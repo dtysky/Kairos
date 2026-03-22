@@ -1,0 +1,574 @@
+# Kairos — 架构设计 v2
+
+> Phase 1：Node.js 库 + CodeBuddy Skill，无 GUI
+> 核心链路：素材导入 → 场景检测 → 脚本生成 → 达芬奇时间线
+
+## 1. 系统全景
+
+```
+┌──────────────────────────────────────────────────────────┐
+│                    CodeBuddy Skill                        │
+│  （交互层：用户通过对话驱动工作流，审阅/编辑脚本等）        │
+│  ★ LLM 能力由 CodeBuddy 宿主提供，Kairos 不自行对接      │
+└───────────────────────┬──────────────────────────────────┘
+                        │ 调用（函数调用 + 结构化数据交换）
+┌───────────────────────▼──────────────────────────────────┐
+│                  Kairos Core Library                      │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐    │
+│  │  Ingest  │ │  Color   │ │  Script  │ │   Cut    │    │
+│  │  素材管理 │ │  调色辅助 │ │  脚本生成 │ │  粗剪编排 │    │
+│  └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘    │
+│       │            │            │            │           │
+│  ┌────▼────────────▼────────────▼────────────▼─────┐     │
+│  │              共享基础设施层                        │     │
+│  │  ProjectManager · MediaIndex · LocalModels ·    │     │
+│  │  FFmpegRunner · GPSMatcher · ConfigStore        │     │
+│  └──────────────────────────────────────────────────┘     │
+└───────┬──────────────┬──────────────┬────────────────────┘
+        │              │              │
+   ┌────▼────┐   ┌─────▼─────┐  ┌────▼──────┐
+   │ FFmpeg  │   │ 本地模型   │  │ DaVinci   │
+   │ (子进程) │   │ ONNX/     │  │ Resolve   │
+   └─────────┘   │ Whisper   │  │ (MCP)     │
+                 └───────────┘  └───────────┘
+```
+
+## 2. 分层架构
+
+### Layer 0 — 外部依赖
+
+| 依赖 | 通信方式 | 用途 |
+|------|----------|------|
+| **FFmpeg / ffprobe** | child_process | 元数据提取、代理文件生成、关键帧抽取、场景切换检测 |
+| **ONNX Runtime** | Node.js 绑定 (onnxruntime-node) | CLIP/BLIP 本地推理（视觉特征提取、场景聚类） |
+| **Whisper** | whisper.cpp HTTP server 或 child_process | 语音识别（旁白提取、风格档案分析） |
+| **CodeBuddy LLM** | Skill 宿主提供 | 脚本生成、场景总结、精剪建议等所有 LLM 能力（Phase 1 不自行对接云端大模型） |
+| **DaVinci Resolve** | MCP (davinci-resolve-mcp) | 调色、时间线创建、素材导入、渲染 |
+| **逆地理编码** | HTTP API | GPS 坐标 → 地名 |
+
+### Layer 1 — 共享基础设施 (`src/infra/`)
+
+核心库的公共能力，所有业务模块共享。
+
+| 模块 | 职责 |
+|------|------|
+| `project` | 项目生命周期管理（创建、加载、阶段状态机） |
+| `media-index` | 素材索引的 CRUD、查询、持久化（JSON，预留 SQLite） |
+| `ffmpeg` | FFmpeg/ffprobe 封装，跨平台硬件加速检测，任务队列 |
+| `local-models` | 本地小模型管理：CLIP/BLIP（ONNX）特征提取 + Whisper 语音识别 |
+| `gps` | GPX 解析、轨迹合并、时间匹配、逆地理编码 |
+| `config` | 用户配置 / 项目配置 / 风格档案的读写 |
+| `task-queue` | 后台任务队列（预处理、批量分析），基于 p-queue |
+| `logger` | 结构化日志 |
+
+### Layer 2 — 业务模块 (`src/modules/`)
+
+四大工作流阶段，每个模块对应需求文档的一个功能域。
+
+#### 2.1 Ingest — 素材导入与管理
+
+```
+src/modules/ingest/
+├── scanner.ts          # 递归扫描目录，识别媒体文件
+├── metadata.ts         # ffprobe 元数据提取 + EXIF 读取
+├── proxy-generator.ts  # FFmpeg 代理文件生成（720p H.264）
+├── gps-writer.ts       # 照片 EXIF GPS 写入（GPX → EXIF）
+├── scene-detector.ts   # CLIP 特征提取 + 聚类 + LLM 场景描述
+├── pharos-reader.ts    # Pharos 分镜数据读取（接口预留）
+└── index.ts            # Ingest 模块入口，编排扫描→元数据→代理→GPS→场景
+```
+
+**关键流程**：
+```
+扫描目录
+  → ffprobe 提取元数据（并行，p-limit 控制并发）
+  → EXIF 读取照片信息
+  → GPX 时间匹配 → GPS 坐标写入素材索引（照片额外写入 EXIF）
+  → FFmpeg 生成 720p 代理文件（后台队列）
+  → CLIP 提取代理文件视觉特征 → 向量聚类 → LLM 生成场景描述
+  → 写入 media/index.json + media/scenes.json
+```
+
+#### 2.2 Color — 调色辅助
+
+```
+src/modules/color/
+├── log-resolver.ts     # 按设备配置解析素材色彩空间（不做自动识别）
+├── cst-mapper.ts       # 色彩空间 → CST/LUT 映射规则
+├── exposure-analyzer.ts # FFmpeg signalstats 分析曝光/白平衡
+├── grade-planner.ts    # 生成调色方案（节点树 + 参数）
+├── resolve-executor.ts # 通过 MCP 在达芬奇中执行调色
+└── index.ts
+```
+
+**Log 格式配置**（不做自动识别，按拍摄设备配置 + 单素材覆盖）：
+```typescript
+type ColorSpace = 'slog3' | 'dlog-m' | 'rec709' | 'hlg';
+
+// 设备级色彩空间配置：每台设备一个默认 Log 格式
+interface DeviceColorConfig {
+  deviceId: string;        // 设备标识，如 "zve1" / "a7r5" / "mavic4pro"
+  deviceName: string;      // 显示名，如 "Sony ZV-E1"
+  colorSpace: ColorSpace;  // 该设备的默认色彩空间
+}
+
+// 单素材覆盖：针对个别素材指定不同的色彩空间
+interface ClipColorOverride {
+  clipId: string;          // 素材 ID
+  colorSpace: ColorSpace;  // 覆盖的色彩空间
+}
+
+// 项目配置
+interface ColorConfig {
+  devices: DeviceColorConfig[];       // 设备列表
+  clipOverrides?: ClipColorOverride[]; // 单素材覆盖（可选）
+  fallback: ColorSpace;               // 未匹配设备的默认值
+}
+
+// 默认预设
+const defaultColorConfig: ColorConfig = {
+  devices: [
+    { deviceId: 'zve1',      deviceName: 'Sony ZV-E1',       colorSpace: 'slog3' },
+    { deviceId: 'a7r5',      deviceName: 'Sony A7R5',        colorSpace: 'slog3' },
+    { deviceId: 'a7r3',      deviceName: 'Sony A7R3',        colorSpace: 'slog3' },
+    { deviceId: 'mavic4pro', deviceName: 'DJI Mavic 4 Pro',  colorSpace: 'dlog-m' },
+  ],
+  fallback: 'rec709',  // 未关联设备的素材默认为已调色/标准
+};
+// Ingest 阶段通过 EXIF 的 Make/Model 自动关联设备；无法识别设备的素材使用 fallback
+// 用户可对单条素材手动覆盖色彩空间（clipOverrides）
+```
+
+**关键流程**：
+```
+读取素材索引
+  → 按素材的拍摄设备匹配色彩空间配置（EXIF Make/Model → deviceId）
+  → 检查 clipOverrides，单素材覆盖优先
+  → 未匹配设备的使用 fallback（默认 Rec.709）
+  → 按色彩空间分组，确定 CST/LUT 映射
+  → FFmpeg signalstats 分析关键帧的亮度/色度统计
+  → 计算 Lift/Gamma/Gain 校正量（目标：YAVG 归一化到 IRE 40-70）
+  → 生成节点方案：Node1=CST → Node2=曝光校正 → Node3=可选LUT
+  → MCP 调用达芬奇：创建节点树 + 写入参数
+```
+
+#### 2.3 Script — 脚本生成
+
+```
+src/modules/script/
+├── style-analyzer.ts   # 风格档案：成片分析（场景切换检测 + Whisper + LLM）
+├── narrative-builder.ts # 叙事骨架构建（分镜+GPS+素材内容 → 段落结构）
+├── script-generator.ts  # LLM 脚本生成（注入风格档案 + 叙事骨架）
+├── content-deriver.ts   # 素材内容推导（片头、精彩回顾等非分镜段落）
+├── script-editor.ts     # 脚本编辑操作（增删改段落 + 上下文衔接）
+├── script-store.ts      # 脚本版本管理
+└── index.ts
+```
+
+**关键流程**：
+```
+（首次）导入成片 MP4 → 生成风格档案
+  → FFmpeg 场景切换检测 → 提取叙事结构
+  → Whisper 转写旁白 → LLM 分析语言风格
+  → 存储 style-profile.json
+
+脚本生成：
+  → 读取 Pharos 分镜数据 + 素材索引 + 场景数据 + GPS 轨迹
+  → narrative-builder 构建叙事骨架（分镜驱动 + 空间叙事）
+  → content-deriver 推导非分镜段落（片头、回顾、花絮）
+  → script-generator 调用 LLM 生成完整脚本
+     - system prompt 注入风格档案
+     - 分段生成，每段包含：旁白、素材引用、时长、情绪
+  → 用户在 CodeBuddy 中审阅/编辑
+  → 存储 script/current.json + 版本快照
+```
+
+#### 2.4 Cut — 粗剪与剪辑辅助
+
+```
+src/modules/cut/
+├── timeline-builder.ts  # 从脚本构建时间线数据结构
+├── resolve-importer.ts  # MCP：导入素材到达芬奇 Media Pool
+├── resolve-timeline.ts  # MCP：创建时间线 + 按脚本排列片段
+├── subtitle-generator.ts # 从脚本旁白生成字幕轨
+├── photo-handler.ts     # 照片静帧处理（Ken Burns 参数）
+├── refine-advisor.ts    # 精剪建议引擎（节奏/转场/B-Roll）
+└── index.ts
+```
+
+**关键流程**：
+```
+读取脚本
+  → timeline-builder 构建时间线结构（轨道、片段、入出点、转场）
+  → MCP 创建达芬奇项目/时间线
+  → MCP 导入素材到 Media Pool
+  → MCP 按时间线结构排列片段
+  → 字幕生成 → MCP 添加字幕轨
+  → 照片素材 → 设置 Ken Burns 效果参数
+  → （可选）精剪建议：LLM 分析时间线，给出优化建议
+```
+
+### Layer 3 — 交互层 (`src/skill/`)
+
+Phase 1 的用户交互通过 CodeBuddy Skill 实现。
+
+```
+src/skill/
+├── index.ts             # Skill 入口，注册命令
+├── workflows/
+│   ├── ingest.ts        # 素材导入工作流
+│   ├── color.ts         # 调色辅助工作流
+│   ├── script.ts        # 脚本生成工作流
+│   └── cut.ts           # 粗剪工作流
+└── prompts/
+    ├── system.ts        # Skill 系统提示词
+    └── templates.ts     # 交互模板（脚本展示、确认编辑等）
+```
+
+## 3. AI 能力架构
+
+Phase 1 的 AI 能力分两层：**LLM 由 CodeBuddy 宿主提供，本地小模型由 Kairos 自行管理**。
+
+### 3.1 设计原则
+
+- **不自行对接云端大模型**：Phase 1 是 CodeBuddy Skill，LLM 能力天然由宿主提供（用户的对话本身就在 LLM 上下文中）
+- **Kairos Core 只管本地小模型**：CLIP/BLIP（视觉特征提取）、Whisper（语音识别），这些需要 Kairos 自行加载和推理
+- **Skill 层负责 LLM 编排**：脚本生成、场景总结、精剪建议等需要大模型的任务，由 Skill 层通过 prompt 模板 + 结构化数据交给 CodeBuddy LLM 处理
+- **Phase 2 再考虑独立 AI Provider**：迁移到 Tauri 桌面应用后，脱离 CodeBuddy 环境，届时再引入多 Provider 架构
+
+### 3.2 LLM 能力（CodeBuddy 宿主）
+
+Skill 层不直接调用任何 LLM API，而是通过设计 prompt 模板和结构化数据格式，让 CodeBuddy 的 LLM 完成推理。
+
+| LLM 任务 | 数据输入（Kairos Core 准备） | 输出（LLM 返回，Skill 解析） |
+|----------|---------------------------|---------------------------|
+| 场景描述生成 | CLIP 特征聚类结果 + 关键帧描述 + GPS 地名 | 场景描述文本 + 情绪标签 |
+| 脚本生成 | 素材索引 + 场景数据 + Pharos 分镜 + GPS 轨迹 + 风格档案 | 结构化脚本 JSON（ScriptSegment[]） |
+| 脚本编辑 | 当前脚本 + 用户修改意图 | 更新后的脚本段落 |
+| 风格分析 | Whisper 旁白文本 + 场景切换统计 | 风格档案 JSON（StyleProfile） |
+| 精剪建议 | 时间线结构 + 素材内容描述 | 优化建议列表 |
+
+**工作模式**：
+```
+Kairos Core Library                    CodeBuddy Skill                    CodeBuddy LLM
+      │                                      │                                │
+      │  ① 准备结构化数据                      │                                │
+      │  （素材索引/CLIP特征/GPS/Whisper文本）  │                                │
+      │ ──────────────────────────────────▶   │                                │
+      │                                      │  ② 组装 prompt（模板 + 数据）     │
+      │                                      │ ─────────────────────────────▶  │
+      │                                      │                                │  ③ LLM 推理
+      │                                      │  ④ 结构化结果                    │
+      │                                      │ ◀─────────────────────────────  │
+      │  ⑤ 解析并持久化                        │                                │
+      │ ◀──────────────────────────────────   │                                │
+```
+
+### 3.3 本地小模型（Kairos 自行管理）
+
+```typescript
+// src/infra/local-models/
+interface LocalModels {
+  // CLIP 视觉特征提取
+  clipEmbed(imagePaths: string[]): Promise<number[][]>;
+
+  // BLIP 图像描述（可选，Phase 1 可用 CLIP + CodeBuddy LLM 替代）
+  blipCaption?(imagePath: string): Promise<string>;
+
+  // Whisper 语音识别
+  whisperTranscribe(audioPath: string, options?: WhisperOptions): Promise<TranscriptSegment[]>;
+}
+
+interface WhisperOptions {
+  language?: string;       // 默认 'zh'
+  model?: string;          // 'base' | 'small' | 'medium'
+  translateToEn?: boolean;
+}
+
+interface TranscriptSegment {
+  start: number;   // 秒
+  end: number;
+  text: string;
+}
+```
+
+| 模型 | 运行方式 | 用途 | 输入 |
+|------|---------|------|------|
+| **CLIP ViT-B/16** | onnxruntime-node | 视觉特征提取、场景聚类 | 代理文件关键帧（224×224） |
+| **Whisper** | whisper.cpp (child_process) | 旁白转写、风格分析 | 音频文件 |
+
+### 3.4 Phase 2 演进
+
+迁移到 Tauri 后，Kairos 脱离 CodeBuddy 环境，需要独立的 LLM 对接：
+- 引入统一 AI Provider 接口（OpenAI / Anthropic / Ollama）
+- 本地小模型层不变，直接复用
+- Skill 层的 prompt 模板迁移为 AI Provider 的调用参数
+
+## 4. MCP 集成架构
+
+Kairos 作为 MCP Client，通过 davinci-resolve-mcp Server 与达芬奇通信。
+
+```
+Kairos (MCP Client)
+    │
+    │  MCP Protocol (stdio / SSE)
+    │
+    ▼
+davinci-resolve-mcp Server
+    │
+    │  DaVinci Resolve Scripting API (Python)
+    │
+    ▼
+DaVinci Resolve Studio (≥18.5)
+```
+
+### 4.1 MCP 操作分类
+
+| 类别 | 操作 | Resolve API 对象 |
+|------|------|-----------------|
+| 调色 | AddSerialNode, SetNodeLUT, SetCDL, ResetAllGrades | Graph |
+| 时间线 | CreateTimeline, AddTrack, AppendToTimeline | Timeline |
+| 素材 | ImportMedia, GetMediaPool, AddSubFolder | MediaPool |
+| 渲染 | AddRenderJob, SetRenderSettings, StartRender | Deliver |
+| 项目 | CreateProject, OpenProject, GetCurrentProject | ProjectManager |
+
+### 4.2 错误处理
+
+- MCP 连接失败 → 提示用户检查 Resolve 是否运行 + MCP Server 是否启动
+- 操作超时 → 重试 3 次，间隔递增
+- Resolve 版本不兼容 → 检测版本号，降级到支持的 API 子集
+- 免费版 → 提示需要 Studio 版本
+
+## 5. 数据流
+
+### 5.1 核心数据模型
+
+```typescript
+// 素材
+interface MediaClip {
+  id: string;                    // nanoid
+  filePath: string;              // 原始文件绝对路径
+  proxyPath?: string;            // 代理文件路径
+  type: 'video' | 'photo' | 'audio';
+  metadata: {
+    duration?: number;           // 秒
+    resolution?: { width: number; height: number };
+    fps?: number;
+    codec?: string;
+    colorSpace?: 'slog3' | 'dlog-m' | 'rec709' | 'hlg';  // 由文件夹配置决定
+    capturedAt: Date;
+  };
+  gps?: { lat: number; lng: number; altitude?: number };
+  placeName?: string;            // 逆地理编码结果
+  sceneId?: string;
+  tags: string[];                // 用户标记
+  clipEmbedding?: number[];      // CLIP 特征向量
+}
+
+// 场景
+interface Scene {
+  id: string;
+  clipIds: string[];
+  timeRange: { start: Date; end: Date };
+  location?: string;
+  description: string;           // AI 生成
+  mood: string;                  // 情绪标签
+  pharosShotId?: string;         // 关联的 Pharos 分镜
+}
+
+// 脚本段落
+interface ScriptSegment {
+  id: string;
+  type: 'intro' | 'scene' | 'transition' | 'highlight' | 'outro';
+  narration: string;             // 旁白/字幕文字
+  clipRefs: Array<{
+    clipId: string;
+    inPoint?: number;            // 秒
+    outPoint?: number;
+  }>;
+  estimatedDuration: number;     // 秒
+  mood: string;
+  notes?: string;                // 用户批注
+}
+
+// 风格档案
+interface StyleProfile {
+  id: string;
+  name: string;
+  sourceFiles: string[];         // 分析的成片文件路径
+  narrative: {
+    introRatio: number;          // 片头占比
+    outroRatio: number;          // 片尾占比
+    avgSegmentDuration: number;  // 平均段落时长
+    brollFrequency: number;      // B-Roll 插入频率
+    pacePattern: string;         // 节奏描述
+  };
+  voiceStyle: {
+    person: '1st' | '2nd' | '3rd';  // 叙述人称
+    tone: string;                    // 语气描述
+    density: 'sparse' | 'moderate' | 'dense';  // 信息密度
+    sampleTexts: string[];           // 代表性文本片段
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// 调色方案
+interface GradePlan {
+  clipId: string;
+  colorSpace: string;
+  nodes: Array<{
+    index: number;
+    type: 'cst' | 'lut' | 'correction';
+    params: Record<string, unknown>;
+  }>;
+}
+```
+
+### 5.2 数据流向
+
+```
+                     ┌─────────────┐
+                     │  原始素材目录  │ (只读引用，除 GPS 写入)
+                     └──────┬──────┘
+                            │
+              ┌─────────────▼─────────────┐
+              │      Ingest Module         │
+              │  元数据 + GPS + 代理 + 场景  │
+              └─────┬───────────┬─────────┘
+                    │           │
+         ┌──────────▼──┐  ┌────▼───────────┐
+         │ media/      │  │ cache/proxy/   │
+         │ index.json  │  │ (代理文件)      │
+         │ scenes.json │  └────┬───────────┘
+         └──────┬──────┘       │
+                │         ┌────▼───────────┐
+                │         │ CLIP/BLIP      │
+                │         │ 视觉特征提取    │
+                │         └────────────────┘
+                │
+     ┌──────────▼──────────┐
+     │   Script Module     │
+     │ 分镜+GPS+场景+风格   │
+     │     → LLM 生成脚本   │
+     └──────────┬──────────┘
+                │
+     ┌──────────▼──────────┐
+     │  script/current.json │
+     └──────────┬──────────┘
+                │
+     ┌──────────▼──────────┐     ┌───────────────┐
+     │    Cut Module        │────▶│ DaVinci       │
+     │ 脚本 → 时间线 → MCP  │     │ Resolve       │
+     └─────────────────────┘     └───────────────┘
+```
+
+## 6. 技术栈总结
+
+### Phase 1 — Node.js 库 + CodeBuddy Skill
+
+| 层级 | 选型 | 理由 |
+|------|------|------|
+| 运行时 | **Node.js 20+ / TypeScript 5.7+** | ESM，快速迭代 |
+| 包管理 | **pnpm** | 快、磁盘友好 |
+| 视频处理 | **fluent-ffmpeg** + 原生 child_process | 元数据、代理、关键帧 |
+| EXIF | **exifreader** + **piexifjs**（写入 GPS） | 照片元数据读写 |
+| GPX | **gpx-parser-builder** | GPX 解析 |
+| AI 本地推理 | **onnxruntime-node** | CLIP/BLIP 模型加载 |
+| AI 语音识别 | **whisper.cpp** (child_process) | 旁白转写 |
+| LLM 能力 | **CodeBuddy 宿主** | 脚本生成、场景总结等（Phase 1 不引入独立 LLM SDK） |
+| MCP Client | **@modelcontextprotocol/sdk** | MCP 协议通信 |
+| 任务队列 | **p-queue** | 并发控制，无 Redis 依赖 |
+| 校验 | **zod** | 配置和数据模型校验 |
+| 测试 | **vitest** | 快、TS 原生支持 |
+| 日志 | **pino** | 结构化、高性能 |
+
+### 后续迁移 — Tauri 桌面应用
+
+- 核心库不变，Tauri sidecar 嵌入 Node.js
+- React 前端调用核心库的 API
+- 代理文件用于应用内视频预览
+
+## 7. 目录结构
+
+```
+kairos/
+├── src/
+│   ├── infra/                    # Layer 1: 共享基础设施
+│   │   ├── project/              # 项目管理
+│   │   ├── media-index/          # 素材索引
+│   │   ├── ffmpeg/               # FFmpeg 封装
+│   │   ├── local-models/          # 本地小模型管理（CLIP/BLIP/Whisper）
+│   │   ├── gps/                  # GPS 处理
+│   │   ├── config/               # 配置管理
+│   │   ├── task-queue/           # 后台任务队列
+│   │   └── logger/               # 日志
+│   │
+│   ├── modules/                  # Layer 2: 业务模块
+│   │   ├── ingest/               # 素材导入与管理
+│   │   ├── color/                # 调色辅助
+│   │   ├── script/               # 脚本生成
+│   │   └── cut/                  # 粗剪与剪辑辅助
+│   │
+│   ├── skill/                    # Layer 3: CodeBuddy Skill 交互层
+│   │   ├── workflows/            # 各阶段工作流
+│   │   └── prompts/              # 提示词模板
+│   │
+│   ├── types/                    # 共享类型定义
+│   │   ├── media.ts
+│   │   ├── scene.ts
+│   │   ├── script.ts
+│   │   ├── style.ts
+│   │   ├── grade.ts
+│   │   └── project.ts
+│   │
+│   └── index.ts                  # 库入口
+│
+├── models/                       # 本地 ONNX 模型文件
+│   └── clip-vit-b-16/
+│
+├── designs/                      # 设计文档
+├── tests/                        # 测试
+├── package.json
+├── tsconfig.json
+└── vitest.config.ts
+```
+
+## 8. 关键设计决策
+
+### D1. JSON 优先，SQLite 备选
+
+Phase 1 使用 JSON 文件存储所有项目数据。原因：
+- 人类可读，调试友好
+- 可纳入 Git 版本管理
+- 1000 条素材以内性能足够（~3MB，解析 <50ms）
+- 若超过 5000 条，通过 Repository 抽象层无缝切换 better-sqlite3
+
+### D2. 本地小模型 + CodeBuddy LLM 双层 AI
+
+Phase 1 不自行对接任何云端大模型：
+- **LLM 能力由 CodeBuddy 宿主提供**：Skill 层通过 prompt 模板 + 结构化数据交换驱动 LLM，无需引入 openai/anthropic SDK
+- **本地小模型用 ONNX Runtime**：CLIP 推理极轻量（单张图片 <100ms），直接加载模型，不走 HTTP
+- **Whisper 用 whisper.cpp**：child_process 调用，无需额外进程管理
+- Phase 2 迁移 Tauri 后再引入独立 AI Provider 架构
+
+### D3. MCP 优先，子进程 Fallback
+
+达芬奇操作优先走 MCP：
+- davinci-resolve-mcp 覆盖 100% Resolve API（324 方法）
+- 标准协议，生态兼容
+- 若 MCP Server 不可用，降级到直接调用 Python 脚本（child_process）
+
+### D4. 代理文件为模型服务
+
+代理文件（720p H.264）的首要用途是喂给本地视觉模型：
+- CLIP 输入分辨率 224×224，720p 代理绰绰有余
+- 分析调色后的代理（而非 Log 原始素材），内容理解更准确
+- 后续 Tauri 版本复用为预览素材
+
+### D5. 后台预处理
+
+耗时操作（代理生成、CLIP 特征提取、场景检测）通过 p-queue 异步执行：
+- 用户导入素材后可继续其他操作
+- 预处理结果持久化到 `cache/preprocess/`，中断可恢复
+- 并发度 = CPU 核心数 × 50%，避免打满系统

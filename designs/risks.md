@@ -1,0 +1,136 @@
+# Kairos — 技术风险与难点
+
+## R1. DaVinci Resolve 集成
+
+**风险等级**：高
+
+| 维度 | 说明 |
+|------|------|
+| 问题 | DaVinci Resolve Scripting API 仅提供 Python/Lua 绑定，无原生 Node.js SDK |
+| 影响 | 调色参数推送、时间线导入、PowerGrade 生成均依赖此 API |
+| 难点 | 需要 MCP Server 作为中间层，增加部署复杂度 |
+| 风险 | Resolve API 文档不完善，部分功能未公开；不同版本 API 行为可能不一致；免费版与 Studio 版 API 权限不同 |
+| 缓解 | MCP 优先，子进程调用 Python 作为 fallback |
+| 反馈 | 能否走MCP，如果不能，就走子进程吧 |
+| 调研 | **MCP 方案可行✅**。GitHub 已有成熟项目 [samuelgursky/davinci-resolve-mcp](https://github.com/samuelgursky/davinci-resolve-mcp)（v2.1.0, 2026-03-16），覆盖 Resolve Scripting API 全部 324 个方法（100%），支持 macOS/Windows/Linux。包含 Graph 对象（节点操作、LUT、调色）、Timeline（轨道/片段/导出）、Gallery（PowerGrade/静帧）等 13 个 API 对象类。**前提：需 DaVinci Resolve Studio 版（≥18.5），免费版不支持外部脚本。** 依赖 Python 3.10-3.12。方案：Kairos 作为 MCP Client 直接调用该 Server，无需自己写 Python 桥接层。子进程方案作为 fallback 保留。 |
+
+## R2. AI 调色参数生成
+
+**风险等级**：高
+
+| 维度 | 说明 |
+|------|------|
+| 问题 | 目前没有成熟的开源模型能直接从画面生成达芬奇节点参数 |
+| 影响 | 调色模块是核心卖点之一，若 AI 生成质量差则功能形同虚设 |
+| 难点 | 调色是高度主观的创作行为，"正确"没有客观标准；S-Log3/D-Log M 的色彩科学复杂，错误转换会导致色彩断裂 |
+| 风险 | 可能需要大量实拍素材做微调训练集，数据获取成本高 |
+| 缓解 | 初期采用规则引擎（CST + 基础曲线调整）兜底，AI 仅做风格建议；积累用户反馈后逐步迭代模型 |
+| 反馈 | 是否能固定插入节点，做一些固定的操作，然后二级调色为波形图达到某种规则 |
+| 调研 | **固定节点模板可行✅**。Resolve Scripting API 的 Graph 对象支持 AddSerialNode / AddParallelNode / AddLayerNode / SetNodeLUT / SetCDL / ResetAllGrades / SetNodeEnabled 等操作（nodeIndex 为 1 基索引，v16.2.0+）。可以程序化构建固定节点树，例如：Node1=CST（S-Log3→Rec.709）→ Node2=曝光校正 → Node3=风格 LUT → Node4=二级微调。**波形图规则驱动方案需分两条路径**：① Resolve API 本身**不暴露波形图/示波器数据**（无 GetScopeData 类 API），无法直接从 Resolve 读取波形数值。② **替代方案：用 FFmpeg `signalstats` filter** 在 Resolve 外部分析视频帧的 YMIN/YMAX/YAVG/UAVG/VAVG 等信号统计数据，或用 OpenCV 计算直方图，根据目标亮度范围（如 YAVG→IRE 40-70）计算 Lift/Gamma/Gain 调整量，再通过 API 写入节点参数。这是一条完全可行的自动化路径：FFmpeg 分析→规则计算→API 写入。 |
+
+## R3. 视频内容理解的精度与速度
+
+**风险等级**：高
+
+| 维度 | 说明 |
+|------|------|
+| 问题 | 数百条 4K 素材逐帧送入多模态模型，推理耗时和成本极高 |
+| 影响 | 场景检测、素材评分、内容描述均依赖视觉理解，是全管线的基础 |
+| 难点 | 需在精度和速度间找平衡——抽帧太稀疏丢信息，太密集耗时爆炸 |
+| 风险 | 本地 CLIP 模型（ONNX Runtime）在不同平台上推理性能需实测验证 |
+| 缓解 | 分层策略：先用轻量 CLIP 做粗筛和聚类，仅对关键帧调用多模态大模型做精细理解；充分利用代理文件降低分辨率 |
+| 反馈 | 上一步在调色后，导出时同时导出低分辨率代理文件，包括图片也可以，缓存到一个目录，进行分析 |
+| 调研 | **完全可行✅，且能显著降低分析成本**。具体方案：① Kairos 用 FFmpeg 生成低分辨率代理（720p H.264），同时抽取关键帧截图（FFmpeg `select='eq(pict_type,I)'` 或按时间间隔抽帧 `fps=1/5` 得到每 5 秒一张图片）。② CLIP 模型（ViT-B/16）输入分辨率固定为 224×224，**即使原始素材是 4K，送入前也会被 resize**，因此使用 720p 代理甚至缩略图不会损失 CLIP 精度。③ 场景描述由 CodeBuddy LLM 基于 CLIP 聚类结果 + 关键帧描述生成，无需本地多模态大模型。④ 分析调色后的代理而非原始 Log 素材，AI 看到的是最终色彩意图，内容理解更准确。⑤ 缓存目录按 `cache/proxy/{clip_id}.mp4` 和 `cache/keyframes/{clip_id}/` 组织。 |
+
+## R4. GPS 时间戳与素材时间对齐
+
+**风险等级**：中
+
+| 维度 | 说明 |
+|------|------|
+| 问题 | 相机内部时钟与 GPS 轨迹记录设备的时间可能存在偏移 |
+| 影响 | 时间错位会导致地点匹配错误，连锁影响脚本叙事的地理准确性 |
+| 难点 | 不同设备（Sony/DJI/手机）时区处理不一致；部分相机不写入 GPS 信息到 EXIF |
+| 缓解 | 提供手动时间偏移校准；利用无人机素材（自带精确 GPS）做锚点交叉验证 |
+| 反馈 | 这个应该不是问题 |
+| 调研 | **同意降级为低风险**。Sony A7R5/A7R3/ZV-E1 的 EXIF 写入 DateTimeOriginal 精度到秒，DJI Mavic 4 Pro 的 SRT/GPX 轨迹自带高精度 GPS 时间戳。两者时间基准均可溯源到 UTC。实际使用中，只要相机时间设置正确（拍摄前同步手机时间），偏移通常在 1-2 秒以内，对地点匹配影响可忽略。保留手动偏移校准作为兜底即可。**GPS 记录方案已确定**：① **主力：GPSLogger for Android**（[github.com/mendhak/gpslogger](https://github.com/mendhak/gpslogger)，4.8k+ stars，开源免费）——设置"Start on bootup"开机自启，后台前台服务常驻记录，输出标准 GPX 文件，支持自定义 HTTP POST 推送到 Kairos 本地端点。记录间隔建议 1-2 分钟或基于 100m 距离变化，日耗电约 5-10%。② **备份：车载 OBD GPS 记录仪**——坦克500 Hi4-T 有标准 OBD-II 接口（方向盘下方左侧），插入后点火自动记录、熄火自动保存，零操作覆盖驾驶段。③ DJI Mavic 4 Pro 飞行段自带 SRT/GPX 高精度轨迹。Kairos 侧设计：接收多源轨迹数据（GPX 文件导入 + HTTP 推送），按时间戳合并去重后匹配素材 EXIF 时间。 |
+
+## R5. 跨平台 FFmpeg 与本地模型部署
+
+**风险等级**：中
+
+| 维度 | 说明 |
+|------|------|
+| 问题 | FFmpeg 编解码器支持、硬件加速方式在 macOS (VideoToolbox) 和 Windows (NVENC/QSV) 上差异大 |
+| 影响 | 代理生成、缩略图提取的性能和兼容性因平台而异 |
+| 难点 | ONNX Runtime 在 macOS 走 CoreML，Windows 走 DirectML/CUDA，配置和性能表现不同；whisper.cpp 在 macOS 走 Metal，Windows 走 CUDA |
+| 缓解 | 封装平台检测层，自动选择最佳硬件加速后端；CI 中加入双平台测试 |
+| 反馈 | 这个实际尝试吧 |
+| 调研 | **风险可控，Phase 1 实测验证**。FFmpeg 方面：macOS VideoToolbox 和 Windows NVENC 的命令行参数差异已有成熟封装方案（fluent-ffmpeg 的 `.outputOptions()` 按平台分支即可）。ONNX Runtime 方面：macOS 和 Windows 均有官方 Node.js 绑定（onnxruntime-node），CLIP 模型推理结果由权重决定，与后端无关。**主要差异点**：① 代理生成速度（VideoToolbox vs NVENC），② Whisper 推理速度（whisper.cpp Metal vs CUDA），③ CLIP 特征提取速度（CoreML vs DirectML）。建议 Phase 1 在两台机器上分别 benchmark 以上三项，记录耗时基准线。 |
+
+## R6. OTIO / FCPXML 时间线格式兼容性
+
+**风险等级**：中
+
+| 维度 | 说明 |
+|------|------|
+| 问题 | OpenTimelineIO (OTIO) 的 Node.js 绑定不成熟，社区维护状态不明 |
+| 影响 | 粗剪输出是管线末端的关键交付物，格式不兼容直接导致无法使用 |
+| 难点 | FCPXML 版本间有差异（FCP X vs DaVinci 解析行为不同）；EDL 格式古老，不支持复杂时间线 |
+| 缓解 | MCP 方案下由 Resolve 自身处理格式兼容；子进程 fallback 时用 xmlbuilder2 拼 FCPXML 1.11 |
+| 反馈 | 这个依赖于风险1，风险1解决了应该就行 |
+| 调研 | **确认与 R1 强绑定✅**。若走 MCP 方案，davinci-resolve-mcp 的 Timeline 对象已支持 ExportToFile（FCPXML/EDL/AAF 等格式）、ImportToTimeline、SetTrack 等操作，**时间线格式兼容问题由 Resolve 自身处理**，Kairos 无需自己拼 FCPXML。若 R1 走 MCP，R6 自动解决。若走子进程 fallback，仍需自行拼 FCPXML，但 FCPXML 1.11 的 XML Schema 公开，Node.js 用 xmlbuilder2 库生成即可，复杂度可控。 |
+
+## R7. 素材规模与 JSON 存储性能
+
+**风险等级**：低-中
+
+| 维度 | 说明 |
+|------|------|
+| 问题 | 单次旅行可能产生 500-1000 条素材，`index.json` 可能膨胀到数 MB |
+| 影响 | 大 JSON 文件的读写、查询性能退化，尤其在频繁交互场景下 |
+| 难点 | JSON 不支持部分读写，每次修改需全量序列化/反序列化 |
+| 缓解 | 初期 1000 条以内 JSON 完全够用（~2-5MB）；若后续规模增长，可透明迁移到 SQLite，上层接口不变 |
+| 反馈 | 这个设计一下索引，应该还好 |
+| 调研 | **同意，低风险✅**。1000 条素材的 index.json 约 2-3MB，Node.js `JSON.parse()` 耗时 <50ms（实测 V8 引擎解析 5MB JSON ~30ms）。设计要点：① 使用 `Map<clipId, MediaInfo>` 结构，clipId 为文件内容 hash 前 12 位，保证唯一性。② 按需加载：启动时只读索引摘要（路径+时间+时长），详细元数据延迟加载。③ 增量写入：使用 write-file-atomic 保证写入原子性，避免断电损坏。④ 若后续超过 5000 条，可无缝切换到 better-sqlite3（Node.js 最成熟的 SQLite 绑定），接口层做 Repository 抽象即可。 |
+
+## R8. 脚本生成的叙事质量
+
+**风险等级**：中
+
+| 维度 | 说明 |
+|------|------|
+| 问题 | LLM 生成的旅行脚本容易"模板化"、缺乏个人风格和情感深度 |
+| 影响 | 脚本质量直接决定用户对工具的信任度和使用意愿 |
+| 难点 | 需要将视觉内容描述、GPS 地理信息、用户笔记多源融合，上下文窗口压力大 |
+| 缓解 | 提供 few-shot 示例注入（用户可上传自己过往作品作为风格参考）；分段生成降低单次上下文长度；交互编辑让用户保持主导权 |
+| 反馈 | 我可以提供过往的作品供分析学习 |
+| 调研 | **Few-shot 风格学习可行✅，且是最实用的提升路径**。方案：① **风格档案库**：导入过往成片的字幕/脚本文本，提取叙事结构、用词偏好、节奏模式，存为 `style-profile.json`。② **Few-shot 注入**：每次生成脚本时，在 system prompt 中注入 2-3 个过往脚本片段作为风格示例，LLM（GPT-4o/Claude/Qwen）能有效模仿个人语调和叙事节奏（GPT-3 论文已验证 few-shot 的泛化能力，后续模型更强）。③ **结构化模板**：分析过往作品的段落结构（开场→转场→高潮→收尾），提取为叙事框架模板，约束 LLM 输出结构。④ **迭代优化**：每次用户编辑脚本后，保存编辑 diff 作为偏好反馈，逐步微调 prompt。不需要模型微调，纯 prompt engineering 即可达到不错效果。 |
+
+## R9. Node.js 处理大量媒体文件的 I/O 压力
+
+**风险等级**：低
+
+| 维度 | 说明 |
+|------|------|
+| 问题 | 扫描数百 GB 素材目录、批量调用 ffprobe 提取元数据时，文件 I/O 和子进程开销大 |
+| 影响 | Ingest 阶段耗时过长影响用户体验 |
+| 缓解 | Node.js 异步 I/O 天然适合并发文件操作；使用工作池（worker_threads 或 p-limit）控制并发度；增量扫描（仅处理新增/变更文件） |
+| 反馈 | 可以在我睡觉的时候进行预处理，用中间格式交换 |
+| 调研 | **后台预处理完全可行✅**。方案：① **任务队列**：使用 p-queue（轻量级 Promise 队列，无 Redis 依赖）管理预处理任务，配合 JSON 文件持久化任务状态（`cache/preprocess/jobs.json`），支持中断恢复。② **夜间批处理流程**：用户导入素材后，标记为"待预处理"→ 睡觉前启动 batch job → p-queue Worker 依次执行：ffprobe 元数据提取 → 代理文件生成 → 缩略图/关键帧导出 → CLIP 特征提取 → 场景检测分组。③ **中间格式**：预处理结果写入 `cache/preprocess/{clip_id}.json`（元数据+CLIP embedding+场景标签），次日启动时直接读取，无需重复计算。④ **进度持久化**：每个 Job 完成后立即写入 jobs.json，进程重启时读取并跳过已完成任务。⑤ **资源控制**：通过 p-queue concurrency 参数限制 FFmpeg 并发数（建议 CPU 核心数 × 50%），避免打满系统资源。 |
+
+---
+
+## 风险矩阵总览
+
+| ID | 风险项 | 等级 | 阶段影响 | 缓解难度 |
+|----|--------|------|----------|----------|
+| R1 | DaVinci Resolve 集成 | 高 | Color / Cut | 中 |
+| R2 | AI 调色参数生成 | 高 | Color | 高 |
+| R3 | 视频内容理解精度与速度 | 高 | Ingest / Script / Cut | 中 |
+| R4 | GPS 时间戳对齐 | 中 | Ingest / Script | 低 |
+| R5 | 跨平台部署差异 | 中 | 全局 | 中 |
+| R6 | 时间线格式兼容 | 中 | Cut | 低 |
+| R7 | JSON 存储性能 | 低-中 | 全局 | 低 |
+| R8 | 脚本叙事质量 | 中 | Script | 中 |
+| R9 | Node.js 媒体 I/O | 低 | Ingest | 低 |
