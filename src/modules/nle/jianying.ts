@@ -1,6 +1,6 @@
 import type {
   IKtepDoc, IKtepAsset, IKtepTimeline,
-  IKtepClip, IKtepSubtitle,
+  IKtepClip, IKtepSubtitle, IKtepTrack,
 } from '../../protocol/schema.js';
 import { validateKtepDoc } from '../../protocol/validator.js';
 import type { INleAdapter, INleCapabilities, INleIdMap } from './adapter.js';
@@ -50,6 +50,7 @@ export class JianyingAdapter implements INleAdapter {
   private idMap: INleIdMap;
   private draftId: string | null = null;
   private assetPaths = new Map<string, string>();
+  private trackKindMap = new Map<string, string>();
 
   constructor(mcp: IMcpCaller, config: Partial<IJianyingConfig> = {}) {
     this.config = { ...CDEFAULTS, ...config };
@@ -90,7 +91,10 @@ export class JianyingAdapter implements INleAdapter {
         track_name: `${track.role}-${track.index}`,
       }) as any;
       const trackId = res.track_id ?? res.data?.track_id;
-      if (trackId) this.idMap.tracks.set(track.id, trackId);
+      if (trackId) {
+        this.idMap.tracks.set(track.id, trackId);
+        this.trackKindMap.set(track.id, track.kind);
+      }
     }
   }
 
@@ -103,43 +107,55 @@ export class JianyingAdapter implements INleAdapter {
       if (!material) continue;
 
       const targetRange = msToRange(clip.timelineInMs, clip.timelineOutMs);
+      const trackKind = this.trackKindMap.get(clip.trackId) ?? 'video';
 
-      const args: Record<string, unknown> = {
-        track_id: jyTrackId,
-        material,
-        target_start_end: targetRange,
-      };
-
-      if (clip.sourceInMs != null && clip.sourceOutMs != null) {
-        args.source_start_end = msToRange(clip.sourceInMs, clip.sourceOutMs);
-      }
-
-      if (clip.transform) {
-        args.clip_settings = {
-          ...(clip.transform.scale != null && {
-            scale_x: clip.transform.scale,
-            scale_y: clip.transform.scale,
-          }),
-          ...(clip.transform.positionX != null && { transform_x: clip.transform.positionX }),
-          ...(clip.transform.positionY != null && { transform_y: clip.transform.positionY }),
-          ...(clip.transform.rotation != null && { rotation: clip.transform.rotation }),
+      if (trackKind === 'audio') {
+        const args: Record<string, unknown> = {
+          track_id: jyTrackId,
+          material,
+          target_start_end: targetRange,
         };
-      }
+        if (clip.sourceInMs != null && clip.sourceOutMs != null) {
+          args.source_start_end = msToRange(clip.sourceInMs, clip.sourceOutMs);
+        }
+        const res = await this.mcp.call('add_audio_segment', args) as any;
+        const segId = res.audio_segment_id ?? res.data?.audio_segment_id;
+        if (segId) this.idMap.clips.set(clip.id, segId);
+      } else {
+        const args: Record<string, unknown> = {
+          track_id: jyTrackId,
+          material,
+          target_start_end: targetRange,
+        };
+        if (clip.sourceInMs != null && clip.sourceOutMs != null) {
+          args.source_start_end = msToRange(clip.sourceInMs, clip.sourceOutMs);
+        }
+        if (clip.transform) {
+          args.clip_settings = {
+            ...(clip.transform.scale != null && {
+              scale_x: clip.transform.scale,
+              scale_y: clip.transform.scale,
+            }),
+            ...(clip.transform.positionX != null && { transform_x: clip.transform.positionX }),
+            ...(clip.transform.positionY != null && { transform_y: clip.transform.positionY }),
+            ...(clip.transform.rotation != null && { rotation: clip.transform.rotation }),
+          };
+        }
+        const res = await this.mcp.call('add_video_segment', args) as any;
+        const segId = res.video_segment_id ?? res.data?.video_segment_id;
+        if (segId) this.idMap.clips.set(clip.id, segId);
 
-      const res = await this.mcp.call('add_video_segment', args) as any;
-      const segId = res.video_segment_id ?? res.data?.video_segment_id;
-      if (segId) this.idMap.clips.set(clip.id, segId);
-
-      // Add transition if present
-      if (clip.transitionOut && clip.transitionOut.type !== 'cut') {
-        const transitionName = mapTransitionType(clip.transitionOut.type);
-        if (transitionName && segId) {
-          await this.mcp.call('add_video_transition', {
-            video_segment_id: segId,
-            transition_name: transitionName,
-            duration: clip.transitionOut.durationMs
-              ? msToTimeStr(clip.transitionOut.durationMs) : undefined,
-          }).catch(() => {});
+        if (clip.transitionOut && clip.transitionOut.type !== 'cut') {
+          const transitionName = mapTransitionType(clip.transitionOut.type);
+          if (transitionName && segId) {
+            await this.mcp.call('add_video_transition', {
+              video_segment_id: segId,
+              transition_type: transitionName,
+              ...(clip.transitionOut.durationMs && {
+                duration: msToTimeStr(clip.transitionOut.durationMs),
+              }),
+            }).catch(() => {});
+          }
         }
       }
     }
@@ -148,10 +164,8 @@ export class JianyingAdapter implements INleAdapter {
   async addSubtitles(cues: IKtepSubtitle[]): Promise<void> {
     if (!this.draftId) throw new Error('No draft created');
 
-    // Create a text track for subtitles if we don't have one
     let textTrackId: string | null = null;
     for (const [ktepId, jyId] of this.idMap.tracks) {
-      // Find any subtitle/caption track
       if (ktepId.includes('caption') || ktepId.includes('subtitle')) {
         textTrackId = jyId;
         break;

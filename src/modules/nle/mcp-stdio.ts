@@ -64,15 +64,23 @@ export class StdioMcpCaller implements IMcpCaller {
 
 /**
  * 快捷创建 jianying-mcp 的 caller。
+ *
+ * @param jianyingMcpRoot - jianying-mcp 仓库根目录（例如 vendor/jianying-mcp）
+ * @param savePath - 中间数据存储目录（MCP 的 SAVE_PATH 环境变量）
+ * @param outputPath - 导出到剪映草稿的目标目录（MCP 的 OUTPUT_PATH 环境变量）
  */
 export function createJianyingMcpCaller(
-  jianyingMcpDir: string,
+  jianyingMcpRoot: string,
   savePath: string,
   outputPath: string,
 ): StdioMcpCaller {
+  const serverDir = jianyingMcpRoot.endsWith('/jianyingdraft')
+    ? jianyingMcpRoot
+    : `${jianyingMcpRoot}/jianyingdraft`;
+
   return new StdioMcpCaller({
     command: 'uv',
-    args: ['--directory', jianyingMcpDir, 'run', 'server.py'],
+    args: ['--directory', serverDir, 'run', 'server.py'],
     env: {
       SAVE_PATH: savePath,
       OUTPUT_PATH: outputPath,
