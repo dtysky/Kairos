@@ -254,12 +254,24 @@ export const IStyleVoice = z.object({
 });
 export type IStyleVoice = z.infer<typeof IStyleVoice>;
 
+export const IStyleSection = z.object({
+  id: z.string(),
+  title: z.string(),
+  content: z.string(),
+  tags: z.array(z.string()).optional(),
+});
+export type IStyleSection = z.infer<typeof IStyleSection>;
+
 export const IStyleProfile = z.object({
   id: z.string(),
   name: z.string(),
   sourceFiles: z.array(z.string()),
   narrative: IStyleNarrative,
   voice: IStyleVoice,
+  rawReference: z.string().optional(),
+  sections: z.array(IStyleSection).optional(),
+  antiPatterns: z.array(z.string()).optional(),
+  parameters: z.record(z.string()).optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

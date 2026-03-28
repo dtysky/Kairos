@@ -6,19 +6,30 @@ const CPROMPT = `你是一个视频风格分析专家。根据以下成片的 AS
 返回 JSON 格式：
 {
   "narrative": {
-    "introRatio": 0.0-1.0 (片头占比),
-    "outroRatio": 0.0-1.0 (片尾占比),
-    "avgSegmentDurationSec": number (平均段落时长秒),
-    "brollFrequency": 0.0-1.0 (空镜/B-roll 频率),
-    "pacePattern": "用中文描述整体节奏，如：缓起→中段密集→结尾回归平静"
+    "introRatio": 0.0-1.0,
+    "outroRatio": 0.0-1.0,
+    "avgSegmentDurationSec": number,
+    "brollFrequency": 0.0-1.0,
+    "pacePattern": "用中文描述整体节奏"
   },
   "voice": {
-    "person": "1st" | "2nd" | "3rd" (人称),
+    "person": "1st" | "2nd" | "3rd",
     "tone": "用中文描述语气风格",
-    "density": "low" | "moderate" | "high" (旁白密度),
+    "density": "low" | "moderate" | "high",
     "sampleTexts": ["2-3 句最能代表风格的原文"]
-  }
-}`;
+  },
+  "sections": [
+    { "title": "章节名", "content": "该维度的详细分析" }
+  ],
+  "antiPatterns": ["应避免的表达方式，每条一个字符串"],
+  "parameters": { "参数名": "参数值" }
+}
+
+请至少分析以下维度并放入 sections：
+1. 叙事结构（段落组织方式、开头结尾惯例）
+2. 语言风格（句式特征、用词偏好）
+3. 情绪层次（情绪光谱、表达克制度）
+4. 视觉语言（画面描写惯例、运镜/光线词汇）`;
 
 export async function analyzeStyle(
   llm: ILlmClient,
@@ -32,10 +43,17 @@ export async function analyzeStyle(
   const raw = await llm.chat([
     { role: 'system', content: CPROMPT },
     { role: 'user', content: combined },
-  ], { jsonMode: true, temperature: 0.3 });
+  ], { jsonMode: true, temperature: 0.3, maxTokens: 4000 });
 
   const parsed = JSON.parse(raw);
   const now = new Date().toISOString();
+
+  const sections = (parsed.sections ?? []).map((s: any, i: number) => ({
+    id: `section-${i + 1}`,
+    title: s.title ?? `分析 ${i + 1}`,
+    content: s.content ?? '',
+    tags: s.tags,
+  }));
 
   return {
     id: randomUUID(),
@@ -54,6 +72,9 @@ export async function analyzeStyle(
       density: parsed.voice?.density ?? 'moderate',
       sampleTexts: parsed.voice?.sampleTexts ?? [],
     },
+    sections,
+    antiPatterns: parsed.antiPatterns ?? [],
+    parameters: parsed.parameters ?? {},
     createdAt: now,
     updatedAt: now,
   };

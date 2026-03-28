@@ -27,6 +27,7 @@ export {
   IKtepDoc,
   IStyleNarrative,
   IStyleVoice,
+  IStyleSection,
   IStyleProfile,
   IStoreManifest,
   EClipType,
