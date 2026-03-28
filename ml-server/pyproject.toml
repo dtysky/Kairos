@@ -1,0 +1,21 @@
+[project]
+name = "kairos-ml"
+version = "0.1.0"
+description = "Kairos ML server — local media analysis"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "faster-whisper",
+    "Pillow",
+    "torch",
+    "transformers",
+    "open-clip-torch",
+]
+
+[project.optional-dependencies]
+ocr = ["paddleocr", "paddlepaddle"]
+ocr-easy = ["easyocr"]
+
+[project.scripts]
+kairos-ml = "kairos_ml.main:run"

@@ -51,6 +51,20 @@ export const EMediaRootCategory = z.enum([
 ]);
 export type EMediaRootCategory = z.infer<typeof EMediaRootCategory>;
 
+export const EClipType = z.enum([
+  'drive', 'talking-head', 'aerial', 'timelapse', 'broll', 'unknown',
+]);
+export type EClipType = z.infer<typeof EClipType>;
+
+export const ESamplingProfile = z.enum(['dense', 'balanced', 'sparse']);
+export type ESamplingProfile = z.infer<typeof ESamplingProfile>;
+
+export const EVlmMode = z.enum(['none', 'multi-image', 'video']);
+export type EVlmMode = z.infer<typeof EVlmMode>;
+
+export const ETargetBudget = z.enum(['coarse', 'standard', 'deep']);
+export type ETargetBudget = z.infer<typeof ETargetBudget>;
+
 // ─── Supporting Types ────────────────────────────────────────
 
 export const ICaptureTime = z.object({
@@ -220,6 +234,53 @@ export const IKtepDoc = z.object({
   adapterHints: z.record(z.unknown()).optional(),
 });
 export type IKtepDoc = z.infer<typeof IKtepDoc>;
+
+// ─── Media Analysis ─────────────────────────────────────────
+
+export const IInterestingWindow = z.object({
+  startMs: z.number(),
+  endMs: z.number(),
+  reason: z.string(),
+});
+export type IInterestingWindow = z.infer<typeof IInterestingWindow>;
+
+export const IMediaAnalysisPlan = z.object({
+  assetId: z.string(),
+  clipType: EClipType,
+  densityScore: z.number().min(0).max(1),
+  samplingProfile: ESamplingProfile,
+  baseSampleIntervalMs: z.number(),
+  interestingWindows: z.array(IInterestingWindow),
+  vlmMode: EVlmMode,
+  targetBudget: ETargetBudget,
+});
+export type IMediaAnalysisPlan = z.infer<typeof IMediaAnalysisPlan>;
+
+export const IChronologyCorrection = z.object({
+  capturedAtOverride: z.string().optional(),
+  summaryOverride: z.string().optional(),
+  labelsAdd: z.array(z.string()).optional(),
+  labelsRemove: z.array(z.string()).optional(),
+  reason: z.string().optional(),
+  updatedAt: z.string(),
+});
+export type IChronologyCorrection = z.infer<typeof IChronologyCorrection>;
+
+export const IMediaChronology = z.object({
+  id: z.string(),
+  assetId: z.string(),
+  ingestRootId: z.string().optional(),
+  capturedAt: z.string().optional(),
+  sortCapturedAt: z.string().optional(),
+  captureTimeSource: ECaptureTimeSource.optional(),
+  captureTimeConfidence: z.number().min(0).max(1).optional(),
+  summary: z.string().optional(),
+  labels: z.array(z.string()),
+  placeHints: z.array(z.string()),
+  evidence: z.array(IKtepEvidence),
+  correction: IChronologyCorrection.optional(),
+});
+export type IMediaChronology = z.infer<typeof IMediaChronology>;
 
 // ─── Store ───────────────────────────────────────────────────
 

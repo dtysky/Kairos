@@ -26,6 +26,14 @@ export {
   IKtepProject,
   IKtepDoc,
   IStoreManifest,
+  EClipType,
+  ESamplingProfile,
+  EVlmMode,
+  ETargetBudget,
+  IInterestingWindow,
+  IMediaAnalysisPlan,
+  IChronologyCorrection,
+  IMediaChronology,
 } from './schema.js';
 
 export {
