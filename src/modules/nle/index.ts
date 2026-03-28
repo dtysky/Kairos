@@ -7,5 +7,6 @@ export {
 } from './adapter.js';
 
 export { type IMcpCaller } from './mcp-caller.js';
+export { StdioMcpCaller, createJianyingMcpCaller, type IStdioMcpConfig } from './mcp-stdio.js';
 export { JianyingAdapter, type IJianyingConfig } from './jianying.js';
 export { exportSrt, exportVtt, formatSrt, formatVtt } from './export-srt.js';
