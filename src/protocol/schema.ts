@@ -235,6 +235,36 @@ export const IKtepDoc = z.object({
 });
 export type IKtepDoc = z.infer<typeof IKtepDoc>;
 
+// ─── Style Profile ───────────────────────────────────────────
+
+export const IStyleNarrative = z.object({
+  introRatio: z.number().min(0).max(1),
+  outroRatio: z.number().min(0).max(1),
+  avgSegmentDurationSec: z.number(),
+  brollFrequency: z.number().min(0).max(1),
+  pacePattern: z.string(),
+});
+export type IStyleNarrative = z.infer<typeof IStyleNarrative>;
+
+export const IStyleVoice = z.object({
+  person: z.enum(['1st', '2nd', '3rd']),
+  tone: z.string(),
+  density: z.enum(['low', 'moderate', 'high']),
+  sampleTexts: z.array(z.string()),
+});
+export type IStyleVoice = z.infer<typeof IStyleVoice>;
+
+export const IStyleProfile = z.object({
+  id: z.string(),
+  name: z.string(),
+  sourceFiles: z.array(z.string()),
+  narrative: IStyleNarrative,
+  voice: IStyleVoice,
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type IStyleProfile = z.infer<typeof IStyleProfile>;
+
 // ─── Media Analysis ─────────────────────────────────────────
 
 export const IInterestingWindow = z.object({
