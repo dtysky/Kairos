@@ -1,0 +1,34 @@
+---
+description: Windows 环境下的命令行与 CUDA 使用约定
+alwaysApply: true
+---
+
+# Windows Shell Environment
+
+## 适用范围
+
+仅当当前工作平台是 **Windows** 时适用本规则。
+
+如果当前平台不是 Windows，则忽略本规则。
+
+## 命令行约定
+
+- 默认使用 **WSL** 作为日常命令行环境。
+- 仅在 **明确需要 CUDA / Windows GPU 环境** 时，才使用 Windows 侧命令行（如 PowerShell）。
+- 如果一个任务同时包含 WSL 与 Windows 步骤，优先把 **非 CUDA** 步骤放在 WSL，减少环境切换。
+
+## 典型场景
+
+- 适合放在 WSL：
+  - 日常代码搜索、编辑、测试、构建
+  - 普通脚本执行
+  - 与 Linux 工具链更匹配的命令
+
+- 适合放在 Windows 命令行：
+  - 明确依赖 CUDA / Windows GPU 的推理、训练或 benchmark
+  - 明确依赖 Windows 本机驱动、PowerShell 或 Windows 专属工具的任务
+
+## 原则
+
+- 不因为“当前默认 shell 是 PowerShell”就默认使用 Windows 侧命令行。
+- 只有在任务对 Windows / CUDA 有明确要求时，才切换过去。
