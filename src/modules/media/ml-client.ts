@@ -1,4 +1,4 @@
-const CDEFAULT_URL = 'http://127.0.0.1:8910';
+const CDEFAULT_URL = process.env['KAIROS_ML_URL'] ?? 'http://127.0.0.1:8910';
 
 export interface IAsrSegment {
   start: number;

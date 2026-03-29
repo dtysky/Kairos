@@ -2,7 +2,7 @@
 name: deploy-kairos
 description: >-
   Deploy the Kairos middle-version project on a new device. Covers Node.js core,
-  Python ML server, jianying-mcp submodule, and LLM API configuration.
+  Python ML server, jianying-mcp submodule, and environment variables.
   Use when setting up Kairos on a fresh machine, cross-device deployment,
   or when the user mentions deploy, install, setup, or environment.
 ---
@@ -17,9 +17,9 @@ Full deployment guide for a new device. Kairos has three subsystems:
 | ML server | Python >= 3.10 + uv/pip | `ml-server/` | For media analysis |
 | Jianying MCP | Python >= 3.13 + uv | `vendor/jianying-mcp/` | For Jianying export |
 
-## Prerequisites Checklist
+LLM 调用由 Cursor / Codex agent 直接完成，不需要单独配置 LLM API key。
 
-Copy and track progress:
+## Prerequisites Checklist
 
 ```
 - [ ] Git (with submodule support)
@@ -125,19 +125,7 @@ Jianying draft directories by platform:
 - **macOS**: `~/Movies/JianyingPro/User Data/Projects/com.lveditor.draft/`
 - **Windows**: `C:\Users\<USER>\AppData\Local\JianyingPro\User Data\Projects\com.lveditor.draft\`
 
-## Step 5: LLM API (for script generation)
-
-Create `.env` in project root:
-
-```bash
-LLM_BASE_URL=https://api.openai.com/v1
-LLM_API_KEY=sk-...
-LLM_MODEL=gpt-4o
-```
-
-Any OpenAI-compatible API works (OpenRouter, DeepSeek, local ollama, etc).
-
-## Step 6: System Tools
+## Step 5: System Tools
 
 Ensure `ffmpeg` and `ffprobe` are on `PATH`:
 
@@ -152,15 +140,36 @@ Install if missing:
 - **Windows**: `choco install ffmpeg` or download from ffmpeg.org
 - **Linux**: `sudo apt install ffmpeg`
 
-## Quick Smoke Test
+## Step 6: Environment Variables (optional)
 
-After all steps, run:
+All optional, used to override defaults when tools aren't on PATH or ML server is remote:
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `FFMPEG_PATH` | `ffmpeg` | Custom ffmpeg binary path |
+| `FFPROBE_PATH` | `ffprobe` | Custom ffprobe binary path |
+| `KAIROS_ML_URL` | `http://127.0.0.1:8910` | ML server URL (for remote/cross-device) |
+
+Example: ML server on Windows GPU machine, TS core on Mac:
+
+```bash
+export KAIROS_ML_URL=http://192.168.1.100:8910
+```
+
+## LLM 调用说明
+
+Kairos 的脚本生成（style analysis, outline, narration）通过 Cursor / Codex agent 直接完成。
+agent 本身就是 LLM，不需要额外配置 API key。
+
+`OpenAIClient` 保留为备用路径，用于未来可能的独立 CLI 模式。
+
+## Quick Smoke Test
 
 ```bash
 # 1. TypeScript compiles
 pnpm build
 
-# 2. ML server responds
+# 2. ML server responds (if started)
 curl http://127.0.0.1:8910/health
 
 # 3. ffprobe works
@@ -180,6 +189,7 @@ ls vendor/jianying-mcp/jianyingdraft/server.py
 | `faster-whisper` fails on macOS | Falls back to CPU; set `CT2_USE_MKL=0` if MKL errors |
 | jianying-mcp `Python >= 3.13 required` | Use `uv python install 3.13` then `uv sync` |
 | `SAVE_PATH not found` | Create the directory: `mkdir -p /tmp/kairos-drafts` |
+| ffmpeg/ffprobe not found on Windows | Set `FFMPEG_PATH` / `FFPROBE_PATH` environment variables |
 
 ## Project Structure Reference
 

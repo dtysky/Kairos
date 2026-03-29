@@ -4,6 +4,7 @@ import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
 const exec = promisify(execFile);
+const FFMPEG = process.env['FFMPEG_PATH'] ?? 'ffmpeg';
 
 export interface IKeyframeResult {
   timeMs: number;
@@ -26,7 +27,7 @@ export async function extractKeyframes(
     const sec = ts / 1000;
     const outPath = join(outputDir, `kf_${ts}.jpg`);
     try {
-      await exec('ffmpeg', [
+      await exec(FFMPEG, [
         '-ss', sec.toFixed(3),
         '-i', filePath,
         '-frames:v', '1',

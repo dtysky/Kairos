@@ -2,6 +2,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
 const exec = promisify(execFile);
+const FFMPEG = process.env['FFMPEG_PATH'] ?? 'ffmpeg';
 
 export interface IShotBoundary {
   timeMs: number;
@@ -16,7 +17,7 @@ export async function detectShots(
   filePath: string,
   threshold = 0.3,
 ): Promise<IShotBoundary[]> {
-  const { stderr } = await exec('ffmpeg', [
+  const { stderr } = await exec(FFMPEG, [
     '-i', filePath,
     '-vf', `select='gt(scene,${threshold})',showinfo`,
     '-vsync', 'vfr',

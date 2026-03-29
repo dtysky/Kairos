@@ -2,6 +2,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
 const exec = promisify(execFile);
+const FFPROBE = process.env['FFPROBE_PATH'] ?? 'ffprobe';
 
 export interface IProbeResult {
   durationMs: number | null;
@@ -14,7 +15,7 @@ export interface IProbeResult {
 }
 
 export async function probe(filePath: string): Promise<IProbeResult> {
-  const { stdout } = await exec('ffprobe', [
+  const { stdout } = await exec(FFPROBE, [
     '-v', 'quiet',
     '-print_format', 'json',
     '-show_format',
