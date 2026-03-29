@@ -1,0 +1,25 @@
+{
+  "defaultCategory": "personal-serious-works",
+  "entries": [
+    {
+      "id": "personal-serious-works",
+      "category": "personal-serious-works",
+      "name": "个人向严肃作品",
+      "description": "高密度第一人称独白驱动的个人严肃影像风格，强调孤独空间、内省叙事与克制的持续行动感。",
+      "profilePath": "personal-serious-works.md",
+      "sourceVideoCount": 1,
+      "createdAt": "2026-03-29T19:21:03+08:00",
+      "updatedAt": "2026-03-29T19:21:03+08:00"
+    },
+    {
+      "id": "serious-travel-documentary-intro",
+      "category": "serious-travel-documentary-intro",
+      "name": "严肃旅拍纪录片的Intro",
+      "description": "严肃旅拍纪录片的开场风格，强调高信息密度建场、旅程尺度、纪录片式任务感与明确的观众引导。",
+      "profilePath": "serious-travel-documentary-intro.md",
+      "sourceVideoCount": 4,
+      "createdAt": "2026-03-29T21:16:57+08:00",
+      "updatedAt": "2026-03-29T21:16:57+08:00"
+    }
+  ]
+}
