@@ -4,6 +4,7 @@ export {
   loadStyleByCategory,
   listStyleCategories,
   parseStyleMarkdown,
+  buildFrontMatter,
   type IStyleLoadOptions,
 } from './style-loader.js';
 export { buildOutline, type IOutlineSegment } from './outline-builder.js';

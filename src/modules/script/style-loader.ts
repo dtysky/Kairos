@@ -117,11 +117,52 @@ function extractFrontMatter(md: string): { body: string; frontMatter: Record<str
   if (!match) return { body: md, frontMatter: {} };
 
   const fm: Record<string, string> = {};
-  for (const line of match[1].split('\n')) {
-    const kv = line.match(/^(\w+)\s*:\s*(.+)$/);
-    if (kv) fm[kv[1].trim()] = kv[2].trim();
+  const lines = match[1].split('\n');
+  let i = 0;
+  while (i < lines.length) {
+    const kv = lines[i].match(/^(\w+)\s*:\s*(.*)$/);
+    if (!kv) { i++; continue; }
+
+    const key = kv[1].trim();
+    const inlineVal = kv[2].trim();
+
+    if (inlineVal === '|' || inlineVal === '>') {
+      const collected: string[] = [];
+      i++;
+      while (i < lines.length && /^\s+/.test(lines[i])) {
+        collected.push(lines[i].replace(/^\s{2}/, ''));
+        i++;
+      }
+      fm[key] = inlineVal === '>'
+        ? collected.join(' ').trim()
+        : collected.join('\n').trim();
+    } else {
+      fm[key] = inlineVal;
+      i++;
+    }
   }
   return { body: md.slice(match[0].length), frontMatter: fm };
+}
+
+/**
+ * Serialize key-value pairs into YAML-like front-matter.
+ * Multi-line values use block literal (|) syntax.
+ */
+export function buildFrontMatter(fields: Record<string, string | undefined>): string {
+  const lines: string[] = ['---'];
+  for (const [key, val] of Object.entries(fields)) {
+    if (val == null) continue;
+    if (val.includes('\n')) {
+      lines.push(`${key}: |`);
+      for (const line of val.split('\n')) {
+        lines.push(`  ${line}`);
+      }
+    } else {
+      lines.push(`${key}: ${val}`);
+    }
+  }
+  lines.push('---', '');
+  return lines.join('\n');
 }
 
 function extractTitle(md: string): string | null {

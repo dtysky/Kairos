@@ -43,31 +43,45 @@ import { initProject } from 'kairos';
 await initProject('/path/to/project', '项目名称');
 ```
 
-这会创建以下目录结构：
+`initProject` 创建目录结构和 3 个种子文件：
 
 ```
 project/
 ├── config/
-│   ├── ingest-roots.json    # 素材根目录配置
-│   └── styles/              # 分类风格档案
-│       ├── catalog.json     # 风格目录
-│       └── {category}.md    # 各分类的风格 markdown
+│   ├── ingest-roots.json    # ← initProject 创建（空 roots）
+│   └── styles/              # ← initProject 创建（空目录）
 ├── store/
-│   ├── project.json          # 项目信息 (IKtepProject)
-│   ├── manifest.json         # 版本跟踪
-│   ├── assets.json           # Phase 1 产出
-│   └── slices.json           # Phase 2 产出
-├── media/                    # 关键帧等中间数据
+│   ├── project.json          # ← initProject 创建（IKtepProject）
+│   └── manifest.json         # ← initProject 创建（IStoreManifest）
+├── media/
 ├── script/
-│   ├── current.json          # Phase 3 产出
-│   └── versions/             # 历史版本
+│   └── versions/
 ├── timeline/
-│   ├── current.json          # Phase 4 产出 (IKtepDoc)
-│   └── versions/             # 历史版本
-├── subtitles/                # SRT/VTT 导出
-├── adapters/                 # NLE 适配器数据
+│   └── versions/
+├── subtitles/
+├── adapters/
 └── analysis/
-    └── reference-transcripts/ # 风格分析的 ASR 原文
+    └── reference-transcripts/
+```
+
+后续各阶段产出的文件：
+
+```
+project/
+├── config/styles/
+│   ├── catalog.json          # Style Analysis 产出
+│   └── {category}.md         # Style Analysis 产出
+├── store/
+│   ├── assets.json           # Phase 1 (Ingest) 产出
+│   └── slices.json           # Phase 2 (Analyze) 产出
+├── script/
+│   └── current.json          # Phase 3 (Script) 产出
+├── timeline/
+│   └── current.json          # Phase 4 (Timeline) 产出 — IKtepDoc
+├── subtitles/
+│   └── *.srt / *.vtt         # Phase 5 (Export) 产出
+└── analysis/
+    └── reference-transcripts/ # Style Analysis 的 ASR 原文
 ```
 
 ## 5 个阶段
