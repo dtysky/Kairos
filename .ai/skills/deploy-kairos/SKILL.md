@@ -2,7 +2,7 @@
 name: deploy-kairos
 description: >-
   Deploy the Kairos middle-version project on a new device. Covers Node.js core,
-  Python ML server, jianying-mcp submodule, and environment variables.
+  Python ML server, vendored jianying-mcp, and environment variables.
   Use when setting up Kairos on a fresh machine, cross-device deployment,
   or when the user mentions deploy, install, setup, or environment.
 ---
@@ -22,7 +22,7 @@ LLM 调用由 Cursor / Codex agent 直接完成，不需要单独配置 LLM API 
 ## Prerequisites Checklist
 
 ```
-- [ ] Git (with submodule support)
+- [ ] Git
 - [ ] Node.js >= 16
 - [ ] pnpm (corepack enable && corepack prepare pnpm@latest --activate)
 - [ ] Python >= 3.10 (recommend 3.12+, 3.13 for jianying-mcp)
@@ -31,17 +31,11 @@ LLM 调用由 Cursor / Codex agent 直接完成，不需要单独配置 LLM API 
 - [ ] GPU driver (optional, for ML acceleration)
 ```
 
-## Step 1: Clone & Init Submodules
+## Step 1: Clone Repository
 
 ```bash
-git clone --recurse-submodules <REPO_URL> Kairos
+git clone <REPO_URL> Kairos
 cd Kairos
-```
-
-If already cloned without submodules:
-
-```bash
-git submodule update --init --recursive
 ```
 
 Verify: `ls vendor/jianying-mcp/jianyingdraft/server.py` should exist.
@@ -119,7 +113,7 @@ When using `createJianyingMcpCaller`, provide:
 
 | Param | Meaning | Example |
 |-------|---------|---------|
-| `jianyingMcpRoot` | Submodule root | `./vendor/jianying-mcp` |
+| `jianyingMcpRoot` | Vendored MCP root | `./vendor/jianying-mcp` |
 | `savePath` | Intermediate data dir | `/tmp/kairos-drafts` |
 | `outputPath` | Jianying drafts dir | Platform-specific, see below |
 
@@ -178,7 +172,7 @@ curl http://127.0.0.1:8910/health
 # 3. ffprobe works
 ffprobe -version
 
-# 4. Submodule present
+# 4. Vendored Jianying MCP present
 ls vendor/jianying-mcp/jianyingdraft/server.py
 ```
 

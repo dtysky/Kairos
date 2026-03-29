@@ -13,7 +13,7 @@ description: >-
 ## 前置条件
 
 - `timeline/current.json` 存在且通过 KTEP 校验
-- jianying-mcp 已安装（`vendor/jianying-mcp`，已执行 `uv sync`）
+- vendored `jianying-mcp` 已就绪（`vendor/jianying-mcp`，已执行 `uv sync`）
 - 剪映已安装在目标机器上
 
 ## 可用工具

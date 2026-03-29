@@ -68,7 +68,7 @@ Kairos/
 │       └── vlm_runner.py     # Scene analysis via Florence-2
 │
 ├── vendor/
-│   └── jianying-mcp/        # Git submodule: Jianying MCP server
+│   └── jianying-mcp/        # Vendored Jianying MCP server
 │       ├── pyproject.toml    # Requires Python >= 3.13
 │       └── jianyingdraft/
 │           └── server.py     # MCP stdio entry point
