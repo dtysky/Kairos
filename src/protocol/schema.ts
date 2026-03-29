@@ -111,6 +111,7 @@ export const IKtepAsset = z.object({
   captureTimeSource: ECaptureTimeSource.optional(),
   captureTimeConfidence: z.number().min(0).max(1).optional(),
   createdAt: z.string().optional(),
+  ingestedAt: z.string().optional(),
   metadata: z.record(z.unknown()).optional(),
 });
 export type IKtepAsset = z.infer<typeof IKtepAsset>;

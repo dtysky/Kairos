@@ -133,6 +133,44 @@ if (!assets || assets.length === 0) {
 
 不必每次从头开始。如果某阶段产出已存在，可以直接从下一阶段继续。例如素材分析很耗时，分析完一次后可以反复修改脚本和时间线。
 
+## 素材追加
+
+项目创建后可以随时追加新素材，不需要重头来过：
+
+```
+已有项目 → 追加 Ingest → 增量 Analyze → 重写 Script → 重建 Timeline → 重新 Export
+```
+
+### 追加流程
+
+1. **追加导入**：`kairos-ingest` 的增量模式，按 `sourcePath` 自动去重
+
+```typescript
+const result = await appendAssets(projectRoot, newAssets);
+// result.added — 实际新增资产
+// result.duplicateCount — 跳过的重复
+```
+
+2. **增量分析**：`kairos-analyze` 自动识别未分析的资产，仅对新素材执行分析
+
+```typescript
+const toAnalyze = findUnanalyzedAssets(allAssets, existingSlices);
+// 仅对 toAnalyze 中的资产做镜头检测、ML 分析
+await appendSlices(projectRoot, newSlices);
+```
+
+3. **重新创作**：Phase 3-5 需要在新素材的基础上重新执行
+   - 脚本需要重写（新素材可能改变叙事结构）
+   - 时间线需要重建
+   - 导出需要重做
+
+### 注意事项
+
+- 每个资产有 `ingestedAt` 时间戳，可以区分不同批次
+- 可以用 `ingestRootId` 标记批次来源
+- 已有的切片和证据不会丢失，新分析结果追加到后面
+- 如果需要重新分析某个旧资产，`appendSlices` 会替换该资产的旧切片
+
 ## 迭代修改
 
 Phase 3 和 Phase 4 支持迭代：

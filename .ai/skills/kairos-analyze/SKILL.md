@@ -2,13 +2,15 @@
 name: kairos-analyze
 description: >-
   Phase 2: Analyze media assets with shot detection, keyframe extraction,
-  ASR/OCR/VLM via ML server, and generate slices with evidence. Use when
-  analyzing footage, detecting shots, or the user mentions analyze or slice.
+  ASR/OCR/VLM via ML server, and generate slices with evidence. Supports
+  incremental analysis for newly appended assets. Use when analyzing footage,
+  detecting shots, or the user mentions analyze or slice.
 ---
 
 # Kairos: Phase 2 — Analyze
 
 对每个资产做镜头检测、关键帧提取、ML 分析，生成带证据的切片（`IKtepSlice[]`）。
+支持**全量分析**和**增量分析**（仅分析新追加的素材）。
 
 ## 前置条件
 
@@ -55,11 +57,35 @@ buildAnalysisPlan(input: ISamplerInput): IMediaAnalysisPlan
 // 证据合并
 mergeEvidence(slice: IKtepSlice, ...sources: IKtepEvidence[][]): IKtepSlice
 evidenceFromPath(filePath: string, folderNotes?: string[]): IKtepEvidence[]
+
+// 增量分析：找出未分析的资产
+findUnanalyzedAssets(assets: IKtepAsset[], slices: IKtepSlice[]): IKtepAsset[]
+
+// 增量合并：将新切片合并到已有切片
+mergeSlices(existing: IKtepSlice[], incoming: IKtepSlice[]): IKtepSlice[]
+appendSlices(projectRoot: string, incoming: IKtepSlice[]): Promise<void>
+```
+
+## 模式判断
+
+Agent 先判断是全量分析还是增量分析：
+
+```typescript
+const assets = await readJson(join(projectRoot, 'store/assets.json'), z.array(IKtepAsset));
+const slices = await readJsonOrNull(join(projectRoot, 'store/slices.json'), z.array(IKtepSlice)) ?? [];
+
+const toAnalyze = slices.length === 0
+  ? assets                                    // 全量：没有任何切片
+  : findUnanalyzedAssets(assets, slices);      // 增量：只分析新资产
+
+if (toAnalyze.length === 0) {
+  // 所有资产已分析完毕，无需操作
+}
 ```
 
 ## 工作流程
 
-### 对每个视频资产：
+### 对每个待分析的视频资产：
 
 1. **镜头检测**
 
@@ -124,8 +150,16 @@ const slice = slicePhoto(asset);
 
 ### 存储
 
+全量分析时直接写入：
+
 ```typescript
 await writeJson(join(projectRoot, 'store/slices.json'), allSlices);
+```
+
+增量分析时合并写入（保留已有切片，追加新切片）：
+
+```typescript
+await appendSlices(projectRoot, newSlices);
 ```
 
 ## 产出
@@ -142,3 +176,4 @@ await writeJson(join(projectRoot, 'store/slices.json'), allSlices);
 - **是否跳过 ML**：如果 ML server 不可用，可以只做镜头检测和关键帧提取，跳过 ASR/OCR/VLM
 - **语言**：ASR 的 language 参数，中文用 `'zh'`，英文用 `'en'`，或不传让模型自动检测
 - **采样密度**：长视频不必每帧分析，用 `buildAnalysisPlan` 生成采样计划
+- **增量 vs 重分析**：默认只分析新追加的资产。如果用户想重新分析某个已有资产（比如换了 ML 模型），可以手动指定，`appendSlices` 会用新切片替换该资产的旧切片
