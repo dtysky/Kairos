@@ -1,4 +1,5 @@
 import nodeFetch from 'node-fetch';
+import { toLocalWindowsServicePath } from './tool-path.js';
 
 const CDEFAULT_URL = process.env['KAIROS_ML_URL'] ?? 'http://127.0.0.1:8910';
 
@@ -45,7 +46,7 @@ export class MlClient {
 
   async asr(audioPath: string, language?: string): Promise<IAsrSegment[]> {
     const res = await this.post<{ segments: IAsrSegment[] }>('/asr', {
-      audio_path: audioPath,
+      audio_path: this.normalizePath(audioPath),
       language,
     });
     return res.segments;
@@ -53,23 +54,27 @@ export class MlClient {
 
   async ocr(imagePath: string): Promise<IOcrResult[]> {
     const res = await this.post<{ texts: IOcrResult[] }>('/ocr', {
-      image_path: imagePath,
+      image_path: this.normalizePath(imagePath),
     });
     return res.texts;
   }
 
   async clipEmbed(imagePaths: string[]): Promise<number[][]> {
     const res = await this.post<{ embeddings: number[][] }>('/clip/embed', {
-      image_paths: imagePaths,
+      image_paths: imagePaths.map(path => this.normalizePath(path)),
     });
     return res.embeddings;
   }
 
   async vlmAnalyze(imagePaths: string[], prompt: string): Promise<IVlmResult> {
     return this.post<IVlmResult>('/vlm/analyze', {
-      image_paths: imagePaths,
+      image_paths: imagePaths.map(path => this.normalizePath(path)),
       prompt,
     });
+  }
+
+  private normalizePath(filePath: string): string {
+    return toLocalWindowsServicePath(filePath, this.baseUrl);
   }
 
   private async post<T>(path: string, body: unknown): Promise<T> {

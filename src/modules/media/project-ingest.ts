@@ -56,7 +56,8 @@ export async function ingestWorkspaceProjectMedia(
   const incoming: IKtepAsset[] = [];
 
   for (const resolvedRoot of resolution.resolved) {
-    const files = await scanDirectory(resolvedRoot.localPath);
+    const files = (await scanDirectory(resolvedRoot.localPath))
+      .filter(file => file.kind !== 'audio');
     scannedRoots.push({
       rootId: resolvedRoot.root.id,
       label: resolvedRoot.root.label,

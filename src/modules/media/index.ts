@@ -14,6 +14,7 @@ export { resolveCaptureTime } from './capture-time.js';
 export { detectShots, computeRhythmStats, type IShotBoundary, type IRhythmStats } from './shot-detect.js';
 export {
   extractKeyframes,
+  extractImageProxy,
   uniformTimestamps,
   buildShotWindows,
   planShotKeyframes,

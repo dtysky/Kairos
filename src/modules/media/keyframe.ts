@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { mkdir } from 'node:fs/promises';
+import { access, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { IMediaToolConfig } from './probe.js';
 import type { IShotBoundary } from './shot-detect.js';
@@ -34,6 +34,34 @@ export interface IShotKeyframeGroup {
   frames: IKeyframeResult[];
 }
 
+export async function extractImageProxy(
+  filePath: string,
+  outputDir: string,
+  tools?: IMediaToolConfig,
+): Promise<IKeyframeResult | null> {
+  await mkdir(outputDir, { recursive: true });
+  const ffmpeg = tools?.ffmpegPath?.trim() || 'ffmpeg';
+  const inputPath = toExecutableInputPath(filePath, ffmpeg);
+  const outPath = join(outputDir, 'image_proxy.jpg');
+  const outputPathForTool = toExecutableInputPath(outPath, ffmpeg);
+  const vf = buildAnalysisProxyFilter(tools);
+
+  try {
+    await exec(ffmpeg, [
+      '-i', inputPath,
+      '-vf', vf,
+      '-frames:v', '1',
+      '-q:v', '2',
+      '-y',
+      outputPathForTool,
+    ]);
+    await access(outPath);
+    return { timeMs: 0, path: outPath };
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Extract keyframes at specific timestamps.
  * Falls back to uniform sampling if no timestamps given.
@@ -47,15 +75,7 @@ export async function extractKeyframes(
   await mkdir(outputDir, { recursive: true });
   const ffmpeg = tools?.ffmpegPath?.trim() || 'ffmpeg';
   const inputPath = toExecutableInputPath(filePath, ffmpeg);
-  const analysisWidth = tools?.analysisProxyWidth && tools.analysisProxyWidth > 0
-    ? Math.round(tools.analysisProxyWidth)
-    : 1024;
-  const pixelFormat = tools?.analysisProxyPixelFormat?.trim() || 'yuv420p';
-
-  const vf = [
-    `scale=w='min(iw,${analysisWidth})':h=-2:flags=fast_bilinear`,
-    `format=pix_fmts=${pixelFormat}`,
-  ].join(',');
+  const vf = buildAnalysisProxyFilter(tools);
 
   const results: IKeyframeResult[] = [];
   for (const ts of timestampsMs) {
@@ -72,12 +92,25 @@ export async function extractKeyframes(
         '-y',
         outputPathForTool,
       ]);
+      await access(outPath);
       results.push({ timeMs: ts, path: outPath });
     } catch {
       // skip frames that fail to extract
     }
   }
   return results;
+}
+
+function buildAnalysisProxyFilter(tools?: IMediaToolConfig): string {
+  const analysisWidth = tools?.analysisProxyWidth && tools.analysisProxyWidth > 0
+    ? Math.round(tools.analysisProxyWidth)
+    : 1024;
+  const pixelFormat = tools?.analysisProxyPixelFormat?.trim() || 'yuv420p';
+
+  return [
+    `scale=w='min(iw,${analysisWidth})':h=-2:flags=fast_bilinear`,
+    `format=pix_fmts=${pixelFormat}`,
+  ].join(',');
 }
 
 /**

@@ -1,4 +1,5 @@
 import { join } from 'node:path';
+import { access } from 'node:fs/promises';
 import type {
   EClipType,
   ETargetBudget,
@@ -30,7 +31,7 @@ import { buildAssetCoarseReport } from './asset-report.js';
 import { buildMediaChronology } from './chronology.js';
 import { estimateDensity } from './density.js';
 import { evidenceFromPath, mergeEvidence } from './evidence.js';
-import { uniformTimestamps, extractKeyframes } from './keyframe.js';
+import { uniformTimestamps, extractImageProxy, extractKeyframes } from './keyframe.js';
 import { MlClient } from './ml-client.js';
 import { recognizeFrames } from './recognizer.js';
 import { resolveAssetLocalPath } from './root-resolver.js';
@@ -356,12 +357,13 @@ async function analyzeSingleAsset(
     input.asset.durationMs ?? 0,
     plan.coarseSampleCount ?? pickCoarseSampleCount(input.asset.durationMs ?? 0),
   );
-  const sampleFrames = await extractKeyframes(
+  const extractedFrames = await extractKeyframes(
     input.localPath,
     buildAssetTempDir(input.projectRoot, input.asset.id),
     sampleTimestamps,
     input.runtimeConfig,
   );
+  const sampleFrames = await filterExistingKeyframes(extractedFrames);
 
   const ml = await input.getMlHandle();
   const summary = await summarizeSamples(ml, sampleFrames);
@@ -391,8 +393,14 @@ async function analyzeSingleAsset(
 async function analyzePhotoAsset(
   input: IAnalyzeSingleAssetInput,
 ): Promise<IAnalyzeSingleAssetResult> {
+  const proxyFrame = await extractImageProxy(
+    input.localPath,
+    buildAssetTempDir(input.projectRoot, input.asset.id),
+    input.runtimeConfig,
+  );
   const ml = await input.getMlHandle();
-  const summary = await summarizeSamples(ml, [{ path: input.localPath }]);
+  const sampleFrames = proxyFrame ? [proxyFrame] : [];
+  const summary = await summarizeSamples(ml, sampleFrames);
   const density = estimateDensity({ durationMs: 0, shotBoundaries: [] });
   const clipTypeGuess: EClipType = 'broll';
   const plan = buildAnalysisPlan({
@@ -411,6 +419,7 @@ async function analyzePhotoAsset(
     summary: summary?.description,
     labels: buildReportLabels(clipTypeGuess, summary?.sceneType, summary?.subjects),
     placeHints: summary?.placeHints ?? [],
+    sampleFrames,
     fineScanMode: 'full',
     fineScanReasons: ['photo-assets-are-directly-usable'],
   });
@@ -591,6 +600,20 @@ async function summarizeSamples(
   }
 }
 
+async function filterExistingKeyframes(
+  frames: { timeMs: number; path: string }[],
+): Promise<{ timeMs: number; path: string }[]> {
+  const existing = await Promise.all(frames.map(async frame => {
+    try {
+      await access(frame.path);
+      return frame;
+    } catch {
+      return null;
+    }
+  }));
+  return existing.filter((frame): frame is { timeMs: number; path: string } => Boolean(frame));
+}
+
 function pickRepresentativeFramePaths(
   paths: string[],
   maxCount: number,
@@ -626,11 +649,12 @@ function selectPendingAssets(
   reports: IAssetCoarseReport[],
   requestedIds?: string[],
 ): IKtepAsset[] {
+  const visualAssets = assets.filter(asset => asset.kind !== 'audio');
   if (requestedIds && requestedIds.length > 0) {
     const requested = new Set(requestedIds);
-    return assets.filter(asset => requested.has(asset.id));
+    return visualAssets.filter(asset => requested.has(asset.id));
   }
-  return findUnreportedAssets(assets, reports);
+  return findUnreportedAssets(visualAssets, reports);
 }
 
 function resolveAssetRootAvailable(
