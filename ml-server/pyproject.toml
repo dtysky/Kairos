@@ -9,8 +9,15 @@ dependencies = [
     "faster-whisper",
     "Pillow",
     "torch",
+    "torchvision",
     "transformers",
+    "accelerate",
+    "einops",
+    "modelscope",
     "open-clip-torch",
+    "scipy",
+    "tiktoken",
+    "transformers_stream_generator==0.0.4",
 ]
 
 [project.optional-dependencies]

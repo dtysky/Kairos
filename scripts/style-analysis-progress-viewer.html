@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kairos Progress Monitor</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f3efe8;
+        --panel: rgba(255, 252, 246, 0.94);
+        --panel-strong: rgba(255, 249, 240, 0.98);
+        --border: rgba(59, 43, 23, 0.12);
+        --text: #24170d;
+        --muted: #716355;
+        --accent: #b85a2d;
+        --accent-deep: #7a3518;
+        --accent-soft: rgba(184, 90, 45, 0.14);
+        --ok: #2f6b49;
+        --ok-soft: rgba(47, 107, 73, 0.14);
+        --err: #a22828;
+        --err-soft: rgba(162, 40, 40, 0.12);
+        --shadow: 0 18px 40px rgba(29, 20, 11, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        overflow-x: hidden;
+        font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(205, 169, 109, 0.16), transparent 26%),
+          radial-gradient(circle at bottom right, rgba(78, 116, 95, 0.09), transparent 22%),
+          var(--bg);
+      }
+
+      .page {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 28px 20px 54px;
+      }
+
+      .eyebrow {
+        color: var(--muted);
+        font-size: 12px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+
+      .panel {
+        width: 100%;
+        min-width: 0;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        box-shadow: var(--shadow);
+      }
+
+      .intro {
+        padding: 22px 24px;
+        background: var(--panel-strong);
+      }
+
+      .title {
+        margin: 10px 0 8px;
+        font-size: clamp(30px, 4vw, 44px);
+        line-height: 1.04;
+        letter-spacing: -0.02em;
+        overflow-wrap: anywhere;
+      }
+
+      .subtitle {
+        margin: 0;
+        color: var(--muted);
+        font-size: 16px;
+        overflow-wrap: anywhere;
+      }
+
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(36, 23, 13, 0.06);
+        font-size: 13px;
+        overflow-wrap: anywhere;
+      }
+
+      .monitor {
+        margin-top: 16px;
+        padding: 24px;
+      }
+
+      .status-row {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px 16px;
+      }
+
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 14px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--accent);
+        background: var(--accent-soft);
+      }
+
+      .status-pill::before {
+        content: "";
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: currentColor;
+        animation: pulse 1.8s ease-in-out infinite;
+      }
+
+      .status-pill.ok {
+        color: var(--ok);
+        background: var(--ok-soft);
+      }
+
+      .status-pill.err {
+        color: var(--err);
+        background: var(--err-soft);
+      }
+
+      .step-label {
+        font-size: clamp(22px, 3vw, 34px);
+        line-height: 1.08;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        overflow-wrap: anywhere;
+      }
+
+      .detail {
+        margin-top: 12px;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.65;
+        overflow-wrap: anywhere;
+      }
+
+      .headline-metrics {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+        margin-top: 22px;
+      }
+
+      .headline-metric {
+        padding: 16px 18px;
+        border-radius: 18px;
+        background: rgba(36, 23, 13, 0.04);
+        border: 1px solid rgba(36, 23, 13, 0.06);
+        min-width: 0;
+      }
+
+      .headline-metric .label {
+        color: var(--muted);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .headline-metric .value {
+        margin-top: 10px;
+        font-size: clamp(30px, 4vw, 46px);
+        line-height: 1;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+
+      .headline-metric .sub {
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .progress-block {
+        margin-top: 22px;
+      }
+
+      .bar-shell {
+        position: relative;
+        width: 100%;
+        height: 18px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: rgba(36, 23, 13, 0.08);
+      }
+
+      .bar-fill {
+        position: relative;
+        width: 0%;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #d37738 0%, #873b1a 100%);
+        transition: width 0.35s ease;
+      }
+
+      .bar-fill::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(110deg, transparent 10%, rgba(255, 255, 255, 0.34) 50%, transparent 90%);
+        animation: shimmer 2.3s linear infinite;
+      }
+
+      .progress-caption {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px 16px;
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .aux {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 20px;
+      }
+
+      .aux-item {
+        padding: 12px 14px;
+        border-radius: 16px;
+        background: rgba(36, 23, 13, 0.035);
+        border: 1px solid rgba(36, 23, 13, 0.05);
+        min-width: 0;
+      }
+
+      .aux-item .label {
+        color: var(--muted);
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .aux-item .value {
+        margin-top: 6px;
+        font-size: 14px;
+        line-height: 1.45;
+        font-weight: 650;
+        overflow-wrap: anywhere;
+      }
+
+      .section {
+        margin-top: 16px;
+        padding: 20px;
+      }
+
+      .section h2 {
+        margin: 0 0 14px;
+        color: var(--muted);
+        font-size: 13px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .step-track {
+        display: grid;
+        gap: 10px;
+      }
+
+      .step-track-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        border-radius: 16px;
+        background: rgba(36, 23, 13, 0.04);
+        border: 1px solid transparent;
+        transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+      }
+
+      .step-track-item.active {
+        transform: translateX(4px);
+        background: rgba(184, 90, 45, 0.1);
+        border-color: rgba(184, 90, 45, 0.18);
+      }
+
+      .step-track-index {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--muted);
+        background: rgba(36, 23, 13, 0.08);
+        flex: 0 0 auto;
+      }
+
+      .step-track-item.active .step-track-index {
+        color: #fff;
+        background: var(--accent);
+        box-shadow: 0 0 0 6px rgba(184, 90, 45, 0.1);
+      }
+
+      .step-track-name {
+        font-size: 15px;
+        font-weight: 650;
+      }
+
+      .step-track-meta {
+        margin-top: 2px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .links a {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        text-decoration: none;
+        color: var(--text);
+        background: rgba(36, 23, 13, 0.06);
+        overflow-wrap: anywhere;
+      }
+
+      pre {
+        margin: 0;
+        padding: 14px;
+        border-radius: 16px;
+        overflow: auto;
+        background: rgba(36, 23, 13, 0.05);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .dim {
+        color: var(--muted);
+      }
+
+      @keyframes pulse {
+        0%, 100% { transform: scale(0.95); opacity: 0.7; }
+        50% { transform: scale(1.18); opacity: 1; }
+      }
+
+      @keyframes shimmer {
+        0% { transform: translateX(-140%); }
+        100% { transform: translateX(140%); }
+      }
+
+      @media (max-width: 780px) {
+        .headline-metrics,
+        .aux {
+          grid-template-columns: 1fr;
+        }
+
+        .page {
+          padding-inline: 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="eyebrow">Kairos Local Monitor</div>
+
+      <section class="panel intro">
+        <h1 class="title" id="title">未命名流程</h1>
+        <p class="subtitle" id="subtitle">等待 progress.json...</p>
+        <div class="chips">
+          <div class="chip" id="pipelineChip">流程: 未知</div>
+          <div class="chip" id="phaseChip">阶段: 未知</div>
+          <div class="chip" id="categoryChip">分类: 未知</div>
+        </div>
+      </section>
+
+      <section class="panel monitor">
+        <div class="status-row">
+          <div class="status-pill" id="statusPill">WAITING</div>
+          <div class="step-label" id="stepLabel">等待任务开始</div>
+        </div>
+
+        <div class="detail" id="detail">当前还没有读取到任何进度数据。</div>
+
+        <div class="headline-metrics">
+          <div class="headline-metric">
+            <div class="label">当前步骤</div>
+            <div class="value" id="stepCounter">0 / 0</div>
+            <div class="sub">流程总步数</div>
+          </div>
+          <div class="headline-metric">
+            <div class="label">当前进度</div>
+            <div class="value" id="progressHero">0 / 0</div>
+            <div class="sub" id="progressUnitHero">sampled-frames</div>
+          </div>
+          <div class="headline-metric">
+            <div class="label">剩余时间</div>
+            <div class="value" id="eta">--:--</div>
+            <div class="sub">实时倒计时</div>
+          </div>
+        </div>
+
+        <div class="progress-block">
+          <div class="bar-shell">
+            <div class="bar-fill" id="barFill"></div>
+          </div>
+          <div class="progress-caption">
+            <span id="progressText">暂无量化进度</span>
+            <span id="fileIndex">文件 0 / 0</span>
+          </div>
+        </div>
+
+        <div class="aux">
+          <div class="aux-item">
+            <div class="label">当前文件</div>
+            <div class="value" id="fileName">-</div>
+          </div>
+          <div class="aux-item">
+            <div class="label">最后更新</div>
+            <div class="value" id="updatedAt">-</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel section">
+        <h2>流程步骤</h2>
+        <div class="step-track" id="stepTrack"></div>
+      </section>
+
+      <section class="panel section">
+        <h2>完成产物</h2>
+        <div id="outputs" class="dim">分析完成后会显示正式产物。</div>
+      </section>
+
+      <section class="panel section">
+        <h2>原始进度数据</h2>
+        <pre id="raw">{
+  "status": "waiting"
+}</pre>
+      </section>
+    </div>
+
+    <script>
+      const STEP_LABELS = [
+        { key: 'probe', label: '读取元数据' },
+        { key: 'scene-detect', label: '场景检测' },
+        { key: 'keyframes', label: '抽取关键帧' },
+        { key: 'ml-start', label: '准备 ML 服务' },
+        { key: 'asr', label: '语音转写' },
+        { key: 'vlm', label: '视觉理解' }
+      ];
+
+      const titleEl = document.getElementById('title');
+      const subtitleEl = document.getElementById('subtitle');
+      const pipelineChipEl = document.getElementById('pipelineChip');
+      const phaseChipEl = document.getElementById('phaseChip');
+      const categoryChipEl = document.getElementById('categoryChip');
+      const statusPillEl = document.getElementById('statusPill');
+      const stepCounterEl = document.getElementById('stepCounter');
+      const stepLabelEl = document.getElementById('stepLabel');
+      const detailEl = document.getElementById('detail');
+      const etaEl = document.getElementById('eta');
+      const progressHeroEl = document.getElementById('progressHero');
+      const progressUnitHeroEl = document.getElementById('progressUnitHero');
+      const fileNameEl = document.getElementById('fileName');
+      const updatedAtEl = document.getElementById('updatedAt');
+      const barFillEl = document.getElementById('barFill');
+      const progressTextEl = document.getElementById('progressText');
+      const fileIndexEl = document.getElementById('fileIndex');
+      const stepTrackEl = document.getElementById('stepTrack');
+      const outputsEl = document.getElementById('outputs');
+      const rawEl = document.getElementById('raw');
+
+      let latestProgress = null;
+      let refreshInFlight = false;
+
+      function formatClock(seconds) {
+        if (seconds == null || Number.isNaN(seconds)) return '--:--';
+        if (seconds <= 0) return '00:00';
+        const hrs = Math.floor(seconds / 3600);
+        const mins = Math.floor((seconds % 3600) / 60);
+        const secs = Math.floor(seconds % 60);
+        if (hrs > 0) return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      }
+
+      function formatDate(value) {
+        if (!value) return '-';
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return value;
+        return date.toLocaleTimeString();
+      }
+
+      function getLiveEta(progress) {
+        if (!progress || progress.etaSeconds == null) return null;
+        if (!progress.updatedAt) return progress.etaSeconds;
+        const updatedAt = new Date(progress.updatedAt).getTime();
+        if (Number.isNaN(updatedAt)) return progress.etaSeconds;
+        const elapsed = Math.max(0, Math.floor((Date.now() - updatedAt) / 1000));
+        return Math.max(0, progress.etaSeconds - elapsed);
+      }
+
+      function setStatus(status) {
+        statusPillEl.className = 'status-pill';
+        if (status === 'succeeded') statusPillEl.classList.add('ok');
+        if (status === 'failed') statusPillEl.classList.add('err');
+        statusPillEl.textContent = (status || 'waiting').toUpperCase();
+      }
+
+      function renderOutputs(progress) {
+        const extra = progress.extra || {};
+        const links = [];
+        if (extra.summaryPath) {
+          links.push(`<a href="./summary.json" target="_blank" rel="noreferrer">summary.json</a>`);
+        }
+        if (extra.transcriptPath) {
+          const transcriptName = extra.transcriptPath.split(/[\\\\/]/).pop();
+          links.push(`<a href="../../../analysis/reference-transcripts/${transcriptName}" target="_blank" rel="noreferrer">transcript</a>`);
+        }
+        outputsEl.innerHTML = links.length
+          ? `<div class="links">${links.join('')}</div>`
+          : '<div class="dim">分析完成后会显示正式产物。</div>';
+      }
+
+      function renderStepTrack(progress) {
+        const currentKey = progress.step;
+        stepTrackEl.innerHTML = STEP_LABELS.map((item, index) => {
+          const active = item.key === currentKey;
+          const meta = active ? '当前步骤' : `步骤 ${index + 1}`;
+          return `
+            <div class="step-track-item${active ? ' active' : ''}">
+              <div class="step-track-index">${index + 1}</div>
+              <div>
+                <div class="step-track-name">${item.label}</div>
+                <div class="step-track-meta">${meta}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      function render(progress) {
+        latestProgress = progress;
+        const fallbackIndex = STEP_LABELS.findIndex(item => item.key === progress.step);
+        const stepIndex = progress.stepIndex || (fallbackIndex >= 0 ? fallbackIndex + 1 : null);
+        const stepTotal = progress.stepTotal || STEP_LABELS.length;
+        const pipelineLabel = progress.pipelineLabel || '风格分析流程';
+        const phaseLabel = progress.phaseLabel || '历史作品风格提取';
+        const categoryLabel = progress.categoryName || progress.categorySlug || '未命名分类';
+
+        titleEl.textContent = pipelineLabel;
+        subtitleEl.textContent = phaseLabel;
+        pipelineChipEl.textContent = `流程: ${pipelineLabel}`;
+        phaseChipEl.textContent = `阶段: ${phaseLabel}`;
+        categoryChipEl.textContent = `分类: ${categoryLabel}`;
+
+        setStatus(progress.status);
+        stepCounterEl.textContent = stepIndex && stepTotal
+          ? `${stepIndex} / ${stepTotal}`
+          : '0 / 0';
+        stepLabelEl.textContent = progress.stepLabel || progress.step || '等待任务开始';
+        detailEl.textContent = progress.detail || '暂无细节';
+        fileNameEl.textContent = progress.fileName || '-';
+        updatedAtEl.textContent = formatDate(progress.updatedAt);
+
+        const current = typeof progress.current === 'number' ? progress.current : null;
+        const total = typeof progress.total === 'number' ? progress.total : null;
+        const pct = current != null && total ? Math.max(0, Math.min(100, (current / total) * 100)) : 0;
+        barFillEl.style.width = `${pct}%`;
+        progressHeroEl.textContent = current != null && total != null ? `${current} / ${total}` : '0 / 0';
+        progressUnitHeroEl.textContent = progress.unit || 'units';
+        progressTextEl.textContent = current != null && total != null
+          ? `${current} / ${total}${progress.unit ? ` ${progress.unit}` : ''}`
+          : '暂无量化进度';
+        fileIndexEl.textContent = `文件 ${progress.fileIndex || 0} / ${progress.fileTotal || 0}`;
+        etaEl.textContent = formatClock(getLiveEta(progress));
+
+        renderStepTrack(progress);
+        renderOutputs(progress);
+        rawEl.textContent = JSON.stringify(progress, null, 2);
+      }
+
+      function tick() {
+        if (!latestProgress) return;
+        etaEl.textContent = formatClock(getLiveEta(latestProgress));
+      }
+
+      async function refresh() {
+        if (refreshInFlight) return;
+        refreshInFlight = true;
+        try {
+          const response = await fetch(`./progress.json?t=${Date.now()}`, {
+            cache: 'no-store',
+            headers: {
+              'cache-control': 'no-cache, no-store, max-age=0',
+              pragma: 'no-cache'
+            }
+          });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const progress = await response.json();
+          render(progress);
+        } catch (error) {
+          latestProgress = null;
+          setStatus('waiting');
+          titleEl.textContent = '等待流程启动';
+          subtitleEl.textContent = '还没有可用的 progress.json';
+          detailEl.textContent = `等待 progress.json: ${error.message}`;
+          etaEl.textContent = '--:--';
+        } finally {
+          refreshInFlight = false;
+        }
+      }
+
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) refresh();
+      });
+
+      refresh();
+      setInterval(refresh, 1000);
+      setInterval(tick, 1000);
+    </script>
+  </body>
+  </html>

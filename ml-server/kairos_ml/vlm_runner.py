@@ -1,56 +1,73 @@
-from transformers import AutoProcessor, AutoModelForCausalLM
-from PIL import Image
-import torch
+import os
+
+from modelscope import snapshot_download
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers.generation import GenerationConfig
+
 from .device import DEVICE
 
 _model = None
-_processor = None
+_tokenizer = None
 
-CMODEL_ID = "microsoft/Florence-2-large"
+CMODEL_ID = os.getenv("KAIROS_VLM_MODEL_ID", "qwen/Qwen-VL-Chat")
+CMODEL_SOURCE = os.getenv("KAIROS_VLM_MODEL_SOURCE", "modelscope")
+CMODEL_PATH = os.getenv("KAIROS_VLM_MODEL_PATH")
+
+
+def _resolve_model_ref() -> str:
+    if CMODEL_PATH:
+        return CMODEL_PATH
+    if CMODEL_SOURCE == "modelscope":
+        return snapshot_download(CMODEL_ID)
+    if CMODEL_SOURCE == "huggingface":
+        if "/" not in CMODEL_ID or CMODEL_ID.startswith("qwen/"):
+            return "Qwen/Qwen-VL-Chat"
+        return CMODEL_ID
+    raise ValueError(f"Unsupported VLM model source: {CMODEL_SOURCE}")
 
 
 def _load():
-    global _model, _processor
+    global _model, _tokenizer
     if _model is not None:
         return
-    dtype = torch.float16 if DEVICE == "cuda" else torch.float32
-    _processor = AutoProcessor.from_pretrained(CMODEL_ID, trust_remote_code=True)
-    _model = AutoModelForCausalLM.from_pretrained(
-        CMODEL_ID, torch_dtype=dtype, trust_remote_code=True,
-    ).to(DEVICE).eval()
+
+    model_ref = _resolve_model_ref()
+    _tokenizer = AutoTokenizer.from_pretrained(model_ref, trust_remote_code=True)
+
+    if DEVICE == "cuda":
+        _model = AutoModelForCausalLM.from_pretrained(
+            model_ref,
+            device_map="cuda",
+            trust_remote_code=True,
+            fp16=True,
+        ).eval()
+    else:
+        _model = AutoModelForCausalLM.from_pretrained(
+            model_ref,
+            device_map="cpu",
+            trust_remote_code=True,
+        ).eval()
+
+    _model.generation_config = GenerationConfig.from_pretrained(
+        model_ref,
+        trust_remote_code=True,
+    )
 
 
 def analyze(image_paths: list[str], prompt: str) -> str:
+    if not image_paths:
+        raise ValueError("No images provided for VLM analysis")
+
     _load()
-    images = [Image.open(p).convert("RGB") for p in image_paths]
-    # Use first image for single-image VLM; multi-image concat for context
-    image = images[0] if len(images) == 1 else _tile_images(images)
-
-    inputs = _processor(text=prompt, images=image, return_tensors="pt").to(DEVICE)
-    with torch.no_grad():
-        ids = _model.generate(
-            **inputs,
-            max_new_tokens=512,
-            num_beams=3,
-            early_stopping=True,
-        )
-    result = _processor.batch_decode(ids, skip_special_tokens=True)[0]
-    return result
-
-
-def _tile_images(images: list[Image.Image], cols: int = 3) -> Image.Image:
-    """Tile multiple images into a grid for multi-image context."""
-    if not images:
-        raise ValueError("No images to tile")
-
-    w = max(img.width for img in images)
-    h = max(img.height for img in images)
-    rows = (len(images) + cols - 1) // cols
-    grid = Image.new("RGB", (w * cols, h * rows))
-
-    for i, img in enumerate(images):
-        r, c = divmod(i, cols)
-        resized = img.resize((w, h))
-        grid.paste(resized, (c * w, r * h))
-
-    return grid
+    query_items = [{"image": os.path.abspath(path)} for path in image_paths]
+    query_items.append(
+        {
+            "text": (
+                f"{prompt}\n"
+                "Return only one JSON object and do not wrap it in markdown."
+            ),
+        },
+    )
+    query = _tokenizer.from_list_format(query_items)
+    response, _history = _model.chat(_tokenizer, query=query, history=None)
+    return response

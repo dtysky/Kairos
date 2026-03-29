@@ -43,12 +43,17 @@ import { initProject } from 'kairos';
 await initProject('/path/to/project', '项目名称');
 ```
 
-`initProject` 创建目录结构和 3 个种子文件：
+如果当前平台是 Windows，并且后续流程涉及媒体分析或导出，在初始化阶段还应先检查 Windows 原生
+`ffmpeg / ffprobe` 是否存在。优先使用当前平台的原生版本；如果没有自动探测到，先要求在项目的
+`config/runtime.json` 中显式配置 `ffmpegPath` / `ffprobePath`，而不是直接假设用户需要重新下载安装。
+
+`initProject` 创建目录结构和 4 个种子文件：
 
 ```
 project/
 ├── config/
 │   ├── ingest-roots.json    # ← initProject 创建（空 roots）
+│   ├── runtime.json         # ← initProject 创建（ffmpeg / ffprobe / ml config）
 │   └── styles/              # ← initProject 创建（空目录）
 ├── store/
 │   ├── project.json          # ← initProject 创建（IKtepProject）

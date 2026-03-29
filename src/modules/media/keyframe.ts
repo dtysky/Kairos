@@ -2,9 +2,9 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
+import type { IMediaToolConfig } from './probe.js';
 
 const exec = promisify(execFile);
-const FFMPEG = process.env['FFMPEG_PATH'] ?? 'ffmpeg';
 
 export interface IKeyframeResult {
   timeMs: number;
@@ -19,15 +19,17 @@ export async function extractKeyframes(
   filePath: string,
   outputDir: string,
   timestampsMs: number[],
+  tools?: IMediaToolConfig,
 ): Promise<IKeyframeResult[]> {
   await mkdir(outputDir, { recursive: true });
+  const ffmpeg = tools?.ffmpegPath?.trim() || 'ffmpeg';
 
   const results: IKeyframeResult[] = [];
   for (const ts of timestampsMs) {
     const sec = ts / 1000;
     const outPath = join(outputDir, `kf_${ts}.jpg`);
     try {
-      await exec(FFMPEG, [
+      await exec(ffmpeg, [
         '-ss', sec.toFixed(3),
         '-i', filePath,
         '-frames:v', '1',

@@ -16,7 +16,9 @@ description: >-
 
 - `store/assets.json` 存在且非空
 - ML server 运行中（`curl http://127.0.0.1:8910/health`），或设置了 `KAIROS_ML_URL`
-- `ffmpeg` / `ffprobe` 可用
+- `ffmpeg` / `ffprobe` 可用；Windows 上优先从项目的 `config/runtime.json` 读取原生路径
+- 默认分析代理规格推荐统一为 `1024w + yuv420p(8bit)`，用于场景检测、节奏分析和大多数前置媒体分析
+- 对长视频的场景检测，默认可进一步降到低帧率采样（例如 `sceneDetectFps = 4`），以换取更可控的分析时长
 
 ## 可用工具
 

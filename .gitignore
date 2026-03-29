@@ -6,5 +6,8 @@ dist/
 coverage/
 .DS_Store
 .pnpm-store/
-.tmp
+.tmp/
 .venv-jianying-test/
+.venv-*
+__pycache__/
+config

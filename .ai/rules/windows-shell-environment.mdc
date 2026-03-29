@@ -16,6 +16,9 @@ alwaysApply: true
 - 默认使用 **WSL** 作为日常命令行环境。
 - 在 WSL 中默认使用 **zsh**，不要默认回退到 `bash`。
 - 仅在 **明确需要 CUDA / Windows GPU 环境** 时，才使用 Windows 侧命令行（如 PowerShell）。
+- 在 **Windows + NVIDIA GPU** 场景下，`VLM / ML server` 默认应在 **Windows 原生 Python 环境** 中以 `CUDA` 运行，不要从 WSL 启动这类推理服务。
+- 在 Windows 平台初始化媒体链路时，先检查 **Windows 原生** `ffmpeg / ffprobe` 是否可用；如果系统 `PATH` 没有，再检查常见安装目录（如 `C:\Applications\...`）。如果仍找不到，优先写入项目内的 `config/runtime.json`（如 `ffmpegPath` / `ffprobePath`），而不是默认继续；下载或安装只作为最后兜底。
+- 风格分析或媒体分析产生的临时文件，默认写入当前 Kairos 工程目录下的 `.tmp/`，不要落到 `C:` 盘的系统临时目录；分析完成后默认清理这些临时产物，除非用户明确要求保留用于调试。
 - 如果一个任务同时包含 WSL 与 Windows 步骤，优先把 **非 CUDA** 步骤放在 WSL，减少环境切换。
 - 如果命令依赖用户的 shell 初始化（如 `nvm`、`pnpm`、`PATH` 定制），优先使用能加载用户 `zsh` 环境的调用方式。
 
@@ -28,6 +31,7 @@ alwaysApply: true
 
 - 适合放在 Windows 命令行：
   - 明确依赖 CUDA / Windows GPU 的推理、训练或 benchmark
+  - `Kairos ML server` / `VLM` 在 Windows + NVIDIA GPU 上的启动与调试
   - 明确依赖 Windows 本机驱动、PowerShell 或 Windows 专属工具的任务
 
 ## 原则

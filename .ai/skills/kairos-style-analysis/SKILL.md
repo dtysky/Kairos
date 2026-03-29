@@ -41,10 +41,25 @@ config/styles/
 
 ## 前置条件
 
-- 用户提供同一分类的 1 到多个历史成片视频文件路径
-- 用户提供该分类的名称 + 指导词
+- 用户提供同一分类的 1 到多个历史成片视频文件路径，或一个包含这些视频的目录路径
+- 用户提供一段辅助说明（会作为 guidance prompt 存储）
+- 最好提供该分类的名称；若未提供，可由 agent 结合路径和说明帮助命名
 - ML server 运行中（ASR 提取旁白文本）
-- `ffmpeg` / `ffprobe` 可用
+- 如果当前平台是 **Windows + NVIDIA GPU**，优先使用 **Windows 原生 Python + CUDA** 启动 ML server / VLM，不要从 WSL 拉起
+- `ffmpeg` / `ffprobe` 可用；Windows 上优先从项目的 `config/runtime.json` 读取原生路径
+- Windows 上建议用 `powershell -ExecutionPolicy Bypass -File scripts/ml-server.ps1 restart` 管理 `kairos-ml`，避免旧实例残留
+- 默认分析代理规格推荐统一为 `1024w + yuv420p(8bit)`；风格分析里的场景检测和大多数预处理都应优先落到这一层
+- 对长视频的场景检测，默认可进一步降到低帧率采样（例如 `sceneDetectFps = 4`），避免在正式抽帧和 VLM 之前耗太久
+
+## 临时文件约定
+
+- 风格分析过程中产生的关键帧、探测结果、临时摘要等中间产物，统一放在 **当前 Kairos 工程目录** 下的 `.tmp/`，例如 `.tmp/style-analysis/{category}/`
+- 不要把这类临时产物写到 `C:` 盘系统临时目录或用户目录外的随机位置
+- `.tmp/` 应加入 `.gitignore`
+- 当风格档案已经写入 `config/styles/` 且不再需要调试时，默认清理对应的临时目录，只保留正式产物：
+  - `config/styles/{category}.md`
+  - `config/styles/catalog.json`
+  - `analysis/reference-transcripts/...`
 
 ## 可用工具
 
@@ -93,24 +108,53 @@ buildFrontMatter(fields: Record<string, string | undefined>): string
 
 ## 工作流程
 
-### Step 0: 收集输入
+### Step 0: 问询式收集输入
 
-向用户确认三项信息：
+进入风格分析时，不要直接开始分析，先走一个固定问询流程。
 
-1. **分类名称**（category）：如 `travel-documentary`、`city-walk`、`aerial`
-2. **指导词**（guidance prompt）：一段自由文本，描述分析侧重
-3. **参考视频路径**：1-5 个该分类的历史成片
+必须向用户索取这几项：
 
+1. **参考文件或目录路径**：可以是 1 到多个视频文件，也可以是一个目录
+2. **辅助说明**：一段自由文本，说明这批作品的定位、希望重点关注什么、希望忽略什么
+3. **分类名称**（可选但推荐）：如 `travel-doc`、`city-walk`、`aerial`
+
+规则：
+
+- 如果用户给的是**目录路径**，先从目录中识别可用视频文件，再向用户确认是否按这批文件继续
+- 如果用户只给了文件/目录路径，没有分类名，允许 agent 根据路径名和辅助说明先给出一个建议分类名
+- “辅助说明”就是后续存入风格档案 front-matter 的 `guidancePrompt`
+- 如果用户给了多个文件，要先确认这些文件是否属于**同一风格分类**
+
+推荐开场问法：
+
+```text
+请先给我两样东西：
+1. 参考视频的文件路径，或包含这些视频的目录路径
+2. 一段辅助说明，告诉我这类作品的定位、希望我重点分析什么、哪些部分不要算进你的个人风格
+
+如果你已经想好了，也可以顺手给一个分类名，比如 travel-doc。
 ```
+
+目录路径场景下的追问模板：
+
+```text
+我会先把这个目录里的视频识别出来，再按同一分类分析。
+如果这个目录里混有别的作品类型，请在辅助说明里告诉我哪些该排除。
+```
+
 示例对话：
+
+```text
 用户："分析我的旅行纪录片风格"
-Agent："请提供以下信息：
-  1. 分类名称建议：travel-documentary
-  2. 您的指导词（告诉我分析时重点关注什么）
-  3. 参考视频文件路径"
-用户："分类就叫 travel-doc。指导词：这是我的长途自驾旅行纪录片，
-  重点关注叙事节奏和语言风格，我追求克制的诗意表达。
-  视频在 /videos/south-north.mp4 和 /videos/northwest.mp4"
+Agent："请先给我两样东西：
+1. 参考视频的文件路径，或包含这些视频的目录路径
+2. 一段辅助说明，告诉我这类作品的定位、希望我重点分析什么、哪些部分不要算进你的个人风格
+
+如果你已经想好了，也可以顺手给一个分类名，比如 travel-doc。"
+
+用户："目录在 /videos/travel-doc/。辅助说明：这是我的长途自驾旅行纪录片，
+重点关注叙事节奏和语言风格，我追求克制的诗意表达。
+目录里如果有花絮和广告片头，不要算进去。分类就叫 travel-doc。"
 ```
 
 ### Step 1: 检查已有分类
@@ -141,6 +185,7 @@ const transcript = await transcribe(ml, videoPath, 'zh');
 ### Step 4: 视觉风格采样
 
 ```typescript
+const outputDir = join(projectRoot, '.tmp/style-analysis', category, 'keyframes');
 const timestamps = uniformTimestamps(meta.durationMs!, 15000);
 const keyframes = await extractKeyframes(videoPath, outputDir, timestamps);
 const recognition = await recognizeFrames(ml, keyframes.map(k => k.path));
@@ -279,6 +324,19 @@ for (const [videoPath, transcript] of transcripts) {
   await writeFile(join(projectRoot, `analysis/reference-transcripts/${category}--${name}.txt`), transcript.fullText, 'utf-8');
 }
 ```
+
+**清理临时目录**：
+
+```typescript
+import { rm } from 'node:fs/promises';
+
+await rm(join(projectRoot, '.tmp/style-analysis', category), {
+  recursive: true,
+  force: true,
+});
+```
+
+如果用户正在排查分析问题，或明确要求保留中间结果，则可以跳过这一步。
 
 ## 产出
 

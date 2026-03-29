@@ -1,8 +1,20 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import type { IMediaToolConfig } from './probe.js';
 
 const exec = promisify(execFile);
-const FFMPEG = process.env['FFMPEG_PATH'] ?? 'ffmpeg';
+const DEFAULT_ANALYSIS_PROXY_WIDTH = 1024;
+const DEFAULT_ANALYSIS_PROXY_PIXEL_FORMAT = 'yuv420p';
+const DEFAULT_SCENE_DETECT_FPS = 4;
+const HW_SURFACE_OUTPUT_FORMATS: Record<string, string> = {
+  cuda: 'cuda',
+  qsv: 'qsv',
+  vaapi: 'vaapi',
+  videotoolbox: 'videotoolbox',
+};
+const HW_DOWNLOAD_FILTERS: Record<string, string> = {
+  qsv: 'hwdownload,format=p010le',
+};
 
 export interface IShotBoundary {
   timeMs: number;
@@ -16,16 +28,62 @@ export interface IShotBoundary {
 export async function detectShots(
   filePath: string,
   threshold = 0.3,
+  tools?: IMediaToolConfig,
 ): Promise<IShotBoundary[]> {
-  const { stderr } = await exec(FFMPEG, [
+  const ffmpeg = tools?.ffmpegPath?.trim() || 'ffmpeg';
+  const hwaccel = tools?.ffmpegHwaccel?.trim();
+  const scaleWidth = tools?.analysisProxyWidth ?? tools?.sceneDetectScaleWidth ?? DEFAULT_ANALYSIS_PROXY_WIDTH;
+  const pixelFormat = tools?.analysisProxyPixelFormat?.trim() || DEFAULT_ANALYSIS_PROXY_PIXEL_FORMAT;
+  const sceneDetectFps = tools?.sceneDetectFps ?? DEFAULT_SCENE_DETECT_FPS;
+  const args: string[] = [];
+  const hwDownloadFilter = hwaccel ? HW_DOWNLOAD_FILTERS[hwaccel] : undefined;
+
+  if (hwaccel && hwaccel !== 'none') {
+    args.push('-hwaccel', hwaccel);
+    const hwOutput = HW_SURFACE_OUTPUT_FORMATS[hwaccel];
+    if (hwOutput && hwDownloadFilter) {
+      args.push('-hwaccel_output_format', hwOutput);
+    }
+  }
+
+  args.push(
     '-i', filePath,
-    '-vf', `select='gt(scene,${threshold})',showinfo`,
-    '-vsync', 'vfr',
+    '-an',
+    '-sn',
+    '-dn',
+    '-vf', buildSceneDetectFilter(threshold, scaleWidth, pixelFormat, sceneDetectFps, hwaccel),
+    '-fps_mode', 'vfr',
     '-f', 'null',
     '-',
-  ], { maxBuffer: 50 * 1024 * 1024 });
+  );
+
+  const { stderr } = await exec(ffmpeg, args, { maxBuffer: 50 * 1024 * 1024 });
 
   return parseShowinfo(stderr);
+}
+
+function buildSceneDetectFilter(
+  threshold: number,
+  scaleWidth: number,
+  pixelFormat: string,
+  sceneDetectFps: number,
+  hwaccel?: string,
+): string {
+  const filters: string[] = [];
+  const hwDownloadFilter = hwaccel ? HW_DOWNLOAD_FILTERS[hwaccel] : undefined;
+  if (hwDownloadFilter) {
+    filters.push(hwDownloadFilter);
+  }
+  if (scaleWidth > 0) {
+    filters.push(`scale=w='min(iw,${scaleWidth})':h=-2:flags=fast_bilinear`);
+  }
+  filters.push(`format=pix_fmts=${pixelFormat}`);
+  if (sceneDetectFps > 0) {
+    filters.push(`fps=${sceneDetectFps}`);
+  }
+  filters.push(`select='gt(scene,${threshold})'`);
+  filters.push('showinfo');
+  return filters.join(',');
 }
 
 export interface IRhythmStats {

@@ -4,7 +4,6 @@
 Kairos/
 ├── package.json              # Node.js ESM, pnpm
 ├── tsconfig.json             # TypeScript strict, ES2022, Node16
-├── .env                      # KAIROS_ML_URL, FFMPEG_PATH, FFPROBE_PATH
 │
 ├── src/                      # TypeScript core
 │   ├── index.ts              # Top-level re-exports
@@ -64,7 +63,7 @@ Kairos/
 │       ├── whisper_runner.py # ASR via faster-whisper
 │       ├── ocr_runner.py     # OCR via PaddleOCR/EasyOCR
 │       ├── clip_runner.py    # Image embeddings via OpenCLIP
-│       └── vlm_runner.py     # Scene analysis via Florence-2
+│       └── vlm_runner.py     # Scene analysis via Qwen-VL-Chat (transformers)
 │
 ├── vendor/
 │   └── jianying-mcp/        # Vendored external Jianying MCP server
@@ -73,6 +72,7 @@ Kairos/
 │           └── server.py     # MCP stdio entry point
 │
 ├── config/                   # Runtime project config (per-project)
+│   ├── runtime.json          # ffmpeg / ffprobe / ML endpoint config
 │   └── styles/
 │       ├── catalog.json      # IStyleCatalog: registry of all categories
 │       ├── travel-doc.md     # Style profile per category

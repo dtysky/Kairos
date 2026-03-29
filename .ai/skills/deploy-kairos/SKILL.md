@@ -14,7 +14,7 @@ Full deployment guide for a new device. Kairos has three subsystems:
 | Subsystem | Runtime | Location | Required |
 |-----------|---------|----------|----------|
 | TypeScript core | Node.js >= 16 + pnpm | `./` (root) | Always |
-| ML server | Python >= 3.10 + uv/pip | `ml-server/` | For media analysis |
+| ML server | Python >= 3.10 + uv/pip | `ml-server/` | For media analysis (`faster-whisper` + `Qwen-VL-Chat`) |
 | Jianying MCP | Python >= 3.13 + uv | `vendor/jianying-mcp/` | Configured externally by MCP host for Jianying export |
 
 LLM 调用由 Cursor / Codex agent 直接完成，不需要单独配置 LLM API key。
@@ -58,7 +58,7 @@ Verify: `ls dist/index.js` should exist and `npx tsc --noEmit` should pass.
 
 | Platform | Device | Notes |
 |----------|--------|-------|
-| Windows + NVIDIA GPU | `cuda` | Install CUDA toolkit + cuDNN first |
+| Windows + NVIDIA GPU | `cuda` | Preferred for VLM; run the ML server in native Windows Python, not WSL |
 | macOS Apple Silicon | `mps` | Works out of box, slower than CUDA |
 | Linux / macOS Intel | `cpu` | Functional but slow for inference |
 
@@ -76,13 +76,47 @@ uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cu
 uv pip install -e ".[ocr]"
 ```
 
+在 `Windows + NVIDIA GPU` 上，建议直接使用 **Windows 原生 Python 环境** 启动 `kairos-ml`，
+让 `Qwen-VL-Chat` 和其他 VLM 推理直接走 `CUDA`。不要从 WSL 拉起这类推理服务。
+
 For EasyOCR instead of PaddleOCR:
 
 ```bash
 uv pip install -e ".[ocr-easy]"
 ```
 
-### 3c. Start ML server
+### 3c. Configure VLM model
+
+By default, Kairos now uses `Qwen-VL-Chat` through `transformers`, with ModelScope as the default model source.
+
+Optional overrides:
+
+```bash
+export KAIROS_VLM_MODEL_SOURCE=modelscope   # or: huggingface
+export KAIROS_VLM_MODEL_ID=qwen/Qwen-VL-Chat
+# Optional: point to a pre-downloaded local directory
+export KAIROS_VLM_MODEL_PATH=/path/to/Qwen-VL-Chat
+```
+
+### 3d. Start ML server
+
+推荐用仓库内的 Windows 管理脚本来启动，而不是手写 `uvicorn` 命令。这个脚本会把服务固定命名为 `kairos-ml`，把 `pid / stdout / stderr` 记录到 `.tmp/run/kairos-ml/`，并且在重启前自动清理旧实例。
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/ml-server.ps1 restart
+```
+
+查看状态：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/ml-server.ps1 status
+```
+
+查看日志：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/ml-server.ps1 logs
+```
 
 ```bash
 kairos-ml
@@ -90,6 +124,7 @@ kairos-ml
 ```
 
 Verify: `curl http://127.0.0.1:8910/health` should return `{"status":"ok","device":"cuda"}`
+在 Windows + NVIDIA GPU 上，如果这里返回的是 `cpu`，优先检查是不是误在 WSL 环境启动了 ML server。
 
 ## Step 4: Jianying MCP (optional, for Jianying export)
 
@@ -145,6 +180,10 @@ Jianying draft directories by platform:
 
 ## Step 5: System Tools
 
+初始化媒体链路时，先检查**当前平台的原生** `ffmpeg / ffprobe`。
+例如在 Windows 上，优先检查 Windows 原生安装，而不是直接假设 WSL 里的版本可用。
+如果系统 `PATH` 里没有，再检查用户常见自定义目录（如 `C:\Applications\...`）；若仍找不到，先把它们写入项目内的 `config/runtime.json`，再考虑下载。
+
 Ensure `ffmpeg` and `ffprobe` are on `PATH`:
 
 ```bash
@@ -158,15 +197,34 @@ Install if missing:
 - **Windows**: `choco install ffmpeg` or download from ffmpeg.org
 - **Linux**: `sudo apt install ffmpeg`
 
+Windows 补充建议：
+
+- 先用 `where ffmpeg` / `where ffprobe` 检查系统 `PATH`
+- 如果用户有自定义软件目录，再检查类似 `C:\Applications\...` 的原生安装位置
+- 如果 Windows 原生版本没有自动探测到，优先在项目的 `config/runtime.json` 中设置 `ffmpegPath` / `ffprobePath`
+- 只有在用户本机确实没有可用原生版本时，再提醒下载，不要默认退回到 WSL 版本
+
+推荐的项目配置：
+
+```json
+{
+  "ffmpegPath": "C:\\Applications\\YourFFmpeg\\ffmpeg.exe",
+  "ffprobePath": "C:\\Applications\\YourFFmpeg\\ffprobe.exe"
+}
+```
+
+`initProject()` 现在会创建 `config/runtime.json`，后续编排层应从这里读取媒体工具路径。
+
 ## Step 6: Environment Variables (optional)
 
-All optional, used to override defaults when tools aren't on PATH or ML server is remote:
+环境变量现在只保留给远端 ML server 或临时调试用，不再推荐用它们配置本机 `ffmpeg / ffprobe`：
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `FFMPEG_PATH` | `ffmpeg` | Custom ffmpeg binary path |
-| `FFPROBE_PATH` | `ffprobe` | Custom ffprobe binary path |
 | `KAIROS_ML_URL` | `http://127.0.0.1:8910` | ML server URL (for remote/cross-device) |
+| `KAIROS_VLM_MODEL_SOURCE` | `modelscope` | VLM checkpoint source: `modelscope` or `huggingface` |
+| `KAIROS_VLM_MODEL_ID` | `qwen/Qwen-VL-Chat` | VLM model identifier |
+| `KAIROS_VLM_MODEL_PATH` | unset | Pre-downloaded local VLM directory (overrides source/id) |
 
 Example: ML server on Windows GPU machine, TS core on Mac:
 

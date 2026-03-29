@@ -2,7 +2,16 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
 const exec = promisify(execFile);
-const FFPROBE = process.env['FFPROBE_PATH'] ?? 'ffprobe';
+
+export interface IMediaToolConfig {
+  ffmpegPath?: string;
+  ffprobePath?: string;
+  ffmpegHwaccel?: string;
+  analysisProxyWidth?: number;
+  analysisProxyPixelFormat?: string;
+  sceneDetectFps?: number;
+  sceneDetectScaleWidth?: number;
+}
 
 export interface IProbeResult {
   durationMs: number | null;
@@ -14,8 +23,9 @@ export interface IProbeResult {
   rawTags: Record<string, string>;
 }
 
-export async function probe(filePath: string): Promise<IProbeResult> {
-  const { stdout } = await exec(FFPROBE, [
+export async function probe(filePath: string, tools?: IMediaToolConfig): Promise<IProbeResult> {
+  const ffprobe = tools?.ffprobePath?.trim() || 'ffprobe';
+  const { stdout } = await exec(ffprobe, [
     '-v', 'quiet',
     '-print_format', 'json',
     '-show_format',
