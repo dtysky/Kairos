@@ -48,8 +48,12 @@ await initProject('/path/to/project', '项目名称');
 ```
 project/
 ├── config/
-│   └── ingest-roots.json    # 素材根目录配置
+│   ├── ingest-roots.json    # 素材根目录配置
+│   └── styles/              # 分类风格档案
+│       ├── catalog.json     # 风格目录
+│       └── {category}.md    # 各分类的风格 markdown
 ├── store/
+│   ├── project.json          # 项目信息 (IKtepProject)
 │   ├── manifest.json         # 版本跟踪
 │   ├── assets.json           # Phase 1 产出
 │   └── slices.json           # Phase 2 产出
@@ -60,7 +64,8 @@ project/
 │   └── current.json          # Phase 4 产出 (IKtepDoc)
 ├── subtitles/                # SRT/VTT 导出
 ├── adapters/                 # NLE 适配器数据
-└── analysis/                 # ML 分析中间结果
+└── analysis/
+    └── reference-transcripts/ # 风格分析的 ASR 原文
 ```
 
 ## 5 个阶段

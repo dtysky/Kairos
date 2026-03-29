@@ -65,7 +65,9 @@ planSubtitles(script: IKtepScript[], clips: IKtepClip[], config?: Partial<ISubti
 // { maxCharsPerCue: 20, language: 'zh' }
 
 // 4. 校验 KTEP 文档
-validateKtepDoc(doc: IKtepDoc): { ok: boolean; errors: [...] }
+validateKtepDoc(doc: IKtepDoc): IValidationResult
+// IValidationResult = { ok: boolean; errors: IValidationError[] }
+// IValidationError = { rule: string; message: string; path?: string }
 ```
 
 ## 工作流程

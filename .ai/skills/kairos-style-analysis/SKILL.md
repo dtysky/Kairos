@@ -21,9 +21,9 @@ description: >-
 ```
 config/styles/
 ├── catalog.json                 # 风格目录（注册所有分类）
-├── travel-documentary.md        # 旅行纪录片风格
+├── travel-doc.md                # 旅行纪录片风格
 ├── city-walk.md                 # 城市漫步风格
-├── aerial-showcase.md           # 航拍集锦风格
+├── aerial.md                    # 航拍集锦风格
 └── vlog.md                      # 日常 vlog 风格
 ```
 
@@ -124,7 +124,6 @@ const existing = await listStyleCategories('config/styles');
 ```typescript
 const meta = await probe(videoPath);
 const shots = await detectShots(videoPath, 0.3);
-const rhythm = computeRhythmStats(shots, meta.durationMs!);
 ```
 
 ### Step 3: ASR 提取旁白（最关键）

@@ -8,6 +8,6 @@ export { MlClient, type IAsrSegment, type IOcrResult, type IVlmResult, type IMlH
 export { transcribe, type ITranscription } from './transcriber.js';
 export { extractOcr, type IOcrExtraction } from './ocr.js';
 export { estimateDensity, type IDensityInput, type IDensityResult } from './density.js';
-export { buildAnalysisPlan } from './sampler.js';
+export { buildAnalysisPlan, type ISamplerInput } from './sampler.js';
 export { mergeEvidence, evidenceFromPath } from './evidence.js';
 export { recognizeFrames, type IRecognition } from './recognizer.js';

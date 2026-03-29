@@ -5,7 +5,7 @@ import type {
 import type { IDensityResult } from './density.js';
 import type { IShotBoundary } from './shot-detect.js';
 
-interface ISamplerInput {
+export interface ISamplerInput {
   assetId: string;
   durationMs: number;
   density: IDensityResult;

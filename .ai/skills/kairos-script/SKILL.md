@@ -47,6 +47,7 @@ buildOutlinePrompt(outline: IOutlineSegment[]): string
 // 脚本编辑工具
 reorderSegments(segments: IKtepScript[], order: string[]): IKtepScript[]
 updateNarration(segments: IKtepScript[], segmentId: string, narration: string): IKtepScript[]
+rewriteNarration(segments: IKtepScript[], segmentId: string, narration: string): IKtepScript[]
 removeSegment(segments: IKtepScript[], segmentId: string): IKtepScript[]
 insertSegment(segments: IKtepScript[], afterId: string | null, segment: IKtepScript): IKtepScript[]
 ```

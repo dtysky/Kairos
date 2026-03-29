@@ -1,12 +1,13 @@
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { IStoreManifest, IMediaRoot } from '../protocol/schema.js';
+import { IStoreManifest, IMediaRoot, IKtepProject } from '../protocol/schema.js';
 import { readJson, readJsonOrNull, writeJson } from './writer.js';
 import { z } from 'zod';
 
 const CDIRS = [
   'config',
+  'config/styles',
   'store',
   'media',
   'script',
@@ -16,6 +17,7 @@ const CDIRS = [
   'subtitles',
   'adapters',
   'analysis',
+  'analysis/reference-transcripts',
 ] as const;
 
 const IIngestRoots = z.object({ roots: z.array(IMediaRoot) });
@@ -27,6 +29,14 @@ export async function initProject(root: string, name: string): Promise<void> {
   }
 
   const now = new Date().toISOString();
+
+  const project: IKtepProject = {
+    id: randomUUID(),
+    name,
+    createdAt: now,
+    updatedAt: now,
+  };
+  await writeJson(join(root, 'store/project.json'), project);
 
   const manifest: IStoreManifest = {
     storeSchemaVersion: '1.0',

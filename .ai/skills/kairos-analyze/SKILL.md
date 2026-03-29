@@ -49,7 +49,7 @@ recognizeFrames(client: MlClient, imagePaths: string[]): Promise<IRecognition>
 // 信息密度估计
 estimateDensity(input: IDensityInput): IDensityResult
 
-// 采样计划
+// 采样计划（ISamplerInput: { assetId, durationMs, density, shotBoundaries, clipType?, budget? }）
 buildAnalysisPlan(input: ISamplerInput): IMediaAnalysisPlan
 
 // 证据合并
@@ -97,11 +97,23 @@ const ocrResult = await extractOcr(ml, keyframes[0].path);
 
 5. **合并证据到切片**
 
+Agent 需要将 ASR/VLM 证据按时间范围分配到对应的切片上：
+
 ```typescript
 for (const slice of slices) {
-  mergeEvidence(slice, transcription.evidence, recognition.evidence);
+  // 筛选与该切片时间范围重叠的 ASR 段落
+  const sliceAsrEvidence = filterEvidenceByTimeRange(
+    transcription.evidence, slice.sourceInMs, slice.sourceOutMs
+  );
+  // 筛选该切片对应关键帧的 VLM 识别结果
+  const sliceVlmEvidence = filterEvidenceByTimeRange(
+    recognition.evidence, slice.sourceInMs, slice.sourceOutMs
+  );
+  mergeEvidence(slice, sliceAsrEvidence, sliceVlmEvidence);
 }
 ```
+
+注：`filterEvidenceByTimeRange` 需要 agent 根据切片的 `sourceInMs`/`sourceOutMs` 自行筛选，或直接对每个切片独立调用 ML。
 
 ### 对每个照片资产：
 

@@ -10,7 +10,7 @@ Kairos/
 │   ├── index.ts              # Top-level re-exports
 │   ├── protocol/
 │   │   ├── schema.ts         # KTEP Zod schemas (IKtep*, E*, C*)
-│   │   ├── validator.ts      # 8 protocol invariant checks
+│   │   ├── validator.ts      # KTEP protocol invariant checks
 │   │   └── index.ts
 │   ├── store/
 │   │   ├── writer.ts         # Atomic JSON read/write
@@ -35,14 +35,14 @@ Kairos/
 │       ├── llm/
 │       │   ├── client.ts     # ILlmClient + OpenAIClient
 │       │   └── index.ts
-│       ├── script/           # M3: script generation
+│       ├── script/           # Script generation + style loading
 │       │   ├── style-analyzer.ts
 │       │   ├── style-loader.ts
 │       │   ├── outline-builder.ts
 │       │   ├── script-generator.ts
 │       │   ├── script-editor.ts
 │       │   └── index.ts
-│       ├── timeline-core/    # M3: timeline construction
+│       ├── timeline-core/    # Timeline construction
 │       │   ├── placement.ts
 │       │   ├── transition.ts
 │       │   ├── subtitle.ts
@@ -85,9 +85,16 @@ Kairos/
 │   ├── 2026-03-28--middle-version-protocol-first.md
 │   └── 2026-03-29--m1-protocol-and-store.md
 │
-└── .cursor/
-    └── skills/
-        └── deploy-kairos/    # This deployment skill
+└── .ai/
+    └── skills/               # Agent skills (symlinked from .cursor/skills)
+        ├── deploy-kairos/    # Deployment skill
+        ├── kairos-workflow/  # Master workflow orchestrator
+        ├── kairos-ingest/    # Phase 1: media ingest
+        ├── kairos-analyze/   # Phase 2: media analysis
+        ├── kairos-style-analysis/  # Style extraction from reference works
+        ├── kairos-script/    # Phase 3: script generation
+        ├── kairos-timeline/  # Phase 4: timeline construction
+        └── kairos-export/    # Phase 5: NLE export
 ```
 
 ## Naming Conventions
@@ -112,7 +119,7 @@ Raw Media → scanner → probe → capture-time → shot-detect → slicer → 
                                                                         ↓
                 ML server (ASR/OCR/VLM/CLIP) ← ml-client ← evidence ← sampler
                                                                         ↓
-                    LLM API ← script-generator ← outline-builder ← style-loader
+              Agent (style-analysis) → style-loader → outline-builder → Agent (script)
                                                                         ↓
                             timeline-builder → placement → transition → subtitle
                                                                         ↓

@@ -19,14 +19,18 @@ export interface IVlmResult {
 export interface IMlHealth {
   status: string;
   device: string;
-  modelsLoaded: string[];
+  models_loaded: string[];
 }
 
 export class MlClient {
   constructor(private baseUrl = CDEFAULT_URL) {}
 
   async health(): Promise<IMlHealth> {
-    return this.post('/health', {});
+    const res = await fetch(`${this.baseUrl}/health`);
+    if (!res.ok) {
+      throw new Error(`ML server /health: ${res.status} ${await res.text()}`);
+    }
+    return res.json() as Promise<IMlHealth>;
   }
 
   async asr(audioPath: string, language?: string): Promise<IAsrSegment[]> {
