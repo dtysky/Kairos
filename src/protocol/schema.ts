@@ -345,30 +345,6 @@ export const IMediaChronology = z.object({
 });
 export type IMediaChronology = z.infer<typeof IMediaChronology>;
 
-// ─── Workflow Progress ──────────────────────────────────────
-
-export const EWorkflowStatus = z.enum(['queued', 'running', 'completed', 'failed']);
-export type EWorkflowStatus = z.infer<typeof EWorkflowStatus>;
-
-export const IWorkflowProgress = z.object({
-  pipelineKey: z.string(),
-  pipelineLabel: z.string(),
-  phaseKey: z.string(),
-  phaseLabel: z.string(),
-  status: EWorkflowStatus,
-  currentStep: z.number().int().min(0),
-  totalSteps: z.number().int().min(0),
-  currentFileIndex: z.number().int().min(0).optional(),
-  totalFiles: z.number().int().min(0).optional(),
-  currentFrameIndex: z.number().int().min(0).optional(),
-  totalFrames: z.number().int().min(0).optional(),
-  etaSeconds: z.number().min(0).optional(),
-  currentFile: z.string().optional(),
-  updatedAt: z.string(),
-  note: z.string().optional(),
-});
-export type IWorkflowProgress = z.infer<typeof IWorkflowProgress>;
-
 // ─── Store ───────────────────────────────────────────────────
 
 export const IStoreManifest = z.object({

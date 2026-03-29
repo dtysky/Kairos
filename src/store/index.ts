@@ -8,13 +8,3 @@ export {
   appendSlices,
   type IMergeResult,
 } from './incremental.js';
-export {
-  readProgress,
-  writeProgress,
-  createProgress,
-  updateProgress,
-  advanceProgress,
-  tmpDir,
-  type IProgressInit,
-  type IProgressUpdate,
-} from './progress.js';

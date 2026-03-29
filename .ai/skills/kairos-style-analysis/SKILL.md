@@ -61,42 +61,6 @@ config/styles/
   - `config/styles/catalog.json`
   - `analysis/reference-transcripts/...`
 
-## 进度报告
-
-风格分析是长时任务，必须通过 `IWorkflowProgress` 持续更新进度，供本地网页仪表盘轮询。
-
-```typescript
-import { createProgress, advanceProgress, tmpDir } from 'kairos-core';
-
-const pipeline = 'style-analysis';
-const scope = category;  // e.g. 'travel-doc'
-
-let progress = createProgress({
-  pipelineKey: pipeline,
-  pipelineLabel: '风格分析',
-  totalSteps: 7,
-  totalFiles: videoPaths.length,
-});
-await writeProgress(projectRoot, pipeline, scope, progress);
-
-// 每次进入新阶段时 advanceProgress：
-progress = await advanceProgress(projectRoot, pipeline, scope, progress, {
-  phaseKey: 'asr',
-  phaseLabel: 'ASR 转写',
-  status: 'running',
-  currentStep: 3,
-  currentFileIndex: 0,
-  currentFile: videoPath,
-});
-
-// 任务完成时：
-progress = await advanceProgress(projectRoot, pipeline, scope, progress, {
-  status: 'completed',
-  currentStep: 7,
-  note: '风格档案已写入 config/styles/',
-});
-```
-
 ## 可用工具
 
 ### 元数据提取

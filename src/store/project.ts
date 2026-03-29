@@ -18,7 +18,6 @@ const CDIRS = [
   'adapters',
   'analysis',
   'analysis/reference-transcripts',
-  'analysis/style-references',
 ] as const;
 
 const IIngestRoots = z.object({ roots: z.array(IMediaRoot) });

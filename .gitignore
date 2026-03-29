@@ -10,7 +10,6 @@ coverage/
 .venv-jianying-test/
 .venv-*
 __pycache__/
-*.egg-info/
 models
 analysis
 config/runtime.json
