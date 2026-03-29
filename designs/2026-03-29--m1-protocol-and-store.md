@@ -48,6 +48,36 @@ src/
 └── index.ts
 ```
 
+## 项目初始化产物
+
+`initProject()` 当前会创建的项目骨架已经不只包含 store，还包括后续风格分析和媒体分析会复用的配置目录：
+
+```text
+<project_root>/
+├── config/
+│   ├── ingest-roots.json
+│   ├── runtime.json
+│   └── styles/
+├── store/
+│   ├── project.json
+│   └── manifest.json
+├── media/
+├── analysis/
+│   └── reference-transcripts/
+├── script/
+│   └── versions/
+├── timeline/
+│   └── versions/
+├── subtitles/
+└── adapters/
+```
+
+其中：
+
+- `config/runtime.json` 用于保存项目级运行时配置，不依赖环境变量
+- `config/styles/` 保存风格档案与分类目录
+- `analysis/reference-transcripts/` 保存后续风格分析和素材分析生成的正式转写文本
+
 ## Schema 清单
 
 ### 常量
@@ -76,6 +106,7 @@ src/
 - `IMediaRoot` — 输入目录配置
 - `ICaptureTime` — 拍摄时间信息
 - `IStoreManifest` — 存储清单
+- `IRuntimeConfig` — 项目级运行时配置
 
 ## 校验器
 
@@ -95,7 +126,55 @@ src/
 - `writeJson()`: 写入临时文件 → `fs.rename` 原子替换
 - `readJson()`: 读取 + Zod 校验
 - `initProject()`: 创建完整目录结构 + 初始 manifest
-- `loadManifest()` / `loadIngestRoots()`: 读取项目状态
+- `loadManifest()` / `loadIngestRoots()` / `loadRuntimeConfig()`: 读取项目状态
+
+当前 `IRuntimeConfig` 已落地的字段：
+
+```typescript
+interface IRuntimeConfig {
+  ffmpegPath?: string;
+  ffprobePath?: string;
+  ffmpegHwaccel?: string;
+  analysisProxyWidth?: number;
+  analysisProxyPixelFormat?: string;
+  sceneDetectFps?: number;
+  sceneDetectScaleWidth?: number;
+  mlServerUrl?: string;
+}
+```
+
+默认初始化值：
+
+```json
+{
+  "analysisProxyWidth": 1024,
+  "analysisProxyPixelFormat": "yuv420p",
+  "sceneDetectFps": 4
+}
+```
+
+说明：
+
+- `ffmpegPath` / `ffprobePath` 记录项目实际使用的原生工具路径
+- `ffmpegHwaccel` 记录默认视频硬件解码方式
+- `analysisProxyWidth` / `analysisProxyPixelFormat` 约束统一分析代理规格
+- `mlServerUrl` 指向本地 ML Server，供分析工作流调用
+
+## 与临时工作区的关系
+
+`M1` 落地的是可持久化的 store 和 config；长时分析任务的中间产物和进度报告不属于 `Canonical Project Store`。
+
+当前实现约定：
+
+- 临时关键帧、代理音频、阶段摘要写入项目内 `.tmp/`
+- 正式输出写入 `config/styles/`、`analysis/reference-transcripts/`、`analysis/style-references/`
+- 后续流程可以通过 `.tmp/<pipeline>/<scope>/progress.json` 驱动本地网页进度监视器
+
+这样可以兼顾：
+
+- 迁移时只带走正式产物和 `config/runtime.json`
+- 调试时保留 `.tmp/`
+- 日常完成后清理临时中间文件
 
 ## 延后项
 

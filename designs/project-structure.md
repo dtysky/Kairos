@@ -1,5 +1,32 @@
 # Kairos — 项目数据结构
 
+> 注：本文件是早期数据结构草案。自 `protocol-first` 中间版本起，当前实现与迁移规范应以
+> [2026-03-28--middle-version-protocol-first.md](./2026-03-28--middle-version-protocol-first.md)
+> 和
+> [2026-03-29--m1-protocol-and-store.md](./2026-03-29--m1-protocol-and-store.md)
+> 为准。
+
+## 中间版本迁移注记（2026-03-29）
+
+当前已实施的中间版本，与本文早期草案相比有几处关键差异：
+
+- `config/runtime.json`
+  - 当前项目把 `ffmpegPath`、`ffprobePath`、`ffmpegHwaccel`、`analysisProxyWidth`、`analysisProxyPixelFormat`、`sceneDetectFps`、`mlServerUrl` 等运行时设置落在项目内配置中
+  - 不再依赖环境变量或用户口头约定
+- `config/styles/`
+  - 风格档案不再只是一份 `style/profile.json`
+  - 当前使用 `config/styles/{category}.md + config/styles/catalog.json`
+- `analysis/reference-transcripts/` 与 `analysis/style-references/`
+  - 风格分析和参考视频分析会先落地单视频报告，再综合出一个正式风格分类
+- `.tmp/`
+  - 当前流水线的关键帧、代理音频、阶段摘要、进度文件统一写入项目内 `.tmp/`
+  - 例如 `.tmp/style-analysis/{category}/progress.json`
+  - 这些内容默认视为可清理的中间产物，不属于 `Canonical Project Store`
+- 本地网页进度页
+  - 长时任务通过轮询 `.tmp/.../progress.json` 展示 `第 N / M 步`、`第 N / M 帧`、`剩余时间`
+
+如果要做新设备部署或数据迁移，请优先参考较新的两份设计文档，而不是本文的旧 `cache/` 结构。
+
 ## 运行时项目目录
 
 每个 Kairos 项目（一次旅行 = 一个项目）在用户指定位置生成如下目录结构：

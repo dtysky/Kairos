@@ -1068,7 +1068,11 @@ Core 侧只依赖这个稳定协议；服务端内部仍可继续沿用 `jianyin
 ```text
 <project_root>/
 ├── config/
-│   └── ingest-roots.json
+│   ├── ingest-roots.json
+│   ├── runtime.json
+│   └── styles/
+│       ├── catalog.json
+│       └── <category>.md
 ├── store/
 │   ├── manifest.json
 │   ├── revisions.jsonl
@@ -1082,7 +1086,12 @@ Core 侧只依赖这个稳定协议；服务端内部仍可继续沿用 `jianyin
 │       └── full/
 ├── analysis/
 │   ├── plans.json
-│   └── windows.json
+│   ├── windows.json
+│   ├── reference-transcripts/
+│   │   └── <category>--<video>.txt
+│   └── style-references/
+│       └── <category>/
+│           └── <video>.json
 ├── media/
 │   ├── index.json
 │   ├── slices.json
@@ -1097,6 +1106,15 @@ Core 侧只依赖这个稳定协议；服务端内部仍可继续沿用 `jianyin
 │   ├── current.srt
 │   ├── current.vtt
 │   └── current.json
+├── .tmp/
+│   └── <pipeline>/
+│       └── <scope>/
+│           ├── progress.json
+│           ├── summary.json
+│           ├── keyframes/
+│           ├── audio/
+│           ├── proxies/
+│           └── logs/
 └── adapters/
     ├── jianying/
     │   └── state.json
@@ -1107,15 +1125,20 @@ Core 侧只依赖这个稳定协议；服务端内部仍可继续沿用 `jianyin
 说明：
 
 - `config/ingest-roots.json` 保存素材输入目录、目录注解、默认时区等配置
+- `config/runtime.json` 保存项目级运行时配置，例如 Windows 原生 `ffmpeg/ffprobe` 路径、硬件解码策略、分析代理规格、ML Server 地址
+- `config/styles/` 保存正式风格档案和分类目录；这是可迁移、可复用的长期产物
 - `store/manifest.json` 保存项目级 schema 版本、当前 revision、最近备份信息
 - `store/revisions.jsonl` 记录每次持久化变更的 revision 日志
 - `store/snapshots/` 保存可回退的文档级快照
 - `store/backups/` 保存跨文档的项目级备份包
 - `analysis/plans.json` 保存每条素材的分析计划、密度分数和采样策略
 - `analysis/windows.json` 保存 `interestingWindows[]` 和命中原因
+- `analysis/reference-transcripts/` 保存参考视频或分析素材的正式转写结果
+- `analysis/style-references/` 保存逐视频落地的风格分析报告，再由上层综合成一个分类风格
 - `slices.json` 是未来最有复用价值的中间资产
 - `media/chronology.json` 保存按拍摄时间排序的素材时序视图，并记录时间/描述修正
 - `current.ktep.json` 是编辑器无关的正式时间线
+- `.tmp/` 保存流水线运行过程中的临时产物、关键帧、代理音频、调试日志和进度文件；默认可清理，不纳入 `Canonical Project Store`
 - `adapters/*/state.json` 只保存适配器私有映射状态
 
 建议的 `ingest-roots.json` 结构：
@@ -1168,6 +1191,104 @@ Core 侧只依赖这个稳定协议；服务端内部仍可继续沿用 `jianyin
 - `versions` 解决“我想回到上一个可编辑状态”
 - `backups` 解决“项目坏了还能不能救回来”
 
+### 14.1.1 运行时配置（Runtime Config）
+
+中间版本不再依赖“环境变量碰巧存在”来寻找工具链。项目根目录中的
+`config/runtime.json` 是**迁移、重放和跨设备部署**时必须优先带走的配置文件。
+
+推荐结构：
+
+```json
+{
+  "ffmpegPath": "C:\\Applications\\ffmpeg.exe",
+  "ffprobePath": "C:\\Applications\\GamePP\\PCBenchmark\\ffprobe.exe",
+  "ffmpegHwaccel": "d3d11va",
+  "analysisProxyWidth": 1024,
+  "analysisProxyPixelFormat": "yuv420p",
+  "sceneDetectFps": 4,
+  "mlServerUrl": "http://127.0.0.1:8910"
+}
+```
+
+说明：
+
+- `ffmpegPath` / `ffprobePath`
+  - 记录项目实际使用的原生工具链路径
+  - Windows 平台优先写 Windows 原生路径，不依赖 `PATH` 或 WSL 内版本
+- `ffmpegHwaccel`
+  - 指定视频解码时优先使用的原生硬件编解码后端，例如 `d3d11va`
+- `analysisProxyWidth` / `analysisProxyPixelFormat`
+  - 指定媒体分析默认使用的代理规格
+  - 当前建议默认值为 `1024w + yuv420p`
+- `sceneDetectFps`
+  - 指定长视频做镜头检测时的默认分析帧率
+- `mlServerUrl`
+  - 指向本地 ML Server，供 `ASR / OCR / VLM` 流水线调用
+
+原则：
+
+- `runtime.json` 是项目级约定，而不是机器全局环境变量快照
+- 新设备部署时优先迁移此文件，再做本机路径校正
+- 若不同平台路径不同，只修改 `runtime.json`，不改业务文档
+
+### 14.1.2 临时工作区与进度报告
+
+长时分析任务不应把所有中间产物塞进 `analysis/`，也不应把进度只留在终端里。
+
+建议约定：
+
+- `.tmp/` 是项目内的**临时工作区**
+- 正式产物写入 `config/`、`analysis/`、`media/`、`script/`、`timeline/`
+- 中间产物写入 `.tmp/<pipeline>/<scope>/`
+- 任务完成后默认清理 `.tmp/` 中不再需要的内容；如用户需要排障，可保留对应目录
+
+以风格分析为例：
+
+```text
+.tmp/
+└── style-analysis/
+    └── serious-travel-documentary-intro/
+        ├── progress.json
+        ├── summary.json
+        ├── keyframes/
+        ├── audio/
+        ├── proxies/
+        └── logs/
+```
+
+建议的 `progress.json`：
+
+```typescript
+interface WorkflowProgress {
+  pipelineKey: string;
+  pipelineLabel: string;
+  phaseKey: string;
+  phaseLabel: string;
+  status: 'queued' | 'running' | 'completed' | 'failed';
+  currentStep: number;
+  totalSteps: number;
+  currentFileIndex?: number;
+  totalFiles?: number;
+  currentFrameIndex?: number;
+  totalFrames?: number;
+  etaSeconds?: number;
+  currentFile?: string;
+  updatedAt: string;
+  note?: string;
+}
+```
+
+建议的呈现方式：
+
+- 后台任务持续更新 `progress.json`
+- 本地网页或桌面壳层定时轮询该文件，展示：
+  - `第 N / M 步`
+  - `第 N / M 帧`
+  - `剩余时间倒计时`
+  - 当前文件和最后更新时间
+
+这样进度观测协议可以被风格分析、素材分析、时间线生成等多个流程复用，而不必为每个流程单独发明一套 UI 状态结构。
+
 ### 14.2 当前状态层（Current State）
 
 当前状态层保存**唯一生效版本**，供系统读取和编辑。
@@ -1175,11 +1296,14 @@ Core 侧只依赖这个稳定协议；服务端内部仍可继续沿用 `jianyin
 建议纳入的 canonical 文档：
 
 - `config/ingest-roots.json`
+- `config/runtime.json`
 - `media/index.json`
 - `media/slices.json`
 - `media/chronology.json`
 - `analysis/plans.json`
 - `analysis/windows.json`
+- `analysis/reference-transcripts/*`
+- `analysis/style-references/<category>/*`
 - `script/current.json`
 - `timeline/current.ktep.json`
 - `subtitles/current.json`
