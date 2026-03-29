@@ -65,6 +65,9 @@ export type EVlmMode = z.infer<typeof EVlmMode>;
 export const ETargetBudget = z.enum(['coarse', 'standard', 'deep']);
 export type ETargetBudget = z.infer<typeof ETargetBudget>;
 
+export const EFineScanMode = z.enum(['skip', 'windowed', 'full']);
+export type EFineScanMode = z.infer<typeof EFineScanMode>;
+
 // ─── Supporting Types ────────────────────────────────────────
 
 export const ICaptureTime = z.object({
@@ -78,15 +81,36 @@ export type ICaptureTime = z.infer<typeof ICaptureTime>;
 
 export const IMediaRoot = z.object({
   id: z.string(),
-  path: z.string(),
+  path: z.string().optional(),
+  label: z.string().optional(),
   enabled: z.boolean(),
   category: EMediaRootCategory.optional(),
   priority: z.number().optional(),
+  description: z.string().optional(),
   notes: z.array(z.string()).optional(),
   tags: z.array(z.string()).optional(),
   defaultTimezone: z.string().optional(),
 });
 export type IMediaRoot = z.infer<typeof IMediaRoot>;
+
+export const IDeviceMediaRootPath = z.object({
+  rootId: z.string(),
+  localPath: z.string(),
+  exists: z.boolean().optional(),
+  lastCheckedAt: z.string().optional(),
+});
+export type IDeviceMediaRootPath = z.infer<typeof IDeviceMediaRootPath>;
+
+export const IDeviceMediaProjectMap = z.object({
+  projectId: z.string(),
+  roots: z.array(IDeviceMediaRootPath),
+});
+export type IDeviceMediaProjectMap = z.infer<typeof IDeviceMediaProjectMap>;
+
+export const IDeviceMediaMapFile = z.object({
+  projects: z.record(IDeviceMediaProjectMap),
+});
+export type IDeviceMediaMapFile = z.infer<typeof IDeviceMediaMapFile>;
 
 // ─── KTEP Core ───────────────────────────────────────────────
 
@@ -312,12 +336,42 @@ export const IMediaAnalysisPlan = z.object({
   clipType: EClipType,
   densityScore: z.number().min(0).max(1),
   samplingProfile: ESamplingProfile,
+  coarseSampleCount: z.number().int().positive().optional(),
   baseSampleIntervalMs: z.number(),
   interestingWindows: z.array(IInterestingWindow),
   vlmMode: EVlmMode,
   targetBudget: ETargetBudget,
+  shouldFineScan: z.boolean().default(false),
+  fineScanMode: EFineScanMode.default('skip'),
 });
 export type IMediaAnalysisPlan = z.infer<typeof IMediaAnalysisPlan>;
+
+export const ICoarseSample = z.object({
+  timeMs: z.number(),
+  path: z.string().optional(),
+  summary: z.string().optional(),
+});
+export type ICoarseSample = z.infer<typeof ICoarseSample>;
+
+export const IAssetCoarseReport = z.object({
+  assetId: z.string(),
+  ingestRootId: z.string().optional(),
+  durationMs: z.number().optional(),
+  clipTypeGuess: EClipType,
+  densityScore: z.number().min(0).max(1),
+  gpsSummary: z.string().optional(),
+  summary: z.string().optional(),
+  labels: z.array(z.string()),
+  placeHints: z.array(z.string()),
+  sampleFrames: z.array(ICoarseSample),
+  interestingWindows: z.array(IInterestingWindow),
+  shouldFineScan: z.boolean(),
+  fineScanMode: EFineScanMode,
+  fineScanReasons: z.array(z.string()),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type IAssetCoarseReport = z.infer<typeof IAssetCoarseReport>;
 
 export const IChronologyCorrection = z.object({
   capturedAtOverride: z.string().optional(),

@@ -9,6 +9,28 @@ export interface IMergeResult {
   duplicateCount: number;
 }
 
+export function getAssetsPath(projectRoot: string): string {
+  return join(projectRoot, 'store/assets.json');
+}
+
+export function getSlicesPath(projectRoot: string): string {
+  return join(projectRoot, 'store/slices.json');
+}
+
+export async function loadAssets(projectRoot: string): Promise<IKtepAsset[]> {
+  return await readJsonOrNull(getAssetsPath(projectRoot), z.array(IKtepAsset)) ?? [];
+}
+
+export async function loadSlices(projectRoot: string): Promise<IKtepSlice[]> {
+  return await readJsonOrNull(getSlicesPath(projectRoot), z.array(IKtepSlice)) ?? [];
+}
+
+export function buildAssetMergeKey(
+  asset: Pick<IKtepAsset, 'ingestRootId' | 'sourcePath'>,
+): string {
+  return `${asset.ingestRootId ?? ''}:${asset.sourcePath}`;
+}
+
 /**
  * Merge new assets into an existing asset list, deduplicating by sourcePath.
  * Existing assets are preserved unchanged; new assets get `ingestedAt` stamped.
@@ -17,18 +39,19 @@ export function mergeAssets(
   existing: IKtepAsset[],
   incoming: IKtepAsset[],
 ): IMergeResult {
-  const pathSet = new Set(existing.map(a => a.sourcePath));
+  const pathSet = new Set(existing.map(buildAssetMergeKey));
   const added: IKtepAsset[] = [];
   let duplicateCount = 0;
 
   const now = new Date().toISOString();
 
   for (const asset of incoming) {
-    if (pathSet.has(asset.sourcePath)) {
+    const key = buildAssetMergeKey(asset);
+    if (pathSet.has(key)) {
       duplicateCount++;
       continue;
     }
-    pathSet.add(asset.sourcePath);
+    pathSet.add(key);
     added.push({ ...asset, ingestedAt: asset.ingestedAt ?? now });
   }
 
@@ -71,8 +94,8 @@ export async function appendAssets(
   projectRoot: string,
   incoming: IKtepAsset[],
 ): Promise<IMergeResult> {
-  const assetsPath = join(projectRoot, 'store/assets.json');
-  const existing = await readJsonOrNull(assetsPath, z.array(IKtepAsset)) ?? [];
+  const assetsPath = getAssetsPath(projectRoot);
+  const existing = await loadAssets(projectRoot);
   const result = mergeAssets(existing, incoming);
   await writeJson(assetsPath, result.assets);
   return result;
@@ -85,8 +108,8 @@ export async function appendSlices(
   projectRoot: string,
   incoming: IKtepSlice[],
 ): Promise<void> {
-  const slicesPath = join(projectRoot, 'store/slices.json');
-  const existing = await readJsonOrNull(slicesPath, z.array(IKtepSlice)) ?? [];
+  const slicesPath = getSlicesPath(projectRoot);
+  const existing = await loadSlices(projectRoot);
   const merged = mergeSlices(existing, incoming);
   await writeJson(slicesPath, merged);
 }

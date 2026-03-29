@@ -1,6 +1,6 @@
 import type {
   IMediaAnalysisPlan, EClipType, ESamplingProfile,
-  EVlmMode, ETargetBudget,
+  EVlmMode, ETargetBudget, EFineScanMode,
 } from '../../protocol/schema.js';
 import type { IDensityResult } from './density.js';
 import type { IShotBoundary } from './shot-detect.js';
@@ -21,6 +21,7 @@ export function buildAnalysisPlan(input: ISamplerInput): IMediaAnalysisPlan {
   const clipType: EClipType = input.clipType ?? 'unknown';
   const budget: ETargetBudget = input.budget ?? 'standard';
   const profile = pickProfile(input.durationMs, input.density.score);
+  const coarseSampleCount = pickCoarseSampleCount(input.durationMs);
   const interval = pickInterval(input.durationMs, profile);
 
   const interestingWindows = findInterestingWindows(
@@ -31,17 +32,36 @@ export function buildAnalysisPlan(input: ISamplerInput): IMediaAnalysisPlan {
   const vlmMode: EVlmMode = budget === 'coarse' ? 'none'
     : input.durationMs < 15000 ? 'video'
     : 'multi-image';
+  const fineScanMode = pickFineScanMode(
+    input.durationMs,
+    input.density.score,
+    interestingWindows.length,
+    clipType,
+    budget,
+  );
+  const shouldFineScan = fineScanMode !== 'skip';
 
   return {
     assetId: input.assetId,
     clipType,
     densityScore: input.density.score,
     samplingProfile: profile,
+    coarseSampleCount,
     baseSampleIntervalMs: interval,
     interestingWindows,
     vlmMode,
     targetBudget: budget,
+    shouldFineScan,
+    fineScanMode,
   };
+}
+
+export function pickCoarseSampleCount(durationMs: number): number {
+  const minutes = durationMs / 60000;
+  if (minutes < 1) return 6;
+  if (minutes < 5) return 10;
+  if (minutes < 20) return 16;
+  return 24;
 }
 
 function pickProfile(durationMs: number, density: number): ESamplingProfile {
@@ -57,6 +77,30 @@ function pickInterval(durationMs: number, profile: ESamplingProfile): number {
   if (sec <= 300) return 8000;
   if (sec <= 1200) return 12000;
   return 20000;
+}
+
+function pickFineScanMode(
+  durationMs: number,
+  density: number,
+  interestingWindowCount: number,
+  clipType: EClipType,
+  budget: ETargetBudget,
+): EFineScanMode {
+  if (budget === 'coarse') return 'skip';
+
+  if (durationMs <= 120000 && (density >= 0.4 || clipType !== 'drive')) {
+    return 'full';
+  }
+
+  if (interestingWindowCount > 0 || density >= 0.55) {
+    return 'windowed';
+  }
+
+  if (clipType === 'aerial' || clipType === 'talking-head' || clipType === 'broll') {
+    return 'windowed';
+  }
+
+  return 'skip';
 }
 
 function findInterestingWindows(

@@ -10,6 +10,7 @@ const CDIRS = [
   'config/styles',
   'store',
   'media',
+  '.tmp',
   'script',
   'script/versions',
   'timeline',
@@ -17,6 +18,7 @@ const CDIRS = [
   'subtitles',
   'adapters',
   'analysis',
+  'analysis/asset-reports',
   'analysis/reference-transcripts',
 ] as const;
 
@@ -72,6 +74,10 @@ export async function loadManifest(root: string): Promise<IStoreManifest> {
   return readJson(join(root, 'store/manifest.json'), IStoreManifest);
 }
 
+export async function loadProject(root: string): Promise<IKtepProject> {
+  return readJson(join(root, 'store/project.json'), IKtepProject);
+}
+
 export async function loadIngestRoots(root: string): Promise<IIngestRoots> {
   const data = await readJsonOrNull(join(root, 'config/ingest-roots.json'), IIngestRoots);
   return data ?? { roots: [] };
@@ -80,4 +86,14 @@ export async function loadIngestRoots(root: string): Promise<IIngestRoots> {
 export async function loadRuntimeConfig(root: string): Promise<IRuntimeConfig> {
   const data = await readJsonOrNull(join(root, 'config/runtime.json'), IRuntimeConfig);
   return data ?? {};
+}
+
+export async function touchProjectUpdatedAt(root: string): Promise<IKtepProject> {
+  const project = await loadProject(root);
+  const updated: IKtepProject = {
+    ...project,
+    updatedAt: new Date().toISOString(),
+  };
+  await writeJson(join(root, 'store/project.json'), updated);
+  return updated;
 }

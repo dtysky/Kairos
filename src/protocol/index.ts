@@ -36,10 +36,16 @@ export {
   ESamplingProfile,
   EVlmMode,
   ETargetBudget,
+  EFineScanMode,
   IInterestingWindow,
   IMediaAnalysisPlan,
+  ICoarseSample,
+  IAssetCoarseReport,
   IChronologyCorrection,
   IMediaChronology,
+  IDeviceMediaRootPath,
+  IDeviceMediaProjectMap,
+  IDeviceMediaMapFile,
 } from './schema.js';
 
 export {

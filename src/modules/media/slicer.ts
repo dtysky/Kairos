@@ -1,5 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import type { IKtepSlice, IKtepAsset } from '../../protocol/schema.js';
+import type {
+  IInterestingWindow,
+  IKtepSlice,
+  IKtepAsset,
+  ESliceType,
+} from '../../protocol/schema.js';
 import type { IShotBoundary } from './shot-detect.js';
 
 /**
@@ -46,4 +51,23 @@ export function sliceVideo(
   }
 
   return slices;
+}
+
+export function sliceInterestingWindows(
+  asset: IKtepAsset,
+  windows: IInterestingWindow[],
+  type: ESliceType = 'unknown',
+): IKtepSlice[] {
+  return windows
+    .filter(window => window.endMs > window.startMs)
+    .map(window => ({
+      id: randomUUID(),
+      assetId: asset.id,
+      type,
+      sourceInMs: window.startMs,
+      sourceOutMs: window.endMs,
+      summary: window.reason,
+      labels: [],
+      evidence: [],
+    }));
 }
