@@ -16,7 +16,8 @@ description: >-
 ## 前置条件
 
 - `store/slices.json` 存在且非空
-- 风格档案可用（`test/style-profile.md` 或用户指定的文件）
+- 风格档案可用（优先 `config/style-profile.md`，也可用 `test/style-profile.md`）
+  - 如果还没有风格档案，先执行 [kairos-style-analysis](../kairos-style-analysis/SKILL.md)
 
 ## 可用工具
 
@@ -46,10 +47,15 @@ insertSegment(segments: IKtepScript[], afterId: string | null, segment: IKtepScr
 ### Step 1: 加载风格档案
 
 ```typescript
-const style = await loadStyleFromMarkdown('test/style-profile.md');
+// 优先使用风格分析产出，否则用手写档案
+const stylePath = existsSync('config/style-profile.md')
+  ? 'config/style-profile.md'
+  : 'test/style-profile.md';
+const style = await loadStyleFromMarkdown(stylePath);
 ```
 
 风格档案包含：叙事结构、语言风格、情绪表达、主题价值观、风格禁区等。
+来源可以是 `kairos-style-analysis` 自动生成，也可以是人工编写。
 
 ### Step 2: 构建叙事骨架
 

@@ -1,7 +1,7 @@
 export { scanDirectory, classifyExt, type IScannedFile } from './scanner.js';
 export { probe, type IProbeResult } from './probe.js';
 export { resolveCaptureTime } from './capture-time.js';
-export { detectShots, type IShotBoundary } from './shot-detect.js';
+export { detectShots, computeRhythmStats, type IShotBoundary, type IRhythmStats } from './shot-detect.js';
 export { extractKeyframes, uniformTimestamps, type IKeyframeResult } from './keyframe.js';
 export { slicePhoto, sliceVideo } from './slicer.js';
 export { MlClient, type IAsrSegment, type IOcrResult, type IVlmResult, type IMlHealth } from './ml-client.js';

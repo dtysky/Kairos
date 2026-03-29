@@ -10,11 +10,24 @@ description: >-
 
 ## Overview
 
-Kairos 将旅拍素材转化为可编辑时间线，分 5 个阶段执行。每个阶段有独立的子 skill，本 skill 负责总控。
+Kairos 将旅拍素材转化为可编辑时间线。流程分为 1 个准备阶段 + 5 个主阶段，每个阶段有独立的子 skill，本 skill 负责总控。
 
 ```
-Ingest → Analyze → Script → Timeline → Export
+[Style Analysis] → Ingest → Analyze → Script → Timeline → Export
 ```
+
+## 准备阶段：Style Analysis（风格分析）
+
+**子 skill**: [kairos-style-analysis](../kairos-style-analysis/SKILL.md)
+
+**可选但推荐**。从用户的历史成片中提取风格档案。
+
+输入：1-5 个历史作品视频
+产出：`config/style-profile.md` + `config/style-profile.json`
+
+如果用户已有手写风格档案（如 `test/style-profile.md`），可以跳过此步直接使用。
+
+风格档案是 Phase 3（Script）的核心输入，决定了旁白的语言风格、叙事结构和情绪表达方式。
 
 ## 项目初始化
 
@@ -69,7 +82,7 @@ project/
 
 **子 skill**: [kairos-script](../kairos-script/SKILL.md)
 
-输入：`store/slices.json` + 风格档案（`test/style-profile.md` 或用户指定）
+输入：`store/slices.json` + 风格档案（`config/style-profile.md` 或 `test/style-profile.md`）
 产出：`script/current.json` — `IKtepScript[]`
 
 前置条件：`store/slices.json` 存在且非空

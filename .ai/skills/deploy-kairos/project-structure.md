@@ -4,7 +4,7 @@
 Kairos/
 ├── package.json              # Node.js ESM, pnpm
 ├── tsconfig.json             # TypeScript strict, ES2022, Node16
-├── .env                      # LLM_BASE_URL, LLM_API_KEY, LLM_MODEL
+├── .env                      # KAIROS_ML_URL, FFMPEG_PATH, FFPROBE_PATH
 │
 ├── src/                      # TypeScript core
 │   ├── index.ts              # Top-level re-exports
