@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import uvicorn
 
-from .device import DEVICE
+from .device import DEVICE, BACKEND
 
 app = FastAPI(title="Kairos ML Server")
 
@@ -30,7 +30,12 @@ _loaded: set[str] = set()
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "device": DEVICE, "models_loaded": list(_loaded)}
+    return {
+        "status": "ok",
+        "device": DEVICE,
+        "backend": BACKEND,
+        "models_loaded": list(_loaded),
+    }
 
 
 @app.post("/asr")

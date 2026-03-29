@@ -28,6 +28,7 @@ export interface IVlmResult {
 export interface IMlHealth {
   status: string;
   device: string;
+  backend: string;
   models_loaded: string[];
 }
 

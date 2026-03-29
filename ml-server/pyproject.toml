@@ -6,8 +6,19 @@ requires-python = ">=3.10"
 dependencies = [
     "fastapi",
     "uvicorn[standard]",
-    "faster-whisper",
     "Pillow",
+]
+
+[project.optional-dependencies]
+# Apple Silicon: pure MLX stack, no PyTorch
+mlx = [
+    "mlx-vlm",
+    "mlx-whisper",
+    "mlx_clip @ git+https://github.com/harperreed/mlx_clip.git",
+]
+
+# CUDA / CPU: PyTorch + transformers stack
+cuda = [
     "torch",
     "torchvision",
     "transformers",
@@ -20,10 +31,8 @@ dependencies = [
     "transformers_stream_generator==0.0.4",
 ]
 
-[project.optional-dependencies]
 ocr = ["paddleocr", "paddlepaddle"]
 ocr-easy = ["easyocr"]
-mlx = ["mlx-vlm"]
 
 [project.scripts]
 kairos-ml = "kairos_ml.main:run"

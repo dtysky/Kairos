@@ -19,13 +19,13 @@ Full deployment guide for a new device. Kairos has three subsystems:
 
 ### 平台 ML 后端差异
 
-| Platform | ASR | VLM | 安装方式 |
-|----------|-----|-----|---------|
-| Windows + NVIDIA GPU | Whisper (transformers, CUDA) | Qwen3-VL-4B (transformers, CUDA) | `pip install -e ".[ocr]"` |
-| macOS Apple Silicon | Whisper (transformers, MPS) | Qwen3-VL-4B (**mlx-vlm**) | `pip install -e ".[mlx]"` |
-| Linux / macOS Intel | Whisper (transformers, CPU) | Qwen3-VL-4B (transformers, CPU) | `pip install -e ".[ocr]"` |
+| Platform | ASR | CLIP | VLM | 安装方式 |
+|----------|-----|------|-----|---------|
+| macOS Apple Silicon | **mlx-whisper** | **mlx_clip** | **mlx-vlm** (Qwen3-VL-4B-8bit) | `pip install -e ".[mlx]"` |
+| Windows + NVIDIA GPU | transformers Whisper (CUDA) | open-clip-torch (CUDA) | transformers Qwen3-VL-4B (CUDA) | `pip install -e ".[cuda]"` |
+| Linux / macOS Intel | transformers Whisper (CPU) | open-clip-torch (CPU) | transformers Qwen3-VL-4B (CPU) | `pip install -e ".[cuda]"` |
 
-VLM 后端自动检测：`KAIROS_VLM_MODEL_SOURCE=auto`（默认）时，macOS 自动用 mlx-vlm，其他平台用 transformers。
+Apple Silicon 上全栈使用 MLX，**不需要 PyTorch**。后端自动检测，也可通过 `KAIROS_ML_BACKEND=mlx|torch` 强制指定。
 
 LLM 调用由 Cursor / Codex agent 直接完成，不需要单独配置 LLM API key。
 
@@ -74,39 +74,51 @@ Verify: `ls dist/index.js` should exist and `npx tsc --noEmit` should pass.
 
 ### 3b. Install dependencies
 
-**macOS Apple Silicon（推荐）：**
+**macOS Apple Silicon（纯 MLX，无 PyTorch）：**
+
+注意：必须使用 **arm64 架构的 Python**。如果 Homebrew 是 x86_64 版本（`/usr/local`），用 `uv` 安装 arm64 Python：
+
+```bash
+uv python install 3.12
+uv venv .venv-ml --python 3.12
+# 验证架构
+.venv-ml/bin/python -c "import platform; print(platform.machine())"  # 应输出 arm64
+```
+
+安装依赖：
 
 ```bash
 cd ml-server
-python3 -m venv ../.venv-ml
-source ../.venv-ml/bin/activate
-pip install -e ".[mlx]"
+uv pip install --python ../.venv-ml/bin/python -e ".[mlx]"
 ```
 
-mlx-vlm 会自动下载 `mlx-community/Qwen3-VL-4B-Instruct-8bit` 量化模型，无需额外配置。
+mlx-vlm 首次使用时自动下载 `mlx-community/Qwen3-VL-4B-Instruct-8bit` (~3GB)。
+mlx-whisper 首次使用时自动下载 Whisper 模型。
+mlx_clip 首次使用时自动转换 CLIP 权重到 MLX 格式。
 
 **Windows + NVIDIA GPU：**
 
 ```bash
 cd ml-server
 uv venv && uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
-uv pip install -e ".[ocr]"
+uv pip install -e ".[cuda]"
 ```
 
 在 `Windows + NVIDIA GPU` 上，建议直接使用 **Windows 原生 Python 环境** 启动 `kairos-ml`，
-让 `Qwen3-VL-4B-Instruct` 和其他 VLM 推理直接走 `CUDA`。不要从 WSL 拉起这类推理服务。
+让推理直接走 `CUDA`。不要从 WSL 拉起推理服务。
 
 **Linux / macOS Intel（CPU fallback）：**
 
 ```bash
 cd ml-server
-uv venv && uv pip install -e ".[ocr]"
+uv venv && uv pip install -e ".[cuda]"
 ```
 
-For EasyOCR instead of PaddleOCR:
+OCR 按需安装（任意平台，不影响主后端选择）：
 
 ```bash
-uv pip install -e ".[ocr-easy]"
+uv pip install -e ".[ocr]"      # PaddleOCR
+uv pip install -e ".[ocr-easy]" # 或 EasyOCR
 ```
 
 ### 3c. Configure VLM model
@@ -157,14 +169,14 @@ cd ml-server && python -m uvicorn kairos_ml.main:app --host 127.0.0.1 --port 891
 
 Verify: `curl http://127.0.0.1:8910/health`
 
-| Platform | 期望 device |
-|----------|------------|
-| Windows + NVIDIA | `cuda` |
-| macOS Apple Silicon | `mps` |
-| CPU fallback | `cpu` |
+| Platform | 期望 device | 期望 backend |
+|----------|------------|-------------|
+| Windows + NVIDIA | `cuda` | `torch` |
+| macOS Apple Silicon | `mps` | `mlx` |
+| CPU fallback | `cpu` | `torch` |
 
 在 Windows 上如果返回 `cpu`，检查是否误在 WSL 环境启动了 ML server。
-在 macOS 上首次启动会下载 mlx 量化模型（~3GB），请耐心等待。
+在 macOS 上首次调用各模型端点时会按需下载（VLM ~3GB, Whisper ~500MB, CLIP ~600MB），请耐心等待。
 
 ## Step 4: Jianying MCP (optional, for Jianying export)
 
@@ -275,7 +287,8 @@ Windows 补充建议：
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `KAIROS_ML_URL` | `http://127.0.0.1:8910` | ML server URL (for remote/cross-device) |
-| `KAIROS_VLM_MODEL_SOURCE` | `auto` | VLM backend: `auto` / `mlx` / `modelscope` / `huggingface` |
+| `KAIROS_ML_BACKEND` | auto-detect | 强制后端: `mlx` / `torch` |
+| `KAIROS_VLM_MODEL_SOURCE` | `auto` | VLM model source: `auto` / `mlx` / `modelscope` / `huggingface` |
 | `KAIROS_VLM_MODEL_ID` | (per backend) | VLM model identifier (transformers 模式) |
 | `KAIROS_VLM_MODEL_PATH` | unset | Pre-downloaded local VLM directory (overrides source/id) |
 
@@ -314,9 +327,9 @@ ls vendor/jianying-mcp/jianyingdraft/server.py
 |---------|-----|
 | `ERR_PNPM_UNEXPECTED_STORE` | Delete `node_modules` and re-run `pnpm install` |
 | `Cannot find module 'node:fs/promises'` | Ensure `@types/node` is installed (`pnpm add -D @types/node`) |
-| ML server `torch not found` | Install PyTorch separately matching your CUDA version |
-| `faster-whisper` fails on macOS | ML server 现在使用 transformers Whisper，MPS 自动启用 |
-| mlx-vlm 模型下载慢 | 设置 `HF_ENDPOINT=https://hf-mirror.com` 使用镜像 |
+| ML server `torch not found` | 仅 Windows/Linux 需要：`pip install -e ".[cuda]"` |
+| macOS `No module named 'mlx'` | 确认 arm64 Python：`python -c "import platform; print(platform.machine())"` |
+| MLX 模型下载慢 | 设置 `HF_ENDPOINT=https://hf-mirror.com` 使用镜像 |
 | jianying-mcp `Python >= 3.13 required` | Use `uv python install 3.13` then `uv sync` |
 | `SAVE_PATH not found` | Create the directory configured in the MCP host, e.g. `mkdir -p /tmp/kairos-drafts` |
 | ffmpeg/ffprobe not found on Windows | Set `FFMPEG_PATH` / `FFPROBE_PATH` environment variables |
