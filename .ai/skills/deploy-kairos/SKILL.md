@@ -14,7 +14,7 @@ Full deployment guide for a new device. Kairos has three subsystems:
 | Subsystem | Runtime | Location | Required |
 |-----------|---------|----------|----------|
 | TypeScript core | Node.js >= 16 + pnpm | `./` (root) | Always |
-| ML server | Python >= 3.10 + uv/pip | `ml-server/` | For media analysis (`faster-whisper` + `Qwen-VL-Chat`) |
+| ML server | Python >= 3.10 + uv/pip | `ml-server/` | For media analysis (`transformers Whisper` + `Qwen3-VL-4B-Instruct`) |
 | Jianying MCP | Python >= 3.13 + uv | `vendor/jianying-mcp/` | Configured externally by MCP host for Jianying export |
 
 LLM 调用由 Cursor / Codex agent 直接完成，不需要单独配置 LLM API key。
@@ -77,7 +77,7 @@ uv pip install -e ".[ocr]"
 ```
 
 在 `Windows + NVIDIA GPU` 上，建议直接使用 **Windows 原生 Python 环境** 启动 `kairos-ml`，
-让 `Qwen-VL-Chat` 和其他 VLM 推理直接走 `CUDA`。不要从 WSL 拉起这类推理服务。
+让 `Qwen3-VL-4B-Instruct` 和其他 VLM 推理直接走 `CUDA`。不要从 WSL 拉起这类推理服务。
 
 For EasyOCR instead of PaddleOCR:
 
@@ -87,15 +87,15 @@ uv pip install -e ".[ocr-easy]"
 
 ### 3c. Configure VLM model
 
-By default, Kairos now uses `Qwen-VL-Chat` through `transformers`, with ModelScope as the default model source.
+By default, Kairos now uses `Qwen3-VL-4B-Instruct` through `transformers`, with ModelScope as the default model source.
 
 Optional overrides:
 
 ```bash
 export KAIROS_VLM_MODEL_SOURCE=modelscope   # or: huggingface
-export KAIROS_VLM_MODEL_ID=qwen/Qwen-VL-Chat
+export KAIROS_VLM_MODEL_ID=Qwen/Qwen3-VL-4B-Instruct
 # Optional: point to a pre-downloaded local directory
-export KAIROS_VLM_MODEL_PATH=/path/to/Qwen-VL-Chat
+export KAIROS_VLM_MODEL_PATH=/path/to/Qwen3-VL-4B-Instruct
 ```
 
 ### 3d. Start ML server
@@ -223,7 +223,7 @@ Windows 补充建议：
 |----------|---------|---------|
 | `KAIROS_ML_URL` | `http://127.0.0.1:8910` | ML server URL (for remote/cross-device) |
 | `KAIROS_VLM_MODEL_SOURCE` | `modelscope` | VLM checkpoint source: `modelscope` or `huggingface` |
-| `KAIROS_VLM_MODEL_ID` | `qwen/Qwen-VL-Chat` | VLM model identifier |
+| `KAIROS_VLM_MODEL_ID` | `Qwen/Qwen3-VL-4B-Instruct` | VLM model identifier |
 | `KAIROS_VLM_MODEL_PATH` | unset | Pre-downloaded local VLM directory (overrides source/id) |
 
 Example: ML server on Windows GPU machine, TS core on Mac:

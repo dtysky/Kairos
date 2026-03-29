@@ -1,5 +1,6 @@
 import type { IKtepEvidence } from '../../protocol/schema.js';
 import type { MlClient } from './ml-client.js';
+import type { IShotKeyframeGroup } from './keyframe.js';
 
 const CVLM_PROMPT = `Analyze this image from a travel video. Return only a raw JSON object with:
 - scene_type: one of "landscape", "cityscape", "driving", "aerial", "food", "portrait", "activity", "landmark", "nature", "interior"
@@ -18,6 +19,14 @@ export interface IRecognition {
   narrativeRole: string;
   description: string;
   evidence: IKtepEvidence[];
+}
+
+export interface IShotRecognition {
+  shotId: string;
+  startMs: number;
+  endMs: number;
+  framePaths: string[];
+  recognition: IRecognition;
 }
 
 export async function recognizeFrames(
@@ -53,4 +62,26 @@ export async function recognizeFrames(
     description: parsed.description ?? '',
     evidence,
   };
+}
+
+export async function recognizeShotGroups(
+  client: MlClient,
+  groups: IShotKeyframeGroup[],
+): Promise<IShotRecognition[]> {
+  const results: IShotRecognition[] = [];
+
+  for (const group of groups) {
+    const framePaths = group.frames.map(frame => frame.path);
+    if (framePaths.length === 0) continue;
+    const recognition = await recognizeFrames(client, framePaths);
+    results.push({
+      shotId: group.shotId,
+      startMs: group.startMs,
+      endMs: group.endMs,
+      framePaths,
+      recognition,
+    });
+  }
+
+  return results;
 }

@@ -223,10 +223,13 @@ function extractAntiPatterns(sections: IStyleSection[]): string[] {
 
 function extractParameters(md: string): Record<string, string> {
   const params: Record<string, string> = {};
-  const tableMatch = md.match(/\|\s*参数\s*\|\s*值\s*\|[\s\S]*?(?=\n\n|---|\n#|$)/);
-  if (!tableMatch) return params;
+  const lines = md.split('\n');
+  const headerIndex = lines.findIndex(line => /^\|\s*参数\s*\|\s*值\s*\|$/.test(line.trim()));
+  if (headerIndex < 0) return params;
 
-  for (const line of tableMatch[0].split('\n')) {
+  for (let i = headerIndex + 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line.startsWith('|')) break;
     const m = line.match(/^\|\s*(.+?)\s*\|\s*(.+?)\s*\|$/);
     if (m && !m[1].includes('---') && m[1].trim() !== '参数') {
       params[m[1].trim()] = m[2].trim();
@@ -237,20 +240,39 @@ function extractParameters(md: string): Record<string, string> {
 
 function extractNarrative(params: Record<string, string>): IStyleProfile['narrative'] {
   return {
-    introRatio: 0.08,
-    outroRatio: 0.05,
-    avgSegmentDurationSec: 25,
-    brollFrequency: 0.3,
-    pacePattern: params['叙事结构'] ?? '线性叙事',
+    introRatio: parseNumberParam(params['开场占比']) ?? 0.08,
+    outroRatio: parseNumberParam(params['结尾占比']) ?? 0.05,
+    avgSegmentDurationSec: parseNumberParam(params['平均段落时长（秒）'] ?? params['平均段落时长']) ?? 25,
+    brollFrequency: parseNumberParam(params['B-roll 频率'] ?? params['Broll 频率']) ?? 0.3,
+    pacePattern: params['节奏模式'] ?? params['叙事结构'] ?? '线性叙事',
   };
 }
 
 function extractVoice(params: Record<string, string>): IStyleProfile['voice'] {
+  const perspective = params['叙述视角'] ?? params['叙事视角'] ?? '';
+  const density = parseDensity(params['语言密度']);
   return {
-    person: (params['叙事视角']?.includes('第一') ? '1st'
-      : params['叙事视角']?.includes('第二') ? '2nd' : '1st') as '1st' | '2nd' | '3rd',
-    tone: params['语言风调'] ?? '平实',
-    density: 'moderate',
+    person: (perspective.includes('2nd') || perspective.includes('第二') ? '2nd'
+      : perspective.includes('3rd') || perspective.includes('第三') ? '3rd'
+      : '1st') as '1st' | '2nd' | '3rd',
+    tone: params['主语气'] ?? params['语言风调'] ?? params['语言风格'] ?? '平实',
+    density,
     sampleTexts: [],
   };
+}
+
+function parseNumberParam(value?: string): number | undefined {
+  if (!value) return undefined;
+  const match = value.match(/-?\d+(?:\.\d+)?/);
+  if (!match) return undefined;
+  const parsed = Number(match[0]);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function parseDensity(value?: string): 'low' | 'moderate' | 'high' {
+  if (!value) return 'moderate';
+  const normalized = value.trim().toLowerCase();
+  if (normalized.includes('high') || normalized.includes('高')) return 'high';
+  if (normalized.includes('low') || normalized.includes('低')) return 'low';
+  return 'moderate';
 }

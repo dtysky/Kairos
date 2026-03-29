@@ -1,4 +1,4 @@
-export { analyzeStyle } from './style-analyzer.js';
+export { analyzeStyle, analyzeStyleFromReports, type IStyleReferenceVideoAnalysis } from './style-analyzer.js';
 export {
   loadStyleFromMarkdown,
   loadStyleByCategory,

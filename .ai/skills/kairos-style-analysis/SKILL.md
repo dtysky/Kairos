@@ -173,6 +173,25 @@ const meta = await probe(videoPath);
 const shots = await detectShots(videoPath, 0.3);
 ```
 
+如果输入里有多个参考视频，必须先对每个视频分别落地一份“单视频分析结果”，再做共同风格综合。不要一开始就把全部素材混成一个大输入。
+
+推荐顺序：
+
+1. 每个视频单独完成：
+   - 元数据提取
+   - 内容洞察
+   - 剪辑节奏统计
+   - 镜头级视觉分析
+   - ASR 转写
+2. 将每个视频的结果分别保存
+3. 最后再把多份“单视频分析结果”综合成共同风格
+
+推荐保存路径：
+
+```text
+analysis/style-references/{category}/{video-stem}.json
+```
+
 ### Step 3: ASR 提取旁白（最关键）
 
 ```typescript
@@ -184,11 +203,39 @@ const transcript = await transcribe(ml, videoPath, 'zh');
 
 ### Step 4: 视觉风格采样
 
+风格分析不要再用“统一每隔 N 秒抽一帧，然后固定批量送 VLM”的方式。
+正式策略应改为：
+
+- 先用 `detectShots()` 得到镜头边界
+- 再把每个镜头区间转成一个 `shot`
+- 每个 `shot` 至少抽 `开始 / 中间 / 收尾` 三帧
+- VLM 以 **每个 shot 为单位** 分析，而不是把多个镜头混成一批描述
+
+这样得到的是“镜头级视觉证据”，而不是“批次级混合摘要”。
+
 ```typescript
 const outputDir = join(projectRoot, '.tmp/style-analysis', category, 'keyframes');
-const timestamps = uniformTimestamps(meta.durationMs!, 15000);
+const shotPlans = planShotKeyframes(shots, meta.durationMs!, 3);
+const timestamps = flattenShotKeyframePlans(shotPlans);
 const keyframes = await extractKeyframes(videoPath, outputDir, timestamps);
-const recognition = await recognizeFrames(ml, keyframes.map(k => k.path));
+const shotGroups = groupKeyframesByShot(shotPlans, keyframes);
+const recognition = await recognizeShotGroups(ml, shotGroups);
+```
+
+每条 `recognition` 应对应一个 shot，并至少包含：
+
+```json
+{
+  "shotId": "shot-012",
+  "startMs": 120000,
+  "endMs": 128500,
+  "framePaths": ["...", "...", "..."],
+  "recognition": {
+    "sceneType": "interior",
+    "mood": "melancholic",
+    "description": "..."
+  }
+}
 ```
 
 ### Step 5: 编辑节奏统计
@@ -203,6 +250,27 @@ const density = estimateDensity({
 ```
 
 ### Step 6: Agent 撰写风格档案（核心创意环节）
+
+如果输入包含多个参考视频，这一步不要直接把所有 transcript 和视觉描述混成一个大文本。应该先把每个视频组织成独立的参考报告，再让 LLM 做“共同风格归纳”。
+
+推荐的数据结构：
+
+```typescript
+type IStyleReferenceVideoAnalysis = {
+  sourceFile: string;
+  transcript?: string;
+  guidancePrompt?: string;
+  contentInsights?: string[];
+  rhythm?: Partial<IRhythmStats>;
+  shotRecognitions?: IShotRecognition[];
+};
+```
+
+也就是说：
+
+- `video A` 先形成自己的风格分析报告
+- `video B` 先形成自己的风格分析报告
+- 最后才做 `A + B + ... => shared style`
 
 Agent 综合以上所有数据 + 用户指导词，撰写风格档案 markdown。
 
