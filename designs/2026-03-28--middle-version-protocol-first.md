@@ -2,7 +2,7 @@
 
 > 日期：2026-03-28
 > 定位：介于“全链路 AI 后期平台”和“只做脚本助手”之间的中间版本
-> 核心目标：先把可复用的中台能力做对，再通过适配层落地到剪映 MCP，并为后续达芬奇/其他 NLE 复用
+> 核心目标：先把可复用的中台能力做对，再通过独立的 NLE Server / 适配层落地到剪映，并为后续达芬奇/其他 NLE 复用
 
 ## 1. 背景
 
@@ -21,7 +21,7 @@
 
 - 不强依赖 GPS、Pharos、调色和达芬奇
 - 但保留未来可复用的核心中台
-- 以剪映 MCP 作为第一个落地适配器
+- 以剪映作为第一个落地 NLE，并将其自动化能力剥离为独立 Server
 - 后续可平移到达芬奇 MCP 或导出协议
 
 ## 2. 设计目标
@@ -69,7 +69,7 @@
 - 时间线生成
 - 字幕生成
 - NLE 适配器抽象
-- 剪映 MCP 适配器
+- 剪映 Server 客户端与导出任务协议
 
 ### 4.2 延后
 
@@ -121,11 +121,11 @@
 
 中间版本只定义统一接口：
 
-- 剪映 MCP 是 `JianyingAdapter`
+- 剪映通过 `JianyingServerClient` 对接独立 `Jianying Server`
 - 达芬奇 MCP 是 `ResolveAdapter`
 - 将来导出 FCPXML/OTIO 也只是另一种适配器或导出器
 
-业务模块不能直接调用任何一个具体 NLE 的 MCP 方法。
+业务模块不能直接调用任何一个具体 NLE 的 MCP 方法，也不能直接拉起平台敏感的 NLE 自动化进程。
 
 ### D5. 空间上下文支持双主模式：GPS 增强模式 + 无 GPS 证据模式
 
@@ -256,6 +256,34 @@ type SpatialContextMode = 'gps-enhanced' | 'evidence-only';
 
 这些注解应进入证据系统，但来源应标记为 `manual-root-note`，不能与画面识别结果混淆。
 
+### D10. 剪映自动化必须剥离为独立 Server，而不是由 Kairos Core 直接通过 stdio 驱动
+
+剪映导出涉及明显的平台边界：
+
+- 剪映本体运行在 Windows
+- 素材路径需要 Windows 语义
+- 字幕与草稿写入依赖本地文件系统和剪映草稿目录
+- 后续 CUDA / 本地模型也可能运行在 Windows 侧
+
+因此，Kairos Core 不应继续：
+
+- vendoring `jianying-mcp`
+- 在 WSL 里直接 `uv run server.py`
+- 直接承担草稿目录、路径映射、Windows 进程管理
+
+建议改为双进程边界：
+
+- **Kairos Core**：负责 `KTEP`、导出计划、任务状态、日志汇总
+- **Jianying Server**：负责 Windows 路径映射、草稿创建、素材导入、字幕写入、导出结果落盘
+
+`jianying-mcp` 可以继续作为 `Jianying Server` 的内部实现基础，但不再作为 Kairos Core 的内嵌依赖暴露。
+
+这意味着：
+
+- Kairos 的正式接口从“直接调用剪映 MCP 工具”升级为“向剪映服务提交导出任务”
+- 剪映侧问题被限制在单独部署单元内，不再污染 Core 的协议与工作流
+- 将来替换 `jianying-mcp` 实现时，不需要改动 Core 侧的脚本、时间线和 store
+
 ## 6. 系统架构
 
 ```text
@@ -278,10 +306,13 @@ type SpatialContextMode = 'gps-enhanced' | 'evidence-only';
                  ▼
       Kairos Timeline Exchange Protocol
                  │
-      ┌──────────┼──────────┐
-      ▼          ▼          ▼
- Jianying    Resolve     Exporters
- Adapter     Adapter     (SRT/FCPXML/OTIO...)
+      ┌──────────┼──────────────┐
+      ▼          ▼              ▼
+ Jianying    Resolve        Exporters
+  Server     Adapter        (SRT/FCPXML/OTIO...)
+    │
+    ▼
+ 剪映草稿 / Windows 日志 / 素材路径映射
 ```
 
 ## 7. 模块划分
@@ -452,21 +483,45 @@ interface MediaChronologyEntry {
 
 ### 7.4 `src/modules/nle/`
 
-负责具体编辑器适配。
+负责具体编辑器适配与外部 NLE Server 客户端。
 
 建议子模块：
 
 - `adapter.ts`
-- `jianying-mcp-adapter.ts`
+- `export-job.ts`
+- `jianying-server-client.ts`
 - `resolve-mcp-adapter.ts`
 - `export-srt.ts`
 - `export-fcpxml.ts`（后续）
 
 职责：
 
-- 将正式协议翻译为具体编辑器操作
-- 维护外部素材 ID / 轨道 ID / 项目 ID 映射
+- 将正式协议翻译为具体编辑器任务
+- 维护外部素材 ID / 轨道 ID / 项目 ID / job ID 映射
 - 对不同编辑器能力差异做降级
+- 将平台敏感操作下沉到独立 Server
+
+### 7.5 `jianying-server/`（独立部署单元，建议独立仓库）
+
+负责剪映落地执行。
+
+建议子模块：
+
+- `server.ts` / `main.py`
+- `job-router.ts`
+- `draft-service.ts`
+- `path-normalizer.ts`
+- `subtitle-service.ts`
+- `asset-import-service.ts`
+- `task-log.ts`
+
+职责：
+
+- 暴露平台本地可访问的服务接口（HTTP / JSON-RPC / MCP over HTTP 均可）
+- 接收 `KTEP` 或 `export job`
+- 在 Windows 上处理草稿目录和素材路径
+- 调用 `jianying-mcp` 或后续替代实现
+- 返回导出结果、日志和错误诊断
 
 ## 8. 本地多模态与自适应采样
 
@@ -894,7 +949,7 @@ interface KtepSubtitleCue {
 
 - 导出 `SRT`
 - 导出 `WebVTT`
-- 通过剪映 MCP 创建字幕轨
+- 通过 `Jianying Server` 创建字幕轨
 - 通过达芬奇 MCP 创建字幕轨
 
 这样字幕算法本身不依赖任何具体 NLE。
@@ -927,13 +982,60 @@ interface NleCapabilities {
 
 ### 12.2 剪映适配器
 
-`JianyingAdapter` 是中间版本的首个正式适配器。
+`JianyingServerClient` 是中间版本的首个正式剪映适配器。
 
 职责：
 
-- 对接剪映 MCP
-- 处理剪映项目创建、素材导入、时间线创建、片段摆放、字幕插入
-- 管理剪映内部对象 ID 与 `KTEP` ID 的映射
+- 对接独立 `Jianying Server`
+- 负责提交导出任务、轮询状态、拉取日志和结果
+- 管理剪映内部对象 ID、草稿 ID 与 `KTEP` / `job` ID 的映射
+
+它不再直接关心：
+
+- `uv` 如何启动
+- Windows 本地 Python 环境
+- 草稿目录的最终写入方式
+- `jianying-mcp` 的内部工具调用顺序
+
+### 12.2.1 剪映导出任务接口
+
+建议引入稳定的 job 协议：
+
+```typescript
+interface JianyingExportJob {
+  jobId: string;
+  projectId: string;
+  timelinePath?: string;
+  ktepDoc?: KtepDocument;
+  outputDraftName: string;
+  outputDraftRoot: string;
+  windowsAssetRoots?: Array<{
+    from: string;
+    to: string;
+  }>;
+  options?: {
+    subtitleY?: number;
+    subtitleSize?: number;
+    exportSrt?: boolean;
+    exportVtt?: boolean;
+  };
+}
+
+interface JianyingExportResult {
+  jobId: string;
+  status: 'queued' | 'running' | 'succeeded' | 'failed';
+  draftPath?: string;
+  srtPath?: string;
+  vttPath?: string;
+  logs: string[];
+  diagnostics?: Array<{
+    code: string;
+    message: string;
+  }>;
+}
+```
+
+Core 侧只依赖这个稳定协议；服务端内部仍可继续沿用 `jianying-mcp` 或任何替代实现。
 
 ### 12.3 达芬奇适配器
 
@@ -1240,8 +1342,9 @@ interface StoreManifest {
 
 ### M4. 剪映适配器
 
-- 剪映 MCP 封装
-- `KTEP -> 剪映操作` 执行器
+- `Jianying Server` 原型
+- `KTEP -> 导出任务` 执行器
+- `Kairos Core -> Jianying Server` 客户端
 - SRT 导出作为兜底
 
 ### M5. 达芬奇适配器

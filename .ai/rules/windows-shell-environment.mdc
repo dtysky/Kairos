@@ -34,4 +34,6 @@ alwaysApply: true
 
 - 不因为“当前默认 shell 是 PowerShell”就默认使用 Windows 侧命令行。
 - 不因为 WSL 可用就默认使用 `bash`，应优先遵循用户在 WSL 中的默认工作 shell：`zsh`。
+- 对于工作区内的常规 WSL 命令，默认直接执行，不要额外向用户确认。
+- 只有当 WSL 命令涉及删除文件，或可能影响工作区外文件 / 目录时，才需要先确认。
 - 只有在任务对 Windows / CUDA 有明确要求时，才切换过去。

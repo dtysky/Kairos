@@ -1,6 +1,6 @@
 import type {
   IKtepDoc, IKtepAsset, IKtepTimeline,
-  IKtepClip, IKtepSubtitle, IKtepTrack,
+  IKtepClip, IKtepSubtitle,
 } from '../../protocol/schema.js';
 import { validateKtepDoc } from '../../protocol/validator.js';
 import type { INleAdapter, INleCapabilities, INleIdMap } from './adapter.js';
@@ -18,6 +18,20 @@ const CDEFAULTS: IJianyingConfig = {
   subtitleSize: 6.0,
 };
 
+function normalizeMaterialPath(material: string): string {
+  if (/^[a-z]+:\/\//i.test(material)) return material;
+
+  if (/^[a-zA-Z]:\//.test(material)) {
+    return material.replace(/\//g, '\\');
+  }
+
+  const wslMountMatch = material.match(/^\/mnt\/([a-zA-Z])\/(.*)$/);
+  if (!wslMountMatch) return material;
+
+  const [, driveLetter, rest] = wslMountMatch;
+  return `${driveLetter.toUpperCase()}:\\${rest.replace(/\//g, '\\')}`;
+}
+
 function msToTimeStr(ms: number): string {
   return `${(ms / 1000).toFixed(3)}s`;
 }
@@ -27,13 +41,15 @@ function msToRange(inMs: number, outMs: number): string {
 }
 
 /**
- * 剪映 MCP 适配器。
- * 通过 IMcpCaller 调用 jianying-mcp 的 MCP 工具。
+ * 剪映时间线应用器。
+ * 通过 IMcpCaller 调用外部配置好的 Jianying MCP 工具，
+ * 将 KTEP 时间线同步到剪映草稿上下文中。
  *
- * 工具链：
- *   create_draft → create_track → add_*_segment → add_*_effects → export_draft
+ * 它覆盖：
+ *   create_draft → create_track → add_*_segment → add_video_transition → add_text_segment
  *
- * @see https://github.com/hey-jian-wei/jianying-mcp
+ * 最终“导出草稿”属于上层导出编排的一部分，因此 `exportDraft()`
+ * 只是剪映专属 helper，不属于通用 NLE 接口。
  */
 export class JianyingAdapter implements INleAdapter {
   readonly name = 'jianying';
@@ -76,7 +92,7 @@ export class JianyingAdapter implements INleAdapter {
 
   async importAssets(assets: IKtepAsset[]): Promise<void> {
     for (const asset of assets) {
-      this.assetPaths.set(asset.id, asset.sourcePath);
+      this.assetPaths.set(asset.id, normalizeMaterialPath(asset.sourcePath));
     }
   }
 
@@ -119,6 +135,9 @@ export class JianyingAdapter implements INleAdapter {
           args.source_start_end = msToRange(clip.sourceInMs, clip.sourceOutMs);
         }
         const res = await this.mcp.call('add_audio_segment', args) as any;
+        if (res?.success === false) {
+          throw new Error(`Jianying add_audio_segment failed: ${res.message ?? material}`);
+        }
         const segId = res.audio_segment_id ?? res.data?.audio_segment_id;
         if (segId) this.idMap.clips.set(clip.id, segId);
       } else {
@@ -142,6 +161,9 @@ export class JianyingAdapter implements INleAdapter {
           };
         }
         const res = await this.mcp.call('add_video_segment', args) as any;
+        if (res?.success === false) {
+          throw new Error(`Jianying add_video_segment failed: ${res.message ?? material}`);
+        }
         const segId = res.video_segment_id ?? res.data?.video_segment_id;
         if (segId) this.idMap.clips.set(clip.id, segId);
 
@@ -166,7 +188,7 @@ export class JianyingAdapter implements INleAdapter {
 
     let textTrackId: string | null = null;
     for (const [ktepId, jyId] of this.idMap.tracks) {
-      if (ktepId.includes('caption') || ktepId.includes('subtitle')) {
+      if (this.trackKindMap.get(ktepId) === 'subtitle') {
         textTrackId = jyId;
         break;
       }
@@ -184,13 +206,16 @@ export class JianyingAdapter implements INleAdapter {
     if (!textTrackId) return;
 
     for (const cue of cues) {
-      await this.mcp.call('add_text_segment', {
+      const res = await this.mcp.call('add_text_segment', {
         track_id: textTrackId,
         text: cue.text,
         target_start_end: msToRange(cue.startMs, cue.endMs),
         style: { size: this.config.subtitleSize },
         clip_settings: { transform_y: this.config.subtitleY },
-      });
+      }) as any;
+      if (res?.success === false) {
+        throw new Error(`Jianying add_text_segment failed: ${res.message ?? cue.text}`);
+      }
     }
   }
 

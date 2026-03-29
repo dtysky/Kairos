@@ -15,7 +15,7 @@ Full deployment guide for a new device. Kairos has three subsystems:
 |-----------|---------|----------|----------|
 | TypeScript core | Node.js >= 16 + pnpm | `./` (root) | Always |
 | ML server | Python >= 3.10 + uv/pip | `ml-server/` | For media analysis |
-| Jianying MCP | Python >= 3.13 + uv | `vendor/jianying-mcp/` | For Jianying export |
+| Jianying MCP | Python >= 3.13 + uv | `vendor/jianying-mcp/` | Configured externally by MCP host for Jianying export |
 
 LLM 调用由 Cursor / Codex agent 直接完成，不需要单独配置 LLM API key。
 
@@ -105,17 +105,38 @@ uv python install 3.13
 uv sync
 ```
 
-No need to start separately — Kairos spawns it via stdio on demand.
+Kairos 不再在内部直接拉起它；请在你的工程 / MCP host 中把它配置成独立 MCP server。
 
-### Configure paths
+### Configure external MCP server
 
-When using `createJianyingMcpCaller`, provide:
+Example:
 
-| Param | Meaning | Example |
-|-------|---------|---------|
-| `jianyingMcpRoot` | Vendored MCP root | `./vendor/jianying-mcp` |
-| `savePath` | Intermediate data dir | `/tmp/kairos-drafts` |
-| `outputPath` | Jianying drafts dir | Platform-specific, see below |
+```json
+{
+  "mcpServers": {
+    "jianying": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "H:\\SpriaHeaven\\Kairos\\vendor\\jianying-mcp\\jianyingdraft",
+        "run",
+        "server.py"
+      ],
+      "env": {
+        "SAVE_PATH": "H:\\SpriaHeaven\\Kairos\\.tmp\\jianying-save",
+        "OUTPUT_PATH": "C:\\Users\\<USER>\\AppData\\Local\\JianyingPro\\User Data\\Projects\\com.lveditor.draft"
+      }
+    }
+  }
+}
+```
+
+需要保证：
+
+- `uv` 可用
+- `SAVE_PATH` 目录存在
+- `OUTPUT_PATH` 指向当前机器的剪映草稿目录
+- 这个 MCP server 由宿主环境管理生命周期，而不是由 Kairos Core 直接启动
 
 Jianying draft directories by platform:
 
@@ -185,7 +206,7 @@ ls vendor/jianying-mcp/jianyingdraft/server.py
 | ML server `torch not found` | Install PyTorch separately matching your CUDA version |
 | `faster-whisper` fails on macOS | Falls back to CPU; set `CT2_USE_MKL=0` if MKL errors |
 | jianying-mcp `Python >= 3.13 required` | Use `uv python install 3.13` then `uv sync` |
-| `SAVE_PATH not found` | Create the directory: `mkdir -p /tmp/kairos-drafts` |
+| `SAVE_PATH not found` | Create the directory configured in the MCP host, e.g. `mkdir -p /tmp/kairos-drafts` |
 | ffmpeg/ffprobe not found on Windows | Set `FFMPEG_PATH` / `FFPROBE_PATH` environment variables |
 
 ## Project Structure Reference

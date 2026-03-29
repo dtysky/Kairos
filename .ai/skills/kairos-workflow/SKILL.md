@@ -126,12 +126,19 @@ project/
 
 ### Phase 5: Export (NLE 导出)
 
-**子 skill**: [kairos-export](../kairos-export/SKILL.md)
+**子 skill**:
+- [kairos-export](../kairos-export/SKILL.md) — 导出路由
+- [kairos-export-jianying](../kairos-export-jianying/SKILL.md) — 导出到剪映
+- [kairos-export-resolve](../kairos-export-resolve/SKILL.md) — 导出到达芬奇
 
 输入：`timeline/current.json`
-产出：剪映草稿 + `subtitles/*.srt`
+产出：按目标 NLE 生成草稿 / 时间线 + `subtitles/*.srt`
 
 前置条件：`timeline/current.json` 存在且通过 KTEP 校验
+
+执行方式：
+- 若用户已明确目标 NLE，直接选择对应导出 skill
+- 若用户只说“导出”，先用 `kairos-export` 决定目标，再路由到具体 skill
 
 ## 状态检查
 

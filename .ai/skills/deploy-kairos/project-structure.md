@@ -51,8 +51,7 @@ Kairos/
 │       │   └── index.ts
 │       └── nle/              # M4: NLE adapter layer
 │           ├── adapter.ts    # INleAdapter interface + executeAdapter
-│           ├── mcp-caller.ts # IMcpCaller interface
-│           ├── mcp-stdio.ts  # StdioMcpCaller + createJianyingMcpCaller
+│           ├── mcp-caller.ts # IMcpCaller interface (injected by external MCP host)
 │           ├── jianying.ts   # JianyingAdapter
 │           ├── export-srt.ts # SRT/WebVTT export
 │           └── index.ts
@@ -68,7 +67,7 @@ Kairos/
 │       └── vlm_runner.py     # Scene analysis via Florence-2
 │
 ├── vendor/
-│   └── jianying-mcp/        # Vendored Jianying MCP server
+│   └── jianying-mcp/        # Vendored external Jianying MCP server
 │       ├── pyproject.toml    # Requires Python >= 3.13
 │       └── jianyingdraft/
 │           └── server.py     # MCP stdio entry point
@@ -95,7 +94,9 @@ Kairos/
         ├── kairos-style-analysis/  # Style extraction from reference works
         ├── kairos-script/    # Phase 3: script generation
         ├── kairos-timeline/  # Phase 4: timeline construction
-        └── kairos-export/    # Phase 5: NLE export
+        ├── kairos-export/    # Phase 5: export router
+        ├── kairos-export-jianying/ # Phase 5: Jianying export
+        └── kairos-export-resolve/  # Phase 5: Resolve export
 ```
 
 ## Naming Conventions
@@ -111,7 +112,7 @@ Kairos/
 | Service | Port | Endpoints |
 |---------|------|-----------|
 | ML server | 8910 | `/health`, `/asr`, `/ocr`, `/clip/embed`, `/vlm/analyze` |
-| Jianying MCP | stdio | `create_draft`, `create_track`, `add_*_segment`, `export_draft` |
+| Jianying MCP | External MCP host | `create_draft`, `create_track`, `add_*_segment`, `export_draft` |
 
 ## Data Flow
 
@@ -124,5 +125,5 @@ Raw Media → scanner → probe → capture-time → shot-detect → slicer → 
                                                                         ↓
                             timeline-builder → placement → transition → subtitle
                                                                         ↓
-                                    JianyingAdapter → jianying-mcp → 剪映草稿
+                                    JianyingAdapter → external jianying-mcp → 剪映草稿
 ```
