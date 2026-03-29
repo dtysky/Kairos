@@ -62,31 +62,45 @@ def _extract_audio_wav(media_path: str) -> Path:
     return out_path
 
 
+def _torch_device_str() -> str:
+    if DEVICE == "cuda":
+        return "cuda:0"
+    if DEVICE == "mps":
+        return "mps"
+    return "cpu"
+
+
 def _get_pipeline():
     global _asr_pipeline
     if _asr_pipeline is not None:
         return _asr_pipeline
 
     model_id = "openai/whisper-small"
-    torch_dtype = torch.float16 if DEVICE == "cuda" else torch.float32
+    use_fp16 = DEVICE in ("cuda", "mps")
+    torch_dtype = torch.float16 if use_fp16 else torch.float32
+
     model = AutoModelForSpeechSeq2Seq.from_pretrained(
         model_id,
         torch_dtype=torch_dtype,
         low_cpu_mem_usage=True,
         use_safetensors=True,
     )
-    if DEVICE == "cuda":
-        model = model.to("cuda")
+    device_str = _torch_device_str()
+    model = model.to(device_str)
 
     processor = AutoProcessor.from_pretrained(model_id)
-    device = 0 if DEVICE == "cuda" else -1
+
+    device_arg = device_str
+    if DEVICE == "cuda":
+        device_arg = 0
+
     _asr_pipeline = pipeline(
         "automatic-speech-recognition",
         model=model,
         tokenizer=processor.tokenizer,
         feature_extractor=processor.feature_extractor,
         torch_dtype=torch_dtype,
-        device=device,
+        device=device_arg,
     )
     return _asr_pipeline
 

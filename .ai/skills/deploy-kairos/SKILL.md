@@ -14,8 +14,18 @@ Full deployment guide for a new device. Kairos has three subsystems:
 | Subsystem | Runtime | Location | Required |
 |-----------|---------|----------|----------|
 | TypeScript core | Node.js >= 16 + pnpm | `./` (root) | Always |
-| ML server | Python >= 3.10 + uv/pip | `ml-server/` | For media analysis (`transformers Whisper` + `Qwen3-VL-4B-Instruct`) |
+| ML server | Python >= 3.10 + uv/pip | `ml-server/` | For media analysis (Whisper ASR + VLM) |
 | Jianying MCP | Python >= 3.13 + uv | `vendor/jianying-mcp/` | Configured externally by MCP host for Jianying export |
+
+### 平台 ML 后端差异
+
+| Platform | ASR | VLM | 安装方式 |
+|----------|-----|-----|---------|
+| Windows + NVIDIA GPU | Whisper (transformers, CUDA) | Qwen3-VL-4B (transformers, CUDA) | `pip install -e ".[ocr]"` |
+| macOS Apple Silicon | Whisper (transformers, MPS) | Qwen3-VL-4B (**mlx-vlm**) | `pip install -e ".[mlx]"` |
+| Linux / macOS Intel | Whisper (transformers, CPU) | Qwen3-VL-4B (transformers, CPU) | `pip install -e ".[ocr]"` |
+
+VLM 后端自动检测：`KAIROS_VLM_MODEL_SOURCE=auto`（默认）时，macOS 自动用 mlx-vlm，其他平台用 transformers。
 
 LLM 调用由 Cursor / Codex agent 直接完成，不需要单独配置 LLM API key。
 
@@ -64,20 +74,34 @@ Verify: `ls dist/index.js` should exist and `npx tsc --noEmit` should pass.
 
 ### 3b. Install dependencies
 
+**macOS Apple Silicon（推荐）：**
+
 ```bash
 cd ml-server
-uv venv && uv pip install -e ".[ocr]"
+python3 -m venv ../.venv-ml
+source ../.venv-ml/bin/activate
+pip install -e ".[mlx]"
 ```
 
-For Windows with CUDA, install PyTorch with CUDA first:
+mlx-vlm 会自动下载 `mlx-community/Qwen3-VL-4B-Instruct-8bit` 量化模型，无需额外配置。
+
+**Windows + NVIDIA GPU：**
 
 ```bash
-uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+cd ml-server
+uv venv && uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
 uv pip install -e ".[ocr]"
 ```
 
 在 `Windows + NVIDIA GPU` 上，建议直接使用 **Windows 原生 Python 环境** 启动 `kairos-ml`，
 让 `Qwen3-VL-4B-Instruct` 和其他 VLM 推理直接走 `CUDA`。不要从 WSL 拉起这类推理服务。
+
+**Linux / macOS Intel（CPU fallback）：**
+
+```bash
+cd ml-server
+uv venv && uv pip install -e ".[ocr]"
+```
 
 For EasyOCR instead of PaddleOCR:
 
@@ -87,44 +111,60 @@ uv pip install -e ".[ocr-easy]"
 
 ### 3c. Configure VLM model
 
-By default, Kairos now uses `Qwen3-VL-4B-Instruct` through `transformers`, with ModelScope as the default model source.
+VLM 后端通过 `KAIROS_VLM_MODEL_SOURCE` 控制，默认 `auto`：
+
+| `KAIROS_VLM_MODEL_SOURCE` | 行为 |
+|---|---|
+| `auto`（默认） | macOS → mlx-vlm，CUDA → transformers + ModelScope |
+| `mlx` | 强制 mlx-vlm，默认模型 `mlx-community/Qwen3-VL-4B-Instruct-8bit` |
+| `modelscope` | 强制 transformers，从 ModelScope 下载 |
+| `huggingface` | 强制 transformers，从 HuggingFace 下载 |
 
 Optional overrides:
 
 ```bash
-export KAIROS_VLM_MODEL_SOURCE=modelscope   # or: huggingface
-export KAIROS_VLM_MODEL_ID=Qwen/Qwen3-VL-4B-Instruct
-# Optional: point to a pre-downloaded local directory
+export KAIROS_VLM_MODEL_SOURCE=auto          # auto / mlx / modelscope / huggingface
+export KAIROS_VLM_MODEL_ID=Qwen/Qwen3-VL-4B-Instruct   # transformers 模式下的模型 ID
+# Optional: point to a pre-downloaded local directory (overrides source/id)
 export KAIROS_VLM_MODEL_PATH=/path/to/Qwen3-VL-4B-Instruct
 ```
 
 ### 3d. Start ML server
 
-推荐用仓库内的 Windows 管理脚本来启动，而不是手写 `uvicorn` 命令。这个脚本会把服务固定命名为 `kairos-ml`，把 `pid / stdout / stderr` 记录到 `.tmp/run/kairos-ml/`，并且在重启前自动清理旧实例。
+推荐用仓库内的管理脚本来启动，而不是手写 `uvicorn` 命令。脚本会把服务固定命名为 `kairos-ml`，把 `pid / stdout / stderr` 记录到 `.tmp/run/kairos-ml/`，重启前自动清理旧实例。
+
+**macOS / Linux：**
+
+```bash
+./scripts/ml-server.sh start
+./scripts/ml-server.sh status
+./scripts/ml-server.sh logs
+```
+
+**Windows (PowerShell)：**
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/ml-server.ps1 restart
-```
-
-查看状态：
-
-```powershell
 powershell -ExecutionPolicy Bypass -File scripts/ml-server.ps1 status
-```
-
-查看日志：
-
-```powershell
 powershell -ExecutionPolicy Bypass -File scripts/ml-server.ps1 logs
 ```
 
+**手动启动（任意平台）：**
+
 ```bash
-kairos-ml
-# or: uv run python -m kairos_ml.main
+cd ml-server && python -m uvicorn kairos_ml.main:app --host 127.0.0.1 --port 8910
 ```
 
-Verify: `curl http://127.0.0.1:8910/health` should return `{"status":"ok","device":"cuda"}`
-在 Windows + NVIDIA GPU 上，如果这里返回的是 `cpu`，优先检查是不是误在 WSL 环境启动了 ML server。
+Verify: `curl http://127.0.0.1:8910/health`
+
+| Platform | 期望 device |
+|----------|------------|
+| Windows + NVIDIA | `cuda` |
+| macOS Apple Silicon | `mps` |
+| CPU fallback | `cpu` |
+
+在 Windows 上如果返回 `cpu`，检查是否误在 WSL 环境启动了 ML server。
+在 macOS 上首次启动会下载 mlx 量化模型（~3GB），请耐心等待。
 
 ## Step 4: Jianying MCP (optional, for Jianying export)
 
@@ -206,10 +246,23 @@ Windows 补充建议：
 
 推荐的项目配置：
 
+**macOS（Homebrew ffmpeg + VideoToolbox 硬件加速）：**
+
+```json
+{
+  "ffmpegHwaccel": "videotoolbox",
+  "analysisProxyWidth": 1024,
+  "sceneDetectFps": 4
+}
+```
+
+**Windows：**
+
 ```json
 {
   "ffmpegPath": "C:\\Applications\\YourFFmpeg\\ffmpeg.exe",
-  "ffprobePath": "C:\\Applications\\YourFFmpeg\\ffprobe.exe"
+  "ffprobePath": "C:\\Applications\\YourFFmpeg\\ffprobe.exe",
+  "ffmpegHwaccel": "cuda"
 }
 ```
 
@@ -222,8 +275,8 @@ Windows 补充建议：
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `KAIROS_ML_URL` | `http://127.0.0.1:8910` | ML server URL (for remote/cross-device) |
-| `KAIROS_VLM_MODEL_SOURCE` | `modelscope` | VLM checkpoint source: `modelscope` or `huggingface` |
-| `KAIROS_VLM_MODEL_ID` | `Qwen/Qwen3-VL-4B-Instruct` | VLM model identifier |
+| `KAIROS_VLM_MODEL_SOURCE` | `auto` | VLM backend: `auto` / `mlx` / `modelscope` / `huggingface` |
+| `KAIROS_VLM_MODEL_ID` | (per backend) | VLM model identifier (transformers 模式) |
 | `KAIROS_VLM_MODEL_PATH` | unset | Pre-downloaded local VLM directory (overrides source/id) |
 
 Example: ML server on Windows GPU machine, TS core on Mac:
@@ -262,7 +315,8 @@ ls vendor/jianying-mcp/jianyingdraft/server.py
 | `ERR_PNPM_UNEXPECTED_STORE` | Delete `node_modules` and re-run `pnpm install` |
 | `Cannot find module 'node:fs/promises'` | Ensure `@types/node` is installed (`pnpm add -D @types/node`) |
 | ML server `torch not found` | Install PyTorch separately matching your CUDA version |
-| `faster-whisper` fails on macOS | Falls back to CPU; set `CT2_USE_MKL=0` if MKL errors |
+| `faster-whisper` fails on macOS | ML server 现在使用 transformers Whisper，MPS 自动启用 |
+| mlx-vlm 模型下载慢 | 设置 `HF_ENDPOINT=https://hf-mirror.com` 使用镜像 |
 | jianying-mcp `Python >= 3.13 required` | Use `uv python install 3.13` then `uv sync` |
 | `SAVE_PATH not found` | Create the directory configured in the MCP host, e.g. `mkdir -p /tmp/kairos-drafts` |
 | ffmpeg/ffprobe not found on Windows | Set `FFMPEG_PATH` / `FFPROBE_PATH` environment variables |

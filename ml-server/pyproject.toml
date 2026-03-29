@@ -23,6 +23,7 @@ dependencies = [
 [project.optional-dependencies]
 ocr = ["paddleocr", "paddlepaddle"]
 ocr-easy = ["easyocr"]
+mlx = ["mlx-vlm"]
 
 [project.scripts]
 kairos-ml = "kairos_ml.main:run"

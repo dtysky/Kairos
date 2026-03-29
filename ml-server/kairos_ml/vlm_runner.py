@@ -1,54 +1,104 @@
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
-
-import torch
-from modelscope import snapshot_download
-from PIL import Image
-from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
 
 from .device import DEVICE
 
+_backend = None
 _model = None
 _processor = None
 
-CMODEL_ID = os.getenv("KAIROS_VLM_MODEL_ID", "Qwen/Qwen3-VL-4B-Instruct")
-CMODEL_SOURCE = os.getenv("KAIROS_VLM_MODEL_SOURCE", "modelscope")
+CMODEL_SOURCE = os.getenv("KAIROS_VLM_MODEL_SOURCE", "auto")
+CMODEL_ID = os.getenv("KAIROS_VLM_MODEL_ID", "")
 CMODEL_PATH = os.getenv("KAIROS_VLM_MODEL_PATH")
+
+CDEFAULT_MLX_MODEL = "mlx-community/Qwen3-VL-4B-Instruct-8bit"
+CDEFAULT_CUDA_MODEL = "Qwen/Qwen3-VL-4B-Instruct"
 
 
 def _repo_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
+def _pick_backend() -> str:
+    source = CMODEL_SOURCE.strip().lower()
+    if source == "mlx":
+        return "mlx"
+    if source in ("modelscope", "huggingface", "transformers"):
+        return "transformers"
+    if DEVICE == "mps" or (DEVICE == "cpu" and sys.platform == "darwin"):
+        return "mlx"
+    return "transformers"
+
+
+# ── MLX backend ──────────────────────────────────────────────
+
+def _load_mlx():
+    global _backend, _model, _processor
+    if _backend == "mlx":
+        return
+
+    from mlx_vlm import load  # type: ignore
+
+    model_ref = CMODEL_PATH or CMODEL_ID or CDEFAULT_MLX_MODEL
+    _model, _processor = load(model_ref)
+    _backend = "mlx"
+
+
+def _analyze_mlx(image_paths: list[str], prompt: str) -> str:
+    from mlx_vlm import generate, apply_chat_template  # type: ignore
+
+    abs_paths = [str(Path(p).resolve()) for p in image_paths]
+    prompt_text = (
+        f"{prompt}\n"
+        "Return only one JSON object and do not wrap it in markdown."
+    )
+    formatted = apply_chat_template(_processor, _model.config, prompt_text, abs_paths)
+    return generate(
+        _model,
+        _processor,
+        formatted,
+        abs_paths,
+        max_tokens=512,
+        temperature=0.1,
+        verbose=False,
+    )
+
+
+# ── Transformers backend (CUDA / CPU) ───────────────────────
+
 def _default_local_model_path() -> Path:
     return _repo_root() / "models" / "Qwen3-VL-4B-Instruct"
 
 
-def _resolve_model_ref() -> str:
+def _resolve_transformers_ref() -> str:
     if CMODEL_PATH:
         return CMODEL_PATH
-    default_local_path = _default_local_model_path()
-    if default_local_path.exists():
-        return str(default_local_path)
-    if CMODEL_SOURCE == "modelscope":
-        return snapshot_download(CMODEL_ID)
-    if CMODEL_SOURCE == "huggingface":
-        return CMODEL_ID
-    raise ValueError(f"Unsupported VLM model source: {CMODEL_SOURCE}")
+    default_local = _default_local_model_path()
+    if default_local.exists():
+        return str(default_local)
+
+    model_id = CMODEL_ID or CDEFAULT_CUDA_MODEL
+    source = CMODEL_SOURCE.strip().lower()
+    if source == "modelscope" or (source == "auto" and DEVICE == "cuda"):
+        from modelscope import snapshot_download
+        return snapshot_download(model_id)
+    return model_id
 
 
-def _model_device() -> str:
-    return "cuda" if DEVICE == "cuda" else "cpu"
+def _load_transformers():
+    global _backend, _model, _processor
 
-
-def _load():
-    global _model, _processor
-    if _model is not None and _processor is not None:
+    if _backend == "transformers":
         return
 
-    model_ref = _resolve_model_ref()
+    import torch
+    from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
+    from PIL import Image  # noqa: F401 — ensure Pillow is available
+
+    model_ref = _resolve_transformers_ref()
     _processor = AutoProcessor.from_pretrained(model_ref)
 
     if DEVICE == "cuda":
@@ -65,20 +115,12 @@ def _load():
         ).eval()
         _model = _model.to("cpu")
 
-
-def _load_images(image_paths: list[str]) -> list[Image.Image]:
-    images: list[Image.Image] = []
-    for path in image_paths:
-        with Image.open(path) as source:
-            images.append(source.convert("RGB"))
-    return images
+    _backend = "transformers"
 
 
-def analyze(image_paths: list[str], prompt: str) -> str:
-    if not image_paths:
-        raise ValueError("No images provided for VLM analysis")
-
-    _load()
+def _analyze_transformers(image_paths: list[str], prompt: str) -> str:
+    import torch
+    from PIL import Image
 
     prompt_text = (
         f"{prompt}\n"
@@ -89,47 +131,51 @@ def analyze(image_paths: list[str], prompt: str) -> str:
             "role": "user",
             "content": [
                 *[
-                    {
-                        "type": "image",
-                        "image": str(Path(path).resolve()),
-                    }
-                    for path in image_paths
+                    {"type": "image", "image": str(Path(p).resolve())}
+                    for p in image_paths
                 ],
-                {
-                    "type": "text",
-                    "text": prompt_text,
-                },
+                {"type": "text", "text": prompt_text},
             ],
         },
     ]
     text = _processor.apply_chat_template(
-        messages,
-        tokenize=False,
-        add_generation_prompt=True,
+        messages, tokenize=False, add_generation_prompt=True,
     )
-    images = _load_images(image_paths)
-    inputs = _processor(
-        text=[text],
-        images=images,
-        padding=True,
-        return_tensors="pt",
-    )
+
+    images: list[Image.Image] = []
+    for path in image_paths:
+        with Image.open(path) as src:
+            images.append(src.convert("RGB"))
+
+    inputs = _processor(text=[text], images=images, padding=True, return_tensors="pt")
     inputs.pop("token_type_ids", None)
     if DEVICE == "cuda":
         inputs = {
-            key: value.to(_model_device()) if hasattr(value, "to") else value
-            for key, value in inputs.items()
+            k: v.to("cuda") if hasattr(v, "to") else v
+            for k, v in inputs.items()
         }
 
-    generated_ids = _model.generate(**inputs, max_new_tokens=256)
+    with torch.no_grad():
+        generated_ids = _model.generate(**inputs, max_new_tokens=512)
+
     input_ids = inputs["input_ids"]
-    generated_ids_trimmed = [
-        output_ids[len(input_id):]
-        for input_id, output_ids in zip(input_ids, generated_ids)
-    ]
+    trimmed = [out[len(inp):] for inp, out in zip(input_ids, generated_ids)]
     outputs = _processor.batch_decode(
-        generated_ids_trimmed,
-        skip_special_tokens=True,
-        clean_up_tokenization_spaces=False,
+        trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False,
     )
     return outputs[0] if outputs else ""
+
+
+# ── Public API ───────────────────────────────────────────────
+
+def analyze(image_paths: list[str], prompt: str) -> str:
+    if not image_paths:
+        raise ValueError("No images provided for VLM analysis")
+
+    backend = _pick_backend()
+    if backend == "mlx":
+        _load_mlx()
+        return _analyze_mlx(image_paths, prompt)
+    else:
+        _load_transformers()
+        return _analyze_transformers(image_paths, prompt)
