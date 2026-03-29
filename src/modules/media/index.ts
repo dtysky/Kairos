@@ -9,6 +9,7 @@ export {
   type IMediaRootResolution,
 } from './root-resolver.js';
 export { probe, type IProbeResult, type IMediaToolConfig } from './probe.js';
+export { toExecutableInputPath } from './tool-path.js';
 export { resolveCaptureTime } from './capture-time.js';
 export { detectShots, computeRhythmStats, type IShotBoundary, type IRhythmStats } from './shot-detect.js';
 export {

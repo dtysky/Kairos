@@ -1,5 +1,19 @@
 export { readJson, readJsonOrNull, writeJson } from './writer.js';
 export {
+  buildProjectBriefTemplate,
+  parseProjectBrief,
+  normalizeProjectBriefLocalPath,
+  type IProjectBriefTemplateInput,
+  type IProjectBriefPathMapping,
+  type IParsedProjectBrief,
+} from './project-brief.js';
+export {
+  syncProjectBriefMappings,
+  buildProjectBriefWithMappings,
+  type ISyncProjectBriefInput,
+  type ISyncProjectBriefResult,
+} from './project-brief-sync.js';
+export {
   initProject,
   loadManifest,
   loadProject,
@@ -8,6 +22,14 @@ export {
   touchProjectUpdatedAt,
   type IRuntimeConfig,
 } from './project.js';
+export {
+  IKairosProgress,
+  IKairosProgressStep,
+  getProjectProgressPath,
+  writeKairosProgress,
+  estimateRemainingSeconds,
+  type IWriteKairosProgressInput,
+} from './progress.js';
 export {
   resolveProjectsRoot,
   resolveWorkspaceProjectRoot,

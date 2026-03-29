@@ -4,6 +4,7 @@ import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { IMediaToolConfig } from './probe.js';
 import type { IShotBoundary } from './shot-detect.js';
+import { toExecutableInputPath } from './tool-path.js';
 
 const exec = promisify(execFile);
 
@@ -45,6 +46,7 @@ export async function extractKeyframes(
 ): Promise<IKeyframeResult[]> {
   await mkdir(outputDir, { recursive: true });
   const ffmpeg = tools?.ffmpegPath?.trim() || 'ffmpeg';
+  const inputPath = toExecutableInputPath(filePath, ffmpeg);
   const analysisWidth = tools?.analysisProxyWidth && tools.analysisProxyWidth > 0
     ? Math.round(tools.analysisProxyWidth)
     : 1024;
@@ -59,15 +61,16 @@ export async function extractKeyframes(
   for (const ts of timestampsMs) {
     const sec = ts / 1000;
     const outPath = join(outputDir, `kf_${ts}.jpg`);
+    const outputPathForTool = toExecutableInputPath(outPath, ffmpeg);
     try {
       await exec(ffmpeg, [
         '-ss', sec.toFixed(3),
-        '-i', filePath,
+        '-i', inputPath,
         '-vf', vf,
         '-frames:v', '1',
         '-q:v', '2',
         '-y',
-        outPath,
+        outputPathForTool,
       ]);
       results.push({ timeMs: ts, path: outPath });
     } catch {

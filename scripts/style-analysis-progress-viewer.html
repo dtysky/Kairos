@@ -469,7 +469,7 @@
     </div>
 
     <script>
-      const STEP_LABELS = [
+      const DEFAULT_STEP_LABELS = [
         { key: 'probe', label: '读取元数据' },
         { key: 'scene-detect', label: '场景检测' },
         { key: 'keyframes', label: '抽取关键帧' },
@@ -501,6 +501,20 @@
 
       let latestProgress = null;
       let refreshInFlight = false;
+
+      function getStepDefinitions(progress) {
+        const stepDefinitions = progress.stepDefinitions || progress.extra?.stepDefinitions;
+        if (Array.isArray(stepDefinitions) && stepDefinitions.length > 0) {
+          return stepDefinitions;
+        }
+        if (progress.stepTotal && progress.stepTotal > 0) {
+          return Array.from({ length: progress.stepTotal }, (_, index) => ({
+            key: `step-${index + 1}`,
+            label: `步骤 ${index + 1}`
+          }));
+        }
+        return DEFAULT_STEP_LABELS;
+      }
 
       function formatClock(seconds) {
         if (seconds == null || Number.isNaN(seconds)) return '--:--';
@@ -537,7 +551,13 @@
 
       function renderOutputs(progress) {
         const extra = progress.extra || {};
+        const declaredLinks = Array.isArray(extra.outputLinks) ? extra.outputLinks : [];
         const links = [];
+        for (const item of declaredLinks) {
+          if (!item || typeof item !== 'object') continue;
+          if (!item.href || !item.label) continue;
+          links.push(`<a href="${item.href}" target="_blank" rel="noreferrer">${item.label}</a>`);
+        }
         if (extra.summaryPath) {
           links.push(`<a href="./summary.json" target="_blank" rel="noreferrer">summary.json</a>`);
         }
@@ -551,8 +571,9 @@
       }
 
       function renderStepTrack(progress) {
+        const stepDefinitions = getStepDefinitions(progress);
         const currentKey = progress.step;
-        stepTrackEl.innerHTML = STEP_LABELS.map((item, index) => {
+        stepTrackEl.innerHTML = stepDefinitions.map((item, index) => {
           const active = item.key === currentKey;
           const meta = active ? '当前步骤' : `步骤 ${index + 1}`;
           return `
@@ -569,12 +590,13 @@
 
       function render(progress) {
         latestProgress = progress;
-        const fallbackIndex = STEP_LABELS.findIndex(item => item.key === progress.step);
+        const stepDefinitions = getStepDefinitions(progress);
+        const fallbackIndex = stepDefinitions.findIndex(item => item.key === progress.step);
         const stepIndex = progress.stepIndex || (fallbackIndex >= 0 ? fallbackIndex + 1 : null);
-        const stepTotal = progress.stepTotal || STEP_LABELS.length;
-        const pipelineLabel = progress.pipelineLabel || '风格分析流程';
-        const phaseLabel = progress.phaseLabel || '历史作品风格提取';
-        const categoryLabel = progress.categoryName || progress.categorySlug || '未命名分类';
+        const stepTotal = progress.stepTotal || stepDefinitions.length;
+        const pipelineLabel = progress.pipelineLabel || 'Kairos 流程';
+        const phaseLabel = progress.phaseLabel || '等待任务启动';
+        const categoryLabel = progress.categoryName || progress.categorySlug || progress.extra?.projectName || '当前任务';
 
         titleEl.textContent = pipelineLabel;
         subtitleEl.textContent = phaseLabel;

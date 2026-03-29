@@ -41,6 +41,7 @@ analyzeWorkspaceProjectMedia(input: {
   assetIds?: string[];
   deviceMapPath?: string;
   budget?: 'coarse' | 'standard' | 'deep';
+  progressPath?: string;
 }): Promise<{
   projectRoot: string;
   analyzedAssetIds: string[];
@@ -144,6 +145,30 @@ const localPath = resolveAssetLocalPath(projectId, asset, roots, deviceMaps);
 5. 自动决定是否细扫并生成 slices
 
 6. 更新 chronology
+
+## 进度展示
+
+素材分析复用 Kairos 通用进度页，而不是复用风格分析的业务逻辑。
+
+- 默认进度文件建议写到：
+
+```text
+projects/<projectId>/.tmp/media-analyze/progress.json
+```
+
+- 本地网页可直接复用：
+
+```text
+scripts/kairos-progress.ps1
+scripts/kairos-progress.sh
+```
+
+- `progress.json` 的关键字段包括：
+  - `pipelineKey / pipelineLabel`
+  - `step / stepLabel / stepIndex / stepTotal`
+  - `fileIndex / fileTotal`
+  - `current / total / unit`
+  - `etaSeconds`
 
 ## 产出
 

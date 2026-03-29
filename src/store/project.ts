@@ -1,9 +1,10 @@
-import { mkdir } from 'node:fs/promises';
-import { join } from 'node:path';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { basename, dirname, join, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { IStoreManifest, IMediaRoot, IKtepProject } from '../protocol/schema.js';
 import { readJson, readJsonOrNull, writeJson } from './writer.js';
 import { z } from 'zod';
+import { buildProjectBriefTemplate } from './project-brief.js';
 
 const CDIRS = [
   'config',
@@ -37,7 +38,11 @@ const IRuntimeConfig = z.object({
 });
 export type IRuntimeConfig = z.infer<typeof IRuntimeConfig>;
 
-export async function initProject(root: string, name: string): Promise<void> {
+export async function initProject(
+  root: string,
+  name: string,
+  description?: string,
+): Promise<void> {
   for (const dir of CDIRS) {
     await mkdir(join(root, dir), { recursive: true });
   }
@@ -62,12 +67,15 @@ export async function initProject(root: string, name: string): Promise<void> {
   const ingestRoots: IIngestRoots = { roots: [] };
   await writeJson(join(root, 'config/ingest-roots.json'), ingestRoots);
 
-  const runtimeConfig: IRuntimeConfig = {
-    analysisProxyWidth: 1024,
-    analysisProxyPixelFormat: 'yuv420p',
-    sceneDetectFps: 4,
-  };
-  await writeJson(join(root, 'config/runtime.json'), runtimeConfig);
+  await writeFile(
+    join(root, 'config/project-brief.md'),
+    buildProjectBriefTemplate({
+      name,
+      description,
+      createdAt: now,
+    }),
+    'utf-8',
+  );
 }
 
 export async function loadManifest(root: string): Promise<IStoreManifest> {
@@ -84,8 +92,11 @@ export async function loadIngestRoots(root: string): Promise<IIngestRoots> {
 }
 
 export async function loadRuntimeConfig(root: string): Promise<IRuntimeConfig> {
-  const data = await readJsonOrNull(join(root, 'config/runtime.json'), IRuntimeConfig);
-  return data ?? {};
+  for (const candidate of getRuntimeConfigCandidates(root)) {
+    const data = await readJsonOrNull(candidate, IRuntimeConfig);
+    if (data) return data;
+  }
+  return {};
 }
 
 export async function touchProjectUpdatedAt(root: string): Promise<IKtepProject> {
@@ -96,4 +107,16 @@ export async function touchProjectUpdatedAt(root: string): Promise<IKtepProject>
   };
   await writeJson(join(root, 'store/project.json'), updated);
   return updated;
+}
+
+function getRuntimeConfigCandidates(root: string): string[] {
+  const normalizedRoot = resolve(root);
+  const candidates = [join(normalizedRoot, 'config/runtime.json')];
+
+  const parent = dirname(normalizedRoot);
+  if (basename(parent) === 'projects') {
+    candidates.push(join(dirname(parent), 'config/runtime.json'));
+  }
+
+  return [...new Set(candidates)];
 }

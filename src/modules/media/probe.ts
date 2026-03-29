@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { toExecutableInputPath } from './tool-path.js';
 
 const exec = promisify(execFile);
 
@@ -25,12 +26,13 @@ export interface IProbeResult {
 
 export async function probe(filePath: string, tools?: IMediaToolConfig): Promise<IProbeResult> {
   const ffprobe = tools?.ffprobePath?.trim() || 'ffprobe';
+  const inputPath = toExecutableInputPath(filePath, ffprobe);
   const { stdout } = await exec(ffprobe, [
     '-v', 'quiet',
     '-print_format', 'json',
     '-show_format',
     '-show_streams',
-    filePath,
+    inputPath,
   ]);
 
   const data = JSON.parse(stdout);

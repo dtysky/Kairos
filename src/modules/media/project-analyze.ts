@@ -10,15 +10,19 @@ import type {
 } from '../../protocol/schema.js';
 import {
   appendSlices,
+  estimateRemainingSeconds,
   findUnreportedAssets,
   loadAssetReports,
   loadAssets,
   loadChronology,
   loadDeviceMediaMaps,
   loadIngestRoots,
+  loadProject,
   loadRuntimeConfig,
   resolveWorkspaceProjectRoot,
+  getProjectProgressPath,
   touchProjectUpdatedAt,
+  writeKairosProgress,
   writeChronology,
   writeAssetReport,
 } from '../../store/index.js';
@@ -40,6 +44,7 @@ export interface IAnalyzeWorkspaceProjectInput {
   assetIds?: string[];
   deviceMapPath?: string;
   budget?: ETargetBudget;
+  progressPath?: string;
 }
 
 export interface IAnalyzeWorkspaceProjectResult {
@@ -52,16 +57,26 @@ export interface IAnalyzeWorkspaceProjectResult {
   mlUsed: boolean;
 }
 
+const CANALYZE_STEP_DEFINITIONS = [
+  { key: 'prepare', label: '准备素材分析' },
+  { key: 'coarse-scan', label: '粗扫素材' },
+  { key: 'fine-scan', label: '自动细扫重点内容' },
+  { key: 'chronology', label: '刷新时间视图' },
+] as const;
+
 export async function analyzeWorkspaceProjectMedia(
   input: IAnalyzeWorkspaceProjectInput,
 ): Promise<IAnalyzeWorkspaceProjectResult> {
   const projectRoot = resolveWorkspaceProjectRoot(input.workspaceRoot, input.projectId);
-  const [{ roots }, deviceMaps, runtimeConfig, assets, existingReports] = await Promise.all([
+  const progressPath = input.progressPath ?? getProjectProgressPath(projectRoot, 'media-analyze');
+  const startedAtMs = Date.now();
+  const [{ roots }, deviceMaps, runtimeConfig, assets, existingReports, project] = await Promise.all([
     loadIngestRoots(projectRoot),
     loadDeviceMediaMaps(input.deviceMapPath),
     loadRuntimeConfig(projectRoot),
     loadAssets(projectRoot),
     loadAssetReports(projectRoot),
+    loadProject(projectRoot),
   ]);
 
   const pendingAssets = selectPendingAssets(assets, existingReports, input.assetIds);
@@ -71,55 +86,212 @@ export async function analyzeWorkspaceProjectMedia(
   let mlHandle: MlAvailability | null = null;
   let mlUsed = false;
 
-  for (const asset of pendingAssets) {
-    const localPath = resolveAssetLocalPath(input.projectId, asset, roots, deviceMaps);
-    if (!localPath) continue;
+  await writeKairosProgress(progressPath, {
+    status: 'running',
+    pipelineKey: 'media-analyze',
+    pipelineLabel: '素材分析流程',
+    phaseKey: 'coarse-first-project-analysis',
+    phaseLabel: '粗扫优先素材分析',
+    step: 'prepare',
+    stepLabel: '准备素材分析',
+    stepIndex: 1,
+    stepTotal: CANALYZE_STEP_DEFINITIONS.length,
+    stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
+    fileIndex: 0,
+    fileTotal: pendingAssets.length,
+    current: 0,
+    total: pendingAssets.length,
+    unit: 'files',
+    detail: `正在读取项目“${project.name}”的素材与设备映射`,
+    extra: {
+      projectId: input.projectId,
+      projectName: project.name,
+    },
+  });
 
-    const analysis = await analyzeSingleAsset({
-      asset,
-      localPath,
-      projectRoot,
-      roots,
-      runtimeConfig,
-      budget: input.budget,
-      getMlHandle: async () => {
-        mlHandle ??= await createMlAvailability(runtimeConfig.mlServerUrl);
-        mlUsed ||= mlHandle.available;
-        return mlHandle;
+  try {
+    for (const [index, asset] of pendingAssets.entries()) {
+      const localPath = resolveAssetLocalPath(input.projectId, asset, roots, deviceMaps);
+      const completedCount = analyzedAssetIds.length;
+      const fileIndex = index + 1;
+      const etaSeconds = estimateRemainingSeconds(startedAtMs, completedCount, pendingAssets.length);
+
+      await writeKairosProgress(progressPath, {
+        status: 'running',
+        pipelineKey: 'media-analyze',
+        pipelineLabel: '素材分析流程',
+        phaseKey: 'coarse-first-project-analysis',
+        phaseLabel: '粗扫优先素材分析',
+        step: 'coarse-scan',
+        stepLabel: '粗扫素材',
+        stepIndex: 2,
+        stepTotal: CANALYZE_STEP_DEFINITIONS.length,
+        stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
+        fileName: asset.displayName,
+        fileIndex,
+        fileTotal: pendingAssets.length,
+        current: fileIndex,
+        total: pendingAssets.length,
+        unit: 'files',
+        etaSeconds,
+        detail: localPath
+          ? `正在粗扫 ${asset.displayName}`
+          : `缺少本机路径映射，跳过 ${asset.displayName}`,
+        extra: {
+          projectId: input.projectId,
+          projectName: project.name,
+          assetId: asset.id,
+          assetKind: asset.kind,
+        },
+      });
+
+      if (!localPath) continue;
+
+      const analysis = await analyzeSingleAsset({
+        asset,
+        localPath,
+        projectRoot,
+        roots,
+        runtimeConfig,
+        budget: input.budget,
+        getMlHandle: async () => {
+          mlHandle ??= await createMlAvailability(runtimeConfig.mlServerUrl);
+          mlUsed ||= mlHandle.available;
+          return mlHandle;
+        },
+      });
+
+      await writeAssetReport(projectRoot, analysis.report);
+      analyzedAssetIds.push(asset.id);
+
+      if (analysis.slices.length > 0) {
+        await writeKairosProgress(progressPath, {
+          status: 'running',
+          pipelineKey: 'media-analyze',
+          pipelineLabel: '素材分析流程',
+          phaseKey: 'coarse-first-project-analysis',
+          phaseLabel: '粗扫优先素材分析',
+          step: 'fine-scan',
+          stepLabel: '自动细扫重点内容',
+          stepIndex: 3,
+          stepTotal: CANALYZE_STEP_DEFINITIONS.length,
+          stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
+          fileName: asset.displayName,
+          fileIndex,
+          fileTotal: pendingAssets.length,
+          current: fileIndex,
+          total: pendingAssets.length,
+          unit: 'files',
+          etaSeconds: estimateRemainingSeconds(startedAtMs, analyzedAssetIds.length, pendingAssets.length),
+          detail: `已为 ${asset.displayName} 生成 ${analysis.slices.length} 个候选切片`,
+          extra: {
+            projectId: input.projectId,
+            projectName: project.name,
+            assetId: asset.id,
+            fineScanMode: analysis.report.fineScanMode,
+            sliceCount: analysis.slices.length,
+          },
+        });
+        await appendSlices(projectRoot, analysis.slices);
+        pendingSlices.push(...analysis.slices);
+        fineScannedAssetIds.push(asset.id);
+      }
+    }
+
+    await writeKairosProgress(progressPath, {
+      status: 'running',
+      pipelineKey: 'media-analyze',
+      pipelineLabel: '素材分析流程',
+      phaseKey: 'coarse-first-project-analysis',
+      phaseLabel: '粗扫优先素材分析',
+      step: 'chronology',
+      stepLabel: '刷新时间视图',
+      stepIndex: 4,
+      stepTotal: CANALYZE_STEP_DEFINITIONS.length,
+      stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
+      fileIndex: pendingAssets.length,
+      fileTotal: pendingAssets.length,
+      current: analyzedAssetIds.length,
+      total: pendingAssets.length,
+      unit: 'files',
+      etaSeconds: 0,
+      detail: '正在按拍摄时间刷新 chronology 视图',
+      extra: {
+        projectId: input.projectId,
+        projectName: project.name,
+        fineScannedAssetCount: fineScannedAssetIds.length,
       },
     });
 
-    await writeAssetReport(projectRoot, analysis.report);
-    analyzedAssetIds.push(asset.id);
+    const chronology = buildMediaChronology(
+      await loadAssets(projectRoot),
+      await loadAssetReports(projectRoot),
+      await loadChronology(projectRoot),
+    );
+    await writeChronology(projectRoot, chronology);
+    await touchProjectUpdatedAt(projectRoot);
 
-    if (analysis.slices.length > 0) {
-      await appendSlices(projectRoot, analysis.slices);
-      pendingSlices.push(...analysis.slices);
-      fineScannedAssetIds.push(asset.id);
-    }
+    const missingRoots = roots.filter(
+      root => root.enabled && !resolveAssetRootAvailable(input.projectId, root, deviceMaps),
+    );
+
+    await writeKairosProgress(progressPath, {
+      status: 'succeeded',
+      pipelineKey: 'media-analyze',
+      pipelineLabel: '素材分析流程',
+      phaseKey: 'coarse-first-project-analysis',
+      phaseLabel: '粗扫优先素材分析',
+      step: 'chronology',
+      stepLabel: '素材分析完成',
+      stepIndex: CANALYZE_STEP_DEFINITIONS.length,
+      stepTotal: CANALYZE_STEP_DEFINITIONS.length,
+      stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
+      fileIndex: pendingAssets.length,
+      fileTotal: pendingAssets.length,
+      current: analyzedAssetIds.length,
+      total: pendingAssets.length,
+      unit: 'files',
+      etaSeconds: 0,
+      detail: `已完成 ${analyzedAssetIds.length} 条素材分析，自动细扫 ${fineScannedAssetIds.length} 条`,
+      extra: {
+        projectId: input.projectId,
+        projectName: project.name,
+        analyzedAssetIds,
+        fineScannedAssetIds,
+        chronologyCount: chronology.length,
+      },
+    });
+
+    return {
+      projectRoot,
+      analyzedAssetIds,
+      fineScannedAssetIds,
+      missingRoots,
+      reportCount: analyzedAssetIds.length,
+      sliceCount: pendingSlices.length,
+      mlUsed,
+    };
+  } catch (error) {
+    await writeKairosProgress(progressPath, {
+      status: 'failed',
+      pipelineKey: 'media-analyze',
+      pipelineLabel: '素材分析流程',
+      phaseKey: 'coarse-first-project-analysis',
+      phaseLabel: '粗扫优先素材分析',
+      stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
+      fileIndex: analyzedAssetIds.length,
+      fileTotal: pendingAssets.length,
+      current: analyzedAssetIds.length,
+      total: pendingAssets.length,
+      unit: 'files',
+      detail: error instanceof Error ? error.message : String(error),
+      extra: {
+        projectId: input.projectId,
+        projectName: project.name,
+      },
+    });
+    throw error;
   }
-
-  const chronology = buildMediaChronology(
-    await loadAssets(projectRoot),
-    await loadAssetReports(projectRoot),
-    await loadChronology(projectRoot),
-  );
-  await writeChronology(projectRoot, chronology);
-  await touchProjectUpdatedAt(projectRoot);
-
-  const missingRoots = roots.filter(
-    root => root.enabled && !resolveAssetRootAvailable(input.projectId, root, deviceMaps),
-  );
-
-  return {
-    projectRoot,
-    analyzedAssetIds,
-    fineScannedAssetIds,
-    missingRoots,
-    reportCount: analyzedAssetIds.length,
-    sliceCount: pendingSlices.length,
-    mlUsed,
-  };
 }
 
 interface IAnalyzeSingleAssetInput {

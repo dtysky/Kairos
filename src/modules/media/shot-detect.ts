@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import type { IMediaToolConfig } from './probe.js';
+import { toExecutableInputPath } from './tool-path.js';
 
 const exec = promisify(execFile);
 const DEFAULT_ANALYSIS_PROXY_WIDTH = 1024;
@@ -31,6 +32,7 @@ export async function detectShots(
   tools?: IMediaToolConfig,
 ): Promise<IShotBoundary[]> {
   const ffmpeg = tools?.ffmpegPath?.trim() || 'ffmpeg';
+  const inputPath = toExecutableInputPath(filePath, ffmpeg);
   const hwaccel = tools?.ffmpegHwaccel?.trim();
   const scaleWidth = tools?.analysisProxyWidth ?? tools?.sceneDetectScaleWidth ?? DEFAULT_ANALYSIS_PROXY_WIDTH;
   const pixelFormat = tools?.analysisProxyPixelFormat?.trim() || DEFAULT_ANALYSIS_PROXY_PIXEL_FORMAT;
@@ -47,7 +49,7 @@ export async function detectShots(
   }
 
   args.push(
-    '-i', filePath,
+    '-i', inputPath,
     '-an',
     '-sn',
     '-dn',

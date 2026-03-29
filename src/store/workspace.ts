@@ -1,7 +1,9 @@
-import { readdir } from 'node:fs/promises';
+import { readdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { IKtepProject } from '../protocol/schema.js';
-import { initProject } from './project.js';
+import { initProject, loadProject } from './project.js';
+import { buildProjectBriefWithMappings } from './project-brief-sync.js';
+import { syncProjectBriefMappings } from './project-brief-sync.js';
 import { readJsonOrNull } from './writer.js';
 
 export interface IWorkspaceProjectEntry {
@@ -25,10 +27,40 @@ export async function initWorkspaceProject(
   workspaceRoot: string,
   projectId: string,
   name: string,
+  description?: string,
 ): Promise<string> {
   const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
-  await initProject(projectRoot, name);
+  await initProject(projectRoot, name, description);
   return projectRoot;
+}
+
+export async function syncWorkspaceProjectBrief(
+  workspaceRoot: string,
+  projectId: string,
+  deviceMapPath?: string,
+) {
+  const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
+  return syncProjectBriefMappings({
+    projectId,
+    projectRoot,
+    deviceMapPath,
+  });
+}
+
+export async function writeWorkspaceProjectBrief(
+  workspaceRoot: string,
+  projectId: string,
+  mappings: Array<{ path: string; description: string }>,
+): Promise<string> {
+  const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
+  const project = await loadProject(projectRoot);
+  const content = buildProjectBriefWithMappings({
+    name: project.name,
+    createdAt: project.createdAt,
+    mappings,
+  });
+  await writeFile(join(projectRoot, 'config/project-brief.md'), content, 'utf-8');
+  return content;
 }
 
 export async function listWorkspaceProjects(

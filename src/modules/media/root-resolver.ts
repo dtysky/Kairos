@@ -21,14 +21,9 @@ export function resolveMediaRootsForDevice(
   deviceMaps: IDeviceMediaMapFile,
 ): IMediaRootResolution {
   const projectMap = deviceMaps.projects[projectId];
-  if (!projectMap) {
-    return {
-      resolved: [],
-      missing: roots.filter(root => root.enabled),
-    };
-  }
-
-  const pathMap = new Map(projectMap.roots.map(item => [item.rootId, item.localPath]));
+  const pathMap = new Map(
+    (projectMap?.roots ?? []).map(item => [item.rootId, item.localPath]),
+  );
   const resolved: IResolvedMediaRoot[] = [];
   const missing: IMediaRoot[] = [];
 
