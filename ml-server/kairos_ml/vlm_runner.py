@@ -48,11 +48,15 @@ def _analyze_mlx(image_paths: list[str], prompt: str) -> str:
         f"{prompt}\n"
         "Return only one JSON object and do not wrap it in markdown."
     )
-    formatted = apply_chat_template(_processor, _model.config, prompt_text, abs_paths)
-    return generate(
-        _model, _processor, formatted, abs_paths,
+    formatted = apply_chat_template(
+        _processor, _model.config, prompt_text,
+        num_images=len(abs_paths),
+    )
+    result = generate(
+        _model, _processor, formatted, image=abs_paths,
         max_tokens=512, temperature=0.1, verbose=False,
     )
+    return result.text if hasattr(result, "text") else str(result)
 
 
 # ── Torch backend (CUDA / CPU) ──────────────────────────────
