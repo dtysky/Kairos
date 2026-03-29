@@ -13,8 +13,9 @@ Kairos/
 │   │   └── index.ts
 │   ├── store/
 │   │   ├── writer.ts         # Atomic JSON read/write
-│   │   ├── project.ts        # initProject, loadManifest
+│   │   ├── project.ts        # initProject, loadManifest, loadRuntimeConfig
 │   │   ├── incremental.ts    # mergeAssets, appendAssets, findUnanalyzedAssets
+│   │   ├── progress.ts       # Workflow progress read/write (.tmp/ integration)
 │   │   └── index.ts
 │   └── modules/
 │       ├── media/            # M2: media analysis pipeline
@@ -72,11 +73,17 @@ Kairos/
 │           └── server.py     # MCP stdio entry point
 │
 ├── config/                   # Runtime project config (per-project)
-│   ├── runtime.json          # ffmpeg / ffprobe / ML endpoint config
+│   ├── runtime.json          # ffmpeg / ffprobe / ML endpoint config (gitignored)
 │   └── styles/
 │       ├── catalog.json      # IStyleCatalog: registry of all categories
 │       ├── travel-doc.md     # Style profile per category
 │       └── ...
+│
+├── .tmp/                     # Temporary workspace (gitignored, auto-created)
+│   └── <pipeline>/
+│       └── <scope>/
+│           ├── progress.json # IWorkflowProgress for real-time dashboards
+│           └── ...           # Pipeline-specific temp artifacts
 │
 ├── test/
 │   └── style-profile.md     # Manual style reference (example)

@@ -40,6 +40,8 @@ export {
   IMediaAnalysisPlan,
   IChronologyCorrection,
   IMediaChronology,
+  EWorkflowStatus,
+  IWorkflowProgress,
 } from './schema.js';
 
 export {

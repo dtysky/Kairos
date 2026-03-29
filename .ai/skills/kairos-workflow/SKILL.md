@@ -65,8 +65,10 @@ project/
 │   └── versions/
 ├── subtitles/
 ├── adapters/
-└── analysis/
-    └── reference-transcripts/
+├── analysis/
+│   ├── reference-transcripts/
+│   └── style-references/
+└── .tmp/                       # 临时工作区（gitignored，自动创建）
 ```
 
 后续各阶段产出的文件：
