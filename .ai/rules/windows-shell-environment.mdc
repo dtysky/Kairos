@@ -14,8 +14,10 @@ alwaysApply: true
 ## 命令行约定
 
 - 默认使用 **WSL** 作为日常命令行环境。
+- 在 WSL 中默认使用 **zsh**，不要默认回退到 `bash`。
 - 仅在 **明确需要 CUDA / Windows GPU 环境** 时，才使用 Windows 侧命令行（如 PowerShell）。
 - 如果一个任务同时包含 WSL 与 Windows 步骤，优先把 **非 CUDA** 步骤放在 WSL，减少环境切换。
+- 如果命令依赖用户的 shell 初始化（如 `nvm`、`pnpm`、`PATH` 定制），优先使用能加载用户 `zsh` 环境的调用方式。
 
 ## 典型场景
 
@@ -31,4 +33,5 @@ alwaysApply: true
 ## 原则
 
 - 不因为“当前默认 shell 是 PowerShell”就默认使用 Windows 侧命令行。
+- 不因为 WSL 可用就默认使用 `bash`，应优先遵循用户在 WSL 中的默认工作 shell：`zsh`。
 - 只有在任务对 Windows / CUDA 有明确要求时，才切换过去。
