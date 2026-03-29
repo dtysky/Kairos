@@ -1,20 +1,48 @@
 ---
 name: kairos-style-analysis
 description: >-
-  Analyze historical video works to extract a detailed style profile. Extracts
-  ASR transcripts, shot rhythm, visual themes, and narration patterns from
-  reference videos. Outputs an IStyleProfile compatible with kairos-script.
+  Analyze historical video works to extract a detailed style profile by category.
+  Supports multiple style categories (travel documentary, city walk, etc.) with
+  user-provided guidance prompts. Outputs IStyleProfile compatible with kairos-script.
   Use when the user provides reference videos, wants to analyze their style,
-  or mentions style, tone, voice, or reference works.
+  or mentions style, tone, voice, category, or reference works.
 ---
 
-# Kairos: Style Analysis — 从历史作品提取风格
+# Kairos: Style Analysis — 分类风格提取
 
-从用户的历史成片中提取详细风格档案，产出可直接供 `kairos-script` 使用的 `IStyleProfile`。
+从用户的历史成片中提取详细风格档案。支持多分类管理和用户指导词。
+
+## 核心概念
+
+### 分类 (Category)
+
+用户的作品可能有多种类型，每种类型有不同的风格：
+
+```
+config/styles/
+├── catalog.json                 # 风格目录（注册所有分类）
+├── travel-documentary.md        # 旅行纪录片风格
+├── city-walk.md                 # 城市漫步风格
+├── aerial-showcase.md           # 航拍集锦风格
+└── vlog.md                      # 日常 vlog 风格
+```
+
+每个分类独立分析、独立存储。在 `kairos-script` 阶段，用户选择使用哪个分类的风格。
+
+### 指导词 (Guidance Prompt)
+
+用户在启动风格分析前提供一段指导文本，告诉 agent：
+- 这类作品的定位是什么
+- 分析时重点关注什么（叙事节奏？画面风格？情绪表达？）
+- 忽略什么（如"这几个视频的开头广告部分不是我的风格"）
+- 任何创作理念或偏好
+
+指导词会存储在风格档案的 front-matter 中，供后续参考。
 
 ## 前置条件
 
-- 用户提供 1 到多个历史成片视频文件路径
+- 用户提供同一分类的 1 到多个历史成片视频文件路径
+- 用户提供该分类的名称 + 指导词
 - ML server 运行中（ASR 提取旁白文本）
 - `ffmpeg` / `ffprobe` 可用
 
@@ -24,23 +52,14 @@ description: >-
 
 ```typescript
 probe(filePath: string): Promise<IProbeResult>
-// { durationMs, width, height, fps, codec, creationTime, rawTags }
 ```
 
 ### 编辑节奏分析
 
 ```typescript
 detectShots(filePath: string, threshold?: number): Promise<IShotBoundary[]>
-// 返回镜头切换点 { timeMs, score }
-
 computeRhythmStats(shots: IShotBoundary[], totalDurationMs: number): IRhythmStats
-// 编辑节奏统计：
-// { shotCount, cutsPerMinute,
-//   shotDurationMs: { min, max, median, mean },
-//   introRhythm, bodyRhythm, outroRhythm }
-
 estimateDensity(input: IDensityInput): IDensityResult
-// 综合密度评分 { score, shotRate, speechRatio, ocrDensity }
 ```
 
 ### 关键帧提取
@@ -54,167 +73,233 @@ uniformTimestamps(durationMs: number, intervalMs: number): number[]
 
 ```typescript
 const ml = new MlClient();
-
-// ASR：提取旁白/解说文本（风格分析最核心的输入）
 transcribe(client: MlClient, audioPath: string, language?: string): Promise<ITranscription>
-// { segments: IAsrSegment[], fullText: string, evidence }
-
-// VLM：场景类型、主体、情绪分析
 recognizeFrames(client: MlClient, imagePaths: string[]): Promise<IRecognition>
-// { sceneType, subjects, mood, placeHints, narrativeRole, description }
-
-// OCR：画面中的文字
 extractOcr(client: MlClient, imagePath: string): Promise<IOcrExtraction>
 ```
 
-### 风格档案工具
+### 风格档案管理
 
 ```typescript
-// 从 markdown 解析为 IStyleProfile
-parseStyleMarkdown(markdown: string, name?: string, sourceFiles?: string[]): IStyleProfile
-
-// 生成风格提示词（用于验证产出是否完整）
+loadStyleFromMarkdown(filePath: string, options?: IStyleLoadOptions): Promise<IStyleProfile>
+loadStyleByCategory(stylesDir: string, category: string): Promise<IStyleProfile | null>
+listStyleCategories(stylesDir: string): Promise<IStyleCatalogEntry[]>
+parseStyleMarkdown(markdown: string, options?: IStyleLoadOptions, sourceFiles?: string[]): IStyleProfile
 buildStylePrompt(style: IStyleProfile): string
 ```
 
 ## 工作流程
 
-### Step 1: 提取原始数据
+### Step 0: 收集输入
+
+向用户确认三项信息：
+
+1. **分类名称**（category）：如 `travel-documentary`、`city-walk`、`aerial`
+2. **指导词**（guidance prompt）：一段自由文本，描述分析侧重
+3. **参考视频路径**：1-5 个该分类的历史成片
+
+```
+示例对话：
+用户："分析我的旅行纪录片风格"
+Agent："请提供以下信息：
+  1. 分类名称建议：travel-documentary
+  2. 您的指导词（告诉我分析时重点关注什么）
+  3. 参考视频文件路径"
+用户："分类就叫 travel-doc。指导词：这是我的长途自驾旅行纪录片，
+  重点关注叙事节奏和语言风格，我追求克制的诗意表达。
+  视频在 /videos/south-north.mp4 和 /videos/northwest.mp4"
+```
+
+### Step 1: 检查已有分类
+
+```typescript
+const existing = await listStyleCategories('config/styles');
+// 检查该分类是否已存在，提示用户是覆盖还是新建
+```
+
+### Step 2: 提取原始数据
 
 对每个参考视频执行：
 
 ```typescript
 const meta = await probe(videoPath);
 const shots = await detectShots(videoPath, 0.3);
-const density = estimateDensity({
-  durationMs: meta.durationMs!,
-  shotBoundaries: shots,
-});
+const rhythm = computeRhythmStats(shots, meta.durationMs!);
 ```
 
-### Step 2: ASR 提取旁白（最关键）
+### Step 3: ASR 提取旁白（最关键）
 
 ```typescript
 const ml = new MlClient();
 const transcript = await transcribe(ml, videoPath, 'zh');
-// transcript.fullText 就是完整旁白文本
 ```
 
 将所有视频的 `fullText` 收集起来，这是风格分析的核心材料。
 
-### Step 3: 视觉风格采样
-
-从每个视频均匀采样关键帧，分析视觉主题：
+### Step 4: 视觉风格采样
 
 ```typescript
-const timestamps = uniformTimestamps(meta.durationMs!, 15000); // 每15秒一帧
+const timestamps = uniformTimestamps(meta.durationMs!, 15000);
 const keyframes = await extractKeyframes(videoPath, outputDir, timestamps);
 const recognition = await recognizeFrames(ml, keyframes.map(k => k.path));
 ```
 
-### Step 4: 编辑节奏统计
+### Step 5: 编辑节奏统计
 
 ```typescript
 const rhythm = computeRhythmStats(shots, meta.durationMs!);
-// rhythm.cutsPerMinute — 平均每分钟切换次数
-// rhythm.shotDurationMs.median — 镜头时长中位数
-// rhythm.introRhythm / bodyRhythm / outroRhythm — 三段切换密度
-
 const density = estimateDensity({
   durationMs: meta.durationMs!,
   shotBoundaries: shots,
   asrSegments: transcript.segments,
 });
-// density.speechRatio — 旁白覆盖率
 ```
 
-Agent 综合这些数据归纳编辑节奏特征：快切 vs 长镜头，开头密结尾疏还是均匀，旁白密度等。
+### Step 6: Agent 撰写风格档案（核心创意环节）
 
-### Step 5: Agent 撰写风格档案（核心创意环节）
+Agent 综合以上所有数据 + 用户指导词，撰写风格档案 markdown。
 
-Agent 综合以上所有数据，撰写结构化的风格档案 markdown。
+**关键**：用户的指导词是分析的"指南针"，agent 应该：
+- 优先关注指导词提到的维度
+- 在指导词提到"忽略"的方面简化分析
+- 将指导词中的创作理念融入风格总结
 
-**分析维度清单**（每个维度写成一个 `## 章节`）：
+**输出 markdown 格式**（带 front-matter）：
 
-1. **叙事结构**
-   - 三幕式还是线性？段落如何组织？
-   - 开头/结尾的惯例手法
-   - 段落间的过渡方式
+```markdown
+---
+category: travel-doc
+name: 旅行纪录片风格
+guidancePrompt: 这是我的长途自驾旅行纪录片，重点关注叙事节奏和语言风格...
+---
 
-2. **语言风格**
-   - 人称（第一/第二/第三？）
-   - 句式特征（短句主导？排比？省略句？）
-   - 用词偏好和高频词
-   - 基调（克制？热情？诗意？口语？）
+# 旅行纪录片 风格档案
 
-3. **情绪层次**
-   - 情绪光谱从低到高的层次
-   - 情绪表达的克制程度
-   - 触发情绪高潮的典型场景
+> 基于 N 篇历史作品归纳而成。
 
-4. **摄影/画面语言**
-   - 核心拍摄母题（延时、航拍、行车等）
-   - 光线描写体系
-   - 运镜相关的叙述词汇
+---
 
-5. **主题与价值观**
-   - 反复出现的核心主题
-   - 文化引用习惯
-   - 个人标签/品牌元素
+## 一、叙事结构
+...
 
-6. **风格禁区**
-   - 应避免的表达方式（每条单独列出）
+## 二、语言风格
+...
 
-7. **关键参数**
-   - 以表格形式列出供脚本生成模块使用的参数
+## 三、情绪层次与表达
+...
 
-**输出格式参考**：`test/style-profile.md` 是一个完整的风格档案样板，agent 应按照类似结构撰写。
+## 四、摄影/画面语言
+...
 
-### Step 6: 存储
+## 五、主题与价值观
+...
 
-将撰写好的 markdown 保存到项目中：
+## 六、结构模板（抽象）
+...
 
-```typescript
-import { writeFile } from 'node:fs/promises';
-await writeFile(join(projectRoot, 'config/style-profile.md'), markdownContent, 'utf-8');
+## 七、风格禁区
+...
+
+## 八、关键参数
+| 参数 | 值 |
+|------|-----|
+| ... | ... |
 ```
 
-同时可以解析为结构化对象验证完整性：
+**分析维度清单**：
+
+1. **叙事结构** — 三幕式？线性？段落组织？开头结尾惯例？
+2. **语言风格** — 人称、句式、用词偏好、基调
+3. **情绪层次** — 情绪光谱、表达克制度、高潮触发
+4. **摄影/画面语言** — 拍摄母题、光线体系、运镜词汇
+5. **主题与价值观** — 核心主题、文化引用、个人标签
+6. **结构模板** — 抽象化的段落结构模板
+7. **风格禁区** — 应避免的表达方式
+8. **关键参数** — 定量参数表格
+
+### Step 7: 存储
+
+**保存风格档案**：
 
 ```typescript
-const profile = parseStyleMarkdown(markdownContent, '风格档案', videoPaths);
-await writeJson(join(projectRoot, 'config/style-profile.json'), profile);
+import { writeFile, mkdir } from 'node:fs/promises';
+
+await mkdir('config/styles', { recursive: true });
+await writeFile(`config/styles/${category}.md`, markdownContent, 'utf-8');
+```
+
+**更新目录注册**：
+
+```typescript
+const catalog: IStyleCatalog = await readJsonOrNull('config/styles/catalog.json') ?? { entries: [] };
+
+const entry: IStyleCatalogEntry = {
+  id: randomUUID(),
+  category,
+  name: '旅行纪录片风格',
+  description: '基于 N 篇历史作品，侧重叙事节奏和克制诗意',
+  profilePath: `${category}.md`,
+  sourceVideoCount: videoPaths.length,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+};
+
+// 替换同分类或追加
+const idx = catalog.entries.findIndex(e => e.category === category);
+if (idx >= 0) catalog.entries[idx] = entry;
+else catalog.entries.push(entry);
+
+await writeJson('config/styles/catalog.json', catalog);
+```
+
+**保存 ASR 原文备查**：
+
+```typescript
+await mkdir('analysis/reference-transcripts', { recursive: true });
+for (const [videoPath, transcript] of transcripts) {
+  const name = basename(videoPath, extname(videoPath));
+  await writeFile(`analysis/reference-transcripts/${category}--${name}.txt`, transcript.fullText, 'utf-8');
+}
 ```
 
 ## 产出
 
 | 文件 | 格式 | 内容 |
 |------|------|------|
-| `config/style-profile.md` | Markdown | 人类可读的完整风格档案 |
-| `config/style-profile.json` | `IStyleProfile` | 结构化风格数据 |
-| `analysis/reference-transcripts/` | TXT | 每个参考视频的 ASR 全文（保留备查） |
+| `config/styles/{category}.md` | Markdown (带 front-matter) | 该分类的完整风格档案 |
+| `config/styles/catalog.json` | `IStyleCatalog` | 所有分类的注册表 |
+| `analysis/reference-transcripts/{category}--{name}.txt` | TXT | ASR 原文备查 |
 
 ## 与下游对接
 
-`kairos-script` 阶段直接加载：
+`kairos-script` 阶段根据用户选择的分类加载：
 
 ```typescript
-const style = await loadStyleFromMarkdown('config/style-profile.md');
+// 方式 1：按分类名加载
+const style = await loadStyleByCategory('config/styles', 'travel-doc');
+
+// 方式 2：直接加载文件
+const style = await loadStyleFromMarkdown('config/styles/travel-doc.md');
+
+// 查看所有可用分类
+const categories = await listStyleCategories('config/styles');
 ```
 
-`style.rawReference` 包含完整 markdown 原文，`buildStylePrompt(style)` 会优先使用它来指导旁白创作。
+`style.guidancePrompt` 会传递到旁白创作阶段，提醒 agent 遵循用户的创作理念。
 
 ## 决策点
 
-- **参考视频数量**：1 个也可以，但 3-5 个能更准确地归纳规律，区分共性和个例
-- **语言**：ASR 的 `language` 参数，中文用 `'zh'`
-- **采样密度**：关键帧采样间隔，15 秒适合快节奏视频，30 秒适合慢节奏
-- **是否保留旧档案**：如果已有 `config/style-profile.md`，确认是覆盖还是对比融合
-- **多作者**：如果参考视频来自不同创作者，应该分别分析而非混合
+| 决策 | 说明 |
+|------|------|
+| 分类命名 | 用短横线连接的英文小写，如 `travel-doc`、`city-walk` |
+| 参考视频数量 | 1 个也可以，3-5 个更准确 |
+| 语言 | ASR 的 `language` 参数，中文用 `'zh'` |
+| 采样密度 | 关键帧间隔 15s（快节奏）或 30s（慢节奏） |
+| 已有分类 | 如已存在，确认覆盖还是追加参考视频后重新分析 |
+| 指导词长度 | 不限，但建议 50-500 字，重点突出 |
 
 ## 备选路径
 
-如果不想通过 ML 提取数据，也可以：
-- 用户直接提供旁白文稿（手动或从字幕文件导入）
-- 用户手写风格档案 markdown
-- 用已有的 `test/style-profile.md` 直接使用
+- 用户直接提供旁白文稿而非视频 → 跳过 Step 2-5，直接用文稿分析
+- 用户手写风格档案 markdown → 直接放入 `config/styles/{category}.md` 并注册
+- 用户想对比两个分类 → 分别执行分析后，agent 总结差异

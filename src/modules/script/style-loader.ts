@@ -1,26 +1,95 @@
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
+import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import type { IStyleProfile, IStyleSection } from '../../protocol/schema.js';
+import type { IStyleProfile, IStyleSection, IStyleCatalog, IStyleCatalogEntry } from '../../protocol/schema.js';
+
+export interface IStyleLoadOptions {
+  name?: string;
+  category?: string;
+  guidancePrompt?: string;
+}
 
 /**
  * 从 markdown 文件加载风格档案。
  * 将 h2 章节拆为 sections，提取结构化参数。
+ * 支持 front-matter 中的 category 和 guidancePrompt。
  */
 export async function loadStyleFromMarkdown(
   filePath: string,
-  name?: string,
+  options?: string | IStyleLoadOptions,
 ): Promise<IStyleProfile> {
   const raw = await readFile(filePath, 'utf-8');
-  return parseStyleMarkdown(raw, name, [filePath]);
+  const opts: IStyleLoadOptions = typeof options === 'string'
+    ? { name: options }
+    : options ?? {};
+  return parseStyleMarkdown(raw, opts, [filePath]);
+}
+
+/**
+ * 从分类目录加载指定类别的风格档案。
+ */
+export async function loadStyleByCategory(
+  stylesDir: string,
+  category: string,
+): Promise<IStyleProfile | null> {
+  const catalogPath = join(stylesDir, 'catalog.json');
+  try {
+    const catalogRaw = await readFile(catalogPath, 'utf-8');
+    const catalog: IStyleCatalog = JSON.parse(catalogRaw);
+    const entry = catalog.entries.find(e => e.category === category);
+    if (!entry) return null;
+    return loadStyleFromMarkdown(join(stylesDir, entry.profilePath), {
+      category: entry.category,
+      name: entry.name,
+    });
+  } catch {
+    const mdPath = join(stylesDir, `${category}.md`);
+    try {
+      return await loadStyleFromMarkdown(mdPath, { category });
+    } catch {
+      return null;
+    }
+  }
+}
+
+/**
+ * 列出所有可用的风格分类。
+ */
+export async function listStyleCategories(
+  stylesDir: string,
+): Promise<IStyleCatalogEntry[]> {
+  const catalogPath = join(stylesDir, 'catalog.json');
+  try {
+    const raw = await readFile(catalogPath, 'utf-8');
+    const catalog: IStyleCatalog = JSON.parse(raw);
+    return catalog.entries;
+  } catch {
+    const files = await readdir(stylesDir).catch(() => []);
+    return files
+      .filter(f => f.endsWith('.md'))
+      .map(f => {
+        const category = f.replace(/\.md$/, '');
+        return {
+          id: category,
+          category,
+          name: category,
+          profilePath: f,
+          sourceVideoCount: 0,
+          createdAt: '',
+          updatedAt: '',
+        };
+      });
+  }
 }
 
 export function parseStyleMarkdown(
   markdown: string,
-  name?: string,
+  options?: IStyleLoadOptions,
   sourceFiles: string[] = [],
 ): IStyleProfile {
-  const sections = splitSections(markdown);
-  const params = extractParameters(markdown);
+  const { body, frontMatter } = extractFrontMatter(markdown);
+  const sections = splitSections(body);
+  const params = extractParameters(body);
   const antiPatterns = extractAntiPatterns(sections);
   const narrative = extractNarrative(params);
   const voice = extractVoice(params);
@@ -28,7 +97,9 @@ export function parseStyleMarkdown(
 
   return {
     id: randomUUID(),
-    name: name ?? extractTitle(markdown) ?? '风格档案',
+    name: options?.name ?? frontMatter['name'] ?? extractTitle(body) ?? '风格档案',
+    category: options?.category ?? frontMatter['category'],
+    guidancePrompt: options?.guidancePrompt ?? frontMatter['guidancePrompt'],
     sourceFiles,
     narrative,
     voice,
@@ -39,6 +110,18 @@ export function parseStyleMarkdown(
     createdAt: now,
     updatedAt: now,
   };
+}
+
+function extractFrontMatter(md: string): { body: string; frontMatter: Record<string, string> } {
+  const match = md.match(/^---\s*\n([\s\S]*?)\n---\s*\n/);
+  if (!match) return { body: md, frontMatter: {} };
+
+  const fm: Record<string, string> = {};
+  for (const line of match[1].split('\n')) {
+    const kv = line.match(/^(\w+)\s*:\s*(.+)$/);
+    if (kv) fm[kv[1].trim()] = kv[2].trim();
+  }
+  return { body: md.slice(match[0].length), frontMatter: fm };
 }
 
 function extractTitle(md: string): string | null {

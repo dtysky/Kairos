@@ -265,6 +265,8 @@ export type IStyleSection = z.infer<typeof IStyleSection>;
 export const IStyleProfile = z.object({
   id: z.string(),
   name: z.string(),
+  category: z.string().optional(),
+  guidancePrompt: z.string().optional(),
   sourceFiles: z.array(z.string()),
   narrative: IStyleNarrative,
   voice: IStyleVoice,
@@ -276,6 +278,24 @@ export const IStyleProfile = z.object({
   updatedAt: z.string(),
 });
 export type IStyleProfile = z.infer<typeof IStyleProfile>;
+
+export const IStyleCatalogEntry = z.object({
+  id: z.string(),
+  category: z.string(),
+  name: z.string(),
+  description: z.string().optional(),
+  profilePath: z.string(),
+  sourceVideoCount: z.number(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type IStyleCatalogEntry = z.infer<typeof IStyleCatalogEntry>;
+
+export const IStyleCatalog = z.object({
+  defaultCategory: z.string().optional(),
+  entries: z.array(IStyleCatalogEntry),
+});
+export type IStyleCatalog = z.infer<typeof IStyleCatalog>;
 
 // ─── Media Analysis ─────────────────────────────────────────
 

@@ -72,8 +72,14 @@ Kairos/
 │       └── jianyingdraft/
 │           └── server.py     # MCP stdio entry point
 │
+├── config/                   # Runtime project config (per-project)
+│   └── styles/
+│       ├── catalog.json      # IStyleCatalog: registry of all categories
+│       ├── travel-doc.md     # Style profile per category
+│       └── ...
+│
 ├── test/
-│   └── style-profile.md     # Manual style reference
+│   └── style-profile.md     # Manual style reference (example)
 │
 ├── designs/                  # Design documents
 │   ├── 2026-03-28--middle-version-protocol-first.md

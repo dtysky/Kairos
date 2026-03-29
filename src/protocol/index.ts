@@ -29,6 +29,8 @@ export {
   IStyleVoice,
   IStyleSection,
   IStyleProfile,
+  IStyleCatalogEntry,
+  IStyleCatalog,
   IStoreManifest,
   EClipType,
   ESamplingProfile,
