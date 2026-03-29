@@ -38,7 +38,7 @@ export async function generateScript(
   return segments;
 }
 
-function buildStylePrompt(style: IStyleProfile): string {
+export function buildStylePrompt(style: IStyleProfile): string {
   // If rawReference exists, use it directly — it's the richest source
   if (style.rawReference) {
     const parts = [style.rawReference];
@@ -79,7 +79,7 @@ function buildStylePrompt(style: IStyleProfile): string {
   return parts.join('\n');
 }
 
-function buildOutlinePrompt(outline: IOutlineSegment[]): string {
+export function buildOutlinePrompt(outline: IOutlineSegment[]): string {
   return outline.map((seg, i) => {
     const evidenceStr = seg.evidence
       .slice(0, 10)
