@@ -15,6 +15,7 @@ Kairos/
 │   ├── store/
 │   │   ├── writer.ts         # Atomic JSON read/write
 │   │   ├── project.ts        # initProject, loadManifest
+│   │   ├── incremental.ts    # mergeAssets, appendAssets, findUnanalyzedAssets
 │   │   └── index.ts
 │   └── modules/
 │       ├── media/            # M2: media analysis pipeline

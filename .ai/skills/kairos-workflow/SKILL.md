@@ -59,9 +59,11 @@ project/
 │   └── slices.json           # Phase 2 产出
 ├── media/                    # 关键帧等中间数据
 ├── script/
-│   └── current.json          # Phase 3 产出
+│   ├── current.json          # Phase 3 产出
+│   └── versions/             # 历史版本
 ├── timeline/
-│   └── current.json          # Phase 4 产出 (IKtepDoc)
+│   ├── current.json          # Phase 4 产出 (IKtepDoc)
+│   └── versions/             # 历史版本
 ├── subtitles/                # SRT/VTT 导出
 ├── adapters/                 # NLE 适配器数据
 └── analysis/
@@ -123,7 +125,9 @@ project/
 
 ```typescript
 import { readJsonOrNull } from 'kairos';
-const assets = await readJsonOrNull('store/assets.json', z.array(IKtepAsset));
+import { join } from 'node:path';
+
+const assets = await readJsonOrNull(join(projectRoot, 'store/assets.json'), z.array(IKtepAsset));
 if (!assets || assets.length === 0) {
   // 需要先执行 Phase 1
 }

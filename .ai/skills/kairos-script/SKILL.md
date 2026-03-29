@@ -44,12 +44,15 @@ buildStylePrompt(style: IStyleProfile): string
 // 生成骨架提示词（供 agent 参考）
 buildOutlinePrompt(outline: IOutlineSegment[]): string
 
-// 脚本编辑工具
+// 脚本编辑工具（纯函数，同步）
 reorderSegments(segments: IKtepScript[], order: string[]): IKtepScript[]
 updateNarration(segments: IKtepScript[], segmentId: string, narration: string): IKtepScript[]
-rewriteNarration(segments: IKtepScript[], segmentId: string, narration: string): IKtepScript[]
 removeSegment(segments: IKtepScript[], segmentId: string): IKtepScript[]
 insertSegment(segments: IKtepScript[], afterId: string | null, segment: IKtepScript): IKtepScript[]
+
+// LLM 辅助改写（需要 ILlmClient，异步）
+rewriteNarration(llm: ILlmClient, segment: IKtepScript, instruction: string): Promise<string>
+// 返回修改后的旁白文本（string），需要再用 updateNarration 替换到数组中
 ```
 
 ## 工作流程

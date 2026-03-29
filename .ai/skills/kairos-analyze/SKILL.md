@@ -123,23 +123,30 @@ const ocrResult = await extractOcr(ml, keyframes[0].path);
 
 5. **合并证据到切片**
 
-Agent 需要将 ASR/VLM 证据按时间范围分配到对应的切片上：
+Agent 需要将 ASR/VLM 证据按时间范围分配到对应的切片上。
+
+**ASR 按时间对齐**：`transcription.segments` 中的 `IAsrSegment` 有 `start`/`end`（单位：秒），
+需要按切片的 `sourceInMs`/`sourceOutMs`（单位：毫秒）匹配：
 
 ```typescript
 for (const slice of slices) {
-  // 筛选与该切片时间范围重叠的 ASR 段落
-  const sliceAsrEvidence = filterEvidenceByTimeRange(
-    transcription.evidence, slice.sourceInMs, slice.sourceOutMs
+  // 筛选与该切片时间范围重叠的 ASR 段落，注意单位转换
+  const sliceStartSec = (slice.sourceInMs ?? 0) / 1000;
+  const sliceEndSec = (slice.sourceOutMs ?? Infinity) / 1000;
+  const matchedSegments = transcription.segments.filter(
+    seg => seg.end > sliceStartSec && seg.start < sliceEndSec
   );
-  // 筛选该切片对应关键帧的 VLM 识别结果
-  const sliceVlmEvidence = filterEvidenceByTimeRange(
-    recognition.evidence, slice.sourceInMs, slice.sourceOutMs
-  );
-  mergeEvidence(slice, sliceAsrEvidence, sliceVlmEvidence);
+  const sliceAsrEvidence: IKtepEvidence[] = matchedSegments.map(seg => ({
+    source: 'asr' as const,
+    value: seg.text.trim(),
+    confidence: 0.8,
+  }));
+
+  // VLM 证据：针对该切片时间范围内的关键帧做 recognizeFrames
+  // 或直接把整体 recognition.evidence 合并（如果没有按切片分帧分析）
+  mergeEvidence(slice, sliceAsrEvidence, recognition.evidence);
 }
 ```
-
-注：`filterEvidenceByTimeRange` 需要 agent 根据切片的 `sourceInMs`/`sourceOutMs` 自行筛选，或直接对每个切片独立调用 ML。
 
 ### 对每个照片资产：
 
