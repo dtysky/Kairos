@@ -10,11 +10,12 @@
     "dev": "tsc --watch"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=16.0.0"
   },
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.28.0",
+    "node-fetch": "^3.3.2",
     "zod": "^3"
   },
   "devDependencies": {

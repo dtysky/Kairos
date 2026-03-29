@@ -13,7 +13,7 @@ Full deployment guide for a new device. Kairos has three subsystems:
 
 | Subsystem | Runtime | Location | Required |
 |-----------|---------|----------|----------|
-| TypeScript core | Node.js >= 18 + pnpm | `./` (root) | Always |
+| TypeScript core | Node.js >= 16 + pnpm | `./` (root) | Always |
 | ML server | Python >= 3.10 + uv/pip | `ml-server/` | For media analysis |
 | Jianying MCP | Python >= 3.13 + uv | `vendor/jianying-mcp/` | For Jianying export |
 
@@ -23,7 +23,7 @@ LLM 调用由 Cursor / Codex agent 直接完成，不需要单独配置 LLM API 
 
 ```
 - [ ] Git (with submodule support)
-- [ ] Node.js >= 18
+- [ ] Node.js >= 16
 - [ ] pnpm (corepack enable && corepack prepare pnpm@latest --activate)
 - [ ] Python >= 3.10 (recommend 3.12+, 3.13 for jianying-mcp)
 - [ ] uv (curl -LsSf https://astral.sh/uv/install.sh | sh)
@@ -52,6 +52,9 @@ Verify: `ls vendor/jianying-mcp/jianyingdraft/server.py` should exist.
 pnpm install
 pnpm build
 ```
+
+注：当前项目在 `WSL + zsh + Node 16` 下已完成基础构建验证。
+如果安装依赖时看到个别三方包声明 `node >= 18` 的 engine warning，可先继续验证本项目链路，再按需要升级 Node。
 
 Verify: `ls dist/index.js` should exist and `npx tsc --noEmit` should pass.
 

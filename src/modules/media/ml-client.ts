@@ -1,4 +1,13 @@
+import nodeFetch from 'node-fetch';
+
 const CDEFAULT_URL = process.env['KAIROS_ML_URL'] ?? 'http://127.0.0.1:8910';
+
+const fetchCompat: typeof fetch = typeof globalThis.fetch === 'function'
+  ? globalThis.fetch.bind(globalThis)
+  : ((
+    input: Parameters<typeof nodeFetch>[0],
+    init?: Parameters<typeof nodeFetch>[1],
+  ) => nodeFetch(input, init)) as typeof fetch;
 
 export interface IAsrSegment {
   start: number;
@@ -26,7 +35,7 @@ export class MlClient {
   constructor(private baseUrl = CDEFAULT_URL) {}
 
   async health(): Promise<IMlHealth> {
-    const res = await fetch(`${this.baseUrl}/health`);
+    const res = await fetchCompat(`${this.baseUrl}/health`);
     if (!res.ok) {
       throw new Error(`ML server /health: ${res.status} ${await res.text()}`);
     }
@@ -63,7 +72,7 @@ export class MlClient {
   }
 
   private async post<T>(path: string, body: unknown): Promise<T> {
-    const res = await fetch(`${this.baseUrl}${path}`, {
+    const res = await fetchCompat(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
