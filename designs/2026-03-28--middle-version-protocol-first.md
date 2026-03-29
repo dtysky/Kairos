@@ -95,14 +95,19 @@
 - 可由 Zod / JSON Schema 校验
 - 可被不同编辑器适配器复用
 
-### D2. “切片”是全系统共享中间层
+### D2. “切片”是全系统共享中间层，但不是所有素材的第一层分析结果
 
-`slice` 是连接内容理解、脚本生成、时间线生成的关键对象。
+`slice` 是连接内容理解、脚本生成、时间线生成的关键对象，但不意味着每条素材一上来都必须被切成镜头级对象。
 
 - 对视频：一个 `slice` 可以是镜头段、延时片段、口播段、航拍段、驾驶段、空镜段
 - 对图片：一个 `slice` 可以是单张照片或照片集合中的单元
 
-后续脚本引用 `slice`，时间线编排也引用 `slice`，而不是直接引用原始素材文件。
+中间版本应分两层：
+
+- **粗扫层**：先形成资产级 `asset report`
+- **细扫层**：只对高价值素材或高价值时间窗生成 `slice`
+
+后续脚本引用 `slice`，时间线编排也引用 `slice`，而不是直接引用原始素材文件；但 `slice` 的生成应建立在“自动判定值得细扫”的前提上。
 
 ### D3. 时间线协议必须编辑器无关
 
@@ -238,23 +243,34 @@ type SpatialContextMode = 'gps-enhanced' | 'evidence-only';
 - 默认按 `capturedAt` 排序
 - 若时间存在修正，则按修正后的排序键重排
 
-### D9. 素材输入目录必须是显式配置，并支持目录级注解
+### D9. 素材输入采用“项目内逻辑素材源 + 设备本地路径映射”
 
-中间版本不能假设只有一个素材目录，也不能假设目录名天然可被稳定理解。
+中间版本不能把某台机器上的绝对路径直接写死进项目数据里，否则跨设备同步会立刻失效。
 
-因此需要一个显式的输入目录配置：
+因此需要拆成两层：
 
-- 指定哪些目录会被扫描
-- 指定目录类型和优先级
-- 为每个目录附加人工注解
+- **项目内逻辑素材源**
+  - 保存在项目内，可随项目一起同步
+  - 描述“这类素材是什么”，而不是“这台机器上它在哪”
+- **设备本地路径映射**
+  - 保存在当前设备本地
+  - 描述“这个逻辑素材源在这台机器上映射到哪个目录”
+
+逻辑素材源需要支持：
+
+- 一个项目配置多个素材目录
+- 每个目录都有自然语言说明
+- 目录说明作为弱先验证据，而不是硬语义约束
 
 目录级注解的作用不是替代识别，而是作为 LLM / 规则系统的先验上下文，例如：
 
-- `“北岛 D1-D3，奥克兰城市段与鸟岛”`
-- `“无人机素材，主要是海岸和地热公园”`
-- `“相机 B 机位，车内口播和第一视角驾驶段为主”`
+- `“主机位，风景、步行、口播都有”`
+- `“无人机，全景、海岸线、地貌为主”`
+- `“手机素材，路上随手拍和车内口播混合”`
 
-这些注解应进入证据系统，但来源应标记为 `manual-root-note`，不能与画面识别结果混淆。
+这些注解应进入证据系统，但来源标记为 `manual-root-note`，不能与画面识别结果混淆。
+
+同时必须承认：**一个目录往往并不只有一个纯语义**。用户通常按设备分目录，也可能完全不分，因此目录注解只能作为弱证据。
 
 ### D10. 剪映自动化必须剥离为独立 Server，而不是由 Kairos Core 直接通过 stdio 驱动
 
@@ -283,6 +299,95 @@ type SpatialContextMode = 'gps-enhanced' | 'evidence-only';
 - Kairos 的正式接口从“直接调用剪映 MCP 工具”升级为“向剪映服务提交导出任务”
 - 剪映侧问题被限制在单独部署单元内，不再污染 Core 的协议与工作流
 - 将来替换 `jianying-mcp` 实现时，不需要改动 Core 侧的脚本、时间线和 store
+
+### D11. 项目数据放在 Kairos 工程内的 `projects/`，而不是散落在素材目录中
+
+中间版本应支持把项目数据直接纳入 Kairos 工程，以便：
+
+- 云端同步
+- 多设备共享
+- 与代码、设计、风格档案统一管理
+
+因此建议采用：
+
+- Kairos 工程内的 `projects/<projectId>/` 保存项目内容
+- 用户原始素材目录继续留在工程外部
+- 通过“逻辑素材源 + 本地路径映射”连接两者
+
+这样系统在用户说“开始剪辑”时，可以直接列出 `projects/` 下已有项目，让用户选择，而不必再扫描任意磁盘位置猜测项目在哪。
+
+项目选择建议：
+
+- 若当前上下文已绑定项目，直接继续
+- 若 `projects/` 下只有一个项目，默认进入该项目
+- 若存在多个项目，按 `store/project.json` 中的名称、更新时间、阶段状态提示用户选择
+
+### D12. 素材分析采用“粗扫优先 + 自动细扫”双阶段，而不是默认镜头级分析
+
+风格分析可以接受镜头级慢流程，但剪辑素材分析不能默认照搬，否则会被长行车、长口播、低变化视频拖垮。
+
+因此素材分析默认分为两层：
+
+- **粗扫**
+  - 面向全部素材
+  - 目标是“知道这条素材大概是什么、值不值得深挖”
+- **细扫**
+  - 只对系统判定高价值的素材或时间窗执行
+  - 目标是生成真正可进入脚本和时间线的 `slice`
+
+粗扫优先利用：
+
+- 时长
+- 元信息
+- 均匀采样帧
+- GPS / 轨迹（若存在）
+- 少量 OCR / ASR / 低成本 VLM
+
+系统而不是用户来决定是否细扫。触发信号包括：
+
+- 高信息密度
+- GPS 轨迹变化明显
+- OCR / ASR 命中地点或事件线索
+- 画面变化显著
+- 不确定性高
+- 被脚本生成或时间线阶段回溯请求
+
+### D13. 素材浏览与剪辑候选默认按拍摄时间组织，而不是只按文件夹或导入顺序
+
+对于纪录片和旅行类项目，拍摄时间顺序本身就是重要叙事骨架。
+
+因此中间版本应默认提供：
+
+- **按拍摄时间排序的素材浏览**
+- **按拍摄时间组织的粗剪候选**
+- **允许偏离时间顺序的叙事编排**
+
+也就是说：
+
+- 时间顺序是默认工作底稿
+- 不是时间线输出的唯一约束
+- 但系统在“找素材、做粗剪、选候选片段”时应优先尊重 `sortCapturedAt`
+
+对于用户来说，最直观的体验应是：
+
+- 先看到“一天内从早到晚拍了什么”
+- 再在这个时序底稿上做重组，而不是一开始就在杂乱文件夹里找镜头
+
+### D14. 无 GPS 项目允许通过人工行程文件推断低置信度近似轨迹
+
+并非所有历史项目都有真实 GPS 轨迹，但很多项目都能回忆出：
+
+- 某天某个时间段大致从哪里到哪里
+- 中间经过哪些地点
+- 大概是什么交通方式
+
+因此中间版本应支持一个**人工可填写、自然语言友好的行程文件**，用来生成低置信度近似轨迹。
+
+这个文件的目标不是取代真实 GPS，而是：
+
+- 补足时间顺序与空间顺序之间的联系
+- 为长行车、长步行、跨地点素材提供弱空间上下文
+- 帮助系统做粗扫召回、地点提示和候选片段聚类
 
 ## 6. 系统架构
 
@@ -324,6 +429,7 @@ type SpatialContextMode = 'gps-enhanced' | 'evidence-only';
 建议子模块：
 
 - `asset-ingest.ts`
+- `asset-report-builder.ts`
 - `shot-slicer.ts`
 - `image-slicer.ts`
 - `speech-transcriber.ts`
@@ -350,19 +456,21 @@ type SpatialContextMode = 'gps-enhanced' | 'evidence-only';
 - 估算信息密度并生成采样计划
 - OCR / 图像标签 / 场景说明
 - 路由到本地 VLM 做重点分析
-- 生成可复用的 `slice`
+- 先生成资产级 `asset report`
+- 再对重点素材或窗口生成可复用的 `slice`
 
 ### 7.1.1 输入目录配置
 
 建议定义：
 
 ```typescript
-interface MediaRootConfig {
+interface MediaRootDefinition {
   id: string;
-  path: string;
+  label: string;
   enabled: boolean;
   category?: 'camera' | 'drone' | 'phone' | 'audio' | 'exports' | 'mixed';
   priority?: number;
+  description?: string;
   notes?: string[];
   tags?: string[];
   defaultTimezone?: string;
@@ -372,11 +480,56 @@ interface MediaRootConfig {
 规则：
 
 - 一个项目可配置多个 `media root`
-- `notes` 作为目录级语义注解进入分析上下文
+- 项目内保存的是逻辑素材源定义，而不是本机绝对路径
+- `description` / `notes` 作为目录级弱语义注解进入分析上下文
 - `tags` 用于规则筛选和脚本召回
 - `defaultTimezone` 用于元信息缺失时的时间归一化
 
-### 7.1.2 拍摄时间归一化
+自然语言输入建议：
+
+```text
+路径：F:\NZ\A7R5
+说明：主机位，风景、步行、口播都有
+
+路径：F:\NZ\Drone
+说明：无人机，全景和地貌为主
+```
+
+系统职责：
+
+- 先接受这种自然语言输入
+- 自动生成稳定的 `rootId`
+- 把“说明”写入项目内的 `ingest-roots.json`
+- 同时把当前设备上的真实路径写入本地路径映射
+
+### 7.1.2 设备本地路径映射
+
+建议在项目外、设备本地保存：
+
+```typescript
+interface DeviceMediaRootMap {
+  projectId: string;
+  roots: Array<{
+    rootId: string;
+    localPath: string;
+    exists?: boolean;
+    lastCheckedAt?: string;
+  }>;
+}
+```
+
+建议位置：
+
+- Windows: `C:/Users/<user>/.kairos/device-media-maps.json`
+- macOS / Linux: `~/.kairos/device-media-maps.json`
+
+规则：
+
+- 不纳入项目同步
+- 允许不同设备把同一个 `rootId` 映射到不同磁盘目录
+- Kairos 在开始剪辑或分析前，必须先检查映射是否存在且路径是否有效
+
+### 7.1.3 拍摄时间归一化
 
 建议定义：
 
@@ -404,7 +557,7 @@ interface CaptureTimeInfo {
 - 文件名时间只能作为 fallback
 - 允许后续做项目级时间偏移修正
 
-### 7.1.3 素材时序视图
+### 7.1.4 素材时序视图
 
 建议定义：
 
@@ -440,6 +593,123 @@ interface MediaChronologyEntry {
 - `summaryOverride` 允许用户对素材描述进行纠正
 - 时间修正和描述修正都应保留原值，不直接覆盖底层分析结果
 - `MediaChronologyEntry[]` 是脚本生成按时间组织素材的首要输入之一
+- 在素材浏览、候选片段检索、粗剪预排时，`sortCapturedAt` 应作为默认排序键
+- 时间线生成可以打破时间顺序，但必须能回溯到“默认按时间组织”的素材视图
+
+### 7.1.4.1 人工行程文件（无 GPS 项目的临时空间输入）
+
+建议允许用户填写一个自然语言友好的可编辑文件，例如：
+
+```text
+日期：2025-01-05
+时间：07:30 - 10:00
+从：兰州
+到：青海湖东岸
+途经：西宁
+交通方式：自驾
+备注：上午主要是出发和路上空镜
+
+日期：2025-01-05
+时间：15:00 - 18:30
+从：青海湖东岸
+到：茶卡
+交通方式：自驾
+备注：下午多是公路、停车拍摄、风景和口播
+```
+
+建议文件位置：
+
+- `projects/<project_id>/config/manual-itinerary.md`
+
+系统职责：
+
+- 允许用户用自然语言维护这份文件
+- 解析为结构化的 `manual itinerary segments`
+- 将地点名 geocode 成近似经纬度
+- 在给定时间段内做低置信度路径插值
+- 生成“近似 GPS / 路线证据”，但明确标记来源不是实测轨迹
+
+建议中间结构：
+
+```typescript
+interface ManualItinerarySegment {
+  id: string;
+  date: string; // YYYY-MM-DD
+  startLocalTime: string; // HH:mm
+  endLocalTime: string; // HH:mm
+  from: string;
+  to: string;
+  via?: string[];
+  transport?: 'drive' | 'walk' | 'train' | 'flight' | 'boat' | 'mixed';
+  notes?: string;
+}
+
+interface ApproximateRoutePoint {
+  at: string; // ISO 8601
+  lat: number;
+  lng: number;
+  source: 'manual-itinerary';
+  confidence: number; // 低于真实 GPS
+}
+```
+
+规则：
+
+- 这类轨迹只能作为弱空间证据
+- 置信度应显著低于真实 GPS / Pharos
+- 可用于粗扫召回、地点提示、长行车素材排序与聚类
+- 不应伪装成真实采样轨迹
+
+### 7.1.5 素材分析的双阶段产物
+
+建议新增两个中间对象：
+
+```typescript
+interface AssetCoarseReport {
+  assetId: string;
+  ingestRootId?: string;
+  durationMs?: number;
+  clipTypeGuess: 'drive' | 'talking-head' | 'aerial' | 'timelapse' | 'broll' | 'unknown';
+  densityScore: number;
+  gpsSummary?: string;
+  summary?: string;
+  labels: string[];
+  placeHints: string[];
+  sampleFrames: Array<{
+    timeMs: number;
+    path?: string;
+    summary?: string;
+  }>;
+  interestingWindows: Array<{
+    startMs: number;
+    endMs: number;
+    reason: string;
+  }>;
+  shouldFineScan: boolean;
+  fineScanReasons: string[];
+}
+
+interface FineScanDecision {
+  assetId: string;
+  mode: 'skip' | 'windowed' | 'full';
+  windows?: Array<{
+    startMs: number;
+    endMs: number;
+    reason: string;
+  }>;
+}
+```
+
+规则：
+
+- `AssetCoarseReport` 面向全部素材
+- 只有 `shouldFineScan === true` 的资产才进入细扫
+- `FineScanDecision.mode = 'full'`
+  - 适用于短视频、高价值素材、或本身就很适合镜头级切分的资产
+- `FineScanDecision.mode = 'windowed'`
+  - 适用于长视频，如行车、长口播、稳定运动镜头
+- `FineScanDecision.mode = 'skip'`
+  - 适用于低价值、低变化、暂时不需要深挖的素材
 
 ### 7.2 `src/modules/script/`
 
@@ -531,17 +801,18 @@ interface MediaChronologyEntry {
 
 #### Layer A — 低成本粗扫
 
-- 镜头切分
-- 关键帧抽取
-- ASR
-- OCR
-- CLIP/BLIP 粗标签
+- 元信息与拍摄时间读取
+- GPS / 轨迹对齐（若存在）
+- 按时长做少量均匀采样
+- 低成本 ASR / OCR / CLIP/BLIP 粗标签
+- 生成 `AssetCoarseReport`
 
 特点：
 
 - 默认本地执行
 - 不依赖云端 token
-- 目的是生成 `MediaAnalysisPlan`
+- 不要求一上来就做全量镜头切分
+- 目的是生成 `MediaAnalysisPlan` 和是否细扫的自动决策
 
 #### Layer B — 本地 VLM 精扫
 
@@ -555,7 +826,7 @@ interface MediaChronologyEntry {
 特点：
 
 - 由本地 `VLM` 执行
-- 以 `slice` 或小窗口为单位
+- 以小窗口或细扫后的 `slice` 为单位
 - 输出高质量结构化描述，而不是自由文本堆砌
 
 #### Layer C — 生成层
@@ -571,6 +842,12 @@ interface MediaChronologyEntry {
 
 - 优先喂结构化 `evidence`
 - 不把原始长视频直接送进大模型
+
+这三层的核心边界是：
+
+- `AssetCoarseReport` 面向全部素材
+- `slice` 面向值得进入脚本和时间线的重点片段
+- 并不是所有素材都必须进入 `slice`
 
 ### 8.2 本地 VLM 角色
 
@@ -595,6 +872,7 @@ interface MediaChronologyEntry {
 - `clipType`
 - `densityScore`
 - `interestingWindows[]`
+- `shouldFineScan`
 
 建议定义：
 
@@ -612,6 +890,7 @@ interface MediaAnalysisPlan {
   }>;
   vlmMode: 'none' | 'multi-image' | 'video';
   targetBudget: 'coarse' | 'standard' | 'deep';
+  shouldFineScan: boolean;
 }
 ```
 
@@ -624,10 +903,59 @@ interface MediaAnalysisPlan {
 - VAD / 口播检测
 - 亮度和色彩变化
 - 图像语义突变
+- GPS 轨迹变化
+- 轨迹停靠 / 转向 / 地标接近
+- 人工行程文件推断出的近似路线变化
 
-### 8.4 首版采样预算
+### 8.4 粗扫采样预算
 
-#### 按时长
+粗扫默认按素材时长决定**均匀采样次数**，而不是先做完整镜头切分。
+
+- `< 1min`：`4-6` 次
+- `1-5min`：`6-10` 次
+- `5-20min`：`10-16` 次
+- `20min+`：`16-24` 次
+
+粗扫目标：
+
+- 判断素材大致类别
+- 估计信息密度
+- 给出 `interestingWindows[]`
+- 判断是否需要细扫
+
+如果存在 GPS / 轨迹：
+
+- 粗扫应优先结合路线变化、停靠点、地标接近、海拔变化等事件
+- 对长行车视频，GPS 常比画面切镜更可靠
+
+如果不存在真实 GPS，但存在人工行程文件：
+
+- 使用 geocode 后的 `from / to / via` 做近似路线提示
+- 将长时间段素材按该时间窗归入对应路线段
+- 对“从 A 到 B 的长途段”优先生成 `drive` 候选，而不是强行做镜头级切分
+
+### 8.5 细扫触发与预算
+
+细扫由系统自动判断，而不是让用户手动指定。
+
+建议触发条件：
+
+- `densityScore` 高于阈值
+- GPS 变化显著
+- OCR / ASR 命中地点、事件或叙事信息
+- 素材类型判断不确定
+- 下游脚本 / 时间线阶段请求高精度切片
+
+细扫模式：
+
+- `full`
+  - 对短视频或高价值素材做全片镜头级分析
+- `windowed`
+  - 对长视频只分析 `interestingWindows[]`
+- `skip`
+  - 当前保留粗扫报告，不生成 `slice`
+
+#### 细扫按时长
 
 - `0-15s`：高密度采样，近似全看
 - `15-60s`：每 `1-2s` 抽样
@@ -635,7 +963,7 @@ interface MediaAnalysisPlan {
 - `5-20min`：每 `8-12s` 抽样
 - `20min+`：每 `15-30s` 抽样
 
-#### 按类型
+#### 细扫按类型
 
 - `talking-head`：画面稀采样，ASR 全量
 - `drive`：默认稀采样，但对突变窗口局部提密
@@ -918,7 +1246,7 @@ interface KtepSubtitleCue {
 ### 10.2 生成步骤
 
 1. 根据 `script segment` 确定段落顺序和目标时长。
-2. 在每个段落中从 `linkedSliceIds` 或标签候选中选片。
+2. 在每个段落中从 `linkedSliceIds` 或标签候选中选片；若无更强叙事约束，优先从拍摄时间相邻的候选中连续取片。
 3. 生成主轨 `primary` 和辅轨 `broll` 的初始摆放。
 4. 为照片和延时生成默认 transform。
 5. 根据脚本生成字幕 cue。
@@ -930,6 +1258,7 @@ interface KtepSubtitleCue {
 首版不追求“完美剪辑决策”，而采用可解释规则：
 
 - 优先使用被脚本直接引用的切片
+- 若用户没有明确要求打乱时间顺序，则优先维持相邻片段的拍摄时间连续性
 - 单个切片默认最大使用时长可配置
 - 航拍 / 延时优先放在段落开头或转场
 - 图片默认走 `Ken Burns`
@@ -1066,80 +1395,98 @@ Core 侧只依赖这个稳定协议；服务端内部仍可继续沿用 `jianyin
 建议在现有 `project-structure` 基础上新增：
 
 ```text
-<project_root>/
-├── config/
-│   ├── ingest-roots.json
-│   ├── runtime.json
-│   └── styles/
-│       ├── catalog.json
-│       └── <category>.md
-├── store/
-│   ├── manifest.json
-│   ├── revisions.jsonl
-│   ├── snapshots/
-│   │   ├── script/
-│   │   ├── timeline/
-│   │   ├── chronology/
-│   │   └── subtitles/
-│   └── backups/
-│       ├── manifest.json
-│       └── full/
-├── analysis/
-│   ├── plans.json
-│   ├── windows.json
-│   ├── reference-transcripts/
-│   │   └── <category>--<video>.txt
-│   └── style-references/
-│       └── <category>/
-│           └── <video>.json
-├── media/
-│   ├── index.json
-│   ├── slices.json
-│   └── chronology.json
-├── script/
-│   ├── current.json
-│   └── versions/
-├── timeline/
-│   ├── current.ktep.json
-│   └── versions/
-├── subtitles/
-│   ├── current.srt
-│   ├── current.vtt
-│   └── current.json
-├── .tmp/
-│   └── <pipeline>/
-│       └── <scope>/
-│           ├── progress.json
-│           ├── summary.json
-│           ├── keyframes/
-│           ├── audio/
-│           ├── proxies/
-│           └── logs/
-└── adapters/
-    ├── jianying/
-    │   └── state.json
-    └── resolve/
-        └── state.json
+<kairos_repo_root>/
+├── projects/
+│   └── <project_id>/
+│       ├── config/
+│       │   ├── ingest-roots.json
+│       │   ├── manual-itinerary.md
+│       │   ├── runtime.json
+│       │   └── styles/
+│       │       ├── catalog.json
+│       │       └── <category>.md
+│       ├── store/
+│       │   ├── manifest.json
+│       │   ├── revisions.jsonl
+│       │   ├── assets.json
+│       │   ├── slices.json
+│       │   ├── snapshots/
+│       │   │   ├── script/
+│       │   │   ├── timeline/
+│       │   │   ├── chronology/
+│       │   │   └── subtitles/
+│       │   └── backups/
+│       │       ├── manifest.json
+│       │       └── full/
+│       ├── analysis/
+│       │   ├── plans.json
+│       │   ├── windows.json
+│       │   ├── asset-reports/
+│       │   │   └── <assetId>.json
+│       │   ├── reference-transcripts/
+│       │   │   └── <category>--<video>.txt
+│       │   └── style-references/
+│       │       └── <category>/
+│       │           └── <video>.json
+│       ├── media/
+│       │   └── chronology.json
+│       ├── script/
+│       │   ├── current.json
+│       │   └── versions/
+│       ├── timeline/
+│       │   ├── current.ktep.json
+│       │   └── versions/
+│       ├── subtitles/
+│       │   ├── current.srt
+│       │   ├── current.vtt
+│       │   └── current.json
+│       ├── .tmp/
+│       │   └── <pipeline>/
+│       │       └── <scope>/
+│       │           ├── progress.json
+│       │           ├── summary.json
+│       │           ├── keyframes/
+│       │           ├── audio/
+│       │           ├── proxies/
+│       │           └── logs/
+│       └── adapters/
+│           ├── jianying/
+│           │   └── state.json
+│           └── resolve/
+│               └── state.json
+└── (code / skills / vendor / designs ...)
+```
+
+项目外、设备本地另存：
+
+```text
+~/.kairos/
+└── device-media-maps.json
 ```
 
 说明：
 
-- `config/ingest-roots.json` 保存素材输入目录、目录注解、默认时区等配置
+- `projects/<project_id>/` 是可同步的项目根目录
+- `config/ingest-roots.json` 保存逻辑素材源定义、目录注解、默认时区等配置
+- `config/manual-itinerary.md` 是无 GPS 项目可选的人工行程文件，用于推断低置信度近似路线
 - `config/runtime.json` 保存项目级运行时配置，例如 Windows 原生 `ffmpeg/ffprobe` 路径、硬件解码策略、分析代理规格、ML Server 地址
 - `config/styles/` 保存正式风格档案和分类目录；这是可迁移、可复用的长期产物
 - `store/manifest.json` 保存项目级 schema 版本、当前 revision、最近备份信息
 - `store/revisions.jsonl` 记录每次持久化变更的 revision 日志
+- `store/assets.json` 保存素材主表
+- `store/slices.json` 只保存细扫后、可进入脚本与时间线的切片
 - `store/snapshots/` 保存可回退的文档级快照
 - `store/backups/` 保存跨文档的项目级备份包
 - `analysis/plans.json` 保存每条素材的分析计划、密度分数和采样策略
 - `analysis/windows.json` 保存 `interestingWindows[]` 和命中原因
+- `analysis/asset-reports/` 保存面向全部素材的粗扫报告
 - `analysis/reference-transcripts/` 保存参考视频或分析素材的正式转写结果
 - `analysis/style-references/` 保存逐视频落地的风格分析报告，再由上层综合成一个分类风格
-- `slices.json` 是未来最有复用价值的中间资产
 - `media/chronology.json` 保存按拍摄时间排序的素材时序视图，并记录时间/描述修正
 - `current.ktep.json` 是编辑器无关的正式时间线
 - `.tmp/` 保存流水线运行过程中的临时产物、关键帧、代理音频、调试日志和进度文件；默认可清理，不纳入 `Canonical Project Store`
 - `adapters/*/state.json` 只保存适配器私有映射状态
+- `~/.kairos/device-media-maps.json` 只保存当前设备上的本地素材目录映射，不纳入项目同步
 
 建议的 `ingest-roots.json` 结构：
 
@@ -1148,30 +1495,53 @@ Core 侧只依赖这个稳定协议；服务端内部仍可继续沿用 `jianyin
   "roots": [
     {
       "id": "nz-a7r5-main",
-      "path": "H:/NZ/A7R5",
+      "label": "A7R5 主机位",
       "enabled": true,
       "category": "camera",
       "priority": 10,
       "defaultTimezone": "Pacific/Auckland",
+      "description": "主机位，城市、步行、风光和部分机内口播混合",
       "notes": [
         "北岛前半段主机位",
-        "城市、步行、风光和部分机内口播"
+        "题材混合，不要求目录只有单一语义"
       ],
       "tags": ["north-island", "main-camera"]
     },
     {
       "id": "nz-drone",
-      "path": "H:/NZ/Mavic",
+      "label": "无人机素材",
       "enabled": true,
       "category": "drone",
       "priority": 20,
       "defaultTimezone": "Pacific/Auckland",
+      "description": "无人机，全景、海岸线、瀑布、地热、公路全景为主",
       "notes": [
-        "无人机素材，优先关注海岸线、瀑布、地热、公路全景"
+        "优先关注海岸线、瀑布、地热、公路全景"
       ],
       "tags": ["north-island", "drone"]
     }
   ]
+}
+```
+
+建议的 `device-media-maps.json`：
+
+```json
+{
+  "projects": {
+    "new-zealand-doc": {
+      "roots": [
+        {
+          "rootId": "nz-a7r5-main",
+          "localPath": "F:\\NZ\\A7R5"
+        },
+        {
+          "rootId": "nz-drone",
+          "localPath": "G:\\NZ\\Mavic"
+        }
+      ]
+    }
+  }
 }
 ```
 
@@ -1297,11 +1667,12 @@ interface WorkflowProgress {
 
 - `config/ingest-roots.json`
 - `config/runtime.json`
-- `media/index.json`
-- `media/slices.json`
+- `store/assets.json`
+- `store/slices.json`
 - `media/chronology.json`
 - `analysis/plans.json`
 - `analysis/windows.json`
+- `analysis/asset-reports/*`
 - `analysis/reference-transcripts/*`
 - `analysis/style-references/<category>/*`
 - `script/current.json`
@@ -1314,6 +1685,7 @@ interface WorkflowProgress {
 - 每份文档职责单一
 - 通过稳定 ID 互相引用
 - 写入必须走原子替换，不允许半写入状态
+- `store/slices.json` 不是全量素材摘要，而是细扫后产生的高价值切片集合
 
 ### 14.3 版本层（Versions / Revisions）
 

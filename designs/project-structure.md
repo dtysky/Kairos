@@ -10,6 +10,11 @@
 
 当前已实施的中间版本，与本文早期草案相比有几处关键差异：
 
+- `projects/<project_id>/`
+  - 下一阶段的正式设计建议把项目数据统一收口到 Kairos 工程内的 `projects/` 目录
+  - 这样便于云同步、多设备共享和项目选择
+- `~/.kairos/device-media-maps.json`
+  - 素材真实目录不再直接写死在项目内，而是由每台设备单独维护本地路径映射
 - `config/runtime.json`
   - 当前项目把 `ffmpegPath`、`ffprobePath`、`ffmpegHwaccel`、`analysisProxyWidth`、`analysisProxyPixelFormat`、`sceneDetectFps`、`mlServerUrl` 等运行时设置落在项目内配置中
   - 不再依赖环境变量或用户口头约定
@@ -22,6 +27,9 @@
   - 当前流水线的关键帧、代理音频、阶段摘要、进度文件统一写入项目内 `.tmp/`
   - 例如 `.tmp/style-analysis/{category}/progress.json`
   - 这些内容默认视为可清理的中间产物，不属于 `Canonical Project Store`
+- 素材分析策略
+  - 下一阶段正式设计采用“粗扫优先 + 自动细扫”
+  - 不是所有素材都默认做镜头级分析，也不是所有素材都会立刻生成 `slice`
 - 本地网页进度页
   - 长时任务通过轮询 `.tmp/.../progress.json` 展示 `第 N / M 步`、`第 N / M 帧`、`剩余时间`
 
