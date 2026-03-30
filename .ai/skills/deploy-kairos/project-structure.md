@@ -56,14 +56,21 @@ Kairos/
 │           └── index.ts
 │
 ├── ml-server/                # Python ML server (FastAPI)
-│   ├── pyproject.toml        # Dependencies: faster-whisper, torch, open-clip, etc.
+│   ├── pyproject.toml        # Dependencies: mlx-whisper, mlx-vlm, etc.
 │   └── kairos_ml/
 │       ├── main.py           # FastAPI app, port 8910
-│       ├── device.py         # cuda/mps/cpu detection
-│       ├── whisper_runner.py # ASR via faster-whisper
+│       ├── device.py         # cuda/mps/cpu + mlx/torch detection
+│       ├── whisper_runner.py # ASR (MLX: whisper-large-v3-turbo / Torch: whisper-small)
 │       ├── ocr_runner.py     # OCR via PaddleOCR/EasyOCR
-│       ├── clip_runner.py    # Image embeddings via OpenCLIP
-│       └── vlm_runner.py     # Scene analysis via Qwen-VL-Chat (transformers)
+│       ├── clip_runner.py    # Image embeddings (MLX: mlx_clip / Torch: open-clip)
+│       └── vlm_runner.py     # VLM (MLX: Qwen3-VL-4B-8bit / Torch: Qwen3-VL-4B)
+│
+├── scripts/
+│   ├── ml-server.sh          # macOS/Linux: start/stop/status ML server
+│   ├── ml-server.ps1         # Windows PowerShell: start/stop/status ML server
+│   ├── ml-models-init.sh     # macOS: pre-download all MLX models from HF Hub
+│   ├── style-analysis-progress.sh   # macOS: serve progress viewer
+│   └── style-analysis-progress-viewer.html  # Real-time progress dashboard
 │
 ├── vendor/
 │   └── jianying-mcp/        # Vendored external Jianying MCP server

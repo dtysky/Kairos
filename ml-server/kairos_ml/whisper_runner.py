@@ -6,11 +6,15 @@ ASR runner with two backends:
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 from .device import DEVICE, BACKEND
+
+CDEFAULT_MLX_WHISPER = "mlx-community/whisper-large-v3-turbo"
+CWHISPER_MODEL = os.getenv("KAIROS_WHISPER_MODEL", "")
 
 
 def _repo_root() -> Path:
@@ -50,7 +54,11 @@ def _extract_audio_wav(media_path: str) -> Path:
 def _transcribe_mlx(wav_path: Path, language: str | None) -> list[dict]:
     import mlx_whisper  # type: ignore
 
-    kwargs: dict = {"word_timestamps": False}
+    model_ref = CWHISPER_MODEL or CDEFAULT_MLX_WHISPER
+    kwargs: dict = {
+        "path_or_hf_repo": model_ref,
+        "word_timestamps": False,
+    }
     if language:
         kwargs["language"] = language
 
