@@ -35,7 +35,7 @@ export {
   pickCoarseSampleCount,
   type ISamplerInput,
 } from './sampler.js';
-export { mergeEvidence, evidenceFromPath } from './evidence.js';
+export { evidenceFromPath } from './evidence.js';
 export { recognizeFrames, recognizeShotGroups, type IRecognition, type IShotRecognition } from './recognizer.js';
 export {
   ingestWorkspaceProjectMedia,

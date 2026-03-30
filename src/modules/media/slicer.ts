@@ -16,7 +16,7 @@ export function slicePhoto(asset: IKtepAsset): IKtepSlice {
     assetId: asset.id,
     type: 'photo',
     labels: [],
-    evidence: [],
+    placeHints: [],
   };
 }
 
@@ -46,7 +46,7 @@ export function sliceVideo(
       sourceInMs: inMs,
       sourceOutMs: outMs,
       labels: [],
-      evidence: [],
+      placeHints: [],
     });
   }
 
@@ -68,6 +68,6 @@ export function sliceInterestingWindows(
       sourceOutMs: window.endMs,
       summary: window.reason,
       labels: [],
-      evidence: [],
+      placeHints: [],
     }));
 }

@@ -148,8 +148,8 @@ export const IKtepSlice = z.object({
   sourceOutMs: z.number().optional(),
   summary: z.string().optional(),
   labels: z.array(z.string()),
+  placeHints: z.array(z.string()),
   confidence: z.number().min(0).max(1).optional(),
-  evidence: z.array(IKtepEvidence),
 });
 export type IKtepSlice = z.infer<typeof IKtepSlice>;
 
@@ -383,6 +383,7 @@ export const IAssetCoarseReport = z.object({
   summary: z.string().optional(),
   labels: z.array(z.string()),
   placeHints: z.array(z.string()),
+  rootNotes: z.array(z.string()),
   sampleFrames: z.array(ICoarseSample),
   interestingWindows: z.array(IInterestingWindow),
   shouldFineScan: z.boolean(),

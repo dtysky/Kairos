@@ -97,7 +97,6 @@ class VideoSegment:
 
         # 确定使用的轨道名称（参数优先，然后是实例属性）
         final_track_name = track_name or self.track_name
-
         material_ext = os.path.splitext(material)[1].lower()
         material_type: Literal["video", "image"] = 'image' if material_ext in CSUPPORTED_IMAGE_FORMATS else 'video'
 
@@ -522,4 +521,3 @@ class VideoSegment:
             track_type = add_track_data.get("track_type")
             if track_type != "video":
                 raise TypeError(f"轨道 '{track_name}' 的类型是 '{track_type}'，不能添加视频片段")
-

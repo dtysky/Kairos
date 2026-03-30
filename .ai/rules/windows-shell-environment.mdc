@@ -13,31 +13,31 @@ alwaysApply: true
 
 ## 命令行约定
 
-- 默认使用 **WSL** 作为日常命令行环境。
-- 在 WSL 中默认使用 **zsh**，不要默认回退到 `bash`。
-- 仅在 **明确需要 CUDA / Windows GPU 环境** 时，才使用 Windows 侧命令行（如 PowerShell）。
+- 对于当前 Kairos 工程，默认使用 **Windows 原生命令行**（如 PowerShell）。
+- 只有在用户明确要求，或某一步只能在 Linux / WSL 工具链下完成时，才切换到 **WSL**。
+- 如果确实需要进入 WSL，默认使用 **zsh**，不要默认回退到 `bash`。
 - 在 **Windows + NVIDIA GPU** 场景下，`VLM / ML server` 默认应在 **Windows 原生 Python 环境** 中以 `CUDA` 运行，不要从 WSL 启动这类推理服务。
 - 在 Windows 平台初始化媒体链路时，先检查 **Windows 原生** `ffmpeg / ffprobe` 是否可用；如果系统 `PATH` 没有，再检查常见安装目录（如 `C:\Applications\...`）。如果仍找不到，优先写入项目内的 `config/runtime.json`（如 `ffmpegPath` / `ffprobePath`），而不是默认继续；下载或安装只作为最后兜底。
 - 风格分析或媒体分析产生的临时文件，默认写入当前 Kairos 工程目录下的 `.tmp/`，不要落到 `C:` 盘的系统临时目录；分析完成后默认清理这些临时产物，除非用户明确要求保留用于调试。
-- 如果一个任务同时包含 WSL 与 Windows 步骤，优先把 **非 CUDA** 步骤放在 WSL，减少环境切换。
-- 如果命令依赖用户的 shell 初始化（如 `nvm`、`pnpm`、`PATH` 定制），优先使用能加载用户 `zsh` 环境的调用方式。
+- 如果一个任务同时包含 WSL 与 Windows 步骤，优先把主流程放在 **Windows 原生**，减少跨环境路径和进程管理问题。
+- 如果命令依赖用户的 shell 初始化（如 `nvm`、`pnpm`、`PATH` 定制），且必须进入 WSL，优先使用能加载用户 `zsh` 环境的调用方式。
 
 ## 典型场景
 
-- 适合放在 WSL：
-  - 日常代码搜索、编辑、测试、构建
-  - 普通脚本执行
-  - 与 Linux 工具链更匹配的命令
-
 - 适合放在 Windows 命令行：
+  - 当前 Kairos 工程的日常代码搜索、编辑、测试、构建
+  - 剪映 / 本地媒体工具 / Windows 原生 ffmpeg 相关任务
   - 明确依赖 CUDA / Windows GPU 的推理、训练或 benchmark
   - `Kairos ML server` / `VLM` 在 Windows + NVIDIA GPU 上的启动与调试
   - 明确依赖 Windows 本机驱动、PowerShell 或 Windows 专属工具的任务
 
+- 适合放在 WSL：
+  - 用户明确要求使用 WSL 的场景
+  - 与 Linux 工具链强绑定、且 Windows 原生不方便替代的命令
+
 ## 原则
 
-- 不因为“当前默认 shell 是 PowerShell”就默认使用 Windows 侧命令行。
-- 不因为 WSL 可用就默认使用 `bash`，应优先遵循用户在 WSL 中的默认工作 shell：`zsh`。
-- 对于工作区内的常规 WSL 命令，默认直接执行，不要额外向用户确认。
-- 只有当 WSL 命令涉及删除文件，或可能影响工作区外文件 / 目录时，才需要先确认。
-- 只有在任务对 Windows / CUDA 有明确要求时，才切换过去。
+- 不再默认把 Kairos 的日常工作流放进 WSL。
+- 不因为 WSL 可用就默认使用 `bash`；只有必须进入 WSL 时，优先遵循用户的默认 shell：`zsh`。
+- 对于工作区内的常规 Windows 原生命令，默认直接执行，不要额外向用户确认。
+- 只有当命令涉及删除文件，或可能影响工作区外文件 / 目录时，才需要先确认。

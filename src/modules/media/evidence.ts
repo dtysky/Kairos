@@ -1,22 +1,4 @@
-import type { IKtepEvidence, IKtepSlice } from '../../protocol/schema.js';
-
-/**
- * 合并多来源证据到 slice 上，去重并按置信度排序。
- */
-export function mergeEvidence(
-  slice: IKtepSlice,
-  ...sources: IKtepEvidence[][]
-): IKtepSlice {
-  const all = [...slice.evidence];
-  for (const batch of sources) {
-    all.push(...batch);
-  }
-
-  const deduped = dedup(all);
-  deduped.sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0));
-
-  return { ...slice, evidence: deduped };
-}
+import type { IKtepEvidence } from '../../protocol/schema.js';
 
 function dedup(evidence: IKtepEvidence[]): IKtepEvidence[] {
   const seen = new Set<string>();

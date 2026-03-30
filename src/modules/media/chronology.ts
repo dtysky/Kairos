@@ -80,6 +80,13 @@ function buildChronologyEvidence(
       confidence: 0.5,
     });
   }
+  for (const note of report?.rootNotes ?? []) {
+    evidence.push({
+      source: 'manual-root-note',
+      value: note,
+      confidence: 0.6,
+    });
+  }
   for (const label of labels) {
     evidence.push({
       source: 'vision',

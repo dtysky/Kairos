@@ -76,12 +76,7 @@ function buildSegmentContext(slices: IKtepSlice[]): IOutlineSegmentContext {
     assetId: slice.assetId,
     summary: slice.summary,
     labels: takeUnique(slice.labels, 4),
-    placeHints: takeUnique(
-      slice.evidence
-        .filter(evidence => evidence.value.startsWith('place:'))
-        .map(evidence => evidence.value.replace(/^place:/, '')),
-      3,
-    ),
+    placeHints: takeUnique(slice.placeHints, 3),
     sourceInMs: slice.sourceInMs,
     sourceOutMs: slice.sourceOutMs,
   }));

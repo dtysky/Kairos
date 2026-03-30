@@ -5,7 +5,6 @@ import type {
   ETargetBudget,
   IAssetCoarseReport,
   IKtepAsset,
-  IKtepEvidence,
   IKtepSlice,
   IMediaAnalysisPlan,
   IMediaRoot,
@@ -31,7 +30,6 @@ import {
 import { buildAssetCoarseReport } from './asset-report.js';
 import { buildMediaChronology } from './chronology.js';
 import { estimateDensity } from './density.js';
-import { evidenceFromPath, mergeEvidence } from './evidence.js';
 import {
   uniformTimestamps,
   extractImageProxy,
@@ -386,6 +384,7 @@ async function analyzeSingleAsset(
 
   const ml = await input.getMlHandle();
   const summary = await summarizeSamples(ml, sampleFrames);
+  const root = input.roots.find(item => item.id === input.asset.ingestRootId);
   const baseReport = buildAssetCoarseReport({
     asset: input.asset,
     plan: effectivePlan,
@@ -393,6 +392,7 @@ async function analyzeSingleAsset(
     summary: summary?.description,
     labels: buildReportLabels(clipTypeGuess, summary?.sceneType, summary?.subjects),
     placeHints: summary?.placeHints ?? [],
+    rootNotes: root?.notes ?? [],
     sampleFrames,
     fineScanReasons: buildFineScanReasons(effectivePlan, density, shotBoundaries),
   });
@@ -456,6 +456,7 @@ async function analyzePhotoAsset(
   const summary = await summarizeSamples(ml, sampleFrames);
   const density = estimateDensity({ durationMs: 0, shotBoundaries: [] });
   const clipTypeGuess: EClipType = 'broll';
+  const root = input.roots.find(item => item.id === input.asset.ingestRootId);
   const plan = buildAnalysisPlan({
     assetId: input.asset.id,
     durationMs: 0,
@@ -472,20 +473,17 @@ async function analyzePhotoAsset(
     summary: summary?.description,
     labels: buildReportLabels(clipTypeGuess, summary?.sceneType, summary?.subjects),
     placeHints: summary?.placeHints ?? [],
+    rootNotes: root?.notes ?? [],
     sampleFrames,
     shouldFineScan: true,
     fineScanMode: 'full',
     fineScanReasons: ['photo-assets-are-directly-usable'],
   });
 
-  const root = input.roots.find(item => item.id === input.asset.ingestRootId);
-  const slice = mergeEvidence(
-    slicePhoto(input.asset),
-    evidenceFromPath(input.asset.sourcePath, root?.notes),
-    summary?.evidence ?? [],
-  );
+  const slice = slicePhoto(input.asset);
   slice.summary = report.summary;
   slice.labels = report.labels;
+  slice.placeHints = report.placeHints;
 
   return {
     report,
@@ -690,16 +688,6 @@ async function buildFineScanSlices(
     return { slices: [], droppedInvalidSliceCount: 0 };
   }
 
-  const root = input.roots.find(item => item.id === input.asset.ingestRootId);
-  const sharedEvidence = [
-    ...evidenceFromPath(input.asset.sourcePath, root?.notes),
-    ...(input.report.summary ? [{
-      source: 'vision' as const,
-      value: input.report.summary,
-      confidence: 0.65,
-    }] : []),
-  ];
-
   const baseSlices = input.report.fineScanMode === 'full'
     ? sliceVideo(input.asset, input.shotBoundaries)
     : sliceInterestingWindows(
@@ -728,14 +716,12 @@ async function buildFineScanSlices(
   const plans = buildFineScanKeyframePlans(effectiveSlices);
   if (plans.length === 0 || !input.ml.available) {
     return {
-      slices: effectiveSlices.map(slice => {
-        const merged = mergeEvidence(slice, sharedEvidence);
-        return {
-          ...merged,
-          summary: slice.summary ?? input.report.summary,
-          labels: [...new Set([...slice.labels, ...input.report.labels])],
-        };
-      }),
+      slices: effectiveSlices.map(slice => ({
+        ...slice,
+        summary: slice.summary ?? input.report.summary,
+        labels: dedupeStrings([...slice.labels, ...input.report.labels]),
+        placeHints: dedupeStrings([...slice.placeHints, ...input.report.placeHints]),
+      })),
       droppedInvalidSliceCount: 0,
     };
   }
@@ -761,22 +747,19 @@ async function buildFineScanSlices(
       droppedInvalidSliceCount += 1;
       continue;
     }
-    const merged = mergeEvidence(
-      slice,
-      sharedEvidence,
-      recognition?.recognition.evidence ?? [],
-    );
     slices.push({
-      ...merged,
+      ...slice,
       summary: recognition?.recognition.description || slice.summary || input.report.summary,
-      labels: [
-        ...new Set([
-          ...slice.labels,
-          ...input.report.labels,
-          recognition?.recognition.sceneType,
-          ...(recognition?.recognition.subjects ?? []),
-        ].filter(Boolean) as string[]),
-      ],
+      labels: dedupeStrings([
+        ...slice.labels,
+        ...input.report.labels,
+        recognition?.recognition.sceneType,
+        ...(recognition?.recognition.subjects ?? []),
+      ]),
+      placeHints: dedupeStrings([
+        ...slice.placeHints,
+        ...(recognition?.recognition.placeHints ?? []),
+      ]),
     });
   }
 
@@ -943,4 +926,12 @@ function resolveAssetRootAvailable(
   const projectMap = deviceMaps.projects[projectId];
   if (!projectMap) return Boolean(root.path);
   return projectMap.roots.some(item => item.rootId === root.id) || Boolean(root.path);
+}
+
+function dedupeStrings(values: Array<string | undefined>): string[] {
+  return [...new Set(
+    values
+      .map(value => value?.trim())
+      .filter((value): value is string => Boolean(value)),
+  )];
 }

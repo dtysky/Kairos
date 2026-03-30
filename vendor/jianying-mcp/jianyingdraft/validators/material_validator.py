@@ -21,6 +21,8 @@ SAVE_PATH = os.getenv('SAVE_PATH')
 class MaterialValidator:
     """素材验证器"""
 
+    DURATION_TOLERANCE_SECONDS = 0.25
+
     # 支持的媒体格式
     SUPPORTED_AUDIO_FORMATS = {'.mp3', '.wav', '.aac', '.m4a', '.flac', '.ogg', '.wma'}
     SUPPORTED_VIDEO_FORMATS = {'.mp4', '.avi', '.mov', '.mkv', '.wmv', '.flv', '.webm', '.m4v', '.mpg', '.mpeg'}
@@ -64,8 +66,11 @@ class MaterialValidator:
             return
         duration_seconds = self._parse_time_to_seconds(source_timerange["duration"])
         # 验证时间范围
-        if duration_seconds > duration:
-            raise ValueError(f"素材所占的轨道时长 {duration_seconds}s 超出素材本身时长 {duration}s，请缩短轨道所占时间")
+        if duration_seconds > duration + self.DURATION_TOLERANCE_SECONDS:
+            raise ValueError(
+                f"素材所占的轨道时长 {duration_seconds}s 超出素材本身时长 {duration}s，"
+                f"已超过容差 {self.DURATION_TOLERANCE_SECONDS}s，请缩短轨道所占时间"
+            )
 
     def download_and_localize_material(self, material_path: str, expected_type: str = None) -> str:
         """
@@ -95,7 +100,8 @@ class MaterialValidator:
         self.validate_material_path(local_path, expected_type)
 
         # 返回相对路径
-        return self._get_relative_path(local_path)
+        relative_path = self._get_relative_path(local_path)
+        return relative_path
 
     def _download_url_to_local(self, url: str, expected_type: str = None) -> str:
         """
@@ -366,5 +372,3 @@ def download_and_validate_material(draft_id: str, material_path: str, material_t
         validator.validate_source_timerange(abs_path, target_timerange)
 
     return local_path
-
-

@@ -15,6 +15,7 @@ export interface IBuildAssetCoarseReportInput {
   summary?: string;
   labels?: string[];
   placeHints?: string[];
+  rootNotes?: string[];
   sampleFrames?: IKeyframeResult[];
   sampleFrameSummaries?: string[];
   shouldFineScan?: boolean;
@@ -37,6 +38,7 @@ export function buildAssetCoarseReport(
     summary: input.summary,
     labels: dedupe(input.labels ?? []),
     placeHints: dedupe(input.placeHints ?? []),
+    rootNotes: dedupe(input.rootNotes ?? []),
     sampleFrames: (input.sampleFrames ?? []).map((frame, index) => ({
       timeMs: frame.timeMs,
       path: frame.path,
