@@ -72,6 +72,12 @@ Kairos/
 │   ├── style-analysis-progress.sh   # macOS: serve progress viewer
 │   └── style-analysis-progress-viewer.html  # Real-time progress dashboard
 │
+├── models/                   # ML model weights (gitignored, ~7 GB total)
+│   ├── whisper-large-v3-turbo/     # mlx-whisper ASR model
+│   ├── clip-vit-base-patch32/      # mlx_clip embedding model
+│   ├── Qwen3-VL-4B-Instruct-8bit/ # mlx-vlm model (Apple Silicon)
+│   └── Qwen3-VL-4B-Instruct/      # transformers VLM model (CUDA)
+│
 ├── vendor/
 │   └── jianying-mcp/        # Vendored external Jianying MCP server
 │       ├── pyproject.toml    # Requires Python >= 3.13

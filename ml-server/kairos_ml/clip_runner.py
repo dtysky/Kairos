@@ -5,6 +5,8 @@ CLIP image embedding with two backends:
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 from .device import DEVICE, BACKEND
 
 _backend_loaded: str | None = None
@@ -12,9 +14,14 @@ _model = None
 _preprocess = None
 _tokenizer = None
 
-CCLIP_MODEL = "openai/clip-vit-base-patch32"
+CCLIP_HF_REPO = "openai/clip-vit-base-patch32"
+CLOCAL_CLIP = "clip-vit-base-patch32"
 COPEN_CLIP_ARCH = "ViT-B-32"
 COPEN_CLIP_PRETRAINED = "laion2b_s34b_b79k"
+
+
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[2]
 
 
 # ── MLX backend ─────────────────────────────────────────────
@@ -26,7 +33,8 @@ def _load_mlx():
 
     from mlx_clip import mlx_clip  # type: ignore
 
-    _model = mlx_clip(CCLIP_MODEL)
+    local = _repo_root() / "models" / CLOCAL_CLIP
+    _model = mlx_clip(str(local), hf_repo=CCLIP_HF_REPO)
     _backend_loaded = "mlx"
 
 

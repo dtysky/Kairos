@@ -14,6 +14,7 @@ from tempfile import NamedTemporaryFile
 from .device import DEVICE, BACKEND
 
 CDEFAULT_MLX_WHISPER = "mlx-community/whisper-large-v3-turbo"
+CLOCAL_MLX_WHISPER = "whisper-large-v3-turbo"
 CWHISPER_MODEL = os.getenv("KAIROS_WHISPER_MODEL", "")
 
 
@@ -54,7 +55,11 @@ def _extract_audio_wav(media_path: str) -> Path:
 def _transcribe_mlx(wav_path: Path, language: str | None) -> list[dict]:
     import mlx_whisper  # type: ignore
 
-    model_ref = CWHISPER_MODEL or CDEFAULT_MLX_WHISPER
+    if CWHISPER_MODEL:
+        model_ref = CWHISPER_MODEL
+    else:
+        local = _repo_root() / "models" / CLOCAL_MLX_WHISPER
+        model_ref = str(local) if local.exists() else CDEFAULT_MLX_WHISPER
     kwargs: dict = {
         "path_or_hf_repo": model_ref,
         "word_timestamps": False,

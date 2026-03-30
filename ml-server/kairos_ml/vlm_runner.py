@@ -19,6 +19,7 @@ CMODEL_ID = os.getenv("KAIROS_VLM_MODEL_ID", "")
 CMODEL_PATH = os.getenv("KAIROS_VLM_MODEL_PATH")
 
 CDEFAULT_MLX_MODEL = "mlx-community/Qwen3-VL-4B-Instruct-8bit"
+CLOCAL_MLX_VLM = "Qwen3-VL-4B-Instruct-8bit"
 CDEFAULT_CUDA_MODEL = "Qwen/Qwen3-VL-4B-Instruct"
 
 
@@ -35,7 +36,11 @@ def _load_mlx():
 
     from mlx_vlm import load  # type: ignore
 
-    model_ref = CMODEL_PATH or CMODEL_ID or CDEFAULT_MLX_MODEL
+    if CMODEL_PATH or CMODEL_ID:
+        model_ref = CMODEL_PATH or CMODEL_ID
+    else:
+        local = _repo_root() / "models" / CLOCAL_MLX_VLM
+        model_ref = str(local) if local.exists() else CDEFAULT_MLX_MODEL
     _model, _processor = load(model_ref)
     _backend_loaded = "mlx"
 

@@ -92,7 +92,7 @@ cd ml-server
 uv pip install --python ../.venv-ml/bin/python -e ".[mlx]"
 ```
 
-安装完成后，运行初始化脚本预下载所有 MLX 模型（见 Step 3e）。
+安装完成后，运行初始化脚本预下载所有 MLX 模型到项目本地 `models/` 目录（见 Step 3d）。
 
 **Windows + NVIDIA GPU：**
 
@@ -141,16 +141,16 @@ export KAIROS_VLM_MODEL_PATH=/path/to/Qwen3-VL-4B-Instruct
 
 ### 3d. Pre-download MLX models (Apple Silicon only)
 
-Apple Silicon 上所有 ML 模型默认从 Hugging Face Hub 下载到 `~/.cache/huggingface/hub/`。
-首次推理时会自动下载，但建议提前初始化以避免分析时阻塞。
+Apple Silicon 上所有 ML 模型从 Hugging Face Hub 下载到项目本地 `models/` 目录（已在 `.gitignore` 中排除）。
+各 runner 的加载优先级：**环境变量覆盖 > `models/` 本地目录 > HF Hub 自动下载**。
 
 **模型清单：**
 
-| 模块 | Hub ID | 用途 | 大小 |
-|------|--------|------|------|
-| mlx-whisper | `mlx-community/whisper-large-v3-turbo` | 语音转写 (ASR) | ~1.6 GB |
-| mlx_clip | `openai/clip-vit-base-patch32` | 图像嵌入 (CLIP) | ~600 MB |
-| mlx-vlm | `mlx-community/Qwen3-VL-4B-Instruct-8bit` | 视觉理解 (VLM) | ~4.9 GB |
+| 模块 | Hub ID | 本地目录 | 用途 | 大小 |
+|------|--------|---------|------|------|
+| mlx-whisper | `mlx-community/whisper-large-v3-turbo` | `models/whisper-large-v3-turbo/` | 语音转写 (ASR) | ~1.6 GB |
+| mlx_clip | `openai/clip-vit-base-patch32` | `models/clip-vit-base-patch32/` | 图像嵌入 (CLIP) | ~600 MB |
+| mlx-vlm | `mlx-community/Qwen3-VL-4B-Instruct-8bit` | `models/Qwen3-VL-4B-Instruct-8bit/` | 视觉理解 (VLM) | ~4.9 GB |
 
 **一键初始化：**
 
@@ -158,14 +158,27 @@ Apple Silicon 上所有 ML 模型默认从 Hugging Face Hub 下载到 `~/.cache/
 ./scripts/ml-models-init.sh
 ```
 
-脚本会自动检测 `.venv-ml` 和 arm64 架构，然后按顺序下载三个模型。
+脚本会：
+1. 检测 `.venv-ml` 和 arm64 架构
+2. 通过 `huggingface_hub.snapshot_download(local_dir=...)` 下载 Whisper、VLM 到 `models/`
+3. 通过 `mlx_clip` 下载并转换 CLIP 权重到 `models/`
+
+下载完成后 `models/` 结构：
+
+```
+models/
+├── whisper-large-v3-turbo/     # ~1.6 GB
+├── clip-vit-base-patch32/      # ~600 MB
+└── Qwen3-VL-4B-Instruct-8bit/ # ~4.9 GB
+```
 
 **可选覆盖（环境变量）：**
 
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
-| `KAIROS_WHISPER_MODEL` | `mlx-community/whisper-large-v3-turbo` | Whisper 模型 ID |
+| `KAIROS_WHISPER_MODEL` | `mlx-community/whisper-large-v3-turbo` | Whisper 模型 ID 或本地路径 |
 | `KAIROS_VLM_MODEL_ID` | `mlx-community/Qwen3-VL-4B-Instruct-8bit` | VLM 模型 ID |
+| `KAIROS_VLM_MODEL_PATH` | unset | VLM 本地路径（覆盖 ID） |
 | `HF_ENDPOINT` | (HuggingFace 官方) | HF 镜像地址，国内可设为 `https://hf-mirror.com` |
 
 ### 3e. Start ML server
@@ -203,7 +216,7 @@ Verify: `curl http://127.0.0.1:8910/health`
 | CPU fallback | `cpu` | `torch` |
 
 在 Windows 上如果返回 `cpu`，检查是否误在 WSL 环境启动了 ML server。
-如果跳过了 Step 3d 的预下载，首次调用端点时会按需下载（VLM ~4.9GB, Whisper ~1.6GB, CLIP ~600MB）。建议先运行 `./scripts/ml-models-init.sh`。
+如果跳过了 Step 3d 的预下载，首次调用端点时 Whisper/VLM 会自动下载到 HF 缓存（不在 `models/`），CLIP 会下载到 `models/`。建议先运行 `./scripts/ml-models-init.sh` 统一管理。
 
 ## Step 4: Jianying MCP (optional, for Jianying export)
 
