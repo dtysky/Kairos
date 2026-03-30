@@ -7,12 +7,13 @@ import type {
   IKtepAsset,
   IKtepEvidence,
   IKtepSlice,
+  IMediaAnalysisPlan,
   IMediaRoot,
 } from '../../protocol/schema.js';
 import {
-  appendSlices,
-  estimateRemainingSeconds,
-  findUnreportedAssets,
+    appendSlices,
+    estimateRemainingSeconds,
+    findUnreportedAssets,
   loadAssetReports,
   loadAssets,
   loadChronology,
@@ -31,9 +32,16 @@ import { buildAssetCoarseReport } from './asset-report.js';
 import { buildMediaChronology } from './chronology.js';
 import { estimateDensity } from './density.js';
 import { evidenceFromPath, mergeEvidence } from './evidence.js';
-import { uniformTimestamps, extractImageProxy, extractKeyframes } from './keyframe.js';
+import {
+  uniformTimestamps,
+  extractImageProxy,
+  extractKeyframes,
+  groupKeyframesByShot,
+  sampleRangeTimestamps,
+  type IShotKeyframePlan,
+} from './keyframe.js';
 import { MlClient } from './ml-client.js';
-import { recognizeFrames } from './recognizer.js';
+import { recognizeFrames, recognizeShotGroups } from './recognizer.js';
 import { resolveAssetLocalPath } from './root-resolver.js';
 import { buildAnalysisPlan, pickCoarseSampleCount } from './sampler.js';
 import { computeRhythmStats, detectShots, type IShotBoundary } from './shot-detect.js';
@@ -319,6 +327,11 @@ interface IAnalyzeSingleAssetResult {
   slices: IKtepSlice[];
 }
 
+interface IFineScanSlicesResult {
+  slices: IKtepSlice[];
+  droppedInvalidSliceCount: number;
+}
+
 interface MlAvailability {
   client: MlClient;
   available: boolean;
@@ -352,10 +365,16 @@ async function analyzeSingleAsset(
     clipType: clipTypeGuess,
     budget: input.budget,
   });
-
   const sampleTimestamps = buildCoarseSampleTimestamps(
     input.asset.durationMs ?? 0,
     plan.coarseSampleCount ?? pickCoarseSampleCount(input.asset.durationMs ?? 0),
+  );
+  const effectivePlan = applyDriveFallbackWindows(
+    plan,
+    clipTypeGuess,
+    input.asset.durationMs ?? 0,
+    input.budget,
+    sampleTimestamps,
   );
   const extractedFrames = await extractKeyframes(
     input.localPath,
@@ -367,26 +386,60 @@ async function analyzeSingleAsset(
 
   const ml = await input.getMlHandle();
   const summary = await summarizeSamples(ml, sampleFrames);
-  const report = buildAssetCoarseReport({
+  const baseReport = buildAssetCoarseReport({
     asset: input.asset,
-    plan,
+    plan: effectivePlan,
     clipTypeGuess,
     summary: summary?.description,
     labels: buildReportLabels(clipTypeGuess, summary?.sceneType, summary?.subjects),
     placeHints: summary?.placeHints ?? [],
     sampleFrames,
-    fineScanReasons: buildFineScanReasons(plan, density, shotBoundaries),
+    fineScanReasons: buildFineScanReasons(effectivePlan, density, shotBoundaries),
+  });
+
+  const fineScan = await buildFineScanSlices({
+    asset: input.asset,
+    localPath: input.localPath,
+    projectRoot: input.projectRoot,
+    roots: input.roots,
+    runtimeConfig: input.runtimeConfig,
+    shotBoundaries,
+    report: baseReport,
+    clipTypeGuess,
+    ml,
+  });
+  const report = reconcileFineScanReport({
+    report: baseReport,
+    slices: fineScan.slices,
+    droppedInvalidSliceCount: fineScan.droppedInvalidSliceCount,
   });
 
   return {
     report,
-    slices: buildFineScanSlices(
-      input.asset,
-      shotBoundaries,
-      report,
-      input.roots,
-      clipTypeGuess,
-    ),
+    slices: fineScan.slices,
+  };
+}
+
+function applyDriveFallbackWindows(
+  plan: IMediaAnalysisPlan,
+  clipTypeGuess: EClipType,
+  durationMs: number,
+  budget: ETargetBudget | undefined,
+  sampleTimestamps: number[],
+): IMediaAnalysisPlan {
+  if (clipTypeGuess !== 'drive') return plan;
+  if ((budget ?? 'standard') === 'coarse') return plan;
+  if (plan.interestingWindows.length > 0) return plan;
+  if (plan.shouldFineScan && plan.fineScanMode !== 'skip') return plan;
+
+  const fallbackWindows = buildDriveFallbackWindows(durationMs, sampleTimestamps);
+  if (fallbackWindows.length === 0) return plan;
+
+  return {
+    ...plan,
+    interestingWindows: fallbackWindows,
+    shouldFineScan: true,
+    fineScanMode: 'windowed',
   };
 }
 
@@ -420,6 +473,7 @@ async function analyzePhotoAsset(
     labels: buildReportLabels(clipTypeGuess, summary?.sceneType, summary?.subjects),
     placeHints: summary?.placeHints ?? [],
     sampleFrames,
+    shouldFineScan: true,
     fineScanMode: 'full',
     fineScanReasons: ['photo-assets-are-directly-usable'],
   });
@@ -470,22 +524,65 @@ function buildCoarseSampleTimestamps(
   sampleCount: number,
 ): number[] {
   if (durationMs <= 0) return [0];
-  const count = Math.max(1, sampleCount);
-  if (count === 1) return [Math.round(durationMs / 2)];
+  const endMs = Math.max(0, durationMs - 1);
+  if (endMs === 0) return [0];
 
-  const intervalMs = Math.max(1000, Math.floor(durationMs / (count + 1)));
-  const uniform = uniformTimestamps(durationMs, intervalMs);
-  if (uniform.length <= count) return uniform;
+  const count = Math.max(2, sampleCount);
+  const anchors = [0, endMs];
+  if (count === 2) return anchors;
+
+  const interiorCount = count - anchors.length;
+  const intervalMs = Math.max(1, Math.floor(durationMs / (count + 1)));
+  const uniform = uniformTimestamps(durationMs, intervalMs)
+    .filter(timeMs => timeMs > 0 && timeMs < endMs);
+
+  if (uniform.length === 0) return anchors;
+  if (uniform.length <= interiorCount) {
+    return [...new Set([0, ...uniform, endMs])].sort((a, b) => a - b);
+  }
 
   const picked: number[] = [];
-  for (let i = 1; i <= count; i++) {
+  for (let i = 1; i <= interiorCount; i++) {
     const index = Math.min(
       uniform.length - 1,
-      Math.round((i * (uniform.length - 1)) / (count + 1)),
+      Math.round((i * (uniform.length - 1)) / (interiorCount + 1)),
     );
     picked.push(uniform[index]);
   }
-  return [...new Set(picked)].sort((a, b) => a - b);
+
+  return [...new Set([0, ...picked, endMs])].sort((a, b) => a - b);
+}
+
+function buildDriveFallbackWindows(
+  durationMs: number,
+  sampleTimestamps: number[],
+): IMediaAnalysisPlan['interestingWindows'] {
+  if (durationMs <= 0) return [];
+
+  const uniqueTimestamps = [...new Set(sampleTimestamps)]
+    .filter(timeMs => timeMs >= 0 && timeMs < durationMs)
+    .sort((a, b) => a - b);
+  if (uniqueTimestamps.length === 0) return [];
+
+  const preferred = uniqueTimestamps.filter(timeMs => timeMs > 0 && timeMs < durationMs - 1);
+  const anchors = preferred.length > 0 ? preferred : uniqueTimestamps;
+  const windowDurationMs = pickDriveFallbackWindowDuration(durationMs);
+  const halfWindowMs = Math.max(1000, Math.floor(windowDurationMs / 2));
+
+  const windows = anchors.map(timeMs => ({
+    startMs: Math.max(0, timeMs - halfWindowMs),
+    endMs: Math.min(durationMs, timeMs + halfWindowMs),
+    reason: 'coarse-sample-window',
+  })).filter(window => window.endMs > window.startMs);
+
+  return mergeInterestingWindows(windows);
+}
+
+function pickDriveFallbackWindowDuration(durationMs: number): number {
+  if (durationMs <= 60_000) return 6_000;
+  if (durationMs <= 5 * 60_000) return 10_000;
+  if (durationMs <= 20 * 60_000) return 16_000;
+  return 20_000;
 }
 
 function guessClipType(
@@ -542,37 +639,151 @@ function buildFineScanReasons(
   return [...reasons];
 }
 
-function buildFineScanSlices(
-  asset: IKtepAsset,
-  shotBoundaries: IShotBoundary[],
-  report: IAssetCoarseReport,
-  roots: IMediaRoot[],
-  clipTypeGuess: EClipType,
-): IKtepSlice[] {
-  if (!report.shouldFineScan) return [];
+function mergeInterestingWindows(
+  windows: IMediaAnalysisPlan['interestingWindows'],
+): IMediaAnalysisPlan['interestingWindows'] {
+  if (windows.length === 0) return [];
+  const sorted = [...windows].sort((a, b) => a.startMs - b.startMs);
+  const merged: typeof windows = [{ ...sorted[0] }];
 
-  const root = roots.find(item => item.id === asset.ingestRootId);
+  for (let index = 1; index < sorted.length; index += 1) {
+    const previous = merged[merged.length - 1];
+    const current = sorted[index];
+    if (current.startMs <= previous.endMs) {
+      previous.endMs = Math.max(previous.endMs, current.endMs);
+      previous.reason = previous.reason === current.reason
+        ? previous.reason
+        : `${previous.reason}+${current.reason}`;
+      continue;
+    }
+    merged.push({ ...current });
+  }
+
+  return merged;
+}
+
+interface IBuildFineScanSlicesInput {
+  asset: IKtepAsset;
+  localPath: string;
+  projectRoot: string;
+  runtimeConfig: {
+    ffmpegPath?: string;
+    ffprobePath?: string;
+    ffmpegHwaccel?: string;
+    analysisProxyWidth?: number;
+    analysisProxyPixelFormat?: string;
+    sceneDetectFps?: number;
+    sceneDetectScaleWidth?: number;
+    mlServerUrl?: string;
+  };
+  shotBoundaries: IShotBoundary[];
+  report: IAssetCoarseReport;
+  roots: IMediaRoot[];
+  clipTypeGuess: EClipType;
+  ml: MlAvailability;
+}
+
+async function buildFineScanSlices(
+  input: IBuildFineScanSlicesInput,
+): Promise<IFineScanSlicesResult> {
+  if (!input.report.shouldFineScan) {
+    return { slices: [], droppedInvalidSliceCount: 0 };
+  }
+
+  const root = input.roots.find(item => item.id === input.asset.ingestRootId);
   const sharedEvidence = [
-    ...evidenceFromPath(asset.sourcePath, root?.notes),
-    ...(report.summary ? [{
+    ...evidenceFromPath(input.asset.sourcePath, root?.notes),
+    ...(input.report.summary ? [{
       source: 'vision' as const,
-      value: report.summary,
+      value: input.report.summary,
       confidence: 0.65,
     }] : []),
   ];
 
-  const baseSlices = report.fineScanMode === 'full'
-    ? sliceVideo(asset, shotBoundaries)
-    : sliceInterestingWindows(asset, report.interestingWindows, mapClipTypeToSliceType(clipTypeGuess));
+  const baseSlices = input.report.fineScanMode === 'full'
+    ? sliceVideo(input.asset, input.shotBoundaries)
+    : sliceInterestingWindows(
+      input.asset,
+      input.report.interestingWindows,
+      mapClipTypeToSliceType(input.clipTypeGuess),
+    );
+  const effectiveSlices = baseSlices.length > 0
+    ? baseSlices
+    : input.report.fineScanMode === 'windowed' && (input.asset.durationMs ?? 0) > 0
+      ? sliceInterestingWindows(
+        input.asset,
+        [{
+          startMs: 0,
+          endMs: input.asset.durationMs ?? 0,
+          reason: 'whole-asset-window-fallback',
+        }],
+        mapClipTypeToSliceType(input.clipTypeGuess),
+      )
+      : baseSlices;
 
-  return baseSlices.map(slice => {
-    const merged = mergeEvidence(slice, sharedEvidence);
+  if (effectiveSlices.length === 0) {
+    return { slices: [], droppedInvalidSliceCount: 0 };
+  }
+
+  const plans = buildFineScanKeyframePlans(effectiveSlices);
+  if (plans.length === 0 || !input.ml.available) {
     return {
-      ...merged,
-      summary: slice.summary ?? report.summary,
-      labels: [...new Set([...slice.labels, ...report.labels])],
+      slices: effectiveSlices.map(slice => {
+        const merged = mergeEvidence(slice, sharedEvidence);
+        return {
+          ...merged,
+          summary: slice.summary ?? input.report.summary,
+          labels: [...new Set([...slice.labels, ...input.report.labels])],
+        };
+      }),
+      droppedInvalidSliceCount: 0,
     };
-  });
+  }
+
+  const timestamps = [...new Set(plans.flatMap(plan => plan.timestampsMs))].sort((a, b) => a - b);
+  const extractedFrames = await extractKeyframes(
+    input.localPath,
+    join(buildAssetTempDir(input.projectRoot, input.asset.id), 'fine-scan'),
+    timestamps,
+    input.runtimeConfig,
+  );
+  const keyframes = await filterExistingKeyframes(extractedFrames);
+  const groups = groupKeyframesByShot(plans, keyframes);
+  const recognitions = await recognizeShotGroups(input.ml.client, groups);
+  const recognitionMap = new Map(recognitions.map(item => [item.shotId, item]));
+
+  const slices: IKtepSlice[] = [];
+  let droppedInvalidSliceCount = 0;
+
+  for (const slice of effectiveSlices) {
+    const recognition = recognitionMap.get(slice.id);
+    if (recognition && isLikelyInvalidVisualSegment(recognition.recognition.description)) {
+      droppedInvalidSliceCount += 1;
+      continue;
+    }
+    const merged = mergeEvidence(
+      slice,
+      sharedEvidence,
+      recognition?.recognition.evidence ?? [],
+    );
+    slices.push({
+      ...merged,
+      summary: recognition?.recognition.description || slice.summary || input.report.summary,
+      labels: [
+        ...new Set([
+          ...slice.labels,
+          ...input.report.labels,
+          recognition?.recognition.sceneType,
+          ...(recognition?.recognition.subjects ?? []),
+        ].filter(Boolean) as string[]),
+      ],
+    });
+  }
+
+  return {
+    slices,
+    droppedInvalidSliceCount,
+  };
 }
 
 function mapClipTypeToSliceType(clipType: EClipType): IKtepSlice['type'] {
@@ -632,6 +843,73 @@ function pickRepresentativeFramePaths(
 
 function buildAssetTempDir(projectRoot: string, assetId: string): string {
   return join(projectRoot, '.tmp', 'media-analyze', assetId);
+}
+
+function buildFineScanKeyframePlans(
+  slices: IKtepSlice[],
+  framesPerSlice = 3,
+): IShotKeyframePlan[] {
+  return slices
+    .filter(slice => typeof slice.sourceInMs === 'number' && typeof slice.sourceOutMs === 'number')
+    .filter(slice => (slice.sourceOutMs as number) > (slice.sourceInMs as number))
+    .map(slice => ({
+      shotId: slice.id,
+      startMs: slice.sourceInMs as number,
+      endMs: slice.sourceOutMs as number,
+      timestampsMs: sampleRangeTimestamps(
+        slice.sourceInMs as number,
+        slice.sourceOutMs as number,
+        framesPerSlice,
+      ),
+    }));
+}
+
+function reconcileFineScanReport(input: {
+  report: IAssetCoarseReport;
+  slices: IKtepSlice[];
+  droppedInvalidSliceCount: number;
+}): IAssetCoarseReport {
+  if (input.droppedInvalidSliceCount <= 0) return input.report;
+
+  if (input.slices.length > 0) {
+    return {
+      ...input.report,
+      fineScanReasons: [
+        ...new Set([
+          ...input.report.fineScanReasons,
+          `dropped-invalid-slices:${input.droppedInvalidSliceCount}`,
+        ]),
+      ],
+    };
+  }
+
+  return {
+    ...input.report,
+    shouldFineScan: false,
+    fineScanMode: 'skip',
+    fineScanReasons: [
+      ...new Set([
+        ...input.report.fineScanReasons,
+        'fine-scan-suppressed:invalid-dark-recording',
+      ]),
+    ],
+  };
+}
+
+function isLikelyInvalidVisualSegment(description?: string): boolean {
+  if (!description) return false;
+  const normalized = description.trim().toLowerCase();
+  if (!normalized) return false;
+
+  return [
+    'black screen',
+    'completely black',
+    'completely dark',
+    'dark frame',
+    'no visible details',
+    'no visible subjects',
+    'absence of visual information',
+  ].some(pattern => normalized.includes(pattern));
 }
 
 async function createMlAvailability(baseUrl?: string): Promise<MlAvailability> {

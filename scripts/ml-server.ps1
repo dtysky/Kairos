@@ -68,7 +68,10 @@ function Get-TrackedProcess {
 
 function Get-AllServerProcesses {
   Get-CimInstance Win32_Process |
-    Where-Object { Test-CommandLineMatch $_.CommandLine }
+    Where-Object {
+      Test-CommandLineMatch $_.CommandLine -or
+      ($_.CommandLine -and $_.CommandLine.Contains("--host $ServerHost") -and $_.CommandLine.Contains("--port $Port"))
+    }
 }
 
 function Remove-StateFiles {
@@ -89,6 +92,8 @@ function Stop-TrackedProcesses {
       $tracked += $process
     }
   }
+
+  $tracked = @($tracked | Sort-Object ProcessId -Unique)
 
   if ($tracked.Count -eq 0) {
     Remove-StateFiles

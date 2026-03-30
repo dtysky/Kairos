@@ -12,6 +12,7 @@ export interface ISamplerInput {
   shotBoundaries: IShotBoundary[];
   clipType?: EClipType;
   budget?: ETargetBudget;
+  extraInterestingWindows?: IMediaAnalysisPlan['interestingWindows'];
 }
 
 /**
@@ -24,10 +25,13 @@ export function buildAnalysisPlan(input: ISamplerInput): IMediaAnalysisPlan {
   const coarseSampleCount = pickCoarseSampleCount(input.durationMs);
   const interval = pickInterval(input.durationMs, profile);
 
-  const interestingWindows = findInterestingWindows(
-    input.shotBoundaries,
-    input.durationMs,
-  );
+  const interestingWindows = mergeWindows([
+    ...findInterestingWindows(
+      input.shotBoundaries,
+      input.durationMs,
+    ),
+    ...(input.extraInterestingWindows ?? []),
+  ]);
 
   const vlmMode: EVlmMode = budget === 'coarse' ? 'none'
     : input.durationMs < 15000 ? 'video'
@@ -57,11 +61,13 @@ export function buildAnalysisPlan(input: ISamplerInput): IMediaAnalysisPlan {
 }
 
 export function pickCoarseSampleCount(durationMs: number): number {
-  const minutes = durationMs / 60000;
-  if (minutes < 1) return 6;
-  if (minutes < 5) return 10;
-  if (minutes < 20) return 16;
-  return 24;
+  const seconds = durationMs / 1000;
+  if (seconds <= 5) return 2;
+  if (seconds <= 15) return 3;
+  if (seconds <= 60) return 4;
+  if (seconds <= 5 * 60) return 6;
+  if (seconds <= 20 * 60) return 8;
+  return 12;
 }
 
 function pickProfile(durationMs: number, density: number): ESamplingProfile {
@@ -88,7 +94,17 @@ function pickFineScanMode(
 ): EFineScanMode {
   if (budget === 'coarse') return 'skip';
 
-  if (durationMs <= 120000 && (density >= 0.4 || clipType !== 'drive')) {
+  // Long driving footage should stay cheap by default, but once we have
+  // visual or spatial windows (GPS / itinerary / OCR landmarks), we can
+  // safely upgrade it to windowed fine-scan.
+  if (clipType === 'drive') {
+    if (interestingWindowCount > 0 || density >= 0.55) {
+      return 'windowed';
+    }
+    return 'skip';
+  }
+
+  if (durationMs <= 120000 && density >= 0.4) {
     return 'full';
   }
 

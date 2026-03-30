@@ -17,6 +17,7 @@ export interface IBuildAssetCoarseReportInput {
   placeHints?: string[];
   sampleFrames?: IKeyframeResult[];
   sampleFrameSummaries?: string[];
+  shouldFineScan?: boolean;
   fineScanReasons?: string[];
   fineScanMode?: EFineScanMode;
 }
@@ -42,7 +43,7 @@ export function buildAssetCoarseReport(
       summary: input.sampleFrameSummaries?.[index],
     })),
     interestingWindows: input.plan.interestingWindows,
-    shouldFineScan: input.plan.shouldFineScan,
+    shouldFineScan: input.shouldFineScan ?? input.plan.shouldFineScan,
     fineScanMode: input.fineScanMode ?? input.plan.fineScanMode,
     fineScanReasons: dedupe(input.fineScanReasons ?? []),
     createdAt: now,

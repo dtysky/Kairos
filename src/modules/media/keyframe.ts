@@ -179,7 +179,7 @@ export function planShotKeyframes(
     shotId: window.id,
     startMs: window.startMs,
     endMs: window.endMs,
-    timestampsMs: sampleShotTimestamps(window.startMs, window.endMs, framesPerShot),
+    timestampsMs: sampleRangeTimestamps(window.startMs, window.endMs, framesPerShot),
   }));
 }
 
@@ -208,7 +208,7 @@ export function groupKeyframesByShot(
   }));
 }
 
-function sampleShotTimestamps(
+export function sampleRangeTimestamps(
   startMs: number,
   endMs: number,
   framesPerShot: number,

@@ -72,17 +72,41 @@ function Get-TrackedProcess {
   return $process
 }
 
+function Get-AllViewerProcesses {
+  Get-CimInstance Win32_Process |
+    Where-Object {
+      $_.CommandLine -and
+      $_.CommandLine.Contains("http.server") -and
+      $_.CommandLine.Contains("$Port") -and
+      $_.CommandLine.Contains("127.0.0.1")
+    }
+}
+
 function Stop-Viewer {
+  $tracked = @()
   $process = Get-TrackedProcess
-  if ($null -eq $process) {
+  if ($null -ne $process) {
+    $tracked += $process
+  }
+  foreach ($viewer in @(Get-AllViewerProcesses)) {
+    if ($tracked.ProcessId -notcontains $viewer.ProcessId) {
+      $tracked += $viewer
+    }
+  }
+  $tracked = @($tracked | Sort-Object ProcessId -Unique)
+
+  if ($tracked.Count -eq 0) {
     Remove-Item -Force $PidPath, $MetaPath -ErrorAction SilentlyContinue
     Write-Output "$SafeServerKey is not running."
     return
   }
-  Stop-Process -Id $process.ProcessId -Force -ErrorAction SilentlyContinue
+
+  foreach ($viewer in $tracked) {
+    Stop-Process -Id $viewer.ProcessId -Force -ErrorAction SilentlyContinue
+  }
   Start-Sleep -Milliseconds 500
   Remove-Item -Force $PidPath, $MetaPath -ErrorAction SilentlyContinue
-  Write-Output "Stopped $SafeServerKey ($($process.ProcessId))."
+  Write-Output ("Stopped {0} instance(s): {1}" -f $SafeServerKey, (($tracked | Select-Object -ExpandProperty ProcessId) -join ", "))
 }
 
 function Start-Viewer {
