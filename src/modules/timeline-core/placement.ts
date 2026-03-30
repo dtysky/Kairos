@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type {
-  IKtepClip, IKtepTrack, IKtepScript, IKtepSlice, IKtepAsset,
+  IKtepClip, IKtepTrack, IKtepScript, IKtepSlice, IKtepAsset, IKtepScriptSelection,
 } from '../../protocol/schema.js';
 
 export interface IPlacementConfig {
@@ -41,37 +41,37 @@ export function placeClips(
 
   for (const seg of script) {
     const segDur = seg.targetDurationMs ?? 10000;
-    const linkedSlices = seg.linkedSliceIds
-      .map(id => sliceMap.get(id))
-      .filter((s): s is IKtepSlice => s != null);
+    const selections = resolveSelections(seg, sliceMap);
 
-    if (linkedSlices.length === 0) {
+    if (selections.length === 0) {
       cursor += segDur;
       continue;
     }
 
-    const perSlice = Math.floor(segDur / linkedSlices.length);
+    const perSelection = Math.floor(segDur / selections.length);
 
-    for (const slice of linkedSlices) {
-      const asset = assetMap.get(slice.assetId);
+    for (const selection of selections) {
+      const asset = assetMap.get(selection.assetId);
       if (!asset) continue;
 
       const isPhoto = asset.kind === 'photo';
       const clipDur = isPhoto
-        ? Math.min(perSlice, cfg.photoDefaultMs)
-        : Math.min(perSlice, cfg.maxSliceDurationMs);
+        ? Math.min(perSelection, cfg.photoDefaultMs)
+        : Math.min(perSelection, cfg.maxSliceDurationMs);
 
-      const isBroll = slice.type === 'broll' || slice.type === 'aerial';
+      const isBroll = selection.sliceType === 'broll' || selection.sliceType === 'aerial';
+      const sourceInMs = selection.sourceInMs;
+      const sourceOutMs = selection.sourceOutMs != null
+        ? Math.min(selection.sourceOutMs, (selection.sourceInMs ?? 0) + clipDur)
+        : undefined;
 
       clips.push({
         id: randomUUID(),
         trackId: isBroll ? brollTrack.id : primaryTrack.id,
         assetId: asset.id,
-        sliceId: slice.id,
-        sourceInMs: slice.sourceInMs,
-        sourceOutMs: slice.sourceOutMs != null
-          ? Math.min(slice.sourceOutMs, (slice.sourceInMs ?? 0) + clipDur)
-          : undefined,
+        sliceId: selection.sliceId,
+        sourceInMs,
+        sourceOutMs,
         timelineInMs: cursor,
         timelineOutMs: cursor + clipDur,
         linkedScriptSegmentId: seg.id,
@@ -94,4 +94,37 @@ export function placeClips(
   }
 
   return { tracks, clips };
+}
+
+interface IResolvedSelection extends IKtepScriptSelection {
+  sliceType?: IKtepSlice['type'];
+}
+
+function resolveSelections(
+  segment: IKtepScript,
+  sliceMap: Map<string, IKtepSlice>,
+): IResolvedSelection[] {
+  if (segment.selections && segment.selections.length > 0) {
+    return segment.selections.map(selection => {
+      const slice = selection.sliceId ? sliceMap.get(selection.sliceId) : undefined;
+      return {
+        ...selection,
+        assetId: selection.assetId ?? slice?.assetId ?? '',
+        sourceInMs: selection.sourceInMs ?? slice?.sourceInMs,
+        sourceOutMs: selection.sourceOutMs ?? slice?.sourceOutMs,
+        sliceType: slice?.type,
+      };
+    }).filter(selection => selection.assetId.length > 0);
+  }
+
+  return segment.linkedSliceIds
+    .map(id => sliceMap.get(id))
+    .filter((slice): slice is IKtepSlice => slice != null)
+    .map(slice => ({
+      assetId: slice.assetId,
+      sliceId: slice.id,
+      sourceInMs: slice.sourceInMs,
+      sourceOutMs: slice.sourceOutMs,
+      sliceType: slice.type,
+    }));
 }

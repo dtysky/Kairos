@@ -15,6 +15,8 @@ export {
   IKtepEvidence,
   IKtepAsset,
   IKtepSlice,
+  IKtepScriptAction,
+  IKtepScriptSelection,
   IKtepScript,
   IKtepKenBurns,
   IKtepTransform,

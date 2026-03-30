@@ -153,12 +153,32 @@ export const IKtepSlice = z.object({
 });
 export type IKtepSlice = z.infer<typeof IKtepSlice>;
 
+export const IKtepScriptAction = z.object({
+  speed: z.number().positive().optional(),
+  preserveNatSound: z.boolean().optional(),
+  muteSource: z.boolean().optional(),
+  transitionHint: ETransitionType.optional(),
+  holdMs: z.number().min(0).optional(),
+});
+export type IKtepScriptAction = z.infer<typeof IKtepScriptAction>;
+
+export const IKtepScriptSelection = z.object({
+  assetId: z.string(),
+  sliceId: z.string().optional(),
+  sourceInMs: z.number().optional(),
+  sourceOutMs: z.number().optional(),
+  notes: z.string().optional(),
+});
+export type IKtepScriptSelection = z.infer<typeof IKtepScriptSelection>;
+
 export const IKtepScript = z.object({
   id: z.string(),
   role: EScriptRole,
   title: z.string().optional(),
   narration: z.string(),
   targetDurationMs: z.number().optional(),
+  actions: IKtepScriptAction.optional(),
+  selections: z.array(IKtepScriptSelection).optional(),
   linkedSliceIds: z.array(z.string()),
   notes: z.string().optional(),
 });
