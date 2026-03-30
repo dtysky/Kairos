@@ -5,6 +5,9 @@ import { IStoreManifest, IMediaRoot, IKtepProject } from '../protocol/schema.js'
 import { readJson, readJsonOrNull, writeJson } from './writer.js';
 import { z } from 'zod';
 import { buildProjectBriefTemplate } from './project-brief.js';
+import {
+  writeScriptBriefTemplate,
+} from './script-brief.js';
 
 const CDIRS = [
   'config',
@@ -76,6 +79,11 @@ export async function initProject(
     }),
     'utf-8',
   );
+
+  await writeScriptBriefTemplate(root, {
+    projectName: name,
+    createdAt: now,
+  });
 }
 
 export async function loadManifest(root: string): Promise<IStoreManifest> {

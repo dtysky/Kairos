@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { IKtepSubtitle, IKtepScript, IKtepClip } from '../../protocol/schema.js';
+import type { IKtepSubtitle, IKtepScript, IKtepClip, IKtepScriptBeat } from '../../protocol/schema.js';
 
 export interface ISubtitleConfig {
   maxCharsPerCue: number;
@@ -12,8 +12,8 @@ const CDEFAULTS: ISubtitleConfig = {
 };
 
 /**
- * 从脚本旁白生成字幕 cue。
- * 按标点/字数切分，时间均匀分布在段落对应的时间线范围内。
+ * 字幕默认直接来自 beat.text。
+ * 仅当脚本仍是旧结构、没有 beats 时，才回退到从整段 narration 推导伪 beat。
  */
 export function planSubtitles(
   script: IKtepScript[],
@@ -24,37 +24,96 @@ export function planSubtitles(
   const subtitles: IKtepSubtitle[] = [];
 
   for (const seg of script) {
-    if (!seg.narration.trim()) continue;
-
     const segClips = clips.filter(c => c.linkedScriptSegmentId === seg.id);
     if (segClips.length === 0) continue;
 
-    const orderedClips = [...segClips].sort((a, b) => a.timelineInMs - b.timelineInMs);
-    const beatTexts = splitNarrationIntoBeats(seg.narration, orderedClips.length);
-
-    for (let clipIndex = 0; clipIndex < orderedClips.length; clipIndex++) {
-      const clip = orderedClips[clipIndex];
-      const beatText = beatTexts[clipIndex]?.trim();
+    const beats = resolveSubtitleBeats(seg, segClips);
+    for (const beat of beats) {
+      const beatText = beat.text.trim();
       if (!beatText) continue;
-      const bucket = splitCueChunks(beatText, cfg.maxCharsPerCue);
 
-      const clipDur = clip.timelineOutMs - clip.timelineInMs;
-      const chunkDur = clipDur / bucket.length;
+      const beatClips = segClips
+        .filter(clip => clip.linkedScriptBeatId === beat.id)
+        .sort((a, b) => a.timelineInMs - b.timelineInMs);
+      if (beatClips.length === 0) continue;
 
-      for (let i = 0; i < bucket.length; i++) {
+      const cueTexts = splitCueChunks(beatText, cfg.maxCharsPerCue);
+      const windows = flattenBeatWindows(beatClips);
+      if (windows.length === 0) continue;
+
+      const totalDuration = windows.reduce((sum, window) => sum + (window.endMs - window.startMs), 0);
+      let cursor = 0;
+
+      for (let i = 0; i < cueTexts.length; i++) {
+        const text = sanitizeSubtitleCueText(cueTexts[i]);
+        if (!text) continue;
+        const remainingTexts = cueTexts.length - i;
+        const remainingDuration = totalDuration - cursor;
+        const cueDuration = remainingTexts === 1
+          ? remainingDuration
+          : Math.max(1, Math.round(totalDuration / cueTexts.length));
+
+        const startMs = locateTimelineOffset(windows, cursor);
+        cursor += cueDuration;
+        const endMs = locateTimelineOffset(windows, Math.min(cursor, totalDuration));
+
         subtitles.push({
           id: randomUUID(),
-          startMs: Math.round(clip.timelineInMs + i * chunkDur),
-          endMs: Math.round(clip.timelineInMs + (i + 1) * chunkDur),
-          text: bucket[i],
+          startMs,
+          endMs: Math.max(endMs, startMs + 1),
+          text,
           language: cfg.language,
           linkedScriptSegmentId: seg.id,
+          linkedScriptBeatId: beat.id,
         });
       }
     }
   }
 
   return subtitles;
+}
+
+function resolveSubtitleBeats(
+  segment: IKtepScript,
+  segClips: IKtepClip[],
+): IKtepScriptBeat[] {
+  if (segment.beats && segment.beats.length > 0) {
+    return segment.beats;
+  }
+
+  const narration = segment.narration?.trim();
+  if (!narration) return [];
+
+  const orderedClips = [...segClips].sort((a, b) => a.timelineInMs - b.timelineInMs);
+  const beatTexts = splitNarrationIntoBeats(narration, orderedClips.length);
+
+  return orderedClips.map((clip, index) => ({
+    id: `legacy-beat-${segment.id}-${index + 1}`,
+    text: beatTexts[index] ?? '',
+    selections: [],
+    linkedSliceIds: clip.sliceId ? [clip.sliceId] : [],
+  }));
+}
+
+function flattenBeatWindows(clips: IKtepClip[]): Array<{ startMs: number; endMs: number }> {
+  return clips
+    .map(clip => ({ startMs: clip.timelineInMs, endMs: clip.timelineOutMs }))
+    .filter(window => window.endMs > window.startMs);
+}
+
+function locateTimelineOffset(
+  windows: Array<{ startMs: number; endMs: number }>,
+  offsetMs: number,
+): number {
+  let cursor = 0;
+  for (const window of windows) {
+    const dur = window.endMs - window.startMs;
+    if (offsetMs <= cursor + dur) {
+      return window.startMs + (offsetMs - cursor);
+    }
+    cursor += dur;
+  }
+  return windows[windows.length - 1]?.endMs ?? 0;
 }
 
 function splitCueChunks(text: string, maxChars: number): string[] {
@@ -189,4 +248,14 @@ function rebalanceShortChunks(chunks: string[], maxChars: number): string[] {
   }
 
   return result;
+}
+
+function sanitizeSubtitleCueText(text: string): string {
+  const trimmed = text.trim();
+  if (!trimmed) return '';
+  if (/—{2,}$/.test(trimmed)) return trimmed;
+
+  return trimmed
+    .replace(/([。！？!?；;，,：:、……\.]+)([」』”’）】〉》]*)$/u, '$2')
+    .trim();
 }

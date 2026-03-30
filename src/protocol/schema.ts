@@ -171,15 +171,27 @@ export const IKtepScriptSelection = z.object({
 });
 export type IKtepScriptSelection = z.infer<typeof IKtepScriptSelection>;
 
+export const IKtepScriptBeat = z.object({
+  id: z.string(),
+  text: z.string(),
+  targetDurationMs: z.number().optional(),
+  actions: IKtepScriptAction.optional(),
+  selections: z.array(IKtepScriptSelection),
+  linkedSliceIds: z.array(z.string()),
+  notes: z.string().optional(),
+});
+export type IKtepScriptBeat = z.infer<typeof IKtepScriptBeat>;
+
 export const IKtepScript = z.object({
   id: z.string(),
   role: EScriptRole,
   title: z.string().optional(),
-  narration: z.string(),
+  narration: z.string().optional(),
   targetDurationMs: z.number().optional(),
   actions: IKtepScriptAction.optional(),
   selections: z.array(IKtepScriptSelection).optional(),
   linkedSliceIds: z.array(z.string()),
+  beats: z.array(IKtepScriptBeat).default([]),
   notes: z.string().optional(),
 });
 export type IKtepScript = z.infer<typeof IKtepScript>;
@@ -230,6 +242,7 @@ export const IKtepClip = z.object({
   transitionOut: IKtepTransition.optional(),
   transform: IKtepTransform.optional(),
   linkedScriptSegmentId: z.string().optional(),
+  linkedScriptBeatId: z.string().optional(),
 });
 export type IKtepClip = z.infer<typeof IKtepClip>;
 
@@ -254,6 +267,7 @@ export const IKtepSubtitle = z.object({
   language: z.string().optional(),
   speaker: z.string().optional(),
   linkedScriptSegmentId: z.string().optional(),
+  linkedScriptBeatId: z.string().optional(),
 });
 export type IKtepSubtitle = z.infer<typeof IKtepSubtitle>;
 
@@ -419,6 +433,110 @@ export const IMediaChronology = z.object({
   correction: IChronologyCorrection.optional(),
 });
 export type IMediaChronology = z.infer<typeof IMediaChronology>;
+
+// ─── Script Planning ────────────────────────────────────────
+
+export const ESegmentPlanStrategy = z.enum([
+  'chronology-first',
+  'location-first',
+  'emotion-first',
+]);
+export type ESegmentPlanStrategy = z.infer<typeof ESegmentPlanStrategy>;
+
+export const IProjectMaterialDigestRoot = z.object({
+  ingestRootId: z.string().optional(),
+  assetCount: z.number().int().nonnegative(),
+  durationMs: z.number().nonnegative().optional(),
+  topLabels: z.array(z.string()),
+  topPlaceHints: z.array(z.string()),
+  summary: z.string().optional(),
+});
+export type IProjectMaterialDigestRoot = z.infer<typeof IProjectMaterialDigestRoot>;
+
+export const IProjectMaterialDigest = z.object({
+  id: z.string(),
+  projectId: z.string(),
+  generatedAt: z.string(),
+  projectBrief: z.string().optional(),
+  totalAssets: z.number().int().nonnegative(),
+  totalDurationMs: z.number().nonnegative().optional(),
+  capturedStartAt: z.string().optional(),
+  capturedEndAt: z.string().optional(),
+  roots: z.array(IProjectMaterialDigestRoot),
+  topLabels: z.array(z.string()),
+  topPlaceHints: z.array(z.string()),
+  clipTypeDistribution: z.record(z.number().int().nonnegative()),
+  mainThemes: z.array(z.string()),
+  recommendedNarrativeAxes: z.array(z.string()),
+  summary: z.string(),
+});
+export type IProjectMaterialDigest = z.infer<typeof IProjectMaterialDigest>;
+
+export const ISegmentPlanSegment = z.object({
+  id: z.string(),
+  role: EScriptRole,
+  title: z.string(),
+  targetDurationMs: z.number().nonnegative().optional(),
+  intent: z.string(),
+  mood: z.string().optional(),
+  preferredClipTypes: z.array(EClipType),
+  preferredLabels: z.array(z.string()),
+  preferredPlaceHints: z.array(z.string()),
+  notes: z.array(z.string()),
+});
+export type ISegmentPlanSegment = z.infer<typeof ISegmentPlanSegment>;
+
+export const ISegmentPlanDraft = z.object({
+  id: z.string(),
+  projectId: z.string(),
+  name: z.string(),
+  strategy: ESegmentPlanStrategy,
+  description: z.string(),
+  generatedAt: z.string(),
+  sourceDigestId: z.string().optional(),
+  reviewBrief: z.string().optional(),
+  segments: z.array(ISegmentPlanSegment),
+  notes: z.array(z.string()),
+});
+export type ISegmentPlanDraft = z.infer<typeof ISegmentPlanDraft>;
+
+export const IApprovedSegmentPlan = z.object({
+  id: z.string(),
+  projectId: z.string(),
+  approvedAt: z.string(),
+  sourceDraftId: z.string().optional(),
+  reviewBrief: z.string().optional(),
+  segments: z.array(ISegmentPlanSegment),
+  notes: z.array(z.string()),
+});
+export type IApprovedSegmentPlan = z.infer<typeof IApprovedSegmentPlan>;
+
+export const ISegmentRecallCandidate = z.object({
+  segmentId: z.string(),
+  sliceId: z.string(),
+  assetId: z.string(),
+  score: z.number(),
+  reasons: z.array(z.string()),
+  summary: z.string().optional(),
+  labels: z.array(z.string()),
+  placeHints: z.array(z.string()),
+  sourceInMs: z.number().optional(),
+  sourceOutMs: z.number().optional(),
+});
+export type ISegmentRecallCandidate = z.infer<typeof ISegmentRecallCandidate>;
+
+export const ISegmentCandidateRecall = z.object({
+  id: z.string(),
+  projectId: z.string(),
+  approvedPlanId: z.string(),
+  generatedAt: z.string(),
+  segments: z.array(z.object({
+    segmentId: z.string(),
+    title: z.string(),
+    candidates: z.array(ISegmentRecallCandidate),
+  })),
+});
+export type ISegmentCandidateRecall = z.infer<typeof ISegmentCandidateRecall>;
 
 // ─── Store ───────────────────────────────────────────────────
 

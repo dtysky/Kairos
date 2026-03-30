@@ -8,6 +8,18 @@ export {
   type IParsedProjectBrief,
 } from './project-brief.js';
 export {
+  getScriptBriefPath,
+  buildScriptBriefTemplate,
+  writeScriptBriefTemplate,
+  syncScriptBriefSegments,
+  seedScriptBriefDraft,
+  loadScriptBrief,
+  extractSegmentBrief,
+  loadOptionalMarkdown,
+  type IScriptBriefTemplateInput,
+  type IScriptBriefSegmentTemplateInput,
+} from './script-brief.js';
+export {
   syncProjectBriefMappings,
   buildProjectBriefWithMappings,
   type ISyncProjectBriefInput,
@@ -58,6 +70,29 @@ export {
   loadChronology,
   writeChronology,
 } from './chronology.js';
+export {
+  getOutlinePath,
+  getOutlinePromptPath,
+  getCurrentScriptPath,
+  loadOutline,
+  writeOutline,
+  loadCurrentScript,
+  writeCurrentScript,
+} from './script-store.js';
+export {
+  getProjectMaterialDigestPath,
+  getSegmentPlanDraftsPath,
+  getApprovedSegmentPlanPath,
+  getSegmentCandidatesPath,
+  loadProjectMaterialDigest,
+  writeProjectMaterialDigest,
+  loadSegmentPlanDrafts,
+  writeSegmentPlanDrafts,
+  loadApprovedSegmentPlan,
+  writeApprovedSegmentPlan,
+  loadSegmentCandidates,
+  writeSegmentCandidates,
+} from './segment-plan.js';
 export {
   getAssetsPath,
   getSlicesPath,

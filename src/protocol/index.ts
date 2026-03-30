@@ -17,6 +17,7 @@ export {
   IKtepSlice,
   IKtepScriptAction,
   IKtepScriptSelection,
+  IKtepScriptBeat,
   IKtepScript,
   IKtepKenBurns,
   IKtepTransform,

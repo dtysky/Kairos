@@ -9,7 +9,7 @@ description: >-
 
 # Kairos: Phase 3 — Script
 
-加载风格档案 → 构建叙事骨架 → 为每个段落写旁白。
+加载风格档案 → 结合全量素材归纳自动起草 brief → 用户审查段落方案 → 为每个段落写旁白。
 
 **核心特点**：旁白由 agent 自身直接创作，不需要外部 LLM API。
 
@@ -21,6 +21,11 @@ description: >-
   - 单一档案：`config/style-profile.md`
   - 手写样板：`test/style-profile.md`
   - 如果还没有风格档案，先执行 [kairos-style-analysis](../kairos-style-analysis/SKILL.md)
+
+**硬性规则**：
+- 风格档案必须由用户人工指定；系统不能根据当前项目素材自动生成、自动挑选或自动推断风格档案。
+- 如果用户没有明确指定某个风格档案，或没有明确说这次不用风格档案，Script 阶段必须暂停并先向用户确认。
+- `kairos-style-analysis` 只能在用户明确要求做风格分析时执行，不能作为 Script 的隐式前置步骤自动触发。
 
 ## 可用工具
 
@@ -75,10 +80,41 @@ const style = await loadStyleFromMarkdown('test/style-profile.md');
 风格档案包含：叙事结构、语言风格、情绪表达、主题价值观、风格禁区等。
 来源可以是 `kairos-style-analysis` 自动生成，也可以是人工编写。
 
+这里的关键前提是：**使用哪一份风格档案，必须由用户手动指定。**
+Agent 可以列出可用档案供用户选择，但不能自行替用户决定，也不能根据当前素材自动生成一份“临时风格档案”。
+
 **注意 `guidancePrompt`**：如果风格档案包含用户指导词（`style.guidancePrompt`），
 agent 在创作旁白时应将其作为额外的创作指导。
 
-### Step 2: 构建叙事骨架
+### Step 2: 自动起草 Script Brief（不要让用户从空白填写）
+
+系统应先根据：
+- `analysis/asset-reports/*.json`
+- `media/chronology.json`
+- `store/slices.json`
+- 风格档案
+
+自动写出一份集中式：
+
+```text
+script/script-brief.md
+```
+
+这份 brief 至少要包含：
+- 全片目标建议
+- 叙事约束建议
+- 段落方案审查建议
+- 每段的简单备注
+
+用户的职责是**审查和修改这份初稿**，而不是从空白开始手写所有内容。
+
+**重要规则**：
+- `material digest` 可以由代码基于素材统计、chronology 和 asset reports 构建。
+- 但 `segment plan drafts` 必须由 LLM 主驱动生成，不能默认用启发式规则硬拆段落。
+- 启发式规划只允许作为 fallback：例如 LLM 不可用、返回非法 JSON、或明确要求离线保底时。
+- 如果当前段落方案明显是规则硬驱动的“平均分段”或“标签直推分段”，应视为不合格，需要回退到 LLM 重新生成。
+
+### Step 3: 构建叙事骨架
 
 ```typescript
 const slices = await readJson('store/slices.json', z.array(IKtepSlice));
@@ -90,7 +126,7 @@ const outline = buildOutline(slices, 5 * 60 * 1000); // 目标 5 分钟
 - `scene` / `highlight`（约 80%）→ 主体段落
 - `outro`（约 5%）→ 结尾
 
-### Step 3: Agent 直接写旁白
+### Step 4: Agent 直接写旁白
 
 **这是 agent 发挥创意的核心环节。**
 
@@ -114,13 +150,13 @@ const scriptSegment: IKtepScript = {
 };
 ```
 
-### Step 4: 存储
+### Step 5: 存储
 
 ```typescript
 await writeJson(join(projectRoot, 'script/current.json'), scriptSegments);
 ```
 
-### Step 5: 迭代微调（可选）
+### Step 6: 迭代微调（可选）
 
 ```typescript
 // 修改某段旁白

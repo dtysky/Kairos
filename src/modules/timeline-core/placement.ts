@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type {
-  IKtepClip, IKtepTrack, IKtepScript, IKtepSlice, IKtepAsset, IKtepScriptSelection,
+  IKtepClip, IKtepTrack, IKtepScript, IKtepSlice, IKtepAsset, IKtepScriptSelection, IKtepScriptBeat,
 } from '../../protocol/schema.js';
 
 export interface IPlacementConfig {
@@ -41,50 +41,65 @@ export function placeClips(
 
   for (const seg of script) {
     const segDur = seg.targetDurationMs ?? 10000;
-    const selections = resolveSelections(seg, sliceMap);
-
-    if (selections.length === 0) {
+    const beats = resolveBeats(seg, sliceMap);
+    if (beats.length === 0) {
       cursor += segDur;
       continue;
     }
 
-    const perSelection = Math.floor(segDur / selections.length);
+    const perBeat = Math.max(1, Math.floor(segDur / beats.length));
 
-    for (const selection of selections) {
-      const asset = assetMap.get(selection.assetId);
-      if (!asset) continue;
+    for (const beat of beats) {
+      const selections = beat.selections;
+      const beatDur = beat.targetDurationMs ?? perBeat;
 
-      const isPhoto = asset.kind === 'photo';
-      const clipDur = isPhoto
-        ? Math.min(perSelection, cfg.photoDefaultMs)
-        : Math.min(perSelection, cfg.maxSliceDurationMs);
+      if (selections.length === 0) {
+        cursor += beatDur;
+        continue;
+      }
 
-      const isBroll = selection.sliceType === 'broll' || selection.sliceType === 'aerial';
-      const sourceInMs = selection.sourceInMs;
-      const sourceOutMs = selection.sourceOutMs != null
-        ? Math.min(selection.sourceOutMs, (selection.sourceInMs ?? 0) + clipDur)
-        : undefined;
+      const perSelection = Math.max(1, Math.floor(beatDur / selections.length));
 
-      clips.push({
-        id: randomUUID(),
-        trackId: isBroll ? brollTrack.id : primaryTrack.id,
-        assetId: asset.id,
-        sliceId: selection.sliceId,
-        sourceInMs,
-        sourceOutMs,
-        timelineInMs: cursor,
-        timelineOutMs: cursor + clipDur,
-        linkedScriptSegmentId: seg.id,
-        transform: isPhoto ? {
-          kenBurns: {
-            startScale: 1.0, endScale: 1.15,
-            startX: 0.5, startY: 0.5,
-            endX: 0.5, endY: 0.4,
-          },
-        } : undefined,
-      });
+      for (const selection of selections) {
+        const asset = assetMap.get(selection.assetId);
+        if (!asset) continue;
 
-      cursor += clipDur;
+        const isPhoto = asset.kind === 'photo';
+        const sourceRangeDur = resolveSourceDuration(selection.sourceInMs, selection.sourceOutMs);
+        const clipDur = sourceRangeDur != null
+          ? sourceRangeDur
+          : isPhoto
+            ? Math.min(perSelection, cfg.photoDefaultMs)
+            : Math.min(perSelection, cfg.maxSliceDurationMs);
+
+        const isBroll = selection.sliceType === 'broll' || selection.sliceType === 'aerial';
+        const sourceInMs = selection.sourceInMs;
+        const sourceOutMs = sourceInMs != null && clipDur > 0
+          ? sourceInMs + clipDur
+          : selection.sourceOutMs;
+
+        clips.push({
+          id: randomUUID(),
+          trackId: isBroll ? brollTrack.id : primaryTrack.id,
+          assetId: asset.id,
+          sliceId: selection.sliceId,
+          sourceInMs,
+          sourceOutMs,
+          timelineInMs: cursor,
+          timelineOutMs: cursor + clipDur,
+          linkedScriptSegmentId: seg.id,
+          linkedScriptBeatId: beat.id,
+          transform: isPhoto ? {
+            kenBurns: {
+              startScale: 1.0, endScale: 1.15,
+              startX: 0.5, startY: 0.5,
+              endX: 0.5, endY: 0.4,
+            },
+          } : undefined,
+        });
+
+        cursor += clipDur;
+      }
     }
   }
 
@@ -100,31 +115,53 @@ interface IResolvedSelection extends IKtepScriptSelection {
   sliceType?: IKtepSlice['type'];
 }
 
-function resolveSelections(
+interface IResolvedBeat extends Omit<IKtepScriptBeat, 'selections'> {
+  selections: IResolvedSelection[];
+}
+
+function resolveBeats(
   segment: IKtepScript,
   sliceMap: Map<string, IKtepSlice>,
-): IResolvedSelection[] {
-  if (segment.selections && segment.selections.length > 0) {
-    return segment.selections.map(selection => {
-      const slice = selection.sliceId ? sliceMap.get(selection.sliceId) : undefined;
-      return {
-        ...selection,
-        assetId: selection.assetId ?? slice?.assetId ?? '',
-        sourceInMs: selection.sourceInMs ?? slice?.sourceInMs,
-        sourceOutMs: selection.sourceOutMs ?? slice?.sourceOutMs,
-        sliceType: slice?.type,
-      };
-    }).filter(selection => selection.assetId.length > 0);
+): IResolvedBeat[] {
+  if (segment.beats && segment.beats.length > 0) {
+    return segment.beats.map(beat => ({
+      ...beat,
+      selections: resolveSelections(beat.selections, sliceMap),
+    })).filter(beat => beat.selections.length > 0 || beat.text.trim().length > 0);
   }
 
-  return segment.linkedSliceIds
-    .map(id => sliceMap.get(id))
-    .filter((slice): slice is IKtepSlice => slice != null)
-    .map(slice => ({
-      assetId: slice.assetId,
-      sliceId: slice.id,
-      sourceInMs: slice.sourceInMs,
-      sourceOutMs: slice.sourceOutMs,
-      sliceType: slice.type,
-    }));
+  const fallbackSelections = resolveSelections(segment.selections ?? [], sliceMap);
+  if (fallbackSelections.length === 0) return [];
+
+  return fallbackSelections.map(selection => ({
+    id: randomUUID(),
+    text: segment.narration ?? '',
+    targetDurationMs: segment.targetDurationMs,
+    actions: segment.actions,
+    selections: [selection],
+    linkedSliceIds: typeof selection.sliceId === 'string' ? [selection.sliceId] : [],
+    notes: segment.notes,
+  }));
+}
+
+function resolveSelections(
+  selections: IKtepScriptSelection[],
+  sliceMap: Map<string, IKtepSlice>,
+): IResolvedSelection[] {
+  return selections.map(selection => {
+    const slice = selection.sliceId ? sliceMap.get(selection.sliceId) : undefined;
+    return {
+      ...selection,
+      assetId: selection.assetId ?? slice?.assetId ?? '',
+      sourceInMs: selection.sourceInMs ?? slice?.sourceInMs,
+      sourceOutMs: selection.sourceOutMs ?? slice?.sourceOutMs,
+      sliceType: slice?.type,
+    };
+  }).filter(selection => selection.assetId.length > 0);
+}
+
+function resolveSourceDuration(sourceInMs?: number, sourceOutMs?: number): number | undefined {
+  if (sourceInMs == null || sourceOutMs == null) return undefined;
+  if (sourceOutMs <= sourceInMs) return undefined;
+  return sourceOutMs - sourceInMs;
 }
