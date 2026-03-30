@@ -95,6 +95,9 @@ src/
 - `IKtepAsset` — 资产
 - `IKtepSlice` — 切片
 - `IKtepEvidence` — 证据
+- `IKtepScriptAction` — 脚本行为
+- `IKtepScriptSelection` — 从 `slice` 中真正选中的子区间
+- `IKtepScriptBeat` — 脚本最小编排单元
 - `IKtepScript` — 脚本段落
 - `IKtepTimeline` — 时间线
 - `IKtepTrack` — 轨道
@@ -120,6 +123,30 @@ src/
 6. `clip.sliceId` 若存在，引用存在的切片 — 运行时校验
 7. 字幕时间范围不得为负 — 运行时校验
 8. 编辑器私有字段不进入核心 — 由 schema 结构保证（`adapterHints`）
+
+## 脚本与时间线的当前方向
+
+这一版实现之后，正式设计口径应理解为：
+
+- `slice` 是候选时间窗，不是最终必用区间
+- `selection` 才是脚本和时间线真正使用的子区间
+- `beat` 是脚本、时间线和字幕共享的最小编排单元
+- `subtitle` 默认来自 `beat.text`，而不是从整段 `narration` 事后切分
+- `segment plan` 必须先经过用户审查，再进入候选召回和 beat 编排
+- `script-brief` 不再只有一份，而是按阶段拆成 project / segment-plan / segment / beat-polish 四层
+
+也就是说，正式的时间线编排顺序应是：
+
+1. `project brief` 形成全片约束
+2. `material digest` 形成全量素材印象
+3. `segment-plan brief` 和系统一起产出 1-3 套 `segment plan drafts`
+4. 用户确认 `approved segment plan`
+5. `segment brief` 为每个段落约束召回与 beat 试写
+6. `candidate recall` 为每个段落召回候选 `slice`
+7. `beat` 确定每一小拍要说什么
+8. `selection` 确定每一小拍到底用 `slice` 里的哪一段
+9. `beat-polish brief` 做局部精修
+10. `timeline clip` 和 `subtitle cue` 共同引用这些 beat 级决策
 
 ## Store 层
 

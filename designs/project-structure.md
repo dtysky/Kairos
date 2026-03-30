@@ -30,6 +30,17 @@
 - 素材分析策略
   - 下一阶段正式设计采用“粗扫优先 + 自动细扫”
   - 不是所有素材都默认做镜头级分析，也不是所有素材都会立刻生成 `slice`
+- 脚本编排模型
+  - 下一阶段正式设计采用 `segment + beat + selection`
+  - `slice` 是候选时间窗，`selection` 才是最终进入时间线的子区间
+  - 字幕默认来自 `beat.text`，而不是从整段 narration 事后切分
+- 段落审查闸门
+  - 正式流程会先生成 `material digest` 和 `segment plan drafts`
+  - 由用户审查并冻结为 `approved segment plan`
+  - 之后才进入候选素材召回、beat 试写和粗剪提案
+- 分层 `script-brief`
+  - `project brief`、`segment-plan brief`、`segment brief`、`beat polish brief`
+  - 都使用自然语言输入，分别作用于全片、段落审查、章节细化和局部精修
 - 本地网页进度页
   - 长时任务通过轮询 `.tmp/.../progress.json` 展示 `第 N / M 步`、`第 N / M 帧`、`剩余时间`
 

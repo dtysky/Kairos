@@ -389,6 +389,94 @@ type SpatialContextMode = 'gps-enhanced' | 'evidence-only';
 - 为长行车、长步行、跨地点素材提供弱空间上下文
 - 帮助系统做粗扫召回、地点提示和候选片段聚类
 
+### D15. `slice` 只是候选时间窗，真正进入编排的是 `selection`
+
+中间版本必须明确区分三层时间单位：
+
+- **asset**：原始素材
+- **slice**：素材分析后得到的候选时间窗
+- **selection**：脚本 / 时间线真正选中的子区间
+
+这意味着：
+
+- `slice` 并不承诺“整段都会被用到”
+- `selection` 允许只截取 `slice` 内的一小段
+- 时间线轨道上的 clip 应引用 `selection` 的 `sourceInMs/sourceOutMs`，而不是默认吃满整个 `slice`
+
+对创作流程而言：
+
+- `slice` 负责“这段值得考虑”
+- `selection` 负责“最后到底用这段里的哪几秒”
+
+### D16. 脚本应以 `beat` 为最小编排单元，而不是事后从整段旁白切字幕
+
+中间版本不应把“整段 narration 写完，再切成字幕 cue”当成正式方案。
+
+更符合真实剪辑流程的结构是：
+
+- 先规划 `segment`
+- 在 `segment` 内生成若干 `beat`
+- 每个 `beat` 绑定一个或多个 `selection`
+- `beat.text` 直接成为字幕和时间线节奏的上游来源
+
+也就是说：
+
+- `segment` 描述这段在全片中的作用、情绪、目标时长
+- `beat` 描述这一小拍要表达什么，以及配哪段画面
+- `subtitle cue` 默认来自 `beat.text`
+- `segment.narration` 若存在，应视为 `beat` 的聚合预览或配音底稿，而不是时间线摆放的唯一真源
+
+### D17. 段落规划必须经过用户审查闸门，不能直接从切片自动滑到脚本
+
+对于一个视频项目，段落规划是创作灵魂，不能默认完全自动决定。
+
+更合理的主流程应是：
+
+1. 先基于 `asset reports + chronology + slices` 生成 **全量素材归纳**
+2. 系统提出 `1-3` 套 **segment plan drafts**
+3. 用户审查、修改、合并或选择其中一套
+4. 只有冻结为 **approved segment plan** 之后，才进入候选素材召回、beat 规划和脚本试写
+
+因此中间版本应显式引入三层中间对象：
+
+- **ProjectMaterialDigest**
+  - 全量素材印象、时间顺序、地点线索、主要母题、节奏判断
+- **SegmentPlanDraft**
+  - 系统自动提出的段落方案，可有 A/B/C 多版
+- **ApprovedSegmentPlan**
+  - 用户确认后的正式段落规划，是后续召回和 beat 编排的唯一上游
+
+这意味着：
+
+- `outline` 不应直接从全部 `slice` 反推出最终段落
+- `candidate recall` 必须以 `ApprovedSegmentPlan` 为输入
+- `rough cut proposal` 也必须建立在已确认的段落规划之上
+
+### D18. `script-brief` 应扩展为贯穿全流程的分层 brief 系统
+
+中间版本不应只保留一份单一的 `script-brief`。  
+更符合真实创作流程的做法，是让 brief 随阶段下沉：
+
+- **Project Brief**
+  - 全片目标、风格来源、受众、总时长、禁区
+- **Segment-Plan Brief**
+  - 这一轮段落规划想回答什么问题
+  - 更偏时间顺序、地点顺序还是情绪顺序
+  - 哪些章节必须存在
+- **Segment Brief**
+  - 某一章节的作用、目标时长、情绪、原声策略、是否允许实验性剪法
+- **Beat Polish Brief**
+  - 对某一小拍的文案、切点、速度和字幕策略做微调
+
+这些 brief 都应保持 **自然语言友好**，而不是要求用户手写 JSON。
+
+它们在流程中的作用是：
+
+1. `Project Brief` 驱动 `ProjectMaterialDigest` 和 `SegmentPlanDraft[]`
+2. `Segment-Plan Brief` 驱动段落方案审查与冻结
+3. `Segment Brief` 驱动候选素材召回和 beat 试写
+4. `Beat Polish Brief` 驱动局部精修和粗剪迭代
+
 ## 6. 系统架构
 
 ```text
@@ -573,7 +661,20 @@ interface MediaChronologyEntry {
   summary?: string;
   labels: string[];
   placeHints: string[];
-  evidence: KtepEvidence[];
+  evidence: Array<{
+    source:
+      | 'vision'
+      | 'asr'
+      | 'ocr'
+      | 'filename'
+      | 'folder'
+      | 'manual-root-note'
+      | 'manual'
+      | 'gps'
+      | 'pharos';
+    value: string;
+    confidence?: number;
+  }>;
   correction?: {
     capturedAtOverride?: string;
     summaryOverride?: string;
@@ -717,8 +818,14 @@ interface FineScanDecision {
 
 建议子模块：
 
+- `material-digest.ts`
+- `segment-planner.ts`
+- `segment-review-store.ts`
+- `candidate-recall.ts`
+- `brief-loader.ts`
 - `style-analyzer.ts`
 - `outline-builder.ts`
+- `beat-planner.ts`
 - `script-generator.ts`
 - `script-editor.ts`
 - `script-store.ts`
@@ -726,11 +833,34 @@ interface FineScanDecision {
 职责：
 
 - 分析历史成片，生成风格档案
-- 基于 `slice` 和证据生成叙事骨架
-- 生成结构化脚本段落
-- 支持段落级编辑和重排
+- 基于 `asset reports + chronology + slices` 生成 `ProjectMaterialDigest`
+- 读取并解释多层 `brief`
+- 基于全量素材归纳生成 `1-3` 套 `SegmentPlanDraft`
+- 支持用户审查并冻结为 `ApprovedSegmentPlan`
+- 基于 `ApprovedSegmentPlan` 召回候选 `slice`
+- 在候选 `slice` 之上生成叙事骨架
+- 在每个 `segment` 下生成 `beat`
+- 为每个 `beat` 生成文本、行为和 `selection`
+- 支持段落级与 beat 级编辑和重排
 
 ### 7.3 `src/modules/timeline-core/`
+
+负责把 `segment + beat + selection` 落成可执行时间线。
+
+建议子模块：
+
+- `placement.ts`
+- `transition-planner.ts`
+- `timeline-builder.ts`
+- `subtitle-planner.ts`
+- `timeline-validator.ts`
+
+职责：
+
+- 基于 `beat.selection` 摆放 clip，而不是默认整段吃满 `slice`
+- 自动生成轨道、转场和字幕
+- 让字幕默认来自 `beat.text`
+- 保证时间线协议可校验
 
 负责与 NLE 无关的时间线能力。
 
@@ -1097,50 +1227,69 @@ interface KtepSlice {
   sourceOutMs?: number;
   summary?: string;
   labels: string[];
-  confidence?: number;
-  evidence: KtepEvidence[];
-}
-
-interface KtepEvidence {
-  source:
-    | 'vision'
-    | 'asr'
-    | 'ocr'
-    | 'filename'
-    | 'folder'
-    | 'manual-root-note'
-    | 'manual'
-    | 'gps'
-    | 'pharos';
-  value: string;
+  placeHints: string[];
   confidence?: number;
 }
 ```
 
 说明：
 
-- `evidence` 用来支撑地点、主题、事件、对象识别
+- `slice` 只保留“可剪辑时间窗”的最小语义，不再复制完整证据包
+- `placeHints` 用于保留脚本和时间线阶段最常消费的地点线索
+- 更完整的 `evidence`、`rootNotes`、`interestingWindows`、GPS/行程信息，应保留在 `asset report`
 - 没有 GPS 时，不影响协议成立
-- 将来接入 GPS / Pharos，只是多加证据来源
+- 将来接入 GPS / Pharos，也优先进入素材分析层，而不是直接复制到每个 `slice`
 
 ### 9.4 脚本对象
 
 ```typescript
+interface KtepScriptAction {
+  speed?: number;
+  preserveNatSound?: boolean;
+  muteSource?: boolean;
+  transitionHint?: 'cut' | 'cross-dissolve' | 'fade' | 'wipe';
+  holdMs?: number;
+}
+
+interface KtepScriptSelection {
+  assetId: string;
+  sliceId?: string;
+  sourceInMs?: number;
+  sourceOutMs?: number;
+  notes?: string;
+}
+
+interface KtepScriptBeat {
+  id: string;
+  text: string;
+  targetDurationMs?: number;
+  actions?: KtepScriptAction;
+  selections: KtepScriptSelection[];
+  linkedSliceIds: string[];
+  notes?: string;
+}
+
 interface KtepScriptSegment {
   id: string;
   role: 'intro' | 'scene' | 'transition' | 'highlight' | 'outro';
   title?: string;
-  narration: string;
+  narration?: string;
   targetDurationMs?: number;
+  actions?: KtepScriptAction;
+  selections?: KtepScriptSelection[];
   linkedSliceIds: string[];
+  beats: KtepScriptBeat[];
   notes?: string;
 }
 ```
 
 说明：
 
-- 脚本只描述“讲什么”
-- `linkedSliceIds` 只提供素材候选，不直接决定轨道摆放
+- `segment` 描述这段在全片中的作用、目标时长和整体叙事意图
+- `beat` 是真正的编排单元：一句文案 + 一组 `selection`
+- `selection` 允许只使用 `slice` 内的一小段，不要求整段吃满
+- `segment.narration` 若存在，应视为 beat 级文本的聚合预览，而不是轨道摆放的唯一真源
+- `linkedSliceIds` 仍可作为兼容字段存在，但正式编排应优先依赖 `beat.selections`
 
 ### 9.5 时间线对象
 
@@ -1174,6 +1323,7 @@ interface KtepClipPlacement {
   transitionOut?: KtepTransition;
   transform?: KtepTransform;
   linkedScriptSegmentId?: string;
+  linkedScriptBeatId?: string;
 }
 
 interface KtepTransition {
@@ -1208,12 +1358,14 @@ interface KtepSubtitleCue {
   language?: string;
   speaker?: string;
   linkedScriptSegmentId?: string;
+  linkedScriptBeatId?: string;
 }
 ```
 
 说明：
 
-- 字幕与脚本相关，但不要求 1:1
+- 字幕默认来自 `beat.text`
+- `linkedScriptBeatId` 应优先存在，便于后续逐拍微调
 - 可以来自旁白脚本，也可以来自口播转写修订
 - 可以直接导出 SRT，也可以通过适配器写入 NLE
 
@@ -1245,24 +1397,32 @@ interface KtepSubtitleCue {
 
 ### 10.2 生成步骤
 
-1. 根据 `script segment` 确定段落顺序和目标时长。
-2. 在每个段落中从 `linkedSliceIds` 或标签候选中选片；若无更强叙事约束，优先从拍摄时间相邻的候选中连续取片。
-3. 生成主轨 `primary` 和辅轨 `broll` 的初始摆放。
-4. 为照片和延时生成默认 transform。
-5. 根据脚本生成字幕 cue。
-6. 生成 `KTEP.timeline`。
-7. 用 `timeline-validator` 做一致性校验。
+1. 读取 `Project Brief`，形成全片约束。
+2. 基于全量素材和 `Project Brief` 生成 `ProjectMaterialDigest`。
+3. 结合 `Segment-Plan Brief` 提出 `SegmentPlanDraft[]`。
+4. 用户选择或修改其中一套，冻结为 `ApprovedSegmentPlan`。
+5. 对每个段落读取对应 `Segment Brief`。
+6. 根据 `ApprovedSegmentPlan + Segment Brief` 为每个段落召回候选 `slice`。
+7. 在每个段落中生成或确认若干 `beat`。
+8. 对每个 `beat`，从候选 `slice` 中截取真正使用的 `selection` 子区间。
+9. 必要时再应用 `Beat Polish Brief` 做局部微调。
+10. 根据 `beat.selection` 生成主轨 `primary` 和辅轨 `broll` 的初始摆放。
+11. 为照片和延时生成默认 transform。
+12. 由 `beat.text` 直接生成字幕 cue；若存在更细的语音或口播对齐信息，再覆盖。
+13. 生成 `KTEP.timeline`。
+14. 用 `timeline-validator` 做一致性校验。
 
 ### 10.3 首版生成策略
 
 首版不追求“完美剪辑决策”，而采用可解释规则：
 
 - 优先使用被脚本直接引用的切片
+- 优先使用 beat 已明确绑定的 `selection`
 - 若用户没有明确要求打乱时间顺序，则优先维持相邻片段的拍摄时间连续性
-- 单个切片默认最大使用时长可配置
+- 单个 `selection` 默认最大使用时长可配置
 - 航拍 / 延时优先放在段落开头或转场
 - 图片默认走 `Ken Burns`
-- 字幕先用规则切分，后续再引入语义断句优化
+- 字幕默认直接来自 `beat.text`；若只有段落 narration，才允许回退到规则切分
 
 ## 11. 字幕添加策略
 
@@ -1270,7 +1430,7 @@ interface KtepSubtitleCue {
 
 ### 11.1 协议层
 
-统一生成 `KtepSubtitleCue[]`。
+统一生成 `KtepSubtitleCue[]`，默认以 `beat` 为来源对象。
 
 ### 11.2 落地层
 
@@ -1402,6 +1562,7 @@ Core 侧只依赖这个稳定协议；服务端内部仍可继续沿用 `jianyin
 │       │   ├── ingest-roots.json
 │       │   ├── manual-itinerary.md
 │       │   ├── runtime.json
+│       │   ├── script-brief.project.md
 │       │   └── styles/
 │       │       ├── catalog.json
 │       │       └── <category>.md
@@ -1421,6 +1582,7 @@ Core 侧只依赖这个稳定协议；服务端内部仍可继续沿用 `jianyin
 │       ├── analysis/
 │       │   ├── plans.json
 │       │   ├── windows.json
+│       │   ├── material-digest.json
 │       │   ├── asset-reports/
 │       │   │   └── <assetId>.json
 │       │   ├── reference-transcripts/
@@ -1431,6 +1593,13 @@ Core 侧只依赖这个稳定协议；服务端内部仍可继续沿用 `jianyin
 │       ├── media/
 │       │   └── chronology.json
 │       ├── script/
+│       │   ├── segment-plan.review.md
+│       │   ├── segment-plan.drafts.json
+│       │   ├── segment-plan.approved.json
+│       │   ├── segment-briefs/
+│       │   │   └── <segmentId>.md
+│       │   ├── beat-polish/
+│       │   │   └── <segmentId>--<beatId>.md
 │       │   ├── current.json
 │       │   └── versions/
 │       ├── timeline/
@@ -1479,10 +1648,17 @@ Core 侧只依赖这个稳定协议；服务端内部仍可继续沿用 `jianyin
 - `store/backups/` 保存跨文档的项目级备份包
 - `analysis/plans.json` 保存每条素材的分析计划、密度分数和采样策略
 - `analysis/windows.json` 保存 `interestingWindows[]` 和命中原因
+- `analysis/material-digest.json` 保存全量素材归纳结果
 - `analysis/asset-reports/` 保存面向全部素材的粗扫报告
 - `analysis/reference-transcripts/` 保存参考视频或分析素材的正式转写结果
 - `analysis/style-references/` 保存逐视频落地的风格分析报告，再由上层综合成一个分类风格
 - `media/chronology.json` 保存按拍摄时间排序的素材时序视图，并记录时间/描述修正
+- `config/script-brief.project.md` 保存全片级自然语言 brief
+- `script/segment-plan.review.md` 保存段落方案审查说明与选择记录
+- `script/segment-plan.drafts.json` 保存系统提出的段落方案候选
+- `script/segment-plan.approved.json` 保存用户确认后的正式段落规划
+- `script/segment-briefs/*.md` 保存章节级自然语言 brief
+- `script/beat-polish/*.md` 保存 beat 级局部精修 brief
 - `current.ktep.json` 是编辑器无关的正式时间线
 - `.tmp/` 保存流水线运行过程中的临时产物、关键帧、代理音频、调试日志和进度文件；默认可清理，不纳入 `Canonical Project Store`
 - `adapters/*/state.json` 只保存适配器私有映射状态
