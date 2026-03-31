@@ -43,6 +43,7 @@ export {
   IInterestingWindow,
   IMediaAnalysisPlan,
   ICoarseSample,
+  ITranscriptSegment,
   IAssetCoarseReport,
   IChronologyCorrection,
   IMediaChronology,

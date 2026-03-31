@@ -150,6 +150,20 @@ const scriptSegment: IKtepScript = {
 };
 ```
 
+正式输出时，`beat` 是更重要的编排单元：
+- `beat.text` 表示这一小拍最终要落到字幕/朗读层的文字
+- `beat.actions?.preserveNatSound = true` 表示这拍要尽量保留原声
+- `beat.actions?.muteSource = true` 表示这拍即使素材里有人声，也应静音后改走旁白
+
+### Step 4.5: 原声与旁白的协同规则
+
+脚本阶段不需要把“是否保留原声”全部手工写死，但要理解下游的默认行为：
+
+- 如果候选切片里有明确 transcript，且这段原话本身值得直接进入正片，优先写成贴近原话的 `beat.text`，并显式设置 `preserveNatSound=true`
+- 如果一个有声音的素材主要承担 `intro / transition / 铺垫 / 空间建立 / 情绪过门`，而不是要直接使用它说的话，应显式设置 `muteSource=true`，让下游走旁白
+- 如果脚本里没有显式写这两个动作，时间线阶段会根据 `slice.transcript / transcriptSegments / speechCoverage`、`beat.text` 与 transcript 的匹配度、以及 segment role 自动推论
+- 当前默认推论是偏保守的：`intro / transition / outro` 不会因为“素材里有声音”就自动保留原声，除非 beat 明显在引用原话
+
 ### Step 5: 存储
 
 ```typescript
@@ -184,6 +198,7 @@ Agent 写旁白时应遵守：
 3. **风格禁区**：风格档案中列出的禁止表达方式绝对不用
 4. **证据驱动**：旁白应基于切片证据（场景描述、地点线索、ASR 文本），不要凭空编造
 5. **节奏**：开篇引人入胜，主体循序渐进，结尾收束有力
+6. **原声判断**：不要把“素材里有人说话”和“这段就该保留原声”画等号；很多带人声的 intro / 过门素材仍然应静音换旁白
 
 ## 备选路径
 

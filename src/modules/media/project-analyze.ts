@@ -5,9 +5,12 @@ import type {
   ETargetBudget,
   IAssetCoarseReport,
   IKtepAsset,
+  IKtepEvidence,
   IKtepSlice,
   IMediaAnalysisPlan,
+  IInterestingWindow,
   IMediaRoot,
+  ITranscriptSegment,
 } from '../../protocol/schema.js';
 import {
     appendSlices,
@@ -44,6 +47,7 @@ import { resolveAssetLocalPath } from './root-resolver.js';
 import { buildAnalysisPlan, pickCoarseSampleCount } from './sampler.js';
 import { computeRhythmStats, detectShots, type IShotBoundary } from './shot-detect.js';
 import { sliceInterestingWindows, slicePhoto, sliceVideo } from './slicer.js';
+import { transcribe } from './transcriber.js';
 
 export interface IAnalyzeWorkspaceProjectInput {
   workspaceRoot: string;
@@ -67,6 +71,7 @@ export interface IAnalyzeWorkspaceProjectResult {
 const CANALYZE_STEP_DEFINITIONS = [
   { key: 'prepare', label: '准备素材分析' },
   { key: 'coarse-scan', label: '粗扫素材' },
+  { key: 'audio-analysis', label: '分析视频内音轨' },
   { key: 'fine-scan', label: '自动细扫重点内容' },
   { key: 'chronology', label: '刷新时间视图' },
 ] as const;
@@ -166,6 +171,35 @@ export async function analyzeWorkspaceProjectMedia(
           mlUsed ||= mlHandle.available;
           return mlHandle;
         },
+        onStageChange: async (stage, detail) => {
+          if (stage !== 'audio-analysis') return;
+          await writeKairosProgress(progressPath, {
+            status: 'running',
+            pipelineKey: 'media-analyze',
+            pipelineLabel: '素材分析流程',
+            phaseKey: 'coarse-first-project-analysis',
+            phaseLabel: '粗扫优先素材分析',
+            step: 'audio-analysis',
+            stepLabel: '分析视频内音轨',
+            stepIndex: 3,
+            stepTotal: CANALYZE_STEP_DEFINITIONS.length,
+            stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
+            fileName: asset.displayName,
+            fileIndex,
+            fileTotal: pendingAssets.length,
+            current: fileIndex,
+            total: pendingAssets.length,
+            unit: 'files',
+            etaSeconds: estimateRemainingSeconds(startedAtMs, analyzedAssetIds.length, pendingAssets.length),
+            detail: detail ?? `正在分析 ${asset.displayName} 的视频内音轨`,
+            extra: {
+              projectId: input.projectId,
+              projectName: project.name,
+              assetId: asset.id,
+              assetKind: asset.kind,
+            },
+          });
+        },
       });
 
       await writeAssetReport(projectRoot, analysis.report);
@@ -180,7 +214,7 @@ export async function analyzeWorkspaceProjectMedia(
           phaseLabel: '粗扫优先素材分析',
           step: 'fine-scan',
           stepLabel: '自动细扫重点内容',
-          stepIndex: 3,
+          stepIndex: 4,
           stepTotal: CANALYZE_STEP_DEFINITIONS.length,
           stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
           fileName: asset.displayName,
@@ -213,7 +247,7 @@ export async function analyzeWorkspaceProjectMedia(
       phaseLabel: '粗扫优先素材分析',
       step: 'chronology',
       stepLabel: '刷新时间视图',
-      stepIndex: 4,
+      stepIndex: 5,
       stepTotal: CANALYZE_STEP_DEFINITIONS.length,
       stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
       fileIndex: pendingAssets.length,
@@ -318,6 +352,7 @@ interface IAnalyzeSingleAssetInput {
   };
   budget?: ETargetBudget;
   getMlHandle: () => Promise<MlAvailability>;
+  onStageChange?: (stage: 'audio-analysis', detail?: string) => Promise<void>;
 }
 
 interface IAnalyzeSingleAssetResult {
@@ -335,6 +370,14 @@ interface MlAvailability {
   available: boolean;
 }
 
+interface ITranscriptContext {
+  transcript: string;
+  segments: ITranscriptSegment[];
+  evidence: IKtepEvidence[];
+  speechCoverage: number;
+  speechWindows: IInterestingWindow[];
+}
+
 async function analyzeSingleAsset(
   input: IAnalyzeSingleAssetInput,
 ): Promise<IAnalyzeSingleAssetResult> {
@@ -350,11 +393,28 @@ async function analyzeSingleAsset(
     0.3,
     input.runtimeConfig,
   ).catch(() => [] as IShotBoundary[]);
+  const ml = await input.getMlHandle();
+  const initialClipTypeGuess = guessClipType(input.asset, shotBoundaries);
+  if (shouldAttemptAsr(input.asset, initialClipTypeGuess, input.budget)) {
+    await input.onStageChange?.('audio-analysis', `正在分析 ${input.asset.displayName} 的视频内音轨`);
+  }
+  const transcript = await maybeTranscribeAsset({
+    asset: input.asset,
+    localPath: input.localPath,
+    clipTypeGuess: initialClipTypeGuess,
+    budget: input.budget,
+    ml,
+  });
+  const clipTypeGuess = refineClipTypeGuess(input.asset, initialClipTypeGuess, transcript);
   const density = estimateDensity({
     durationMs: input.asset.durationMs ?? 0,
     shotBoundaries,
+    asrSegments: transcript?.segments.map(segment => ({
+      start: segment.startMs / 1000,
+      end: segment.endMs / 1000,
+      text: segment.text,
+    })),
   });
-  const clipTypeGuess = guessClipType(input.asset, shotBoundaries);
   const plan = buildAnalysisPlan({
     assetId: input.asset.id,
     durationMs: input.asset.durationMs ?? 0,
@@ -362,6 +422,7 @@ async function analyzeSingleAsset(
     shotBoundaries,
     clipType: clipTypeGuess,
     budget: input.budget,
+    extraInterestingWindows: transcript?.speechWindows,
   });
   const sampleTimestamps = buildCoarseSampleTimestamps(
     input.asset.durationMs ?? 0,
@@ -382,7 +443,6 @@ async function analyzeSingleAsset(
   );
   const sampleFrames = await filterExistingKeyframes(extractedFrames);
 
-  const ml = await input.getMlHandle();
   const summary = await summarizeSamples(ml, sampleFrames);
   const root = input.roots.find(item => item.id === input.asset.ingestRootId);
   const baseReport = buildAssetCoarseReport({
@@ -390,11 +450,14 @@ async function analyzeSingleAsset(
     plan: effectivePlan,
     clipTypeGuess,
     summary: summary?.description,
-    labels: buildReportLabels(clipTypeGuess, summary?.sceneType, summary?.subjects),
+    transcript: transcript?.transcript,
+    transcriptSegments: transcript?.segments,
+    speechCoverage: transcript?.speechCoverage,
+    labels: buildReportLabels(clipTypeGuess, summary?.sceneType, summary?.subjects, transcript),
     placeHints: summary?.placeHints ?? [],
     rootNotes: root?.notes ?? [],
     sampleFrames,
-    fineScanReasons: buildFineScanReasons(effectivePlan, density, shotBoundaries),
+    fineScanReasons: buildFineScanReasons(effectivePlan, density, shotBoundaries, transcript),
   });
 
   const fineScan = await buildFineScanSlices({
@@ -405,6 +468,7 @@ async function analyzeSingleAsset(
     runtimeConfig: input.runtimeConfig,
     shotBoundaries,
     report: baseReport,
+    transcript,
     clipTypeGuess,
     ml,
   });
@@ -441,6 +505,209 @@ function applyDriveFallbackWindows(
     shouldFineScan: true,
     fineScanMode: 'windowed',
   };
+}
+
+async function maybeTranscribeAsset(input: {
+  asset: IKtepAsset;
+  localPath: string;
+  clipTypeGuess: EClipType;
+  budget?: ETargetBudget;
+  ml: MlAvailability;
+}): Promise<ITranscriptContext | null> {
+  if (!input.ml.available) return null;
+  if (!shouldAttemptAsr(input.asset, input.clipTypeGuess, input.budget)) return null;
+
+  try {
+    const result = await transcribe(input.ml.client, input.localPath);
+    const segments = result.segments
+      .map(segment => ({
+        startMs: Math.max(0, Math.round(segment.start * 1000)),
+        endMs: Math.max(Math.round(segment.start * 1000), Math.round(segment.end * 1000)),
+        text: segment.text.trim(),
+      }))
+      .filter(segment => segment.endMs > segment.startMs && segment.text.length > 0);
+
+    const transcript = result.fullText.trim();
+    if (!transcript && segments.length === 0) {
+      return null;
+    }
+
+    return {
+      transcript,
+      segments,
+      evidence: result.evidence,
+      speechCoverage: computeSpeechCoverage(input.asset.durationMs ?? 0, segments),
+      speechWindows: buildSpeechWindows(input.asset.durationMs ?? 0, segments),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function shouldAttemptAsr(
+  asset: IKtepAsset,
+  clipTypeGuess: EClipType,
+  budget?: ETargetBudget,
+): boolean {
+  if (budget === 'coarse') return false;
+  const durationMs = asset.durationMs ?? 0;
+  if (durationMs <= 0) return false;
+  if (clipTypeGuess === 'talking-head') return durationMs <= 30 * 60_000;
+  if (clipTypeGuess === 'unknown') return durationMs <= 20 * 60_000;
+  if (clipTypeGuess === 'drive') return durationMs <= 12 * 60_000;
+  return durationMs <= 10 * 60_000;
+}
+
+function computeSpeechCoverage(
+  durationMs: number,
+  segments: ITranscriptSegment[],
+): number {
+  if (durationMs <= 0 || segments.length === 0) return 0;
+
+  const coveredMs = segments.reduce(
+    (sum, segment) => sum + Math.max(0, segment.endMs - segment.startMs),
+    0,
+  );
+  return Math.min(coveredMs / durationMs, 1);
+}
+
+function buildSpeechWindows(
+  durationMs: number,
+  segments: ITranscriptSegment[],
+): IInterestingWindow[] {
+  if (durationMs <= 0 || segments.length === 0) return [];
+
+  return mergeInterestingWindows(
+    segments.map(segment => ({
+      startMs: Math.max(0, segment.startMs - 500),
+      endMs: Math.min(durationMs, segment.endMs + 900),
+      reason: 'speech-window',
+    })),
+  );
+}
+
+function refineClipTypeGuess(
+  asset: IKtepAsset,
+  clipTypeGuess: EClipType,
+  transcript?: ITranscriptContext | null,
+): EClipType {
+  if (!transcript?.transcript) return clipTypeGuess;
+  if (clipTypeGuess === 'drive') return clipTypeGuess;
+
+  const durationMs = asset.durationMs ?? 0;
+  if (clipTypeGuess === 'unknown' && durationMs <= 3 * 60_000 && transcript.speechCoverage >= 0.18) {
+    return 'talking-head';
+  }
+  if (clipTypeGuess === 'broll' && durationMs > 20_000 && transcript.speechCoverage >= 0.3) {
+    return 'talking-head';
+  }
+  return clipTypeGuess;
+}
+
+function decorateSliceWithTranscript(
+  slice: IKtepSlice,
+  transcript?: ITranscriptContext | null,
+  extraEvidence: IKtepEvidence[] = [],
+): IKtepSlice {
+  if (!transcript || !transcript.transcript) {
+    const evidence = dedupeEvidence([...(slice.evidence ?? []), ...extraEvidence]);
+    return evidence.length > 0
+      ? { ...slice, evidence }
+      : slice;
+  }
+
+  const match = collectTranscriptForSlice(slice, transcript);
+  const transcriptSummary = shouldUseTranscriptSummary(slice.summary)
+    ? match.transcript
+    : slice.summary;
+  const evidence = dedupeEvidence([
+    ...(slice.evidence ?? []),
+    ...match.evidence,
+    ...extraEvidence,
+  ]);
+
+  return {
+    ...slice,
+    summary: transcriptSummary,
+    transcript: match.transcript ?? slice.transcript,
+    transcriptSegments: match.transcriptSegments ?? slice.transcriptSegments,
+    labels: dedupeStrings([
+      ...slice.labels,
+      match.transcript ? 'speech' : undefined,
+      (match.speechCoverage ?? 0) >= 0.35 ? 'spoken-content' : undefined,
+    ]),
+    evidence: evidence.length > 0 ? evidence : undefined,
+    speechCoverage: match.speechCoverage ?? slice.speechCoverage,
+  };
+}
+
+function collectTranscriptForSlice(
+  slice: IKtepSlice,
+  transcript: ITranscriptContext,
+): {
+  transcript?: string;
+  transcriptSegments?: ITranscriptSegment[];
+  evidence: IKtepEvidence[];
+  speechCoverage?: number;
+} {
+  if (transcript.segments.length === 0) {
+    return {
+      transcript: transcript.transcript || undefined,
+      transcriptSegments: transcript.transcript
+        ? [{
+          startMs: slice.sourceInMs ?? 0,
+          endMs: slice.sourceOutMs ?? (slice.sourceInMs ?? 0),
+          text: transcript.transcript,
+        }]
+        : undefined,
+      evidence: transcript.evidence,
+      speechCoverage: transcript.speechCoverage,
+    };
+  }
+
+  const rangeStartMs = slice.sourceInMs ?? 0;
+  const rangeEndMs = slice.sourceOutMs ?? Number.POSITIVE_INFINITY;
+  const overlapped = transcript.segments.filter(segment =>
+    segment.endMs > rangeStartMs && segment.startMs < rangeEndMs,
+  );
+
+  if (overlapped.length === 0) {
+    return { evidence: [] };
+  }
+
+  const clippedSegments = overlapped
+    .map(segment => ({
+      startMs: Math.max(rangeStartMs, segment.startMs),
+      endMs: Math.min(rangeEndMs, segment.endMs),
+      text: segment.text,
+    }))
+    .filter(segment => segment.endMs > segment.startMs);
+  const excerpt = clippedSegments.map(segment => segment.text).join(' ').trim();
+  const speechMs = clippedSegments.reduce((sum, segment) => {
+    const overlapStart = segment.startMs;
+    const overlapEnd = segment.endMs;
+    return sum + Math.max(0, overlapEnd - overlapStart);
+  }, 0);
+  const sliceDurationMs = resolveSliceDurationMs(slice.sourceInMs, slice.sourceOutMs);
+
+  return {
+    transcript: excerpt || undefined,
+    transcriptSegments: clippedSegments,
+    evidence: clippedSegments.map(segment => ({
+      source: 'asr',
+      value: segment.text,
+      confidence: 0.8,
+    })),
+    speechCoverage: sliceDurationMs && sliceDurationMs > 0
+      ? Math.min(speechMs / sliceDurationMs, 1)
+      : transcript.speechCoverage,
+  };
+}
+
+function shouldUseTranscriptSummary(summary?: string): boolean {
+  if (!summary) return true;
+  return ['speech-window', 'coarse-sample-window', 'whole-asset-window-fallback']
+    .some(token => summary.includes(token));
 }
 
 async function analyzePhotoAsset(
@@ -607,11 +874,19 @@ function buildReportLabels(
   clipType: EClipType,
   sceneType?: string,
   subjects?: string[],
+  transcript?: ITranscriptContext | null,
 ): string[] {
+  const speechLabels = transcript?.transcript
+    ? [
+      'speech',
+      transcript.speechCoverage >= 0.3 ? 'spoken-content' : undefined,
+    ]
+    : [];
   return [...new Set([
     clipType,
     sceneType,
     ...(subjects ?? []).slice(0, 6),
+    ...speechLabels,
   ].filter(Boolean) as string[])];
 }
 
@@ -623,6 +898,7 @@ function buildFineScanReasons(
   },
   density: { score: number },
   shotBoundaries: IShotBoundary[],
+  transcript?: ITranscriptContext | null,
 ): string[] {
   if (!reportPlan.shouldFineScan) {
     return ['coarse-scan-sufficient'];
@@ -631,6 +907,8 @@ function buildFineScanReasons(
   reasons.add(`fine-scan:${reportPlan.fineScanMode}`);
   if (density.score >= 0.55) reasons.add('high-density-score');
   if (shotBoundaries.length >= 12) reasons.add('high-shot-count');
+  if ((transcript?.speechWindows.length ?? 0) > 0) reasons.add('speech-window');
+  if ((transcript?.speechCoverage ?? 0) >= 0.2) reasons.add('high-speech-coverage');
   for (const window of reportPlan.interestingWindows) {
     reasons.add(window.reason);
   }
@@ -676,6 +954,7 @@ interface IBuildFineScanSlicesInput {
   };
   shotBoundaries: IShotBoundary[];
   report: IAssetCoarseReport;
+  transcript?: ITranscriptContext | null;
   roots: IMediaRoot[];
   clipTypeGuess: EClipType;
   ml: MlAvailability;
@@ -716,12 +995,15 @@ async function buildFineScanSlices(
   const plans = buildFineScanKeyframePlans(effectiveSlices);
   if (plans.length === 0 || !input.ml.available) {
     return {
-      slices: effectiveSlices.map(slice => ({
-        ...slice,
-        summary: slice.summary ?? input.report.summary,
-        labels: dedupeStrings([...slice.labels, ...input.report.labels]),
-        placeHints: dedupeStrings([...slice.placeHints, ...input.report.placeHints]),
-      })),
+      slices: effectiveSlices.map(slice => {
+        const withTranscript = decorateSliceWithTranscript(slice, input.transcript);
+        return {
+          ...withTranscript,
+          summary: withTranscript.summary ?? input.report.summary ?? withTranscript.transcript,
+          labels: dedupeStrings([...withTranscript.labels, ...input.report.labels]),
+          placeHints: dedupeStrings([...withTranscript.placeHints, ...input.report.placeHints]),
+        };
+      }),
       droppedInvalidSliceCount: 0,
     };
   }
@@ -747,17 +1029,26 @@ async function buildFineScanSlices(
       droppedInvalidSliceCount += 1;
       continue;
     }
+    const withTranscript = decorateSliceWithTranscript(
+      slice,
+      input.transcript,
+      recognition?.recognition.evidence,
+    );
     slices.push({
-      ...slice,
-      summary: recognition?.recognition.description || slice.summary || input.report.summary,
+      ...withTranscript,
+      summary: recognition?.recognition.description
+        || withTranscript.summary
+        || input.report.summary
+        || withTranscript.transcript,
       labels: dedupeStrings([
-        ...slice.labels,
+        ...withTranscript.labels,
         ...input.report.labels,
         recognition?.recognition.sceneType,
         ...(recognition?.recognition.subjects ?? []),
       ]),
       placeHints: dedupeStrings([
-        ...slice.placeHints,
+        ...withTranscript.placeHints,
+        ...input.report.placeHints,
         ...(recognition?.recognition.placeHints ?? []),
       ]),
     });
@@ -934,4 +1225,22 @@ function dedupeStrings(values: Array<string | undefined>): string[] {
       .map(value => value?.trim())
       .filter((value): value is string => Boolean(value)),
   )];
+}
+
+function resolveSliceDurationMs(sourceInMs?: number, sourceOutMs?: number): number | undefined {
+  if (sourceInMs == null || sourceOutMs == null) return undefined;
+  if (sourceOutMs <= sourceInMs) return undefined;
+  return sourceOutMs - sourceInMs;
+}
+
+function dedupeEvidence(evidence: IKtepEvidence[]): IKtepEvidence[] {
+  const seen = new Set<string>();
+  const deduped: IKtepEvidence[] = [];
+  for (const item of evidence) {
+    const key = `${item.source}:${item.value}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(item);
+  }
+  return deduped;
 }

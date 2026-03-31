@@ -80,6 +80,15 @@ function buildChronologyEvidence(
       confidence: 0.5,
     });
   }
+  for (const segment of report?.transcriptSegments?.slice(0, 6) ?? []) {
+    const text = segment.text.trim();
+    if (!text) continue;
+    evidence.push({
+      source: 'asr',
+      value: text,
+      confidence: 0.8,
+    });
+  }
   for (const note of report?.rootNotes ?? []) {
     evidence.push({
       source: 'manual-root-note',

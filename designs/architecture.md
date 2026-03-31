@@ -3,6 +3,22 @@
 > Phase 1：Node.js 库 + CodeBuddy Skill，无 GUI
 > 核心链路：素材导入 → 场景检测 → 脚本生成 → 达芬奇时间线
 
+## 0. 2026-03-31 增补
+
+当前代码实现相对这份 v2 架构稿，已经补上三条需要被视为正式口径的能力：
+
+1. Phase 2 的 `coarse-first analyze` 已把 ASR 纳入视频细扫前链路
+   - coarse report / slice 可携带 `transcript / transcriptSegments / speechCoverage`
+   - 语音窗口会和视觉窗口一起进入 `interestingWindows`
+2. Phase 3 的脚本召回和 outline 已消费 transcript 证据
+   - transcript 不再只是附属说明，而是候选召回和 beat 写作的正式输入
+3. Phase 4 的字幕已支持双路径
+   - 旁白路径：来自 `beat.text`
+   - 原声路径：来自 `slice.transcriptSegments`
+   - `preserveNatSound / muteSource` 为显式覆盖；未标注时允许根据 transcript 匹配度、`speechCoverage`、segment role 自动推论
+
+因此，后续阅读本稿时，应把“语音证据进入细扫”和“原声/旁白双路径字幕”一起视为当前中间版本架构的一部分。
+
 ## 1. 系统全景
 
 ```

@@ -141,9 +141,20 @@ project/
 **子 skill**: [kairos-analyze](../kairos-analyze/SKILL.md)
 
 输入：`store/assets.json`
-产出：`store/slices.json` — `IKtepSlice[]`
+产出：
+- `analysis/asset-reports/*.json` — 单素材 coarse report
+- `store/slices.json` — `IKtepSlice[]`
+- `media/chronology.json` — 时间排序视图
 
 前置条件：`store/assets.json` 存在且非空
+
+当前分析链路除了视觉粗扫/细扫，还会在符合条件的视频上补充 ASR：
+- 结构上更准确的理解是：`视觉粗扫 -> 音频分析 -> 细扫决策 -> 细扫执行`
+- coarse report 会带 `transcript / transcriptSegments / speechCoverage`
+- 语音时间窗会参与 fine-scan window 生成
+- chronology 会写入部分 ASR evidence
+- 当前正式项目的音频分析主路径指的是“视频素材里的音轨”，不是独立纯音频资产
+- 如果后续项目真的引入独立音频素材，再补单独 analyze 分支；当前不要把这点和视频内语音 ASR 混为一谈
 
 ### Phase 3: Script (脚本创作)
 
@@ -165,6 +176,8 @@ project/
 - 在用户审查 `script/script-brief.md` 之前，不应直接把段落方案推进到正式脚本
 - 素材归纳（material digest）可以由规则和统计生成，但**段落规划（segment plan drafts）必须由 LLM 主驱动生成**
 - 启发式规则只能作为 fallback，不能作为默认或主要的段落规划方案来源
+- ASR transcript 已经是正式证据源之一，可参与 candidate recall、outline 和 beat 写作
+- 但“素材里有声音”不等于“成片一定保留原声”；脚本应通过 `preserveNatSound / muteSource` 表达明确意图，未标注时交给 Timeline 自动推论
 
 ### Phase 4: Timeline (时间线构建)
 
@@ -174,6 +187,10 @@ project/
 产出：`timeline/current.json` — `IKtepDoc`（完整 KTEP 文档）
 
 前置条件：前 3 阶段产出均存在
+
+当前 Timeline 阶段的字幕有两条正式路径：
+- 旁白路径：按 `beat.text` 切字幕
+- 原声路径：当选中的 slice 带 transcript 且判断应保留原声时，按 `transcriptSegments` 直接落字幕
 
 ### Phase 5: Export (NLE 导出)
 

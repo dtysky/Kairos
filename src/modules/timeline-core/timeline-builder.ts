@@ -56,7 +56,7 @@ export function buildTimeline(
   };
 
   // 4. Plan subtitles
-  const subtitles: IKtepSubtitle[] = planSubtitles(script, clips, cfg.subtitle);
+  const subtitles: IKtepSubtitle[] = planSubtitles(script, clips, slices, cfg.subtitle);
 
   // 5. Assemble document
   const doc: IKtepDoc = {

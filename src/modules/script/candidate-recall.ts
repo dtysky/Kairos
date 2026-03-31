@@ -124,12 +124,21 @@ function rankCandidatesForSegment(
       }
     }
 
+    if (slice.transcript && segment.intent) {
+      const transcriptOverlap = overlapScore(tokenize(slice.transcript), tokenize(segment.intent));
+      if (transcriptOverlap > 0) {
+        score += transcriptOverlap * 2.2;
+        reasons.push(`transcript:${transcriptOverlap}`);
+      }
+    }
+
     if (segmentBrief) {
       const briefOverlap = overlapScore(
         [
           ...slice.labels,
           ...slice.placeHints,
           ...tokenize(slice.summary ?? ''),
+          ...tokenize(slice.transcript ?? ''),
         ],
         tokenize(segmentBrief),
       );
@@ -161,6 +170,7 @@ function rankCandidatesForSegment(
       score,
       reasons: reasons.length > 0 ? reasons : ['fallback:lowest-confidence'],
       summary: slice.summary,
+      transcript: slice.transcript,
       labels: slice.labels,
       placeHints: slice.placeHints,
       sourceInMs: slice.sourceInMs,

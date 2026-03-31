@@ -94,6 +94,7 @@ src/
 - `IKtepProject` — 项目元信息
 - `IKtepAsset` — 资产
 - `IKtepSlice` — 切片
+- `ITranscriptSegment` — 切片/素材的语音转写片段
 - `IKtepEvidence` — 证据
 - `IKtepScriptAction` — 脚本行为
 - `IKtepScriptSelection` — 从 `slice` 中真正选中的子区间
@@ -129,9 +130,11 @@ src/
 这一版实现之后，正式设计口径应理解为：
 
 - `slice` 是候选时间窗，不是最终必用区间
+- `slice` 可以同时携带视觉摘要和语音证据：`summary / transcript / transcriptSegments / speechCoverage / evidence[]`
 - `selection` 才是脚本和时间线真正使用的子区间
 - `beat` 是脚本、时间线和字幕共享的最小编排单元
-- `subtitle` 默认来自 `beat.text`，而不是从整段 `narration` 事后切分
+- `subtitle` 默认来自 `beat.text`，但当该 beat 保留原声时，也可以直接来自 `slice.transcriptSegments`
+- `preserveNatSound` / `muteSource` 是脚本层的显式覆盖信号；未显式设置时，时间线层允许结合 transcript 匹配度、`speechCoverage` 和 segment role 自动推论
 - `segment plan` 必须先经过用户审查，再进入候选召回和 beat 编排
 - `script-brief` 不再只有一份，而是按阶段拆成 project / segment-plan / segment / beat-polish 四层
 

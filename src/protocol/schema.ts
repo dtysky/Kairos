@@ -121,6 +121,13 @@ export const IKtepEvidence = z.object({
 });
 export type IKtepEvidence = z.infer<typeof IKtepEvidence>;
 
+export const ITranscriptSegment = z.object({
+  startMs: z.number().nonnegative(),
+  endMs: z.number().nonnegative(),
+  text: z.string(),
+});
+export type ITranscriptSegment = z.infer<typeof ITranscriptSegment>;
+
 export const IKtepAsset = z.object({
   id: z.string(),
   kind: EAssetKind,
@@ -147,8 +154,12 @@ export const IKtepSlice = z.object({
   sourceInMs: z.number().optional(),
   sourceOutMs: z.number().optional(),
   summary: z.string().optional(),
+  transcript: z.string().optional(),
+  transcriptSegments: z.array(ITranscriptSegment).optional(),
   labels: z.array(z.string()),
   placeHints: z.array(z.string()),
+  evidence: z.array(IKtepEvidence).optional(),
+  speechCoverage: z.number().min(0).max(1).optional(),
   confidence: z.number().min(0).max(1).optional(),
 });
 export type IKtepSlice = z.infer<typeof IKtepSlice>;
@@ -395,6 +406,9 @@ export const IAssetCoarseReport = z.object({
   densityScore: z.number().min(0).max(1),
   gpsSummary: z.string().optional(),
   summary: z.string().optional(),
+  transcript: z.string().optional(),
+  transcriptSegments: z.array(ITranscriptSegment).optional(),
+  speechCoverage: z.number().min(0).max(1).optional(),
   labels: z.array(z.string()),
   placeHints: z.array(z.string()),
   rootNotes: z.array(z.string()),
@@ -518,6 +532,7 @@ export const ISegmentRecallCandidate = z.object({
   score: z.number(),
   reasons: z.array(z.string()),
   summary: z.string().optional(),
+  transcript: z.string().optional(),
   labels: z.array(z.string()),
   placeHints: z.array(z.string()),
   sourceInMs: z.number().optional(),

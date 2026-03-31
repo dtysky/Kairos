@@ -9,6 +9,7 @@ export interface IOutlineSliceContext {
   sliceId: string;
   assetId: string;
   summary?: string;
+  transcript?: string;
   labels: string[];
   placeHints: string[];
   sourceInMs?: number;
@@ -22,6 +23,7 @@ export interface IOutlineBeat {
   sliceId?: string;
   selection: IKtepScriptSelection;
   summary?: string;
+  transcript?: string;
   labels: string[];
   placeHints: string[];
   sourceInMs?: number;
@@ -108,6 +110,7 @@ export function buildOutlineFromApprovedPlan(
       sliceId: candidate.sliceId,
       assetId: candidate.assetId,
       summary: candidate.summary,
+      transcript: candidate.transcript,
       labels: takeUnique(candidate.labels, 4),
       placeHints: takeUnique(candidate.placeHints, 3),
       sourceInMs: candidate.sourceInMs,
@@ -120,7 +123,7 @@ export function buildOutlineFromApprovedPlan(
     }
 
     const summary = (beats.length > 0 ? beats : sliceContexts)
-      .map(candidate => candidate.summary?.trim())
+      .map(candidate => candidate.summary?.trim() || candidate.transcript?.trim())
       .filter((value): value is string => Boolean(value))
       .slice(0, 3)
       .join(' / ') || segment.intent;
@@ -183,6 +186,7 @@ function buildPlannedBeatsForSegment(
       sliceId: candidate.sliceId,
       selection: trimmedSelection,
       summary: candidate.summary,
+      transcript: candidate.transcript,
       labels: candidate.labels,
       placeHints: candidate.placeHints,
       sourceInMs: trimmedSelection.sourceInMs,
@@ -348,6 +352,7 @@ function buildSegmentContext(slices: IKtepSlice[]): IOutlineSegmentContext {
     sliceId: slice.id,
     assetId: slice.assetId,
     summary: slice.summary,
+    transcript: slice.transcript,
     labels: takeUnique(slice.labels, 4),
     placeHints: takeUnique(slice.placeHints, 3),
     sourceInMs: slice.sourceInMs,
@@ -355,7 +360,7 @@ function buildSegmentContext(slices: IKtepSlice[]): IOutlineSegmentContext {
   }));
 
   const summaries = slices
-    .map(slice => slice.summary?.trim())
+    .map(slice => slice.summary?.trim() || slice.transcript?.trim())
     .filter((summary): summary is string => Boolean(summary));
   const startMs = pickMinNumber(slices.map(slice => slice.sourceInMs));
   const endMs = pickMaxNumber(slices.map(slice => slice.sourceOutMs));
@@ -458,6 +463,7 @@ function buildSegmentBeats(
       sliceId: slice.id,
       selection,
       summary: slice.summary,
+      transcript: slice.transcript,
       labels: takeUnique(slice.labels, 4),
       placeHints: takeUnique(slice.placeHints, 3),
       sourceInMs: selection.sourceInMs,

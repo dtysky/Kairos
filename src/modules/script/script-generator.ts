@@ -18,6 +18,9 @@ const CSYSTEM = `你是一个旅拍纪录片脚本创作者。根据给定的叙
 5. 每个段落必须返回 beats 数组；每个 beat 至少包含 id, text, selections, linkedSliceIds
 6. 每个 beat 应只绑定 1 到若干条真正要使用的 selections，必要时可以只取候选 slice 内的一小段
 7. actions 可包含 speed, preserveNatSound, muteSource, transitionHint, holdMs
+7a. 如果候选切片里带有明确口播/人物原声 transcript，且这段话本身值得直接进入正片，优先保留原声并设置 preserveNatSound=true
+7b. 对于 preserveNatSound=true 的 beat，text 应尽量贴近要保留的原话或其可读字幕版本，不要再额外改写成旁白
+7c. 如果一个带语音的素材主要承担 intro、transition、铺垫、空间建立或情绪过门画面，而不打算直接使用它的原话，就不要因为它有 transcript 就保留原声；这类 beat 应优先设置 muteSource=true，并把 text 正常写成旁白
 8. narration 是整段的聚合预览，可选；若提供，应与 beats 内容一致
 9. 返回 JSON 数组，每个元素包含 id, role, title, narration, targetDurationMs, actions, selections, linkedSliceIds, beats`;
 
@@ -128,6 +131,7 @@ export function buildOutlinePrompt(outline: IOutlineSegment[]): string {
         const uniquePlaceHints = beat.placeHints.filter(place => !repeatedPlaceHints.has(place));
         const details = [
           beat.summary,
+          beat.transcript ? `原声: ${beat.transcript}` : '',
           uniqueLabels.length > 0 ? `标签: ${uniqueLabels.join(', ')}` : '',
           uniquePlaceHints.length > 0 ? `地点: ${uniquePlaceHints.join(', ')}` : '',
         ].filter(Boolean).join(' | ');
@@ -382,7 +386,10 @@ function buildFallbackBeatTexts(
   const splitTexts = splitNarrationIntoBeats(rawNarration, beatCount);
   return splitTexts.map((text, index) => {
     if (text.trim().length > 0) return text;
-    return fallbackBeats[index]?.summary ?? fallbackBeats[index]?.title ?? '';
+    return fallbackBeats[index]?.transcript
+      ?? fallbackBeats[index]?.summary
+      ?? fallbackBeats[index]?.title
+      ?? '';
   });
 }
 

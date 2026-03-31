@@ -59,7 +59,12 @@ planTransitions(clips: IKtepClip[], config?: Partial<ITransitionConfig>): IKtepC
 // { defaultType: 'cut', sceneChangeType: 'cross-dissolve', sceneChangeDurationMs: 800 }
 
 // 3. 生成字幕
-planSubtitles(script: IKtepScript[], clips: IKtepClip[], config?: Partial<ISubtitleConfig>): IKtepSubtitle[]
+planSubtitles(
+  script: IKtepScript[],
+  clips: IKtepClip[],
+  slices: IKtepSlice[],
+  config?: Partial<ISubtitleConfig>,
+): IKtepSubtitle[]
 
 // ISubtitleConfig:
 // { maxCharsPerCue: 20, language: 'zh' }
@@ -111,11 +116,21 @@ const clips = planTransitions(rawClips, {
   sceneChangeDurationMs: 1000,
 });
 
-const subtitles = planSubtitles(script, clips, {
+const subtitles = planSubtitles(script, clips, slices, {
   maxCharsPerCue: 15,
   language: 'zh',
 });
 ```
+
+## 字幕来源规则
+
+Timeline 阶段的字幕已经不是“永远只切 `beat.text`”：
+
+- 默认仍以 `beat.text` 作为旁白/成片字幕来源
+- 如果选中的 `slice` 带有明确 `transcriptSegments`，且脚本显式要求 `preserveNatSound=true`，会优先按原声时间轴生成字幕
+- 如果脚本显式要求 `muteSource=true`，即使素材里有 transcript，也会回到 `beat.text`
+- 如果脚本没有显式标注，系统会根据 `speechCoverage`、`beat.text` 与 transcript 的匹配程度、以及段落角色自动推论是否保留原声
+- 当前推论默认对 `intro / transition / outro` 更保守，避免“因为素材里有人说话就把过门镜头错误保留原声”
 
 ## 产出
 

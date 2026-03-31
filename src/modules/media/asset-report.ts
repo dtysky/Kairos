@@ -4,6 +4,7 @@ import type {
   IMediaAnalysisPlan,
   EClipType,
   EFineScanMode,
+  ITranscriptSegment,
 } from '../../protocol/schema.js';
 import type { IKeyframeResult } from './keyframe.js';
 
@@ -13,6 +14,9 @@ export interface IBuildAssetCoarseReportInput {
   clipTypeGuess?: EClipType;
   gpsSummary?: string;
   summary?: string;
+  transcript?: string;
+  transcriptSegments?: ITranscriptSegment[];
+  speechCoverage?: number;
   labels?: string[];
   placeHints?: string[];
   rootNotes?: string[];
@@ -36,6 +40,9 @@ export function buildAssetCoarseReport(
     densityScore: input.plan.densityScore,
     gpsSummary: input.gpsSummary,
     summary: input.summary,
+    transcript: input.transcript?.trim() || undefined,
+    transcriptSegments: input.transcriptSegments?.filter(segment => segment.text.trim().length > 0),
+    speechCoverage: input.speechCoverage,
     labels: dedupe(input.labels ?? []),
     placeHints: dedupe(input.placeHints ?? []),
     rootNotes: dedupe(input.rootNotes ?? []),
