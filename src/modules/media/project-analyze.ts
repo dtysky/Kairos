@@ -42,10 +42,17 @@ import {
   type IShotKeyframePlan,
 } from './keyframe.js';
 import { MlClient } from './ml-client.js';
-import { recognizeFrames, recognizeShotGroups } from './recognizer.js';
+import { probe } from './probe.js';
+import { recognizeFrames, recognizeShotGroups, type IRecognition } from './recognizer.js';
 import { resolveAssetLocalPath } from './root-resolver.js';
-import { buildAnalysisPlan, pickCoarseSampleCount } from './sampler.js';
-import { computeRhythmStats, detectShots, type IShotBoundary } from './shot-detect.js';
+import {
+  applyAnalysisDecision,
+  buildAnalysisPlan,
+  buildHeuristicAnalysisDecision,
+  type IAnalysisDecision,
+  pickCoarseSampleCount,
+} from './sampler.js';
+import { detectShots, type IShotBoundary } from './shot-detect.js';
 import { sliceInterestingWindows, slicePhoto, sliceVideo } from './slicer.js';
 import { transcribe } from './transcriber.js';
 
@@ -95,8 +102,15 @@ export async function analyzeWorkspaceProjectMedia(
   const analyzedAssetIds: string[] = [];
   const fineScannedAssetIds: string[] = [];
   const pendingSlices: IKtepSlice[] = [];
+  const preparedAnalyses: IPreparedAssetAnalysis[] = [];
+  const finalizedAnalyses: IFinalizedAssetAnalysis[] = [];
   let mlHandle: MlAvailability | null = null;
   let mlUsed = false;
+  const getMlHandle = async () => {
+    mlHandle ??= await createMlAvailability(runtimeConfig.mlServerUrl);
+    mlUsed ||= mlHandle.available;
+    return mlHandle;
+  };
 
   await writeKairosProgress(progressPath, {
     status: 'running',
@@ -124,9 +138,8 @@ export async function analyzeWorkspaceProjectMedia(
   try {
     for (const [index, asset] of pendingAssets.entries()) {
       const localPath = resolveAssetLocalPath(input.projectId, asset, roots, deviceMaps);
-      const completedCount = analyzedAssetIds.length;
       const fileIndex = index + 1;
-      const etaSeconds = estimateRemainingSeconds(startedAtMs, completedCount, pendingAssets.length);
+      const etaSeconds = estimateRemainingSeconds(startedAtMs, preparedAnalyses.length, pendingAssets.length);
 
       await writeKairosProgress(progressPath, {
         status: 'running',
@@ -159,18 +172,52 @@ export async function analyzeWorkspaceProjectMedia(
 
       if (!localPath) continue;
 
-      const analysis = await analyzeSingleAsset({
+      const prepared = await prepareAssetVisualCoarse({
         asset,
         localPath,
         projectRoot,
-        roots,
         runtimeConfig,
-        budget: input.budget,
-        getMlHandle: async () => {
-          mlHandle ??= await createMlAvailability(runtimeConfig.mlServerUrl);
-          mlUsed ||= mlHandle.available;
-          return mlHandle;
+        getMlHandle,
+      });
+      preparedAnalyses.push(prepared);
+    }
+
+    for (const [index, prepared] of preparedAnalyses.entries()) {
+      const fileIndex = index + 1;
+
+      await writeKairosProgress(progressPath, {
+        status: 'running',
+        pipelineKey: 'media-analyze',
+        pipelineLabel: '素材分析流程',
+        phaseKey: 'coarse-first-project-analysis',
+        phaseLabel: '粗扫优先素材分析',
+        step: 'audio-analysis',
+        stepLabel: '分析视频内音轨',
+        stepIndex: 3,
+        stepTotal: CANALYZE_STEP_DEFINITIONS.length,
+        stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
+        fileName: prepared.asset.displayName,
+        fileIndex,
+        fileTotal: preparedAnalyses.length,
+        current: fileIndex,
+        total: preparedAnalyses.length,
+        unit: 'files',
+        etaSeconds: estimateRemainingSeconds(startedAtMs, analyzedAssetIds.length, preparedAnalyses.length),
+        detail: describeDecisionStage(prepared.asset, prepared.hasAudioTrack),
+        extra: {
+          projectId: input.projectId,
+          projectName: project.name,
+          assetId: prepared.asset.id,
+          assetKind: prepared.asset.kind,
         },
+      });
+
+      const finalized = await finalizePreparedAsset({
+        prepared,
+        projectRoot,
+        roots,
+        budget: input.budget,
+        getMlHandle,
         onStageChange: async (stage, detail) => {
           if (stage !== 'audio-analysis') return;
           await writeKairosProgress(progressPath, {
@@ -184,28 +231,78 @@ export async function analyzeWorkspaceProjectMedia(
             stepIndex: 3,
             stepTotal: CANALYZE_STEP_DEFINITIONS.length,
             stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
-            fileName: asset.displayName,
+            fileName: prepared.asset.displayName,
             fileIndex,
-            fileTotal: pendingAssets.length,
+            fileTotal: preparedAnalyses.length,
             current: fileIndex,
-            total: pendingAssets.length,
+            total: preparedAnalyses.length,
             unit: 'files',
-            etaSeconds: estimateRemainingSeconds(startedAtMs, analyzedAssetIds.length, pendingAssets.length),
-            detail: detail ?? `正在分析 ${asset.displayName} 的视频内音轨`,
+            etaSeconds: estimateRemainingSeconds(startedAtMs, analyzedAssetIds.length, preparedAnalyses.length),
+            detail: detail ?? `正在分析 ${prepared.asset.displayName} 的视频内音轨`,
             extra: {
               projectId: input.projectId,
               projectName: project.name,
-              assetId: asset.id,
-              assetKind: asset.kind,
+              assetId: prepared.asset.id,
+              assetKind: prepared.asset.kind,
             },
           });
         },
       });
 
-      await writeAssetReport(projectRoot, analysis.report);
-      analyzedAssetIds.push(asset.id);
+      await writeAssetReport(projectRoot, finalized.report);
+      analyzedAssetIds.push(prepared.asset.id);
+      finalizedAnalyses.push(finalized);
+    }
 
-      if (analysis.slices.length > 0) {
+    const fineScanCandidates = finalizedAnalyses.filter(analysis => analysis.report.shouldFineScan);
+    for (const [index, analysis] of fineScanCandidates.entries()) {
+      const fileIndex = index + 1;
+
+      await writeKairosProgress(progressPath, {
+        status: 'running',
+        pipelineKey: 'media-analyze',
+        pipelineLabel: '素材分析流程',
+        phaseKey: 'coarse-first-project-analysis',
+        phaseLabel: '粗扫优先素材分析',
+        step: 'fine-scan',
+        stepLabel: '自动细扫重点内容',
+        stepIndex: 4,
+        stepTotal: CANALYZE_STEP_DEFINITIONS.length,
+        stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
+        fileName: analysis.prepared.asset.displayName,
+        fileIndex,
+        fileTotal: fineScanCandidates.length,
+        current: fileIndex,
+        total: fineScanCandidates.length,
+        unit: 'files',
+        etaSeconds: estimateRemainingSeconds(startedAtMs, fineScannedAssetIds.length, fineScanCandidates.length),
+        detail: `正在细扫 ${analysis.prepared.asset.displayName}`,
+        extra: {
+          projectId: input.projectId,
+          projectName: project.name,
+          assetId: analysis.prepared.asset.id,
+          fineScanMode: analysis.report.fineScanMode,
+        },
+      });
+
+      const fineScan = await generateFineScanOutput({
+        analysis,
+        projectRoot,
+        roots,
+        runtimeConfig,
+        getMlHandle,
+      });
+      const updatedReport = reconcileFineScanReport({
+        report: analysis.report,
+        slices: fineScan.slices,
+        droppedInvalidSliceCount: fineScan.droppedInvalidSliceCount,
+      });
+      if (updatedReport !== analysis.report) {
+        analysis.report = updatedReport;
+        await writeAssetReport(projectRoot, updatedReport);
+      }
+
+      if (fineScan.slices.length > 0) {
         await writeKairosProgress(progressPath, {
           status: 'running',
           pipelineKey: 'media-analyze',
@@ -217,25 +314,25 @@ export async function analyzeWorkspaceProjectMedia(
           stepIndex: 4,
           stepTotal: CANALYZE_STEP_DEFINITIONS.length,
           stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
-          fileName: asset.displayName,
+          fileName: analysis.prepared.asset.displayName,
           fileIndex,
-          fileTotal: pendingAssets.length,
+          fileTotal: fineScanCandidates.length,
           current: fileIndex,
-          total: pendingAssets.length,
+          total: fineScanCandidates.length,
           unit: 'files',
-          etaSeconds: estimateRemainingSeconds(startedAtMs, analyzedAssetIds.length, pendingAssets.length),
-          detail: `已为 ${asset.displayName} 生成 ${analysis.slices.length} 个候选切片`,
+          etaSeconds: estimateRemainingSeconds(startedAtMs, fineScannedAssetIds.length, fineScanCandidates.length),
+          detail: `已为 ${analysis.prepared.asset.displayName} 生成 ${fineScan.slices.length} 个候选切片`,
           extra: {
             projectId: input.projectId,
             projectName: project.name,
-            assetId: asset.id,
-            fineScanMode: analysis.report.fineScanMode,
-            sliceCount: analysis.slices.length,
+            assetId: analysis.prepared.asset.id,
+            fineScanMode: updatedReport.fineScanMode,
+            sliceCount: fineScan.slices.length,
           },
         });
-        await appendSlices(projectRoot, analysis.slices);
-        pendingSlices.push(...analysis.slices);
-        fineScannedAssetIds.push(asset.id);
+        await appendSlices(projectRoot, fineScan.slices);
+        pendingSlices.push(...fineScan.slices);
+        fineScannedAssetIds.push(analysis.prepared.asset.id);
       }
     }
 
@@ -339,7 +436,6 @@ interface IAnalyzeSingleAssetInput {
   asset: IKtepAsset;
   localPath: string;
   projectRoot: string;
-  roots: IMediaRoot[];
   runtimeConfig: {
     ffmpegPath?: string;
     ffprobePath?: string;
@@ -352,12 +448,32 @@ interface IAnalyzeSingleAssetInput {
   };
   budget?: ETargetBudget;
   getMlHandle: () => Promise<MlAvailability>;
+}
+
+interface IPreparedAssetAnalysis extends IAnalyzeSingleAssetInput {
+  shotBoundaries: IShotBoundary[];
+  sampleFrames: { timeMs: number; path: string }[];
+  coarseSampleTimestamps: number[];
+  visualSummary: IRecognition | null;
+  initialClipTypeGuess: EClipType;
+  hasAudioTrack: boolean;
+}
+
+interface IFinalizePreparedAssetInput {
+  prepared: IPreparedAssetAnalysis;
+  projectRoot: string;
+  roots: IMediaRoot[];
+  budget?: ETargetBudget;
+  getMlHandle: () => Promise<MlAvailability>;
   onStageChange?: (stage: 'audio-analysis', detail?: string) => Promise<void>;
 }
 
-interface IAnalyzeSingleAssetResult {
+interface IFinalizedAssetAnalysis {
+  prepared: IPreparedAssetAnalysis;
   report: IAssetCoarseReport;
-  slices: IKtepSlice[];
+  transcript?: ITranscriptContext | null;
+  clipType: EClipType;
+  decisionReasons: string[];
 }
 
 interface IFineScanSlicesResult {
@@ -378,14 +494,22 @@ interface ITranscriptContext {
   speechWindows: IInterestingWindow[];
 }
 
-async function analyzeSingleAsset(
+async function prepareAssetVisualCoarse(
   input: IAnalyzeSingleAssetInput,
-): Promise<IAnalyzeSingleAssetResult> {
+): Promise<IPreparedAssetAnalysis> {
   if (input.asset.kind === 'photo') {
-    return analyzePhotoAsset(input);
+    return preparePhotoVisualCoarse(input);
   }
   if (input.asset.kind === 'audio') {
-    return analyzeAudioAsset(input.asset);
+    return {
+      ...input,
+      shotBoundaries: [],
+      sampleFrames: [],
+      coarseSampleTimestamps: [],
+      visualSummary: null,
+      initialClipTypeGuess: 'unknown',
+      hasAudioTrack: false,
+    };
   }
 
   const shotBoundaries = await detectShots(
@@ -393,47 +517,9 @@ async function analyzeSingleAsset(
     0.3,
     input.runtimeConfig,
   ).catch(() => [] as IShotBoundary[]);
-  const ml = await input.getMlHandle();
-  const initialClipTypeGuess = guessClipType(input.asset, shotBoundaries);
-  if (shouldAttemptAsr(input.asset, initialClipTypeGuess, input.budget)) {
-    await input.onStageChange?.('audio-analysis', `正在分析 ${input.asset.displayName} 的视频内音轨`);
-  }
-  const transcript = await maybeTranscribeAsset({
-    asset: input.asset,
-    localPath: input.localPath,
-    clipTypeGuess: initialClipTypeGuess,
-    budget: input.budget,
-    ml,
-  });
-  const clipTypeGuess = refineClipTypeGuess(input.asset, initialClipTypeGuess, transcript);
-  const density = estimateDensity({
-    durationMs: input.asset.durationMs ?? 0,
-    shotBoundaries,
-    asrSegments: transcript?.segments.map(segment => ({
-      start: segment.startMs / 1000,
-      end: segment.endMs / 1000,
-      text: segment.text,
-    })),
-  });
-  const plan = buildAnalysisPlan({
-    assetId: input.asset.id,
-    durationMs: input.asset.durationMs ?? 0,
-    density,
-    shotBoundaries,
-    clipType: clipTypeGuess,
-    budget: input.budget,
-    extraInterestingWindows: transcript?.speechWindows,
-  });
   const sampleTimestamps = buildCoarseSampleTimestamps(
     input.asset.durationMs ?? 0,
-    plan.coarseSampleCount ?? pickCoarseSampleCount(input.asset.durationMs ?? 0),
-  );
-  const effectivePlan = applyDriveFallbackWindows(
-    plan,
-    clipTypeGuess,
-    input.asset.durationMs ?? 0,
-    input.budget,
-    sampleTimestamps,
+    pickCoarseSampleCount(input.asset.durationMs ?? 0),
   );
   const extractedFrames = await extractKeyframes(
     input.localPath,
@@ -442,59 +528,265 @@ async function analyzeSingleAsset(
     input.runtimeConfig,
   );
   const sampleFrames = await filterExistingKeyframes(extractedFrames);
+  const visualSummary = await summarizeSamples(await input.getMlHandle(), sampleFrames);
+  const hasAudioTrack = await resolveAssetHasAudioTrack(
+    input.asset,
+    input.localPath,
+    input.runtimeConfig,
+  );
 
-  const summary = await summarizeSamples(ml, sampleFrames);
-  const root = input.roots.find(item => item.id === input.asset.ingestRootId);
-  const baseReport = buildAssetCoarseReport({
-    asset: input.asset,
+  return {
+    ...input,
+    shotBoundaries,
+    sampleFrames,
+    coarseSampleTimestamps: sampleTimestamps,
+    visualSummary,
+    initialClipTypeGuess: guessClipType(input.asset, shotBoundaries),
+    hasAudioTrack,
+  };
+}
+
+async function finalizePreparedAsset(
+  input: IFinalizePreparedAssetInput,
+): Promise<IFinalizedAssetAnalysis> {
+  if (input.prepared.asset.kind === 'photo') {
+    return finalizePhotoPreparedAsset(input);
+  }
+  if (input.prepared.asset.kind === 'audio') {
+    return {
+      prepared: input.prepared,
+      report: buildAudioAssetReport(input.prepared.asset),
+      clipType: 'unknown',
+      decisionReasons: ['audio-assets-skip-visual-fine-scan'],
+    };
+  }
+
+  const ml = await input.getMlHandle();
+  if (shouldAnalyzeAudioTrack(input.prepared.asset, input.prepared.hasAudioTrack)) {
+    await input.onStageChange?.('audio-analysis', `正在分析 ${input.prepared.asset.displayName} 的视频内音轨`);
+  }
+  const transcript = await maybeTranscribeAsset({
+    asset: input.prepared.asset,
+    localPath: input.prepared.localPath,
+    hasAudioTrack: input.prepared.hasAudioTrack,
+    ml,
+  });
+  const density = estimateDensity({
+    durationMs: input.prepared.asset.durationMs ?? 0,
+    shotBoundaries: input.prepared.shotBoundaries,
+    asrSegments: transcript?.segments.map(segment => ({
+      start: segment.startMs / 1000,
+      end: segment.endMs / 1000,
+      text: segment.text,
+    })),
+  });
+  const plan = buildAnalysisPlan({
+    assetId: input.prepared.asset.id,
+    durationMs: input.prepared.asset.durationMs ?? 0,
+    density,
+    shotBoundaries: input.prepared.shotBoundaries,
+    clipType: input.prepared.initialClipTypeGuess,
+    budget: input.budget,
+    extraInterestingWindows: transcript?.speechWindows,
+  });
+  const decision = await resolveUnifiedAnalysisDecision({
+    prepared: input.prepared,
+    transcript,
+    densityScore: density.score,
+    basePlan: plan,
+    budget: input.budget,
+    ml,
+  });
+  const effectivePlan = applyDriveFallbackWindows(
+    applyAnalysisDecision(plan, decision),
+    decision.clipType,
+    input.prepared.asset.durationMs ?? 0,
+    input.budget,
+    input.prepared.coarseSampleTimestamps,
+  );
+  const root = input.roots.find(item => item.id === input.prepared.asset.ingestRootId);
+  const report = buildAssetCoarseReport({
+    asset: input.prepared.asset,
     plan: effectivePlan,
-    clipTypeGuess,
-    summary: summary?.description,
+    clipTypeGuess: decision.clipType,
+    summary: input.prepared.visualSummary?.description,
     transcript: transcript?.transcript,
     transcriptSegments: transcript?.segments,
     speechCoverage: transcript?.speechCoverage,
-    labels: buildReportLabels(clipTypeGuess, summary?.sceneType, summary?.subjects, transcript),
-    placeHints: summary?.placeHints ?? [],
+    labels: buildReportLabels(
+      decision.clipType,
+      input.prepared.visualSummary?.sceneType,
+      input.prepared.visualSummary?.subjects,
+      transcript,
+    ),
+    placeHints: input.prepared.visualSummary?.placeHints ?? [],
     rootNotes: root?.notes ?? [],
-    sampleFrames,
-    fineScanReasons: buildFineScanReasons(effectivePlan, density, shotBoundaries, transcript),
-  });
-
-  const fineScan = await buildFineScanSlices({
-    asset: input.asset,
-    localPath: input.localPath,
-    projectRoot: input.projectRoot,
-    roots: input.roots,
-    runtimeConfig: input.runtimeConfig,
-    shotBoundaries,
-    report: baseReport,
-    transcript,
-    clipTypeGuess,
-    ml,
-  });
-  const report = reconcileFineScanReport({
-    report: baseReport,
-    slices: fineScan.slices,
-    droppedInvalidSliceCount: fineScan.droppedInvalidSliceCount,
+    sampleFrames: input.prepared.sampleFrames,
+    fineScanReasons: buildFineScanReasons(
+      effectivePlan,
+      density,
+      input.prepared.shotBoundaries,
+      transcript,
+      decision.decisionReasons,
+    ),
   });
 
   return {
+    prepared: input.prepared,
     report,
-    slices: fineScan.slices,
+    transcript,
+    clipType: decision.clipType,
+    decisionReasons: decision.decisionReasons,
+  };
+}
+
+async function resolveUnifiedAnalysisDecision(input: {
+  prepared: IPreparedAssetAnalysis;
+  transcript?: ITranscriptContext | null;
+  densityScore: number;
+  basePlan: IMediaAnalysisPlan;
+  budget?: ETargetBudget;
+  ml: MlAvailability;
+}): Promise<IAnalysisDecision> {
+  const fallbackDecision = buildHeuristicAnalysisDecision({
+    durationMs: input.prepared.asset.durationMs ?? 0,
+    densityScore: input.densityScore,
+    interestingWindowCount: input.basePlan.interestingWindows.length,
+    clipType: input.prepared.initialClipTypeGuess,
+    initialClipTypeGuess: input.prepared.initialClipTypeGuess,
+    budget: input.budget,
+    sceneType: input.prepared.visualSummary?.sceneType,
+    subjects: input.prepared.visualSummary?.subjects,
+    summary: input.prepared.visualSummary?.description,
+    transcript: input.transcript?.transcript,
+    speechCoverage: input.transcript?.speechCoverage,
+    hasAudioTrack: input.prepared.hasAudioTrack,
+    hasMeaningfulSpeech: hasMeaningfulSpeech(input.transcript),
+  });
+
+  const inferredDecision = await inferUnifiedAnalysisDecision(input);
+  if (!inferredDecision) return fallbackDecision;
+
+  return reconcileUnifiedAnalysisDecision({
+    candidate: inferredDecision,
+    fallback: fallbackDecision,
+    basePlan: input.basePlan,
+    budget: input.budget,
+    hasMeaningfulSpeech: hasMeaningfulSpeech(input.transcript),
+  });
+}
+
+async function inferUnifiedAnalysisDecision(input: {
+  prepared: IPreparedAssetAnalysis;
+  transcript?: ITranscriptContext | null;
+  densityScore: number;
+  basePlan: IMediaAnalysisPlan;
+  budget?: ETargetBudget;
+  ml: MlAvailability;
+}): Promise<IAnalysisDecision | null> {
+  if (!input.ml.available) return null;
+
+  const framePaths = pickRepresentativeFramePaths(
+    input.prepared.sampleFrames.map(frame => frame.path),
+    6,
+  );
+  if (framePaths.length === 0) return null;
+
+  try {
+    const result = await input.ml.client.vlmAnalyze(
+      framePaths,
+      buildUnifiedDecisionPrompt({
+        prepared: input.prepared,
+        transcript: input.transcript,
+        densityScore: input.densityScore,
+        basePlan: input.basePlan,
+        budget: input.budget,
+      }),
+    );
+    return parseUnifiedAnalysisDecision(result.description);
+  } catch {
+    return null;
+  }
+}
+
+function reconcileUnifiedAnalysisDecision(input: {
+  candidate: IAnalysisDecision;
+  fallback: IAnalysisDecision;
+  basePlan: IMediaAnalysisPlan;
+  budget?: ETargetBudget;
+  hasMeaningfulSpeech: boolean;
+}): IAnalysisDecision {
+  const budget = input.budget ?? 'standard';
+  if (budget === 'coarse') {
+    return {
+      ...input.fallback,
+      shouldFineScan: false,
+      fineScanMode: 'skip',
+      decisionReasons: dedupeStrings([
+        ...input.fallback.decisionReasons,
+        'budget:coarse',
+        'fine-scan:skip',
+      ]),
+    };
+  }
+
+  const decision: IAnalysisDecision = {
+    ...input.candidate,
+    decisionReasons: [...input.candidate.decisionReasons],
+  };
+
+  if (decision.clipType === 'unknown' && input.fallback.clipType !== 'unknown') {
+    decision.clipType = input.fallback.clipType;
+    decision.decisionReasons.push(`fallback-clip:${input.fallback.clipType}`);
+  }
+
+  const hasCredibleWindows = input.basePlan.interestingWindows.length > 0;
+  if (decision.fineScanMode === 'skip' && (hasCredibleWindows || input.hasMeaningfulSpeech)) {
+    decision.fineScanMode = input.fallback.fineScanMode === 'full' ? 'full' : 'windowed';
+    decision.shouldFineScan = true;
+    decision.decisionReasons.push(
+      hasCredibleWindows
+        ? 'guardrail:interesting-window-promoted'
+        : 'guardrail:meaningful-speech-promoted',
+    );
+  }
+
+  if (decision.fineScanMode === 'skip') {
+    decision.shouldFineScan = false;
+  } else if (!decision.shouldFineScan) {
+    decision.shouldFineScan = true;
+  }
+
+  const inheritedFallbackReasons = input.fallback.decisionReasons.filter(reason => {
+    if (reason.startsWith('semantic-clip:')) return reason === `semantic-clip:${decision.clipType}`;
+    if (reason.startsWith('fine-scan:')) return reason === `fine-scan:${decision.fineScanMode}`;
+    if (reason.startsWith('clip-type-corrected:')) return false;
+    return true;
+  });
+
+  return {
+    ...decision,
+    decisionReasons: dedupeStrings([
+      ...inheritedFallbackReasons,
+      ...decision.decisionReasons,
+      `semantic-clip:${decision.clipType}`,
+      `fine-scan:${decision.fineScanMode}`,
+    ]),
   };
 }
 
 function applyDriveFallbackWindows(
   plan: IMediaAnalysisPlan,
-  clipTypeGuess: EClipType,
+  clipType: EClipType,
   durationMs: number,
   budget: ETargetBudget | undefined,
   sampleTimestamps: number[],
 ): IMediaAnalysisPlan {
-  if (clipTypeGuess !== 'drive') return plan;
+  if (clipType !== 'drive') return plan;
   if ((budget ?? 'standard') === 'coarse') return plan;
+  if (!plan.shouldFineScan || plan.fineScanMode === 'skip') return plan;
   if (plan.interestingWindows.length > 0) return plan;
-  if (plan.shouldFineScan && plan.fineScanMode !== 'skip') return plan;
+  if (plan.fineScanMode === 'full') return plan;
 
   const fallbackWindows = buildDriveFallbackWindows(durationMs, sampleTimestamps);
   if (fallbackWindows.length === 0) return plan;
@@ -502,20 +794,17 @@ function applyDriveFallbackWindows(
   return {
     ...plan,
     interestingWindows: fallbackWindows,
-    shouldFineScan: true,
-    fineScanMode: 'windowed',
   };
 }
 
 async function maybeTranscribeAsset(input: {
   asset: IKtepAsset;
   localPath: string;
-  clipTypeGuess: EClipType;
-  budget?: ETargetBudget;
+  hasAudioTrack: boolean;
   ml: MlAvailability;
 }): Promise<ITranscriptContext | null> {
   if (!input.ml.available) return null;
-  if (!shouldAttemptAsr(input.asset, input.clipTypeGuess, input.budget)) return null;
+  if (!shouldAnalyzeAudioTrack(input.asset, input.hasAudioTrack)) return null;
 
   try {
     const result = await transcribe(input.ml.client, input.localPath);
@@ -544,18 +833,13 @@ async function maybeTranscribeAsset(input: {
   }
 }
 
-function shouldAttemptAsr(
+function shouldAnalyzeAudioTrack(
   asset: IKtepAsset,
-  clipTypeGuess: EClipType,
-  budget?: ETargetBudget,
+  hasAudioTrack: boolean,
 ): boolean {
-  if (budget === 'coarse') return false;
-  const durationMs = asset.durationMs ?? 0;
-  if (durationMs <= 0) return false;
-  if (clipTypeGuess === 'talking-head') return durationMs <= 30 * 60_000;
-  if (clipTypeGuess === 'unknown') return durationMs <= 20 * 60_000;
-  if (clipTypeGuess === 'drive') return durationMs <= 12 * 60_000;
-  return durationMs <= 10 * 60_000;
+  if (asset.kind !== 'video') return false;
+  if (!hasAudioTrack) return false;
+  return (asset.durationMs ?? 0) > 0;
 }
 
 function computeSpeechCoverage(
@@ -586,22 +870,149 @@ function buildSpeechWindows(
   );
 }
 
-function refineClipTypeGuess(
-  asset: IKtepAsset,
-  clipTypeGuess: EClipType,
+function hasMeaningfulSpeech(
   transcript?: ITranscriptContext | null,
-): EClipType {
-  if (!transcript?.transcript) return clipTypeGuess;
-  if (clipTypeGuess === 'drive') return clipTypeGuess;
+): boolean {
+  if (!transcript) return false;
 
-  const durationMs = asset.durationMs ?? 0;
-  if (clipTypeGuess === 'unknown' && durationMs <= 3 * 60_000 && transcript.speechCoverage >= 0.18) {
-    return 'talking-head';
+  const compactTranscript = transcript.transcript.replace(/\s+/g, '');
+  if (compactTranscript.length >= 20) return true;
+  if (transcript.segments.length >= 2 && transcript.speechCoverage >= 0.08) return true;
+  return transcript.speechCoverage >= 0.18;
+}
+
+function buildUnifiedDecisionPrompt(input: {
+  prepared: IPreparedAssetAnalysis;
+  transcript?: ITranscriptContext | null;
+  densityScore: number;
+  basePlan: IMediaAnalysisPlan;
+  budget?: ETargetBudget;
+}): string {
+  const transcriptExcerpt = buildTranscriptExcerpt(input.transcript) ?? 'none';
+  const signalPayload = JSON.stringify({
+    duration_ms: input.prepared.asset.durationMs ?? 0,
+    budget: input.budget ?? 'standard',
+    initial_clip_type_guess: input.prepared.initialClipTypeGuess,
+    density_score: Number(input.densityScore.toFixed(3)),
+    shot_count: input.prepared.shotBoundaries.length,
+    has_audio_track: input.prepared.hasAudioTrack,
+    speech_coverage: Number((input.transcript?.speechCoverage ?? 0).toFixed(3)),
+    has_meaningful_speech: hasMeaningfulSpeech(input.transcript),
+    visual_scene_type: input.prepared.visualSummary?.sceneType ?? 'unknown',
+    visual_subjects: input.prepared.visualSummary?.subjects ?? [],
+    visual_description: input.prepared.visualSummary?.description ?? '',
+    place_hints: input.prepared.visualSummary?.placeHints ?? [],
+    interesting_windows: input.basePlan.interestingWindows.map(window => ({
+      start_ms: window.startMs,
+      end_ms: window.endMs,
+      reason: window.reason,
+    })),
+    transcript_excerpt: transcriptExcerpt,
+  }, null, 2);
+
+  return `You are deciding semantic clip type and fine-scan policy for a travel documentary editing system.
+Return only a raw JSON object with:
+{
+  "clip_type": "drive" | "talking-head" | "aerial" | "timelapse" | "broll" | "unknown",
+  "should_fine_scan": boolean,
+  "fine_scan_mode": "skip" | "windowed" | "full",
+  "decision_reasons": string[]
+}
+
+Rules:
+- Use both the images and the textual signals below.
+- Final clip_type must be semantic, not just based on duration heuristics.
+- Strong audio means meaningful human speech. Background music, engine noise, road noise, ambience, or other non-speech sounds do not count as strong audio.
+- If the frames clearly show sustained driving or road footage, prefer "drive" even when the initial heuristic guess is "unknown".
+- If either visual or speech evidence indicates promising regions, prefer "windowed" over "skip".
+- Use "full" only for short high-value clips or when both visual and speech signals are strong.
+
+Signals:
+${signalPayload}`;
+}
+
+function parseUnifiedAnalysisDecision(raw: string): IAnalysisDecision | null {
+  const parsed = tryParseJsonObject(raw);
+  if (!parsed || typeof parsed !== 'object') return null;
+
+  const clipType = normalizeClipType((parsed as Record<string, unknown>)['clip_type']
+    ?? (parsed as Record<string, unknown>)['clipType']);
+  const fineScanMode = normalizeFineScanMode((parsed as Record<string, unknown>)['fine_scan_mode']
+    ?? (parsed as Record<string, unknown>)['fineScanMode']);
+
+  if (!clipType || !fineScanMode) return null;
+
+  const rawShouldFineScan = (parsed as Record<string, unknown>)['should_fine_scan']
+    ?? (parsed as Record<string, unknown>)['shouldFineScan'];
+  const shouldFineScan = typeof rawShouldFineScan === 'boolean'
+    ? rawShouldFineScan && fineScanMode !== 'skip'
+    : fineScanMode !== 'skip';
+  const decisionReasons = Array.isArray((parsed as Record<string, unknown>)['decision_reasons'])
+    ? ((parsed as Record<string, unknown>)['decision_reasons'] as unknown[])
+      .filter((value): value is string => typeof value === 'string')
+    : [];
+
+  return {
+    clipType,
+    shouldFineScan,
+    fineScanMode,
+    decisionReasons,
+  };
+}
+
+function tryParseJsonObject(raw: string): unknown {
+  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) return null;
+  try {
+    return JSON.parse(jsonMatch[0]);
+  } catch {
+    return null;
   }
-  if (clipTypeGuess === 'broll' && durationMs > 20_000 && transcript.speechCoverage >= 0.3) {
-    return 'talking-head';
+}
+
+function normalizeClipType(value: unknown): EClipType | null {
+  if (typeof value !== 'string') return null;
+
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'driving') return 'drive';
+  if (normalized === 'portrait') return 'talking-head';
+  if (normalized === 'time-lapse' || normalized === 'time lapse') return 'timelapse';
+  if (normalized === 'drive'
+    || normalized === 'talking-head'
+    || normalized === 'aerial'
+    || normalized === 'timelapse'
+    || normalized === 'broll'
+    || normalized === 'unknown') {
+    return normalized;
   }
-  return clipTypeGuess;
+  return null;
+}
+
+function normalizeFineScanMode(value: unknown): 'skip' | 'windowed' | 'full' | null {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'skip' || normalized === 'windowed' || normalized === 'full') {
+    return normalized;
+  }
+  return null;
+}
+
+function buildTranscriptExcerpt(
+  transcript?: ITranscriptContext | null,
+  maxLength = 480,
+): string | undefined {
+  if (!transcript) return undefined;
+
+  const source = transcript.segments.length > 0
+    ? transcript.segments
+      .slice(0, 8)
+      .map(segment => segment.text.trim())
+      .filter(Boolean)
+      .join(' ')
+    : transcript.transcript.trim();
+  if (!source) return undefined;
+  if (source.length <= maxLength) return source;
+  return `${source.slice(0, Math.max(0, maxLength - 3)).trim()}...`;
 }
 
 function decorateSliceWithTranscript(
@@ -710,22 +1121,36 @@ function shouldUseTranscriptSummary(summary?: string): boolean {
     .some(token => summary.includes(token));
 }
 
-async function analyzePhotoAsset(
+async function preparePhotoVisualCoarse(
   input: IAnalyzeSingleAssetInput,
-): Promise<IAnalyzeSingleAssetResult> {
+): Promise<IPreparedAssetAnalysis> {
   const proxyFrame = await extractImageProxy(
     input.localPath,
     buildAssetTempDir(input.projectRoot, input.asset.id),
     input.runtimeConfig,
   );
-  const ml = await input.getMlHandle();
   const sampleFrames = proxyFrame ? [proxyFrame] : [];
-  const summary = await summarizeSamples(ml, sampleFrames);
+  const visualSummary = await summarizeSamples(await input.getMlHandle(), sampleFrames);
+
+  return {
+    ...input,
+    shotBoundaries: [],
+    sampleFrames,
+    coarseSampleTimestamps: [0],
+    visualSummary,
+    initialClipTypeGuess: 'broll',
+    hasAudioTrack: false,
+  };
+}
+
+async function finalizePhotoPreparedAsset(
+  input: IFinalizePreparedAssetInput,
+): Promise<IFinalizedAssetAnalysis> {
   const density = estimateDensity({ durationMs: 0, shotBoundaries: [] });
   const clipTypeGuess: EClipType = 'broll';
-  const root = input.roots.find(item => item.id === input.asset.ingestRootId);
+  const root = input.roots.find(item => item.id === input.prepared.asset.ingestRootId);
   const plan = buildAnalysisPlan({
-    assetId: input.asset.id,
+    assetId: input.prepared.asset.id,
     durationMs: 0,
     density,
     shotBoundaries: [],
@@ -734,34 +1159,35 @@ async function analyzePhotoAsset(
   });
 
   const report = buildAssetCoarseReport({
-    asset: input.asset,
+    asset: input.prepared.asset,
     plan,
     clipTypeGuess,
-    summary: summary?.description,
-    labels: buildReportLabels(clipTypeGuess, summary?.sceneType, summary?.subjects),
-    placeHints: summary?.placeHints ?? [],
+    summary: input.prepared.visualSummary?.description,
+    labels: buildReportLabels(
+      clipTypeGuess,
+      input.prepared.visualSummary?.sceneType,
+      input.prepared.visualSummary?.subjects,
+    ),
+    placeHints: input.prepared.visualSummary?.placeHints ?? [],
     rootNotes: root?.notes ?? [],
-    sampleFrames,
+    sampleFrames: input.prepared.sampleFrames,
     shouldFineScan: true,
     fineScanMode: 'full',
     fineScanReasons: ['photo-assets-are-directly-usable'],
   });
 
-  const slice = slicePhoto(input.asset);
-  slice.summary = report.summary;
-  slice.labels = report.labels;
-  slice.placeHints = report.placeHints;
-
   return {
+    prepared: input.prepared,
     report,
-    slices: [slice],
+    clipType: clipTypeGuess,
+    decisionReasons: ['photo-assets-are-directly-usable'],
   };
 }
 
-async function analyzeAudioAsset(
+function buildAudioAssetReport(
   asset: IKtepAsset,
-): Promise<IAnalyzeSingleAssetResult> {
-  const report = buildAssetCoarseReport({
+): IAssetCoarseReport {
+  return buildAssetCoarseReport({
     asset,
     plan: {
       assetId: asset.id,
@@ -781,7 +1207,107 @@ async function analyzeAudioAsset(
     labels: ['audio'],
     fineScanReasons: ['audio-assets-skip-visual-fine-scan'],
   });
-  return { report, slices: [] };
+}
+
+async function generateFineScanOutput(input: {
+  analysis: IFinalizedAssetAnalysis;
+  projectRoot: string;
+  roots: IMediaRoot[];
+  runtimeConfig: {
+    ffmpegPath?: string;
+    ffprobePath?: string;
+    ffmpegHwaccel?: string;
+    analysisProxyWidth?: number;
+    analysisProxyPixelFormat?: string;
+    sceneDetectFps?: number;
+    sceneDetectScaleWidth?: number;
+    mlServerUrl?: string;
+  };
+  getMlHandle: () => Promise<MlAvailability>;
+}): Promise<IFineScanSlicesResult> {
+  if (!input.analysis.report.shouldFineScan) {
+    return { slices: [], droppedInvalidSliceCount: 0 };
+  }
+
+  if (input.analysis.prepared.asset.kind === 'photo') {
+    const slice = slicePhoto(input.analysis.prepared.asset);
+    slice.summary = input.analysis.report.summary;
+    slice.labels = input.analysis.report.labels;
+    slice.placeHints = input.analysis.report.placeHints;
+    return {
+      slices: [slice],
+      droppedInvalidSliceCount: 0,
+    };
+  }
+
+  if (input.analysis.prepared.asset.kind === 'audio') {
+    return { slices: [], droppedInvalidSliceCount: 0 };
+  }
+
+  return buildFineScanSlices({
+    asset: input.analysis.prepared.asset,
+    localPath: input.analysis.prepared.localPath,
+    projectRoot: input.projectRoot,
+    roots: input.roots,
+    runtimeConfig: input.runtimeConfig,
+    shotBoundaries: input.analysis.prepared.shotBoundaries,
+    report: input.analysis.report,
+    transcript: input.analysis.transcript,
+    clipType: input.analysis.clipType,
+    ml: await input.getMlHandle(),
+  });
+}
+
+function describeDecisionStage(
+  asset: IKtepAsset,
+  hasAudioTrack: boolean,
+): string {
+  if (asset.kind === 'photo') {
+    return `正在整理 ${asset.displayName} 的视觉粗扫结果并判断切片策略`;
+  }
+  if (asset.kind === 'audio') {
+    return `正在整理 ${asset.displayName} 的粗扫结果`;
+  }
+  if (shouldAnalyzeAudioTrack(asset, hasAudioTrack)) {
+    return `正在结合视觉粗扫与音轨结果判断 ${asset.displayName} 是否值得细扫`;
+  }
+  return `未检测到可用音轨，正在根据视觉粗扫结果判断 ${asset.displayName} 是否值得细扫`;
+}
+
+async function resolveAssetHasAudioTrack(
+  asset: IKtepAsset,
+  localPath: string,
+  runtimeConfig: IAnalyzeSingleAssetInput['runtimeConfig'],
+): Promise<boolean> {
+  if (asset.kind !== 'video') return false;
+
+  const metadataFlag = readMetadataBoolean(asset.metadata, 'hasAudioStream');
+  if (typeof metadataFlag === 'boolean') {
+    return metadataFlag;
+  }
+
+  try {
+    const probed = await probe(localPath, runtimeConfig);
+    return probed.hasAudioStream;
+  } catch {
+    // If probing fails, prefer attempting ASR over silently suppressing audio analysis.
+    return true;
+  }
+}
+
+function readMetadataBoolean(
+  metadata: IKtepAsset['metadata'],
+  key: string,
+): boolean | undefined {
+  if (!metadata || typeof metadata !== 'object') return undefined;
+  const value = metadata[key];
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value > 0;
+  if (typeof value === 'string') {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+  }
+  return undefined;
 }
 
 function buildCoarseSampleTimestamps(
@@ -899,11 +1425,13 @@ function buildFineScanReasons(
   density: { score: number },
   shotBoundaries: IShotBoundary[],
   transcript?: ITranscriptContext | null,
+  decisionReasons: string[] = [],
 ): string[] {
+  const reasons = new Set<string>(decisionReasons);
   if (!reportPlan.shouldFineScan) {
-    return ['coarse-scan-sufficient'];
+    reasons.add('coarse-scan-sufficient');
+    return [...reasons];
   }
-  const reasons = new Set<string>();
   reasons.add(`fine-scan:${reportPlan.fineScanMode}`);
   if (density.score >= 0.55) reasons.add('high-density-score');
   if (shotBoundaries.length >= 12) reasons.add('high-shot-count');
@@ -956,7 +1484,7 @@ interface IBuildFineScanSlicesInput {
   report: IAssetCoarseReport;
   transcript?: ITranscriptContext | null;
   roots: IMediaRoot[];
-  clipTypeGuess: EClipType;
+  clipType: EClipType;
   ml: MlAvailability;
 }
 
@@ -972,7 +1500,7 @@ async function buildFineScanSlices(
     : sliceInterestingWindows(
       input.asset,
       input.report.interestingWindows,
-      mapClipTypeToSliceType(input.clipTypeGuess),
+      mapClipTypeToSliceType(input.clipType),
     );
   const effectiveSlices = baseSlices.length > 0
     ? baseSlices
@@ -984,7 +1512,7 @@ async function buildFineScanSlices(
           endMs: input.asset.durationMs ?? 0,
           reason: 'whole-asset-window-fallback',
         }],
-        mapClipTypeToSliceType(input.clipTypeGuess),
+        mapClipTypeToSliceType(input.clipType),
       )
       : baseSlices;
 

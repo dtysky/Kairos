@@ -20,6 +20,8 @@ export interface IProbeResult {
   height: number | null;
   fps: number | null;
   codec: string | null;
+  hasAudioStream: boolean;
+  audioStreamCount: number;
   creationTime: string | null;
   rawTags: Record<string, string>;
 }
@@ -37,6 +39,9 @@ export async function probe(filePath: string, tools?: IMediaToolConfig): Promise
 
   const data = JSON.parse(stdout);
   const video = data.streams?.find((s: any) => s.codec_type === 'video');
+  const audioStreams = Array.isArray(data.streams)
+    ? data.streams.filter((s: any) => s.codec_type === 'audio')
+    : [];
   const fmt = data.format ?? {};
   const tags = { ...fmt.tags, ...video?.tags };
 
@@ -46,6 +51,8 @@ export async function probe(filePath: string, tools?: IMediaToolConfig): Promise
     height: video?.height ?? null,
     fps: parseFps(video?.r_frame_rate),
     codec: video?.codec_name ?? null,
+    hasAudioStream: audioStreams.length > 0,
+    audioStreamCount: audioStreams.length,
     creationTime: tags?.creation_time ?? tags?.date ?? null,
     rawTags: flattenTags(tags),
   };

@@ -15,6 +15,29 @@ export interface ISamplerInput {
   extraInterestingWindows?: IMediaAnalysisPlan['interestingWindows'];
 }
 
+export interface IAnalysisDecision {
+  clipType: EClipType;
+  shouldFineScan: boolean;
+  fineScanMode: EFineScanMode;
+  decisionReasons: string[];
+}
+
+export interface IHeuristicAnalysisDecisionInput {
+  durationMs: number;
+  densityScore: number;
+  interestingWindowCount: number;
+  clipType?: EClipType;
+  initialClipTypeGuess?: EClipType;
+  budget?: ETargetBudget;
+  sceneType?: string;
+  subjects?: string[];
+  summary?: string;
+  transcript?: string;
+  speechCoverage?: number;
+  hasAudioTrack?: boolean;
+  hasMeaningfulSpeech?: boolean;
+}
+
 /**
  * 生成采样计划：根据时长 + 信息密度决定采样策略。
  */
@@ -60,6 +83,56 @@ export function buildAnalysisPlan(input: ISamplerInput): IMediaAnalysisPlan {
   };
 }
 
+export function applyAnalysisDecision(
+  plan: IMediaAnalysisPlan,
+  decision: IAnalysisDecision,
+): IMediaAnalysisPlan {
+  return {
+    ...plan,
+    clipType: decision.clipType,
+    shouldFineScan: decision.shouldFineScan,
+    fineScanMode: decision.fineScanMode,
+  };
+}
+
+export function buildHeuristicAnalysisDecision(
+  input: IHeuristicAnalysisDecisionInput,
+): IAnalysisDecision {
+  const clipType = resolveSemanticClipType(input);
+  const budget: ETargetBudget = input.budget ?? 'standard';
+  const fineScanMode = pickUnifiedFineScanMode({
+    budget,
+    durationMs: input.durationMs,
+    densityScore: input.densityScore,
+    interestingWindowCount: input.interestingWindowCount,
+    clipType,
+    speechCoverage: input.speechCoverage ?? 0,
+    hasMeaningfulSpeech: input.hasMeaningfulSpeech ?? false,
+  });
+
+  const reasons = new Set<string>();
+  reasons.add(`semantic-clip:${clipType}`);
+  if (input.initialClipTypeGuess && input.initialClipTypeGuess !== clipType) {
+    reasons.add(`clip-type-corrected:${input.initialClipTypeGuess}->${clipType}`);
+  }
+  if (input.sceneType) reasons.add(`visual-scene:${normalizeToken(input.sceneType)}`);
+  if (input.interestingWindowCount > 0) reasons.add(`interesting-windows:${input.interestingWindowCount}`);
+  if ((input.hasMeaningfulSpeech ?? false)) reasons.add('meaningful-human-speech');
+  if ((input.speechCoverage ?? 0) >= 0.2) reasons.add('high-speech-coverage');
+  if ((input.hasAudioTrack ?? false) && !(input.hasMeaningfulSpeech ?? false)) {
+    reasons.add('audio-without-meaningful-speech');
+  }
+  reasons.add(`fine-scan:${fineScanMode}`);
+  if (fineScanMode === 'skip') reasons.add('coarse-scan-sufficient');
+
+  return {
+    clipType,
+    shouldFineScan: fineScanMode !== 'skip',
+    fineScanMode,
+    decisionReasons: [...reasons],
+  };
+}
+
 export function pickCoarseSampleCount(durationMs: number): number {
   const seconds = durationMs / 1000;
   if (seconds <= 5) return 2;
@@ -83,6 +156,41 @@ function pickInterval(durationMs: number, profile: ESamplingProfile): number {
   if (sec <= 300) return 8000;
   if (sec <= 1200) return 12000;
   return 20000;
+}
+
+function pickUnifiedFineScanMode(input: {
+  budget: ETargetBudget;
+  durationMs: number;
+  densityScore: number;
+  interestingWindowCount: number;
+  clipType: EClipType;
+  speechCoverage: number;
+  hasMeaningfulSpeech: boolean;
+}): EFineScanMode {
+  if (input.budget === 'coarse') return 'skip';
+
+  const heuristicMode = pickFineScanMode(
+    input.durationMs,
+    input.densityScore,
+    input.interestingWindowCount,
+    input.clipType,
+    input.budget,
+  );
+
+  if (input.hasMeaningfulSpeech) {
+    if (input.clipType === 'talking-head' && input.durationMs <= 3 * 60_000 && input.speechCoverage >= 0.3) {
+      return 'full';
+    }
+    if (heuristicMode === 'skip') {
+      return input.durationMs <= 3 * 60_000 ? 'full' : 'windowed';
+    }
+  }
+
+  if (input.interestingWindowCount > 0 && heuristicMode === 'skip') {
+    return 'windowed';
+  }
+
+  return heuristicMode;
 }
 
 function pickFineScanMode(
@@ -117,6 +225,96 @@ function pickFineScanMode(
   }
 
   return 'skip';
+}
+
+function resolveSemanticClipType(input: IHeuristicAnalysisDecisionInput): EClipType {
+  const semanticHints = [
+    input.sceneType,
+    input.summary,
+    ...(input.subjects ?? []),
+    input.hasMeaningfulSpeech ? input.transcript : undefined,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  if (includesAny(semanticHints, [
+    'driving',
+    'drive',
+    'dashboard',
+    'windshield',
+    'road lane',
+    'highway',
+    'vehicle drives',
+    'car driving',
+    'road trip',
+  ])) {
+    return 'drive';
+  }
+
+  if (includesAny(semanticHints, [
+    'aerial',
+    'drone',
+    'bird-eye',
+    'birds-eye',
+    'overhead',
+  ])) {
+    return 'aerial';
+  }
+
+  if (includesAny(semanticHints, [
+    'timelapse',
+    'time-lapse',
+    'time lapse',
+  ])) {
+    return 'timelapse';
+  }
+
+  if (input.hasMeaningfulSpeech) {
+    if (includesAny(semanticHints, [
+      'talking',
+      'speaking',
+      'speaker',
+      'interview',
+      'monologue',
+      'dialogue',
+      'conversation',
+      'portrait',
+      'vlog',
+    ])) {
+      return 'talking-head';
+    }
+    if (input.durationMs <= 8 * 60_000) {
+      return 'talking-head';
+    }
+  }
+
+  if (input.clipType && input.clipType !== 'unknown') {
+    return input.clipType;
+  }
+
+  if (includesAny(semanticHints, [
+    'landscape',
+    'cityscape',
+    'landmark',
+    'nature',
+    'food',
+    'interior',
+    'street',
+    'mountain',
+    'lake',
+    'coast',
+    'building',
+    'walk',
+  ])) {
+    return 'broll';
+  }
+
+  if (input.durationMs > 0 && input.durationMs <= 20_000) {
+    return 'broll';
+  }
+
+  return input.initialClipTypeGuess ?? 'unknown';
 }
 
 function findInterestingWindows(
@@ -165,4 +363,12 @@ function mergeWindows(
     }
   }
   return merged;
+}
+
+function includesAny(value: string, needles: string[]): boolean {
+  return needles.some(needle => value.includes(needle));
+}
+
+function normalizeToken(value: string): string {
+  return value.trim().toLowerCase().replace(/\s+/g, '-');
 }

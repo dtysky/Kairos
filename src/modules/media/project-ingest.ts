@@ -125,6 +125,8 @@ async function buildAssetFromScan(
       rootLabel: root.label,
       rootDescription: root.description,
       rootNotes: root.notes,
+      hasAudioStream: probeResult.hasAudioStream,
+      audioStreamCount: probeResult.audioStreamCount,
       rawTags: probeResult.rawTags,
     },
   };
@@ -143,6 +145,8 @@ async function safeProbe(
       height: null,
       fps: null,
       codec: null,
+      hasAudioStream: false,
+      audioStreamCount: 0,
       creationTime: null,
       rawTags: {},
     };

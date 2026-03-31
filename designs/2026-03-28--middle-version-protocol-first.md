@@ -362,11 +362,15 @@ type SpatialContextMode = 'gps-enhanced' | 'evidence-only';
 
 - **视觉粗扫**
   - 面向全部素材
-  - 目标是“知道这条素材视觉上大概是什么、值不值得深挖”
+  - 目标是“收集低成本视觉信号”，而不是在这一步就下最终语义类型结论
 - **音频分析**
   - 位于视觉粗扫之后、细扫决策之前
+  - 对象应是**所有带音轨的视频**，而不是只对被视觉粗扫判成某些类型的素材开放
   - 目标是补入口播/原声相关信号，而不是等到细扫后才处理
-- **细扫**
+- **统一分析与细扫决策**
+  - 位于视觉粗扫和音频分析都结束之后
+  - 由统一分析器综合视觉与音频信号，先推测语义类型，再决定是否进入细扫以及如何细扫
+- **细扫执行**
   - 只对系统判定高价值的素材或时间窗执行
   - 目标是生成真正可进入脚本和时间线的 `slice`
 
@@ -381,9 +385,22 @@ type SpatialContextMode = 'gps-enhanced' | 'evidence-only';
 音频分析负责补充：
 
 - ASR transcript
-- speech coverage
+- speech coverage（这里默认指**人声覆盖**，不是背景音乐覆盖）
 - speech windows
 - 口播/原声相关证据
+- 人声是否构成强语义线索
+- 背景音乐是否只是弱上下文而非有效叙事证据
+
+这里需要明确一个中间版本口径：
+
+- 视觉粗扫先产出 `visualSignals`
+- 音频分析再产出 `audioSignals`
+- `visualSignals` 与 `audioSignals` 都属于证据输入，在这两个阶段都不直接输出最终 `type`
+- 细扫决策不是“视觉先决定，音频再补丁”，而是一个**统一分析器 / 融合决策器**同时消费这两路信号
+- 音频分析的前置条件应是“视频存在可用音轨”，而不是“视觉粗扫已经认为它像 talking-head / drive / broll”
+- `budget` 参与的是最终细扫决策，不应作为是否执行音频分析的前置门槛
+- 强音频信号默认指**可转写的人声**，例如口播、对话、现场讲话；背景音乐本身不应被视作强细扫触发器
+- 最终 `type` 应在统一分析阶段输出，并与 `shouldFineScan / fineScanMode / windows` 一起形成同一次决策结果
 
 系统而不是用户来决定是否细扫。细扫触发信号来自视觉粗扫与音频分析的合并结果，包括：
 
@@ -393,6 +410,14 @@ type SpatialContextMode = 'gps-enhanced' | 'evidence-only';
 - 画面变化显著
 - 不确定性高
 - 被脚本生成或时间线阶段回溯请求
+
+这里的合并原则应是：
+
+- 两路信号都弱，才允许 `skip`
+- 任一路信号给出可信窗口，就至少进入 `windowed`
+- 只有在素材较短且高价值，或视觉/音频双信号都强时，才升级到 `full`
+- 对无音轨视频，`audioSignals` 可以为空，但这不影响视觉粗扫独立推动细扫决策
+- 对长行车视频，单纯存在背景音乐、发动机声、路噪，不应单独把音频信号判成“强”
 
 ### D13. 素材浏览与剪辑候选默认按拍摄时间组织，而不是只按文件夹或导入顺序
 
@@ -803,11 +828,62 @@ interface ApproximateRoutePoint {
 - 可用于粗扫召回、地点提示、长行车素材排序与聚类
 - 不应伪装成真实采样轨迹
 
-### 7.1.5 素材分析的双阶段产物
+### 7.1.5 素材分析的双路信号与统一决策产物
 
-建议新增两个中间对象：
+建议在中间版本里显式区分三类对象：视觉粗扫信号、音频分析信号、统一分析后的决策产物。
 
 ```typescript
+interface VisualCoarseSignals {
+  assetId: string;
+  densityScore: number;
+  summary?: string;
+  labels: string[];
+  placeHints: string[];
+  sampleFrames: Array<{
+    timeMs: number;
+    path?: string;
+    summary?: string;
+  }>;
+  interestingWindows: Array<{
+    startMs: number;
+    endMs: number;
+    reason: string;
+  }>;
+}
+
+interface AudioAnalysisSignals {
+  assetId: string;
+  hasAudioTrack: boolean;
+  transcript?: string;
+  transcriptSegments?: Array<{
+    startMs: number;
+    endMs: number;
+    text: string;
+  }>;
+  speechCoverage?: number; // 人声覆盖，而不是背景音乐覆盖
+  hasMeaningfulSpeech?: boolean;
+  backgroundMusicOnly?: boolean;
+  interestingWindows: Array<{
+    startMs: number;
+    endMs: number;
+    reason: string;
+  }>;
+}
+
+interface FineScanDecision {
+  assetId: string;
+  clipType: 'drive' | 'talking-head' | 'aerial' | 'timelapse' | 'broll' | 'unknown';
+  shouldFineScan: boolean;
+  mode: 'skip' | 'windowed' | 'full';
+  windows: Array<{
+    startMs: number;
+    endMs: number;
+    reason: string;
+    sources: Array<'visual' | 'audio'>;
+  }>;
+  decisionReasons: string[];
+}
+
 interface AssetCoarseReport {
   assetId: string;
   ingestRootId?: string;
@@ -823,36 +899,38 @@ interface AssetCoarseReport {
     path?: string;
     summary?: string;
   }>;
+  transcript?: string;
+  transcriptSegments?: Array<{
+    startMs: number;
+    endMs: number;
+    text: string;
+  }>;
+  speechCoverage?: number;
   interestingWindows: Array<{
     startMs: number;
     endMs: number;
     reason: string;
   }>;
   shouldFineScan: boolean;
+  fineScanMode: 'skip' | 'windowed' | 'full';
   fineScanReasons: string[];
-}
-
-interface FineScanDecision {
-  assetId: string;
-  mode: 'skip' | 'windowed' | 'full';
-  windows?: Array<{
-    startMs: number;
-    endMs: number;
-    reason: string;
-  }>;
 }
 ```
 
 规则：
 
-- `AssetCoarseReport` 面向全部素材
-- 只有 `shouldFineScan === true` 的资产才进入细扫
+- `VisualCoarseSignals` 与 `AudioAnalysisSignals` 是并列输入，不互相充当前置门槛
+- 音频分析默认覆盖所有带音轨视频；无音轨时才允许 `AudioAnalysisSignals.hasAudioTrack = false`
+- `AudioAnalysisSignals` 的“强信号”默认以人声为中心，而不是以背景音乐为中心
+- `FineScanDecision` 是统一分析结果，应由同一次推理同时给出 `clipType + shouldFineScan + mode + windows`
+- 中间版本不建议在视觉粗扫阶段就写死最终 `clipType`
+- `AssetCoarseReport` 是正式落盘产物，承载融合后的最终判断
 - `FineScanDecision.mode = 'full'`
-  - 适用于短视频、高价值素材、或本身就很适合镜头级切分的资产
+  - 适用于短视频、高价值素材、或视觉/音频双信号都很强的资产
 - `FineScanDecision.mode = 'windowed'`
-  - 适用于长视频，如行车、长口播、稳定运动镜头
+  - 适用于长视频、单路信号明确命中时间窗、或虽然整体不适合全量细扫但局部值得深挖的资产
 - `FineScanDecision.mode = 'skip'`
-  - 适用于低价值、低变化、暂时不需要深挖的素材
+  - 仅适用于视觉与音频两路信号都弱，或预算档位在融合层明确压制细扫的情况
 
 ### 7.2 `src/modules/script/`
 
@@ -1039,12 +1117,19 @@ interface FineScanDecision {
 
 ### 8.3 自适应采样规则
 
-先计算：
+先分别计算：
+
+- `visualSignals`
+- `audioSignals`
+
+再统一分析得到：
 
 - `clipType`
 - `densityScore`
 - `interestingWindows[]`
 - `shouldFineScan`
+- `fineScanMode`
+- `decisionReasons[]`
 
 建议定义：
 
@@ -1062,9 +1147,21 @@ interface MediaAnalysisPlan {
   }>;
   vlmMode: 'none' | 'multi-image' | 'video';
   targetBudget: 'coarse' | 'standard' | 'deep';
+  hasAudioTrack?: boolean;
+  speechCoverage?: number; // 人声覆盖
   shouldFineScan: boolean;
+  fineScanMode: 'skip' | 'windowed' | 'full';
+  decisionReasons: string[];
 }
 ```
+
+说明：
+
+- `MediaAnalysisPlan` 是统一分析后的决策对象，不是纯视觉计划
+- `targetBudget` 作用于融合层，不应用来提前阻断音频分析
+- 音频信号至少应通过 `hasAudioTrack / speechCoverage / transcriptSegments / speech windows` 进入这一步
+- 其中 `speechCoverage` 与 `speech windows` 默认只统计可用人声，不把背景音乐时长误计为强语义音频信号
+- `clipType` 也应在这一步统一给出，而不是由视觉粗扫阶段单独冻结
 
 信息密度信号可来自：
 
