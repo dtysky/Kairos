@@ -106,3 +106,14 @@ export {
   appendSlices,
   type IMergeResult,
 } from './incremental.js';
+export {
+  getPathTimezonesPath,
+  getManualItineraryPath,
+  loadPathTimezones,
+  loadManualItinerary,
+  matchPathTimezoneOverride,
+  type IPathTimezoneOverride,
+  type ILoadedPathTimezones,
+  type IManualItinerarySegment,
+  type ILoadedManualItinerary,
+} from './spatial-context.js';

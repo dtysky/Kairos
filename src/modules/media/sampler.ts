@@ -36,6 +36,8 @@ export interface IHeuristicAnalysisDecisionInput {
   speechCoverage?: number;
   hasAudioTrack?: boolean;
   hasMeaningfulSpeech?: boolean;
+  routeTransport?: string;
+  spatialHintCount?: number;
 }
 
 /**
@@ -108,6 +110,7 @@ export function buildHeuristicAnalysisDecision(
     clipType,
     speechCoverage: input.speechCoverage ?? 0,
     hasMeaningfulSpeech: input.hasMeaningfulSpeech ?? false,
+    routeTransport: input.routeTransport,
   });
 
   const reasons = new Set<string>();
@@ -122,6 +125,8 @@ export function buildHeuristicAnalysisDecision(
   if ((input.hasAudioTrack ?? false) && !(input.hasMeaningfulSpeech ?? false)) {
     reasons.add('audio-without-meaningful-speech');
   }
+  if ((input.spatialHintCount ?? 0) > 0) reasons.add(`spatial-hints:${input.spatialHintCount}`);
+  if (input.routeTransport) reasons.add(`route-transport:${normalizeToken(input.routeTransport)}`);
   reasons.add(`fine-scan:${fineScanMode}`);
   if (fineScanMode === 'skip') reasons.add('coarse-scan-sufficient');
 
@@ -166,6 +171,7 @@ function pickUnifiedFineScanMode(input: {
   clipType: EClipType;
   speechCoverage: number;
   hasMeaningfulSpeech: boolean;
+  routeTransport?: string;
 }): EFineScanMode {
   if (input.budget === 'coarse') return 'skip';
 
@@ -184,6 +190,10 @@ function pickUnifiedFineScanMode(input: {
     if (heuristicMode === 'skip') {
       return input.durationMs <= 3 * 60_000 ? 'full' : 'windowed';
     }
+  }
+
+  if (input.routeTransport === 'drive' && heuristicMode === 'skip' && input.durationMs >= 2 * 60_000) {
+    return 'windowed';
   }
 
   if (input.interestingWindowCount > 0 && heuristicMode === 'skip') {
@@ -287,6 +297,10 @@ function resolveSemanticClipType(input: IHeuristicAnalysisDecisionInput): EClipT
     if (input.durationMs <= 8 * 60_000) {
       return 'talking-head';
     }
+  }
+
+  if (input.routeTransport === 'drive' && input.durationMs >= 2 * 60_000) {
+    return 'drive';
   }
 
   if (input.clipType && input.clipType !== 'unknown') {

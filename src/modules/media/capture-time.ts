@@ -1,7 +1,8 @@
 import { stat } from 'node:fs/promises';
 import { basename } from 'node:path';
-import type { ICaptureTime, ECaptureTimeSource } from '../../protocol/schema.js';
+import type { ICaptureTime } from '../../protocol/schema.js';
 import type { IProbeResult } from './probe.js';
+import { convertLocalDateTimeToIso } from './timezone-utils.js';
 
 /**
  * 按优先级提取拍摄时间：
@@ -69,10 +70,17 @@ function tryParseFilename(
     if (m.length >= 7) {
       const [, yr, mo, dy, hr, mi, sc] = m;
       const iso = `${yr}-${mo}-${dy}T${hr}:${mi}:${sc}`;
-      const d = new Date(iso + (defaultTimezone ? '' : 'Z'));
-      if (!isNaN(d.getTime())) {
+      const capturedAt = convertLocalDateTimeToIso(
+        `${yr}-${mo}-${dy}`,
+        `${hr}:${mi}:${sc}`,
+        defaultTimezone,
+      ) ?? convertLocalDateTimeToIso(
+        `${yr}-${mo}-${dy}`,
+        `${hr}:${mi}:${sc}`,
+      );
+      if (capturedAt) {
         return {
-          capturedAt: d.toISOString(),
+          capturedAt,
           originalValue: iso,
           originalTimezone: defaultTimezone,
           source: 'filename',

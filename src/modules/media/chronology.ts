@@ -66,6 +66,13 @@ function buildChronologyEvidence(
   labels: string[],
 ): IKtepEvidence[] {
   const evidence: IKtepEvidence[] = [];
+  if (report?.gpsSummary) {
+    evidence.push({
+      source: report.gpsSummary.startsWith('manual-itinerary') ? 'manual' : 'gps',
+      value: report.gpsSummary,
+      confidence: report.gpsSummary.startsWith('manual-itinerary') ? 0.45 : 0.7,
+    });
+  }
   if (report?.summary) {
     evidence.push({
       source: 'vision',

@@ -13,22 +13,27 @@ import type {
   ITranscriptSegment,
 } from '../../protocol/schema.js';
 import {
-    appendSlices,
-    estimateRemainingSeconds,
-    findUnreportedAssets,
+  appendSlices,
+  estimateRemainingSeconds,
+  findUnreportedAssets,
   loadAssetReports,
   loadAssets,
   loadChronology,
   loadDeviceMediaMaps,
   loadIngestRoots,
+  loadManualItinerary,
+  loadPathTimezones,
   loadProject,
   loadRuntimeConfig,
+  matchPathTimezoneOverride,
   resolveWorkspaceProjectRoot,
   getProjectProgressPath,
   touchProjectUpdatedAt,
   writeKairosProgress,
   writeChronology,
   writeAssetReport,
+  type ILoadedManualItinerary,
+  type IPathTimezoneOverride,
 } from '../../store/index.js';
 import { buildAssetCoarseReport } from './asset-report.js';
 import { buildMediaChronology } from './chronology.js';
@@ -54,6 +59,7 @@ import {
 } from './sampler.js';
 import { detectShots, type IShotBoundary } from './shot-detect.js';
 import { sliceInterestingWindows, slicePhoto, sliceVideo } from './slicer.js';
+import { formatDateInTimeZone } from './timezone-utils.js';
 import { transcribe } from './transcriber.js';
 
 export interface IAnalyzeWorkspaceProjectInput {
@@ -89,13 +95,15 @@ export async function analyzeWorkspaceProjectMedia(
   const projectRoot = resolveWorkspaceProjectRoot(input.workspaceRoot, input.projectId);
   const progressPath = input.progressPath ?? getProjectProgressPath(projectRoot, 'media-analyze');
   const startedAtMs = Date.now();
-  const [{ roots }, deviceMaps, runtimeConfig, assets, existingReports, project] = await Promise.all([
+  const [{ roots }, deviceMaps, runtimeConfig, assets, existingReports, project, manualItinerary, pathTimezones] = await Promise.all([
     loadIngestRoots(projectRoot),
     loadDeviceMediaMaps(input.deviceMapPath),
     loadRuntimeConfig(projectRoot),
     loadAssets(projectRoot),
     loadAssetReports(projectRoot),
     loadProject(projectRoot),
+    loadManualItinerary(projectRoot),
+    loadPathTimezones(projectRoot),
   ]);
 
   const pendingAssets = selectPendingAssets(assets, existingReports, input.assetIds);
@@ -216,6 +224,8 @@ export async function analyzeWorkspaceProjectMedia(
         prepared,
         projectRoot,
         roots,
+        manualItinerary,
+        pathTimezones: pathTimezones.overrides,
         budget: input.budget,
         getMlHandle,
         onStageChange: async (stage, detail) => {
@@ -463,6 +473,8 @@ interface IFinalizePreparedAssetInput {
   prepared: IPreparedAssetAnalysis;
   projectRoot: string;
   roots: IMediaRoot[];
+  manualItinerary: ILoadedManualItinerary;
+  pathTimezones: IPathTimezoneOverride[];
   budget?: ETargetBudget;
   getMlHandle: () => Promise<MlAvailability>;
   onStageChange?: (stage: 'audio-analysis', detail?: string) => Promise<void>;
@@ -492,6 +504,13 @@ interface ITranscriptContext {
   evidence: IKtepEvidence[];
   speechCoverage: number;
   speechWindows: IInterestingWindow[];
+}
+
+interface IManualSpatialContext {
+  gpsSummary?: string;
+  placeHints: string[];
+  transport?: 'drive' | 'walk' | 'train' | 'flight' | 'boat' | 'mixed';
+  decisionReasons: string[];
 }
 
 async function prepareAssetVisualCoarse(
@@ -580,6 +599,13 @@ async function finalizePreparedAsset(
       text: segment.text,
     })),
   });
+  const root = input.roots.find(item => item.id === input.prepared.asset.ingestRootId);
+  const manualSpatial = resolveManualSpatialContext({
+    asset: input.prepared.asset,
+    root,
+    itinerary: input.manualItinerary,
+    pathTimezones: input.pathTimezones,
+  });
   const plan = buildAnalysisPlan({
     assetId: input.prepared.asset.id,
     durationMs: input.prepared.asset.durationMs ?? 0,
@@ -596,6 +622,7 @@ async function finalizePreparedAsset(
     basePlan: plan,
     budget: input.budget,
     ml,
+    manualSpatial,
   });
   const effectivePlan = applyDriveFallbackWindows(
     applyAnalysisDecision(plan, decision),
@@ -604,11 +631,11 @@ async function finalizePreparedAsset(
     input.budget,
     input.prepared.coarseSampleTimestamps,
   );
-  const root = input.roots.find(item => item.id === input.prepared.asset.ingestRootId);
   const report = buildAssetCoarseReport({
     asset: input.prepared.asset,
     plan: effectivePlan,
     clipTypeGuess: decision.clipType,
+    gpsSummary: manualSpatial?.gpsSummary,
     summary: input.prepared.visualSummary?.description,
     transcript: transcript?.transcript,
     transcriptSegments: transcript?.segments,
@@ -619,7 +646,10 @@ async function finalizePreparedAsset(
       input.prepared.visualSummary?.subjects,
       transcript,
     ),
-    placeHints: input.prepared.visualSummary?.placeHints ?? [],
+    placeHints: dedupeStrings([
+      ...(input.prepared.visualSummary?.placeHints ?? []),
+      ...(manualSpatial?.placeHints ?? []),
+    ]),
     rootNotes: root?.notes ?? [],
     sampleFrames: input.prepared.sampleFrames,
     fineScanReasons: buildFineScanReasons(
@@ -627,7 +657,10 @@ async function finalizePreparedAsset(
       density,
       input.prepared.shotBoundaries,
       transcript,
-      decision.decisionReasons,
+      dedupeStrings([
+        ...decision.decisionReasons,
+        ...(manualSpatial?.decisionReasons ?? []),
+      ]),
     ),
   });
 
@@ -636,8 +669,197 @@ async function finalizePreparedAsset(
     report,
     transcript,
     clipType: decision.clipType,
-    decisionReasons: decision.decisionReasons,
+    decisionReasons: dedupeStrings([
+      ...decision.decisionReasons,
+      ...(manualSpatial?.decisionReasons ?? []),
+    ]),
   };
+}
+
+function resolveManualSpatialContext(input: {
+  asset: IKtepAsset;
+  root?: IMediaRoot;
+  itinerary: ILoadedManualItinerary;
+  pathTimezones: IPathTimezoneOverride[];
+}): IManualSpatialContext | null {
+  const matched = pickManualItinerarySegment(input);
+  if (!matched) return null;
+
+  const placeHints = dedupeStrings([
+    matched.segment.location,
+    ...splitManualPlaceHints(matched.segment.location),
+    matched.segment.from,
+    matched.segment.to,
+    ...(matched.segment.via ?? []),
+  ]);
+
+  return {
+    gpsSummary: buildManualSpatialSummary(matched.segment, matched.timezone),
+    placeHints,
+    transport: matched.segment.transport,
+    decisionReasons: dedupeStrings([
+      'manual-itinerary-match',
+      matched.segment.transport ? `manual-transport:${matched.segment.transport}` : undefined,
+      placeHints.length > 0 ? `manual-spatial-hints:${placeHints.length}` : undefined,
+    ]),
+  };
+}
+
+function pickManualItinerarySegment(input: {
+  asset: IKtepAsset;
+  root?: IMediaRoot;
+  itinerary: ILoadedManualItinerary;
+  pathTimezones: IPathTimezoneOverride[];
+}): { segment: ILoadedManualItinerary['segments'][number]; timezone: string } | null {
+  if (!input.asset.capturedAt || input.itinerary.segments.length === 0) return null;
+
+  const assetTimezone = resolveAssetSpatialTimezone(input.asset, input.root, input.pathTimezones);
+  let best: { segment: ILoadedManualItinerary['segments'][number]; timezone: string } | null = null;
+  let bestScore = Number.NEGATIVE_INFINITY;
+
+  for (const segment of input.itinerary.segments) {
+    if (!matchesManualItineraryRoot(segment.rootRef, input.root)) continue;
+    if (!matchesManualItineraryPath(segment.pathPrefix, input.asset.sourcePath, input.root)) continue;
+
+    const timezone = segment.timezone?.trim()
+      || input.itinerary.defaultTimezone?.trim()
+      || assetTimezone;
+    if (!timezone) continue;
+
+    const localCapture = formatDateInTimeZone(input.asset.capturedAt, timezone);
+    if (!localCapture) continue;
+    if (localCapture.date !== segment.date) continue;
+    if (!matchesManualItineraryTimeWindow(localCapture.hourMinute, segment.startLocalTime, segment.endLocalTime)) {
+      continue;
+    }
+
+    const score = (segment.pathPrefix ? 10000 + segment.pathPrefix.length : 0)
+      + (segment.rootRef ? 1000 : 0)
+      + (segment.timezone ? 100 : 0)
+      + (segment.startLocalTime || segment.endLocalTime ? 10 : 0)
+      + (segment.location ? 5 : 0)
+      + (segment.transport ? 2 : 0);
+
+    if (score > bestScore) {
+      best = { segment, timezone };
+      bestScore = score;
+    }
+  }
+
+  return best;
+}
+
+function resolveAssetSpatialTimezone(
+  asset: IKtepAsset,
+  root: IMediaRoot | undefined,
+  pathTimezones: IPathTimezoneOverride[],
+): string | undefined {
+  const metadataTimezone = readMetadataString(asset.metadata, 'effectiveTimezone');
+  if (metadataTimezone) return metadataTimezone;
+
+  const override = matchPathTimezoneOverride({
+    overrides: pathTimezones,
+    rootId: root?.id,
+    rootLabel: root?.label,
+    sourcePath: asset.sourcePath,
+  });
+  return override?.timezone ?? root?.defaultTimezone;
+}
+
+function matchesManualItineraryRoot(
+  rootRef: string | undefined,
+  root?: IMediaRoot,
+): boolean {
+  if (!rootRef) return true;
+  const normalized = rootRef.trim().toLowerCase();
+  return normalized === (root?.id ?? '').trim().toLowerCase()
+    || normalized === (root?.label ?? '').trim().toLowerCase();
+}
+
+function matchesManualItineraryPath(
+  pathPrefix: string | undefined,
+  sourcePath: string,
+  root?: IMediaRoot,
+): boolean {
+  if (!pathPrefix) return true;
+  const pathCandidates = buildPortablePathCandidates(sourcePath, root);
+  return pathCandidates.some(candidate => candidate === pathPrefix || candidate.startsWith(`${pathPrefix}/`));
+}
+
+function matchesManualItineraryTimeWindow(
+  localTime: string,
+  startLocalTime?: string,
+  endLocalTime?: string,
+): boolean {
+  if (!startLocalTime && !endLocalTime) return true;
+
+  const time = parseHourMinute(localTime);
+  const start = parseHourMinute(startLocalTime ?? '00:00');
+  const end = parseHourMinute(endLocalTime ?? '23:59');
+  if (time == null || start == null || end == null) return false;
+
+  if (end >= start) {
+    return time >= start && time <= end;
+  }
+  return time >= start || time <= end;
+}
+
+function buildManualSpatialSummary(
+  segment: ILoadedManualItinerary['segments'][number],
+  timezone: string,
+): string {
+  const route = segment.location
+    ?? ([segment.from, segment.to].filter(Boolean).join(' -> ')
+      || (segment.via ?? []).join(' -> '));
+  const timeWindow = segment.startLocalTime && segment.endLocalTime
+    ? `${segment.startLocalTime}-${segment.endLocalTime}`
+    : 'all-day';
+  const transport = segment.transport ? ` ${segment.transport}` : '';
+  const notes = segment.notes ? `; ${segment.notes}` : '';
+  return `manual-itinerary ${segment.date} ${timeWindow} ${route}${transport} @${timezone}${notes}`.trim();
+}
+
+function splitManualPlaceHints(value?: string): string[] {
+  if (!value) return [];
+  return value
+    .split(/[、,/，>|→-]+/u)
+    .map(item => item.trim())
+    .filter(Boolean);
+}
+
+function normalizePortablePath(value: string): string {
+  return value
+    .trim()
+    .replace(/\\/gu, '/')
+    .replace(/^\.?\//u, '')
+    .replace(/\/+/gu, '/')
+    .replace(/\/$/u, '')
+    .toLowerCase();
+}
+
+function buildPortablePathCandidates(sourcePath: string, root?: IMediaRoot): string[] {
+  const normalizedSource = normalizePortablePath(sourcePath);
+  const candidates = new Set<string>([normalizedSource]);
+  const normalizedRootLabel = root?.label ? normalizePortablePath(root.label) : undefined;
+  const normalizedRootId = root?.id ? normalizePortablePath(root.id) : undefined;
+
+  if (normalizedRootLabel) {
+    candidates.add(`${normalizedRootLabel}/${normalizedSource}`);
+  }
+  if (normalizedRootId) {
+    candidates.add(`${normalizedRootId}/${normalizedSource}`);
+  }
+
+  return [...candidates];
+}
+
+function parseHourMinute(value: string): number | null {
+  const match = value.trim().match(/^(\d{2}):(\d{2})$/u);
+  if (!match) return null;
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return null;
+  return hour * 60 + minute;
 }
 
 async function resolveUnifiedAnalysisDecision(input: {
@@ -647,6 +869,7 @@ async function resolveUnifiedAnalysisDecision(input: {
   basePlan: IMediaAnalysisPlan;
   budget?: ETargetBudget;
   ml: MlAvailability;
+  manualSpatial?: IManualSpatialContext | null;
 }): Promise<IAnalysisDecision> {
   const fallbackDecision = buildHeuristicAnalysisDecision({
     durationMs: input.prepared.asset.durationMs ?? 0,
@@ -662,6 +885,8 @@ async function resolveUnifiedAnalysisDecision(input: {
     speechCoverage: input.transcript?.speechCoverage,
     hasAudioTrack: input.prepared.hasAudioTrack,
     hasMeaningfulSpeech: hasMeaningfulSpeech(input.transcript),
+    routeTransport: input.manualSpatial?.transport,
+    spatialHintCount: input.manualSpatial?.placeHints.length,
   });
 
   const inferredDecision = await inferUnifiedAnalysisDecision(input);
@@ -683,6 +908,7 @@ async function inferUnifiedAnalysisDecision(input: {
   basePlan: IMediaAnalysisPlan;
   budget?: ETargetBudget;
   ml: MlAvailability;
+  manualSpatial?: IManualSpatialContext | null;
 }): Promise<IAnalysisDecision | null> {
   if (!input.ml.available) return null;
 
@@ -701,6 +927,7 @@ async function inferUnifiedAnalysisDecision(input: {
         densityScore: input.densityScore,
         basePlan: input.basePlan,
         budget: input.budget,
+        manualSpatial: input.manualSpatial,
       }),
     );
     return parseUnifiedAnalysisDecision(result.description);
@@ -887,6 +1114,7 @@ function buildUnifiedDecisionPrompt(input: {
   densityScore: number;
   basePlan: IMediaAnalysisPlan;
   budget?: ETargetBudget;
+  manualSpatial?: IManualSpatialContext | null;
 }): string {
   const transcriptExcerpt = buildTranscriptExcerpt(input.transcript) ?? 'none';
   const signalPayload = JSON.stringify({
@@ -902,6 +1130,9 @@ function buildUnifiedDecisionPrompt(input: {
     visual_subjects: input.prepared.visualSummary?.subjects ?? [],
     visual_description: input.prepared.visualSummary?.description ?? '',
     place_hints: input.prepared.visualSummary?.placeHints ?? [],
+    manual_spatial_summary: input.manualSpatial?.gpsSummary ?? '',
+    manual_spatial_hints: input.manualSpatial?.placeHints ?? [],
+    manual_transport: input.manualSpatial?.transport ?? '',
     interesting_windows: input.basePlan.interestingWindows.map(window => ({
       start_ms: window.startMs,
       end_ms: window.endMs,
@@ -923,6 +1154,7 @@ Rules:
 - Use both the images and the textual signals below.
 - Final clip_type must be semantic, not just based on duration heuristics.
 - Strong audio means meaningful human speech. Background music, engine noise, road noise, ambience, or other non-speech sounds do not count as strong audio.
+- Manual itinerary and spatial hints are weak evidence: useful for place/route inference, but weaker than clear visual or speech contradictions.
 - If the frames clearly show sustained driving or road footage, prefer "drive" even when the initial heuristic guess is "unknown".
 - If either visual or speech evidence indicates promising regions, prefer "windowed" over "skip".
 - Use "full" only for short high-value clips or when both visual and speech signals are strong.
@@ -1149,6 +1381,12 @@ async function finalizePhotoPreparedAsset(
   const density = estimateDensity({ durationMs: 0, shotBoundaries: [] });
   const clipTypeGuess: EClipType = 'broll';
   const root = input.roots.find(item => item.id === input.prepared.asset.ingestRootId);
+  const manualSpatial = resolveManualSpatialContext({
+    asset: input.prepared.asset,
+    root,
+    itinerary: input.manualItinerary,
+    pathTimezones: input.pathTimezones,
+  });
   const plan = buildAnalysisPlan({
     assetId: input.prepared.asset.id,
     durationMs: 0,
@@ -1162,25 +1400,35 @@ async function finalizePhotoPreparedAsset(
     asset: input.prepared.asset,
     plan,
     clipTypeGuess,
+    gpsSummary: manualSpatial?.gpsSummary,
     summary: input.prepared.visualSummary?.description,
     labels: buildReportLabels(
       clipTypeGuess,
       input.prepared.visualSummary?.sceneType,
       input.prepared.visualSummary?.subjects,
     ),
-    placeHints: input.prepared.visualSummary?.placeHints ?? [],
+    placeHints: dedupeStrings([
+      ...(input.prepared.visualSummary?.placeHints ?? []),
+      ...(manualSpatial?.placeHints ?? []),
+    ]),
     rootNotes: root?.notes ?? [],
     sampleFrames: input.prepared.sampleFrames,
     shouldFineScan: true,
     fineScanMode: 'full',
-    fineScanReasons: ['photo-assets-are-directly-usable'],
+    fineScanReasons: dedupeStrings([
+      'photo-assets-are-directly-usable',
+      ...(manualSpatial?.decisionReasons ?? []),
+    ]),
   });
 
   return {
     prepared: input.prepared,
     report,
     clipType: clipTypeGuess,
-    decisionReasons: ['photo-assets-are-directly-usable'],
+    decisionReasons: dedupeStrings([
+      'photo-assets-are-directly-usable',
+      ...(manualSpatial?.decisionReasons ?? []),
+    ]),
   };
 }
 
@@ -1308,6 +1556,17 @@ function readMetadataBoolean(
     if (value === 'false') return false;
   }
   return undefined;
+}
+
+function readMetadataString(
+  metadata: IKtepAsset['metadata'],
+  key: string,
+): string | undefined {
+  if (!metadata || typeof metadata !== 'object') return undefined;
+  const value = metadata[key];
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  return trimmed || undefined;
 }
 
 function buildCoarseSampleTimestamps(
