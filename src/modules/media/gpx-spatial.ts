@@ -26,6 +26,10 @@ export interface IGpxPoint {
   path: string;
 }
 
+export interface ITimedPointLike {
+  time: string;
+}
+
 export async function resolveGpxSpatialContext(
   input: IResolveGpxSpatialContextInput,
 ): Promise<IGpxSpatialContext | null> {
@@ -35,7 +39,7 @@ export async function resolveGpxSpatialContext(
   if (Number.isNaN(assetTimestamp)) return null;
 
   const points = await loadGpxPointsFromPaths(input.gpxPaths);
-  const matched = pickNearestPoint(
+  const matched = pickNearestTimedPoint(
     points,
     assetTimestamp,
     input.matchToleranceMs ?? CDEFAULT_GPX_MATCH_TOLERANCE_MS,
@@ -99,12 +103,12 @@ export async function loadGpxPoints(filePath: string): Promise<IGpxPoint[]> {
   return points;
 }
 
-function pickNearestPoint(
-  points: IGpxPoint[],
+export function pickNearestTimedPoint<T extends ITimedPointLike>(
+  points: T[],
   assetTimestamp: number,
   toleranceMs: number,
-): IGpxPoint | null {
-  let best: IGpxPoint | null = null;
+): T | null {
+  let best: T | null = null;
   let bestDelta = Number.POSITIVE_INFINITY;
 
   for (const point of points) {

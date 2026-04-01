@@ -142,15 +142,17 @@ flowchart TD
 ### 三类边界
 
 - 项目内正式产物：可同步、可复用、可作为正式输入继续流转
-- 设备本地映射：`~/.kairos/device-media-maps.json`，只描述当前设备能访问到的素材真实目录
+- 设备本地映射：`config/device-media-maps.local.json`，只描述当前设备能访问到的素材真实目录，默认不纳入同步
 - 临时产物：`.tmp/`，默认不属于 `Canonical Project Store`
 
 ### 当前稳定约定
 
 - `config/ingest-roots.json` 保存逻辑素材源，而不是设备绝对路径
+- `config/project-brief.md` 是路径映射的人类输入入口；进入 Ingest 前会同步到 `config/ingest-roots.json` 与 `config/device-media-maps.local.json`
 - `config/runtime.json` 是项目级运行时配置入口
 - `config/styles/` 保存正式风格档案
 - `gps/tracks/*.gpx` 与 `gps/merged.json` 是当前项目级外部轨迹资源入口
+- `gps/derived.json` 是项目级 `project-derived-track` 缓存，统一收口 embedded-derived 与 manual-itinerary-derived 的弱空间来源
 - 主链消费的是项目当前采用的素材版本，而不是强制要求原始素材始终在线
 
 ### 元信息保真原则
@@ -198,14 +200,19 @@ flowchart TD
 
 1. `embedded GPS`
 2. `project GPX`
-3. `manual-itinerary`
+3. `project-derived-track`
 4. `none`
 
 补充约定：
 
 - DJI / QuickTime / EXIF 的 embedded GPS 属于素材同源真值
 - 项目级 GPX 是第二优先级资源，统一收口到 `gps/tracks/*.gpx` 与 `gps/merged.json`
-- `manual-itinerary` 只负责无内嵌 GPS 且无可用 GPX 命中时的低置信度 fallback
+- `project-derived-track` 是第三优先级的项目级弱空间层，缓存落在 `gps/derived.json`
+- `project-derived-track` 在 ingest 阶段刷新，当前 v1 会保守地合并两类条目：
+  - 已有 embedded GPS 的素材派生出的稀疏时间点
+  - `manual-itinerary` 编译出的稀疏时间窗 / 锚点
+- `manual-itinerary` 不再作为 analyze 时的独立顶层 fallback；它的项目级输出并入 `project-derived-track`
+- 如果用户修改了 `config/manual-itinerary.md`，应先重新跑一次 ingest，让 `gps/derived.json` 刷新后再 analyze
 - 最终采用的空间结果挂在 `IAssetCoarseReport.inferredGps`，而不是回写到素材真值层
 
 ## 7. 正式流程与当前实现的边界
@@ -219,7 +226,7 @@ flowchart TD
 - coarse-first analyze 与 ASR 进入正式分析链路
 - `segment + beat + selection` 的编排方向
 - 双路径字幕
-- `create_time(UTC)` 与 `embedded GPS > project GPX > manual-itinerary`
+- `create_time(UTC)` 与 `embedded GPS > project GPX > project-derived-track`
 - `DaVinci color` 作为独立增强链路，而非主链固定步骤
 - 派生素材版本必须保留关键元信息
 
@@ -228,7 +235,7 @@ flowchart TD
 - 项目化 ingest / analyze / script / timeline 准备链路
 - 无 `Pharos` 场景下的兼容使用方式
 - 以项目素材和分析结果驱动的临时版本工作流
-- 项目级 GPX / embedded GPS / manual-itinerary 的时空语义收口
+- 项目级 GPX / embedded GPS / project-derived-track 的时空语义收口
 
 ### 仍然属于后续补齐或持续演进的部分
 

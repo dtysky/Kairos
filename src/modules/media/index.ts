@@ -75,6 +75,10 @@ export {
   type IResolveProjectGpxPathsInput,
 } from './project-gps.js';
 export {
+  refreshProjectDerivedTrackCache,
+  type IRefreshProjectDerivedTrackCacheInput,
+} from './project-derived-track.js';
+export {
   resolveAssetSpatialContext,
   type IResolveAssetSpatialContextInput,
 } from './spatial-resolver.js';

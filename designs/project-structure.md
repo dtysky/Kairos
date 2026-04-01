@@ -21,7 +21,7 @@
   - 文件 `create_time`
   - GPS / 空间相关元信息
   - 后续与 `Pharos`、chronology、空间推断对齐所需的其他核心字段
-- 当前正式项目结构围绕 `projects/<projectId>/`、`config/runtime.json`、logical ingest roots、`~/.kairos/device-media-maps.json`、`gps/tracks/*.gpx`、`gps/merged.json` 与项目内 `.tmp/` 展开
+- 当前正式项目结构围绕 `projects/<projectId>/`、`config/runtime.json`、logical ingest roots、`config/device-media-maps.local.json`、`gps/tracks/*.gpx`、`gps/merged.json`、`gps/derived.json` 与项目内 `.tmp/` 展开
 
 ## 当前实现与早期草案的差异注记（2026-03-29 之后）
 
@@ -30,8 +30,9 @@
 - `projects/<project_id>/`
   - 下一阶段的正式设计建议把项目数据统一收口到 Kairos 工程内的 `projects/` 目录
   - 这样便于云同步、多设备共享和项目选择
-- `~/.kairos/device-media-maps.json`
-  - 素材真实目录不再直接写死在项目内，而是由每台设备单独维护本地路径映射
+- `config/device-media-maps.local.json`
+  - 素材真实目录不再直接写死在正式产物中，而是由当前设备在项目内维护本地路径映射
+  - 该文件属于本机私有配置，应默认忽略，不作为项目同步内容
 - `config/runtime.json`
   - 当前项目把 `ffmpegPath`、`ffprobePath`、`ffmpegHwaccel`、`analysisProxyWidth`、`analysisProxyPixelFormat`、`sceneDetectFps`、`mlServerUrl` 等运行时设置落在项目内配置中
   - 不再依赖环境变量或用户口头约定
@@ -39,13 +40,18 @@
   - 风格档案不再只是一份 `style/profile.json`
   - 当前使用 `config/styles/{category}.md + config/styles/catalog.json`
 - `config/manual-itinerary.md` 与 `analysis/asset-reports/`
-  - `manual-itinerary` 当前只负责推断 GPS / 空间上下文，不再承担 timezone 输入语义
-  - 最终空间来源优先级为 `embedded GPS > project GPX > manual-itinerary`
+  - `manual-itinerary` 当前只负责提供项目级弱空间线索，不再承担 timezone 输入语义，也不再作为 analyze 阶段的独立顶层来源
+  - ingest 会在 refresh `project-derived-track` 时尝试把它编译进 `gps/derived.json`
+  - 最终空间来源优先级为 `embedded GPS > project GPX > project-derived-track`
   - 结构化结果落在 `IAssetCoarseReport.inferredGps`，而不是写回素材主数据
 - `gps/tracks/` 与 `gps/merged.json`
   - 项目级外部轨迹资源现统一收口到 `gps/tracks/*.gpx`
   - 标准化后的缓存写到 `gps/merged.json`
   - Analyze 在没有显式 `gpxPaths` 时默认读取这里，而不是要求每次调用临时传路径
+- `gps/derived.json`
+  - 项目级 `project-derived-track` 缓存
+  - 当前 v1 统一收口 embedded-derived sparse points 与 manual-itinerary-derived sparse windows
+  - Analyze 默认把它作为第三优先级空间层消费，不做跨 gap 插值
 - `analysis/reference-transcripts/` 与 `analysis/style-references/`
   - 风格分析和参考视频分析会先落地单视频报告，再综合出一个正式风格分类
 - `.tmp/`

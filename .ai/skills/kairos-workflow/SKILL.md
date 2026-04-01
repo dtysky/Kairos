@@ -76,7 +76,10 @@ F:\你的素材目录
 
 用户填完 `project-brief.md` 后，不要手工再抄一遍配置；应把它当成路径映射的输入源，同步到：
 - `config/ingest-roots.json`
-- `~/.kairos/device-media-maps.json`
+- `config/device-media-maps.local.json`
+
+如果下一步就是跑 Ingest，优先直接调用 `ingestWorkspaceProjectMedia()`；当前实现会在检测到
+`project-brief.md` 已配置路径映射时，先自动同步一次再继续扫描。
 
 如果当前平台是 Windows，并且后续流程涉及媒体分析或导出，在初始化阶段还应先检查 Windows 原生
 `ffmpeg / ffprobe` 是否存在。优先使用当前平台的原生版本；如果没有自动探测到，先要求在项目的
@@ -147,6 +150,17 @@ project/
 - `media/chronology.json` — 时间排序视图
 
 前置条件：`store/assets.json` 存在且非空
+
+**强规则**：
+- Workflow 在进入 Analyze 前，必须先执行一次 GPS 规则提示，不能直接开跑
+- 至少要向用户说明：`embedded GPS > project GPX > project-derived-track > none`
+- 必须结合当前项目状态指出：是否已有项目级 GPX、是否已有 `gps/derived.json`、是否已有 `config/manual-itinerary.md`
+- 如果缺少 GPX 且缺少 `gps/derived.json`，必须明确提示：没有 embedded GPS 的素材将没有空间 fallback
+- 如果用户刚修改了 `manual-itinerary` 但还没重新跑 ingest，必须明确提示：需要先刷新 `gps/derived.json`
+- 必须指导用户选择：补 GPX、填写/更新 `manual-itinerary` 后 rerun ingest，或明确接受“部分素材没有空间结果”后继续
+  - 当用户选择填写 `manual-itinerary` 时，默认应推荐一句自然语言一段，而不是要求先写成 key-value 表单
+  - 推荐示例：`2026.02.17，早上九点左右，开车从新西兰皇后镇出发`
+- 只有在用户明确确认继续后，才可以调用 Analyze
 
 当前分析链路除了视觉粗扫/细扫，还会在符合条件的视频上补充 ASR：
 - 结构上更准确的理解是：`视觉粗扫 -> 音频分析 -> 细扫决策 -> 细扫执行`

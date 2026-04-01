@@ -29,7 +29,7 @@ async function writeTempJson(content: string): Promise<string> {
 }
 
 describe('resolveAssetSpatialContext', () => {
-  it('uses embedded GPS before GPX and manual-itinerary fallback', async () => {
+  it('uses embedded GPS before GPX and project-derived-track', async () => {
     const gpxPath = await writeTempGpx([
       '<?xml version="1.0" encoding="UTF-8"?>',
       '<gpx version="1.1" creator="test">',
@@ -49,19 +49,23 @@ describe('resolveAssetSpatialContext', () => {
           },
         },
       } as any,
-      itinerary: {
-        warnings: [],
-        segments: [{
-          id: 'manual-1',
-          date: '2026-03-31',
-          startLocalTime: '16:00',
-          endLocalTime: '17:00',
-          location: '北京市天安门',
+      derivedTrack: {
+        schemaVersion: '1.0',
+        updatedAt: '2026-03-31T08:16:00.000Z',
+        entryCount: 1,
+        entries: [{
+          id: 'derived-1',
+          originType: 'embedded-derived',
+          matchKind: 'point',
+          confidence: 0.72,
+          lat: 39.111111,
+          lng: 116.222222,
+          time: '2026-03-31T08:15:00Z',
+          sourceAssetId: 'asset-dji',
+          sourcePath: 'gps-anchor.mp4',
         }],
       },
       gpxPaths: [gpxPath],
-      resolveTimezoneFromLocation: async () => 'Asia/Shanghai',
-      geocodeLocation: async () => ({ lat: 39.909187, lng: 116.397463 }),
     });
 
     expect(result?.inferredGps).toEqual(expect.objectContaining({
@@ -72,7 +76,7 @@ describe('resolveAssetSpatialContext', () => {
     expect(result?.decisionReasons).toContain('embedded-gps');
   });
 
-  it('uses GPX match before manual-itinerary fallback', async () => {
+  it('uses GPX match before project-derived-track', async () => {
     const gpxPath = await writeTempGpx([
       '<?xml version="1.0" encoding="UTF-8"?>',
       '<gpx version="1.1" creator="test">',
@@ -87,19 +91,23 @@ describe('resolveAssetSpatialContext', () => {
         capturedAt: '2026-03-31T08:15:30.000Z',
         sourcePath: 'travel/day1/clip.mp4',
       },
-      itinerary: {
-        warnings: [],
-        segments: [{
-          id: 'manual-1',
-          date: '2026-03-31',
-          startLocalTime: '16:00',
-          endLocalTime: '17:00',
-          location: '北京市天安门',
+      derivedTrack: {
+        schemaVersion: '1.0',
+        updatedAt: '2026-03-31T08:16:00.000Z',
+        entryCount: 1,
+        entries: [{
+          id: 'derived-1',
+          originType: 'embedded-derived',
+          matchKind: 'point',
+          confidence: 0.72,
+          lat: 39.909187,
+          lng: 116.397463,
+          time: '2026-03-31T08:15:20Z',
+          sourceAssetId: 'asset-dji',
+          sourcePath: 'gps-anchor.mp4',
         }],
       },
       gpxPaths: [gpxPath],
-      resolveTimezoneFromLocation: async () => 'Asia/Shanghai',
-      geocodeLocation: async () => ({ lat: 39.909187, lng: 116.397463 }),
     });
 
     expect(result?.inferredGps).toEqual(expect.objectContaining({
@@ -110,7 +118,7 @@ describe('resolveAssetSpatialContext', () => {
     expect(result?.gpsSummary).toContain('gpx');
   });
 
-  it('matches merged project GPX cache before manual-itinerary fallback', async () => {
+  it('matches merged project GPX cache before project-derived-track', async () => {
     const mergedPath = await writeTempJson(JSON.stringify({
       schemaVersion: '1.0',
       updatedAt: '2026-03-31T08:16:00.000Z',
@@ -133,19 +141,25 @@ describe('resolveAssetSpatialContext', () => {
         capturedAt: '2026-03-31T08:15:30.000Z',
         sourcePath: 'travel/day1/clip.mp4',
       },
-      itinerary: {
-        warnings: [],
-        segments: [{
-          id: 'manual-1',
-          date: '2026-03-31',
-          startLocalTime: '16:00',
-          endLocalTime: '17:00',
-          location: '北京市天安门',
+      derivedTrack: {
+        schemaVersion: '1.0',
+        updatedAt: '2026-03-31T08:16:00.000Z',
+        entryCount: 1,
+        entries: [{
+          id: 'derived-1',
+          originType: 'manual-itinerary-derived',
+          matchKind: 'window',
+          confidence: 0.45,
+          lat: 39.909187,
+          lng: 116.397463,
+          startTime: '2026-03-31T08:00:00Z',
+          endTime: '2026-03-31T09:00:00Z',
+          matchedItinerarySegmentId: 'manual-itinerary-1',
+          locationText: '北京市天安门',
+          timezone: 'Asia/Shanghai',
         }],
       },
       gpxPaths: [mergedPath],
-      resolveTimezoneFromLocation: async () => 'Asia/Shanghai',
-      geocodeLocation: async () => ({ lat: 39.909187, lng: 116.397463 }),
     });
 
     expect(result?.inferredGps).toEqual(expect.objectContaining({
@@ -156,42 +170,120 @@ describe('resolveAssetSpatialContext', () => {
     expect(result?.gpsSummary).toContain('gpx');
   });
 
-  it('falls back to manual-itinerary when GPX has no match', async () => {
-    const gpxPath = await writeTempGpx([
-      '<?xml version="1.0" encoding="UTF-8"?>',
-      '<gpx version="1.1" creator="test">',
-      '  <trk><trkseg>',
-      '    <trkpt lat="39.111111" lon="116.222222"><time>2026-03-31T04:00:00Z</time></trkpt>',
-      '  </trkseg></trk>',
-      '</gpx>',
-    ].join('\n'));
-
+  it('uses project-derived-track when GPX has no match', async () => {
     const result = await resolveAssetSpatialContext({
       asset: {
         capturedAt: '2026-03-31T08:15:30.000Z',
         sourcePath: 'travel/day1/clip.mp4',
       },
-      itinerary: {
-        warnings: [],
-        segments: [{
-          id: 'manual-1',
-          date: '2026-03-31',
-          startLocalTime: '16:00',
-          endLocalTime: '17:00',
-          location: '北京市天安门',
+      derivedTrack: {
+        schemaVersion: '1.0',
+        updatedAt: '2026-03-31T08:16:00.000Z',
+        entryCount: 1,
+        entries: [{
+          id: 'derived-1',
+          originType: 'embedded-derived',
+          matchKind: 'point',
+          confidence: 0.72,
+          lat: 39.111111,
+          lng: 116.222222,
+          time: '2026-03-31T08:15:00Z',
+          sourceAssetId: 'asset-dji',
+          sourcePath: 'gps-anchor.mp4',
         }],
       },
-      gpxPaths: [gpxPath],
-      resolveTimezoneFromLocation: async () => 'Asia/Shanghai',
-      geocodeLocation: async () => ({ lat: 39.909187, lng: 116.397463 }),
+      gpxPaths: [],
     });
 
     expect(result?.inferredGps).toEqual(expect.objectContaining({
-      source: 'manual-itinerary',
+      source: 'derived-track',
+      derivedOriginType: 'embedded-derived',
+      lat: 39.111111,
+      lng: 116.222222,
+      sourceAssetId: 'asset-dji',
+    }));
+    expect(result?.gpsSummary).toContain('derived-track');
+  });
+
+  it('keeps manual-itinerary provenance inside project-derived-track matches', async () => {
+    const result = await resolveAssetSpatialContext({
+      asset: {
+        capturedAt: '2026-03-31T08:15:30.000Z',
+        sourcePath: 'travel/day1/clip.mp4',
+      },
+      root: {
+        id: 'root-1',
+        label: 'camera-a',
+      },
+      derivedTrack: {
+        schemaVersion: '1.0',
+        updatedAt: '2026-03-31T08:16:00.000Z',
+        entryCount: 1,
+        entries: [{
+          id: 'derived-1',
+          originType: 'manual-itinerary-derived',
+          matchKind: 'window',
+          confidence: 0.45,
+          lat: 39.909187,
+          lng: 116.397463,
+          startTime: '2026-03-31T08:00:00Z',
+          endTime: '2026-03-31T09:00:00Z',
+          matchedItinerarySegmentId: 'manual-itinerary-1',
+          locationText: '北京市天安门',
+          timezone: 'Asia/Shanghai',
+          rootRef: 'camera-a',
+        }],
+      },
+    });
+
+    expect(result?.inferredGps).toEqual(expect.objectContaining({
+      source: 'derived-track',
+      derivedOriginType: 'manual-itinerary-derived',
       lat: 39.909187,
       lng: 116.397463,
-      matchedItinerarySegmentId: 'manual-1',
+      matchedItinerarySegmentId: 'manual-itinerary-1',
+      locationText: '北京市天安门',
     }));
-    expect(result?.gpsSummary).toContain('manual-itinerary');
+    expect(result?.gpsSummary).toContain('manual-itinerary-derived');
+  });
+
+  it('does not interpolate between sparse derived-track points', async () => {
+    const result = await resolveAssetSpatialContext({
+      asset: {
+        capturedAt: '2026-03-31T08:30:00.000Z',
+        sourcePath: 'travel/day1/clip.mp4',
+      },
+      derivedTrack: {
+        schemaVersion: '1.0',
+        updatedAt: '2026-03-31T08:16:00.000Z',
+        entryCount: 2,
+        entries: [
+          {
+            id: 'derived-1',
+            originType: 'embedded-derived',
+            matchKind: 'point',
+            confidence: 0.72,
+            lat: 39.111111,
+            lng: 116.222222,
+            time: '2026-03-31T08:00:00Z',
+            sourceAssetId: 'asset-a',
+            sourcePath: 'gps-anchor-a.mp4',
+          },
+          {
+            id: 'derived-2',
+            originType: 'embedded-derived',
+            matchKind: 'point',
+            confidence: 0.72,
+            lat: 39.222222,
+            lng: 116.333333,
+            time: '2026-03-31T09:00:00Z',
+            sourceAssetId: 'asset-b',
+            sourcePath: 'gps-anchor-b.mp4',
+          },
+        ],
+      },
+    });
+
+    expect(result).toBeNull();
   });
 });

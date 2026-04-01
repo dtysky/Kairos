@@ -43,7 +43,8 @@ export async function inferManualItineraryGps(
   return {
     gpsSummary,
     inferredGps: {
-      source: 'manual-itinerary',
+      source: 'derived-track',
+      derivedOriginType: 'manual-itinerary-derived',
       confidence: 0.45,
       lat: matched.coordinates.lat,
       lng: matched.coordinates.lng,
@@ -176,7 +177,7 @@ function buildManualSpatialSummary(
     : 'all-day';
   const transport = segment.transport ? ` ${segment.transport}` : '';
   const notes = segment.notes ? `; ${segment.notes}` : '';
-  return `manual-itinerary ${segment.date} ${timeWindow} ${route}${transport} @${timezone}${notes}`.trim();
+  return `derived-track manual-itinerary-derived ${segment.date} ${timeWindow} ${route}${transport} @${timezone}${notes}`.trim();
 }
 
 function splitManualPlaceHints(value?: string): string[] {

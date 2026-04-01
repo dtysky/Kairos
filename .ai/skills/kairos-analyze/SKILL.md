@@ -45,8 +45,6 @@ analyzeWorkspaceProjectMedia(input: {
   gpxMatchToleranceMs?: number;
   budget?: 'coarse' | 'standard' | 'deep';
   progressPath?: string;
-  resolveTimezoneFromLocation?: (location: string) => Promise<string | null>;
-  geocodeLocation?: (location: string) => Promise<{ lat: number; lng: number } | null>;
 }): Promise<{
   projectRoot: string;
   analyzedAssetIds: string[];
@@ -57,6 +55,32 @@ analyzeWorkspaceProjectMedia(input: {
   mlUsed: boolean;
 }>
 ```
+
+`deviceMapPath` 通常不用显式传。省略时，Analyze 默认读取当前项目内的
+`config/device-media-maps.local.json`。
+
+## 强规则：Analyze 前必须先做 GPS 提示
+
+在任何一次 Analyze 开始前，agent **必须先向用户明确提示并指导当前项目的 GPS 规则**。这一步是强规则，不能因为用户直接说“analyze / 分析 / 继续”就跳过。
+
+开始 Analyze 之前，至少要明确告诉用户：
+
+- 当前空间优先级是：`embedded GPS > project GPX > project-derived-track > none`
+- `manual-itinerary` 不再作为 Analyze 阶段的独立顶层 fallback；它会在 ingest 时被编译进 `gps/derived.json`
+- `manual-itinerary` 不负责修正素材拍摄时间；拍摄时间仍以 `create_time(UTC)` 为主
+- 如果项目里没有 `gps/merged.json` / `gps/tracks/*.gpx`，也没有 `gps/derived.json`，那么**没有 embedded GPS 的素材将拿不到空间 fallback**
+- 如果用户刚修改过 `config/manual-itinerary.md` 但还没重新跑 ingest，必须明确提醒：当前 `gps/derived.json` 可能还是旧的
+
+在提示规则后，还必须指导用户当前可选动作：
+
+- 导入项目级 GPX
+- 填写 `config/manual-itinerary.md`
+  - 默认推荐一句自然语言一段，例如：`2026.02.17，早上九点左右，开车从新西兰皇后镇出发`
+  - 只有需要限制到特定素材源或路径前缀时，再补 `素材源:` / `路径:` 这类结构化字段
+- 如果选择填写或修改了 `manual-itinerary`，先重新跑一次 ingest，刷新 `gps/derived.json`
+- 或明确接受“部分素材没有空间结果”后继续
+
+只有在用户明确确认继续后，才可以真正调用 `analyzeWorkspaceProjectMedia()`。
 
 底层会复用这些工具：
 
@@ -79,7 +103,7 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
 
 1. `embedded GPS`
 2. `project GPX`
-3. `manual-itinerary`
+3. `project-derived-track`
 4. 无空间结果
 
 规则：
@@ -89,8 +113,14 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
 - 当前内嵌 GPS 解析已覆盖更宽的 QuickTime / EXIF 变体：`location`、`location-eng`、`com.apple.quicktime.location.iso6709`、`com.apple.quicktime.location_iso6709`、`GPSLatitude/GPSLongitude(+Ref)` 以及简单 rational / DMS 风格坐标
 - 如果没有可用内嵌 GPS，Analyze 会先看显式传入的 `gpxPaths`
 - 如果调用方没有显式传入 `gpxPaths`，Analyze 默认读取项目内 `gps/merged.json`；若 merged cache 不存在，再回落到 `gps/tracks/*.gpx`
-- `manual-itinerary` 只在**没有可用内嵌 GPS** 且 **没有匹配到 GPX** 时，作为低置信度 fallback
-- 当存在内嵌 GPS 时，`manual-itinerary` 和 GPX 都不能覆盖它
+- 如果没有 GPX 命中，Analyze 再读取项目内 `gps/derived.json`，把它作为第三优先级空间层
+- `project-derived-track` 当前 v1 只做保守匹配：
+  - embedded-derived 条目只允许 sparse nearest-point 命中
+  - manual-itinerary-derived 条目只允许 ingest 预编译好的 bounded window / anchor 命中
+  - 不做跨 gap 插值
+- `manual-itinerary` 不再直接参与 Analyze 匹配；它只能先通过 ingest 编译进 `project-derived-track`
+- 如果 `manual-itinerary` 在上次 ingest 之后被修改，先 rerun ingest，再 analyze
+- 当存在内嵌 GPS 时，`project-derived-track` 和 GPX 都不能覆盖它
 - 当前代码入口仍允许通过 `gpxPaths` 显式注入 1..N 个 GPX 文件路径，用于覆盖默认发现
 - 默认 GPX 命中策略是：从带 `time` 的 `trkpt / rtept / wpt` 中，按 `capturedAt` 选择容差内最近点
 - `manual-itinerary` 不负责修正素材拍摄时间；素材时间仍以 `create_time(UTC)` 为主
@@ -246,10 +276,10 @@ scripts/kairos-progress.sh
   - `full/windowed` 两种 slice 产出
   - chronology 刷新
   - 视频内语音的 ASR -> speech windows -> transcript/slice 贯通
-  - `embedded GPS > project GPX > manual-itinerary` 空间优先级
+  - `embedded GPS > project GPX > project-derived-track` 空间优先级
   - 更宽的 DJI / QuickTime / EXIF embedded GPS 解析
-  - 项目级 `gps/tracks/*.gpx` + `gps/merged.json` 默认发现
-  - `manual-itinerary -> inferredGps` 的 fallback 通路（宿主注入 resolver 时）
+  - 项目级 `gps/tracks/*.gpx` + `gps/merged.json` + `gps/derived.json` 默认发现
+  - ingest 时从 embedded GPS / `manual-itinerary` 刷新 `project-derived-track`
 
 - 当前还没实现到最深：
   - merged cache 的自动失效检测 / 地图 UI / 可视化轨迹审阅

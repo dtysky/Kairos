@@ -20,7 +20,8 @@
    - `preserveNatSound / muteSource` 为显式覆盖；未标注时允许根据 transcript 匹配度、`speechCoverage`、segment role 自动推论
 4. GPS 链路已形成当前最小闭环
    - 项目内外部轨迹统一收口到 `gps/tracks/*.gpx` 与 `gps/merged.json`
-   - Analyze 默认遵循 `embedded GPS > project GPX > manual-itinerary`
+   - ingest 会额外刷新 `gps/derived.json`，把 embedded-derived sparse points 与 manual-itinerary-derived sparse windows 统一编译成 `project-derived-track`
+   - Analyze 默认遵循 `embedded GPS > project GPX > project-derived-track`
    - DJI / QuickTime / EXIF 的 embedded GPS 解析已覆盖更宽字段变体，而不再只看最小 key 集
 5. 正式流程与当前实现的关系已经更明确
    - 正式主链仍以 `Pharos` 为主输入
@@ -143,7 +144,8 @@ src/modules/ingest/
   → ffprobe 提取元数据（并行，p-limit 控制并发）
   → EXIF 读取照片信息
   → 提取素材自身内嵌 GPS（DJI 视频 metadata / 照片 EXIF）
-  → 若内嵌 GPS 不可用，再走项目级 `gps/merged.json` / `gps/tracks/*.gpx` 时间匹配 → GPS 坐标写入素材索引（照片额外写入 EXIF）
+  → ingest 刷新项目级 `gps/derived.json`，统一收口 embedded-derived sparse points 与 `manual-itinerary` 编译结果
+  → Analyze 若内嵌 GPS 不可用，则先走项目级 `gps/merged.json` / `gps/tracks/*.gpx` 时间匹配，再回落 `gps/derived.json` 的保守匹配（无插值）
   → FFmpeg 生成 720p 代理文件（后台队列）
   → CLIP 提取代理文件视觉特征 → 向量聚类 → LLM 生成场景描述
   → 写入 media/index.json + media/scenes.json

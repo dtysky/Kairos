@@ -116,14 +116,8 @@ function buildChronologyEvidence(
 
 function resolveGpsEvidence(
   report: IAssetCoarseReport,
-): { source: 'manual' | 'gps'; confidence: number } {
+): { source: 'manual' | 'gps' | 'derived-track'; confidence: number } {
   const inferredSource = report.inferredGps?.source;
-  if (inferredSource === 'manual-itinerary') {
-    return {
-      source: 'manual',
-      confidence: 0.45,
-    };
-  }
   if (inferredSource === 'embedded') {
     return {
       source: 'gps',
@@ -136,8 +130,14 @@ function resolveGpsEvidence(
       confidence: 0.7,
     };
   }
-  return report.gpsSummary?.startsWith('manual-itinerary')
-    ? { source: 'manual', confidence: 0.45 }
+  if (inferredSource === 'derived-track') {
+    return {
+      source: 'derived-track',
+      confidence: report.inferredGps?.confidence ?? 0.45,
+    };
+  }
+  return report.gpsSummary?.startsWith('derived-track')
+    ? { source: 'derived-track', confidence: report.inferredGps?.confidence ?? 0.45 }
     : { source: 'gps', confidence: 0.7 };
 }
 

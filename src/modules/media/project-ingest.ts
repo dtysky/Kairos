@@ -4,18 +4,20 @@ import type { IKtepAsset, IMediaRoot } from '../../protocol/schema.js';
 import {
   appendAssets,
   loadAssetReports,
-  loadDeviceMediaMaps,
+  loadProjectDeviceMediaMaps,
   loadIngestRoots,
   loadRuntimeConfig,
   loadChronology,
   loadAssets,
   resolveWorkspaceProjectRoot,
+  syncProjectBriefMappings,
   touchProjectUpdatedAt,
   writeChronology,
   type IMergeResult,
 } from '../../store/index.js';
 import { resolveCaptureTime } from './capture-time.js';
 import { buildMediaChronology } from './chronology.js';
+import { refreshProjectDerivedTrackCache } from './project-derived-track.js';
 import { probe, type IMediaToolConfig } from './probe.js';
 import { resolveMediaRootsForDevice, toPortableRelativePath } from './root-resolver.js';
 import { scanDirectory } from './scanner.js';
@@ -24,6 +26,8 @@ export interface IIngestWorkspaceProjectInput {
   workspaceRoot: string;
   projectId: string;
   deviceMapPath?: string;
+  resolveTimezoneFromLocation?: (location: string) => Promise<string | null>;
+  geocodeLocation?: (location: string) => Promise<{ lat: number; lng: number } | null>;
 }
 
 export interface IIngestedRootSummary {
@@ -45,9 +49,14 @@ export async function ingestWorkspaceProjectMedia(
   input: IIngestWorkspaceProjectInput,
 ): Promise<IIngestWorkspaceProjectResult> {
   const projectRoot = resolveWorkspaceProjectRoot(input.workspaceRoot, input.projectId);
+  await syncProjectBriefMappings({
+    projectId: input.projectId,
+    projectRoot,
+    deviceMapPath: input.deviceMapPath,
+  });
   const [{ roots }, deviceMaps, runtimeConfig] = await Promise.all([
     loadIngestRoots(projectRoot),
-    loadDeviceMediaMaps(input.deviceMapPath),
+    loadProjectDeviceMediaMaps(projectRoot, input.deviceMapPath),
     loadRuntimeConfig(projectRoot),
   ]);
 
@@ -78,6 +87,11 @@ export async function ingestWorkspaceProjectMedia(
   }
 
   const merge = await appendAssets(projectRoot, incoming);
+  await refreshProjectDerivedTrackCache({
+    projectRoot,
+    resolveTimezoneFromLocation: input.resolveTimezoneFromLocation,
+    geocodeLocation: input.geocodeLocation,
+  });
   const chronologyCount = await refreshProjectChronology(projectRoot);
   await touchProjectUpdatedAt(projectRoot);
 

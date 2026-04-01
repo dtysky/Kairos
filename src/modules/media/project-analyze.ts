@@ -4,6 +4,7 @@ import type {
   EClipType,
   ETargetBudget,
   IAssetCoarseReport,
+  IDeviceMediaMapFile,
   IKtepAsset,
   IKtepEvidence,
   IKtepSlice,
@@ -19,9 +20,9 @@ import {
   loadAssetReports,
   loadAssets,
   loadChronology,
-  loadDeviceMediaMaps,
+  loadProjectDeviceMediaMaps,
   loadIngestRoots,
-  loadManualItinerary,
+  loadProjectDerivedTrack,
   loadProject,
   loadRuntimeConfig,
   resolveWorkspaceProjectRoot,
@@ -30,7 +31,7 @@ import {
   writeKairosProgress,
   writeChronology,
   writeAssetReport,
-  type ILoadedManualItinerary,
+  type IProjectDerivedTrack,
 } from '../../store/index.js';
 import { buildAssetCoarseReport } from './asset-report.js';
 import { buildMediaChronology } from './chronology.js';
@@ -70,8 +71,6 @@ export interface IAnalyzeWorkspaceProjectInput {
   gpxMatchToleranceMs?: number;
   budget?: ETargetBudget;
   progressPath?: string;
-  resolveTimezoneFromLocation?: (location: string) => Promise<string | null>;
-  geocodeLocation?: (location: string) => Promise<{ lat: number; lng: number } | null>;
 }
 
 export interface IAnalyzeWorkspaceProjectResult {
@@ -98,14 +97,14 @@ export async function analyzeWorkspaceProjectMedia(
   const projectRoot = resolveWorkspaceProjectRoot(input.workspaceRoot, input.projectId);
   const progressPath = input.progressPath ?? getProjectProgressPath(projectRoot, 'media-analyze');
   const startedAtMs = Date.now();
-  const [{ roots }, deviceMaps, runtimeConfig, assets, existingReports, project, manualItinerary] = await Promise.all([
+  const [{ roots }, deviceMaps, runtimeConfig, assets, existingReports, project, derivedTrack] = await Promise.all([
     loadIngestRoots(projectRoot),
-    loadDeviceMediaMaps(input.deviceMapPath),
+    loadProjectDeviceMediaMaps(projectRoot, input.deviceMapPath),
     loadRuntimeConfig(projectRoot),
     loadAssets(projectRoot),
     loadAssetReports(projectRoot),
     loadProject(projectRoot),
-    loadManualItinerary(projectRoot),
+    loadProjectDerivedTrack(projectRoot),
   ]);
   const gpxPaths = await resolveProjectGpxPaths({
     projectRoot,
@@ -230,13 +229,11 @@ export async function analyzeWorkspaceProjectMedia(
         prepared,
         projectRoot,
         roots,
-        manualItinerary,
+        derivedTrack,
         gpxPaths,
         gpxMatchToleranceMs: input.gpxMatchToleranceMs,
         budget: input.budget,
         getMlHandle,
-        resolveTimezoneFromLocation: input.resolveTimezoneFromLocation,
-        geocodeLocation: input.geocodeLocation,
         onStageChange: async (stage, detail) => {
           if (stage !== 'audio-analysis') return;
           await writeKairosProgress(progressPath, {
@@ -482,13 +479,11 @@ interface IFinalizePreparedAssetInput {
   prepared: IPreparedAssetAnalysis;
   projectRoot: string;
   roots: IMediaRoot[];
-  manualItinerary: ILoadedManualItinerary;
+  derivedTrack?: IProjectDerivedTrack | null;
   gpxPaths?: string[];
   gpxMatchToleranceMs?: number;
   budget?: ETargetBudget;
   getMlHandle: () => Promise<MlAvailability>;
-  resolveTimezoneFromLocation?: (location: string) => Promise<string | null>;
-  geocodeLocation?: (location: string) => Promise<{ lat: number; lng: number } | null>;
   onStageChange?: (stage: 'audio-analysis', detail?: string) => Promise<void>;
 }
 
@@ -608,11 +603,9 @@ async function finalizePreparedAsset(
   const manualSpatial = await resolveManualSpatialContext({
     asset: input.prepared.asset,
     root,
-    itinerary: input.manualItinerary,
     gpxPaths: input.gpxPaths,
     gpxMatchToleranceMs: input.gpxMatchToleranceMs,
-    resolveTimezoneFromLocation: input.resolveTimezoneFromLocation,
-    geocodeLocation: input.geocodeLocation,
+    derivedTrack: input.derivedTrack,
   });
   const plan = buildAnalysisPlan({
     assetId: input.prepared.asset.id,
@@ -688,20 +681,16 @@ async function finalizePreparedAsset(
 async function resolveManualSpatialContext(input: {
   asset: IKtepAsset;
   root?: IMediaRoot;
-  itinerary: ILoadedManualItinerary;
   gpxPaths?: string[];
   gpxMatchToleranceMs?: number;
-  resolveTimezoneFromLocation?: (location: string) => Promise<string | null>;
-  geocodeLocation?: (location: string) => Promise<{ lat: number; lng: number } | null>;
+  derivedTrack?: IProjectDerivedTrack | null;
 }): Promise<IManualSpatialContext | null> {
   return resolveAssetSpatialContext({
     asset: input.asset,
     root: input.root,
-    itinerary: input.itinerary,
     gpxPaths: input.gpxPaths,
     gpxMatchToleranceMs: input.gpxMatchToleranceMs,
-    resolveTimezoneFromLocation: input.resolveTimezoneFromLocation,
-    geocodeLocation: input.geocodeLocation,
+    derivedTrack: input.derivedTrack,
   });
 }
 
@@ -1227,11 +1216,9 @@ async function finalizePhotoPreparedAsset(
   const manualSpatial = await resolveManualSpatialContext({
     asset: input.prepared.asset,
     root,
-    itinerary: input.manualItinerary,
     gpxPaths: input.gpxPaths,
     gpxMatchToleranceMs: input.gpxMatchToleranceMs,
-    resolveTimezoneFromLocation: input.resolveTimezoneFromLocation,
-    geocodeLocation: input.geocodeLocation,
+    derivedTrack: input.derivedTrack,
   });
   const plan = buildAnalysisPlan({
     assetId: input.prepared.asset.id,
@@ -1846,7 +1833,7 @@ function selectPendingAssets(
 function resolveAssetRootAvailable(
   projectId: string,
   root: IMediaRoot,
-  deviceMaps: Awaited<ReturnType<typeof loadDeviceMediaMaps>>,
+  deviceMaps: IDeviceMediaMapFile,
 ): boolean {
   const projectMap = deviceMaps.projects[projectId];
   if (!projectMap) return Boolean(root.path);

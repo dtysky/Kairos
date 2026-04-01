@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { basename } from 'node:path';
 import type { IDeviceMediaMapFile, IMediaRoot } from '../protocol/schema.js';
-import { saveDeviceProjectMap } from './device-media-maps.js';
+import { loadProjectDeviceMediaMaps, saveProjectDeviceMap } from './device-media-maps.js';
 import { loadIngestRoots } from './project.js';
 import { buildProjectBriefTemplate, normalizeProjectBriefLocalPath, parseProjectBrief } from './project-brief.js';
 import { writeJson } from './writer.js';
@@ -27,6 +27,15 @@ export async function syncProjectBriefMappings(
   );
   const parsed = parseProjectBrief(content);
   const existingRoots = await loadIngestRoots(input.projectRoot);
+  const existingDeviceMaps = await loadProjectDeviceMediaMaps(input.projectRoot, input.deviceMapPath);
+
+  if (parsed.mappings.length === 0) {
+    return {
+      ingestRoots: existingRoots.roots,
+      deviceMaps: existingDeviceMaps,
+      warnings: parsed.warnings,
+    };
+  }
 
   const pathOccurrences = new Map<string, number>();
   const roots = parsed.mappings.map((mapping, index) => {
@@ -47,7 +56,8 @@ export async function syncProjectBriefMappings(
   });
 
   await writeJson(`${input.projectRoot}/config/ingest-roots.json`, { roots });
-  const deviceMaps = await saveDeviceProjectMap(
+  const deviceMaps = await saveProjectDeviceMap(
+    input.projectRoot,
     input.projectId,
     {
       roots: parsed.mappings.map((mapping, index) => ({

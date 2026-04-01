@@ -1,6 +1,7 @@
 import { mkdir, readdir } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 import { z } from 'zod';
+import { EDerivedTrackOriginType } from '../protocol/schema.js';
 import { readJsonOrNull, writeJson } from './writer.js';
 
 export const IProjectGpsPoint = z.object({
@@ -27,6 +28,39 @@ export const IProjectGpsMerged = z.object({
 });
 export type IProjectGpsMerged = z.infer<typeof IProjectGpsMerged>;
 
+export const EProjectDerivedTrackMatchKind = z.enum(['point', 'window']);
+export type EProjectDerivedTrackMatchKind = z.infer<typeof EProjectDerivedTrackMatchKind>;
+
+export const IProjectDerivedTrackEntry = z.object({
+  id: z.string(),
+  originType: EDerivedTrackOriginType,
+  matchKind: EProjectDerivedTrackMatchKind,
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+  confidence: z.number().min(0).max(1),
+  time: z.string().optional(),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
+  timezone: z.string().optional(),
+  sourceAssetId: z.string().optional(),
+  sourcePath: z.string().optional(),
+  matchedItinerarySegmentId: z.string().optional(),
+  locationText: z.string().optional(),
+  transport: z.enum(['drive', 'walk', 'train', 'flight', 'boat', 'mixed']).optional(),
+  rootRef: z.string().optional(),
+  pathPrefix: z.string().optional(),
+  summary: z.string().optional(),
+});
+export type IProjectDerivedTrackEntry = z.infer<typeof IProjectDerivedTrackEntry>;
+
+export const IProjectDerivedTrack = z.object({
+  schemaVersion: z.literal('1.0'),
+  updatedAt: z.string(),
+  entryCount: z.number().int().nonnegative(),
+  entries: z.array(IProjectDerivedTrackEntry),
+});
+export type IProjectDerivedTrack = z.infer<typeof IProjectDerivedTrack>;
+
 export function getProjectGpsRoot(projectRoot: string): string {
   return join(projectRoot, 'gps');
 }
@@ -37,6 +71,10 @@ export function getProjectGpsTracksRoot(projectRoot: string): string {
 
 export function getProjectGpsMergedPath(projectRoot: string): string {
   return join(projectRoot, 'gps/merged.json');
+}
+
+export function getProjectDerivedTrackPath(projectRoot: string): string {
+  return join(projectRoot, 'gps/derived.json');
 }
 
 export async function ensureProjectGpsDirs(projectRoot: string): Promise<void> {
@@ -60,11 +98,26 @@ export async function loadProjectGpsMergedByPath(path: string): Promise<IProject
   return readJsonOrNull(path, IProjectGpsMerged);
 }
 
+export async function loadProjectDerivedTrack(projectRoot: string): Promise<IProjectDerivedTrack | null> {
+  return readJsonOrNull(getProjectDerivedTrackPath(projectRoot), IProjectDerivedTrack);
+}
+
+export async function loadProjectDerivedTrackByPath(path: string): Promise<IProjectDerivedTrack | null> {
+  return readJsonOrNull(path, IProjectDerivedTrack);
+}
+
 export async function writeProjectGpsMerged(
   projectRoot: string,
   merged: IProjectGpsMerged,
 ): Promise<void> {
   await writeJson(getProjectGpsMergedPath(projectRoot), merged);
+}
+
+export async function writeProjectDerivedTrack(
+  projectRoot: string,
+  derivedTrack: IProjectDerivedTrack,
+): Promise<void> {
+  await writeJson(getProjectDerivedTrackPath(projectRoot), derivedTrack);
 }
 
 function isGpxTrackName(name: string): boolean {

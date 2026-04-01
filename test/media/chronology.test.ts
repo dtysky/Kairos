@@ -44,7 +44,7 @@ describe('buildMediaChronology', () => {
     });
   });
 
-  it('uses inferredGps.source to classify manual itinerary evidence', () => {
+  it('uses inferredGps.source to classify derived-track evidence', () => {
     const chronology = buildMediaChronology(
       [{
         id: 'asset-1',
@@ -58,9 +58,10 @@ describe('buildMediaChronology', () => {
         assetId: 'asset-1',
         clipTypeGuess: 'broll',
         densityScore: 0.2,
-        gpsSummary: 'manual-itinerary 2026-03-31 all-day 北京市天安门 @Asia/Shanghai',
+        gpsSummary: 'derived-track manual-itinerary-derived 2026-03-31 07:15:00Z-08:45:00Z 北京市天安门',
         inferredGps: {
-          source: 'manual-itinerary',
+          source: 'derived-track',
+          derivedOriginType: 'manual-itinerary-derived',
           confidence: 0.45,
           lat: 39.909187,
           lng: 116.397463,
@@ -80,8 +81,8 @@ describe('buildMediaChronology', () => {
     );
 
     expect(chronology[0]?.evidence[0]).toEqual({
-      source: 'manual',
-      value: 'manual-itinerary 2026-03-31 all-day 北京市天安门 @Asia/Shanghai',
+      source: 'derived-track',
+      value: 'derived-track manual-itinerary-derived 2026-03-31 07:15:00Z-08:45:00Z 北京市天安门',
       confidence: 0.45,
     });
   });

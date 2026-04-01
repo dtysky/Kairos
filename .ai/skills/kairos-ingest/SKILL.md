@@ -44,8 +44,9 @@ Kairos 现在的项目结构是：
 - 项目内：`config/ingest-roots.json`
   - 保存逻辑 root
   - 包括 `id / label / description / notes / tags`
-- 设备本地：`~/.kairos/device-media-maps.json`
+- 设备本地：`config/device-media-maps.local.json`
   - 保存 `projectId + rootId -> localPath`
+  - 默认落在当前项目内，但属于本机私有映射，不应纳入项目同步
 
 也就是说：
 - 项目可以同步
@@ -57,7 +58,14 @@ Kairos 现在的项目结构是：
 initWorkspaceProject(workspaceRoot: string, projectId: string, name: string): Promise<string>
 resolveWorkspaceProjectRoot(workspaceRoot: string, projectId: string): string
 
-saveDeviceProjectMap(
+syncWorkspaceProjectBrief(
+  workspaceRoot: string,
+  projectId: string,
+  deviceMapPath?: string,
+): Promise<ISyncProjectBriefResult>
+
+saveProjectDeviceMap(
+  projectRoot: string,
   projectId: string,
   projectMap: { roots: { rootId: string; localPath: string }[] },
   filePath?: string,
@@ -67,6 +75,8 @@ ingestWorkspaceProjectMedia(input: {
   workspaceRoot: string;
   projectId: string;
   deviceMapPath?: string;
+  resolveTimezoneFromLocation?: (location: string) => Promise<string | null>;
+  geocodeLocation?: (location: string) => Promise<{ lat: number; lng: number } | null>;
 }): Promise<{
   projectRoot: string;
   scannedRoots: { rootId: string; label?: string; localPath: string; scannedFileCount: number }[];
@@ -90,13 +100,15 @@ importProjectGpxTracks(input: {
 
 - 原始 GPX：`projects/<projectId>/gps/tracks/*.gpx`
 - 标准化 merged cache：`projects/<projectId>/gps/merged.json`
+- 项目级 derived cache：`projects/<projectId>/gps/derived.json`
 
 约定：
 
 - `initWorkspaceProject()` 会初始化 `gps/` 与 `gps/tracks/`
 - 导入 GPX 后，优先调用 `importProjectGpxTracks()` 复制进项目并刷新 merged cache
+- ingest 会刷新 `gps/derived.json`，把 embedded-derived sparse points 与可解析的 `manual-itinerary` 条目统一编译进 `project-derived-track`
 - Analyze 在没有显式 `gpxPaths` 时，会默认读取这个项目级 GPX 资源
-- 这套资源只是第二优先级，不能覆盖素材自身的 embedded GPS 真值
+- `project-derived-track` 是第三优先级空间层，不能覆盖素材自身的 embedded GPS 真值，也不能覆盖项目级外部 GPX
 
 ## 用户输入方式
 
@@ -114,17 +126,26 @@ importProjectGpxTracks(input: {
 说明：无人机，全景和地貌为主
 ```
 
-然后 agent 再把它落成：
+然后 agent 应先写/更新 `config/project-brief.md`，再由系统同步成：
 - `projects/<projectId>/config/ingest-roots.json`
-- `~/.kairos/device-media-maps.json`
+- `projects/<projectId>/config/device-media-maps.local.json`
 
 ## 工作流程
 
 1. 确认或初始化项目
 - 如果项目还不存在，先 `initWorkspaceProject()`
 
-2. 写入逻辑素材源
-- `config/ingest-roots.json`
+2. 写入或更新 `config/project-brief.md`
+- 用自然语言维护路径和说明
+
+3. 从 `project-brief.md` 同步正式配置
+- `syncWorkspaceProjectBrief()`
+- 会更新：
+  - `config/ingest-roots.json`
+  - `config/device-media-maps.local.json`
+- 不要手工重复编辑 `ingest-roots.json`
+
+4. 如有必要，再补充逻辑 root 元数据
 - 每个 root 至少要有：
   - `id`
   - `enabled`
@@ -132,20 +153,22 @@ importProjectGpxTracks(input: {
   - `description`
   - `notes[]`
 
-3. 写入本机路径映射
-- 用 `saveDeviceProjectMap()` 或 `assignDeviceMediaRoot()`
-
-4. 跑导入
+5. 跑导入
+- 默认会优先读取项目内 `config/device-media-maps.local.json`
+- 如果 `project-brief.md` 已有映射，`ingestWorkspaceProjectMedia()` 会先尝试自动同步一次
+- 如果项目希望让 `manual-itinerary` 参与后续空间推断，修改完 `config/manual-itinerary.md` 后也应重新跑一次 ingest，刷新 `gps/derived.json`
 
 ```typescript
 const result = await ingestWorkspaceProjectMedia({
   workspaceRoot,
   projectId,
   deviceMapPath,
+  resolveTimezoneFromLocation,
+  geocodeLocation,
 });
 ```
 
-5. 向用户报告
+6. 向用户报告
 - 扫了几个 root
 - 新增多少素材
 - 跳过多少重复素材
@@ -158,6 +181,7 @@ const result = await ingestWorkspaceProjectMedia({
 |------|------|
 | `store/assets.json` | 所有素材资产，`sourcePath` 为 root-relative 路径 |
 | `media/chronology.json` | 按拍摄时间排序的素材视图 |
+| `gps/derived.json` | 统一后的 `project-derived-track` 缓存 |
 
 ## 注意点
 
@@ -165,4 +189,5 @@ const result = await ingestWorkspaceProjectMedia({
 - 去重键是 `ingestRootId + sourcePath`
 - 根目录说明是弱语义证据，不是强分类
 - 如果某个逻辑 root 在当前设备没有映射，要向用户报告 `missingRoots`
-- `manual-itinerary` 不属于 ingest 输入语义；它是 analyze 阶段在没有 embedded / GPX 命中时的空间 fallback
+- `manual-itinerary` 不是素材路径映射输入，但它现在属于 ingest refresh 的空间编译输入：会被编译进 `gps/derived.json`
+- 如果宿主没有提供 `resolveTimezoneFromLocation / geocodeLocation`，ingest 仍会刷新 embedded-derived 部分，但无法把 `manual-itinerary` 编译成可用坐标

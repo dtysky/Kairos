@@ -18,7 +18,7 @@ export type ESliceType = z.infer<typeof ESliceType>;
 
 export const EEvidenceSource = z.enum([
   'vision', 'asr', 'ocr', 'filename', 'folder',
-  'manual-root-note', 'manual', 'gps', 'pharos',
+  'manual-root-note', 'manual', 'gps', 'derived-track', 'pharos',
 ]);
 export type EEvidenceSource = z.infer<typeof EEvidenceSource>;
 
@@ -127,12 +127,18 @@ export const ITranscriptSegment = z.object({
 });
 export type ITranscriptSegment = z.infer<typeof ITranscriptSegment>;
 
+export const EDerivedTrackOriginType = z.enum(['embedded-derived', 'manual-itinerary-derived']);
+export type EDerivedTrackOriginType = z.infer<typeof EDerivedTrackOriginType>;
+
 export const IInferredGps = z.object({
-  source: z.enum(['embedded', 'gpx', 'manual-itinerary']),
+  source: z.enum(['embedded', 'gpx', 'derived-track']),
   confidence: z.number().min(0).max(1),
   lat: z.number().min(-90).max(90),
   lng: z.number().min(-180).max(180),
+  derivedOriginType: EDerivedTrackOriginType.optional(),
   timezone: z.string().optional(),
+  sourceAssetId: z.string().optional(),
+  sourcePath: z.string().optional(),
   matchedItinerarySegmentId: z.string().optional(),
   locationText: z.string().optional(),
   summary: z.string().optional(),

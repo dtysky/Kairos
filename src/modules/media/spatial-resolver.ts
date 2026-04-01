@@ -1,20 +1,17 @@
 import type { IKtepAsset, IMediaRoot } from '../../protocol/schema.js';
-import type { ILoadedManualItinerary } from '../../store/spatial-context.js';
-import {
-  inferManualItineraryGps,
-  type IManualSpatialContext,
-} from './manual-spatial.js';
+import type { IProjectDerivedTrack } from '../../store/index.js';
+import { type IManualSpatialContext } from './manual-spatial.js';
+import { resolveDerivedTrackSpatialContext } from './derived-track-spatial.js';
 import { resolveEmbeddedGpsContext } from './gps-embedded.js';
 import { resolveGpxSpatialContext } from './gpx-spatial.js';
 
 export interface IResolveAssetSpatialContextInput {
   asset: Pick<IKtepAsset, 'capturedAt' | 'sourcePath' | 'metadata'>;
   root?: Pick<IMediaRoot, 'id' | 'label'>;
-  itinerary: ILoadedManualItinerary;
   gpxPaths?: string[];
   gpxMatchToleranceMs?: number;
-  resolveTimezoneFromLocation?: (location: string) => Promise<string | null>;
-  geocodeLocation?: (location: string) => Promise<{ lat: number; lng: number } | null>;
+  derivedTrack?: IProjectDerivedTrack | null;
+  derivedTrackPointMatchToleranceMs?: number;
 }
 
 export async function resolveAssetSpatialContext(
@@ -30,15 +27,10 @@ export async function resolveAssetSpatialContext(
   });
   if (gpxSpatial) return gpxSpatial;
 
-  if (!input.resolveTimezoneFromLocation || !input.geocodeLocation) {
-    return null;
-  }
-
-  return inferManualItineraryGps({
+  return resolveDerivedTrackSpatialContext({
     asset: input.asset,
     root: input.root,
-    itinerary: input.itinerary,
-    resolveTimezoneFromLocation: input.resolveTimezoneFromLocation,
-    geocodeLocation: input.geocodeLocation,
+    derivedTrack: input.derivedTrack,
+    pointMatchToleranceMs: input.derivedTrackPointMatchToleranceMs,
   });
 }

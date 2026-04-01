@@ -21,6 +21,26 @@ async function createProjectRoot(): Promise<string> {
 }
 
 describe('manual itinerary redesign', () => {
+  it('parses natural language one-line itinerary entries', async () => {
+    const projectRoot = await createProjectRoot();
+    await writeFile(
+      join(projectRoot, 'config/manual-itinerary.md'),
+      '2026.02.17，早上九点左右，开车从新西兰皇后镇出发\n',
+      'utf-8',
+    );
+
+    const result = await loadManualItinerary(projectRoot);
+    expect(result.warnings).toEqual([]);
+    expect(result.segments).toHaveLength(1);
+    expect(result.segments[0]).toEqual(expect.objectContaining({
+      date: '2026-02-17',
+      startLocalTime: '08:15',
+      endLocalTime: '09:45',
+      from: '新西兰皇后镇',
+      transport: 'drive',
+    }));
+  });
+
   it('ignores timezone fields in manual-itinerary markdown', async () => {
     const projectRoot = await createProjectRoot();
     await writeFile(join(projectRoot, 'config/manual-itinerary.md'), [
@@ -66,7 +86,8 @@ describe('manual itinerary redesign', () => {
     });
 
     expect(result?.inferredGps).toEqual(expect.objectContaining({
-      source: 'manual-itinerary',
+      source: 'derived-track',
+      derivedOriginType: 'manual-itinerary-derived',
       lat: 39.909187,
       lng: 116.397463,
       timezone: 'Asia/Shanghai',
