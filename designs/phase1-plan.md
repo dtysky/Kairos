@@ -1,7 +1,15 @@
-# Kairos — Phase 1 实现计划
+# Kairos — Phase 1 实现计划（历史里程碑计划）
 
-> Phase 1 目标：跑通从素材到达芬奇时间线的完整链路
-> 形态：Node.js 库 + Agent Skill，无 GUI
+> 本文档记录的是早期的 Phase 1 里程碑计划，主要用于保留当时的实施顺序、范围切分和历史背景。
+> 它不是当前正式方案的主入口，也不应被理解为当前实现状态清单。
+>
+> 当前正式口径应以 [`current-solution-summary.md`](./current-solution-summary.md)、[`requirements.md`](./requirements.md)、[`architecture.md`](./architecture.md) 与 [`project-structure.md`](./project-structure.md) 为准。
+>
+> 需要特别注意的当前口径：
+> - 正式主链是 `Pharos-first`
+> - 当前实现仍是临时承载版本，只覆盖了正式流程中的多个阶段
+> - `DaVinci color` 是与主链解耦的独立增强链路，不是主链中的固定顺序步骤
+> - 主链消费的是项目当前采用的素材版本；若来自调色 / 转换 / 导出链路，则必须保留媒体创建时间、`create_time`、GPS 等关键元信息
 
 ## 0. 里程碑总览
 
@@ -16,6 +24,12 @@
 | M6 | Skill 集成 | Agent Skill 工作流封装 + 端到端验证 | 1.5 周 | M5 |
 
 **总预计：~12.5 周**（可并行 M2/M3 节约 ~1.5 周 → 实际 ~11 周）
+
+补充说明：
+
+- 这里的里程碑依赖关系反映的是早期实施组织方式
+- 按当前正式口径理解，`M3 调色辅助` 更接近独立增强链路，而不是正式主链中的固定前置步骤
+- `Pharos` 在本计划中仍带有“接口预留”痕迹，但当前正式文档已经把它定义为主流程的主输入来源
 
 ```
 Week:  1    2    3    4    5    6    7    8    9   10   11

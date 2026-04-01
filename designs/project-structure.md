@@ -1,14 +1,31 @@
 # Kairos — 项目数据结构
 
-> 注：本文件是早期数据结构草案。自 `protocol-first` 中间版本起，当前实现与迁移规范应以
+> 当前方案的浓缩入口：[`current-solution-summary.md`](./current-solution-summary.md)。
+> 本文当前同时承担两种职责：顶部给出当前正式结构要点，后文保留较多早期结构与迁移背景，适合作为历史与细节补充阅读。
+>
+> 注：本文后半部分仍保留早期数据结构草案内容；当前正式口径应以本文顶部要点、[`current-solution-summary.md`](./current-solution-summary.md) 与较新的协议 / 存储设计为准。
+> 若需要查看历史推导，可继续参考
 > [2026-03-28--middle-version-protocol-first.md](./2026-03-28--middle-version-protocol-first.md)
 > 和
 > [2026-03-29--m1-protocol-and-store.md](./2026-03-29--m1-protocol-and-store.md)
-> 为准。
+> 。
 
-## 中间版本迁移注记（2026-03-29）
+## 当前正式结构要点
 
-当前已实施的中间版本，与本文早期草案相比有几处关键差异：
+- 正式主链以 `Pharos` 为主输入，兼容没有 `Pharos` 的 fallback 路径
+- 当前实现仍是临时版本，但已经覆盖正式主链中的多个阶段
+- 主链消费的是项目当前采用的素材版本；它可以是原始素材，也可以是独立调色链路产出的版本
+- `DaVinci color` 是与主链解耦的独立增强链路，而不是主链中的固定顺序步骤
+- 只要主链消费的是派生素材版本，该版本就必须保留关键元信息，至少包括：
+  - 媒体创建时间
+  - 文件 `create_time`
+  - GPS / 空间相关元信息
+  - 后续与 `Pharos`、chronology、空间推断对齐所需的其他核心字段
+- 当前正式项目结构围绕 `projects/<projectId>/`、`config/runtime.json`、logical ingest roots、`~/.kairos/device-media-maps.json`、`gps/tracks/*.gpx`、`gps/merged.json` 与项目内 `.tmp/` 展开
+
+## 当前实现与早期草案的差异注记（2026-03-29 之后）
+
+当前实现虽然仍是临时版本，但已经在结构上对齐了多项正式口径；与本文早期草案相比有几处关键差异：
 
 - `projects/<project_id>/`
   - 下一阶段的正式设计建议把项目数据统一收口到 Kairos 工程内的 `projects/` 目录
@@ -36,10 +53,10 @@
   - 例如 `.tmp/style-analysis/{category}/progress.json`
   - 这些内容默认视为可清理的中间产物，不属于 `Canonical Project Store`
 - 素材分析策略
-  - 下一阶段正式设计采用“粗扫优先 + 自动细扫”
+  - 当前正式流程采用“粗扫优先 + 自动细扫”
   - 不是所有素材都默认做镜头级分析，也不是所有素材都会立刻生成 `slice`
 - 脚本编排模型
-  - 下一阶段正式设计采用 `segment + beat + selection`
+  - 当前正式流程采用 `segment + beat + selection`
   - `slice` 是候选时间窗，`selection` 才是最终进入时间线的子区间
   - 字幕默认来自 `beat.text`，而不是从整段 narration 事后切分
 - 段落审查闸门
@@ -52,9 +69,9 @@
 - 本地网页进度页
   - 长时任务通过轮询 `.tmp/.../progress.json` 展示 `第 N / M 步`、`第 N / M 帧`、`剩余时间`
 
-如果要做新设备部署或数据迁移，请优先参考较新的两份设计文档，而不是本文的旧 `cache/` 结构。
+如果要做新设备部署或数据迁移，请优先参考本文顶部要点、`current-solution-summary.md` 与较新的两份设计文档，而不是本文后文保留的旧 `cache/` 结构。
 
-## 运行时项目目录
+## 历史草案：运行时项目目录
 
 每个 Kairos 项目（一次旅行 = 一个项目）在用户指定位置生成如下目录结构：
 

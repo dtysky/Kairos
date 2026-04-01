@@ -1,5 +1,9 @@
 # Kairos — 技术风险与难点
 
+> 注：本文讨论的是“正式流程 + 当前实现”共同面对的风险。
+> 当前正式主链仍以 `Pharos` 为主输入；当前实现仍是临时承载版本；`DaVinci color` 是与主链解耦的独立增强链路。
+> 因此，涉及 Resolve / 调色的风险应优先理解为“独立链路风险”，而不是所有项目主链都会被强制阻塞的单点风险。
+
 ## R1. DaVinci Resolve 集成
 
 **风险等级**：高
@@ -7,12 +11,12 @@
 | 维度 | 说明 |
 |------|------|
 | 问题 | DaVinci Resolve Scripting API 仅提供 Python/Lua 绑定，无原生 Node.js SDK |
-| 影响 | 调色参数推送、时间线导入、PowerGrade 生成均依赖此 API |
+| 影响 | Resolve 侧调色链路、Resolve 时间线导入、PowerGrade 生成 |
 | 难点 | 需要 MCP Server 作为中间层，增加部署复杂度 |
 | 风险 | Resolve API 文档不完善，部分功能未公开；不同版本 API 行为可能不一致；免费版与 Studio 版 API 权限不同 |
 | 缓解 | MCP 优先，子进程调用 Python 作为 fallback |
 | 反馈 | 能否走MCP，如果不能，就走子进程吧 |
-| 调研 | **MCP 方案可行✅**。GitHub 已有成熟项目 [samuelgursky/davinci-resolve-mcp](https://github.com/samuelgursky/davinci-resolve-mcp)（v2.1.0, 2026-03-16），覆盖 Resolve Scripting API 全部 324 个方法（100%），支持 macOS/Windows/Linux。包含 Graph 对象（节点操作、LUT、调色）、Timeline（轨道/片段/导出）、Gallery（PowerGrade/静帧）等 13 个 API 对象类。**前提：需 DaVinci Resolve Studio 版（≥18.5），免费版不支持外部脚本。** 依赖 Python 3.10-3.12。方案：Kairos 作为 MCP Client 直接调用该 Server，无需自己写 Python 桥接层。子进程方案作为 fallback 保留。 |
+| 调研 | **MCP 方案可行✅**。GitHub 已有成熟项目 [samuelgursky/davinci-resolve-mcp](https://github.com/samuelgursky/davinci-resolve-mcp)（v2.1.0, 2026-03-16），覆盖 Resolve Scripting API 全部 324 个方法（100%），支持 macOS/Windows/Linux。包含 Graph 对象（节点操作、LUT、调色）、Timeline（轨道/片段/导出）、Gallery（PowerGrade/静帧）等 13 个 API 对象类。**前提：需 DaVinci Resolve Studio 版（≥18.5），免费版不支持外部脚本。** 依赖 Python 3.10-3.12。方案：Kairos 作为 MCP Client 直接调用该 Server，无需自己写 Python 桥接层。子进程方案作为 fallback 保留。这条风险主要影响 Resolve 相关独立链路与 Resolve 导出路径，不应阻塞无 Resolve / 无调色场景下的正式主链。 |
 
 ## R2. AI 调色参数生成
 
@@ -21,7 +25,7 @@
 | 维度 | 说明 |
 |------|------|
 | 问题 | 目前没有成熟的开源模型能直接从画面生成达芬奇节点参数 |
-| 影响 | 调色模块是核心卖点之一，若 AI 生成质量差则功能形同虚设 |
+| 影响 | 独立调色链路的可用性与调色结果质量 |
 | 难点 | 调色是高度主观的创作行为，"正确"没有客观标准；S-Log3/D-Log M 的色彩科学复杂，错误转换会导致色彩断裂 |
 | 风险 | 可能需要大量实拍素材做微调训练集，数据获取成本高 |
 | 缓解 | 初期采用规则引擎（CST + 基础曲线调整）兜底，AI 仅做风格建议；积累用户反馈后逐步迭代模型 |
@@ -175,6 +179,20 @@
 | 反馈 | 用户明确要求：大疆无人机拍摄的视频里，已经有非常丰富的 GPS 数据 |
 | 调研 | **最小方案可行✅**。当前 ingest 已把 `ffprobe` 提取到的 `rawTags` 落到 `asset.metadata.rawTags`，因此可以先从素材 metadata 中解析同源 GPS；已验证的最小字段集包括 QuickTime/DJI 常见 `location` / `com.apple.quicktime.location.iso6709` 以及标准化 `gpslatitude/gpslongitude`。在此基础上，再回落到现有 GPX 最近点匹配和 `manual-itinerary` fallback，能以最小改动打通 `embedded > GPX > manual-itinerary`。 |
 
+## R14. 派生素材版本的关键元信息保真
+
+**风险等级**：高
+
+| 维度 | 说明 |
+|------|------|
+| 问题 | 调色、转码、导出或其他独立链路产出的派生素材版本，可能丢失媒体创建时间、`create_time`、GPS 等关键元信息 |
+| 影响 | Ingest / Analyze / Chronology / Pharos 对齐 / 空间推断 |
+| 难点 | 不同工具对容器 metadata、EXIF、QuickTime tags 的保留策略不一致；有些链路会重写文件但不自动继承原始字段 |
+| 风险 | 一旦主链消费的是元信息缺失的派生素材版本，chronology 排序、Pharos 匹配、GPS 推断与后续审查都会失真，且原始素材可能已被清理，难以补救 |
+| 缓解 | 将“关键元信息保真”提升为跨链路硬约束；任何进入正式主链的派生素材版本都必须保留至少媒体创建时间、`create_time`、GPS / 空间相关元信息，以及后续匹配所需的其他核心字段；若工具默认不保真，则需要补写 metadata 或增加导出后校验步骤 |
+| 反馈 | 用户明确要求：素材的转换导出一定要保留元信息，包括媒体创建时间、`create_time`、GPS 等等，并写入正式文档 |
+| 调研 | **方案可行✅，且必须作为正式约束执行**。对视频 / 容器类素材，可通过保留或补写容器 metadata（如 `creation_time` / QuickTime location tags）保证时间与空间语义连续；对照片类素材，可通过保留或补写 EXIF 保证 `DateTimeOriginal` / GPS 字段不丢失。设计上更重要的是：Kairos 必须把“派生素材进入主链前的元信息校验”当作正式边界条件，而不是假设外部工具会自动保真。 |
+
 ---
 
 ## 风险矩阵总览
@@ -194,3 +212,4 @@
 | R11 | `manual-itinerary` 从“时间修正”重定义为“GPS 推断” | 中 | Analyze / Script | 中 |
 | R12 | Node 16 下的测试基建兼容性 | 低-中 | 测试 / 验证 | 低 |
 | R13 | 内嵌 GPS / GPX / manual 的来源优先级边界 | 中 | Analyze / Chronology | 中 |
+| R14 | 派生素材版本的关键元信息保真 | 高 | Color / Ingest / Analyze / Chronology | 中 |

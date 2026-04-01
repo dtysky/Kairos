@@ -1,18 +1,20 @@
 # Kairos — 架构设计 v2
 
-> Phase 1：Node.js 库 + Agent Skill，无 GUI
-> 核心链路：素材导入 → 场景检测 → 脚本生成 → 达芬奇时间线
+> 当前实现形态：Node.js 库 + Agent Skill（临时承载版本）
+> 正式主链：Pharos-first 的素材编排流程；DaVinci 调色是与主链解耦的独立增强链路
+>
+> 如需先快速理解当前方案全貌，优先阅读 [`current-solution-summary.md`](./current-solution-summary.md)。
 
 ## 0. 2026-03-31 增补
 
-当前代码实现相对这份 v2 架构稿，已经补上三条需要被视为正式口径的能力：
+当前代码实现相对这份 v2 架构稿，已经覆盖了正式流程中的若干关键阶段：
 
-1. Phase 2 的 `coarse-first analyze` 已把 ASR 纳入视频细扫前链路
+1. `coarse-first analyze` 已把 ASR 纳入视频细扫前链路
    - coarse report / slice 可携带 `transcript / transcriptSegments / speechCoverage`
    - 语音窗口会和视觉窗口一起进入 `interestingWindows`
-2. Phase 3 的脚本召回和 outline 已消费 transcript 证据
+2. 脚本召回和 outline 已消费 transcript 证据
    - transcript 不再只是附属说明，而是候选召回和 beat 写作的正式输入
-3. Phase 4 的字幕已支持双路径
+3. 字幕已支持双路径
    - 旁白路径：来自 `beat.text`
    - 原声路径：来自 `slice.transcriptSegments`
    - `preserveNatSound / muteSource` 为显式覆盖；未标注时允许根据 transcript 匹配度、`speechCoverage`、segment role 自动推论
@@ -20,8 +22,45 @@
    - 项目内外部轨迹统一收口到 `gps/tracks/*.gpx` 与 `gps/merged.json`
    - Analyze 默认遵循 `embedded GPS > project GPX > manual-itinerary`
    - DJI / QuickTime / EXIF 的 embedded GPS 解析已覆盖更宽字段变体，而不再只看最小 key 集
+5. 正式流程与当前实现的关系已经更明确
+   - 正式主链仍以 `Pharos` 为主输入
+   - 当前实现仍是临时承载版本，但已经覆盖主链中的多个阶段
+   - `DaVinci color` 应理解为与主链解耦的独立增强链路，而不是主链中的固定顺序步骤
 
-因此，后续阅读本稿时，应把“语音证据进入细扫”和“原声/旁白双路径字幕”一起视为当前中间版本架构的一部分。
+因此，后续阅读本稿时，应把这些能力理解为“正式流程中已被当前实现覆盖的阶段”，而不是另一套独立的“中间版本架构”。
+
+## 0.1 正式流程与独立链路
+
+```mermaid
+flowchart TD
+  pharos[PharosInput]
+  sourceMedia[SourceMedia]
+  colorChain["DaVinciColorChain (independent)"]
+  adoptedMedia[AdoptedMediaVersion]
+  ingest[Ingest]
+  analyze[Analyze]
+  script[Script]
+  timeline[Timeline]
+  exportFlow[Export]
+
+  sourceMedia --> adoptedMedia
+  sourceMedia --> colorChain
+  colorChain --> adoptedMedia
+  adoptedMedia --> ingest
+  ingest --> analyze
+  pharos --> script
+  analyze --> script
+  script --> timeline
+  timeline --> exportFlow
+```
+
+当前应按下面的关系理解系统：
+
+- `Pharos` 是正式主链的主输入之一
+- 主链消费的是项目当前采用的素材版本，它可以是原始素材，也可以是独立调色链路产出的版本
+- `DaVinci color` 可以独立运行、多次更新，并在需要时产出供主链消费的素材版本
+- 若主链消费的是派生素材版本，则该版本必须保留媒体创建时间、`create_time`、GPS 等关键元信息，避免破坏 chronology、Pharos 对齐与空间推断
+- 无 `Pharos` 时允许走兼容路径，但这是 fallback，不改变 `Pharos-first` 的正式定义
 
 ## 1. 系统全景
 
@@ -109,6 +148,11 @@ src/modules/ingest/
   → CLIP 提取代理文件视觉特征 → 向量聚类 → LLM 生成场景描述
   → 写入 media/index.json + media/scenes.json
 ```
+
+补充口径：
+
+- Ingest 读取的是项目当前采用的素材版本，而不是强制要求原始素材始终在线
+- 如果输入来自独立调色/转换链路，该链路需要先保证关键元信息被保留下来
 
 #### 2.2 Color — 调色辅助
 
@@ -204,6 +248,11 @@ src/modules/script/
   → 存储 script/current.json + 版本快照
 ```
 
+补充口径：
+
+- 正式脚本流程以 `Pharos` 为主输入
+- 无 `Pharos` 时，当前实现允许基于素材分析结果、brief 与行程信息走兼容路径
+
 #### 2.4 Cut — 粗剪与剪辑辅助
 
 ```
@@ -231,7 +280,7 @@ src/modules/cut/
 
 ### Layer 3 — 交互层 (`src/skill/`)
 
-Phase 1 的用户交互通过 Agent Skill 实现。
+当前实现的用户交互通过 Agent Skill 实现。
 
 ```
 src/skill/
@@ -248,14 +297,14 @@ src/skill/
 
 ## 3. AI 能力架构
 
-Phase 1 的 AI 能力分两层：**LLM 由 Agent 宿主提供，本地小模型由 Kairos 自行管理**。
+当前实现的 AI 能力分两层：**LLM 由 Agent 宿主提供，本地小模型由 Kairos 自行管理**。
 
 ### 3.1 设计原则
 
-- **不自行对接云端大模型**：Phase 1 是 Agent Skill，LLM 能力天然由宿主提供（用户的对话本身就在 LLM 上下文中）
+- **不自行对接云端大模型**：当前实现基于 Agent Skill 运行，LLM 能力天然由宿主提供（用户的对话本身就在 LLM 上下文中）
 - **Kairos Core 只管本地小模型**：CLIP/BLIP（视觉特征提取）、Whisper（语音识别），这些需要 Kairos 自行加载和推理
 - **Skill 层负责 LLM 编排**：脚本生成、场景总结、精剪建议等需要大模型的任务，由 Skill 层通过 prompt 模板 + 结构化数据交给 Agent LLM 处理
-- **Phase 2 再考虑独立 AI Provider**：迁移到 Tauri 桌面应用后，脱离 Agent 环境，届时再引入多 Provider 架构
+- **后续再考虑独立 AI Provider**：如果迁移到 Tauri 桌面应用并脱离 Agent 环境，再引入多 Provider 架构
 
 ### 3.2 LLM 能力（Agent 宿主）
 
@@ -320,7 +369,7 @@ interface TranscriptSegment {
 
 ### 3.4 Phase 2 演进
 
-迁移到 Tauri 后，Kairos 脱离 Agent 环境，需要独立的 LLM 对接：
+若后续迁移到 Tauri，Kairos 脱离 Agent 环境后需要独立的 LLM 对接：
 - 引入统一 AI Provider 接口（OpenAI / Anthropic / Ollama）
 - 本地小模型层不变，直接复用
 - Skill 层的 prompt 模板迁移为 AI Provider 的调用参数
@@ -486,7 +535,7 @@ interface GradePlan {
 
 ## 6. 技术栈总结
 
-### Phase 1 — Node.js 库 + Agent Skill
+### 当前实现 — Node.js 库 + Agent Skill
 
 | 层级 | 选型 | 理由 |
 |------|------|------|
@@ -504,7 +553,7 @@ interface GradePlan {
 | 测试 | **vitest** | 快、TS 原生支持 |
 | 日志 | **pino** | 结构化、高性能 |
 
-### 后续迁移 — Tauri 桌面应用
+### 后续演进 — Tauri 桌面应用
 
 - 核心库不变，Tauri sidecar 嵌入 Node.js
 - React 前端调用核心库的 API
@@ -559,7 +608,7 @@ kairos/
 
 ### D1. JSON 优先，SQLite 备选
 
-Phase 1 使用 JSON 文件存储所有项目数据。原因：
+当前实现使用 JSON 文件存储所有项目数据。原因：
 - 人类可读，调试友好
 - 可纳入 Git 版本管理
 - 1000 条素材以内性能足够（~3MB，解析 <50ms）
@@ -567,11 +616,11 @@ Phase 1 使用 JSON 文件存储所有项目数据。原因：
 
 ### D2. 本地小模型 + Agent LLM 双层 AI
 
-Phase 1 不自行对接任何云端大模型：
+当前实现不自行对接任何云端大模型：
 - **LLM 能力由 Agent 宿主提供**：Skill 层通过 prompt 模板 + 结构化数据交换驱动 LLM，无需引入 openai/anthropic SDK
 - **本地小模型用 ONNX Runtime**：CLIP 推理极轻量（单张图片 <100ms），直接加载模型，不走 HTTP
 - **Whisper 用 whisper.cpp**：child_process 调用，无需额外进程管理
-- Phase 2 迁移 Tauri 后再引入独立 AI Provider 架构
+- 后续若迁移 Tauri，再引入独立 AI Provider 架构
 
 ### D3. MCP 优先，子进程 Fallback
 
