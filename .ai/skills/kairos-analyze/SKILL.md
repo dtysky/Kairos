@@ -17,6 +17,7 @@ description: >-
 - 自动判断哪些素材值得细扫
 - 只对重点素材生成 `store/slices.json`
 - 更新 `media/chronology.json`
+- 在有空间线索时，为 coarse report 挂上 GPS / 地点上下文
 
 ## 和风格分析的区别
 
@@ -40,8 +41,12 @@ analyzeWorkspaceProjectMedia(input: {
   projectId: string;
   assetIds?: string[];
   deviceMapPath?: string;
+  gpxPaths?: string[];
+  gpxMatchToleranceMs?: number;
   budget?: 'coarse' | 'standard' | 'deep';
   progressPath?: string;
+  resolveTimezoneFromLocation?: (location: string) => Promise<string | null>;
+  geocodeLocation?: (location: string) => Promise<{ lat: number; lng: number } | null>;
 }): Promise<{
   projectRoot: string;
   analyzedAssetIds: string[];
@@ -67,6 +72,29 @@ sliceInterestingWindows(...)
 buildAssetCoarseReport(...)
 buildMediaChronology(...)
 ```
+
+## 空间上下文优先级
+
+Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
+
+1. `embedded GPS`
+2. `project GPX`
+3. `manual-itinerary`
+4. 无空间结果
+
+规则：
+
+- 如果素材自身已经带有 GPS，优先使用素材同源 GPS 真值
+- 对 DJI 视频，优先检查容器/流 metadata 里的内嵌 GPS；它比外部 GPX 更优先
+- 当前内嵌 GPS 解析已覆盖更宽的 QuickTime / EXIF 变体：`location`、`location-eng`、`com.apple.quicktime.location.iso6709`、`com.apple.quicktime.location_iso6709`、`GPSLatitude/GPSLongitude(+Ref)` 以及简单 rational / DMS 风格坐标
+- 如果没有可用内嵌 GPS，Analyze 会先看显式传入的 `gpxPaths`
+- 如果调用方没有显式传入 `gpxPaths`，Analyze 默认读取项目内 `gps/merged.json`；若 merged cache 不存在，再回落到 `gps/tracks/*.gpx`
+- `manual-itinerary` 只在**没有可用内嵌 GPS** 且 **没有匹配到 GPX** 时，作为低置信度 fallback
+- 当存在内嵌 GPS 时，`manual-itinerary` 和 GPX 都不能覆盖它
+- 当前代码入口仍允许通过 `gpxPaths` 显式注入 1..N 个 GPX 文件路径，用于覆盖默认发现
+- 默认 GPX 命中策略是：从带 `time` 的 `trkpt / rtept / wpt` 中，按 `capturedAt` 选择容差内最近点
+- `manual-itinerary` 不负责修正素材拍摄时间；素材时间仍以 `create_time(UTC)` 为主
+- 空间推断结果应落在 coarse report，而不是回写素材真值层
 
 ## 默认分析策略
 
@@ -100,7 +128,7 @@ buildMediaChronology(...)
 
 ### 3. 自动细扫决策
 
-系统根据视觉粗扫 + 音频分析的合并信号自动决定：
+系统根据视觉粗扫 + 音频分析 + 可用空间线索的合并信号自动决定：
 - `durationMs`
 - `densityScore`
 - `interestingWindows`
@@ -164,6 +192,8 @@ const localPath = resolveAssetLocalPath(projectId, asset, roots, deviceMaps);
 - `summary`
 - `labels`
 - `placeHints`
+- `gpsSummary`
+- `inferredGps`
 - `transcript`
 - `transcriptSegments`
 - `speechCoverage`
@@ -216,9 +246,13 @@ scripts/kairos-progress.sh
   - `full/windowed` 两种 slice 产出
   - chronology 刷新
   - 视频内语音的 ASR -> speech windows -> transcript/slice 贯通
+  - `embedded GPS > project GPX > manual-itinerary` 空间优先级
+  - 更宽的 DJI / QuickTime / EXIF embedded GPS 解析
+  - 项目级 `gps/tracks/*.gpx` + `gps/merged.json` 默认发现
+  - `manual-itinerary -> inferredGps` 的 fallback 通路（宿主注入 resolver 时）
 
 - 当前还没实现到最深：
-  - GPS/人工行程参与 coarse report
+  - merged cache 的自动失效检测 / 地图 UI / 可视化轨迹审阅
   - 独立音频资产的 analyze 分支
   - OCR 更深地参与 coarse/fine 召回
   - 已有旧 report / slice 的 transcript backfill

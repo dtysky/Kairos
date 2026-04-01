@@ -95,6 +95,7 @@ src/
 - `IKtepAsset` — 资产
 - `IKtepSlice` — 切片
 - `ITranscriptSegment` — 切片/素材的语音转写片段
+- `IInferredGps` — 分析层推断出来的单条 GPS 结果
 - `IKtepEvidence` — 证据
 - `IKtepScriptAction` — 脚本行为
 - `IKtepScriptSelection` — 从 `slice` 中真正选中的子区间
@@ -111,6 +112,11 @@ src/
 - `ICaptureTime` — 拍摄时间信息
 - `IStoreManifest` — 存储清单
 - `IRuntimeConfig` — 项目级运行时配置
+
+当前补充口径：
+
+- `IMediaRoot` 不再包含 `defaultTimezone`；素材时间统一以 `create_time(UTC)` 为主来源
+- `IAssetCoarseReport` 允许挂载 `inferredGps`，用于保存最终采用的结构化空间结果；当前来源优先级为 `embedded GPS > GPX > manual-itinerary`
 
 ## 校验器
 

@@ -107,13 +107,21 @@ export {
   type IMergeResult,
 } from './incremental.js';
 export {
-  getPathTimezonesPath,
   getManualItineraryPath,
-  loadPathTimezones,
   loadManualItinerary,
-  matchPathTimezoneOverride,
-  type IPathTimezoneOverride,
-  type ILoadedPathTimezones,
   type IManualItinerarySegment,
   type ILoadedManualItinerary,
 } from './spatial-context.js';
+export {
+  getProjectGpsRoot,
+  getProjectGpsTracksRoot,
+  getProjectGpsMergedPath,
+  ensureProjectGpsDirs,
+  listProjectGpsTrackPaths,
+  loadProjectGpsMerged,
+  loadProjectGpsMergedByPath,
+  writeProjectGpsMerged,
+  type IProjectGpsPoint,
+  type IProjectGpsTrackSummary,
+  type IProjectGpsMerged,
+} from './gps.js';

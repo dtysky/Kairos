@@ -67,10 +67,11 @@ function buildChronologyEvidence(
 ): IKtepEvidence[] {
   const evidence: IKtepEvidence[] = [];
   if (report?.gpsSummary) {
+    const gpsEvidence = resolveGpsEvidence(report);
     evidence.push({
-      source: report.gpsSummary.startsWith('manual-itinerary') ? 'manual' : 'gps',
+      source: gpsEvidence.source,
       value: report.gpsSummary,
-      confidence: report.gpsSummary.startsWith('manual-itinerary') ? 0.45 : 0.7,
+      confidence: gpsEvidence.confidence,
     });
   }
   if (report?.summary) {
@@ -111,6 +112,33 @@ function buildChronologyEvidence(
     });
   }
   return dedupeEvidence(evidence);
+}
+
+function resolveGpsEvidence(
+  report: IAssetCoarseReport,
+): { source: 'manual' | 'gps'; confidence: number } {
+  const inferredSource = report.inferredGps?.source;
+  if (inferredSource === 'manual-itinerary') {
+    return {
+      source: 'manual',
+      confidence: 0.45,
+    };
+  }
+  if (inferredSource === 'embedded') {
+    return {
+      source: 'gps',
+      confidence: 0.95,
+    };
+  }
+  if (inferredSource === 'gpx') {
+    return {
+      source: 'gps',
+      confidence: 0.7,
+    };
+  }
+  return report.gpsSummary?.startsWith('manual-itinerary')
+    ? { source: 'manual', confidence: 0.45 }
+    : { source: 'gps', confidence: 0.7 };
 }
 
 function compareChronology(a: IMediaChronology, b: IMediaChronology): number {

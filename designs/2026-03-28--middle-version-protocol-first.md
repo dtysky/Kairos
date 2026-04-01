@@ -628,7 +628,6 @@ interface MediaRootDefinition {
   description?: string;
   notes?: string[];
   tags?: string[];
-  defaultTimezone?: string;
 }
 ```
 
@@ -638,7 +637,7 @@ interface MediaRootDefinition {
 - 项目内保存的是逻辑素材源定义，而不是本机绝对路径
 - `description` / `notes` 作为目录级弱语义注解进入分析上下文
 - `tags` 用于规则筛选和脚本召回
-- `defaultTimezone` 用于元信息缺失时的时间归一化
+- 素材拍摄时间不再依赖 root 级 timezone 解释，统一以 `create_time(UTC)` 为主来源
 
 自然语言输入建议：
 
@@ -891,6 +890,16 @@ interface AssetCoarseReport {
   clipTypeGuess: 'drive' | 'talking-head' | 'aerial' | 'timelapse' | 'broll' | 'unknown';
   densityScore: number;
   gpsSummary?: string;
+  inferredGps?: {
+    source: 'embedded' | 'gpx' | 'manual-itinerary';
+    confidence: number;
+    lat: number;
+    lng: number;
+    timezone?: string;
+    matchedItinerarySegmentId?: string;
+    locationText?: string;
+    summary?: string;
+  };
   summary?: string;
   labels: string[];
   placeHints: string[];
@@ -1814,7 +1823,6 @@ Core 侧只依赖这个稳定协议；服务端内部仍可继续沿用 `jianyin
       "enabled": true,
       "category": "camera",
       "priority": 10,
-      "defaultTimezone": "Pacific/Auckland",
       "description": "主机位，城市、步行、风光和部分机内口播混合",
       "notes": [
         "北岛前半段主机位",
@@ -1828,7 +1836,6 @@ Core 侧只依赖这个稳定协议；服务端内部仍可继续沿用 `jianyin
       "enabled": true,
       "category": "drone",
       "priority": 20,
-      "defaultTimezone": "Pacific/Auckland",
       "description": "无人机，全景、海岸线、瀑布、地热、公路全景为主",
       "notes": [
         "优先关注海岸线、瀑布、地热、公路全景"

@@ -6,15 +6,12 @@ import {
   loadAssetReports,
   loadDeviceMediaMaps,
   loadIngestRoots,
-  loadPathTimezones,
   loadRuntimeConfig,
   loadChronology,
   loadAssets,
-  matchPathTimezoneOverride,
   resolveWorkspaceProjectRoot,
   touchProjectUpdatedAt,
   writeChronology,
-  type IPathTimezoneOverride,
   type IMergeResult,
 } from '../../store/index.js';
 import { resolveCaptureTime } from './capture-time.js';
@@ -48,11 +45,10 @@ export async function ingestWorkspaceProjectMedia(
   input: IIngestWorkspaceProjectInput,
 ): Promise<IIngestWorkspaceProjectResult> {
   const projectRoot = resolveWorkspaceProjectRoot(input.workspaceRoot, input.projectId);
-  const [{ roots }, deviceMaps, runtimeConfig, pathTimezones] = await Promise.all([
+  const [{ roots }, deviceMaps, runtimeConfig] = await Promise.all([
     loadIngestRoots(projectRoot),
     loadDeviceMediaMaps(input.deviceMapPath),
     loadRuntimeConfig(projectRoot),
-    loadPathTimezones(projectRoot),
   ]);
 
   const resolution = resolveMediaRootsForDevice(input.projectId, roots, deviceMaps);
@@ -77,7 +73,6 @@ export async function ingestWorkspaceProjectMedia(
         resolvedRoot.root,
         resolvedRoot.localPath,
         runtimeConfig,
-        pathTimezones.overrides,
       ));
     }
   }
@@ -102,22 +97,10 @@ async function buildAssetFromScan(
   root: IMediaRoot,
   localRootPath: string,
   tools: IMediaToolConfig,
-  pathTimezones: IPathTimezoneOverride[],
 ): Promise<IKtepAsset> {
   const sourcePath = toPortableRelativePath(localRootPath, localFilePath);
-  const timezoneOverride = matchPathTimezoneOverride({
-    overrides: pathTimezones,
-    rootId: root.id,
-    rootLabel: root.label,
-    sourcePath,
-  });
-  const effectiveTimezone = timezoneOverride?.timezone ?? root.defaultTimezone;
   const probeResult = await safeProbe(localFilePath, tools);
-  const capture = await resolveCaptureTime(
-    localFilePath,
-    probeResult,
-    effectiveTimezone,
-  );
+  const capture = await resolveCaptureTime(localFilePath, probeResult);
 
   return {
     id: randomUUID(),
@@ -139,10 +122,6 @@ async function buildAssetFromScan(
       rootDescription: root.description,
       rootNotes: root.notes,
       captureOriginalValue: capture.originalValue,
-      captureOriginalTimezone: capture.originalTimezone,
-      effectiveTimezone,
-      effectiveTimezoneSource: timezoneOverride ? 'path-timezone' : root.defaultTimezone ? 'root-default-timezone' : undefined,
-      effectiveTimezonePathPrefix: timezoneOverride?.pathPrefix,
       hasAudioStream: probeResult.hasAudioStream,
       audioStreamCount: probeResult.audioStreamCount,
       rawTags: probeResult.rawTags,

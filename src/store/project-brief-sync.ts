@@ -43,7 +43,6 @@ export async function syncProjectBriefMappings(
       tags: existing?.tags ?? [],
       category: existing?.category,
       priority: existing?.priority ?? (index + 1),
-      defaultTimezone: existing?.defaultTimezone,
     } satisfies IMediaRoot;
   });
 

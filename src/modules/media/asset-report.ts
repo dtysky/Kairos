@@ -1,5 +1,6 @@
 import type {
   IAssetCoarseReport,
+  IInferredGps,
   IKtepAsset,
   IMediaAnalysisPlan,
   EClipType,
@@ -13,6 +14,7 @@ export interface IBuildAssetCoarseReportInput {
   plan: IMediaAnalysisPlan;
   clipTypeGuess?: EClipType;
   gpsSummary?: string;
+  inferredGps?: IInferredGps;
   summary?: string;
   transcript?: string;
   transcriptSegments?: ITranscriptSegment[];
@@ -39,6 +41,7 @@ export function buildAssetCoarseReport(
     clipTypeGuess: input.clipTypeGuess ?? input.plan.clipType,
     densityScore: input.plan.densityScore,
     gpsSummary: input.gpsSummary,
+    inferredGps: input.inferredGps,
     summary: input.summary,
     transcript: input.transcript?.trim() || undefined,
     transcriptSegments: input.transcriptSegments?.filter(segment => segment.text.trim().length > 0),

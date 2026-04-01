@@ -89,7 +89,6 @@ export const IMediaRoot = z.object({
   description: z.string().optional(),
   notes: z.array(z.string()).optional(),
   tags: z.array(z.string()).optional(),
-  defaultTimezone: z.string().optional(),
 });
 export type IMediaRoot = z.infer<typeof IMediaRoot>;
 
@@ -127,6 +126,18 @@ export const ITranscriptSegment = z.object({
   text: z.string(),
 });
 export type ITranscriptSegment = z.infer<typeof ITranscriptSegment>;
+
+export const IInferredGps = z.object({
+  source: z.enum(['embedded', 'gpx', 'manual-itinerary']),
+  confidence: z.number().min(0).max(1),
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+  timezone: z.string().optional(),
+  matchedItinerarySegmentId: z.string().optional(),
+  locationText: z.string().optional(),
+  summary: z.string().optional(),
+});
+export type IInferredGps = z.infer<typeof IInferredGps>;
 
 export const IKtepAsset = z.object({
   id: z.string(),
@@ -405,6 +416,7 @@ export const IAssetCoarseReport = z.object({
   clipTypeGuess: EClipType,
   densityScore: z.number().min(0).max(1),
   gpsSummary: z.string().optional(),
+  inferredGps: IInferredGps.optional(),
   summary: z.string().optional(),
   transcript: z.string().optional(),
   transcriptSegments: z.array(ITranscriptSegment).optional(),

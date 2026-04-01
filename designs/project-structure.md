@@ -21,6 +21,14 @@
 - `config/styles/`
   - 风格档案不再只是一份 `style/profile.json`
   - 当前使用 `config/styles/{category}.md + config/styles/catalog.json`
+- `config/manual-itinerary.md` 与 `analysis/asset-reports/`
+  - `manual-itinerary` 当前只负责推断 GPS / 空间上下文，不再承担 timezone 输入语义
+  - 最终空间来源优先级为 `embedded GPS > project GPX > manual-itinerary`
+  - 结构化结果落在 `IAssetCoarseReport.inferredGps`，而不是写回素材主数据
+- `gps/tracks/` 与 `gps/merged.json`
+  - 项目级外部轨迹资源现统一收口到 `gps/tracks/*.gpx`
+  - 标准化后的缓存写到 `gps/merged.json`
+  - Analyze 在没有显式 `gpxPaths` 时默认读取这里，而不是要求每次调用临时传路径
 - `analysis/reference-transcripts/` 与 `analysis/style-references/`
   - 风格分析和参考视频分析会先落地单视频报告，再综合出一个正式风格分类
 - `.tmp/`
@@ -59,9 +67,8 @@
 │   └── scenes.json            # 场景分组：sceneId → Scene 映射
 │
 ├── gps/
-│   ├── tracks/                # 原始 GPX 文件（多源：Pharos 手机端/DJI 无人机 SRT）
-│   ├── merged.json            # 合并去重后的统一轨迹
-│   └── geocode-cache.json     # 逆地理编码缓存
+│   ├── tracks/                # 原始 GPX 文件（项目级外部轨迹资源）
+│   └── merged.json            # 归一化后的统一轨迹点缓存
 │
 ├── style/
 │   └── profile.json           # 风格档案（叙事结构 + 旁白风格）

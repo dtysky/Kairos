@@ -30,6 +30,9 @@ Kairos 现在的项目结构是：
 └── projects/
     └── <projectId>/
         ├── config/
+        ├── gps/
+        │   ├── tracks/
+        │   └── merged.json
         ├── store/
         ├── analysis/
         ├── media/
@@ -71,7 +74,29 @@ ingestWorkspaceProjectMedia(input: {
   merge: IMergeResult;
   chronologyCount: number;
 }>
+
+importProjectGpxTracks(input: {
+  projectRoot: string;
+  sourcePaths: string[];
+}): Promise<{
+  trackPaths: string[];
+  merged: IProjectGpsMerged;
+}>
 ```
+
+## 项目级 GPS 资源
+
+如果用户提供外部 GPX，不要把它当成一次性的临时路径约定。当前项目内的正式落点是：
+
+- 原始 GPX：`projects/<projectId>/gps/tracks/*.gpx`
+- 标准化 merged cache：`projects/<projectId>/gps/merged.json`
+
+约定：
+
+- `initWorkspaceProject()` 会初始化 `gps/` 与 `gps/tracks/`
+- 导入 GPX 后，优先调用 `importProjectGpxTracks()` 复制进项目并刷新 merged cache
+- Analyze 在没有显式 `gpxPaths` 时，会默认读取这个项目级 GPX 资源
+- 这套资源只是第二优先级，不能覆盖素材自身的 embedded GPS 真值
 
 ## 用户输入方式
 
@@ -140,3 +165,4 @@ const result = await ingestWorkspaceProjectMedia({
 - 去重键是 `ingestRootId + sourcePath`
 - 根目录说明是弱语义证据，不是强分类
 - 如果某个逻辑 root 在当前设备没有映射，要向用户报告 `missingRoots`
+- `manual-itinerary` 不属于 ingest 输入语义；它是 analyze 阶段在没有 embedded / GPX 命中时的空间 fallback

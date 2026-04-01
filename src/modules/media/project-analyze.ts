@@ -22,10 +22,8 @@ import {
   loadDeviceMediaMaps,
   loadIngestRoots,
   loadManualItinerary,
-  loadPathTimezones,
   loadProject,
   loadRuntimeConfig,
-  matchPathTimezoneOverride,
   resolveWorkspaceProjectRoot,
   getProjectProgressPath,
   touchProjectUpdatedAt,
@@ -33,7 +31,6 @@ import {
   writeChronology,
   writeAssetReport,
   type ILoadedManualItinerary,
-  type IPathTimezoneOverride,
 } from '../../store/index.js';
 import { buildAssetCoarseReport } from './asset-report.js';
 import { buildMediaChronology } from './chronology.js';
@@ -59,7 +56,9 @@ import {
 } from './sampler.js';
 import { detectShots, type IShotBoundary } from './shot-detect.js';
 import { sliceInterestingWindows, slicePhoto, sliceVideo } from './slicer.js';
-import { formatDateInTimeZone } from './timezone-utils.js';
+import { resolveProjectGpxPaths } from './project-gps.js';
+import { resolveAssetSpatialContext } from './spatial-resolver.js';
+import type { IManualSpatialContext } from './manual-spatial.js';
 import { transcribe } from './transcriber.js';
 
 export interface IAnalyzeWorkspaceProjectInput {
@@ -67,8 +66,12 @@ export interface IAnalyzeWorkspaceProjectInput {
   projectId: string;
   assetIds?: string[];
   deviceMapPath?: string;
+  gpxPaths?: string[];
+  gpxMatchToleranceMs?: number;
   budget?: ETargetBudget;
   progressPath?: string;
+  resolveTimezoneFromLocation?: (location: string) => Promise<string | null>;
+  geocodeLocation?: (location: string) => Promise<{ lat: number; lng: number } | null>;
 }
 
 export interface IAnalyzeWorkspaceProjectResult {
@@ -95,7 +98,7 @@ export async function analyzeWorkspaceProjectMedia(
   const projectRoot = resolveWorkspaceProjectRoot(input.workspaceRoot, input.projectId);
   const progressPath = input.progressPath ?? getProjectProgressPath(projectRoot, 'media-analyze');
   const startedAtMs = Date.now();
-  const [{ roots }, deviceMaps, runtimeConfig, assets, existingReports, project, manualItinerary, pathTimezones] = await Promise.all([
+  const [{ roots }, deviceMaps, runtimeConfig, assets, existingReports, project, manualItinerary] = await Promise.all([
     loadIngestRoots(projectRoot),
     loadDeviceMediaMaps(input.deviceMapPath),
     loadRuntimeConfig(projectRoot),
@@ -103,8 +106,11 @@ export async function analyzeWorkspaceProjectMedia(
     loadAssetReports(projectRoot),
     loadProject(projectRoot),
     loadManualItinerary(projectRoot),
-    loadPathTimezones(projectRoot),
   ]);
+  const gpxPaths = await resolveProjectGpxPaths({
+    projectRoot,
+    gpxPaths: input.gpxPaths,
+  });
 
   const pendingAssets = selectPendingAssets(assets, existingReports, input.assetIds);
   const analyzedAssetIds: string[] = [];
@@ -225,9 +231,12 @@ export async function analyzeWorkspaceProjectMedia(
         projectRoot,
         roots,
         manualItinerary,
-        pathTimezones: pathTimezones.overrides,
+        gpxPaths,
+        gpxMatchToleranceMs: input.gpxMatchToleranceMs,
         budget: input.budget,
         getMlHandle,
+        resolveTimezoneFromLocation: input.resolveTimezoneFromLocation,
+        geocodeLocation: input.geocodeLocation,
         onStageChange: async (stage, detail) => {
           if (stage !== 'audio-analysis') return;
           await writeKairosProgress(progressPath, {
@@ -474,9 +483,12 @@ interface IFinalizePreparedAssetInput {
   projectRoot: string;
   roots: IMediaRoot[];
   manualItinerary: ILoadedManualItinerary;
-  pathTimezones: IPathTimezoneOverride[];
+  gpxPaths?: string[];
+  gpxMatchToleranceMs?: number;
   budget?: ETargetBudget;
   getMlHandle: () => Promise<MlAvailability>;
+  resolveTimezoneFromLocation?: (location: string) => Promise<string | null>;
+  geocodeLocation?: (location: string) => Promise<{ lat: number; lng: number } | null>;
   onStageChange?: (stage: 'audio-analysis', detail?: string) => Promise<void>;
 }
 
@@ -504,13 +516,6 @@ interface ITranscriptContext {
   evidence: IKtepEvidence[];
   speechCoverage: number;
   speechWindows: IInterestingWindow[];
-}
-
-interface IManualSpatialContext {
-  gpsSummary?: string;
-  placeHints: string[];
-  transport?: 'drive' | 'walk' | 'train' | 'flight' | 'boat' | 'mixed';
-  decisionReasons: string[];
 }
 
 async function prepareAssetVisualCoarse(
@@ -600,11 +605,14 @@ async function finalizePreparedAsset(
     })),
   });
   const root = input.roots.find(item => item.id === input.prepared.asset.ingestRootId);
-  const manualSpatial = resolveManualSpatialContext({
+  const manualSpatial = await resolveManualSpatialContext({
     asset: input.prepared.asset,
     root,
     itinerary: input.manualItinerary,
-    pathTimezones: input.pathTimezones,
+    gpxPaths: input.gpxPaths,
+    gpxMatchToleranceMs: input.gpxMatchToleranceMs,
+    resolveTimezoneFromLocation: input.resolveTimezoneFromLocation,
+    geocodeLocation: input.geocodeLocation,
   });
   const plan = buildAnalysisPlan({
     assetId: input.prepared.asset.id,
@@ -636,6 +644,7 @@ async function finalizePreparedAsset(
     plan: effectivePlan,
     clipTypeGuess: decision.clipType,
     gpsSummary: manualSpatial?.gpsSummary,
+    inferredGps: manualSpatial?.inferredGps,
     summary: input.prepared.visualSummary?.description,
     transcript: transcript?.transcript,
     transcriptSegments: transcript?.segments,
@@ -676,190 +685,24 @@ async function finalizePreparedAsset(
   };
 }
 
-function resolveManualSpatialContext(input: {
+async function resolveManualSpatialContext(input: {
   asset: IKtepAsset;
   root?: IMediaRoot;
   itinerary: ILoadedManualItinerary;
-  pathTimezones: IPathTimezoneOverride[];
-}): IManualSpatialContext | null {
-  const matched = pickManualItinerarySegment(input);
-  if (!matched) return null;
-
-  const placeHints = dedupeStrings([
-    matched.segment.location,
-    ...splitManualPlaceHints(matched.segment.location),
-    matched.segment.from,
-    matched.segment.to,
-    ...(matched.segment.via ?? []),
-  ]);
-
-  return {
-    gpsSummary: buildManualSpatialSummary(matched.segment, matched.timezone),
-    placeHints,
-    transport: matched.segment.transport,
-    decisionReasons: dedupeStrings([
-      'manual-itinerary-match',
-      matched.segment.transport ? `manual-transport:${matched.segment.transport}` : undefined,
-      placeHints.length > 0 ? `manual-spatial-hints:${placeHints.length}` : undefined,
-    ]),
-  };
-}
-
-function pickManualItinerarySegment(input: {
-  asset: IKtepAsset;
-  root?: IMediaRoot;
-  itinerary: ILoadedManualItinerary;
-  pathTimezones: IPathTimezoneOverride[];
-}): { segment: ILoadedManualItinerary['segments'][number]; timezone: string } | null {
-  if (!input.asset.capturedAt || input.itinerary.segments.length === 0) return null;
-
-  const assetTimezone = resolveAssetSpatialTimezone(input.asset, input.root, input.pathTimezones);
-  let best: { segment: ILoadedManualItinerary['segments'][number]; timezone: string } | null = null;
-  let bestScore = Number.NEGATIVE_INFINITY;
-
-  for (const segment of input.itinerary.segments) {
-    if (!matchesManualItineraryRoot(segment.rootRef, input.root)) continue;
-    if (!matchesManualItineraryPath(segment.pathPrefix, input.asset.sourcePath, input.root)) continue;
-
-    const timezone = segment.timezone?.trim()
-      || input.itinerary.defaultTimezone?.trim()
-      || assetTimezone;
-    if (!timezone) continue;
-
-    const localCapture = formatDateInTimeZone(input.asset.capturedAt, timezone);
-    if (!localCapture) continue;
-    if (localCapture.date !== segment.date) continue;
-    if (!matchesManualItineraryTimeWindow(localCapture.hourMinute, segment.startLocalTime, segment.endLocalTime)) {
-      continue;
-    }
-
-    const score = (segment.pathPrefix ? 10000 + segment.pathPrefix.length : 0)
-      + (segment.rootRef ? 1000 : 0)
-      + (segment.timezone ? 100 : 0)
-      + (segment.startLocalTime || segment.endLocalTime ? 10 : 0)
-      + (segment.location ? 5 : 0)
-      + (segment.transport ? 2 : 0);
-
-    if (score > bestScore) {
-      best = { segment, timezone };
-      bestScore = score;
-    }
-  }
-
-  return best;
-}
-
-function resolveAssetSpatialTimezone(
-  asset: IKtepAsset,
-  root: IMediaRoot | undefined,
-  pathTimezones: IPathTimezoneOverride[],
-): string | undefined {
-  const metadataTimezone = readMetadataString(asset.metadata, 'effectiveTimezone');
-  if (metadataTimezone) return metadataTimezone;
-
-  const override = matchPathTimezoneOverride({
-    overrides: pathTimezones,
-    rootId: root?.id,
-    rootLabel: root?.label,
-    sourcePath: asset.sourcePath,
+  gpxPaths?: string[];
+  gpxMatchToleranceMs?: number;
+  resolveTimezoneFromLocation?: (location: string) => Promise<string | null>;
+  geocodeLocation?: (location: string) => Promise<{ lat: number; lng: number } | null>;
+}): Promise<IManualSpatialContext | null> {
+  return resolveAssetSpatialContext({
+    asset: input.asset,
+    root: input.root,
+    itinerary: input.itinerary,
+    gpxPaths: input.gpxPaths,
+    gpxMatchToleranceMs: input.gpxMatchToleranceMs,
+    resolveTimezoneFromLocation: input.resolveTimezoneFromLocation,
+    geocodeLocation: input.geocodeLocation,
   });
-  return override?.timezone ?? root?.defaultTimezone;
-}
-
-function matchesManualItineraryRoot(
-  rootRef: string | undefined,
-  root?: IMediaRoot,
-): boolean {
-  if (!rootRef) return true;
-  const normalized = rootRef.trim().toLowerCase();
-  return normalized === (root?.id ?? '').trim().toLowerCase()
-    || normalized === (root?.label ?? '').trim().toLowerCase();
-}
-
-function matchesManualItineraryPath(
-  pathPrefix: string | undefined,
-  sourcePath: string,
-  root?: IMediaRoot,
-): boolean {
-  if (!pathPrefix) return true;
-  const pathCandidates = buildPortablePathCandidates(sourcePath, root);
-  return pathCandidates.some(candidate => candidate === pathPrefix || candidate.startsWith(`${pathPrefix}/`));
-}
-
-function matchesManualItineraryTimeWindow(
-  localTime: string,
-  startLocalTime?: string,
-  endLocalTime?: string,
-): boolean {
-  if (!startLocalTime && !endLocalTime) return true;
-
-  const time = parseHourMinute(localTime);
-  const start = parseHourMinute(startLocalTime ?? '00:00');
-  const end = parseHourMinute(endLocalTime ?? '23:59');
-  if (time == null || start == null || end == null) return false;
-
-  if (end >= start) {
-    return time >= start && time <= end;
-  }
-  return time >= start || time <= end;
-}
-
-function buildManualSpatialSummary(
-  segment: ILoadedManualItinerary['segments'][number],
-  timezone: string,
-): string {
-  const route = segment.location
-    ?? ([segment.from, segment.to].filter(Boolean).join(' -> ')
-      || (segment.via ?? []).join(' -> '));
-  const timeWindow = segment.startLocalTime && segment.endLocalTime
-    ? `${segment.startLocalTime}-${segment.endLocalTime}`
-    : 'all-day';
-  const transport = segment.transport ? ` ${segment.transport}` : '';
-  const notes = segment.notes ? `; ${segment.notes}` : '';
-  return `manual-itinerary ${segment.date} ${timeWindow} ${route}${transport} @${timezone}${notes}`.trim();
-}
-
-function splitManualPlaceHints(value?: string): string[] {
-  if (!value) return [];
-  return value
-    .split(/[、,/，>|→-]+/u)
-    .map(item => item.trim())
-    .filter(Boolean);
-}
-
-function normalizePortablePath(value: string): string {
-  return value
-    .trim()
-    .replace(/\\/gu, '/')
-    .replace(/^\.?\//u, '')
-    .replace(/\/+/gu, '/')
-    .replace(/\/$/u, '')
-    .toLowerCase();
-}
-
-function buildPortablePathCandidates(sourcePath: string, root?: IMediaRoot): string[] {
-  const normalizedSource = normalizePortablePath(sourcePath);
-  const candidates = new Set<string>([normalizedSource]);
-  const normalizedRootLabel = root?.label ? normalizePortablePath(root.label) : undefined;
-  const normalizedRootId = root?.id ? normalizePortablePath(root.id) : undefined;
-
-  if (normalizedRootLabel) {
-    candidates.add(`${normalizedRootLabel}/${normalizedSource}`);
-  }
-  if (normalizedRootId) {
-    candidates.add(`${normalizedRootId}/${normalizedSource}`);
-  }
-
-  return [...candidates];
-}
-
-function parseHourMinute(value: string): number | null {
-  const match = value.trim().match(/^(\d{2}):(\d{2})$/u);
-  if (!match) return null;
-  const hour = Number(match[1]);
-  const minute = Number(match[2]);
-  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return null;
-  return hour * 60 + minute;
 }
 
 async function resolveUnifiedAnalysisDecision(input: {
@@ -1381,11 +1224,14 @@ async function finalizePhotoPreparedAsset(
   const density = estimateDensity({ durationMs: 0, shotBoundaries: [] });
   const clipTypeGuess: EClipType = 'broll';
   const root = input.roots.find(item => item.id === input.prepared.asset.ingestRootId);
-  const manualSpatial = resolveManualSpatialContext({
+  const manualSpatial = await resolveManualSpatialContext({
     asset: input.prepared.asset,
     root,
     itinerary: input.manualItinerary,
-    pathTimezones: input.pathTimezones,
+    gpxPaths: input.gpxPaths,
+    gpxMatchToleranceMs: input.gpxMatchToleranceMs,
+    resolveTimezoneFromLocation: input.resolveTimezoneFromLocation,
+    geocodeLocation: input.geocodeLocation,
   });
   const plan = buildAnalysisPlan({
     assetId: input.prepared.asset.id,
@@ -1401,6 +1247,7 @@ async function finalizePhotoPreparedAsset(
     plan,
     clipTypeGuess,
     gpsSummary: manualSpatial?.gpsSummary,
+    inferredGps: manualSpatial?.inferredGps,
     summary: input.prepared.visualSummary?.description,
     labels: buildReportLabels(
       clipTypeGuess,

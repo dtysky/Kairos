@@ -48,3 +48,33 @@ export {
   type IAnalyzeWorkspaceProjectInput,
   type IAnalyzeWorkspaceProjectResult,
 } from './project-analyze.js';
+export {
+  inferManualItineraryGps,
+  type IManualSpatialContext,
+  type IInferManualItineraryGpsInput,
+} from './manual-spatial.js';
+export {
+  resolveEmbeddedGpsContext,
+  type IEmbeddedGpsContext,
+} from './gps-embedded.js';
+export {
+  resolveGpxSpatialContext,
+  loadGpxPoints,
+  loadGpxPointsFromPaths,
+  type IGpxSpatialContext,
+  type IGpxPoint,
+  type IResolveGpxSpatialContextInput,
+} from './gpx-spatial.js';
+export {
+  importProjectGpxTracks,
+  refreshProjectGpsCache,
+  getDefaultProjectGpxPaths,
+  resolveProjectGpxPaths,
+  type IImportProjectGpxTracksInput,
+  type IImportProjectGpxTracksResult,
+  type IResolveProjectGpxPathsInput,
+} from './project-gps.js';
+export {
+  resolveAssetSpatialContext,
+  type IResolveAssetSpatialContextInput,
+} from './spatial-resolver.js';

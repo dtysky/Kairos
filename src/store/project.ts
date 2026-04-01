@@ -24,6 +24,8 @@ const CDIRS = [
   'analysis',
   'analysis/asset-reports',
   'analysis/reference-transcripts',
+  'gps',
+  'gps/tracks',
 ] as const;
 
 const IIngestRoots = z.object({ roots: z.array(IMediaRoot) });

@@ -1,25 +1,11 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-export interface IPathTimezoneOverride {
-  id: string;
-  rootRef?: string;
-  pathPrefix: string;
-  timezone: string;
-  notes?: string;
-}
-
-export interface ILoadedPathTimezones {
-  overrides: IPathTimezoneOverride[];
-  warnings: string[];
-}
-
 export interface IManualItinerarySegment {
   id: string;
   date: string;
   startLocalTime?: string;
   endLocalTime?: string;
-  timezone?: string;
   rootRef?: string;
   pathPrefix?: string;
   location?: string;
@@ -31,49 +17,14 @@ export interface IManualItinerarySegment {
 }
 
 export interface ILoadedManualItinerary {
-  defaultTimezone?: string;
   segments: IManualItinerarySegment[];
   warnings: string[];
 }
 
 const CKEY_SPLITTER = /^([^:：]+)\s*[:：]\s*(.+)$/u;
 
-export function getPathTimezonesPath(projectRoot: string): string {
-  return join(projectRoot, 'config', 'path-timezones.md');
-}
-
 export function getManualItineraryPath(projectRoot: string): string {
   return join(projectRoot, 'config', 'manual-itinerary.md');
-}
-
-export async function loadPathTimezones(projectRoot: string): Promise<ILoadedPathTimezones> {
-  const content = await loadOptionalMarkdown(getPathTimezonesPath(projectRoot));
-  if (!content) {
-    return { overrides: [], warnings: [] };
-  }
-
-  const warnings: string[] = [];
-  const blocks = splitKeyValueBlocks(content);
-  const overrides: IPathTimezoneOverride[] = [];
-
-  for (const [index, block] of blocks.entries()) {
-    const timezone = block.map.get('时区') ?? block.map.get('timezone');
-    const pathPrefix = block.map.get('目录') ?? block.map.get('路径') ?? block.map.get('path') ?? block.map.get('pathprefix');
-    if (!timezone || !pathPrefix) {
-      warnings.push(`path-timezones block ${index + 1} missing timezone or path prefix`);
-      continue;
-    }
-
-    overrides.push({
-      id: `path-timezone-${index + 1}`,
-      rootRef: block.map.get('素材源') ?? block.map.get('root') ?? block.map.get('rootid'),
-      pathPrefix: normalizePortablePath(pathPrefix),
-      timezone: timezone.trim(),
-      notes: block.map.get('备注') ?? block.map.get('notes'),
-    });
-  }
-
-  return { overrides, warnings };
 }
 
 export async function loadManualItinerary(projectRoot: string): Promise<ILoadedManualItinerary> {
@@ -83,7 +34,6 @@ export async function loadManualItinerary(projectRoot: string): Promise<ILoadedM
   }
 
   const warnings: string[] = [];
-  const defaultTimezone = extractDefaultTimezone(content);
   const blocks = splitKeyValueBlocks(content);
   const segments: IManualItinerarySegment[] = [];
 
@@ -122,7 +72,6 @@ export async function loadManualItinerary(projectRoot: string): Promise<ILoadedM
       date,
       startLocalTime: parsedTime?.start,
       endLocalTime: parsedTime?.end,
-      timezone: block.map.get('时区') ?? block.map.get('timezone'),
       rootRef: block.map.get('素材源') ?? block.map.get('root') ?? block.map.get('rootid'),
       pathPrefix: normalizeOptionalPortablePath(
         block.map.get('目录')
@@ -140,42 +89,9 @@ export async function loadManualItinerary(projectRoot: string): Promise<ILoadedM
   }
 
   return {
-    defaultTimezone,
     segments,
     warnings,
   };
-}
-
-export function matchPathTimezoneOverride(input: {
-  overrides: IPathTimezoneOverride[];
-  rootId?: string;
-  rootLabel?: string;
-  sourcePath: string;
-}): IPathTimezoneOverride | null {
-  const pathCandidates = buildPortablePathCandidates({
-    sourcePath: input.sourcePath,
-    rootId: input.rootId,
-    rootLabel: input.rootLabel,
-  });
-  let best: IPathTimezoneOverride | null = null;
-  let bestScore = -1;
-
-  for (const override of input.overrides) {
-    if (!matchesRootRef(override.rootRef, input.rootId, input.rootLabel)) {
-      continue;
-    }
-    if (!matchesPathPrefix(pathCandidates, override.pathPrefix)) {
-      continue;
-    }
-
-    const score = override.pathPrefix.length + (override.rootRef ? 10000 : 0);
-    if (score > bestScore) {
-      best = override;
-      bestScore = score;
-    }
-  }
-
-  return best;
 }
 
 async function loadOptionalMarkdown(path: string): Promise<string | undefined> {
@@ -234,16 +150,6 @@ function splitKeyValueBlocks(content: string): Array<{ map: Map<string, string> 
   return blocks;
 }
 
-function extractDefaultTimezone(content: string): string | undefined {
-  for (const rawLine of content.split(/\r?\n/u)) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith('#')) continue;
-    const match = line.match(/^(默认时区|default timezone)\s*[:：]\s*(.+)$/iu);
-    if (match?.[2]) return match[2].trim();
-  }
-  return undefined;
-}
-
 function normalizeOptionalPortablePath(value?: string): string | undefined {
   if (!value) return undefined;
   return normalizePortablePath(value);
@@ -252,7 +158,7 @@ function normalizeOptionalPortablePath(value?: string): string | undefined {
 function normalizeManualDate(raw?: string): string | undefined {
   if (!raw) return undefined;
 
-  const match = raw.trim().match(/^(\d{4})\s*[./-年]\s*(\d{1,2})\s*[./-月]\s*(\d{1,2})\s*日?$/u);
+  const match = raw.trim().match(/^(\d{4})\s*[./年-]\s*(\d{1,2})\s*[./月-]\s*(\d{1,2})\s*日?$/u);
   if (!match?.[1] || !match[2] || !match[3]) {
     return undefined;
   }
@@ -304,7 +210,7 @@ function parseManualDateTime(raw?: string): { date: string; time?: string } | nu
   if (!raw) return null;
 
   const match = raw.trim().match(
-    /^(\d{4})\s*[./-年]\s*(\d{1,2})\s*[./-月]\s*(\d{1,2})\s*日?(?:[ tT]+(.+))?$/u,
+    /^(\d{4})\s*[./年-]\s*(\d{1,2})\s*[./月-]\s*(\d{1,2})\s*日?(?:[ tT]+(.+))?$/u,
   );
   if (!match?.[1] || !match[2] || !match[3]) {
     return null;
@@ -345,37 +251,6 @@ function normalizeTransport(raw?: string): IManualItinerarySegment['transport'] 
   if (['boat', 'ferry', '船', '轮渡'].includes(normalized)) return 'boat';
   if (['mixed', '混合'].includes(normalized)) return 'mixed';
   return undefined;
-}
-
-function matchesRootRef(rootRef: string | undefined, rootId?: string, rootLabel?: string): boolean {
-  if (!rootRef) return true;
-  const normalized = rootRef.trim().toLowerCase();
-  return normalized === (rootId ?? '').trim().toLowerCase()
-    || normalized === (rootLabel ?? '').trim().toLowerCase();
-}
-
-function matchesPathPrefix(pathCandidates: string[], pathPrefix: string): boolean {
-  return pathCandidates.some(candidate => candidate === pathPrefix || candidate.startsWith(`${pathPrefix}/`));
-}
-
-function buildPortablePathCandidates(input: {
-  sourcePath: string;
-  rootId?: string;
-  rootLabel?: string;
-}): string[] {
-  const normalizedSource = normalizePortablePath(input.sourcePath);
-  const candidates = new Set<string>([normalizedSource]);
-  const normalizedRootLabel = normalizeOptionalPortablePath(input.rootLabel);
-  const normalizedRootId = normalizeOptionalPortablePath(input.rootId);
-
-  if (normalizedRootLabel) {
-    candidates.add(`${normalizedRootLabel}/${normalizedSource}`);
-  }
-  if (normalizedRootId) {
-    candidates.add(`${normalizedRootId}/${normalizedSource}`);
-  }
-
-  return [...candidates];
 }
 
 function timeToMinutes(value: string): number | null {

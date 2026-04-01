@@ -40,7 +40,7 @@
 | 风险 | 本地 CLIP 模型（ONNX Runtime）在不同平台上推理性能需实测验证 |
 | 缓解 | 分层策略：先用轻量 CLIP 做粗筛和聚类，仅对关键帧调用多模态大模型做精细理解；充分利用代理文件降低分辨率 |
 | 反馈 | 上一步在调色后，导出时同时导出低分辨率代理文件，包括图片也可以，缓存到一个目录，进行分析 |
-| 调研 | **完全可行✅，且能显著降低分析成本**。具体方案：① Kairos 用 FFmpeg 生成低分辨率代理（720p H.264），同时抽取关键帧截图（FFmpeg `select='eq(pict_type,I)'` 或按时间间隔抽帧 `fps=1/5` 得到每 5 秒一张图片）。② CLIP 模型（ViT-B/16）输入分辨率固定为 224×224，**即使原始素材是 4K，送入前也会被 resize**，因此使用 720p 代理甚至缩略图不会损失 CLIP 精度。③ 场景描述由 CodeBuddy LLM 基于 CLIP 聚类结果 + 关键帧描述生成，无需本地多模态大模型。④ 分析调色后的代理而非原始 Log 素材，AI 看到的是最终色彩意图，内容理解更准确。⑤ 缓存目录按 `cache/proxy/{clip_id}.mp4` 和 `cache/keyframes/{clip_id}/` 组织。 |
+| 调研 | **完全可行✅，且能显著降低分析成本**。具体方案：① Kairos 用 FFmpeg 生成低分辨率代理（720p H.264），同时抽取关键帧截图（FFmpeg `select='eq(pict_type,I)'` 或按时间间隔抽帧 `fps=1/5` 得到每 5 秒一张图片）。② CLIP 模型（ViT-B/16）输入分辨率固定为 224×224，**即使原始素材是 4K，送入前也会被 resize**，因此使用 720p 代理甚至缩略图不会损失 CLIP 精度。③ 场景描述由 Agent LLM 基于 CLIP 聚类结果 + 关键帧描述生成，无需本地多模态大模型。④ 分析调色后的代理而非原始 Log 素材，AI 看到的是最终色彩意图，内容理解更准确。⑤ 缓存目录按 `cache/proxy/{clip_id}.mp4` 和 `cache/keyframes/{clip_id}/` 组织。 |
 
 ## R4. GPS 时间戳与素材时间对齐
 
@@ -119,6 +119,62 @@
 | 反馈 | 可以在我睡觉的时候进行预处理，用中间格式交换 |
 | 调研 | **后台预处理完全可行✅**。方案：① **任务队列**：使用 p-queue（轻量级 Promise 队列，无 Redis 依赖）管理预处理任务，配合 JSON 文件持久化任务状态（`cache/preprocess/jobs.json`），支持中断恢复。② **夜间批处理流程**：用户导入素材后，标记为"待预处理"→ 睡觉前启动 batch job → p-queue Worker 依次执行：ffprobe 元数据提取 → 代理文件生成 → 缩略图/关键帧导出 → CLIP 特征提取 → 场景检测分组。③ **中间格式**：预处理结果写入 `cache/preprocess/{clip_id}.json`（元数据+CLIP embedding+场景标签），次日启动时直接读取，无需重复计算。④ **进度持久化**：每个 Job 完成后立即写入 jobs.json，进程重启时读取并跳过已完成任务。⑤ **资源控制**：通过 p-queue concurrency 参数限制 FFmpeg 并发数（建议 CPU 核心数 × 50%），避免打满系统资源。 |
 
+## R10. `path-timezones` 退出后的时间链路收口
+
+**风险等级**：中
+
+| 维度 | 说明 |
+|------|------|
+| 问题 | 当前 ingest / analyze 仍显式依赖 `path-timezones` 和 timezone metadata，直接删除可能导致时间解析、人工行程匹配和文档约定脱节 |
+| 影响 | Ingest / Analyze / 协议字段 / 设计文档 |
+| 难点 | 需要把“素材时间真值”和“空间推断”彻底拆开，避免仍有代码把 timezone 当作素材侧输入 |
+| 风险 | 删除不彻底会留下死字段、误导性文档或隐式 fallback，后续行为变得不可预测 |
+| 缓解 | 统一改为 `create_time(UTC) -> filename -> filesystem`；删除 `path-timezones` 读取链；让 `manual-itinerary` 不再承担素材时间解释职责 |
+| 反馈 | 用户明确要求：`path-timezones` 不再需要；素材时间直接读取文件 `create_time`，它已经是 UTC；`manual-itinerary` 本来就不应该写 timezone |
+| 调研 | **方案可行✅**。现有 `resolveCaptureTime()` 已经把 `creation_time` 作为最高优先级，只需移除 timezone 入参与相关 metadata 写入即可；仓库中 `path-timezones` 的消费点集中在 `project-ingest.ts`、`project-analyze.ts`、`spatial-context.ts`、`store/index.ts`，影响范围清晰且可控。 |
+
+## R11. `manual-itinerary` 从“时间修正”重定义为“GPS 推断”
+
+**风险等级**：中
+
+| 维度 | 说明 |
+|------|------|
+| 问题 | 当前 `manual-itinerary` 仍以 timezone/date/time window 为匹配中心，产物只有 `gpsSummary/placeHints` 文本，尚未形成结构化坐标 |
+| 影响 | Analyze 粗扫报告、chronology 证据、后续空间叙事与素材分析 |
+| 难点 | 需要把文本地点解析为单条最终坐标，并明确它属于“分析结果”而不是素材主数据 |
+| 风险 | 若仍沿用字符串摘要，后续模块难以消费结构化 GPS；若把推断坐标直接写回 asset，又会污染素材真值层 |
+| 缓解 | 新增 `IAssetCoarseReport` 上的结构化 inferred GPS 字段；每个 asset 只保留一条最终推断坐标；地点文本到坐标通过地图服务解析 |
+| 反馈 | 用户明确要求：如果提供了 GPX 文件，则优先使用 GPX；`manual-itinerary` 只在没有 GPX 或 GPX 无法匹配时，推断 GPS 为后续素材分析流程做准备；存储粒度为“每个 asset 一条最终推断 GPS”；不需要兼容旧格式 |
+| 调研 | **主方案可行✅**。仓库当前尚无结构化坐标写入逻辑，但已有 `gpsSummary/placeHints` 分析层挂载点，适合扩展；同时已验证高德地图 MCP 的 `maps_geo` / `maps_text_search` 能从地点文本返回经纬度，例如“北京市天安门”可稳定返回 `116.397463,39.909187`，足以支撑文本地点到单点坐标的推断链。 |
+
+## R12. Node 16 下的测试基建兼容性
+
+**风险等级**：低-中
+
+| 维度 | 说明 |
+|------|------|
+| 问题 | 当前仓库运行时为 Node `v16.20.2`，最新版 `vitest` 无法启动，导致 TDD 回路在测试框架层面中断 |
+| 影响 | 本次实现的测试与验证流程 |
+| 难点 | 需要在“不升级项目最低 Node 版本”的前提下，选择兼容的测试运行器版本 |
+| 风险 | 若继续使用最新版测试框架，红测失败原因将不是业务逻辑而是运行时 API 缺失 |
+| 缓解 | 使用明确兼容 Node 16 的测试框架版本，并把该约束写入计划和脚本 |
+| 反馈 | 当前用户未要求升级 Node 版本，因此默认保持 Node 16 兼容 |
+| 调研 | **可行✅**。已确认当前运行时为 Node `v16.20.2`；`vitest@4.1.2` 要求 Node `^20 || ^22 || >=24`，`vitest@1.6.1` 要求 Node `^18 || >=20`。最终落地选择为 `vitest@0.32.0 + vite@4.5.5`：两者都明确兼容 Node 16，并且能避开 `vite@5` 在 Node 16 上的 `crypto.getRandomValues` 启动问题。 |
+
+## R13. 内嵌 GPS / GPX / manual 的来源优先级边界
+
+**风险等级**：中
+
+| 维度 | 说明 |
+|------|------|
+| 问题 | 当前 analyze 代码需要同时处理素材内嵌 GPS、外部 GPX 和 `manual-itinerary` 三类来源，必须明确真值优先级与 fallback 边界 |
+| 影响 | Analyze 粗扫报告、chronology 证据、空间上下文来源优先级 |
+| 难点 | DJI/QuickTime 内嵌 GPS 字段命名存在变体；GPX 仍需要时间匹配容差；同时要避免让 `manual-itinerary` 覆盖素材同源真值 |
+| 风险 | 可能出现：错误解析内嵌 GPS；或者内嵌 GPS 缺失时，GPX / `manual-itinerary` fallback 不稳定，导致空间上下文丢失或被误覆盖 |
+| 缓解 | 统一来源优先级为 `embedded GPS > GPX > manual-itinerary`；本轮只实现最小内嵌字段集和最小 GPX 匹配；测试锁住三者优先级与 chronology 来源表达 |
+| 反馈 | 用户明确要求：大疆无人机拍摄的视频里，已经有非常丰富的 GPS 数据 |
+| 调研 | **最小方案可行✅**。当前 ingest 已把 `ffprobe` 提取到的 `rawTags` 落到 `asset.metadata.rawTags`，因此可以先从素材 metadata 中解析同源 GPS；已验证的最小字段集包括 QuickTime/DJI 常见 `location` / `com.apple.quicktime.location.iso6709` 以及标准化 `gpslatitude/gpslongitude`。在此基础上，再回落到现有 GPX 最近点匹配和 `manual-itinerary` fallback，能以最小改动打通 `embedded > GPX > manual-itinerary`。 |
+
 ---
 
 ## 风险矩阵总览
@@ -134,3 +190,7 @@
 | R7 | JSON 存储性能 | 低-中 | 全局 | 低 |
 | R8 | 脚本叙事质量 | 中 | Script | 中 |
 | R9 | Node.js 媒体 I/O | 低 | Ingest | 低 |
+| R10 | `path-timezones` 退出后的时间链路收口 | 中 | Ingest / Analyze | 低 |
+| R11 | `manual-itinerary` 从“时间修正”重定义为“GPS 推断” | 中 | Analyze / Script | 中 |
+| R12 | Node 16 下的测试基建兼容性 | 低-中 | 测试 / 验证 | 低 |
+| R13 | 内嵌 GPS / GPX / manual 的来源优先级边界 | 中 | Analyze / Chronology | 中 |

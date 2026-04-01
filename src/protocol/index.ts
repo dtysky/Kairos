@@ -44,6 +44,7 @@ export {
   IMediaAnalysisPlan,
   ICoarseSample,
   ITranscriptSegment,
+  IInferredGps,
   IAssetCoarseReport,
   IChronologyCorrection,
   IMediaChronology,

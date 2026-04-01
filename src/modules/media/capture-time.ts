@@ -13,7 +13,6 @@ import { convertLocalDateTimeToIso } from './timezone-utils.js';
 export async function resolveCaptureTime(
   filePath: string,
   probeResult: IProbeResult,
-  defaultTimezone?: string,
 ): Promise<ICaptureTime> {
   // Priority 1: container metadata
   if (probeResult.creationTime) {
@@ -29,7 +28,7 @@ export async function resolveCaptureTime(
   }
 
   // Priority 2: filename pattern
-  const fromName = tryParseFilename(basename(filePath), defaultTimezone);
+  const fromName = tryParseFilename(basename(filePath));
   if (fromName) return fromName;
 
   // Priority 3: filesystem mtime
@@ -61,7 +60,6 @@ const CFILENAME_PATTERNS: RegExp[] = [
 
 function tryParseFilename(
   name: string,
-  defaultTimezone?: string,
 ): ICaptureTime | null {
   for (const pattern of CFILENAME_PATTERNS) {
     const m = name.match(pattern);
@@ -73,16 +71,11 @@ function tryParseFilename(
       const capturedAt = convertLocalDateTimeToIso(
         `${yr}-${mo}-${dy}`,
         `${hr}:${mi}:${sc}`,
-        defaultTimezone,
-      ) ?? convertLocalDateTimeToIso(
-        `${yr}-${mo}-${dy}`,
-        `${hr}:${mi}:${sc}`,
       );
       if (capturedAt) {
         return {
           capturedAt,
           originalValue: iso,
-          originalTimezone: defaultTimezone,
           source: 'filename',
           confidence: 0.5,
         };
