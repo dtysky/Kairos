@@ -6,7 +6,7 @@ import { resolveEmbeddedGpsContext } from './gps-embedded.js';
 import { resolveGpxSpatialContext } from './gpx-spatial.js';
 
 export interface IResolveAssetSpatialContextInput {
-  asset: Pick<IKtepAsset, 'capturedAt' | 'sourcePath' | 'metadata'>;
+  asset: Pick<IKtepAsset, 'capturedAt' | 'sourcePath' | 'metadata' | 'embeddedGps'>;
   root?: Pick<IMediaRoot, 'id' | 'label'>;
   gpxPaths?: string[];
   gpxMatchToleranceMs?: number;

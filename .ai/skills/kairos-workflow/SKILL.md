@@ -94,6 +94,12 @@ project/
 │   ├── runtime.json         # ← initProject 创建（ffmpeg / ffprobe / ml config）
 │   ├── project-brief.md     # ← initProject 创建（项目说明 + 路径映射模板）
 │   └── styles/              # ← initProject 创建（空目录）
+├── gps/
+│   ├── tracks/
+│   ├── same-source/
+│   │   ├── tracks/
+│   │   └── index.json
+│   └── derived.json
 ├── store/
 │   ├── project.json          # ← initProject 创建（IKtepProject）
 │   └── manifest.json         # ← initProject 创建（IStoreManifest）
@@ -115,8 +121,14 @@ project/
 ├── config/styles/
 │   ├── catalog.json          # Style Analysis 产出
 │   └── {category}.md         # Style Analysis 产出
+├── gps/
+│   ├── tracks/*.gpx          # 项目级外部 GPX
+│   ├── merged.json           # 项目级外部 GPX merged cache
+│   ├── same-source/index.json
+│   ├── same-source/tracks/*.gpx
+│   └── derived.json          # project-derived-track cache
 ├── store/
-│   ├── assets.json           # Phase 1 (Ingest) 产出
+│   ├── assets.json           # Phase 1 (Ingest) 产出；same-source GPS 只保留 lightweight embeddedGps refs
 │   └── slices.json           # Phase 2 (Analyze) 产出
 ├── script/
 │   └── current.json          # Phase 3 (Script) 产出
@@ -139,6 +151,10 @@ project/
 
 前置条件：项目已初始化
 
+补充口径：
+- dense sidecar `.SRT` / DJI FlightRecord 轨迹会规范化写到 `gps/same-source/tracks/*.gpx` + `gps/same-source/index.json`
+- 这套内部 GPX 只用于 same-source 索引 / 惰性查找，不改变 `embedded GPS > project GPX > project-derived-track` 的正式优先级
+
 ### Phase 2: Analyze (素材分析)
 
 **子 skill**: [kairos-analyze](../kairos-analyze/SKILL.md)
@@ -157,7 +173,8 @@ project/
 - 必须结合当前项目状态指出：是否已有项目级 GPX、是否已有 `gps/derived.json`、是否已有 `config/manual-itinerary.md`
 - 如果缺少 GPX 且缺少 `gps/derived.json`，必须明确提示：没有 embedded GPS 的素材将没有空间 fallback
 - 如果用户刚修改了 `manual-itinerary` 但还没重新跑 ingest，必须明确提示：需要先刷新 `gps/derived.json`
-- 必须指导用户选择：补 GPX、填写/更新 `manual-itinerary` 后 rerun ingest，或明确接受“部分素材没有空间结果”后继续
+- 如果用户手里拿的是 sidecar `.SRT` 或 DJI FlightRecord 日志，必须明确提示：这类输入属于 `embedded GPS` 标准链路，不是普通 GPX
+- 必须指导用户选择：补 GPX、给对应 root 配置 `飞行记录路径`、填写/更新 `manual-itinerary` 后 rerun ingest，或明确接受“部分素材没有空间结果”后继续
   - 当用户选择填写 `manual-itinerary` 时，默认应推荐一句自然语言一段，而不是要求先写成 key-value 表单
   - 推荐示例：`2026.02.17，早上九点左右，开车从新西兰皇后镇出发`
 - 只有在用户明确确认继续后，才可以调用 Analyze

@@ -47,9 +47,10 @@ function buildEmbeddedDerivedEntries(
   const entries: IProjectDerivedTrackEntry[] = [];
 
   for (const asset of assets) {
-    if (!asset.capturedAt || Number.isNaN(Date.parse(asset.capturedAt))) continue;
     const embedded = resolveEmbeddedGpsContext(asset);
     if (!embedded?.inferredGps) continue;
+    const representativeTime = asset.embeddedGps?.representativeTime ?? asset.capturedAt;
+    if (!representativeTime || Number.isNaN(Date.parse(representativeTime))) continue;
 
     entries.push({
       id: `embedded-derived:${asset.id}`,
@@ -58,12 +59,12 @@ function buildEmbeddedDerivedEntries(
       lat: embedded.inferredGps.lat,
       lng: embedded.inferredGps.lng,
       confidence: CEMBEDDED_DERIVED_CONFIDENCE,
-      time: asset.capturedAt,
+      time: representativeTime,
       sourceAssetId: asset.id,
       sourcePath: asset.sourcePath,
       summary: buildDerivedTrackSummary(
         'embedded-derived',
-        `${asset.capturedAt} ${embedded.inferredGps.lat.toFixed(6)},${embedded.inferredGps.lng.toFixed(6)} ${asset.displayName}`,
+        `${representativeTime} ${embedded.inferredGps.lat.toFixed(6)},${embedded.inferredGps.lng.toFixed(6)} ${asset.displayName}`,
       ),
     });
   }

@@ -21,6 +21,7 @@ import { refreshProjectDerivedTrackCache } from './project-derived-track.js';
 import { probe, type IMediaToolConfig } from './probe.js';
 import { resolveMediaRootsForDevice, toPortableRelativePath } from './root-resolver.js';
 import { scanDirectory } from './scanner.js';
+import { prepareRootSameSourceGpsContext, resolveAssetSameSourceGpsBinding } from './same-source-gps.js';
 
 export interface IIngestWorkspaceProjectInput {
   workspaceRoot: string;
@@ -43,6 +44,7 @@ export interface IIngestWorkspaceProjectResult {
   missingRoots: IMediaRoot[];
   merge: IMergeResult;
   chronologyCount: number;
+  warnings: string[];
 }
 
 export async function ingestWorkspaceProjectMedia(
@@ -63,8 +65,18 @@ export async function ingestWorkspaceProjectMedia(
   const resolution = resolveMediaRootsForDevice(input.projectId, roots, deviceMaps);
   const scannedRoots: IIngestedRootSummary[] = [];
   const incoming: IKtepAsset[] = [];
+  const warnings = new Set<string>();
 
   for (const resolvedRoot of resolution.resolved) {
+    const preparedRootGps = await prepareRootSameSourceGpsContext({
+      projectRoot,
+      flightRecordPath: resolvedRoot.flightRecordPath,
+      djiOpenAPIKey: runtimeConfig.djiOpenAPIKey,
+    });
+    for (const warning of preparedRootGps.warnings) {
+      warnings.add(warning);
+    }
+
     const files = (await scanDirectory(resolvedRoot.localPath))
       .filter(file => file.kind !== 'audio');
     scannedRoots.push({
@@ -76,12 +88,15 @@ export async function ingestWorkspaceProjectMedia(
 
     for (const file of files) {
       incoming.push(await buildAssetFromScan(
+        projectRoot,
         file.path,
         file.kind,
         file.sizeBytes,
         resolvedRoot.root,
         resolvedRoot.localPath,
         runtimeConfig,
+        preparedRootGps,
+        warning => warnings.add(warning),
       ));
     }
   }
@@ -101,20 +116,40 @@ export async function ingestWorkspaceProjectMedia(
     missingRoots: resolution.missing,
     merge,
     chronologyCount,
+    warnings: [...warnings],
   };
 }
 
 async function buildAssetFromScan(
+  projectRoot: string,
   localFilePath: string,
   kind: IKtepAsset['kind'],
   sizeBytes: number,
   root: IMediaRoot,
   localRootPath: string,
   tools: IMediaToolConfig,
+  preparedRootGps: Awaited<ReturnType<typeof prepareRootSameSourceGpsContext>>,
+  onWarning: (warning: string) => void,
 ): Promise<IKtepAsset> {
   const sourcePath = toPortableRelativePath(localRootPath, localFilePath);
   const probeResult = await safeProbe(localFilePath, tools);
   const capture = await resolveCaptureTime(localFilePath, probeResult);
+  const sameSourceGps = await resolveAssetSameSourceGpsBinding({
+    projectRoot,
+    trackIdentityKey: `${root.id}:${sourcePath}`,
+    asset: {
+      kind,
+      capturedAt: capture.capturedAt,
+      durationMs: probeResult.durationMs ?? undefined,
+      displayName: sourcePath || basename(localFilePath),
+      sourcePath,
+    },
+    localPath: localFilePath,
+    preparedRootGps,
+  });
+  for (const warning of sameSourceGps.warnings) {
+    onWarning(warning);
+  }
 
   return {
     id: randomUUID(),
@@ -130,6 +165,7 @@ async function buildAssetFromScan(
     captureTimeSource: capture.source,
     captureTimeConfidence: capture.confidence,
     createdAt: capture.capturedAt,
+    embeddedGps: sameSourceGps.binding ?? undefined,
     metadata: {
       sizeBytes,
       rootLabel: root.label,

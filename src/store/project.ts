@@ -26,6 +26,8 @@ const CDIRS = [
   'analysis/reference-transcripts',
   'gps',
   'gps/tracks',
+  'gps/same-source',
+  'gps/same-source/tracks',
 ] as const;
 
 const IIngestRoots = z.object({ roots: z.array(IMediaRoot) });
@@ -40,6 +42,7 @@ const IRuntimeConfig = z.object({
   sceneDetectFps: z.number().positive().optional(),
   sceneDetectScaleWidth: z.number().int().positive().optional(),
   mlServerUrl: z.string().optional(),
+  djiOpenAPIKey: z.string().optional(),
 });
 export type IRuntimeConfig = z.infer<typeof IRuntimeConfig>;
 

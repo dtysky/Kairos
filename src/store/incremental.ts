@@ -33,13 +33,14 @@ export function buildAssetMergeKey(
 
 /**
  * Merge new assets into an existing asset list, deduplicating by sourcePath.
- * Existing assets are preserved unchanged; new assets get `ingestedAt` stamped.
+ * Existing assets keep their identity but refresh scanned ingest fields when
+ * the same source file is seen again; new assets get `ingestedAt` stamped.
  */
 export function mergeAssets(
   existing: IKtepAsset[],
   incoming: IKtepAsset[],
 ): IMergeResult {
-  const pathSet = new Set(existing.map(buildAssetMergeKey));
+  const existingByKey = new Map(existing.map(asset => [buildAssetMergeKey(asset), asset]));
   const added: IKtepAsset[] = [];
   let duplicateCount = 0;
 
@@ -47,16 +48,19 @@ export function mergeAssets(
 
   for (const asset of incoming) {
     const key = buildAssetMergeKey(asset);
-    if (pathSet.has(key)) {
+    const current = existingByKey.get(key);
+    if (current) {
       duplicateCount++;
+      existingByKey.set(key, mergeAssetRecord(current, asset, now));
       continue;
     }
-    pathSet.add(key);
-    added.push({ ...asset, ingestedAt: asset.ingestedAt ?? now });
+    const stamped = { ...asset, ingestedAt: asset.ingestedAt ?? now };
+    existingByKey.set(key, stamped);
+    added.push(stamped);
   }
 
   return {
-    assets: [...existing, ...added],
+    assets: [...existingByKey.values()],
     added,
     duplicateCount,
   };
@@ -99,6 +103,19 @@ export async function appendAssets(
   const result = mergeAssets(existing, incoming);
   await writeJson(assetsPath, result.assets);
   return result;
+}
+
+function mergeAssetRecord(
+  existing: IKtepAsset,
+  incoming: IKtepAsset,
+  now: string,
+): IKtepAsset {
+  return {
+    ...existing,
+    ...incoming,
+    id: existing.id,
+    ingestedAt: existing.ingestedAt ?? incoming.ingestedAt ?? now,
+  };
 }
 
 /**

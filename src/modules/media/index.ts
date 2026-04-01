@@ -58,6 +58,17 @@ export {
   type IEmbeddedGpsContext,
 } from './gps-embedded.js';
 export {
+  prepareRootSameSourceGpsContext,
+  resolveAssetSameSourceGpsBinding,
+  resolveSidecarSrtBinding,
+  bindAssetToFlightRecordPoints,
+  loadSameSourceTrackPoints,
+  loadEmbeddedGpsBindingPoints,
+  pickNearestEmbeddedGpsBindingPoint,
+  type IPreparedRootGpsContext,
+  type IResolveAssetSameSourceGpsBindingInput,
+} from './same-source-gps.js';
+export {
   resolveGpxSpatialContext,
   loadGpxPoints,
   loadGpxPointsFromPaths,

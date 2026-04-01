@@ -21,7 +21,7 @@
   - 文件 `create_time`
   - GPS / 空间相关元信息
   - 后续与 `Pharos`、chronology、空间推断对齐所需的其他核心字段
-- 当前正式项目结构围绕 `projects/<projectId>/`、`config/runtime.json`、logical ingest roots、`config/device-media-maps.local.json`、`gps/tracks/*.gpx`、`gps/merged.json`、`gps/derived.json` 与项目内 `.tmp/` 展开
+- 当前正式项目结构围绕 `projects/<projectId>/`、`config/runtime.json`、logical ingest roots、`config/device-media-maps.local.json`、`gps/tracks/*.gpx`、`gps/merged.json`、`gps/same-source/`、`gps/derived.json` 与项目内 `.tmp/` 展开
 
 ## 当前实现与早期草案的差异注记（2026-03-29 之后）
 
@@ -33,8 +33,9 @@
 - `config/device-media-maps.local.json`
   - 素材真实目录不再直接写死在正式产物中，而是由当前设备在项目内维护本地路径映射
   - 该文件属于本机私有配置，应默认忽略，不作为项目同步内容
+  - 每个 root 本地映射现在还可以带 `flightRecordPath`，用于声明该素材源对应的 DJI FlightRecord 目录或文件；实际识别按文件头/可解析性完成
 - `config/runtime.json`
-  - 当前项目把 `ffmpegPath`、`ffprobePath`、`ffmpegHwaccel`、`analysisProxyWidth`、`analysisProxyPixelFormat`、`sceneDetectFps`、`mlServerUrl` 等运行时设置落在项目内配置中
+  - 当前项目把 `ffmpegPath`、`ffprobePath`、`ffmpegHwaccel`、`analysisProxyWidth`、`analysisProxyPixelFormat`、`sceneDetectFps`、`mlServerUrl`、`djiOpenAPIKey` 等运行时设置落在项目内配置中
   - 不再依赖环境变量或用户口头约定
 - `config/styles/`
   - 风格档案不再只是一份 `style/profile.json`
@@ -44,10 +45,23 @@
   - ingest 会在 refresh `project-derived-track` 时尝试把它编译进 `gps/derived.json`
   - 最终空间来源优先级为 `embedded GPS > project GPX > project-derived-track`
   - 结构化结果落在 `IAssetCoarseReport.inferredGps`，而不是写回素材主数据
+- `config/project-brief.md`
+  - 每个素材源 block 除了 `路径` / `说明`，还可以额外声明 `飞行记录路径`
+  - 该字段用于把 root 伴随的 DJI FlightRecord 日志纳入 ingest 标准流程，而不是依赖硬编码文件名
+- ingest root 旁路 sidecar
+  - 与素材同 basename 的 `.SRT` 会在 ingest 时自动发现并绑定
+  - 绑定成功后按同源 `embedded GPS` 进入主优先级链路
 - `gps/tracks/` 与 `gps/merged.json`
   - 项目级外部轨迹资源现统一收口到 `gps/tracks/*.gpx`
   - 标准化后的缓存写到 `gps/merged.json`
   - Analyze 在没有显式 `gpxPaths` 时默认读取这里，而不是要求每次调用临时传路径
+- `gps/same-source/`
+  - sidecar `.SRT` / root 级 FlightRecord 这类 dense same-source 轨迹会规范化写到 `gps/same-source/tracks/*.gpx`
+  - `gps/same-source/index.json` 维护 `trackId -> source/origin/file` 的项目内索引
+  - 这套内部 GPX 只用于索引 / 惰性查找，不改变 `embedded GPS > project GPX > project-derived-track` 的正式优先级
+- `store/assets.json`
+  - 绑定成功的 same-source GPS 不再内联 dense `points[]`
+  - 资产上的 `embeddedGps` 只保留轻量引用，如 `trackId / pointCount / representative / startTime / endTime / sourcePath`
 - `gps/derived.json`
   - 项目级 `project-derived-track` 缓存
   - 当前 v1 统一收口 embedded-derived sparse points 与 manual-itinerary-derived sparse windows

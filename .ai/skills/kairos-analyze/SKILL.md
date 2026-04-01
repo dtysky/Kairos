@@ -70,13 +70,16 @@ analyzeWorkspaceProjectMedia(input: {
 - `manual-itinerary` 不负责修正素材拍摄时间；拍摄时间仍以 `create_time(UTC)` 为主
 - 如果项目里没有 `gps/merged.json` / `gps/tracks/*.gpx`，也没有 `gps/derived.json`，那么**没有 embedded GPS 的素材将拿不到空间 fallback**
 - 如果用户刚修改过 `config/manual-itinerary.md` 但还没重新跑 ingest，必须明确提醒：当前 `gps/derived.json` 可能还是旧的
+- 如果用户手里有 sidecar `.SRT` 或 DJI FlightRecord 日志，必须提醒：这类数据走的是 `embedded GPS` 标准链路，不是普通项目 GPX
 
 在提示规则后，还必须指导用户当前可选动作：
 
 - 导入项目级 GPX
+- 在对应素材源的 `project-brief.md` block 里配置 `飞行记录路径`
 - 填写 `config/manual-itinerary.md`
   - 默认推荐一句自然语言一段，例如：`2026.02.17，早上九点左右，开车从新西兰皇后镇出发`
   - 只有需要限制到特定素材源或路径前缀时，再补 `素材源:` / `路径:` 这类结构化字段
+- `.SRT` 如果和素材同 basename 放在素材旁，ingest 会自动发现，不需要单独导入
 - 如果选择填写或修改了 `manual-itinerary`，先重新跑一次 ingest，刷新 `gps/derived.json`
 - 或明确接受“部分素材没有空间结果”后继续
 
@@ -109,8 +112,10 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
 规则：
 
 - 如果素材自身已经带有 GPS，优先使用素材同源 GPS 真值
-- 对 DJI 视频，优先检查容器/流 metadata 里的内嵌 GPS；它比外部 GPX 更优先
+- 对 DJI 视频，优先检查素材同源 GPS：容器/流 metadata、同 basename sidecar `.SRT`、以及 root 级 DJI FlightRecord 日志切片；它们都比外部 GPX 更优先
 - 当前内嵌 GPS 解析已覆盖更宽的 QuickTime / EXIF 变体：`location`、`location-eng`、`com.apple.quicktime.location.iso6709`、`com.apple.quicktime.location_iso6709`、`GPSLatitude/GPSLongitude(+Ref)` 以及简单 rational / DMS 风格坐标
+- DJI FlightRecord 日志不是普通项目 GPX；它只有在 ingest 时被识别并成功切到某个素材的时间段后，才按 `embedded GPS` 进入主链
+- ingest 会把 dense sidecar / FlightRecord 轨迹规范化写到 `gps/same-source/tracks/*.gpx` + `gps/same-source/index.json`；Analyze 看到的仍然是资产上的轻量 `embeddedGps` 引用，不应把这套内部 cache 当成第二优先级 `project GPX`
 - 如果没有可用内嵌 GPS，Analyze 会先看显式传入的 `gpxPaths`
 - 如果调用方没有显式传入 `gpxPaths`，Analyze 默认读取项目内 `gps/merged.json`；若 merged cache 不存在，再回落到 `gps/tracks/*.gpx`
 - 如果没有 GPX 命中，Analyze 再读取项目内 `gps/derived.json`，把它作为第三优先级空间层
@@ -278,6 +283,7 @@ scripts/kairos-progress.sh
   - 视频内语音的 ASR -> speech windows -> transcript/slice 贯通
   - `embedded GPS > project GPX > project-derived-track` 空间优先级
   - 更宽的 DJI / QuickTime / EXIF embedded GPS 解析
+  - sidecar `.SRT` 与 root 级 DJI FlightRecord 日志的同源 GPS 绑定
   - 项目级 `gps/tracks/*.gpx` + `gps/merged.json` + `gps/derived.json` 默认发现
   - ingest 时从 embedded GPS / `manual-itinerary` 刷新 `project-derived-track`
 

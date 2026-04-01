@@ -93,4 +93,37 @@ describe('resolveEmbeddedGpsContext', () => {
 
     expect(result).toBeNull();
   });
+
+  it('prefers asset-bound same-source GPS over raw metadata parsing', () => {
+    const result = resolveEmbeddedGpsContext({
+      embeddedGps: {
+        originType: 'sidecar-srt',
+        confidence: 0.96,
+        representativeTime: '2026-02-17T03:20:14.000Z',
+        representativeLat: -45.03022,
+        representativeLng: 168.6627,
+        startTime: '2026-02-17T03:20:12.000Z',
+        endTime: '2026-02-17T03:20:14.000Z',
+        sourcePath: 'DJI_0001.SRT',
+        points: [{
+          time: '2026-02-17T03:20:14.000Z',
+          lat: -45.03022,
+          lng: 168.6627,
+        }],
+      },
+      metadata: {
+        rawTags: {
+          location: '+39.123456+116.654321+120.000/',
+        },
+      },
+    } as any);
+
+    expect(result?.inferredGps).toEqual(expect.objectContaining({
+      source: 'embedded',
+      embeddedOriginType: 'sidecar-srt',
+      confidence: 0.96,
+      lat: -45.03022,
+      lng: 168.6627,
+    }));
+  });
 });

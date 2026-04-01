@@ -8,6 +8,7 @@ import type {
 export interface IResolvedMediaRoot {
   root: IMediaRoot;
   localPath: string;
+  flightRecordPath?: string;
 }
 
 export interface IMediaRootResolution {
@@ -22,16 +23,20 @@ export function resolveMediaRootsForDevice(
 ): IMediaRootResolution {
   const projectMap = deviceMaps.projects[projectId];
   const pathMap = new Map(
-    (projectMap?.roots ?? []).map(item => [item.rootId, item.localPath]),
+    (projectMap?.roots ?? []).map(item => [item.rootId, item]),
   );
   const resolved: IResolvedMediaRoot[] = [];
   const missing: IMediaRoot[] = [];
 
   for (const root of roots) {
     if (!root.enabled) continue;
-    const localPath = pathMap.get(root.id);
-    if (localPath) {
-      resolved.push({ root, localPath });
+    const localRoot = pathMap.get(root.id);
+    if (localRoot?.localPath) {
+      resolved.push({
+        root,
+        localPath: localRoot.localPath,
+        flightRecordPath: localRoot.flightRecordPath,
+      });
     } else if (root.path) {
       // Backward-compatible fallback for older project configs.
       resolved.push({ root, localPath: root.path });

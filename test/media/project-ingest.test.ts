@@ -8,11 +8,13 @@ import {
   loadIngestRoots,
   loadProjectDeviceMediaMaps,
   loadProjectDerivedTrack,
+  loadProjectSameSourceGpsIndex,
   saveDeviceProjectMap,
   writeJson,
   writeWorkspaceProjectBrief,
 } from '../../src/store/index.js';
 import { ingestWorkspaceProjectMedia } from '../../src/modules/media/project-ingest.js';
+import { loadSameSourceTrackPoints } from '../../src/modules/media/same-source-gps.js';
 
 const workspaces: string[] = [];
 
@@ -29,6 +31,65 @@ async function createWorkspace(): Promise<string> {
 }
 
 describe('ingestWorkspaceProjectMedia', () => {
+  it('binds sidecar SRT as embedded GPS during ingest', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-sidecar-srt';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Test Project');
+    const mediaRoot = join(workspaceRoot, 'media-root');
+
+    await mkdir(mediaRoot, { recursive: true });
+    await writeFile(join(mediaRoot, 'DJI_0001.MP4'), '');
+    await writeFile(join(mediaRoot, 'DJI_0001.SRT'), [
+      '1',
+      '00:00:00,000 --> 00:00:00,500',
+      '[latitude: -45.030230] [longitude: 168.662710]',
+      '',
+      '2',
+      '00:00:01,000 --> 00:00:01,500',
+      '[latitude: -45.030220] [longitude: 168.662700]',
+      '',
+    ].join('\n'), 'utf-8');
+    await writeWorkspaceProjectBrief(workspaceRoot, projectId, [
+      {
+        path: mediaRoot,
+        description: '无人机素材',
+      },
+    ]);
+
+    const result = await ingestWorkspaceProjectMedia({
+      workspaceRoot,
+      projectId,
+    });
+
+    expect(result.warnings).toEqual([]);
+    const assets = await loadAssets(projectRoot);
+    expect(assets[0]?.embeddedGps).toEqual(expect.objectContaining({
+      originType: 'sidecar-srt',
+      pointCount: 2,
+      sourcePath: join(mediaRoot, 'DJI_0001.SRT'),
+    }));
+    expect(assets[0]?.embeddedGps?.trackId).toMatch(/^sidecar-srt-/u);
+    expect(assets[0]?.embeddedGps?.points).toBeUndefined();
+
+    const sameSourceIndex = await loadProjectSameSourceGpsIndex(projectRoot);
+    expect(sameSourceIndex?.trackCount).toBe(1);
+    expect(sameSourceIndex?.tracks[0]).toEqual(expect.objectContaining({
+      id: assets[0]?.embeddedGps?.trackId,
+      originType: 'sidecar-srt',
+      pointCount: 2,
+      sourcePath: join(mediaRoot, 'DJI_0001.SRT'),
+    }));
+
+    const cachedPoints = await loadSameSourceTrackPoints(projectRoot, assets[0]!.embeddedGps!.trackId!);
+    expect(cachedPoints).toHaveLength(2);
+
+    const derivedTrack = await loadProjectDerivedTrack(projectRoot);
+    expect(derivedTrack?.entries[0]).toEqual(expect.objectContaining({
+      originType: 'embedded-derived',
+      sourceAssetId: assets[0]?.id,
+    }));
+  });
+
   it('refreshes project-derived-track cache during ingest', async () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-derived-track';

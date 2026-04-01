@@ -95,6 +95,7 @@ export type IMediaRoot = z.infer<typeof IMediaRoot>;
 export const IDeviceMediaRootPath = z.object({
   rootId: z.string(),
   localPath: z.string(),
+  flightRecordPath: z.string().optional(),
   exists: z.boolean().optional(),
   lastCheckedAt: z.string().optional(),
 });
@@ -130,11 +131,37 @@ export type ITranscriptSegment = z.infer<typeof ITranscriptSegment>;
 export const EDerivedTrackOriginType = z.enum(['embedded-derived', 'manual-itinerary-derived']);
 export type EDerivedTrackOriginType = z.infer<typeof EDerivedTrackOriginType>;
 
+export const EEmbeddedGpsOriginType = z.enum(['metadata', 'sidecar-srt', 'flight-record']);
+export type EEmbeddedGpsOriginType = z.infer<typeof EEmbeddedGpsOriginType>;
+
+export const IEmbeddedGpsPoint = z.object({
+  time: z.string(),
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+});
+export type IEmbeddedGpsPoint = z.infer<typeof IEmbeddedGpsPoint>;
+
+export const IEmbeddedGpsBinding = z.object({
+  originType: EEmbeddedGpsOriginType,
+  confidence: z.number().min(0).max(1),
+  representativeTime: z.string(),
+  representativeLat: z.number().min(-90).max(90),
+  representativeLng: z.number().min(-180).max(180),
+  trackId: z.string().optional(),
+  pointCount: z.number().int().nonnegative().optional(),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
+  sourcePath: z.string().optional(),
+  points: z.array(IEmbeddedGpsPoint).optional(),
+});
+export type IEmbeddedGpsBinding = z.infer<typeof IEmbeddedGpsBinding>;
+
 export const IInferredGps = z.object({
   source: z.enum(['embedded', 'gpx', 'derived-track']),
   confidence: z.number().min(0).max(1),
   lat: z.number().min(-90).max(90),
   lng: z.number().min(-180).max(180),
+  embeddedOriginType: EEmbeddedGpsOriginType.optional(),
   derivedOriginType: EDerivedTrackOriginType.optional(),
   timezone: z.string().optional(),
   sourceAssetId: z.string().optional(),
@@ -160,6 +187,7 @@ export const IKtepAsset = z.object({
   captureTimeConfidence: z.number().min(0).max(1).optional(),
   createdAt: z.string().optional(),
   ingestedAt: z.string().optional(),
+  embeddedGps: IEmbeddedGpsBinding.optional(),
   metadata: z.record(z.unknown()).optional(),
 });
 export type IKtepAsset = z.infer<typeof IKtepAsset>;

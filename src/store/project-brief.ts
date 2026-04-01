@@ -1,3 +1,5 @@
+import { posix, win32 } from 'node:path';
+
 export interface IProjectBriefTemplateInput {
   name: string;
   description?: string;
@@ -7,6 +9,7 @@ export interface IProjectBriefTemplateInput {
 export interface IProjectBriefPathMapping {
   path: string;
   description: string;
+  flightRecordPath?: string;
 }
 
 export interface IParsedProjectBrief {
@@ -53,8 +56,10 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
   let inMappings = false;
   let pendingPath: string | null = null;
   let pendingDescription: string | null = null;
+  let pendingFlightRecordPath: string | null = null;
   let expectPathValue = false;
   let expectDescriptionValue = false;
+  let expectFlightRecordPathValue = false;
 
   for (const rawLine of lines) {
     const line = rawLine.trim();
@@ -85,9 +90,16 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
     if (line.startsWith('## ')) break;
 
     if (line.startsWith('路径：')) {
-      pushPendingMapping(mappings, warnings, pendingPath, pendingDescription);
+      pushPendingMapping(
+        mappings,
+        warnings,
+        pendingPath,
+        pendingDescription,
+        pendingFlightRecordPath,
+      );
       pendingPath = null;
       pendingDescription = null;
+      pendingFlightRecordPath = null;
 
       const value = line.slice('路径：'.length).trim();
       if (value) {
@@ -97,6 +109,7 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
         expectPathValue = true;
       }
       expectDescriptionValue = false;
+      expectFlightRecordPathValue = false;
       continue;
     }
 
@@ -108,11 +121,16 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
       } else {
         expectDescriptionValue = true;
       }
+      continue;
+    }
 
-      if (pendingPath && pendingDescription) {
-        pushPendingMapping(mappings, warnings, pendingPath, pendingDescription);
-        pendingPath = null;
-        pendingDescription = null;
+    if (line.startsWith('飞行记录路径：')) {
+      const value = line.slice('飞行记录路径：'.length).trim();
+      if (value) {
+        pendingFlightRecordPath = value;
+        expectFlightRecordPathValue = false;
+      } else {
+        expectFlightRecordPathValue = true;
       }
       continue;
     }
@@ -126,16 +144,23 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
     if (expectDescriptionValue) {
       pendingDescription = line;
       expectDescriptionValue = false;
-      if (pendingPath && pendingDescription) {
-        pushPendingMapping(mappings, warnings, pendingPath, pendingDescription);
-        pendingPath = null;
-        pendingDescription = null;
-      }
+      continue;
+    }
+
+    if (expectFlightRecordPathValue) {
+      pendingFlightRecordPath = line;
+      expectFlightRecordPathValue = false;
       continue;
     }
   }
 
-  pushPendingMapping(mappings, warnings, pendingPath, pendingDescription);
+  pushPendingMapping(
+    mappings,
+    warnings,
+    pendingPath,
+    pendingDescription,
+    pendingFlightRecordPath,
+  );
 
   const duplicatePaths = findDuplicatePaths(mappings);
   for (const path of duplicatePaths) {
@@ -151,8 +176,8 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
   };
 }
 
-export function normalizeProjectBriefLocalPath(path: string): string {
-  const trimmed = path.trim();
+export function normalizeProjectBriefLocalPath(path: string, basePath?: string): string {
+  const trimmed = resolveProjectBriefPath(path, basePath);
   if (process.platform === 'win32') return trimmed;
 
   const winMatch = trimmed.match(/^([a-zA-Z]):[\\/](.*)$/);
@@ -168,6 +193,7 @@ function pushPendingMapping(
   warnings: string[],
   path: string | null,
   description: string | null,
+  flightRecordPath: string | null,
 ): void {
   if (!path && !description) return;
   if (!path) {
@@ -176,10 +202,18 @@ function pushPendingMapping(
   }
   if (!description) {
     warnings.push(`路径映射缺少说明：${path}`);
-    out.push({ path, description: '（待补充说明）' });
+    out.push({
+      path,
+      description: '（待补充说明）',
+      flightRecordPath: flightRecordPath ?? undefined,
+    });
     return;
   }
-  out.push({ path, description });
+  out.push({
+    path,
+    description,
+    flightRecordPath: flightRecordPath ?? undefined,
+  });
 }
 
 function findDuplicatePaths(
@@ -196,4 +230,22 @@ function findDuplicatePaths(
       const key = path.trim().toLowerCase();
       return (counts.get(key) ?? 0) > 1 && all.findIndex(item => item.trim().toLowerCase() === key) === index;
     });
+}
+
+function resolveProjectBriefPath(path: string, basePath?: string): string {
+  const trimmed = path.trim();
+  if (!basePath || !isRelativeProjectBriefPath(trimmed)) {
+    return trimmed;
+  }
+
+  const base = basePath.trim();
+  const pathImpl = /^[a-zA-Z]:[\\/]/u.test(base) ? win32 : posix;
+  return pathImpl.normalize(pathImpl.resolve(base, trimmed));
+}
+
+function isRelativeProjectBriefPath(path: string): boolean {
+  return path.startsWith('./')
+    || path.startsWith('.\\')
+    || path.startsWith('../')
+    || path.startsWith('..\\');
 }

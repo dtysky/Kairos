@@ -5,6 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
+  dji-log-parser-js:
+    specifier: ^0.5.7
+    version: 0.5.7
   node-fetch:
     specifier: ^3.3.2
     version: 3.3.2
@@ -390,6 +393,11 @@ packages:
     dependencies:
       type-detect: 4.1.0
     dev: true
+
+  /dji-log-parser-js@0.5.7:
+    resolution: {integrity: sha512-Yx6eE79jgmqzZWoL8LmKXYkdAUwJa5PLJlADkkRvxt276PcTAtrj2sdJMWktmfQ7yIA5xompcGrZGu7idc441A==}
+    engines: {node: '>=18.0.0'}
+    dev: false
 
   /esbuild@0.18.20:
     resolution: {integrity: sha512-ceqxoedUrcayh7Y7ZX6NdbbDzGROiyVBgC4PriJThBKSVPWnnFHZAkfI1lJT8QFkOwH4qOS2SJkS4wvpGl8BpA==}

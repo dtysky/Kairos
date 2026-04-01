@@ -149,9 +149,12 @@ flowchart TD
 
 - `config/ingest-roots.json` 保存逻辑素材源，而不是设备绝对路径
 - `config/project-brief.md` 是路径映射的人类输入入口；进入 Ingest 前会同步到 `config/ingest-roots.json` 与 `config/device-media-maps.local.json`
+- `project-brief` 的每个 root block 允许额外声明 `飞行记录路径`，作为该素材根目录对应的 DJI FlightRecord 日志入口；实际识别不依赖强文件名，而是以文件头/可解析性为准
 - `config/runtime.json` 是项目级运行时配置入口
+- 如果需要解密 DJI v13/v14 FlightRecord，`config/runtime.json` 可提供 `djiOpenAPIKey`
 - `config/styles/` 保存正式风格档案
 - `gps/tracks/*.gpx` 与 `gps/merged.json` 是当前项目级外部轨迹资源入口
+- `gps/same-source/tracks/*.gpx` 与 `gps/same-source/index.json` 是 dense same-source GPS 的项目内缓存入口，仅用于内部索引 / 惰性查找
 - `gps/derived.json` 是项目级 `project-derived-track` 缓存，统一收口 embedded-derived 与 manual-itinerary-derived 的弱空间来源
 - 主链消费的是项目当前采用的素材版本，而不是强制要求原始素材始终在线
 
@@ -205,12 +208,20 @@ flowchart TD
 
 补充约定：
 
-- DJI / QuickTime / EXIF 的 embedded GPS 属于素材同源真值
+- `embedded GPS` 的正式语义是“素材同源、可直接绑定到该素材时间段的 GPS 真值”
+- 当前同源 GPS 包括：
+  - DJI / QuickTime / EXIF 的文件内 GPS
+  - 与素材同 basename 的 sidecar `.SRT`
+  - 来自 root 级 `飞行记录路径` 的 DJI FlightRecord 日志（常见文件名可能是 `DJIFlightRecord_*.txt` 或 `FlightRecord_*.txt`），在 ingest 时按文件头识别、切分并成功绑定到该素材的轨迹片段
 - 项目级 GPX 是第二优先级资源，统一收口到 `gps/tracks/*.gpx` 与 `gps/merged.json`
+- sidecar `.SRT` / FlightRecord 这类 dense same-source 轨迹不再内联进 `store/assets.json`；它们会规范化写到 `gps/same-source/tracks/*.gpx`，并在 `gps/same-source/index.json` 里登记
+- 绑定成功后，资产上的 `embeddedGps` 只保留轻量引用：`trackId / pointCount / representative / startTime / endTime / sourcePath`
+- 这里使用 GPX 只是内部存储格式；绑定到素材后的正式语义仍然是 `embedded GPS`，不会变成第二优先级的 `project GPX`
 - `project-derived-track` 是第三优先级的项目级弱空间层，缓存落在 `gps/derived.json`
 - `project-derived-track` 在 ingest 阶段刷新，当前 v1 会保守地合并两类条目：
   - 已有 embedded GPS 的素材派生出的稀疏时间点
   - `manual-itinerary` 编译出的稀疏时间窗 / 锚点
+- DJI FlightRecord 日志不属于普通 `project GPX`；它是 root 伴随遥测输入，只有在成功绑定到单个素材后才按 `embedded GPS` 进入主链
 - `manual-itinerary` 不再作为 analyze 时的独立顶层 fallback；它的项目级输出并入 `project-derived-track`
 - 如果用户修改了 `config/manual-itinerary.md`，应先重新跑一次 ingest，让 `gps/derived.json` 刷新后再 analyze
 - 最终采用的空间结果挂在 `IAssetCoarseReport.inferredGps`，而不是回写到素材真值层

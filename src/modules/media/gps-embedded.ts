@@ -8,8 +8,20 @@ export interface IEmbeddedGpsContext {
 }
 
 export function resolveEmbeddedGpsContext(
-  asset: Pick<IKtepAsset, 'capturedAt' | 'metadata'>,
+  asset: Pick<IKtepAsset, 'capturedAt' | 'metadata' | 'embeddedGps'>,
 ): IEmbeddedGpsContext | null {
+  const binding = asset.embeddedGps;
+  if (binding) {
+    return buildEmbeddedContext(
+      binding.representativeLat,
+      binding.representativeLng,
+      binding.sourcePath ?? binding.originType,
+      binding.originType,
+      binding.originType,
+      binding.confidence,
+    );
+  }
+
   const metadata = readMetadataRecord(asset.metadata);
   if (!metadata) return null;
 
@@ -28,7 +40,7 @@ export function resolveEmbeddedGpsContext(
   );
   const parsedIso = parseIso6709(iso6709);
   if (parsedIso) {
-    return buildEmbeddedContext(parsedIso.lat, parsedIso.lng, iso6709!, 'iso6709');
+    return buildEmbeddedContext(parsedIso.lat, parsedIso.lng, iso6709!, 'iso6709', 'metadata', 0.98);
   }
 
   const lat = parseCoordinateValue(
@@ -70,7 +82,7 @@ export function resolveEmbeddedGpsContext(
 
   if (lat == null || lng == null) return null;
   if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
-  return buildEmbeddedContext(lat, lng, `${lat},${lng}`, 'lat-lng');
+  return buildEmbeddedContext(lat, lng, `${lat},${lng}`, 'lat-lng', 'metadata', 0.98);
 }
 
 function buildEmbeddedContext(
@@ -78,15 +90,18 @@ function buildEmbeddedContext(
   lng: number,
   originalValue: string,
   sourceKey: string,
+  originType: NonNullable<IInferredGps['embeddedOriginType']>,
+  confidence: number,
 ): IEmbeddedGpsContext {
   const gpsSummary = `embedded ${lat.toFixed(6)},${lng.toFixed(6)}`;
   return {
     gpsSummary,
     inferredGps: {
       source: 'embedded',
-      confidence: 0.98,
+      confidence,
       lat,
       lng,
+      embeddedOriginType: originType,
       summary: gpsSummary,
     },
     placeHints: [],

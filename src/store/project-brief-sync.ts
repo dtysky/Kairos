@@ -63,6 +63,9 @@ export async function syncProjectBriefMappings(
       roots: parsed.mappings.map((mapping, index) => ({
         rootId: roots[index].id,
         localPath: normalizeProjectBriefLocalPath(mapping.path),
+        flightRecordPath: mapping.flightRecordPath
+          ? normalizeProjectBriefLocalPath(mapping.flightRecordPath, mapping.path)
+          : undefined,
       })),
     },
     input.deviceMapPath,
@@ -79,12 +82,13 @@ export function buildProjectBriefWithMappings(input: {
   name: string;
   description?: string;
   createdAt?: string;
-  mappings: Array<{ path: string; description: string }>;
+  mappings: Array<{ path: string; description: string; flightRecordPath?: string }>;
 }): string {
   const base = buildProjectBriefTemplate(input).trimEnd();
   const body = input.mappings.flatMap(mapping => [
     `路径：${mapping.path}`,
     `说明：${mapping.description}`,
+    ...(mapping.flightRecordPath ? [`飞行记录路径：${mapping.flightRecordPath}`] : []),
     '',
   ]);
   return `${base}\n${body.join('\n')}`.trimEnd() + '\n';

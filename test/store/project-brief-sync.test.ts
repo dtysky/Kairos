@@ -36,7 +36,7 @@ describe('syncWorkspaceProjectBrief', () => {
     const droneRoot = join(workspaceRoot, 'media', 'drone');
     await writeWorkspaceProjectBrief(workspaceRoot, projectId, [
       { path: cameraRoot, description: '主机位' },
-      { path: droneRoot, description: '无人机' },
+      { path: droneRoot, description: '无人机', flightRecordPath: './FlightRecord' },
     ]);
 
     const result = await syncWorkspaceProjectBrief(workspaceRoot, projectId);
@@ -61,6 +61,7 @@ describe('syncWorkspaceProjectBrief', () => {
       {
         rootId: result.ingestRoots[1]!.id,
         localPath: droneRoot,
+        flightRecordPath: join(droneRoot, 'FlightRecord'),
       },
     ]);
   });
