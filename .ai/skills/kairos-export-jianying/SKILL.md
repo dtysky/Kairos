@@ -1,8 +1,8 @@
 ---
 name: kairos-export-jianying
 description: >-
-  Export a Kairos KTEP timeline to Jianying using an externally configured
-  Jianying MCP server, and optionally emit SRT/VTT subtitles. Use when the user
+  Export a Kairos KTEP timeline to Jianying using the vendored
+  `pyJianYingDraft` backend, and optionally emit SRT/VTT subtitles. Use when the user
   wants a Jianying draft, a Jianying smoke test, or subtitles from the final timeline.
 ---
 
@@ -13,7 +13,8 @@ description: >-
 ## 前置条件
 
 - `timeline/current.json` 存在且通过 KTEP 校验
-- 宿主环境已配置名为 `jianying` 的外部 MCP server
+- 仓库内 `vendor/pyJianYingDraft` 存在
+- 本机可用 `python` 或 `uv`
 - 剪映已安装在目标机器上
 - 目标机器可以访问时间线中引用的素材路径
 
@@ -28,8 +29,8 @@ description: >-
 
 ## 执行原则
 
-- 在 skill 层编排导出，不把宿主相关 MCP bridge 写回 `Kairos Core`
-- 优先直接使用宿主提供的 `jianying` MCP 工具
+- 在 skill 层编排导出，但直接调用 `Kairos Core` 提供的本地 Jianying backend
+- 不再依赖外部 `jianying` MCP server
 - 允许复用仓库中的 `KTEP` 校验和字幕导出逻辑
 
 ## 建议流程
@@ -50,13 +51,13 @@ description: >-
 
 ## 失败时优先检查
 
-- `jianying` MCP 是否可用
+- `vendor/pyJianYingDraft` 是否存在且路径未被改坏
+- `python` / `uv` 是否可用，以及 `pymediainfo` / `imageio` 依赖能否解析
 - 素材路径是否是目标机器可访问的 Windows 路径
-- `SAVE_PATH` / `OUTPUT_PATH` 是否存在
 - 剪映草稿目录是否可写
 
 ## 说明
 
-- `vendor/jianying-mcp` 可以继续保留在仓库内
-- 但它应被宿主环境作为外部 MCP server 使用
+- `vendor/pyJianYingDraft` 是当前直接 vendored 的上游库
+- 当前 backend 通过 `pyJianYingDraft` 直写 `draft_info.json` / `draft_meta_info.json`
 - 这个 skill 是 Phase 5 的剪映目标实现

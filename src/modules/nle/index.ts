@@ -6,6 +6,29 @@ export {
   executeAdapter,
 } from './adapter.js';
 
-export { type IMcpCaller } from './mcp-caller.js';
-export { JianyingAdapter, type IJianyingConfig } from './jianying.js';
+export {
+  JianyingAdapter,
+  buildJianyingConfigFromRuntime,
+  buildJianyingDraftSpec,
+  createJianyingAdapter,
+  exportJianyingDraft,
+  CPYJIANYINGDRAFT_COMPATIBILITY_MESSAGE,
+  type IJianyingConfig,
+  type IJianyingDraftSpec,
+  type IJianyingExportResult,
+} from './jianying.js';
+export {
+  JianyingLocalRunner,
+  JianyingLocalExportError,
+  getVendoredJianyingPythonPath,
+  inferDefaultJianyingDraftRoot,
+  resolveJianyingOutputPath,
+  resolveJianyingPyProjectRoot,
+  resolveJianyingPythonInvocation,
+  resolveJianyingScriptPath,
+  type IJianyingExportMessage,
+  type IJianyingLocalConfig,
+  type IJianyingLocalManifest,
+  type IJianyingPythonInvocation,
+} from './jianying-local.js';
 export { exportSrt, exportVtt, formatSrt, formatVtt } from './export-srt.js';

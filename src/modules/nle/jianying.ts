@@ -1,55 +1,50 @@
 import type {
-  IKtepDoc, IKtepAsset, IKtepTimeline,
-  IKtepClip, IKtepSubtitle,
+  IDeviceMediaMapFile,
+  IKtepAsset,
+  IKtepClip,
+  IKtepDoc,
+  IKtepSubtitle,
+  IKtepTimeline,
+  IMediaRoot,
 } from '../../protocol/schema.js';
-import { validateKtepDoc } from '../../protocol/validator.js';
+import type { IRuntimeConfig } from '../../store/project.js';
 import type { INleAdapter, INleCapabilities, INleIdMap } from './adapter.js';
-import { createIdMap } from './adapter.js';
-import type { IMcpCaller } from './mcp-caller.js';
+import {
+  buildJianyingDraftSpec,
+  JianyingDraftBuilder,
+  mapTransitionType,
+  msToRange,
+  msToTimeStr,
+  normalizeMaterialPath,
+  type IJianyingBuilderConfig,
+  type IJianyingDraftBuildResult,
+  type IJianyingDraftSpec,
+} from './jianying-spec.js';
+import {
+  CPYJIANYINGDRAFT_COMPATIBILITY_MESSAGE,
+  JianyingLocalRunner,
+  type IJianyingExportResult,
+  type IJianyingLocalConfig,
+} from './jianying-local.js';
 
-export interface IJianyingConfig {
+export interface IJianyingConfig extends IJianyingBuilderConfig, IJianyingLocalConfig {
   outputPath?: string;
   subtitleY?: number;
   subtitleSize?: number;
+  mediaRoots?: IMediaRoot[];
+  deviceMaps?: IDeviceMediaMapFile;
 }
 
 const CDEFAULTS: IJianyingConfig = {
+  backend: 'pyjianyingdraft',
   subtitleY: -0.8,
   subtitleSize: 6.0,
 };
 
-function normalizeMaterialPath(material: string): string {
-  if (/^[a-z]+:\/\//i.test(material)) return material;
-
-  if (/^[a-zA-Z]:\//.test(material)) {
-    return material.replace(/\//g, '\\');
-  }
-
-  const wslMountMatch = material.match(/^\/mnt\/([a-zA-Z])\/(.*)$/);
-  if (!wslMountMatch) return material;
-
-  const [, driveLetter, rest] = wslMountMatch;
-  return `${driveLetter.toUpperCase()}:\\${rest.replace(/\//g, '\\')}`;
-}
-
-function msToTimeStr(ms: number): string {
-  return `${(ms / 1000).toFixed(3)}s`;
-}
-
-function msToRange(inMs: number, outMs: number): string {
-  return `${msToTimeStr(inMs)}-${msToTimeStr(outMs)}`;
-}
-
 /**
  * 剪映时间线应用器。
- * 通过 IMcpCaller 调用外部配置好的 Jianying MCP 工具，
- * 将 KTEP 时间线同步到剪映草稿上下文中。
- *
- * 它覆盖：
- *   create_draft → create_track → add_*_segment → add_video_transition → add_text_segment
- *
- * 最终“导出草稿”属于上层导出编排的一部分，因此 `exportDraft()`
- * 只是剪映专属 helper，不属于通用 NLE 接口。
+ * 它在 TypeScript 侧构建一个一次性的 Jianying 草稿 spec，
+ * 然后交给本地 Python 后端直接写出 pyJianYingDraft 草稿。
  */
 export class JianyingAdapter implements INleAdapter {
   readonly name = 'jianying';
@@ -62,181 +57,113 @@ export class JianyingAdapter implements INleAdapter {
   };
 
   private config: IJianyingConfig;
-  private mcp: IMcpCaller;
-  private idMap: INleIdMap;
-  private draftId: string | null = null;
-  private assetPaths = new Map<string, string>();
-  private trackKindMap = new Map<string, string>();
+  private builder: JianyingDraftBuilder;
+  private runner: JianyingLocalRunner;
+  private lastExportResult: IJianyingExportResult | null = null;
 
-  constructor(mcp: IMcpCaller, config: Partial<IJianyingConfig> = {}) {
+  constructor(config: Partial<IJianyingConfig> = {}) {
     this.config = { ...CDEFAULTS, ...config };
-    this.mcp = mcp;
-    this.idMap = createIdMap();
+    this.builder = new JianyingDraftBuilder(this.config);
+    this.runner = new JianyingLocalRunner(this.config);
   }
 
   async validate(doc: IKtepDoc): Promise<void> {
-    const result = validateKtepDoc(doc);
-    if (!result.ok) {
-      const msg = result.errors.map(e => `[${e.rule}] ${e.message}`).join('\n');
-      throw new Error(`Jianying validation failed:\n${msg}`);
-    }
+    await this.builder.validate(doc);
   }
 
   async ensureProject(projectName: string): Promise<void> {
-    const res = await this.mcp.call('create_draft', {
-      draft_name: projectName,
-    }) as any;
-    this.draftId = res.draft_id ?? res.data?.draft_id;
-    this.idMap.projectId = this.draftId!;
+    await this.builder.ensureProject(projectName);
   }
 
   async importAssets(assets: IKtepAsset[]): Promise<void> {
-    for (const asset of assets) {
-      this.assetPaths.set(asset.id, normalizeMaterialPath(asset.sourcePath));
-    }
+    await this.builder.importAssets(assets);
   }
 
   async createTimeline(timeline: IKtepTimeline): Promise<void> {
-    if (!this.draftId) throw new Error('No draft created');
-
-    for (const track of timeline.tracks) {
-      const trackType = track.kind === 'subtitle' ? 'text' : track.kind;
-      const res = await this.mcp.call('create_track', {
-        draft_id: this.draftId,
-        track_type: trackType,
-        track_name: `${track.role}-${track.index}`,
-      }) as any;
-      const trackId = res.track_id ?? res.data?.track_id;
-      if (trackId) {
-        this.idMap.tracks.set(track.id, trackId);
-        this.trackKindMap.set(track.id, track.kind);
-      }
-    }
+    await this.builder.createTimeline(timeline);
   }
 
   async placeClips(clips: IKtepClip[]): Promise<void> {
-    for (const clip of clips) {
-      const jyTrackId = this.idMap.tracks.get(clip.trackId);
-      if (!jyTrackId) continue;
-
-      const material = this.assetPaths.get(clip.assetId);
-      if (!material) continue;
-
-      const targetRange = msToRange(clip.timelineInMs, clip.timelineOutMs);
-      const trackKind = this.trackKindMap.get(clip.trackId) ?? 'video';
-
-      if (trackKind === 'audio') {
-        const args: Record<string, unknown> = {
-          track_id: jyTrackId,
-          material,
-          target_start_end: targetRange,
-        };
-        if (clip.sourceInMs != null && clip.sourceOutMs != null) {
-          args.source_start_end = msToRange(clip.sourceInMs, clip.sourceOutMs);
-        }
-        const res = await this.mcp.call('add_audio_segment', args) as any;
-        if (res?.success === false) {
-          throw new Error(`Jianying add_audio_segment failed: ${res.message ?? material}`);
-        }
-        const segId = res.audio_segment_id ?? res.data?.audio_segment_id;
-        if (segId) this.idMap.clips.set(clip.id, segId);
-      } else {
-        const args: Record<string, unknown> = {
-          track_id: jyTrackId,
-          material,
-          target_start_end: targetRange,
-        };
-        if (clip.sourceInMs != null && clip.sourceOutMs != null) {
-          args.source_start_end = msToRange(clip.sourceInMs, clip.sourceOutMs);
-        }
-        if (clip.transform) {
-          args.clip_settings = {
-            ...(clip.transform.scale != null && {
-              scale_x: clip.transform.scale,
-              scale_y: clip.transform.scale,
-            }),
-            ...(clip.transform.positionX != null && { transform_x: clip.transform.positionX }),
-            ...(clip.transform.positionY != null && { transform_y: clip.transform.positionY }),
-            ...(clip.transform.rotation != null && { rotation: clip.transform.rotation }),
-          };
-        }
-        const res = await this.mcp.call('add_video_segment', args) as any;
-        if (res?.success === false) {
-          throw new Error(`Jianying add_video_segment failed: ${res.message ?? material}`);
-        }
-        const segId = res.video_segment_id ?? res.data?.video_segment_id;
-        if (segId) this.idMap.clips.set(clip.id, segId);
-
-        if (clip.transitionOut && clip.transitionOut.type !== 'cut') {
-          const transitionName = mapTransitionType(clip.transitionOut.type);
-          if (transitionName && segId) {
-            await this.mcp.call('add_video_transition', {
-              video_segment_id: segId,
-              transition_type: transitionName,
-              ...(clip.transitionOut.durationMs && {
-                duration: msToTimeStr(clip.transitionOut.durationMs),
-              }),
-            }).catch(() => {});
-          }
-        }
-      }
-    }
+    await this.builder.placeClips(clips);
   }
 
   async addSubtitles(cues: IKtepSubtitle[]): Promise<void> {
-    if (!this.draftId) throw new Error('No draft created');
-
-    let textTrackId: string | null = null;
-    for (const [ktepId, jyId] of this.idMap.tracks) {
-      if (this.trackKindMap.get(ktepId) === 'subtitle') {
-        textTrackId = jyId;
-        break;
-      }
-    }
-
-    if (!textTrackId) {
-      const res = await this.mcp.call('create_track', {
-        draft_id: this.draftId,
-        track_type: 'text',
-        track_name: 'subtitles',
-      }) as any;
-      textTrackId = res.track_id ?? res.data?.track_id;
-    }
-
-    if (!textTrackId) return;
-
-    for (const cue of cues) {
-      const res = await this.mcp.call('add_text_segment', {
-        track_id: textTrackId,
-        text: cue.text,
-        target_start_end: msToRange(cue.startMs, cue.endMs),
-        style: { size: this.config.subtitleSize },
-        clip_settings: { transform_y: this.config.subtitleY },
-      }) as any;
-      if (res?.success === false) {
-        throw new Error(`Jianying add_text_segment failed: ${res.message ?? cue.text}`);
-      }
-    }
+    await this.builder.addSubtitles(cues);
   }
 
   async exportDraft(): Promise<string | null> {
-    if (!this.draftId) return null;
-    const args: Record<string, unknown> = { draft_id: this.draftId };
-    if (this.config.outputPath) args.jianying_draft_path = this.config.outputPath;
-    const res = await this.mcp.call('export_draft', args) as any;
-    return res.data?.output_path ?? null;
+    const result = await this.exportDraftDetailed();
+    return result.outputPath;
+  }
+
+  async exportDraftDetailed(): Promise<IJianyingExportResult> {
+    const result = await this.runner.export(this.builder.build());
+    this.lastExportResult = result;
+    return result;
   }
 
   getIdMap(): INleIdMap {
-    return this.idMap;
+    return this.builder.getIdMap();
+  }
+
+  getWarnings(): string[] {
+    return this.builder.getWarnings();
+  }
+
+  getLastExportResult(): IJianyingExportResult | null {
+    return this.lastExportResult;
+  }
+
+  getCompatibilityNotice(): string {
+    return CPYJIANYINGDRAFT_COMPATIBILITY_MESSAGE;
   }
 }
 
-function mapTransitionType(type: string): string | null {
-  const map: Record<string, string> = {
-    'cross-dissolve': '叠化',
-    'fade': '淡化',
-    'wipe': '擦除',
+export async function exportJianyingDraft(
+  doc: IKtepDoc,
+  config: IJianyingConfig = {},
+): Promise<IJianyingDraftBuildResult & { result: IJianyingExportResult }> {
+  const buildResult = await buildJianyingDraftSpec(doc, config);
+  const runner = new JianyingLocalRunner({ ...CDEFAULTS, ...config });
+  const result = await runner.export(buildResult.spec);
+  return {
+    ...buildResult,
+    result,
   };
-  return map[type] ?? null;
 }
+
+export function buildJianyingConfigFromRuntime(
+  runtimeConfig: Partial<IRuntimeConfig>,
+  overrides: Partial<IJianyingConfig> = {},
+): IJianyingConfig {
+  const backend = runtimeConfig.jianyingBackend === 'pyjianyingdraft'
+    ? 'pyjianyingdraft'
+    : undefined;
+
+  return {
+    ...CDEFAULTS,
+    backend,
+    draftRoot: runtimeConfig.jianyingDraftRoot,
+    pythonPath: runtimeConfig.jianyingPythonPath,
+    uvPath: runtimeConfig.jianyingUvPath,
+    pyProjectRoot: runtimeConfig.jianyingPyProjectRoot,
+    ...overrides,
+  };
+}
+
+export function createJianyingAdapter(
+  config: Partial<IJianyingConfig> = {},
+): JianyingAdapter {
+  return new JianyingAdapter({ ...CDEFAULTS, ...config });
+}
+
+export {
+  CPYJIANYINGDRAFT_COMPATIBILITY_MESSAGE,
+  buildJianyingDraftSpec,
+  mapTransitionType,
+  msToRange,
+  msToTimeStr,
+  normalizeMaterialPath,
+  type IJianyingDraftSpec,
+  type IJianyingExportResult,
+};

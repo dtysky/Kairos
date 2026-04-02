@@ -79,10 +79,10 @@ Kairos/
 │   └── Qwen3-VL-4B-Instruct/      # transformers VLM model (CUDA)
 │
 ├── vendor/
-│   └── jianying-mcp/        # Vendored external Jianying MCP server
-│       ├── pyproject.toml    # Requires Python >= 3.13
-│       └── jianyingdraft/
-│           └── server.py     # MCP stdio entry point
+│   └── pyJianYingDraft/      # Vendored upstream Jianying draft library repo
+│       ├── pyJianYingDraft/   # Python package imported by Kairos local exporter
+│       ├── requirements.txt   # Upstream runtime deps
+│       └── README.md          # Upstream usage / compatibility notes
 │
 ├── config/                   # Runtime project config (per-project)
 │   ├── runtime.json          # ffmpeg / ffprobe / ML endpoint config
@@ -125,7 +125,7 @@ Kairos/
 | Service | Port | Endpoints |
 |---------|------|-----------|
 | ML server | 8910 | `/health`, `/asr`, `/ocr`, `/clip/embed`, `/vlm/analyze` |
-| Jianying MCP | External MCP host | `create_draft`, `create_track`, `add_*_segment`, `export_draft` |
+| Jianying draft backend | Local Python CLI | `JianyingDraftSpec` → `scripts/jianying-export.py` |
 
 ## Data Flow
 
@@ -138,5 +138,5 @@ Raw Media → scanner → probe → capture-time → shot-detect → slicer → 
                                                                         ↓
                             timeline-builder → placement → transition → subtitle
                                                                         ↓
-                                    JianyingAdapter → external jianying-mcp → 剪映草稿
+                                    JianyingAdapter → local pyJianYingDraft CLI → 剪映草稿
 ```

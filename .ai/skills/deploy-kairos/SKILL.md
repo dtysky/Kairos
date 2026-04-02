@@ -2,7 +2,7 @@
 name: deploy-kairos
 description: >-
   Deploy the Kairos middle-version project on a new device. Covers Node.js core,
-  Python ML server, vendored jianying-mcp, and environment variables.
+  Python ML server, vendored pyJianYingDraft backend, and environment variables.
   Use when setting up Kairos on a fresh machine, cross-device deployment,
   or when the user mentions deploy, install, setup, or environment.
 ---
@@ -15,7 +15,7 @@ Full deployment guide for a new device. Kairos has three subsystems:
 |-----------|---------|----------|----------|
 | TypeScript core | Node.js >= 16 + pnpm | `./` (root) | Always |
 | ML server | Python >= 3.10 + uv/pip | `ml-server/` | For media analysis (Whisper ASR + VLM) |
-| Jianying MCP | Python >= 3.13 + uv | `vendor/jianying-mcp/` | Configured externally by MCP host for Jianying export |
+| Jianying draft backend | Python >= 3.8 + uv/python | `vendor/pyJianYingDraft/` | Used by Kairos local export for Jianying draft generation |
 
 ### 平台 ML 后端差异
 
@@ -35,7 +35,7 @@ LLM 调用由 Cursor / Codex agent 直接完成，不需要单独配置 LLM API 
 - [ ] Git
 - [ ] Node.js >= 16
 - [ ] pnpm (corepack enable && corepack prepare pnpm@latest --activate)
-- [ ] Python >= 3.10 (recommend 3.12+, 3.13 for jianying-mcp)
+- [ ] Python >= 3.10 (recommend 3.12+)
 - [ ] uv (curl -LsSf https://astral.sh/uv/install.sh | sh)
 - [ ] ffmpeg + ffprobe (media analysis)
 - [ ] GPU driver (optional, for ML acceleration)
@@ -48,7 +48,7 @@ git clone <REPO_URL> Kairos
 cd Kairos
 ```
 
-Verify: `ls vendor/jianying-mcp/jianyingdraft/server.py` should exist.
+Verify: `ls vendor/pyJianYingDraft/pyJianYingDraft/__init__.py` should exist.
 
 ## Step 2: TypeScript Core
 
@@ -218,45 +218,26 @@ Verify: `curl http://127.0.0.1:8910/health`
 在 Windows 上如果返回 `cpu`，检查是否误在 WSL 环境启动了 ML server。
 如果跳过了 Step 3d 的预下载，首次调用端点时 Whisper/VLM 会自动下载到 HF 缓存（不在 `models/`），CLIP 会下载到 `models/`。建议先运行 `./scripts/ml-models-init.sh` 统一管理。
 
-## Step 4: Jianying MCP (optional, for Jianying export)
+## Step 4: Jianying Draft Backend (optional, for Jianying export)
 
 ```bash
-cd vendor/jianying-mcp
-uv sync
+cd vendor/pyJianYingDraft
 ```
 
-**Note**: jianying-mcp requires Python >= 3.13. If your system Python is older, use:
+**Note**: `pyJianYingDraft` upstream itself只要求 Python >= 3.8；Kairos 默认会优先：
+
+1. 使用 `config/runtime.json` 中显式指定的 `jianyingPythonPath`
+2. 其次使用 `vendor/pyJianYingDraft/.venv`
+3. 再退回 `uv run --with pymediainfo --with imageio python`
+
+如果你希望预热一个本地虚拟环境，可以：
 
 ```bash
-uv python install 3.13
-uv sync
+uv venv .venv
+uv pip install -r requirements.txt
 ```
 
-Kairos 不再在内部直接拉起它；请在你的工程 / MCP host 中把它配置成独立 MCP server。
-
-### Configure external MCP server
-
-Example:
-
-```json
-{
-  "mcpServers": {
-    "jianying": {
-      "command": "uv",
-      "args": [
-        "--directory",
-        "H:\\SpriaHeaven\\Kairos\\vendor\\jianying-mcp\\jianyingdraft",
-        "run",
-        "server.py"
-      ],
-      "env": {
-        "SAVE_PATH": "H:\\SpriaHeaven\\Kairos\\.tmp\\jianying-save",
-        "OUTPUT_PATH": "C:\\Users\\<USER>\\AppData\\Local\\JianyingPro\\User Data\\Projects\\com.lveditor.draft"
-      }
-    }
-  }
-}
-```
+Kairos 不再依赖外部 Jianying MCP server；Jianying 导出会从 Node 侧直接调用本地 Python CLI。
 
 需要保证：
 
@@ -359,8 +340,8 @@ curl http://127.0.0.1:8910/health
 # 3. ffprobe works
 ffprobe -version
 
-# 4. Vendored Jianying MCP present
-ls vendor/jianying-mcp/jianyingdraft/server.py
+# 4. Vendored pyJianYingDraft present
+ls vendor/pyJianYingDraft/pyJianYingDraft/__init__.py
 ```
 
 ## Troubleshooting
@@ -372,8 +353,8 @@ ls vendor/jianying-mcp/jianyingdraft/server.py
 | ML server `torch not found` | 仅 Windows/Linux 需要：`pip install -e ".[cuda]"` |
 | macOS `No module named 'mlx'` | 确认 arm64 Python：`python -c "import platform; print(platform.machine())"` |
 | MLX 模型下载慢 | 设置 `HF_ENDPOINT=https://hf-mirror.com` 使用镜像 |
-| jianying-mcp `Python >= 3.13 required` | Use `uv python install 3.13` then `uv sync` |
-| `SAVE_PATH not found` | Create the directory configured in the MCP host, e.g. `mkdir -p /tmp/kairos-drafts` |
+| Jianying export cannot import `pyJianYingDraft` | Check `vendor/pyJianYingDraft` exists and `scripts/jianying-export.py` points to it |
+| Jianying export fails with missing Python deps | Run `cd vendor/pyJianYingDraft && uv venv .venv && uv pip install -r requirements.txt` or let Kairos use `uv run --with ...` |
 | ffmpeg/ffprobe not found on Windows | Set `FFMPEG_PATH` / `FFPROBE_PATH` environment variables |
 
 ## Project Structure Reference
