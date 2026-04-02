@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { existsSync } from 'node:fs';
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -27,27 +27,13 @@ afterEach(async () => {
 });
 
 describe('JianyingLocalRunner', () => {
-  it('falls back to uv with explicit runtime dependencies when no vendored venv exists', async () => {
-    const invocation = await resolveJianyingPythonInvocation({
-      uvPath: 'uv-mock',
-      pyProjectRoot,
-    });
+  it('requires an explicit python path or vendored venv', async () => {
+    const missingPyProjectRoot = await mkdtemp(join(tmpdir(), 'kairos-jianying-no-venv-'));
+    tempPaths.push(missingPyProjectRoot);
 
-    const expectedArgs = [
-      'run',
-      '--no-project',
-      '--with',
-      'pymediainfo',
-      '--with',
-      'imageio',
-      ...(process.platform === 'win32'
-        ? ['--with', 'uiautomation>=2']
-        : []),
-      'python',
-    ];
-
-    expect(invocation.command).toBe('uv-mock');
-    expect(invocation.argsPrefix).toEqual(expectedArgs);
+    await expect(resolveJianyingPythonInvocation({
+      pyProjectRoot: missingPyProjectRoot,
+    })).rejects.toThrow(/Cannot find Jianying backend Python/);
   });
 
   it('writes a one-shot manifest and parses the CLI response', async () => {
@@ -196,6 +182,7 @@ describe('JianyingLocalRunner', () => {
       ) as {
         draft_virtual_store: Array<{ type: number; value: Array<{ child_id: string; parent_id: string }> }>;
       };
+      const expectedImagePath = await realpath(imagePath);
 
       const materialEntries = Object.entries(keyValue).filter(([, value]) => !value.segmentId);
       const segmentEntries = Object.entries(keyValue).filter(([, value]) => !!value.segmentId);
@@ -207,7 +194,7 @@ describe('JianyingLocalRunner', () => {
       expect(materialEntries[0]?.[1].materialId).toBe(materialEntries[0]?.[0]);
       expect(segmentEntries[0]?.[1].materialId).toBe(materialEntries[0]?.[0]);
       expect(draftMaterialGroup?.value).toHaveLength(1);
-      expect(draftMaterialGroup?.value[0]?.file_Path).toBe(imagePath);
+      expect(draftMaterialGroup?.value[0]?.file_Path).toBe(expectedImagePath);
       expect(draftMaterialGroup?.value[0]?.metetype).toBe('photo');
       expect(draftMaterialGroup?.value[0]?.duration).toBe(5_000_000);
       expect(typeOneStore?.value).toHaveLength(1);

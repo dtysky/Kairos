@@ -36,6 +36,8 @@
   - 每个 root 本地映射现在还可以带 `flightRecordPath`，用于声明该素材源对应的 DJI FlightRecord 目录或文件；实际识别按文件头/可解析性完成
 - `config/runtime.json`
   - 当前项目把 `ffmpegPath`、`ffprobePath`、`ffmpegHwaccel`、`analysisProxyWidth`、`analysisProxyPixelFormat`、`sceneDetectFps`、`mlServerUrl`、`djiOpenAPIKey` 等运行时设置落在项目内配置中
+  - 时间线 / 草稿输出规格也从这里读取：`timelineWidth`、`timelineHeight`、`timelineFps`
+  - 剪映本地导出相关配置也在这里维护，例如 `jianyingDraftRoot`、`jianyingPythonPath`、`jianyingPyProjectRoot`
   - 不再依赖环境变量或用户口头约定
 - `config/styles/`
   - 风格档案不再只是一份 `style/profile.json`
@@ -79,6 +81,8 @@
   - 当前正式流程采用 `segment + beat + selection`
   - `slice` 是候选时间窗，`selection` 才是最终进入时间线的子区间
   - 字幕默认来自 `beat.text`，而不是从整段 narration 事后切分
+  - `beat` 可选带 `utterances[]`，显式表达多段配音与停顿
+  - 当某拍不走原声时，时间线会为命中的视频片段标记静音意图，交给导出适配器落地
 - 段落审查闸门
   - 正式流程会先生成 `material digest` 和 `segment plan drafts`
   - 由用户审查并冻结为 `approved segment plan`

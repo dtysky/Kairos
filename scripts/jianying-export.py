@@ -144,17 +144,21 @@ def create_media_segments(
             clip.get("sourceOutMs"),
         )
 
+        volume = float(clip.get("volume", 1.0))
+
         if clip["kind"] == "audio":
             segment = AudioSegment(
                 str(clip["materialPath"]),
                 target_timerange,
                 source_timerange=source_timerange,
+                volume=volume,
             )
         else:
             segment = VideoSegment(
                 str(clip["materialPath"]),
                 target_timerange,
                 source_timerange=source_timerange,
+                volume=volume,
                 clip_settings=build_clip_settings(clip.get("clipSettings")),
             )
             transition = clip.get("transitionOut")

@@ -50,6 +50,7 @@ export interface IJianyingClipSpec {
   targetEndMs: number;
   sourceInMs?: number;
   sourceOutMs?: number;
+  volume?: number;
   clipSettings?: IJianyingClipSettings;
   transitionOut?: IJianyingTransitionSpec;
 }
@@ -220,6 +221,7 @@ export class JianyingDraftBuilder {
       }
 
       const clipSettings = buildClipSettings(clip);
+      const clipVolume = buildClipVolume(clip);
       if (clip.transform?.kenBurns) {
         this.warnings.add(
           `Clip ${clip.id} contains kenBurns data, but the pyJianYingDraft backend currently ignores kenBurns motion.`,
@@ -236,6 +238,7 @@ export class JianyingDraftBuilder {
         targetEndMs: clip.timelineOutMs,
         ...(clip.sourceInMs != null && { sourceInMs: clip.sourceInMs }),
         ...(clip.sourceOutMs != null && { sourceOutMs: clip.sourceOutMs }),
+        ...(clipVolume != null && { volume: clipVolume }),
         ...(clipSettings && { clipSettings }),
         ...(trackKind === 'video' && clip.transitionOut?.type !== 'cut' && {
           transitionOut: buildTransitionSpec(clip.transitionOut?.type, clip.transitionOut?.durationMs),
@@ -458,6 +461,10 @@ function buildClipSettings(clip: IKtepClip): IJianyingClipSettings | undefined {
   };
 
   return Object.keys(settings).length > 0 ? settings : undefined;
+}
+
+function buildClipVolume(clip: IKtepClip): number | undefined {
+  return clip.muteAudio ? 0 : undefined;
 }
 
 function buildTransitionSpec(type: string | undefined, durationMs: number | undefined): IJianyingTransitionSpec | undefined {

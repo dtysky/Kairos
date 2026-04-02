@@ -36,7 +36,6 @@ export interface IJianyingConfig extends IJianyingBuilderConfig, IJianyingLocalC
 }
 
 const CDEFAULTS: IJianyingConfig = {
-  backend: 'pyjianyingdraft',
   subtitleY: -0.8,
   subtitleSize: 6.0,
 };
@@ -136,16 +135,10 @@ export function buildJianyingConfigFromRuntime(
   runtimeConfig: Partial<IRuntimeConfig>,
   overrides: Partial<IJianyingConfig> = {},
 ): IJianyingConfig {
-  const backend = runtimeConfig.jianyingBackend === 'pyjianyingdraft'
-    ? 'pyjianyingdraft'
-    : undefined;
-
   return {
     ...CDEFAULTS,
-    backend,
     draftRoot: runtimeConfig.jianyingDraftRoot,
     pythonPath: runtimeConfig.jianyingPythonPath,
-    uvPath: runtimeConfig.jianyingUvPath,
     pyProjectRoot: runtimeConfig.jianyingPyProjectRoot,
     ...overrides,
   };

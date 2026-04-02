@@ -15,7 +15,7 @@ Full deployment guide for a new device. Kairos has three subsystems:
 |-----------|---------|----------|----------|
 | TypeScript core | Node.js >= 16 + pnpm | `./` (root) | Always |
 | ML server | Python >= 3.10 + uv/pip | `ml-server/` | For media analysis (Whisper ASR + VLM) |
-| Jianying draft backend | Python >= 3.8 + uv/python | `vendor/pyJianYingDraft/` | Used by Kairos local export for Jianying draft generation |
+| Jianying draft backend | Python >= 3.8 + vendored `.venv` | `vendor/pyJianYingDraft/` | Used by Kairos local export for Jianying draft generation |
 
 ### 平台 ML 后端差异
 
@@ -224,27 +224,46 @@ Verify: `curl http://127.0.0.1:8910/health`
 cd vendor/pyJianYingDraft
 ```
 
-**Note**: `pyJianYingDraft` upstream itself只要求 Python >= 3.8；Kairos 默认会优先：
+**Note**: `pyJianYingDraft` upstream itself只要求 Python >= 3.8；Kairos 本地导出默认使用：
 
-1. 使用 `config/runtime.json` 中显式指定的 `jianyingPythonPath`
-2. 其次使用 `vendor/pyJianYingDraft/.venv`
-3. 再退回 `uv run --with pymediainfo --with imageio python`
+1. `config/runtime.json` 中显式指定的 `jianyingPythonPath`
+2. 否则使用 `vendor/pyJianYingDraft/.venv`
 
-如果你希望预热一个本地虚拟环境，可以：
+推荐固定 vendored `.venv`：
 
 ```bash
-uv venv .venv
-uv pip install -r requirements.txt
+cd vendor/pyJianYingDraft
+python3 -m venv .venv
+.venv/bin/python -m pip install --upgrade pip
+.venv/bin/python -m pip install pymediainfo imageio
+```
+
+Windows:
+
+```powershell
+cd vendor/pyJianYingDraft
+py -3 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+.\.venv\Scripts\python.exe -m pip install pymediainfo imageio "uiautomation>=2"
+```
+
+直接启动导出脚本：
+
+```bash
+./scripts/jianying-export.sh --manifest /path/to/manifest.json
+```
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/jianying-export.ps1 --manifest C:\path\to\manifest.json
 ```
 
 Kairos 不再依赖外部 Jianying MCP server；Jianying 导出会从 Node 侧直接调用本地 Python CLI。
 
 需要保证：
 
-- `uv` 可用
+- `vendor/pyJianYingDraft/.venv` 可用，或显式配置 `jianyingPythonPath`
 - `SAVE_PATH` 目录存在
 - `OUTPUT_PATH` 指向当前机器的剪映草稿目录
-- 这个 MCP server 由宿主环境管理生命周期，而不是由 Kairos Core 直接启动
 
 Jianying draft directories by platform:
 
@@ -285,7 +304,10 @@ Windows 补充建议：
 {
   "ffmpegHwaccel": "videotoolbox",
   "analysisProxyWidth": 1024,
-  "sceneDetectFps": 4
+  "sceneDetectFps": 4,
+  "timelineWidth": 3840,
+  "timelineHeight": 2160,
+  "timelineFps": 30
 }
 ```
 
@@ -295,11 +317,14 @@ Windows 补充建议：
 {
   "ffmpegPath": "C:\\Applications\\YourFFmpeg\\ffmpeg.exe",
   "ffprobePath": "C:\\Applications\\YourFFmpeg\\ffprobe.exe",
-  "ffmpegHwaccel": "cuda"
+  "ffmpegHwaccel": "cuda",
+  "timelineWidth": 3840,
+  "timelineHeight": 2160,
+  "timelineFps": 30
 }
 ```
 
-`initProject()` 现在会创建 `config/runtime.json`，后续编排层应从这里读取媒体工具路径。
+`initProject()` 现在会创建 `config/runtime.json`，后续编排层应从这里读取媒体工具路径和时间线 / 草稿输出规格。
 
 ## Step 6: Environment Variables (optional)
 
@@ -354,7 +379,7 @@ ls vendor/pyJianYingDraft/pyJianYingDraft/__init__.py
 | macOS `No module named 'mlx'` | 确认 arm64 Python：`python -c "import platform; print(platform.machine())"` |
 | MLX 模型下载慢 | 设置 `HF_ENDPOINT=https://hf-mirror.com` 使用镜像 |
 | Jianying export cannot import `pyJianYingDraft` | Check `vendor/pyJianYingDraft` exists and `scripts/jianying-export.py` points to it |
-| Jianying export fails with missing Python deps | Run `cd vendor/pyJianYingDraft && uv venv .venv && uv pip install -r requirements.txt` or let Kairos use `uv run --with ...` |
+| Jianying export fails with missing Python deps | Create `vendor/pyJianYingDraft/.venv` and install `pymediainfo imageio` (Windows adds `uiautomation>=2`) |
 | ffmpeg/ffprobe not found on Windows | Set `FFMPEG_PATH` / `FFPROBE_PATH` environment variables |
 
 ## Project Structure Reference

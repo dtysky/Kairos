@@ -1,20 +1,25 @@
 import { randomUUID } from 'node:crypto';
 import type { IKtepSubtitle, IKtepScript, IKtepClip, IKtepScriptBeat, IKtepSlice } from '../../protocol/schema.js';
+import {
+  buildNarrationBeatPlan,
+  buildSourceSpeechContext,
+  sanitizeSubtitleCueText,
+  shouldPreferSourceSpeech,
+  type ISpeechPacingConfig,
+} from './pacing.js';
 
-export interface ISubtitleConfig {
-  maxCharsPerCue: number;
+export interface ISubtitleConfig extends ISpeechPacingConfig {
   language: string;
-}
-
-interface ISourceSpeechContext {
-  dominantSliceType?: IKtepSlice['type'];
-  speechCoverage: number;
-  transcriptSegmentCount: number;
-  transcriptText: string;
 }
 
 const CDEFAULTS: ISubtitleConfig = {
   maxCharsPerCue: 20,
+  cjkCharsPerSecond: 3.8,
+  latinWordsPerSecond: 2.8,
+  digitGroupsPerSecond: 2.4,
+  shortPauseMs: 180,
+  longPauseMs: 320,
+  minCueDurationMs: 1100,
   language: 'zh',
 };
 
@@ -49,39 +54,51 @@ export function planSubtitles(
         continue;
       }
 
-      const beatText = beat.text.trim();
-      if (!beatText) continue;
+      subtitles.push(...planNarrationSubtitles(seg, beat, beatClips, cfg));
+    }
+  }
 
-      const cueTexts = splitCueChunks(beatText, cfg.maxCharsPerCue);
-      const windows = flattenBeatWindows(beatClips);
-      if (windows.length === 0) continue;
+  return subtitles;
+}
 
-      const totalDuration = windows.reduce((sum, window) => sum + (window.endMs - window.startMs), 0);
-      let cursor = 0;
+function planNarrationSubtitles(
+  segment: IKtepScript,
+  beat: IKtepScriptBeat,
+  beatClips: IKtepClip[],
+  config: ISubtitleConfig,
+): IKtepSubtitle[] {
+  const windows = flattenBeatWindows(beatClips);
+  if (windows.length === 0) return [];
 
-      for (let i = 0; i < cueTexts.length; i++) {
-        const text = sanitizeSubtitleCueText(cueTexts[i]);
-        if (!text) continue;
-        const remainingTexts = cueTexts.length - i;
-        const remainingDuration = totalDuration - cursor;
-        const cueDuration = remainingTexts === 1
-          ? remainingDuration
-          : Math.max(1, Math.round(totalDuration / cueTexts.length));
+  const totalDuration = windows.reduce((sum, window) => sum + (window.endMs - window.startMs), 0);
+  if (totalDuration <= 0) return [];
 
-        const startMs = locateTimelineOffset(windows, cursor);
-        cursor += cueDuration;
-        const endMs = locateTimelineOffset(windows, Math.min(cursor, totalDuration));
+  const narrationPlan = buildNarrationBeatPlan(beat, config);
+  const subtitles: IKtepSubtitle[] = [];
 
-        subtitles.push({
-          id: randomUUID(),
-          startMs,
-          endMs: Math.max(endMs, startMs + 1),
-          text,
-          language: cfg.language,
-          linkedScriptSegmentId: seg.id,
-          linkedScriptBeatId: beat.id,
-        });
-      }
+  for (const utterance of narrationPlan.utterances) {
+    if (utterance.startOffsetMs >= totalDuration) break;
+
+    let cursor = utterance.startOffsetMs;
+    for (const cue of utterance.cuePlans) {
+      if (cursor >= totalDuration) break;
+
+      const text = sanitizeSubtitleCueText(cue.text);
+      if (!text) continue;
+
+      const startMs = locateTimelineOffset(windows, cursor);
+      cursor = Math.min(cursor + cue.durationMs, totalDuration);
+      const endMs = locateTimelineOffset(windows, cursor);
+
+      subtitles.push({
+        id: randomUUID(),
+        startMs,
+        endMs: Math.max(endMs, startMs + 1),
+        text,
+        language: config.language,
+        linkedScriptSegmentId: segment.id,
+        linkedScriptBeatId: beat.id,
+      });
     }
   }
 
@@ -153,161 +170,6 @@ function planSourceSpeechSubtitles(
   return subtitles;
 }
 
-function shouldPreferSourceSpeech(
-  segment: IKtepScript,
-  beat: IKtepScriptBeat,
-  speechContext: ISourceSpeechContext,
-): boolean {
-  if (beat.actions?.muteSource === true || segment.actions?.muteSource === true) {
-    return false;
-  }
-  if (beat.actions?.preserveNatSound === true) return true;
-  if (segment.actions?.preserveNatSound === true) return true;
-  if (speechContext.transcriptSegmentCount === 0) return false;
-  if (speechContext.speechCoverage < 0.18) return false;
-
-  const beatText = normalizeComparisonText(beat.text);
-  if (!beatText) return true;
-
-  const transcriptText = normalizeComparisonText(speechContext.transcriptText);
-  if (!transcriptText) return false;
-
-  if (hasStrongTranscriptContainment(beatText, transcriptText)) {
-    return true;
-  }
-
-  const matchScore = computeTranscriptMatchScore(beatText, transcriptText);
-  if (beatText.length >= 6 && matchScore >= 0.6) return true;
-
-  if (segment.role === 'intro' || segment.role === 'transition' || segment.role === 'outro') {
-    return false;
-  }
-
-  if (speechContext.dominantSliceType === 'talking-head') {
-    return speechContext.speechCoverage >= 0.42 && matchScore >= 0.18;
-  }
-
-  return speechContext.speechCoverage >= 0.72 && matchScore >= 0.3;
-}
-
-function buildSourceSpeechContext(
-  beatClips: IKtepClip[],
-  sliceMap: Map<string, IKtepSlice>,
-): ISourceSpeechContext {
-  const transcriptParts: string[] = [];
-  const typeWeights = new Map<IKtepSlice['type'], number>();
-  let transcriptSegmentCount = 0;
-  let totalWindowMs = 0;
-  let spokenWindowMs = 0;
-
-  for (const clip of beatClips) {
-    const slice = clip.sliceId ? sliceMap.get(clip.sliceId) : undefined;
-    if (!slice) continue;
-
-    const sourceInMs = clip.sourceInMs ?? slice.sourceInMs ?? 0;
-    const sourceOutMs = clip.sourceOutMs ?? slice.sourceOutMs ?? sourceInMs;
-    const windowDurationMs = Math.max(0, sourceOutMs - sourceInMs);
-
-    if (windowDurationMs > 0) {
-      totalWindowMs += windowDurationMs;
-      typeWeights.set(slice.type, (typeWeights.get(slice.type) ?? 0) + windowDurationMs);
-    }
-
-    const transcriptSegments = slice.transcriptSegments ?? [];
-    if (transcriptSegments.length === 0) continue;
-
-    for (const transcriptSegment of transcriptSegments) {
-      const overlapStart = Math.max(sourceInMs, transcriptSegment.startMs);
-      const overlapEnd = Math.min(sourceOutMs, transcriptSegment.endMs);
-      if (overlapEnd <= overlapStart) continue;
-
-      const normalizedText = sanitizeSubtitleCueText(transcriptSegment.text);
-      if (!normalizedText) continue;
-
-      transcriptParts.push(normalizedText);
-      transcriptSegmentCount += 1;
-      spokenWindowMs += overlapEnd - overlapStart;
-    }
-  }
-
-  let dominantSliceType: IKtepSlice['type'] | undefined;
-  let dominantWeight = -1;
-  for (const [sliceType, weight] of typeWeights.entries()) {
-    if (weight > dominantWeight) {
-      dominantSliceType = sliceType;
-      dominantWeight = weight;
-    }
-  }
-
-  return {
-    dominantSliceType,
-    speechCoverage: totalWindowMs > 0 ? Math.min(1, spokenWindowMs / totalWindowMs) : 0,
-    transcriptSegmentCount,
-    transcriptText: transcriptParts.join(' '),
-  };
-}
-
-function computeTranscriptMatchScore(beatText: string, transcriptText: string): number {
-  const beatTokens = tokenizeComparisonText(beatText);
-  const transcriptTokens = tokenizeComparisonText(transcriptText);
-  const tokenScore = computeDirectionalOverlap(beatTokens, transcriptTokens);
-
-  const beatNgrams = buildCharacterNgrams(beatText);
-  const transcriptNgrams = buildCharacterNgrams(transcriptText);
-  const ngramScore = computeDirectionalOverlap(beatNgrams, transcriptNgrams);
-
-  return Math.max(tokenScore, ngramScore);
-}
-
-function hasStrongTranscriptContainment(beatText: string, transcriptText: string): boolean {
-  const shorterLength = Math.min(beatText.length, transcriptText.length);
-  if (shorterLength < 6) return false;
-  return transcriptText.includes(beatText) || beatText.includes(transcriptText);
-}
-
-function tokenizeComparisonText(text: string): string[] {
-  return text
-    .toLowerCase()
-    .split(/[^a-z0-9\u4e00-\u9fa5]+/u)
-    .map(token => token.trim())
-    .filter(token => token.length >= 2);
-}
-
-function buildCharacterNgrams(text: string, size = 2): string[] {
-  const normalized = text
-    .toLowerCase()
-    .replace(/[^a-z0-9\u4e00-\u9fa5]+/gu, '');
-  if (normalized.length === 0) return [];
-  if (normalized.length <= size) return [normalized];
-
-  const grams: string[] = [];
-  for (let index = 0; index <= normalized.length - size; index++) {
-    grams.push(normalized.slice(index, index + size));
-  }
-  return grams;
-}
-
-function computeDirectionalOverlap(source: string[], target: string[]): number {
-  if (source.length === 0 || target.length === 0) return 0;
-
-  const targetSet = new Set(target);
-  const uniqueSource = Array.from(new Set(source));
-  let hitCount = 0;
-
-  for (const item of uniqueSource) {
-    if (targetSet.has(item)) hitCount += 1;
-  }
-
-  return hitCount / uniqueSource.length;
-}
-
-function normalizeComparisonText(text: string | undefined): string {
-  return (text ?? '')
-    .toLowerCase()
-    .replace(/[\s\p{P}\p{S}]+/gu, '')
-    .trim();
-}
-
 function resolveSubtitleBeats(
   segment: IKtepScript,
   segClips: IKtepClip[],
@@ -349,42 +211,6 @@ function locateTimelineOffset(
     cursor += dur;
   }
   return windows[windows.length - 1]?.endMs ?? 0;
-}
-
-function splitCueChunks(text: string, maxChars: number): string[] {
-  const strongUnits = splitWithDelimiters(text, /([。！？!?；;])/);
-  const chunks: string[] = [];
-
-  for (const unit of strongUnits) {
-    const normalized = unit.trim();
-    if (!normalized) continue;
-
-    if (normalized.length <= maxChars) {
-      chunks.push(normalized);
-      continue;
-    }
-
-    const weakUnits = splitWithDelimiters(normalized, /([，,])/);
-    let buffer = '';
-
-    for (const weak of weakUnits) {
-      const part = weak.trim();
-      if (!part) continue;
-
-      if (buffer.length > 0 && buffer.length + part.length > maxChars) {
-        chunks.push(buffer.trim());
-        buffer = part;
-      } else {
-        buffer += part;
-      }
-    }
-
-    if (buffer.trim()) {
-      chunks.push(buffer.trim());
-    }
-  }
-
-  return rebalanceShortChunks(chunks, maxChars);
 }
 
 function splitNarrationIntoBeats(text: string, beatCount: number): string[] {
@@ -445,13 +271,49 @@ function splitNarrationIntoBeats(text: string, beatCount: number): string[] {
   return beats;
 }
 
+function splitCueChunks(text: string, maxChars: number): string[] {
+  const strongUnits = splitWithDelimiters(text, /([。！？!?；;])/);
+  const chunks: string[] = [];
+
+  for (const unit of strongUnits) {
+    const normalized = unit.trim();
+    if (!normalized) continue;
+
+    if (normalized.length <= maxChars) {
+      chunks.push(normalized);
+      continue;
+    }
+
+    const weakUnits = splitWithDelimiters(normalized, /([，,])/);
+    let buffer = '';
+
+    for (const weak of weakUnits) {
+      const part = weak.trim();
+      if (!part) continue;
+
+      if (buffer.length > 0 && buffer.length + part.length > maxChars) {
+        chunks.push(buffer.trim());
+        buffer = part;
+      } else {
+        buffer += part;
+      }
+    }
+
+    if (buffer.trim()) {
+      chunks.push(buffer.trim());
+    }
+  }
+
+  return rebalanceShortChunks(chunks, maxChars);
+}
+
 function splitWithDelimiters(text: string, delimiter: RegExp): string[] {
   const parts = text.split(delimiter);
   const result: string[] = [];
 
-  for (let i = 0; i < parts.length; i += 2) {
-    const body = parts[i] ?? '';
-    const tail = parts[i + 1] ?? '';
+  for (let index = 0; index < parts.length; index += 2) {
+    const body = parts[index] ?? '';
+    const tail = parts[index + 1] ?? '';
     const combined = `${body}${tail}`.trim();
     if (combined) {
       result.push(combined);
@@ -483,14 +345,4 @@ function rebalanceShortChunks(chunks: string[], maxChars: number): string[] {
   }
 
   return result;
-}
-
-function sanitizeSubtitleCueText(text: string): string {
-  const trimmed = text.trim();
-  if (!trimmed) return '';
-  if (/—{2,}$/.test(trimmed)) return trimmed;
-
-  return trimmed
-    .replace(/([。！？!?；;，,：:、……\.]+)([」』”’）】〉》]*)$/u, '$2')
-    .trim();
 }

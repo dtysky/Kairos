@@ -4,9 +4,11 @@ import type {
   IKtepScript, IKtepProject, IKtepSubtitle,
 } from '../../protocol/schema.js';
 import { CPROTOCOL, CVERSION } from '../../protocol/schema.js';
+import type { IRuntimeConfig } from '../../store/project.js';
 import { placeClips, type IPlacementConfig } from './placement.js';
 import { planTransitions, type ITransitionConfig } from './transition.js';
 import { planSubtitles, type ISubtitleConfig } from './subtitle.js';
+import { normalizeScriptTiming } from './pacing.js';
 import { validateKtepDoc } from '../../protocol/validator.js';
 
 export interface IBuildConfig {
@@ -19,16 +21,34 @@ export interface IBuildConfig {
   subtitle?: Partial<ISubtitleConfig>;
 }
 
+export type ITimelineRuntimeConfig = Pick<
+  IRuntimeConfig,
+  'timelineFps' | 'timelineWidth' | 'timelineHeight'
+>;
+
 const CDEFAULTS: IBuildConfig = {
-  fps: 25,
+  fps: 30,
   width: 3840,
   height: 2160,
   name: 'Untitled',
 };
 
+export function resolveTimelineBuildConfig(
+  runtimeConfig: Partial<ITimelineRuntimeConfig> = {},
+  overrides: Partial<IBuildConfig> = {},
+): IBuildConfig {
+  return {
+    ...CDEFAULTS,
+    ...(runtimeConfig.timelineFps != null && { fps: runtimeConfig.timelineFps }),
+    ...(runtimeConfig.timelineWidth != null && { width: runtimeConfig.timelineWidth }),
+    ...(runtimeConfig.timelineHeight != null && { height: runtimeConfig.timelineHeight }),
+    ...overrides,
+  };
+}
+
 /**
  * 完整时间线构建流水线：
- *   脚本 → 摆放 → 转场 → 字幕 → 校验 → KtepDoc
+ *   脚本时长归一化 → 摆放 → 转场 → 字幕 → 校验 → KtepDoc
  */
 export function buildTimeline(
   project: IKtepProject,
@@ -37,10 +57,11 @@ export function buildTimeline(
   script: IKtepScript[],
   config: Partial<IBuildConfig> = {},
 ): IKtepDoc {
-  const cfg = { ...CDEFAULTS, ...config };
+  const cfg = resolveTimelineBuildConfig({}, config);
+  const normalizedScript = normalizeScriptTiming(script, slices, cfg.subtitle);
 
   // 1. Place clips
-  const { tracks, clips: rawClips } = placeClips(script, slices, assets, cfg.placement);
+  const { tracks, clips: rawClips } = placeClips(normalizedScript, slices, assets, cfg.placement);
 
   // 2. Plan transitions
   const clips = planTransitions(rawClips, cfg.transition);
@@ -56,7 +77,7 @@ export function buildTimeline(
   };
 
   // 4. Plan subtitles
-  const subtitles: IKtepSubtitle[] = planSubtitles(script, clips, slices, cfg.subtitle);
+  const subtitles: IKtepSubtitle[] = planSubtitles(normalizedScript, clips, slices, cfg.subtitle);
 
   // 5. Assemble document
   const doc: IKtepDoc = {
@@ -65,7 +86,7 @@ export function buildTimeline(
     project,
     assets,
     slices,
-    script,
+    script: normalizedScript,
     timeline,
     subtitles,
   };

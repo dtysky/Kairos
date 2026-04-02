@@ -29,6 +29,17 @@
    - 正式主链仍以 `Pharos` 为主输入
    - 当前实现仍是临时承载版本，但已经覆盖主链中的多个阶段
    - `DaVinci color` 应理解为与主链解耦的独立增强链路，而不是主链中的固定顺序步骤
+6. 剪映导出链路已经切换到当前本地实现
+   - 不再依赖外部 `jianying-mcp` 或独立 `Jianying Server`
+   - 由 Node 侧直接调用 vendored `pyJianYingDraft` Python CLI
+   - Python 运行时优先走项目内固定 `.venv` 或显式 `jianyingPythonPath`
+   - 导出目标目录必须是一个全新的具体草稿目录，禁止覆盖、清空或重建已有目录
+   - 如果任务是修改已有草稿，必须先核对草稿目录和可读元数据，再允许写入
+7. 时间线旁白模型已经升级
+   - `beat` 可选携带 `utterances[]`，显式表达多段配音及 `pauseBeforeMs / pauseAfterMs`
+   - 字幕按有声岛落位，不再默认占满整个 beat
+   - 时间线默认输出规格改为项目级可配置，fallback 为 `3840x2160 @ 30fps`
+   - 当某拍不走 source speech 时，命中的视频 clip 会带上“静音原音”意图，由导出适配器映射到具体 NLE
 
 因此，后续阅读本稿时，应把这些能力理解为“正式流程中已被当前实现覆盖的阶段”，而不是另一套独立的“中间版本架构”。
 

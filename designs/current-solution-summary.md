@@ -79,8 +79,17 @@ flowchart TD
 ### Timeline / Export
 
 - 时间线与导出围绕 `KTEP` 展开
-- 字幕默认来自 `beat.text`
-- 当某拍保留原声时，字幕也可以来自 `slice.transcriptSegments`
+- 字幕已有两条正式路径：
+  - 旁白路径：默认来自 `beat.text`
+  - 原声路径：当某拍保留原声时，可直接来自 `slice.transcriptSegments`
+- 旁白路径已支持显式 `beat.utterances[]`，可以在一个 beat 内表达多段配音与头部 / 中间 / 尾部停顿；字幕只覆盖有声岛，不再默认铺满整个 beat
+- `preserveNatSound / muteSource` 是脚本层的显式覆盖信号；未显式标注时，时间线层可结合 transcript 匹配度、`speechCoverage` 与段落角色推论是否保留原声
+- 当前字幕时长已不再是简单平均分配，而是会参考说话速度和标点停顿做节奏估算
+- 时间线 / 草稿输出规格已收口为项目级运行时配置：`timelineWidth / timelineHeight / timelineFps`，默认值为 `3840x2160 @ 30fps`
+- 当某拍不走 source speech 时，时间线会把命中的带音轨视频 clip 标记为静音意图；导出到 Jianying 时会落成静音视频片段
+- 剪映导出不再走外部 `jianying-mcp` / 独立 `Jianying Server` 路线，而是由 Node 侧调用 vendored `pyJianYingDraft` 本地 CLI
+- 当前剪映 backend 会直写 `draft_info.json` / `draft_meta_info.json`，并补齐本地素材注册元数据
+- 剪映导出默认遵循“新目录导出”，禁止覆盖、清空或删除已有草稿目录；如果要修改已有草稿，必须先核对目标身份
 - Resolve、剪映或其他导出目标都应建立在同一套正式时间线语义之上
 
 ## 3. 协议与数据骨架

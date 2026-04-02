@@ -152,6 +152,7 @@ const scriptSegment: IKtepScript = {
 
 正式输出时，`beat` 是更重要的编排单元：
 - `beat.text` 表示这一小拍最终要落到字幕/朗读层的文字
+- 如果一个 beat 内本来就有多段配音与停顿，可额外提供 `beat.utterances?: Array<{ text, pauseBeforeMs?, pauseAfterMs? }>`
 - `beat.actions?.preserveNatSound = true` 表示这拍要尽量保留原声
 - `beat.actions?.muteSource = true` 表示这拍即使素材里有人声，也应静音后改走旁白
 
@@ -161,8 +162,10 @@ const scriptSegment: IKtepScript = {
 
 - 如果候选切片里有明确 transcript，且这段原话本身值得直接进入正片，优先写成贴近原话的 `beat.text`，并显式设置 `preserveNatSound=true`
 - 如果一个有声音的素材主要承担 `intro / transition / 铺垫 / 空间建立 / 情绪过门`，而不是要直接使用它说的话，应显式设置 `muteSource=true`，让下游走旁白
+- 如果这拍旁白在头部 / 中间 / 尾部需要明确留白，不要只把话全塞进 `beat.text`；应直接写 `beat.utterances[]` 把 pause 表达出来
 - 如果脚本里没有显式写这两个动作，时间线阶段会根据 `slice.transcript / transcriptSegments / speechCoverage`、`beat.text` 与 transcript 的匹配度、以及 segment role 自动推论
 - 当前默认推论是偏保守的：`intro / transition / outro` 不会因为“素材里有声音”就自动保留原声，除非 beat 明显在引用原话
+- 对于 `muteSource=true` 或被时间线判定为不走原声的 beat，下游会把命中的带音轨视频静音，避免旁白与素材原音叠在一起
 
 ### Step 5: 存储
 

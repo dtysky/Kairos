@@ -4,6 +4,11 @@
 > 定位：介于“全链路 AI 后期平台”和“只做脚本助手”之间的中间版本
 > 核心目标：先把可复用的中台能力做对，再通过独立的 NLE Server / 适配层落地到剪映，并为后续达芬奇/其他 NLE 复用
 
+> 状态说明（2026-04-02）：
+> 本文保留其历史设计语境，但其中关于“独立 `Jianying Server` / `jianying-mcp`”的若干段落已经被当前实现替代。
+> 当前正式口径请优先参考 `designs/current-solution-summary.md`、`designs/architecture.md` 与最新的导出 skill。
+> 目前剪映落地走的是 vendored `pyJianYingDraft` 本地 CLI + 固定 `.venv`，并带有导出路径安全和既有草稿目标核对规则。
+
 ## 1. 背景
 
 当前总设计覆盖了素材导入、GPS、调色、脚本生成、达芬奇时间线、MCP 集成等完整链路，但对首个真实项目来说跨度过大。

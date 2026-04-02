@@ -32,11 +32,9 @@ export interface IJianyingLocalManifest {
 }
 
 export interface IJianyingLocalConfig {
-  backend?: 'pyjianyingdraft';
   outputPath?: string;
   draftRoot?: string;
   pythonPath?: string;
-  uvPath?: string;
   pyProjectRoot?: string;
   scriptPath?: string;
 }
@@ -93,12 +91,6 @@ export class JianyingLocalRunner {
   }
 
   async export(spec: IJianyingDraftSpec): Promise<IJianyingExportResult> {
-    if (this.config.backend && this.config.backend !== 'pyjianyingdraft') {
-      throw new Error(
-        `Unsupported Jianying backend '${this.config.backend}'. The local runner only supports 'pyjianyingdraft'.`,
-      );
-    }
-
     const outputPath = resolveJianyingOutputPath(spec.project.name, this.config);
     await assertSafeJianyingOutputPath(outputPath);
     const manifestDir = await mkdtemp(join(tmpdir(), 'kairos-jianying-'));
@@ -167,10 +159,7 @@ export async function resolveJianyingPythonInvocation(
     };
   }
 
-  return {
-    command: config.uvPath?.trim() || 'uv',
-    argsPrefix: ['run', '--no-project', ...buildJianyingUvDependencyArgs(), 'python'],
-  };
+  throw new Error(buildMissingJianyingPythonMessage(vendoredPython));
 }
 
 export function getVendoredJianyingPythonPath(pyProjectRoot = resolveJianyingPyProjectRoot()): string {
@@ -216,12 +205,12 @@ function resolveJianyingWorkingDirectory(pyProjectRoot?: string): string {
   return dirname(resolveJianyingScriptPath()) || resolveJianyingPyProjectRoot(pyProjectRoot);
 }
 
-function buildJianyingUvDependencyArgs(): string[] {
-  const deps = ['pymediainfo', 'imageio'];
-  if (process.platform === 'win32') {
-    deps.push('uiautomation>=2');
-  }
-  return deps.flatMap(dep => ['--with', dep]);
+function buildMissingJianyingPythonMessage(vendoredPython: string): string {
+  return (
+    'Cannot find Jianying backend Python. '
+    + `Create '${vendoredPython}' for the vendored pyJianYingDraft backend `
+    + `or set 'jianyingPythonPath' in runtime config.`
+  );
 }
 
 function parseCliPayload(raw: string): {

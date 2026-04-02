@@ -14,7 +14,7 @@ description: >-
 
 - `timeline/current.json` 存在且通过 KTEP 校验
 - 仓库内 `vendor/pyJianYingDraft` 存在
-- 本机可用 `python` 或 `uv`
+- `vendor/pyJianYingDraft/.venv` 可用，或 `config/runtime.json` 已显式配置 `jianyingPythonPath`
 - 剪映已安装在目标机器上
 - 目标机器可以访问时间线中引用的素材路径
 - 最终导出路径必须是一个新的具体草稿目录，不能是已有目录，更不能直接是剪映草稿根目录
@@ -33,6 +33,8 @@ description: >-
 - 在 skill 层编排导出，但直接调用 `Kairos Core` 提供的本地 Jianying backend
 - 不再依赖外部 `jianying` MCP server
 - 允许复用仓库中的 `KTEP` 校验和字幕导出逻辑
+- 草稿分辨率 / 帧率应直接继承 `timeline/current.json` 的正式规格；若项目未显式配置，则当前默认规格是 `3840x2160 @ 30fps`
+- 如果时间线 clip 带有“静音原音”意图，导出到剪映时应把对应视频片段写成静音
 
 ## 强规则：导出路径安全
 
@@ -73,7 +75,8 @@ description: >-
 ## 失败时优先检查
 
 - `vendor/pyJianYingDraft` 是否存在且路径未被改坏
-- `python` / `uv` 是否可用，以及 `pymediainfo` / `imageio` 依赖能否解析
+- `vendor/pyJianYingDraft/.venv` 是否存在，或 `jianyingPythonPath` 是否指向可执行 Python
+- 该 Python 环境中 `pymediainfo` / `imageio`（Windows 还包括 `uiautomation>=2`）是否可导入
 - 素材路径是否是目标机器可访问的 Windows 路径
 - 剪映草稿目录是否可写
 - 最终草稿目录是否误指向现有目录或草稿根目录
@@ -83,5 +86,6 @@ description: >-
 
 - `vendor/pyJianYingDraft` 是当前直接 vendored 的上游库
 - 当前 backend 通过 `pyJianYingDraft` 直写 `draft_info.json` / `draft_meta_info.json`
+- 对于需要静音的视频片段，当前 backend 会通过 `pyJianYingDraft` 的音量参数把片段音量压到静音
 - 这个 skill 是 Phase 5 的剪映目标实现
 - 默认安全策略是“新目录导出”，不是“覆盖旧草稿”

@@ -43,10 +43,11 @@ const IRuntimeConfig = z.object({
   sceneDetectScaleWidth: z.number().int().positive().optional(),
   mlServerUrl: z.string().optional(),
   djiOpenAPIKey: z.string().optional(),
-  jianyingBackend: z.literal('pyjianyingdraft').optional(),
+  timelineWidth: z.number().int().positive().optional(),
+  timelineHeight: z.number().int().positive().optional(),
+  timelineFps: z.number().positive().optional(),
   jianyingDraftRoot: z.string().optional(),
   jianyingPythonPath: z.string().optional(),
-  jianyingUvPath: z.string().optional(),
   jianyingPyProjectRoot: z.string().optional(),
 });
 export type IRuntimeConfig = z.infer<typeof IRuntimeConfig>;

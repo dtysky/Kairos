@@ -218,6 +218,7 @@ project/
 - 启发式规则只能作为 fallback，不能作为默认或主要的段落规划方案来源
 - ASR transcript 已经是正式证据源之一，可参与 candidate recall、outline 和 beat 写作
 - 但“素材里有声音”不等于“成片一定保留原声”；脚本应通过 `preserveNatSound / muteSource` 表达明确意图，未标注时交给 Timeline 自动推论
+- 如果一个 beat 内存在明确的头部 / 中间 / 尾部停顿，Script 阶段应优先写 `beat.utterances[]`，而不是假设字幕会自动在整拍里留白
 
 ### Phase 4: Timeline (时间线构建)
 
@@ -231,6 +232,8 @@ project/
 当前 Timeline 阶段的字幕有两条正式路径：
 - 旁白路径：按 `beat.text` 切字幕
 - 原声路径：当选中的 slice 带 transcript 且判断应保留原声时，按 `transcriptSegments` 直接落字幕
+- 若 `beat.utterances[]` 存在，Timeline 会按 utterance + pause 生成多个有声岛
+- 默认输出规格走项目 `config/runtime.json` 中的 `timelineWidth / timelineHeight / timelineFps`；未配置时 fallback 为 `3840x2160 @ 30fps`
 
 ### Phase 5: Export (NLE 导出)
 

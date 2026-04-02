@@ -87,4 +87,171 @@ describe('placeClips', () => {
       [4000, 8000],
     ]);
   });
+
+  it('stretches narration clips to the requested beat duration', () => {
+    const assets: IKtepAsset[] = [
+      {
+        id: 'asset-drive',
+        kind: 'video',
+        sourcePath: 'drive.mp4',
+        displayName: 'drive.mp4',
+      },
+    ];
+    const slices: IKtepSlice[] = [
+      {
+        id: 'slice-drive',
+        assetId: 'asset-drive',
+        type: 'drive',
+        sourceInMs: 2000,
+        sourceOutMs: 3000,
+        labels: [],
+        placeHints: [],
+      },
+    ];
+    const script: IKtepScript[] = [{
+      id: 'segment-1',
+      role: 'scene',
+      narration: 'test',
+      targetDurationMs: 4800,
+      linkedSliceIds: ['slice-drive'],
+      beats: [
+        {
+          id: 'beat-1',
+          text: '这是一段更长的旁白，需要比素材窗口更久。',
+          targetDurationMs: 4800,
+          actions: {
+            muteSource: true,
+          },
+          selections: [{
+            assetId: 'asset-drive',
+            sliceId: 'slice-drive',
+            sourceInMs: 2000,
+            sourceOutMs: 3000,
+          }],
+          linkedSliceIds: ['slice-drive'],
+        },
+      ],
+    }];
+
+    const { clips } = placeClips(script, slices, assets);
+
+    expect(clips).toHaveLength(1);
+    expect(clips[0]).toMatchObject({
+      sourceInMs: 2000,
+      sourceOutMs: 3000,
+      timelineInMs: 0,
+      timelineOutMs: 4800,
+    });
+  });
+
+  it('mutes embedded video audio for narration-driven beats', () => {
+    const assets: IKtepAsset[] = [
+      {
+        id: 'asset-drive',
+        kind: 'video',
+        sourcePath: 'drive.mp4',
+        displayName: 'drive.mp4',
+        metadata: {
+          hasAudioStream: true,
+          audioStreamCount: 1,
+        },
+      },
+    ];
+    const slices: IKtepSlice[] = [
+      {
+        id: 'slice-drive',
+        assetId: 'asset-drive',
+        type: 'drive',
+        sourceInMs: 0,
+        sourceOutMs: 1200,
+        labels: [],
+        placeHints: [],
+      },
+    ];
+    const script: IKtepScript[] = [{
+      id: 'segment-1',
+      role: 'scene',
+      narration: 'test',
+      targetDurationMs: 1200,
+      linkedSliceIds: ['slice-drive'],
+      beats: [
+        {
+          id: 'beat-1',
+          text: '旁白覆盖这段镜头。',
+          actions: {
+            muteSource: true,
+          },
+          selections: [{
+            assetId: 'asset-drive',
+            sliceId: 'slice-drive',
+            sourceInMs: 0,
+            sourceOutMs: 1200,
+          }],
+          linkedSliceIds: ['slice-drive'],
+        },
+      ],
+    }];
+
+    const { clips } = placeClips(script, slices, assets);
+
+    expect(clips[0]?.muteAudio).toBe(true);
+  });
+
+  it('keeps embedded video audio when a beat preserves natural sound', () => {
+    const assets: IKtepAsset[] = [
+      {
+        id: 'asset-talk',
+        kind: 'video',
+        sourcePath: 'talk.mp4',
+        displayName: 'talk.mp4',
+        metadata: {
+          hasAudioStream: true,
+          audioStreamCount: 1,
+        },
+      },
+    ];
+    const slices: IKtepSlice[] = [
+      {
+        id: 'slice-talk',
+        assetId: 'asset-talk',
+        type: 'talking-head',
+        sourceInMs: 0,
+        sourceOutMs: 1200,
+        transcriptSegments: [{
+          startMs: 0,
+          endMs: 1200,
+          text: '这是现场原话',
+        }],
+        labels: [],
+        placeHints: [],
+      },
+    ];
+    const script: IKtepScript[] = [{
+      id: 'segment-1',
+      role: 'scene',
+      narration: 'test',
+      targetDurationMs: 1200,
+      linkedSliceIds: ['slice-talk'],
+      beats: [
+        {
+          id: 'beat-1',
+          text: '这是现场原话',
+          actions: {
+            preserveNatSound: true,
+          },
+          selections: [{
+            assetId: 'asset-talk',
+            sliceId: 'slice-talk',
+            sourceInMs: 0,
+            sourceOutMs: 1200,
+          }],
+          linkedSliceIds: ['slice-talk'],
+        },
+      ],
+    }];
+
+    const { clips } = placeClips(script, slices, assets);
+
+    expect(clips[0]?.muteAudio).toBeUndefined();
+  });
 });

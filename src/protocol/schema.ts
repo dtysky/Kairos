@@ -227,9 +227,17 @@ export const IKtepScriptSelection = z.object({
 });
 export type IKtepScriptSelection = z.infer<typeof IKtepScriptSelection>;
 
+export const IKtepBeatUtterance = z.object({
+  text: z.string(),
+  pauseBeforeMs: z.number().min(0).optional(),
+  pauseAfterMs: z.number().min(0).optional(),
+});
+export type IKtepBeatUtterance = z.infer<typeof IKtepBeatUtterance>;
+
 export const IKtepScriptBeat = z.object({
   id: z.string(),
   text: z.string(),
+  utterances: z.array(IKtepBeatUtterance).optional(),
   targetDurationMs: z.number().optional(),
   actions: IKtepScriptAction.optional(),
   selections: z.array(IKtepScriptSelection),
@@ -296,6 +304,7 @@ export const IKtepClip = z.object({
   timelineOutMs: z.number(),
   transitionIn: IKtepTransition.optional(),
   transitionOut: IKtepTransition.optional(),
+  muteAudio: z.boolean().optional(),
   transform: IKtepTransform.optional(),
   linkedScriptSegmentId: z.string().optional(),
   linkedScriptBeatId: z.string().optional(),
