@@ -60,6 +60,11 @@ import { sliceInterestingWindows, slicePhoto, sliceVideo } from './slicer.js';
 import { resolveProjectGpxPaths } from './project-gps.js';
 import { resolveAssetSpatialContext } from './spatial-resolver.js';
 import type { IManualSpatialContext } from './manual-spatial.js';
+import {
+  hasMeaningfulSpeech,
+  normalizeTranscriptContext,
+  type ITranscriptContext,
+} from './transcript-signal.js';
 import { transcribe } from './transcriber.js';
 
 export interface IAnalyzeWorkspaceProjectInput {
@@ -121,7 +126,10 @@ export async function analyzeWorkspaceProjectMedia(
   let mlUsed = false;
   const getMlHandle = async () => {
     mlHandle ??= await createMlAvailability(runtimeConfig.mlServerUrl);
-    mlUsed ||= mlHandle.available;
+    if (!mlHandle.available) {
+      throw new Error(buildMlUnavailableErrorMessage(runtimeConfig.mlServerUrl));
+    }
+    mlUsed = true;
     return mlHandle;
   };
 
@@ -149,6 +157,10 @@ export async function analyzeWorkspaceProjectMedia(
   });
 
   try {
+    if (pendingAssets.length > 0) {
+      await getMlHandle();
+    }
+
     for (const [index, asset] of pendingAssets.entries()) {
       const localPath = resolveAssetLocalPath(input.projectId, asset, roots, deviceMaps);
       const fileIndex = index + 1;
@@ -503,14 +515,6 @@ interface IFineScanSlicesResult {
 interface MlAvailability {
   client: MlClient;
   available: boolean;
-}
-
-interface ITranscriptContext {
-  transcript: string;
-  segments: ITranscriptSegment[];
-  evidence: IKtepEvidence[];
-  speechCoverage: number;
-  speechWindows: IInterestingWindow[];
 }
 
 async function prepareAssetVisualCoarse(
@@ -880,13 +884,13 @@ async function maybeTranscribeAsset(input: {
       return null;
     }
 
-    return {
+    return normalizeTranscriptContext({
       transcript,
       segments,
       evidence: result.evidence,
       speechCoverage: computeSpeechCoverage(input.asset.durationMs ?? 0, segments),
       speechWindows: buildSpeechWindows(input.asset.durationMs ?? 0, segments),
-    };
+    });
   } catch {
     return null;
   }
@@ -927,17 +931,6 @@ function buildSpeechWindows(
       reason: 'speech-window',
     })),
   );
-}
-
-function hasMeaningfulSpeech(
-  transcript?: ITranscriptContext | null,
-): boolean {
-  if (!transcript) return false;
-
-  const compactTranscript = transcript.transcript.replace(/\s+/g, '');
-  if (compactTranscript.length >= 20) return true;
-  if (transcript.segments.length >= 2 && transcript.speechCoverage >= 0.08) return true;
-  return transcript.speechCoverage >= 0.18;
 }
 
 function buildUnifiedDecisionPrompt(input: {
@@ -1815,6 +1808,14 @@ async function createMlAvailability(baseUrl?: string): Promise<MlAvailability> {
   } catch {
     return { client, available: false };
   }
+}
+
+function buildMlUnavailableErrorMessage(baseUrl?: string): string {
+  return [
+    `ML server 不可用：${baseUrl ?? 'http://127.0.0.1:8910'}`,
+    '当前 analyze 不允许在无 ML 服务时静默 fallback。',
+    '请先启动或修复 ML server，再重新运行 analyze。',
+  ].join(' ');
 }
 
 function selectPendingAssets(

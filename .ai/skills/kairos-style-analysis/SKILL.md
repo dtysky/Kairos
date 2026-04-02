@@ -45,11 +45,14 @@ config/styles/
 - 用户提供一段辅助说明（会作为 guidance prompt 存储）
 - 最好提供该分类的名称；若未提供，可由 agent 结合路径和说明帮助命名
 - ML server 运行中（ASR 提取旁白文本）
+- 如果 ML server 不可用，必须直接停下并提示用户修复；不要静默退化成“无 ASR / 无 VLM”的风格分析结果
 - 如果当前平台是 **Windows + NVIDIA GPU**，优先使用 **Windows 原生 Python + CUDA** 启动 ML server / VLM，不要从 WSL 拉起
 - `ffmpeg` / `ffprobe` 可用；Windows 上优先从项目的 `config/runtime.json` 读取原生路径
 - Windows 上建议用 `powershell -ExecutionPolicy Bypass -File scripts/ml-server.ps1 restart` 管理 `kairos-ml`，避免旧实例残留
 - 默认分析代理规格推荐统一为 `1024w + yuv420p(8bit)`；风格分析里的场景检测和大多数预处理都应优先落到这一层
 - 对长视频的场景检测，默认可进一步降到低帧率采样（例如 `sceneDetectFps = 4`），避免在正式抽帧和 VLM 之前耗太久
+- 如果本轮风格分析是 agent 临时拉起 ML server 才开始的，任务结束、失败或中断后也必须主动把这个 ML server 停掉；不要留下孤儿推理服务
+- 但如果 ML server 是用户本来就在跑的长期服务，则不要擅自停止
 
 ## 临时文件约定
 
@@ -60,6 +63,7 @@ config/styles/
   - `config/styles/{category}.md`
   - `config/styles/catalog.json`
   - `analysis/reference-transcripts/...`
+- 如果 agent 在本轮风格分析里启动过监控页或 ML server，也应在收尾阶段同步停止对应进程
 
 ## 可用工具
 

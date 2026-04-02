@@ -59,6 +59,13 @@ analyzeWorkspaceProjectMedia(input: {
 `deviceMapPath` 通常不用显式传。省略时，Analyze 默认读取当前项目内的
 `config/device-media-maps.local.json`。
 
+## ML 前置条件
+
+- ML server 是 Analyze 的硬前置条件，不可用时必须直接停掉
+- 不允许在 ML server 不可用时继续产出“看起来完成了”的 fallback analyze 结果
+- 在真正开始粗扫前，应先检查 ML server health；如果不可用，立刻提示用户启动/修复服务后再继续
+- 只有用户明确接受“这轮先不做 analyze”时，才可以停在这里；不能擅自降级成无 ML 的 analyze
+
 ## 强规则：Analyze 前必须先做 GPS 提示
 
 在任何一次 Analyze 开始前，agent **必须先向用户明确提示并指导当前项目的 GPS 规则**。这一步是强规则，不能因为用户直接说“analyze / 分析 / 继续”就跳过。
@@ -158,6 +165,8 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
 - 对视频内音轨跑轻量 ASR
 - 提取 `transcript / transcriptSegments / speechCoverage`
 - 把 ASR 命中的语音时间窗并入 `interestingWindows`
+- 但要把“极稀疏语音”当噪声处理：如果 `speechCoverage` 低到只剩零星词片段（当前阈值为 `< 0.05`），应直接丢弃整段 transcript 上下文，不写入 coarse report，也不要让它推动 `interestingWindows` 或 fine-scan
+- 不要把“高 coverage 但内容本来就简单/重复”的素材误判为 ASR 故障；那类结果可以保留，只是后续由剪辑策略自己决定值不值得用
 
 这一步默认仍属于 Analyze phase，但不再和“视觉粗扫”混写成同一个子步骤。
 
@@ -244,6 +253,13 @@ const localPath = resolveAssetLocalPath(projectId, asset, roots, deviceMaps);
 
 素材分析复用 Kairos 通用进度页，而不是复用风格分析的业务逻辑。
 
+重要提示：
+- 只要开始执行一个可能持续较久的 Analyze，就应同步启动或刷新本地监控面板，而不是只在后台静默运行
+- 启动 Analyze 后，agent 应主动把监控面板 URL 告诉用户；如果分析已经开始但面板还没打开，应立即补开
+- 监控面板读取的是项目内 `.tmp/media-analyze/progress.json`，所以面板目录必须和当前项目绑定，不能混到别的项目进度目录
+- Analyze 正常结束、失败退出或用户中断后，agent 必须清理由自己启动的辅助进程，至少包括本次监控面板服务；如果本轮还主动拉起了 ML server，也必须一起停掉；除非用户明确要求保留
+- 清理边界只包含 agent 本轮主动启动的进程；不要顺手杀掉用户原本就在跑的 ML 服务、别的项目面板或无关后台服务
+
 - 默认进度文件建议写到：
 
 ```text
@@ -256,6 +272,16 @@ projects/<projectId>/.tmp/media-analyze/progress.json
 scripts/kairos-progress.ps1
 scripts/kairos-progress.sh
 ```
+
+- 推荐做法：
+  - macOS / Linux：先用 `KAIROS_PROGRESS_DIR=... bash scripts/kairos-progress.sh start` 启动面板，再开始或继续 Analyze
+  - Windows：先用 `scripts/kairos-progress.ps1 -Action start -ProgressDir ...` 启动面板，再开始或继续 Analyze
+  - 收尾时：
+    - macOS / Linux：`KAIROS_PROGRESS_DIR=... bash scripts/kairos-progress.sh stop`
+    - Windows：`scripts/kairos-progress.ps1 -Action stop -ProgressDir ...`
+  - 如果本轮 Analyze 是 agent 临时拉起 ML server 才跑起来的，收尾时也要配套执行：
+    - macOS / Linux：`bash scripts/ml-server.sh stop`
+    - Windows：`powershell -ExecutionPolicy Bypass -File scripts/ml-server.ps1 stop`
 
 - `progress.json` 的关键字段包括：
   - `pipelineKey / pipelineLabel`

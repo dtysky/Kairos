@@ -190,6 +190,8 @@ const result = await ingestWorkspaceProjectMedia({
 - 当前总资产数
 - chronology 是否更新
 - 是否有同源 GPS 绑定 warnings（例如 `FlightRecord` 缺失、未解密、未解析出坐标）
+- 如果本轮 ingest 为了观测进度或排查问题启动过临时辅助进程，结束后要主动清理；除非用户明确要求保留
+- 清理范围只包含 agent 本轮主动拉起的辅助进程，不包括用户本来就在跑的后台服务
 
 ## 导入结果
 
