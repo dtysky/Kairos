@@ -1,5 +1,5 @@
 import { execFile, type ExecFileOptionsWithStringEncoding } from 'node:child_process';
-import { access, mkdtemp, writeFile } from 'node:fs/promises';
+import { access, lstat, mkdtemp, readdir, writeFile } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -100,6 +100,7 @@ export class JianyingLocalRunner {
     }
 
     const outputPath = resolveJianyingOutputPath(spec.project.name, this.config);
+    await assertSafeJianyingOutputPath(outputPath);
     const manifestDir = await mkdtemp(join(tmpdir(), 'kairos-jianying-'));
     const manifestPath = join(manifestDir, 'manifest.json');
     const manifest: IJianyingLocalManifest = {
@@ -313,6 +314,47 @@ function sanitizeDraftName(projectName: string): string {
   return sanitized || 'Kairos Draft';
 }
 
+async function assertSafeJianyingOutputPath(outputPath: string): Promise<void> {
+  try {
+    const stats = await lstat(outputPath);
+    if (!stats.isDirectory()) {
+      throw new JianyingLocalExportError({
+        code: 'unsafe_output_path',
+        message: (
+          `Refusing to export to existing path '${outputPath}'. `
+          + 'Export target must be a brand-new directory because overwrite/delete is disabled.'
+        ),
+        manifestPath: '',
+        outputPath,
+      });
+    }
+
+    const entries = await readdir(outputPath);
+    const detail = entries.length > 0
+      ? ` It already contains ${entries.length} entr${entries.length === 1 ? 'y' : 'ies'}.`
+      : ' The directory already exists.';
+    throw new JianyingLocalExportError({
+      code: 'unsafe_output_path',
+      message: (
+        `Refusing to export to existing directory '${outputPath}'. `
+        + 'Export target must not already exist because overwrite/delete is disabled.'
+        + detail
+      ),
+      manifestPath: '',
+      outputPath,
+      details: {
+        entryCount: entries.length,
+        sampleEntries: entries.slice(0, 10),
+      },
+    });
+  } catch (error) {
+    if (getErrorCode(error) === 'ENOENT') {
+      return;
+    }
+    throw error;
+  }
+}
+
 async function pathExists(filePath: string): Promise<boolean> {
   try {
     await access(filePath, constants.F_OK);
@@ -320,4 +362,10 @@ async function pathExists(filePath: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+function getErrorCode(error: unknown): string | undefined {
+  if (!error || typeof error !== 'object') return undefined;
+  const code = Reflect.get(error, 'code');
+  return typeof code === 'string' ? code : undefined;
 }

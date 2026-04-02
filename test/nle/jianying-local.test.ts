@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { existsSync } from 'node:fs';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -99,6 +99,38 @@ describe('JianyingLocalRunner', () => {
       'pyjianyingdraft_backend',
       'py_notice',
     ]);
+  });
+
+  it('refuses to export into an existing directory', async () => {
+    const outputRoot = await mkdtemp(join(tmpdir(), 'kairos-jianying-local-test-'));
+    const outputPath = join(outputRoot, 'Existing Draft');
+    tempPaths.push(outputRoot);
+
+    await mkdir(outputPath, { recursive: true });
+    await writeFile(join(outputPath, 'draft_info.json'), '{}', 'utf-8');
+
+    let invoked = false;
+    const runner = new JianyingLocalRunner(
+      {
+        outputPath,
+        pythonPath: 'python-mock',
+        pyProjectRoot,
+        scriptPath,
+      },
+      async () => {
+        invoked = true;
+        return {
+          stdout: '{}',
+          stderr: '',
+        };
+      },
+    );
+
+    await expect(runner.export(createTextOnlySpec())).rejects.toMatchObject({
+      code: 'unsafe_output_path',
+      outputPath,
+    });
+    expect(invoked).toBe(false);
   });
 
   it.skipIf(!existsSync(vendoredPython))(

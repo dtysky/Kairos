@@ -32,9 +32,6 @@ export function placeClips(
   const primaryTrack: IKtepTrack = {
     id: randomUUID(), kind: 'video', role: 'primary', index: 0,
   };
-  const brollTrack: IKtepTrack = {
-    id: randomUUID(), kind: 'video', role: 'broll', index: 1,
-  };
 
   const clips: IKtepClip[] = [];
   let cursor = 0;
@@ -72,7 +69,6 @@ export function placeClips(
             ? Math.min(perSelection, cfg.photoDefaultMs)
             : Math.min(perSelection, cfg.maxSliceDurationMs);
 
-        const isBroll = selection.sliceType === 'broll' || selection.sliceType === 'aerial';
         const sourceInMs = selection.sourceInMs;
         const sourceOutMs = sourceInMs != null && clipDur > 0
           ? sourceInMs + clipDur
@@ -80,7 +76,9 @@ export function placeClips(
 
         clips.push({
           id: randomUUID(),
-          trackId: isBroll ? brollTrack.id : primaryTrack.id,
+          // Jianying does not handle serial clips split across multiple video tracks well.
+          // Until we support true overlap-aware placement, keep all serial video clips on one track.
+          trackId: primaryTrack.id,
           assetId: asset.id,
           sliceId: selection.sliceId,
           sourceInMs,
@@ -103,12 +101,7 @@ export function placeClips(
     }
   }
 
-  const tracks = [primaryTrack];
-  if (clips.some(c => c.trackId === brollTrack.id)) {
-    tracks.push(brollTrack);
-  }
-
-  return { tracks, clips };
+  return { tracks: [primaryTrack], clips };
 }
 
 interface IResolvedSelection extends IKtepScriptSelection {

@@ -72,7 +72,7 @@ def export_manifest(manifest: Dict[str, Any]) -> Dict[str, Any]:
         width=int(spec["timeline"]["resolution"]["width"]),
         height=int(spec["timeline"]["resolution"]["height"]),
         fps=int(spec["timeline"]["fps"]),
-        allow_replace=True,
+        allow_replace=False,
     )
     # Current Jianying builds expect the main draft payload as `draft_info.json`.
     script.save_path = str(output_path / "draft_info.json")
