@@ -26,6 +26,15 @@ export {
   type IShotKeyframeGroup,
 } from './keyframe.js';
 export { slicePhoto, sliceVideo, sliceInterestingWindows } from './slicer.js';
+export {
+  applyTypeAwareWindowExpansion,
+  buildDriveSpeedCandidate,
+  hasExplicitEditRange,
+  mergeInterestingWindowsByPreferredBounds,
+  resolveSlicePreferredRange,
+  resolveWindowPreferredRange,
+  type ITypeAwareWindowExpansionInput,
+} from './window-policy.js';
 export { MlClient, type IAsrSegment, type IOcrResult, type IVlmResult, type IMlHealth } from './ml-client.js';
 export { transcribe, type ITranscription } from './transcriber.js';
 export { extractOcr, type IOcrExtraction } from './ocr.js';

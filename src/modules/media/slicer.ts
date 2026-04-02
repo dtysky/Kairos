@@ -45,6 +45,8 @@ export function sliceVideo(
       type: 'shot',
       sourceInMs: inMs,
       sourceOutMs: outMs,
+      editSourceInMs: inMs,
+      editSourceOutMs: outMs,
       labels: [],
       placeHints: [],
     });
@@ -66,8 +68,16 @@ export function sliceInterestingWindows(
       type,
       sourceInMs: window.startMs,
       sourceOutMs: window.endMs,
+      editSourceInMs: window.editStartMs ?? window.startMs,
+      editSourceOutMs: window.editEndMs ?? window.endMs,
       summary: window.reason,
       labels: [],
       placeHints: [],
+      ...(window.speedCandidate && {
+        speedCandidate: {
+          ...window.speedCandidate,
+          suggestedSpeeds: [...window.speedCandidate.suggestedSpeeds],
+        },
+      }),
     }));
 }

@@ -66,6 +66,10 @@ import {
   type ITranscriptContext,
 } from './transcript-signal.js';
 import { transcribe } from './transcriber.js';
+import {
+  applyTypeAwareWindowExpansion,
+  buildDriveSpeedCandidate,
+} from './window-policy.js';
 
 export interface IAnalyzeWorkspaceProjectInput {
   workspaceRoot: string;
@@ -629,13 +633,22 @@ async function finalizePreparedAsset(
     ml,
     manualSpatial,
   });
-  const effectivePlan = applyDriveFallbackWindows(
+  const decidedPlan = applyDriveFallbackWindows(
     applyAnalysisDecision(plan, decision),
     decision.clipType,
     input.prepared.asset.durationMs ?? 0,
     input.budget,
     input.prepared.coarseSampleTimestamps,
   );
+  const effectivePlan: IMediaAnalysisPlan = {
+    ...decidedPlan,
+    interestingWindows: applyTypeAwareWindowExpansion({
+      clipType: decision.clipType,
+      durationMs: input.prepared.asset.durationMs ?? 0,
+      windows: decidedPlan.interestingWindows,
+      shotBoundaries: input.prepared.shotBoundaries,
+    }),
+  };
   const report = buildAssetCoarseReport({
     asset: input.prepared.asset,
     plan: effectivePlan,
@@ -1506,7 +1519,7 @@ function buildFineScanReasons(
   reportPlan: {
     shouldFineScan: boolean;
     fineScanMode: 'skip' | 'windowed' | 'full';
-    interestingWindows: { reason: string }[];
+    interestingWindows: IInterestingWindow[];
   },
   density: { score: number },
   shotBoundaries: IShotBoundary[],
@@ -1525,6 +1538,16 @@ function buildFineScanReasons(
   if ((transcript?.speechCoverage ?? 0) >= 0.2) reasons.add('high-speech-coverage');
   for (const window of reportPlan.interestingWindows) {
     reasons.add(window.reason);
+    if (
+      typeof window.editStartMs === 'number'
+      && typeof window.editEndMs === 'number'
+      && (window.editStartMs !== window.startMs || window.editEndMs !== window.endMs)
+    ) {
+      reasons.add('edit-window-expanded');
+    }
+    if (window.speedCandidate) {
+      reasons.add('drive-speed-candidate');
+    }
   }
   return [...reasons];
 }
@@ -1588,7 +1611,7 @@ async function buildFineScanSlices(
       input.report.interestingWindows,
       mapClipTypeToSliceType(input.clipType),
     );
-  const effectiveSlices = baseSlices.length > 0
+  const rawSlices = baseSlices.length > 0
     ? baseSlices
     : input.report.fineScanMode === 'windowed' && (input.asset.durationMs ?? 0) > 0
       ? sliceInterestingWindows(
@@ -1601,6 +1624,13 @@ async function buildFineScanSlices(
         mapClipTypeToSliceType(input.clipType),
       )
       : baseSlices;
+  const effectiveSlices = rawSlices.map(slice =>
+    applySliceWindowSemantics(
+      slice,
+      input.clipType,
+      input.asset.durationMs ?? 0,
+    ),
+  );
 
   if (effectiveSlices.length === 0) {
     return { slices: [], droppedInvalidSliceCount: 0 };
@@ -1738,18 +1768,56 @@ function buildFineScanKeyframePlans(
   framesPerSlice = 3,
 ): IShotKeyframePlan[] {
   return slices
-    .filter(slice => typeof slice.sourceInMs === 'number' && typeof slice.sourceOutMs === 'number')
-    .filter(slice => (slice.sourceOutMs as number) > (slice.sourceInMs as number))
+    .filter(slice => {
+      const startMs = slice.editSourceInMs ?? slice.sourceInMs;
+      const endMs = slice.editSourceOutMs ?? slice.sourceOutMs;
+      return typeof startMs === 'number' && typeof endMs === 'number' && endMs > startMs;
+    })
     .map(slice => ({
       shotId: slice.id,
-      startMs: slice.sourceInMs as number,
-      endMs: slice.sourceOutMs as number,
+      startMs: (slice.editSourceInMs ?? slice.sourceInMs) as number,
+      endMs: (slice.editSourceOutMs ?? slice.sourceOutMs) as number,
       timestampsMs: sampleRangeTimestamps(
-        slice.sourceInMs as number,
-        slice.sourceOutMs as number,
+        (slice.editSourceInMs ?? slice.sourceInMs) as number,
+        (slice.editSourceOutMs ?? slice.sourceOutMs) as number,
         framesPerSlice,
       ),
     }));
+}
+
+function applySliceWindowSemantics(
+  slice: IKtepSlice,
+  clipType: EClipType,
+  assetDurationMs: number,
+): IKtepSlice {
+  const result: IKtepSlice = {
+    ...slice,
+    ...(typeof slice.sourceInMs === 'number' && typeof slice.sourceOutMs === 'number'
+      ? {
+        editSourceInMs: slice.editSourceInMs ?? slice.sourceInMs,
+        editSourceOutMs: slice.editSourceOutMs ?? slice.sourceOutMs,
+      }
+      : {}),
+  };
+
+  if (clipType !== 'drive' || result.speedCandidate) {
+    return result;
+  }
+
+  const editStartMs = result.editSourceInMs ?? result.sourceInMs;
+  const editEndMs = result.editSourceOutMs ?? result.sourceOutMs;
+  if (typeof editStartMs !== 'number' || typeof editEndMs !== 'number' || editEndMs <= editStartMs) {
+    return result;
+  }
+
+  return {
+    ...result,
+    speedCandidate: buildDriveSpeedCandidate(
+      assetDurationMs,
+      editEndMs - editStartMs,
+      `drive:${result.summary ?? 'fine-scan-slice'}`,
+    ),
+  };
 }
 
 function reconcileFineScanReport(input: {

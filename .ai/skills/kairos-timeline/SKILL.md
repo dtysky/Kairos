@@ -134,6 +134,14 @@ Timeline 阶段的字幕已经不是“永远只切 `beat.text`”：
 - 如果 `beat.utterances[]` 存在，字幕会按多段 utterance + `pauseBeforeMs / pauseAfterMs` 生成多个有声岛，而不是把整个 beat 当成连续配音
 - 当某拍不走 source speech 时，命中的带音轨视频 clip 会被标记为静音意图，供导出适配器把原音压到静音
 
+## 画面时长与速度规则
+
+- 对 Analyze 新产出的 slice，时间线默认优先使用 `editSourceInMs / editSourceOutMs`，而不是旧的 tight focus window
+- 只有旧 slice / 旧 selection 缺少 edit bounds 时，`placeClips()` 才会回落到 legacy stretch 行为
+- 如果确实需要速度变化，应显式使用 `beat.actions.speed`
+- 显式 `speed` 现在会进入 timeline clip `speed`，并继续透传到导出层；不要再依赖“短 source + 长 target”去隐式制造慢放
+- `drive` slice 上的 `speedCandidate` 只是建议档位，不是自动应用的最终速度
+
 ## 产出
 
 | 文件 | 格式 | 内容 |
@@ -144,6 +152,7 @@ Timeline 阶段的字幕已经不是“永远只切 `beat.text`”：
 
 - **默认输出规格**：若项目 `config/runtime.json` 未显式设置 `timelineWidth / timelineHeight / timelineFps`，默认生成 `3840x2160 @ 30fps`
 - **项目覆盖**：如果项目有明确输出要求，应优先通过 `config/runtime.json` 覆盖默认规格，而不是只在某个 NLE 导出阶段临时改
+- **速度决策**：`drive` 段落如果需要更快节奏，优先写显式 `actions.speed`，不要靠缩短 selection 或期待导出器自动推导
 - **转场风格**：`cross-dissolve`（柔和）vs `fade`（正式）vs `cut`（干脆）
 - **照片时长**：默认 5 秒，快节奏可以 3 秒，慢节奏可以 7 秒
 - **字幕字数**：`maxCharsPerCue` 控制每条字幕的最大字数，中文建议 15-20

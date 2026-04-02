@@ -23,6 +23,7 @@ const CSYSTEM = `你是一个旅拍纪录片脚本创作者。根据给定的叙
 8a. 如果候选切片里带有明确口播/人物原声 transcript，且这段话本身值得直接进入正片，优先保留原声并设置 preserveNatSound=true
 8b. 对于 preserveNatSound=true 的 beat，text 应尽量贴近要保留的原话或其可读字幕版本，不要再额外改写成旁白
 8c. 如果一个带语音的素材主要承担 intro、transition、铺垫、空间建立或情绪过门画面，而不打算直接使用它的原话，就不要因为它有 transcript 就保留原声；这类 beat 应优先设置 muteSource=true，并把 text 正常写成旁白
+8d. 如果候选 beat 标出了速度候选（例如 2x/5x/10x），只有在你明确想做速度蒙太奇时才填写 actions.speed；不要靠把 source 裁得很短或默认慢放去贴时长
 9. narration 是整段的聚合预览，可选；若提供，应与 beats 内容一致
 10. 返回 JSON 数组，每个元素包含 id, role, title, narration, targetDurationMs, actions, selections, linkedSliceIds, beats`;
 
@@ -136,6 +137,9 @@ export function buildOutlinePrompt(outline: IOutlineSegment[]): string {
           beat.transcript ? `原声: ${beat.transcript}` : '',
           uniqueLabels.length > 0 ? `标签: ${uniqueLabels.join(', ')}` : '',
           uniquePlaceHints.length > 0 ? `地点: ${uniquePlaceHints.join(', ')}` : '',
+          beat.speedCandidate
+            ? `速度候选: ${beat.speedCandidate.suggestedSpeeds.join('x / ')}x`
+            : '',
         ].filter(Boolean).join(' | ');
         return `   - ${index + 1}. ${beat.title} ${beatRange}${details ? ` ${details}` : ''}`;
       })
@@ -159,11 +163,17 @@ function normalizeSelections(
     const fallback = fallbackSelections[i] ?? fallbackSelections[0];
     const assetId = raw?.assetId ?? fallback?.assetId;
     if (typeof assetId !== 'string' || assetId.length === 0) continue;
+    const normalizedWindow = normalizeSelectionWindow(
+      pickOptionalNumber(raw?.sourceInMs, fallback?.sourceInMs),
+      pickOptionalNumber(raw?.sourceOutMs, fallback?.sourceOutMs),
+      fallback?.sourceInMs,
+      fallback?.sourceOutMs,
+    );
     normalized.push({
       assetId,
       sliceId: raw?.sliceId ?? fallback?.sliceId,
-      sourceInMs: pickOptionalNumber(raw?.sourceInMs, fallback?.sourceInMs),
-      sourceOutMs: pickOptionalNumber(raw?.sourceOutMs, fallback?.sourceOutMs),
+      sourceInMs: normalizedWindow?.sourceInMs,
+      sourceOutMs: normalizedWindow?.sourceOutMs,
       notes: typeof raw?.notes === 'string' ? raw.notes : undefined,
     });
   }
@@ -454,6 +464,67 @@ function splitWithDelimiters(text: string, delimiter: RegExp): string[] {
   }
 
   return result;
+}
+
+function normalizeSelectionWindow(
+  sourceInMs: number | undefined,
+  sourceOutMs: number | undefined,
+  fallbackInMs: number | undefined,
+  fallbackOutMs: number | undefined,
+): Pick<IKtepScriptSelection, 'sourceInMs' | 'sourceOutMs'> | undefined {
+  if (typeof sourceInMs !== 'number' || typeof sourceOutMs !== 'number' || sourceOutMs <= sourceInMs) {
+    if (typeof fallbackInMs === 'number' || typeof fallbackOutMs === 'number') {
+      return {
+        sourceInMs: fallbackInMs,
+        sourceOutMs: fallbackOutMs,
+      };
+    }
+    return {
+      sourceInMs,
+      sourceOutMs,
+    };
+  }
+
+  let normalizedInMs = sourceInMs;
+  let normalizedOutMs = sourceOutMs;
+  const hasFallbackWindow = typeof fallbackInMs === 'number' && typeof fallbackOutMs === 'number' && fallbackOutMs > fallbackInMs;
+  if (hasFallbackWindow) {
+    normalizedInMs = Math.max(fallbackInMs as number, normalizedInMs);
+    normalizedOutMs = Math.min(fallbackOutMs as number, normalizedOutMs);
+    if (normalizedOutMs <= normalizedInMs) {
+      return {
+        sourceInMs: fallbackInMs,
+        sourceOutMs: fallbackOutMs,
+      };
+    }
+
+    const fallbackDurationMs = (fallbackOutMs as number) - (fallbackInMs as number);
+    const requestedDurationMs = normalizedOutMs - normalizedInMs;
+    const minSafeDurationMs = Math.min(
+      Math.max(2_500, Math.round(fallbackDurationMs * 0.4)),
+      fallbackDurationMs,
+    );
+
+    if (fallbackDurationMs >= 4_000 && requestedDurationMs < minSafeDurationMs) {
+      const center = normalizedInMs + requestedDurationMs / 2;
+      normalizedInMs = Math.round(center - minSafeDurationMs / 2);
+      normalizedOutMs = normalizedInMs + minSafeDurationMs;
+
+      if (normalizedInMs < (fallbackInMs as number)) {
+        normalizedInMs = fallbackInMs as number;
+        normalizedOutMs = normalizedInMs + minSafeDurationMs;
+      }
+      if (normalizedOutMs > (fallbackOutMs as number)) {
+        normalizedOutMs = fallbackOutMs as number;
+        normalizedInMs = normalizedOutMs - minSafeDurationMs;
+      }
+    }
+  }
+
+  return {
+    sourceInMs: normalizedInMs,
+    sourceOutMs: normalizedOutMs,
+  };
 }
 
 function findRepeatedTokens(tokenGroups: string[][]): Set<string> {

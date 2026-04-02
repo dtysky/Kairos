@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type {
   IKtepClip, IKtepTrack, IKtepScript, IKtepSlice, IKtepAsset, IKtepScriptSelection, IKtepScriptBeat,
 } from '../../protocol/schema.js';
+import { hasExplicitEditRange, resolveSlicePreferredRange } from '../media/window-policy.js';
 import { buildSourceSpeechContext, shouldPreferSourceSpeech } from './pacing.js';
 
 export interface IPlacementConfig {
@@ -55,7 +56,9 @@ export function placeClips(
         beat,
         buildSourceSpeechContext(selections, sliceMap),
       );
-      const shouldStretchSelections = !preferSourceSpeech;
+      const explicitSpeed = preferSourceSpeech
+        ? undefined
+        : resolveRequestedSpeed(beat.actions?.speed ?? seg.actions?.speed);
 
       if (selections.length === 0) {
         cursor += beatDur;
@@ -75,9 +78,14 @@ export function placeClips(
           : isPhoto
             ? Math.min(perSelection, cfg.photoDefaultMs)
             : Math.min(perSelection, cfg.maxSliceDurationMs);
-        const clipDur = shouldStretchSelections
-          ? Math.max(baseClipDur, perSelection)
-          : baseClipDur;
+        const shouldStretchSelections = !preferSourceSpeech
+          && explicitSpeed == null
+          && !selection.hasExplicitEditRange;
+        const explicitSpeedClipDur = explicitSpeed != null && sourceRangeDur != null
+          ? Math.max(1, Math.round(sourceRangeDur / explicitSpeed))
+          : undefined;
+        const clipDur = explicitSpeedClipDur
+          ?? (shouldStretchSelections ? Math.max(baseClipDur, perSelection) : baseClipDur);
 
         const sourceInMs = selection.sourceInMs;
         const sourceOutMs = selection.sourceOutMs != null
@@ -95,6 +103,7 @@ export function placeClips(
           sliceId: selection.sliceId,
           sourceInMs,
           sourceOutMs,
+          ...(explicitSpeed != null && { speed: explicitSpeed }),
           timelineInMs: cursor,
           timelineOutMs: cursor + clipDur,
           ...(shouldMuteClipAudio(asset, preferSourceSpeech) && { muteAudio: true }),
@@ -119,6 +128,8 @@ export function placeClips(
 
 interface IResolvedSelection extends IKtepScriptSelection {
   sliceType?: IKtepSlice['type'];
+  hasExplicitEditRange?: boolean;
+  speedCandidate?: IKtepSlice['speedCandidate'];
 }
 
 interface IResolvedBeat extends Omit<IKtepScriptBeat, 'selections'> {
@@ -156,12 +167,15 @@ function resolveSelections(
 ): IResolvedSelection[] {
   return selections.map(selection => {
     const slice = selection.sliceId ? sliceMap.get(selection.sliceId) : undefined;
+    const preferredRange = slice ? resolveSlicePreferredRange(slice) : null;
     return {
       ...selection,
       assetId: selection.assetId ?? slice?.assetId ?? '',
-      sourceInMs: selection.sourceInMs ?? slice?.sourceInMs,
-      sourceOutMs: selection.sourceOutMs ?? slice?.sourceOutMs,
+      sourceInMs: selection.sourceInMs ?? preferredRange?.startMs ?? slice?.sourceInMs,
+      sourceOutMs: selection.sourceOutMs ?? preferredRange?.endMs ?? slice?.sourceOutMs,
       sliceType: slice?.type,
+      hasExplicitEditRange: slice ? hasExplicitEditRange(slice) : false,
+      speedCandidate: slice?.speedCandidate,
     };
   }).filter(selection => selection.assetId.length > 0);
 }
@@ -194,4 +208,9 @@ function resolveSourceDuration(sourceInMs?: number, sourceOutMs?: number): numbe
   if (sourceInMs == null || sourceOutMs == null) return undefined;
   if (sourceOutMs <= sourceInMs) return undefined;
   return sourceOutMs - sourceInMs;
+}
+
+function resolveRequestedSpeed(speed?: number): number | undefined {
+  if (typeof speed !== 'number' || !Number.isFinite(speed) || speed <= 0) return undefined;
+  return speed;
 }

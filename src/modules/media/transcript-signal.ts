@@ -30,7 +30,8 @@ export function normalizeTranscriptContext(
     || segments.map(segment => segment.text).join(' ').trim();
   const speechWindows = transcript.speechWindows
     .filter(window => window.endMs > window.startMs)
-    .map(window => ({ ...window }));
+    .map(normalizeInterestingWindow)
+    .filter((window): window is IInterestingWindow => window != null);
   const speechCoverage = Math.max(0, Math.min(1, transcript.speechCoverage));
 
   if (!normalizedTranscript && segments.length === 0) return null;
@@ -54,4 +55,35 @@ export function hasMeaningfulSpeech(
   if (compactTranscript.length >= 20) return true;
   if (transcript.segments.length >= 2 && transcript.speechCoverage >= 0.08) return true;
   return transcript.speechCoverage >= 0.18;
+}
+
+function normalizeInterestingWindow(
+  window: IInterestingWindow,
+): IInterestingWindow | null {
+  if (window.endMs <= window.startMs) return null;
+
+  const editStartMs = typeof window.editStartMs === 'number' ? window.editStartMs : undefined;
+  const editEndMs = typeof window.editEndMs === 'number' ? window.editEndMs : undefined;
+  const suggestedSpeeds = window.speedCandidate
+    ? [...window.speedCandidate.suggestedSpeeds]
+      .filter(speed => Number.isFinite(speed) && speed > 0)
+    : [];
+
+  return {
+    ...window,
+    ...(editStartMs != null && editEndMs != null && editEndMs > editStartMs
+      ? {
+        editStartMs,
+        editEndMs,
+      }
+      : {}),
+    ...(window.speedCandidate && suggestedSpeeds.length > 0
+      ? {
+        speedCandidate: {
+          ...window.speedCandidate,
+          suggestedSpeeds,
+        },
+      }
+      : {}),
+  };
 }

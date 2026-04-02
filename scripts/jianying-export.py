@@ -143,6 +143,7 @@ def create_media_segments(
             clip.get("sourceInMs"),
             clip.get("sourceOutMs"),
         )
+        speed = float(clip["speed"]) if clip.get("speed") is not None else None
 
         volume = float(clip.get("volume", 1.0))
 
@@ -151,6 +152,7 @@ def create_media_segments(
                 str(clip["materialPath"]),
                 target_timerange,
                 source_timerange=source_timerange,
+                speed=speed,
                 volume=volume,
             )
         else:
@@ -158,6 +160,7 @@ def create_media_segments(
                 str(clip["materialPath"]),
                 target_timerange,
                 source_timerange=source_timerange,
+                speed=speed,
                 volume=volume,
                 clip_settings=build_clip_settings(clip.get("clipSettings")),
             )

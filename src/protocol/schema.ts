@@ -198,6 +198,8 @@ export const IKtepSlice = z.object({
   type: ESliceType,
   sourceInMs: z.number().optional(),
   sourceOutMs: z.number().optional(),
+  editSourceInMs: z.number().optional(),
+  editSourceOutMs: z.number().optional(),
   summary: z.string().optional(),
   transcript: z.string().optional(),
   transcriptSegments: z.array(ITranscriptSegment).optional(),
@@ -206,6 +208,11 @@ export const IKtepSlice = z.object({
   evidence: z.array(IKtepEvidence).optional(),
   speechCoverage: z.number().min(0).max(1).optional(),
   confidence: z.number().min(0).max(1).optional(),
+  speedCandidate: z.object({
+    suggestedSpeeds: z.array(z.number().positive()).min(1),
+    rationale: z.string(),
+    confidence: z.number().min(0).max(1).optional(),
+  }).optional(),
 });
 export type IKtepSlice = z.infer<typeof IKtepSlice>;
 
@@ -300,6 +307,7 @@ export const IKtepClip = z.object({
   sliceId: z.string().optional(),
   sourceInMs: z.number().optional(),
   sourceOutMs: z.number().optional(),
+  speed: z.number().positive().optional(),
   timelineInMs: z.number(),
   timelineOutMs: z.number(),
   transitionIn: IKtepTransition.optional(),
@@ -423,10 +431,20 @@ export type IStyleCatalog = z.infer<typeof IStyleCatalog>;
 
 // ─── Media Analysis ─────────────────────────────────────────
 
+export const ISpeedCandidateHint = z.object({
+  suggestedSpeeds: z.array(z.number().positive()).min(1),
+  rationale: z.string(),
+  confidence: z.number().min(0).max(1).optional(),
+});
+export type ISpeedCandidateHint = z.infer<typeof ISpeedCandidateHint>;
+
 export const IInterestingWindow = z.object({
   startMs: z.number(),
   endMs: z.number(),
+  editStartMs: z.number().optional(),
+  editEndMs: z.number().optional(),
   reason: z.string(),
+  speedCandidate: ISpeedCandidateHint.optional(),
 });
 export type IInterestingWindow = z.infer<typeof IInterestingWindow>;
 
@@ -592,6 +610,9 @@ export const ISegmentRecallCandidate = z.object({
   placeHints: z.array(z.string()),
   sourceInMs: z.number().optional(),
   sourceOutMs: z.number().optional(),
+  editSourceInMs: z.number().optional(),
+  editSourceOutMs: z.number().optional(),
+  speedCandidate: ISpeedCandidateHint.optional(),
 });
 export type ISegmentRecallCandidate = z.infer<typeof ISegmentRecallCandidate>;
 

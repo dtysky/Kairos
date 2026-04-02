@@ -50,6 +50,7 @@ export interface IJianyingClipSpec {
   targetEndMs: number;
   sourceInMs?: number;
   sourceOutMs?: number;
+  speed?: number;
   volume?: number;
   clipSettings?: IJianyingClipSettings;
   transitionOut?: IJianyingTransitionSpec;
@@ -238,6 +239,7 @@ export class JianyingDraftBuilder {
         targetEndMs: clip.timelineOutMs,
         ...(clip.sourceInMs != null && { sourceInMs: clip.sourceInMs }),
         ...(clip.sourceOutMs != null && { sourceOutMs: clip.sourceOutMs }),
+        ...(clip.speed != null && { speed: clip.speed }),
         ...(clipVolume != null && { volume: clipVolume }),
         ...(clipSettings && { clipSettings }),
         ...(trackKind === 'video' && clip.transitionOut?.type !== 'cut' && {

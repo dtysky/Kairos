@@ -69,12 +69,18 @@ flowchart TD
 - 当前正式策略是“粗扫优先 + 自动细扫”
 - 视频内音轨的 ASR 已进入正式分析链路，而不再只是附属信息
 - `transcript / transcriptSegments / speechCoverage / placeHints / inferredGps` 都属于分析层结果
+- `interestingWindows` 不再只有单一语义：
+  - `startMs / endMs` 保留“为什么这里重要”的 focus/evidence window
+  - `editStartMs / editEndMs` 表示更适合后续编排消费的 edit-friendly bounds
+- `drive` 类素材可在分析层直接挂 `speedCandidate` metadata（例如 `2x / 5x / 10x` 建议档位），但 Analyze 不直接替下游决定最终速度
 
 ### Script
 
 - 正式脚本编排已经不是“整段 narration + 粗引用素材”的模型
 - 当前正式模型是 `segment + beat + selection`
 - 用户审查闸门存在于脚本生成之前，而不是召回和编排全部完成之后
+- 当前脚本 / outline 默认优先消费 Analyze 给出的 `editSourceInMs / editSourceOutMs`，而不是继续把 tight evidence window 当成最终可剪子区间
+- 模型仍可把 `selection.sourceInMs / sourceOutMs` 写得更细，但系统会先 clamp 到 outline fallback window，避免再次无意识裁得过短
 
 ### Timeline / Export
 
@@ -85,6 +91,10 @@ flowchart TD
 - 旁白路径已支持显式 `beat.utterances[]`，可以在一个 beat 内表达多段配音与头部 / 中间 / 尾部停顿；字幕只覆盖有声岛，不再默认铺满整个 beat
 - `preserveNatSound / muteSource` 是脚本层的显式覆盖信号；未显式标注时，时间线层可结合 transcript 匹配度、`speechCoverage` 与段落角色推论是否保留原声
 - 当前字幕时长已不再是简单平均分配，而是会参考说话速度和标点停顿做节奏估算
+- 当前时间线不再把“短 source + 长 beat”当成默认慢放来源：
+  - 对带 `editSourceInMs / editSourceOutMs` 的新 slice，时间线优先使用 edit-friendly bounds
+  - 只有旧 slice / 旧 selection 缺少 edit bounds 时，才保留 legacy fallback stretch
+- 如果确实需要速度蒙太奇，当前正式路径是显式填写 `beat.actions.speed`，它会进入 timeline clip `speed` 并透传到导出层
 - 时间线 / 草稿输出规格已收口为项目级运行时配置：`timelineWidth / timelineHeight / timelineFps`，默认值为 `3840x2160 @ 30fps`
 - 当某拍不走 source speech 时，时间线会把命中的带音轨视频 clip 标记为静音意图；导出到 Jianying 时会落成静音视频片段
 - 剪映导出不再走外部 `jianying-mcp` / 独立 `Jianying Server` 路线，而是由 Node 侧调用 vendored `pyJianYingDraft` 本地 CLI
@@ -123,7 +133,9 @@ flowchart TD
 ### 当前正式语义
 
 - `asset`：素材真值层，保存原始资产事实
-- `slice`：分析后得到的候选时间窗
+- `slice`：分析后得到的候选时间窗，同时可带两层时间语义
+  - `sourceInMs / sourceOutMs`：focus / evidence window
+  - `editSourceInMs / editSourceOutMs`：edit-friendly bounds
 - `selection`：脚本 / 时间线真正使用的子区间
 - `beat`：当前正式的最小编排单元
 - `segment`：叙事层面的段落容器
@@ -131,7 +143,7 @@ flowchart TD
 关键结论：
 
 - `slice` 不承诺整段都会被用到
-- `selection` 才决定到底使用 `slice` 里的哪几秒
+- `selection` 才决定到底使用 `slice` 里的哪几秒；如果没有显式再裁，默认应优先落在 Analyze 给出的 edit-friendly bounds 上
 - `beat` 统一承接文案、画面选择、字幕和时间线编排
 - `segment.narration` 若存在，应理解为 beat 级文本的聚合预览，而不是时间线摆放的唯一真源
 

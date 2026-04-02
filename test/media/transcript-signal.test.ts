@@ -55,4 +55,42 @@ describe('transcript signal filtering', () => {
     expect(transcript?.speechCoverage).toBe(1);
     expect(hasMeaningfulSpeech(transcript)).toBe(true);
   });
+
+  it('preserves edit window metadata on normalized speech windows', () => {
+    const transcript = normalizeTranscriptContext({
+      transcript: 'Look ahead.',
+      segments: [{
+        startMs: 2_000,
+        endMs: 4_000,
+        text: 'Look ahead.',
+      }],
+      evidence: [],
+      speechCoverage: 0.2,
+      speechWindows: [{
+        startMs: 2_000,
+        endMs: 4_000,
+        editStartMs: 1_500,
+        editEndMs: 5_500,
+        reason: 'speech-window',
+        speedCandidate: {
+          suggestedSpeeds: [2, 5],
+          rationale: 'drive:speech-window',
+          confidence: 0.8,
+        },
+      }],
+    });
+
+    expect(transcript).not.toBeNull();
+    expect(transcript?.speechWindows[0]).toMatchObject({
+      startMs: 2_000,
+      endMs: 4_000,
+      editStartMs: 1_500,
+      editEndMs: 5_500,
+      speedCandidate: {
+        suggestedSpeeds: [2, 5],
+        rationale: 'drive:speech-window',
+        confidence: 0.8,
+      },
+    });
+  });
 });

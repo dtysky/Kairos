@@ -4,6 +4,7 @@ import type {
 } from '../../protocol/schema.js';
 import type { IDensityResult } from './density.js';
 import type { IShotBoundary } from './shot-detect.js';
+import { mergeInterestingWindowsByPreferredBounds } from './window-policy.js';
 
 export interface ISamplerInput {
   assetId: string;
@@ -362,21 +363,7 @@ function findInterestingWindows(
 function mergeWindows(
   windows: IMediaAnalysisPlan['interestingWindows'],
 ): IMediaAnalysisPlan['interestingWindows'] {
-  if (windows.length === 0) return [];
-  const sorted = [...windows].sort((a, b) => a.startMs - b.startMs);
-  const merged: typeof windows = [sorted[0]];
-
-  for (let i = 1; i < sorted.length; i++) {
-    const prev = merged[merged.length - 1];
-    const cur = sorted[i];
-    if (cur.startMs <= prev.endMs) {
-      prev.endMs = Math.max(prev.endMs, cur.endMs);
-      prev.reason = `${prev.reason}+${cur.reason}`;
-    } else {
-      merged.push(cur);
-    }
-  }
-  return merged;
+  return mergeInterestingWindowsByPreferredBounds(windows);
 }
 
 function includesAny(value: string, needles: string[]): boolean {

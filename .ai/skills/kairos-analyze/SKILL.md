@@ -165,6 +165,9 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
 - 对视频内音轨跑轻量 ASR
 - 提取 `transcript / transcriptSegments / speechCoverage`
 - 把 ASR 命中的语音时间窗并入 `interestingWindows`
+- `interestingWindows` 现在需要区分两层语义：
+  - `startMs / endMs` 保留 focus/evidence window
+  - `editStartMs / editEndMs` 作为后续 Script/Timeline 默认消费的 edit-friendly bounds
 - 但要把“极稀疏语音”当噪声处理：如果 `speechCoverage` 低到只剩零星词片段（当前阈值为 `< 0.05`），应直接丢弃整段 transcript 上下文，不写入 coarse report，也不要让它推动 `interestingWindows` 或 fine-scan
 - 不要把“高 coverage 但内容本来就简单/重复”的素材误判为 ASR 故障；那类结果可以保留，只是后续由剪辑策略自己决定值不值得用
 
@@ -182,6 +185,12 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
 - 预算档位
 
 这里的语音信号默认指视频素材内部抽出的语音线索，而不是独立音频文件批处理。
+
+当前扩窗口径：
+
+- `talking-head / speech-window`：保持更紧的 edit bounds，避免破坏原声链路
+- `broll / aerial / timelapse / unknown`：把 focus window 扩成更可剪的 edit bounds
+- `drive`：除了更宽的 edit bounds，还应额外挂 `speedCandidate` metadata（例如 `2x / 5x / 10x` 建议），但不要在 Analyze 阶段直接决定最终 speed
 
 输出：
 - `shouldFineScan`
@@ -203,6 +212,12 @@ analysis/asset-reports/<assetId>.json
   - 只把 `interestingWindows` 变成 slices
 - `skip`
   - 只保留 coarse report，不生成 slices
+
+`store/slices.json` 的当前正式语义：
+
+- `sourceInMs / sourceOutMs` 继续保留兼容性的 focus/evidence window
+- `editSourceInMs / editSourceOutMs` 承载 edit-friendly bounds，供 Script/Timeline 默认优先使用
+- `drive` slice 可额外挂 `speedCandidate`
 
 ## 工作流程
 
@@ -244,6 +259,8 @@ const localPath = resolveAssetLocalPath(projectId, asset, roots, deviceMaps);
 - `interestingWindows`
 - `shouldFineScan`
 - `fineScanMode`
+
+注意：当前 `interestingWindows` 不是“单一最终剪辑窗口”，而是 `focus window + edit-friendly bounds` 的组合结构。
 
 7. 自动决定是否细扫并生成 slices
 
@@ -294,8 +311,8 @@ scripts/kairos-progress.sh
 
 | 文件 | 内容 |
 |------|------|
-| `analysis/asset-reports/*.json` | 单素材粗扫报告 |
-| `store/slices.json` | 只包含自动进入细扫的重点素材切片 |
+| `analysis/asset-reports/*.json` | 单素材粗扫报告（含 focus windows、edit bounds、可选 drive speed candidate） |
+| `store/slices.json` | 只包含自动进入细扫的重点素材切片；保留 `sourceIn/out` 兼容字段，并额外写入 `editSourceIn/out` |
 | `media/chronology.json` | 带 summary/labels/ASR evidence 的时间排序视图 |
 
 ## 当前实现边界

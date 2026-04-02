@@ -98,6 +98,8 @@ function rankCandidatesForSegment(
     const report = reportMap.get(slice.assetId);
     const reasons: string[] = [];
     let score = 0;
+    const preferredStartMs = slice.editSourceInMs ?? slice.sourceInMs;
+    const preferredEndMs = slice.editSourceOutMs ?? slice.sourceOutMs;
 
     if (segment.preferredClipTypes.includes(mapSliceTypeToClipType(slice.type))) {
       score += 3;
@@ -148,17 +150,22 @@ function rankCandidatesForSegment(
       }
     }
 
-    if (segment.role === 'intro' && (slice.sourceInMs ?? 0) <= 60_000) {
+    if (segment.role === 'intro' && (preferredStartMs ?? 0) <= 60_000) {
       score += 0.75;
       reasons.push('role:intro-early-window');
     }
 
-    if (segment.role === 'outro' && typeof slice.sourceOutMs === 'number') {
+    if (segment.role === 'outro' && typeof preferredEndMs === 'number') {
       const durationMs = report?.durationMs;
-      if (typeof durationMs === 'number' && slice.sourceOutMs >= durationMs - 60_000) {
+      if (typeof durationMs === 'number' && preferredEndMs >= durationMs - 60_000) {
         score += 0.75;
         reasons.push('role:outro-late-window');
       }
+    }
+
+    if (slice.speedCandidate) {
+      score += slice.type === 'drive' ? 0.6 : 0.2;
+      reasons.push(`speed-candidate:${slice.speedCandidate.suggestedSpeeds.join('/')}`);
     }
 
     score += slice.confidence ?? 0.5;
@@ -175,10 +182,13 @@ function rankCandidatesForSegment(
       placeHints: slice.placeHints,
       sourceInMs: slice.sourceInMs,
       sourceOutMs: slice.sourceOutMs,
+      editSourceInMs: slice.editSourceInMs,
+      editSourceOutMs: slice.editSourceOutMs,
+      speedCandidate: slice.speedCandidate,
     };
   }).sort((a, b) =>
     b.score - a.score
-    || (a.sourceInMs ?? 0) - (b.sourceInMs ?? 0)
+    || (a.editSourceInMs ?? a.sourceInMs ?? 0) - (b.editSourceInMs ?? b.sourceInMs ?? 0)
     || a.sliceId.localeCompare(b.sliceId),
   );
 }

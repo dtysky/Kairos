@@ -96,4 +96,61 @@ describe('buildJianyingDraftSpec', () => {
       volume: 0,
     });
   });
+
+  it('passes explicit clip speed through to Jianying specs', async () => {
+    const doc: IKtepDoc = {
+      protocol: 'kairos.timeline',
+      version: '1.0',
+      project: {
+        id: 'project-2',
+        name: 'Speed Spec Test',
+        createdAt: '2026-04-02T00:00:00.000Z',
+        updatedAt: '2026-04-02T00:00:00.000Z',
+      },
+      assets: [{
+        id: 'asset-1',
+        kind: 'video',
+        sourcePath: '/tmp/speed-spec-test.mp4',
+        displayName: 'speed-spec-test.mp4',
+      }],
+      slices: [],
+      script: [],
+      timeline: {
+        id: 'timeline-2',
+        name: 'Speed Timeline',
+        fps: 30,
+        resolution: {
+          width: 3840,
+          height: 2160,
+        },
+        tracks: [{
+          id: 'track-1',
+          kind: 'video',
+          role: 'primary',
+          index: 0,
+        }],
+        clips: [{
+          id: 'clip-1',
+          trackId: 'track-1',
+          assetId: 'asset-1',
+          sourceInMs: 0,
+          sourceOutMs: 10_000,
+          speed: 5,
+          timelineInMs: 0,
+          timelineOutMs: 2_000,
+        }],
+      },
+      subtitles: [],
+    };
+
+    const { spec } = await buildJianyingDraftSpec(doc);
+
+    expect(spec.clips[0]).toMatchObject({
+      sourceInMs: 0,
+      sourceOutMs: 10_000,
+      speed: 5,
+      targetStartMs: 0,
+      targetEndMs: 2_000,
+    });
+  });
 });

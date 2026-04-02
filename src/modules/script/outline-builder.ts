@@ -2,8 +2,10 @@ import type {
   IApprovedSegmentPlan,
   IKtepScriptSelection,
   IKtepSlice,
+  ISpeedCandidateHint,
   ISegmentCandidateRecall,
 } from '../../protocol/schema.js';
+import { hasExplicitEditRange, resolveSlicePreferredRange } from '../media/window-policy.js';
 
 export interface IOutlineSliceContext {
   sliceId: string;
@@ -14,6 +16,9 @@ export interface IOutlineSliceContext {
   placeHints: string[];
   sourceInMs?: number;
   sourceOutMs?: number;
+  editSourceInMs?: number;
+  editSourceOutMs?: number;
+  speedCandidate?: ISpeedCandidateHint;
 }
 
 export interface IOutlineBeat {
@@ -28,6 +33,7 @@ export interface IOutlineBeat {
   placeHints: string[];
   sourceInMs?: number;
   sourceOutMs?: number;
+  speedCandidate?: ISpeedCandidateHint;
   estimatedDurationMs: number;
 }
 
@@ -64,7 +70,8 @@ export function buildOutline(
   if (slices.length === 0) return [];
 
   const sorted = [...slices].sort((a, b) =>
-    (a.sourceInMs ?? 0) - (b.sourceInMs ?? 0)
+    (resolveSlicePreferredRange(a)?.startMs ?? a.sourceInMs ?? 0)
+    - (resolveSlicePreferredRange(b)?.startMs ?? b.sourceInMs ?? 0)
     || a.assetId.localeCompare(b.assetId)
     || a.id.localeCompare(b.id),
   );
@@ -115,6 +122,9 @@ export function buildOutlineFromApprovedPlan(
       placeHints: takeUnique(candidate.placeHints, 3),
       sourceInMs: candidate.sourceInMs,
       sourceOutMs: candidate.sourceOutMs,
+      editSourceInMs: candidate.editSourceInMs,
+      editSourceOutMs: candidate.editSourceOutMs,
+      speedCandidate: candidate.speedCandidate,
     }));
 
     const beats = buildPlannedBeatsForSegment(segment, sliceContexts, usedSliceIds);
@@ -146,8 +156,8 @@ export function buildOutlineFromApprovedPlan(
         assetId: beats[0]?.assetId ?? '',
         sliceContexts,
         summary,
-        startMs: pickMinNumber(sliceContexts.map(candidate => candidate.sourceInMs)),
-        endMs: pickMaxNumber(sliceContexts.map(candidate => candidate.sourceOutMs)),
+        startMs: pickMinNumber(sliceContexts.map(candidate => getContextStartMs(candidate))),
+        endMs: pickMaxNumber(sliceContexts.map(candidate => getContextEndMs(candidate))),
       },
       estimatedDurationMs,
     };
@@ -165,19 +175,16 @@ function buildPlannedBeatsForSegment(
   const selected = selectSegmentBeatCandidates(segment, sliceContexts, usedSliceIds, beatCount);
 
   return selected.map((candidate, beatIndex) => {
-    const selection: IKtepScriptSelection = {
-      assetId: candidate.assetId,
-      sliceId: candidate.sliceId,
-      sourceInMs: candidate.sourceInMs,
-      sourceOutMs: candidate.sourceOutMs,
-    };
+    const selection = buildSelectionFromContext(candidate);
     const beatDuration = estimateBeatDuration(
       selection.sourceInMs,
       selection.sourceOutMs,
       segment.targetDurationMs,
       Math.max(selected.length, 1),
     );
-    const trimmedSelection = trimSelection(selection, beatDuration);
+    const trimmedSelection = shouldTrimContextSelection(candidate)
+      ? trimSelection(selection, beatDuration)
+      : selection;
 
     return {
       id: `outline-beat-${segment.id}-${beatIndex + 1}`,
@@ -191,6 +198,7 @@ function buildPlannedBeatsForSegment(
       placeHints: candidate.placeHints,
       sourceInMs: trimmedSelection.sourceInMs,
       sourceOutMs: trimmedSelection.sourceOutMs,
+      speedCandidate: candidate.speedCandidate,
       estimatedDurationMs: beatDuration,
     };
   });
@@ -271,7 +279,8 @@ function scoreCandidateForSegment(
   );
   const placePreference = overlapScore(candidate.placeHints, segment.preferredPlaceHints);
   const labelPreference = overlapScore(candidate.labels, segment.preferredLabels);
-  const timeBias = typeof candidate.sourceInMs === 'number' ? candidate.sourceInMs / 60000 : 0;
+  const preferredStartMs = getContextStartMs(candidate);
+  const timeBias = typeof preferredStartMs === 'number' ? preferredStartMs / 60000 : 0;
 
   let score = placePreference * 3 + labelPreference * 2 + roadScore;
 
@@ -289,6 +298,10 @@ function scoreCandidateForSegment(
     score -= segment.role === 'scene' ? 1.5 : 3;
   }
 
+  if (candidate.speedCandidate) {
+    score += segment.role === 'scene' || segment.role === 'highlight' ? 0.6 : 0.2;
+  }
+
   return score;
 }
 
@@ -297,7 +310,7 @@ function compareCandidateScore(left: number, right: number): number {
 }
 
 function compareCandidateTime(left: IOutlineSliceContext, right: IOutlineSliceContext): number {
-  return (left.sourceInMs ?? 0) - (right.sourceInMs ?? 0);
+  return (getContextStartMs(left) ?? 0) - (getContextStartMs(right) ?? 0);
 }
 
 function buildCandidateSignature(candidate: IOutlineSliceContext): string {
@@ -309,10 +322,12 @@ function buildCandidateSignature(candidate: IOutlineSliceContext): string {
 }
 
 function timeDistanceMs(left: IOutlineSliceContext, right: IOutlineSliceContext): number {
-  if (typeof left.sourceInMs !== 'number' || typeof right.sourceInMs !== 'number') {
+  const leftStartMs = getContextStartMs(left);
+  const rightStartMs = getContextStartMs(right);
+  if (typeof leftStartMs !== 'number' || typeof rightStartMs !== 'number') {
     return Number.POSITIVE_INFINITY;
   }
-  return Math.abs(left.sourceInMs - right.sourceInMs);
+  return Math.abs(leftStartMs - rightStartMs);
 }
 
 function countMatches(source: string[], keywords: string[]): number {
@@ -357,13 +372,16 @@ function buildSegmentContext(slices: IKtepSlice[]): IOutlineSegmentContext {
     placeHints: takeUnique(slice.placeHints, 3),
     sourceInMs: slice.sourceInMs,
     sourceOutMs: slice.sourceOutMs,
+    editSourceInMs: slice.editSourceInMs,
+    editSourceOutMs: slice.editSourceOutMs,
+    speedCandidate: slice.speedCandidate,
   }));
 
   const summaries = slices
     .map(slice => slice.summary?.trim() || slice.transcript?.trim())
     .filter((summary): summary is string => Boolean(summary));
-  const startMs = pickMinNumber(slices.map(slice => slice.sourceInMs));
-  const endMs = pickMaxNumber(slices.map(slice => slice.sourceOutMs));
+  const startMs = pickMinNumber(sliceContexts.map(slice => getContextStartMs(slice)));
+  const endMs = pickMaxNumber(sliceContexts.map(slice => getContextEndMs(slice)));
 
   return {
     assetId: slices[0]?.assetId ?? '',
@@ -377,11 +395,12 @@ function buildSegmentContext(slices: IKtepSlice[]): IOutlineSegmentContext {
 }
 
 function buildSelection(slice: IKtepSlice): IKtepScriptSelection {
+  const preferredRange = resolveSlicePreferredRange(slice);
   return {
     assetId: slice.assetId,
     sliceId: slice.id,
-    sourceInMs: slice.sourceInMs,
-    sourceOutMs: slice.sourceOutMs,
+    sourceInMs: preferredRange?.startMs ?? slice.sourceInMs,
+    sourceOutMs: preferredRange?.endMs ?? slice.sourceOutMs,
   };
 }
 
@@ -468,6 +487,7 @@ function buildSegmentBeats(
       placeHints: takeUnique(slice.placeHints, 3),
       sourceInMs: selection.sourceInMs,
       sourceOutMs: selection.sourceOutMs,
+      speedCandidate: slice.speedCandidate,
       estimatedDurationMs: beatDuration,
     };
   });
@@ -496,8 +516,9 @@ function estimateGroupDuration(slices: IKtepSlice[]): number {
 }
 
 function estimateSliceDuration(slice: IKtepSlice): number {
-  if (typeof slice.sourceInMs === 'number' && typeof slice.sourceOutMs === 'number') {
-    return Math.max(0, slice.sourceOutMs - slice.sourceInMs);
+  const preferredRange = resolveSlicePreferredRange(slice);
+  if (preferredRange) {
+    return Math.max(0, preferredRange.endMs - preferredRange.startMs);
   }
   return 5000;
 }
@@ -507,6 +528,9 @@ function buildTrimmedSelection(
   targetDurationMs: number,
 ): IKtepScriptSelection {
   const base = buildSelection(slice);
+  if (hasExplicitEditRange(slice)) {
+    return base;
+  }
   const start = slice.sourceInMs;
   const end = slice.sourceOutMs;
 
@@ -538,6 +562,27 @@ function buildTrimmedSelection(
     sourceInMs: trimmedStart,
     sourceOutMs: trimmedEnd,
   };
+}
+
+function buildSelectionFromContext(context: IOutlineSliceContext): IKtepScriptSelection {
+  return {
+    assetId: context.assetId,
+    sliceId: context.sliceId,
+    sourceInMs: getContextStartMs(context),
+    sourceOutMs: getContextEndMs(context),
+  };
+}
+
+function shouldTrimContextSelection(context: IOutlineSliceContext): boolean {
+  return !hasExplicitEditRange(context);
+}
+
+function getContextStartMs(context: IOutlineSliceContext): number | undefined {
+  return context.editSourceInMs ?? context.sourceInMs;
+}
+
+function getContextEndMs(context: IOutlineSliceContext): number | undefined {
+  return context.editSourceOutMs ?? context.sourceOutMs;
 }
 
 function pickSegmentRole(

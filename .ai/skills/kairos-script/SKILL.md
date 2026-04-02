@@ -121,6 +121,13 @@ const slices = await readJson('store/slices.json', z.array(IKtepSlice));
 const outline = buildOutline(slices, 5 * 60 * 1000); // 目标 5 分钟
 ```
 
+当前需要注意的 slice 语义：
+
+- `slice.sourceInMs / sourceOutMs` 仍是兼容性的 focus/evidence window
+- `slice.editSourceInMs / editSourceOutMs` 是 Analyze 已经扩好的 edit-friendly bounds
+- `buildOutline()` 现在默认优先消费 `editSourceInMs / editSourceOutMs`
+- 只有旧 slice 没有 edit bounds 时，outline 才会回落到 legacy center-trim
+
 骨架结构：
 - `intro`（约 10%）→ 开篇
 - `scene` / `highlight`（约 80%）→ 主体段落
@@ -155,6 +162,7 @@ const scriptSegment: IKtepScript = {
 - 如果一个 beat 内本来就有多段配音与停顿，可额外提供 `beat.utterances?: Array<{ text, pauseBeforeMs?, pauseAfterMs? }>`
 - `beat.actions?.preserveNatSound = true` 表示这拍要尽量保留原声
 - `beat.actions?.muteSource = true` 表示这拍即使素材里有人声，也应静音后改走旁白
+- `beat.actions?.speed = number` 只在你明确要做速度蒙太奇时使用；它现在是显式 retime 信号，不应用“裁很短的 source”去间接制造
 
 ### Step 4.5: 原声与旁白的协同规则
 
@@ -163,9 +171,11 @@ const scriptSegment: IKtepScript = {
 - 如果候选切片里有明确 transcript，且这段原话本身值得直接进入正片，优先写成贴近原话的 `beat.text`，并显式设置 `preserveNatSound=true`
 - 如果一个有声音的素材主要承担 `intro / transition / 铺垫 / 空间建立 / 情绪过门`，而不是要直接使用它说的话，应显式设置 `muteSource=true`，让下游走旁白
 - 如果这拍旁白在头部 / 中间 / 尾部需要明确留白，不要只把话全塞进 `beat.text`；应直接写 `beat.utterances[]` 把 pause 表达出来
+- 如果候选 beat 提示了 `speedCandidate`（例如 `2x / 5x / 10x`），把它理解为“可以考虑加速”，而不是默认必须加速；只有你明确想做速度段落时才填写 `actions.speed`
 - 如果脚本里没有显式写这两个动作，时间线阶段会根据 `slice.transcript / transcriptSegments / speechCoverage`、`beat.text` 与 transcript 的匹配度、以及 segment role 自动推论
 - 当前默认推论是偏保守的：`intro / transition / outro` 不会因为“素材里有声音”就自动保留原声，除非 beat 明显在引用原话
 - 对于 `muteSource=true` 或被时间线判定为不走原声的 beat，下游会把命中的带音轨视频静音，避免旁白与素材原音叠在一起
+- 如果模型返回了比 outline fallback 窗口短得多的 `selection.sourceInMs / sourceOutMs`，系统会先做 clamp/保守扩回，避免再次无意识裁到过短
 
 ### Step 5: 存储
 

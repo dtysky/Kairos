@@ -88,7 +88,7 @@ describe('placeClips', () => {
     ]);
   });
 
-  it('stretches narration clips to the requested beat duration', () => {
+  it('keeps legacy stretching when no edit bounds are available', () => {
     const assets: IKtepAsset[] = [
       {
         id: 'asset-drive',
@@ -141,6 +141,121 @@ describe('placeClips', () => {
       sourceOutMs: 3000,
       timelineInMs: 0,
       timelineOutMs: 4800,
+    });
+  });
+
+  it('prefers edit-friendly slice bounds instead of implicit slow-fill', () => {
+    const assets: IKtepAsset[] = [
+      {
+        id: 'asset-drive',
+        kind: 'video',
+        sourcePath: 'drive.mp4',
+        displayName: 'drive.mp4',
+      },
+    ];
+    const slices: IKtepSlice[] = [
+      {
+        id: 'slice-drive',
+        assetId: 'asset-drive',
+        type: 'drive',
+        sourceInMs: 2000,
+        sourceOutMs: 3000,
+        editSourceInMs: 0,
+        editSourceOutMs: 6000,
+        labels: [],
+        placeHints: [],
+      },
+    ];
+    const script: IKtepScript[] = [{
+      id: 'segment-1',
+      role: 'scene',
+      narration: 'test',
+      targetDurationMs: 8000,
+      linkedSliceIds: ['slice-drive'],
+      beats: [
+        {
+          id: 'beat-1',
+          text: '这段旁白更长，但不该再靠默认慢放去填满。',
+          targetDurationMs: 8000,
+          actions: {
+            muteSource: true,
+          },
+          selections: [{
+            assetId: 'asset-drive',
+            sliceId: 'slice-drive',
+          }],
+          linkedSliceIds: ['slice-drive'],
+        },
+      ],
+    }];
+
+    const { clips } = placeClips(script, slices, assets);
+
+    expect(clips).toHaveLength(1);
+    expect(clips[0]).toMatchObject({
+      sourceInMs: 0,
+      sourceOutMs: 6000,
+      timelineInMs: 0,
+      timelineOutMs: 6000,
+    });
+    expect(clips[0]?.speed).toBeUndefined();
+  });
+
+  it('uses explicit speed instead of implicit retiming', () => {
+    const assets: IKtepAsset[] = [
+      {
+        id: 'asset-drive',
+        kind: 'video',
+        sourcePath: 'drive.mp4',
+        displayName: 'drive.mp4',
+      },
+    ];
+    const slices: IKtepSlice[] = [
+      {
+        id: 'slice-drive',
+        assetId: 'asset-drive',
+        type: 'drive',
+        sourceInMs: 0,
+        sourceOutMs: 10_000,
+        editSourceInMs: 0,
+        editSourceOutMs: 10_000,
+        labels: [],
+        placeHints: [],
+      },
+    ];
+    const script: IKtepScript[] = [{
+      id: 'segment-1',
+      role: 'scene',
+      narration: 'test',
+      targetDurationMs: 10_000,
+      linkedSliceIds: ['slice-drive'],
+      beats: [
+        {
+          id: 'beat-1',
+          text: '开快一点。',
+          targetDurationMs: 10_000,
+          actions: {
+            muteSource: true,
+            speed: 5,
+          },
+          selections: [{
+            assetId: 'asset-drive',
+            sliceId: 'slice-drive',
+          }],
+          linkedSliceIds: ['slice-drive'],
+        },
+      ],
+    }];
+
+    const { clips } = placeClips(script, slices, assets);
+
+    expect(clips).toHaveLength(1);
+    expect(clips[0]).toMatchObject({
+      sourceInMs: 0,
+      sourceOutMs: 10_000,
+      speed: 5,
+      timelineInMs: 0,
+      timelineOutMs: 2000,
     });
   });
 
