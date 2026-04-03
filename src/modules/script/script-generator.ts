@@ -8,6 +8,7 @@ import type {
 } from '../../protocol/schema.js';
 import type { ILlmClient } from '../llm/client.js';
 import type { IOutlineBeat, IOutlineSegment } from './outline-builder.js';
+import { buildRhythmMaterialPromptLines } from './style-rhythm.js';
 
 const CSYSTEM = `你是一个旅拍纪录片脚本创作者。根据给定的叙事骨架、风格档案和切片证据，为每个段落撰写旁白文案。
 
@@ -97,6 +98,15 @@ export function buildStylePrompt(style: IStyleProfile): string {
     `旁白密度: ${style.voice.density}`,
     `节奏: ${style.narrative.pacePattern}`,
   ];
+  const rhythmLines = buildRhythmMaterialPromptLines(style, {
+    sectionHeading: '节奏与素材编排要点：',
+    parameterHeading: '节奏与素材参数：',
+    antiPatternHeading: '节奏相关禁区：',
+    maxSectionLength: 220,
+  });
+  if (rhythmLines.length > 0) {
+    parts.push(...rhythmLines);
+  }
 
   if (style.voice.sampleTexts.length > 0) {
     parts.push(`示例文案:\n${style.voice.sampleTexts.map(t => `  > ${t}`).join('\n')}`);

@@ -369,4 +369,104 @@ describe('placeClips', () => {
 
     expect(clips[0]?.muteAudio).toBeUndefined();
   });
+
+  it('routes protected sidecar audio onto a nat track when report prefers fallback', () => {
+    const assets: IKtepAsset[] = [
+      {
+        id: 'asset-talk',
+        kind: 'video',
+        sourcePath: 'talk.mp4',
+        displayName: 'talk.mp4',
+        protectionAudio: {
+          sourcePath: 'talk.wav',
+          displayName: 'talk.wav',
+          alignment: 'exact',
+        },
+        metadata: {
+          hasAudioStream: true,
+          audioStreamCount: 1,
+        },
+      },
+    ];
+    const slices: IKtepSlice[] = [
+      {
+        id: 'slice-talk',
+        assetId: 'asset-talk',
+        type: 'talking-head',
+        sourceInMs: 0,
+        sourceOutMs: 1800,
+        transcriptSegments: [{
+          startMs: 0,
+          endMs: 1800,
+          text: '这是现场原话',
+        }],
+        labels: [],
+        placeHints: [],
+      },
+    ];
+    const script: IKtepScript[] = [{
+      id: 'segment-1',
+      role: 'scene',
+      narration: 'test',
+      targetDurationMs: 1800,
+      linkedSliceIds: ['slice-talk'],
+      beats: [
+        {
+          id: 'beat-1',
+          text: '这是现场原话',
+          actions: {
+            preserveNatSound: true,
+          },
+          selections: [{
+            assetId: 'asset-talk',
+            sliceId: 'slice-talk',
+            sourceInMs: 0,
+            sourceOutMs: 1800,
+          }],
+          linkedSliceIds: ['slice-talk'],
+        },
+      ],
+    }];
+
+    const { tracks, clips } = placeClips(script, slices, assets, {}, [{
+      assetId: 'asset-talk',
+      clipTypeGuess: 'talking-head',
+      densityScore: 0.4,
+      labels: ['speech'],
+      placeHints: [],
+      rootNotes: [],
+      sampleFrames: [],
+      interestingWindows: [],
+      shouldFineScan: false,
+      fineScanMode: 'skip',
+      fineScanReasons: [],
+      createdAt: '2026-04-03T00:00:00.000Z',
+      updatedAt: '2026-04-03T00:00:00.000Z',
+      protectedAudio: {
+        recommendedSource: 'protection',
+        reason: '保护音轨更稳。',
+      },
+    }]);
+
+    expect(tracks).toHaveLength(2);
+    expect(tracks[1]).toMatchObject({
+      kind: 'audio',
+      role: 'nat',
+    });
+    expect(clips).toHaveLength(2);
+    expect(clips[0]).toMatchObject({
+      assetId: 'asset-talk',
+      muteAudio: true,
+      timelineInMs: 0,
+      timelineOutMs: 1800,
+    });
+    expect(clips[1]).toMatchObject({
+      assetId: 'asset-talk',
+      trackId: tracks[1]!.id,
+      timelineInMs: 0,
+      timelineOutMs: 1800,
+      sourceInMs: 0,
+      sourceOutMs: 1800,
+    });
+  });
 });

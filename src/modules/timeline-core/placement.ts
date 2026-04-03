@@ -1,6 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import type {
-  IKtepClip, IKtepTrack, IKtepScript, IKtepSlice, IKtepAsset, IKtepScriptSelection, IKtepScriptBeat,
+  IAssetCoarseReport,
+  IKtepClip,
+  IKtepTrack,
+  IKtepScript,
+  IKtepSlice,
+  IKtepAsset,
+  IKtepScriptSelection,
+  IKtepScriptBeat,
 } from '../../protocol/schema.js';
 import { hasExplicitEditRange, resolveSlicePreferredRange } from '../media/window-policy.js';
 import { buildSourceSpeechContext, shouldPreferSourceSpeech } from './pacing.js';
@@ -26,14 +33,17 @@ export function placeClips(
   slices: IKtepSlice[],
   assets: IKtepAsset[],
   config: Partial<IPlacementConfig> = {},
+  assetReports: IAssetCoarseReport[] = [],
 ): { tracks: IKtepTrack[]; clips: IKtepClip[] } {
   const cfg = { ...CDEFAULTS, ...config };
   const sliceMap = new Map(slices.map(s => [s.id, s]));
   const assetMap = new Map(assets.map(a => [a.id, a]));
+  const reportMap = new Map(assetReports.map(report => [report.assetId, report]));
 
   const primaryTrack: IKtepTrack = {
     id: randomUUID(), kind: 'video', role: 'primary', index: 0,
   };
+  let natTrack: IKtepTrack | null = null;
 
   const clips: IKtepClip[] = [];
   let cursor = 0;
@@ -70,6 +80,7 @@ export function placeClips(
       for (const selection of selections) {
         const asset = assetMap.get(selection.assetId);
         if (!asset) continue;
+        const report = reportMap.get(asset.id);
 
         const isPhoto = asset.kind === 'photo';
         const sourceRangeDur = resolveSourceDuration(selection.sourceInMs, selection.sourceOutMs);
@@ -93,6 +104,10 @@ export function placeClips(
           : sourceInMs != null && clipDur > 0
           ? sourceInMs + clipDur
           : selection.sourceOutMs;
+        const timelineInMs = cursor;
+        const timelineOutMs = cursor + clipDur;
+        const useProtectionAudio = preferSourceSpeech
+          && shouldUseProtectionAudioFallback(asset, report);
 
         clips.push({
           id: randomUUID(),
@@ -104,9 +119,9 @@ export function placeClips(
           sourceInMs,
           sourceOutMs,
           ...(explicitSpeed != null && { speed: explicitSpeed }),
-          timelineInMs: cursor,
-          timelineOutMs: cursor + clipDur,
-          ...(shouldMuteClipAudio(asset, preferSourceSpeech) && { muteAudio: true }),
+          timelineInMs,
+          timelineOutMs,
+          ...((useProtectionAudio || shouldMuteClipAudio(asset, preferSourceSpeech)) && { muteAudio: true }),
           linkedScriptSegmentId: seg.id,
           linkedScriptBeatId: beat.id,
           transform: isPhoto ? {
@@ -118,12 +133,36 @@ export function placeClips(
           } : undefined,
         });
 
+        if (useProtectionAudio) {
+          natTrack ??= {
+            id: randomUUID(),
+            kind: 'audio',
+            role: 'nat',
+            index: 0,
+          };
+          clips.push({
+            id: randomUUID(),
+            trackId: natTrack.id,
+            assetId: asset.id,
+            sliceId: selection.sliceId,
+            sourceInMs,
+            sourceOutMs,
+            timelineInMs,
+            timelineOutMs,
+            linkedScriptSegmentId: seg.id,
+            linkedScriptBeatId: beat.id,
+          });
+        }
+
         cursor += clipDur;
       }
     }
   }
 
-  return { tracks: [primaryTrack], clips };
+  return {
+    tracks: natTrack ? [primaryTrack, natTrack] : [primaryTrack],
+    clips,
+  };
 }
 
 interface IResolvedSelection extends IKtepScriptSelection {
@@ -213,4 +252,13 @@ function resolveSourceDuration(sourceInMs?: number, sourceOutMs?: number): numbe
 function resolveRequestedSpeed(speed?: number): number | undefined {
   if (typeof speed !== 'number' || !Number.isFinite(speed) || speed <= 0) return undefined;
   return speed;
+}
+
+function shouldUseProtectionAudioFallback(
+  asset: IKtepAsset,
+  report?: IAssetCoarseReport,
+): boolean {
+  if (asset.kind !== 'video') return false;
+  if (!asset.protectionAudio || asset.protectionAudio.alignment === 'mismatch') return false;
+  return report?.protectedAudio?.recommendedSource === 'protection';
 }

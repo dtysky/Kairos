@@ -113,6 +113,7 @@ importProjectGpxTracks(input: {
 - `initWorkspaceProject()` 会初始化 `gps/` 与 `gps/tracks/`
 - 导入 GPX 后，优先调用 `importProjectGpxTracks()` 复制进项目并刷新 merged cache
 - 同 basename 的 sidecar `.SRT` 不需要单独导入；ingest 会在素材根目录中自动发现并尝试绑定
+- 同目录同 basename 的 sidecar 保护音轨（如 `.wav/.flac/.m4a`）也应在 ingest 时自动发现，但当前正式语义是挂在对应视频资产的 `protectionAudio` 绑定上，而不是把它们重新作为通用独立音频资产导入
 - DJI FlightRecord 日志不属于普通 `project GPX`。它的标准入口是每个 root 的 `飞行记录路径`，并在 ingest 时按文件头/可解析性识别，再切成素材级同源 GPS
 - sidecar `.SRT` / FlightRecord 这类 dense same-source 轨迹会规范化写到 `gps/same-source/*`；这只是内部存储格式，不改变它们作为 `embedded GPS` 的正式语义
 - 新 ingest 不再把 dense GPS `points[]` 内联进 `store/assets.json`；资产只保留 `embeddedGps.trackId / pointCount / representative / startTime / endTime`
@@ -170,6 +171,7 @@ importProjectGpxTracks(input: {
 - 默认会优先读取项目内 `config/device-media-maps.local.json`
 - 如果 `project-brief.md` 已有映射，`ingestWorkspaceProjectMedia()` 会先尝试自动同步一次
 - `.SRT` sidecar 会在素材旁自动发现，不需要单独配置
+- 保护音轨 sidecar 也会按“同目录同 basename”自动发现；第一阶段只做视频资产绑定，不把这些音频重新放回普通素材池
 - `飞行记录路径` 如果存在，会被当作该 root 的同源遥测输入，而不是普通项目 GPX
 - 如果项目希望让 `manual-itinerary` 参与后续空间推断，修改完 `config/manual-itinerary.md` 后也应重新跑一次 ingest，刷新 `gps/derived.json`
 
@@ -197,7 +199,7 @@ const result = await ingestWorkspaceProjectMedia({
 
 | 文件 | 内容 |
 |------|------|
-| `store/assets.json` | 所有素材资产，`sourcePath` 为 root-relative 路径；成功绑定的 `.SRT` / `FlightRecord` 同源 GPS 会写成轻量 `embeddedGps` 引用，而不是内联 dense `points[]` |
+| `store/assets.json` | 所有素材资产，`sourcePath` 为 root-relative 路径；成功绑定的 `.SRT` / `FlightRecord` 同源 GPS 会写成轻量 `embeddedGps` 引用；同 basename 的保护音轨会写成视频资产上的 `protectionAudio` 绑定，而不是单独 reopen 通用 audio ingest |
 | `media/chronology.json` | 按拍摄时间排序的素材视图 |
 | `gps/same-source/index.json` + `gps/same-source/tracks/*.gpx` | dense same-source GPS 的项目内内部 cache，仅用于索引 / 惰性查找 |
 | `gps/derived.json` | 统一后的 `project-derived-track` 缓存 |

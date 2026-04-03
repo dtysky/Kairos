@@ -14,8 +14,10 @@ export interface IValidationResult {
 export function validateKtepDoc(doc: IKtepDoc): IValidationResult {
   const errors: IValidationError[] = [];
 
-  const trackIds = new Set(doc.timeline.tracks.map(t => t.id));
-  const assetIds = new Set(doc.assets.map(a => a.id));
+  const trackMap = new Map(doc.timeline.tracks.map(track => [track.id, track]));
+  const assetMap = new Map(doc.assets.map(asset => [asset.id, asset]));
+  const trackIds = new Set(trackMap.keys());
+  const assetIds = new Set(assetMap.keys());
   const sliceIds = new Set(doc.slices.map(s => s.id));
 
   for (const clip of doc.timeline.clips) {
@@ -55,6 +57,33 @@ export function validateKtepDoc(doc: IKtepDoc): IValidationResult {
       errors.push({
         rule: 'asset-ref',
         message: `clip ${clip.id}: assetId "${clip.assetId}" not found in assets`,
+        path: `timeline.clips.${clip.id}`,
+      });
+    }
+
+    const track = trackMap.get(clip.trackId);
+    const asset = assetMap.get(clip.assetId);
+    if (track?.kind === 'audio' && asset) {
+      if (asset.kind === 'photo') {
+        errors.push({
+          rule: 'audio-asset-kind',
+          message: `clip ${clip.id}: audio track cannot reference photo asset "${asset.id}"`,
+          path: `timeline.clips.${clip.id}`,
+        });
+      }
+      if (asset.kind === 'video' && !asset.protectionAudio) {
+        errors.push({
+          rule: 'audio-asset-kind',
+          message: `clip ${clip.id}: audio track referencing video asset "${asset.id}" requires asset.protectionAudio`,
+          path: `timeline.clips.${clip.id}`,
+        });
+      }
+    }
+
+    if (track?.kind === 'video' && asset?.kind === 'audio') {
+      errors.push({
+        rule: 'video-asset-kind',
+        message: `clip ${clip.id}: video track cannot reference audio asset "${asset.id}"`,
         path: `timeline.clips.${clip.id}`,
       });
     }

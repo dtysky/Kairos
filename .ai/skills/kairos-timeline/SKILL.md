@@ -36,6 +36,7 @@ buildTimeline(
 //   width: number (default 3840),
 //   height: number (default 2160),
 //   name: string (default 'Untitled'),
+//   assetReports?: IAssetCoarseReport[],
 //   placement?: Partial<IPlacementConfig>,
 //   transition?: Partial<ITransitionConfig>,
 //   subtitle?: Partial<ISubtitleConfig>,
@@ -131,6 +132,7 @@ Timeline 阶段的字幕已经不是“永远只切 `beat.text`”：
 - 如果脚本显式要求 `muteSource=true`，即使素材里有 transcript，也会回到 `beat.text`
 - 如果脚本没有显式标注，系统会根据 `speechCoverage`、`beat.text` 与 transcript 的匹配程度、以及段落角色自动推论是否保留原声
 - 当前推论默认对 `intro / transition / outro` 更保守，避免“因为素材里有人说话就把过门镜头错误保留原声”
+- 如果某条视频资产在 Analyze 的 `assetReports` 里被保守推荐切到 `protectionAudio`，且当前 beat 走 `preserveNatSound`，时间线会把视频原音静音，并外挂一条对齐的 `nat` 音轨作为原声 fallback
 - 如果 `beat.utterances[]` 存在，字幕会按多段 utterance + `pauseBeforeMs / pauseAfterMs` 生成多个有声岛，而不是把整个 beat 当成连续配音
 - 当某拍不走 source speech 时，命中的带音轨视频 clip 会被标记为静音意图，供导出适配器把原音压到静音
 
@@ -141,6 +143,7 @@ Timeline 阶段的字幕已经不是“永远只切 `beat.text`”：
 - 如果确实需要速度变化，应显式使用 `beat.actions.speed`
 - 显式 `speed` 现在会进入 timeline clip `speed`，并继续透传到导出层；不要再依赖“短 source + 长 target”去隐式制造慢放
 - `drive` slice 上的 `speedCandidate` 只是建议档位，不是自动应用的最终速度
+- 保护音轨 fallback 当前只在 `assetReports` 明确推荐 `protection` 时才会自动路由；默认仍优先保留视频内无线 mic
 
 ## 产出
 

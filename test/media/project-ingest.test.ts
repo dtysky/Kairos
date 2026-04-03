@@ -31,6 +31,42 @@ async function createWorkspace(): Promise<string> {
 }
 
 describe('ingestWorkspaceProjectMedia', () => {
+  it('binds same-stem protection audio without reopening generic audio ingest', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-protection-audio';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Test Project');
+    const mediaRoot = join(workspaceRoot, 'media-root');
+
+    await mkdir(mediaRoot, { recursive: true });
+    await writeFile(join(mediaRoot, 'A001.mp4'), '');
+    await writeFile(join(mediaRoot, 'A001.wav'), '');
+    await writeWorkspaceProjectBrief(workspaceRoot, projectId, [
+      {
+        path: mediaRoot,
+        description: '主机位素材',
+      },
+    ]);
+
+    const result = await ingestWorkspaceProjectMedia({
+      workspaceRoot,
+      projectId,
+    });
+
+    expect(result.scannedRoots[0]).toMatchObject({
+      localPath: mediaRoot,
+      scannedFileCount: 1,
+    });
+
+    const assets = await loadAssets(projectRoot);
+    expect(assets).toHaveLength(1);
+    expect(assets[0]?.sourcePath).toBe('A001.mp4');
+    expect(assets[0]?.protectionAudio).toMatchObject({
+      sourcePath: 'A001.wav',
+      displayName: 'A001.wav',
+      alignment: 'unknown',
+    });
+  });
+
   it('binds sidecar SRT as embedded GPS during ingest', async () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-sidecar-srt';

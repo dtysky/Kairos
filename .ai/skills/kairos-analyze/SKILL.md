@@ -164,12 +164,17 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
 
 - 对视频内音轨跑轻量 ASR
 - 提取 `transcript / transcriptSegments / speechCoverage`
+- 如果资产已绑定 `protectionAudio`，额外补一层轻量音频健康注释，重点观察低电平、静音比例、语音线索偏弱等问题
 - 把 ASR 命中的语音时间窗并入 `interestingWindows`
 - `interestingWindows` 现在需要区分两层语义：
   - `startMs / endMs` 保留 focus/evidence window
   - `editStartMs / editEndMs` 作为后续 Script/Timeline 默认消费的 edit-friendly bounds
 - 但要把“极稀疏语音”当噪声处理：如果 `speechCoverage` 低到只剩零星词片段（当前阈值为 `< 0.05`），应直接丢弃整段 transcript 上下文，不写入 coarse report，也不要让它推动 `interestingWindows` 或 fine-scan
 - 不要把“高 coverage 但内容本来就简单/重复”的素材误判为 ASR 故障；那类结果可以保留，只是后续由剪辑策略自己决定值不值得用
+- 当前保护音轨策略是保守 fallback，不是双主音轨竞争：
+  - 视频内无线 mic 仍是默认主音轨
+  - `protectionAudio` 只是同目录同 basename 的 sidecar 兜底来源
+  - 默认不要给所有保护音轨都跑第二遍完整 ASR，只有主音轨明显可疑或后续原声路由真正需要时才升级比较
 
 这一步默认仍属于 Analyze phase，但不再和“视觉粗扫”混写成同一个子步骤。
 
@@ -256,6 +261,7 @@ const localPath = resolveAssetLocalPath(projectId, asset, roots, deviceMaps);
 - `transcript`
 - `transcriptSegments`
 - `speechCoverage`
+- 可选 `protectedAudio` 注释与保守推荐
 - `interestingWindows`
 - `shouldFineScan`
 - `fineScanMode`

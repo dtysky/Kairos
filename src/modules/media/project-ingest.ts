@@ -19,6 +19,7 @@ import { resolveCaptureTime } from './capture-time.js';
 import { buildMediaChronology } from './chronology.js';
 import { refreshProjectDerivedTrackCache } from './project-derived-track.js';
 import { probe, type IMediaToolConfig } from './probe.js';
+import { resolveProtectionAudioBinding } from './protection-audio.js';
 import { resolveMediaRootsForDevice, toPortableRelativePath } from './root-resolver.js';
 import { scanDirectory } from './scanner.js';
 import { prepareRootSameSourceGpsContext, resolveAssetSameSourceGpsBinding } from './same-source-gps.js';
@@ -151,6 +152,15 @@ async function buildAssetFromScan(
     onWarning(warning);
   }
 
+  const protectionAudio = kind === 'video'
+    ? await resolveProtectionAudioBinding({
+      localPath: localFilePath,
+      localRootPath,
+      assetDurationMs: probeResult.durationMs ?? undefined,
+      tools,
+    })
+    : null;
+
   return {
     id: randomUUID(),
     kind,
@@ -166,6 +176,7 @@ async function buildAssetFromScan(
     captureTimeConfidence: capture.confidence,
     createdAt: capture.capturedAt,
     embeddedGps: sameSourceGps.binding ?? undefined,
+    protectionAudio: protectionAudio ?? undefined,
     metadata: {
       sizeBytes,
       rootLabel: root.label,
@@ -174,6 +185,10 @@ async function buildAssetFromScan(
       captureOriginalValue: capture.originalValue,
       hasAudioStream: probeResult.hasAudioStream,
       audioStreamCount: probeResult.audioStreamCount,
+      audioCodec: probeResult.audioCodec,
+      audioSampleRate: probeResult.audioSampleRate,
+      audioChannels: probeResult.audioChannels,
+      audioBitRate: probeResult.audioBitRate,
       rawTags: probeResult.rawTags,
     },
   };
@@ -194,6 +209,10 @@ async function safeProbe(
       codec: null,
       hasAudioStream: false,
       audioStreamCount: 0,
+      audioCodec: null,
+      audioSampleRate: null,
+      audioChannels: null,
+      audioBitRate: null,
       creationTime: null,
       rawTags: {},
     };

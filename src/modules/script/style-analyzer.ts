@@ -3,6 +3,14 @@ import type { ILlmClient } from '../llm/client.js';
 import type { IRhythmStats } from '../media/shot-detect.js';
 import type { IShotRecognition } from '../media/recognizer.js';
 import { randomUUID } from 'node:crypto';
+import {
+  CRHYTHM_MATERIAL_PARAMETER_KEYS,
+  ensureRhythmMaterialParameterKeys,
+} from './style-rhythm.js';
+
+const CRHYTHM_PARAMETER_GUIDE = CRHYTHM_MATERIAL_PARAMETER_KEYS
+  .map(key => `- ${key}`)
+  .join('\n');
 
 const CPROMPT = `你是一个视频风格分析专家。你会先阅读每个参考视频的单独分析，再综合归纳出共同风格。
 
@@ -41,11 +49,23 @@ const CPROMPT = `你是一个视频风格分析专家。你会先阅读每个参
   "parameters": { "参数名": "参数值" }
 }
 
+要求：
+- sections 中必须包含一个专门讨论“剪辑节奏与素材编排”的章节，重点回答：
+  - 是否会使用照片素材，照片通常是少量点缀、成组出现，还是与视频交替
+  - 延时摄影更像建立场、转场、情绪抬升，还是独立段落
+  - 航拍通常在什么时候插入：开场建场、地理重置、过渡、高潮抬升、情绪释放
+  - 空镜/B-roll 在节奏里承担什么作用
+  - 节奏通常因什么而抬升
+- parameters 里至少给出以下稳定 key；如果某项不明显，也要用中文短句明确写“少用 / 不明显 / 偶尔出现”等：
+${CRHYTHM_PARAMETER_GUIDE}
+- 这些 key 的值应是简短但可执行的规则，而不是抽象空话
+
 请至少分析以下维度并放入 sections：
 1. 叙事结构（段落组织方式、开头结尾惯例）
 2. 语言风格（句式特征、用词偏好）
 3. 情绪层次（情绪光谱、表达克制度）
-4. 视觉语言（画面描写惯例、运镜/光线词汇）`;
+4. 视觉语言（画面描写惯例、运镜/光线词汇）
+5. 剪辑节奏与素材编排（照片、延时、航拍、空镜/B-roll、节奏抬升）`;
 
 export interface IStyleReferenceVideoAnalysis {
   sourceFile: string;
@@ -84,12 +104,16 @@ export async function analyzeStyleFromReports(
   const parsed = JSON.parse(raw);
   const now = new Date().toISOString();
 
-  const sections = (parsed.sections ?? []).map((s: any, i: number) => ({
+  const parameters = ensureRhythmMaterialParameterKeys(
+    normalizeParameters(parsed.parameters),
+    '未明确',
+  );
+  const sections = normalizeSections((parsed.sections ?? []).map((s: any, i: number) => ({
     id: `section-${i + 1}`,
     title: s.title ?? `分析 ${i + 1}`,
     content: s.content ?? '',
     tags: s.tags,
-  }));
+  })), parameters, parsed.narrative?.pacePattern);
 
   return {
     id: randomUUID(),
@@ -110,7 +134,7 @@ export async function analyzeStyleFromReports(
     },
     sections,
     antiPatterns: parsed.antiPatterns ?? [],
-    parameters: parsed.parameters ?? {},
+    parameters,
     createdAt: now,
     updatedAt: now,
   };
@@ -163,6 +187,10 @@ function formatReferenceReport(
       '镜头样本：',
       ...samples,
     ].join('\n'));
+    const materialGrammar = formatMaterialGrammarEvidence(report.shotRecognitions);
+    if (materialGrammar.length > 0) {
+      blocks.push(materialGrammar.join('\n'));
+    }
   }
 
   if (report.transcript?.trim()) {
@@ -170,6 +198,179 @@ function formatReferenceReport(
   }
 
   return blocks.join('\n\n');
+}
+
+function normalizeParameters(raw: unknown): Record<string, string> {
+  if (!raw || typeof raw !== 'object') return {};
+
+  return Object.fromEntries(
+    Object.entries(raw as Record<string, unknown>)
+      .filter(([, value]) => typeof value === 'string' && value.trim().length > 0)
+      .map(([key, value]) => [key.trim(), (value as string).trim()]),
+  );
+}
+
+function normalizeSections(
+  sections: IStyleProfile['sections'],
+  parameters: Record<string, string>,
+  pacePattern?: string,
+): NonNullable<IStyleProfile['sections']> {
+  const normalized = (sections ?? []).map(section => ({ ...section }));
+  const contractBlock = buildRhythmMaterialContractBlock(parameters, pacePattern);
+  const rhythmIndex = normalized.findIndex(section =>
+    section.title.includes('节奏') || section.title.includes('素材编排'),
+  );
+
+  if (rhythmIndex >= 0) {
+    const current = normalized[rhythmIndex]!;
+    if (!containsRhythmMaterialContract(current.content)) {
+      normalized[rhythmIndex] = {
+        ...current,
+        content: `${current.content.trim()}\n\n${contractBlock}`.trim(),
+      };
+    }
+    return normalized;
+  }
+
+  normalized.push({
+    id: `section-${normalized.length + 1}`,
+    title: '剪辑节奏与素材编排',
+    content: contractBlock,
+    tags: ['rhythm', 'editing', 'material-grammar'],
+  });
+  return normalized;
+}
+
+function buildRhythmMaterialContractBlock(
+  parameters: Record<string, string>,
+  pacePattern?: string,
+): string {
+  return [
+    pacePattern ? `整体节奏：${pacePattern}` : undefined,
+    '素材编排语法：',
+    `- 照片素材：${parameters['照片使用策略'] ?? '未明确'}`,
+    `- 照片编排方式：${parameters['照片编排方式'] ?? '未明确'}`,
+    `- 延时摄影：${parameters['延时使用关系'] ?? '未明确'}`,
+    `- 航拍插入时机：${parameters['航拍插入时机'] ?? '未明确'}`,
+    `- 空镜/B-roll：${parameters['空镜/B-roll 关系'] ?? '未明确'}`,
+    `- 节奏抬升触发点：${parameters['节奏抬升触发点'] ?? '未明确'}`,
+  ].filter(Boolean).join('\n');
+}
+
+function containsRhythmMaterialContract(content: string): boolean {
+  return [
+    '照片素材',
+    '照片编排方式',
+    '延时摄影',
+    '航拍插入时机',
+    '空镜/B-roll',
+    '节奏抬升触发点',
+  ].every(keyword => content.includes(keyword));
+}
+
+function formatMaterialGrammarEvidence(
+  shotRecognitions: IShotRecognition[],
+): string[] {
+  if (shotRecognitions.length === 0) return [];
+
+  const totalDurationMs = Math.max(
+    ...shotRecognitions.map(item => Math.max(item.endMs, item.startMs)),
+    1,
+  );
+  const aerialShots = shotRecognitions.filter(item => item.recognition.sceneType === 'aerial');
+  const establishingShots = shotRecognitions.filter(item =>
+    item.recognition.narrativeRole === 'establishing' || item.recognition.narrativeRole === 'intro',
+  );
+  const transitionShots = shotRecognitions.filter(item => item.recognition.narrativeRole === 'transition');
+  const photoLikeShots = filterRecognitionCandidates(shotRecognitions, [
+    'photo',
+    'photograph',
+    'still image',
+    'still frame',
+    'archival',
+    'archive',
+    'snapshot',
+    'postcard',
+    '照片',
+    '相片',
+    '静帧',
+  ]);
+  const timelapseShots = filterRecognitionCandidates(shotRecognitions, [
+    'timelapse',
+    'time-lapse',
+    'time lapse',
+    'star trail',
+    'light trail',
+    'fast-moving cloud',
+    'sped-up',
+    'accelerated',
+    '延时',
+    '车流',
+    '星轨',
+  ]);
+  const contextBrollShots = shotRecognitions.filter(item =>
+    item.recognition.narrativeRole === 'detail'
+    || item.recognition.narrativeRole === 'transition'
+    || item.recognition.narrativeRole === 'filler'
+    || item.recognition.narrativeRole === 'establishing',
+  );
+
+  return [
+    '素材编排线索：',
+    `- aerialShots: ${aerialShots.length}${formatPhaseDistribution(aerialShots, totalDurationMs)}`,
+    `- establishingShots: ${establishingShots.length}${formatPhaseDistribution(establishingShots, totalDurationMs)}`,
+    `- transitionShots: ${transitionShots.length}${formatPhaseDistribution(transitionShots, totalDurationMs)}`,
+    `- timelapseCandidates: ${timelapseShots.length}${formatPhaseDistribution(timelapseShots, totalDurationMs)}`,
+    `- stillPhotoLikeCandidates: ${photoLikeShots.length}${formatPhaseDistribution(photoLikeShots, totalDurationMs)}`,
+    `- contextBrollLikeShots: ${contextBrollShots.length}`,
+    ...formatCandidateExamples('航拍样本', aerialShots),
+    ...formatCandidateExamples('延时候选样本', timelapseShots),
+    ...formatCandidateExamples('照片候选样本', photoLikeShots),
+  ];
+}
+
+function filterRecognitionCandidates(
+  shots: IShotRecognition[],
+  keywords: string[],
+): IShotRecognition[] {
+  return shots.filter(item => {
+    const haystack = [
+      item.recognition.description,
+      ...item.recognition.subjects,
+      item.recognition.narrativeRole,
+      item.recognition.sceneType,
+    ].join(' ').toLowerCase();
+    return keywords.some(keyword => haystack.includes(keyword.toLowerCase()));
+  });
+}
+
+function formatPhaseDistribution(
+  shots: IShotRecognition[],
+  totalDurationMs: number,
+): string {
+  if (shots.length === 0 || totalDurationMs <= 0) return '';
+  const counts = { intro: 0, body: 0, outro: 0 };
+  const third = totalDurationMs / 3;
+
+  for (const shot of shots) {
+    const pivot = shot.startMs;
+    if (pivot < third) counts.intro += 1;
+    else if (pivot < third * 2) counts.body += 1;
+    else counts.outro += 1;
+  }
+
+  return ` (intro:${counts.intro}, body:${counts.body}, outro:${counts.outro})`;
+}
+
+function formatCandidateExamples(
+  label: string,
+  shots: IShotRecognition[],
+): string[] {
+  if (shots.length === 0) return [];
+  const examples = shots
+    .slice(0, 3)
+    .map(item => `${item.shotId}:${item.recognition.description}`);
+  return [`- ${label}: ${examples.join(' | ')}`];
 }
 
 function countBy(values: string[]): Map<string, number> {

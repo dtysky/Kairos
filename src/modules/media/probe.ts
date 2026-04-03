@@ -22,6 +22,10 @@ export interface IProbeResult {
   codec: string | null;
   hasAudioStream: boolean;
   audioStreamCount: number;
+  audioCodec: string | null;
+  audioSampleRate: number | null;
+  audioChannels: number | null;
+  audioBitRate: number | null;
   creationTime: string | null;
   rawTags: Record<string, string>;
 }
@@ -42,6 +46,7 @@ export async function probe(filePath: string, tools?: IMediaToolConfig): Promise
   const audioStreams = Array.isArray(data.streams)
     ? data.streams.filter((s: any) => s.codec_type === 'audio')
     : [];
+  const primaryAudio = audioStreams[0];
   const fmt = data.format ?? {};
   const tags = { ...fmt.tags, ...video?.tags };
 
@@ -53,6 +58,10 @@ export async function probe(filePath: string, tools?: IMediaToolConfig): Promise
     codec: video?.codec_name ?? null,
     hasAudioStream: audioStreams.length > 0,
     audioStreamCount: audioStreams.length,
+    audioCodec: primaryAudio?.codec_name ?? null,
+    audioSampleRate: parseNumber(primaryAudio?.sample_rate),
+    audioChannels: parseNumber(primaryAudio?.channels),
+    audioBitRate: parseNumber(primaryAudio?.bit_rate),
     creationTime: tags?.creation_time ?? tags?.date ?? null,
     rawTags: flattenTags(tags),
   };
@@ -72,4 +81,13 @@ function flattenTags(tags: Record<string, any> | undefined): Record<string, stri
     if (typeof v === 'string') out[k.toLowerCase()] = v;
   }
   return out;
+}
+
+function parseNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim().length > 0) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return null;
 }

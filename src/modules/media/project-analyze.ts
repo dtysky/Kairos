@@ -34,6 +34,11 @@ import {
   type IProjectDerivedTrack,
 } from '../../store/index.js';
 import { buildAssetCoarseReport } from './asset-report.js';
+import {
+  analyzeAudioHealth,
+  recommendProtectedAudioFallback,
+  summarizeAudioHealth,
+} from './audio-health.js';
 import { buildMediaChronology } from './chronology.js';
 import { estimateDensity } from './density.js';
 import {
@@ -46,6 +51,7 @@ import {
 } from './keyframe.js';
 import { MlClient } from './ml-client.js';
 import { probe } from './probe.js';
+import { canUseProtectionAudio, resolveProtectionAudioLocalPath } from './protection-audio.js';
 import { recognizeFrames, recognizeShotGroups, type IRecognition } from './recognizer.js';
 import { resolveAssetLocalPath } from './root-resolver.js';
 import {
@@ -242,9 +248,11 @@ export async function analyzeWorkspaceProjectMedia(
       });
 
       const finalized = await finalizePreparedAsset({
+        projectId: input.projectId,
         prepared,
         projectRoot,
         roots,
+        deviceMaps,
         derivedTrack,
         gpxPaths,
         gpxMatchToleranceMs: input.gpxMatchToleranceMs,
@@ -492,9 +500,11 @@ interface IPreparedAssetAnalysis extends IAnalyzeSingleAssetInput {
 }
 
 interface IFinalizePreparedAssetInput {
+  projectId: string;
   prepared: IPreparedAssetAnalysis;
   projectRoot: string;
   roots: IMediaRoot[];
+  deviceMaps: IDeviceMediaMapFile;
   derivedTrack?: IProjectDerivedTrack | null;
   gpxPaths?: string[];
   gpxMatchToleranceMs?: number;
@@ -598,6 +608,17 @@ async function finalizePreparedAsset(
     hasAudioTrack: input.prepared.hasAudioTrack,
     ml,
   });
+  const protectedAudio = await evaluateProtectedAudioFallback({
+    projectId: input.projectId,
+    asset: input.prepared.asset,
+    localVideoPath: input.prepared.localPath,
+    roots: input.roots,
+    deviceMaps: input.deviceMaps,
+    runtimeConfig: input.prepared.runtimeConfig,
+    embeddedTranscript: transcript,
+    ml,
+    onStageChange: input.onStageChange,
+  });
   const density = estimateDensity({
     durationMs: input.prepared.asset.durationMs ?? 0,
     shotBoundaries: input.prepared.shotBoundaries,
@@ -659,12 +680,17 @@ async function finalizePreparedAsset(
     transcript: transcript?.transcript,
     transcriptSegments: transcript?.segments,
     speechCoverage: transcript?.speechCoverage,
-    labels: buildReportLabels(
-      decision.clipType,
-      input.prepared.visualSummary?.sceneType,
-      input.prepared.visualSummary?.subjects,
-      transcript,
-    ),
+    protectedAudio,
+    labels: dedupeStrings([
+      ...buildReportLabels(
+        decision.clipType,
+        input.prepared.visualSummary?.sceneType,
+        input.prepared.visualSummary?.subjects,
+        transcript,
+      ),
+      ...(input.prepared.asset.protectionAudio ? ['protection-audio-available'] : []),
+      ...(protectedAudio?.recommendedSource === 'protection' ? ['protection-audio-fallback'] : []),
+    ]),
     placeHints: dedupeStrings([
       ...(input.prepared.visualSummary?.placeHints ?? []),
       ...(manualSpatial?.placeHints ?? []),
@@ -882,6 +908,20 @@ async function maybeTranscribeAsset(input: {
   if (!input.ml.available) return null;
   if (!shouldAnalyzeAudioTrack(input.asset, input.hasAudioTrack)) return null;
 
+  return transcribeAudioContext({
+    localPath: input.localPath,
+    durationMs: input.asset.durationMs ?? 0,
+    ml: input.ml,
+  });
+}
+
+async function transcribeAudioContext(input: {
+  localPath: string;
+  durationMs: number;
+  ml: MlAvailability;
+}): Promise<ITranscriptContext | null> {
+  if (!input.ml.available) return null;
+
   try {
     const result = await transcribe(input.ml.client, input.localPath);
     const segments = result.segments
@@ -901,12 +941,107 @@ async function maybeTranscribeAsset(input: {
       transcript,
       segments,
       evidence: result.evidence,
-      speechCoverage: computeSpeechCoverage(input.asset.durationMs ?? 0, segments),
-      speechWindows: buildSpeechWindows(input.asset.durationMs ?? 0, segments),
+      speechCoverage: computeSpeechCoverage(input.durationMs, segments),
+      speechWindows: buildSpeechWindows(input.durationMs, segments),
     });
   } catch {
     return null;
   }
+}
+
+async function evaluateProtectedAudioFallback(input: {
+  projectId: string;
+  asset: IKtepAsset;
+  localVideoPath: string;
+  roots: IMediaRoot[];
+  deviceMaps: IDeviceMediaMapFile;
+  runtimeConfig: IPreparedAssetAnalysis['runtimeConfig'];
+  embeddedTranscript?: ITranscriptContext | null;
+  ml: MlAvailability;
+  onStageChange?: (stage: 'audio-analysis', detail?: string) => Promise<void>;
+}): Promise<IAssetCoarseReport['protectedAudio'] | undefined> {
+  const binding = input.asset.protectionAudio;
+  if (!binding) return undefined;
+
+  const embeddedTelemetry = await analyzeAudioHealth(
+    input.localVideoPath,
+    input.asset.durationMs,
+    input.runtimeConfig,
+  );
+  const embeddedSummary = summarizeAudioHealth({
+    telemetry: embeddedTelemetry,
+    speechCoverage: input.embeddedTranscript?.speechCoverage,
+    transcript: input.embeddedTranscript?.transcript,
+  });
+
+  const protectionLocalPath = resolveProtectionAudioLocalPath(
+    input.projectId,
+    input.asset,
+    input.roots,
+    input.deviceMaps,
+  );
+  if (!protectionLocalPath) {
+    return recommendProtectedAudioFallback({
+      binding,
+      embedded: embeddedSummary,
+      comparedProtectionTranscript: false,
+    });
+  }
+
+  const protectionTelemetry = await analyzeAudioHealth(
+    protectionLocalPath,
+    binding.durationMs ?? input.asset.durationMs,
+    input.runtimeConfig,
+  );
+  let protectionTranscript: ITranscriptContext | null = null;
+  let comparedProtectionTranscript = false;
+
+  if (shouldCompareProtectionTranscript(binding, embeddedSummary, input.embeddedTranscript)) {
+    await input.onStageChange?.('audio-analysis', `正在对比 ${input.asset.displayName} 的保护音轨`);
+    protectionTranscript = await transcribeAudioContext({
+      localPath: protectionLocalPath,
+      durationMs: binding.durationMs ?? input.asset.durationMs ?? 0,
+      ml: input.ml,
+    });
+    comparedProtectionTranscript = Boolean(protectionTranscript);
+  }
+
+  const protectionSummary = summarizeAudioHealth({
+    telemetry: protectionTelemetry,
+    speechCoverage: protectionTranscript?.speechCoverage,
+    transcript: protectionTranscript?.transcript,
+    notes: [
+      binding.alignment === 'unknown'
+        ? '未确认保护音轨与视频的精确时长关系。'
+        : `保护音轨时长对齐状态：${binding.alignment}`,
+    ],
+  });
+
+  return recommendProtectedAudioFallback({
+    binding,
+    embedded: embeddedSummary,
+    protection: protectionSummary,
+    comparedProtectionTranscript,
+  });
+}
+
+function shouldCompareProtectionTranscript(
+  binding: NonNullable<IKtepAsset['protectionAudio']>,
+  embeddedSummary: ReturnType<typeof summarizeAudioHealth>,
+  embeddedTranscript?: ITranscriptContext | null,
+): boolean {
+  if (!canUseProtectionAudio(binding) && binding.alignment !== 'unknown') return false;
+
+  const issues = new Set(embeddedSummary.issues ?? []);
+  if (issues.has('low-level') || issues.has('speech-coverage-weak') || issues.has('speech-clarity-suspect')) {
+    return true;
+  }
+
+  if ((embeddedTranscript?.speechCoverage ?? 0) < 0.05) {
+    return true;
+  }
+
+  return !(embeddedTranscript?.transcript?.trim());
 }
 
 function shouldAnalyzeAudioTrack(

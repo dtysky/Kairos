@@ -156,6 +156,22 @@ export const IEmbeddedGpsBinding = z.object({
 });
 export type IEmbeddedGpsBinding = z.infer<typeof IEmbeddedGpsBinding>;
 
+export const EProtectionAudioAlignment = z.enum(['exact', 'near', 'mismatch', 'unknown']);
+export type EProtectionAudioAlignment = z.infer<typeof EProtectionAudioAlignment>;
+
+export const IProtectionAudioBinding = z.object({
+  sourcePath: z.string(),
+  displayName: z.string().optional(),
+  durationMs: z.number().optional(),
+  durationDiffMs: z.number().nonnegative().optional(),
+  alignment: EProtectionAudioAlignment,
+  codec: z.string().optional(),
+  sampleRate: z.number().int().positive().optional(),
+  channels: z.number().int().positive().optional(),
+  bitRate: z.number().positive().optional(),
+});
+export type IProtectionAudioBinding = z.infer<typeof IProtectionAudioBinding>;
+
 export const IInferredGps = z.object({
   source: z.enum(['embedded', 'gpx', 'derived-track']),
   confidence: z.number().min(0).max(1),
@@ -188,6 +204,7 @@ export const IKtepAsset = z.object({
   createdAt: z.string().optional(),
   ingestedAt: z.string().optional(),
   embeddedGps: IEmbeddedGpsBinding.optional(),
+  protectionAudio: IProtectionAudioBinding.optional(),
   metadata: z.record(z.unknown()).optional(),
 });
 export type IKtepAsset = z.infer<typeof IKtepAsset>;
@@ -470,6 +487,30 @@ export const ICoarseSample = z.object({
 });
 export type ICoarseSample = z.infer<typeof ICoarseSample>;
 
+export const IAudioHealthSummary = z.object({
+  meanVolumeDb: z.number().optional(),
+  maxVolumeDb: z.number().optional(),
+  silenceRatio: z.number().min(0).max(1).optional(),
+  speechCoverage: z.number().min(0).max(1).optional(),
+  transcriptChars: z.number().int().nonnegative().optional(),
+  score: z.number().min(0).max(1).optional(),
+  issues: z.array(z.string()).optional(),
+  notes: z.array(z.string()).optional(),
+});
+export type IAudioHealthSummary = z.infer<typeof IAudioHealthSummary>;
+
+export const EProtectedAudioRecommendation = z.enum(['embedded', 'protection', 'undecided']);
+export type EProtectedAudioRecommendation = z.infer<typeof EProtectedAudioRecommendation>;
+
+export const IProtectedAudioAssessment = z.object({
+  recommendedSource: EProtectedAudioRecommendation,
+  reason: z.string().optional(),
+  comparedProtectionTranscript: z.boolean().optional(),
+  embedded: IAudioHealthSummary.optional(),
+  protection: IAudioHealthSummary.optional(),
+});
+export type IProtectedAudioAssessment = z.infer<typeof IProtectedAudioAssessment>;
+
 export const IAssetCoarseReport = z.object({
   assetId: z.string(),
   ingestRootId: z.string().optional(),
@@ -482,6 +523,7 @@ export const IAssetCoarseReport = z.object({
   transcript: z.string().optional(),
   transcriptSegments: z.array(ITranscriptSegment).optional(),
   speechCoverage: z.number().min(0).max(1).optional(),
+  protectedAudio: IProtectedAudioAssessment.optional(),
   labels: z.array(z.string()),
   placeHints: z.array(z.string()),
   rootNotes: z.array(z.string()),

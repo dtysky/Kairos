@@ -9,6 +9,7 @@ import type {
   IMediaRoot,
 } from '../../protocol/schema.js';
 import { validateKtepDoc } from '../../protocol/validator.js';
+import { resolveProtectionAudioLocalPath } from '../media/protection-audio.js';
 import { resolveAssetLocalPath } from '../media/root-resolver.js';
 import { loadProjectDeviceMediaMaps } from '../../store/device-media-maps.js';
 import { loadIngestRoots } from '../../store/project.js';
@@ -125,6 +126,8 @@ export class JianyingDraftBuilder {
   };
   private idMap: INleIdMap;
   private assetPaths = new Map<string, string>();
+  private protectionAssetPaths = new Map<string, string>();
+  private assetKindMap = new Map<string, IKtepAsset['kind']>();
   private trackKindMap = new Map<string, EJianyingTrackKind>();
   private tracks: IJianyingTrackSpec[] = [];
   private clips: IJianyingClipSpec[] = [];
@@ -166,6 +169,11 @@ export class JianyingDraftBuilder {
     for (const asset of assets) {
       const resolved = this.resolveAssetPath(asset, context);
       this.assetPaths.set(asset.id, resolved);
+      this.assetKindMap.set(asset.id, asset.kind);
+      const protectionPath = this.resolveProtectionAudioPath(asset, context);
+      if (protectionPath) {
+        this.protectionAssetPaths.set(asset.id, protectionPath);
+      }
       this.idMap.assets.set(asset.id, resolved);
     }
   }
@@ -216,7 +224,7 @@ export class JianyingDraftBuilder {
         throw new Error(`Jianying clip ${clip.id} cannot be placed on track ${clip.trackId}`);
       }
 
-      const materialPath = this.assetPaths.get(clip.assetId);
+      const materialPath = this.resolveClipMaterialPath(clip, trackKind);
       if (!materialPath) {
         throw new Error(`Jianying clip ${clip.id} references unresolved asset ${clip.assetId}`);
       }
@@ -365,6 +373,61 @@ export class JianyingDraftBuilder {
     }
 
     return normalizeMaterialPath(resolved);
+  }
+
+  private resolveProtectionAudioPath(
+    asset: IKtepAsset,
+    context: IAssetResolutionContext | null,
+  ): string | null {
+    if (!asset.protectionAudio?.sourcePath) return null;
+
+    if (isUri(asset.protectionAudio.sourcePath)) {
+      return asset.protectionAudio.sourcePath;
+    }
+
+    if (isPlatformAbsolutePath(asset.protectionAudio.sourcePath)) {
+      return normalizeMaterialPath(asset.protectionAudio.sourcePath);
+    }
+
+    if (!context) {
+      throw new Error(
+        `Asset ${asset.id} uses relative protection audio path '${asset.protectionAudio.sourcePath}', but no projectRoot or media root mapping was provided for Jianying export.`,
+      );
+    }
+
+    const resolved = resolveProtectionAudioLocalPath(
+      context.projectId,
+      asset,
+      context.roots,
+      context.deviceMaps,
+    );
+    if (!resolved) {
+      const rootHint = asset.ingestRootId ?? 'unknown-ingest-root';
+      throw new Error(
+        `Unable to resolve protection audio for asset ${asset.id} from ingest root ${rootHint}. Check device media mappings or sidecar binding.`,
+      );
+    }
+
+    return normalizeMaterialPath(resolved);
+  }
+
+  private resolveClipMaterialPath(
+    clip: IKtepClip,
+    trackKind: EJianyingTrackKind,
+  ): string | undefined {
+    if (trackKind === 'audio') {
+      const protectionPath = this.protectionAssetPaths.get(clip.assetId);
+      if (protectionPath) return protectionPath;
+
+      const assetKind = this.assetKindMap.get(clip.assetId);
+      if (assetKind === 'video') {
+        throw new Error(
+          `Jianying clip ${clip.id} references video asset ${clip.assetId} on an audio track, but no protection audio path was resolved.`,
+        );
+      }
+    }
+
+    return this.assetPaths.get(clip.assetId);
   }
 
   private ensureSubtitleTrack(): string {

@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type {
+  IAssetCoarseReport,
   IKtepTimeline, IKtepDoc, IKtepAsset, IKtepSlice,
   IKtepScript, IKtepProject, IKtepSubtitle,
 } from '../../protocol/schema.js';
@@ -16,6 +17,7 @@ export interface IBuildConfig {
   width: number;
   height: number;
   name: string;
+  assetReports?: IAssetCoarseReport[];
   placement?: Partial<IPlacementConfig>;
   transition?: Partial<ITransitionConfig>;
   subtitle?: Partial<ISubtitleConfig>;
@@ -61,7 +63,13 @@ export function buildTimeline(
   const normalizedScript = normalizeScriptTiming(script, slices, cfg.subtitle);
 
   // 1. Place clips
-  const { tracks, clips: rawClips } = placeClips(normalizedScript, slices, assets, cfg.placement);
+  const { tracks, clips: rawClips } = placeClips(
+    normalizedScript,
+    slices,
+    assets,
+    cfg.placement,
+    cfg.assetReports,
+  );
 
   // 2. Plan transitions
   const clips = planTransitions(rawClips, cfg.transition);

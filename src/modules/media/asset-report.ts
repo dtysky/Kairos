@@ -19,6 +19,7 @@ export interface IBuildAssetCoarseReportInput {
   transcript?: string;
   transcriptSegments?: ITranscriptSegment[];
   speechCoverage?: number;
+  protectedAudio?: IAssetCoarseReport['protectedAudio'];
   labels?: string[];
   placeHints?: string[];
   rootNotes?: string[];
@@ -46,6 +47,7 @@ export function buildAssetCoarseReport(
     transcript: input.transcript?.trim() || undefined,
     transcriptSegments: input.transcriptSegments?.filter(segment => segment.text.trim().length > 0),
     speechCoverage: input.speechCoverage,
+    protectedAudio: input.protectedAudio,
     labels: dedupe(input.labels ?? []),
     placeHints: dedupe(input.placeHints ?? []),
     rootNotes: dedupe(input.rootNotes ?? []),

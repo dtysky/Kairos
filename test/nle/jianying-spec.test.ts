@@ -153,4 +153,91 @@ describe('buildJianyingDraftSpec', () => {
       targetEndMs: 2_000,
     });
   });
+
+  it('exports protected nat audio clips from a bound video asset', async () => {
+    const doc: IKtepDoc = {
+      protocol: 'kairos.timeline',
+      version: '1.0',
+      project: {
+        id: 'project-3',
+        name: 'Protected Audio Spec Test',
+        createdAt: '2026-04-03T00:00:00.000Z',
+        updatedAt: '2026-04-03T00:00:00.000Z',
+      },
+      assets: [{
+        id: 'asset-video',
+        kind: 'video',
+        sourcePath: '/tmp/protected-audio-video.mp4',
+        displayName: 'protected-audio-video.mp4',
+        protectionAudio: {
+          sourcePath: '/tmp/protected-audio-video.wav',
+          displayName: 'protected-audio-video.wav',
+          alignment: 'exact',
+        },
+      }],
+      slices: [],
+      script: [],
+      timeline: {
+        id: 'timeline-3',
+        name: 'Protected Audio Timeline',
+        fps: 30,
+        resolution: {
+          width: 3840,
+          height: 2160,
+        },
+        tracks: [
+          {
+            id: 'track-video',
+            kind: 'video',
+            role: 'primary',
+            index: 0,
+          },
+          {
+            id: 'track-audio',
+            kind: 'audio',
+            role: 'nat',
+            index: 0,
+          },
+        ],
+        clips: [
+          {
+            id: 'clip-video',
+            trackId: 'track-video',
+            assetId: 'asset-video',
+            timelineInMs: 0,
+            timelineOutMs: 1500,
+            sourceInMs: 0,
+            sourceOutMs: 1500,
+            muteAudio: true,
+          },
+          {
+            id: 'clip-audio',
+            trackId: 'track-audio',
+            assetId: 'asset-video',
+            timelineInMs: 0,
+            timelineOutMs: 1500,
+            sourceInMs: 0,
+            sourceOutMs: 1500,
+          },
+        ],
+      },
+      subtitles: [],
+    };
+
+    const { spec } = await buildJianyingDraftSpec(doc);
+    const audioClip = spec.clips.find(clip => clip.id === 'clip-audio');
+    const videoClip = spec.clips.find(clip => clip.id === 'clip-video');
+
+    expect(videoClip).toMatchObject({
+      kind: 'video',
+      materialPath: '/tmp/protected-audio-video.mp4',
+      volume: 0,
+    });
+    expect(audioClip).toMatchObject({
+      kind: 'audio',
+      materialPath: '/tmp/protected-audio-video.wav',
+      targetStartMs: 0,
+      targetEndMs: 1500,
+    });
+  });
 });

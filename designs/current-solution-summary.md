@@ -62,6 +62,7 @@ flowchart TD
 - 通过逻辑素材源导入项目当前采用的素材版本
 - 真实本机目录路径不写死进项目，而是通过设备本地映射维护
 - 保留素材真值，例如 `capturedAt`、`rawTags`、基础 metadata
+- 对同目录同 basename 的保护音轨 sidecar，当前正式策略是作为视频资产上的 `protectionAudio` 绑定信息记录，而不是重新放开通用独立音频 ingest
 - 如果输入素材来自独立调色/转换链路，该链路必须先保证关键元信息被保留下来
 
 ### Analyze
@@ -69,6 +70,7 @@ flowchart TD
 - 当前正式策略是“粗扫优先 + 自动细扫”
 - 视频内音轨的 ASR 已进入正式分析链路，而不再只是附属信息
 - `transcript / transcriptSegments / speechCoverage / placeHints / inferredGps` 都属于分析层结果
+- 如果视频绑定了 `protectionAudio`，Analyze 当前会补充轻量音频健康注释，并在保守条件下给出 `embedded / protection / undecided` 的 fallback 推荐；默认不对所有保护音轨跑第二遍完整 ASR
 - `interestingWindows` 不再只有单一语义：
   - `startMs / endMs` 保留“为什么这里重要”的 focus/evidence window
   - `editStartMs / editEndMs` 表示更适合后续编排消费的 edit-friendly bounds
@@ -90,6 +92,7 @@ flowchart TD
   - 原声路径：当某拍保留原声时，可直接来自 `slice.transcriptSegments`
 - 旁白路径已支持显式 `beat.utterances[]`，可以在一个 beat 内表达多段配音与头部 / 中间 / 尾部停顿；字幕只覆盖有声岛，不再默认铺满整个 beat
 - `preserveNatSound / muteSource` 是脚本层的显式覆盖信号；未显式标注时，时间线层可结合 transcript 匹配度、`speechCoverage` 与段落角色推论是否保留原声
+- 当视频资产已绑定保护音轨，且 Analyze 的保守推荐明确偏向 `protection` 时，时间线可把视频原音静音，并额外挂一条对齐的 `nat` 音轨作为原声兜底
 - 当前字幕时长已不再是简单平均分配，而是会参考说话速度和标点停顿做节奏估算
 - 当前时间线不再把“短 source + 长 beat”当成默认慢放来源：
   - 对带 `editSourceInMs / editSourceOutMs` 的新 slice，时间线优先使用 edit-friendly bounds

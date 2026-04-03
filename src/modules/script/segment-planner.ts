@@ -22,6 +22,7 @@ import {
   writeSegmentPlanDrafts,
 } from '../../store/index.js';
 import { loadStyleByCategory } from './style-loader.js';
+import { buildRhythmMaterialPromptLines } from './style-rhythm.js';
 
 export interface IPrepareSegmentPlanningInput {
   projectRoot: string;
@@ -197,7 +198,7 @@ export function buildProjectMaterialDigest(input: {
   };
 }
 
-function buildSegmentPlanningPrompt(
+export function buildSegmentPlanningPrompt(
   digest: IProjectMaterialDigest,
   reviewBrief?: string,
   style?: IStyleProfile | null,
@@ -209,6 +210,12 @@ function buildSegmentPlanningPrompt(
     `语言密度：${style.voice.density}`,
     `语气：${style.voice.tone}`,
     `节奏：${style.narrative.pacePattern}`,
+    ...buildRhythmMaterialPromptLines(style, {
+      sectionHeading: '节奏与素材编排：',
+      parameterHeading: '节奏编排参数：',
+      antiPatternHeading: '节奏相关禁区：',
+      maxSectionLength: 180,
+    }),
     ...(style.antiPatterns ?? []).slice(0, 5).map(item => `避免：${item}`),
   ] : ['风格：未指定'];
 
