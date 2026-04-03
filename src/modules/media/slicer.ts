@@ -66,6 +66,7 @@ export function sliceInterestingWindows(
       id: randomUUID(),
       assetId: asset.id,
       type,
+      semanticKind: window.semanticKind,
       sourceInMs: window.startMs,
       sourceOutMs: window.endMs,
       editSourceInMs: window.editStartMs ?? window.startMs,

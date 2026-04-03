@@ -1,12 +1,16 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import type { EClipType } from '../../protocol/schema.js';
 import type { IMediaToolConfig } from './probe.js';
 import { toExecutableInputPath } from './tool-path.js';
 
 const exec = promisify(execFile);
 const DEFAULT_ANALYSIS_PROXY_WIDTH = 1024;
 const DEFAULT_ANALYSIS_PROXY_PIXEL_FORMAT = 'yuv420p';
-const DEFAULT_SCENE_DETECT_FPS = 4;
+const DEFAULT_NON_DRIVE_SCENE_DETECT_FPS = 2;
+const DRIVE_SCENE_DETECT_TARGET_FRAMES = 60;
+const DRIVE_SCENE_DETECT_MIN_FPS = 0.5;
+const DRIVE_SCENE_DETECT_MAX_FPS = 2;
 const HW_SURFACE_OUTPUT_FORMATS: Record<string, string> = {
   cuda: 'cuda',
   qsv: 'qsv',
@@ -22,6 +26,32 @@ export interface IShotBoundary {
   score: number;
 }
 
+export interface ISceneDetectContext {
+  clipType?: EClipType;
+  durationMs?: number;
+}
+
+export function resolveEffectiveSceneDetectFps(input: {
+  tools?: Pick<IMediaToolConfig, 'sceneDetectFps'>;
+  context?: ISceneDetectContext;
+}): number {
+  const configuredFps = normalizePositiveFps(input.tools?.sceneDetectFps);
+  if (configuredFps != null) return configuredFps;
+
+  if (input.context?.clipType !== 'drive') {
+    return DEFAULT_NON_DRIVE_SCENE_DETECT_FPS;
+  }
+
+  const durationMs = input.context?.durationMs ?? 0;
+  if (durationMs <= 0) {
+    return DEFAULT_NON_DRIVE_SCENE_DETECT_FPS;
+  }
+
+  // Longer drive clips intentionally lower fps so FFmpeg compares frames farther apart.
+  const driveFps = DRIVE_SCENE_DETECT_TARGET_FRAMES / Math.max(durationMs / 1000, 1);
+  return roundFps(Math.max(DRIVE_SCENE_DETECT_MIN_FPS, Math.min(DRIVE_SCENE_DETECT_MAX_FPS, driveFps)));
+}
+
 /**
  * FFmpeg scene detection — returns timestamps where scene changes occur.
  * threshold: 0.0–1.0, lower = more sensitive (default 0.3)
@@ -30,13 +60,14 @@ export async function detectShots(
   filePath: string,
   threshold = 0.3,
   tools?: IMediaToolConfig,
+  context: ISceneDetectContext = {},
 ): Promise<IShotBoundary[]> {
   const ffmpeg = tools?.ffmpegPath?.trim() || 'ffmpeg';
   const inputPath = toExecutableInputPath(filePath, ffmpeg);
   const hwaccel = tools?.ffmpegHwaccel?.trim();
   const scaleWidth = tools?.analysisProxyWidth ?? tools?.sceneDetectScaleWidth ?? DEFAULT_ANALYSIS_PROXY_WIDTH;
   const pixelFormat = tools?.analysisProxyPixelFormat?.trim() || DEFAULT_ANALYSIS_PROXY_PIXEL_FORMAT;
-  const sceneDetectFps = tools?.sceneDetectFps ?? DEFAULT_SCENE_DETECT_FPS;
+  const sceneDetectFps = resolveEffectiveSceneDetectFps({ tools, context });
   const args: string[] = [];
   const hwDownloadFilter = hwaccel ? HW_DOWNLOAD_FILTERS[hwaccel] : undefined;
 
@@ -173,4 +204,15 @@ function parseShowinfo(output: string): IShotBoundary[] {
     }
   }
   return boundaries;
+}
+
+function normalizePositiveFps(fps?: number): number | undefined {
+  if (typeof fps !== 'number' || !Number.isFinite(fps) || fps <= 0) {
+    return undefined;
+  }
+  return roundFps(fps);
+}
+
+function roundFps(fps: number): number {
+  return Math.round(fps * 100) / 100;
 }

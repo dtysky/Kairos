@@ -56,6 +56,9 @@ export const EClipType = z.enum([
 ]);
 export type EClipType = z.infer<typeof EClipType>;
 
+export const EWindowSemantic = z.enum(['speech', 'visual']);
+export type EWindowSemantic = z.infer<typeof EWindowSemantic>;
+
 export const ESamplingProfile = z.enum(['dense', 'balanced', 'sparse']);
 export type ESamplingProfile = z.infer<typeof ESamplingProfile>;
 
@@ -213,6 +216,7 @@ export const IKtepSlice = z.object({
   id: z.string(),
   assetId: z.string(),
   type: ESliceType,
+  semanticKind: EWindowSemantic.optional(),
   sourceInMs: z.number().optional(),
   sourceOutMs: z.number().optional(),
   editSourceInMs: z.number().optional(),
@@ -460,6 +464,7 @@ export const IInterestingWindow = z.object({
   endMs: z.number(),
   editStartMs: z.number().optional(),
   editEndMs: z.number().optional(),
+  semanticKind: EWindowSemantic.optional(),
   reason: z.string(),
   speedCandidate: ISpeedCandidateHint.optional(),
 });
@@ -646,6 +651,7 @@ export const ISegmentRecallCandidate = z.object({
   assetId: z.string(),
   score: z.number(),
   reasons: z.array(z.string()),
+  semanticKind: EWindowSemantic.optional(),
   summary: z.string().optional(),
   transcript: z.string().optional(),
   labels: z.array(z.string()),

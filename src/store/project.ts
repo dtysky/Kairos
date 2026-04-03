@@ -41,6 +41,7 @@ const IRuntimeConfig = z.object({
   analysisProxyPixelFormat: z.string().optional(),
   sceneDetectFps: z.number().positive().optional(),
   sceneDetectScaleWidth: z.number().int().positive().optional(),
+  keyframeExtractConcurrency: z.number().int().positive().optional(),
   mlServerUrl: z.string().optional(),
   djiOpenAPIKey: z.string().optional(),
   timelineWidth: z.number().int().positive().optional(),

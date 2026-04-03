@@ -16,6 +16,32 @@ export interface IAsrSegment {
   text: string;
 }
 
+export interface IMlAsrTiming {
+  backend?: string;
+  modelRef?: string;
+  totalMs?: number;
+  loadMs?: number;
+  wavExtractMs?: number;
+  inferenceMs?: number;
+}
+
+export interface IMlVlmTiming {
+  backend?: string;
+  modelRef?: string;
+  totalMs?: number;
+  loadMs?: number;
+  imageOpenMs?: number;
+  processorMs?: number;
+  h2dMs?: number;
+  generateMs?: number;
+  decodeMs?: number;
+}
+
+export interface IAsrResult {
+  segments: IAsrSegment[];
+  timing?: IMlAsrTiming;
+}
+
 export interface IOcrResult {
   text: string;
   confidence: number;
@@ -24,6 +50,7 @@ export interface IOcrResult {
 
 export interface IVlmResult {
   description: string;
+  timing?: IMlVlmTiming;
 }
 
 export interface IMlHealth {
@@ -45,11 +72,15 @@ export class MlClient {
   }
 
   async asr(audioPath: string, language?: string): Promise<IAsrSegment[]> {
-    const res = await this.post<{ segments: IAsrSegment[] }>('/asr', {
+    const res = await this.asrDetailed(audioPath, language);
+    return res.segments;
+  }
+
+  async asrDetailed(audioPath: string, language?: string): Promise<IAsrResult> {
+    return this.post<IAsrResult>('/asr', {
       audio_path: this.normalizePath(audioPath),
       language,
     });
-    return res.segments;
   }
 
   async ocr(imagePath: string): Promise<IOcrResult[]> {

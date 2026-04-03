@@ -12,6 +12,7 @@ export interface IMediaToolConfig {
   analysisProxyPixelFormat?: string;
   sceneDetectFps?: number;
   sceneDetectScaleWidth?: number;
+  keyframeExtractConcurrency?: number;
 }
 
 export interface IProbeResult {

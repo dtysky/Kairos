@@ -4,7 +4,7 @@ import type {
 } from '../../protocol/schema.js';
 import type { IDensityResult } from './density.js';
 import type { IShotBoundary } from './shot-detect.js';
-import { mergeInterestingWindowsByPreferredBounds } from './window-policy.js';
+import { isSpeechSemanticWindow, mergeInterestingWindowsByPreferredBounds } from './window-policy.js';
 
 export interface ISamplerInput {
   assetId: string;
@@ -51,13 +51,23 @@ export function buildAnalysisPlan(input: ISamplerInput): IMediaAnalysisPlan {
   const coarseSampleCount = pickCoarseSampleCount(input.durationMs);
   const interval = pickInterval(input.durationMs, profile);
 
-  const interestingWindows = mergeWindows([
-    ...findInterestingWindows(
-      input.shotBoundaries,
-      input.durationMs,
-    ),
-    ...(input.extraInterestingWindows ?? []),
-  ]);
+  const shotInterestingWindows = findInterestingWindows(
+    input.shotBoundaries,
+    input.durationMs,
+  );
+  const extraInterestingWindows = input.extraInterestingWindows ?? [];
+  const interestingWindows = mergeWindows(clipType === 'drive'
+    ? [
+      ...shotInterestingWindows.map(window => tagDriveWindowSemantic(window, 'visual')),
+      ...extraInterestingWindows.map(window => tagDriveWindowSemantic(
+        window,
+        isSpeechSemanticWindow(window) ? 'speech' : 'visual',
+      )),
+    ]
+    : [
+      ...shotInterestingWindows,
+      ...extraInterestingWindows,
+    ]);
 
   const vlmMode: EVlmMode = budget === 'coarse' ? 'none'
     : input.durationMs < 15000 ? 'video'
@@ -364,6 +374,16 @@ function mergeWindows(
   windows: IMediaAnalysisPlan['interestingWindows'],
 ): IMediaAnalysisPlan['interestingWindows'] {
   return mergeInterestingWindowsByPreferredBounds(windows);
+}
+
+function tagDriveWindowSemantic(
+  window: IMediaAnalysisPlan['interestingWindows'][number],
+  semanticKind: 'speech' | 'visual',
+): IMediaAnalysisPlan['interestingWindows'][number] {
+  return {
+    ...window,
+    semanticKind: window.semanticKind ?? semanticKind,
+  };
 }
 
 function includesAny(value: string, needles: string[]): boolean {

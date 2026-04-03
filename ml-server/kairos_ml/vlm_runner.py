@@ -6,6 +6,7 @@ VLM (Vision Language Model) runner with two backends:
 from __future__ import annotations
 
 import os
+import time
 from pathlib import Path
 
 from .device import DEVICE, BACKEND
@@ -29,39 +30,60 @@ def _repo_root() -> Path:
 
 # ── MLX backend ──────────────────────────────────────────────
 
-def _load_mlx():
+def _resolve_mlx_ref() -> str:
+    if CMODEL_PATH or CMODEL_ID:
+        return CMODEL_PATH or CMODEL_ID
+    local = _repo_root() / "models" / CLOCAL_MLX_VLM
+    return str(local) if local.exists() else CDEFAULT_MLX_MODEL
+
+
+def _load_mlx() -> tuple[float, str]:
     global _backend_loaded, _model, _processor
+    model_ref = _resolve_mlx_ref()
     if _backend_loaded == "mlx":
-        return
+        return 0.0, model_ref
 
     from mlx_vlm import load  # type: ignore
 
-    if CMODEL_PATH or CMODEL_ID:
-        model_ref = CMODEL_PATH or CMODEL_ID
-    else:
-        local = _repo_root() / "models" / CLOCAL_MLX_VLM
-        model_ref = str(local) if local.exists() else CDEFAULT_MLX_MODEL
+    started_at = time.perf_counter()
     _model, _processor = load(model_ref)
     _backend_loaded = "mlx"
+    return (time.perf_counter() - started_at) * 1000.0, model_ref
 
 
-def _analyze_mlx(image_paths: list[str], prompt: str) -> str:
+def _analyze_mlx(image_paths: list[str], prompt: str) -> tuple[str, dict]:
     from mlx_vlm import generate, apply_chat_template  # type: ignore
 
+    total_started_at = time.perf_counter()
     abs_paths = [str(Path(p).resolve()) for p in image_paths]
     prompt_text = (
         f"{prompt}\n"
         "Return only one JSON object and do not wrap it in markdown."
     )
+    prep_started_at = time.perf_counter()
     formatted = apply_chat_template(
         _processor, _model.config, prompt_text,
         num_images=len(abs_paths),
     )
+    processor_ms = (time.perf_counter() - prep_started_at) * 1000.0
+    generate_started_at = time.perf_counter()
     result = generate(
         _model, _processor, formatted, image=abs_paths,
         max_tokens=512, temperature=0.1, verbose=False,
     )
-    return result.text if hasattr(result, "text") else str(result)
+    generate_ms = (time.perf_counter() - generate_started_at) * 1000.0
+    text = result.text if hasattr(result, "text") else str(result)
+    return text, {
+        "backend": BACKEND,
+        "totalMs": (time.perf_counter() - total_started_at) * 1000.0,
+        "loadMs": 0.0,
+        "imageOpenMs": 0.0,
+        "processorMs": processor_ms,
+        "h2dMs": 0.0,
+        "generateMs": generate_ms,
+        "decodeMs": 0.0,
+        "modelRef": _resolve_mlx_ref(),
+    }
 
 
 # ── Torch backend (CUDA / CPU) ──────────────────────────────
@@ -85,15 +107,16 @@ def _resolve_transformers_ref() -> str:
     return model_id
 
 
-def _load_transformers():
+def _load_transformers() -> tuple[float, str]:
     global _backend_loaded, _model, _processor
+    model_ref = _resolve_transformers_ref()
     if _backend_loaded == "torch":
-        return
+        return 0.0, model_ref
 
     import torch
     from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
 
-    model_ref = _resolve_transformers_ref()
+    started_at = time.perf_counter()
     _processor = AutoProcessor.from_pretrained(model_ref)
 
     if DEVICE == "cuda":
@@ -107,12 +130,14 @@ def _load_transformers():
         ).eval().to("cpu")
 
     _backend_loaded = "torch"
+    return (time.perf_counter() - started_at) * 1000.0, model_ref
 
 
-def _analyze_transformers(image_paths: list[str], prompt: str) -> str:
+def _analyze_transformers(image_paths: list[str], prompt: str) -> tuple[str, dict]:
     import torch
     from PIL import Image
 
+    total_started_at = time.perf_counter()
     prompt_text = (
         f"{prompt}\n"
         "Return only one JSON object and do not wrap it in markdown."
@@ -128,30 +153,57 @@ def _analyze_transformers(image_paths: list[str], prompt: str) -> str:
         messages, tokenize=False, add_generation_prompt=True,
     )
 
+    image_open_started_at = time.perf_counter()
     images = [Image.open(p).convert("RGB") for p in image_paths]
+    image_open_ms = (time.perf_counter() - image_open_started_at) * 1000.0
+    processor_started_at = time.perf_counter()
     inputs = _processor(text=[text], images=images, padding=True, return_tensors="pt")
+    processor_ms = (time.perf_counter() - processor_started_at) * 1000.0
     inputs.pop("token_type_ids", None)
+    h2d_ms = 0.0
     if DEVICE == "cuda":
+        h2d_started_at = time.perf_counter()
         inputs = {k: v.to("cuda") if hasattr(v, "to") else v for k, v in inputs.items()}
+        h2d_ms = (time.perf_counter() - h2d_started_at) * 1000.0
 
+    generate_started_at = time.perf_counter()
     with torch.no_grad():
         generated_ids = _model.generate(**inputs, max_new_tokens=512)
+    generate_ms = (time.perf_counter() - generate_started_at) * 1000.0
 
     trimmed = [out[len(inp):] for inp, out in zip(inputs["input_ids"], generated_ids)]
+    decode_started_at = time.perf_counter()
     outputs = _processor.batch_decode(
         trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False,
     )
-    return outputs[0] if outputs else ""
+    decode_ms = (time.perf_counter() - decode_started_at) * 1000.0
+    return (outputs[0] if outputs else ""), {
+        "backend": BACKEND,
+        "totalMs": (time.perf_counter() - total_started_at) * 1000.0,
+        "loadMs": 0.0,
+        "imageOpenMs": image_open_ms,
+        "processorMs": processor_ms,
+        "h2dMs": h2d_ms,
+        "generateMs": generate_ms,
+        "decodeMs": decode_ms,
+        "modelRef": "",
+    }
 
 
 # ── Public API ───────────────────────────────────────────────
 
-def analyze(image_paths: list[str], prompt: str) -> str:
+def analyze(image_paths: list[str], prompt: str) -> tuple[str, dict]:
     if not image_paths:
         raise ValueError("No images provided for VLM analysis")
 
     if BACKEND == "mlx":
-        _load_mlx()
-        return _analyze_mlx(image_paths, prompt)
-    _load_transformers()
-    return _analyze_transformers(image_paths, prompt)
+        load_ms, model_ref = _load_mlx()
+        description, timing = _analyze_mlx(image_paths, prompt)
+        timing["loadMs"] = load_ms
+        timing["modelRef"] = model_ref
+        return description, timing
+    load_ms, model_ref = _load_transformers()
+    description, timing = _analyze_transformers(image_paths, prompt)
+    timing["loadMs"] = load_ms
+    timing["modelRef"] = model_ref
+    return description, timing

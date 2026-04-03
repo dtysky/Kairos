@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import time
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
@@ -39,6 +40,17 @@ def _audio_temp_dir() -> Path:
     return output
 
 
+def _resolve_mlx_model_ref() -> str:
+    if CWHISPER_MODEL:
+        return CWHISPER_MODEL
+    local = _repo_root() / "models" / CLOCAL_MLX_WHISPER
+    return str(local) if local.exists() else CDEFAULT_MLX_WHISPER
+
+
+def _resolve_torch_model_ref() -> str:
+    return "openai/whisper-small"
+
+
 def _extract_audio_wav(media_path: str) -> Path:
     with NamedTemporaryFile(delete=False, suffix=".wav", dir=_audio_temp_dir()) as h:
         out_path = Path(h.name)
@@ -55,11 +67,7 @@ def _extract_audio_wav(media_path: str) -> Path:
 def _transcribe_mlx(wav_path: Path, language: str | None) -> list[dict]:
     import mlx_whisper  # type: ignore
 
-    if CWHISPER_MODEL:
-        model_ref = CWHISPER_MODEL
-    else:
-        local = _repo_root() / "models" / CLOCAL_MLX_WHISPER
-        model_ref = str(local) if local.exists() else CDEFAULT_MLX_WHISPER
+    model_ref = _resolve_mlx_model_ref()
     kwargs: dict = {
         "path_or_hf_repo": model_ref,
         "word_timestamps": False,
@@ -107,7 +115,7 @@ def _get_torch_pipeline():
     from scipy.io import wavfile as _wf  # noqa: F401 — verify scipy
     from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 
-    model_id = "openai/whisper-small"
+    model_id = _resolve_torch_model_ref()
     use_fp16 = DEVICE == "cuda"
     torch_dtype = torch.float16 if use_fp16 else torch.float32
     device_str = _torch_device_str()
@@ -130,10 +138,9 @@ def _get_torch_pipeline():
     return _asr_pipeline
 
 
-def _transcribe_torch(wav_path: Path, language: str | None) -> list[dict]:
+def _transcribe_torch(wav_path: Path, language: str | None, asr) -> list[dict]:
     from scipy.io import wavfile
 
-    asr = _get_torch_pipeline()
     sample_rate, samples = wavfile.read(str(wav_path))
     if len(samples.shape) > 1:
         samples = samples.mean(axis=1)
@@ -176,11 +183,37 @@ def _transcribe_torch(wav_path: Path, language: str | None) -> list[dict]:
 
 # ── Public API ───────────────────────────────────────────────
 
-def transcribe(audio_path: str, language: str | None = None) -> list[dict]:
+def transcribe(audio_path: str, language: str | None = None) -> tuple[list[dict], dict]:
+    total_started_at = time.perf_counter()
+    wav_started_at = time.perf_counter()
     wav_path = _extract_audio_wav(audio_path)
+    wav_extract_ms = (time.perf_counter() - wav_started_at) * 1000.0
     try:
         if BACKEND == "mlx":
-            return _transcribe_mlx(wav_path, language)
-        return _transcribe_torch(wav_path, language)
+            inference_started_at = time.perf_counter()
+            segments = _transcribe_mlx(wav_path, language)
+            inference_ms = (time.perf_counter() - inference_started_at) * 1000.0
+            return segments, {
+                "backend": BACKEND,
+                "modelRef": _resolve_mlx_model_ref(),
+                "totalMs": (time.perf_counter() - total_started_at) * 1000.0,
+                "loadMs": 0.0,
+                "wavExtractMs": wav_extract_ms,
+                "inferenceMs": inference_ms,
+            }
+        load_started_at = time.perf_counter()
+        asr = _get_torch_pipeline()
+        load_ms = (time.perf_counter() - load_started_at) * 1000.0
+        inference_started_at = time.perf_counter()
+        segments = _transcribe_torch(wav_path, language, asr)
+        inference_ms = (time.perf_counter() - inference_started_at) * 1000.0
+        return segments, {
+            "backend": BACKEND,
+            "modelRef": _resolve_torch_model_ref(),
+            "totalMs": (time.perf_counter() - total_started_at) * 1000.0,
+            "loadMs": load_ms,
+            "wavExtractMs": wav_extract_ms,
+            "inferenceMs": inference_ms,
+        }
     finally:
         wav_path.unlink(missing_ok=True)

@@ -176,6 +176,7 @@ function rankCandidatesForSegment(
       assetId: slice.assetId,
       score,
       reasons: reasons.length > 0 ? reasons : ['fallback:lowest-confidence'],
+      semanticKind: slice.semanticKind,
       summary: slice.summary,
       transcript: slice.transcript,
       labels: slice.labels,

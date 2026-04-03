@@ -37,6 +37,7 @@ describe('type-aware edit window expansion', () => {
       windows: [{
         startMs: 30_000,
         endMs: 34_000,
+        semanticKind: 'visual',
         reason: 'coarse-sample-window',
       }],
     });
@@ -50,4 +51,41 @@ describe('type-aware edit window expansion', () => {
     });
     expect(windows[0]?.speedCandidate?.rationale).toMatch(/drive:coarse-sample-window/u);
   });
+
+
+  it('keeps overlapping drive speech and visual windows separate', () => {
+    const windows = applyTypeAwareWindowExpansion({
+      clipType: 'drive',
+      durationMs: 180_000,
+      shotBoundaries: [
+        { timeMs: 60_000, score: 0.9 },
+      ],
+      windows: [
+        {
+          startMs: 59_500,
+          endMs: 61_000,
+          semanticKind: 'visual',
+          reason: 'high-scene-score',
+        },
+        {
+          startMs: 60_200,
+          endMs: 60_900,
+          semanticKind: 'speech',
+          reason: 'speech-window',
+        },
+      ],
+    });
+
+    expect(windows).toHaveLength(2);
+    const speechWindow = windows.find(window => window.semanticKind === 'speech');
+    const visualWindow = windows.find(window => window.semanticKind === 'visual');
+
+    expect(speechWindow).toBeDefined();
+    expect(speechWindow?.speedCandidate).toBeUndefined();
+    expect(visualWindow?.speedCandidate).toBeDefined();
+    expect((speechWindow?.editEndMs ?? 0) - (speechWindow?.editStartMs ?? 0)).toBeLessThan(
+      (visualWindow?.editEndMs ?? 0) - (visualWindow?.editStartMs ?? 0),
+    );
+  });
+
 });

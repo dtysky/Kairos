@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { getAnalyzePerformanceProfilePath } from '../../src/modules/media/analyze-profile.js';
 import { analyzeWorkspaceProjectMedia } from '../../src/modules/media/project-analyze.js';
 import {
   getProjectProgressPath,
@@ -54,6 +55,10 @@ describe('analyzeWorkspaceProjectMedia', () => {
       workspaceRoot,
       projectId,
       progressPath,
+      performanceProfile: {
+        enabled: true,
+        runLabel: 'ml-unavailable',
+      },
     })).rejects.toThrow(/ML server 不可用/u);
 
     const progress = JSON.parse(await readFile(progressPath, 'utf-8')) as {
@@ -62,5 +67,16 @@ describe('analyzeWorkspaceProjectMedia', () => {
     };
     expect(progress.status).toBe('failed');
     expect(progress.detail).toMatch(/ML server 不可用/u);
+
+    const profile = JSON.parse(
+      await readFile(getAnalyzePerformanceProfilePath(projectRoot), 'utf-8'),
+    ) as {
+      status: string;
+      failureMessage?: string;
+      analyzedAssetCount: number;
+    };
+    expect(profile.status).toBe('failed');
+    expect(profile.failureMessage).toMatch(/ML server 不可用/u);
+    expect(profile.analyzedAssetCount).toBe(0);
   });
 });

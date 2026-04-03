@@ -7,6 +7,8 @@ import type { IShotBoundary } from './shot-detect.js';
 import { toExecutableInputPath } from './tool-path.js';
 
 const exec = promisify(execFile);
+const CDEFAULT_KEYFRAME_EXTRACT_CONCURRENCY = 3;
+const CMAX_KEYFRAME_EXTRACT_CONCURRENCY = 6;
 
 export interface IKeyframeResult {
   timeMs: number;
@@ -76,29 +78,86 @@ export async function extractKeyframes(
   const ffmpeg = tools?.ffmpegPath?.trim() || 'ffmpeg';
   const inputPath = toExecutableInputPath(filePath, ffmpeg);
   const vf = buildAnalysisProxyFilter(tools);
+  const concurrency = resolveKeyframeExtractConcurrency(
+    timestampsMs.length,
+    tools?.keyframeExtractConcurrency,
+  );
 
-  const results: IKeyframeResult[] = [];
-  for (const ts of timestampsMs) {
-    const sec = ts / 1000;
-    const outPath = join(outputDir, `kf_${ts}.jpg`);
-    const outputPathForTool = toExecutableInputPath(outPath, ffmpeg);
-    try {
-      await exec(ffmpeg, [
-        '-ss', sec.toFixed(3),
-        '-i', inputPath,
-        '-vf', vf,
-        '-frames:v', '1',
-        '-q:v', '2',
-        '-y',
-        outputPathForTool,
-      ]);
-      await access(outPath);
-      results.push({ timeMs: ts, path: outPath });
-    } catch {
-      // skip frames that fail to extract
-    }
+  const results = await mapWithConcurrencyLimit(
+    timestampsMs,
+    concurrency,
+    async (ts) => extractSingleKeyframeAtTimestamp(ts, {
+      ffmpeg,
+      inputPath,
+      outputDir,
+      vf,
+    }),
+  );
+  return results.filter((result): result is IKeyframeResult => result !== null);
+}
+
+async function extractSingleKeyframeAtTimestamp(
+  timeMs: number,
+  input: {
+    ffmpeg: string;
+    inputPath: string;
+    outputDir: string;
+    vf: string;
+  },
+): Promise<IKeyframeResult | null> {
+  const sec = timeMs / 1000;
+  const outPath = join(input.outputDir, `kf_${timeMs}.jpg`);
+  const outputPathForTool = toExecutableInputPath(outPath, input.ffmpeg);
+
+  try {
+    await exec(input.ffmpeg, [
+      '-ss', sec.toFixed(3),
+      '-i', input.inputPath,
+      '-vf', input.vf,
+      '-frames:v', '1',
+      '-q:v', '2',
+      '-y',
+      outputPathForTool,
+    ]);
+    await access(outPath);
+    return { timeMs, path: outPath };
+  } catch {
+    return null;
   }
+}
+
+async function mapWithConcurrencyLimit<T, TResult>(
+  items: T[],
+  concurrency: number,
+  worker: (item: T, index: number) => Promise<TResult>,
+): Promise<TResult[]> {
+  const results = new Array<TResult>(items.length);
+  let nextIndex = 0;
+
+  const workerCount = Math.min(Math.max(1, concurrency), items.length);
+  await Promise.all(
+    Array.from({ length: workerCount }, async () => {
+      while (nextIndex < items.length) {
+        const currentIndex = nextIndex;
+        nextIndex += 1;
+        results[currentIndex] = await worker(items[currentIndex]!, currentIndex);
+      }
+    }),
+  );
+
   return results;
+}
+
+function resolveKeyframeExtractConcurrency(
+  taskCount: number,
+  configured?: number,
+): number {
+  if (taskCount <= 0) return 1;
+
+  const preferred = Number.isFinite(configured)
+    ? Math.floor(configured!)
+    : CDEFAULT_KEYFRAME_EXTRACT_CONCURRENCY;
+  return Math.min(taskCount, Math.max(1, Math.min(CMAX_KEYFRAME_EXTRACT_CONCURRENCY, preferred)));
 }
 
 function buildAnalysisProxyFilter(tools?: IMediaToolConfig): string {

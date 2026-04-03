@@ -38,6 +38,17 @@ export function applyTypeAwareWindowExpansion(
   return mergeInterestingWindowsByPreferredBounds(expanded);
 }
 
+export function isSpeechSemanticWindow(
+  window: Pick<IInterestingWindow, 'reason' | 'semanticKind'>,
+): boolean {
+  if (window.semanticKind === 'speech') return true;
+  return window.reason
+    .split('+')
+    .map(token => token.trim())
+    .filter(Boolean)
+    .includes('speech-window');
+}
+
 export function resolveWindowPreferredRange(
   window: Pick<IInterestingWindow, 'startMs' | 'endMs' | 'editStartMs' | 'editEndMs'>,
 ): IResolvedRange | null {
@@ -124,11 +135,12 @@ export function mergeInterestingWindowsByPreferredBounds(
       endMs: current.endMs,
     };
 
-    if (currentRange.startMs <= previousRange.endMs) {
+    if (currentRange.startMs <= previousRange.endMs && canMergeWindowSemantics(previous, current)) {
       previous.startMs = Math.min(previous.startMs, current.startMs);
       previous.endMs = Math.max(previous.endMs, current.endMs);
       previous.editStartMs = Math.min(previousRange.startMs, currentRange.startMs);
       previous.editEndMs = Math.max(previousRange.endMs, currentRange.endMs);
+      previous.semanticKind = previous.semanticKind ?? current.semanticKind;
       previous.reason = mergeReasonTokens(previous.reason, current.reason);
       previous.speedCandidate = mergeSpeedCandidates(previous.speedCandidate, current.speedCandidate);
       continue;
@@ -148,7 +160,7 @@ function expandWindow(
   const focusEnd = clampMs(window.endMs, 0, input.durationMs);
   if (focusEnd <= focusStart) return null;
 
-  const policy = resolvePolicy(input.clipType, window.reason, input.durationMs);
+  const policy = resolvePolicy(input.clipType, window, input.durationMs);
   const cuts = buildCutPoints(input.durationMs, input.shotBoundaries ?? []);
 
   let editStart = Math.max(0, focusStart - policy.beforeMs);
@@ -173,7 +185,7 @@ function expandWindow(
     input.durationMs,
   );
 
-  const speedCandidate = input.clipType === 'drive'
+  const speedCandidate = input.clipType === 'drive' && !isSpeechSemanticWindow(window)
     ? buildDriveSpeedCandidate(
       input.durationMs,
       normalized.endMs - normalized.startMs,
@@ -193,10 +205,10 @@ function expandWindow(
 
 function resolvePolicy(
   clipType: EClipType,
-  reason: string,
+  window: IInterestingWindow,
   durationMs: number,
 ): IWindowExpansionPolicy {
-  if (reason.includes('speech-window') || clipType === 'talking-head') {
+  if (isSpeechSemanticWindow(window) || clipType === 'talking-head') {
     return { beforeMs: 250, afterMs: 750, minDurationMs: 2_400 };
   }
 
@@ -323,6 +335,15 @@ function mergeReasonTokens(left: string, right: string): string {
       .filter(Boolean),
   );
   return [...tokens].join('+');
+}
+
+function canMergeWindowSemantics(
+  left: Pick<IInterestingWindow, 'semanticKind'>,
+  right: Pick<IInterestingWindow, 'semanticKind'>,
+): boolean {
+  return left.semanticKind == null
+    || right.semanticKind == null
+    || left.semanticKind === right.semanticKind;
 }
 
 function mergeSpeedCandidates(

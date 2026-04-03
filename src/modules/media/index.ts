@@ -40,7 +40,24 @@ export {
   resolveWindowPreferredRange,
   type ITypeAwareWindowExpansionInput,
 } from './window-policy.js';
-export { MlClient, type IAsrSegment, type IOcrResult, type IVlmResult, type IMlHealth } from './ml-client.js';
+export {
+  MlClient,
+  type IAsrSegment,
+  type IMlAsrTiming,
+  type IMlVlmTiming,
+  type IAsrResult,
+  type IOcrResult,
+  type IVlmResult,
+  type IMlHealth,
+} from './ml-client.js';
+export {
+  AnalyzePerformanceSession,
+  getAnalyzePerformanceProfilePath,
+  shouldEnableAnalyzePerformanceProfile,
+  type IAnalyzePerformanceProfileOptions,
+  type IAnalyzePerformanceProfile,
+  type IAnalyzeAssetPerformance,
+} from './analyze-profile.js';
 export { transcribe, type ITranscription } from './transcriber.js';
 export { extractOcr, type IOcrExtraction } from './ocr.js';
 export { estimateDensity, type IDensityInput, type IDensityResult } from './density.js';

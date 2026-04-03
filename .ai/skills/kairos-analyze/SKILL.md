@@ -144,9 +144,13 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
 
 先做面向全量素材的低成本视觉分析：
 - 视频：
-  - 低成本 scene detect
   - 均匀少量采样帧
   - 可用时做一次轻量 VLM 总结
+  - `scene detect` 不再作为默认前置；它会在 coarse + audio decision 之后，只对真正需要 shot 结构的素材延后触发
+  - 当前 deferred gate 至少覆盖：
+    - `video + fineScanMode === full` 的 hard gate
+    - selected `windowed` non-drive 的 fragmented-window soft gate
+    - scenic `drive` 复用已有 coarse VLM 语义的单独 soft gate
 - 照片：
   - 直接做轻量视觉总结
 - 音频：
@@ -201,6 +205,13 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
 - `shouldFineScan`
 - `fineScanMode = skip | windowed | full`
 
+如果 provisional 结果最终需要 shot 结构（当前包括视频 `full` hard gate、selected `windowed` non-drive soft gate，以及 scenic `drive` 的 coarse-semantic soft gate）：
+
+- 再补跑一次 deferred `scene detect`
+- 只重算 shot-sensitive 的 planning pieces
+- 不重跑 coarse VLM / ASR
+- 没命中 gate 的 `windowed / skip` 默认不再支付这笔成本
+
 到这一步之后，才会形成用于后续流程的 coarse-level report。这个 report 可以已经带上 transcript 字段，但概念上它不是“纯视觉粗扫结果”，而是“粗扫 + 音频分析合并后的分析结果”。
 
 分析结果会写到：
@@ -248,7 +259,9 @@ const localPath = resolveAssetLocalPath(projectId, asset, roots, deviceMaps);
 
 5. 在细扫决策前补充视频内音轨分析
 
-6. 合并视觉/音频信号，生成 coarse-level report
+6. 合并视觉/音频信号，生成 provisional decision / plan
+
+7. 仅当 final plan 命中 deferred gate 时，补跑 `scene detect` 并只重算 shot-sensitive plan
 
 这个 report 会包含：
 - `clipTypeGuess`
@@ -268,9 +281,9 @@ const localPath = resolveAssetLocalPath(projectId, asset, roots, deviceMaps);
 
 注意：当前 `interestingWindows` 不是“单一最终剪辑窗口”，而是 `focus window + edit-friendly bounds` 的组合结构。
 
-7. 自动决定是否细扫并生成 slices
+8. 自动决定是否细扫并生成 slices
 
-8. 更新 chronology
+9. 更新 chronology
 
 ## 进度展示
 

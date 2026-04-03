@@ -71,6 +71,7 @@ describe('transcript signal filtering', () => {
         endMs: 4_000,
         editStartMs: 1_500,
         editEndMs: 5_500,
+        semanticKind: 'speech',
         reason: 'speech-window',
         speedCandidate: {
           suggestedSpeeds: [2, 5],
@@ -86,6 +87,7 @@ describe('transcript signal filtering', () => {
       endMs: 4_000,
       editStartMs: 1_500,
       editEndMs: 5_500,
+      semanticKind: 'speech',
       speedCandidate: {
         suggestedSpeeds: [2, 5],
         rationale: 'drive:speech-window',

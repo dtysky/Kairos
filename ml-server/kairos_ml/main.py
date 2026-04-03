@@ -43,8 +43,8 @@ def asr(req: AsrRequest):
     try:
         from .whisper_runner import transcribe
         _loaded.add("whisper")
-        segments = transcribe(req.audio_path, req.language)
-        return {"segments": segments}
+        segments, timing = transcribe(req.audio_path, req.language)
+        return {"segments": segments, "timing": timing}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -76,8 +76,8 @@ def vlm_analyze(req: VlmRequest):
     try:
         from .vlm_runner import analyze
         _loaded.add("vlm")
-        description = analyze(req.image_paths, req.prompt)
-        return {"description": description}
+        description, timing = analyze(req.image_paths, req.prompt)
+        return {"description": description, "timing": timing}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

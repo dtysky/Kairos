@@ -10,6 +10,7 @@ import { hasExplicitEditRange, resolveSlicePreferredRange } from '../media/windo
 export interface IOutlineSliceContext {
   sliceId: string;
   assetId: string;
+  semanticKind?: IKtepSlice['semanticKind'];
   summary?: string;
   transcript?: string;
   labels: string[];
@@ -26,6 +27,7 @@ export interface IOutlineBeat {
   title: string;
   assetId: string;
   sliceId?: string;
+  semanticKind?: IKtepSlice['semanticKind'];
   selection: IKtepScriptSelection;
   summary?: string;
   transcript?: string;
@@ -116,6 +118,7 @@ export function buildOutlineFromApprovedPlan(
     const sliceContexts: IOutlineSliceContext[] = (recalled?.candidates ?? []).map(candidate => ({
       sliceId: candidate.sliceId,
       assetId: candidate.assetId,
+      semanticKind: candidate.semanticKind,
       summary: candidate.summary,
       transcript: candidate.transcript,
       labels: takeUnique(candidate.labels, 4),
@@ -191,6 +194,7 @@ function buildPlannedBeatsForSegment(
       title: `${segment.title} 拍 ${beatIndex + 1}`,
       assetId: candidate.assetId,
       sliceId: candidate.sliceId,
+      semanticKind: candidate.semanticKind,
       selection: trimmedSelection,
       summary: candidate.summary,
       transcript: candidate.transcript,

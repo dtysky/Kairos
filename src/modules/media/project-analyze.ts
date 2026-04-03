@@ -35,12 +35,18 @@ import {
 } from '../../store/index.js';
 import { buildAssetCoarseReport } from './asset-report.js';
 import {
+  AnalyzePerformanceSession,
+  shouldEnableAnalyzePerformanceProfile,
+  type IAnalyzePerformanceProfileOptions,
+  type TAnalyzeSceneDetectPhase,
+} from './analyze-profile.js';
+import {
   analyzeAudioHealth,
   recommendProtectedAudioFallback,
   summarizeAudioHealth,
 } from './audio-health.js';
 import { buildMediaChronology } from './chronology.js';
-import { estimateDensity } from './density.js';
+import { estimateDensity, type IDensityResult } from './density.js';
 import {
   uniformTimestamps,
   extractImageProxy,
@@ -71,10 +77,13 @@ import {
   normalizeTranscriptContext,
   type ITranscriptContext,
 } from './transcript-signal.js';
-import { transcribe } from './transcriber.js';
+import { transcribe, type ITranscription } from './transcriber.js';
 import {
   applyTypeAwareWindowExpansion,
   buildDriveSpeedCandidate,
+  isSpeechSemanticWindow,
+  mergeInterestingWindowsByPreferredBounds,
+  resolveWindowPreferredRange,
 } from './window-policy.js';
 
 export interface IAnalyzeWorkspaceProjectInput {
@@ -86,6 +95,7 @@ export interface IAnalyzeWorkspaceProjectInput {
   gpxMatchToleranceMs?: number;
   budget?: ETargetBudget;
   progressPath?: string;
+  performanceProfile?: IAnalyzePerformanceProfileOptions;
 }
 
 export interface IAnalyzeWorkspaceProjectResult {
@@ -96,6 +106,7 @@ export interface IAnalyzeWorkspaceProjectResult {
   reportCount: number;
   sliceCount: number;
   mlUsed: boolean;
+  performanceProfilePath?: string;
 }
 
 const CANALYZE_STEP_DEFINITIONS = [
@@ -112,6 +123,16 @@ export async function analyzeWorkspaceProjectMedia(
   const projectRoot = resolveWorkspaceProjectRoot(input.workspaceRoot, input.projectId);
   const progressPath = input.progressPath ?? getProjectProgressPath(projectRoot, 'media-analyze');
   const startedAtMs = Date.now();
+  const performance: AnalyzePerformanceSession | undefined = shouldEnableAnalyzePerformanceProfile(input.performanceProfile)
+    ? new AnalyzePerformanceSession({
+      projectId: input.projectId,
+      projectRoot,
+      budget: input.budget,
+      requestedAssetIds: input.assetIds,
+      options: input.performanceProfile,
+    })
+    : undefined;
+  const performanceProfilePath = performance?.resolveOutputPath(input.performanceProfile?.outputPath);
   const [{ roots }, deviceMaps, runtimeConfig, assets, existingReports, project, derivedTrack] = await Promise.all([
     loadIngestRoots(projectRoot),
     loadProjectDeviceMediaMaps(projectRoot, input.deviceMapPath),
@@ -127,6 +148,7 @@ export async function analyzeWorkspaceProjectMedia(
   });
 
   const pendingAssets = selectPendingAssets(assets, existingReports, input.assetIds);
+  performance?.setAssetCount(pendingAssets.length);
   const analyzedAssetIds: string[] = [];
   const fineScannedAssetIds: string[] = [];
   const pendingSlices: IKtepSlice[] = [];
@@ -135,15 +157,54 @@ export async function analyzeWorkspaceProjectMedia(
   let mlHandle: MlAvailability | null = null;
   let mlUsed = false;
   const getMlHandle = async () => {
-    mlHandle ??= await createMlAvailability(runtimeConfig.mlServerUrl);
+    if (!mlHandle) {
+      const healthStartedAt = Date.now();
+      mlHandle = await createMlAvailability(runtimeConfig.mlServerUrl);
+      performance?.recordMlHealthCheck(Date.now() - healthStartedAt);
+    }
     if (!mlHandle.available) {
       throw new Error(buildMlUnavailableErrorMessage(runtimeConfig.mlServerUrl));
     }
     mlUsed = true;
     return mlHandle;
   };
+  const writeTrackedProgress = async (
+    payload: Parameters<typeof writeKairosProgress>[1],
+  ) => {
+    const writeStartedAt = Date.now();
+    const result = await writeKairosProgress(progressPath, payload);
+    performance?.recordProgressWrite(Date.now() - writeStartedAt);
+    return result;
+  };
+  const writeTrackedReport = async (
+    asset: IKtepAsset,
+    report: IAssetCoarseReport,
+  ) => {
+    const writeStartedAt = Date.now();
+    await writeAssetReport(projectRoot, report);
+    performance?.recordReportWrite(asset, Date.now() - writeStartedAt);
+  };
+  const appendTrackedSlices = async (
+    asset: IKtepAsset,
+    slices: IKtepSlice[],
+  ) => {
+    const writeStartedAt = Date.now();
+    await appendSlices(projectRoot, slices);
+    performance?.recordSliceAppend(asset, slices.length, Date.now() - writeStartedAt);
+  };
+  const writeTrackedChronology = async (
+    chronology: Awaited<ReturnType<typeof loadChronology>>,
+  ) => {
+    const writeStartedAt = Date.now();
+    await writeChronology(projectRoot, chronology);
+    performance?.recordChronologyWrite(Date.now() - writeStartedAt);
+  };
+  const flushPerformance = async () => {
+    if (!performance || !performanceProfilePath) return;
+    await performance.write(performanceProfilePath);
+  };
 
-  await writeKairosProgress(progressPath, {
+  await writeTrackedProgress({
     status: 'running',
     pipelineKey: 'media-analyze',
     pipelineLabel: '素材分析流程',
@@ -176,7 +237,7 @@ export async function analyzeWorkspaceProjectMedia(
       const fileIndex = index + 1;
       const etaSeconds = estimateRemainingSeconds(startedAtMs, preparedAnalyses.length, pendingAssets.length);
 
-      await writeKairosProgress(progressPath, {
+      await writeTrackedProgress({
         status: 'running',
         pipelineKey: 'media-analyze',
         pipelineLabel: '素材分析流程',
@@ -207,20 +268,23 @@ export async function analyzeWorkspaceProjectMedia(
 
       if (!localPath) continue;
 
+      const prepareStartedAt = Date.now();
       const prepared = await prepareAssetVisualCoarse({
         asset,
         localPath,
         projectRoot,
         runtimeConfig,
         getMlHandle,
+        performance,
       });
+      performance?.recordStage(asset, 'prepare', Date.now() - prepareStartedAt);
       preparedAnalyses.push(prepared);
     }
 
     for (const [index, prepared] of preparedAnalyses.entries()) {
       const fileIndex = index + 1;
 
-      await writeKairosProgress(progressPath, {
+      await writeTrackedProgress({
         status: 'running',
         pipelineKey: 'media-analyze',
         pipelineLabel: '素材分析流程',
@@ -247,6 +311,7 @@ export async function analyzeWorkspaceProjectMedia(
         },
       });
 
+      const finalizeStartedAt = Date.now();
       const finalized = await finalizePreparedAsset({
         projectId: input.projectId,
         prepared,
@@ -258,9 +323,10 @@ export async function analyzeWorkspaceProjectMedia(
         gpxMatchToleranceMs: input.gpxMatchToleranceMs,
         budget: input.budget,
         getMlHandle,
+        performance,
         onStageChange: async (stage, detail) => {
           if (stage !== 'audio-analysis') return;
-          await writeKairosProgress(progressPath, {
+          await writeTrackedProgress({
             status: 'running',
             pipelineKey: 'media-analyze',
             pipelineLabel: '素材分析流程',
@@ -288,8 +354,9 @@ export async function analyzeWorkspaceProjectMedia(
           });
         },
       });
+      performance?.recordStage(prepared.asset, 'finalize', Date.now() - finalizeStartedAt);
 
-      await writeAssetReport(projectRoot, finalized.report);
+      await writeTrackedReport(prepared.asset, finalized.report);
       analyzedAssetIds.push(prepared.asset.id);
       finalizedAnalyses.push(finalized);
     }
@@ -298,7 +365,7 @@ export async function analyzeWorkspaceProjectMedia(
     for (const [index, analysis] of fineScanCandidates.entries()) {
       const fileIndex = index + 1;
 
-      await writeKairosProgress(progressPath, {
+      await writeTrackedProgress({
         status: 'running',
         pipelineKey: 'media-analyze',
         pipelineLabel: '素材分析流程',
@@ -325,13 +392,20 @@ export async function analyzeWorkspaceProjectMedia(
         },
       });
 
+      const fineScanStartedAt = Date.now();
       const fineScan = await generateFineScanOutput({
         analysis,
         projectRoot,
         roots,
         runtimeConfig,
         getMlHandle,
+        performance,
       });
+      performance?.recordStage(analysis.prepared.asset, 'fine-scan', Date.now() - fineScanStartedAt);
+      performance?.recordDroppedInvalidSlices(
+        analysis.prepared.asset,
+        fineScan.droppedInvalidSliceCount,
+      );
       const updatedReport = reconcileFineScanReport({
         report: analysis.report,
         slices: fineScan.slices,
@@ -339,11 +413,11 @@ export async function analyzeWorkspaceProjectMedia(
       });
       if (updatedReport !== analysis.report) {
         analysis.report = updatedReport;
-        await writeAssetReport(projectRoot, updatedReport);
+        await writeTrackedReport(analysis.prepared.asset, updatedReport);
       }
 
       if (fineScan.slices.length > 0) {
-        await writeKairosProgress(progressPath, {
+        await writeTrackedProgress({
           status: 'running',
           pipelineKey: 'media-analyze',
           pipelineLabel: '素材分析流程',
@@ -370,13 +444,13 @@ export async function analyzeWorkspaceProjectMedia(
             sliceCount: fineScan.slices.length,
           },
         });
-        await appendSlices(projectRoot, fineScan.slices);
+        await appendTrackedSlices(analysis.prepared.asset, fineScan.slices);
         pendingSlices.push(...fineScan.slices);
         fineScannedAssetIds.push(analysis.prepared.asset.id);
       }
     }
 
-    await writeKairosProgress(progressPath, {
+    await writeTrackedProgress({
       status: 'running',
       pipelineKey: 'media-analyze',
       pipelineLabel: '素材分析流程',
@@ -401,19 +475,21 @@ export async function analyzeWorkspaceProjectMedia(
       },
     });
 
+    const chronologyStartedAt = Date.now();
     const chronology = buildMediaChronology(
       await loadAssets(projectRoot),
       await loadAssetReports(projectRoot),
       await loadChronology(projectRoot),
     );
-    await writeChronology(projectRoot, chronology);
+    await writeTrackedChronology(chronology);
     await touchProjectUpdatedAt(projectRoot);
+    performance?.recordChronologyRefresh(Date.now() - chronologyStartedAt);
 
     const missingRoots = roots.filter(
       root => root.enabled && !resolveAssetRootAvailable(input.projectId, root, deviceMaps),
     );
 
-    await writeKairosProgress(progressPath, {
+    await writeTrackedProgress({
       status: 'succeeded',
       pipelineKey: 'media-analyze',
       pipelineLabel: '素材分析流程',
@@ -439,6 +515,13 @@ export async function analyzeWorkspaceProjectMedia(
         chronologyCount: chronology.length,
       },
     });
+    performance?.finalizeSuccess({
+      pipelineTotalMs: Date.now() - startedAtMs,
+      analyzedAssetCount: analyzedAssetIds.length,
+      fineScannedAssetCount: fineScannedAssetIds.length,
+      missingRootCount: missingRoots.length,
+    });
+    await flushPerformance();
 
     return {
       projectRoot,
@@ -448,9 +531,10 @@ export async function analyzeWorkspaceProjectMedia(
       reportCount: analyzedAssetIds.length,
       sliceCount: pendingSlices.length,
       mlUsed,
+      performanceProfilePath,
     };
   } catch (error) {
-    await writeKairosProgress(progressPath, {
+    await writeTrackedProgress({
       status: 'failed',
       pipelineKey: 'media-analyze',
       pipelineLabel: '素材分析流程',
@@ -468,6 +552,13 @@ export async function analyzeWorkspaceProjectMedia(
         projectName: project.name,
       },
     });
+    performance?.finalizeFailure({
+      pipelineTotalMs: Date.now() - startedAtMs,
+      failureMessage: error instanceof Error ? error.message : String(error),
+      analyzedAssetCount: analyzedAssetIds.length,
+      fineScannedAssetCount: fineScannedAssetIds.length,
+    });
+    await flushPerformance();
     throw error;
   }
 }
@@ -484,14 +575,17 @@ interface IAnalyzeSingleAssetInput {
     analysisProxyPixelFormat?: string;
     sceneDetectFps?: number;
     sceneDetectScaleWidth?: number;
+    keyframeExtractConcurrency?: number;
     mlServerUrl?: string;
   };
   budget?: ETargetBudget;
   getMlHandle: () => Promise<MlAvailability>;
+  performance?: AnalyzePerformanceSession;
 }
 
 interface IPreparedAssetAnalysis extends IAnalyzeSingleAssetInput {
   shotBoundaries: IShotBoundary[];
+  shotBoundariesResolved: boolean;
   sampleFrames: { timeMs: number; path: string }[];
   coarseSampleTimestamps: number[];
   visualSummary: IRecognition | null;
@@ -511,6 +605,7 @@ interface IFinalizePreparedAssetInput {
   budget?: ETargetBudget;
   getMlHandle: () => Promise<MlAvailability>;
   onStageChange?: (stage: 'audio-analysis', detail?: string) => Promise<void>;
+  performance?: AnalyzePerformanceSession;
 }
 
 interface IFinalizedAssetAnalysis {
@@ -521,15 +616,72 @@ interface IFinalizedAssetAnalysis {
   decisionReasons: string[];
 }
 
+interface IPreparedAssetPlanningContext {
+  density: IDensityResult;
+  basePlan: IMediaAnalysisPlan;
+  decision: IAnalysisDecision;
+  finalPlan: IMediaAnalysisPlan;
+  decisionReasons: string[];
+}
+
 interface IFineScanSlicesResult {
   slices: IKtepSlice[];
   droppedInvalidSliceCount: number;
+}
+
+interface ITranscribedAudioContext {
+  context: ITranscriptContext | null;
+  timing?: ITranscription['timing'];
+  roundTripMs?: number;
 }
 
 interface MlAvailability {
   client: MlClient;
   available: boolean;
 }
+
+const CTALKING_HEAD_AUDIO_LED_MIN_SPEECH_COVERAGE = 0.12;
+const CTALKING_HEAD_AUDIO_LED_GAP_MS = 12_000;
+const CDEFERRED_SCENE_DETECT_WINDOW_GAP_MS = 12_000;
+const CSCENIC_DRIVE_KEYWORDS = [
+  'landscape',
+  'nature',
+  'mountain',
+  'coast',
+  'coastal',
+  'lake',
+  'river',
+  'valley',
+  'forest',
+  'bridge',
+  'town',
+  'village',
+  'cliff',
+  'fjord',
+  'fiord',
+  'countryside',
+  'winding',
+  'curve',
+  'bend',
+  'scenic',
+  'mist',
+  'lush',
+  'greenery',
+  'lookout',
+] as const;
+const CMONOTONE_DRIVE_KEYWORDS = [
+  'dashboard',
+  'highway',
+  'freeway',
+  'expressway',
+  'traffic',
+  'lane',
+  'intersection',
+  'parking',
+  'commute',
+  'stoplight',
+  'tunnel',
+] as const;
 
 async function prepareAssetVisualCoarse(
   input: IAnalyzeSingleAssetInput,
@@ -541,6 +693,7 @@ async function prepareAssetVisualCoarse(
     return {
       ...input,
       shotBoundaries: [],
+      shotBoundariesResolved: true,
       sampleFrames: [],
       coarseSampleTimestamps: [],
       visualSummary: null,
@@ -549,23 +702,30 @@ async function prepareAssetVisualCoarse(
     };
   }
 
-  const shotBoundaries = await detectShots(
-    input.localPath,
-    0.3,
-    input.runtimeConfig,
-  ).catch(() => [] as IShotBoundary[]);
   const sampleTimestamps = buildCoarseSampleTimestamps(
     input.asset.durationMs ?? 0,
     pickCoarseSampleCount(input.asset.durationMs ?? 0),
   );
+  const coarseKeyframeStartedAt = Date.now();
   const extractedFrames = await extractKeyframes(
     input.localPath,
     buildAssetTempDir(input.projectRoot, input.asset.id),
     sampleTimestamps,
     input.runtimeConfig,
   );
+  input.performance?.recordKeyframeExtract({
+    asset: input.asset,
+    phase: 'coarse',
+    elapsedMs: Date.now() - coarseKeyframeStartedAt,
+    keyframeCount: extractedFrames.length,
+  });
   const sampleFrames = await filterExistingKeyframes(extractedFrames);
-  const visualSummary = await summarizeSamples(await input.getMlHandle(), sampleFrames);
+  const visualSummary = await summarizeSamples({
+    asset: input.asset,
+    ml: await input.getMlHandle(),
+    sampleFrames,
+    performance: input.performance,
+  });
   const hasAudioTrack = await resolveAssetHasAudioTrack(
     input.asset,
     input.localPath,
@@ -574,11 +734,12 @@ async function prepareAssetVisualCoarse(
 
   return {
     ...input,
-    shotBoundaries,
+    shotBoundaries: [],
+    shotBoundariesResolved: false,
     sampleFrames,
     coarseSampleTimestamps: sampleTimestamps,
     visualSummary,
-    initialClipTypeGuess: guessClipType(input.asset, shotBoundaries),
+    initialClipTypeGuess: guessClipType(input.asset, [], false),
     hasAudioTrack,
   };
 }
@@ -607,6 +768,7 @@ async function finalizePreparedAsset(
     localPath: input.prepared.localPath,
     hasAudioTrack: input.prepared.hasAudioTrack,
     ml,
+    performance: input.performance,
   });
   const protectedAudio = await evaluateProtectedAudioFallback({
     projectId: input.projectId,
@@ -618,15 +780,7 @@ async function finalizePreparedAsset(
     embeddedTranscript: transcript,
     ml,
     onStageChange: input.onStageChange,
-  });
-  const density = estimateDensity({
-    durationMs: input.prepared.asset.durationMs ?? 0,
-    shotBoundaries: input.prepared.shotBoundaries,
-    asrSegments: transcript?.segments.map(segment => ({
-      start: segment.startMs / 1000,
-      end: segment.endMs / 1000,
-      text: segment.text,
-    })),
+    performance: input.performance,
   });
   const root = input.roots.find(item => item.id === input.prepared.asset.ingestRootId);
   const manualSpatial = await resolveManualSpatialContext({
@@ -636,88 +790,81 @@ async function finalizePreparedAsset(
     gpxMatchToleranceMs: input.gpxMatchToleranceMs,
     derivedTrack: input.derivedTrack,
   });
-  const plan = buildAnalysisPlan({
-    assetId: input.prepared.asset.id,
-    durationMs: input.prepared.asset.durationMs ?? 0,
-    density,
-    shotBoundaries: input.prepared.shotBoundaries,
-    clipType: input.prepared.initialClipTypeGuess,
-    budget: input.budget,
-    extraInterestingWindows: transcript?.speechWindows,
-  });
-  const decision = await resolveUnifiedAnalysisDecision({
+  const provisionalPlanning = await resolvePreparedAssetPlanning({
     prepared: input.prepared,
     transcript,
-    densityScore: density.score,
-    basePlan: plan,
     budget: input.budget,
     ml,
     manualSpatial,
+    performance: input.performance,
   });
-  const decidedPlan = applyDriveFallbackWindows(
-    applyAnalysisDecision(plan, decision),
-    decision.clipType,
-    input.prepared.asset.durationMs ?? 0,
-    input.budget,
-    input.prepared.coarseSampleTimestamps,
-  );
-  const effectivePlan: IMediaAnalysisPlan = {
-    ...decidedPlan,
-    interestingWindows: applyTypeAwareWindowExpansion({
-      clipType: decision.clipType,
-      durationMs: input.prepared.asset.durationMs ?? 0,
-      windows: decidedPlan.interestingWindows,
-      shotBoundaries: input.prepared.shotBoundaries,
-    }),
-  };
+
+  let prepared = input.prepared;
+  let planning = provisionalPlanning;
+  if (shouldRunDeferredSceneDetect({
+    prepared,
+    plan: provisionalPlanning.finalPlan,
+    manualSpatial,
+  })) {
+    prepared = await runDeferredSceneDetect({
+      prepared,
+      phase: 'finalize',
+      clipType: provisionalPlanning.finalPlan.clipType,
+      performance: input.performance,
+    });
+    planning = await resolvePreparedAssetPlanning({
+      prepared,
+      transcript,
+      budget: input.budget,
+      ml,
+      manualSpatial,
+      performance: input.performance,
+      decision: provisionalPlanning.decision,
+    });
+  }
+
   const report = buildAssetCoarseReport({
-    asset: input.prepared.asset,
-    plan: effectivePlan,
-    clipTypeGuess: decision.clipType,
+    asset: prepared.asset,
+    plan: planning.finalPlan,
+    clipTypeGuess: planning.decision.clipType,
     gpsSummary: manualSpatial?.gpsSummary,
     inferredGps: manualSpatial?.inferredGps,
-    summary: input.prepared.visualSummary?.description,
+    summary: prepared.visualSummary?.description,
     transcript: transcript?.transcript,
     transcriptSegments: transcript?.segments,
     speechCoverage: transcript?.speechCoverage,
     protectedAudio,
     labels: dedupeStrings([
       ...buildReportLabels(
-        decision.clipType,
-        input.prepared.visualSummary?.sceneType,
-        input.prepared.visualSummary?.subjects,
+        planning.decision.clipType,
+        prepared.visualSummary?.sceneType,
+        prepared.visualSummary?.subjects,
         transcript,
       ),
-      ...(input.prepared.asset.protectionAudio ? ['protection-audio-available'] : []),
+      ...(prepared.asset.protectionAudio ? ['protection-audio-available'] : []),
       ...(protectedAudio?.recommendedSource === 'protection' ? ['protection-audio-fallback'] : []),
     ]),
     placeHints: dedupeStrings([
-      ...(input.prepared.visualSummary?.placeHints ?? []),
+      ...(prepared.visualSummary?.placeHints ?? []),
       ...(manualSpatial?.placeHints ?? []),
     ]),
     rootNotes: root?.notes ?? [],
-    sampleFrames: input.prepared.sampleFrames,
+    sampleFrames: prepared.sampleFrames,
     fineScanReasons: buildFineScanReasons(
-      effectivePlan,
-      density,
-      input.prepared.shotBoundaries,
+      planning.finalPlan,
+      planning.density,
+      prepared.shotBoundaries,
       transcript,
-      dedupeStrings([
-        ...decision.decisionReasons,
-        ...(manualSpatial?.decisionReasons ?? []),
-      ]),
+      planning.decisionReasons,
     ),
   });
 
   return {
-    prepared: input.prepared,
+    prepared,
     report,
     transcript,
-    clipType: decision.clipType,
-    decisionReasons: dedupeStrings([
-      ...decision.decisionReasons,
-      ...(manualSpatial?.decisionReasons ?? []),
-    ]),
+    clipType: planning.decision.clipType,
+    decisionReasons: planning.decisionReasons,
   };
 }
 
@@ -737,6 +884,166 @@ async function resolveManualSpatialContext(input: {
   });
 }
 
+async function resolvePreparedAssetPlanning(input: {
+  prepared: IPreparedAssetAnalysis;
+  transcript?: ITranscriptContext | null;
+  budget?: ETargetBudget;
+  ml: MlAvailability;
+  manualSpatial?: IManualSpatialContext | null;
+  performance?: AnalyzePerformanceSession;
+  decision?: IAnalysisDecision;
+}): Promise<IPreparedAssetPlanningContext> {
+  const density = estimateDensity({
+    durationMs: input.prepared.asset.durationMs ?? 0,
+    shotBoundaries: input.prepared.shotBoundaries,
+    asrSegments: buildDensityAsrSegments(input.transcript),
+  });
+  const basePlan = buildAnalysisPlan({
+    assetId: input.prepared.asset.id,
+    durationMs: input.prepared.asset.durationMs ?? 0,
+    density,
+    shotBoundaries: input.prepared.shotBoundaries,
+    clipType: input.prepared.initialClipTypeGuess,
+    budget: input.budget,
+    extraInterestingWindows: input.transcript?.speechWindows,
+  });
+  const fallbackDecision = buildFallbackUnifiedAnalysisDecision({
+    prepared: input.prepared,
+    transcript: input.transcript,
+    densityScore: density.score,
+    basePlan,
+    budget: input.budget,
+    manualSpatial: input.manualSpatial,
+  });
+  const decision = input.decision
+    ? reconcileUnifiedAnalysisDecision({
+      candidate: input.decision,
+      fallback: fallbackDecision,
+      basePlan,
+      budget: input.budget,
+      hasMeaningfulSpeech: hasMeaningfulSpeech(input.transcript),
+    })
+    : await resolveUnifiedAnalysisDecision({
+      prepared: input.prepared,
+      transcript: input.transcript,
+      densityScore: density.score,
+      basePlan,
+      budget: input.budget,
+      ml: input.ml,
+      manualSpatial: input.manualSpatial,
+      performance: input.performance,
+      fallbackDecision,
+    });
+  const decisionBasePlan = buildAnalysisPlan({
+    assetId: input.prepared.asset.id,
+    durationMs: input.prepared.asset.durationMs ?? 0,
+    density,
+    shotBoundaries: input.prepared.shotBoundaries,
+    clipType: decision.clipType,
+    budget: input.budget,
+    extraInterestingWindows: input.transcript?.speechWindows,
+  });
+  const decidedPlan = applyDriveFallbackWindows(
+    applyAnalysisDecision(decisionBasePlan, decision),
+    decision.clipType,
+    input.prepared.asset.durationMs ?? 0,
+    input.budget,
+    input.prepared.coarseSampleTimestamps,
+  );
+  const expandedPlan: IMediaAnalysisPlan = {
+    ...decidedPlan,
+    interestingWindows: applyTypeAwareWindowExpansion({
+      clipType: decision.clipType,
+      durationMs: input.prepared.asset.durationMs ?? 0,
+      windows: decidedPlan.interestingWindows,
+      shotBoundaries: input.prepared.shotBoundaries,
+    }),
+  };
+  const audioLedPlan = applyTalkingHeadAudioLedWindowStrategy({
+    plan: expandedPlan,
+    clipType: decision.clipType,
+    transcript: input.transcript,
+    durationMs: input.prepared.asset.durationMs ?? 0,
+  });
+
+  return {
+    density,
+    basePlan,
+    decision,
+    finalPlan: audioLedPlan.plan,
+    decisionReasons: dedupeStrings([
+      ...decision.decisionReasons,
+      ...(input.manualSpatial?.decisionReasons ?? []),
+      ...(audioLedPlan.applied ? ['talking-head:audio-led-windows'] : []),
+    ]),
+  };
+}
+
+function buildDensityAsrSegments(
+  transcript?: ITranscriptContext | null,
+): Array<{ start: number; end: number; text: string }> | undefined {
+  return transcript?.segments.map(segment => ({
+    start: segment.startMs / 1000,
+    end: segment.endMs / 1000,
+    text: segment.text,
+  }));
+}
+
+function shouldRunDeferredSceneDetect(input: {
+  prepared: IPreparedAssetAnalysis;
+  plan: IMediaAnalysisPlan;
+  manualSpatial?: IManualSpatialContext | null;
+}): boolean {
+  if (input.prepared.asset.kind !== 'video') return false;
+  if (input.prepared.shotBoundariesResolved) return false;
+  if (input.plan.fineScanMode === 'full') return true;
+  if (shouldRunScenicDriveDeferredSceneDetect(input)) return true;
+  if (!input.plan.shouldFineScan || input.plan.fineScanMode !== 'windowed') return false;
+
+  return shouldRunWindowedDeferredSceneDetect(input.plan);
+}
+
+async function runDeferredSceneDetect(input: {
+  prepared: IPreparedAssetAnalysis;
+  phase: TAnalyzeSceneDetectPhase;
+  clipType?: EClipType;
+  performance?: AnalyzePerformanceSession;
+}): Promise<IPreparedAssetAnalysis> {
+  if (input.prepared.asset.kind !== 'video' || input.prepared.shotBoundariesResolved) {
+    return input.prepared;
+  }
+
+  const sceneDetectStartedAt = Date.now();
+  let shotBoundaries: IShotBoundary[] = [];
+  try {
+    shotBoundaries = await detectShots(
+      input.prepared.localPath,
+      0.3,
+      input.prepared.runtimeConfig,
+      {
+        clipType: input.clipType ?? input.prepared.initialClipTypeGuess,
+        durationMs: input.prepared.asset.durationMs,
+      },
+    );
+  } catch {
+    shotBoundaries = [];
+  }
+
+  input.performance?.recordSceneDetect({
+    asset: input.prepared.asset,
+    phase: input.phase,
+    elapsedMs: Date.now() - sceneDetectStartedAt,
+    shotCount: shotBoundaries.length,
+  });
+
+  return {
+    ...input.prepared,
+    shotBoundaries,
+    shotBoundariesResolved: true,
+    initialClipTypeGuess: guessClipType(input.prepared.asset, shotBoundaries, true),
+  };
+}
+
 async function resolveUnifiedAnalysisDecision(input: {
   prepared: IPreparedAssetAnalysis;
   transcript?: ITranscriptContext | null;
@@ -745,8 +1052,32 @@ async function resolveUnifiedAnalysisDecision(input: {
   budget?: ETargetBudget;
   ml: MlAvailability;
   manualSpatial?: IManualSpatialContext | null;
+  performance?: AnalyzePerformanceSession;
+  fallbackDecision?: IAnalysisDecision;
 }): Promise<IAnalysisDecision> {
-  const fallbackDecision = buildHeuristicAnalysisDecision({
+  const fallbackDecision = input.fallbackDecision ?? buildFallbackUnifiedAnalysisDecision(input);
+
+  const inferredDecision = await inferUnifiedAnalysisDecision(input);
+  return !inferredDecision
+    ? fallbackDecision
+    : reconcileUnifiedAnalysisDecision({
+      candidate: inferredDecision,
+      fallback: fallbackDecision,
+      basePlan: input.basePlan,
+      budget: input.budget,
+      hasMeaningfulSpeech: hasMeaningfulSpeech(input.transcript),
+    });
+}
+
+function buildFallbackUnifiedAnalysisDecision(input: {
+  prepared: IPreparedAssetAnalysis;
+  transcript?: ITranscriptContext | null;
+  densityScore: number;
+  basePlan: IMediaAnalysisPlan;
+  budget?: ETargetBudget;
+  manualSpatial?: IManualSpatialContext | null;
+}): IAnalysisDecision {
+  return buildHeuristicAnalysisDecision({
     durationMs: input.prepared.asset.durationMs ?? 0,
     densityScore: input.densityScore,
     interestingWindowCount: input.basePlan.interestingWindows.length,
@@ -763,17 +1094,6 @@ async function resolveUnifiedAnalysisDecision(input: {
     routeTransport: input.manualSpatial?.transport,
     spatialHintCount: input.manualSpatial?.placeHints.length,
   });
-
-  const inferredDecision = await inferUnifiedAnalysisDecision(input);
-  if (!inferredDecision) return fallbackDecision;
-
-  return reconcileUnifiedAnalysisDecision({
-    candidate: inferredDecision,
-    fallback: fallbackDecision,
-    basePlan: input.basePlan,
-    budget: input.budget,
-    hasMeaningfulSpeech: hasMeaningfulSpeech(input.transcript),
-  });
 }
 
 async function inferUnifiedAnalysisDecision(input: {
@@ -784,6 +1104,7 @@ async function inferUnifiedAnalysisDecision(input: {
   budget?: ETargetBudget;
   ml: MlAvailability;
   manualSpatial?: IManualSpatialContext | null;
+  performance?: AnalyzePerformanceSession;
 }): Promise<IAnalysisDecision | null> {
   if (!input.ml.available) return null;
 
@@ -794,6 +1115,7 @@ async function inferUnifiedAnalysisDecision(input: {
   if (framePaths.length === 0) return null;
 
   try {
+    const decisionStartedAt = Date.now();
     const result = await input.ml.client.vlmAnalyze(
       framePaths,
       buildUnifiedDecisionPrompt({
@@ -805,6 +1127,13 @@ async function inferUnifiedAnalysisDecision(input: {
         manualSpatial: input.manualSpatial,
       }),
     );
+    input.performance?.recordVlm({
+      asset: input.prepared.asset,
+      phase: 'decision',
+      imageCount: framePaths.length,
+      roundTripMs: Date.now() - decisionStartedAt,
+      timing: result.timing,
+    });
     return parseUnifiedAnalysisDecision(result.description);
   } catch {
     return null;
@@ -877,6 +1206,81 @@ function reconcileUnifiedAnalysisDecision(input: {
   };
 }
 
+function shouldRunWindowedDeferredSceneDetect(plan: IMediaAnalysisPlan): boolean {
+  if (plan.clipType === 'drive') return false;
+
+  const separatedWindowClusters = countSeparatedInterestingWindowClusters(plan.interestingWindows);
+  if (separatedWindowClusters >= 2) return true;
+
+  const hasSpeechWindow = plan.interestingWindows.some(window => isSpeechSemanticWindow(window));
+  const hasNonSpeechWindow = plan.interestingWindows.some(window => !isSpeechSemanticWindow(window));
+  return hasSpeechWindow && hasNonSpeechWindow;
+}
+
+function countSeparatedInterestingWindowClusters(windows: IInterestingWindow[]): number {
+  const ranges = windows
+    .map(window => resolveWindowPreferredRange(window) ?? {
+      startMs: window.startMs,
+      endMs: window.endMs,
+    })
+    .filter(range => range.endMs > range.startMs)
+    .sort((left, right) => left.startMs - right.startMs || left.endMs - right.endMs);
+  if (ranges.length === 0) return 0;
+
+  let clusters = 1;
+  let currentEndMs = ranges[0]!.endMs;
+  for (let index = 1; index < ranges.length; index += 1) {
+    const range = ranges[index]!;
+    if (range.startMs - currentEndMs >= CDEFERRED_SCENE_DETECT_WINDOW_GAP_MS) {
+      clusters += 1;
+      currentEndMs = range.endMs;
+      continue;
+    }
+    currentEndMs = Math.max(currentEndMs, range.endMs);
+  }
+  return clusters;
+}
+
+function shouldRunScenicDriveDeferredSceneDetect(input: {
+  prepared: IPreparedAssetAnalysis;
+  plan: IMediaAnalysisPlan;
+  manualSpatial?: IManualSpatialContext | null;
+}): boolean {
+  if (input.plan.clipType !== 'drive') return false;
+
+  const visualSummary = input.prepared.visualSummary;
+  if (!visualSummary) return false;
+
+  const semanticText = [
+    visualSummary.sceneType,
+    visualSummary.narrativeRole,
+    visualSummary.description,
+    ...visualSummary.subjects,
+    ...visualSummary.placeHints,
+    ...(input.manualSpatial?.placeHints ?? []),
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  const scenicCueCount = countKeywordMatches(semanticText, CSCENIC_DRIVE_KEYWORDS);
+  const monotoneCueCount = countKeywordMatches(semanticText, CMONOTONE_DRIVE_KEYWORDS);
+  const hasNarrativeSupport = ['intro', 'establishing', 'transition', 'climax']
+    .includes(visualSummary.narrativeRole);
+  const hasPlaceSupport = visualSummary.placeHints.length > 0 || (input.manualSpatial?.placeHints.length ?? 0) > 0;
+
+  const scenicSignalStrongEnough = scenicCueCount >= 2
+    || (scenicCueCount >= 1 && (hasNarrativeSupport || hasPlaceSupport));
+
+  return scenicSignalStrongEnough && scenicCueCount > monotoneCueCount;
+}
+
+function countKeywordMatches(text: string, keywords: readonly string[]): number {
+  return keywords.reduce((count, keyword) => (
+    text.includes(keyword) ? count + 1 : count
+  ), 0);
+}
+
 function applyDriveFallbackWindows(
   plan: IMediaAnalysisPlan,
   clipType: EClipType,
@@ -885,18 +1289,162 @@ function applyDriveFallbackWindows(
   sampleTimestamps: number[],
 ): IMediaAnalysisPlan {
   if (clipType !== 'drive') return plan;
-  if ((budget ?? 'standard') === 'coarse') return plan;
-  if (!plan.shouldFineScan || plan.fineScanMode === 'skip') return plan;
-  if (plan.interestingWindows.length > 0) return plan;
-  if (plan.fineScanMode === 'full') return plan;
 
-  const fallbackWindows = buildDriveFallbackWindows(durationMs, sampleTimestamps);
-  if (fallbackWindows.length === 0) return plan;
+  const speechWindows = plan.interestingWindows
+    .filter(window => isSpeechSemanticWindow(window))
+    .map(window => withWindowSemanticKind(window, 'speech'));
+  const visualWindows = plan.interestingWindows
+    .filter(window => !isSpeechSemanticWindow(window))
+    .map(window => withWindowSemanticKind(window, 'visual'));
+
+  if ((budget ?? 'standard') === 'coarse' || !plan.shouldFineScan || plan.fineScanMode === 'skip') {
+    return {
+      ...plan,
+      interestingWindows: mergeInterestingWindowsByPreferredBounds([
+        ...speechWindows,
+        ...visualWindows,
+      ]),
+    };
+  }
+
+  if (plan.fineScanMode === 'full') {
+    return {
+      ...plan,
+      interestingWindows: mergeInterestingWindowsByPreferredBounds([
+        ...speechWindows,
+        ...visualWindows,
+      ]),
+    };
+  }
+
+  const fallbackVisualWindows = visualWindows.length > 0
+    ? visualWindows
+    : buildDriveFallbackWindows(durationMs, sampleTimestamps);
 
   return {
     ...plan,
-    interestingWindows: fallbackWindows,
+    interestingWindows: mergeInterestingWindowsByPreferredBounds([
+      ...speechWindows,
+      ...fallbackVisualWindows,
+    ]),
   };
+}
+
+function withWindowSemanticKind(
+  window: IInterestingWindow,
+  semanticKind: 'speech' | 'visual',
+): IInterestingWindow {
+  return {
+    ...window,
+    semanticKind: window.semanticKind ?? semanticKind,
+    ...(window.speedCandidate && {
+      speedCandidate: {
+        ...window.speedCandidate,
+        suggestedSpeeds: [...window.speedCandidate.suggestedSpeeds],
+      },
+    }),
+  };
+}
+
+function applyTalkingHeadAudioLedWindowStrategy(input: {
+  plan: IMediaAnalysisPlan;
+  clipType: EClipType;
+  transcript?: ITranscriptContext | null;
+  durationMs: number;
+}): {
+  plan: IMediaAnalysisPlan;
+  applied: boolean;
+} {
+  if (input.clipType !== 'talking-head') {
+    return { plan: input.plan, applied: false };
+  }
+  if (!hasMeaningfulSpeech(input.transcript)) {
+    return { plan: input.plan, applied: false };
+  }
+  if ((input.transcript?.speechCoverage ?? 0) < CTALKING_HEAD_AUDIO_LED_MIN_SPEECH_COVERAGE) {
+    return { plan: input.plan, applied: false };
+  }
+
+  const speechWindows = input.plan.interestingWindows
+    .filter(window => isSpeechSemanticWindow(window));
+  if (speechWindows.length === 0) {
+    return { plan: input.plan, applied: false };
+  }
+
+  const visualWindows = input.plan.interestingWindows
+    .filter(window => !isSpeechSemanticWindow(window));
+  const supplementedWindows = pickTalkingHeadGapSupplementWindows({
+    speechWindows,
+    visualWindows,
+  });
+  const mergedWindows = mergeInterestingWindowsByPreferredBounds([
+    ...speechWindows,
+    ...supplementedWindows,
+  ]);
+  if (mergedWindows.length === 0) {
+    return { plan: input.plan, applied: false };
+  }
+
+  const mergedCoverageMs = mergedWindows.reduce((sum, window) => {
+    const range = resolveWindowPreferredRange(window) ?? {
+      startMs: window.startMs,
+      endMs: window.endMs,
+    };
+    return sum + Math.max(0, range.endMs - range.startMs);
+  }, 0);
+  const shouldPreferWindowed = input.plan.fineScanMode === 'full'
+    && input.durationMs > 0
+    && mergedCoverageMs < input.durationMs * 0.85;
+
+  return {
+    plan: {
+      ...input.plan,
+      interestingWindows: mergedWindows,
+      fineScanMode: shouldPreferWindowed ? 'windowed' : input.plan.fineScanMode,
+      shouldFineScan: true,
+    },
+    applied: true,
+  };
+}
+
+function pickTalkingHeadGapSupplementWindows(input: {
+  speechWindows: IInterestingWindow[];
+  visualWindows: IInterestingWindow[];
+}): IInterestingWindow[] {
+  if (input.speechWindows.length < 2 || input.visualWindows.length === 0) return [];
+
+  const speechRanges = [...input.speechWindows]
+    .map(window => ({
+      window,
+      range: resolveWindowPreferredRange(window) ?? {
+        startMs: window.startMs,
+        endMs: window.endMs,
+      },
+    }))
+    .sort((left, right) => left.range.startMs - right.range.startMs);
+  const visualRanges = input.visualWindows.map(window => ({
+    window,
+    range: resolveWindowPreferredRange(window) ?? {
+      startMs: window.startMs,
+      endMs: window.endMs,
+    },
+  }));
+  const supplements: IInterestingWindow[] = [];
+
+  for (let index = 1; index < speechRanges.length; index += 1) {
+    const previous = speechRanges[index - 1]!.range;
+    const current = speechRanges[index]!.range;
+    const gapStartMs = previous.endMs;
+    const gapEndMs = current.startMs;
+    if (gapEndMs - gapStartMs < CTALKING_HEAD_AUDIO_LED_GAP_MS) continue;
+
+    for (const visual of visualRanges) {
+      if (visual.range.endMs <= gapStartMs || visual.range.startMs >= gapEndMs) continue;
+      supplements.push(visual.window);
+    }
+  }
+
+  return supplements;
 }
 
 async function maybeTranscribeAsset(input: {
@@ -904,23 +1452,35 @@ async function maybeTranscribeAsset(input: {
   localPath: string;
   hasAudioTrack: boolean;
   ml: MlAvailability;
+  performance?: AnalyzePerformanceSession;
 }): Promise<ITranscriptContext | null> {
   if (!input.ml.available) return null;
   if (!shouldAnalyzeAudioTrack(input.asset, input.hasAudioTrack)) return null;
 
-  return transcribeAudioContext({
+  const transcript = await transcribeAudioContext({
     localPath: input.localPath,
     durationMs: input.asset.durationMs ?? 0,
     ml: input.ml,
   });
+  if (transcript.timing || transcript.roundTripMs != null) {
+    input.performance?.recordAsr({
+      asset: input.asset,
+      phase: 'embedded',
+      roundTripMs: transcript.roundTripMs,
+      timing: transcript.timing,
+    });
+  }
+  return transcript.context;
 }
 
 async function transcribeAudioContext(input: {
   localPath: string;
   durationMs: number;
   ml: MlAvailability;
-}): Promise<ITranscriptContext | null> {
-  if (!input.ml.available) return null;
+}): Promise<ITranscribedAudioContext> {
+  if (!input.ml.available) {
+    return { context: null };
+  }
 
   try {
     const result = await transcribe(input.ml.client, input.localPath);
@@ -934,18 +1494,26 @@ async function transcribeAudioContext(input: {
 
     const transcript = result.fullText.trim();
     if (!transcript && segments.length === 0) {
-      return null;
+      return {
+        context: null,
+        timing: result.timing,
+        roundTripMs: result.roundTripMs,
+      };
     }
 
-    return normalizeTranscriptContext({
-      transcript,
-      segments,
-      evidence: result.evidence,
-      speechCoverage: computeSpeechCoverage(input.durationMs, segments),
-      speechWindows: buildSpeechWindows(input.durationMs, segments),
-    });
+    return {
+      context: normalizeTranscriptContext({
+        transcript,
+        segments,
+        evidence: result.evidence,
+        speechCoverage: computeSpeechCoverage(input.durationMs, segments),
+        speechWindows: buildSpeechWindows(input.durationMs, segments),
+      }),
+      timing: result.timing,
+      roundTripMs: result.roundTripMs,
+    };
   } catch {
-    return null;
+    return { context: null };
   }
 }
 
@@ -959,6 +1527,7 @@ async function evaluateProtectedAudioFallback(input: {
   embeddedTranscript?: ITranscriptContext | null;
   ml: MlAvailability;
   onStageChange?: (stage: 'audio-analysis', detail?: string) => Promise<void>;
+  performance?: AnalyzePerformanceSession;
 }): Promise<IAssetCoarseReport['protectedAudio'] | undefined> {
   const binding = input.asset.protectionAudio;
   if (!binding) return undefined;
@@ -998,12 +1567,21 @@ async function evaluateProtectedAudioFallback(input: {
 
   if (shouldCompareProtectionTranscript(binding, embeddedSummary, input.embeddedTranscript)) {
     await input.onStageChange?.('audio-analysis', `正在对比 ${input.asset.displayName} 的保护音轨`);
-    protectionTranscript = await transcribeAudioContext({
+    const protectionTranscriptResult = await transcribeAudioContext({
       localPath: protectionLocalPath,
       durationMs: binding.durationMs ?? input.asset.durationMs ?? 0,
       ml: input.ml,
     });
-    comparedProtectionTranscript = Boolean(protectionTranscript);
+    if (protectionTranscriptResult.timing || protectionTranscriptResult.roundTripMs != null) {
+      input.performance?.recordAsr({
+        asset: input.asset,
+        phase: 'protection',
+        roundTripMs: protectionTranscriptResult.roundTripMs,
+        timing: protectionTranscriptResult.timing,
+      });
+    }
+    protectionTranscript = protectionTranscriptResult.context;
+    comparedProtectionTranscript = Boolean(protectionTranscriptResult.context);
   }
 
   const protectionSummary = summarizeAudioHealth({
@@ -1076,6 +1654,7 @@ function buildSpeechWindows(
     segments.map(segment => ({
       startMs: Math.max(0, segment.startMs - 500),
       endMs: Math.min(durationMs, segment.endMs + 900),
+      semanticKind: 'speech',
       reason: 'speech-window',
     })),
   );
@@ -1095,7 +1674,10 @@ function buildUnifiedDecisionPrompt(input: {
     budget: input.budget ?? 'standard',
     initial_clip_type_guess: input.prepared.initialClipTypeGuess,
     density_score: Number(input.densityScore.toFixed(3)),
-    shot_count: input.prepared.shotBoundaries.length,
+    shot_count_known: input.prepared.shotBoundariesResolved,
+    shot_count: input.prepared.shotBoundariesResolved
+      ? input.prepared.shotBoundaries.length
+      : null,
     has_audio_track: input.prepared.hasAudioTrack,
     speech_coverage: Number((input.transcript?.speechCoverage ?? 0).toFixed(3)),
     has_meaningful_speech: hasMeaningfulSpeech(input.transcript),
@@ -1127,6 +1709,7 @@ Rules:
 - Use both the images and the textual signals below.
 - Final clip_type must be semantic, not just based on duration heuristics.
 - Strong audio means meaningful human speech. Background music, engine noise, road noise, ambience, or other non-speech sounds do not count as strong audio.
+- If shot_count_known is false, treat shot_count as unavailable rather than evidence of zero cuts.
 - Manual itinerary and spatial hints are weak evidence: useful for place/route inference, but weaker than clear visual or speech contradictions.
 - If the frames clearly show sustained driving or road footage, prefer "drive" even when the initial heuristic guess is "unknown".
 - If either visual or speech evidence indicates promising regions, prefer "windowed" over "skip".
@@ -1225,7 +1808,7 @@ function decorateSliceWithTranscript(
   transcript?: ITranscriptContext | null,
   extraEvidence: IKtepEvidence[] = [],
 ): IKtepSlice {
-  if (!transcript || !transcript.transcript) {
+  if (!transcript || !transcript.transcript || (slice.type === 'drive' && slice.semanticKind === 'visual')) {
     const evidence = dedupeEvidence([...(slice.evidence ?? []), ...extraEvidence]);
     return evidence.length > 0
       ? { ...slice, evidence }
@@ -1233,7 +1816,7 @@ function decorateSliceWithTranscript(
   }
 
   const match = collectTranscriptForSlice(slice, transcript);
-  const transcriptSummary = shouldUseTranscriptSummary(slice.summary)
+  const transcriptSummary = shouldUseTranscriptSummary(slice)
     ? match.transcript
     : slice.summary;
   const evidence = dedupeEvidence([
@@ -1320,7 +1903,12 @@ function collectTranscriptForSlice(
   };
 }
 
-function shouldUseTranscriptSummary(summary?: string): boolean {
+function shouldUseTranscriptSummary(
+  slice: Pick<IKtepSlice, 'summary' | 'semanticKind'>,
+): boolean {
+  if (slice.semanticKind === 'speech') return true;
+  if (slice.semanticKind === 'visual') return false;
+  const summary = slice.summary;
   if (!summary) return true;
   return ['speech-window', 'coarse-sample-window', 'whole-asset-window-fallback']
     .some(token => summary.includes(token));
@@ -1335,11 +1923,17 @@ async function preparePhotoVisualCoarse(
     input.runtimeConfig,
   );
   const sampleFrames = proxyFrame ? [proxyFrame] : [];
-  const visualSummary = await summarizeSamples(await input.getMlHandle(), sampleFrames);
+  const visualSummary = await summarizeSamples({
+    asset: input.asset,
+    ml: await input.getMlHandle(),
+    sampleFrames,
+    performance: input.performance,
+  });
 
   return {
     ...input,
     shotBoundaries: [],
+    shotBoundariesResolved: true,
     sampleFrames,
     coarseSampleTimestamps: [0],
     visualSummary,
@@ -1444,9 +2038,11 @@ async function generateFineScanOutput(input: {
     analysisProxyPixelFormat?: string;
     sceneDetectFps?: number;
     sceneDetectScaleWidth?: number;
+    keyframeExtractConcurrency?: number;
     mlServerUrl?: string;
   };
   getMlHandle: () => Promise<MlAvailability>;
+  performance?: AnalyzePerformanceSession;
 }): Promise<IFineScanSlicesResult> {
   if (!input.analysis.report.shouldFineScan) {
     return { slices: [], droppedInvalidSliceCount: 0 };
@@ -1467,17 +2063,29 @@ async function generateFineScanOutput(input: {
     return { slices: [], droppedInvalidSliceCount: 0 };
   }
 
+  let prepared = input.analysis.prepared;
+  if (input.analysis.report.fineScanMode === 'full' && !prepared.shotBoundariesResolved) {
+    prepared = await runDeferredSceneDetect({
+      prepared,
+      phase: 'fine-scan',
+      clipType: input.analysis.clipType,
+      performance: input.performance,
+    });
+    input.analysis.prepared = prepared;
+  }
+
   return buildFineScanSlices({
-    asset: input.analysis.prepared.asset,
-    localPath: input.analysis.prepared.localPath,
+    asset: prepared.asset,
+    localPath: prepared.localPath,
     projectRoot: input.projectRoot,
     roots: input.roots,
     runtimeConfig: input.runtimeConfig,
-    shotBoundaries: input.analysis.prepared.shotBoundaries,
+    shotBoundaries: prepared.shotBoundaries,
     report: input.analysis.report,
     transcript: input.analysis.transcript,
     clipType: input.analysis.clipType,
     ml: await input.getMlHandle(),
+    performance: input.performance,
   });
 }
 
@@ -1597,6 +2205,7 @@ function buildDriveFallbackWindows(
   const windows = anchors.map(timeMs => ({
     startMs: Math.max(0, timeMs - halfWindowMs),
     endMs: Math.min(durationMs, timeMs + halfWindowMs),
+    semanticKind: 'visual' as const,
     reason: 'coarse-sample-window',
   })).filter(window => window.endMs > window.startMs);
 
@@ -1613,8 +2222,12 @@ function pickDriveFallbackWindowDuration(durationMs: number): number {
 function guessClipType(
   asset: IKtepAsset,
   shotBoundaries: IShotBoundary[],
+  shotBoundariesResolved = true,
 ): EClipType {
   if (asset.kind === 'photo') return 'broll';
+  if (!shotBoundariesResolved) {
+    return (asset.durationMs ?? 0) <= 20_000 ? 'broll' : 'unknown';
+  }
 
   const durationSec = Math.max((asset.durationMs ?? 0) / 1000, 1);
   const shotRate = shotBoundaries.length / durationSec;
@@ -1697,8 +2310,9 @@ function mergeInterestingWindows(
   for (let index = 1; index < sorted.length; index += 1) {
     const previous = merged[merged.length - 1];
     const current = sorted[index];
-    if (current.startMs <= previous.endMs) {
+    if (current.startMs <= previous.endMs && canMergeInterestingWindowSemantics(previous, current)) {
       previous.endMs = Math.max(previous.endMs, current.endMs);
+      previous.semanticKind = previous.semanticKind ?? current.semanticKind;
       previous.reason = previous.reason === current.reason
         ? previous.reason
         : `${previous.reason}+${current.reason}`;
@@ -1708,6 +2322,15 @@ function mergeInterestingWindows(
   }
 
   return merged;
+}
+
+function canMergeInterestingWindowSemantics(
+  left: Pick<IInterestingWindow, 'semanticKind'>,
+  right: Pick<IInterestingWindow, 'semanticKind'>,
+): boolean {
+  return left.semanticKind == null
+    || right.semanticKind == null
+    || left.semanticKind === right.semanticKind;
 }
 
 interface IBuildFineScanSlicesInput {
@@ -1722,6 +2345,7 @@ interface IBuildFineScanSlicesInput {
     analysisProxyPixelFormat?: string;
     sceneDetectFps?: number;
     sceneDetectScaleWidth?: number;
+    keyframeExtractConcurrency?: number;
     mlServerUrl?: string;
   };
   shotBoundaries: IShotBoundary[];
@@ -1730,6 +2354,7 @@ interface IBuildFineScanSlicesInput {
   roots: IMediaRoot[];
   clipType: EClipType;
   ml: MlAvailability;
+  performance?: AnalyzePerformanceSession;
 }
 
 async function buildFineScanSlices(
@@ -1754,6 +2379,7 @@ async function buildFineScanSlices(
         [{
           startMs: 0,
           endMs: input.asset.durationMs ?? 0,
+          ...(input.clipType === 'drive' ? { semanticKind: 'visual' as const } : {}),
           reason: 'whole-asset-window-fallback',
         }],
         mapClipTypeToSliceType(input.clipType),
@@ -1788,15 +2414,31 @@ async function buildFineScanSlices(
   }
 
   const timestamps = [...new Set(plans.flatMap(plan => plan.timestampsMs))].sort((a, b) => a - b);
+  const fineKeyframeStartedAt = Date.now();
   const extractedFrames = await extractKeyframes(
     input.localPath,
     join(buildAssetTempDir(input.projectRoot, input.asset.id), 'fine-scan'),
     timestamps,
     input.runtimeConfig,
   );
+  input.performance?.recordKeyframeExtract({
+    asset: input.asset,
+    phase: 'fine',
+    elapsedMs: Date.now() - fineKeyframeStartedAt,
+    keyframeCount: extractedFrames.length,
+  });
   const keyframes = await filterExistingKeyframes(extractedFrames);
   const groups = groupKeyframesByShot(plans, keyframes);
   const recognitions = await recognizeShotGroups(input.ml.client, groups);
+  for (const recognition of recognitions) {
+    input.performance?.recordVlm({
+      asset: input.asset,
+      phase: 'fine',
+      imageCount: recognition.framePaths.length,
+      roundTripMs: recognition.recognition.roundTripMs,
+      timing: recognition.recognition.timing,
+    });
+  }
   const recognitionMap = new Map(recognitions.map(item => [item.shotId, item]));
 
   const slices: IKtepSlice[] = [];
@@ -1848,17 +2490,27 @@ function mapClipTypeToSliceType(clipType: EClipType): IKtepSlice['type'] {
   return 'unknown';
 }
 
-async function summarizeSamples(
-  ml: MlAvailability,
-  sampleFrames: { path: string }[],
-) {
-  if (!ml.available || sampleFrames.length === 0) return null;
+async function summarizeSamples(input: {
+  asset: IKtepAsset;
+  ml: MlAvailability;
+  sampleFrames: { path: string }[];
+  performance?: AnalyzePerformanceSession;
+}) {
+  if (!input.ml.available || input.sampleFrames.length === 0) return null;
 
-  const paths = pickRepresentativeFramePaths(sampleFrames.map(frame => frame.path), 6);
+  const paths = pickRepresentativeFramePaths(input.sampleFrames.map(frame => frame.path), 6);
   if (paths.length === 0) return null;
 
   try {
-    return await recognizeFrames(ml.client, paths);
+    const recognition = await recognizeFrames(input.ml.client, paths);
+    input.performance?.recordVlm({
+      asset: input.asset,
+      phase: 'coarse',
+      imageCount: recognition.imageCount ?? paths.length,
+      roundTripMs: recognition.roundTripMs,
+      timing: recognition.timing,
+    });
+    return recognition;
   } catch {
     return null;
   }
@@ -1935,7 +2587,7 @@ function applySliceWindowSemantics(
       : {}),
   };
 
-  if (clipType !== 'drive' || result.speedCandidate) {
+  if (clipType !== 'drive' || result.speedCandidate || result.semanticKind === 'speech') {
     return result;
   }
 

@@ -14,4 +14,5 @@ models
 analysis
 config/runtime.json
 config/device-media-maps.local.json
-projects/tmp-current-flow-test-20260401-160735/
+projects/tmp-*
+

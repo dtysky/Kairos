@@ -1,0 +1,1242 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kairos Analyze Performance Heatmap</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b1020;
+        --panel: #11182e;
+        --panel-2: #151d36;
+        --panel-3: #1a2340;
+        --border: #26304f;
+        --text: #e8edf9;
+        --muted: #a8b3cf;
+        --accent: #7cc4ff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 24px;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin-top: 0;
+      }
+
+      h1 {
+        margin-bottom: 8px;
+        font-size: 28px;
+      }
+
+      h2 {
+        margin-bottom: 10px;
+        font-size: 20px;
+      }
+
+      h3 {
+        margin-bottom: 10px;
+        font-size: 16px;
+      }
+
+      p,
+      li {
+        line-height: 1.5;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .section {
+        margin-top: 28px;
+      }
+
+      .card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .card {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: linear-gradient(180deg, var(--panel-2), var(--panel));
+        padding: 14px 16px;
+      }
+
+      .card-label {
+        font-size: 12px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .card-value {
+        margin-top: 8px;
+        font-size: 28px;
+        font-weight: 700;
+      }
+
+      .card-sub {
+        margin-top: 6px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .delta-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .delta-card {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: linear-gradient(180deg, var(--panel-2), var(--panel));
+        padding: 14px 16px;
+      }
+
+      .delta-label {
+        font-size: 12px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .delta-value {
+        margin-top: 8px;
+        font-size: 26px;
+        font-weight: 800;
+      }
+
+      .delta-value.positive {
+        color: #ffb1a1;
+      }
+
+      .delta-value.negative {
+        color: #9de1a5;
+      }
+
+      .delta-note {
+        margin-top: 6px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .donut-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 16px;
+        margin-top: 18px;
+      }
+
+      .donut-card {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: linear-gradient(180deg, var(--panel-2), var(--panel));
+        padding: 18px;
+      }
+
+      .donut-shell {
+        position: relative;
+        width: 220px;
+        height: 220px;
+        margin: 12px auto 0;
+      }
+
+      .donut-ring {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 1px solid var(--border);
+      }
+
+      .donut-hole {
+        position: absolute;
+        inset: 26px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        text-align: center;
+        padding: 14px;
+      }
+
+      .donut-total {
+        font-size: 28px;
+        font-weight: 800;
+      }
+
+      .donut-sub {
+        margin-top: 4px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .donut-legend {
+        margin-top: 18px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .donut-legend-item {
+        display: grid;
+        grid-template-columns: 12px 1fr auto;
+        gap: 10px;
+        align-items: center;
+        font-size: 13px;
+      }
+
+      .swatch {
+        width: 12px;
+        height: 12px;
+        border-radius: 4px;
+      }
+
+      .legend-main {
+        color: var(--text);
+      }
+
+      .legend-meta {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .legend {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 12px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .legend-bar {
+        width: 220px;
+        height: 12px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: linear-gradient(
+          90deg,
+          hsl(220deg 45% 16%),
+          hsl(210deg 85% 34%),
+          hsl(42deg 92% 55%),
+          hsl(12deg 88% 53%)
+        );
+      }
+
+      .table-wrap {
+        margin-top: 14px;
+        overflow-x: auto;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--panel);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 920px;
+      }
+
+      th,
+      td {
+        border-right: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
+        padding: 10px 12px;
+        font-size: 13px;
+        vertical-align: middle;
+      }
+
+      th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background: var(--panel-2);
+        text-align: right;
+        white-space: nowrap;
+      }
+
+      td {
+        text-align: right;
+        white-space: nowrap;
+      }
+
+      th:first-child,
+      td:first-child {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        text-align: left;
+        background: var(--panel-3);
+      }
+
+      th.note,
+      td.note {
+        text-align: left;
+        white-space: normal;
+        min-width: 240px;
+      }
+
+      td.heat {
+        font-weight: 700;
+      }
+
+      td.delta-positive {
+        color: #ffb1a1;
+      }
+
+      td.delta-negative {
+        color: #9de1a5;
+      }
+
+      .pill {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .pill.bad {
+        background: rgba(255, 120, 97, 0.16);
+        color: #ffb1a1;
+      }
+
+      .pill.good {
+        background: rgba(131, 210, 143, 0.16);
+        color: #9de1a5;
+      }
+
+      .pill.neutral {
+        background: rgba(124, 196, 255, 0.14);
+        color: var(--accent);
+      }
+
+      .small {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      code {
+        font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Kairos Analyze 性能热力图</h1>
+    <p class="muted">
+      基于
+      <code>.tmp/run/mac-eval-baseline-qwen3vl.json</code>
+      与
+      <code>.tmp/run/mac-eval-candidate-qwen35.json</code>
+      生成。这个页面的目的不是只比较模型本身，而是把整条 Analyze 链路里
+      <code>VLM / ffmpeg / ASR / I/O / 资产级路径变化</code>
+      都可视化出来。
+    </p>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-label">Baseline Pipeline</div>
+        <div class="card-value">188.0s</div>
+        <div class="card-sub">当前默认 `Qwen3-VL-4B-Instruct-8bit`</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Candidate Pipeline</div>
+        <div class="card-value">254.1s</div>
+        <div class="card-sub">`Qwen3_5-4B-MLX-8bit`</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Reading Order</div>
+        <div class="card-value">资产 × 阶段</div>
+        <div class="card-sub">先看哪条素材在哪个阶段发热，再看模型层解释</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Stable Fixed Tax</div>
+        <div class="card-value">ffmpeg</div>
+        <div class="card-sub">两轮 `scene detect` 都稳定约 `63s`</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Baseline 全链路画像</h2>
+      <p class="muted">
+        这里先只看 baseline，不讨论 candidate。目标是先回答当前默认 Analyze
+        流水线里，到底是哪些阶段、哪些资产在烧时间，各自占比是多少。
+      </p>
+      <div class="card-grid" id="baseline-focus-cards"></div>
+      <div class="donut-grid">
+        <div class="donut-card">
+          <h3>Baseline Stage Share</h3>
+          <div class="donut-shell">
+            <div class="donut-ring" id="baseline-stage-share-ring"></div>
+            <div class="donut-hole">
+              <div class="donut-total" id="baseline-stage-share-total"></div>
+              <div class="donut-sub">stage total</div>
+            </div>
+          </div>
+          <div class="donut-legend" id="baseline-stage-share-legend"></div>
+        </div>
+        <div class="donut-card">
+          <h3>Baseline Asset Share</h3>
+          <div class="donut-shell">
+            <div class="donut-ring" id="baseline-asset-share-ring"></div>
+            <div class="donut-hole">
+              <div class="donut-total" id="baseline-asset-share-total"></div>
+              <div class="donut-sub">asset stage total</div>
+            </div>
+          </div>
+          <div class="donut-legend" id="baseline-asset-share-legend"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Baseline 资产 × 阶段热力图</h2>
+      <p class="muted">
+        这是 baseline 主表。优先看这里：哪条资产在
+        <code>prepare / finalize / fine-scan / scene detect / VLM / ASR</code>
+        哪一格最热。
+      </p>
+      <div class="table-wrap">
+        <table id="baseline-primary-table"></table>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>A/B 差值热力图（附录）</h2>
+      <p class="muted">
+        先用
+        <code>candidate - baseline</code>
+        的差值热力图回答“如果切到 candidate，会在哪些资产和阶段上额外变贵”。这部分只作为 baseline
+        分析后的补充对照。
+      </p>
+      <div class="table-wrap">
+        <table id="asset-delta-table"></table>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Candidate 原始热力图（附录）</h2>
+      <p class="muted">
+        这是 candidate 的原始热力图，只作为对照使用，帮助理解差值热图为什么会发热。
+      </p>
+      <div class="table-wrap">
+        <table id="candidate-asset-table"></table>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>路径漂移表（A/B 对照）</h2>
+      <p class="muted">
+        这里只强调“是不是走了不同子流程”。这张表解释了为什么有的素材虽然看起来更快，
+        其实只是 candidate 少做了有价值的 fine-scan，或者把 fine-scan 错加到了别的素材上。
+      </p>
+      <div class="table-wrap">
+        <table id="path-drift-table"></table>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>结构占比图（A/B 对照）</h2>
+      <p class="muted">
+        资产 × 阶段看完之后，再回到整条链路的总体结构。这里用明确百分比和环形图展示
+        baseline 与 candidate 的子系统占比。
+      </p>
+      <div class="delta-grid" id="share-summary"></div>
+      <div class="donut-grid">
+        <div class="donut-card">
+          <h3>Baseline Share</h3>
+          <div class="donut-shell">
+            <div class="donut-ring" id="baseline-share-ring"></div>
+            <div class="donut-hole">
+              <div class="donut-total" id="baseline-share-total"></div>
+              <div class="donut-sub">total pipeline</div>
+            </div>
+          </div>
+          <div class="donut-legend" id="baseline-share-legend"></div>
+        </div>
+        <div class="donut-card">
+          <h3>Candidate Share</h3>
+          <div class="donut-shell">
+            <div class="donut-ring" id="candidate-share-ring"></div>
+            <div class="donut-hole">
+              <div class="donut-total" id="candidate-share-total"></div>
+              <div class="donut-sub">total pipeline</div>
+            </div>
+          </div>
+          <div class="donut-legend" id="candidate-share-legend"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>子系统热力图（A/B 对照汇总）</h2>
+      <p class="muted">
+        这里看的是资产 × 阶段结果的汇总分账，不再作为第一阅读入口。
+      </p>
+      <div class="table-wrap">
+        <table id="subsystem-table"></table>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>颜色说明</h2>
+      <div class="legend">
+        <span>低</span>
+        <div class="legend-bar"></div>
+        <span>高</span>
+      </div>
+      <p class="small">
+        原始热力图中颜色越热，表示相对耗时越高。差值热力图里红色表示变贵，绿色表示变便宜，
+        深色表示变化很小。
+      </p>
+    </div>
+
+    <div class="section">
+      <p class="small">
+        推荐阅读顺序：
+        <code>Baseline 全链路画像</code>
+        ->
+        <code>Baseline 资产 × 阶段热力图</code>
+        ->
+        <code>A/B 差值热力图</code>
+        ->
+        <code>Candidate 原始热力图</code>
+        ->
+        <code>路径漂移表</code>
+        ->
+        <code>结构占比图</code>
+        ->
+        <code>子系统热力图</code>
+      </p>
+    </div>
+
+    <script>
+      const subsystemRows = [
+        {
+          metric: "Pipeline Total",
+          baseline: 188010,
+          candidate: 254076,
+          baselineMeta: "100.0%",
+          candidateMeta: "100.0%",
+          note: "整条 Analyze 端到端耗时",
+        },
+        {
+          metric: "VLM Total",
+          baseline: 91131,
+          candidate: 162689,
+          baselineMeta: "48.5%",
+          candidateMeta: "64.0%",
+          note: "coarse + decision + fine-scan",
+        },
+        {
+          metric: "ffmpeg Total",
+          baseline: 91573,
+          candidate: 87110,
+          baselineMeta: "48.7%",
+          candidateMeta: "34.3%",
+          note: "scene detect + keyframe extract",
+        },
+        {
+          metric: "scene detect",
+          baseline: 63556,
+          candidate: 63326,
+          baselineMeta: "4 calls",
+          candidateMeta: "4 calls",
+          note: "稳定固定税，基本不受模型影响",
+        },
+        {
+          metric: "keyframe extract",
+          baseline: 28017,
+          candidate: 23784,
+          baselineMeta: "7 calls",
+          candidateMeta: "7 calls",
+          note: "随 fine-scan 分配轻微浮动",
+        },
+        {
+          metric: "coarse VLM",
+          baseline: 35702,
+          candidate: 66437,
+          baselineMeta: "5 req / avg 7.1s",
+          candidateMeta: "5 req / avg 13.3s",
+          note: "candidate 热路径明显更慢",
+        },
+        {
+          metric: "decision VLM",
+          baseline: 32163,
+          candidate: 62535,
+          baselineMeta: "4 req / avg 8.0s",
+          candidateMeta: "4 req / avg 15.6s",
+          note: "本轮最突出的回退之一",
+        },
+        {
+          metric: "fine-scan VLM",
+          baseline: 23266,
+          candidate: 33717,
+          baselineMeta: "4 req / avg 5.8s",
+          candidateMeta: "3 req / avg 11.2s",
+          note: "请求更少，但每次更慢",
+        },
+        {
+          metric: "ASR Total",
+          baseline: 4864,
+          candidate: 3852,
+          baselineMeta: "2 req",
+          candidateMeta: "2 req",
+          note: "只命中 embedded 音轨，不是本轮热点",
+        },
+        {
+          metric: "I/O Total",
+          baseline: 30,
+          candidate: 27,
+          baselineMeta: "23 progress writes",
+          candidateMeta: "23 progress writes",
+          note: "进度、报告、切片、chronology 落盘几乎可以忽略",
+        },
+        {
+          metric: "Model Load",
+          baseline: 2410,
+          candidate: 2207,
+          baselineMeta: "cold only",
+          candidateMeta: "cold only",
+          note: "冷启动成本很小，不是主因",
+        },
+      ];
+
+      const shareColors = {
+        VLM: "#ff7d66",
+        ffmpeg: "#ffd166",
+        ASR: "#6fd3a0",
+        "I/O": "#6fb6ff",
+        Other: "#6f7da8",
+      };
+
+      const stageColors = {
+        Prepare: "#6fb6ff",
+        Finalize: "#ffd166",
+        "Fine Scan": "#ff7d66",
+        Chronology: "#6f7da8",
+      };
+
+      const assetShareColors = {
+        C1501: "#ff7d66",
+        DJI_0023: "#ffd166",
+        DJI_0268: "#6fd3a0",
+        DJI_0070: "#6fb6ff",
+        Photo: "#b494ff",
+      };
+
+      const baselineFocusCards = [
+        {
+          label: "Prepare",
+          value: "114.5s",
+          note: "60.9% of pipeline",
+        },
+        {
+          label: "Finalize",
+          value: "37.0s",
+          note: "19.7% of pipeline",
+        },
+        {
+          label: "Fine Scan",
+          value: "36.4s",
+          note: "19.4% of pipeline",
+        },
+        {
+          label: "Chronology",
+          value: "11ms",
+          note: "~0.0% of pipeline",
+        },
+        {
+          label: "VLM Share",
+          value: "48.5%",
+          note: "91.1s total",
+        },
+        {
+          label: "ffmpeg Share",
+          value: "48.7%",
+          note: "91.6s total",
+        },
+      ];
+
+      const baselineStageBreakdown = {
+        total: 188010,
+        items: [
+          { label: "Prepare", value: 114529, share: 60.9 },
+          { label: "Finalize", value: 37035, share: 19.7 },
+          { label: "Fine Scan", value: 36387, share: 19.4 },
+          { label: "Chronology", value: 11, share: 0.0 },
+        ],
+      };
+
+      const baselineAssetShareBreakdown = {
+        total: 187951,
+        items: [
+          { label: "C1501", value: 68342, share: 36.4 },
+          { label: "DJI_0023", value: 52229, share: 27.8 },
+          { label: "DJI_0268", value: 37499, share: 19.9 },
+          { label: "DJI_0070", value: 25510, share: 13.6 },
+          { label: "Photo", value: 4371, share: 2.3 },
+        ],
+      };
+
+      const shareBreakdown = {
+        baseline: {
+          total: 188010,
+          items: [
+            { label: "VLM", value: 91131, share: 48.5 },
+            { label: "ffmpeg", value: 91573, share: 48.7 },
+            { label: "ASR", value: 4864, share: 2.6 },
+            { label: "I/O", value: 30, share: 0.0 },
+            { label: "Other", value: 412, share: 0.2 },
+          ],
+        },
+        candidate: {
+          total: 254076,
+          items: [
+            { label: "VLM", value: 162689, share: 64.0 },
+            { label: "ffmpeg", value: 87110, share: 34.3 },
+            { label: "ASR", value: 3852, share: 1.5 },
+            { label: "I/O", value: 27, share: 0.0 },
+            { label: "Other", value: 398, share: 0.2 },
+          ],
+        },
+      };
+
+      const shareSummaryCards = [
+        {
+          label: "Pipeline Delta",
+          value: "+35.1%",
+          type: "positive",
+          note: "188.0s -> 254.1s",
+        },
+        {
+          label: "VLM Delta",
+          value: "+78.5%",
+          type: "positive",
+          note: "91.1s -> 162.7s",
+        },
+        {
+          label: "VLM Share",
+          value: "+15.5pt",
+          type: "positive",
+          note: "48.5% -> 64.0%",
+        },
+        {
+          label: "ffmpeg Share",
+          value: "-14.4pt",
+          type: "negative",
+          note: "48.7% -> 34.3%",
+        },
+      ];
+
+      const assetColumns = [
+        { key: "prepare", label: "Prepare" },
+        { key: "finalize", label: "Finalize" },
+        { key: "fine", label: "Fine Scan" },
+        { key: "scene", label: "Scene Detect" },
+        { key: "coarseVlm", label: "Coarse VLM" },
+        { key: "decisionVlm", label: "Decision VLM" },
+        { key: "fineVlm", label: "Fine VLM" },
+        { key: "asr", label: "ASR" },
+      ];
+
+      const baselineAssets = [
+        {
+          asset: "0001-2.jpg",
+          prepare: 4370,
+          finalize: 1,
+          fine: 0,
+          scene: 0,
+          coarseVlm: 4003,
+          decisionVlm: 0,
+          fineVlm: 0,
+          asr: 0,
+          slices: 1,
+          note: "single photo, only coarse VLM",
+        },
+        {
+          asset: "C1501.MP4",
+          prepare: 48733,
+          finalize: 12505,
+          fine: 7104,
+          scene: 33936,
+          coarseVlm: 12565,
+          decisionVlm: 9021,
+          fineVlm: 5536,
+          asr: 3479,
+          slices: 1,
+          note: "scene -> coarse -> ASR -> decision -> fine",
+        },
+        {
+          asset: "DJI_20260217042948_0023_D.MP4",
+          prepare: 26127,
+          finalize: 7358,
+          fine: 18744,
+          scene: 15619,
+          coarseVlm: 6627,
+          decisionVlm: 7358,
+          fineVlm: 12137,
+          asr: 0,
+          slices: 2,
+          note: "drive clip, 2 fine VLM req, 2 slices",
+        },
+        {
+          asset: "DJI_20260217052235_0070_D.MP4",
+          prepare: 18069,
+          finalize: 7441,
+          fine: 0,
+          scene: 8240,
+          coarseVlm: 6386,
+          decisionVlm: 7440,
+          fineVlm: 0,
+          asr: 0,
+          slices: 0,
+          note: "aerial clip, skip fine-scan",
+        },
+        {
+          asset: "DJI_20260217143122_0268_D.MP4",
+          prepare: 17230,
+          finalize: 9730,
+          fine: 10539,
+          scene: 5761,
+          coarseVlm: 6121,
+          decisionVlm: 8344,
+          fineVlm: 5593,
+          asr: 1385,
+          slices: 1,
+          note: "talking-head with ASR and fine-scan",
+        },
+      ];
+
+      const candidateAssets = [
+        {
+          asset: "0001-2.jpg",
+          prepare: 12754,
+          finalize: 1,
+          fine: 0,
+          scene: 0,
+          coarseVlm: 12390,
+          decisionVlm: 0,
+          fineVlm: 0,
+          asr: 0,
+          slices: 1,
+          note: "same path, but coarse VLM much slower",
+        },
+        {
+          asset: "C1501.MP4",
+          prepare: 50595,
+          finalize: 17728,
+          fine: 11788,
+          scene: 31358,
+          coarseVlm: 17048,
+          decisionVlm: 15333,
+          fineVlm: 10238,
+          asr: 2392,
+          slices: 1,
+          note: "same path, all VLM buckets inflated",
+        },
+        {
+          asset: "DJI_20260217042948_0023_D.MP4",
+          prepare: 31955,
+          finalize: 15870,
+          fine: 0,
+          scene: 16840,
+          coarseVlm: 11198,
+          decisionVlm: 15870,
+          fineVlm: 0,
+          asr: 0,
+          slices: 0,
+          note: "decision drift removed valuable fine-scan work",
+        },
+        {
+          asset: "DJI_20260217052235_0070_D.MP4",
+          prepare: 26156,
+          finalize: 15596,
+          fine: 13128,
+          scene: 8932,
+          coarseVlm: 13782,
+          decisionVlm: 15596,
+          fineVlm: 10757,
+          asr: 0,
+          slices: 1,
+          note: "decision drift added extra fine-scan branch",
+        },
+        {
+          asset: "DJI_20260217143122_0268_D.MP4",
+          prepare: 23564,
+          finalize: 17196,
+          fine: 17692,
+          scene: 6196,
+          coarseVlm: 12019,
+          decisionVlm: 15736,
+          fineVlm: 12722,
+          asr: 1460,
+          slices: 1,
+          note: "same path, but VLM gets much hotter",
+        },
+      ];
+
+      const pathRows = [
+        {
+          asset: "0001-2.jpg",
+          baseline: "coarse VLM -> +1 slice",
+          candidate: "coarse VLM -> +1 slice",
+          effect: "same path",
+          note: "纯粹是 coarse VLM 变慢，且结果还更差。",
+        },
+        {
+          asset: "C1501.MP4",
+          baseline: "scene -> coarse -> ASR -> decision -> fine",
+          candidate: "scene -> coarse -> ASR -> decision -> fine",
+          effect: "same path, slower",
+          note: "路径没变，但 coarse / decision / fine 三段 VLM 都更热。",
+        },
+        {
+          asset: "DJI_20260217042948_0023_D.MP4",
+          baseline: "fine-scan kept, 2 fine VLM req, +2 slices",
+          candidate: "fine-scan removed, +0 slice",
+          effect: "less work, lower value",
+          note: "candidate 看起来更快，其实是少做了有价值的细扫。",
+        },
+        {
+          asset: "DJI_20260217052235_0070_D.MP4",
+          baseline: "skip fine-scan, +0 slice",
+          candidate: "windowed fine-scan, +1 slice",
+          effect: "extra branch added",
+          note: "candidate 因决策漂移而多跑了一段 fine-scan。",
+        },
+        {
+          asset: "DJI_20260217143122_0268_D.MP4",
+          baseline: "scene -> coarse -> ASR -> decision -> fine",
+          candidate: "scene -> coarse -> ASR -> decision -> fine",
+          effect: "same path, slower",
+          note: "这类样本最能说明 candidate 单次 VLM 推理更慢。",
+        },
+      ];
+
+      function fmtMs(ms) {
+        if (ms >= 1000) return (ms / 1000).toFixed(1) + "s";
+        return ms + "ms";
+      }
+
+      function heatColor(value, max) {
+        if (!value) return "hsl(220deg 45% 16%)";
+        const ratio = Math.max(0, Math.min(1, value / max));
+        const hue = 214 - ratio * 202;
+        const sat = 88;
+        const light = 18 + ratio * 34;
+        return `hsl(${hue}deg ${sat}% ${light}%)`;
+      }
+
+      function deltaHeatColor(value, maxAbs) {
+        if (!value || maxAbs === 0) return "hsl(220deg 45% 16%)";
+        const ratio = Math.max(0, Math.min(1, Math.abs(value) / maxAbs));
+        const hue = value > 0 ? 10 : 145;
+        const sat = 85;
+        const light = 18 + ratio * 30;
+        return `hsl(${hue}deg ${sat}% ${light}%)`;
+      }
+
+      function deltaText(base, candidate) {
+        if (base === 0 && candidate === 0) return "0";
+        if (base === 0 && candidate > 0) return "new";
+        if (base > 0 && candidate === 0) return "removed";
+        const ratio = ((candidate - base) / base) * 100;
+        const sign = ratio > 0 ? "+" : "";
+        return `${sign}${ratio.toFixed(1)}%`;
+      }
+
+      function renderShareSummary() {
+        const root = document.getElementById("share-summary");
+        root.innerHTML = shareSummaryCards
+          .map(card => {
+            return `
+              <div class="delta-card">
+                <div class="delta-label">${card.label}</div>
+                <div class="delta-value ${card.type}">${card.value}</div>
+                <div class="delta-note">${card.note}</div>
+              </div>
+            `;
+          })
+          .join("");
+      }
+
+      function renderFocusCards() {
+        const root = document.getElementById("baseline-focus-cards");
+        root.innerHTML = baselineFocusCards
+          .map(card => {
+            return `
+              <div class="card">
+                <div class="card-label">${card.label}</div>
+                <div class="card-value">${card.value}</div>
+                <div class="card-sub">${card.note}</div>
+              </div>
+            `;
+          })
+          .join("");
+      }
+
+      function renderDonut(prefix, data, colorMap = shareColors) {
+        const ring = document.getElementById(`${prefix}-share-ring`);
+        const total = document.getElementById(`${prefix}-share-total`);
+        const legend = document.getElementById(`${prefix}-share-legend`);
+
+        let cursor = 0;
+        const segments = data.items.map(item => {
+          const start = cursor;
+          cursor += item.share;
+          const end = cursor;
+          return `${colorMap[item.label]} ${start}% ${end}%`;
+        });
+
+        ring.style.background = `conic-gradient(${segments.join(", ")})`;
+        total.textContent = fmtMs(data.total);
+        legend.innerHTML = data.items
+          .map(item => {
+            return `
+              <div class="donut-legend-item">
+                <span class="swatch" style="background:${colorMap[item.label]}"></span>
+                <div>
+                  <div class="legend-main">${item.label}</div>
+                  <div class="legend-meta">${fmtMs(item.value)}</div>
+                </div>
+                <div>${item.share.toFixed(1)}%</div>
+              </div>
+            `;
+          })
+          .join("");
+      }
+
+      function renderSubsystemTable() {
+        const table = document.getElementById("subsystem-table");
+        const maxValue = Math.max(
+          ...subsystemRows.flatMap(row => [row.baseline, row.candidate]),
+        );
+
+        table.innerHTML = `
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Baseline</th>
+              <th>Candidate</th>
+              <th>Delta</th>
+              <th class="note">Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${subsystemRows
+              .map(row => {
+                const delta = deltaText(row.baseline, row.candidate);
+                const deltaClass =
+                  delta === "0"
+                    ? ""
+                    : delta === "removed"
+                      ? "delta-negative"
+                      : delta.startsWith("-")
+                        ? "delta-negative"
+                        : "delta-positive";
+
+                return `
+                  <tr>
+                    <td>${row.metric}</td>
+                    <td class="heat" style="background:${heatColor(row.baseline, maxValue)}">
+                      ${fmtMs(row.baseline)}
+                      <div class="small">${row.baselineMeta}</div>
+                    </td>
+                    <td class="heat" style="background:${heatColor(row.candidate, maxValue)}">
+                      ${fmtMs(row.candidate)}
+                      <div class="small">${row.candidateMeta}</div>
+                    </td>
+                    <td class="${deltaClass}">${delta}</td>
+                    <td class="note">${row.note}</td>
+                  </tr>
+                `;
+              })
+              .join("")}
+          </tbody>
+        `;
+      }
+
+      function renderAssetDeltaTable() {
+        const table = document.getElementById("asset-delta-table");
+        const rows = baselineAssets.map(baseRow => {
+          const candidateRow = candidateAssets.find(row => row.asset === baseRow.asset);
+          const deltas = Object.fromEntries(
+            assetColumns.map(col => [col.key, candidateRow[col.key] - baseRow[col.key]]),
+          );
+          const totalDelta = assetColumns.reduce((sum, col) => sum + deltas[col.key], 0);
+          const path = pathRows.find(row => row.asset === baseRow.asset);
+
+          return {
+            asset: baseRow.asset,
+            ...deltas,
+            totalDelta,
+            effect: path?.effect ?? "same path",
+            note: path?.note ?? "",
+          };
+        });
+
+        const maxAbs = Math.max(
+          ...rows.flatMap(row => [
+            ...assetColumns.map(col => Math.abs(row[col.key])),
+            Math.abs(row.totalDelta),
+          ]),
+        );
+
+        const fmtDelta = value => {
+          if (value === 0) return "0";
+          const sign = value > 0 ? "+" : "";
+          return sign + fmtMs(value);
+        };
+
+        table.innerHTML = `
+          <thead>
+            <tr>
+              <th>Asset</th>
+              ${assetColumns.map(col => `<th>${col.label}</th>`).join("")}
+              <th>Total Delta</th>
+              <th>Path Effect</th>
+              <th class="note">Interpretation</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows
+              .map(row => {
+                const effectClass =
+                  row.effect === "same path, slower" ||
+                  row.effect === "extra branch added" ||
+                  row.effect === "less work, lower value"
+                    ? "bad"
+                    : "neutral";
+
+                return `
+                  <tr>
+                    <td>${row.asset}</td>
+                    ${assetColumns
+                      .map(col => {
+                        const value = row[col.key];
+                        const deltaClass =
+                          value > 0 ? "delta-positive" : value < 0 ? "delta-negative" : "";
+                        return `<td class="heat ${deltaClass}" style="background:${deltaHeatColor(value, maxAbs)}">${fmtDelta(value)}</td>`;
+                      })
+                      .join("")}
+                    <td class="${row.totalDelta > 0 ? "delta-positive" : row.totalDelta < 0 ? "delta-negative" : ""}" style="background:${deltaHeatColor(row.totalDelta, maxAbs)}">${fmtDelta(row.totalDelta)}</td>
+                    <td><span class="pill ${effectClass}">${row.effect}</span></td>
+                    <td class="note">${row.note}</td>
+                  </tr>
+                `;
+              })
+              .join("")}
+          </tbody>
+        `;
+      }
+
+      function renderAssetTable(id, rows) {
+        const table = document.getElementById(id);
+        const maxValue = Math.max(
+          ...rows.flatMap(row => assetColumns.map(col => row[col.key])),
+        );
+
+        table.innerHTML = `
+          <thead>
+            <tr>
+              <th>Asset</th>
+              ${assetColumns.map(col => `<th>${col.label}</th>`).join("")}
+              <th>Slices</th>
+              <th class="note">Path Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows
+              .map(row => {
+                return `
+                  <tr>
+                    <td>${row.asset}</td>
+                    ${assetColumns
+                      .map(col => {
+                        const value = row[col.key];
+                        return `<td class="heat" style="background:${heatColor(value, maxValue)}">${fmtMs(value)}</td>`;
+                      })
+                      .join("")}
+                    <td>${row.slices}</td>
+                    <td class="note">${row.note}</td>
+                  </tr>
+                `;
+              })
+              .join("")}
+          </tbody>
+        `;
+      }
+
+      function renderPathTable() {
+        const table = document.getElementById("path-drift-table");
+        table.innerHTML = `
+          <thead>
+            <tr>
+              <th>Asset</th>
+              <th class="note">Baseline Path</th>
+              <th class="note">Candidate Path</th>
+              <th>Effect</th>
+              <th class="note">Interpretation</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${pathRows
+              .map(row => {
+                let pill = "neutral";
+                if (row.effect === "same path, slower" || row.effect === "extra branch added") {
+                  pill = "bad";
+                } else if (row.effect === "less work, lower value") {
+                  pill = "bad";
+                }
+
+                return `
+                  <tr>
+                    <td>${row.asset}</td>
+                    <td class="note">${row.baseline}</td>
+                    <td class="note">${row.candidate}</td>
+                    <td><span class="pill ${pill}">${row.effect}</span></td>
+                    <td class="note">${row.note}</td>
+                  </tr>
+                `;
+              })
+              .join("")}
+          </tbody>
+        `;
+      }
+
+      renderFocusCards();
+      renderDonut("baseline-stage", baselineStageBreakdown, stageColors);
+      renderDonut("baseline-asset", baselineAssetShareBreakdown, assetShareColors);
+      renderShareSummary();
+      renderDonut("baseline", shareBreakdown.baseline);
+      renderDonut("candidate", shareBreakdown.candidate);
+      renderAssetDeltaTable();
+      renderSubsystemTable();
+      renderAssetTable("baseline-primary-table", baselineAssets);
+      renderAssetTable("candidate-asset-table", candidateAssets);
+      renderPathTable();
+    </script>
+  </body>
+</html>

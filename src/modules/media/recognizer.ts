@@ -1,5 +1,5 @@
 import type { IKtepEvidence } from '../../protocol/schema.js';
-import type { MlClient } from './ml-client.js';
+import type { MlClient, IMlVlmTiming } from './ml-client.js';
 import type { IShotKeyframeGroup } from './keyframe.js';
 
 const CVLM_PROMPT = `Analyze this image from a travel video. Return only a raw JSON object with:
@@ -19,6 +19,9 @@ export interface IRecognition {
   narrativeRole: string;
   description: string;
   evidence: IKtepEvidence[];
+  timing?: IMlVlmTiming;
+  roundTripMs?: number;
+  imageCount?: number;
 }
 
 export interface IShotRecognition {
@@ -33,7 +36,9 @@ export async function recognizeFrames(
   client: MlClient,
   imagePaths: string[],
 ): Promise<IRecognition> {
+  const startedAt = Date.now();
   const result = await client.vlmAnalyze(imagePaths, CVLM_PROMPT);
+  const roundTripMs = Date.now() - startedAt;
 
   let parsed: any;
   try {
@@ -61,6 +66,9 @@ export async function recognizeFrames(
     narrativeRole: parsed.narrative_role ?? 'filler',
     description: parsed.description ?? '',
     evidence,
+    timing: result.timing,
+    roundTripMs,
+    imageCount: imagePaths.length,
   };
 }
 
