@@ -78,6 +78,7 @@ import {
   type ITranscriptContext,
 } from './transcript-signal.js';
 import { transcribe, type ITranscription } from './transcriber.js';
+import { enforceProjectTimelineConsistency } from './timeline-consistency.js';
 import {
   applyTypeAwareWindowExpansion,
   buildDriveSpeedCandidate,
@@ -228,6 +229,12 @@ export async function analyzeWorkspaceProjectMedia(
   });
 
   try {
+    await enforceProjectTimelineConsistency({
+      projectRoot,
+      assets,
+      roots,
+    });
+
     if (pendingAssets.length > 0) {
       await getMlHandle();
     }

@@ -115,8 +115,8 @@ src/
 
 当前补充口径：
 
-- `IMediaRoot` 不再包含 `defaultTimezone`；素材时间统一以 `create_time(UTC)` 为主来源
-- `IAssetCoarseReport` 允许挂载 `inferredGps`，用于保存最终采用的结构化空间结果；当前来源优先级为 `embedded GPS > GPX > manual-itinerary`
+- `IMediaRoot` 不再包含 `defaultTimezone`；视频等容器素材以 `create_time(UTC)` 为主时间来源，照片优先使用 EXIF 原始时间与时区
+- `IAssetCoarseReport` 允许挂载 `inferredGps`，用于保存最终采用的结构化空间结果；当前来源优先级为 `embedded GPS > project GPX > project-derived-track`
 
 ## 校验器
 

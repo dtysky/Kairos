@@ -25,6 +25,9 @@
    - ingest 会额外刷新 `gps/derived.json`，把 embedded-derived sparse points 与 manual-itinerary-derived sparse windows 统一编译成 `project-derived-track`
    - Analyze 默认遵循 `embedded GPS > project GPX > project-derived-track`
    - DJI / QuickTime / EXIF 的 embedded GPS 解析已覆盖更宽字段变体，而不再只看最小 key 集
+   - 照片的拍摄时间已切到 EXIF 原始时间链：`DateTimeOriginal(+OffsetTimeOriginal) > CreateDate(+OffsetTimeDigitized/OffsetTime) > GPSDateTime > container > filename > filesystem`
+   - 照片若自身 EXIF 带 GPS，会直接写成 `embeddedGps(metadata)` 真值；只有没有自身 GPS 时，才继续走 project GPX / `project-derived-track` 的时间匹配
+   - `config/manual-itinerary.md` 现在有两层正式语义：正文用于弱空间线索，末尾“素材时间校正”表格用于人工 capture time override；未解决的表格行会阻塞 Analyze
 5. 正式流程与当前实现的关系已经更明确
    - 正式主链仍以 `Pharos` 为主输入
    - 当前实现仍是临时承载版本，但已经覆盖主链中的多个阶段
@@ -145,7 +148,7 @@ src/modules/ingest/
 ├── scanner.ts          # 递归扫描目录，识别媒体文件
 ├── metadata.ts         # ffprobe 元数据提取 + EXIF 读取
 ├── proxy-generator.ts  # FFmpeg 代理文件生成（720p H.264）
-├── gps-writer.ts       # 照片 EXIF GPS 写入（GPX → EXIF）
+├── gps-writer.ts       # 历史命名；当前语义是绑定素材空间线索，不回写原始照片 EXIF
 ├── scene-detector.ts   # CLIP 特征提取 + 聚类 + LLM 场景描述
 ├── pharos-reader.ts    # Pharos 分镜数据读取（接口预留）
 └── index.ts            # Ingest 模块入口，编排扫描→元数据→代理→GPS→场景
@@ -156,10 +159,13 @@ src/modules/ingest/
 扫描目录
   → ffprobe 提取元数据（并行，p-limit 控制并发）
   → EXIF 读取照片信息
+  → 照片优先解析 `DateTimeOriginal(+OffsetTimeOriginal)`，再回落 `CreateDate(+OffsetTimeDigitized/OffsetTime)`、`GPSDateTime`、容器时间、文件名和文件系统时间
   → 提取素材自身同源 GPS（DJI 视频 metadata / 照片 EXIF / sidecar SRT / root 级 FlightRecord 切片）
+  → 照片若自身 EXIF 带 GPS，直接写资产 `embeddedGps(metadata)`；否则才继续做时间匹配
   → 把 dense same-source 轨迹规范化到 `gps/same-source/tracks/*.gpx` + `gps/same-source/index.json`
   → 资产只写 lightweight `embeddedGps` 引用（`trackId / pointCount / representative / time-window`），不再内联 dense `points[]`
   → ingest 刷新项目级 `gps/derived.json`，统一收口 embedded-derived sparse points 与 `manual-itinerary` 编译结果
+  → 若弱时间源与项目时间线明显冲突，把待校正素材追加到 `config/manual-itinerary.md` 的“素材时间校正”表格，并阻塞后续 Analyze
   → Analyze 若内嵌 GPS 不可用，则先走项目级 `gps/merged.json` / `gps/tracks/*.gpx` 时间匹配，再回落 `gps/derived.json` 的保守匹配（无插值）
   → FFmpeg 生成 720p 代理文件（后台队列）
   → CLIP 提取代理文件视觉特征 → 向量聚类 → LLM 生成场景描述

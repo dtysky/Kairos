@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -38,10 +38,13 @@ describe('syncWorkspaceProjectBrief', () => {
       { path: cameraRoot, description: '主机位' },
       { path: droneRoot, description: '无人机', flightRecordPath: './FlightRecord' },
     ]);
+    const briefContent = await readFile(join(projectRoot, 'config/project-brief.md'), 'utf-8');
 
     const result = await syncWorkspaceProjectBrief(workspaceRoot, projectId);
 
     expect(result.warnings).toEqual([]);
+    expect(briefContent).not.toContain('路径：\n说明：\n\n路径：\n说明：');
+    expect(briefContent.match(/^路径：/gm)).toHaveLength(2);
     expect(result.ingestRoots).toHaveLength(2);
     expect(result.ingestRoots[0]).toMatchObject({
       enabled: true,

@@ -120,6 +120,15 @@ export {
   type ILoadedManualItinerary,
 } from './spatial-context.js';
 export {
+  getManualItineraryGeoCachePath,
+  loadManualItineraryGeoCache,
+  writeManualItineraryGeoCache,
+  findManualItineraryGeoCacheEntry,
+  normalizeManualItineraryGeoQuery,
+  type IManualItineraryGeoCache,
+  type IManualItineraryGeoCacheEntry,
+} from './manual-itinerary-geo.js';
+export {
   getProjectGpsRoot,
   getProjectGpsTracksRoot,
   getProjectSameSourceGpsRoot,

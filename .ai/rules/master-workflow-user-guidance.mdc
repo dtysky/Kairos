@@ -1,0 +1,101 @@
+---
+description: 当用户询问如何使用 Kairos 或发起全流程任务时，必须按统一工作流口径引导
+alwaysApply: true
+---
+
+# Master Workflow User Guidance
+
+当用户在 Kairos 工程里提出以下类型的问题时，适用本规则：
+
+- “这个系统怎么用”
+- “帮我从头做一个项目”
+- “继续这个项目，下一步该做什么”
+- “把整个流程串起来”
+- 未明确指明 phase，只是笼统要求开始做片子、继续做片子、导出成片
+
+## 总原则
+
+- 必须把 Kairos 解释成一个 **准备阶段 + 5 个主阶段** 的工作流，而不是一组互不相关的脚本。
+- 必须优先遵循 `kairos-workflow` skill 作为总控口径，再根据当前阶段调用对应的 phase skill。
+- 当用户没有明确说明当前已经做到哪一步时，先根据项目内已有产物判断可恢复阶段，再继续，不要默认从头重跑。
+- 对用户的说明应优先使用“下一步做什么 + 为什么 + 需要用户提供什么”的方式，而不是只罗列内部实现细节。
+
+## 对用户的标准流程口径
+
+Kairos 的标准顺序是：
+
+1. 可选的 `Style Analysis`
+2. `Project Init`
+3. `Ingest`
+4. `Analyze`
+5. `Script`
+6. `Timeline`
+7. `Export`
+
+向用户解释“怎么用”时，默认按下面的口径组织：
+
+- 第一步先确认项目是否已经初始化；如果没有，先建立 `projects/<projectId>/`
+- 第二步让用户维护 `config/project-brief.md`，把素材根目录和说明写进去
+- 第三步执行 Ingest，把素材扫描进 `store/assets.json`
+- 第四步执行 Analyze，生成 `store/slices.json`、`analysis/asset-reports/*.json`、`media/chronology.json`
+- 第五步在用户明确指定风格档案后进入 Script，生成 `script/current.json`
+- 第六步基于脚本和素材构建 `timeline/current.json`
+- 第七步在目标 NLE 和导出目录明确后执行 Export
+
+## 用户真正该编辑的入口
+
+默认应把以下文件视为用户入口，而不是要求用户直接改中间产物：
+
+- `config/project-brief.md`
+- `config/manual-itinerary.md`
+- `config/styles/{category}.md` 或用户明确指定的风格档案
+- `script/script-brief.md`
+
+默认不要把这些文件当成人类主编辑入口：
+
+- `config/ingest-roots.json`
+- `config/device-media-maps.local.json`
+- `store/assets.json`
+- `store/slices.json`
+- `timeline/current.json`
+
+## 当前阶段判断
+
+当用户没有明确说 phase 时，按以下顺序判断：
+
+- 没有 `store/project.json` / `store/manifest.json`：先做 `Project Init`
+- 有项目骨架但没有 `store/assets.json`：先做 `Ingest`
+- 有 `store/assets.json` 但没有 `store/slices.json`：先做 `Analyze`
+- 有 `store/slices.json` 但没有 `script/current.json`：先做 `Script`
+- 有 `script/current.json` 但没有 `timeline/current.json`：先做 `Timeline`
+- 有 `timeline/current.json`：进入 `Export` 或迭代修改
+
+如果用户是追加素材，不要回到全新项目口径；应按：
+
+- 增量 `Ingest`
+- 增量 `Analyze`
+- 重做 `Script`
+- 重做 `Timeline`
+- 重新 `Export`
+
+## 必须阻塞并先说明的停点
+
+- 在 `Analyze` 前，必须先说明 GPS 优先级：`embedded GPS > project GPX > project-derived-track > none`
+- 在 `Analyze` 前，必须先确认 ML server 可用；不可静默退化成无 ML 分析
+- 在 `Script` 前，如果用户没有明确指定风格档案或明确说这次不用风格档案，必须停下确认
+- 在 `Export` 前，必须先确认目标 NLE 和最终输出目录；目标不明确时不能直接写出草稿
+
+## 对用户的推荐表达方式
+
+- 如果用户问“怎么开始”，优先给出当前项目的下一步，而不是整本手册
+- 如果用户问“整个流程是什么”，先给 5-7 步的高层顺序，再补当前项目卡在哪一步
+- 如果用户问“继续做”，优先指出当前已完成产物和最近可继续的 phase
+- 如果用户只要求某一阶段，不要强行展开全流程说明；只在必要时补充它的前置条件和后续交接
+
+## 禁止行为
+
+- 不要把 `kairos-workflow` skill 当成单个 phase 的替代实现
+- 不要跳过 `Project Init` 就直接假设项目配置已正确
+- 不要让用户直接维护 `assets.json` / `slices.json` 这类派生产物
+- 不要在风格未确认的情况下直接进入 Script
+- 不要在导出目标未确认时直接进入 Export

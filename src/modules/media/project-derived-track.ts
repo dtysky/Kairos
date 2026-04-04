@@ -1,6 +1,8 @@
 import type { EDerivedTrackOriginType, IKtepAsset } from '../../protocol/schema.js';
 import {
+  findManualItineraryGeoCacheEntry,
   loadAssets,
+  loadManualItineraryGeoCache,
   loadManualItinerary,
   writeProjectDerivedTrack,
   type IProjectDerivedTrack,
@@ -21,14 +23,15 @@ export interface IRefreshProjectDerivedTrackCacheInput {
 export async function refreshProjectDerivedTrackCache(
   input: IRefreshProjectDerivedTrackCacheInput,
 ): Promise<IProjectDerivedTrack> {
-  const [assets, itinerary] = await Promise.all([
+  const [assets, itinerary, geoCache] = await Promise.all([
     loadAssets(input.projectRoot),
     loadManualItinerary(input.projectRoot),
+    loadManualItineraryGeoCache(input.projectRoot),
   ]);
 
   const entries = [
     ...buildEmbeddedDerivedEntries(assets),
-    ...await buildManualDerivedEntries(itinerary.segments, input),
+    ...await buildManualDerivedEntries(itinerary.segments, input, geoCache),
   ].sort(compareDerivedTrackEntries);
 
   const derivedTrack: IProjectDerivedTrack = {
@@ -88,34 +91,36 @@ async function buildManualDerivedEntries(
     notes?: string;
   }>,
   input: IRefreshProjectDerivedTrackCacheInput,
+  geoCache: Awaited<ReturnType<typeof loadManualItineraryGeoCache>>,
 ): Promise<IProjectDerivedTrackEntry[]> {
-  if (!input.resolveTimezoneFromLocation || !input.geocodeLocation) return [];
-
   const entries: IProjectDerivedTrackEntry[] = [];
   for (const segment of segments) {
     const locationText = buildManualLocationText(segment);
     if (!locationText) continue;
 
-    const timezone = (await input.resolveTimezoneFromLocation(locationText))?.trim();
-    if (!timezone) continue;
+    const primaryQuery = buildManualLocationQuery(segment) ?? locationText;
+    const resolvedGeo = await resolveManualSegmentGeo(primaryQuery, geoCache, input);
+    if (!resolvedGeo) continue;
 
-    const coordinates = await input.geocodeLocation(locationText);
-    if (!coordinates) continue;
-
-    const bounds = buildManualUtcBounds(segment.date, segment.startLocalTime, segment.endLocalTime, timezone);
+    const bounds = buildManualUtcBounds(
+      segment.date,
+      segment.startLocalTime,
+      segment.endLocalTime,
+      resolvedGeo.timezone,
+    );
     if (!bounds) continue;
 
     entries.push({
       id: `manual-itinerary-derived:${segment.id}`,
       originType: 'manual-itinerary-derived',
       matchKind: 'window',
-      lat: coordinates.lat,
-      lng: coordinates.lng,
+      lat: resolvedGeo.lat,
+      lng: resolvedGeo.lng,
       confidence: CMANUAL_DERIVED_CONFIDENCE,
       time: bounds.time,
       startTime: bounds.startTime,
       endTime: bounds.endTime,
-      timezone,
+      timezone: resolvedGeo.timezone,
       matchedItinerarySegmentId: segment.id,
       locationText,
       transport: segment.transport,
@@ -149,6 +154,50 @@ function buildManualLocationText(
     .filter(Boolean) as string[];
 
   return parts.length > 0 ? parts.join(' / ') : null;
+}
+
+function buildManualLocationQuery(
+  segment: {
+    location?: string;
+    from?: string;
+    to?: string;
+    via?: string[];
+  },
+): string | null {
+  return segment.location?.trim()
+    || segment.to?.trim()
+    || segment.from?.trim()
+    || segment.via?.find(item => item.trim())?.trim()
+    || null;
+}
+
+async function resolveManualSegmentGeo(
+  query: string,
+  geoCache: Awaited<ReturnType<typeof loadManualItineraryGeoCache>>,
+  input: IRefreshProjectDerivedTrackCacheInput,
+): Promise<{ lat: number; lng: number; timezone: string } | null> {
+  const cached = findManualItineraryGeoCacheEntry(geoCache, query);
+  if (cached) {
+    return {
+      lat: cached.lat,
+      lng: cached.lng,
+      timezone: cached.timezone.trim(),
+    };
+  }
+
+  if (!input.resolveTimezoneFromLocation || !input.geocodeLocation) return null;
+
+  const timezone = (await input.resolveTimezoneFromLocation(query))?.trim();
+  if (!timezone) return null;
+
+  const coordinates = await input.geocodeLocation(query);
+  if (!coordinates) return null;
+
+  return {
+    lat: coordinates.lat,
+    lng: coordinates.lng,
+    timezone,
+  };
 }
 
 function buildManualUtcBounds(

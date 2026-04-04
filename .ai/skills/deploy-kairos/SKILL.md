@@ -196,9 +196,15 @@ models/
 **Windows (PowerShell)：**
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts/ml-server.ps1 restart
+powershell -ExecutionPolicy Bypass -File scripts/ml-server.ps1 start
 powershell -ExecutionPolicy Bypass -File scripts/ml-server.ps1 status
 powershell -ExecutionPolicy Bypass -File scripts/ml-server.ps1 logs
+```
+
+只有在你明确需要重载 Python 环境或模型时，再额外执行：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/ml-server.ps1 restart
 ```
 
 **手动启动（任意平台）：**

@@ -18,6 +18,7 @@
 - `DaVinci color` 是与主链解耦的独立增强链路，而不是主链中的固定顺序步骤
 - 只要主链消费的是派生素材版本，该版本就必须保留关键元信息，至少包括：
   - 媒体创建时间
+  - 照片 EXIF 原始拍摄时间与时区
   - 文件 `create_time`
   - GPS / 空间相关元信息
   - 后续与 `Pharos`、chronology、空间推断对齐所需的其他核心字段
@@ -43,10 +44,13 @@
   - 风格档案不再只是一份 `style/profile.json`
   - 当前使用 `config/styles/{category}.md + config/styles/catalog.json`
 - `config/manual-itinerary.md` 与 `analysis/asset-reports/`
-  - `manual-itinerary` 当前只负责提供项目级弱空间线索，不再承担 timezone 输入语义，也不再作为 analyze 阶段的独立顶层来源
-  - ingest 会在 refresh `project-derived-track` 时尝试把它编译进 `gps/derived.json`
-  - 最终空间来源优先级为 `embedded GPS > project GPX > project-derived-track`
-  - 结构化结果落在 `IAssetCoarseReport.inferredGps`，而不是写回素材主数据
+  - `manual-itinerary` 现在有两层正式语义：
+    - 正文行程：项目级弱空间线索，不承担 timezone 输入语义，也不再作为 analyze 阶段的独立顶层来源
+    - 末尾“素材时间校正”表格：人工 capture time override，用户填写 `正确日期 / 正确时间 / 时区` 后，下一次 ingest 会把它作为 `manual` 真值应用到资产时间
+  - ingest 会在 refresh `project-derived-track` 时把正文编译进 `gps/derived.json`
+  - 最终空间来源优先级为 `embedded GPS > project GPX > project-derived-track > none`
+  - 如果 ingest 发现弱时间源和项目时间线明显冲突，会把阻塞项写进这张表；未填写或填写后未 rerun ingest 都会阻塞 Analyze
+  - 结构化空间结果落在 `IAssetCoarseReport.inferredGps`，而不是写回素材主数据
 - `config/project-brief.md`
   - 每个素材源 block 除了 `路径` / `说明`，还可以额外声明 `飞行记录路径`
   - 该字段用于把 root 伴随的 DJI FlightRecord 日志纳入 ingest 标准流程，而不是依赖硬编码文件名
@@ -68,6 +72,7 @@
   - 项目级 `project-derived-track` 缓存
   - 当前 v1 统一收口 embedded-derived sparse points 与 manual-itinerary-derived sparse windows
   - Analyze 默认把它作为第三优先级空间层消费，不做跨 gap 插值
+  - 照片若没有自身 GPS，也会使用修正后的 `capturedAt` 参与 project GPX / `project-derived-track` 的时间匹配
 - `analysis/reference-transcripts/` 与 `analysis/style-references/`
   - 风格分析和参考视频分析会先落地单视频报告，再综合出一个正式风格分类
 - `.tmp/`

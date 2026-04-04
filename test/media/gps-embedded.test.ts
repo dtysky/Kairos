@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveEmbeddedGpsContext } from '../../src/modules/media/gps-embedded.js';
+import { resolveEmbeddedGpsBinding, resolveEmbeddedGpsContext } from '../../src/modules/media/gps-embedded.js';
 
 describe('resolveEmbeddedGpsContext', () => {
   it('parses DJI quicktime ISO6709 location from rawTags', () => {
@@ -124,6 +124,26 @@ describe('resolveEmbeddedGpsContext', () => {
       confidence: 0.96,
       lat: -45.03022,
       lng: 168.6627,
+    }));
+  });
+
+  it('builds a metadata embedded GPS binding for ingest-time photo assets', () => {
+    const result = resolveEmbeddedGpsBinding({
+      capturedAt: '2026-02-19T13:30:43.000Z',
+      metadata: {
+        rawTags: {
+          gpslatitude: '-46.520156',
+          gpslongitude: '168.281810',
+        },
+      },
+    } as any);
+
+    expect(result).toEqual(expect.objectContaining({
+      originType: 'metadata',
+      representativeTime: '2026-02-19T13:30:43.000Z',
+      representativeLat: -46.520156,
+      representativeLng: 168.28181,
+      pointCount: 1,
     }));
   });
 });

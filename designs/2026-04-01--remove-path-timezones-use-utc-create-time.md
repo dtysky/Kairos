@@ -1,3 +1,13 @@
+## 2026-04-05 实施注记
+
+本文“移除 `path-timezones`、不再要求 `manual-itinerary` 提供 timezone 输入”的方向仍然成立，但当前实现已经在原方案上进一步收口为：
+
+- 视频等容器素材继续以 `create_time(UTC)` 为主时间来源；照片则改为优先读取 `EXIF DateTimeOriginal(+OffsetTimeOriginal) > EXIF CreateDate(+OffsetTimeDigitized/OffsetTime) > EXIF GPSDateTime > container > filename > filesystem`
+- 正式空间优先级已收口为 `embedded GPS > project GPX > project-derived-track > none`
+- `manual-itinerary` 正文会在 ingest 时编译进 `gps/derived.json`，不再作为 Analyze 的独立顶层 fallback
+- `config/manual-itinerary.md` 末尾新增“素材时间校正”表格：ingest 发现弱时间源与项目时间线明显冲突时，必须把素材写入该表，并阻塞 Analyze；用户填写 `正确日期 / 正确时间 / 时区` 后 rerun ingest，才会生效
+- 照片若自身 EXIF 带 GPS，会直接写成 `embeddedGps(metadata)` 真值；只有没有自身 GPS 时，才继续用修正后的拍摄时间匹配 project GPX / `project-derived-track`
+
 ## 背景
 
 当前实现里，素材拍摄时间除了优先读取 `ffprobe creation_time`，还会：
@@ -10,39 +20,40 @@
 新的约束是：
 
 - 不再需要 `path-timezones`
-- 文件的 `create_time` 已经是 UTC，可直接作为拍摄时间主来源
+- 视频等容器素材的 `create_time` 已经是 UTC，可作为主时间来源；照片则优先使用 EXIF 原始时间和时区
 - 如果素材自身带有 GPS（例如 DJI 无人机视频），它是空间真值主来源
-- 若无内嵌 GPS，再回落到外部 GPX
-- `manual-itinerary` 不负责修正素材时间，也不应该要求用户填写 timezone
-- `manual-itinerary` 只在没有内嵌 GPS、且 GPX 也不能匹配到该素材时，推断近似 GPS / 空间上下文，为后续素材分析准备结构化空间线索
+- 若无内嵌 GPS，再回落到项目级 GPX，再回落到 `project-derived-track`
+- `manual-itinerary` 正文不负责直接修正素材时间，也不应该要求用户填写 timezone；真正的人工时间修正入口是同文件末尾的“素材时间校正”表格
+- `manual-itinerary` 正文只负责在 ingest 时编译近似 GPS / 空间上下文，为后续素材分析准备结构化空间线索
 
 ## 目标
 
-让素材时间链路切换为“UTC create_time 优先”，移除 `path-timezones` 参与拍摄时间解析的逻辑，并把 `manual-itinerary` 明确收敛为“推断 GPS / 空间上下文”的分析输入。
+让素材时间链路移除 `path-timezones` 依赖，并收口为“视频等容器素材 `create_time(UTC)` 优先、照片 EXIF 原始时间优先”的实现；同时把 `manual-itinerary` 明确拆成“正文弱空间线索 + 末尾人工时间校正表”两层输入。
 
 ## 方案对比
 
-### 推荐方案：移除 `path-timezones`，并采用 `embedded GPS > GPX > manual-itinerary` 的空间优先级
+### 推荐方案：移除 `path-timezones`，并采用 `embedded GPS > project GPX > project-derived-track` 的空间优先级
 
 做法：
 
 - ingest 不再读取 `config/path-timezones.md`
-- `resolveCaptureTime()` 不再把 timezone 当作输入；优先直接解析 `probeResult.creationTime`
+- `resolveCaptureTime()` 不再把 timezone 当作外部输入；视频等容器素材优先解析 `probeResult.creationTime`，照片优先读取 EXIF 原始时间和时区
 - 若 `creation_time` 缺失，仍保留文件名 / 文件系统时间 fallback，但不再依赖路径级时区覆盖
 - asset metadata 不再写入 `effectiveTimezone*` / `captureOriginalTimezone`
 - analyze 不再读取 `path-timezones`
 - analyze 的空间来源优先级改为：
   - 素材自身内嵌 GPS（如 DJI 视频 metadata / 照片 EXIF）
-  - 已匹配的 GPX 坐标
-  - `manual-itinerary` 推断坐标
+  - 已匹配的项目级 GPX 坐标
+  - `project-derived-track`（包含 ingest 预编译的 `manual-itinerary` 弱空间结果）
   - 无空间结果
-- `manual-itinerary` 不再接受 `timezone/defaultTimezone` 作为用户输入语义
-- `manual-itinerary` 只在内嵌 GPS 缺失且 GPX 也无法匹配时，根据：
+- `manual-itinerary` 正文不再接受 `timezone/defaultTimezone` 作为用户输入语义
+- `manual-itinerary` 正文只在内嵌 GPS 缺失且项目级 GPX 也无法匹配时，根据：
   - 日期 / 时间窗
   - 地点文本
   - 路线描述（`from / to / via`）
-  推断一条近似 GPS / 空间上下文
-- 推断得到的 GPS 作为分析层产物存储，不写回素材本体
+  推断一条近似 GPS / 空间上下文，并在 ingest 时编译进 `gps/derived.json`
+- `manual-itinerary` 末尾“素材时间校正”表格用于人工修正 capture time；修正结果会在 rerun ingest 后进入资产真值层
+- 推断得到的空间结果作为分析层产物存储，不写回素材本体
 
 优点：
 

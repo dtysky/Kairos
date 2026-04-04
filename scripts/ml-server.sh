@@ -75,6 +75,24 @@ find_all_server_pids() {
   pgrep -f "$EXPECTED_MARKER" 2>/dev/null || true
 }
 
+get_any_server_pid() {
+  local tracked_pid
+  tracked_pid="$(get_tracked_pid 2>/dev/null || true)"
+  if [[ -n "$tracked_pid" ]]; then
+    echo "$tracked_pid"
+    return 0
+  fi
+
+  local all_pids
+  all_pids="$(find_all_server_pids)"
+  if [[ -n "$all_pids" ]]; then
+    echo "$all_pids" | head -n 1
+    return 0
+  fi
+
+  return 1
+}
+
 health_check() {
   curl -s --max-time 3 "http://${HOST}:${PORT}/health" 2>/dev/null || true
 }
@@ -147,6 +165,20 @@ do_start() {
     exit 1
   fi
 
+  local health existing_pid
+  health="$(health_check)"
+  existing_pid="$(get_any_server_pid 2>/dev/null || true)"
+  if [[ -n "$health" && -n "$existing_pid" ]]; then
+    local device
+    device="$(echo "$health" | python3 -c 'import sys,json; print(json.load(sys.stdin).get("device","unknown"))' 2>/dev/null || echo 'unknown')"
+    echo "kairos-ml already running (PID $existing_pid) on ${HOST}:${PORT} with device=$device"
+    return
+  fi
+  if [[ -n "$health" && -z "$existing_pid" ]]; then
+    echo "ERROR: kairos-ml is responding on ${HOST}:${PORT}, but no matching process was found. Refusing to restart automatically." >&2
+    exit 1
+  fi
+
   do_stop > /dev/null 2>&1 || true
   rm -f "$STDOUT_LOG" "$STDERR_LOG"
 
@@ -187,14 +219,19 @@ do_start() {
 
 do_status() {
   local pid
-  pid="$(get_tracked_pid 2>/dev/null || true)"
+  local health
+  health="$(health_check)"
+  pid="$(get_any_server_pid 2>/dev/null || true)"
   if [[ -z "$pid" ]]; then
+    if [[ -n "$health" ]]; then
+      echo "kairos-ml is responding on ${HOST}:${PORT}, but no managed process was found."
+      echo "Health: $health"
+      return
+    fi
     echo "kairos-ml is not running."
     return
   fi
 
-  local health
-  health="$(health_check)"
   echo "kairos-ml is running (PID $pid) on ${HOST}:${PORT}"
   if [[ -n "$health" ]]; then
     echo "Health: $health"

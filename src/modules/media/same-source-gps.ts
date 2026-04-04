@@ -23,6 +23,7 @@ const CSRT_BINDING_CONFIDENCE = 0.96;
 const CFLIGHT_RECORD_BINDING_CONFIDENCE = 0.92;
 const CFLIGHT_RECORD_VIDEO_MARGIN_MS = 5_000;
 const CFLIGHT_RECORD_PHOTO_TOLERANCE_MS = 60_000;
+const CFLIGHT_RECORD_MAX_MEDIAN_DEVIATION_MS = 24 * 60 * 60 * 1000;
 const CFLIGHT_RECORD_ENV_KEYS = ['KAIROS_DJI_OPEN_API_KEY', 'DJI_OPEN_API_KEY'] as const;
 const CFLIGHT_RECORD_HEADER_SIZE = 100;
 const CFLIGHT_RECORD_VERSION_OFFSET = 10;
@@ -375,11 +376,13 @@ async function loadFlightRecordTrack(
       .filter((point): point is IFlightRecordPoint => point != null)
       .sort((left, right) => left.time.localeCompare(right.time));
     if (points.length === 0) return null;
+    const sanitizedPoints = sanitizeFlightRecordPoints(points);
+    if (sanitizedPoints.length === 0) return null;
     return {
       id: trackId,
       originType: 'flight-record',
       sourcePath: filePath,
-      points: dedupeSameSourceTrackPoints(points),
+      points: dedupeSameSourceTrackPoints(sanitizedPoints),
     };
   } catch (error) {
     warnings.push(`FlightRecord 解析失败：${filePath} (${String(error)})`);
@@ -446,6 +449,36 @@ export function resolveFlightRecordApiKey(explicitApiKey?: string): string | und
     if (value) return value;
   }
   return undefined;
+}
+
+export function sanitizeFlightRecordPoints(points: IFlightRecordPoint[]): IFlightRecordPoint[] {
+  if (points.length < 3) {
+    return [...points].sort((left, right) => left.time.localeCompare(right.time));
+  }
+
+  const withParsedTime = points
+    .map(point => ({
+      point,
+      timeMs: Date.parse(point.time),
+    }))
+    .filter((entry): entry is { point: IFlightRecordPoint; timeMs: number } => Number.isFinite(entry.timeMs))
+    .sort((left, right) => left.timeMs - right.timeMs);
+
+  if (withParsedTime.length < 3) {
+    return withParsedTime.map(entry => entry.point);
+  }
+
+  const medianTimeMs = withParsedTime[Math.floor(withParsedTime.length / 2)]?.timeMs;
+  if (!Number.isFinite(medianTimeMs)) {
+    return withParsedTime.map(entry => entry.point);
+  }
+
+  const filtered = withParsedTime
+    .filter(entry => Math.abs(entry.timeMs - medianTimeMs) <= CFLIGHT_RECORD_MAX_MEDIAN_DEVIATION_MS)
+    .map(entry => entry.point);
+
+  return (filtered.length >= 3 ? filtered : withParsedTime.map(entry => entry.point))
+    .sort((left, right) => left.time.localeCompare(right.time));
 }
 
 function normalizeFlightRecordTime(value?: string): string | null {

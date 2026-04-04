@@ -1,4 +1,4 @@
-import type { IInferredGps, IKtepAsset } from '../../protocol/schema.js';
+import type { IEmbeddedGpsBinding, IInferredGps, IKtepAsset } from '../../protocol/schema.js';
 
 export interface IEmbeddedGpsContext {
   gpsSummary: string;
@@ -22,7 +22,86 @@ export function resolveEmbeddedGpsContext(
     );
   }
 
-  const metadata = readMetadataRecord(asset.metadata);
+  const candidate = resolveEmbeddedGpsCandidate(asset.metadata);
+  if (!candidate) return null;
+  return buildEmbeddedContext(
+    candidate.lat,
+    candidate.lng,
+    candidate.originalValue,
+    candidate.sourceKey,
+    candidate.originType,
+    candidate.confidence,
+  );
+}
+
+export function resolveEmbeddedGpsBinding(
+  asset: Pick<IKtepAsset, 'capturedAt' | 'metadata' | 'embeddedGps'>,
+): IEmbeddedGpsBinding | null {
+  if (asset.embeddedGps) {
+    return asset.embeddedGps;
+  }
+  if (!asset.capturedAt) return null;
+
+  const candidate = resolveEmbeddedGpsCandidate(asset.metadata);
+  if (!candidate) return null;
+
+  return {
+    originType: candidate.originType,
+    confidence: candidate.confidence,
+    representativeTime: asset.capturedAt,
+    representativeLat: candidate.lat,
+    representativeLng: candidate.lng,
+    pointCount: 1,
+    startTime: asset.capturedAt,
+    endTime: asset.capturedAt,
+  };
+}
+
+function buildEmbeddedContext(
+  lat: number,
+  lng: number,
+  originalValue: string,
+  sourceKey: string,
+  originType: NonNullable<IInferredGps['embeddedOriginType']>,
+  confidence: number,
+): IEmbeddedGpsContext {
+  const gpsSummary = `embedded ${lat.toFixed(6)},${lng.toFixed(6)}`;
+  return {
+    gpsSummary,
+    inferredGps: {
+      source: 'embedded',
+      confidence,
+      lat,
+      lng,
+      embeddedOriginType: originType,
+      summary: gpsSummary,
+    },
+    placeHints: [],
+    decisionReasons: [
+      'embedded-gps',
+      `embedded-gps:${sourceKey}`,
+      `embedded-gps-original:${originalValue}`,
+    ],
+  };
+}
+
+function readMetadataRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+function resolveEmbeddedGpsCandidate(
+  metadataValue: unknown,
+): {
+  lat: number;
+  lng: number;
+  originalValue: string;
+  sourceKey: string;
+  originType: NonNullable<IInferredGps['embeddedOriginType']>;
+  confidence: number;
+} | null {
+  const metadata = readMetadataRecord(metadataValue);
   if (!metadata) return null;
 
   const rawTags = readMetadataRecord(metadata['rawTags']);
@@ -40,7 +119,14 @@ export function resolveEmbeddedGpsContext(
   );
   const parsedIso = parseIso6709(iso6709);
   if (parsedIso) {
-    return buildEmbeddedContext(parsedIso.lat, parsedIso.lng, iso6709!, 'iso6709', 'metadata', 0.98);
+    return {
+      lat: parsedIso.lat,
+      lng: parsedIso.lng,
+      originalValue: iso6709!,
+      sourceKey: 'iso6709',
+      originType: 'metadata',
+      confidence: 0.98,
+    };
   }
 
   const lat = parseCoordinateValue(
@@ -82,41 +168,14 @@ export function resolveEmbeddedGpsContext(
 
   if (lat == null || lng == null) return null;
   if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
-  return buildEmbeddedContext(lat, lng, `${lat},${lng}`, 'lat-lng', 'metadata', 0.98);
-}
-
-function buildEmbeddedContext(
-  lat: number,
-  lng: number,
-  originalValue: string,
-  sourceKey: string,
-  originType: NonNullable<IInferredGps['embeddedOriginType']>,
-  confidence: number,
-): IEmbeddedGpsContext {
-  const gpsSummary = `embedded ${lat.toFixed(6)},${lng.toFixed(6)}`;
   return {
-    gpsSummary,
-    inferredGps: {
-      source: 'embedded',
-      confidence,
-      lat,
-      lng,
-      embeddedOriginType: originType,
-      summary: gpsSummary,
-    },
-    placeHints: [],
-    decisionReasons: [
-      'embedded-gps',
-      `embedded-gps:${sourceKey}`,
-      `embedded-gps-original:${originalValue}`,
-    ],
+    lat,
+    lng,
+    originalValue: `${lat},${lng}`,
+    sourceKey: 'lat-lng',
+    originType: 'metadata',
+    confidence: 0.98,
   };
-}
-
-function readMetadataRecord(value: unknown): Record<string, unknown> | null {
-  return value && typeof value === 'object' && !Array.isArray(value)
-    ? value as Record<string, unknown>
-    : null;
 }
 
 function firstString(...values: unknown[]): string | undefined {

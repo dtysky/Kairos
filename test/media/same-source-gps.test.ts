@@ -12,6 +12,7 @@ import {
   prepareRootSameSourceGpsContext,
   resolveFlightRecordApiKey,
   resolveSidecarSrtBinding,
+  sanitizeFlightRecordPoints,
 } from '../../src/modules/media/same-source-gps.js';
 
 const tempRoots: string[] = [];
@@ -147,6 +148,70 @@ describe('same-source GPS binding', () => {
       sourcePath: 'FlightRecord/DJIFlightRecord_001.txt',
     }));
     expect(binding?.points).toBeUndefined();
+  });
+
+  it('drops sparse FlightRecord time outliers around the dominant capture window', () => {
+    const sanitized = sanitizeFlightRecordPoints([
+      {
+        time: '1970-01-01T00:00:00.000Z',
+        lat: -45.55264,
+        lng: 168.51069,
+        trackId: 'flight-record-a',
+        sourcePath: 'FlightRecord/DJIFlightRecord_001.txt',
+      },
+      {
+        time: '2026-02-16T21:17:08.130Z',
+        lat: -45.55264,
+        lng: 168.51069,
+        trackId: 'flight-record-a',
+        sourcePath: 'FlightRecord/DJIFlightRecord_001.txt',
+      },
+      {
+        time: '2026-02-16T21:17:08.234Z',
+        lat: -45.55264,
+        lng: 168.51069,
+        trackId: 'flight-record-a',
+        sourcePath: 'FlightRecord/DJIFlightRecord_001.txt',
+      },
+      {
+        time: '2026-02-16T21:17:08.335Z',
+        lat: -45.55264,
+        lng: 168.51069,
+        trackId: 'flight-record-a',
+        sourcePath: 'FlightRecord/DJIFlightRecord_001.txt',
+      },
+      {
+        time: '2031-12-28T10:18:35.225Z',
+        lat: -45.55264,
+        lng: 168.5107,
+        trackId: 'flight-record-a',
+        sourcePath: 'FlightRecord/DJIFlightRecord_001.txt',
+      },
+    ]);
+
+    expect(sanitized).toEqual([
+      {
+        time: '2026-02-16T21:17:08.130Z',
+        lat: -45.55264,
+        lng: 168.51069,
+        trackId: 'flight-record-a',
+        sourcePath: 'FlightRecord/DJIFlightRecord_001.txt',
+      },
+      {
+        time: '2026-02-16T21:17:08.234Z',
+        lat: -45.55264,
+        lng: 168.51069,
+        trackId: 'flight-record-a',
+        sourcePath: 'FlightRecord/DJIFlightRecord_001.txt',
+      },
+      {
+        time: '2026-02-16T21:17:08.335Z',
+        lat: -45.55264,
+        lng: 168.51069,
+        trackId: 'flight-record-a',
+        sourcePath: 'FlightRecord/DJIFlightRecord_001.txt',
+      },
+    ]);
   });
 
   it('recognizes DJI flight record by header instead of filename', () => {

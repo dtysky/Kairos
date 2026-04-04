@@ -1,0 +1,39 @@
+{
+  "projects": {
+    "new-zealand-documentary": {
+      "projectId": "new-zealand-documentary",
+      "roots": [
+        {
+          "rootId": "root-vlog-proj-new-zealand-camera-export",
+          "localPath": "F:\\vlog-proj\\new-zealand\\camera\\export"
+        },
+        {
+          "rootId": "root-vlog-proj-new-zealand-drone-export",
+          "localPath": "F:\\vlog-proj\\new-zealand\\drone\\export",
+          "flightRecordPath": "F:\\vlog-proj\\new-zealand\\drone-gps"
+        },
+        {
+          "rootId": "root-vlog-proj-new-zealand-pocket3",
+          "localPath": "F:\\vlog-proj\\new-zealand\\pocket3"
+        },
+        {
+          "rootId": "root-vlog-proj-new-zealand-drone-car",
+          "localPath": "F:\\vlog-proj\\new-zealand\\drone-car",
+          "flightRecordPath": "F:\\vlog-proj\\new-zealand\\drone-gps"
+        },
+        {
+          "rootId": "root-vlog-proj-new-zealand-ts",
+          "localPath": "F:\\vlog-proj\\new-zealand\\ts"
+        },
+        {
+          "rootId": "root-vlog-proj-new-zealand-photos-north",
+          "localPath": "F:\\vlog-proj\\new-zealand\\photos\\north"
+        },
+        {
+          "rootId": "root-vlog-proj-new-zealand-photos-south",
+          "localPath": "F:\\vlog-proj\\new-zealand\\photos\\south"
+        }
+      ]
+    }
+  }
+}

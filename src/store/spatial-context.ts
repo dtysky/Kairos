@@ -23,6 +23,7 @@ export interface ILoadedManualItinerary {
 
 const CKEY_SPLITTER = /^([^:：]+)\s*[:：]\s*(.+)$/u;
 const CNATURAL_TIME_PERIODS = /(凌晨|清晨|早上|上午|中午|下午|傍晚|晚上|夜里|午夜)/u;
+const CMANUAL_CAPTURE_TIME_SECTION = /(?:^|\n)##\s*素材时间校正\b[\s\S]*$/u;
 
 interface IManualTextBlock {
   map: Map<string, string>;
@@ -122,7 +123,8 @@ async function loadOptionalMarkdown(path: string): Promise<string | undefined> {
 }
 
 function splitManualBlocks(content: string): IManualTextBlock[] {
-  const lines = content
+  const sanitized = content.replace(CMANUAL_CAPTURE_TIME_SECTION, '\n');
+  const lines = sanitized
     .split(/\r?\n/u)
     .map(line => line.trim())
     .filter(line => !line.startsWith('#') && !line.startsWith('```'));
@@ -157,6 +159,15 @@ function splitManualBlocks(content: string): IManualTextBlock[] {
       current.set(key, rawValue);
       lastKey = rawKey;
       continue;
+    }
+
+    if (
+      !lastKey
+      && current.size === 0
+      && prose.length > 0
+      && looksLikeNaturalSegmentStart(normalizedLine)
+    ) {
+      pushCurrent();
     }
 
     if (lastKey) {
@@ -266,10 +277,17 @@ function extractNaturalDate(raw: string): string | undefined {
 }
 
 function extractNaturalTimeInput(raw: string): string | undefined {
-  const match = raw.match(
-    /(?:凌晨|清晨|早上|上午|中午|下午|傍晚|晚上|夜里|午夜)?\s*[零一二两三四五六七八九十\d]{1,3}\s*点(?:\s*(?:半|[零一二两三四五六七八九十\d]{1,3}\s*分?))?\s*(?:左右)?/u,
-  );
-  return parseNaturalClockPhrase(match?.[0]);
+  const matches = [...raw.matchAll(
+    /(?:凌晨|清晨|早上|上午|中午|下午|傍晚|晚上|夜里|午夜)?\s*[零一二两三四五六七八九十\d]{1,3}\s*点(?:\s*(?:半|[零一二两三四五六七八九十\d]{1,3}\s*分?))?\s*(?:左右)?/gu,
+  )]
+    .map(match => parseNaturalClockPhrase(match[0]))
+    .filter((value): value is string => Boolean(value));
+
+  if (matches.length >= 2) {
+    return `${matches[0]} - ${matches[1]}`;
+  }
+
+  return matches[0];
 }
 
 function parseNaturalClockPhrase(raw?: string): string | undefined {
@@ -353,14 +371,16 @@ function extractNaturalTransport(raw: string): IManualItinerarySegment['transpor
   if (/(自驾|开车|驾车)/u.test(raw)) return 'drive';
   if (/(步行|徒步|走路)/u.test(raw)) return 'walk';
   if (/(火车|高铁)/u.test(raw)) return 'train';
-  if (/(飞机|航班|飞往)/u.test(raw)) return 'flight';
+  if (/(飞机|航班|飞往|飞完)/u.test(raw)) return 'flight';
   if (/(轮渡|渡轮|坐船|乘船|船)/u.test(raw)) return 'boat';
   if (/(混合|转场)/u.test(raw)) return 'mixed';
   return undefined;
 }
 
 function extractNaturalRoute(raw: string): Pick<IParsedNaturalManualSegment, 'location' | 'from' | 'to'> {
-  const fromTo = raw.match(/从\s*([^，。,；;]+?)\s*(?:到|至)\s*([^，。,；;]+?)(?:[，。,；;]|$)/u);
+  const fromTo = raw.match(
+    /从\s*([^，。,；;]+?)\s*(?:到|至|前往|去|飞往|飞完|抵达|到达)\s*([^，。,；;]+?)(?:[，。,；;]|$)/u,
+  );
   if (fromTo?.[1] && fromTo[2]) {
     return {
       from: cleanNaturalPlace(fromTo[1]),
@@ -368,22 +388,53 @@ function extractNaturalRoute(raw: string): Pick<IParsedNaturalManualSegment, 'lo
     };
   }
 
+  const plainRoute = raw.match(
+    /(?:^|[，。,；;])\s*([^，。,；;]+?)\s*飞(?:往|完)\s*([^，。,；;]+?)(?:[，。,；;]|$)/u,
+  );
+  if (plainRoute?.[1] && plainRoute[2]) {
+    return {
+      from: cleanNaturalPlace(plainRoute[1]),
+      to: cleanNaturalPlace(plainRoute[2]),
+    };
+  }
+
   const from = cleanNaturalPlace(
     raw.match(/从\s*([^，。,；;]+?)\s*(?:出发|启程|返程|返回|前往|去|[，。,；;]|$)/u)?.[1],
   );
-  const to = cleanNaturalPlace(
-    raw.match(/(?:到|至|抵达|到达)\s*([^，。,；;]+?)(?:[，。,；;]|$)/u)?.[1],
+  const arrivalTo = cleanNaturalPlace(
+    raw.match(/(?:抵达|到达|前往|飞往|飞完)\s*([^，。,；;]+?)(?:[，。,；;]|$)/u)?.[1],
   );
+  const genericTo = cleanNaturalPlace(
+    raw.match(/(?:到|至)\s*([^，。,；;]+?)(?:[，。,；;]|$)/u)?.[1],
+  );
+  const to = arrivalTo ?? (looksLikeNaturalTimePhrase(genericTo) ? undefined : genericTo);
   const location = cleanNaturalPlace(
-    raw.match(/(?:在|于)\s*([^，。,；;]+?)(?:拍摄|停留|休息|附近|一带|[，。,；;]|$)/u)?.[1],
+    raw.match(/(?:在|于)\s*([^，。,；;]+?)(?:拍摄|停留|休息|附近|一带|候机|还车|[，。,；;]|$)/u)?.[1]
+      ?? raw.match(/(?:^|[，。,；;])\s*([^，。,；;]+?)(?:候机|还车|拍摄|记录|停留|休息)(?:[，。,；;]|$)/u)?.[1],
   );
 
   return { location, from, to };
 }
 
+function looksLikeNaturalSegmentStart(value: string): boolean {
+  return /^(\d{4}\s*[./年-]\s*\d{1,2}\s*[./月-]\s*\d{1,2}\s*日?)/u.test(value);
+}
+
+function looksLikeNaturalTimePhrase(value?: string): boolean {
+  if (!value) return false;
+  return CNATURAL_TIME_PERIODS.test(value) || /点/u.test(value);
+}
+
 function cleanNaturalPlace(value?: string): string | undefined {
   const normalized = value?.trim();
-  return normalized ? normalized : undefined;
+  if (!normalized) return undefined;
+
+  const cleaned = normalized
+    .replace(/\s*[（(][^）)]*[）)]\s*$/u, '')
+    .replace(/(?:进行)?(?:野生动物|风光|街景|纪实|沿途)?(?:拍摄与记录|拍摄|记录|候机|还车)\s*$/u, '')
+    .trim();
+
+  return cleaned || undefined;
 }
 
 function normalizeManualTimeInput(raw?: string): string | undefined {

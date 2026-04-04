@@ -217,9 +217,11 @@ flowchart TD
 
 ### 时间
 
-- 素材拍摄时间以 `create_time(UTC)` 为主来源
+- 视频等容器素材的拍摄时间以 `create_time(UTC)` 为主来源
+- 照片拍摄时间优先级为：`EXIF DateTimeOriginal(+OffsetTimeOriginal) > EXIF CreateDate(+OffsetTimeDigitized/OffsetTime) > EXIF GPSDateTime > container > filename > filesystem`
 - 不再依赖 `path-timezones`
-- `manual-itinerary` 不再承担拍摄时间修正职责
+- `manual-itinerary` 正文不直接修正拍摄时间，但末尾“素材时间校正”表格会在 rerun ingest 后作为 `manual` capture time 真值覆盖弱时间源
+- 如果 ingest 发现弱时间源和项目时间线明显冲突，会把待校正素材写入这张表，并强制阻塞 Analyze
 
 ### 空间
 
@@ -237,6 +239,7 @@ flowchart TD
   - DJI / QuickTime / EXIF 的文件内 GPS
   - 与素材同 basename 的 sidecar `.SRT`
   - 来自 root 级 `飞行记录路径` 的 DJI FlightRecord 日志（常见文件名可能是 `DJIFlightRecord_*.txt` 或 `FlightRecord_*.txt`），在 ingest 时按文件头识别、切分并成功绑定到该素材的轨迹片段
+- 照片若自身 EXIF 带 GPS，直接作为 `embedded GPS` 真值；只有没有自身 GPS 时，才继续按拍摄时间走 project GPX / `project-derived-track`
 - 项目级 GPX 是第二优先级资源，统一收口到 `gps/tracks/*.gpx` 与 `gps/merged.json`
 - sidecar `.SRT` / FlightRecord 这类 dense same-source 轨迹不再内联进 `store/assets.json`；它们会规范化写到 `gps/same-source/tracks/*.gpx`，并在 `gps/same-source/index.json` 里登记
 - 绑定成功后，资产上的 `embeddedGps` 只保留轻量引用：`trackId / pointCount / representative / startTime / endTime / sourcePath`
@@ -261,7 +264,7 @@ flowchart TD
 - coarse-first analyze 与 ASR 进入正式分析链路
 - `segment + beat + selection` 的编排方向
 - 双路径字幕
-- `create_time(UTC)` 与 `embedded GPS > project GPX > project-derived-track`
+- 照片 EXIF 时间优先链、Analyze 前时间线强阻塞，以及 `embedded GPS > project GPX > project-derived-track`
 - `DaVinci color` 作为独立增强链路，而非主链固定步骤
 - 派生素材版本必须保留关键元信息
 

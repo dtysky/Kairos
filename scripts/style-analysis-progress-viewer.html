@@ -501,6 +501,83 @@
 
       let latestProgress = null;
       let refreshInFlight = false;
+      const INTRO_STAGE_DEFINITIONS = [
+        { key: 'ml-start', label: '检查 ML 服务' },
+        { key: 'clip', label: '裁切 Intro 片段' },
+        { key: 'probe', label: '读取元数据' },
+        { key: 'scene-detect', label: '场景检测' },
+        { key: 'asr', label: '语音转写' },
+        { key: 'keyframes', label: '抽取关键帧' },
+        { key: 'vlm', label: '视觉理解' },
+        { key: 'complete', label: '分析完成' }
+      ];
+
+      function normalizeProgress(progress) {
+        if (!progress || typeof progress !== 'object') return progress;
+        if (!progress.stage || progress.step) return progress;
+
+        const detail = progress.detail && typeof progress.detail === 'object'
+          ? progress.detail
+          : {};
+        const stageMeta = {
+          'health-check': { step: 'ml-start', label: '检查 ML 服务' },
+          'clip': { step: 'clip', label: '裁切 Intro 片段' },
+          'probe': { step: 'probe', label: '读取元数据' },
+          'shot-detect': { step: 'scene-detect', label: '场景检测' },
+          'transcribe': { step: 'asr', label: '语音转写' },
+          'keyframes': { step: 'keyframes', label: '抽取关键帧' },
+          'vlm': { step: 'vlm', label: '视觉理解' },
+          'video-complete': { step: 'vlm', label: '单视频完成' },
+          'complete': { step: 'complete', label: '分析完成' }
+        }[progress.stage] || { step: progress.stage, label: progress.stage };
+
+        const detailParts = [];
+        if (detail.video) detailParts.push(`当前视频：${detail.video}`);
+        if (typeof detail.currentIndex === 'number' && typeof detail.totalVideos === 'number') {
+          detailParts.push(`进度：${detail.currentIndex} / ${detail.totalVideos}`);
+        }
+        if (typeof detail.durationMs === 'number') {
+          detailParts.push(`时长：${Math.round(detail.durationMs / 1000)}s`);
+        }
+        if (typeof detail.shotCount === 'number') {
+          detailParts.push(`镜头边界：${detail.shotCount}`);
+        }
+        if (typeof detail.shotGroups === 'number') {
+          detailParts.push(`镜头组：${detail.shotGroups}`);
+        }
+        if (typeof detail.extractedKeyframes === 'number') {
+          detailParts.push(`关键帧：${detail.extractedKeyframes}`);
+        }
+
+        const stepDefinitions = INTRO_STAGE_DEFINITIONS;
+        const stepIndex = Math.max(
+          1,
+          stepDefinitions.findIndex(item => item.key === stageMeta.step) + 1,
+        );
+        const totalVideos = typeof detail.totalVideos === 'number' ? detail.totalVideos : null;
+        const fileIndex = typeof detail.currentIndex === 'number' ? detail.currentIndex : null;
+
+        return {
+          ...progress,
+          status: progress.stage === 'complete' ? 'succeeded' : 'running',
+          step: stageMeta.step,
+          stepLabel: stageMeta.label,
+          stepIndex,
+          stepTotal: stepDefinitions.length,
+          stepDefinitions,
+          pipelineLabel: 'Kairos 风格分析',
+          phaseLabel: progress.category?.name || 'Intro 风格分析',
+          categoryName: progress.category?.name || progress.category?.slug || '当前任务',
+          detail: detailParts.join(' · ') || '处理中',
+          fileName: detail.video || '-',
+          fileIndex,
+          fileTotal: totalVideos,
+          current: fileIndex,
+          total: totalVideos,
+          unit: totalVideos ? 'videos' : 'steps',
+          etaSeconds: null,
+        };
+      }
 
       function getStepDefinitions(progress) {
         const stepDefinitions = progress.stepDefinitions || progress.extra?.stepDefinitions;
@@ -647,7 +724,7 @@
             }
           });
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          const progress = await response.json();
+          const progress = normalizeProgress(await response.json());
           render(progress);
         } catch (error) {
           latestProgress = null;

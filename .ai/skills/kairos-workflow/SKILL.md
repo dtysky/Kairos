@@ -167,6 +167,8 @@ project/
 补充口径：
 - dense sidecar `.SRT` / DJI FlightRecord 轨迹会规范化写到 `gps/same-source/tracks/*.gpx` + `gps/same-source/index.json`
 - 这套内部 GPX 只用于 same-source 索引 / 惰性查找，不改变 `embedded GPS > project GPX > project-derived-track` 的正式优先级
+- 照片拍摄时间默认优先吃 EXIF 原始时间和时区；如果照片自身带 GPS，也应直接作为 `embedded GPS` 真值
+- 如果 ingest 发现素材时间和项目时间线明显冲突，必须把待校正项追加到 `config/manual-itinerary.md` 末尾的“素材时间校正”表格，并阻塞后续阶段
 
 ### Phase 2: Analyze (素材分析)
 
@@ -187,10 +189,12 @@ project/
 - 必须结合当前项目状态指出：是否已有项目级 GPX、是否已有 `gps/derived.json`、是否已有 `config/manual-itinerary.md`
 - 如果缺少 GPX 且缺少 `gps/derived.json`，必须明确提示：没有 embedded GPS 的素材将没有空间 fallback
 - 如果用户刚修改了 `manual-itinerary` 但还没重新跑 ingest，必须明确提示：需要先刷新 `gps/derived.json`
+- 如果 `manual-itinerary` 末尾“素材时间校正”表格还有未填写或未重新 ingest 应用的条目，Workflow 必须停在 Analyze 之前
 - 如果用户手里拿的是 sidecar `.SRT` 或 DJI FlightRecord 日志，必须明确提示：这类输入属于 `embedded GPS` 标准链路，不是普通 GPX
 - 必须指导用户选择：补 GPX、给对应 root 配置 `飞行记录路径`、填写/更新 `manual-itinerary` 后 rerun ingest，或明确接受“部分素材没有空间结果”后继续
   - 当用户选择填写 `manual-itinerary` 时，默认应推荐一句自然语言一段，而不是要求先写成 key-value 表单
   - 推荐示例：`2026.02.17，早上九点左右，开车从新西兰皇后镇出发`
+- 如果是时间线冲突导致的阻塞，必须明确指导用户去填 `manual-itinerary` 末尾表格里的 `正确日期 / 正确时间 / 时区`，然后 rerun ingest
 - 只有在用户明确确认继续后，才可以调用 Analyze
 
 当前分析链路除了视觉粗扫/细扫，还会在符合条件的视频上补充 ASR：

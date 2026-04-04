@@ -17,12 +17,18 @@ import {
 } from '../../store/index.js';
 import { resolveCaptureTime } from './capture-time.js';
 import { buildMediaChronology } from './chronology.js';
+import { resolveEmbeddedGpsBinding } from './gps-embedded.js';
+import {
+  findManualCaptureTimeOverride,
+  loadManualCaptureTimeOverrides,
+} from './manual-capture-time.js';
 import { refreshProjectDerivedTrackCache } from './project-derived-track.js';
 import { probe, type IMediaToolConfig } from './probe.js';
 import { resolveProtectionAudioBinding } from './protection-audio.js';
 import { resolveMediaRootsForDevice, toPortableRelativePath } from './root-resolver.js';
 import { scanDirectory } from './scanner.js';
 import { prepareRootSameSourceGpsContext, resolveAssetSameSourceGpsBinding } from './same-source-gps.js';
+import { enforceProjectTimelineConsistency } from './timeline-consistency.js';
 
 export interface IIngestWorkspaceProjectInput {
   workspaceRoot: string;
@@ -62,6 +68,7 @@ export async function ingestWorkspaceProjectMedia(
     loadProjectDeviceMediaMaps(projectRoot, input.deviceMapPath),
     loadRuntimeConfig(projectRoot),
   ]);
+  const manualCaptureOverrides = await loadManualCaptureTimeOverrides(projectRoot);
 
   const resolution = resolveMediaRootsForDevice(input.projectId, roots, deviceMaps);
   const scannedRoots: IIngestedRootSummary[] = [];
@@ -96,6 +103,7 @@ export async function ingestWorkspaceProjectMedia(
         resolvedRoot.root,
         resolvedRoot.localPath,
         runtimeConfig,
+        manualCaptureOverrides,
         preparedRootGps,
         warning => warnings.add(warning),
       ));
@@ -110,6 +118,11 @@ export async function ingestWorkspaceProjectMedia(
   });
   const chronologyCount = await refreshProjectChronology(projectRoot);
   await touchProjectUpdatedAt(projectRoot);
+  await enforceProjectTimelineConsistency({
+    projectRoot,
+    assets: merge.assets,
+    roots,
+  });
 
   return {
     projectRoot,
@@ -129,25 +142,46 @@ async function buildAssetFromScan(
   root: IMediaRoot,
   localRootPath: string,
   tools: IMediaToolConfig,
+  manualCaptureOverrides: Awaited<ReturnType<typeof loadManualCaptureTimeOverrides>>,
   preparedRootGps: Awaited<ReturnType<typeof prepareRootSameSourceGpsContext>>,
   onWarning: (warning: string) => void,
 ): Promise<IKtepAsset> {
   const sourcePath = toPortableRelativePath(localRootPath, localFilePath);
   const probeResult = await safeProbe(localFilePath, tools);
-  const capture = await resolveCaptureTime(localFilePath, probeResult);
-  const sameSourceGps = await resolveAssetSameSourceGpsBinding({
-    projectRoot,
-    trackIdentityKey: `${root.id}:${sourcePath}`,
-    asset: {
-      kind,
-      capturedAt: capture.capturedAt,
-      durationMs: probeResult.durationMs ?? undefined,
-      displayName: sourcePath || basename(localFilePath),
-      sourcePath,
-    },
-    localPath: localFilePath,
-    preparedRootGps,
+  const manualOverride = findManualCaptureTimeOverride(manualCaptureOverrides, {
+    rootRef: root.id,
+    sourcePath,
   });
+  const capture = manualOverride
+    ? {
+      capturedAt: manualOverride.capturedAt,
+      originalValue: `${manualOverride.correctedDate} ${manualOverride.correctedTime}`,
+      originalTimezone: manualOverride.timezone,
+      source: 'manual' as const,
+      confidence: 1,
+    }
+    : await resolveCaptureTime(localFilePath, probeResult);
+  const metadataGps = kind === 'photo'
+    ? resolveEmbeddedGpsBinding({
+      capturedAt: capture.capturedAt,
+      metadata: { rawTags: probeResult.rawTags },
+    })
+    : null;
+  const sameSourceGps = metadataGps
+    ? { binding: null, warnings: [] as string[] }
+    : await resolveAssetSameSourceGpsBinding({
+      projectRoot,
+      trackIdentityKey: `${root.id}:${sourcePath}`,
+      asset: {
+        kind,
+        capturedAt: capture.capturedAt,
+        durationMs: probeResult.durationMs ?? undefined,
+        displayName: sourcePath || basename(localFilePath),
+        sourcePath,
+      },
+      localPath: localFilePath,
+      preparedRootGps,
+    });
   for (const warning of sameSourceGps.warnings) {
     onWarning(warning);
   }
@@ -175,7 +209,7 @@ async function buildAssetFromScan(
     captureTimeSource: capture.source,
     captureTimeConfidence: capture.confidence,
     createdAt: capture.capturedAt,
-    embeddedGps: sameSourceGps.binding ?? undefined,
+    embeddedGps: metadataGps ?? sameSourceGps.binding ?? undefined,
     protectionAudio: protectionAudio ?? undefined,
     metadata: {
       sizeBytes,

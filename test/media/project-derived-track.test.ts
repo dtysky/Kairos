@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import {
   initWorkspaceProject,
   loadProjectDerivedTrack,
+  writeManualItineraryGeoCache,
   writeJson,
 } from '../../src/store/index.js';
 import { refreshProjectDerivedTrackCache } from '../../src/modules/media/project-derived-track.js';
@@ -101,6 +102,41 @@ describe('project derived track cache', () => {
       matchKind: 'window',
       matchedItinerarySegmentId: 'manual-itinerary-1',
       locationText: '北京市天安门',
+      timezone: 'Asia/Shanghai',
+      lat: 39.909187,
+      lng: 116.397463,
+      startTime: '2026-03-31T07:15:00.000Z',
+      endTime: '2026-03-31T08:45:00.000Z',
+    }));
+  });
+
+  it('compiles manual-itinerary from project geo cache without live resolvers', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectRoot = await initWorkspaceProject(workspaceRoot, 'project-c', 'Test Project');
+
+    await writeFile(
+      join(projectRoot, 'config/manual-itinerary.md'),
+      '2026.03.31，下午四点，从北京市朝阳区前往北京市天安门拍摄\n',
+      'utf-8',
+    );
+    await writeManualItineraryGeoCache(projectRoot, [
+      {
+        query: '北京市天安门',
+        lat: 39.909187,
+        lng: 116.397463,
+        timezone: 'Asia/Shanghai',
+        aliases: ['北京市朝阳区 / 北京市天安门'],
+      },
+    ]);
+
+    const cache = await refreshProjectDerivedTrackCache({ projectRoot });
+
+    expect(cache.entryCount).toBe(1);
+    expect(cache.entries[0]).toEqual(expect.objectContaining({
+      originType: 'manual-itinerary-derived',
+      matchKind: 'window',
+      matchedItinerarySegmentId: 'manual-itinerary-1',
+      locationText: '北京市朝阳区 / 北京市天安门',
       timezone: 'Asia/Shanghai',
       lat: 39.909187,
       lng: 116.397463,

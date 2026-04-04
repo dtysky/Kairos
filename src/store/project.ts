@@ -36,6 +36,7 @@ type IIngestRoots = z.infer<typeof IIngestRoots>;
 const IRuntimeConfig = z.object({
   ffmpegPath: z.string().optional(),
   ffprobePath: z.string().optional(),
+  exiftoolPath: z.string().optional(),
   ffmpegHwaccel: z.string().optional(),
   analysisProxyWidth: z.number().int().positive().optional(),
   analysisProxyPixelFormat: z.string().optional(),

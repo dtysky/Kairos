@@ -1,0 +1,81 @@
+{
+  "roots": [
+    {
+      "id": "root-vlog-proj-new-zealand-camera-export",
+      "label": "camera/export",
+      "enabled": true,
+      "description": "A7R5拍摄视频，高画质",
+      "notes": [
+        "A7R5拍摄视频，高画质"
+      ],
+      "tags": [],
+      "priority": 1
+    },
+    {
+      "id": "root-vlog-proj-new-zealand-drone-export",
+      "label": "drone/export",
+      "enabled": true,
+      "description": "无人机航拍，高画质",
+      "notes": [
+        "无人机航拍，高画质"
+      ],
+      "tags": [],
+      "priority": 2
+    },
+    {
+      "id": "root-vlog-proj-new-zealand-pocket3",
+      "label": "new-zealand/pocket3",
+      "enabled": true,
+      "description": "Pocket3/Action6拍摄，行程的各种主要记录镜头",
+      "notes": [
+        "Pocket3/Action6拍摄，行程的各种主要记录镜头"
+      ],
+      "tags": [],
+      "priority": 3
+    },
+    {
+      "id": "root-vlog-proj-new-zealand-drone-car",
+      "label": "new-zealand/drone-car",
+      "enabled": true,
+      "description": "Pocket3损坏后，用无人机在车上作为行车记录拍摄的高清视频",
+      "notes": [
+        "Pocket3损坏后，用无人机在车上作为行车记录拍摄的高清视频"
+      ],
+      "tags": [],
+      "priority": 4
+    },
+    {
+      "id": "root-vlog-proj-new-zealand-ts",
+      "label": "new-zealand/ts",
+      "enabled": true,
+      "description": "延时摄影，素材名中有对应的日期和机位说明",
+      "notes": [
+        "延时摄影，素材名中有对应的日期和机位说明"
+      ],
+      "tags": [],
+      "priority": 5
+    },
+    {
+      "id": "root-vlog-proj-new-zealand-photos-north",
+      "label": "photos/north",
+      "enabled": true,
+      "description": "北岛拍摄的一些照片",
+      "notes": [
+        "北岛拍摄的一些照片"
+      ],
+      "tags": [],
+      "priority": 6
+    },
+    {
+      "id": "root-vlog-proj-new-zealand-photos-south",
+      "label": "photos/south",
+      "enabled": true,
+      "description": "南岛拍摄的一些照片",
+      "notes": [
+        "南岛拍摄的一些照片"
+      ],
+      "tags": [],
+      "priority": 7
+    }
+  ]
+}

@@ -41,6 +41,28 @@ function Test-CommandLineMatch([string]$CommandLine) {
   return $CommandLine -and $CommandLine.Contains($ExpectedMarker)
 }
 
+function Test-ServerProcessCandidate($Process) {
+  $commandLine = [string]$Process.CommandLine
+  if ([string]::IsNullOrWhiteSpace($commandLine)) {
+    return $false
+  }
+
+  if ($Process.Name -notin @('python.exe', 'pythonw.exe')) {
+    return $false
+  }
+
+  if (Test-CommandLineMatch $commandLine) {
+    return $true
+  }
+
+  $looksLikeUvicorn = $commandLine.Contains('-m uvicorn') -or $commandLine.Contains('uvicorn ')
+  if (-not $looksLikeUvicorn) {
+    return $false
+  }
+
+  return $commandLine.Contains("--host $ServerHost") -and $commandLine.Contains("--port $Port")
+}
+
 function Get-TrackedProcess {
   if (-not (Test-Path $PidPath)) {
     return $null
@@ -69,9 +91,22 @@ function Get-TrackedProcess {
 function Get-AllServerProcesses {
   Get-CimInstance Win32_Process |
     Where-Object {
-      Test-CommandLineMatch $_.CommandLine -or
-      ($_.CommandLine -and $_.CommandLine.Contains("--host $ServerHost") -and $_.CommandLine.Contains("--port $Port"))
+      Test-ServerProcessCandidate $_
     }
+}
+
+function Get-AnyServerProcess {
+  $trackedProcess = Get-TrackedProcess
+  if ($null -ne $trackedProcess) {
+    return $trackedProcess
+  }
+
+  $all = @(Get-AllServerProcesses | Sort-Object ProcessId)
+  if ($all.Count -gt 0) {
+    return $all[0]
+  }
+
+  return $null
 }
 
 function Remove-StateFiles {
@@ -101,13 +136,22 @@ function Stop-TrackedProcesses {
     return
   }
 
+  $stoppedPids = @()
   foreach ($process in $tracked) {
+    if (-not (Test-ServerProcessCandidate $process)) {
+      continue
+    }
     Stop-Process -Id $process.ProcessId -Force -ErrorAction SilentlyContinue
+    $stoppedPids += $process.ProcessId
   }
 
   Start-Sleep -Seconds 1
   Remove-StateFiles
-  Write-Output ("Stopped {0} instance(s): {1}" -f $ServerName, (($tracked | Select-Object -ExpandProperty ProcessId) -join ", "))
+  if ($stoppedPids.Count -eq 0) {
+    Write-Output "$ServerName is not running."
+    return
+  }
+  Write-Output ("Stopped {0} instance(s): {1}" -f $ServerName, ($stoppedPids -join ", "))
 }
 
 function Test-Health {
@@ -147,6 +191,16 @@ function Start-Server {
     throw "Cannot find ml-server directory: $MlServerRoot"
   }
 
+  $healthy = Test-Health
+  $existingProcess = Get-AnyServerProcess
+  if ($null -ne $healthy -and $null -ne $existingProcess) {
+    Write-Output ("{0} already running (PID {1}) on {2}:{3} with device={4}" -f $ServerName, $existingProcess.ProcessId, $ServerHost, $Port, $healthy.device)
+    return
+  }
+  if ($null -ne $healthy -and $null -eq $existingProcess) {
+    throw ("{0} is responding on {1}:{2}, but no matching process was found. Refusing to restart automatically." -f $ServerName, $ServerHost, $Port)
+  }
+
   Stop-TrackedProcesses | Out-Null
   Remove-Item -Force $StdoutPath, $StderrPath -ErrorAction SilentlyContinue
 
@@ -184,10 +238,26 @@ function Start-Server {
 }
 
 function Show-Status {
-  $process = Get-TrackedProcess
+  $process = Get-AnyServerProcess
   $health = Test-Health
 
   if ($null -eq $process) {
+    if ($null -ne $health) {
+      $status = [ordered]@{
+        name = $ServerName
+        pid = $null
+        running = $true
+        host = $ServerHost
+        port = $Port
+        commandLine = $null
+        health = $health
+        managed = $false
+        stdoutPath = $StdoutPath
+        stderrPath = $StderrPath
+      }
+      $status | ConvertTo-Json -Depth 5
+      return
+    }
     Write-Output "$ServerName is not running."
     return
   }
@@ -200,6 +270,7 @@ function Show-Status {
     port = $Port
     commandLine = $process.CommandLine
     health = $health
+    managed = ($null -ne (Get-TrackedProcess))
     stdoutPath = $StdoutPath
     stderrPath = $StderrPath
   }

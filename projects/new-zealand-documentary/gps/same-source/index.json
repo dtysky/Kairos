@@ -1,0 +1,340 @@
+{
+  "schemaVersion": "1.0",
+  "updatedAt": "2026-04-04T19:05:56.413Z",
+  "trackCount": 37,
+  "tracks": [
+    {
+      "id": "flight-record-001be50879ae28df",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-001be50879ae28df.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-20_[15-30-00].txt",
+      "pointCount": 10861,
+      "startTime": "2026-02-20T07:30:00.759Z",
+      "endTime": "2026-02-20T07:42:04.850Z"
+    },
+    {
+      "id": "flight-record-02ac50e32584117a",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-02ac50e32584117a.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-11_[09-35-41].txt",
+      "pointCount": 7869,
+      "startTime": "2026-02-11T01:36:03.929Z",
+      "endTime": "2026-02-11T01:44:48.546Z"
+    },
+    {
+      "id": "flight-record-0499054bc00dbc7f",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-0499054bc00dbc7f.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-15_[06-58-00].txt",
+      "pointCount": 5383,
+      "startTime": "2026-02-14T22:58:13.141Z",
+      "endTime": "2026-02-14T23:04:11.993Z"
+    },
+    {
+      "id": "flight-record-083103b6b0a6d006",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-083103b6b0a6d006.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-19_[11-11-09].txt",
+      "pointCount": 2514,
+      "startTime": "2026-02-19T03:11:09.678Z",
+      "endTime": "2026-02-19T03:13:57.291Z"
+    },
+    {
+      "id": "flight-record-0e6cd3ecfb584977",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-0e6cd3ecfb584977.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-09_[15-30-47].txt",
+      "pointCount": 22996,
+      "startTime": "2026-02-09T07:30:48.065Z",
+      "endTime": "2026-02-09T07:56:21.194Z"
+    },
+    {
+      "id": "flight-record-0f841eb99ccda2d3",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-0f841eb99ccda2d3.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-14_[12-27-12].txt",
+      "pointCount": 21429,
+      "startTime": "2026-02-14T04:27:12.263Z",
+      "endTime": "2026-02-14T04:51:00.752Z"
+    },
+    {
+      "id": "flight-record-1b084f07f3da0f62",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-1b084f07f3da0f62.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-10_[10-00-21].txt",
+      "pointCount": 11938,
+      "startTime": "2026-02-10T02:00:34.011Z",
+      "endTime": "2026-02-10T02:13:49.859Z"
+    },
+    {
+      "id": "flight-record-22354b90953c2fea",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-22354b90953c2fea.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-15_[01-54-00].txt",
+      "pointCount": 21535,
+      "startTime": "2026-02-14T17:54:00.174Z",
+      "endTime": "2026-02-14T18:17:55.893Z"
+    },
+    {
+      "id": "flight-record-28567aa4be7a6055",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-28567aa4be7a6055.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-13_[09-41-02].txt",
+      "pointCount": 8471,
+      "startTime": "2026-02-13T01:41:14.310Z",
+      "endTime": "2026-02-13T01:50:39.014Z"
+    },
+    {
+      "id": "flight-record-29f77f8818728b40",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-29f77f8818728b40.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-18_[12-01-47].txt",
+      "pointCount": 16389,
+      "startTime": "2026-02-18T04:01:47.670Z",
+      "endTime": "2026-02-18T04:20:00.293Z"
+    },
+    {
+      "id": "flight-record-35df5bb4a5d5c39f",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-35df5bb4a5d5c39f.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-19_[01-52-02].txt",
+      "pointCount": 28336,
+      "startTime": "2026-02-18T17:52:17.615Z",
+      "endTime": "2026-02-18T18:23:46.625Z"
+    },
+    {
+      "id": "flight-record-404eda6c1a7a6606",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-404eda6c1a7a6606.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-14_[08-23-25].txt",
+      "pointCount": 5866,
+      "startTime": "2026-02-14T00:23:42.004Z",
+      "endTime": "2026-02-14T00:30:13.061Z"
+    },
+    {
+      "id": "flight-record-46258ec7c7958dab",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-46258ec7c7958dab.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-15_[02-52-49].txt",
+      "pointCount": 4596,
+      "startTime": "2026-02-14T18:52:49.504Z",
+      "endTime": "2026-02-14T18:57:55.863Z"
+    },
+    {
+      "id": "flight-record-4d508b6a1d129637",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-4d508b6a1d129637.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-19_[02-29-18].txt",
+      "pointCount": 16501,
+      "startTime": "2026-02-18T18:29:18.502Z",
+      "endTime": "2026-02-18T18:47:38.601Z"
+    },
+    {
+      "id": "flight-record-530b1a52712cf8d0",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-530b1a52712cf8d0.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-11_[13-00-03].txt",
+      "pointCount": 6623,
+      "startTime": "2026-02-11T05:00:32.199Z",
+      "endTime": "2026-02-11T05:07:58.530Z"
+    },
+    {
+      "id": "flight-record-54cf1a56d4c53d88",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-54cf1a56d4c53d88.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-13_[01-55-27].txt",
+      "pointCount": 9141,
+      "startTime": "2026-02-12T17:55:27.444Z",
+      "endTime": "2026-02-12T18:05:36.755Z"
+    },
+    {
+      "id": "flight-record-5b11c5c43e50e262",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-5b11c5c43e50e262.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-17_[05-17-08].txt",
+      "pointCount": 6601,
+      "startTime": "2026-02-16T21:17:08.130Z",
+      "endTime": "2026-02-16T21:24:28.382Z"
+    },
+    {
+      "id": "flight-record-5e74d95554e3cba8",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-5e74d95554e3cba8.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-09_[15-03-15].txt",
+      "pointCount": 22954,
+      "startTime": "2026-02-09T07:03:15.268Z",
+      "endTime": "2026-02-09T07:28:45.627Z"
+    },
+    {
+      "id": "flight-record-6e0585bc93e0c9e9",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-6e0585bc93e0c9e9.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-14_[10-42-29].txt",
+      "pointCount": 4471,
+      "startTime": "2026-02-14T02:42:29.505Z",
+      "endTime": "2026-02-14T02:47:27.476Z"
+    },
+    {
+      "id": "flight-record-72fc8014c2a4a9b7",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-72fc8014c2a4a9b7.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-14_[12-14-33].txt",
+      "pointCount": 6075,
+      "startTime": "2026-02-14T04:14:33.951Z",
+      "endTime": "2026-02-14T04:21:18.907Z"
+    },
+    {
+      "id": "flight-record-78c0be5bf1002d11",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-78c0be5bf1002d11.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-13_[01-15-47].txt",
+      "pointCount": 26488,
+      "startTime": "2026-02-12T17:15:47.604Z",
+      "endTime": "2026-02-12T17:45:13.499Z"
+    },
+    {
+      "id": "flight-record-81b1e79b11bc4c8e",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-81b1e79b11bc4c8e.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-16_[01-49-08].txt",
+      "pointCount": 1710,
+      "startTime": "2026-02-15T17:49:08.449Z",
+      "endTime": "2026-02-15T17:51:02.382Z"
+    },
+    {
+      "id": "flight-record-9bfc4a7caf82e1d2",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-9bfc4a7caf82e1d2.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-16_[06-27-14].txt",
+      "pointCount": 9773,
+      "startTime": "2026-02-15T22:27:14.838Z",
+      "endTime": "2026-02-15T22:38:06.483Z"
+    },
+    {
+      "id": "flight-record-9d7e66e6fffea006",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-9d7e66e6fffea006.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-15_[07-36-57].txt",
+      "pointCount": 17473,
+      "startTime": "2026-02-14T23:36:57.784Z",
+      "endTime": "2026-02-14T23:56:22.647Z"
+    },
+    {
+      "id": "flight-record-a5783e0a853733d3",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-a5783e0a853733d3.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-15_[02-19-02].txt",
+      "pointCount": 17890,
+      "startTime": "2026-02-14T18:19:03.083Z",
+      "endTime": "2026-02-14T18:38:55.705Z"
+    },
+    {
+      "id": "flight-record-ac36e7d16b9214b5",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-ac36e7d16b9214b5.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-18_[15-17-12].txt",
+      "pointCount": 15177,
+      "startTime": "2026-02-18T07:17:12.279Z",
+      "endTime": "2026-02-18T07:34:04.077Z"
+    },
+    {
+      "id": "flight-record-b8cc115ef46b9bc7",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-b8cc115ef46b9bc7.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-09_[02-03-37].txt",
+      "pointCount": 15302,
+      "startTime": "2026-02-08T18:04:16.239Z",
+      "endTime": "2026-02-08T18:21:16.279Z"
+    },
+    {
+      "id": "flight-record-b8f8a753e9dc4d95",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-b8f8a753e9dc4d95.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-20_[15-02-04].txt",
+      "pointCount": 21681,
+      "startTime": "2026-02-20T07:02:12.887Z",
+      "endTime": "2026-02-20T07:26:18.730Z"
+    },
+    {
+      "id": "flight-record-c40fb9060320e76e",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-c40fb9060320e76e.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-18_[16-00-56].txt",
+      "pointCount": 19132,
+      "startTime": "2026-02-18T08:00:56.324Z",
+      "endTime": "2026-02-18T08:22:11.795Z"
+    },
+    {
+      "id": "flight-record-da284a2cc12f212d",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-da284a2cc12f212d.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-09_[13-45-20].txt",
+      "pointCount": 4988,
+      "startTime": "2026-02-09T05:45:38.921Z",
+      "endTime": "2026-02-09T05:51:11.835Z"
+    },
+    {
+      "id": "flight-record-df192192b45cebcb",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-df192192b45cebcb.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-16_[05-59-55].txt",
+      "pointCount": 1938,
+      "startTime": "2026-02-15T22:00:03.687Z",
+      "endTime": "2026-02-15T22:02:12.895Z"
+    },
+    {
+      "id": "flight-record-e6eee28f8c2eb3f2",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-e6eee28f8c2eb3f2.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-17_[13-30-32].txt",
+      "pointCount": 20491,
+      "startTime": "2026-02-17T05:30:32.740Z",
+      "endTime": "2026-02-17T05:53:18.780Z"
+    },
+    {
+      "id": "flight-record-f1f1b047a2de1091",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-f1f1b047a2de1091.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-18_[03-17-05].txt",
+      "pointCount": 16626,
+      "startTime": "2026-02-17T19:17:05.451Z",
+      "endTime": "2026-02-17T19:35:33.927Z"
+    },
+    {
+      "id": "flight-record-f5a80e5b31364842",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-f5a80e5b31364842.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-19_[07-51-11].txt",
+      "pointCount": 21411,
+      "startTime": "2026-02-18T23:51:12.060Z",
+      "endTime": "2026-02-19T00:14:59.429Z"
+    },
+    {
+      "id": "flight-record-f804a7d57a4924df",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-f804a7d57a4924df.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-19_[11-21-37].txt",
+      "pointCount": 10431,
+      "startTime": "2026-02-19T03:21:40.808Z",
+      "endTime": "2026-02-19T03:33:16.194Z"
+    },
+    {
+      "id": "flight-record-fa1c02728f095369",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-fa1c02728f095369.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-17_[08-42-18].txt",
+      "pointCount": 406,
+      "startTime": "2026-02-17T00:42:19.038Z",
+      "endTime": "2026-02-17T00:42:46.038Z"
+    },
+    {
+      "id": "flight-record-faa798c86e4f8a0e",
+      "originType": "flight-record",
+      "relativePath": "tracks/flight-record-faa798c86e4f8a0e.gpx",
+      "sourcePath": "F:\\vlog-proj\\new-zealand\\drone-gps\\FlightRecord_2026-02-14_[02-49-52].txt",
+      "pointCount": 3523,
+      "startTime": "2026-02-13T18:50:04.311Z",
+      "endTime": "2026-02-13T18:53:59.123Z"
+    }
+  ]
+}

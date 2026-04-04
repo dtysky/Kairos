@@ -74,10 +74,11 @@ analyzeWorkspaceProjectMedia(input: {
 
 - 当前空间优先级是：`embedded GPS > project GPX > project-derived-track > none`
 - `manual-itinerary` 不再作为 Analyze 阶段的独立顶层 fallback；它会在 ingest 时被编译进 `gps/derived.json`
-- `manual-itinerary` 不负责修正素材拍摄时间；拍摄时间仍以 `create_time(UTC)` 为主
+- `manual-itinerary` 正文不直接修正拍摄时间，但它末尾的“素材时间校正”表格会在 ingest 时作为 `manual` capture time 真值被消费
 - 如果项目里没有 `gps/merged.json` / `gps/tracks/*.gpx`，也没有 `gps/derived.json`，那么**没有 embedded GPS 的素材将拿不到空间 fallback**
 - 如果用户刚修改过 `config/manual-itinerary.md` 但还没重新跑 ingest，必须明确提醒：当前 `gps/derived.json` 可能还是旧的
 - 如果用户手里有 sidecar `.SRT` 或 DJI FlightRecord 日志，必须提醒：这类数据走的是 `embedded GPS` 标准链路，不是普通项目 GPX
+- 如果 `config/manual-itinerary.md` 末尾存在未填写完的“素材时间校正”表格，或者用户刚填完还没 rerun ingest，Analyze 必须停下，先让用户刷新 ingest
 
 在提示规则后，还必须指导用户当前可选动作：
 
@@ -88,9 +89,17 @@ analyzeWorkspaceProjectMedia(input: {
   - 只有需要限制到特定素材源或路径前缀时，再补 `素材源:` / `路径:` 这类结构化字段
 - `.SRT` 如果和素材同 basename 放在素材旁，ingest 会自动发现，不需要单独导入
 - 如果选择填写或修改了 `manual-itinerary`，先重新跑一次 ingest，刷新 `gps/derived.json`
+- 如果 ingest 已把待校正素材写进 `manual-itinerary` 末尾表格，必须先让用户填写 `正确日期 / 正确时间 / 时区`，再 rerun ingest
 - 或明确接受“部分素材没有空间结果”后继续
 
 只有在用户明确确认继续后，才可以真正调用 `analyzeWorkspaceProjectMedia()`。
+
+## 强规则：Analyze 前必须先过时间线一致性校验
+
+- Analyze 前必须确认当前项目不存在“素材时间和项目时间线明显冲突”的阻塞项
+- 这类阻塞项由 ingest 自动写入 `config/manual-itinerary.md` 末尾的“素材时间校正”表格
+- 只要表格里还有未填写或尚未重新 ingest 应用的条目，Analyze 就必须直接停掉，不能继续消耗 ML 预算
+- agent 必须明确告诉用户：先填写表格，再 rerun ingest，确认 `store/assets.json / media/chronology.json / gps/derived.json` 已刷新后，才能继续 Analyze
 
 底层会复用这些工具：
 
@@ -135,7 +144,7 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
 - 当存在内嵌 GPS 时，`project-derived-track` 和 GPX 都不能覆盖它
 - 当前代码入口仍允许通过 `gpxPaths` 显式注入 1..N 个 GPX 文件路径，用于覆盖默认发现
 - 默认 GPX 命中策略是：从带 `time` 的 `trkpt / rtept / wpt` 中，按 `capturedAt` 选择容差内最近点
-- `manual-itinerary` 不负责修正素材拍摄时间；素材时间仍以 `create_time(UTC)` 为主
+- `manual-itinerary` 正文不直接参与拍摄时间修正；真正的时间修正入口是它末尾的“素材时间校正”表格，并且只有 rerun ingest 后才会生效
 - 空间推断结果应落在 coarse report，而不是回写素材真值层
 
 ## 默认分析策略

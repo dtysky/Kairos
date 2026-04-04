@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -243,5 +243,88 @@ describe('ingestWorkspaceProjectMedia', () => {
     expect(metadata['effectiveTimezoneSource']).toBeUndefined();
     expect(metadata['effectiveTimezonePathPrefix']).toBeUndefined();
     expect(metadata['captureOriginalTimezone']).toBeUndefined();
+  });
+
+  it('blocks ingest when weak capture times obviously conflict with project timeline and appends a correction table', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-timeline-block';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Test Project');
+    const mediaRoot = join(workspaceRoot, 'media-root');
+
+    await mkdir(mediaRoot, { recursive: true });
+    await writeFile(join(mediaRoot, '20260331_081530.mp4'), '');
+    await writeFile(
+      join(projectRoot, 'config/manual-itinerary.md'),
+      '2026.02.17，上午10点，在新西兰皇后镇拍摄\n',
+      'utf-8',
+    );
+    await writeWorkspaceProjectBrief(workspaceRoot, projectId, [{
+      path: mediaRoot,
+      description: '主机位素材',
+    }]);
+
+    await expect(ingestWorkspaceProjectMedia({
+      workspaceRoot,
+      projectId,
+    })).rejects.toThrow(/拍摄时间与项目时间线明显不一致/u);
+
+    const manualItinerary = await readFile(
+      join(projectRoot, 'config/manual-itinerary.md'),
+      'utf-8',
+    );
+    expect(manualItinerary).toContain('## 素材时间校正');
+    expect(manualItinerary).toContain('20260331_081530.mp4');
+  });
+
+  it('applies filled manual capture time overrides during ingest', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-manual-capture-override';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Test Project');
+    const mediaRoot = join(workspaceRoot, 'media-root');
+
+    await mkdir(mediaRoot, { recursive: true });
+    await writeFile(join(mediaRoot, '20260331_081530.mp4'), '');
+    await writeFile(
+      join(projectRoot, 'config/manual-itinerary.md'),
+      [
+        '2026.02.17，上午10点，在新西兰皇后镇拍摄',
+        '',
+        '## 素材时间校正',
+        '',
+        '以下素材的拍摄时间和项目时间线明显不一致。请填写“正确日期 / 正确时间 / 时区”后重新运行 ingest；未填写的行会阻塞后续 Analyze。',
+        '',
+        '| 状态 | 素材源 | 路径 | 当前时间UTC | 当前来源 | 建议日期 | 建议时间 | 正确日期 | 正确时间 | 时区 | 备注 |',
+        '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |',
+        '| 已填写 | root-1 | 20260331_081530.mp4 | 2026-03-31T08:15:30.000Z | filename | 2026-03-31 | 08:15:30 | 2026-02-17 | 10:15 | Pacific/Auckland | 手工修正 |',
+      ].join('\n'),
+      'utf-8',
+    );
+
+    await writeJson(join(projectRoot, 'config/ingest-roots.json'), {
+      roots: [{
+        id: 'root-1',
+        enabled: true,
+        label: 'camera-a',
+      }],
+    });
+    await saveDeviceProjectMap(projectId, {
+      roots: [{
+        rootId: 'root-1',
+        localPath: mediaRoot,
+      }],
+    }, join(workspaceRoot, 'device-media-maps.json'));
+
+    const result = await ingestWorkspaceProjectMedia({
+      workspaceRoot,
+      projectId,
+      deviceMapPath: join(workspaceRoot, 'device-media-maps.json'),
+    });
+
+    expect(result.missingRoots).toEqual([]);
+    const assets = await loadAssets(projectRoot);
+    expect(assets[0]).toEqual(expect.objectContaining({
+      captureTimeSource: 'manual',
+      capturedAt: '2026-02-16T21:15:00.000Z',
+    }));
   });
 });

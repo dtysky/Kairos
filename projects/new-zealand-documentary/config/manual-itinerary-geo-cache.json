@@ -1,0 +1,246 @@
+{
+  "schemaVersion": "1.0",
+  "updatedAt": "2026-04-04T17:02:13.556Z",
+  "entries": [
+    {
+      "query": "奥克兰-伊甸山",
+      "lat": -36.8816475,
+      "lng": 174.761999,
+      "timezone": "Pacific/Auckland",
+      "aliases": [
+        "Mount Eden Auckland New Zealand"
+      ],
+      "source": "photon+timeapi"
+    },
+    {
+      "query": "奥克兰-Devonport-Takapuna",
+      "lat": -36.7919674,
+      "lng": 174.7874925,
+      "timezone": "Pacific/Auckland",
+      "aliases": [
+        "Devonport-Takapuna Auckland New Zealand"
+      ],
+      "source": "photon+timeapi"
+    },
+    {
+      "query": "奥克兰-Saint Marys Bay",
+      "lat": -36.8447404,
+      "lng": 174.7454914,
+      "timezone": "Pacific/Auckland",
+      "aliases": [
+        "Saint Marys Bay Auckland New Zealand"
+      ],
+      "source": "photon+timeapi"
+    },
+    {
+      "query": "奥克兰机场",
+      "lat": -37.0003333,
+      "lng": 174.7917688,
+      "timezone": "Pacific/Auckland",
+      "aliases": [
+        "Auckland Airport New Zealand"
+      ],
+      "source": "photon+timeapi"
+    },
+    {
+      "query": "广州白云机场",
+      "lat": 23.4262156,
+      "lng": 113.2967059,
+      "timezone": "Asia/Shanghai",
+      "aliases": [
+        "Guangzhou Baiyun International Airport China"
+      ],
+      "source": "photon+timeapi"
+    },
+    {
+      "query": "怀欧塔普",
+      "lat": -38.3558981,
+      "lng": 176.367513,
+      "timezone": "Pacific/Auckland",
+      "aliases": [
+        "Waiotapu New Zealand"
+      ],
+      "source": "photon+timeapi"
+    },
+    {
+      "query": "基督城-New Brighton",
+      "lat": 45.0628999,
+      "lng": -93.2060969,
+      "timezone": "America/Chicago",
+      "aliases": [
+        "New Brighton Christchurch New Zealand"
+      ],
+      "source": "photon+timeapi"
+    },
+    {
+      "query": "基督城机场",
+      "lat": -43.4852369,
+      "lng": 172.5354825,
+      "timezone": "Pacific/Auckland",
+      "aliases": [
+        "Christchurch Airport New Zealand"
+      ],
+      "source": "photon+timeapi"
+    },
+    {
+      "query": "林迪斯山口",
+      "lat": -44.5882604,
+      "lng": 169.6430798,
+      "timezone": "Pacific/Auckland",
+      "aliases": [
+        "Lindis Pass New Zealand"
+      ],
+      "source": "photon+timeapi"
+    },
+    {
+      "query": "普卡基湖",
+      "lat": -44.0477609,
+      "lng": 170.1742311,
+      "timezone": "Pacific/Auckland",
+      "aliases": [
+        "Lake Pukaki New Zealand"
+      ],
+      "source": "photon+timeapi"
+    },
+    {
+      "query": "特卡波湖",
+      "lat": -44.0045194,
+      "lng": 170.4777273,
+      "timezone": "Pacific/Auckland",
+      "aliases": [
+        "Lake Tekapo New Zealand"
+      ],
+      "source": "photon+timeapi"
+    },
+    {
+      "query": "峡湾国家公园",
+      "lat": -45.2915528,
+      "lng": 167.4879931,
+      "timezone": "Pacific/Auckland",
+      "aliases": [
+        "Fiordland National Park New Zealand"
+      ],
+      "source": "photon+timeapi"
+    },
+    {
+      "query": "新西兰奥克兰",
+      "lat": -36.852095,
+      "lng": 174.7631803,
+      "timezone": "Pacific/Auckland",
+      "aliases": [
+        "Auckland New Zealand"
+      ],
+      "source": "photon+timeapi"
+    },
+    {
+      "query": "新西兰奥克兰-Saint Marys Bay",
+      "lat": -36.8447404,
+      "lng": 174.7454914,
+      "timezone": "Pacific/Auckland",
+      "aliases": [
+        "Saint Marys Bay Auckland New Zealand"
+      ],
+      "source": "photon+timeapi"
+    },
+    {
+      "query": "Ahuriri Flat",
+      "lat": -46.4012005,
+      "lng": 169.7001028,
+      "timezone": "Pacific/Auckland",
+      "aliases": [
+        "Ahuriri Flat New Zealand"
+      ],
+      "source": "photon+timeapi"
+    },
+    {
+      "query": "Ben Ohau",
+      "lat": -44.2602504,
+      "lng": 169.9079488,
+      "timezone": "Pacific/Auckland",
+      "aliases": [
+        "Ben Ohau New Zealand"
+      ],
+      "source": "photon+timeapi"
+    },
+    {
+      "query": "Ealing",
+      "lat": 51.5126553,
+      "lng": -0.3051952,
+      "timezone": "Europe/London",
+      "aliases": [
+        "Ealing Canterbury New Zealand"
+      ],
+      "source": "photon+timeapi"
+    },
+    {
+      "query": "Lowther",
+      "lat": 54.5902092,
+      "lng": -2.7319639,
+      "timezone": "Europe/London",
+      "aliases": [
+        "Lowther New Zealand"
+      ],
+      "source": "photon+timeapi"
+    },
+    {
+      "query": "Ngatira",
+      "lat": -39.128722,
+      "lng": 176.281194,
+      "timezone": "Pacific/Auckland",
+      "aliases": [
+        "Ngatira New Zealand"
+      ],
+      "source": "photon+timeapi"
+    },
+    {
+      "query": "Omaui",
+      "lat": -46.51905,
+      "lng": 168.26089,
+      "timezone": "Pacific/Auckland",
+      "aliases": [
+        "Omaui New Zealand"
+      ],
+      "source": "photon+timeapi"
+    },
+    {
+      "query": "Roaring Meg",
+      "lat": -42.3181807,
+      "lng": 171.4128856,
+      "timezone": "Pacific/Auckland",
+      "aliases": [
+        "Roaring Meg New Zealand"
+      ],
+      "source": "photon+timeapi"
+    },
+    {
+      "query": "Rotokawa",
+      "lat": -38.1097137,
+      "lng": 176.3248216,
+      "timezone": "Pacific/Auckland",
+      "aliases": [
+        "Rotokawa New Zealand"
+      ],
+      "source": "photon+timeapi"
+    },
+    {
+      "query": "Tongaporutu海岸",
+      "lat": -38.8207345,
+      "lng": 174.5992321,
+      "timezone": "Pacific/Auckland",
+      "aliases": [
+        "Tongaporutu New Zealand"
+      ],
+      "source": "photon+timeapi"
+    },
+    {
+      "query": "Waipapa Point",
+      "lat": -46.6602241,
+      "lng": 168.8470704,
+      "timezone": "Pacific/Auckland",
+      "aliases": [
+        "Waipapa Point New Zealand"
+      ],
+      "source": "photon+timeapi"
+    }
+  ]
+}
