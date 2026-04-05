@@ -22,6 +22,8 @@ Kairos 当前需要区分两层：
 
 - Kairos 不把 NLE 当作主数据中心，而把它们视为执行器或导出目标
 - 当前的 `Node.js core + Agent skill` 是对正式流程的临时承载形态，而不是正式流程本身的唯一边界
+- 本地运行与任务编排当前已收口到 `Supervisor + Hana UI console`
+- `素材分析` 与 `风格分析` 在当前控制台里直接以主路由展示监控，而不是再跳一次独立监控入口
 - 未来如果引入桌面 UI 或更多 provider / adapter，应建立在这套协议与项目模型上，而不是推翻它
 - 某些项目会直接消费调色后的素材版本而非原始素材；因此主链面向的是“当前采用的素材版本”，而不是固定绑定“永远使用原始素材”
 
@@ -162,7 +164,7 @@ flowchart TD
 
 当前正式项目模型围绕 `projects/<projectId>/` 展开，主要包括：
 
-- `config/`：逻辑素材源、运行时配置、风格档案、人工 itinerary 等
+- `config/`：逻辑素材源、运行时配置、风格档案、人工 itinerary，以及 Workspace 结构化配置
 - `store/`：项目元数据与清单
 - `analysis/`：资产分析报告、参考转写，以及 Analyze 的 durable resume cache（如 `prepared-assets/`、`audio-checkpoints/`）
 - `script/`、`timeline/`、`subtitles/`、`adapters/`：脚本、时间线与适配器状态
@@ -180,6 +182,7 @@ flowchart TD
 
 - `config/ingest-roots.json` 保存逻辑素材源，而不是设备绝对路径
 - `config/project-brief.md` 是路径映射的人类输入入口；进入 Ingest 前会同步到 `config/ingest-roots.json` 与 `config/device-media-maps.local.json`
+- `config/project-brief.json`、`config/manual-itinerary.json`、`script/script-brief.json`、`config/style-sources.json` 与 `config/review-queue.json` 是当前 Console/Workspace 的结构化事实源
 - `project-brief` 的每个 root block 允许额外声明 `飞行记录路径`，作为该素材根目录对应的 DJI FlightRecord 日志入口；实际识别不依赖强文件名，而是以文件头/可解析性为准
 - `config/runtime.json` 是项目级运行时配置入口
 - 如果需要解密 DJI v13/v14 FlightRecord，`config/runtime.json` 可提供 `djiOpenAPIKey`
@@ -188,6 +191,22 @@ flowchart TD
 - `gps/same-source/tracks/*.gpx` 与 `gps/same-source/index.json` 是 dense same-source GPS 的项目内缓存入口，仅用于内部索引 / 惰性查找
 - `gps/derived.json` 是项目级 `project-derived-track` 缓存，统一收口 embedded-derived 与 manual-itinerary-derived 的弱空间来源
 - 主链消费的是项目当前采用的素材版本，而不是强制要求原始素材始终在线
+
+### 当前运行与控制面
+
+- 本地运行时当前由 `Supervisor` 承载，Dashboard 默认在 `127.0.0.1:8940`，ML 默认在 `127.0.0.1:8910`
+- `apps/kairos-console/` 是当前正式控制台，采用“工作流优先”的顶层路由：
+  - `/`
+  - `/ingest-gps`
+  - `/analyze`
+  - `/style`
+  - `/script`
+  - `/timeline-export`
+  - `/project`
+- `Analyze` 与 `Style` 当前都直接在主路由展示监控内容：
+  - `/analyze` 直接展示 Analyze monitor
+  - `/style` 直接展示当前分类的 Style monitor
+- 旧 `/analyze/monitor` 与 `/style/monitor/:categoryId?` 只保留为兼容跳转
 
 ### 元信息保真原则
 

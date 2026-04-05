@@ -248,15 +248,13 @@ function AppShell() {
                 <Route
                   exact
                   path="/analyze/monitor"
-                  render={() => (
-                    <AnalyzeMonitorRoute projectId={projectId} />
-                  )}
+                  render={() => <Redirect to="/analyze" />}
                 />
                 <Route
                   exact
                   path="/analyze"
                   render={() => (
-                    <AnalyzeHubPage
+                    <AnalyzePage
                       projectId={projectId}
                       projectProgress={projectProgress}
                       activeJobs={activeJobs}
@@ -268,24 +266,21 @@ function AppShell() {
                 <Route
                   exact
                   path="/style/monitor/:categoryId?"
-                  render={props => (
-                    <StyleMonitorRoute
-                      projectId={projectId}
-                      categoryId={props.match.params.categoryId}
-                    />
-                  )}
+                  render={props => <Redirect to={buildStylePath(props.match.params.categoryId)} />}
                 />
                 <Route
                   exact
                   path="/style"
-                  render={() => (
-                    <StyleHubPage
+                  render={routeProps => (
+                    <StylePage
                       projectId={projectId}
                       config={config?.styleSources}
                       setStyleSources={setStyleSources}
                       saveSection={saveSection}
                       busy={busy}
                       onRun={() => runWorkflow('style-analysis')}
+                      location={routeProps.location}
+                      history={routeProps.history}
                     />
                   )}
                 />
@@ -338,8 +333,8 @@ function AppShell() {
 function OverviewPage({ currentProject, activeJobs, services, projectProgress, openReviewCount }) {
   const workflows = [
     { path: '/ingest-gps', label: '导入与 GPS', summary: '维护 project-brief、manual-itinerary 与素材时间校正。' },
-    { path: '/analyze', label: '素材分析', summary: '查看分析状态、恢复进度并进入专属监控页。' },
-    { path: '/style', label: '风格分析', summary: '维护 style sources，进入分类级风格监控页。' },
+    { path: '/analyze', label: '素材分析', summary: '直接查看分析监控、恢复进度并启动 Analyze。' },
+    { path: '/style', label: '风格分析', summary: '直接查看当前分类监控，并维护 style sources。' },
     { path: '/script', label: '脚本', summary: '维护 script-brief，并发起 agent script job。' },
     { path: '/timeline-export', label: '时间线与导出', summary: '查看时间线和导出阶段的能力与 blocker。' },
     { path: '/project', label: '项目', summary: '查看全量 Review Queue 与服务诊断。' },
@@ -473,60 +468,73 @@ function IngestGpsPage({
   );
 }
 
-function AnalyzeHubPage({ projectId, projectProgress, activeJobs, busy, onRun }) {
+function AnalyzePage({ projectId, projectProgress, activeJobs, busy, onRun }) {
   const analyzeJobs = activeJobs.filter(job => job.jobType === 'analyze');
   return (
-    <div className="route-page">
-      <RouteIntro title="素材分析" subtitle="从分析摘要进入专属监控页，恢复或重启时继续沿用现有 checkpoint。" />
-      <div className="card-grid card-grid-two">
-        <Card className="panel">
-          <div className="section-header">
-            <h2>分析摘要</h2>
-            <Tag>{projectProgress?.status || 'idle'}</Tag>
+    <MonitorLoader
+      kind="analyze"
+      projectId={projectId}
+      emptyLabel="当前项目还没有可展示的 Analyze 监控数据。"
+      toolbar={(
+        <>
+          <div className="monitor-toolbar-group">
+            <Button onClick={onRun} disabled={busy['job:analyze'] || !projectId}>
+              {busy['job:analyze'] ? '启动中…' : '启动 Analyze'}
+            </Button>
           </div>
-          {projectProgress ? (
-            <div className="stack-list">
-              <div className="job-item">
-                <div>
-                  <strong>{projectProgress.stepLabel || projectProgress.step}</strong>
-                  <div className="muted">{projectProgress.detail}</div>
-                </div>
-                <Tag>{`${projectProgress.current || 0}/${projectProgress.total || 0}`}</Tag>
-              </div>
-              {projectProgress.fileName ? <div className="muted">{projectProgress.fileName}</div> : null}
+          <div className="monitor-toolbar-meta">
+            <span>{`活跃 job ${analyzeJobs.length}`}</span>
+            {projectProgress ? <span>{`${projectProgress.current || 0}/${projectProgress.total || 0}`}</span> : null}
+          </div>
+        </>
+      )}
+      afterMonitor={(
+        <div className="card-grid card-grid-two">
+          <Card className="panel">
+            <div className="section-header">
+              <h2>分析摘要</h2>
+              <Tag>{projectProgress?.status || 'idle'}</Tag>
             </div>
-          ) : (
-            <p className="muted">当前还没有项目级分析进度。</p>
-          )}
-          <div className="actions">
-            <Button onClick={onRun} disabled={busy['job:analyze'] || !projectId}>{busy['job:analyze'] ? '启动中…' : '启动 Analyze'}</Button>
-            <Link className="text-link" to="/analyze/monitor">进入监控页</Link>
-          </div>
-        </Card>
-        <Card className="panel">
-          <div className="section-header">
-            <h2>活跃 Analyze Job</h2>
-            <Tag>{`${analyzeJobs.length} 个`}</Tag>
-          </div>
-          {analyzeJobs.length === 0 ? <p className="muted">当前没有受控 analyze job。若仍有进度推进，可能是孤儿 worker。</p> : null}
-          <div className="stack-list">
-            {analyzeJobs.map(job => (
-              <div key={job.jobId} className="job-item">
-                <div>
-                  <strong>{job.jobId.slice(0, 8)}</strong>
-                  <div className="muted">{job.progress?.stepLabel || job.updatedAt}</div>
+            {projectProgress ? (
+              <div className="stack-list">
+                <div className="job-item">
+                  <div>
+                    <strong>{projectProgress.stepLabel || projectProgress.step}</strong>
+                    <div className="muted">{projectProgress.detail}</div>
+                  </div>
+                  <Tag>{`${projectProgress.current || 0}/${projectProgress.total || 0}`}</Tag>
                 </div>
-                <Tag>{job.status}</Tag>
+                {projectProgress.fileName ? <div className="muted">{projectProgress.fileName}</div> : null}
               </div>
-            ))}
-          </div>
-        </Card>
-      </div>
-    </div>
+            ) : (
+              <p className="muted">当前还没有项目级分析进度。</p>
+            )}
+          </Card>
+          <Card className="panel">
+            <div className="section-header">
+              <h2>活跃 Analyze Job</h2>
+              <Tag>{`${analyzeJobs.length} 个`}</Tag>
+            </div>
+            {analyzeJobs.length === 0 ? <p className="muted">当前没有受控 analyze job。若仍有进度推进，可能是孤儿 worker。</p> : null}
+            <div className="stack-list">
+              {analyzeJobs.map(job => (
+                <div key={job.jobId} className="job-item">
+                  <div>
+                    <strong>{job.jobId.slice(0, 8)}</strong>
+                    <div className="muted">{job.progress?.stepLabel || job.updatedAt}</div>
+                  </div>
+                  <Tag>{job.status}</Tag>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      )}
+    />
   );
 }
 
-function StyleHubPage({ projectId, config, setStyleSources, saveSection, busy, onRun }) {
+function StylePage({ projectId, config, setStyleSources, saveSection, busy, onRun, location, history }) {
   if (!config) {
     return (
       <div className="route-page">
@@ -534,42 +542,43 @@ function StyleHubPage({ projectId, config, setStyleSources, saveSection, busy, o
       </div>
     );
   }
-  const defaultCategory = config.defaultCategory || config.categories[0]?.categoryId || '';
+  const currentCategoryId = resolveCurrentStyleCategory(config, location.search);
   return (
-    <div className="route-page">
-      <RouteIntro title="风格分析" subtitle="配置 style sources，并通过专属监控页跟踪每个风格分类的 agent 分析过程。" />
-      <Card className="panel">
-        <div className="section-header">
-          <h2>运行入口</h2>
-          <Tag>{`${config.categories.length} 个分类`}</Tag>
-        </div>
-        <div className="actions">
-          <Button onClick={onRun} disabled={busy['job:style-analysis'] || !projectId}>{busy['job:style-analysis'] ? '启动中…' : '启动 Style Analysis'}</Button>
-          <Link className="text-link" to={defaultCategory ? `/style/monitor/${encodeURIComponent(defaultCategory)}` : '/style/monitor'}>进入监控页</Link>
-        </div>
-        {config.categories.length > 0 ? (
-          <div className="stack-list">
-            {config.categories.map(category => (
-              <div key={category.categoryId} className="job-item">
-                <div>
-                  <strong>{category.displayName}</strong>
-                  <div className="muted">{`${category.sources.length} 个来源 · ${category.categoryId}`}</div>
-                </div>
-                <Link className="text-link" to={`/style/monitor/${encodeURIComponent(category.categoryId)}`}>查看监控</Link>
-              </div>
-            ))}
+    <MonitorLoader
+      kind="style"
+      projectId={projectId}
+      categoryId={currentCategoryId}
+      emptyLabel="当前分类还没有可展示的风格分析监控数据。"
+      toolbar={(
+        <>
+          <div className="monitor-toolbar-group">
+            <select
+              value={currentCategoryId}
+              onChange={event => history.push(buildStylePath(event.target.value))}
+            >
+              {config.categories.map(category => (
+                <option key={category.categoryId} value={category.categoryId}>{category.displayName}</option>
+              ))}
+            </select>
+            <Button onClick={onRun} disabled={busy['job:style-analysis'] || !projectId}>
+              {busy['job:style-analysis'] ? '启动中…' : '启动 Style Analysis'}
+            </Button>
           </div>
-        ) : (
-          <p className="muted">还没有配置 style category。</p>
-        )}
-      </Card>
-      <StyleSourcesEditor
-        config={config}
-        setConfig={setStyleSources}
-        onSave={() => saveSection('style-sources')}
-        busy={busy['style-sources']}
-      />
-    </div>
+          <div className="monitor-toolbar-meta">
+            <span>{`${config.categories.length} 个分类`}</span>
+            {currentCategoryId ? <span>{currentCategoryId}</span> : null}
+          </div>
+        </>
+      )}
+      afterMonitor={(
+        <StyleSourcesEditor
+          config={config}
+          setConfig={setStyleSources}
+          onSave={() => saveSection('style-sources')}
+          busy={busy['style-sources']}
+        />
+      )}
+    />
   );
 }
 
@@ -657,28 +666,7 @@ function ProjectPage({ services, busy, onControlMl, reviews, setReviews, resolve
   );
 }
 
-function AnalyzeMonitorRoute({ projectId }) {
-  return (
-    <MonitorLoader
-      kind="analyze"
-      projectId={projectId}
-      emptyLabel="当前项目还没有可展示的 Analyze 监控数据。"
-    />
-  );
-}
-
-function StyleMonitorRoute({ projectId, categoryId }) {
-  return (
-    <MonitorLoader
-      kind="style"
-      projectId={projectId}
-      categoryId={categoryId}
-      emptyLabel="当前分类还没有可展示的风格分析监控数据。"
-    />
-  );
-}
-
-function MonitorLoader({ kind, projectId, categoryId, emptyLabel }) {
+function MonitorLoader({ kind, projectId, categoryId, emptyLabel, toolbar, afterMonitor }) {
   const [model, setModel] = useState(null);
   const [error, setError] = useState('');
 
@@ -712,7 +700,7 @@ function MonitorLoader({ kind, projectId, categoryId, emptyLabel }) {
   return (
     <div className="route-page">
       {error ? <div className="error-banner">{error}</div> : null}
-      <MonitorPage model={model} emptyLabel={emptyLabel} />
+      <MonitorPage model={model} emptyLabel={emptyLabel} toolbar={toolbar} afterMonitor={afterMonitor} />
     </div>
   );
 }
@@ -765,6 +753,21 @@ function resolveTopLevelPath(pathname) {
   if (pathname.startsWith('/timeline-export')) return '/timeline-export';
   if (pathname.startsWith('/project')) return '/project';
   return '/';
+}
+
+function resolveCurrentStyleCategory(config, search) {
+  const params = new URLSearchParams(search || '');
+  const requested = params.get('categoryId');
+  if (requested && config.categories.some(category => category.categoryId === requested)) {
+    return requested;
+  }
+  return config.defaultCategory || config.categories[0]?.categoryId || '';
+}
+
+function buildStylePath(categoryId) {
+  return categoryId
+    ? `/style?categoryId=${encodeURIComponent(categoryId)}`
+    : '/style';
 }
 
 function makeSectionSetter(setConfig, sectionKey) {

@@ -1,11 +1,11 @@
 :root {
   color-scheme: light;
-  --bg: #f3efe8;
-  --panel: rgba(255, 252, 246, 0.94);
-  --panel-strong: rgba(255, 249, 240, 0.98);
-  --border: rgba(59, 43, 23, 0.12);
-  --text: #24170d;
-  --muted: #716355;
+  --bg: #ffffff;
+  --panel: #ffffff;
+  --panel-strong: #ffffff;
+  --border: rgba(24, 24, 24, 0.1);
+  --text: #1f1f1f;
+  --muted: #666666;
   --accent: #b85a2d;
   --accent-deep: #7a3518;
   --accent-soft: rgba(184, 90, 45, 0.12);
@@ -15,7 +15,7 @@
   --warn-soft: rgba(156, 107, 29, 0.14);
   --err: #a22828;
   --err-soft: rgba(162, 40, 40, 0.12);
-  --shadow: 0 18px 40px rgba(29, 20, 11, 0.08);
+  --shadow: 0 10px 28px rgba(15, 15, 15, 0.05);
 }
 
 * {
@@ -27,10 +27,7 @@ body {
   min-height: 100vh;
   font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
   color: var(--text);
-  background:
-    radial-gradient(circle at top left, rgba(205, 169, 109, 0.16), transparent 26%),
-    radial-gradient(circle at bottom right, rgba(78, 116, 95, 0.09), transparent 22%),
-    var(--bg);
+  background: var(--bg);
 }
 
 a {
@@ -62,7 +59,7 @@ pre {
 
 .top-nav-wrap {
   padding-bottom: 24px;
-  border-bottom: 1px solid rgba(59, 43, 23, 0.18);
+  border-bottom: 1px solid rgba(24, 24, 24, 0.1);
 }
 
 .top-nav.hana-menu {
@@ -83,7 +80,7 @@ pre {
 
 .top-nav .hana-menuitem-active {
   color: var(--text);
-  border-bottom-color: rgba(140, 116, 81, 0.72);
+  border-bottom-color: rgba(107, 107, 107, 0.72);
 }
 
 .workspace-bar {
@@ -114,11 +111,12 @@ pre {
 }
 
 .workspace-actions select,
+.monitor-toolbar select,
 .field input,
 .field textarea {
   width: 100%;
-  border: 1px solid #eadbc4;
-  background: #fffefb;
+  border: 1px solid rgba(24, 24, 24, 0.12);
+  background: #ffffff;
   border-radius: 12px;
   padding: 10px 12px;
   font: inherit;
@@ -139,12 +137,12 @@ pre {
 }
 
 .message-banner {
-  background: #fff1d8;
+  background: #faf2e7;
   color: #7c4a06;
 }
 
 .error-banner {
-  background: #fde9e6;
+  background: #faece9;
   color: #92261d;
 }
 
@@ -231,8 +229,8 @@ pre {
 .output-row {
   padding: 14px 16px;
   border-radius: 16px;
-  background: rgba(255, 251, 244, 0.95);
-  border: 1px solid rgba(59, 43, 23, 0.08);
+  background: #ffffff;
+  border: 1px solid rgba(24, 24, 24, 0.08);
 }
 
 .row-card,
@@ -259,8 +257,8 @@ pre {
   display: block;
   padding: 18px 18px 20px;
   border-radius: 18px;
-  border: 1px solid rgba(59, 43, 23, 0.08);
-  background: rgba(255, 251, 244, 0.95);
+  border: 1px solid rgba(24, 24, 24, 0.08);
+  background: #ffffff;
   transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
@@ -345,6 +343,32 @@ pre {
   margin: 0;
   color: var(--muted);
   font-size: 16px;
+}
+
+.monitor-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(24, 24, 24, 0.08);
+}
+
+.monitor-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.monitor-toolbar-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .chips {
@@ -453,8 +477,8 @@ pre {
 .headline-metric {
   padding: 16px 18px;
   border-radius: 18px;
-  background: rgba(36, 23, 13, 0.04);
-  border: 1px solid rgba(36, 23, 13, 0.06);
+  background: rgba(24, 24, 24, 0.025);
+  border: 1px solid rgba(24, 24, 24, 0.06);
 }
 
 .headline-metric .label,
@@ -488,7 +512,7 @@ pre {
   height: 18px;
   border-radius: 999px;
   overflow: hidden;
-  background: rgba(36, 23, 13, 0.08);
+  background: rgba(24, 24, 24, 0.08);
 }
 
 .bar-fill {
@@ -519,8 +543,8 @@ pre {
 .aux-item {
   padding: 12px 14px;
   border-radius: 16px;
-  background: rgba(36, 23, 13, 0.035);
-  border: 1px solid rgba(36, 23, 13, 0.05);
+  background: rgba(24, 24, 24, 0.025);
+  border: 1px solid rgba(24, 24, 24, 0.05);
 }
 
 .aux-item .value {
@@ -546,7 +570,7 @@ pre {
   gap: 12px;
   padding: 12px 14px;
   border-radius: 16px;
-  background: rgba(36, 23, 13, 0.04);
+  background: rgba(24, 24, 24, 0.025);
   border: 1px solid transparent;
 }
 
@@ -571,7 +595,7 @@ pre {
   font-size: 12px;
   font-weight: 800;
   color: var(--muted);
-  background: rgba(36, 23, 13, 0.08);
+  background: rgba(24, 24, 24, 0.08);
   flex: 0 0 auto;
 }
 
@@ -598,7 +622,7 @@ pre {
   display: block;
   padding: 10px 12px;
   border-radius: 12px;
-  background: rgba(36, 23, 13, 0.04);
+  background: rgba(24, 24, 24, 0.04);
   color: var(--muted);
   overflow-wrap: anywhere;
 }
@@ -635,6 +659,9 @@ pre {
 
   .workspace-bar,
   .workspace-actions,
+  .monitor-toolbar,
+  .monitor-toolbar-group,
+  .monitor-toolbar-meta,
   .actions,
   .section-header,
   .list-toolbar,

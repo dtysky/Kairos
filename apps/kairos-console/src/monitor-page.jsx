@@ -1,11 +1,12 @@
 import React from 'react';
 import { Card, Tag } from 'hana-ui';
 
-export function MonitorPage({ model, emptyLabel }) {
+export function MonitorPage({ model, emptyLabel, toolbar, afterMonitor }) {
   if (!model) {
     return (
       <div className="route-page">
         <EmptyPanel label={emptyLabel || '当前还没有可用的监控数据。'} />
+        {afterMonitor || null}
       </div>
     );
   }
@@ -29,6 +30,7 @@ export function MonitorPage({ model, emptyLabel }) {
             </span>
           ))}
         </div>
+        {toolbar ? <div className="monitor-toolbar">{toolbar}</div> : null}
       </Card>
 
       <Card className="monitor-panel hero-panel">
@@ -113,6 +115,8 @@ export function MonitorPage({ model, emptyLabel }) {
         <h2>原始进度数据</h2>
         <pre className="raw-json">{JSON.stringify(model.raw, null, 2)}</pre>
       </Card>
+
+      {afterMonitor || null}
     </div>
   );
 }

@@ -22,7 +22,8 @@
   - 文件 `create_time`
   - GPS / 空间相关元信息
   - 后续与 `Pharos`、chronology、空间推断对齐所需的其他核心字段
-- 当前正式项目结构围绕 `projects/<projectId>/`、`config/runtime.json`、logical ingest roots、`config/device-media-maps.local.json`、`gps/tracks/*.gpx`、`gps/merged.json`、`gps/same-source/`、`gps/derived.json` 与项目内 `.tmp/` 展开
+- 当前正式项目结构围绕 `projects/<projectId>/`、`config/runtime.json`、logical ingest roots、`config/device-media-maps.local.json`、Workspace 结构化配置 JSON、`gps/tracks/*.gpx`、`gps/merged.json`、`gps/same-source/`、`gps/derived.json` 与项目内 `.tmp/` 展开
+- 本地运行与项目配置当前由 `Supervisor + Hana UI console` 承载；`Analyze` 与 `Style` 监控直接挂在 `/analyze` 与 `/style` 主路由上
 
 ## 当前实现与早期草案的差异注记（2026-03-29 之后）
 
@@ -43,6 +44,13 @@
 - `config/styles/`
   - 风格档案不再只是一份 `style/profile.json`
   - 当前使用 `config/styles/{category}.md + config/styles/catalog.json`
+- Workspace 结构化配置
+  - `config/project-brief.json`
+  - `config/manual-itinerary.json`
+  - `script/script-brief.json`
+  - `config/style-sources.json`
+  - `config/review-queue.json`
+  - 这些 JSON 当前是 Console 的正式事实源，Markdown 继续保留为项目内可读派生产物
 - `config/manual-itinerary.md` 与 `analysis/asset-reports/`
   - `manual-itinerary` 现在有两层正式语义：
     - 正文行程：项目级弱空间线索，不承担 timezone 输入语义，也不再作为 analyze 阶段的独立顶层来源
@@ -96,7 +104,9 @@
   - `project brief`、`segment-plan brief`、`segment brief`、`beat polish brief`
   - 都使用自然语言输入，分别作用于全片、段落审查、章节细化和局部精修
 - 本地网页进度页
-  - 长时任务通过轮询 `.tmp/.../progress.json` 展示 `第 N / M 步`、`第 N / M 帧`、`剩余时间`
+  - 当前由 `Supervisor` 聚合为控制台监控接口，再由 Hana UI 控制台展示
+  - `Analyze` 与 `Style` 监控主入口分别是 `/analyze` 与 `/style`
+  - 旧监控子路由只保留兼容跳转
 
 如果要做新设备部署或数据迁移，请优先参考本文顶部要点、`current-solution-summary.md` 与较新的两份设计文档，而不是本文后文保留的旧 `cache/` 结构。
 

@@ -76,15 +76,19 @@
   - `style-sources` -> `风格分析`
   - `script-brief` -> `脚本`
   - 全量 `review queue` -> `项目`
-- 监控页已迁成专属路由，不再继续使用旧静态 HTML：
-  - `/analyze/monitor`
-  - `/style/monitor/:categoryId?`
+- `素材分析` 与 `风格分析` 当前都以主路由直接承载监控内容：
+  - `/analyze` 直接展示 Analyze monitor
+  - `/style` 直接展示当前分类的 Style monitor
+- 旧监控子路由保留为兼容跳转：
+  - `/analyze/monitor` -> `/analyze`
+  - `/style/monitor/:categoryId?` -> `/style?categoryId=...`
 - 监控页保持旧版监控页的信息层级：
   - intro header
   - hero progress monitor
   - `流程步骤`
   - `完成产物`
   - `原始进度数据`
+- 控制台本轮先把整站背景收回白底，保留结构层级和语义色，后续再单独做视觉升级。
 - 为监控页新增 Supervisor 聚合接口：
   - `GET /api/projects/:projectId/monitor/analyze`
   - `GET /api/projects/:projectId/monitor/style-analysis`
