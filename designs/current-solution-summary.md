@@ -70,8 +70,12 @@ flowchart TD
 ### Analyze
 
 - 当前正式策略是“粗扫优先 + 自动细扫”
+- 当前 Analyze 的稳定执行顺序已经是：
+  - `visual coarse prepare -> audio analysis -> merged decision -> deferred scene detect(if needed)`
+  - `scene detect` 不再是所有视频的 unconditional coarse 前置税，而是只在最终确实需要 shot 结构时延后触发
 - 视频内音轨的 ASR 已进入正式分析链路，而不再只是附属信息
 - `transcript / transcriptSegments / speechCoverage / placeHints / inferredGps` 都属于分析层结果
+- `asset report.clipTypeGuess` 当前表示 finalize 后的语义结论，不等于 ASR 入口使用的早期粗扫判断；Analyze 内部仍会保留独立的 coarse checkpoint 信号（如 `initialClipTypeGuess / visualSummary.sceneType`）用于前置决策
 - Analyze 现在按素材分阶段持久化可恢复状态：
   - `analysis/prepared-assets/<assetId>.json` 保存 coarse prepared checkpoint
   - `analysis/audio-checkpoints/<assetId>.json` 保存 ASR / protection fallback checkpoint
@@ -82,6 +86,12 @@ flowchart TD
 - `interestingWindows` 不再只有单一语义：
   - `startMs / endMs` 保留“为什么这里重要”的 focus/evidence window
   - `editStartMs / editEndMs` 表示更适合后续编排消费的 edit-friendly bounds
+- `talking-head` 当前有 audio-led window strategy，会优先把连续 speech windows 收口成更适合原声消费的窗口，而不是继续沿用宽泛视觉窗口
+- `drive` 类素材当前正式保留 `speech` 与 `visual` 两条语义支路：
+  - `interestingWindows` / slices 可携带 `semanticKind`
+  - `speech` path 面向 transcript / source speech
+  - `visual` path 面向景色 summary 与 `speedCandidate`
+  - 两类窗口不再默认 merge 成同一种“有语音就等于可直接剪原声”的窗口
 - `drive` 类素材可在分析层直接挂 `speedCandidate` metadata（例如 `2x / 5x / 10x` 建议档位），但 Analyze 不直接替下游决定最终速度
 
 ### Script

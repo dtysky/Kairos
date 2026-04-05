@@ -12,6 +12,10 @@
 1. `coarse-first analyze` 已把 ASR 纳入视频细扫前链路
    - coarse report / slice 可携带 `transcript / transcriptSegments / speechCoverage`
    - 语音窗口会和视觉窗口一起进入 `interestingWindows`
+   - 当前执行顺序已经稳定为 `visual coarse prepare -> audio analysis -> merged decision -> deferred scene detect(if needed)`；`scene detect` 不再是所有视频的默认前置步骤
+   - `asset report.clipTypeGuess` 是 finalize 后的语义结论，不等于 ASR 入口使用的早期粗扫判断；Analyze 内部仍保留 `initialClipTypeGuess / visualSummary.sceneType` 这类 coarse 信号
+   - `talking-head` 当前有 audio-led window strategy，会优先把连续 speech windows 收口成更适合原声消费的窗口
+   - `drive` 的 `speech` 和 `visual` windows / slices 已正式分语义，并通过 `semanticKind` 继续向后传递
 2. 脚本召回和 outline 已消费 transcript 证据
    - transcript 不再只是附属说明，而是候选召回和 beat 写作的正式输入
 3. 字幕已支持双路径
