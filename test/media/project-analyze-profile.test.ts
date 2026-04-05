@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { access, mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { getAnalyzePerformanceProfilePath } from '../../src/modules/media/analyze-profile.js';
@@ -8,6 +8,8 @@ import {
   getAssetReportPath,
   getSlicesPath,
   initWorkspaceProject,
+  writeFineScanCheckpoint,
+  writePreparedAssetCheckpoint,
   writeJson,
 } from '../../src/store/index.js';
 
@@ -893,5 +895,238 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
     expect(profile.ffmpeg.sceneDetectPhases?.finalize?.callCount).toBe(1);
     expect(profile.ffmpeg.sceneDetectPhases?.['fine-scan']?.callCount).toBe(0);
     expect(profile.assets[0]?.sceneDetectPhases?.finalize?.callCount).toBe(1);
+  });
+
+  it('resumes from a frames-ready fine-scan checkpoint without re-extracting keyframes', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-analyze-fine-scan-resume';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Fine Scan Resume Project');
+    const mediaRoot = join(projectRoot, '.tmp', 'fixtures');
+    const mediaPath = join(mediaRoot, 'resume.mp4');
+    const fineScanDir = join(projectRoot, '.tmp', 'media-analyze', 'asset-resume', 'fine-scan');
+    const readyFrames = [
+      join(fineScanDir, 'kf_0.jpg'),
+      join(fineScanDir, 'kf_1500.jpg'),
+      join(fineScanDir, 'kf_2999.jpg'),
+    ];
+
+    await mkdir(mediaRoot, { recursive: true });
+    await mkdir(fineScanDir, { recursive: true });
+    await writeFile(mediaPath, 'fake-media');
+    await Promise.all(readyFrames.map((framePath, index) => writeFile(framePath, `frame-${index}`)));
+
+    await writeJson(join(projectRoot, 'config/runtime.json'), {
+      mlServerUrl: 'http://127.0.0.1:8910',
+    });
+    await writeJson(join(projectRoot, 'config/ingest-roots.json'), {
+      roots: [{
+        id: 'root-1',
+        enabled: true,
+        label: 'camera-a',
+        path: mediaRoot,
+      }],
+    });
+    await writeJson(join(projectRoot, 'store/assets.json'), [{
+      id: 'asset-resume',
+      kind: 'video',
+      sourcePath: 'resume.mp4',
+      displayName: 'resume.mp4',
+      ingestRootId: 'root-1',
+      durationMs: 12_000,
+      capturedAt: '2026-03-31T08:15:30.000Z',
+      metadata: {
+        hasAudioStream: false,
+      },
+    }]);
+    await writeJson(getAssetReportPath(projectRoot, 'asset-resume'), {
+      assetId: 'asset-resume',
+      ingestRootId: 'root-1',
+      durationMs: 12_000,
+      clipTypeGuess: 'broll',
+      densityScore: 0.4,
+      summary: 'Existing resume summary.',
+      labels: ['broll'],
+      placeHints: [],
+      rootNotes: [],
+      sampleFrames: [{
+        timeMs: 0,
+        path: readyFrames[0],
+      }],
+      interestingWindows: [{
+        startMs: 0,
+        endMs: 3_000,
+        reason: 'resume-window',
+      }],
+      shouldFineScan: true,
+      fineScanMode: 'windowed',
+      fineScanReasons: ['resume-test'],
+      createdAt: '2026-03-31T08:15:30.000Z',
+      updatedAt: '2026-03-31T08:15:30.000Z',
+    });
+    await writePreparedAssetCheckpoint(projectRoot, {
+      assetId: 'asset-resume',
+      shotBoundaries: [],
+      shotBoundariesResolved: false,
+      sampleFrames: [{
+        timeMs: 0,
+        path: readyFrames[0],
+      }],
+      coarseSampleTimestamps: [0],
+      visualSummary: null,
+      initialClipTypeGuess: 'broll',
+      hasAudioTrack: false,
+    });
+    await writeFineScanCheckpoint(projectRoot, {
+      assetId: 'asset-resume',
+      status: 'frames-ready',
+      effectiveSlices: [{
+        id: 'slice-resume',
+        assetId: 'asset-resume',
+        type: 'broll',
+        sourceInMs: 0,
+        sourceOutMs: 3_000,
+        labels: ['broll'],
+        placeHints: [],
+      }],
+      keyframePlans: [{
+        shotId: 'slice-resume',
+        startMs: 0,
+        endMs: 3_000,
+        timestampsMs: [0, 1500, 2999],
+      }],
+      timestampsMs: [0, 1500, 2999],
+      expectedFramePaths: readyFrames,
+      readyFrameCount: readyFrames.length,
+      readyFrameBytes: 21,
+      droppedInvalidSliceCount: 0,
+    });
+
+    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue({
+      status: 'ok',
+      device: 'apple',
+      backend: 'mlx',
+      models_loaded: [],
+    });
+    vi.spyOn(MlClient.prototype, 'vlmAnalyze').mockResolvedValue({
+      description: JSON.stringify({
+        scene_type: 'landscape',
+        subjects: ['lake'],
+        mood: 'calm',
+        place_hints: ['queenstown'],
+        narrative_role: 'detail',
+        description: 'Recovered fine-scan recognition from prefetched frames.',
+      }),
+      timing: {
+        backend: 'mlx',
+        modelRef: 'test-qwen',
+        totalMs: 41,
+        processorMs: 7,
+        generateMs: 28,
+      },
+    });
+
+    const { analyzeWorkspaceProjectMedia } = await import('../../src/modules/media/project-analyze.js');
+    const result = await analyzeWorkspaceProjectMedia({
+      workspaceRoot,
+      projectId,
+      performanceProfile: {
+        enabled: true,
+        runLabel: 'fine-scan-resume',
+      },
+    });
+
+    const slices = JSON.parse(
+      await readFile(getSlicesPath(projectRoot), 'utf-8'),
+    ) as Array<{ assetId: string }>;
+
+    expect(extractKeyframesMock).not.toHaveBeenCalled();
+    expect(result.sliceCount).toBeGreaterThan(0);
+    expect(slices.some(slice => slice.assetId === 'asset-resume')).toBe(true);
+  });
+
+  it('skips fine-scan resume when a pending report has no prepared checkpoint', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-analyze-fine-scan-skip-missing-prepared';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Fine Scan Skip Missing Prepared');
+    const mediaRoot = join(projectRoot, '.tmp', 'fixtures');
+    const mediaPath = join(mediaRoot, 'skip.mp4');
+    const preparedCheckpointPath = join(
+      projectRoot,
+      'analysis',
+      'prepared-assets',
+      'asset-skip.json',
+    );
+
+    await mkdir(mediaRoot, { recursive: true });
+    await writeFile(mediaPath, 'fake-media');
+
+    await writeJson(join(projectRoot, 'config/runtime.json'), {
+      mlServerUrl: 'http://127.0.0.1:8910',
+    });
+    await writeJson(join(projectRoot, 'config/ingest-roots.json'), {
+      roots: [{
+        id: 'root-1',
+        enabled: true,
+        label: 'camera-a',
+        path: mediaRoot,
+      }],
+    });
+    await writeJson(join(projectRoot, 'store/assets.json'), [{
+      id: 'asset-skip',
+      kind: 'video',
+      sourcePath: 'skip.mp4',
+      displayName: 'skip.mp4',
+      ingestRootId: 'root-1',
+      durationMs: 8_000,
+      capturedAt: '2026-03-31T08:15:30.000Z',
+      metadata: {
+        hasAudioStream: false,
+      },
+    }]);
+    await writeJson(getAssetReportPath(projectRoot, 'asset-skip'), {
+      assetId: 'asset-skip',
+      ingestRootId: 'root-1',
+      durationMs: 8_000,
+      clipTypeGuess: 'broll',
+      densityScore: 0.2,
+      summary: 'Existing report without prepared checkpoint.',
+      labels: ['broll'],
+      placeHints: [],
+      rootNotes: [],
+      sampleFrames: [],
+      interestingWindows: [{
+        startMs: 0,
+        endMs: 2_000,
+        reason: 'skip-window',
+      }],
+      shouldFineScan: true,
+      fineScanMode: 'windowed',
+      fineScanReasons: ['skip-missing-prepared'],
+      createdAt: '2026-03-31T08:15:30.000Z',
+      updatedAt: '2026-03-31T08:15:30.000Z',
+    });
+
+    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue({
+      status: 'ok',
+      device: 'apple',
+      backend: 'mlx',
+      models_loaded: [],
+    });
+
+    const { analyzeWorkspaceProjectMedia } = await import('../../src/modules/media/project-analyze.js');
+    const result = await analyzeWorkspaceProjectMedia({
+      workspaceRoot,
+      projectId,
+      performanceProfile: {
+        enabled: true,
+        runLabel: 'fine-scan-skip-missing-prepared',
+      },
+    });
+
+    expect(result.reportCount).toBe(0);
+    expect(result.sliceCount).toBe(0);
+    expect(result.fineScannedAssetIds).toEqual([]);
+    expect(extractKeyframesMock).not.toHaveBeenCalled();
+    await expect(access(preparedCheckpointPath)).rejects.toThrow();
   });
 });

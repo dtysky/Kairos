@@ -15,6 +15,10 @@ export interface IKeyframeResult {
   path: string;
 }
 
+export interface IExtractKeyframesOptions {
+  concurrencyOverride?: number;
+}
+
 export interface IShotWindow {
   id: string;
   startMs: number;
@@ -75,6 +79,7 @@ export async function extractKeyframes(
   outputDir: string,
   timestampsMs: number[],
   tools?: IMediaToolConfig,
+  options?: IExtractKeyframesOptions,
 ): Promise<IKeyframeResult[]> {
   await mkdir(outputDir, { recursive: true });
   const ffmpeg = tools?.ffmpegPath?.trim() || 'ffmpeg';
@@ -83,6 +88,7 @@ export async function extractKeyframes(
   const concurrency = resolveKeyframeExtractConcurrency(
     timestampsMs.length,
     tools?.keyframeExtractConcurrency,
+    options?.concurrencyOverride,
   );
 
   const results = await mapWithConcurrencyLimit(
@@ -167,11 +173,14 @@ async function mapWithConcurrencyLimit<T, TResult>(
 function resolveKeyframeExtractConcurrency(
   taskCount: number,
   configured?: number,
+  override?: number,
 ): number {
   if (taskCount <= 0) return 1;
 
-  const preferred = Number.isFinite(configured)
-    ? Math.floor(configured!)
+  const preferred = Number.isFinite(override)
+    ? Math.floor(override!)
+    : Number.isFinite(configured)
+      ? Math.floor(configured!)
     : CDEFAULT_KEYFRAME_EXTRACT_CONCURRENCY;
   return Math.min(taskCount, Math.max(1, Math.min(CMAX_KEYFRAME_EXTRACT_CONCURRENCY, preferred)));
 }

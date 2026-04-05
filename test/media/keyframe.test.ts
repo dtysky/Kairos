@@ -244,4 +244,52 @@ describe('extractKeyframes', () => {
     expect(result.map(frame => frame.timeMs)).toEqual([1000, 2000, 3000, 4000]);
     expect(result.every(frame => frame.path.endsWith('.jpg'))).toBe(true);
   });
+
+  it('lets a single call override runtime concurrency for fine-scan prefetch', async () => {
+    const workspaceRoot = await createWorkspace();
+    const outputDir = join(workspaceRoot, 'frames');
+    const pending: IPendingExecCall[] = [];
+    let activeCalls = 0;
+    let maxActiveCalls = 0;
+
+    execFileMock.mockImplementation((
+      _file: string,
+      args: string[],
+      callback: ExecCallback,
+    ) => {
+      activeCalls += 1;
+      maxActiveCalls = Math.max(maxActiveCalls, activeCalls);
+      const outputs = collectImageOutputs(args);
+      pending.push({
+        args,
+        finish: () => {
+          writeOutputs(outputs);
+          activeCalls -= 1;
+          callback(null, '', '');
+        },
+      });
+    });
+
+    const { extractKeyframes } = await import('../../src/modules/media/keyframe.js');
+    const extraction = extractKeyframes(
+      '/tmp/input.mp4',
+      outputDir,
+      [1000, 2000, 3000],
+      { keyframeExtractConcurrency: 4 },
+      { concurrencyOverride: 1 },
+    );
+
+    await waitForPendingCount(pending, 1);
+    expect(pending).toHaveLength(1);
+    expect(maxActiveCalls).toBe(1);
+
+    pending[0]!.finish();
+    await waitForPendingCount(pending, 2);
+    pending[1]!.finish();
+    await waitForPendingCount(pending, 3);
+    pending[2]!.finish();
+
+    const result = await extraction;
+    expect(result.map(frame => frame.timeMs)).toEqual([1000, 2000, 3000]);
+  });
 });

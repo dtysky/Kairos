@@ -2,8 +2,10 @@ import { access, readdir } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import {
   getAudioAnalysisCheckpointRoot,
+  getFineScanCheckpointRoot,
   getPreparedAssetCheckpointRoot,
   listWorkspaceProjects,
+  loadFineScanCheckpoint,
   loadProjectBriefConfig,
   loadStyleSourcesConfig,
 } from '../store/index.js';
@@ -47,12 +49,28 @@ export interface IMonitorProgress {
   updatedAt?: string;
 }
 
+export interface IMonitorPipelineSummary {
+  kind: 'fine-scan';
+  total?: number;
+  prefetched?: number;
+  recognized?: number;
+  ready?: number;
+  persisted?: number;
+  activePrefetch?: number;
+  activeRecognition?: number;
+  readyFrameBytes?: number;
+  checkpointPlanOrPrefetch?: number;
+  checkpointReady?: number;
+  checkpointRecognizing?: number;
+}
+
 export interface IMonitorModel {
   title: string;
   subtitle: string;
   chips: IMonitorChip[];
   metrics: IMonitorMetric[];
   progress: IMonitorProgress;
+  pipeline?: IMonitorPipelineSummary;
   stepDefinitions: IMonitorStepDefinition[];
   outputs: IMonitorOutput[];
   raw: unknown;
@@ -76,6 +94,14 @@ interface IAnalyzeProgressPayload {
   stepDefinitions?: Array<{ key: string; label: string }>;
   extra?: {
     projectName?: string;
+    fineScanAssetTotal?: number;
+    prefetchedAssetCount?: number;
+    recognizedAssetCount?: number;
+    readyAssetCount?: number;
+    readyFrameBytes?: number;
+    activePrefetchCount?: number;
+    activeRecognitionCount?: number;
+    persistedAssetCount?: number;
   };
 }
 
@@ -98,7 +124,8 @@ const CANALYZE_STEP_DESCRIPTIONS: Record<string, string> = {
   prepare: '装载项目上下文并准备素材分析工作目录。',
   'coarse-scan': '抽取粗扫关键帧，完成首轮视觉理解与初筛。',
   'audio-analysis': '分析素材音轨、转录语音并生成语音驱动信息。',
-  'fine-scan': '对重点素材补做细扫切片与结构化片段理解。',
+  'fine-scan-prefetch': '为待细扫素材预抽关键帧，并准备识别所需中间态。',
+  'fine-scan-recognition': '消费已准备好的关键帧，生成细扫切片与视觉理解结果。',
   chronology: '刷新 chronology 与项目级时间视图。',
 };
 
@@ -130,6 +157,7 @@ export async function buildAnalyzeMonitorModel(
     countChildren(getPreparedAssetCheckpointRoot(projectRoot)),
     countChildren(getAudioAnalysisCheckpointRoot(projectRoot)),
   ]);
+  const fineScanCheckpointSummary = await summarizeFineScanCheckpoints(projectRoot);
   const total = progress?.total ?? progress?.fileTotal ?? 0;
   const current = progress?.current ?? progress?.fileIndex ?? 0;
   const percent = total > 0
@@ -137,6 +165,23 @@ export async function buildAnalyzeMonitorModel(
     : undefined;
   const stepDefinitions = buildAnalyzeSteps(progress);
   const projectName = progress?.extra?.projectName ?? projectEntry?.project.name ?? projectId;
+  const isFineScanPipelineStep = progress?.step === 'fine-scan-prefetch' || progress?.step === 'fine-scan-recognition';
+  const fineScanTotal = progress?.extra?.fineScanAssetTotal ?? total;
+  const fineScanPrefetched = progress?.extra?.prefetchedAssetCount;
+  const fineScanRecognized = progress?.extra?.recognizedAssetCount;
+  const fineScanReady = progress?.extra?.readyAssetCount;
+  const completionMetric = isFineScanPipelineStep && typeof fineScanRecognized === 'number'
+    ? {
+      value: `识别 ${fineScanRecognized}/${fineScanTotal}`,
+      sub: [
+        typeof fineScanPrefetched === 'number' ? `预抽 ${fineScanPrefetched}/${fineScanTotal}` : null,
+        typeof fineScanReady === 'number' ? `就绪 ${fineScanReady}` : null,
+      ].filter((part): part is string => Boolean(part)).join(' · '),
+    }
+    : {
+      value: total > 0 ? `${current}/${total}` : '暂无',
+      sub: percent != null ? `${percent.toFixed(1)}%` : '等待进度写入',
+    };
 
   return {
     title: '素材分析',
@@ -149,8 +194,8 @@ export async function buildAnalyzeMonitorModel(
     metrics: [
       {
         label: '完成进度',
-        value: total > 0 ? `${current}/${total}` : '暂无',
-        sub: percent != null ? `${percent.toFixed(1)}%` : '等待进度写入',
+        value: completionMetric.value,
+        sub: completionMetric.sub || (percent != null ? `${percent.toFixed(1)}%` : '等待进度写入'),
       },
       {
         label: '已落盘报告',
@@ -161,6 +206,13 @@ export async function buildAnalyzeMonitorModel(
         label: '音频中间态',
         value: String(audioCheckpointCount),
         sub: audioCheckpointCount > 0 ? '可恢复 audio checkpoint' : '当前没有 audio checkpoint',
+      },
+      {
+        label: '细扫中间态',
+        value: String(fineScanCheckpointSummary.total),
+        sub: fineScanCheckpointSummary.total > 0
+          ? `plan/prefetch ${fineScanCheckpointSummary.planOrPrefetch} · ready ${fineScanCheckpointSummary.ready} · recognizing ${fineScanCheckpointSummary.recognizing}`
+          : '当前没有 fine-scan checkpoint',
       },
     ],
     progress: {
@@ -175,11 +227,28 @@ export async function buildAnalyzeMonitorModel(
       etaSeconds: progress?.etaSeconds,
       updatedAt: progress?.updatedAt ?? latestJob?.updatedAt,
     },
+    pipeline: progress?.extra?.fineScanAssetTotal || fineScanCheckpointSummary.total > 0
+      ? {
+        kind: 'fine-scan',
+        total: fineScanTotal || undefined,
+        prefetched: fineScanPrefetched,
+        recognized: fineScanRecognized,
+        ready: fineScanReady,
+        persisted: progress?.extra?.persistedAssetCount,
+        activePrefetch: progress?.extra?.activePrefetchCount,
+        activeRecognition: progress?.extra?.activeRecognitionCount,
+        readyFrameBytes: progress?.extra?.readyFrameBytes,
+        checkpointPlanOrPrefetch: fineScanCheckpointSummary.planOrPrefetch,
+        checkpointReady: fineScanCheckpointSummary.ready,
+        checkpointRecognizing: fineScanCheckpointSummary.recognizing,
+      }
+      : undefined,
     stepDefinitions,
     outputs: await Promise.all([
       outputItem('资产报告目录', join(projectRoot, 'analysis', 'asset-reports'), '每条素材的正式分析结果。', reportCount > 0),
       outputItem('prepared-assets', getPreparedAssetCheckpointRoot(projectRoot), '粗扫完成后的 checkpoint。', preparedCount > 0),
       outputItem('audio-checkpoints', getAudioAnalysisCheckpointRoot(projectRoot), '音频阶段可恢复 checkpoint。', audioCheckpointCount > 0),
+      outputItem('fine-scan-checkpoints', getFineScanCheckpointRoot(projectRoot), '细扫预抽帧与识别阶段的恢复 checkpoint。', fineScanCheckpointSummary.total > 0),
       outputItem('chronology.json', join(projectRoot, 'media', 'chronology.json'), '项目时间视图与后续编辑的时序基础。'),
     ]),
     raw: progress,
@@ -258,13 +327,14 @@ export async function buildStyleMonitorModel(
 }
 
 function buildAnalyzeSteps(progress: IAnalyzeProgressPayload | null): IMonitorStepDefinition[] {
-  const definitions = progress?.stepDefinitions ?? [
-    { key: 'prepare', label: '准备素材分析' },
-    { key: 'coarse-scan', label: '粗扫素材' },
-    { key: 'audio-analysis', label: '分析视频内音轨' },
-    { key: 'fine-scan', label: '自动细扫重点内容' },
-    { key: 'chronology', label: '刷新时间视图' },
-  ];
+    const definitions = progress?.stepDefinitions ?? [
+      { key: 'prepare', label: '准备素材分析' },
+      { key: 'coarse-scan', label: '粗扫素材' },
+      { key: 'audio-analysis', label: '分析视频内音轨' },
+      { key: 'fine-scan-prefetch', label: '预抽细扫关键帧' },
+      { key: 'fine-scan-recognition', label: '识别细扫素材' },
+      { key: 'chronology', label: '刷新时间视图' },
+    ];
   const activeIndex = Math.max(0, Number(progress?.stepIndex ?? 1) - 1);
   const isComplete = progress?.status === 'completed';
   const isError = progress?.status === 'failed';
@@ -339,6 +409,51 @@ async function buildStyleOutputs(
   return outputs;
 }
 
+async function summarizeFineScanCheckpoints(projectRoot: string): Promise<{
+  total: number;
+  planOrPrefetch: number;
+  ready: number;
+  recognizing: number;
+}> {
+  const root = getFineScanCheckpointRoot(projectRoot);
+  try {
+    const entries = await readdir(root, { withFileTypes: true });
+    let total = 0;
+    let planOrPrefetch = 0;
+    let ready = 0;
+    let recognizing = 0;
+
+    for (const entry of entries) {
+      if (!entry.isFile() || !entry.name.endsWith('.json')) continue;
+      const assetId = entry.name.replace(/\.json$/u, '');
+      const checkpoint = await loadFineScanCheckpoint(projectRoot, assetId);
+      if (!checkpoint) continue;
+      total += 1;
+      if (checkpoint.status === 'frame-plan-ready' || checkpoint.status === 'prefetching') {
+        planOrPrefetch += 1;
+      } else if (checkpoint.status === 'frames-ready') {
+        ready += 1;
+      } else if (checkpoint.status === 'recognizing') {
+        recognizing += 1;
+      }
+    }
+
+    return {
+      total,
+      planOrPrefetch,
+      ready,
+      recognizing,
+    };
+  } catch {
+    return {
+      total: 0,
+      planOrPrefetch: 0,
+      ready: 0,
+      recognizing: 0,
+    };
+  }
+}
+
 async function outputItem(
   label: string,
   path: string,
@@ -356,7 +471,7 @@ async function outputItem(
 function statusLabel(status: string): string {
   const normalized = status.toLowerCase();
   if (normalized === 'running') return '运行中';
-  if (normalized === 'completed') return '已完成';
+  if (normalized === 'completed' || normalized === 'succeeded') return '已完成';
   if (normalized === 'blocked') return '已阻塞';
   if (normalized === 'failed') return '失败';
   if (normalized === 'queued') return '排队中';
@@ -367,7 +482,7 @@ function statusLabel(status: string): string {
 
 function toneForStatus(status: string): IMonitorChip['tone'] {
   const normalized = status.toLowerCase();
-  if (normalized === 'completed' || normalized === 'running') return 'ok';
+  if (normalized === 'completed' || normalized === 'succeeded' || normalized === 'running') return 'ok';
   if (normalized === 'blocked' || normalized === 'queued') return 'warn';
   if (normalized === 'failed' || normalized === 'error') return 'error';
   return 'default';

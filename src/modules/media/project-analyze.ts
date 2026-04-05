@@ -1,5 +1,6 @@
 import { join } from 'node:path';
-import { access } from 'node:fs/promises';
+import { access, stat } from 'node:fs/promises';
+import { freemem } from 'node:os';
 import type {
   EClipType,
   ETargetBudget,
@@ -32,13 +33,17 @@ import {
   removePreparedAssetCheckpoint,
   resolveWorkspaceProjectRoot,
   getProjectProgressPath,
+  loadFineScanCheckpoint,
   touchProjectUpdatedAt,
   writeKairosProgress,
   writeChronology,
   writeAssetReport,
   writeAudioAnalysisCheckpoint,
+  writeFineScanCheckpoint,
   writePreparedAssetCheckpoint,
+  removeFineScanCheckpoint,
   type IProjectDerivedTrack,
+  type IFineScanCheckpoint,
 } from '../../store/index.js';
 import { buildAssetCoarseReport } from './asset-report.js';
 import {
@@ -60,6 +65,7 @@ import {
   extractKeyframes,
   groupKeyframesByShot,
   sampleRangeTimestamps,
+  type IKeyframeResult,
   type IShotKeyframePlan,
 } from './keyframe.js';
 import { MlClient } from './ml-client.js';
@@ -121,10 +127,18 @@ const CANALYZE_STEP_DEFINITIONS = [
   { key: 'prepare', label: '准备素材分析' },
   { key: 'coarse-scan', label: '粗扫素材' },
   { key: 'audio-analysis', label: '分析视频内音轨' },
-  { key: 'fine-scan', label: '自动细扫重点内容' },
+  { key: 'fine-scan-prefetch', label: '预抽细扫关键帧' },
+  { key: 'fine-scan-recognition', label: '识别细扫素材' },
   { key: 'chronology', label: '刷新时间视图' },
 ] as const;
 const CAUDIO_ANALYSIS_KEEP_OTHER_MODELS_LOADED = true;
+const CFINE_SCAN_PREFETCH_DEFAULTS = {
+  baseConcurrency: 1,
+  maxConcurrency: 3,
+  minFreeMemoryMb: 2048,
+  maxReadyAssets: 6,
+  maxReadyFrameMb: 768,
+} as const;
 
 export async function analyzeWorkspaceProjectMedia(
   input: IAnalyzeWorkspaceProjectInput,
@@ -426,101 +440,21 @@ export async function analyzeWorkspaceProjectMedia(
       ...finalizedAnalyses.filter(analysis => analysis.report.shouldFineScan),
     ]);
     const fineScanPhaseStartedAtMs = Date.now();
-    for (const [index, analysis] of fineScanCandidates.entries()) {
-      const fileIndex = index + 1;
-
-      await writeTrackedProgress({
-        status: 'running',
-        pipelineKey: 'media-analyze',
-        pipelineLabel: '素材分析流程',
-        phaseKey: 'coarse-first-project-analysis',
-        phaseLabel: '粗扫优先素材分析',
-        step: 'fine-scan',
-        stepLabel: '自动细扫重点内容',
-        stepIndex: 4,
-        stepTotal: CANALYZE_STEP_DEFINITIONS.length,
-        stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
-        fileName: analysis.prepared.asset.displayName,
-        fileIndex: progressTotal,
-        fileTotal: progressTotal,
-        current: progressTotal,
-        total: progressTotal,
-        unit: 'files',
-        etaSeconds: estimatePhaseEtaSeconds(
-          fineScanPhaseStartedAtMs,
-          fineScannedAssetIds.length,
-          fineScanCandidates.length,
-        ),
-        detail: `正在细扫 ${analysis.prepared.asset.displayName}`,
-        extra: {
-          projectId: input.projectId,
-          projectName: project.name,
-          assetId: analysis.prepared.asset.id,
-          fineScanMode: analysis.report.fineScanMode,
-        },
-      });
-
-      const fineScanStartedAt = Date.now();
-      const fineScan = await generateFineScanOutput({
-        analysis,
-        projectRoot,
-        roots,
-        runtimeConfig,
-        getMlHandle,
-        performance,
-      });
-      performance?.recordStage(analysis.prepared.asset, 'fine-scan', Date.now() - fineScanStartedAt);
-      performance?.recordDroppedInvalidSlices(
-        analysis.prepared.asset,
-        fineScan.droppedInvalidSliceCount,
-      );
-      const updatedReport = reconcileFineScanReport({
-        report: analysis.report,
-        slices: fineScan.slices,
-        droppedInvalidSliceCount: fineScan.droppedInvalidSliceCount,
-      });
-
-      if (fineScan.slices.length > 0) {
-        await writeTrackedProgress({
-          status: 'running',
-          pipelineKey: 'media-analyze',
-          pipelineLabel: '素材分析流程',
-          phaseKey: 'coarse-first-project-analysis',
-          phaseLabel: '粗扫优先素材分析',
-          step: 'fine-scan',
-          stepLabel: '自动细扫重点内容',
-          stepIndex: 4,
-          stepTotal: CANALYZE_STEP_DEFINITIONS.length,
-          stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
-          fileName: analysis.prepared.asset.displayName,
-          fileIndex: progressTotal,
-          fileTotal: progressTotal,
-          current: progressTotal,
-          total: progressTotal,
-          unit: 'files',
-          etaSeconds: estimatePhaseEtaSeconds(
-            fineScanPhaseStartedAtMs,
-            fineScannedAssetIds.length,
-            fineScanCandidates.length,
-          ),
-          detail: `已为 ${analysis.prepared.asset.displayName} 生成 ${fineScan.slices.length} 个候选切片`,
-          extra: {
-            projectId: input.projectId,
-            projectName: project.name,
-            assetId: analysis.prepared.asset.id,
-            fineScanMode: updatedReport.fineScanMode,
-            sliceCount: fineScan.slices.length,
-          },
-        });
-        await appendTrackedSlices(analysis.prepared.asset, fineScan.slices);
-        pendingSlices.push(...fineScan.slices);
-        fineScannedAssetIds.push(analysis.prepared.asset.id);
-      }
-
-      analysis.report = finalizeFineScanReport(updatedReport, fineScan.slices.length);
-      await writeTrackedReport(analysis.prepared.asset, analysis.report);
-      await removePreparedAssetCheckpoint(projectRoot, analysis.prepared.asset.id);
-    }
+    const fineScanResult = await runFineScanPipeline({
+      fineScanCandidates,
+      fineScanPhaseStartedAtMs,
+      projectId: input.projectId,
+      projectName: project.name,
+      projectRoot,
+      runtimeConfig,
+      getMlHandle,
+      performance,
+      writeTrackedProgress,
+      writeTrackedReport,
+      appendTrackedSlices,
+    });
+    pendingSlices.push(...fineScanResult.pendingSlices);
+    fineScannedAssetIds.push(...fineScanResult.fineScannedAssetIds);
 
     await writeTrackedProgress({
       status: 'running',
@@ -530,7 +464,7 @@ export async function analyzeWorkspaceProjectMedia(
       phaseLabel: '粗扫优先素材分析',
       step: 'chronology',
       stepLabel: '刷新时间视图',
-      stepIndex: 5,
+      stepIndex: CANALYZE_STEP_DEFINITIONS.length,
       stepTotal: CANALYZE_STEP_DEFINITIONS.length,
       stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
       fileIndex: progressTotal,
@@ -648,6 +582,11 @@ interface IAnalyzeSingleAssetInput {
     sceneDetectFps?: number;
     sceneDetectScaleWidth?: number;
     keyframeExtractConcurrency?: number;
+    fineScanPrefetchBaseConcurrency?: number;
+    fineScanPrefetchMaxConcurrency?: number;
+    fineScanPrefetchMinFreeMemoryMb?: number;
+    fineScanPrefetchMaxReadyAssets?: number;
+    fineScanPrefetchMaxReadyFrameMb?: number;
     mlServerUrl?: string;
   };
   budget?: ETargetBudget;
@@ -686,6 +625,29 @@ interface IFinalizedAssetAnalysis {
   transcript?: ITranscriptContext | null;
   clipType: EClipType;
   decisionReasons: string[];
+}
+
+interface IFineScanPrefetchLimits {
+  baseConcurrency: number;
+  maxConcurrency: number;
+  minFreeMemoryMb: number;
+  maxReadyAssets: number;
+  maxReadyFrameMb: number;
+}
+
+interface IFineScanTaskState {
+  analysis: IFinalizedAssetAnalysis;
+  checkpoint: IFineScanCheckpoint;
+  plannedAtMs: number;
+  prefetchedAtMs?: number;
+  persisted: boolean;
+}
+
+interface IFineScanRecognitionResult {
+  task: IFineScanTaskState;
+  slices: IKtepSlice[];
+  updatedReport: IAssetCoarseReport;
+  droppedInvalidSliceCount: number;
 }
 
 interface IPreparedAssetPlanningContext {
@@ -2236,6 +2198,311 @@ function buildAudioAssetReport(
   });
 }
 
+function resolveFineScanPrefetchLimits(
+  runtimeConfig: IAnalyzeSingleAssetInput['runtimeConfig'],
+): IFineScanPrefetchLimits {
+  const baseConcurrency = Math.max(
+    1,
+    Math.floor(runtimeConfig.fineScanPrefetchBaseConcurrency ?? CFINE_SCAN_PREFETCH_DEFAULTS.baseConcurrency),
+  );
+  const maxConcurrency = Math.max(
+    baseConcurrency,
+    Math.floor(runtimeConfig.fineScanPrefetchMaxConcurrency ?? CFINE_SCAN_PREFETCH_DEFAULTS.maxConcurrency),
+  );
+  return {
+    baseConcurrency,
+    maxConcurrency,
+    minFreeMemoryMb: Math.max(
+      1,
+      Math.floor(runtimeConfig.fineScanPrefetchMinFreeMemoryMb ?? CFINE_SCAN_PREFETCH_DEFAULTS.minFreeMemoryMb),
+    ),
+    maxReadyAssets: Math.max(
+      1,
+      Math.floor(runtimeConfig.fineScanPrefetchMaxReadyAssets ?? CFINE_SCAN_PREFETCH_DEFAULTS.maxReadyAssets),
+    ),
+    maxReadyFrameMb: Math.max(
+      1,
+      Math.floor(runtimeConfig.fineScanPrefetchMaxReadyFrameMb ?? CFINE_SCAN_PREFETCH_DEFAULTS.maxReadyFrameMb),
+    ),
+  };
+}
+
+export function resolveFineScanPrefetchTargetConcurrency(input: {
+  limits: IFineScanPrefetchLimits;
+  freeMemoryMb: number;
+  readyAssetCount: number;
+  readyFrameBytes: number;
+  hasFramesReady: boolean;
+  hasActivePrefetch: boolean;
+  hasPendingPrefetch: boolean;
+}): number {
+  const readyFrameMb = input.readyFrameBytes / (1024 * 1024);
+  if (
+    input.readyAssetCount >= input.limits.maxReadyAssets
+    || readyFrameMb >= input.limits.maxReadyFrameMb
+  ) {
+    return 0;
+  }
+
+  const effectiveFreeMemoryMb = Math.max(0, Math.floor(input.freeMemoryMb));
+  if (effectiveFreeMemoryMb < input.limits.minFreeMemoryMb) {
+    if (!input.hasFramesReady && !input.hasActivePrefetch && input.hasPendingPrefetch) {
+      return 1;
+    }
+    return 0;
+  }
+
+  if (effectiveFreeMemoryMb >= input.limits.minFreeMemoryMb * 2) {
+    return input.limits.maxConcurrency;
+  }
+
+  return input.limits.baseConcurrency;
+}
+
+function buildFineScanOutputDir(projectRoot: string, assetId: string): string {
+  return join(buildAssetTempDir(projectRoot, assetId), 'fine-scan');
+}
+
+function buildFineScanExpectedFramePaths(
+  projectRoot: string,
+  assetId: string,
+  timestampsMs: number[],
+): string[] {
+  const outputDir = buildFineScanOutputDir(projectRoot, assetId);
+  return timestampsMs.map(timeMs => join(outputDir, `kf_${timeMs}.jpg`));
+}
+
+async function resolveReadyFineScanFrames(
+  checkpoint: IFineScanCheckpoint,
+): Promise<{ frames: IKeyframeResult[]; readyFrameCount: number; readyFrameBytes: number }> {
+  const frames = (
+    await Promise.all(checkpoint.expectedFramePaths.map(async (path, index) => {
+      try {
+        const frameStat = await stat(path);
+        return {
+          timeMs: checkpoint.timestampsMs[index] ?? 0,
+          path,
+          size: frameStat.size,
+        };
+      } catch {
+        return null;
+      }
+    }))
+  ).filter((frame): frame is { timeMs: number; path: string; size: number } => Boolean(frame));
+
+  return {
+    frames: frames.map(({ timeMs, path }) => ({ timeMs, path })),
+    readyFrameCount: frames.length,
+    readyFrameBytes: frames.reduce((sum, frame) => sum + frame.size, 0),
+  };
+}
+
+function buildFineScanSlicesFallback(
+  effectiveSlices: IKtepSlice[],
+  transcript: ITranscriptContext | null | undefined,
+  report: IAssetCoarseReport,
+): IKtepSlice[] {
+  return effectiveSlices.map(slice => {
+    const withTranscript = decorateSliceWithTranscript(slice, transcript);
+    return {
+      ...withTranscript,
+      summary: withTranscript.summary ?? report.summary ?? withTranscript.transcript,
+      labels: dedupeStrings([...withTranscript.labels, ...report.labels]),
+      placeHints: dedupeStrings([...withTranscript.placeHints, ...report.placeHints]),
+    };
+  });
+}
+
+function buildFineScanPlan(input: IBuildFineScanSlicesInput): {
+  effectiveSlices: IKtepSlice[];
+  keyframePlans: IShotKeyframePlan[];
+  timestampsMs: number[];
+  expectedFramePaths: string[];
+} {
+  const baseSlices = input.report.fineScanMode === 'full'
+    ? sliceVideo(input.asset, input.shotBoundaries)
+    : sliceInterestingWindows(
+      input.asset,
+      input.report.interestingWindows,
+      mapClipTypeToSliceType(input.clipType),
+    );
+  const rawSlices = baseSlices.length > 0
+    ? baseSlices
+    : input.report.fineScanMode === 'windowed' && (input.asset.durationMs ?? 0) > 0
+      ? sliceInterestingWindows(
+        input.asset,
+        [{
+          startMs: 0,
+          endMs: input.asset.durationMs ?? 0,
+          ...(input.clipType === 'drive' ? { semanticKind: 'visual' as const } : {}),
+          reason: 'whole-asset-window-fallback',
+        }],
+        mapClipTypeToSliceType(input.clipType),
+      )
+      : baseSlices;
+  const effectiveSlices = rawSlices.map(slice =>
+    applySliceWindowSemantics(
+      slice,
+      input.clipType,
+      input.asset.durationMs ?? 0,
+    ),
+  );
+  const keyframePlans = buildFineScanKeyframePlans(effectiveSlices);
+  const timestampsMs = [...new Set(keyframePlans.flatMap(plan => plan.timestampsMs))].sort((a, b) => a - b);
+
+  return {
+    effectiveSlices,
+    keyframePlans,
+    timestampsMs,
+    expectedFramePaths: buildFineScanExpectedFramePaths(input.projectRoot, input.asset.id, timestampsMs),
+  };
+}
+
+async function normalizeFineScanCheckpointForResume(
+  projectRoot: string,
+  checkpoint: IFineScanCheckpoint,
+): Promise<IFineScanCheckpoint> {
+  const ready = await resolveReadyFineScanFrames(checkpoint);
+  const hasReadyFrames = ready.readyFrameCount > 0 || checkpoint.timestampsMs.length === 0;
+  const nextStatus = checkpoint.status === 'prefetching'
+    ? (hasReadyFrames ? 'frames-ready' : 'frame-plan-ready')
+    : checkpoint.status === 'recognizing'
+      ? (hasReadyFrames ? 'frames-ready' : 'frame-plan-ready')
+      : checkpoint.status === 'persisted'
+        ? (hasReadyFrames ? 'frames-ready' : 'frame-plan-ready')
+        : checkpoint.status === 'frame-plan-ready' && hasReadyFrames
+          ? 'frames-ready'
+          : checkpoint.status === 'frames-ready' && !hasReadyFrames
+            ? 'frame-plan-ready'
+            : checkpoint.status;
+
+  const normalized: IFineScanCheckpoint = {
+    ...checkpoint,
+    status: nextStatus,
+    readyFrameCount: ready.readyFrameCount,
+    readyFrameBytes: ready.readyFrameBytes,
+  };
+
+  if (
+    normalized.status !== checkpoint.status
+    || normalized.readyFrameCount !== checkpoint.readyFrameCount
+    || normalized.readyFrameBytes !== checkpoint.readyFrameBytes
+  ) {
+    await writeFineScanCheckpoint(projectRoot, normalized);
+  }
+
+  return normalized;
+}
+
+async function ensureFineScanTaskState(input: {
+  analysis: IFinalizedAssetAnalysis;
+  projectRoot: string;
+  runtimeConfig: IAnalyzeSingleAssetInput['runtimeConfig'];
+  getMlHandle: () => Promise<MlAvailability>;
+  performance?: AnalyzePerformanceSession;
+}): Promise<IFineScanTaskState | null> {
+  if (!input.analysis.report.shouldFineScan) return null;
+
+  const assetId = input.analysis.prepared.asset.id;
+  const existingCheckpoint = await loadFineScanCheckpoint(input.projectRoot, assetId);
+  if (existingCheckpoint) {
+    return {
+      analysis: input.analysis,
+      checkpoint: await normalizeFineScanCheckpointForResume(input.projectRoot, existingCheckpoint),
+      plannedAtMs: Date.now(),
+      persisted: false,
+    };
+  }
+
+  if (input.analysis.prepared.asset.kind === 'audio') {
+    const checkpoint: IFineScanCheckpoint = {
+      assetId,
+      status: 'frames-ready',
+      effectiveSlices: [],
+      keyframePlans: [],
+      timestampsMs: [],
+      expectedFramePaths: [],
+      readyFrameCount: 0,
+      readyFrameBytes: 0,
+      droppedInvalidSliceCount: 0,
+      updatedAt: new Date().toISOString(),
+    };
+    await writeFineScanCheckpoint(input.projectRoot, checkpoint);
+    return {
+      analysis: input.analysis,
+      checkpoint,
+      plannedAtMs: Date.now(),
+      persisted: false,
+    };
+  }
+
+  if (input.analysis.prepared.asset.kind === 'photo') {
+    const checkpoint: IFineScanCheckpoint = {
+      assetId,
+      status: 'frames-ready',
+      effectiveSlices: [slicePhoto(input.analysis.prepared.asset)],
+      keyframePlans: [],
+      timestampsMs: [],
+      expectedFramePaths: [],
+      readyFrameCount: 0,
+      readyFrameBytes: 0,
+      droppedInvalidSliceCount: 0,
+      updatedAt: new Date().toISOString(),
+    };
+    await writeFineScanCheckpoint(input.projectRoot, checkpoint);
+    return {
+      analysis: input.analysis,
+      checkpoint,
+      plannedAtMs: Date.now(),
+      persisted: false,
+    };
+  }
+
+  let prepared = input.analysis.prepared;
+  if (input.analysis.report.fineScanMode === 'full' && !prepared.shotBoundariesResolved) {
+    prepared = await runDeferredSceneDetect({
+      prepared,
+      phase: 'fine-scan',
+      clipType: input.analysis.clipType,
+      performance: input.performance,
+    });
+    input.analysis.prepared = prepared;
+  }
+
+  const plan = buildFineScanPlan({
+    asset: prepared.asset,
+    localPath: prepared.localPath,
+    projectRoot: input.projectRoot,
+    roots: [],
+    runtimeConfig: input.runtimeConfig,
+    shotBoundaries: prepared.shotBoundaries,
+    report: input.analysis.report,
+    transcript: input.analysis.transcript,
+    clipType: input.analysis.clipType,
+    ml: await input.getMlHandle(),
+    performance: input.performance,
+  });
+  const checkpoint: IFineScanCheckpoint = {
+    assetId,
+    status: plan.expectedFramePaths.length > 0 ? 'frame-plan-ready' : 'frames-ready',
+    effectiveSlices: plan.effectiveSlices,
+    keyframePlans: plan.keyframePlans,
+    timestampsMs: plan.timestampsMs,
+    expectedFramePaths: plan.expectedFramePaths,
+    readyFrameCount: 0,
+    readyFrameBytes: 0,
+    droppedInvalidSliceCount: 0,
+    updatedAt: new Date().toISOString(),
+  };
+  await writeFineScanCheckpoint(input.projectRoot, checkpoint);
+  return {
+    analysis: input.analysis,
+    checkpoint,
+    plannedAtMs: Date.now(),
+    persisted: false,
+  };
+}
+
 async function generateFineScanOutput(input: {
   analysis: IFinalizedAssetAnalysis;
   projectRoot: string;
@@ -2249,6 +2516,11 @@ async function generateFineScanOutput(input: {
     sceneDetectFps?: number;
     sceneDetectScaleWidth?: number;
     keyframeExtractConcurrency?: number;
+    fineScanPrefetchBaseConcurrency?: number;
+    fineScanPrefetchMaxConcurrency?: number;
+    fineScanPrefetchMinFreeMemoryMb?: number;
+    fineScanPrefetchMaxReadyAssets?: number;
+    fineScanPrefetchMaxReadyFrameMb?: number;
     mlServerUrl?: string;
   };
   getMlHandle: () => Promise<MlAvailability>;
@@ -2556,6 +2828,11 @@ interface IBuildFineScanSlicesInput {
     sceneDetectFps?: number;
     sceneDetectScaleWidth?: number;
     keyframeExtractConcurrency?: number;
+    fineScanPrefetchBaseConcurrency?: number;
+    fineScanPrefetchMaxConcurrency?: number;
+    fineScanPrefetchMinFreeMemoryMb?: number;
+    fineScanPrefetchMaxReadyAssets?: number;
+    fineScanPrefetchMaxReadyFrameMb?: number;
     mlServerUrl?: string;
   };
   shotBoundaries: IShotBoundary[];
@@ -2688,6 +2965,457 @@ async function buildFineScanSlices(
   return {
     slices,
     droppedInvalidSliceCount,
+  };
+}
+
+async function prefetchFineScanTask(input: {
+  task: IFineScanTaskState;
+  projectRoot: string;
+  runtimeConfig: IAnalyzeSingleAssetInput['runtimeConfig'];
+  performance?: AnalyzePerformanceSession;
+}): Promise<IFineScanTaskState> {
+  const { task } = input;
+  const checkpoint = {
+    ...task.checkpoint,
+    status: 'prefetching' as const,
+  };
+  await writeFineScanCheckpoint(input.projectRoot, checkpoint);
+
+  if (checkpoint.timestampsMs.length > 0) {
+    const fineKeyframeStartedAt = Date.now();
+    const extractedFrames = await extractKeyframes(
+      task.analysis.prepared.localPath,
+      buildFineScanOutputDir(input.projectRoot, task.analysis.prepared.asset.id),
+      checkpoint.timestampsMs,
+      input.runtimeConfig,
+      { concurrencyOverride: 1 },
+    );
+    input.performance?.recordKeyframeExtract({
+      asset: task.analysis.prepared.asset,
+      phase: 'fine',
+      elapsedMs: Date.now() - fineKeyframeStartedAt,
+      keyframeCount: extractedFrames.length,
+    });
+
+    const readyFrames = await Promise.all(extractedFrames.map(async frame => {
+      try {
+        const frameStat = await stat(frame.path);
+        return {
+          ...frame,
+          size: frameStat.size,
+        };
+      } catch {
+        return null;
+      }
+    }));
+    const existingFrames = readyFrames.filter((frame): frame is IKeyframeResult & { size: number } => Boolean(frame));
+    const updatedCheckpoint: IFineScanCheckpoint = {
+      ...checkpoint,
+      status: 'frames-ready',
+      timestampsMs: existingFrames.map(frame => frame.timeMs),
+      expectedFramePaths: existingFrames.map(frame => frame.path),
+      readyFrameCount: existingFrames.length,
+      readyFrameBytes: existingFrames.reduce((sum, frame) => sum + frame.size, 0),
+    };
+    await writeFineScanCheckpoint(input.projectRoot, updatedCheckpoint);
+    return {
+      ...task,
+      checkpoint: updatedCheckpoint,
+      prefetchedAtMs: Date.now(),
+    };
+  }
+
+  const updatedCheckpoint: IFineScanCheckpoint = {
+    ...checkpoint,
+    status: 'frames-ready',
+    readyFrameCount: 0,
+    readyFrameBytes: 0,
+  };
+  await writeFineScanCheckpoint(input.projectRoot, updatedCheckpoint);
+  return {
+    ...task,
+    checkpoint: updatedCheckpoint,
+    prefetchedAtMs: Date.now(),
+  };
+}
+
+async function recognizeFineScanTask(input: {
+  task: IFineScanTaskState;
+  projectRoot: string;
+  runtimeConfig: IAnalyzeSingleAssetInput['runtimeConfig'];
+  getMlHandle: () => Promise<MlAvailability>;
+  performance?: AnalyzePerformanceSession;
+}): Promise<IFineScanRecognitionResult> {
+  const updatedCheckpoint: IFineScanCheckpoint = {
+    ...input.task.checkpoint,
+    status: 'recognizing',
+  };
+  await writeFineScanCheckpoint(input.projectRoot, updatedCheckpoint);
+  let slices: IKtepSlice[] = [];
+  let droppedInvalidSliceCount = 0;
+
+  if (input.task.analysis.prepared.asset.kind === 'photo') {
+    const slice = updatedCheckpoint.effectiveSlices[0] ?? slicePhoto(input.task.analysis.prepared.asset);
+    slice.summary = input.task.analysis.report.summary;
+    slice.labels = input.task.analysis.report.labels;
+    slice.placeHints = input.task.analysis.report.placeHints;
+    slices = [slice];
+  } else if (input.task.analysis.prepared.asset.kind === 'audio') {
+    slices = [];
+  } else {
+    const readyFrames = await resolveReadyFineScanFrames(updatedCheckpoint);
+    if (updatedCheckpoint.effectiveSlices.length === 0) {
+      slices = [];
+    } else if (updatedCheckpoint.keyframePlans.length === 0) {
+      slices = buildFineScanSlicesFallback(
+        updatedCheckpoint.effectiveSlices,
+        input.task.analysis.transcript,
+        input.task.analysis.report,
+      );
+    } else {
+      const ml = await input.getMlHandle();
+      const groups = groupKeyframesByShot(updatedCheckpoint.keyframePlans, readyFrames.frames);
+      const recognitions = await recognizeShotGroups(ml.client, groups);
+      for (const recognition of recognitions) {
+        input.performance?.recordVlm({
+          asset: input.task.analysis.prepared.asset,
+          phase: 'fine',
+          imageCount: recognition.framePaths.length,
+          roundTripMs: recognition.recognition.roundTripMs,
+          timing: recognition.recognition.timing,
+        });
+      }
+      const recognitionMap = new Map(recognitions.map(item => [item.shotId, item]));
+
+      for (const slice of updatedCheckpoint.effectiveSlices) {
+        const recognition = recognitionMap.get(slice.id);
+        if (recognition && isLikelyInvalidVisualSegment(recognition.recognition.description)) {
+          droppedInvalidSliceCount += 1;
+          continue;
+        }
+        const withTranscript = decorateSliceWithTranscript(
+          slice,
+          input.task.analysis.transcript,
+          recognition?.recognition.evidence,
+        );
+        slices.push({
+          ...withTranscript,
+          summary: recognition?.recognition.description
+            || withTranscript.summary
+            || input.task.analysis.report.summary
+            || withTranscript.transcript,
+          labels: dedupeStrings([
+            ...withTranscript.labels,
+            ...input.task.analysis.report.labels,
+            recognition?.recognition.sceneType,
+            ...(recognition?.recognition.subjects ?? []),
+          ]),
+          placeHints: dedupeStrings([
+            ...withTranscript.placeHints,
+            ...input.task.analysis.report.placeHints,
+            ...(recognition?.recognition.placeHints ?? []),
+          ]),
+        });
+      }
+    }
+  }
+
+  return {
+    task: {
+      ...input.task,
+      checkpoint: updatedCheckpoint,
+    },
+    slices,
+    updatedReport: reconcileFineScanReport({
+      report: input.task.analysis.report,
+      slices,
+      droppedInvalidSliceCount,
+    }),
+    droppedInvalidSliceCount,
+  };
+}
+
+function countReadyFineScanAssets(tasks: IFineScanTaskState[]): number {
+  return tasks.filter(task =>
+    task.checkpoint.status === 'frames-ready'
+    || task.checkpoint.status === 'recognizing',
+  ).length;
+}
+
+function sumReadyFineScanFrameBytes(tasks: IFineScanTaskState[]): number {
+  return tasks
+    .filter(task =>
+      task.checkpoint.status === 'frames-ready'
+      || task.checkpoint.status === 'recognizing',
+    )
+    .reduce((sum, task) => sum + task.checkpoint.readyFrameBytes, 0);
+}
+
+async function runFineScanPipeline(input: {
+  fineScanCandidates: IFinalizedAssetAnalysis[];
+  fineScanPhaseStartedAtMs: number;
+  projectId: string;
+  projectName: string;
+  projectRoot: string;
+  runtimeConfig: IAnalyzeSingleAssetInput['runtimeConfig'];
+  getMlHandle: () => Promise<MlAvailability>;
+  performance?: AnalyzePerformanceSession;
+  writeTrackedProgress: (payload: Parameters<typeof writeKairosProgress>[1]) => Promise<unknown>;
+  writeTrackedReport: (asset: IKtepAsset, report: IAssetCoarseReport) => Promise<void>;
+  appendTrackedSlices: (asset: IKtepAsset, slices: IKtepSlice[]) => Promise<void>;
+}): Promise<{
+  pendingSlices: IKtepSlice[];
+  fineScannedAssetIds: string[];
+}> {
+  const preparedTasks = (
+    await Promise.all(input.fineScanCandidates.map(async analysis => ensureFineScanTaskState({
+      analysis,
+      projectRoot: input.projectRoot,
+      runtimeConfig: input.runtimeConfig,
+      getMlHandle: input.getMlHandle,
+      performance: input.performance,
+    })))
+  ).filter((task): task is IFineScanTaskState => Boolean(task));
+
+  if (preparedTasks.length === 0) {
+    return {
+      pendingSlices: [],
+      fineScannedAssetIds: [],
+    };
+  }
+
+  const limits = resolveFineScanPrefetchLimits(input.runtimeConfig);
+  const pendingSlices: IKtepSlice[] = [];
+  const fineScannedAssetIds: string[] = [];
+  const activePrefetches = new Map<string, Promise<IFineScanTaskState>>();
+  let activeRecognition: { assetId: string; promise: Promise<IFineScanRecognitionResult> } | null = null;
+  let prefetchedCount = preparedTasks.filter(task =>
+    task.checkpoint.status === 'frames-ready'
+    || task.checkpoint.status === 'recognizing'
+    || task.checkpoint.status === 'persisted',
+  ).length;
+  let recognizedCount = preparedTasks.filter(task => task.persisted).length;
+
+  const writeFineScanProgress = async (
+    stage: 'fine-scan-prefetch' | 'fine-scan-recognition',
+    task?: IFineScanTaskState,
+    detail?: string,
+  ) => {
+    const current = stage === 'fine-scan-prefetch' ? prefetchedCount : recognizedCount;
+    const readyAssetCount = countReadyFineScanAssets(preparedTasks);
+    const readyFrameBytes = sumReadyFineScanFrameBytes(preparedTasks);
+    const activePrefetchCount = activePrefetches.size;
+    const activeRecognitionCount = activeRecognition ? 1 : 0;
+    await input.writeTrackedProgress({
+      status: 'running',
+      pipelineKey: 'media-analyze',
+      pipelineLabel: '素材分析流程',
+      phaseKey: 'coarse-first-project-analysis',
+      phaseLabel: '粗扫优先素材分析',
+      step: stage,
+      stepLabel: stage === 'fine-scan-prefetch' ? '预抽细扫关键帧' : '识别细扫素材',
+      stepIndex: stage === 'fine-scan-prefetch' ? 4 : 5,
+      stepTotal: CANALYZE_STEP_DEFINITIONS.length,
+      stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
+      fileName: task?.analysis.prepared.asset.displayName,
+      fileIndex: current,
+      fileTotal: preparedTasks.length,
+      current,
+      total: preparedTasks.length,
+      unit: 'assets',
+      etaSeconds: estimatePhaseEtaSeconds(
+        input.fineScanPhaseStartedAtMs,
+        current,
+        preparedTasks.length,
+      ),
+      detail,
+      extra: {
+        projectId: input.projectId,
+        projectName: input.projectName,
+        assetId: task?.analysis.prepared.asset.id,
+        fineScanMode: task?.analysis.report.fineScanMode,
+        fineScanAssetTotal: preparedTasks.length,
+        prefetchedAssetCount: prefetchedCount,
+        recognizedAssetCount: recognizedCount,
+        readyAssetCount,
+        readyFrameBytes,
+        activePrefetchCount,
+        activeRecognitionCount,
+        persistedAssetCount: recognizedCount,
+      },
+    });
+  };
+
+  while (recognizedCount < preparedTasks.length) {
+    while (true) {
+      const pendingPrefetchTasks = preparedTasks.filter(task =>
+        !task.persisted
+        && task.checkpoint.status === 'frame-plan-ready'
+        && !activePrefetches.has(task.analysis.prepared.asset.id),
+      );
+      if (pendingPrefetchTasks.length === 0) break;
+
+      const targetPrefetchConcurrency = resolveFineScanPrefetchTargetConcurrency({
+        limits,
+        freeMemoryMb: freemem() / (1024 * 1024),
+        readyAssetCount: countReadyFineScanAssets(preparedTasks),
+        readyFrameBytes: sumReadyFineScanFrameBytes(preparedTasks),
+        hasFramesReady: preparedTasks.some(task => task.checkpoint.status === 'frames-ready'),
+        hasActivePrefetch: activePrefetches.size > 0,
+        hasPendingPrefetch: pendingPrefetchTasks.length > 0,
+      });
+      if (targetPrefetchConcurrency <= activePrefetches.size) break;
+
+      const nextPrefetchTask = pendingPrefetchTasks[0];
+      if (!nextPrefetchTask) break;
+
+      activePrefetches.set(
+        nextPrefetchTask.analysis.prepared.asset.id,
+        prefetchFineScanTask({
+          task: nextPrefetchTask,
+          projectRoot: input.projectRoot,
+          runtimeConfig: input.runtimeConfig,
+          performance: input.performance,
+        }),
+      );
+      if (!activeRecognition) {
+        await writeFineScanProgress(
+          'fine-scan-prefetch',
+          nextPrefetchTask,
+          `正在为 ${nextPrefetchTask.analysis.prepared.asset.displayName} 预抽细扫关键帧`,
+        );
+      }
+    }
+
+    if (!activeRecognition) {
+      const nextRecognitionTask = preparedTasks.find(task =>
+        !task.persisted && task.checkpoint.status === 'frames-ready',
+      );
+      if (nextRecognitionTask) {
+        activeRecognition = {
+          assetId: nextRecognitionTask.analysis.prepared.asset.id,
+          promise: recognizeFineScanTask({
+            task: nextRecognitionTask,
+            projectRoot: input.projectRoot,
+            runtimeConfig: input.runtimeConfig,
+            getMlHandle: input.getMlHandle,
+            performance: input.performance,
+          }),
+        };
+        await writeFineScanProgress(
+          'fine-scan-recognition',
+          nextRecognitionTask,
+          `正在识别 ${nextRecognitionTask.analysis.prepared.asset.displayName} 的细扫素材`,
+        );
+      }
+    }
+
+    const pendingEvents: Array<Promise<
+      | { type: 'prefetch'; assetId: string; task: IFineScanTaskState }
+      | { type: 'recognition'; assetId: string; result: IFineScanRecognitionResult }
+    >> = [];
+    for (const [assetId, promise] of activePrefetches.entries()) {
+      pendingEvents.push(promise.then(task => ({ type: 'prefetch' as const, assetId, task })));
+    }
+    if (activeRecognition) {
+      const recognitionHandle = activeRecognition;
+      pendingEvents.push(
+        recognitionHandle.promise.then(result => ({
+          type: 'recognition' as const,
+          assetId: recognitionHandle.assetId,
+          result,
+        })),
+      );
+    }
+
+    if (pendingEvents.length === 0) {
+      break;
+    }
+
+    const nextEvent = await Promise.race(pendingEvents);
+    if (nextEvent.type === 'prefetch') {
+      activePrefetches.delete(nextEvent.assetId);
+      const taskIndex = preparedTasks.findIndex(task => task.analysis.prepared.asset.id === nextEvent.assetId);
+      if (taskIndex >= 0) {
+        preparedTasks[taskIndex] = nextEvent.task;
+      }
+      prefetchedCount = preparedTasks.filter(task =>
+        task.checkpoint.status === 'frames-ready'
+        || task.checkpoint.status === 'recognizing'
+        || task.checkpoint.status === 'persisted',
+      ).length;
+      if (!activeRecognition) {
+        await writeFineScanProgress(
+          'fine-scan-prefetch',
+          nextEvent.task,
+          `已为 ${nextEvent.task.analysis.prepared.asset.displayName} 准备 ${nextEvent.task.checkpoint.readyFrameCount} 张细扫关键帧`,
+        );
+      }
+      continue;
+    }
+
+    activeRecognition = null;
+    const taskIndex = preparedTasks.findIndex(task => task.analysis.prepared.asset.id === nextEvent.assetId);
+    if (taskIndex < 0) {
+      continue;
+    }
+
+    const task = preparedTasks[taskIndex];
+    const finalizedReport = finalizeFineScanReport(
+      nextEvent.result.updatedReport,
+      nextEvent.result.slices.length,
+    );
+    if (nextEvent.result.slices.length > 0) {
+      await input.appendTrackedSlices(task.analysis.prepared.asset, nextEvent.result.slices);
+      pendingSlices.push(...nextEvent.result.slices);
+      fineScannedAssetIds.push(task.analysis.prepared.asset.id);
+    }
+    task.analysis.report = finalizedReport;
+    await input.writeTrackedReport(task.analysis.prepared.asset, finalizedReport);
+    await removePreparedAssetCheckpoint(input.projectRoot, task.analysis.prepared.asset.id);
+    await writeFineScanCheckpoint(input.projectRoot, {
+      ...task.checkpoint,
+      status: 'persisted',
+      droppedInvalidSliceCount: nextEvent.result.droppedInvalidSliceCount,
+      readyFrameCount: 0,
+      readyFrameBytes: 0,
+    });
+    await removeFineScanCheckpoint(input.projectRoot, task.analysis.prepared.asset.id);
+
+    preparedTasks[taskIndex] = {
+      ...task,
+      checkpoint: {
+        ...task.checkpoint,
+        status: 'persisted',
+        droppedInvalidSliceCount: nextEvent.result.droppedInvalidSliceCount,
+        readyFrameCount: 0,
+        readyFrameBytes: 0,
+        updatedAt: new Date().toISOString(),
+      },
+      persisted: true,
+    };
+    input.performance?.recordStage(
+      task.analysis.prepared.asset,
+      'fine-scan',
+      Date.now() - task.plannedAtMs,
+    );
+    input.performance?.recordDroppedInvalidSlices(
+      task.analysis.prepared.asset,
+      nextEvent.result.droppedInvalidSliceCount,
+    );
+    recognizedCount = preparedTasks.filter(entry => entry.persisted).length;
+    await writeFineScanProgress(
+      'fine-scan-recognition',
+      preparedTasks[taskIndex],
+      nextEvent.result.slices.length > 0
+        ? `已为 ${task.analysis.prepared.asset.displayName} 生成 ${nextEvent.result.slices.length} 个候选切片`
+        : `已完成 ${task.analysis.prepared.asset.displayName} 的细扫识别`,
+    );
+  }
+
+  return {
+    pendingSlices,
+    fineScannedAssetIds,
   };
 }
 
@@ -2968,7 +3696,7 @@ async function loadPendingFineScanAnalyses(input: {
     const localPath = resolveAssetLocalPath(input.projectId, entry.asset, input.roots, input.deviceMaps);
     if (!localPath) continue;
 
-    const prepared = await loadOrPrepareAssetVisualCoarse({
+    const prepared = await loadPreparedAssetVisualCoarse({
       asset: entry.asset,
       localPath,
       projectRoot: input.projectRoot,
@@ -2976,6 +3704,7 @@ async function loadPendingFineScanAnalyses(input: {
       getMlHandle: input.getMlHandle,
       performance: input.performance,
     });
+    if (!prepared) continue;
     analyses.push({
       prepared,
       report: entry.report,

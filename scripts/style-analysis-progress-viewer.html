@@ -665,6 +665,40 @@
         }).join('');
       }
 
+      function getFineScanProgressStats(progress) {
+        if (!progress || (progress.step !== 'fine-scan-prefetch' && progress.step !== 'fine-scan-recognition')) {
+          return null;
+        }
+        const extra = progress.extra || {};
+        const total = typeof extra.fineScanAssetTotal === 'number'
+          ? extra.fineScanAssetTotal
+          : typeof progress.total === 'number'
+            ? progress.total
+            : null;
+        if (total == null) return null;
+        const prefetched = typeof extra.prefetchedAssetCount === 'number'
+          ? extra.prefetchedAssetCount
+          : progress.step === 'fine-scan-prefetch' && typeof progress.current === 'number'
+            ? progress.current
+            : 0;
+        const recognized = typeof extra.recognizedAssetCount === 'number'
+          ? extra.recognizedAssetCount
+          : progress.step === 'fine-scan-recognition' && typeof progress.current === 'number'
+            ? progress.current
+            : 0;
+        const ready = typeof extra.readyAssetCount === 'number' ? extra.readyAssetCount : 0;
+        const activePrefetch = typeof extra.activePrefetchCount === 'number' ? extra.activePrefetchCount : 0;
+        const activeRecognition = typeof extra.activeRecognitionCount === 'number' ? extra.activeRecognitionCount : 0;
+        return {
+          total,
+          prefetched,
+          recognized,
+          ready,
+          activePrefetch,
+          activeRecognition,
+        };
+      }
+
       function render(progress) {
         latestProgress = progress;
         const stepDefinitions = getStepDefinitions(progress);
@@ -692,14 +726,32 @@
 
         const current = typeof progress.current === 'number' ? progress.current : null;
         const total = typeof progress.total === 'number' ? progress.total : null;
+        const fineScanStats = getFineScanProgressStats(progress);
         const pct = current != null && total ? Math.max(0, Math.min(100, (current / total) * 100)) : 0;
         barFillEl.style.width = `${pct}%`;
-        progressHeroEl.textContent = current != null && total != null ? `${current} / ${total}` : '0 / 0';
-        progressUnitHeroEl.textContent = progress.unit || 'units';
-        progressTextEl.textContent = current != null && total != null
-          ? `${current} / ${total}${progress.unit ? ` ${progress.unit}` : ''}`
-          : '暂无量化进度';
-        fileIndexEl.textContent = `文件 ${progress.fileIndex || 0} / ${progress.fileTotal || 0}`;
+        if (fineScanStats) {
+          const primaryCount = progress.step === 'fine-scan-prefetch'
+            ? fineScanStats.prefetched
+            : fineScanStats.recognized;
+          progressHeroEl.textContent = `${primaryCount} / ${fineScanStats.total}`;
+          progressUnitHeroEl.textContent = 'assets';
+          progressTextEl.textContent = progress.step === 'fine-scan-prefetch'
+            ? `已预抽 ${fineScanStats.prefetched} / ${fineScanStats.total} assets`
+            : `已识别 ${fineScanStats.recognized} / ${fineScanStats.total} assets`;
+          fileIndexEl.textContent = `已识别 ${fineScanStats.recognized} / ${fineScanStats.total} · 已预抽 ${fineScanStats.prefetched} / ${fineScanStats.total} · 就绪 ${fineScanStats.ready} · 预抽中 ${fineScanStats.activePrefetch} · 识别中 ${fineScanStats.activeRecognition}`;
+        } else {
+          progressHeroEl.textContent = current != null && total != null ? `${current} / ${total}` : '0 / 0';
+          progressUnitHeroEl.textContent = progress.unit || 'units';
+          progressTextEl.textContent = current != null && total != null
+            ? `${current} / ${total}${progress.unit ? ` ${progress.unit}` : ''}`
+            : '暂无量化进度';
+          const fileCounterLabel = progress.unit === 'assets'
+            ? '素材'
+            : progress.unit === 'videos'
+              ? '视频'
+              : '文件';
+          fileIndexEl.textContent = `${fileCounterLabel} ${progress.fileIndex || 0} / ${progress.fileTotal || 0}`;
+        }
         etaEl.textContent = formatClock(getLiveEta(progress));
 
         renderStepTrack(progress);

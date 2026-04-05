@@ -3,7 +3,10 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { getAnalyzePerformanceProfilePath } from '../../src/modules/media/analyze-profile.js';
-import { analyzeWorkspaceProjectMedia } from '../../src/modules/media/project-analyze.js';
+import {
+  analyzeWorkspaceProjectMedia,
+  resolveFineScanPrefetchTargetConcurrency,
+} from '../../src/modules/media/project-analyze.js';
 import {
   getProjectProgressPath,
   initWorkspaceProject,
@@ -25,6 +28,40 @@ async function createWorkspace(): Promise<string> {
 }
 
 describe('analyzeWorkspaceProjectMedia', () => {
+  it('pauses fine-scan prefetch when ready caches exceed configured limits', () => {
+    expect(resolveFineScanPrefetchTargetConcurrency({
+      limits: {
+        baseConcurrency: 1,
+        maxConcurrency: 3,
+        minFreeMemoryMb: 2048,
+        maxReadyAssets: 2,
+        maxReadyFrameMb: 128,
+      },
+      freeMemoryMb: 8192,
+      readyAssetCount: 2,
+      readyFrameBytes: 32 * 1024 * 1024,
+      hasFramesReady: true,
+      hasActivePrefetch: false,
+      hasPendingPrefetch: true,
+    })).toBe(0);
+
+    expect(resolveFineScanPrefetchTargetConcurrency({
+      limits: {
+        baseConcurrency: 1,
+        maxConcurrency: 3,
+        minFreeMemoryMb: 2048,
+        maxReadyAssets: 4,
+        maxReadyFrameMb: 128,
+      },
+      freeMemoryMb: 8192,
+      readyAssetCount: 1,
+      readyFrameBytes: 256 * 1024 * 1024,
+      hasFramesReady: true,
+      hasActivePrefetch: false,
+      hasPendingPrefetch: true,
+    })).toBe(0);
+  });
+
   it('fails immediately when ML server is unavailable', async () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-analyze-ml-unavailable';

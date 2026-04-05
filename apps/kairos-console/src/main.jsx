@@ -475,7 +475,7 @@ function AnalyzePage({ projectId, projectProgress, activeJobs, busy, onRun }) {
       kind="analyze"
       projectId={projectId}
       emptyLabel="当前项目还没有可展示的 Analyze 监控数据。"
-      toolbar={(
+      toolbar={model => (
         <>
           <div className="monitor-toolbar-group">
             <Button onClick={onRun} disabled={busy['job:analyze'] || !projectId}>
@@ -484,53 +484,118 @@ function AnalyzePage({ projectId, projectProgress, activeJobs, busy, onRun }) {
           </div>
           <div className="monitor-toolbar-meta">
             <span>{`活跃 job ${analyzeJobs.length}`}</span>
-            {projectProgress ? <span>{`${projectProgress.current || 0}/${projectProgress.total || 0}`}</span> : null}
+            {renderAnalyzeToolbarMeta(model, projectProgress)}
           </div>
         </>
       )}
-      afterMonitor={(
-        <div className="card-grid card-grid-two">
-          <Card className="panel">
-            <div className="section-header">
-              <h2>分析摘要</h2>
-              <Tag>{projectProgress?.status || 'idle'}</Tag>
-            </div>
-            {projectProgress ? (
-              <div className="stack-list">
-                <div className="job-item">
-                  <div>
-                    <strong>{projectProgress.stepLabel || projectProgress.step}</strong>
-                    <div className="muted">{projectProgress.detail}</div>
-                  </div>
-                  <Tag>{`${projectProgress.current || 0}/${projectProgress.total || 0}`}</Tag>
-                </div>
-                {projectProgress.fileName ? <div className="muted">{projectProgress.fileName}</div> : null}
-              </div>
-            ) : (
-              <p className="muted">当前还没有项目级分析进度。</p>
-            )}
-          </Card>
-          <Card className="panel">
-            <div className="section-header">
-              <h2>活跃 Analyze Job</h2>
-              <Tag>{`${analyzeJobs.length} 个`}</Tag>
-            </div>
-            {analyzeJobs.length === 0 ? <p className="muted">当前没有受控 analyze job。若仍有进度推进，可能是孤儿 worker。</p> : null}
-            <div className="stack-list">
-              {analyzeJobs.map(job => (
-                <div key={job.jobId} className="job-item">
-                  <div>
-                    <strong>{job.jobId.slice(0, 8)}</strong>
-                    <div className="muted">{job.progress?.stepLabel || job.updatedAt}</div>
-                  </div>
-                  <Tag>{job.status}</Tag>
-                </div>
-              ))}
-            </div>
-          </Card>
-        </div>
+      afterMonitor={model => (
+        <AnalyzeAfterMonitor
+          model={model}
+          projectProgress={projectProgress}
+          analyzeJobs={analyzeJobs}
+        />
       )}
     />
+  );
+}
+
+function AnalyzeAfterMonitor({ model, projectProgress, analyzeJobs }) {
+  const progress = model?.progress || projectProgress || null;
+  const pipeline = model?.pipeline || null;
+  const pipelineTotal = pipeline?.total || 0;
+  const prefetched = pipeline?.prefetched ?? 0;
+  const recognized = pipeline?.recognized ?? 0;
+  const ready = pipeline?.ready ?? pipeline?.checkpointReady ?? 0;
+  const persisted = pipeline?.persisted ?? 0;
+  const activePrefetch = pipeline?.activePrefetch ?? 0;
+  const activeRecognition = pipeline?.activeRecognition ?? 0;
+  const readyFrameBytes = pipeline?.readyFrameBytes ?? 0;
+  const checkpointSummary = pipeline
+    ? [
+      pipeline.checkpointPlanOrPrefetch ? `plan/prefetch ${pipeline.checkpointPlanOrPrefetch}` : null,
+      pipeline.checkpointReady ? `ready ${pipeline.checkpointReady}` : null,
+      pipeline.checkpointRecognizing ? `recognizing ${pipeline.checkpointRecognizing}` : null,
+    ].filter(Boolean).join(' · ')
+    : '';
+
+  return (
+    <div className="card-grid card-grid-two">
+      <Card className="panel">
+        <div className="section-header">
+          <h2>细扫流水线</h2>
+          <Tag>{progress?.stepLabel || progress?.stepKey || projectProgress?.stepLabel || projectProgress?.step || 'idle'}</Tag>
+        </div>
+        {pipeline ? (
+          <>
+            <div className="pipeline-metric-grid">
+              <PipelineMetricCard label="已预抽" value={formatCountPair(prefetched, pipelineTotal)} sub="为后续识别准备关键帧" />
+              <PipelineMetricCard label="已识别" value={formatCountPair(recognized, pipelineTotal)} sub="已完成 fine-scan recognition" />
+              <PipelineMetricCard label="已持久化" value={formatCountPair(persisted, pipelineTotal)} sub="已落最终 slices / report" />
+              <PipelineMetricCard label="就绪队列" value={String(ready)} sub={readyFrameBytes > 0 ? `缓存 ${formatBytes(readyFrameBytes)}` : '等待识别消费'} />
+              <PipelineMetricCard label="预抽 worker" value={String(activePrefetch)} sub={checkpointSummary || '素材级 ffmpeg prefetch'} />
+              <PipelineMetricCard label="识别 worker" value={String(activeRecognition)} sub="GPU recognition worker" />
+            </div>
+            <div className="pipeline-footnote">
+              {progress?.detail || '当前 Analyze 已按 fine-scan prefetch -> recognition 流水线运行。'}
+            </div>
+            {progress?.fileName ? <div className="muted">{`当前素材：${progress.fileName}`}</div> : null}
+          </>
+        ) : (
+          <div className="stack-list">
+            <p className="muted">当前还没有可展示的 fine-scan 流水线指标；进入细扫阶段后，这里会显示预抽、识别、就绪队列和 worker 状态。</p>
+            {progress ? (
+              <div className="job-item">
+                <div>
+                  <strong>{progress.stepLabel || progress.stepKey || projectProgress?.stepLabel || projectProgress?.step || '等待运行'}</strong>
+                  <div className="muted">{progress.detail || projectProgress?.detail || '等待更多进度写入。'}</div>
+                </div>
+                <Tag>{`${progress.current || projectProgress?.current || 0}/${progress.total || projectProgress?.total || 0}`}</Tag>
+              </div>
+            ) : null}
+          </div>
+        )}
+      </Card>
+      <Card className="panel">
+        <div className="section-header">
+          <h2>活跃 Analyze Job</h2>
+          <Tag>{`${analyzeJobs.length} 个`}</Tag>
+        </div>
+        <div className="stack-list">
+          <div className="job-item">
+            <div>
+              <strong>{progress?.stepLabel || progress?.stepKey || projectProgress?.stepLabel || projectProgress?.step || '等待运行'}</strong>
+              <div className="muted">{progress?.detail || projectProgress?.detail || '当前还没有项目级分析进度。'}</div>
+            </div>
+            <Tag>{progress?.status || projectProgress?.status || 'idle'}</Tag>
+          </div>
+          {progress?.fileName || projectProgress?.fileName ? (
+            <div className="pipeline-footnote">
+              {`当前素材：${progress?.fileName || projectProgress?.fileName}`}
+            </div>
+          ) : null}
+          {analyzeJobs.length === 0 ? <p className="muted">当前没有受控 analyze job。若仍有进度推进，可能是孤儿 worker。</p> : null}
+          {analyzeJobs.map(job => (
+            <div key={job.jobId} className="job-item">
+              <div>
+                <strong>{job.jobId.slice(0, 8)}</strong>
+                <div className="muted">{job.progress?.stepLabel || job.updatedAt}</div>
+              </div>
+              <Tag>{job.status}</Tag>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function PipelineMetricCard({ label, value, sub }) {
+  return (
+    <div className="pipeline-metric-card">
+      <div className="label">{label}</div>
+      <div className="value">{value}</div>
+      {sub ? <div className="sub">{sub}</div> : null}
+    </div>
   );
 }
 
@@ -700,9 +765,51 @@ function MonitorLoader({ kind, projectId, categoryId, emptyLabel, toolbar, after
   return (
     <div className="route-page">
       {error ? <div className="error-banner">{error}</div> : null}
-      <MonitorPage model={model} emptyLabel={emptyLabel} toolbar={toolbar} afterMonitor={afterMonitor} />
+      <MonitorPage
+        model={model}
+        emptyLabel={emptyLabel}
+        toolbar={typeof toolbar === 'function' ? toolbar(model) : toolbar}
+        afterMonitor={typeof afterMonitor === 'function' ? afterMonitor(model) : afterMonitor}
+      />
     </div>
   );
+}
+
+function renderAnalyzeToolbarMeta(model, projectProgress) {
+  const pipeline = model?.pipeline;
+  if (pipeline?.total) {
+    return (
+      <>
+        <span>{`识别 ${pipeline.recognized || 0}/${pipeline.total}`}</span>
+        <span>{`预抽 ${pipeline.prefetched || 0}/${pipeline.total}`}</span>
+      </>
+    );
+  }
+  if (projectProgress) {
+    return <span>{`${projectProgress.current || 0}/${projectProgress.total || 0}`}</span>;
+  }
+  return null;
+}
+
+function formatCountPair(current, total) {
+  if (typeof total === 'number' && total > 0) {
+    return `${current || 0}/${total}`;
+  }
+  return String(current || 0);
+}
+
+function formatBytes(bytes) {
+  const value = Number(bytes) || 0;
+  if (value >= 1024 * 1024 * 1024) {
+    return `${(value / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+  }
+  if (value >= 1024 * 1024) {
+    return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+  }
+  if (value >= 1024) {
+    return `${(value / 1024).toFixed(1)} KB`;
+  }
+  return `${value} B`;
 }
 
 function TopNav({ history, location }) {

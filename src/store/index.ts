@@ -89,6 +89,15 @@ export {
   type IAudioAnalysisCheckpoint,
 } from './analyze-audio.js';
 export {
+  getFineScanCheckpointRoot,
+  getFineScanCheckpointPath,
+  loadFineScanCheckpoint,
+  writeFineScanCheckpoint,
+  removeFineScanCheckpoint,
+  type EFineScanCheckpointStatus,
+  type IFineScanCheckpoint,
+} from './analyze-fine-scan.js';
+export {
   getChronologyPath,
   loadChronology,
   writeChronology,

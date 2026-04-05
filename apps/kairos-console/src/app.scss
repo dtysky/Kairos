@@ -627,6 +627,42 @@ pre {
   overflow-wrap: anywhere;
 }
 
+.pipeline-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.pipeline-metric-card {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(184, 90, 45, 0.06);
+  border: 1px solid rgba(184, 90, 45, 0.12);
+}
+
+.pipeline-metric-card .label {
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pipeline-metric-card .value {
+  margin-top: 10px;
+  font-size: 26px;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+}
+
+.pipeline-metric-card .sub,
+.pipeline-footnote {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .raw-json {
   margin: 16px 0 0;
   padding: 16px;
@@ -642,7 +678,8 @@ pre {
   .field-grid-three,
   .link-card-grid,
   .headline-metrics,
-  .aux-grid {
+  .aux-grid,
+  .pipeline-metric-grid {
     grid-template-columns: 1fr;
   }
 
