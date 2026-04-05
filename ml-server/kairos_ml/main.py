@@ -26,6 +26,26 @@ class VlmRequest(BaseModel):
 
 _loaded: set[str] = set()
 
+
+def _unload_whisper():
+    try:
+        from .whisper_runner import unload
+
+        if unload():
+            _loaded.discard("whisper")
+    except Exception:
+        return
+
+
+def _unload_vlm():
+    try:
+        from .vlm_runner import unload
+
+        if unload():
+            _loaded.discard("vlm")
+    except Exception:
+        return
+
 # ─── Routes ───────────────────────────────────────────────────
 
 @app.get("/health")
@@ -34,13 +54,14 @@ def health():
         "status": "ok",
         "device": DEVICE,
         "backend": BACKEND,
-        "models_loaded": list(_loaded),
+        "models_loaded": sorted(_loaded),
     }
 
 
 @app.post("/asr")
 def asr(req: AsrRequest):
     try:
+        _unload_vlm()
         from .whisper_runner import transcribe
         _loaded.add("whisper")
         segments, timing = transcribe(req.audio_path, req.language)
@@ -74,6 +95,7 @@ def clip_embed(req: ClipEmbedRequest):
 @app.post("/vlm/analyze")
 def vlm_analyze(req: VlmRequest):
     try:
+        _unload_whisper()
         from .vlm_runner import analyze
         _loaded.add("vlm")
         description, timing = analyze(req.image_paths, req.prompt)

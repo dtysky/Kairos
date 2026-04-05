@@ -43,6 +43,13 @@
    - 字幕按有声岛落位，不再默认占满整个 beat
    - 时间线默认输出规格改为项目级可配置，fallback 为 `3840x2160 @ 30fps`
    - 当某拍不走 source speech 时，命中的视频 clip 会带上“静音原音”意图，由导出适配器映射到具体 NLE
+8. Analyze 恢复与资源口径已经补到项目级正式设计
+   - coarse prepared state 会写入 `analysis/prepared-assets/<assetId>.json`
+   - ASR / protection fallback state 会写入 `analysis/audio-checkpoints/<assetId>.json`
+   - `asset report` 新增 `fineScanCompletedAt / fineScanSliceCount`，用于恢复 `fine-scan`
+   - `retry / resume` 后 ETA 改为按当前阶段重新估算，且当前阶段完成样本少于 `3` 条时不显示 ETA
+   - ML server 会在 `VLM` 和 `Whisper` 之间互斥卸载，避免两套模型同时常驻显存
+   - 保护音轨只在资产已绑定 `protectionAudio` 时进入保守 fallback，且默认不做独立健康检查
 
 因此，后续阅读本稿时，应把这些能力理解为“正式流程中已被当前实现覆盖的阶段”，而不是另一套独立的“中间版本架构”。
 

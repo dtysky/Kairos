@@ -45,6 +45,8 @@ export async function extractImageProxy(
   const ffmpeg = tools?.ffmpegPath?.trim() || 'ffmpeg';
   const inputPath = toExecutableInputPath(filePath, ffmpeg);
   const outPath = join(outputDir, 'image_proxy.jpg');
+  const existingProxy = await resolveExistingKeyframe(outPath, 0);
+  if (existingProxy) return existingProxy;
   const outputPathForTool = toExecutableInputPath(outPath, ffmpeg);
   const vf = buildAnalysisProxyFilter(tools);
 
@@ -107,6 +109,8 @@ async function extractSingleKeyframeAtTimestamp(
 ): Promise<IKeyframeResult | null> {
   const sec = timeMs / 1000;
   const outPath = join(input.outputDir, `kf_${timeMs}.jpg`);
+  const existingKeyframe = await resolveExistingKeyframe(outPath, timeMs);
+  if (existingKeyframe) return existingKeyframe;
   const outputPathForTool = toExecutableInputPath(outPath, input.ffmpeg);
 
   try {
@@ -119,6 +123,18 @@ async function extractSingleKeyframeAtTimestamp(
       '-y',
       outputPathForTool,
     ]);
+    await access(outPath);
+    return { timeMs, path: outPath };
+  } catch {
+    return null;
+  }
+}
+
+async function resolveExistingKeyframe(
+  outPath: string,
+  timeMs: number,
+): Promise<IKeyframeResult | null> {
+  try {
     await access(outPath);
     return { timeMs, path: outPath };
   } catch {

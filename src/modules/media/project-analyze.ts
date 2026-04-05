@@ -17,20 +17,27 @@ import {
   appendSlices,
   estimateRemainingSeconds,
   findUnreportedAssets,
+  loadAudioAnalysisCheckpoint,
   loadAssetReports,
   loadAssets,
   loadChronology,
   loadProjectDeviceMediaMaps,
   loadIngestRoots,
+  loadPreparedAssetCheckpoint,
   loadProjectDerivedTrack,
   loadProject,
   loadRuntimeConfig,
+  loadSlices,
+  removeAudioAnalysisCheckpoint,
+  removePreparedAssetCheckpoint,
   resolveWorkspaceProjectRoot,
   getProjectProgressPath,
   touchProjectUpdatedAt,
   writeKairosProgress,
   writeChronology,
   writeAssetReport,
+  writeAudioAnalysisCheckpoint,
+  writePreparedAssetCheckpoint,
   type IProjectDerivedTrack,
 } from '../../store/index.js';
 import { buildAssetCoarseReport } from './asset-report.js';
@@ -134,12 +141,13 @@ export async function analyzeWorkspaceProjectMedia(
     })
     : undefined;
   const performanceProfilePath = performance?.resolveOutputPath(input.performanceProfile?.outputPath);
-  const [{ roots }, deviceMaps, runtimeConfig, assets, existingReports, project, derivedTrack] = await Promise.all([
+  const [{ roots }, deviceMaps, runtimeConfig, assets, existingReports, existingSlices, project, derivedTrack] = await Promise.all([
     loadIngestRoots(projectRoot),
     loadProjectDeviceMediaMaps(projectRoot, input.deviceMapPath),
     loadRuntimeConfig(projectRoot),
     loadAssets(projectRoot),
     loadAssetReports(projectRoot),
+    loadSlices(projectRoot),
     loadProject(projectRoot),
     loadProjectDerivedTrack(projectRoot),
   ]);
@@ -148,7 +156,23 @@ export async function analyzeWorkspaceProjectMedia(
     gpxPaths: input.gpxPaths,
   });
 
+  const requestedScope = input.assetIds?.length
+    ? new Set(input.assetIds)
+    : null;
+  const progressScopeAssets = assets.filter(asset => (
+    asset.kind !== 'audio'
+    && (!requestedScope || requestedScope.has(asset.id))
+  ));
   const pendingAssets = selectPendingAssets(assets, existingReports, input.assetIds);
+  const pendingFineScanEntries = !input.assetIds?.length
+    ? selectPendingFineScanEntries(assets, existingReports, existingSlices)
+    : [];
+  const progressTotal = progressScopeAssets.length;
+  const progressBase = Math.max(0, progressTotal - pendingAssets.length);
+  const toOverallProgressIndex = (localIndex: number) => Math.min(
+    progressTotal,
+    progressBase + Math.max(0, localIndex),
+  );
   performance?.setAssetCount(pendingAssets.length);
   const analyzedAssetIds: string[] = [];
   const fineScannedAssetIds: string[] = [];
@@ -216,10 +240,10 @@ export async function analyzeWorkspaceProjectMedia(
     stepIndex: 1,
     stepTotal: CANALYZE_STEP_DEFINITIONS.length,
     stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
-    fileIndex: 0,
-    fileTotal: pendingAssets.length,
-    current: 0,
-    total: pendingAssets.length,
+    fileIndex: progressBase,
+    fileTotal: progressTotal,
+    current: progressBase,
+    total: progressTotal,
     unit: 'files',
     detail: `正在读取项目“${project.name}”的素材与设备映射`,
     extra: {
@@ -235,14 +259,19 @@ export async function analyzeWorkspaceProjectMedia(
       roots,
     });
 
-    if (pendingAssets.length > 0) {
+    if (pendingAssets.length > 0 || pendingFineScanEntries.length > 0) {
       await getMlHandle();
     }
 
+    const coarsePhaseStartedAtMs = Date.now();
     for (const [index, asset] of pendingAssets.entries()) {
       const localPath = resolveAssetLocalPath(input.projectId, asset, roots, deviceMaps);
-      const fileIndex = index + 1;
-      const etaSeconds = estimateRemainingSeconds(startedAtMs, preparedAnalyses.length, pendingAssets.length);
+      const fileIndex = toOverallProgressIndex(index + 1);
+      const etaSeconds = estimatePhaseEtaSeconds(
+        coarsePhaseStartedAtMs,
+        preparedAnalyses.length,
+        pendingAssets.length,
+      );
 
       await writeTrackedProgress({
         status: 'running',
@@ -257,9 +286,9 @@ export async function analyzeWorkspaceProjectMedia(
         stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
         fileName: asset.displayName,
         fileIndex,
-        fileTotal: pendingAssets.length,
+        fileTotal: progressTotal,
         current: fileIndex,
-        total: pendingAssets.length,
+        total: progressTotal,
         unit: 'files',
         etaSeconds,
         detail: localPath
@@ -276,7 +305,7 @@ export async function analyzeWorkspaceProjectMedia(
       if (!localPath) continue;
 
       const prepareStartedAt = Date.now();
-      const prepared = await prepareAssetVisualCoarse({
+      const prepared = await loadOrPrepareAssetVisualCoarse({
         asset,
         localPath,
         projectRoot,
@@ -288,8 +317,9 @@ export async function analyzeWorkspaceProjectMedia(
       preparedAnalyses.push(prepared);
     }
 
+    const audioPhaseStartedAtMs = Date.now();
     for (const [index, prepared] of preparedAnalyses.entries()) {
-      const fileIndex = index + 1;
+      const fileIndex = toOverallProgressIndex(index + 1);
 
       await writeTrackedProgress({
         status: 'running',
@@ -304,11 +334,15 @@ export async function analyzeWorkspaceProjectMedia(
         stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
         fileName: prepared.asset.displayName,
         fileIndex,
-        fileTotal: preparedAnalyses.length,
+        fileTotal: progressTotal,
         current: fileIndex,
-        total: preparedAnalyses.length,
+        total: progressTotal,
         unit: 'files',
-        etaSeconds: estimateRemainingSeconds(startedAtMs, analyzedAssetIds.length, preparedAnalyses.length),
+        etaSeconds: estimatePhaseEtaSeconds(
+          audioPhaseStartedAtMs,
+          analyzedAssetIds.length,
+          preparedAnalyses.length,
+        ),
         detail: describeDecisionStage(prepared.asset, prepared.hasAudioTrack),
         extra: {
           projectId: input.projectId,
@@ -346,11 +380,15 @@ export async function analyzeWorkspaceProjectMedia(
             stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
             fileName: prepared.asset.displayName,
             fileIndex,
-            fileTotal: preparedAnalyses.length,
+            fileTotal: progressTotal,
             current: fileIndex,
-            total: preparedAnalyses.length,
+            total: progressTotal,
             unit: 'files',
-            etaSeconds: estimateRemainingSeconds(startedAtMs, analyzedAssetIds.length, preparedAnalyses.length),
+            etaSeconds: estimatePhaseEtaSeconds(
+              audioPhaseStartedAtMs,
+              analyzedAssetIds.length,
+              preparedAnalyses.length,
+            ),
             detail: detail ?? `正在分析 ${prepared.asset.displayName} 的视频内音轨`,
             extra: {
               projectId: input.projectId,
@@ -364,11 +402,29 @@ export async function analyzeWorkspaceProjectMedia(
       performance?.recordStage(prepared.asset, 'finalize', Date.now() - finalizeStartedAt);
 
       await writeTrackedReport(prepared.asset, finalized.report);
+      await removeAudioAnalysisCheckpoint(projectRoot, prepared.asset.id);
+      if (!finalized.report.shouldFineScan) {
+        await removePreparedAssetCheckpoint(projectRoot, prepared.asset.id);
+      }
       analyzedAssetIds.push(prepared.asset.id);
       finalizedAnalyses.push(finalized);
     }
 
-    const fineScanCandidates = finalizedAnalyses.filter(analysis => analysis.report.shouldFineScan);
+    const resumedFineScanAnalyses = await loadPendingFineScanAnalyses({
+      projectId: input.projectId,
+      projectRoot,
+      entries: pendingFineScanEntries,
+      roots,
+      deviceMaps,
+      runtimeConfig,
+      getMlHandle,
+      performance,
+    });
+    const fineScanCandidates = dedupeFineScanAnalyses([
+      ...resumedFineScanAnalyses,
+      ...finalizedAnalyses.filter(analysis => analysis.report.shouldFineScan),
+    ]);
+    const fineScanPhaseStartedAtMs = Date.now();
     for (const [index, analysis] of fineScanCandidates.entries()) {
       const fileIndex = index + 1;
 
@@ -384,12 +440,16 @@ export async function analyzeWorkspaceProjectMedia(
         stepTotal: CANALYZE_STEP_DEFINITIONS.length,
         stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
         fileName: analysis.prepared.asset.displayName,
-        fileIndex,
-        fileTotal: fineScanCandidates.length,
-        current: fileIndex,
-        total: fineScanCandidates.length,
+        fileIndex: progressTotal,
+        fileTotal: progressTotal,
+        current: progressTotal,
+        total: progressTotal,
         unit: 'files',
-        etaSeconds: estimateRemainingSeconds(startedAtMs, fineScannedAssetIds.length, fineScanCandidates.length),
+        etaSeconds: estimatePhaseEtaSeconds(
+          fineScanPhaseStartedAtMs,
+          fineScannedAssetIds.length,
+          fineScanCandidates.length,
+        ),
         detail: `正在细扫 ${analysis.prepared.asset.displayName}`,
         extra: {
           projectId: input.projectId,
@@ -418,10 +478,6 @@ export async function analyzeWorkspaceProjectMedia(
         slices: fineScan.slices,
         droppedInvalidSliceCount: fineScan.droppedInvalidSliceCount,
       });
-      if (updatedReport !== analysis.report) {
-        analysis.report = updatedReport;
-        await writeTrackedReport(analysis.prepared.asset, updatedReport);
-      }
 
       if (fineScan.slices.length > 0) {
         await writeTrackedProgress({
@@ -436,12 +492,16 @@ export async function analyzeWorkspaceProjectMedia(
           stepTotal: CANALYZE_STEP_DEFINITIONS.length,
           stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
           fileName: analysis.prepared.asset.displayName,
-          fileIndex,
-          fileTotal: fineScanCandidates.length,
-          current: fileIndex,
-          total: fineScanCandidates.length,
+          fileIndex: progressTotal,
+          fileTotal: progressTotal,
+          current: progressTotal,
+          total: progressTotal,
           unit: 'files',
-          etaSeconds: estimateRemainingSeconds(startedAtMs, fineScannedAssetIds.length, fineScanCandidates.length),
+          etaSeconds: estimatePhaseEtaSeconds(
+            fineScanPhaseStartedAtMs,
+            fineScannedAssetIds.length,
+            fineScanCandidates.length,
+          ),
           detail: `已为 ${analysis.prepared.asset.displayName} 生成 ${fineScan.slices.length} 个候选切片`,
           extra: {
             projectId: input.projectId,
@@ -455,6 +515,10 @@ export async function analyzeWorkspaceProjectMedia(
         pendingSlices.push(...fineScan.slices);
         fineScannedAssetIds.push(analysis.prepared.asset.id);
       }
+
+      analysis.report = finalizeFineScanReport(updatedReport, fineScan.slices.length);
+      await writeTrackedReport(analysis.prepared.asset, analysis.report);
+      await removePreparedAssetCheckpoint(projectRoot, analysis.prepared.asset.id);
     }
 
     await writeTrackedProgress({
@@ -468,10 +532,10 @@ export async function analyzeWorkspaceProjectMedia(
       stepIndex: 5,
       stepTotal: CANALYZE_STEP_DEFINITIONS.length,
       stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
-      fileIndex: pendingAssets.length,
-      fileTotal: pendingAssets.length,
-      current: analyzedAssetIds.length,
-      total: pendingAssets.length,
+      fileIndex: progressTotal,
+      fileTotal: progressTotal,
+      current: progressTotal,
+      total: progressTotal,
       unit: 'files',
       etaSeconds: 0,
       detail: '正在按拍摄时间刷新 chronology 视图',
@@ -507,10 +571,10 @@ export async function analyzeWorkspaceProjectMedia(
       stepIndex: CANALYZE_STEP_DEFINITIONS.length,
       stepTotal: CANALYZE_STEP_DEFINITIONS.length,
       stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
-      fileIndex: pendingAssets.length,
-      fileTotal: pendingAssets.length,
-      current: analyzedAssetIds.length,
-      total: pendingAssets.length,
+      fileIndex: progressTotal,
+      fileTotal: progressTotal,
+      current: progressTotal,
+      total: progressTotal,
       unit: 'files',
       etaSeconds: 0,
       detail: `已完成 ${analyzedAssetIds.length} 条素材分析，自动细扫 ${fineScannedAssetIds.length} 条`,
@@ -548,10 +612,10 @@ export async function analyzeWorkspaceProjectMedia(
       phaseKey: 'coarse-first-project-analysis',
       phaseLabel: '粗扫优先素材分析',
       stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
-      fileIndex: analyzedAssetIds.length,
-      fileTotal: pendingAssets.length,
-      current: analyzedAssetIds.length,
-      total: pendingAssets.length,
+      fileIndex: toOverallProgressIndex(analyzedAssetIds.length),
+      fileTotal: progressTotal,
+      current: toOverallProgressIndex(analyzedAssetIds.length),
+      total: progressTotal,
       unit: 'files',
       detail: error instanceof Error ? error.message : String(error),
       extra: {
@@ -640,6 +704,11 @@ interface ITranscribedAudioContext {
   context: ITranscriptContext | null;
   timing?: ITranscription['timing'];
   roundTripMs?: number;
+}
+
+interface IResumeFineScanEntry {
+  asset: IKtepAsset;
+  report: IAssetCoarseReport;
 }
 
 interface MlAvailability {
@@ -751,6 +820,116 @@ async function prepareAssetVisualCoarse(
   };
 }
 
+async function loadOrPrepareAssetVisualCoarse(
+  input: IAnalyzeSingleAssetInput,
+): Promise<IPreparedAssetAnalysis> {
+  const restored = await loadPreparedAssetVisualCoarse(input);
+  if (restored) {
+    return restored;
+  }
+
+  const prepared = await prepareAssetVisualCoarse(input);
+  await writePreparedAssetCheckpoint(input.projectRoot, {
+    assetId: prepared.asset.id,
+    shotBoundaries: prepared.shotBoundaries,
+    shotBoundariesResolved: prepared.shotBoundariesResolved,
+    sampleFrames: prepared.sampleFrames,
+    coarseSampleTimestamps: prepared.coarseSampleTimestamps,
+    visualSummary: prepared.visualSummary,
+    initialClipTypeGuess: prepared.initialClipTypeGuess,
+    hasAudioTrack: prepared.hasAudioTrack,
+  });
+  return prepared;
+}
+
+async function loadPreparedAssetVisualCoarse(
+  input: IAnalyzeSingleAssetInput,
+): Promise<IPreparedAssetAnalysis | null> {
+  const checkpoint = await loadPreparedAssetCheckpoint(input.projectRoot, input.asset.id);
+  if (!checkpoint) return null;
+
+  const sampleFrames = await filterExistingKeyframes(checkpoint.sampleFrames);
+  if (checkpoint.sampleFrames.length > 0 && sampleFrames.length === 0) {
+    return null;
+  }
+
+  return {
+    ...input,
+    shotBoundaries: checkpoint.shotBoundaries,
+    shotBoundariesResolved: checkpoint.shotBoundariesResolved,
+    sampleFrames,
+    coarseSampleTimestamps: checkpoint.coarseSampleTimestamps,
+    visualSummary: checkpoint.visualSummary,
+    initialClipTypeGuess: checkpoint.initialClipTypeGuess,
+    hasAudioTrack: checkpoint.hasAudioTrack,
+  };
+}
+
+async function loadOrAnalyzePreparedAudio(input: {
+  projectId: string;
+  projectRoot: string;
+  prepared: IPreparedAssetAnalysis;
+  roots: IMediaRoot[];
+  deviceMaps: IDeviceMediaMapFile;
+  ml: MlAvailability;
+  onStageChange?: (stage: 'audio-analysis', detail?: string) => Promise<void>;
+  performance?: AnalyzePerformanceSession;
+}): Promise<{
+  transcript: ITranscriptContext | null;
+  protectedAudio?: IAssetCoarseReport['protectedAudio'];
+}> {
+  const shouldCheckpoint = shouldAnalyzeAudioTrack(input.prepared.asset, input.prepared.hasAudioTrack)
+    || Boolean(input.prepared.asset.protectionAudio);
+
+  if (shouldCheckpoint) {
+    const checkpoint = await loadAudioAnalysisCheckpoint(input.projectRoot, input.prepared.asset.id);
+    if (checkpoint) {
+      return {
+        transcript: normalizeTranscriptContext(checkpoint.transcript ?? null),
+        protectedAudio: checkpoint.protectedAudio,
+      };
+    }
+  }
+
+  if (shouldAnalyzeAudioTrack(input.prepared.asset, input.prepared.hasAudioTrack)) {
+    await input.onStageChange?.('audio-analysis', `正在分析 ${input.prepared.asset.displayName} 的视频内音轨`);
+  }
+  const transcript = await maybeTranscribeAsset({
+    asset: input.prepared.asset,
+    localPath: input.prepared.localPath,
+    hasAudioTrack: input.prepared.hasAudioTrack,
+    ml: input.ml,
+    performance: input.performance,
+  });
+  const protectedAudio = input.prepared.asset.protectionAudio
+    ? await evaluateProtectedAudioFallback({
+      projectId: input.projectId,
+      asset: input.prepared.asset,
+      localVideoPath: input.prepared.localPath,
+      roots: input.roots,
+      deviceMaps: input.deviceMaps,
+      runtimeConfig: input.prepared.runtimeConfig,
+      embeddedTranscript: transcript,
+      ml: input.ml,
+      onStageChange: input.onStageChange,
+      performance: input.performance,
+    })
+    : undefined;
+
+  if (shouldCheckpoint) {
+    await writeAudioAnalysisCheckpoint(input.projectRoot, {
+      assetId: input.prepared.asset.id,
+      transcript,
+      protectedAudio,
+    });
+  }
+
+  return {
+    transcript,
+    protectedAudio,
+  };
+}
+
 async function finalizePreparedAsset(
   input: IFinalizePreparedAssetInput,
 ): Promise<IFinalizedAssetAnalysis> {
@@ -767,24 +946,12 @@ async function finalizePreparedAsset(
   }
 
   const ml = await input.getMlHandle();
-  if (shouldAnalyzeAudioTrack(input.prepared.asset, input.prepared.hasAudioTrack)) {
-    await input.onStageChange?.('audio-analysis', `正在分析 ${input.prepared.asset.displayName} 的视频内音轨`);
-  }
-  const transcript = await maybeTranscribeAsset({
-    asset: input.prepared.asset,
-    localPath: input.prepared.localPath,
-    hasAudioTrack: input.prepared.hasAudioTrack,
-    ml,
-    performance: input.performance,
-  });
-  const protectedAudio = await evaluateProtectedAudioFallback({
+  const { transcript, protectedAudio } = await loadOrAnalyzePreparedAudio({
     projectId: input.projectId,
-    asset: input.prepared.asset,
-    localVideoPath: input.prepared.localPath,
+    projectRoot: input.projectRoot,
+    prepared: input.prepared,
     roots: input.roots,
     deviceMaps: input.deviceMaps,
-    runtimeConfig: input.prepared.runtimeConfig,
-    embeddedTranscript: transcript,
     ml,
     onStageChange: input.onStageChange,
     performance: input.performance,
@@ -1524,7 +1691,7 @@ async function transcribeAudioContext(input: {
   }
 }
 
-async function evaluateProtectedAudioFallback(input: {
+export async function evaluateProtectedAudioFallback(input: {
   projectId: string;
   asset: IKtepAsset;
   localVideoPath: string;
@@ -1564,11 +1731,6 @@ async function evaluateProtectedAudioFallback(input: {
     });
   }
 
-  const protectionTelemetry = await analyzeAudioHealth(
-    protectionLocalPath,
-    binding.durationMs ?? input.asset.durationMs,
-    input.runtimeConfig,
-  );
   let protectionTranscript: ITranscriptContext | null = null;
   let comparedProtectionTranscript = false;
 
@@ -1592,10 +1754,10 @@ async function evaluateProtectedAudioFallback(input: {
   }
 
   const protectionSummary = summarizeAudioHealth({
-    telemetry: protectionTelemetry,
     speechCoverage: protectionTranscript?.speechCoverage,
     transcript: protectionTranscript?.transcript,
     notes: [
+      '保护音轨默认不做独立健康检查，仅在必要时做语音对比。',
       binding.alignment === 'unknown'
         ? '未确认保护音轨与视频的精确时长关系。'
         : `保护音轨时长对齐状态：${binding.alignment}`,
@@ -2646,6 +2808,19 @@ function reconcileFineScanReport(input: {
   };
 }
 
+function finalizeFineScanReport(
+  report: IAssetCoarseReport,
+  sliceCount: number,
+): IAssetCoarseReport {
+  const now = new Date().toISOString();
+  return {
+    ...report,
+    fineScanCompletedAt: now,
+    fineScanSliceCount: sliceCount,
+    updatedAt: now,
+  };
+}
+
 function isLikelyInvalidVisualSegment(description?: string): boolean {
   if (!description) return false;
   const normalized = description.trim().toLowerCase();
@@ -2680,6 +2855,15 @@ function buildMlUnavailableErrorMessage(baseUrl?: string): string {
   ].join(' ');
 }
 
+function estimatePhaseEtaSeconds(
+  startedAtMs: number,
+  completedCount: number,
+  totalCount: number,
+): number | undefined {
+  if (completedCount < 3) return undefined;
+  return estimateRemainingSeconds(startedAtMs, completedCount, totalCount);
+}
+
 function selectPendingAssets(
   assets: IKtepAsset[],
   reports: IAssetCoarseReport[],
@@ -2691,6 +2875,101 @@ function selectPendingAssets(
     return visualAssets.filter(asset => requested.has(asset.id));
   }
   return findUnreportedAssets(visualAssets, reports);
+}
+
+function selectPendingFineScanEntries(
+  assets: IKtepAsset[],
+  reports: IAssetCoarseReport[],
+  slices: IKtepSlice[],
+): IResumeFineScanEntry[] {
+  const assetById = new Map(
+    assets
+      .filter(asset => asset.kind !== 'audio')
+      .map(asset => [asset.id, asset] as const),
+  );
+  const sliceAssetIds = new Set(slices.map(slice => slice.assetId));
+
+  return reports
+    .filter(report => report.shouldFineScan && !isFineScanComplete(report, sliceAssetIds))
+    .map(report => ({
+      asset: assetById.get(report.assetId),
+      report,
+    }))
+    .filter((entry): entry is IResumeFineScanEntry => Boolean(entry.asset));
+}
+
+function isFineScanComplete(
+  report: IAssetCoarseReport,
+  sliceAssetIds: Set<string>,
+): boolean {
+  if (!report.shouldFineScan) return true;
+  if (typeof report.fineScanCompletedAt === 'string' && report.fineScanCompletedAt.trim().length > 0) {
+    return true;
+  }
+  if (typeof report.fineScanSliceCount === 'number') {
+    return true;
+  }
+  return sliceAssetIds.has(report.assetId);
+}
+
+async function loadPendingFineScanAnalyses(input: {
+  projectId: string;
+  projectRoot: string;
+  entries: IResumeFineScanEntry[];
+  roots: IMediaRoot[];
+  deviceMaps: IDeviceMediaMapFile;
+  runtimeConfig: IAnalyzeSingleAssetInput['runtimeConfig'];
+  getMlHandle: () => Promise<MlAvailability>;
+  performance?: AnalyzePerformanceSession;
+}): Promise<IFinalizedAssetAnalysis[]> {
+  const analyses: IFinalizedAssetAnalysis[] = [];
+  for (const entry of input.entries) {
+    const localPath = resolveAssetLocalPath(input.projectId, entry.asset, input.roots, input.deviceMaps);
+    if (!localPath) continue;
+
+    const prepared = await loadOrPrepareAssetVisualCoarse({
+      asset: entry.asset,
+      localPath,
+      projectRoot: input.projectRoot,
+      runtimeConfig: input.runtimeConfig,
+      getMlHandle: input.getMlHandle,
+      performance: input.performance,
+    });
+    analyses.push({
+      prepared,
+      report: entry.report,
+      transcript: restoreTranscriptContextFromReport(entry.report),
+      clipType: entry.report.clipTypeGuess,
+      decisionReasons: [...entry.report.fineScanReasons],
+    });
+  }
+  return analyses;
+}
+
+function dedupeFineScanAnalyses(
+  analyses: IFinalizedAssetAnalysis[],
+): IFinalizedAssetAnalysis[] {
+  const byAssetId = new Map<string, IFinalizedAssetAnalysis>();
+  for (const analysis of analyses) {
+    byAssetId.set(analysis.prepared.asset.id, analysis);
+  }
+  return [...byAssetId.values()];
+}
+
+function restoreTranscriptContextFromReport(
+  report: IAssetCoarseReport,
+): ITranscriptContext | null {
+  if (!report.transcript && (!report.transcriptSegments || report.transcriptSegments.length === 0)) {
+    return null;
+  }
+
+  return normalizeTranscriptContext({
+    transcript: report.transcript ?? '',
+    segments: report.transcriptSegments ?? [],
+    evidence: [],
+    speechCoverage: report.speechCoverage ?? 0,
+    speechWindows: report.interestingWindows.filter(window => isSpeechSemanticWindow(window)),
+  });
 }
 
 function resolveAssetRootAvailable(

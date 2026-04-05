@@ -70,7 +70,13 @@ flowchart TD
 - 当前正式策略是“粗扫优先 + 自动细扫”
 - 视频内音轨的 ASR 已进入正式分析链路，而不再只是附属信息
 - `transcript / transcriptSegments / speechCoverage / placeHints / inferredGps` 都属于分析层结果
-- 如果视频绑定了 `protectionAudio`，Analyze 当前会补充轻量音频健康注释，并在保守条件下给出 `embedded / protection / undecided` 的 fallback 推荐；默认不对所有保护音轨跑第二遍完整 ASR
+- Analyze 现在按素材分阶段持久化可恢复状态：
+  - `analysis/prepared-assets/<assetId>.json` 保存 coarse prepared checkpoint
+  - `analysis/audio-checkpoints/<assetId>.json` 保存 ASR / protection fallback checkpoint
+  - `analysis/asset-reports/<assetId>.json` 用 `fineScanCompletedAt / fineScanSliceCount` 标记细扫完成态
+- 如果视频绑定了 `protectionAudio`，Analyze 当前只在这类资产上进入保护音轨保守 fallback；保护音轨默认不做独立健康检查，只在主音轨明显可疑时升级到 transcript 对比
+- ML server 当前会在 `VLM` 和 `Whisper` 之间互斥卸载，避免两套模型同时常驻显存
+- `retry / resume` 后的 ETA 当前按阶段重置，并且在当前阶段完成样本少于 `3` 条时不显示，避免沿用上一轮进度口径后产生夸张倒计时
 - `interestingWindows` 不再只有单一语义：
   - `startMs / endMs` 保留“为什么这里重要”的 focus/evidence window
   - `editStartMs / editEndMs` 表示更适合后续编排消费的 edit-friendly bounds
@@ -158,7 +164,7 @@ flowchart TD
 
 - `config/`：逻辑素材源、运行时配置、风格档案、人工 itinerary 等
 - `store/`：项目元数据与清单
-- `analysis/`：资产分析报告、参考转写等正式分析产物
+- `analysis/`：资产分析报告、参考转写，以及 Analyze 的 durable resume cache（如 `prepared-assets/`、`audio-checkpoints/`）
 - `script/`、`timeline/`、`subtitles/`、`adapters/`：脚本、时间线与适配器状态
 - `gps/`：项目级外部轨迹资源与归一化缓存
 - `.tmp/`：流水线临时产物、进度、代理音频、关键帧等可清理内容
@@ -168,6 +174,7 @@ flowchart TD
 - 项目内正式产物：可同步、可复用、可作为正式输入继续流转
 - 设备本地映射：`config/device-media-maps.local.json`，只描述当前设备能访问到的素材真实目录，默认不纳入同步
 - 临时产物：`.tmp/`，默认不属于 `Canonical Project Store`
+- 可恢复中间态：`analysis/prepared-assets/` 与 `analysis/audio-checkpoints/` 用于跨进程恢复 Analyze；它们是 durable resume cache，不是 Script / Timeline 的正式输入
 
 ### 当前稳定约定
 

@@ -5,6 +5,7 @@ VLM (Vision Language Model) runner with two backends:
 """
 from __future__ import annotations
 
+import gc
 import os
 import time
 from pathlib import Path
@@ -131,6 +132,33 @@ def _load_transformers() -> tuple[float, str]:
 
     _backend_loaded = "torch"
     return (time.perf_counter() - started_at) * 1000.0, model_ref
+
+
+def unload() -> bool:
+    global _backend_loaded, _model, _processor
+    if _backend_loaded is None and _model is None and _processor is None:
+        return False
+
+    model_ref = _model
+    processor_ref = _processor
+    _backend_loaded = None
+    _model = None
+    _processor = None
+    del model_ref
+    del processor_ref
+    gc.collect()
+
+    if DEVICE == "cuda":
+        try:
+            import torch
+
+            torch.cuda.empty_cache()
+            if hasattr(torch.cuda, "ipc_collect"):
+                torch.cuda.ipc_collect()
+        except Exception:
+            pass
+
+    return True
 
 
 def _analyze_transformers(image_paths: list[str], prompt: str) -> tuple[str, dict]:

@@ -8,7 +8,12 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "test": "node --experimental-global-webcrypto ./node_modules/vitest/vitest.mjs run"
+    "test": "node --experimental-global-webcrypto ./node_modules/vitest/vitest.mjs run",
+    "console:build": "npm --prefix apps/kairos-console run build",
+    "supervisor:start": "node dist/supervisor/cli.js start",
+    "supervisor:stop": "node dist/supervisor/cli.js stop",
+    "supervisor:restart": "node dist/supervisor/cli.js restart",
+    "supervisor:status": "node dist/supervisor/cli.js status"
   },
   "engines": {
     "node": ">=16.0.0"

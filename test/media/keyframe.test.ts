@@ -58,6 +58,52 @@ async function waitForPendingCount(
 }
 
 describe('extractKeyframes', () => {
+  it('reuses existing coarse keyframes and only extracts missing timestamps', async () => {
+    const workspaceRoot = await createWorkspace();
+    const outputDir = join(workspaceRoot, 'frames');
+    writeOutputs([
+      join(outputDir, 'kf_1000.jpg'),
+      join(outputDir, 'kf_3000.jpg'),
+    ]);
+
+    execFileMock.mockImplementation((
+      _file: string,
+      args: string[],
+      callback: ExecCallback,
+    ) => {
+      writeOutputs(collectImageOutputs(args));
+      callback(null, '', '');
+    });
+
+    const { extractKeyframes } = await import('../../src/modules/media/keyframe.js');
+    const result = await extractKeyframes('/tmp/input.mp4', outputDir, [1000, 2000, 3000]);
+
+    expect(execFileMock).toHaveBeenCalledTimes(1);
+    expect(execFileMock.mock.calls[0]?.[1]).toContain(join(outputDir, 'kf_2000.jpg'));
+    expect(result.map(frame => frame.timeMs)).toEqual([1000, 2000, 3000]);
+    expect(result.map(frame => frame.path)).toEqual([
+      join(outputDir, 'kf_1000.jpg'),
+      join(outputDir, 'kf_2000.jpg'),
+      join(outputDir, 'kf_3000.jpg'),
+    ]);
+  });
+
+  it('skips ffmpeg entirely when all requested coarse keyframes already exist', async () => {
+    const workspaceRoot = await createWorkspace();
+    const outputDir = join(workspaceRoot, 'frames');
+    writeOutputs([
+      join(outputDir, 'kf_1000.jpg'),
+      join(outputDir, 'kf_2000.jpg'),
+      join(outputDir, 'kf_3000.jpg'),
+    ]);
+
+    const { extractKeyframes } = await import('../../src/modules/media/keyframe.js');
+    const result = await extractKeyframes('/tmp/input.mp4', outputDir, [1000, 2000, 3000]);
+
+    expect(execFileMock).not.toHaveBeenCalled();
+    expect(result.map(frame => frame.timeMs)).toEqual([1000, 2000, 3000]);
+  });
+
   it('uses a conservative default concurrency of three and preserves timestamp order', async () => {
     const workspaceRoot = await createWorkspace();
     const outputDir = join(workspaceRoot, 'frames');

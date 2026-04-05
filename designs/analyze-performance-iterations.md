@@ -268,3 +268,26 @@
   - `drive` deferred `scene detect` 采用时长感知 fps
   - `drive` speech / visual windows 与 slices 已端到端携带 `semanticKind`
 
+### Iteration 8 - `2026-04-05`
+
+- 目标：补齐 Analyze 的中断恢复能力，避免长跑任务在 `coarse / audio / fine-scan` 中途停止后整批白跑；同时修正 `retry / resume` 后的 ETA 误导
+- 方法：
+  - coarse 完成后写 `analysis/prepared-assets/<assetId>.json`
+  - audio 完成后写 `analysis/audio-checkpoints/<assetId>.json`
+  - `asset report` 新增 `fineScanCompletedAt / fineScanSliceCount`
+  - `fine-scan` 恢复时允许从 `report + checkpoint` 直接继续，而不是只认“有没有 report”
+  - ETA 改为按 `coarse-scan / audio-analysis / fine-scan` 三个阶段分别重估；当前阶段完成数 `< 3` 时不显示 ETA
+  - ML server 在 `VLM` 和 `Whisper` 之间互斥卸载，避免双模型同时常驻显存
+  - 保护音轨 fallback 改为“仅对已绑定 `protectionAudio` 的素材触发，且默认不做独立健康检查”
+- profile：无统一 wall-time profile；本轮主要是恢复能力与面板口径修复，不是吞吐 benchmark
+- 结果：
+  - Analyze 现在具备 coarse / audio / fine-scan 三段可恢复状态
+  - `retry / resume` 后 ETA 不再沿用上一轮的全局起点，不再出现几十小时级别的误导性倒计时
+  - 单卡环境里 `VLM + Whisper` 不再同时常驻
+- 结论：
+  - 这轮优先解决的是“长任务可恢复性”和“用户感知正确性”，不是单纯压缩 wall time
+  - 未来如果要做更激进的 ETA，需要单独设计跨进程吞吐统计，而不是把本轮的保守重置逻辑继续复杂化
+- 当前代码状态：
+  - `analysis/prepared-assets/` 与 `analysis/audio-checkpoints/` 已成为 Analyze 的 durable resume cache
+  - `asset report` 已携带 fine-scan 完成态
+  - ETA 当前遵循“重试后直接重置，阶段内样本不足不显示”的保守规则

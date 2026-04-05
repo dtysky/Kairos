@@ -73,6 +73,22 @@ export {
   findUnreportedAssets,
 } from './analysis.js';
 export {
+  getPreparedAssetCheckpointRoot,
+  getPreparedAssetCheckpointPath,
+  loadPreparedAssetCheckpoint,
+  writePreparedAssetCheckpoint,
+  removePreparedAssetCheckpoint,
+  type IPreparedAssetCheckpoint,
+} from './analyze-prepared.js';
+export {
+  getAudioAnalysisCheckpointRoot,
+  getAudioAnalysisCheckpointPath,
+  loadAudioAnalysisCheckpoint,
+  writeAudioAnalysisCheckpoint,
+  removeAudioAnalysisCheckpoint,
+  type IAudioAnalysisCheckpoint,
+} from './analyze-audio.js';
+export {
   getChronologyPath,
   loadChronology,
   writeChronology,
@@ -158,3 +174,25 @@ export {
   type IProjectDerivedTrackEntry,
   type IProjectDerivedTrack,
 } from './gps.js';
+export {
+  getReviewQueuePath,
+  loadReviewQueue,
+  saveReviewQueue,
+  upsertReviewItems,
+  replaceReviewItemsByMatcher,
+  resolveReviewItem,
+} from './review-queue.js';
+export {
+  getProjectBriefConfigPath,
+  getManualItineraryConfigPath,
+  getScriptBriefConfigPath,
+  getStyleSourcesConfigPath,
+  loadProjectBriefConfig,
+  saveProjectBriefConfig,
+  loadManualItineraryConfig,
+  saveManualItineraryConfig,
+  loadScriptBriefConfig,
+  saveScriptBriefConfig,
+  loadStyleSourcesConfig,
+  saveStyleSourcesConfig,
+} from './workspace-config.js';

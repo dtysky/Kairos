@@ -229,6 +229,13 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
 analysis/asset-reports/<assetId>.json
 ```
 
+当前恢复口径补充：
+
+- coarse prepared state 会写到 `analysis/prepared-assets/<assetId>.json`
+- audio state 会写到 `analysis/audio-checkpoints/<assetId>.json`
+- report 里的 `fineScanCompletedAt / fineScanSliceCount` 用来标记 `fine-scan` 是否真正完成
+- `retry / resume` 后 ETA 不继承上一轮估算，而是按当前阶段重新估；当前阶段完成数 `< 3` 时，面板不显示 ETA
+
 ### 4. 只对重点内容产出 slices
 
 - `full`

@@ -1,0 +1,1062 @@
+{
+  "items": [
+    {
+      "id": "capture-time:root-vlog-proj-new-zealand-ts::20260207_广州奥克兰飞机夜转日.mp4",
+      "projectId": "new-zealand-documentary",
+      "kind": "capture-time-correction",
+      "stage": "ingest",
+      "status": "resolved",
+      "title": "校正素材拍摄时间：20260207_广州奥克兰飞机夜转日.mp4",
+      "reason": "TS 时间映射（用户提供）",
+      "sourcePath": "20260207_广州奥克兰飞机夜转日.mp4",
+      "rootRef": "root-vlog-proj-new-zealand-ts",
+      "currentValue": {
+        "currentCapturedAt": "2026-02-23T06:37:32.000Z",
+        "currentSource": "container"
+      },
+      "suggestedValue": {
+        "suggestedDate": "2026-02-07",
+        "suggestedTime": "00:00:00",
+        "timezone": "Pacific/Auckland"
+      },
+      "fields": [
+        {
+          "key": "correctedDate",
+          "label": "正确日期",
+          "value": "2026-02-07",
+          "suggestedValue": "2026-02-07",
+          "required": true
+        },
+        {
+          "key": "correctedTime",
+          "label": "正确时间",
+          "value": "00:00:00",
+          "suggestedValue": "00:00:00",
+          "required": true
+        },
+        {
+          "key": "timezone",
+          "label": "时区",
+          "value": "Pacific/Auckland",
+          "suggestedValue": "Pacific/Auckland"
+        }
+      ],
+      "note": "TS 时间映射（用户提供）",
+      "createdAt": "2026-04-05T06:29:09.764Z",
+      "updatedAt": "2026-04-05T06:29:09.764Z",
+      "resolvedAt": "2026-04-05T06:29:09.764Z"
+    },
+    {
+      "id": "capture-time:root-vlog-proj-new-zealand-ts::20260207_奥克兰cbd朝霞2.mp4",
+      "projectId": "new-zealand-documentary",
+      "kind": "capture-time-correction",
+      "stage": "ingest",
+      "status": "resolved",
+      "title": "校正素材拍摄时间：20260207_奥克兰CBD朝霞2.mp4",
+      "reason": "TS 时间映射（用户提供）",
+      "sourcePath": "20260207_奥克兰CBD朝霞2.mp4",
+      "rootRef": "root-vlog-proj-new-zealand-ts",
+      "currentValue": {
+        "currentCapturedAt": "2026-02-23T06:42:42.000Z",
+        "currentSource": "container"
+      },
+      "suggestedValue": {
+        "suggestedDate": "2026-02-07",
+        "suggestedTime": "06:05:14",
+        "timezone": "Pacific/Auckland"
+      },
+      "fields": [
+        {
+          "key": "correctedDate",
+          "label": "正确日期",
+          "value": "2026-02-07",
+          "suggestedValue": "2026-02-07",
+          "required": true
+        },
+        {
+          "key": "correctedTime",
+          "label": "正确时间",
+          "value": "06:05:14",
+          "suggestedValue": "06:05:14",
+          "required": true
+        },
+        {
+          "key": "timezone",
+          "label": "时区",
+          "value": "Pacific/Auckland",
+          "suggestedValue": "Pacific/Auckland"
+        }
+      ],
+      "note": "TS 时间映射（用户提供）",
+      "createdAt": "2026-04-05T06:29:09.764Z",
+      "updatedAt": "2026-04-05T06:29:09.764Z",
+      "resolvedAt": "2026-04-05T06:29:09.764Z"
+    },
+    {
+      "id": "capture-time:root-vlog-proj-new-zealand-ts::20260208_奥克兰cbd朝霞1.mp4",
+      "projectId": "new-zealand-documentary",
+      "kind": "capture-time-correction",
+      "stage": "ingest",
+      "status": "resolved",
+      "title": "校正素材拍摄时间：20260208_奥克兰CBD朝霞1.mp4",
+      "reason": "TS 时间映射（用户提供）",
+      "sourcePath": "20260208_奥克兰CBD朝霞1.mp4",
+      "rootRef": "root-vlog-proj-new-zealand-ts",
+      "currentValue": {
+        "currentCapturedAt": "2026-02-23T06:40:00.000Z",
+        "currentSource": "container"
+      },
+      "suggestedValue": {
+        "suggestedDate": "2026-02-07",
+        "suggestedTime": "06:05:14",
+        "timezone": "Pacific/Auckland"
+      },
+      "fields": [
+        {
+          "key": "correctedDate",
+          "label": "正确日期",
+          "value": "2026-02-07",
+          "suggestedValue": "2026-02-07",
+          "required": true
+        },
+        {
+          "key": "correctedTime",
+          "label": "正确时间",
+          "value": "06:05:14",
+          "suggestedValue": "06:05:14",
+          "required": true
+        },
+        {
+          "key": "timezone",
+          "label": "时区",
+          "value": "Pacific/Auckland",
+          "suggestedValue": "Pacific/Auckland"
+        }
+      ],
+      "note": "TS 时间映射（用户提供）",
+      "createdAt": "2026-04-05T06:29:09.764Z",
+      "updatedAt": "2026-04-05T06:29:09.764Z",
+      "resolvedAt": "2026-04-05T06:29:09.764Z"
+    },
+    {
+      "id": "capture-time:root-vlog-proj-new-zealand-ts::20260208_奥克兰维多利亚山晚霞1.mp4",
+      "projectId": "new-zealand-documentary",
+      "kind": "capture-time-correction",
+      "stage": "ingest",
+      "status": "resolved",
+      "title": "校正素材拍摄时间：20260208_奥克兰维多利亚山晚霞1.mp4",
+      "reason": "TS 时间映射（用户提供）",
+      "sourcePath": "20260208_奥克兰维多利亚山晚霞1.mp4",
+      "rootRef": "root-vlog-proj-new-zealand-ts",
+      "currentValue": {
+        "currentCapturedAt": "2026-02-23T06:44:14.000Z",
+        "currentSource": "container"
+      },
+      "suggestedValue": {
+        "suggestedDate": "2026-02-08",
+        "suggestedTime": "19:55:05",
+        "timezone": "Pacific/Auckland"
+      },
+      "fields": [
+        {
+          "key": "correctedDate",
+          "label": "正确日期",
+          "value": "2026-02-08",
+          "suggestedValue": "2026-02-08",
+          "required": true
+        },
+        {
+          "key": "correctedTime",
+          "label": "正确时间",
+          "value": "19:55:05",
+          "suggestedValue": "19:55:05",
+          "required": true
+        },
+        {
+          "key": "timezone",
+          "label": "时区",
+          "value": "Pacific/Auckland",
+          "suggestedValue": "Pacific/Auckland"
+        }
+      ],
+      "note": "TS 时间映射（用户提供）",
+      "createdAt": "2026-04-05T06:29:09.764Z",
+      "updatedAt": "2026-04-05T06:29:09.764Z",
+      "resolvedAt": "2026-04-05T06:29:09.764Z"
+    },
+    {
+      "id": "capture-time:root-vlog-proj-new-zealand-ts::20260208_奥克兰维多利亚山晚霞3.mp4",
+      "projectId": "new-zealand-documentary",
+      "kind": "capture-time-correction",
+      "stage": "ingest",
+      "status": "resolved",
+      "title": "校正素材拍摄时间：20260208_奥克兰维多利亚山晚霞3.mp4",
+      "reason": "TS 时间映射（用户提供）",
+      "sourcePath": "20260208_奥克兰维多利亚山晚霞3.mp4",
+      "rootRef": "root-vlog-proj-new-zealand-ts",
+      "currentValue": {
+        "currentCapturedAt": "2026-02-23T09:08:49.000Z",
+        "currentSource": "container"
+      },
+      "suggestedValue": {
+        "suggestedDate": "2026-02-08",
+        "suggestedTime": "19:55:05",
+        "timezone": "Pacific/Auckland"
+      },
+      "fields": [
+        {
+          "key": "correctedDate",
+          "label": "正确日期",
+          "value": "2026-02-08",
+          "suggestedValue": "2026-02-08",
+          "required": true
+        },
+        {
+          "key": "correctedTime",
+          "label": "正确时间",
+          "value": "19:55:05",
+          "suggestedValue": "19:55:05",
+          "required": true
+        },
+        {
+          "key": "timezone",
+          "label": "时区",
+          "value": "Pacific/Auckland",
+          "suggestedValue": "Pacific/Auckland"
+        }
+      ],
+      "note": "TS 时间映射（用户提供）",
+      "createdAt": "2026-04-05T06:29:09.764Z",
+      "updatedAt": "2026-04-05T06:29:09.764Z",
+      "resolvedAt": "2026-04-05T06:29:09.764Z"
+    },
+    {
+      "id": "capture-time:root-vlog-proj-new-zealand-ts::20260208_奥克兰维多利亚山晚霞2.mp4",
+      "projectId": "new-zealand-documentary",
+      "kind": "capture-time-correction",
+      "stage": "ingest",
+      "status": "resolved",
+      "title": "校正素材拍摄时间：20260208_奥克兰维多利亚山晚霞2.mp4",
+      "reason": "TS 时间映射（用户提供）",
+      "sourcePath": "20260208_奥克兰维多利亚山晚霞2.mp4",
+      "rootRef": "root-vlog-proj-new-zealand-ts",
+      "currentValue": {
+        "currentCapturedAt": "2026-02-23T06:46:51.000Z",
+        "currentSource": "container"
+      },
+      "suggestedValue": {
+        "suggestedDate": "2026-02-08",
+        "suggestedTime": "20:15:16",
+        "timezone": "Pacific/Auckland"
+      },
+      "fields": [
+        {
+          "key": "correctedDate",
+          "label": "正确日期",
+          "value": "2026-02-08",
+          "suggestedValue": "2026-02-08",
+          "required": true
+        },
+        {
+          "key": "correctedTime",
+          "label": "正确时间",
+          "value": "20:15:16",
+          "suggestedValue": "20:15:16",
+          "required": true
+        },
+        {
+          "key": "timezone",
+          "label": "时区",
+          "value": "Pacific/Auckland",
+          "suggestedValue": "Pacific/Auckland"
+        }
+      ],
+      "note": "TS 时间映射（用户提供）",
+      "createdAt": "2026-04-05T06:29:09.764Z",
+      "updatedAt": "2026-04-05T06:29:09.764Z",
+      "resolvedAt": "2026-04-05T06:29:09.764Z"
+    },
+    {
+      "id": "capture-time:root-vlog-proj-new-zealand-ts::20260209_新西兰三姐妹与大象岩日落.mp4",
+      "projectId": "new-zealand-documentary",
+      "kind": "capture-time-correction",
+      "stage": "ingest",
+      "status": "resolved",
+      "title": "校正素材拍摄时间：20260209_新西兰三姐妹与大象岩日落.mp4",
+      "reason": "TS 时间映射（用户提供）",
+      "sourcePath": "20260209_新西兰三姐妹与大象岩日落.mp4",
+      "rootRef": "root-vlog-proj-new-zealand-ts",
+      "currentValue": {
+        "currentCapturedAt": "2026-02-23T06:48:22.000Z",
+        "currentSource": "container"
+      },
+      "suggestedValue": {
+        "suggestedDate": "2026-02-09",
+        "suggestedTime": "19:52:35",
+        "timezone": "Pacific/Auckland"
+      },
+      "fields": [
+        {
+          "key": "correctedDate",
+          "label": "正确日期",
+          "value": "2026-02-09",
+          "suggestedValue": "2026-02-09",
+          "required": true
+        },
+        {
+          "key": "correctedTime",
+          "label": "正确时间",
+          "value": "19:52:35",
+          "suggestedValue": "19:52:35",
+          "required": true
+        },
+        {
+          "key": "timezone",
+          "label": "时区",
+          "value": "Pacific/Auckland",
+          "suggestedValue": "Pacific/Auckland"
+        }
+      ],
+      "note": "TS 时间映射（用户提供）",
+      "createdAt": "2026-04-05T06:29:09.764Z",
+      "updatedAt": "2026-04-05T06:29:09.764Z",
+      "resolvedAt": "2026-04-05T06:29:09.764Z"
+    },
+    {
+      "id": "capture-time:root-vlog-proj-new-zealand-ts::20260210_新西兰陶波湖日落.mp4",
+      "projectId": "new-zealand-documentary",
+      "kind": "capture-time-correction",
+      "stage": "ingest",
+      "status": "resolved",
+      "title": "校正素材拍摄时间：20260210_新西兰陶波湖日落.mp4",
+      "reason": "TS 时间映射（用户提供）",
+      "sourcePath": "20260210_新西兰陶波湖日落.mp4",
+      "rootRef": "root-vlog-proj-new-zealand-ts",
+      "currentValue": {
+        "currentCapturedAt": "2026-02-23T06:50:49.000Z",
+        "currentSource": "container"
+      },
+      "suggestedValue": {
+        "suggestedDate": "2026-02-10",
+        "suggestedTime": "20:11:32",
+        "timezone": "Pacific/Auckland"
+      },
+      "fields": [
+        {
+          "key": "correctedDate",
+          "label": "正确日期",
+          "value": "2026-02-10",
+          "suggestedValue": "2026-02-10",
+          "required": true
+        },
+        {
+          "key": "correctedTime",
+          "label": "正确时间",
+          "value": "20:11:32",
+          "suggestedValue": "20:11:32",
+          "required": true
+        },
+        {
+          "key": "timezone",
+          "label": "时区",
+          "value": "Pacific/Auckland",
+          "suggestedValue": "Pacific/Auckland"
+        }
+      ],
+      "note": "TS 时间映射（用户提供）",
+      "createdAt": "2026-04-05T06:29:09.764Z",
+      "updatedAt": "2026-04-05T06:29:09.764Z",
+      "resolvedAt": "2026-04-05T06:29:09.764Z"
+    },
+    {
+      "id": "capture-time:root-vlog-proj-new-zealand-ts::20260210_新西兰汉密尔顿日落.mp4",
+      "projectId": "new-zealand-documentary",
+      "kind": "capture-time-correction",
+      "stage": "ingest",
+      "status": "resolved",
+      "title": "校正素材拍摄时间：20260210_新西兰汉密尔顿日落.mp4",
+      "reason": "TS 时间映射（用户提供）",
+      "sourcePath": "20260210_新西兰汉密尔顿日落.mp4",
+      "rootRef": "root-vlog-proj-new-zealand-ts",
+      "currentValue": {
+        "currentCapturedAt": "2026-02-23T07:27:11.000Z",
+        "currentSource": "container"
+      },
+      "suggestedValue": {
+        "suggestedDate": "2026-02-11",
+        "suggestedTime": "19:48:59",
+        "timezone": "Pacific/Auckland"
+      },
+      "fields": [
+        {
+          "key": "correctedDate",
+          "label": "正确日期",
+          "value": "2026-02-11",
+          "suggestedValue": "2026-02-11",
+          "required": true
+        },
+        {
+          "key": "correctedTime",
+          "label": "正确时间",
+          "value": "19:48:59",
+          "suggestedValue": "19:48:59",
+          "required": true
+        },
+        {
+          "key": "timezone",
+          "label": "时区",
+          "value": "Pacific/Auckland",
+          "suggestedValue": "Pacific/Auckland"
+        }
+      ],
+      "note": "TS 时间映射（用户提供）",
+      "createdAt": "2026-04-05T06:29:09.764Z",
+      "updatedAt": "2026-04-05T06:29:09.764Z",
+      "resolvedAt": "2026-04-05T06:29:09.764Z"
+    },
+    {
+      "id": "capture-time:root-vlog-proj-new-zealand-ts::20260212_基督城朝霞.mp4",
+      "projectId": "new-zealand-documentary",
+      "kind": "capture-time-correction",
+      "stage": "ingest",
+      "status": "resolved",
+      "title": "校正素材拍摄时间：20260212_基督城朝霞.mp4",
+      "reason": "TS 时间映射（用户提供）",
+      "sourcePath": "20260212_基督城朝霞.mp4",
+      "rootRef": "root-vlog-proj-new-zealand-ts",
+      "currentValue": {
+        "currentCapturedAt": "2026-02-26T06:29:45.000Z",
+        "currentSource": "container"
+      },
+      "suggestedValue": {
+        "suggestedDate": "2026-02-12",
+        "suggestedTime": "06:13:23",
+        "timezone": "Pacific/Auckland"
+      },
+      "fields": [
+        {
+          "key": "correctedDate",
+          "label": "正确日期",
+          "value": "2026-02-12",
+          "suggestedValue": "2026-02-12",
+          "required": true
+        },
+        {
+          "key": "correctedTime",
+          "label": "正确时间",
+          "value": "06:13:23",
+          "suggestedValue": "06:13:23",
+          "required": true
+        },
+        {
+          "key": "timezone",
+          "label": "时区",
+          "value": "Pacific/Auckland",
+          "suggestedValue": "Pacific/Auckland"
+        }
+      ],
+      "note": "TS 时间映射（用户提供）",
+      "createdAt": "2026-04-05T06:29:09.764Z",
+      "updatedAt": "2026-04-05T06:29:09.764Z",
+      "resolvedAt": "2026-04-05T06:29:09.764Z"
+    },
+    {
+      "id": "capture-time:root-vlog-proj-new-zealand-ts::20260212_新西兰库克山日转夜星空.mp4",
+      "projectId": "new-zealand-documentary",
+      "kind": "capture-time-correction",
+      "stage": "ingest",
+      "status": "resolved",
+      "title": "校正素材拍摄时间：20260212_新西兰库克山日转夜星空.mp4",
+      "reason": "TS 时间映射（用户提供）",
+      "sourcePath": "20260212_新西兰库克山日转夜星空.mp4",
+      "rootRef": "root-vlog-proj-new-zealand-ts",
+      "currentValue": {
+        "currentCapturedAt": "2026-02-24T00:51:12.000Z",
+        "currentSource": "container"
+      },
+      "suggestedValue": {
+        "suggestedDate": "2026-02-12",
+        "suggestedTime": "21:25:57",
+        "timezone": "Pacific/Auckland"
+      },
+      "fields": [
+        {
+          "key": "correctedDate",
+          "label": "正确日期",
+          "value": "2026-02-12",
+          "suggestedValue": "2026-02-12",
+          "required": true
+        },
+        {
+          "key": "correctedTime",
+          "label": "正确时间",
+          "value": "21:25:57",
+          "suggestedValue": "21:25:57",
+          "required": true
+        },
+        {
+          "key": "timezone",
+          "label": "时区",
+          "value": "Pacific/Auckland",
+          "suggestedValue": "Pacific/Auckland"
+        }
+      ],
+      "note": "TS 时间映射（用户提供）",
+      "createdAt": "2026-04-05T06:29:09.764Z",
+      "updatedAt": "2026-04-05T06:29:09.764Z",
+      "resolvedAt": "2026-04-05T06:29:09.764Z"
+    },
+    {
+      "id": "capture-time:root-vlog-proj-new-zealand-ts::库克山星轨.mp4",
+      "projectId": "new-zealand-documentary",
+      "kind": "capture-time-correction",
+      "stage": "ingest",
+      "status": "resolved",
+      "title": "校正素材拍摄时间：库克山星轨.mp4",
+      "reason": "TS 时间映射（用户提供）",
+      "sourcePath": "库克山星轨.mp4",
+      "rootRef": "root-vlog-proj-new-zealand-ts",
+      "currentValue": {
+        "currentCapturedAt": "2026-02-24T11:53:35.000Z",
+        "currentSource": "container"
+      },
+      "suggestedValue": {
+        "suggestedDate": "2026-02-12",
+        "suggestedTime": "21:25:57",
+        "timezone": "Pacific/Auckland"
+      },
+      "fields": [
+        {
+          "key": "correctedDate",
+          "label": "正确日期",
+          "value": "2026-02-12",
+          "suggestedValue": "2026-02-12",
+          "required": true
+        },
+        {
+          "key": "correctedTime",
+          "label": "正确时间",
+          "value": "21:25:57",
+          "suggestedValue": "21:25:57",
+          "required": true
+        },
+        {
+          "key": "timezone",
+          "label": "时区",
+          "value": "Pacific/Auckland",
+          "suggestedValue": "Pacific/Auckland"
+        }
+      ],
+      "note": "TS 时间映射（用户提供）",
+      "createdAt": "2026-04-05T06:29:09.764Z",
+      "updatedAt": "2026-04-05T06:29:09.764Z",
+      "resolvedAt": "2026-04-05T06:29:09.764Z"
+    },
+    {
+      "id": "capture-time:root-vlog-proj-new-zealand-ts::20260212_新西兰库克山银河.mp4",
+      "projectId": "new-zealand-documentary",
+      "kind": "capture-time-correction",
+      "stage": "ingest",
+      "status": "resolved",
+      "title": "校正素材拍摄时间：20260212_新西兰库克山银河.mp4",
+      "reason": "TS 时间映射（用户提供）",
+      "sourcePath": "20260212_新西兰库克山银河.mp4",
+      "rootRef": "root-vlog-proj-new-zealand-ts",
+      "currentValue": {
+        "currentCapturedAt": "2026-02-23T14:49:16.000Z",
+        "currentSource": "container"
+      },
+      "suggestedValue": {
+        "suggestedDate": "2026-02-12",
+        "suggestedTime": "23:10:11",
+        "timezone": "Pacific/Auckland"
+      },
+      "fields": [
+        {
+          "key": "correctedDate",
+          "label": "正确日期",
+          "value": "2026-02-12",
+          "suggestedValue": "2026-02-12",
+          "required": true
+        },
+        {
+          "key": "correctedTime",
+          "label": "正确时间",
+          "value": "23:10:11",
+          "suggestedValue": "23:10:11",
+          "required": true
+        },
+        {
+          "key": "timezone",
+          "label": "时区",
+          "value": "Pacific/Auckland",
+          "suggestedValue": "Pacific/Auckland"
+        }
+      ],
+      "note": "TS 时间映射（用户提供）",
+      "createdAt": "2026-04-05T06:29:09.764Z",
+      "updatedAt": "2026-04-05T06:29:09.764Z",
+      "resolvedAt": "2026-04-05T06:29:09.764Z"
+    },
+    {
+      "id": "capture-time:root-vlog-proj-new-zealand-ts::20260213_新西兰库克山日照金山.mp4",
+      "projectId": "new-zealand-documentary",
+      "kind": "capture-time-correction",
+      "stage": "ingest",
+      "status": "resolved",
+      "title": "校正素材拍摄时间：20260213_新西兰库克山日照金山.mp4",
+      "reason": "TS 时间映射（用户提供）",
+      "sourcePath": "20260213_新西兰库克山日照金山.mp4",
+      "rootRef": "root-vlog-proj-new-zealand-ts",
+      "currentValue": {
+        "currentCapturedAt": "2026-02-23T07:29:55.000Z",
+        "currentSource": "container"
+      },
+      "suggestedValue": {
+        "suggestedDate": "2026-02-13",
+        "suggestedTime": "06:50:38",
+        "timezone": "Pacific/Auckland"
+      },
+      "fields": [
+        {
+          "key": "correctedDate",
+          "label": "正确日期",
+          "value": "2026-02-13",
+          "suggestedValue": "2026-02-13",
+          "required": true
+        },
+        {
+          "key": "correctedTime",
+          "label": "正确时间",
+          "value": "06:50:38",
+          "suggestedValue": "06:50:38",
+          "required": true
+        },
+        {
+          "key": "timezone",
+          "label": "时区",
+          "value": "Pacific/Auckland",
+          "suggestedValue": "Pacific/Auckland"
+        }
+      ],
+      "note": "TS 时间映射（用户提供）",
+      "createdAt": "2026-04-05T06:29:09.764Z",
+      "updatedAt": "2026-04-05T06:29:09.764Z",
+      "resolvedAt": "2026-04-05T06:29:09.764Z"
+    },
+    {
+      "id": "capture-time:root-vlog-proj-new-zealand-ts::20260213_新西兰普卡基湖日出.mp4",
+      "projectId": "new-zealand-documentary",
+      "kind": "capture-time-correction",
+      "stage": "ingest",
+      "status": "resolved",
+      "title": "校正素材拍摄时间：20260213_新西兰普卡基湖日出.mp4",
+      "reason": "TS 时间映射（用户提供）",
+      "sourcePath": "20260213_新西兰普卡基湖日出.mp4",
+      "rootRef": "root-vlog-proj-new-zealand-ts",
+      "currentValue": {
+        "currentCapturedAt": "2026-02-23T07:28:41.000Z",
+        "currentSource": "container"
+      },
+      "suggestedValue": {
+        "suggestedDate": "2026-02-13",
+        "suggestedTime": "06:50:38",
+        "timezone": "Pacific/Auckland"
+      },
+      "fields": [
+        {
+          "key": "correctedDate",
+          "label": "正确日期",
+          "value": "2026-02-13",
+          "suggestedValue": "2026-02-13",
+          "required": true
+        },
+        {
+          "key": "correctedTime",
+          "label": "正确时间",
+          "value": "06:50:38",
+          "suggestedValue": "06:50:38",
+          "required": true
+        },
+        {
+          "key": "timezone",
+          "label": "时区",
+          "value": "Pacific/Auckland",
+          "suggestedValue": "Pacific/Auckland"
+        }
+      ],
+      "note": "TS 时间映射（用户提供）",
+      "createdAt": "2026-04-05T06:29:09.764Z",
+      "updatedAt": "2026-04-05T06:29:09.764Z",
+      "resolvedAt": "2026-04-05T06:29:09.764Z"
+    },
+    {
+      "id": "capture-time:root-vlog-proj-new-zealand-ts::20260213_新西兰普卡基湖风暴1.mp4",
+      "projectId": "new-zealand-documentary",
+      "kind": "capture-time-correction",
+      "stage": "ingest",
+      "status": "resolved",
+      "title": "校正素材拍摄时间：20260213_新西兰普卡基湖风暴1.mp4",
+      "reason": "TS 时间映射（用户提供）",
+      "sourcePath": "20260213_新西兰普卡基湖风暴1.mp4",
+      "rootRef": "root-vlog-proj-new-zealand-ts",
+      "currentValue": {
+        "currentCapturedAt": "2026-02-26T15:01:37.000Z",
+        "currentSource": "container"
+      },
+      "suggestedValue": {
+        "suggestedDate": "2026-02-13",
+        "suggestedTime": "20:22:08",
+        "timezone": "Pacific/Auckland"
+      },
+      "fields": [
+        {
+          "key": "correctedDate",
+          "label": "正确日期",
+          "value": "2026-02-13",
+          "suggestedValue": "2026-02-13",
+          "required": true
+        },
+        {
+          "key": "correctedTime",
+          "label": "正确时间",
+          "value": "20:22:08",
+          "suggestedValue": "20:22:08",
+          "required": true
+        },
+        {
+          "key": "timezone",
+          "label": "时区",
+          "value": "Pacific/Auckland",
+          "suggestedValue": "Pacific/Auckland"
+        }
+      ],
+      "note": "TS 时间映射（用户提供）",
+      "createdAt": "2026-04-05T06:29:09.764Z",
+      "updatedAt": "2026-04-05T06:29:09.764Z",
+      "resolvedAt": "2026-04-05T06:29:09.764Z"
+    },
+    {
+      "id": "capture-time:root-vlog-proj-new-zealand-ts::20260213_新西兰普卡基湖风暴2.mp4",
+      "projectId": "new-zealand-documentary",
+      "kind": "capture-time-correction",
+      "stage": "ingest",
+      "status": "resolved",
+      "title": "校正素材拍摄时间：20260213_新西兰普卡基湖风暴2.mp4",
+      "reason": "TS 时间映射（用户提供）",
+      "sourcePath": "20260213_新西兰普卡基湖风暴2.mp4",
+      "rootRef": "root-vlog-proj-new-zealand-ts",
+      "currentValue": {
+        "currentCapturedAt": "2026-02-24T12:16:35.000Z",
+        "currentSource": "container"
+      },
+      "suggestedValue": {
+        "suggestedDate": "2026-02-13",
+        "suggestedTime": "20:22:08",
+        "timezone": "Pacific/Auckland"
+      },
+      "fields": [
+        {
+          "key": "correctedDate",
+          "label": "正确日期",
+          "value": "2026-02-13",
+          "suggestedValue": "2026-02-13",
+          "required": true
+        },
+        {
+          "key": "correctedTime",
+          "label": "正确时间",
+          "value": "20:22:08",
+          "suggestedValue": "20:22:08",
+          "required": true
+        },
+        {
+          "key": "timezone",
+          "label": "时区",
+          "value": "Pacific/Auckland",
+          "suggestedValue": "Pacific/Auckland"
+        }
+      ],
+      "note": "TS 时间映射（用户提供）",
+      "createdAt": "2026-04-05T06:29:09.764Z",
+      "updatedAt": "2026-04-05T06:29:09.764Z",
+      "resolvedAt": "2026-04-05T06:29:09.764Z"
+    },
+    {
+      "id": "capture-time:root-vlog-proj-new-zealand-ts::20260214_新西兰蒂卡波湖日出.mp4",
+      "projectId": "new-zealand-documentary",
+      "kind": "capture-time-correction",
+      "stage": "ingest",
+      "status": "resolved",
+      "title": "校正素材拍摄时间：20260214_新西兰蒂卡波湖日出.mp4",
+      "reason": "TS 时间映射（用户提供）",
+      "sourcePath": "20260214_新西兰蒂卡波湖日出.mp4",
+      "rootRef": "root-vlog-proj-new-zealand-ts",
+      "currentValue": {
+        "currentCapturedAt": "2026-02-23T01:09:52.000Z",
+        "currentSource": "container"
+      },
+      "suggestedValue": {
+        "suggestedDate": "2026-02-14",
+        "suggestedTime": "07:05:44",
+        "timezone": "Pacific/Auckland"
+      },
+      "fields": [
+        {
+          "key": "correctedDate",
+          "label": "正确日期",
+          "value": "2026-02-14",
+          "suggestedValue": "2026-02-14",
+          "required": true
+        },
+        {
+          "key": "correctedTime",
+          "label": "正确时间",
+          "value": "07:05:44",
+          "suggestedValue": "07:05:44",
+          "required": true
+        },
+        {
+          "key": "timezone",
+          "label": "时区",
+          "value": "Pacific/Auckland",
+          "suggestedValue": "Pacific/Auckland"
+        }
+      ],
+      "note": "TS 时间映射（用户提供）",
+      "createdAt": "2026-04-05T06:29:09.764Z",
+      "updatedAt": "2026-04-05T06:29:09.764Z",
+      "resolvedAt": "2026-04-05T06:29:09.764Z"
+    },
+    {
+      "id": "capture-time:root-vlog-proj-new-zealand-ts::20260215_新西兰瓦纳卡湖银河.mp4",
+      "projectId": "new-zealand-documentary",
+      "kind": "capture-time-correction",
+      "stage": "ingest",
+      "status": "resolved",
+      "title": "校正素材拍摄时间：20260215_新西兰瓦纳卡湖银河.mp4",
+      "reason": "TS 时间映射（用户提供）",
+      "sourcePath": "20260215_新西兰瓦纳卡湖银河.mp4",
+      "rootRef": "root-vlog-proj-new-zealand-ts",
+      "currentValue": {
+        "currentCapturedAt": "2026-02-23T03:27:24.000Z",
+        "currentSource": "container"
+      },
+      "suggestedValue": {
+        "suggestedDate": "2026-02-15",
+        "suggestedTime": "04:19:39",
+        "timezone": "Pacific/Auckland"
+      },
+      "fields": [
+        {
+          "key": "correctedDate",
+          "label": "正确日期",
+          "value": "2026-02-15",
+          "suggestedValue": "2026-02-15",
+          "required": true
+        },
+        {
+          "key": "correctedTime",
+          "label": "正确时间",
+          "value": "04:19:39",
+          "suggestedValue": "04:19:39",
+          "required": true
+        },
+        {
+          "key": "timezone",
+          "label": "时区",
+          "value": "Pacific/Auckland",
+          "suggestedValue": "Pacific/Auckland"
+        }
+      ],
+      "note": "TS 时间映射（用户提供）",
+      "createdAt": "2026-04-05T06:29:09.764Z",
+      "updatedAt": "2026-04-05T06:29:09.764Z",
+      "resolvedAt": "2026-04-05T06:29:09.764Z"
+    },
+    {
+      "id": "capture-time:root-vlog-proj-new-zealand-ts::20260218_新西兰怀帕帕灯塔日落转风暴.mp4",
+      "projectId": "new-zealand-documentary",
+      "kind": "capture-time-correction",
+      "stage": "ingest",
+      "status": "resolved",
+      "title": "校正素材拍摄时间：20260218_新西兰怀帕帕灯塔日落转风暴.mp4",
+      "reason": "TS 时间映射（用户提供）",
+      "sourcePath": "20260218_新西兰怀帕帕灯塔日落转风暴.mp4",
+      "rootRef": "root-vlog-proj-new-zealand-ts",
+      "currentValue": {
+        "currentCapturedAt": "2026-02-26T06:25:43.000Z",
+        "currentSource": "container"
+      },
+      "suggestedValue": {
+        "suggestedDate": "2026-02-18",
+        "suggestedTime": "20:09:03",
+        "timezone": "Pacific/Auckland"
+      },
+      "fields": [
+        {
+          "key": "correctedDate",
+          "label": "正确日期",
+          "value": "2026-02-18",
+          "suggestedValue": "2026-02-18",
+          "required": true
+        },
+        {
+          "key": "correctedTime",
+          "label": "正确时间",
+          "value": "20:09:03",
+          "suggestedValue": "20:09:03",
+          "required": true
+        },
+        {
+          "key": "timezone",
+          "label": "时区",
+          "value": "Pacific/Auckland",
+          "suggestedValue": "Pacific/Auckland"
+        }
+      ],
+      "note": "TS 时间映射（用户提供）",
+      "createdAt": "2026-04-05T06:29:09.764Z",
+      "updatedAt": "2026-04-05T06:29:09.764Z",
+      "resolvedAt": "2026-04-05T06:29:09.764Z"
+    },
+    {
+      "id": "capture-time:root-vlog-proj-new-zealand-ts::20260219_新西兰布拉夫银河1.mp4",
+      "projectId": "new-zealand-documentary",
+      "kind": "capture-time-correction",
+      "stage": "ingest",
+      "status": "resolved",
+      "title": "校正素材拍摄时间：20260219_新西兰布拉夫银河1.mp4",
+      "reason": "TS 时间映射（用户提供）",
+      "sourcePath": "20260219_新西兰布拉夫银河1.mp4",
+      "rootRef": "root-vlog-proj-new-zealand-ts",
+      "currentValue": {
+        "currentCapturedAt": "2026-02-23T01:05:41.000Z",
+        "currentSource": "container"
+      },
+      "suggestedValue": {
+        "suggestedDate": "2026-02-19",
+        "suggestedTime": "02:20:32",
+        "timezone": "Pacific/Auckland"
+      },
+      "fields": [
+        {
+          "key": "correctedDate",
+          "label": "正确日期",
+          "value": "2026-02-19",
+          "suggestedValue": "2026-02-19",
+          "required": true
+        },
+        {
+          "key": "correctedTime",
+          "label": "正确时间",
+          "value": "02:20:32",
+          "suggestedValue": "02:20:32",
+          "required": true
+        },
+        {
+          "key": "timezone",
+          "label": "时区",
+          "value": "Pacific/Auckland",
+          "suggestedValue": "Pacific/Auckland"
+        }
+      ],
+      "note": "TS 时间映射（用户提供）",
+      "createdAt": "2026-04-05T06:29:09.764Z",
+      "updatedAt": "2026-04-05T06:29:09.764Z",
+      "resolvedAt": "2026-04-05T06:29:09.764Z"
+    },
+    {
+      "id": "capture-time:root-vlog-proj-new-zealand-ts::20260219_新西兰布拉夫银河2.mp4",
+      "projectId": "new-zealand-documentary",
+      "kind": "capture-time-correction",
+      "stage": "ingest",
+      "status": "resolved",
+      "title": "校正素材拍摄时间：20260219_新西兰布拉夫银河2.mp4",
+      "reason": "TS 时间映射（用户提供）",
+      "sourcePath": "20260219_新西兰布拉夫银河2.mp4",
+      "rootRef": "root-vlog-proj-new-zealand-ts",
+      "currentValue": {
+        "currentCapturedAt": "2026-02-23T01:37:19.000Z",
+        "currentSource": "container"
+      },
+      "suggestedValue": {
+        "suggestedDate": "2026-02-19",
+        "suggestedTime": "02:20:32",
+        "timezone": "Pacific/Auckland"
+      },
+      "fields": [
+        {
+          "key": "correctedDate",
+          "label": "正确日期",
+          "value": "2026-02-19",
+          "suggestedValue": "2026-02-19",
+          "required": true
+        },
+        {
+          "key": "correctedTime",
+          "label": "正确时间",
+          "value": "02:20:32",
+          "suggestedValue": "02:20:32",
+          "required": true
+        },
+        {
+          "key": "timezone",
+          "label": "时区",
+          "value": "Pacific/Auckland",
+          "suggestedValue": "Pacific/Auckland"
+        }
+      ],
+      "note": "TS 时间映射（用户提供）",
+      "createdAt": "2026-04-05T06:29:09.764Z",
+      "updatedAt": "2026-04-05T06:29:09.764Z",
+      "resolvedAt": "2026-04-05T06:29:09.764Z"
+    },
+    {
+      "id": "capture-time:root-vlog-proj-new-zealand-ts::20260220_新西兰途中航拍晚霞.mp4",
+      "projectId": "new-zealand-documentary",
+      "kind": "capture-time-correction",
+      "stage": "ingest",
+      "status": "resolved",
+      "title": "校正素材拍摄时间：20260220_新西兰途中航拍晚霞.mp4",
+      "reason": "TS 时间映射（用户提供）",
+      "sourcePath": "20260220_新西兰途中航拍晚霞.mp4",
+      "rootRef": "root-vlog-proj-new-zealand-ts",
+      "currentValue": {
+        "currentCapturedAt": "2026-02-23T03:40:48.000Z",
+        "currentSource": "container"
+      },
+      "suggestedValue": {
+        "suggestedDate": "2026-02-20",
+        "suggestedTime": "15:08:43",
+        "timezone": "Pacific/Auckland"
+      },
+      "fields": [
+        {
+          "key": "correctedDate",
+          "label": "正确日期",
+          "value": "2026-02-20",
+          "suggestedValue": "2026-02-20",
+          "required": true
+        },
+        {
+          "key": "correctedTime",
+          "label": "正确时间",
+          "value": "15:08:43",
+          "suggestedValue": "15:08:43",
+          "required": true
+        },
+        {
+          "key": "timezone",
+          "label": "时区",
+          "value": "Pacific/Auckland",
+          "suggestedValue": "Pacific/Auckland"
+        }
+      ],
+      "note": "TS 时间映射（用户提供）",
+      "createdAt": "2026-04-05T06:29:09.764Z",
+      "updatedAt": "2026-04-05T06:29:09.764Z",
+      "resolvedAt": "2026-04-05T06:29:09.764Z"
+    }
+  ]
+}

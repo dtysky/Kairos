@@ -537,6 +537,8 @@ export const IAssetCoarseReport = z.object({
   shouldFineScan: z.boolean(),
   fineScanMode: EFineScanMode,
   fineScanReasons: z.array(z.string()),
+  fineScanCompletedAt: z.string().optional(),
+  fineScanSliceCount: z.number().int().min(0).optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -686,3 +688,173 @@ export const IStoreManifest = z.object({
   updatedAt: z.string(),
 });
 export type IStoreManifest = z.infer<typeof IStoreManifest>;
+
+// ─── Project Workspace / Review Queue ───────────────────────
+
+export const IProjectBriefMappingConfig = z.object({
+  path: z.string(),
+  description: z.string(),
+  flightRecordPath: z.string().optional(),
+});
+export type IProjectBriefMappingConfig = z.infer<typeof IProjectBriefMappingConfig>;
+
+export const IProjectBriefConfig = z.object({
+  name: z.string(),
+  description: z.string().optional(),
+  createdAt: z.string().optional(),
+  mappings: z.array(IProjectBriefMappingConfig),
+});
+export type IProjectBriefConfig = z.infer<typeof IProjectBriefConfig>;
+
+export const IManualItinerarySegmentConfig = z.object({
+  id: z.string(),
+  date: z.string(),
+  startLocalTime: z.string().optional(),
+  endLocalTime: z.string().optional(),
+  rootRef: z.string().optional(),
+  pathPrefix: z.string().optional(),
+  location: z.string().optional(),
+  from: z.string().optional(),
+  to: z.string().optional(),
+  via: z.array(z.string()).optional(),
+  transport: z.enum(['drive', 'walk', 'train', 'flight', 'boat', 'mixed']).optional(),
+  notes: z.string().optional(),
+});
+export type IManualItinerarySegmentConfig = z.infer<typeof IManualItinerarySegmentConfig>;
+
+export const IManualCaptureTimeOverrideConfig = z.object({
+  rootRef: z.string().optional(),
+  sourcePath: z.string(),
+  currentCapturedAt: z.string().optional(),
+  currentSource: z.string().optional(),
+  suggestedDate: z.string().optional(),
+  suggestedTime: z.string().optional(),
+  correctedDate: z.string().optional(),
+  correctedTime: z.string().optional(),
+  timezone: z.string().optional(),
+  note: z.string().optional(),
+});
+export type IManualCaptureTimeOverrideConfig = z.infer<typeof IManualCaptureTimeOverrideConfig>;
+
+export const IManualItineraryConfig = z.object({
+  prose: z.string().default(''),
+  segments: z.array(IManualItinerarySegmentConfig).default([]),
+  captureTimeOverrides: z.array(IManualCaptureTimeOverrideConfig).default([]),
+});
+export type IManualItineraryConfig = z.infer<typeof IManualItineraryConfig>;
+
+export const IScriptBriefSegmentConfig = z.object({
+  segmentId: z.string(),
+  title: z.string().optional(),
+  role: z.string().optional(),
+  targetDurationMs: z.number().nonnegative().optional(),
+  intent: z.string().optional(),
+  preferredClipTypes: z.array(z.string()).default([]),
+  preferredPlaceHints: z.array(z.string()).default([]),
+  notes: z.array(z.string()).default([]),
+});
+export type IScriptBriefSegmentConfig = z.infer<typeof IScriptBriefSegmentConfig>;
+
+export const IScriptBriefConfig = z.object({
+  projectName: z.string(),
+  createdAt: z.string().optional(),
+  styleCategory: z.string().optional(),
+  statusText: z.string().optional(),
+  goalDraft: z.array(z.string()).default([]),
+  constraintDraft: z.array(z.string()).default([]),
+  planReviewDraft: z.array(z.string()).default([]),
+  segments: z.array(IScriptBriefSegmentConfig).default([]),
+});
+export type IScriptBriefConfig = z.infer<typeof IScriptBriefConfig>;
+
+export const EStyleSourceType = z.enum(['file', 'directory']);
+export type EStyleSourceType = z.infer<typeof EStyleSourceType>;
+
+export const IStyleSourceItem = z.object({
+  id: z.string(),
+  type: EStyleSourceType,
+  path: z.string(),
+  rangeStart: z.string().optional(),
+  rangeEnd: z.string().optional(),
+  note: z.string().optional(),
+  includeNotes: z.string().optional(),
+  excludeNotes: z.string().optional(),
+});
+export type IStyleSourceItem = z.infer<typeof IStyleSourceItem>;
+
+export const IStyleSourceCategoryConfig = z.object({
+  categoryId: z.string(),
+  displayName: z.string(),
+  guidancePrompt: z.string().optional(),
+  inclusionNotes: z.string().optional(),
+  exclusionNotes: z.string().optional(),
+  overwriteExisting: z.boolean().default(false),
+  profilePath: z.string().optional(),
+  sources: z.array(IStyleSourceItem).default([]),
+});
+export type IStyleSourceCategoryConfig = z.infer<typeof IStyleSourceCategoryConfig>;
+
+export const IStyleSourcesConfig = z.object({
+  defaultCategory: z.string().optional(),
+  categories: z.array(IStyleSourceCategoryConfig).default([]),
+});
+export type IStyleSourcesConfig = z.infer<typeof IStyleSourcesConfig>;
+
+export const EReviewStage = z.enum([
+  'project-init',
+  'ingest',
+  'gps-refresh',
+  'analyze',
+  'style-analysis',
+  'script',
+  'timeline',
+  'export',
+]);
+export type EReviewStage = z.infer<typeof EReviewStage>;
+
+export const EReviewStatus = z.enum(['open', 'resolved', 'dismissed']);
+export type EReviewStatus = z.infer<typeof EReviewStatus>;
+
+export const EReviewItemKind = z.enum([
+  'capture-time-correction',
+  'script-review',
+  'agent-approval',
+  'style-source-warning',
+  'generic',
+]);
+export type EReviewItemKind = z.infer<typeof EReviewItemKind>;
+
+export const IReviewField = z.object({
+  key: z.string(),
+  label: z.string(),
+  value: z.string().optional(),
+  suggestedValue: z.string().optional(),
+  required: z.boolean().optional(),
+});
+export type IReviewField = z.infer<typeof IReviewField>;
+
+export const IReviewItem = z.object({
+  id: z.string(),
+  projectId: z.string(),
+  kind: EReviewItemKind,
+  stage: EReviewStage,
+  status: EReviewStatus,
+  title: z.string(),
+  reason: z.string(),
+  sourcePath: z.string().optional(),
+  rootRef: z.string().optional(),
+  relatedJobId: z.string().optional(),
+  currentValue: z.record(z.string()).optional(),
+  suggestedValue: z.record(z.string()).optional(),
+  fields: z.array(IReviewField).default([]),
+  note: z.string().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  resolvedAt: z.string().optional(),
+});
+export type IReviewItem = z.infer<typeof IReviewItem>;
+
+export const IReviewQueue = z.object({
+  items: z.array(IReviewItem).default([]),
+});
+export type IReviewQueue = z.infer<typeof IReviewQueue>;

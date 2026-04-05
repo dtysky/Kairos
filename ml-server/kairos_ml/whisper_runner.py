@@ -5,10 +5,13 @@ ASR runner with two backends:
 """
 from __future__ import annotations
 
+import audioop
+import gc
 import json
 import os
 import subprocess
 import time
+import wave
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
@@ -17,6 +20,9 @@ from .device import DEVICE, BACKEND
 CDEFAULT_MLX_WHISPER = "mlx-community/whisper-large-v3-turbo"
 CLOCAL_MLX_WHISPER = "whisper-large-v3-turbo"
 CWHISPER_MODEL = os.getenv("KAIROS_WHISPER_MODEL", "")
+CSILENCE_GATE_WINDOW_SECONDS = 1.0
+CSILENCE_GATE_RMS_THRESHOLD = 48
+CSILENCE_GATE_PEAK_THRESHOLD = 192
 
 
 def _repo_root() -> Path:
@@ -60,6 +66,61 @@ def _extract_audio_wav(media_path: str) -> Path:
         check=True, capture_output=True, text=True,
     )
     return out_path
+
+
+def _build_silence_gate_window_starts(total_frames: int, window_frames: int) -> list[int]:
+    if total_frames <= 0 or window_frames <= 0:
+        return []
+    if total_frames <= window_frames:
+        return [0]
+
+    max_start = max(0, total_frames - window_frames)
+    midpoint_start = max(0, (total_frames - window_frames) // 2)
+    return sorted({0, midpoint_start, max_start})
+
+
+def _has_effective_audio(wav_path: Path) -> tuple[bool, dict]:
+    try:
+        with wave.open(str(wav_path), "rb") as wav:
+            total_frames = wav.getnframes()
+            sample_width = wav.getsampwidth()
+            sample_rate = wav.getframerate()
+            window_frames = max(1, min(total_frames, int(sample_rate * CSILENCE_GATE_WINDOW_SECONDS)))
+            starts = _build_silence_gate_window_starts(total_frames, window_frames)
+
+            sampled_windows = 0
+            max_rms = 0
+            max_peak = 0
+
+            for start in starts:
+                wav.setpos(start)
+                frame_bytes = wav.readframes(window_frames)
+                if not frame_bytes:
+                    continue
+
+                sampled_windows += 1
+                max_rms = max(max_rms, int(audioop.rms(frame_bytes, sample_width)))
+                max_peak = max(max_peak, int(audioop.max(frame_bytes, sample_width)))
+                if max_rms > CSILENCE_GATE_RMS_THRESHOLD or max_peak > CSILENCE_GATE_PEAK_THRESHOLD:
+                    return True, {
+                        "sampledWindows": sampled_windows,
+                        "maxRms": max_rms,
+                        "maxPeak": max_peak,
+                    }
+
+            return False, {
+                "sampledWindows": sampled_windows,
+                "maxRms": max_rms,
+                "maxPeak": max_peak,
+            }
+    except Exception:
+        # Prefer a false negative over suppressing real speech when probing fails.
+        return True, {
+            "sampledWindows": 0,
+            "maxRms": None,
+            "maxPeak": None,
+            "probeFailed": True,
+        }
 
 
 # ── MLX backend (mlx-whisper) ────────────────────────────────
@@ -138,6 +199,29 @@ def _get_torch_pipeline():
     return _asr_pipeline
 
 
+def unload() -> bool:
+    global _asr_pipeline
+    if _asr_pipeline is None:
+        return False
+
+    pipeline_ref = _asr_pipeline
+    _asr_pipeline = None
+    del pipeline_ref
+    gc.collect()
+
+    if DEVICE == "cuda":
+        try:
+            import torch
+
+            torch.cuda.empty_cache()
+            if hasattr(torch.cuda, "ipc_collect"):
+                torch.cuda.ipc_collect()
+        except Exception:
+            pass
+
+    return True
+
+
 def _transcribe_torch(wav_path: Path, language: str | None, asr) -> list[dict]:
     from scipy.io import wavfile
 
@@ -189,6 +273,22 @@ def transcribe(audio_path: str, language: str | None = None) -> tuple[list[dict]
     wav_path = _extract_audio_wav(audio_path)
     wav_extract_ms = (time.perf_counter() - wav_started_at) * 1000.0
     try:
+        silence_gate_started_at = time.perf_counter()
+        has_effective_audio, silence_gate = _has_effective_audio(wav_path)
+        silence_gate_ms = (time.perf_counter() - silence_gate_started_at) * 1000.0
+        if not has_effective_audio:
+            return [], {
+                "backend": BACKEND,
+                "modelRef": _resolve_mlx_model_ref() if BACKEND == "mlx" else _resolve_torch_model_ref(),
+                "totalMs": (time.perf_counter() - total_started_at) * 1000.0,
+                "loadMs": 0.0,
+                "wavExtractMs": wav_extract_ms,
+                "inferenceMs": 0.0,
+                "silenceGateMs": silence_gate_ms,
+                "skippedSilent": True,
+                "effectiveAudioDetected": False,
+                "silenceGateStats": silence_gate,
+            }
         if BACKEND == "mlx":
             inference_started_at = time.perf_counter()
             segments = _transcribe_mlx(wav_path, language)
@@ -200,6 +300,10 @@ def transcribe(audio_path: str, language: str | None = None) -> tuple[list[dict]
                 "loadMs": 0.0,
                 "wavExtractMs": wav_extract_ms,
                 "inferenceMs": inference_ms,
+                "silenceGateMs": silence_gate_ms,
+                "skippedSilent": False,
+                "effectiveAudioDetected": True,
+                "silenceGateStats": silence_gate,
             }
         load_started_at = time.perf_counter()
         asr = _get_torch_pipeline()
@@ -214,6 +318,10 @@ def transcribe(audio_path: str, language: str | None = None) -> tuple[list[dict]
             "loadMs": load_ms,
             "wavExtractMs": wav_extract_ms,
             "inferenceMs": inference_ms,
+            "silenceGateMs": silence_gate_ms,
+            "skippedSilent": False,
+            "effectiveAudioDetected": True,
+            "silenceGateStats": silence_gate,
         }
     finally:
         wav_path.unlink(missing_ok=True)

@@ -23,6 +23,15 @@ export interface IMlAsrTiming {
   loadMs?: number;
   wavExtractMs?: number;
   inferenceMs?: number;
+  silenceGateMs?: number;
+  skippedSilent?: boolean;
+  effectiveAudioDetected?: boolean;
+  silenceGateStats?: {
+    sampledWindows?: number;
+    maxRms?: number | null;
+    maxPeak?: number | null;
+    probeFailed?: boolean;
+  };
 }
 
 export interface IMlVlmTiming {
