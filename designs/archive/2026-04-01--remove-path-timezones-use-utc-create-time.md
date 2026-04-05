@@ -126,8 +126,8 @@
 - `src/store/spatial-context.ts`
 - `src/store/index.ts`
 - `src/protocol/schema.ts`
-- `designs/2026-03-28--middle-version-protocol-first.md`
-- `designs/2026-03-29--m1-protocol-and-store.md`
+- `./2026-03-28--middle-version-protocol-first.md`
+- `./2026-03-29--m1-protocol-and-store.md`
 - `designs/project-structure.md`
 
 ## 存储建议

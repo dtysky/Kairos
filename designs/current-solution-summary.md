@@ -313,15 +313,15 @@ flowchart TD
 
 ## 8. 历史文档怎么使用
 
-如果你需要查看设计脉络，而不是只看当前浓缩结论，可继续阅读这些文档：
+如果你需要查看设计脉络，而不是只看当前浓缩结论，可继续阅读 `archive/` 下的这些文档：
 
-- [2026-03-28--middle-version-protocol-first.md](./2026-03-28--middle-version-protocol-first.md)
+- [2026-03-28--middle-version-protocol-first.md](./archive/2026-03-28--middle-version-protocol-first.md)
   - 适合查看 `KTEP`、`slice / selection / beat`、双路径字幕、项目结构调整等设计推导
-- [2026-03-29--m1-protocol-and-store.md](./2026-03-29--m1-protocol-and-store.md)
+- [2026-03-29--m1-protocol-and-store.md](./archive/2026-03-29--m1-protocol-and-store.md)
   - 适合查看协议与核心存储的落地口径
-- [2026-04-01--remove-path-timezones-use-utc-create-time.md](./2026-04-01--remove-path-timezones-use-utc-create-time.md)
+- [2026-04-01--remove-path-timezones-use-utc-create-time.md](./archive/2026-04-01--remove-path-timezones-use-utc-create-time.md)
   - 适合查看时间链路与空间优先级收口的决策背景
-- [phase1-plan.md](./phase1-plan.md)
+- [phase1-plan.md](./archive/phase1-plan.md)
   - 适合作为早期里程碑计划的历史参考，而不是当前方案的直接入口
 
 ## 9. 阅读顺序建议

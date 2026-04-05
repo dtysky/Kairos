@@ -3,7 +3,7 @@
 > 本文档记录的是早期的 Phase 1 里程碑计划，主要用于保留当时的实施顺序、范围切分和历史背景。
 > 它不是当前正式方案的主入口，也不应被理解为当前实现状态清单。
 >
-> 当前正式口径应以 [`current-solution-summary.md`](./current-solution-summary.md)、[`requirements.md`](./requirements.md)、[`architecture.md`](./architecture.md) 与 [`project-structure.md`](./project-structure.md) 为准。
+> 当前正式口径应以 [`current-solution-summary.md`](../current-solution-summary.md)、[`requirements.md`](../requirements.md)、[`architecture.md`](../architecture.md) 与 [`project-structure.md`](../project-structure.md) 为准。
 >
 > 需要特别注意的当前口径：
 > - 正式主链是 `Pharos-first`

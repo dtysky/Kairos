@@ -1,7 +1,7 @@
 # Kairos - Analyze 性能迭代记录
 
 > 这份文档只保留 `Analyze` 性能工作的当前结论、已拍板取舍和迭代日志。
-> 详细分析见：`designs/analyze-performance-optimization.md`、`designs/2026-04-03--analyze-mac-mlx-model-ab-report.md`、`designs/2026-04-03--analyze-mac-mlx-performance-heatmap.html`、`designs/2026-04-03--analyze-hotspot-optimization-decision-sheet.md`
+> 详细分析见：`./analyze-performance-optimization.md`、`./2026-04-03--analyze-mac-mlx-model-ab-report.md`、`./2026-04-03--analyze-mac-mlx-performance-heatmap.html`、`./2026-04-03--analyze-hotspot-optimization-decision-sheet.md`
 
 ## 1. 当前快照
 
@@ -86,8 +86,8 @@
 - 产物：
   - `.tmp/run/mac-eval-baseline-qwen3vl.json`
   - `.tmp/run/mac-eval-candidate-qwen35.json`
-  - `designs/2026-04-03--analyze-mac-mlx-model-ab-report.md`
-  - `designs/2026-04-03--analyze-mac-mlx-performance-heatmap.html`
+  - `./2026-04-03--analyze-mac-mlx-model-ab-report.md`
+  - `./2026-04-03--analyze-mac-mlx-performance-heatmap.html`
 
 ### Iteration 1 - `2026-04-03`
 

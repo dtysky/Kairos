@@ -4,10 +4,10 @@
 > 本文当前同时承担两种职责：顶部给出当前正式结构要点，后文保留较多早期结构与迁移背景，适合作为历史与细节补充阅读。
 >
 > 注：本文后半部分仍保留早期数据结构草案内容；当前正式口径应以本文顶部要点、[`current-solution-summary.md`](./current-solution-summary.md) 与较新的协议 / 存储设计为准。
-> 若需要查看历史推导，可继续参考
-> [2026-03-28--middle-version-protocol-first.md](./2026-03-28--middle-version-protocol-first.md)
+> 若需要查看历史推导，可继续参考 `archive/` 下的
+> [2026-03-28--middle-version-protocol-first.md](./archive/2026-03-28--middle-version-protocol-first.md)
 > 和
-> [2026-03-29--m1-protocol-and-store.md](./2026-03-29--m1-protocol-and-store.md)
+> [2026-03-29--m1-protocol-and-store.md](./archive/2026-03-29--m1-protocol-and-store.md)
 > 。
 
 ## 当前正式结构要点

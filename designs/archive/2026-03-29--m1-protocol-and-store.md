@@ -2,7 +2,7 @@
 
 > 日期：2026-03-29
 > 状态：已实施
-> 依赖：`designs/2026-03-28--middle-version-protocol-first.md`
+> 依赖：`./2026-03-28--middle-version-protocol-first.md`
 
 ## 目标
 
