@@ -66,11 +66,17 @@ Kairos/
 │       └── vlm_runner.py     # VLM (MLX: Qwen3-VL-4B-8bit / Torch: Qwen3-VL-4B)
 │
 ├── scripts/
+│   ├── kairos-supervisor.sh  # macOS/Linux: start/stop/status Supervisor + React console
+│   ├── kairos-supervisor.ps1 # Windows PowerShell: start/stop/status Supervisor + React console
 │   ├── ml-server.sh          # macOS/Linux: start/stop/status ML server
 │   ├── ml-server.ps1         # Windows PowerShell: start/stop/status ML server
 │   ├── ml-models-init.sh     # macOS: pre-download all MLX models from HF Hub
-│   ├── style-analysis-progress.sh   # macOS: serve progress viewer
-│   └── style-analysis-progress-viewer.html  # Real-time progress dashboard
+│   ├── kairos-progress.sh    # Legacy compatibility helper for static progress viewing
+│   ├── kairos-progress.ps1   # Legacy compatibility helper for static progress viewing
+│   └── style-analysis-progress-viewer.html  # Legacy static monitor template, no longer the official console
+│
+├── apps/
+│   └── kairos-console/       # Official React console served by Supervisor (`/analyze`, `/style`, ...)
 │
 ├── models/                   # ML model weights (gitignored, ~7 GB total)
 │   ├── whisper-large-v3-turbo/     # mlx-whisper ASR model
@@ -125,6 +131,7 @@ Kairos/
 | Service | Port | Endpoints |
 |---------|------|-----------|
 | ML server | 8910 | `/health`, `/asr`, `/ocr`, `/clip/embed`, `/vlm/analyze` |
+| Supervisor dashboard | 8940 | `/`, `/analyze`, `/style`, `/script`, `/timeline-export`, `/project` |
 | Jianying draft backend | Local Python CLI | `JianyingDraftSpec` → `scripts/jianying-export.py` |
 
 ## Data Flow

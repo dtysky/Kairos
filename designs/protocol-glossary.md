@@ -21,6 +21,39 @@
 
 如果本文档与临时说明冲突，以本文档为准。
 
+## 1.1 变更与入口术语
+
+### `Plan mode`
+
+指任何需求、行为、接口、工作流、正式入口或用户路径变更前的计划确认阶段。
+
+- 如果宿主支持显式 `Plan` 模式，应先进入该模式
+- 如果宿主不支持显式 `Plan mode`，则必须先给出结构化计划并确认
+
+### `design-first change`
+
+指当前正式变更顺序：
+
+1. `Plan mode`
+2. 先更新设计文档
+3. 再实现
+4. 实现后回查并同步设计文档、rules 和 skills
+
+### `official console`
+
+指当前正式本地运行与监控入口：
+
+- `Supervisor + React console (apps/kairos-console/)`
+- 正式监控主路由是 `/analyze` 与 `/style`
+
+### `legacy monitor helper`
+
+指仍保留在仓库里、但不再代表正式入口的兼容 / 调试工具，例如：
+
+- `scripts/kairos-progress.ps1`
+- `scripts/kairos-progress.sh`
+- `scripts/style-analysis-progress-viewer.html`
+
 ## 2. 术语分层
 
 在媒体分析里，容易混在一起的其实是三种不同层级的词：

@@ -22,10 +22,28 @@ Kairos 当前需要区分两层：
 
 - Kairos 不把 NLE 当作主数据中心，而把它们视为执行器或导出目标
 - 当前的 `Node.js core + Agent skill` 是对正式流程的临时承载形态，而不是正式流程本身的唯一边界
-- 本地运行与任务编排当前已收口到 `Supervisor + Hana UI console`
+- 仓库根目录的 `AGENTS.md` 是当前 agent 启动时的统一引导入口，用来收口必读文档、rules、skills 和正式运行入口
+- 本地运行与任务编排当前已收口到 `Supervisor + React console (apps/kairos-console/)`
 - `素材分析` 与 `风格分析` 在当前控制台里直接以主路由展示监控，而不是再跳一次独立监控入口
+- `scripts/kairos-progress.*` 与 `scripts/style-analysis-progress-viewer.html` 只保留兼容 / 调试用途，不再是新的正式监控入口
 - 未来如果引入桌面 UI 或更多 provider / adapter，应建立在这套协议与项目模型上，而不是推翻它
 - 某些项目会直接消费调色后的素材版本而非原始素材；因此主链面向的是“当前采用的素材版本”，而不是固定绑定“永远使用原始素材”
+
+## 1.1 当前变更纪律
+
+凡是需求、行为、接口、工作流、正式入口或用户路径变更，当前正式顺序固定为：
+
+1. 先进入 `Plan` 模式；如果宿主没有显式 `Plan mode`，先产出结构化计划并确认
+2. 计划确认后，先更新相关设计文档
+3. 再开始实现
+4. 实现完成后，回查并同步受影响的设计文档、rules 和 skills
+
+如果变更影响正式入口、监控页、工作流主路径或用户操作方式，还必须同步更新：
+
+- `README.md`
+- `AGENTS.md`
+- `designs/current-solution-summary.md`
+- `designs/architecture.md`
 
 ## 2. 正式主流程
 
@@ -205,7 +223,7 @@ flowchart TD
 ### 当前运行与控制面
 
 - 本地运行时当前由 `Supervisor` 承载，Dashboard 默认在 `127.0.0.1:8940`，ML 默认在 `127.0.0.1:8910`
-- `apps/kairos-console/` 是当前正式控制台，采用“工作流优先”的顶层路由：
+- `apps/kairos-console/` 是当前正式 React 控制台，采用“工作流优先”的顶层路由：
   - `/`
   - `/ingest-gps`
   - `/analyze`
@@ -217,6 +235,13 @@ flowchart TD
   - `/analyze` 直接展示 Analyze monitor
   - `/style` 直接展示当前分类的 Style monitor
 - 旧 `/analyze/monitor` 与 `/style/monitor/:categoryId?` 只保留为兼容跳转
+- 旧静态进度页脚本只保留兼容 / 调试用途，新的正式监控能力应优先落在 `Supervisor + React console` 这条链路
+- React Analyze monitor 现在已经直接承认 fine-scan 流水线语义，会展示 `已预抽 / 已识别 / ready queue / active workers` 这类结构化指标，而不再只剩单条通用 `current / total`
+- `scripts/kairos-supervisor.* start` 当前只负责拉起 `Supervisor + React console`，不会自动恢复或重放旧的 analyze job；需要继续分析时，必须显式重新发起 `analyze` job
+- `projects/<projectId>/.tmp/media-analyze/progress.json` 是 durable progress cache，不等于“当前一定有 live analyze job 在跑”；运维判断必须至少同时核对：
+  - `Supervisor` job 里是否存在 `running analyze`
+  - `progress.json` 的 `LastWriteTime / updatedAt` 是否仍在推进
+  - GPU / ML 是否出现与当前阶段一致的活跃迹象
 
 ### 元信息保真原则
 

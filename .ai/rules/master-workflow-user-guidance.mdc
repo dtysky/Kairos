@@ -19,6 +19,8 @@ alwaysApply: true
 - 必须优先遵循 `kairos-workflow` skill 作为总控口径，再根据当前阶段调用对应的 phase skill。
 - 当用户没有明确说明当前已经做到哪一步时，先根据项目内已有产物判断可恢复阶段，再继续，不要默认从头重跑。
 - 对用户的说明应优先使用“下一步做什么 + 为什么 + 需要用户提供什么”的方式，而不是只罗列内部实现细节。
+- 如果当前任务涉及需求、行为、工作流、正式入口或用户路径变更，必须额外遵守 `change-management-discipline.mdc`：先进入 `Plan` 模式（或宿主等价的结构化计划确认），再更新设计文档、再实现，最后回查并同步设计文档 / rules / skills。
+- 当前正式控制面是 `Supervisor + React console (apps/kairos-console/)`；`/analyze` 与 `/style` 是正式监控路由，旧静态监控页和兼容脚本不能再被解释成新的正式入口。
 
 ## 对用户的标准流程口径
 

@@ -19,6 +19,15 @@ description: >-
 - 更新 `media/chronology.json`
 - 在有空间线索时，为 coarse report 挂上 GPS / 地点上下文
 
+## 变更工作流规则
+
+只要本轮任务涉及需求、行为、接口、工作流、正式入口或用户路径变更，必须遵守下面顺序：
+
+1. 先进入 `Plan` 模式；如果宿主没有显式 `Plan mode`，先给出结构化计划并得到确认。
+2. 计划确认后，先更新相关设计文档，再开始实现。
+3. 实现完成后，必须回查并同步受影响的设计文档、rules 和 skills，再结束本轮。
+4. 如果变更影响正式入口、监控页、工作流主路径或用户操作方式，还要同步更新 `README.md`、`designs/current-solution-summary.md` 和 `designs/architecture.md`。
+
 ## 和风格分析的区别
 
 - `kairos-style-analysis`
@@ -234,6 +243,7 @@ analysis/asset-reports/<assetId>.json
 - coarse prepared state 会写到 `analysis/prepared-assets/<assetId>.json`
 - audio state 会写到 `analysis/audio-checkpoints/<assetId>.json`
 - report 里的 `fineScanCompletedAt / fineScanSliceCount` 用来标记 `fine-scan` 是否真正完成
+- `analysis/fine-scan-checkpoints/<assetId>.json` 只代表 fine-scan 的 durable 中间态，不代表当前一定存在 live fine-scan worker
 - `retry / resume` 后 ETA 不继承上一轮估算，而是按当前阶段重新估；当前阶段完成数 `< 3` 时，面板不显示 ETA
 
 ### 4. 只对重点内容产出 slices
@@ -303,14 +313,26 @@ const localPath = resolveAssetLocalPath(projectId, asset, roots, deviceMaps);
 
 ## 进度展示
 
-素材分析复用 Kairos 通用进度页，而不是复用风格分析的业务逻辑。
+素材分析的正式监控入口是 `Supervisor + React console`，而不是旧静态 HTML 监控页。
 
 重要提示：
 - 只要开始执行一个可能持续较久的 Analyze，就应同步启动或刷新本地监控面板，而不是只在后台静默运行
 - 启动 Analyze 后，agent 应主动把监控面板 URL 告诉用户；如果分析已经开始但面板还没打开，应立即补开
-- 监控面板读取的是项目内 `.tmp/media-analyze/progress.json`，所以面板目录必须和当前项目绑定，不能混到别的项目进度目录
+- 正式 Analyze 监控路由是 `http://127.0.0.1:8940/analyze`
+- `React console` 最终仍读取项目内 `.tmp/media-analyze/progress.json`，因此当前项目上下文必须正确，不能把面板混到别的项目进度目录
+- `scripts/kairos-supervisor.ps1/.sh start` 只会启动 `Supervisor + React console`，不会自动恢复旧的 analyze job；服务起来不等于分析已经重新开始
+- `progress.json`、`audio-checkpoints`、`fine-scan-checkpoints` 都是 durable cache，不是 live job 证据；只看到旧进度、旧 step、旧当前文件名，不能直接断言 Analyze 还在跑
+- 当 Analyze 进入 fine-scan 流水线阶段时，React console 现在会直接展示 `已预抽 / 已识别 / ready queue / active workers`，不再只依赖单条 `current / total`
 - Analyze 正常结束、失败退出或用户中断后，agent 必须清理由自己启动的辅助进程，至少包括本次监控面板服务；如果本轮还主动拉起了 ML server，也必须一起停掉；除非用户明确要求保留
 - 清理边界只包含 agent 本轮主动启动的进程；不要顺手杀掉用户原本就在跑的 ML 服务、别的项目面板或无关后台服务
+- `scripts/kairos-progress.ps1/.sh` 与 `scripts/style-analysis-progress-viewer.html` 现在只保留为兼容 / 调试辅助，不能再被当成新的正式监控入口
+
+- 遇到“页面看起来还在跑，但 GPU / ML 没动静”时，必须先按这个顺序核查，而不是盲目重启或沿用旧结论：
+  - `Supervisor` 当前是否真的存在 `running analyze` job
+  - `progress.json` 的 `LastWriteTime / updatedAt` 是否持续推进
+  - GPU / ML 活跃迹象是否与当前 phase 相符
+- 如果正式流程没起来，就要先查为什么没有 live analyze job；不要把 stale `progress.json` 当成“正式流程其实已经在跑”
+- 如果 `Supervisor` 已启动但没有 `running analyze` job，需要显式重新发起 analyze；不要假设 `Supervisor` 重启会帮你自动恢复
 
 - 默认进度文件建议写到：
 
@@ -318,19 +340,20 @@ const localPath = resolveAssetLocalPath(projectId, asset, roots, deviceMaps);
 projects/<projectId>/.tmp/media-analyze/progress.json
 ```
 
-- 本地网页可直接复用：
+- 正式监控入口：
 
 ```text
-scripts/kairos-progress.ps1
-scripts/kairos-progress.sh
+scripts/kairos-supervisor.ps1
+scripts/kairos-supervisor.sh
 ```
 
 - 推荐做法：
-  - macOS / Linux：先用 `KAIROS_PROGRESS_DIR=... bash scripts/kairos-progress.sh start` 启动面板，再开始或继续 Analyze
-  - Windows：先用 `scripts/kairos-progress.ps1 -Action start -ProgressDir ...` 启动面板，再开始或继续 Analyze
+  - macOS / Linux：先用 `bash scripts/kairos-supervisor.sh start` 启动 `Supervisor + React console`
+  - Windows：先用 `powershell -ExecutionPolicy Bypass -File scripts/kairos-supervisor.ps1 start` 启动 `Supervisor + React console`
+  - 监控 Analyze 时，默认打开 `http://127.0.0.1:8940/analyze`
   - 收尾时：
-    - macOS / Linux：`KAIROS_PROGRESS_DIR=... bash scripts/kairos-progress.sh stop`
-    - Windows：`scripts/kairos-progress.ps1 -Action stop -ProgressDir ...`
+    - macOS / Linux：`bash scripts/kairos-supervisor.sh stop`
+    - Windows：`powershell -ExecutionPolicy Bypass -File scripts/kairos-supervisor.ps1 stop`
   - 如果本轮 Analyze 是 agent 临时拉起 ML server 才跑起来的，收尾时也要配套执行：
     - macOS / Linux：`bash scripts/ml-server.sh stop`
     - Windows：`powershell -ExecutionPolicy Bypass -File scripts/ml-server.ps1 stop`

@@ -15,6 +15,10 @@ Kairos currently runs as a `Node.js core + Agent skills` workflow around a forma
 Current stable pipeline:
 
 - `Pharos -> ingest -> analyze -> script -> timeline -> export`
+- official local runtime / monitor entry is `Supervisor + React console (apps/kairos-console/)`
+  - `http://127.0.0.1:8940/analyze` is the official Analyze monitor route
+  - `http://127.0.0.1:8940/style` is the official Style monitor route
+  - `scripts/kairos-progress.*` and `scripts/style-analysis-progress-viewer.html` are legacy compatibility helpers, not the official path for new capability work
 - subtitles support two formal paths:
   - narration path from `beat.text`
   - source-speech path from `slice.transcriptSegments`
@@ -34,8 +38,25 @@ Current stable pipeline:
   - existing draft directories must never be overwritten or deleted
   - modifying an existing draft requires explicit target verification first
 
+## Change Discipline
+
+For any requirement, behavior, workflow, protocol, or official entry change, Kairos now follows one mandatory order:
+
+1. enter `Plan` mode first, or produce a structured plan and confirm it if the host does not expose explicit Plan mode
+2. update the relevant design docs before implementation
+3. implement the change
+4. review and sync the impacted design docs, rules, and skills before closing the task
+
+If the change affects official user paths, monitoring, or workflow entry points, also update:
+
+- `README.md`
+- `AGENTS.md`
+- `designs/current-solution-summary.md`
+- `designs/architecture.md`
+
 ## Key Docs
 
+- `AGENTS.md` — root bootstrap for agents; indexes mandatory rules, skills, and official runtime entry points
 - `designs/current-solution-summary.md` — quickest entry for the current official solution
 - `designs/architecture.md` — architecture context plus current-vs-historical notes
 - `designs/project-structure.md` — current project storage layout and migration notes

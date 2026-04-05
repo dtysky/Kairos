@@ -3,7 +3,7 @@
 > 当前实现形态：Node.js 库 + Agent Skill（临时承载版本）
 > 正式主链：Pharos-first 的素材编排流程；DaVinci 调色是与主链解耦的独立增强链路
 >
-> 如需先快速理解当前方案全貌，优先阅读 [`current-solution-summary.md`](./current-solution-summary.md)。
+> 如需先快速理解当前方案全貌，优先阅读 [`../AGENTS.md`](../AGENTS.md) 与 [`current-solution-summary.md`](./current-solution-summary.md)。
 
 ## 0. 2026-03-31 增补
 
@@ -56,13 +56,31 @@
    - 保护音轨只在资产已绑定 `protectionAudio` 时进入保守 fallback，且默认不做独立健康检查
 9. 本地运行时与控制台已经形成当前正式操作面
    - `Supervisor` 统一承载本地服务与 job 编排
-   - `apps/kairos-console/` 采用 Hana UI + 工作流优先路由，而不是单页工作台
+   - `apps/kairos-console/` 采用 React + 工作流优先路由，而不是单页工作台
    - `Analyze` 与 `Style` 监控当前直接由 `/analyze` 与 `/style` 主路由承载
    - 旧 `/analyze/monitor` 与 `/style/monitor/:categoryId?` 仅保留兼容跳转
+   - `scripts/kairos-progress.*` 与旧静态监控页只保留兼容 / 调试用途，不再是新的正式入口
+   - React Analyze 页当前已直接消费 fine-scan pipeline monitor model，并把 `prefetch / recognition / ready queue / active workers` 作为结构化 UI 展示
 
 因此，后续阅读本稿时，应把这些能力理解为“正式流程中已被当前实现覆盖的阶段”，而不是另一套独立的“中间版本架构”。
 
-## 0.1 正式流程与独立链路
+## 0.1 当前变更纪律
+
+凡是需求、行为、接口、工作流、正式入口或用户路径变更，当前正式顺序固定为：
+
+1. 先进入 `Plan` 模式；如果宿主没有显式 `Plan mode`，先产出结构化计划并确认
+2. 计划确认后，先更新相关设计文档
+3. 再开始实现
+4. 实现完成后，回查并同步受影响的设计文档、rules 和 skills
+
+如果变更影响正式入口、监控页、工作流主路径或用户操作方式，还必须同步更新：
+
+- `README.md`
+- `AGENTS.md`
+- `designs/current-solution-summary.md`
+- `designs/architecture.md`
+
+## 0.2 正式流程与独立链路
 
 ```mermaid
 flowchart TD
@@ -99,7 +117,7 @@ flowchart TD
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│                    Hana UI Console                           │
+│                     React Console                            │
 │  （工作流控制台：配置、监控、Review Queue、任务入口）          │
 └───────────────────────┬──────────────────────────────────────┘
                         │ HTTP API / 状态聚合

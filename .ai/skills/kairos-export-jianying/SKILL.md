@@ -10,6 +10,15 @@ description: >-
 
 将 `timeline/current.json` 导出到剪映。
 
+## 变更工作流规则
+
+只要本轮任务涉及需求、行为、接口、工作流、正式入口或用户路径变更，必须遵守下面顺序：
+
+1. 先进入 `Plan` 模式；如果宿主没有显式 `Plan mode`，先给出结构化计划并得到确认。
+2. 计划确认后，先更新相关设计文档，再开始实现。
+3. 实现完成后，必须回查并同步受影响的设计文档、rules 和 skills，再结束本轮。
+4. 如果变更影响正式入口、监控页、工作流主路径或用户操作方式，还要同步更新 `README.md`、`designs/current-solution-summary.md` 和 `designs/architecture.md`。
+
 ## 前置条件
 
 - `timeline/current.json` 存在且通过 KTEP 校验

@@ -457,6 +457,18 @@ VLM 识别端不再等待：
 - “正在为后续细扫预抽关键帧”
 - “正在识别已准备好的细扫素材”
 
+对当前正式 `Supervisor + React console` 的额外要求：
+
+- React Analyze 页不能只显示一条通用 `current / total`
+- 至少要把以下流水线指标做成一等展示：
+  - `已预抽 / 总待细扫素材`
+  - `已识别 / 总待细扫素材`
+  - `ready queue` 当前积压
+  - `active prefetch workers`
+  - `active recognition workers`
+- 这些指标应来自后端 monitor model 的结构化字段，而不是只靠解析原始 JSON 文本
+- 项目级 Analyze 摘要区也要改成与这套流水线指标一致，不能继续单独显示旧的串行口径
+
 ## 预期收益
 
 如果实施本方案，预期收益包括：

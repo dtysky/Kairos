@@ -23,7 +23,23 @@
   - GPS / 空间相关元信息
   - 后续与 `Pharos`、chronology、空间推断对齐所需的其他核心字段
 - 当前正式项目结构围绕 `projects/<projectId>/`、`config/runtime.json`、logical ingest roots、`config/device-media-maps.local.json`、Workspace 结构化配置 JSON、`gps/tracks/*.gpx`、`gps/merged.json`、`gps/same-source/`、`gps/derived.json` 与项目内 `.tmp/` 展开
-- 本地运行与项目配置当前由 `Supervisor + Hana UI console` 承载；`Analyze` 与 `Style` 监控直接挂在 `/analyze` 与 `/style` 主路由上
+- 本地运行与项目配置当前由 `Supervisor + React console (apps/kairos-console/)` 承载；`Analyze` 与 `Style` 监控直接挂在 `/analyze` 与 `/style` 主路由上
+- `scripts/kairos-progress.*` 与旧静态监控页当前只保留兼容 / 调试用途，不再是新的正式监控入口
+
+## 当前变更纪律
+
+凡是需求、行为、接口、工作流、正式入口或用户路径变更，当前正式顺序固定为：
+
+1. 先进入 `Plan` 模式；如果宿主没有显式 `Plan mode`，先产出结构化计划并确认
+2. 计划确认后，先更新相关设计文档
+3. 再开始实现
+4. 实现完成后，回查并同步受影响的设计文档、rules 和 skills
+
+如果变更影响正式入口、监控页、工作流主路径或用户操作方式，还必须同步更新：
+
+- `README.md`
+- `designs/current-solution-summary.md`
+- `designs/architecture.md`
 
 ## 当前实现与早期草案的差异注记（2026-03-29 之后）
 
