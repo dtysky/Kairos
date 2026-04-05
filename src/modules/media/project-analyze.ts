@@ -124,6 +124,7 @@ const CANALYZE_STEP_DEFINITIONS = [
   { key: 'fine-scan', label: '自动细扫重点内容' },
   { key: 'chronology', label: '刷新时间视图' },
 ] as const;
+const CAUDIO_ANALYSIS_KEEP_OTHER_MODELS_LOADED = true;
 
 export async function analyzeWorkspaceProjectMedia(
   input: IAnalyzeWorkspaceProjectInput,
@@ -1300,6 +1301,7 @@ async function inferUnifiedAnalysisDecision(input: {
         budget: input.budget,
         manualSpatial: input.manualSpatial,
       }),
+      { keepOtherModelsLoaded: CAUDIO_ANALYSIS_KEEP_OTHER_MODELS_LOADED },
     );
     input.performance?.recordVlm({
       asset: input.prepared.asset,
@@ -1657,7 +1659,12 @@ async function transcribeAudioContext(input: {
   }
 
   try {
-    const result = await transcribe(input.ml.client, input.localPath);
+    const result = await transcribe(
+      input.ml.client,
+      input.localPath,
+      undefined,
+      { keepOtherModelsLoaded: CAUDIO_ANALYSIS_KEEP_OTHER_MODELS_LOADED },
+    );
     const segments = result.segments
       .map(segment => ({
         startMs: Math.max(0, Math.round(segment.start * 1000)),

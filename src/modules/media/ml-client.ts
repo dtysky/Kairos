@@ -69,6 +69,10 @@ export interface IMlHealth {
   models_loaded: string[];
 }
 
+export interface IMlRequestOptions {
+  keepOtherModelsLoaded?: boolean;
+}
+
 export class MlClient {
   constructor(private baseUrl = CDEFAULT_URL) {}
 
@@ -80,15 +84,24 @@ export class MlClient {
     return res.json() as Promise<IMlHealth>;
   }
 
-  async asr(audioPath: string, language?: string): Promise<IAsrSegment[]> {
-    const res = await this.asrDetailed(audioPath, language);
+  async asr(
+    audioPath: string,
+    language?: string,
+    options?: IMlRequestOptions,
+  ): Promise<IAsrSegment[]> {
+    const res = await this.asrDetailed(audioPath, language, options);
     return res.segments;
   }
 
-  async asrDetailed(audioPath: string, language?: string): Promise<IAsrResult> {
+  async asrDetailed(
+    audioPath: string,
+    language?: string,
+    options?: IMlRequestOptions,
+  ): Promise<IAsrResult> {
     return this.post<IAsrResult>('/asr', {
       audio_path: this.normalizePath(audioPath),
       language,
+      keep_other_models_loaded: options?.keepOtherModelsLoaded ?? false,
     });
   }
 
@@ -106,10 +119,15 @@ export class MlClient {
     return res.embeddings;
   }
 
-  async vlmAnalyze(imagePaths: string[], prompt: string): Promise<IVlmResult> {
+  async vlmAnalyze(
+    imagePaths: string[],
+    prompt: string,
+    options?: IMlRequestOptions,
+  ): Promise<IVlmResult> {
     return this.post<IVlmResult>('/vlm/analyze', {
       image_paths: imagePaths.map(path => this.normalizePath(path)),
       prompt,
+      keep_other_models_loaded: options?.keepOtherModelsLoaded ?? false,
     });
   }
 

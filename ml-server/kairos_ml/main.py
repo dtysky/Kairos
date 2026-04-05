@@ -11,6 +11,7 @@ app = FastAPI(title="Kairos ML Server")
 class AsrRequest(BaseModel):
     audio_path: str
     language: str | None = None
+    keep_other_models_loaded: bool = False
 
 class OcrRequest(BaseModel):
     image_path: str
@@ -21,6 +22,7 @@ class ClipEmbedRequest(BaseModel):
 class VlmRequest(BaseModel):
     image_paths: list[str]
     prompt: str
+    keep_other_models_loaded: bool = False
 
 # ─── State ────────────────────────────────────────────────────
 
@@ -61,7 +63,10 @@ def health():
 @app.post("/asr")
 def asr(req: AsrRequest):
     try:
-        _unload_vlm()
+        # Analyze finalize may chain ASR -> decision VLM for the same asset.
+        # Allow callers to keep both models resident for that hot path.
+        if not req.keep_other_models_loaded:
+            _unload_vlm()
         from .whisper_runner import transcribe
         _loaded.add("whisper")
         segments, timing = transcribe(req.audio_path, req.language)
@@ -95,7 +100,8 @@ def clip_embed(req: ClipEmbedRequest):
 @app.post("/vlm/analyze")
 def vlm_analyze(req: VlmRequest):
     try:
-        _unload_whisper()
+        if not req.keep_other_models_loaded:
+            _unload_whisper()
         from .vlm_runner import analyze
         _loaded.add("vlm")
         description, timing = analyze(req.image_paths, req.prompt)

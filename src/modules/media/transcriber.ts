@@ -3,6 +3,7 @@ import type {
   MlClient,
   IAsrSegment,
   IMlAsrTiming,
+  IMlRequestOptions,
 } from './ml-client.js';
 
 export interface ITranscription {
@@ -13,13 +14,16 @@ export interface ITranscription {
   roundTripMs?: number;
 }
 
+export interface ITranscribeOptions extends IMlRequestOptions {}
+
 export async function transcribe(
   client: MlClient,
   audioPath: string,
   language?: string,
+  options?: ITranscribeOptions,
 ): Promise<ITranscription> {
   const startedAt = Date.now();
-  const result = await client.asrDetailed(audioPath, language);
+  const result = await client.asrDetailed(audioPath, language, options);
   const roundTripMs = Date.now() - startedAt;
   const segments = result.segments;
   const fullText = segments.map(s => s.text).join(' ').trim();
