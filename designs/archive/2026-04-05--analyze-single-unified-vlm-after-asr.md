@@ -131,9 +131,9 @@
 
 - “把两次 VLM 合成一次 unified VLM”
 
-## 候选重构后的阶段边界
+## 重构后的阶段边界
 
-视频主链更倾向变成：
+视频主链改成：
 
 1. `coarse-scan`
    - 抽少量 keyframes
@@ -148,6 +148,191 @@
    - 决定 `interestingWindows / shouldFineScan / fineScanMode`
 4. `deferred-scene-detect`
    - 仅在 unified decision 判定需要时触发
+
+对没有音轨的视频，分支应明确是：
+
+- `coarse-scan -> finalize`
+
+也就是说：
+
+- 没音轨视频不会等待 transcript
+- 不会因为没有 ASR 就失去视觉语义输出
+- unified VLM 仍然照常执行，只是传空 transcript、`speechCoverage = 0`、无 `speechWindows`
+
+因此本方案的统一口径应是：
+
+- 有音轨视频：`coarse-scan -> audio-analysis -> finalize`
+- 无音轨视频：`coarse-scan -> finalize`
+
+## ASR 批处理调度约束
+
+如果后续把 `audio-analysis` 拆成更纯的 ASR pass，本轮方案要求：
+
+- 对有音轨视频做整素材级 ASR batch
+- 不把固定 `30s` chunk 当成系统级调度单位
+
+这里的判断依据是：
+
+- 总音频计算量本来就是既定的
+- 真正想要的优化是吃满 GPU / 显存，提高吞吐
+- 而不是把同一条素材先切成很多小段，再在人为碎片上做额外调度
+
+因此调度单位应是：
+
+- 一条素材 = 一个 ASR job
+
+而不是：
+
+- `30s` 小段 = 一个 ASR job
+
+### FIFO 与容量预算
+
+worker 形态应是：
+
+- 常驻 ASR worker
+- 维护待转写 FIFO
+- 从 FIFO 中取整条素材组成 batch
+- 按容量预算决定本批可装入多少素材
+
+这里的“容量预算”不应简单等于：
+
+- 读一眼瞬时剩余显存，然后贪心塞满
+
+更稳的口径应是：
+
+- 以经验校准后的 batch capacity 为主
+- 以瞬时显存/设备状态为 safety cap
+- 尽量把时长接近的素材放进同一批，减少 padding 浪费
+
+### 16k mono 规范化
+
+本轮方案要求 ASR worker 的统一输入格式是：
+
+- `16kHz`
+- `mono`
+- 标准化 WAV 中间产物
+
+也就是说：
+
+- 原始视频音轨不应直接作为 batch 推理输入
+- 所有待转写素材都应先进入统一的音频规范化步骤
+- `wav-ready` 的语义应明确表示“已准备好可直接送入 ASR 的 16k mono 音频”
+
+这样做的目的包括：
+
+- 减少无意义的数据体积
+- 稳定 batch 容量估算
+- 让不同素材来源进入同一种 ASR 输入分布
+- 让 checkpoint / resume 更清晰
+
+因此，后续如果实现整素材 FIFO batch，默认链路应是：
+
+- `asset -> extract/normalize 16k mono wav -> wav-ready -> asr-running`
+
+### segment 时间线是硬约束
+
+本轮方案明确要求：
+
+- 即使后续改成整素材级 ASR batch，ASR 结果也必须保留 segment 级时间线
+
+这里至少应稳定产出：
+
+- `text`
+- `startMs`
+- `endMs`
+
+也就是说，ASR worker 不能只返回：
+
+- `fullText`
+
+而必须返回：
+
+- `transcriptSegments`
+
+原因很直接：
+
+- `speechWindows` 需要从语音时间线导出
+- 基础字幕规划也依赖 segment 级时间线
+- 没有时间线，后续只能回退成粗糙的整段语音判断，无法支撑窗口分割
+
+因此更合适的约束是：
+
+- batch 只改变调度和吞吐
+- 不改变单素材 ASR 结果的时间线语义
+
+后续链路应保持：
+
+- `transcriptSegments -> speechCoverage -> speechWindows`
+
+而不是：
+
+- `fullText -> 猜测 speechWindows`
+
+这也意味着 checkpoint / resume 至少要能稳定回填：
+
+- `transcript`
+- `transcriptSegments`
+- `speechCoverage`
+- `speechWindows`
+
+### 不默认拆段
+
+本轮讨论明确不倾向把拆段作为默认策略。
+
+原因包括：
+
+- 拆段并不会减少总计算量
+- 会引入额外调度复杂度
+- 会增加边界管理和回填复杂度
+- 会让 checkpoint / progress 语义从“素材”退化成“碎片”
+
+因此默认口径应是：
+
+- batch 的并行化发生在“多素材并行”
+- 而不是“单素材先切碎再并行”
+
+如果极长素材未来需要特殊处理，也应被视为例外分支，而不是全局默认调度形态。
+
+### checkpoint 与恢复
+
+这条方案要求音频阶段必须保留清晰的按素材 checkpoint。
+
+更合适的状态语义是：
+
+- `pending`
+- `wav-ready`
+- `asr-running`
+- `asr-done`
+- `finalized`
+
+恢复语义应是：
+
+- 已进入 `asr-done` 的素材，下次直接跳过 ASR
+- `pending / wav-ready` 素材重新入队
+- progress 统计以素材数为主，而不是以 batch 数或 chunk 数为主
+
+这点被认为是必要要求，而不是附属优化，因为：
+
+- Analyze 本身就是长流程
+- 没有清晰 checkpoint 的 batch worker 不适合正式项目场景
+
+### 与 unified finalize 的关系
+
+本轮更倾向的链路不是：
+
+- 每条素材 `ASR -> finalize -> 下一条`
+
+而是：
+
+- 先完成一轮纯 ASR pass
+- 再进入后续 unified finalize
+
+也就是说，真正能发挥 batch 吞吐价值的前提是：
+
+- `audio-analysis` 足够纯
+- 不再在同一素材循环里夹杂第二个重阶段
+
+否则，多素材 batch 带来的收益会被逐素材 finalize 串行重新吃掉。
 
 如果 UI 层仍然只保留原有 step 数量，也应至少在文案上承认：
 
@@ -178,7 +363,7 @@
 
 这里允许后续再讨论具体命名，但不允许把 UI 改动降级成“以后再说”的附属事项。
 
-## 统一 VLM 的建议输入
+## 统一 VLM 的输入要求
 
 ### 视觉输入
 
@@ -198,16 +383,24 @@
 - manual spatial hints / transport
 - source context
 
+对于没有音轨的视频，这组输入应退化为：
+
+- 空 transcript
+- `speechCoverage = 0`
+- 无 `speechWindows`
+
+但 unified VLM 不应因此被跳过。
+
 ### 来源上下文
 
-这里更倾向传人写的来源说明，而不是机器猜测的 clip type prior。
+这里要求传人写的来源说明，而不是机器猜测的 clip type prior。
 
-`sourceContext` 更适合包括：
+`sourceContext` 应包括：
 
 - `rootLabel`
 - `rootDescription`
 - `rootNotes`
-- 如有必要，再补 path-prefix 级别的人写说明
+- 如有配置，再补 path-prefix 级别的人写说明
 
 这里明确不建议再传：
 
@@ -334,15 +527,30 @@
 
 规则层仍然保留，只是不再默认建立在 coarse `visualSummary` 之上。
 
-## 未决问题
+## 已确认决议
 
-以下问题仍需后续实现评审时拍板：
+以下内容在本轮不再视为未决：
 
-1. unified VLM 的返回 schema 是否直接扩成 “summary + decision” 复合结构
-2. photo 路径是否也统一进同一类 prompt，还是继续保留当前轻量单图 summary 路径
-3. `sourceContext` 的边界是否只保留 root 级说明，还是允许 path-prefix 级说明一并注入
-4. UI 层最终采用 `3-step` 还是 `4-step` 展示，但无论哪种都必须真实反映 unified finalize 的存在
-5. 若 unified VLM 失败，fallback heuristic 的保守策略如何收紧
+1. 视频主链默认只保留一次 unified VLM，并且它发生在 `finalize`
+2. `coarse-scan` 不再产出 `visualSummary`，只负责准备 keyframes、`hasAudioTrack` 和 `sourceContext`
+3. 有音轨视频走 `coarse-scan -> audio-analysis -> finalize`；无音轨视频走 `coarse-scan -> finalize`
+4. `sourceContext` 取代 `initialClipTypeGuess`，允许注入 root 级说明和用户写的 path-prefix 级说明，但不允许再传机器猜测的 clip type prior
+5. UI 必须同步改，并按 `coarse-scan / audio-analysis / finalize / deferred-scene-detect` 这套真实语义展示；无音轨素材允许跳过 `audio-analysis`，但不允许把 `finalize` 再伪装成音频阶段
+6. 纯 ASR pass 采用整素材 FIFO batch，不以固定 `30s` chunk 作为系统级调度单位
+7. ASR batch 的统一输入格式必须是 `16kHz + mono + WAV`
+8. ASR 结果必须保留 segment 级时间线，并稳定回填 `transcript / transcriptSegments / speechCoverage / speechWindows`
+9. unified VLM 的返回结果直接采用“`visualSummary + decision`”复合结构，不再拆成两轮 VLM
+10. `timelapse` 分类必须比其他 clip type 更保守：不能仅凭 transcript 中出现“延时/延时摄影”等字样、三脚架线索、或静态风景画面就判成 `timelapse`；至少需要明确的来源上下文或更强的视觉/拍摄证据
+11. 如果 unified VLM 失败，允许回落到保守 heuristic fallback，但 fallback 只能做保守分流，不能在缺少 unified VLM 结果时放宽到更激进的 fine-scan
+
+## 实现细化
+
+以下只保留实现层面的细化事项，不再视为方案分支：
+
+1. photo 路径继续沿用当前轻量单图 summary 路径，不强行并入视频 unified VLM
+2. ASR batch capacity 采用“长度分桶 + 保守安全余量 + 瞬时显存 safety cap”的组合口径
+3. progress 展示可以继续细化文案，但不得改变这份文档确认的阶段语义
+4. `timelapse` 更适合作为受限标签处理：优先依赖 `sourceContext` 或明确拍摄模式证据，而不是让模型从普通 scenic / static footage 中自由猜出
 
 ## 建议的下一步
 
