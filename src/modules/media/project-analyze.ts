@@ -878,9 +878,17 @@ async function loadOrAnalyzePreparedAudio(input: {
 }): Promise<{
   transcript: ITranscriptContext | null;
   protectedAudio?: IAssetCoarseReport['protectedAudio'];
+  hasAvailableProtectionAudio: boolean;
 }> {
   const shouldCheckpoint = shouldAnalyzeAudioTrack(input.prepared.asset, input.prepared.hasAudioTrack)
     || Boolean(input.prepared.asset.protectionAudio);
+  const protectionAudioLocalPath = await resolveAvailableProtectionAudioLocalPath({
+    projectId: input.projectId,
+    asset: input.prepared.asset,
+    roots: input.roots,
+    deviceMaps: input.deviceMaps,
+  });
+  const hasAvailableProtectionAudio = Boolean(protectionAudioLocalPath);
 
   if (shouldCheckpoint) {
     const checkpoint = await loadAudioAnalysisCheckpoint(input.projectRoot, input.prepared.asset.id);
@@ -888,6 +896,7 @@ async function loadOrAnalyzePreparedAudio(input: {
       return {
         transcript: normalizeTranscriptContext(checkpoint.transcript ?? null),
         protectedAudio: checkpoint.protectedAudio,
+        hasAvailableProtectionAudio,
       };
     }
   }
@@ -914,6 +923,7 @@ async function loadOrAnalyzePreparedAudio(input: {
       ml: input.ml,
       onStageChange: input.onStageChange,
       performance: input.performance,
+      protectionAudioLocalPath,
     })
     : undefined;
 
@@ -928,6 +938,7 @@ async function loadOrAnalyzePreparedAudio(input: {
   return {
     transcript,
     protectedAudio,
+    hasAvailableProtectionAudio,
   };
 }
 
@@ -947,7 +958,7 @@ async function finalizePreparedAsset(
   }
 
   const ml = await input.getMlHandle();
-  const { transcript, protectedAudio } = await loadOrAnalyzePreparedAudio({
+  const { transcript, protectedAudio, hasAvailableProtectionAudio } = await loadOrAnalyzePreparedAudio({
     projectId: input.projectId,
     projectRoot: input.projectRoot,
     prepared: input.prepared,
@@ -1016,7 +1027,7 @@ async function finalizePreparedAsset(
         prepared.visualSummary?.subjects,
         transcript,
       ),
-      ...(prepared.asset.protectionAudio ? ['protection-audio-available'] : []),
+      ...(hasAvailableProtectionAudio ? ['protection-audio-available'] : []),
       ...(protectedAudio?.recommendedSource === 'protection' ? ['protection-audio-fallback'] : []),
     ]),
     placeHints: dedupeStrings([
@@ -1709,6 +1720,7 @@ export async function evaluateProtectedAudioFallback(input: {
   ml: MlAvailability;
   onStageChange?: (stage: 'audio-analysis', detail?: string) => Promise<void>;
   performance?: AnalyzePerformanceSession;
+  protectionAudioLocalPath?: string | null;
 }): Promise<IAssetCoarseReport['protectedAudio'] | undefined> {
   const binding = input.asset.protectionAudio;
   if (!binding) return undefined;
@@ -1724,12 +1736,12 @@ export async function evaluateProtectedAudioFallback(input: {
     transcript: input.embeddedTranscript?.transcript,
   });
 
-  const protectionLocalPath = resolveProtectionAudioLocalPath(
-    input.projectId,
-    input.asset,
-    input.roots,
-    input.deviceMaps,
-  );
+  const protectionLocalPath = input.protectionAudioLocalPath ?? await resolveAvailableProtectionAudioLocalPath({
+    projectId: input.projectId,
+    asset: input.asset,
+    roots: input.roots,
+    deviceMaps: input.deviceMaps,
+  });
   if (!protectionLocalPath) {
     return recommendProtectedAudioFallback({
       binding,
@@ -1796,6 +1808,28 @@ function shouldCompareProtectionTranscript(
   }
 
   return !(embeddedTranscript?.transcript?.trim());
+}
+
+async function resolveAvailableProtectionAudioLocalPath(input: {
+  projectId: string;
+  asset: IKtepAsset;
+  roots: IMediaRoot[];
+  deviceMaps: IDeviceMediaMapFile;
+}): Promise<string | null> {
+  const localPath = resolveProtectionAudioLocalPath(
+    input.projectId,
+    input.asset,
+    input.roots,
+    input.deviceMaps,
+  );
+  if (!localPath) return null;
+
+  try {
+    await access(localPath);
+    return localPath;
+  } catch {
+    return null;
+  }
 }
 
 function shouldAnalyzeAudioTrack(
