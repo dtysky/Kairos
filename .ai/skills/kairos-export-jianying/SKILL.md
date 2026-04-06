@@ -26,7 +26,7 @@ description: >-
 - `vendor/pyJianYingDraft/.venv` 可用，或 `config/runtime.json` 已显式配置 `jianyingPythonPath`
 - 剪映已安装在目标机器上
 - 目标机器可以访问时间线中引用的素材路径
-- 最终导出路径必须是一个新的具体草稿目录，不能是已有目录，更不能直接是剪映草稿根目录
+- 项目内 staging 草稿目录与最终剪映草稿目录都必须是新的具体目录，不能是已有目录，更不能直接把剪映草稿根目录当成草稿本身
 
 ## 输入
 
@@ -44,11 +44,18 @@ description: >-
 - 允许复用仓库中的 `KTEP` 校验和字幕导出逻辑
 - 草稿分辨率 / 帧率应直接继承 `timeline/current.json` 的正式规格；若项目未显式配置，则当前默认规格是 `3840x2160 @ 30fps`
 - 如果时间线 clip 带有“静音原音”意图，导出到剪映时应把对应视频片段写成静音
+- 默认导出链路是：
+  - 先在 `projects/<projectId>/adapters/jianying-staging/<draftName>` 生成 staging draft
+  - staging 成功后，再复制到真实 `jianyingDraftRoot/<draftName>`
+- 若时间线含有显式变速片段，Jianying 导出适配层可以做 backend compatibility normalization，但这种修正不能回写正式 `timeline/current.json`
 
 ## 强规则：导出路径安全
 
-- 导出前必须先解析出**最终草稿目录**，不能只拿 `draftRoot` 或剪映草稿库根目录就直接写。
-- 必须检查最终草稿目录是否已存在；只要已存在，就阻塞并让用户改用新的目录名。
+- 导出前必须同时解析出：
+  - 项目内 **staging 草稿目录**
+  - 真实剪映草稿根目录下的 **最终草稿目录**
+- 不能只拿 `draftRoot` 或剪映草稿库根目录就直接写。
+- 必须检查 staging 草稿目录和最终草稿目录是否已存在；只要任一已存在，就阻塞并让用户改用新的目录名。
 - 禁止覆盖、清空、删除、重建已有草稿目录；不要依赖 `allow_replace`、删目录重建之类的底层行为。
 - 如果用户只给了草稿根目录，默认应在其下生成新的具体子目录，建议使用时间戳或版本号。
 - 如果本阶段还会导出 `SRT / VTT` 到本地文件，同样先检查字幕目标路径；已有文件或非空目录都不能直接覆盖。
@@ -65,18 +72,20 @@ description: >-
 
 1. 读取并校验 `timeline/current.json`
 2. 判断这次是“新建导出”还是“修改已有草稿”
-3. 若是新建导出：解析最终草稿目录，并确认它不是草稿根目录
-4. 若是新建导出：检查该目录是否已存在、是否为空；如果已存在则阻塞并改用新的目录名
+3. 若是新建导出：解析项目内 staging 草稿目录和最终草稿目录，并确认最终目录不是草稿根目录本身
+4. 若是新建导出：检查 staging 草稿目录和最终草稿目录；只要任一已存在就阻塞并改用新的目录名
 5. 若是修改已有草稿：先核对目标草稿路径、目录名和元数据，确认修改对象无误
-6. 用安全的新目录创建剪映草稿，或在已核对的目标草稿上执行后续动作
-7. 按 `KTEP` 轨道创建剪映轨道
-8. 按 `KTEP` 片段摆放视频 / 图片 / 音频素材
-9. 按 `KTEP` 字幕创建文本轨或同时导出 `SRT / VTT`
-10. 导出草稿并返回草稿路径
+6. 先在安全的 staging 目录生成剪映草稿
+7. staging 成功后，再复制到最终草稿目录
+8. 按 `KTEP` 轨道创建剪映轨道
+9. 按 `KTEP` 片段摆放视频 / 图片 / 音频素材
+10. 按 `KTEP` 字幕创建文本轨或同时导出 `SRT / VTT`
+11. 返回 staging 路径、最终草稿路径和字幕路径
 
 ## 推荐产出
 
-- 剪映草稿路径
+- 项目内 staging 草稿路径
+- 最终剪映草稿路径
 - `subtitles/output.srt`
 - `subtitles/output.vtt`
 - 导出日志与失败诊断
@@ -87,7 +96,7 @@ description: >-
 - `vendor/pyJianYingDraft/.venv` 是否存在，或 `jianyingPythonPath` 是否指向可执行 Python
 - 该 Python 环境中 `pymediainfo` / `imageio`（Windows 还包括 `uiautomation>=2`）是否可导入
 - 素材路径是否是目标机器可访问的 Windows 路径
-- 剪映草稿目录是否可写
+- 项目内 staging 目录是否可写
 - 最终草稿目录是否误指向现有目录或草稿根目录
 - 若是在改已有草稿，目标草稿是否已经按路径 + 名称 + 元数据核对过
 
@@ -97,4 +106,4 @@ description: >-
 - 当前 backend 通过 `pyJianYingDraft` 直写 `draft_info.json` / `draft_meta_info.json`
 - 对于需要静音的视频片段，当前 backend 会通过 `pyJianYingDraft` 的音量参数把片段音量压到静音
 - 这个 skill 是 Phase 5 的剪映目标实现
-- 默认安全策略是“新目录导出”，不是“覆盖旧草稿”
+- 默认安全策略是“项目内 staging + 新目录复制”，不是“覆盖旧草稿”

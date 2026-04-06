@@ -22,6 +22,8 @@ export {
   JianyingLocalExportError,
   getVendoredJianyingPythonPath,
   inferDefaultJianyingDraftRoot,
+  inferDefaultJianyingStagingRoot,
+  resolveJianyingExportPaths,
   resolveJianyingOutputPath,
   resolveJianyingPyProjectRoot,
   resolveJianyingPythonInvocation,
@@ -29,6 +31,7 @@ export {
   type IJianyingExportMessage,
   type IJianyingLocalConfig,
   type IJianyingLocalManifest,
+  type IJianyingResolvedPaths,
   type IJianyingPythonInvocation,
 } from './jianying-local.js';
 export { exportSrt, exportVtt, formatSrt, formatVtt } from './export-srt.js';

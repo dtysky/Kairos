@@ -50,7 +50,6 @@ description: >-
 
 适用场景：
 - 用户明确说“导出到剪映”
-- 当前宿主已配置 `jianying` MCP server
 - 需要生成剪映草稿、SRT、VTT
 
 ### 目标是达芬奇 / Resolve
@@ -73,7 +72,9 @@ description: >-
 ## 统一前置条件
 
 - `timeline/current.json` 存在且通过 KTEP 校验
-- 宿主环境中已配置对应的外部 MCP server
+- 宿主环境中已具备对应目标的实际导出能力
+  - 剪映：vendored `pyJianYingDraft` 本地后端 + 可用 Python 环境
+  - Resolve：对应的 Resolve MCP server
 - 目标机器上已安装对应的 NLE（若该 NLE 必需）
 - 若本阶段会写本地草稿 / 字幕 / 中间文件，最终输出路径已解析为具体目录或文件名，且不会触发现有内容覆盖
 

@@ -40,8 +40,10 @@
    - 不再依赖外部 `jianying-mcp` 或独立 `Jianying Server`
    - 由 Node 侧直接调用 vendored `pyJianYingDraft` Python CLI
    - Python 运行时优先走项目内固定 `.venv` 或显式 `jianyingPythonPath`
-   - 导出目标目录必须是一个全新的具体草稿目录，禁止覆盖、清空或重建已有目录
+   - 默认导出会先在 `projects/<projectId>/adapters/jianying-staging/` 生成 staging 草稿，再复制到真实 `jianyingDraftRoot`
+   - staging 目录和最终草稿目录都必须是全新的具体目录，禁止覆盖、清空或重建已有目录
    - 如果任务是修改已有草稿，必须先核对草稿目录和可读元数据，再允许写入
+   - 对带显式 `speed` 的时间线，Jianying 导出适配层会做 backend compatibility normalization，吸收 `pyJianYingDraft` 的微秒级时长重算偏差，但不会反向污染正式 `KTEP timeline`
 7. 时间线旁白模型已经升级
    - `beat` 可选携带 `utterances[]`，显式表达多段配音及 `pauseBeforeMs / pauseAfterMs`
    - 字幕按有声岛落位，不再默认占满整个 beat
@@ -58,9 +60,15 @@
    - `Supervisor` 统一承载本地服务与 job 编排
    - `apps/kairos-console/` 采用 React + 工作流优先路由，而不是单页工作台
    - `Analyze` 与 `Style` 监控当前直接由 `/analyze` 与 `/style` 主路由承载
+   - `Style` 当前承载的是 **Workspace 级风格库 / 风格来源配置 / style-analysis monitor**，而不是某个单项目私有风格页
    - 旧 `/analyze/monitor` 与 `/style/monitor/:categoryId?` 仅保留兼容跳转
    - `scripts/kairos-progress.*` 与旧静态监控页只保留兼容 / 调试用途，不再是新的正式入口
    - React Analyze 页当前已直接消费 fine-scan pipeline monitor model，并把 `prefetch / recognition / ready queue / active workers` 作为结构化 UI 展示
+   - 可复用的风格资产当前统一收口为 Workspace 级：
+     - `config/styles/`
+     - `config/style-sources.json`
+     - `analysis/reference-transcripts/`
+     - `analysis/style-references/`
 
 因此，后续阅读本稿时，应把这些能力理解为“正式流程中已被当前实现覆盖的阶段”，而不是另一套独立的“中间版本架构”。
 
@@ -128,7 +136,7 @@ flowchart TD
                         │ 调用（函数调用 + 结构化数据交换）
 ┌───────────────────────▼──────────────────────────────────────┐
 │                      Agent Skill                              │
-│  （交互层：用户通过对话驱动工作流，审阅/编辑脚本等）            │
+│  （交互层：用户通过对话驱动工作流，审阅 script-brief、写脚本等） │
 │  ★ LLM 能力由 Agent 宿主提供，Kairos 不自行对接                │
 └───────────────────────┬──────────────────────────────────────┘
                         │
@@ -136,7 +144,7 @@ flowchart TD
 │                    Kairos Core Library                        │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐        │
 │  │  Ingest  │ │  Color   │ │  Script  │ │   Cut    │        │
-│  │  素材管理 │ │  调色辅助 │ │  脚本生成 │ │  粗剪编排 │        │
+│  │  素材管理 │ │  调色辅助 │ │ 脚本准备/生成 │ │  粗剪编排 │        │
 │  └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘        │
 │       │            │            │            │               │
 │  ┌────▼────────────▼────────────▼────────────▼─────┐         │
@@ -180,6 +188,11 @@ flowchart TD
 | `config` | 用户配置 / 项目配置 / 风格档案的读写 |
 | `task-queue` | 后台任务队列（预处理、批量分析），基于 p-queue |
 | `logger` | 结构化日志 |
+
+补充口径：
+
+- `config/runtime.json` 仍是项目级 / workspace 级运行时覆盖入口
+- 可复用风格档案与风格来源配置不是项目级 store，而是 workspace 级共享配置
 
 ### Layer 2 — 业务模块 (`src/modules/`)
 
@@ -305,19 +318,27 @@ src/modules/script/
   → 存储 style-profile.json
 
 脚本生成：
-  → 读取 Pharos 分镜数据 + 素材索引 + 场景数据 + GPS 轨迹
-  → narrative-builder 构建叙事骨架（分镜驱动 + 空间叙事）
-  → content-deriver 推导非分镜段落（片头、回顾、花絮）
-  → script-generator 调用 LLM 生成完整脚本
-     - system prompt 注入风格档案
-     - 分段生成，每段包含：旁白、素材引用、时长、情绪
-  → 用户在 Agent 中审阅/编辑
-  → 存储 script/current.json + 版本快照
+  → 从 workspace `config/styles/` 选择用户指定的 style category
+  → `/script` 先自动保存 `styleCategory`
+  → Console 以 persistent workflow prompt + hana modal 明确提示当前 handoff，而不是只给低对比行内说明
+  → Agent 读取 Pharos 分镜数据 + 素材索引 + 场景数据 + GPS 轨迹，并生成初版 `script-brief`
+  → 用户先在 `/script` 中审阅和手动保存 brief
+  → Supervisor / Console 再做 deterministic prep
+     - 仅在 `script-brief.workflowState = ready_to_prepare` 后允许运行
+     - 校验 slices / styleCategory / workspace style profile
+     - 刷新 `analysis/material-digest.json`
+     - 成功后推进到 `ready_for_agent`
+  → Agent 再读取 brief + digest + style profile，推进段落规划、outline 与正式脚本写作
+  → 由 Agent 存储 `script/current.json` + 版本快照
 ```
 
 补充口径：
 
 - 正式脚本流程以 `Pharos` 为主输入
+- 项目只记录“本项目选用哪个 workspace style category”，不在项目内持有共享 style 库
+- `script` Supervisor job 当前是 prep-only，不负责自动生成 `script/current.json`
+- `script/script-brief.json` 当前是脚本阶段流程状态真值；`script/script-brief.md` 会同步机器可恢复元信息
+- 如果用户已经修改过当前 brief，而又想让 Agent 重新生成初版 brief，正式路径是 `/script` 页里的覆盖确认，而不是 Agent 直接覆盖
 - 无 `Pharos` 时，当前实现允许基于素材分析结果、brief 与行程信息走兼容路径
 
 #### 2.4 Cut — 粗剪与剪辑辅助

@@ -25,6 +25,11 @@ Kairos 当前需要区分两层：
 - 仓库根目录的 `AGENTS.md` 是当前 agent 启动时的统一引导入口，用来收口必读文档、rules、skills 和正式运行入口
 - 本地运行与任务编排当前已收口到 `Supervisor + React console (apps/kairos-console/)`
 - `素材分析` 与 `风格分析` 在当前控制台里直接以主路由展示监控，而不是再跳一次独立监控入口
+- 风格档案、风格来源配置与风格分析参考产物当前已收口为 **Workspace 级共享资产**：
+  - `config/styles/`
+  - `config/style-sources.json`
+  - `analysis/reference-transcripts/`
+  - `analysis/style-references/`
 - `scripts/kairos-progress.*` 与 `scripts/style-analysis-progress-viewer.html` 只保留兼容 / 调试用途，不再是新的正式监控入口
 - 未来如果引入桌面 UI 或更多 provider / adapter，应建立在这套协议与项目模型上，而不是推翻它
 - 某些项目会直接消费调色后的素材版本而非原始素材；因此主链面向的是“当前采用的素材版本”，而不是固定绑定“永远使用原始素材”
@@ -116,7 +121,26 @@ flowchart TD
 
 - 正式脚本编排已经不是“整段 narration + 粗引用素材”的模型
 - 当前正式模型是 `segment + beat + selection`
-- 用户审查闸门存在于脚本生成之前，而不是召回和编排全部完成之后
+- `script-brief` 是当前脚本阶段的正式人工审查入口
+- 当前 `/script` 页已经收口为：
+  - 先选择 workspace `styleCategory`，并立即自动保存
+  - Agent 生成初版 `script-brief`
+  - 用户在 `/script` 审查并手动保存 brief
+  - 用户点击 `准备给 Agent`
+  - 关键 handoff 会通过持续可见的 workflow prompt 和显式 hana modal 提示用户“下一步去哪里”，而不再只靠淡色行内文案
+- 当前 Console 里的 `script` job 已收口为 **deterministic prep**，只负责校验前置条件并刷新确定性材料
+- `script/current.json` 的唯一正式作者是 **Agent**
+- `script/script-brief.json` 当前承载脚本阶段的正式流程状态真值：
+  - `choose_style`
+  - `await_brief_draft`
+  - `review_brief`
+  - `ready_to_prepare`
+  - `ready_for_agent`
+  - `script_generated`
+- `script/script-brief.md` 会同步机器可恢复的 workflow 元信息；即使 `.json` 丢失，也能恢复脚本阶段状态
+- 如果用户已经修改过当前 brief，而又想让 Agent 重新生成初版 brief，正式路径是在 `/script` 点击 `重新生成初版 brief` 并通过 UI 明确确认覆盖
+- 用户审查闸门存在于 Agent 写脚本之前，而不是召回和编排全部完成之后
+- Script 阶段当前从 **Workspace 风格库** 里选择用户指定的 `style category`，项目只保存“本项目使用哪一个分类”，不再把风格档案作为项目内资产持有
 - 当前脚本 / outline 默认优先消费 Analyze 给出的 `editSourceInMs / editSourceOutMs`，而不是继续把 tight evidence window 当成最终可剪子区间
 - 模型仍可把 `selection.sourceInMs / sourceOutMs` 写得更细，但系统会先 clamp 到 outline fallback window，避免再次无意识裁得过短
 
@@ -138,7 +162,11 @@ flowchart TD
 - 当某拍不走 source speech 时，时间线会把命中的带音轨视频 clip 标记为静音意图；导出到 Jianying 时会落成静音视频片段
 - 剪映导出不再走外部 `jianying-mcp` / 独立 `Jianying Server` 路线，而是由 Node 侧调用 vendored `pyJianYingDraft` 本地 CLI
 - 当前剪映 backend 会直写 `draft_info.json` / `draft_meta_info.json`，并补齐本地素材注册元数据
-- 剪映导出默认遵循“新目录导出”，禁止覆盖、清空或删除已有草稿目录；如果要修改已有草稿，必须先核对目标身份
+- 剪映导出当前正式遵循“两段式新目录导出”：
+  - 先在 `projects/<projectId>/adapters/jianying-staging/<draftName>` 生成项目内 staging 草稿
+  - staging 成功后，再复制到真实 `jianyingDraftRoot/<draftName>`
+  - 两侧目录都必须是全新目录，禁止覆盖、清空或删除已有草稿目录
+- 对带 `speed` 的剪映导出，当前适配层会做 backend compatibility normalization，修正 `pyJianYingDraft` 的微秒级重算偏差，但不会回写正式 `timeline/current.json`
 - Resolve、剪映或其他导出目标都应建立在同一套正式时间线语义之上
 
 ## 3. 协议与数据骨架
@@ -192,12 +220,19 @@ flowchart TD
 
 当前正式项目模型围绕 `projects/<projectId>/` 展开，主要包括：
 
-- `config/`：逻辑素材源、运行时配置、风格档案、人工 itinerary，以及 Workspace 结构化配置
+- `config/`：逻辑素材源、运行时配置、人工 itinerary，以及项目级结构化配置
 - `store/`：项目元数据与清单
-- `analysis/`：资产分析报告、参考转写，以及 Analyze 的 durable resume cache（如 `prepared-assets/`、`audio-checkpoints/`）
+- `analysis/`：资产分析报告，以及 Analyze 的 durable resume cache（如 `prepared-assets/`、`audio-checkpoints/`）
 - `script/`、`timeline/`、`subtitles/`、`adapters/`：脚本、时间线与适配器状态
 - `gps/`：项目级外部轨迹资源与归一化缓存
 - `.tmp/`：流水线临时产物、进度、代理音频、关键帧等可清理内容
+
+另外还有一组 **Workspace 级共享资产**，不属于单个项目目录：
+
+- `config/styles/`：正式风格档案库
+- `config/style-sources.json`：风格来源配置
+- `analysis/reference-transcripts/`：风格分析的参考转写
+- `analysis/style-references/`：逐参考视频分析结果与分类汇总
 
 ### 三类边界
 
@@ -210,11 +245,12 @@ flowchart TD
 
 - `config/ingest-roots.json` 保存逻辑素材源，而不是设备绝对路径
 - `config/project-brief.md` 是路径映射的人类输入入口；进入 Ingest 前会同步到 `config/ingest-roots.json` 与 `config/device-media-maps.local.json`
-- `config/project-brief.json`、`config/manual-itinerary.json`、`script/script-brief.json`、`config/style-sources.json` 与 `config/review-queue.json` 是当前 Console/Workspace 的结构化事实源
+- `config/project-brief.json`、`config/manual-itinerary.json`、`script/script-brief.json` 与 `config/review-queue.json` 是当前项目级 Console 结构化事实源
+- `config/style-sources.json` 是当前 **Workspace 级** Console 结构化事实源
 - `project-brief` 的每个 root block 允许额外声明 `飞行记录路径`，作为该素材根目录对应的 DJI FlightRecord 日志入口；实际识别不依赖强文件名，而是以文件头/可解析性为准
 - `config/runtime.json` 是项目级运行时配置入口
 - 如果需要解密 DJI v13/v14 FlightRecord，`config/runtime.json` 可提供 `djiOpenAPIKey`
-- `config/styles/` 保存正式风格档案
+- `config/styles/` 保存 **Workspace 级** 正式风格档案
 - `gps/tracks/*.gpx` 与 `gps/merged.json` 是当前项目级外部轨迹资源入口
 - `gps/same-source/tracks/*.gpx` 与 `gps/same-source/index.json` 是 dense same-source GPS 的项目内缓存入口，仅用于内部索引 / 惰性查找
 - `gps/derived.json` 是项目级 `project-derived-track` 缓存，统一收口 embedded-derived 与 manual-itinerary-derived 的弱空间来源
@@ -233,7 +269,7 @@ flowchart TD
   - `/project`
 - `Analyze` 与 `Style` 当前都直接在主路由展示监控内容：
   - `/analyze` 直接展示 Analyze monitor
-  - `/style` 直接展示当前分类的 Style monitor
+  - `/style` 直接展示 Workspace 风格库与当前分类的 Style monitor
 - 旧 `/analyze/monitor` 与 `/style/monitor/:categoryId?` 只保留为兼容跳转
 - 旧静态进度页脚本只保留兼容 / 调试用途，新的正式监控能力应优先落在 `Supervisor + React console` 这条链路
 - React Analyze monitor 现在已经直接承认 fine-scan 流水线语义，会展示 `已预抽 / 已识别 / ready queue / active workers` 这类结构化指标，而不再只剩单条通用 `current / total`
@@ -262,15 +298,21 @@ flowchart TD
 
 1. `project brief` 提供全片约束
 2. `material digest` 提供全量素材印象
-3. 系统生成 `segment plan drafts`
-4. 用户冻结 `approved segment plan`
-5. 进入段落级召回、beat 试写与选择
-6. 由 `selection` 与 `beat` 共同落成时间线和字幕
+3. 用户在 `/script` 选择 workspace 风格分类，并自动保存
+4. Agent 生成初版 `script-brief`
+5. 用户回到 `/script` 审查并手动保存 brief
+6. `/script` 会通过显眼的 prompt / modal 提示下一步；用户点击 `准备给 Agent` 后，Console 只刷新确定性 prep 材料
+7. Agent 再继续推进 `approved segment plan`、段落级召回、beat 试写与选择
+8. Agent 写入 `script/current.json`
+9. 再由 `selection` 与 `beat` 共同落成时间线和字幕
 
 因此，当前稳定结论包括：
 
 - `Pharos` 是正式脚本流程的主输入；没有 `Pharos` 时才回落到兼容路径
-- `approved segment plan` 是正式闸门，不是可有可无的附加步骤
+- `approved segment plan` 仍是正式闸门，但不再由 Supervisor 隐式自动批准
+- Console 不再默认生成 `segment plan drafts` 并自动推进脚本写作
+- `script` prep 只有在 `script-brief.workflowState = ready_to_prepare` 后才允许运行；成功后推进到 `ready_for_agent`
+- 若用户修改过 brief，又想回到“Agent 重生初版 brief”，必须先在 `/script` 完成覆盖确认
 - `script-brief` 已经分层，而不是只有一份统管全文的脚本说明
 - `beat` 和 `selection` 比旧的“段落 narration + slice 粗引用”模型更接近当前真实编排方式
 

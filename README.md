@@ -17,8 +17,22 @@ Current stable pipeline:
 - `Pharos -> ingest -> analyze -> script -> timeline -> export`
 - official local runtime / monitor entry is `Supervisor + React console (apps/kairos-console/)`
   - `http://127.0.0.1:8940/analyze` is the official Analyze monitor route
-  - `http://127.0.0.1:8940/style` is the official Style monitor route
+  - `http://127.0.0.1:8940/style` is the official workspace-level Style monitor route
   - `scripts/kairos-progress.*` and `scripts/style-analysis-progress-viewer.html` are legacy compatibility helpers, not the official path for new capability work
+- reusable style assets now live at workspace scope, not project scope:
+  - `config/styles/` stores the shared style library
+  - `config/style-sources.json` stores the shared style-source manifest
+  - `analysis/reference-transcripts/` and `analysis/style-references/` store shared style-analysis outputs
+- project script work now references a workspace style category instead of owning its own `config/styles/`
+- the `/script` console page now acts as deterministic script preparation:
+  - user first selects a workspace `styleCategory` in `/script`; that selection auto-saves
+  - agent then generates the initial `script-brief`
+  - user reviews and manually saves the brief in `/script`
+  - the console now surfaces these handoffs with persistent workflow prompts and explicit hana modal confirmations instead of relying on low-contrast inline copy
+  - `/script` validates `store/slices.json`, the selected workspace `styleCategory`, and the matching style profile
+  - `/script` refreshes deterministic prep outputs such as `analysis/material-digest.json`
+  - the final `script/current.json` remains agent-authored
+  - if the reviewed brief was already user-edited and a fresh initial draft is needed, overwrite permission is granted explicitly from `/script` instead of silent agent overwrite
 - subtitles support two formal paths:
   - narration path from `beat.text`
   - source-speech path from `slice.transcriptSegments`
@@ -34,9 +48,12 @@ Current stable pipeline:
 - when a beat does not use source speech, Kairos will mark selected video clips to mute their embedded audio during NLE export
 - Jianying export now uses the vendored local `pyJianYingDraft` CLI, not an external Jianying MCP/server
 - Jianying draft export is guarded by strict safety rules:
-  - export target must be a brand-new draft directory
+  - drafts are created in project-local staging under `projects/<projectId>/adapters/jianying-staging/`
+  - a successful staging draft is then copied into the configured Jianying draft root
+  - both the staging directory and the final draft directory must be brand-new
   - existing draft directories must never be overwritten or deleted
   - modifying an existing draft requires explicit target verification first
+- Jianying export also normalizes retimed clip placement for `pyJianYingDraft` compatibility, so backend microsecond rounding does not mutate the formal `timeline/current.json`
 
 ## Change Discipline
 

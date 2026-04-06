@@ -23,6 +23,7 @@
   - GPS / 空间相关元信息
   - 后续与 `Pharos`、chronology、空间推断对齐所需的其他核心字段
 - 当前正式项目结构围绕 `projects/<projectId>/`、`config/runtime.json`、logical ingest roots、`config/device-media-maps.local.json`、Workspace 结构化配置 JSON、`gps/tracks/*.gpx`、`gps/merged.json`、`gps/same-source/`、`gps/derived.json` 与项目内 `.tmp/` 展开
+- 可复用风格资产当前不属于单项目目录，而是收口为 Workspace 级共享资产
 - 本地运行与项目配置当前由 `Supervisor + React console (apps/kairos-console/)` 承载；`Analyze` 与 `Style` 监控直接挂在 `/analyze` 与 `/style` 主路由上
 - `scripts/kairos-progress.*` 与旧静态监控页当前只保留兼容 / 调试用途，不再是新的正式监控入口
 
@@ -56,17 +57,19 @@
   - 当前项目把 `ffmpegPath`、`ffprobePath`、`ffmpegHwaccel`、`analysisProxyWidth`、`analysisProxyPixelFormat`、`sceneDetectFps`、`mlServerUrl`、`djiOpenAPIKey` 等运行时设置落在项目内配置中
   - 时间线 / 草稿输出规格也从这里读取：`timelineWidth`、`timelineHeight`、`timelineFps`
   - 剪映本地导出相关配置也在这里维护，例如 `jianyingDraftRoot`、`jianyingPythonPath`、`jianyingPyProjectRoot`
+  - 其中 `jianyingDraftRoot` 表示**真实剪映草稿根目录**；项目内 staging 草稿默认生成在 `adapters/jianying-staging/`
   - 不再依赖环境变量或用户口头约定
 - `config/styles/`
-  - 风格档案不再只是一份 `style/profile.json`
-  - 当前使用 `config/styles/{category}.md + config/styles/catalog.json`
+  - 这是 **Workspace 级** 风格档案库，不再是项目级目录
+  - 当前使用 `<workspaceRoot>/config/styles/{category}.md + <workspaceRoot>/config/styles/catalog.json`
 - Workspace 结构化配置
   - `config/project-brief.json`
   - `config/manual-itinerary.json`
   - `script/script-brief.json`
   - `config/style-sources.json`
   - `config/review-queue.json`
-  - 这些 JSON 当前是 Console 的正式事实源，Markdown 继续保留为项目内可读派生产物
+  - 其中 `config/style-sources.json` 是 **Workspace 级** 风格来源事实源
+  - 其余列在项目目录内的 JSON 当前是项目级 Console 事实源，Markdown 继续保留为项目内可读派生产物
 - `config/manual-itinerary.md` 与 `analysis/asset-reports/`
   - `manual-itinerary` 现在有两层正式语义：
     - 正文行程：项目级弱空间线索，不承担 timezone 输入语义，也不再作为 analyze 阶段的独立顶层来源
@@ -98,10 +101,12 @@
   - Analyze 默认把它作为第三优先级空间层消费，不做跨 gap 插值
   - 照片若没有自身 GPS，也会使用修正后的 `capturedAt` 参与 project GPX / `project-derived-track` 的时间匹配
 - `analysis/reference-transcripts/` 与 `analysis/style-references/`
+  - 这两类目录当前是 **Workspace 级** 风格分析正式产物
   - 风格分析和参考视频分析会先落地单视频报告，再综合出一个正式风格分类
 - `.tmp/`
-  - 当前流水线的关键帧、代理音频、阶段摘要、进度文件统一写入项目内 `.tmp/`
-  - 例如 `.tmp/style-analysis/{category}/progress.json`
+  - 项目级流水线临时产物继续写入项目内 `.tmp/`
+  - workspace 级 style-analysis 临时产物写入 `<workspaceRoot>/.tmp/`
+  - 例如 `<workspaceRoot>/.tmp/style-analysis/{category}/progress.json`
   - 这些内容默认视为可清理的中间产物，不属于 `Canonical Project Store`
 - 素材分析策略
   - 当前正式流程采用“粗扫优先 + 自动细扫”
