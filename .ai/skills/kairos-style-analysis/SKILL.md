@@ -28,7 +28,7 @@ description: >-
 用户的作品可能有多种类型，每种类型有不同的风格：
 
 ```
-config/styles/
+<workspaceRoot>/config/styles/
 ├── catalog.json                 # 风格目录（注册所有分类）
 ├── travel-doc.md                # 旅行纪录片风格
 ├── city-walk.md                 # 城市漫步风格
@@ -66,13 +66,14 @@ config/styles/
 
 ## 临时文件约定
 
-- 风格分析过程中产生的关键帧、探测结果、临时摘要等中间产物，统一放在 **当前 Kairos 工程目录** 下的 `.tmp/`，例如 `.tmp/style-analysis/{category}/`
+- 风格分析过程中产生的关键帧、探测结果、临时摘要等中间产物，统一放在 **当前 workspaceRoot** 下的 `.tmp/`，例如 `.tmp/style-analysis/{category}/`
 - 不要把这类临时产物写到 `C:` 盘系统临时目录或用户目录外的随机位置
 - `.tmp/` 应加入 `.gitignore`
 - 当风格档案已经写入 `config/styles/` 且不再需要调试时，默认清理对应的临时目录，只保留正式产物：
-  - `config/styles/{category}.md`
-  - `config/styles/catalog.json`
-  - `analysis/reference-transcripts/...`
+  - `<workspaceRoot>/config/styles/{category}.md`
+  - `<workspaceRoot>/config/styles/catalog.json`
+  - `<workspaceRoot>/analysis/reference-transcripts/...`
+  - `<workspaceRoot>/analysis/style-references/...`
 - 如果 agent 在本轮风格分析里启动过监控页或 ML server，也应在收尾阶段同步停止对应进程
 
 ## 可用工具
@@ -174,7 +175,8 @@ Agent："请先给我两样东西：
 ### Step 1: 检查已有分类
 
 ```typescript
-const existing = await listStyleCategories('config/styles');
+const stylesDir = join(workspaceRoot, 'config/styles');
+const existing = await listStyleCategories(stylesDir);
 // 检查该分类是否已存在，提示用户是覆盖还是新建
 ```
 
@@ -203,7 +205,7 @@ const shots = await detectShots(videoPath, 0.3);
 推荐保存路径：
 
 ```text
-analysis/style-references/{category}/{video-stem}.json
+<workspaceRoot>/analysis/style-references/{category}/{video-stem}.json
 ```
 
 ### Step 3: ASR 提取旁白（最关键）
@@ -228,7 +230,7 @@ const transcript = await transcribe(ml, videoPath, 'zh');
 这样得到的是“镜头级视觉证据”，而不是“批次级混合摘要”。
 
 ```typescript
-const outputDir = join(projectRoot, '.tmp/style-analysis', category, 'keyframes');
+const outputDir = join(workspaceRoot, '.tmp/style-analysis', category, 'keyframes');
 const shotPlans = planShotKeyframes(shots, meta.durationMs!, 3);
 const timestamps = flattenShotKeyframePlans(shotPlans);
 const keyframes = await extractKeyframes(videoPath, outputDir, timestamps);
@@ -304,25 +306,59 @@ const header = buildFrontMatter({
 const markdownContent = header + bodyMarkdown;
 ```
 
-**节奏章节合同（推荐作为当前默认口径）**：
+**节奏 / 素材 / 运镜章节合同（当前默认口径）**：
 
-- 不要再把“节奏”只写成一句 `快 / 慢 / 先缓后快`
-- markdown 中最好单独有一个章节，例如 `## 五、剪辑节奏与素材编排`
-- 这个章节至少应明确：
-  - 是否会使用照片素材
-  - 照片是零散点缀、成组出现，还是与视频交替
-  - 延时摄影与 establishing / 建场镜头是什么关系
-  - 航拍通常在什么时机插入：开场建场、地理重置、过渡、高潮抬升、情绪释放等
-  - 空镜/B-roll 在节奏里承担什么作用
-  - 节奏通常因什么而抬升
-- `参数` 表中应尽量使用稳定 key；即使值只是 `少用 / 偶尔 / 不明显` 也比完全缺失更好
+- 不要再把风格分析写成“叙事语气 + 一句节奏描述”的长文摘要
+- 风格档案至少要同时产出两层：
+  - 给人读的长文 section：解释这种风格为什么这样组织
+  - 给下游直接消费的结构：稳定标题、参数表、禁区和功能位偏好
+- markdown 中建议至少单独有这些章节：
+  - `## 节奏阶段拆解`
+  - `## 剪辑节奏与素材编排`
+  - `## 摄影 / 画面 / 运镜语言`
+  - `## 镜头语法与功能分配`
+  - `## 风格禁区`
+  - `## 关键参数`
+- 节奏章节不要只写 `前快中稳后抬`，而要尽量拆成更可消费的阶段特征，例如：
+  - 开场如何进场、靠什么建立气质
+  - 中前段如何建立地点、议题或人物
+  - 中段如何转入观察、停顿或铺垫
+  - 后段如何抬升、释放或收束
+- 素材编排章节至少应明确：
+  - `aerial / timelapse / drive / talking-head / broll / nat sound` 各自承担什么角色
+  - 它们通常在什么时机插入，承担建场、转场、地理重置、情绪释放还是人物承接
+  - 哪些镜头语法只适合 `开场建场`，哪些更适合 `地理重置`，哪些更适合 `情绪释放`
+  - 不要把航拍和延时只写成“好看素材”；要说明它们为什么在该风格里重要
+- 运镜章节至少应明确：
+  - 高频手法：推进、拉远、横移、俯冲、跟车、固定机位延时、高位建场等哪些常见
+  - 低频或谨慎使用的手法
+  - 这些手法主要服务空间建立、人物跟随、地理重置还是情绪释放
+- 风格禁区要尽量拆开：
+  - `素材禁区`
+  - `镜头禁区`
+- 禁区条目尽量使用 `1. **标题** — 说明` 的格式，便于 loader 稳定提取 `antiPatterns`
+- `参数` 表中应尽量使用稳定 key；即使值只是 `少用 / 偶尔 / 不明显 / 仅在某阶段` 也比完全缺失更好
 - 推荐 key：
-  - `照片使用策略`
-  - `照片编排方式`
-  - `延时使用关系`
-  - `航拍插入时机`
-  - `空镜/B-roll 关系`
-  - `节奏抬升触发点`
+  - `节奏阶段一`
+  - `节奏阶段二`
+  - `节奏阶段三`
+  - `节奏阶段四`
+  - `aerial角色`
+  - `timelapse角色`
+  - `drive角色`
+  - `talking-head角色`
+  - `broll角色`
+  - `nat sound角色`
+  - `高频运镜`
+  - `低频运镜`
+  - `开场建场镜头语法`
+  - `地理重置镜头语法`
+  - `情绪释放镜头语法`
+  - `Recall 优先素材`
+  - `Outline 建议骨架`
+  - `素材禁区`
+  - `镜头禁区`
+- 这些结论默认表示“观测到的高频偏好”，不是自动变成所有未来脚本都必须机械复刻的硬模板；只有明确写成禁区或硬约束时才应强约束下游
 
 **输出 markdown 格式**（带 front-matter，多行 guidancePrompt 用 `|` 语法）：
 
@@ -342,34 +378,74 @@ guidancePrompt: |
 
 ---
 
-## 一、叙事结构
+## 一、风格定位与观察范围
 ...
 
-## 二、语言风格
+## 二、节奏阶段拆解
+阶段一：
 ...
 
-## 三、情绪层次与表达
+阶段二：
 ...
 
-## 四、摄影/画面语言
+## 三、剪辑节奏与素材编排
+- `aerial`：
+- `timelapse`：
+- `drive`：
+- `talking-head`：
+- `broll`：
+- `nat sound`：
 ...
 
-## 五、剪辑节奏与素材编排
+## 四、摄影 / 画面 / 运镜语言
+- 高频运镜：
+- 低频运镜：
 ...
 
-## 六、主题与价值观
+## 五、镜头语法与功能分配
+- 开场建场：
+- 地理重置：
+- 情绪释放：
 ...
 
-## 七、结构模板（抽象）
+## 六、叙事与语言风格
+...
+
+## 七、下游消费提示（Script / Recall / Outline）
+- Script：
+- Recall：
+- Outline：
 ...
 
 ## 八、风格禁区
-...
+### 素材禁区
+1. **...** — ...
+
+### 镜头禁区
+1. **...** — ...
 
 ## 九、关键参数
 | 参数 | 值 |
 |------|-----|
-| ... | ... |
+| 节奏阶段一 | ... |
+| 节奏阶段二 | ... |
+| 节奏阶段三 | ... |
+| 节奏阶段四 | ... |
+| aerial角色 | ... |
+| timelapse角色 | ... |
+| drive角色 | ... |
+| talking-head角色 | ... |
+| broll角色 | ... |
+| nat sound角色 | ... |
+| 高频运镜 | ... |
+| 低频运镜 | ... |
+| 开场建场镜头语法 | ... |
+| 地理重置镜头语法 | ... |
+| 情绪释放镜头语法 | ... |
+| Recall 优先素材 | ... |
+| Outline 建议骨架 | ... |
+| 素材禁区 | ... |
+| 镜头禁区 | ... |
 ```
 
 **分析维度清单**：
@@ -377,12 +453,14 @@ guidancePrompt: |
 1. **叙事结构** — 三幕式？线性？段落组织？开头结尾惯例？
 2. **语言风格** — 人称、句式、用词偏好、基调
 3. **情绪层次** — 情绪光谱、表达克制度、高潮触发
-4. **摄影/画面语言** — 拍摄母题、光线体系、运镜词汇
-5. **剪辑节奏与素材编排** — 照片、延时、航拍、空镜/B-roll 与节奏抬升关系
-6. **主题与价值观** — 核心主题、文化引用、个人标签
-7. **结构模板** — 抽象化的段落结构模板
-8. **风格禁区** — 应避免的表达方式
-9. **关键参数** — 定量参数表格
+4. **摄影 / 画面 / 运镜语言** — 拍摄母题、光线体系、运镜词汇与镜头组织偏好
+5. **节奏阶段拆解** — 不同阶段如何进场、铺垫、观察、抬升与收束
+6. **剪辑节奏与素材编排** — `aerial / timelapse / drive / talking-head / broll / nat sound` 的角色与插入时机
+7. **镜头语法与功能分配** — 哪些镜头适合开场建场、地理重置、情绪释放
+8. **主题与价值观** — 核心主题、文化引用、个人标签
+9. **结构模板** — 抽象化的段落结构模板
+10. **风格禁区** — 应避免的表达方式；优先拆成素材禁区与镜头禁区
+11. **关键参数** — 可被 `kairos-script` 直接消费的稳定参数表格
 
 ### Step 7: 存储
 
@@ -392,14 +470,14 @@ guidancePrompt: |
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
-await mkdir(join(projectRoot, 'config/styles'), { recursive: true });
-await writeFile(join(projectRoot, `config/styles/${category}.md`), markdownContent, 'utf-8');
+await mkdir(join(workspaceRoot, 'config/styles'), { recursive: true });
+await writeFile(join(workspaceRoot, `config/styles/${category}.md`), markdownContent, 'utf-8');
 ```
 
 **更新目录注册**：
 
 ```typescript
-const catalogPath = join(projectRoot, 'config/styles/catalog.json');
+const catalogPath = join(workspaceRoot, 'config/styles/catalog.json');
 const catalog: IStyleCatalog = await readJsonOrNull(catalogPath, IStyleCatalog) ?? { entries: [] };
 
 const entry: IStyleCatalogEntry = {
@@ -418,16 +496,16 @@ const idx = catalog.entries.findIndex(e => e.category === category);
 if (idx >= 0) catalog.entries[idx] = entry;
 else catalog.entries.push(entry);
 
-await writeJson(join(projectRoot, 'config/styles/catalog.json'), catalog);
+await writeJson(join(workspaceRoot, 'config/styles/catalog.json'), catalog);
 ```
 
 **保存 ASR 原文备查**：
 
 ```typescript
-await mkdir(join(projectRoot, 'analysis/reference-transcripts'), { recursive: true });
+await mkdir(join(workspaceRoot, 'analysis/reference-transcripts'), { recursive: true });
 for (const [videoPath, transcript] of transcripts) {
   const name = basename(videoPath, extname(videoPath));
-  await writeFile(join(projectRoot, `analysis/reference-transcripts/${category}--${name}.txt`), transcript.fullText, 'utf-8');
+  await writeFile(join(workspaceRoot, `analysis/reference-transcripts/${category}--${name}.txt`), transcript.fullText, 'utf-8');
 }
 ```
 
@@ -436,7 +514,7 @@ for (const [videoPath, transcript] of transcripts) {
 ```typescript
 import { rm } from 'node:fs/promises';
 
-await rm(join(projectRoot, '.tmp/style-analysis', category), {
+await rm(join(workspaceRoot, '.tmp/style-analysis', category), {
   recursive: true,
   force: true,
 });
@@ -448,9 +526,10 @@ await rm(join(projectRoot, '.tmp/style-analysis', category), {
 
 | 文件 | 格式 | 内容 |
 |------|------|------|
-| `config/styles/{category}.md` | Markdown (带 front-matter) | 该分类的完整风格档案 |
-| `config/styles/catalog.json` | `IStyleCatalog` | 所有分类的注册表 |
-| `analysis/reference-transcripts/{category}--{name}.txt` | TXT | ASR 原文备查 |
+| `<workspaceRoot>/config/styles/{category}.md` | Markdown (带 front-matter) | 该分类的完整风格档案 |
+| `<workspaceRoot>/config/styles/catalog.json` | `IStyleCatalog` | 所有分类的注册表 |
+| `<workspaceRoot>/analysis/reference-transcripts/{category}--{name}.txt` | TXT | ASR 原文备查 |
+| `<workspaceRoot>/analysis/style-references/{category}/{video-stem}.json` | JSON | 单参考视频分析结果 |
 
 ## 与下游对接
 
@@ -458,16 +537,27 @@ await rm(join(projectRoot, '.tmp/style-analysis', category), {
 
 ```typescript
 // 方式 1：按分类名加载
-const style = await loadStyleByCategory('config/styles', 'travel-doc');
+const style = await loadStyleByCategory(join(workspaceRoot, 'config/styles'), 'travel-doc');
 
 // 方式 2：直接加载文件
-const style = await loadStyleFromMarkdown('config/styles/travel-doc.md');
+const style = await loadStyleFromMarkdown(join(workspaceRoot, 'config/styles/travel-doc.md'));
 
 // 查看所有可用分类
-const categories = await listStyleCategories('config/styles');
+const categories = await listStyleCategories(join(workspaceRoot, 'config/styles'));
 ```
 
 `style.guidancePrompt` 会传递到旁白创作阶段，提醒 agent 遵循用户的创作理念。
+
+`kairos-script` 当前不应只把风格档案当作一篇长文来“感受语气”，而应优先直接读取其中的：
+
+- 节奏阶段拆解
+- `aerial / timelapse / drive / talking-head / broll / nat sound` 角色
+- 运镜 / 镜头语言
+- `开场建场 / 地理重置 / 情绪释放` 功能位偏好
+- `参数` 表中的稳定 key
+- `风格禁区` 中的素材禁区 / 镜头禁区
+
+这些内容的目标是直接服务 `recall / outline / intro / montage`，而不是让下游再从整篇长文里重新猜一次。
 
 ## 决策点
 
@@ -483,5 +573,5 @@ const categories = await listStyleCategories('config/styles');
 ## 备选路径
 
 - 用户直接提供旁白文稿而非视频 → 跳过 Step 2-5，直接用文稿分析
-- 用户手写风格档案 markdown → 直接放入 `config/styles/{category}.md` 并注册
+- 用户手写风格档案 markdown → 直接放入 `<workspaceRoot>/config/styles/{category}.md` 并注册
 - 用户想对比两个分类 → 分别执行分析后，agent 总结差异

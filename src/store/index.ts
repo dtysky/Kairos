@@ -195,7 +195,7 @@ export {
   getProjectBriefConfigPath,
   getManualItineraryConfigPath,
   getScriptBriefConfigPath,
-  getStyleSourcesConfigPath,
+  getWorkspaceStyleSourcesConfigPath,
   loadProjectBriefConfig,
   saveProjectBriefConfig,
   loadManualItineraryConfig,

@@ -113,6 +113,7 @@ pre {
 .workspace-actions select,
 .monitor-toolbar select,
 .field input,
+.field select,
 .field textarea {
   width: 100%;
   border: 1px solid rgba(24, 24, 24, 0.12);
@@ -149,6 +150,81 @@ pre {
 .route-page {
   display: grid;
   gap: 18px;
+}
+
+.workflow-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 22px 24px;
+  border-radius: 22px;
+  border: 1px solid transparent;
+  box-shadow: var(--shadow);
+}
+
+.workflow-prompt-copy {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.workflow-prompt-eyebrow {
+  color: currentColor;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  opacity: 0.82;
+}
+
+.workflow-prompt h3 {
+  margin: 0;
+  font-size: clamp(24px, 3vw, 34px);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+}
+
+.workflow-prompt p {
+  margin: 0;
+  max-width: 860px;
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.workflow-prompt-detail {
+  color: inherit;
+  font-size: 13px;
+  line-height: 1.65;
+  opacity: 0.82;
+}
+
+.workflow-prompt-actions {
+  flex: 0 0 auto;
+}
+
+.workflow-prompt-accent {
+  color: #713217;
+  background: linear-gradient(135deg, rgba(184, 90, 45, 0.18), rgba(255, 242, 232, 0.96));
+  border-color: rgba(184, 90, 45, 0.28);
+}
+
+.workflow-prompt-ok {
+  color: #1f5b3b;
+  background: linear-gradient(135deg, rgba(47, 107, 73, 0.18), rgba(241, 250, 245, 0.98));
+  border-color: rgba(47, 107, 73, 0.24);
+}
+
+.workflow-prompt-warn {
+  color: #704b08;
+  background: linear-gradient(135deg, rgba(156, 107, 29, 0.18), rgba(255, 248, 235, 0.98));
+  border-color: rgba(156, 107, 29, 0.24);
+}
+
+.workflow-prompt-error {
+  color: #7e261d;
+  background: linear-gradient(135deg, rgba(162, 40, 40, 0.18), rgba(253, 242, 241, 0.98));
+  border-color: rgba(162, 40, 40, 0.24);
 }
 
 .route-intro {
@@ -303,18 +379,64 @@ pre {
   font-size: 13px;
 }
 
+.field input[readonly] {
+  background: rgba(24, 24, 24, 0.035);
+  color: #4f4f4f;
+}
+
+.field input:disabled,
+.field select:disabled,
+.field textarea:disabled {
+  background: rgba(24, 24, 24, 0.04);
+  color: #7a7a7a;
+  cursor: not-allowed;
+}
+
+.field-help {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.field-help-error,
+.inline-warning {
+  color: #8e2f1d;
+}
+
+.inline-warning {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(162, 40, 40, 0.16);
+  background: rgba(162, 40, 40, 0.08);
+  line-height: 1.55;
+}
+
 .field textarea {
   resize: vertical;
 }
 
-.danger-link {
+.console-shell .hana-button {
+  font-family: inherit;
+}
+
+.modal-copy p {
+  margin: 0 0 10px;
+  line-height: 1.65;
+}
+
+.modal-copy p:last-child {
+  margin-bottom: 0;
+}
+
+.modal-actions {
+  justify-content: flex-end;
+}
+
+.row-card > .hana-button,
+.nested-card > .hana-button {
   margin-top: 10px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #b2402e;
-  cursor: pointer;
-  text-align: left;
 }
 
 .checkbox-row {
@@ -695,6 +817,7 @@ pre {
   }
 
   .workspace-bar,
+  .workflow-prompt,
   .workspace-actions,
   .monitor-toolbar,
   .monitor-toolbar-group,

@@ -11,7 +11,6 @@ import {
 
 const CDIRS = [
   'config',
-  'config/styles',
   'store',
   'media',
   '.tmp',
@@ -24,7 +23,6 @@ const CDIRS = [
   'analysis',
   'analysis/asset-reports',
   'analysis/fine-scan-checkpoints',
-  'analysis/reference-transcripts',
   'gps',
   'gps/tracks',
   'gps/same-source',

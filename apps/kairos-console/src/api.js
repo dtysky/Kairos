@@ -42,6 +42,10 @@ export function fetchProjectConfig(projectId) {
   return apiGet(`/api/projects/${encodeURIComponent(projectId)}/config`);
 }
 
+export function fetchWorkspaceStyleConfig() {
+  return apiGet('/api/workspace/config/style-sources');
+}
+
 export function fetchProjectReviews(projectId) {
   return apiGet(`/api/projects/${encodeURIComponent(projectId)}/reviews`);
 }
@@ -54,13 +58,17 @@ export function fetchAnalyzeMonitor(projectId) {
   return apiGet(`/api/projects/${encodeURIComponent(projectId)}/monitor/analyze`);
 }
 
-export function fetchStyleMonitor(projectId, categoryId) {
+export function fetchStyleMonitor(categoryId) {
   const query = categoryId ? `?categoryId=${encodeURIComponent(categoryId)}` : '';
-  return apiGet(`/api/projects/${encodeURIComponent(projectId)}/monitor/style-analysis${query}`);
+  return apiGet(`/api/workspace/monitor/style-analysis${query}`);
 }
 
 export function saveProjectSection(projectId, sectionKey, payload) {
   return apiPut(`/api/projects/${encodeURIComponent(projectId)}/config/${sectionKey}`, payload);
+}
+
+export function saveWorkspaceStyleConfig(payload) {
+  return apiPut('/api/workspace/config/style-sources', payload);
 }
 
 export function resolveProjectReview(projectId, reviewId, payload) {
@@ -69,6 +77,10 @@ export function resolveProjectReview(projectId, reviewId, payload) {
 
 export function startJob(projectId, jobType, args = {}) {
   return apiPost('/api/jobs', { jobType, projectId, args });
+}
+
+export function startWorkspaceJob(jobType, args = {}) {
+  return apiPost('/api/jobs', { jobType, args });
 }
 
 export function controlMl(action) {

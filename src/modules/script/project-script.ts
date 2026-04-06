@@ -2,14 +2,21 @@ import { writeFile } from 'node:fs/promises';
 import type { IStyleProfile, IKtepScript } from '../../protocol/schema.js';
 import type { ILlmClient } from '../llm/client.js';
 import {
+  getProjectMaterialDigestPath,
+  getScriptBriefPath,
   loadApprovedSegmentPlan,
+  loadScriptBriefConfig,
   loadSegmentCandidates,
+  saveScriptBriefConfig,
   writeOutline,
   writeCurrentScript,
   getOutlinePromptPath,
 } from '../../store/index.js';
 import { loadStyleByCategory } from './style-loader.js';
-import { prepareSegmentPlanning } from './segment-planner.js';
+import {
+  prepareProjectMaterialDigest,
+  prepareSegmentPlanning,
+} from './segment-planner.js';
 import { approveSegmentPlan, recallSegmentCandidates } from './candidate-recall.js';
 import { buildOutlineFromApprovedPlan, type IOutlineSegment } from './outline-builder.js';
 import { buildOutlinePrompt, generateScript } from './script-generator.js';
@@ -34,6 +41,22 @@ export interface IGenerateProjectScriptInput {
   planningLlm?: ILlmClient;
 }
 
+export interface IPrepareProjectScriptForAgentInput {
+  projectRoot: string;
+  workspaceRoot?: string;
+  styleCategory?: string;
+}
+
+export interface IPrepareProjectScriptForAgentResult {
+  projectId: string;
+  projectName: string;
+  styleCategory: string;
+  digestPath: string;
+  scriptBriefPath: string;
+  status: 'awaiting_agent';
+  message: string;
+}
+
 export async function buildProjectOutlineFromPlanning(
   input: IBuildProjectOutlineInput,
 ): Promise<IBuildProjectOutlineResult> {
@@ -53,6 +76,47 @@ export async function buildProjectOutlineFromPlanning(
   await writeFile(getOutlinePromptPath(input.projectRoot), buildOutlinePrompt(outline), 'utf-8');
 
   return { outline };
+}
+
+export async function prepareProjectScriptForAgent(
+  input: IPrepareProjectScriptForAgentInput,
+): Promise<IPrepareProjectScriptForAgentResult> {
+  const scriptBriefConfig = await loadScriptBriefConfig(input.projectRoot);
+  const styleCategory = input.styleCategory ?? scriptBriefConfig.styleCategory;
+  if (!styleCategory) {
+    throw new Error('script prep requires styleCategory');
+  }
+
+  if (input.workspaceRoot) {
+    const style = await loadStyleByCategory(`${input.workspaceRoot}/config/styles`, styleCategory);
+    if (!style) {
+      throw new Error(`style profile not found for category "${styleCategory}"`);
+    }
+  }
+
+  if (scriptBriefConfig.workflowState !== 'ready_to_prepare') {
+    throw new Error('script prep requires script-brief.workflowState=ready_to_prepare');
+  }
+
+  const { project } = await prepareProjectMaterialDigest({
+    projectRoot: input.projectRoot,
+  });
+  await saveScriptBriefConfig(input.projectRoot, {
+    ...scriptBriefConfig,
+    projectName: scriptBriefConfig.projectName?.trim() || project.name,
+    styleCategory,
+    workflowState: 'ready_for_agent',
+  });
+
+  return {
+    projectId: project.id,
+    projectName: project.name,
+    styleCategory,
+    digestPath: getProjectMaterialDigestPath(input.projectRoot),
+    scriptBriefPath: getScriptBriefPath(input.projectRoot),
+    status: 'awaiting_agent',
+    message: 'Script preparation completed. Return to the agent to author script/current.json.',
+  };
 }
 
 export async function generateProjectScriptFromPlanning(

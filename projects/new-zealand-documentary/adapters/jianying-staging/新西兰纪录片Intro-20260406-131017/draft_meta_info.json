@@ -1,0 +1,808 @@
+{
+    "cloud_package_completed_time": "",
+    "draft_cloud_capcut_purchase_info": "",
+    "draft_cloud_last_action_download": false,
+    "draft_cloud_materials": [],
+    "draft_cloud_purchase_info": "",
+    "draft_cloud_template_id": "",
+    "draft_cloud_tutorial_info": "",
+    "draft_cloud_videocut_purchase_info": "",
+    "draft_cover": "",
+    "draft_deeplink_url": "",
+    "draft_enterprise_info": {
+        "draft_enterprise_extra": "",
+        "draft_enterprise_id": "",
+        "draft_enterprise_name": "",
+        "enterprise_material": []
+    },
+    "draft_fold_path": "H:\\SpriaHeaven\\Kairos\\projects\\new-zealand-documentary\\adapters\\jianying-staging\\新西兰纪录片Intro-20260406-131017",
+    "draft_id": "6701C302-00F2-4EDA-93BE-724AD4A21993",
+    "draft_is_ai_packaging_used": false,
+    "draft_is_ai_shorts": false,
+    "draft_is_ai_translate": false,
+    "draft_is_article_video_draft": false,
+    "draft_is_from_deeplink": "false",
+    "draft_is_invisible": false,
+    "draft_materials": [
+        {
+            "type": 0,
+            "value": [
+                {
+                    "create_time": 1775452244,
+                    "duration": 20154000,
+                    "extra_info": "DJI_20260207110940_0028_D.MP4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\pocket3\\day1\\DJI_20260207110940_0028_D.MP4",
+                    "height": 2160,
+                    "id": "A3AF2052-E836-5A40-8FA6-CB19841D4DB4",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                },
+                {
+                    "create_time": 1775452244,
+                    "duration": 7575000,
+                    "extra_info": "DJI_20260210102923_0471_D.MP4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\pocket3\\day4\\DJI_20260210102923_0471_D.MP4",
+                    "height": 2160,
+                    "id": "30A95DC1-8B44-5E76-A28C-FF327D0E0C5B",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                },
+                {
+                    "create_time": 1775452244,
+                    "duration": 28112000,
+                    "extra_info": "DJI_20260214060523_0295_D.MP4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\pocket3\\day6-7\\DJI_20260214060523_0295_D.MP4",
+                    "height": 2160,
+                    "id": "53BC1DE1-4839-555D-92AB-EDF9EA28314B",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                },
+                {
+                    "create_time": 1775452244,
+                    "duration": 13514000,
+                    "extra_info": "C1484.mp4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\camera\\export\\C1484.mp4",
+                    "height": 2160,
+                    "id": "5854A356-567C-55B5-9FB1-DE84F690376A",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                },
+                {
+                    "create_time": 1775452244,
+                    "duration": 8008000,
+                    "extra_info": "C1452.mp4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\camera\\export\\C1452.mp4",
+                    "height": 2160,
+                    "id": "4D332153-FBDE-51FF-A586-1B2BB8730962",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                },
+                {
+                    "create_time": 1775452244,
+                    "duration": 37505000,
+                    "extra_info": "DJI_20260214060411_0294_D.MP4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\pocket3\\day6-7\\DJI_20260214060411_0294_D.MP4",
+                    "height": 2160,
+                    "id": "7F814752-FD21-5BE4-8775-1E32D6FBC8F1",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                },
+                {
+                    "create_time": 1775452244,
+                    "duration": 10611000,
+                    "extra_info": "DJI_20260206192530_0003_D.MP4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\pocket3\\day1\\DJI_20260206192530_0003_D.MP4",
+                    "height": 2160,
+                    "id": "0AF3F884-5831-50F9-A4E1-45503E54C276",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                },
+                {
+                    "create_time": 1775452244,
+                    "duration": 7942000,
+                    "extra_info": "DJI_20260206191545_0001_D.MP4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\pocket3\\day1\\DJI_20260206191545_0001_D.MP4",
+                    "height": 2160,
+                    "id": "CAA001F2-FFB5-5697-BF14-380E279B5649",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                },
+                {
+                    "create_time": 1775452244,
+                    "duration": 14248000,
+                    "extra_info": "DJI_20260212110944_0034_D.MP4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\pocket3\\day6-7\\DJI_20260212110944_0034_D.MP4",
+                    "height": 2160,
+                    "id": "39AB0186-306B-5917-AE51-D3B2DC31C500",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                },
+                {
+                    "create_time": 1775452244,
+                    "duration": 12580000,
+                    "extra_info": "DJI_20260221113658_0159_D.MP4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\pocket3\\day15\\DJI_20260221113658_0159_D.MP4",
+                    "height": 2160,
+                    "id": "23EFC302-D003-5A66-AA26-EEA87C0B17C1",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                },
+                {
+                    "create_time": 1775452244,
+                    "duration": 26761000,
+                    "extra_info": "DJI_20260208051541_0153_D.MP4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\pocket3\\day2\\DJI_20260208051541_0153_D.MP4",
+                    "height": 2160,
+                    "id": "C2D46755-58F3-5978-BA96-DF1A47951E8C",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                },
+                {
+                    "create_time": 1775452244,
+                    "duration": 128028000,
+                    "extra_info": "DJI_20260208094649_0200_D.MP4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\pocket3\\day2\\DJI_20260208094649_0200_D.MP4",
+                    "height": 2160,
+                    "id": "CC5DDBAB-0F68-5148-8AD4-9128CCDF986A",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                },
+                {
+                    "create_time": 1775452244,
+                    "duration": 27228000,
+                    "extra_info": "DJI_20260221163657_0182_D.MP4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\pocket3\\day15\\DJI_20260221163657_0182_D.MP4",
+                    "height": 2160,
+                    "id": "EFA8D5B4-D3D8-555D-93D8-F7F48080D87A",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                },
+                {
+                    "create_time": 1775452244,
+                    "duration": 19053000,
+                    "extra_info": "DJI_20260209015734_0278_D.MP4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\pocket3\\day3\\DJI_20260209015734_0278_D.MP4",
+                    "height": 2160,
+                    "id": "7A9E50A3-5030-59C8-A1FF-A81DE5BE300B",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                },
+                {
+                    "create_time": 1775452244,
+                    "duration": 4572000,
+                    "extra_info": "DJI_20260208015431_0139_D.MP4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\pocket3\\day2\\DJI_20260208015431_0139_D.MP4",
+                    "height": 2160,
+                    "id": "EFA48BC7-76AB-55A0-8299-DF13F2A74EF1",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                },
+                {
+                    "create_time": 1775452244,
+                    "duration": 15149000,
+                    "extra_info": "DJI_20260208151651_0249_D.MP4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\pocket3\\day2\\DJI_20260208151651_0249_D.MP4",
+                    "height": 2160,
+                    "id": "A2DC915D-29B2-5344-90A5-CC75913D710E",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                },
+                {
+                    "create_time": 1775452244,
+                    "duration": 77111000,
+                    "extra_info": "DJI_20260210084001_0453_D.MP4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\pocket3\\day4\\DJI_20260210084001_0453_D.MP4",
+                    "height": 2160,
+                    "id": "960BFB89-D5A7-5C79-91DC-248DB3B42E2C",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                },
+                {
+                    "create_time": 1775452244,
+                    "duration": 8392000,
+                    "extra_info": "DJI_20260211100959_0078_D.MP4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\pocket3\\day5\\DJI_20260211100959_0078_D.MP4",
+                    "height": 2160,
+                    "id": "F055C9FD-24F2-5ED8-9AA8-D487C2552DB0",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                },
+                {
+                    "create_time": 1775452244,
+                    "duration": 453654000,
+                    "extra_info": "DJI_20260209095909_0305_D.MP4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\pocket3\\day3\\DJI_20260209095909_0305_D.MP4",
+                    "height": 2160,
+                    "id": "25C9F4B4-059D-5DF0-B256-76DF40DBD8B8",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                },
+                {
+                    "create_time": 1775452244,
+                    "duration": 10378000,
+                    "extra_info": "DJI_20260210131142_0490_D.MP4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\pocket3\\day4\\DJI_20260210131142_0490_D.MP4",
+                    "height": 2160,
+                    "id": "6429337E-E599-52BD-A817-396E8AE57506",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                },
+                {
+                    "create_time": 1775452244,
+                    "duration": 10010000,
+                    "extra_info": "C1378.mp4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\camera\\export\\C1378.mp4",
+                    "height": 2160,
+                    "id": "8F4E0C60-308A-5310-A5EA-4EE2360AE5AC",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                },
+                {
+                    "create_time": 1775452244,
+                    "duration": 5172000,
+                    "extra_info": "DJI_20260208074426_0192_D.MP4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\pocket3\\day2\\DJI_20260208074426_0192_D.MP4",
+                    "height": 2160,
+                    "id": "81A9F53A-8358-5CB0-B365-103B9D52A4D7",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                },
+                {
+                    "create_time": 1775452244,
+                    "duration": 12513000,
+                    "extra_info": "C1379.mp4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\camera\\export\\C1379.mp4",
+                    "height": 2160,
+                    "id": "CD241530-1B40-505E-BEB8-4C9D73E06790",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                },
+                {
+                    "create_time": 1775452244,
+                    "duration": 18402000,
+                    "extra_info": "DJI_20260213141116_0229_D.MP4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\pocket3\\day6-7\\DJI_20260213141116_0229_D.MP4",
+                    "height": 2160,
+                    "id": "D7CA9A05-06F5-52DD-800D-712E07F68062",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                },
+                {
+                    "create_time": 1775452244,
+                    "duration": 14682000,
+                    "extra_info": "DJI_20260214082555_0075_D.mp4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\drone\\export\\DJI_20260214082555_0075_D.mp4",
+                    "height": 2160,
+                    "id": "55FAE43C-712E-59FA-BED3-13D8C2342C4E",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                },
+                {
+                    "create_time": 1775452244,
+                    "duration": 7737000,
+                    "extra_info": "DJI_20260217100731_0226_D.MP4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\pocket3\\day11\\DJI_20260217100731_0226_D.MP4",
+                    "height": 2160,
+                    "id": "EF8940A4-2125-52C3-A700-86DE54BA642E",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                },
+                {
+                    "create_time": 1775452244,
+                    "duration": 23791000,
+                    "extra_info": "DJI_20260217143122_0268_D.MP4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\pocket3\\day11\\DJI_20260217143122_0268_D.MP4",
+                    "height": 2160,
+                    "id": "CEA073C7-2042-5B48-817A-BBB6556C1472",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                },
+                {
+                    "create_time": 1775452244,
+                    "duration": 5206000,
+                    "extra_info": "DJI_20260210124828_0487_D.MP4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\pocket3\\day4\\DJI_20260210124828_0487_D.MP4",
+                    "height": 2160,
+                    "id": "87A9486F-02FF-5990-9551-AD9907DF9963",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                },
+                {
+                    "create_time": 1775452244,
+                    "duration": 5306000,
+                    "extra_info": "DJI_20260215195123_0069_D.MP4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\pocket3\\day9\\DJI_20260215195123_0069_D.MP4",
+                    "height": 2160,
+                    "id": "F193DDA4-6E01-56AF-B525-9BA3FCF43008",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                },
+                {
+                    "create_time": 1775452244,
+                    "duration": 71439000,
+                    "extra_info": "DJI_20260219183854_0580_D.MP4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\pocket3\\day13\\DJI_20260219183854_0580_D.MP4",
+                    "height": 2160,
+                    "id": "18F40C55-C79E-55B5-B8CD-13B149C335FA",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                },
+                {
+                    "create_time": 1775452244,
+                    "duration": 18936000,
+                    "extra_info": "DJI_20260215215958_0086_D.MP4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\pocket3\\day9\\DJI_20260215215958_0086_D.MP4",
+                    "height": 2160,
+                    "id": "657E7C36-428A-5CDB-90CC-8650E5A8033C",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                },
+                {
+                    "create_time": 1775452244,
+                    "duration": 249383000,
+                    "extra_info": "DJI_20260217104828_0236_D.MP4",
+                    "file_Path": "F:\\vlog-proj\\new-zealand\\pocket3\\day11\\DJI_20260217104828_0236_D.MP4",
+                    "height": 2160,
+                    "id": "1F7EC5AB-FC5D-55E7-8E01-3E5A0F5419DE",
+                    "import_time": 1775452244,
+                    "import_time_ms": 1775452244200783,
+                    "item_source": 1,
+                    "md5": "",
+                    "metetype": "video",
+                    "roughcut_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "sub_time_range": {
+                        "duration": -1,
+                        "start": -1
+                    },
+                    "type": 0,
+                    "width": 3840
+                }
+            ]
+        },
+        {
+            "type": 1,
+            "value": []
+        },
+        {
+            "type": 2,
+            "value": []
+        },
+        {
+            "type": 3,
+            "value": []
+        },
+        {
+            "type": 6,
+            "value": []
+        },
+        {
+            "type": 7,
+            "value": []
+        },
+        {
+            "type": 8,
+            "value": []
+        }
+    ],
+    "draft_materials_copied_info": [],
+    "draft_name": "新西兰纪录片Intro-20260406-131017",
+    "draft_new_version": "",
+    "draft_removable_storage_device": "",
+    "draft_root_path": "H:\\SpriaHeaven\\Kairos\\projects\\new-zealand-documentary\\adapters\\jianying-staging",
+    "draft_segment_extra_info": [],
+    "draft_type": "",
+    "tm_draft_cloud_completed": "",
+    "tm_draft_cloud_modified": 0,
+    "tm_draft_removed": 0,
+    "tm_duration": 130902000,
+    "draft_need_rename_folder": false,
+    "tm_draft_create": 1775452244200783,
+    "tm_draft_modified": 1775452244200783,
+    "draft_timeline_materials_size_": 50106
+}

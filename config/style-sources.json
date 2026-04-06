@@ -1,0 +1,101 @@
+{
+  "defaultCategory": "serious-travel-documentary-intro",
+  "categories": [
+    {
+      "categoryId": "china-north-south-traverse-intro",
+      "displayName": "中国南北穿越的Intro",
+      "guidancePrompt": "这些是我拍的中国南北穿越旅拍纪录片，不过这次我们只分析 intro 部分。\n20250510_中国南北穿越 的 intro范围：00:00 ~ 02:45",
+      "inclusionNotes": "以超长纵向穿越为主命题的 intro，先抛出“中国有多长”的尺度问题，再用城市、古城、黄河与沙漠的连续切换把地理跨度和独自完成旅程的任务感推起来。",
+      "overwriteExisting": false,
+      "profilePath": "china-north-south-traverse-intro.md",
+      "sources": [
+        {
+          "id": "china-north-south-traverse-intro-20250510_中国南北穿越",
+          "type": "file",
+          "path": "F:/vlog-proj/style-analysis/travel-documentary/20250510_中国南北穿越.mp4",
+          "rangeStart": "00:00",
+          "rangeEnd": "02:45",
+          "note": "只分析 intro 段落"
+        }
+      ]
+    },
+    {
+      "categoryId": "egypt-travel-documentary-intro",
+      "displayName": "埃及旅拍纪录片的Intro",
+      "guidancePrompt": "这些是我拍的埃及旅拍纪录片，不过这次我们只分析 intro 部分。\n20251003_埃及自驾穿越 的 intro范围：00:00 ~ 02:17",
+      "inclusionNotes": "以古文明想象与自驾现实反差驱动的 intro，先用 landmark montage 抬出历史与地理尺度，再把道路、交通和旅途摩擦拉进叙事。",
+      "overwriteExisting": false,
+      "profilePath": "egypt-travel-documentary-intro.md",
+      "sources": [
+        {
+          "id": "egypt-travel-documentary-intro-20251003_埃及自驾穿越",
+          "type": "file",
+          "path": "F:/vlog-proj/style-analysis/travel-documentary/20251003_埃及自驾穿越.mp4",
+          "rangeStart": "00:00",
+          "rangeEnd": "02:17",
+          "note": "只分析 intro 段落"
+        }
+      ]
+    },
+    {
+      "categoryId": "serious-travel-documentary-intro",
+      "displayName": "严肃旅拍纪录片的Intro",
+      "guidancePrompt": "这些是我严肃旅拍纪录片，不过这次我们只分析 intro 部分。\n2025-01-05 的 intro 范围：00:00 ~ 01:15\n20250203_坦桑尼亚Safari 的 intro范围：00:00 ~ 01:33\n20250510_中国南北穿越 的 intro范围：00:00 ~ 02:45\n20251003_埃及自驾穿越 的 intro范围：00:00 ~ 02:17",
+      "inclusionNotes": "以第一人称长段旁白驱动的大尺度建场型开头，强调地理跨度、主题钩子、路线预告与纪录片式任务感。",
+      "overwriteExisting": false,
+      "profilePath": "serious-travel-documentary-intro.md",
+      "sources": [
+        {
+          "id": "serious-travel-documentary-intro-2025-01-05",
+          "type": "file",
+          "path": "F:\\vlog-proj\\style-analysis\\travel-documentary\\2025-01-05.mp4",
+          "rangeStart": "00:00",
+          "rangeEnd": "01:15",
+          "note": "只分析 intro 段落"
+        },
+        {
+          "id": "serious-travel-documentary-intro-20250203_坦桑尼亚Safari",
+          "type": "file",
+          "path": "F:\\vlog-proj\\style-analysis\\travel-documentary\\20250203_坦桑尼亚Safari.mp4",
+          "rangeStart": "00:00",
+          "rangeEnd": "01:33",
+          "note": "只分析 intro 段落"
+        },
+        {
+          "id": "serious-travel-documentary-intro-20250510_中国南北穿越",
+          "type": "file",
+          "path": "F:\\vlog-proj\\style-analysis\\travel-documentary\\20250510_中国南北穿越.mp4",
+          "rangeStart": "00:00",
+          "rangeEnd": "02:45",
+          "note": "只分析 intro 段落"
+        },
+        {
+          "id": "serious-travel-documentary-intro-20251003_埃及自驾穿越",
+          "type": "file",
+          "path": "F:\\vlog-proj\\style-analysis\\travel-documentary\\20251003_埃及自驾穿越.mp4",
+          "rangeStart": "00:00",
+          "rangeEnd": "02:17",
+          "note": "只分析 intro 段落"
+        }
+      ]
+    },
+    {
+      "categoryId": "tanzania-safari-intro",
+      "displayName": "坦桑尼亚Safari的Intro",
+      "guidancePrompt": "这些是我拍的坦桑尼亚 Safari 旅拍纪录片，不过这次我们只分析 intro 部分。\n20250203_坦桑尼亚Safari 的 intro范围：00:00 ~ 01:33",
+      "inclusionNotes": "以东非草原生命力和野性秩序为核心的 intro，先用捕猎与迁徙的动物镜头抓人，再用塞伦盖蒂、火山口、彩虹和风暴把自然能量推高。",
+      "overwriteExisting": false,
+      "profilePath": "tanzania-safari-intro.md",
+      "sources": [
+        {
+          "id": "tanzania-safari-intro-20250203_坦桑尼亚Safari",
+          "type": "file",
+          "path": "F:/vlog-proj/style-analysis/travel-documentary/20250203_坦桑尼亚Safari.mp4",
+          "rangeStart": "00:00",
+          "rangeEnd": "01:33",
+          "note": "只分析 intro 段落"
+        }
+      ]
+    }
+  ]
+}

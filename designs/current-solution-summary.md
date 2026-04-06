@@ -30,6 +30,10 @@ Kairos 当前需要区分两层：
   - `config/style-sources.json`
   - `analysis/reference-transcripts/`
   - `analysis/style-references/`
+- Workspace 风格档案当前不再只是“给人读的风格长文”，而是 Script 阶段的正式输入之一：
+  - 章节里应尽量明确阶段节奏、素材角色、运镜语言、功能位分配与禁区
+  - 参数表里应尽量提供稳定 key，便于 `script / recall / outline` 直接消费
+  - 这些内容默认表示“观测到的高频偏好”，不是自动变成所有脚本都必须照抄的硬模板
 - `scripts/kairos-progress.*` 与 `scripts/style-analysis-progress-viewer.html` 只保留兼容 / 调试用途，不再是新的正式监控入口
 - 未来如果引入桌面 UI 或更多 provider / adapter，应建立在这套协议与项目模型上，而不是推翻它
 - 某些项目会直接消费调色后的素材版本而非原始素材；因此主链面向的是“当前采用的素材版本”，而不是固定绑定“永远使用原始素材”
@@ -141,6 +145,10 @@ flowchart TD
 - 如果用户已经修改过当前 brief，而又想让 Agent 重新生成初版 brief，正式路径是在 `/script` 点击 `重新生成初版 brief` 并通过 UI 明确确认覆盖
 - 用户审查闸门存在于 Agent 写脚本之前，而不是召回和编排全部完成之后
 - Script 阶段当前从 **Workspace 风格库** 里选择用户指定的 `style category`，项目只保存“本项目使用哪一个分类”，不再把风格档案作为项目内资产持有
+- 当前 style profile 应同时提供两层信息：
+  - 面向人的长文解释：为什么这种 intro / montage 会这样组织
+  - 面向下游的直接提示：节奏阶段、`aerial / timelapse / drive / talking-head / broll / nat sound` 角色、运镜语法、`开场建场 / 地理重置 / 情绪释放` 功能位、素材禁区 / 镜头禁区、稳定参数表
+- Script / recall / outline 当前应优先直接消费这些 style sections / parameters / antiPatterns，而不是只把风格档案当作“语气说明”再让 LLM 从长文里二次猜测镜头组织规则
 - 当前脚本 / outline 默认优先消费 Analyze 给出的 `editSourceInMs / editSourceOutMs`，而不是继续把 tight evidence window 当成最终可剪子区间
 - 模型仍可把 `selection.sourceInMs / sourceOutMs` 写得更细，但系统会先 clamp 到 outline fallback window，避免再次无意识裁得过短
 - 如果某拍最终保留原声，Script / Timeline 当前会把命中的 `selection.sourceInMs / sourceOutMs` 向外吸附到完整 `transcriptSegments` 边界；若完整一句原声长于原 beat 目标时长，会优先延长该 beat，而不是切在句中
@@ -253,7 +261,7 @@ flowchart TD
 - `project-brief` 的每个 root block 允许额外声明 `飞行记录路径`，作为该素材根目录对应的 DJI FlightRecord 日志入口；实际识别不依赖强文件名，而是以文件头/可解析性为准
 - `config/runtime.json` 是项目级运行时配置入口
 - 如果需要解密 DJI v13/v14 FlightRecord，`config/runtime.json` 可提供 `djiOpenAPIKey`
-- `config/styles/` 保存 **Workspace 级** 正式风格档案
+- `config/styles/` 保存 **Workspace 级** 正式风格档案；这些档案当前应同时包含长文 section 与可直接被脚本阶段消费的参数 / 禁区 / 节奏语法提示
 - `gps/tracks/*.gpx` 与 `gps/merged.json` 是当前项目级外部轨迹资源入口
 - `gps/same-source/tracks/*.gpx` 与 `gps/same-source/index.json` 是 dense same-source GPS 的项目内缓存入口，仅用于内部索引 / 惰性查找
 - `gps/derived.json` 是项目级 `project-derived-track` 缓存，统一收口 embedded-derived 与 manual-itinerary-derived 的弱空间来源

@@ -1,0 +1,570 @@
+[
+  {
+    "id": "intro-entry",
+    "role": "intro",
+    "title": "引入：国家想象与真正的落地入口",
+    "narration": "提到新西兰，大家先想到的总是雪山、海湾和那种被反复讲述的纯净。但真正开始这趟穿越时，先落到眼前的，不是 postcard，而是航站楼、租车场和必须立刻适应的左舵路感。",
+    "targetDurationMs": 16000,
+    "linkedSliceIds": [
+      "fcf25543-24da-4615-a572-14938e938cd0",
+      "042e7220-605e-42d1-b091-a0ea5b97e5aa",
+      "1795dbf0-f867-4b8f-a1c2-3e99ae04c2ce",
+      "02fdc08d-f833-4b5d-bd4d-397c94f52028",
+      "f9b128ea-ba8f-4161-b4b1-bd66df020d6c"
+    ],
+    "beats": [
+      {
+        "id": "intro-entry-beat-1",
+        "text": "提到新西兰，大家先想到的，往往是那些过分上镜的海湾和雪山。",
+        "targetDurationMs": 7000,
+        "actions": {
+          "muteSource": true
+        },
+        "selections": [
+          {
+            "assetId": "0d356fd8-e6a9-4b06-8194-879884859b41",
+            "sliceId": "fcf25543-24da-4615-a572-14938e938cd0",
+            "sourceInMs": 0,
+            "sourceOutMs": 20160,
+            "notes": "Bay of Islands aerial establishes the postcard-scale coastline"
+          },
+          {
+            "assetId": "3f6e8a07-2e2d-43d9-a5c2-f21e4af6e7df",
+            "sliceId": "042e7220-605e-42d1-b091-a0ea5b97e5aa",
+            "sourceInMs": 0,
+            "sourceOutMs": 37526,
+            "notes": "Aoraki aerial supplies the snow-mountain half of the promise"
+          }
+        ],
+        "linkedSliceIds": [
+          "fcf25543-24da-4615-a572-14938e938cd0",
+          "042e7220-605e-42d1-b091-a0ea5b97e5aa"
+        ],
+        "notes": "同一句字幕只承接海湾和雪山两种国家级意象，并全部交给真正的无人机镜头。"
+      },
+      {
+        "id": "intro-entry-beat-2",
+        "text": "但真正落地时，先撞上的不是 postcard，而是跑道、航站楼和必须立刻适应的左舵路感。",
+        "targetDurationMs": 9000,
+        "actions": {
+          "muteSource": true
+        },
+        "selections": [
+          {
+            "assetId": "912d5b40-479a-4169-a1ae-1685fe6386ee",
+            "sliceId": "1795dbf0-f867-4b8f-a1c2-3e99ae04c2ce",
+            "sourceInMs": 0,
+            "sourceOutMs": 44845,
+            "notes": "Airport runway aerial lands the 'runway' half of the line"
+          },
+          {
+            "assetId": "0f9ae1d9-38fa-4305-a28f-fcef58dc7e30",
+            "sliceId": "02fdc08d-f833-4b5d-bd4d-397c94f52028",
+            "sourceInMs": 0,
+            "sourceOutMs": 4872,
+            "notes": "Terminal entry signage covers the terminal phrase"
+          },
+          {
+            "assetId": "07a42b65-d371-4cd0-95e9-d1c7ff064722",
+            "sliceId": "f9b128ea-ba8f-4161-b4b1-bd66df020d6c",
+            "sourceInMs": 140,
+            "sourceOutMs": 46900,
+            "notes": "First rental-lot pullout carries the left-hand-drive adaptation"
+          }
+        ],
+        "linkedSliceIds": [
+          "1795dbf0-f867-4b8f-a1c2-3e99ae04c2ce",
+          "02fdc08d-f833-4b5d-bd4d-397c94f52028",
+          "f9b128ea-ba8f-4161-b4b1-bd66df020d6c"
+        ],
+        "notes": "把落地、航站楼和左舵路感拆给同一层级的三个证据，不再混进别的语义。"
+      }
+    ],
+    "notes": "片头从国家想象切入，但很快让机场、租车和城市边界接管。"
+  },
+  {
+    "id": "intro-hook",
+    "role": "intro",
+    "title": "钩子：现实比风景来得更快",
+    "narration": "现实来得比想象快得多。刚把车开出来，状况就先出现了。还没真正沉浸在目的地滤镜里，停车场、陌生路权和不断冒出来的判断，就把这趟旅程从风景片拖回了现场。",
+    "targetDurationMs": 18000,
+    "linkedSliceIds": [
+      "3063546d-1523-45a3-b5d3-ad1945d58905",
+      "06dfd4c4-344d-4ab5-876f-a3f9db2c3333",
+      "69f1abe1-b15e-4bd9-ae63-32a171305692",
+      "ec5ce2b1-44e9-4101-9cf2-6f8e8426ac14",
+      "05909e9d-2d42-4ed0-bb6d-1f42e6ec2a79"
+    ],
+    "beats": [
+      {
+        "id": "intro-hook-beat-1",
+        "text": "刚出发，车就先坏了。",
+        "targetDurationMs": 5000,
+        "actions": {
+          "preserveNatSound": true
+        },
+        "selections": [
+          {
+            "assetId": "1471e33f-1a4b-44d9-b080-ccac246feb8b",
+            "sliceId": "3063546d-1523-45a3-b5d3-ad1945d58905",
+            "sourceInMs": 0,
+            "sourceOutMs": 10611,
+            "notes": "Keep the spoken hook intact"
+          }
+        ],
+        "linkedSliceIds": [
+          "3063546d-1523-45a3-b5d3-ad1945d58905"
+        ],
+        "notes": "保留原声整句，继续作为事实钩子。"
+      },
+      {
+        "id": "intro-hook-beat-2",
+        "text": "还没真正沉浸在目的地滤镜里，租车场和停车场就先把人拽回了现场。",
+        "targetDurationMs": 6000,
+        "actions": {
+          "muteSource": true
+        },
+        "selections": [
+          {
+            "assetId": "18f3151b-18e0-476b-8af4-691f1368183f",
+            "sliceId": "06dfd4c4-344d-4ab5-876f-a3f9db2c3333",
+            "sourceInMs": 0,
+            "sourceOutMs": 11100,
+            "notes": "Rental-lot anxiety keeps the line grounded in the car handoff"
+          },
+          {
+            "assetId": "29d3bb59-a62a-42ce-8ea6-d36395943c50",
+            "sliceId": "69f1abe1-b15e-4bd9-ae63-32a171305692",
+            "sourceInMs": 0,
+            "sourceOutMs": 3900,
+            "notes": "Parking-lot detail completes the same reality layer"
+          }
+        ],
+        "linkedSliceIds": [
+          "06dfd4c4-344d-4ab5-876f-a3f9db2c3333",
+          "69f1abe1-b15e-4bd9-ae63-32a171305692"
+        ],
+        "notes": "同一拍只保留租车场 / 停车场这一个现实层级，不再横跳到别的空间。"
+      },
+      {
+        "id": "intro-hook-beat-3",
+        "text": "从这一刻起，这趟路看的已经不是风景，而是一路判断。",
+        "targetDurationMs": 7000,
+        "actions": {
+          "muteSource": true
+        },
+        "selections": [
+          {
+            "assetId": "146cd378-47f7-4b54-9f55-a168dd5c7749",
+            "sliceId": "ec5ce2b1-44e9-4101-9cf2-6f8e8426ac14",
+            "sourceInMs": 15620,
+            "sourceOutMs": 27563,
+            "notes": "Car issue evidence anchors the 'not scenery anymore' turn"
+          },
+          {
+            "assetId": "1a23e35f-7c44-4e3d-ab21-e9c818a03e2f",
+            "sliceId": "05909e9d-2d42-4ed0-bb6d-1f42e6ec2a79",
+            "sourceInMs": 0,
+            "sourceOutMs": 6900,
+            "notes": "Roundabout pressure makes the 'judgment' clause visible"
+          }
+        ],
+        "linkedSliceIds": [
+          "ec5ce2b1-44e9-4101-9cf2-6f8e8426ac14",
+          "05909e9d-2d42-4ed0-bb6d-1f42e6ec2a79"
+        ],
+        "notes": "把这一句压成坏车与路权判断两层，长度和镜头密度一起收紧。"
+      }
+    ],
+    "notes": "现实摩擦提前压上来，先把片子从 postcard 拉回现场。"
+  },
+  {
+    "id": "why-this-journey",
+    "role": "scene",
+    "title": "立题：这不是看景点，而是把车开进现场",
+    "narration": "很多年里，我认识新西兰都来自图像和名字本身。但真正落地之后，你会发现，这里不是一组等着被看的景点，而是一套必须亲自开进去的空间。",
+    "targetDurationMs": 19000,
+    "linkedSliceIds": [
+      "aee511e1-75b2-4dd3-9193-1caaafc7de11",
+      "4ab54e84-fed2-48ce-8f88-1a3cb35c5270",
+      "f0b452c6-d846-4f3f-89d9-a5f32a6bc1de",
+      "74c28fd3-cb26-45a5-98be-ac6f9ce4bb59",
+      "5392fc45-7350-4a2d-8767-c8778198eec8",
+      "77a356bd-6f97-4545-82c3-878a1abbbc14"
+    ],
+    "beats": [
+      {
+        "id": "why-this-journey-beat-1",
+        "text": "很多年里，我认识新西兰都来自图像和名字本身。",
+        "targetDurationMs": 9000,
+        "actions": {
+          "muteSource": true
+        },
+        "selections": [
+          {
+            "assetId": "1880cdbe-fbe0-49f1-90a3-3254e9ef9f1e",
+            "sliceId": "aee511e1-75b2-4dd3-9193-1caaafc7de11",
+            "sourceInMs": 0,
+            "sourceOutMs": 6742,
+            "notes": "Sky Tower establishes the remembered city icon"
+          },
+          {
+            "assetId": "307991e9-e7a2-4b18-bfb9-27a815f58952",
+            "sliceId": "4ab54e84-fed2-48ce-8f88-1a3cb35c5270",
+            "sourceInMs": 0,
+            "sourceOutMs": 5239,
+            "notes": "Harbor skyline carries the postcard-image layer"
+          },
+          {
+            "assetId": "2c7e7710-a189-416a-b7de-9064a3a54e62",
+            "sliceId": "f0b452c6-d846-4f3f-89d9-a5f32a6bc1de",
+            "sourceInMs": 5260,
+            "sourceOutMs": 16171,
+            "notes": "Pier and boats keep the line in image-memory, not talking-head explanation"
+          }
+        ],
+        "linkedSliceIds": [
+          "aee511e1-75b2-4dd3-9193-1caaafc7de11",
+          "4ab54e84-fed2-48ce-8f88-1a3cb35c5270",
+          "f0b452c6-d846-4f3f-89d9-a5f32a6bc1de"
+        ],
+        "notes": "这句回到纯图像层，不再用 talking-head 打断。"
+      },
+      {
+        "id": "why-this-journey-beat-2",
+        "text": "但真正落地之后，你会发现，这里不是一组等着被看的景点，而是一套必须亲自开进去的空间。",
+        "targetDurationMs": 10000,
+        "actions": {
+          "muteSource": true
+        },
+        "selections": [
+          {
+            "assetId": "1d902ad4-cae8-47b9-ba3c-2328ee816ea4",
+            "sliceId": "74c28fd3-cb26-45a5-98be-ac6f9ce4bb59",
+            "sourceInMs": 62500,
+            "sourceOutMs": 67900,
+            "notes": "Auckland city drive with directions"
+          },
+          {
+            "assetId": "10ce4784-f5cb-4c44-b025-7ce5f5c15e8c",
+            "sliceId": "5392fc45-7350-4a2d-8767-c8778198eec8",
+            "sourceInMs": 75720,
+            "sourceOutMs": 101864,
+            "notes": "Urban route through Auckland"
+          },
+          {
+            "assetId": "16878859-9a7a-4c95-9dc7-cf9b61aae6e6",
+            "sliceId": "77a356bd-6f97-4545-82c3-878a1abbbc14",
+            "sourceInMs": 14152,
+            "sourceOutMs": 28728,
+            "notes": "Bridge and green hills transition"
+          }
+        ],
+        "linkedSliceIds": [
+          "74c28fd3-cb26-45a5-98be-ac6f9ce4bb59",
+          "5392fc45-7350-4a2d-8767-c8778198eec8",
+          "77a356bd-6f97-4545-82c3-878a1abbbc14"
+        ],
+        "notes": "让 drive 真正成为“必须自己开进去”的证据。"
+      }
+    ],
+    "notes": "立题段强调这趟路不是看景点，而是验证空间和路感。"
+  },
+  {
+    "id": "north-island-preview",
+    "role": "scene",
+    "title": "北岛预告：地热、湖岸与黑沙海岸",
+    "narration": "北岛先把这趟路的骨架搭了出来。离开奥克兰之后，地热、湖岸、黑沙海岸和一段接一段的公路，不断把地貌、天气和驾驶判断压在一起。你很难再把它理解成一个单点目的地。",
+    "targetDurationMs": 22000,
+    "linkedSliceIds": [
+      "eaef605d-a130-4dac-b682-6ec69f8df4ec",
+      "cb6ffbae-b3c1-4224-a9cc-b33c5fad4b15",
+      "6f2e92b2-1c87-4df2-a4c2-44cf8528f48b",
+      "84080584-2d5c-4377-9168-047b411ac277",
+      "2a4fe482-66b6-4c62-a2c4-3bfe68df1074",
+      "eabed790-5a30-4a45-a28d-eee0bf1e0d00"
+    ],
+    "beats": [
+      {
+        "id": "north-island-preview-beat-1",
+        "text": "离开奥克兰之后，北岛先亮出来的，不是名场面，而是路线本身。",
+        "targetDurationMs": 8000,
+        "actions": {
+          "muteSource": true
+        },
+        "selections": [
+          {
+            "assetId": "9bb4bee8-463c-4787-978b-e57794bc573f",
+            "sliceId": "eaef605d-a130-4dac-b682-6ec69f8df4ec",
+            "sourceInMs": 103500,
+            "sourceOutMs": 145900,
+            "notes": "Thermal Explorer Highway gives the route backbone"
+          },
+          {
+            "assetId": "b42c8499-0d6a-44d2-8b46-ea895ca2ea7f",
+            "sliceId": "cb6ffbae-b3c1-4224-a9cc-b33c5fad4b15",
+            "sourceInMs": 25820,
+            "sourceOutMs": 29300,
+            "notes": "Forest-road continuation stays in the same route layer"
+          }
+        ],
+        "linkedSliceIds": [
+          "eaef605d-a130-4dac-b682-6ec69f8df4ec",
+          "cb6ffbae-b3c1-4224-a9cc-b33c5fad4b15"
+        ],
+        "notes": "这一拍只说路线骨架，所以只保留 road 语义。"
+      },
+      {
+        "id": "north-island-preview-beat-2",
+        "text": "地热蒸汽和湖岸，会让空间一层层换面。",
+        "targetDurationMs": 7000,
+        "actions": {
+          "muteSource": true
+        },
+        "selections": [
+          {
+            "assetId": "258a49b4-8ed5-4e13-8486-217199719a64",
+            "sliceId": "6f2e92b2-1c87-4df2-a4c2-44cf8528f48b",
+            "sourceInMs": 0,
+            "sourceOutMs": 6620,
+            "notes": "Geothermal steam covers the first half of the line"
+          },
+          {
+            "assetId": "c5097637-20cb-4fb6-a560-4577d29d1333",
+            "sliceId": "84080584-2d5c-4377-9168-047b411ac277",
+            "sourceInMs": 0,
+            "sourceOutMs": 5974,
+            "notes": "Lakeside calm covers the second half of the line"
+          }
+        ],
+        "linkedSliceIds": [
+          "6f2e92b2-1c87-4df2-a4c2-44cf8528f48b",
+          "84080584-2d5c-4377-9168-047b411ac277"
+        ],
+        "notes": "这一句压成两个明确地貌词，字幕和镜头长度一起收紧。"
+      },
+      {
+        "id": "north-island-preview-beat-3",
+        "text": "等车逼近黑沙海岸和鸟崖，这条路又会突然翻成海风和悬崖。",
+        "targetDurationMs": 7000,
+        "actions": {
+          "muteSource": true
+        },
+        "selections": [
+          {
+            "assetId": "2a460050-6d6c-4ca9-b5d3-d7cb0ca41c4d",
+            "sliceId": "2a4fe482-66b6-4c62-a2c4-3bfe68df1074",
+            "sourceInMs": 0,
+            "sourceOutMs": 49900,
+            "notes": "Approach road proves the coast is being reached by car"
+          },
+          {
+            "assetId": "1bccbc06-f61a-442d-b6fb-e9ed7ba2f6cb",
+            "sliceId": "eabed790-5a30-4a45-a28d-eee0bf1e0d00",
+            "sourceInMs": 0,
+            "sourceOutMs": 10027,
+            "notes": "Coastal cliff aerial completes the sea-cliff reset"
+          }
+        ],
+        "linkedSliceIds": [
+          "2a4fe482-66b6-4c62-a2c4-3bfe68df1074",
+          "eabed790-5a30-4a45-a28d-eee0bf1e0d00"
+        ],
+        "notes": "这里把无人机真正放回海岸重置位，而不是继续用地面碎片拼海风。"
+      }
+    ],
+    "notes": "北岛承担路线展开，不做报菜名式堆地名。"
+  },
+  {
+    "id": "south-island-escalation",
+    "role": "scene",
+    "title": "南岛抬升：开阔、弯道与地形压强",
+    "narration": "南岛不是简单把景观做大，而是把这趟穿越的压强继续往上推。普卡基和特卡波先把视野彻底拉开，接着米尔福德公路又把开阔一点点逼回到山体和弯道之间。到了皇后镇和瓦纳卡，你才意识到，这些名字背后其实是一整片必须靠车轮穿透的地形。",
+    "targetDurationMs": 30000,
+    "linkedSliceIds": [
+      "69105973-3df7-4d2f-936e-74f7e883aca2",
+      "76f4326f-ccef-4b25-9d08-42a393e3f2ef",
+      "042e7220-605e-42d1-b091-a0ea5b97e5aa",
+      "7ecc1a1c-9fae-43a6-92db-aced614bff04",
+      "debacb81-58f1-44a9-ab22-98ce78fc54de",
+      "35a71012-1e23-4583-a7a2-3837a6eb24a9",
+      "ff361026-6f9b-44eb-9961-92d294366249"
+    ],
+    "beats": [
+      {
+        "id": "south-island-escalation-beat-1",
+        "text": "真正把这趟路抬到另一个尺度的，是南岛。",
+        "targetDurationMs": 5000,
+        "actions": {
+          "muteSource": true
+        },
+        "selections": [
+          {
+            "assetId": "089d685a-6280-4037-8443-d0e707e2d4a2",
+            "sliceId": "69105973-3df7-4d2f-936e-74f7e883aca2",
+            "sourceInMs": 8022,
+            "sourceOutMs": 14022,
+            "notes": "South Island entry via Tekapo road"
+          }
+        ],
+        "linkedSliceIds": [
+          "69105973-3df7-4d2f-936e-74f7e883aca2"
+        ],
+        "notes": "先用 road entrance 抬尺度，而不是直接空投 postcard。"
+      },
+      {
+        "id": "south-island-escalation-beat-2",
+        "text": "普卡基、特卡波和库克山一带，会先把视野彻底拉开。",
+        "targetDurationMs": 8500,
+        "actions": {
+          "muteSource": true
+        },
+        "selections": [
+          {
+            "assetId": "0333b2fe-4d18-4eb5-984d-44b275c9f3fe",
+            "sliceId": "76f4326f-ccef-4b25-9d08-42a393e3f2ef",
+            "sourceInMs": 0,
+            "sourceOutMs": 8022,
+            "notes": "Tekapo aerial opens the scale of the lake-and-alps basin"
+          },
+          {
+            "assetId": "3f6e8a07-2e2d-43d9-a5c2-f21e4af6e7df",
+            "sliceId": "042e7220-605e-42d1-b091-a0ea5b97e5aa",
+            "sourceInMs": 0,
+            "sourceOutMs": 37526,
+            "notes": "Aoraki aerial completes the south-island lift"
+          }
+        ],
+        "linkedSliceIds": [
+          "76f4326f-ccef-4b25-9d08-42a393e3f2ef",
+          "042e7220-605e-42d1-b091-a0ea5b97e5aa"
+        ],
+        "notes": "这一拍完全交给真正的无人机做南岛尺度抬升。"
+      },
+      {
+        "id": "south-island-escalation-beat-3",
+        "text": "但等路线逼近米尔福德，开阔很快又会被山体和弯道一点点压回来。",
+        "targetDurationMs": 8000,
+        "actions": {
+          "muteSource": true
+        },
+        "selections": [
+          {
+            "assetId": "24b89dd4-f760-4f81-bacc-a6274bf6a21e",
+            "sliceId": "7ecc1a1c-9fae-43a6-92db-aced614bff04",
+            "sourceInMs": 72145,
+            "sourceOutMs": 82145,
+            "notes": "Milford approach road carries the bend-and-pressure side"
+          },
+          {
+            "assetId": "1713ce4c-55d8-4639-96b4-9d995a2dfeca",
+            "sliceId": "debacb81-58f1-44a9-ab22-98ce78fc54de",
+            "sourceInMs": 0,
+            "sourceOutMs": 13526,
+            "notes": "Milford aerial confirms the fjord-scale compression"
+          }
+        ],
+        "linkedSliceIds": [
+          "7ecc1a1c-9fae-43a6-92db-aced614bff04",
+          "debacb81-58f1-44a9-ab22-98ce78fc54de"
+        ],
+        "notes": "米尔福德这一句收成 road + aerial 两层，长度和地形压迫都更直接。"
+      },
+      {
+        "id": "south-island-escalation-beat-4",
+        "text": "再往后，皇后镇、瓦卡蒂普湖和瓦纳卡会提醒你，这趟穿越一直都在换地形。",
+        "targetDurationMs": 8500,
+        "actions": {
+          "muteSource": true
+        },
+        "selections": [
+          {
+            "assetId": "416f93d0-e52a-47ca-9eec-823c140345a2",
+            "sliceId": "35a71012-1e23-4583-a7a2-3837a6eb24a9",
+            "sourceInMs": 17152,
+            "sourceOutMs": 23152,
+            "notes": "Lake Wakatipu roadside line stays in the route layer"
+          },
+          {
+            "assetId": "1ddff09b-9593-4985-a820-d2e72165142b",
+            "sliceId": "ff361026-6f9b-44eb-9961-92d294366249",
+            "sourceInMs": 0,
+            "sourceOutMs": 7380,
+            "notes": "Wanaka cold-morning texture completes the terrain-change reminder"
+          }
+        ],
+        "linkedSliceIds": [
+          "35a71012-1e23-4583-a7a2-3837a6eb24a9",
+          "ff361026-6f9b-44eb-9961-92d294366249"
+        ],
+        "notes": "最后一拍收成两种地形变化，不再额外挂一条和字幕无关的水面 detail。"
+      }
+    ],
+    "notes": "南岛段从开阔转向压强，再转回路线判断。"
+  },
+  {
+    "id": "invitation-to-feature",
+    "role": "transition",
+    "title": "邀请：继续把车开进这片土地",
+    "narration": "所以这支片子想记录的，不只是新西兰有多上镜，而是当你真的把车开进去以后，这些路和天气会怎样改写想象。接下来，就跟我继续往里走。",
+    "targetDurationMs": 13000,
+    "linkedSliceIds": [
+      "eaef605d-a130-4dac-b682-6ec69f8df4ec",
+      "debacb81-58f1-44a9-ab22-98ce78fc54de",
+      "a1e359d8-5380-4337-9065-75b8d2b58404"
+    ],
+    "beats": [
+      {
+        "id": "invitation-to-feature-beat-1",
+        "text": "所以这支片子想记录的，不只是新西兰有多上镜，而是这片土地会怎样把想象改写成现场。",
+        "targetDurationMs": 7000,
+        "actions": {
+          "muteSource": true
+        },
+        "selections": [
+          {
+            "assetId": "9bb4bee8-463c-4787-978b-e57794bc573f",
+            "sliceId": "eaef605d-a130-4dac-b682-6ec69f8df4ec",
+            "sourceInMs": 103500,
+            "sourceOutMs": 145900,
+            "notes": "North Island road holds the '现场' side of the line"
+          },
+          {
+            "assetId": "1713ce4c-55d8-4639-96b4-9d995a2dfeca",
+            "sliceId": "debacb81-58f1-44a9-ab22-98ce78fc54de",
+            "sourceInMs": 0,
+            "sourceOutMs": 13526,
+            "notes": "Milford aerial keeps the final summary at full landscape scale"
+          }
+        ],
+        "linkedSliceIds": [
+          "eaef605d-a130-4dac-b682-6ec69f8df4ec",
+          "debacb81-58f1-44a9-ab22-98ce78fc54de"
+        ],
+        "notes": "结尾总结只保留 road + aerial 两种正式层级，不再拼三段无关 motion。"
+      },
+      {
+        "id": "invitation-to-feature-beat-2",
+        "text": "接下来，就继续往里走。",
+        "targetDurationMs": 6000,
+        "actions": {
+          "muteSource": true
+        },
+        "selections": [
+          {
+            "assetId": "a6d57d16-133d-4069-a809-f29d8c718602",
+            "sliceId": "a1e359d8-5380-4337-9065-75b8d2b58404",
+            "sourceInMs": 84500,
+            "sourceOutMs": 108900,
+            "notes": "Single forward-moving road shot carries the invitation cleanly"
+          }
+        ],
+        "linkedSliceIds": [
+          "a1e359d8-5380-4337-9065-75b8d2b58404"
+        ],
+        "notes": "最后一句只保留一个前进镜头，避免字幕和切镜继续打架。"
+      }
+    ],
+    "notes": "邀请段总结“想象被现场改写”，并继续保持车轮向前。"
+  }
+]

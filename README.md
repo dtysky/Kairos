@@ -23,6 +23,9 @@ Current stable pipeline:
   - `config/styles/` stores the shared style library
   - `config/style-sources.json` stores the shared style-source manifest
   - `analysis/reference-transcripts/` and `analysis/style-references/` store shared style-analysis outputs
+- workspace style profiles are no longer treated as prose-only references:
+  - each `config/styles/*.md` should carry directly consumable rhythm-stage guidance, material-role guidance, camera/shot-language preferences, function-slot hints, stable parameter keys, and anti-patterns
+  - these style outputs are expected to guide `script` recall / outline / beat writing directly, not only provide high-level narrative tone
 - project script work now references a workspace style category instead of owning its own `config/styles/`
 - the `/script` console page now acts as deterministic script preparation:
   - user first selects a workspace `styleCategory` in `/script`; that selection auto-saves
@@ -33,6 +36,7 @@ Current stable pipeline:
   - `/script` refreshes deterministic prep outputs such as `analysis/material-digest.json`
   - the final `script/current.json` remains agent-authored
   - if the reviewed brief was already user-edited and a fresh initial draft is needed, overwrite permission is granted explicitly from `/script` instead of silent agent overwrite
+  - the selected style profile should already expose structured preferences for rhythm stages, material grammar, camera language, and anti-patterns, so Agent work does not depend on re-inferring everything from a long style essay
 - subtitles support two formal paths:
   - narration path from `beat.text`
   - source-speech path from `slice.transcriptSegments`

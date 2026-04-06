@@ -755,10 +755,25 @@ export const IScriptBriefSegmentConfig = z.object({
 });
 export type IScriptBriefSegmentConfig = z.infer<typeof IScriptBriefSegmentConfig>;
 
+export const EScriptBriefWorkflowState = z.enum([
+  'choose_style',
+  'await_brief_draft',
+  'review_brief',
+  'ready_to_prepare',
+  'ready_for_agent',
+  'script_generated',
+]);
+export type EScriptBriefWorkflowState = z.infer<typeof EScriptBriefWorkflowState>;
+
 export const IScriptBriefConfig = z.object({
   projectName: z.string(),
   createdAt: z.string().optional(),
   styleCategory: z.string().optional(),
+  workflowState: EScriptBriefWorkflowState.default('choose_style'),
+  lastAgentDraftAt: z.string().optional(),
+  lastUserReviewAt: z.string().optional(),
+  lastAgentDraftFingerprint: z.string().optional(),
+  briefOverwriteApprovedAt: z.string().optional(),
   statusText: z.string().optional(),
   goalDraft: z.array(z.string()).default([]),
   constraintDraft: z.array(z.string()).default([]),

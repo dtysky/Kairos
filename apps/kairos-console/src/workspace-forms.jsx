@@ -1,5 +1,26 @@
 import React from 'react';
-import { Button, Card, Divider, Tag } from 'hana-ui';
+import { Button, Card, Divider, Modal, Tag } from 'hana-ui';
+
+export function WorkflowPrompt({
+  eyebrow = 'Next Step',
+  title,
+  body,
+  tone = 'accent',
+  actions = null,
+  detail = '',
+}) {
+  return (
+    <div className={`workflow-prompt workflow-prompt-${tone}`}>
+      <div className="workflow-prompt-copy">
+        <div className="workflow-prompt-eyebrow">{eyebrow}</div>
+        <h3>{title}</h3>
+        <p>{body}</p>
+        {detail ? <div className="workflow-prompt-detail">{detail}</div> : null}
+      </div>
+      {actions ? <div className="workflow-prompt-actions">{actions}</div> : null}
+    </div>
+  );
+}
 
 export function ProjectBriefEditor({ config, setConfig, onSave, busy }) {
   if (!config) return null;
@@ -59,13 +80,13 @@ export function ProjectBriefEditor({ config, setConfig, onSave, busy }) {
               onChange={value => updateArrayItem(config.mappings, index, { ...mapping, flightRecordPath: value }, next => setConfig(current => ({ ...current, mappings: next })))}
             />
           </div>
-          <button
-            className="danger-link"
-            type="button"
+          <Button
+            type="error"
+            size="small"
             onClick={() => removeArrayItem(config.mappings, index, next => setConfig(current => ({ ...current, mappings: next })))}
           >
             删除
-          </button>
+          </Button>
         </div>
       ))}
     </Card>
@@ -162,13 +183,13 @@ export function ManualItineraryEditor({ config, setConfig, onSave, busy }) {
             value={segment.notes || ''}
             onChange={value => updateArrayItem(config.segments, index, { ...segment, notes: value }, next => setConfig(current => ({ ...current, segments: next })))}
           />
-          <button
-            className="danger-link"
-            type="button"
+          <Button
+            type="error"
+            size="small"
             onClick={() => removeArrayItem(config.segments, index, next => setConfig(current => ({ ...current, segments: next })))}
           >
             删除
-          </button>
+          </Button>
         </div>
       ))}
     </Card>
@@ -221,46 +242,144 @@ export function CaptureTimeOverridesEditor({ config, setConfig, onSave, busy }) 
   );
 }
 
-export function ScriptBriefEditor({ config, setConfig, onSave, busy }) {
+export function ScriptBriefEditor({
+  config,
+  styleSources,
+  setConfig,
+  onSave,
+  onStyleCategoryChange,
+  onRequestRegenerate,
+  busy,
+  autoSaveBusy = false,
+  regenerateBusy = false,
+}) {
+  const [showOverwriteModal, setShowOverwriteModal] = React.useState(false);
   if (!config) return null;
+  const categories = styleSources?.categories || [];
+  const workflowState = config.workflowState || 'choose_style';
+  const hasValidStyleCategory = !config.styleCategory
+    || categories.some(category => category.categoryId === config.styleCategory);
+  const canEditBrief = workflowState !== 'choose_style' && workflowState !== 'await_brief_draft';
+  const canRequestRegenerate = workflowState === 'review_brief' || workflowState === 'ready_to_prepare';
+  const currentFingerprint = computeScriptBriefFingerprint(config);
+  const userModifiedBrief = Boolean(
+    config.lastAgentDraftFingerprint && currentFingerprint !== config.lastAgentDraftFingerprint,
+  );
+  const categoryOptions = [
+    { value: '', label: '（待指定）' },
+    ...categories.map(category => ({
+      value: category.categoryId,
+      label: category.displayName,
+    })),
+  ];
+  if (config.styleCategory && !hasValidStyleCategory) {
+    categoryOptions.unshift({
+      value: config.styleCategory,
+      label: `当前分类已失效：${config.styleCategory}`,
+    });
+  }
+
+  function handleStyleCategoryChange(value) {
+    const nextStyleCategory = value || undefined;
+    const nextWorkflowState = nextStyleCategory ? 'await_brief_draft' : 'choose_style';
+    setConfig(current => ({
+      ...current,
+      styleCategory: nextStyleCategory,
+      workflowState: nextWorkflowState,
+      briefOverwriteApprovedAt: undefined,
+      statusText: describeScriptWorkflowState(nextWorkflowState),
+    }));
+    onStyleCategoryChange?.(nextStyleCategory);
+  }
+
+  async function handleConfirmRegenerate() {
+    setShowOverwriteModal(false);
+    await onRequestRegenerate?.();
+  }
+
+  function handleRequestRegenerate() {
+    if (userModifiedBrief) {
+      setShowOverwriteModal(true);
+      return;
+    }
+    onRequestRegenerate?.();
+  }
+
   return (
     <Card className="panel">
-      <SectionHeader title="Script Brief" onSave={onSave} busy={busy} />
+      <SectionHeader
+        title="Script Brief"
+        onSave={onSave}
+        busy={busy}
+        saveDisabled={!canEditBrief || autoSaveBusy || regenerateBusy}
+        actions={canRequestRegenerate ? (
+          <Button
+            type={regenerateBusy ? 'disabled' : 'default'}
+            disabled={regenerateBusy}
+            onClick={handleRequestRegenerate}
+          >
+            {regenerateBusy ? '处理中…' : '重新生成初版 brief'}
+          </Button>
+        ) : null}
+      />
       <div className="field-grid field-grid-three">
         <Field
           label="项目名"
           value={config.projectName}
-          onChange={value => setConfig(current => ({ ...current, projectName: value }))}
+          onChange={() => {}}
+          readOnly
         />
-        <Field
+        <SelectField
           label="风格分类"
           value={config.styleCategory || ''}
-          onChange={value => setConfig(current => ({ ...current, styleCategory: value }))}
+          onChange={handleStyleCategoryChange}
+          options={categoryOptions}
+          disabled={autoSaveBusy || categoryOptions.length <= 1}
         />
         <Field
           label="状态"
           value={config.statusText || ''}
-          onChange={value => setConfig(current => ({ ...current, statusText: value }))}
+          onChange={() => {}}
+          readOnly
         />
       </div>
+      {autoSaveBusy ? (
+        <p className="field-help">正在自动保存风格分类…</p>
+      ) : null}
+      {!autoSaveBusy ? (
+        <p className="field-help">风格分类会自动保存；下面的 brief 内容仍需要手动点击“保存”。</p>
+      ) : null}
+      {config.styleCategory && !hasValidStyleCategory ? (
+        <p className="field-help field-help-error">当前风格分类已失效，请从 workspace 风格库重新选择。</p>
+      ) : null}
+      {userModifiedBrief && canRequestRegenerate ? (
+        <p className="field-help field-help-error">当前 brief 与最近一次 Agent 初稿不同。重新生成初版 brief 会覆盖这些修改。</p>
+      ) : null}
       <TextAreaField
         label="全片目标（每行一条）"
         value={(config.goalDraft || []).join('\n')}
         onChange={value => setConfig(current => ({ ...current, goalDraft: splitLines(value) }))}
+        rows={8}
+        disabled={!canEditBrief}
       />
       <TextAreaField
         label="叙事约束（每行一条）"
         value={(config.constraintDraft || []).join('\n')}
         onChange={value => setConfig(current => ({ ...current, constraintDraft: splitLines(value) }))}
+        rows={8}
+        disabled={!canEditBrief}
       />
       <TextAreaField
         label="段落方案审查（每行一条）"
         value={(config.planReviewDraft || []).join('\n')}
         onChange={value => setConfig(current => ({ ...current, planReviewDraft: splitLines(value) }))}
+        rows={8}
+        disabled={!canEditBrief}
       />
       <Divider />
       <ListToolbar
         title="Segment Brief"
+        disabled={!canEditBrief}
         onAdd={() => setConfig(current => ({
           ...current,
           segments: [...current.segments, {
@@ -281,53 +400,86 @@ export function ScriptBriefEditor({ config, setConfig, onSave, busy }) {
             <Field
               label="segmentId"
               value={segment.segmentId}
+              disabled={!canEditBrief}
               onChange={value => updateArrayItem(config.segments, index, { ...segment, segmentId: value }, next => setConfig(current => ({ ...current, segments: next })))}
             />
             <Field
               label="标题"
               value={segment.title || ''}
+              disabled={!canEditBrief}
               onChange={value => updateArrayItem(config.segments, index, { ...segment, title: value }, next => setConfig(current => ({ ...current, segments: next })))}
             />
             <Field
               label="角色"
               value={segment.role || ''}
+              disabled={!canEditBrief}
               onChange={value => updateArrayItem(config.segments, index, { ...segment, role: value }, next => setConfig(current => ({ ...current, segments: next })))}
             />
             <Field
               label="目标时长(ms)"
               value={String(segment.targetDurationMs || '')}
+              disabled={!canEditBrief}
               onChange={value => updateArrayItem(config.segments, index, { ...segment, targetDurationMs: Number(value) || 0 }, next => setConfig(current => ({ ...current, segments: next })))}
             />
             <Field
               label="ClipTypes(, 分隔)"
               value={(segment.preferredClipTypes || []).join(', ')}
+              disabled={!canEditBrief}
               onChange={value => updateArrayItem(config.segments, index, { ...segment, preferredClipTypes: splitComma(value) }, next => setConfig(current => ({ ...current, segments: next })))}
             />
             <Field
               label="PlaceHints(, 分隔)"
               value={(segment.preferredPlaceHints || []).join(', ')}
+              disabled={!canEditBrief}
               onChange={value => updateArrayItem(config.segments, index, { ...segment, preferredPlaceHints: splitComma(value) }, next => setConfig(current => ({ ...current, segments: next })))}
             />
           </div>
           <TextAreaField
             label="Intent"
             value={segment.intent || ''}
+            disabled={!canEditBrief}
             onChange={value => updateArrayItem(config.segments, index, { ...segment, intent: value }, next => setConfig(current => ({ ...current, segments: next })))}
           />
           <TextAreaField
             label="Notes(每行一条)"
             value={(segment.notes || []).join('\n')}
+            disabled={!canEditBrief}
             onChange={value => updateArrayItem(config.segments, index, { ...segment, notes: splitLines(value) }, next => setConfig(current => ({ ...current, segments: next })))}
           />
-          <button
-            className="danger-link"
-            type="button"
+          <Button
+            type={!canEditBrief ? 'disabled' : 'error'}
+            size="small"
+            disabled={!canEditBrief}
             onClick={() => removeArrayItem(config.segments, index, next => setConfig(current => ({ ...current, segments: next })))}
           >
             删除
-          </button>
+          </Button>
         </div>
       ))}
+      <Modal
+        show={showOverwriteModal}
+        title="覆盖当前 brief？"
+        showClose
+        closeOnClickBg
+        cancel={() => setShowOverwriteModal(false)}
+        actions={(
+          <div className="actions modal-actions">
+            <Button type="default" onClick={() => setShowOverwriteModal(false)}>取消</Button>
+            <Button
+              type={regenerateBusy ? 'disabled' : 'primary'}
+              disabled={regenerateBusy}
+              onClick={handleConfirmRegenerate}
+            >
+              {regenerateBusy ? '处理中…' : '确认覆盖'}
+            </Button>
+          </div>
+        )}
+      >
+        <div className="modal-copy">
+          <p>这会授权下一次 Agent 重新生成初版 brief。</p>
+          <p>重新生成后，你当前已经修改的 brief 内容会被覆盖。</p>
+        </div>
+      </Modal>
     </Card>
   );
 }
@@ -457,22 +609,22 @@ export function StyleSourcesEditor({ config, setConfig, onSave, busy }) {
                 value={source.excludeNotes || ''}
                 onChange={value => updateNestedArrayItem(config.categories, index, 'sources', sourceIndex, { ...source, excludeNotes: value }, next => setConfig(current => ({ ...current, categories: next })))}
               />
-              <button
-                className="danger-link"
-                type="button"
+              <Button
+                type="error"
+                size="small"
                 onClick={() => removeNestedArrayItem(config.categories, index, 'sources', sourceIndex, next => setConfig(current => ({ ...current, categories: next })))}
               >
                 删除来源
-              </button>
+              </Button>
             </div>
           ))}
-          <button
-            className="danger-link"
-            type="button"
+          <Button
+            type="error"
+            size="small"
             onClick={() => removeArrayItem(config.categories, index, next => setConfig(current => ({ ...current, categories: next })))}
           >
             删除分类
-          </button>
+          </Button>
         </div>
       ))}
     </Card>
@@ -525,7 +677,7 @@ export function ReviewQueuePanel({
             rows={compact ? 3 : 4}
           />
           <div className="actions">
-            <Button onClick={() => onResolve(review.id)}>标记完成</Button>
+            <Button type="primary" onClick={() => onResolve(review.id)}>标记完成</Button>
           </div>
         </div>
       ))}
@@ -533,31 +685,49 @@ export function ReviewQueuePanel({
   );
 }
 
-export function SectionHeader({ title, onSave, busy }) {
+export function SectionHeader({ title, onSave, busy, saveDisabled = false, actions = null }) {
   return (
     <div className="section-header">
       <h2>{title}</h2>
-      <Button onClick={onSave} disabled={busy}>{busy ? '保存中…' : '保存'}</Button>
+      <div className="actions">
+        {actions}
+        {typeof onSave === 'function' ? (
+          <Button
+            type={busy || saveDisabled ? 'disabled' : 'primary'}
+            disabled={busy || saveDisabled}
+            onClick={onSave}
+          >
+            {busy ? '保存中…' : '保存'}
+          </Button>
+        ) : null}
+      </div>
     </div>
   );
 }
 
-export function ListToolbar({ title, onAdd }) {
+export function ListToolbar({ title, onAdd, disabled = false }) {
   return (
     <div className="list-toolbar">
       <h3>{title}</h3>
-      <Button onClick={onAdd}>新增</Button>
+      <Button
+        type={disabled ? 'disabled' : 'default'}
+        disabled={disabled}
+        onClick={onAdd}
+      >
+        新增
+      </Button>
     </div>
   );
 }
 
-export function Field({ label, value, onChange, readOnly = false, placeholder = '' }) {
+export function Field({ label, value, onChange, readOnly = false, disabled = false, placeholder = '' }) {
   return (
     <label className="field">
       <span>{label}</span>
       <input
         value={value}
         readOnly={readOnly}
+        disabled={disabled}
         placeholder={placeholder}
         onChange={event => onChange(event.target.value)}
       />
@@ -565,11 +735,28 @@ export function Field({ label, value, onChange, readOnly = false, placeholder = 
   );
 }
 
-export function TextAreaField({ label, value, onChange, rows = 4 }) {
+export function SelectField({ label, value, onChange, options, disabled = false }) {
+  return (
+    <label className="field">
+      <span>{label}</span>
+      <select
+        value={value}
+        disabled={disabled}
+        onChange={event => onChange(event.target.value)}
+      >
+        {options.map(option => (
+          <option key={`${option.value}:${option.label}`} value={option.value}>{option.label}</option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+export function TextAreaField({ label, value, onChange, rows = 4, disabled = false }) {
   return (
     <label className="field field-area">
       <span>{label}</span>
-      <textarea value={value} onChange={event => onChange(event.target.value)} rows={rows} />
+      <textarea value={value} disabled={disabled} onChange={event => onChange(event.target.value)} rows={rows} />
     </label>
   );
 }
@@ -636,3 +823,50 @@ function removeNestedArrayItem(items, index, nestedKey, nestedIndex, apply) {
 }
 
 function noop() {}
+
+function describeScriptWorkflowState(workflowState) {
+  return SCRIPT_WORKFLOW_STATUS_TEXT[workflowState] || SCRIPT_WORKFLOW_STATUS_TEXT.choose_style;
+}
+
+function computeScriptBriefFingerprint(config) {
+  const payload = {
+    goalDraft: normalizeFingerprintLines(config.goalDraft),
+    constraintDraft: normalizeFingerprintLines(config.constraintDraft),
+    planReviewDraft: normalizeFingerprintLines(config.planReviewDraft),
+    segments: (config.segments || []).map(segment => ({
+      segmentId: String(segment.segmentId || '').trim(),
+      title: String(segment.title || '').trim() || undefined,
+      role: String(segment.role || '').trim() || undefined,
+      targetDurationMs: Number(segment.targetDurationMs) > 0 ? Number(segment.targetDurationMs) : undefined,
+      intent: String(segment.intent || '').trim() || undefined,
+      preferredClipTypes: normalizeFingerprintLines(segment.preferredClipTypes),
+      preferredPlaceHints: normalizeFingerprintLines(segment.preferredPlaceHints),
+      notes: normalizeFingerprintLines(segment.notes),
+    })),
+  };
+  return hashScriptBriefFingerprintPayload(JSON.stringify(payload));
+}
+
+function normalizeFingerprintLines(values) {
+  return (values || [])
+    .map(value => String(value || '').trim())
+    .filter(Boolean);
+}
+
+function hashScriptBriefFingerprintPayload(value) {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `fnv1a:${(hash >>> 0).toString(16).padStart(8, '0')}`;
+}
+
+const SCRIPT_WORKFLOW_STATUS_TEXT = {
+  choose_style: '请先在 /script 选择风格分类。',
+  await_brief_draft: '风格已保存，请回到 Agent 生成初版 brief。',
+  review_brief: '初版 brief 已生成，请在 /script 审查并保存。',
+  ready_to_prepare: 'brief 已保存，请点击 准备给 Agent。',
+  ready_for_agent: '脚本准备已完成，请回到 Agent 继续生成 script/current.json。',
+  script_generated: '脚本已生成，可继续审稿或进入 Timeline。',
+};

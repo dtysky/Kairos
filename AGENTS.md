@@ -35,7 +35,7 @@ The current official local runtime and monitor path is:
 
 - `Supervisor + React console (apps/kairos-console/)`
 - Analyze monitor route: `http://127.0.0.1:8940/analyze`
-- Style monitor route: `http://127.0.0.1:8940/style`
+- Style monitor route: `http://127.0.0.1:8940/style` (workspace-level style library / style-analysis monitor)
 
 Legacy compatibility helpers are not the official path for new capability work:
 
@@ -84,4 +84,15 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
 - Prefer Windows PowerShell in this repository unless the user explicitly asks for WSL or the step is Linux-only.
 - Do not treat stale progress displays as proof that formal processing is alive.
 - Do not silently use legacy monitor paths for new work when `Supervisor + React console` is the official entry.
+- Treat `/script` as a preparation surface by default:
+  - `/script` first auto-saves the selected style category
+  - Agent drafts the initial `script-brief`
+  - user reviews and manually saves the brief in `/script`
+  - Console / Supervisor then prepare deterministic script inputs
+  - the final `script/current.json` is agent-authored unless a newer design doc says otherwise
+- Reusable style assets are workspace-scoped by default:
+  - `config/styles/`
+  - `config/style-sources.json`
+  - `analysis/reference-transcripts/`
+  - `analysis/style-references/`
 - When in doubt about phase routing, start from [`.ai/skills/kairos-workflow/SKILL.md`](./.ai/skills/kairos-workflow/SKILL.md) and then move to the concrete phase skill.

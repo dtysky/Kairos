@@ -6,7 +6,6 @@ import {
   getPreparedAssetCheckpointRoot,
   listWorkspaceProjects,
   loadFineScanCheckpoint,
-  loadProjectBriefConfig,
   loadStyleSourcesConfig,
 } from '../store/index.js';
 import { listJobRecords, type ISupervisorJobRecord } from './state.js';
@@ -258,12 +257,9 @@ export async function buildAnalyzeMonitorModel(
 
 export async function buildStyleMonitorModel(
   workspaceRoot: string,
-  projectId: string,
   requestedCategoryId?: string,
 ): Promise<IMonitorModel> {
-  const projectRoot = join(workspaceRoot, 'projects', projectId);
-  const projectBrief = await loadProjectBriefConfig(projectRoot).catch(() => null);
-  const styleSources = await loadStyleSourcesConfig(workspaceRoot, projectRoot);
+  const styleSources = await loadStyleSourcesConfig(workspaceRoot);
   const fallbackCategory = requestedCategoryId
     || styleSources.defaultCategory
     || styleSources.categories[0]?.categoryId
@@ -275,15 +271,17 @@ export async function buildStyleMonitorModel(
   const progressPath = join(workspaceRoot, '.tmp', 'style-analysis', categoryId, 'progress.json');
   const progress = await readJsonFile<IStyleProgressPayload>(progressPath);
   const jobs = await listJobRecords(workspaceRoot);
-  const latestJob = jobs.find(job => job.projectId === projectId && job.jobType === 'style-analysis') ?? null;
+  const latestJob = jobs.find(job => job.jobType === 'style-analysis') ?? null;
   const stepDefinitions = buildStyleSteps(progress?.stage);
   const outputs = await buildStyleOutputs(workspaceRoot, category, progress);
   const totalVideos = progress?.detail?.totalVideos ?? category?.sources.length ?? 0;
+  const workspaceName = basename(workspaceRoot);
 
   return {
     title: '风格分析',
-    subtitle: `${projectBrief?.name ?? projectId} · 参考来源配置与 agent 风格分析监控`,
+    subtitle: `${workspaceName} · Workspace 风格库、来源配置与 agent 风格分析监控`,
     chips: [
+      { label: `工作区 ${workspaceName}` },
       { label: category?.displayName ?? categoryId },
       { label: `${category?.sources.length ?? 0} 个来源` },
       { label: statusLabel(progress?.stage === 'complete' ? 'completed' : latestJob?.status ?? 'idle'), tone: toneForStatus(progress?.stage === 'complete' ? 'completed' : latestJob?.status ?? 'idle') },
@@ -471,6 +469,7 @@ async function outputItem(
 function statusLabel(status: string): string {
   const normalized = status.toLowerCase();
   if (normalized === 'running') return '运行中';
+  if (normalized === 'awaiting_agent') return '等待 Agent';
   if (normalized === 'completed' || normalized === 'succeeded') return '已完成';
   if (normalized === 'blocked') return '已阻塞';
   if (normalized === 'failed') return '失败';
@@ -483,6 +482,7 @@ function statusLabel(status: string): string {
 function toneForStatus(status: string): IMonitorChip['tone'] {
   const normalized = status.toLowerCase();
   if (normalized === 'completed' || normalized === 'succeeded' || normalized === 'running') return 'ok';
+  if (normalized === 'awaiting_agent') return 'warn';
   if (normalized === 'blocked' || normalized === 'queued') return 'warn';
   if (normalized === 'failed' || normalized === 'error') return 'error';
   return 'default';

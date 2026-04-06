@@ -19,11 +19,15 @@
 2. 脚本召回和 outline 已消费 transcript 证据
    - transcript 不再只是附属说明，而是候选召回和 beat 写作的正式输入
    - 如果某拍最终保留原声，outline / timeline 会把选区吸附到完整 `transcriptSegments` 边界；必要时 beat 时长会向上扩，避免切在句中
-3. 字幕已支持双路径
+3. 风格分析与脚本阶段的交接语义已经收口
+   - Workspace 风格档案不再只是“叙事语气说明”，还应明确输出阶段节奏、素材角色、运镜语法、功能位分配、素材禁区 / 镜头禁区与稳定参数
+   - 这些信息默认是 Script / recall / outline 的直接输入，不应主要依赖 LLM 重新从长文里猜一次镜头组织规则
+   - 这里记录的是“观测到的高频偏好”，只有明确写成禁区或硬约束时才应强制下游
+4. 字幕已支持双路径
    - 旁白路径：来自 `beat.text`
    - 原声路径：来自 `slice.transcriptSegments`
    - `preserveNatSound / muteSource` 为显式覆盖；未标注时允许根据 transcript 匹配度、`speechCoverage`、segment role 自动推论
-4. GPS 链路已形成当前最小闭环
+5. GPS 链路已形成当前最小闭环
    - 项目内外部轨迹统一收口到 `gps/tracks/*.gpx` 与 `gps/merged.json`
    - `embedded GPS` 的正式语义已扩展为“素材同源且可绑定”的 GPS：文件 metadata / EXIF、同 basename `.SRT`、以及 root 级 DJI FlightRecord 日志切片（按文件头识别，不依赖强文件名）
    - dense same-source 轨迹现在会规范化写到 `gps/same-source/tracks/*.gpx` + `gps/same-source/index.json`，资产上只保留轻量 `embeddedGps` 引用
@@ -33,11 +37,11 @@
    - 照片的拍摄时间已切到 EXIF 原始时间链：`DateTimeOriginal(+OffsetTimeOriginal) > CreateDate(+OffsetTimeDigitized/OffsetTime) > GPSDateTime > container > filename > filesystem`
    - 照片若自身 EXIF 带 GPS，会直接写成 `embeddedGps(metadata)` 真值；只有没有自身 GPS 时，才继续走 project GPX / `project-derived-track` 的时间匹配
    - `config/manual-itinerary.md` 现在有两层正式语义：正文用于弱空间线索，末尾“素材时间校正”表格用于人工 capture time override；未解决的表格行会阻塞 Analyze
-5. 正式流程与当前实现的关系已经更明确
+6. 正式流程与当前实现的关系已经更明确
    - 正式主链仍以 `Pharos` 为主输入
    - 当前实现仍是临时承载版本，但已经覆盖主链中的多个阶段
    - `DaVinci color` 应理解为与主链解耦的独立增强链路，而不是主链中的固定顺序步骤
-6. 剪映导出链路已经切换到当前本地实现
+7. 剪映导出链路已经切换到当前本地实现
    - 不再依赖外部 `jianying-mcp` 或独立 `Jianying Server`
    - 由 Node 侧直接调用 vendored `pyJianYingDraft` Python CLI
    - Python 运行时优先走项目内固定 `.venv` 或显式 `jianyingPythonPath`
@@ -45,21 +49,21 @@
    - staging 目录和最终草稿目录都必须是全新的具体目录，禁止覆盖、清空或重建已有目录
    - 如果任务是修改已有草稿，必须先核对草稿目录和可读元数据，再允许写入
    - 对带显式 `speed` 的时间线，Jianying 导出适配层会做 backend compatibility normalization，吸收 `pyJianYingDraft` 的微秒级时长重算偏差，但不会反向污染正式 `KTEP timeline`
-7. 时间线旁白模型已经升级
+8. 时间线旁白模型已经升级
    - `beat` 可选携带 `utterances[]`，显式表达多段配音及 `pauseBeforeMs / pauseAfterMs`
    - 字幕按有声岛落位，不再默认占满整个 beat
    - 时间线默认输出规格改为项目级可配置，fallback 为 `3840x2160 @ 30fps`
    - 当某拍不走 source speech 时，命中的视频 clip 会带上“静音原音”意图，由导出适配器映射到具体 NLE
    - 显式 `beat.actions.speed` 当前只是请求信号，只有 `drive / aerial` clip 会消费；其他类型 clip 即使同拍也强制保持 `1x`
    - clip placement 当前优先贴合 `beat.targetDurationMs`，不会再让显式 speed beat 按原始 source 时长自由漂移
-8. Analyze 恢复与资源口径已经补到项目级正式设计
+9. Analyze 恢复与资源口径已经补到项目级正式设计
    - coarse prepared state 会写入 `analysis/prepared-assets/<assetId>.json`
    - ASR / protection fallback state 会写入 `analysis/audio-checkpoints/<assetId>.json`
    - `asset report` 新增 `fineScanCompletedAt / fineScanSliceCount`，用于恢复 `fine-scan`
    - `retry / resume` 后 ETA 改为按当前阶段重新估算，且当前阶段完成样本少于 `3` 条时不显示 ETA
    - ML server 会在 `VLM` 和 `Whisper` 之间互斥卸载，避免两套模型同时常驻显存
    - 保护音轨只在资产已绑定 `protectionAudio` 时进入保守 fallback，且默认不做独立健康检查
-9. 本地运行时与控制台已经形成当前正式操作面
+10. 本地运行时与控制台已经形成当前正式操作面
    - `Supervisor` 统一承载本地服务与 job 编排
    - `apps/kairos-console/` 采用 React + 工作流优先路由，而不是单页工作台
    - `Analyze` 与 `Style` 监控当前直接由 `/analyze` 与 `/style` 主路由承载
@@ -319,6 +323,8 @@ src/modules/script/
   → FFmpeg 场景切换检测 → 提取叙事结构
   → Whisper 转写旁白 → LLM 分析语言风格
   → 存储 style-profile.json
+  → 风格档案除长文总结外，还应写出阶段节奏、素材角色、运镜语法、功能位偏好与禁区
+  → 参数表尽量使用稳定 key，供后续 Script / recall / outline 直接读取
 
 脚本生成：
   → 从 workspace `config/styles/` 选择用户指定的 style category
@@ -332,6 +338,8 @@ src/modules/script/
      - 刷新 `analysis/material-digest.json`
      - 成功后推进到 `ready_for_agent`
   → Agent 再读取 brief + digest + style profile，推进段落规划、outline 与正式脚本写作
+     - 优先消费 style profile 中明确写出的节奏阶段、素材角色、运镜语言、功能位分配、参数表与 anti-patterns
+     - 不应把 style profile 仅当作叙事语气说明，再完全依赖 LLM 从长文里二次猜镜头语法
   → 由 Agent 存储 `script/current.json` + 版本快照
 ```
 
@@ -339,6 +347,9 @@ src/modules/script/
 
 - 正式脚本流程以 `Pharos` 为主输入
 - 项目只记录“本项目选用哪个 workspace style category”，不在项目内持有共享 style 库
+- workspace style profile 当前应理解为“双层产物”：
+  - 一层给人阅读：解释节奏、素材与镜头语言背后的风格观察
+  - 一层给下游直接消费：参数、禁区、功能位与稳定 section 语义
 - `script` Supervisor job 当前是 prep-only，不负责自动生成 `script/current.json`
 - `script/script-brief.json` 当前是脚本阶段流程状态真值；`script/script-brief.md` 会同步机器可恢复元信息
 - 如果用户已经修改过当前 brief，而又想让 Agent 重新生成初版 brief，正式路径是 `/script` 页里的覆盖确认，而不是 Agent 直接覆盖
@@ -570,6 +581,13 @@ interface StyleProfile {
     density: 'sparse' | 'moderate' | 'dense';  // 信息密度
     sampleTexts: string[];           // 代表性文本片段
   };
+  sections?: Array<{
+    title: string;
+    content: string;
+    tags?: string[];
+  }>;                               // 长文 section，同时承载节奏/素材/运镜等稳定标题语义
+  antiPatterns?: string[];          // 风格禁区；更适合被下游直接读取
+  parameters?: Record<string, string>; // 稳定 key-value，供 Script / recall / outline 直接消费
   createdAt: Date;
   updatedAt: Date;
 }

@@ -1,12 +1,12 @@
 import { join } from 'node:path';
 import {
-  OpenAIClient,
   analyzeWorkspaceProjectMedia,
-  generateProjectScriptFromPlanning,
   importProjectGpxTracks,
   ingestWorkspaceProjectMedia,
   initWorkspaceProject,
+  loadSlices,
   loadProjectStyleByCategory,
+  prepareProjectScriptForAgent,
   refreshProjectDerivedTrackCache,
   refreshProjectGpsCache,
   resolveWorkspaceProjectRoot,
@@ -16,13 +16,23 @@ import {
   loadStyleSourcesConfig,
   writeJson,
 } from '../store/index.js';
-import { loadJobRecord, writeJobRecord, getSupervisorJobRoot } from './state.js';
+import {
+  loadJobRecord,
+  writeJobRecord,
+  getSupervisorJobRoot,
+  type TSupervisorJobStatus,
+} from './state.js';
 
 class BlockedJobError extends Error {
   constructor(public blockers: string[]) {
     super(blockers.join('; '));
     this.name = 'BlockedJobError';
   }
+}
+
+interface IJobExecutionResult {
+  result?: unknown;
+  finalStatus?: Extract<TSupervisorJobStatus, 'completed' | 'awaiting_agent'>;
 }
 
 async function main(): Promise<void> {
@@ -47,12 +57,12 @@ async function main(): Promise<void> {
   });
 
   try {
-    const result = await runJob(workspaceRoot, record.jobType, record.projectId, record.args);
+    const execution = await runJob(workspaceRoot, record.jobType, record.projectId, record.args);
     const resultPath = record.resultPath ?? join(getSupervisorJobRoot(workspaceRoot, record.jobId), 'result.json');
-    await writeJson(resultPath, result ?? { ok: true });
+    await writeJson(resultPath, execution.result ?? { ok: true });
     await writeJobRecord(workspaceRoot, {
       ...record,
-      status: 'completed',
+      status: execution.finalStatus ?? 'completed',
       resultPath,
       startedAt: record.startedAt ?? startedAt,
       finishedAt: new Date().toISOString(),
@@ -90,7 +100,7 @@ async function runJob(
   jobType: string,
   projectId: string | undefined,
   args: Record<string, unknown>,
-): Promise<unknown> {
+): Promise<IJobExecutionResult> {
   switch (jobType) {
     case 'project-init': {
       if (!projectId) {
@@ -99,16 +109,18 @@ async function runJob(
       const projectName = toStringValue(args.name) || projectId;
       const description = toStringValue(args.description);
       const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, projectName, description);
-      return { projectRoot };
+      return { result: { projectRoot } };
     }
     case 'ingest': {
       if (!projectId) {
         throw new BlockedJobError(['ingest requires projectId']);
       }
-      return ingestWorkspaceProjectMedia({
-        workspaceRoot,
-        projectId,
-      });
+      return {
+        result: await ingestWorkspaceProjectMedia({
+          workspaceRoot,
+          projectId,
+        }),
+      };
     }
     case 'gps-refresh': {
       if (!projectId) {
@@ -125,50 +137,58 @@ async function runJob(
       const merged = await refreshProjectGpsCache(projectRoot);
       const derived = await refreshProjectDerivedTrackCache({ projectRoot });
       return {
-        imported,
-        merged,
-        derived,
+        result: {
+          imported,
+          merged,
+          derived,
+        },
       };
     }
     case 'analyze': {
       if (!projectId) {
         throw new BlockedJobError(['analyze requires projectId']);
       }
-      return analyzeWorkspaceProjectMedia({
-        workspaceRoot,
-        projectId,
-        assetIds: toStringArray(args.assetIds),
-      });
+      return {
+        result: await analyzeWorkspaceProjectMedia({
+          workspaceRoot,
+          projectId,
+          assetIds: toStringArray(args.assetIds),
+        }),
+      };
     }
     case 'script': {
       if (!projectId) {
         throw new BlockedJobError(['script requires projectId']);
       }
-      const llm = resolveLlmClient();
       const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
+      const slices = await loadSlices(projectRoot);
+      if (slices.length === 0) {
+        throw new BlockedJobError(['script prep requires non-empty store/slices.json']);
+      }
       const scriptConfig = await loadScriptBriefConfig(projectRoot);
       const styleCategory = toStringValue(args.styleCategory) || scriptConfig.styleCategory;
       if (!styleCategory) {
-        throw new BlockedJobError(['script requires styleCategory in args or script-brief']);
+        throw new BlockedJobError(['script prep requires styleCategory in args or script-brief']);
       }
-      const style = await loadProjectStyleByCategory(workspaceRoot, styleCategory);
-      if (!style) {
+      if (scriptConfig.workflowState !== 'ready_to_prepare') {
+        throw new BlockedJobError([
+          `script prep requires script-brief.workflowState=ready_to_prepare (current: ${scriptConfig.workflowState})`,
+        ]);
+      }
+      if (!await loadProjectStyleByCategory(workspaceRoot, styleCategory)) {
         throw new BlockedJobError([`style profile not found for category "${styleCategory}"`]);
       }
-      return generateProjectScriptFromPlanning({
-        projectRoot,
-        workspaceRoot,
-        styleCategory,
-        llm,
-        style,
-      });
+      return {
+        finalStatus: 'awaiting_agent',
+        result: await prepareProjectScriptForAgent({
+          projectRoot,
+          workspaceRoot,
+          styleCategory,
+        }),
+      };
     }
     case 'style-analysis': {
-      if (!projectId) {
-        throw new BlockedJobError(['style-analysis requires projectId']);
-      }
-      const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
-      const config = await loadStyleSourcesConfig(workspaceRoot, projectRoot);
+      const config = await loadStyleSourcesConfig(workspaceRoot);
       if (config.categories.length === 0) {
         throw new BlockedJobError(['style-analysis requires style-sources configuration']);
       }
@@ -184,18 +204,6 @@ async function runJob(
     default:
       throw new BlockedJobError([`Unsupported job type: ${jobType}`]);
   }
-}
-
-function resolveLlmClient(): OpenAIClient {
-  const apiKey = process.env.KAIROS_LLM_API_KEY || process.env.OPENAI_API_KEY;
-  const baseUrl = process.env.KAIROS_LLM_BASE_URL || process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
-  const model = process.env.KAIROS_LLM_MODEL || process.env.OPENAI_MODEL || 'gpt-4o';
-  if (!apiKey) {
-    throw new BlockedJobError([
-      'script job requires KAIROS_LLM_API_KEY or OPENAI_API_KEY',
-    ]);
-  }
-  return new OpenAIClient(apiKey, baseUrl, model);
 }
 
 function parseArgs(argv: string[]): Record<string, string> {

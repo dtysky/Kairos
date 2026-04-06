@@ -16,4 +16,4 @@ alwaysApply: true
 
 - 不要在没读 `kairos-script` skill 的情况下直接生成脚本
 - 不要忽略当前项目已经写明的风格参考，又重复向用户追问同一信息
-- 不要只因为当前项目目录下没有 `style-profile` 文件，就跳过对根级 `config/` 与已存在 brief 的核对
+- 不要只因为当前项目目录下没有 `style-profile` 文件，就跳过对 workspace 级 `config/styles/`、`config/style-sources.json` 与已存在 brief 的核对

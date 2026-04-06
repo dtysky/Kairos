@@ -31,26 +31,31 @@ export interface IPrepareSegmentPlanningInput {
   llm?: ILlmClient;
 }
 
+export interface IPrepareProjectMaterialDigestInput {
+  projectRoot: string;
+}
+
+export interface IPrepareProjectMaterialDigestResult {
+  project: IKtepProject;
+  digest: IProjectMaterialDigest;
+  scriptBrief?: string;
+}
+
 export interface IPrepareSegmentPlanningResult {
   project: IKtepProject;
   digest: IProjectMaterialDigest;
   drafts: ISegmentPlanDraft[];
 }
 
-export async function prepareSegmentPlanning(
-  input: IPrepareSegmentPlanningInput,
-): Promise<IPrepareSegmentPlanningResult> {
-  const stylePromise = input.styleCategory && input.workspaceRoot
-    ? loadStyleByCategory(`${input.workspaceRoot}/config/styles`, input.styleCategory)
-    : Promise.resolve(null);
-
-  const [project, assets, reports, chronology, scriptBrief, style] = await Promise.all([
+export async function prepareProjectMaterialDigest(
+  input: IPrepareProjectMaterialDigestInput,
+): Promise<IPrepareProjectMaterialDigestResult> {
+  const [project, assets, reports, chronology, scriptBrief] = await Promise.all([
     loadProject(input.projectRoot),
     loadAssets(input.projectRoot),
     loadAssetReports(input.projectRoot),
     loadChronology(input.projectRoot),
     loadScriptBrief(input.projectRoot),
-    stylePromise,
   ]);
 
   const digest = buildProjectMaterialDigest({
@@ -60,6 +65,29 @@ export async function prepareSegmentPlanning(
     chronology,
     projectBrief: scriptBrief,
   });
+
+  await writeProjectMaterialDigest(input.projectRoot, digest);
+
+  return {
+    project,
+    digest,
+    scriptBrief,
+  };
+}
+
+export async function prepareSegmentPlanning(
+  input: IPrepareSegmentPlanningInput,
+): Promise<IPrepareSegmentPlanningResult> {
+  const stylePromise = input.styleCategory && input.workspaceRoot
+    ? loadStyleByCategory(`${input.workspaceRoot}/config/styles`, input.styleCategory)
+    : Promise.resolve(null);
+
+  const [{ project, digest, scriptBrief }, style] = await Promise.all([
+    prepareProjectMaterialDigest({
+      projectRoot: input.projectRoot,
+    }),
+    stylePromise,
+  ]);
   const drafts = input.llm
     ? await generateSegmentPlanDraftsWithLlm({
       llm: input.llm,
@@ -73,11 +101,10 @@ export async function prepareSegmentPlanning(
       style,
     });
 
-  await writeProjectMaterialDigest(input.projectRoot, digest);
   await writeSegmentPlanDrafts(input.projectRoot, drafts);
   await seedScriptBriefDraft(input.projectRoot, {
     projectName: project.name,
-    styleCategory: style?.name ?? input.styleCategory,
+    styleCategory: input.styleCategory ?? style?.category,
     statusText: '系统已基于你指定的风格档案和当前素材分析生成一版初稿，请先审查再继续。',
     goalDraft: buildProjectGoalDraft(digest, style),
     constraintDraft: buildConstraintDraft(digest, drafts[0], style),

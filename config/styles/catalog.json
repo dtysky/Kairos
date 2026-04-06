@@ -2,6 +2,26 @@
   "defaultCategory": "serious-travel-documentary-intro",
   "entries": [
     {
+      "id": "china-north-south-traverse-intro",
+      "category": "china-north-south-traverse-intro",
+      "name": "中国南北穿越的Intro",
+      "description": "以超长纵向穿越为主命题的 intro，先抛出“中国有多长”的尺度问题，再用城市、古城、黄河与沙漠的连续切换把地理跨度和独自完成旅程的任务感推起来。",
+      "profilePath": "china-north-south-traverse-intro.md",
+      "sourceVideoCount": 1,
+      "createdAt": "2026-04-06T06:49:05.146Z",
+      "updatedAt": "2026-04-06T06:49:05.146Z"
+    },
+    {
+      "id": "egypt-travel-documentary-intro",
+      "category": "egypt-travel-documentary-intro",
+      "name": "埃及旅拍纪录片的Intro",
+      "description": "以古文明想象与自驾现实反差驱动的 intro，先用 landmark montage 抬出历史与地理尺度，再把道路、交通和旅途摩擦拉进叙事。",
+      "profilePath": "egypt-travel-documentary-intro.md",
+      "sourceVideoCount": 1,
+      "createdAt": "2026-04-06T06:36:56.216Z",
+      "updatedAt": "2026-04-06T06:36:56.216Z"
+    },
+    {
       "id": "serious-travel-documentary-intro",
       "category": "serious-travel-documentary-intro",
       "name": "严肃旅拍纪录片的Intro",
@@ -10,6 +30,16 @@
       "sourceVideoCount": 4,
       "createdAt": "2026-04-04T22:20:00+08:00",
       "updatedAt": "2026-04-04T22:20:00+08:00"
+    },
+    {
+      "id": "tanzania-safari-intro",
+      "category": "tanzania-safari-intro",
+      "name": "坦桑尼亚Safari的Intro",
+      "description": "以东非草原生命力和野性秩序为核心的 intro，先用捕猎与迁徙的动物镜头抓人，再用塞伦盖蒂、火山口、彩虹和风暴把自然能量推高。",
+      "profilePath": "tanzania-safari-intro.md",
+      "sourceVideoCount": 1,
+      "createdAt": "2026-04-06T06:49:05.261Z",
+      "updatedAt": "2026-04-06T06:49:05.261Z"
     }
   ]
 }

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { BrowserRouter as Router, Link, Redirect, Route, Switch } from 'react-router-dom';
-import { Button, Card, Menu, MenuItem, Tag } from 'hana-ui';
+import { Button, Card, Menu, MenuItem, Modal, Tag } from 'hana-ui';
 import 'hana-ui/hana-style.scss';
 import './app.scss';
 import {
@@ -12,10 +12,13 @@ import {
   fetchProjectProgress,
   fetchProjectReviews,
   fetchStyleMonitor,
+  fetchWorkspaceStyleConfig,
   fetchWorkspaceStatus,
   resolveProjectReview,
   saveProjectSection,
+  saveWorkspaceStyleConfig,
   startJob,
+  startWorkspaceJob,
 } from './api.js';
 import { EmptyPanel, MonitorPage } from './monitor-page.jsx';
 import {
@@ -25,6 +28,7 @@ import {
   ReviewQueuePanel,
   ScriptBriefEditor,
   StyleSourcesEditor,
+  WorkflowPrompt,
 } from './workspace-forms.jsx';
 
 function AppShell() {
@@ -32,14 +36,18 @@ function AppShell() {
   const [capabilities, setCapabilities] = useState(null);
   const [projectId, setProjectId] = useState(window.localStorage.getItem('kairos.console.projectId') || '');
   const [config, setConfig] = useState(null);
+  const [savedConfig, setSavedConfig] = useState(null);
+  const [styleSources, setStyleSources] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [projectProgress, setProjectProgress] = useState(null);
   const [busy, setBusy] = useState({});
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [workflowDialog, setWorkflowDialog] = useState(null);
 
   useEffect(() => {
     refreshStatus();
+    refreshStyleSources();
     fetchCapabilities().then(setCapabilities).catch(handleError);
     const timer = window.setInterval(refreshStatus, 4000);
     return () => window.clearInterval(timer);
@@ -66,9 +74,11 @@ function AppShell() {
   const projects = status?.projects || [];
   const currentProject = projects.find(project => project.projectId === projectId) || null;
   const services = status?.services || [];
+  const allJobs = status?.jobs || [];
   const activeJobs = useMemo(
-    () => (status?.jobs || []).filter(job => ['queued', 'running', 'blocked'].includes(job.status)),
-    [status],
+    () => allJobs.filter(job => ['queued', 'running', 'blocked'].includes(job.status))
+      .filter(job => !(job.jobType === 'script' && job.executionMode === 'agent')),
+    [allJobs],
   );
   const mlService = services.find(service => service.name === 'ml') || null;
   const dashboardService = services.find(service => service.name === 'dashboard') || null;
@@ -77,7 +87,11 @@ function AppShell() {
   const setProjectBrief = makeSectionSetter(setConfig, 'projectBrief');
   const setManualItinerary = makeSectionSetter(setConfig, 'manualItinerary');
   const setScriptBrief = makeSectionSetter(setConfig, 'scriptBrief');
-  const setStyleSources = makeSectionSetter(setConfig, 'styleSources');
+
+  function openWorkflowDialog(dialog) {
+    if (!dialog) return;
+    setWorkflowDialog(dialog);
+  }
 
   async function refreshStatus() {
     try {
@@ -95,7 +109,16 @@ function AppShell() {
         fetchProjectReviews(nextProjectId),
       ]);
       setConfig(nextConfig);
+      setSavedConfig(nextConfig);
       setReviews(nextReviews.items || []);
+    } catch (caught) {
+      handleError(caught);
+    }
+  }
+
+  async function refreshStyleSources() {
+    try {
+      setStyleSources(await fetchWorkspaceStyleConfig());
     } catch (caught) {
       handleError(caught);
     }
@@ -117,7 +140,6 @@ function AppShell() {
         'project-brief': config.projectBrief,
         'manual-itinerary': config.manualItinerary,
         'script-brief': config.scriptBrief,
-        'style-sources': config.styleSources,
       };
       await saveProjectSection(projectId, sectionKey, mapping[sectionKey]);
       await refreshProject(projectId);
@@ -131,12 +153,112 @@ function AppShell() {
     }
   }
 
-  async function runWorkflow(jobType) {
+  async function saveScriptBriefPayload(payload, busyKey, { successMessage = '', workflowDialog: nextWorkflowDialog = null } = {}) {
+    if (!projectId) return;
+    setBusy(current => ({ ...current, [busyKey]: true }));
+    try {
+      await saveProjectSection(projectId, 'script-brief', payload);
+      await refreshProject(projectId);
+      await refreshStatus();
+      if (nextWorkflowDialog) {
+        openWorkflowDialog(nextWorkflowDialog);
+        setMessage('');
+      } else {
+        setMessage(successMessage);
+      }
+      setError('');
+    } catch (caught) {
+      handleError(caught);
+    } finally {
+      setBusy(current => ({ ...current, [busyKey]: false }));
+    }
+  }
+
+  async function saveScriptBriefReview() {
+    const brief = config?.scriptBrief;
+    if (!brief) return;
+    const payload = buildReviewedScriptBriefPayload(brief);
+    await saveScriptBriefPayload(
+      payload,
+      'script-brief',
+      {
+        workflowDialog: payload.workflowState === 'ready_to_prepare'
+          ? buildScriptWorkflowDialog('ready_to_prepare')
+          : null,
+        successMessage: payload.workflowState === 'ready_to_prepare'
+          ? ''
+          : '当前仍在等待 Agent 初版 brief',
+      },
+    );
+  }
+
+  async function saveScriptBriefStyleCategory(styleCategory) {
+    const base = savedConfig?.scriptBrief || config?.scriptBrief;
+    if (!base) return;
+    await saveScriptBriefPayload(
+      buildStyleSelectionScriptBriefPayload(base, styleCategory),
+      'script-brief:style',
+      {
+        workflowDialog: styleCategory ? buildScriptWorkflowDialog('await_brief_draft') : null,
+        successMessage: styleCategory ? '' : '已清除风格分类',
+      },
+    );
+  }
+
+  async function authorizeScriptBriefRegeneration() {
+    const base = savedConfig?.scriptBrief || config?.scriptBrief;
+    if (!base?.styleCategory) return;
+    await saveScriptBriefPayload(
+      buildRegenerateScriptBriefPayload(base),
+      'script-brief:regenerate',
+      {
+        workflowDialog: {
+          title: '已授权重新生成初版 brief',
+          body: '下一步请回到 Agent，让它重新生成初版 brief。',
+          detail: '这次授权只生效一次；如果你之后又改了 brief，需要重新确认覆盖。',
+        },
+      },
+    );
+  }
+
+  async function saveStyleLibrary() {
+    if (!styleSources) return;
+    const busyKey = 'style-sources';
+    setBusy(current => ({ ...current, [busyKey]: true }));
+    try {
+      await saveWorkspaceStyleConfig(styleSources);
+      await refreshStyleSources();
+      await refreshStatus();
+      setMessage('已保存 workspace style-sources');
+      setError('');
+    } catch (caught) {
+      handleError(caught);
+    } finally {
+      setBusy(current => ({ ...current, [busyKey]: false }));
+    }
+  }
+
+  async function runProjectWorkflow(jobType, args = {}) {
     if (!projectId) return;
     const busyKey = `job:${jobType}`;
     setBusy(current => ({ ...current, [busyKey]: true }));
     try {
-      await startJob(projectId, jobType, {});
+      await startJob(projectId, jobType, args);
+      await refreshStatus();
+      setMessage(jobType === 'script' ? '' : `已启动 ${jobType}`);
+      setError('');
+    } catch (caught) {
+      handleError(caught);
+    } finally {
+      setBusy(current => ({ ...current, [busyKey]: false }));
+    }
+  }
+
+  async function runWorkspaceWorkflow(jobType, args = {}) {
+    const busyKey = `job:${jobType}`;
+    setBusy(current => ({ ...current, [busyKey]: true }));
+    try {
+      await startWorkspaceJob(jobType, args);
       await refreshStatus();
       setMessage(`已启动 ${jobType}`);
       setError('');
@@ -214,6 +336,25 @@ function AppShell() {
 
               {message ? <div className="message-banner">{message}</div> : null}
               {error ? <div className="error-banner">{error}</div> : null}
+              <Modal
+                show={Boolean(workflowDialog)}
+                title={workflowDialog?.title || ''}
+                showClose
+                closeOnClickBg
+                cancel={() => setWorkflowDialog(null)}
+                actions={(
+                  <div className="actions modal-actions">
+                    <Button type="primary" onClick={() => setWorkflowDialog(null)}>
+                      {workflowDialog?.confirmLabel || '知道了'}
+                    </Button>
+                  </div>
+                )}
+              >
+                <div className="modal-copy">
+                  <p>{workflowDialog?.body}</p>
+                  {workflowDialog?.detail ? <p>{workflowDialog.detail}</p> : null}
+                </div>
+              </Modal>
 
               <Switch>
                 <Route
@@ -259,7 +400,7 @@ function AppShell() {
                       projectProgress={projectProgress}
                       activeJobs={activeJobs}
                       busy={busy}
-                      onRun={() => runWorkflow('analyze')}
+                      onRun={() => runProjectWorkflow('analyze')}
                     />
                   )}
                 />
@@ -273,12 +414,11 @@ function AppShell() {
                   path="/style"
                   render={routeProps => (
                     <StylePage
-                      projectId={projectId}
-                      config={config?.styleSources}
+                      config={styleSources}
                       setStyleSources={setStyleSources}
-                      saveSection={saveSection}
+                      onSave={saveStyleLibrary}
                       busy={busy}
-                      onRun={() => runWorkflow('style-analysis')}
+                      onRun={categoryId => runWorkspaceWorkflow('style-analysis', categoryId ? { categoryId } : {})}
                       location={routeProps.location}
                       history={routeProps.history}
                     />
@@ -290,11 +430,16 @@ function AppShell() {
                   render={() => (
                     <ScriptPage
                       config={config?.scriptBrief}
+                      styleSources={styleSources}
                       setScriptBrief={setScriptBrief}
-                      saveSection={saveSection}
+                      saveScriptBriefReview={saveScriptBriefReview}
+                      saveScriptBriefStyleCategory={saveScriptBriefStyleCategory}
+                      authorizeScriptBriefRegeneration={authorizeScriptBriefRegeneration}
                       busy={busy}
-                      activeJobs={activeJobs}
-                      onRun={() => runWorkflow('script')}
+                      jobs={allJobs}
+                      projectId={projectId}
+                      onRun={() => runProjectWorkflow('script')}
+                      onWorkflowTransition={workflowState => openWorkflowDialog(buildScriptWorkflowDialog(workflowState))}
                     />
                   )}
                 />
@@ -334,8 +479,8 @@ function OverviewPage({ currentProject, activeJobs, services, projectProgress, o
   const workflows = [
     { path: '/ingest-gps', label: '导入与 GPS', summary: '维护 project-brief、manual-itinerary 与素材时间校正。' },
     { path: '/analyze', label: '素材分析', summary: '直接查看分析监控、恢复进度并启动 Analyze。' },
-    { path: '/style', label: '风格分析', summary: '直接查看当前分类监控，并维护 style sources。' },
-    { path: '/script', label: '脚本', summary: '维护 script-brief，并发起 agent script job。' },
+    { path: '/style', label: '风格分析', summary: '维护 Workspace 风格库、style sources，并查看当前分类监控。' },
+    { path: '/script', label: '脚本', summary: '维护 script-brief，并准备确定性材料给 Agent 继续写稿。' },
     { path: '/timeline-export', label: '时间线与导出', summary: '查看时间线和导出阶段的能力与 blocker。' },
     { path: '/project', label: '项目', summary: '查看全量 Review Queue 与服务诊断。' },
   ];
@@ -478,9 +623,13 @@ function AnalyzePage({ projectId, projectProgress, activeJobs, busy, onRun }) {
       toolbar={model => (
         <>
           <div className="monitor-toolbar-group">
-            <Button onClick={onRun} disabled={busy['job:analyze'] || !projectId}>
-              {busy['job:analyze'] ? '启动中…' : '启动 Analyze'}
-            </Button>
+          <Button
+            type={busy['job:analyze'] || !projectId ? 'disabled' : 'primary'}
+            disabled={busy['job:analyze'] || !projectId}
+            onClick={onRun}
+          >
+            {busy['job:analyze'] ? '启动中…' : '启动 Analyze'}
+          </Button>
           </div>
           <div className="monitor-toolbar-meta">
             <span>{`活跃 job ${analyzeJobs.length}`}</span>
@@ -599,7 +748,7 @@ function PipelineMetricCard({ label, value, sub }) {
   );
 }
 
-function StylePage({ projectId, config, setStyleSources, saveSection, busy, onRun, location, history }) {
+function StylePage({ config, setStyleSources, onSave, busy, onRun, location, history }) {
   if (!config) {
     return (
       <div className="route-page">
@@ -611,7 +760,6 @@ function StylePage({ projectId, config, setStyleSources, saveSection, busy, onRu
   return (
     <MonitorLoader
       kind="style"
-      projectId={projectId}
       categoryId={currentCategoryId}
       emptyLabel="当前分类还没有可展示的风格分析监控数据。"
       toolbar={(
@@ -625,9 +773,13 @@ function StylePage({ projectId, config, setStyleSources, saveSection, busy, onRu
                 <option key={category.categoryId} value={category.categoryId}>{category.displayName}</option>
               ))}
             </select>
-            <Button onClick={onRun} disabled={busy['job:style-analysis'] || !projectId}>
-              {busy['job:style-analysis'] ? '启动中…' : '启动 Style Analysis'}
-            </Button>
+          <Button
+            type={busy['job:style-analysis'] || !currentCategoryId ? 'disabled' : 'primary'}
+            disabled={busy['job:style-analysis'] || !currentCategoryId}
+            onClick={() => onRun(currentCategoryId)}
+          >
+            {busy['job:style-analysis'] ? '启动中…' : '启动 Style Analysis'}
+          </Button>
           </div>
           <div className="monitor-toolbar-meta">
             <span>{`${config.categories.length} 个分类`}</span>
@@ -639,7 +791,7 @@ function StylePage({ projectId, config, setStyleSources, saveSection, busy, onRu
         <StyleSourcesEditor
           config={config}
           setConfig={setStyleSources}
-          onSave={() => saveSection('style-sources')}
+          onSave={onSave}
           busy={busy['style-sources']}
         />
       )}
@@ -647,25 +799,107 @@ function StylePage({ projectId, config, setStyleSources, saveSection, busy, onRu
   );
 }
 
-function ScriptPage({ config, setScriptBrief, saveSection, busy, activeJobs, onRun }) {
-  const scriptJobs = activeJobs.filter(job => job.jobType === 'script');
+function ScriptPage({
+  config,
+  styleSources,
+  setScriptBrief,
+  saveScriptBriefReview,
+  saveScriptBriefStyleCategory,
+  authorizeScriptBriefRegeneration,
+  busy,
+  jobs,
+  projectId,
+  onRun,
+  onWorkflowTransition,
+}) {
+  const scriptJobs = (jobs || [])
+    .filter(job => job.jobType === 'script'
+      && job.executionMode === 'deterministic'
+      && (!projectId || job.projectId === projectId));
+  const latestJob = scriptJobs[0] || null;
+  const activeScriptJobs = scriptJobs.filter(job => ['queued', 'running', 'blocked'].includes(job.status));
+  const availableCategories = styleSources?.categories || [];
+  const workflowState = config?.workflowState || 'choose_style';
+  const hasSelectedStyleCategory = Boolean(config?.styleCategory);
+  const hasValidStyleCategory = hasSelectedStyleCategory
+    && availableCategories.some(category => category.categoryId === config?.styleCategory);
+  const canPrepare = hasValidStyleCategory && workflowState === 'ready_to_prepare';
+  const workflowPrompt = buildScriptWorkflowPrompt({
+    config,
+    availableCategories,
+    hasSelectedStyleCategory,
+    hasValidStyleCategory,
+    workflowState,
+    latestJob,
+  });
+  const previousWorkflowStateRef = React.useRef(null);
+
+  useEffect(() => {
+    const previousWorkflowState = previousWorkflowStateRef.current;
+    if (
+      previousWorkflowState
+      && previousWorkflowState !== workflowState
+      && shouldAutoOpenScriptWorkflowDialog(workflowState)
+    ) {
+      onWorkflowTransition?.(workflowState);
+    }
+    previousWorkflowStateRef.current = workflowState;
+  }, [onWorkflowTransition, workflowState]);
+
   return (
     <div className="route-page">
-      <RouteIntro title="脚本" subtitle="维护 script-brief，并把 agent 脚本生成作为后台 job 管理。" />
+      <RouteIntro
+        title="脚本"
+        subtitle="先在这里选风格并审查 brief，再点“准备给 Agent”；最终 `script/current.json` 仍由 Agent 生成。"
+      />
+      {workflowPrompt ? (
+        <WorkflowPrompt
+          eyebrow={workflowPrompt.eyebrow}
+          title={workflowPrompt.title}
+          body={workflowPrompt.body}
+          tone={workflowPrompt.tone}
+          detail={workflowPrompt.detail}
+        />
+      ) : null}
       <Card className="panel">
         <div className="section-header">
-          <h2>Script Job</h2>
-          <Tag>{`${scriptJobs.length} 个活跃 job`}</Tag>
+          <h2>Script Preparation</h2>
+          <Tag>{latestJob ? formatScriptJobStatus(latestJob.status) : '未运行'}</Tag>
         </div>
+        <p className="muted">这里不会后台自动写稿。点击后只会校验风格与素材前置条件、刷新 `analysis/material-digest.json`，并把流程推进到“回到 Agent 继续写正式脚本”。</p>
+        {!availableCategories.length ? (
+          <p className="muted">Workspace 风格库当前没有可选分类；请先到 `/style` 配置或生成风格档案。</p>
+        ) : null}
+        {latestJob ? (
+          <div className="job-item">
+            <div>
+              <strong>{latestJob.status === 'awaiting_agent' ? '准备完成' : '最近一次 Script Preparation'}</strong>
+              <div className="muted">{describeScriptJob(latestJob)}</div>
+            </div>
+            <Tag>{formatScriptJobStatus(latestJob.status)}</Tag>
+          </div>
+        ) : null}
         <div className="actions">
-          <Button onClick={onRun} disabled={busy['job:script']}>{busy['job:script'] ? '启动中…' : '启动 Script Job'}</Button>
+            <Button
+              type={busy['job:script'] || !canPrepare ? 'disabled' : 'primary'}
+              disabled={busy['job:script'] || !canPrepare}
+              onClick={onRun}
+            >
+              {busy['job:script'] ? '准备中…' : '准备给 Agent'}
+            </Button>
         </div>
+        <div className="muted">{`活跃 job ${activeScriptJobs.length}`}</div>
       </Card>
       <ScriptBriefEditor
         config={config}
+        styleSources={styleSources}
         setConfig={setScriptBrief}
-        onSave={() => saveSection('script-brief')}
+        onSave={saveScriptBriefReview}
+        onStyleCategoryChange={saveScriptBriefStyleCategory}
+        onRequestRegenerate={authorizeScriptBriefRegeneration}
         busy={busy['script-brief']}
+        autoSaveBusy={busy['script-brief:style']}
+        regenerateBusy={busy['script-brief:regenerate']}
       />
     </div>
   );
@@ -716,9 +950,27 @@ function ProjectPage({ services, busy, onControlMl, reviews, setReviews, resolve
           ))}
         </div>
         <div className="actions">
-          <Button onClick={() => onControlMl('start')} disabled={busy['ml:start']}>{busy['ml:start'] ? '处理中…' : '启动 ML'}</Button>
-          <Button onClick={() => onControlMl('restart')} disabled={busy['ml:restart']}>{busy['ml:restart'] ? '处理中…' : '重启 ML'}</Button>
-          <Button onClick={() => onControlMl('stop')} disabled={busy['ml:stop']}>{busy['ml:stop'] ? '处理中…' : '停止 ML'}</Button>
+          <Button
+            type={busy['ml:start'] ? 'disabled' : 'primary'}
+            disabled={busy['ml:start']}
+            onClick={() => onControlMl('start')}
+          >
+            {busy['ml:start'] ? '处理中…' : '启动 ML'}
+          </Button>
+          <Button
+            type={busy['ml:restart'] ? 'disabled' : 'warning'}
+            disabled={busy['ml:restart']}
+            onClick={() => onControlMl('restart')}
+          >
+            {busy['ml:restart'] ? '处理中…' : '重启 ML'}
+          </Button>
+          <Button
+            type={busy['ml:stop'] ? 'disabled' : 'error'}
+            disabled={busy['ml:stop']}
+            onClick={() => onControlMl('stop')}
+          >
+            {busy['ml:stop'] ? '处理中…' : '停止 ML'}
+          </Button>
         </div>
       </Card>
       <ReviewQueuePanel
@@ -739,10 +991,10 @@ function MonitorLoader({ kind, projectId, categoryId, emptyLabel, toolbar, after
     let active = true;
     async function refresh() {
       try {
-        const next = !projectId
-          ? null
-          : kind === 'style'
-            ? await fetchStyleMonitor(projectId, categoryId)
+        const next = kind === 'style'
+          ? await fetchStyleMonitor(categoryId)
+          : !projectId
+            ? null
             : await fetchAnalyzeMonitor(projectId);
         if (active) {
           setModel(next);
@@ -812,6 +1064,159 @@ function formatBytes(bytes) {
   return `${value} B`;
 }
 
+function formatScriptJobStatus(status) {
+  if (status === 'awaiting_agent') return '等待 Agent';
+  if (status === 'running') return '准备中';
+  if (status === 'blocked') return '已阻塞';
+  if (status === 'completed') return '已完成';
+  if (status === 'queued') return '排队中';
+  if (status === 'failed') return '失败';
+  if (status === 'stopped') return '已停止';
+  return status || '未运行';
+}
+
+function describeScriptJob(job) {
+  if (!job) return '当前还没有 script preparation 记录。';
+  if (job.status === 'awaiting_agent') {
+    return '确定性脚本准备已完成。请回到 Agent 对话继续生成 `script/current.json`。';
+  }
+  if (job.status === 'blocked') {
+    return (job.blockers || []).join('；') || '当前脚本准备被阻塞。';
+  }
+  if (job.status === 'running' || job.status === 'queued') {
+    return '正在刷新 deterministic prep 材料。这个阶段不会后台自动写正式脚本。';
+  }
+  if (job.status === 'failed') {
+    return '脚本准备执行失败，请查看 job 日志并重试。';
+  }
+  return '最近一次 script preparation 已结束。';
+}
+
+function buildScriptWorkflowPrompt({
+  config,
+  availableCategories,
+  hasSelectedStyleCategory,
+  hasValidStyleCategory,
+  workflowState,
+  latestJob,
+}) {
+  if (!availableCategories.length) {
+    return {
+      eyebrow: 'Action Required',
+      title: '先去 /style 准备风格库',
+      body: '当前 workspace 还没有任何可选风格分类。先去 /style 配置或生成风格档案，再回到这里继续脚本流程。',
+      tone: 'warn',
+    };
+  }
+  if (!hasSelectedStyleCategory) {
+    return {
+      eyebrow: 'Action Required',
+      title: '先选择风格分类',
+      body: '在下面选择一个 workspace 风格分类。系统会自动保存，然后下一步就是回到 Agent 生成初版 brief。',
+      tone: 'warn',
+    };
+  }
+  if (config?.styleCategory && !hasValidStyleCategory) {
+    return {
+      eyebrow: 'Blocked',
+      title: '当前风格分类已失效',
+      body: '这个项目记录的风格分类在 workspace 风格库里已经不存在了。先在下面重新选择一个有效分类，再继续脚本准备。',
+      tone: 'error',
+    };
+  }
+  if (workflowState === 'await_brief_draft') {
+    return {
+      eyebrow: 'Next Step',
+      title: '回到 Agent 生成初版 brief',
+      body: '风格分类已经保存。下一步不在这里，而是在 Agent 对话里让它起草第一版 script-brief。',
+      tone: 'accent',
+    };
+  }
+  if (workflowState === 'review_brief') {
+    return {
+      eyebrow: 'Next Step',
+      title: '先审查并保存 brief',
+      body: 'Agent 初版已经生成。请在当前页面修改并保存；保存后，流程才会进入“准备给 Agent”。',
+      detail: '如果你决定重生初版 brief，也请先在这里通过覆盖确认。',
+      tone: 'accent',
+    };
+  }
+  if (workflowState === 'ready_to_prepare') {
+    return {
+      eyebrow: 'Ready',
+      title: '现在可以点击“准备给 Agent”了',
+      body: 'brief 审查结果已经保存。下一步点击下方按钮刷新确定性材料；这个阶段不会后台自动写正式脚本。',
+      tone: 'ok',
+    };
+  }
+  if (workflowState === 'ready_for_agent') {
+    return {
+      eyebrow: 'Ready',
+      title: '回到 Agent 继续生成正式脚本',
+      body: 'deterministic prep 已完成。现在请回到 Agent，对它说“继续”，再让它写正式的 `script/current.json`。',
+      detail: latestJob ? describeScriptJob(latestJob) : '',
+      tone: 'ok',
+    };
+  }
+  if (workflowState === 'script_generated') {
+    return {
+      eyebrow: 'Done',
+      title: '脚本已经生成',
+      body: '现在可以继续审稿，或者进入 Timeline 阶段。如果你再次修改 brief，流程会回到 prep 前。',
+      tone: 'ok',
+    };
+  }
+  return {
+    eyebrow: 'Action Required',
+    title: '先选择风格分类',
+    body: '在下面完成风格选择后，系统才知道下一步该把你带去哪个脚本流程状态。',
+    tone: 'warn',
+  };
+}
+
+function buildScriptWorkflowDialog(workflowState) {
+  if (workflowState === 'await_brief_draft') {
+    return {
+      title: '风格已保存',
+      body: '下一步请回到 Agent，生成初版 brief。',
+      detail: '这个 handoff 已经同步到当前页面顶部的 workflow prompt，不用担心关掉弹窗后找不到下一步。',
+    };
+  }
+  if (workflowState === 'review_brief') {
+    return {
+      title: '初版 brief 已生成',
+      body: '下一步请在 /script 审查、修改并保存 brief。',
+      detail: '保存完成后，页面会继续把你引导到“准备给 Agent”。',
+    };
+  }
+  if (workflowState === 'ready_to_prepare') {
+    return {
+      title: 'brief 已保存',
+      body: '下一步请点击“准备给 Agent”。',
+      detail: '这个阶段只会刷新确定性材料，不会后台自动写正式脚本。',
+    };
+  }
+  if (workflowState === 'ready_for_agent') {
+    return {
+      title: '准备已完成',
+      body: '下一步请回到 Agent，继续生成正式脚本。',
+      detail: '页面顶部的 workflow prompt 也会继续保留这条指引，直到状态变化。',
+    };
+  }
+  if (workflowState === 'script_generated') {
+    return {
+      title: '脚本已生成',
+      body: '现在可以继续审稿，或者进入 Timeline 阶段。',
+      detail: '如果你继续修改 brief，流程会自动回退到 prep 前状态。',
+    };
+  }
+  return null;
+}
+
+function shouldAutoOpenScriptWorkflowDialog(workflowState) {
+  return ['review_brief', 'ready_for_agent', 'script_generated'].includes(workflowState);
+}
+
 function TopNav({ history, location }) {
   const items = [
     { path: '/', label: '总览' },
@@ -877,6 +1282,47 @@ function buildStylePath(categoryId) {
     : '/style';
 }
 
+function buildStyleSelectionScriptBriefPayload(brief, styleCategory) {
+  const workflowState = styleCategory ? 'await_brief_draft' : 'choose_style';
+  return {
+    ...brief,
+    styleCategory,
+    workflowState,
+    briefOverwriteApprovedAt: undefined,
+    statusText: describeScriptWorkflowState(workflowState),
+  };
+}
+
+function buildReviewedScriptBriefPayload(brief) {
+  const hasAgentDraft = Boolean(brief.lastAgentDraftAt || brief.lastAgentDraftFingerprint);
+  const workflowState = !brief.styleCategory
+    ? 'choose_style'
+    : hasAgentDraft
+      ? 'ready_to_prepare'
+      : 'await_brief_draft';
+  return {
+    ...brief,
+    workflowState,
+    lastUserReviewAt: workflowState === 'ready_to_prepare'
+      ? new Date().toISOString()
+      : undefined,
+    statusText: describeScriptWorkflowState(workflowState),
+  };
+}
+
+function buildRegenerateScriptBriefPayload(brief) {
+  return {
+    ...brief,
+    workflowState: 'await_brief_draft',
+    briefOverwriteApprovedAt: new Date().toISOString(),
+    statusText: describeScriptWorkflowState('await_brief_draft'),
+  };
+}
+
+function describeScriptWorkflowState(workflowState) {
+  return SCRIPT_WORKFLOW_STATUS_TEXT[workflowState] || SCRIPT_WORKFLOW_STATUS_TEXT.choose_style;
+}
+
 function makeSectionSetter(setConfig, sectionKey) {
   return updater => {
     setConfig(current => ({
@@ -887,5 +1333,14 @@ function makeSectionSetter(setConfig, sectionKey) {
     }));
   };
 }
+
+const SCRIPT_WORKFLOW_STATUS_TEXT = {
+  choose_style: '请先在 /script 选择风格分类。',
+  await_brief_draft: '风格已保存，请回到 Agent 生成初版 brief。',
+  review_brief: '初版 brief 已生成，请在 /script 审查并保存。',
+  ready_to_prepare: 'brief 已保存，请点击 准备给 Agent。',
+  ready_for_agent: '脚本准备已完成，请回到 Agent 继续生成 script/current.json。',
+  script_generated: '脚本已生成，可继续审稿或进入 Timeline。',
+};
 
 ReactDOM.render(<AppShell />, document.getElementById('root'));

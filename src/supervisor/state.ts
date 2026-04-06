@@ -4,7 +4,7 @@ import { writeJson } from '../store/writer.js';
 
 export type TSupervisorServiceName = 'dashboard' | 'ml';
 export type TSupervisorServiceStatus = 'stopped' | 'starting' | 'running' | 'error';
-export type TSupervisorJobStatus = 'queued' | 'running' | 'completed' | 'failed' | 'blocked' | 'stopped';
+export type TSupervisorJobStatus = 'queued' | 'running' | 'completed' | 'failed' | 'blocked' | 'stopped' | 'awaiting_agent';
 export type TSupervisorExecutionMode = 'deterministic' | 'agent';
 
 export interface ISupervisorServiceRecord {

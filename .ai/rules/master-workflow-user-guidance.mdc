@@ -40,7 +40,13 @@ Kairos 的标准顺序是：
 - 第二步让用户维护 `config/project-brief.md`，把素材根目录和说明写进去
 - 第三步执行 Ingest，把素材扫描进 `store/assets.json`
 - 第四步执行 Analyze，生成 `store/slices.json`、`analysis/asset-reports/*.json`、`media/chronology.json`
-- 第五步在用户明确指定风格档案后进入 Script，生成 `script/current.json`
+- 第五步在用户明确指定 **workspace 风格分类**（或明确说明这次不用风格档案）后进入 Script：
+  - 先在 `/script` 选择风格分类并自动保存
+  - 再由 Agent 生成初版 `script-brief`
+  - 用户回到 `/script` 审查并手动保存 brief
+  - `/script` 会用显眼的 workflow prompt / modal 提示“下一步回到 Agent”或“点击准备给 Agent”
+  - 再点击 `准备给 Agent`
+  - 最后回到 Agent 生成 `script/current.json`
 - 第六步基于脚本和素材构建 `timeline/current.json`
 - 第七步在目标 NLE 和导出目录明确后执行 Export
 
@@ -50,7 +56,7 @@ Kairos 的标准顺序是：
 
 - `config/project-brief.md`
 - `config/manual-itinerary.md`
-- `config/styles/{category}.md` 或用户明确指定的风格档案
+- `<workspaceRoot>/config/styles/{category}.md` 或用户明确指定的风格档案
 - `script/script-brief.md`
 
 默认不要把这些文件当成人类主编辑入口：
@@ -84,7 +90,9 @@ Kairos 的标准顺序是：
 
 - 在 `Analyze` 前，必须先说明 GPS 优先级：`embedded GPS > project GPX > project-derived-track > none`
 - 在 `Analyze` 前，必须先确认 ML server 可用；不可静默退化成无 ML 分析
-- 在 `Script` 前，如果用户没有明确指定风格档案或明确说这次不用风格档案，必须停下确认
+- 在 `Script` 前，如果用户没有明确指定 workspace 风格分类或明确说这次不用风格档案，必须停下确认
+- 在 `Script` 阶段，不要把 Console 的 `script` job 描述成“后台自动写稿”；它当前只负责 deterministic prep，不负责起草初版 brief，也不负责写正式脚本
+- 如果用户已经修改过当前 brief，又想回到“重生成初版 brief”，必须把用户引导回 `/script` 走覆盖确认；Agent 不能静默覆盖
 - 在 `Export` 前，必须先确认目标 NLE 和最终输出目录；目标不明确时不能直接写出草稿
 
 ## 对用户的推荐表达方式

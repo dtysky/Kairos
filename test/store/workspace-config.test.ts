@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -30,6 +30,14 @@ async function createWorkspace(): Promise<string> {
 }
 
 describe('workspace config sync', () => {
+  it('does not create project-level styles directories during project init', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectRoot = await initWorkspaceProject(workspaceRoot, 'project-init', 'Project Init');
+
+    await expect(access(join(projectRoot, 'config', 'styles'))).rejects.toBeTruthy();
+    await expect(access(join(projectRoot, 'analysis', 'reference-transcripts'))).rejects.toBeTruthy();
+  });
+
   it('roundtrips project brief into markdown and json', async () => {
     const workspaceRoot = await createWorkspace();
     const projectRoot = await initWorkspaceProject(workspaceRoot, 'project-a', 'Project A');
@@ -88,6 +96,16 @@ describe('workspace config sync', () => {
     expect(markdown).toContain('20260208_奥克兰维多利亚山晚霞1.mp4');
   });
 
+  it('treats scaffold style placeholder as undefined when loading script brief', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectRoot = await initWorkspaceProject(workspaceRoot, 'project-placeholder', 'Placeholder Project');
+
+    const brief = await loadScriptBriefConfig(projectRoot);
+
+    expect(brief.styleCategory).toBeUndefined();
+    expect(brief.workflowState).toBe('choose_style');
+  });
+
   it('syncs script brief and style sources without losing catalog metadata', async () => {
     const workspaceRoot = await createWorkspace();
     const projectRoot = await initWorkspaceProject(workspaceRoot, 'project-c', 'Project C');
@@ -107,27 +125,7 @@ describe('workspace config sync', () => {
     });
     await writeFile(join(stylesRoot, 'travel-doc.md'), '# Travel Doc\n\n## 叙事结构\n\nold body\n', 'utf-8');
 
-    await saveScriptBriefConfig(projectRoot, {
-      projectName: 'Project C',
-      createdAt: '2026-04-05T00:00:00.000Z',
-      styleCategory: 'travel-doc',
-      statusText: '已进入脚本审查',
-      goalDraft: ['表达旅途的克制感'],
-      constraintDraft: ['总时长 8 分钟'],
-      planReviewDraft: ['保留开场留白'],
-      segments: [{
-        segmentId: 'intro',
-        title: '开场',
-        role: 'intro',
-        targetDurationMs: 45000,
-        intent: '建立旅途基调',
-        preferredClipTypes: ['broll', 'timelapse'],
-        preferredPlaceHints: ['Auckland'],
-        notes: ['少解释，多留白'],
-      }],
-    });
-
-    await saveStyleSourcesConfig(workspaceRoot, projectRoot, {
+    await saveStyleSourcesConfig(workspaceRoot, {
       defaultCategory: 'travel-doc',
       categories: [{
         categoryId: 'travel-doc',
@@ -145,13 +143,51 @@ describe('workspace config sync', () => {
       }],
     });
 
+    await saveScriptBriefConfig(projectRoot, {
+      projectName: 'Project C',
+      createdAt: '2026-04-05T00:00:00.000Z',
+      styleCategory: 'travel-doc',
+      workflowState: 'await_brief_draft',
+      goalDraft: [],
+      constraintDraft: [],
+      planReviewDraft: [],
+      segments: [],
+    });
+
+    await saveScriptBriefConfig(projectRoot, {
+      projectName: 'Project C',
+      createdAt: '2026-04-05T00:00:00.000Z',
+      styleCategory: 'travel-doc',
+      workflowState: 'review_brief',
+      goalDraft: ['表达旅途的克制感'],
+      constraintDraft: ['总时长 8 分钟'],
+      planReviewDraft: ['保留开场留白'],
+      segments: [{
+        segmentId: 'intro',
+        title: '开场',
+        role: 'intro',
+        targetDurationMs: 45000,
+        intent: '建立旅途基调',
+        preferredClipTypes: ['broll', 'timelapse'],
+        preferredPlaceHints: ['Auckland'],
+        notes: ['少解释，多留白'],
+      }],
+    });
+
     const brief = await loadScriptBriefConfig(projectRoot);
-    const styleSources = await loadStyleSourcesConfig(workspaceRoot, projectRoot);
+    const styleSources = await loadStyleSourcesConfig(workspaceRoot);
     const scriptMarkdown = await readFile(join(projectRoot, 'script', 'script-brief.md'), 'utf-8');
     const styleMarkdown = await readFile(join(stylesRoot, 'travel-doc.md'), 'utf-8');
     const catalog = JSON.parse(await readFile(join(stylesRoot, 'catalog.json'), 'utf-8'));
+    await rm(join(projectRoot, 'script', 'script-brief.json'), { force: true });
+    const parsedFromMarkdown = await loadScriptBriefConfig(projectRoot);
 
     expect(brief.styleCategory).toBe('travel-doc');
+    expect(brief.workflowState).toBe('review_brief');
+    expect(parsedFromMarkdown.styleCategory).toBe('travel-doc');
+    expect(parsedFromMarkdown.workflowState).toBe('review_brief');
+    expect(scriptMarkdown).toContain('风格参考：严肃旅拍纪录片（travel-doc）');
+    expect(scriptMarkdown).toContain('workflowState=review_brief');
     expect(scriptMarkdown).toContain('### [intro] 开场');
     expect(styleSources.categories[0]?.sources).toHaveLength(1);
     expect(styleMarkdown).toContain('guidancePrompt: 重点看 intro 的克制感与叙事节奏。');

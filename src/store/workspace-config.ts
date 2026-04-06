@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { readFile, writeFile } from 'node:fs/promises';
-import { basename, join } from 'node:path';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { basename, dirname, join, resolve } from 'node:path';
 import {
   IManualCaptureTimeOverrideConfig,
   IManualItineraryConfig,
@@ -24,8 +24,12 @@ import { parseProjectBrief } from './project-brief.js';
 import { buildProjectBriefWithMappings } from './project-brief-sync.js';
 import {
   buildScriptBriefTemplate,
+  computeScriptBriefFingerprint,
+  describeScriptBriefWorkflowState,
   getScriptBriefPath,
+  inferScriptBriefWorkflowState,
   loadOptionalMarkdown,
+  parseScriptBriefWorkflowMetadata,
 } from './script-brief.js';
 import { getManualItineraryPath, loadManualItinerary } from './spatial-context.js';
 import { readJsonOrNull, writeJson } from './writer.js';
@@ -47,8 +51,8 @@ export function getScriptBriefConfigPath(projectRoot: string): string {
   return join(projectRoot, 'script', 'script-brief.json');
 }
 
-export function getStyleSourcesConfigPath(projectRoot: string): string {
-  return join(projectRoot, 'config', 'style-sources.json');
+export function getWorkspaceStyleSourcesConfigPath(workspaceRoot: string): string {
+  return join(workspaceRoot, 'config', 'style-sources.json');
 }
 
 export async function loadProjectBriefConfig(projectRoot: string): Promise<TProjectBriefConfig> {
@@ -136,18 +140,14 @@ export async function saveManualItineraryConfig(
 }
 
 export async function loadScriptBriefConfig(projectRoot: string): Promise<TScriptBriefConfig> {
-  const stored = await readJsonOrNull(getScriptBriefConfigPath(projectRoot), IScriptBriefConfig);
-  if (stored) return IScriptBriefConfig.parse(stored);
+  const stored = await readRawScriptBriefConfig(projectRoot);
+  if (stored) {
+    return normalizeScriptBriefConfigData(stored, basename(projectRoot));
+  }
 
   const markdown = await loadOptionalMarkdown(getScriptBriefPath(projectRoot));
   if (!markdown) {
-    return IScriptBriefConfig.parse({
-      projectName: basename(projectRoot),
-      goalDraft: [],
-      constraintDraft: [],
-      planReviewDraft: [],
-      segments: [],
-    });
+    return buildDefaultScriptBriefConfig(basename(projectRoot));
   }
 
   return parseScriptBriefMarkdown(markdown, basename(projectRoot));
@@ -157,23 +157,15 @@ export async function saveScriptBriefConfig(
   projectRoot: string,
   config: TScriptBriefConfig,
 ): Promise<TScriptBriefConfig> {
-  const input = IScriptBriefConfig.parse(config);
-  const normalized = IScriptBriefConfig.parse({
-    ...input,
-    goalDraft: normalizeDraftLines(input.goalDraft),
-    constraintDraft: normalizeDraftLines(input.constraintDraft),
-    planReviewDraft: normalizeDraftLines(input.planReviewDraft),
-    segments: input.segments.map(segment => ({
-      ...segment,
-      segmentId: segment.segmentId.trim(),
-      title: segment.title?.trim() || undefined,
-      role: segment.role?.trim() || undefined,
-      intent: segment.intent?.trim() || undefined,
-      preferredClipTypes: segment.preferredClipTypes.filter(Boolean),
-      preferredPlaceHints: segment.preferredPlaceHints.filter(Boolean),
-      notes: segment.notes.filter(Boolean),
-    })),
-  });
+  const previous = await loadScriptBriefConfig(projectRoot).catch(
+    () => buildDefaultScriptBriefConfig(basename(projectRoot)),
+  );
+  const input = normalizeScriptBriefConfigData(config, basename(projectRoot));
+  const normalized = applyScriptBriefPersistenceRules(input, previous);
+  const styleReferenceLabel = await resolveScriptStyleReferenceLabel(
+    projectRoot,
+    normalized.styleCategory,
+  );
   await writeJson(getScriptBriefConfigPath(projectRoot), normalized);
   await writeFile(
     getScriptBriefPath(projectRoot),
@@ -181,6 +173,12 @@ export async function saveScriptBriefConfig(
       projectName: normalized.projectName,
       createdAt: normalized.createdAt,
       styleCategory: normalized.styleCategory,
+      workflowState: normalized.workflowState,
+      lastAgentDraftAt: normalized.lastAgentDraftAt,
+      lastUserReviewAt: normalized.lastUserReviewAt,
+      lastAgentDraftFingerprint: normalized.lastAgentDraftFingerprint,
+      briefOverwriteApprovedAt: normalized.briefOverwriteApprovedAt,
+      styleReferenceLabel,
       statusText: normalized.statusText,
       goalDraft: normalized.goalDraft,
       constraintDraft: normalized.constraintDraft,
@@ -194,9 +192,8 @@ export async function saveScriptBriefConfig(
 
 export async function loadStyleSourcesConfig(
   workspaceRoot: string,
-  projectRoot: string,
 ): Promise<TStyleSourcesConfig> {
-  const stored = await readJsonOrNull(getStyleSourcesConfigPath(projectRoot), IStyleSourcesConfig);
+  const stored = await readJsonOrNull(getWorkspaceStyleSourcesConfigPath(workspaceRoot), IStyleSourcesConfig);
   if (stored) return IStyleSourcesConfig.parse(stored);
 
   const stylesDir = join(workspaceRoot, 'config', 'styles');
@@ -228,7 +225,6 @@ export async function loadStyleSourcesConfig(
 
 export async function saveStyleSourcesConfig(
   workspaceRoot: string,
-  projectRoot: string,
   config: TStyleSourcesConfig,
 ): Promise<TStyleSourcesConfig> {
   const input = IStyleSourcesConfig.parse(config);
@@ -255,7 +251,7 @@ export async function saveStyleSourcesConfig(
     })),
   });
 
-  await writeJson(getStyleSourcesConfigPath(projectRoot), normalized);
+  await writeJson(getWorkspaceStyleSourcesConfigPath(workspaceRoot), normalized);
   await syncStyleCatalog(workspaceRoot, normalized);
   await syncStyleProfileFrontMatter(workspaceRoot, normalized);
   return normalized;
@@ -267,6 +263,149 @@ function normalizeDraftLines(lines: string[]): string[] {
     .filter(Boolean);
 }
 
+function normalizeScriptBriefSegments(
+  segments: Array<Partial<TScriptBriefSegmentConfig>> | undefined,
+): TScriptBriefSegmentConfig[] {
+  return (segments ?? []).map(segment => IScriptBriefSegmentConfig.parse({
+    segmentId: stringValue(segment.segmentId) ?? `segment-${randomUUID()}`,
+    title: stringValue(segment.title),
+    role: stringValue(segment.role),
+    targetDurationMs: typeof segment.targetDurationMs === 'number' && segment.targetDurationMs > 0
+      ? segment.targetDurationMs
+      : undefined,
+    intent: stringValue(segment.intent),
+    preferredClipTypes: normalizeDraftLines(segment.preferredClipTypes ?? []),
+    preferredPlaceHints: normalizeDraftLines(segment.preferredPlaceHints ?? []),
+    notes: normalizeDraftLines(segment.notes ?? []),
+  }));
+}
+
+function buildDefaultScriptBriefConfig(projectName: string): TScriptBriefConfig {
+  return IScriptBriefConfig.parse({
+    projectName,
+    workflowState: 'choose_style',
+    statusText: describeScriptBriefWorkflowState('choose_style'),
+    goalDraft: [],
+    constraintDraft: [],
+    planReviewDraft: [],
+    segments: [],
+  });
+}
+
+function normalizeScriptBriefConfigData(
+  input: Partial<TScriptBriefConfig> | Record<string, unknown>,
+  fallbackProjectName: string,
+): TScriptBriefConfig {
+  const projectName = stringValue(input.projectName) ?? fallbackProjectName;
+  const createdAt = stringValue(input.createdAt);
+  const styleCategory = stringValue(input.styleCategory);
+  const lastAgentDraftAt = stringValue(input.lastAgentDraftAt);
+  const lastUserReviewAt = stringValue(input.lastUserReviewAt);
+  const lastAgentDraftFingerprint = stringValue(input.lastAgentDraftFingerprint);
+  const briefOverwriteApprovedAt = stringValue(input.briefOverwriteApprovedAt);
+  const workflowState = inferScriptBriefWorkflowState({
+    workflowState: stringValue(input.workflowState),
+    styleCategory,
+    statusText: stringValue(input.statusText),
+    lastAgentDraftAt,
+    lastUserReviewAt,
+    lastAgentDraftFingerprint,
+    briefOverwriteApprovedAt,
+  });
+
+  return IScriptBriefConfig.parse({
+    projectName,
+    createdAt,
+    styleCategory,
+    workflowState: styleCategory ? workflowState : 'choose_style',
+    lastAgentDraftAt,
+    lastUserReviewAt,
+    lastAgentDraftFingerprint,
+    briefOverwriteApprovedAt,
+    statusText: describeScriptBriefWorkflowState(styleCategory ? workflowState : 'choose_style'),
+    goalDraft: normalizeDraftLines(Array.isArray(input.goalDraft) ? input.goalDraft as string[] : []),
+    constraintDraft: normalizeDraftLines(Array.isArray(input.constraintDraft) ? input.constraintDraft as string[] : []),
+    planReviewDraft: normalizeDraftLines(Array.isArray(input.planReviewDraft) ? input.planReviewDraft as string[] : []),
+    segments: normalizeScriptBriefSegments(Array.isArray(input.segments)
+      ? input.segments as Array<Partial<TScriptBriefSegmentConfig>>
+      : []),
+  });
+}
+
+function applyScriptBriefPersistenceRules(
+  input: TScriptBriefConfig,
+  previous: TScriptBriefConfig,
+): TScriptBriefConfig {
+  const styleChanged = input.styleCategory !== previous.styleCategory;
+  const currentFingerprint = computeScriptBriefFingerprint(input);
+  let workflowState = input.workflowState;
+  let lastAgentDraftAt = input.lastAgentDraftAt ?? previous.lastAgentDraftAt;
+  let lastUserReviewAt = input.lastUserReviewAt ?? previous.lastUserReviewAt;
+  let lastAgentDraftFingerprint = input.lastAgentDraftFingerprint ?? previous.lastAgentDraftFingerprint;
+  let briefOverwriteApprovedAt = input.briefOverwriteApprovedAt;
+
+  if (!input.styleCategory) {
+    return IScriptBriefConfig.parse({
+      ...input,
+      workflowState: 'choose_style',
+      lastAgentDraftAt: undefined,
+      lastUserReviewAt: undefined,
+      lastAgentDraftFingerprint: undefined,
+      briefOverwriteApprovedAt: undefined,
+      statusText: describeScriptBriefWorkflowState('choose_style'),
+    });
+  }
+
+  if (styleChanged) {
+    workflowState = 'await_brief_draft';
+    lastAgentDraftAt = undefined;
+    lastUserReviewAt = undefined;
+    lastAgentDraftFingerprint = undefined;
+    briefOverwriteApprovedAt = undefined;
+  }
+
+  const hasAgentDraft = Boolean(lastAgentDraftAt || lastAgentDraftFingerprint);
+
+  if (workflowState === 'review_brief') {
+    lastAgentDraftAt = input.lastAgentDraftAt ?? new Date().toISOString();
+    lastUserReviewAt = undefined;
+    lastAgentDraftFingerprint = currentFingerprint;
+    briefOverwriteApprovedAt = undefined;
+  } else if (workflowState === 'ready_to_prepare') {
+    if (!hasAgentDraft) {
+      workflowState = 'await_brief_draft';
+      lastUserReviewAt = undefined;
+    } else {
+      lastUserReviewAt = input.lastUserReviewAt ?? new Date().toISOString();
+    }
+    briefOverwriteApprovedAt = undefined;
+  } else if (workflowState === 'ready_for_agent' || workflowState === 'script_generated') {
+    briefOverwriteApprovedAt = undefined;
+  } else if (workflowState === 'await_brief_draft') {
+    if (!input.briefOverwriteApprovedAt && !styleChanged) {
+      briefOverwriteApprovedAt = undefined;
+    }
+  }
+
+  const effectiveAgentFingerprint = lastAgentDraftFingerprint;
+  const userModifiedAgainstAgent = Boolean(
+    effectiveAgentFingerprint && currentFingerprint !== effectiveAgentFingerprint,
+  );
+  if (userModifiedAgainstAgent && workflowState !== 'await_brief_draft') {
+    briefOverwriteApprovedAt = undefined;
+  }
+
+  return IScriptBriefConfig.parse({
+    ...input,
+    workflowState,
+    lastAgentDraftAt,
+    lastUserReviewAt,
+    lastAgentDraftFingerprint,
+    briefOverwriteApprovedAt,
+    statusText: describeScriptBriefWorkflowState(workflowState),
+  });
+}
+
 function parseScriptBriefMarkdown(
   markdown: string,
   fallbackProjectName: string,
@@ -275,25 +414,41 @@ function parseScriptBriefMarkdown(
   const headerMatch = normalized.match(/^#\s+(.+?)(?:\s+—\s+Script Brief)?$/m);
   const projectName = headerMatch?.[1]?.trim() || fallbackProjectName;
   const createdAt = extractMetaLine(normalized, '创建日期');
-  const styleCategory = extractMetaLine(normalized, '风格参考');
+  const styleCategory = parseStyleReference(extractMetaLine(normalized, '风格参考'));
   const statusText = extractMetaLine(normalized, '当前状态');
+  const workflowMetadata = parseScriptBriefWorkflowMetadata(normalized);
 
-  return IScriptBriefConfig.parse({
+  return normalizeScriptBriefConfigData({
     projectName,
     createdAt,
     styleCategory: emptyToUndefined(styleCategory),
+    workflowState: workflowMetadata.workflowState,
+    lastAgentDraftAt: workflowMetadata.lastAgentDraftAt,
+    lastUserReviewAt: workflowMetadata.lastUserReviewAt,
+    lastAgentDraftFingerprint: workflowMetadata.lastAgentDraftFingerprint,
+    briefOverwriteApprovedAt: workflowMetadata.briefOverwriteApprovedAt,
     statusText: emptyToUndefined(statusText),
     goalDraft: extractBulletSection(normalized, '全片目标'),
     constraintDraft: extractBulletSection(normalized, '叙事约束'),
     planReviewDraft: extractBulletSection(normalized, '段落方案审查'),
     segments: extractScriptBriefSegments(normalized),
-  });
+  }, fallbackProjectName);
 }
 
 function extractMetaLine(markdown: string, key: string): string | undefined {
   const escapedKey = escapeRegExp(key);
   const match = markdown.match(new RegExp(`^-\\s*${escapedKey}：(.+)$`, 'm'));
   return match?.[1]?.trim();
+}
+
+function parseStyleReference(value?: string): string | undefined {
+  const trimmed = value?.trim();
+  if (!trimmed) return undefined;
+  if (trimmed === '（待指定）' || trimmed === '(待指定)' || trimmed === '待指定') {
+    return undefined;
+  }
+  const explicitCategory = trimmed.match(/[（(]([A-Za-z0-9][A-Za-z0-9_-]*)[）)]\s*$/u);
+  return explicitCategory?.[1] ?? trimmed;
 }
 
 function extractBulletSection(markdown: string, title: string): string[] {
@@ -547,6 +702,7 @@ async function syncStyleProfileFrontMatter(
   config: TStyleSourcesConfig,
 ): Promise<void> {
   const stylesDir = join(workspaceRoot, 'config', 'styles');
+  await mkdir(stylesDir, { recursive: true });
   for (const category of config.categories) {
     const profilePath = join(stylesDir, category.profilePath || `${category.categoryId}.md`);
     const existing = await readFile(profilePath, 'utf-8').catch(() => null);
@@ -601,9 +757,61 @@ function escapeMarkdownCell(value: string): string {
   return value.replace(/\|/gu, '\\|').trim();
 }
 
+async function readRawScriptBriefConfig(
+  projectRoot: string,
+): Promise<Record<string, unknown> | null> {
+  try {
+    const raw = await readFile(getScriptBriefConfigPath(projectRoot), 'utf-8');
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object'
+      ? parsed as Record<string, unknown>
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 function emptyToUndefined(value?: string | null): string | undefined {
   const trimmed = value?.trim();
   return trimmed ? trimmed : undefined;
+}
+
+function stringValue(value: unknown): string | undefined {
+  return typeof value === 'string' ? emptyToUndefined(value) : undefined;
+}
+
+function resolveWorkspaceRootFromProjectRoot(projectRoot: string): string | undefined {
+  const normalizedRoot = resolve(projectRoot);
+  const parent = dirname(normalizedRoot);
+  if (basename(parent) !== 'projects') {
+    return undefined;
+  }
+  return dirname(parent);
+}
+
+async function resolveScriptStyleReferenceLabel(
+  projectRoot: string,
+  styleCategory?: string,
+): Promise<string | undefined> {
+  if (!styleCategory) {
+    return undefined;
+  }
+
+  const workspaceRoot = resolveWorkspaceRootFromProjectRoot(projectRoot);
+  if (!workspaceRoot) {
+    return styleCategory;
+  }
+
+  const styleSources = await loadStyleSourcesConfig(workspaceRoot).catch(() => null);
+  const matchedCategory = styleSources?.categories.find(
+    category => category.categoryId === styleCategory,
+  );
+  const displayName = matchedCategory?.displayName?.trim();
+
+  if (!displayName || displayName === styleCategory) {
+    return styleCategory;
+  }
+  return `${displayName}（${styleCategory}）`;
 }
 
 function escapeRegExp(value: string): string {

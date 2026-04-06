@@ -9,7 +9,7 @@ description: >-
 
 # Kairos: Phase 3 — Script
 
-加载风格档案 → 结合全量素材归纳自动起草 brief → 用户审查段落方案 → 为每个段落写旁白。
+加载风格档案 → `/script` 自动保存风格分类 → Agent 生成初版 `script-brief` → 用户审查并手动保存 brief → `/script` 做 deterministic prep → Agent 写正式脚本。
 
 **核心特点**：旁白由 agent 自身直接创作，不需要外部 LLM API。
 
@@ -26,15 +26,15 @@ description: >-
 
 - `store/slices.json` 存在且非空
 - 风格档案可用（以下方式任选其一）：
-  - 分类档案：`config/styles/{category}.md`（由 [kairos-style-analysis](../kairos-style-analysis/SKILL.md) 生成）
-  - 单一档案：`config/style-profile.md`
+  - 分类档案：`<workspaceRoot>/config/styles/{category}.md`（由 [kairos-style-analysis](../kairos-style-analysis/SKILL.md) 生成）
   - 手写样板：`test/style-profile.md`
-  - 如果还没有风格档案，先执行 [kairos-style-analysis](../kairos-style-analysis/SKILL.md)
+  - 如果还没有 workspace 风格档案，先执行 [kairos-style-analysis](../kairos-style-analysis/SKILL.md)
 
 **硬性规则**：
 - 风格档案必须由用户人工指定；系统不能根据当前项目素材自动生成、自动挑选或自动推断风格档案。
 - 如果用户没有明确指定某个风格档案，或没有明确说这次不用风格档案，Script 阶段必须暂停并先向用户确认。
 - `kairos-style-analysis` 只能在用户明确要求做风格分析时执行，不能作为 Script 的隐式前置步骤自动触发。
+- 项目内只保存 `script/script-brief.json.styleCategory` 这类“本项目选哪个 workspace 风格分类”的状态；可复用风格库不再属于项目目录。
 
 ## 可用工具
 
@@ -75,35 +75,73 @@ rewriteNarration(llm: ILlmClient, segment: IKtepScript, instruction: string): Pr
 
 ```typescript
 // 方式 1：按分类加载（推荐，支持多种风格）
-const categories = await listStyleCategories('config/styles');
+const stylesDir = join(workspaceRoot, 'config/styles');
+const categories = await listStyleCategories(stylesDir);
 // 展示可用分类给用户选择，或由用户直接指定
-const style = await loadStyleByCategory('config/styles', 'travel-doc');
+const style = await loadStyleByCategory(stylesDir, 'travel-doc');
 
-// 方式 2：加载单一档案（兜底）
-const style = await loadStyleFromMarkdown('config/style-profile.md');
-
-// 方式 3：加载手写样板
+// 方式 2：加载手写样板
 const style = await loadStyleFromMarkdown('test/style-profile.md');
 ```
 
-风格档案包含：叙事结构、语言风格、情绪表达、主题价值观、风格禁区等。
+风格档案包含：叙事结构、语言风格、情绪表达、主题价值观、风格禁区，以及可直接消费的节奏阶段、素材角色、运镜语言、功能位偏好和参数表。
 来源可以是 `kairos-style-analysis` 自动生成，也可以是人工编写。
+
+当前应优先读取的 style 信号包括：
+- `style.sections` 中关于节奏阶段、素材编排、摄影 / 运镜、镜头功能位的章节
+- `style.parameters` 中的稳定 key-value
+- `style.antiPatterns` 中的风格禁区
+
+不要把 style profile 只当成一篇“帮助感受语气”的长文；它现在还承担 `recall / outline / intro / montage` 的直接指导输入。
 
 这里的关键前提是：**使用哪一份风格档案，必须由用户手动指定。**
 Agent 可以列出可用档案供用户选择，但不能自行替用户决定，也不能根据当前素材自动生成一份“临时风格档案”。
 
+当前 Console 的正式口径是：
+- workspace 风格库维护在 `/style`
+- Script 页先选择 `styleCategory`，并立即自动保存
+- 关键 handoff 会通过持续可见的 workflow prompt 与 hana modal 明确提示“下一步回到 Agent / 点击准备”，而不是只靠轻量行内提示
+- `script/script-brief.json` 内部继续保存 `categoryId`
+- `script/script-brief.md` 可以显示友好名称，但不能替代内部 `categoryId`
+
 **注意 `guidancePrompt`**：如果风格档案包含用户指导词（`style.guidancePrompt`），
 agent 在创作旁白时应将其作为额外的创作指导。
 
-### Step 2: 自动起草 Script Brief（不要让用户从空白填写）
+### Step 2: 先让用户在 `/script` 指定风格，再由 Agent 起草 Script Brief
 
-系统应先根据：
+当前正式口径分两层：
+
+- `/script` 页负责脚本阶段的流程入口与人工审查面
+- Agent 负责起草初版 brief 与正式脚本写作
+
+正式顺序固定为：
+
+1. 用户在 `/script` 选择 `styleCategory`，选择后立即自动保存
+2. Agent 读取 style profile、slices、chronology、asset reports，生成初版 `script-brief`
+3. 用户回到 `/script` 审查并手动保存 brief
+4. `/script` 会用更显眼的 workflow prompt / modal 提示用户点击 `准备给 Agent`
+5. Console 校验前置条件并刷新 `analysis/material-digest.json`
+6. Agent 再继续写正式 `script/current.json`
+
+Console prep 不允许做的事：
+- 自动起草初版 `script-brief`
+- 自动写 `script/current.json`
+- 自动批准 `segment plan`
+- 自动生成并推进 `outline`
+
+Agent 起草初版 brief 时，应根据：
 - `analysis/asset-reports/*.json`
 - `media/chronology.json`
 - `store/slices.json`
 - 风格档案
 
-自动写出一份集中式：
+Agent 起草 brief 时，不要只总结“语气是什么”，还应把当前选中的风格分类归纳成更可执行的拍法提示，例如：
+- 片头 / montage 应该按哪些节奏阶段推进
+- `aerial / timelapse / drive / talking-head / broll / nat sound` 各自在当前风格里承担什么角色
+- 哪些镜头语法更适合 `开场建场 / 地理重置 / 情绪释放`
+- 明确的素材禁区 / 镜头禁区是什么
+
+补全并审阅一份集中式：
 
 ```text
 script/script-brief.md
@@ -115,13 +153,18 @@ script/script-brief.md
 - 段落方案审查建议
 - 每段的简单备注
 
-用户的职责是**审查和修改这份初稿**，而不是从空白开始手写所有内容。
+用户的职责是**审查和修改这份 brief**，而不是从空白开始手写所有内容。
+
+如果用户已经修改过当前 brief，而又想让 Agent 重新生成一版初稿：
+
+- Agent 不能静默覆盖
+- 正式路径是让用户回到 `/script` 点击 `重新生成初版 brief`
+- 覆盖确认必须在 UI 中通过 hana modal 显式完成；确认后，下一次 Agent 才允许覆盖
 
 **重要规则**：
 - `material digest` 可以由代码基于素材统计、chronology 和 asset reports 构建。
-- 但 `segment plan drafts` 必须由 LLM 主驱动生成，不能默认用启发式规则硬拆段落。
-- 启发式规划只允许作为 fallback：例如 LLM 不可用、返回非法 JSON、或明确要求离线保底时。
-- 如果当前段落方案明显是规则硬驱动的“平均分段”或“标签直推分段”，应视为不合格，需要回退到 LLM 重新生成。
+- `segment plan drafts`、`approved segment plan`、`outline` 和 `script/current.json` 都应视为 Agent 阶段产物，不再由 Console prep 自动生成。
+- `script/script-brief.json.workflowState` 是脚本阶段的正式流程真值；Agent 应根据它判断当前该做“提示选风格 / 起草 brief / 等待用户审查 / 写正式脚本”中的哪一步。
 
 ### Step 3: 构建叙事骨架
 
@@ -142,16 +185,31 @@ const outline = buildOutline(slices, 5 * 60 * 1000); // 目标 5 分钟
 - `scene` / `highlight`（约 80%）→ 主体段落
 - `outro`（约 5%）→ 结尾
 
+构建 outline 和后续 recall 时，优先用风格档案里的结构化提示，而不是只凭通用直觉：
+
+- `节奏阶段一 / 二 / 三 / 四...` 决定段落和 beat 的推进方式
+- `aerial角色 / timelapse角色 / drive角色 / talking-head角色 / broll角色 / nat sound角色` 决定不同素材类型在该段里是否应优先召回
+- `高频运镜 / 低频运镜` 决定镜头语言偏好
+- `开场建场镜头语法 / 地理重置镜头语法 / 情绪释放镜头语法` 决定这些功能位分别该用什么画面组织
+- `素材禁区 / 镜头禁区 / antiPatterns` 决定哪些候选就算“好看”也不该进当前风格
+
 ### Step 4: Agent 直接写旁白
 
 **这是 agent 发挥创意的核心环节。**
 
 Agent 需要：
 
-1. 阅读完整风格档案（`style.rawReference` 或 `buildStylePrompt(style)`）
+1. 阅读完整风格档案（`style.rawReference` 或 `buildStylePrompt(style)`），并优先提取其中的 sections / parameters / antiPatterns
 2. 理解叙事骨架的每个段落（`buildOutlinePrompt(outline)`）
 3. 查看每个段落关联的切片证据（scene descriptions, ASR text, place hints）
 4. 为每个段落写旁白，严格遵循风格档案
+
+对于 `intro / montage / transition` 这类高度依赖镜头组织的段落，优先按下面顺序消费风格信息：
+
+1. 先看节奏阶段与功能位参数
+2. 再看素材角色参数
+3. 再看运镜 / 镜头语言章节
+4. 最后才让自由创作去填具体措辞与细节
 
 输出格式 — 每个段落一个 `IKtepScript`：
 
@@ -171,16 +229,19 @@ const scriptSegment: IKtepScript = {
 - 如果一个 beat 内本来就有多段配音与停顿，可额外提供 `beat.utterances?: Array<{ text, pauseBeforeMs?, pauseAfterMs? }>`
 - `beat.actions?.preserveNatSound = true` 表示这拍要尽量保留原声
 - `beat.actions?.muteSource = true` 表示这拍即使素材里有人声，也应静音后改走旁白
-- `beat.actions?.speed = number` 只在你明确要做速度蒙太奇时使用；它现在是显式 retime 信号，不应用“裁很短的 source”去间接制造
+- `beat.actions?.speed = number` 只在你明确要做速度蒙太奇时使用；它现在是显式 retime 请求，不应用“裁很短的 source”去间接制造
+- `actions.speed` 只应该写给本质上是 `drive / aerial` montage 的 beat；混入 `talking-head / broll / shot / timelapse / photo / unknown` 时，不要给整拍写 speed
 
 ### Step 4.5: 原声与旁白的协同规则
 
 脚本阶段不需要把“是否保留原声”全部手工写死，但要理解下游的默认行为：
 
 - 如果候选切片里有明确 transcript，且这段原话本身值得直接进入正片，优先写成贴近原话的 `beat.text`，并显式设置 `preserveNatSound=true`
+- 对于 `preserveNatSound=true` 的 beat，优先只绑定一个主讲话 selection，并确保选区覆盖完整一句 `transcriptSegments`，不要切在句中
 - 如果一个有声音的素材主要承担 `intro / transition / 铺垫 / 空间建立 / 情绪过门`，而不是要直接使用它说的话，应显式设置 `muteSource=true`，让下游走旁白
 - 如果这拍旁白在头部 / 中间 / 尾部需要明确留白，不要只把话全塞进 `beat.text`；应直接写 `beat.utterances[]` 把 pause 表达出来
 - 如果候选 beat 提示了 `speedCandidate`（例如 `2x / 5x / 10x`），把它理解为“可以考虑加速”，而不是默认必须加速；只有你明确想做速度段落时才填写 `actions.speed`
+- 如果一条原声完整句子明显长于当前 beat 预算，默认优先保句子完整；下游会延长 beat，而不是把原话切断
 - 如果脚本里没有显式写这两个动作，时间线阶段会根据 `slice.transcript / transcriptSegments / speechCoverage`、`beat.text` 与 transcript 的匹配度、以及 segment role 自动推论
 - 当前默认推论是偏保守的：`intro / transition / outro` 不会因为“素材里有声音”就自动保留原声，除非 beat 明显在引用原话
 - 对于 `muteSource=true` 或被时间线判定为不走原声的 beat，下游会把命中的带音轨视频静音，避免旁白与素材原音叠在一起
@@ -191,6 +252,9 @@ const scriptSegment: IKtepScript = {
 ```typescript
 await writeJson(join(projectRoot, 'script/current.json'), scriptSegments);
 ```
+
+这里的正式作者是 **Agent**。
+如果是 Console / Supervisor 的 `script` job，不应写这个文件。
 
 ### Step 6: 迭代微调（可选）
 
@@ -221,14 +285,9 @@ Agent 写旁白时应遵守：
 4. **证据驱动**：旁白应基于切片证据（场景描述、地点线索、ASR 文本），不要凭空编造
 5. **节奏**：开篇引人入胜，主体循序渐进，结尾收束有力
 6. **原声判断**：不要把“素材里有人说话”和“这段就该保留原声”画等号；很多带人声的 intro / 过门素材仍然应静音换旁白
+7. **直接消费 style 参数**：优先使用风格档案里已经明确写出的节奏阶段、素材角色、运镜语言、功能位和禁区，不要把这些又退回成纯主观猜测
 
 ## 备选路径
 
-如果需要用外部 LLM API（非 agent 模式），可以使用：
-
-```typescript
-import { generateScript } from 'kairos';
-const script = await generateScript(llmClient, outline, style);
-```
-
-这需要配置 `OpenAIClient`，不是主推流程。
+仓库里仍保留了一些脚本生成 helper，供 Agent 手动阶段按需调用。
+但当前正式流程不是“Console 后台自动写稿”，而是“Console 准备，Agent 创作”。

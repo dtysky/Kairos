@@ -128,11 +128,9 @@ async function routeRequest(
     return;
   }
 
-  const styleMonitorMatch = pathname.match(/^\/api\/projects\/([^/]+)\/monitor\/style-analysis$/u);
-  if (styleMonitorMatch && method === 'GET') {
-    const projectId = decodeURIComponent(styleMonitorMatch[1]!);
+  if (pathname === '/api/workspace/monitor/style-analysis' && method === 'GET') {
     const categoryId = url.searchParams.get('categoryId') ?? undefined;
-    sendJson(response, 200, await buildStyleMonitorModel(options.workspaceRoot, projectId, categoryId));
+    sendJson(response, 200, await buildStyleMonitorModel(options.workspaceRoot, categoryId));
     return;
   }
 
@@ -149,7 +147,7 @@ async function routeRequest(
         { jobType: 'gps-refresh', executionMode: 'deterministic', supported: true },
         { jobType: 'analyze', executionMode: 'deterministic', supported: true },
         { jobType: 'style-analysis', executionMode: 'agent', supported: true, note: 'agent-backed manifest is ready; runner still returns explicit blocker' },
-        { jobType: 'script', executionMode: 'agent', supported: true },
+        { jobType: 'script', executionMode: 'deterministic', supported: true, note: 'runs only after reviewed brief is saved; advances ready_to_prepare -> ready_for_agent; final script remains agent-authored' },
         { jobType: 'timeline', executionMode: 'deterministic', supported: false },
         { jobType: 'export-jianying', executionMode: 'deterministic', supported: false },
         { jobType: 'export-resolve', executionMode: 'agent', supported: false },
@@ -162,18 +160,21 @@ async function routeRequest(
   if (configMatch && method === 'GET') {
     const projectId = decodeURIComponent(configMatch[1]!);
     const projectRoot = join(options.workspaceRoot, 'projects', projectId);
-    const [projectBrief, manualItinerary, scriptBrief, styleSources] = await Promise.all([
+    const [projectBrief, manualItinerary, scriptBrief] = await Promise.all([
       loadProjectBriefConfig(projectRoot),
       loadManualItineraryConfig(projectRoot),
       loadScriptBriefConfig(projectRoot),
-      loadStyleSourcesConfig(options.workspaceRoot, projectRoot),
     ]);
     sendJson(response, 200, {
       projectBrief,
       manualItinerary,
       scriptBrief,
-      styleSources,
     });
+    return;
+  }
+
+  if (pathname === '/api/workspace/config/style-sources' && method === 'GET') {
+    sendJson(response, 200, await loadStyleSourcesConfig(options.workspaceRoot));
     return;
   }
 
@@ -208,12 +209,9 @@ async function routeRequest(
     return;
   }
 
-  const styleSourcesMatch = pathname.match(/^\/api\/projects\/([^/]+)\/config\/style-sources$/u);
-  if (styleSourcesMatch && method === 'PUT') {
-    const projectId = decodeURIComponent(styleSourcesMatch[1]!);
-    const projectRoot = join(options.workspaceRoot, 'projects', projectId);
+  if (pathname === '/api/workspace/config/style-sources' && method === 'PUT') {
     const payload = await readJsonBody(request);
-    sendJson(response, 200, await saveStyleSourcesConfig(options.workspaceRoot, projectRoot, payload));
+    sendJson(response, 200, await saveStyleSourcesConfig(options.workspaceRoot, payload));
     return;
   }
 
@@ -376,14 +374,18 @@ async function startJob(
       projectBrief: await loadProjectBriefConfig(projectRoot).catch(() => null),
       manualItinerary: await loadManualItineraryConfig(projectRoot).catch(() => null),
       scriptBrief: await loadScriptBriefConfig(projectRoot).catch(() => null),
-      styleSources: await loadStyleSourcesConfig(workspaceRoot, projectRoot).catch(() => null),
+      workspaceStyleSources: await loadStyleSourcesConfig(workspaceRoot).catch(() => null),
+    }, null, 2));
+  } else if (payload.jobType === 'style-analysis') {
+    await writeFileSafe(configSnapshotPath, JSON.stringify({
+      workspaceStyleSources: await loadStyleSourcesConfig(workspaceRoot).catch(() => null),
     }, null, 2));
   }
 
   const record: ISupervisorJobRecord = {
     jobId,
     jobType: payload.jobType,
-    executionMode: payload.jobType === 'style-analysis' || payload.jobType === 'script'
+    executionMode: payload.jobType === 'style-analysis'
       ? 'agent'
       : 'deterministic',
     projectId: payload.projectId,

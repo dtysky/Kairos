@@ -90,12 +90,16 @@ Kairos/
 │       ├── requirements.txt   # Upstream runtime deps
 │       └── README.md          # Upstream usage / compatibility notes
 │
-├── config/                   # Runtime project config (per-project)
+├── config/                   # Workspace-shared runtime + style config
 │   ├── runtime.json          # ffmpeg / ffprobe / ML endpoint config
+│   ├── style-sources.json    # Workspace style-source manifest
 │   └── styles/
 │       ├── catalog.json      # IStyleCatalog: registry of all categories
 │       ├── travel-doc.md     # Style profile per category
 │       └── ...
+├── analysis/
+│   ├── reference-transcripts/ # Workspace style-analysis ASR cache
+│   └── style-references/      # Workspace style-analysis per-video reports
 │
 ├── test/
 │   └── style-profile.md     # Manual style reference (example)
@@ -141,7 +145,7 @@ Raw Media → scanner → probe → capture-time → shot-detect → slicer → 
                                                                         ↓
                 ML server (ASR/OCR/VLM/CLIP) ← ml-client ← evidence ← sampler
                                                                         ↓
-              Agent (style-analysis) → style-loader → outline-builder → Agent (script)
+Agent (workspace style-analysis) → style-loader → outline-builder → Agent (script)
                                                                         ↓
                             timeline-builder → placement → transition → subtitle
                                                                         ↓

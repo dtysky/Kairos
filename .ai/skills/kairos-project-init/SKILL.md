@@ -68,7 +68,6 @@ description: >-
 ```text
 project/
 ├── config/
-│   └── styles/
 ├── store/
 ├── media/
 ├── .tmp/
@@ -79,8 +78,7 @@ project/
 ├── subtitles/
 ├── adapters/
 ├── analysis/
-│   ├── asset-reports/
-│   └── reference-transcripts/
+│   └── asset-reports/
 └── gps/
     └── tracks/
 ```
@@ -107,6 +105,10 @@ project/
   - 用户需要弱空间证据时再创建
 - `config/runtime.json`
   - 可选本地运行时覆盖，不是 `initProject()` 自动产物
+- `<workspaceRoot>/config/styles/`
+  - workspace 级共享风格库，不属于项目初始化产物
+- `<workspaceRoot>/config/style-sources.json`
+  - workspace 级风格来源配置，不属于项目初始化产物
 
 ## 可用入口
 
