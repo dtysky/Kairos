@@ -121,8 +121,9 @@ interface IStyleProgressPayload {
 
 const CANALYZE_STEP_DESCRIPTIONS: Record<string, string> = {
   prepare: '装载项目上下文并准备素材分析工作目录。',
-  'coarse-scan': '抽取粗扫关键帧，完成首轮视觉理解与初筛。',
-  'audio-analysis': '分析素材音轨、转录语音并生成语音驱动信息。',
+  'coarse-scan': '抽取粗扫关键帧，准备 finalize 所需的关键帧、音轨探测与恢复中间态。',
+  'audio-analysis': '分析素材内嵌音轨，按需比较 protection audio，并生成语音决策辅助信息。',
+  finalize: '统一完成视觉总结、clip type 判断与 fine-scan 策略决策。',
   'fine-scan-prefetch': '为待细扫素材预抽关键帧，并准备识别所需中间态。',
   'fine-scan-recognition': '消费已准备好的关键帧，生成细扫切片与视觉理解结果。',
   chronology: '刷新 chronology 与项目级时间视图。',
@@ -245,8 +246,8 @@ export async function buildAnalyzeMonitorModel(
     stepDefinitions,
     outputs: await Promise.all([
       outputItem('资产报告目录', join(projectRoot, 'analysis', 'asset-reports'), '每条素材的正式分析结果。', reportCount > 0),
-      outputItem('prepared-assets', getPreparedAssetCheckpointRoot(projectRoot), '粗扫完成后的 checkpoint。', preparedCount > 0),
-      outputItem('audio-checkpoints', getAudioAnalysisCheckpointRoot(projectRoot), '音频阶段可恢复 checkpoint。', audioCheckpointCount > 0),
+      outputItem('prepared-assets', getPreparedAssetCheckpointRoot(projectRoot), 'coarse-scan 阶段生成的 prepared inputs checkpoint。', preparedCount > 0),
+      outputItem('audio-checkpoints', getAudioAnalysisCheckpointRoot(projectRoot), 'audio-analysis 阶段可恢复的 transcript / protection 决策辅助 checkpoint。', audioCheckpointCount > 0),
       outputItem('fine-scan-checkpoints', getFineScanCheckpointRoot(projectRoot), '细扫预抽帧与识别阶段的恢复 checkpoint。', fineScanCheckpointSummary.total > 0),
       outputItem('chronology.json', join(projectRoot, 'media', 'chronology.json'), '项目时间视图与后续编辑的时序基础。'),
     ]),
@@ -329,6 +330,7 @@ function buildAnalyzeSteps(progress: IAnalyzeProgressPayload | null): IMonitorSt
       { key: 'prepare', label: '准备素材分析' },
       { key: 'coarse-scan', label: '粗扫素材' },
       { key: 'audio-analysis', label: '分析视频内音轨' },
+      { key: 'finalize', label: '统一完成素材分析' },
       { key: 'fine-scan-prefetch', label: '预抽细扫关键帧' },
       { key: 'fine-scan-recognition', label: '识别细扫素材' },
       { key: 'chronology', label: '刷新时间视图' },

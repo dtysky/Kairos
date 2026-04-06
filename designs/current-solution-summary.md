@@ -98,16 +98,19 @@ flowchart TD
 
 - 当前正式策略是“粗扫优先 + 自动细扫”
 - 当前 Analyze 的稳定执行顺序已经是：
-  - `visual coarse prepare -> audio analysis -> merged decision -> deferred scene detect(if needed)`
+  - 有音轨视频：`coarse-scan -> audio-analysis -> finalize -> deferred scene detect(if needed)`
+  - 无音轨视频：`coarse-scan -> finalize -> deferred scene detect(if needed)`
   - `scene detect` 不再是所有视频的 unconditional coarse 前置税，而是只在最终确实需要 shot 结构时延后触发
 - 视频内音轨的 ASR 已进入正式分析链路，而不再只是附属信息
 - `transcript / transcriptSegments / speechCoverage / placeHints / inferredGps` 都属于分析层结果
-- `asset report.clipTypeGuess` 当前表示 finalize 后的语义结论，不等于 ASR 入口使用的早期粗扫判断；Analyze 内部仍会保留独立的 coarse checkpoint 信号（如 `initialClipTypeGuess / visualSummary.sceneType`）用于前置决策
+- `asset report.clipTypeGuess` 当前表示 finalize 后的语义结论；视频素材的正式 `visualSummary + decision` 只在 `finalize` 单次 unified VLM 中产出，前置阶段只保留 cheap planning inputs
 - Analyze 现在按素材分阶段持久化可恢复状态：
-  - `analysis/prepared-assets/<assetId>.json` 保存 coarse prepared checkpoint
-  - `analysis/audio-checkpoints/<assetId>.json` 保存 ASR / protection fallback checkpoint
+  - `analysis/prepared-assets/<assetId>.json` 保存 coarse prepared checkpoint（keyframes / `hasAudioTrack` / source context 等输入）
+  - `analysis/audio-checkpoints/<assetId>.json` 保存 ASR / protection-audio 中间态
   - `analysis/asset-reports/<assetId>.json` 用 `fineScanCompletedAt / fineScanSliceCount` 标记细扫完成态
-- 如果视频绑定了 `protectionAudio`，Analyze 当前只在这类资产上进入保护音轨保守 fallback；保护音轨默认不做独立健康检查，只在主音轨明显可疑时升级到 transcript 对比
+- 如果视频绑定了 `protectionAudio`，Analyze 当前会把保护音轨放在 `audio-analysis` 阶段做决策辅助：
+  - 保护音轨默认不做独立健康检查，只在主音轨明显可疑或确有必要时升级到 transcript 对比
+  - protection transcript 的当前定位是 finalize prompt 的辅助信号，不会覆盖正式 `report.transcriptSegments`
 - ML server 当前会在 `VLM` 和 `Whisper` 之间互斥卸载，避免两套模型同时常驻显存
 - `retry / resume` 后的 ETA 当前按阶段重置，并且在当前阶段完成样本少于 `3` 条时不显示，避免沿用上一轮进度口径后产生夸张倒计时
 - `interestingWindows` 不再只有单一语义：
@@ -250,7 +253,7 @@ flowchart TD
 - 项目内正式产物：可同步、可复用、可作为正式输入继续流转
 - 设备本地映射：`config/device-media-maps.local.json`，只描述当前设备能访问到的素材真实目录，默认不纳入同步
 - 临时产物：`.tmp/`，默认不属于 `Canonical Project Store`
-- 可恢复中间态：`analysis/prepared-assets/` 与 `analysis/audio-checkpoints/` 用于跨进程恢复 Analyze；它们是 durable resume cache，不是 Script / Timeline 的正式输入
+- 可恢复中间态：`analysis/prepared-assets/` 与 `analysis/audio-checkpoints/` 用于跨进程恢复 Analyze；它们是 durable resume cache，不是 Script / Timeline 的正式输入，且在 stage 语义调整后允许安全失效并重建
 
 ### 当前稳定约定
 

@@ -17,10 +17,17 @@ const ITranscriptCheckpoint = z.object({
   speechWindows: z.array(IInterestingWindow),
 });
 
+const IAudioDecisionHints = z.object({
+  protectionRecommendation: z.string().optional(),
+  protectionTranscriptExcerpt: z.string().optional(),
+});
+
 const IAudioAnalysisCheckpoint = z.object({
   assetId: z.string(),
   transcript: ITranscriptCheckpoint.nullable().optional(),
+  protectionTranscript: ITranscriptCheckpoint.nullable().optional(),
   protectedAudio: IProtectedAudioAssessment.optional(),
+  decisionHints: IAudioDecisionHints.optional(),
   updatedAt: z.string(),
 });
 

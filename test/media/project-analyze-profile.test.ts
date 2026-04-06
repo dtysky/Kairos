@@ -127,10 +127,20 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       if (prompt.includes('semantic clip type and fine-scan policy')) {
         return {
           description: JSON.stringify({
-            clip_type: 'broll',
-            should_fine_scan: true,
-            fine_scan_mode: 'windowed',
-            decision_reasons: ['test-semantic-decision'],
+            visual_summary: {
+              scene_type: 'landscape',
+              subjects: ['mountains', 'road'],
+              mood: 'calm',
+              place_hints: ['lake'],
+              narrative_role: 'establishing',
+              description: `Recognized ${imagePaths.length} representative frames.`,
+            },
+            decision: {
+              clip_type: 'broll',
+              should_fine_scan: true,
+              fine_scan_mode: 'windowed',
+              decision_reasons: ['test-semantic-decision'],
+            },
           }),
           timing: {
             backend: 'mlx',
@@ -202,8 +212,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
     expect(profile.stageTotals.prepareMs).toBeGreaterThanOrEqual(0);
     expect(profile.stageTotals.finalizeMs).toBeGreaterThanOrEqual(0);
     expect(profile.stageTotals.chronologyRefreshMs).toBeGreaterThanOrEqual(0);
-    expect(profile.ml.coarseVlm.requestCount).toBe(1);
-    expect(profile.ml.decisionVlm.requestCount).toBe(1);
+    expect(profile.ml.finalizeVlm.requestCount).toBe(1);
     expect(profile.ml.fineScanVlm.requestCount).toBeGreaterThan(0);
     expect(profile.ml.embeddedAsr.requestCount).toBe(1);
     expect(profile.ml.embeddedAsr.wavExtractMs).toBe(24);
@@ -219,8 +228,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
     expect(profile.io.sliceAppendCount).toBe(1);
     expect(profile.assets).toHaveLength(1);
     expect(profile.assets[0]?.assetId).toBe('asset-1');
-    expect(profile.assets[0]?.vlm?.coarseRequestCount).toBe(1);
-    expect(profile.assets[0]?.vlm?.decisionRequestCount).toBe(1);
+    expect(profile.assets[0]?.vlm?.finalizeRequestCount).toBe(1);
     expect(profile.assets[0]?.vlm?.fineRequestCount).toBeGreaterThan(0);
     expect(profile.assets[0]?.sceneDetectPhases?.finalize?.callCount).toBe(0);
     expect(profile.assets[0]?.asr?.embeddedRequestCount).toBe(1);
@@ -299,10 +307,20 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       if (prompt.includes('semantic clip type and fine-scan policy')) {
         return {
           description: JSON.stringify({
-            clip_type: 'talking-head',
-            should_fine_scan: true,
-            fine_scan_mode: 'full',
-            decision_reasons: ['test-talking-head-decision'],
+            visual_summary: {
+              scene_type: 'portrait',
+              subjects: ['speaker', 'mountains'],
+              mood: 'calm',
+              place_hints: ['lookout'],
+              narrative_role: 'detail',
+              description: `Recognized ${imagePaths.length} speaking frames.`,
+            },
+            decision: {
+              clip_type: 'talking-head',
+              should_fine_scan: true,
+              fine_scan_mode: 'full',
+              decision_reasons: ['test-talking-head-decision'],
+            },
           }),
           timing: {
             backend: 'mlx',
@@ -365,7 +383,150 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
     expect(profile.assets[0]?.sceneDetectPhases?.finalize?.callCount).toBe(1);
   });
 
-  it('runs deferred scene detect for scenic drives using reused coarse VLM semantics', async () => {
+  it('fails the analyze run when unified finalize returns invalid JSON', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-analyze-finalize-failure';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Finalize Failure Project');
+    const mediaRoot = join(projectRoot, '.tmp', 'fixtures');
+
+    await mkdir(mediaRoot, { recursive: true });
+    await writeFile(join(mediaRoot, 'broken.mp4'), 'fake-media');
+    await writeFile(join(mediaRoot, 'ok.mp4'), 'fake-media');
+
+    await writeJson(join(projectRoot, 'config/runtime.json'), {
+      mlServerUrl: 'http://127.0.0.1:8910',
+    });
+    await writeJson(join(projectRoot, 'config/ingest-roots.json'), {
+      roots: [{
+        id: 'root-1',
+        enabled: true,
+        label: 'camera-a',
+        description: 'Main travel ingest root',
+        notes: ['road trip footage'],
+        path: mediaRoot,
+      }],
+    });
+    await writeJson(join(projectRoot, 'store/assets.json'), [{
+      id: 'asset-broken',
+      kind: 'video',
+      sourcePath: 'broken.mp4',
+      displayName: 'broken.mp4',
+      ingestRootId: 'root-1',
+      durationMs: 12_000,
+      capturedAt: '2026-03-31T08:15:30.000Z',
+      metadata: {
+        hasAudioStream: false,
+      },
+    }, {
+      id: 'asset-ok',
+      kind: 'video',
+      sourcePath: 'ok.mp4',
+      displayName: 'ok.mp4',
+      ingestRootId: 'root-1',
+      durationMs: 8_000,
+      capturedAt: '2026-03-31T08:16:30.000Z',
+      metadata: {
+        hasAudioStream: false,
+      },
+    }]);
+
+    extractKeyframesMock.mockImplementation(async (
+      _filePath: string,
+      outputDir: string,
+      timestampsMs: number[],
+    ) => {
+      await mkdir(outputDir, { recursive: true });
+      return Promise.all(timestampsMs.map(async timeMs => {
+        const framePath = join(outputDir, `frame-${timeMs}.jpg`);
+        await writeFile(framePath, `frame-${timeMs}`);
+        return { timeMs, path: framePath };
+      }));
+    });
+
+    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue({
+      status: 'ok',
+      device: 'apple',
+      backend: 'mlx',
+      models_loaded: [],
+    });
+    vi.spyOn(MlClient.prototype, 'vlmAnalyze')
+      .mockResolvedValueOnce({
+        description: 'not-json',
+        timing: {
+          backend: 'mlx',
+          modelRef: 'test-qwen',
+          totalMs: 40,
+        },
+      })
+      .mockResolvedValueOnce({
+        description: JSON.stringify({
+          visual_summary: {
+            scene_type: 'landscape',
+            subjects: ['road'],
+            mood: 'calm',
+            place_hints: ['lake'],
+            narrative_role: 'detail',
+            description: 'Valid finalize output for the second asset.',
+          },
+          decision: {
+            clip_type: 'broll',
+            should_fine_scan: false,
+            fine_scan_mode: 'skip',
+            decision_reasons: ['test-second-asset-skip'],
+          },
+        }),
+        timing: {
+          backend: 'mlx',
+          modelRef: 'test-qwen',
+          totalMs: 41,
+        },
+      });
+
+    const { analyzeWorkspaceProjectMedia } = await import('../../src/modules/media/project-analyze.js');
+    await expect(analyzeWorkspaceProjectMedia({
+      workspaceRoot,
+      projectId,
+      performanceProfile: {
+        enabled: true,
+        runLabel: 'finalize-failure',
+      },
+    })).rejects.toThrow(/统一完成素材分析失败/u);
+
+    const profile = JSON.parse(
+      await readFile(getAnalyzePerformanceProfilePath(projectRoot), 'utf-8'),
+    ) as {
+      status: string;
+      fineScannedAssetCount: number;
+      failureMessage?: string;
+      failureItems?: Array<{ assetId: string; stage: string; reason: string }>;
+    };
+    const progress = JSON.parse(
+      await readFile(join(projectRoot, '.tmp', 'media-analyze', 'progress.json'), 'utf-8'),
+    ) as {
+      status: string;
+      detail?: string;
+      step?: string;
+      extra?: { failures?: Array<{ assetId: string }> };
+    };
+
+    expect(profile.status).toBe('failed');
+    expect(profile.fineScannedAssetCount).toBe(0);
+    expect(profile.failureMessage).toMatch(/统一完成素材分析失败 1 条/u);
+    expect(profile.failureItems).toEqual([
+      expect.objectContaining({
+        assetId: 'asset-broken',
+        stage: 'finalize',
+      }),
+    ]);
+    expect(progress.status).toBe('failed');
+    expect(progress.step).toBe('finalize');
+    expect(progress.detail).toMatch(/统一完成素材分析失败 1 条/u);
+    expect(progress.extra?.failures?.[0]?.assetId).toBe('asset-broken');
+    expect(detectShotsMock).not.toHaveBeenCalled();
+    await expect(access(join(projectRoot, 'media', 'chronology.json'))).rejects.toThrow();
+  });
+
+  it('runs deferred scene detect for scenic drives using finalize VLM semantics', async () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-analyze-scenic-drive';
     const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Scenic Drive Project');
@@ -425,10 +586,20 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       if (prompt.includes('semantic clip type and fine-scan policy')) {
         return {
           description: JSON.stringify({
-            clip_type: 'drive',
-            should_fine_scan: false,
-            fine_scan_mode: 'skip',
-            decision_reasons: ['test-scenic-drive-skip'],
+            visual_summary: {
+              scene_type: 'driving',
+              subjects: ['winding road', 'mountains', 'lake'],
+              mood: 'calm',
+              place_hints: ['queenstown'],
+              narrative_role: 'transition',
+              description: `Recognized ${imagePaths.length} scenic frames along a winding lakeside mountain road.`,
+            },
+            decision: {
+              clip_type: 'drive',
+              should_fine_scan: false,
+              fine_scan_mode: 'skip',
+              decision_reasons: ['test-scenic-drive-skip'],
+            },
           }),
           timing: {
             backend: 'mlx',
@@ -570,10 +741,20 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       if (prompt.includes('semantic clip type and fine-scan policy')) {
         return {
           description: JSON.stringify({
-            clip_type: 'drive',
-            should_fine_scan: true,
-            fine_scan_mode: 'windowed',
-            decision_reasons: ['test-drive-windowed'],
+            visual_summary: {
+              scene_type: 'driving',
+              subjects: ['forest road', 'bridge', 'trees'],
+              mood: 'calm',
+              place_hints: ['queenstown'],
+              narrative_role: 'transition',
+              description: `Recognized ${imagePaths.length} scenic frames while driving from the bridge into the forest.`,
+            },
+            decision: {
+              clip_type: 'drive',
+              should_fine_scan: true,
+              fine_scan_mode: 'windowed',
+              decision_reasons: ['test-drive-windowed'],
+            },
           }),
           timing: {
             backend: 'mlx',
@@ -711,10 +892,20 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       if (prompt.includes('semantic clip type and fine-scan policy')) {
         return {
           description: JSON.stringify({
-            clip_type: 'drive',
-            should_fine_scan: false,
-            fine_scan_mode: 'skip',
-            decision_reasons: ['test-flat-drive-skip'],
+            visual_summary: {
+              scene_type: 'driving',
+              subjects: ['dashboard', 'highway lane'],
+              mood: 'calm',
+              place_hints: [],
+              narrative_role: 'filler',
+              description: `Recognized ${imagePaths.length} steady highway commute frames from the dashboard.`,
+            },
+            decision: {
+              clip_type: 'drive',
+              should_fine_scan: false,
+              fine_scan_mode: 'skip',
+              decision_reasons: ['test-flat-drive-skip'],
+            },
           }),
           timing: {
             backend: 'mlx',
@@ -832,10 +1023,20 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       if (prompt.includes('semantic clip type and fine-scan policy')) {
         return {
           description: JSON.stringify({
-            clip_type: 'broll',
-            should_fine_scan: true,
-            fine_scan_mode: 'full',
-            decision_reasons: ['test-full-mode-decision'],
+            visual_summary: {
+              scene_type: 'landscape',
+              subjects: ['coast'],
+              mood: 'calm',
+              place_hints: ['cliff'],
+              narrative_role: 'detail',
+              description: `Recognized ${imagePaths.length} representative frames.`,
+            },
+            decision: {
+              clip_type: 'broll',
+              should_fine_scan: true,
+              fine_scan_mode: 'full',
+              decision_reasons: ['test-full-mode-decision'],
+            },
           }),
           timing: {
             backend: 'mlx',
@@ -964,6 +1165,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       updatedAt: '2026-03-31T08:15:30.000Z',
     });
     await writePreparedAssetCheckpoint(projectRoot, {
+      schemaVersion: 2,
       assetId: 'asset-resume',
       shotBoundaries: [],
       shotBoundariesResolved: false,
@@ -972,9 +1174,13 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
         path: readyFrames[0],
       }],
       coarseSampleTimestamps: [0],
-      visualSummary: null,
-      initialClipTypeGuess: 'broll',
       hasAudioTrack: false,
+      sourceContext: {
+        ingestRootId: 'root-1',
+        rootLabel: 'camera-a',
+        rootDescription: 'Resume fixture root',
+        rootNotes: [],
+      },
     });
     await writeFineScanCheckpoint(projectRoot, {
       assetId: 'asset-resume',

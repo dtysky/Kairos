@@ -12,8 +12,10 @@
 1. `coarse-first analyze` 已把 ASR 纳入视频细扫前链路
    - coarse report / slice 可携带 `transcript / transcriptSegments / speechCoverage`
    - 语音窗口会和视觉窗口一起进入 `interestingWindows`
-   - 当前执行顺序已经稳定为 `visual coarse prepare -> audio analysis -> merged decision -> deferred scene detect(if needed)`；`scene detect` 不再是所有视频的默认前置步骤
-   - `asset report.clipTypeGuess` 是 finalize 后的语义结论，不等于 ASR 入口使用的早期粗扫判断；Analyze 内部仍保留 `initialClipTypeGuess / visualSummary.sceneType` 这类 coarse 信号
+   - 当前执行顺序已经稳定为：
+     - 有音轨视频：`coarse-scan -> audio-analysis -> finalize -> deferred scene detect(if needed)`
+     - 无音轨视频：`coarse-scan -> finalize -> deferred scene detect(if needed)`
+   - `asset report.clipTypeGuess` 是 finalize 后的语义结论；视频素材的正式 `visualSummary + decision` 只在 `finalize` 单次 unified VLM 中产出
    - `talking-head` 当前有 audio-led window strategy，会优先把连续 speech windows 收口成更适合原声消费的窗口
    - `drive` 的 `speech` 和 `visual` windows / slices 已正式分语义，并通过 `semanticKind` 继续向后传递
 2. 脚本召回和 outline 已消费 transcript 证据
@@ -57,12 +59,13 @@
    - 显式 `beat.actions.speed` 当前只是请求信号，只有 `drive / aerial` clip 会消费；其他类型 clip 即使同拍也强制保持 `1x`
    - clip placement 当前优先贴合 `beat.targetDurationMs`，不会再让显式 speed beat 按原始 source 时长自由漂移
 9. Analyze 恢复与资源口径已经补到项目级正式设计
-   - coarse prepared state 会写入 `analysis/prepared-assets/<assetId>.json`
-   - ASR / protection fallback state 会写入 `analysis/audio-checkpoints/<assetId>.json`
+   - coarse prepared state 会写入 `analysis/prepared-assets/<assetId>.json`，只保存 finalize 之前的准备输入
+   - ASR / protection 中间态会写入 `analysis/audio-checkpoints/<assetId>.json`
    - `asset report` 新增 `fineScanCompletedAt / fineScanSliceCount`，用于恢复 `fine-scan`
    - `retry / resume` 后 ETA 改为按当前阶段重新估算，且当前阶段完成样本少于 `3` 条时不显示 ETA
    - ML server 会在 `VLM` 和 `Whisper` 之间互斥卸载，避免两套模型同时常驻显存
-   - 保护音轨只在资产已绑定 `protectionAudio` 时进入保守 fallback，且默认不做独立健康检查
+   - 保护音轨只在资产已绑定 `protectionAudio` 时进入 `audio-analysis` 决策辅助，且默认不做独立健康检查
+   - protection transcript 当前不覆盖正式 `report.transcriptSegments`，只作为 finalize prompt 的辅助信号
 10. 本地运行时与控制台已经形成当前正式操作面
    - `Supervisor` 统一承载本地服务与 job 编排
    - `apps/kairos-console/` 采用 React + 工作流优先路由，而不是单页工作台

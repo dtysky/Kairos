@@ -127,6 +127,7 @@ const CANALYZE_STEP_DEFINITIONS = [
   { key: 'prepare', label: '准备素材分析' },
   { key: 'coarse-scan', label: '粗扫素材' },
   { key: 'audio-analysis', label: '分析视频内音轨' },
+  { key: 'finalize', label: '统一完成素材分析' },
   { key: 'fine-scan-prefetch', label: '预抽细扫关键帧' },
   { key: 'fine-scan-recognition', label: '识别细扫素材' },
   { key: 'chronology', label: '刷新时间视图' },
@@ -194,6 +195,7 @@ export async function analyzeWorkspaceProjectMedia(
   const pendingSlices: IKtepSlice[] = [];
   const preparedAnalyses: IPreparedAssetAnalysis[] = [];
   const finalizedAnalyses: IFinalizedAssetAnalysis[] = [];
+  let performanceFailureHandled = false;
   let mlHandle: MlAvailability | null = null;
   let mlUsed = false;
   const getMlHandle = async () => {
@@ -243,28 +245,68 @@ export async function analyzeWorkspaceProjectMedia(
     if (!performance || !performanceProfilePath) return;
     await performance.write(performanceProfilePath);
   };
+  const resolveStepMeta = (step: typeof CANALYZE_STEP_DEFINITIONS[number]['key']) => {
+    const stepIndex = CANALYZE_STEP_DEFINITIONS.findIndex(item => item.key === step);
+    const definition = CANALYZE_STEP_DEFINITIONS[stepIndex];
+    if (!definition) {
+      throw new Error(`Unknown analyze step: ${step}`);
+    }
+    return {
+      ...definition,
+      stepIndex: stepIndex + 1,
+      stepTotal: CANALYZE_STEP_DEFINITIONS.length,
+    };
+  };
+  const writeAnalyzeStepProgress = async (inputStep: {
+    step: typeof CANALYZE_STEP_DEFINITIONS[number]['key'];
+    fileIndex?: number;
+    fileTotal?: number;
+    current?: number;
+    total?: number;
+    unit?: string;
+    detail?: string;
+    fileName?: string;
+    etaSeconds?: number;
+    extra?: Record<string, unknown>;
+    status?: 'running' | 'succeeded' | 'failed';
+  }) => {
+    const stepMeta = resolveStepMeta(inputStep.step);
+    await writeTrackedProgress({
+      status: inputStep.status ?? 'running',
+      pipelineKey: 'media-analyze',
+      pipelineLabel: '素材分析流程',
+      phaseKey: 'coarse-first-project-analysis',
+      phaseLabel: '粗扫优先素材分析',
+      step: stepMeta.key,
+      stepLabel: stepMeta.label,
+      stepIndex: stepMeta.stepIndex,
+      stepTotal: stepMeta.stepTotal,
+      stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
+      fileIndex: inputStep.fileIndex,
+      fileTotal: inputStep.fileTotal,
+      current: inputStep.current,
+      total: inputStep.total,
+      unit: inputStep.unit,
+      detail: inputStep.detail,
+      fileName: inputStep.fileName,
+      etaSeconds: inputStep.etaSeconds,
+      extra: inputStep.extra,
+    });
+  };
 
-  await writeTrackedProgress({
-    status: 'running',
-    pipelineKey: 'media-analyze',
-    pipelineLabel: '素材分析流程',
-    phaseKey: 'coarse-first-project-analysis',
-    phaseLabel: '粗扫优先素材分析',
+  await writeAnalyzeStepProgress({
     step: 'prepare',
-    stepLabel: '准备素材分析',
-    stepIndex: 1,
-    stepTotal: CANALYZE_STEP_DEFINITIONS.length,
-    stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
+    status: 'running',
     fileIndex: progressBase,
     fileTotal: progressTotal,
     current: progressBase,
     total: progressTotal,
     unit: 'files',
     detail: `正在读取项目“${project.name}”的素材与设备映射`,
-    extra: {
-      projectId: input.projectId,
-      projectName: project.name,
-    },
+        extra: {
+          projectId: input.projectId,
+          projectName: project.name,
+        },
   });
 
   try {
@@ -278,6 +320,7 @@ export async function analyzeWorkspaceProjectMedia(
       await getMlHandle();
     }
 
+    const finalizeFailures: IFinalizeFailure[] = [];
     const coarsePhaseStartedAtMs = Date.now();
     for (const [index, asset] of pendingAssets.entries()) {
       const localPath = resolveAssetLocalPath(input.projectId, asset, roots, deviceMaps);
@@ -288,17 +331,8 @@ export async function analyzeWorkspaceProjectMedia(
         pendingAssets.length,
       );
 
-      await writeTrackedProgress({
-        status: 'running',
-        pipelineKey: 'media-analyze',
-        pipelineLabel: '素材分析流程',
-        phaseKey: 'coarse-first-project-analysis',
-        phaseLabel: '粗扫优先素材分析',
+      await writeAnalyzeStepProgress({
         step: 'coarse-scan',
-        stepLabel: '粗扫素材',
-        stepIndex: 2,
-        stepTotal: CANALYZE_STEP_DEFINITIONS.length,
-        stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
         fileName: asset.displayName,
         fileIndex,
         fileTotal: progressTotal,
@@ -324,6 +358,7 @@ export async function analyzeWorkspaceProjectMedia(
         asset,
         localPath,
         projectRoot,
+        roots,
         runtimeConfig,
         getMlHandle,
         performance,
@@ -336,17 +371,11 @@ export async function analyzeWorkspaceProjectMedia(
     for (const [index, prepared] of preparedAnalyses.entries()) {
       const fileIndex = toOverallProgressIndex(index + 1);
 
-      await writeTrackedProgress({
-        status: 'running',
-        pipelineKey: 'media-analyze',
-        pipelineLabel: '素材分析流程',
-        phaseKey: 'coarse-first-project-analysis',
-        phaseLabel: '粗扫优先素材分析',
-        step: 'audio-analysis',
-        stepLabel: '分析视频内音轨',
-        stepIndex: 3,
-        stepTotal: CANALYZE_STEP_DEFINITIONS.length,
-        stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
+      const writePreparedStageProgress = async (
+        stage: 'audio-analysis' | 'finalize',
+        detail?: string,
+      ) => writeAnalyzeStepProgress({
+        step: stage,
         fileName: prepared.asset.displayName,
         fileIndex,
         fileTotal: progressTotal,
@@ -358,7 +387,7 @@ export async function analyzeWorkspaceProjectMedia(
           analyzedAssetIds.length,
           preparedAnalyses.length,
         ),
-        detail: describeDecisionStage(prepared.asset, prepared.hasAudioTrack),
+        detail,
         extra: {
           projectId: input.projectId,
           projectName: project.name,
@@ -367,62 +396,94 @@ export async function analyzeWorkspaceProjectMedia(
         },
       });
 
-      const finalizeStartedAt = Date.now();
-      const finalized = await finalizePreparedAsset({
-        projectId: input.projectId,
-        prepared,
-        projectRoot,
-        roots,
-        deviceMaps,
-        derivedTrack,
-        gpxPaths,
-        gpxMatchToleranceMs: input.gpxMatchToleranceMs,
-        budget: input.budget,
-        getMlHandle,
-        performance,
-        onStageChange: async (stage, detail) => {
-          if (stage !== 'audio-analysis') return;
-          await writeTrackedProgress({
-            status: 'running',
-            pipelineKey: 'media-analyze',
-            pipelineLabel: '素材分析流程',
-            phaseKey: 'coarse-first-project-analysis',
-            phaseLabel: '粗扫优先素材分析',
-            step: 'audio-analysis',
-            stepLabel: '分析视频内音轨',
-            stepIndex: 3,
-            stepTotal: CANALYZE_STEP_DEFINITIONS.length,
-            stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
-            fileName: prepared.asset.displayName,
-            fileIndex,
-            fileTotal: progressTotal,
-            current: fileIndex,
-            total: progressTotal,
-            unit: 'files',
-            etaSeconds: estimatePhaseEtaSeconds(
-              audioPhaseStartedAtMs,
-              analyzedAssetIds.length,
-              preparedAnalyses.length,
-            ),
-            detail: detail ?? `正在分析 ${prepared.asset.displayName} 的视频内音轨`,
-            extra: {
-              projectId: input.projectId,
-              projectName: project.name,
-              assetId: prepared.asset.id,
-              assetKind: prepared.asset.kind,
-            },
-          });
+      const needsAudioStage = shouldAnalyzeAudioTrack(prepared.asset, prepared.hasAudioTrack)
+        || Boolean(prepared.asset.protectionAudio);
+      if (needsAudioStage) {
+        await writePreparedStageProgress(
+          'audio-analysis',
+          describeAudioAnalysisStage(prepared.asset, prepared.hasAudioTrack),
+        );
+      } else {
+        await writePreparedStageProgress(
+          'finalize',
+          describeFinalizeStage(prepared.asset, prepared.hasAudioTrack),
+        );
+      }
+
+      try {
+        const finalizeStartedAt = Date.now();
+        const finalized = await finalizePreparedAsset({
+          projectId: input.projectId,
+          prepared,
+          projectRoot,
+          roots,
+          deviceMaps,
+          derivedTrack,
+          gpxPaths,
+          gpxMatchToleranceMs: input.gpxMatchToleranceMs,
+          budget: input.budget,
+          getMlHandle,
+          performance,
+          onStageChange: async (stage, detail) => {
+            await writePreparedStageProgress(
+              stage,
+              detail ?? (
+                stage === 'audio-analysis'
+                  ? describeAudioAnalysisStage(prepared.asset, prepared.hasAudioTrack)
+                  : describeFinalizeStage(prepared.asset, prepared.hasAudioTrack)
+              ),
+            );
+          },
+        });
+        performance?.recordStage(prepared.asset, 'finalize', Date.now() - finalizeStartedAt);
+
+        await writeTrackedReport(prepared.asset, finalized.report);
+        await removeAudioAnalysisCheckpoint(projectRoot, prepared.asset.id);
+        if (!finalized.report.shouldFineScan) {
+          await removePreparedAssetCheckpoint(projectRoot, prepared.asset.id);
+        }
+        analyzedAssetIds.push(prepared.asset.id);
+        finalizedAnalyses.push(finalized);
+      } catch (error) {
+        finalizeFailures.push({
+          assetId: prepared.asset.id,
+          displayName: prepared.asset.displayName,
+          stage: 'finalize',
+          reason: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
+    if (finalizeFailures.length > 0) {
+      const failedDisplayNames = finalizeFailures
+        .map(item => item.displayName)
+        .join('、');
+      const failureMessage = `统一完成素材分析失败 ${finalizeFailures.length} 条：${failedDisplayNames}`;
+      await writeAnalyzeStepProgress({
+        step: 'finalize',
+        status: 'failed',
+        fileIndex: toOverallProgressIndex(analyzedAssetIds.length),
+        fileTotal: progressTotal,
+        current: toOverallProgressIndex(analyzedAssetIds.length),
+        total: progressTotal,
+        unit: 'files',
+        detail: failureMessage,
+        extra: {
+          projectId: input.projectId,
+          projectName: project.name,
+          failures: finalizeFailures,
         },
       });
-      performance?.recordStage(prepared.asset, 'finalize', Date.now() - finalizeStartedAt);
-
-      await writeTrackedReport(prepared.asset, finalized.report);
-      await removeAudioAnalysisCheckpoint(projectRoot, prepared.asset.id);
-      if (!finalized.report.shouldFineScan) {
-        await removePreparedAssetCheckpoint(projectRoot, prepared.asset.id);
-      }
-      analyzedAssetIds.push(prepared.asset.id);
-      finalizedAnalyses.push(finalized);
+      performance?.finalizeFailure({
+        pipelineTotalMs: Date.now() - startedAtMs,
+        failureMessage,
+        analyzedAssetCount: analyzedAssetIds.length,
+        fineScannedAssetCount: fineScannedAssetIds.length,
+        failureItems: finalizeFailures,
+      });
+      performanceFailureHandled = true;
+      await flushPerformance();
+      throw new Error(failureMessage);
     }
 
     const resumedFineScanAnalyses = await loadPendingFineScanAnalyses({
@@ -456,17 +517,8 @@ export async function analyzeWorkspaceProjectMedia(
     pendingSlices.push(...fineScanResult.pendingSlices);
     fineScannedAssetIds.push(...fineScanResult.fineScannedAssetIds);
 
-    await writeTrackedProgress({
-      status: 'running',
-      pipelineKey: 'media-analyze',
-      pipelineLabel: '素材分析流程',
-      phaseKey: 'coarse-first-project-analysis',
-      phaseLabel: '粗扫优先素材分析',
+    await writeAnalyzeStepProgress({
       step: 'chronology',
-      stepLabel: '刷新时间视图',
-      stepIndex: CANALYZE_STEP_DEFINITIONS.length,
-      stepTotal: CANALYZE_STEP_DEFINITIONS.length,
-      stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
       fileIndex: progressTotal,
       fileTotal: progressTotal,
       current: progressTotal,
@@ -495,17 +547,9 @@ export async function analyzeWorkspaceProjectMedia(
       root => root.enabled && !resolveAssetRootAvailable(input.projectId, root, deviceMaps),
     );
 
-    await writeTrackedProgress({
-      status: 'succeeded',
-      pipelineKey: 'media-analyze',
-      pipelineLabel: '素材分析流程',
-      phaseKey: 'coarse-first-project-analysis',
-      phaseLabel: '粗扫优先素材分析',
+    await writeAnalyzeStepProgress({
       step: 'chronology',
-      stepLabel: '素材分析完成',
-      stepIndex: CANALYZE_STEP_DEFINITIONS.length,
-      stepTotal: CANALYZE_STEP_DEFINITIONS.length,
-      stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
+      status: 'succeeded',
       fileIndex: progressTotal,
       fileTotal: progressTotal,
       current: progressTotal,
@@ -540,31 +584,36 @@ export async function analyzeWorkspaceProjectMedia(
       performanceProfilePath,
     };
   } catch (error) {
-    await writeTrackedProgress({
-      status: 'failed',
-      pipelineKey: 'media-analyze',
-      pipelineLabel: '素材分析流程',
-      phaseKey: 'coarse-first-project-analysis',
-      phaseLabel: '粗扫优先素材分析',
-      stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
-      fileIndex: toOverallProgressIndex(analyzedAssetIds.length),
-      fileTotal: progressTotal,
-      current: toOverallProgressIndex(analyzedAssetIds.length),
-      total: progressTotal,
-      unit: 'files',
-      detail: error instanceof Error ? error.message : String(error),
-      extra: {
-        projectId: input.projectId,
-        projectName: project.name,
-      },
-    });
-    performance?.finalizeFailure({
-      pipelineTotalMs: Date.now() - startedAtMs,
-      failureMessage: error instanceof Error ? error.message : String(error),
-      analyzedAssetCount: analyzedAssetIds.length,
-      fineScannedAssetCount: fineScannedAssetIds.length,
-    });
-    await flushPerformance();
+    const failureMessage = error instanceof Error ? error.message : String(error);
+    if (!performanceFailureHandled) {
+      await writeTrackedProgress({
+        status: 'failed',
+        pipelineKey: 'media-analyze',
+        pipelineLabel: '素材分析流程',
+        phaseKey: 'coarse-first-project-analysis',
+        phaseLabel: '粗扫优先素材分析',
+        stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
+        fileIndex: toOverallProgressIndex(analyzedAssetIds.length),
+        fileTotal: progressTotal,
+        current: toOverallProgressIndex(analyzedAssetIds.length),
+        total: progressTotal,
+        unit: 'files',
+        detail: failureMessage,
+        extra: {
+          projectId: input.projectId,
+          projectName: project.name,
+        },
+      });
+    }
+    if (!performanceFailureHandled) {
+      performance?.finalizeFailure({
+        pipelineTotalMs: Date.now() - startedAtMs,
+        failureMessage,
+        analyzedAssetCount: analyzedAssetIds.length,
+        fineScannedAssetCount: fineScannedAssetIds.length,
+      });
+      await flushPerformance();
+    }
     throw error;
   }
 }
@@ -573,6 +622,7 @@ interface IAnalyzeSingleAssetInput {
   asset: IKtepAsset;
   localPath: string;
   projectRoot: string;
+  roots: IMediaRoot[];
   runtimeConfig: {
     ffmpegPath?: string;
     ffprobePath?: string;
@@ -599,9 +649,15 @@ interface IPreparedAssetAnalysis extends IAnalyzeSingleAssetInput {
   shotBoundariesResolved: boolean;
   sampleFrames: { timeMs: number; path: string }[];
   coarseSampleTimestamps: number[];
-  visualSummary: IRecognition | null;
-  initialClipTypeGuess: EClipType;
   hasAudioTrack: boolean;
+  sourceContext: IPreparedSourceContext;
+}
+
+interface IPreparedSourceContext {
+  ingestRootId?: string;
+  rootLabel?: string;
+  rootDescription?: string;
+  rootNotes: string[];
 }
 
 interface IFinalizePreparedAssetInput {
@@ -615,7 +671,7 @@ interface IFinalizePreparedAssetInput {
   gpxMatchToleranceMs?: number;
   budget?: ETargetBudget;
   getMlHandle: () => Promise<MlAvailability>;
-  onStageChange?: (stage: 'audio-analysis', detail?: string) => Promise<void>;
+  onStageChange?: (stage: 'audio-analysis' | 'finalize', detail?: string) => Promise<void>;
   performance?: AnalyzePerformanceSession;
 }
 
@@ -623,6 +679,7 @@ interface IFinalizedAssetAnalysis {
   prepared: IPreparedAssetAnalysis;
   report: IAssetCoarseReport;
   transcript?: ITranscriptContext | null;
+  visualSummary?: IRecognition | null;
   clipType: EClipType;
   decisionReasons: string[];
 }
@@ -653,6 +710,8 @@ interface IFineScanRecognitionResult {
 interface IPreparedAssetPlanningContext {
   density: IDensityResult;
   basePlan: IMediaAnalysisPlan;
+  heuristicClipType: EClipType;
+  visualSummary: IRecognition | null;
   decision: IAnalysisDecision;
   finalPlan: IMediaAnalysisPlan;
   decisionReasons: string[];
@@ -667,6 +726,31 @@ interface ITranscribedAudioContext {
   context: ITranscriptContext | null;
   timing?: ITranscription['timing'];
   roundTripMs?: number;
+}
+
+interface IAudioDecisionHints {
+  protectionRecommendation?: string;
+  protectionTranscriptExcerpt?: string;
+}
+
+interface IAudioAnalysisContext {
+  embeddedTranscript: ITranscriptContext | null;
+  protectionTranscript?: ITranscriptContext | null;
+  protectedAudio?: IAssetCoarseReport['protectedAudio'];
+  decisionHints: IAudioDecisionHints;
+  hasAvailableProtectionAudio: boolean;
+}
+
+interface IUnifiedFinalizeAnalysis {
+  visualSummary: IRecognition | null;
+  decision: IAnalysisDecision;
+}
+
+interface IFinalizeFailure {
+  assetId: string;
+  displayName: string;
+  stage: 'finalize';
+  reason: string;
 }
 
 interface IResumeFineScanEntry {
@@ -735,9 +819,8 @@ async function prepareAssetVisualCoarse(
       shotBoundariesResolved: true,
       sampleFrames: [],
       coarseSampleTimestamps: [],
-      visualSummary: null,
-      initialClipTypeGuess: 'unknown',
       hasAudioTrack: false,
+      sourceContext: buildPreparedSourceContext(input.asset, input.roots),
     };
   }
 
@@ -759,12 +842,6 @@ async function prepareAssetVisualCoarse(
     keyframeCount: extractedFrames.length,
   });
   const sampleFrames = await filterExistingKeyframes(extractedFrames);
-  const visualSummary = await summarizeSamples({
-    asset: input.asset,
-    ml: await input.getMlHandle(),
-    sampleFrames,
-    performance: input.performance,
-  });
   const hasAudioTrack = await resolveAssetHasAudioTrack(
     input.asset,
     input.localPath,
@@ -777,9 +854,8 @@ async function prepareAssetVisualCoarse(
     shotBoundariesResolved: false,
     sampleFrames,
     coarseSampleTimestamps: sampleTimestamps,
-    visualSummary,
-    initialClipTypeGuess: guessClipType(input.asset, [], false),
     hasAudioTrack,
+    sourceContext: buildPreparedSourceContext(input.asset, input.roots),
   };
 }
 
@@ -793,14 +869,14 @@ async function loadOrPrepareAssetVisualCoarse(
 
   const prepared = await prepareAssetVisualCoarse(input);
   await writePreparedAssetCheckpoint(input.projectRoot, {
+    schemaVersion: 2,
     assetId: prepared.asset.id,
     shotBoundaries: prepared.shotBoundaries,
     shotBoundariesResolved: prepared.shotBoundariesResolved,
     sampleFrames: prepared.sampleFrames,
     coarseSampleTimestamps: prepared.coarseSampleTimestamps,
-    visualSummary: prepared.visualSummary,
-    initialClipTypeGuess: prepared.initialClipTypeGuess,
     hasAudioTrack: prepared.hasAudioTrack,
+    sourceContext: prepared.sourceContext,
   });
   return prepared;
 }
@@ -822,9 +898,8 @@ async function loadPreparedAssetVisualCoarse(
     shotBoundariesResolved: checkpoint.shotBoundariesResolved,
     sampleFrames,
     coarseSampleTimestamps: checkpoint.coarseSampleTimestamps,
-    visualSummary: checkpoint.visualSummary,
-    initialClipTypeGuess: checkpoint.initialClipTypeGuess,
     hasAudioTrack: checkpoint.hasAudioTrack,
+    sourceContext: checkpoint.sourceContext,
   };
 }
 
@@ -835,13 +910,9 @@ async function loadOrAnalyzePreparedAudio(input: {
   roots: IMediaRoot[];
   deviceMaps: IDeviceMediaMapFile;
   ml: MlAvailability;
-  onStageChange?: (stage: 'audio-analysis', detail?: string) => Promise<void>;
+  onStageChange?: (stage: 'audio-analysis' | 'finalize', detail?: string) => Promise<void>;
   performance?: AnalyzePerformanceSession;
-}): Promise<{
-  transcript: ITranscriptContext | null;
-  protectedAudio?: IAssetCoarseReport['protectedAudio'];
-  hasAvailableProtectionAudio: boolean;
-}> {
+}): Promise<IAudioAnalysisContext> {
   const shouldCheckpoint = shouldAnalyzeAudioTrack(input.prepared.asset, input.prepared.hasAudioTrack)
     || Boolean(input.prepared.asset.protectionAudio);
   const protectionAudioLocalPath = await resolveAvailableProtectionAudioLocalPath({
@@ -856,8 +927,17 @@ async function loadOrAnalyzePreparedAudio(input: {
     const checkpoint = await loadAudioAnalysisCheckpoint(input.projectRoot, input.prepared.asset.id);
     if (checkpoint) {
       return {
-        transcript: normalizeTranscriptContext(checkpoint.transcript ?? null),
+        embeddedTranscript: normalizeTranscriptContext(checkpoint.transcript ?? null),
+        protectionTranscript: normalizeTranscriptContext(checkpoint.protectionTranscript ?? null),
         protectedAudio: checkpoint.protectedAudio,
+        decisionHints: {
+          protectionRecommendation: typeof checkpoint.decisionHints?.protectionRecommendation === 'string'
+            ? checkpoint.decisionHints.protectionRecommendation
+            : undefined,
+          protectionTranscriptExcerpt: typeof checkpoint.decisionHints?.protectionTranscriptExcerpt === 'string'
+            ? checkpoint.decisionHints.protectionTranscriptExcerpt
+            : undefined,
+        },
         hasAvailableProtectionAudio,
       };
     }
@@ -866,14 +946,14 @@ async function loadOrAnalyzePreparedAudio(input: {
   if (shouldAnalyzeAudioTrack(input.prepared.asset, input.prepared.hasAudioTrack)) {
     await input.onStageChange?.('audio-analysis', `正在分析 ${input.prepared.asset.displayName} 的视频内音轨`);
   }
-  const transcript = await maybeTranscribeAsset({
+  const embeddedTranscript = await maybeTranscribeAsset({
     asset: input.prepared.asset,
     localPath: input.prepared.localPath,
     hasAudioTrack: input.prepared.hasAudioTrack,
     ml: input.ml,
     performance: input.performance,
   });
-  const protectedAudio = input.prepared.asset.protectionAudio
+  const protectedAudioContext = input.prepared.asset.protectionAudio
     ? await evaluateProtectedAudioFallback({
       projectId: input.projectId,
       asset: input.prepared.asset,
@@ -881,7 +961,7 @@ async function loadOrAnalyzePreparedAudio(input: {
       roots: input.roots,
       deviceMaps: input.deviceMaps,
       runtimeConfig: input.prepared.runtimeConfig,
-      embeddedTranscript: transcript,
+      embeddedTranscript,
       ml: input.ml,
       onStageChange: input.onStageChange,
       performance: input.performance,
@@ -892,14 +972,18 @@ async function loadOrAnalyzePreparedAudio(input: {
   if (shouldCheckpoint) {
     await writeAudioAnalysisCheckpoint(input.projectRoot, {
       assetId: input.prepared.asset.id,
-      transcript,
-      protectedAudio,
+      transcript: embeddedTranscript,
+      protectionTranscript: protectedAudioContext?.protectionTranscript,
+      protectedAudio: protectedAudioContext?.protectedAudio,
+      decisionHints: protectedAudioContext?.decisionHints,
     });
   }
 
   return {
-    transcript,
-    protectedAudio,
+    embeddedTranscript,
+    protectionTranscript: protectedAudioContext?.protectionTranscript,
+    protectedAudio: protectedAudioContext?.protectedAudio,
+    decisionHints: protectedAudioContext?.decisionHints ?? {},
     hasAvailableProtectionAudio,
   };
 }
@@ -914,13 +998,14 @@ async function finalizePreparedAsset(
     return {
       prepared: input.prepared,
       report: buildAudioAssetReport(input.prepared.asset),
+      visualSummary: null,
       clipType: 'unknown',
       decisionReasons: ['audio-assets-skip-visual-fine-scan'],
     };
   }
 
   const ml = await input.getMlHandle();
-  const { transcript, protectedAudio, hasAvailableProtectionAudio } = await loadOrAnalyzePreparedAudio({
+  const audioContext = await loadOrAnalyzePreparedAudio({
     projectId: input.projectId,
     projectRoot: input.projectRoot,
     prepared: input.prepared,
@@ -938,9 +1023,14 @@ async function finalizePreparedAsset(
     gpxMatchToleranceMs: input.gpxMatchToleranceMs,
     derivedTrack: input.derivedTrack,
   });
+  await input.onStageChange?.('finalize', describeFinalizeStage(
+    input.prepared.asset,
+    input.prepared.hasAudioTrack,
+  ));
   const provisionalPlanning = await resolvePreparedAssetPlanning({
     prepared: input.prepared,
-    transcript,
+    transcript: audioContext.embeddedTranscript,
+    audioContext,
     budget: input.budget,
     ml,
     manualSpatial,
@@ -951,6 +1041,7 @@ async function finalizePreparedAsset(
   let planning = provisionalPlanning;
   if (shouldRunDeferredSceneDetect({
     prepared,
+    visualSummary: provisionalPlanning.visualSummary,
     plan: provisionalPlanning.finalPlan,
     manualSpatial,
   })) {
@@ -962,12 +1053,16 @@ async function finalizePreparedAsset(
     });
     planning = await resolvePreparedAssetPlanning({
       prepared,
-      transcript,
+      transcript: audioContext.embeddedTranscript,
+      audioContext,
       budget: input.budget,
       ml,
       manualSpatial,
       performance: input.performance,
-      decision: provisionalPlanning.decision,
+      unifiedAnalysis: {
+        visualSummary: provisionalPlanning.visualSummary,
+        decision: provisionalPlanning.decision,
+      },
     });
   }
 
@@ -977,23 +1072,23 @@ async function finalizePreparedAsset(
     clipTypeGuess: planning.decision.clipType,
     gpsSummary: manualSpatial?.gpsSummary,
     inferredGps: manualSpatial?.inferredGps,
-    summary: prepared.visualSummary?.description,
-    transcript: transcript?.transcript,
-    transcriptSegments: transcript?.segments,
-    speechCoverage: transcript?.speechCoverage,
-    protectedAudio,
+    summary: planning.visualSummary?.description,
+    transcript: audioContext.embeddedTranscript?.transcript,
+    transcriptSegments: audioContext.embeddedTranscript?.segments,
+    speechCoverage: audioContext.embeddedTranscript?.speechCoverage,
+    protectedAudio: audioContext.protectedAudio,
     labels: dedupeStrings([
       ...buildReportLabels(
         planning.decision.clipType,
-        prepared.visualSummary?.sceneType,
-        prepared.visualSummary?.subjects,
-        transcript,
+        planning.visualSummary?.sceneType,
+        planning.visualSummary?.subjects,
+        audioContext.embeddedTranscript,
       ),
-      ...(hasAvailableProtectionAudio ? ['protection-audio-available'] : []),
-      ...(protectedAudio?.recommendedSource === 'protection' ? ['protection-audio-fallback'] : []),
+      ...(audioContext.hasAvailableProtectionAudio ? ['protection-audio-available'] : []),
+      ...(audioContext.protectedAudio?.recommendedSource === 'protection' ? ['protection-audio-fallback'] : []),
     ]),
     placeHints: dedupeStrings([
-      ...(prepared.visualSummary?.placeHints ?? []),
+      ...(planning.visualSummary?.placeHints ?? []),
       ...(manualSpatial?.placeHints ?? []),
     ]),
     rootNotes: root?.notes ?? [],
@@ -1002,7 +1097,7 @@ async function finalizePreparedAsset(
       planning.finalPlan,
       planning.density,
       prepared.shotBoundaries,
-      transcript,
+      audioContext.embeddedTranscript,
       planning.decisionReasons,
     ),
   });
@@ -1010,7 +1105,8 @@ async function finalizePreparedAsset(
   return {
     prepared,
     report,
-    transcript,
+    transcript: audioContext.embeddedTranscript,
+    visualSummary: planning.visualSummary,
     clipType: planning.decision.clipType,
     decisionReasons: planning.decisionReasons,
   };
@@ -1035,65 +1131,74 @@ async function resolveManualSpatialContext(input: {
 async function resolvePreparedAssetPlanning(input: {
   prepared: IPreparedAssetAnalysis;
   transcript?: ITranscriptContext | null;
+  audioContext?: IAudioAnalysisContext;
   budget?: ETargetBudget;
   ml: MlAvailability;
   manualSpatial?: IManualSpatialContext | null;
   performance?: AnalyzePerformanceSession;
-  decision?: IAnalysisDecision;
+  unifiedAnalysis?: IUnifiedFinalizeAnalysis;
 }): Promise<IPreparedAssetPlanningContext> {
   const density = estimateDensity({
     durationMs: input.prepared.asset.durationMs ?? 0,
     shotBoundaries: input.prepared.shotBoundaries,
     asrSegments: buildDensityAsrSegments(input.transcript),
   });
+  const heuristicClipType = resolveHeuristicClipType(input.prepared);
   const basePlan = buildAnalysisPlan({
     assetId: input.prepared.asset.id,
     durationMs: input.prepared.asset.durationMs ?? 0,
     density,
     shotBoundaries: input.prepared.shotBoundaries,
-    clipType: input.prepared.initialClipTypeGuess,
+    clipType: heuristicClipType,
     budget: input.budget,
     extraInterestingWindows: input.transcript?.speechWindows,
   });
   const fallbackDecision = buildFallbackUnifiedAnalysisDecision({
     prepared: input.prepared,
     transcript: input.transcript,
+    audioContext: input.audioContext,
     densityScore: density.score,
     basePlan,
+    heuristicClipType,
     budget: input.budget,
     manualSpatial: input.manualSpatial,
   });
-  const decision = input.decision
-    ? reconcileUnifiedAnalysisDecision({
-      candidate: input.decision,
-      fallback: fallbackDecision,
-      basePlan,
-      budget: input.budget,
-      hasMeaningfulSpeech: hasMeaningfulSpeech(input.transcript),
-    })
-    : await resolveUnifiedAnalysisDecision({
+  const unifiedAnalysis = input.unifiedAnalysis
+    ? {
+      visualSummary: input.unifiedAnalysis.visualSummary,
+      decision: reconcileUnifiedAnalysisDecision({
+        candidate: input.unifiedAnalysis.decision,
+        fallback: fallbackDecision,
+        basePlan,
+        budget: input.budget,
+        hasMeaningfulSpeech: hasMeaningfulSpeech(input.transcript),
+      }),
+    }
+    : await resolveUnifiedFinalizeAnalysis({
       prepared: input.prepared,
       transcript: input.transcript,
+      audioContext: input.audioContext,
       densityScore: density.score,
       basePlan,
+      heuristicClipType,
       budget: input.budget,
       ml: input.ml,
       manualSpatial: input.manualSpatial,
       performance: input.performance,
-      fallbackDecision,
+      fallback: fallbackDecision,
     });
   const decisionBasePlan = buildAnalysisPlan({
     assetId: input.prepared.asset.id,
     durationMs: input.prepared.asset.durationMs ?? 0,
     density,
     shotBoundaries: input.prepared.shotBoundaries,
-    clipType: decision.clipType,
+    clipType: unifiedAnalysis.decision.clipType,
     budget: input.budget,
     extraInterestingWindows: input.transcript?.speechWindows,
   });
   const decidedPlan = applyDriveFallbackWindows(
-    applyAnalysisDecision(decisionBasePlan, decision),
-    decision.clipType,
+    applyAnalysisDecision(decisionBasePlan, unifiedAnalysis.decision),
+    unifiedAnalysis.decision.clipType,
     input.prepared.asset.durationMs ?? 0,
     input.budget,
     input.prepared.coarseSampleTimestamps,
@@ -1101,7 +1206,7 @@ async function resolvePreparedAssetPlanning(input: {
   const expandedPlan: IMediaAnalysisPlan = {
     ...decidedPlan,
     interestingWindows: applyTypeAwareWindowExpansion({
-      clipType: decision.clipType,
+      clipType: unifiedAnalysis.decision.clipType,
       durationMs: input.prepared.asset.durationMs ?? 0,
       windows: decidedPlan.interestingWindows,
       shotBoundaries: input.prepared.shotBoundaries,
@@ -1109,7 +1214,7 @@ async function resolvePreparedAssetPlanning(input: {
   };
   const audioLedPlan = applyTalkingHeadAudioLedWindowStrategy({
     plan: expandedPlan,
-    clipType: decision.clipType,
+    clipType: unifiedAnalysis.decision.clipType,
     transcript: input.transcript,
     durationMs: input.prepared.asset.durationMs ?? 0,
   });
@@ -1117,10 +1222,12 @@ async function resolvePreparedAssetPlanning(input: {
   return {
     density,
     basePlan,
-    decision,
+    heuristicClipType,
+    visualSummary: unifiedAnalysis.visualSummary,
+    decision: unifiedAnalysis.decision,
     finalPlan: audioLedPlan.plan,
     decisionReasons: dedupeStrings([
-      ...decision.decisionReasons,
+      ...unifiedAnalysis.decision.decisionReasons,
       ...(input.manualSpatial?.decisionReasons ?? []),
       ...(audioLedPlan.applied ? ['talking-head:audio-led-windows'] : []),
     ]),
@@ -1139,6 +1246,7 @@ function buildDensityAsrSegments(
 
 function shouldRunDeferredSceneDetect(input: {
   prepared: IPreparedAssetAnalysis;
+  visualSummary?: IRecognition | null;
   plan: IMediaAnalysisPlan;
   manualSpatial?: IManualSpatialContext | null;
 }): boolean {
@@ -1169,7 +1277,7 @@ async function runDeferredSceneDetect(input: {
       0.3,
       input.prepared.runtimeConfig,
       {
-        clipType: input.clipType ?? input.prepared.initialClipTypeGuess,
+        clipType: input.clipType ?? resolveHeuristicClipType(input.prepared),
         durationMs: input.prepared.asset.durationMs,
       },
     );
@@ -1188,40 +1296,46 @@ async function runDeferredSceneDetect(input: {
     ...input.prepared,
     shotBoundaries,
     shotBoundariesResolved: true,
-    initialClipTypeGuess: guessClipType(input.prepared.asset, shotBoundaries, true),
   };
 }
 
-async function resolveUnifiedAnalysisDecision(input: {
+async function resolveUnifiedFinalizeAnalysis(input: {
   prepared: IPreparedAssetAnalysis;
   transcript?: ITranscriptContext | null;
+  audioContext?: IAudioAnalysisContext;
   densityScore: number;
   basePlan: IMediaAnalysisPlan;
+  heuristicClipType: EClipType;
   budget?: ETargetBudget;
   ml: MlAvailability;
   manualSpatial?: IManualSpatialContext | null;
   performance?: AnalyzePerformanceSession;
-  fallbackDecision?: IAnalysisDecision;
-}): Promise<IAnalysisDecision> {
-  const fallbackDecision = input.fallbackDecision ?? buildFallbackUnifiedAnalysisDecision(input);
+  fallback: IAnalysisDecision;
+}): Promise<IUnifiedFinalizeAnalysis> {
+  const inference = await inferUnifiedAnalysisDecision(input);
+  if (!inference.ok) {
+    throw new Error(inference.reason);
+  }
 
-  const inferredDecision = await inferUnifiedAnalysisDecision(input);
-  return !inferredDecision
-    ? fallbackDecision
-    : reconcileUnifiedAnalysisDecision({
-      candidate: inferredDecision,
-      fallback: fallbackDecision,
+  return {
+    visualSummary: inference.value.visualSummary,
+    decision: reconcileUnifiedAnalysisDecision({
+      candidate: inference.value.decision,
+      fallback: input.fallback,
       basePlan: input.basePlan,
       budget: input.budget,
       hasMeaningfulSpeech: hasMeaningfulSpeech(input.transcript),
-    });
+    }),
+  };
 }
 
 function buildFallbackUnifiedAnalysisDecision(input: {
   prepared: IPreparedAssetAnalysis;
   transcript?: ITranscriptContext | null;
+  audioContext?: IAudioAnalysisContext;
   densityScore: number;
   basePlan: IMediaAnalysisPlan;
+  heuristicClipType: EClipType;
   budget?: ETargetBudget;
   manualSpatial?: IManualSpatialContext | null;
 }): IAnalysisDecision {
@@ -1229,12 +1343,10 @@ function buildFallbackUnifiedAnalysisDecision(input: {
     durationMs: input.prepared.asset.durationMs ?? 0,
     densityScore: input.densityScore,
     interestingWindowCount: input.basePlan.interestingWindows.length,
-    clipType: input.prepared.initialClipTypeGuess,
-    initialClipTypeGuess: input.prepared.initialClipTypeGuess,
+    clipType: input.heuristicClipType,
+    initialClipTypeGuess: input.heuristicClipType,
     budget: input.budget,
-    sceneType: input.prepared.visualSummary?.sceneType,
-    subjects: input.prepared.visualSummary?.subjects,
-    summary: input.prepared.visualSummary?.description,
+    sourceContextText: buildSourceContextText(input.prepared.sourceContext),
     transcript: input.transcript?.transcript,
     speechCoverage: input.transcript?.speechCoverage,
     hasAudioTrack: input.prepared.hasAudioTrack,
@@ -1247,30 +1359,41 @@ function buildFallbackUnifiedAnalysisDecision(input: {
 async function inferUnifiedAnalysisDecision(input: {
   prepared: IPreparedAssetAnalysis;
   transcript?: ITranscriptContext | null;
+  audioContext?: IAudioAnalysisContext;
   densityScore: number;
   basePlan: IMediaAnalysisPlan;
+  heuristicClipType: EClipType;
   budget?: ETargetBudget;
   ml: MlAvailability;
   manualSpatial?: IManualSpatialContext | null;
   performance?: AnalyzePerformanceSession;
-}): Promise<IAnalysisDecision | null> {
-  if (!input.ml.available) return null;
+}): Promise<
+  | { ok: true; value: IUnifiedFinalizeAnalysis }
+  | { ok: false; reason: string }
+> {
+  if (!input.ml.available) {
+    return { ok: false, reason: `素材 ${input.prepared.asset.displayName} 在 finalize 阶段无法连接 ML 服务` };
+  }
 
   const framePaths = pickRepresentativeFramePaths(
     input.prepared.sampleFrames.map(frame => frame.path),
     6,
   );
-  if (framePaths.length === 0) return null;
+  if (framePaths.length === 0) {
+    return { ok: false, reason: `素材 ${input.prepared.asset.displayName} 缺少可用于 finalize 的代表帧` };
+  }
 
   try {
     const decisionStartedAt = Date.now();
     const result = await input.ml.client.vlmAnalyze(
       framePaths,
-      buildUnifiedDecisionPrompt({
+      buildUnifiedFinalizePrompt({
         prepared: input.prepared,
         transcript: input.transcript,
+        audioContext: input.audioContext,
         densityScore: input.densityScore,
         basePlan: input.basePlan,
+        heuristicClipType: input.heuristicClipType,
         budget: input.budget,
         manualSpatial: input.manualSpatial,
       }),
@@ -1278,14 +1401,27 @@ async function inferUnifiedAnalysisDecision(input: {
     );
     input.performance?.recordVlm({
       asset: input.prepared.asset,
-      phase: 'decision',
+      phase: 'finalize',
       imageCount: framePaths.length,
       roundTripMs: Date.now() - decisionStartedAt,
       timing: result.timing,
     });
-    return parseUnifiedAnalysisDecision(result.description);
-  } catch {
-    return null;
+    const parsed = parseUnifiedFinalizeAnalysis(result.description);
+    if (!parsed) {
+      return {
+        ok: false,
+        reason: `素材 ${input.prepared.asset.displayName} 的 unified finalize 返回了无效 JSON`,
+      };
+    }
+    return {
+      ok: true,
+      value: parsed,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      reason: `素材 ${input.prepared.asset.displayName} 的 unified finalize 失败：${error instanceof Error ? error.message : String(error)}`,
+    };
   }
 }
 
@@ -1392,12 +1528,13 @@ function countSeparatedInterestingWindowClusters(windows: IInterestingWindow[]):
 
 function shouldRunScenicDriveDeferredSceneDetect(input: {
   prepared: IPreparedAssetAnalysis;
+  visualSummary?: IRecognition | null;
   plan: IMediaAnalysisPlan;
   manualSpatial?: IManualSpatialContext | null;
 }): boolean {
   if (input.plan.clipType !== 'drive') return false;
 
-  const visualSummary = input.prepared.visualSummary;
+  const visualSummary = input.visualSummary;
   if (!visualSummary) return false;
 
   const semanticText = [
@@ -1680,10 +1817,14 @@ export async function evaluateProtectedAudioFallback(input: {
   runtimeConfig: IPreparedAssetAnalysis['runtimeConfig'];
   embeddedTranscript?: ITranscriptContext | null;
   ml: MlAvailability;
-  onStageChange?: (stage: 'audio-analysis', detail?: string) => Promise<void>;
+  onStageChange?: (stage: 'audio-analysis' | 'finalize', detail?: string) => Promise<void>;
   performance?: AnalyzePerformanceSession;
   protectionAudioLocalPath?: string | null;
-}): Promise<IAssetCoarseReport['protectedAudio'] | undefined> {
+}): Promise<{
+  protectedAudio?: IAssetCoarseReport['protectedAudio'];
+  protectionTranscript?: ITranscriptContext | null;
+  decisionHints: IAudioDecisionHints;
+} | undefined> {
   const binding = input.asset.protectionAudio;
   if (!binding) return undefined;
 
@@ -1705,11 +1846,15 @@ export async function evaluateProtectedAudioFallback(input: {
     deviceMaps: input.deviceMaps,
   });
   if (!protectionLocalPath) {
-    return recommendProtectedAudioFallback({
+    const protectedAudio = recommendProtectedAudioFallback({
       binding,
       embedded: embeddedSummary,
       comparedProtectionTranscript: false,
     });
+    return {
+      protectedAudio,
+      decisionHints: buildProtectedAudioDecisionHints(protectedAudio),
+    };
   }
 
   let protectionTranscript: ITranscriptContext | null = null;
@@ -1745,12 +1890,17 @@ export async function evaluateProtectedAudioFallback(input: {
     ],
   });
 
-  return recommendProtectedAudioFallback({
+  const protectedAudio = recommendProtectedAudioFallback({
     binding,
     embedded: embeddedSummary,
     protection: protectionSummary,
     comparedProtectionTranscript,
   });
+  return {
+    protectedAudio,
+    protectionTranscript,
+    decisionHints: buildProtectedAudioDecisionHints(protectedAudio, protectionTranscript),
+  };
 }
 
 function shouldCompareProtectionTranscript(
@@ -1832,19 +1982,22 @@ function buildSpeechWindows(
   );
 }
 
-function buildUnifiedDecisionPrompt(input: {
+function buildUnifiedFinalizePrompt(input: {
   prepared: IPreparedAssetAnalysis;
   transcript?: ITranscriptContext | null;
+  audioContext?: IAudioAnalysisContext;
   densityScore: number;
   basePlan: IMediaAnalysisPlan;
+  heuristicClipType: EClipType;
   budget?: ETargetBudget;
   manualSpatial?: IManualSpatialContext | null;
 }): string {
   const transcriptExcerpt = buildTranscriptExcerpt(input.transcript) ?? 'none';
+  const sourceContextText = buildSourceContextText(input.prepared.sourceContext);
   const signalPayload = JSON.stringify({
     duration_ms: input.prepared.asset.durationMs ?? 0,
     budget: input.budget ?? 'standard',
-    initial_clip_type_guess: input.prepared.initialClipTypeGuess,
+    heuristic_clip_type: input.heuristicClipType,
     density_score: Number(input.densityScore.toFixed(3)),
     shot_count_known: input.prepared.shotBoundariesResolved,
     shot_count: input.prepared.shotBoundariesResolved
@@ -1853,10 +2006,13 @@ function buildUnifiedDecisionPrompt(input: {
     has_audio_track: input.prepared.hasAudioTrack,
     speech_coverage: Number((input.transcript?.speechCoverage ?? 0).toFixed(3)),
     has_meaningful_speech: hasMeaningfulSpeech(input.transcript),
-    visual_scene_type: input.prepared.visualSummary?.sceneType ?? 'unknown',
-    visual_subjects: input.prepared.visualSummary?.subjects ?? [],
-    visual_description: input.prepared.visualSummary?.description ?? '',
-    place_hints: input.prepared.visualSummary?.placeHints ?? [],
+    source_context: {
+      ingest_root_id: input.prepared.sourceContext.ingestRootId ?? null,
+      root_label: input.prepared.sourceContext.rootLabel ?? null,
+      root_description: input.prepared.sourceContext.rootDescription ?? null,
+      root_notes: input.prepared.sourceContext.rootNotes,
+      summarized_text: sourceContextText || '',
+    },
     manual_spatial_summary: input.manualSpatial?.gpsSummary ?? '',
     manual_spatial_hints: input.manualSpatial?.placeHints ?? [],
     manual_transport: input.manualSpatial?.transport ?? '',
@@ -1865,16 +2021,28 @@ function buildUnifiedDecisionPrompt(input: {
       end_ms: window.endMs,
       reason: window.reason,
     })),
-    transcript_excerpt: transcriptExcerpt,
+    embedded_transcript_excerpt: transcriptExcerpt,
+    protection_recommendation: input.audioContext?.decisionHints.protectionRecommendation ?? '',
+    protection_transcript_excerpt: input.audioContext?.decisionHints.protectionTranscriptExcerpt ?? '',
   }, null, 2);
 
-  return `You are deciding semantic clip type and fine-scan policy for a travel documentary editing system.
+  return `You are producing visual summary and deciding semantic clip type and fine-scan policy for a travel documentary editing system.
 Return only a raw JSON object with:
 {
-  "clip_type": "drive" | "talking-head" | "aerial" | "timelapse" | "broll" | "unknown",
-  "should_fine_scan": boolean,
-  "fine_scan_mode": "skip" | "windowed" | "full",
-  "decision_reasons": string[]
+  "visual_summary": {
+    "scene_type": string,
+    "subjects": string[],
+    "mood": string,
+    "place_hints": string[],
+    "narrative_role": string,
+    "description": string
+  },
+  "decision": {
+    "clip_type": "drive" | "talking-head" | "aerial" | "timelapse" | "broll" | "unknown",
+    "should_fine_scan": boolean,
+    "fine_scan_mode": "skip" | "windowed" | "full",
+    "decision_reasons": string[]
+  }
 }
 
 Rules:
@@ -1883,7 +2051,8 @@ Rules:
 - Strong audio means meaningful human speech. Background music, engine noise, road noise, ambience, or other non-speech sounds do not count as strong audio.
 - If shot_count_known is false, treat shot_count as unavailable rather than evidence of zero cuts.
 - Manual itinerary and spatial hints are weak evidence: useful for place/route inference, but weaker than clear visual or speech contradictions.
-- If the frames clearly show sustained driving or road footage, prefer "drive" even when the initial heuristic guess is "unknown".
+- If the frames clearly show sustained driving or road footage, prefer "drive" even when the heuristic clip type is "unknown".
+- Do not classify a clip as "timelapse" unless the frames themselves show strong timelapse evidence. Transcript mentions, tripod/static scenery, or source context alone are insufficient.
 - If either visual or speech evidence indicates promising regions, prefer "windowed" over "skip".
 - Use "full" only for short high-value clips or when both visual and speech signals are strong.
 
@@ -1891,32 +2060,49 @@ Signals:
 ${signalPayload}`;
 }
 
-function parseUnifiedAnalysisDecision(raw: string): IAnalysisDecision | null {
+function parseUnifiedFinalizeAnalysis(raw: string): IUnifiedFinalizeAnalysis | null {
   const parsed = tryParseJsonObject(raw);
   if (!parsed || typeof parsed !== 'object') return null;
 
-  const clipType = normalizeClipType((parsed as Record<string, unknown>)['clip_type']
-    ?? (parsed as Record<string, unknown>)['clipType']);
-  const fineScanMode = normalizeFineScanMode((parsed as Record<string, unknown>)['fine_scan_mode']
-    ?? (parsed as Record<string, unknown>)['fineScanMode']);
+  const root = parsed as Record<string, unknown>;
+  const visualNode = root['visual_summary'];
+  const decisionNode = root['decision'];
+  if (!visualNode || typeof visualNode !== 'object' || !decisionNode || typeof decisionNode !== 'object') {
+    return null;
+  }
 
+  const clipType = normalizeClipType((decisionNode as Record<string, unknown>)['clip_type']
+    ?? (decisionNode as Record<string, unknown>)['clipType']);
+  const fineScanMode = normalizeFineScanMode((decisionNode as Record<string, unknown>)['fine_scan_mode']
+    ?? (decisionNode as Record<string, unknown>)['fineScanMode']);
   if (!clipType || !fineScanMode) return null;
 
-  const rawShouldFineScan = (parsed as Record<string, unknown>)['should_fine_scan']
-    ?? (parsed as Record<string, unknown>)['shouldFineScan'];
+  const rawShouldFineScan = (decisionNode as Record<string, unknown>)['should_fine_scan']
+    ?? (decisionNode as Record<string, unknown>)['shouldFineScan'];
   const shouldFineScan = typeof rawShouldFineScan === 'boolean'
     ? rawShouldFineScan && fineScanMode !== 'skip'
     : fineScanMode !== 'skip';
-  const decisionReasons = Array.isArray((parsed as Record<string, unknown>)['decision_reasons'])
-    ? ((parsed as Record<string, unknown>)['decision_reasons'] as unknown[])
+  const decisionReasons = Array.isArray((decisionNode as Record<string, unknown>)['decision_reasons'])
+    ? ((decisionNode as Record<string, unknown>)['decision_reasons'] as unknown[])
       .filter((value): value is string => typeof value === 'string')
     : [];
 
   return {
-    clipType,
-    shouldFineScan,
-    fineScanMode,
-    decisionReasons,
+    visualSummary: {
+      sceneType: normalizePromptString((visualNode as Record<string, unknown>)['scene_type']) ?? 'unknown',
+      subjects: normalizePromptStringArray((visualNode as Record<string, unknown>)['subjects']),
+      mood: normalizePromptString((visualNode as Record<string, unknown>)['mood']) ?? 'unknown',
+      placeHints: normalizePromptStringArray((visualNode as Record<string, unknown>)['place_hints']),
+      narrativeRole: normalizePromptString((visualNode as Record<string, unknown>)['narrative_role']) ?? 'unknown',
+      description: normalizePromptString((visualNode as Record<string, unknown>)['description']) ?? '',
+      evidence: [],
+    },
+    decision: {
+      clipType,
+      shouldFineScan,
+      fineScanMode,
+      decisionReasons,
+    },
   };
 }
 
@@ -1957,6 +2143,20 @@ function normalizeFineScanMode(value: unknown): 'skip' | 'windowed' | 'full' | n
   return null;
 }
 
+function normalizePromptString(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const normalized = value.trim();
+  return normalized || undefined;
+}
+
+function normalizePromptStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is string => typeof item === 'string')
+    .map(item => item.trim())
+    .filter(Boolean);
+}
+
 function buildTranscriptExcerpt(
   transcript?: ITranscriptContext | null,
   maxLength = 480,
@@ -1973,6 +2173,62 @@ function buildTranscriptExcerpt(
   if (!source) return undefined;
   if (source.length <= maxLength) return source;
   return `${source.slice(0, Math.max(0, maxLength - 3)).trim()}...`;
+}
+
+function buildProtectedAudioDecisionHints(
+  protectedAudio?: IAssetCoarseReport['protectedAudio'],
+  protectionTranscript?: ITranscriptContext | null,
+): IAudioDecisionHints {
+  if (!protectedAudio) {
+    return {};
+  }
+
+  return {
+    protectionRecommendation: [
+      `recommended:${protectedAudio.recommendedSource}`,
+      protectedAudio.reason ? `reason:${protectedAudio.reason}` : undefined,
+      protectedAudio.comparedProtectionTranscript ? 'compared-transcript:true' : undefined,
+    ]
+      .filter(Boolean)
+      .join(' | '),
+    protectionTranscriptExcerpt: buildTranscriptExcerpt(protectionTranscript, 240),
+  };
+}
+
+function buildPreparedSourceContext(
+  asset: IKtepAsset,
+  roots: IMediaRoot[],
+): IPreparedSourceContext {
+  const root = roots.find(item => item.id === asset.ingestRootId);
+  return {
+    ingestRootId: asset.ingestRootId,
+    rootLabel: root?.label,
+    rootDescription: root?.description,
+    rootNotes: root?.notes ?? [],
+  };
+}
+
+function buildSourceContextText(
+  sourceContext?: IPreparedSourceContext | null,
+): string {
+  return [
+    sourceContext?.rootLabel,
+    sourceContext?.rootDescription,
+    ...(sourceContext?.rootNotes ?? []),
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .trim();
+}
+
+function resolveHeuristicClipType(prepared: IPreparedAssetAnalysis): EClipType {
+  if (prepared.asset.kind === 'photo') return 'broll';
+  if (prepared.asset.kind === 'audio') return 'unknown';
+  return guessClipType(
+    prepared.asset,
+    prepared.shotBoundaries,
+    prepared.shotBoundariesResolved,
+  );
 }
 
 function decorateSliceWithTranscript(
@@ -2095,12 +2351,6 @@ async function preparePhotoVisualCoarse(
     input.runtimeConfig,
   );
   const sampleFrames = proxyFrame ? [proxyFrame] : [];
-  const visualSummary = await summarizeSamples({
-    asset: input.asset,
-    ml: await input.getMlHandle(),
-    sampleFrames,
-    performance: input.performance,
-  });
 
   return {
     ...input,
@@ -2108,9 +2358,8 @@ async function preparePhotoVisualCoarse(
     shotBoundariesResolved: true,
     sampleFrames,
     coarseSampleTimestamps: [0],
-    visualSummary,
-    initialClipTypeGuess: 'broll',
     hasAudioTrack: false,
+    sourceContext: buildPreparedSourceContext(input.asset, input.roots),
   };
 }
 
@@ -2119,6 +2368,14 @@ async function finalizePhotoPreparedAsset(
 ): Promise<IFinalizedAssetAnalysis> {
   const density = estimateDensity({ durationMs: 0, shotBoundaries: [] });
   const clipTypeGuess: EClipType = 'broll';
+  const ml = await input.getMlHandle();
+  const visualSummary = await summarizeSamples({
+    asset: input.prepared.asset,
+    ml,
+    sampleFrames: input.prepared.sampleFrames,
+    performance: input.performance,
+    phase: 'finalize',
+  });
   const root = input.roots.find(item => item.id === input.prepared.asset.ingestRootId);
   const manualSpatial = await resolveManualSpatialContext({
     asset: input.prepared.asset,
@@ -2142,14 +2399,14 @@ async function finalizePhotoPreparedAsset(
     clipTypeGuess,
     gpsSummary: manualSpatial?.gpsSummary,
     inferredGps: manualSpatial?.inferredGps,
-    summary: input.prepared.visualSummary?.description,
+    summary: visualSummary?.description,
     labels: buildReportLabels(
       clipTypeGuess,
-      input.prepared.visualSummary?.sceneType,
-      input.prepared.visualSummary?.subjects,
+      visualSummary?.sceneType,
+      visualSummary?.subjects,
     ),
     placeHints: dedupeStrings([
-      ...(input.prepared.visualSummary?.placeHints ?? []),
+      ...(visualSummary?.placeHints ?? []),
       ...(manualSpatial?.placeHints ?? []),
     ]),
     rootNotes: root?.notes ?? [],
@@ -2165,6 +2422,7 @@ async function finalizePhotoPreparedAsset(
   return {
     prepared: input.prepared,
     report,
+    visualSummary,
     clipType: clipTypeGuess,
     decisionReasons: dedupeStrings([
       'photo-assets-are-directly-usable',
@@ -2571,20 +2829,33 @@ async function generateFineScanOutput(input: {
   });
 }
 
-function describeDecisionStage(
+function describeAudioAnalysisStage(
+  asset: IKtepAsset,
+  hasAudioTrack: boolean,
+): string {
+  if (asset.kind === 'audio') {
+    return `正在整理 ${asset.displayName} 的音频上下文`;
+  }
+  if (shouldAnalyzeAudioTrack(asset, hasAudioTrack)) {
+    return `正在分析 ${asset.displayName} 的视频内音轨并评估 protection audio`;
+  }
+  return `正在检查 ${asset.displayName} 是否需要补充 protection audio 对比`;
+}
+
+function describeFinalizeStage(
   asset: IKtepAsset,
   hasAudioTrack: boolean,
 ): string {
   if (asset.kind === 'photo') {
-    return `正在整理 ${asset.displayName} 的视觉粗扫结果并判断切片策略`;
+    return `正在统一完成 ${asset.displayName} 的视觉总结与正式报告`;
   }
   if (asset.kind === 'audio') {
-    return `正在整理 ${asset.displayName} 的粗扫结果`;
+    return `正在整理 ${asset.displayName} 的分析结果`;
   }
   if (shouldAnalyzeAudioTrack(asset, hasAudioTrack)) {
-    return `正在结合视觉粗扫与音轨结果判断 ${asset.displayName} 是否值得细扫`;
+    return `正在结合关键帧、音轨与上下文统一完成 ${asset.displayName} 的视觉总结与切片决策`;
   }
-  return `未检测到可用音轨，正在根据视觉粗扫结果判断 ${asset.displayName} 是否值得细扫`;
+  return `未检测到可用音轨，正在基于关键帧与上下文统一完成 ${asset.displayName} 的视觉总结与切片决策`;
 }
 
 async function resolveAssetHasAudioTrack(
@@ -3214,7 +3485,7 @@ async function runFineScanPipeline(input: {
       phaseLabel: '粗扫优先素材分析',
       step: stage,
       stepLabel: stage === 'fine-scan-prefetch' ? '预抽细扫关键帧' : '识别细扫素材',
-      stepIndex: stage === 'fine-scan-prefetch' ? 4 : 5,
+      stepIndex: CANALYZE_STEP_DEFINITIONS.findIndex(item => item.key === stage) + 1,
       stepTotal: CANALYZE_STEP_DEFINITIONS.length,
       stepDefinitions: [...CANALYZE_STEP_DEFINITIONS],
       fileName: task?.analysis.prepared.asset.displayName,
@@ -3433,6 +3704,7 @@ async function summarizeSamples(input: {
   ml: MlAvailability;
   sampleFrames: { path: string }[];
   performance?: AnalyzePerformanceSession;
+  phase?: 'finalize';
 }) {
   if (!input.ml.available || input.sampleFrames.length === 0) return null;
 
@@ -3443,7 +3715,7 @@ async function summarizeSamples(input: {
     const recognition = await recognizeFrames(input.ml.client, paths);
     input.performance?.recordVlm({
       asset: input.asset,
-      phase: 'coarse',
+      phase: input.phase ?? 'finalize',
       imageCount: recognition.imageCount ?? paths.length,
       roundTripMs: recognition.roundTripMs,
       timing: recognition.timing,
@@ -3700,6 +3972,7 @@ async function loadPendingFineScanAnalyses(input: {
       asset: entry.asset,
       localPath,
       projectRoot: input.projectRoot,
+      roots: input.roots,
       runtimeConfig: input.runtimeConfig,
       getMlHandle: input.getMlHandle,
       performance: input.performance,

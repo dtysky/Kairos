@@ -84,6 +84,11 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
 - Prefer Windows PowerShell in this repository unless the user explicitly asks for WSL or the step is Linux-only.
 - Do not treat stale progress displays as proof that formal processing is alive.
 - Do not silently use legacy monitor paths for new work when `Supervisor + React console` is the official entry.
+- Treat video Analyze as a staged pipeline whose formal semantic decision happens in `finalize`:
+  - with audio: `coarse-scan -> audio-analysis -> finalize -> deferred scene detect(if needed)`
+  - without audio: `coarse-scan -> finalize -> deferred scene detect(if needed)`
+  - `coarse-scan` prepares keyframes, `hasAudioTrack`, and source context; it does not own the formal video `visualSummary`
+- Treat `analysis/prepared-assets/` and `analysis/audio-checkpoints/` as durable Analyze resume caches, not canonical downstream inputs.
 - Treat `/script` as a preparation surface by default:
   - `/script` first auto-saves the selected style category
   - Agent drafts the initial `script-brief`

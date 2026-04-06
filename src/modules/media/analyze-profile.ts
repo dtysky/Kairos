@@ -66,10 +66,8 @@ export interface IAnalyzeAssetPerformance {
   appendedSliceCount: number;
   droppedInvalidSliceCount: number;
   vlm: {
-    coarseRequestCount: number;
-    coarseRoundTripMs: number;
-    decisionRequestCount: number;
-    decisionRoundTripMs: number;
+    finalizeRequestCount: number;
+    finalizeRoundTripMs: number;
     fineRequestCount: number;
     fineRoundTripMs: number;
   };
@@ -106,8 +104,7 @@ export interface IAnalyzePerformanceProfile {
   };
   ml: {
     healthCheckMs: number;
-    coarseVlm: IAnalyzeMlRequestBucket;
-    decisionVlm: IAnalyzeMlRequestBucket;
+    finalizeVlm: IAnalyzeMlRequestBucket;
     fineScanVlm: IAnalyzeMlRequestBucket;
     embeddedAsr: IAnalyzeAsrRequestBucket;
     protectionAsr: IAnalyzeAsrRequestBucket;
@@ -134,6 +131,12 @@ export interface IAnalyzePerformanceProfile {
   };
   assets: IAnalyzeAssetPerformance[];
   failureMessage?: string;
+  failureItems?: Array<{
+    assetId: string;
+    displayName: string;
+    stage: string;
+    reason: string;
+  }>;
 }
 
 export function shouldEnableAnalyzePerformanceProfile(
@@ -182,8 +185,7 @@ export class AnalyzePerformanceSession {
       },
       ml: {
         healthCheckMs: 0,
-        coarseVlm: createMlBucket(),
-        decisionVlm: createMlBucket(),
+        finalizeVlm: createMlBucket(),
         fineScanVlm: createMlBucket(),
         embeddedAsr: createAsrBucket(),
         protectionAsr: createAsrBucket(),
@@ -291,17 +293,15 @@ export class AnalyzePerformanceSession {
 
   recordVlm(input: {
     asset: IKtepAsset;
-    phase: 'coarse' | 'decision' | 'fine';
+    phase: 'finalize' | 'fine';
     imageCount: number;
     roundTripMs?: number;
     timing?: IMlVlmTiming;
   }): void {
     const record = this.ensureAsset(input.asset);
-    const bucket = input.phase === 'coarse'
-      ? this.profile.ml.coarseVlm
-      : input.phase === 'decision'
-        ? this.profile.ml.decisionVlm
-        : this.profile.ml.fineScanVlm;
+    const bucket = input.phase === 'finalize'
+      ? this.profile.ml.finalizeVlm
+      : this.profile.ml.fineScanVlm;
     bucket.requestCount += 1;
     bucket.imageCount += Math.max(0, Math.round(input.imageCount));
     bucket.roundTripMs += clampMs(input.roundTripMs);
@@ -315,14 +315,9 @@ export class AnalyzePerformanceSession {
     bucket.backend ??= normalizeOptionalString(input.timing?.backend);
     bucket.modelRef ??= normalizeOptionalString(input.timing?.modelRef);
 
-    if (input.phase === 'coarse') {
-      record.vlm.coarseRequestCount += 1;
-      record.vlm.coarseRoundTripMs += clampMs(input.roundTripMs);
-      return;
-    }
-    if (input.phase === 'decision') {
-      record.vlm.decisionRequestCount += 1;
-      record.vlm.decisionRoundTripMs += clampMs(input.roundTripMs);
+    if (input.phase === 'finalize') {
+      record.vlm.finalizeRequestCount += 1;
+      record.vlm.finalizeRoundTripMs += clampMs(input.roundTripMs);
       return;
     }
     record.vlm.fineRequestCount += 1;
@@ -413,11 +408,23 @@ export class AnalyzePerformanceSession {
     failureMessage: string;
     analyzedAssetCount: number;
     fineScannedAssetCount: number;
+    failureItems?: Array<{
+      assetId: string;
+      displayName: string;
+      stage: string;
+      reason: string;
+    }>;
   }): void {
     this.profile.status = 'failed';
     this.profile.completedAt = new Date().toISOString();
     this.profile.pipelineTotalMs = clampMs(input.pipelineTotalMs);
     this.profile.failureMessage = input.failureMessage.trim();
+    this.profile.failureItems = input.failureItems?.map(item => ({
+      assetId: item.assetId,
+      displayName: item.displayName,
+      stage: item.stage,
+      reason: item.reason,
+    }));
     this.profile.analyzedAssetCount = Math.max(0, Math.round(input.analyzedAssetCount));
     this.profile.fineScannedAssetCount = Math.max(0, Math.round(input.fineScannedAssetCount));
     this.syncAssets();
@@ -432,8 +439,7 @@ export class AnalyzePerformanceSession {
       stageTotals: { ...this.profile.stageTotals },
       ml: {
         healthCheckMs: this.profile.ml.healthCheckMs,
-        coarseVlm: { ...this.profile.ml.coarseVlm },
-        decisionVlm: { ...this.profile.ml.decisionVlm },
+        finalizeVlm: { ...this.profile.ml.finalizeVlm },
         fineScanVlm: { ...this.profile.ml.fineScanVlm },
         embeddedAsr: { ...this.profile.ml.embeddedAsr },
         protectionAsr: { ...this.profile.ml.protectionAsr },
@@ -449,6 +455,7 @@ export class AnalyzePerformanceSession {
         vlm: { ...asset.vlm },
         asr: { ...asset.asr },
       })),
+      failureItems: this.profile.failureItems?.map(item => ({ ...item })),
     };
   }
 
@@ -481,10 +488,8 @@ export class AnalyzePerformanceSession {
       appendedSliceCount: 0,
       droppedInvalidSliceCount: 0,
       vlm: {
-        coarseRequestCount: 0,
-        coarseRoundTripMs: 0,
-        decisionRequestCount: 0,
-        decisionRoundTripMs: 0,
+        finalizeRequestCount: 0,
+        finalizeRoundTripMs: 0,
         fineRequestCount: 0,
         fineRoundTripMs: 0,
       },

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -28,6 +28,7 @@ describe('prepared asset checkpoints', () => {
     const projectRoot = await createWorkspace();
 
     await writePreparedAssetCheckpoint(projectRoot, {
+      schemaVersion: 2,
       assetId: 'asset-1',
       shotBoundaries: [],
       shotBoundariesResolved: false,
@@ -36,25 +37,25 @@ describe('prepared asset checkpoints', () => {
         path: 'H:/tmp/frame-0001.jpg',
       }],
       coarseSampleTimestamps: [0, 1000, 2000],
-      visualSummary: {
-        sceneType: 'landscape',
-        subjects: ['mountain'],
-        mood: 'calm',
-        placeHints: ['new zealand'],
-        narrativeRole: 'establishing',
-        description: 'A wide scenic view.',
-        evidence: [],
-      },
-      initialClipTypeGuess: 'broll',
       hasAudioTrack: true,
+      sourceContext: {
+        ingestRootId: 'root-1',
+        rootLabel: 'camera-a',
+        rootDescription: 'Main travel footage root',
+        rootNotes: ['contains road-trip clips'],
+      },
     });
 
     const loaded = await loadPreparedAssetCheckpoint(projectRoot, 'asset-1');
     expect(loaded).toMatchObject({
+      schemaVersion: 2,
       assetId: 'asset-1',
       coarseSampleTimestamps: [0, 1000, 2000],
-      initialClipTypeGuess: 'broll',
       hasAudioTrack: true,
+      sourceContext: {
+        ingestRootId: 'root-1',
+        rootLabel: 'camera-a',
+      },
     });
     expect(loaded?.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
 
@@ -63,5 +64,25 @@ describe('prepared asset checkpoints', () => {
     await expect(loadPreparedAssetCheckpoint(projectRoot, 'asset-1')).resolves.toBeNull();
     await expect(removePreparedAssetCheckpoint(projectRoot, 'asset-1')).resolves.toBeUndefined();
     expect(getPreparedAssetCheckpointPath(projectRoot, 'asset-1')).toContain('analysis');
+  });
+
+  it('treats old prepared checkpoint schema as stale', async () => {
+    const projectRoot = await createWorkspace();
+    const checkpointPath = getPreparedAssetCheckpointPath(projectRoot, 'asset-stale');
+    await mkdir(join(projectRoot, 'analysis', 'prepared-assets'), { recursive: true });
+
+    await writeFile(checkpointPath, JSON.stringify({
+      assetId: 'asset-stale',
+      shotBoundaries: [],
+      shotBoundariesResolved: false,
+      sampleFrames: [],
+      coarseSampleTimestamps: [0],
+      visualSummary: null,
+      initialClipTypeGuess: 'broll',
+      hasAudioTrack: false,
+      updatedAt: '2026-04-07T00:00:00.000Z',
+    }), 'utf-8');
+
+    await expect(loadPreparedAssetCheckpoint(projectRoot, 'asset-stale')).resolves.toBeNull();
   });
 });

@@ -33,6 +33,7 @@ export interface IHeuristicAnalysisDecisionInput {
   sceneType?: string;
   subjects?: string[];
   summary?: string;
+  sourceContextText?: string;
   transcript?: string;
   speechCoverage?: number;
   hasAudioTrack?: boolean;
@@ -249,9 +250,18 @@ function pickFineScanMode(
 }
 
 function resolveSemanticClipType(input: IHeuristicAnalysisDecisionInput): EClipType {
+  const visualSemanticHints = [
+    input.sceneType,
+    input.summary,
+    ...(input.subjects ?? []),
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
   const semanticHints = [
     input.sceneType,
     input.summary,
+    input.sourceContextText,
     ...(input.subjects ?? []),
     input.hasMeaningfulSpeech ? input.transcript : undefined,
   ]
@@ -283,7 +293,7 @@ function resolveSemanticClipType(input: IHeuristicAnalysisDecisionInput): EClipT
     return 'aerial';
   }
 
-  if (includesAny(semanticHints, [
+  if (includesAny(visualSemanticHints, [
     'timelapse',
     'time-lapse',
     'time lapse',

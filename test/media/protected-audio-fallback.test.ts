@@ -90,6 +90,7 @@ describe('evaluateProtectedAudioFallback', () => {
         available: true,
         client: {},
       } as never,
+      protectionAudioLocalPath: 'F:/project/audio/clip.wav',
     });
 
     expect(analyzeAudioHealthMock).toHaveBeenCalledTimes(1);
@@ -99,11 +100,11 @@ describe('evaluateProtectedAudioFallback', () => {
       {},
     );
     expect(transcribeMock).toHaveBeenCalledTimes(1);
-    expect(transcribeMock).toHaveBeenCalledWith(
-      {},
-      'F:/project/audio/clip.wav',
-    );
-    expect(result?.recommendedSource).toBe('protection');
-    expect(result?.protection?.notes).toContain('保护音轨默认不做独立健康检查，仅在必要时做语音对比。');
+    expect(transcribeMock.mock.calls[0]?.[0]).toEqual({});
+    expect(transcribeMock.mock.calls[0]?.[1]).toBe('F:/project/audio/clip.wav');
+    expect(result?.protectedAudio?.recommendedSource).toBe('protection');
+    expect(result?.protectedAudio?.protection?.notes).toContain('保护音轨默认不做独立健康检查，仅在必要时做语音对比。');
+    expect(result?.decisionHints.protectionRecommendation).toContain('recommended:protection');
+    expect(result?.decisionHints.protectionTranscriptExcerpt).toContain('clear backup narration');
   });
 });

@@ -44,9 +44,24 @@ describe('audio analysis checkpoints', () => {
           reason: 'speech-window',
         }],
       },
+      protectionTranscript: {
+        transcript: 'backup hello world',
+        segments: [{
+          startMs: 0,
+          endMs: 1500,
+          text: 'backup hello world',
+        }],
+        evidence: [],
+        speechCoverage: 0.38,
+        speechWindows: [],
+      },
       protectedAudio: {
         recommendedSource: 'embedded',
         comparedProtectionTranscript: false,
+      },
+      decisionHints: {
+        protectionRecommendation: 'recommended:embedded',
+        protectionTranscriptExcerpt: 'backup hello world',
       },
     });
 
@@ -57,8 +72,14 @@ describe('audio analysis checkpoints', () => {
         transcript: 'hello world',
         speechCoverage: 0.42,
       },
+      protectionTranscript: {
+        transcript: 'backup hello world',
+      },
       protectedAudio: {
         recommendedSource: 'embedded',
+      },
+      decisionHints: {
+        protectionRecommendation: 'recommended:embedded',
       },
     });
 

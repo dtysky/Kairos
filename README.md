@@ -40,6 +40,13 @@ Current stable pipeline:
 - subtitles support two formal paths:
   - narration path from `beat.text`
   - source-speech path from `slice.transcriptSegments`
+- video Analyze now produces formal video `visualSummary + decision` in a single unified VLM pass during `finalize`:
+  - with audio: `coarse-scan -> audio-analysis -> finalize -> deferred scene detect(if needed)`
+  - without audio: `coarse-scan -> finalize -> deferred scene detect(if needed)`
+  - `coarse-scan` prepares keyframes, `hasAudioTrack`, and source context; it is not the formal visual-summary stage
+- Analyze durable resume caches are stage-local internals:
+  - `analysis/prepared-assets/` stores coarse prepared inputs, not finalized visual semantics
+  - `analysis/audio-checkpoints/` stores ASR and protection-audio intermediate state
 - Analyze now distinguishes tight focus windows from edit-friendly bounds:
   - coarse reports keep `interestingWindows[].startMs/endMs` as focus/evidence windows
   - edit-ready bounds travel alongside them as `interestingWindows[].editStartMs/editEndMs`

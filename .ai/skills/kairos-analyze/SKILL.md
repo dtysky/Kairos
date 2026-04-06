@@ -163,12 +163,11 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
 先做面向全量素材的低成本视觉分析：
 - 视频：
   - 均匀少量采样帧
-  - 可用时做一次轻量 VLM 总结
-  - `scene detect` 不再作为默认前置；它会在 coarse + audio decision 之后，只对真正需要 shot 结构的素材延后触发
+  - `scene detect` 不再作为默认前置；它会在 coarse + audio + finalize decision 之后，只对真正需要 shot 结构的素材延后触发
   - 当前 deferred gate 至少覆盖：
     - `video + fineScanMode === full` 的 hard gate
     - selected `windowed` non-drive 的 fragmented-window soft gate
-    - scenic `drive` 复用已有 coarse VLM 语义的单独 soft gate
+    - scenic `drive` 复用 finalize unified VLM 语义的单独 soft gate
 - 照片：
   - 直接做轻量视觉总结
 - 音频：
@@ -179,6 +178,8 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
 - 这条素材大概是什么
 - 是否存在值得深挖的视觉时间窗
 - 是否值得进入后续更高成本分析
+
+这里的“基础判断”当前主要来自 cheap metadata / sample timestamps / source context，而不是一轮正式 coarse VLM 结果。视频素材的正式 `visualSummary` 在默认主链里由 `finalize` 统一产出。
 
 ### 2. 音频分析（细扫决策前）
 
@@ -196,13 +197,14 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
 - 当前保护音轨策略是保守 fallback，不是双主音轨竞争：
   - 视频内无线 mic 仍是默认主音轨
   - `protectionAudio` 只是同目录同 basename 的 sidecar 兜底来源
-  - 默认不要给所有保护音轨都跑第二遍完整 ASR，只有主音轨明显可疑或后续原声路由真正需要时才升级比较
+  - 默认不要给所有保护音轨都跑第二遍完整 ASR，只有主音轨明显可疑或确有必要时才升级比较
+  - protection transcript 当前只作为 finalize prompt 的辅助信号，不覆盖正式 `report.transcriptSegments`
 
 这一步默认仍属于 Analyze phase，但不再和“视觉粗扫”混写成同一个子步骤。
 
 ### 3. 自动细扫决策
 
-系统根据视觉粗扫 + 音频分析 + 可用空间线索的合并信号自动决定：
+系统根据 coarse inputs + 音频分析 + 可用空间线索的合并信号自动决定：
 - `durationMs`
 - `densityScore`
 - `interestingWindows`
@@ -223,14 +225,14 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
 - `shouldFineScan`
 - `fineScanMode = skip | windowed | full`
 
-如果 provisional 结果最终需要 shot 结构（当前包括视频 `full` hard gate、selected `windowed` non-drive soft gate，以及 scenic `drive` 的 coarse-semantic soft gate）：
+如果 provisional 结果最终需要 shot 结构（当前包括视频 `full` hard gate、selected `windowed` non-drive soft gate，以及 scenic `drive` 的 finalize-semantic soft gate）：
 
 - 再补跑一次 deferred `scene detect`
 - 只重算 shot-sensitive 的 planning pieces
-- 不重跑 coarse VLM / ASR
+- 不重跑 finalize VLM / ASR
 - 没命中 gate 的 `windowed / skip` 默认不再支付这笔成本
 
-到这一步之后，才会形成用于后续流程的 coarse-level report。这个 report 可以已经带上 transcript 字段，但概念上它不是“纯视觉粗扫结果”，而是“粗扫 + 音频分析合并后的分析结果”。
+到这一步之后，才会形成用于后续流程的 coarse-level report。这个 report 可以已经带上 transcript 字段，但概念上它不是“纯视觉粗扫结果”，而是“coarse inputs + audio-analysis + finalize unified VLM”之后的分析结果。
 
 分析结果会写到：
 

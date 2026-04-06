@@ -224,7 +224,9 @@ project/
 - 只有在用户明确确认继续后，才可以调用 Analyze
 
 当前分析链路除了视觉粗扫/细扫，还会在符合条件的视频上补充 ASR：
-- 结构上更准确的理解是：`视觉粗扫 -> 音频分析 -> 细扫决策 -> 细扫执行`
+- 结构上更准确的理解是：
+  - 有音轨视频：`coarse-scan -> audio-analysis -> finalize -> 细扫决策 -> 细扫执行`
+  - 无音轨视频：`coarse-scan -> finalize -> 细扫决策 -> 细扫执行`
 - coarse report 会带 `transcript / transcriptSegments / speechCoverage`
 - 语音时间窗会参与 fine-scan window 生成
 - chronology 会写入部分 ASR evidence

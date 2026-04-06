@@ -1,7 +1,6 @@
 import { unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { z } from 'zod';
-import { EClipType, IKtepEvidence } from '../protocol/schema.js';
 import { readJsonOrNull, writeJson } from './writer.js';
 
 const IShotBoundary = z.object({
@@ -14,40 +13,22 @@ const ICoarseFrame = z.object({
   path: z.string(),
 });
 
-const IMlVlmTiming = z.object({
-  backend: z.string().optional(),
-  modelRef: z.string().optional(),
-  totalMs: z.number().optional(),
-  loadMs: z.number().optional(),
-  imageOpenMs: z.number().optional(),
-  processorMs: z.number().optional(),
-  h2dMs: z.number().optional(),
-  generateMs: z.number().optional(),
-  decodeMs: z.number().optional(),
-});
-
-const IRecognitionCheckpoint = z.object({
-  sceneType: z.string(),
-  subjects: z.array(z.string()),
-  mood: z.string(),
-  placeHints: z.array(z.string()),
-  narrativeRole: z.string(),
-  description: z.string(),
-  evidence: z.array(IKtepEvidence),
-  timing: IMlVlmTiming.optional(),
-  roundTripMs: z.number().optional(),
-  imageCount: z.number().optional(),
+const IPreparedSourceContext = z.object({
+  ingestRootId: z.string().optional(),
+  rootLabel: z.string().optional(),
+  rootDescription: z.string().optional(),
+  rootNotes: z.array(z.string()),
 });
 
 const IPreparedAssetCheckpoint = z.object({
+  schemaVersion: z.literal(2),
   assetId: z.string(),
   shotBoundaries: z.array(IShotBoundary),
   shotBoundariesResolved: z.boolean(),
   sampleFrames: z.array(ICoarseFrame),
   coarseSampleTimestamps: z.array(z.number()),
-  visualSummary: IRecognitionCheckpoint.nullable(),
-  initialClipTypeGuess: EClipType,
   hasAudioTrack: z.boolean(),
+  sourceContext: IPreparedSourceContext,
   updatedAt: z.string(),
 });
 
