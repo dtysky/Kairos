@@ -9,7 +9,11 @@ import type {
   IKtepScriptSelection,
   IKtepScriptBeat,
 } from '../../protocol/schema.js';
-import { hasExplicitEditRange, resolveSlicePreferredRange } from '../media/window-policy.js';
+import {
+  hasExplicitEditRange,
+  resolveSlicePreferredRange,
+  snapSelectionToTranscriptSegments,
+} from '../media/window-policy.js';
 import { buildSourceSpeechContext, shouldPreferSourceSpeech } from './pacing.js';
 
 export interface IPlacementConfig {
@@ -59,13 +63,19 @@ export function placeClips(
     const perBeat = Math.max(1, Math.floor(segDur / beats.length));
 
     for (const beat of beats) {
-      const selections = beat.selections;
       const beatDur = beat.targetDurationMs ?? perBeat;
+      const initialSelections = beat.selections;
       const preferSourceSpeech = shouldPreferSourceSpeech(
         seg,
         beat,
-        buildSourceSpeechContext(selections, sliceMap),
+        buildSourceSpeechContext(initialSelections, sliceMap),
       );
+      const selections = preferSourceSpeech
+        ? initialSelections.map(selection => {
+          const slice = selection.sliceId ? sliceMap.get(selection.sliceId) : undefined;
+          return snapSelectionToTranscriptSegments(selection, slice);
+        })
+        : initialSelections;
       const explicitSpeed = preferSourceSpeech
         ? undefined
         : resolveRequestedSpeed(beat.actions?.speed ?? seg.actions?.speed);
@@ -75,56 +85,43 @@ export function placeClips(
         continue;
       }
 
-      const perSelection = Math.max(1, Math.floor(beatDur / selections.length));
+      const placement = buildBeatPlacement(
+        selections,
+        beatDur,
+        explicitSpeed,
+        preferSourceSpeech,
+        assetMap,
+        reportMap,
+        cfg,
+      );
 
-      for (const selection of selections) {
-        const asset = assetMap.get(selection.assetId);
-        if (!asset) continue;
-        const report = reportMap.get(asset.id);
+      if (placement.entries.length === 0) {
+        cursor += beatDur;
+        continue;
+      }
 
-        const isPhoto = asset.kind === 'photo';
-        const sourceRangeDur = resolveSourceDuration(selection.sourceInMs, selection.sourceOutMs);
-        const baseClipDur = sourceRangeDur != null
-          ? sourceRangeDur
-          : isPhoto
-            ? Math.min(perSelection, cfg.photoDefaultMs)
-            : Math.min(perSelection, cfg.maxSliceDurationMs);
-        const shouldStretchSelections = !preferSourceSpeech
-          && explicitSpeed == null
-          && !selection.hasExplicitEditRange;
-        const explicitSpeedClipDur = explicitSpeed != null && sourceRangeDur != null
-          ? Math.max(1, Math.round(sourceRangeDur / explicitSpeed))
-          : undefined;
-        const clipDur = explicitSpeedClipDur
-          ?? (shouldStretchSelections ? Math.max(baseClipDur, perSelection) : baseClipDur);
-
-        const sourceInMs = selection.sourceInMs;
-        const sourceOutMs = selection.sourceOutMs != null
-          ? selection.sourceOutMs
-          : sourceInMs != null && clipDur > 0
-          ? sourceInMs + clipDur
-          : selection.sourceOutMs;
+      for (const entry of placement.entries) {
         const timelineInMs = cursor;
-        const timelineOutMs = cursor + clipDur;
+        const timelineOutMs = cursor + entry.timelineDurationMs;
         const useProtectionAudio = preferSourceSpeech
-          && shouldUseProtectionAudioFallback(asset, report);
+          && shouldUseProtectionAudioFallback(entry.asset, entry.report);
 
         clips.push({
           id: randomUUID(),
           // Jianying does not handle serial clips split across multiple video tracks well.
           // Until we support true overlap-aware placement, keep all serial video clips on one track.
           trackId: primaryTrack.id,
-          assetId: asset.id,
-          sliceId: selection.sliceId,
-          sourceInMs,
-          sourceOutMs,
-          ...(explicitSpeed != null && { speed: explicitSpeed }),
+          assetId: entry.asset.id,
+          sliceId: entry.selection.sliceId,
+          sourceInMs: entry.sourceInMs,
+          sourceOutMs: entry.sourceOutMs,
+          ...(entry.appliedSpeed != null && { speed: entry.appliedSpeed }),
           timelineInMs,
           timelineOutMs,
-          ...((useProtectionAudio || shouldMuteClipAudio(asset, preferSourceSpeech)) && { muteAudio: true }),
+          ...((useProtectionAudio || shouldMuteClipAudio(entry.asset, preferSourceSpeech)) && { muteAudio: true }),
           linkedScriptSegmentId: seg.id,
           linkedScriptBeatId: beat.id,
-          transform: isPhoto ? {
+          transform: entry.isPhoto ? {
             kenBurns: {
               startScale: 1.0, endScale: 1.15,
               startX: 0.5, startY: 0.5,
@@ -143,10 +140,10 @@ export function placeClips(
           clips.push({
             id: randomUUID(),
             trackId: natTrack.id,
-            assetId: asset.id,
-            sliceId: selection.sliceId,
-            sourceInMs,
-            sourceOutMs,
+            assetId: entry.asset.id,
+            sliceId: entry.selection.sliceId,
+            sourceInMs: entry.sourceInMs,
+            sourceOutMs: entry.sourceOutMs,
             timelineInMs,
             timelineOutMs,
             linkedScriptSegmentId: seg.id,
@@ -154,7 +151,7 @@ export function placeClips(
           });
         }
 
-        cursor += clipDur;
+        cursor += entry.timelineDurationMs;
       }
     }
   }
@@ -169,10 +166,27 @@ interface IResolvedSelection extends IKtepScriptSelection {
   sliceType?: IKtepSlice['type'];
   hasExplicitEditRange?: boolean;
   speedCandidate?: IKtepSlice['speedCandidate'];
+  preferredSourceInMs?: number;
+  preferredSourceOutMs?: number;
 }
 
 interface IResolvedBeat extends Omit<IKtepScriptBeat, 'selections'> {
   selections: IResolvedSelection[];
+}
+
+interface IPlacementEntry {
+  selection: IResolvedSelection;
+  asset: IKtepAsset;
+  report?: IAssetCoarseReport;
+  sourceInMs?: number;
+  sourceOutMs?: number;
+  preferredSourceInMs?: number;
+  preferredSourceOutMs?: number;
+  sourceDurationMs?: number;
+  timelineDurationMs: number;
+  appliedSpeed?: number;
+  canStretch: boolean;
+  isPhoto: boolean;
 }
 
 function resolveBeats(
@@ -212,6 +226,8 @@ function resolveSelections(
       assetId: selection.assetId ?? slice?.assetId ?? '',
       sourceInMs: selection.sourceInMs ?? preferredRange?.startMs ?? slice?.sourceInMs,
       sourceOutMs: selection.sourceOutMs ?? preferredRange?.endMs ?? slice?.sourceOutMs,
+      preferredSourceInMs: preferredRange?.startMs ?? selection.sourceInMs ?? slice?.sourceInMs,
+      preferredSourceOutMs: preferredRange?.endMs ?? selection.sourceOutMs ?? slice?.sourceOutMs,
       sliceType: slice?.type,
       hasExplicitEditRange: slice ? hasExplicitEditRange(slice) : false,
       speedCandidate: slice?.speedCandidate,
@@ -252,6 +268,385 @@ function resolveSourceDuration(sourceInMs?: number, sourceOutMs?: number): numbe
 function resolveRequestedSpeed(speed?: number): number | undefined {
   if (typeof speed !== 'number' || !Number.isFinite(speed) || speed <= 0) return undefined;
   return speed;
+}
+
+function buildBeatPlacement(
+  selections: IResolvedSelection[],
+  beatTargetDurationMs: number,
+  requestedSpeed: number | undefined,
+  preferSourceSpeech: boolean,
+  assetMap: Map<string, IKtepAsset>,
+  reportMap: Map<string, IAssetCoarseReport>,
+  config: IPlacementConfig,
+): { entries: IPlacementEntry[]; totalDurationMs: number } {
+  const perSelectionTargetMs = Math.max(1, Math.round(beatTargetDurationMs / Math.max(selections.length, 1)));
+  const entries = selections
+    .map(selection => buildPlacementEntry(
+      selection,
+      perSelectionTargetMs,
+      requestedSpeed,
+      preferSourceSpeech,
+      assetMap,
+      reportMap,
+      config,
+    ))
+    .filter((entry): entry is IPlacementEntry => entry != null);
+
+  if (entries.length === 0) {
+    return { entries: [], totalDurationMs: 0 };
+  }
+
+  const naturalTotalMs = sumPlacementDurations(entries);
+  const effectiveTargetDurationMs = preferSourceSpeech
+    ? Math.max(beatTargetDurationMs, naturalTotalMs)
+    : beatTargetDurationMs;
+
+  if (naturalTotalMs > effectiveTargetDurationMs) {
+    fitEntriesToBudget(entries, effectiveTargetDurationMs);
+  } else if (naturalTotalMs < effectiveTargetDurationMs) {
+    expandEntriesTowardBudget(entries, effectiveTargetDurationMs, preferSourceSpeech);
+  }
+
+  return {
+    entries,
+    totalDurationMs: sumPlacementDurations(entries),
+  };
+}
+
+function buildPlacementEntry(
+  selection: IResolvedSelection,
+  perSelectionTargetMs: number,
+  requestedSpeed: number | undefined,
+  preferSourceSpeech: boolean,
+  assetMap: Map<string, IKtepAsset>,
+  reportMap: Map<string, IAssetCoarseReport>,
+  config: IPlacementConfig,
+): IPlacementEntry | null {
+  const asset = assetMap.get(selection.assetId);
+  if (!asset) return null;
+
+  const sourceInMs = selection.sourceInMs;
+  const sourceOutMs = selection.sourceOutMs;
+  const sourceDurationMs = resolveSourceDuration(sourceInMs, sourceOutMs);
+  const isPhoto = asset.kind === 'photo';
+  const appliedSpeed = requestedSpeed != null && isSpeedEligibleSliceType(selection.sliceType)
+    ? requestedSpeed
+    : undefined;
+  const naturalDurationMs = sourceDurationMs != null
+    ? resolveTimelineDurationFromSource(sourceDurationMs, appliedSpeed)
+    : isPhoto
+      ? Math.min(perSelectionTargetMs, config.photoDefaultMs)
+      : Math.min(perSelectionTargetMs, config.maxSliceDurationMs);
+
+  return {
+    selection,
+    asset,
+    report: reportMap.get(asset.id),
+    sourceInMs,
+    sourceOutMs,
+    preferredSourceInMs: selection.preferredSourceInMs,
+    preferredSourceOutMs: selection.preferredSourceOutMs,
+    sourceDurationMs,
+    timelineDurationMs: naturalDurationMs,
+    appliedSpeed,
+    canStretch: !preferSourceSpeech && appliedSpeed == null,
+    isPhoto,
+  };
+}
+
+function fitEntriesToBudget(entries: IPlacementEntry[], targetTotalMs: number): void {
+  const currentDurations = entries.map(entry => entry.timelineDurationMs);
+  const targetDurations = allocateScaledDurations(currentDurations, targetTotalMs);
+
+  entries.forEach((entry, index) => {
+    trimEntryToTimelineDuration(entry, targetDurations[index] ?? entry.timelineDurationMs);
+  });
+
+  absorbResidual(entries, targetTotalMs, false);
+}
+
+function expandEntriesTowardBudget(
+  entries: IPlacementEntry[],
+  targetTotalMs: number,
+  preferSourceSpeech: boolean,
+): void {
+  let remainingMs = targetTotalMs - sumPlacementDurations(entries);
+  if (remainingMs <= 0) return;
+
+  const expansionCaps = entries.map(entry => resolveExpansionCapacityMs(entry));
+  const expansionPlan = allocateUpToCapacities(remainingMs, expansionCaps);
+  entries.forEach((entry, index) => {
+    const additionalMs = expansionPlan[index] ?? 0;
+    if (additionalMs <= 0) return;
+    expandEntryWithinBounds(entry, entry.timelineDurationMs + additionalMs);
+  });
+
+  remainingMs = targetTotalMs - sumPlacementDurations(entries);
+  if (remainingMs <= 0 || preferSourceSpeech) {
+    absorbResidual(entries, targetTotalMs, false);
+    return;
+  }
+
+  const stretchableIndexes = entries
+    .map((entry, index) => (entry.canStretch ? index : -1))
+    .filter(index => index >= 0);
+  if (stretchableIndexes.length === 0) {
+    absorbResidual(entries, targetTotalMs, false);
+    return;
+  }
+
+  const stretchWeights = stretchableIndexes.map(index => entries[index]!.timelineDurationMs);
+  const stretchPlan = allocateScaledDurations(stretchWeights, remainingMs, false);
+  stretchableIndexes.forEach((index, order) => {
+    entries[index]!.timelineDurationMs += stretchPlan[order] ?? 0;
+  });
+
+  absorbResidual(entries, targetTotalMs, true);
+}
+
+function resolveExpansionCapacityMs(entry: IPlacementEntry): number {
+  if (
+    entry.sourceDurationMs == null
+    || entry.sourceInMs == null
+    || entry.sourceOutMs == null
+    || entry.preferredSourceInMs == null
+    || entry.preferredSourceOutMs == null
+  ) {
+    return 0;
+  }
+
+  const boundStartMs = Math.min(entry.preferredSourceInMs, entry.sourceInMs);
+  const boundEndMs = Math.max(entry.preferredSourceOutMs, entry.sourceOutMs);
+  if (boundEndMs <= boundStartMs) return 0;
+
+  const capacitySourceMs = (boundEndMs - boundStartMs) - entry.sourceDurationMs;
+  if (capacitySourceMs <= 0) return 0;
+
+  return resolveTimelineDurationFromSource(
+    entry.sourceDurationMs + capacitySourceMs,
+    entry.appliedSpeed,
+  ) - entry.timelineDurationMs;
+}
+
+function trimEntryToTimelineDuration(entry: IPlacementEntry, targetDurationMs: number): void {
+  const safeTargetDurationMs = Math.max(1, targetDurationMs);
+  if (
+    entry.sourceDurationMs == null
+    || entry.sourceInMs == null
+    || entry.sourceOutMs == null
+  ) {
+    entry.timelineDurationMs = safeTargetDurationMs;
+    return;
+  }
+
+  const desiredSourceDurationMs = resolveSourceDurationForTimeline(safeTargetDurationMs, entry.appliedSpeed);
+  const trimmedSourceDurationMs = Math.max(1, Math.min(entry.sourceDurationMs, desiredSourceDurationMs));
+  entry.sourceOutMs = entry.sourceInMs + trimmedSourceDurationMs;
+  entry.sourceDurationMs = trimmedSourceDurationMs;
+  entry.timelineDurationMs = resolveTimelineDurationFromSource(trimmedSourceDurationMs, entry.appliedSpeed);
+}
+
+function expandEntryWithinBounds(entry: IPlacementEntry, targetDurationMs: number): void {
+  if (
+    entry.sourceDurationMs == null
+    || entry.sourceInMs == null
+    || entry.sourceOutMs == null
+    || entry.preferredSourceInMs == null
+    || entry.preferredSourceOutMs == null
+  ) {
+    return;
+  }
+
+  const boundStartMs = Math.min(entry.preferredSourceInMs, entry.sourceInMs);
+  const boundEndMs = Math.max(entry.preferredSourceOutMs, entry.sourceOutMs);
+  if (boundEndMs <= boundStartMs) return;
+
+  const desiredSourceDurationMs = Math.max(
+    entry.sourceDurationMs,
+    resolveSourceDurationForTimeline(targetDurationMs, entry.appliedSpeed),
+  );
+  const expandedRange = expandSourceRangeWithinBounds(
+    entry.sourceInMs,
+    entry.sourceOutMs,
+    desiredSourceDurationMs,
+    boundStartMs,
+    boundEndMs,
+  );
+
+  entry.sourceInMs = expandedRange.startMs;
+  entry.sourceOutMs = expandedRange.endMs;
+  entry.sourceDurationMs = expandedRange.endMs - expandedRange.startMs;
+  entry.timelineDurationMs = resolveTimelineDurationFromSource(entry.sourceDurationMs, entry.appliedSpeed);
+}
+
+function expandSourceRangeWithinBounds(
+  currentStartMs: number,
+  currentEndMs: number,
+  desiredDurationMs: number,
+  boundStartMs: number,
+  boundEndMs: number,
+): { startMs: number; endMs: number } {
+  const boundedStartMs = Math.max(0, Math.min(boundStartMs, currentStartMs));
+  const boundedEndMs = Math.max(currentEndMs, boundEndMs);
+  const maxDurationMs = boundedEndMs - boundedStartMs;
+  const targetDurationMs = Math.max(
+    currentEndMs - currentStartMs,
+    Math.min(desiredDurationMs, maxDurationMs),
+  );
+  const centerMs = (currentStartMs + currentEndMs) / 2;
+  let startMs = Math.round(centerMs - targetDurationMs / 2);
+  let endMs = startMs + targetDurationMs;
+
+  if (startMs < boundedStartMs) {
+    startMs = boundedStartMs;
+    endMs = startMs + targetDurationMs;
+  }
+  if (endMs > boundedEndMs) {
+    endMs = boundedEndMs;
+    startMs = endMs - targetDurationMs;
+  }
+
+  return {
+    startMs,
+    endMs,
+  };
+}
+
+function absorbResidual(
+  entries: IPlacementEntry[],
+  targetTotalMs: number,
+  allowStretch: boolean,
+): void {
+  let currentTotalMs = sumPlacementDurations(entries);
+  if (currentTotalMs === targetTotalMs) return;
+
+  const adjustOrder = allowStretch
+    ? [...entries.keys()].reverse()
+    : [...entries.keys()]
+      .filter(index => entries[index]!.sourceDurationMs != null)
+      .reverse();
+  if (adjustOrder.length === 0) return;
+
+  for (const index of adjustOrder) {
+    const entry = entries[index]!;
+    if (currentTotalMs === targetTotalMs) break;
+
+    const deltaMs = targetTotalMs - currentTotalMs;
+    if (deltaMs > 0) {
+      if (allowStretch && entry.canStretch) {
+        entry.timelineDurationMs += deltaMs;
+      } else {
+        expandEntryWithinBounds(entry, entry.timelineDurationMs + deltaMs);
+      }
+    } else {
+      const reductionMs = Math.min(entry.timelineDurationMs - 1, Math.abs(deltaMs));
+      if (reductionMs <= 0) continue;
+      trimEntryToTimelineDuration(entry, entry.timelineDurationMs - reductionMs);
+    }
+
+    currentTotalMs = sumPlacementDurations(entries);
+  }
+}
+
+function sumPlacementDurations(entries: IPlacementEntry[]): number {
+  return entries.reduce((sum, entry) => sum + entry.timelineDurationMs, 0);
+}
+
+function allocateScaledDurations(
+  weights: number[],
+  targetTotalMs: number,
+  requireMinimumOne = true,
+): number[] {
+  if (weights.length === 0) return [];
+  if (targetTotalMs <= 0) {
+    return Array.from({ length: weights.length }, () => 0);
+  }
+
+  const safeWeights = weights.map(weight => Math.max(0, Math.round(weight)));
+  const weightSum = safeWeights.reduce((sum, weight) => sum + weight, 0);
+  const minimum = requireMinimumOne && targetTotalMs >= weights.length ? 1 : 0;
+  const allocations: number[] = Array.from({ length: weights.length }, () => minimum);
+  let remainingMs = targetTotalMs - allocations.reduce((sum, value) => sum + value, 0);
+  if (remainingMs < 0) remainingMs = 0;
+
+  if (weightSum <= 0) {
+    for (let index = 0; index < allocations.length && remainingMs > 0; index += 1) {
+      allocations[index] += 1;
+      remainingMs -= 1;
+    }
+    return allocations;
+  }
+
+  const shares = safeWeights.map(weight => remainingMs * (weight / weightSum));
+  shares.forEach((share, index) => {
+    const whole = Math.floor(share);
+    allocations[index] += whole;
+    remainingMs -= whole;
+  });
+
+  const remainders = shares
+    .map((share, index) => ({ index, remainder: share - Math.floor(share) }))
+    .sort((left, right) => right.remainder - left.remainder || left.index - right.index);
+
+  for (const item of remainders) {
+    if (remainingMs <= 0) break;
+    allocations[item.index] += 1;
+    remainingMs -= 1;
+  }
+
+  return allocations;
+}
+
+function allocateUpToCapacities(totalMs: number, capacities: number[]): number[] {
+  const roundedCaps = capacities.map(capacity => Math.max(0, Math.floor(capacity)));
+  const allocations = Array.from({ length: roundedCaps.length }, () => 0);
+  let remainingMs = Math.max(0, totalMs);
+
+  while (remainingMs > 0) {
+    const expandable = roundedCaps
+      .map((capacity, index) => ({ index, remaining: capacity - allocations[index]! }))
+      .filter(item => item.remaining > 0);
+    if (expandable.length === 0) break;
+
+    const remainingCapacityMs = expandable.reduce((sum, item) => sum + item.remaining, 0);
+    let distributedThisRound = 0;
+
+    for (const item of expandable) {
+      if (remainingMs <= 0) break;
+      const share = Math.max(1, Math.floor((remainingMs * item.remaining) / remainingCapacityMs));
+      const applied = Math.min(item.remaining, share, remainingMs);
+      allocations[item.index] += applied;
+      remainingMs -= applied;
+      distributedThisRound += applied;
+    }
+
+    if (distributedThisRound === 0) {
+      allocations[expandable[0]!.index] += 1;
+      remainingMs -= 1;
+    }
+  }
+
+  return allocations;
+}
+
+function isSpeedEligibleSliceType(sliceType?: IKtepSlice['type']): boolean {
+  return sliceType === 'drive' || sliceType === 'aerial';
+}
+
+function resolveTimelineDurationFromSource(
+  sourceDurationMs: number,
+  speed?: number,
+): number {
+  if (speed == null) return sourceDurationMs;
+  return Math.max(1, Math.round(sourceDurationMs / speed));
+}
+
+function resolveSourceDurationForTimeline(
+  timelineDurationMs: number,
+  speed?: number,
+): number {
+  if (speed == null) return Math.max(1, timelineDurationMs);
+  return Math.max(1, Math.round(timelineDurationMs * speed));
 }
 
 function shouldUseProtectionAudioFallback(

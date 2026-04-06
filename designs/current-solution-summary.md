@@ -143,6 +143,7 @@ flowchart TD
 - Script 阶段当前从 **Workspace 风格库** 里选择用户指定的 `style category`，项目只保存“本项目使用哪一个分类”，不再把风格档案作为项目内资产持有
 - 当前脚本 / outline 默认优先消费 Analyze 给出的 `editSourceInMs / editSourceOutMs`，而不是继续把 tight evidence window 当成最终可剪子区间
 - 模型仍可把 `selection.sourceInMs / sourceOutMs` 写得更细，但系统会先 clamp 到 outline fallback window，避免再次无意识裁得过短
+- 如果某拍最终保留原声，Script / Timeline 当前会把命中的 `selection.sourceInMs / sourceOutMs` 向外吸附到完整 `transcriptSegments` 边界；若完整一句原声长于原 beat 目标时长，会优先延长该 beat，而不是切在句中
 
 ### Timeline / Export
 
@@ -157,7 +158,9 @@ flowchart TD
 - 当前时间线不再把“短 source + 长 beat”当成默认慢放来源：
   - 对带 `editSourceInMs / editSourceOutMs` 的新 slice，时间线优先使用 edit-friendly bounds
   - 只有旧 slice / 旧 selection 缺少 edit bounds 时，才保留 legacy fallback stretch
-- 如果确实需要速度蒙太奇，当前正式路径是显式填写 `beat.actions.speed`，它会进入 timeline clip `speed` 并透传到导出层
+- 如果确实需要速度蒙太奇，当前正式路径是显式填写 `beat.actions.speed`
+- `IKtepScriptAction.speed` 当前的正式语义是“请求加速”，只有 `drive / aerial` clip 会实际消费；混合 beat 中其他类型 clip 会强制保持 `1x`
+- `placeClips()` 当前会优先把 clip 总时长贴到 `beat.targetDurationMs`，而不是让显式 `speed` beat 按原始 source 时长自由漂移
 - 时间线 / 草稿输出规格已收口为项目级运行时配置：`timelineWidth / timelineHeight / timelineFps`，默认值为 `3840x2160 @ 30fps`
 - 当某拍不走 source speech 时，时间线会把命中的带音轨视频 clip 标记为静音意图；导出到 Jianying 时会落成静音视频片段
 - 剪映导出不再走外部 `jianying-mcp` / 独立 `Jianying Server` 路线，而是由 Node 侧调用 vendored `pyJianYingDraft` 本地 CLI

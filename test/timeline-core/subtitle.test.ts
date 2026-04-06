@@ -174,6 +174,84 @@ describe('speech-paced subtitles', () => {
     });
   });
 
+  it('expands preserveNatSound beats to a full spoken sentence before placement and subtitles', () => {
+    const assets: IKtepAsset[] = [
+      {
+        id: 'asset-talk',
+        kind: 'video',
+        sourcePath: 'talk.mp4',
+        displayName: 'talk.mp4',
+      },
+    ];
+    const slices: IKtepSlice[] = [
+      {
+        id: 'slice-talk',
+        assetId: 'asset-talk',
+        type: 'talking-head',
+        sourceInMs: 0,
+        sourceOutMs: 3_000,
+        transcriptSegments: [
+          {
+            startMs: 0,
+            endMs: 1_800,
+            text: '这是完整的一句话。',
+          },
+        ],
+        labels: [],
+        placeHints: [],
+      },
+    ];
+    const script: IKtepScript[] = [{
+      id: 'segment-1',
+      role: 'scene',
+      narration: 'ignored',
+      targetDurationMs: 600,
+      linkedSliceIds: ['slice-talk'],
+      beats: [
+        {
+          id: 'beat-1',
+          text: '这是完整的一句话。',
+          targetDurationMs: 600,
+          actions: {
+            preserveNatSound: true,
+          },
+          selections: [{
+            assetId: 'asset-talk',
+            sliceId: 'slice-talk',
+            sourceInMs: 300,
+            sourceOutMs: 900,
+          }],
+          linkedSliceIds: ['slice-talk'],
+        },
+      ],
+    }];
+
+    const doc = buildTimeline(CPROJECT, assets, slices, script);
+
+    expect(doc.script?.[0]?.beats[0]).toMatchObject({
+      targetDurationMs: 1800,
+      selections: [{
+        assetId: 'asset-talk',
+        sliceId: 'slice-talk',
+        sourceInMs: 0,
+        sourceOutMs: 1800,
+      }],
+    });
+    expect(doc.timeline.clips[0]).toMatchObject({
+      assetId: 'asset-talk',
+      sourceInMs: 0,
+      sourceOutMs: 1800,
+      timelineInMs: 0,
+      timelineOutMs: 1800,
+    });
+    expect(doc.subtitles).toHaveLength(1);
+    expect(doc.subtitles?.[0]).toMatchObject({
+      text: '这是完整的一句话',
+      startMs: 0,
+      endMs: 1800,
+    });
+  });
+
   it('expands narration beats when the estimated speech exceeds the source window', () => {
     const assets: IKtepAsset[] = [
       {

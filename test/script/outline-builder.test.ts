@@ -46,4 +46,38 @@ describe('buildOutline edit-window policy', () => {
       sourceOutMs: 8_000,
     });
   });
+
+  it('snaps transcript-backed selections to full transcript segment boundaries', () => {
+    const slices: IKtepSlice[] = [{
+      id: 'slice-talk',
+      assetId: 'asset-talk',
+      type: 'talking-head',
+      sourceInMs: 0,
+      sourceOutMs: 12_000,
+      editSourceInMs: 1_500,
+      editSourceOutMs: 3_500,
+      transcriptSegments: [
+        {
+          startMs: 1_000,
+          endMs: 4_000,
+          text: '这是第一句完整的话。',
+        },
+        {
+          startMs: 5_000,
+          endMs: 8_000,
+          text: '这是第二句。',
+        },
+      ],
+      labels: ['speech'],
+      placeHints: [],
+    }];
+
+    const outline = buildOutline(slices, 2_000);
+
+    expect(outline).toHaveLength(1);
+    expect(outline[0]?.beats[0]?.selection).toMatchObject({
+      sourceInMs: 1_000,
+      sourceOutMs: 4_000,
+    });
+  });
 });

@@ -5,7 +5,11 @@ import type {
   ISpeedCandidateHint,
   ISegmentCandidateRecall,
 } from '../../protocol/schema.js';
-import { hasExplicitEditRange, resolveSlicePreferredRange } from '../media/window-policy.js';
+import {
+  hasExplicitEditRange,
+  resolveSlicePreferredRange,
+  snapSelectionToTranscriptSegments,
+} from '../media/window-policy.js';
 
 export interface IOutlineSliceContext {
   sliceId: string;
@@ -532,6 +536,9 @@ function buildTrimmedSelection(
   targetDurationMs: number,
 ): IKtepScriptSelection {
   const base = buildSelection(slice);
+  if ((slice.transcriptSegments?.length ?? 0) > 0) {
+    return snapSelectionToTranscriptSegments(base, slice);
+  }
   if (hasExplicitEditRange(slice)) {
     return base;
   }

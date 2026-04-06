@@ -4,6 +4,10 @@ import type {
   IKtepScriptSelection,
   IKtepSlice,
 } from '../../protocol/schema.js';
+import {
+  resolveSelectionRange,
+  snapSelectionToTranscriptSegments,
+} from '../media/window-policy.js';
 
 export interface ISpeechPacingConfig {
   maxCharsPerCue: number;
@@ -217,8 +221,9 @@ export function buildSourceSpeechContext(
     const slice = selection.sliceId ? sliceMap.get(selection.sliceId) : undefined;
     if (!slice) continue;
 
-    const sourceInMs = selection.sourceInMs ?? slice.sourceInMs ?? 0;
-    const sourceOutMs = selection.sourceOutMs ?? slice.sourceOutMs ?? sourceInMs;
+    const selectionRange = resolveSelectionRange(selection, slice);
+    const sourceInMs = selectionRange?.startMs ?? 0;
+    const sourceOutMs = selectionRange?.endMs ?? sourceInMs;
     const windowDurationMs = Math.max(0, sourceOutMs - sourceInMs);
 
     if (windowDurationMs > 0) {
@@ -351,7 +356,23 @@ function normalizeBeatTiming(
 ): IKtepScriptBeat {
   const speechContext = buildSourceSpeechContext(beat.selections, sliceMap);
   if (shouldPreferSourceSpeech(segment, beat, speechContext)) {
-    return beat;
+    const normalizedSelections = normalizeSourceSpeechSelections(beat.selections, sliceMap);
+    const targetDurationMs = Math.max(
+      beat.targetDurationMs ?? 0,
+      sumSelectionDurationsMs(normalizedSelections, sliceMap),
+    );
+    if (
+      targetDurationMs === (beat.targetDurationMs ?? 0)
+      && !haveSelectionWindowsChanged(beat.selections, normalizedSelections)
+    ) {
+      return beat;
+    }
+
+    return {
+      ...beat,
+      selections: normalizedSelections,
+      ...(targetDurationMs > 0 && { targetDurationMs }),
+    };
   }
 
   const estimatedDurationMs = buildNarrationBeatPlan(beat, config).totalDurationMs;
@@ -385,7 +406,23 @@ function normalizeLegacySegmentTiming(
   };
   const speechContext = buildSourceSpeechContext(legacyBeat.selections, sliceMap);
   if (shouldPreferSourceSpeech(segment, legacyBeat, speechContext)) {
-    return segment;
+    const normalizedSelections = normalizeSourceSpeechSelections(legacyBeat.selections, sliceMap);
+    const targetDurationMs = Math.max(
+      segment.targetDurationMs ?? 0,
+      sumSelectionDurationsMs(normalizedSelections, sliceMap),
+    );
+    if (
+      targetDurationMs === (segment.targetDurationMs ?? 0)
+      && !haveSelectionWindowsChanged(segment.selections ?? [], normalizedSelections)
+    ) {
+      return segment;
+    }
+
+    return {
+      ...segment,
+      selections: normalizedSelections,
+      ...(targetDurationMs > 0 && { targetDurationMs }),
+    };
   }
 
   const estimatedDurationMs = estimateNarrationBeatDurationMs(narration, config);
@@ -556,4 +593,45 @@ function resolveSourceDuration(sourceInMs?: number, sourceOutMs?: number): numbe
   if (sourceInMs == null || sourceOutMs == null) return undefined;
   if (sourceOutMs <= sourceInMs) return undefined;
   return sourceOutMs - sourceInMs;
+}
+
+function normalizeSourceSpeechSelections(
+  selections: IKtepScriptSelection[],
+  sliceMap: Map<string, IKtepSlice>,
+): IKtepScriptSelection[] {
+  return selections.map(selection => {
+    const slice = selection.sliceId ? sliceMap.get(selection.sliceId) : undefined;
+    return snapSelectionToTranscriptSegments(selection, slice);
+  });
+}
+
+function sumSelectionDurationsMs(
+  selections: IKtepScriptSelection[],
+  sliceMap: Map<string, IKtepSlice>,
+): number {
+  return selections.reduce((sum, selection) => {
+    const slice = selection.sliceId ? sliceMap.get(selection.sliceId) : undefined;
+    const range = resolveSelectionRange(selection, slice);
+    if (!range) return sum;
+    return sum + Math.max(0, range.endMs - range.startMs);
+  }, 0);
+}
+
+function haveSelectionWindowsChanged(
+  before: IKtepScriptSelection[],
+  after: IKtepScriptSelection[],
+): boolean {
+  if (before.length !== after.length) return true;
+
+  for (let index = 0; index < before.length; index += 1) {
+    const previous = before[index];
+    const next = after[index];
+    if (!previous || !next) return true;
+    if (previous.assetId !== next.assetId || previous.sliceId !== next.sliceId) return true;
+    if (previous.sourceInMs !== next.sourceInMs || previous.sourceOutMs !== next.sourceOutMs) {
+      return true;
+    }
+  }
+
+  return false;
 }

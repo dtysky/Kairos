@@ -18,6 +18,7 @@
    - `drive` 的 `speech` 和 `visual` windows / slices 已正式分语义，并通过 `semanticKind` 继续向后传递
 2. 脚本召回和 outline 已消费 transcript 证据
    - transcript 不再只是附属说明，而是候选召回和 beat 写作的正式输入
+   - 如果某拍最终保留原声，outline / timeline 会把选区吸附到完整 `transcriptSegments` 边界；必要时 beat 时长会向上扩，避免切在句中
 3. 字幕已支持双路径
    - 旁白路径：来自 `beat.text`
    - 原声路径：来自 `slice.transcriptSegments`
@@ -49,6 +50,8 @@
    - 字幕按有声岛落位，不再默认占满整个 beat
    - 时间线默认输出规格改为项目级可配置，fallback 为 `3840x2160 @ 30fps`
    - 当某拍不走 source speech 时，命中的视频 clip 会带上“静音原音”意图，由导出适配器映射到具体 NLE
+   - 显式 `beat.actions.speed` 当前只是请求信号，只有 `drive / aerial` clip 会消费；其他类型 clip 即使同拍也强制保持 `1x`
+   - clip placement 当前优先贴合 `beat.targetDurationMs`，不会再让显式 speed beat 按原始 source 时长自由漂移
 8. Analyze 恢复与资源口径已经补到项目级正式设计
    - coarse prepared state 会写入 `analysis/prepared-assets/<assetId>.json`
    - ASR / protection fallback state 会写入 `analysis/audio-checkpoints/<assetId>.json`

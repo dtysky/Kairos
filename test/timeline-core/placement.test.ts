@@ -144,7 +144,7 @@ describe('placeClips', () => {
     });
   });
 
-  it('prefers edit-friendly slice bounds instead of implicit slow-fill', () => {
+  it('prefers edit-friendly slice bounds before stretching to the beat budget', () => {
     const assets: IKtepAsset[] = [
       {
         id: 'asset-drive',
@@ -196,7 +196,7 @@ describe('placeClips', () => {
       sourceInMs: 0,
       sourceOutMs: 6000,
       timelineInMs: 0,
-      timelineOutMs: 6000,
+      timelineOutMs: 8000,
     });
     expect(clips[0]?.speed).toBeUndefined();
   });
@@ -256,6 +256,212 @@ describe('placeClips', () => {
       speed: 5,
       timelineInMs: 0,
       timelineOutMs: 2000,
+    });
+  });
+
+  it('only applies speed to drive clips inside a mixed beat', () => {
+    const assets: IKtepAsset[] = [
+      {
+        id: 'asset-drive',
+        kind: 'video',
+        sourcePath: 'drive.mp4',
+        displayName: 'drive.mp4',
+      },
+      {
+        id: 'asset-broll',
+        kind: 'video',
+        sourcePath: 'broll.mp4',
+        displayName: 'broll.mp4',
+      },
+    ];
+    const slices: IKtepSlice[] = [
+      {
+        id: 'slice-drive',
+        assetId: 'asset-drive',
+        type: 'drive',
+        sourceInMs: 0,
+        sourceOutMs: 10_000,
+        labels: [],
+        placeHints: [],
+      },
+      {
+        id: 'slice-broll',
+        assetId: 'asset-broll',
+        type: 'broll',
+        sourceInMs: 0,
+        sourceOutMs: 4_000,
+        labels: [],
+        placeHints: [],
+      },
+    ];
+    const script: IKtepScript[] = [{
+      id: 'segment-1',
+      role: 'scene',
+      narration: 'test',
+      targetDurationMs: 5_000,
+      linkedSliceIds: ['slice-drive', 'slice-broll'],
+      beats: [
+        {
+          id: 'beat-1',
+          text: '混合加速段。',
+          targetDurationMs: 5_000,
+          actions: {
+            muteSource: true,
+            speed: 5,
+          },
+          selections: [
+            {
+              assetId: 'asset-drive',
+              sliceId: 'slice-drive',
+              sourceInMs: 0,
+              sourceOutMs: 10_000,
+            },
+            {
+              assetId: 'asset-broll',
+              sliceId: 'slice-broll',
+              sourceInMs: 0,
+              sourceOutMs: 4_000,
+            },
+          ],
+          linkedSliceIds: ['slice-drive', 'slice-broll'],
+        },
+      ],
+    }];
+
+    const { clips } = placeClips(script, slices, assets);
+
+    expect(clips).toHaveLength(2);
+    expect(clips[0]).toMatchObject({
+      assetId: 'asset-drive',
+      speed: 5,
+      timelineInMs: 0,
+      timelineOutMs: 1667,
+    });
+    expect(clips[1]).toMatchObject({
+      assetId: 'asset-broll',
+      sourceInMs: 0,
+      sourceOutMs: 3333,
+      timelineInMs: 1667,
+      timelineOutMs: 5000,
+    });
+    expect(clips[1]?.speed).toBeUndefined();
+  });
+
+  it('keeps non-drive-or-aerial speed requests at 1x', () => {
+    const assets: IKtepAsset[] = [
+      {
+        id: 'asset-timelapse',
+        kind: 'video',
+        sourcePath: 'timelapse.mp4',
+        displayName: 'timelapse.mp4',
+      },
+    ];
+    const slices: IKtepSlice[] = [
+      {
+        id: 'slice-timelapse',
+        assetId: 'asset-timelapse',
+        type: 'timelapse',
+        sourceInMs: 0,
+        sourceOutMs: 4_000,
+        labels: [],
+        placeHints: [],
+      },
+    ];
+    const script: IKtepScript[] = [{
+      id: 'segment-1',
+      role: 'highlight',
+      narration: 'test',
+      targetDurationMs: 4_000,
+      linkedSliceIds: ['slice-timelapse'],
+      beats: [
+        {
+          id: 'beat-1',
+          text: '延时素材不应再次加速。',
+          targetDurationMs: 4_000,
+          actions: {
+            muteSource: true,
+            speed: 8,
+          },
+          selections: [{
+            assetId: 'asset-timelapse',
+            sliceId: 'slice-timelapse',
+            sourceInMs: 0,
+            sourceOutMs: 4_000,
+          }],
+          linkedSliceIds: ['slice-timelapse'],
+        },
+      ],
+    }];
+
+    const { clips } = placeClips(script, slices, assets);
+
+    expect(clips).toHaveLength(1);
+    expect(clips[0]).toMatchObject({
+      sourceInMs: 0,
+      sourceOutMs: 4_000,
+      timelineInMs: 0,
+      timelineOutMs: 4_000,
+    });
+    expect(clips[0]?.speed).toBeUndefined();
+  });
+
+  it('expands legal aerial speed clips within bounds to better match the beat budget', () => {
+    const assets: IKtepAsset[] = [
+      {
+        id: 'asset-aerial',
+        kind: 'video',
+        sourcePath: 'aerial.mp4',
+        displayName: 'aerial.mp4',
+      },
+    ];
+    const slices: IKtepSlice[] = [
+      {
+        id: 'slice-aerial',
+        assetId: 'asset-aerial',
+        type: 'aerial',
+        sourceInMs: 0,
+        sourceOutMs: 8_000,
+        editSourceInMs: 0,
+        editSourceOutMs: 24_000,
+        labels: [],
+        placeHints: [],
+      },
+    ];
+    const script: IKtepScript[] = [{
+      id: 'segment-1',
+      role: 'intro',
+      narration: 'test',
+      targetDurationMs: 6_000,
+      linkedSliceIds: ['slice-aerial'],
+      beats: [
+        {
+          id: 'beat-1',
+          text: '航拍加速建场。',
+          targetDurationMs: 6_000,
+          actions: {
+            muteSource: true,
+            speed: 4,
+          },
+          selections: [{
+            assetId: 'asset-aerial',
+            sliceId: 'slice-aerial',
+            sourceInMs: 0,
+            sourceOutMs: 8_000,
+          }],
+          linkedSliceIds: ['slice-aerial'],
+        },
+      ],
+    }];
+
+    const { clips } = placeClips(script, slices, assets);
+
+    expect(clips).toHaveLength(1);
+    expect(clips[0]).toMatchObject({
+      sourceInMs: 0,
+      sourceOutMs: 24_000,
+      speed: 4,
+      timelineInMs: 0,
+      timelineOutMs: 6_000,
     });
   });
 

@@ -43,7 +43,8 @@ Current stable pipeline:
 - drive slices can now carry `speedCandidate` metadata (for example `2x / 5x / 10x` suggestions), but final retiming stays an explicit downstream decision
 - a `beat` can now optionally carry explicit `utterances[]` with head / middle / tail pauses, so subtitles only occupy voiced islands while video can continue underneath
 - outline / script now prefer Analyze-provided edit bounds instead of re-centering every slice by default; legacy slices without edit bounds still fall back to conservative trimming
-- explicit acceleration now flows through `beat.actions.speed` -> timeline clip `speed` -> NLE export, instead of relying on hidden slow-fill from too-short source windows
+- explicit acceleration now flows through `beat.actions.speed` -> timeline clip `speed` -> NLE export, but only `drive / aerial` clips may consume it; placement also fits clips against `beat.targetDurationMs` instead of drifting with raw source duration
+- when a beat preserves source speech, Kairos now snaps the selected window outward to full `transcriptSegments` boundaries and will extend the beat if needed so the spoken sentence finishes cleanly
 - timeline / draft output spec is project-configurable through `config/runtime.json` and now defaults to `3840x2160 @ 30fps`
 - when a beat does not use source speech, Kairos will mark selected video clips to mute their embedded audio during NLE export
 - Jianying export now uses the vendored local `pyJianYingDraft` CLI, not an external Jianying MCP/server

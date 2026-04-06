@@ -16,9 +16,10 @@ export function validateKtepDoc(doc: IKtepDoc): IValidationResult {
 
   const trackMap = new Map(doc.timeline.tracks.map(track => [track.id, track]));
   const assetMap = new Map(doc.assets.map(asset => [asset.id, asset]));
+  const sliceMap = new Map(doc.slices.map(slice => [slice.id, slice]));
   const trackIds = new Set(trackMap.keys());
   const assetIds = new Set(assetMap.keys());
-  const sliceIds = new Set(doc.slices.map(s => s.id));
+  const sliceIds = new Set(sliceMap.keys());
 
   for (const clip of doc.timeline.clips) {
     // Rule 2: timelineOutMs > timelineInMs
@@ -95,6 +96,17 @@ export function validateKtepDoc(doc: IKtepDoc): IValidationResult {
         message: `clip ${clip.id}: sliceId "${clip.sliceId}" not found in slices`,
         path: `timeline.clips.${clip.id}`,
       });
+    }
+
+    if (clip.speed != null) {
+      const slice = clip.sliceId != null ? sliceMap.get(clip.sliceId) : undefined;
+      if (!slice || (slice.type !== 'drive' && slice.type !== 'aerial')) {
+        errors.push({
+          rule: 'clip-speed-type',
+          message: `clip ${clip.id}: speed is only allowed on drive/aerial slices`,
+          path: `timeline.clips.${clip.id}`,
+        });
+      }
     }
   }
 

@@ -1,12 +1,14 @@
 import type {
   EClipType,
   IInterestingWindow,
+  ITranscriptSegment,
+  IKtepScriptSelection,
   IKtepSlice,
   ISpeedCandidateHint,
 } from '../../protocol/schema.js';
 import type { IShotBoundary } from './shot-detect.js';
 
-interface IResolvedRange {
+export interface IResolvedRange {
   startMs: number;
   endMs: number;
 }
@@ -69,6 +71,65 @@ export function resolveSlicePreferredRange(
     slice.editSourceInMs,
     slice.editSourceOutMs,
   );
+}
+
+export function resolveSelectionRange(
+  selection: Pick<IKtepScriptSelection, 'sourceInMs' | 'sourceOutMs'>,
+  slice?: Pick<IKtepSlice, 'sourceInMs' | 'sourceOutMs' | 'editSourceInMs' | 'editSourceOutMs'>,
+): IResolvedRange | null {
+  const preferredRange = slice ? resolveSlicePreferredRange(slice) : null;
+  const startMs = selection.sourceInMs ?? preferredRange?.startMs;
+  const endMs = selection.sourceOutMs ?? preferredRange?.endMs;
+
+  if (typeof startMs !== 'number' || typeof endMs !== 'number' || endMs <= startMs) {
+    return preferredRange;
+  }
+
+  return { startMs, endMs };
+}
+
+export function expandRangeToTranscriptSegments(
+  range: IResolvedRange,
+  transcriptSegments: ITranscriptSegment[] = [],
+): IResolvedRange {
+  if (transcriptSegments.length === 0) return range;
+
+  const intersectingSegments = transcriptSegments.filter(segment =>
+    segment.endMs > range.startMs && segment.startMs < range.endMs,
+  );
+  if (intersectingSegments.length === 0) return range;
+
+  const startMs = Math.min(
+    range.startMs,
+    ...intersectingSegments.map(segment => segment.startMs),
+  );
+  const endMs = Math.max(
+    range.endMs,
+    ...intersectingSegments.map(segment => segment.endMs),
+  );
+
+  return { startMs, endMs };
+}
+
+export function snapSelectionToTranscriptSegments<T extends Pick<
+  IKtepScriptSelection,
+  'sourceInMs' | 'sourceOutMs'
+>>(
+  selection: T,
+  slice?: Pick<
+    IKtepSlice,
+    'sourceInMs' | 'sourceOutMs' | 'editSourceInMs' | 'editSourceOutMs' | 'transcriptSegments'
+  >,
+): T {
+  const range = resolveSelectionRange(selection, slice);
+  if (!range) return selection;
+
+  const snappedRange = expandRangeToTranscriptSegments(range, slice?.transcriptSegments ?? []);
+  return {
+    ...selection,
+    sourceInMs: snappedRange.startMs,
+    sourceOutMs: snappedRange.endMs,
+  };
 }
 
 export function hasExplicitEditRange(

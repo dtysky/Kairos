@@ -24,7 +24,9 @@ const CSYSTEM = `你是一个旅拍纪录片脚本创作者。根据给定的叙
 8a. 如果候选切片里带有明确口播/人物原声 transcript，且这段话本身值得直接进入正片，优先保留原声并设置 preserveNatSound=true
 8b. 对于 preserveNatSound=true 的 beat，text 应尽量贴近要保留的原话或其可读字幕版本，不要再额外改写成旁白
 8c. 如果一个带语音的素材主要承担 intro、transition、铺垫、空间建立或情绪过门画面，而不打算直接使用它的原话，就不要因为它有 transcript 就保留原声；这类 beat 应优先设置 muteSource=true，并把 text 正常写成旁白
-8d. 如果候选 beat 标出了速度候选（例如 2x/5x/10x），只有在你明确想做速度蒙太奇时才填写 actions.speed；不要靠把 source 裁得很短或默认慢放去贴时长
+8d. 对于 preserveNatSound=true 的 beat，优先只绑定一个主讲话 selection，并保证选区至少覆盖完整一句 transcriptSegments；不要切在句中，也不要把多个讲话镜头混成一个原声 montage
+8e. 如果候选 beat 标出了速度候选（例如 2x/5x/10x），只有在这个 beat 本质上是 drive / aerial montage 时才填写 actions.speed；混入 talking-head、broll、shot、timelapse、photo 或 unknown 时不要给整拍写 speed
+8f. 保留原声的 beat 不允许写 actions.speed
 9. narration 是整段的聚合预览，可选；若提供，应与 beats 内容一致
 10. 返回 JSON 数组，每个元素包含 id, role, title, narration, targetDurationMs, actions, selections, linkedSliceIds, beats`;
 
@@ -155,7 +157,7 @@ export function buildOutlinePrompt(outline: IOutlineSegment[]): string {
       })
       .join('\n');
 
-    return `${i + 1}. [${seg.role}] ${seg.title} (${Math.round(seg.estimatedDurationMs / 1000)}s)\n   时间范围: ${timeRange}\n   素材切片: ${seg.sliceIds.length} 个\n   预规划 beats: ${seg.beats.length} 个\n   段落摘要: ${seg.context.summary}\n   输出要求: 先参考预规划 beats，再在每个 beat 中从候选切片里截取真正要用的子区间${beatLines ? `\n${beatLines}` : ''}`;
+    return `${i + 1}. [${seg.role}] ${seg.title} (${Math.round(seg.estimatedDurationMs / 1000)}s)\n   时间范围: ${timeRange}\n   素材切片: ${seg.sliceIds.length} 个\n   预规划 beats: ${seg.beats.length} 个\n   段落摘要: ${seg.context.summary}\n   输出要求: 先参考预规划 beats，再在每个 beat 中从候选切片里截取真正要用的子区间；如果决定保留原声，选区必须覆盖完整一句 transcript，不要切半句；如果要写 speed，只能用于纯 drive/aerial 节奏段${beatLines ? `\n${beatLines}` : ''}`;
   }).join('\n');
 }
 
