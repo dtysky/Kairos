@@ -4,6 +4,7 @@ import { freemem } from 'node:os';
 import type {
   EClipType,
   ETargetBudget,
+  IAudioHealthSummary,
   IAssetCoarseReport,
   IDeviceMediaMapFile,
   IKtepAsset,
@@ -70,7 +71,7 @@ import {
 } from './keyframe.js';
 import { MlClient } from './ml-client.js';
 import { probe } from './probe.js';
-import { canUseProtectionAudio, resolveProtectionAudioLocalPath } from './protection-audio.js';
+import { resolveProtectionAudioLocalPath } from './protection-audio.js';
 import { recognizeFrames, recognizeShotGroups, type IRecognition } from './recognizer.js';
 import { resolveAssetLocalPath } from './root-resolver.js';
 import {
@@ -133,6 +134,21 @@ const CANALYZE_STEP_DEFINITIONS = [
   { key: 'chronology', label: '刷新时间视图' },
 ] as const;
 const CAUDIO_ANALYSIS_KEEP_OTHER_MODELS_LOADED = true;
+const CCOARSE_SCAN_DEFAULTS = {
+  baseConcurrency: 1,
+  maxConcurrency: 3,
+  minFreeMemoryMb: 4096,
+} as const;
+const CAUDIO_ANALYSIS_LOCAL_DEFAULTS = {
+  baseConcurrency: 1,
+  maxConcurrency: 3,
+  minFreeMemoryMb: 3072,
+} as const;
+const CAUDIO_ANALYSIS_ASR_DEFAULTS = {
+  baseConcurrency: 1,
+  maxConcurrency: 4,
+  minFreeMemoryMb: 4096,
+} as const;
 const CFINE_SCAN_PREFETCH_DEFAULTS = {
   baseConcurrency: 1,
   maxConcurrency: 3,
@@ -257,19 +273,7 @@ export async function analyzeWorkspaceProjectMedia(
       stepTotal: CANALYZE_STEP_DEFINITIONS.length,
     };
   };
-  const writeAnalyzeStepProgress = async (inputStep: {
-    step: typeof CANALYZE_STEP_DEFINITIONS[number]['key'];
-    fileIndex?: number;
-    fileTotal?: number;
-    current?: number;
-    total?: number;
-    unit?: string;
-    detail?: string;
-    fileName?: string;
-    etaSeconds?: number;
-    extra?: Record<string, unknown>;
-    status?: 'running' | 'succeeded' | 'failed';
-  }) => {
+  const writeAnalyzeStepProgress = async (inputStep: IAnalyzeStepProgressInput) => {
     const stepMeta = resolveStepMeta(inputStep.step);
     await writeTrackedProgress({
       status: inputStep.status ?? 'running',
@@ -321,58 +325,42 @@ export async function analyzeWorkspaceProjectMedia(
     }
 
     const finalizeFailures: IFinalizeFailure[] = [];
-    const coarsePhaseStartedAtMs = Date.now();
-    for (const [index, asset] of pendingAssets.entries()) {
-      const localPath = resolveAssetLocalPath(input.projectId, asset, roots, deviceMaps);
-      const fileIndex = toOverallProgressIndex(index + 1);
-      const etaSeconds = estimatePhaseEtaSeconds(
-        coarsePhaseStartedAtMs,
-        preparedAnalyses.length,
-        pendingAssets.length,
-      );
+    preparedAnalyses.push(...await runCoarseScanPipeline({
+      projectId: input.projectId,
+      projectName: project.name,
+      pendingAssets,
+      projectRoot,
+      roots,
+      deviceMaps,
+      runtimeConfig,
+      getMlHandle,
+      performance,
+      progressTotal,
+      toOverallProgressIndex,
+      writeAnalyzeStepProgress,
+    }));
 
-      await writeAnalyzeStepProgress({
-        step: 'coarse-scan',
-        fileName: asset.displayName,
-        fileIndex,
-        fileTotal: progressTotal,
-        current: fileIndex,
-        total: progressTotal,
-        unit: 'files',
-        etaSeconds,
-        detail: localPath
-          ? `正在粗扫 ${asset.displayName}`
-          : `缺少本机路径映射，跳过 ${asset.displayName}`,
-        extra: {
-          projectId: input.projectId,
-          projectName: project.name,
-          assetId: asset.id,
-          assetKind: asset.kind,
-        },
-      });
+    const audioContextsByAssetId = await runAudioAnalysisPipeline({
+      projectId: input.projectId,
+      projectName: project.name,
+      preparedAnalyses,
+      projectRoot,
+      roots,
+      deviceMaps,
+      runtimeConfig,
+      getMlHandle,
+      performance,
+      progressTotal,
+      toOverallProgressIndex,
+      writeAnalyzeStepProgress,
+    });
 
-      if (!localPath) continue;
-
-      const prepareStartedAt = Date.now();
-      const prepared = await loadOrPrepareAssetVisualCoarse({
-        asset,
-        localPath,
-        projectRoot,
-        roots,
-        runtimeConfig,
-        getMlHandle,
-        performance,
-      });
-      performance?.recordStage(asset, 'prepare', Date.now() - prepareStartedAt);
-      preparedAnalyses.push(prepared);
-    }
-
-    const audioPhaseStartedAtMs = Date.now();
+    const finalizePhaseStartedAtMs = Date.now();
     for (const [index, prepared] of preparedAnalyses.entries()) {
       const fileIndex = toOverallProgressIndex(index + 1);
 
       const writePreparedStageProgress = async (
-        stage: 'audio-analysis' | 'finalize',
+        stage: 'finalize',
         detail?: string,
       ) => writeAnalyzeStepProgress({
         step: stage,
@@ -383,7 +371,7 @@ export async function analyzeWorkspaceProjectMedia(
         total: progressTotal,
         unit: 'files',
         etaSeconds: estimatePhaseEtaSeconds(
-          audioPhaseStartedAtMs,
+          finalizePhaseStartedAtMs,
           analyzedAssetIds.length,
           preparedAnalyses.length,
         ),
@@ -396,25 +384,17 @@ export async function analyzeWorkspaceProjectMedia(
         },
       });
 
-      const needsAudioStage = shouldAnalyzeAudioTrack(prepared.asset, prepared.hasAudioTrack)
-        || Boolean(prepared.asset.protectionAudio);
-      if (needsAudioStage) {
-        await writePreparedStageProgress(
-          'audio-analysis',
-          describeAudioAnalysisStage(prepared.asset, prepared.hasAudioTrack),
-        );
-      } else {
-        await writePreparedStageProgress(
-          'finalize',
-          describeFinalizeStage(prepared.asset, prepared.hasAudioTrack),
-        );
-      }
+      await writePreparedStageProgress(
+        'finalize',
+        describeFinalizeStage(prepared.asset, prepared.hasAudioTrack),
+      );
 
       try {
         const finalizeStartedAt = Date.now();
         const finalized = await finalizePreparedAsset({
           projectId: input.projectId,
           prepared,
+          audioContext: audioContextsByAssetId.get(prepared.asset.id),
           projectRoot,
           roots,
           deviceMaps,
@@ -424,14 +404,10 @@ export async function analyzeWorkspaceProjectMedia(
           budget: input.budget,
           getMlHandle,
           performance,
-          onStageChange: async (stage, detail) => {
+          onStageChange: async (_stage, detail) => {
             await writePreparedStageProgress(
-              stage,
-              detail ?? (
-                stage === 'audio-analysis'
-                  ? describeAudioAnalysisStage(prepared.asset, prepared.hasAudioTrack)
-                  : describeFinalizeStage(prepared.asset, prepared.hasAudioTrack)
-              ),
+              'finalize',
+              detail ?? describeFinalizeStage(prepared.asset, prepared.hasAudioTrack),
             );
           },
         });
@@ -618,6 +594,522 @@ export async function analyzeWorkspaceProjectMedia(
   }
 }
 
+async function runCoarseScanPipeline(input: {
+  projectId: string;
+  projectName: string;
+  pendingAssets: IKtepAsset[];
+  projectRoot: string;
+  roots: IMediaRoot[];
+  deviceMaps: IDeviceMediaMapFile;
+  runtimeConfig: IAnalyzeSingleAssetInput['runtimeConfig'];
+  getMlHandle: () => Promise<MlAvailability>;
+  performance?: AnalyzePerformanceSession;
+  progressTotal: number;
+  toOverallProgressIndex: (localIndex: number) => number;
+  writeAnalyzeStepProgress: (inputStep: IAnalyzeStepProgressInput) => Promise<void>;
+}): Promise<IPreparedAssetAnalysis[]> {
+  if (input.pendingAssets.length === 0) {
+    return [];
+  }
+
+  const limits = resolveCoarseScanLimits(input.runtimeConfig);
+  const tasks: ICoarseScanTaskState[] = input.pendingAssets.map((asset, index) => {
+    const localPath = resolveAssetLocalPath(input.projectId, asset, input.roots, input.deviceMaps);
+    return {
+      index,
+      asset,
+      localPath,
+      status: localPath ? 'pending' : 'skipped',
+    };
+  });
+  const preparedByIndex = new Array<IPreparedAssetAnalysis | null>(tasks.length).fill(null);
+  const active = new Map<string, Promise<{ prepared: IPreparedAssetAnalysis; elapsedMs: number }>>();
+  const startedAtMs = Date.now();
+
+  const writeProgress = async (detail?: string) => {
+    const activeTasks = tasks.filter(task => task.status === 'running');
+    const completedCount = tasks.filter(task =>
+      task.status === 'completed' || task.status === 'skipped',
+    ).length;
+    const targetConcurrency = resolveDynamicStageTargetConcurrency({
+      limits,
+      freeMemoryMb: freemem() / (1024 * 1024),
+      hasActiveWorkers: active.size > 0,
+      hasPendingWork: tasks.some(task => task.status === 'pending'),
+    });
+
+    await input.writeAnalyzeStepProgress({
+      step: 'coarse-scan',
+      fileName: buildConcurrentAssetLabel(activeTasks.map(task => task.asset.displayName)),
+      fileIndex: input.toOverallProgressIndex(completedCount),
+      fileTotal: input.progressTotal,
+      current: input.toOverallProgressIndex(completedCount),
+      total: input.progressTotal,
+      unit: 'files',
+      etaSeconds: estimatePhaseEtaSeconds(startedAtMs, completedCount, tasks.length),
+      detail,
+      extra: {
+        projectId: input.projectId,
+        projectName: input.projectName,
+        pipelineKind: 'coarse-scan',
+        coarseTotal: tasks.length,
+        coarseCompletedCount: completedCount,
+        coarsePendingCount: tasks.filter(task => task.status === 'pending').length,
+        coarseActiveCount: active.size,
+        coarseTargetConcurrency: targetConcurrency,
+        coarseCheckpointedCount: preparedByIndex.filter(Boolean).length,
+        activeAssetNames: activeTasks.map(task => task.asset.displayName),
+      },
+    });
+  };
+
+  await writeProgress('正在准备粗扫队列');
+
+  while (tasks.some(task => task.status === 'pending' || task.status === 'running')) {
+    while (true) {
+      const pendingTasks = tasks.filter(task => task.status === 'pending' && task.localPath);
+      if (pendingTasks.length === 0) break;
+
+      const targetConcurrency = resolveDynamicStageTargetConcurrency({
+        limits,
+        freeMemoryMb: freemem() / (1024 * 1024),
+        hasActiveWorkers: active.size > 0,
+        hasPendingWork: pendingTasks.length > 0,
+      });
+      if (targetConcurrency <= active.size) break;
+
+      const nextTask = pendingTasks[0];
+      if (!nextTask || !nextTask.localPath) break;
+      const localPath = nextTask.localPath;
+
+      nextTask.status = 'running';
+      active.set(nextTask.asset.id, (async () => {
+        const prepareStartedAt = Date.now();
+        const prepared = await loadOrPrepareAssetVisualCoarse({
+          asset: nextTask.asset,
+          localPath,
+          projectRoot: input.projectRoot,
+          roots: input.roots,
+          runtimeConfig: input.runtimeConfig,
+          getMlHandle: input.getMlHandle,
+          performance: input.performance,
+        });
+        return {
+          prepared,
+          elapsedMs: Date.now() - prepareStartedAt,
+        };
+      })());
+    }
+
+    if (active.size === 0) break;
+    await writeProgress(`正在粗扫 ${buildConcurrentAssetLabel(tasks.filter(task => task.status === 'running').map(task => task.asset.displayName))}`);
+
+    const nextEvent = await Promise.race(
+      [...active.entries()].map(([assetId, promise]) => promise.then(result => ({ assetId, ...result }))),
+    );
+    active.delete(nextEvent.assetId);
+    const task = tasks.find(item => item.asset.id === nextEvent.assetId);
+    if (!task) continue;
+
+    task.status = 'completed';
+    task.prepared = nextEvent.prepared;
+    preparedByIndex[task.index] = nextEvent.prepared;
+    input.performance?.recordStage(
+      task.asset,
+      'prepare',
+      nextEvent.elapsedMs,
+    );
+    await writeProgress(`已完成 ${task.asset.displayName} 的粗扫准备`);
+  }
+
+  return preparedByIndex.filter((prepared): prepared is IPreparedAssetAnalysis => Boolean(prepared));
+}
+
+async function runAudioAnalysisPipeline(input: {
+  projectId: string;
+  projectName: string;
+  preparedAnalyses: IPreparedAssetAnalysis[];
+  projectRoot: string;
+  roots: IMediaRoot[];
+  deviceMaps: IDeviceMediaMapFile;
+  runtimeConfig: IAnalyzeSingleAssetInput['runtimeConfig'];
+  getMlHandle: () => Promise<MlAvailability>;
+  performance?: AnalyzePerformanceSession;
+  progressTotal: number;
+  toOverallProgressIndex: (localIndex: number) => number;
+  writeAnalyzeStepProgress: (inputStep: IAnalyzeStepProgressInput) => Promise<void>;
+}): Promise<Map<string, IAudioAnalysisContext>> {
+  const contexts = new Map<string, IAudioAnalysisContext>();
+  const tasks: IAudioAnalysisTaskState[] = input.preparedAnalyses
+    .filter(prepared =>
+      shouldAnalyzeAudioTrack(prepared.asset, prepared.hasAudioTrack)
+      || Boolean(prepared.asset.protectionAudio),
+    )
+    .map(prepared => ({
+      prepared,
+      shouldCheckpoint: shouldAnalyzeAudioTrack(prepared.asset, prepared.hasAudioTrack)
+        || Boolean(prepared.asset.protectionAudio),
+      hasAvailableProtectionAudio: false,
+      status: 'local-pending',
+    }));
+
+  if (tasks.length === 0) {
+    return contexts;
+  }
+
+  const ml = await input.getMlHandle();
+  const localLimits = resolveAudioAnalysisLocalLimits(input.runtimeConfig);
+  const asrLimits = resolveAudioAnalysisAsrLimits(input.runtimeConfig);
+  const activeLocal = new Map<string, Promise<IAudioAnalysisTaskState>>();
+  const activeAsr = new Map<string, Promise<IAudioAnalysisTaskState>>();
+  const startedAtMs = Date.now();
+
+  const writeProgress = async (detail?: string) => {
+    const completedCount = tasks.filter(task => task.status === 'completed').length;
+    const activeAssetNames = [
+      ...tasks.filter(task => task.status === 'local-running').map(task => task.prepared.asset.displayName),
+      ...tasks.filter(task => task.status === 'asr-running').map(task => task.prepared.asset.displayName),
+    ];
+    const targetLocalConcurrency = resolveDynamicStageTargetConcurrency({
+      limits: localLimits,
+      freeMemoryMb: freemem() / (1024 * 1024),
+      hasActiveWorkers: activeLocal.size > 0,
+      hasPendingWork: tasks.some(task => task.status === 'local-pending'),
+    });
+    const targetAsrConcurrency = resolveDynamicStageTargetConcurrency({
+      limits: asrLimits,
+      freeMemoryMb: freemem() / (1024 * 1024),
+      hasActiveWorkers: activeAsr.size > 0,
+      hasPendingWork: tasks.some(task => task.status === 'asr-pending'),
+    });
+
+    await input.writeAnalyzeStepProgress({
+      step: 'audio-analysis',
+      fileName: buildConcurrentAssetLabel(activeAssetNames),
+      fileIndex: input.toOverallProgressIndex(completedCount),
+      fileTotal: input.progressTotal,
+      current: input.toOverallProgressIndex(completedCount),
+      total: input.progressTotal,
+      unit: 'files',
+      etaSeconds: estimatePhaseEtaSeconds(startedAtMs, completedCount, tasks.length),
+      detail,
+      extra: {
+        projectId: input.projectId,
+        projectName: input.projectName,
+        pipelineKind: 'audio-analysis',
+        audioTotal: tasks.length,
+        audioCompletedCount: completedCount,
+        audioPendingCount: tasks.filter(task => task.status === 'local-pending' || task.status === 'asr-pending').length,
+        audioActiveLocalCount: activeLocal.size,
+        audioTargetLocalConcurrency: targetLocalConcurrency,
+        audioQueuedAsrCount: tasks.filter(task => task.status === 'asr-pending').length,
+        audioActiveAsrCount: activeAsr.size,
+        audioTargetAsrConcurrency: targetAsrConcurrency,
+        audioCheckpointedCount: tasks.filter(task => task.audioContext).length,
+        activeAssetNames,
+      },
+    });
+  };
+
+  await writeProgress('正在准备音频分析队列');
+
+  while (tasks.some(task => task.status !== 'completed')) {
+    while (true) {
+      const pendingLocalTasks = tasks.filter(task => task.status === 'local-pending');
+      if (pendingLocalTasks.length === 0) break;
+      const targetLocalConcurrency = resolveDynamicStageTargetConcurrency({
+        limits: localLimits,
+        freeMemoryMb: freemem() / (1024 * 1024),
+        hasActiveWorkers: activeLocal.size > 0,
+        hasPendingWork: pendingLocalTasks.length > 0,
+      });
+      if (targetLocalConcurrency <= activeLocal.size) break;
+
+      const nextTask = pendingLocalTasks[0];
+      if (!nextTask) break;
+      nextTask.status = 'local-running';
+      activeLocal.set(nextTask.prepared.asset.id, runAudioAnalysisLocalTask({
+        task: nextTask,
+        projectId: input.projectId,
+        projectRoot: input.projectRoot,
+        roots: input.roots,
+        deviceMaps: input.deviceMaps,
+      }));
+    }
+
+    while (true) {
+      const pendingAsrTasks = tasks.filter(task => task.status === 'asr-pending');
+      if (pendingAsrTasks.length === 0) break;
+      const targetAsrConcurrency = resolveDynamicStageTargetConcurrency({
+        limits: asrLimits,
+        freeMemoryMb: freemem() / (1024 * 1024),
+        hasActiveWorkers: activeAsr.size > 0,
+        hasPendingWork: pendingAsrTasks.length > 0,
+      });
+      if (targetAsrConcurrency <= activeAsr.size) break;
+
+      const nextTask = pendingAsrTasks[0];
+      if (!nextTask) break;
+      nextTask.status = 'asr-running';
+      activeAsr.set(nextTask.prepared.asset.id, runAudioAnalysisAsrTask({
+        task: nextTask,
+        projectRoot: input.projectRoot,
+        ml,
+        performance: input.performance,
+      }));
+    }
+
+    if (activeLocal.size === 0 && activeAsr.size === 0) break;
+    await writeProgress(`正在执行 ${buildConcurrentAssetLabel([
+      ...tasks.filter(task => task.status === 'local-running').map(task => task.prepared.asset.displayName),
+      ...tasks.filter(task => task.status === 'asr-running').map(task => task.prepared.asset.displayName),
+    ])} 的音频分析`);
+
+    const pendingEvents: Array<Promise<
+      | { type: 'local'; assetId: string; task: IAudioAnalysisTaskState }
+      | { type: 'asr'; assetId: string; task: IAudioAnalysisTaskState }
+    >> = [];
+    for (const [assetId, promise] of activeLocal.entries()) {
+      pendingEvents.push(promise.then(task => ({ type: 'local' as const, assetId, task })));
+    }
+    for (const [assetId, promise] of activeAsr.entries()) {
+      pendingEvents.push(promise.then(task => ({ type: 'asr' as const, assetId, task })));
+    }
+
+    const nextEvent = await Promise.race(pendingEvents);
+    const taskIndex = tasks.findIndex(task => task.prepared.asset.id === nextEvent.assetId);
+    if (taskIndex < 0) continue;
+
+    if (nextEvent.type === 'local') {
+      activeLocal.delete(nextEvent.assetId);
+      tasks[taskIndex] = nextEvent.task;
+      if (nextEvent.task.status === 'completed' && nextEvent.task.audioContext) {
+        contexts.set(nextEvent.assetId, nextEvent.task.audioContext);
+      }
+      await writeProgress(`已完成 ${nextEvent.task.prepared.asset.displayName} 的本地音频检查`);
+      continue;
+    }
+
+    activeAsr.delete(nextEvent.assetId);
+    tasks[taskIndex] = nextEvent.task;
+    if (nextEvent.task.audioContext) {
+      contexts.set(nextEvent.assetId, nextEvent.task.audioContext);
+    }
+    await writeProgress(`已完成 ${nextEvent.task.prepared.asset.displayName} 的音轨转写`);
+  }
+
+  return contexts;
+}
+
+function buildConcurrentAssetLabel(activeAssetNames: string[]): string | undefined {
+  if (activeAssetNames.length === 0) return undefined;
+  if (activeAssetNames.length <= 3) return activeAssetNames.join('、');
+  return `${activeAssetNames.length} 条素材并发中`;
+}
+
+function buildEmptyAudioAnalysisContext(
+  hasAvailableProtectionAudio: boolean,
+): IAudioAnalysisContext {
+  return {
+    selectedTranscript: null,
+    decisionHints: {},
+    hasAvailableProtectionAudio,
+  };
+}
+
+function restoreAudioAnalysisContextFromCheckpoint(input: {
+  checkpoint: Awaited<ReturnType<typeof loadAudioAnalysisCheckpoint>>;
+  hasAvailableProtectionAudio: boolean;
+}): IAudioAnalysisContext | null {
+  if (!input.checkpoint) return null;
+
+  return {
+    selectedTranscript: normalizeTranscriptContext(input.checkpoint.selectedTranscript ?? null),
+    selectedTranscriptSource: input.checkpoint.selectedTranscriptSource,
+    embeddedHealth: input.checkpoint.embeddedHealth,
+    protectionHealth: input.checkpoint.protectionHealth,
+    protectedAudio: input.checkpoint.protectedAudio,
+    decisionHints: {
+      protectionRecommendation: typeof input.checkpoint.decisionHints?.protectionRecommendation === 'string'
+        ? input.checkpoint.decisionHints.protectionRecommendation
+        : undefined,
+      protectionTranscriptExcerpt: typeof input.checkpoint.decisionHints?.protectionTranscriptExcerpt === 'string'
+        ? input.checkpoint.decisionHints.protectionTranscriptExcerpt
+        : undefined,
+    },
+    hasAvailableProtectionAudio: input.hasAvailableProtectionAudio,
+  };
+}
+
+async function runAudioAnalysisLocalTask(input: {
+  task: IAudioAnalysisTaskState;
+  projectId: string;
+  projectRoot: string;
+  roots: IMediaRoot[];
+  deviceMaps: IDeviceMediaMapFile;
+}): Promise<IAudioAnalysisTaskState> {
+  const protectionAudioLocalPath = await resolveAvailableProtectionAudioLocalPath({
+    projectId: input.projectId,
+    asset: input.task.prepared.asset,
+    roots: input.roots,
+    deviceMaps: input.deviceMaps,
+  });
+  const hasAvailableProtectionAudio = Boolean(protectionAudioLocalPath);
+
+  if (input.task.shouldCheckpoint) {
+    const checkpoint = await loadAudioAnalysisCheckpoint(
+      input.projectRoot,
+      input.task.prepared.asset.id,
+    );
+    const restored = restoreAudioAnalysisContextFromCheckpoint({
+      checkpoint,
+      hasAvailableProtectionAudio,
+    });
+    if (restored) {
+      return {
+        ...input.task,
+        hasAvailableProtectionAudio,
+        protectionAudioLocalPath,
+        status: 'completed',
+        selectedTranscriptSource: restored.selectedTranscriptSource,
+        embeddedHealth: restored.embeddedHealth,
+        protectionHealth: restored.protectionHealth,
+        audioContext: restored,
+      };
+    }
+  }
+
+  const routing = input.task.prepared.asset.protectionAudio
+    ? await evaluateProtectedAudioFallback({
+      projectId: input.projectId,
+      asset: input.task.prepared.asset,
+      localVideoPath: input.task.prepared.localPath,
+      hasAudioTrack: input.task.prepared.hasAudioTrack,
+      roots: input.roots,
+      deviceMaps: input.deviceMaps,
+      runtimeConfig: input.task.prepared.runtimeConfig,
+      protectionAudioLocalPath,
+    })
+    : undefined;
+  const selectedTranscriptSource = routing?.selectedTranscriptSource
+    ?? (
+      shouldAnalyzeAudioTrack(input.task.prepared.asset, input.task.prepared.hasAudioTrack)
+        ? 'embedded'
+        : undefined
+    );
+
+  if (!selectedTranscriptSource) {
+    const audioContext = buildEmptyAudioAnalysisContext(hasAvailableProtectionAudio);
+    audioContext.embeddedHealth = routing?.embeddedHealth;
+    audioContext.protectionHealth = routing?.protectionHealth;
+    audioContext.protectedAudio = buildResolvedProtectedAudioAssessment({
+      asset: input.task.prepared.asset,
+      hasAudioTrack: input.task.prepared.hasAudioTrack,
+      hasAvailableProtectionAudio,
+      embeddedHealth: routing?.embeddedHealth,
+      protectionHealth: routing?.protectionHealth,
+    });
+    audioContext.decisionHints = buildProtectedAudioDecisionHints(audioContext.protectedAudio);
+
+    if (input.task.shouldCheckpoint) {
+      await writeAudioAnalysisCheckpoint(input.task.prepared.projectRoot, {
+        assetId: input.task.prepared.asset.id,
+        selectedTranscript: audioContext.selectedTranscript,
+        selectedTranscriptSource: audioContext.selectedTranscriptSource,
+        embeddedHealth: audioContext.embeddedHealth,
+        protectionHealth: audioContext.protectionHealth,
+        protectedAudio: audioContext.protectedAudio,
+        decisionHints: audioContext.decisionHints,
+      });
+    }
+
+    return {
+      ...input.task,
+      hasAvailableProtectionAudio,
+      protectionAudioLocalPath,
+      status: 'completed',
+      embeddedHealth: audioContext.embeddedHealth,
+      protectionHealth: audioContext.protectionHealth,
+      audioContext,
+    };
+  }
+
+  return {
+    ...input.task,
+    hasAvailableProtectionAudio,
+    protectionAudioLocalPath,
+    status: 'asr-pending',
+    selectedTranscriptSource,
+    embeddedHealth: routing?.embeddedHealth,
+    protectionHealth: routing?.protectionHealth,
+  };
+}
+
+async function runAudioAnalysisAsrTask(input: {
+  task: IAudioAnalysisTaskState;
+  projectRoot: string;
+  ml: MlAvailability;
+  performance?: AnalyzePerformanceSession;
+}): Promise<IAudioAnalysisTaskState> {
+  const selectedTranscript = await transcribeSelectedAudioSource({
+    asset: input.task.prepared.asset,
+    localVideoPath: input.task.prepared.localPath,
+    hasAudioTrack: input.task.prepared.hasAudioTrack,
+    protectionAudioLocalPath: input.task.protectionAudioLocalPath,
+    selectedTranscriptSource: input.task.selectedTranscriptSource,
+    ml: input.ml,
+    performance: input.performance,
+  });
+  const embeddedHealth = enrichAudioHealthWithTranscript(
+    input.task.embeddedHealth,
+    input.task.selectedTranscriptSource === 'embedded' ? selectedTranscript : null,
+  );
+  const protectionHealth = enrichAudioHealthWithTranscript(
+    input.task.protectionHealth,
+    input.task.selectedTranscriptSource === 'protection' ? selectedTranscript : null,
+  );
+  const protectedAudio = buildResolvedProtectedAudioAssessment({
+    asset: input.task.prepared.asset,
+    hasAudioTrack: input.task.prepared.hasAudioTrack,
+    hasAvailableProtectionAudio: input.task.hasAvailableProtectionAudio,
+    selectedTranscriptSource: input.task.selectedTranscriptSource,
+    embeddedHealth,
+    protectionHealth,
+  });
+  const audioContext: IAudioAnalysisContext = {
+    selectedTranscript,
+    selectedTranscriptSource: input.task.selectedTranscriptSource,
+    embeddedHealth,
+    protectionHealth,
+    protectedAudio,
+    decisionHints: buildProtectedAudioDecisionHints(
+      protectedAudio,
+      input.task.selectedTranscriptSource === 'protection' ? selectedTranscript : null,
+    ),
+    hasAvailableProtectionAudio: input.task.hasAvailableProtectionAudio,
+  };
+
+  if (input.task.shouldCheckpoint) {
+    await writeAudioAnalysisCheckpoint(input.projectRoot, {
+      assetId: input.task.prepared.asset.id,
+      selectedTranscript: audioContext.selectedTranscript,
+      selectedTranscriptSource: audioContext.selectedTranscriptSource,
+      embeddedHealth: audioContext.embeddedHealth,
+      protectionHealth: audioContext.protectionHealth,
+      protectedAudio: audioContext.protectedAudio,
+      decisionHints: audioContext.decisionHints,
+    });
+  }
+
+  return {
+    ...input.task,
+    status: 'completed',
+    embeddedHealth,
+    protectionHealth,
+    audioContext,
+  };
+}
+
 interface IAnalyzeSingleAssetInput {
   asset: IKtepAsset;
   localPath: string;
@@ -632,6 +1124,15 @@ interface IAnalyzeSingleAssetInput {
     sceneDetectFps?: number;
     sceneDetectScaleWidth?: number;
     keyframeExtractConcurrency?: number;
+    coarseScanBaseConcurrency?: number;
+    coarseScanMaxConcurrency?: number;
+    coarseScanMinFreeMemoryMb?: number;
+    audioAnalysisLocalBaseConcurrency?: number;
+    audioAnalysisLocalMaxConcurrency?: number;
+    audioAnalysisLocalMinFreeMemoryMb?: number;
+    audioAnalysisAsrBaseConcurrency?: number;
+    audioAnalysisAsrMaxConcurrency?: number;
+    audioAnalysisAsrMinFreeMemoryMb?: number;
     fineScanPrefetchBaseConcurrency?: number;
     fineScanPrefetchMaxConcurrency?: number;
     fineScanPrefetchMinFreeMemoryMb?: number;
@@ -663,6 +1164,7 @@ interface IPreparedSourceContext {
 interface IFinalizePreparedAssetInput {
   projectId: string;
   prepared: IPreparedAssetAnalysis;
+  audioContext?: IAudioAnalysisContext;
   projectRoot: string;
   roots: IMediaRoot[];
   deviceMaps: IDeviceMediaMapFile;
@@ -671,7 +1173,7 @@ interface IFinalizePreparedAssetInput {
   gpxMatchToleranceMs?: number;
   budget?: ETargetBudget;
   getMlHandle: () => Promise<MlAvailability>;
-  onStageChange?: (stage: 'audio-analysis' | 'finalize', detail?: string) => Promise<void>;
+  onStageChange?: (stage: 'finalize', detail?: string) => Promise<void>;
   performance?: AnalyzePerformanceSession;
 }
 
@@ -690,6 +1192,12 @@ interface IFineScanPrefetchLimits {
   minFreeMemoryMb: number;
   maxReadyAssets: number;
   maxReadyFrameMb: number;
+}
+
+interface IDynamicStageConcurrencyLimits {
+  baseConcurrency: number;
+  maxConcurrency: number;
+  minFreeMemoryMb: number;
 }
 
 interface IFineScanTaskState {
@@ -734,8 +1242,10 @@ interface IAudioDecisionHints {
 }
 
 interface IAudioAnalysisContext {
-  embeddedTranscript: ITranscriptContext | null;
-  protectionTranscript?: ITranscriptContext | null;
+  selectedTranscript: ITranscriptContext | null;
+  selectedTranscriptSource?: 'embedded' | 'protection';
+  embeddedHealth?: IAudioHealthSummary;
+  protectionHealth?: IAudioHealthSummary;
   protectedAudio?: IAssetCoarseReport['protectedAudio'];
   decisionHints: IAudioDecisionHints;
   hasAvailableProtectionAudio: boolean;
@@ -753,6 +1263,20 @@ interface IFinalizeFailure {
   reason: string;
 }
 
+interface IAnalyzeStepProgressInput {
+  step: typeof CANALYZE_STEP_DEFINITIONS[number]['key'];
+  fileIndex?: number;
+  fileTotal?: number;
+  current?: number;
+  total?: number;
+  unit?: string;
+  detail?: string;
+  fileName?: string;
+  etaSeconds?: number;
+  extra?: Record<string, unknown>;
+  status?: 'running' | 'succeeded' | 'failed';
+}
+
 interface IResumeFineScanEntry {
   asset: IKtepAsset;
   report: IAssetCoarseReport;
@@ -761,6 +1285,26 @@ interface IResumeFineScanEntry {
 interface MlAvailability {
   client: MlClient;
   available: boolean;
+}
+
+interface ICoarseScanTaskState {
+  index: number;
+  asset: IKtepAsset;
+  localPath: string | null;
+  status: 'pending' | 'running' | 'completed' | 'skipped';
+  prepared?: IPreparedAssetAnalysis;
+}
+
+interface IAudioAnalysisTaskState {
+  prepared: IPreparedAssetAnalysis;
+  shouldCheckpoint: boolean;
+  hasAvailableProtectionAudio: boolean;
+  protectionAudioLocalPath?: string | null;
+  status: 'local-pending' | 'local-running' | 'asr-pending' | 'asr-running' | 'completed';
+  selectedTranscriptSource?: 'embedded' | 'protection';
+  embeddedHealth?: IAudioHealthSummary;
+  protectionHealth?: IAudioHealthSummary;
+  audioContext?: IAudioAnalysisContext;
 }
 
 const CTALKING_HEAD_AUDIO_LED_MIN_SPEECH_COVERAGE = 0.12;
@@ -805,6 +1349,7 @@ const CMONOTONE_DRIVE_KEYWORDS = [
   'stoplight',
   'tunnel',
 ] as const;
+const CPROTECTION_AUDIO_SWITCH_MARGIN = 0.15;
 
 async function prepareAssetVisualCoarse(
   input: IAnalyzeSingleAssetInput,
@@ -834,6 +1379,7 @@ async function prepareAssetVisualCoarse(
     buildAssetTempDir(input.projectRoot, input.asset.id),
     sampleTimestamps,
     input.runtimeConfig,
+    { concurrencyOverride: 1 },
   );
   input.performance?.recordKeyframeExtract({
     asset: input.asset,
@@ -910,7 +1456,7 @@ async function loadOrAnalyzePreparedAudio(input: {
   roots: IMediaRoot[];
   deviceMaps: IDeviceMediaMapFile;
   ml: MlAvailability;
-  onStageChange?: (stage: 'audio-analysis' | 'finalize', detail?: string) => Promise<void>;
+  onStageChange?: (stage: 'finalize', detail?: string) => Promise<void>;
   performance?: AnalyzePerformanceSession;
 }): Promise<IAudioAnalysisContext> {
   const shouldCheckpoint = shouldAnalyzeAudioTrack(input.prepared.asset, input.prepared.hasAudioTrack)
@@ -927,8 +1473,10 @@ async function loadOrAnalyzePreparedAudio(input: {
     const checkpoint = await loadAudioAnalysisCheckpoint(input.projectRoot, input.prepared.asset.id);
     if (checkpoint) {
       return {
-        embeddedTranscript: normalizeTranscriptContext(checkpoint.transcript ?? null),
-        protectionTranscript: normalizeTranscriptContext(checkpoint.protectionTranscript ?? null),
+        selectedTranscript: normalizeTranscriptContext(checkpoint.selectedTranscript ?? null),
+        selectedTranscriptSource: checkpoint.selectedTranscriptSource,
+        embeddedHealth: checkpoint.embeddedHealth,
+        protectionHealth: checkpoint.protectionHealth,
         protectedAudio: checkpoint.protectedAudio,
         decisionHints: {
           protectionRecommendation: typeof checkpoint.decisionHints?.protectionRecommendation === 'string'
@@ -943,49 +1491,73 @@ async function loadOrAnalyzePreparedAudio(input: {
     }
   }
 
-  if (shouldAnalyzeAudioTrack(input.prepared.asset, input.prepared.hasAudioTrack)) {
-    await input.onStageChange?.('audio-analysis', `正在分析 ${input.prepared.asset.displayName} 的视频内音轨`);
-  }
-  const embeddedTranscript = await maybeTranscribeAsset({
+  const routing = await evaluateProtectedAudioFallback({
+    projectId: input.projectId,
     asset: input.prepared.asset,
-    localPath: input.prepared.localPath,
+    localVideoPath: input.prepared.localPath,
     hasAudioTrack: input.prepared.hasAudioTrack,
+    roots: input.roots,
+    deviceMaps: input.deviceMaps,
+    runtimeConfig: input.prepared.runtimeConfig,
+    protectionAudioLocalPath,
+  });
+  const selectedTranscriptSource = routing?.selectedTranscriptSource
+    ?? (
+      shouldAnalyzeAudioTrack(input.prepared.asset, input.prepared.hasAudioTrack)
+        ? 'embedded'
+        : undefined
+    );
+  const selectedTranscript = await transcribeSelectedAudioSource({
+    asset: input.prepared.asset,
+    localVideoPath: input.prepared.localPath,
+    hasAudioTrack: input.prepared.hasAudioTrack,
+    protectionAudioLocalPath,
+    selectedTranscriptSource,
     ml: input.ml,
     performance: input.performance,
   });
-  const protectedAudioContext = input.prepared.asset.protectionAudio
-    ? await evaluateProtectedAudioFallback({
-      projectId: input.projectId,
+  const embeddedHealth = enrichAudioHealthWithTranscript(
+    routing?.embeddedHealth,
+    selectedTranscriptSource === 'embedded' ? selectedTranscript : null,
+  );
+  const protectionHealth = enrichAudioHealthWithTranscript(
+    routing?.protectionHealth,
+    selectedTranscriptSource === 'protection' ? selectedTranscript : null,
+  );
+  const audioContext: IAudioAnalysisContext = {
+    selectedTranscript,
+    selectedTranscriptSource,
+    embeddedHealth,
+    protectionHealth,
+    protectedAudio: buildResolvedProtectedAudioAssessment({
       asset: input.prepared.asset,
-      localVideoPath: input.prepared.localPath,
-      roots: input.roots,
-      deviceMaps: input.deviceMaps,
-      runtimeConfig: input.prepared.runtimeConfig,
-      embeddedTranscript,
-      ml: input.ml,
-      onStageChange: input.onStageChange,
-      performance: input.performance,
-      protectionAudioLocalPath,
-    })
-    : undefined;
+      hasAudioTrack: input.prepared.hasAudioTrack,
+      hasAvailableProtectionAudio,
+      selectedTranscriptSource,
+      embeddedHealth,
+      protectionHealth,
+    }),
+    decisionHints: {},
+    hasAvailableProtectionAudio,
+  };
+  audioContext.decisionHints = buildProtectedAudioDecisionHints(
+    audioContext.protectedAudio,
+    audioContext.selectedTranscriptSource === 'protection' ? audioContext.selectedTranscript : null,
+  );
 
   if (shouldCheckpoint) {
     await writeAudioAnalysisCheckpoint(input.projectRoot, {
       assetId: input.prepared.asset.id,
-      transcript: embeddedTranscript,
-      protectionTranscript: protectedAudioContext?.protectionTranscript,
-      protectedAudio: protectedAudioContext?.protectedAudio,
-      decisionHints: protectedAudioContext?.decisionHints,
+      selectedTranscript: audioContext.selectedTranscript,
+      selectedTranscriptSource: audioContext.selectedTranscriptSource,
+      embeddedHealth: audioContext.embeddedHealth,
+      protectionHealth: audioContext.protectionHealth,
+      protectedAudio: audioContext.protectedAudio,
+      decisionHints: audioContext.decisionHints,
     });
   }
 
-  return {
-    embeddedTranscript,
-    protectionTranscript: protectedAudioContext?.protectionTranscript,
-    protectedAudio: protectedAudioContext?.protectedAudio,
-    decisionHints: protectedAudioContext?.decisionHints ?? {},
-    hasAvailableProtectionAudio,
-  };
+  return audioContext;
 }
 
 async function finalizePreparedAsset(
@@ -1005,16 +1577,11 @@ async function finalizePreparedAsset(
   }
 
   const ml = await input.getMlHandle();
-  const audioContext = await loadOrAnalyzePreparedAudio({
-    projectId: input.projectId,
-    projectRoot: input.projectRoot,
-    prepared: input.prepared,
-    roots: input.roots,
-    deviceMaps: input.deviceMaps,
-    ml,
-    onStageChange: input.onStageChange,
-    performance: input.performance,
-  });
+  const audioContext = input.audioContext ?? {
+    selectedTranscript: null,
+    decisionHints: {},
+    hasAvailableProtectionAudio: false,
+  };
   const root = input.roots.find(item => item.id === input.prepared.asset.ingestRootId);
   const manualSpatial = await resolveManualSpatialContext({
     asset: input.prepared.asset,
@@ -1029,7 +1596,7 @@ async function finalizePreparedAsset(
   ));
   const provisionalPlanning = await resolvePreparedAssetPlanning({
     prepared: input.prepared,
-    transcript: audioContext.embeddedTranscript,
+    transcript: audioContext.selectedTranscript,
     audioContext,
     budget: input.budget,
     ml,
@@ -1053,7 +1620,7 @@ async function finalizePreparedAsset(
     });
     planning = await resolvePreparedAssetPlanning({
       prepared,
-      transcript: audioContext.embeddedTranscript,
+      transcript: audioContext.selectedTranscript,
       audioContext,
       budget: input.budget,
       ml,
@@ -1073,19 +1640,19 @@ async function finalizePreparedAsset(
     gpsSummary: manualSpatial?.gpsSummary,
     inferredGps: manualSpatial?.inferredGps,
     summary: planning.visualSummary?.description,
-    transcript: audioContext.embeddedTranscript?.transcript,
-    transcriptSegments: audioContext.embeddedTranscript?.segments,
-    speechCoverage: audioContext.embeddedTranscript?.speechCoverage,
+    transcript: audioContext.selectedTranscript?.transcript,
+    transcriptSegments: audioContext.selectedTranscript?.segments,
+    speechCoverage: audioContext.selectedTranscript?.speechCoverage,
     protectedAudio: audioContext.protectedAudio,
     labels: dedupeStrings([
       ...buildReportLabels(
         planning.decision.clipType,
         planning.visualSummary?.sceneType,
         planning.visualSummary?.subjects,
-        audioContext.embeddedTranscript,
+        audioContext.selectedTranscript,
       ),
       ...(audioContext.hasAvailableProtectionAudio ? ['protection-audio-available'] : []),
-      ...(audioContext.protectedAudio?.recommendedSource === 'protection' ? ['protection-audio-fallback'] : []),
+      ...(audioContext.selectedTranscriptSource === 'protection' ? ['protection-audio-fallback'] : []),
     ]),
     placeHints: dedupeStrings([
       ...(planning.visualSummary?.placeHints ?? []),
@@ -1097,7 +1664,7 @@ async function finalizePreparedAsset(
       planning.finalPlan,
       planning.density,
       prepared.shotBoundaries,
-      audioContext.embeddedTranscript,
+      audioContext.selectedTranscript,
       planning.decisionReasons,
     ),
   });
@@ -1105,7 +1672,7 @@ async function finalizePreparedAsset(
   return {
     prepared,
     report,
-    transcript: audioContext.embeddedTranscript,
+    transcript: audioContext.selectedTranscript,
     visualSummary: planning.visualSummary,
     clipType: planning.decision.clipType,
     decisionReasons: planning.decisionReasons,
@@ -1812,32 +2379,34 @@ export async function evaluateProtectedAudioFallback(input: {
   projectId: string;
   asset: IKtepAsset;
   localVideoPath: string;
+  hasAudioTrack: boolean;
   roots: IMediaRoot[];
   deviceMaps: IDeviceMediaMapFile;
   runtimeConfig: IPreparedAssetAnalysis['runtimeConfig'];
-  embeddedTranscript?: ITranscriptContext | null;
-  ml: MlAvailability;
-  onStageChange?: (stage: 'audio-analysis' | 'finalize', detail?: string) => Promise<void>;
-  performance?: AnalyzePerformanceSession;
   protectionAudioLocalPath?: string | null;
 }): Promise<{
-  protectedAudio?: IAssetCoarseReport['protectedAudio'];
-  protectionTranscript?: ITranscriptContext | null;
-  decisionHints: IAudioDecisionHints;
+  selectedTranscriptSource?: 'embedded' | 'protection';
+  embeddedHealth?: IAudioHealthSummary;
+  protectionHealth?: IAudioHealthSummary;
 } | undefined> {
   const binding = input.asset.protectionAudio;
   if (!binding) return undefined;
 
-  const embeddedTelemetry = await analyzeAudioHealth(
-    input.localVideoPath,
-    input.asset.durationMs,
-    input.runtimeConfig,
-  );
-  const embeddedSummary = summarizeAudioHealth({
-    telemetry: embeddedTelemetry,
-    speechCoverage: input.embeddedTranscript?.speechCoverage,
-    transcript: input.embeddedTranscript?.transcript,
-  });
+  const shouldAnalyzeEmbedded = shouldAnalyzeAudioTrack(input.asset, input.hasAudioTrack);
+  const embeddedTelemetry = shouldAnalyzeEmbedded
+    ? await analyzeAudioHealth(
+      input.localVideoPath,
+      input.asset.durationMs,
+      input.runtimeConfig,
+    )
+    : null;
+  const embeddedHealth = shouldAnalyzeEmbedded
+    ? summarizeAudioHealth({
+      telemetry: embeddedTelemetry,
+    })
+    : summarizeAudioHealth({
+      notes: ['当前视频没有可用内嵌音轨。'],
+    });
 
   const protectionLocalPath = input.protectionAudioLocalPath ?? await resolveAvailableProtectionAudioLocalPath({
     projectId: input.projectId,
@@ -1845,81 +2414,162 @@ export async function evaluateProtectedAudioFallback(input: {
     roots: input.roots,
     deviceMaps: input.deviceMaps,
   });
-  if (!protectionLocalPath) {
-    const protectedAudio = recommendProtectedAudioFallback({
-      binding,
-      embedded: embeddedSummary,
-      comparedProtectionTranscript: false,
-    });
-    return {
-      protectedAudio,
-      decisionHints: buildProtectedAudioDecisionHints(protectedAudio),
-    };
-  }
+  const protectionHealth = protectionLocalPath
+    ? summarizeAudioHealth({
+      telemetry: await analyzeAudioHealth(
+        protectionLocalPath,
+        binding.durationMs ?? input.asset.durationMs,
+        input.runtimeConfig,
+      ),
+      notes: [
+        '保护音轨健康检查基于 sidecar 音频完成。',
+        binding.alignment === 'unknown'
+          ? '未确认保护音轨与视频的精确时长关系。'
+          : `保护音轨时长对齐状态：${binding.alignment}`,
+      ],
+    })
+    : undefined;
 
-  let protectionTranscript: ITranscriptContext | null = null;
-  let comparedProtectionTranscript = false;
-
-  if (shouldCompareProtectionTranscript(binding, embeddedSummary, input.embeddedTranscript)) {
-    await input.onStageChange?.('audio-analysis', `正在对比 ${input.asset.displayName} 的保护音轨`);
-    const protectionTranscriptResult = await transcribeAudioContext({
-      localPath: protectionLocalPath,
-      durationMs: binding.durationMs ?? input.asset.durationMs ?? 0,
-      ml: input.ml,
-    });
-    if (protectionTranscriptResult.timing || protectionTranscriptResult.roundTripMs != null) {
-      input.performance?.recordAsr({
-        asset: input.asset,
-        phase: 'protection',
-        roundTripMs: protectionTranscriptResult.roundTripMs,
-        timing: protectionTranscriptResult.timing,
-      });
-    }
-    protectionTranscript = protectionTranscriptResult.context;
-    comparedProtectionTranscript = Boolean(protectionTranscriptResult.context);
-  }
-
-  const protectionSummary = summarizeAudioHealth({
-    speechCoverage: protectionTranscript?.speechCoverage,
-    transcript: protectionTranscript?.transcript,
-    notes: [
-      '保护音轨默认不做独立健康检查，仅在必要时做语音对比。',
-      binding.alignment === 'unknown'
-        ? '未确认保护音轨与视频的精确时长关系。'
-        : `保护音轨时长对齐状态：${binding.alignment}`,
-    ],
-  });
-
-  const protectedAudio = recommendProtectedAudioFallback({
-    binding,
-    embedded: embeddedSummary,
-    protection: protectionSummary,
-    comparedProtectionTranscript,
-  });
   return {
-    protectedAudio,
-    protectionTranscript,
-    decisionHints: buildProtectedAudioDecisionHints(protectedAudio, protectionTranscript),
+    selectedTranscriptSource: resolveSelectedAudioTranscriptSource({
+      binding,
+      hasEmbeddedCandidate: shouldAnalyzeEmbedded,
+      hasProtectionCandidate: Boolean(protectionLocalPath),
+      embeddedHealth,
+      protectionHealth,
+    }),
+    embeddedHealth,
+    protectionHealth,
   };
 }
 
-function shouldCompareProtectionTranscript(
-  binding: NonNullable<IKtepAsset['protectionAudio']>,
-  embeddedSummary: ReturnType<typeof summarizeAudioHealth>,
-  embeddedTranscript?: ITranscriptContext | null,
-): boolean {
-  if (!canUseProtectionAudio(binding) && binding.alignment !== 'unknown') return false;
-
-  const issues = new Set(embeddedSummary.issues ?? []);
-  if (issues.has('low-level') || issues.has('speech-coverage-weak') || issues.has('speech-clarity-suspect')) {
-    return true;
+function resolveSelectedAudioTranscriptSource(input: {
+  binding?: NonNullable<IKtepAsset['protectionAudio']>;
+  hasEmbeddedCandidate: boolean;
+  hasProtectionCandidate: boolean;
+  embeddedHealth?: IAudioHealthSummary;
+  protectionHealth?: IAudioHealthSummary;
+}): 'embedded' | 'protection' | undefined {
+  if (!input.hasEmbeddedCandidate) {
+    return input.hasProtectionCandidate ? 'protection' : undefined;
+  }
+  if (!input.hasProtectionCandidate) {
+    return 'embedded';
+  }
+  if (input.binding?.alignment === 'mismatch') {
+    return 'embedded';
   }
 
-  if ((embeddedTranscript?.speechCoverage ?? 0) < 0.05) {
-    return true;
+  const embeddedScore = input.embeddedHealth?.score ?? 0.5;
+  const protectionScore = input.protectionHealth?.score ?? 0.5;
+  if (protectionScore >= embeddedScore + CPROTECTION_AUDIO_SWITCH_MARGIN) {
+    return 'protection';
   }
 
-  return !(embeddedTranscript?.transcript?.trim());
+  return 'embedded';
+}
+
+function enrichAudioHealthWithTranscript(
+  summary: IAudioHealthSummary | undefined,
+  transcript: ITranscriptContext | null,
+): IAudioHealthSummary | undefined {
+  if (!summary) return undefined;
+  if (!transcript) return summary;
+  return summarizeAudioHealth({
+    telemetry: {
+      meanVolumeDb: summary.meanVolumeDb,
+      maxVolumeDb: summary.maxVolumeDb,
+      silenceRatio: summary.silenceRatio,
+    },
+    speechCoverage: transcript.speechCoverage,
+    transcript: transcript.transcript,
+    notes: summary.notes,
+  });
+}
+
+function buildResolvedProtectedAudioAssessment(input: {
+  asset: IKtepAsset;
+  hasAudioTrack: boolean;
+  hasAvailableProtectionAudio: boolean;
+  selectedTranscriptSource?: 'embedded' | 'protection';
+  embeddedHealth?: IAudioHealthSummary;
+  protectionHealth?: IAudioHealthSummary;
+}): IAssetCoarseReport['protectedAudio'] {
+  const binding = input.asset.protectionAudio;
+  if (!binding) {
+    return undefined;
+  }
+
+  const embeddedFallback = input.embeddedHealth ?? summarizeAudioHealth({
+    notes: input.hasAudioTrack ? ['未能获得可用的主音轨健康指标。'] : ['当前视频没有可用内嵌音轨。'],
+  });
+  const baseAssessment = recommendProtectedAudioFallback({
+    binding,
+    embedded: embeddedFallback,
+    protection: input.protectionHealth,
+    comparedProtectionTranscript: false,
+  });
+  const recommendedSource = input.selectedTranscriptSource
+    ?? baseAssessment?.recommendedSource
+    ?? 'embedded';
+
+  let reason = baseAssessment?.reason;
+  if (recommendedSource === 'protection' && !input.hasAudioTrack) {
+    reason = '当前视频没有可用内嵌音轨，保护音轨被提升为正式语音来源。';
+  } else if (recommendedSource === 'protection') {
+    reason = '保护音轨健康分数明显更高，已提升为正式语音来源。';
+  } else if (binding.alignment === 'mismatch') {
+    reason = '保护音轨与视频时长差异过大，当前不适合作为自动兜底来源。';
+  } else if (!input.hasAvailableProtectionAudio) {
+    reason = '已绑定保护音轨，但暂未获得可用的保护音轨健康指标。';
+  } else if (!reason) {
+    reason = '当前主无线麦音轨仍是更稳妥的默认来源。';
+  }
+
+  return {
+    recommendedSource,
+    reason,
+    comparedProtectionTranscript: false,
+    embedded: embeddedFallback,
+    ...(input.protectionHealth && { protection: input.protectionHealth }),
+  };
+}
+
+async function transcribeSelectedAudioSource(input: {
+  asset: IKtepAsset;
+  localVideoPath: string;
+  hasAudioTrack: boolean;
+  protectionAudioLocalPath?: string | null;
+  selectedTranscriptSource?: 'embedded' | 'protection';
+  ml: MlAvailability;
+  performance?: AnalyzePerformanceSession;
+}): Promise<ITranscriptContext | null> {
+  if (input.selectedTranscriptSource === 'protection') {
+    const protectionLocalPath = input.protectionAudioLocalPath?.trim();
+    if (!protectionLocalPath) return null;
+    const result = await transcribeAudioContext({
+      localPath: protectionLocalPath,
+      durationMs: input.asset.protectionAudio?.durationMs ?? input.asset.durationMs ?? 0,
+      ml: input.ml,
+    });
+    if (result.timing || result.roundTripMs != null) {
+      input.performance?.recordAsr({
+        asset: input.asset,
+        phase: 'protection',
+        roundTripMs: result.roundTripMs,
+        timing: result.timing,
+      });
+    }
+    return result.context;
+  }
+
+  return maybeTranscribeAsset({
+    asset: input.asset,
+    localPath: input.localVideoPath,
+    hasAudioTrack: input.hasAudioTrack,
+    ml: input.ml,
+    performance: input.performance,
+  });
 }
 
 async function resolveAvailableProtectionAudioLocalPath(input: {
@@ -2456,6 +3106,90 @@ function buildAudioAssetReport(
   });
 }
 
+function resolveCoarseScanLimits(
+  runtimeConfig: IAnalyzeSingleAssetInput['runtimeConfig'],
+): IDynamicStageConcurrencyLimits {
+  const baseConcurrency = Math.max(
+    1,
+    Math.floor(runtimeConfig.coarseScanBaseConcurrency ?? CCOARSE_SCAN_DEFAULTS.baseConcurrency),
+  );
+  const maxConcurrency = Math.max(
+    baseConcurrency,
+    Math.floor(runtimeConfig.coarseScanMaxConcurrency ?? CCOARSE_SCAN_DEFAULTS.maxConcurrency),
+  );
+  return {
+    baseConcurrency,
+    maxConcurrency,
+    minFreeMemoryMb: Math.max(
+      1,
+      Math.floor(runtimeConfig.coarseScanMinFreeMemoryMb ?? CCOARSE_SCAN_DEFAULTS.minFreeMemoryMb),
+    ),
+  };
+}
+
+function resolveAudioAnalysisLocalLimits(
+  runtimeConfig: IAnalyzeSingleAssetInput['runtimeConfig'],
+): IDynamicStageConcurrencyLimits {
+  const baseConcurrency = Math.max(
+    1,
+    Math.floor(runtimeConfig.audioAnalysisLocalBaseConcurrency ?? CAUDIO_ANALYSIS_LOCAL_DEFAULTS.baseConcurrency),
+  );
+  const maxConcurrency = Math.max(
+    baseConcurrency,
+    Math.floor(runtimeConfig.audioAnalysisLocalMaxConcurrency ?? CAUDIO_ANALYSIS_LOCAL_DEFAULTS.maxConcurrency),
+  );
+  return {
+    baseConcurrency,
+    maxConcurrency,
+    minFreeMemoryMb: Math.max(
+      1,
+      Math.floor(runtimeConfig.audioAnalysisLocalMinFreeMemoryMb ?? CAUDIO_ANALYSIS_LOCAL_DEFAULTS.minFreeMemoryMb),
+    ),
+  };
+}
+
+function resolveAudioAnalysisAsrLimits(
+  runtimeConfig: IAnalyzeSingleAssetInput['runtimeConfig'],
+): IDynamicStageConcurrencyLimits {
+  const baseConcurrency = Math.max(
+    1,
+    Math.floor(runtimeConfig.audioAnalysisAsrBaseConcurrency ?? CAUDIO_ANALYSIS_ASR_DEFAULTS.baseConcurrency),
+  );
+  const maxConcurrency = Math.max(
+    baseConcurrency,
+    Math.floor(runtimeConfig.audioAnalysisAsrMaxConcurrency ?? CAUDIO_ANALYSIS_ASR_DEFAULTS.maxConcurrency),
+  );
+  return {
+    baseConcurrency,
+    maxConcurrency,
+    minFreeMemoryMb: Math.max(
+      1,
+      Math.floor(runtimeConfig.audioAnalysisAsrMinFreeMemoryMb ?? CAUDIO_ANALYSIS_ASR_DEFAULTS.minFreeMemoryMb),
+    ),
+  };
+}
+
+export function resolveDynamicStageTargetConcurrency(input: {
+  limits: IDynamicStageConcurrencyLimits;
+  freeMemoryMb: number;
+  hasActiveWorkers: boolean;
+  hasPendingWork: boolean;
+}): number {
+  const effectiveFreeMemoryMb = Math.max(0, Math.floor(input.freeMemoryMb));
+  if (effectiveFreeMemoryMb < input.limits.minFreeMemoryMb) {
+    if (!input.hasActiveWorkers && input.hasPendingWork) {
+      return 1;
+    }
+    return 0;
+  }
+
+  if (effectiveFreeMemoryMb >= input.limits.minFreeMemoryMb * 2) {
+    return input.limits.maxConcurrency;
+  }
+
+  return input.limits.baseConcurrency;
+}
+
 function resolveFineScanPrefetchLimits(
   runtimeConfig: IAnalyzeSingleAssetInput['runtimeConfig'],
 ): IFineScanPrefetchLimits {
@@ -2837,9 +3571,9 @@ function describeAudioAnalysisStage(
     return `正在整理 ${asset.displayName} 的音频上下文`;
   }
   if (shouldAnalyzeAudioTrack(asset, hasAudioTrack)) {
-    return `正在分析 ${asset.displayName} 的视频内音轨并评估 protection audio`;
+    return `正在分析 ${asset.displayName} 的视频内音轨，执行双健康检查并路由到单一路径 ASR`;
   }
-  return `正在检查 ${asset.displayName} 是否需要补充 protection audio 对比`;
+  return `正在检查 ${asset.displayName} 是否应直接切换到 protection audio`;
 }
 
 function describeFinalizeStage(

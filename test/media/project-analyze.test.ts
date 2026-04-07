@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { getAnalyzePerformanceProfilePath } from '../../src/modules/media/analyze-profile.js';
 import {
   analyzeWorkspaceProjectMedia,
+  resolveDynamicStageTargetConcurrency,
   resolveFineScanPrefetchTargetConcurrency,
 } from '../../src/modules/media/project-analyze.js';
 import {
@@ -60,6 +61,41 @@ describe('analyzeWorkspaceProjectMedia', () => {
       hasActivePrefetch: false,
       hasPendingPrefetch: true,
     })).toBe(0);
+  });
+
+  it('keeps at least one dynamic worker alive when memory is low and work is pending', () => {
+    expect(resolveDynamicStageTargetConcurrency({
+      limits: {
+        baseConcurrency: 1,
+        maxConcurrency: 3,
+        minFreeMemoryMb: 4096,
+      },
+      freeMemoryMb: 1024,
+      hasActiveWorkers: false,
+      hasPendingWork: true,
+    })).toBe(1);
+
+    expect(resolveDynamicStageTargetConcurrency({
+      limits: {
+        baseConcurrency: 1,
+        maxConcurrency: 3,
+        minFreeMemoryMb: 4096,
+      },
+      freeMemoryMb: 1024,
+      hasActiveWorkers: true,
+      hasPendingWork: true,
+    })).toBe(0);
+
+    expect(resolveDynamicStageTargetConcurrency({
+      limits: {
+        baseConcurrency: 1,
+        maxConcurrency: 3,
+        minFreeMemoryMb: 4096,
+      },
+      freeMemoryMb: 9000,
+      hasActiveWorkers: false,
+      hasPendingWork: true,
+    })).toBe(3);
   });
 
   it('fails immediately when ML server is unavailable', async () => {

@@ -16,6 +16,13 @@ export function MonitorPage({ model, emptyLabel, toolbar, afterMonitor }) {
     : model.progress?.current && model.progress?.total
       ? Math.max(0, Math.min(100, (model.progress.current / model.progress.total) * 100))
       : 0;
+  const activePipeline = (model.pipelines || []).find(pipeline =>
+    Array.isArray(pipeline.activeAssetNames) && pipeline.activeAssetNames.length > 0,
+  );
+  const activeAssetLabel = activePipeline ? '活跃素材' : '当前素材';
+  const activeAssetValue = activePipeline
+    ? formatActiveAssets(activePipeline.activeAssetNames)
+    : (model.progress?.fileName || '暂无');
 
   return (
     <div className="route-page monitor-page">
@@ -70,8 +77,8 @@ export function MonitorPage({ model, emptyLabel, toolbar, afterMonitor }) {
 
         <div className="aux-grid">
           <div className="aux-item">
-            <div className="label">当前素材</div>
-            <div className="value">{model.progress?.fileName || '暂无'}</div>
+            <div className="label">{activeAssetLabel}</div>
+            <div className="value">{activeAssetValue}</div>
           </div>
           <div className="aux-item">
             <div className="label">最后更新</div>
@@ -169,6 +176,16 @@ function formatEta(seconds) {
   if (hours > 0) return `${hours}h ${minutes}m`;
   if (minutes > 0) return `${minutes}m ${remain}s`;
   return `${remain}s`;
+}
+
+function formatActiveAssets(names) {
+  if (!Array.isArray(names) || names.length === 0) {
+    return '暂无';
+  }
+  if (names.length <= 3) {
+    return names.join('、');
+  }
+  return `${names.length} 条素材并发中`;
 }
 
 function toneClass(status) {

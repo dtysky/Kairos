@@ -44,9 +44,12 @@ Current stable pipeline:
   - with audio: `coarse-scan -> audio-analysis -> finalize -> deferred scene detect(if needed)`
   - without audio: `coarse-scan -> finalize -> deferred scene detect(if needed)`
   - `coarse-scan` prepares keyframes, `hasAudioTrack`, and source context; it is not the formal visual-summary stage
+  - `coarse-scan` now runs as asset-level dynamic concurrency: each active asset uses at most one coarse keyframe `ffmpeg`, while multiple assets may progress in parallel based on free-memory limits
+  - `audio-analysis` now runs as a two-queue asset pipeline: local audio health / routing work and ASR work have separate dynamic concurrency controls
+  - for assets with `protectionAudio`, Analyze now performs dual lightweight health checks first, routes to a single chosen ASR source, and promotes that chosen transcript to the formal downstream transcript
 - Analyze durable resume caches are stage-local internals:
   - `analysis/prepared-assets/` stores coarse prepared inputs, not finalized visual semantics
-  - `analysis/audio-checkpoints/` stores ASR and protection-audio intermediate state
+  - `analysis/audio-checkpoints/` stores selected-transcript, audio-health, and protection-routing intermediate state
 - Analyze now distinguishes tight focus windows from edit-friendly bounds:
   - coarse reports keep `interestingWindows[].startMs/endMs` as focus/evidence windows
   - edit-ready bounds travel alongside them as `interestingWindows[].editStartMs/editEndMs`
@@ -58,6 +61,7 @@ Current stable pipeline:
 - when a beat preserves source speech, Kairos now snaps the selected window outward to full `transcriptSegments` boundaries and will extend the beat if needed so the spoken sentence finishes cleanly
 - timeline / draft output spec is project-configurable through `config/runtime.json` and now defaults to `3840x2160 @ 30fps`
 - when a beat does not use source speech, Kairos will mark selected video clips to mute their embedded audio during NLE export
+- the official Analyze monitor now exposes structured pipeline cards for `coarse-scan`, `audio-analysis`, and `fine-scan` instead of pretending the first two stages are single-asset serial work
 - Jianying export now uses the vendored local `pyJianYingDraft` CLI, not an external Jianying MCP/server
 - Jianying draft export is guarded by strict safety rules:
   - drafts are created in project-local staging under `projects/<projectId>/adapters/jianying-staging/`

@@ -227,9 +227,12 @@ project/
 - 结构上更准确的理解是：
   - 有音轨视频：`coarse-scan -> audio-analysis -> finalize -> 细扫决策 -> 细扫执行`
   - 无音轨视频：`coarse-scan -> finalize -> 细扫决策 -> 细扫执行`
+- `coarse-scan` 当前是素材级动态并发：同一素材在 coarse 阶段最多一个抽帧 `ffmpeg`，但多个素材会按 free memory 目标并发推进
+- `audio-analysis` 当前是两级素材队列：先做本地健康检查/保护音轨选边，再把最终选中的一路送入 ASR 队列
 - coarse report 会带 `transcript / transcriptSegments / speechCoverage`
 - 语音时间窗会参与 fine-scan window 生成
 - chronology 会写入部分 ASR evidence
+- 对带 `protectionAudio` 的素材，当前正式策略是双健康检查后只跑一侧 ASR；如果 protection 被选中，它就直接成为正式 transcript 来源
 - 当前正式项目的音频分析主路径指的是“视频素材里的音轨”，不是独立纯音频资产
 - 如果后续项目真的引入独立音频素材，再补单独 analyze 分支；当前不要把这点和视频内语音 ASR 混为一谈
 

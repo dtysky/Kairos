@@ -6,6 +6,7 @@ ASR runner with two backends:
 from __future__ import annotations
 
 import audioop
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import gc
 import json
 import os
@@ -265,63 +266,186 @@ def _transcribe_torch(wav_path: Path, language: str | None, asr) -> list[dict]:
     ]
 
 
+def _load_torch_audio_input(wav_path: Path) -> dict:
+    from scipy.io import wavfile
+
+    sample_rate, samples = wavfile.read(str(wav_path))
+    if len(samples.shape) > 1:
+        samples = samples.mean(axis=1)
+    return {
+        "array": samples.astype("float32") / 32768.0,
+        "sampling_rate": int(sample_rate),
+    }
+
+
+def _prepare_transcription_input(media_path: str) -> dict:
+    total_started_at = time.perf_counter()
+    wav_started_at = time.perf_counter()
+    wav_path = _extract_audio_wav(media_path)
+    wav_extract_ms = (time.perf_counter() - wav_started_at) * 1000.0
+    silence_gate_started_at = time.perf_counter()
+    has_effective_audio, silence_gate = _has_effective_audio(wav_path)
+    silence_gate_ms = (time.perf_counter() - silence_gate_started_at) * 1000.0
+    return {
+        "wav_path": wav_path,
+        "wav_extract_ms": wav_extract_ms,
+        "silence_gate_ms": silence_gate_ms,
+        "silence_gate": silence_gate,
+        "has_effective_audio": has_effective_audio,
+        "total_started_at": total_started_at,
+    }
+
+
+def _build_silent_timing(prepared: dict) -> dict:
+    return {
+        "backend": BACKEND,
+        "modelRef": _resolve_mlx_model_ref() if BACKEND == "mlx" else _resolve_torch_model_ref(),
+        "totalMs": (time.perf_counter() - prepared["total_started_at"]) * 1000.0,
+        "loadMs": 0.0,
+        "wavExtractMs": prepared["wav_extract_ms"],
+        "inferenceMs": 0.0,
+        "silenceGateMs": prepared["silence_gate_ms"],
+        "skippedSilent": True,
+        "effectiveAudioDetected": False,
+        "silenceGateStats": prepared["silence_gate"],
+    }
+
+
+def _transcribe_torch_batch(prepared_entries: list[dict], languages: list[str | None]) -> list[tuple[list[dict], dict]]:
+    outputs: list[tuple[list[dict], dict] | None] = [None] * len(prepared_entries)
+    load_started_at = time.perf_counter()
+    asr = _get_torch_pipeline()
+    load_ms = (time.perf_counter() - load_started_at) * 1000.0
+
+    grouped_indices: dict[str | None, list[int]] = {}
+    for index, language in enumerate(languages):
+        grouped_indices.setdefault(language, []).append(index)
+
+    for language, indices in grouped_indices.items():
+        audio_inputs = [_load_torch_audio_input(prepared_entries[index]["wav_path"]) for index in indices]
+        generate_kwargs: dict = {"task": "transcribe"}
+        if language:
+            generate_kwargs["language"] = language
+
+        inference_started_at = time.perf_counter()
+        batch_result = asr(
+            audio_inputs[0] if len(audio_inputs) == 1 else audio_inputs,
+            chunk_length_s=30,
+            batch_size=max(1, min(8, len(audio_inputs))),
+            return_timestamps=True,
+            generate_kwargs=generate_kwargs,
+        )
+        inference_total_ms = (time.perf_counter() - inference_started_at) * 1000.0
+        normalized_results = batch_result if isinstance(batch_result, list) else [batch_result]
+        per_item_inference_ms = inference_total_ms / max(1, len(indices))
+
+        for result_index, entry_index in enumerate(indices):
+            prepared = prepared_entries[entry_index]
+            result = normalized_results[result_index]
+            chunks = result.get("chunks") or []
+            if not chunks:
+                text = str(result.get("text") or "").strip()
+                segments = [] if not text else [{"start": 0.0, "end": 0.0, "text": text}]
+            else:
+                segments = [
+                    {
+                        "start": float((chunk.get("timestamp") or (0.0, 0.0))[0] or 0.0),
+                        "end": float(
+                            (chunk.get("timestamp") or (0.0, 0.0))[1]
+                            or (chunk.get("timestamp") or (0.0, 0.0))[0]
+                            or 0.0
+                        ),
+                        "text": str(chunk.get("text") or "").strip(),
+                    }
+                    for chunk in chunks
+                    if str(chunk.get("text") or "").strip()
+                ]
+            outputs[entry_index] = (
+                segments,
+                {
+                    "backend": BACKEND,
+                    "modelRef": _resolve_torch_model_ref(),
+                    "totalMs": (time.perf_counter() - prepared["total_started_at"]) * 1000.0,
+                    "loadMs": load_ms,
+                    "wavExtractMs": prepared["wav_extract_ms"],
+                    "inferenceMs": per_item_inference_ms,
+                    "silenceGateMs": prepared["silence_gate_ms"],
+                    "skippedSilent": False,
+                    "effectiveAudioDetected": True,
+                    "silenceGateStats": prepared["silence_gate"],
+                },
+            )
+
+    return [item for item in outputs if item is not None]
+
+
+def transcribe_many(
+    requests: list[tuple[str, str | None]],
+    preprocess_max_concurrency: int = 1,
+) -> list[tuple[list[dict], dict]]:
+    prepared_entries: list[dict | None] = [None] * len(requests)
+    outputs: list[tuple[list[dict], dict] | None] = [None] * len(requests)
+
+    with ThreadPoolExecutor(max_workers=max(1, preprocess_max_concurrency)) as executor:
+        future_map = {
+            executor.submit(_prepare_transcription_input, media_path): (index, language)
+            for index, (media_path, language) in enumerate(requests)
+        }
+        for future in as_completed(future_map):
+            index, language = future_map[future]
+            prepared = future.result()
+            prepared["language"] = language
+            if not prepared["has_effective_audio"]:
+                outputs[index] = ([], _build_silent_timing(prepared))
+                prepared["wav_path"].unlink(missing_ok=True)
+                continue
+            prepared_entries[index] = prepared
+
+    indexed_active_entries = [
+        (index, prepared)
+        for index, prepared in enumerate(prepared_entries)
+        if prepared is not None
+    ]
+    active_entries = [prepared for _, prepared in indexed_active_entries]
+    active_languages = [prepared["language"] for prepared in active_entries]
+    try:
+        if active_entries:
+            if BACKEND == "mlx":
+                for index, prepared in indexed_active_entries:
+                    inference_started_at = time.perf_counter()
+                    segments = _transcribe_mlx(prepared["wav_path"], prepared["language"])
+                    inference_ms = (time.perf_counter() - inference_started_at) * 1000.0
+                    outputs[index] = (
+                        segments,
+                        {
+                            "backend": BACKEND,
+                            "modelRef": _resolve_mlx_model_ref(),
+                            "totalMs": (time.perf_counter() - prepared["total_started_at"]) * 1000.0,
+                            "loadMs": 0.0,
+                            "wavExtractMs": prepared["wav_extract_ms"],
+                            "inferenceMs": inference_ms,
+                            "silenceGateMs": prepared["silence_gate_ms"],
+                            "skippedSilent": False,
+                            "effectiveAudioDetected": True,
+                            "silenceGateStats": prepared["silence_gate"],
+                        },
+                    )
+            else:
+                active_results = _transcribe_torch_batch(active_entries, active_languages)
+                active_result_index = 0
+                for index, prepared in enumerate(prepared_entries):
+                    if prepared is None:
+                        continue
+                    outputs[index] = active_results[active_result_index]
+                    active_result_index += 1
+    finally:
+        for prepared in active_entries:
+            prepared["wav_path"].unlink(missing_ok=True)
+
+    return [item for item in outputs if item is not None]
+
+
 # ── Public API ───────────────────────────────────────────────
 
 def transcribe(audio_path: str, language: str | None = None) -> tuple[list[dict], dict]:
-    total_started_at = time.perf_counter()
-    wav_started_at = time.perf_counter()
-    wav_path = _extract_audio_wav(audio_path)
-    wav_extract_ms = (time.perf_counter() - wav_started_at) * 1000.0
-    try:
-        silence_gate_started_at = time.perf_counter()
-        has_effective_audio, silence_gate = _has_effective_audio(wav_path)
-        silence_gate_ms = (time.perf_counter() - silence_gate_started_at) * 1000.0
-        if not has_effective_audio:
-            return [], {
-                "backend": BACKEND,
-                "modelRef": _resolve_mlx_model_ref() if BACKEND == "mlx" else _resolve_torch_model_ref(),
-                "totalMs": (time.perf_counter() - total_started_at) * 1000.0,
-                "loadMs": 0.0,
-                "wavExtractMs": wav_extract_ms,
-                "inferenceMs": 0.0,
-                "silenceGateMs": silence_gate_ms,
-                "skippedSilent": True,
-                "effectiveAudioDetected": False,
-                "silenceGateStats": silence_gate,
-            }
-        if BACKEND == "mlx":
-            inference_started_at = time.perf_counter()
-            segments = _transcribe_mlx(wav_path, language)
-            inference_ms = (time.perf_counter() - inference_started_at) * 1000.0
-            return segments, {
-                "backend": BACKEND,
-                "modelRef": _resolve_mlx_model_ref(),
-                "totalMs": (time.perf_counter() - total_started_at) * 1000.0,
-                "loadMs": 0.0,
-                "wavExtractMs": wav_extract_ms,
-                "inferenceMs": inference_ms,
-                "silenceGateMs": silence_gate_ms,
-                "skippedSilent": False,
-                "effectiveAudioDetected": True,
-                "silenceGateStats": silence_gate,
-            }
-        load_started_at = time.perf_counter()
-        asr = _get_torch_pipeline()
-        load_ms = (time.perf_counter() - load_started_at) * 1000.0
-        inference_started_at = time.perf_counter()
-        segments = _transcribe_torch(wav_path, language, asr)
-        inference_ms = (time.perf_counter() - inference_started_at) * 1000.0
-        return segments, {
-            "backend": BACKEND,
-            "modelRef": _resolve_torch_model_ref(),
-            "totalMs": (time.perf_counter() - total_started_at) * 1000.0,
-            "loadMs": load_ms,
-            "wavExtractMs": wav_extract_ms,
-            "inferenceMs": inference_ms,
-            "silenceGateMs": silence_gate_ms,
-            "skippedSilent": False,
-            "effectiveAudioDetected": True,
-            "silenceGateStats": silence_gate,
-        }
-    finally:
-        wav_path.unlink(missing_ok=True)
+    return transcribe_many([(audio_path, language)], preprocess_max_concurrency=1)[0]

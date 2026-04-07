@@ -650,59 +650,38 @@ function AnalyzePage({ projectId, projectProgress, activeJobs, busy, onRun }) {
 
 function AnalyzeAfterMonitor({ model, projectProgress, analyzeJobs }) {
   const progress = model?.progress || projectProgress || null;
-  const pipeline = model?.pipeline || null;
-  const pipelineTotal = pipeline?.total || 0;
-  const prefetched = pipeline?.prefetched ?? 0;
-  const recognized = pipeline?.recognized ?? 0;
-  const ready = pipeline?.ready ?? pipeline?.checkpointReady ?? 0;
-  const persisted = pipeline?.persisted ?? 0;
-  const activePrefetch = pipeline?.activePrefetch ?? 0;
-  const activeRecognition = pipeline?.activeRecognition ?? 0;
-  const readyFrameBytes = pipeline?.readyFrameBytes ?? 0;
-  const checkpointSummary = pipeline
-    ? [
-      pipeline.checkpointPlanOrPrefetch ? `plan/prefetch ${pipeline.checkpointPlanOrPrefetch}` : null,
-      pipeline.checkpointReady ? `ready ${pipeline.checkpointReady}` : null,
-      pipeline.checkpointRecognizing ? `recognizing ${pipeline.checkpointRecognizing}` : null,
-    ].filter(Boolean).join(' · ')
-    : '';
+  const pipelines = model?.pipelines || [];
+  const coarsePipeline = pipelines.find(item => item.kind === 'coarse-scan') || null;
+  const audioPipeline = pipelines.find(item => item.kind === 'audio-analysis') || null;
+  const finePipeline = pipelines.find(item => item.kind === 'fine-scan') || null;
 
   return (
     <div className="card-grid card-grid-two">
       <Card className="panel">
         <div className="section-header">
-          <h2>细扫流水线</h2>
+          <h2>Analyze 并发阶段</h2>
           <Tag>{progress?.stepLabel || progress?.stepKey || projectProgress?.stepLabel || projectProgress?.step || 'idle'}</Tag>
         </div>
-        {pipeline ? (
-          <>
-            <div className="pipeline-metric-grid">
-              <PipelineMetricCard label="已预抽" value={formatCountPair(prefetched, pipelineTotal)} sub="为后续识别准备关键帧" />
-              <PipelineMetricCard label="已识别" value={formatCountPair(recognized, pipelineTotal)} sub="已完成 fine-scan recognition" />
-              <PipelineMetricCard label="已持久化" value={formatCountPair(persisted, pipelineTotal)} sub="已落最终 slices / report" />
-              <PipelineMetricCard label="就绪队列" value={String(ready)} sub={readyFrameBytes > 0 ? `缓存 ${formatBytes(readyFrameBytes)}` : '等待识别消费'} />
-              <PipelineMetricCard label="预抽 worker" value={String(activePrefetch)} sub={checkpointSummary || '素材级 ffmpeg prefetch'} />
-              <PipelineMetricCard label="识别 worker" value={String(activeRecognition)} sub="GPU recognition worker" />
-            </div>
-            <div className="pipeline-footnote">
-              {progress?.detail || '当前 Analyze 已按 fine-scan prefetch -> recognition 流水线运行。'}
-            </div>
-            {progress?.fileName ? <div className="muted">{`当前素材：${progress.fileName}`}</div> : null}
-          </>
-        ) : (
-          <div className="stack-list">
-            <p className="muted">当前还没有可展示的 fine-scan 流水线指标；进入细扫阶段后，这里会显示预抽、识别、就绪队列和 worker 状态。</p>
-            {progress ? (
-              <div className="job-item">
-                <div>
-                  <strong>{progress.stepLabel || progress.stepKey || projectProgress?.stepLabel || projectProgress?.step || '等待运行'}</strong>
-                  <div className="muted">{progress.detail || projectProgress?.detail || '等待更多进度写入。'}</div>
-                </div>
-                <Tag>{`${progress.current || projectProgress?.current || 0}/${progress.total || projectProgress?.total || 0}`}</Tag>
-              </div>
-            ) : null}
-          </div>
-        )}
+        <div className="stack-list">
+          <AnalyzePipelineSection
+            title="粗扫队列"
+            pipeline={coarsePipeline}
+            emptyLabel="进入 coarse-scan 后，这里会显示素材级 worker、排队和 prepared checkpoint 状态。"
+          />
+          <AnalyzePipelineSection
+            title="音频队列"
+            pipeline={audioPipeline}
+            emptyLabel="进入 audio-analysis 后，这里会显示 local health/routing、ASR queue 和活跃素材。"
+          />
+          <AnalyzePipelineSection
+            title="细扫流水线"
+            pipeline={finePipeline}
+            emptyLabel="进入 fine-scan 后，这里会显示预抽、识别、就绪队列和 worker 状态。"
+          />
+        </div>
+        <div className="pipeline-footnote">
+          {progress?.detail || '当前 Analyze 已按 coarse-scan / audio-analysis / fine-scan 三段并发状态写入结构化监控。'}
+        </div>
       </Card>
       <Card className="panel">
         <div className="section-header">
@@ -734,6 +713,80 @@ function AnalyzeAfterMonitor({ model, projectProgress, analyzeJobs }) {
           ))}
         </div>
       </Card>
+    </div>
+  );
+}
+
+function AnalyzePipelineSection({ title, pipeline, emptyLabel }) {
+  if (!pipeline) {
+    return (
+      <div className="job-item">
+        <div>
+          <strong>{title}</strong>
+          <div className="muted">{emptyLabel}</div>
+        </div>
+        <Tag>idle</Tag>
+      </div>
+    );
+  }
+
+  if (pipeline.kind === 'coarse-scan') {
+    return (
+      <div className="pipeline-section">
+        <div className="section-header">
+          <h3>{title}</h3>
+          <Tag>{formatCountPair(pipeline.completed, pipeline.total)}</Tag>
+        </div>
+        <div className="pipeline-metric-grid">
+          <PipelineMetricCard label="已完成" value={formatCountPair(pipeline.completed, pipeline.total)} sub="已完成 prepared 输入落盘" />
+          <PipelineMetricCard label="待处理" value={String(pipeline.pending || 0)} sub="等待进入粗扫 worker" />
+          <PipelineMetricCard label="活跃 worker" value={String(pipeline.active || 0)} sub={`目标 ${pipeline.targetConcurrency || 0}`} />
+          <PipelineMetricCard label="已 checkpoint" value={String(pipeline.checkpointed || 0)} sub="prepared-assets durable cache" />
+        </div>
+        {pipeline.activeAssetNames?.length ? <div className="muted">{`活跃素材：${pipeline.activeAssetNames.join('、')}`}</div> : null}
+      </div>
+    );
+  }
+
+  if (pipeline.kind === 'audio-analysis') {
+    return (
+      <div className="pipeline-section">
+        <div className="section-header">
+          <h3>{title}</h3>
+          <Tag>{formatCountPair(pipeline.completed, pipeline.total)}</Tag>
+        </div>
+        <div className="pipeline-metric-grid">
+          <PipelineMetricCard label="已完成" value={formatCountPair(pipeline.completed, pipeline.total)} sub="audio-analysis 完成或命中 checkpoint" />
+          <PipelineMetricCard label="待处理" value={String(pipeline.pending || 0)} sub="尚未完成 local / ASR 队列" />
+          <PipelineMetricCard label="Local worker" value={String(pipeline.activeLocal || 0)} sub={`目标 ${pipeline.targetLocalConcurrency || 0}`} />
+          <PipelineMetricCard label="ASR 排队" value={String(pipeline.queuedAsr || 0)} sub="等待进入转写队列" />
+          <PipelineMetricCard label="ASR worker" value={String(pipeline.activeAsr || 0)} sub={`目标 ${pipeline.targetAsrConcurrency || 0}`} />
+          <PipelineMetricCard label="已 checkpoint" value={String(pipeline.checkpointed || 0)} sub="audio-checkpoints durable cache" />
+        </div>
+        {pipeline.activeAssetNames?.length ? <div className="muted">{`活跃素材：${pipeline.activeAssetNames.join('、')}`}</div> : null}
+      </div>
+    );
+  }
+
+  const checkpointSummary = [
+    pipeline.checkpointPlanOrPrefetch ? `plan/prefetch ${pipeline.checkpointPlanOrPrefetch}` : null,
+    pipeline.checkpointReady ? `ready ${pipeline.checkpointReady}` : null,
+    pipeline.checkpointRecognizing ? `recognizing ${pipeline.checkpointRecognizing}` : null,
+  ].filter(Boolean).join(' · ');
+  return (
+    <div className="pipeline-section">
+      <div className="section-header">
+        <h3>{title}</h3>
+        <Tag>{formatCountPair(pipeline.recognized, pipeline.total)}</Tag>
+      </div>
+      <div className="pipeline-metric-grid">
+        <PipelineMetricCard label="已预抽" value={formatCountPair(pipeline.prefetched, pipeline.total)} sub="为后续识别准备关键帧" />
+        <PipelineMetricCard label="已识别" value={formatCountPair(pipeline.recognized, pipeline.total)} sub="已完成 fine-scan recognition" />
+        <PipelineMetricCard label="已持久化" value={formatCountPair(pipeline.persisted, pipeline.total)} sub="已落最终 slices / report" />
+        <PipelineMetricCard label="就绪队列" value={String(pipeline.ready || pipeline.checkpointReady || 0)} sub={pipeline.readyFrameBytes > 0 ? `缓存 ${formatBytes(pipeline.readyFrameBytes)}` : '等待识别消费'} />
+        <PipelineMetricCard label="预抽 worker" value={String(pipeline.activePrefetch || 0)} sub={checkpointSummary || '素材级 ffmpeg prefetch'} />
+        <PipelineMetricCard label="识别 worker" value={String(pipeline.activeRecognition || 0)} sub="GPU recognition worker" />
+      </div>
     </div>
   );
 }
@@ -1028,12 +1081,34 @@ function MonitorLoader({ kind, projectId, categoryId, emptyLabel, toolbar, after
 }
 
 function renderAnalyzeToolbarMeta(model, projectProgress) {
-  const pipeline = model?.pipeline;
-  if (pipeline?.total) {
+  const pipelines = model?.pipelines || [];
+  const activePipeline = pipelines.find(item => item.kind === model?.progress?.stepKey)
+    || pipelines.find(item => item.kind === 'audio-analysis' && ((item.activeLocal || 0) > 0 || (item.activeAsr || 0) > 0))
+    || pipelines.find(item => item.kind === 'coarse-scan' && (item.active || 0) > 0)
+    || pipelines.find(item => item.kind === 'fine-scan' && (((item.activePrefetch || 0) > 0) || ((item.activeRecognition || 0) > 0)))
+    || pipelines[0];
+  if (activePipeline?.kind === 'coarse-scan') {
     return (
       <>
-        <span>{`识别 ${pipeline.recognized || 0}/${pipeline.total}`}</span>
-        <span>{`预抽 ${pipeline.prefetched || 0}/${pipeline.total}`}</span>
+        <span>{`粗扫 ${activePipeline.completed || 0}/${activePipeline.total || 0}`}</span>
+        <span>{`worker ${activePipeline.active || 0}/${activePipeline.targetConcurrency || 0}`}</span>
+      </>
+    );
+  }
+  if (activePipeline?.kind === 'audio-analysis') {
+    return (
+      <>
+        <span>{`音频 ${activePipeline.completed || 0}/${activePipeline.total || 0}`}</span>
+        <span>{`local ${activePipeline.activeLocal || 0}/${activePipeline.targetLocalConcurrency || 0}`}</span>
+        <span>{`ASR ${activePipeline.activeAsr || 0}/${activePipeline.targetAsrConcurrency || 0}`}</span>
+      </>
+    );
+  }
+  if (activePipeline?.kind === 'fine-scan') {
+    return (
+      <>
+        <span>{`识别 ${activePipeline.recognized || 0}/${activePipeline.total || 0}`}</span>
+        <span>{`预抽 ${activePipeline.prefetched || 0}/${activePipeline.total || 0}`}</span>
       </>
     );
   }

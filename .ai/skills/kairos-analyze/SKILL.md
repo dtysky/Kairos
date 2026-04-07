@@ -185,9 +185,9 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
 
 对符合条件的视频，在视觉粗扫之后、细扫决策之前补一段音频分析：
 
-- 对视频内音轨跑轻量 ASR
+- 先对视频内主音轨做轻量音频健康检查
 - 提取 `transcript / transcriptSegments / speechCoverage`
-- 如果资产已绑定 `protectionAudio`，额外补一层轻量音频健康注释，重点观察低电平、静音比例、语音线索偏弱等问题
+- 如果资产已绑定 `protectionAudio`，先对 embedded 与 protection 都做轻量音频健康检查，重点观察低电平、静音比例、语音线索偏弱等问题
 - 把 ASR 命中的语音时间窗并入 `interestingWindows`
 - `interestingWindows` 现在需要区分两层语义：
   - `startMs / endMs` 保留 focus/evidence window
@@ -197,8 +197,9 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
 - 当前保护音轨策略是保守 fallback，不是双主音轨竞争：
   - 视频内无线 mic 仍是默认主音轨
   - `protectionAudio` 只是同目录同 basename 的 sidecar 兜底来源
-  - 默认不要给所有保护音轨都跑第二遍完整 ASR，只有主音轨明显可疑或确有必要时才升级比较
-  - protection transcript 当前只作为 finalize prompt 的辅助信号，不覆盖正式 `report.transcriptSegments`
+  - 现在会先做双健康检查再选边，只对最终被选中的一路跑 ASR
+  - `alignment === mismatch` 时强制保留 embedded；protection 只有在健康分数明显更优时才切换
+  - 一旦 protection 被选中，它就直接成为正式 `report.transcriptSegments`
 
 这一步默认仍属于 Analyze phase，但不再和“视觉粗扫”混写成同一个子步骤。
 
@@ -244,6 +245,7 @@ analysis/asset-reports/<assetId>.json
 
 - coarse prepared state 会写到 `analysis/prepared-assets/<assetId>.json`
 - audio state 会写到 `analysis/audio-checkpoints/<assetId>.json`
+  - 当前正式口径是 `selectedTranscript / selectedTranscriptSource / embeddedHealth / protectionHealth / protectedAudio / decisionHints`
 - report 里的 `fineScanCompletedAt / fineScanSliceCount` 用来标记 `fine-scan` 是否真正完成
 - `analysis/fine-scan-checkpoints/<assetId>.json` 只代表 fine-scan 的 durable 中间态，不代表当前一定存在 live fine-scan worker
 - `retry / resume` 后 ETA 不继承上一轮估算，而是按当前阶段重新估；当前阶段完成数 `< 3` 时，面板不显示 ETA
@@ -324,7 +326,10 @@ const localPath = resolveAssetLocalPath(projectId, asset, roots, deviceMaps);
 - `React console` 最终仍读取项目内 `.tmp/media-analyze/progress.json`，因此当前项目上下文必须正确，不能把面板混到别的项目进度目录
 - `scripts/kairos-supervisor.ps1/.sh start` 只会启动 `Supervisor + React console`，不会自动恢复旧的 analyze job；服务起来不等于分析已经重新开始
 - `progress.json`、`audio-checkpoints`、`fine-scan-checkpoints` 都是 durable cache，不是 live job 证据；只看到旧进度、旧 step、旧当前文件名，不能直接断言 Analyze 还在跑
-- 当 Analyze 进入 fine-scan 流水线阶段时，React console 现在会直接展示 `已预抽 / 已识别 / ready queue / active workers`，不再只依赖单条 `current / total`
+- React console 当前会把 Analyze 直接展示成三段结构化流水线：
+  - `粗扫队列`：素材级抽帧 worker、prepared checkpoint、活跃素材
+  - `音频队列`：local health/routing、ASR queue、活跃素材
+  - `细扫流水线`：`已预抽 / 已识别 / ready queue / active workers`
 - Analyze 正常结束、失败退出或用户中断后，agent 必须清理由自己启动的辅助进程，至少包括本次监控面板服务；如果本轮还主动拉起了 ML server，也必须一起停掉；除非用户明确要求保留
 - 清理边界只包含 agent 本轮主动启动的进程；不要顺手杀掉用户原本就在跑的 ML 服务、别的项目面板或无关后台服务
 - `scripts/kairos-progress.ps1/.sh` 与 `scripts/style-analysis-progress-viewer.html` 现在只保留为兼容 / 调试辅助，不能再被当成新的正式监控入口

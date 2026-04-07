@@ -2,6 +2,7 @@ import { unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { z } from 'zod';
 import {
+  IAudioHealthSummary,
   IInterestingWindow,
   IKtepEvidence,
   IProtectedAudioAssessment,
@@ -22,10 +23,16 @@ const IAudioDecisionHints = z.object({
   protectionTranscriptExcerpt: z.string().optional(),
 });
 
+const EAudioTranscriptSource = z.enum(['embedded', 'protection']);
+export type EAudioTranscriptSource = z.infer<typeof EAudioTranscriptSource>;
+
 const IAudioAnalysisCheckpoint = z.object({
+  schemaVersion: z.literal(2),
   assetId: z.string(),
-  transcript: ITranscriptCheckpoint.nullable().optional(),
-  protectionTranscript: ITranscriptCheckpoint.nullable().optional(),
+  selectedTranscript: ITranscriptCheckpoint.nullable().optional(),
+  selectedTranscriptSource: EAudioTranscriptSource.optional(),
+  embeddedHealth: IAudioHealthSummary.optional(),
+  protectionHealth: IAudioHealthSummary.optional(),
   protectedAudio: IProtectedAudioAssessment.optional(),
   decisionHints: IAudioDecisionHints.optional(),
   updatedAt: z.string(),
@@ -53,9 +60,10 @@ export async function loadAudioAnalysisCheckpoint(
 
 export async function writeAudioAnalysisCheckpoint(
   projectRoot: string,
-  checkpoint: Omit<IAudioAnalysisCheckpoint, 'updatedAt'> & { updatedAt?: string },
+  checkpoint: Omit<IAudioAnalysisCheckpoint, 'updatedAt' | 'schemaVersion'> & { updatedAt?: string },
 ): Promise<void> {
   await writeJson(getAudioAnalysisCheckpointPath(projectRoot, checkpoint.assetId), {
+    schemaVersion: 2,
     ...checkpoint,
     updatedAt: checkpoint.updatedAt ?? new Date().toISOString(),
   });

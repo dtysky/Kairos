@@ -39,7 +39,8 @@ export interface IProbeResult {
 
 export async function probe(filePath: string, tools?: IMediaToolConfig): Promise<IProbeResult> {
   if (isPhotoPath(filePath)) {
-    const imageProbe = await probePhotoWithExiftool(filePath, tools).catch(() => null);
+    const imageProbe = await probePhotoWithExiftool(filePath, tools)
+      .catch(async () => await probePhotoWithMdls(filePath).catch(() => null));
     if (imageProbe) return imageProbe;
   }
 
@@ -110,7 +111,9 @@ async function probePhotoWithExiftool(
     '-LensModel',
     '-Software',
     inputPath,
-  ]);
+  ], {
+    env: buildStableToolExecEnv(),
+  });
 
   const rows = JSON.parse(stdout);
   const metadata = Array.isArray(rows) ? rows[0] : null;
@@ -133,6 +136,50 @@ async function probePhotoWithExiftool(
     audioBitRate: null,
     creationTime: null,
     rawTags: tags,
+  };
+}
+
+async function probePhotoWithMdls(
+  filePath: string,
+): Promise<IProbeResult> {
+  if (process.platform !== 'darwin') {
+    throw new Error('mdls photo probe is only supported on darwin');
+  }
+
+  const inputPath = toExecutableInputPath(filePath, 'mdls');
+  const { stdout } = await exec('mdls', [
+    '-name', 'kMDItemContentCreationDate',
+    '-name', 'kMDItemPixelWidth',
+    '-name', 'kMDItemPixelHeight',
+    inputPath,
+  ], {
+    env: buildStableToolExecEnv(),
+  });
+
+  const contentCreationDate = parseMdlsField(stdout, 'kMDItemContentCreationDate');
+  const pixelWidth = parseMdlsField(stdout, 'kMDItemPixelWidth');
+  const pixelHeight = parseMdlsField(stdout, 'kMDItemPixelHeight');
+
+  if (!contentCreationDate && !pixelWidth && !pixelHeight) {
+    throw new Error(`mdls returned no usable metadata for ${filePath}`);
+  }
+
+  return {
+    durationMs: null,
+    width: parseNumber(pixelWidth),
+    height: parseNumber(pixelHeight),
+    fps: null,
+    codec: null,
+    hasAudioStream: false,
+    audioStreamCount: 0,
+    audioCodec: null,
+    audioSampleRate: null,
+    audioChannels: null,
+    audioBitRate: null,
+    creationTime: contentCreationDate && contentCreationDate !== '(null)'
+      ? contentCreationDate
+      : null,
+    rawTags: {},
   };
 }
 
@@ -165,4 +212,26 @@ function parseNumber(value: unknown): number | null {
 
 function isPhotoPath(filePath: string): boolean {
   return CPHOTO_EXT.has(extname(filePath).toLowerCase());
+}
+
+function parseMdlsField(output: string, fieldName: string): string | null {
+  const line = output
+    .split(/\r?\n/gu)
+    .find(item => item.trim().startsWith(`${fieldName} = `));
+  if (!line) return null;
+  const value = line.split(/\s=\s/u).slice(1).join(' = ').trim();
+  return value || null;
+}
+
+function buildStableToolExecEnv(): NodeJS.ProcessEnv {
+  if (process.platform === 'win32') {
+    return process.env;
+  }
+
+  return {
+    ...process.env,
+    LC_ALL: 'C',
+    LANG: 'C',
+    LC_CTYPE: 'C',
+  };
 }

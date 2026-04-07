@@ -49,8 +49,19 @@ export interface IMonitorProgress {
 }
 
 export interface IMonitorPipelineSummary {
-  kind: 'fine-scan';
+  kind: 'coarse-scan' | 'audio-analysis' | 'fine-scan';
   total?: number;
+  completed?: number;
+  pending?: number;
+  active?: number;
+  targetConcurrency?: number;
+  checkpointed?: number;
+  activeAssetNames?: string[];
+  activeLocal?: number;
+  targetLocalConcurrency?: number;
+  queuedAsr?: number;
+  activeAsr?: number;
+  targetAsrConcurrency?: number;
   prefetched?: number;
   recognized?: number;
   ready?: number;
@@ -69,7 +80,7 @@ export interface IMonitorModel {
   chips: IMonitorChip[];
   metrics: IMonitorMetric[];
   progress: IMonitorProgress;
-  pipeline?: IMonitorPipelineSummary;
+  pipelines?: IMonitorPipelineSummary[];
   stepDefinitions: IMonitorStepDefinition[];
   outputs: IMonitorOutput[];
   raw: unknown;
@@ -93,6 +104,23 @@ interface IAnalyzeProgressPayload {
   stepDefinitions?: Array<{ key: string; label: string }>;
   extra?: {
     projectName?: string;
+    pipelineKind?: string;
+    activeAssetNames?: string[];
+    coarseTotal?: number;
+    coarseCompletedCount?: number;
+    coarsePendingCount?: number;
+    coarseActiveCount?: number;
+    coarseTargetConcurrency?: number;
+    coarseCheckpointedCount?: number;
+    audioTotal?: number;
+    audioCompletedCount?: number;
+    audioPendingCount?: number;
+    audioActiveLocalCount?: number;
+    audioTargetLocalConcurrency?: number;
+    audioQueuedAsrCount?: number;
+    audioActiveAsrCount?: number;
+    audioTargetAsrConcurrency?: number;
+    audioCheckpointedCount?: number;
     fineScanAssetTotal?: number;
     prefetchedAssetCount?: number;
     recognizedAssetCount?: number;
@@ -121,8 +149,8 @@ interface IStyleProgressPayload {
 
 const CANALYZE_STEP_DESCRIPTIONS: Record<string, string> = {
   prepare: '装载项目上下文并准备素材分析工作目录。',
-  'coarse-scan': '抽取粗扫关键帧，准备 finalize 所需的关键帧、音轨探测与恢复中间态。',
-  'audio-analysis': '分析素材内嵌音轨，按需比较 protection audio，并生成语音决策辅助信息。',
+  'coarse-scan': '按素材级 worker 抽取粗扫关键帧；单素材同一时刻最多一个 ffmpeg，多素材按内存动态并发。',
+  'audio-analysis': '先做 embedded/protection 双健康检查，再将选中的单一路径送入 ASR 队列，按内存动态并发。',
   finalize: '统一完成视觉总结、clip type 判断与 fine-scan 策略决策。',
   'fine-scan-prefetch': '为待细扫素材预抽关键帧，并准备识别所需中间态。',
   'fine-scan-recognition': '消费已准备好的关键帧，生成细扫切片与视觉理解结果。',
@@ -170,6 +198,51 @@ export async function buildAnalyzeMonitorModel(
   const fineScanPrefetched = progress?.extra?.prefetchedAssetCount;
   const fineScanRecognized = progress?.extra?.recognizedAssetCount;
   const fineScanReady = progress?.extra?.readyAssetCount;
+  const coarsePipeline = progress?.extra?.coarseTotal || progress?.step === 'coarse-scan'
+    ? {
+      kind: 'coarse-scan' as const,
+      total: progress?.extra?.coarseTotal ?? total,
+      completed: progress?.extra?.coarseCompletedCount,
+      pending: progress?.extra?.coarsePendingCount,
+      active: progress?.extra?.coarseActiveCount,
+      targetConcurrency: progress?.extra?.coarseTargetConcurrency,
+      checkpointed: progress?.extra?.coarseCheckpointedCount,
+      activeAssetNames: progress?.extra?.activeAssetNames,
+    }
+    : null;
+  const audioPipeline = progress?.extra?.audioTotal || progress?.step === 'audio-analysis'
+    ? {
+      kind: 'audio-analysis' as const,
+      total: progress?.extra?.audioTotal ?? total,
+      completed: progress?.extra?.audioCompletedCount,
+      pending: progress?.extra?.audioPendingCount,
+      activeLocal: progress?.extra?.audioActiveLocalCount,
+      targetLocalConcurrency: progress?.extra?.audioTargetLocalConcurrency,
+      queuedAsr: progress?.extra?.audioQueuedAsrCount,
+      activeAsr: progress?.extra?.audioActiveAsrCount,
+      targetAsrConcurrency: progress?.extra?.audioTargetAsrConcurrency,
+      checkpointed: progress?.extra?.audioCheckpointedCount,
+      activeAssetNames: progress?.extra?.activeAssetNames,
+    }
+    : null;
+  const fineScanPipeline = progress?.extra?.fineScanAssetTotal || fineScanCheckpointSummary.total > 0
+    ? {
+      kind: 'fine-scan' as const,
+      total: fineScanTotal || undefined,
+      prefetched: fineScanPrefetched,
+      recognized: fineScanRecognized,
+      ready: fineScanReady,
+      persisted: progress?.extra?.persistedAssetCount,
+      activePrefetch: progress?.extra?.activePrefetchCount,
+      activeRecognition: progress?.extra?.activeRecognitionCount,
+      readyFrameBytes: progress?.extra?.readyFrameBytes,
+      checkpointPlanOrPrefetch: fineScanCheckpointSummary.planOrPrefetch,
+      checkpointReady: fineScanCheckpointSummary.ready,
+      checkpointRecognizing: fineScanCheckpointSummary.recognizing,
+    }
+    : null;
+  const pipelines = [coarsePipeline, audioPipeline, fineScanPipeline]
+    .filter(Boolean) as IMonitorPipelineSummary[];
   const completionMetric = isFineScanPipelineStep && typeof fineScanRecognized === 'number'
     ? {
       value: `识别 ${fineScanRecognized}/${fineScanTotal}`,
@@ -227,22 +300,7 @@ export async function buildAnalyzeMonitorModel(
       etaSeconds: progress?.etaSeconds,
       updatedAt: progress?.updatedAt ?? latestJob?.updatedAt,
     },
-    pipeline: progress?.extra?.fineScanAssetTotal || fineScanCheckpointSummary.total > 0
-      ? {
-        kind: 'fine-scan',
-        total: fineScanTotal || undefined,
-        prefetched: fineScanPrefetched,
-        recognized: fineScanRecognized,
-        ready: fineScanReady,
-        persisted: progress?.extra?.persistedAssetCount,
-        activePrefetch: progress?.extra?.activePrefetchCount,
-        activeRecognition: progress?.extra?.activeRecognitionCount,
-        readyFrameBytes: progress?.extra?.readyFrameBytes,
-        checkpointPlanOrPrefetch: fineScanCheckpointSummary.planOrPrefetch,
-        checkpointReady: fineScanCheckpointSummary.ready,
-        checkpointRecognizing: fineScanCheckpointSummary.recognizing,
-      }
-      : undefined,
+    pipelines: pipelines.length > 0 ? pipelines : undefined,
     stepDefinitions,
     outputs: await Promise.all([
       outputItem('资产报告目录', join(projectRoot, 'analysis', 'asset-reports'), '每条素材的正式分析结果。', reportCount > 0),

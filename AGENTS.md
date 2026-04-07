@@ -88,6 +88,9 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - with audio: `coarse-scan -> audio-analysis -> finalize -> deferred scene detect(if needed)`
   - without audio: `coarse-scan -> finalize -> deferred scene detect(if needed)`
   - `coarse-scan` prepares keyframes, `hasAudioTrack`, and source context; it does not own the formal video `visualSummary`
+- Treat `coarse-scan` and `audio-analysis` as asset-level concurrent stages:
+  - `coarse-scan` may advance multiple assets in parallel, but each active asset should use at most one coarse keyframe `ffmpeg`
+  - `audio-analysis` now means dual health-check routing plus a single chosen ASR source for assets with `protectionAudio`
 - Treat `analysis/prepared-assets/` and `analysis/audio-checkpoints/` as durable Analyze resume caches, not canonical downstream inputs.
 - Treat `/script` as a preparation surface by default:
   - `/script` first auto-saves the selected style category

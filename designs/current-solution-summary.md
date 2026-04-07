@@ -101,17 +101,28 @@ flowchart TD
   - 有音轨视频：`coarse-scan -> audio-analysis -> finalize -> deferred scene detect(if needed)`
   - 无音轨视频：`coarse-scan -> finalize -> deferred scene detect(if needed)`
   - `scene detect` 不再是所有视频的 unconditional coarse 前置税，而是只在最终确实需要 shot 结构时延后触发
+- `coarse-scan` 当前已经切到素材级动态并发：
+  - 同一素材在 coarse 阶段最多只允许一个关键帧抽取 `ffmpeg`
+  - 多条素材可根据 free memory 目标并发数并行推进
 - 视频内音轨的 ASR 已进入正式分析链路，而不再只是附属信息
 - `transcript / transcriptSegments / speechCoverage / placeHints / inferredGps` 都属于分析层结果
 - `asset report.clipTypeGuess` 当前表示 finalize 后的语义结论；视频素材的正式 `visualSummary + decision` 只在 `finalize` 单次 unified VLM 中产出，前置阶段只保留 cheap planning inputs
 - Analyze 现在按素材分阶段持久化可恢复状态：
   - `analysis/prepared-assets/<assetId>.json` 保存 coarse prepared checkpoint（keyframes / `hasAudioTrack` / source context 等输入）
-  - `analysis/audio-checkpoints/<assetId>.json` 保存 ASR / protection-audio 中间态
+  - `analysis/audio-checkpoints/<assetId>.json` 保存 selected transcript / transcript source / audio health / protection routing 中间态
   - `analysis/asset-reports/<assetId>.json` 用 `fineScanCompletedAt / fineScanSliceCount` 标记细扫完成态
-- 如果视频绑定了 `protectionAudio`，Analyze 当前会把保护音轨放在 `audio-analysis` 阶段做决策辅助：
-  - 保护音轨默认不做独立健康检查，只在主音轨明显可疑或确有必要时升级到 transcript 对比
-  - protection transcript 的当前定位是 finalize prompt 的辅助信号，不会覆盖正式 `report.transcriptSegments`
+- `audio-analysis` 当前已经切到两级素材队列：
+  - 本地 health / routing 队列负责 embedded 与 protection 的轻量健康检查
+  - ASR 队列只对最终选中的一路音轨转写，并按 free memory 目标并发数动态扩缩
+- 如果视频绑定了 `protectionAudio`，Analyze 当前会先做双健康检查再选边：
+  - `alignment === mismatch` 时强制保留 embedded
+  - protection 缺失、不可访问或健康检查失败时回退 embedded
+  - protection 只有在健康分数明显更优时才会成为正式 transcript 来源
+- 一旦选择了 protection，它就不再只是 finalize prompt 的辅助信号，而会直接覆盖正式 `report.transcriptSegments`
 - ML server 当前会在 `VLM` 和 `Whisper` 之间互斥卸载，避免两套模型同时常驻显存
+- ML server 当前的 ASR 也已经收口成显式队列：
+  - Torch backend 会把等待窗口内的独立请求聚合后做单次批推理
+  - MLX backend 共享 admission/queue 语义，但保持单推理通道，不做真实 multi-audio batch
 - `retry / resume` 后的 ETA 当前按阶段重置，并且在当前阶段完成样本少于 `3` 条时不显示，避免沿用上一轮进度口径后产生夸张倒计时
 - `interestingWindows` 不再只有单一语义：
   - `startMs / endMs` 保留“为什么这里重要”的 focus/evidence window
@@ -286,7 +297,11 @@ flowchart TD
   - `/style` 直接展示 Workspace 风格库与当前分类的 Style monitor
 - 旧 `/analyze/monitor` 与 `/style/monitor/:categoryId?` 只保留为兼容跳转
 - 旧静态进度页脚本只保留兼容 / 调试用途，新的正式监控能力应优先落在 `Supervisor + React console` 这条链路
-- React Analyze monitor 现在已经直接承认 fine-scan 流水线语义，会展示 `已预抽 / 已识别 / ready queue / active workers` 这类结构化指标，而不再只剩单条通用 `current / total`
+- React Analyze monitor 现在已经直接承认多阶段并发语义：
+  - `coarse-scan` 展示素材级 worker、checkpoint 数和活跃素材
+  - `audio-analysis` 展示 local queue、ASR queue、活跃 worker 和排队数
+  - `fine-scan` 继续展示 `已预抽 / 已识别 / ready queue / active workers`
+  - hero 区不再把并发阶段误写成单一“当前素材”
 - `scripts/kairos-supervisor.* start` 当前只负责拉起 `Supervisor + React console`，不会自动恢复或重放旧的 analyze job；需要继续分析时，必须显式重新发起 `analyze` job
 - `projects/<projectId>/.tmp/media-analyze/progress.json` 是 durable progress cache，不等于“当前一定有 live analyze job 在跑”；运维判断必须至少同时核对：
   - `Supervisor` job 里是否存在 `running analyze`

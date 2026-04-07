@@ -23,6 +23,9 @@ export interface IMlAsrTiming {
   loadMs?: number;
   wavExtractMs?: number;
   inferenceMs?: number;
+  queueWaitMs?: number;
+  batched?: boolean;
+  batchSize?: number;
   silenceGateMs?: number;
   skippedSilent?: boolean;
   effectiveAudioDetected?: boolean;
@@ -67,6 +70,13 @@ export interface IMlHealth {
   device: string;
   backend: string;
   models_loaded: string[];
+  limits?: {
+    asrBatchMaxItems?: number;
+    asrBatchMaxWaitMs?: number;
+    asrPreprocessMaxConcurrency?: number;
+    asrMode?: string;
+    asrQueuedRequests?: number;
+  };
 }
 
 export interface IMlRequestOptions {

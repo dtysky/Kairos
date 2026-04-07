@@ -23,28 +23,12 @@ async function createWorkspace(): Promise<string> {
 }
 
 describe('audio analysis checkpoints', () => {
-  it('roundtrips transcript and protection-audio assessment', async () => {
+  it('roundtrips selected transcript and protection-audio assessment', async () => {
     const projectRoot = await createWorkspace();
 
     await writeAudioAnalysisCheckpoint(projectRoot, {
       assetId: 'asset-1',
-      transcript: {
-        transcript: 'hello world',
-        segments: [{
-          startMs: 0,
-          endMs: 1200,
-          text: 'hello world',
-        }],
-        evidence: [],
-        speechCoverage: 0.42,
-        speechWindows: [{
-          startMs: 0,
-          endMs: 1800,
-          semanticKind: 'speech',
-          reason: 'speech-window',
-        }],
-      },
-      protectionTranscript: {
+      selectedTranscript: {
         transcript: 'backup hello world',
         segments: [{
           startMs: 0,
@@ -53,14 +37,29 @@ describe('audio analysis checkpoints', () => {
         }],
         evidence: [],
         speechCoverage: 0.38,
-        speechWindows: [],
+        speechWindows: [{
+          startMs: 0,
+          endMs: 1800,
+          semanticKind: 'speech',
+          reason: 'speech-window',
+        }],
+      },
+      selectedTranscriptSource: 'protection',
+      embeddedHealth: {
+        meanVolumeDb: -38,
+        score: 0.45,
+      },
+      protectionHealth: {
+        meanVolumeDb: -22,
+        speechCoverage: 0.38,
+        score: 0.78,
       },
       protectedAudio: {
-        recommendedSource: 'embedded',
+        recommendedSource: 'protection',
         comparedProtectionTranscript: false,
       },
       decisionHints: {
-        protectionRecommendation: 'recommended:embedded',
+        protectionRecommendation: 'recommended:protection',
         protectionTranscriptExcerpt: 'backup hello world',
       },
     });
@@ -68,18 +67,23 @@ describe('audio analysis checkpoints', () => {
     const loaded = await loadAudioAnalysisCheckpoint(projectRoot, 'asset-1');
     expect(loaded).toMatchObject({
       assetId: 'asset-1',
-      transcript: {
-        transcript: 'hello world',
-        speechCoverage: 0.42,
-      },
-      protectionTranscript: {
+      schemaVersion: 2,
+      selectedTranscript: {
         transcript: 'backup hello world',
+        speechCoverage: 0.38,
+      },
+      selectedTranscriptSource: 'protection',
+      embeddedHealth: {
+        score: 0.45,
+      },
+      protectionHealth: {
+        score: 0.78,
       },
       protectedAudio: {
-        recommendedSource: 'embedded',
+        recommendedSource: 'protection',
       },
       decisionHints: {
-        protectionRecommendation: 'recommended:embedded',
+        protectionRecommendation: 'recommended:protection',
       },
     });
 

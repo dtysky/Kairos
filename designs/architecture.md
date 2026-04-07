@@ -60,12 +60,12 @@
    - clip placement 当前优先贴合 `beat.targetDurationMs`，不会再让显式 speed beat 按原始 source 时长自由漂移
 9. Analyze 恢复与资源口径已经补到项目级正式设计
    - coarse prepared state 会写入 `analysis/prepared-assets/<assetId>.json`，只保存 finalize 之前的准备输入
-   - ASR / protection 中间态会写入 `analysis/audio-checkpoints/<assetId>.json`
+   - ASR / protection 中间态会写入 `analysis/audio-checkpoints/<assetId>.json`，当前正式保存口径是 selected transcript、transcript source、audio health 与 protection routing
    - `asset report` 新增 `fineScanCompletedAt / fineScanSliceCount`，用于恢复 `fine-scan`
    - `retry / resume` 后 ETA 改为按当前阶段重新估算，且当前阶段完成样本少于 `3` 条时不显示 ETA
    - ML server 会在 `VLM` 和 `Whisper` 之间互斥卸载，避免两套模型同时常驻显存
-   - 保护音轨只在资产已绑定 `protectionAudio` 时进入 `audio-analysis` 决策辅助，且默认不做独立健康检查
-   - protection transcript 当前不覆盖正式 `report.transcriptSegments`，只作为 finalize prompt 的辅助信号
+   - 保护音轨只在资产已绑定 `protectionAudio` 时进入 `audio-analysis` 路由决策；当前正式策略是 embedded / protection 双健康检查后只跑一侧 ASR
+   - 如果 protection 被选中，它会直接成为正式 `report.transcriptSegments` 来源，而不再只是 finalize prompt 的辅助信号
 10. 本地运行时与控制台已经形成当前正式操作面
    - `Supervisor` 统一承载本地服务与 job 编排
    - `apps/kairos-console/` 采用 React + 工作流优先路由，而不是单页工作台
@@ -73,7 +73,10 @@
    - `Style` 当前承载的是 **Workspace 级风格库 / 风格来源配置 / style-analysis monitor**，而不是某个单项目私有风格页
    - 旧 `/analyze/monitor` 与 `/style/monitor/:categoryId?` 仅保留兼容跳转
    - `scripts/kairos-progress.*` 与旧静态监控页只保留兼容 / 调试用途，不再是新的正式入口
-   - React Analyze 页当前已直接消费 fine-scan pipeline monitor model，并把 `prefetch / recognition / ready queue / active workers` 作为结构化 UI 展示
+   - React Analyze 页当前已直接消费多阶段 Analyze pipeline monitor model：
+     - `coarse-scan` 展示素材级抽帧 worker、活跃素材和 prepared checkpoint
+     - `audio-analysis` 展示 local queue、ASR queue 与活跃 worker
+     - `fine-scan` 继续展示 `prefetch / recognition / ready queue / active workers`
    - 可复用的风格资产当前统一收口为 Workspace 级：
      - `config/styles/`
      - `config/style-sources.json`
