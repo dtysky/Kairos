@@ -4,6 +4,7 @@ import type {
   IKtepAsset,
   IKtepProject,
   IMediaChronology,
+  IProjectPharosContext,
   IProjectMaterialDigest,
   ISegmentPlanDraft,
   ISegmentPlanSegment,
@@ -16,11 +17,13 @@ import {
   loadAssets,
   loadChronology,
   loadProject,
+  loadProjectBriefConfig,
   loadScriptBrief,
   seedScriptBriefDraft,
   writeProjectMaterialDigest,
   writeSegmentPlanDrafts,
 } from '../../store/index.js';
+import { loadOrBuildProjectPharosContext } from '../pharos/context.js';
 import { loadStyleByCategory } from './style-loader.js';
 import { buildRhythmMaterialPromptLines } from './style-rhythm.js';
 
@@ -50,13 +53,18 @@ export interface IPrepareSegmentPlanningResult {
 export async function prepareProjectMaterialDigest(
   input: IPrepareProjectMaterialDigestInput,
 ): Promise<IPrepareProjectMaterialDigestResult> {
-  const [project, assets, reports, chronology, scriptBrief] = await Promise.all([
+  const [project, assets, reports, chronology, scriptBrief, projectBriefConfig] = await Promise.all([
     loadProject(input.projectRoot),
     loadAssets(input.projectRoot),
     loadAssetReports(input.projectRoot),
     loadChronology(input.projectRoot),
     loadScriptBrief(input.projectRoot),
+    loadProjectBriefConfig(input.projectRoot),
   ]);
+  const pharosContext = await loadOrBuildProjectPharosContext({
+    projectRoot: input.projectRoot,
+    includedTripIds: projectBriefConfig.pharos?.includedTripIds ?? [],
+  });
 
   const digest = buildProjectMaterialDigest({
     project,
@@ -64,6 +72,7 @@ export async function prepareProjectMaterialDigest(
     reports,
     chronology,
     projectBrief: scriptBrief,
+    pharosContext,
   });
 
   await writeProjectMaterialDigest(input.projectRoot, digest);
@@ -175,6 +184,7 @@ export function buildProjectMaterialDigest(input: {
   reports: IAssetCoarseReport[];
   chronology: IMediaChronology[];
   projectBrief?: string;
+  pharosContext?: IProjectPharosContext | null;
 }): IProjectMaterialDigest {
   const now = new Date().toISOString();
   const reportMap = new Map(input.reports.map(report => [report.assetId, report]));
@@ -198,6 +208,7 @@ export function buildProjectMaterialDigest(input: {
     topLabels,
     clipTypeDistribution,
   });
+  const pharos = buildPharosDigest(input.assets, input.reports, input.pharosContext ?? null);
 
   return {
     id: randomUUID(),
@@ -214,6 +225,7 @@ export function buildProjectMaterialDigest(input: {
     clipTypeDistribution,
     mainThemes,
     recommendedNarrativeAxes,
+    pharos,
     summary: buildDigestSummary({
       project: input.project,
       assetCount: input.assets.length,
@@ -221,6 +233,7 @@ export function buildProjectMaterialDigest(input: {
       topLabels,
       topPlaceHints,
       recommendedNarrativeAxes,
+      pharos,
     }),
   };
 }
@@ -252,6 +265,7 @@ export function buildSegmentPlanningPrompt(
     root.durationMs != null ? `时长: ${Math.round(root.durationMs / 1000)}s` : '',
     root.summary ? `摘要: ${root.summary}` : '',
   ].filter(Boolean).join(' | '));
+  const pharosLines = buildDigestPharosPromptLines(digest.pharos);
 
   return [
     '## 项目级素材归纳',
@@ -267,6 +281,9 @@ export function buildSegmentPlanningPrompt(
     '',
     '## 用户当前 brief',
     reviewBrief ?? '（暂无）',
+    '',
+    '## Pharos',
+    ...pharosLines,
     '',
     '## 指定风格',
     ...styleLines,
@@ -682,6 +699,7 @@ function buildDigestSummary(input: {
   topLabels: string[];
   topPlaceHints: string[];
   recommendedNarrativeAxes: string[];
+  pharos?: IProjectMaterialDigest['pharos'];
 }): string {
   const totalMinutes = Math.round(input.totalDurationMs / 60000);
   const parts = [
@@ -696,10 +714,113 @@ function buildDigestSummary(input: {
   if (input.topPlaceHints.length > 0) {
     parts.push(`地点线索集中在 ${input.topPlaceHints.slice(0, 3).join('、')}`);
   }
+  if (input.pharos) {
+    const pharosSummary = buildPharosDigestSummarySentence(input.pharos);
+    if (pharosSummary) parts.push(pharosSummary);
+  }
   if (input.recommendedNarrativeAxes.length > 0) {
     parts.push(`建议优先按 ${input.recommendedNarrativeAxes.join(' / ')} 组织段落`);
   }
   return parts.join('，') + '。';
+}
+
+function buildPharosDigest(
+  assets: IKtepAsset[],
+  reports: IAssetCoarseReport[],
+  context: IProjectPharosContext | null,
+): IProjectMaterialDigest['pharos'] | undefined {
+  if (!context) return undefined;
+
+  const matchedAssetIds = new Set(
+    reports
+      .filter(report => report.pharosMatches.length > 0)
+      .map(report => report.assetId),
+  );
+  const matchedRefs = new Set(
+    reports
+      .flatMap(report => report.pharosMatches)
+      .map(match => `${match.ref.tripId}::${match.ref.shotId}`),
+  );
+
+  return {
+    status: context.status,
+    fallbackMode: context.status !== 'success',
+    discoveredTripCount: context.discoveredTripIds.length,
+    includedTripCount: context.trips.length,
+    matchedAssetCount: matchedAssetIds.size,
+    unmatchedAssetCount: Math.max(0, assets.length - matchedAssetIds.size),
+    pendingShotCount: context.shots.filter(shot =>
+      shot.status === 'pending'
+      && !matchedRefs.has(`${shot.ref.tripId}::${shot.ref.shotId}`),
+    ).length,
+    abandonedShotCount: context.shots.filter(shot => shot.status === 'abandoned').length,
+    warnings: context.warnings,
+    errors: context.errors,
+    trips: context.trips.map(trip => ({
+      tripId: trip.tripId,
+      title: trip.title,
+      tripKind: trip.tripKind,
+      revision: trip.revision,
+      dateStart: trip.dateStart,
+      dateEnd: trip.dateEnd,
+      mustCount: trip.mustCount,
+      optionalCount: trip.optionalCount,
+      pendingCount: trip.pendingCount,
+      abandonedCount: trip.abandonedCount,
+      matchedAssetCount: new Set(
+        reports
+          .filter(report => report.pharosMatches.some(match => match.ref.tripId === trip.tripId))
+          .map(report => report.assetId),
+      ).size,
+    })),
+  };
+}
+
+function buildDigestPharosPromptLines(
+  pharos: IProjectMaterialDigest['pharos'] | undefined,
+): string[] {
+  if (!pharos) {
+    return ['当前项目没有可用的 Pharos 规划上下文；请按 fallback 路径组织。'];
+  }
+
+  const lines = [
+    `状态: ${pharos.status}`,
+    `已发现 Trip: ${pharos.discoveredTripCount}`,
+    `已纳入 Trip: ${pharos.includedTripCount}`,
+    `已匹配素材: ${pharos.matchedAssetCount}`,
+    `未匹配素材: ${pharos.unmatchedAssetCount}`,
+    `待补镜头: ${pharos.pendingShotCount}`,
+    `已放弃镜头: ${pharos.abandonedShotCount}`,
+  ];
+
+  for (const trip of pharos.trips.slice(0, 6)) {
+    lines.push([
+      `- ${trip.title}`,
+      trip.dateStart && trip.dateEnd ? `${trip.dateStart} -> ${trip.dateEnd}` : '',
+      trip.revision != null ? `rev ${trip.revision}` : '',
+      `must ${trip.mustCount}`,
+      `pending ${trip.pendingCount}`,
+      `abandoned ${trip.abandonedCount}`,
+      `matched-assets ${trip.matchedAssetCount}`,
+    ].filter(Boolean).join(' | '));
+  }
+
+  if (pharos.errors.length > 0) {
+    lines.push(`错误: ${pharos.errors[0]}`);
+  } else if (pharos.warnings.length > 0) {
+    lines.push(`警告: ${pharos.warnings[0]}`);
+  }
+
+  return lines;
+}
+
+function buildPharosDigestSummarySentence(
+  pharos: NonNullable<IProjectMaterialDigest['pharos']>,
+): string | undefined {
+  if (pharos.status === 'empty') {
+    return '当前没有可用的 Pharos 规划镜头，脚本需要按 fallback 路径组织';
+  }
+  return `Pharos 当前纳入 ${pharos.includedTripCount} 个 trip，已匹配 ${pharos.matchedAssetCount} 条素材，仍有 ${pharos.pendingShotCount} 个 pending 镜头待补位`;
 }
 
 function inferTargetDurationMs(brief?: string): number | undefined {

@@ -150,6 +150,27 @@ function rankCandidatesForSegment(
       }
     }
 
+    if ((slice.pharosRefs?.length ?? 0) > 0) {
+      score += 0.6;
+      reasons.push(`pharos:linked-${slice.pharosRefs?.length ?? 0}`);
+    }
+    if ((report?.pharosMatches.length ?? 0) > 0) {
+      const pharosTokens = report?.pharosMatches.flatMap(match => [
+        ...tokenize(match.tripTitle ?? ''),
+        ...tokenize(match.dayTitle ?? ''),
+      ]) ?? [];
+      const segmentTokens = dedupeStrings([
+        ...segment.preferredPlaceHints,
+        ...tokenize(segment.intent),
+        ...tokenize(segment.title),
+      ]);
+      const pharosOverlap = overlapScore(pharosTokens, segmentTokens);
+      if (pharosOverlap > 0) {
+        score += pharosOverlap * 1.8;
+        reasons.push(`pharos-context:${pharosOverlap}`);
+      }
+    }
+
     if (segment.role === 'intro' && (preferredStartMs ?? 0) <= 60_000) {
       score += 0.75;
       reasons.push('role:intro-early-window');
@@ -181,6 +202,7 @@ function rankCandidatesForSegment(
       transcript: slice.transcript,
       labels: slice.labels,
       placeHints: slice.placeHints,
+      pharosRefs: slice.pharosRefs,
       sourceInMs: slice.sourceInMs,
       sourceOutMs: slice.sourceOutMs,
       editSourceInMs: slice.editSourceInMs,
@@ -212,6 +234,10 @@ function overlapScore(source: string[], target: string[]): number {
     if (targetSet.has(normalized)) count++;
   }
   return count;
+}
+
+function dedupeStrings(values: string[]): string[] {
+  return [...new Set(values.map(value => value.trim()).filter(Boolean))];
 }
 
 function mapSliceTypeToClipType(type: IKtepSlice['type']): ISegmentPlanSegment['preferredClipTypes'][number] {

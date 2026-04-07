@@ -22,7 +22,7 @@ export function WorkflowPrompt({
   );
 }
 
-export function ProjectBriefEditor({ config, setConfig, onSave, busy }) {
+export function ProjectBriefEditor({ config, pharosStatus, setConfig, onSave, busy }) {
   if (!config) return null;
   return (
     <Card className="panel">
@@ -52,6 +52,49 @@ export function ProjectBriefEditor({ config, setConfig, onSave, busy }) {
             createdAt: value,
           }))}
         />
+      </div>
+      <Divider />
+      <div className="row-card">
+        <div className="section-header">
+          <h3>Pharos 资产</h3>
+          <Tag>{pharosStatus?.status || 'empty'}</Tag>
+        </div>
+        <div className="field-grid field-grid-three">
+          <Field
+            label="固定目录"
+            value={pharosStatus?.rootPath || ''}
+            onChange={noop}
+            readOnly
+          />
+          <Field
+            label="发现 Trip"
+            value={String(pharosStatus?.discoveredTripCount || 0)}
+            onChange={noop}
+            readOnly
+          />
+          <Field
+            label="纳入 Trip"
+            value={String(pharosStatus?.includedTripCount || 0)}
+            onChange={noop}
+            readOnly
+          />
+        </div>
+        <TextAreaField
+          label="包含 Trip（每行一个，可留空表示全部纳入）"
+          value={(config.pharos?.includedTripIds || []).join('\n')}
+          onChange={value => setConfig(current => ({
+            ...current,
+            pharos: {
+              includedTripIds: splitLines(value),
+            },
+          }))}
+          rows={4}
+        />
+        {pharosStatus?.latestMessage ? (
+          <p className="muted">{pharosStatus.latestMessage}</p>
+        ) : (
+          <p className="muted">不再填写外部 Pharos 路径；把 trip 镜像放到项目内固定目录即可。</p>
+        )}
       </div>
       <Divider />
       <ListToolbar

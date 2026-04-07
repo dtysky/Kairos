@@ -19,6 +19,10 @@ import {
   saveStyleSourcesConfig,
   syncWorkspaceProjectBrief,
 } from '../store/index.js';
+import {
+  buildProjectPharosAssetStatus,
+  loadOrBuildProjectPharosContext,
+} from '../modules/pharos/context.js';
 import { getMlServiceStatus, startMlService, stopMlService } from './runtime.js';
 import {
   getSupervisorJobRoot,
@@ -165,10 +169,16 @@ async function routeRequest(
       loadManualItineraryConfig(projectRoot),
       loadScriptBriefConfig(projectRoot),
     ]);
+    const pharosContext = await loadOrBuildProjectPharosContext({
+      projectRoot,
+      includedTripIds: projectBrief.pharos?.includedTripIds ?? [],
+    });
     sendJson(response, 200, {
       projectBrief,
       manualItinerary,
       scriptBrief,
+      pharosStatus: buildProjectPharosAssetStatus(pharosContext, projectRoot),
+      pharosContext,
     });
     return;
   }
@@ -374,6 +384,10 @@ async function startJob(
       projectBrief: await loadProjectBriefConfig(projectRoot).catch(() => null),
       manualItinerary: await loadManualItineraryConfig(projectRoot).catch(() => null),
       scriptBrief: await loadScriptBriefConfig(projectRoot).catch(() => null),
+      pharosContext: await loadOrBuildProjectPharosContext({
+        projectRoot,
+        includedTripIds: (await loadProjectBriefConfig(projectRoot).catch(() => null))?.pharos?.includedTripIds ?? [],
+      }).catch(() => null),
       workspaceStyleSources: await loadStyleSourcesConfig(workspaceRoot).catch(() => null),
     }, null, 2));
   } else if (payload.jobType === 'style-analysis') {

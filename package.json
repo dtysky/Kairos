@@ -8,6 +8,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
+    "pharos:protocol:hash": "node scripts/pharos-protocol-hash.mjs",
     "test": "node --experimental-global-webcrypto ./node_modules/vitest/vitest.mjs run",
     "console:build": "npm --prefix apps/kairos-console run build",
     "supervisor:start": "node dist/supervisor/cli.js start",

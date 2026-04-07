@@ -121,6 +121,7 @@ export function placeClips(
           ...((useProtectionAudio || shouldMuteClipAudio(entry.asset, preferSourceSpeech)) && { muteAudio: true }),
           linkedScriptSegmentId: seg.id,
           linkedScriptBeatId: beat.id,
+          pharosRefs: entry.selection.pharosRefs,
           transform: entry.isPhoto ? {
             kenBurns: {
               startScale: 1.0, endScale: 1.15,
@@ -148,6 +149,7 @@ export function placeClips(
             timelineOutMs,
             linkedScriptSegmentId: seg.id,
             linkedScriptBeatId: beat.id,
+            pharosRefs: entry.selection.pharosRefs,
           });
         }
 
@@ -203,15 +205,16 @@ function resolveBeats(
   const fallbackSelections = resolveSelections(segment.selections ?? [], sliceMap);
   if (fallbackSelections.length === 0) return [];
 
-  return fallbackSelections.map(selection => ({
-    id: randomUUID(),
-    text: segment.narration ?? '',
-    targetDurationMs: segment.targetDurationMs,
-    actions: segment.actions,
-    selections: [selection],
-    linkedSliceIds: typeof selection.sliceId === 'string' ? [selection.sliceId] : [],
-    notes: segment.notes,
-  }));
+    return fallbackSelections.map(selection => ({
+      id: randomUUID(),
+      text: segment.narration ?? '',
+      targetDurationMs: segment.targetDurationMs,
+      actions: segment.actions,
+      selections: [selection],
+      linkedSliceIds: typeof selection.sliceId === 'string' ? [selection.sliceId] : [],
+      pharosRefs: selection.pharosRefs ?? segment.pharosRefs,
+      notes: segment.notes,
+    }));
 }
 
 function resolveSelections(

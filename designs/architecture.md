@@ -129,6 +129,8 @@ flowchart TD
 当前应按下面的关系理解系统：
 
 - `Pharos` 是正式主链的主输入之一
+- `Pharos` 当前通过项目内固定镜像目录接入：`projects/<projectId>/pharos/<trip_id>/`
+- `project-brief.md` 只承担可选 trip 筛选语义，不再配置外部 `Pharos` 目录路径
 - 主链消费的是项目当前采用的素材版本，它可以是原始素材，也可以是独立调色链路产出的版本
 - `DaVinci color` 可以独立运行、多次更新，并在需要时产出供主链消费的素材版本
 - 若主链消费的是派生素材版本，则该版本必须保留媒体创建时间、`create_time`、GPS 等关键元信息，避免破坏 chronology、Pharos 对齐与空间推断
@@ -220,7 +222,7 @@ src/modules/ingest/
 ├── proxy-generator.ts  # FFmpeg 代理文件生成（720p H.264）
 ├── gps-writer.ts       # 历史命名；当前语义是绑定素材空间线索，不回写原始照片 EXIF
 ├── scene-detector.ts   # CLIP 特征提取 + 聚类 + LLM 场景描述
-├── pharos-reader.ts    # Pharos 分镜数据读取（接口预留）
+├── pharos-reader.ts    # Pharos 项目内镜像读取与规范化
 └── index.ts            # Ingest 模块入口，编排扫描→元数据→代理→GPS→场景
 ```
 
@@ -233,6 +235,7 @@ src/modules/ingest/
   → 提取素材自身同源 GPS（DJI 视频 metadata / 照片 EXIF / sidecar SRT / root 级 FlightRecord 切片）
   → 照片若自身 EXIF 带 GPS，直接写资产 `embeddedGps(metadata)`；否则才继续做时间匹配
   → 把 dense same-source 轨迹规范化到 `gps/same-source/tracks/*.gpx` + `gps/same-source/index.json`
+  → 扫描 `project/pharos/<trip_id>/plan.json + record.json? + gpx/` 并生成共享 `pharos-context`
   → 资产只写 lightweight `embeddedGps` 引用（`trackId / pointCount / representative / time-window`），不再内联 dense `points[]`
   → ingest 刷新项目级 `gps/derived.json`，统一收口 embedded-derived sparse points 与 `manual-itinerary` 编译结果
   → 若弱时间源与项目时间线明显冲突，把待校正素材追加到 `config/manual-itinerary.md` 的“素材时间校正”表格，并阻塞后续 Analyze
@@ -246,6 +249,11 @@ src/modules/ingest/
 
 - Ingest 读取的是项目当前采用的素材版本，而不是强制要求原始素材始终在线
 - 如果输入来自独立调色/转换链路，该链路需要先保证关键元信息被保留下来
+- `Pharos` 相关的正式消费顺序为：
+  - 项目内 `pharos/<trip_id>/` 镜像作为输入仓
+  - `plan.json` 必需，`record.json` 与 `gpx/` 可缺失
+  - 解析状态由 Supervisor / Console 显示为 `空 / 解析成功 / 解析失败`
+  - Analyze 的空间优先级为 `embedded > GPX(含 project/pharos/<trip_id>/gpx/*.gpx) > Pharos GPS > project-derived-track`
 
 #### 2.2 Color — 调色辅助
 

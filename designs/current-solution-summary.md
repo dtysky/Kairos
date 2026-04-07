@@ -15,6 +15,7 @@ Kairos 当前需要区分两层：
 - 一个以 `KTEP` 为核心协议的后期编排系统
 - 一个以 `projects/<projectId>/` 为中心的项目化存储体系
 - 一条以 `Pharos -> ingest -> analyze -> script -> timeline -> export` 为骨架的正式主流程
+- `Pharos` 输入当前固定镜像到项目内 `pharos/<trip_id>/plan.json + record.json? + gpx/`
 - 一条与主链解耦的 `DaVinci color` 独立增强链路
 - 一组运行在 Agent 环境中的工作流技能，以及面向不同 NLE / 导出目标的适配层
 
@@ -82,6 +83,8 @@ flowchart TD
 这里的正式关系是：
 
 - `Pharos` 是正式流程的主输入之一，主要驱动脚本规划、拍摄语义和素材对齐
+- `Pharos` 当前不再通过用户填写外部路径接入；每个项目固定扫描 `projects/<projectId>/pharos/`
+- `project-brief.md` 中的 `## Pharos` 当前只承担 trip 筛选语义；未填写时默认纳入全部可解析 trip，填写 `包含 Trip：...` 时只消费这些 trip
 - `AdoptedMediaVersion` 表示项目当前采用的素材版本，它可以是原始素材，也可以是独立调色链路产出的版本
 - `DaVinciColorChain` 是独立链路，不属于主链中的固定顺序步骤
 - 如果项目没有 `Pharos`，主链允许退化为基于素材、brief、行程和分析结果的兼容路径，但这属于 fallback，而不是正式主定义
@@ -250,6 +253,7 @@ flowchart TD
 - `analysis/`：资产分析报告，以及 Analyze 的 durable resume cache（如 `prepared-assets/`、`audio-checkpoints/`）
 - `script/`、`timeline/`、`subtitles/`、`adapters/`：脚本、时间线与适配器状态
 - `gps/`：项目级外部轨迹资源与归一化缓存
+- `pharos/`：项目内固定 `Pharos` 镜像目录，按 `trip_id` 分子目录；解析后的共享快照写入 `analysis/pharos-context.json`
 - `.tmp/`：流水线临时产物、进度、代理音频、关键帧等可清理内容
 
 另外还有一组 **Workspace 级共享资产**，不属于单个项目目录：

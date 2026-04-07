@@ -15,6 +15,10 @@ Kairos currently runs as a `Node.js core + Agent skills` workflow around a forma
 Current stable pipeline:
 
 - `Pharos -> ingest -> analyze -> script -> timeline -> export`
+- `Pharos` 的正式输入位置已收口到项目内固定目录 `projects/<projectId>/pharos/<trip_id>/`
+  - 每个 trip 子目录当前消费 `plan.json`，可选消费 `record.json` 与 `gpx/*.gpx`
+  - `project-brief.md` 只允许通过 `## Pharos` / `包含 Trip：...` 做可选 trip 筛选，不再填写外部 `Pharos` 路径
+  - Console 会把 `Pharos` 状态显示为 `空 / 解析成功 / 解析失败`，缺失 `Pharos` 时主链继续走 fallback
 - official local runtime / monitor entry is `Supervisor + React console (apps/kairos-console/)`
   - `http://127.0.0.1:8940/analyze` is the official Analyze monitor route
   - `http://127.0.0.1:8940/style` is the official workspace-level Style monitor route

@@ -19,6 +19,7 @@ export interface IOutlineSliceContext {
   transcript?: string;
   labels: string[];
   placeHints: string[];
+  pharosRefs?: IKtepSlice['pharosRefs'];
   sourceInMs?: number;
   sourceOutMs?: number;
   editSourceInMs?: number;
@@ -127,6 +128,7 @@ export function buildOutlineFromApprovedPlan(
       transcript: candidate.transcript,
       labels: takeUnique(candidate.labels, 4),
       placeHints: takeUnique(candidate.placeHints, 3),
+      pharosRefs: candidate.pharosRefs,
       sourceInMs: candidate.sourceInMs,
       sourceOutMs: candidate.sourceOutMs,
       editSourceInMs: candidate.editSourceInMs,
@@ -581,6 +583,7 @@ function buildSelectionFromContext(context: IOutlineSliceContext): IKtepScriptSe
     sliceId: context.sliceId,
     sourceInMs: getContextStartMs(context),
     sourceOutMs: getContextEndMs(context),
+    pharosRefs: context.pharosRefs,
   };
 }
 

@@ -29,6 +29,12 @@ If the task changes requirements, behavior, interfaces, workflow, monitoring, or
 3. implement the change
 4. review and sync impacted docs, rules, and skills before finishing
 
+If the task touches `Pharos`, first follow [`.ai/rules/pharos-protocol-sync.mdc`](./.ai/rules/pharos-protocol-sync.mdc):
+
+1. run `node scripts/pharos-protocol-hash.mjs`
+2. compare against `.ai/pharos-protocol-baseline.json`
+3. if hash changed, re-read `../Pharos/designs/` before planning or implementing
+
 ## Official Runtime Entry
 
 The current official local runtime and monitor path is:
@@ -60,6 +66,7 @@ Read every file in [`.ai/rules/`](./.ai/rules/). Current repository rules are:
 - [`.ai/rules/draft-target-verification.mdc`](./.ai/rules/draft-target-verification.mdc) — verify the exact existing draft / project target before modifying it
 - [`.ai/rules/export-path-safety.mdc`](./.ai/rules/export-path-safety.mdc) — never overwrite or clear an existing export target
 - [`.ai/rules/master-workflow-user-guidance.mdc`](./.ai/rules/master-workflow-user-guidance.mdc) — explain Kairos as one workflow and route users through the correct phase
+- [`.ai/rules/pharos-protocol-sync.mdc`](./.ai/rules/pharos-protocol-sync.mdc) — any Pharos-related work must start with sibling protocol hash verification
 - [`.ai/rules/script-skill-enforcement.mdc`](./.ai/rules/script-skill-enforcement.mdc) — always read and use `kairos-script` before script-generation work
 - [`.ai/rules/windows-shell-environment.mdc`](./.ai/rules/windows-shell-environment.mdc) — on Windows, prefer native PowerShell unless the user explicitly wants WSL or a Linux-only step is required
 
@@ -104,3 +111,4 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - `analysis/reference-transcripts/`
   - `analysis/style-references/`
 - When in doubt about phase routing, start from [`.ai/skills/kairos-workflow/SKILL.md`](./.ai/skills/kairos-workflow/SKILL.md) and then move to the concrete phase skill.
+- When the task touches `Pharos`, treat `../Pharos/designs` as the upstream protocol source of truth and verify its current combined hash before relying on memory.

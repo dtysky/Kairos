@@ -1,0 +1,27 @@
+{
+  "sourceRoot": "../Pharos/designs",
+  "generatedAt": "2026-04-07T11:03:18.192Z",
+  "combinedSha256": "f6f9f80b96a41b7d45023c30a8505a2d9063f6cb5e31b0efed38a043f3a7fcba",
+  "files": [
+    {
+      "path": "overview.md",
+      "sha256": "9d188f7eef1dd23f32a7d12a26a286a050005504d249dfa3a798adf2b529c4dc"
+    },
+    {
+      "path": "protocol.md",
+      "sha256": "6e3c196011a3c8b0058d067e1b320d9e17560ee1721d2074b49277c59c521f27"
+    },
+    {
+      "path": "pyxis-architecture.md",
+      "sha256": "58575a578e1e8eef9238b0be958aed3c91097bb711f71a87853b286352d53368"
+    },
+    {
+      "path": "pyxis-voice-ble.md",
+      "sha256": "83fed32d5f4d75df62453d56664629f14b140d3145ab4550626f81113a69c94c"
+    },
+    {
+      "path": "requirements.md",
+      "sha256": "4147b48fad8abc9e62ec557cb384e37742a5a74db062d274feebb0711a17d09e"
+    }
+  ]
+}

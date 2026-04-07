@@ -6,6 +6,8 @@ import type {
   EClipType,
   EFineScanMode,
   ITranscriptSegment,
+  IPharosMatch,
+  IPharosRef,
 } from '../../protocol/schema.js';
 import type { IKeyframeResult } from './keyframe.js';
 
@@ -20,6 +22,11 @@ export interface IBuildAssetCoarseReportInput {
   transcriptSegments?: ITranscriptSegment[];
   speechCoverage?: number;
   protectedAudio?: IAssetCoarseReport['protectedAudio'];
+  pharosMatches?: IPharosMatch[];
+  primaryPharosRef?: IPharosRef;
+  pharosMatchConfidence?: number;
+  pharosStatus?: IAssetCoarseReport['pharosStatus'];
+  pharosDayTitle?: string;
   labels?: string[];
   placeHints?: string[];
   rootNotes?: string[];
@@ -48,6 +55,11 @@ export function buildAssetCoarseReport(
     transcriptSegments: input.transcriptSegments?.filter(segment => segment.text.trim().length > 0),
     speechCoverage: input.speechCoverage,
     protectedAudio: input.protectedAudio,
+    pharosMatches: input.pharosMatches ?? [],
+    primaryPharosRef: input.primaryPharosRef,
+    pharosMatchConfidence: input.pharosMatchConfidence,
+    pharosStatus: input.pharosStatus,
+    pharosDayTitle: input.pharosDayTitle,
     labels: dedupe(input.labels ?? []),
     placeHints: dedupe(input.placeHints ?? []),
     rootNotes: dedupe(input.rootNotes ?? []),

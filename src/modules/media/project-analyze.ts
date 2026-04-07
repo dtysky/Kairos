@@ -35,6 +35,7 @@ import {
   resolveWorkspaceProjectRoot,
   getProjectProgressPath,
   loadFineScanCheckpoint,
+  loadProjectBriefConfig,
   touchProjectUpdatedAt,
   writeKairosProgress,
   writeChronology,
@@ -86,6 +87,8 @@ import { sliceInterestingWindows, slicePhoto, sliceVideo } from './slicer.js';
 import { resolveProjectGpxPaths } from './project-gps.js';
 import { resolveAssetSpatialContext } from './spatial-resolver.js';
 import type { IManualSpatialContext } from './manual-spatial.js';
+import { loadOrBuildProjectPharosContext, pharosRefsFromMatches } from '../pharos/context.js';
+import { matchAssetToPharos } from '../pharos/matcher.js';
 import {
   hasMeaningfulSpeech,
   normalizeTranscriptContext,
@@ -173,7 +176,7 @@ export async function analyzeWorkspaceProjectMedia(
     })
     : undefined;
   const performanceProfilePath = performance?.resolveOutputPath(input.performanceProfile?.outputPath);
-  const [{ roots }, deviceMaps, runtimeConfig, assets, existingReports, existingSlices, project, derivedTrack] = await Promise.all([
+  const [{ roots }, deviceMaps, runtimeConfig, assets, existingReports, existingSlices, project, derivedTrack, projectBrief] = await Promise.all([
     loadIngestRoots(projectRoot),
     loadProjectDeviceMediaMaps(projectRoot, input.deviceMapPath),
     loadRuntimeConfig(projectRoot),
@@ -182,10 +185,16 @@ export async function analyzeWorkspaceProjectMedia(
     loadSlices(projectRoot),
     loadProject(projectRoot),
     loadProjectDerivedTrack(projectRoot),
+    loadProjectBriefConfig(projectRoot),
   ]);
+  const pharosContext = await loadOrBuildProjectPharosContext({
+    projectRoot,
+    includedTripIds: projectBrief.pharos?.includedTripIds ?? [],
+  });
   const gpxPaths = await resolveProjectGpxPaths({
     projectRoot,
     gpxPaths: input.gpxPaths,
+    pharosGpxPaths: pharosContext.gpxFiles.map(file => file.path),
   });
 
   const requestedScope = input.assetIds?.length
@@ -399,6 +408,7 @@ export async function analyzeWorkspaceProjectMedia(
           roots,
           deviceMaps,
           derivedTrack,
+          pharosContext,
           gpxPaths,
           gpxMatchToleranceMs: input.gpxMatchToleranceMs,
           budget: input.budget,
@@ -1169,6 +1179,7 @@ interface IFinalizePreparedAssetInput {
   roots: IMediaRoot[];
   deviceMaps: IDeviceMediaMapFile;
   derivedTrack?: IProjectDerivedTrack | null;
+  pharosContext?: Awaited<ReturnType<typeof loadOrBuildProjectPharosContext>> | null;
   gpxPaths?: string[];
   gpxMatchToleranceMs?: number;
   budget?: ETargetBudget;
@@ -1588,6 +1599,7 @@ async function finalizePreparedAsset(
     root,
     gpxPaths: input.gpxPaths,
     gpxMatchToleranceMs: input.gpxMatchToleranceMs,
+    pharosContext: input.pharosContext,
     derivedTrack: input.derivedTrack,
   });
   await input.onStageChange?.('finalize', describeFinalizeStage(
@@ -1633,6 +1645,32 @@ async function finalizePreparedAsset(
     });
   }
 
+  const labels = dedupeStrings([
+    ...buildReportLabels(
+      planning.decision.clipType,
+      planning.visualSummary?.sceneType,
+      planning.visualSummary?.subjects,
+      audioContext.selectedTranscript,
+    ),
+    ...(audioContext.hasAvailableProtectionAudio ? ['protection-audio-available'] : []),
+    ...(audioContext.selectedTranscriptSource === 'protection' ? ['protection-audio-fallback'] : []),
+  ]);
+  const placeHints = dedupeStrings([
+    ...(planning.visualSummary?.placeHints ?? []),
+    ...(manualSpatial?.placeHints ?? []),
+  ]);
+  const pharosMatches = matchAssetToPharos({
+    asset: input.prepared.asset,
+    context: input.pharosContext ?? null,
+    report: {
+      clipTypeGuess: planning.decision.clipType,
+      summary: planning.visualSummary?.description,
+      placeHints,
+      labels,
+      inferredGps: manualSpatial?.inferredGps,
+    },
+  });
+
   const report = buildAssetCoarseReport({
     asset: prepared.asset,
     plan: planning.finalPlan,
@@ -1644,20 +1682,13 @@ async function finalizePreparedAsset(
     transcriptSegments: audioContext.selectedTranscript?.segments,
     speechCoverage: audioContext.selectedTranscript?.speechCoverage,
     protectedAudio: audioContext.protectedAudio,
-    labels: dedupeStrings([
-      ...buildReportLabels(
-        planning.decision.clipType,
-        planning.visualSummary?.sceneType,
-        planning.visualSummary?.subjects,
-        audioContext.selectedTranscript,
-      ),
-      ...(audioContext.hasAvailableProtectionAudio ? ['protection-audio-available'] : []),
-      ...(audioContext.selectedTranscriptSource === 'protection' ? ['protection-audio-fallback'] : []),
-    ]),
-    placeHints: dedupeStrings([
-      ...(planning.visualSummary?.placeHints ?? []),
-      ...(manualSpatial?.placeHints ?? []),
-    ]),
+    pharosMatches,
+    primaryPharosRef: pharosMatches[0]?.ref,
+    pharosMatchConfidence: pharosMatches[0]?.confidence,
+    pharosStatus: pharosMatches[0]?.status,
+    pharosDayTitle: pharosMatches[0]?.dayTitle,
+    labels,
+    placeHints,
     rootNotes: root?.notes ?? [],
     sampleFrames: prepared.sampleFrames,
     fineScanReasons: buildFineScanReasons(
@@ -1684,6 +1715,7 @@ async function resolveManualSpatialContext(input: {
   root?: IMediaRoot;
   gpxPaths?: string[];
   gpxMatchToleranceMs?: number;
+  pharosContext?: Awaited<ReturnType<typeof loadOrBuildProjectPharosContext>> | null;
   derivedTrack?: IProjectDerivedTrack | null;
 }): Promise<IManualSpatialContext | null> {
   return resolveAssetSpatialContext({
@@ -1691,6 +1723,7 @@ async function resolveManualSpatialContext(input: {
     root: input.root,
     gpxPaths: input.gpxPaths,
     gpxMatchToleranceMs: input.gpxMatchToleranceMs,
+    pharosContext: input.pharosContext,
     derivedTrack: input.derivedTrack,
   });
 }
@@ -3032,6 +3065,7 @@ async function finalizePhotoPreparedAsset(
     root,
     gpxPaths: input.gpxPaths,
     gpxMatchToleranceMs: input.gpxMatchToleranceMs,
+    pharosContext: input.pharosContext,
     derivedTrack: input.derivedTrack,
   });
   const plan = buildAnalysisPlan({
@@ -3043,6 +3077,27 @@ async function finalizePhotoPreparedAsset(
     budget: input.budget,
   });
 
+  const labels = buildReportLabels(
+    clipTypeGuess,
+    visualSummary?.sceneType,
+    visualSummary?.subjects,
+  );
+  const placeHints = dedupeStrings([
+    ...(visualSummary?.placeHints ?? []),
+    ...(manualSpatial?.placeHints ?? []),
+  ]);
+  const pharosMatches = matchAssetToPharos({
+    asset: input.prepared.asset,
+    context: input.pharosContext ?? null,
+    report: {
+      clipTypeGuess,
+      summary: visualSummary?.description,
+      placeHints,
+      labels,
+      inferredGps: manualSpatial?.inferredGps,
+    },
+  });
+
   const report = buildAssetCoarseReport({
     asset: input.prepared.asset,
     plan,
@@ -3050,15 +3105,13 @@ async function finalizePhotoPreparedAsset(
     gpsSummary: manualSpatial?.gpsSummary,
     inferredGps: manualSpatial?.inferredGps,
     summary: visualSummary?.description,
-    labels: buildReportLabels(
-      clipTypeGuess,
-      visualSummary?.sceneType,
-      visualSummary?.subjects,
-    ),
-    placeHints: dedupeStrings([
-      ...(visualSummary?.placeHints ?? []),
-      ...(manualSpatial?.placeHints ?? []),
-    ]),
+    pharosMatches,
+    primaryPharosRef: pharosMatches[0]?.ref,
+    pharosMatchConfidence: pharosMatches[0]?.confidence,
+    pharosStatus: pharosMatches[0]?.status,
+    pharosDayTitle: pharosMatches[0]?.dayTitle,
+    labels,
+    placeHints,
     rootNotes: root?.notes ?? [],
     sampleFrames: input.prepared.sampleFrames,
     shouldFineScan: true,
@@ -3301,6 +3354,7 @@ function buildFineScanSlicesFallback(
       summary: withTranscript.summary ?? report.summary ?? withTranscript.transcript,
       labels: dedupeStrings([...withTranscript.labels, ...report.labels]),
       placeHints: dedupeStrings([...withTranscript.placeHints, ...report.placeHints]),
+      pharosRefs: pharosRefsFromMatches(report.pharosMatches),
     };
   });
 }
@@ -3899,6 +3953,7 @@ async function buildFineScanSlices(
           summary: withTranscript.summary ?? input.report.summary ?? withTranscript.transcript,
           labels: dedupeStrings([...withTranscript.labels, ...input.report.labels]),
           placeHints: dedupeStrings([...withTranscript.placeHints, ...input.report.placeHints]),
+          pharosRefs: pharosRefsFromMatches(input.report.pharosMatches),
         };
       }),
       droppedInvalidSliceCount: 0,
@@ -3964,6 +4019,7 @@ async function buildFineScanSlices(
         ...input.report.placeHints,
         ...(recognition?.recognition.placeHints ?? []),
       ]),
+      pharosRefs: pharosRefsFromMatches(input.report.pharosMatches),
     });
   }
 
@@ -4064,6 +4120,7 @@ async function recognizeFineScanTask(input: {
     slice.summary = input.task.analysis.report.summary;
     slice.labels = input.task.analysis.report.labels;
     slice.placeHints = input.task.analysis.report.placeHints;
+    slice.pharosRefs = pharosRefsFromMatches(input.task.analysis.report.pharosMatches);
     slices = [slice];
   } else if (input.task.analysis.prepared.asset.kind === 'audio') {
     slices = [];

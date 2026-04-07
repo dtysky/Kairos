@@ -12,11 +12,16 @@ export interface IProjectBriefPathMapping {
   flightRecordPath?: string;
 }
 
+export interface IProjectBriefPharosConfig {
+  includedTripIds: string[];
+}
+
 export interface IParsedProjectBrief {
   name?: string;
   description?: string;
   createdAt?: string;
   mappings: IProjectBriefPathMapping[];
+  pharos?: IProjectBriefPharosConfig;
   warnings: string[];
 }
 
@@ -41,6 +46,10 @@ export function buildProjectBriefTemplate(
     '路径：',
     '说明：',
     '',
+    '## Pharos',
+    '',
+    '包含 Trip：',
+    '',
   ].join('\n');
 }
 
@@ -53,13 +62,16 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
   let createdAt: string | undefined;
 
   const mappings: IProjectBriefPathMapping[] = [];
+  const includedTripIds: string[] = [];
   let inMappings = false;
+  let inPharos = false;
   let pendingPath: string | null = null;
   let pendingDescription: string | null = null;
   let pendingFlightRecordPath: string | null = null;
   let expectPathValue = false;
   let expectDescriptionValue = false;
   let expectFlightRecordPathValue = false;
+  let expectIncludedTripValue = false;
 
   for (const rawLine of lines) {
     const line = rawLine.trim();
@@ -82,12 +94,70 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
 
     if (line === '## 路径映射') {
       inMappings = true;
+      inPharos = false;
+      expectIncludedTripValue = false;
+      continue;
+    }
+
+    if (line === '## Pharos') {
+      pushPendingMapping(
+        mappings,
+        warnings,
+        pendingPath,
+        pendingDescription,
+        pendingFlightRecordPath,
+      );
+      pendingPath = null;
+      pendingDescription = null;
+      pendingFlightRecordPath = null;
+      inMappings = false;
+      inPharos = true;
+      expectPathValue = false;
+      expectDescriptionValue = false;
+      expectFlightRecordPathValue = false;
+      continue;
+    }
+
+    if (line.startsWith('## ')) {
+      pushPendingMapping(
+        mappings,
+        warnings,
+        pendingPath,
+        pendingDescription,
+        pendingFlightRecordPath,
+      );
+      pendingPath = null;
+      pendingDescription = null;
+      pendingFlightRecordPath = null;
+      inMappings = false;
+      inPharos = false;
+      expectPathValue = false;
+      expectDescriptionValue = false;
+      expectFlightRecordPathValue = false;
+      expectIncludedTripValue = false;
+      continue;
+    }
+
+    if (inPharos) {
+      if (line.startsWith('包含 Trip：')) {
+        const value = line.slice('包含 Trip：'.length).trim();
+        if (value) {
+          pushIncludedTripId(includedTripIds, value);
+          expectIncludedTripValue = false;
+        } else {
+          expectIncludedTripValue = true;
+        }
+        continue;
+      }
+
+      if (expectIncludedTripValue) {
+        pushIncludedTripId(includedTripIds, line);
+        expectIncludedTripValue = false;
+      }
       continue;
     }
 
     if (!inMappings) continue;
-
-    if (line.startsWith('## ')) break;
 
     if (line.startsWith('路径：')) {
       pushPendingMapping(
@@ -166,12 +236,21 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
   for (const path of duplicatePaths) {
     warnings.push(`路径映射中存在重复路径：${path}`);
   }
+  const duplicateTripIds = findDuplicateItems(includedTripIds);
+  for (const tripId of duplicateTripIds) {
+    warnings.push(`Pharos Trip 筛选中存在重复 Trip：${tripId}`);
+  }
 
   return {
     name,
     description,
     createdAt,
     mappings,
+    pharos: includedTripIds.length > 0
+      ? {
+        includedTripIds,
+      }
+      : undefined,
     warnings,
   };
 }
@@ -230,6 +309,24 @@ function findDuplicatePaths(
       const key = path.trim().toLowerCase();
       return (counts.get(key) ?? 0) > 1 && all.findIndex(item => item.trim().toLowerCase() === key) === index;
     });
+}
+
+function pushIncludedTripId(out: string[], value: string): void {
+  const trimmed = value.trim();
+  if (!trimmed) return;
+  out.push(trimmed);
+}
+
+function findDuplicateItems(items: string[]): string[] {
+  const counts = new Map<string, number>();
+  for (const item of items) {
+    const key = item.trim().toLowerCase();
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return items.filter((item, index, all) => {
+    const key = item.trim().toLowerCase();
+    return (counts.get(key) ?? 0) > 1 && all.findIndex(value => value.trim().toLowerCase() === key) === index;
+  });
 }
 
 function resolveProjectBriefPath(path: string, basePath?: string): string {

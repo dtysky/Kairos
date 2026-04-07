@@ -124,6 +124,33 @@ export const IKtepEvidence = z.object({
 });
 export type IKtepEvidence = z.infer<typeof IKtepEvidence>;
 
+export const IPharosRef = z.object({
+  tripId: z.string(),
+  shotId: z.string(),
+});
+export type IPharosRef = z.infer<typeof IPharosRef>;
+
+export const EPharosAssetState = z.enum(['empty', 'success', 'failure']);
+export type EPharosAssetState = z.infer<typeof EPharosAssetState>;
+
+export const EPharosShotMatchStatus = z.enum([
+  'pending',
+  'expected',
+  'unexpected',
+  'abandoned',
+]);
+export type EPharosShotMatchStatus = z.infer<typeof EPharosShotMatchStatus>;
+
+export const IPharosMatch = z.object({
+  ref: IPharosRef,
+  confidence: z.number().min(0).max(1),
+  status: EPharosShotMatchStatus.optional(),
+  tripTitle: z.string().optional(),
+  dayTitle: z.string().optional(),
+  matchReasons: z.array(z.string()).default([]),
+});
+export type IPharosMatch = z.infer<typeof IPharosMatch>;
+
 export const ITranscriptSegment = z.object({
   startMs: z.number().nonnegative(),
   endMs: z.number().nonnegative(),
@@ -176,7 +203,7 @@ export const IProtectionAudioBinding = z.object({
 export type IProtectionAudioBinding = z.infer<typeof IProtectionAudioBinding>;
 
 export const IInferredGps = z.object({
-  source: z.enum(['embedded', 'gpx', 'derived-track']),
+  source: z.enum(['embedded', 'gpx', 'pharos', 'derived-track']),
   confidence: z.number().min(0).max(1),
   lat: z.number().min(-90).max(90),
   lng: z.number().min(-180).max(180),
@@ -227,6 +254,7 @@ export const IKtepSlice = z.object({
   labels: z.array(z.string()),
   placeHints: z.array(z.string()),
   evidence: z.array(IKtepEvidence).optional(),
+  pharosRefs: z.array(IPharosRef).optional(),
   speechCoverage: z.number().min(0).max(1).optional(),
   confidence: z.number().min(0).max(1).optional(),
   speedCandidate: z.object({
@@ -252,6 +280,7 @@ export const IKtepScriptSelection = z.object({
   sourceInMs: z.number().optional(),
   sourceOutMs: z.number().optional(),
   notes: z.string().optional(),
+  pharosRefs: z.array(IPharosRef).optional(),
 });
 export type IKtepScriptSelection = z.infer<typeof IKtepScriptSelection>;
 
@@ -270,6 +299,7 @@ export const IKtepScriptBeat = z.object({
   actions: IKtepScriptAction.optional(),
   selections: z.array(IKtepScriptSelection),
   linkedSliceIds: z.array(z.string()),
+  pharosRefs: z.array(IPharosRef).optional(),
   notes: z.string().optional(),
 });
 export type IKtepScriptBeat = z.infer<typeof IKtepScriptBeat>;
@@ -283,6 +313,7 @@ export const IKtepScript = z.object({
   actions: IKtepScriptAction.optional(),
   selections: z.array(IKtepScriptSelection).optional(),
   linkedSliceIds: z.array(z.string()),
+  pharosRefs: z.array(IPharosRef).optional(),
   beats: z.array(IKtepScriptBeat).default([]),
   notes: z.string().optional(),
 });
@@ -337,6 +368,7 @@ export const IKtepClip = z.object({
   transform: IKtepTransform.optional(),
   linkedScriptSegmentId: z.string().optional(),
   linkedScriptBeatId: z.string().optional(),
+  pharosRefs: z.array(IPharosRef).optional(),
 });
 export type IKtepClip = z.infer<typeof IKtepClip>;
 
@@ -529,6 +561,11 @@ export const IAssetCoarseReport = z.object({
   transcriptSegments: z.array(ITranscriptSegment).optional(),
   speechCoverage: z.number().min(0).max(1).optional(),
   protectedAudio: IProtectedAudioAssessment.optional(),
+  pharosMatches: z.array(IPharosMatch).default([]),
+  primaryPharosRef: IPharosRef.optional(),
+  pharosMatchConfidence: z.number().min(0).max(1).optional(),
+  pharosStatus: EPharosShotMatchStatus.optional(),
+  pharosDayTitle: z.string().optional(),
   labels: z.array(z.string()),
   placeHints: z.array(z.string()),
   rootNotes: z.array(z.string()),
@@ -566,6 +603,10 @@ export const IMediaChronology = z.object({
   labels: z.array(z.string()),
   placeHints: z.array(z.string()),
   evidence: z.array(IKtepEvidence),
+  pharosMatches: z.array(IPharosMatch).default([]),
+  primaryPharosRef: IPharosRef.optional(),
+  pharosStatus: EPharosShotMatchStatus.optional(),
+  pharosDayTitle: z.string().optional(),
   correction: IChronologyCorrection.optional(),
 });
 export type IMediaChronology = z.infer<typeof IMediaChronology>;
@@ -589,6 +630,36 @@ export const IProjectMaterialDigestRoot = z.object({
 });
 export type IProjectMaterialDigestRoot = z.infer<typeof IProjectMaterialDigestRoot>;
 
+export const IProjectMaterialDigestPharosTrip = z.object({
+  tripId: z.string(),
+  title: z.string(),
+  tripKind: z.enum(['planned', 'freeform']).optional(),
+  revision: z.number().int().nonnegative().optional(),
+  dateStart: z.string().optional(),
+  dateEnd: z.string().optional(),
+  mustCount: z.number().int().nonnegative().default(0),
+  optionalCount: z.number().int().nonnegative().default(0),
+  pendingCount: z.number().int().nonnegative().default(0),
+  abandonedCount: z.number().int().nonnegative().default(0),
+  matchedAssetCount: z.number().int().nonnegative().default(0),
+});
+export type IProjectMaterialDigestPharosTrip = z.infer<typeof IProjectMaterialDigestPharosTrip>;
+
+export const IProjectMaterialDigestPharos = z.object({
+  status: EPharosAssetState,
+  fallbackMode: z.boolean().default(true),
+  discoveredTripCount: z.number().int().nonnegative().default(0),
+  includedTripCount: z.number().int().nonnegative().default(0),
+  matchedAssetCount: z.number().int().nonnegative().default(0),
+  unmatchedAssetCount: z.number().int().nonnegative().default(0),
+  pendingShotCount: z.number().int().nonnegative().default(0),
+  abandonedShotCount: z.number().int().nonnegative().default(0),
+  warnings: z.array(z.string()).default([]),
+  errors: z.array(z.string()).default([]),
+  trips: z.array(IProjectMaterialDigestPharosTrip).default([]),
+});
+export type IProjectMaterialDigestPharos = z.infer<typeof IProjectMaterialDigestPharos>;
+
 export const IProjectMaterialDigest = z.object({
   id: z.string(),
   projectId: z.string(),
@@ -604,6 +675,7 @@ export const IProjectMaterialDigest = z.object({
   clipTypeDistribution: z.record(z.number().int().nonnegative()),
   mainThemes: z.array(z.string()),
   recommendedNarrativeAxes: z.array(z.string()),
+  pharos: IProjectMaterialDigestPharos.optional(),
   summary: z.string(),
 });
 export type IProjectMaterialDigest = z.infer<typeof IProjectMaterialDigest>;
@@ -658,6 +730,7 @@ export const ISegmentRecallCandidate = z.object({
   transcript: z.string().optional(),
   labels: z.array(z.string()),
   placeHints: z.array(z.string()),
+  pharosRefs: z.array(IPharosRef).optional(),
   sourceInMs: z.number().optional(),
   sourceOutMs: z.number().optional(),
   editSourceInMs: z.number().optional(),
@@ -698,13 +771,94 @@ export const IProjectBriefMappingConfig = z.object({
 });
 export type IProjectBriefMappingConfig = z.infer<typeof IProjectBriefMappingConfig>;
 
+export const IProjectBriefPharosConfig = z.object({
+  includedTripIds: z.array(z.string()).default([]),
+});
+export type IProjectBriefPharosConfig = z.infer<typeof IProjectBriefPharosConfig>;
+
 export const IProjectBriefConfig = z.object({
   name: z.string(),
   description: z.string().optional(),
   createdAt: z.string().optional(),
   mappings: z.array(IProjectBriefMappingConfig),
+  pharos: IProjectBriefPharosConfig.optional(),
 });
 export type IProjectBriefConfig = z.infer<typeof IProjectBriefConfig>;
+
+export const IProjectPharosGpxSummary = z.object({
+  tripId: z.string(),
+  path: z.string(),
+  pointCount: z.number().int().nonnegative().optional(),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
+});
+export type IProjectPharosGpxSummary = z.infer<typeof IProjectPharosGpxSummary>;
+
+export const IProjectPharosTripSummary = z.object({
+  tripId: z.string(),
+  title: z.string(),
+  tripKind: z.enum(['planned', 'freeform']).optional(),
+  revision: z.number().int().nonnegative().optional(),
+  timezone: z.string().optional(),
+  dateStart: z.string().optional(),
+  dateEnd: z.string().optional(),
+  mustCount: z.number().int().nonnegative().default(0),
+  optionalCount: z.number().int().nonnegative().default(0),
+  pendingCount: z.number().int().nonnegative().default(0),
+  expectedCount: z.number().int().nonnegative().default(0),
+  unexpectedCount: z.number().int().nonnegative().default(0),
+  abandonedCount: z.number().int().nonnegative().default(0),
+  gpxCount: z.number().int().nonnegative().default(0),
+  warnings: z.array(z.string()).default([]),
+});
+export type IProjectPharosTripSummary = z.infer<typeof IProjectPharosTripSummary>;
+
+export const IProjectPharosShot = z.object({
+  ref: IPharosRef,
+  tripTitle: z.string().optional(),
+  tripKind: z.enum(['planned', 'freeform']).optional(),
+  day: z.number().int().positive().optional(),
+  date: z.string().optional(),
+  dayTitle: z.string().optional(),
+  location: z.string(),
+  description: z.string(),
+  type: z.string(),
+  priority: z.enum(['must', 'optional']).optional(),
+  source: z.string().optional(),
+  device: z.string().optional(),
+  roll: z.string().optional(),
+  devices: z.array(z.string()).default([]),
+  rolls: z.array(z.string()).default([]),
+  gps: z.tuple([z.number(), z.number()]).optional(),
+  gpsStart: z.tuple([z.number(), z.number()]).optional(),
+  gpsEnd: z.tuple([z.number(), z.number()]).optional(),
+  timeWindowStart: z.string().optional(),
+  timeWindowEnd: z.string().optional(),
+  actualTimeStart: z.string().optional(),
+  actualTimeEnd: z.string().optional(),
+  actualGpsStart: z.tuple([z.number(), z.number()]).optional(),
+  actualGpsEnd: z.tuple([z.number(), z.number()]).optional(),
+  status: EPharosShotMatchStatus.optional(),
+  note: z.string().nullable().optional(),
+  abandonReason: z.string().nullable().optional(),
+  isExtraShot: z.boolean().default(false),
+});
+export type IProjectPharosShot = z.infer<typeof IProjectPharosShot>;
+
+export const IProjectPharosContext = z.object({
+  schemaVersion: z.literal('1.0'),
+  generatedAt: z.string(),
+  status: EPharosAssetState,
+  rootPath: z.string(),
+  discoveredTripIds: z.array(z.string()).default([]),
+  includedTripIds: z.array(z.string()).default([]),
+  warnings: z.array(z.string()).default([]),
+  errors: z.array(z.string()).default([]),
+  trips: z.array(IProjectPharosTripSummary).default([]),
+  shots: z.array(IProjectPharosShot).default([]),
+  gpxFiles: z.array(IProjectPharosGpxSummary).default([]),
+});
+export type IProjectPharosContext = z.infer<typeof IProjectPharosContext>;
 
 export const IManualItinerarySegmentConfig = z.object({
   id: z.string(),

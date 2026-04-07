@@ -83,27 +83,48 @@ export function buildProjectBriefWithMappings(input: {
   description?: string;
   createdAt?: string;
   mappings: Array<{ path: string; description: string; flightRecordPath?: string }>;
+  pharos?: { includedTripIds?: string[] };
 }): string {
-  if (input.mappings.length === 0) {
-    return buildProjectBriefTemplate(input);
-  }
-
   const templateLines = buildProjectBriefTemplate(input)
     .replace(/\r\n/g, '\n')
     .split('\n');
-  const mappingHeadingIndex = templateLines.findIndex(line => line.trim() === '## 路径映射');
+  const pharosHeadingIndex = templateLines.findIndex(line => line.trim() === '## Pharos');
   const header = (
-    mappingHeadingIndex >= 0
-      ? templateLines.slice(0, mappingHeadingIndex + 2)
+    pharosHeadingIndex >= 0
+      ? templateLines.slice(0, pharosHeadingIndex)
       : templateLines
   ).join('\n').trimEnd();
-  const body = input.mappings.flatMap(mapping => [
+
+  const mappingLines = input.mappings.length > 0
+    ? input.mappings.flatMap(mapping => [
     `路径：${mapping.path}`,
     `说明：${mapping.description}`,
     ...(mapping.flightRecordPath ? [`飞行记录路径：${mapping.flightRecordPath}`] : []),
     '',
-  ]);
-  return `${header}\n${body.join('\n')}`.trimEnd() + '\n';
+  ])
+    : [
+      '路径：',
+      '说明：',
+      '',
+      '路径：',
+      '说明：',
+      '',
+    ];
+
+  const includedTripIds = input.pharos?.includedTripIds ?? [];
+  const pharosLines = includedTripIds.length > 0
+    ? includedTripIds.flatMap(tripId => [`包含 Trip：${tripId}`, ''])
+    : ['包含 Trip：', ''];
+
+  return [
+    header,
+    '## 路径映射',
+    '',
+    ...mappingLines,
+    '## Pharos',
+    '',
+    ...pharosLines,
+  ].join('\n').trimEnd() + '\n';
 }
 
 function buildRootId(path: string, pathOccurrences: Map<string, number>): string {

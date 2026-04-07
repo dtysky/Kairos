@@ -24,6 +24,7 @@ export interface IImportProjectGpxTracksResult {
 export interface IResolveProjectGpxPathsInput {
   projectRoot: string;
   gpxPaths?: string[];
+  pharosGpxPaths?: string[];
 }
 
 export async function importProjectGpxTracks(
@@ -96,8 +97,13 @@ export async function resolveProjectGpxPaths(
   input: IResolveProjectGpxPathsInput,
 ): Promise<string[]> {
   const explicitPaths = dedupePaths(input.gpxPaths ?? []);
-  if (explicitPaths.length > 0) return explicitPaths;
-  return getDefaultProjectGpxPaths(input.projectRoot);
+  const projectPaths = explicitPaths.length > 0
+    ? explicitPaths
+    : await getDefaultProjectGpxPaths(input.projectRoot);
+  return dedupePaths([
+    ...projectPaths,
+    ...(input.pharosGpxPaths ?? []),
+  ]);
 }
 
 async function copyTrackIntoProject(projectRoot: string, sourcePath: string): Promise<string> {

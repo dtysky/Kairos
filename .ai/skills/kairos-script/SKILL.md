@@ -22,6 +22,16 @@ description: >-
 3. 实现完成后，必须回查并同步受影响的设计文档、rules 和 skills，再结束本轮。
 4. 如果变更影响正式入口、监控页、工作流主路径或用户操作方式，还要同步更新 `README.md`、`designs/current-solution-summary.md` 和 `designs/architecture.md`。
 
+## 强规则：Pharos 驱动脚本前先校验上游协议
+
+脚本阶段如果要引入、修改或解释 `Pharos` 输入，必须先：
+
+1. 运行 `node scripts/pharos-protocol-hash.mjs`
+2. 对比 `.ai/pharos-protocol-baseline.json`
+3. 若 hash 不一致，先阅读 `../Pharos/designs/` 下当前协议文档，再继续设计或实现
+
+不要把旧版 `Pharos` 结构记忆直接当成当前脚本阶段的正式输入真值。
+
 ## 前置条件
 
 - `store/slices.json` 存在且非空

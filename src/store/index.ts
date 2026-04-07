@@ -184,6 +184,12 @@ export {
   type IProjectDerivedTrack,
 } from './gps.js';
 export {
+  getProjectPharosRoot,
+  getProjectPharosContextPath,
+  loadProjectPharosContext,
+  writeProjectPharosContext,
+} from './pharos.js';
+export {
   getReviewQueuePath,
   loadReviewQueue,
   saveReviewQueue,

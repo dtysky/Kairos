@@ -1,0 +1,34 @@
+---
+description: 任何 Pharos 相关实现前，都必须先校验兄弟仓库协议文档是否变更并完成同步判断
+alwaysApply: true
+---
+
+# Pharos Protocol Sync
+
+当任务满足以下任一条件时，必须先执行本规则，再继续设计或实现：
+
+- 需求直接提到 `Pharos`
+- 代码、协议、工作流、脚本规划、素材对齐、时间线编排将新增或修改 `Pharos` 接入
+- 需要解释或实现 Kairos 与 `Pharos` 的协作边界
+
+## 文档位置
+
+- `Pharos` 仓库固定在当前仓库的同级目录：`../Pharos`
+- 当前需要检查的协议文档目录：`../Pharos/designs`
+- 当前基线记录文件：`.ai/pharos-protocol-baseline.json`
+- 当前校验脚本：`scripts/pharos-protocol-hash.mjs`
+
+## 强制顺序
+
+1. 先运行 `node scripts/pharos-protocol-hash.mjs`，读取当前 `../Pharos/designs` 的文件级 hash 与组合 hash。
+2. 将结果与 `.ai/pharos-protocol-baseline.json` 对比。
+3. 如果基线缺失或 hash 不一致，必须先重新阅读 `../Pharos/designs` 下相关协议文档，再进入计划或实现。
+4. 只有在 Kairos 侧规则、设计文档、skills 与实现已经同步后，才允许更新 `.ai/pharos-protocol-baseline.json`。
+5. 完成 Pharos 相关实现时，应在结果说明中明确本轮校验到的 `combinedSha256`，避免口径漂移。
+
+## 禁止行为
+
+- 不要在未做 hash 比对前直接修改 Pharos 相关实现。
+- 不要把旧印象当成 `Pharos` 当前协议真值。
+- 不要只读 Kairos 自己的设计文档就开始实现 Pharos 集成。
+- 不要在 Kairos 侧尚未同步时就刷新基线文件，掩盖协议漂移。

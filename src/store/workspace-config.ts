@@ -66,6 +66,7 @@ export async function loadProjectBriefConfig(projectRoot: string): Promise<TProj
     description: parsed.description,
     createdAt: parsed.createdAt,
     mappings: parsed.mappings,
+    pharos: parsed.pharos,
   });
 }
 
@@ -80,6 +81,13 @@ export async function saveProjectBriefConfig(
       description: mapping.description.trim(),
       flightRecordPath: mapping.flightRecordPath?.trim() || undefined,
     })),
+    pharos: config.pharos
+      ? {
+        includedTripIds: (config.pharos.includedTripIds ?? [])
+          .map(tripId => tripId.trim())
+          .filter(Boolean),
+      }
+      : undefined,
   });
   await writeJson(getProjectBriefConfigPath(projectRoot), normalized);
   await writeFile(

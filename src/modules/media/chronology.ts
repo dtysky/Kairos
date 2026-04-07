@@ -38,6 +38,10 @@ export function buildMediaChronology(
       labels,
       placeHints: report?.placeHints ?? [],
       evidence: buildChronologyEvidence(report, labels),
+      pharosMatches: report?.pharosMatches ?? [],
+      primaryPharosRef: report?.primaryPharosRef,
+      pharosStatus: report?.pharosStatus,
+      pharosDayTitle: report?.pharosDayTitle,
       correction,
     } satisfies IMediaChronology;
   });
@@ -111,12 +115,26 @@ function buildChronologyEvidence(
       confidence: 0.4,
     });
   }
+  for (const match of report?.pharosMatches ?? []) {
+    const detail = [
+      match.tripTitle,
+      match.dayTitle,
+      match.ref.tripId,
+      match.ref.shotId,
+      match.status ? `status:${match.status}` : '',
+    ].filter(Boolean).join(' | ');
+    evidence.push({
+      source: 'pharos',
+      value: detail,
+      confidence: match.confidence,
+    });
+  }
   return dedupeEvidence(evidence);
 }
 
 function resolveGpsEvidence(
   report: IAssetCoarseReport,
-): { source: 'manual' | 'gps' | 'derived-track'; confidence: number } {
+): { source: 'manual' | 'gps' | 'derived-track' | 'pharos'; confidence: number } {
   const inferredSource = report.inferredGps?.source;
   if (inferredSource === 'embedded') {
     return {
@@ -128,6 +146,12 @@ function resolveGpsEvidence(
     return {
       source: 'gps',
       confidence: 0.7,
+    };
+  }
+  if (inferredSource === 'pharos') {
+    return {
+      source: 'pharos',
+      confidence: report.inferredGps?.confidence ?? 0.55,
     };
   }
   if (inferredSource === 'derived-track') {

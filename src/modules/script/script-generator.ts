@@ -75,6 +75,7 @@ export async function generateScript(
         actions: normalizeActions(s.actions),
         selections: normalizedSelections.length > 0 ? normalizedSelections : undefined,
         linkedSliceIds,
+        pharosRefs: mergePharosRefsFromSelections(normalizedSelections),
         beats,
         notes: s.notes,
       };
@@ -187,6 +188,7 @@ function normalizeSelections(
       sourceInMs: normalizedWindow?.sourceInMs,
       sourceOutMs: normalizedWindow?.sourceOutMs,
       notes: typeof raw?.notes === 'string' ? raw.notes : undefined,
+      pharosRefs: normalizePharosRefs(raw?.pharosRefs, fallback?.pharosRefs),
     });
   }
 
@@ -235,6 +237,7 @@ function normalizeBeats(
       actions: normalizeActions(rawBeat?.actions),
       selections,
       linkedSliceIds,
+      pharosRefs: normalizePharosRefs(rawBeat?.pharosRefs, mergePharosRefsFromSelections(selections)),
       notes: typeof rawBeat?.notes === 'string' ? rawBeat.notes : undefined,
     });
   }
@@ -260,6 +263,7 @@ function buildFallbackBeats(
     targetDurationMs: beat.estimatedDurationMs ?? defaultBeatDuration,
     selections: [beat.selection],
     linkedSliceIds: typeof beat.sliceId === 'string' ? [beat.sliceId] : [],
+    pharosRefs: beat.selection.pharosRefs,
   }));
 }
 
@@ -323,6 +327,32 @@ function flattenBeatSelections(beats: IKtepScriptBeat[]): IKtepScriptSelection[]
   }
 
   return flattened;
+}
+
+function normalizePharosRefs(rawRefs: unknown, fallbackRefs?: IKtepScriptSelection['pharosRefs']): IKtepScriptSelection['pharosRefs'] {
+  const source = Array.isArray(rawRefs) ? rawRefs : fallbackRefs;
+  if (!Array.isArray(source) || source.length === 0) return undefined;
+
+  const seen = new Set<string>();
+  const refs = [];
+  for (const item of source) {
+    if (!item || typeof item !== 'object') continue;
+    const tripId = typeof (item as any).tripId === 'string' ? (item as any).tripId.trim() : '';
+    const shotId = typeof (item as any).shotId === 'string' ? (item as any).shotId.trim() : '';
+    if (!tripId || !shotId) continue;
+    const key = `${tripId}::${shotId}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    refs.push({ tripId, shotId });
+  }
+  return refs.length > 0 ? refs : undefined;
+}
+
+function mergePharosRefsFromSelections(
+  selections: IKtepScriptSelection[],
+): IKtepScriptSelection['pharosRefs'] {
+  const refs = selections.flatMap(selection => selection.pharosRefs ?? []);
+  return normalizePharosRefs(refs);
 }
 
 function normalizeNarration(

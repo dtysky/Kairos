@@ -23,6 +23,7 @@ const CDIRS = [
   'analysis',
   'analysis/asset-reports',
   'analysis/fine-scan-checkpoints',
+  'pharos',
   'gps',
   'gps/tracks',
   'gps/same-source',

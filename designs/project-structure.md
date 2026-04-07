@@ -23,6 +23,8 @@
   - GPS / 空间相关元信息
   - 后续与 `Pharos`、chronology、空间推断对齐所需的其他核心字段
 - 当前正式项目结构围绕 `projects/<projectId>/`、`config/runtime.json`、logical ingest roots、`config/device-media-maps.local.json`、Workspace 结构化配置 JSON、`gps/tracks/*.gpx`、`gps/merged.json`、`gps/same-source/`、`gps/derived.json` 与项目内 `.tmp/` 展开
+- `Pharos` 资产当前固定放在项目内 `pharos/<trip_id>/`，而不是让用户填写外部路径
+- `project-brief.md` 可选带 `## Pharos` 段，只支持 `包含 Trip：...` 形式的 trip 筛选；未填写时默认纳入全部可解析 trip
 - 可复用风格资产当前不属于单项目目录，而是收口为 Workspace 级共享资产
 - 本地运行与项目配置当前由 `Supervisor + React console (apps/kairos-console/)` 承载；`Analyze` 与 `Style` 监控直接挂在 `/analyze` 与 `/style` 主路由上
 - `scripts/kairos-progress.*` 与旧静态监控页当前只保留兼容 / 调试用途，不再是新的正式监控入口
@@ -81,6 +83,14 @@
 - `config/project-brief.md`
   - 每个素材源 block 除了 `路径` / `说明`，还可以额外声明 `飞行记录路径`
   - 该字段用于把 root 伴随的 DJI FlightRecord 日志纳入 ingest 标准流程，而不是依赖硬编码文件名
+- `pharos/`
+  - 每个项目固定存在 `pharos/` 目录，内部按 `trip_id` 分子目录
+  - 单个 trip 当前正式消费：
+    - `plan.json`（必需）
+    - `record.json`（可选）
+    - `gpx/*.gpx`（可选）
+  - 解析后的共享快照写入 `analysis/pharos-context.json`
+  - Console 项目配置页会显示 `Pharos` 状态卡：`空 / 解析成功 / 解析失败`
 - ingest root 旁路 sidecar
   - 与素材同 basename 的 `.SRT` 会在 ingest 时自动发现并绑定
   - 绑定成功后按同源 `embedded GPS` 进入主优先级链路
