@@ -7,6 +7,7 @@ import {
   CRHYTHM_MATERIAL_PARAMETER_KEYS,
   ensureRhythmMaterialParameterKeys,
 } from './style-rhythm.js';
+import { deriveStyleProtocolV2Fields } from './style-loader.js';
 
 const CRHYTHM_PARAMETER_GUIDE = CRHYTHM_MATERIAL_PARAMETER_KEYS
   .map(key => `- ${key}`)
@@ -114,6 +115,7 @@ export async function analyzeStyleFromReports(
     content: s.content ?? '',
     tags: s.tags,
   })), parameters, parsed.narrative?.pacePattern);
+  const derived = deriveStyleProtocolV2Fields(sections, parameters, parsed.antiPatterns ?? []);
 
   return {
     id: randomUUID(),
@@ -135,6 +137,12 @@ export async function analyzeStyleFromReports(
     sections,
     antiPatterns: parsed.antiPatterns ?? [],
     parameters,
+    arrangementBias: derived.arrangementBias,
+    arrangementStructure: derived.arrangementStructure,
+    segmentArchetypes: derived.segmentArchetypes,
+    transitionRules: derived.transitionRules,
+    functionBlocks: derived.functionBlocks,
+    globalConstraints: derived.globalConstraints,
     createdAt: now,
     updatedAt: now,
   };

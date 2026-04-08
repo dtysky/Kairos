@@ -1,7 +1,7 @@
 ---
 name: kairos-script
 description: >-
-  Phase 3: Load style profile, build narrative outline from slices, and write
+  Phase 3: Load style profile, build narrative outline from spans, and write
   narration for each segment. The agent writes narration directly using its own
   LLM capabilities. Use when writing script, narration, voiceover, or the user
   mentions script, story, or narrate.
@@ -12,6 +12,11 @@ description: >-
 加载风格档案 → `/script` 自动保存风格分类 → Agent 生成初版 `script-brief` → 用户审查并手动保存 brief → `/script` 做 deterministic prep → Agent 写正式脚本。
 
 **核心特点**：旁白由 agent 自身直接创作，不需要外部 LLM API。
+
+当前 v1 script prep 的正式准备链已经切成：
+- `Span -> Bundle Graph`
+- `Style-Driven Arrangement`
+- `Packet -> Outline -> Script`
 
 ## 变更工作流规则
 
@@ -34,7 +39,7 @@ description: >-
 
 ## 前置条件
 
-- `store/slices.json` 存在且非空
+- `store/spans.json` 存在且非空
 - 风格档案可用（以下方式任选其一）：
   - 分类档案：`<workspaceRoot>/config/styles/{category}.md`（由 [kairos-style-analysis](../kairos-style-analysis/SKILL.md) 生成）
   - 手写样板：`test/style-profile.md`
@@ -58,8 +63,8 @@ loadStyleByCategory(stylesDir: string, category: string): Promise<IStyleProfile 
 // 列出所有可用的风格分类
 listStyleCategories(stylesDir: string): Promise<IStyleCatalogEntry[]>
 
-// 构建叙事骨架：切片 → 段落结构
-buildOutline(slices: IKtepSlice[], targetDurationMs: number): IOutlineSegment[]
+// 构建叙事骨架：span / bundle / arrangement segment → outline
+buildOutline(spans: IKtepSlice[], targetDurationMs: number): IOutlineSegment[]
 // IOutlineSegment = { role, title, sliceIds, evidence, estimatedDurationMs }
 
 // 生成风格提示词（供 agent 参考）
@@ -127,10 +132,10 @@ agent 在创作旁白时应将其作为额外的创作指导。
 正式顺序固定为：
 
 1. 用户在 `/script` 选择 `styleCategory`，选择后立即自动保存
-2. Agent 读取 style profile、slices、chronology、asset reports，生成初版 `script-brief`
+2. Agent 读取 style profile、spans、chronology、asset reports，生成初版 `script-brief`
 3. 用户回到 `/script` 审查并手动保存 brief
 4. `/script` 会用更显眼的 workflow prompt / modal 提示用户点击 `准备给 Agent`
-5. Console 校验前置条件并刷新 `analysis/material-digest.json`
+5. Console 校验前置条件并刷新 bundle / arrangement prep 产物
 6. Agent 再继续写正式 `script/current.json`
 
 Console prep 不允许做的事：
@@ -142,7 +147,7 @@ Console prep 不允许做的事：
 Agent 起草初版 brief 时，应根据：
 - `analysis/asset-reports/*.json`
 - `media/chronology.json`
-- `store/slices.json`
+- `store/spans.json`
 - 风格档案
 
 Agent 起草 brief 时，不要只总结“语气是什么”，还应把当前选中的风格分类归纳成更可执行的拍法提示，例如：
@@ -179,16 +184,18 @@ script/script-brief.md
 ### Step 3: 构建叙事骨架
 
 ```typescript
-const slices = await readJson('store/slices.json', z.array(IKtepSlice));
-const outline = buildOutline(slices, 5 * 60 * 1000); // 目标 5 分钟
+const spans = await readJson('store/spans.json', z.array(IKtepSlice));
+const outline = buildOutline(spans, 5 * 60 * 1000); // 目标 5 分钟
 ```
 
-当前需要注意的 slice 语义：
+当前需要注意的 span 语义：
 
-- `slice.sourceInMs / sourceOutMs` 仍是兼容性的 focus/evidence window
-- `slice.editSourceInMs / editSourceOutMs` 是 Analyze 已经扩好的 edit-friendly bounds
+- `span.sourceInMs / sourceOutMs` 仍是兼容性的 focus/evidence window
+- `span.editSourceInMs / editSourceOutMs` 是 Analyze 已经扩好的 edit-friendly bounds
+- `span.materialPatterns[]` 是材料模式短语
+- `span.localEditingIntent` 是局部剪辑作用与消费约束
 - `buildOutline()` 现在默认优先消费 `editSourceInMs / editSourceOutMs`
-- 只有旧 slice 没有 edit bounds 时，outline 才会回落到 legacy center-trim
+- 只有旧 span 没有 edit bounds 时，outline 才会回落到 legacy center-trim
 
 骨架结构：
 - `intro`（约 10%）→ 开篇

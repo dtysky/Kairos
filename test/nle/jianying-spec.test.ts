@@ -113,7 +113,39 @@ describe('buildJianyingDraftSpec', () => {
         sourcePath: '/tmp/speed-spec-test.mp4',
         displayName: 'speed-spec-test.mp4',
       }],
-      slices: [],
+      slices: [{
+        id: 'slice-drive-1',
+        assetId: 'asset-1',
+        type: 'drive',
+        sourceInMs: 0,
+        sourceOutMs: 10_000,
+        narrativeFunctions: {
+          core: ['route-advance'],
+          extra: [],
+          evidence: [],
+        },
+        shotGrammar: {
+          core: ['windshield-drive'],
+          extra: [],
+          evidence: [],
+        },
+        viewpointRoles: {
+          core: ['driving-selfie'],
+          extra: [],
+          evidence: [],
+        },
+        subjectStates: {
+          core: ['en-route'],
+          extra: [],
+          evidence: [],
+        },
+        grounding: {
+          speechMode: 'none',
+          speechValue: 'none',
+          spatialEvidence: [],
+          pharosRefs: [],
+        },
+      }],
       script: [],
       timeline: {
         id: 'timeline-2',
@@ -133,6 +165,7 @@ describe('buildJianyingDraftSpec', () => {
           id: 'clip-1',
           trackId: 'track-1',
           assetId: 'asset-1',
+          sliceId: 'slice-drive-1',
           sourceInMs: 0,
           sourceOutMs: 10_000,
           speed: 5,

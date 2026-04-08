@@ -29,7 +29,10 @@ export function getSegmentCandidatesPath(projectRoot: string): string {
 export async function loadProjectMaterialDigest(
   projectRoot: string,
 ): Promise<IProjectMaterialDigest | null> {
-  return readJsonOrNull(getProjectMaterialDigestPath(projectRoot), IProjectMaterialDigest);
+  return readJsonOrNull(
+    getProjectMaterialDigestPath(projectRoot),
+    IProjectMaterialDigest,
+  ) as Promise<IProjectMaterialDigest | null>;
 }
 
 export async function writeProjectMaterialDigest(
@@ -42,7 +45,10 @@ export async function writeProjectMaterialDigest(
 export async function loadSegmentPlanDrafts(
   projectRoot: string,
 ): Promise<ISegmentPlanDraft[]> {
-  return await readJsonOrNull(getSegmentPlanDraftsPath(projectRoot), ISegmentPlanDraftFile) ?? [];
+  return (await readJsonOrNull(
+    getSegmentPlanDraftsPath(projectRoot),
+    ISegmentPlanDraftFile,
+  ) as ISegmentPlanDraft[] | null) ?? [];
 }
 
 export async function writeSegmentPlanDrafts(
@@ -55,7 +61,10 @@ export async function writeSegmentPlanDrafts(
 export async function loadApprovedSegmentPlan(
   projectRoot: string,
 ): Promise<IApprovedSegmentPlan | null> {
-  return readJsonOrNull(getApprovedSegmentPlanPath(projectRoot), IApprovedSegmentPlan);
+  return readJsonOrNull(
+    getApprovedSegmentPlanPath(projectRoot),
+    IApprovedSegmentPlan,
+  ) as Promise<IApprovedSegmentPlan | null>;
 }
 
 export async function writeApprovedSegmentPlan(
@@ -68,7 +77,10 @@ export async function writeApprovedSegmentPlan(
 export async function loadSegmentCandidates(
   projectRoot: string,
 ): Promise<ISegmentCandidateRecall | null> {
-  return readJsonOrNull(getSegmentCandidatesPath(projectRoot), ISegmentCandidateRecall);
+  return readJsonOrNull(
+    getSegmentCandidatesPath(projectRoot),
+    ISegmentCandidateRecall,
+  ) as Promise<ISegmentCandidateRecall | null>;
 }
 
 export async function writeSegmentCandidates(

@@ -1,7 +1,17 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import type { IStyleProfile, IStyleSection, IStyleCatalog, IStyleCatalogEntry } from '../../protocol/schema.js';
+import type {
+  IArrangementBias,
+  IStyleArrangementStructure,
+  IStyleCatalog,
+  IStyleCatalogEntry,
+  IStyleFunctionBlock,
+  IStyleProfile,
+  IStyleSection,
+  IStyleSegmentArchetype,
+  IStyleTransitionRule,
+} from '../../protocol/schema.js';
 
 export interface IStyleLoadOptions {
   name?: string;
@@ -93,6 +103,7 @@ export function parseStyleMarkdown(
   const antiPatterns = extractAntiPatterns(sections);
   const narrative = extractNarrative(params);
   const voice = extractVoice(params);
+  const derived = deriveStyleProtocolV2Fields(sections, params, antiPatterns);
   const now = new Date().toISOString();
 
   return {
@@ -107,8 +118,48 @@ export function parseStyleMarkdown(
     sections,
     antiPatterns,
     parameters: params,
+    arrangementBias: derived.arrangementBias,
+    arrangementStructure: derived.arrangementStructure,
+    segmentArchetypes: derived.segmentArchetypes,
+    transitionRules: derived.transitionRules,
+    functionBlocks: derived.functionBlocks,
+    globalConstraints: derived.globalConstraints,
     createdAt: now,
     updatedAt: now,
+  };
+}
+
+export function deriveStyleProtocolV2Fields(
+  sections: IStyleSection[],
+  parameters: Record<string, string>,
+  antiPatterns: string[] = [],
+): {
+  arrangementBias: IArrangementBias;
+  arrangementStructure: IStyleArrangementStructure;
+  segmentArchetypes: IStyleSegmentArchetype[];
+  transitionRules: IStyleTransitionRule[];
+  functionBlocks: IStyleFunctionBlock[];
+  globalConstraints: string[];
+} {
+  const segmentArchetypes = buildSegmentArchetypes(sections, parameters);
+  const transitionRules = buildTransitionRules(segmentArchetypes);
+  const functionBlocks = buildFunctionBlocks(sections, parameters, antiPatterns);
+  const arrangementBias = buildArrangementBias(parameters, sections);
+  const arrangementStructure = buildArrangementStructure(sections, parameters);
+  const globalConstraints = dedupeStrings([
+    ...(antiPatterns ?? []),
+    parameters['全局约束'],
+    parameters['段落禁区'],
+    parameters['镜头禁区'],
+  ]);
+
+  return {
+    arrangementBias,
+    arrangementStructure,
+    segmentArchetypes,
+    transitionRules,
+    functionBlocks,
+    globalConstraints,
   };
 }
 
@@ -266,6 +317,439 @@ function extractVoice(params: Record<string, string>): IStyleProfile['voice'] {
     density,
     sampleTexts: [],
   };
+}
+
+function buildArrangementBias(
+  parameters: Record<string, string>,
+  sections: IStyleSection[],
+): IArrangementBias {
+  const text = [
+    parameters['编排主轴'],
+    parameters['段落组织方式'],
+    ...sections
+      .filter(section => section.title.includes('叙事') || section.title.includes('结构'))
+      .map(section => section.content),
+  ].filter(Boolean).join('\n');
+
+  const preferredStrategies = dedupeStrings([
+    /空间|地点|地理/u.test(text) ? 'space-first' : undefined,
+    /时间|chronology|顺序/u.test(text) ? 'time-first' : undefined,
+    /事件|冲突|桥段/u.test(text) ? 'event-first' : undefined,
+  ]) as IArrangementBias['preferredStrategies'];
+
+  return {
+    preferredStrategies: preferredStrategies.length > 0 ? preferredStrategies : ['mixed'],
+    notes: parameters['编排备注'],
+  };
+}
+
+function buildArrangementStructure(
+  sections: IStyleSection[],
+  parameters: Record<string, string>,
+): IStyleArrangementStructure {
+  const organizationModes = dedupeStrings([
+    parameters['组织模式'],
+    parameters['段落组织方式'],
+    parameters['编排主轴'],
+    ...collectOrganizationModes(sections, parameters),
+  ]);
+  const explicitPrograms = collectArrangementPrograms(sections, parameters);
+  const arrangementPrograms = explicitPrograms;
+  return {
+    organizationModes: organizationModes.length > 0 ? organizationModes : ['叙事段落驱动'],
+    arrangementPrograms,
+    bundlePreferenceNotes: sections
+      .filter(section =>
+        section.title.includes('素材')
+        || section.title.includes('结构')
+        || section.title.includes('编排')
+        || section.title.includes('段落程序')
+        || section.title.includes('组织程序'))
+      .map(section => section.content.trim())
+      .filter(Boolean)
+      .slice(0, 6),
+  };
+}
+
+function collectArrangementPrograms(
+  sections: IStyleSection[],
+  parameters: Record<string, string>,
+): IStyleArrangementStructure['arrangementPrograms'] {
+  const values = dedupeStrings([
+    ...extractArrangementProgramLines(parameters['段落程序']),
+    ...extractArrangementProgramLines(parameters['组织程序']),
+    ...extractArrangementProgramLines(parameters['片头段落程序']),
+    ...extractArrangementProgramLines(parameters['正文段落程序']),
+    ...extractArrangementProgramLines(parameters['收尾段落程序']),
+    ...sections
+      .filter(section =>
+        section.title.includes('段落程序')
+        || section.title.includes('组织程序')
+        || section.title.includes('片头结构')
+        || section.title.includes('正文结构')
+        || section.title.includes('收尾结构'))
+      .flatMap(section => extractArrangementProgramLines(section.content)),
+  ]);
+
+  return values
+    .filter(phrase => !/^组织模式[:：]/u.test(phrase))
+    .map((phrase, index) => ({
+    id: `program-${index + 1}-${toProgramSlug(phrase)}`,
+    phrase,
+    bundlePreferencePhrases: [],
+    }));
+}
+
+function collectOrganizationModes(
+  sections: IStyleSection[],
+  parameters: Record<string, string>,
+): string[] {
+  const rawLines = [
+    parameters['组织模式'],
+    parameters['段落组织方式'],
+    ...sections
+      .filter(section => section.title.includes('段落程序') || section.title.includes('组织程序'))
+      .flatMap(section => extractArrangementProgramLines(section.content)),
+  ];
+  return dedupeStrings(rawLines.flatMap(line => {
+    if (!line) return [];
+    const match = line.match(/^组织模式[:：]\s*(.+)$/u);
+    return match?.[1] ? [match[1].trim()] : [];
+  }));
+}
+
+function buildSegmentArchetypes(
+  sections: IStyleSection[],
+  parameters: Record<string, string>,
+): IStyleSegmentArchetype[] {
+  const signalText = buildStyleSignalText(sections, parameters);
+  const candidates = [
+    maybeCreateArchetypeFromSignal({
+      signalText,
+      keywords: ['开场', '引入', '开头', '建场'],
+      id: 'opening-intro',
+      name: '开场引入',
+      functions: ['establish', 'geo-reset'],
+      preferredMaterials: ['aerial', 'broll', 'timelapse'],
+      preferredShotGrammar: ['aerial', 'locked-timelapse'],
+      typicalTiming: 'opening',
+      notes: collectMatchingSections(sections, ['开场', '引入', '开头']),
+    }),
+    maybeCreateArchetypeFromSignal({
+      signalText,
+      keywords: ['景点介绍', '地点介绍', '第三视角', '对镜讲解', '人物讲解'],
+      id: 'poi-intro',
+      name: '第三视角介绍',
+      functions: ['info-delivery', 'geo-reset'],
+      preferredMaterials: ['shot', 'talking-head', 'broll'],
+      preferredShotGrammar: ['third-person-to-camera', 'handheld-observe'],
+      typicalTiming: 'middle',
+      notes: collectMatchingSections(sections, ['景点', '介绍', '第三视角']),
+    }),
+    maybeCreateArchetypeFromSignal({
+      signalText,
+      keywords: ['路途', '行车', '路线推进', '开车', '在路上'],
+      id: 'route-advance',
+      name: '路途推进',
+      functions: ['route-advance', 'transition'],
+      preferredMaterials: ['drive', 'aerial'],
+      preferredShotGrammar: ['windshield-drive', 'car-interior-drive', 'follow-vehicle'],
+      typicalTiming: 'middle',
+      notes: collectMatchingSections(sections, ['路途', '行车', '推进']),
+    }),
+    maybeCreateArchetypeFromSignal({
+      signalText,
+      keywords: ['跟车', '跟人', '桥段连接', '空间过桥', '人物过桥'],
+      id: 'bridge-follow',
+      name: '过桥跟随',
+      functions: ['transition', 'emotion-release'],
+      preferredMaterials: ['aerial', 'shot', 'broll'],
+      preferredShotGrammar: ['follow-vehicle', 'handheld-observe'],
+      typicalTiming: 'bridge',
+      notes: collectMatchingSections(sections, ['过渡', '跟车', '跟人', '桥']),
+    }),
+    maybeCreateArchetypeFromSignal({
+      signalText,
+      keywords: ['冲突', 'drama', '戏剧转折', '冲突桥段', '情节转折'],
+      id: 'drama-turn',
+      name: '冲突桥段',
+      functions: ['conflict-event', 'conflict-foreshadow'],
+      preferredMaterials: ['talking-head', 'shot', 'broll'],
+      preferredShotGrammar: ['handheld-observe', 'walk-and-talk'],
+      typicalTiming: 'middle',
+      notes: collectMatchingSections(sections, ['冲突', 'drama', '转折', '桥段']),
+    }),
+    maybeCreateArchetypeFromSignal({
+      signalText,
+      keywords: ['延时', '拔升', '抬升', '时间流逝'],
+      id: 'time-lift',
+      name: '时间拔升',
+      functions: ['time-passage', 'emotion-release'],
+      preferredMaterials: ['timelapse', 'aerial'],
+      preferredShotGrammar: ['locked-timelapse', 'pull-back'],
+      typicalTiming: 'bridge',
+      notes: collectMatchingSections(sections, ['延时', '拔升', '抬升']),
+    }),
+    maybeCreateArchetypeFromSignal({
+      signalText,
+      keywords: ['结尾', '收尾', '回落', '收束'],
+      id: 'closure',
+      name: '收束结尾',
+      functions: ['arrival', 'emotion-release', 'transition'],
+      preferredMaterials: ['aerial', 'broll', 'talking-head'],
+      preferredShotGrammar: ['pull-back', 'third-person-to-camera'],
+      typicalTiming: 'ending',
+      notes: collectMatchingSections(sections, ['结尾', '收尾', '回落', '收束']),
+    }),
+  ].filter(Boolean) as IStyleSegmentArchetype[];
+
+  if (candidates.length > 0) return candidates;
+
+  return [{
+    id: 'generic-observational',
+    name: '通用观察式段落',
+    functions: ['transition', 'info-delivery'],
+    preferredShotGrammar: ['handheld-observe'],
+    preferredViewpoints: [],
+    preferredMaterials: ['shot', 'broll'],
+    typicalTiming: 'middle',
+    notes: parameters['段落组织方式'] ?? parameters['编排主轴'] ?? '未明确',
+  }];
+}
+
+function buildTransitionRules(
+  archetypes: IStyleSegmentArchetype[],
+): IStyleTransitionRule[] {
+  const ordered = archetypes.map(item => item.id);
+  const transitions: IStyleTransitionRule[] = [];
+  for (let i = 0; i < ordered.length - 1; i++) {
+    transitions.push({
+      from: ordered[i],
+      to: ordered[i + 1],
+      purpose: `${ordered[i]} -> ${ordered[i + 1]}`,
+      preferredTransitions: derivePreferredTransitions(ordered[i], ordered[i + 1]),
+    });
+  }
+  return transitions;
+}
+
+function buildFunctionBlocks(
+  sections: IStyleSection[],
+  parameters: Record<string, string>,
+  antiPatterns: string[],
+): IStyleFunctionBlock[] {
+  const signalText = buildStyleSignalText(sections, parameters);
+  const blocks: IStyleFunctionBlock[] = [];
+  const pushBlock = (
+    id: string,
+    functions: string[],
+    preferredMaterials: string[],
+    preferredShotGrammar: string[],
+    preferredTransitions: string[],
+    timingBias?: IStyleFunctionBlock['timingBias'],
+    notes?: string,
+  ) => {
+    blocks.push({
+      id,
+      functions,
+      preferredShotGrammar,
+      preferredMaterials,
+      preferredTransitions,
+      disallowedPatterns: antiPatterns.slice(0, 5),
+      timingBias,
+      notes,
+    });
+  };
+
+  if (hasStyleSignal(signalText, ['开场', '引入', '建场'])) {
+    pushBlock(
+      'opening-establish',
+      ['establish', 'geo-reset'],
+      ['aerial', 'timelapse', 'broll'],
+      ['aerial', 'locked-timelapse'],
+      ['fade', 'cross-dissolve'],
+      'opening',
+      collectMatchingSections(sections, ['开场', '引入', '建场']),
+    );
+  }
+  if (hasStyleSignal(signalText, ['行车', '路途', '路线推进', '开车', '在路上'])) {
+    pushBlock(
+      'route-advance',
+      ['route-advance', 'transition'],
+      ['drive', 'aerial'],
+      ['windshield-drive', 'follow-vehicle'],
+      ['cut', 'cross-dissolve'],
+      'middle',
+      parameters['行车素材职责'] ?? collectMatchingSections(sections, ['行车', '路途']),
+    );
+  }
+  if (hasStyleSignal(signalText, ['延时', '拔升', '抬升', '时间流逝'])) {
+    pushBlock(
+      'time-lift',
+      ['time-passage', 'emotion-release'],
+      ['timelapse', 'aerial'],
+      ['locked-timelapse', 'pull-back'],
+      ['fade', 'cross-dissolve'],
+      'bridge',
+      parameters['延时使用关系'] ?? collectMatchingSections(sections, ['延时', '拔升']),
+    );
+  }
+  if (hasStyleSignal(signalText, ['结尾', '收束', '回落', '收尾'])) {
+    pushBlock(
+      'closure',
+      ['arrival', 'emotion-release'],
+      ['aerial', 'broll', 'talking-head'],
+      ['pull-back', 'third-person-to-camera'],
+      ['fade'],
+      'ending',
+      collectMatchingSections(sections, ['结尾', '收束']),
+    );
+  }
+
+  return blocks;
+}
+
+function maybeCreateArchetypeFromSignal(input: {
+  signalText: string;
+  keywords: string[];
+  id: string;
+  name: string;
+  functions: string[];
+  preferredMaterials: string[];
+  preferredShotGrammar: string[];
+  typicalTiming: IStyleSegmentArchetype['typicalTiming'];
+  notes?: string;
+}): IStyleSegmentArchetype | null {
+  if (!hasStyleSignal(input.signalText, input.keywords)) {
+    return null;
+  }
+  return createArchetypeFromHint(
+    input.id,
+    input.name,
+    input.functions,
+    input.preferredMaterials,
+    input.preferredShotGrammar,
+    input.typicalTiming,
+    input.notes,
+  );
+}
+
+function createArchetypeFromHint(
+  id: string,
+  name: string,
+  functions: string[],
+  preferredMaterials: string[],
+  preferredShotGrammar: string[],
+  typicalTiming: IStyleSegmentArchetype['typicalTiming'],
+  notes?: string,
+): IStyleSegmentArchetype {
+  return {
+    id,
+    name,
+    functions,
+    preferredShotGrammar,
+    preferredViewpoints: [],
+    preferredMaterials,
+    typicalTiming,
+    notes,
+  };
+}
+
+function extractArrangementProgramLines(text?: string): string[] {
+  if (!text) return [];
+  return text
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map(line => line.replace(/^[-*]\s*/, '').replace(/^\d+[.)]\s*/, '').trim())
+    .filter(line => line.length >= 6);
+}
+
+function toProgramSlug(phrase: string): string {
+  const normalized = phrase
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, '-')
+    .replace(/^-+|-+$/g, '');
+  return normalized.length > 0 ? normalized.slice(0, 40) : randomUUID();
+}
+
+function collectMatchingSections(sections: IStyleSection[], keywords: string[]): string | undefined {
+  const values = sections
+    .filter(section => keywords.some(keyword => section.title.includes(keyword) || section.content.includes(keyword)))
+    .map(section => `${section.title}: ${section.content}`.trim())
+    .filter(Boolean);
+  return values.length > 0 ? values.slice(0, 2).join('\n\n') : undefined;
+}
+
+function buildStyleSignalText(
+  sections: IStyleSection[],
+  parameters: Record<string, string>,
+): string {
+  return [
+    ...sections.map(section => `${section.title}\n${section.content}`),
+    ...Object.entries(parameters).map(([key, value]) => `${key}: ${value}`),
+  ].join('\n');
+}
+
+function hasStyleSignal(signalText: string, keywords: string[]): boolean {
+  return keywords.some(keyword => containsPositiveStyleKeyword(signalText, keyword));
+}
+
+function containsPositiveStyleKeyword(signalText: string, keyword: string): boolean {
+  const chunks = signalText
+    .split(/[\n。！？；;]+/u)
+    .map(chunk => chunk.trim())
+    .filter(Boolean);
+
+  for (const chunk of chunks) {
+    let searchFrom = 0;
+    while (searchFrom < chunk.length) {
+      const index = chunk.indexOf(keyword, searchFrom);
+      if (index < 0) break;
+      const before = chunk.slice(Math.max(0, index - 8), index);
+      if (!hasNegativeCueBeforeKeyword(before)) {
+        return true;
+      }
+      searchFrom = index + keyword.length;
+    }
+  }
+
+  return false;
+}
+
+function hasNegativeCueBeforeKeyword(context: string): boolean {
+  return [
+    '不做',
+    '不要',
+    '不想',
+    '不该',
+    '不宜',
+    '不再',
+    '不强调',
+    '不主打',
+    '不承担',
+    '不需要',
+    '无需',
+    '无须',
+    '避免',
+    '禁止',
+    '别把',
+    '并非',
+    '不是',
+    '不能',
+    '不会',
+    '少用',
+  ].some(cue => context.includes(cue));
+}
+
+function derivePreferredTransitions(from: string, to: string): string[] {
+  if (from.includes('opening') || to.includes('closure')) return ['fade'];
+  if (from.includes('time') || to.includes('time')) return ['cross-dissolve'];
+  return ['cut'];
+}
+
+function dedupeStrings(values: Array<string | undefined>): string[] {
+  return [...new Set(values.map(value => value?.trim()).filter(Boolean) as string[])];
 }
 
 function parseNumberParam(value?: string): number | undefined {

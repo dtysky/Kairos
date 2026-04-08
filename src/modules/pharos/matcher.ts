@@ -3,6 +3,7 @@ import type {
   IPharosMatch,
   IProjectPharosContext,
   IProjectPharosShot,
+  ISpatialEvidence,
   IKtepAsset,
 } from '../../protocol/schema.js';
 import type { IManualSpatialContext } from '../media/manual-spatial.js';
@@ -14,7 +15,9 @@ const CGPS_NEAR_KM = 1.5;
 export interface IMatchAssetToPharosInput {
   asset: Pick<IKtepAsset, 'sourcePath' | 'capturedAt' | 'metadata' | 'embeddedGps'>;
   context: IProjectPharosContext | null;
-  report?: Pick<IAssetCoarseReport, 'clipTypeGuess' | 'summary' | 'placeHints' | 'labels' | 'inferredGps'>;
+  report?: Pick<IAssetCoarseReport, 'clipTypeGuess' | 'summary' | 'placeHints' | 'labels' | 'inferredGps'> & {
+    spatialEvidence?: Array<Pick<ISpatialEvidence, 'lat' | 'lng' | 'confidence' | 'tier' | 'locationText'>>;
+  };
   limit?: number;
 }
 
@@ -26,7 +29,7 @@ export function matchAssetToPharos(
   }
 
   const matches = input.context.shots.map(shot => scoreShotMatch(shot, input))
-    .filter((item): item is IScoredMatch => item.score > 0);
+    .filter((item): item is IScoredMatch => item != null && item.score > 0);
 
   return matches
     .sort((left, right) =>
@@ -96,7 +99,7 @@ function scoreShotMatch(
   const timeScore = scoreTimeMatch(input.asset.capturedAt, shot, reasons);
   score += timeScore;
 
-  const gpsScore = scoreGpsMatch(input.report?.inferredGps, shot, reasons);
+  const gpsScore = scoreGpsMatch(resolveBestGpsCandidate(input.report), shot, reasons);
   score += gpsScore;
 
   const deviceScore = scoreDeviceMatch(input.asset, shot, reasons);
@@ -168,7 +171,7 @@ function scoreTimeMatch(
 }
 
 function scoreGpsMatch(
-  inferredGps: IMatchAssetToPharosInput['report'] extends { inferredGps?: infer T } ? T : never,
+  inferredGps: { lat: number; lng: number; confidence?: number } | undefined,
   shot: IProjectPharosShot,
   reasons: string[],
 ): number {
@@ -200,7 +203,7 @@ function scoreDeviceMatch(
   const shotTokens = dedupeStrings([
     shot.device,
     ...shot.devices,
-  ].flatMap(tokenizeDeviceToken));
+  ].flatMap(token => tokenizeDeviceToken(token ?? '')));
   const overlap = assetTokens.filter(token => shotTokens.includes(token));
   if (overlap.length === 0) return 0;
   reasons.push(`device:${overlap[0]}`);
@@ -261,6 +264,29 @@ function collectAssetDeviceTokens(
     tokens.add(token);
   }
   return [...tokens];
+}
+
+function resolveBestGpsCandidate(
+  report: IMatchAssetToPharosInput['report'] | undefined,
+): { lat: number; lng: number; confidence?: number } | undefined {
+  const spatialCandidate = (report?.spatialEvidence ?? [])
+    .filter(item => typeof item.lat === 'number' && typeof item.lng === 'number')
+    .sort((left, right) => (right.confidence ?? 0) - (left.confidence ?? 0))[0];
+  if (spatialCandidate) {
+    return {
+      lat: spatialCandidate.lat as number,
+      lng: spatialCandidate.lng as number,
+      confidence: spatialCandidate.confidence,
+    };
+  }
+  if (report?.inferredGps) {
+    return {
+      lat: report.inferredGps.lat,
+      lng: report.inferredGps.lng,
+      confidence: report.inferredGps.confidence,
+    };
+  }
+  return undefined;
 }
 
 function tokenizeDeviceToken(input: string): string[] {

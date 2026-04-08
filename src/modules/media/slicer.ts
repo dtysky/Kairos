@@ -6,6 +6,7 @@ import type {
   ESliceType,
 } from '../../protocol/schema.js';
 import type { IShotBoundary } from './shot-detect.js';
+import { createEmptySliceSemantics } from './semantic-slice.js';
 
 /**
  * Photo → one slice per asset.
@@ -15,8 +16,7 @@ export function slicePhoto(asset: IKtepAsset): IKtepSlice {
     id: randomUUID(),
     assetId: asset.id,
     type: 'photo',
-    labels: [],
-    placeHints: [],
+    ...createEmptySliceSemantics(),
   };
 }
 
@@ -47,8 +47,7 @@ export function sliceVideo(
       sourceOutMs: outMs,
       editSourceInMs: inMs,
       editSourceOutMs: outMs,
-      labels: [],
-      placeHints: [],
+      ...createEmptySliceSemantics(),
     });
   }
 
@@ -71,9 +70,7 @@ export function sliceInterestingWindows(
       sourceOutMs: window.endMs,
       editSourceInMs: window.editStartMs ?? window.startMs,
       editSourceOutMs: window.editEndMs ?? window.endMs,
-      summary: window.reason,
-      labels: [],
-      placeHints: [],
+      ...createEmptySliceSemantics(),
       ...(window.speedCandidate && {
         speedCandidate: {
           ...window.speedCandidate,

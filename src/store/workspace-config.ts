@@ -67,6 +67,8 @@ export async function loadProjectBriefConfig(projectRoot: string): Promise<TProj
     createdAt: parsed.createdAt,
     mappings: parsed.mappings,
     pharos: parsed.pharos,
+    materialPatternPhrases: parsed.vocabulary.materialPatternPhrases,
+    localEditingIntentPhrases: parsed.vocabulary.localEditingIntentPhrases,
   });
 }
 
@@ -88,6 +90,12 @@ export async function saveProjectBriefConfig(
           .filter(Boolean),
       }
       : undefined,
+    materialPatternPhrases: (config.materialPatternPhrases ?? [])
+      .map(phrase => phrase.trim())
+      .filter(Boolean),
+    localEditingIntentPhrases: (config.localEditingIntentPhrases ?? [])
+      .map(phrase => phrase.trim())
+      .filter(Boolean),
   });
   await writeJson(getProjectBriefConfigPath(projectRoot), normalized);
   await writeFile(
@@ -100,9 +108,16 @@ export async function saveProjectBriefConfig(
 
 export async function loadManualItineraryConfig(projectRoot: string): Promise<TManualItineraryConfig> {
   const stored = await readJsonOrNull(getManualItineraryConfigPath(projectRoot), IManualItineraryConfig);
-  if (stored) return IManualItineraryConfig.parse(stored);
-
   const raw = await readFile(getManualItineraryPath(projectRoot), 'utf-8').catch(() => '');
+  if (!raw) {
+    if (stored) return IManualItineraryConfig.parse(stored);
+    return IManualItineraryConfig.parse({
+      prose: '',
+      segments: [],
+      captureTimeOverrides: [],
+    });
+  }
+
   const parsed = await loadManualItinerary(projectRoot);
   return IManualItineraryConfig.parse({
     prose: stripManualCaptureTimeSection(raw).trim(),

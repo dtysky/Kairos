@@ -126,15 +126,33 @@ export {
   writeSegmentCandidates,
 } from './segment-plan.js';
 export {
+  getMotifBundlesPath,
+  getArrangementSkeletonsPath,
+  getSegmentCardsPath,
+  getCurrentArrangementPath,
+  loadMotifBundles,
+  writeMotifBundles,
+  loadArrangementSkeletons,
+  writeArrangementSkeletons,
+  loadSegmentCards,
+  writeSegmentCards,
+  loadCurrentArrangement,
+  writeCurrentArrangement,
+} from './arrangement.js';
+export {
   getAssetsPath,
+  getSpansPath,
   getSlicesPath,
   loadAssets,
+  loadSpans,
   loadSlices,
   buildAssetMergeKey,
   mergeAssets,
   findUnanalyzedAssets,
+  mergeSpans,
   mergeSlices,
   appendAssets,
+  appendSpans,
   appendSlices,
   type IMergeResult,
 } from './incremental.js';

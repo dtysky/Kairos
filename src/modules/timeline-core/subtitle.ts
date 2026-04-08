@@ -188,6 +188,7 @@ function resolveSubtitleBeats(
     id: `legacy-beat-${segment.id}-${index + 1}`,
     text: beatTexts[index] ?? '',
     selections: [],
+    linkedSpanIds: clip.spanId ? [clip.spanId] : [],
     linkedSliceIds: clip.sliceId ? [clip.sliceId] : [],
   }));
 }

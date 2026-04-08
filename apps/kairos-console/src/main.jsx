@@ -919,7 +919,7 @@ function ScriptPage({
           <h2>Script Preparation</h2>
           <Tag>{latestJob ? formatScriptJobStatus(latestJob.status) : '未运行'}</Tag>
         </div>
-        <p className="muted">这里不会后台自动写稿。点击后只会校验风格与素材前置条件、刷新 `analysis/material-digest.json`，并把流程推进到“回到 Agent 继续写正式脚本”。</p>
+        <p className="muted">这里不会后台自动写稿。点击后只会校验风格与素材前置条件，生成 `script/arrangement.current.json`、`script/arrangement-skeletons.json` 与 `script/segment-cards.json`，并把流程推进到“回到 Agent 继续写正式脚本”。</p>
         {!availableCategories.length ? (
           <p className="muted">Workspace 风格库当前没有可选分类；请先到 `/style` 配置或生成风格档案。</p>
         ) : null}

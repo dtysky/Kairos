@@ -84,14 +84,16 @@ export function buildProjectBriefWithMappings(input: {
   createdAt?: string;
   mappings: Array<{ path: string; description: string; flightRecordPath?: string }>;
   pharos?: { includedTripIds?: string[] };
+  materialPatternPhrases?: string[];
+  localEditingIntentPhrases?: string[];
 }): string {
   const templateLines = buildProjectBriefTemplate(input)
     .replace(/\r\n/g, '\n')
     .split('\n');
-  const pharosHeadingIndex = templateLines.findIndex(line => line.trim() === '## Pharos');
+  const mappingHeadingIndex = templateLines.findIndex(line => line.trim() === '## 路径映射');
   const header = (
-    pharosHeadingIndex >= 0
-      ? templateLines.slice(0, pharosHeadingIndex)
+    mappingHeadingIndex >= 0
+      ? templateLines.slice(0, mappingHeadingIndex)
       : templateLines
   ).join('\n').trimEnd();
 
@@ -115,6 +117,12 @@ export function buildProjectBriefWithMappings(input: {
   const pharosLines = includedTripIds.length > 0
     ? includedTripIds.flatMap(tripId => [`包含 Trip：${tripId}`, ''])
     : ['包含 Trip：', ''];
+  const materialPatternLines = (input.materialPatternPhrases ?? []).length > 0
+    ? input.materialPatternPhrases!.flatMap(phrase => [`- ${phrase}`, ''])
+    : ['- ', ''];
+  const localIntentLines = (input.localEditingIntentPhrases ?? []).length > 0
+    ? input.localEditingIntentPhrases!.flatMap(phrase => [`- ${phrase}`, ''])
+    : ['- ', ''];
 
   return [
     header,
@@ -124,6 +132,12 @@ export function buildProjectBriefWithMappings(input: {
     '## Pharos',
     '',
     ...pharosLines,
+    '## 材料模式短语',
+    '',
+    ...materialPatternLines,
+    '## 局部剪辑作用短语',
+    '',
+    ...localIntentLines,
   ].join('\n').trimEnd() + '\n';
 }
 

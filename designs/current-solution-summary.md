@@ -55,6 +55,26 @@ Kairos 当前需要区分两层：
 - `designs/current-solution-summary.md`
 - `designs/architecture.md`
 
+## 1.2 2026-04-08 语义协议切换
+
+当前主链已经开始从旧的 `slice + 五轴语义 + 单阶段 arrangement` 切到新的准备模型：
+
+- Analyze 的正式素材单元现在优先叫 `span`
+- 项目内正式持久化路径已切到 `store/spans.json`
+- `span` 当前正式承载三块主信息：
+  - `materialPatterns[]`
+  - `localEditingIntent`
+  - `grounding`
+- 项目级正式词集当前只保留两层，并挂到 `project-brief`：
+  - `材料模式短语`
+  - `局部剪辑作用短语`
+- Script prep 当前改成“两次组织”：
+  - 先从 `span` 预聚合素材侧 `Bundle Graph`
+  - 再由 `style + 约束 + bundle inventory` 生成 style-driven arrangement
+- `Bundle` 当前是素材侧自然语言对象，不是第四套正式词表
+- `Segment` 当前不再是内置固定词表，而是 style-driven 的自然语言段落对象
+- Timeline / script selection 当前开始优先传递 `spanId`；`sliceId` 只作为兼容字段继续存在一段时间
+
 ## 2. 正式主流程
 
 ```mermaid

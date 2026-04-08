@@ -65,17 +65,16 @@ export async function recallSegmentCandidates(
   const reportMap = new Map(reports.map(report => [report.assetId, report]));
   const maxCandidates = input.maxCandidatesPerSegment ?? 8;
 
-  const segmentResults = [];
-  for (const segment of approvedPlan.segments) {
+  const segmentResults = approvedPlan.segments.map(segment => {
     const segmentBrief = extractSegmentBrief(scriptBrief, segment.id);
     const candidates = rankCandidatesForSegment(segment, segmentBrief, slices, reportMap)
       .slice(0, maxCandidates);
-    segmentResults.push({
+    return {
       segmentId: segment.id,
       title: segment.title,
       candidates,
-    });
-  }
+    };
+  });
 
   const recall: ISegmentCandidateRecall = {
     id: randomUUID(),
@@ -96,40 +95,51 @@ function rankCandidatesForSegment(
 ) {
   return slices.map(slice => {
     const report = reportMap.get(slice.assetId);
+    const semanticLabels = dedupeStrings([
+      ...slice.narrativeFunctions.core,
+      ...slice.shotGrammar.core,
+      ...slice.viewpointRoles.core,
+      ...slice.subjectStates.core,
+      ...slice.narrativeFunctions.extra,
+    ]);
+    const placeHints = dedupeStrings([
+      ...slice.grounding.spatialEvidence
+        .map(item => item.locationText?.trim())
+        .filter((value): value is string => Boolean(value)),
+      ...(report?.placeHints ?? []),
+    ]);
+    const summary = buildSliceSummary(slice);
     const reasons: string[] = [];
     let score = 0;
-    const preferredStartMs = slice.editSourceInMs ?? slice.sourceInMs;
-    const preferredEndMs = slice.editSourceOutMs ?? slice.sourceOutMs;
 
     if (segment.preferredClipTypes.includes(mapSliceTypeToClipType(slice.type))) {
       score += 3;
       reasons.push(`clip-type:${slice.type}`);
     }
 
-    const labelOverlap = overlapScore(slice.labels, segment.preferredLabels);
+    const labelOverlap = overlapScore(semanticLabels, segment.preferredLabels);
     if (labelOverlap > 0) {
-      score += labelOverlap * 2;
-      reasons.push(`labels:${labelOverlap}`);
+      score += labelOverlap * 2.2;
+      reasons.push(`semantics:${labelOverlap}`);
     }
 
-    const placeOverlap = overlapScore(slice.placeHints, segment.preferredPlaceHints);
+    const placeOverlap = overlapScore(placeHints, segment.preferredPlaceHints);
     if (placeOverlap > 0) {
       score += placeOverlap * 2.5;
       reasons.push(`places:${placeOverlap}`);
     }
 
-    if (slice.summary && segment.intent) {
-      const summaryOverlap = overlapScore(tokenize(slice.summary), tokenize(segment.intent));
-      if (summaryOverlap > 0) {
-        score += summaryOverlap * 1.5;
-        reasons.push(`intent:${summaryOverlap}`);
-      }
+    const intentTokens = tokenize(segment.intent);
+    const summaryOverlap = overlapScore(tokenize(summary), intentTokens);
+    if (summaryOverlap > 0) {
+      score += summaryOverlap * 1.8;
+      reasons.push(`intent:${summaryOverlap}`);
     }
 
-    if (slice.transcript && segment.intent) {
-      const transcriptOverlap = overlapScore(tokenize(slice.transcript), tokenize(segment.intent));
+    if (slice.transcript && intentTokens.length > 0) {
+      const transcriptOverlap = overlapScore(tokenize(slice.transcript), intentTokens);
       if (transcriptOverlap > 0) {
-        score += transcriptOverlap * 2.2;
+        score += transcriptOverlap * 2.3;
         reasons.push(`transcript:${transcriptOverlap}`);
       }
     }
@@ -137,9 +147,9 @@ function rankCandidatesForSegment(
     if (segmentBrief) {
       const briefOverlap = overlapScore(
         [
-          ...slice.labels,
-          ...slice.placeHints,
-          ...tokenize(slice.summary ?? ''),
+          ...semanticLabels,
+          ...placeHints,
+          ...tokenize(summary),
           ...tokenize(slice.transcript ?? ''),
         ],
         tokenize(segmentBrief),
@@ -151,57 +161,52 @@ function rankCandidatesForSegment(
     }
 
     if ((slice.pharosRefs?.length ?? 0) > 0) {
-      score += 0.6;
+      score += 0.8;
       reasons.push(`pharos:linked-${slice.pharosRefs?.length ?? 0}`);
     }
-    if ((report?.pharosMatches.length ?? 0) > 0) {
-      const pharosTokens = report?.pharosMatches.flatMap(match => [
+
+    if (report?.pharosMatches.length) {
+      const pharosTokens = report.pharosMatches.flatMap(match => [
         ...tokenize(match.tripTitle ?? ''),
         ...tokenize(match.dayTitle ?? ''),
-      ]) ?? [];
-      const segmentTokens = dedupeStrings([
-        ...segment.preferredPlaceHints,
-        ...tokenize(segment.intent),
-        ...tokenize(segment.title),
       ]);
-      const pharosOverlap = overlapScore(pharosTokens, segmentTokens);
+      const pharosOverlap = overlapScore(
+        pharosTokens,
+        dedupeStrings([
+          ...segment.preferredPlaceHints,
+          ...tokenize(segment.intent),
+          ...tokenize(segment.title),
+        ]),
+      );
       if (pharosOverlap > 0) {
-        score += pharosOverlap * 1.8;
+        score += pharosOverlap * 1.6;
         reasons.push(`pharos-context:${pharosOverlap}`);
       }
     }
 
-    if (segment.role === 'intro' && (preferredStartMs ?? 0) <= 60_000) {
+    if (segment.role === 'intro' && (slice.editSourceInMs ?? slice.sourceInMs ?? 0) <= 60_000) {
       score += 0.75;
       reasons.push('role:intro-early-window');
     }
 
-    if (segment.role === 'outro' && typeof preferredEndMs === 'number') {
-      const durationMs = report?.durationMs;
-      if (typeof durationMs === 'number' && preferredEndMs >= durationMs - 60_000) {
-        score += 0.75;
-        reasons.push('role:outro-late-window');
-      }
-    }
-
     if (slice.speedCandidate) {
-      score += slice.type === 'drive' ? 0.6 : 0.2;
+      score += slice.type === 'drive' || slice.type === 'aerial' ? 0.6 : 0.2;
       reasons.push(`speed-candidate:${slice.speedCandidate.suggestedSpeeds.join('/')}`);
     }
 
-    score += slice.confidence ?? 0.5;
+    score += averageConfidence(slice);
 
     return {
       segmentId: segment.id,
       sliceId: slice.id,
       assetId: slice.assetId,
       score,
-      reasons: reasons.length > 0 ? reasons : ['fallback:lowest-confidence'],
+      reasons: reasons.length > 0 ? reasons : ['fallback:semantic-low-signal'],
       semanticKind: slice.semanticKind,
-      summary: slice.summary,
+      summary,
       transcript: slice.transcript,
-      labels: slice.labels,
-      placeHints: slice.placeHints,
+      labels: semanticLabels,
+      placeHints,
       pharosRefs: slice.pharosRefs,
       sourceInMs: slice.sourceInMs,
       sourceOutMs: slice.sourceOutMs,
@@ -214,6 +219,28 @@ function rankCandidatesForSegment(
     || (a.editSourceInMs ?? a.sourceInMs ?? 0) - (b.editSourceInMs ?? b.sourceInMs ?? 0)
     || a.sliceId.localeCompare(b.sliceId),
   );
+}
+
+function averageConfidence(slice: IKtepSlice): number {
+  const confidenceValues = [
+    ...slice.narrativeFunctions.evidence.map(item => item.confidence),
+    ...slice.shotGrammar.evidence.map(item => item.confidence),
+    ...slice.viewpointRoles.evidence.map(item => item.confidence),
+    ...slice.subjectStates.evidence.map(item => item.confidence),
+    ...slice.grounding.spatialEvidence.map(item => item.confidence),
+  ].filter(value => Number.isFinite(value));
+  if (confidenceValues.length === 0) return 0.5;
+  return confidenceValues.reduce((sum, value) => sum + value, 0) / confidenceValues.length;
+}
+
+function buildSliceSummary(slice: IKtepSlice): string {
+  return [
+    slice.narrativeFunctions.core[0],
+    slice.shotGrammar.core[0],
+    slice.viewpointRoles.core[0],
+    slice.grounding.spatialEvidence[0]?.locationText,
+    slice.transcript?.trim(),
+  ].filter(Boolean).join(' / ') || slice.type;
 }
 
 function tokenize(text: string): string[] {

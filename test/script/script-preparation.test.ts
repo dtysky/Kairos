@@ -4,13 +4,15 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { prepareProjectScriptForAgent } from '../../src/modules/script/project-script.js';
 import {
+  getArrangementSkeletonsPath,
   getApprovedSegmentPlanPath,
+  getCurrentArrangementPath,
   getCurrentScriptPath,
   getOutlinePath,
   getOutlinePromptPath,
-  getProjectMaterialDigestPath,
   getScriptBriefConfigPath,
   getScriptBriefPath,
+  getSegmentCardsPath,
   getSegmentCandidatesPath,
   getSegmentPlanDraftsPath,
   initWorkspaceProject,
@@ -65,10 +67,57 @@ async function seedScriptPrepProject(workspaceRoot: string, projectId = 'script-
     sourceOutMs: 5_000,
     editSourceInMs: 500,
     editSourceOutMs: 5_500,
-    summary: '海边步行镜头',
     transcript: '海边很安静。',
-    labels: ['coast', 'walk'],
-    placeHints: ['Auckland'],
+    materialPatterns: [{
+      phrase: '高辨识度地点快速建场',
+      confidence: 0.82,
+      evidence: [],
+    }, {
+      phrase: '现场人声可以直接使用',
+      confidence: 0.74,
+      evidence: [],
+    }],
+    localEditingIntent: {
+      primaryPhrase: '适合先把观众带进一个地方',
+      secondaryPhrases: ['适合抬高尺度、气势或情绪'],
+      forbiddenPhrases: [],
+      sourceAudioPolicy: 'optional',
+      speedPolicy: 'forbid',
+      confidence: 0.8,
+      reasons: ['高辨识度地点快速建场'],
+    },
+    narrativeFunctions: {
+      core: ['establish'],
+      extra: ['coast'],
+      evidence: [],
+    },
+    shotGrammar: {
+      core: ['handheld-observe'],
+      extra: [],
+      evidence: [],
+    },
+    viewpointRoles: {
+      core: ['third-person-intro'],
+      extra: [],
+      evidence: [],
+    },
+    subjectStates: {
+      core: ['admiring'],
+      extra: [],
+      evidence: [],
+    },
+    grounding: {
+      speechMode: 'available',
+      speechValue: 'emotional',
+      spatialEvidence: [{
+        tier: 'strong-inference',
+        confidence: 0.8,
+        sourceKinds: ['vision'],
+        reasons: ['coastal-walk'],
+        locationText: 'Auckland',
+      }],
+      pharosRefs: [],
+    },
     evidence: [],
   }]);
   await writeJson(join(projectRoot, 'media', 'chronology.json'), [{
@@ -139,7 +188,7 @@ async function seedScriptPrepProject(workspaceRoot: string, projectId = 'script-
 }
 
 describe('prepareProjectScriptForAgent', () => {
-  it('writes digest and script brief without touching agent-owned script outputs', async () => {
+  it('writes arrangement artifacts and script brief without touching agent-owned script outputs', async () => {
     const workspaceRoot = await createWorkspace();
     const projectRoot = await seedScriptPrepProject(workspaceRoot);
     const sentinelScript = '{\n  "sentinel": true\n}\n';
@@ -153,19 +202,30 @@ describe('prepareProjectScriptForAgent', () => {
     });
 
     expect(result.status).toBe('awaiting_agent');
-    expect(result.digestPath).toBe(getProjectMaterialDigestPath(projectRoot));
+    expect(result.arrangementPath).toBe(getCurrentArrangementPath(projectRoot));
     expect(result.scriptBriefPath).toBe(getScriptBriefPath(projectRoot));
 
-    const digest = JSON.parse(
-      await readFile(getProjectMaterialDigestPath(projectRoot), 'utf-8'),
+    const arrangement = JSON.parse(
+      await readFile(getCurrentArrangementPath(projectRoot), 'utf-8'),
     ) as {
-      totalAssets: number;
-      topLabels: string[];
-      topPlaceHints: string[];
+      chosenSkeletonId: string;
+      segmentCardIds: string[];
+      strategy: string;
     };
-    expect(digest.totalAssets).toBe(1);
-    expect(digest.topLabels).toContain('coast');
-    expect(digest.topPlaceHints).toContain('Auckland');
+    expect(arrangement.chosenSkeletonId).toBeTruthy();
+    expect(arrangement.segmentCardIds.length).toBeGreaterThan(0);
+    expect(arrangement.strategy).toBeTruthy();
+
+    const skeletons = JSON.parse(
+      await readFile(getArrangementSkeletonsPath(projectRoot), 'utf-8'),
+    ) as Array<{ id: string; nodes: Array<{ bundleIds: string[] }> }>;
+    const segmentCards = JSON.parse(
+      await readFile(getSegmentCardsPath(projectRoot), 'utf-8'),
+    ) as Array<{ id: string; bundleIds: string[]; narrativeSketch: string }>;
+    expect(skeletons.length).toBeGreaterThan(0);
+    expect(segmentCards.length).toBeGreaterThan(0);
+    expect(segmentCards[0]?.bundleIds.length).toBeGreaterThan(0);
+    expect(segmentCards[0]?.narrativeSketch).toMatch(/适合先把观众带进一个地方|Auckland/u);
 
     const scriptBrief = await loadScriptBriefConfig(projectRoot);
     const scriptBriefJson = JSON.parse(
@@ -180,10 +240,15 @@ describe('prepareProjectScriptForAgent', () => {
     expect(scriptBrief.styleCategory).toBe('travel-doc');
     expect(scriptBrief.workflowState).toBe('ready_for_agent');
     expect(scriptBrief.statusText).toMatch(/脚本准备已完成/u);
+    expect(scriptBrief.planReviewDraft.some(line => /当前选中 skeleton/u.test(line))).toBe(true);
+    expect(scriptBrief.segments.length).toBeGreaterThan(0);
+    expect(scriptBrief.segments[0]?.notes.some(line => /style-program-hints:/u.test(line))).toBe(true);
     expect(scriptBriefJson.styleCategory).toBe('travel-doc');
     expect(scriptBriefJson.workflowState).toBe('ready_for_agent');
     expect(scriptBriefMarkdown).toContain('当前状态：脚本准备已完成');
     expect(scriptBriefMarkdown).toContain('workflowState=ready_for_agent');
+    expect(scriptBriefMarkdown).toContain('当前选中 skeleton');
+    expect(scriptBriefMarkdown).toContain('style-program-hints:');
 
     expect(await readFile(getCurrentScriptPath(projectRoot), 'utf-8')).toBe(sentinelScript);
     await expect(access(getSegmentPlanDraftsPath(projectRoot))).rejects.toBeTruthy();

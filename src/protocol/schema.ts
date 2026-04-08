@@ -218,6 +218,54 @@ export const IInferredGps = z.object({
 });
 export type IInferredGps = z.infer<typeof IInferredGps>;
 
+export const ESemanticEvidenceTier = z.enum(['truth', 'strong-inference', 'weak-inference']);
+export type ESemanticEvidenceTier = z.infer<typeof ESemanticEvidenceTier>;
+
+export const ISemanticEvidence = z.object({
+  tier: ESemanticEvidenceTier,
+  confidence: z.number().min(0).max(1),
+  sourceKinds: z.array(z.string()).default([]),
+  reasons: z.array(z.string()).default([]),
+});
+export type ISemanticEvidence = z.infer<typeof ISemanticEvidence>;
+
+export const ISemanticTagSet = z.object({
+  core: z.array(z.string()).default([]),
+  extra: z.array(z.string()).default([]),
+  evidence: z.array(ISemanticEvidence).default([]),
+});
+export type ISemanticTagSet = z.infer<typeof ISemanticTagSet>;
+
+export const EGroundingSpeechMode = z.enum(['none', 'available', 'preferred']);
+export type EGroundingSpeechMode = z.infer<typeof EGroundingSpeechMode>;
+
+export const EGroundingSpeechValue = z.enum(['none', 'informative', 'emotional', 'mixed']);
+export type EGroundingSpeechValue = z.infer<typeof EGroundingSpeechValue>;
+
+export const ISpatialEvidence = z.object({
+  tier: ESemanticEvidenceTier,
+  confidence: z.number().min(0).max(1),
+  sourceKinds: z.array(z.string()).default([]),
+  reasons: z.array(z.string()).default([]),
+  lat: z.number().min(-90).max(90).optional(),
+  lng: z.number().min(-180).max(180).optional(),
+  locationText: z.string().optional(),
+  routeRole: z.string().optional(),
+  timeReference: z.string().optional(),
+  pharosRef: IPharosRef.optional(),
+});
+export type ISpatialEvidence = z.infer<typeof ISpatialEvidence>;
+
+export const ISpanGrounding = z.object({
+  speechMode: EGroundingSpeechMode,
+  speechValue: EGroundingSpeechValue,
+  spatialEvidence: z.array(ISpatialEvidence).default([]),
+  pharosRefs: z.array(IPharosRef).default([]),
+});
+export type ISpanGrounding = z.infer<typeof ISpanGrounding>;
+export const ISliceGrounding = ISpanGrounding;
+export type ISliceGrounding = ISpanGrounding;
+
 export const IKtepAsset = z.object({
   id: z.string(),
   kind: EAssetKind,
@@ -239,7 +287,26 @@ export const IKtepAsset = z.object({
 });
 export type IKtepAsset = z.infer<typeof IKtepAsset>;
 
-export const IKtepSlice = z.object({
+export const IMaterialPattern = z.object({
+  phrase: z.string(),
+  confidence: z.number().min(0).max(1),
+  excerpt: z.string().optional(),
+  evidenceRefs: z.array(z.string()).default([]),
+});
+export type IMaterialPattern = z.infer<typeof IMaterialPattern>;
+
+export const ILocalEditingIntent = z.object({
+  primaryPhrase: z.string(),
+  secondaryPhrases: z.array(z.string()).default([]),
+  forbiddenPhrases: z.array(z.string()).default([]),
+  sourceAudioPolicy: z.enum(['must-use', 'prefer-use', 'optional', 'prefer-mute', 'must-mute']),
+  speedPolicy: z.enum(['forbid', 'allow-mild', 'allow-strong']),
+  confidence: z.number().min(0).max(1),
+  reasons: z.array(z.string()).default([]),
+});
+export type ILocalEditingIntent = z.infer<typeof ILocalEditingIntent>;
+
+export const IKtepSpan = z.object({
   id: z.string(),
   assetId: z.string(),
   type: ESliceType,
@@ -248,22 +315,56 @@ export const IKtepSlice = z.object({
   sourceOutMs: z.number().optional(),
   editSourceInMs: z.number().optional(),
   editSourceOutMs: z.number().optional(),
-  summary: z.string().optional(),
   transcript: z.string().optional(),
   transcriptSegments: z.array(ITranscriptSegment).optional(),
-  labels: z.array(z.string()),
-  placeHints: z.array(z.string()),
+  materialPatterns: z.array(IMaterialPattern).default([]),
+  grounding: ISpanGrounding.default({
+    speechMode: 'none',
+    speechValue: 'none',
+    spatialEvidence: [],
+    pharosRefs: [],
+  }),
+  localEditingIntent: ILocalEditingIntent.default({
+    primaryPhrase: '适合先作为一般观察材料使用',
+    secondaryPhrases: [],
+    forbiddenPhrases: [],
+    sourceAudioPolicy: 'optional',
+    speedPolicy: 'forbid',
+    confidence: 0.4,
+    reasons: [],
+  }),
+  narrativeFunctions: ISemanticTagSet.default({
+    core: [],
+    extra: [],
+    evidence: [],
+  }),
+  shotGrammar: ISemanticTagSet.default({
+    core: [],
+    extra: [],
+    evidence: [],
+  }),
+  viewpointRoles: ISemanticTagSet.default({
+    core: [],
+    extra: [],
+    evidence: [],
+  }),
+  subjectStates: ISemanticTagSet.default({
+    core: [],
+    extra: [],
+    evidence: [],
+  }),
   evidence: z.array(IKtepEvidence).optional(),
   pharosRefs: z.array(IPharosRef).optional(),
   speechCoverage: z.number().min(0).max(1).optional(),
-  confidence: z.number().min(0).max(1).optional(),
   speedCandidate: z.object({
     suggestedSpeeds: z.array(z.number().positive()).min(1),
     rationale: z.string(),
     confidence: z.number().min(0).max(1).optional(),
   }).optional(),
 });
-export type IKtepSlice = z.infer<typeof IKtepSlice>;
+export type IKtepSpan = z.infer<typeof IKtepSpan>;
+export const IKtepSlice = IKtepSpan;
+export type IKtepSlice = IKtepSpan;
 
 export const IKtepScriptAction = z.object({
   speed: z.number().positive().optional(),
@@ -276,6 +377,7 @@ export type IKtepScriptAction = z.infer<typeof IKtepScriptAction>;
 
 export const IKtepScriptSelection = z.object({
   assetId: z.string(),
+  spanId: z.string().optional(),
   sliceId: z.string().optional(),
   sourceInMs: z.number().optional(),
   sourceOutMs: z.number().optional(),
@@ -298,7 +400,8 @@ export const IKtepScriptBeat = z.object({
   targetDurationMs: z.number().optional(),
   actions: IKtepScriptAction.optional(),
   selections: z.array(IKtepScriptSelection),
-  linkedSliceIds: z.array(z.string()),
+  linkedSpanIds: z.array(z.string()).default([]),
+  linkedSliceIds: z.array(z.string()).default([]),
   pharosRefs: z.array(IPharosRef).optional(),
   notes: z.string().optional(),
 });
@@ -312,7 +415,8 @@ export const IKtepScript = z.object({
   targetDurationMs: z.number().optional(),
   actions: IKtepScriptAction.optional(),
   selections: z.array(IKtepScriptSelection).optional(),
-  linkedSliceIds: z.array(z.string()),
+  linkedSpanIds: z.array(z.string()).default([]),
+  linkedSliceIds: z.array(z.string()).default([]),
   pharosRefs: z.array(IPharosRef).optional(),
   beats: z.array(IKtepScriptBeat).default([]),
   notes: z.string().optional(),
@@ -356,6 +460,7 @@ export const IKtepClip = z.object({
   id: z.string(),
   trackId: z.string(),
   assetId: z.string(),
+  spanId: z.string().optional(),
   sliceId: z.string().optional(),
   sourceInMs: z.number().optional(),
   sourceOutMs: z.number().optional(),
@@ -412,7 +517,8 @@ export const IKtepDoc = z.object({
   version: z.literal(CVERSION),
   project: IKtepProject,
   assets: z.array(IKtepAsset),
-  slices: z.array(IKtepSlice),
+  spans: z.array(IKtepSpan),
+  slices: z.array(IKtepSpan).optional(),
   script: z.array(IKtepScript).optional(),
   timeline: IKtepTimeline,
   subtitles: z.array(IKtepSubtitle).optional(),
@@ -447,6 +553,68 @@ export const IStyleSection = z.object({
 });
 export type IStyleSection = z.infer<typeof IStyleSection>;
 
+export const EArrangementStrategy = z.enum([
+  'space-first',
+  'time-first',
+  'event-first',
+  'mixed',
+]);
+export type EArrangementStrategy = z.infer<typeof EArrangementStrategy>;
+
+export const IStyleSegmentArchetype = z.object({
+  id: z.string(),
+  name: z.string(),
+  functions: z.array(z.string()).default([]),
+  preferredShotGrammar: z.array(z.string()).default([]),
+  preferredViewpoints: z.array(z.string()).default([]),
+  preferredMaterials: z.array(z.string()).default([]),
+  typicalTiming: z.enum(['opening', 'middle', 'ending', 'bridge']).optional(),
+  notes: z.string().optional(),
+});
+export type IStyleSegmentArchetype = z.infer<typeof IStyleSegmentArchetype>;
+
+export const IStyleArrangementProgram = z.object({
+  id: z.string(),
+  phrase: z.string(),
+  bundlePreferencePhrases: z.array(z.string()).default([]),
+  notes: z.string().optional(),
+});
+export type IStyleArrangementProgram = z.infer<typeof IStyleArrangementProgram>;
+
+export const IStyleArrangementStructure = z.object({
+  organizationModes: z.array(z.string()).default([]),
+  arrangementPrograms: z.array(IStyleArrangementProgram).default([]),
+  bundlePreferenceNotes: z.array(z.string()).default([]),
+});
+export type IStyleArrangementStructure = z.infer<typeof IStyleArrangementStructure>;
+
+export const IStyleTransitionRule = z.object({
+  from: z.string(),
+  to: z.string(),
+  purpose: z.string(),
+  preferredTransitions: z.array(z.string()).default([]),
+  notes: z.string().optional(),
+});
+export type IStyleTransitionRule = z.infer<typeof IStyleTransitionRule>;
+
+export const IStyleFunctionBlock = z.object({
+  id: z.string(),
+  functions: z.array(z.string()).default([]),
+  preferredShotGrammar: z.array(z.string()).default([]),
+  preferredMaterials: z.array(z.string()).default([]),
+  preferredTransitions: z.array(z.string()).default([]),
+  disallowedPatterns: z.array(z.string()).default([]),
+  timingBias: z.enum(['opening', 'middle', 'ending', 'bridge']).optional(),
+  notes: z.string().optional(),
+});
+export type IStyleFunctionBlock = z.infer<typeof IStyleFunctionBlock>;
+
+export const IArrangementBias = z.object({
+  preferredStrategies: z.array(EArrangementStrategy).default([]),
+  notes: z.string().optional(),
+});
+export type IArrangementBias = z.infer<typeof IArrangementBias>;
+
 export const IStyleProfile = z.object({
   id: z.string(),
   name: z.string(),
@@ -459,6 +627,12 @@ export const IStyleProfile = z.object({
   sections: z.array(IStyleSection).optional(),
   antiPatterns: z.array(z.string()).optional(),
   parameters: z.record(z.string()).optional(),
+  arrangementBias: IArrangementBias,
+  arrangementStructure: IStyleArrangementStructure,
+  segmentArchetypes: z.array(IStyleSegmentArchetype).default([]),
+  transitionRules: z.array(IStyleTransitionRule),
+  functionBlocks: z.array(IStyleFunctionBlock),
+  globalConstraints: z.array(z.string()).default([]),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -610,6 +784,195 @@ export const IMediaChronology = z.object({
   correction: IChronologyCorrection.optional(),
 });
 export type IMediaChronology = z.infer<typeof IMediaChronology>;
+
+// ─── Arrangement Synthesis ─────────────────────────────────
+
+export const IMotifBundle = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string(),
+  memberSpanIds: z.array(z.string()).default([]),
+  representativeSpanIds: z.array(z.string()).default([]),
+  dominantMaterialPatterns: z.array(z.string()).default([]),
+  compatibleLocalIntentPhrases: z.array(z.string()).default([]),
+  audioPolicyHint: z.string().optional(),
+  reuseHints: z.array(z.string()).default([]),
+  sliceIds: z.array(z.string()).default([]),
+  representativeSliceIds: z.array(z.string()).default([]),
+  dominantFunctions: z.array(z.string()).default([]),
+  dominantPlaces: z.array(z.string()).default([]),
+  dominantViewpoints: z.array(z.string()).default([]),
+  timeContinuity: z.enum(['tight', 'mixed', 'loose']).optional(),
+  spatialContinuity: z.enum(['tight', 'mixed', 'loose']).optional(),
+  archetypeHits: z.array(z.object({
+    archetypeId: z.string(),
+    confidence: z.number().min(0).max(1),
+    reasons: z.array(z.string()).default([]),
+  })).default([]),
+  notes: z.string().optional(),
+});
+export type IMotifBundle = z.infer<typeof IMotifBundle>;
+
+export const IArrangementSkeletonNode = z.object({
+  id: z.string(),
+  title: z.string().optional(),
+  description: z.string().optional(),
+  programPhrase: z.string().optional(),
+  bundleIds: z.array(z.string()).default([]),
+  hardConstraints: z.array(z.string()).default([]),
+  archetypeId: z.string().optional(),
+  functions: z.array(z.string()).default([]),
+  narrativePurpose: z.string().optional(),
+});
+export type IArrangementSkeletonNode = z.infer<typeof IArrangementSkeletonNode>;
+
+export const IArrangementSkeletonEdge = z.object({
+  from: z.string(),
+  to: z.string(),
+  transitionPurpose: z.string(),
+});
+export type IArrangementSkeletonEdge = z.infer<typeof IArrangementSkeletonEdge>;
+
+export const IArrangementSkeleton = z.object({
+  id: z.string(),
+  projectId: z.string().optional(),
+  organizationMode: z.string().optional(),
+  strategy: EArrangementStrategy.optional(),
+  programPhrases: z.array(z.string()).optional(),
+  nodes: z.array(IArrangementSkeletonNode),
+  edges: z.array(IArrangementSkeletonEdge).default([]),
+  narrativeSketch: z.string(),
+});
+export type IArrangementSkeleton = z.infer<typeof IArrangementSkeleton>;
+
+export const IArrangementSegment = z.object({
+  id: z.string(),
+  skeletonId: z.string(),
+  nodeId: z.string(),
+  title: z.string().optional(),
+  description: z.string().optional(),
+  programPhrase: z.string().optional(),
+  bundleIds: z.array(z.string()).default([]),
+  representativeSpanIds: z.array(z.string()).optional(),
+  hardConstraints: z.array(z.string()).default([]),
+  narrativeSketch: z.string(),
+  archetypeId: z.string().optional(),
+  segmentGoal: z.string().optional(),
+  styleArchetypeHits: z.array(z.string()).default([]),
+});
+export type IArrangementSegment = z.infer<typeof IArrangementSegment>;
+export const ISegmentCard = IArrangementSegment;
+export type ISegmentCard = IArrangementSegment;
+
+export const ICurrentArrangement = z.object({
+  id: z.string(),
+  projectId: z.string(),
+  generatedAt: z.string(),
+  chosenSkeletonId: z.string(),
+  segmentIds: z.array(z.string()).optional(),
+  segmentCardIds: z.array(z.string()).default([]),
+  narrativeSketch: z.string(),
+  organizationMode: z.string().optional(),
+  strategy: EArrangementStrategy.optional(),
+});
+export type ICurrentArrangement = z.infer<typeof ICurrentArrangement>;
+
+// ─── Packet Layer ──────────────────────────────────────────
+
+export const EPacketRepresentationPolicy = z.enum([
+  'cards-only',
+  'cards-plus-representatives',
+  'local-representatives-only',
+]);
+export type EPacketRepresentationPolicy = z.infer<typeof EPacketRepresentationPolicy>;
+
+export const IPacketBudgetPolicy = z.object({
+  targetTokenBudget: z.number().int().positive(),
+  representationPolicy: EPacketRepresentationPolicy,
+  mustHideRawSlices: z.boolean(),
+});
+export type IPacketBudgetPolicy = z.infer<typeof IPacketBudgetPolicy>;
+
+export const IProjectArrangementPacket = z.object({
+  projectGoal: z.string(),
+  budget: IPacketBudgetPolicy,
+  skeletonCandidates: z.array(IArrangementSkeleton),
+  arrangementSegments: z.array(IArrangementSegment),
+  segmentCards: z.array(IArrangementSegment).default([]),
+  stylePrograms: z.array(IStyleArrangementProgram).default([]),
+  styleArchetypeHits: z.array(z.object({
+    archetypeId: z.string(),
+    matchedBundleIds: z.array(z.string()).default([]),
+    notes: z.string().optional(),
+  })).default([]),
+  hardConstraints: z.array(z.string()).default([]),
+  outputContract: z.object({
+    chosenSkeletonId: z.string(),
+    organizationMode: z.string().optional(),
+    arrangementStrategy: EArrangementStrategy.optional(),
+    segmentOutline: z.array(z.object({
+      segmentId: z.string().optional(),
+      order: z.number().int().nonnegative(),
+      segmentCardId: z.string().optional(),
+    })).default([]),
+    narrativeSketch: z.string(),
+  }),
+});
+export type IProjectArrangementPacket = z.infer<typeof IProjectArrangementPacket>;
+
+export const ISegmentPacket = z.object({
+  budget: IPacketBudgetPolicy,
+  arrangementSegment: IArrangementSegment,
+  segmentCard: IArrangementSegment,
+  motifBundles: z.array(IMotifBundle),
+  representativeSpans: z.array(IKtepSpan),
+  representativeSlices: z.array(IKtepSpan).default([]),
+  styleProgramPhrases: z.array(z.string()).default([]),
+  styleArchetypeHits: z.array(z.string()).default([]),
+  hardConstraints: z.array(z.string()).default([]),
+  outputContract: z.object({
+    beatPlan: z.array(z.unknown()).default([]),
+    narrativeSketch: z.string(),
+  }),
+});
+export type ISegmentPacket = z.infer<typeof ISegmentPacket>;
+
+export const IBeatPacket = z.object({
+  budget: IPacketBudgetPolicy,
+  beatGoal: z.string(),
+  motifBundleIds: z.array(z.string()).default([]),
+  representativeSpans: z.array(IKtepSpan),
+  representativeSlices: z.array(IKtepSpan).default([]),
+  stylePrograms: z.array(z.string()).default([]),
+  styleBlocks: z.array(z.string()).default([]),
+  localTimelineConstraints: z.array(z.string()).default([]),
+  outputContract: z.object({
+    chosenSpanIds: z.array(z.string()).default([]),
+    chosenSliceIds: z.array(z.string()).default([]),
+    sourceSpeechDecision: z.enum(['use', 'avoid', 'optional']),
+    roughTextIntent: z.string(),
+  }),
+});
+export type IBeatPacket = z.infer<typeof IBeatPacket>;
+
+export const ITimelineRefinementPacket = z.object({
+  budget: IPacketBudgetPolicy,
+  actualTimelineFacts: z.object({
+    segmentId: z.string(),
+    beatId: z.string(),
+    durationMs: z.number().nonnegative(),
+    clips: z.array(z.unknown()).default([]),
+    subtitleWindows: z.array(z.unknown()).default([]),
+  }),
+  currentBeatIntent: z.string(),
+  sourceSpeechDecision: z.enum(['use', 'avoid', 'optional']),
+  styleBlocks: z.array(z.string()).default([]),
+  outputContract: z.object({
+    finalText: z.string(),
+    timelineAdjustmentRequest: z.unknown().optional(),
+  }),
+});
+export type ITimelineRefinementPacket = z.infer<typeof ITimelineRefinementPacket>;
 
 // ─── Script Planning ────────────────────────────────────────
 
@@ -782,6 +1145,8 @@ export const IProjectBriefConfig = z.object({
   createdAt: z.string().optional(),
   mappings: z.array(IProjectBriefMappingConfig),
   pharos: IProjectBriefPharosConfig.optional(),
+  materialPatternPhrases: z.array(z.string()).default([]),
+  localEditingIntentPhrases: z.array(z.string()).default([]),
 });
 export type IProjectBriefConfig = z.infer<typeof IProjectBriefConfig>;
 

@@ -16,7 +16,8 @@ export function validateKtepDoc(doc: IKtepDoc): IValidationResult {
 
   const trackMap = new Map(doc.timeline.tracks.map(track => [track.id, track]));
   const assetMap = new Map(doc.assets.map(asset => [asset.id, asset]));
-  const sliceMap = new Map(doc.slices.map(slice => [slice.id, slice]));
+  const spans = doc.spans ?? doc.slices ?? [];
+  const sliceMap = new Map(spans.map(slice => [slice.id, slice]));
   const trackIds = new Set(trackMap.keys());
   const assetIds = new Set(assetMap.keys());
   const sliceIds = new Set(sliceMap.keys());
@@ -111,7 +112,7 @@ export function validateKtepDoc(doc: IKtepDoc): IValidationResult {
   }
 
   // Rule 3 also applies to slices
-  for (const slice of doc.slices) {
+  for (const slice of spans) {
     if (
       slice.sourceInMs != null &&
       slice.sourceOutMs != null &&

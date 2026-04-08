@@ -17,9 +17,9 @@ const CSYSTEM = `你是一个旅拍纪录片脚本创作者。根据给定的叙
 2. 严格遵守风格禁区，禁区中列出的表达方式绝对不要使用
 3. 段落长度与目标时长匹配
 4. 正式编排单元是 beats，不是把一整段 narration 事后切字幕
-5. 每个段落必须返回 beats 数组；每个 beat 至少包含 id, text, selections, linkedSliceIds
+5. 每个段落必须返回 beats 数组；每个 beat 至少包含 id, text, selections, linkedSpanIds；linkedSliceIds 只作为兼容补充
 6. 如果一个 beat 内本来就有多段配音和明确停顿，可额外返回 utterances: [{ text, pauseBeforeMs?, pauseAfterMs? }]；没有显式 pause 时可省略
-7. 每个 beat 应只绑定 1 到若干条真正要使用的 selections，必要时可以只取候选 slice 内的一小段
+7. 每个 beat 应只绑定 1 到若干条真正要使用的 selections，selection 里优先填写 spanId，必要时可以只取候选 span 内的一小段
 8. actions 可包含 speed, preserveNatSound, muteSource, transitionHint, holdMs
 8a. 如果候选切片里带有明确口播/人物原声 transcript，且这段话本身值得直接进入正片，优先保留原声并设置 preserveNatSound=true
 8b. 对于 preserveNatSound=true 的 beat，text 应尽量贴近要保留的原话或其可读字幕版本，不要再额外改写成旁白
@@ -66,6 +66,11 @@ export async function generateScript(
         normalizedSelections,
         outline[i]?.sliceIds ?? [],
       );
+      const linkedSpanIds = takeLinkedSpanIds(
+        s.linkedSpanIds,
+        normalizedSelections,
+        linkedSliceIds,
+      );
       return {
         id: s.id ?? randomUUID(),
         role: s.role ?? outline[i]?.role ?? 'scene',
@@ -74,6 +79,7 @@ export async function generateScript(
         targetDurationMs: s.targetDurationMs ?? outline[i]?.estimatedDurationMs,
         actions: normalizeActions(s.actions),
         selections: normalizedSelections.length > 0 ? normalizedSelections : undefined,
+        linkedSpanIds,
         linkedSliceIds,
         pharosRefs: mergePharosRefsFromSelections(normalizedSelections),
         beats,
@@ -85,22 +91,26 @@ export async function generateScript(
 }
 
 export function buildStylePrompt(style: IStyleProfile): string {
-  // If rawReference exists, use it directly — it's the richest source
-  if (style.rawReference) {
-    const parts = [style.rawReference];
-    if (style.antiPatterns?.length) {
-      parts.push(`\n### 风格禁区（绝对不要使用）\n${style.antiPatterns.map((p, i) => `${i + 1}. ${p}`).join('\n')}`);
-    }
-    return parts.join('\n');
-  }
-
-  // Fallback: build from structured fields
   const parts: string[] = [
     `人称: ${style.voice.person === '1st' ? '第一人称' : style.voice.person === '2nd' ? '第二人称' : '第三人称'}`,
     `语气: ${style.voice.tone}`,
     `旁白密度: ${style.voice.density}`,
     `节奏: ${style.narrative.pacePattern}`,
+    `全片编排偏向: ${style.arrangementBias?.preferredStrategies?.join(' / ') || 'mixed'}`,
   ];
+  if ((style.arrangementStructure?.organizationModes?.length ?? 0) > 0) {
+    parts.push(`组织模式: ${style.arrangementStructure.organizationModes.join(' / ')}`);
+  }
+  if ((style.arrangementStructure?.arrangementPrograms?.length ?? 0) > 0) {
+    parts.push('\n### 段落程序');
+    parts.push(...style.arrangementStructure.arrangementPrograms.slice(0, 10).map(program =>
+      `- ${program.phrase}${(program.bundlePreferencePhrases?.length ?? 0) > 0 ? ` | bundle偏好=${program.bundlePreferencePhrases.join(' / ')}` : ''}${program.notes ? ` | ${program.notes}` : ''}`,
+    ));
+  }
+  if ((style.arrangementStructure?.bundlePreferenceNotes?.length ?? 0) > 0) {
+    parts.push('\n### Bundle 选用偏好');
+    parts.push(...style.arrangementStructure.bundlePreferenceNotes.slice(0, 6).map(note => `- ${note}`));
+  }
   const rhythmLines = buildRhythmMaterialPromptLines(style, {
     sectionHeading: '节奏与素材编排要点：',
     parameterHeading: '节奏与素材参数：',
@@ -115,50 +125,57 @@ export function buildStylePrompt(style: IStyleProfile): string {
     parts.push(`示例文案:\n${style.voice.sampleTexts.map(t => `  > ${t}`).join('\n')}`);
   }
 
-  if (style.sections?.length) {
-    for (const sec of style.sections) {
-      parts.push(`\n### ${sec.title}\n${sec.content}`);
-    }
+  if ((style.functionBlocks?.length ?? 0) > 0) {
+    parts.push('\n### 功能块');
+    parts.push(...style.functionBlocks.slice(0, 10).map(block =>
+      `- ${block.notes ?? block.id}: 偏好镜头=${block.preferredShotGrammar.join('/') || '-'} | 偏好材料=${block.preferredMaterials.join('/') || '-'} | 禁区=${block.disallowedPatterns.join('/') || '-'}`,
+    ));
+  }
+
+  if ((style.globalConstraints?.length ?? 0) > 0) {
+    parts.push(`\n### 全局约束\n${style.globalConstraints.map(item => `- ${item}`).join('\n')}`);
   }
 
   if (style.antiPatterns?.length) {
     parts.push(`\n### 风格禁区（绝对不要使用）\n${style.antiPatterns.map((p, i) => `${i + 1}. ${p}`).join('\n')}`);
   }
 
-  if (style.parameters && Object.keys(style.parameters).length > 0) {
-    const paramLines = Object.entries(style.parameters)
-      .map(([k, v]) => `- ${k}: ${v}`);
-    parts.push(`\n### 关键参数\n${paramLines.join('\n')}`);
+  if (style.sections?.length) {
+    parts.push('\n### 解释性补充');
+    for (const sec of style.sections.slice(0, 4)) {
+      parts.push(`- ${sec.title}: ${sec.content.slice(0, 180)}`);
+    }
   }
 
-  return parts.join('\n');
+  return parts.join('\n').trim();
 }
 
 export function buildOutlinePrompt(outline: IOutlineSegment[]): string {
   return outline.map((seg, i) => {
     const timeRange = formatTimeRange(seg.context.startMs, seg.context.endMs);
-    const repeatedLabels = findRepeatedTokens(seg.context.sliceContexts.map(slice => slice.labels));
-    const repeatedPlaceHints = findRepeatedTokens(seg.context.sliceContexts.map(slice => slice.placeHints));
     const beatLines = seg.beats
       .slice(0, 8)
       .map((beat, index) => {
         const beatRange = formatTimeRange(beat.sourceInMs, beat.sourceOutMs);
-        const uniqueLabels = beat.labels.filter(label => !repeatedLabels.has(label));
-        const uniquePlaceHints = beat.placeHints.filter(place => !repeatedPlaceHints.has(place));
         const details = [
           beat.summary,
           beat.transcript ? `原声: ${beat.transcript}` : '',
-          uniqueLabels.length > 0 ? `标签: ${uniqueLabels.join(', ')}` : '',
-          uniquePlaceHints.length > 0 ? `地点: ${uniquePlaceHints.join(', ')}` : '',
+          beat.localEditingIntent ? `局部作用: ${beat.localEditingIntent}` : '',
+          beat.materialPatterns.length > 0 ? `材料模式: ${beat.materialPatterns.join(', ')}` : '',
+          beat.locations.length > 0 ? `地点: ${beat.locations.join(', ')}` : '',
+          beat.sourceSpeechDecision ? `原声建议: ${beat.sourceSpeechDecision}` : '',
+          beat.sourceAudioPolicy ? `原声策略: ${beat.sourceAudioPolicy}` : '',
+          beat.speedPolicy ? `速度策略: ${beat.speedPolicy}` : '',
           beat.speedCandidate
             ? `速度候选: ${beat.speedCandidate.suggestedSpeeds.join('x / ')}x`
             : '',
+          beat.selections.length > 1 ? `代表素材: ${beat.selections.length} 条` : '',
         ].filter(Boolean).join(' | ');
         return `   - ${index + 1}. ${beat.title} ${beatRange}${details ? ` ${details}` : ''}`;
       })
       .join('\n');
 
-    return `${i + 1}. [${seg.role}] ${seg.title} (${Math.round(seg.estimatedDurationMs / 1000)}s)\n   时间范围: ${timeRange}\n   素材切片: ${seg.sliceIds.length} 个\n   预规划 beats: ${seg.beats.length} 个\n   段落摘要: ${seg.context.summary}\n   输出要求: 先参考预规划 beats，再在每个 beat 中从候选切片里截取真正要用的子区间；如果决定保留原声，选区必须覆盖完整一句 transcript，不要切半句；如果要写 speed，只能用于纯 drive/aerial 节奏段${beatLines ? `\n${beatLines}` : ''}`;
+    return `${i + 1}. [${seg.role}] ${seg.title} (${Math.round(seg.estimatedDurationMs / 1000)}s)\n   时间范围: ${timeRange}\n   segmentCard: ${seg.segmentCardId}\n   段落程序: ${seg.title}\n   段落草图: ${seg.narrativeSketch || seg.context.summary}\n   代表素材: ${seg.sliceIds.length} 条\n   预规划 beats: ${seg.beats.length} 个\n   输出要求: 只根据当前段的 beats 做决定；优先遵循材料模式、局部作用和原声/速度约束；如果决定保留原声，选区必须覆盖完整一句 transcript；如果要写 speed，只能用于纯 drive/aerial montage；不要为了解释信息而硬塞多余旁白${beatLines ? `\n${beatLines}` : ''}`;
   }).join('\n');
 }
 
@@ -184,6 +201,7 @@ function normalizeSelections(
     );
     normalized.push({
       assetId,
+      spanId: raw?.spanId ?? raw?.sliceId ?? fallback?.spanId ?? fallback?.sliceId,
       sliceId: raw?.sliceId ?? fallback?.sliceId,
       sourceInMs: normalizedWindow?.sourceInMs,
       sourceOutMs: normalizedWindow?.sourceOutMs,
@@ -211,7 +229,9 @@ function normalizeBeats(
   for (let i = 0; i < rawBeats.length; i++) {
     const rawBeat = rawBeats[i] as any;
     const beatFallback = pickBeatFallback(fallbackBeats, i);
-    const beatFallbackSelections = beatFallback ? [beatFallback.selection] : [];
+    const beatFallbackSelections = beatFallback?.selections?.length
+      ? beatFallback.selections
+      : beatFallback ? [beatFallback.selection] : [];
     const selections = normalizeSelections(rawBeat?.selections, beatFallbackSelections);
     const linkedSliceIds = takeLinkedSliceIds(
       rawBeat?.linkedSliceIds,
@@ -219,6 +239,11 @@ function normalizeBeats(
       beatFallbackSelections
         .map(selection => selection.sliceId)
         .filter((sliceId): sliceId is string => typeof sliceId === 'string' && sliceId.length > 0),
+    );
+    const linkedSpanIds = takeLinkedSpanIds(
+      rawBeat?.linkedSpanIds,
+      selections,
+      linkedSliceIds,
     );
     const utterances = normalizeUtterances(rawBeat?.utterances);
     const text = resolveBeatText(
@@ -236,6 +261,7 @@ function normalizeBeats(
       targetDurationMs: pickOptionalNumber(rawBeat?.targetDurationMs, beatFallback?.estimatedDurationMs),
       actions: normalizeActions(rawBeat?.actions),
       selections,
+      linkedSpanIds,
       linkedSliceIds,
       pharosRefs: normalizePharosRefs(rawBeat?.pharosRefs, mergePharosRefsFromSelections(selections)),
       notes: typeof rawBeat?.notes === 'string' ? rawBeat.notes : undefined,
@@ -261,7 +287,10 @@ function buildFallbackBeats(
     id: beat.id,
     text: beatTexts[index] ?? beat.summary ?? '',
     targetDurationMs: beat.estimatedDurationMs ?? defaultBeatDuration,
-    selections: [beat.selection],
+    selections: beat.selections.length > 0 ? beat.selections : [beat.selection],
+    linkedSpanIds: typeof (beat.selection.spanId ?? beat.sliceId) === 'string'
+      ? [beat.selection.spanId ?? beat.sliceId as string]
+      : [],
     linkedSliceIds: typeof beat.sliceId === 'string' ? [beat.sliceId] : [],
     pharosRefs: beat.selection.pharosRefs,
   }));
@@ -413,6 +442,20 @@ function takeLinkedSliceIds(
     .map(selection => selection.sliceId)
     .filter((sliceId): sliceId is string => typeof sliceId === 'string' && sliceId.length > 0);
   return derived.length > 0 ? derived : fallbackSliceIds;
+}
+
+function takeLinkedSpanIds(
+  rawLinkedSpanIds: unknown,
+  selections: IKtepScriptSelection[],
+  fallbackSpanIds: string[],
+): string[] {
+  if (Array.isArray(rawLinkedSpanIds) && rawLinkedSpanIds.every(value => typeof value === 'string')) {
+    return rawLinkedSpanIds;
+  }
+  const derived = selections
+    .map(selection => selection.spanId ?? selection.sliceId)
+    .filter((spanId): spanId is string => typeof spanId === 'string' && spanId.length > 0);
+  return derived.length > 0 ? derived : fallbackSpanIds;
 }
 
 function splitNarrationIntoBeats(
@@ -567,20 +610,6 @@ function normalizeSelectionWindow(
     sourceInMs: normalizedInMs,
     sourceOutMs: normalizedOutMs,
   };
-}
-
-function findRepeatedTokens(tokenGroups: string[][]): Set<string> {
-  if (tokenGroups.length <= 1) return new Set();
-  const firstGroup = new Set(tokenGroups[0]);
-  const repeated = new Set<string>();
-
-  for (const token of firstGroup) {
-    if (tokenGroups.every(group => group.includes(token))) {
-      repeated.add(token);
-    }
-  }
-
-  return repeated;
 }
 
 function pickOptionalNumber(primary: unknown, fallback?: number): number | undefined {

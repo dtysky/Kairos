@@ -1,6 +1,7 @@
 import { join } from 'node:path';
+import { access } from 'node:fs/promises';
 import { z } from 'zod';
-import { IKtepAsset, IKtepSlice } from '../protocol/schema.js';
+import { IKtepAsset, IKtepSlice, IKtepSpan } from '../protocol/schema.js';
 import { readJsonOrNull, writeJson } from './writer.js';
 
 export interface IMergeResult {
@@ -14,15 +15,26 @@ export function getAssetsPath(projectRoot: string): string {
 }
 
 export function getSlicesPath(projectRoot: string): string {
-  return join(projectRoot, 'store/slices.json');
+  return getSpansPath(projectRoot);
+}
+
+export function getSpansPath(projectRoot: string): string {
+  return join(projectRoot, 'store/spans.json');
 }
 
 export async function loadAssets(projectRoot: string): Promise<IKtepAsset[]> {
-  return await readJsonOrNull(getAssetsPath(projectRoot), z.array(IKtepAsset)) ?? [];
+  return (await readJsonOrNull(getAssetsPath(projectRoot), z.array(IKtepAsset)) as IKtepAsset[] | null) ?? [];
 }
 
 export async function loadSlices(projectRoot: string): Promise<IKtepSlice[]> {
-  return await readJsonOrNull(getSlicesPath(projectRoot), z.array(IKtepSlice)) ?? [];
+  return loadSpans(projectRoot);
+}
+
+export async function loadSpans(projectRoot: string): Promise<IKtepSpan[]> {
+  const primaryPath = getSpansPath(projectRoot);
+  const legacyPath = join(projectRoot, 'store/slices.json');
+  const targetPath = await access(primaryPath).then(() => primaryPath).catch(() => legacyPath);
+  return (await readJsonOrNull(targetPath, z.array(IKtepSpan)) as IKtepSpan[] | null) ?? [];
 }
 
 export function buildAssetMergeKey(
@@ -71,7 +83,7 @@ export function mergeAssets(
  */
 export function findUnanalyzedAssets(
   assets: IKtepAsset[],
-  slices: IKtepSlice[],
+  slices: IKtepSpan[],
 ): IKtepAsset[] {
   const analyzedAssetIds = new Set(slices.map(s => s.assetId));
   return assets.filter(a => !analyzedAssetIds.has(a.id));
@@ -82,9 +94,9 @@ export function findUnanalyzedAssets(
  * assetId (re-analysis) or appends new ones.
  */
 export function mergeSlices(
-  existing: IKtepSlice[],
-  incoming: IKtepSlice[],
-): IKtepSlice[] {
+  existing: IKtepSpan[],
+  incoming: IKtepSpan[],
+): IKtepSpan[] {
   const incomingAssetIds = new Set(incoming.map(s => s.assetId));
   const kept = existing.filter(s => !incomingAssetIds.has(s.assetId));
   return [...kept, ...incoming];
@@ -123,10 +135,13 @@ function mergeAssetRecord(
  */
 export async function appendSlices(
   projectRoot: string,
-  incoming: IKtepSlice[],
+  incoming: IKtepSpan[],
 ): Promise<void> {
-  const slicesPath = getSlicesPath(projectRoot);
-  const existing = await loadSlices(projectRoot);
+  const slicesPath = getSpansPath(projectRoot);
+  const existing = await loadSpans(projectRoot);
   const merged = mergeSlices(existing, incoming);
   await writeJson(slicesPath, merged);
 }
+
+export const appendSpans = appendSlices;
+export const mergeSpans = mergeSlices;

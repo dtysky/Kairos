@@ -85,6 +85,26 @@
 
 因此，后续阅读本稿时，应把这些能力理解为“正式流程中已被当前实现覆盖的阶段”，而不是另一套独立的“中间版本架构”。
 
+## 0.3 2026-04-08 语义准备链更新
+
+当前实现已经开始把旧的 `slice + 五轴语义 + 单阶段 arrangement` 迁到新的准备链：
+
+- Analyze 正式素材单元优先收口为 `Span`
+- 项目内正式持久化路径改为 `store/spans.json`
+- `Span` 当前主承载：
+  - `materialPatterns[]`
+  - `localEditingIntent`
+  - `grounding`
+- 项目级正式词集当前只保留两层，并通过 `config/project-brief.md/.json` 维护：
+  - `材料模式短语`
+  - `局部剪辑作用短语`
+- Script prep 现在分为两次组织：
+  1. `Span -> Bundle Graph`
+  2. `Style + constraints + bundle inventory -> style-driven arrangement`
+- `Bundle` 当前是素材侧自然语言对象，不是独立固定词表
+- `Segment` 当前不再作为固定 archetype 闭集，而是 style-driven 生成的自然语言段落对象
+- `style` 当前应优先提供结构化 `arrangementStructure`，而不是只靠 prose 猜段落程序
+
 ## 0.1 当前变更纪律
 
 凡是需求、行为、接口、工作流、正式入口或用户路径变更，当前正式顺序固定为：

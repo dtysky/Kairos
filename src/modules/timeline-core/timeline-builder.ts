@@ -93,6 +93,7 @@ export function buildTimeline(
     version: CVERSION,
     project,
     assets,
+    spans: slices,
     slices,
     script: normalizedScript,
     timeline,

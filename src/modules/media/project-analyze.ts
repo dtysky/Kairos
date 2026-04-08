@@ -103,6 +103,10 @@ import {
   mergeInterestingWindowsByPreferredBounds,
   resolveWindowPreferredRange,
 } from './window-policy.js';
+import {
+  createEmptySliceSemantics,
+  decorateSliceWithSemanticTags,
+} from './semantic-slice.js';
 
 export interface IAnalyzeWorkspaceProjectInput {
   workspaceRoot: string;
@@ -191,6 +195,10 @@ export async function analyzeWorkspaceProjectMedia(
     projectRoot,
     includedTripIds: projectBrief.pharos?.includedTripIds ?? [],
   });
+  const semanticVocabulary = {
+    materialPatternPhrases: projectBrief.materialPatternPhrases ?? [],
+    localEditingIntentPhrases: projectBrief.localEditingIntentPhrases ?? [],
+  };
   const gpxPaths = await resolveProjectGpxPaths({
     projectRoot,
     gpxPaths: input.gpxPaths,
@@ -493,6 +501,7 @@ export async function analyzeWorkspaceProjectMedia(
       projectId: input.projectId,
       projectName: project.name,
       projectRoot,
+      vocabulary: semanticVocabulary,
       runtimeConfig,
       getMlHandle,
       performance,
@@ -2927,25 +2936,26 @@ function decorateSliceWithTranscript(
   }
 
   const match = collectTranscriptForSlice(slice, transcript);
-  const transcriptSummary = shouldUseTranscriptSummary(slice)
-    ? match.transcript
-    : slice.summary;
   const evidence = dedupeEvidence([
     ...(slice.evidence ?? []),
     ...match.evidence,
     ...extraEvidence,
   ]);
+  const grounding: IKtepSlice['grounding'] = {
+    ...slice.grounding,
+    speechMode: match.transcript
+      ? (slice.semanticKind === 'speech' || slice.type === 'talking-head' ? 'preferred' : 'available')
+      : slice.grounding.speechMode,
+    speechValue: match.transcript
+      ? ((match.speechCoverage ?? 0) >= 0.45 ? 'informative' : 'mixed')
+      : slice.grounding.speechValue,
+  };
 
   return {
     ...slice,
-    summary: transcriptSummary,
     transcript: match.transcript ?? slice.transcript,
     transcriptSegments: match.transcriptSegments ?? slice.transcriptSegments,
-    labels: dedupeStrings([
-      ...slice.labels,
-      match.transcript ? 'speech' : undefined,
-      (match.speechCoverage ?? 0) >= 0.35 ? 'spoken-content' : undefined,
-    ]),
+    grounding,
     evidence: evidence.length > 0 ? evidence : undefined,
     speechCoverage: match.speechCoverage ?? slice.speechCoverage,
   };
@@ -3012,17 +3022,6 @@ function collectTranscriptForSlice(
       ? Math.min(speechMs / sliceDurationMs, 1)
       : transcript.speechCoverage,
   };
-}
-
-function shouldUseTranscriptSummary(
-  slice: Pick<IKtepSlice, 'summary' | 'semanticKind'>,
-): boolean {
-  if (slice.semanticKind === 'speech') return true;
-  if (slice.semanticKind === 'visual') return false;
-  const summary = slice.summary;
-  if (!summary) return true;
-  return ['speech-window', 'coarse-sample-window', 'whole-asset-window-fallback']
-    .some(token => summary.includes(token));
 }
 
 async function preparePhotoVisualCoarse(
@@ -3346,16 +3345,26 @@ function buildFineScanSlicesFallback(
   effectiveSlices: IKtepSlice[],
   transcript: ITranscriptContext | null | undefined,
   report: IAssetCoarseReport,
+  vocabulary?: {
+    materialPatternPhrases?: string[];
+    localEditingIntentPhrases?: string[];
+  },
 ): IKtepSlice[] {
   return effectiveSlices.map(slice => {
     const withTranscript = decorateSliceWithTranscript(slice, transcript);
-    return {
-      ...withTranscript,
-      summary: withTranscript.summary ?? report.summary ?? withTranscript.transcript,
-      labels: dedupeStrings([...withTranscript.labels, ...report.labels]),
-      placeHints: dedupeStrings([...withTranscript.placeHints, ...report.placeHints]),
-      pharosRefs: pharosRefsFromMatches(report.pharosMatches),
-    };
+        return decorateSliceWithSemanticTags({
+          slice: {
+            ...withTranscript,
+            pharosRefs: pharosRefsFromMatches(report.pharosMatches),
+      },
+      clipType: report.clipTypeGuess,
+      report,
+      vocabulary,
+      semanticWindow: withTranscript.semanticKind ? {
+            semanticKind: withTranscript.semanticKind,
+            reason: 'fine-scan-fallback',
+          } : null,
+        });
   });
 }
 
@@ -3552,6 +3561,10 @@ async function ensureFineScanTaskState(input: {
 async function generateFineScanOutput(input: {
   analysis: IFinalizedAssetAnalysis;
   projectRoot: string;
+  vocabulary?: {
+    materialPatternPhrases?: string[];
+    localEditingIntentPhrases?: string[];
+  };
   roots: IMediaRoot[];
   runtimeConfig: {
     ffmpegPath?: string;
@@ -3577,10 +3590,12 @@ async function generateFineScanOutput(input: {
   }
 
   if (input.analysis.prepared.asset.kind === 'photo') {
-    const slice = slicePhoto(input.analysis.prepared.asset);
-    slice.summary = input.analysis.report.summary;
-    slice.labels = input.analysis.report.labels;
-    slice.placeHints = input.analysis.report.placeHints;
+    const slice = decorateSliceWithSemanticTags({
+      slice: slicePhoto(input.analysis.prepared.asset),
+      clipType: input.analysis.report.clipTypeGuess,
+      report: input.analysis.report,
+      vocabulary: input.vocabulary,
+    });
     return {
       slices: [slice],
       droppedInvalidSliceCount: 0,
@@ -3606,6 +3621,7 @@ async function generateFineScanOutput(input: {
     asset: prepared.asset,
     localPath: prepared.localPath,
     projectRoot: input.projectRoot,
+    vocabulary: input.vocabulary,
     roots: input.roots,
     runtimeConfig: input.runtimeConfig,
     shotBoundaries: prepared.shotBoundaries,
@@ -3878,6 +3894,10 @@ interface IBuildFineScanSlicesInput {
   asset: IKtepAsset;
   localPath: string;
   projectRoot: string;
+  vocabulary?: {
+    materialPatternPhrases?: string[];
+    localEditingIntentPhrases?: string[];
+  };
   runtimeConfig: {
     ffmpegPath?: string;
     ffprobePath?: string;
@@ -3948,13 +3968,19 @@ async function buildFineScanSlices(
     return {
       slices: effectiveSlices.map(slice => {
         const withTranscript = decorateSliceWithTranscript(slice, input.transcript);
-        return {
-          ...withTranscript,
-          summary: withTranscript.summary ?? input.report.summary ?? withTranscript.transcript,
-          labels: dedupeStrings([...withTranscript.labels, ...input.report.labels]),
-          placeHints: dedupeStrings([...withTranscript.placeHints, ...input.report.placeHints]),
-          pharosRefs: pharosRefsFromMatches(input.report.pharosMatches),
-        };
+        return decorateSliceWithSemanticTags({
+          slice: {
+            ...withTranscript,
+            pharosRefs: pharosRefsFromMatches(input.report.pharosMatches),
+          },
+          clipType: input.report.clipTypeGuess,
+          report: input.report,
+          vocabulary: input.vocabulary,
+          semanticWindow: withTranscript.semanticKind ? {
+            semanticKind: withTranscript.semanticKind,
+            reason: 'fine-scan-no-ml-fallback',
+          } : null,
+        });
       }),
       droppedInvalidSliceCount: 0,
     };
@@ -4002,25 +4028,27 @@ async function buildFineScanSlices(
       input.transcript,
       recognition?.recognition.evidence,
     );
-    slices.push({
-      ...withTranscript,
-      summary: recognition?.recognition.description
-        || withTranscript.summary
-        || input.report.summary
-        || withTranscript.transcript,
-      labels: dedupeStrings([
-        ...withTranscript.labels,
-        ...input.report.labels,
-        recognition?.recognition.sceneType,
-        ...(recognition?.recognition.subjects ?? []),
-      ]),
-      placeHints: dedupeStrings([
-        ...withTranscript.placeHints,
-        ...input.report.placeHints,
-        ...(recognition?.recognition.placeHints ?? []),
-      ]),
-      pharosRefs: pharosRefsFromMatches(input.report.pharosMatches),
-    });
+    slices.push(decorateSliceWithSemanticTags({
+      slice: {
+        ...withTranscript,
+        pharosRefs: pharosRefsFromMatches(input.report.pharosMatches),
+      },
+      clipType: input.report.clipTypeGuess,
+      report: input.report,
+      vocabulary: input.vocabulary,
+      recognition: recognition?.recognition
+        ? {
+          description: recognition.recognition.description,
+          sceneType: recognition.recognition.sceneType,
+          subjects: recognition.recognition.subjects,
+          placeHints: recognition.recognition.placeHints,
+        }
+        : null,
+      semanticWindow: withTranscript.semanticKind ? {
+        semanticKind: withTranscript.semanticKind,
+        reason: recognition?.recognition.description ?? 'fine-scan-window',
+      } : null,
+    }));
   }
 
   return {
@@ -4103,6 +4131,10 @@ async function prefetchFineScanTask(input: {
 async function recognizeFineScanTask(input: {
   task: IFineScanTaskState;
   projectRoot: string;
+  vocabulary?: {
+    materialPatternPhrases?: string[];
+    localEditingIntentPhrases?: string[];
+  };
   runtimeConfig: IAnalyzeSingleAssetInput['runtimeConfig'];
   getMlHandle: () => Promise<MlAvailability>;
   performance?: AnalyzePerformanceSession;
@@ -4116,11 +4148,16 @@ async function recognizeFineScanTask(input: {
   let droppedInvalidSliceCount = 0;
 
   if (input.task.analysis.prepared.asset.kind === 'photo') {
-    const slice = updatedCheckpoint.effectiveSlices[0] ?? slicePhoto(input.task.analysis.prepared.asset);
-    slice.summary = input.task.analysis.report.summary;
-    slice.labels = input.task.analysis.report.labels;
-    slice.placeHints = input.task.analysis.report.placeHints;
-    slice.pharosRefs = pharosRefsFromMatches(input.task.analysis.report.pharosMatches);
+    const baseSlice = updatedCheckpoint.effectiveSlices[0] ?? slicePhoto(input.task.analysis.prepared.asset);
+    const slice = decorateSliceWithSemanticTags({
+      slice: {
+        ...baseSlice,
+        pharosRefs: pharosRefsFromMatches(input.task.analysis.report.pharosMatches),
+      },
+      clipType: input.task.analysis.report.clipTypeGuess,
+      report: input.task.analysis.report,
+      vocabulary: input.vocabulary,
+    });
     slices = [slice];
   } else if (input.task.analysis.prepared.asset.kind === 'audio') {
     slices = [];
@@ -4133,6 +4170,7 @@ async function recognizeFineScanTask(input: {
         updatedCheckpoint.effectiveSlices,
         input.task.analysis.transcript,
         input.task.analysis.report,
+        input.vocabulary,
       );
     } else {
       const ml = await input.getMlHandle();
@@ -4160,24 +4198,27 @@ async function recognizeFineScanTask(input: {
           input.task.analysis.transcript,
           recognition?.recognition.evidence,
         );
-        slices.push({
-          ...withTranscript,
-          summary: recognition?.recognition.description
-            || withTranscript.summary
-            || input.task.analysis.report.summary
-            || withTranscript.transcript,
-          labels: dedupeStrings([
-            ...withTranscript.labels,
-            ...input.task.analysis.report.labels,
-            recognition?.recognition.sceneType,
-            ...(recognition?.recognition.subjects ?? []),
-          ]),
-          placeHints: dedupeStrings([
-            ...withTranscript.placeHints,
-            ...input.task.analysis.report.placeHints,
-            ...(recognition?.recognition.placeHints ?? []),
-          ]),
-        });
+        slices.push(decorateSliceWithSemanticTags({
+          slice: {
+            ...withTranscript,
+            pharosRefs: pharosRefsFromMatches(input.task.analysis.report.pharosMatches),
+          },
+          clipType: input.task.analysis.report.clipTypeGuess,
+          report: input.task.analysis.report,
+          vocabulary: input.vocabulary,
+          recognition: recognition?.recognition
+            ? {
+              description: recognition.recognition.description,
+              sceneType: recognition.recognition.sceneType,
+              subjects: recognition.recognition.subjects,
+              placeHints: recognition.recognition.placeHints,
+            }
+            : null,
+          semanticWindow: withTranscript.semanticKind ? {
+            semanticKind: withTranscript.semanticKind,
+            reason: recognition?.recognition.description ?? 'fine-scan-window',
+          } : null,
+        }));
       }
     }
   }
@@ -4219,6 +4260,10 @@ async function runFineScanPipeline(input: {
   projectId: string;
   projectName: string;
   projectRoot: string;
+  vocabulary?: {
+    materialPatternPhrases?: string[];
+    localEditingIntentPhrases?: string[];
+  };
   runtimeConfig: IAnalyzeSingleAssetInput['runtimeConfig'];
   getMlHandle: () => Promise<MlAvailability>;
   performance?: AnalyzePerformanceSession;
@@ -4359,6 +4404,7 @@ async function runFineScanPipeline(input: {
           promise: recognizeFineScanTask({
             task: nextRecognitionTask,
             projectRoot: input.projectRoot,
+            vocabulary: input.vocabulary,
             runtimeConfig: input.runtimeConfig,
             getMlHandle: input.getMlHandle,
             performance: input.performance,
@@ -4603,7 +4649,7 @@ function applySliceWindowSemantics(
     speedCandidate: buildDriveSpeedCandidate(
       assetDurationMs,
       editEndMs - editStartMs,
-      `drive:${result.summary ?? 'fine-scan-slice'}`,
+      `drive:${result.narrativeFunctions.core[0] ?? result.shotGrammar.core[0] ?? 'fine-scan-slice'}`,
     ),
   };
 }

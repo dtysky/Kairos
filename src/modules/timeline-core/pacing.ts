@@ -402,6 +402,7 @@ function normalizeLegacySegmentTiming(
     text: narration,
     actions: segment.actions,
     selections: segment.selections ?? [],
+    linkedSpanIds: segment.linkedSpanIds,
     linkedSliceIds: segment.linkedSliceIds,
   };
   const speechContext = buildSourceSpeechContext(legacyBeat.selections, sliceMap);

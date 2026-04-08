@@ -3,7 +3,7 @@ name: kairos-analyze
 description: >-
   Phase 2: Coarse-first media analysis for Kairos editing projects. Builds
   asset-level reports, updates chronology, and automatically decides whether to
-  fine-scan specific assets into slices. Use when analyzing project footage for
+  fine-scan specific assets into spans. Use when analyzing project footage for
   editing preparation. This is separate from style-analysis.
 ---
 
@@ -15,9 +15,14 @@ description: >-
 - 先对全量素材做轻量粗扫
 - 落单素材报告 `analysis/asset-reports/<assetId>.json`
 - 自动判断哪些素材值得细扫
-- 只对重点素材生成 `store/slices.json`
+- 只对重点素材生成 `store/spans.json`
 - 更新 `media/chronology.json`
 - 在有空间线索时，为 coarse report 挂上 GPS / 地点上下文
+
+当前 v1 的正式 Analyze 语义口径是：
+- `Asset Evidence -> Span`
+- `Span` 当前主承载 `materialPatterns[] / localEditingIntent / grounding`
+- `slice` 仅作为兼容命名继续存在于少量代码和导出字段中
 
 ## 变更工作流规则
 

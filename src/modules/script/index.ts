@@ -7,8 +7,32 @@ export {
   buildFrontMatter,
   type IStyleLoadOptions,
 } from './style-loader.js';
-export { buildOutline, type IOutlineBeat, type IOutlineSegment } from './outline-builder.js';
-export { buildOutlineFromApprovedPlan } from './outline-builder.js';
+export {
+  buildOutline,
+  buildOutlineFromPackets,
+  type IBuildOutlineFromPacketsInput,
+  type IOutlineBeat,
+  type IOutlineSegment,
+} from './outline-builder.js';
+export {
+  prepareScriptArrangement,
+  type IPrepareScriptArrangementInput,
+  type IPrepareScriptArrangementResult,
+} from './arrangement-preparation.js';
+export {
+  synthesizeArrangement,
+  buildMotifBundles,
+  buildArrangementSkeletons,
+  buildSegmentCards,
+  chooseCurrentArrangement,
+  type ISynthesizeArrangementInput,
+  type ISynthesizeArrangementResult,
+} from './arrangement-synthesis.js';
+export {
+  buildProjectArrangementPacket,
+  buildSegmentPacket,
+  buildBeatPackets,
+} from './packet-builder.js';
 export {
   prepareProjectMaterialDigest,
   prepareSegmentPlanning,

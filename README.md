@@ -36,14 +36,18 @@ Current stable pipeline:
   - agent then generates the initial `script-brief`
   - user reviews and manually saves the brief in `/script`
   - the console now surfaces these handoffs with persistent workflow prompts and explicit hana modal confirmations instead of relying on low-contrast inline copy
-  - `/script` validates `store/slices.json`, the selected workspace `styleCategory`, and the matching style profile
-  - `/script` refreshes deterministic prep outputs such as `analysis/material-digest.json`
+  - `/script` validates `store/spans.json`, the selected workspace `styleCategory`, and the matching style profile
+  - `/script` now prepares deterministic arrangement artifacts such as `analysis/motif-bundles.json`, `script/arrangement-skeletons.json`, `script/arrangement-segments.json`, and `script/arrangement.current.json`
   - the final `script/current.json` remains agent-authored
   - if the reviewed brief was already user-edited and a fresh initial draft is needed, overwrite permission is granted explicitly from `/script` instead of silent agent overwrite
-  - the selected style profile should already expose structured preferences for rhythm stages, material grammar, camera language, and anti-patterns, so Agent work does not depend on re-inferring everything from a long style essay
+  - the selected style profile should already expose structured arrangement programs, bundle preferences, rhythm stages, material grammar, camera language, and anti-patterns, so Agent work does not depend on re-inferring everything from a long style essay
+  - script prep now follows `Span -> Bundle Graph -> Style-Driven Arrangement -> Packet -> Outline -> Script`, rather than the older single-stage segment-plan path
+- project brief now carries two project-level semantic vocab layers for analyze/script:
+  - `材料模式短语`
+  - `局部剪辑作用短语`
 - subtitles support two formal paths:
   - narration path from `beat.text`
-  - source-speech path from `slice.transcriptSegments`
+  - source-speech path from `span.transcriptSegments`
 - video Analyze now produces formal video `visualSummary + decision` in a single unified VLM pass during `finalize`:
   - with audio: `coarse-scan -> audio-analysis -> finalize -> deferred scene detect(if needed)`
   - without audio: `coarse-scan -> finalize -> deferred scene detect(if needed)`
@@ -57,14 +61,18 @@ Current stable pipeline:
 - Analyze now distinguishes tight focus windows from edit-friendly bounds:
   - coarse reports keep `interestingWindows[].startMs/endMs` as focus/evidence windows
   - edit-ready bounds travel alongside them as `interestingWindows[].editStartMs/editEndMs`
-  - persisted `store/slices.json` keeps backward-compatible `sourceInMs/sourceOutMs` plus wider `editSourceInMs/editSourceOutMs`
-- drive slices can now carry `speedCandidate` metadata (for example `2x / 5x / 10x` suggestions), but final retiming stays an explicit downstream decision
+  - persisted `store/spans.json` keeps backward-compatible `sourceInMs/sourceOutMs` plus wider `editSourceInMs/editSourceOutMs`
+- analyze now formalizes material-side semantics on each span:
+  - `materialPatterns[]`
+  - `localEditingIntent`
+  - `grounding`
+- drive spans can now carry `speedCandidate` metadata (for example `2x / 5x / 10x` suggestions), but final retiming stays an explicit downstream decision
 - a `beat` can now optionally carry explicit `utterances[]` with head / middle / tail pauses, so subtitles only occupy voiced islands while video can continue underneath
-- outline / script now prefer Analyze-provided edit bounds instead of re-centering every slice by default; legacy slices without edit bounds still fall back to conservative trimming
+- outline / script now prefer Analyze-provided edit bounds instead of re-centering every span by default; legacy spans without edit bounds still fall back to conservative trimming
 - explicit acceleration now flows through `beat.actions.speed` -> timeline clip `speed` -> NLE export, but only `drive / aerial` clips may consume it; placement also fits clips against `beat.targetDurationMs` instead of drifting with raw source duration
 - when a beat preserves source speech, Kairos now snaps the selected window outward to full `transcriptSegments` boundaries and will extend the beat if needed so the spoken sentence finishes cleanly
 - timeline / draft output spec is project-configurable through `config/runtime.json` and now defaults to `3840x2160 @ 30fps`
-- when a beat does not use source speech, Kairos will mark selected video clips to mute their embedded audio during NLE export
+- when a beat does not use source speech, Kairos will mark selected video clips to mute their embedded audio during NLE export; clip/selection references now prefer `spanId`
 - the official Analyze monitor now exposes structured pipeline cards for `coarse-scan`, `audio-analysis`, and `fine-scan` instead of pretending the first two stages are single-asset serial work
 - Jianying export now uses the vendored local `pyJianYingDraft` CLI, not an external Jianying MCP/server
 - Jianying draft export is guarded by strict safety rules:

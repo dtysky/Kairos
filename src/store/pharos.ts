@@ -13,7 +13,10 @@ export function getProjectPharosContextPath(projectRoot: string): string {
 export async function loadProjectPharosContext(
   projectRoot: string,
 ): Promise<IProjectPharosContext | null> {
-  return readJsonOrNull(getProjectPharosContextPath(projectRoot), IProjectPharosContext);
+  return readJsonOrNull(
+    getProjectPharosContextPath(projectRoot),
+    IProjectPharosContext,
+  ) as Promise<IProjectPharosContext | null>;
 }
 
 export async function writeProjectPharosContext(
