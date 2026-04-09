@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { IStyleProfile } from '../../src/protocol/schema.js';
 import { buildStylePrompt } from '../../src/modules/script/script-generator.js';
 
-describe('buildStylePrompt rhythm grammar fallback', () => {
-  it('includes material-grammar rhythm cues when rawReference is absent', () => {
+describe('buildStylePrompt', () => {
+  it('includes arrangement structure and narration constraints', () => {
     const style: IStyleProfile = {
       id: 'style-1',
       name: '旅行纪录片风格',
@@ -30,11 +30,28 @@ describe('buildStylePrompt rhythm grammar fallback', () => {
       }],
       parameters: {
         '照片使用策略': '少量点缀，不会连续出现太久。',
-        '照片编排方式': '与视频交替而不是成串堆叠。',
-        '延时使用关系': '建场之后或时间推进时进入。',
-        '航拍插入时机': '开场建场、转场、情绪抬升前。',
-        '空镜/B-roll 关系': '用来留白和建立空间。',
-        '节奏抬升触发点': '进入内心高潮或空间切换时。',
+      },
+      arrangementStructure: {
+        primaryAxis: '路线推进与空间打开',
+        secondaryAxes: ['人物状态', '地点呼吸'],
+        chapterPrograms: [{
+          type: 'opening',
+          intent: '先建立空间和旅程起点',
+          materialRoles: ['establishing', 'anchor'],
+          promotionSignals: ['建场', '地理重置'],
+          transitionBias: 'smooth-intro',
+          localNarrationNote: '先少解释。',
+        }],
+        chapterSplitPrinciples: ['先空间后人物'],
+        chapterTransitionNotes: ['用环境音做桥'],
+      },
+      narrationConstraints: {
+        perspective: '第一人称贴身观察',
+        tone: '克制冷静',
+        informationDensity: '少解释，多留白',
+        explanationBias: '让材料自己成立',
+        forbiddenPatterns: ['不要导游腔'],
+        notes: ['句子不要太满'],
       },
       createdAt: '2026-04-03T00:00:00.000Z',
       updatedAt: '2026-04-03T00:00:00.000Z',
@@ -42,10 +59,10 @@ describe('buildStylePrompt rhythm grammar fallback', () => {
 
     const prompt = buildStylePrompt(style);
 
-    expect(prompt).toMatch(/节奏与素材编排要点：/u);
-    expect(prompt).toMatch(/照片更多出现在回望和停顿里/u);
-    expect(prompt).toMatch(/节奏与素材参数：/u);
-    expect(prompt).toMatch(/照片使用策略: 少量点缀，不会连续出现太久。/u);
-    expect(prompt).toMatch(/航拍插入时机: 开场建场、转场、情绪抬升前。/u);
+    expect(prompt).toMatch(/编排主轴: 路线推进与空间打开/u);
+    expect(prompt).toMatch(/章节程序/u);
+    expect(prompt).toMatch(/opening: 先建立空间和旅程起点/u);
+    expect(prompt).toMatch(/Narration Constraints/u);
+    expect(prompt).toMatch(/forbidden: 不要导游腔/u);
   });
 });

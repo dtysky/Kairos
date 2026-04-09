@@ -12,11 +12,9 @@ const CSCRIPT_BRIEF_META_SUFFIX = '-->';
 export interface IScriptBriefSegmentTemplateInput {
   segmentId: string;
   title?: string;
-  role?: string;
+  roleHint?: string;
   targetDurationMs?: number;
   intent?: string;
-  preferredClipTypes?: string[];
-  preferredPlaceHints?: string[];
   notes?: string[];
 }
 
@@ -61,13 +59,13 @@ export function describeScriptBriefWorkflowState(
     case 'choose_style':
       return '请先在 /script 选择风格分类。';
     case 'await_brief_draft':
-      return '风格已保存，请回到 Agent 生成初版 brief。';
+      return '风格已保存，请回到 Agent 同时起草 material-overview.md 和 script-brief。';
     case 'review_brief':
-      return '初版 brief 已生成，请在 /script 审查并保存。';
+      return '初版 overview / brief 已生成，请在 /script 审查 brief 并保存。';
     case 'ready_to_prepare':
       return 'brief 已保存，请点击 准备给 Agent。';
     case 'ready_for_agent':
-      return '脚本准备已完成，请回到 Agent 继续生成 script/current.json。';
+      return '事实刷新与 bundle 索引已完成，请回到 Agent 继续生成 segment-plan、material-slots 与 script/current.json。';
     case 'script_generated':
       return '脚本已生成，可继续审稿或进入 Timeline。';
     default:
@@ -96,7 +94,7 @@ export function inferScriptBriefWorkflowState(input: {
   if (/脚本已生成/u.test(normalizedStatus)) {
     return 'script_generated';
   }
-  if (/准备已完成/u.test(normalizedStatus) || /回到 Agent .*script\/current\.json/u.test(normalizedStatus)) {
+  if (/bundle 索引已完成/u.test(normalizedStatus) || /ready_for_agent/u.test(normalizedStatus)) {
     return 'ready_for_agent';
   }
   if (input.briefOverwriteApprovedAt?.trim()) {
@@ -106,9 +104,6 @@ export function inferScriptBriefWorkflowState(input: {
     return 'ready_to_prepare';
   }
   if (input.lastAgentDraftAt?.trim() || input.lastAgentDraftFingerprint?.trim()) {
-    return 'review_brief';
-  }
-  if (/审查/u.test(normalizedStatus) || /review/u.test(normalizedStatus)) {
     return 'review_brief';
   }
   return 'await_brief_draft';
@@ -188,8 +183,8 @@ export function buildScriptBriefTemplate(
     .join('\n\n');
   const goalDraft = (input.goalDraft?.length ? input.goalDraft : [
     '这支片想表达什么？',
+    'material overview 需要帮后续写稿锁定哪些事实边界？',
     '观众看完后应该留下什么感觉？',
-    '这次先做 intro / 正片中段 / 结尾中的哪一部分？',
   ]).map(line => `- ${line}`);
   const constraintDraft = (input.constraintDraft?.length ? input.constraintDraft : [
     '目标总时长：',
@@ -197,11 +192,10 @@ export function buildScriptBriefTemplate(
     '禁区：',
   ]).map(line => `- ${line}`);
   const planReviewDraft = (input.planReviewDraft?.length ? input.planReviewDraft : [
-    '更偏时间顺序 / 地点顺序 / 情绪顺序：',
+    'primary axis / secondary axes 是否合理：',
     '哪些章节必须存在：',
     '哪些章节不要出现：',
     '哪些地方宁可留白，不要解释太满：',
-    '选择方案：',
     '修改说明：',
   ]).map(line => `- ${line}`);
 
@@ -236,10 +230,9 @@ export function buildScriptBriefTemplate(
     '',
     segmentEntries || [
       '### [segment-id] 段落标题',
-      '- 角色：scene',
+      '- 角色提示：scene',
       '- 目标时长：30s',
       '- 简单说明：',
-      '- 画面/声音偏好：',
       '- 文案约束：',
     ].join('\n'),
     '',
@@ -325,17 +318,16 @@ function buildSegmentBriefEntry(
   input: IScriptBriefSegmentTemplateInput,
 ): string {
   const title = input.title?.trim() || input.segmentId;
-  const role = input.role?.trim() || 'scene';
+  const roleHint = input.roleHint?.trim() || 'scene';
   const targetSeconds = typeof input.targetDurationMs === 'number'
     ? `${Math.round(input.targetDurationMs / 1000)}s`
     : '（待定）';
 
   return [
     `### [${input.segmentId}] ${title}`,
-    `- 角色：${role}`,
+    `- 角色提示：${roleHint}`,
     `- 目标时长：${targetSeconds}`,
     `- 简单说明：${input.intent?.trim() || ''}`,
-    `- 画面/声音偏好：${buildVisualPreference(input)}`,
     `- 文案约束：${buildConstraintHint(input)}`,
   ].join('\n');
 }
@@ -347,11 +339,9 @@ function normalizeSegmentTemplateInput(
   return {
     segmentId,
     title: input.title,
-    role: input.role,
+    roleHint: 'roleHint' in input ? input.roleHint : undefined,
     targetDurationMs: input.targetDurationMs,
     intent: 'intent' in input ? input.intent : undefined,
-    preferredClipTypes: 'preferredClipTypes' in input ? input.preferredClipTypes : undefined,
-    preferredPlaceHints: 'preferredPlaceHints' in input ? input.preferredPlaceHints : undefined,
     notes: 'notes' in input ? input.notes : undefined,
   };
 }
@@ -398,11 +388,9 @@ function normalizeScriptBriefFingerprintPayload(
     segments: (input.segments ?? []).map(segment => ({
       segmentId: segment.segmentId.trim(),
       title: segment.title?.trim() || undefined,
-      role: segment.role?.trim() || undefined,
+      roleHint: segment.roleHint?.trim() || undefined,
       targetDurationMs: segment.targetDurationMs,
       intent: segment.intent?.trim() || undefined,
-      preferredClipTypes: normalizeList(segment.preferredClipTypes),
-      preferredPlaceHints: normalizeList(segment.preferredPlaceHints),
       notes: normalizeList(segment.notes),
     })),
   };
@@ -446,21 +434,8 @@ function isScriptBriefScaffold(content: string): boolean {
   return content.includes('当前状态：待填写脚本创作 brief')
     || content.includes('当前状态：等待用户指定风格后再开始脚本阶段')
     || content.includes('当前状态：请先在 /script 选择风格分类。')
-    || content.includes('当前状态：风格已保存，请回到 Agent 生成初版 brief。')
-    || (content.includes('## 当前输入') && content.includes('## 需要用户指定'))
     || content.includes('这支片想表达什么？')
     || content.includes('### [segment-id] 段落标题');
-}
-
-function buildVisualPreference(input: IScriptBriefSegmentTemplateInput): string {
-  const parts: string[] = [];
-  if (input.preferredClipTypes?.length) {
-    parts.push(`优先 ${input.preferredClipTypes.join(' / ')}`);
-  }
-  if (input.preferredPlaceHints?.length) {
-    parts.push(`地点线索 ${input.preferredPlaceHints.join(' / ')}`);
-  }
-  return parts.join('；') || '';
 }
 
 function buildConstraintHint(input: IScriptBriefSegmentTemplateInput): string {

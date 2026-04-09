@@ -132,6 +132,16 @@ export function ProjectBriefEditor({ config, pharosStatus, setConfig, onSave, bu
           </Button>
         </div>
       ))}
+      <Divider />
+      <TextAreaField
+        label="材料模式短语（每行一条）"
+        value={(config.materialPatternPhrases || []).join('\n')}
+        onChange={value => setConfig(current => ({
+          ...current,
+          materialPatternPhrases: splitLines(value),
+        }))}
+        rows={6}
+      />
     </Card>
   );
 }
@@ -361,7 +371,7 @@ export function ScriptBriefEditor({
             disabled={regenerateBusy}
             onClick={handleRequestRegenerate}
           >
-            {regenerateBusy ? '处理中…' : '重新生成初版 brief'}
+            {regenerateBusy ? '处理中…' : '重新生成 overview / brief'}
           </Button>
         ) : null}
       />
@@ -396,7 +406,7 @@ export function ScriptBriefEditor({
         <p className="field-help field-help-error">当前风格分类已失效，请从 workspace 风格库重新选择。</p>
       ) : null}
       {userModifiedBrief && canRequestRegenerate ? (
-        <p className="field-help field-help-error">当前 brief 与最近一次 Agent 初稿不同。重新生成初版 brief 会覆盖这些修改。</p>
+        <p className="field-help field-help-error">当前 brief 与最近一次 Agent 初稿不同。重新生成 overview / brief 会覆盖这些修改。</p>
       ) : null}
       <TextAreaField
         label="全片目标（每行一条）"
@@ -428,11 +438,9 @@ export function ScriptBriefEditor({
           segments: [...current.segments, {
             segmentId: `segment-${Date.now()}`,
             title: '',
-            role: 'scene',
+            roleHint: 'scene',
             targetDurationMs: 30000,
             intent: '',
-            preferredClipTypes: [],
-            preferredPlaceHints: [],
             notes: [],
           }],
         }))}
@@ -453,28 +461,16 @@ export function ScriptBriefEditor({
               onChange={value => updateArrayItem(config.segments, index, { ...segment, title: value }, next => setConfig(current => ({ ...current, segments: next })))}
             />
             <Field
-              label="角色"
-              value={segment.role || ''}
+              label="角色提示"
+              value={segment.roleHint || ''}
               disabled={!canEditBrief}
-              onChange={value => updateArrayItem(config.segments, index, { ...segment, role: value }, next => setConfig(current => ({ ...current, segments: next })))}
+              onChange={value => updateArrayItem(config.segments, index, { ...segment, roleHint: value }, next => setConfig(current => ({ ...current, segments: next })))}
             />
             <Field
               label="目标时长(ms)"
               value={String(segment.targetDurationMs || '')}
               disabled={!canEditBrief}
               onChange={value => updateArrayItem(config.segments, index, { ...segment, targetDurationMs: Number(value) || 0 }, next => setConfig(current => ({ ...current, segments: next })))}
-            />
-            <Field
-              label="ClipTypes(, 分隔)"
-              value={(segment.preferredClipTypes || []).join(', ')}
-              disabled={!canEditBrief}
-              onChange={value => updateArrayItem(config.segments, index, { ...segment, preferredClipTypes: splitComma(value) }, next => setConfig(current => ({ ...current, segments: next })))}
-            />
-            <Field
-              label="PlaceHints(, 分隔)"
-              value={(segment.preferredPlaceHints || []).join(', ')}
-              disabled={!canEditBrief}
-              onChange={value => updateArrayItem(config.segments, index, { ...segment, preferredPlaceHints: splitComma(value) }, next => setConfig(current => ({ ...current, segments: next })))}
             />
           </div>
           <TextAreaField
@@ -519,7 +515,7 @@ export function ScriptBriefEditor({
         )}
       >
         <div className="modal-copy">
-          <p>这会授权下一次 Agent 重新生成初版 brief。</p>
+          <p>这会授权下一次 Agent 重新生成 material-overview.md 和初版 brief。</p>
           <p>重新生成后，你当前已经修改的 brief 内容会被覆盖。</p>
         </div>
       </Modal>
@@ -879,11 +875,9 @@ function computeScriptBriefFingerprint(config) {
     segments: (config.segments || []).map(segment => ({
       segmentId: String(segment.segmentId || '').trim(),
       title: String(segment.title || '').trim() || undefined,
-      role: String(segment.role || '').trim() || undefined,
+      roleHint: String(segment.roleHint || '').trim() || undefined,
       targetDurationMs: Number(segment.targetDurationMs) > 0 ? Number(segment.targetDurationMs) : undefined,
       intent: String(segment.intent || '').trim() || undefined,
-      preferredClipTypes: normalizeFingerprintLines(segment.preferredClipTypes),
-      preferredPlaceHints: normalizeFingerprintLines(segment.preferredPlaceHints),
       notes: normalizeFingerprintLines(segment.notes),
     })),
   };
@@ -907,9 +901,9 @@ function hashScriptBriefFingerprintPayload(value) {
 
 const SCRIPT_WORKFLOW_STATUS_TEXT = {
   choose_style: '请先在 /script 选择风格分类。',
-  await_brief_draft: '风格已保存，请回到 Agent 生成初版 brief。',
-  review_brief: '初版 brief 已生成，请在 /script 审查并保存。',
+  await_brief_draft: '风格已保存，请回到 Agent 生成 material-overview.md 和初版 brief。',
+  review_brief: '初版 overview / brief 已生成，请在 /script 审查并保存。',
   ready_to_prepare: 'brief 已保存，请点击 准备给 Agent。',
-  ready_for_agent: '脚本准备已完成，请回到 Agent 继续生成 script/current.json。',
+  ready_for_agent: '事实刷新与 bundle 索引已完成，请回到 Agent 继续生成 segment-plan、material-slots 与 script/current.json。',
   script_generated: '脚本已生成，可继续审稿或进入 Timeline。',
 };

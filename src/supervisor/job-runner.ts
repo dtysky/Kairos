@@ -12,6 +12,8 @@ import {
   resolveWorkspaceProjectRoot,
 } from '../index.js';
 import {
+  getMaterialOverviewPath,
+  loadOptionalMarkdown,
   loadScriptBriefConfig,
   loadStyleSourcesConfig,
   writeJson,
@@ -163,7 +165,7 @@ async function runJob(
       const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
       const slices = await loadSlices(projectRoot);
       if (slices.length === 0) {
-        throw new BlockedJobError(['script prep requires non-empty store/slices.json']);
+        throw new BlockedJobError(['script prep requires non-empty store/spans.json']);
       }
       const scriptConfig = await loadScriptBriefConfig(projectRoot);
       const styleCategory = toStringValue(args.styleCategory) || scriptConfig.styleCategory;
@@ -177,6 +179,9 @@ async function runJob(
       }
       if (!await loadProjectStyleByCategory(workspaceRoot, styleCategory)) {
         throw new BlockedJobError([`style profile not found for category "${styleCategory}"`]);
+      }
+      if (!(await loadOptionalMarkdown(getMaterialOverviewPath(projectRoot)))?.trim()) {
+        throw new BlockedJobError(['script prep requires existing script/material-overview.md']);
       }
       return {
         finalStatus: 'awaiting_agent',

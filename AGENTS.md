@@ -101,9 +101,14 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
 - Treat `analysis/prepared-assets/` and `analysis/audio-checkpoints/` as durable Analyze resume caches, not canonical downstream inputs.
 - Treat `/script` as a preparation surface by default:
   - `/script` first auto-saves the selected style category
-  - Agent drafts the initial `script-brief`
+  - Agent drafts `script/material-overview.md` and the initial `script-brief`
   - user reviews and manually saves the brief in `/script`
   - Console / Supervisor then prepare deterministic script inputs
+    - `script/material-overview.facts.json`
+    - `script/material-overview.md`
+    - `script/segment-plan.json`
+    - `script/material-slots.json`
+    - `analysis/material-bundles.json`
   - the final `script/current.json` is agent-authored unless a newer design doc says otherwise
 - Reusable style assets are workspace-scoped by default:
   - `config/styles/`

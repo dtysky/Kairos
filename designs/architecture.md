@@ -87,23 +87,22 @@
 
 ## 0.3 2026-04-08 语义准备链更新
 
-当前实现已经开始把旧的 `slice + 五轴语义 + 单阶段 arrangement` 迁到新的准备链：
+当前实现已经开始把旧的 `slice + 五轴语义 + 单阶段 arrangement` 迁到新的 model-driven arrangement 准备链：
 
 - Analyze 正式素材单元优先收口为 `Span`
 - 项目内正式持久化路径改为 `store/spans.json`
 - `Span` 当前主承载：
   - `materialPatterns[]`
-  - `localEditingIntent`
   - `grounding`
-- 项目级正式词集当前只保留两层，并通过 `config/project-brief.md/.json` 维护：
+- 项目级正式词集当前只保留一层，并通过 `config/project-brief.md/.json` 维护：
   - `材料模式短语`
-  - `局部剪辑作用短语`
-- Script prep 现在分为两次组织：
-  1. `Span -> Bundle Graph`
-  2. `Style + constraints + bundle inventory -> style-driven arrangement`
-- `Bundle` 当前是素材侧自然语言对象，不是独立固定词表
-- `Segment` 当前不再作为固定 archetype 闭集，而是 style-driven 生成的自然语言段落对象
-- `style` 当前应优先提供结构化 `arrangementStructure`，而不是只靠 prose 猜段落程序
+- Script prep 现在正式改为：
+  1. `Analyze -> Material Overview`
+  2. `Material Overview + Script Brief + arrangementStructure + narrationConstraints -> Segment Plan`
+  3. `Segment Plan -> Material Slots -> Bundle Lookup -> Chosen SpanIds -> Beat / Script`
+- `Bundle` 当前是 `materialPatterns` 粗索引层，不是独立叙事身份
+- `Segment` 当前不再作为固定 archetype 闭集，而是 LLM-first 的项目级动态段落对象
+- `style` 当前应同时提供结构程序层 `arrangementStructure` 与脚本叙述约束层 `narrationConstraints`
 
 ## 0.1 当前变更纪律
 
@@ -364,16 +363,17 @@ src/modules/script/
   → 从 workspace `config/styles/` 选择用户指定的 style category
   → `/script` 先自动保存 `styleCategory`
   → Console 以 persistent workflow prompt + hana modal 明确提示当前 handoff，而不是只给低对比行内说明
-  → Agent 读取 Pharos 分镜数据 + 素材索引 + 场景数据 + GPS 轨迹，并生成初版 `script-brief`
+  → Agent 读取 Pharos 分镜数据 + 素材索引 + 场景数据 + GPS 轨迹，并生成 `script/material-overview.md` 与初版 `script-brief`
   → 用户先在 `/script` 中审阅和手动保存 brief
   → Supervisor / Console 再做 deterministic prep
      - 仅在 `script-brief.workflowState = ready_to_prepare` 后允许运行
-     - 校验 slices / styleCategory / workspace style profile
-     - 刷新 `analysis/material-digest.json`
+     - 校验 spans / styleCategory / workspace style profile
+     - 刷新 `script/material-overview.facts.json`
+     - 刷新 `analysis/material-bundles.json`
      - 成功后推进到 `ready_for_agent`
-  → Agent 再读取 brief + digest + style profile，推进段落规划、outline 与正式脚本写作
-     - 优先消费 style profile 中明确写出的节奏阶段、素材角色、运镜语言、功能位分配、参数表与 anti-patterns
-     - 不应把 style profile 仅当作叙事语气说明，再完全依赖 LLM 从长文里二次猜镜头语法
+  → Agent 再读取 overview + brief + style profile，推进 `segment plan -> material slots -> chosenSpanIds -> outline -> script/current.json`
+     - `arrangementStructure` 主导结构决策
+     - `narrationConstraints` 只弱影响表达
   → 由 Agent 存储 `script/current.json` + 版本快照
 ```
 

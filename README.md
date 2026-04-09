@@ -33,18 +33,17 @@ Current stable pipeline:
 - project script work now references a workspace style category instead of owning its own `config/styles/`
 - the `/script` console page now acts as deterministic script preparation:
   - user first selects a workspace `styleCategory` in `/script`; that selection auto-saves
-  - agent then generates the initial `script-brief`
+  - agent then generates `script/material-overview.md` and the initial `script-brief`
   - user reviews and manually saves the brief in `/script`
   - the console now surfaces these handoffs with persistent workflow prompts and explicit hana modal confirmations instead of relying on low-contrast inline copy
   - `/script` validates `store/spans.json`, the selected workspace `styleCategory`, and the matching style profile
-  - `/script` now prepares deterministic arrangement artifacts such as `analysis/motif-bundles.json`, `script/arrangement-skeletons.json`, `script/arrangement-segments.json`, and `script/arrangement.current.json`
+  - `/script` now prepares deterministic script inputs such as `script/material-overview.facts.json`, `script/material-overview.md`, `script/segment-plan.json`, `script/material-slots.json`, and `analysis/material-bundles.json`
   - the final `script/current.json` remains agent-authored
   - if the reviewed brief was already user-edited and a fresh initial draft is needed, overwrite permission is granted explicitly from `/script` instead of silent agent overwrite
-  - the selected style profile should already expose structured arrangement programs, bundle preferences, rhythm stages, material grammar, camera language, and anti-patterns, so Agent work does not depend on re-inferring everything from a long style essay
-  - script prep now follows `Span -> Bundle Graph -> Style-Driven Arrangement -> Packet -> Outline -> Script`, rather than the older single-stage segment-plan path
-- project brief now carries two project-level semantic vocab layers for analyze/script:
+  - the selected style profile should already expose structured `arrangementStructure`, `narrationConstraints`, rhythm stages, material grammar, camera language, and anti-patterns, so Agent work does not depend on re-inferring everything from a long style essay
+  - script prep now follows `Analyze -> Material Overview -> Script Brief -> Segment Plan -> Material Slots -> Bundle Lookup -> Chosen SpanIds -> Beat / Script`
+- project brief now carries one project-level semantic vocab layer for analyze/script:
   - `材料模式短语`
-  - `局部剪辑作用短语`
 - subtitles support two formal paths:
   - narration path from `beat.text`
   - source-speech path from `span.transcriptSegments`
@@ -61,10 +60,9 @@ Current stable pipeline:
 - Analyze now distinguishes tight focus windows from edit-friendly bounds:
   - coarse reports keep `interestingWindows[].startMs/endMs` as focus/evidence windows
   - edit-ready bounds travel alongside them as `interestingWindows[].editStartMs/editEndMs`
-  - persisted `store/spans.json` keeps backward-compatible `sourceInMs/sourceOutMs` plus wider `editSourceInMs/editSourceOutMs`
+  - persisted `store/spans.json` keeps `sourceInMs/sourceOutMs` plus wider `editSourceInMs/editSourceOutMs`
 - analyze now formalizes material-side semantics on each span:
   - `materialPatterns[]`
-  - `localEditingIntent`
   - `grounding`
 - drive spans can now carry `speedCandidate` metadata (for example `2x / 5x / 10x` suggestions), but final retiming stays an explicit downstream decision
 - a `beat` can now optionally carry explicit `utterances[]` with head / middle / tail pauses, so subtitles only occupy voiced islands while video can continue underneath

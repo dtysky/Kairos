@@ -165,12 +165,10 @@ describe('workspace config sync', () => {
       segments: [{
         segmentId: 'intro',
         title: '开场',
-        role: 'intro',
+        roleHint: 'intro',
         targetDurationMs: 45000,
         intent: '建立旅途基调',
-        preferredClipTypes: ['broll', 'timelapse'],
-        preferredPlaceHints: ['Auckland'],
-        notes: ['少解释，多留白'],
+        notes: ['少解释，多留白', 'Auckland'],
       }],
     });
 

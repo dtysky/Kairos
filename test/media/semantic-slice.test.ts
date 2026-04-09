@@ -20,7 +20,7 @@ function buildBaseSlice(): IKtepSlice {
 }
 
 describe('decorateSliceWithSemanticTags', () => {
-  it('normalizes material patterns and local intent with project brief vocabulary', () => {
+  it('keeps only material patterns, grounding and semantic tag sets', () => {
     const result = decorateSliceWithSemanticTags({
       slice: buildBaseSlice(),
       clipType: 'drive',
@@ -46,17 +46,13 @@ describe('decorateSliceWithSemanticTags', () => {
           '道路、桥梁、河流或海岸在证明路线',
           '现场人声可以直接使用',
         ],
-        localEditingIntentPhrases: [
-          '适合证明行动、路途或过程正在发生（项目口径）',
-          '适合承接解释性信息',
-        ],
       },
     });
 
     expect(result.materialPatterns.map(item => item.phrase)).toContain('车内向前行进视角（项目口径）');
-    expect(result.localEditingIntent.primaryPhrase).toBe('适合证明行动、路途或过程正在发生（项目口径）');
-    expect(result.localEditingIntent.reasons).toEqual(
-      expect.arrayContaining(['车内向前行进视角（项目口径）']),
-    );
+    expect(result.grounding.speechMode).toBe('preferred');
+    expect(result.narrativeFunctions.core).toContain('路上自述');
+    expect(result.viewpointRoles.core).toContain('行进中的观察者');
+    expect('localEditingIntent' in result).toBe(false);
   });
 });

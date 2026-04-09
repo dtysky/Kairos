@@ -5,56 +5,26 @@ export {
   listStyleCategories,
   parseStyleMarkdown,
   buildFrontMatter,
+  deriveStyleProtocolV2Fields,
   type IStyleLoadOptions,
 } from './style-loader.js';
 export {
   buildOutline,
-  buildOutlineFromPackets,
-  type IBuildOutlineFromPacketsInput,
+  type IBuildOutlineInput,
   type IOutlineBeat,
   type IOutlineSegment,
 } from './outline-builder.js';
-export {
-  prepareScriptArrangement,
-  type IPrepareScriptArrangementInput,
-  type IPrepareScriptArrangementResult,
-} from './arrangement-preparation.js';
-export {
-  synthesizeArrangement,
-  buildMotifBundles,
-  buildArrangementSkeletons,
-  buildSegmentCards,
-  chooseCurrentArrangement,
-  type ISynthesizeArrangementInput,
-  type ISynthesizeArrangementResult,
-} from './arrangement-synthesis.js';
-export {
-  buildProjectArrangementPacket,
-  buildSegmentPacket,
-  buildBeatPackets,
-} from './packet-builder.js';
-export {
-  prepareProjectMaterialDigest,
-  prepareSegmentPlanning,
-  buildProjectMaterialDigest,
-  buildSegmentPlanDrafts,
-  type IPrepareProjectMaterialDigestInput,
-  type IPrepareProjectMaterialDigestResult,
-  type IPrepareSegmentPlanningInput,
-  type IPrepareSegmentPlanningResult,
-} from './segment-planner.js';
-export {
-  approveSegmentPlan,
-  recallSegmentCandidates,
-  loadExistingOrRecallSegmentCandidates,
-  type IApproveSegmentPlanInput,
-  type IRecallSegmentCandidatesInput,
-} from './candidate-recall.js';
 export {
   buildProjectOutlineFromPlanning,
   generateProjectScriptFromPlanning,
   prepareProjectScriptForAgent,
   loadProjectStyleByCategory,
+  buildProjectMaterialOverviewFacts,
+  buildMaterialOverviewMarkdown,
+  buildMaterialBundles,
+  buildSegmentPlanDocument,
+  buildMaterialSlotsDocument,
+  resolveChosenSpanIds,
   type IBuildProjectOutlineInput,
   type IBuildProjectOutlineResult,
   type IGenerateProjectScriptInput,

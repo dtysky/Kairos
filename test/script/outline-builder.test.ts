@@ -1,83 +1,81 @@
 import { describe, expect, it } from 'vitest';
-import type { IKtepSlice } from '../../src/protocol/schema.js';
 import { buildOutline } from '../../src/modules/script/outline-builder.js';
 
-describe('buildOutline edit-window policy', () => {
-  it('prefers analyze-provided edit bounds over center trimming', () => {
-    const slices: IKtepSlice[] = [{
-      id: 'slice-drive',
-      assetId: 'asset-drive',
-      type: 'drive',
-      sourceInMs: 2_000,
-      sourceOutMs: 3_000,
-      editSourceInMs: 0,
-      editSourceOutMs: 9_000,
-      labels: ['drive'],
-      placeHints: [],
-    }];
+describe('buildOutline', () => {
+  it('builds beats from material slots and chosen spans', () => {
+    const segmentPlan = {
+      id: 'plan-1',
+      projectId: 'project-1',
+      generatedAt: '2026-04-09T00:00:00.000Z',
+      segments: [{
+        id: 'segment-opening',
+        title: '进入海边',
+        intent: '先建立海边空间与呼吸感。',
+        targetDurationMs: 18_000,
+        roleHint: 'intro',
+        notes: ['先留白'],
+      }],
+      notes: [],
+    };
 
-    const outline = buildOutline(slices, 8_000);
+    const materialSlots = {
+      id: 'slots-1',
+      projectId: 'project-1',
+      generatedAt: '2026-04-09T00:00:00.000Z',
+      segments: [{
+        segmentId: 'segment-opening',
+        slots: [{
+          id: 'slot-1',
+          query: '海边建场 / 留白',
+          requirement: 'required',
+          targetBundles: ['bundle-coast'],
+          chosenSpanIds: ['span-coast'],
+        }],
+      }],
+    };
 
-    expect(outline).toHaveLength(1);
-    expect(outline[0]?.beats[0]?.selection).toMatchObject({
-      sourceInMs: 0,
-      sourceOutMs: 9_000,
-    });
-    expect(outline[0]?.beats[0]?.sourceInMs).toBe(0);
-    expect(outline[0]?.beats[0]?.sourceOutMs).toBe(9_000);
-  });
-
-  it('keeps legacy center trimming for slices without edit bounds', () => {
-    const slices: IKtepSlice[] = [{
-      id: 'slice-legacy',
-      assetId: 'asset-legacy',
-      type: 'broll',
-      sourceInMs: 0,
-      sourceOutMs: 12_000,
-      labels: [],
-      placeHints: [],
-    }];
-
-    const outline = buildOutline(slices, 4_000);
-
-    expect(outline).toHaveLength(1);
-    expect(outline[0]?.beats[0]?.selection).toMatchObject({
-      sourceInMs: 4_000,
-      sourceOutMs: 8_000,
-    });
-  });
-
-  it('snaps transcript-backed selections to full transcript segment boundaries', () => {
-    const slices: IKtepSlice[] = [{
-      id: 'slice-talk',
-      assetId: 'asset-talk',
-      type: 'talking-head',
-      sourceInMs: 0,
-      sourceOutMs: 12_000,
-      editSourceInMs: 1_500,
-      editSourceOutMs: 3_500,
-      transcriptSegments: [
-        {
-          startMs: 1_000,
-          endMs: 4_000,
-          text: '这是第一句完整的话。',
+    const spansById = new Map([
+      ['span-coast', {
+        id: 'span-coast',
+        assetId: 'asset-1',
+        type: 'broll',
+        sourceInMs: 1_000,
+        sourceOutMs: 7_000,
+        transcript: '海边很安静。',
+        materialPatterns: [{
+          phrase: '高辨识度地点快速建场',
+          confidence: 0.82,
+          evidenceRefs: [],
+        }],
+        grounding: {
+          speechMode: 'available',
+          speechValue: 'emotional',
+          spatialEvidence: [{
+            tier: 'strong-inference',
+            confidence: 0.8,
+            sourceKinds: ['vision'],
+            reasons: ['test'],
+            locationText: 'Auckland',
+          }],
+          pharosRefs: [],
         },
-        {
-          startMs: 5_000,
-          endMs: 8_000,
-          text: '这是第二句。',
-        },
-      ],
-      labels: ['speech'],
-      placeHints: [],
-    }];
+        narrativeFunctions: { core: [], extra: [], evidence: [] },
+        shotGrammar: { core: [], extra: [], evidence: [] },
+        viewpointRoles: { core: [], extra: [], evidence: [] },
+        subjectStates: { core: [], extra: [], evidence: [] },
+      }],
+    ]);
 
-    const outline = buildOutline(slices, 2_000);
+    const outline = buildOutline({
+      segmentPlan,
+      materialSlots,
+      spansById,
+    });
 
     expect(outline).toHaveLength(1);
-    expect(outline[0]?.beats[0]?.selection).toMatchObject({
-      sourceInMs: 1_000,
-      sourceOutMs: 4_000,
-    });
+    expect(outline[0]?.role).toBe('intro');
+    expect(outline[0]?.beats[0]?.linkedSpanIds).toEqual(['span-coast']);
+    expect(outline[0]?.beats[0]?.sourceSpeechDecision).toBe('preserve');
+    expect(outline[0]?.beats[0]?.locations).toContain('Auckland');
   });
 });

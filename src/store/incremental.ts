@@ -1,5 +1,4 @@
 import { join } from 'node:path';
-import { access } from 'node:fs/promises';
 import { z } from 'zod';
 import { IKtepAsset, IKtepSlice, IKtepSpan } from '../protocol/schema.js';
 import { readJsonOrNull, writeJson } from './writer.js';
@@ -31,10 +30,7 @@ export async function loadSlices(projectRoot: string): Promise<IKtepSlice[]> {
 }
 
 export async function loadSpans(projectRoot: string): Promise<IKtepSpan[]> {
-  const primaryPath = getSpansPath(projectRoot);
-  const legacyPath = join(projectRoot, 'store/slices.json');
-  const targetPath = await access(primaryPath).then(() => primaryPath).catch(() => legacyPath);
-  return (await readJsonOrNull(targetPath, z.array(IKtepSpan)) as IKtepSpan[] | null) ?? [];
+  return (await readJsonOrNull(getSpansPath(projectRoot), z.array(IKtepSpan)) as IKtepSpan[] | null) ?? [];
 }
 
 export function buildAssetMergeKey(

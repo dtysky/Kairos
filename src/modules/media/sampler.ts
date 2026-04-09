@@ -1,6 +1,6 @@
 import type {
   IMediaAnalysisPlan, EClipType, ESamplingProfile,
-  EVlmMode, ETargetBudget, EFineScanMode,
+  EVlmMode, ETargetBudget, EFineScanMode, EFinalizeFineScanMode, EKeepDecision, EMaterializationPath,
 } from '../../protocol/schema.js';
 import type { IDensityResult } from './density.js';
 import type { IShotBoundary } from './shot-detect.js';
@@ -18,8 +18,9 @@ export interface ISamplerInput {
 
 export interface IAnalysisDecision {
   clipType: EClipType;
-  shouldFineScan: boolean;
-  fineScanMode: EFineScanMode;
+  keepDecision: EKeepDecision;
+  materializationPath?: EMaterializationPath;
+  fineScanMode?: EFinalizeFineScanMode;
   decisionReasons: string[];
 }
 
@@ -104,8 +105,10 @@ export function applyAnalysisDecision(
   return {
     ...plan,
     clipType: decision.clipType,
-    shouldFineScan: decision.shouldFineScan,
-    fineScanMode: decision.fineScanMode,
+    shouldFineScan: decision.materializationPath === 'fine-scan',
+    fineScanMode: decision.materializationPath === 'fine-scan'
+      ? (decision.fineScanMode ?? 'windowed')
+      : 'skip',
   };
 }
 
@@ -144,8 +147,9 @@ export function buildHeuristicAnalysisDecision(
 
   return {
     clipType,
-    shouldFineScan: fineScanMode !== 'skip',
-    fineScanMode,
+    keepDecision: 'keep',
+    materializationPath: fineScanMode === 'skip' ? 'direct' : 'fine-scan',
+    fineScanMode: fineScanMode === 'skip' ? undefined : fineScanMode,
     decisionReasons: [...reasons],
   };
 }

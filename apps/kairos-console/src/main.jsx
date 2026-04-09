@@ -187,7 +187,7 @@ function AppShell() {
           : null,
         successMessage: payload.workflowState === 'ready_to_prepare'
           ? ''
-          : '当前仍在等待 Agent 初版 brief',
+          : '当前仍在等待 Agent 生成 overview / brief',
       },
     );
   }
@@ -213,8 +213,8 @@ function AppShell() {
       'script-brief:regenerate',
       {
         workflowDialog: {
-          title: '已授权重新生成初版 brief',
-          body: '下一步请回到 Agent，让它重新生成初版 brief。',
+          title: '已授权重新生成 overview / brief',
+          body: '下一步请回到 Agent，让它重新生成 material-overview.md 和初版 brief。',
           detail: '这次授权只生效一次；如果你之后又改了 brief，需要重新确认覆盖。',
         },
       },
@@ -903,7 +903,7 @@ function ScriptPage({
     <div className="route-page">
       <RouteIntro
         title="脚本"
-        subtitle="先在这里选风格并审查 brief，再点“准备给 Agent”；最终 `script/current.json` 仍由 Agent 生成。"
+        subtitle="先在这里选风格并审查 brief，再点“准备给 Agent”；准备阶段只刷新 facts 和 bundle，正式 `segment-plan / material-slots / script/current.json` 仍由 Agent 生成。"
       />
       {workflowPrompt ? (
         <WorkflowPrompt
@@ -919,7 +919,7 @@ function ScriptPage({
           <h2>Script Preparation</h2>
           <Tag>{latestJob ? formatScriptJobStatus(latestJob.status) : '未运行'}</Tag>
         </div>
-        <p className="muted">这里不会后台自动写稿。点击后只会校验风格与素材前置条件，生成 `script/arrangement.current.json`、`script/arrangement-skeletons.json` 与 `script/segment-cards.json`，并把流程推进到“回到 Agent 继续写正式脚本”。</p>
+        <p className="muted">这里不会后台自动写稿。点击后只会校验风格与素材前置条件，刷新 `script/material-overview.facts.json` 和 `analysis/material-bundles.json`，并把流程推进到“回到 Agent 继续写正式脚本”。</p>
         {!availableCategories.length ? (
           <p className="muted">Workspace 风格库当前没有可选分类；请先到 `/style` 配置或生成风格档案。</p>
         ) : null}
@@ -1153,7 +1153,7 @@ function formatScriptJobStatus(status) {
 function describeScriptJob(job) {
   if (!job) return '当前还没有 script preparation 记录。';
   if (job.status === 'awaiting_agent') {
-    return '确定性脚本准备已完成。请回到 Agent 对话继续生成 `script/current.json`。';
+    return '确定性脚本准备已完成。请回到 Agent 对话继续生成 `script/segment-plan.json`、`script/material-slots.json` 和 `script/current.json`。';
   }
   if (job.status === 'blocked') {
     return (job.blockers || []).join('；') || '当前脚本准备被阻塞。';
@@ -1187,7 +1187,7 @@ function buildScriptWorkflowPrompt({
     return {
       eyebrow: 'Action Required',
       title: '先选择风格分类',
-      body: '在下面选择一个 workspace 风格分类。系统会自动保存，然后下一步就是回到 Agent 生成初版 brief。',
+      body: '在下面选择一个 workspace 风格分类。系统会自动保存，然后下一步就是回到 Agent 生成 material-overview.md 和初版 brief。',
       tone: 'warn',
     };
   }
@@ -1202,8 +1202,8 @@ function buildScriptWorkflowPrompt({
   if (workflowState === 'await_brief_draft') {
     return {
       eyebrow: 'Next Step',
-      title: '回到 Agent 生成初版 brief',
-      body: '风格分类已经保存。下一步不在这里，而是在 Agent 对话里让它起草第一版 script-brief。',
+      title: '回到 Agent 生成 overview / brief',
+      body: '风格分类已经保存。下一步不在这里，而是在 Agent 对话里让它同时起草 material-overview.md 和第一版 script-brief。',
       tone: 'accent',
     };
   }
@@ -1212,7 +1212,7 @@ function buildScriptWorkflowPrompt({
       eyebrow: 'Next Step',
       title: '先审查并保存 brief',
       body: 'Agent 初版已经生成。请在当前页面修改并保存；保存后，流程才会进入“准备给 Agent”。',
-      detail: '如果你决定重生初版 brief，也请先在这里通过覆盖确认。',
+      detail: '如果你决定重生 overview / brief，也请先在这里通过覆盖确认。',
       tone: 'accent',
     };
   }
@@ -1228,7 +1228,7 @@ function buildScriptWorkflowPrompt({
     return {
       eyebrow: 'Ready',
       title: '回到 Agent 继续生成正式脚本',
-      body: 'deterministic prep 已完成。现在请回到 Agent，对它说“继续”，再让它写正式的 `script/current.json`。',
+      body: 'deterministic prep 已完成。现在请回到 Agent，对它说“继续”，再让它生成正式的 `script/segment-plan.json`、`script/material-slots.json` 和 `script/current.json`。',
       detail: latestJob ? describeScriptJob(latestJob) : '',
       tone: 'ok',
     };
@@ -1253,13 +1253,13 @@ function buildScriptWorkflowDialog(workflowState) {
   if (workflowState === 'await_brief_draft') {
     return {
       title: '风格已保存',
-      body: '下一步请回到 Agent，生成初版 brief。',
+      body: '下一步请回到 Agent，生成 material-overview.md 和初版 brief。',
       detail: '这个 handoff 已经同步到当前页面顶部的 workflow prompt，不用担心关掉弹窗后找不到下一步。',
     };
   }
   if (workflowState === 'review_brief') {
     return {
-      title: '初版 brief 已生成',
+      title: '初版 overview / brief 已生成',
       body: '下一步请在 /script 审查、修改并保存 brief。',
       detail: '保存完成后，页面会继续把你引导到“准备给 Agent”。',
     };
@@ -1411,10 +1411,10 @@ function makeSectionSetter(setConfig, sectionKey) {
 
 const SCRIPT_WORKFLOW_STATUS_TEXT = {
   choose_style: '请先在 /script 选择风格分类。',
-  await_brief_draft: '风格已保存，请回到 Agent 生成初版 brief。',
-  review_brief: '初版 brief 已生成，请在 /script 审查并保存。',
+  await_brief_draft: '风格已保存，请回到 Agent 生成 material-overview.md 和初版 brief。',
+  review_brief: '初版 overview / brief 已生成，请在 /script 审查并保存。',
   ready_to_prepare: 'brief 已保存，请点击 准备给 Agent。',
-  ready_for_agent: '脚本准备已完成，请回到 Agent 继续生成 script/current.json。',
+  ready_for_agent: '事实刷新与 bundle 索引已完成，请回到 Agent 继续生成 segment-plan、material-slots 与 script/current.json。',
   script_generated: '脚本已生成，可继续审稿或进入 Timeline。',
 };
 

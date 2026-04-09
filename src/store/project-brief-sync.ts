@@ -85,7 +85,6 @@ export function buildProjectBriefWithMappings(input: {
   mappings: Array<{ path: string; description: string; flightRecordPath?: string }>;
   pharos?: { includedTripIds?: string[] };
   materialPatternPhrases?: string[];
-  localEditingIntentPhrases?: string[];
 }): string {
   const templateLines = buildProjectBriefTemplate(input)
     .replace(/\r\n/g, '\n')
@@ -99,11 +98,11 @@ export function buildProjectBriefWithMappings(input: {
 
   const mappingLines = input.mappings.length > 0
     ? input.mappings.flatMap(mapping => [
-    `路径：${mapping.path}`,
-    `说明：${mapping.description}`,
-    ...(mapping.flightRecordPath ? [`飞行记录路径：${mapping.flightRecordPath}`] : []),
-    '',
-  ])
+      `路径：${mapping.path}`,
+      `说明：${mapping.description}`,
+      ...(mapping.flightRecordPath ? [`飞行记录路径：${mapping.flightRecordPath}`] : []),
+      '',
+    ])
     : [
       '路径：',
       '说明：',
@@ -117,11 +116,9 @@ export function buildProjectBriefWithMappings(input: {
   const pharosLines = includedTripIds.length > 0
     ? includedTripIds.flatMap(tripId => [`包含 Trip：${tripId}`, ''])
     : ['包含 Trip：', ''];
-  const materialPatternLines = (input.materialPatternPhrases ?? []).length > 0
-    ? input.materialPatternPhrases!.flatMap(phrase => [`- ${phrase}`, ''])
-    : ['- ', ''];
-  const localIntentLines = (input.localEditingIntentPhrases ?? []).length > 0
-    ? input.localEditingIntentPhrases!.flatMap(phrase => [`- ${phrase}`, ''])
+  const materialPatternPhrases = input.materialPatternPhrases ?? [];
+  const materialPatternLines = materialPatternPhrases.length > 0
+    ? materialPatternPhrases.flatMap(phrase => [`- ${phrase}`, ''])
     : ['- ', ''];
 
   return [
@@ -135,9 +132,6 @@ export function buildProjectBriefWithMappings(input: {
     '## 材料模式短语',
     '',
     ...materialPatternLines,
-    '## 局部剪辑作用短语',
-    '',
-    ...localIntentLines,
   ].join('\n').trimEnd() + '\n';
 }
 

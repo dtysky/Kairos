@@ -128,12 +128,13 @@
   - `beat` 可选带 `utterances[]`，显式表达多段配音与停顿
   - 当某拍不走原声时，时间线会为命中的视频片段标记静音意图，交给导出适配器落地
 - 段落审查闸门
-  - 正式流程会先生成 `material digest` 和 `segment plan drafts`
-  - 由用户审查并冻结为 `approved segment plan`
-  - 之后才进入候选素材召回、beat 试写和粗剪提案
+  - 正式流程会先生成 `script/material-overview.md`
+  - 用户审查 `script-brief`
+  - 然后由 Agent 继续生成 `script/segment-plan.json`、`script/material-slots.json` 与 `chosenSpanIds`
+  - 之后才进入 beat 试写和粗剪提案
 - 分层 `script-brief`
-  - `project brief`、`segment-plan brief`、`segment brief`、`beat polish brief`
-  - 都使用自然语言输入，分别作用于全片、段落审查、章节细化和局部精修
+  - `project brief` 与 `script brief`
+  - 都使用自然语言输入，分别作用于项目约束和脚本阶段目标/硬约束
 - 本地网页进度页
   - 当前由 `Supervisor` 聚合为控制台监控接口，再由 Hana UI 控制台展示
   - `Analyze` 与 `Style` 监控主入口分别是 `/analyze` 与 `/style`

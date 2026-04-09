@@ -1,16 +1,13 @@
+import { randomUUID } from 'node:crypto';
 import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { randomUUID } from 'node:crypto';
 import type {
-  IArrangementBias,
   IStyleArrangementStructure,
   IStyleCatalog,
   IStyleCatalogEntry,
-  IStyleFunctionBlock,
+  IStyleNarrationConstraints,
   IStyleProfile,
   IStyleSection,
-  IStyleSegmentArchetype,
-  IStyleTransitionRule,
 } from '../../protocol/schema.js';
 
 export interface IStyleLoadOptions {
@@ -19,11 +16,6 @@ export interface IStyleLoadOptions {
   guidancePrompt?: string;
 }
 
-/**
- * 从 markdown 文件加载风格档案。
- * 将 h2 章节拆为 sections，提取结构化参数。
- * 支持 front-matter 中的 category 和 guidancePrompt。
- */
 export async function loadStyleFromMarkdown(
   filePath: string,
   options?: string | IStyleLoadOptions,
@@ -35,9 +27,6 @@ export async function loadStyleFromMarkdown(
   return parseStyleMarkdown(raw, opts, [filePath]);
 }
 
-/**
- * 从分类目录加载指定类别的风格档案。
- */
 export async function loadStyleByCategory(
   stylesDir: string,
   category: string,
@@ -46,7 +35,7 @@ export async function loadStyleByCategory(
   try {
     const catalogRaw = await readFile(catalogPath, 'utf-8');
     const catalog: IStyleCatalog = JSON.parse(catalogRaw);
-    const entry = catalog.entries.find(e => e.category === category);
+    const entry = catalog.entries.find(item => item.category === category);
     if (!entry) return null;
     return loadStyleFromMarkdown(join(stylesDir, entry.profilePath), {
       category: entry.category,
@@ -62,9 +51,6 @@ export async function loadStyleByCategory(
   }
 }
 
-/**
- * 列出所有可用的风格分类。
- */
 export async function listStyleCategories(
   stylesDir: string,
 ): Promise<IStyleCatalogEntry[]> {
@@ -76,14 +62,14 @@ export async function listStyleCategories(
   } catch {
     const files = await readdir(stylesDir).catch(() => []);
     return files
-      .filter(f => f.endsWith('.md'))
-      .map(f => {
-        const category = f.replace(/\.md$/, '');
+      .filter(file => file.endsWith('.md'))
+      .map(file => {
+        const category = file.replace(/\.md$/, '');
         return {
           id: category,
           category,
           name: category,
-          profilePath: f,
+          profilePath: file,
           sourceVideoCount: 0,
           createdAt: '',
           updatedAt: '',
@@ -99,31 +85,27 @@ export function parseStyleMarkdown(
 ): IStyleProfile {
   const { body, frontMatter } = extractFrontMatter(markdown);
   const sections = splitSections(body);
-  const params = extractParameters(body);
-  const antiPatterns = extractAntiPatterns(sections);
-  const narrative = extractNarrative(params);
-  const voice = extractVoice(params);
-  const derived = deriveStyleProtocolV2Fields(sections, params, antiPatterns);
+  const parameters = extractParameters(body);
+  const antiPatterns = extractAntiPatterns(sections, parameters);
+  const narrative = extractNarrative(parameters);
+  const voice = extractVoice(parameters);
+  const derived = deriveStyleProtocolV2Fields(sections, parameters, antiPatterns, voice);
   const now = new Date().toISOString();
 
   return {
     id: randomUUID(),
-    name: options?.name ?? frontMatter['name'] ?? extractTitle(body) ?? '风格档案',
-    category: options?.category ?? frontMatter['category'],
-    guidancePrompt: options?.guidancePrompt ?? frontMatter['guidancePrompt'],
+    name: options?.name ?? frontMatter.name ?? extractTitle(body) ?? '风格档案',
+    category: options?.category ?? frontMatter.category,
+    guidancePrompt: options?.guidancePrompt ?? frontMatter.guidancePrompt,
     sourceFiles,
     narrative,
     voice,
     rawReference: markdown,
     sections,
     antiPatterns,
-    parameters: params,
-    arrangementBias: derived.arrangementBias,
+    parameters,
     arrangementStructure: derived.arrangementStructure,
-    segmentArchetypes: derived.segmentArchetypes,
-    transitionRules: derived.transitionRules,
-    functionBlocks: derived.functionBlocks,
-    globalConstraints: derived.globalConstraints,
+    narrationConstraints: derived.narrationConstraints,
     createdAt: now,
     updatedAt: now,
   };
@@ -133,213 +115,158 @@ export function deriveStyleProtocolV2Fields(
   sections: IStyleSection[],
   parameters: Record<string, string>,
   antiPatterns: string[] = [],
+  voice?: IStyleProfile['voice'],
 ): {
-  arrangementBias: IArrangementBias;
   arrangementStructure: IStyleArrangementStructure;
-  segmentArchetypes: IStyleSegmentArchetype[];
-  transitionRules: IStyleTransitionRule[];
-  functionBlocks: IStyleFunctionBlock[];
-  globalConstraints: string[];
+  narrationConstraints: IStyleNarrationConstraints;
 } {
-  const segmentArchetypes = buildSegmentArchetypes(sections, parameters);
-  const transitionRules = buildTransitionRules(segmentArchetypes);
-  const functionBlocks = buildFunctionBlocks(sections, parameters, antiPatterns);
-  const arrangementBias = buildArrangementBias(parameters, sections);
   const arrangementStructure = buildArrangementStructure(sections, parameters);
-  const globalConstraints = dedupeStrings([
-    ...(antiPatterns ?? []),
-    parameters['全局约束'],
-    parameters['段落禁区'],
-    parameters['镜头禁区'],
-  ]);
+  const narrationConstraints = buildNarrationConstraints(parameters, antiPatterns, voice);
 
   return {
-    arrangementBias,
     arrangementStructure,
-    segmentArchetypes,
-    transitionRules,
-    functionBlocks,
-    globalConstraints,
+    narrationConstraints,
   };
 }
 
-function extractFrontMatter(md: string): { body: string; frontMatter: Record<string, string> } {
-  const match = md.match(/^---\s*\n([\s\S]*?)\n---\s*\n/);
-  if (!match) return { body: md, frontMatter: {} };
+function extractFrontMatter(markdown: string): { body: string; frontMatter: Record<string, string> } {
+  const match = markdown.match(/^---\s*\n([\s\S]*?)\n---\s*\n/u);
+  if (!match) return { body: markdown, frontMatter: {} };
 
-  const fm: Record<string, string> = {};
+  const frontMatter: Record<string, string> = {};
   const lines = match[1].split('\n');
-  let i = 0;
-  while (i < lines.length) {
-    const kv = lines[i].match(/^(\w+)\s*:\s*(.*)$/);
-    if (!kv) { i++; continue; }
+  let index = 0;
+  while (index < lines.length) {
+    const kv = lines[index].match(/^(\w+)\s*:\s*(.*)$/u);
+    if (!kv) {
+      index += 1;
+      continue;
+    }
 
     const key = kv[1].trim();
-    const inlineVal = kv[2].trim();
-
-    if (inlineVal === '|' || inlineVal === '>') {
+    const inlineValue = kv[2].trim();
+    if (inlineValue === '|' || inlineValue === '>') {
       const collected: string[] = [];
-      i++;
-      while (i < lines.length && /^\s+/.test(lines[i])) {
-        collected.push(lines[i].replace(/^\s{2}/, ''));
-        i++;
+      index += 1;
+      while (index < lines.length && /^\s+/.test(lines[index])) {
+        collected.push(lines[index].replace(/^\s{2}/u, ''));
+        index += 1;
       }
-      fm[key] = inlineVal === '>'
+      frontMatter[key] = inlineValue === '>'
         ? collected.join(' ').trim()
         : collected.join('\n').trim();
-    } else {
-      fm[key] = inlineVal;
-      i++;
+      continue;
     }
+
+    frontMatter[key] = inlineValue;
+    index += 1;
   }
-  return { body: md.slice(match[0].length), frontMatter: fm };
+
+  return {
+    body: markdown.slice(match[0].length),
+    frontMatter,
+  };
 }
 
-/**
- * Serialize key-value pairs into YAML-like front-matter.
- * Multi-line values use block literal (|) syntax.
- */
 export function buildFrontMatter(fields: Record<string, string | undefined>): string {
   const lines: string[] = ['---'];
-  for (const [key, val] of Object.entries(fields)) {
-    if (val == null) continue;
-    if (val.includes('\n')) {
+  for (const [key, value] of Object.entries(fields)) {
+    if (value == null) continue;
+    if (value.includes('\n')) {
       lines.push(`${key}: |`);
-      for (const line of val.split('\n')) {
+      for (const line of value.split('\n')) {
         lines.push(`  ${line}`);
       }
     } else {
-      lines.push(`${key}: ${val}`);
+      lines.push(`${key}: ${value}`);
     }
   }
   lines.push('---', '');
   return lines.join('\n');
 }
 
-function extractTitle(md: string): string | null {
-  const m = md.match(/^#\s+(.+)/m);
-  return m ? m[1].trim() : null;
+function extractTitle(markdown: string): string | null {
+  const match = markdown.match(/^#\s+(.+)$/mu);
+  return match ? match[1].trim() : null;
 }
 
-function splitSections(md: string): IStyleSection[] {
-  const parts = md.split(/^##\s+/m).slice(1);
-  return parts.map((part, i) => {
+function splitSections(markdown: string): IStyleSection[] {
+  const parts = markdown.split(/^##\s+/mu).slice(1);
+  return parts.map((part, index) => {
     const lines = part.split('\n');
     const title = lines[0].trim();
     const content = lines.slice(1).join('\n').trim();
-    const tags = extractSectionTags(title);
     return {
-      id: `section-${i + 1}`,
+      id: `section-${index + 1}`,
       title,
       content,
-      tags,
+      tags: inferSectionTags(title),
     };
   });
 }
 
-function extractSectionTags(title: string): string[] {
-  const tagMap: Record<string, string[]> = {
-    '叙事': ['narrative', 'structure'],
-    '语言': ['language', 'voice'],
-    '情绪': ['emotion', 'mood'],
-    '节奏': ['rhythm', 'editing', 'material-grammar'],
-    '剪辑': ['rhythm', 'editing', 'material-grammar'],
-    '摄影': ['photography', 'visual'],
-    '画面': ['photography', 'visual'],
-    '照片': ['photo', 'material-grammar'],
-    '延时': ['timelapse', 'material-grammar'],
-    '航拍': ['aerial', 'material-grammar'],
-    '空镜': ['broll', 'material-grammar'],
-    '素材编排': ['editing', 'material-grammar'],
-    '主题': ['theme', 'values'],
-    '价值': ['theme', 'values'],
-    '结构': ['structure', 'template'],
-    '模板': ['structure', 'template'],
-    '禁区': ['anti-pattern', 'constraints'],
-    '参数': ['parameters'],
-    '风格': ['style'],
-  };
+function inferSectionTags(title: string): string[] {
+  const normalized = title.toLowerCase();
+  return dedupeStrings([
+    /叙事|结构|chapter|program/u.test(normalized) ? 'structure' : undefined,
+    /语言|voice|旁白|narration/u.test(normalized) ? 'voice' : undefined,
+    /节奏|剪辑|素材编排|material/u.test(normalized) ? 'material-grammar' : undefined,
+    /情绪|tone|mood/u.test(normalized) ? 'emotion' : undefined,
+    /视觉|摄影|画面/u.test(normalized) ? 'visual' : undefined,
+  ]);
+}
 
-  const tags: string[] = [];
-  for (const [keyword, t] of Object.entries(tagMap)) {
-    if (title.includes(keyword)) tags.push(...t);
+function extractParameters(markdown: string): Record<string, string> {
+  const parameters: Record<string, string> = {};
+
+  for (const line of markdown.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    const match = trimmed.match(/^[-*]?\s*([^:：]+)[:：]\s*(.+)$/u);
+    if (!match) continue;
+    const key = match[1].trim();
+    const value = match[2].trim();
+    if (!key || !value) continue;
+    parameters[key] = value;
   }
-  return [...new Set(tags)];
+
+  return parameters;
 }
 
-function extractAntiPatterns(sections: IStyleSection[]): string[] {
-  const antiSection = sections.find(s =>
-    s.tags?.includes('anti-pattern') || s.title.includes('禁区') || s.title.includes('避免'),
-  );
-  if (!antiSection) return [];
-
-  return antiSection.content
-    .split('\n')
-    .filter(line => /^\d+\.\s+\*\*/.test(line))
-    .map(line => line.replace(/^\d+\.\s+/, '').replace(/\*\*/g, '').trim());
-}
-
-function extractParameters(md: string): Record<string, string> {
-  const params: Record<string, string> = {};
-  const lines = md.split('\n');
-  const headerIndex = lines.findIndex(line => /^\|\s*参数\s*\|\s*值\s*\|$/.test(line.trim()));
-  if (headerIndex < 0) return params;
-
-  for (let i = headerIndex + 1; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line.startsWith('|')) break;
-    const m = line.match(/^\|\s*(.+?)\s*\|\s*(.+?)\s*\|$/);
-    if (m && !m[1].includes('---') && m[1].trim() !== '参数') {
-      params[m[1].trim()] = m[2].trim();
-    }
-  }
-  return params;
-}
-
-function extractNarrative(params: Record<string, string>): IStyleProfile['narrative'] {
-  return {
-    introRatio: parseNumberParam(params['开场占比']) ?? 0.08,
-    outroRatio: parseNumberParam(params['结尾占比']) ?? 0.05,
-    avgSegmentDurationSec: parseNumberParam(params['平均段落时长（秒）'] ?? params['平均段落时长']) ?? 25,
-    brollFrequency: parseNumberParam(params['B-roll 频率'] ?? params['Broll 频率']) ?? 0.3,
-    pacePattern: params['节奏模式'] ?? params['叙事结构'] ?? '线性叙事',
-  };
-}
-
-function extractVoice(params: Record<string, string>): IStyleProfile['voice'] {
-  const perspective = params['叙述视角'] ?? params['叙事视角'] ?? '';
-  const density = parseDensity(params['语言密度']);
-  return {
-    person: (perspective.includes('2nd') || perspective.includes('第二') ? '2nd'
-      : perspective.includes('3rd') || perspective.includes('第三') ? '3rd'
-      : '1st') as '1st' | '2nd' | '3rd',
-    tone: params['主语气'] ?? params['语言风调'] ?? params['语言风格'] ?? '平实',
-    density,
-    sampleTexts: [],
-  };
-}
-
-function buildArrangementBias(
-  parameters: Record<string, string>,
+function extractAntiPatterns(
   sections: IStyleSection[],
-): IArrangementBias {
-  const text = [
-    parameters['编排主轴'],
-    parameters['段落组织方式'],
-    ...sections
-      .filter(section => section.title.includes('叙事') || section.title.includes('结构'))
-      .map(section => section.content),
-  ].filter(Boolean).join('\n');
+  parameters: Record<string, string>,
+): string[] {
+  const fromSections = sections
+    .filter(section => /禁区|反例|avoid|anti/u.test(section.title))
+    .flatMap(section => extractBulletLines(section.content));
 
-  const preferredStrategies = dedupeStrings([
-    /空间|地点|地理/u.test(text) ? 'space-first' : undefined,
-    /时间|chronology|顺序/u.test(text) ? 'time-first' : undefined,
-    /事件|冲突|桥段/u.test(text) ? 'event-first' : undefined,
-  ]) as IArrangementBias['preferredStrategies'];
+  const fromParameters = Object.entries(parameters)
+    .filter(([key]) => /禁区|反例|forbid|avoid/u.test(key))
+    .flatMap(([, value]) => splitInlineList(value));
 
+  return dedupeStrings([...fromSections, ...fromParameters]);
+}
+
+function extractNarrative(parameters: Record<string, string>): IStyleProfile['narrative'] {
   return {
-    preferredStrategies: preferredStrategies.length > 0 ? preferredStrategies : ['mixed'],
-    notes: parameters['编排备注'],
+    introRatio: clampRatio(parseRatio(parameters['开头占比']) ?? parseRatio(parameters['introRatio']) ?? 0.12),
+    outroRatio: clampRatio(parseRatio(parameters['结尾占比']) ?? parseRatio(parameters['outroRatio']) ?? 0.08),
+    avgSegmentDurationSec: parsePositiveNumber(parameters['平均章节时长']) ?? parsePositiveNumber(parameters['avgSegmentDurationSec']) ?? 28,
+    brollFrequency: clampRatio(parseRatio(parameters['空镜频率']) ?? parseRatio(parameters['brollFrequency']) ?? 0.35),
+    pacePattern: parameters['节奏'] ?? parameters['pacePattern'] ?? '克制推进',
+  };
+}
+
+function extractVoice(parameters: Record<string, string>): IStyleProfile['voice'] {
+  const person = normalizePerson(parameters['人称'] ?? parameters['person']);
+  const density = normalizeDensity(parameters['旁白密度'] ?? parameters['density']);
+  const sampleTexts = splitInlineList(parameters['示例文案'] ?? parameters['sampleTexts']);
+  return {
+    person,
+    tone: parameters['语气'] ?? parameters['tone'] ?? '平实克制',
+    density,
+    sampleTexts,
   };
 }
 
@@ -347,423 +274,245 @@ function buildArrangementStructure(
   sections: IStyleSection[],
   parameters: Record<string, string>,
 ): IStyleArrangementStructure {
-  const organizationModes = dedupeStrings([
-    parameters['组织模式'],
-    parameters['段落组织方式'],
+  const primaryAxis = firstNonEmpty(
+    parameters['primaryAxis'],
     parameters['编排主轴'],
-    ...collectOrganizationModes(sections, parameters),
+    parameters['主轴'],
+    inferPrimaryAxis(sections),
+  );
+  const secondaryAxes = dedupeStrings([
+    ...splitInlineList(parameters['secondaryAxes']),
+    ...splitInlineList(parameters['副轴']),
+    ...splitInlineList(parameters['辅助轴']),
   ]);
-  const explicitPrograms = collectArrangementPrograms(sections, parameters);
-  const arrangementPrograms = explicitPrograms;
+  const chapterSplitPrinciples = dedupeStrings([
+    ...splitInlineList(parameters['chapterSplitPrinciples']),
+    ...splitInlineList(parameters['章节切分原则']),
+    ...collectSectionSignals(sections, /切分|段落/u, 3),
+  ]);
+  const chapterTransitionNotes = dedupeStrings([
+    ...splitInlineList(parameters['chapterTransitionNotes']),
+    ...splitInlineList(parameters['章节转场']),
+    ...collectSectionSignals(sections, /转场|衔接|过渡/u, 3),
+  ]);
+  const chapterPrograms = buildChapterPrograms(sections, parameters, primaryAxis);
+
   return {
-    organizationModes: organizationModes.length > 0 ? organizationModes : ['叙事段落驱动'],
-    arrangementPrograms,
-    bundlePreferenceNotes: sections
-      .filter(section =>
-        section.title.includes('素材')
-        || section.title.includes('结构')
-        || section.title.includes('编排')
-        || section.title.includes('段落程序')
-        || section.title.includes('组织程序'))
-      .map(section => section.content.trim())
-      .filter(Boolean)
-      .slice(0, 6),
+    primaryAxis,
+    secondaryAxes,
+    chapterPrograms,
+    chapterSplitPrinciples,
+    chapterTransitionNotes,
   };
 }
 
-function collectArrangementPrograms(
+function buildChapterPrograms(
   sections: IStyleSection[],
   parameters: Record<string, string>,
-): IStyleArrangementStructure['arrangementPrograms'] {
-  const values = dedupeStrings([
-    ...extractArrangementProgramLines(parameters['段落程序']),
-    ...extractArrangementProgramLines(parameters['组织程序']),
-    ...extractArrangementProgramLines(parameters['片头段落程序']),
-    ...extractArrangementProgramLines(parameters['正文段落程序']),
-    ...extractArrangementProgramLines(parameters['收尾段落程序']),
-    ...sections
-      .filter(section =>
-        section.title.includes('段落程序')
-        || section.title.includes('组织程序')
-        || section.title.includes('片头结构')
-        || section.title.includes('正文结构')
-        || section.title.includes('收尾结构'))
-      .flatMap(section => extractArrangementProgramLines(section.content)),
-  ]);
+  primaryAxis?: string,
+): IStyleArrangementStructure['chapterPrograms'] {
+  const explicitPrograms = Object.entries(parameters)
+    .filter(([key]) => /chapterProgram|章节程序|段落程序/u.test(key))
+    .map(([, value], index) => parseChapterProgramValue(value, index))
+    .filter((value): value is NonNullable<typeof value> => Boolean(value));
 
-  return values
-    .filter(phrase => !/^组织模式[:：]/u.test(phrase))
-    .map((phrase, index) => ({
-    id: `program-${index + 1}-${toProgramSlug(phrase)}`,
-    phrase,
-    bundlePreferencePhrases: [],
-    }));
-}
-
-function collectOrganizationModes(
-  sections: IStyleSection[],
-  parameters: Record<string, string>,
-): string[] {
-  const rawLines = [
-    parameters['组织模式'],
-    parameters['段落组织方式'],
-    ...sections
-      .filter(section => section.title.includes('段落程序') || section.title.includes('组织程序'))
-      .flatMap(section => extractArrangementProgramLines(section.content)),
-  ];
-  return dedupeStrings(rawLines.flatMap(line => {
-    if (!line) return [];
-    const match = line.match(/^组织模式[:：]\s*(.+)$/u);
-    return match?.[1] ? [match[1].trim()] : [];
-  }));
-}
-
-function buildSegmentArchetypes(
-  sections: IStyleSection[],
-  parameters: Record<string, string>,
-): IStyleSegmentArchetype[] {
-  const signalText = buildStyleSignalText(sections, parameters);
-  const candidates = [
-    maybeCreateArchetypeFromSignal({
-      signalText,
-      keywords: ['开场', '引入', '开头', '建场'],
-      id: 'opening-intro',
-      name: '开场引入',
-      functions: ['establish', 'geo-reset'],
-      preferredMaterials: ['aerial', 'broll', 'timelapse'],
-      preferredShotGrammar: ['aerial', 'locked-timelapse'],
-      typicalTiming: 'opening',
-      notes: collectMatchingSections(sections, ['开场', '引入', '开头']),
-    }),
-    maybeCreateArchetypeFromSignal({
-      signalText,
-      keywords: ['景点介绍', '地点介绍', '第三视角', '对镜讲解', '人物讲解'],
-      id: 'poi-intro',
-      name: '第三视角介绍',
-      functions: ['info-delivery', 'geo-reset'],
-      preferredMaterials: ['shot', 'talking-head', 'broll'],
-      preferredShotGrammar: ['third-person-to-camera', 'handheld-observe'],
-      typicalTiming: 'middle',
-      notes: collectMatchingSections(sections, ['景点', '介绍', '第三视角']),
-    }),
-    maybeCreateArchetypeFromSignal({
-      signalText,
-      keywords: ['路途', '行车', '路线推进', '开车', '在路上'],
-      id: 'route-advance',
-      name: '路途推进',
-      functions: ['route-advance', 'transition'],
-      preferredMaterials: ['drive', 'aerial'],
-      preferredShotGrammar: ['windshield-drive', 'car-interior-drive', 'follow-vehicle'],
-      typicalTiming: 'middle',
-      notes: collectMatchingSections(sections, ['路途', '行车', '推进']),
-    }),
-    maybeCreateArchetypeFromSignal({
-      signalText,
-      keywords: ['跟车', '跟人', '桥段连接', '空间过桥', '人物过桥'],
-      id: 'bridge-follow',
-      name: '过桥跟随',
-      functions: ['transition', 'emotion-release'],
-      preferredMaterials: ['aerial', 'shot', 'broll'],
-      preferredShotGrammar: ['follow-vehicle', 'handheld-observe'],
-      typicalTiming: 'bridge',
-      notes: collectMatchingSections(sections, ['过渡', '跟车', '跟人', '桥']),
-    }),
-    maybeCreateArchetypeFromSignal({
-      signalText,
-      keywords: ['冲突', 'drama', '戏剧转折', '冲突桥段', '情节转折'],
-      id: 'drama-turn',
-      name: '冲突桥段',
-      functions: ['conflict-event', 'conflict-foreshadow'],
-      preferredMaterials: ['talking-head', 'shot', 'broll'],
-      preferredShotGrammar: ['handheld-observe', 'walk-and-talk'],
-      typicalTiming: 'middle',
-      notes: collectMatchingSections(sections, ['冲突', 'drama', '转折', '桥段']),
-    }),
-    maybeCreateArchetypeFromSignal({
-      signalText,
-      keywords: ['延时', '拔升', '抬升', '时间流逝'],
-      id: 'time-lift',
-      name: '时间拔升',
-      functions: ['time-passage', 'emotion-release'],
-      preferredMaterials: ['timelapse', 'aerial'],
-      preferredShotGrammar: ['locked-timelapse', 'pull-back'],
-      typicalTiming: 'bridge',
-      notes: collectMatchingSections(sections, ['延时', '拔升', '抬升']),
-    }),
-    maybeCreateArchetypeFromSignal({
-      signalText,
-      keywords: ['结尾', '收尾', '回落', '收束'],
-      id: 'closure',
-      name: '收束结尾',
-      functions: ['arrival', 'emotion-release', 'transition'],
-      preferredMaterials: ['aerial', 'broll', 'talking-head'],
-      preferredShotGrammar: ['pull-back', 'third-person-to-camera'],
-      typicalTiming: 'ending',
-      notes: collectMatchingSections(sections, ['结尾', '收尾', '回落', '收束']),
-    }),
-  ].filter(Boolean) as IStyleSegmentArchetype[];
-
-  if (candidates.length > 0) return candidates;
-
-  return [{
-    id: 'generic-observational',
-    name: '通用观察式段落',
-    functions: ['transition', 'info-delivery'],
-    preferredShotGrammar: ['handheld-observe'],
-    preferredViewpoints: [],
-    preferredMaterials: ['shot', 'broll'],
-    typicalTiming: 'middle',
-    notes: parameters['段落组织方式'] ?? parameters['编排主轴'] ?? '未明确',
-  }];
-}
-
-function buildTransitionRules(
-  archetypes: IStyleSegmentArchetype[],
-): IStyleTransitionRule[] {
-  const ordered = archetypes.map(item => item.id);
-  const transitions: IStyleTransitionRule[] = [];
-  for (let i = 0; i < ordered.length - 1; i++) {
-    transitions.push({
-      from: ordered[i],
-      to: ordered[i + 1],
-      purpose: `${ordered[i]} -> ${ordered[i + 1]}`,
-      preferredTransitions: derivePreferredTransitions(ordered[i], ordered[i + 1]),
-    });
+  if (explicitPrograms.length > 0) {
+    return explicitPrograms;
   }
-  return transitions;
+
+  const structureHints = sections
+    .filter(section => /结构|叙事|编排/u.test(section.title))
+    .flatMap(section => extractBulletLines(section.content))
+    .slice(0, 4);
+
+  const defaults = structureHints.length > 0
+    ? structureHints.map((hint, index) => ({
+      type: `chapter-${index + 1}`,
+      intent: hint,
+      materialRoles: inferMaterialRoles(hint),
+      promotionSignals: dedupeStrings([primaryAxis, hint]),
+      transitionBias: index === 0 ? 'smooth-intro' : index === structureHints.length - 1 ? 'settle-outro' : 'carry-forward',
+      localNarrationNote: index === 0 ? '先建立观看坐标，再进入细节。' : undefined,
+    }))
+    : [
+      {
+        type: 'opening',
+        intent: '先建立空间和观看主轴',
+        materialRoles: ['establishing', 'anchor'],
+        promotionSignals: dedupeStrings([primaryAxis, '建场']),
+        transitionBias: 'smooth-intro',
+        localNarrationNote: '旁白先收一点，不要解释过满。',
+      },
+      {
+        type: 'body',
+        intent: '沿着主轴推进，逐步打开观察层次',
+        materialRoles: ['observation', 'progression'],
+        promotionSignals: dedupeStrings([primaryAxis, '推进']),
+        transitionBias: 'carry-forward',
+      },
+      {
+        type: 'closing',
+        intent: '把观察收回到人物或情绪结论',
+        materialRoles: ['resolution'],
+        promotionSignals: dedupeStrings([primaryAxis, '收束']),
+        transitionBias: 'settle-outro',
+      },
+    ];
+
+  return defaults.slice(0, 6);
 }
 
-function buildFunctionBlocks(
-  sections: IStyleSection[],
+function buildNarrationConstraints(
   parameters: Record<string, string>,
   antiPatterns: string[],
-): IStyleFunctionBlock[] {
-  const signalText = buildStyleSignalText(sections, parameters);
-  const blocks: IStyleFunctionBlock[] = [];
-  const pushBlock = (
-    id: string,
-    functions: string[],
-    preferredMaterials: string[],
-    preferredShotGrammar: string[],
-    preferredTransitions: string[],
-    timingBias?: IStyleFunctionBlock['timingBias'],
-    notes?: string,
-  ) => {
-    blocks.push({
-      id,
-      functions,
-      preferredShotGrammar,
-      preferredMaterials,
-      preferredTransitions,
-      disallowedPatterns: antiPatterns.slice(0, 5),
-      timingBias,
-      notes,
-    });
-  };
-
-  if (hasStyleSignal(signalText, ['开场', '引入', '建场'])) {
-    pushBlock(
-      'opening-establish',
-      ['establish', 'geo-reset'],
-      ['aerial', 'timelapse', 'broll'],
-      ['aerial', 'locked-timelapse'],
-      ['fade', 'cross-dissolve'],
-      'opening',
-      collectMatchingSections(sections, ['开场', '引入', '建场']),
-    );
-  }
-  if (hasStyleSignal(signalText, ['行车', '路途', '路线推进', '开车', '在路上'])) {
-    pushBlock(
-      'route-advance',
-      ['route-advance', 'transition'],
-      ['drive', 'aerial'],
-      ['windshield-drive', 'follow-vehicle'],
-      ['cut', 'cross-dissolve'],
-      'middle',
-      parameters['行车素材职责'] ?? collectMatchingSections(sections, ['行车', '路途']),
-    );
-  }
-  if (hasStyleSignal(signalText, ['延时', '拔升', '抬升', '时间流逝'])) {
-    pushBlock(
-      'time-lift',
-      ['time-passage', 'emotion-release'],
-      ['timelapse', 'aerial'],
-      ['locked-timelapse', 'pull-back'],
-      ['fade', 'cross-dissolve'],
-      'bridge',
-      parameters['延时使用关系'] ?? collectMatchingSections(sections, ['延时', '拔升']),
-    );
-  }
-  if (hasStyleSignal(signalText, ['结尾', '收束', '回落', '收尾'])) {
-    pushBlock(
-      'closure',
-      ['arrival', 'emotion-release'],
-      ['aerial', 'broll', 'talking-head'],
-      ['pull-back', 'third-person-to-camera'],
-      ['fade'],
-      'ending',
-      collectMatchingSections(sections, ['结尾', '收束']),
-    );
-  }
-
-  return blocks;
-}
-
-function maybeCreateArchetypeFromSignal(input: {
-  signalText: string;
-  keywords: string[];
-  id: string;
-  name: string;
-  functions: string[];
-  preferredMaterials: string[];
-  preferredShotGrammar: string[];
-  typicalTiming: IStyleSegmentArchetype['typicalTiming'];
-  notes?: string;
-}): IStyleSegmentArchetype | null {
-  if (!hasStyleSignal(input.signalText, input.keywords)) {
-    return null;
-  }
-  return createArchetypeFromHint(
-    input.id,
-    input.name,
-    input.functions,
-    input.preferredMaterials,
-    input.preferredShotGrammar,
-    input.typicalTiming,
-    input.notes,
-  );
-}
-
-function createArchetypeFromHint(
-  id: string,
-  name: string,
-  functions: string[],
-  preferredMaterials: string[],
-  preferredShotGrammar: string[],
-  typicalTiming: IStyleSegmentArchetype['typicalTiming'],
-  notes?: string,
-): IStyleSegmentArchetype {
+  voice?: IStyleProfile['voice'],
+): IStyleNarrationConstraints {
   return {
-    id,
-    name,
-    functions,
-    preferredShotGrammar,
-    preferredViewpoints: [],
-    preferredMaterials,
-    typicalTiming,
-    notes,
+    perspective: parameters['旁白视角'] ?? parameters['perspective'] ?? normalizeVoicePerspective(voice?.person),
+    tone: parameters['旁白语气'] ?? parameters['tone'] ?? voice?.tone,
+    informationDensity: parameters['信息密度'] ?? parameters['informationDensity'] ?? normalizeVoiceDensity(voice?.density),
+    explanationBias: parameters['解释倾向'] ?? parameters['explanationBias'] ?? '克制解释，优先让材料自己成立',
+    forbiddenPatterns: dedupeStrings([
+      ...splitInlineList(parameters['forbiddenPatterns']),
+      ...antiPatterns,
+    ]),
+    notes: dedupeStrings([
+      ...splitInlineList(parameters['narrationNotes']),
+      ...splitInlineList(parameters['旁白备注']),
+    ]),
   };
 }
 
-function extractArrangementProgramLines(text?: string): string[] {
-  if (!text) return [];
-  return text
+function parseChapterProgramValue(
+  value: string,
+  index: number,
+): IStyleArrangementStructure['chapterPrograms'][number] | null {
+  if (!value.trim()) return null;
+  const parts = value.split('|').map(item => item.trim());
+  if (parts.length >= 5) {
+    return {
+      type: parts[0],
+      intent: parts[1],
+      materialRoles: splitInlineList(parts[2]),
+      promotionSignals: splitInlineList(parts[3]),
+      transitionBias: parts[4],
+      localNarrationNote: parts[5] || undefined,
+    };
+  }
+
+  return {
+    type: `chapter-${index + 1}`,
+    intent: value.trim(),
+    materialRoles: inferMaterialRoles(value),
+    promotionSignals: splitInlineList(value),
+    transitionBias: 'carry-forward',
+  };
+}
+
+function collectSectionSignals(
+  sections: IStyleSection[],
+  pattern: RegExp,
+  limit: number,
+): string[] {
+  return sections
+    .filter(section => pattern.test(section.title) || pattern.test(section.content))
+    .flatMap(section => extractBulletLines(section.content))
+    .slice(0, limit);
+}
+
+function inferPrimaryAxis(sections: IStyleSection[]): string | undefined {
+  const structureSection = sections.find(section => /结构|叙事|编排/u.test(section.title));
+  if (!structureSection) return undefined;
+  const firstSentence = structureSection.content
     .split('\n')
     .map(line => line.trim())
-    .filter(Boolean)
-    .map(line => line.replace(/^[-*]\s*/, '').replace(/^\d+[.)]\s*/, '').trim())
-    .filter(line => line.length >= 6);
+    .find(Boolean);
+  return firstSentence?.slice(0, 48);
 }
 
-function toProgramSlug(phrase: string): string {
-  const normalized = phrase
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}]+/gu, '-')
-    .replace(/^-+|-+$/g, '');
-  return normalized.length > 0 ? normalized.slice(0, 40) : randomUUID();
+function inferMaterialRoles(value: string): string[] {
+  const normalized = value.toLowerCase();
+  return dedupeStrings([
+    /建场|establish/u.test(normalized) ? 'establishing' : undefined,
+    /推进|journey|route/u.test(normalized) ? 'progression' : undefined,
+    /人物|self|主观/u.test(normalized) ? 'subjective' : undefined,
+    /收束|结尾|resolve/u.test(normalized) ? 'resolution' : undefined,
+    /观察|detail/u.test(normalized) ? 'observation' : undefined,
+  ]);
 }
 
-function collectMatchingSections(sections: IStyleSection[], keywords: string[]): string | undefined {
-  const values = sections
-    .filter(section => keywords.some(keyword => section.title.includes(keyword) || section.content.includes(keyword)))
-    .map(section => `${section.title}: ${section.content}`.trim())
+function extractBulletLines(content: string): string[] {
+  return content
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => /^[-*]\s+/u.test(line))
+    .map(line => line.replace(/^[-*]\s+/u, '').trim())
     .filter(Boolean);
-  return values.length > 0 ? values.slice(0, 2).join('\n\n') : undefined;
 }
 
-function buildStyleSignalText(
-  sections: IStyleSection[],
-  parameters: Record<string, string>,
-): string {
-  return [
-    ...sections.map(section => `${section.title}\n${section.content}`),
-    ...Object.entries(parameters).map(([key, value]) => `${key}: ${value}`),
-  ].join('\n');
-}
-
-function hasStyleSignal(signalText: string, keywords: string[]): boolean {
-  return keywords.some(keyword => containsPositiveStyleKeyword(signalText, keyword));
-}
-
-function containsPositiveStyleKeyword(signalText: string, keyword: string): boolean {
-  const chunks = signalText
-    .split(/[\n。！？；;]+/u)
-    .map(chunk => chunk.trim())
+function splitInlineList(value?: string): string[] {
+  if (!value?.trim()) return [];
+  return value
+    .split(/[、,，;；/]/u)
+    .map(item => item.trim())
     .filter(Boolean);
+}
 
-  for (const chunk of chunks) {
-    let searchFrom = 0;
-    while (searchFrom < chunk.length) {
-      const index = chunk.indexOf(keyword, searchFrom);
-      if (index < 0) break;
-      const before = chunk.slice(Math.max(0, index - 8), index);
-      if (!hasNegativeCueBeforeKeyword(before)) {
-        return true;
-      }
-      searchFrom = index + keyword.length;
-    }
+function normalizePerson(value?: string): IStyleProfile['voice']['person'] {
+  const normalized = value?.trim().toLowerCase();
+  if (normalized === '2nd' || normalized === '第二人称') return '2nd';
+  if (normalized === '3rd' || normalized === '第三人称') return '3rd';
+  return '1st';
+}
+
+function normalizeDensity(value?: string): IStyleProfile['voice']['density'] {
+  const normalized = value?.trim().toLowerCase();
+  if (normalized === 'low' || normalized === '低') return 'low';
+  if (normalized === 'high' || normalized === '高') return 'high';
+  return 'moderate';
+}
+
+function normalizeVoicePerspective(value?: IStyleProfile['voice']['person']): string | undefined {
+  if (value === '1st') return '第一人称贴身观察';
+  if (value === '2nd') return '第二人称代入';
+  if (value === '3rd') return '第三人称旁观';
+  return undefined;
+}
+
+function normalizeVoiceDensity(value?: IStyleProfile['voice']['density']): string | undefined {
+  if (value === 'low') return '少解释，多留白';
+  if (value === 'high') return '信息密度高，但仍要克制';
+  if (value === 'moderate') return '中等密度，解释只服务主轴';
+  return undefined;
+}
+
+function parsePositiveNumber(value?: string): number | undefined {
+  if (!value) return undefined;
+  const match = value.match(/(\d+(?:\.\d+)?)/u);
+  if (!match) return undefined;
+  const parsed = Number(match[1]);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+function parseRatio(value?: string): number | undefined {
+  if (!value) return undefined;
+  if (/%/u.test(value)) {
+    const parsedPercent = parsePositiveNumber(value);
+    return typeof parsedPercent === 'number' ? parsedPercent / 100 : undefined;
   }
-
-  return false;
+  const parsed = parsePositiveNumber(value);
+  if (typeof parsed !== 'number') return undefined;
+  return parsed > 1 ? parsed / 100 : parsed;
 }
 
-function hasNegativeCueBeforeKeyword(context: string): boolean {
-  return [
-    '不做',
-    '不要',
-    '不想',
-    '不该',
-    '不宜',
-    '不再',
-    '不强调',
-    '不主打',
-    '不承担',
-    '不需要',
-    '无需',
-    '无须',
-    '避免',
-    '禁止',
-    '别把',
-    '并非',
-    '不是',
-    '不能',
-    '不会',
-    '少用',
-  ].some(cue => context.includes(cue));
+function clampRatio(value: number): number {
+  return Math.max(0, Math.min(1, value));
 }
 
-function derivePreferredTransitions(from: string, to: string): string[] {
-  if (from.includes('opening') || to.includes('closure')) return ['fade'];
-  if (from.includes('time') || to.includes('time')) return ['cross-dissolve'];
-  return ['cut'];
+function firstNonEmpty(...values: Array<string | undefined>): string | undefined {
+  return values.map(value => value?.trim()).find(Boolean);
 }
 
 function dedupeStrings(values: Array<string | undefined>): string[] {
   return [...new Set(values.map(value => value?.trim()).filter(Boolean) as string[])];
-}
-
-function parseNumberParam(value?: string): number | undefined {
-  if (!value) return undefined;
-  const match = value.match(/-?\d+(?:\.\d+)?/);
-  if (!match) return undefined;
-  const parsed = Number(match[0]);
-  return Number.isFinite(parsed) ? parsed : undefined;
-}
-
-function parseDensity(value?: string): 'low' | 'moderate' | 'high' {
-  if (!value) return 'moderate';
-  const normalized = value.trim().toLowerCase();
-  if (normalized.includes('high') || normalized.includes('高')) return 'high';
-  if (normalized.includes('low') || normalized.includes('低')) return 'low';
-  return 'moderate';
 }

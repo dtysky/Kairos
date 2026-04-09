@@ -57,22 +57,19 @@ Kairos 当前需要区分两层：
 
 ## 1.2 2026-04-08 语义协议切换
 
-当前主链已经开始从旧的 `slice + 五轴语义 + 单阶段 arrangement` 切到新的准备模型：
+当前主链已经开始从旧的 `slice + 五轴语义 + 单阶段 arrangement` 切到新的 model-driven arrangement 准备链：
 
 - Analyze 的正式素材单元现在优先叫 `span`
 - 项目内正式持久化路径已切到 `store/spans.json`
 - `span` 当前正式承载三块主信息：
   - `materialPatterns[]`
-  - `localEditingIntent`
   - `grounding`
-- 项目级正式词集当前只保留两层，并挂到 `project-brief`：
+- 项目级正式词集当前只保留一层，并挂到 `project-brief`：
   - `材料模式短语`
-  - `局部剪辑作用短语`
-- Script prep 当前改成“两次组织”：
-  - 先从 `span` 预聚合素材侧 `Bundle Graph`
-  - 再由 `style + 约束 + bundle inventory` 生成 style-driven arrangement
-- `Bundle` 当前是素材侧自然语言对象，不是第四套正式词表
-- `Segment` 当前不再是内置固定词表，而是 style-driven 的自然语言段落对象
+- Script prep 当前正式链路为：
+  - `Analyze -> Material Overview -> Script Brief -> Segment Plan -> Material Slots -> Bundle Lookup -> Chosen SpanIds -> Beat / Script`
+- `Bundle` 当前是 `materialPatterns` 驱动的粗索引入口，不承担叙事骨架身份
+- `Segment` 当前是 LLM-first 的项目级动态段落结果，不是固定 archetype 闭集
 - Timeline / script selection 当前开始优先传递 `spanId`；`sliceId` 只作为兼容字段继续存在一段时间
 
 ## 2. 正式主流程
@@ -350,20 +347,20 @@ flowchart TD
 当前正式的脚本工作流应理解为：
 
 1. `project brief` 提供全片约束
-2. `material digest` 提供全量素材印象
+2. `material overview` 提供全量素材边界、强弱与缺口
 3. 用户在 `/script` 选择 workspace 风格分类，并自动保存
-4. Agent 生成初版 `script-brief`
+4. Agent 生成 `material-overview.md` 与初版 `script-brief`
 5. 用户回到 `/script` 审查并手动保存 brief
 6. `/script` 会通过显眼的 prompt / modal 提示下一步；用户点击 `准备给 Agent` 后，Console 只刷新确定性 prep 材料
-7. Agent 再继续推进 `approved segment plan`、段落级召回、beat 试写与选择
+7. Agent 再继续推进 `segment plan`、`material slots`、bundle lookup、`chosenSpanIds`、beat 试写与选择
 8. Agent 写入 `script/current.json`
 9. 再由 `selection` 与 `beat` 共同落成时间线和字幕
 
 因此，当前稳定结论包括：
 
 - `Pharos` 是正式脚本流程的主输入；没有 `Pharos` 时才回落到兼容路径
-- `approved segment plan` 仍是正式闸门，但不再由 Supervisor 隐式自动批准
-- Console 不再默认生成 `segment plan drafts` 并自动推进脚本写作
+- `segment plan` 是 Agent 阶段的正式闸门，但不再拆成 drafts / approved 两套持久化协议
+- Console 不再默认生成 `material digest`、`segment plan drafts`、`approved segment plan` 或 `segment candidates`
 - `script` prep 只有在 `script-brief.workflowState = ready_to_prepare` 后才允许运行；成功后推进到 `ready_for_agent`
 - 若用户修改过 brief，又想回到“Agent 重生初版 brief”，必须先在 `/script` 完成覆盖确认
 - `script-brief` 已经分层，而不是只有一份统管全文的脚本说明

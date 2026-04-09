@@ -18,7 +18,6 @@ export interface IProjectBriefPharosConfig {
 
 export interface IProjectBriefVocabularyConfig {
   materialPatternPhrases: string[];
-  localEditingIntentPhrases: string[];
 }
 
 export interface IParsedProjectBrief {
@@ -60,10 +59,6 @@ export function buildProjectBriefTemplate(
     '',
     '- ',
     '',
-    '## 局部剪辑作用短语',
-    '',
-    '- ',
-    '',
   ].join('\n');
 }
 
@@ -78,11 +73,10 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
   const mappings: IProjectBriefPathMapping[] = [];
   const includedTripIds: string[] = [];
   const materialPatternPhrases: string[] = [];
-  const localEditingIntentPhrases: string[] = [];
+
   let inMappings = false;
   let inPharos = false;
   let inMaterialPatterns = false;
-  let inLocalEditingIntents = false;
   let pendingPath: string | null = null;
   let pendingDescription: string | null = null;
   let pendingFlightRecordPath: string | null = null;
@@ -114,7 +108,6 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
       inMappings = true;
       inPharos = false;
       inMaterialPatterns = false;
-      inLocalEditingIntents = false;
       expectIncludedTripValue = false;
       continue;
     }
@@ -133,7 +126,6 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
       inMappings = false;
       inPharos = true;
       inMaterialPatterns = false;
-      inLocalEditingIntents = false;
       expectPathValue = false;
       expectDescriptionValue = false;
       expectFlightRecordPathValue = false;
@@ -154,29 +146,6 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
       inMappings = false;
       inPharos = false;
       inMaterialPatterns = true;
-      inLocalEditingIntents = false;
-      expectPathValue = false;
-      expectDescriptionValue = false;
-      expectFlightRecordPathValue = false;
-      expectIncludedTripValue = false;
-      continue;
-    }
-
-    if (line === '## 局部剪辑作用短语') {
-      pushPendingMapping(
-        mappings,
-        warnings,
-        pendingPath,
-        pendingDescription,
-        pendingFlightRecordPath,
-      );
-      pendingPath = null;
-      pendingDescription = null;
-      pendingFlightRecordPath = null;
-      inMappings = false;
-      inPharos = false;
-      inMaterialPatterns = false;
-      inLocalEditingIntents = true;
       expectPathValue = false;
       expectDescriptionValue = false;
       expectFlightRecordPathValue = false;
@@ -198,7 +167,6 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
       inMappings = false;
       inPharos = false;
       inMaterialPatterns = false;
-      inLocalEditingIntents = false;
       expectPathValue = false;
       expectDescriptionValue = false;
       expectFlightRecordPathValue = false;
@@ -225,13 +193,10 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
       continue;
     }
 
-    if (inMaterialPatterns || inLocalEditingIntents) {
+    if (inMaterialPatterns) {
       const phrase = normalizePhraseLine(line);
-      if (!phrase) continue;
-      if (inMaterialPatterns) {
+      if (phrase) {
         materialPatternPhrases.push(phrase);
-      } else {
-        localEditingIntentPhrases.push(phrase);
       }
       continue;
     }
@@ -299,7 +264,6 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
     if (expectFlightRecordPathValue) {
       pendingFlightRecordPath = line;
       expectFlightRecordPathValue = false;
-      continue;
     }
   }
 
@@ -326,13 +290,10 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
     createdAt,
     mappings,
     pharos: includedTripIds.length > 0
-      ? {
-        includedTripIds,
-      }
+      ? { includedTripIds }
       : undefined,
     vocabulary: {
       materialPatternPhrases: dedupeTrimmedStrings(materialPatternPhrases),
-      localEditingIntentPhrases: dedupeTrimmedStrings(localEditingIntentPhrases),
     },
     warnings,
   };
@@ -387,9 +348,7 @@ function pushPendingMapping(
   });
 }
 
-function findDuplicatePaths(
-  mappings: IProjectBriefPathMapping[],
-): string[] {
+function findDuplicatePaths(mappings: IProjectBriefPathMapping[]): string[] {
   const counts = new Map<string, number>();
   for (const mapping of mappings) {
     const key = mapping.path.trim().toLowerCase();

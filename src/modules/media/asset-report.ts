@@ -4,7 +4,9 @@ import type {
   IKtepAsset,
   IMediaAnalysisPlan,
   EClipType,
-  EFineScanMode,
+  EFinalizeFineScanMode,
+  EKeepDecision,
+  EMaterializationPath,
   ITranscriptSegment,
   IPharosMatch,
   IPharosRef,
@@ -32,21 +34,32 @@ export interface IBuildAssetCoarseReportInput {
   rootNotes?: string[];
   sampleFrames?: IKeyframeResult[];
   sampleFrameSummaries?: string[];
-  shouldFineScan?: boolean;
+  keepDecision?: EKeepDecision;
+  materializationPath?: EMaterializationPath;
   fineScanReasons?: string[];
-  fineScanMode?: EFineScanMode;
+  fineScanMode?: EFinalizeFineScanMode;
 }
 
 export function buildAssetCoarseReport(
   input: IBuildAssetCoarseReportInput,
 ): IAssetCoarseReport {
   const now = new Date().toISOString();
+  const keepDecision = input.keepDecision ?? 'keep';
+  const materializationPath = keepDecision === 'drop'
+    ? undefined
+    : input.materializationPath ?? (input.plan.shouldFineScan ? 'fine-scan' : 'direct');
+  const fineScanMode = materializationPath === 'fine-scan'
+    ? input.fineScanMode ?? (input.plan.fineScanMode === 'full' ? 'full' : 'windowed')
+    : undefined;
 
   return {
     assetId: input.asset.id,
     ingestRootId: input.asset.ingestRootId,
     durationMs: input.asset.durationMs,
     clipTypeGuess: input.clipTypeGuess ?? input.plan.clipType,
+    keepDecision,
+    materializationPath,
+    fineScanMode,
     densityScore: input.plan.densityScore,
     gpsSummary: input.gpsSummary,
     inferredGps: input.inferredGps,
@@ -69,8 +82,6 @@ export function buildAssetCoarseReport(
       summary: input.sampleFrameSummaries?.[index],
     })),
     interestingWindows: input.plan.interestingWindows,
-    shouldFineScan: input.shouldFineScan ?? input.plan.shouldFineScan,
-    fineScanMode: input.fineScanMode ?? input.plan.fineScanMode,
     fineScanReasons: dedupe(input.fineScanReasons ?? []),
     createdAt: now,
     updatedAt: now,

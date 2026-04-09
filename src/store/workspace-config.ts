@@ -68,7 +68,6 @@ export async function loadProjectBriefConfig(projectRoot: string): Promise<TProj
     mappings: parsed.mappings,
     pharos: parsed.pharos,
     materialPatternPhrases: parsed.vocabulary.materialPatternPhrases,
-    localEditingIntentPhrases: parsed.vocabulary.localEditingIntentPhrases,
   });
 }
 
@@ -91,9 +90,6 @@ export async function saveProjectBriefConfig(
       }
       : undefined,
     materialPatternPhrases: (config.materialPatternPhrases ?? [])
-      .map(phrase => phrase.trim())
-      .filter(Boolean),
-    localEditingIntentPhrases: (config.localEditingIntentPhrases ?? [])
       .map(phrase => phrase.trim())
       .filter(Boolean),
   });
@@ -292,13 +288,11 @@ function normalizeScriptBriefSegments(
   return (segments ?? []).map(segment => IScriptBriefSegmentConfig.parse({
     segmentId: stringValue(segment.segmentId) ?? `segment-${randomUUID()}`,
     title: stringValue(segment.title),
-    role: stringValue(segment.role),
+    roleHint: stringValue(segment.roleHint),
     targetDurationMs: typeof segment.targetDurationMs === 'number' && segment.targetDurationMs > 0
       ? segment.targetDurationMs
       : undefined,
     intent: stringValue(segment.intent),
-    preferredClipTypes: normalizeDraftLines(segment.preferredClipTypes ?? []),
-    preferredPlaceHints: normalizeDraftLines(segment.preferredPlaceHints ?? []),
     notes: normalizeDraftLines(segment.notes ?? []),
   }));
 }
@@ -494,20 +488,17 @@ function extractScriptBriefSegments(markdown: string): TScriptBriefSegmentConfig
     const startIndex = match.index ?? 0;
     const nextStart = matches[index + 1]?.index ?? section.length;
     const block = section.slice(startIndex, nextStart);
-    const role = extractSegmentLine(block, '角色');
+    const roleHint = extractSegmentLine(block, '角色提示') ?? extractSegmentLine(block, '角色');
     const duration = extractSegmentLine(block, '目标时长');
     const intent = extractSegmentLine(block, '简单说明');
-    const visual = extractSegmentLine(block, '画面/声音偏好') ?? '';
     const constraints = extractSegmentLine(block, '文案约束') ?? '';
 
     return IScriptBriefSegmentConfig.parse({
       segmentId,
       title,
-      role: emptyToUndefined(role),
+      roleHint: emptyToUndefined(roleHint),
       targetDurationMs: parseTargetDurationMs(duration),
       intent: emptyToUndefined(intent),
-      preferredClipTypes: extractVisualPreferencePart(visual, '优先'),
-      preferredPlaceHints: extractVisualPreferencePart(visual, '地点线索'),
       notes: splitInlineNotes(constraints),
     });
   });
@@ -531,20 +522,6 @@ function parseTargetDurationMs(value?: string): number | undefined {
   if (seconds) return Number(seconds) * 1000;
   const numeric = Number(value);
   return Number.isFinite(numeric) && numeric > 0 ? numeric : undefined;
-}
-
-function extractVisualPreferencePart(value: string, prefix: string): string[] {
-  const parts = value
-    .split('；')
-    .map(part => part.trim())
-    .find(part => part.startsWith(prefix));
-  if (!parts) return [];
-  return parts
-    .slice(prefix.length)
-    .trim()
-    .split('/')
-    .map(item => item.trim())
-    .filter(Boolean);
 }
 
 function splitInlineNotes(value: string): string[] {
