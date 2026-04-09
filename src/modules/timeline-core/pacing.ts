@@ -6,6 +6,7 @@ import type {
 } from '../../protocol/schema.js';
 import {
   resolveSelectionRange,
+  resolveSelectionTranscriptRange,
   snapSelectionToTranscriptSegments,
 } from '../media/window-policy.js';
 
@@ -357,10 +358,7 @@ function normalizeBeatTiming(
   const speechContext = buildSourceSpeechContext(beat.selections, sliceMap);
   if (shouldPreferSourceSpeech(segment, beat, speechContext)) {
     const normalizedSelections = normalizeSourceSpeechSelections(beat.selections, sliceMap);
-    const targetDurationMs = Math.max(
-      beat.targetDurationMs ?? 0,
-      sumSelectionDurationsMs(normalizedSelections, sliceMap),
-    );
+    const targetDurationMs = sumSelectionDurationsMs(normalizedSelections, sliceMap);
     if (
       targetDurationMs === (beat.targetDurationMs ?? 0)
       && !haveSelectionWindowsChanged(beat.selections, normalizedSelections)
@@ -408,10 +406,7 @@ function normalizeLegacySegmentTiming(
   const speechContext = buildSourceSpeechContext(legacyBeat.selections, sliceMap);
   if (shouldPreferSourceSpeech(segment, legacyBeat, speechContext)) {
     const normalizedSelections = normalizeSourceSpeechSelections(legacyBeat.selections, sliceMap);
-    const targetDurationMs = Math.max(
-      segment.targetDurationMs ?? 0,
-      sumSelectionDurationsMs(normalizedSelections, sliceMap),
-    );
+    const targetDurationMs = sumSelectionDurationsMs(normalizedSelections, sliceMap);
     if (
       targetDurationMs === (segment.targetDurationMs ?? 0)
       && !haveSelectionWindowsChanged(segment.selections ?? [], normalizedSelections)
@@ -596,10 +591,26 @@ function resolveSourceDuration(sourceInMs?: number, sourceOutMs?: number): numbe
   return sourceOutMs - sourceInMs;
 }
 
-function normalizeSourceSpeechSelections(
+export function normalizeSourceSpeechSelections(
   selections: IKtepScriptSelection[],
   sliceMap: Map<string, IKtepSlice>,
 ): IKtepScriptSelection[] {
+  const transcriptSelections = selections.flatMap(selection => {
+    const slice = selection.sliceId ? sliceMap.get(selection.sliceId) : undefined;
+    const transcriptRange = resolveSelectionTranscriptRange(selection, slice);
+    if (!transcriptRange) return [];
+
+    return [{
+      ...selection,
+      sourceInMs: transcriptRange.startMs,
+      sourceOutMs: transcriptRange.endMs,
+    }];
+  });
+
+  if (transcriptSelections.length > 0) {
+    return transcriptSelections;
+  }
+
   return selections.map(selection => {
     const slice = selection.sliceId ? sliceMap.get(selection.sliceId) : undefined;
     return snapSelectionToTranscriptSegments(selection, slice);

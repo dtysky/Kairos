@@ -576,6 +576,164 @@ describe('placeClips', () => {
     expect(clips[0]?.muteAudio).toBeUndefined();
   });
 
+  it('drops non-transcript cutaways from preserveNatSound beats before placement', () => {
+    const assets: IKtepAsset[] = [
+      {
+        id: 'asset-cutaway',
+        kind: 'video',
+        sourcePath: 'cutaway.mp4',
+        displayName: 'cutaway.mp4',
+        metadata: {
+          hasAudioStream: false,
+          audioStreamCount: 0,
+        },
+      },
+      {
+        id: 'asset-talk',
+        kind: 'video',
+        sourcePath: 'talk.mp4',
+        displayName: 'talk.mp4',
+        metadata: {
+          hasAudioStream: true,
+          audioStreamCount: 1,
+        },
+      },
+    ];
+    const slices: IKtepSlice[] = [
+      {
+        id: 'slice-cutaway',
+        assetId: 'asset-cutaway',
+        type: 'broll',
+        sourceInMs: 0,
+        sourceOutMs: 4000,
+        labels: [],
+        placeHints: [],
+      },
+      {
+        id: 'slice-talk',
+        assetId: 'asset-talk',
+        type: 'talking-head',
+        sourceInMs: 0,
+        sourceOutMs: 1200,
+        transcriptSegments: [{
+          startMs: 0,
+          endMs: 1200,
+          text: '这是现场原话',
+        }],
+        labels: [],
+        placeHints: [],
+      },
+    ];
+    const script: IKtepScript[] = [{
+      id: 'segment-1',
+      role: 'scene',
+      narration: 'test',
+      targetDurationMs: 5200,
+      linkedSliceIds: ['slice-cutaway', 'slice-talk'],
+      beats: [
+        {
+          id: 'beat-1',
+          text: '这是现场原话',
+          targetDurationMs: 5200,
+          actions: {
+            preserveNatSound: true,
+          },
+          selections: [
+            {
+              assetId: 'asset-cutaway',
+              sliceId: 'slice-cutaway',
+              sourceInMs: 0,
+              sourceOutMs: 4000,
+            },
+            {
+              assetId: 'asset-talk',
+              sliceId: 'slice-talk',
+              sourceInMs: 0,
+              sourceOutMs: 1200,
+            },
+          ],
+          linkedSliceIds: ['slice-cutaway', 'slice-talk'],
+        },
+      ],
+    }];
+
+    const { clips } = placeClips(script, slices, assets);
+
+    expect(clips).toHaveLength(1);
+    expect(clips[0]).toMatchObject({
+      assetId: 'asset-talk',
+      sliceId: 'slice-talk',
+      sourceInMs: 0,
+      sourceOutMs: 1200,
+      timelineInMs: 0,
+      timelineOutMs: 1200,
+    });
+    expect(clips[0]?.muteAudio).toBeUndefined();
+  });
+
+  it('keeps original selections when preserveNatSound beats have no transcript overlap', () => {
+    const assets: IKtepAsset[] = [
+      {
+        id: 'asset-ambient',
+        kind: 'video',
+        sourcePath: 'ambient.mp4',
+        displayName: 'ambient.mp4',
+        metadata: {
+          hasAudioStream: true,
+          audioStreamCount: 1,
+        },
+      },
+    ];
+    const slices: IKtepSlice[] = [
+      {
+        id: 'slice-ambient',
+        assetId: 'asset-ambient',
+        type: 'broll',
+        sourceInMs: 1000,
+        sourceOutMs: 3600,
+        labels: [],
+        placeHints: [],
+      },
+    ];
+    const script: IKtepScript[] = [{
+      id: 'segment-1',
+      role: 'scene',
+      narration: 'test',
+      targetDurationMs: 2600,
+      linkedSliceIds: ['slice-ambient'],
+      beats: [
+        {
+          id: 'beat-1',
+          text: '风声和路噪就够了。',
+          targetDurationMs: 2600,
+          actions: {
+            preserveNatSound: true,
+          },
+          selections: [{
+            assetId: 'asset-ambient',
+            sliceId: 'slice-ambient',
+            sourceInMs: 1000,
+            sourceOutMs: 3600,
+          }],
+          linkedSliceIds: ['slice-ambient'],
+        },
+      ],
+    }];
+
+    const { clips } = placeClips(script, slices, assets);
+
+    expect(clips).toHaveLength(1);
+    expect(clips[0]).toMatchObject({
+      assetId: 'asset-ambient',
+      sliceId: 'slice-ambient',
+      sourceInMs: 1000,
+      sourceOutMs: 3600,
+      timelineInMs: 0,
+      timelineOutMs: 2600,
+    });
+    expect(clips[0]?.muteAudio).toBeUndefined();
+  });
+
   it('routes protected sidecar audio onto a nat track when report prefers fallback', () => {
     const assets: IKtepAsset[] = [
       {

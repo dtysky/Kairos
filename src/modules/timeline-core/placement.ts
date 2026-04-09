@@ -12,9 +12,12 @@ import type {
 import {
   hasExplicitEditRange,
   resolveSlicePreferredRange,
-  snapSelectionToTranscriptSegments,
 } from '../media/window-policy.js';
-import { buildSourceSpeechContext, shouldPreferSourceSpeech } from './pacing.js';
+import {
+  buildSourceSpeechContext,
+  normalizeSourceSpeechSelections,
+  shouldPreferSourceSpeech,
+} from './pacing.js';
 
 export interface IPlacementConfig {
   maxSliceDurationMs: number;
@@ -71,11 +74,7 @@ export function placeClips(
         buildSourceSpeechContext(initialSelections, sliceMap),
       );
       const selections = preferSourceSpeech
-        ? initialSelections.map(selection => {
-          const spanRef = selection.spanId ?? selection.sliceId;
-          const slice = spanRef ? sliceMap.get(spanRef) : undefined;
-          return snapSelectionToTranscriptSegments(selection, slice);
-        })
+        ? normalizeSourceSpeechSelections(initialSelections, sliceMap)
         : initialSelections;
       const explicitSpeed = preferSourceSpeech
         ? undefined

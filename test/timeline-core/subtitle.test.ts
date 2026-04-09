@@ -107,6 +107,104 @@ describe('speech-paced subtitles', () => {
     expect(clips[0]!.timelineOutMs - subtitles[1]!.endMs).toBeGreaterThanOrEqual(700);
   });
 
+  it('never lets narration subtitles cross clip boundaries', () => {
+    const script: IKtepScript[] = [{
+      id: 'segment-1',
+      role: 'scene',
+      narration: 'ignored',
+      linkedSliceIds: ['slice-1', 'slice-2', 'slice-3'],
+      beats: [
+        {
+          id: 'beat-1',
+          text: '等米尔福德方向真的露出来',
+          selections: [
+            { assetId: 'asset-1', sliceId: 'slice-1', sourceInMs: 0, sourceOutMs: 1000 },
+            { assetId: 'asset-2', sliceId: 'slice-2', sourceInMs: 0, sourceOutMs: 1000 },
+            { assetId: 'asset-3', sliceId: 'slice-3', sourceInMs: 0, sourceOutMs: 5000 },
+          ],
+          linkedSliceIds: ['slice-1', 'slice-2', 'slice-3'],
+        },
+      ],
+    }];
+    const slices: IKtepSlice[] = [
+      {
+        id: 'slice-1',
+        assetId: 'asset-1',
+        type: 'photo',
+        sourceInMs: 0,
+        sourceOutMs: 1000,
+        labels: [],
+        placeHints: [],
+      },
+      {
+        id: 'slice-2',
+        assetId: 'asset-2',
+        type: 'photo',
+        sourceInMs: 0,
+        sourceOutMs: 1000,
+        labels: [],
+        placeHints: [],
+      },
+      {
+        id: 'slice-3',
+        assetId: 'asset-3',
+        type: 'broll',
+        sourceInMs: 0,
+        sourceOutMs: 5000,
+        labels: [],
+        placeHints: [],
+      },
+    ];
+    const clips: IKtepClip[] = [
+      {
+        id: 'clip-1',
+        trackId: 'track-1',
+        assetId: 'asset-1',
+        sliceId: 'slice-1',
+        sourceInMs: 0,
+        sourceOutMs: 1000,
+        timelineInMs: 0,
+        timelineOutMs: 1000,
+        linkedScriptSegmentId: 'segment-1',
+        linkedScriptBeatId: 'beat-1',
+      },
+      {
+        id: 'clip-2',
+        trackId: 'track-1',
+        assetId: 'asset-2',
+        sliceId: 'slice-2',
+        sourceInMs: 0,
+        sourceOutMs: 1000,
+        timelineInMs: 1000,
+        timelineOutMs: 2000,
+        linkedScriptSegmentId: 'segment-1',
+        linkedScriptBeatId: 'beat-1',
+      },
+      {
+        id: 'clip-3',
+        trackId: 'track-1',
+        assetId: 'asset-3',
+        sliceId: 'slice-3',
+        sourceInMs: 0,
+        sourceOutMs: 5000,
+        timelineInMs: 2000,
+        timelineOutMs: 7000,
+        linkedScriptSegmentId: 'segment-1',
+        linkedScriptBeatId: 'beat-1',
+      },
+    ];
+
+    const subtitles = planSubtitles(script, clips, slices);
+    const windows = clips.map(clip => ({ startMs: clip.timelineInMs, endMs: clip.timelineOutMs }));
+
+    expect(subtitles.length).toBeGreaterThan(1);
+    expect(subtitles.map(subtitle => subtitle.text).join('')).toBe('等米尔福德方向真的露出来');
+    for (const subtitle of subtitles) {
+      const touched = windows.filter(window => window.endMs > subtitle.startMs && window.startMs < subtitle.endMs);
+      expect(touched).toHaveLength(1);
+    }
+  });
+
   it('keeps preserveNatSound beats on source transcript timing', () => {
     const script: IKtepScript[] = [{
       id: 'segment-1',
@@ -249,6 +347,108 @@ describe('speech-paced subtitles', () => {
       text: '这是完整的一句话',
       startMs: 0,
       endMs: 1800,
+    });
+  });
+
+  it('filters non-transcript cutaways out of preserveNatSound beats before subtitle planning', () => {
+    const assets: IKtepAsset[] = [
+      {
+        id: 'asset-cutaway',
+        kind: 'video',
+        sourcePath: 'cutaway.mp4',
+        displayName: 'cutaway.mp4',
+      },
+      {
+        id: 'asset-talk',
+        kind: 'video',
+        sourcePath: 'talk.mp4',
+        displayName: 'talk.mp4',
+      },
+    ];
+    const slices: IKtepSlice[] = [
+      {
+        id: 'slice-cutaway',
+        assetId: 'asset-cutaway',
+        type: 'broll',
+        sourceInMs: 0,
+        sourceOutMs: 4000,
+        labels: [],
+        placeHints: [],
+      },
+      {
+        id: 'slice-talk',
+        assetId: 'asset-talk',
+        type: 'talking-head',
+        sourceInMs: 0,
+        sourceOutMs: 1200,
+        transcriptSegments: [
+          {
+            startMs: 0,
+            endMs: 1200,
+            text: '这是现场原话',
+          },
+        ],
+        labels: [],
+        placeHints: [],
+      },
+    ];
+    const script: IKtepScript[] = [{
+      id: 'segment-1',
+      role: 'scene',
+      narration: 'ignored',
+      targetDurationMs: 5200,
+      linkedSliceIds: ['slice-cutaway', 'slice-talk'],
+      beats: [
+        {
+          id: 'beat-1',
+          text: '这是现场原话',
+          targetDurationMs: 5200,
+          actions: {
+            preserveNatSound: true,
+          },
+          selections: [
+            {
+              assetId: 'asset-cutaway',
+              sliceId: 'slice-cutaway',
+              sourceInMs: 0,
+              sourceOutMs: 4000,
+            },
+            {
+              assetId: 'asset-talk',
+              sliceId: 'slice-talk',
+              sourceInMs: 0,
+              sourceOutMs: 1200,
+            },
+          ],
+          linkedSliceIds: ['slice-cutaway', 'slice-talk'],
+        },
+      ],
+    }];
+
+    const doc = buildTimeline(CPROJECT, assets, slices, script);
+
+    expect(doc.script?.[0]?.beats[0]).toMatchObject({
+      targetDurationMs: 1200,
+      selections: [{
+        assetId: 'asset-talk',
+        sliceId: 'slice-talk',
+        sourceInMs: 0,
+        sourceOutMs: 1200,
+      }],
+    });
+    expect(doc.timeline.clips).toHaveLength(1);
+    expect(doc.timeline.clips[0]).toMatchObject({
+      assetId: 'asset-talk',
+      sourceInMs: 0,
+      sourceOutMs: 1200,
+      timelineInMs: 0,
+      timelineOutMs: 1200,
+    });
+    expect(doc.subtitles).toHaveLength(1);
+    expect(doc.subtitles?.[0]).toMatchObject({
+      text: '这是现场原话',
+      startMs: 0,
+      endMs: 1200,
     });
   });
 
