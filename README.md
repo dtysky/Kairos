@@ -22,6 +22,8 @@ Current stable pipeline:
 - official local runtime / monitor entry is `Supervisor + React console (apps/kairos-console/)`
   - `http://127.0.0.1:8940/analyze` is the official Analyze monitor route
   - `http://127.0.0.1:8940/style` is the official workspace-level Style monitor route
+  - console refresh now prefers the project that currently owns the latest active project-scoped job before falling back to the last locally remembered selection
+  - when multiple projects share the same display name, the selector must surface `projectId` to avoid mixing monitor context
   - `scripts/kairos-progress.*` and `scripts/style-analysis-progress-viewer.html` are legacy compatibility helpers, not the official path for new capability work
 - reusable style assets now live at workspace scope, not project scope:
   - `config/styles/` stores the shared style library

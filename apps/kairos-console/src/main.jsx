@@ -34,7 +34,9 @@ import {
 function AppShell() {
   const [status, setStatus] = useState(null);
   const [capabilities, setCapabilities] = useState(null);
-  const [projectId, setProjectId] = useState(window.localStorage.getItem('kairos.console.projectId') || '');
+  const storedProjectIdRef = React.useRef(window.localStorage.getItem('kairos.console.projectId') || '');
+  const hydratedProjectSelectionRef = React.useRef(false);
+  const [projectId, setProjectId] = useState('');
   const [config, setConfig] = useState(null);
   const [savedConfig, setSavedConfig] = useState(null);
   const [styleSources, setStyleSources] = useState(null);
@@ -55,15 +57,26 @@ function AppShell() {
 
   useEffect(() => {
     if (!status?.projects?.length) return;
+    if (!hydratedProjectSelectionRef.current) {
+      hydratedProjectSelectionRef.current = true;
+      const nextProjectId = pickConsoleProjectId(status.projects, status.jobs, storedProjectIdRef.current);
+      if (nextProjectId) {
+        setProjectId(nextProjectId);
+      }
+      return;
+    }
     if (projectId && status.projects.some(project => project.projectId === projectId)) {
       return;
     }
-    const nextProjectId = status.projects[0].projectId;
-    setProjectId(nextProjectId);
+    const nextProjectId = pickConsoleProjectId(status.projects, status.jobs, storedProjectIdRef.current);
+    if (nextProjectId) {
+      setProjectId(nextProjectId);
+    }
   }, [status, projectId]);
 
   useEffect(() => {
     if (!projectId) return;
+    storedProjectIdRef.current = projectId;
     window.localStorage.setItem('kairos.console.projectId', projectId);
     refreshProject(projectId);
     refreshProjectProgress(projectId);
@@ -72,6 +85,7 @@ function AppShell() {
   }, [projectId]);
 
   const projects = status?.projects || [];
+  const duplicateProjectNames = useMemo(() => buildDuplicateProjectNameSet(projects), [projects]);
   const currentProject = projects.find(project => project.projectId === projectId) || null;
   const services = status?.services || [];
   const allJobs = status?.jobs || [];
@@ -318,12 +332,15 @@ function AppShell() {
                 <div>
                   <div className="eyebrow">Kairos Supervisor</div>
                   <h1>{currentProject?.project?.name || 'Kairos Console'}</h1>
+                  {currentProject?.projectId ? <div className="muted">{currentProject.projectId}</div> : null}
                   <p>工作流优先的配置、监控与任务控制台。</p>
                 </div>
                 <div className="workspace-actions">
                   <select value={projectId} onChange={event => setProjectId(event.target.value)}>
                     {projects.map(project => (
-                      <option key={project.projectId} value={project.projectId}>{project.project.name}</option>
+                      <option key={project.projectId} value={project.projectId}>
+                        {formatProjectOptionLabel(project, duplicateProjectNames)}
+                      </option>
                     ))}
                   </select>
                   <div className="service-pills">
@@ -1116,6 +1133,61 @@ function renderAnalyzeToolbarMeta(model, projectProgress) {
     return <span>{`${projectProgress.current || 0}/${projectProgress.total || 0}`}</span>;
   }
   return null;
+}
+
+function pickConsoleProjectId(projects, jobs, storedProjectId) {
+  if (!projects.length) {
+    return '';
+  }
+  const activeProjectId = pickLatestActiveProjectId(projects, jobs);
+  if (activeProjectId) {
+    return activeProjectId;
+  }
+  if (storedProjectId && projects.some(project => project.projectId === storedProjectId)) {
+    return storedProjectId;
+  }
+  return projects[0]?.projectId || '';
+}
+
+function pickLatestActiveProjectId(projects, jobs) {
+  const validProjectIds = new Set(projects.map(project => project.projectId));
+  const candidates = (jobs || [])
+    .filter(job => job.projectId && validProjectIds.has(job.projectId))
+    .filter(job => ['running', 'queued', 'blocked'].includes(job.status))
+    .sort(compareActiveProjectJobs);
+  return candidates[0]?.projectId || '';
+}
+
+function compareActiveProjectJobs(left, right) {
+  const statusPriority = {
+    running: 3,
+    queued: 2,
+    blocked: 1,
+  };
+  const statusDiff = (statusPriority[right.status] || 0) - (statusPriority[left.status] || 0);
+  if (statusDiff !== 0) {
+    return statusDiff;
+  }
+  return Date.parse(right.updatedAt || 0) - Date.parse(left.updatedAt || 0);
+}
+
+function buildDuplicateProjectNameSet(projects) {
+  const counts = new Map();
+  for (const project of projects) {
+    const name = project.project?.name || project.projectId;
+    counts.set(name, (counts.get(name) || 0) + 1);
+  }
+  return new Set(Array.from(counts.entries())
+    .filter(([, count]) => count > 1)
+    .map(([name]) => name));
+}
+
+function formatProjectOptionLabel(project, duplicateProjectNames) {
+  const name = project.project?.name || project.projectId;
+  if (duplicateProjectNames.has(name)) {
+    return `${name} · ${project.projectId}`;
+  }
+  return name;
 }
 
 function formatCountPair(current, total) {

@@ -114,6 +114,29 @@
 
 `chapterPrograms[]` 使用开放短语定义章节类型，不收成固定枚举。
 
+本稿把它的最小正式形状写死为：
+
+- `type`
+- `intent`
+- `materialRoles`
+- `promotionSignals`
+- `transitionBias`
+
+这五个字段的语义分别是：
+
+- `type`
+  - 开放短语的章节类型
+- `intent`
+  - 这一类章节想完成什么
+- `materialRoles`
+  - 这一类章节通常需要哪些材料角色
+- `promotionSignals`
+  - 什么材料或事件出现时，常被升格成独立章节
+- `transitionBias`
+  - 它通常如何接前后章节
+
+如果需要章节级叙述补充，可以在单个 chapter program 上附加可选 `localNarrationNote`，但它不属于最小正式字段集合。
+
 每个 chapter program 只描述：
 
 - 章节意图
@@ -129,11 +152,23 @@
 - 哪些材料缺席时仍可成立
 - 哪些材料出现时常被升格成独立章节
 
+但它到 retrieval 的正式桥接链路应写成：
+
+`chapterPrograms[].materialRoles -> slot query -> materialPatterns / targetBundles -> bundle lookup`
+
+也就是说：
+
+- `chapterPrograms[].materialRoles` 先表达风格层的材料角色短语
+- `slot` 生成阶段再把这些角色归一到 `materialPatterns`
+- `targetBundles` 继续以 `materialPatterns` 作为第一层入口
+
 但它不直接下沉成：
 
 - 固定 slot 列表
 - 固定 bundle 骨架
 - 固定项目级 segment 序列
+- `targetBundles`
+- retrieval 模板
 
 ### 4. `narrationConstraints` 的正式语义
 
@@ -149,6 +184,10 @@
 
 这一层以全局约束为主，允许少量章节级补充。
 
+这里的章节级补充不单独挂在 `narrationConstraints` 内部。
+
+如果某个 chapter program 需要局部叙述补充，应作为该 chapter program 的可选 `localNarrationNote` 挂载。
+
 它才更接近通常意义上的“文学风格”。
 
 ### 5. Style 到 Segment 的关系
@@ -159,6 +198,12 @@
 - `material overview` 提供这次项目的材料边界与缺口
 - `script brief` 提供这次项目的目标与硬约束
 - `segment planner` 再结合当前素材把它们实例化成这一次的 `segment plan`
+
+这里主次关系也要写清：
+
+- `segment planner` 主要消费 `arrangementStructure`
+- `narrationConstraints` 只弱影响 segment 的表达倾向
+- `narrationConstraints` 不直接决定 segment 结构
 
 也就是说：
 
@@ -350,11 +395,18 @@ overview 是独立状态，建议用户先审，但不是硬闸门。
 
 `segment planning` 的输入固定为：
 
-- `style`
+- `arrangementStructure`
+- `narrationConstraints`
 - reviewed `material overview`
 - reviewed hard constraints
 
 它不应被写成一套可完全由规则约束的模板系统。
+
+这里进一步明确：
+
+- `arrangementStructure` 主导结构决策
+- `narrationConstraints` 只弱影响表达倾向
+- `narrationConstraints` 不直接决定 `segment` 结构
 
 ### 3. `segment` 必须被理解为动态结果，而不是规则模板
 
@@ -514,8 +566,14 @@ bundle 命中之后，再做更细的过滤。
   - 使用开放短语
   - 不收成固定枚举
 
-- `chapterPrograms[].commonContents`
-  - 表达材料角色约束
+- `chapterPrograms[]`
+  - 最小正式字段为：
+    - `type`
+    - `intent`
+    - `materialRoles`
+    - `promotionSignals`
+    - `transitionBias`
+  - 可选局部叙述补充挂在单个 chapter program 的 `localNarrationNote`
   - 不定义 slot 模板
 
 - `segmentArchetypes`
@@ -600,14 +658,22 @@ bundle 命中之后，再做更细的过滤。
   - 不被强迫映射到旅行时间链
 
 - `chapterPrograms[]`
+  - 最小正式字段固定为 `type / intent / materialRoles / promotionSignals / transitionBias`
   - 只表达材料角色约束
   - 不产固定 slot 列表
   - 不产固定 bundle 骨架
+  - 如需局部叙述补充，挂在 chapter program 的 `localNarrationNote`
+
+- retrieval 桥接
+  - `chapterPrograms[].materialRoles` 先进入 slot query
+  - 再归一到 `materialPatterns / targetBundles`
+  - 再进入 bundle lookup
 
 - Script 实例化时
   - `arrangementStructure + material overview + brief + 当前素材`
   - 共同决定 segment
   - 而不是只照抄 style 结构
+  - 其中 `arrangementStructure` 主导结构，`narrationConstraints` 只弱影响表达
 
 ## Non-Goals
 

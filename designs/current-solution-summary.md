@@ -316,6 +316,8 @@ flowchart TD
 - `Analyze` 与 `Style` 当前都直接在主路由展示监控内容：
   - `/analyze` 直接展示 Analyze monitor
   - `/style` 直接展示 Workspace 风格库与当前分类的 Style monitor
+- Console 刷新时，默认项目选择优先跟随最新的 active project-scoped job；只有当前没有活跃项目 job 时，才回落到本地记住的上次选择
+- 如果多个项目共用同一个 `project.name`，项目选择器必须直接显示 `projectId`，避免把 monitor / progress 请求落到错误项目
 - 旧 `/analyze/monitor` 与 `/style/monitor/:categoryId?` 只保留为兼容跳转
 - 旧静态进度页脚本只保留兼容 / 调试用途，新的正式监控能力应优先落在 `Supervisor + React console` 这条链路
 - React Analyze monitor 现在已经直接承认多阶段并发语义：

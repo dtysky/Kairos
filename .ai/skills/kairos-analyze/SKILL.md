@@ -329,6 +329,8 @@ const localPath = resolveAssetLocalPath(projectId, asset, roots, deviceMaps);
 - 启动 Analyze 后，agent 应主动把监控面板 URL 告诉用户；如果分析已经开始但面板还没打开，应立即补开
 - 正式 Analyze 监控路由是 `http://127.0.0.1:8940/analyze`
 - `React console` 最终仍读取项目内 `.tmp/media-analyze/progress.json`，因此当前项目上下文必须正确，不能把面板混到别的项目进度目录
+- Console 刷新时，默认项目上下文应优先跟随最新的 active project-scoped job；只有当前没有活跃项目 job 时，才回退到本地记忆的上次选择
+- 如果多个项目 display name 相同，项目选择器必须直接显示 `projectId`，避免把 Analyze monitor 请求到同名旧项目
 - `scripts/kairos-supervisor.ps1/.sh start` 只会启动 `Supervisor + React console`，不会自动恢复旧的 analyze job；服务起来不等于分析已经重新开始
 - `progress.json`、`audio-checkpoints`、`fine-scan-checkpoints` 都是 durable cache，不是 live job 证据；只看到旧进度、旧 step、旧当前文件名，不能直接断言 Analyze 还在跑
 - React console 当前会把 Analyze 直接展示成三段结构化流水线：

@@ -96,6 +96,15 @@
           "note": "只分析 intro 段落"
         }
       ]
+    },
+    {
+      "categoryId": "driving-vlog-test",
+      "displayName": "开车拍摄 VLOG 测试风格",
+      "guidancePrompt": "这是一份人工编写的测试风格档案，用来验证当前 script pipeline 对 drive-heavy vlog 的消费是否稳定。重点观察开车途中素材的编排、车内外视角切换、临停观察点的组织方式，以及更口语化但仍然克制的第一人称旁白。",
+      "inclusionNotes": "以驾驶连续性为主骨架，用车内外 POV、roadside observation、临停观察和轻口语第一人称旁白来组织一路上的体感与路感。",
+      "overwriteExisting": false,
+      "profilePath": "driving-vlog-test.md",
+      "sources": []
     }
   ]
 }
