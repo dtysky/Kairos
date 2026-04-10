@@ -71,10 +71,13 @@
    - `apps/kairos-console/` 采用 React + 工作流优先路由，而不是单页工作台
    - `Analyze` 与 `Style` 监控当前直接由 `/analyze` 与 `/style` 主路由承载
    - `Style` 当前承载的是 **Workspace 级风格库 / 风格来源配置 / style-analysis monitor**，而不是某个单项目私有风格页
+   - `scripts/kairos-supervisor.* start` 当前只负责拉起 `Supervisor + React console`；不会自动拉起 ML，也不会恢复旧 job
+   - `progress.json` 当前必须被理解为 durable cache，而不是 live job 证据；live 状态只来自 Supervisor job record
+   - 顶层 Kairos job 的结束态统一要求 `ML stopped`
    - Console 刷新时，默认项目上下文优先跟随最新的 active project-scoped job；没有活跃项目 job 时才回退到本地记忆的选择
    - 当多个项目 display name 相同，项目选择器必须显式展示 `projectId`，避免监控与配置页混到旧项目
    - 旧 `/analyze/monitor` 与 `/style/monitor/:categoryId?` 仅保留兼容跳转
-   - `scripts/kairos-progress.*` 与旧静态监控页只保留兼容 / 调试用途，不再是新的正式入口
+   - workspace `style-analysis` 当前应被实现为 deterministic prep job，而不是“agent-backed 但 runner 缺失”的占位壳子
    - React Analyze 页当前已直接消费多阶段 Analyze pipeline monitor model：
      - `coarse-scan` 展示素材级抽帧 worker、活跃素材和 prepared checkpoint
      - `audio-analysis` 展示 local queue、ASR queue 与活跃 worker
@@ -84,6 +87,7 @@
      - `config/style-sources.json`
      - `analysis/reference-transcripts/`
      - `analysis/style-references/`
+   - `config/style-sources.json` 是唯一正式 style 索引；`config/styles/*.md` 只承载 profile 内容，不再维护独立 `catalog.json`
 
 因此，后续阅读本稿时，应把这些能力理解为“正式流程中已被当前实现覆盖的阶段”，而不是另一套独立的“中间版本架构”。
 
@@ -167,7 +171,8 @@ flowchart TD
                         │ HTTP API / 状态聚合
 ┌───────────────────────▼──────────────────────────────────────┐
 │                    Supervisor Runtime                         │
-│  services: dashboard / ml   jobs: ingest / analyze / script │
+│  services: dashboard / ml   jobs: ingest / analyze /        │
+│  style-analysis / script / timeline / export               │
 └───────────────────────┬──────────────────────────────────────┘
                         │ 调用（函数调用 + 结构化数据交换）
 ┌───────────────────────▼──────────────────────────────────────┐

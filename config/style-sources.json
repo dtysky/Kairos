@@ -1,5 +1,5 @@
 {
-  "defaultCategory": "serious-travel-documentary-intro",
+  "defaultCategory": "short-trip-photo-vlog",
   "categories": [
     {
       "categoryId": "china-north-south-traverse-intro",
@@ -105,6 +105,21 @@
       "overwriteExisting": false,
       "profilePath": "driving-vlog-test.md",
       "sources": []
+    },
+    {
+      "categoryId": "short-trip-photo-vlog",
+      "displayName": "短途摄影VLOG风格",
+      "guidancePrompt": "短途摄影VLOG风格。重点观察短途自驾或轻量出行中的摄影化取景、路上段落、停靠观察、轻口语第一人称旁白，以及更轻快但不碎裂的节奏组织。",
+      "inclusionNotes": "以短途出行与摄影化取景为主，强调路上推进、临停观察、景别变化和轻口语第一人称记录感。",
+      "overwriteExisting": false,
+      "profilePath": "short-trip-photo-vlog.md",
+      "sources": [
+        {
+          "id": "short-trip-photo-vlog-20251221_yangchun",
+          "type": "file",
+          "path": "/Volumes/home/LostVlog/20251221_阳春黄凿顶自驾.mp4"
+        }
+      ]
     }
   ]
 }

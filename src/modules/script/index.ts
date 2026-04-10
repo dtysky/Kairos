@@ -1,5 +1,11 @@
 export { analyzeStyle, analyzeStyleFromReports, type IStyleReferenceVideoAnalysis } from './style-analyzer.js';
 export {
+  prepareWorkspaceStyleAnalysisForAgent,
+  type IPrepareWorkspaceStyleAnalysisInput,
+  type IPrepareWorkspaceStyleAnalysisResult,
+  type TStylePreparationStatus,
+} from './style-preparation.js';
+export {
   loadStyleFromMarkdown,
   loadStyleByCategory,
   listStyleCategories,

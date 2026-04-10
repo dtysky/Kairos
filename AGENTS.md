@@ -43,15 +43,12 @@ The current official local runtime and monitor path is:
 - Analyze monitor route: `http://127.0.0.1:8940/analyze`
 - Style monitor route: `http://127.0.0.1:8940/style` (workspace-level style library / style-analysis monitor)
 
-Legacy compatibility helpers are not the official path for new capability work:
-
-- `scripts/kairos-progress.*`
-- `scripts/style-analysis-progress-viewer.html`
-
 Operational lesson that must not be forgotten:
 
-- `scripts/kairos-supervisor.* start` starts `Supervisor + React console`, but does not auto-resume old analyze jobs
+- `scripts/kairos-supervisor.* start` starts `Supervisor + React console`, but does not start ML and does not auto-resume old jobs
 - `projects/<projectId>/.tmp/media-analyze/progress.json` is durable progress cache, not proof that a live analyze job is running
+- `<workspaceRoot>/.tmp/style-analysis/<category>/progress.json` is also durable progress cache, not proof that a live style-analysis job is running
+- Kairos-managed top-level jobs must end with `ML stopped`, including success, failure, stop, and interrupt paths
 - if a page looks active but GPU / ML is idle, verify:
   - there is a live `running analyze` job in `Supervisor`
   - `progress.json` timestamps are still moving
@@ -67,6 +64,7 @@ Read every file in [`.ai/rules/`](./.ai/rules/). Current repository rules are:
 - [`.ai/rules/export-path-safety.mdc`](./.ai/rules/export-path-safety.mdc) — never overwrite or clear an existing export target
 - [`.ai/rules/master-workflow-user-guidance.mdc`](./.ai/rules/master-workflow-user-guidance.mdc) — explain Kairos as one workflow and route users through the correct phase
 - [`.ai/rules/pharos-protocol-sync.mdc`](./.ai/rules/pharos-protocol-sync.mdc) — any Pharos-related work must start with sibling protocol hash verification
+- [`.ai/rules/runtime-service-truth.mdc`](./.ai/rules/runtime-service-truth.mdc) — official runtime truth for Supervisor, ML, live jobs, and durable progress caches
 - [`.ai/rules/script-skill-enforcement.mdc`](./.ai/rules/script-skill-enforcement.mdc) — always read and use `kairos-script` before script-generation work
 - [`.ai/rules/windows-shell-environment.mdc`](./.ai/rules/windows-shell-environment.mdc) — on Windows, prefer native PowerShell unless the user explicitly wants WSL or a Linux-only step is required
 
@@ -91,6 +89,8 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
 - Prefer Windows PowerShell in this repository unless the user explicitly asks for WSL or the step is Linux-only.
 - Do not treat stale progress displays as proof that formal processing is alive.
 - Do not silently use legacy monitor paths for new work when `Supervisor + React console` is the official entry.
+- Treat workspace style-analysis as a formal deterministic prep job before Agent style synthesis, not as a UI-only placeholder.
+- Treat the end state of every Kairos-managed top-level flow as `ML stopped`.
 - Treat video Analyze as a staged pipeline whose formal semantic decision happens in `finalize`:
   - with audio: `coarse-scan -> audio-analysis -> finalize -> deferred scene detect(if needed)`
   - without audio: `coarse-scan -> finalize -> deferred scene detect(if needed)`
@@ -115,5 +115,6 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - `config/style-sources.json`
   - `analysis/reference-transcripts/`
   - `analysis/style-references/`
+  - `config/style-sources.json` is the only structured style index; `config/styles/*.md` only hold profile content
 - When in doubt about phase routing, start from [`.ai/skills/kairos-workflow/SKILL.md`](./.ai/skills/kairos-workflow/SKILL.md) and then move to the concrete phase skill.
 - When the task touches `Pharos`, treat `../Pharos/designs` as the upstream protocol source of truth and verify its current combined hash before relying on memory.

@@ -31,11 +31,18 @@ Kairos 当前需要区分两层：
   - `config/style-sources.json`
   - `analysis/reference-transcripts/`
   - `analysis/style-references/`
+  - `config/style-sources.json` 是当前唯一正式 style 索引；`config/styles/*.md` 只承载 profile 正文，不再配套 `catalog.json`
 - Workspace 风格档案当前不再只是“给人读的风格长文”，而是 Script 阶段的正式输入之一：
   - 章节里应尽量明确阶段节奏、素材角色、运镜语言、功能位分配与禁区
   - 参数表里应尽量提供稳定 key，便于 `script / recall / outline` 直接消费
   - 这些内容默认表示“观测到的高频偏好”，不是自动变成所有脚本都必须照抄的硬模板
-- `scripts/kairos-progress.*` 与 `scripts/style-analysis-progress-viewer.html` 只保留兼容 / 调试用途，不再是新的正式监控入口
+- `scripts/kairos-supervisor.* start` 只启动 `Supervisor + React console`，不会顺带拉起 ML，也不会自动恢复旧 job
+- `projects/<projectId>/.tmp/media-analyze/progress.json` 与 `<workspaceRoot>/.tmp/style-analysis/{category}/progress.json` 都只是 durable progress cache，不等于 live job
+- Kairos 官方管理的顶层流程在结束态必须回收到 `ML stopped`
+- workspace `style-analysis` 当前正式收口为 deterministic prep：
+  - `health-check -> clip -> probe -> shot-detect -> transcribe -> keyframes -> vlm -> video-complete -> awaiting_agent|completed`
+  - prep job 负责把 reference transcript、per-video report 与 workspace progress 正式落盘
+  - 最终 `config/styles/{category}.md` 继续由 Agent 基于这些 prep 产物写成
 - 未来如果引入桌面 UI 或更多 provider / adapter，应建立在这套协议与项目模型上，而不是推翻它
 - 某些项目会直接消费调色后的素材版本而非原始素材；因此主链面向的是“当前采用的素材版本”，而不是固定绑定“永远使用原始素材”
 
@@ -325,11 +332,12 @@ flowchart TD
   - `audio-analysis` 展示 local queue、ASR queue、活跃 worker 和排队数
   - `fine-scan` 继续展示 `已预抽 / 已识别 / ready queue / active workers`
   - hero 区不再把并发阶段误写成单一“当前素材”
-- `scripts/kairos-supervisor.* start` 当前只负责拉起 `Supervisor + React console`，不会自动恢复或重放旧的 analyze job；需要继续分析时，必须显式重新发起 `analyze` job
+- `scripts/kairos-supervisor.* start` 当前只负责拉起 `Supervisor + React console`，不会自动启动 ML，也不会自动恢复或重放旧 job；需要继续分析时，必须显式重新发起对应 job
 - `projects/<projectId>/.tmp/media-analyze/progress.json` 是 durable progress cache，不等于“当前一定有 live analyze job 在跑”；运维判断必须至少同时核对：
   - `Supervisor` job 里是否存在 `running analyze`
   - `progress.json` 的 `LastWriteTime / updatedAt` 是否仍在推进
   - GPU / ML 是否出现与当前阶段一致的活跃迹象
+- workspace `style-analysis` 也遵守同一条 live-job 规则；stale progress 只能显示 cached/idle，不能伪装成仍在运行
 
 ### 元信息保真原则
 

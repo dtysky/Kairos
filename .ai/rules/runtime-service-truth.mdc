@@ -1,0 +1,41 @@
+---
+description: 官方运行时、live job 语义、durable progress cache 和 ML 生命周期的统一真值
+alwaysApply: true
+---
+
+# Runtime Service Truth
+
+只要任务涉及 Kairos 的正式运行入口、Supervisor、Console 监控、ML service、Analyze、Style Analysis、Script prep 或 job 生命周期，就必须遵守这份规则。
+
+## Official Runtime Contract
+
+- 当前唯一正式本地运行入口是 `Supervisor + React console (apps/kairos-console/)`
+- 正式监控路由是：
+  - `http://127.0.0.1:8940/analyze`
+  - `http://127.0.0.1:8940/style`
+- `scripts/kairos-supervisor.* start` 只启动 `Supervisor + React console`
+- `scripts/kairos-supervisor.* start` 不会自动启动 ML
+- `scripts/kairos-supervisor.* start` 不会自动恢复旧 job
+
+## Live Job Truth
+
+- `progress.json` 只是 durable progress cache，不等于 live job
+- `projects/<projectId>/.tmp/media-analyze/progress.json` 不是 Analyze 仍在运行的证据
+- `<workspaceRoot>/.tmp/style-analysis/<category>/progress.json` 也不是 style-analysis 仍在运行的证据
+- 判断“流程是否真的还在跑”，必须至少同时核对：
+  - Supervisor 中是否存在匹配的 active job
+  - `progress.json.updatedAt` 是否持续推进
+  - GPU / ML / worker 活动是否和当前 phase 一致
+
+## Capability Truth
+
+- Console 的“可启动 / 运行中 / 完成”只能来自真实 capability 和 live job
+- 任何 jobType 只要 runner 没接好，就不能在 capability 或 UI 上继续表现成正式可运行
+- stale progress 只能显示 cached / idle，不得伪装成 running
+
+## ML Lifecycle Truth
+
+- Kairos 官方管理的顶层流程结束态必须是 `ML stopped`
+- 这里的顶层流程至少包括：`project-init`、`ingest`、`gps-refresh`、`analyze`、`style-analysis`、`script`、`timeline`、`export`
+- 结束路径包括：正常完成、失败退出、用户 stop、restart 前置 stop、以及中断收尾
+- 低层调试命令可以单独启动 ML，但正式流程收尾时仍必须把 Kairos 官方 ML service 对账回 `stopped`

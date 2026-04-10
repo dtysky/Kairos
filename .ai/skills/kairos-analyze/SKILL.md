@@ -332,14 +332,14 @@ const localPath = resolveAssetLocalPath(projectId, asset, roots, deviceMaps);
 - Console 刷新时，默认项目上下文应优先跟随最新的 active project-scoped job；只有当前没有活跃项目 job 时，才回退到本地记忆的上次选择
 - 如果多个项目 display name 相同，项目选择器必须直接显示 `projectId`，避免把 Analyze monitor 请求到同名旧项目
 - `scripts/kairos-supervisor.ps1/.sh start` 只会启动 `Supervisor + React console`，不会自动恢复旧的 analyze job；服务起来不等于分析已经重新开始
+- `scripts/kairos-supervisor.ps1/.sh start` 也不会自动启动 ML；Analyze 是否能跑要单独看 ML health 和 live job
 - `progress.json`、`audio-checkpoints`、`fine-scan-checkpoints` 都是 durable cache，不是 live job 证据；只看到旧进度、旧 step、旧当前文件名，不能直接断言 Analyze 还在跑
 - React console 当前会把 Analyze 直接展示成三段结构化流水线：
   - `粗扫队列`：素材级抽帧 worker、prepared checkpoint、活跃素材
   - `音频队列`：local health/routing、ASR queue、活跃素材
   - `细扫流水线`：`已预抽 / 已识别 / ready queue / active workers`
-- Analyze 正常结束、失败退出或用户中断后，agent 必须清理由自己启动的辅助进程，至少包括本次监控面板服务；如果本轮还主动拉起了 ML server，也必须一起停掉；除非用户明确要求保留
+- Analyze 正常结束、失败退出或用户中断后，必须把 Kairos 官方管理的 ML service 对账回 `stopped`；监控面板和其他本轮辅助进程也要同步收尾
 - 清理边界只包含 agent 本轮主动启动的进程；不要顺手杀掉用户原本就在跑的 ML 服务、别的项目面板或无关后台服务
-- `scripts/kairos-progress.ps1/.sh` 与 `scripts/style-analysis-progress-viewer.html` 现在只保留为兼容 / 调试辅助，不能再被当成新的正式监控入口
 
 - 遇到“页面看起来还在跑，但 GPU / ML 没动静”时，必须先按这个顺序核查，而不是盲目重启或沿用旧结论：
   - `Supervisor` 当前是否真的存在 `running analyze` job

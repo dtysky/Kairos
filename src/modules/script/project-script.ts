@@ -149,10 +149,7 @@ export async function prepareProjectScriptForAgent(
     throw new Error('script prep requires script-brief.workflowState=ready_to_prepare');
   }
 
-  const style = await loadStyleByCategory(`${input.workspaceRoot}/config/styles`, styleCategory);
-  if (!style) {
-    throw new Error(`style profile not found for category "${styleCategory}"`);
-  }
+  await loadStyleByCategory(`${input.workspaceRoot}/config/styles`, styleCategory);
   const overviewMarkdown = await loadOptionalMarkdown(getMaterialOverviewPath(input.projectRoot));
   if (!overviewMarkdown?.trim()) {
     throw new Error('script prep requires script/material-overview.md');
@@ -226,7 +223,7 @@ export async function generateProjectScriptFromPlanning(
 export async function loadProjectStyleByCategory(
   workspaceRoot: string,
   category: string,
-): Promise<IStyleProfile | null> {
+) : Promise<IStyleProfile> {
   return loadStyleByCategory(`${workspaceRoot}/config/styles`, category);
 }
 
@@ -615,11 +612,7 @@ async function resolveStyle(
   if (!category) {
     throw new Error('styleCategory is required to resolve style profile');
   }
-  const style = await loadProjectStyleByCategory(workspaceRoot, category);
-  if (!style) {
-    throw new Error(`style profile not found for category "${category}"`);
-  }
-  return style;
+  return loadProjectStyleByCategory(workspaceRoot, category);
 }
 
 async function clearObsoleteArrangementArtifacts(projectRoot: string): Promise<void> {

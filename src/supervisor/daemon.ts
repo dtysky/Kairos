@@ -6,6 +6,7 @@ import { spawn } from 'node:child_process';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import {
   getProjectProgressPath,
+  getWorkspaceStyleAnalysisProgressPath,
   listWorkspaceProjects,
   loadManualItineraryConfig,
   loadProjectBriefConfig,
@@ -150,7 +151,7 @@ async function routeRequest(
         { jobType: 'ingest', executionMode: 'deterministic', supported: true },
         { jobType: 'gps-refresh', executionMode: 'deterministic', supported: true },
         { jobType: 'analyze', executionMode: 'deterministic', supported: true },
-        { jobType: 'style-analysis', executionMode: 'agent', supported: true, note: 'agent-backed manifest is ready; runner still returns explicit blocker' },
+        { jobType: 'style-analysis', executionMode: 'deterministic', supported: true, note: 'runs deterministic prep and then hands off to Agent for the final style profile' },
         { jobType: 'script', executionMode: 'deterministic', supported: true, note: 'runs only after reviewed brief is saved; advances ready_to_prepare -> ready_for_agent; final script remains agent-authored' },
         { jobType: 'timeline', executionMode: 'deterministic', supported: false },
         { jobType: 'export-jianying', executionMode: 'deterministic', supported: false },
@@ -299,6 +300,7 @@ async function routeRequest(
           // ignore
         }
       }
+      await stopMlService(options.workspaceRoot).catch(() => undefined);
       const stopped = {
         ...current,
         status: 'stopped' as const,
@@ -310,6 +312,7 @@ async function routeRequest(
       return;
     }
 
+    await stopMlService(options.workspaceRoot).catch(() => undefined);
     const restarted = await startJob(options.workspaceRoot, {
       jobType: current.jobType,
       projectId: current.projectId,
@@ -373,6 +376,11 @@ async function startJob(
   const resultPath = join(jobRoot, 'result.json');
   const progressPath = payload.jobType === 'analyze' && payload.projectId
     ? getProjectProgressPath(join(workspaceRoot, 'projects', payload.projectId), 'media-analyze')
+    : payload.jobType === 'style-analysis'
+      ? getWorkspaceStyleAnalysisProgressPath(
+        workspaceRoot,
+        await resolveStyleAnalysisCategoryId(workspaceRoot, payload.args),
+      )
     : undefined;
   const inputSnapshotPath = join(jobRoot, 'input.json');
   const configSnapshotPath = join(jobRoot, 'config-snapshot.json');
@@ -399,9 +407,7 @@ async function startJob(
   const record: ISupervisorJobRecord = {
     jobId,
     jobType: payload.jobType,
-    executionMode: payload.jobType === 'style-analysis'
-      ? 'agent'
-      : 'deterministic',
+    executionMode: 'deterministic',
     projectId: payload.projectId,
     args: payload.args ?? {},
     status: 'queued',
@@ -441,6 +447,23 @@ async function startJob(
   };
   await writeJobRecord(workspaceRoot, queued);
   return queued;
+}
+
+async function resolveStyleAnalysisCategoryId(
+  workspaceRoot: string,
+  args?: Record<string, unknown>,
+): Promise<string> {
+  const explicit = typeof args?.categoryId === 'string' && args.categoryId.trim()
+    ? args.categoryId.trim()
+    : undefined;
+  if (explicit) return explicit;
+
+  const config = await loadStyleSourcesConfig(workspaceRoot);
+  const categoryId = config.defaultCategory || config.categories[0]?.categoryId;
+  if (!categoryId) {
+    throw new Error('workspace style-sources.json does not define any categories');
+  }
+  return categoryId;
 }
 
 async function applyCaptureTimeReviewResolution(

@@ -214,3 +214,12 @@ export {
   loadStyleSourcesConfig,
   saveStyleSourcesConfig,
 } from './workspace-config.js';
+export {
+  getWorkspaceStyleAnalysisRoot,
+  getWorkspaceStyleAnalysisProgressPath,
+  getWorkspaceStyleAnalysisClipsRoot,
+  getWorkspaceStyleAnalysisKeyframesRoot,
+  getWorkspaceStyleAnalysisSummaryPath,
+  getStyleReferenceReportsRoot,
+  getStyleReferenceTranscriptsRoot,
+} from './style-analysis.js';

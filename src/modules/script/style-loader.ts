@@ -1,14 +1,15 @@
 import { randomUUID } from 'node:crypto';
-import { readFile, readdir } from 'node:fs/promises';
-import { join } from 'node:path';
+import { readFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 import type {
   IStyleArrangementStructure,
-  IStyleCatalog,
-  IStyleCatalogEntry,
   IStyleNarrationConstraints,
   IStyleProfile,
   IStyleSection,
+  IStyleSourceCategoryConfig,
+  IStyleSourcesConfig,
 } from '../../protocol/schema.js';
+import { IStyleSourcesConfig as IStyleSourcesConfigSchema } from '../../protocol/schema.js';
 
 export interface IStyleLoadOptions {
   name?: string;
@@ -30,52 +31,27 @@ export async function loadStyleFromMarkdown(
 export async function loadStyleByCategory(
   stylesDir: string,
   category: string,
-): Promise<IStyleProfile | null> {
-  const catalogPath = join(stylesDir, 'catalog.json');
-  try {
-    const catalogRaw = await readFile(catalogPath, 'utf-8');
-    const catalog: IStyleCatalog = JSON.parse(catalogRaw);
-    const entry = catalog.entries.find(item => item.category === category);
-    if (!entry) return null;
-    return loadStyleFromMarkdown(join(stylesDir, entry.profilePath), {
-      category: entry.category,
-      name: entry.name,
-    });
-  } catch {
-    const mdPath = join(stylesDir, `${category}.md`);
-    try {
-      return await loadStyleFromMarkdown(mdPath, { category });
-    } catch {
-      return null;
-    }
+): Promise<IStyleProfile> {
+  const { categories, styleSourcesPath } = await loadStyleSourceRegistry(stylesDir);
+  const entry = categories.find(item => item.categoryId === category);
+  if (!entry) {
+    throw new Error(`style category "${category}" is not defined in ${styleSourcesPath}`);
   }
+  if (!entry.profilePath?.trim()) {
+    throw new Error(`style category "${category}" is missing profilePath in ${styleSourcesPath}`);
+  }
+  return loadStyleFromMarkdown(join(stylesDir, entry.profilePath), {
+    category: entry.categoryId,
+    name: entry.displayName,
+    guidancePrompt: entry.guidancePrompt,
+  });
 }
 
 export async function listStyleCategories(
   stylesDir: string,
-): Promise<IStyleCatalogEntry[]> {
-  const catalogPath = join(stylesDir, 'catalog.json');
-  try {
-    const raw = await readFile(catalogPath, 'utf-8');
-    const catalog: IStyleCatalog = JSON.parse(raw);
-    return catalog.entries;
-  } catch {
-    const files = await readdir(stylesDir).catch(() => []);
-    return files
-      .filter(file => file.endsWith('.md'))
-      .map(file => {
-        const category = file.replace(/\.md$/, '');
-        return {
-          id: category,
-          category,
-          name: category,
-          profilePath: file,
-          sourceVideoCount: 0,
-          createdAt: '',
-          updatedAt: '',
-        };
-      });
-  }
+): Promise<IStyleSourceCategoryConfig[]> {
+  const { categories } = await loadStyleSourceRegistry(stylesDir);
+  return categories;
 }
 
 export function parseStyleMarkdown(
@@ -126,6 +102,19 @@ export function deriveStyleProtocolV2Fields(
   return {
     arrangementStructure,
     narrationConstraints,
+  };
+}
+
+async function loadStyleSourceRegistry(stylesDir: string): Promise<{
+  styleSourcesPath: string;
+  categories: IStyleSourcesConfig['categories'];
+}> {
+  const styleSourcesPath = join(dirname(stylesDir), 'style-sources.json');
+  const raw = await readFile(styleSourcesPath, 'utf-8');
+  const config = IStyleSourcesConfigSchema.parse(JSON.parse(raw)) as IStyleSourcesConfig;
+  return {
+    styleSourcesPath,
+    categories: config.categories,
   };
 }
 

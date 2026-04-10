@@ -58,8 +58,6 @@ export {
   IStyleArrangementStructure,
   IStyleNarrationConstraints,
   IStyleProfile,
-  IStyleCatalogEntry,
-  IStyleCatalog,
   IProjectBriefMappingConfig,
   IProjectBriefPharosConfig,
   IProjectBriefConfig,

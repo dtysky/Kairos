@@ -61,7 +61,7 @@ loadStyleFromMarkdown(filePath: string, options?: IStyleLoadOptions): Promise<IS
 loadStyleByCategory(stylesDir: string, category: string): Promise<IStyleProfile | null>
 
 // 列出所有可用的风格分类
-listStyleCategories(stylesDir: string): Promise<IStyleCatalogEntry[]>
+listStyleCategories(stylesDir: string): Promise<IStyleSourceCategoryConfig[]>
 
 // 生成风格提示词（供 agent 参考）
 buildStylePrompt(style: IStyleProfile): string

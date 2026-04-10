@@ -416,6 +416,7 @@ function AppShell() {
                       projectId={projectId}
                       projectProgress={projectProgress}
                       activeJobs={activeJobs}
+                      capabilities={capabilities}
                       busy={busy}
                       onRun={() => runProjectWorkflow('analyze')}
                     />
@@ -432,6 +433,8 @@ function AppShell() {
                   render={routeProps => (
                     <StylePage
                       config={styleSources}
+                      capabilities={capabilities}
+                      jobs={allJobs}
                       setStyleSources={setStyleSources}
                       onSave={saveStyleLibrary}
                       busy={busy}
@@ -630,8 +633,13 @@ function IngestGpsPage({
   );
 }
 
-function AnalyzePage({ projectId, projectProgress, activeJobs, busy, onRun }) {
+function AnalyzePage({ projectId, projectProgress, activeJobs, capabilities, busy, onRun }) {
   const analyzeJobs = activeJobs.filter(job => job.jobType === 'analyze');
+  const analyzeCapability = capabilities?.jobs?.find(job => job.jobType === 'analyze');
+  const canStartAnalyze = Boolean(projectId)
+    && !busy['job:analyze']
+    && analyzeJobs.length === 0
+    && analyzeCapability?.supported !== false;
   return (
     <MonitorLoader
       kind="analyze"
@@ -641,11 +649,11 @@ function AnalyzePage({ projectId, projectProgress, activeJobs, busy, onRun }) {
         <>
           <div className="monitor-toolbar-group">
           <Button
-            type={busy['job:analyze'] || !projectId ? 'disabled' : 'primary'}
-            disabled={busy['job:analyze'] || !projectId}
+            type={canStartAnalyze ? 'primary' : 'disabled'}
+            disabled={!canStartAnalyze}
             onClick={onRun}
           >
-            {busy['job:analyze'] ? '启动中…' : '启动 Analyze'}
+            {busy['job:analyze'] ? '启动中…' : analyzeJobs.length > 0 ? 'Analyze 运行中…' : '启动 Analyze'}
           </Button>
           </div>
           <div className="monitor-toolbar-meta">
@@ -818,7 +826,7 @@ function PipelineMetricCard({ label, value, sub }) {
   );
 }
 
-function StylePage({ config, setStyleSources, onSave, busy, onRun, location, history }) {
+function StylePage({ config, capabilities, jobs, setStyleSources, onSave, busy, onRun, location, history }) {
   if (!config) {
     return (
       <div className="route-page">
@@ -826,7 +834,17 @@ function StylePage({ config, setStyleSources, onSave, busy, onRun, location, his
       </div>
     );
   }
-  const currentCategoryId = resolveCurrentStyleCategory(config, location.search);
+  const currentCategoryId = resolveCurrentStyleCategory(config, location.search, jobs);
+  const styleCapability = capabilities?.jobs?.find(job => job.jobType === 'style-analysis');
+  const activeStyleJobs = (jobs || []).filter(job =>
+    job.jobType === 'style-analysis'
+      && ['queued', 'running', 'blocked'].includes(job.status),
+  );
+  const activeCurrentCategoryJob = activeStyleJobs.find(job => getStyleJobCategoryId(job) === currentCategoryId) || null;
+  const canStartStyleAnalysis = Boolean(currentCategoryId)
+    && !busy['job:style-analysis']
+    && activeStyleJobs.length === 0
+    && styleCapability?.supported !== false;
   return (
     <MonitorLoader
       kind="style"
@@ -844,11 +862,11 @@ function StylePage({ config, setStyleSources, onSave, busy, onRun, location, his
               ))}
             </select>
           <Button
-            type={busy['job:style-analysis'] || !currentCategoryId ? 'disabled' : 'primary'}
-            disabled={busy['job:style-analysis'] || !currentCategoryId}
+            type={canStartStyleAnalysis ? 'primary' : 'disabled'}
+            disabled={!canStartStyleAnalysis}
             onClick={() => onRun(currentCategoryId)}
           >
-            {busy['job:style-analysis'] ? '启动中…' : '启动 Style Analysis'}
+            {busy['job:style-analysis'] ? '启动中…' : activeStyleJobs.length > 0 ? 'Style Prep 运行中…' : '启动 Style Prep'}
           </Button>
           </div>
           <div className="monitor-toolbar-meta">
@@ -1414,11 +1432,18 @@ function resolveTopLevelPath(pathname) {
   return '/';
 }
 
-function resolveCurrentStyleCategory(config, search) {
+function resolveCurrentStyleCategory(config, search, jobs = []) {
   const params = new URLSearchParams(search || '');
   const requested = params.get('categoryId');
   if (requested && config.categories.some(category => category.categoryId === requested)) {
     return requested;
+  }
+  const liveCategoryId = (jobs || [])
+    .filter(job => job.jobType === 'style-analysis' && ['queued', 'running', 'blocked'].includes(job.status))
+    .map(getStyleJobCategoryId)
+    .find(categoryId => categoryId && config.categories.some(category => category.categoryId === categoryId));
+  if (liveCategoryId) {
+    return liveCategoryId;
   }
   return config.defaultCategory || config.categories[0]?.categoryId || '';
 }
@@ -1427,6 +1452,11 @@ function buildStylePath(categoryId) {
   return categoryId
     ? `/style?categoryId=${encodeURIComponent(categoryId)}`
     : '/style';
+}
+
+function getStyleJobCategoryId(job) {
+  const value = job?.args?.categoryId;
+  return typeof value === 'string' && value.trim() ? value.trim() : '';
 }
 
 function buildStyleSelectionScriptBriefPayload(brief, styleCategory) {

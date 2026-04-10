@@ -71,9 +71,6 @@ Kairos/
 │   ├── ml-server.sh          # macOS/Linux: start/stop/status ML server
 │   ├── ml-server.ps1         # Windows PowerShell: start/stop/status ML server
 │   ├── ml-models-init.sh     # macOS: pre-download all MLX models from HF Hub
-│   ├── kairos-progress.sh    # Legacy compatibility helper for static progress viewing
-│   ├── kairos-progress.ps1   # Legacy compatibility helper for static progress viewing
-│   └── style-analysis-progress-viewer.html  # Legacy static monitor template, no longer the official console
 │
 ├── apps/
 │   └── kairos-console/       # Official React console served by Supervisor (`/analyze`, `/style`, ...)
@@ -94,7 +91,6 @@ Kairos/
 │   ├── runtime.json          # ffmpeg / ffprobe / ML endpoint config
 │   ├── style-sources.json    # Workspace style-source manifest
 │   └── styles/
-│       ├── catalog.json      # IStyleCatalog: registry of all categories
 │       ├── travel-doc.md     # Style profile per category
 │       └── ...
 ├── analysis/

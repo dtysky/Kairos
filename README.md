@@ -22,17 +22,24 @@ Current stable pipeline:
 - official local runtime / monitor entry is `Supervisor + React console (apps/kairos-console/)`
   - `http://127.0.0.1:8940/analyze` is the official Analyze monitor route
   - `http://127.0.0.1:8940/style` is the official workspace-level Style monitor route
+  - `scripts/kairos-supervisor.* start` only starts `Supervisor + React console`; it does not start ML and does not resume old jobs
+  - `progress.json` is only a durable progress cache; a phase is live only when Supervisor still has the matching active job
   - console refresh now prefers the project that currently owns the latest active project-scoped job before falling back to the last locally remembered selection
   - when multiple projects share the same display name, the selector must surface `projectId` to avoid mixing monitor context
-  - `scripts/kairos-progress.*` and `scripts/style-analysis-progress-viewer.html` are legacy compatibility helpers, not the official path for new capability work
+  - top-level workflow jobs now always reconcile to `ML stopped` after completion, failure, manual stop, or interruption
 - reusable style assets now live at workspace scope, not project scope:
   - `config/styles/` stores the shared style library
-  - `config/style-sources.json` stores the shared style-source manifest
+  - `config/style-sources.json` stores the shared style-source manifest and is the only structured style index
   - `analysis/reference-transcripts/` and `analysis/style-references/` store shared style-analysis outputs
+  - `config/styles/{category}.md` holds profile content only; it is no longer paired with a separate `catalog.json`
 - workspace style profiles are no longer treated as prose-only references:
   - each `config/styles/*.md` should carry directly consumable rhythm-stage guidance, material-role guidance, camera/shot-language preferences, function-slot hints, stable parameter keys, and anti-patterns
   - these style outputs are expected to guide `script` recall / outline / beat writing directly, not only provide high-level narrative tone
 - project script work now references a workspace style category instead of owning its own `config/styles/`
+- workspace style-analysis now runs as a formal deterministic prep job:
+  - `health-check -> clip -> probe -> shot-detect -> transcribe -> keyframes -> vlm -> video-complete -> awaiting_agent|completed`
+  - the prep job writes workspace `.tmp/style-analysis/{category}/progress.json`, `analysis/reference-transcripts/`, and `analysis/style-references/`
+  - the final style profile remains agent-authored from those prep outputs
 - the `/script` console page now acts as deterministic script preparation:
   - user first selects a workspace `styleCategory` in `/script`; that selection auto-saves
   - agent then generates `script/material-overview.md` and the initial `script-brief`

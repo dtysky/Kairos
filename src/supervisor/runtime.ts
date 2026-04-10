@@ -3,6 +3,7 @@ import { createWriteStream } from 'node:fs';
 import { spawn, execFile as execFileCallback, type ChildProcess } from 'node:child_process';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
+import nodeFetch from 'node-fetch';
 import {
   getSupervisorServiceRoot,
   loadServiceRecord,
@@ -11,6 +12,12 @@ import {
 } from './state.js';
 
 const execFile = promisify(execFileCallback);
+const fetchCompat: typeof fetch = typeof globalThis.fetch === 'function'
+  ? globalThis.fetch.bind(globalThis)
+  : ((
+    input: Parameters<typeof nodeFetch>[0],
+    init?: Parameters<typeof nodeFetch>[1],
+  ) => nodeFetch(input, init)) as typeof fetch;
 
 export interface IMlServiceConfig {
   host: string;
@@ -43,10 +50,68 @@ export function resolveMlServiceConfig(workspaceRoot: string): IMlServiceConfig 
   };
 }
 
+export async function ensureMlServiceRunning(workspaceRoot: string): Promise<ISupervisorServiceRecord> {
+  const status = await getMlServiceStatus(workspaceRoot);
+  if (status.status === 'running') {
+    return status;
+  }
+  return startMlService(workspaceRoot);
+}
+
+export function shouldReuseExistingMlService(input: {
+  listenerPid: number | null;
+  health: unknown;
+}): boolean {
+  return Boolean(input.listenerPid && input.health);
+}
+
+export function shouldStopExistingMlService(input: {
+  recordListenerPid?: number;
+  listenerPid: number | null;
+  health: unknown;
+}): boolean {
+  return Boolean(
+    input.listenerPid
+      && (input.recordListenerPid === input.listenerPid || input.health),
+  );
+}
+
 export async function startMlService(workspaceRoot: string): Promise<ISupervisorServiceRecord> {
   const config = resolveMlServiceConfig(workspaceRoot);
   await mkdir(getSupervisorServiceRoot(workspaceRoot, 'ml'), { recursive: true });
-  await killPortOccupant(config.port);
+  const existing = await loadServiceRecord(workspaceRoot, 'ml');
+  const existingListenerPid = await findPortListenerPid(config.port);
+  const existingHealth = existingListenerPid
+    ? await waitForJson(config.healthUrl, 2_000).catch(() => null)
+    : null;
+
+  if (shouldReuseExistingMlService({ listenerPid: existingListenerPid, health: existingHealth })) {
+    const running: ISupervisorServiceRecord = {
+      name: 'ml',
+      status: 'running',
+      port: config.port,
+      url: `http://${config.host}:${config.port}/`,
+      launcherPid: existing?.launcherPid,
+      listenerPid: existingListenerPid ?? undefined,
+      command: existing?.command ?? [config.pythonPath, ...config.command],
+      cwd: config.workingDirectory,
+      startedAt: existing?.startedAt ?? new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      stdoutPath: config.stdoutPath,
+      stderrPath: config.stderrPath,
+      health: existingHealth,
+    };
+    await writeServiceRecord(workspaceRoot, running);
+    return running;
+  }
+
+  if (existingListenerPid) {
+    if (existing?.listenerPid && existing.listenerPid === existingListenerPid) {
+      await killPid(existingListenerPid);
+    } else {
+      throw new Error(`Cannot start Kairos ML service: port ${config.port} is already occupied by another process.`);
+    }
+  }
 
   const stdout = createWriteStream(config.stdoutPath, { flags: 'w' });
   const stderr = createWriteStream(config.stderrPath, { flags: 'w' });
@@ -106,11 +171,18 @@ export async function startMlService(workspaceRoot: string): Promise<ISupervisor
 export async function stopMlService(workspaceRoot: string): Promise<ISupervisorServiceRecord> {
   const config = resolveMlServiceConfig(workspaceRoot);
   const record = await loadServiceRecord(workspaceRoot, 'ml');
-  const listenerPid = record?.listenerPid ?? await findPortListenerPid(config.port);
-  if (listenerPid) {
+  const listenerPid = await findPortListenerPid(config.port);
+  const health = listenerPid
+    ? await waitForJson(config.healthUrl, 2_000).catch(() => null)
+    : null;
+  const shouldStop = shouldStopExistingMlService({
+    recordListenerPid: record?.listenerPid,
+    listenerPid,
+    health,
+  });
+
+  if (listenerPid && shouldStop) {
     await killPid(listenerPid);
-  } else {
-    await killPortOccupant(config.port);
   }
 
   const stopped: ISupervisorServiceRecord = {
@@ -123,6 +195,9 @@ export async function stopMlService(workspaceRoot: string): Promise<ISupervisorS
     stdoutPath: config.stdoutPath,
     stderrPath: config.stderrPath,
     updatedAt: new Date().toISOString(),
+    lastError: listenerPid && !shouldStop
+      ? `Port ${config.port} is occupied by a non-Kairos process; left untouched.`
+      : undefined,
   };
   await writeServiceRecord(workspaceRoot, stopped);
   return stopped;
@@ -133,13 +208,16 @@ export async function getMlServiceStatus(workspaceRoot: string): Promise<ISuperv
   const record = await loadServiceRecord(workspaceRoot, 'ml');
   const listenerPid = await findPortListenerPid(config.port);
   const health = listenerPid ? await waitForJson(config.healthUrl, 2_000).catch(() => null) : null;
+  const isRunning = Boolean(listenerPid && health);
+  const isStarting = !isRunning && record?.status === 'starting';
+  const hasExternalOccupant = Boolean(listenerPid && !health && record?.listenerPid !== listenerPid);
   const status: ISupervisorServiceRecord = {
     name: 'ml',
-    status: listenerPid && health ? 'running' : (record?.status === 'starting' ? 'starting' : 'stopped'),
+    status: isRunning ? 'running' : (isStarting ? 'starting' : 'stopped'),
     port: config.port,
     url: `http://${config.host}:${config.port}/`,
     launcherPid: record?.launcherPid,
-    listenerPid: listenerPid ?? record?.listenerPid,
+    listenerPid: isRunning ? (listenerPid ?? undefined) : undefined,
     command: record?.command,
     cwd: config.workingDirectory,
     startedAt: record?.startedAt,
@@ -147,7 +225,11 @@ export async function getMlServiceStatus(workspaceRoot: string): Promise<ISuperv
     stdoutPath: config.stdoutPath,
     stderrPath: config.stderrPath,
     health: health ?? undefined,
-    lastError: record?.lastError,
+    lastError: isRunning
+      ? undefined
+      : (isStarting
+        ? record?.lastError
+        : (hasExternalOccupant ? `Port ${config.port} is occupied by a non-Kairos process; treated as stopped.` : undefined)),
   };
   await writeServiceRecord(workspaceRoot, status);
   return status;
@@ -158,7 +240,7 @@ export async function waitForJson(url: string, timeoutMs: number): Promise<unkno
   let lastError: unknown;
   while (Date.now() - startedAt < timeoutMs) {
     try {
-      const response = await fetch(url);
+      const response = await fetchCompat(url);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }

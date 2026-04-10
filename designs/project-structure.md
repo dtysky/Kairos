@@ -27,7 +27,9 @@
 - `project-brief.md` 可选带 `## Pharos` 段，只支持 `包含 Trip：...` 形式的 trip 筛选；未填写时默认纳入全部可解析 trip
 - 可复用风格资产当前不属于单项目目录，而是收口为 Workspace 级共享资产
 - 本地运行与项目配置当前由 `Supervisor + React console (apps/kairos-console/)` 承载；`Analyze` 与 `Style` 监控直接挂在 `/analyze` 与 `/style` 主路由上
-- `scripts/kairos-progress.*` 与旧静态监控页当前只保留兼容 / 调试用途，不再是新的正式监控入口
+- `scripts/kairos-supervisor.* start` 只启动 `Supervisor + React console`；不会自动启动 ML，也不会恢复旧 job
+- `media-analyze` 与 `style-analysis` 的 `progress.json` 只表示 durable cache，不表示 live job
+- 顶层 Kairos job 在结束态必须回收到 `ML stopped`
 
 ## 当前变更纪律
 
@@ -63,14 +65,14 @@
   - 不再依赖环境变量或用户口头约定
 - `config/styles/`
   - 这是 **Workspace 级** 风格档案库，不再是项目级目录
-  - 当前使用 `<workspaceRoot>/config/styles/{category}.md + <workspaceRoot>/config/styles/catalog.json`
+  - 当前只使用 `<workspaceRoot>/config/styles/{category}.md`
 - Workspace 结构化配置
   - `config/project-brief.json`
   - `config/manual-itinerary.json`
   - `script/script-brief.json`
   - `config/style-sources.json`
   - `config/review-queue.json`
-  - 其中 `config/style-sources.json` 是 **Workspace 级** 风格来源事实源
+  - 其中 `config/style-sources.json` 是 **Workspace 级** 风格来源事实源，也是唯一正式 style 索引
   - 其余列在项目目录内的 JSON 当前是项目级 Console 事实源，Markdown 继续保留为项目内可读派生产物
 - `config/manual-itinerary.md` 与 `analysis/asset-reports/`
   - `manual-itinerary` 现在有两层正式语义：
@@ -117,6 +119,7 @@
   - 项目级流水线临时产物继续写入项目内 `.tmp/`
   - workspace 级 style-analysis 临时产物写入 `<workspaceRoot>/.tmp/`
   - 例如 `<workspaceRoot>/.tmp/style-analysis/{category}/progress.json`
+  - `style-analysis` prep 目录当前还会持有 clipped inputs、keyframes、combined summary 等可重跑中间态
   - 这些内容默认视为可清理的中间产物，不属于 `Canonical Project Store`
 - 素材分析策略
   - 当前正式流程采用“粗扫优先 + 自动细扫”

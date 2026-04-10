@@ -1,40 +1,85 @@
-import { describe, expect, it } from 'vitest';
-import { parseStyleMarkdown } from '../../src/modules/script/style-loader.js';
+import { afterEach, describe, expect, it } from 'vitest';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { listStyleCategories, loadStyleByCategory } from '../../src/modules/script/style-loader.js';
+import { saveStyleSourcesConfig } from '../../src/store/index.js';
 
-describe('parseStyleMarkdown', () => {
-  it('extracts arrangementStructure and narrationConstraints in the new shape', () => {
-    const style = parseStyleMarkdown(`
-# 旅行纪录片 风格档案
+const workspaces: string[] = [];
 
-## 叙事结构
-- 先建空间，再进入人物。
+afterEach(async () => {
+  await Promise.all(workspaces.splice(0).map(path => rm(path, { recursive: true, force: true })));
+});
 
-## 剪辑节奏与素材编排
-- 照片只短暂点缀。
-- 航拍用于开场建场和地理重置。
+async function createWorkspace(): Promise<string> {
+  const workspaceRoot = await mkdtemp(join(tmpdir(), 'kairos-style-loader-test-'));
+  workspaces.push(workspaceRoot);
+  return workspaceRoot;
+}
 
-## 参数
-主轴: 路线推进
-辅助轴: 地点观察 / 情绪回落
-章节切分原则: 先空间后人物 / 以路程节点切分
-章节转场: 用交通噪声做桥
-章节程序1: opening | 先建立地理坐标 | establishing / anchor | 建场 / 地理重置 | smooth-intro | 旁白先收一点
-旁白视角: 第一人称贴身观察
-旁白备注: 少解释 / 留白
-`);
+describe('style-loader', () => {
+  it('loads style profiles by resolving metadata from style-sources.json', async () => {
+    const workspaceRoot = await createWorkspace();
+    const stylesDir = join(workspaceRoot, 'config', 'styles');
 
-    expect(style.arrangementStructure.primaryAxis).toBe('路线推进');
-    expect(style.arrangementStructure.secondaryAxes).toEqual(['地点观察', '情绪回落']);
-    expect(style.arrangementStructure.chapterSplitPrinciples).toContain('先空间后人物');
-    expect(style.arrangementStructure.chapterPrograms[0]).toMatchObject({
-      type: 'opening',
-      intent: '先建立地理坐标',
-      materialRoles: ['establishing', 'anchor'],
-      promotionSignals: ['建场', '地理重置'],
-      transitionBias: 'smooth-intro',
-      localNarrationNote: '旁白先收一点',
+    await saveStyleSourcesConfig(workspaceRoot, {
+      defaultCategory: 'travel-doc',
+      categories: [{
+        categoryId: 'travel-doc',
+        displayName: 'Travel Doc',
+        guidancePrompt: '重点关注旅行纪录片的叙事推进。',
+        overwriteExisting: false,
+        profilePath: 'travel-doc.md',
+        sources: [],
+      }],
     });
-    expect(style.narrationConstraints.perspective).toBe('第一人称贴身观察');
-    expect(style.narrationConstraints.notes).toEqual(['少解释', '留白']);
+    await writeFile(join(stylesDir, 'travel-doc.md'), [
+      '---',
+      'name: Travel Doc',
+      'category: travel-doc',
+      'guidancePrompt: 重点关注旅行纪录片的叙事推进。',
+      '---',
+      '# Travel Doc',
+      '',
+      '## 节奏阶段',
+      '',
+      '稳步推进。',
+      '',
+    ].join('\n'), 'utf-8');
+
+    const style = await loadStyleByCategory(stylesDir, 'travel-doc');
+
+    expect(style?.name).toBe('Travel Doc');
+    expect(style?.category).toBe('travel-doc');
+    expect(style?.guidancePrompt).toBe('重点关注旅行纪录片的叙事推进。');
+  });
+
+  it('fails when the requested category is not registered in style-sources.json', async () => {
+    const workspaceRoot = await createWorkspace();
+    const stylesDir = join(workspaceRoot, 'config', 'styles');
+
+    await saveStyleSourcesConfig(workspaceRoot, {
+      defaultCategory: 'travel-doc',
+      categories: [{
+        categoryId: 'travel-doc',
+        displayName: 'Travel Doc',
+        overwriteExisting: false,
+        profilePath: 'travel-doc.md',
+        sources: [],
+      }],
+    });
+    await writeFile(join(stylesDir, 'rogue.md'), '# Rogue\n', 'utf-8');
+
+    const categories = await listStyleCategories(stylesDir);
+
+    await expect(loadStyleByCategory(stylesDir, 'rogue')).rejects.toThrow('not defined in');
+    expect(categories.map(item => item.categoryId)).toEqual(['travel-doc']);
+  });
+
+  it('fails immediately when style-sources.json is missing', async () => {
+    const workspaceRoot = await createWorkspace();
+    const stylesDir = join(workspaceRoot, 'config', 'styles');
+
+    await expect(listStyleCategories(stylesDir)).rejects.toThrow('style-sources.json');
   });
 });
