@@ -57,6 +57,136 @@ async function createWorkspace(): Promise<string> {
 }
 
 describe('analyzeWorkspaceProjectMedia profiling', () => {
+  it('materializes direct-path visual assets into spans without entering fine-scan', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-analyze-direct-materialization';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Direct Materialization Project');
+    const mediaRoot = join(projectRoot, '.tmp', 'fixtures');
+    const mediaPath = join(mediaRoot, 'atomic-broll.mp4');
+
+    await mkdir(mediaRoot, { recursive: true });
+    await writeFile(mediaPath, 'fake-media');
+
+    await writeJson(join(projectRoot, 'config/runtime.json'), {
+      mlServerUrl: 'http://127.0.0.1:8910',
+    });
+    await writeJson(join(projectRoot, 'config/ingest-roots.json'), {
+      roots: [{
+        id: 'root-1',
+        enabled: true,
+        label: 'camera-a',
+        path: mediaRoot,
+      }],
+    });
+    await writeJson(join(projectRoot, 'store/assets.json'), [{
+      id: 'asset-direct',
+      kind: 'video',
+      sourcePath: 'atomic-broll.mp4',
+      displayName: 'atomic-broll.mp4',
+      ingestRootId: 'root-1',
+      durationMs: 9_000,
+      capturedAt: '2026-03-31T08:15:30.000Z',
+      metadata: {
+        hasAudioStream: false,
+      },
+    }]);
+
+    extractKeyframesMock.mockImplementation(async (
+      _filePath: string,
+      outputDir: string,
+      timestampsMs: number[],
+    ) => {
+      await mkdir(outputDir, { recursive: true });
+      return Promise.all(timestampsMs.map(async timeMs => {
+        const framePath = join(outputDir, `frame-${timeMs}.jpg`);
+        await writeFile(framePath, `frame-${timeMs}`);
+        return { timeMs, path: framePath };
+      }));
+    });
+
+    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue({
+      status: 'ok',
+      device: 'apple',
+      backend: 'mlx',
+      models_loaded: [],
+    });
+    vi.spyOn(MlClient.prototype, 'vlmAnalyze').mockImplementation(async (imagePaths, prompt) => {
+      if (prompt.includes('semantic clip type and materialization policy')) {
+        return {
+          description: JSON.stringify({
+            visual_summary: {
+              scene_type: 'landscape',
+              subjects: ['pier', 'coastline'],
+              mood: 'calm',
+              place_hints: ['Auckland'],
+              narrative_role: 'detail',
+              description: `Recognized ${imagePaths.length} direct-usable frames.`,
+            },
+            decision: {
+              clip_type: 'broll',
+              keep_decision: 'keep',
+              materialization_path: 'direct',
+              decision_reasons: ['test-direct-materialization'],
+            },
+          }),
+          timing: {
+            backend: 'mlx',
+            modelRef: 'test-qwen',
+            totalMs: 48,
+            processorMs: 7,
+            generateMs: 34,
+          },
+        };
+      }
+      return {
+        description: JSON.stringify({
+          scene_type: 'landscape',
+          subjects: ['pier', 'coastline'],
+          mood: 'calm',
+          place_hints: ['Auckland'],
+          narrative_role: 'detail',
+          description: `Recognized ${imagePaths.length} direct-usable frames.`,
+        }),
+        timing: {
+          backend: 'mlx',
+          modelRef: 'test-qwen',
+          totalMs: 32,
+          processorMs: 6,
+          generateMs: 21,
+        },
+      };
+    });
+
+    const { analyzeWorkspaceProjectMedia } = await import('../../src/modules/media/project-analyze.js');
+    const result = await analyzeWorkspaceProjectMedia({
+      workspaceRoot,
+      projectId,
+      performanceProfile: {
+        enabled: true,
+        runLabel: 'direct-materialization',
+      },
+    });
+
+    const report = JSON.parse(
+      await readFile(getAssetReportPath(projectRoot, 'asset-direct'), 'utf-8'),
+    ) as {
+      keepDecision: string;
+      materializationPath?: string;
+      fineScanMode?: string;
+    };
+    const slices = JSON.parse(
+      await readFile(getSlicesPath(projectRoot), 'utf-8'),
+    ) as Array<{ assetId: string; materialPatterns?: Array<{ phrase: string }> }>;
+
+    expect(report.keepDecision).toBe('keep');
+    expect(report.materializationPath).toBe('direct');
+    expect(report.fineScanMode).toBeUndefined();
+    expect(result.fineScannedAssetIds).toEqual([]);
+    expect(result.sliceCount).toBeGreaterThan(0);
+    expect(slices.some(slice => slice.assetId === 'asset-direct')).toBe(true);
+    expect(detectShotsMock).not.toHaveBeenCalled();
+  });
+
   it('writes a structured performance profile for a successful analyze run', async () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-analyze-profiled';
@@ -124,7 +254,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       },
     });
     vi.spyOn(MlClient.prototype, 'vlmAnalyze').mockImplementation(async (imagePaths, prompt) => {
-      if (prompt.includes('semantic clip type and fine-scan policy')) {
+      if (prompt.includes('semantic clip type and materialization policy')) {
         return {
           description: JSON.stringify({
             visual_summary: {
@@ -137,7 +267,8 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
             },
             decision: {
               clip_type: 'broll',
-              should_fine_scan: true,
+              keep_decision: 'keep',
+              materialization_path: 'fine-scan',
               fine_scan_mode: 'windowed',
               decision_reasons: ['test-semantic-decision'],
             },
@@ -304,7 +435,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       },
     });
     vi.spyOn(MlClient.prototype, 'vlmAnalyze').mockImplementation(async (imagePaths, prompt) => {
-      if (prompt.includes('semantic clip type and fine-scan policy')) {
+      if (prompt.includes('semantic clip type and materialization policy')) {
         return {
           description: JSON.stringify({
             visual_summary: {
@@ -317,7 +448,8 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
             },
             decision: {
               clip_type: 'talking-head',
-              should_fine_scan: true,
+              keep_decision: 'keep',
+              materialization_path: 'fine-scan',
               fine_scan_mode: 'full',
               decision_reasons: ['test-talking-head-decision'],
             },
@@ -363,6 +495,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
     const report = JSON.parse(
       await readFile(getAssetReportPath(projectRoot, 'asset-talk'), 'utf-8'),
     ) as {
+      materializationPath?: string;
       fineScanMode: string;
       interestingWindows: Array<{ reason: string }>;
       fineScanReasons: string[];
@@ -374,7 +507,8 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       assets: Array<Record<string, any>>;
     };
 
-    expect(report.fineScanMode).toBe('windowed');
+    expect(report.materializationPath).toBe('fine-scan');
+    expect(['windowed', 'full']).toContain(report.fineScanMode);
     expect(report.interestingWindows.length).toBeGreaterThan(0);
     expect(report.interestingWindows.every(window => window.reason.includes('speech-window'))).toBe(true);
     expect(report.fineScanReasons).toContain('talking-head:audio-led-windows');
@@ -470,8 +604,8 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
           },
           decision: {
             clip_type: 'broll',
-            should_fine_scan: false,
-            fine_scan_mode: 'skip',
+            keep_decision: 'keep',
+            materialization_path: 'direct',
             decision_reasons: ['test-second-asset-skip'],
           },
         }),
@@ -583,7 +717,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       models_loaded: [],
     });
     vi.spyOn(MlClient.prototype, 'vlmAnalyze').mockImplementation(async (imagePaths, prompt) => {
-      if (prompt.includes('semantic clip type and fine-scan policy')) {
+      if (prompt.includes('semantic clip type and materialization policy')) {
         return {
           description: JSON.stringify({
             visual_summary: {
@@ -596,8 +730,8 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
             },
             decision: {
               clip_type: 'drive',
-              should_fine_scan: false,
-              fine_scan_mode: 'skip',
+              keep_decision: 'keep',
+              materialization_path: 'direct',
               decision_reasons: ['test-scenic-drive-skip'],
             },
           }),
@@ -738,7 +872,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       },
     });
     vi.spyOn(MlClient.prototype, 'vlmAnalyze').mockImplementation(async (imagePaths, prompt) => {
-      if (prompt.includes('semantic clip type and fine-scan policy')) {
+      if (prompt.includes('semantic clip type and materialization policy')) {
         return {
           description: JSON.stringify({
             visual_summary: {
@@ -751,7 +885,8 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
             },
             decision: {
               clip_type: 'drive',
-              should_fine_scan: true,
+              keep_decision: 'keep',
+              materialization_path: 'fine-scan',
               fine_scan_mode: 'windowed',
               decision_reasons: ['test-drive-windowed'],
             },
@@ -889,7 +1024,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       models_loaded: [],
     });
     vi.spyOn(MlClient.prototype, 'vlmAnalyze').mockImplementation(async (imagePaths, prompt) => {
-      if (prompt.includes('semantic clip type and fine-scan policy')) {
+      if (prompt.includes('semantic clip type and materialization policy')) {
         return {
           description: JSON.stringify({
             visual_summary: {
@@ -902,8 +1037,8 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
             },
             decision: {
               clip_type: 'drive',
-              should_fine_scan: false,
-              fine_scan_mode: 'skip',
+              keep_decision: 'keep',
+              materialization_path: 'direct',
               decision_reasons: ['test-flat-drive-skip'],
             },
           }),
@@ -948,7 +1083,8 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
     const report = JSON.parse(
       await readFile(getAssetReportPath(projectRoot, 'asset-drive-flat'), 'utf-8'),
     ) as {
-      fineScanMode: string;
+      materializationPath?: string;
+      fineScanMode?: string;
     };
     const profile = JSON.parse(
       await readFile(result.performanceProfilePath as string, 'utf-8'),
@@ -956,8 +1092,9 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       ffmpeg: Record<string, any>;
     };
 
-    expect(report.fineScanMode).toBe('skip');
-    expect(result.sliceCount).toBe(0);
+    expect(report.materializationPath).toBe('direct');
+    expect(report.fineScanMode).toBeUndefined();
+    expect(result.sliceCount).toBeGreaterThan(0);
     expect(detectShotsMock).not.toHaveBeenCalled();
     expect(profile.ffmpeg.sceneDetectCallCount).toBe(0);
   });
@@ -1020,7 +1157,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       models_loaded: [],
     });
     vi.spyOn(MlClient.prototype, 'vlmAnalyze').mockImplementation(async (imagePaths, prompt) => {
-      if (prompt.includes('semantic clip type and fine-scan policy')) {
+      if (prompt.includes('semantic clip type and materialization policy')) {
         return {
           description: JSON.stringify({
             visual_summary: {
@@ -1033,7 +1170,8 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
             },
             decision: {
               clip_type: 'broll',
-              should_fine_scan: true,
+              keep_decision: 'keep',
+              materialization_path: 'fine-scan',
               fine_scan_mode: 'full',
               decision_reasons: ['test-full-mode-decision'],
             },
@@ -1158,7 +1296,8 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
         endMs: 3_000,
         reason: 'resume-window',
       }],
-      shouldFineScan: true,
+      keepDecision: 'keep',
+      materializationPath: 'fine-scan',
       fineScanMode: 'windowed',
       fineScanReasons: ['resume-test'],
       createdAt: '2026-03-31T08:15:30.000Z',
@@ -1305,7 +1444,8 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
         endMs: 2_000,
         reason: 'skip-window',
       }],
-      shouldFineScan: true,
+      keepDecision: 'keep',
+      materializationPath: 'fine-scan',
       fineScanMode: 'windowed',
       fineScanReasons: ['skip-missing-prepared'],
       createdAt: '2026-03-31T08:15:30.000Z',

@@ -28,15 +28,16 @@ description: >-
 用户的作品可能有多种类型，每种类型有不同的风格：
 
 ```
-<workspaceRoot>/config/styles/
-├── catalog.json                 # 风格目录（注册所有分类）
-├── travel-doc.md                # 旅行纪录片风格
-├── city-walk.md                 # 城市漫步风格
-├── aerial.md                    # 航拍集锦风格
-└── vlog.md                      # 日常 vlog 风格
+<workspaceRoot>/config/
+├── style-sources.json           # 唯一正式分类索引
+└── styles/
+    ├── travel-doc.md            # 旅行纪录片风格
+    ├── city-walk.md             # 城市漫步风格
+    ├── aerial.md                # 航拍集锦风格
+    └── vlog.md                  # 日常 vlog 风格
 ```
 
-每个分类独立分析、独立存储。在 `kairos-script` 阶段，用户选择使用哪个分类的风格。
+每个分类独立分析、独立存储。`config/style-sources.json` 负责 `categoryId -> profilePath/displayName/guidancePrompt/sources`，`config/styles/*.md` 只承载 profile 正文。
 
 ### 指导词 (Guidance Prompt)
 
@@ -53,7 +54,7 @@ description: >-
 - 用户提供同一分类的 1 到多个历史成片视频文件路径，或一个包含这些视频的目录路径
 - 用户提供一段辅助说明（会作为 guidance prompt 存储）
 - 最好提供该分类的名称；若未提供，可由 agent 结合路径和说明帮助命名
-- ML server 运行中（ASR 提取旁白文本）
+- ML server 可由正式流程按需拉起；不要假设 `scripts/kairos-supervisor.* start` 已经顺带把它启动
 - 如果 ML server 不可用，必须直接停下并提示用户修复；不要静默退化成“无 ASR / 无 VLM”的风格分析结果
 - 如果当前平台是 **Windows + NVIDIA GPU**，优先使用 **Windows 原生 Python + CUDA** 启动 ML server / VLM，不要从 WSL 拉起
 - `ffmpeg` / `ffprobe` 可用；Windows 上优先从项目的 `config/runtime.json` 读取原生路径
@@ -61,20 +62,21 @@ description: >-
 - 只有在你明确需要重载 Python 环境或模型时，才用 `powershell -ExecutionPolicy Bypass -File scripts/ml-server.ps1 restart`
 - 默认分析代理规格推荐统一为 `1024w + yuv420p(8bit)`；风格分析里的场景检测和大多数预处理都应优先落到这一层
 - 对长视频的场景检测，默认可进一步降到低帧率采样（例如 `sceneDetectFps = 4`），避免在正式抽帧和 VLM 之前耗太久
-- 如果本轮风格分析是 agent 临时拉起 ML server 才开始的，任务结束、失败或中断后也必须主动把这个 ML server 停掉；不要留下孤儿推理服务
-- 但如果 ML server 是用户本来就在跑的长期服务，则不要擅自停止
+- 当前正式流程要求：不论本轮是成功、失败、stop 还是中断，Kairos 官方管理的 ML service 在风格分析结束态都必须回到 `stopped`
 
 ## 临时文件约定
 
 - 风格分析过程中产生的关键帧、探测结果、临时摘要等中间产物，统一放在 **当前 workspaceRoot** 下的 `.tmp/`，例如 `.tmp/style-analysis/{category}/`
+- 当前正式链路是 `Supervisor deterministic prep -> awaiting_agent -> Agent final style profile`
+- deterministic prep 必须持续写 `.tmp/style-analysis/{category}/progress.json`，并把逐视频报告与 transcript 落到 `analysis/style-references/`、`analysis/reference-transcripts/`
 - 不要把这类临时产物写到 `C:` 盘系统临时目录或用户目录外的随机位置
 - `.tmp/` 应加入 `.gitignore`
 - 当风格档案已经写入 `config/styles/` 且不再需要调试时，默认清理对应的临时目录，只保留正式产物：
+  - `<workspaceRoot>/config/style-sources.json`
   - `<workspaceRoot>/config/styles/{category}.md`
-  - `<workspaceRoot>/config/styles/catalog.json`
   - `<workspaceRoot>/analysis/reference-transcripts/...`
   - `<workspaceRoot>/analysis/style-references/...`
-- 如果 agent 在本轮风格分析里启动过监控页或 ML server，也应在收尾阶段同步停止对应进程
+- 风格分析收尾时必须再次确认 Kairos 官方管理的 ML service 已经停止
 
 ## 可用工具
 
@@ -113,7 +115,7 @@ extractOcr(client: MlClient, imagePath: string): Promise<IOcrExtraction>
 ```typescript
 loadStyleFromMarkdown(filePath: string, options?: IStyleLoadOptions): Promise<IStyleProfile>
 loadStyleByCategory(stylesDir: string, category: string): Promise<IStyleProfile | null>
-listStyleCategories(stylesDir: string): Promise<IStyleCatalogEntry[]>
+listStyleCategories(stylesDir: string): Promise<IStyleSourceCategoryConfig[]>
 parseStyleMarkdown(markdown: string, options?: IStyleLoadOptions, sourceFiles?: string[]): IStyleProfile
 buildStylePrompt(style: IStyleProfile): string
 
@@ -474,29 +476,34 @@ await mkdir(join(workspaceRoot, 'config/styles'), { recursive: true });
 await writeFile(join(workspaceRoot, `config/styles/${category}.md`), markdownContent, 'utf-8');
 ```
 
-**更新目录注册**：
+**更新唯一分类索引**：
 
 ```typescript
-const catalogPath = join(workspaceRoot, 'config/styles/catalog.json');
-const catalog: IStyleCatalog = await readJsonOrNull(catalogPath, IStyleCatalog) ?? { entries: [] };
-
-const entry: IStyleCatalogEntry = {
-  id: randomUUID(),
-  category,
-  name: '旅行纪录片风格',
-  description: '基于 N 篇历史作品，侧重叙事节奏和克制诗意',
-  profilePath: `${category}.md`,
-  sourceVideoCount: videoPaths.length,
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
+const styleSourcesPath = join(workspaceRoot, 'config/style-sources.json');
+const styleSources = await readJsonOrNull(styleSourcesPath, IStyleSourcesConfig) ?? {
+  defaultCategory: undefined,
+  categories: [],
 };
 
-// 替换同分类或追加
-const idx = catalog.entries.findIndex(e => e.category === category);
-if (idx >= 0) catalog.entries[idx] = entry;
-else catalog.entries.push(entry);
+const nextCategory = {
+  categoryId: category,
+  displayName: '旅行纪录片风格',
+  guidancePrompt: userGuidancePrompt,
+  inclusionNotes: '基于 N 篇历史作品，侧重叙事节奏和克制诗意',
+  overwriteExisting: false,
+  profilePath: `${category}.md`,
+  sources: videoPaths.map((path, index) => ({
+    id: `source-${index + 1}`,
+    type: 'file',
+    path,
+  })),
+};
 
-await writeJson(join(workspaceRoot, 'config/styles/catalog.json'), catalog);
+styleSources.categories = [
+  ...styleSources.categories.filter(item => item.categoryId !== category),
+  nextCategory,
+];
+await writeJson(styleSourcesPath, styleSources);
 ```
 
 **保存 ASR 原文备查**：
@@ -526,8 +533,8 @@ await rm(join(workspaceRoot, '.tmp/style-analysis', category), {
 
 | 文件 | 格式 | 内容 |
 |------|------|------|
+| `<workspaceRoot>/config/style-sources.json` | `IStyleSourcesConfig` | 唯一正式分类索引与来源配置 |
 | `<workspaceRoot>/config/styles/{category}.md` | Markdown (带 front-matter) | 该分类的完整风格档案 |
-| `<workspaceRoot>/config/styles/catalog.json` | `IStyleCatalog` | 所有分类的注册表 |
 | `<workspaceRoot>/analysis/reference-transcripts/{category}--{name}.txt` | TXT | ASR 原文备查 |
 | `<workspaceRoot>/analysis/style-references/{category}/{video-stem}.json` | JSON | 单参考视频分析结果 |
 
@@ -542,7 +549,7 @@ const style = await loadStyleByCategory(join(workspaceRoot, 'config/styles'), 't
 // 方式 2：直接加载文件
 const style = await loadStyleFromMarkdown(join(workspaceRoot, 'config/styles/travel-doc.md'));
 
-// 查看所有可用分类
+// 查看所有可用分类（来自 style-sources）
 const categories = await listStyleCategories(join(workspaceRoot, 'config/styles'));
 ```
 
@@ -573,5 +580,5 @@ const categories = await listStyleCategories(join(workspaceRoot, 'config/styles'
 ## 备选路径
 
 - 用户直接提供旁白文稿而非视频 → 跳过 Step 2-5，直接用文稿分析
-- 用户手写风格档案 markdown → 直接放入 `<workspaceRoot>/config/styles/{category}.md` 并注册
+- 用户手写风格档案 markdown → 直接放入 `<workspaceRoot>/config/styles/{category}.md` 并同步更新 `config/style-sources.json`
 - 用户想对比两个分类 → 分别执行分析后，agent 总结差异

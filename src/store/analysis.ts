@@ -19,7 +19,10 @@ export async function loadAssetReport(
   projectRoot: string,
   assetId: string,
 ): Promise<IAssetCoarseReport | null> {
-  return readJsonOrNull(getAssetReportPath(projectRoot, assetId), IAssetCoarseReport);
+  return readJsonOrNull(
+    getAssetReportPath(projectRoot, assetId),
+    IAssetCoarseReport,
+  ) as Promise<IAssetCoarseReport | null>;
 }
 
 export async function writeAssetReport(
@@ -41,7 +44,7 @@ export async function loadAssetReports(
     const report = await readJsonOrNull(
       join(root, entry.name),
       IAssetCoarseReport,
-    );
+    ) as IAssetCoarseReport | null;
     if (report) reports.push(report);
   }
 

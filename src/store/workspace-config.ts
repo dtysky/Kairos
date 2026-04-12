@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { basename, dirname, join, resolve } from 'node:path';
 import {
   IManualCaptureTimeOverrideConfig,
@@ -7,7 +7,6 @@ import {
   IProjectBriefConfig,
   IScriptBriefSegmentConfig,
   IScriptBriefConfig,
-  IStyleCatalog,
   IStyleSourcesConfig,
   type IManualCaptureTimeOverrideConfig as TManualCaptureTimeOverrideConfig,
   type IManualItineraryConfig as TManualItineraryConfig,
@@ -15,11 +14,9 @@ import {
   type IProjectBriefConfig as TProjectBriefConfig,
   type IScriptBriefConfig as TScriptBriefConfig,
   type IScriptBriefSegmentConfig as TScriptBriefSegmentConfig,
-  type IStyleCatalog as TStyleCatalog,
-  type IStyleCatalogEntry as TStyleCatalogEntry,
   type IStyleSourcesConfig as TStyleSourcesConfig,
 } from '../protocol/schema.js';
-import { buildFrontMatter, loadStyleByCategory } from '../modules/script/style-loader.js';
+import { buildFrontMatter } from '../modules/script/style-loader.js';
 import { parseProjectBrief } from './project-brief.js';
 import { buildProjectBriefWithMappings } from './project-brief-sync.js';
 import {
@@ -67,6 +64,7 @@ export async function loadProjectBriefConfig(projectRoot: string): Promise<TProj
     createdAt: parsed.createdAt,
     mappings: parsed.mappings,
     pharos: parsed.pharos,
+    materialPatternPhrases: parsed.vocabulary.materialPatternPhrases,
   });
 }
 
@@ -88,6 +86,9 @@ export async function saveProjectBriefConfig(
           .filter(Boolean),
       }
       : undefined,
+    materialPatternPhrases: (config.materialPatternPhrases ?? [])
+      .map(phrase => phrase.trim())
+      .filter(Boolean),
   });
   await writeJson(getProjectBriefConfigPath(projectRoot), normalized);
   await writeFile(
@@ -100,9 +101,16 @@ export async function saveProjectBriefConfig(
 
 export async function loadManualItineraryConfig(projectRoot: string): Promise<TManualItineraryConfig> {
   const stored = await readJsonOrNull(getManualItineraryConfigPath(projectRoot), IManualItineraryConfig);
-  if (stored) return IManualItineraryConfig.parse(stored);
-
   const raw = await readFile(getManualItineraryPath(projectRoot), 'utf-8').catch(() => '');
+  if (!raw) {
+    if (stored) return IManualItineraryConfig.parse(stored);
+    return IManualItineraryConfig.parse({
+      prose: '',
+      segments: [],
+      captureTimeOverrides: [],
+    });
+  }
+
   const parsed = await loadManualItinerary(projectRoot);
   return IManualItineraryConfig.parse({
     prose: stripManualCaptureTimeSection(raw).trim(),
@@ -201,34 +209,12 @@ export async function saveScriptBriefConfig(
 export async function loadStyleSourcesConfig(
   workspaceRoot: string,
 ): Promise<TStyleSourcesConfig> {
-  const stored = await readJsonOrNull(getWorkspaceStyleSourcesConfigPath(workspaceRoot), IStyleSourcesConfig);
-  if (stored) return IStyleSourcesConfig.parse(stored);
-
-  const stylesDir = join(workspaceRoot, 'config', 'styles');
-  const catalog = await readJsonOrNull(join(stylesDir, 'catalog.json'), IStyleCatalog) ?? {
-    defaultCategory: undefined,
-    entries: [],
-  };
-  const categories = [];
-
-  for (const entry of catalog.entries) {
-    const profile = await loadStyleByCategory(stylesDir, entry.category).catch(() => null);
-    categories.push({
-      categoryId: entry.category,
-      displayName: entry.name,
-      guidancePrompt: profile?.guidancePrompt,
-      inclusionNotes: undefined,
-      exclusionNotes: undefined,
-      overwriteExisting: false,
-      profilePath: entry.profilePath,
-      sources: [],
-    });
+  const configPath = getWorkspaceStyleSourcesConfigPath(workspaceRoot);
+  const stored = await readJsonOrNull(configPath, IStyleSourcesConfig);
+  if (stored) {
+    return IStyleSourcesConfig.parse(stored);
   }
-
-  return IStyleSourcesConfig.parse({
-    defaultCategory: catalog.defaultCategory,
-    categories,
-  });
+  throw new Error(`workspace style-sources.json is required: ${configPath}`);
 }
 
 export async function saveStyleSourcesConfig(
@@ -245,7 +231,7 @@ export async function saveStyleSourcesConfig(
       guidancePrompt: category.guidancePrompt?.trim() || undefined,
       inclusionNotes: category.inclusionNotes?.trim() || undefined,
       exclusionNotes: category.exclusionNotes?.trim() || undefined,
-      profilePath: category.profilePath?.trim() || undefined,
+      profilePath: category.profilePath?.trim() || `${category.categoryId.trim()}.md`,
       sources: category.sources.map(source => ({
         ...source,
         id: source.id || randomUUID(),
@@ -260,8 +246,8 @@ export async function saveStyleSourcesConfig(
   });
 
   await writeJson(getWorkspaceStyleSourcesConfigPath(workspaceRoot), normalized);
-  await syncStyleCatalog(workspaceRoot, normalized);
   await syncStyleProfileFrontMatter(workspaceRoot, normalized);
+  await removeStaleStyleCatalog(workspaceRoot);
   return normalized;
 }
 
@@ -277,13 +263,11 @@ function normalizeScriptBriefSegments(
   return (segments ?? []).map(segment => IScriptBriefSegmentConfig.parse({
     segmentId: stringValue(segment.segmentId) ?? `segment-${randomUUID()}`,
     title: stringValue(segment.title),
-    role: stringValue(segment.role),
+    roleHint: stringValue(segment.roleHint),
     targetDurationMs: typeof segment.targetDurationMs === 'number' && segment.targetDurationMs > 0
       ? segment.targetDurationMs
       : undefined,
     intent: stringValue(segment.intent),
-    preferredClipTypes: normalizeDraftLines(segment.preferredClipTypes ?? []),
-    preferredPlaceHints: normalizeDraftLines(segment.preferredPlaceHints ?? []),
     notes: normalizeDraftLines(segment.notes ?? []),
   }));
 }
@@ -479,20 +463,17 @@ function extractScriptBriefSegments(markdown: string): TScriptBriefSegmentConfig
     const startIndex = match.index ?? 0;
     const nextStart = matches[index + 1]?.index ?? section.length;
     const block = section.slice(startIndex, nextStart);
-    const role = extractSegmentLine(block, '角色');
+    const roleHint = extractSegmentLine(block, '角色提示') ?? extractSegmentLine(block, '角色');
     const duration = extractSegmentLine(block, '目标时长');
     const intent = extractSegmentLine(block, '简单说明');
-    const visual = extractSegmentLine(block, '画面/声音偏好') ?? '';
     const constraints = extractSegmentLine(block, '文案约束') ?? '';
 
     return IScriptBriefSegmentConfig.parse({
       segmentId,
       title,
-      role: emptyToUndefined(role),
+      roleHint: emptyToUndefined(roleHint),
       targetDurationMs: parseTargetDurationMs(duration),
       intent: emptyToUndefined(intent),
-      preferredClipTypes: extractVisualPreferencePart(visual, '优先'),
-      preferredPlaceHints: extractVisualPreferencePart(visual, '地点线索'),
       notes: splitInlineNotes(constraints),
     });
   });
@@ -516,20 +497,6 @@ function parseTargetDurationMs(value?: string): number | undefined {
   if (seconds) return Number(seconds) * 1000;
   const numeric = Number(value);
   return Number.isFinite(numeric) && numeric > 0 ? numeric : undefined;
-}
-
-function extractVisualPreferencePart(value: string, prefix: string): string[] {
-  const parts = value
-    .split('；')
-    .map(part => part.trim())
-    .find(part => part.startsWith(prefix));
-  if (!parts) return [];
-  return parts
-    .slice(prefix.length)
-    .trim()
-    .split('/')
-    .map(item => item.trim())
-    .filter(Boolean);
 }
 
 function splitInlineNotes(value: string): string[] {
@@ -670,41 +637,6 @@ function renderManualCaptureSection(rows: TManualCaptureTimeOverrideConfig[]): s
   ].join('\n');
 }
 
-async function syncStyleCatalog(
-  workspaceRoot: string,
-  config: TStyleSourcesConfig,
-): Promise<void> {
-  const catalogPath = join(workspaceRoot, 'config', 'styles', 'catalog.json');
-  const existing = await readJsonOrNull(catalogPath, IStyleCatalog) ?? {
-    defaultCategory: undefined,
-    entries: [],
-  };
-  const byCategory = new Map(existing.entries.map(entry => [entry.category, entry]));
-  const now = new Date().toISOString();
-  const nextEntries: TStyleCatalogEntry[] = [];
-
-  for (const category of config.categories) {
-    const current = byCategory.get(category.categoryId);
-    nextEntries.push({
-      id: current?.id ?? randomUUID(),
-      category: category.categoryId,
-      name: category.displayName,
-      description: category.inclusionNotes ?? current?.description,
-      profilePath: category.profilePath || current?.profilePath || `${category.categoryId}.md`,
-      sourceVideoCount: category.sources.length,
-      createdAt: current?.createdAt ?? now,
-      updatedAt: now,
-    });
-    byCategory.delete(category.categoryId);
-  }
-
-  nextEntries.push(...byCategory.values());
-  await writeJson(catalogPath, {
-    defaultCategory: config.defaultCategory ?? existing.defaultCategory,
-    entries: nextEntries.sort((left, right) => left.category.localeCompare(right.category)),
-  });
-}
-
 async function syncStyleProfileFrontMatter(
   workspaceRoot: string,
   config: TStyleSourcesConfig,
@@ -738,6 +670,10 @@ async function syncStyleProfileFrontMatter(
     })}${body.trimStart()}`;
     await writeFile(profilePath, next, 'utf-8');
   }
+}
+
+async function removeStaleStyleCatalog(workspaceRoot: string): Promise<void> {
+  await rm(join(workspaceRoot, 'config', 'styles', 'catalog.json'), { force: true });
 }
 
 function splitFrontMatter(markdown: string): {

@@ -31,11 +31,18 @@ Kairos 当前需要区分两层：
   - `config/style-sources.json`
   - `analysis/reference-transcripts/`
   - `analysis/style-references/`
+  - `config/style-sources.json` 是当前唯一正式 style 索引；`config/styles/*.md` 只承载 profile 正文，不再配套 `catalog.json`
 - Workspace 风格档案当前不再只是“给人读的风格长文”，而是 Script 阶段的正式输入之一：
   - 章节里应尽量明确阶段节奏、素材角色、运镜语言、功能位分配与禁区
   - 参数表里应尽量提供稳定 key，便于 `script / recall / outline` 直接消费
   - 这些内容默认表示“观测到的高频偏好”，不是自动变成所有脚本都必须照抄的硬模板
-- `scripts/kairos-progress.*` 与 `scripts/style-analysis-progress-viewer.html` 只保留兼容 / 调试用途，不再是新的正式监控入口
+- `scripts/kairos-supervisor.* start` 只启动 `Supervisor + React console`，不会顺带拉起 ML，也不会自动恢复旧 job
+- `projects/<projectId>/.tmp/media-analyze/progress.json` 与 `<workspaceRoot>/.tmp/style-analysis/{category}/progress.json` 都只是 durable progress cache，不等于 live job
+- Kairos 官方管理的顶层流程在结束态必须回收到 `ML stopped`
+- workspace `style-analysis` 当前正式收口为 deterministic prep：
+  - `health-check -> clip -> probe -> shot-detect -> transcribe -> keyframes -> vlm -> video-complete -> awaiting_agent|completed`
+  - prep job 负责把 reference transcript、per-video report 与 workspace progress 正式落盘
+  - 最终 `config/styles/{category}.md` 继续由 Agent 基于这些 prep 产物写成
 - 未来如果引入桌面 UI 或更多 provider / adapter，应建立在这套协议与项目模型上，而不是推翻它
 - 某些项目会直接消费调色后的素材版本而非原始素材；因此主链面向的是“当前采用的素材版本”，而不是固定绑定“永远使用原始素材”
 
@@ -54,6 +61,23 @@ Kairos 当前需要区分两层：
 - `AGENTS.md`
 - `designs/current-solution-summary.md`
 - `designs/architecture.md`
+
+## 1.2 2026-04-08 语义协议切换
+
+当前主链已经开始从旧的 `slice + 五轴语义 + 单阶段 arrangement` 切到新的 model-driven arrangement 准备链：
+
+- Analyze 的正式素材单元现在优先叫 `span`
+- 项目内正式持久化路径已切到 `store/spans.json`
+- `span` 当前正式承载三块主信息：
+  - `materialPatterns[]`
+  - `grounding`
+- 项目级正式词集当前只保留一层，并挂到 `project-brief`：
+  - `材料模式短语`
+- Script prep 当前正式链路为：
+  - `Analyze -> Material Overview -> Script Brief -> Segment Plan -> Material Slots -> Bundle Lookup -> Chosen SpanIds -> Beat / Script`
+- `Bundle` 当前是 `materialPatterns` 驱动的粗索引入口，不承担叙事骨架身份
+- `Segment` 当前是 LLM-first 的项目级动态段落结果，不是固定 archetype 闭集
+- Timeline / script selection 当前开始优先传递 `spanId`；`sliceId` 只作为兼容字段继续存在一段时间
 
 ## 2. 正式主流程
 
@@ -299,6 +323,8 @@ flowchart TD
 - `Analyze` 与 `Style` 当前都直接在主路由展示监控内容：
   - `/analyze` 直接展示 Analyze monitor
   - `/style` 直接展示 Workspace 风格库与当前分类的 Style monitor
+- Console 刷新时，默认项目选择优先跟随最新的 active project-scoped job；只有当前没有活跃项目 job 时，才回落到本地记住的上次选择
+- 如果多个项目共用同一个 `project.name`，项目选择器必须直接显示 `projectId`，避免把 monitor / progress 请求落到错误项目
 - 旧 `/analyze/monitor` 与 `/style/monitor/:categoryId?` 只保留为兼容跳转
 - 旧静态进度页脚本只保留兼容 / 调试用途，新的正式监控能力应优先落在 `Supervisor + React console` 这条链路
 - React Analyze monitor 现在已经直接承认多阶段并发语义：
@@ -306,11 +332,12 @@ flowchart TD
   - `audio-analysis` 展示 local queue、ASR queue、活跃 worker 和排队数
   - `fine-scan` 继续展示 `已预抽 / 已识别 / ready queue / active workers`
   - hero 区不再把并发阶段误写成单一“当前素材”
-- `scripts/kairos-supervisor.* start` 当前只负责拉起 `Supervisor + React console`，不会自动恢复或重放旧的 analyze job；需要继续分析时，必须显式重新发起 `analyze` job
+- `scripts/kairos-supervisor.* start` 当前只负责拉起 `Supervisor + React console`，不会自动启动 ML，也不会自动恢复或重放旧 job；需要继续分析时，必须显式重新发起对应 job
 - `projects/<projectId>/.tmp/media-analyze/progress.json` 是 durable progress cache，不等于“当前一定有 live analyze job 在跑”；运维判断必须至少同时核对：
   - `Supervisor` job 里是否存在 `running analyze`
   - `progress.json` 的 `LastWriteTime / updatedAt` 是否仍在推进
   - GPU / ML 是否出现与当前阶段一致的活跃迹象
+- workspace `style-analysis` 也遵守同一条 live-job 规则；stale progress 只能显示 cached/idle，不能伪装成仍在运行
 
 ### 元信息保真原则
 
@@ -330,20 +357,20 @@ flowchart TD
 当前正式的脚本工作流应理解为：
 
 1. `project brief` 提供全片约束
-2. `material digest` 提供全量素材印象
+2. `material overview` 提供全量素材边界、强弱与缺口
 3. 用户在 `/script` 选择 workspace 风格分类，并自动保存
-4. Agent 生成初版 `script-brief`
+4. Agent 生成 `material-overview.md` 与初版 `script-brief`
 5. 用户回到 `/script` 审查并手动保存 brief
 6. `/script` 会通过显眼的 prompt / modal 提示下一步；用户点击 `准备给 Agent` 后，Console 只刷新确定性 prep 材料
-7. Agent 再继续推进 `approved segment plan`、段落级召回、beat 试写与选择
+7. Agent 再继续推进 `segment plan`、`material slots`、bundle lookup、`chosenSpanIds`、beat 试写与选择
 8. Agent 写入 `script/current.json`
 9. 再由 `selection` 与 `beat` 共同落成时间线和字幕
 
 因此，当前稳定结论包括：
 
 - `Pharos` 是正式脚本流程的主输入；没有 `Pharos` 时才回落到兼容路径
-- `approved segment plan` 仍是正式闸门，但不再由 Supervisor 隐式自动批准
-- Console 不再默认生成 `segment plan drafts` 并自动推进脚本写作
+- `segment plan` 是 Agent 阶段的正式闸门，但不再拆成 drafts / approved 两套持久化协议
+- Console 不再默认生成 `material digest`、`segment plan drafts`、`approved segment plan` 或 `segment candidates`
 - `script` prep 只有在 `script-brief.workflowState = ready_to_prepare` 后才允许运行；成功后推进到 `ready_for_agent`
 - 若用户修改过 brief，又想回到“Agent 重生初版 brief”，必须先在 `/script` 完成覆盖确认
 - `script-brief` 已经分层，而不是只有一份统管全文的脚本说明

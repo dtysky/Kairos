@@ -236,10 +236,13 @@ async function parseTripDirectory(
   }
 
   const record = await parseRecordFile(join(tripRoot, 'record.json'), tripId, warnings, errors);
-  const recordMap = new Map(
-    (record?.records ?? [])
-      .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object')
-      .map(item => [String(item.shot_id ?? ''), item]),
+  const recordEntries = Array.isArray(record?.records)
+    ? record.records.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object')
+    : [];
+  const recordMap = new Map<string, Record<string, unknown>>(
+    recordEntries
+      .map(item => [String(item.shot_id ?? ''), item] as const)
+      .filter(([shotId]) => Boolean(shotId)),
   );
   const dayList = Array.isArray(plan.days) ? plan.days : [];
   const planShots: IProjectPharosShot[] = [];
@@ -312,6 +315,7 @@ async function parseTripDirectory(
         actualGpsStart: readNestedCoordinate(recordEntry, 'actual_gps', 'start'),
         actualGpsEnd: readNestedCoordinate(recordEntry, 'actual_gps', 'end'),
         status,
+        isExtraShot: false,
         note: typeof recordEntry?.note === 'string' || recordEntry?.note === null
           ? (recordEntry.note as string | null)
           : undefined,
@@ -338,7 +342,9 @@ async function parseTripDirectory(
       description: typeof shot.description === 'string' ? shot.description : '',
       type: typeof shot.type === 'string' ? shot.type : 'unknown',
       device: typeof shot.device === 'string' ? shot.device : undefined,
+      roll: typeof shot.roll === 'string' ? shot.roll : undefined,
       devices: typeof shot.device === 'string' ? [shot.device] : [],
+      rolls: typeof shot.roll === 'string' ? [shot.roll] : [],
       gps: normalizeCoordinate(shot.gps),
       actualTimeStart: readNestedString(shot, 'time', 'start'),
       actualTimeEnd: readNestedString(shot, 'time', 'end'),

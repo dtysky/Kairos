@@ -106,7 +106,13 @@ describe('workspace config sync', () => {
     expect(brief.workflowState).toBe('choose_style');
   });
 
-  it('syncs script brief and style sources without losing catalog metadata', async () => {
+  it('requires style-sources.json as the only workspace style index', async () => {
+    const workspaceRoot = await createWorkspace();
+
+    await expect(loadStyleSourcesConfig(workspaceRoot)).rejects.toThrow('style-sources.json');
+  });
+
+  it('syncs script brief and style sources while removing stale catalog files', async () => {
     const workspaceRoot = await createWorkspace();
     const projectRoot = await initWorkspaceProject(workspaceRoot, 'project-c', 'Project C');
     const stylesRoot = join(workspaceRoot, 'config', 'styles');
@@ -118,7 +124,6 @@ describe('workspace config sync', () => {
         category: 'travel-doc',
         name: 'Travel Doc',
         profilePath: 'travel-doc.md',
-        sourceVideoCount: 2,
         createdAt: '2026-04-01T00:00:00.000Z',
         updatedAt: '2026-04-01T00:00:00.000Z',
       }],
@@ -165,12 +170,10 @@ describe('workspace config sync', () => {
       segments: [{
         segmentId: 'intro',
         title: '开场',
-        role: 'intro',
+        roleHint: 'intro',
         targetDurationMs: 45000,
         intent: '建立旅途基调',
-        preferredClipTypes: ['broll', 'timelapse'],
-        preferredPlaceHints: ['Auckland'],
-        notes: ['少解释，多留白'],
+        notes: ['少解释，多留白', 'Auckland'],
       }],
     });
 
@@ -178,7 +181,6 @@ describe('workspace config sync', () => {
     const styleSources = await loadStyleSourcesConfig(workspaceRoot);
     const scriptMarkdown = await readFile(join(projectRoot, 'script', 'script-brief.md'), 'utf-8');
     const styleMarkdown = await readFile(join(stylesRoot, 'travel-doc.md'), 'utf-8');
-    const catalog = JSON.parse(await readFile(join(stylesRoot, 'catalog.json'), 'utf-8'));
     await rm(join(projectRoot, 'script', 'script-brief.json'), { force: true });
     const parsedFromMarkdown = await loadScriptBriefConfig(projectRoot);
 
@@ -190,7 +192,8 @@ describe('workspace config sync', () => {
     expect(scriptMarkdown).toContain('workflowState=review_brief');
     expect(scriptMarkdown).toContain('### [intro] 开场');
     expect(styleSources.categories[0]?.sources).toHaveLength(1);
+    expect(styleSources.categories[0]?.profilePath).toBe('travel-doc.md');
     expect(styleMarkdown).toContain('guidancePrompt: 重点看 intro 的克制感与叙事节奏。');
-    expect(catalog.entries[0].name).toBe('严肃旅拍纪录片');
+    await expect(access(join(stylesRoot, 'catalog.json'))).rejects.toBeTruthy();
   });
 });

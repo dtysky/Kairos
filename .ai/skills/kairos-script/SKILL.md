@@ -1,7 +1,7 @@
 ---
 name: kairos-script
 description: >-
-  Phase 3: Load style profile, build narrative outline from slices, and write
+  Phase 3: Load style profile, build narrative outline from spans, and write
   narration for each segment. The agent writes narration directly using its own
   LLM capabilities. Use when writing script, narration, voiceover, or the user
   mentions script, story, or narrate.
@@ -12,6 +12,11 @@ description: >-
 加载风格档案 → `/script` 自动保存风格分类 → Agent 生成初版 `script-brief` → 用户审查并手动保存 brief → `/script` 做 deterministic prep → Agent 写正式脚本。
 
 **核心特点**：旁白由 agent 自身直接创作，不需要外部 LLM API。
+
+当前正式 script prep 链路已经切成：
+- `Analyze -> Material Overview`
+- `Material Overview + Script Brief + arrangementStructure + narrationConstraints -> Segment Plan`
+- `Segment Plan -> Material Slots -> Bundle Lookup -> Chosen SpanIds -> Beat / Script`
 
 ## 变更工作流规则
 
@@ -34,7 +39,7 @@ description: >-
 
 ## 前置条件
 
-- `store/slices.json` 存在且非空
+- `store/spans.json` 存在且非空
 - 风格档案可用（以下方式任选其一）：
   - 分类档案：`<workspaceRoot>/config/styles/{category}.md`（由 [kairos-style-analysis](../kairos-style-analysis/SKILL.md) 生成）
   - 手写样板：`test/style-profile.md`
@@ -56,17 +61,10 @@ loadStyleFromMarkdown(filePath: string, options?: IStyleLoadOptions): Promise<IS
 loadStyleByCategory(stylesDir: string, category: string): Promise<IStyleProfile | null>
 
 // 列出所有可用的风格分类
-listStyleCategories(stylesDir: string): Promise<IStyleCatalogEntry[]>
-
-// 构建叙事骨架：切片 → 段落结构
-buildOutline(slices: IKtepSlice[], targetDurationMs: number): IOutlineSegment[]
-// IOutlineSegment = { role, title, sliceIds, evidence, estimatedDurationMs }
+listStyleCategories(stylesDir: string): Promise<IStyleSourceCategoryConfig[]>
 
 // 生成风格提示词（供 agent 参考）
 buildStylePrompt(style: IStyleProfile): string
-
-// 生成骨架提示词（供 agent 参考）
-buildOutlinePrompt(outline: IOutlineSegment[]): string
 
 // 脚本编辑工具（纯函数，同步）
 reorderSegments(segments: IKtepScript[], order: string[]): IKtepScript[]
@@ -127,10 +125,10 @@ agent 在创作旁白时应将其作为额外的创作指导。
 正式顺序固定为：
 
 1. 用户在 `/script` 选择 `styleCategory`，选择后立即自动保存
-2. Agent 读取 style profile、slices、chronology、asset reports，生成初版 `script-brief`
+2. Agent 读取 style profile、spans、chronology、asset reports、Pharos context，生成 `script/material-overview.md` 与初版 `script-brief`
 3. 用户回到 `/script` 审查并手动保存 brief
 4. `/script` 会用更显眼的 workflow prompt / modal 提示用户点击 `准备给 Agent`
-5. Console 校验前置条件并刷新 `analysis/material-digest.json`
+5. Console 校验前置条件并刷新 `script/material-overview.facts.json` 与 `analysis/material-bundles.json`
 6. Agent 再继续写正式 `script/current.json`
 
 Console prep 不允许做的事：
@@ -142,7 +140,7 @@ Console prep 不允许做的事：
 Agent 起草初版 brief 时，应根据：
 - `analysis/asset-reports/*.json`
 - `media/chronology.json`
-- `store/slices.json`
+- `store/spans.json`
 - 风格档案
 
 Agent 起草 brief 时，不要只总结“语气是什么”，还应把当前选中的风格分类归纳成更可执行的拍法提示，例如：
@@ -172,36 +170,38 @@ script/script-brief.md
 - 覆盖确认必须在 UI 中通过 hana modal 显式完成；确认后，下一次 Agent 才允许覆盖
 
 **重要规则**：
-- `material digest` 可以由代码基于素材统计、chronology 和 asset reports 构建。
-- `segment plan drafts`、`approved segment plan`、`outline` 和 `script/current.json` 都应视为 Agent 阶段产物，不再由 Console prep 自动生成。
+- `material overview` 采用文档型输入，结构化事实底稿写入 `script/material-overview.facts.json`。
+- `segment plan`、`material slots`、`outline` 和 `script/current.json` 都应视为 Agent 阶段产物，不再由 Console prep 自动生成。
 - `script/script-brief.json.workflowState` 是脚本阶段的正式流程真值；Agent 应根据它判断当前该做“提示选风格 / 起草 brief / 等待用户审查 / 写正式脚本”中的哪一步。
 
-### Step 3: 构建叙事骨架
+### Step 3: Agent 生成 Segment Plan 与 Material Slots
 
 ```typescript
-const slices = await readJson('store/slices.json', z.array(IKtepSlice));
-const outline = buildOutline(slices, 5 * 60 * 1000); // 目标 5 分钟
+const spans = await readJson('store/spans.json', z.array(IKtepSlice));
 ```
 
-当前需要注意的 slice 语义：
+当前需要注意的 span 语义：
 
-- `slice.sourceInMs / sourceOutMs` 仍是兼容性的 focus/evidence window
-- `slice.editSourceInMs / editSourceOutMs` 是 Analyze 已经扩好的 edit-friendly bounds
-- `buildOutline()` 现在默认优先消费 `editSourceInMs / editSourceOutMs`
-- 只有旧 slice 没有 edit bounds 时，outline 才会回落到 legacy center-trim
+- `span.sourceInMs / sourceOutMs` 是 focus/evidence window
+- `span.editSourceInMs / editSourceOutMs` 是 Analyze 已经扩好的 edit-friendly bounds
+- `span.materialPatterns[]` 是材料模式短语
+- `material-bundles` 只用作 `materialPatterns` 驱动的粗索引层
+- `segment plan` 只保留段落本体：`id`、`title`、`intent`、`targetDurationMs`、可选 `roleHint` / `notes`
+- `material slots` 只保留运行时薄检索信息：`id`、`query`、`requirement`、`targetBundles`、`chosenSpanIds`
 
-骨架结构：
-- `intro`（约 10%）→ 开篇
-- `scene` / `highlight`（约 80%）→ 主体段落
-- `outro`（约 5%）→ 结尾
-
-构建 outline 和后续 recall 时，优先用风格档案里的结构化提示，而不是只凭通用直觉：
+生成 `segment plan` 时，优先用风格档案里的结构化提示，而不是只凭通用直觉：
 
 - `节奏阶段一 / 二 / 三 / 四...` 决定段落和 beat 的推进方式
-- `aerial角色 / timelapse角色 / drive角色 / talking-head角色 / broll角色 / nat sound角色` 决定不同素材类型在该段里是否应优先召回
+- `chapterPrograms[]` 里的 `materialRoles`、`promotionSignals`、`transitionBias` 决定段落如何长出来
 - `高频运镜 / 低频运镜` 决定镜头语言偏好
 - `开场建场镜头语法 / 地理重置镜头语法 / 情绪释放镜头语法` 决定这些功能位分别该用什么画面组织
 - `素材禁区 / 镜头禁区 / antiPatterns` 决定哪些候选就算“好看”也不该进当前风格
+
+生成 `material slots` 时，遵循：
+
+- `segment intent -> slot query -> targetBundles -> bundle lookup -> chosenSpanIds`
+- bundle 命中后，再按 time / GPS / chronology / Pharos day-shot 线索做二次过滤
+- `chosenSpanIds` 是 retrieval 的正式结果回写位
 
 ### Step 4: Agent 直接写旁白
 

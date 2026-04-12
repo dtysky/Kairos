@@ -4,16 +4,19 @@ import {
   importProjectGpxTracks,
   ingestWorkspaceProjectMedia,
   initWorkspaceProject,
+  loadRuntimeConfig,
   loadSlices,
   loadProjectStyleByCategory,
+  prepareWorkspaceStyleAnalysisForAgent,
   prepareProjectScriptForAgent,
   refreshProjectDerivedTrackCache,
   refreshProjectGpsCache,
   resolveWorkspaceProjectRoot,
 } from '../index.js';
 import {
+  getMaterialOverviewPath,
+  loadOptionalMarkdown,
   loadScriptBriefConfig,
-  loadStyleSourcesConfig,
   writeJson,
 } from '../store/index.js';
 import {
@@ -22,6 +25,7 @@ import {
   getSupervisorJobRoot,
   type TSupervisorJobStatus,
 } from './state.js';
+import { ensureMlServiceRunning, stopMlService } from './runtime.js';
 
 class BlockedJobError extends Error {
   constructor(public blockers: string[]) {
@@ -57,6 +61,10 @@ async function main(): Promise<void> {
   });
 
   try {
+    if (await shouldEnsureManagedMl(workspaceRoot, record.jobType, record.projectId)) {
+      await ensureMlServiceRunning(workspaceRoot);
+    }
+
     const execution = await runJob(workspaceRoot, record.jobType, record.projectId, record.args);
     const resultPath = record.resultPath ?? join(getSupervisorJobRoot(workspaceRoot, record.jobId), 'result.json');
     await writeJson(resultPath, execution.result ?? { ok: true });
@@ -92,6 +100,8 @@ async function main(): Promise<void> {
       lastError: error instanceof Error ? error.stack ?? error.message : String(error),
     });
     throw error;
+  } finally {
+    await stopMlService(workspaceRoot).catch(() => undefined);
   }
 }
 
@@ -163,7 +173,7 @@ async function runJob(
       const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
       const slices = await loadSlices(projectRoot);
       if (slices.length === 0) {
-        throw new BlockedJobError(['script prep requires non-empty store/slices.json']);
+        throw new BlockedJobError(['script prep requires non-empty store/spans.json']);
       }
       const scriptConfig = await loadScriptBriefConfig(projectRoot);
       const styleCategory = toStringValue(args.styleCategory) || scriptConfig.styleCategory;
@@ -175,8 +185,13 @@ async function runJob(
           `script prep requires script-brief.workflowState=ready_to_prepare (current: ${scriptConfig.workflowState})`,
         ]);
       }
-      if (!await loadProjectStyleByCategory(workspaceRoot, styleCategory)) {
-        throw new BlockedJobError([`style profile not found for category "${styleCategory}"`]);
+      try {
+        await loadProjectStyleByCategory(workspaceRoot, styleCategory);
+      } catch (error) {
+        throw new BlockedJobError([error instanceof Error ? error.message : String(error)]);
+      }
+      if (!(await loadOptionalMarkdown(getMaterialOverviewPath(projectRoot)))?.trim()) {
+        throw new BlockedJobError(['script prep requires existing script/material-overview.md']);
       }
       return {
         finalStatus: 'awaiting_agent',
@@ -188,14 +203,14 @@ async function runJob(
       };
     }
     case 'style-analysis': {
-      const config = await loadStyleSourcesConfig(workspaceRoot);
-      if (config.categories.length === 0) {
-        throw new BlockedJobError(['style-analysis requires style-sources configuration']);
-      }
-      throw new BlockedJobError([
-        'style-analysis is declared as an agent-backed job',
-        'the Supervisor now snapshots and manages its config, but the full background reference-analysis executor is not yet wired into this runner',
-      ]);
+      const result = await prepareWorkspaceStyleAnalysisForAgent({
+        workspaceRoot,
+        categoryId: toStringValue(args.categoryId),
+      });
+      return {
+        finalStatus: result.status,
+        result,
+      };
     }
     case 'timeline':
     case 'export-jianying':
@@ -203,6 +218,32 @@ async function runJob(
       throw new BlockedJobError([`${jobType} runner is not wired yet in this Supervisor iteration.`]);
     default:
       throw new BlockedJobError([`Unsupported job type: ${jobType}`]);
+  }
+}
+
+async function shouldEnsureManagedMl(
+  workspaceRoot: string,
+  jobType: string,
+  projectId?: string,
+): Promise<boolean> {
+  if (!['analyze', 'style-analysis'].includes(jobType)) {
+    return false;
+  }
+
+  const runtimeRoot = projectId
+    ? resolveWorkspaceProjectRoot(workspaceRoot, projectId)
+    : workspaceRoot;
+  const runtimeConfig = await loadRuntimeConfig(runtimeRoot);
+  return isLocalMlUrl(runtimeConfig.mlServerUrl);
+}
+
+function isLocalMlUrl(value?: string): boolean {
+  if (!value?.trim()) return true;
+  try {
+    const parsed = new URL(value);
+    return ['127.0.0.1', 'localhost', '::1'].includes(parsed.hostname);
+  } catch {
+    return true;
   }
 }
 

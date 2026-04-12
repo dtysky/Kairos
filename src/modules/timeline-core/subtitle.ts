@@ -86,19 +86,18 @@ function planNarrationSubtitles(
       const text = sanitizeSubtitleCueText(cue.text);
       if (!text) continue;
 
-      const startMs = locateTimelineOffset(windows, cursor);
-      cursor = Math.min(cursor + cue.durationMs, totalDuration);
-      const endMs = locateTimelineOffset(windows, cursor);
-
-      subtitles.push({
+      const plannedDurationMs = Math.max(1, Math.min(cue.durationMs, totalDuration - cursor));
+      const cueSubtitles = splitNarrationCueAcrossWindows(text, plannedDurationMs, cursor, windows, config);
+      subtitles.push(...cueSubtitles.map(part => ({
         id: randomUUID(),
-        startMs,
-        endMs: Math.max(endMs, startMs + 1),
-        text,
+        startMs: part.startMs,
+        endMs: Math.max(part.endMs, part.startMs + 1),
+        text: part.text,
         language: config.language,
         linkedScriptSegmentId: segment.id,
         linkedScriptBeatId: beat.id,
-      });
+      })));
+      cursor = Math.min(cursor + plannedDurationMs, totalDuration);
     }
   }
 
@@ -188,6 +187,7 @@ function resolveSubtitleBeats(
     id: `legacy-beat-${segment.id}-${index + 1}`,
     text: beatTexts[index] ?? '',
     selections: [],
+    linkedSpanIds: clip.spanId ? [clip.spanId] : [],
     linkedSliceIds: clip.sliceId ? [clip.sliceId] : [],
   }));
 }
@@ -211,6 +211,144 @@ function locateTimelineOffset(
     cursor += dur;
   }
   return windows[windows.length - 1]?.endMs ?? 0;
+}
+
+function locateWindowOffset(
+  windows: Array<{ startMs: number; endMs: number }>,
+  offsetMs: number,
+): { window: { startMs: number; endMs: number }; timelineMs: number } | null {
+  let cursor = 0;
+
+  for (const window of windows) {
+    const durationMs = window.endMs - window.startMs;
+    if (durationMs <= 0) continue;
+
+    if (offsetMs < cursor + durationMs) {
+      return {
+        window,
+        timelineMs: window.startMs + (offsetMs - cursor),
+      };
+    }
+
+    cursor += durationMs;
+  }
+
+  const lastWindow = windows[windows.length - 1];
+  if (!lastWindow) return null;
+  return {
+    window: lastWindow,
+    timelineMs: lastWindow.endMs,
+  };
+}
+
+function splitNarrationCueAcrossWindows(
+  text: string,
+  durationMs: number,
+  startOffsetMs: number,
+  windows: Array<{ startMs: number; endMs: number }>,
+  config: Pick<ISubtitleConfig, 'maxCharsPerCue'>,
+): Array<{ text: string; startMs: number; endMs: number }> {
+  const subtitles: Array<{ text: string; startMs: number; endMs: number }> = [];
+  let remainingText = sanitizeSubtitleCueText(text);
+  let remainingDurationMs = Math.max(1, durationMs);
+  let cursor = startOffsetMs;
+
+  while (remainingDurationMs > 0) {
+    const position = locateWindowOffset(windows, cursor);
+    if (!position) break;
+
+    const windowRemainingMs = Math.max(0, position.window.endMs - position.timelineMs);
+    if (windowRemainingMs <= 0) {
+      cursor += 1;
+      continue;
+    }
+
+    const segmentDurationMs = Math.min(remainingDurationMs, windowRemainingMs);
+    let segmentText = remainingText;
+
+    if (segmentDurationMs < remainingDurationMs) {
+      const [head, tail] = splitCueTextForWindowBoundary(
+        remainingText,
+        segmentDurationMs,
+        remainingDurationMs,
+        config.maxCharsPerCue,
+      );
+      segmentText = head;
+      remainingText = tail;
+    } else {
+      remainingText = '';
+    }
+
+    const normalizedSegmentText = sanitizeSubtitleCueText(segmentText);
+    if (normalizedSegmentText) {
+      subtitles.push({
+        text: normalizedSegmentText,
+        startMs: position.timelineMs,
+        endMs: position.timelineMs + segmentDurationMs,
+      });
+    }
+
+    cursor += segmentDurationMs;
+    remainingDurationMs -= segmentDurationMs;
+  }
+
+  return subtitles;
+}
+
+function splitCueTextForWindowBoundary(
+  text: string,
+  leadingDurationMs: number,
+  totalDurationMs: number,
+  maxCharsPerCue: number,
+): [string, string] {
+  const normalized = sanitizeSubtitleCueText(text);
+  const chars = Array.from(normalized);
+  if (chars.length <= 1) return [normalized, ''];
+
+  const ratio = Math.max(0.05, Math.min(0.95, leadingDurationMs / Math.max(totalDurationMs, 1)));
+  const idealLeadingChars = Math.max(1, Math.min(chars.length - 1, Math.round(chars.length * ratio)));
+
+  const punctuationSplit = splitCueChunks(normalized, Math.max(1, Math.min(maxCharsPerCue, idealLeadingChars)));
+  if (punctuationSplit.length > 1) {
+    const head = sanitizeSubtitleCueText(punctuationSplit[0] ?? '');
+    const tail = sanitizeSubtitleCueText(punctuationSplit.slice(1).join(''));
+    if (head && tail) return [head, tail];
+  }
+
+  const splitIndex = resolveCueCharacterSplitIndex(chars, idealLeadingChars);
+  return [
+    chars.slice(0, splitIndex).join('').trim(),
+    chars.slice(splitIndex).join('').trim(),
+  ];
+}
+
+function resolveCueCharacterSplitIndex(chars: string[], idealIndex: number): number {
+  const minLeft = chars.length >= 4 ? 2 : 1;
+  const minRight = chars.length >= 4 ? 2 : 1;
+  const lowerBound = minLeft;
+  const upperBound = chars.length - minRight;
+  const clampedIdeal = Math.max(lowerBound, Math.min(upperBound, idealIndex));
+
+  for (let radius = 0; radius <= chars.length; radius += 1) {
+    const candidates = radius === 0
+      ? [clampedIdeal]
+      : [clampedIdeal - radius, clampedIdeal + radius];
+
+    for (const candidate of candidates) {
+      if (candidate < lowerBound || candidate > upperBound) continue;
+      if (isPreferredCueSplitBoundary(chars, candidate)) {
+        return candidate;
+      }
+    }
+  }
+
+  return clampedIdeal;
+}
+
+function isPreferredCueSplitBoundary(chars: string[], index: number): boolean {
+  const previous = chars[index - 1] ?? '';
+  const next = chars[index] ?? '';
+  return /[\s，,。！？!?；;：:、]/u.test(previous) || /[\s，,。！？!?；;：:、]/u.test(next);
 }
 
 function splitNarrationIntoBeats(text: string, beatCount: number): string[] {

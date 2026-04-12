@@ -1,3 +1,5 @@
+import nodeFetch from 'node-fetch';
+
 export interface ILlmMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
@@ -12,6 +14,13 @@ export interface ILlmOptions {
 export interface ILlmClient {
   chat(messages: ILlmMessage[], opts?: ILlmOptions): Promise<string>;
 }
+
+const fetchCompat: typeof fetch = typeof globalThis.fetch === 'function'
+  ? globalThis.fetch.bind(globalThis)
+  : ((
+    input: Parameters<typeof nodeFetch>[0],
+    init?: Parameters<typeof nodeFetch>[1],
+  ) => nodeFetch(input, init)) as typeof fetch;
 
 /**
  * OpenAI-compatible chat client.
@@ -33,7 +42,7 @@ export class OpenAIClient implements ILlmClient {
     if (opts.maxTokens != null) body.max_tokens = opts.maxTokens;
     if (opts.jsonMode) body.response_format = { type: 'json_object' };
 
-    const res = await fetch(`${this.baseUrl}/chat/completions`, {
+    const res = await fetchCompat(`${this.baseUrl}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

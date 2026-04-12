@@ -2,8 +2,14 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { mkdtemp, mkdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { buildAnalyzeMonitorModel } from '../../src/supervisor/monitor-model.js';
-import { initWorkspaceProject, writeJson } from '../../src/store/index.js';
+import { buildAnalyzeMonitorModel, buildStyleMonitorModel } from '../../src/supervisor/monitor-model.js';
+import { writeJobRecord } from '../../src/supervisor/state.js';
+import {
+  getWorkspaceStyleAnalysisProgressPath,
+  initWorkspaceProject,
+  saveStyleSourcesConfig,
+  writeJson,
+} from '../../src/store/index.js';
 
 const workspaces: string[] = [];
 
@@ -85,5 +91,93 @@ describe('buildAnalyzeMonitorModel', () => {
       activePrefetch: 1,
       activeRecognition: 1,
     });
+  });
+});
+
+describe('buildStyleMonitorModel', () => {
+  it('marks stale progress as cached when there is no live style-analysis job', async () => {
+    const workspaceRoot = await createWorkspace();
+    await saveStyleSourcesConfig(workspaceRoot, {
+      defaultCategory: 'road-vlog',
+      categories: [{
+        categoryId: 'road-vlog',
+        displayName: 'Road Vlog',
+        overwriteExisting: false,
+        profilePath: 'road-vlog.md',
+        sources: [],
+      }],
+    });
+
+    await writeJson(getWorkspaceStyleAnalysisProgressPath(workspaceRoot, 'road-vlog'), {
+      status: 'running',
+      stage: 'transcribe',
+      updatedAt: '2026-04-10T12:00:00.000Z',
+      current: 1,
+      total: 2,
+      category: {
+        slug: 'road-vlog',
+        name: 'Road Vlog',
+      },
+      detail: {
+        totalVideos: 2,
+        message: '旧进度缓存仍然存在。',
+      },
+    });
+
+    const model = await buildStyleMonitorModel(workspaceRoot, 'road-vlog');
+
+    expect(model.progress.status).toBe('cached');
+    expect(model.progress.stepKey).toBe('transcribe');
+    expect(model.outputs.map(item => item.label)).toContain('style-sources.json');
+    expect(model.outputs.map(item => item.label)).not.toContain('catalog.json');
+  });
+
+  it('defaults /style monitor to the category of the latest live style-analysis job', async () => {
+    const workspaceRoot = await createWorkspace();
+    await saveStyleSourcesConfig(workspaceRoot, {
+      defaultCategory: 'city-walk',
+      categories: [
+        {
+          categoryId: 'city-walk',
+          displayName: 'City Walk',
+          overwriteExisting: false,
+          profilePath: 'city-walk.md',
+          sources: [],
+        },
+        {
+          categoryId: 'road-vlog',
+          displayName: 'Road Vlog',
+          overwriteExisting: false,
+          profilePath: 'road-vlog.md',
+          sources: [],
+        },
+      ],
+    });
+
+    await writeJobRecord(workspaceRoot, {
+      jobId: 'style-live-road',
+      jobType: 'style-analysis',
+      executionMode: 'deterministic',
+      args: { categoryId: 'road-vlog' },
+      status: 'running',
+      updatedAt: '2026-04-10T12:05:00.000Z',
+      blockers: [],
+    });
+
+    const model = await buildStyleMonitorModel(workspaceRoot);
+
+    expect(model.chips.map(chip => chip.label)).toContain('Road Vlog');
+  });
+
+  it('fails when style-sources.json has no resolvable monitor category', async () => {
+    const workspaceRoot = await createWorkspace();
+    await writeJson(join(workspaceRoot, 'config', 'style-sources.json'), {
+      defaultCategory: 'missing-category',
+      categories: [],
+    });
+
+    await expect(buildStyleMonitorModel(workspaceRoot)).rejects.toThrow(
+      'style-sources.json defaultCategory "missing-category" is not defined in config/style-sources.json',
+    );
   });
 });

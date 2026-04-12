@@ -71,6 +71,15 @@ export type ETargetBudget = z.infer<typeof ETargetBudget>;
 export const EFineScanMode = z.enum(['skip', 'windowed', 'full']);
 export type EFineScanMode = z.infer<typeof EFineScanMode>;
 
+export const EKeepDecision = z.enum(['keep', 'drop']);
+export type EKeepDecision = z.infer<typeof EKeepDecision>;
+
+export const EMaterializationPath = z.enum(['fine-scan', 'direct']);
+export type EMaterializationPath = z.infer<typeof EMaterializationPath>;
+
+export const EFinalizeFineScanMode = z.enum(['windowed', 'full']);
+export type EFinalizeFineScanMode = z.infer<typeof EFinalizeFineScanMode>;
+
 // ─── Supporting Types ────────────────────────────────────────
 
 export const ICaptureTime = z.object({
@@ -218,6 +227,54 @@ export const IInferredGps = z.object({
 });
 export type IInferredGps = z.infer<typeof IInferredGps>;
 
+export const ESemanticEvidenceTier = z.enum(['truth', 'strong-inference', 'weak-inference']);
+export type ESemanticEvidenceTier = z.infer<typeof ESemanticEvidenceTier>;
+
+export const ISemanticEvidence = z.object({
+  tier: ESemanticEvidenceTier,
+  confidence: z.number().min(0).max(1),
+  sourceKinds: z.array(z.string()).default([]),
+  reasons: z.array(z.string()).default([]),
+});
+export type ISemanticEvidence = z.infer<typeof ISemanticEvidence>;
+
+export const ISemanticTagSet = z.object({
+  core: z.array(z.string()).default([]),
+  extra: z.array(z.string()).default([]),
+  evidence: z.array(ISemanticEvidence).default([]),
+});
+export type ISemanticTagSet = z.infer<typeof ISemanticTagSet>;
+
+export const EGroundingSpeechMode = z.enum(['none', 'available', 'preferred']);
+export type EGroundingSpeechMode = z.infer<typeof EGroundingSpeechMode>;
+
+export const EGroundingSpeechValue = z.enum(['none', 'informative', 'emotional', 'mixed']);
+export type EGroundingSpeechValue = z.infer<typeof EGroundingSpeechValue>;
+
+export const ISpatialEvidence = z.object({
+  tier: ESemanticEvidenceTier,
+  confidence: z.number().min(0).max(1),
+  sourceKinds: z.array(z.string()).default([]),
+  reasons: z.array(z.string()).default([]),
+  lat: z.number().min(-90).max(90).optional(),
+  lng: z.number().min(-180).max(180).optional(),
+  locationText: z.string().optional(),
+  routeRole: z.string().optional(),
+  timeReference: z.string().optional(),
+  pharosRef: IPharosRef.optional(),
+});
+export type ISpatialEvidence = z.infer<typeof ISpatialEvidence>;
+
+export const ISpanGrounding = z.object({
+  speechMode: EGroundingSpeechMode,
+  speechValue: EGroundingSpeechValue,
+  spatialEvidence: z.array(ISpatialEvidence).default([]),
+  pharosRefs: z.array(IPharosRef).default([]),
+});
+export type ISpanGrounding = z.infer<typeof ISpanGrounding>;
+export const ISliceGrounding = ISpanGrounding;
+export type ISliceGrounding = ISpanGrounding;
+
 export const IKtepAsset = z.object({
   id: z.string(),
   kind: EAssetKind,
@@ -239,7 +296,15 @@ export const IKtepAsset = z.object({
 });
 export type IKtepAsset = z.infer<typeof IKtepAsset>;
 
-export const IKtepSlice = z.object({
+export const IMaterialPattern = z.object({
+  phrase: z.string(),
+  confidence: z.number().min(0).max(1),
+  excerpt: z.string().optional(),
+  evidenceRefs: z.array(z.string()).default([]),
+});
+export type IMaterialPattern = z.infer<typeof IMaterialPattern>;
+
+export const IKtepSpan = z.object({
   id: z.string(),
   assetId: z.string(),
   type: ESliceType,
@@ -248,22 +313,47 @@ export const IKtepSlice = z.object({
   sourceOutMs: z.number().optional(),
   editSourceInMs: z.number().optional(),
   editSourceOutMs: z.number().optional(),
-  summary: z.string().optional(),
   transcript: z.string().optional(),
   transcriptSegments: z.array(ITranscriptSegment).optional(),
-  labels: z.array(z.string()),
-  placeHints: z.array(z.string()),
+  materialPatterns: z.array(IMaterialPattern).default([]),
+  grounding: ISpanGrounding.default({
+    speechMode: 'none',
+    speechValue: 'none',
+    spatialEvidence: [],
+    pharosRefs: [],
+  }),
+  narrativeFunctions: ISemanticTagSet.default({
+    core: [],
+    extra: [],
+    evidence: [],
+  }),
+  shotGrammar: ISemanticTagSet.default({
+    core: [],
+    extra: [],
+    evidence: [],
+  }),
+  viewpointRoles: ISemanticTagSet.default({
+    core: [],
+    extra: [],
+    evidence: [],
+  }),
+  subjectStates: ISemanticTagSet.default({
+    core: [],
+    extra: [],
+    evidence: [],
+  }),
   evidence: z.array(IKtepEvidence).optional(),
   pharosRefs: z.array(IPharosRef).optional(),
   speechCoverage: z.number().min(0).max(1).optional(),
-  confidence: z.number().min(0).max(1).optional(),
   speedCandidate: z.object({
     suggestedSpeeds: z.array(z.number().positive()).min(1),
     rationale: z.string(),
     confidence: z.number().min(0).max(1).optional(),
   }).optional(),
 });
-export type IKtepSlice = z.infer<typeof IKtepSlice>;
+export type IKtepSpan = z.infer<typeof IKtepSpan>;
+export const IKtepSlice = IKtepSpan;
+export type IKtepSlice = IKtepSpan;
 
 export const IKtepScriptAction = z.object({
   speed: z.number().positive().optional(),
@@ -276,6 +366,7 @@ export type IKtepScriptAction = z.infer<typeof IKtepScriptAction>;
 
 export const IKtepScriptSelection = z.object({
   assetId: z.string(),
+  spanId: z.string().optional(),
   sliceId: z.string().optional(),
   sourceInMs: z.number().optional(),
   sourceOutMs: z.number().optional(),
@@ -298,7 +389,8 @@ export const IKtepScriptBeat = z.object({
   targetDurationMs: z.number().optional(),
   actions: IKtepScriptAction.optional(),
   selections: z.array(IKtepScriptSelection),
-  linkedSliceIds: z.array(z.string()),
+  linkedSpanIds: z.array(z.string()).default([]),
+  linkedSliceIds: z.array(z.string()).default([]),
   pharosRefs: z.array(IPharosRef).optional(),
   notes: z.string().optional(),
 });
@@ -312,7 +404,8 @@ export const IKtepScript = z.object({
   targetDurationMs: z.number().optional(),
   actions: IKtepScriptAction.optional(),
   selections: z.array(IKtepScriptSelection).optional(),
-  linkedSliceIds: z.array(z.string()),
+  linkedSpanIds: z.array(z.string()).default([]),
+  linkedSliceIds: z.array(z.string()).default([]),
   pharosRefs: z.array(IPharosRef).optional(),
   beats: z.array(IKtepScriptBeat).default([]),
   notes: z.string().optional(),
@@ -356,6 +449,7 @@ export const IKtepClip = z.object({
   id: z.string(),
   trackId: z.string(),
   assetId: z.string(),
+  spanId: z.string().optional(),
   sliceId: z.string().optional(),
   sourceInMs: z.number().optional(),
   sourceOutMs: z.number().optional(),
@@ -412,7 +506,8 @@ export const IKtepDoc = z.object({
   version: z.literal(CVERSION),
   project: IKtepProject,
   assets: z.array(IKtepAsset),
-  slices: z.array(IKtepSlice),
+  spans: z.array(IKtepSpan),
+  slices: z.array(IKtepSpan).optional(),
   script: z.array(IKtepScript).optional(),
   timeline: IKtepTimeline,
   subtitles: z.array(IKtepSubtitle).optional(),
@@ -447,6 +542,35 @@ export const IStyleSection = z.object({
 });
 export type IStyleSection = z.infer<typeof IStyleSection>;
 
+export const IStyleChapterProgram = z.object({
+  type: z.string(),
+  intent: z.string(),
+  materialRoles: z.array(z.string()).default([]),
+  promotionSignals: z.array(z.string()).default([]),
+  transitionBias: z.string(),
+  localNarrationNote: z.string().optional(),
+});
+export type IStyleChapterProgram = z.infer<typeof IStyleChapterProgram>;
+
+export const IStyleArrangementStructure = z.object({
+  primaryAxis: z.string().optional(),
+  secondaryAxes: z.array(z.string()).default([]),
+  chapterPrograms: z.array(IStyleChapterProgram).default([]),
+  chapterSplitPrinciples: z.array(z.string()).default([]),
+  chapterTransitionNotes: z.array(z.string()).default([]),
+});
+export type IStyleArrangementStructure = z.infer<typeof IStyleArrangementStructure>;
+
+export const IStyleNarrationConstraints = z.object({
+  perspective: z.string().optional(),
+  tone: z.string().optional(),
+  informationDensity: z.string().optional(),
+  explanationBias: z.string().optional(),
+  forbiddenPatterns: z.array(z.string()).default([]),
+  notes: z.array(z.string()).default([]),
+});
+export type IStyleNarrationConstraints = z.infer<typeof IStyleNarrationConstraints>;
+
 export const IStyleProfile = z.object({
   id: z.string(),
   name: z.string(),
@@ -459,28 +583,12 @@ export const IStyleProfile = z.object({
   sections: z.array(IStyleSection).optional(),
   antiPatterns: z.array(z.string()).optional(),
   parameters: z.record(z.string()).optional(),
+  arrangementStructure: IStyleArrangementStructure,
+  narrationConstraints: IStyleNarrationConstraints,
   createdAt: z.string(),
   updatedAt: z.string(),
 });
 export type IStyleProfile = z.infer<typeof IStyleProfile>;
-
-export const IStyleCatalogEntry = z.object({
-  id: z.string(),
-  category: z.string(),
-  name: z.string(),
-  description: z.string().optional(),
-  profilePath: z.string(),
-  sourceVideoCount: z.number(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-});
-export type IStyleCatalogEntry = z.infer<typeof IStyleCatalogEntry>;
-
-export const IStyleCatalog = z.object({
-  defaultCategory: z.string().optional(),
-  entries: z.array(IStyleCatalogEntry),
-});
-export type IStyleCatalog = z.infer<typeof IStyleCatalog>;
 
 // ─── Media Analysis ─────────────────────────────────────────
 
@@ -553,6 +661,9 @@ export const IAssetCoarseReport = z.object({
   ingestRootId: z.string().optional(),
   durationMs: z.number().optional(),
   clipTypeGuess: EClipType,
+  keepDecision: EKeepDecision.default('keep'),
+  materializationPath: EMaterializationPath.optional(),
+  fineScanMode: EFinalizeFineScanMode.optional(),
   densityScore: z.number().min(0).max(1),
   gpsSummary: z.string().optional(),
   inferredGps: IInferredGps.optional(),
@@ -571,8 +682,6 @@ export const IAssetCoarseReport = z.object({
   rootNotes: z.array(z.string()),
   sampleFrames: z.array(ICoarseSample),
   interestingWindows: z.array(IInterestingWindow),
-  shouldFineScan: z.boolean(),
-  fineScanMode: EFineScanMode,
   fineScanReasons: z.array(z.string()),
   fineScanCompletedAt: z.string().optional(),
   fineScanSliceCount: z.number().int().min(0).optional(),
@@ -611,26 +720,20 @@ export const IMediaChronology = z.object({
 });
 export type IMediaChronology = z.infer<typeof IMediaChronology>;
 
-// ─── Script Planning ────────────────────────────────────────
+// ─── Model-Driven Script Prep ──────────────────────────────
 
-export const ESegmentPlanStrategy = z.enum([
-  'chronology-first',
-  'location-first',
-  'emotion-first',
-]);
-export type ESegmentPlanStrategy = z.infer<typeof ESegmentPlanStrategy>;
-
-export const IProjectMaterialDigestRoot = z.object({
+export const IProjectMaterialOverviewRoot = z.object({
   ingestRootId: z.string().optional(),
   assetCount: z.number().int().nonnegative(),
   durationMs: z.number().nonnegative().optional(),
   topLabels: z.array(z.string()),
   topPlaceHints: z.array(z.string()),
+  topMaterialPatterns: z.array(z.string()).default([]),
   summary: z.string().optional(),
 });
-export type IProjectMaterialDigestRoot = z.infer<typeof IProjectMaterialDigestRoot>;
+export type IProjectMaterialOverviewRoot = z.infer<typeof IProjectMaterialOverviewRoot>;
 
-export const IProjectMaterialDigestPharosTrip = z.object({
+export const IProjectMaterialOverviewPharosTrip = z.object({
   tripId: z.string(),
   title: z.string(),
   tripKind: z.enum(['planned', 'freeform']).optional(),
@@ -643,9 +746,9 @@ export const IProjectMaterialDigestPharosTrip = z.object({
   abandonedCount: z.number().int().nonnegative().default(0),
   matchedAssetCount: z.number().int().nonnegative().default(0),
 });
-export type IProjectMaterialDigestPharosTrip = z.infer<typeof IProjectMaterialDigestPharosTrip>;
+export type IProjectMaterialOverviewPharosTrip = z.infer<typeof IProjectMaterialOverviewPharosTrip>;
 
-export const IProjectMaterialDigestPharos = z.object({
+export const IProjectMaterialOverviewPharos = z.object({
   status: EPharosAssetState,
   fallbackMode: z.boolean().default(true),
   discoveredTripCount: z.number().int().nonnegative().default(0),
@@ -656,11 +759,11 @@ export const IProjectMaterialDigestPharos = z.object({
   abandonedShotCount: z.number().int().nonnegative().default(0),
   warnings: z.array(z.string()).default([]),
   errors: z.array(z.string()).default([]),
-  trips: z.array(IProjectMaterialDigestPharosTrip).default([]),
+  trips: z.array(IProjectMaterialOverviewPharosTrip).default([]),
 });
-export type IProjectMaterialDigestPharos = z.infer<typeof IProjectMaterialDigestPharos>;
+export type IProjectMaterialOverviewPharos = z.infer<typeof IProjectMaterialOverviewPharos>;
 
-export const IProjectMaterialDigest = z.object({
+export const IProjectMaterialOverviewFacts = z.object({
   id: z.string(),
   projectId: z.string(),
   generatedAt: z.string(),
@@ -669,88 +772,75 @@ export const IProjectMaterialDigest = z.object({
   totalDurationMs: z.number().nonnegative().optional(),
   capturedStartAt: z.string().optional(),
   capturedEndAt: z.string().optional(),
-  roots: z.array(IProjectMaterialDigestRoot),
+  roots: z.array(IProjectMaterialOverviewRoot),
   topLabels: z.array(z.string()),
   topPlaceHints: z.array(z.string()),
+  topMaterialPatterns: z.array(z.string()).default([]),
   clipTypeDistribution: z.record(z.number().int().nonnegative()),
   mainThemes: z.array(z.string()),
-  recommendedNarrativeAxes: z.array(z.string()),
-  pharos: IProjectMaterialDigestPharos.optional(),
+  inferredGaps: z.array(z.string()).default([]),
+  pharos: IProjectMaterialOverviewPharos.optional(),
   summary: z.string(),
 });
-export type IProjectMaterialDigest = z.infer<typeof IProjectMaterialDigest>;
+export type IProjectMaterialOverviewFacts = z.infer<typeof IProjectMaterialOverviewFacts>;
+
+export const IMaterialBundle = z.object({
+  id: z.string(),
+  key: z.string(),
+  label: z.string(),
+  memberSpanIds: z.array(z.string()).default([]),
+  representativeSpanIds: z.array(z.string()).default([]),
+  placeHints: z.array(z.string()).default([]),
+  pharosTripIds: z.array(z.string()).default([]),
+  notes: z.array(z.string()).default([]),
+});
+export type IMaterialBundle = z.infer<typeof IMaterialBundle>;
 
 export const ISegmentPlanSegment = z.object({
   id: z.string(),
-  role: EScriptRole,
   title: z.string(),
-  targetDurationMs: z.number().nonnegative().optional(),
   intent: z.string(),
-  mood: z.string().optional(),
-  preferredClipTypes: z.array(EClipType),
-  preferredLabels: z.array(z.string()),
-  preferredPlaceHints: z.array(z.string()),
-  notes: z.array(z.string()),
+  targetDurationMs: z.number().nonnegative().optional(),
+  roleHint: z.string().optional(),
+  notes: z.array(z.string()).default([]),
 });
 export type ISegmentPlanSegment = z.infer<typeof ISegmentPlanSegment>;
 
-export const ISegmentPlanDraft = z.object({
+export const ISegmentPlan = z.object({
   id: z.string(),
   projectId: z.string(),
-  name: z.string(),
-  strategy: ESegmentPlanStrategy,
-  description: z.string(),
   generatedAt: z.string(),
-  sourceDigestId: z.string().optional(),
-  reviewBrief: z.string().optional(),
-  segments: z.array(ISegmentPlanSegment),
-  notes: z.array(z.string()),
-});
-export type ISegmentPlanDraft = z.infer<typeof ISegmentPlanDraft>;
-
-export const IApprovedSegmentPlan = z.object({
-  id: z.string(),
-  projectId: z.string(),
-  approvedAt: z.string(),
-  sourceDraftId: z.string().optional(),
-  reviewBrief: z.string().optional(),
-  segments: z.array(ISegmentPlanSegment),
-  notes: z.array(z.string()),
-});
-export type IApprovedSegmentPlan = z.infer<typeof IApprovedSegmentPlan>;
-
-export const ISegmentRecallCandidate = z.object({
-  segmentId: z.string(),
-  sliceId: z.string(),
-  assetId: z.string(),
-  score: z.number(),
-  reasons: z.array(z.string()),
-  semanticKind: EWindowSemantic.optional(),
   summary: z.string().optional(),
-  transcript: z.string().optional(),
-  labels: z.array(z.string()),
-  placeHints: z.array(z.string()),
-  pharosRefs: z.array(IPharosRef).optional(),
-  sourceInMs: z.number().optional(),
-  sourceOutMs: z.number().optional(),
-  editSourceInMs: z.number().optional(),
-  editSourceOutMs: z.number().optional(),
-  speedCandidate: ISpeedCandidateHint.optional(),
+  segments: z.array(ISegmentPlanSegment),
+  notes: z.array(z.string()).default([]),
 });
-export type ISegmentRecallCandidate = z.infer<typeof ISegmentRecallCandidate>;
+export type ISegmentPlan = z.infer<typeof ISegmentPlan>;
 
-export const ISegmentCandidateRecall = z.object({
+export const EMaterialSlotRequirement = z.enum(['required', 'optional']);
+export type EMaterialSlotRequirement = z.infer<typeof EMaterialSlotRequirement>;
+
+export const IMaterialSlot = z.object({
+  id: z.string(),
+  query: z.string(),
+  requirement: EMaterialSlotRequirement.default('required'),
+  targetBundles: z.array(z.string()).default([]),
+  chosenSpanIds: z.array(z.string()).default([]),
+});
+export type IMaterialSlot = z.infer<typeof IMaterialSlot>;
+
+export const ISegmentMaterialSlotGroup = z.object({
+  segmentId: z.string(),
+  slots: z.array(IMaterialSlot).default([]),
+});
+export type ISegmentMaterialSlotGroup = z.infer<typeof ISegmentMaterialSlotGroup>;
+
+export const IMaterialSlotsDocument = z.object({
   id: z.string(),
   projectId: z.string(),
-  approvedPlanId: z.string(),
   generatedAt: z.string(),
-  segments: z.array(z.object({
-    segmentId: z.string(),
-    title: z.string(),
-    candidates: z.array(ISegmentRecallCandidate),
-  })),
+  segments: z.array(ISegmentMaterialSlotGroup).default([]),
 });
-export type ISegmentCandidateRecall = z.infer<typeof ISegmentCandidateRecall>;
+export type IMaterialSlotsDocument = z.infer<typeof IMaterialSlotsDocument>;
 
 // ─── Store ───────────────────────────────────────────────────
 
@@ -782,6 +872,7 @@ export const IProjectBriefConfig = z.object({
   createdAt: z.string().optional(),
   mappings: z.array(IProjectBriefMappingConfig),
   pharos: IProjectBriefPharosConfig.optional(),
+  materialPatternPhrases: z.array(z.string()).default([]),
 });
 export type IProjectBriefConfig = z.infer<typeof IProjectBriefConfig>;
 
@@ -900,11 +991,9 @@ export type IManualItineraryConfig = z.infer<typeof IManualItineraryConfig>;
 export const IScriptBriefSegmentConfig = z.object({
   segmentId: z.string(),
   title: z.string().optional(),
-  role: z.string().optional(),
+  roleHint: z.string().optional(),
   targetDurationMs: z.number().nonnegative().optional(),
   intent: z.string().optional(),
-  preferredClipTypes: z.array(z.string()).default([]),
-  preferredPlaceHints: z.array(z.string()).default([]),
   notes: z.array(z.string()).default([]),
 });
 export type IScriptBriefSegmentConfig = z.infer<typeof IScriptBriefSegmentConfig>;

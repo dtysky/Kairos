@@ -103,6 +103,10 @@ import {
   mergeInterestingWindowsByPreferredBounds,
   resolveWindowPreferredRange,
 } from './window-policy.js';
+import {
+  createEmptySliceSemantics,
+  decorateSliceWithSemanticTags,
+} from './semantic-slice.js';
 
 export interface IAnalyzeWorkspaceProjectInput {
   workspaceRoot: string;
@@ -191,6 +195,9 @@ export async function analyzeWorkspaceProjectMedia(
     projectRoot,
     includedTripIds: projectBrief.pharos?.includedTripIds ?? [],
   });
+  const semanticVocabulary = {
+    materialPatternPhrases: projectBrief.materialPatternPhrases ?? [],
+  };
   const gpxPaths = await resolveProjectGpxPaths({
     projectRoot,
     gpxPaths: input.gpxPaths,
@@ -424,8 +431,19 @@ export async function analyzeWorkspaceProjectMedia(
         performance?.recordStage(prepared.asset, 'finalize', Date.now() - finalizeStartedAt);
 
         await writeTrackedReport(prepared.asset, finalized.report);
+        if (shouldDirectMaterializeReport(finalized.report)) {
+          const directResult = await generateDirectMaterializationOutput({
+            analysis: finalized,
+            vocabulary: semanticVocabulary,
+          });
+          if (directResult.slices.length === 0) {
+            throw new Error(`素材 ${prepared.asset.displayName} 的 direct materialization 未生成任何 spans`);
+          }
+          await appendTrackedSlices(prepared.asset, directResult.slices);
+          pendingSlices.push(...directResult.slices);
+        }
         await removeAudioAnalysisCheckpoint(projectRoot, prepared.asset.id);
-        if (!finalized.report.shouldFineScan) {
+        if (!shouldFineScanReport(finalized.report)) {
           await removePreparedAssetCheckpoint(projectRoot, prepared.asset.id);
         }
         analyzedAssetIds.push(prepared.asset.id);
@@ -484,7 +502,7 @@ export async function analyzeWorkspaceProjectMedia(
     });
     const fineScanCandidates = dedupeFineScanAnalyses([
       ...resumedFineScanAnalyses,
-      ...finalizedAnalyses.filter(analysis => analysis.report.shouldFineScan),
+      ...finalizedAnalyses.filter(analysis => shouldFineScanReport(analysis.report)),
     ]);
     const fineScanPhaseStartedAtMs = Date.now();
     const fineScanResult = await runFineScanPipeline({
@@ -493,6 +511,7 @@ export async function analyzeWorkspaceProjectMedia(
       projectId: input.projectId,
       projectName: project.name,
       projectRoot,
+      vocabulary: semanticVocabulary,
       runtimeConfig,
       getMlHandle,
       performance,
@@ -1267,6 +1286,36 @@ interface IUnifiedFinalizeAnalysis {
   decision: IAnalysisDecision;
 }
 
+function shouldKeepDecision(
+  decision: Pick<IAnalysisDecision, 'keepDecision'>,
+): boolean {
+  return decision.keepDecision === 'keep';
+}
+
+function shouldFineScanDecision(
+  decision: Pick<IAnalysisDecision, 'keepDecision' | 'materializationPath'>,
+): boolean {
+  return decision.keepDecision === 'keep' && decision.materializationPath === 'fine-scan';
+}
+
+function shouldKeepReport(
+  report: Pick<IAssetCoarseReport, 'keepDecision'>,
+): boolean {
+  return report.keepDecision === 'keep';
+}
+
+function shouldFineScanReport(
+  report: Pick<IAssetCoarseReport, 'keepDecision' | 'materializationPath'>,
+): boolean {
+  return report.keepDecision === 'keep' && report.materializationPath === 'fine-scan';
+}
+
+function shouldDirectMaterializeReport(
+  report: Pick<IAssetCoarseReport, 'keepDecision' | 'materializationPath'>,
+): boolean {
+  return report.keepDecision === 'keep' && report.materializationPath === 'direct';
+}
+
 interface IFinalizeFailure {
   assetId: string;
   displayName: string;
@@ -1675,6 +1724,9 @@ async function finalizePreparedAsset(
     asset: prepared.asset,
     plan: planning.finalPlan,
     clipTypeGuess: planning.decision.clipType,
+    keepDecision: planning.decision.keepDecision,
+    materializationPath: planning.decision.materializationPath,
+    fineScanMode: planning.decision.fineScanMode,
     gpsSummary: manualSpatial?.gpsSummary,
     inferredGps: manualSpatial?.inferredGps,
     summary: planning.visualSummary?.description,
@@ -1692,7 +1744,11 @@ async function finalizePreparedAsset(
     rootNotes: root?.notes ?? [],
     sampleFrames: prepared.sampleFrames,
     fineScanReasons: buildFineScanReasons(
-      planning.finalPlan,
+      {
+        materializationPath: planning.decision.materializationPath,
+        fineScanMode: planning.decision.fineScanMode,
+        interestingWindows: planning.finalPlan.interestingWindows,
+      },
       planning.density,
       prepared.shotBoundaries,
       audioContext.selectedTranscript,
@@ -2036,12 +2092,13 @@ function reconcileUnifiedAnalysisDecision(input: {
   if (budget === 'coarse') {
     return {
       ...input.fallback,
-      shouldFineScan: false,
-      fineScanMode: 'skip',
+      keepDecision: 'keep',
+      materializationPath: 'direct',
+      fineScanMode: undefined,
       decisionReasons: dedupeStrings([
         ...input.fallback.decisionReasons,
         'budget:coarse',
-        'fine-scan:skip',
+        'materialization:direct',
       ]),
     };
   }
@@ -2057,9 +2114,9 @@ function reconcileUnifiedAnalysisDecision(input: {
   }
 
   const hasCredibleWindows = input.basePlan.interestingWindows.length > 0;
-  if (decision.fineScanMode === 'skip' && (hasCredibleWindows || input.hasMeaningfulSpeech)) {
+  if (shouldKeepDecision(decision) && !shouldFineScanDecision(decision) && (hasCredibleWindows || input.hasMeaningfulSpeech)) {
+    decision.materializationPath = 'fine-scan';
     decision.fineScanMode = input.fallback.fineScanMode === 'full' ? 'full' : 'windowed';
-    decision.shouldFineScan = true;
     decision.decisionReasons.push(
       hasCredibleWindows
         ? 'guardrail:interesting-window-promoted'
@@ -2067,15 +2124,19 @@ function reconcileUnifiedAnalysisDecision(input: {
     );
   }
 
-  if (decision.fineScanMode === 'skip') {
-    decision.shouldFineScan = false;
-  } else if (!decision.shouldFineScan) {
-    decision.shouldFineScan = true;
+  if (decision.keepDecision === 'drop') {
+    decision.materializationPath = undefined;
+    decision.fineScanMode = undefined;
+  } else if (decision.materializationPath !== 'fine-scan') {
+    decision.fineScanMode = undefined;
+  } else if (decision.materializationPath === 'fine-scan' && !decision.fineScanMode) {
+    decision.fineScanMode = input.fallback.fineScanMode ?? 'windowed';
   }
 
   const inheritedFallbackReasons = input.fallback.decisionReasons.filter(reason => {
     if (reason.startsWith('semantic-clip:')) return reason === `semantic-clip:${decision.clipType}`;
-    if (reason.startsWith('fine-scan:')) return reason === `fine-scan:${decision.fineScanMode}`;
+    if (reason.startsWith('materialization:')) return reason === `materialization:${decision.materializationPath ?? 'none'}`;
+    if (reason.startsWith('fine-scan:')) return decision.fineScanMode != null && reason === `fine-scan:${decision.fineScanMode}`;
     if (reason.startsWith('clip-type-corrected:')) return false;
     return true;
   });
@@ -2086,7 +2147,9 @@ function reconcileUnifiedAnalysisDecision(input: {
       ...inheritedFallbackReasons,
       ...decision.decisionReasons,
       `semantic-clip:${decision.clipType}`,
-      `fine-scan:${decision.fineScanMode}`,
+      `keep:${decision.keepDecision}`,
+      `materialization:${decision.materializationPath ?? 'none'}`,
+      decision.fineScanMode ? `fine-scan:${decision.fineScanMode}` : undefined,
     ]),
   };
 }
@@ -2709,7 +2772,7 @@ function buildUnifiedFinalizePrompt(input: {
     protection_transcript_excerpt: input.audioContext?.decisionHints.protectionTranscriptExcerpt ?? '',
   }, null, 2);
 
-  return `You are producing visual summary and deciding semantic clip type and fine-scan policy for a travel documentary editing system.
+  return `You are producing visual summary and deciding semantic clip type and materialization policy for a travel documentary editing system.
 Return only a raw JSON object with:
 {
   "visual_summary": {
@@ -2722,8 +2785,9 @@ Return only a raw JSON object with:
   },
   "decision": {
     "clip_type": "drive" | "talking-head" | "aerial" | "timelapse" | "broll" | "unknown",
-    "should_fine_scan": boolean,
-    "fine_scan_mode": "skip" | "windowed" | "full",
+    "keep_decision": "keep" | "drop",
+    "materialization_path": "fine-scan" | "direct",
+    "fine_scan_mode": "windowed" | "full",
     "decision_reasons": string[]
   }
 }
@@ -2736,7 +2800,9 @@ Rules:
 - Manual itinerary and spatial hints are weak evidence: useful for place/route inference, but weaker than clear visual or speech contradictions.
 - If the frames clearly show sustained driving or road footage, prefer "drive" even when the heuristic clip type is "unknown".
 - Do not classify a clip as "timelapse" unless the frames themselves show strong timelapse evidence. Transcript mentions, tripod/static scenery, or source context alone are insufficient.
-- If either visual or speech evidence indicates promising regions, prefer "windowed" over "skip".
+- Use "drop" only for truly unusable dark / blank / corrupted visual material.
+- Photos and clearly atomic visual materials can use "direct" materialization.
+- If either visual or speech evidence indicates promising regions, prefer "fine-scan" with "windowed".
 - Use "full" only for short high-value clips or when both visual and speech signals are strong.
 
 Signals:
@@ -2756,15 +2822,15 @@ function parseUnifiedFinalizeAnalysis(raw: string): IUnifiedFinalizeAnalysis | n
 
   const clipType = normalizeClipType((decisionNode as Record<string, unknown>)['clip_type']
     ?? (decisionNode as Record<string, unknown>)['clipType']);
-  const fineScanMode = normalizeFineScanMode((decisionNode as Record<string, unknown>)['fine_scan_mode']
+  const keepDecision = normalizeKeepDecision((decisionNode as Record<string, unknown>)['keep_decision']
+    ?? (decisionNode as Record<string, unknown>)['keepDecision']);
+  const materializationPath = normalizeMaterializationPath((decisionNode as Record<string, unknown>)['materialization_path']
+    ?? (decisionNode as Record<string, unknown>)['materializationPath']);
+  const fineScanMode = normalizeFinalizeFineScanMode((decisionNode as Record<string, unknown>)['fine_scan_mode']
     ?? (decisionNode as Record<string, unknown>)['fineScanMode']);
-  if (!clipType || !fineScanMode) return null;
-
-  const rawShouldFineScan = (decisionNode as Record<string, unknown>)['should_fine_scan']
-    ?? (decisionNode as Record<string, unknown>)['shouldFineScan'];
-  const shouldFineScan = typeof rawShouldFineScan === 'boolean'
-    ? rawShouldFineScan && fineScanMode !== 'skip'
-    : fineScanMode !== 'skip';
+  if (!clipType || !keepDecision) return null;
+  if (keepDecision === 'keep' && !materializationPath) return null;
+  if (materializationPath === 'fine-scan' && !fineScanMode) return null;
   const decisionReasons = Array.isArray((decisionNode as Record<string, unknown>)['decision_reasons'])
     ? ((decisionNode as Record<string, unknown>)['decision_reasons'] as unknown[])
       .filter((value): value is string => typeof value === 'string')
@@ -2782,8 +2848,9 @@ function parseUnifiedFinalizeAnalysis(raw: string): IUnifiedFinalizeAnalysis | n
     },
     decision: {
       clipType,
-      shouldFineScan,
-      fineScanMode,
+      keepDecision,
+      materializationPath: materializationPath ?? undefined,
+      fineScanMode: fineScanMode ?? undefined,
       decisionReasons,
     },
   };
@@ -2817,10 +2884,28 @@ function normalizeClipType(value: unknown): EClipType | null {
   return null;
 }
 
-function normalizeFineScanMode(value: unknown): 'skip' | 'windowed' | 'full' | null {
+function normalizeKeepDecision(value: unknown): 'keep' | 'drop' | null {
   if (typeof value !== 'string') return null;
   const normalized = value.trim().toLowerCase();
-  if (normalized === 'skip' || normalized === 'windowed' || normalized === 'full') {
+  if (normalized === 'keep' || normalized === 'drop') {
+    return normalized;
+  }
+  return null;
+}
+
+function normalizeMaterializationPath(value: unknown): 'fine-scan' | 'direct' | null {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'fine-scan' || normalized === 'direct') {
+    return normalized;
+  }
+  return null;
+}
+
+function normalizeFinalizeFineScanMode(value: unknown): 'windowed' | 'full' | null {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'windowed' || normalized === 'full') {
     return normalized;
   }
   return null;
@@ -2927,25 +3012,26 @@ function decorateSliceWithTranscript(
   }
 
   const match = collectTranscriptForSlice(slice, transcript);
-  const transcriptSummary = shouldUseTranscriptSummary(slice)
-    ? match.transcript
-    : slice.summary;
   const evidence = dedupeEvidence([
     ...(slice.evidence ?? []),
     ...match.evidence,
     ...extraEvidence,
   ]);
+  const grounding: IKtepSlice['grounding'] = {
+    ...slice.grounding,
+    speechMode: match.transcript
+      ? (slice.semanticKind === 'speech' || slice.type === 'talking-head' ? 'preferred' : 'available')
+      : slice.grounding.speechMode,
+    speechValue: match.transcript
+      ? ((match.speechCoverage ?? 0) >= 0.45 ? 'informative' : 'mixed')
+      : slice.grounding.speechValue,
+  };
 
   return {
     ...slice,
-    summary: transcriptSummary,
     transcript: match.transcript ?? slice.transcript,
     transcriptSegments: match.transcriptSegments ?? slice.transcriptSegments,
-    labels: dedupeStrings([
-      ...slice.labels,
-      match.transcript ? 'speech' : undefined,
-      (match.speechCoverage ?? 0) >= 0.35 ? 'spoken-content' : undefined,
-    ]),
+    grounding,
     evidence: evidence.length > 0 ? evidence : undefined,
     speechCoverage: match.speechCoverage ?? slice.speechCoverage,
   };
@@ -3012,17 +3098,6 @@ function collectTranscriptForSlice(
       ? Math.min(speechMs / sliceDurationMs, 1)
       : transcript.speechCoverage,
   };
-}
-
-function shouldUseTranscriptSummary(
-  slice: Pick<IKtepSlice, 'summary' | 'semanticKind'>,
-): boolean {
-  if (slice.semanticKind === 'speech') return true;
-  if (slice.semanticKind === 'visual') return false;
-  const summary = slice.summary;
-  if (!summary) return true;
-  return ['speech-window', 'coarse-sample-window', 'whole-asset-window-fallback']
-    .some(token => summary.includes(token));
 }
 
 async function preparePhotoVisualCoarse(
@@ -3102,6 +3177,8 @@ async function finalizePhotoPreparedAsset(
     asset: input.prepared.asset,
     plan,
     clipTypeGuess,
+    keepDecision: 'keep',
+    materializationPath: 'direct',
     gpsSummary: manualSpatial?.gpsSummary,
     inferredGps: manualSpatial?.inferredGps,
     summary: visualSummary?.description,
@@ -3114,10 +3191,8 @@ async function finalizePhotoPreparedAsset(
     placeHints,
     rootNotes: root?.notes ?? [],
     sampleFrames: input.prepared.sampleFrames,
-    shouldFineScan: true,
-    fineScanMode: 'full',
     fineScanReasons: dedupeStrings([
-      'photo-assets-are-directly-usable',
+      'photo-assets-use-direct-materialization',
       ...(manualSpatial?.decisionReasons ?? []),
     ]),
   });
@@ -3153,9 +3228,10 @@ function buildAudioAssetReport(
       fineScanMode: 'skip',
     },
     clipTypeGuess: 'unknown',
+    keepDecision: 'drop',
     summary: 'Audio asset imported; waiting for downstream use or dedicated audio analysis.',
     labels: ['audio'],
-    fineScanReasons: ['audio-assets-skip-visual-fine-scan'],
+    fineScanReasons: ['audio-assets-drop-visual-materialization'],
   });
 }
 
@@ -3346,16 +3422,25 @@ function buildFineScanSlicesFallback(
   effectiveSlices: IKtepSlice[],
   transcript: ITranscriptContext | null | undefined,
   report: IAssetCoarseReport,
+  vocabulary?: {
+    materialPatternPhrases?: string[];
+  },
 ): IKtepSlice[] {
   return effectiveSlices.map(slice => {
     const withTranscript = decorateSliceWithTranscript(slice, transcript);
-    return {
-      ...withTranscript,
-      summary: withTranscript.summary ?? report.summary ?? withTranscript.transcript,
-      labels: dedupeStrings([...withTranscript.labels, ...report.labels]),
-      placeHints: dedupeStrings([...withTranscript.placeHints, ...report.placeHints]),
-      pharosRefs: pharosRefsFromMatches(report.pharosMatches),
-    };
+        return decorateSliceWithSemanticTags({
+          slice: {
+            ...withTranscript,
+            pharosRefs: pharosRefsFromMatches(report.pharosMatches),
+      },
+      clipType: report.clipTypeGuess,
+      report,
+      vocabulary,
+      semanticWindow: withTranscript.semanticKind ? {
+            semanticKind: withTranscript.semanticKind,
+            reason: 'fine-scan-fallback',
+          } : null,
+        });
   });
 }
 
@@ -3447,7 +3532,7 @@ async function ensureFineScanTaskState(input: {
   getMlHandle: () => Promise<MlAvailability>;
   performance?: AnalyzePerformanceSession;
 }): Promise<IFineScanTaskState | null> {
-  if (!input.analysis.report.shouldFineScan) return null;
+  if (!shouldFineScanReport(input.analysis.report)) return null;
 
   const assetId = input.analysis.prepared.asset.id;
   const existingCheckpoint = await loadFineScanCheckpoint(input.projectRoot, assetId);
@@ -3552,6 +3637,9 @@ async function ensureFineScanTaskState(input: {
 async function generateFineScanOutput(input: {
   analysis: IFinalizedAssetAnalysis;
   projectRoot: string;
+  vocabulary?: {
+    materialPatternPhrases?: string[];
+  };
   roots: IMediaRoot[];
   runtimeConfig: {
     ffmpegPath?: string;
@@ -3572,15 +3660,17 @@ async function generateFineScanOutput(input: {
   getMlHandle: () => Promise<MlAvailability>;
   performance?: AnalyzePerformanceSession;
 }): Promise<IFineScanSlicesResult> {
-  if (!input.analysis.report.shouldFineScan) {
+  if (!shouldFineScanReport(input.analysis.report)) {
     return { slices: [], droppedInvalidSliceCount: 0 };
   }
 
   if (input.analysis.prepared.asset.kind === 'photo') {
-    const slice = slicePhoto(input.analysis.prepared.asset);
-    slice.summary = input.analysis.report.summary;
-    slice.labels = input.analysis.report.labels;
-    slice.placeHints = input.analysis.report.placeHints;
+    const slice = decorateSliceWithSemanticTags({
+      slice: slicePhoto(input.analysis.prepared.asset),
+      clipType: input.analysis.report.clipTypeGuess,
+      report: input.analysis.report,
+      vocabulary: input.vocabulary,
+    });
     return {
       slices: [slice],
       droppedInvalidSliceCount: 0,
@@ -3606,6 +3696,7 @@ async function generateFineScanOutput(input: {
     asset: prepared.asset,
     localPath: prepared.localPath,
     projectRoot: input.projectRoot,
+    vocabulary: input.vocabulary,
     roots: input.roots,
     runtimeConfig: input.runtimeConfig,
     shotBoundaries: prepared.shotBoundaries,
@@ -3615,6 +3706,73 @@ async function generateFineScanOutput(input: {
     ml: await input.getMlHandle(),
     performance: input.performance,
   });
+}
+
+async function generateDirectMaterializationOutput(input: {
+  analysis: IFinalizedAssetAnalysis;
+  vocabulary?: {
+    materialPatternPhrases?: string[];
+  };
+}): Promise<IFineScanSlicesResult> {
+  if (!shouldDirectMaterializeReport(input.analysis.report)) {
+    return { slices: [], droppedInvalidSliceCount: 0 };
+  }
+
+  const asset = input.analysis.prepared.asset;
+  if (asset.kind === 'audio') {
+    return { slices: [], droppedInvalidSliceCount: 0 };
+  }
+
+  if (asset.kind === 'photo') {
+    const slice = decorateSliceWithSemanticTags({
+      slice: slicePhoto(asset),
+      clipType: input.analysis.report.clipTypeGuess,
+      report: input.analysis.report,
+      vocabulary: input.vocabulary,
+      recognition: toRecognitionSummary(input.analysis.visualSummary),
+    });
+    return {
+      slices: [slice],
+      droppedInvalidSliceCount: 0,
+    };
+  }
+
+  const directWindows = input.analysis.report.interestingWindows.length > 0
+    ? input.analysis.report.interestingWindows
+    : typeof asset.durationMs === 'number' && asset.durationMs > 0
+      ? [{
+        startMs: 0,
+        endMs: asset.durationMs,
+        reason: 'direct-whole-asset-window',
+      }]
+      : [];
+  const baseSlices = sliceInterestingWindows(
+    asset,
+    directWindows,
+    mapClipTypeToSliceType(input.analysis.clipType),
+  );
+  const slices = baseSlices.map(slice => {
+    const withTranscript = decorateSliceWithTranscript(slice, input.analysis.transcript);
+    return decorateSliceWithSemanticTags({
+      slice: {
+        ...withTranscript,
+        pharosRefs: pharosRefsFromMatches(input.analysis.report.pharosMatches),
+      },
+      clipType: input.analysis.report.clipTypeGuess,
+      report: input.analysis.report,
+      vocabulary: input.vocabulary,
+      recognition: toRecognitionSummary(input.analysis.visualSummary),
+      semanticWindow: withTranscript.semanticKind ? {
+        semanticKind: withTranscript.semanticKind,
+        reason: 'direct-materialization',
+      } : null,
+    });
+  });
+
+  return {
+    slices,
+    droppedInvalidSliceCount: 0,
+  };
 }
 
 function describeAudioAnalysisStage(
@@ -3806,8 +3964,8 @@ function buildReportLabels(
 
 function buildFineScanReasons(
   reportPlan: {
-    shouldFineScan: boolean;
-    fineScanMode: 'skip' | 'windowed' | 'full';
+    materializationPath?: 'fine-scan' | 'direct';
+    fineScanMode?: 'windowed' | 'full';
     interestingWindows: IInterestingWindow[];
   },
   density: { score: number },
@@ -3816,11 +3974,11 @@ function buildFineScanReasons(
   decisionReasons: string[] = [],
 ): string[] {
   const reasons = new Set<string>(decisionReasons);
-  if (!reportPlan.shouldFineScan) {
+  if (reportPlan.materializationPath !== 'fine-scan') {
     reasons.add('coarse-scan-sufficient');
     return [...reasons];
   }
-  reasons.add(`fine-scan:${reportPlan.fineScanMode}`);
+  reasons.add(`fine-scan:${reportPlan.fineScanMode ?? 'windowed'}`);
   if (density.score >= 0.55) reasons.add('high-density-score');
   if (shotBoundaries.length >= 12) reasons.add('high-shot-count');
   if ((transcript?.speechWindows.length ?? 0) > 0) reasons.add('speech-window');
@@ -3878,6 +4036,9 @@ interface IBuildFineScanSlicesInput {
   asset: IKtepAsset;
   localPath: string;
   projectRoot: string;
+  vocabulary?: {
+    materialPatternPhrases?: string[];
+  };
   runtimeConfig: {
     ffmpegPath?: string;
     ffprobePath?: string;
@@ -3906,7 +4067,7 @@ interface IBuildFineScanSlicesInput {
 async function buildFineScanSlices(
   input: IBuildFineScanSlicesInput,
 ): Promise<IFineScanSlicesResult> {
-  if (!input.report.shouldFineScan) {
+  if (!shouldFineScanReport(input.report)) {
     return { slices: [], droppedInvalidSliceCount: 0 };
   }
 
@@ -3948,13 +4109,19 @@ async function buildFineScanSlices(
     return {
       slices: effectiveSlices.map(slice => {
         const withTranscript = decorateSliceWithTranscript(slice, input.transcript);
-        return {
-          ...withTranscript,
-          summary: withTranscript.summary ?? input.report.summary ?? withTranscript.transcript,
-          labels: dedupeStrings([...withTranscript.labels, ...input.report.labels]),
-          placeHints: dedupeStrings([...withTranscript.placeHints, ...input.report.placeHints]),
-          pharosRefs: pharosRefsFromMatches(input.report.pharosMatches),
-        };
+        return decorateSliceWithSemanticTags({
+          slice: {
+            ...withTranscript,
+            pharosRefs: pharosRefsFromMatches(input.report.pharosMatches),
+          },
+          clipType: input.report.clipTypeGuess,
+          report: input.report,
+          vocabulary: input.vocabulary,
+          semanticWindow: withTranscript.semanticKind ? {
+            semanticKind: withTranscript.semanticKind,
+            reason: 'fine-scan-no-ml-fallback',
+          } : null,
+        });
       }),
       droppedInvalidSliceCount: 0,
     };
@@ -4002,25 +4169,27 @@ async function buildFineScanSlices(
       input.transcript,
       recognition?.recognition.evidence,
     );
-    slices.push({
-      ...withTranscript,
-      summary: recognition?.recognition.description
-        || withTranscript.summary
-        || input.report.summary
-        || withTranscript.transcript,
-      labels: dedupeStrings([
-        ...withTranscript.labels,
-        ...input.report.labels,
-        recognition?.recognition.sceneType,
-        ...(recognition?.recognition.subjects ?? []),
-      ]),
-      placeHints: dedupeStrings([
-        ...withTranscript.placeHints,
-        ...input.report.placeHints,
-        ...(recognition?.recognition.placeHints ?? []),
-      ]),
-      pharosRefs: pharosRefsFromMatches(input.report.pharosMatches),
-    });
+    slices.push(decorateSliceWithSemanticTags({
+      slice: {
+        ...withTranscript,
+        pharosRefs: pharosRefsFromMatches(input.report.pharosMatches),
+      },
+      clipType: input.report.clipTypeGuess,
+      report: input.report,
+      vocabulary: input.vocabulary,
+      recognition: recognition?.recognition
+        ? {
+          description: recognition.recognition.description,
+          sceneType: recognition.recognition.sceneType,
+          subjects: recognition.recognition.subjects,
+          placeHints: recognition.recognition.placeHints,
+        }
+        : null,
+      semanticWindow: withTranscript.semanticKind ? {
+        semanticKind: withTranscript.semanticKind,
+        reason: recognition?.recognition.description ?? 'fine-scan-window',
+      } : null,
+    }));
   }
 
   return {
@@ -4103,6 +4272,9 @@ async function prefetchFineScanTask(input: {
 async function recognizeFineScanTask(input: {
   task: IFineScanTaskState;
   projectRoot: string;
+  vocabulary?: {
+    materialPatternPhrases?: string[];
+  };
   runtimeConfig: IAnalyzeSingleAssetInput['runtimeConfig'];
   getMlHandle: () => Promise<MlAvailability>;
   performance?: AnalyzePerformanceSession;
@@ -4116,11 +4288,16 @@ async function recognizeFineScanTask(input: {
   let droppedInvalidSliceCount = 0;
 
   if (input.task.analysis.prepared.asset.kind === 'photo') {
-    const slice = updatedCheckpoint.effectiveSlices[0] ?? slicePhoto(input.task.analysis.prepared.asset);
-    slice.summary = input.task.analysis.report.summary;
-    slice.labels = input.task.analysis.report.labels;
-    slice.placeHints = input.task.analysis.report.placeHints;
-    slice.pharosRefs = pharosRefsFromMatches(input.task.analysis.report.pharosMatches);
+    const baseSlice = updatedCheckpoint.effectiveSlices[0] ?? slicePhoto(input.task.analysis.prepared.asset);
+    const slice = decorateSliceWithSemanticTags({
+      slice: {
+        ...baseSlice,
+        pharosRefs: pharosRefsFromMatches(input.task.analysis.report.pharosMatches),
+      },
+      clipType: input.task.analysis.report.clipTypeGuess,
+      report: input.task.analysis.report,
+      vocabulary: input.vocabulary,
+    });
     slices = [slice];
   } else if (input.task.analysis.prepared.asset.kind === 'audio') {
     slices = [];
@@ -4133,6 +4310,7 @@ async function recognizeFineScanTask(input: {
         updatedCheckpoint.effectiveSlices,
         input.task.analysis.transcript,
         input.task.analysis.report,
+        input.vocabulary,
       );
     } else {
       const ml = await input.getMlHandle();
@@ -4160,24 +4338,27 @@ async function recognizeFineScanTask(input: {
           input.task.analysis.transcript,
           recognition?.recognition.evidence,
         );
-        slices.push({
-          ...withTranscript,
-          summary: recognition?.recognition.description
-            || withTranscript.summary
-            || input.task.analysis.report.summary
-            || withTranscript.transcript,
-          labels: dedupeStrings([
-            ...withTranscript.labels,
-            ...input.task.analysis.report.labels,
-            recognition?.recognition.sceneType,
-            ...(recognition?.recognition.subjects ?? []),
-          ]),
-          placeHints: dedupeStrings([
-            ...withTranscript.placeHints,
-            ...input.task.analysis.report.placeHints,
-            ...(recognition?.recognition.placeHints ?? []),
-          ]),
-        });
+        slices.push(decorateSliceWithSemanticTags({
+          slice: {
+            ...withTranscript,
+            pharosRefs: pharosRefsFromMatches(input.task.analysis.report.pharosMatches),
+          },
+          clipType: input.task.analysis.report.clipTypeGuess,
+          report: input.task.analysis.report,
+          vocabulary: input.vocabulary,
+          recognition: recognition?.recognition
+            ? {
+              description: recognition.recognition.description,
+              sceneType: recognition.recognition.sceneType,
+              subjects: recognition.recognition.subjects,
+              placeHints: recognition.recognition.placeHints,
+            }
+            : null,
+          semanticWindow: withTranscript.semanticKind ? {
+            semanticKind: withTranscript.semanticKind,
+            reason: recognition?.recognition.description ?? 'fine-scan-window',
+          } : null,
+        }));
       }
     }
   }
@@ -4219,6 +4400,9 @@ async function runFineScanPipeline(input: {
   projectId: string;
   projectName: string;
   projectRoot: string;
+  vocabulary?: {
+    materialPatternPhrases?: string[];
+  };
   runtimeConfig: IAnalyzeSingleAssetInput['runtimeConfig'];
   getMlHandle: () => Promise<MlAvailability>;
   performance?: AnalyzePerformanceSession;
@@ -4359,6 +4543,7 @@ async function runFineScanPipeline(input: {
           promise: recognizeFineScanTask({
             task: nextRecognitionTask,
             projectRoot: input.projectRoot,
+            vocabulary: input.vocabulary,
             runtimeConfig: input.runtimeConfig,
             getMlHandle: input.getMlHandle,
             performance: input.performance,
@@ -4603,7 +4788,7 @@ function applySliceWindowSemantics(
     speedCandidate: buildDriveSpeedCandidate(
       assetDurationMs,
       editEndMs - editStartMs,
-      `drive:${result.summary ?? 'fine-scan-slice'}`,
+      `drive:${result.narrativeFunctions.core[0] ?? result.shotGrammar.core[0] ?? 'fine-scan-slice'}`,
     ),
   };
 }
@@ -4629,8 +4814,9 @@ function reconcileFineScanReport(input: {
 
   return {
     ...input.report,
-    shouldFineScan: false,
-    fineScanMode: 'skip',
+    keepDecision: 'drop',
+    materializationPath: undefined,
+    fineScanMode: undefined,
     fineScanReasons: [
       ...new Set([
         ...input.report.fineScanReasons,
@@ -4650,6 +4836,23 @@ function finalizeFineScanReport(
     fineScanCompletedAt: now,
     fineScanSliceCount: sliceCount,
     updatedAt: now,
+  };
+}
+
+function toRecognitionSummary(
+  recognition?: IRecognition | null,
+): {
+  description?: string;
+  sceneType?: string;
+  subjects?: string[];
+  placeHints?: string[];
+} | null {
+  if (!recognition) return null;
+  return {
+    description: recognition.description,
+    sceneType: recognition.sceneType,
+    subjects: recognition.subjects,
+    placeHints: recognition.placeHints,
   };
 }
 
@@ -4722,7 +4925,7 @@ function selectPendingFineScanEntries(
   const sliceAssetIds = new Set(slices.map(slice => slice.assetId));
 
   return reports
-    .filter(report => report.shouldFineScan && !isFineScanComplete(report, sliceAssetIds))
+    .filter(report => shouldFineScanReport(report) && !isFineScanComplete(report, sliceAssetIds))
     .map(report => ({
       asset: assetById.get(report.assetId),
       report,
@@ -4734,7 +4937,7 @@ function isFineScanComplete(
   report: IAssetCoarseReport,
   sliceAssetIds: Set<string>,
 ): boolean {
-  if (!report.shouldFineScan) return true;
+  if (!shouldFineScanReport(report)) return true;
   if (typeof report.fineScanCompletedAt === 'string' && report.fineScanCompletedAt.trim().length > 0) {
     return true;
   }

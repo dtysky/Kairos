@@ -63,7 +63,7 @@ async function startSupervisor(workspaceRoot: string, port: number): Promise<voi
     },
   );
   child.unref();
-  console.log(`Started Kairos Supervisor on http://127.0.0.1:${port}/`);
+  console.log(`Started Kairos Supervisor on http://127.0.0.1:${port}/ (console only; ML is not auto-started and old jobs are not resumed).`);
 }
 
 async function stopSupervisor(workspaceRoot: string, port: number, stopMl: boolean): Promise<void> {
@@ -76,7 +76,7 @@ async function stopSupervisor(workspaceRoot: string, port: number, stopMl: boole
     console.log('Stopped Kairos Supervisor and ML service listeners if present.');
     return;
   }
-  console.log('Stopped Kairos Supervisor listener. ML service was left untouched.');
+  console.log('Stopped Kairos Supervisor listener. ML was left untouched here; formal jobs should already reconcile ML back to stopped when they finish.');
 }
 
 async function getStatus(workspaceRoot: string, port: number): Promise<unknown> {

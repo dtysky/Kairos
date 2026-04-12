@@ -92,11 +92,7 @@ export function expandRangeToTranscriptSegments(
   range: IResolvedRange,
   transcriptSegments: ITranscriptSegment[] = [],
 ): IResolvedRange {
-  if (transcriptSegments.length === 0) return range;
-
-  const intersectingSegments = transcriptSegments.filter(segment =>
-    segment.endMs > range.startMs && segment.startMs < range.endMs,
-  );
+  const intersectingSegments = findIntersectingTranscriptSegments(range, transcriptSegments);
   if (intersectingSegments.length === 0) return range;
 
   const startMs = Math.min(
@@ -111,6 +107,25 @@ export function expandRangeToTranscriptSegments(
   return { startMs, endMs };
 }
 
+export function resolveSelectionTranscriptRange(
+  selection: Pick<IKtepScriptSelection, 'sourceInMs' | 'sourceOutMs'>,
+  slice?: Pick<
+    IKtepSlice,
+    'sourceInMs' | 'sourceOutMs' | 'editSourceInMs' | 'editSourceOutMs' | 'transcriptSegments'
+  >,
+): IResolvedRange | null {
+  const range = resolveSelectionRange(selection, slice);
+  if (!range) return null;
+
+  const intersectingSegments = findIntersectingTranscriptSegments(range, slice?.transcriptSegments ?? []);
+  if (intersectingSegments.length === 0) return null;
+
+  return {
+    startMs: Math.min(range.startMs, ...intersectingSegments.map(segment => segment.startMs)),
+    endMs: Math.max(range.endMs, ...intersectingSegments.map(segment => segment.endMs)),
+  };
+}
+
 export function snapSelectionToTranscriptSegments<T extends Pick<
   IKtepScriptSelection,
   'sourceInMs' | 'sourceOutMs'
@@ -121,10 +136,9 @@ export function snapSelectionToTranscriptSegments<T extends Pick<
     'sourceInMs' | 'sourceOutMs' | 'editSourceInMs' | 'editSourceOutMs' | 'transcriptSegments'
   >,
 ): T {
-  const range = resolveSelectionRange(selection, slice);
-  if (!range) return selection;
+  const snappedRange = resolveSelectionTranscriptRange(selection, slice);
+  if (!snappedRange) return selection;
 
-  const snappedRange = expandRangeToTranscriptSegments(range, slice?.transcriptSegments ?? []);
   return {
     ...selection,
     sourceInMs: snappedRange.startMs,
@@ -262,6 +276,19 @@ function expandWindow(
     editEndMs: normalized.endMs,
     ...(speedCandidate && { speedCandidate }),
   };
+}
+
+function findIntersectingTranscriptSegments(
+  range: IResolvedRange,
+  transcriptSegments: ITranscriptSegment[] = [],
+): ITranscriptSegment[] {
+  if (transcriptSegments.length === 0) return [];
+
+  return transcriptSegments.filter(segment =>
+    segment.text.trim().length > 0
+    && segment.endMs > range.startMs
+    && segment.startMs < range.endMs,
+  );
 }
 
 function resolvePolicy(

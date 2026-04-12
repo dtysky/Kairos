@@ -4,6 +4,8 @@ import {
   getAudioAnalysisCheckpointRoot,
   getFineScanCheckpointRoot,
   getPreparedAssetCheckpointRoot,
+  getStyleReferenceReportsRoot,
+  getWorkspaceStyleAnalysisProgressPath,
   listWorkspaceProjects,
   loadFineScanCheckpoint,
   loadStyleSourcesConfig,
@@ -133,12 +135,24 @@ interface IAnalyzeProgressPayload {
 }
 
 interface IStyleProgressPayload {
+  status?: string;
   stage?: string;
   updatedAt?: string;
+  current?: number;
+  total?: number;
+  percent?: number;
+  fileName?: string;
+  videoIndex?: number;
+  videoTotal?: number;
   detail?: {
     totalVideos?: number;
+    currentVideo?: string;
+    currentSourcePath?: string;
+    clipPath?: string;
+    reportPath?: string;
     summaryPath?: string;
     transcriptPath?: string;
+    message?: string;
     outputLinks?: Array<{ label?: string; path?: string; description?: string }>;
   };
   category?: {
@@ -180,6 +194,11 @@ export async function buildAnalyzeMonitorModel(
     .find(item => item.projectId === projectId);
   const jobs = await listJobRecords(workspaceRoot);
   const latestJob = jobs.find(job => job.projectId === projectId && job.jobType === 'analyze') ?? null;
+  const liveJob = jobs.find(job =>
+    job.projectId === projectId
+      && job.jobType === 'analyze'
+      && isLiveJobStatus(job.status),
+  ) ?? null;
   const [reportCount, preparedCount, audioCheckpointCount] = await Promise.all([
     countChildren(join(projectRoot, 'analysis', 'asset-reports')),
     countChildren(getPreparedAssetCheckpointRoot(projectRoot)),
@@ -193,6 +212,11 @@ export async function buildAnalyzeMonitorModel(
     : undefined;
   const stepDefinitions = buildAnalyzeSteps(progress);
   const projectName = progress?.extra?.projectName ?? projectEntry?.project.name ?? projectId;
+  const monitorStatus = resolveMonitorStatus({
+    liveJobStatus: liveJob?.status,
+    latestJobStatus: latestJob?.status,
+    hasCachedProgress: Boolean(progress),
+  });
   const isFineScanPipelineStep = progress?.step === 'fine-scan-prefetch' || progress?.step === 'fine-scan-recognition';
   const fineScanTotal = progress?.extra?.fineScanAssetTotal ?? total;
   const fineScanPrefetched = progress?.extra?.prefetchedAssetCount;
@@ -262,7 +286,7 @@ export async function buildAnalyzeMonitorModel(
     chips: [
       { label: `项目 ${projectName}` },
       { label: '流程 media-analyze' },
-      { label: statusLabel(progress?.status ?? latestJob?.status ?? 'idle'), tone: toneForStatus(progress?.status ?? latestJob?.status ?? 'idle') },
+      { label: statusLabel(monitorStatus), tone: toneForStatus(monitorStatus) },
     ],
     metrics: [
       {
@@ -289,7 +313,7 @@ export async function buildAnalyzeMonitorModel(
       },
     ],
     progress: {
-      status: progress?.status ?? latestJob?.status ?? 'idle',
+      status: monitorStatus,
       stepKey: progress?.step,
       stepLabel: progress?.stepLabel,
       detail: progress?.detail,
@@ -319,57 +343,75 @@ export async function buildStyleMonitorModel(
   requestedCategoryId?: string,
 ): Promise<IMonitorModel> {
   const styleSources = await loadStyleSourcesConfig(workspaceRoot);
-  const fallbackCategory = requestedCategoryId
-    || styleSources.defaultCategory
-    || styleSources.categories[0]?.categoryId
-    || 'style-analysis';
-  const category = styleSources.categories.find(item => item.categoryId === fallbackCategory)
-    ?? styleSources.categories[0]
-    ?? null;
-  const categoryId = category?.categoryId ?? fallbackCategory;
-  const progressPath = join(workspaceRoot, '.tmp', 'style-analysis', categoryId, 'progress.json');
-  const progress = await readJsonFile<IStyleProgressPayload>(progressPath);
   const jobs = await listJobRecords(workspaceRoot);
-  const latestJob = jobs.find(job => job.jobType === 'style-analysis') ?? null;
-  const stepDefinitions = buildStyleSteps(progress?.stage);
+  const latestLiveJob = jobs.find(job => job.jobType === 'style-analysis' && isLiveJobStatus(job.status)) ?? null;
+  const category = resolveStyleMonitorCategory(
+    styleSources,
+    requestedCategoryId,
+    getStyleJobCategoryId(latestLiveJob),
+  );
+  const categoryId = category.categoryId;
+  const progressPath = getWorkspaceStyleAnalysisProgressPath(workspaceRoot, categoryId);
+  const progress = await readJsonFile<IStyleProgressPayload>(progressPath);
+  const latestJob = jobs.find(job =>
+    job.jobType === 'style-analysis'
+      && (getStyleJobCategoryId(job) === categoryId || !requestedCategoryId),
+  ) ?? null;
+  const liveJob = jobs.find(job =>
+    job.jobType === 'style-analysis'
+      && getStyleJobCategoryId(job) === categoryId
+      && isLiveJobStatus(job.status),
+  ) ?? null;
+  const monitorStatus = resolveMonitorStatus({
+    liveJobStatus: liveJob?.status,
+    latestJobStatus: latestJob?.status,
+    hasCachedProgress: Boolean(progress),
+  });
+  const stepDefinitions = buildStyleSteps(progress?.stage, monitorStatus);
   const outputs = await buildStyleOutputs(workspaceRoot, category, progress);
-  const totalVideos = progress?.detail?.totalVideos ?? category?.sources.length ?? 0;
+  const totalVideos = progress?.total ?? progress?.videoTotal ?? progress?.detail?.totalVideos ?? category?.sources.length ?? 0;
   const workspaceName = basename(workspaceRoot);
 
   return {
     title: '风格分析',
-    subtitle: `${workspaceName} · Workspace 风格库、来源配置与 agent 风格分析监控`,
+    subtitle: `${workspaceName} · Workspace 风格库、deterministic prep 与 Agent 风格分析交接监控`,
     chips: [
       { label: `工作区 ${workspaceName}` },
-      { label: category?.displayName ?? categoryId },
-      { label: `${category?.sources.length ?? 0} 个来源` },
-      { label: statusLabel(progress?.stage === 'complete' ? 'completed' : latestJob?.status ?? 'idle'), tone: toneForStatus(progress?.stage === 'complete' ? 'completed' : latestJob?.status ?? 'idle') },
+      { label: category.displayName },
+      { label: `${category.sources.length} 个来源` },
+      { label: statusLabel(monitorStatus), tone: toneForStatus(monitorStatus) },
     ],
     metrics: [
       {
         label: '参考视频',
         value: String(totalVideos),
-        sub: category ? `${category.categoryId}` : '未配置分类',
+        sub: category.categoryId,
       },
       {
         label: '当前阶段',
         value: styleStageLabel(progress?.stage),
-        sub: progress?.updatedAt ? `更新于 ${formatShortTime(progress.updatedAt)}` : '等待运行',
+        sub: progress?.updatedAt
+          ? `${monitorStatus === 'cached' ? 'cached progress' : '更新于'} ${formatShortTime(progress.updatedAt)}`
+          : '等待运行',
       },
       {
         label: '来源条目',
-        value: String(category?.sources.length ?? 0),
-        sub: category?.profilePath ? `profile -> ${category.profilePath}` : '尚未绑定 profilePath',
+        value: String(category.sources.length),
+        sub: category.profilePath ? `profile -> ${category.profilePath}` : '尚未绑定 profilePath',
       },
     ],
     progress: {
-      status: progress?.stage === 'complete' ? 'completed' : latestJob?.status ?? 'idle',
+      status: monitorStatus,
       stepKey: progress?.stage,
       stepLabel: styleStageLabel(progress?.stage),
-      detail: category?.guidancePrompt || category?.inclusionNotes || '等待运行或查看当前分类说明。',
-      current: progress?.stage === 'complete' ? totalVideos : undefined,
+      detail: progress?.detail?.message
+        || category.guidancePrompt
+        || category.inclusionNotes
+        || '等待运行或查看当前分类说明。',
+      current: progress?.current ?? progress?.videoIndex ?? (progress?.stage === 'complete' ? totalVideos : undefined),
       total: totalVideos || undefined,
-      percent: progress?.stage === 'complete' ? 100 : undefined,
+      percent: progress?.percent ?? (progress?.stage === 'complete' ? 100 : undefined),
+      fileName: progress?.fileName ?? progress?.detail?.currentVideo,
       etaSeconds: undefined,
       updatedAt: progress?.updatedAt ?? latestJob?.updatedAt,
     },
@@ -412,14 +454,17 @@ function buildAnalyzeSteps(progress: IAnalyzeProgressPayload | null): IMonitorSt
   }));
 }
 
-function buildStyleSteps(stage?: string): IMonitorStepDefinition[] {
+function buildStyleSteps(stage?: string, status = 'idle'): IMonitorStepDefinition[] {
   const activeIndex = Math.max(0, CSTYLE_STAGE_ORDER.findIndex(item => item.key === stage));
   const isComplete = stage === 'complete';
+  const isError = status === 'failed';
   return CSTYLE_STAGE_ORDER.map((item, index) => ({
     ...item,
     state: isComplete
       ? 'completed'
-      : index < activeIndex
+      : isError && index === activeIndex
+        ? 'error'
+        : index < activeIndex
         ? 'completed'
         : index === activeIndex
           ? 'active'
@@ -433,29 +478,32 @@ async function buildStyleOutputs(
     categoryId: string;
     profilePath?: string;
     sources: Array<{ path: string }>;
-  } | null,
+  },
   progress: IStyleProgressPayload | null,
 ): Promise<IMonitorOutput[]> {
   const outputs: IMonitorOutput[] = [];
-  if (category?.profilePath) {
+  if (category.profilePath) {
     outputs.push(await outputItem(
-      '风格档案 Markdown',
-      join(workspaceRoot, 'config', 'styles', category.profilePath),
-      '风格 profile/front-matter 同步产物。',
-    ));
+    '风格档案 Markdown',
+    join(workspaceRoot, 'config', 'styles', category.profilePath),
+    '风格 profile/front-matter 同步产物。',
+  ));
   }
   outputs.push(await outputItem(
     'style-references',
-    join(workspaceRoot, 'analysis', 'style-references', category?.categoryId ?? 'style-analysis'),
+    getStyleReferenceReportsRoot(workspaceRoot, category.categoryId),
     '参考视频分析中间结果与汇总目录。',
   ));
   outputs.push(await outputItem(
-    'catalog.json',
-    join(workspaceRoot, 'config', 'styles', 'catalog.json'),
-    '全局 style 分类目录。',
+    'style-sources.json',
+    join(workspaceRoot, 'config', 'style-sources.json'),
+    'Workspace 级 style 分类与来源配置。',
   ));
   if (progress?.detail?.summaryPath) {
     outputs.push(await outputItem('combined summary', progress.detail.summaryPath, '分类级汇总 JSON。'));
+  }
+  if (progress?.detail?.reportPath) {
+    outputs.push(await outputItem('current report', progress.detail.reportPath, '当前或最近一个参考视频分析结果。'));
   }
   if (progress?.detail?.transcriptPath) {
     outputs.push(await outputItem('transcript', progress.detail.transcriptPath, '本轮分析输出的转录文件。'));
@@ -465,6 +513,36 @@ async function buildStyleOutputs(
     outputs.push(await outputItem(link.label ?? basename(link.path), link.path, link.description));
   }
   return outputs;
+}
+
+function resolveStyleMonitorCategory(
+  config: Awaited<ReturnType<typeof loadStyleSourcesConfig>>,
+  requestedCategoryId?: string,
+  activeCategoryId?: string,
+): Awaited<ReturnType<typeof loadStyleSourcesConfig>>['categories'][number] {
+  const resolveById = (categoryId: string, reason: string) => {
+    const matched = config.categories.find(item => item.categoryId === categoryId);
+    if (!matched) {
+      throw new Error(`${reason} "${categoryId}" is not defined in config/style-sources.json`);
+    }
+    return matched;
+  };
+
+  if (requestedCategoryId?.trim()) {
+    return resolveById(requestedCategoryId.trim(), 'requested style category');
+  }
+  if (activeCategoryId?.trim()) {
+    return resolveById(activeCategoryId.trim(), 'active style-analysis category');
+  }
+  if (config.defaultCategory?.trim()) {
+    return resolveById(config.defaultCategory.trim(), 'style-sources.json defaultCategory');
+  }
+
+  const first = config.categories[0];
+  if (!first) {
+    throw new Error('style-sources.json does not define any style categories');
+  }
+  return first;
 }
 
 async function summarizeFineScanCheckpoints(projectRoot: string): Promise<{
@@ -531,6 +609,7 @@ function statusLabel(status: string): string {
   if (normalized === 'running') return '运行中';
   if (normalized === 'awaiting_agent') return '等待 Agent';
   if (normalized === 'completed' || normalized === 'succeeded') return '已完成';
+  if (normalized === 'cached') return '缓存进度';
   if (normalized === 'blocked') return '已阻塞';
   if (normalized === 'failed') return '失败';
   if (normalized === 'queued') return '排队中';
@@ -543,6 +622,7 @@ function toneForStatus(status: string): IMonitorChip['tone'] {
   const normalized = status.toLowerCase();
   if (normalized === 'completed' || normalized === 'succeeded' || normalized === 'running') return 'ok';
   if (normalized === 'awaiting_agent') return 'warn';
+  if (normalized === 'cached') return 'warn';
   if (normalized === 'blocked' || normalized === 'queued') return 'warn';
   if (normalized === 'failed' || normalized === 'error') return 'error';
   return 'default';
@@ -589,4 +669,24 @@ async function readJsonFile<T>(path: string): Promise<T | null> {
   } catch {
     return null;
   }
+}
+
+function isLiveJobStatus(status?: string): boolean {
+  return status === 'queued' || status === 'running' || status === 'blocked';
+}
+
+function resolveMonitorStatus(input: {
+  liveJobStatus?: string;
+  latestJobStatus?: string;
+  hasCachedProgress: boolean;
+}): string {
+  if (input.liveJobStatus) return input.liveJobStatus;
+  if (input.latestJobStatus) return input.latestJobStatus;
+  if (input.hasCachedProgress) return 'cached';
+  return 'idle';
+}
+
+function getStyleJobCategoryId(job: ISupervisorJobRecord | null): string | undefined {
+  const value = job?.args?.categoryId;
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
 }

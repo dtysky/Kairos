@@ -193,6 +193,9 @@ function toneClass(status) {
   if (normalized === 'running' || normalized === 'completed') {
     return 'ok';
   }
+  if (normalized === 'awaiting_agent' || normalized === 'cached') {
+    return 'warn';
+  }
   if (normalized === 'failed' || normalized === 'error') {
     return 'error';
   }
@@ -206,7 +209,9 @@ function statusLabel(status) {
   const normalized = (status || '').toLowerCase();
   if (normalized === 'running') return '运行中';
   if (normalized === 'completed') return '已完成';
+  if (normalized === 'awaiting_agent') return '等待 Agent';
   if (normalized === 'blocked') return '已阻塞';
+  if (normalized === 'cached') return '缓存进度';
   if (normalized === 'queued') return '排队中';
   if (normalized === 'failed' || normalized === 'error') return '失败';
   if (normalized === 'stopped') return '已停止';

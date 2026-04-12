@@ -12,10 +12,10 @@ export function getChronologyPath(projectRoot: string): string {
 export async function loadChronology(
   projectRoot: string,
 ): Promise<IMediaChronology[]> {
-  return await readJsonOrNull(
+  return (await readJsonOrNull(
     getChronologyPath(projectRoot),
     IChronologyFile,
-  ) ?? [];
+  ) as IMediaChronology[] | null) ?? [];
 }
 
 export async function writeChronology(

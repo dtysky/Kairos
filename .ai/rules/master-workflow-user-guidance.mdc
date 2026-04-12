@@ -21,6 +21,9 @@ alwaysApply: true
 - 对用户的说明应优先使用“下一步做什么 + 为什么 + 需要用户提供什么”的方式，而不是只罗列内部实现细节。
 - 如果当前任务涉及需求、行为、工作流、正式入口或用户路径变更，必须额外遵守 `change-management-discipline.mdc`：先进入 `Plan` 模式（或宿主等价的结构化计划确认），再更新设计文档、再实现，最后回查并同步设计文档 / rules / skills。
 - 当前正式控制面是 `Supervisor + React console (apps/kairos-console/)`；`/analyze` 与 `/style` 是正式监控路由，旧静态监控页和兼容脚本不能再被解释成新的正式入口。
+- `scripts/kairos-supervisor.* start` 只会启动 `Supervisor + React console`，不会顺带启动 ML，也不会恢复旧 job。
+- `progress.json` 只能被解释成 durable cache；“是否还在跑”必须看 live job record。
+- Kairos 官方管理的顶层流程结束态必须是 `ML stopped`。
 
 ## 对用户的标准流程口径
 
@@ -90,6 +93,7 @@ Kairos 的标准顺序是：
 
 - 在 `Analyze` 前，必须先说明 GPS 优先级：`embedded GPS > project GPX > project-derived-track > none`
 - 在 `Analyze` 前，必须先确认 ML server 可用；不可静默退化成无 ML 分析
+- 在 `Analyze`、`Style Analysis` 或任何可能使用 ML 的正式流程结束后，必须确认 Kairos 官方 ML service 已回收到 `stopped`
 - 在 `Script` 前，如果用户没有明确指定 workspace 风格分类或明确说这次不用风格档案，必须停下确认
 - 在 `Script` 阶段，不要把 Console 的 `script` job 描述成“后台自动写稿”；它当前只负责 deterministic prep，不负责起草初版 brief，也不负责写正式脚本
 - 如果用户已经修改过当前 brief，又想回到“重生成初版 brief”，必须把用户引导回 `/script` 走覆盖确认；Agent 不能静默覆盖

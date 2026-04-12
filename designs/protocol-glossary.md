@@ -48,11 +48,7 @@
 
 ### `legacy monitor helper`
 
-指仍保留在仓库里、但不再代表正式入口的兼容 / 调试工具，例如：
-
-- `scripts/kairos-progress.ps1`
-- `scripts/kairos-progress.sh`
-- `scripts/style-analysis-progress-viewer.html`
+指已经退出正式链路、仅作为历史语义保留在文档里的旧静态监控方案。
 
 ## 2. 术语分层
 

@@ -71,8 +71,13 @@
    - `apps/kairos-console/` 采用 React + 工作流优先路由，而不是单页工作台
    - `Analyze` 与 `Style` 监控当前直接由 `/analyze` 与 `/style` 主路由承载
    - `Style` 当前承载的是 **Workspace 级风格库 / 风格来源配置 / style-analysis monitor**，而不是某个单项目私有风格页
+   - `scripts/kairos-supervisor.* start` 当前只负责拉起 `Supervisor + React console`；不会自动拉起 ML，也不会恢复旧 job
+   - `progress.json` 当前必须被理解为 durable cache，而不是 live job 证据；live 状态只来自 Supervisor job record
+   - 顶层 Kairos job 的结束态统一要求 `ML stopped`
+   - Console 刷新时，默认项目上下文优先跟随最新的 active project-scoped job；没有活跃项目 job 时才回退到本地记忆的选择
+   - 当多个项目 display name 相同，项目选择器必须显式展示 `projectId`，避免监控与配置页混到旧项目
    - 旧 `/analyze/monitor` 与 `/style/monitor/:categoryId?` 仅保留兼容跳转
-   - `scripts/kairos-progress.*` 与旧静态监控页只保留兼容 / 调试用途，不再是新的正式入口
+   - workspace `style-analysis` 当前应被实现为 deterministic prep job，而不是“agent-backed 但 runner 缺失”的占位壳子
    - React Analyze 页当前已直接消费多阶段 Analyze pipeline monitor model：
      - `coarse-scan` 展示素材级抽帧 worker、活跃素材和 prepared checkpoint
      - `audio-analysis` 展示 local queue、ASR queue 与活跃 worker
@@ -82,8 +87,28 @@
      - `config/style-sources.json`
      - `analysis/reference-transcripts/`
      - `analysis/style-references/`
+   - `config/style-sources.json` 是唯一正式 style 索引；`config/styles/*.md` 只承载 profile 内容，不再维护独立 `catalog.json`
 
 因此，后续阅读本稿时，应把这些能力理解为“正式流程中已被当前实现覆盖的阶段”，而不是另一套独立的“中间版本架构”。
+
+## 0.3 2026-04-08 语义准备链更新
+
+当前实现已经开始把旧的 `slice + 五轴语义 + 单阶段 arrangement` 迁到新的 model-driven arrangement 准备链：
+
+- Analyze 正式素材单元优先收口为 `Span`
+- 项目内正式持久化路径改为 `store/spans.json`
+- `Span` 当前主承载：
+  - `materialPatterns[]`
+  - `grounding`
+- 项目级正式词集当前只保留一层，并通过 `config/project-brief.md/.json` 维护：
+  - `材料模式短语`
+- Script prep 现在正式改为：
+  1. `Analyze -> Material Overview`
+  2. `Material Overview + Script Brief + arrangementStructure + narrationConstraints -> Segment Plan`
+  3. `Segment Plan -> Material Slots -> Bundle Lookup -> Chosen SpanIds -> Beat / Script`
+- `Bundle` 当前是 `materialPatterns` 粗索引层，不是独立叙事身份
+- `Segment` 当前不再作为固定 archetype 闭集，而是 LLM-first 的项目级动态段落对象
+- `style` 当前应同时提供结构程序层 `arrangementStructure` 与脚本叙述约束层 `narrationConstraints`
 
 ## 0.1 当前变更纪律
 
@@ -146,7 +171,8 @@ flowchart TD
                         │ HTTP API / 状态聚合
 ┌───────────────────────▼──────────────────────────────────────┐
 │                    Supervisor Runtime                         │
-│  services: dashboard / ml   jobs: ingest / analyze / script │
+│  services: dashboard / ml   jobs: ingest / analyze /        │
+│  style-analysis / script / timeline / export               │
 └───────────────────────┬──────────────────────────────────────┘
                         │ 调用（函数调用 + 结构化数据交换）
 ┌───────────────────────▼──────────────────────────────────────┐
@@ -344,16 +370,17 @@ src/modules/script/
   → 从 workspace `config/styles/` 选择用户指定的 style category
   → `/script` 先自动保存 `styleCategory`
   → Console 以 persistent workflow prompt + hana modal 明确提示当前 handoff，而不是只给低对比行内说明
-  → Agent 读取 Pharos 分镜数据 + 素材索引 + 场景数据 + GPS 轨迹，并生成初版 `script-brief`
+  → Agent 读取 Pharos 分镜数据 + 素材索引 + 场景数据 + GPS 轨迹，并生成 `script/material-overview.md` 与初版 `script-brief`
   → 用户先在 `/script` 中审阅和手动保存 brief
   → Supervisor / Console 再做 deterministic prep
      - 仅在 `script-brief.workflowState = ready_to_prepare` 后允许运行
-     - 校验 slices / styleCategory / workspace style profile
-     - 刷新 `analysis/material-digest.json`
+     - 校验 spans / styleCategory / workspace style profile
+     - 刷新 `script/material-overview.facts.json`
+     - 刷新 `analysis/material-bundles.json`
      - 成功后推进到 `ready_for_agent`
-  → Agent 再读取 brief + digest + style profile，推进段落规划、outline 与正式脚本写作
-     - 优先消费 style profile 中明确写出的节奏阶段、素材角色、运镜语言、功能位分配、参数表与 anti-patterns
-     - 不应把 style profile 仅当作叙事语气说明，再完全依赖 LLM 从长文里二次猜镜头语法
+  → Agent 再读取 overview + brief + style profile，推进 `segment plan -> material slots -> chosenSpanIds -> outline -> script/current.json`
+     - `arrangementStructure` 主导结构决策
+     - `narrationConstraints` 只弱影响表达
   → 由 Agent 存储 `script/current.json` + 版本快照
 ```
 

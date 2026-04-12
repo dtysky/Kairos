@@ -49,7 +49,7 @@ export async function loadFineScanCheckpoint(
   return readJsonOrNull(
     getFineScanCheckpointPath(projectRoot, assetId),
     IFineScanCheckpoint,
-  );
+  ) as Promise<IFineScanCheckpoint | null>;
 }
 
 export async function writeFineScanCheckpoint(
@@ -58,6 +58,7 @@ export async function writeFineScanCheckpoint(
 ): Promise<void> {
   await writeJson(getFineScanCheckpointPath(projectRoot, checkpoint.assetId), {
     ...checkpoint,
+    effectiveSlices: checkpoint.effectiveSlices.map(normalizeCheckpointSlice),
     updatedAt: checkpoint.updatedAt ?? new Date().toISOString(),
   });
 }
@@ -67,4 +68,36 @@ export async function removeFineScanCheckpoint(
   assetId: string,
 ): Promise<void> {
   await unlink(getFineScanCheckpointPath(projectRoot, assetId)).catch(() => undefined);
+}
+
+function normalizeCheckpointSlice(slice: IKtepSlice): IKtepSlice {
+  return {
+    ...slice,
+    narrativeFunctions: {
+      core: slice.narrativeFunctions?.core ?? [],
+      extra: slice.narrativeFunctions?.extra ?? [],
+      evidence: slice.narrativeFunctions?.evidence ?? [],
+    },
+    shotGrammar: {
+      core: slice.shotGrammar?.core ?? [],
+      extra: slice.shotGrammar?.extra ?? [],
+      evidence: slice.shotGrammar?.evidence ?? [],
+    },
+    viewpointRoles: {
+      core: slice.viewpointRoles?.core ?? [],
+      extra: slice.viewpointRoles?.extra ?? [],
+      evidence: slice.viewpointRoles?.evidence ?? [],
+    },
+    subjectStates: {
+      core: slice.subjectStates?.core ?? [],
+      extra: slice.subjectStates?.extra ?? [],
+      evidence: slice.subjectStates?.evidence ?? [],
+    },
+    grounding: {
+      speechMode: slice.grounding?.speechMode ?? 'none',
+      speechValue: slice.grounding?.speechValue ?? 'none',
+      spatialEvidence: slice.grounding?.spatialEvidence ?? [],
+      pharosRefs: slice.grounding?.pharosRefs ?? [],
+    },
+  };
 }

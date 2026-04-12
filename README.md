@@ -22,28 +22,40 @@ Current stable pipeline:
 - official local runtime / monitor entry is `Supervisor + React console (apps/kairos-console/)`
   - `http://127.0.0.1:8940/analyze` is the official Analyze monitor route
   - `http://127.0.0.1:8940/style` is the official workspace-level Style monitor route
-  - `scripts/kairos-progress.*` and `scripts/style-analysis-progress-viewer.html` are legacy compatibility helpers, not the official path for new capability work
+  - `scripts/kairos-supervisor.* start` only starts `Supervisor + React console`; it does not start ML and does not resume old jobs
+  - `progress.json` is only a durable progress cache; a phase is live only when Supervisor still has the matching active job
+  - console refresh now prefers the project that currently owns the latest active project-scoped job before falling back to the last locally remembered selection
+  - when multiple projects share the same display name, the selector must surface `projectId` to avoid mixing monitor context
+  - top-level workflow jobs now always reconcile to `ML stopped` after completion, failure, manual stop, or interruption
 - reusable style assets now live at workspace scope, not project scope:
   - `config/styles/` stores the shared style library
-  - `config/style-sources.json` stores the shared style-source manifest
+  - `config/style-sources.json` stores the shared style-source manifest and is the only structured style index
   - `analysis/reference-transcripts/` and `analysis/style-references/` store shared style-analysis outputs
+  - `config/styles/{category}.md` holds profile content only; it is no longer paired with a separate `catalog.json`
 - workspace style profiles are no longer treated as prose-only references:
   - each `config/styles/*.md` should carry directly consumable rhythm-stage guidance, material-role guidance, camera/shot-language preferences, function-slot hints, stable parameter keys, and anti-patterns
   - these style outputs are expected to guide `script` recall / outline / beat writing directly, not only provide high-level narrative tone
 - project script work now references a workspace style category instead of owning its own `config/styles/`
+- workspace style-analysis now runs as a formal deterministic prep job:
+  - `health-check -> clip -> probe -> shot-detect -> transcribe -> keyframes -> vlm -> video-complete -> awaiting_agent|completed`
+  - the prep job writes workspace `.tmp/style-analysis/{category}/progress.json`, `analysis/reference-transcripts/`, and `analysis/style-references/`
+  - the final style profile remains agent-authored from those prep outputs
 - the `/script` console page now acts as deterministic script preparation:
   - user first selects a workspace `styleCategory` in `/script`; that selection auto-saves
-  - agent then generates the initial `script-brief`
+  - agent then generates `script/material-overview.md` and the initial `script-brief`
   - user reviews and manually saves the brief in `/script`
   - the console now surfaces these handoffs with persistent workflow prompts and explicit hana modal confirmations instead of relying on low-contrast inline copy
-  - `/script` validates `store/slices.json`, the selected workspace `styleCategory`, and the matching style profile
-  - `/script` refreshes deterministic prep outputs such as `analysis/material-digest.json`
+  - `/script` validates `store/spans.json`, the selected workspace `styleCategory`, and the matching style profile
+  - `/script` now prepares deterministic script inputs such as `script/material-overview.facts.json`, `script/material-overview.md`, `script/segment-plan.json`, `script/material-slots.json`, and `analysis/material-bundles.json`
   - the final `script/current.json` remains agent-authored
   - if the reviewed brief was already user-edited and a fresh initial draft is needed, overwrite permission is granted explicitly from `/script` instead of silent agent overwrite
-  - the selected style profile should already expose structured preferences for rhythm stages, material grammar, camera language, and anti-patterns, so Agent work does not depend on re-inferring everything from a long style essay
+  - the selected style profile should already expose structured `arrangementStructure`, `narrationConstraints`, rhythm stages, material grammar, camera language, and anti-patterns, so Agent work does not depend on re-inferring everything from a long style essay
+  - script prep now follows `Analyze -> Material Overview -> Script Brief -> Segment Plan -> Material Slots -> Bundle Lookup -> Chosen SpanIds -> Beat / Script`
+- project brief now carries one project-level semantic vocab layer for analyze/script:
+  - `材料模式短语`
 - subtitles support two formal paths:
   - narration path from `beat.text`
-  - source-speech path from `slice.transcriptSegments`
+  - source-speech path from `span.transcriptSegments`
 - video Analyze now produces formal video `visualSummary + decision` in a single unified VLM pass during `finalize`:
   - with audio: `coarse-scan -> audio-analysis -> finalize -> deferred scene detect(if needed)`
   - without audio: `coarse-scan -> finalize -> deferred scene detect(if needed)`
@@ -57,14 +69,17 @@ Current stable pipeline:
 - Analyze now distinguishes tight focus windows from edit-friendly bounds:
   - coarse reports keep `interestingWindows[].startMs/endMs` as focus/evidence windows
   - edit-ready bounds travel alongside them as `interestingWindows[].editStartMs/editEndMs`
-  - persisted `store/slices.json` keeps backward-compatible `sourceInMs/sourceOutMs` plus wider `editSourceInMs/editSourceOutMs`
-- drive slices can now carry `speedCandidate` metadata (for example `2x / 5x / 10x` suggestions), but final retiming stays an explicit downstream decision
+  - persisted `store/spans.json` keeps `sourceInMs/sourceOutMs` plus wider `editSourceInMs/editSourceOutMs`
+- analyze now formalizes material-side semantics on each span:
+  - `materialPatterns[]`
+  - `grounding`
+- drive spans can now carry `speedCandidate` metadata (for example `2x / 5x / 10x` suggestions), but final retiming stays an explicit downstream decision
 - a `beat` can now optionally carry explicit `utterances[]` with head / middle / tail pauses, so subtitles only occupy voiced islands while video can continue underneath
-- outline / script now prefer Analyze-provided edit bounds instead of re-centering every slice by default; legacy slices without edit bounds still fall back to conservative trimming
+- outline / script now prefer Analyze-provided edit bounds instead of re-centering every span by default; legacy spans without edit bounds still fall back to conservative trimming
 - explicit acceleration now flows through `beat.actions.speed` -> timeline clip `speed` -> NLE export, but only `drive / aerial` clips may consume it; placement also fits clips against `beat.targetDurationMs` instead of drifting with raw source duration
 - when a beat preserves source speech, Kairos now snaps the selected window outward to full `transcriptSegments` boundaries and will extend the beat if needed so the spoken sentence finishes cleanly
 - timeline / draft output spec is project-configurable through `config/runtime.json` and now defaults to `3840x2160 @ 30fps`
-- when a beat does not use source speech, Kairos will mark selected video clips to mute their embedded audio during NLE export
+- when a beat does not use source speech, Kairos will mark selected video clips to mute their embedded audio during NLE export; clip/selection references now prefer `spanId`
 - the official Analyze monitor now exposes structured pipeline cards for `coarse-scan`, `audio-analysis`, and `fine-scan` instead of pretending the first two stages are single-asset serial work
 - Jianying export now uses the vendored local `pyJianYingDraft` CLI, not an external Jianying MCP/server
 - Jianying draft export is guarded by strict safety rules:

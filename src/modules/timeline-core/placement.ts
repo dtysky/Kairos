@@ -12,9 +12,12 @@ import type {
 import {
   hasExplicitEditRange,
   resolveSlicePreferredRange,
-  snapSelectionToTranscriptSegments,
 } from '../media/window-policy.js';
-import { buildSourceSpeechContext, shouldPreferSourceSpeech } from './pacing.js';
+import {
+  buildSourceSpeechContext,
+  normalizeSourceSpeechSelections,
+  shouldPreferSourceSpeech,
+} from './pacing.js';
 
 export interface IPlacementConfig {
   maxSliceDurationMs: number;
@@ -71,10 +74,7 @@ export function placeClips(
         buildSourceSpeechContext(initialSelections, sliceMap),
       );
       const selections = preferSourceSpeech
-        ? initialSelections.map(selection => {
-          const slice = selection.sliceId ? sliceMap.get(selection.sliceId) : undefined;
-          return snapSelectionToTranscriptSegments(selection, slice);
-        })
+        ? normalizeSourceSpeechSelections(initialSelections, sliceMap)
         : initialSelections;
       const explicitSpeed = preferSourceSpeech
         ? undefined
@@ -112,6 +112,7 @@ export function placeClips(
           // Until we support true overlap-aware placement, keep all serial video clips on one track.
           trackId: primaryTrack.id,
           assetId: entry.asset.id,
+          spanId: entry.selection.spanId ?? entry.selection.sliceId,
           sliceId: entry.selection.sliceId,
           sourceInMs: entry.sourceInMs,
           sourceOutMs: entry.sourceOutMs,
@@ -142,6 +143,7 @@ export function placeClips(
             id: randomUUID(),
             trackId: natTrack.id,
             assetId: entry.asset.id,
+            spanId: entry.selection.spanId ?? entry.selection.sliceId,
             sliceId: entry.selection.sliceId,
             sourceInMs: entry.sourceInMs,
             sourceOutMs: entry.sourceOutMs,
@@ -211,6 +213,9 @@ function resolveBeats(
       targetDurationMs: segment.targetDurationMs,
       actions: segment.actions,
       selections: [selection],
+      linkedSpanIds: typeof (selection.spanId ?? selection.sliceId) === 'string'
+        ? [selection.spanId ?? selection.sliceId as string]
+        : [],
       linkedSliceIds: typeof selection.sliceId === 'string' ? [selection.sliceId] : [],
       pharosRefs: selection.pharosRefs ?? segment.pharosRefs,
       notes: segment.notes,
@@ -222,10 +227,12 @@ function resolveSelections(
   sliceMap: Map<string, IKtepSlice>,
 ): IResolvedSelection[] {
   return selections.map(selection => {
-    const slice = selection.sliceId ? sliceMap.get(selection.sliceId) : undefined;
+    const spanRef = selection.spanId ?? selection.sliceId;
+    const slice = spanRef ? sliceMap.get(spanRef) : undefined;
     const preferredRange = slice ? resolveSlicePreferredRange(slice) : null;
     return {
       ...selection,
+      spanId: selection.spanId ?? selection.sliceId ?? slice?.id,
       assetId: selection.assetId ?? slice?.assetId ?? '',
       sourceInMs: selection.sourceInMs ?? preferredRange?.startMs ?? slice?.sourceInMs,
       sourceOutMs: selection.sourceOutMs ?? preferredRange?.endMs ?? slice?.sourceOutMs,

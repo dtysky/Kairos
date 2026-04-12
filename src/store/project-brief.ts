@@ -16,12 +16,17 @@ export interface IProjectBriefPharosConfig {
   includedTripIds: string[];
 }
 
+export interface IProjectBriefVocabularyConfig {
+  materialPatternPhrases: string[];
+}
+
 export interface IParsedProjectBrief {
   name?: string;
   description?: string;
   createdAt?: string;
   mappings: IProjectBriefPathMapping[];
   pharos?: IProjectBriefPharosConfig;
+  vocabulary: IProjectBriefVocabularyConfig;
   warnings: string[];
 }
 
@@ -50,6 +55,10 @@ export function buildProjectBriefTemplate(
     '',
     '包含 Trip：',
     '',
+    '## 材料模式短语',
+    '',
+    '- ',
+    '',
   ].join('\n');
 }
 
@@ -63,8 +72,11 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
 
   const mappings: IProjectBriefPathMapping[] = [];
   const includedTripIds: string[] = [];
+  const materialPatternPhrases: string[] = [];
+
   let inMappings = false;
   let inPharos = false;
+  let inMaterialPatterns = false;
   let pendingPath: string | null = null;
   let pendingDescription: string | null = null;
   let pendingFlightRecordPath: string | null = null;
@@ -95,6 +107,7 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
     if (line === '## 路径映射') {
       inMappings = true;
       inPharos = false;
+      inMaterialPatterns = false;
       expectIncludedTripValue = false;
       continue;
     }
@@ -112,9 +125,31 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
       pendingFlightRecordPath = null;
       inMappings = false;
       inPharos = true;
+      inMaterialPatterns = false;
       expectPathValue = false;
       expectDescriptionValue = false;
       expectFlightRecordPathValue = false;
+      continue;
+    }
+
+    if (line === '## 材料模式短语') {
+      pushPendingMapping(
+        mappings,
+        warnings,
+        pendingPath,
+        pendingDescription,
+        pendingFlightRecordPath,
+      );
+      pendingPath = null;
+      pendingDescription = null;
+      pendingFlightRecordPath = null;
+      inMappings = false;
+      inPharos = false;
+      inMaterialPatterns = true;
+      expectPathValue = false;
+      expectDescriptionValue = false;
+      expectFlightRecordPathValue = false;
+      expectIncludedTripValue = false;
       continue;
     }
 
@@ -131,6 +166,7 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
       pendingFlightRecordPath = null;
       inMappings = false;
       inPharos = false;
+      inMaterialPatterns = false;
       expectPathValue = false;
       expectDescriptionValue = false;
       expectFlightRecordPathValue = false;
@@ -153,6 +189,14 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
       if (expectIncludedTripValue) {
         pushIncludedTripId(includedTripIds, line);
         expectIncludedTripValue = false;
+      }
+      continue;
+    }
+
+    if (inMaterialPatterns) {
+      const phrase = normalizePhraseLine(line);
+      if (phrase) {
+        materialPatternPhrases.push(phrase);
       }
       continue;
     }
@@ -220,7 +264,6 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
     if (expectFlightRecordPathValue) {
       pendingFlightRecordPath = line;
       expectFlightRecordPathValue = false;
-      continue;
     }
   }
 
@@ -247,10 +290,11 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
     createdAt,
     mappings,
     pharos: includedTripIds.length > 0
-      ? {
-        includedTripIds,
-      }
+      ? { includedTripIds }
       : undefined,
+    vocabulary: {
+      materialPatternPhrases: dedupeTrimmedStrings(materialPatternPhrases),
+    },
     warnings,
   };
 }
@@ -265,6 +309,15 @@ export function normalizeProjectBriefLocalPath(path: string, basePath?: string):
   const drive = winMatch[1].toLowerCase();
   const rest = winMatch[2].replace(/[\\/]+/g, '/');
   return `/mnt/${drive}/${rest}`;
+}
+
+function normalizePhraseLine(line: string): string | null {
+  const normalized = line.replace(/^[-*]\s*/, '').trim();
+  return normalized.length > 0 ? normalized : null;
+}
+
+function dedupeTrimmedStrings(values: string[]): string[] {
+  return [...new Set(values.map(value => value.trim()).filter(Boolean))];
 }
 
 function pushPendingMapping(
@@ -295,9 +348,7 @@ function pushPendingMapping(
   });
 }
 
-function findDuplicatePaths(
-  mappings: IProjectBriefPathMapping[],
-): string[] {
+function findDuplicatePaths(mappings: IProjectBriefPathMapping[]): string[] {
   const counts = new Map<string, number>();
   for (const mapping of mappings) {
     const key = mapping.path.trim().toLowerCase();
