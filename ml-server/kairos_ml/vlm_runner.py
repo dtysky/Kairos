@@ -28,6 +28,7 @@ CDEFAULT_CUDA_MODEL = "Qwen/Qwen3.5-9B"
 CLOCAL_TORCH_VLM = "Qwen3_5-9B"
 CLEGACY_LOCAL_TORCH_VLM = "Qwen3-VL-4B-Instruct"
 CTHINK_BLOCK_RE = re.compile(r"<think>.*?</think>\s*", re.DOTALL)
+CWINDOWS_SAFE_GLOBAL_WORKERS = max(1, int(os.getenv("KAIROS_VLM_WINDOWS_GLOBAL_WORKERS", "1")))
 
 
 def _repo_root() -> Path:
@@ -145,6 +146,26 @@ def _strip_reasoning_output(text: str) -> str:
     return normalized
 
 
+def _windows_safe_transformers_global_workers() -> int | None:
+    if os.name != "nt" or DEVICE != "cuda":
+        return None
+    return CWINDOWS_SAFE_GLOBAL_WORKERS
+
+
+def _configure_transformers_loading() -> None:
+    target_workers = _windows_safe_transformers_global_workers()
+    if target_workers is None:
+        return
+
+    # Windows/CUDA can crash when transformers materializes many shards
+    # in parallel immediately after Whisper has been unloaded.
+    import transformers.core_model_loading as core_model_loading
+
+    if getattr(core_model_loading, "GLOBAL_WORKERS", None) == target_workers:
+        return
+    core_model_loading.GLOBAL_WORKERS = target_workers
+
+
 def _load_transformers() -> tuple[float, str]:
     global _backend_loaded, _model, _processor, _model_type
     model_ref = _resolve_transformers_ref()
@@ -155,6 +176,7 @@ def _load_transformers() -> tuple[float, str]:
     from transformers import AutoProcessor
 
     started_at = time.perf_counter()
+    _configure_transformers_loading()
     _processor = AutoProcessor.from_pretrained(model_ref)
     model_cls, _model_type = _resolve_transformers_model_class(model_ref)
 
