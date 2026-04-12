@@ -71,6 +71,8 @@ Current stable pipeline:
   - `coarse-scan` now runs as asset-level dynamic concurrency: each active asset uses at most one coarse keyframe `ffmpeg`, while multiple assets may progress in parallel based on free-memory limits
   - `audio-analysis` now runs as a two-queue asset pipeline: local audio health / routing work and ASR work have separate dynamic concurrency controls
   - for assets with `protectionAudio`, Analyze now performs dual lightweight health checks first, routes to a single chosen ASR source, and promotes that chosen transcript to the formal downstream transcript
+  - Analyze now treats `Whisper` and `VLM` as mutually exclusive residents during the ASR/finalize handoff; entering `VLM` must unload `Whisper` first instead of keeping both models hot
+  - on transformers-backed VLM paths (`Windows + CUDA`, `Linux`, `CPU fallback`), the default local/current model is now `models/Qwen3_5-9B` / `Qwen/Qwen3.5-9B`; the MLX path remains on `Qwen3-VL-4B-Instruct-8bit` until a dedicated MLX-packaged Qwen3.5 artifact is adopted
 - Analyze durable resume caches are stage-local internals:
   - `analysis/prepared-assets/` stores coarse prepared inputs, not finalized visual semantics
   - `analysis/audio-checkpoints/` stores selected-transcript, audio-health, and protection-routing intermediate state

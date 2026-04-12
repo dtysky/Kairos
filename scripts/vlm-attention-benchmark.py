@@ -13,6 +13,7 @@ import argparse
 import gc
 import json
 import os
+import re
 import statistics
 import sys
 import time
@@ -20,7 +21,8 @@ from pathlib import Path
 from typing import Any
 
 
-CDEFAULT_MODEL_ID = "Qwen/Qwen3-VL-4B-Instruct"
+CDEFAULT_MODEL_ID = "Qwen/Qwen3.5-9B"
+CTHINK_BLOCK_RE = re.compile(r"<think>.*?</think>\s*", re.DOTALL)
 CDEFAULT_PROMPT = (
     "Summarize the provided image(s) as one JSON object with keys "
     '"scene", "notable_objects", and "camera_notes".'
@@ -32,7 +34,14 @@ def _repo_root() -> Path:
 
 
 def _default_local_model_path() -> Path:
-    return _repo_root() / "models" / "Qwen3-VL-4B-Instruct"
+    candidates = [
+        _repo_root() / "models" / "Qwen3_5-9B",
+        _repo_root() / "models" / "Qwen3-VL-4B-Instruct",
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return candidates[0]
 
 
 def _resolve_model_ref(explicit_ref: str | None) -> str:
@@ -114,21 +123,41 @@ def _cleanup_case(model: Any, processor: Any, device: str) -> None:
         torch.cuda.ipc_collect()
 
 
+def _resolve_model_class(model_ref: str):
+    from transformers import AutoConfig, Qwen3VLForConditionalGeneration, Qwen3_5ForConditionalGeneration
+
+    config = AutoConfig.from_pretrained(model_ref)
+    model_type = str(getattr(config, "model_type", "") or "").strip().lower()
+    if model_type == "qwen3_5":
+        return Qwen3_5ForConditionalGeneration, model_type
+    return Qwen3VLForConditionalGeneration, model_type
+
+
+def _strip_reasoning_output(text: str) -> str:
+    if not text:
+        return text
+    normalized = text.strip()
+    if "</think>" in normalized:
+        normalized = normalized.split("</think>")[-1].strip()
+    return CTHINK_BLOCK_RE.sub("", normalized).strip()
+
+
 def _load_case(model_ref: str, attn_mode: str, device: str, dtype_name: str) -> tuple[Any, Any, float]:
-    from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
+    from transformers import AutoProcessor
 
     dtype = _resolve_dtype(dtype_name, device)
     started_at = time.perf_counter()
     processor = AutoProcessor.from_pretrained(model_ref)
+    model_cls, _model_type = _resolve_model_class(model_ref)
 
     kwargs: dict[str, Any] = {
-        "dtype": dtype,
+        "torch_dtype": dtype,
         "attn_implementation": attn_mode,
     }
     if device == "cuda":
         kwargs["device_map"] = "auto"
 
-    model = Qwen3VLForConditionalGeneration.from_pretrained(model_ref, **kwargs).eval()
+    model = model_cls.from_pretrained(model_ref, **kwargs).eval()
     if device == "cpu":
         model = model.to("cpu")
     elif device == "mps":
@@ -163,11 +192,13 @@ def _run_round(
             {"type": "text", "text": prompt_text},
         ],
     }]
-    text = processor.apply_chat_template(
-        messages,
-        tokenize=False,
-        add_generation_prompt=True,
-    )
+    chat_template_kwargs: dict[str, Any] = {
+        "tokenize": False,
+        "add_generation_prompt": True,
+    }
+    if getattr(model.config, "model_type", "") == "qwen3_5":
+        chat_template_kwargs["enable_thinking"] = False
+    text = processor.apply_chat_template(messages, **chat_template_kwargs)
 
     image_open_started_at = time.perf_counter()
     images = []
@@ -233,7 +264,7 @@ def _run_round(
     if device == "cuda":
         peak_memory_mb = torch.cuda.max_memory_allocated() / (1024.0 * 1024.0)
 
-    output_text = outputs[0] if outputs else ""
+    output_text = _strip_reasoning_output(outputs[0] if outputs else "")
     return {
         "totalMs": (time.perf_counter() - total_started_at) * 1000.0,
         "imageOpenMs": image_open_ms,
@@ -354,7 +385,7 @@ def _print_summary(report: dict[str, Any]) -> None:
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Benchmark sdpa vs flash_attention_2 for Kairos Qwen3-VL.",
+        description="Benchmark sdpa vs flash_attention_2 for Kairos transformers VLM.",
     )
     parser.add_argument(
         "images",
@@ -399,7 +430,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--model-ref",
-        help="Optional explicit model path or model ID. Defaults to local models/Qwen3-VL-4B-Instruct when present.",
+        help="Optional explicit model path or model ID. Defaults to local models/Qwen3_5-9B when present.",
     )
     parser.add_argument(
         "--output",

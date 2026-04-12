@@ -1,12 +1,13 @@
 """
 VLM (Vision Language Model) runner with two backends:
   - MLX:   mlx-vlm + Qwen3-VL quantized  (Apple Silicon, no PyTorch)
-  - Torch: transformers + Qwen3-VL        (CUDA / CPU)
+  - Torch: transformers + Qwen3.5 / Qwen3-VL  (CUDA / CPU)
 """
 from __future__ import annotations
 
 import gc
 import os
+import re
 import time
 from pathlib import Path
 
@@ -15,6 +16,7 @@ from .device import DEVICE, BACKEND
 _backend_loaded: str | None = None
 _model = None
 _processor = None
+_model_type: str | None = None
 
 CMODEL_SOURCE = os.getenv("KAIROS_VLM_MODEL_SOURCE", "auto")
 CMODEL_ID = os.getenv("KAIROS_VLM_MODEL_ID", "")
@@ -22,7 +24,10 @@ CMODEL_PATH = os.getenv("KAIROS_VLM_MODEL_PATH")
 
 CDEFAULT_MLX_MODEL = "mlx-community/Qwen3-VL-4B-Instruct-8bit"
 CLOCAL_MLX_VLM = "Qwen3-VL-4B-Instruct-8bit"
-CDEFAULT_CUDA_MODEL = "Qwen/Qwen3-VL-4B-Instruct"
+CDEFAULT_CUDA_MODEL = "Qwen/Qwen3.5-9B"
+CLOCAL_TORCH_VLM = "Qwen3_5-9B"
+CLEGACY_LOCAL_TORCH_VLM = "Qwen3-VL-4B-Instruct"
+CTHINK_BLOCK_RE = re.compile(r"<think>.*?</think>\s*", re.DOTALL)
 
 
 def _repo_root() -> Path:
@@ -89,15 +94,22 @@ def _analyze_mlx(image_paths: list[str], prompt: str) -> tuple[str, dict]:
 
 # ── Torch backend (CUDA / CPU) ──────────────────────────────
 
-def _default_local_model_path() -> Path:
-    return _repo_root() / "models" / "Qwen3-VL-4B-Instruct"
+def _default_local_model_path() -> Path | None:
+    candidates = [
+        _repo_root() / "models" / CLOCAL_TORCH_VLM,
+        _repo_root() / "models" / CLEGACY_LOCAL_TORCH_VLM,
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return None
 
 
 def _resolve_transformers_ref() -> str:
     if CMODEL_PATH:
         return CMODEL_PATH
     default_local = _default_local_model_path()
-    if default_local.exists():
+    if default_local is not None:
         return str(default_local)
 
     model_id = CMODEL_ID or CDEFAULT_CUDA_MODEL
@@ -108,26 +120,52 @@ def _resolve_transformers_ref() -> str:
     return model_id
 
 
+def _resolve_transformers_model_class(model_ref: str):
+    from transformers import AutoConfig, Qwen3VLForConditionalGeneration, Qwen3_5ForConditionalGeneration
+
+    config = AutoConfig.from_pretrained(model_ref)
+    model_type = str(getattr(config, "model_type", "") or "").strip().lower()
+    if model_type == "qwen3_5":
+        return Qwen3_5ForConditionalGeneration, model_type
+    return Qwen3VLForConditionalGeneration, model_type
+
+
+def _should_disable_thinking() -> bool:
+    return _model_type == "qwen3_5"
+
+
+def _strip_reasoning_output(text: str) -> str:
+    if not text:
+        return text
+
+    normalized = text.strip()
+    if "</think>" in normalized:
+        normalized = normalized.split("</think>")[-1].strip()
+    normalized = CTHINK_BLOCK_RE.sub("", normalized).strip()
+    return normalized
+
+
 def _load_transformers() -> tuple[float, str]:
-    global _backend_loaded, _model, _processor
+    global _backend_loaded, _model, _processor, _model_type
     model_ref = _resolve_transformers_ref()
     if _backend_loaded == "torch":
         return 0.0, model_ref
 
     import torch
-    from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
+    from transformers import AutoProcessor
 
     started_at = time.perf_counter()
     _processor = AutoProcessor.from_pretrained(model_ref)
+    model_cls, _model_type = _resolve_transformers_model_class(model_ref)
 
     if DEVICE == "cuda":
-        _model = Qwen3VLForConditionalGeneration.from_pretrained(
-            model_ref, dtype=torch.float16,
+        _model = model_cls.from_pretrained(
+            model_ref, torch_dtype=torch.float16,
             device_map="auto", attn_implementation="sdpa",
         ).eval()
     else:
-        _model = Qwen3VLForConditionalGeneration.from_pretrained(
-            model_ref, dtype=torch.float32,
+        _model = model_cls.from_pretrained(
+            model_ref, torch_dtype=torch.float32,
         ).eval().to("cpu")
 
     _backend_loaded = "torch"
@@ -135,17 +173,20 @@ def _load_transformers() -> tuple[float, str]:
 
 
 def unload() -> bool:
-    global _backend_loaded, _model, _processor
-    if _backend_loaded is None and _model is None and _processor is None:
+    global _backend_loaded, _model, _processor, _model_type
+    if _backend_loaded is None and _model is None and _processor is None and _model_type is None:
         return False
 
     model_ref = _model
     processor_ref = _processor
+    model_type_ref = _model_type
     _backend_loaded = None
     _model = None
     _processor = None
+    _model_type = None
     del model_ref
     del processor_ref
+    del model_type_ref
     gc.collect()
 
     if DEVICE == "cuda":
@@ -177,9 +218,13 @@ def _analyze_transformers(image_paths: list[str], prompt: str) -> tuple[str, dic
             {"type": "text", "text": prompt_text},
         ],
     }]
-    text = _processor.apply_chat_template(
-        messages, tokenize=False, add_generation_prompt=True,
-    )
+    chat_template_kwargs = {
+        "tokenize": False,
+        "add_generation_prompt": True,
+    }
+    if _should_disable_thinking():
+        chat_template_kwargs["enable_thinking"] = False
+    text = _processor.apply_chat_template(messages, **chat_template_kwargs)
 
     image_open_started_at = time.perf_counter()
     images = [Image.open(p).convert("RGB") for p in image_paths]
@@ -205,7 +250,7 @@ def _analyze_transformers(image_paths: list[str], prompt: str) -> tuple[str, dic
         trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False,
     )
     decode_ms = (time.perf_counter() - decode_started_at) * 1000.0
-    return (outputs[0] if outputs else ""), {
+    return _strip_reasoning_output(outputs[0] if outputs else ""), {
         "backend": BACKEND,
         "totalMs": (time.perf_counter() - total_started_at) * 1000.0,
         "loadMs": 0.0,

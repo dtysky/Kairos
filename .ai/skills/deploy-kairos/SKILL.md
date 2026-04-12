@@ -31,8 +31,8 @@ Full deployment guide for a new device. Kairos has three subsystems:
 | Platform | ASR | CLIP | VLM | 安装方式 |
 |----------|-----|------|-----|---------|
 | macOS Apple Silicon | **mlx-whisper** (large-v3-turbo) | **mlx_clip** | **mlx-vlm** (Qwen3-VL-4B-8bit) | `pip install -e ".[mlx]"` + `./scripts/ml-models-init.sh` |
-| Windows + NVIDIA GPU | transformers Whisper (CUDA) | open-clip-torch (CUDA) | transformers Qwen3-VL-4B (CUDA) | `pip install -e ".[cuda]"` |
-| Linux / macOS Intel | transformers Whisper (CPU) | open-clip-torch (CPU) | transformers Qwen3-VL-4B (CPU) | `pip install -e ".[cuda]"` |
+| Windows + NVIDIA GPU | transformers Whisper (CUDA) | open-clip-torch (CUDA) | transformers Qwen3.5-9B (CUDA) | `pip install -e ".[cuda]"` |
+| Linux / macOS Intel | transformers Whisper (CPU) | open-clip-torch (CPU) | transformers Qwen3.5-9B (CPU) | `pip install -e ".[cuda]"` |
 
 Apple Silicon 上全栈使用 MLX，**不需要 PyTorch**。后端自动检测，也可通过 `KAIROS_ML_BACKEND=mlx|torch` 强制指定。
 
@@ -134,7 +134,7 @@ VLM 后端通过 `KAIROS_VLM_MODEL_SOURCE` 控制，默认 `auto`：
 
 | `KAIROS_VLM_MODEL_SOURCE` | 行为 |
 |---|---|
-| `auto`（默认） | macOS → mlx-vlm，CUDA → transformers + ModelScope |
+| `auto`（默认） | macOS → mlx-vlm，CUDA / CPU → transformers + local `models/Qwen3_5-9B` or `Qwen/Qwen3.5-9B` |
 | `mlx` | 强制 mlx-vlm，默认模型 `mlx-community/Qwen3-VL-4B-Instruct-8bit` |
 | `modelscope` | 强制 transformers，从 ModelScope 下载 |
 | `huggingface` | 强制 transformers，从 HuggingFace 下载 |
@@ -143,9 +143,9 @@ Optional overrides:
 
 ```bash
 export KAIROS_VLM_MODEL_SOURCE=auto          # auto / mlx / modelscope / huggingface
-export KAIROS_VLM_MODEL_ID=Qwen/Qwen3-VL-4B-Instruct   # transformers 模式下的模型 ID
+export KAIROS_VLM_MODEL_ID=Qwen/Qwen3.5-9B   # transformers 模式下的模型 ID
 # Optional: point to a pre-downloaded local directory (overrides source/id)
-export KAIROS_VLM_MODEL_PATH=/path/to/Qwen3-VL-4B-Instruct
+export KAIROS_VLM_MODEL_PATH=/path/to/Qwen3_5-9B
 ```
 
 ### 3d. Pre-download MLX models (Apple Silicon only)
@@ -159,7 +159,8 @@ Apple Silicon 上所有 ML 模型从 Hugging Face Hub 下载到项目本地 `mod
 |------|--------|---------|------|------|
 | mlx-whisper | `mlx-community/whisper-large-v3-turbo` | `models/whisper-large-v3-turbo/` | 语音转写 (ASR) | ~1.6 GB |
 | mlx_clip | `openai/clip-vit-base-patch32` | `models/clip-vit-base-patch32/` | 图像嵌入 (CLIP) | ~600 MB |
-| mlx-vlm | `mlx-community/Qwen3-VL-4B-Instruct-8bit` | `models/Qwen3-VL-4B-Instruct-8bit/` | 视觉理解 (VLM) | ~4.9 GB |
+| mlx-vlm | `mlx-community/Qwen3-VL-4B-Instruct-8bit` | `models/Qwen3-VL-4B-Instruct-8bit/` | 视觉理解 (Apple Silicon / MLX) | ~4.9 GB |
+| transformers VLM | `Qwen/Qwen3.5-9B` | `models/Qwen3_5-9B/` | 视觉理解 (CUDA / CPU) | ~18-20 GB |
 
 **一键初始化：**
 
@@ -186,7 +187,7 @@ models/
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
 | `KAIROS_WHISPER_MODEL` | `mlx-community/whisper-large-v3-turbo` | Whisper 模型 ID 或本地路径 |
-| `KAIROS_VLM_MODEL_ID` | `mlx-community/Qwen3-VL-4B-Instruct-8bit` | VLM 模型 ID |
+| `KAIROS_VLM_MODEL_ID` | `Qwen/Qwen3.5-9B`（transformers） | VLM 模型 ID |
 | `KAIROS_VLM_MODEL_PATH` | unset | VLM 本地路径（覆盖 ID） |
 | `HF_ENDPOINT` | (HuggingFace 官方) | HF 镜像地址，国内可设为 `https://hf-mirror.com` |
 
@@ -351,7 +352,7 @@ Windows 补充建议：
 | `KAIROS_ML_BACKEND` | auto-detect | 强制后端: `mlx` / `torch` |
 | `KAIROS_WHISPER_MODEL` | `mlx-community/whisper-large-v3-turbo` | MLX Whisper 模型 ID |
 | `KAIROS_VLM_MODEL_SOURCE` | `auto` | VLM model source: `auto` / `mlx` / `modelscope` / `huggingface` |
-| `KAIROS_VLM_MODEL_ID` | (per backend) | VLM model identifier (transformers 模式) |
+| `KAIROS_VLM_MODEL_ID` | `Qwen/Qwen3.5-9B`（transformers 默认） | VLM model identifier (transformers 模式) |
 | `KAIROS_VLM_MODEL_PATH` | unset | Pre-downloaded local VLM directory (overrides source/id) |
 | `HF_ENDPOINT` | (HuggingFace 官方) | HF 镜像地址，国内可设为 `https://hf-mirror.com` |
 

@@ -240,7 +240,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       backend: 'mlx',
       models_loaded: [],
     });
-    vi.spyOn(MlClient.prototype, 'asrDetailed').mockResolvedValue({
+    const asrSpy = vi.spyOn(MlClient.prototype, 'asrDetailed').mockResolvedValue({
       segments: [
         { start: 0.2, end: 2.4, text: 'Driving through the valley now.' },
         { start: 4.1, end: 6.2, text: 'The lake opens up on the left side.' },
@@ -253,7 +253,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
         inferenceMs: 59,
       },
     });
-    vi.spyOn(MlClient.prototype, 'vlmAnalyze').mockImplementation(async (imagePaths, prompt) => {
+    const vlmSpy = vi.spyOn(MlClient.prototype, 'vlmAnalyze').mockImplementation(async (imagePaths, prompt) => {
       if (prompt.includes('semantic clip type and materialization policy')) {
         return {
           description: JSON.stringify({
@@ -364,6 +364,9 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
     expect(profile.assets[0]?.sceneDetectPhases?.finalize?.callCount).toBe(0);
     expect(profile.assets[0]?.asr?.embeddedRequestCount).toBe(1);
     expect(profile.assets[0]?.appendedSliceCount).toBe(result.sliceCount);
+    expect(asrSpy.mock.calls[0]?.[2]).toEqual({ keepOtherModelsLoaded: false });
+    const finalizeVlmCall = vlmSpy.mock.calls.find(call => call[1]?.includes('semantic clip type and materialization policy'));
+    expect(finalizeVlmCall?.[2]).toEqual({ keepOtherModelsLoaded: false });
     expect(detectShotsMock).not.toHaveBeenCalled();
   });
 

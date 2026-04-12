@@ -150,6 +150,11 @@ flowchart TD
   - protection 只有在健康分数明显更优时才会成为正式 transcript 来源
 - 一旦选择了 protection，它就不再只是 finalize prompt 的辅助信号，而会直接覆盖正式 `report.transcriptSegments`
 - ML server 当前会在 `VLM` 和 `Whisper` 之间互斥卸载，避免两套模型同时常驻显存
+- Analyze 当前在 `audio-analysis -> finalize` 交接时也遵守这条互斥规则：进入 `VLM` 前必须先卸载 `Whisper`，不再为了单素材热路径保留双驻留
+- 当前 transformers VLM 默认模型已切到 `Qwen3.5-9B`：
+  - 本地优先目录：`models/Qwen3_5-9B`
+  - 无本地目录时的默认 ID：`Qwen/Qwen3.5-9B`
+  - Apple Silicon 的 MLX 路径暂时继续使用 `Qwen3-VL-4B-Instruct-8bit`，直到引入兼容的 MLX 版本
 - ML server 当前的 ASR 也已经收口成显式队列：
   - Torch backend 会把等待窗口内的独立请求聚合后做单次批推理
   - MLX backend 共享 admission/queue 语义，但保持单推理通道，不做真实 multi-audio batch

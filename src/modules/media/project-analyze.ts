@@ -140,7 +140,9 @@ const CANALYZE_STEP_DEFINITIONS = [
   { key: 'fine-scan-recognition', label: '识别细扫素材' },
   { key: 'chronology', label: '刷新时间视图' },
 ] as const;
-const CAUDIO_ANALYSIS_KEEP_OTHER_MODELS_LOADED = true;
+// Analyze now treats ASR and finalize VLM as separate stages. Entering one
+// stage must unload the other model instead of keeping both resident.
+const CAUDIO_ANALYSIS_KEEP_OTHER_MODELS_LOADED = false;
 const CCOARSE_SCAN_DEFAULTS = {
   baseConcurrency: 1,
   maxConcurrency: 3,

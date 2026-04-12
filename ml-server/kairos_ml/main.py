@@ -169,8 +169,8 @@ def health():
 @app.post("/asr")
 def asr(req: AsrRequest):
     try:
-        # Analyze finalize may chain ASR -> decision VLM for the same asset.
-        # Allow callers to keep both models resident for that hot path.
+        # Kairos normally switches model residency when moving between ASR and VLM.
+        # keep_other_models_loaded is only an explicit override for non-default flows.
         if not req.keep_other_models_loaded:
             _unload_vlm()
         _loaded.add("whisper")
@@ -205,6 +205,8 @@ def clip_embed(req: ClipEmbedRequest):
 @app.post("/vlm/analyze")
 def vlm_analyze(req: VlmRequest):
     try:
+        # The default Kairos hot path unloads Whisper before entering VLM so the
+        # ASR and finalize stages do not keep both models resident together.
         if not req.keep_other_models_loaded:
             _unload_whisper()
         from .vlm_runner import analyze

@@ -66,8 +66,13 @@
    - `asset report` 新增 `fineScanCompletedAt / fineScanSliceCount`，用于恢复 `fine-scan`
    - `retry / resume` 后 ETA 改为按当前阶段重新估算，且当前阶段完成样本少于 `3` 条时不显示 ETA
    - ML server 会在 `VLM` 和 `Whisper` 之间互斥卸载，避免两套模型同时常驻显存
+   - `audio-analysis -> finalize` 的正式切换也遵守同一条规则：进入 `VLM` 前必须先卸载 `Whisper`，不再为单素材热路径保留双驻留
    - 保护音轨只在资产已绑定 `protectionAudio` 时进入 `audio-analysis` 路由决策；当前正式策略是 embedded / protection 双健康检查后只跑一侧 ASR
    - 如果 protection 被选中，它会直接成为正式 `report.transcriptSegments` 来源，而不再只是 finalize prompt 的辅助信号
+   - 当前 transformers VLM 默认模型改为 `Qwen3.5-9B`：
+     - 本地优先目录：`models/Qwen3_5-9B`
+     - 默认远端 ID：`Qwen/Qwen3.5-9B`
+     - Apple Silicon 的 MLX 路径继续使用 `Qwen3-VL-4B-Instruct-8bit`，直到引入兼容的 MLX 版本
 10. 本地运行时与控制台已经形成当前正式操作面
    - `Supervisor` 统一承载本地服务与 job 编排
    - `apps/kairos-console/` 采用 React + 工作流优先路由，而不是单页工作台
