@@ -17,6 +17,10 @@ import {
   type IStyleSourcesConfig as TStyleSourcesConfig,
 } from '../protocol/schema.js';
 import { buildFrontMatter } from '../modules/script/style-loader.js';
+import {
+  isManualCaptureTimeResolved,
+  materializeManualCaptureTimeRow,
+} from '../modules/media/manual-capture-time-shared.js';
 import { parseProjectBrief } from './project-brief.js';
 import { buildProjectBriefWithMappings } from './project-brief-sync.js';
 import {
@@ -131,19 +135,9 @@ export async function saveManualItineraryConfig(
       id: segment.id || randomUUID(),
       via: segment.via?.filter(Boolean),
     })),
-    captureTimeOverrides: input.captureTimeOverrides.map(override => ({
-      ...override,
-      rootRef: override.rootRef?.trim() || undefined,
-      sourcePath: override.sourcePath.trim(),
-      currentCapturedAt: override.currentCapturedAt?.trim() || undefined,
-      currentSource: override.currentSource?.trim() || undefined,
-      suggestedDate: override.suggestedDate?.trim() || undefined,
-      suggestedTime: override.suggestedTime?.trim() || undefined,
-      correctedDate: override.correctedDate?.trim() || undefined,
-      correctedTime: override.correctedTime?.trim() || undefined,
-      timezone: override.timezone?.trim() || undefined,
-      note: override.note?.trim() || undefined,
-    })),
+    captureTimeOverrides: input.captureTimeOverrides.map(override => (
+      materializeManualCaptureTimeRow(override)
+    )),
   });
 
   await writeJson(getManualItineraryConfigPath(projectRoot), normalized);
@@ -613,12 +607,12 @@ function renderManualCaptureSection(rows: TManualCaptureTimeOverrideConfig[]): s
   return [
     CMANUAL_CAPTURE_TIME_HEADING,
     '',
-    '以下素材的拍摄时间和项目时间线明显不一致。请填写“正确日期 / 正确时间 / 时区”后重新运行 ingest；未填写的行会阻塞后续 Analyze。',
+    '以下素材的拍摄时间和项目时间线明显不一致。请优先填写“正确时间 / 时区”；如可推导，系统会自动补齐正确日期。未解决的行会阻塞后续 Analyze。',
     '',
     `| ${header.join(' | ')} |`,
     `| ${header.map(() => '---').join(' | ')} |`,
     ...rows.map(row => {
-      const status = row.correctedDate && row.correctedTime ? '已填写' : '待填写';
+      const status = isManualCaptureTimeResolved(row) ? '已填写' : '待填写';
       const cells = [
         status,
         row.rootRef ?? '',

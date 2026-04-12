@@ -68,6 +68,7 @@ description: >-
 ```text
 project/
 ├── config/
+├── pharos/
 ├── store/
 ├── media/
 ├── .tmp/
@@ -90,6 +91,7 @@ project/
 - `config/ingest-roots.json`
 - `config/project-brief.md`
 - `script/script-brief.md`
+- `pharos/`
 
 ### 后续按需出现的文件
 
@@ -148,16 +150,19 @@ const projectRoot = await initWorkspaceProject(
 2. 新项目启动
 - 调 `initWorkspaceProject(workspaceRoot, projectId, name, description?)`
 - 这一步只创建骨架和基础种子文件，不会自动扫描素材
+- 新项目启动后应明确提醒用户：`projects/<projectId>/pharos/` 已经建好，后续只需要把 `trip_id/plan.json + record.json? + gpx/` 镜像放进去
 
 3. 迁移或修复已有项目
 - 先保留所有已同步产物
 - 仅补齐缺失的种子目录和初始化文件
+- `pharos/` 根目录属于应自动补齐的项目级固定目录；不要把“请用户先手动建 pharos 根目录”当成正式路径
 - 如果 `config/project-brief.md` 缺失，可以用 `writeWorkspaceProjectBrief()` 或 `buildProjectBriefTemplate()` 重建
 - 如果 `script/script-brief.md` 缺失，可以用 `writeScriptBriefTemplate()` 回填
 - 不要为了补一个文件去重跑整套 `initProject()`
 
 4. 维护 `project-brief`
 - 路径映射统一先写到 `config/project-brief.md`
+- `Pharos` 不再通过外部路径字段接入；项目内固定投放位置是 `projects/<projectId>/pharos/`
 - 推荐让用户用自然语言维护：
 
 ```text
@@ -207,6 +212,7 @@ const projectRoot = await initWorkspaceProject(
 | 检查项 | 结论 |
 |---|---|
 | `store/project.json` + `store/manifest.json` | 项目骨架已经存在 |
+| `pharos/` | `Pharos` 固定镜像根目录已经就位，可直接放入 `trip_id/plan.json + record.json? + gpx/` |
 | `config/project-brief.md` | 可以继续维护素材路径与说明 |
 | `config/ingest-roots.json` + `config/device-media-maps.local.json` | 可以直接进入 Ingest |
 | `store/assets.json` | 可以跳过首轮 Ingest |

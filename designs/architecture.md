@@ -38,7 +38,9 @@
    - DJI / QuickTime / EXIF 的 embedded GPS 解析已覆盖更宽字段变体，而不再只看最小 key 集
    - 照片的拍摄时间已切到 EXIF 原始时间链：`DateTimeOriginal(+OffsetTimeOriginal) > CreateDate(+OffsetTimeDigitized/OffsetTime) > GPSDateTime > container > filename > filesystem`
    - 照片若自身 EXIF 带 GPS，会直接写成 `embeddedGps(metadata)` 真值；只有没有自身 GPS 时，才继续走 project GPX / `project-derived-track` 的时间匹配
-   - `config/manual-itinerary.md` 现在有两层正式语义：正文用于弱空间线索，末尾“素材时间校正”表格用于人工 capture time override；未解决的表格行会阻塞 Analyze
+  - `config/manual-itinerary.md` 现在有两层正式语义：正文用于弱空间线索，末尾“素材时间校正”配置用于人工 capture time override；未解决的条目会阻塞 Analyze
+  - 时间阻塞当前只针对弱时间源；高置信 `exif` / `manual` 不会再被文件名日期直接反驳
+  - 时间阻塞当前会同时参考项目时间线、文件名完整时间戳漂移，以及已纳入 `Pharos` trip 的整体时间边界
 6. 正式流程与当前实现的关系已经更明确
    - 正式主链仍以 `Pharos` 为主输入
    - 当前实现仍是临时承载版本，但已经覆盖主链中的多个阶段
@@ -155,6 +157,8 @@ flowchart TD
 
 - `Pharos` 是正式主链的主输入之一
 - `Pharos` 当前通过项目内固定镜像目录接入：`projects/<projectId>/pharos/<trip_id>/`
+- 项目初始化会直接创建 `projects/<projectId>/pharos/`；Console 读取项目配置时也应补齐缺失目录，而不是继续要求用户手动建根目录
+- `/ingest-gps` 当前应明确展示这个固定目录，并提醒用户把 `trip_id/plan.json`、`record.json` 与 `gpx/` 镜像投放到这里
 - `project-brief.md` 只承担可选 trip 筛选语义，不再配置外部 `Pharos` 目录路径
 - 主链消费的是项目当前采用的素材版本，它可以是原始素材，也可以是独立调色链路产出的版本
 - `DaVinci color` 可以独立运行、多次更新，并在需要时产出供主链消费的素材版本
@@ -264,7 +268,8 @@ src/modules/ingest/
   → 扫描 `project/pharos/<trip_id>/plan.json + record.json? + gpx/` 并生成共享 `pharos-context`
   → 资产只写 lightweight `embeddedGps` 引用（`trackId / pointCount / representative / time-window`），不再内联 dense `points[]`
   → ingest 刷新项目级 `gps/derived.json`，统一收口 embedded-derived sparse points 与 `manual-itinerary` 编译结果
-  → 若弱时间源与项目时间线明显冲突，把待校正素材追加到 `config/manual-itinerary.md` 的“素材时间校正”表格，并阻塞后续 Analyze
+  → 若弱时间源与项目时间线、文件名完整时间戳或已纳入 `Pharos` trip 边界明显冲突，把待校正素材追加到 `config/manual-itinerary.md` 的“素材时间校正”配置，并阻塞后续 Analyze
+  → Console 的 `/ingest-gps` 当前会把这些阻塞项渲染成卡片式修正器，支持 `保持当前 / 使用建议 / 手动修正`
   → Analyze 若内嵌 GPS 不可用，则先走项目级 `gps/merged.json` / `gps/tracks/*.gpx` 时间匹配，再回落 `gps/derived.json` 的保守匹配（无插值）
   → FFmpeg 生成 720p 代理文件（后台队列）
   → CLIP 提取代理文件视觉特征 → 向量聚类 → LLM 生成场景描述
@@ -277,6 +282,7 @@ src/modules/ingest/
 - 如果输入来自独立调色/转换链路，该链路需要先保证关键元信息被保留下来
 - `Pharos` 相关的正式消费顺序为：
   - 项目内 `pharos/<trip_id>/` 镜像作为输入仓
+  - 项目级 `pharos/` 根目录由项目初始化和 Console 配置读取自动准备；用户不需要再手动先建这个根目录
   - `plan.json` 必需，`record.json` 与 `gpx/` 可缺失
   - 解析状态由 Supervisor / Console 显示为 `空 / 解析成功 / 解析失败`
   - Analyze 的空间优先级为 `embedded > GPX(含 project/pharos/<trip_id>/gpx/*.gpx) > Pharos GPS > project-derived-track`

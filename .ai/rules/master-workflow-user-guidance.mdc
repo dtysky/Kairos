@@ -94,6 +94,7 @@ Kairos 的标准顺序是：
 - 在 `Analyze` 前，必须先说明 GPS 优先级：`embedded GPS > project GPX > project-derived-track > none`
 - 在 `Analyze` 前，必须先确认 ML server 可用；不可静默退化成无 ML 分析
 - 在 `Analyze`、`Style Analysis` 或任何可能使用 ML 的正式流程结束后，必须确认 Kairos 官方 ML service 已回收到 `stopped`
+- 如果 ingest 因素材时间冲突被阻塞，必须先把用户引导到 `/ingest-gps` 的“素材时间校正”卡片；默认先填 `正确时间 / 时区`，只有自动补日期失败时才要求再补 `正确日期`
 - 在 `Script` 前，如果用户没有明确指定 workspace 风格分类或明确说这次不用风格档案，必须停下确认
 - 在 `Script` 阶段，不要把 Console 的 `script` job 描述成“后台自动写稿”；它当前只负责 deterministic prep，不负责起草初版 brief，也不负责写正式脚本
 - 如果用户已经修改过当前 brief，又想回到“重生成初版 brief”，必须把用户引导回 `/script` 走覆盖确认；Agent 不能静默覆盖

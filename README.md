@@ -17,8 +17,16 @@ Current stable pipeline:
 - `Pharos -> ingest -> analyze -> script -> timeline -> export`
 - `Pharos` 的正式输入位置已收口到项目内固定目录 `projects/<projectId>/pharos/<trip_id>/`
   - 每个 trip 子目录当前消费 `plan.json`，可选消费 `record.json` 与 `gpx/*.gpx`
+  - 项目初始化会直接创建 `projects/<projectId>/pharos/`；Console 读取项目配置时也会补齐缺失目录
   - `project-brief.md` 只允许通过 `## Pharos` / `包含 Trip：...` 做可选 trip 筛选，不再填写外部 `Pharos` 路径
-  - Console 会把 `Pharos` 状态显示为 `空 / 解析成功 / 解析失败`，缺失 `Pharos` 时主链继续走 fallback
+  - `/ingest-gps` 会明确提示这个固定目录，并提醒用户把 `trip_id/plan.json`、`record.json`、`gpx/` 镜像放进来
+  - Console 会把 `Pharos` 状态显示为 `空 / 解析成功 / 解析失败`
+- `导入与 GPS` 当前正式承载素材时间阻塞与修正：
+  - 高置信 `exif` / `manual` 不会再因为文件名日期不同而被硬阻塞
+  - 弱时间源会同时校验项目时间线、文件名完整时间戳漂移，以及已纳入 `Pharos` trip 的整体时间边界
+  - 阻塞项通过 Console 卡片式“素材时间校正”处理，而不是要求用户直接回填 Markdown 表格
+  - 用户当前可直接在 UI 中选择 `保持当前 / 使用建议 / 手动修正`
+  - 手动修正默认只要求 `正确时间 + 时区`；`正确日期` 会优先按 `suggestedDate`，否则按当前时间在该时区对应的本地日期自动补齐
 - official local runtime / monitor entry is `Supervisor + React console (apps/kairos-console/)`
   - `http://127.0.0.1:8940/analyze` is the official Analyze monitor route
   - `http://127.0.0.1:8940/style` is the official workspace-level Style monitor route

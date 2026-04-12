@@ -132,7 +132,7 @@ importProjectGpxTracks(input: {
 - `project-derived-track` 是第三优先级空间层，不能覆盖素材自身的 embedded GPS 真值，也不能覆盖项目级外部 GPX
 - 照片的拍摄时间优先级现在是：`EXIF DateTimeOriginal(+OffsetTimeOriginal) > EXIF CreateDate(+OffsetTimeDigitized/OffsetTime) > filename > filesystem`
 - 照片如果自身 EXIF 已带 GPS，应直接写成资产的 `embeddedGps(metadata)` 真值；只有没有自身 GPS 时，才继续走 sidecar / FlightRecord / `manual-itinerary` 的时间匹配链路
-- 如果 ingest 发现素材拍摄时间和项目时间线明显冲突，必须把阻塞项追加到 `config/manual-itinerary.md` 末尾的“素材时间校正”表格，并立刻阻塞后续流程
+- 如果 ingest 发现弱时间源素材的拍摄时间和项目时间线、文件名完整时间戳或已纳入 `Pharos` trip 的整体时间边界明显冲突，必须把阻塞项同步到 `/ingest-gps` 的“素材时间校正”卡片与 `config/manual-itinerary.md`，并立刻阻塞后续流程
 
 ## 用户输入方式
 
@@ -186,8 +186,9 @@ importProjectGpxTracks(input: {
 - 保护音轨 sidecar 也会按“同目录同 basename”自动发现；第一阶段只做视频资产绑定，不把这些音频重新放回普通素材池
 - `飞行记录路径` 如果存在，会被当作该 root 的同源遥测输入，而不是普通项目 GPX
 - 如果项目希望让 `manual-itinerary` 参与后续空间推断，修改完 `config/manual-itinerary.md` 后也应重新跑一次 ingest，刷新 `gps/derived.json`
-- 如果 `config/manual-itinerary.md` 末尾已经有“素材时间校正”表格，ingest 必须读取用户填写的 `正确日期 / 正确时间 / 时区`，并把它作为 `manual` capture time 真值覆盖弱时间源
-- 如果本轮 ingest 又发现新的明显时间冲突，必须更新这张表；未填写的行会阻塞 Analyze
+- 如果 `config/manual-itinerary.md` 末尾已经有“素材时间校正”区，ingest 必须读取用户在 Console 或 Markdown 中维护的修正值，并把它作为 `manual` capture time 真值覆盖弱时间源
+- 当前正式语义是：优先填写 `正确时间 / 时区`；`正确日期` 会先用 `suggestedDate` 自动补齐，再退到“当前时间在所填时区对应的本地日期”；只有仍无法推导时才需要用户手填日期
+- 如果本轮 ingest 又发现新的明显时间冲突，必须更新这些卡片 / 行；未解决的项会阻塞 Analyze
 
 ```typescript
 const result = await ingestWorkspaceProjectMedia({
@@ -228,6 +229,6 @@ const result = await ingestWorkspaceProjectMedia({
 - `manual-itinerary` 不是素材路径映射输入，但它现在属于 ingest refresh 的空间编译输入：会被编译进 `gps/derived.json`
 - `manual-itinerary` 现在有两层正式语义：
   - 正文自然语言段落：用于空间/路线推断
-  - 末尾“素材时间校正”表格：用于手工修正具体素材的拍摄时间
+  - 末尾“素材时间校正”区：用于手工修正具体素材的拍摄时间；Console 正式入口是卡片式修正器，不要求用户先回到 Markdown 填表
 - 如果 `FlightRecord` 日志是加密版本且环境里没有 `KAIROS_DJI_OPEN_API_KEY` / `DJI_OPEN_API_KEY`，要向用户报告对应 warning
 - 如果宿主没有提供 `resolveTimezoneFromLocation / geocodeLocation`，ingest 仍会刷新 embedded-derived 部分，但无法把 `manual-itinerary` 编译成可用坐标

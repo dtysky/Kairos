@@ -80,7 +80,7 @@ describe('workspace config sync', () => {
         sourcePath: '20260208_奥克兰维多利亚山晚霞1.mp4',
         suggestedDate: '2026-02-08',
         suggestedTime: '19:55:05',
-        correctedDate: '2026-02-08',
+        correctedDate: '',
         correctedTime: '19:55:05',
         timezone: 'Pacific/Auckland',
         note: 'TS 时间映射（用户提供）',
@@ -91,6 +91,7 @@ describe('workspace config sync', () => {
     const markdown = await readFile(join(projectRoot, 'config', 'manual-itinerary.md'), 'utf-8');
     expect(loaded.prose).toContain('奥克兰出发');
     expect(loaded.segments[0]?.location).toContain('维多利亚山');
+    expect(loaded.captureTimeOverrides[0]?.correctedDate).toBe('2026-02-08');
     expect(markdown).toContain('## 结构化行程');
     expect(markdown).toContain('## 素材时间校正');
     expect(markdown).toContain('20260208_奥克兰维多利亚山晚霞1.mp4');

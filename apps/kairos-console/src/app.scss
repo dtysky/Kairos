@@ -227,6 +227,48 @@ pre {
   border-color: rgba(162, 40, 40, 0.24);
 }
 
+.pharos-callout {
+  margin-top: 14px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(184, 90, 45, 0.24);
+  background: linear-gradient(135deg, rgba(184, 90, 45, 0.1), rgba(255, 247, 241, 0.98));
+  display: grid;
+  gap: 10px;
+}
+
+.pharos-callout-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #713217;
+}
+
+.pharos-callout p {
+  margin: 0;
+  color: #5f3a29;
+  line-height: 1.65;
+}
+
+.pharos-callout-path {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid rgba(24, 24, 24, 0.08);
+  overflow-x: auto;
+}
+
+.pharos-callout-tree {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid rgba(24, 24, 24, 0.08);
+  color: #4c433d;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
 .route-intro {
   padding: 12px 0 6px;
 }
@@ -312,6 +354,31 @@ pre {
 .row-card,
 .nested-card {
   margin-top: 14px;
+}
+
+.capture-time-card {
+  display: grid;
+  gap: 12px;
+}
+
+.capture-time-tags,
+.capture-time-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.capture-time-reason {
+  margin-top: 6px;
+}
+
+.capture-time-hint {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(184, 90, 45, 0.08);
+  color: #6a4835;
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 .nested-card {

@@ -5,8 +5,12 @@ import {
   replaceReviewItemsByMatcher,
   saveManualItineraryConfig,
 } from '../../store/index.js';
-import type { IReviewItem } from '../../protocol/schema.js';
-import { convertLocalDateTimeToIso } from './timezone-utils.js';
+import {
+  buildCaptureTimeReviewItems,
+  buildManualCaptureTimeReviewKey,
+  isManualCaptureTimeResolved,
+  resolveManualCaptureTimeRow,
+} from './manual-capture-time-shared.js';
 
 export interface IManualCaptureTimeOverride {
   rootRef?: string;
@@ -42,21 +46,16 @@ export async function loadManualCaptureTimeOverrides(
   const overrides: IManualCaptureTimeOverride[] = [];
 
   for (const row of rows) {
-    const correctedDate = normalizeDate(row.correctedDate);
-    const correctedTime = normalizeTime(row.correctedTime);
-    const timezone = row.timezone?.trim() || undefined;
-    if (!correctedDate || !correctedTime) continue;
-
-    const capturedAt = convertLocalDateTimeToIso(correctedDate, correctedTime, timezone);
-    if (!capturedAt) continue;
+    const resolved = resolveManualCaptureTimeRow(row);
+    if (!resolved) continue;
 
     overrides.push({
       rootRef: row.rootRef,
       sourcePath: row.sourcePath,
-      capturedAt,
-      timezone,
-      correctedDate,
-      correctedTime,
+      capturedAt: resolved.capturedAt,
+      timezone: resolved.timezone,
+      correctedDate: resolved.correctedDate,
+      correctedTime: resolved.correctedTime,
       note: row.note,
     });
   }
@@ -106,7 +105,7 @@ export async function syncManualCaptureTimeBlockers(
     } satisfies IManualCaptureTimeRow;
   });
   const preservedManualRows = existingRows.filter(row => {
-    if (!row.correctedDate || !row.correctedTime) return false;
+    if (!isManualCaptureTimeResolved(row)) return false;
     return !blockerKeys.has(buildManualCaptureTimeKey(row.rootRef, row.sourcePath));
   });
 
@@ -130,16 +129,7 @@ export async function syncManualCaptureTimeBlockers(
 }
 
 function buildManualCaptureTimeKey(rootRef: string | undefined, sourcePath: string): string {
-  return `${(rootRef ?? '').trim().toLowerCase()}::${normalizePortablePath(sourcePath)}`;
-}
-
-function normalizePortablePath(value: string): string {
-  return value
-    .trim()
-    .replace(/\\/gu, '/')
-    .replace(/^\.?\//u, '')
-    .replace(/\/+/gu, '/')
-    .toLowerCase();
+  return buildManualCaptureTimeReviewKey(rootRef, sourcePath);
 }
 
 function pickRowNote(existing?: string, generated?: string): string | undefined {
@@ -149,83 +139,4 @@ function pickRowNote(existing?: string, generated?: string): string | undefined 
     return `${trimmedGenerated}；${trimmedExisting}`;
   }
   return trimmedExisting || trimmedGenerated || undefined;
-}
-
-function normalizeDate(value?: string): string | undefined {
-  const match = value?.trim().match(/^(\d{4})[-/.](\d{2})[-/.](\d{2})$/u);
-  if (!match?.[1] || !match[2] || !match[3]) return undefined;
-  return `${match[1]}-${match[2]}-${match[3]}`;
-}
-
-function normalizeTime(value?: string): string | undefined {
-  const trimmed = value?.trim();
-  if (!trimmed) return undefined;
-
-  const minutePrecision = trimmed.match(/^(\d{2}):(\d{2})$/u);
-  if (minutePrecision?.[1] && minutePrecision[2]) {
-    return `${minutePrecision[1]}:${minutePrecision[2]}:00`;
-  }
-
-  const secondPrecision = trimmed.match(/^(\d{2}):(\d{2}):(\d{2})$/u);
-  if (secondPrecision?.[1] && secondPrecision[2] && secondPrecision[3]) {
-    return `${secondPrecision[1]}:${secondPrecision[2]}:${secondPrecision[3]}`;
-  }
-
-  return undefined;
-}
-
-function buildCaptureTimeReviewItems(
-  projectId: string,
-  rows: IManualCaptureTimeRow[],
-): IReviewItem[] {
-  const now = new Date().toISOString();
-  return rows.map(row => {
-    const resolved = Boolean(row.correctedDate && row.correctedTime);
-    return {
-      id: `capture-time:${buildManualCaptureTimeKey(row.rootRef, row.sourcePath)}`,
-      projectId,
-      kind: 'capture-time-correction',
-      stage: 'ingest',
-      status: resolved ? 'resolved' : 'open',
-      title: `校正素材拍摄时间：${row.sourcePath}`,
-      reason: row.note ?? '当前拍摄时间与项目时间线明显不一致。',
-      sourcePath: row.sourcePath,
-      rootRef: row.rootRef,
-      currentValue: {
-        currentCapturedAt: row.currentCapturedAt ?? '',
-        currentSource: row.currentSource ?? '',
-      },
-      suggestedValue: {
-        suggestedDate: row.suggestedDate ?? '',
-        suggestedTime: row.suggestedTime ?? '',
-        timezone: row.timezone ?? '',
-      },
-      fields: [
-        {
-          key: 'correctedDate',
-          label: '正确日期',
-          value: row.correctedDate,
-          suggestedValue: row.suggestedDate,
-          required: true,
-        },
-        {
-          key: 'correctedTime',
-          label: '正确时间',
-          value: row.correctedTime,
-          suggestedValue: row.suggestedTime,
-          required: true,
-        },
-        {
-          key: 'timezone',
-          label: '时区',
-          value: row.timezone,
-          suggestedValue: row.timezone,
-        },
-      ],
-      note: row.note,
-      createdAt: now,
-      updatedAt: now,
-      resolvedAt: resolved ? now : undefined,
-    };
-  });
 }

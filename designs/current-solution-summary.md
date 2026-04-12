@@ -16,6 +16,8 @@ Kairos 当前需要区分两层：
 - 一个以 `projects/<projectId>/` 为中心的项目化存储体系
 - 一条以 `Pharos -> ingest -> analyze -> script -> timeline -> export` 为骨架的正式主流程
 - `Pharos` 输入当前固定镜像到项目内 `pharos/<trip_id>/plan.json + record.json? + gpx/`
+  - 项目初始化当前会直接创建 `projects/<projectId>/pharos/`
+  - Console 读取项目配置时会补齐缺失的 `pharos/` 根目录，并在 `/ingest-gps` 明确提示这个固定投放位置
 - 一条与主链解耦的 `DaVinci color` 独立增强链路
 - 一组运行在 Agent 环境中的工作流技能，以及面向不同 NLE / 导出目标的适配层
 
@@ -108,6 +110,7 @@ flowchart TD
 
 - `Pharos` 是正式流程的主输入之一，主要驱动脚本规划、拍摄语义和素材对齐
 - `Pharos` 当前不再通过用户填写外部路径接入；每个项目固定扫描 `projects/<projectId>/pharos/`
+- 如果项目迁移后缺少这个目录，Console 当前应先自动补齐，再向用户展示固定目录和投放提示
 - `project-brief.md` 中的 `## Pharos` 当前只承担 trip 筛选语义；未填写时默认纳入全部可解析 trip，填写 `包含 Trip：...` 时只消费这些 trip
 - `AdoptedMediaVersion` 表示项目当前采用的素材版本，它可以是原始素材，也可以是独立调色链路产出的版本
 - `DaVinciColorChain` 是独立链路，不属于主链中的固定顺序步骤
@@ -383,8 +386,17 @@ flowchart TD
 - 视频等容器素材的拍摄时间以 `create_time(UTC)` 为主来源
 - 照片拍摄时间优先级为：`EXIF DateTimeOriginal(+OffsetTimeOriginal) > EXIF CreateDate(+OffsetTimeDigitized/OffsetTime) > EXIF GPSDateTime > container > filename > filesystem`
 - 不再依赖 `path-timezones`
-- `manual-itinerary` 正文不直接修正拍摄时间，但末尾“素材时间校正”表格会在 rerun ingest 后作为 `manual` capture time 真值覆盖弱时间源
-- 如果 ingest 发现弱时间源和项目时间线明显冲突，会把待校正素材写入这张表，并强制阻塞 Analyze
+- 高置信 `exif` / `manual` 当前不会再因为文件名日期不一致而被硬阻塞
+- `manual-itinerary` 正文不直接修正拍摄时间，但末尾“素材时间校正”结构化配置会在 rerun ingest 后作为 `manual` capture time 真值覆盖弱时间源
+- 如果 ingest 发现弱时间源和项目时间线明显冲突，会把待校正素材写入 Console 的卡片式“素材时间校正”，并同步回 `manual-itinerary`
+- 当前时间阻塞同时覆盖三类场景：
+  - 弱时间源明显超出 `manual-itinerary` / 项目时间线范围
+  - 弱时间源的当前 `capturedAt` 与文件名完整时间戳存在显著残余漂移
+  - 项目存在已纳入 `Pharos` trip 时，素材时间明显超出 trip 的整体时间边界
+- 时间修正当前正式语义是：
+  - 用户可直接在 UI 里 `保持当前 / 使用建议 / 手动修正`
+  - 手动修正优先填写 `正确时间 + 时区`
+  - `正确日期` 优先用 `suggestedDate` 自动补齐；没有时再用当前时间在所选时区对应的本地日期；只有仍无法确定时才需要用户手填
 
 ### 空间
 

@@ -2,6 +2,7 @@ import { readdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { IKtepProject } from '../protocol/schema.js';
 import { initProject, loadProject } from './project.js';
+import { ensureProjectPharosRoot } from './pharos.js';
 import { buildProjectBriefWithMappings } from './project-brief-sync.js';
 import { syncProjectBriefMappings } from './project-brief-sync.js';
 import { readJsonOrNull } from './writer.js';
@@ -31,6 +32,7 @@ export async function initWorkspaceProject(
 ): Promise<string> {
   const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
   await initProject(projectRoot, name, description);
+  await ensureProjectPharosRoot(projectRoot);
   return projectRoot;
 }
 

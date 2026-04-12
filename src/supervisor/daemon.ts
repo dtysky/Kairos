@@ -21,6 +21,10 @@ import {
   syncWorkspaceProjectBrief,
 } from '../store/index.js';
 import {
+  buildCaptureTimeReviewItems,
+  buildManualCaptureTimeReviewKey,
+} from '../modules/media/manual-capture-time-shared.js';
+import {
   buildProjectPharosAssetStatus,
   loadOrBuildProjectPharosContext,
 } from '../modules/pharos/context.js';
@@ -474,9 +478,9 @@ async function applyCaptureTimeReviewResolution(
   const correctedDate = review.fields.find(field => field.key === 'correctedDate')?.value?.trim();
   const correctedTime = review.fields.find(field => field.key === 'correctedTime')?.value?.trim();
   const timezone = review.fields.find(field => field.key === 'timezone')?.value?.trim();
-  const key = `${(review.rootRef ?? '').trim().toLowerCase()}::${normalizePortablePath(review.sourcePath ?? '')}`;
+  const key = buildManualCaptureTimeReviewKey(review.rootRef, review.sourcePath ?? '');
   const existingByKey = new Map(config.captureTimeOverrides.map(item => [
-    `${(item.rootRef ?? '').trim().toLowerCase()}::${normalizePortablePath(item.sourcePath)}`,
+    buildManualCaptureTimeReviewKey(item.rootRef, item.sourcePath),
     item,
   ]));
   const current = existingByKey.get(key);
@@ -503,36 +507,7 @@ async function syncCaptureTimeReviewsFromConfig(projectId: string, projectRoot: 
   const config = await loadManualItineraryConfig(projectRoot);
   const queue = await loadReviewQueue(projectRoot);
   const preserved = queue.items.filter(item => item.kind !== 'capture-time-correction');
-  const now = new Date().toISOString();
-  const captureItems = config.captureTimeOverrides.map(item => ({
-    id: `capture-time:${(item.rootRef ?? '').trim().toLowerCase()}::${normalizePortablePath(item.sourcePath)}`,
-    projectId,
-    kind: 'capture-time-correction' as const,
-    stage: 'ingest' as const,
-    status: item.correctedDate && item.correctedTime ? 'resolved' as const : 'open' as const,
-    title: `校正素材拍摄时间：${item.sourcePath}`,
-    reason: item.note ?? '当前拍摄时间与项目时间线明显不一致。',
-    sourcePath: item.sourcePath,
-    rootRef: item.rootRef,
-    currentValue: {
-      currentCapturedAt: item.currentCapturedAt ?? '',
-      currentSource: item.currentSource ?? '',
-    },
-    suggestedValue: {
-      suggestedDate: item.suggestedDate ?? '',
-      suggestedTime: item.suggestedTime ?? '',
-      timezone: item.timezone ?? '',
-    },
-    fields: [
-      { key: 'correctedDate', label: '正确日期', value: item.correctedDate, suggestedValue: item.suggestedDate, required: true },
-      { key: 'correctedTime', label: '正确时间', value: item.correctedTime, suggestedValue: item.suggestedTime, required: true },
-      { key: 'timezone', label: '时区', value: item.timezone, suggestedValue: item.timezone },
-    ],
-    note: item.note,
-    createdAt: now,
-    updatedAt: now,
-    resolvedAt: item.correctedDate && item.correctedTime ? now : undefined,
-  }));
+  const captureItems = buildCaptureTimeReviewItems(projectId, config.captureTimeOverrides);
   await writeFileSafe(join(projectRoot, 'config', 'review-queue.json'), JSON.stringify({
     items: [...preserved, ...captureItems],
   }, null, 2));
@@ -667,10 +642,6 @@ function contentTypeFor(path: string): string {
 
 function fileUrlPath(url: URL): string {
   return decodeURIComponent(url.pathname.replace(/^\/([A-Za-z]:\/)/u, '$1'));
-}
-
-function normalizePortablePath(value: string): string {
-  return value.replace(/\\/gu, '/').replace(/^\.?\//u, '').replace(/\/+/gu, '/').toLowerCase();
 }
 
 main().catch(error => {

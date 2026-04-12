@@ -24,6 +24,17 @@ export function WorkflowPrompt({
 
 export function ProjectBriefEditor({ config, pharosStatus, setConfig, onSave, busy }) {
   if (!config) return null;
+  const pharosRootPath = pharosStatus?.rootPath || 'projects/<projectId>/pharos';
+  const pharosNoticeTitle = pharosStatus?.status === 'success'
+    ? 'Pharos 固定目录已接入'
+    : pharosStatus?.status === 'failure'
+      ? 'Pharos 固定目录已准备好，但当前 Trip 还没对上'
+      : 'Pharos 固定目录已准备好';
+  const pharosNoticeBody = pharosStatus?.status === 'success'
+    ? '继续把 trip 镜像放到这个固定目录即可；如需限制范围，只在下面填写“包含 Trip”。'
+    : pharosStatus?.status === 'failure'
+      ? '固定目录已经准备好。请核对 trip 目录名，并把对应的 plan / record / gpx 镜像放到这里。'
+      : '不需要再填写外部 Pharos 路径。把每个 trip 的镜像目录直接放到这个固定位置即可。';
   return (
     <Card className="panel">
       <SectionHeader title="Project Brief" onSave={onSave} busy={busy} />
@@ -90,10 +101,22 @@ export function ProjectBriefEditor({ config, pharosStatus, setConfig, onSave, bu
           }))}
           rows={4}
         />
+        <div className="pharos-callout">
+          <div className="pharos-callout-title">{pharosNoticeTitle}</div>
+          <p>{pharosNoticeBody}</p>
+          <div className="pharos-callout-path">
+            <code>{pharosRootPath}</code>
+          </div>
+          <pre className="pharos-callout-tree">{`trip-<uuid>/
+  plan.json
+  record.json
+  gpx/
+    *.gpx`}</pre>
+        </div>
         {pharosStatus?.latestMessage ? (
           <p className="muted">{pharosStatus.latestMessage}</p>
         ) : (
-          <p className="muted">不再填写外部 Pharos 路径；把 trip 镜像放到项目内固定目录即可。</p>
+          <p className="muted">Console 会先帮你准备好这个固定目录；用户只需要把 trip 镜像投放进去。</p>
         )}
       </div>
       <Divider />
@@ -255,32 +278,68 @@ export function CaptureTimeOverridesEditor({ config, setConfig, onSave, busy }) 
     <Card className="panel">
       <SectionHeader title="素材时间校正" onSave={onSave} busy={busy} />
       {config.captureTimeOverrides.length === 0 ? (
-        <p className="muted">当前没有待维护的 capture-time overrides。</p>
+        <p className="muted">当前没有待维护的素材时间校正项。</p>
       ) : null}
       {config.captureTimeOverrides.map((item, index) => (
-        <div key={`${item.rootRef || 'root'}:${item.sourcePath}:${index}`} className="row-card">
+        <div key={`${item.rootRef || 'root'}:${item.sourcePath}:${index}`} className="row-card capture-time-card">
           <div className="row-top">
-            <strong>{item.sourcePath}</strong>
-            <Tag>{item.rootRef || '未标记 root'}</Tag>
+            <div>
+              <strong>{item.sourcePath}</strong>
+              <div className="muted capture-time-reason">{item.note || '当前拍摄时间和项目时间线存在明显冲突。'}</div>
+            </div>
+            <div className="capture-time-tags">
+              <Tag>{item.rootRef || '未标记 root'}</Tag>
+              <Tag>{item.currentSource || '未知来源'}</Tag>
+            </div>
+          </div>
+          <div className="capture-time-actions">
+            <Button
+              type={item.currentCapturedAt ? 'default' : 'disabled'}
+              disabled={!item.currentCapturedAt}
+              onClick={() => applyCaptureTimeAction(config.captureTimeOverrides, index, buildKeepCurrentOverride(item), next => setConfig(current => ({ ...current, captureTimeOverrides: next })))}
+            >
+              保持当前
+            </Button>
+            <Button
+              type={item.suggestedTime ? 'default' : 'disabled'}
+              disabled={!item.suggestedTime}
+              onClick={() => applyCaptureTimeAction(config.captureTimeOverrides, index, buildSuggestedOverride(item), next => setConfig(current => ({ ...current, captureTimeOverrides: next })))}
+            >
+              使用建议
+            </Button>
+            <Button
+              type="default"
+              onClick={() => applyCaptureTimeAction(config.captureTimeOverrides, index, buildManualStartOverride(item), next => setConfig(current => ({ ...current, captureTimeOverrides: next })))}
+            >
+              手动修正
+            </Button>
           </div>
           <div className="field-grid field-grid-three">
             <Field label="当前时间" value={item.currentCapturedAt || ''} onChange={noop} readOnly />
-            <Field label="当前来源" value={item.currentSource || ''} onChange={noop} readOnly />
             <Field label="建议日期" value={item.suggestedDate || ''} onChange={noop} readOnly />
             <Field label="建议时间" value={item.suggestedTime || ''} onChange={noop} readOnly />
+            <Field label="建议时区" value={item.timezone || ''} onChange={noop} readOnly />
+          </div>
+          <div className="capture-time-hint">
+            正常情况下先填“正确时间 / 时区”就够了。若能推导，系统会自动补齐日期；只有无法推导时才需要手填“正确日期”。
+          </div>
+          <div className="field-grid field-grid-three">
             <Field
-              label="正确日期"
+              label={`正确日期${requiresExplicitDate(item) ? ' *' : ''}`}
               value={item.correctedDate || ''}
+              placeholder={suggestedDatePlaceholder(item)}
               onChange={value => updateArrayItem(config.captureTimeOverrides, index, { ...item, correctedDate: value }, next => setConfig(current => ({ ...current, captureTimeOverrides: next })))}
             />
             <Field
-              label="正确时间"
+              label="正确时间 *"
               value={item.correctedTime || ''}
+              placeholder={item.suggestedTime || ''}
               onChange={value => updateArrayItem(config.captureTimeOverrides, index, { ...item, correctedTime: value }, next => setConfig(current => ({ ...current, captureTimeOverrides: next })))}
             />
             <Field
               label="时区"
               value={item.timezone || ''}
+              placeholder={item.timezone || '例如 Asia/Shanghai'}
               onChange={value => updateArrayItem(config.captureTimeOverrides, index, { ...item, timezone: value }, next => setConfig(current => ({ ...current, captureTimeOverrides: next })))}
             />
           </div>
@@ -810,6 +869,95 @@ export function splitComma(value) {
 
 export function splitList(value) {
   return value.split('/').map(item => item.trim()).filter(Boolean);
+}
+
+function applyCaptureTimeAction(items, index, partial, apply) {
+  const next = [...items];
+  next[index] = {
+    ...next[index],
+    ...partial,
+  };
+  apply(next);
+}
+
+function buildSuggestedOverride(item) {
+  return {
+    correctedDate: item.suggestedDate || item.correctedDate || '',
+    correctedTime: item.suggestedTime || item.correctedTime || '',
+    timezone: item.timezone || '',
+  };
+}
+
+function buildManualStartOverride(item) {
+  return {
+    timezone: item.timezone || 'UTC',
+  };
+}
+
+function buildKeepCurrentOverride(item) {
+  const current = deriveCurrentLocalDateTime(item.currentCapturedAt, item.timezone || 'UTC');
+  if (!current) {
+    return {};
+  }
+  return {
+    correctedDate: current.date,
+    correctedTime: current.time,
+    timezone: current.timezone,
+  };
+}
+
+function suggestedDatePlaceholder(item) {
+  if (item.suggestedDate) return item.suggestedDate;
+  const current = deriveCurrentLocalDateTime(item.currentCapturedAt, item.timezone);
+  if (current?.date) {
+    return `自动补齐 ${current.date}`;
+  }
+  return '无法自动推导时再填写';
+}
+
+function requiresExplicitDate(item) {
+  if (!normalizeCaptureTime(item.correctedTime)) return false;
+  return !item.correctedDate && !item.suggestedDate && !deriveCurrentLocalDateTime(item.currentCapturedAt, item.timezone);
+}
+
+function normalizeCaptureTime(value) {
+  const trimmed = String(value || '').trim();
+  if (/^\d{2}:\d{2}$/u.test(trimmed)) return `${trimmed}:00`;
+  return /^\d{2}:\d{2}:\d{2}$/u.test(trimmed) ? trimmed : '';
+}
+
+function deriveCurrentLocalDateTime(currentCapturedAt, timeZone) {
+  if (!currentCapturedAt) return null;
+  const date = new Date(currentCapturedAt);
+  if (Number.isNaN(date.getTime())) return null;
+  const effectiveTimeZone = String(timeZone || '').trim() || 'UTC';
+  try {
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: effectiveTimeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+    const parts = new Map(formatter.formatToParts(date).map(part => [part.type, part.value]));
+    const year = parts.get('year');
+    const month = parts.get('month');
+    const day = parts.get('day');
+    const hour = parts.get('hour');
+    const minute = parts.get('minute');
+    const second = parts.get('second');
+    if (!year || !month || !day || !hour || !minute || !second) return null;
+    return {
+      date: `${year}-${month}-${day}`,
+      time: `${hour}:${minute}:${second}`,
+      timezone: effectiveTimeZone,
+    };
+  } catch {
+    return null;
+  }
 }
 
 function updateReviewField(reviews, reviewId, fieldKey, value, setReviews) {
