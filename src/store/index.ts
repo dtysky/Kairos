@@ -188,6 +188,7 @@ export {
 } from './gps.js';
 export {
   getProjectPharosRoot,
+  ensureProjectPharosRoot,
   getProjectPharosContextPath,
   loadProjectPharosContext,
   writeProjectPharosContext,

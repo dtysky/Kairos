@@ -15,4 +15,4 @@ analysis
 config/runtime.json
 config/device-media-maps.local.json
 projects/tmp-*
-
+*/adapters

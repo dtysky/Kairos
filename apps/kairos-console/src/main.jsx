@@ -605,6 +605,7 @@ function IngestGpsPage({
       <RouteIntro title="导入与 GPS" subtitle="维护项目素材根、行程正文、结构化 segment 与拍摄时间校正。" />
       <ProjectBriefEditor
         config={config.projectBrief}
+        pharosStatus={config.pharosStatus}
         setConfig={setProjectBrief}
         onSave={() => saveSection('project-brief')}
         busy={busy['project-brief']}

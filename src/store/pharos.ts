@@ -1,9 +1,16 @@
+import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { IProjectPharosContext } from '../protocol/schema.js';
 import { readJsonOrNull, writeJson } from './writer.js';
 
 export function getProjectPharosRoot(projectRoot: string): string {
   return join(projectRoot, 'pharos');
+}
+
+export async function ensureProjectPharosRoot(projectRoot: string): Promise<string> {
+  const rootPath = getProjectPharosRoot(projectRoot);
+  await mkdir(rootPath, { recursive: true });
+  return rootPath;
 }
 
 export function getProjectPharosContextPath(projectRoot: string): string {

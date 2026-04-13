@@ -87,6 +87,7 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
 ## Practical Defaults
 
 - Prefer Windows PowerShell in this repository unless the user explicitly asks for WSL or the step is Linux-only.
+- Treat `projects/<projectId>/pharos/` as a project-local fixed inbox: project init should create it, and Console-side project config loading should repair it if it is missing before asking the user to place trip mirrors.
 - Do not treat stale progress displays as proof that formal processing is alive.
 - Do not silently use legacy monitor paths for new work when `Supervisor + React console` is the official entry.
 - Treat workspace style-analysis as a formal deterministic prep job before Agent style synthesis, not as a UI-only placeholder.

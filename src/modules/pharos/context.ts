@@ -9,6 +9,7 @@ import type {
   IProjectPharosTripSummary,
 } from '../../protocol/schema.js';
 import {
+  ensureProjectPharosRoot,
   getProjectPharosRoot,
   loadProjectPharosContext,
   writeProjectPharosContext,
@@ -57,31 +58,13 @@ export async function loadOrBuildProjectPharosContext(
 export async function buildProjectPharosContext(
   input: ILoadOrBuildProjectPharosContextInput,
 ): Promise<IProjectPharosContext> {
-  const rootPath = getProjectPharosRoot(input.projectRoot);
+  const rootPath = await ensureProjectPharosRoot(input.projectRoot);
   const includedTripIds = normalizeTripIds(input.includedTripIds ?? []);
   const warnings: string[] = [];
   const errors: string[] = [];
   const shots: IProjectPharosShot[] = [];
   const trips: IProjectPharosTripSummary[] = [];
   const gpxFiles: IProjectPharosGpxSummary[] = [];
-
-  if (!(await pathExists(rootPath))) {
-    return {
-      schemaVersion: '1.0',
-      generatedAt: new Date().toISOString(),
-      status: includedTripIds.length > 0 ? 'failure' : 'empty',
-      rootPath,
-      discoveredTripIds: [],
-      includedTripIds,
-      warnings,
-      errors: includedTripIds.length > 0
-        ? [`Pharos 目录不存在，但项目指定了包含 Trip：${includedTripIds.join('、')}`]
-        : [],
-      trips: [],
-      shots: [],
-      gpxFiles: [],
-    };
-  }
 
   const dirEntries = await readdir(rootPath, { withFileTypes: true });
   const discoveredTripIds = dirEntries
