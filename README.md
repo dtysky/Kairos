@@ -68,6 +68,8 @@ Current stable pipeline:
   - with audio: `coarse-scan -> audio-analysis -> finalize -> deferred scene detect(if needed)`
   - without audio: `coarse-scan -> finalize -> deferred scene detect(if needed)`
   - `coarse-scan` prepares keyframes, `hasAudioTrack`, and source context; it is not the formal visual-summary stage
+  - when `finalize` returns invalid JSON, Analyze now persists raw finalize attempts under `projects/<projectId>/.tmp/media-analyze/finalize-attempts/<assetId>/` and automatically retries with larger VLM token budgets before failing the run
+  - finalize retry currently uses token budgets `512 -> 768 -> 1152` (x1.5 each round, rounded up), and the prompt now explicitly caps `decision_reasons` to a short list to reduce truncation pressure
   - `coarse-scan` now runs as asset-level dynamic concurrency: each active asset uses at most one coarse keyframe `ffmpeg`, while multiple assets may progress in parallel based on free-memory limits
   - `audio-analysis` now runs as a two-queue asset pipeline: local audio health / routing work and ASR work have separate dynamic concurrency controls
   - for assets with `protectionAudio`, Analyze now performs dual lightweight health checks first, routes to a single chosen ASR source, and promotes that chosen transcript to the formal downstream transcript

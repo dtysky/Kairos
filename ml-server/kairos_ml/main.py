@@ -45,6 +45,7 @@ class VlmRequest(BaseModel):
     image_paths: list[str]
     prompt: str
     keep_other_models_loaded: bool = False
+    max_tokens: int | None = None
 
 # ─── State ────────────────────────────────────────────────────
 
@@ -211,7 +212,7 @@ def vlm_analyze(req: VlmRequest):
             _unload_whisper()
         from .vlm_runner import analyze
         _loaded.add("vlm")
-        description, timing = analyze(req.image_paths, req.prompt)
+        description, timing = analyze(req.image_paths, req.prompt, max_tokens=req.max_tokens)
         return {"description": description, "timing": timing}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -131,6 +131,9 @@ flowchart TD
   - 有音轨视频：`coarse-scan -> audio-analysis -> finalize -> deferred scene detect(if needed)`
   - 无音轨视频：`coarse-scan -> finalize -> deferred scene detect(if needed)`
   - `scene detect` 不再是所有视频的 unconditional coarse 前置税，而是只在最终确实需要 shot 结构时延后触发
+ - `finalize` 当前会把每次 unified VLM 原始输出落到 `projects/<projectId>/.tmp/media-analyze/finalize-attempts/<assetId>/attempt-*.json`
+ - 如果 unified `finalize` 返回 invalid JSON，Analyze 不再立即判整轮失败，而是自动按更高 token 预算重试；当前预算序列为 `512 -> 768 -> 1152`
+ - `finalize` prompt 当前会明确要求 `decision_reasons` 保持短列表，避免模型在长枚举里把 JSON 截断
 - `coarse-scan` 当前已经切到素材级动态并发：
   - 同一素材在 coarse 阶段最多只允许一个关键帧抽取 `ffmpeg`
   - 多条素材可根据 free memory 目标并发数并行推进

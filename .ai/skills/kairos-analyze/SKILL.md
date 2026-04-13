@@ -79,6 +79,9 @@ analyzeWorkspaceProjectMedia(input: {
 - 不允许在 ML server 不可用时继续产出“看起来完成了”的 fallback analyze 结果
 - 在真正开始粗扫前，应先检查 ML server health；如果不可用，立刻提示用户启动/修复服务后再继续
 - 只有用户明确接受“这轮先不做 analyze”时，才可以停在这里；不能擅自降级成无 ML 的 analyze
+- 如果 unified `finalize` 返回 invalid JSON，不要先猜是模型坏了还是 prompt 坏了；当前正式做法是先查看 `projects/<projectId>/.tmp/media-analyze/finalize-attempts/<assetId>/attempt-*.json`
+- Analyze 当前会自动对 invalid-JSON `finalize` 做增量 token 重试，默认预算序列为 `512 -> 768 -> 1152`
+- 若最终仍失败，应优先依据 attempt 文件判断是 token 截断、格式漂移，还是服务端异常，再决定是否改 prompt 或模型参数
 
 ## 强规则：Analyze 前必须先做 GPS 提示
 

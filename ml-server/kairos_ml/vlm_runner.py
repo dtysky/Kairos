@@ -29,6 +29,7 @@ CLOCAL_TORCH_VLM = "Qwen3_5-9B"
 CLEGACY_LOCAL_TORCH_VLM = "Qwen3-VL-4B-Instruct"
 CTHINK_BLOCK_RE = re.compile(r"<think>.*?</think>\s*", re.DOTALL)
 CWINDOWS_SAFE_GLOBAL_WORKERS = max(1, int(os.getenv("KAIROS_VLM_WINDOWS_GLOBAL_WORKERS", "1")))
+CDEFAULT_MAX_TOKENS = max(1, int(os.getenv("KAIROS_VLM_MAX_TOKENS", "512")))
 
 
 def _repo_root() -> Path:
@@ -58,11 +59,22 @@ def _load_mlx() -> tuple[float, str]:
     return (time.perf_counter() - started_at) * 1000.0, model_ref
 
 
-def _analyze_mlx(image_paths: list[str], prompt: str) -> tuple[str, dict]:
+def _normalize_max_tokens(max_tokens: int | None) -> int:
+    if max_tokens is None:
+        return CDEFAULT_MAX_TOKENS
+    try:
+        value = int(max_tokens)
+    except (TypeError, ValueError):
+        return CDEFAULT_MAX_TOKENS
+    return max(1, value)
+
+
+def _analyze_mlx(image_paths: list[str], prompt: str, max_tokens: int | None = None) -> tuple[str, dict]:
     from mlx_vlm import generate, apply_chat_template  # type: ignore
 
     total_started_at = time.perf_counter()
     abs_paths = [str(Path(p).resolve()) for p in image_paths]
+    token_budget = _normalize_max_tokens(max_tokens)
     prompt_text = (
         f"{prompt}\n"
         "Return only one JSON object and do not wrap it in markdown."
@@ -76,7 +88,7 @@ def _analyze_mlx(image_paths: list[str], prompt: str) -> tuple[str, dict]:
     generate_started_at = time.perf_counter()
     result = generate(
         _model, _processor, formatted, image=abs_paths,
-        max_tokens=512, temperature=0.1, verbose=False,
+        max_tokens=token_budget, temperature=0.1, verbose=False,
     )
     generate_ms = (time.perf_counter() - generate_started_at) * 1000.0
     text = result.text if hasattr(result, "text") else str(result)
@@ -224,11 +236,12 @@ def unload() -> bool:
     return True
 
 
-def _analyze_transformers(image_paths: list[str], prompt: str) -> tuple[str, dict]:
+def _analyze_transformers(image_paths: list[str], prompt: str, max_tokens: int | None = None) -> tuple[str, dict]:
     import torch
     from PIL import Image
 
     total_started_at = time.perf_counter()
+    token_budget = _normalize_max_tokens(max_tokens)
     prompt_text = (
         f"{prompt}\n"
         "Return only one JSON object and do not wrap it in markdown."
@@ -263,7 +276,7 @@ def _analyze_transformers(image_paths: list[str], prompt: str) -> tuple[str, dic
 
     generate_started_at = time.perf_counter()
     with torch.no_grad():
-        generated_ids = _model.generate(**inputs, max_new_tokens=512)
+        generated_ids = _model.generate(**inputs, max_new_tokens=token_budget)
     generate_ms = (time.perf_counter() - generate_started_at) * 1000.0
 
     trimmed = [out[len(inp):] for inp, out in zip(inputs["input_ids"], generated_ids)]
@@ -287,18 +300,18 @@ def _analyze_transformers(image_paths: list[str], prompt: str) -> tuple[str, dic
 
 # ── Public API ───────────────────────────────────────────────
 
-def analyze(image_paths: list[str], prompt: str) -> tuple[str, dict]:
+def analyze(image_paths: list[str], prompt: str, max_tokens: int | None = None) -> tuple[str, dict]:
     if not image_paths:
         raise ValueError("No images provided for VLM analysis")
 
     if BACKEND == "mlx":
         load_ms, model_ref = _load_mlx()
-        description, timing = _analyze_mlx(image_paths, prompt)
+        description, timing = _analyze_mlx(image_paths, prompt, max_tokens=max_tokens)
         timing["loadMs"] = load_ms
         timing["modelRef"] = model_ref
         return description, timing
     load_ms, model_ref = _load_transformers()
-    description, timing = _analyze_transformers(image_paths, prompt)
+    description, timing = _analyze_transformers(image_paths, prompt, max_tokens=max_tokens)
     timing["loadMs"] = load_ms
     timing["modelRef"] = model_ref
     return description, timing

@@ -366,7 +366,10 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
     expect(profile.assets[0]?.appendedSliceCount).toBe(result.sliceCount);
     expect(asrSpy.mock.calls[0]?.[2]).toEqual({ keepOtherModelsLoaded: false });
     const finalizeVlmCall = vlmSpy.mock.calls.find(call => call[1]?.includes('semantic clip type and materialization policy'));
-    expect(finalizeVlmCall?.[2]).toEqual({ keepOtherModelsLoaded: false });
+    expect(finalizeVlmCall?.[2]).toEqual(expect.objectContaining({
+      keepOtherModelsLoaded: false,
+      maxTokens: 512,
+    }));
     expect(detectShotsMock).not.toHaveBeenCalled();
   });
 
@@ -528,7 +531,6 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
 
     await mkdir(mediaRoot, { recursive: true });
     await writeFile(join(mediaRoot, 'broken.mp4'), 'fake-media');
-    await writeFile(join(mediaRoot, 'ok.mp4'), 'fake-media');
 
     await writeJson(join(projectRoot, 'config/runtime.json'), {
       mlServerUrl: 'http://127.0.0.1:8910',
@@ -554,17 +556,6 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       metadata: {
         hasAudioStream: false,
       },
-    }, {
-      id: 'asset-ok',
-      kind: 'video',
-      sourcePath: 'ok.mp4',
-      displayName: 'ok.mp4',
-      ingestRootId: 'root-1',
-      durationMs: 8_000,
-      capturedAt: '2026-03-31T08:16:30.000Z',
-      metadata: {
-        hasAudioStream: false,
-      },
     }]);
 
     extractKeyframesMock.mockImplementation(async (
@@ -586,38 +577,14 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       backend: 'mlx',
       models_loaded: [],
     });
-    vi.spyOn(MlClient.prototype, 'vlmAnalyze')
-      .mockResolvedValueOnce({
-        description: 'not-json',
-        timing: {
-          backend: 'mlx',
-          modelRef: 'test-qwen',
-          totalMs: 40,
-        },
-      })
-      .mockResolvedValueOnce({
-        description: JSON.stringify({
-          visual_summary: {
-            scene_type: 'landscape',
-            subjects: ['road'],
-            mood: 'calm',
-            place_hints: ['lake'],
-            narrative_role: 'detail',
-            description: 'Valid finalize output for the second asset.',
-          },
-          decision: {
-            clip_type: 'broll',
-            keep_decision: 'keep',
-            materialization_path: 'direct',
-            decision_reasons: ['test-second-asset-skip'],
-          },
-        }),
-        timing: {
-          backend: 'mlx',
-          modelRef: 'test-qwen',
-          totalMs: 41,
-        },
-      });
+    const vlmSpy = vi.spyOn(MlClient.prototype, 'vlmAnalyze').mockResolvedValue({
+      description: 'not-json',
+      timing: {
+        backend: 'mlx',
+        modelRef: 'test-qwen',
+        totalMs: 40,
+      },
+    });
 
     const { analyzeWorkspaceProjectMedia } = await import('../../src/modules/media/project-analyze.js');
     await expect(analyzeWorkspaceProjectMedia({
@@ -659,8 +626,142 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
     expect(progress.step).toBe('finalize');
     expect(progress.detail).toMatch(/统一完成素材分析失败 1 条/u);
     expect(progress.extra?.failures?.[0]?.assetId).toBe('asset-broken');
+    const finalizeCalls = vlmSpy.mock.calls.filter(call => call[1]?.includes('semantic clip type and materialization policy'));
+    expect(finalizeCalls).toHaveLength(3);
+    expect(finalizeCalls.map(call => call[2]?.maxTokens)).toEqual([512, 768, 1152]);
+    const captureRoot = join(projectRoot, '.tmp', 'media-analyze', 'finalize-attempts', 'asset-broken');
+    const attemptOne = JSON.parse(await readFile(join(captureRoot, 'attempt-01.json'), 'utf-8')) as { parseOk: boolean; maxTokens: number; response: string; };
+    const attemptThree = JSON.parse(await readFile(join(captureRoot, 'attempt-03.json'), 'utf-8')) as { parseOk: boolean; maxTokens: number; response: string; };
+    expect(attemptOne.parseOk).toBe(false);
+    expect(attemptOne.maxTokens).toBe(512);
+    expect(attemptThree.parseOk).toBe(false);
+    expect(attemptThree.maxTokens).toBe(1152);
+    expect(attemptThree.response).toBe('not-json');
     expect(detectShotsMock).not.toHaveBeenCalled();
     await expect(access(join(projectRoot, 'media', 'chronology.json'))).rejects.toThrow();
+  });
+
+  it('retries unified finalize with larger token budgets and succeeds on a later attempt', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-analyze-finalize-retry-success';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Finalize Retry Success Project');
+    const mediaRoot = join(projectRoot, '.tmp', 'fixtures');
+
+    await mkdir(mediaRoot, { recursive: true });
+    await writeFile(join(mediaRoot, 'retry.mp4'), 'fake-media');
+
+    await writeJson(join(projectRoot, 'config/runtime.json'), {
+      mlServerUrl: 'http://127.0.0.1:8910',
+    });
+    await writeJson(join(projectRoot, 'config/ingest-roots.json'), {
+      roots: [{
+        id: 'root-1',
+        enabled: true,
+        label: 'camera-a',
+        description: 'Main travel ingest root',
+        notes: ['retry footage'],
+        path: mediaRoot,
+      }],
+    });
+    await writeJson(join(projectRoot, 'store/assets.json'), [{
+      id: 'asset-retry',
+      kind: 'video',
+      sourcePath: 'retry.mp4',
+      displayName: 'retry.mp4',
+      ingestRootId: 'root-1',
+      durationMs: 10_000,
+      capturedAt: '2026-03-31T08:15:30.000Z',
+      metadata: {
+        hasAudioStream: false,
+      },
+    }]);
+
+    extractKeyframesMock.mockImplementation(async (
+      _filePath: string,
+      outputDir: string,
+      timestampsMs: number[],
+    ) => {
+      await mkdir(outputDir, { recursive: true });
+      return Promise.all(timestampsMs.map(async timeMs => {
+        const framePath = join(outputDir, `frame-${timeMs}.jpg`);
+        await writeFile(framePath, `frame-${timeMs}`);
+        return { timeMs, path: framePath };
+      }));
+    });
+
+    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue({
+      status: 'ok',
+      device: 'apple',
+      backend: 'mlx',
+      models_loaded: [],
+    });
+    const vlmSpy = vi.spyOn(MlClient.prototype, 'vlmAnalyze')
+      .mockResolvedValueOnce({
+        description: '{"visual_summary": {"scene_type": "broken"',
+        timing: {
+          backend: 'mlx',
+          modelRef: 'test-qwen',
+          totalMs: 40,
+        },
+      })
+      .mockResolvedValueOnce({
+        description: 'not-json',
+        timing: {
+          backend: 'mlx',
+          modelRef: 'test-qwen',
+          totalMs: 41,
+        },
+      })
+      .mockResolvedValueOnce({
+        description: JSON.stringify({
+          visual_summary: {
+            scene_type: 'landscape',
+            subjects: ['road'],
+            mood: 'calm',
+            place_hints: ['lake'],
+            narrative_role: 'detail',
+            description: 'Valid finalize output after retries.',
+          },
+          decision: {
+            clip_type: 'broll',
+            keep_decision: 'keep',
+            materialization_path: 'direct',
+            decision_reasons: ['test-retry-success'],
+          },
+        }),
+        timing: {
+          backend: 'mlx',
+          modelRef: 'test-qwen',
+          totalMs: 42,
+        },
+      });
+
+    const { analyzeWorkspaceProjectMedia } = await import('../../src/modules/media/project-analyze.js');
+    const result = await analyzeWorkspaceProjectMedia({
+      workspaceRoot,
+      projectId,
+    });
+
+    expect(result.analyzedAssetIds).toEqual(['asset-retry']);
+    expect(result.reportCount).toBe(1);
+    const finalizeCalls = vlmSpy.mock.calls.filter(call => call[1]?.includes('semantic clip type and materialization policy'));
+    expect(finalizeCalls).toHaveLength(3);
+    expect(finalizeCalls.map(call => call[2]?.maxTokens)).toEqual([512, 768, 1152]);
+    const captureRoot = join(projectRoot, '.tmp', 'media-analyze', 'finalize-attempts', 'asset-retry');
+    const attemptOne = JSON.parse(await readFile(join(captureRoot, 'attempt-01.json'), 'utf-8')) as { parseOk: boolean; maxTokens: number; responseLikelyTruncated: boolean; };
+    const attemptTwo = JSON.parse(await readFile(join(captureRoot, 'attempt-02.json'), 'utf-8')) as { parseOk: boolean; maxTokens: number; };
+    const attemptThree = JSON.parse(await readFile(join(captureRoot, 'attempt-03.json'), 'utf-8')) as { parseOk: boolean; maxTokens: number; response: string; };
+    expect(attemptOne.parseOk).toBe(false);
+    expect(attemptOne.maxTokens).toBe(512);
+    expect(attemptOne.responseLikelyTruncated).toBe(true);
+    expect(attemptTwo.parseOk).toBe(false);
+    expect(attemptTwo.maxTokens).toBe(768);
+    expect(attemptThree.parseOk).toBe(true);
+    expect(attemptThree.maxTokens).toBe(1152);
+    const report = JSON.parse(await readFile(getAssetReportPath(projectRoot, 'asset-retry'), 'utf-8')) as { clipTypeGuess: string; keepDecision: string; };
+    expect(report.clipTypeGuess).toBe('broll');
+    expect(report.keepDecision).toBe('keep');
+    await expect(access(join(projectRoot, 'media', 'chronology.json'))).resolves.toBeUndefined();
   });
 
   it('runs deferred scene detect for scenic drives using finalize VLM semantics', async () => {

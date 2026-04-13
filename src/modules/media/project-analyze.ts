@@ -1,5 +1,5 @@
 import { join } from 'node:path';
-import { access, stat } from 'node:fs/promises';
+import { access, mkdir, rm, stat } from 'node:fs/promises';
 import { freemem } from 'node:os';
 import type {
   EClipType,
@@ -37,6 +37,7 @@ import {
   loadFineScanCheckpoint,
   loadProjectBriefConfig,
   touchProjectUpdatedAt,
+  writeJson,
   writeKairosProgress,
   writeChronology,
   writeAssetReport,
@@ -71,6 +72,7 @@ import {
   type IShotKeyframePlan,
 } from './keyframe.js';
 import { MlClient } from './ml-client.js';
+import type { IMlVlmTiming } from './ml-client.js';
 import { probe } from './probe.js';
 import { resolveProtectionAudioLocalPath } from './protection-audio.js';
 import { recognizeFrames, recognizeShotGroups, type IRecognition } from './recognizer.js';
@@ -165,6 +167,28 @@ const CFINE_SCAN_PREFETCH_DEFAULTS = {
   maxReadyAssets: 6,
   maxReadyFrameMb: 768,
 } as const;
+const CFINALIZE_RETRY_MAX_TOKENS = [512, 768, 1152] as const;
+const CFINALIZE_DECISION_REASONS_LIMIT = 6;
+const CFINALIZE_CAPTURE_SCHEMA_VERSION = 1;
+
+interface IFinalizeAttemptCapture {
+  schemaVersion: number;
+  assetId: string;
+  displayName: string;
+  attemptIndex: number;
+  maxTokens: number;
+  prompt: string;
+  imagePaths: string[];
+  response: string;
+  responseLength: number;
+  responseEndsWithBrace: boolean;
+  responseEndsWithFence: boolean;
+  responseLikelyTruncated: boolean;
+  parseOk: boolean;
+  timing?: IMlVlmTiming;
+  roundTripMs: number;
+  capturedAt: string;
+}
 
 export async function analyzeWorkspaceProjectMedia(
   input: IAnalyzeWorkspaceProjectInput,
@@ -1658,6 +1682,7 @@ async function finalizePreparedAsset(
     input.prepared.hasAudioTrack,
   ));
   const provisionalPlanning = await resolvePreparedAssetPlanning({
+    projectRoot: input.projectRoot,
     prepared: input.prepared,
     transcript: audioContext.selectedTranscript,
     audioContext,
@@ -1682,6 +1707,7 @@ async function finalizePreparedAsset(
       performance: input.performance,
     });
     planning = await resolvePreparedAssetPlanning({
+      projectRoot: input.projectRoot,
       prepared,
       transcript: audioContext.selectedTranscript,
       audioContext,
@@ -1787,6 +1813,7 @@ async function resolveManualSpatialContext(input: {
 }
 
 async function resolvePreparedAssetPlanning(input: {
+  projectRoot: string;
   prepared: IPreparedAssetAnalysis;
   transcript?: ITranscriptContext | null;
   audioContext?: IAudioAnalysisContext;
@@ -1833,6 +1860,7 @@ async function resolvePreparedAssetPlanning(input: {
       }),
     }
     : await resolveUnifiedFinalizeAnalysis({
+      projectRoot: input.projectRoot,
       prepared: input.prepared,
       transcript: input.transcript,
       audioContext: input.audioContext,
@@ -1958,6 +1986,7 @@ async function runDeferredSceneDetect(input: {
 }
 
 async function resolveUnifiedFinalizeAnalysis(input: {
+  projectRoot: string;
   prepared: IPreparedAssetAnalysis;
   transcript?: ITranscriptContext | null;
   audioContext?: IAudioAnalysisContext;
@@ -2015,6 +2044,7 @@ function buildFallbackUnifiedAnalysisDecision(input: {
 }
 
 async function inferUnifiedAnalysisDecision(input: {
+  projectRoot: string;
   prepared: IPreparedAssetAnalysis;
   transcript?: ITranscriptContext | null;
   audioContext?: IAudioAnalysisContext;
@@ -2041,46 +2071,136 @@ async function inferUnifiedAnalysisDecision(input: {
     return { ok: false, reason: `素材 ${input.prepared.asset.displayName} 缺少可用于 finalize 的代表帧` };
   }
 
+  const prompt = buildUnifiedFinalizePrompt({
+    prepared: input.prepared,
+    transcript: input.transcript,
+    audioContext: input.audioContext,
+    densityScore: input.densityScore,
+    basePlan: input.basePlan,
+    heuristicClipType: input.heuristicClipType,
+    budget: input.budget,
+    manualSpatial: input.manualSpatial,
+  });
+  const captureRoot = await prepareFinalizeAttemptCaptureRoot(
+    input.projectRoot,
+    input.prepared.asset.id,
+  );
+  let latestCapturePath: string | null = null;
+
   try {
-    const decisionStartedAt = Date.now();
-    const result = await input.ml.client.vlmAnalyze(
-      framePaths,
-      buildUnifiedFinalizePrompt({
-        prepared: input.prepared,
-        transcript: input.transcript,
-        audioContext: input.audioContext,
-        densityScore: input.densityScore,
-        basePlan: input.basePlan,
-        heuristicClipType: input.heuristicClipType,
-        budget: input.budget,
-        manualSpatial: input.manualSpatial,
-      }),
-      { keepOtherModelsLoaded: CAUDIO_ANALYSIS_KEEP_OTHER_MODELS_LOADED },
-    );
-    input.performance?.recordVlm({
-      asset: input.prepared.asset,
-      phase: 'finalize',
-      imageCount: framePaths.length,
-      roundTripMs: Date.now() - decisionStartedAt,
-      timing: result.timing,
-    });
-    const parsed = parseUnifiedFinalizeAnalysis(result.description);
-    if (!parsed) {
-      return {
-        ok: false,
-        reason: `素材 ${input.prepared.asset.displayName} 的 unified finalize 返回了无效 JSON`,
-      };
+    for (const [attemptIndex, maxTokens] of CFINALIZE_RETRY_MAX_TOKENS.entries()) {
+      const decisionStartedAt = Date.now();
+      const result = await input.ml.client.vlmAnalyze(
+        framePaths,
+        prompt,
+        {
+          keepOtherModelsLoaded: CAUDIO_ANALYSIS_KEEP_OTHER_MODELS_LOADED,
+          maxTokens,
+        },
+      );
+      const roundTripMs = Date.now() - decisionStartedAt;
+      input.performance?.recordVlm({
+        asset: input.prepared.asset,
+        phase: 'finalize',
+        imageCount: framePaths.length,
+        roundTripMs,
+        timing: result.timing,
+      });
+      const parsed = parseUnifiedFinalizeAnalysis(result.description);
+      latestCapturePath = await writeFinalizeAttemptCapture({
+        captureRoot,
+        asset: input.prepared.asset,
+        attemptIndex: attemptIndex + 1,
+        maxTokens,
+        prompt,
+        imagePaths: framePaths,
+        response: result.description,
+        parseOk: parsed !== null,
+        timing: result.timing,
+        roundTripMs,
+      });
+      if (parsed) {
+        return {
+          ok: true,
+          value: parsed,
+        };
+      }
+      if (attemptIndex < CFINALIZE_RETRY_MAX_TOKENS.length - 1) {
+        continue;
+      }
     }
     return {
-      ok: true,
-      value: parsed,
+      ok: false,
+      reason: `素材 ${input.prepared.asset.displayName} 的 unified finalize 连续 ${CFINALIZE_RETRY_MAX_TOKENS.length} 次返回无效 JSON${latestCapturePath ? `（raw: ${latestCapturePath}）` : ''}`,
     };
   } catch (error) {
     return {
       ok: false,
-      reason: `素材 ${input.prepared.asset.displayName} 的 unified finalize 失败：${error instanceof Error ? error.message : String(error)}`,
+      reason: `素材 ${input.prepared.asset.displayName} 的 unified finalize 失败：${error instanceof Error ? error.message : String(error)}${latestCapturePath ? `（latest raw: ${latestCapturePath}）` : ''}`,
     };
   }
+}
+
+async function prepareFinalizeAttemptCaptureRoot(
+  projectRoot: string,
+  assetId: string,
+): Promise<string> {
+  const root = join(projectRoot, '.tmp', 'media-analyze', 'finalize-attempts', assetId);
+  await rm(root, { recursive: true, force: true });
+  await mkdir(root, { recursive: true });
+  return root;
+}
+
+async function writeFinalizeAttemptCapture(input: {
+  captureRoot: string;
+  asset: IKtepAsset;
+  attemptIndex: number;
+  maxTokens: number;
+  prompt: string;
+  imagePaths: string[];
+  response: string;
+  parseOk: boolean;
+  timing?: IMlVlmTiming;
+  roundTripMs: number;
+}): Promise<string> {
+  const trimmed = input.response.trimEnd();
+  const payload: IFinalizeAttemptCapture = {
+    schemaVersion: CFINALIZE_CAPTURE_SCHEMA_VERSION,
+    assetId: input.asset.id,
+    displayName: input.asset.displayName,
+    attemptIndex: input.attemptIndex,
+    maxTokens: input.maxTokens,
+    prompt: input.prompt,
+    imagePaths: input.imagePaths,
+    response: input.response,
+    responseLength: input.response.length,
+    responseEndsWithBrace: trimmed.endsWith('}'),
+    responseEndsWithFence: trimmed.endsWith('```'),
+    responseLikelyTruncated: looksLikeTruncatedJsonResponse(trimmed),
+    parseOk: input.parseOk,
+    timing: input.timing,
+    roundTripMs: input.roundTripMs,
+    capturedAt: new Date().toISOString(),
+  };
+  const targetPath = join(
+    input.captureRoot,
+    `attempt-${String(input.attemptIndex).padStart(2, '0')}.json`,
+  );
+  await writeJson(targetPath, payload);
+  return targetPath;
+}
+
+function looksLikeTruncatedJsonResponse(raw: string): boolean {
+  if (!raw) return false;
+  if (!raw.trimEnd().endsWith('}')) return true;
+  const openBraces = (raw.match(/\{/g) ?? []).length;
+  const closeBraces = (raw.match(/\}/g) ?? []).length;
+  const openBrackets = (raw.match(/\[/g) ?? []).length;
+  const closeBrackets = (raw.match(/\]/g) ?? []).length;
+  const quoteCount = (raw.match(/"/g) ?? []).length;
+  return openBraces !== closeBraces
+    || openBrackets !== closeBrackets
+    || (quoteCount % 2 === 1);
 }
 
 function reconcileUnifiedAnalysisDecision(input: {
@@ -2806,6 +2926,8 @@ Rules:
 - Photos and clearly atomic visual materials can use "direct" materialization.
 - If either visual or speech evidence indicates promising regions, prefer "fine-scan" with "windowed".
 - Use "full" only for short high-value clips or when both visual and speech signals are strong.
+- Keep "decision_reasons" concise: 1 to ${CFINALIZE_DECISION_REASONS_LIMIT} short strings only.
+- Do not exhaustively enumerate every category the clip is not.
 
 Signals:
 ${signalPayload}`;

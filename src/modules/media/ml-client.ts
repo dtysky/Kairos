@@ -81,6 +81,7 @@ export interface IMlHealth {
 
 export interface IMlRequestOptions {
   keepOtherModelsLoaded?: boolean;
+  maxTokens?: number;
 }
 
 export class MlClient {
@@ -138,6 +139,7 @@ export class MlClient {
       image_paths: imagePaths.map(path => this.normalizePath(path)),
       prompt,
       keep_other_models_loaded: options?.keepOtherModelsLoaded ?? false,
+      max_tokens: options?.maxTokens,
     });
   }
 
