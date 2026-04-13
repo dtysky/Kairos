@@ -3,6 +3,51 @@ import type { IKtepAsset, IKtepScript, IKtepSlice } from '../../src/protocol/sch
 import { placeClips } from '../../src/modules/timeline-core/placement.js';
 
 describe('placeClips', () => {
+  it('does not stretch a single photo to absorb leftover beat budget', () => {
+    const assets: IKtepAsset[] = [
+      {
+        id: 'asset-photo',
+        kind: 'photo',
+        sourcePath: 'photo.jpg',
+        displayName: 'photo.jpg',
+      },
+    ];
+    const slices: IKtepSlice[] = [
+      {
+        id: 'slice-photo',
+        assetId: 'asset-photo',
+        type: 'photo',
+        labels: [],
+        placeHints: [],
+      },
+    ];
+    const script: IKtepScript[] = [{
+      id: 'segment-1',
+      role: 'scene',
+      narration: 'test',
+      targetDurationMs: 9_000,
+      linkedSliceIds: ['slice-photo'],
+      beats: [
+        {
+          id: 'beat-1',
+          text: '单张照片不该被拉到九秒。',
+          targetDurationMs: 9_000,
+          selections: [{
+            assetId: 'asset-photo',
+            sliceId: 'slice-photo',
+          }],
+          linkedSliceIds: ['slice-photo'],
+        },
+      ],
+    }];
+
+    const { clips } = placeClips(script, slices, assets);
+
+    expect(clips).toHaveLength(1);
+    expect(clips[0]?.timelineInMs).toBe(0);
+    expect(clips[0]?.timelineOutMs).toBe(5_000);
+  });
+
   it('keeps serial video selections on a single primary track', () => {
     const assets: IKtepAsset[] = [
       {
@@ -832,5 +877,174 @@ describe('placeClips', () => {
       sourceInMs: 0,
       sourceOutMs: 1800,
     });
+  });
+
+  it('reorders beats within the same segment when chronology guard is enabled', () => {
+    const assets: IKtepAsset[] = [
+      {
+        id: 'asset-late',
+        kind: 'video',
+        sourcePath: 'late.mp4',
+        displayName: 'late.mp4',
+        capturedAt: '2026-04-10T10:00:00.000Z',
+      },
+      {
+        id: 'asset-early',
+        kind: 'video',
+        sourcePath: 'early.mp4',
+        displayName: 'early.mp4',
+        capturedAt: '2026-04-10T08:00:00.000Z',
+      },
+    ];
+    const slices: IKtepSlice[] = [
+      {
+        id: 'slice-late',
+        assetId: 'asset-late',
+        type: 'broll',
+        sourceInMs: 0,
+        sourceOutMs: 2_000,
+        labels: [],
+        placeHints: [],
+      },
+      {
+        id: 'slice-early',
+        assetId: 'asset-early',
+        type: 'broll',
+        sourceInMs: 0,
+        sourceOutMs: 2_000,
+        labels: [],
+        placeHints: [],
+      },
+    ];
+    const script: IKtepScript[] = [{
+      id: 'segment-1',
+      role: 'scene',
+      narration: 'test',
+      targetDurationMs: 4_000,
+      linkedSliceIds: ['slice-late', 'slice-early'],
+      beats: [
+        {
+          id: 'beat-late',
+          text: '先错放晚一点的镜头。',
+          targetDurationMs: 2_000,
+          selections: [{ assetId: 'asset-late', sliceId: 'slice-late', sourceInMs: 0, sourceOutMs: 2_000 }],
+          linkedSliceIds: ['slice-late'],
+        },
+        {
+          id: 'beat-early',
+          text: '再放更早的镜头。',
+          targetDurationMs: 2_000,
+          selections: [{ assetId: 'asset-early', sliceId: 'slice-early', sourceInMs: 0, sourceOutMs: 2_000 }],
+          linkedSliceIds: ['slice-early'],
+        },
+      ],
+    }];
+
+    const { clips } = placeClips(script, slices, assets, {
+      arrangementSignals: {
+        primaryAxisKind: 'time',
+        chronologyStrength: 0.8,
+        routeContinuityStrength: 0.6,
+        processContinuityStrength: 0.6,
+        spaceStrength: 0.1,
+        emotionStrength: 0.1,
+        payoffStrength: 0.1,
+        enforceChronology: true,
+        materialRoleBias: {},
+      },
+    });
+
+    expect(clips.map(clip => clip.assetId)).toEqual(['asset-early', 'asset-late']);
+    expect(clips.map(clip => [clip.timelineInMs, clip.timelineOutMs])).toEqual([
+      [0, 2000],
+      [2000, 4000],
+    ]);
+  });
+
+  it('throws when chronology guard still detects backwards beats across segments', () => {
+    const assets: IKtepAsset[] = [
+      {
+        id: 'asset-late',
+        kind: 'video',
+        sourcePath: 'late.mp4',
+        displayName: 'late.mp4',
+        capturedAt: '2026-04-10T10:00:00.000Z',
+      },
+      {
+        id: 'asset-early',
+        kind: 'video',
+        sourcePath: 'early.mp4',
+        displayName: 'early.mp4',
+        capturedAt: '2026-04-10T08:00:00.000Z',
+      },
+    ];
+    const slices: IKtepSlice[] = [
+      {
+        id: 'slice-late',
+        assetId: 'asset-late',
+        type: 'broll',
+        sourceInMs: 0,
+        sourceOutMs: 2_000,
+        labels: [],
+        placeHints: [],
+      },
+      {
+        id: 'slice-early',
+        assetId: 'asset-early',
+        type: 'broll',
+        sourceInMs: 0,
+        sourceOutMs: 2_000,
+        labels: [],
+        placeHints: [],
+      },
+    ];
+    const script: IKtepScript[] = [
+      {
+        id: 'segment-1',
+        role: 'scene',
+        narration: 'test',
+        targetDurationMs: 2_000,
+        linkedSliceIds: ['slice-late'],
+        beats: [
+          {
+            id: 'beat-late',
+            text: '后拍的段落被放在前面。',
+            targetDurationMs: 2_000,
+            selections: [{ assetId: 'asset-late', sliceId: 'slice-late', sourceInMs: 0, sourceOutMs: 2_000 }],
+            linkedSliceIds: ['slice-late'],
+          },
+        ],
+      },
+      {
+        id: 'segment-2',
+        role: 'scene',
+        narration: 'test',
+        targetDurationMs: 2_000,
+        linkedSliceIds: ['slice-early'],
+        beats: [
+          {
+            id: 'beat-early',
+            text: '更早的段落还排在后面。',
+            targetDurationMs: 2_000,
+            selections: [{ assetId: 'asset-early', sliceId: 'slice-early', sourceInMs: 0, sourceOutMs: 2_000 }],
+            linkedSliceIds: ['slice-early'],
+          },
+        ],
+      },
+    ];
+
+    expect(() => placeClips(script, slices, assets, {
+      arrangementSignals: {
+        primaryAxisKind: 'time',
+        chronologyStrength: 0.8,
+        routeContinuityStrength: 0.6,
+        processContinuityStrength: 0.6,
+        spaceStrength: 0.1,
+        emotionStrength: 0.1,
+        payoffStrength: 0.1,
+        enforceChronology: true,
+        materialRoleBias: {},
+      },
+    })).toThrow(/Chronology guard failed/u);
   });
 });

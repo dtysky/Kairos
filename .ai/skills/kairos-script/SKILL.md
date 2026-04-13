@@ -188,6 +188,10 @@ const spans = await readJson('store/spans.json', z.array(IKtepSlice));
 - `material-bundles` 只用作 `materialPatterns` 驱动的粗索引层
 - `segment plan` 只保留段落本体：`id`、`title`、`intent`、`targetDurationMs`、可选 `roleHint` / `notes`
 - `material slots` 只保留运行时薄检索信息：`id`、`query`、`requirement`、`targetBundles`、`chosenSpanIds`
+- 当前 Script 执行层还会基于现有 style profile 解析一个内部 `ResolvedArrangementSignals`：
+  - 它不是新的公开协议
+  - 它只用于判断当前风格主轴更偏时间推进、空间推进、情感推进还是结果回看
+  - 如果 style 明确强调 `chronology / route continuity / continuous process`，顺时序会成为正式执行约束，而不是只有 prompt 偏好
 
 生成 `segment plan` 时，优先用风格档案里的结构化提示，而不是只凭通用直觉：
 
@@ -196,12 +200,21 @@ const spans = await readJson('store/spans.json', z.array(IKtepSlice));
 - `高频运镜 / 低频运镜` 决定镜头语言偏好
 - `开场建场镜头语法 / 地理重置镜头语法 / 情绪释放镜头语法` 决定这些功能位分别该用什么画面组织
 - `素材禁区 / 镜头禁区 / antiPatterns` 决定哪些候选就算“好看”也不该进当前风格
+- 当当前风格主轴明显偏时间 / 路程推进时：
+  - 先按 `capturedAt + chronology + Pharos trip/day/shot` 建立单调递增的时间带
+  - 再把段落分配到各自合法时间带里
+  - 不允许后段跨窗回捞前段素材来填空
+- `targetDurationMs` 不应再主要从 style 平均章节时长直接拍脑袋得出：
+  - 先看这一段实际能承载多少关键过程视频、多少可保留原声、多少结果照片组、多少事件节点
+  - style 只继续调节节奏与上下限
 
 生成 `material slots` 时，遵循：
 
 - `segment intent -> slot query -> targetBundles -> bundle lookup -> chosenSpanIds`
 - bundle 命中后，再按 time / GPS / chronology / Pharos day-shot 线索做二次过滤
 - `chosenSpanIds` 是 retrieval 的正式结果回写位
+- 对时间主轴强的风格，二次过滤必须服从时间带窗口；局部打分只能在当前窗口里择优，不能跨窗乱拿素材
+- 关键过程视频如果承载不可替代的时间推进、事件推进、人物关系推进或有效原声，应保留为独立 beat，不要让它被更泛的 summary 段或静态成果材料吞掉
 
 ### Step 4: Agent 直接写旁白
 

@@ -272,6 +272,70 @@ describe('speech-paced subtitles', () => {
     });
   });
 
+  it('falls back to beat text when source-speech transcript looks too noisy', () => {
+    const script: IKtepScript[] = [{
+      id: 'segment-1',
+      role: 'scene',
+      narration: 'ignored',
+      linkedSliceIds: ['slice-talk'],
+      beats: [
+        {
+          id: 'beat-1',
+          text: '先把今天要拍什么说清楚。',
+          actions: {
+            preserveNatSound: true,
+          },
+          selections: [{
+            assetId: 'asset-talk',
+            sliceId: 'slice-talk',
+            sourceInMs: 0,
+            sourceOutMs: 2400,
+          }],
+          linkedSliceIds: ['slice-talk'],
+        },
+      ],
+    }];
+    const slices: IKtepSlice[] = [
+      {
+        id: 'slice-talk',
+        assetId: 'asset-talk',
+        type: 'talking-head',
+        sourceInMs: 0,
+        sourceOutMs: 2400,
+        transcriptSegments: [
+          {
+            startMs: 0,
+            endMs: 2400,
+            text: '导航导航导航导航导航导航',
+          },
+        ],
+        labels: [],
+        placeHints: [],
+      },
+    ];
+    const clips: IKtepClip[] = [
+      {
+        id: 'clip-1',
+        trackId: 'track-1',
+        assetId: 'asset-talk',
+        sliceId: 'slice-talk',
+        sourceInMs: 0,
+        sourceOutMs: 2400,
+        timelineInMs: 0,
+        timelineOutMs: 2400,
+        linkedScriptSegmentId: 'segment-1',
+        linkedScriptBeatId: 'beat-1',
+      },
+    ];
+
+    const subtitles = planSubtitles(script, clips, slices, {
+      maxCharsPerCue: 10,
+    });
+
+    expect(subtitles.length).toBeGreaterThan(0);
+    expect(subtitles.map(subtitle => subtitle.text).join('')).toBe('先把今天要拍什么说清楚');
+  });
+
   it('expands preserveNatSound beats to a full spoken sentence before placement and subtitles', () => {
     const assets: IKtepAsset[] = [
       {

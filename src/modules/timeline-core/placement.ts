@@ -18,11 +18,13 @@ import {
   normalizeSourceSpeechSelections,
   shouldPreferSourceSpeech,
 } from './pacing.js';
+import type { IResolvedArrangementSignals } from '../script/arrangement-signals.js';
 
 export interface IPlacementConfig {
   maxSliceDurationMs: number;
   defaultTransitionMs: number;
   photoDefaultMs: number;
+  arrangementSignals?: IResolvedArrangementSignals;
 }
 
 const CDEFAULTS: IPlacementConfig = {
@@ -46,6 +48,7 @@ export function placeClips(
   const sliceMap = new Map(slices.map(s => [s.id, s]));
   const assetMap = new Map(assets.map(a => [a.id, a]));
   const reportMap = new Map(assetReports.map(report => [report.assetId, report]));
+  const chronologyGuardEnabled = cfg.arrangementSignals?.enforceChronology === true;
 
   const primaryTrack: IKtepTrack = {
     id: randomUUID(), kind: 'video', role: 'primary', index: 0,
@@ -54,10 +57,13 @@ export function placeClips(
 
   const clips: IKtepClip[] = [];
   let cursor = 0;
+  let previousBeatChronologyKey: string | null = null;
 
   for (const seg of script) {
     const segDur = seg.targetDurationMs ?? 10000;
-    const beats = resolveBeats(seg, sliceMap);
+    const beats = chronologyGuardEnabled
+      ? applyChronologyAwareBeatOrdering(resolveBeats(seg, sliceMap), assetMap)
+      : resolveBeats(seg, sliceMap);
     if (beats.length === 0) {
       cursor += segDur;
       continue;
@@ -76,17 +82,37 @@ export function placeClips(
       const selections = preferSourceSpeech
         ? normalizeSourceSpeechSelections(initialSelections, sliceMap)
         : initialSelections;
+      const orderedSelections = chronologyGuardEnabled
+        ? sortSelectionsByChronology(selections, assetMap)
+        : selections;
       const explicitSpeed = preferSourceSpeech
         ? undefined
         : resolveRequestedSpeed(beat.actions?.speed ?? seg.actions?.speed);
+      const beatChronologyKey = chronologyGuardEnabled
+        ? resolveBeatChronologyKey(orderedSelections, assetMap)
+        : null;
 
-      if (selections.length === 0) {
+      if (
+        chronologyGuardEnabled
+        && beatChronologyKey
+        && previousBeatChronologyKey
+        && beatChronologyKey.localeCompare(previousBeatChronologyKey) < 0
+      ) {
+        throw new Error(
+          `Chronology guard failed for beat ${beat.id}: ${beatChronologyKey} < ${previousBeatChronologyKey}`,
+        );
+      }
+      if (chronologyGuardEnabled && beatChronologyKey) {
+        previousBeatChronologyKey = beatChronologyKey;
+      }
+
+      if (orderedSelections.length === 0) {
         cursor += beatDur;
         continue;
       }
 
       const placement = buildBeatPlacement(
-        selections,
+        orderedSelections,
         beatDur,
         explicitSpeed,
         preferSourceSpeech,
@@ -357,11 +383,70 @@ function buildPlacementEntry(
     preferredSourceInMs: selection.preferredSourceInMs,
     preferredSourceOutMs: selection.preferredSourceOutMs,
     sourceDurationMs,
-    timelineDurationMs: naturalDurationMs,
-    appliedSpeed,
-    canStretch: !preferSourceSpeech && appliedSpeed == null,
+      timelineDurationMs: naturalDurationMs,
+      appliedSpeed,
+    canStretch: !preferSourceSpeech && appliedSpeed == null && !isPhoto,
     isPhoto,
   };
+}
+
+function applyChronologyAwareBeatOrdering(
+  beats: IResolvedBeat[],
+  assetMap: Map<string, IKtepAsset>,
+): IResolvedBeat[] {
+  return beats
+    .map((beat, index) => {
+      const orderedSelections = sortSelectionsByChronology(beat.selections, assetMap);
+      return {
+        beat: {
+          ...beat,
+          selections: orderedSelections,
+        },
+        index,
+        chronologyKey: resolveBeatChronologyKey(orderedSelections, assetMap),
+      };
+    })
+    .sort((left, right) => {
+      if (!left.chronologyKey && !right.chronologyKey) return left.index - right.index;
+      if (!left.chronologyKey) return 1;
+      if (!right.chronologyKey) return -1;
+      return left.chronologyKey.localeCompare(right.chronologyKey) || left.index - right.index;
+    })
+    .map(item => item.beat);
+}
+
+function sortSelectionsByChronology(
+  selections: IResolvedSelection[],
+  assetMap: Map<string, IKtepAsset>,
+): IResolvedSelection[] {
+  return [...selections].sort((left, right) => {
+    const leftKey = resolveSelectionChronologyKey(left, assetMap);
+    const rightKey = resolveSelectionChronologyKey(right, assetMap);
+    if (!leftKey && !rightKey) return 0;
+    if (!leftKey) return 1;
+    if (!rightKey) return -1;
+    return leftKey.localeCompare(rightKey);
+  });
+}
+
+function resolveBeatChronologyKey(
+  selections: IResolvedSelection[],
+  assetMap: Map<string, IKtepAsset>,
+): string | null {
+  for (const selection of selections) {
+    const key = resolveSelectionChronologyKey(selection, assetMap);
+    if (key) return key;
+  }
+  return null;
+}
+
+function resolveSelectionChronologyKey(
+  selection: Pick<IResolvedSelection, 'assetId' | 'sourceInMs'>,
+  assetMap: Map<string, IKtepAsset>,
+): string | null {
+  const capturedAt = assetMap.get(selection.assetId)?.capturedAt?.trim();
+  if (!capturedAt) return null;
+  return `${capturedAt}|${String(Math.max(0, Math.round(selection.sourceInMs ?? 0))).padStart(9, '0')}`;
 }
 
 function fitEntriesToBudget(entries: IPlacementEntry[], targetTotalMs: number): void {

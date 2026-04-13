@@ -336,7 +336,10 @@ export function splitCueChunks(text: string, maxChars: number): string[] {
     }
   }
 
-  return rebalanceShortChunks(chunks, maxChars);
+  return rebalanceShortChunks(
+    chunks.flatMap(chunk => hardSplitCueChunk(chunk, maxChars)),
+    maxChars,
+  );
 }
 
 export function sanitizeSubtitleCueText(text: string): string {
@@ -583,6 +586,42 @@ function rebalanceShortChunks(chunks: string[], maxChars: number): string[] {
   }
 
   return result;
+}
+
+function hardSplitCueChunk(chunk: string, maxChars: number): string[] {
+  const normalized = chunk.trim();
+  if (!normalized) return [];
+  if (normalized.length <= maxChars) return [normalized];
+
+  const chars = Array.from(normalized);
+  const result: string[] = [];
+  let index = 0;
+
+  while (index < chars.length) {
+    let end = Math.min(chars.length, index + maxChars);
+    if (end < chars.length) {
+      const preferred = findCueBoundary(chars, index, end);
+      if (preferred > index) {
+        end = preferred;
+      }
+    }
+
+    result.push(chars.slice(index, end).join('').trim());
+    index = end;
+  }
+
+  return result.filter(Boolean);
+}
+
+function findCueBoundary(chars: string[], start: number, end: number): number {
+  for (let index = end; index > start; index -= 1) {
+    const previous = chars[index - 1] ?? '';
+    const next = chars[index] ?? '';
+    if (/[\s，,。！？!?；;：:、]/u.test(previous) || /[\s，,。！？!?；;：:、]/u.test(next)) {
+      return index;
+    }
+  }
+  return end;
 }
 
 function resolveSourceDuration(sourceInMs?: number, sourceOutMs?: number): number | undefined {

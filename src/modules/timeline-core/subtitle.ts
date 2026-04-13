@@ -4,6 +4,7 @@ import {
   buildNarrationBeatPlan,
   buildSourceSpeechContext,
   sanitizeSubtitleCueText,
+  splitCueChunks,
   shouldPreferSourceSpeech,
   type ISpeechPacingConfig,
 } from './pacing.js';
@@ -135,6 +136,9 @@ function planSourceSpeechSubtitles(
       if (!rawText) continue;
 
       const cueTexts = splitCueChunks(rawText, config.maxCharsPerCue);
+      if (shouldFallbackToNarrationSubtitles(rawText, cueTexts, config.maxCharsPerCue)) {
+        return [];
+      }
       const totalDuration = overlapEnd - overlapStart;
       let cursor = 0;
 
@@ -167,6 +171,26 @@ function planSourceSpeechSubtitles(
   }
 
   return subtitles;
+}
+
+function shouldFallbackToNarrationSubtitles(
+  rawText: string,
+  cueTexts: string[],
+  maxChars: number,
+): boolean {
+  if (cueTexts.length === 0) return true;
+  if (cueTexts.some(text => text.length > maxChars)) return true;
+  if (cueTexts.length > 4 && rawText.length > maxChars * 3) return true;
+
+  const normalized = rawText.replace(/\s+/gu, '');
+  if (normalized.length >= 12) {
+    const uniqueRatio = new Set(Array.from(normalized)).size / normalized.length;
+    if (uniqueRatio < 0.32) return true;
+  }
+
+  if (/(.{1,4})\1{2,}/u.test(normalized)) return true;
+  if (/(\S{1,8})(?:\s+\1){2,}/u.test(rawText)) return true;
+  return false;
 }
 
 function resolveSubtitleBeats(
@@ -409,42 +433,6 @@ function splitNarrationIntoBeats(text: string, beatCount: number): string[] {
   return beats;
 }
 
-function splitCueChunks(text: string, maxChars: number): string[] {
-  const strongUnits = splitWithDelimiters(text, /([。！？!?；;])/);
-  const chunks: string[] = [];
-
-  for (const unit of strongUnits) {
-    const normalized = unit.trim();
-    if (!normalized) continue;
-
-    if (normalized.length <= maxChars) {
-      chunks.push(normalized);
-      continue;
-    }
-
-    const weakUnits = splitWithDelimiters(normalized, /([，,])/);
-    let buffer = '';
-
-    for (const weak of weakUnits) {
-      const part = weak.trim();
-      if (!part) continue;
-
-      if (buffer.length > 0 && buffer.length + part.length > maxChars) {
-        chunks.push(buffer.trim());
-        buffer = part;
-      } else {
-        buffer += part;
-      }
-    }
-
-    if (buffer.trim()) {
-      chunks.push(buffer.trim());
-    }
-  }
-
-  return rebalanceShortChunks(chunks, maxChars);
-}
-
 function splitWithDelimiters(text: string, delimiter: RegExp): string[] {
   const parts = text.split(delimiter);
   const result: string[] = [];
@@ -456,30 +444,6 @@ function splitWithDelimiters(text: string, delimiter: RegExp): string[] {
     if (combined) {
       result.push(combined);
     }
-  }
-
-  return result;
-}
-
-function rebalanceShortChunks(chunks: string[], maxChars: number): string[] {
-  if (chunks.length <= 1) return chunks;
-
-  const result: string[] = [];
-  for (const chunk of chunks) {
-    const current = chunk.trim();
-    if (!current) continue;
-
-    const previous = result[result.length - 1];
-    if (
-      previous
-      && current.length <= 6
-      && previous.length + current.length <= maxChars + 4
-    ) {
-      result[result.length - 1] = `${previous}${current}`;
-      continue;
-    }
-
-    result.push(current);
   }
 
   return result;

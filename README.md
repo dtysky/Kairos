@@ -43,6 +43,7 @@ Current stable pipeline:
 - workspace style profiles are no longer treated as prose-only references:
   - each `config/styles/*.md` should carry directly consumable rhythm-stage guidance, material-role guidance, camera/shot-language preferences, function-slot hints, stable parameter keys, and anti-patterns
   - these style outputs are expected to guide `script` recall / outline / beat writing directly, not only provide high-level narrative tone
+  - script/timeline runtime now resolves a small internal arrangement-signal layer from the existing style profile; it is not a new public schema, but it lets downstream logic tell whether the current style is mainly time/route-driven, space-driven, emotion-driven, or payoff-driven
 - project script work now references a workspace style category instead of owning its own `config/styles/`
 - workspace style-analysis now runs as a formal deterministic prep job:
   - `health-check -> clip -> probe -> shot-detect -> transcribe -> keyframes -> vlm -> video-complete -> awaiting_agent|completed`
@@ -59,11 +60,18 @@ Current stable pipeline:
   - if the reviewed brief was already user-edited and a fresh initial draft is needed, overwrite permission is granted explicitly from `/script` instead of silent agent overwrite
   - the selected style profile should already expose structured `arrangementStructure`, `narrationConstraints`, rhythm stages, material grammar, camera language, and anti-patterns, so Agent work does not depend on re-inferring everything from a long style essay
   - script prep now follows `Analyze -> Material Overview -> Script Brief -> Segment Plan -> Material Slots -> Bundle Lookup -> Chosen SpanIds -> Beat / Script`
+  - when the selected style clearly emphasizes chronology / route continuity / continuous process, script prep now enforces ordering in three layers:
+    - internal arrangement signals resolve that the style is time-axis-strong from the existing style markdown
+    - deterministic prep builds monotonic time bands for segments and only retrieves spans inside the legal band
+    - downstream timeline assembly re-validates chronology and refuses to silently output a backwards sequence
+  - deterministic prep no longer treats style averages as the primary source of segment length; segment budgets now start from material capacity, while style only nudges pacing and caps
+  - key process videos with real event progression / relationship progression / effective source speech are now protected from being swallowed by broad summary segments
 - project brief now carries one project-level semantic vocab layer for analyze/script:
   - `材料模式短语`
 - subtitles support two formal paths:
   - narration path from `beat.text`
   - source-speech path from `span.transcriptSegments`
+  - source-speech subtitles now run through cleanup and hard cue splitting first; noisy ASR that still cannot produce readable cues falls back to `beat.text`
 - video Analyze now produces formal video `visualSummary + decision` in a single unified VLM pass during `finalize`:
   - with audio: `coarse-scan -> audio-analysis -> finalize -> deferred scene detect(if needed)`
   - without audio: `coarse-scan -> finalize -> deferred scene detect(if needed)`
@@ -90,6 +98,11 @@ Current stable pipeline:
 - outline / script now prefer Analyze-provided edit bounds instead of re-centering every span by default; legacy spans without edit bounds still fall back to conservative trimming
 - explicit acceleration now flows through `beat.actions.speed` -> timeline clip `speed` -> NLE export, but only `drive / aerial` clips may consume it; placement also fits clips against `beat.targetDurationMs` instead of drifting with raw source duration
 - when a beat preserves source speech, Kairos now snaps the selected window outward to full `transcriptSegments` boundaries and will extend the beat if needed so the spoken sentence finishes cleanly
+- timeline placement no longer uses single photos as an unbounded way to absorb leftover beat budget; photos keep short natural holds unless the script explicitly asks for a longer hold
+- for styles whose existing main axis resolves to time / route progression, timeline placement now treats chronology as a formal guardrail instead of a soft preference:
+  - adjacent beats should keep non-decreasing `capturedAt`
+  - multi-selection beats should default to chronological order internally
+  - if a safe in-band reorder still cannot restore order, timeline generation now throws instead of silently exporting a wrong sequence
 - timeline / draft output spec is project-configurable through `config/runtime.json` and now defaults to `3840x2160 @ 30fps`
 - when a beat does not use source speech, Kairos will mark selected video clips to mute their embedded audio during NLE export; clip/selection references now prefer `spanId`
 - the official Analyze monitor now exposes structured pipeline cards for `coarse-scan`, `audio-analysis`, and `fine-scan` instead of pretending the first two stages are single-asset serial work

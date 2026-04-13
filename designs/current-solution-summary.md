@@ -38,6 +38,7 @@ Kairos 当前需要区分两层：
   - 章节里应尽量明确阶段节奏、素材角色、运镜语言、功能位分配与禁区
   - 参数表里应尽量提供稳定 key，便于 `script / recall / outline` 直接消费
   - 这些内容默认表示“观测到的高频偏好”，不是自动变成所有脚本都必须照抄的硬模板
+  - Script / Timeline 内部会从现有 style profile 解析一个小的运行时 `arrangement signals` 层，用来判断当前风格主轴更偏时间推进、空间推进、情感推进还是结果回看；这不是新的公开协议，也不是新的用户配置面
 - `scripts/kairos-supervisor.* start` 只启动 `Supervisor + React console`，不会顺带拉起 ML，也不会自动恢复旧 job
 - `projects/<projectId>/.tmp/media-analyze/progress.json` 与 `<workspaceRoot>/.tmp/style-analysis/{category}/progress.json` 都只是 durable progress cache，不等于 live job
 - Kairos 官方管理的顶层流程在结束态必须回收到 `ML stopped`
@@ -201,6 +202,16 @@ flowchart TD
   - 面向人的长文解释：为什么这种 intro / montage 会这样组织
   - 面向下游的直接提示：节奏阶段、`aerial / timelapse / drive / talking-head / broll / nat sound` 角色、运镜语法、`开场建场 / 地理重置 / 情绪释放` 功能位、素材禁区 / 镜头禁区、稳定参数表
 - Script / recall / outline 当前应优先直接消费这些 style sections / parameters / antiPatterns，而不是只把风格档案当作“语气说明”再让 LLM 从长文里二次猜测镜头组织规则
+- 当现有风格信号明确偏 `chronology / route continuity / continuous process` 时，顺时序不再只是 prompt 偏好，而是脚本编排的正式执行结果：
+  - Script prep 会先基于 `capturedAt + chronology + Pharos trip/day/shot` 建立单调递增的时间带
+  - `segment plan / material slots` 只能在各自合法时间带内召回素材
+  - `beat` 顺序默认保持时间单调递增，不允许后段跨窗回捞前段素材
+- Script prep 当前也不再先由 style 平均章节时长决定总预算，再去硬塞素材：
+  - 段落长度先由素材容量反推（关键过程视频、可保留原声、结果照片组、事件节点）
+  - style 只继续负责节奏修正与上下限
+- 关键过程视频现在有正式 guardrail：
+  - 只要某条视频承载不可替代的时间推进、事件推进、人物关系推进或有效原声，就应保留成独立 beat
+  - 不允许被泛化的 summary 段落或“更好看”的静态成果材料静默吞掉
 - 当前脚本 / outline 默认优先消费 Analyze 给出的 `editSourceInMs / editSourceOutMs`，而不是继续把 tight evidence window 当成最终可剪子区间
 - 模型仍可把 `selection.sourceInMs / sourceOutMs` 写得更细，但系统会先 clamp 到 outline fallback window，避免再次无意识裁得过短
 - 如果某拍最终保留原声，Script / Timeline 当前会把命中的 `selection.sourceInMs / sourceOutMs` 向外吸附到完整 `transcriptSegments` 边界；若完整一句原声长于原 beat 目标时长，会优先延长该 beat，而不是切在句中
@@ -215,12 +226,17 @@ flowchart TD
 - `preserveNatSound / muteSource` 是脚本层的显式覆盖信号；未显式标注时，时间线层可结合 transcript 匹配度、`speechCoverage` 与段落角色推论是否保留原声
 - 当视频资产已绑定保护音轨，且 Analyze 的保守推荐明确偏向 `protection` 时，时间线可把视频原音静音，并额外挂一条对齐的 `nat` 音轨作为原声兜底
 - 当前字幕时长已不再是简单平均分配，而是会参考说话速度和标点停顿做节奏估算
+- 当 beat 走 source speech 时，字幕现在会先做文本清洗与强制分句；若 ASR 明显噪声化、重复化或清洗后仍无法生成可读 cue，会回退到 `beat.text`
 - 当前时间线不再把“短 source + 长 beat”当成默认慢放来源：
   - 对带 `editSourceInMs / editSourceOutMs` 的新 slice，时间线优先使用 edit-friendly bounds
   - 只有旧 slice / 旧 selection 缺少 edit bounds 时，才保留 legacy fallback stretch
+- 时间线当前新增 chronology guardrail：
+  - 对主轴明确偏时间/路程推进的风格，placement 会优先保持 beat 内和 beat 间的 `capturedAt` 单调递增
+  - placement 会先尝试同段内安全重排；若仍无法恢复合法顺序，则拒绝静默生成错序时间线
 - 如果确实需要速度蒙太奇，当前正式路径是显式填写 `beat.actions.speed`
 - `IKtepScriptAction.speed` 当前的正式语义是“请求加速”，只有 `drive / aerial` clip 会实际消费；混合 beat 中其他类型 clip 会强制保持 `1x`
 - `placeClips()` 当前会优先把 clip 总时长贴到 `beat.targetDurationMs`，而不是让显式 `speed` beat 按原始 source 时长自由漂移
+- `placeClips()` 不再把单张照片当作吸收剩余预算的默认容器；照片会尽量保持短自然停留，只有脚本显式要求更长 hold 时才拉长
 - 时间线 / 草稿输出规格已收口为项目级运行时配置：`timelineWidth / timelineHeight / timelineFps`，默认值为 `3840x2160 @ 30fps`
 - 当某拍不走 source speech 时，时间线会把命中的带音轨视频 clip 标记为静音意图；导出到 Jianying 时会落成静音视频片段
 - 剪映导出不再走外部 `jianying-mcp` / 独立 `Jianying Server` 路线，而是由 Node 侧调用 vendored `pyJianYingDraft` 本地 CLI

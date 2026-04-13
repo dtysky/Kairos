@@ -49,8 +49,7 @@ export function buildOutline(input: IBuildOutlineInput): IOutlineSegment[] {
   return input.segmentPlan.segments.map((segment, index, allSegments) => {
     const group = slotGroupBySegmentId.get(segment.id);
     const beats = (group?.slots ?? [])
-      .map(slot => buildBeat(slot.id, slot.query, slot.chosenSpanIds, input.spansById))
-      .filter((beat): beat is IOutlineBeat => Boolean(beat));
+      .flatMap(slot => buildBeats(slot.id, slot.query, slot.chosenSpanIds, input.spansById));
 
     const selections = dedupeSelections(beats.flatMap(beat => beat.selections));
     const spanIds = dedupeStrings(beats.flatMap(beat => beat.linkedSpanIds));
@@ -68,42 +67,46 @@ export function buildOutline(input: IBuildOutlineInput): IOutlineSegment[] {
   });
 }
 
-function buildBeat(
+function buildBeats(
   slotId: string,
   query: string,
   chosenSpanIds: string[],
   spansById: Map<string, IKtepSlice>,
+): IOutlineBeat[] {
+  return chosenSpanIds
+    .map((spanId, index) => buildBeat(`${slotId || randomUUID()}-${index + 1}`, query, spanId, spansById))
+    .filter((beat): beat is IOutlineBeat => Boolean(beat));
+}
+
+function buildBeat(
+  beatId: string,
+  query: string,
+  chosenSpanId: string,
+  spansById: Map<string, IKtepSlice>,
 ): IOutlineBeat | null {
-  const spans = chosenSpanIds
-    .map(spanId => spansById.get(spanId))
-    .filter((span): span is IKtepSlice => Boolean(span));
-  if (spans.length === 0) return null;
+  const primary = spansById.get(chosenSpanId);
+  if (!primary) return null;
 
-  const primary = spans[0]!;
-  const selections = spans.map(span => ({
-    assetId: span.assetId,
-    spanId: span.id,
-    sliceId: span.id,
-    sourceInMs: span.sourceInMs,
-    sourceOutMs: span.sourceOutMs,
-    pharosRefs: span.pharosRefs,
-  }));
+  const selections = [{
+    assetId: primary.assetId,
+    spanId: primary.id,
+    sliceId: primary.id,
+    sourceInMs: primary.sourceInMs,
+    sourceOutMs: primary.sourceOutMs,
+    pharosRefs: primary.pharosRefs,
+  }];
 
-  const locations = dedupeStrings(spans.flatMap(span =>
-    span.grounding.spatialEvidence.map(evidence => evidence.locationText),
-  ));
-  const materialPatterns = dedupeStrings(spans.flatMap(span =>
-    span.materialPatterns.map(pattern => pattern.phrase),
-  ));
-  const transcript = dedupeStrings(spans.map(span => span.transcript)).join(' / ') || undefined;
+  const locations = dedupeStrings(primary.grounding.spatialEvidence.map(evidence => evidence.locationText));
+  const materialPatterns = dedupeStrings(primary.materialPatterns.map(pattern => pattern.phrase));
+  const transcript = primary.transcript?.trim() || undefined;
 
   return {
-    id: slotId || randomUUID(),
+    id: beatId,
     title: summarizeQuery(query),
-    summary: buildBeatSummary(query, spans, locations, materialPatterns),
+    summary: buildBeatSummary(query, [primary], locations, materialPatterns),
     query,
     selections,
-    linkedSpanIds: spans.map(span => span.id),
+    linkedSpanIds: [primary.id],
     transcript,
     materialPatterns,
     locations,

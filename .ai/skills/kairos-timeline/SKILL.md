@@ -150,11 +150,18 @@ Timeline 阶段的字幕已经不是“永远只切 `beat.text`”：
 
 - 对 Analyze 新产出的 slice，时间线默认优先使用 `editSourceInMs / editSourceOutMs`，而不是旧的 tight focus window
 - 只有旧 slice / 旧 selection 缺少 edit bounds 时，`placeClips()` 才会回落到 legacy stretch 行为
+- 对主轴明确偏时间 / 路程推进的 style，Timeline 还承担最后一层 chronology guardrail：
+  - 相邻 beats 的主 selection `capturedAt` 不应倒退
+  - 同一 beat 内多 selections 默认也应按时间递增
+  - 若检测到倒序，先尝试同段内安全重排；仍无法恢复时应直接报错，而不是静默输出错序时间线
 - 如果确实需要速度变化，应显式使用 `beat.actions.speed`
 - 显式 `speed` 现在会进入 timeline clip `speed`，并继续透传到导出层；但只有 `drive / aerial` clip 会实际消费，其他类型即使同拍也会强制保持 `1x`
 - `placeClips()` 当前会优先把 clip 总时长贴合 `beat.targetDurationMs`，而不是让显式 `speed` beat 按原始 source 时长自由漂移
 - `drive` slice 上的 `speedCandidate` 只是建议档位，不是自动应用的最终速度
 - 保护音轨 fallback 当前只在 `assetReports` 明确推荐 `protection` 时才会自动路由；默认仍优先保留视频内无线 mic
+- 照片不再是默认的预算填充器：
+  - 没有显式长停要求时，单张照片应尽量保持短自然停留
+  - 预算有剩余时，优先通过补素材、缩短 beat 或让上游重排解决，而不是无上限拉长一张照片
 
 ## 产出
 

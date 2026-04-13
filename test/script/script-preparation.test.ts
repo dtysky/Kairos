@@ -5,10 +5,13 @@ import { join } from 'node:path';
 import type { ILlmClient, ILlmMessage, ILlmOptions } from '../../src/modules/llm/client.js';
 import {
   buildMaterialSlotsDocument,
+  buildSegmentPlanDocument,
   buildProjectOutlineFromPlanning,
   generateProjectScriptFromPlanning,
   prepareProjectScriptForAgent,
 } from '../../src/modules/script/project-script.js';
+import { resolveArrangementSignals } from '../../src/modules/script/arrangement-signals.js';
+import { loadStyleFromMarkdown } from '../../src/modules/script/style-loader.js';
 import {
   getCurrentScriptPath,
   getMaterialBundlesPath,
@@ -198,6 +201,18 @@ async function writeOverview(projectRoot: string): Promise<void> {
 }
 
 describe('model-driven script preparation', () => {
+  it('resolves short-trip-photo-vlog as a chronology-driven arrangement axis', async () => {
+    const style = await loadStyleFromMarkdown(
+      join(process.cwd(), 'config', 'styles', 'short-trip-photo-vlog.md'),
+    );
+
+    const signals = resolveArrangementSignals(style);
+
+    expect(signals.primaryAxisKind).toBe('time');
+    expect(signals.enforceChronology).toBe(true);
+    expect(signals.routeContinuityStrength).toBeGreaterThan(0.28);
+  });
+
   it('requires material-overview.md before deterministic prep can advance to ready_for_agent', async () => {
     const workspaceRoot = await createWorkspace();
     const projectRoot = await seedProject(workspaceRoot);
@@ -468,5 +483,324 @@ describe('model-driven script preparation', () => {
 
     expect(slots.segments[0]?.slots[0]?.targetBundles).toEqual(['bundle-coast']);
     expect(slots.segments[0]?.slots[0]?.chosenSpanIds).toEqual(['span-coast']);
+  });
+
+  it('keeps chronology-driven segments inside monotonic time bands', () => {
+    const style = {
+      id: 'style-chronology',
+      name: 'Chronology First',
+      category: 'chronology-first',
+      sourceFiles: [],
+      narrative: {
+        introRatio: 0.1,
+        outroRatio: 0.08,
+        avgSegmentDurationSec: 18,
+        brollFrequency: 0.3,
+        pacePattern: '按当天路程推进。',
+      },
+      voice: {
+        person: '1st',
+        tone: '平实',
+        density: 'moderate',
+        sampleTexts: [],
+      },
+      sections: [],
+      parameters: {
+        编排主轴: '按 chronology 和 route continuity 推进',
+        章节切分原则: '按出发 / 路上 / 到场切段',
+      },
+      arrangementStructure: {
+        primaryAxis: '路线推进',
+        secondaryAxes: ['地点观察'],
+        chapterPrograms: [
+          {
+            type: 'departure',
+            intent: '先交代出发。',
+            materialRoles: ['anchor'],
+            promotionSignals: ['chronology'],
+            transitionBias: 'smooth-intro',
+          },
+          {
+            type: 'route',
+            intent: '把路上的推进做实。',
+            materialRoles: ['progression'],
+            promotionSignals: ['route continuity'],
+            transitionBias: 'carry-forward',
+          },
+          {
+            type: 'arrival',
+            intent: '给到场后的第一眼。',
+            materialRoles: ['observation'],
+            promotionSignals: ['arrival'],
+            transitionBias: 'settle-outro',
+          },
+        ],
+        chapterSplitPrinciples: ['按 chronology 切段'],
+        chapterTransitionNotes: ['按路程推进衔接'],
+      },
+      narrationConstraints: {
+        perspective: '第一人称',
+        tone: '平实',
+        informationDensity: '中等',
+        explanationBias: '先跟着时间走',
+        forbiddenPatterns: [],
+        notes: [],
+      },
+      antiPatterns: [],
+      createdAt: '2026-04-10T00:00:00.000Z',
+      updatedAt: '2026-04-10T00:00:00.000Z',
+    } as const;
+
+    const slots = buildMaterialSlotsDocument({
+      projectId: 'project-1',
+      segmentPlan: {
+        id: 'plan-1',
+        projectId: 'project-1',
+        generatedAt: '2026-04-10T00:00:00.000Z',
+        summary: 'test',
+        notes: [],
+        segments: [
+          { id: 'seg-1', title: '出发', intent: '出发', targetDurationMs: 12_000, notes: [] },
+          { id: 'seg-2', title: '路上', intent: '路上', targetDurationMs: 12_000, notes: [] },
+          { id: 'seg-3', title: '到场', intent: '到场', targetDurationMs: 12_000, notes: [] },
+        ],
+      },
+      bundles: [{
+        id: 'bundle-route',
+        key: '路程推进',
+        label: '路程推进',
+        memberSpanIds: ['span-1', 'span-2', 'span-3'],
+        representativeSpanIds: ['span-1', 'span-2', 'span-3'],
+        placeHints: ['A', 'B', 'C'],
+        pharosTripIds: [],
+        notes: ['出发', '路上', '到场'],
+      }],
+      spans: [
+        {
+          id: 'span-1',
+          assetId: 'asset-1',
+          type: 'drive',
+          sourceInMs: 0,
+          sourceOutMs: 4_000,
+          transcript: '先出发。',
+          materialPatterns: [{ phrase: '路程推进', confidence: 0.8, evidenceRefs: [] }],
+          grounding: { speechMode: 'available', speechValue: 'informative', spatialEvidence: [], pharosRefs: [] },
+          narrativeFunctions: { core: [], extra: [], evidence: [] },
+          shotGrammar: { core: [], extra: [], evidence: [] },
+          viewpointRoles: { core: [], extra: [], evidence: [] },
+          subjectStates: { core: [], extra: [], evidence: [] },
+        },
+        {
+          id: 'span-2',
+          assetId: 'asset-2',
+          type: 'drive',
+          sourceInMs: 0,
+          sourceOutMs: 4_000,
+          transcript: '现在正在路上。',
+          materialPatterns: [{ phrase: '路程推进', confidence: 0.8, evidenceRefs: [] }],
+          grounding: { speechMode: 'available', speechValue: 'informative', spatialEvidence: [], pharosRefs: [] },
+          narrativeFunctions: { core: [], extra: [], evidence: [] },
+          shotGrammar: { core: [], extra: [], evidence: [] },
+          viewpointRoles: { core: [], extra: [], evidence: [] },
+          subjectStates: { core: [], extra: [], evidence: [] },
+        },
+        {
+          id: 'span-3',
+          assetId: 'asset-3',
+          type: 'broll',
+          sourceInMs: 0,
+          sourceOutMs: 4_000,
+          transcript: '已经到场了。',
+          materialPatterns: [{ phrase: '路程推进', confidence: 0.8, evidenceRefs: [] }],
+          grounding: { speechMode: 'available', speechValue: 'informative', spatialEvidence: [], pharosRefs: [] },
+          narrativeFunctions: { core: [], extra: [], evidence: [] },
+          shotGrammar: { core: [], extra: [], evidence: [] },
+          viewpointRoles: { core: [], extra: [], evidence: [] },
+          subjectStates: { core: [], extra: [], evidence: [] },
+        },
+      ],
+      chronology: [
+        {
+          id: 'c-1',
+          assetId: 'asset-1',
+          capturedAt: '2026-04-10T08:00:00.000Z',
+          sortCapturedAt: '2026-04-10T08:00:00.000Z',
+          labels: [],
+          placeHints: [],
+          evidence: [],
+        },
+        {
+          id: 'c-2',
+          assetId: 'asset-2',
+          capturedAt: '2026-04-10T09:00:00.000Z',
+          sortCapturedAt: '2026-04-10T09:00:00.000Z',
+          labels: [],
+          placeHints: [],
+          evidence: [],
+        },
+        {
+          id: 'c-3',
+          assetId: 'asset-3',
+          capturedAt: '2026-04-10T10:00:00.000Z',
+          sortCapturedAt: '2026-04-10T10:00:00.000Z',
+          labels: [],
+          placeHints: [],
+          evidence: [],
+        },
+      ],
+      pharosContext: null,
+      style,
+    });
+
+    expect(slots.segments[0]?.slots[0]?.chosenSpanIds[0]).toBe('span-1');
+    expect(slots.segments[1]?.slots[0]?.chosenSpanIds[0]).toBe('span-2');
+    expect(slots.segments[2]?.slots[0]?.chosenSpanIds[0]).toBe('span-3');
+  });
+
+  it('derives missing segment durations from material capacity when no reviewed duration is provided', () => {
+    const style = {
+      id: 'style-chronology',
+      name: 'Chronology First',
+      category: 'chronology-first',
+      sourceFiles: [],
+      narrative: {
+        introRatio: 0.1,
+        outroRatio: 0.08,
+        avgSegmentDurationSec: 10,
+        brollFrequency: 0.3,
+        pacePattern: '按过程推进。',
+      },
+      voice: {
+        person: '1st',
+        tone: '平实',
+        density: 'moderate',
+        sampleTexts: [],
+      },
+      sections: [],
+      parameters: {
+        编排主轴: 'chronology / route continuity',
+      },
+      arrangementStructure: {
+        primaryAxis: '路线推进',
+        secondaryAxes: [],
+        chapterPrograms: [
+          {
+            type: 'opening',
+            intent: '先出发。',
+            materialRoles: ['anchor'],
+            promotionSignals: ['chronology'],
+            transitionBias: 'smooth-intro',
+          },
+          {
+            type: 'body',
+            intent: '把过程做实。',
+            materialRoles: ['progression'],
+            promotionSignals: ['route continuity'],
+            transitionBias: 'carry-forward',
+          },
+        ],
+        chapterSplitPrinciples: [],
+        chapterTransitionNotes: [],
+      },
+      narrationConstraints: {
+        perspective: '第一人称',
+        tone: '平实',
+        informationDensity: '中等',
+        explanationBias: '先跟着过程走',
+        forbiddenPatterns: [],
+        notes: [],
+      },
+      antiPatterns: [],
+      createdAt: '2026-04-10T00:00:00.000Z',
+      updatedAt: '2026-04-10T00:00:00.000Z',
+    } as const;
+
+    const brief = {
+      projectName: 'x',
+      workflowState: 'ready_for_agent',
+      goalDraft: [],
+      constraintDraft: [],
+      planReviewDraft: [],
+      segments: [
+        { segmentId: 'seg-1', title: '出发', intent: '出发', notes: [] },
+        { segmentId: 'seg-2', title: '主体', intent: '主体', notes: [] },
+      ],
+    } as Awaited<ReturnType<typeof loadScriptBriefConfig>>;
+
+    const plan = buildSegmentPlanDocument({
+      projectId: 'project-1',
+      brief,
+      style,
+      facts: {
+        id: 'facts-1',
+        projectId: 'project-1',
+        generatedAt: '2026-04-10T00:00:00.000Z',
+        projectBrief: '',
+        totalAssets: 3,
+        totalDurationMs: 30_000,
+        roots: [],
+        topLabels: [],
+        topPlaceHints: [],
+        topMaterialPatterns: [],
+        clipTypeDistribution: {},
+        mainThemes: [],
+        inferredGaps: [],
+        summary: '',
+      },
+      overviewMarkdown: '# Material Overview',
+      spans: [
+        {
+          id: 'span-a',
+          assetId: 'asset-a',
+          type: 'drive',
+          sourceInMs: 0,
+          sourceOutMs: 6_000,
+          transcript: '先出发。',
+          materialPatterns: [{ phrase: '路程推进', confidence: 0.8, evidenceRefs: [] }],
+          grounding: { speechMode: 'available', speechValue: 'informative', spatialEvidence: [], pharosRefs: [] },
+          narrativeFunctions: { core: [], extra: [], evidence: [] },
+          shotGrammar: { core: [], extra: [], evidence: [] },
+          viewpointRoles: { core: [], extra: [], evidence: [] },
+          subjectStates: { core: [], extra: [], evidence: [] },
+        },
+        {
+          id: 'span-b',
+          assetId: 'asset-b',
+          type: 'drive',
+          sourceInMs: 0,
+          sourceOutMs: 8_000,
+          transcript: '路上继续推进。',
+          materialPatterns: [{ phrase: '路程推进', confidence: 0.8, evidenceRefs: [] }],
+          grounding: { speechMode: 'available', speechValue: 'informative', spatialEvidence: [], pharosRefs: [] },
+          narrativeFunctions: { core: [], extra: [], evidence: [] },
+          shotGrammar: { core: [], extra: [], evidence: [] },
+          viewpointRoles: { core: [], extra: [], evidence: [] },
+          subjectStates: { core: [], extra: [], evidence: [] },
+        },
+        {
+          id: 'span-c',
+          assetId: 'asset-c',
+          type: 'drive',
+          sourceInMs: 0,
+          sourceOutMs: 8_000,
+          transcript: '路上继续推进。',
+          materialPatterns: [{ phrase: '路程推进', confidence: 0.8, evidenceRefs: [] }],
+          grounding: { speechMode: 'available', speechValue: 'informative', spatialEvidence: [], pharosRefs: [] },
+          narrativeFunctions: { core: [], extra: [], evidence: [] },
+          shotGrammar: { core: [], extra: [], evidence: [] },
+          viewpointRoles: { core: [], extra: [], evidence: [] },
+          subjectStates: { core: [], extra: [], evidence: [] },
+        },
+      ],
+      chronology: [
+        { id: 'c-a', assetId: 'asset-a', capturedAt: '2026-04-10T08:00:00.000Z', sortCapturedAt: '2026-04-10T08:00:00.000Z', labels: [], placeHints: [], evidence: [] },
+        { id: 'c-b', assetId: 'asset-b', capturedAt: '2026-04-10T09:00:00.000Z', sortCapturedAt: '2026-04-10T09:00:00.000Z', labels: [], placeHints: [], evidence: [] },
+        { id: 'c-c', assetId: 'asset-c', capturedAt: '2026-04-10T09:30:00.000Z', sortCapturedAt: '2026-04-10T09:30:00.000Z', labels: [], placeHints: [], evidence: [] },
+      ],
+      pharosContext: null,
+    });
+
+    expect(plan.segments[0]?.targetDurationMs).toBeGreaterThan(10_000);
+    expect(plan.segments[1]?.targetDurationMs).toBeGreaterThan(plan.segments[0]?.targetDurationMs ?? 0);
   });
 });

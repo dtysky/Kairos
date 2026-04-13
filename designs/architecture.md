@@ -25,10 +25,12 @@
    - Workspace 风格档案不再只是“叙事语气说明”，还应明确输出阶段节奏、素材角色、运镜语法、功能位分配、素材禁区 / 镜头禁区与稳定参数
    - 这些信息默认是 Script / recall / outline 的直接输入，不应主要依赖 LLM 重新从长文里猜一次镜头组织规则
    - 这里记录的是“观测到的高频偏好”，只有明确写成禁区或硬约束时才应强制下游
+   - Script / Timeline 当前会在内部把这些现有 style 信号解析成一个轻量运行时 `ResolvedArrangementSignals`，用于判断当前风格主轴更偏时间推进、空间推进、情感推进还是结果回看；它不是新的公开 schema
 4. 字幕已支持双路径
    - 旁白路径：来自 `beat.text`
    - 原声路径：来自 `slice.transcriptSegments`
    - `preserveNatSound / muteSource` 为显式覆盖；未标注时允许根据 transcript 匹配度、`speechCoverage`、segment role 自动推论
+   - 对 source-speech 字幕，时间线会先做清洗、强切句与噪声判断；若 ASR 明显不适合作为成片字幕，则回退到 `beat.text`
 5. GPS 链路已形成当前最小闭环
    - 项目内外部轨迹统一收口到 `gps/tracks/*.gpx` 与 `gps/merged.json`
    - `embedded GPS` 的正式语义已扩展为“素材同源且可绑定”的 GPS：文件 metadata / EXIF、同 basename `.SRT`、以及 root 级 DJI FlightRecord 日志切片（按文件头识别，不依赖强文件名）
@@ -395,6 +397,9 @@ src/modules/script/
   → Agent 再读取 overview + brief + style profile，推进 `segment plan -> material slots -> chosenSpanIds -> outline -> script/current.json`
      - `arrangementStructure` 主导结构决策
      - `narrationConstraints` 只弱影响表达
+     - 当现有 style 信号明确偏 `chronology / route continuity / continuous process` 时，prep 会先建立单调递增的时间带，再让各段只在合法时间带内召回素材
+     - 关键过程视频若承载不可替代的时间推进、事件推进、人物关系推进或有效原声，应保留成独立 beat，而不是被 summary 段或更静态的成果材料吞掉
+     - 段落预算先由素材容量反推（关键视频、可保留原声、结果照片组、事件节点），style 只继续负责节奏修正与上下限
   → 由 Agent 存储 `script/current.json` + 版本快照
 ```
 
@@ -427,6 +432,7 @@ src/modules/cut/
 ```
 读取脚本
   → timeline-builder 构建时间线结构（轨道、片段、入出点、转场）
+  → 若当前 style 主轴偏时间 / 路程推进，则在 placement 阶段复核主 selection 的 chronology，不允许静默输出倒序 timeline
   → MCP 创建达芬奇项目/时间线
   → MCP 导入素材到 Media Pool
   → MCP 按时间线结构排列片段
@@ -434,6 +440,11 @@ src/modules/cut/
   → 照片素材 → 设置 Ken Burns 效果参数
   → （可选）精剪建议：LLM 分析时间线，给出优化建议
 ```
+
+补充口径：
+
+- Timeline placement 不再把单张照片当作默认的预算填充器；若脚本没有显式长停要求，照片应尽量保持短自然停留
+- 当 chronology guardrail 检测到倒序时，placement 会先尝试同段内安全重排；仍无法恢复合法顺序时应直接拒绝生成，而不是静默产出错序成片
 
 ### Layer 3 — 交互层 (`src/skill/`)
 

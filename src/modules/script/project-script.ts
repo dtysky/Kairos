@@ -38,6 +38,10 @@ import {
 import { buildOutline, type IOutlineSegment } from './outline-builder.js';
 import { buildOutlinePrompt, generateScript } from './script-generator.js';
 import { loadStyleByCategory } from './style-loader.js';
+import {
+  resolveArrangementSignals,
+  type IResolvedArrangementSignals,
+} from './arrangement-signals.js';
 
 export interface IBuildProjectOutlineInput {
   projectRoot: string;
@@ -85,6 +89,25 @@ interface IScriptPlanningContext {
   pharosContext: IProjectPharosContext | null;
 }
 
+interface IOrderedSpanCandidate {
+  spanId: string;
+  assetId: string;
+  sortKey: string;
+  orderIndex: number;
+  orderPosition: number;
+  sourceDurationMs: number;
+  materialCapacityMs: number;
+  isPhoto: boolean;
+  hasSourceSpeech: boolean;
+  isKeyProcessVideo: boolean;
+}
+
+interface ISegmentTimeBand {
+  startPosition: number;
+  endPosition: number;
+  centerPosition: number;
+}
+
 export async function buildProjectOutlineFromPlanning(
   input: IBuildProjectOutlineInput,
 ): Promise<IBuildProjectOutlineResult> {
@@ -97,12 +120,23 @@ export async function buildProjectOutlineFromPlanning(
   if (!overviewMarkdown?.trim()) {
     throw new Error('script generation requires script/material-overview.md');
   }
+  const arrangementSignals = resolveArrangementSignals(style);
+  const orderedSpanCandidates = buildOrderedSpanCandidates({
+    spans: prepared.context.spans,
+    chronology: prepared.context.chronology,
+    pharosContext: prepared.context.pharosContext,
+  });
   const segmentPlan = buildSegmentPlanDocument({
     projectId: prepared.context.project.id,
     brief,
     style,
     facts: prepared.facts,
     overviewMarkdown,
+    spans: prepared.context.spans,
+    chronology: prepared.context.chronology,
+    pharosContext: prepared.context.pharosContext,
+    arrangementSignals,
+    orderedSpanCandidates,
   });
   const materialSlots = buildMaterialSlotsDocument({
     projectId: prepared.context.project.id,
@@ -112,6 +146,8 @@ export async function buildProjectOutlineFromPlanning(
     chronology: prepared.context.chronology,
     pharosContext: prepared.context.pharosContext,
     style,
+    arrangementSignals,
+    orderedSpanCandidates,
   });
   const spansById = new Map(prepared.context.spans.map(span => [span.id, span] as const));
   const outline = buildOutline({
@@ -409,7 +445,13 @@ export function buildSegmentPlanDocument(input: {
   style: IStyleProfile;
   facts: IProjectMaterialOverviewFacts;
   overviewMarkdown: string;
+  spans?: IKtepSlice[];
+  chronology?: IScriptPlanningContext['chronology'];
+  pharosContext?: IProjectPharosContext | null;
+  arrangementSignals?: IResolvedArrangementSignals;
+  orderedSpanCandidates?: IOrderedSpanCandidate[];
 }): ISegmentPlan {
+  const arrangementSignals = input.arrangementSignals ?? resolveArrangementSignals(input.style);
   const providedSegments = input.brief.segments.map(segment => ({
     id: segment.segmentId,
     title: segment.title?.trim() || segment.segmentId,
@@ -432,10 +474,29 @@ export function buildSegmentPlanDocument(input: {
     ]),
   }));
 
-  const segments = (providedSegments.length > 0 ? providedSegments : derivedSegments)
+  const seedSegments = (providedSegments.length > 0 ? providedSegments : derivedSegments);
+  const orderedSpanCandidates = input.orderedSpanCandidates ?? buildOrderedSpanCandidates({
+    spans: input.spans ?? [],
+    chronology: input.chronology ?? [],
+    pharosContext: input.pharosContext ?? null,
+  });
+  const timeBands = buildSegmentTimeBands(
+    seedSegments.length,
+    orderedSpanCandidates,
+    arrangementSignals,
+  );
+
+  const segments = seedSegments
     .map((segment, index, allSegments) => ({
       ...segment,
-      targetDurationMs: segment.targetDurationMs ?? inferSegmentDurationMs(index, allSegments.length, input.style),
+      targetDurationMs: segment.targetDurationMs ?? inferSegmentDurationMs(
+        index,
+        allSegments.length,
+        input.style,
+        timeBands[index],
+        orderedSpanCandidates,
+        arrangementSignals,
+      ),
     }));
   const overviewNotes = extractOverviewGuidance(input.overviewMarkdown, 6);
 
@@ -462,9 +523,22 @@ export function buildMaterialSlotsDocument(input: {
   chronology: IScriptPlanningContext['chronology'];
   pharosContext: IProjectPharosContext | null;
   style: IStyleProfile;
+  arrangementSignals?: IResolvedArrangementSignals;
+  orderedSpanCandidates?: IOrderedSpanCandidate[];
 }): IMaterialSlotsDocument {
   const spansById = new Map(input.spans.map(span => [span.id, span] as const));
   const chronologyByAssetId = new Map(input.chronology.map(item => [item.assetId, item] as const));
+  const arrangementSignals = input.arrangementSignals ?? resolveArrangementSignals(input.style);
+  const orderedSpanCandidates = input.orderedSpanCandidates ?? buildOrderedSpanCandidates({
+    spans: input.spans,
+    chronology: input.chronology,
+    pharosContext: input.pharosContext,
+  });
+  const timeBands = buildSegmentTimeBands(
+    input.segmentPlan.segments.length,
+    orderedSpanCandidates,
+    arrangementSignals,
+  );
 
   return {
     id: randomUUID(),
@@ -488,6 +562,9 @@ export function buildMaterialSlotsDocument(input: {
         pharosContext: input.pharosContext,
         segmentIndex: index,
         segmentCount: allSegments.length,
+        arrangementSignals,
+        orderedSpanCandidates,
+        timeBand: timeBands[index],
       });
 
       return {
@@ -513,16 +590,51 @@ export function resolveChosenSpanIds(input: {
   pharosContext: IProjectPharosContext | null;
   segmentIndex: number;
   segmentCount: number;
+  arrangementSignals?: IResolvedArrangementSignals;
+  orderedSpanCandidates?: IOrderedSpanCandidate[];
+  timeBand?: ISegmentTimeBand;
 }): string[] {
   const querySignature = normalizeSemanticText(input.query);
   const queryTokens = tokenizeSemanticText(input.query);
-  const desiredPosition = input.segmentCount <= 1 ? 0 : input.segmentIndex / (input.segmentCount - 1);
+  const desiredPosition = input.timeBand?.centerPosition
+    ?? (input.segmentCount <= 1 ? 0 : input.segmentIndex / (input.segmentCount - 1));
+  const arrangementSignals = input.arrangementSignals ?? {
+    primaryAxisKind: 'mixed',
+    chronologyStrength: 0,
+    routeContinuityStrength: 0,
+    processContinuityStrength: 0,
+    spaceStrength: 0,
+    emotionStrength: 0,
+    payoffStrength: 0,
+    enforceChronology: false,
+    materialRoleBias: {},
+  } satisfies IResolvedArrangementSignals;
   const targeted = input.bundles.filter(bundle =>
     input.targetBundleIds.length > 0 ? input.targetBundleIds.includes(bundle.id) : true,
   );
   const candidateBundles = targeted.length > 0 ? targeted : input.bundles;
+  const orderedSpanCandidates = input.orderedSpanCandidates ?? buildOrderedSpanCandidates({
+    spans: [...input.spansById.values()],
+    chronology: [...input.chronologyByAssetId.values()],
+    pharosContext: input.pharosContext,
+  });
+  const candidateBySpanId = new Map(
+    orderedSpanCandidates.map(candidate => [candidate.spanId, candidate] as const),
+  );
+  const candidateSpanIds = dedupeStrings(candidateBundles.flatMap(bundle => bundle.memberSpanIds));
+  const eligibleSpanIds = resolveEligibleSpanIds(
+    candidateSpanIds,
+    candidateBySpanId,
+    input.timeBand,
+    arrangementSignals,
+  );
 
-  const scored: Array<{ spanId: string; score: number }> = [];
+  const scored: Array<{
+    spanId: string;
+    score: number;
+    orderIndex: number;
+    isKeyProcessVideo: boolean;
+  }> = [];
   for (const bundle of candidateBundles) {
     const bundleText = `${bundle.label} ${bundle.key} ${bundle.notes.join(' ')} ${bundle.placeHints.join(' ')}`;
     const bundleScore = input.targetBundleIds.includes(bundle.id)
@@ -530,9 +642,11 @@ export function resolveChosenSpanIds(input: {
       : scoreSemanticMatch(queryTokens, normalizeSemanticText(bundleText)) * 16;
 
     for (const spanId of bundle.memberSpanIds) {
+      if (!eligibleSpanIds.has(spanId)) continue;
       const span = input.spansById.get(spanId);
       if (!span) continue;
       const chronology = input.chronologyByAssetId.get(span.assetId);
+      const candidate = candidateBySpanId.get(spanId);
       const materialScore = Math.max(
         ...span.materialPatterns.map(pattern => scoreSemanticMatch(queryTokens, normalizeSemanticText(pattern.phrase))),
         0,
@@ -544,22 +658,299 @@ export function resolveChosenSpanIds(input: {
       const transcriptScore = span.transcript
         ? scoreSemanticMatch(queryTokens, normalizeSemanticText(span.transcript)) * 8
         : 0;
-      const chronologyScore = chronology
-        ? scoreChronologyPosition(chronology, input.chronologyByAssetId, desiredPosition) * 10
-        : 0;
+      const chronologyScore = candidate
+        ? scoreTimeBandFit(candidate, input.timeBand, desiredPosition, arrangementSignals) * 18
+        : chronology
+          ? scoreChronologyPosition(chronology, input.chronologyByAssetId, desiredPosition) * 10
+          : 0;
       const pharosScore = scorePharosMatch(span, input.pharosContext, querySignature) * 12;
+      const keyVideoScore = candidate?.isKeyProcessVideo
+        ? 10 + arrangementSignals.processContinuityStrength * 6
+        : 0;
+      const sourceSpeechScore = candidate?.hasSourceSpeech ? 4 : 0;
       scored.push({
         spanId,
-        score: bundleScore + materialScore + placeScore + transcriptScore + chronologyScore + pharosScore,
+        score: bundleScore + materialScore + placeScore + transcriptScore + chronologyScore + pharosScore + keyVideoScore + sourceSpeechScore,
+        orderIndex: candidate?.orderIndex ?? Number.MAX_SAFE_INTEGER,
+        isKeyProcessVideo: candidate?.isKeyProcessVideo ?? false,
       });
     }
   }
 
-  return scored
-    .sort((left, right) => right.score - left.score)
-    .map(item => item.spanId)
-    .filter((spanId, index, all) => all.indexOf(spanId) === index)
-    .slice(0, 3);
+  const ranked = scored
+    .sort((left, right) => right.score - left.score || left.orderIndex - right.orderIndex);
+  const selectionLimit = resolveSelectionLimit(ranked, arrangementSignals);
+  const prioritized = dedupeRankedSpanIds([
+    ...ranked.filter(item => item.isKeyProcessVideo).slice(0, Math.min(2, selectionLimit)),
+    ...ranked,
+  ]);
+
+  const chosen = prioritized
+    .slice(0, selectionLimit)
+    .sort((left, right) => arrangementSignals.enforceChronology
+      ? left.orderIndex - right.orderIndex || right.score - left.score
+      : right.score - left.score || left.orderIndex - right.orderIndex,
+    );
+
+  return chosen.map(item => item.spanId);
+}
+
+function buildOrderedSpanCandidates(input: {
+  spans: IKtepSlice[];
+  chronology: IScriptPlanningContext['chronology'];
+  pharosContext: IProjectPharosContext | null;
+}): IOrderedSpanCandidate[] {
+  const chronologyByAssetId = new Map(input.chronology.map(item => [item.assetId, item] as const));
+  const pharosOrderMap = buildPharosOrderMap(input.pharosContext);
+
+  const candidates = input.spans.map(span => {
+    const chronology = chronologyByAssetId.get(span.assetId);
+    const hasSourceSpeech = Boolean(span.transcript?.trim())
+      || (span.transcriptSegments?.length ?? 0) > 0
+      || span.grounding.speechMode === 'preferred';
+    const isPhoto = span.type === 'photo';
+    const sourceDurationMs = resolvePositiveDuration(span.sourceInMs, span.sourceOutMs)
+      ?? (isPhoto ? 0 : 4_000);
+    const keyProcessScore = resolveKeyProcessScore(span, hasSourceSpeech);
+
+    return {
+      spanId: span.id,
+      assetId: span.assetId,
+      sortKey: resolveSpanSortKey(span, chronology, pharosOrderMap),
+      orderIndex: -1,
+      orderPosition: 0,
+      sourceDurationMs,
+      materialCapacityMs: estimateSpanCapacityMs(span, sourceDurationMs, hasSourceSpeech, keyProcessScore),
+      isPhoto,
+      hasSourceSpeech,
+      isKeyProcessVideo: !isPhoto && keyProcessScore >= 2,
+    } satisfies IOrderedSpanCandidate;
+  });
+
+  return candidates
+    .sort((left, right) => left.sortKey.localeCompare(right.sortKey))
+    .map((candidate, index, all) => ({
+      ...candidate,
+      orderIndex: index,
+      orderPosition: all.length <= 1 ? 0 : index / (all.length - 1),
+    }));
+}
+
+function buildSegmentTimeBands(
+  segmentCount: number,
+  orderedSpanCandidates: IOrderedSpanCandidate[],
+  arrangementSignals: IResolvedArrangementSignals,
+): ISegmentTimeBand[] {
+  if (!arrangementSignals.enforceChronology || segmentCount <= 1 || orderedSpanCandidates.length === 0) {
+    return Array.from({ length: Math.max(segmentCount, 1) }, () => ({
+      startPosition: 0,
+      endPosition: 1,
+      centerPosition: 0.5,
+    }));
+  }
+
+  const padding = Math.min(0.16, Math.max(0.06, 0.45 / segmentCount));
+  return Array.from({ length: segmentCount }, (_, index) => {
+    const baseStart = index / segmentCount;
+    const baseEnd = (index + 1) / segmentCount;
+    return {
+      startPosition: index === 0 ? 0 : Math.max(0, baseStart - padding),
+      endPosition: index === segmentCount - 1 ? 1 : Math.min(1, baseEnd + padding),
+      centerPosition: (baseStart + baseEnd) / 2,
+    };
+  });
+}
+
+function resolveEligibleSpanIds(
+  spanIds: string[],
+  candidateBySpanId: Map<string, IOrderedSpanCandidate>,
+  timeBand: ISegmentTimeBand | undefined,
+  arrangementSignals: IResolvedArrangementSignals,
+): Set<string> {
+  if (!timeBand || !arrangementSignals.enforceChronology) {
+    return new Set(spanIds);
+  }
+
+  const tolerances = [0, 0.08, 0.16];
+  for (const tolerance of tolerances) {
+    const eligible = spanIds.filter(spanId => {
+      const candidate = candidateBySpanId.get(spanId);
+      if (!candidate) return true;
+      return isCandidateWithinTimeBand(candidate, timeBand, arrangementSignals, tolerance);
+    });
+    if (eligible.length > 0) {
+      return new Set(eligible);
+    }
+  }
+
+  return new Set(spanIds);
+}
+
+function isCandidateWithinTimeBand(
+  candidate: IOrderedSpanCandidate,
+  timeBand: ISegmentTimeBand,
+  arrangementSignals: IResolvedArrangementSignals,
+  tolerance = 0,
+): boolean {
+  if (!arrangementSignals.enforceChronology) return true;
+  return candidate.orderPosition >= timeBand.startPosition - tolerance
+    && candidate.orderPosition <= timeBand.endPosition + tolerance;
+}
+
+function scoreTimeBandFit(
+  candidate: IOrderedSpanCandidate,
+  timeBand: ISegmentTimeBand | undefined,
+  desiredPosition: number,
+  arrangementSignals: IResolvedArrangementSignals,
+): number {
+  if (!arrangementSignals.enforceChronology) {
+    return Math.max(0, 1 - Math.abs(candidate.orderPosition - desiredPosition));
+  }
+  if (!timeBand) {
+    return Math.max(0, 1 - Math.abs(candidate.orderPosition - desiredPosition));
+  }
+  const halfWidth = Math.max(0.08, (timeBand.endPosition - timeBand.startPosition) / 2);
+  return Math.max(0, 1 - Math.abs(candidate.orderPosition - timeBand.centerPosition) / halfWidth);
+}
+
+function resolveSelectionLimit(
+  ranked: Array<{ isKeyProcessVideo: boolean }>,
+  arrangementSignals: IResolvedArrangementSignals,
+): number {
+  if (!arrangementSignals.enforceChronology) return 3;
+  const keyVideoCount = ranked.filter(item => item.isKeyProcessVideo).length;
+  return Math.min(5, keyVideoCount >= 3 ? 4 : 3);
+}
+
+function dedupeRankedSpanIds<T extends { spanId: string }>(items: T[]): T[] {
+  const seen = new Set<string>();
+  const result: T[] = [];
+  for (const item of items) {
+    if (seen.has(item.spanId)) continue;
+    seen.add(item.spanId);
+    result.push(item);
+  }
+  return result;
+}
+
+function buildPharosOrderMap(
+  pharosContext: IProjectPharosContext | null,
+): Map<string, string> {
+  if (!pharosContext) return new Map();
+  const tripOrder = new Map(pharosContext.trips.map((trip, index) => [trip.tripId, index] as const));
+  const orderedShots = [...pharosContext.shots]
+    .sort((left, right) => resolvePharosShotSortKey(left, tripOrder).localeCompare(resolvePharosShotSortKey(right, tripOrder)));
+
+  return new Map(
+    orderedShots.map((shot, index) => [
+      `${shot.ref.tripId}:${shot.ref.shotId}`,
+      `${String(index).padStart(6, '0')}|${resolvePharosShotSortKey(shot, tripOrder)}`,
+    ] as const),
+  );
+}
+
+function resolveSpanSortKey(
+  span: IKtepSlice,
+  chronology: IScriptPlanningContext['chronology'][number] | undefined,
+  pharosOrderMap: Map<string, string>,
+): string {
+  const chronologyKey = normalizeChronologyKey(chronology?.sortCapturedAt ?? chronology?.capturedAt);
+  if (chronologyKey) {
+    return `0|${chronologyKey}|${padMs(span.sourceInMs)}|${span.id}`;
+  }
+
+  const pharosRefs = span.pharosRefs ?? [];
+  const pharosKey = pharosRefs
+    .map(ref => pharosOrderMap.get(`${ref.tripId}:${ref.shotId}`))
+    .filter((value): value is string => typeof value === 'string')
+    .sort()[0];
+  if (pharosKey) {
+    return `1|${pharosKey}|${padMs(span.sourceInMs)}|${span.id}`;
+  }
+
+  return `2|${span.assetId}|${padMs(span.sourceInMs)}|${span.id}`;
+}
+
+function resolvePharosShotSortKey(
+  shot: IProjectPharosContext['shots'][number],
+  tripOrder: Map<string, number>,
+): string {
+  const tripIndex = String(tripOrder.get(shot.ref.tripId) ?? Number.MAX_SAFE_INTEGER).padStart(6, '0');
+  const timeKey = normalizeChronologyKey(
+    shot.actualTimeStart
+    ?? shot.timeWindowStart
+    ?? shot.actualTimeEnd
+    ?? shot.timeWindowEnd
+    ?? shot.date,
+  ) ?? '9999-12-31t23:59:59.999z';
+  const dayKey = String(shot.day ?? Number.MAX_SAFE_INTEGER).padStart(4, '0');
+  return `${tripIndex}|${timeKey}|${dayKey}|${shot.ref.shotId}`;
+}
+
+function resolveKeyProcessScore(
+  span: IKtepSlice,
+  hasSourceSpeech: boolean,
+): number {
+  let score = 0;
+  if (hasSourceSpeech) score += 2;
+  if (span.pharosRefs?.length) score += 1;
+  if (span.type === 'drive' || span.type === 'talking-head' || span.type === 'shot') score += 1;
+  if (span.grounding.spatialEvidence.some(evidence => evidence.routeRole || evidence.timeReference)) score += 1;
+
+  const processText = normalizeSemanticText([
+    span.transcript ?? '',
+    ...span.materialPatterns.map(pattern => pattern.phrase),
+    ...span.grounding.spatialEvidence.map(evidence => evidence.locationText ?? ''),
+  ].join(' '));
+  if (
+    /(接人|会合|到场|出发|抵达|返程|路上|准备|进入|拍摄|沟通|聊天)/u.test(processText)
+    || /(route|drive|arrive|depart|meet|pickup|return|start|enter)/u.test(processText)
+  ) {
+    score += 1;
+  }
+
+  return score;
+}
+
+function estimateSpanCapacityMs(
+  span: IKtepSlice,
+  sourceDurationMs: number,
+  hasSourceSpeech: boolean,
+  keyProcessScore: number,
+): number {
+  if (span.type === 'photo') {
+    return 1_500;
+  }
+
+  let capacityMs = clampInt(sourceDurationMs || 3_500, 1_500, 6_500);
+  if (hasSourceSpeech) {
+    capacityMs = Math.max(capacityMs, 3_000);
+  }
+  capacityMs += Math.min(keyProcessScore, 3) * 600;
+  return capacityMs;
+}
+
+function normalizeChronologyKey(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  if (!trimmed) return undefined;
+  const ms = Date.parse(trimmed);
+  if (!Number.isFinite(ms)) return undefined;
+  return new Date(ms).toISOString().toLowerCase();
+}
+
+function resolvePositiveDuration(startMs?: number, endMs?: number): number | undefined {
+  if (typeof startMs !== 'number' || typeof endMs !== 'number') return undefined;
+  if (endMs <= startMs) return undefined;
+  return endMs - startMs;
+}
+
+function clampInt(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, Math.round(value)));
+}
+
+function padMs(value?: number): string {
+  const safe = typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0;
+  return String(safe).padStart(9, '0');
 }
 
 async function ensureMaterialFactsAndBundles(projectRoot: string): Promise<{
@@ -750,6 +1141,36 @@ function humanizeProgramType(type: string, index: number): string {
 }
 
 function inferSegmentDurationMs(
+  index: number,
+  total: number,
+  style: IStyleProfile,
+  timeBand?: ISegmentTimeBand,
+  orderedSpanCandidates: IOrderedSpanCandidate[] = [],
+  arrangementSignals?: IResolvedArrangementSignals,
+): number {
+  const base = inferStyleSegmentDurationMs(index, total, style);
+  if (!timeBand || orderedSpanCandidates.length === 0 || !arrangementSignals) {
+    return base;
+  }
+  const bandCandidates = orderedSpanCandidates
+    .filter(candidate => isCandidateWithinTimeBand(candidate, timeBand, arrangementSignals, 0.06));
+  if (bandCandidates.length === 0) return base;
+
+  const ranked = [...bandCandidates]
+    .sort((left, right) =>
+      Number(right.isKeyProcessVideo) - Number(left.isKeyProcessVideo)
+      || Number(right.hasSourceSpeech) - Number(left.hasSourceSpeech)
+      || right.materialCapacityMs - left.materialCapacityMs
+      || left.orderIndex - right.orderIndex,
+    )
+    .slice(0, Math.min(5, bandCandidates.length));
+  const materialDriven = ranked.reduce((sum, candidate) => sum + candidate.materialCapacityMs, 0);
+  const floor = Math.max(8_000, Math.round(base * 0.65));
+  const ceiling = Math.max(floor, Math.round(base * 2.25));
+  return Math.max(floor, Math.min(materialDriven, ceiling));
+}
+
+function inferStyleSegmentDurationMs(
   index: number,
   total: number,
   style: IStyleProfile,
