@@ -169,6 +169,135 @@ describe('buildStyleMonitorModel', () => {
     expect(model.chips.map(chip => chip.label)).toContain('Road Vlog');
   });
 
+  it('defaults /style monitor to the category of the latest finished style-analysis job when there is no live job', async () => {
+    const workspaceRoot = await createWorkspace();
+    await saveStyleSourcesConfig(workspaceRoot, {
+      defaultCategory: 'short-trip-photo-vlog',
+      categories: [
+        {
+          categoryId: 'short-trip-photo-vlog',
+          displayName: 'Short Trip',
+          overwriteExisting: false,
+          profilePath: 'short-trip-photo-vlog.md',
+          sources: [],
+        },
+        {
+          categoryId: 'general-event-coverage',
+          displayName: 'General Event',
+          overwriteExisting: false,
+          profilePath: 'general-event-coverage.md',
+          sources: [{ id: 'source-1', type: 'file', path: 'F:\\event.mp4' }],
+        },
+      ],
+    });
+
+    await writeJobRecord(workspaceRoot, {
+      jobId: 'style-finished-event',
+      jobType: 'style-analysis',
+      executionMode: 'deterministic',
+      args: { categoryId: 'general-event-coverage' },
+      status: 'awaiting_agent',
+      updatedAt: '2026-04-13T16:44:19.828Z',
+      blockers: [],
+    });
+    await writeJson(getWorkspaceStyleAnalysisProgressPath(workspaceRoot, 'general-event-coverage'), {
+      status: 'awaiting_agent',
+      stage: 'complete',
+      updatedAt: '2026-04-13T16:44:19.827Z',
+      current: 1,
+      total: 1,
+      percent: 100,
+      detail: {
+        totalVideos: 1,
+        currentVideo: 'event.mp4',
+        currentSourcePath: 'F:\\event.mp4',
+        message: 'Deterministic prep 已完成，请回到 Agent 生成最终风格档案。',
+      },
+      extra: {
+        activeVideo: {
+          displayName: 'event.mp4',
+          sourcePath: 'F:\\event.mp4',
+          clipPath: 'H:\\tmp\\event-clip.mp4',
+          index: 1,
+          total: 1,
+        },
+        stageStartedAt: '2026-04-13T16:40:00.000Z',
+        stageMetrics: {
+          keyframes: {
+            plannedCount: 6,
+            extractedCount: 6,
+            activeWorkers: 0,
+            outputDir: 'H:\\tmp\\keyframes',
+          },
+          vlm: {
+            totalGroups: 2,
+            completedGroups: 2,
+            currentShotId: 'shot-002',
+            currentFrameCount: 3,
+            lastRoundTripMs: 420,
+          },
+        },
+        queue: {
+          completedCount: 1,
+          pendingCount: 0,
+          completedNames: ['event.mp4'],
+          pendingNames: [],
+        },
+      },
+      category: {
+        slug: 'general-event-coverage',
+        name: 'General Event',
+      },
+    });
+
+    const model = await buildStyleMonitorModel(workspaceRoot);
+
+    expect(model.raw.category.categoryId).toBe('general-event-coverage');
+    expect(model.progress.status).toBe('awaiting_agent');
+    expect(model.progress.stepKey).toBe('complete');
+    expect(model.sections?.find(section => section.title === '当前视频')?.items[0]?.value).toBe('event.mp4');
+    expect(model.sections?.find(section => section.title === '当前阶段细节')?.items.some(item => item.label === '抽取关键帧')).toBe(true);
+    expect(model.sections?.find(section => section.title === '视频队列')?.items[0]?.value).toBe('1');
+  });
+
+  it('does not inherit another category status when the requested category has no progress', async () => {
+    const workspaceRoot = await createWorkspace();
+    await saveStyleSourcesConfig(workspaceRoot, {
+      defaultCategory: 'short-trip-photo-vlog',
+      categories: [
+        {
+          categoryId: 'short-trip-photo-vlog',
+          displayName: 'Short Trip',
+          overwriteExisting: false,
+          profilePath: 'short-trip-photo-vlog.md',
+          sources: [{ id: 'source-1', type: 'file', path: 'F:\\trip.mp4' }],
+        },
+        {
+          categoryId: 'general-event-coverage',
+          displayName: 'General Event',
+          overwriteExisting: false,
+          profilePath: 'general-event-coverage.md',
+          sources: [{ id: 'source-2', type: 'file', path: 'F:\\event.mp4' }],
+        },
+      ],
+    });
+    await writeJobRecord(workspaceRoot, {
+      jobId: 'style-finished-event',
+      jobType: 'style-analysis',
+      executionMode: 'deterministic',
+      args: { categoryId: 'general-event-coverage' },
+      status: 'awaiting_agent',
+      updatedAt: '2026-04-13T16:44:19.828Z',
+      blockers: [],
+    });
+
+    const model = await buildStyleMonitorModel(workspaceRoot, 'short-trip-photo-vlog');
+
+    expect(model.raw.category.categoryId).toBe('short-trip-photo-vlog');
+    expect(model.progress.status).toBe('idle');
+    expect(model.progress.stepLabel).toBe('等待启动');
+  });
+
   it('fails when style-sources.json has no resolvable monitor category', async () => {
     const workspaceRoot = await createWorkspace();
     await writeJson(join(workspaceRoot, 'config', 'style-sources.json'), {

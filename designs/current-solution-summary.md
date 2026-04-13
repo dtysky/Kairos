@@ -45,6 +45,8 @@ Kairos 当前需要区分两层：
 - workspace `style-analysis` 当前正式收口为 deterministic prep：
   - `health-check -> clip -> probe -> shot-detect -> transcribe -> keyframes -> vlm -> video-complete -> awaiting_agent|completed`
   - prep job 负责把 reference transcript、per-video report 与 workspace progress 正式落盘
+  - `/style` 默认不再盲目回到 `defaultCategory`；应优先落到“当前最相关”的分类：显式 `categoryId` -> live job -> 最近完成 job -> 最近 cached progress -> `defaultCategory` -> 第一个分类
+  - `/style` monitor 不应只显示粗阶段；当前视频、`keyframes` 抽帧进度、`vlm` 识别进度和视频队列摘要都属于正式可见运行态
   - 最终 `config/styles/{category}.md` 继续由 Agent 基于这些 prep 产物写成
 - 未来如果引入桌面 UI 或更多 provider / adapter，应建立在这套协议与项目模型上，而不是推翻它
 - 某些项目会直接消费调色后的素材版本而非原始素材；因此主链面向的是“当前采用的素材版本”，而不是固定绑定“永远使用原始素材”
@@ -181,6 +183,7 @@ flowchart TD
 - `script-brief` 是当前脚本阶段的正式人工审查入口
 - 当前 `/script` 页已经收口为：
   - 先选择 workspace `styleCategory`，并立即自动保存
+  - 一旦 `styleCategory` 改变，旧的 `material-overview / brief draft / segment-plan / material-slots / outline / script/current.json` 必须立即失效并清空，项目回到“重新起稿”
   - Agent 生成初版 `script-brief`
   - 用户在 `/script` 审查并手动保存 brief
   - 用户点击 `准备给 Agent`

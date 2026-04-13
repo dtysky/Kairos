@@ -32,6 +32,18 @@ export interface IShotRecognition {
   recognition: IRecognition;
 }
 
+export interface IRecognizeShotGroupsOptions {
+  onProgress?: (progress: IRecognizeShotGroupsProgress) => Promise<void> | void;
+}
+
+export interface IRecognizeShotGroupsProgress {
+  totalGroups: number;
+  completedGroups: number;
+  currentShotId?: string;
+  currentFrameCount?: number;
+  lastRoundTripMs?: number;
+}
+
 export async function recognizeFrames(
   client: MlClient,
   imagePaths: string[],
@@ -75,12 +87,32 @@ export async function recognizeFrames(
 export async function recognizeShotGroups(
   client: MlClient,
   groups: IShotKeyframeGroup[],
+  options?: IRecognizeShotGroupsOptions,
 ): Promise<IShotRecognition[]> {
   const results: IShotRecognition[] = [];
+  let progressChain = Promise.resolve();
+  const reportProgress = async (progress: IRecognizeShotGroupsProgress) => {
+    if (!options?.onProgress) return;
+    progressChain = progressChain
+      .then(() => options.onProgress?.(progress))
+      .catch(() => undefined);
+    await progressChain;
+  };
+
+  await reportProgress({
+    totalGroups: groups.length,
+    completedGroups: 0,
+  });
 
   for (const group of groups) {
     const framePaths = group.frames.map(frame => frame.path);
     if (framePaths.length === 0) continue;
+    await reportProgress({
+      totalGroups: groups.length,
+      completedGroups: results.length,
+      currentShotId: group.shotId,
+      currentFrameCount: framePaths.length,
+    });
     const recognition = await recognizeFrames(client, framePaths);
     results.push({
       shotId: group.shotId,
@@ -88,6 +120,13 @@ export async function recognizeShotGroups(
       endMs: group.endMs,
       framePaths,
       recognition,
+    });
+    await reportProgress({
+      totalGroups: groups.length,
+      completedGroups: results.length,
+      currentShotId: group.shotId,
+      currentFrameCount: framePaths.length,
+      lastRoundTripMs: recognition.roundTripMs,
     });
   }
 

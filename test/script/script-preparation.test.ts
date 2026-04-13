@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { ILlmClient, ILlmMessage, ILlmOptions } from '../../src/modules/llm/client.js';
@@ -256,6 +256,94 @@ describe('model-driven script preparation', () => {
 
     const brief = await loadScriptBriefConfig(projectRoot);
     expect(brief.workflowState).toBe('ready_for_agent');
+  });
+
+  it('forces script prep to restart from a fresh brief when styleCategory changes', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectRoot = await seedProject(workspaceRoot);
+    const stylesRoot = join(workspaceRoot, 'config', 'styles');
+
+    await saveStyleSourcesConfig(workspaceRoot, {
+      defaultCategory: 'travel-doc',
+      categories: [
+        {
+          categoryId: 'travel-doc',
+          displayName: 'Travel Doc',
+          overwriteExisting: false,
+          profilePath: 'travel-doc.md',
+          sources: [],
+        },
+        {
+          categoryId: 'event-doc',
+          displayName: 'Event Doc',
+          overwriteExisting: false,
+          profilePath: 'event-doc.md',
+          sources: [],
+        },
+      ],
+    });
+    await writeFile(join(stylesRoot, 'event-doc.md'), '# Event Doc\n', 'utf-8');
+
+    await writeOverview(projectRoot);
+    await writeFile(getCurrentScriptPath(projectRoot), '{\n  "sentinel": true\n}\n', 'utf-8');
+    await writeJson(getSegmentPlanPath(projectRoot), { segments: [] });
+    await writeJson(getMaterialSlotsPath(projectRoot), { segments: [] });
+    await writeJson(getOutlinePath(projectRoot), []);
+
+    await saveScriptBriefConfig(projectRoot, {
+      projectName: 'Script Prep Project',
+      createdAt: '2026-04-09T08:00:00.000Z',
+      styleCategory: 'event-doc',
+      workflowState: 'await_brief_draft',
+      goalDraft: ['should be cleared'],
+      constraintDraft: ['should be cleared'],
+      planReviewDraft: ['should be cleared'],
+      segments: [{
+        segmentId: 'segment-event',
+        title: 'Event Intro',
+      }],
+    });
+
+    const nextBrief = await loadScriptBriefConfig(projectRoot);
+    expect(nextBrief.styleCategory).toBe('event-doc');
+    expect(nextBrief.workflowState).toBe('await_brief_draft');
+    expect(nextBrief.goalDraft).toEqual([]);
+    expect(nextBrief.constraintDraft).toEqual([]);
+    expect(nextBrief.planReviewDraft).toEqual([]);
+    expect(nextBrief.segments).toEqual([]);
+    await expect(access(join(projectRoot, 'script', 'material-overview.md'))).rejects.toBeTruthy();
+    await expect(access(getSegmentPlanPath(projectRoot))).rejects.toBeTruthy();
+    await expect(access(getMaterialSlotsPath(projectRoot))).rejects.toBeTruthy();
+    await expect(access(getOutlinePath(projectRoot))).rejects.toBeTruthy();
+    await expect(access(getCurrentScriptPath(projectRoot))).rejects.toBeTruthy();
+
+    await expect(prepareProjectScriptForAgent({
+      projectRoot,
+      workspaceRoot,
+      styleCategory: 'event-doc',
+    })).rejects.toThrow(/script-brief\.workflowState=ready_to_prepare/u);
+
+    await saveScriptBriefConfig(projectRoot, {
+      ...nextBrief,
+      workflowState: 'review_brief',
+      goalDraft: ['new brief draft'],
+      constraintDraft: ['new brief constraint'],
+      planReviewDraft: ['new brief review'],
+      segments: [{
+        segmentId: 'segment-event',
+        title: 'Event Intro',
+      }],
+    });
+    await saveScriptBriefConfig(projectRoot, {
+      ...(await loadScriptBriefConfig(projectRoot)),
+      workflowState: 'ready_to_prepare',
+    });
+
+    await expect(prepareProjectScriptForAgent({
+      projectRoot,
+      workspaceRoot,
+      styleCategory: 'event-doc',
+    })).rejects.toThrow(/script prep requires script\/material-overview\.md/u);
   });
 
   it('writes segment-plan, material-slots and script/current from the new chain', async () => {

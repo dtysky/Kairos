@@ -32,6 +32,7 @@ import {
   loadOptionalMarkdown,
   parseScriptBriefWorkflowMetadata,
 } from './script-brief.js';
+import { clearScriptArtifactsForStyleChange } from './script-store.js';
 import { getManualItineraryPath, loadManualItinerary } from './spatial-context.js';
 import { readJsonOrNull, writeJson } from './writer.js';
 
@@ -197,6 +198,9 @@ export async function saveScriptBriefConfig(
     }),
     'utf-8',
   );
+  if (normalized.styleCategory !== previous.styleCategory) {
+    await clearScriptArtifactsForStyleChange(projectRoot);
+  }
   return normalized;
 }
 
@@ -329,6 +333,10 @@ function applyScriptBriefPersistenceRules(
   let lastUserReviewAt = input.lastUserReviewAt ?? previous.lastUserReviewAt;
   let lastAgentDraftFingerprint = input.lastAgentDraftFingerprint ?? previous.lastAgentDraftFingerprint;
   let briefOverwriteApprovedAt = input.briefOverwriteApprovedAt;
+  let goalDraft = input.goalDraft;
+  let constraintDraft = input.constraintDraft;
+  let planReviewDraft = input.planReviewDraft;
+  let segments = input.segments;
 
   if (!input.styleCategory) {
     return IScriptBriefConfig.parse({
@@ -348,6 +356,10 @@ function applyScriptBriefPersistenceRules(
     lastUserReviewAt = undefined;
     lastAgentDraftFingerprint = undefined;
     briefOverwriteApprovedAt = undefined;
+    goalDraft = [];
+    constraintDraft = [];
+    planReviewDraft = [];
+    segments = [];
   }
 
   const hasAgentDraft = Boolean(lastAgentDraftAt || lastAgentDraftFingerprint);
@@ -383,6 +395,10 @@ function applyScriptBriefPersistenceRules(
 
   return IScriptBriefConfig.parse({
     ...input,
+    goalDraft,
+    constraintDraft,
+    planReviewDraft,
+    segments,
     workflowState,
     lastAgentDraftAt,
     lastUserReviewAt,

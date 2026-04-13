@@ -131,12 +131,21 @@ describe('prepareWorkspaceStyleAnalysisForAgent', () => {
       { timeMs: 4_000, score: 0.9 },
       { timeMs: 8_000, score: 0.8 },
     ]);
-    extractKeyframesMock.mockImplementation(async (_filePath, _outputDir, timestampsMs) =>
-      timestampsMs.map(timeMs => ({
-        timeMs,
-        path: `/tmp/kf_${timeMs}.jpg`,
-      })),
-    );
+    extractKeyframesMock.mockImplementation(async (_filePath, _outputDir, timestampsMs, _tools, options) => {
+      const results = [];
+      for (let index = 0; index < timestampsMs.length; index += 1) {
+        results.push({
+          timeMs: timestampsMs[index],
+          path: `/tmp/kf_${timestampsMs[index]}.jpg`,
+        });
+        await options?.onProgress?.({
+          plannedCount: timestampsMs.length,
+          extractedCount: results.length,
+          activeWorkers: Math.max(0, timestampsMs.length - results.length),
+        });
+      }
+      return results;
+    });
     transcribeMock.mockResolvedValue({
       segments: [
         { start: 0, end: 1.5, text: '今天从城里开到山顶。' },
@@ -145,23 +154,42 @@ describe('prepareWorkspaceStyleAnalysisForAgent', () => {
       fullText: '今天从城里开到山顶。 这段路很安静。',
       evidence: [],
     });
-    recognizeShotGroupsMock.mockResolvedValue([
-      {
-        shotId: 'shot-001',
-        startMs: 0,
-        endMs: 4_000,
-        framePaths: ['/tmp/kf_0.jpg'],
-        recognition: {
-          sceneType: 'driving',
-          subjects: ['road', 'dashboard'],
-          mood: 'calm',
-          placeHints: ['mountain road'],
-          narrativeRole: 'establishing',
-          description: '驾驶镜头建立路线和空间关系。',
-          evidence: [],
-        },
-      },
-    ]);
+    recognizeShotGroupsMock.mockImplementation(async (_ml, groups, options) => {
+      const results = [];
+      for (const group of groups) {
+        await options?.onProgress?.({
+          totalGroups: groups.length,
+          completedGroups: results.length,
+          currentShotId: group.shotId,
+          currentFrameCount: group.frames.length,
+        });
+        results.push({
+          shotId: group.shotId,
+          startMs: group.startMs,
+          endMs: group.endMs,
+          framePaths: group.frames.map(frame => frame.path),
+          recognition: {
+            sceneType: 'driving',
+            subjects: ['road', 'dashboard'],
+            mood: 'calm',
+            placeHints: ['mountain road'],
+            narrativeRole: 'establishing',
+            description: '驾驶镜头建立路线和空间关系。',
+            evidence: [],
+            roundTripMs: 240,
+            imageCount: group.frames.length,
+          },
+        });
+        await options?.onProgress?.({
+          totalGroups: groups.length,
+          completedGroups: results.length,
+          currentShotId: group.shotId,
+          currentFrameCount: group.frames.length,
+          lastRoundTripMs: 240,
+        });
+      }
+      return results;
+    });
 
     const result = await prepareWorkspaceStyleAnalysisForAgent({
       workspaceRoot,
@@ -180,11 +208,27 @@ describe('prepareWorkspaceStyleAnalysisForAgent', () => {
       stage: string;
       total: number;
       detail?: { summaryPath?: string };
+      extra?: {
+        stageMetrics?: {
+          keyframes?: { plannedCount?: number; extractedCount?: number; outputDir?: string };
+          vlm?: { totalGroups?: number; completedGroups?: number; lastRoundTripMs?: number };
+        };
+        queue?: {
+          completedCount?: number;
+          pendingCount?: number;
+        };
+      };
     };
     expect(progress.status).toBe('awaiting_agent');
     expect(progress.stage).toBe('complete');
     expect(progress.total).toBe(1);
     expect(progress.detail?.summaryPath).toBe(getWorkspaceStyleAnalysisSummaryPath(workspaceRoot, 'road-vlog'));
+    expect(progress.extra?.stageMetrics?.keyframes?.plannedCount).toBeGreaterThan(0);
+    expect(progress.extra?.stageMetrics?.keyframes?.extractedCount).toBeGreaterThan(0);
+    expect(progress.extra?.stageMetrics?.vlm?.completedGroups).toBe(3);
+    expect(progress.extra?.stageMetrics?.vlm?.lastRoundTripMs).toBe(240);
+    expect(progress.extra?.queue?.completedCount).toBe(1);
+    expect(progress.extra?.queue?.pendingCount).toBe(0);
 
     const summary = JSON.parse(
       await readFile(getWorkspaceStyleAnalysisSummaryPath(workspaceRoot, 'road-vlog'), 'utf-8'),

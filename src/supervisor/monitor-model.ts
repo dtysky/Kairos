@@ -37,6 +37,17 @@ export interface IMonitorOutput {
   exists: boolean;
 }
 
+export interface IMonitorSectionItem {
+  label: string;
+  value: string;
+  sub?: string;
+}
+
+export interface IMonitorSection {
+  title: string;
+  items: IMonitorSectionItem[];
+}
+
 export interface IMonitorProgress {
   status: string;
   stepKey?: string;
@@ -83,6 +94,7 @@ export interface IMonitorModel {
   metrics: IMonitorMetric[];
   progress: IMonitorProgress;
   pipelines?: IMonitorPipelineSummary[];
+  sections?: IMonitorSection[];
   stepDefinitions: IMonitorStepDefinition[];
   outputs: IMonitorOutput[];
   raw: unknown;
@@ -155,7 +167,49 @@ interface IStyleProgressPayload {
     message?: string;
     outputLinks?: Array<{ label?: string; path?: string; description?: string }>;
   };
+  extra?: {
+    activeVideo?: {
+      displayName?: string;
+      sourcePath?: string;
+      clipPath?: string;
+      index?: number;
+      total?: number;
+    };
+    stageStartedAt?: string;
+    stageMetrics?: {
+      shotDetect?: {
+        durationMs?: number;
+        sceneDetectFps?: number;
+        detectedShots?: number;
+      };
+      transcribe?: {
+        segmentCount?: number;
+        textChars?: number;
+        roundTripMs?: number;
+      };
+      keyframes?: {
+        plannedCount?: number;
+        extractedCount?: number;
+        activeWorkers?: number;
+        outputDir?: string;
+      };
+      vlm?: {
+        totalGroups?: number;
+        completedGroups?: number;
+        currentShotId?: string;
+        currentFrameCount?: number;
+        lastRoundTripMs?: number;
+      };
+    };
+    queue?: {
+      completedCount?: number;
+      pendingCount?: number;
+      completedNames?: string[];
+      pendingNames?: string[];
+    };
+  };
   category?: {
+    categoryId?: string;
     slug?: string;
     name?: string;
   };
@@ -345,17 +399,21 @@ export async function buildStyleMonitorModel(
   const styleSources = await loadStyleSourcesConfig(workspaceRoot);
   const jobs = await listJobRecords(workspaceRoot);
   const latestLiveJob = jobs.find(job => job.jobType === 'style-analysis' && isLiveJobStatus(job.status)) ?? null;
+  const latestStyleJob = jobs.find(job => job.jobType === 'style-analysis') ?? null;
+  const latestProgressCategoryId = await resolveLatestStyleProgressCategoryId(workspaceRoot, styleSources);
   const category = resolveStyleMonitorCategory(
     styleSources,
     requestedCategoryId,
     getStyleJobCategoryId(latestLiveJob),
+    getStyleJobCategoryId(latestStyleJob),
+    latestProgressCategoryId,
   );
   const categoryId = category.categoryId;
   const progressPath = getWorkspaceStyleAnalysisProgressPath(workspaceRoot, categoryId);
   const progress = await readJsonFile<IStyleProgressPayload>(progressPath);
   const latestJob = jobs.find(job =>
     job.jobType === 'style-analysis'
-      && (getStyleJobCategoryId(job) === categoryId || !requestedCategoryId),
+      && getStyleJobCategoryId(job) === categoryId,
   ) ?? null;
   const liveJob = jobs.find(job =>
     job.jobType === 'style-analysis'
@@ -369,6 +427,7 @@ export async function buildStyleMonitorModel(
   });
   const stepDefinitions = buildStyleSteps(progress?.stage, monitorStatus);
   const outputs = await buildStyleOutputs(workspaceRoot, category, progress);
+  const sections = buildStyleSections(progress);
   const totalVideos = progress?.total ?? progress?.videoTotal ?? progress?.detail?.totalVideos ?? category?.sources.length ?? 0;
   const workspaceName = basename(workspaceRoot);
 
@@ -415,6 +474,7 @@ export async function buildStyleMonitorModel(
       etaSeconds: undefined,
       updatedAt: progress?.updatedAt ?? latestJob?.updatedAt,
     },
+    sections,
     stepDefinitions,
     outputs,
     raw: {
@@ -455,7 +515,7 @@ function buildAnalyzeSteps(progress: IAnalyzeProgressPayload | null): IMonitorSt
 }
 
 function buildStyleSteps(stage?: string, status = 'idle'): IMonitorStepDefinition[] {
-  const activeIndex = Math.max(0, CSTYLE_STAGE_ORDER.findIndex(item => item.key === stage));
+  const activeIndex = stage ? CSTYLE_STAGE_ORDER.findIndex(item => item.key === stage) : -1;
   const isComplete = stage === 'complete';
   const isError = status === 'failed';
   return CSTYLE_STAGE_ORDER.map((item, index) => ({
@@ -464,12 +524,127 @@ function buildStyleSteps(stage?: string, status = 'idle'): IMonitorStepDefinitio
       ? 'completed'
       : isError && index === activeIndex
         ? 'error'
-        : index < activeIndex
+        : activeIndex >= 0 && index < activeIndex
         ? 'completed'
-        : index === activeIndex
+        : activeIndex >= 0 && index === activeIndex
           ? 'active'
           : 'pending',
   }));
+}
+
+function buildStyleSections(progress: IStyleProgressPayload | null): IMonitorSection[] | undefined {
+  if (!progress) return undefined;
+
+  const sections: IMonitorSection[] = [];
+  const activeVideo = progress.extra?.activeVideo;
+  if (activeVideo?.displayName || progress.detail?.currentVideo) {
+    sections.push({
+      title: '当前视频',
+      items: [
+        {
+          label: '视频',
+          value: activeVideo?.displayName || progress.detail?.currentVideo || '暂无',
+          sub: activeVideo?.index && activeVideo?.total
+            ? `第 ${activeVideo.index}/${activeVideo.total} 条`
+            : undefined,
+        },
+        {
+          label: '来源路径',
+          value: activeVideo?.sourcePath || progress.detail?.currentSourcePath || '暂无',
+        },
+        {
+          label: 'Clip 路径',
+          value: activeVideo?.clipPath || progress.detail?.clipPath || '尚未生成',
+        },
+        {
+          label: '阶段开始',
+          value: formatDateTime(progress.extra?.stageStartedAt),
+        },
+      ],
+    });
+  }
+
+  const stageItems = buildStyleStageSectionItems(progress);
+  if (stageItems.length > 0) {
+    sections.push({
+      title: '当前阶段细节',
+      items: stageItems,
+    });
+  }
+
+  const queue = progress.extra?.queue;
+  if (queue) {
+    sections.push({
+      title: '视频队列',
+      items: [
+        {
+          label: '已完成',
+          value: String(queue.completedCount ?? 0),
+          sub: joinNames(queue.completedNames),
+        },
+        {
+          label: '待处理',
+          value: String(queue.pendingCount ?? 0),
+          sub: joinNames(queue.pendingNames),
+        },
+      ],
+    });
+  }
+
+  return sections.length > 0 ? sections : undefined;
+}
+
+function buildStyleStageSectionItems(progress: IStyleProgressPayload): IMonitorSectionItem[] {
+  const stageMetrics = progress.extra?.stageMetrics;
+  const items: IMonitorSectionItem[] = [];
+
+  if (progress.stage === 'shot-detect' || stageMetrics?.shotDetect?.detectedShots != null) {
+    items.push({
+      label: '场景检测',
+      value: stageMetrics?.shotDetect?.detectedShots != null
+        ? `${stageMetrics.shotDetect.detectedShots} 个镜头边界`
+        : '运行中',
+      sub: [
+        stageMetrics?.shotDetect?.durationMs != null ? `时长 ${formatDurationMs(stageMetrics.shotDetect.durationMs)}` : '',
+        stageMetrics?.shotDetect?.sceneDetectFps != null ? `sceneDetectFps=${stageMetrics.shotDetect.sceneDetectFps}` : '',
+      ].filter(Boolean).join(' · ') || undefined,
+    });
+  }
+  if (progress.stage === 'transcribe' || stageMetrics?.transcribe?.segmentCount != null) {
+    items.push({
+      label: '语音转写',
+      value: stageMetrics?.transcribe?.segmentCount != null
+        ? `${stageMetrics.transcribe.segmentCount} 段`
+        : '运行中',
+      sub: [
+        stageMetrics?.transcribe?.textChars != null ? `${stageMetrics.transcribe.textChars} 字` : '',
+        stageMetrics?.transcribe?.roundTripMs != null ? `round-trip ${formatDurationMs(stageMetrics.transcribe.roundTripMs)}` : '',
+      ].filter(Boolean).join(' · ') || undefined,
+    });
+  }
+  if (progress.stage === 'keyframes' || stageMetrics?.keyframes?.plannedCount != null) {
+    items.push({
+      label: '抽取关键帧',
+      value: `${stageMetrics?.keyframes?.extractedCount ?? 0}/${stageMetrics?.keyframes?.plannedCount ?? 0}`,
+      sub: [
+        stageMetrics?.keyframes?.activeWorkers != null ? `${stageMetrics.keyframes.activeWorkers} 个 worker` : '',
+        stageMetrics?.keyframes?.outputDir ? stageMetrics.keyframes.outputDir : '',
+      ].filter(Boolean).join(' · ') || undefined,
+    });
+  }
+  if (progress.stage === 'vlm' || stageMetrics?.vlm?.totalGroups != null) {
+    items.push({
+      label: '视觉理解',
+      value: `${stageMetrics?.vlm?.completedGroups ?? 0}/${stageMetrics?.vlm?.totalGroups ?? 0} 组镜头`,
+      sub: [
+        stageMetrics?.vlm?.currentShotId ? `当前 ${stageMetrics.vlm.currentShotId}` : '',
+        stageMetrics?.vlm?.currentFrameCount != null ? `${stageMetrics.vlm.currentFrameCount} 帧` : '',
+        stageMetrics?.vlm?.lastRoundTripMs != null ? `round-trip ${formatDurationMs(stageMetrics.vlm.lastRoundTripMs)}` : '',
+      ].filter(Boolean).join(' · ') || undefined,
+    });
+  }
+
+  return items;
 }
 
 async function buildStyleOutputs(
@@ -519,6 +694,8 @@ function resolveStyleMonitorCategory(
   config: Awaited<ReturnType<typeof loadStyleSourcesConfig>>,
   requestedCategoryId?: string,
   activeCategoryId?: string,
+  latestJobCategoryId?: string,
+  latestProgressCategoryId?: string,
 ): Awaited<ReturnType<typeof loadStyleSourcesConfig>>['categories'][number] {
   const resolveById = (categoryId: string, reason: string) => {
     const matched = config.categories.find(item => item.categoryId === categoryId);
@@ -534,6 +711,12 @@ function resolveStyleMonitorCategory(
   if (activeCategoryId?.trim()) {
     return resolveById(activeCategoryId.trim(), 'active style-analysis category');
   }
+  if (latestJobCategoryId?.trim()) {
+    return resolveById(latestJobCategoryId.trim(), 'latest style-analysis category');
+  }
+  if (latestProgressCategoryId?.trim()) {
+    return resolveById(latestProgressCategoryId.trim(), 'latest style-analysis progress category');
+  }
   if (config.defaultCategory?.trim()) {
     return resolveById(config.defaultCategory.trim(), 'style-sources.json defaultCategory');
   }
@@ -543,6 +726,25 @@ function resolveStyleMonitorCategory(
     throw new Error('style-sources.json does not define any style categories');
   }
   return first;
+}
+
+async function resolveLatestStyleProgressCategoryId(
+  workspaceRoot: string,
+  config: Awaited<ReturnType<typeof loadStyleSourcesConfig>>,
+): Promise<string | undefined> {
+  let latestCategoryId: string | undefined;
+  let latestTimestamp = '';
+  for (const category of config.categories) {
+    const progress = await readJsonFile<IStyleProgressPayload>(
+      getWorkspaceStyleAnalysisProgressPath(workspaceRoot, category.categoryId),
+    );
+    if (!progress?.updatedAt) continue;
+    if (progress.updatedAt > latestTimestamp) {
+      latestTimestamp = progress.updatedAt;
+      latestCategoryId = category.categoryId;
+    }
+  }
+  return latestCategoryId;
 }
 
 async function summarizeFineScanCheckpoints(projectRoot: string): Promise<{
@@ -642,6 +844,36 @@ function formatShortTime(value: string): string {
     hour: '2-digit',
     minute: '2-digit',
   });
+}
+
+function formatDateTime(value?: string): string {
+  if (!value) return '暂无';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString('zh-CN', {
+    hour12: false,
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+}
+
+function formatDurationMs(value?: number): string {
+  const totalMs = Math.max(0, Number(value) || 0);
+  if (totalMs >= 60_000) {
+    return `${Math.round((totalMs / 1000 / 60) * 10) / 10}m`;
+  }
+  if (totalMs >= 1_000) {
+    return `${Math.round((totalMs / 1000) * 10) / 10}s`;
+  }
+  return `${Math.round(totalMs)}ms`;
+}
+
+function joinNames(names?: string[]): string | undefined {
+  if (!Array.isArray(names) || names.length === 0) return undefined;
+  return names.join('、');
 }
 
 async function countChildren(path: string): Promise<number> {

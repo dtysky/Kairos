@@ -17,6 +17,13 @@ export interface IKeyframeResult {
 
 export interface IExtractKeyframesOptions {
   concurrencyOverride?: number;
+  onProgress?: (progress: IKeyframeExtractProgress) => Promise<void> | void;
+}
+
+export interface IKeyframeExtractProgress {
+  plannedCount: number;
+  extractedCount: number;
+  activeWorkers: number;
 }
 
 export interface IShotWindow {
@@ -90,16 +97,46 @@ export async function extractKeyframes(
     tools?.keyframeExtractConcurrency,
     options?.concurrencyOverride,
   );
+  let extractedCount = 0;
+  let activeWorkers = 0;
+  let progressChain = Promise.resolve();
+  const reportProgress = async () => {
+    if (!options?.onProgress) return;
+    const snapshot: IKeyframeExtractProgress = {
+      plannedCount: timestampsMs.length,
+      extractedCount,
+      activeWorkers,
+    };
+    progressChain = progressChain
+      .then(() => options.onProgress?.(snapshot))
+      .catch(() => undefined);
+    await progressChain;
+  };
+
+  await reportProgress();
 
   const results = await mapWithConcurrencyLimit(
     timestampsMs,
     concurrency,
-    async (ts) => extractSingleKeyframeAtTimestamp(ts, {
-      ffmpeg,
-      inputPath,
-      outputDir,
-      vf,
-    }),
+    async (ts) => {
+      activeWorkers += 1;
+      await reportProgress();
+      try {
+        const result = await extractSingleKeyframeAtTimestamp(ts, {
+          ffmpeg,
+          inputPath,
+          outputDir,
+          vf,
+        });
+        if (result) {
+          extractedCount += 1;
+        }
+        return result;
+      } finally {
+        activeWorkers = Math.max(0, activeWorkers - 1);
+        await reportProgress();
+      }
+    },
   );
   return results.filter((result): result is IKeyframeResult => result !== null);
 }

@@ -88,20 +88,35 @@ export function MonitorPage({ model, emptyLabel, toolbar, afterMonitor }) {
       </Card>
 
       <Card className="monitor-panel section-panel">
-        <h2>流程步骤</h2>
-        <div className="step-track">
+        <h2>阶段总览</h2>
+        <div className="monitor-stage-grid">
           {(model.stepDefinitions || []).map((step, index) => (
-            <div key={step.key || index} className={`step-track-item state-${step.state}`}>
-              <div className="step-track-index">{index + 1}</div>
-              <div className="step-track-copy">
-                <strong>{step.label}</strong>
-                {step.description ? <div className="muted">{step.description}</div> : null}
+            <div key={step.key || index} className={`monitor-stage-card state-${step.state}`}>
+              <div className="monitor-stage-head">
+                <div className="step-track-index">{index + 1}</div>
+                <Tag>{stateLabel(step.state)}</Tag>
               </div>
-              <Tag>{stateLabel(step.state)}</Tag>
+              <strong>{step.label}</strong>
+              {step.description ? <div className="muted">{step.description}</div> : null}
             </div>
           ))}
         </div>
       </Card>
+
+      {(model.sections || []).map(section => (
+        <Card key={section.title} className="monitor-panel section-panel">
+          <h2>{section.title}</h2>
+          <div className="pipeline-metric-grid">
+            {(section.items || []).map(item => (
+              <div key={`${section.title}:${item.label}`} className="pipeline-metric-card">
+                <div className="label">{item.label}</div>
+                <div className="value value-compact">{item.value}</div>
+                {item.sub ? <div className="sub">{item.sub}</div> : null}
+              </div>
+            ))}
+          </div>
+        </Card>
+      ))}
 
       <Card className="monitor-panel section-panel">
         <h2>完成产物</h2>

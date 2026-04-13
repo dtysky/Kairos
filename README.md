@@ -48,9 +48,12 @@ Current stable pipeline:
 - workspace style-analysis now runs as a formal deterministic prep job:
   - `health-check -> clip -> probe -> shot-detect -> transcribe -> keyframes -> vlm -> video-complete -> awaiting_agent|completed`
   - the prep job writes workspace `.tmp/style-analysis/{category}/progress.json`, `analysis/reference-transcripts/`, and `analysis/style-references/`
+  - `/style` now resolves the most relevant category in this order: explicit `categoryId` -> live style job -> latest style job -> latest cached style progress -> `defaultCategory` -> first category
+  - the `/style` monitor is no longer limited to a coarse stage string; it should show current video context plus concrete `keyframes / vlm / queue` runtime state when available
   - the final style profile remains agent-authored from those prep outputs
 - the `/script` console page now acts as deterministic script preparation:
   - user first selects a workspace `styleCategory` in `/script`; that selection auto-saves
+  - changing `styleCategory` now invalidates the previous script run immediately; Kairos clears the old `material-overview`, brief draft body, arrangement artifacts, outline, and `script/current.json`, then returns the workflow to `await_brief_draft`
   - agent then generates `script/material-overview.md` and the initial `script-brief`
   - user reviews and manually saves the brief in `/script`
   - the console now surfaces these handoffs with persistent workflow prompts and explicit hana modal confirmations instead of relying on low-contrast inline copy

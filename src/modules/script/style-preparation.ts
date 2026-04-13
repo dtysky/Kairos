@@ -22,17 +22,28 @@ import {
   classifyExt,
 } from '../media/scanner.js';
 import { probe, type IProbeResult } from '../media/probe.js';
-import { detectShots, computeRhythmStats, type IRhythmStats, type IShotBoundary } from '../media/shot-detect.js';
+import {
+  detectShots,
+  computeRhythmStats,
+  resolveEffectiveSceneDetectFps,
+  type IRhythmStats,
+  type IShotBoundary,
+} from '../media/shot-detect.js';
 import {
   extractKeyframes,
   flattenShotKeyframePlans,
   groupKeyframesByShot,
   planShotKeyframes,
+  type IKeyframeExtractProgress,
   type IShotKeyframePlan,
 } from '../media/keyframe.js';
 import { MlClient, type IAsrSegment, type IMlHealth } from '../media/ml-client.js';
 import { transcribe } from '../media/transcriber.js';
-import { recognizeShotGroups, type IShotRecognition } from '../media/recognizer.js';
+import {
+  recognizeShotGroups,
+  type IRecognizeShotGroupsProgress,
+  type IShotRecognition,
+} from '../media/recognizer.js';
 import { toExecutableInputPath } from '../media/tool-path.js';
 import type { IStyleReferenceVideoAnalysis } from './style-analyzer.js';
 
@@ -143,6 +154,47 @@ interface IStyleProgressPayload {
     message?: string;
     outputLinks?: Array<{ label?: string; path?: string; description?: string }>;
   };
+  extra?: {
+    activeVideo?: {
+      displayName: string;
+      sourcePath: string;
+      clipPath?: string;
+      index: number;
+      total: number;
+    };
+    stageStartedAt?: string;
+    stageMetrics?: {
+      shotDetect?: {
+        durationMs?: number;
+        sceneDetectFps?: number;
+        detectedShots?: number;
+      };
+      transcribe?: {
+        segmentCount?: number;
+        textChars?: number;
+        roundTripMs?: number;
+      };
+      keyframes?: {
+        plannedCount?: number;
+        extractedCount?: number;
+        activeWorkers?: number;
+        outputDir?: string;
+      };
+      vlm?: {
+        totalGroups?: number;
+        completedGroups?: number;
+        currentShotId?: string;
+        currentFrameCount?: number;
+        lastRoundTripMs?: number;
+      };
+    };
+    queue?: {
+      completedCount: number;
+      pendingCount: number;
+      completedNames: string[];
+      pendingNames: string[];
+    };
+  };
   category: {
     slug: string;
     name: string;
@@ -152,6 +204,9 @@ interface IStyleProgressPayload {
 interface IWriteStyleProgressInput extends Omit<IStyleProgressPayload, 'updatedAt' | 'category'> {
   category: IStyleSourceCategoryConfig;
 }
+
+type TStyleProgressExtra = NonNullable<IStyleProgressPayload['extra']>;
+type TStyleProgressStageMetrics = NonNullable<TStyleProgressExtra['stageMetrics']>;
 
 export async function prepareWorkspaceStyleAnalysisForAgent(
   input: IPrepareWorkspaceStyleAnalysisInput,
@@ -171,8 +226,59 @@ export async function prepareWorkspaceStyleAnalysisForAgent(
   const transcriptPaths: string[] = [];
   const agentInputReports: IStyleReferenceVideoAnalysis[] = [];
   let currentStage = 'health-check';
+  let currentStageStartedAt = new Date().toISOString();
+  let latestCompletedStageMetrics: TStyleProgressStageMetrics | undefined;
+
+  const enterStage = (stage: string) => {
+    currentStage = stage;
+    currentStageStartedAt = new Date().toISOString();
+  };
+  const buildQueueState = (current?: number, stage?: string) => {
+    const total = videoSources.length;
+    if (!current || current <= 0) {
+      return {
+        completedCount: 0,
+        pendingCount: total,
+        completedNames: [],
+        pendingNames: videoSources.map(item => item.displayName),
+      };
+    }
+    const zeroIndex = Math.max(0, current - 1);
+    const completedCount = stage === 'video-complete' || stage === 'complete'
+      ? Math.min(total, current)
+      : Math.max(0, current - 1);
+    return {
+      completedCount,
+      pendingCount: Math.max(0, total - completedCount - (stage === 'complete' ? 0 : stage === 'video-complete' ? 0 : 1)),
+      completedNames: videoSources.slice(0, completedCount).map(item => item.displayName),
+      pendingNames: stage === 'complete'
+        ? []
+        : videoSources.slice(zeroIndex + 1).map(item => item.displayName),
+    };
+  };
+  const buildStyleExtra = (input: {
+    current?: number;
+    video?: IResolvedStyleVideoSource;
+    clipPath?: string;
+    stageMetrics?: TStyleProgressStageMetrics;
+    stage?: string;
+  }): TStyleProgressExtra => ({
+    activeVideo: input.video && input.current
+      ? {
+        displayName: input.video.displayName,
+        sourcePath: input.video.sourcePath,
+        clipPath: input.clipPath,
+        index: input.current,
+        total: videoSources.length,
+      }
+      : undefined,
+    stageStartedAt: currentStageStartedAt,
+    stageMetrics: input.stageMetrics,
+    queue: buildQueueState(input.current, input.stage ?? currentStage),
+  });
 
   try {
+    enterStage('health-check');
     const health = await ml.health();
     await writeStyleProgress(progressPath, {
       status: 'running',
@@ -185,11 +291,13 @@ export async function prepareWorkspaceStyleAnalysisForAgent(
         health,
         message: 'ML health-check 已完成，开始准备参考视频分析。',
       },
+      extra: buildStyleExtra({ stage: 'health-check' }),
     });
 
     for (let index = 0; index < videoSources.length; index += 1) {
       const video = videoSources[index]!;
       const current = index + 1;
+      const stageMetrics: TStyleProgressStageMetrics = {};
       const clipPath = await prepareStyleClip({
         workspaceRoot: input.workspaceRoot,
         categoryId: category.categoryId,
@@ -201,7 +309,7 @@ export async function prepareWorkspaceStyleAnalysisForAgent(
         category,
       });
 
-      currentStage = 'probe';
+      enterStage('probe');
       await writeStyleProgress(progressPath, {
         status: 'running',
         stage: currentStage,
@@ -216,11 +324,12 @@ export async function prepareWorkspaceStyleAnalysisForAgent(
           clipPath,
           message: '读取参考视频元数据。',
         },
+        extra: buildStyleExtra({ current, video, clipPath, stageMetrics }),
       });
       const probed = await probe(clipPath, runtimeConfig);
       const durationMs = probed.durationMs ?? 0;
 
-      currentStage = 'shot-detect';
+      enterStage('shot-detect');
       await writeStyleProgress(progressPath, {
         status: 'running',
         stage: currentStage,
@@ -235,13 +344,19 @@ export async function prepareWorkspaceStyleAnalysisForAgent(
           clipPath,
           message: '建立镜头级结构。',
         },
+        extra: buildStyleExtra({ current, video, clipPath, stageMetrics }),
       });
       const shots = durationMs > 0
         ? await detectShots(clipPath, 0.3, runtimeConfig, { durationMs })
         : [];
       const rhythm = computeRhythmStats(shots, durationMs);
+      stageMetrics.shotDetect = {
+        durationMs,
+        sceneDetectFps: resolveEffectiveSceneDetectFps({ tools: runtimeConfig, context: { durationMs } }),
+        detectedShots: shots.length,
+      };
 
-      currentStage = 'transcribe';
+      enterStage('transcribe');
       await writeStyleProgress(progressPath, {
         status: 'running',
         stage: currentStage,
@@ -256,8 +371,14 @@ export async function prepareWorkspaceStyleAnalysisForAgent(
           clipPath,
           message: '转写参考视频中的语音内容。',
         },
+        extra: buildStyleExtra({ current, video, clipPath, stageMetrics }),
       });
       const transcriptResult = await transcribe(ml, clipPath, 'zh');
+      stageMetrics.transcribe = {
+        segmentCount: transcriptResult.segments.length,
+        textChars: transcriptResult.fullText.length,
+        roundTripMs: transcriptResult.roundTripMs,
+      };
       const transcriptPath = join(
         getStyleReferenceTranscriptsRoot(input.workspaceRoot, category.categoryId),
         `${video.fileKey}.json`,
@@ -272,7 +393,19 @@ export async function prepareWorkspaceStyleAnalysisForAgent(
       await writeJson(transcriptPath, transcriptDocument);
       transcriptPaths.push(transcriptPath);
 
-      currentStage = 'keyframes';
+      enterStage('keyframes');
+      const keyframeOutputDir = join(
+        getWorkspaceStyleAnalysisKeyframesRoot(input.workspaceRoot, category.categoryId),
+        video.fileKey,
+      );
+      const keyframePlans = durationMs > 0 ? planShotKeyframes(shots, durationMs, 3) : [];
+      const plannedKeyframes = flattenShotKeyframePlans(keyframePlans);
+      stageMetrics.keyframes = {
+        plannedCount: plannedKeyframes.length,
+        extractedCount: 0,
+        activeWorkers: 0,
+        outputDir: keyframeOutputDir,
+      };
       await writeStyleProgress(progressPath, {
         status: 'running',
         stage: currentStage,
@@ -288,19 +421,56 @@ export async function prepareWorkspaceStyleAnalysisForAgent(
           transcriptPath,
           message: '抽取镜头关键帧。',
         },
+        extra: buildStyleExtra({ current, video, clipPath, stageMetrics }),
       });
-      const keyframePlans = durationMs > 0 ? planShotKeyframes(shots, durationMs, 3) : [];
       const keyframes = keyframePlans.length > 0
         ? await extractKeyframes(
           clipPath,
-          join(getWorkspaceStyleAnalysisKeyframesRoot(input.workspaceRoot, category.categoryId), video.fileKey),
-          flattenShotKeyframePlans(keyframePlans),
+          keyframeOutputDir,
+          plannedKeyframes,
           runtimeConfig,
+          {
+            onProgress: async (progress: IKeyframeExtractProgress) => {
+              stageMetrics.keyframes = {
+                plannedCount: progress.plannedCount,
+                extractedCount: progress.extractedCount,
+                activeWorkers: progress.activeWorkers,
+                outputDir: keyframeOutputDir,
+              };
+              await writeStyleProgress(progressPath, {
+                status: 'running',
+                stage: currentStage,
+                current,
+                total: videoSources.length,
+                fileName: video.displayName,
+                category,
+                detail: {
+                  totalVideos: videoSources.length,
+                  currentVideo: video.displayName,
+                  currentSourcePath: video.sourcePath,
+                  clipPath,
+                  transcriptPath,
+                  message: '抽取镜头关键帧。',
+                },
+                extra: buildStyleExtra({ current, video, clipPath, stageMetrics }),
+              });
+            },
+          },
         )
         : [];
       const keyframeGroups = groupKeyframesByShot(keyframePlans, keyframes);
+      stageMetrics.keyframes = {
+        plannedCount: plannedKeyframes.length,
+        extractedCount: keyframes.length,
+        activeWorkers: 0,
+        outputDir: keyframeOutputDir,
+      };
 
-      currentStage = 'vlm';
+      enterStage('vlm');
+      stageMetrics.vlm = {
+        totalGroups: keyframeGroups.length,
+        completedGroups: 0,
+      };
       await writeStyleProgress(progressPath, {
         status: 'running',
         stage: currentStage,
@@ -316,10 +486,43 @@ export async function prepareWorkspaceStyleAnalysisForAgent(
           transcriptPath,
           message: '按镜头分析视觉语言与画面调性。',
         },
+        extra: buildStyleExtra({ current, video, clipPath, stageMetrics }),
       });
       const shotRecognitions = keyframeGroups.length > 0
-        ? await recognizeShotGroups(ml, keyframeGroups)
+        ? await recognizeShotGroups(ml, keyframeGroups, {
+          onProgress: async (progress: IRecognizeShotGroupsProgress) => {
+            stageMetrics.vlm = {
+              totalGroups: progress.totalGroups,
+              completedGroups: progress.completedGroups,
+              currentShotId: progress.currentShotId,
+              currentFrameCount: progress.currentFrameCount,
+              lastRoundTripMs: progress.lastRoundTripMs,
+            };
+            await writeStyleProgress(progressPath, {
+              status: 'running',
+              stage: currentStage,
+              current,
+              total: videoSources.length,
+              fileName: video.displayName,
+              category,
+              detail: {
+                totalVideos: videoSources.length,
+                currentVideo: video.displayName,
+                currentSourcePath: video.sourcePath,
+                clipPath,
+                transcriptPath,
+                message: '按镜头分析视觉语言与画面调性。',
+              },
+              extra: buildStyleExtra({ current, video, clipPath, stageMetrics }),
+            });
+          },
+        })
         : [];
+      stageMetrics.vlm = {
+        ...stageMetrics.vlm,
+        totalGroups: keyframeGroups.length,
+        completedGroups: shotRecognitions.length,
+      };
 
       const reportPath = join(
         getStyleReferenceReportsRoot(input.workspaceRoot, category.categoryId),
@@ -364,7 +567,7 @@ export async function prepareWorkspaceStyleAnalysisForAgent(
       reportPaths.push(reportPath);
       agentInputReports.push(agentInput);
 
-      currentStage = 'video-complete';
+      enterStage('video-complete');
       await writeStyleProgress(progressPath, {
         status: 'running',
         stage: currentStage,
@@ -386,7 +589,11 @@ export async function prepareWorkspaceStyleAnalysisForAgent(
             { label: 'transcript', path: transcriptPath, description: '单视频 ASR 结果。' },
           ],
         },
+        extra: buildStyleExtra({ current, video, clipPath, stageMetrics, stage: 'video-complete' }),
       });
+      latestCompletedStageMetrics = {
+        ...stageMetrics,
+      };
     }
 
     const summaryPath = getWorkspaceStyleAnalysisSummaryPath(input.workspaceRoot, category.categoryId);
@@ -406,6 +613,7 @@ export async function prepareWorkspaceStyleAnalysisForAgent(
     };
     await writeJson(summaryPath, summary);
 
+    enterStage('complete');
     await writeStyleProgress(progressPath, {
       status: 'awaiting_agent',
       stage: 'complete',
@@ -422,6 +630,11 @@ export async function prepareWorkspaceStyleAnalysisForAgent(
           ...reportPaths.map(path => ({ label: basename(path), path, description: '单视频分析结果。' })),
         ],
       },
+      extra: buildStyleExtra({
+        current: videoSources.length,
+        stage: 'complete',
+        stageMetrics: latestCompletedStageMetrics,
+      }),
     });
 
     return {
@@ -443,6 +656,9 @@ export async function prepareWorkspaceStyleAnalysisForAgent(
       detail: {
         totalVideos: videoSources.length,
         message: error instanceof Error ? error.message : String(error),
+      },
+      extra: {
+        stageStartedAt: currentStageStartedAt,
       },
     }).catch(() => undefined);
     throw error;

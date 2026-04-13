@@ -52,6 +52,28 @@ export function getCurrentScriptPath(projectRoot: string): string {
   return join(projectRoot, 'script', 'current.json');
 }
 
+export async function clearScriptArtifactsForStyleChange(projectRoot: string): Promise<void> {
+  const { rm } = await import('node:fs/promises');
+  await Promise.all([
+    rm(getMaterialOverviewFactsPath(projectRoot), { force: true }),
+    rm(getMaterialOverviewPath(projectRoot), { force: true }),
+    rm(getMaterialBundlesPath(projectRoot), { force: true }),
+    rm(join(projectRoot, 'analysis', 'material-digest.json'), { force: true }),
+    rm(join(projectRoot, 'analysis', 'motif-bundles.json'), { force: true }),
+    rm(getSegmentPlanPath(projectRoot), { force: true }),
+    rm(join(projectRoot, 'script', 'segment-plan.drafts.json'), { force: true }),
+    rm(join(projectRoot, 'script', 'segment-plan.approved.json'), { force: true }),
+    rm(getMaterialSlotsPath(projectRoot), { force: true }),
+    rm(join(projectRoot, 'script', 'segment-candidates.json'), { force: true }),
+    rm(join(projectRoot, 'script', 'arrangement-skeletons.json'), { force: true }),
+    rm(join(projectRoot, 'script', 'segment-cards.json'), { force: true }),
+    rm(join(projectRoot, 'script', 'arrangement.current.json'), { force: true }),
+    rm(getOutlinePath(projectRoot), { force: true }),
+    rm(getOutlinePromptPath(projectRoot), { force: true }),
+    rm(getCurrentScriptPath(projectRoot), { force: true }),
+  ]);
+}
+
 export async function loadMaterialOverviewFacts(
   projectRoot: string,
 ): Promise<IProjectMaterialOverviewFacts | null> {

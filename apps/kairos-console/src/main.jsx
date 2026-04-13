@@ -835,47 +835,53 @@ function StylePage({ config, capabilities, jobs, setStyleSources, onSave, busy, 
       </div>
     );
   }
-  const currentCategoryId = resolveCurrentStyleCategory(config, location.search, jobs);
+  const requestedCategoryId = resolveCurrentStyleCategory(config, location.search, jobs);
   const styleCapability = capabilities?.jobs?.find(job => job.jobType === 'style-analysis');
   const activeStyleJobs = (jobs || []).filter(job =>
     job.jobType === 'style-analysis'
       && ['queued', 'running', 'blocked'].includes(job.status),
   );
-  const activeCurrentCategoryJob = activeStyleJobs.find(job => getStyleJobCategoryId(job) === currentCategoryId) || null;
-  const canStartStyleAnalysis = Boolean(currentCategoryId)
-    && !busy['job:style-analysis']
-    && activeStyleJobs.length === 0
-    && styleCapability?.supported !== false;
   return (
     <MonitorLoader
       kind="style"
-      categoryId={currentCategoryId}
+      categoryId={requestedCategoryId}
       emptyLabel="当前分类还没有可展示的风格分析监控数据。"
-      toolbar={(
-        <>
+      toolbar={model => {
+        const resolvedCategoryId = getStyleMonitorCategoryId(model)
+          || requestedCategoryId
+          || config.defaultCategory
+          || config.categories[0]?.categoryId
+          || '';
+        const canStartStyleAnalysis = Boolean(resolvedCategoryId)
+          && !busy['job:style-analysis']
+          && activeStyleJobs.length === 0
+          && styleCapability?.supported !== false;
+        return (
+          <>
           <div className="monitor-toolbar-group">
             <select
-              value={currentCategoryId}
+              value={resolvedCategoryId}
               onChange={event => history.push(buildStylePath(event.target.value))}
             >
               {config.categories.map(category => (
                 <option key={category.categoryId} value={category.categoryId}>{category.displayName}</option>
               ))}
             </select>
-          <Button
-            type={canStartStyleAnalysis ? 'primary' : 'disabled'}
-            disabled={!canStartStyleAnalysis}
-            onClick={() => onRun(currentCategoryId)}
-          >
-            {busy['job:style-analysis'] ? '启动中…' : activeStyleJobs.length > 0 ? 'Style Prep 运行中…' : '启动 Style Prep'}
-          </Button>
+            <Button
+              type={canStartStyleAnalysis ? 'primary' : 'disabled'}
+              disabled={!canStartStyleAnalysis}
+              onClick={() => onRun(resolvedCategoryId)}
+            >
+              {busy['job:style-analysis'] ? '启动中…' : activeStyleJobs.length > 0 ? 'Style Prep 运行中…' : '启动 Style Prep'}
+            </Button>
           </div>
           <div className="monitor-toolbar-meta">
             <span>{`${config.categories.length} 个分类`}</span>
-            {currentCategoryId ? <span>{currentCategoryId}</span> : null}
+            {resolvedCategoryId ? <span>{resolvedCategoryId}</span> : null}
           </div>
-        </>
-      )}
+          </>
+        );
+      }}
       afterMonitor={(
         <StyleSourcesEditor
           config={config}
@@ -1446,7 +1452,7 @@ function resolveCurrentStyleCategory(config, search, jobs = []) {
   if (liveCategoryId) {
     return liveCategoryId;
   }
-  return config.defaultCategory || config.categories[0]?.categoryId || '';
+  return '';
 }
 
 function buildStylePath(categoryId) {
@@ -1458,6 +1464,10 @@ function buildStylePath(categoryId) {
 function getStyleJobCategoryId(job) {
   const value = job?.args?.categoryId;
   return typeof value === 'string' && value.trim() ? value.trim() : '';
+}
+
+function getStyleMonitorCategoryId(model) {
+  return model?.raw?.category?.categoryId || '';
 }
 
 function buildStyleSelectionScriptBriefPayload(brief, styleCategory) {

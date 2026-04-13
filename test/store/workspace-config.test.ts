@@ -197,4 +197,85 @@ describe('workspace config sync', () => {
     expect(styleMarkdown).toContain('guidancePrompt: 重点看 intro 的克制感与叙事节奏。');
     await expect(access(join(stylesRoot, 'catalog.json'))).rejects.toBeTruthy();
   });
+
+  it('clears stale script artifacts when styleCategory changes', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectRoot = await initWorkspaceProject(workspaceRoot, 'project-style-reset', 'Project Style Reset');
+    const stylesRoot = join(workspaceRoot, 'config', 'styles');
+
+    await saveStyleSourcesConfig(workspaceRoot, {
+      defaultCategory: 'travel-doc',
+      categories: [
+        {
+          categoryId: 'travel-doc',
+          displayName: 'Travel Doc',
+          overwriteExisting: false,
+          profilePath: 'travel-doc.md',
+          sources: [],
+        },
+        {
+          categoryId: 'event-doc',
+          displayName: 'Event Doc',
+          overwriteExisting: false,
+          profilePath: 'event-doc.md',
+          sources: [],
+        },
+      ],
+    });
+    await writeFile(join(stylesRoot, 'travel-doc.md'), '# Travel Doc\n', 'utf-8');
+    await writeFile(join(stylesRoot, 'event-doc.md'), '# Event Doc\n', 'utf-8');
+
+    await saveScriptBriefConfig(projectRoot, {
+      projectName: 'Project Style Reset',
+      styleCategory: 'travel-doc',
+      workflowState: 'script_generated',
+      lastAgentDraftAt: '2026-04-05T00:00:00.000Z',
+      lastUserReviewAt: '2026-04-05T01:00:00.000Z',
+      goalDraft: ['旧目标'],
+      constraintDraft: ['旧约束'],
+      planReviewDraft: ['旧审查'],
+      segments: [{
+        segmentId: 'intro',
+        title: '旧开场',
+        notes: ['旧笔记'],
+      }],
+    });
+    await writeFile(join(projectRoot, 'script', 'material-overview.md'), '# old overview', 'utf-8');
+    await writeJson(join(projectRoot, 'script', 'material-overview.facts.json'), { sentinel: true });
+    await writeJson(join(projectRoot, 'analysis', 'material-bundles.json'), [{ id: 'bundle-1' }]);
+    await writeJson(join(projectRoot, 'script', 'segment-plan.json'), { segments: [] });
+    await writeJson(join(projectRoot, 'script', 'material-slots.json'), { segments: [] });
+    await writeJson(join(projectRoot, 'analysis', 'outline.json'), []);
+    await writeFile(join(projectRoot, 'analysis', 'outline-prompt.txt'), 'old prompt', 'utf-8');
+    await writeJson(join(projectRoot, 'script', 'current.json'), []);
+
+    const next = await saveScriptBriefConfig(projectRoot, {
+      projectName: 'Project Style Reset',
+      createdAt: '2026-04-05T00:00:00.000Z',
+      styleCategory: 'event-doc',
+      workflowState: 'await_brief_draft',
+      goalDraft: ['should be cleared'],
+      constraintDraft: ['should be cleared'],
+      planReviewDraft: ['should be cleared'],
+      segments: [{
+        segmentId: 'new-intro',
+        title: '新开场',
+      }],
+    });
+
+    expect(next.styleCategory).toBe('event-doc');
+    expect(next.workflowState).toBe('await_brief_draft');
+    expect(next.goalDraft).toEqual([]);
+    expect(next.constraintDraft).toEqual([]);
+    expect(next.planReviewDraft).toEqual([]);
+    expect(next.segments).toEqual([]);
+    await expect(access(join(projectRoot, 'script', 'material-overview.md'))).rejects.toBeTruthy();
+    await expect(access(join(projectRoot, 'script', 'material-overview.facts.json'))).rejects.toBeTruthy();
+    await expect(access(join(projectRoot, 'analysis', 'material-bundles.json'))).rejects.toBeTruthy();
+    await expect(access(join(projectRoot, 'script', 'segment-plan.json'))).rejects.toBeTruthy();
+    await expect(access(join(projectRoot, 'script', 'material-slots.json'))).rejects.toBeTruthy();
+    await expect(access(join(projectRoot, 'analysis', 'outline.json'))).rejects.toBeTruthy();
+    await expect(access(join(projectRoot, 'analysis', 'outline-prompt.txt'))).rejects.toBeTruthy();
+    await expect(access(join(projectRoot, 'script', 'current.json'))).rejects.toBeTruthy();
+  });
 });

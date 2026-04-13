@@ -69,6 +69,8 @@ description: >-
 - 风格分析过程中产生的关键帧、探测结果、临时摘要等中间产物，统一放在 **当前 workspaceRoot** 下的 `.tmp/`，例如 `.tmp/style-analysis/{category}/`
 - 当前正式链路是 `Supervisor deterministic prep -> awaiting_agent -> Agent final style profile`
 - deterministic prep 必须持续写 `.tmp/style-analysis/{category}/progress.json`，并把逐视频报告与 transcript 落到 `analysis/style-references/`、`analysis/reference-transcripts/`
+- `/style` monitor 默认应回到“最相关的最近分类”，而不是在无显式 `categoryId` 时盲目回 `defaultCategory`
+- `progress.json` 不应只保留粗阶段；至少应能表达当前视频、当前阶段开始时间、`keyframes` 抽帧计数、`vlm` shot-group 识别计数，以及已完成 / 待处理队列摘要
 - 不要把这类临时产物写到 `C:` 盘系统临时目录或用户目录外的随机位置
 - `.tmp/` 应加入 `.gitignore`
 - 当风格档案已经写入 `config/styles/` 且不再需要调试时，默认清理对应的临时目录，只保留正式产物：
@@ -239,6 +241,11 @@ const keyframes = await extractKeyframes(videoPath, outputDir, timestamps);
 const shotGroups = groupKeyframesByShot(shotPlans, keyframes);
 const recognition = await recognizeShotGroups(ml, shotGroups);
 ```
+
+当前 monitor 期望这两个阶段继续补充可见运行态：
+
+- `keyframes`：`plannedCount / extractedCount / activeWorkers / outputDir`
+- `vlm`：`totalGroups / completedGroups / currentShotId / lastRoundTripMs`
 
 每条 `recognition` 应对应一个 shot，并至少包含：
 

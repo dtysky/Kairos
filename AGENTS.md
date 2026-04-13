@@ -48,6 +48,8 @@ Operational lesson that must not be forgotten:
 - `scripts/kairos-supervisor.* start` starts `Supervisor + React console`, but does not start ML and does not auto-resume old jobs
 - `projects/<projectId>/.tmp/media-analyze/progress.json` is durable progress cache, not proof that a live analyze job is running
 - `<workspaceRoot>/.tmp/style-analysis/<category>/progress.json` is also durable progress cache, not proof that a live style-analysis job is running
+- `/style` should resolve one category of truth per monitor view; do not mix default-category metadata with another category's latest job/progress
+- `/style` should surface current video context plus `keyframes / vlm / queue` runtime detail when progress data provides it
 - Kairos-managed top-level jobs must end with `ML stopped`, including success, failure, stop, and interrupt paths
 - if a page looks active but GPU / ML is idle, verify:
   - there is a live `running analyze` job in `Supervisor`
@@ -102,6 +104,7 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
 - Treat `analysis/prepared-assets/` and `analysis/audio-checkpoints/` as durable Analyze resume caches, not canonical downstream inputs.
 - Treat `/script` as a preparation surface by default:
   - `/script` first auto-saves the selected style category
+  - changing `styleCategory` invalidates the previous script run immediately and should clear stale script artifacts before asking Agent to start over
   - Agent drafts `script/material-overview.md` and the initial `script-brief`
   - user reviews and manually saves the brief in `/script`
   - Console / Supervisor then prepare deterministic script inputs
