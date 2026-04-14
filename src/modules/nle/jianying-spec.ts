@@ -135,7 +135,7 @@ export class JianyingDraftBuilder {
   private timeline: IJianyingDraftSpec['timeline'] | null = null;
   private projectId: string | undefined;
   private projectName: string | undefined;
-  private subtitleTrackName: string | null = null;
+  private subtitleTrackNames: string[] = [];
   private warnings = new Set<string>();
   private pathResolutionContextPromise: Promise<IAssetResolutionContext | null> | null = null;
 
@@ -194,7 +194,7 @@ export class JianyingDraftBuilder {
       const kind = mapTrackKind(track.kind);
       const name = buildTrackName(track.role, track.index);
       if (kind === 'text') {
-        this.subtitleTrackName = name;
+        this.subtitleTrackNames.push(name);
       }
 
       this.trackKindMap.set(track.id, kind);
@@ -259,16 +259,38 @@ export class JianyingDraftBuilder {
   }
 
   async addSubtitles(cues: IKtepSubtitle[]): Promise<void> {
-    const trackName = this.ensureSubtitleTrack();
-    this.subtitles = cues.map(cue => ({
-      id: cue.id,
-      trackName,
-      text: cue.text,
-      startMs: cue.startMs,
-      endMs: cue.endMs,
-      style: { size: this.config.subtitleSize },
-      clipSettings: { transform_y: this.config.subtitleY },
-    }));
+    type ISubtitleLane = {
+      trackName: string;
+      endMs: number;
+    };
+
+    const lanes: ISubtitleLane[] = [];
+    const subtitles: IJianyingSubtitleSpec[] = [];
+    const sortedCues = [...cues].sort((left, right) => (
+      left.startMs - right.startMs
+      || left.endMs - right.endMs
+      || left.id.localeCompare(right.id)
+    ));
+
+    for (const cue of sortedCues) {
+      const lane = this.resolveSubtitleLane(lanes, cue);
+      subtitles.push({
+        id: cue.id,
+        trackName: lane.trackName,
+        text: cue.text,
+        startMs: cue.startMs,
+        endMs: cue.endMs,
+        style: { size: this.config.subtitleSize },
+        clipSettings: { transform_y: this.config.subtitleY },
+      });
+    }
+
+    this.subtitles = subtitles.sort((left, right) => (
+      left.trackName.localeCompare(right.trackName)
+      || left.startMs - right.startMs
+      || left.endMs - right.endMs
+      || left.id.localeCompare(right.id)
+    ));
   }
 
   build(): IJianyingDraftSpec {
@@ -430,22 +452,41 @@ export class JianyingDraftBuilder {
     return this.assetPaths.get(clip.assetId);
   }
 
-  private ensureSubtitleTrack(): string {
-    if (this.subtitleTrackName) return this.subtitleTrackName;
+  private resolveSubtitleLane(
+    lanes: Array<{ trackName: string; endMs: number }>,
+    cue: IKtepSubtitle,
+  ): { trackName: string; endMs: number } {
+    const reusableLane = lanes.find(lane => cue.startMs >= lane.endMs);
+    if (reusableLane) {
+      reusableLane.endMs = cue.endMs;
+      return reusableLane;
+    }
+
+    const createdLane = {
+      trackName: this.ensureSubtitleTrack(lanes.length),
+      endMs: cue.endMs,
+    };
+    lanes.push(createdLane);
+    return createdLane;
+  }
+
+  private ensureSubtitleTrack(index: number): string {
+    const existingTrackName = this.subtitleTrackNames[index];
+    if (existingTrackName) return existingTrackName;
 
     const generatedName = createUniqueTrackName(this.tracks.map(track => track.name), 'subtitles');
     const generatedTrack: IJianyingTrackSpec = {
-      id: CGENERATED_SUBTITLE_TRACK_ID,
+      id: index === 0 ? CGENERATED_SUBTITLE_TRACK_ID : `${CGENERATED_SUBTITLE_TRACK_ID}-${index}`,
       kind: 'text',
       role: 'caption',
-      index: 0,
+      index,
       name: generatedName,
-      relativeIndex: 999,
+      relativeIndex: 999 + index,
     };
     this.tracks.push(generatedTrack);
     this.trackKindMap.set(generatedTrack.id, generatedTrack.kind);
     this.idMap.tracks.set(generatedTrack.id, generatedTrack.name);
-    this.subtitleTrackName = generatedTrack.name;
+    this.subtitleTrackNames.push(generatedTrack.name);
     return generatedTrack.name;
   }
 }

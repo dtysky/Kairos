@@ -31,7 +31,7 @@ const CDIRS = [
 ] as const;
 
 const IIngestRoots = z.object({ roots: z.array(IMediaRoot) });
-type IIngestRoots = z.infer<typeof IIngestRoots>;
+export type IIngestRoots = z.infer<typeof IIngestRoots>;
 
 const IRuntimeConfig = z.object({
   ffmpegPath: z.string().optional(),
@@ -124,6 +124,20 @@ export async function loadProject(root: string): Promise<IKtepProject> {
 export async function loadIngestRoots(root: string): Promise<IIngestRoots> {
   const data = await readJsonOrNull(join(root, 'config/ingest-roots.json'), IIngestRoots);
   return data ?? { roots: [] };
+}
+
+export async function saveIngestRoots(root: string, ingestRoots: IIngestRoots): Promise<IIngestRoots> {
+  const normalized = IIngestRoots.parse({
+    roots: ingestRoots.roots.map(item => ({
+      ...item,
+      label: item.label?.trim() || undefined,
+      description: item.description?.trim() || undefined,
+      notes: item.notes?.map(note => note.trim()).filter(Boolean),
+      tags: item.tags?.map(tag => tag.trim()).filter(Boolean),
+    })),
+  });
+  await writeJson(join(root, 'config/ingest-roots.json'), normalized);
+  return normalized;
 }
 
 export async function loadRuntimeConfig(root: string): Promise<IRuntimeConfig> {

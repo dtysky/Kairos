@@ -254,12 +254,13 @@ async function safeProbe(
 }
 
 async function refreshProjectChronology(projectRoot: string): Promise<number> {
-  const [assets, reports, existing] = await Promise.all([
+  const [assets, reports, existing, { roots }] = await Promise.all([
     loadAssets(projectRoot),
     loadAssetReports(projectRoot),
     loadChronology(projectRoot),
+    loadIngestRoots(projectRoot),
   ]);
-  const chronology = buildMediaChronology(assets, reports, existing);
+  const chronology = buildMediaChronology(assets, reports, existing, roots);
   await writeChronology(projectRoot, chronology);
   return chronology.length;
 }

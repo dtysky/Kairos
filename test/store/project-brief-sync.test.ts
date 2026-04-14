@@ -110,4 +110,41 @@ describe('syncWorkspaceProjectBrief', () => {
       },
     ]);
   });
+
+  it('preserves root-level clock offsets when syncing mapped roots from project brief', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-c';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Test Project');
+    const cameraRoot = 'C:\\media\\camera';
+
+    await writeJson(join(projectRoot, 'config/ingest-roots.json'), {
+      roots: [{
+        id: 'root-media-camera',
+        enabled: true,
+        label: 'camera',
+        description: '已有目录',
+        priority: 1,
+        clockOffsetMs: -611_000,
+      }],
+    });
+    await writeWorkspaceProjectBrief(workspaceRoot, projectId, [
+      { path: cameraRoot, description: '主机位' },
+    ]);
+
+    const result = await syncWorkspaceProjectBrief(workspaceRoot, projectId);
+
+    expect(result.ingestRoots).toEqual([
+      expect.objectContaining({
+        id: 'root-media-camera',
+        clockOffsetMs: -611_000,
+        description: '主机位',
+      }),
+    ]);
+
+    const ingestRoots = await loadIngestRoots(projectRoot);
+    expect(ingestRoots.roots[0]).toEqual(expect.objectContaining({
+      id: 'root-media-camera',
+      clockOffsetMs: -611_000,
+    }));
+  });
 });

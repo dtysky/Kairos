@@ -20,7 +20,8 @@
    - `drive` 的 `speech` 和 `visual` windows / slices 已正式分语义，并通过 `semanticKind` 继续向后传递
 2. 脚本召回和 outline 已消费 transcript 证据
    - transcript 不再只是附属说明，而是候选召回和 beat 写作的正式输入
-   - 如果某拍最终保留原声，outline / timeline 会把选区吸附到完整 `transcriptSegments` 边界；必要时 beat 时长会向上扩，避免切在句中
+   - 如果某拍最终保留原声，outline / timeline 会把选区优先裁成 transcript-driven speech islands；粗剪时长与字幕以这些语音岛边界为准，不再回退解释性旁白
+   - `source-speech` 当前以过滤后的口语 transcript 为真值：导航播报、录制口令和设备提示不应进入 speech islands，也不应成为 source-speech 字幕
 3. 风格分析与脚本阶段的交接语义已经收口
    - Workspace 风格档案不再只是“叙事语气说明”，还应明确输出阶段节奏、素材角色、运镜语法、功能位分配、素材禁区 / 镜头禁区与稳定参数
    - 这些信息默认是 Script / recall / outline 的直接输入，不应主要依赖 LLM 重新从长文里猜一次镜头组织规则
@@ -30,8 +31,9 @@
 4. 字幕已支持双路径
    - 旁白路径：来自 `beat.text`
    - 原声路径：来自 `slice.transcriptSegments`
-   - `preserveNatSound / muteSource` 为显式覆盖；未标注时允许根据 transcript 匹配度、`speechCoverage`、segment role 自动推论
-   - 对 source-speech 字幕，时间线会先做清洗、强切句与噪声判断；若 ASR 明显不适合作为成片字幕，则回退到 `beat.text`
+   - `preserveNatSound / muteSource` 为显式覆盖；未标注时，只要主视频 selection 有可用 transcript / speech coverage，粗剪默认优先保留原声
+   - 对 source-speech 字幕，时间线会先做清洗、强切句与噪声判断；若某个 cue 明显不适合作为成片字幕，只跳过该 cue；只有整段都不可读时，才保留原声且不回退到 `beat.text`
+   - 单个粗 transcript segment 被拆成多条字幕时，时间线应按 cue 长度 / 语速做加权重对时，而不是平均分配整段时长
 5. GPS 链路已形成当前最小闭环
    - 项目内外部轨迹统一收口到 `gps/tracks/*.gpx` 与 `gps/merged.json`
    - `embedded GPS` 的正式语义已扩展为“素材同源且可绑定”的 GPS：文件 metadata / EXIF、同 basename `.SRT`、以及 root 级 DJI FlightRecord 日志切片（按文件头识别，不依赖强文件名）
@@ -44,6 +46,10 @@
   - `config/manual-itinerary.md` 现在有两层正式语义：正文用于弱空间线索，末尾“素材时间校正”配置用于人工 capture time override；未解决的条目会阻塞 Analyze
   - 时间阻塞当前只针对弱时间源；高置信 `exif` / `manual` 不会再被文件名日期直接反驳
   - 时间阻塞当前会同时参考项目时间线、文件名完整时间戳漂移，以及已纳入 `Pharos` trip 的整体时间边界
+  - 项目内跨设备时钟漂移当前正式通过 ingest root 统一修正，而不是继续让 timeline 末端猜：
+    - `config/ingest-roots.json` 的 `IMediaRoot.clockOffsetMs?` 表示项目内该 root 的统一时钟偏移
+    - 单素材 `captureTimeOverrides` 继续存在，但只作为 root offset 上层例外
+    - `media/chronology.json` 的 `sortCapturedAt` 当前是唯一正式时序真值，优先级为 `capturedAtOverride -> asset.capturedAt + root.clockOffsetMs -> asset.capturedAt`
 6. 正式流程与当前实现的关系已经更明确
    - 正式主链仍以 `Pharos` 为主输入
    - 当前实现仍是临时承载版本，但已经覆盖主链中的多个阶段
@@ -62,7 +68,12 @@
    - 时间线默认输出规格改为项目级可配置，fallback 为 `3840x2160 @ 30fps`
    - 当某拍不走 source speech 时，命中的视频 clip 会带上“静音原音”意图，由导出适配器映射到具体 NLE
    - 显式 `beat.actions.speed` 当前只是请求信号，只有 `drive / aerial` clip 会消费；其他类型 clip 即使同拍也强制保持 `1x`
-   - clip placement 当前优先贴合 `beat.targetDurationMs`，不会再让显式 speed beat 按原始 source 时长自由漂移
+   - 对 silent `drive / aerial` 粗剪 beat，如果 Analyze 已给出 `speedCandidate` 且脚本没有显式写 `actions.speed`，时间线默认按 `2x` 自动加速
+   - clip placement 当前默认保留 selection 的自然 source 时长 / edit-friendly bounds；`targetDurationMs` 在粗剪里只保留为可选审阅提示
+- 如果同一 `asset` 同时产出 source-speech 与 silent `drive / aerial`，时间线应先锁定 source-speech 的 source ranges，再把 silent montage 剪成非重叠 remainder；同一 source window 不得同时出现在两条路径里
+  - 如果同一 `drive / aerial asset` 被多个 silent montage beat 重复引用，placement 还应继续扣掉前面已消费的 source ranges；后续 beat 只能使用新的 remainder
+     - photo-only beat 默认落成 `1s` 静默镜头；只有显式 `holdMs` 才延长，且默认不生成字幕
+- Timeline 的 chronology guard、beat 排序与 selection 排序当前都必须统一消费 `media/chronology.json` 的 `sortCapturedAt`，不再允许私自回退到原始 `asset.capturedAt`
 9. Analyze 恢复与资源口径已经补到项目级正式设计
    - coarse prepared state 会写入 `analysis/prepared-assets/<assetId>.json`，只保存 finalize 之前的准备输入
    - ASR / protection 中间态会写入 `analysis/audio-checkpoints/<assetId>.json`，当前正式保存口径是 selected transcript、transcript source、audio health 与 protection routing
@@ -173,6 +184,7 @@ flowchart TD
 - 项目初始化会直接创建 `projects/<projectId>/pharos/`；Console 读取项目配置时也应补齐缺失目录，而不是继续要求用户手动建根目录
 - `/ingest-gps` 当前应明确展示这个固定目录，并提醒用户把 `trip_id/plan.json`、`record.json` 与 `gpx/` 镜像投放到这里
 - `project-brief.md` 只承担可选 trip 筛选语义，不再配置外部 `Pharos` 目录路径
+- `/ingest-gps` 除了单素材“素材时间校正”卡片外，当前还应并列提供 root 级设备时钟偏移 editor，用 `±HH:MM:SS` 输入并保存 `clockOffsetMs`
 - 主链消费的是项目当前采用的素材版本，它可以是原始素材，也可以是独立调色链路产出的版本
 - `DaVinci color` 可以独立运行、多次更新，并在需要时产出供主链消费的素材版本
 - 若主链消费的是派生素材版本，则该版本必须保留媒体创建时间、`create_time`、GPS 等关键元信息，避免破坏 chronology、Pharos 对齐与空间推断
@@ -401,8 +413,9 @@ src/modules/script/
      - `arrangementStructure` 主导结构决策
      - `narrationConstraints` 只弱影响表达
      - 当现有 style 信号明确偏 `chronology / route continuity / continuous process` 时，prep 会先建立单调递增的时间带，再让各段只在合法时间带内召回素材
+     - 粗剪 recall 默认是高召回保留，不再做固定上限的代表性抽样；`material-bundles` 是全量索引，`material-slots` 可以展开成多 slot / 多 beat
      - 关键过程视频若承载不可替代的时间推进、事件推进、人物关系推进或有效原声，应保留成独立 beat，而不是被 summary 段或更静态的成果材料吞掉
-     - 段落预算先由素材容量反推（关键视频、可保留原声、结果照片组、事件节点），style 只继续负责节奏修正与上下限
+     - `targetDurationMs` 只保留为可选审阅提示，不再驱动粗剪召回、裁剪或扩展
   → 由 Agent 存储 `script/current.json` + 版本快照
 ```
 
@@ -448,6 +461,7 @@ src/modules/cut/
 
 - Timeline placement 不再把单张照片当作默认的预算填充器；若脚本没有显式长停要求，照片应尽量保持短自然停留
 - 当 chronology guardrail 检测到倒序时，placement 会先尝试同段内安全重排；仍无法恢复合法顺序时应直接拒绝生成，而不是静默产出错序成片
+- Script prep 与 Timeline placement 当前共享同一份 chronology 真值；root 级 `clockOffsetMs` 变化后必须先刷新 `media/chronology.json`，再重建 script prep / script / timeline，不能继续沿用旧顺序产物
 
 ### Layer 3 — 交互层 (`src/skill/`)
 

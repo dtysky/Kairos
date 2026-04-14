@@ -3,7 +3,7 @@ import type { IKtepAsset, IKtepScript, IKtepSlice } from '../../src/protocol/sch
 import { placeClips } from '../../src/modules/timeline-core/placement.js';
 
 describe('placeClips', () => {
-  it('does not stretch a single photo to absorb leftover beat budget', () => {
+  it('keeps a single photo at the 1s rough-cut default', () => {
     const assets: IKtepAsset[] = [
       {
         id: 'asset-photo',
@@ -45,7 +45,7 @@ describe('placeClips', () => {
 
     expect(clips).toHaveLength(1);
     expect(clips[0]?.timelineInMs).toBe(0);
-    expect(clips[0]?.timelineOutMs).toBe(5_000);
+    expect(clips[0]?.timelineOutMs).toBe(1_000);
   });
 
   it('keeps serial video selections on a single primary track', () => {
@@ -133,7 +133,7 @@ describe('placeClips', () => {
     ]);
   });
 
-  it('keeps legacy stretching when no edit bounds are available', () => {
+  it('keeps narration-driven video on its natural source duration when no edit bounds are available', () => {
     const assets: IKtepAsset[] = [
       {
         id: 'asset-drive',
@@ -185,11 +185,11 @@ describe('placeClips', () => {
       sourceInMs: 2000,
       sourceOutMs: 3000,
       timelineInMs: 0,
-      timelineOutMs: 4800,
+      timelineOutMs: 1000,
     });
   });
 
-  it('prefers edit-friendly slice bounds before stretching to the beat budget', () => {
+  it('prefers edit-friendly slice bounds without stretching to a beat budget', () => {
     const assets: IKtepAsset[] = [
       {
         id: 'asset-drive',
@@ -241,7 +241,7 @@ describe('placeClips', () => {
       sourceInMs: 0,
       sourceOutMs: 6000,
       timelineInMs: 0,
-      timelineOutMs: 8000,
+      timelineOutMs: 6000,
     });
     expect(clips[0]?.speed).toBeUndefined();
   });
@@ -301,6 +301,200 @@ describe('placeClips', () => {
       speed: 5,
       timelineInMs: 0,
       timelineOutMs: 2000,
+    });
+  });
+
+  it('auto-applies 2x speed for silent drive rough cuts when speedCandidate is present', () => {
+    const assets: IKtepAsset[] = [
+      {
+        id: 'asset-drive',
+        kind: 'video',
+        sourcePath: 'drive.mp4',
+        displayName: 'drive.mp4',
+      },
+    ];
+    const slices: IKtepSlice[] = [
+      {
+        id: 'slice-drive',
+        assetId: 'asset-drive',
+        type: 'drive',
+        sourceInMs: 0,
+        sourceOutMs: 10_000,
+        speedCandidate: {
+          sourceWindow: { startMs: 0, endMs: 10_000 },
+          suggestedSpeeds: [2, 5],
+        },
+        labels: [],
+        placeHints: [],
+      },
+    ];
+    const script: IKtepScript[] = [{
+      id: 'segment-1',
+      role: 'scene',
+      narration: 'test',
+      linkedSliceIds: ['slice-drive'],
+      beats: [
+        {
+          id: 'beat-1',
+          text: '静默行车素材默认加到 2x。',
+          actions: {
+            muteSource: true,
+          },
+          selections: [{
+            assetId: 'asset-drive',
+            sliceId: 'slice-drive',
+            sourceInMs: 0,
+            sourceOutMs: 10_000,
+          }],
+          linkedSliceIds: ['slice-drive'],
+        },
+      ],
+    }];
+
+    const { clips } = placeClips(script, slices, assets);
+
+    expect(clips).toHaveLength(1);
+    expect(clips[0]).toMatchObject({
+      sourceInMs: 0,
+      sourceOutMs: 10_000,
+      speed: 2,
+      timelineInMs: 0,
+      timelineOutMs: 5000,
+    });
+  });
+
+  it('does not auto-apply speed when a drive beat preserves source speech', () => {
+    const assets: IKtepAsset[] = [
+      {
+        id: 'asset-drive',
+        kind: 'video',
+        sourcePath: 'drive.mp4',
+        displayName: 'drive.mp4',
+      },
+    ];
+    const slices: IKtepSlice[] = [
+      {
+        id: 'slice-drive',
+        assetId: 'asset-drive',
+        type: 'drive',
+        sourceInMs: 0,
+        sourceOutMs: 4_000,
+        speedCandidate: {
+          sourceWindow: { startMs: 0, endMs: 4_000 },
+          suggestedSpeeds: [2, 5],
+        },
+        transcriptSegments: [{
+          startMs: 0,
+          endMs: 2_000,
+          text: '先沿着这条路进去。',
+        }],
+        labels: [],
+        placeHints: [],
+      },
+    ];
+    const script: IKtepScript[] = [{
+      id: 'segment-1',
+      role: 'scene',
+      narration: 'test',
+      linkedSliceIds: ['slice-drive'],
+      beats: [
+        {
+          id: 'beat-1',
+          text: '先沿着这条路进去。',
+          actions: {
+            preserveNatSound: true,
+          },
+          selections: [{
+            assetId: 'asset-drive',
+            sliceId: 'slice-drive',
+            sourceInMs: 0,
+            sourceOutMs: 4_000,
+          }],
+          linkedSliceIds: ['slice-drive'],
+        },
+      ],
+    }];
+
+    const { clips } = placeClips(script, slices, assets);
+
+    expect(clips).toHaveLength(1);
+    expect(clips[0]).toMatchObject({
+      sourceInMs: 0,
+      sourceOutMs: 2_000,
+      timelineInMs: 0,
+      timelineOutMs: 2_000,
+    });
+    expect(clips[0]?.speed).toBeUndefined();
+  });
+
+  it('anchors clean source-speech clips directly to transcript boundaries without fixed padding', () => {
+    const assets: IKtepAsset[] = [
+      {
+        id: 'asset-drive',
+        kind: 'video',
+        sourcePath: 'C0218.MP4',
+        displayName: 'C0218.MP4',
+        metadata: {
+          hasAudioStream: true,
+          audioStreamCount: 1,
+        },
+      },
+    ];
+    const slices: IKtepSlice[] = [
+      {
+        id: 'slice-drive',
+        assetId: 'asset-drive',
+        type: 'drive',
+        sourceInMs: 0,
+        sourceOutMs: 8_512,
+        transcriptSegments: [
+          {
+            startMs: 0,
+            endMs: 2_000,
+            text: '鲜鱼没有戴长脚',
+          },
+          {
+            startMs: 2_000,
+            endMs: 4_000,
+            text: '所以只能在镜面拍',
+          },
+        ],
+        labels: [],
+        placeHints: [],
+      },
+    ];
+    const script: IKtepScript[] = [{
+      id: 'segment-1',
+      role: 'scene',
+      narration: 'test',
+      linkedSliceIds: ['slice-drive'],
+      beats: [
+        {
+          id: 'beat-1',
+          text: '鲜鱼没有戴长脚 所以只能在镜面拍',
+          actions: {
+            preserveNatSound: true,
+          },
+          selections: [{
+            assetId: 'asset-drive',
+            sliceId: 'slice-drive',
+            sourceInMs: 0,
+            sourceOutMs: 8_512,
+          }],
+          linkedSliceIds: ['slice-drive'],
+        },
+      ],
+    }];
+
+    const { clips } = placeClips(script, slices, assets);
+
+    expect(clips).toHaveLength(1);
+    expect(clips[0]).toMatchObject({
+      assetId: 'asset-drive',
+      sourceInMs: 0,
+      sourceOutMs: 4_000,
+      timelineInMs: 0,
+      timelineOutMs: 4_000,
     });
   });
 
@@ -380,14 +574,14 @@ describe('placeClips', () => {
       assetId: 'asset-drive',
       speed: 5,
       timelineInMs: 0,
-      timelineOutMs: 1667,
+      timelineOutMs: 2000,
     });
     expect(clips[1]).toMatchObject({
       assetId: 'asset-broll',
       sourceInMs: 0,
-      sourceOutMs: 3333,
-      timelineInMs: 1667,
-      timelineOutMs: 5000,
+      sourceOutMs: 4_000,
+      timelineInMs: 2000,
+      timelineOutMs: 6000,
     });
     expect(clips[1]?.speed).toBeUndefined();
   });
@@ -450,7 +644,7 @@ describe('placeClips', () => {
     expect(clips[0]?.speed).toBeUndefined();
   });
 
-  it('expands legal aerial speed clips within bounds to better match the beat budget', () => {
+  it('keeps legal aerial speed clips on their natural accelerated duration', () => {
     const assets: IKtepAsset[] = [
       {
         id: 'asset-aerial',
@@ -503,10 +697,10 @@ describe('placeClips', () => {
     expect(clips).toHaveLength(1);
     expect(clips[0]).toMatchObject({
       sourceInMs: 0,
-      sourceOutMs: 24_000,
+      sourceOutMs: 8_000,
       speed: 4,
       timelineInMs: 0,
-      timelineOutMs: 6_000,
+      timelineOutMs: 2_000,
     });
   });
 
@@ -779,6 +973,360 @@ describe('placeClips', () => {
     expect(clips[0]?.muteAudio).toBeUndefined();
   });
 
+  it('splits source-speech drive beats into speech islands and removes long silent gaps', () => {
+    const assets: IKtepAsset[] = [
+      {
+        id: 'asset-drive',
+        kind: 'video',
+        sourcePath: 'drive.mp4',
+        displayName: 'drive.mp4',
+        metadata: {
+          hasAudioStream: true,
+          audioStreamCount: 1,
+        },
+      },
+    ];
+    const slices: IKtepSlice[] = [
+      {
+        id: 'slice-drive',
+        assetId: 'asset-drive',
+        type: 'drive',
+        sourceInMs: 0,
+        sourceOutMs: 10_000,
+        transcriptSegments: [
+          {
+            startMs: 0,
+            endMs: 1_000,
+            text: '先直走。',
+          },
+          {
+            startMs: 1_500,
+            endMs: 2_500,
+            text: '看到路口再右转。',
+          },
+          {
+            startMs: 5_500,
+            endMs: 6_500,
+            text: '现在已经快到了。',
+          },
+        ],
+        labels: [],
+        placeHints: [],
+      },
+    ];
+    const script: IKtepScript[] = [{
+      id: 'segment-1',
+      role: 'scene',
+      narration: 'test',
+      linkedSliceIds: ['slice-drive'],
+      beats: [
+        {
+          id: 'beat-1',
+          text: '先直走，看到路口再右转，现在已经快到了。',
+          actions: {
+            preserveNatSound: true,
+          },
+          selections: [{
+            assetId: 'asset-drive',
+            sliceId: 'slice-drive',
+            sourceInMs: 0,
+            sourceOutMs: 10_000,
+          }],
+          linkedSliceIds: ['slice-drive'],
+        },
+      ],
+    }];
+
+    const { clips } = placeClips(script, slices, assets);
+
+    expect(clips).toHaveLength(2);
+    expect(clips[0]).toMatchObject({
+      assetId: 'asset-drive',
+      sourceInMs: 0,
+      sourceOutMs: 2_500,
+      timelineInMs: 0,
+      timelineOutMs: 2_500,
+    });
+    expect(clips[1]).toMatchObject({
+      assetId: 'asset-drive',
+      sourceInMs: 5_500,
+      sourceOutMs: 6_500,
+      timelineInMs: 2_500,
+      timelineOutMs: 3_500,
+    });
+    expect(clips.every(clip => clip.speed == null)).toBe(true);
+  });
+
+  it('filters navigation and device-command transcript tails out of source-speech windows', () => {
+    const assets: IKtepAsset[] = [
+      {
+        id: 'asset-drive',
+        kind: 'video',
+        sourcePath: 'C0195.MP4',
+        displayName: 'C0195.MP4',
+        metadata: {
+          hasAudioStream: true,
+          audioStreamCount: 1,
+        },
+      },
+    ];
+    const slices: IKtepSlice[] = [
+      {
+        id: 'slice-drive',
+        assetId: 'asset-drive',
+        type: 'drive',
+        sourceInMs: 17_500,
+        sourceOutMs: 64_576,
+        transcriptSegments: [
+          {
+            startMs: 18_000,
+            endMs: 36_700,
+            text: '刚刚这边已经开始堵了',
+          },
+          {
+            startMs: 38_700,
+            endMs: 51_000,
+            text: '沿S33南光高速继续行驶9.1公里',
+          },
+          {
+            startMs: 51_500,
+            endMs: 52_000,
+            text: '请集中注意力',
+          },
+          {
+            startMs: 53_000,
+            endMs: 53_500,
+            text: '拍摄启动',
+          },
+          {
+            startMs: 62_000,
+            endMs: 64_000,
+            text: '停止录像',
+          },
+        ],
+        labels: [],
+        placeHints: [],
+      },
+    ];
+    const script: IKtepScript[] = [{
+      id: 'segment-1',
+      role: 'scene',
+      narration: 'test',
+      linkedSliceIds: ['slice-drive'],
+      beats: [
+        {
+          id: 'beat-1',
+          text: '刚刚这边已经开始堵了',
+          actions: {
+            preserveNatSound: true,
+          },
+          selections: [{
+            assetId: 'asset-drive',
+            sliceId: 'slice-drive',
+            sourceInMs: 17_500,
+            sourceOutMs: 64_576,
+          }],
+          linkedSliceIds: ['slice-drive'],
+        },
+      ],
+    }];
+
+    const { clips } = placeClips(script, slices, assets);
+
+    expect(clips).toHaveLength(1);
+    expect(clips[0]).toMatchObject({
+      assetId: 'asset-drive',
+      sourceInMs: 18_000,
+      sourceOutMs: 36_700,
+      timelineInMs: 0,
+      timelineOutMs: 18_700,
+    });
+    expect(clips[0]?.speed).toBeUndefined();
+  });
+
+  it('removes source-speech-owned windows from silent drive montage on the same asset', () => {
+    const assets: IKtepAsset[] = [
+      {
+        id: 'asset-drive',
+        kind: 'video',
+        sourcePath: 'drive.mp4',
+        displayName: 'drive.mp4',
+        metadata: {
+          hasAudioStream: true,
+          audioStreamCount: 1,
+        },
+      },
+    ];
+    const slices: IKtepSlice[] = [
+      {
+        id: 'slice-drive',
+        assetId: 'asset-drive',
+        type: 'drive',
+        sourceInMs: 0,
+        sourceOutMs: 8_000,
+        speedCandidate: {
+          sourceWindow: { startMs: 0, endMs: 8_000 },
+          suggestedSpeeds: [2, 5],
+        },
+        transcriptSegments: [
+          {
+            startMs: 1_000,
+            endMs: 3_000,
+            text: '现在先从这边进去',
+          },
+        ],
+        labels: [],
+        placeHints: [],
+      },
+    ];
+    const script: IKtepScript[] = [{
+      id: 'segment-1',
+      role: 'scene',
+      narration: 'test',
+      linkedSliceIds: ['slice-drive'],
+      beats: [
+        {
+          id: 'beat-speech',
+          text: '现在先从这边进去',
+          actions: {
+            preserveNatSound: true,
+          },
+          selections: [{
+            assetId: 'asset-drive',
+            sliceId: 'slice-drive',
+            sourceInMs: 0,
+            sourceOutMs: 5_000,
+          }],
+          linkedSliceIds: ['slice-drive'],
+        },
+        {
+          id: 'beat-silent',
+          text: '静默行车',
+          actions: {
+            muteSource: true,
+          },
+          selections: [{
+            assetId: 'asset-drive',
+            sliceId: 'slice-drive',
+            sourceInMs: 0,
+            sourceOutMs: 5_000,
+          }],
+          linkedSliceIds: ['slice-drive'],
+        },
+      ],
+    }];
+
+    const { clips } = placeClips(script, slices, assets);
+
+    expect(clips).toHaveLength(2);
+    expect(clips[0]).toMatchObject({
+      linkedScriptBeatId: 'beat-speech',
+      sourceInMs: 1_000,
+      sourceOutMs: 3_000,
+      timelineInMs: 0,
+      timelineOutMs: 2_000,
+    });
+    expect(clips[1]).toMatchObject({
+      linkedScriptBeatId: 'beat-silent',
+      sourceInMs: 3_000,
+      sourceOutMs: 5_000,
+      speed: 2,
+      timelineInMs: 2_000,
+      timelineOutMs: 3_000,
+    });
+  });
+
+  it('removes already-used silent drive windows from later beats on the same asset', () => {
+    const assets: IKtepAsset[] = [
+      {
+        id: 'asset-drive',
+        kind: 'video',
+        sourcePath: 'drive.mp4',
+        displayName: 'drive.mp4',
+      },
+    ];
+    const slices: IKtepSlice[] = [
+      {
+        id: 'slice-drive-1',
+        assetId: 'asset-drive',
+        type: 'drive',
+        sourceInMs: 13_450,
+        sourceOutMs: 51_125,
+        speedCandidate: {
+          sourceWindow: { startMs: 13_450, endMs: 51_125 },
+          suggestedSpeeds: [2, 5],
+        },
+        labels: [],
+        placeHints: [],
+      },
+      {
+        id: 'slice-drive-2',
+        assetId: 'asset-drive',
+        type: 'drive',
+        sourceInMs: 17_500,
+        sourceOutMs: 64_576,
+        speedCandidate: {
+          sourceWindow: { startMs: 17_500, endMs: 64_576 },
+          suggestedSpeeds: [2, 5],
+        },
+        labels: [],
+        placeHints: [],
+      },
+    ];
+    const script: IKtepScript[] = [{
+      id: 'segment-1',
+      role: 'scene',
+      narration: 'test',
+      linkedSliceIds: ['slice-drive-1', 'slice-drive-2'],
+      beats: [
+        {
+          id: 'beat-silent-1',
+          text: '',
+          actions: {
+            muteSource: true,
+          },
+          selections: [{
+            assetId: 'asset-drive',
+            sliceId: 'slice-drive-1',
+            sourceInMs: 13_450,
+            sourceOutMs: 51_125,
+          }],
+          linkedSliceIds: ['slice-drive-1'],
+        },
+        {
+          id: 'beat-silent-2',
+          text: '',
+          actions: {
+            muteSource: true,
+          },
+          selections: [{
+            assetId: 'asset-drive',
+            sliceId: 'slice-drive-2',
+            sourceInMs: 17_500,
+            sourceOutMs: 64_576,
+          }],
+          linkedSliceIds: ['slice-drive-2'],
+        },
+      ],
+    }];
+
+    const { clips } = placeClips(script, slices, assets);
+
+    expect(clips).toHaveLength(2);
+    expect(clips[0]).toMatchObject({
+      linkedScriptBeatId: 'beat-silent-1',
+      sourceInMs: 13_450,
+      sourceOutMs: 51_125,
+      speed: 2,
+    });
+    expect(clips[1]).toMatchObject({
+      linkedScriptBeatId: 'beat-silent-2',
+      sourceInMs: 51_125,
+      sourceOutMs: 64_576,
+      speed: 2,
+    });
+  });
+
   it('routes protected sidecar audio onto a nat track when report prefers fallback', () => {
     const assets: IKtepAsset[] = [
       {
@@ -879,6 +1427,54 @@ describe('placeClips', () => {
     });
   });
 
+  it('extends photo clips only when holdMs is explicitly requested', () => {
+    const assets: IKtepAsset[] = [
+      {
+        id: 'asset-photo',
+        kind: 'photo',
+        sourcePath: 'photo.jpg',
+        displayName: 'photo.jpg',
+      },
+    ];
+    const slices: IKtepSlice[] = [
+      {
+        id: 'slice-photo',
+        assetId: 'asset-photo',
+        type: 'photo',
+        labels: [],
+        placeHints: [],
+      },
+    ];
+    const script: IKtepScript[] = [{
+      id: 'segment-1',
+      role: 'scene',
+      narration: 'test',
+      linkedSliceIds: ['slice-photo'],
+      beats: [
+        {
+          id: 'beat-1',
+          text: '这张照片要多停一会。',
+          actions: {
+            holdMs: 3200,
+          },
+          selections: [{
+            assetId: 'asset-photo',
+            sliceId: 'slice-photo',
+          }],
+          linkedSliceIds: ['slice-photo'],
+        },
+      ],
+    }];
+
+    const { clips } = placeClips(script, slices, assets);
+
+    expect(clips).toHaveLength(1);
+    expect(clips[0]).toMatchObject({
+      timelineInMs: 0,
+      timelineOutMs: 3200,
+    });
+  });
+
   it('reorders beats within the same segment when chronology guard is enabled', () => {
     const assets: IKtepAsset[] = [
       {
@@ -959,6 +1555,101 @@ describe('placeClips', () => {
       [0, 2000],
       [2000, 4000],
     ]);
+  });
+
+  it('uses chronology.sortCapturedAt instead of raw asset capturedAt for chronology ordering', () => {
+    const assets: IKtepAsset[] = [
+      {
+        id: 'asset-video',
+        kind: 'video',
+        sourcePath: 'C0251.MP4',
+        displayName: 'C0251.MP4',
+        capturedAt: '2026-04-12T07:59:35.000Z',
+      },
+      {
+        id: 'asset-photo',
+        kind: 'photo',
+        sourcePath: 'DSC06876.jpg',
+        displayName: 'DSC06876.jpg',
+        capturedAt: '2026-04-12T08:09:46.000Z',
+      },
+    ];
+    const slices: IKtepSlice[] = [
+      {
+        id: 'slice-photo',
+        assetId: 'asset-photo',
+        type: 'photo',
+        labels: [],
+        placeHints: [],
+      },
+      {
+        id: 'slice-video',
+        assetId: 'asset-video',
+        type: 'broll',
+        sourceInMs: 0,
+        sourceOutMs: 2_000,
+        labels: [],
+        placeHints: [],
+      },
+    ];
+    const script: IKtepScript[] = [{
+      id: 'segment-1',
+      role: 'scene',
+      narration: 'test',
+      linkedSliceIds: ['slice-photo', 'slice-video'],
+      beats: [
+        {
+          id: 'beat-photo',
+          text: '',
+          selections: [{ assetId: 'asset-photo', sliceId: 'slice-photo' }],
+          linkedSliceIds: ['slice-photo'],
+        },
+        {
+          id: 'beat-video',
+          text: '',
+          selections: [{ assetId: 'asset-video', sliceId: 'slice-video', sourceInMs: 0, sourceOutMs: 2_000 }],
+          linkedSliceIds: ['slice-video'],
+        },
+      ],
+    }];
+
+    const { clips } = placeClips(script, slices, assets, {
+      chronology: [
+        {
+          id: 'chrono-video',
+          assetId: 'asset-video',
+          capturedAt: '2026-04-12T07:59:35.000Z',
+          sortCapturedAt: '2026-04-12T07:59:35.000Z',
+          labels: [],
+          placeHints: [],
+          evidence: [],
+          pharosMatches: [],
+        },
+        {
+          id: 'chrono-photo',
+          assetId: 'asset-photo',
+          capturedAt: '2026-04-12T08:09:46.000Z',
+          sortCapturedAt: '2026-04-12T07:59:35.500Z',
+          labels: [],
+          placeHints: [],
+          evidence: [],
+          pharosMatches: [],
+        },
+      ],
+      arrangementSignals: {
+        primaryAxisKind: 'time',
+        chronologyStrength: 0.8,
+        routeContinuityStrength: 0.6,
+        processContinuityStrength: 0.6,
+        spaceStrength: 0.1,
+        emotionStrength: 0.1,
+        payoffStrength: 0.1,
+        enforceChronology: true,
+        materialRoleBias: {},
+      },
+    });
+
+    expect(clips.map(clip => clip.assetId)).toEqual(['asset-video', 'asset-photo']);
   });
 
   it('throws when chronology guard still detects backwards beats across segments', () => {

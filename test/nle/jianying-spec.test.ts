@@ -187,6 +187,79 @@ describe('buildJianyingDraftSpec', () => {
     });
   });
 
+  it('splits overlapping subtitles across multiple generated text tracks', async () => {
+    const doc: IKtepDoc = {
+      protocol: 'kairos.timeline',
+      version: '1.0',
+      project: {
+        id: 'project-subtitles',
+        name: 'Subtitle Lane Spec Test',
+        createdAt: '2026-04-14T00:00:00.000Z',
+        updatedAt: '2026-04-14T00:00:00.000Z',
+      },
+      assets: [],
+      slices: [],
+      script: [],
+      timeline: {
+        id: 'timeline-subtitles',
+        name: 'Subtitle Lane Timeline',
+        fps: 30,
+        resolution: {
+          width: 3840,
+          height: 2160,
+        },
+        tracks: [],
+        clips: [],
+      },
+      subtitles: [
+        {
+          id: 'subtitle-1',
+          startMs: 0,
+          endMs: 1_500,
+          text: 'first',
+        },
+        {
+          id: 'subtitle-2',
+          startMs: 500,
+          endMs: 1_000,
+          text: 'second',
+        },
+        {
+          id: 'subtitle-3',
+          startMs: 1_500,
+          endMs: 2_000,
+          text: 'third',
+        },
+      ],
+    };
+
+    const { spec } = await buildJianyingDraftSpec(doc);
+    const textTracks = spec.tracks.filter(track => track.kind === 'text');
+
+    expect(textTracks).toHaveLength(2);
+    expect(textTracks.map(track => track.name)).toEqual(['subtitles', 'subtitles-1']);
+    expect(spec.subtitles).toEqual([
+      expect.objectContaining({
+        id: 'subtitle-1',
+        trackName: 'subtitles',
+        startMs: 0,
+        endMs: 1_500,
+      }),
+      expect.objectContaining({
+        id: 'subtitle-3',
+        trackName: 'subtitles',
+        startMs: 1_500,
+        endMs: 2_000,
+      }),
+      expect.objectContaining({
+        id: 'subtitle-2',
+        trackName: 'subtitles-1',
+        startMs: 500,
+        endMs: 1_000,
+      }),
+    ]);
+  });
+
   it('exports protected nat audio clips from a bound video asset', async () => {
     const doc: IKtepDoc = {
       protocol: 'kairos.timeline',

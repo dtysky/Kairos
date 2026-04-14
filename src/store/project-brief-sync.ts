@@ -46,9 +46,11 @@ export async function syncProjectBriefMappings(
     return {
       id: rootId,
       label,
-      enabled: true,
+      enabled: existing?.enabled ?? true,
+      clockOffsetMs: existing?.clockOffsetMs,
+      path: existing?.path,
       description: mapping.description,
-      notes: [mapping.description],
+      notes: existing?.notes ?? [mapping.description],
       tags: existing?.tags ?? [],
       category: existing?.category,
       priority: existing?.priority ?? (index + 1),

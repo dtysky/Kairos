@@ -3,15 +3,18 @@ import type {
   IKtepAsset,
   IKtepEvidence,
   IMediaChronology,
+  IMediaRoot,
 } from '../../protocol/schema.js';
 
 export function buildMediaChronology(
   assets: IKtepAsset[],
   reports: IAssetCoarseReport[] = [],
   existing: IMediaChronology[] = [],
+  roots: IMediaRoot[] = [],
 ): IMediaChronology[] {
   const reportMap = new Map(reports.map(report => [report.assetId, report]));
   const existingMap = new Map(existing.map(entry => [entry.assetId, entry]));
+  const rootMap = new Map(roots.map(root => [root.id, root]));
 
   const chronology = assets.map(asset => {
     const report = reportMap.get(asset.id);
@@ -24,7 +27,9 @@ export function buildMediaChronology(
       correction?.labelsRemove,
     );
     const summary = correction?.summaryOverride ?? report?.summary;
-    const sortCapturedAt = correction?.capturedAtOverride ?? asset.capturedAt;
+    const sortCapturedAt = correction?.capturedAtOverride
+      ?? applyRootClockOffset(asset.capturedAt, rootMap.get(asset.ingestRootId ?? '')?.clockOffsetMs)
+      ?? asset.capturedAt;
 
     return {
       id: prior?.id ?? asset.id,
@@ -47,6 +52,19 @@ export function buildMediaChronology(
   });
 
   return chronology.sort(compareChronology);
+}
+
+function applyRootClockOffset(
+  capturedAt: string | undefined,
+  clockOffsetMs: number | undefined,
+): string | undefined {
+  if (!capturedAt) return undefined;
+  if (clockOffsetMs == null || !Number.isFinite(clockOffsetMs) || clockOffsetMs === 0) {
+    return capturedAt;
+  }
+  const capturedAtMs = Date.parse(capturedAt);
+  if (!Number.isFinite(capturedAtMs)) return capturedAt;
+  return new Date(capturedAtMs + clockOffsetMs).toISOString();
 }
 
 function applyLabelCorrection(

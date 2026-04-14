@@ -77,4 +77,103 @@ describe('buildTimeline output spec', () => {
     });
     expect(doc.timeline.fps).toBe(24);
   });
+
+  it('passes chronology config through to placement', () => {
+    const assets: IKtepAsset[] = [
+      {
+        id: 'asset-late',
+        kind: 'video',
+        sourcePath: 'late.mp4',
+        displayName: 'late.mp4',
+        capturedAt: '2026-04-12T08:10:00.000Z',
+      },
+      {
+        id: 'asset-early',
+        kind: 'video',
+        sourcePath: 'early.mp4',
+        displayName: 'early.mp4',
+        capturedAt: '2026-04-12T07:59:35.000Z',
+      },
+    ];
+    const slices: IKtepSlice[] = [
+      {
+        id: 'slice-late',
+        assetId: 'asset-late',
+        type: 'broll',
+        sourceInMs: 0,
+        sourceOutMs: 1000,
+        labels: [],
+        placeHints: [],
+      },
+      {
+        id: 'slice-early',
+        assetId: 'asset-early',
+        type: 'broll',
+        sourceInMs: 0,
+        sourceOutMs: 1000,
+        labels: [],
+        placeHints: [],
+      },
+    ];
+    const script: IKtepScript[] = [{
+      id: 'segment-1',
+      role: 'scene',
+      narration: '短句。',
+      linkedSliceIds: ['slice-late', 'slice-early'],
+      beats: [
+        {
+          id: 'beat-late',
+          text: '',
+          selections: [{ assetId: 'asset-late', sliceId: 'slice-late', sourceInMs: 0, sourceOutMs: 1000 }],
+          linkedSliceIds: ['slice-late'],
+        },
+        {
+          id: 'beat-early',
+          text: '',
+          selections: [{ assetId: 'asset-early', sliceId: 'slice-early', sourceInMs: 0, sourceOutMs: 1000 }],
+          linkedSliceIds: ['slice-early'],
+        },
+      ],
+    }];
+
+    const doc = buildTimeline(CPROJECT, assets, slices, script, {
+      chronology: [
+        {
+          id: 'chrono-late',
+          assetId: 'asset-late',
+          capturedAt: '2026-04-12T08:10:00.000Z',
+          sortCapturedAt: '2026-04-12T08:00:00.500Z',
+          labels: [],
+          placeHints: [],
+          evidence: [],
+          pharosMatches: [],
+        },
+        {
+          id: 'chrono-early',
+          assetId: 'asset-early',
+          capturedAt: '2026-04-12T07:59:35.000Z',
+          sortCapturedAt: '2026-04-12T08:00:00.000Z',
+          labels: [],
+          placeHints: [],
+          evidence: [],
+          pharosMatches: [],
+        },
+      ],
+      placement: {
+        arrangementSignals: {
+          primaryAxisKind: 'time',
+          chronologyStrength: 0.8,
+          routeContinuityStrength: 0.6,
+          processContinuityStrength: 0.6,
+          spaceStrength: 0.1,
+          emotionStrength: 0.1,
+          payoffStrength: 0.1,
+          enforceChronology: true,
+          materialRoleBias: {},
+        },
+      },
+    });
+
+    expect(doc.timeline.clips.map(clip => clip.assetId)).toEqual(['asset-early', 'asset-late']);
+  });
 });

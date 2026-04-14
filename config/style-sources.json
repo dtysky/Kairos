@@ -120,6 +120,37 @@
           "path": "/Volumes/home/LostVlog/20251221_阳春黄凿顶自驾.mp4"
         }
       ]
+    },
+    {
+      "categoryId": "general-event-coverage",
+      "displayName": "一般活动摄影",
+      "guidancePrompt": "一般活动摄影",
+      "inclusionNotes": "以一般活动摄影为主，重点观察活动现场的记录方式、画面组织、节奏控制和常见镜头语言。",
+      "overwriteExisting": false,
+      "profilePath": "general-event-coverage.md",
+      "sources": [
+        {
+          "id": "general-event-coverage-2024-01-28",
+          "type": "file",
+          "path": "\\\\LostHope\\home\\LostVlog\\2024-01-28.mp4"
+        }
+      ]
+    },
+    {
+      "categoryId": "time-driven-event-coverage",
+      "displayName": "时间驱动的活动摄影",
+      "guidancePrompt": "时间驱动的活动摄影。重点按活动真实时间推进来组织视频：到场、准备、进入状态、主体进行、高点、尾声。优先保住阶段变化和现场推进感，而不是单纯按空间热点拼贴。",
+      "inclusionNotes": "以活动当天的真实时间推进为主骨架，强调准备、升温、主体阶段、高点和收束的连续经历，可覆盖展会、约拍、线下活动等不同场景。",
+      "overwriteExisting": false,
+      "profilePath": "time-driven-event-coverage.md",
+      "sources": [
+        {
+          "id": "time-driven-event-coverage-2024-01-28",
+          "type": "file",
+          "path": "\\\\LostHope\\home\\LostVlog\\2024-01-28.mp4",
+          "note": "当前手写时间驱动活动风格的参考样本"
+        }
+      ]
     }
   ]
 }

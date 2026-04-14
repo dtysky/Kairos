@@ -7,11 +7,16 @@ import { dirname, extname, join, normalize, resolve } from 'node:path';
 import {
   getProjectProgressPath,
   getWorkspaceStyleAnalysisProgressPath,
+  loadAssets,
+  loadAssetReports,
+  loadChronology,
+  loadIngestRoots,
   listWorkspaceProjects,
   loadManualItineraryConfig,
   loadProjectBriefConfig,
   loadReviewQueue,
   loadScriptBriefConfig,
+  saveIngestRoots,
   loadStyleSourcesConfig,
   resolveReviewItem,
   saveManualItineraryConfig,
@@ -19,16 +24,20 @@ import {
   saveScriptBriefConfig,
   saveStyleSourcesConfig,
   syncWorkspaceProjectBrief,
+  touchProjectUpdatedAt,
+  writeChronology,
 } from '../store/index.js';
 import {
   buildCaptureTimeReviewItems,
   buildManualCaptureTimeReviewKey,
 } from '../modules/media/manual-capture-time-shared.js';
+import { buildMediaChronology } from '../modules/media/chronology.js';
 import {
   buildProjectPharosAssetStatus,
   loadOrBuildProjectPharosContext,
 } from '../modules/pharos/context.js';
 import { getMlServiceStatus, startMlService, stopMlService } from './runtime.js';
+import type { IKtepAsset, IMediaChronology, IMediaRoot } from '../protocol/schema.js';
 import {
   getSupervisorJobRoot,
   listJobRecords,
@@ -169,10 +178,13 @@ async function routeRequest(
   if (configMatch && method === 'GET') {
     const projectId = decodeURIComponent(configMatch[1]!);
     const projectRoot = join(options.workspaceRoot, 'projects', projectId);
-    const [projectBrief, manualItinerary, scriptBrief] = await Promise.all([
+    const [projectBrief, manualItinerary, scriptBrief, ingestRoots, assets, chronology] = await Promise.all([
       loadProjectBriefConfig(projectRoot),
       loadManualItineraryConfig(projectRoot),
       loadScriptBriefConfig(projectRoot),
+      loadIngestRoots(projectRoot),
+      loadAssets(projectRoot),
+      loadChronology(projectRoot),
     ]);
     const pharosContext = await loadOrBuildProjectPharosContext({
       projectRoot,
@@ -182,6 +194,8 @@ async function routeRequest(
       projectBrief,
       manualItinerary,
       scriptBrief,
+      ingestRoots,
+      ingestRootSummaries: buildIngestRootSummaries(ingestRoots.roots, assets, chronology),
       pharosStatus: buildProjectPharosAssetStatus(pharosContext, projectRoot),
       pharosContext,
     });
@@ -211,6 +225,23 @@ async function routeRequest(
     const payload = await readJsonBody(request);
     const saved = await saveManualItineraryConfig(projectRoot, payload);
     await syncCaptureTimeReviewsFromConfig(projectId, projectRoot);
+    sendJson(response, 200, saved);
+    return;
+  }
+
+  const ingestRootsMatch = pathname.match(/^\/api\/projects\/([^/]+)\/config\/ingest-roots$/u);
+  if (ingestRootsMatch && method === 'PUT') {
+    const projectId = decodeURIComponent(ingestRootsMatch[1]!);
+    const projectRoot = join(options.workspaceRoot, 'projects', projectId);
+    const payload = await readJsonBody(request);
+    const saved = await saveIngestRoots(projectRoot, payload);
+    const [assets, reports, existing] = await Promise.all([
+      loadAssets(projectRoot),
+      loadAssetReports(projectRoot),
+      loadChronology(projectRoot),
+    ]);
+    await writeChronology(projectRoot, buildMediaChronology(assets, reports, existing, saved.roots));
+    await touchProjectUpdatedAt(projectRoot);
     sendJson(response, 200, saved);
     return;
   }
@@ -394,6 +425,7 @@ async function startJob(
     const projectRoot = join(workspaceRoot, 'projects', payload.projectId);
     await writeFileSafe(configSnapshotPath, JSON.stringify({
       projectBrief: await loadProjectBriefConfig(projectRoot).catch(() => null),
+      ingestRoots: await loadIngestRoots(projectRoot).catch(() => null),
       manualItinerary: await loadManualItineraryConfig(projectRoot).catch(() => null),
       scriptBrief: await loadScriptBriefConfig(projectRoot).catch(() => null),
       pharosContext: await loadOrBuildProjectPharosContext({
@@ -511,6 +543,74 @@ async function syncCaptureTimeReviewsFromConfig(projectId: string, projectRoot: 
   await writeFileSafe(join(projectRoot, 'config', 'review-queue.json'), JSON.stringify({
     items: [...preserved, ...captureItems],
   }, null, 2));
+}
+
+function buildIngestRootSummaries(
+  roots: IMediaRoot[],
+  assets: IKtepAsset[],
+  chronology: IMediaChronology[],
+): Array<{
+  rootId: string;
+  assetCount: number;
+  firstAnchor?: {
+    assetId: string;
+    displayName: string;
+    capturedAt?: string;
+    sortCapturedAt?: string;
+  };
+  lastAnchor?: {
+    assetId: string;
+    displayName: string;
+    capturedAt?: string;
+    sortCapturedAt?: string;
+  };
+}> {
+  const chronologyByAssetId = new Map(chronology.map(entry => [entry.assetId, entry]));
+  const grouped = new Map<string, IKtepAsset[]>();
+
+  for (const asset of assets) {
+    const rootId = asset.ingestRootId;
+    if (!rootId) continue;
+    const current = grouped.get(rootId) ?? [];
+    current.push(asset);
+    grouped.set(rootId, current);
+  }
+
+  return roots.map(root => {
+    const entries = [...(grouped.get(root.id) ?? [])].sort((left, right) => {
+      const leftChronology = chronologyByAssetId.get(left.id);
+      const rightChronology = chronologyByAssetId.get(right.id);
+      const leftKey = leftChronology?.sortCapturedAt ?? leftChronology?.capturedAt ?? left.capturedAt ?? '';
+      const rightKey = rightChronology?.sortCapturedAt ?? rightChronology?.capturedAt ?? right.capturedAt ?? '';
+      if (leftKey !== rightKey) return leftKey.localeCompare(rightKey);
+      return left.id.localeCompare(right.id);
+    });
+    const first = entries[0];
+    const last = entries[entries.length - 1];
+    const firstChronology = first ? chronologyByAssetId.get(first.id) : undefined;
+    const lastChronology = last ? chronologyByAssetId.get(last.id) : undefined;
+
+    return {
+      rootId: root.id,
+      assetCount: entries.length,
+      firstAnchor: first
+        ? {
+          assetId: first.id,
+          displayName: first.displayName ?? first.id,
+          capturedAt: firstChronology?.capturedAt ?? first.capturedAt,
+          sortCapturedAt: firstChronology?.sortCapturedAt ?? first.capturedAt,
+        }
+        : undefined,
+      lastAnchor: last
+        ? {
+          assetId: last.id,
+          displayName: last.displayName ?? last.id,
+          capturedAt: lastChronology?.capturedAt ?? last.capturedAt,
+          sortCapturedAt: lastChronology?.sortCapturedAt ?? last.capturedAt,
+        }
+        : undefined,
+    };
+  });
 }
 
 async function serveConsoleAsset(

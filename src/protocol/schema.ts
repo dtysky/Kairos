@@ -96,6 +96,7 @@ export const IMediaRoot = z.object({
   path: z.string().optional(),
   label: z.string().optional(),
   enabled: z.boolean(),
+  clockOffsetMs: z.number().int().optional(),
   category: EMediaRootCategory.optional(),
   priority: z.number().optional(),
   description: z.string().optional(),

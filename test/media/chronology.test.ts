@@ -86,4 +86,64 @@ describe('buildMediaChronology', () => {
       confidence: 0.45,
     });
   });
+
+  it('applies ingest-root clock offsets to sortCapturedAt', () => {
+    const chronology = buildMediaChronology(
+      [{
+        id: 'asset-1',
+        kind: 'photo',
+        sourcePath: 'photo.jpg',
+        displayName: 'photo.jpg',
+        ingestRootId: 'root-photo',
+        capturedAt: '2026-04-12T08:09:46.000Z',
+        createdAt: '2026-04-12T08:09:46.000Z',
+      }],
+      [],
+      [],
+      [{
+        id: 'root-photo',
+        enabled: true,
+        clockOffsetMs: -611_000,
+      }],
+    );
+
+    expect(chronology[0]?.capturedAt).toBe('2026-04-12T08:09:46.000Z');
+    expect(chronology[0]?.sortCapturedAt).toBe('2026-04-12T07:59:35.000Z');
+  });
+
+  it('keeps asset-level capturedAtOverride above root clock offsets', () => {
+    const chronology = buildMediaChronology(
+      [{
+        id: 'asset-1',
+        kind: 'photo',
+        sourcePath: 'photo.jpg',
+        displayName: 'photo.jpg',
+        ingestRootId: 'root-photo',
+        capturedAt: '2026-04-12T08:09:46.000Z',
+        createdAt: '2026-04-12T08:09:46.000Z',
+      }],
+      [],
+      [{
+        id: 'chrono-1',
+        assetId: 'asset-1',
+        ingestRootId: 'root-photo',
+        capturedAt: '2026-04-12T08:09:46.000Z',
+        sortCapturedAt: '2026-04-12T08:09:46.000Z',
+        labels: [],
+        placeHints: [],
+        evidence: [],
+        pharosMatches: [],
+        correction: {
+          capturedAtOverride: '2026-04-12T08:00:01.000Z',
+        },
+      }],
+      [{
+        id: 'root-photo',
+        enabled: true,
+        clockOffsetMs: -611_000,
+      }],
+    );
+
+    expect(chronology[0]?.sortCapturedAt).toBe('2026-04-12T08:00:01.000Z');
+  });
 });

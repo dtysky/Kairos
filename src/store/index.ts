@@ -30,9 +30,11 @@ export {
   loadManifest,
   loadProject,
   loadIngestRoots,
+  saveIngestRoots,
   loadRuntimeConfig,
   touchProjectUpdatedAt,
   type IRuntimeConfig,
+  type IIngestRoots,
 } from './project.js';
 export {
   IKairosProgress,

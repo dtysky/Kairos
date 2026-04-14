@@ -16,11 +16,15 @@ const CSYSTEM = `你是一个旅拍纪录片脚本创作者。根据给定的 ma
 1. 严格遵循风格档案中的编排主轴、章节程序和 narrationConstraints。
 2. beats 是正式编排单元；每个 segment 必须返回 beats 数组。
 3. 每个 beat 至少返回 id, text, selections, linkedSpanIds。
-4. 如果候选素材里带有可信 transcript，且这段原声本身值得直接进入正片，可设置 preserveNatSound=true。
-5. preserveNatSound=true 时不要再给这个 beat 写 speed。
-6. speed 只能用于纯 drive / aerial montage。
-7. narration 是整段聚合预览，可选，但必须与 beats 内容一致。
-8. 返回 JSON 数组，每个元素包含 id, role, title, narration, targetDurationMs, actions, selections, linkedSpanIds, linkedSliceIds, beats。`;
+4. 如果候选素材里带有可用 transcriptSegments / 原声边界，默认把该 beat 写成 source-speech，并设置 preserveNatSound=true；不要再额外写解释性旁白。
+5. 照片 beat 默认静默：可以保留内部说明文字，但不要写 utterances，不要把照片写成需要字幕或口播的段落。
+6. 只有无可用原声的视频，才允许尽可能用 beat.text / utterances 组织旁白。
+7. preserveNatSound=true 时不要再给这个 beat 写 speed。
+8. speed 只能用于纯 drive / aerial montage。
+9. targetDurationMs 是可选审阅提示；除非用户明确要求，否则不要臆造 segment 或 beat 的时长预算。
+10. narration 是整段聚合预览，可选，但必须与 beats 内容一致。
+11. 允许润色和补充，但不要通过删 beat 来压缩召回结果；如果 outline 已给出 beat，就默认保留这些 beat。
+12. 返回 JSON 数组，每个元素包含 id, role, title, narration, targetDurationMs, actions, selections, linkedSpanIds, linkedSliceIds, beats。`;
 
 export interface IScriptGenerationContext {
   materialOverview?: string;
@@ -190,7 +194,7 @@ export function buildOutlinePrompt(outline: IOutlineSegment[]): string {
       .join('\n');
 
     return [
-      `${index + 1}. [${segment.role}] ${segment.title} (${Math.round(segment.estimatedDurationMs / 1000)}s)`,
+      `${index + 1}. [${segment.role}] ${segment.title}`,
       `   段落意图: ${segment.narrativeSketch}`,
       `   备注: ${segment.notes.join(' / ') || '无'}`,
       `   已选 spans: ${segment.spanIds.length}`,
@@ -219,7 +223,7 @@ function normalizeSegment(raw: unknown, fallback: IOutlineSegment): IKtepScript 
     role: normalizeRole(stringValue(source.role), fallback.role),
     title: stringValue(source.title) ?? fallback.title,
     narration: stringValue(source.narration) ?? mergeBeatNarration(beats),
-    targetDurationMs: positiveNumber(source.targetDurationMs) ?? fallback.estimatedDurationMs,
+    targetDurationMs: positiveNumber(source.targetDurationMs),
     actions: normalizeActions(source.actions),
     selections: selections.length > 0 ? selections : undefined,
     linkedSpanIds,
@@ -235,34 +239,101 @@ function normalizeBeats(raw: unknown, fallbackBeats: IOutlineBeat[]): IKtepScrip
     return fallbackBeats.map(buildFallbackBeat);
   }
 
-  return raw.map((item, index) => {
-    const source = typeof item === 'object' && item ? item as Record<string, unknown> : {};
-    const fallback = fallbackBeats[index] ?? fallbackBeats[0];
-    const selections = normalizeSelections(source.selections, fallback ? fallback.selections : []);
-    const linkedSpanIds = dedupeStrings([
-      ...normalizeStringArray(source.linkedSpanIds),
-      ...selections.map(selection => selection.spanId),
-      ...(fallback?.linkedSpanIds ?? []),
-    ]);
-    const linkedSliceIds = dedupeStrings([
-      ...normalizeStringArray(source.linkedSliceIds),
-      ...linkedSpanIds,
-    ]);
-    const utterances = normalizeUtterances(source.utterances);
-
-    return {
-      id: stringValue(source.id) ?? fallback?.id ?? randomUUID(),
-      text: stringValue(source.text) ?? fallback?.summary ?? '根据素材推进段落。',
-      utterances: utterances.length > 0 ? utterances : undefined,
-      targetDurationMs: positiveNumber(source.targetDurationMs),
-      actions: normalizeActions(source.actions),
-      selections,
-      linkedSpanIds,
-      linkedSliceIds,
-      pharosRefs: mergePharosRefs(selections),
-      notes: stringValue(source.notes),
-    };
+  const rawItems = raw
+    .map(item => (typeof item === 'object' && item ? item as Record<string, unknown> : {}));
+  const rawIndexesById = new Map<string, number[]>();
+  rawItems.forEach((item, index) => {
+    const id = stringValue(item.id);
+    if (!id) return;
+    const current = rawIndexesById.get(id) ?? [];
+    current.push(index);
+    rawIndexesById.set(id, current);
   });
+
+  const usedIndexes = new Set<number>();
+  const coveredSpanIds = new Set<string>();
+  const beats = fallbackBeats.map((fallback, index) => {
+    const matchedIndex = consumeMatchedBeatIndex(fallback.id, index, rawItems, rawIndexesById, usedIndexes);
+    const normalized = normalizeBeatRecord(
+      matchedIndex != null ? rawItems[matchedIndex] : undefined,
+      fallback,
+    );
+    normalized.linkedSpanIds.forEach(spanId => coveredSpanIds.add(spanId));
+    return normalized;
+  });
+
+  rawItems.forEach((item, index) => {
+    if (usedIndexes.has(index)) return;
+    const normalized = normalizeBeatRecord(item);
+    const freshSpanIds = normalized.linkedSpanIds.filter(spanId => !coveredSpanIds.has(spanId));
+    if (freshSpanIds.length === 0) return;
+    const freshSelections = normalized.selections.filter(selection =>
+      selection.spanId != null && freshSpanIds.includes(selection.spanId),
+    );
+    beats.push({
+      ...normalized,
+      selections: freshSelections.length > 0 ? freshSelections : normalized.selections,
+      linkedSpanIds: freshSpanIds,
+      linkedSliceIds: dedupeStrings([
+        ...normalized.linkedSliceIds,
+        ...freshSpanIds,
+      ]),
+      pharosRefs: mergePharosRefs(freshSelections.length > 0 ? freshSelections : normalized.selections),
+    });
+    freshSpanIds.forEach(spanId => coveredSpanIds.add(spanId));
+  });
+
+  return beats;
+}
+
+function consumeMatchedBeatIndex(
+  fallbackId: string,
+  fallbackIndex: number,
+  rawItems: Array<Record<string, unknown>>,
+  rawIndexesById: Map<string, number[]>,
+  usedIndexes: Set<number>,
+): number | null {
+  const matchedById = rawIndexesById.get(fallbackId)?.find(index => !usedIndexes.has(index));
+  if (matchedById != null) {
+    usedIndexes.add(matchedById);
+    return matchedById;
+  }
+  if (!usedIndexes.has(fallbackIndex) && fallbackIndex < rawItems.length) {
+    usedIndexes.add(fallbackIndex);
+    return fallbackIndex;
+  }
+  return null;
+}
+
+function normalizeBeatRecord(
+  source: Record<string, unknown> | undefined,
+  fallback?: IOutlineBeat,
+): IKtepScriptBeat {
+  const safeSource = source ?? {};
+  const selections = normalizeSelections(safeSource.selections, fallback?.selections ?? []);
+  const linkedSpanIds = dedupeStrings([
+    ...normalizeStringArray(safeSource.linkedSpanIds),
+    ...selections.map(selection => selection.spanId),
+    ...(fallback?.linkedSpanIds ?? []),
+  ]);
+  const linkedSliceIds = dedupeStrings([
+    ...normalizeStringArray(safeSource.linkedSliceIds),
+    ...linkedSpanIds,
+  ]);
+  const utterances = normalizeUtterances(safeSource.utterances);
+
+  return {
+    id: stringValue(safeSource.id) ?? fallback?.id ?? randomUUID(),
+    text: stringValue(safeSource.text) ?? resolveFallbackBeatText(fallback),
+    utterances: utterances.length > 0 ? utterances : undefined,
+    targetDurationMs: positiveNumber(safeSource.targetDurationMs),
+    actions: normalizeActions(safeSource.actions),
+    selections,
+    linkedSpanIds,
+    linkedSliceIds,
+    pharosRefs: mergePharosRefs(selections),
+    notes: stringValue(safeSource.notes),
+  };
 }
 
 function buildFallbackScript(outline: IOutlineSegment[]): IKtepScript[] {
@@ -273,7 +344,7 @@ function buildFallbackScript(outline: IOutlineSegment[]): IKtepScript[] {
       role: segment.role,
       title: segment.title,
       narration: mergeBeatNarration(beats),
-      targetDurationMs: segment.estimatedDurationMs,
+      targetDurationMs: undefined,
       selections: segment.selections.length > 0 ? segment.selections : undefined,
       linkedSpanIds: segment.spanIds,
       linkedSliceIds: segment.spanIds,
@@ -287,7 +358,7 @@ function buildFallbackScript(outline: IOutlineSegment[]): IKtepScript[] {
 function buildFallbackBeat(beat: IOutlineBeat): IKtepScriptBeat {
   return {
     id: beat.id,
-    text: beat.summary,
+    text: resolveFallbackBeatText(beat),
     targetDurationMs: undefined,
     selections: beat.selections,
     linkedSpanIds: beat.linkedSpanIds,
@@ -295,6 +366,12 @@ function buildFallbackBeat(beat: IOutlineBeat): IKtepScriptBeat {
     pharosRefs: mergePharosRefs(beat.selections),
     notes: beat.query,
   };
+}
+
+function resolveFallbackBeatText(beat: IOutlineBeat | undefined): string {
+  const transcript = beat?.transcript?.trim();
+  if (transcript) return transcript;
+  return '';
 }
 
 function normalizeSelections(raw: unknown, fallback: IKtepScriptSelection[]): IKtepScriptSelection[] {

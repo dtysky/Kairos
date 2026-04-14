@@ -1,17 +1,17 @@
 ---
 name: kairos-script
 description: >-
-  Phase 3: Load style profile, build narrative outline from spans, and write
-  narration for each segment. The agent writes narration directly using its own
-  LLM capabilities. Use when writing script, narration, voiceover, or the user
-  mentions script, story, or narrate.
+  Phase 3: Load style profile, build an evidence-driven outline from spans, and
+  write beats or narration only where needed. Use when writing script, beat
+  design, source-speech planning, or the user mentions script, story, or
+  narrate.
 ---
 
 # Kairos: Phase 3 — Script
 
 加载风格档案 → `/script` 自动保存风格分类 → Agent 生成初版 `script-brief` → 用户审查并手动保存 brief → `/script` 做 deterministic prep → Agent 写正式脚本。
 
-**核心特点**：旁白由 agent 自身直接创作，不需要外部 LLM API。
+**核心特点**：粗剪脚本以证据和素材原声为优先；旁白只是可选表达，不是默认目标。
 
 当前正式 script prep 链路已经切成：
 - `Analyze -> Material Overview`
@@ -186,8 +186,8 @@ const spans = await readJson('store/spans.json', z.array(IKtepSlice));
 - `span.sourceInMs / sourceOutMs` 是 focus/evidence window
 - `span.editSourceInMs / editSourceOutMs` 是 Analyze 已经扩好的 edit-friendly bounds
 - `span.materialPatterns[]` 是材料模式短语
-- `material-bundles` 只用作 `materialPatterns` 驱动的粗索引层
-- `segment plan` 只保留段落本体：`id`、`title`、`intent`、`targetDurationMs`、可选 `roleHint` / `notes`
+- `material-bundles` 只用作 `materialPatterns` 驱动的粗索引层，但它现在应覆盖项目内全部有效 spans，而不是被提前缩成 shortlist
+- `segment plan` 只保留段落本体：`id`、`title`、`intent`、可选 `targetDurationMs`、可选 `roleHint` / `notes`
 - `material slots` 只保留运行时薄检索信息：`id`、`query`、`requirement`、`targetBundles`、`chosenSpanIds`
 - 当前 Script 执行层还会基于现有 style profile 解析一个内部 `ResolvedArrangementSignals`：
   - 它不是新的公开协议
@@ -205,28 +205,33 @@ const spans = await readJson('store/spans.json', z.array(IKtepSlice));
   - 先按 `capturedAt + chronology + Pharos trip/day/shot` 建立单调递增的时间带
   - 再把段落分配到各自合法时间带里
   - 不允许后段跨窗回捞前段素材来填空
-- `targetDurationMs` 不应再主要从 style 平均章节时长直接拍脑袋得出：
-  - 先看这一段实际能承载多少关键过程视频、多少可保留原声、多少结果照片组、多少事件节点
-  - style 只继续调节节奏与上下限
+- `targetDurationMs` 现在只是一种可选审阅提示，不再是粗剪默认预算：
+  - 不要从 style 平均章节时长、材料容量或模板习惯自动补一个预算
+  - 先把关键过程视频、可保留原声、结果照片组、事件节点尽量枚举出来
+  - 只有用户明确要求某段时长时，才把它写成显式 `targetDurationMs`
 
 生成 `material slots` 时，遵循：
 
 - `segment intent -> slot query -> targetBundles -> bundle lookup -> chosenSpanIds`
 - bundle 命中后，再按 time / GPS / chronology / Pharos day-shot 线索做二次过滤
 - `chosenSpanIds` 是 retrieval 的正式结果回写位
+- 粗剪默认是高召回保留：
+  - 不要再按固定 `3-4` 个 span 上限做代表性抽样
+  - 有信息增量的 span 默认都应进入 `chosenSpanIds`
+  - 只应去掉空白、坏段和高重叠近重复
 - 对时间主轴强的风格，二次过滤必须服从时间带窗口；局部打分只能在当前窗口里择优，不能跨窗乱拿素材
 - 关键过程视频如果承载不可替代的时间推进、事件推进、人物关系推进或有效原声，应保留为独立 beat，不要让它被更泛的 summary 段或静态成果材料吞掉
 
-### Step 4: Agent 直接写旁白
+### Step 4: Agent 编排 beat，并只在必要时写旁白
 
-**这是 agent 发挥创意的核心环节。**
+**这是 agent 把风格约束落到证据上的核心环节。**
 
 Agent 需要：
 
 1. 阅读完整风格档案（`style.rawReference` 或 `buildStylePrompt(style)`），并优先提取其中的 sections / parameters / antiPatterns
 2. 理解叙事骨架的每个段落（`buildOutlinePrompt(outline)`）
 3. 查看每个段落关联的切片证据（scene descriptions, ASR text, place hints）
-4. 为每个段落写旁白，严格遵循风格档案
+4. 为每个段落组织 beat；只有在素材没有可用原声时才补写必要旁白，且严格遵循风格档案
 
 对于 `intro / montage / transition` 这类高度依赖镜头组织的段落，优先按下面顺序消费风格信息：
 
@@ -234,6 +239,20 @@ Agent 需要：
 2. 再看素材角色参数
 3. 再看运镜 / 镜头语言章节
 4. 最后才让自由创作去填具体措辞与细节
+
+粗剪阶段的默认写法分三类：
+
+1. 有可用原声的视频：
+   - 优先写成 source-speech beat
+   - `beat.text` 只做成片文字层或审阅锚点，不额外补解释性旁白
+   - 选区应尽量覆盖完整一句 `transcriptSegments`，并允许下游按 speech islands 拆掉长静默
+2. 照片：
+   - 生成独立 photo beat
+   - 不写 `utterances`
+   - 不把照片当 narration beat 使用
+3. 无可用原声的视频：
+   - 允许用 `beat.text` / `beat.utterances` 完整组织旁白
+   - 仍然必须基于切片证据，不要凭空解释
 
 输出格式 — 每个段落一个 `IKtepScript`：
 
@@ -243,13 +262,13 @@ const scriptSegment: IKtepScript = {
   role: 'scene',           // 'intro' | 'scene' | 'transition' | 'highlight' | 'outro'
   title: '段落标题',
   narration: '旁白文本...',
-  targetDurationMs: 30000,  // 预计时长
+  targetDurationMs: 30000,  // 可选，仅作审阅提示
   linkedSliceIds: ['slice-id-1', 'slice-id-2'],
 };
 ```
 
 正式输出时，`beat` 是更重要的编排单元：
-- `beat.text` 表示这一小拍最终要落到字幕/朗读层的文字
+- `beat.text` 表示这一小拍最终要落到成片文字层或字幕层的文字锚点
 - 如果一个 beat 内本来就有多段配音与停顿，可额外提供 `beat.utterances?: Array<{ text, pauseBeforeMs?, pauseAfterMs? }>`
 - `beat.actions?.preserveNatSound = true` 表示这拍要尽量保留原声
 - `beat.actions?.muteSource = true` 表示这拍即使素材里有人声，也应静音后改走旁白
@@ -260,16 +279,17 @@ const scriptSegment: IKtepScript = {
 
 脚本阶段不需要把“是否保留原声”全部手工写死，但要理解下游的默认行为：
 
-- 如果候选切片里有明确 transcript，且这段原话本身值得直接进入正片，优先写成贴近原话的 `beat.text`，并显式设置 `preserveNatSound=true`
-- 对于 `preserveNatSound=true` 的 beat，优先只绑定一个主讲话 selection，并确保选区覆盖完整一句 `transcriptSegments`，不要切在句中
-- 如果一个有声音的素材主要承担 `intro / transition / 铺垫 / 空间建立 / 情绪过门`，而不是要直接使用它说的话，应显式设置 `muteSource=true`，让下游走旁白
+- 只要主视频 selection 有可用 `transcriptSegments`，且没有显式 `muteSource=true`，时间线默认就会把这拍当 source-speech 处理
+- 对于想保留原声的 beat，优先只绑定一个主讲话 selection，并确保选区覆盖完整一句 `transcriptSegments`，不要切在句中
+- 如果一个带音轨素材不应该使用原话，就显式设置 `muteSource=true`，让下游改走旁白
+- 照片 beat 默认是静默画面：不要写 `utterances`，也不要用照片承接 narration
+- 对于无可用原声的视频，如果需要旁白，请直接在 `beat.text` / `beat.utterances[]` 里把文字结构写完整
 - 如果这拍旁白在头部 / 中间 / 尾部需要明确留白，不要只把话全塞进 `beat.text`；应直接写 `beat.utterances[]` 把 pause 表达出来
-- 如果候选 beat 提示了 `speedCandidate`（例如 `2x / 5x / 10x`），把它理解为“可以考虑加速”，而不是默认必须加速；只有你明确想做速度段落时才填写 `actions.speed`
-- 如果一条原声完整句子明显长于当前 beat 预算，默认优先保句子完整；下游会延长 beat，而不是把原话切断
-- 如果脚本里没有显式写这两个动作，时间线阶段会根据 `slice.transcript / transcriptSegments / speechCoverage`、`beat.text` 与 transcript 的匹配度、以及 segment role 自动推论
-- 当前默认推论是偏保守的：`intro / transition / outro` 不会因为“素材里有声音”就自动保留原声，除非 beat 明显在引用原话
-- 对于 `muteSource=true` 或被时间线判定为不走原声的 beat，下游会把命中的带音轨视频静音，避免旁白与素材原音叠在一起
-- 如果模型返回了比 outline fallback 窗口短得多的 `selection.sourceInMs / sourceOutMs`，系统会先做 clamp/保守扩回，避免再次无意识裁到过短
+- 如果候选 beat 提示了 `speedCandidate`（例如 `2x / 5x / 10x`），下游 rough cut 对 silent `drive / aerial` 已会默认按 `2x` 自动加速；只有你明确想覆盖这个默认时才填写 `actions.speed`
+- `targetDurationMs` 不再驱动粗剪 placement；不要为了对齐预算而压缩原话、吞掉关键过程，或拉长照片
+- 如果脚本没有显式写这两个动作，时间线阶段会根据 `transcriptSegments / speechCoverage / muteSource` 默认推论；这个默认现在偏向“有可用原声就保原声”
+- 对于最终走 source-speech 的 beat，时间线会优先裁成 speech islands；如果某个 cue 清洗后不可读，会只跳过那个 cue；只有整段都不可读时才保留原声且不生成字幕
+- 如果模型返回了比 edit-friendly bounds 短得多的 `selection.sourceInMs / sourceOutMs`，系统会先做 clamp/保守扩回，避免再次无意识裁到过短
 
 ### Step 5: 存储
 
@@ -297,19 +317,20 @@ const trimmed = removeSegment(segments, segId);
 
 | 文件 | 格式 | 内容 |
 |------|------|------|
-| `script/current.json` | `IKtepScript[]` | 完整脚本（带旁白） |
+| `script/current.json` | `IKtepScript[]` | 完整脚本（含 beat / 必要旁白） |
 
 ## 创作指南
 
-Agent 写旁白时应遵守：
+Agent 写 script / beat 时应遵守：
 
 1. **人称/语气**：严格按照风格档案中的设定（第一人称？平实？感性？）
-2. **旁白密度**：与段落时长匹配，避免过密或过疏
+2. **旁白克制**：优先使用有效原声；只有无可用原声的视频才补必要旁白，照片不要补写旁白
 3. **风格禁区**：风格档案中列出的禁止表达方式绝对不用
 4. **证据驱动**：旁白应基于切片证据（场景描述、地点线索、ASR 文本），不要凭空编造
-5. **节奏**：开篇引人入胜，主体循序渐进，结尾收束有力
-6. **原声判断**：不要把“素材里有人说话”和“这段就该保留原声”画等号；很多带人声的 intro / 过门素材仍然应静音换旁白
-7. **直接消费 style 参数**：优先使用风格档案里已经明确写出的节奏阶段、素材角色、运镜语言、功能位和禁区，不要把这些又退回成纯主观猜测
+5. **节奏**：开篇引人入胜，主体循序渐进，结尾收束有力，但不要为了时长预算硬做压缩或填充
+6. **原声判断**：不要把“素材里有人说话”和“这段就该静音旁白”画等号；只要原话本身有价值，粗剪默认应保留
+7. **照片处理**：照片默认是一秒静默信息点；只有显式 `holdMs` 才应拉长
+8. **直接消费 style 参数**：优先使用风格档案里已经明确写出的节奏阶段、素材角色、运镜语言、功能位和禁区，不要把这些又退回成纯主观猜测
 
 ## 备选路径
 

@@ -23,6 +23,7 @@ import {
 import { EmptyPanel, MonitorPage } from './monitor-page.jsx';
 import {
   CaptureTimeOverridesEditor,
+  IngestRootClockEditor,
   ManualItineraryEditor,
   ProjectBriefEditor,
   ReviewQueuePanel,
@@ -99,6 +100,7 @@ function AppShell() {
   const openReviewCount = reviews.filter(review => review.status === 'open').length;
 
   const setProjectBrief = makeSectionSetter(setConfig, 'projectBrief');
+  const setIngestRoots = makeSectionSetter(setConfig, 'ingestRoots');
   const setManualItinerary = makeSectionSetter(setConfig, 'manualItinerary');
   const setScriptBrief = makeSectionSetter(setConfig, 'scriptBrief');
 
@@ -152,6 +154,7 @@ function AppShell() {
     try {
       const mapping = {
         'project-brief': config.projectBrief,
+        'ingest-roots': config.ingestRoots,
         'manual-itinerary': config.manualItinerary,
         'script-brief': config.scriptBrief,
       };
@@ -394,6 +397,7 @@ function AppShell() {
                     <IngestGpsPage
                       config={config}
                       setProjectBrief={setProjectBrief}
+                      setIngestRoots={setIngestRoots}
                       setManualItinerary={setManualItinerary}
                       saveSection={saveSection}
                       busy={busy}
@@ -586,6 +590,7 @@ function OverviewPage({ currentProject, activeJobs, services, projectProgress, o
 function IngestGpsPage({
   config,
   setProjectBrief,
+  setIngestRoots,
   setManualItinerary,
   saveSection,
   busy,
@@ -615,6 +620,13 @@ function IngestGpsPage({
         setConfig={setManualItinerary}
         onSave={() => saveSection('manual-itinerary')}
         busy={busy['manual-itinerary']}
+      />
+      <IngestRootClockEditor
+        config={config.ingestRoots}
+        summaries={config.ingestRootSummaries || []}
+        setConfig={setIngestRoots}
+        onSave={() => saveSection('ingest-roots')}
+        busy={busy['ingest-roots']}
       />
       <CaptureTimeOverridesEditor
         config={config.manualItinerary}

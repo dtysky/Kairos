@@ -6,6 +6,7 @@ import type {
   IKtepScript,
   IKtepSlice,
   IKtepAsset,
+  IMediaChronology,
   IKtepScriptSelection,
   IKtepScriptBeat,
 } from '../../protocol/schema.js';
@@ -16,6 +17,7 @@ import {
 import {
   buildSourceSpeechContext,
   normalizeSourceSpeechSelections,
+  shouldPreserveNaturalSound,
   shouldPreferSourceSpeech,
 } from './pacing.js';
 import type { IResolvedArrangementSignals } from '../script/arrangement-signals.js';
@@ -24,14 +26,16 @@ export interface IPlacementConfig {
   maxSliceDurationMs: number;
   defaultTransitionMs: number;
   photoDefaultMs: number;
+  chronology?: IMediaChronology[];
   arrangementSignals?: IResolvedArrangementSignals;
 }
 
 const CDEFAULTS: IPlacementConfig = {
   maxSliceDurationMs: 15000,
   defaultTransitionMs: 500,
-  photoDefaultMs: 5000,
+  photoDefaultMs: 1000,
 };
+const CSILENT_REMAINDER_MIN_TIMELINE_MS = 1000;
 
 /**
  * 根据脚本段落和切片生成 clip 摆放。
@@ -47,6 +51,7 @@ export function placeClips(
   const cfg = { ...CDEFAULTS, ...config };
   const sliceMap = new Map(slices.map(s => [s.id, s]));
   const assetMap = new Map(assets.map(a => [a.id, a]));
+  const chronologyMap = new Map((cfg.chronology ?? []).map(entry => [entry.assetId, entry]));
   const reportMap = new Map(assetReports.map(report => [report.assetId, report]));
   const chronologyGuardEnabled = cfg.arrangementSignals?.enforceChronology === true;
 
@@ -59,37 +64,52 @@ export function placeClips(
   let cursor = 0;
   let previousBeatChronologyKey: string | null = null;
 
-  for (const seg of script) {
-    const segDur = seg.targetDurationMs ?? 10000;
-    const beats = chronologyGuardEnabled
-      ? applyChronologyAwareBeatOrdering(resolveBeats(seg, sliceMap), assetMap)
-      : resolveBeats(seg, sliceMap);
-    if (beats.length === 0) {
-      cursor += segDur;
+  const preparedSegments = script.map(seg => prepareSegmentPlacement(
+    seg,
+    sliceMap,
+    assetMap,
+    chronologyMap,
+    chronologyGuardEnabled,
+  ));
+  const sourceSpeechOwnership = buildSourceSpeechOwnership(preparedSegments);
+  const consumedSilentOwnership = new Map<string, Array<{ startMs: number; endMs: number }>>();
+
+  for (const preparedSegment of preparedSegments) {
+    if (preparedSegment.beats.length === 0) {
       continue;
     }
 
-    const perBeat = Math.max(1, Math.floor(segDur / beats.length));
-
-    for (const beat of beats) {
-      const beatDur = beat.targetDurationMs ?? perBeat;
-      const initialSelections = beat.selections;
-      const preferSourceSpeech = shouldPreferSourceSpeech(
-        seg,
-        beat,
-        buildSourceSpeechContext(initialSelections, sliceMap),
-      );
-      const selections = preferSourceSpeech
-        ? normalizeSourceSpeechSelections(initialSelections, sliceMap)
-        : initialSelections;
-      const orderedSelections = chronologyGuardEnabled
-        ? sortSelectionsByChronology(selections, assetMap)
-        : selections;
-      const explicitSpeed = preferSourceSpeech
+    for (const preparedBeat of preparedSegment.beats) {
+      const beat = preparedBeat.beat;
+      const explicitSpeed = preparedBeat.preferSourceSpeech
         ? undefined
-        : resolveRequestedSpeed(beat.actions?.speed ?? seg.actions?.speed);
+        : resolveRequestedSpeed(beat.actions?.speed ?? preparedSegment.segment.actions?.speed);
+      const provisionalSpeed = explicitSpeed
+        ?? resolveAutoMontageSpeed(preparedBeat.selections, preparedBeat.preferSourceSpeech);
+      const overlapTrimmedSelections = preparedBeat.preferSourceSpeech
+        ? preparedBeat.selections
+        : trimSelectionsAgainstSourceSpeech(
+          preparedBeat.selections,
+          sourceSpeechOwnership,
+          provisionalSpeed,
+        );
+      const dedupedSelections = preparedBeat.preferSourceSpeech
+        ? overlapTrimmedSelections
+        : trimSelectionsAgainstConsumedSilentRanges(
+          overlapTrimmedSelections,
+          consumedSilentOwnership,
+          provisionalSpeed,
+        );
+      const orderedSelections = chronologyGuardEnabled
+        ? sortSelectionsByChronology(dedupedSelections, assetMap, chronologyMap)
+        : dedupedSelections;
+      const requestedSpeed = explicitSpeed
+        ?? resolveAutoMontageSpeed(orderedSelections, preparedBeat.preferSourceSpeech);
+      const requestedHoldMs = resolveRequestedHoldMs(
+        beat.actions?.holdMs ?? preparedSegment.segment.actions?.holdMs,
+      );
       const beatChronologyKey = chronologyGuardEnabled
-        ? resolveBeatChronologyKey(orderedSelections, assetMap)
+        ? resolveBeatChronologyKey(orderedSelections, assetMap, chronologyMap)
         : null;
 
       if (
@@ -107,29 +127,27 @@ export function placeClips(
       }
 
       if (orderedSelections.length === 0) {
-        cursor += beatDur;
         continue;
       }
 
       const placement = buildBeatPlacement(
         orderedSelections,
-        beatDur,
-        explicitSpeed,
-        preferSourceSpeech,
+        requestedSpeed,
+        requestedHoldMs,
+        preparedBeat.preferSourceSpeech,
         assetMap,
         reportMap,
         cfg,
       );
 
       if (placement.entries.length === 0) {
-        cursor += beatDur;
         continue;
       }
 
       for (const entry of placement.entries) {
         const timelineInMs = cursor;
         const timelineOutMs = cursor + entry.timelineDurationMs;
-        const useProtectionAudio = preferSourceSpeech
+        const useProtectionAudio = preparedBeat.keepNaturalSound
           && shouldUseProtectionAudioFallback(entry.asset, entry.report);
 
         clips.push({
@@ -145,8 +163,8 @@ export function placeClips(
           ...(entry.appliedSpeed != null && { speed: entry.appliedSpeed }),
           timelineInMs,
           timelineOutMs,
-          ...((useProtectionAudio || shouldMuteClipAudio(entry.asset, preferSourceSpeech)) && { muteAudio: true }),
-          linkedScriptSegmentId: seg.id,
+          ...((useProtectionAudio || shouldMuteClipAudio(entry.asset, preparedBeat.keepNaturalSound)) && { muteAudio: true }),
+          linkedScriptSegmentId: preparedSegment.segment.id,
           linkedScriptBeatId: beat.id,
           pharosRefs: entry.selection.pharosRefs,
           transform: entry.isPhoto ? {
@@ -175,13 +193,17 @@ export function placeClips(
             sourceOutMs: entry.sourceOutMs,
             timelineInMs,
             timelineOutMs,
-            linkedScriptSegmentId: seg.id,
+            linkedScriptSegmentId: preparedSegment.segment.id,
             linkedScriptBeatId: beat.id,
             pharosRefs: entry.selection.pharosRefs,
           });
         }
 
         cursor += entry.timelineDurationMs;
+      }
+
+      if (!preparedBeat.preferSourceSpeech) {
+        appendConsumedSilentOwnership(consumedSilentOwnership, placement.entries);
       }
     }
   }
@@ -202,6 +224,18 @@ interface IResolvedSelection extends IKtepScriptSelection {
 
 interface IResolvedBeat extends Omit<IKtepScriptBeat, 'selections'> {
   selections: IResolvedSelection[];
+}
+
+interface IPreparedBeatPlacement {
+  beat: IResolvedBeat;
+  preferSourceSpeech: boolean;
+  keepNaturalSound: boolean;
+  selections: IResolvedSelection[];
+}
+
+interface IPreparedSegmentPlacement {
+  segment: IKtepScript;
+  beats: IPreparedBeatPlacement[];
 }
 
 interface IPlacementEntry {
@@ -271,8 +305,8 @@ function resolveSelections(
   }).filter(selection => selection.assetId.length > 0);
 }
 
-function shouldMuteClipAudio(asset: IKtepAsset, preferSourceSpeech: boolean): boolean {
-  if (preferSourceSpeech || asset.kind !== 'video') return false;
+function shouldMuteClipAudio(asset: IKtepAsset, keepNaturalSound: boolean): boolean {
+  if (keepNaturalSound || asset.kind !== 'video') return false;
 
   const explicitFlag = readMetadataBoolean(asset.metadata, 'hasAudioStream');
   if (explicitFlag != null) return explicitFlag;
@@ -306,21 +340,273 @@ function resolveRequestedSpeed(speed?: number): number | undefined {
   return speed;
 }
 
+function resolveAutoMontageSpeed(
+  selections: IResolvedSelection[],
+  preferSourceSpeech: boolean,
+): number | undefined {
+  if (preferSourceSpeech || selections.length === 0) return undefined;
+  if (!selections.every(selection =>
+    isSpeedEligibleSliceType(selection.sliceType)
+    && (selection.speedCandidate?.suggestedSpeeds?.length ?? 0) > 0,
+  )) {
+    return undefined;
+  }
+  return 2;
+}
+
+function resolveRequestedHoldMs(holdMs?: number): number | undefined {
+  if (typeof holdMs !== 'number' || !Number.isFinite(holdMs) || holdMs <= 0) return undefined;
+  return Math.round(holdMs);
+}
+
+function prepareSegmentPlacement(
+  segment: IKtepScript,
+  sliceMap: Map<string, IKtepSlice>,
+  assetMap: Map<string, IKtepAsset>,
+  chronologyMap: Map<string, IMediaChronology>,
+  chronologyGuardEnabled: boolean,
+): IPreparedSegmentPlacement {
+  const beats = chronologyGuardEnabled
+    ? applyChronologyAwareBeatOrdering(resolveBeats(segment, sliceMap), assetMap, chronologyMap)
+    : resolveBeats(segment, sliceMap);
+
+  return {
+    segment,
+    beats: beats.map(beat => {
+      const initialSelections = beat.selections;
+      const speechContext = buildSourceSpeechContext(initialSelections, sliceMap);
+      const preferSourceSpeech = shouldPreferSourceSpeech(segment, beat, speechContext);
+      const normalizedSelections = preferSourceSpeech
+        ? normalizeSourceSpeechSelections(initialSelections, sliceMap)
+        : initialSelections;
+      const orderedSelections = chronologyGuardEnabled
+        ? sortSelectionsByChronology(normalizedSelections, assetMap, chronologyMap)
+        : normalizedSelections;
+
+      return {
+        beat,
+        preferSourceSpeech,
+        keepNaturalSound: preferSourceSpeech || shouldPreserveNaturalSound(segment, beat),
+        selections: orderedSelections,
+      };
+    }).filter(beat => beat.selections.length > 0 || beat.beat.text.trim().length > 0),
+  };
+}
+
+function buildSourceSpeechOwnership(
+  segments: IPreparedSegmentPlacement[],
+): Map<string, Array<{ startMs: number; endMs: number }>> {
+  const ownership = new Map<string, Array<{ startMs: number; endMs: number }>>();
+
+  for (const segment of segments) {
+    for (const beat of segment.beats) {
+      if (!beat.preferSourceSpeech) continue;
+      for (const selection of beat.selections) {
+        if (typeof selection.sourceInMs !== 'number' || typeof selection.sourceOutMs !== 'number') {
+          continue;
+        }
+        if (selection.sourceOutMs <= selection.sourceInMs) continue;
+        const current = ownership.get(selection.assetId) ?? [];
+        current.push({
+          startMs: selection.sourceInMs,
+          endMs: selection.sourceOutMs,
+        });
+        ownership.set(selection.assetId, current);
+      }
+    }
+  }
+
+  for (const [assetId, ranges] of ownership.entries()) {
+    ownership.set(assetId, mergeSourceRanges(ranges));
+  }
+
+  return ownership;
+}
+
+function trimSelectionsAgainstSourceSpeech(
+  selections: IResolvedSelection[],
+  ownership: Map<string, Array<{ startMs: number; endMs: number }>>,
+  requestedSpeed: number | undefined,
+): IResolvedSelection[] {
+  return selections.flatMap(selection => {
+    if (!isSpeedEligibleSliceType(selection.sliceType)) {
+      return [selection];
+    }
+    if (typeof selection.sourceInMs !== 'number' || typeof selection.sourceOutMs !== 'number') {
+      return [selection];
+    }
+    if (selection.sourceOutMs <= selection.sourceInMs) {
+      return [];
+    }
+
+    const ownedRanges = ownership.get(selection.assetId) ?? [];
+    if (ownedRanges.length === 0) {
+      return [selection];
+    }
+
+    const remainders = subtractSourceRanges(
+      {
+        startMs: selection.sourceInMs,
+        endMs: selection.sourceOutMs,
+      },
+      ownedRanges,
+    );
+
+    return remainders
+      .filter(range =>
+        resolveTimelineDurationFromSource(range.endMs - range.startMs, requestedSpeed)
+        >= CSILENT_REMAINDER_MIN_TIMELINE_MS,
+      )
+      .map(range => ({
+        ...selection,
+        sourceInMs: range.startMs,
+        sourceOutMs: range.endMs,
+      }));
+  });
+}
+
+function trimSelectionsAgainstConsumedSilentRanges(
+  selections: IResolvedSelection[],
+  ownership: Map<string, Array<{ startMs: number; endMs: number }>>,
+  requestedSpeed: number | undefined,
+): IResolvedSelection[] {
+  return selections.flatMap(selection => {
+    if (!isSpeedEligibleSliceType(selection.sliceType)) {
+      return [selection];
+    }
+    if (typeof selection.sourceInMs !== 'number' || typeof selection.sourceOutMs !== 'number') {
+      return [selection];
+    }
+    if (selection.sourceOutMs <= selection.sourceInMs) {
+      return [];
+    }
+
+    const consumedRanges = ownership.get(selection.assetId) ?? [];
+    if (consumedRanges.length === 0) {
+      return [selection];
+    }
+
+    const remainders = subtractSourceRanges(
+      {
+        startMs: selection.sourceInMs,
+        endMs: selection.sourceOutMs,
+      },
+      consumedRanges,
+    );
+
+    return remainders
+      .filter(range =>
+        resolveTimelineDurationFromSource(range.endMs - range.startMs, requestedSpeed)
+        >= CSILENT_REMAINDER_MIN_TIMELINE_MS,
+      )
+      .map(range => ({
+        ...selection,
+        sourceInMs: range.startMs,
+        sourceOutMs: range.endMs,
+      }));
+  });
+}
+
+function appendConsumedSilentOwnership(
+  ownership: Map<string, Array<{ startMs: number; endMs: number }>>,
+  entries: IPlacementEntry[],
+): void {
+  for (const entry of entries) {
+    if (!isSpeedEligibleSliceType(entry.selection.sliceType)) {
+      continue;
+    }
+    if (typeof entry.sourceInMs !== 'number' || typeof entry.sourceOutMs !== 'number') {
+      continue;
+    }
+    if (entry.sourceOutMs <= entry.sourceInMs) {
+      continue;
+    }
+
+    const current = ownership.get(entry.asset.id) ?? [];
+    current.push({
+      startMs: entry.sourceInMs,
+      endMs: entry.sourceOutMs,
+    });
+    ownership.set(entry.asset.id, mergeSourceRanges(current));
+  }
+}
+
+function mergeSourceRanges(
+  ranges: Array<{ startMs: number; endMs: number }>,
+): Array<{ startMs: number; endMs: number }> {
+  if (ranges.length === 0) return [];
+
+  const sorted = [...ranges]
+    .filter(range => range.endMs > range.startMs)
+    .sort((left, right) => left.startMs - right.startMs || left.endMs - right.endMs);
+  if (sorted.length === 0) return [];
+
+  const merged: Array<{ startMs: number; endMs: number }> = [sorted[0]!];
+  for (let index = 1; index < sorted.length; index += 1) {
+    const current = sorted[index]!;
+    const previous = merged[merged.length - 1]!;
+    if (current.startMs <= previous.endMs) {
+      previous.endMs = Math.max(previous.endMs, current.endMs);
+      continue;
+    }
+    merged.push({ ...current });
+  }
+
+  return merged;
+}
+
+function subtractSourceRanges(
+  range: { startMs: number; endMs: number },
+  blockers: Array<{ startMs: number; endMs: number }>,
+): Array<{ startMs: number; endMs: number }> {
+  let remainders = [range];
+  for (const blocker of blockers) {
+    remainders = remainders.flatMap(current => subtractSingleSourceRange(current, blocker));
+    if (remainders.length === 0) break;
+  }
+  return remainders.filter(current => current.endMs > current.startMs);
+}
+
+function subtractSingleSourceRange(
+  range: { startMs: number; endMs: number },
+  blocker: { startMs: number; endMs: number },
+): Array<{ startMs: number; endMs: number }> {
+  const overlapStart = Math.max(range.startMs, blocker.startMs);
+  const overlapEnd = Math.min(range.endMs, blocker.endMs);
+  if (overlapEnd <= overlapStart) {
+    return [range];
+  }
+
+  const result: Array<{ startMs: number; endMs: number }> = [];
+  if (range.startMs < overlapStart) {
+    result.push({
+      startMs: range.startMs,
+      endMs: overlapStart,
+    });
+  }
+  if (overlapEnd < range.endMs) {
+    result.push({
+      startMs: overlapEnd,
+      endMs: range.endMs,
+    });
+  }
+  return result;
+}
+
 function buildBeatPlacement(
   selections: IResolvedSelection[],
-  beatTargetDurationMs: number,
   requestedSpeed: number | undefined,
+  requestedHoldMs: number | undefined,
   preferSourceSpeech: boolean,
   assetMap: Map<string, IKtepAsset>,
   reportMap: Map<string, IAssetCoarseReport>,
   config: IPlacementConfig,
 ): { entries: IPlacementEntry[]; totalDurationMs: number } {
-  const perSelectionTargetMs = Math.max(1, Math.round(beatTargetDurationMs / Math.max(selections.length, 1)));
   const entries = selections
     .map(selection => buildPlacementEntry(
       selection,
-      perSelectionTargetMs,
       requestedSpeed,
+      requestedHoldMs,
       preferSourceSpeech,
       assetMap,
       reportMap,
@@ -332,17 +618,6 @@ function buildBeatPlacement(
     return { entries: [], totalDurationMs: 0 };
   }
 
-  const naturalTotalMs = sumPlacementDurations(entries);
-  const effectiveTargetDurationMs = preferSourceSpeech
-    ? Math.max(beatTargetDurationMs, naturalTotalMs)
-    : beatTargetDurationMs;
-
-  if (naturalTotalMs > effectiveTargetDurationMs) {
-    fitEntriesToBudget(entries, effectiveTargetDurationMs);
-  } else if (naturalTotalMs < effectiveTargetDurationMs) {
-    expandEntriesTowardBudget(entries, effectiveTargetDurationMs, preferSourceSpeech);
-  }
-
   return {
     entries,
     totalDurationMs: sumPlacementDurations(entries),
@@ -351,8 +626,8 @@ function buildBeatPlacement(
 
 function buildPlacementEntry(
   selection: IResolvedSelection,
-  perSelectionTargetMs: number,
   requestedSpeed: number | undefined,
+  requestedHoldMs: number | undefined,
   preferSourceSpeech: boolean,
   assetMap: Map<string, IKtepAsset>,
   reportMap: Map<string, IAssetCoarseReport>,
@@ -371,8 +646,8 @@ function buildPlacementEntry(
   const naturalDurationMs = sourceDurationMs != null
     ? resolveTimelineDurationFromSource(sourceDurationMs, appliedSpeed)
     : isPhoto
-      ? Math.min(perSelectionTargetMs, config.photoDefaultMs)
-      : Math.min(perSelectionTargetMs, config.maxSliceDurationMs);
+      ? requestedHoldMs ?? config.photoDefaultMs
+      : requestedHoldMs ?? config.maxSliceDurationMs;
 
   return {
     selection,
@@ -393,17 +668,18 @@ function buildPlacementEntry(
 function applyChronologyAwareBeatOrdering(
   beats: IResolvedBeat[],
   assetMap: Map<string, IKtepAsset>,
+  chronologyMap: Map<string, IMediaChronology>,
 ): IResolvedBeat[] {
   return beats
     .map((beat, index) => {
-      const orderedSelections = sortSelectionsByChronology(beat.selections, assetMap);
+      const orderedSelections = sortSelectionsByChronology(beat.selections, assetMap, chronologyMap);
       return {
         beat: {
           ...beat,
           selections: orderedSelections,
         },
         index,
-        chronologyKey: resolveBeatChronologyKey(orderedSelections, assetMap),
+        chronologyKey: resolveBeatChronologyKey(orderedSelections, assetMap, chronologyMap),
       };
     })
     .sort((left, right) => {
@@ -418,10 +694,11 @@ function applyChronologyAwareBeatOrdering(
 function sortSelectionsByChronology(
   selections: IResolvedSelection[],
   assetMap: Map<string, IKtepAsset>,
+  chronologyMap: Map<string, IMediaChronology>,
 ): IResolvedSelection[] {
   return [...selections].sort((left, right) => {
-    const leftKey = resolveSelectionChronologyKey(left, assetMap);
-    const rightKey = resolveSelectionChronologyKey(right, assetMap);
+    const leftKey = resolveSelectionChronologyKey(left, assetMap, chronologyMap);
+    const rightKey = resolveSelectionChronologyKey(right, assetMap, chronologyMap);
     if (!leftKey && !rightKey) return 0;
     if (!leftKey) return 1;
     if (!rightKey) return -1;
@@ -432,9 +709,10 @@ function sortSelectionsByChronology(
 function resolveBeatChronologyKey(
   selections: IResolvedSelection[],
   assetMap: Map<string, IKtepAsset>,
+  chronologyMap: Map<string, IMediaChronology>,
 ): string | null {
   for (const selection of selections) {
-    const key = resolveSelectionChronologyKey(selection, assetMap);
+    const key = resolveSelectionChronologyKey(selection, assetMap, chronologyMap);
     if (key) return key;
   }
   return null;
@@ -443,8 +721,12 @@ function resolveBeatChronologyKey(
 function resolveSelectionChronologyKey(
   selection: Pick<IResolvedSelection, 'assetId' | 'sourceInMs'>,
   assetMap: Map<string, IKtepAsset>,
+  chronologyMap: Map<string, IMediaChronology>,
 ): string | null {
-  const capturedAt = assetMap.get(selection.assetId)?.capturedAt?.trim();
+  const chronology = chronologyMap.get(selection.assetId);
+  const capturedAt = chronology?.sortCapturedAt?.trim()
+    || chronology?.capturedAt?.trim()
+    || assetMap.get(selection.assetId)?.capturedAt?.trim();
   if (!capturedAt) return null;
   return `${capturedAt}|${String(Math.max(0, Math.round(selection.sourceInMs ?? 0))).padStart(9, '0')}`;
 }

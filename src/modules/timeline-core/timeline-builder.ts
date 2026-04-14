@@ -3,6 +3,7 @@ import type {
   IAssetCoarseReport,
   IKtepTimeline, IKtepDoc, IKtepAsset, IKtepSlice,
   IKtepScript, IKtepProject, IKtepSubtitle,
+  IMediaChronology,
 } from '../../protocol/schema.js';
 import { CPROTOCOL, CVERSION } from '../../protocol/schema.js';
 import type { IRuntimeConfig } from '../../store/project.js';
@@ -18,6 +19,7 @@ export interface IBuildConfig {
   height: number;
   name: string;
   assetReports?: IAssetCoarseReport[];
+  chronology?: IMediaChronology[];
   placement?: Partial<IPlacementConfig>;
   transition?: Partial<ITransitionConfig>;
   subtitle?: Partial<ISubtitleConfig>;
@@ -67,7 +69,7 @@ export function buildTimeline(
     normalizedScript,
     slices,
     assets,
-    cfg.placement,
+    { ...cfg.placement, chronology: cfg.chronology },
     cfg.assetReports,
   );
 

@@ -465,7 +465,6 @@ export function buildSegmentPlanDocument(input: {
     id: `segment-${index + 1}`,
     title: humanizeProgramType(program.type, index),
     intent: program.intent,
-    targetDurationMs: Math.round(input.style.narrative.avgSegmentDurationSec * 1000),
     roleHint: program.materialRoles[0],
     notes: dedupeStrings([
       program.transitionBias,
@@ -487,16 +486,8 @@ export function buildSegmentPlanDocument(input: {
   );
 
   const segments = seedSegments
-    .map((segment, index, allSegments) => ({
+    .map(segment => ({
       ...segment,
-      targetDurationMs: segment.targetDurationMs ?? inferSegmentDurationMs(
-        index,
-        allSegments.length,
-        input.style,
-        timeBands[index],
-        orderedSpanCandidates,
-        arrangementSignals,
-      ),
     }));
   const overviewNotes = extractOverviewGuidance(input.overviewMarkdown, 6);
 
@@ -566,16 +557,25 @@ export function buildMaterialSlotsDocument(input: {
         orderedSpanCandidates,
         timeBand: timeBands[index],
       });
+      const slots = chosenSpanIds.length > 0
+        ? chosenSpanIds.map((spanId, slotIndex) => ({
+          id: `${segment.id}-slot-${slotIndex + 1}`,
+          query,
+          requirement: 'required' as const,
+          targetBundles,
+          chosenSpanIds: [spanId],
+        }))
+        : [{
+          id: `${segment.id}-slot-1`,
+          query,
+          requirement: 'required' as const,
+          targetBundles,
+          chosenSpanIds: [],
+        }];
 
       return {
         segmentId: segment.id,
-        slots: [{
-          id: `${segment.id}-slot-1`,
-          query,
-          requirement: 'required',
-          targetBundles,
-          chosenSpanIds,
-        }],
+        slots,
       };
     }),
   };
@@ -621,13 +621,19 @@ export function resolveChosenSpanIds(input: {
   const candidateBySpanId = new Map(
     orderedSpanCandidates.map(candidate => [candidate.spanId, candidate] as const),
   );
-  const candidateSpanIds = dedupeStrings(candidateBundles.flatMap(bundle => bundle.memberSpanIds));
+  const bundleIdsBySpanId = buildBundleIdsBySpanId(input.bundles);
+  const candidateSpanIds = dedupeStrings(
+    arrangementSignals.enforceChronology
+      ? orderedSpanCandidates.map(candidate => candidate.spanId)
+      : candidateBundles.flatMap(bundle => bundle.memberSpanIds),
+  );
   const eligibleSpanIds = resolveEligibleSpanIds(
-    candidateSpanIds,
+    candidateSpanIds.length > 0 ? candidateSpanIds : orderedSpanCandidates.map(candidate => candidate.spanId),
     candidateBySpanId,
     input.timeBand,
     arrangementSignals,
   );
+  const targetBundleIdSet = new Set(input.targetBundleIds);
 
   const scored: Array<{
     spanId: string;
@@ -635,58 +641,46 @@ export function resolveChosenSpanIds(input: {
     orderIndex: number;
     isKeyProcessVideo: boolean;
   }> = [];
-  for (const bundle of candidateBundles) {
-    const bundleText = `${bundle.label} ${bundle.key} ${bundle.notes.join(' ')} ${bundle.placeHints.join(' ')}`;
-    const bundleScore = input.targetBundleIds.includes(bundle.id)
-      ? 40
-      : scoreSemanticMatch(queryTokens, normalizeSemanticText(bundleText)) * 16;
-
-    for (const spanId of bundle.memberSpanIds) {
-      if (!eligibleSpanIds.has(spanId)) continue;
-      const span = input.spansById.get(spanId);
-      if (!span) continue;
-      const chronology = input.chronologyByAssetId.get(span.assetId);
-      const candidate = candidateBySpanId.get(spanId);
-      const materialScore = Math.max(
-        ...span.materialPatterns.map(pattern => scoreSemanticMatch(queryTokens, normalizeSemanticText(pattern.phrase))),
-        0,
-      ) * 30;
-      const placeScore = Math.max(
-        ...span.grounding.spatialEvidence.map(evidence => scoreSemanticMatch(queryTokens, normalizeSemanticText(evidence.locationText ?? ''))),
-        0,
-      ) * 12;
-      const transcriptScore = span.transcript
-        ? scoreSemanticMatch(queryTokens, normalizeSemanticText(span.transcript)) * 8
+  for (const spanId of eligibleSpanIds) {
+    const span = input.spansById.get(spanId);
+    if (!span) continue;
+    const chronology = input.chronologyByAssetId.get(span.assetId);
+    const candidate = candidateBySpanId.get(spanId);
+    const materialScore = Math.max(
+      ...span.materialPatterns.map(pattern => scoreSemanticMatch(queryTokens, normalizeSemanticText(pattern.phrase))),
+      0,
+    ) * 30;
+    const placeScore = Math.max(
+      ...span.grounding.spatialEvidence.map(evidence => scoreSemanticMatch(queryTokens, normalizeSemanticText(evidence.locationText ?? ''))),
+      0,
+    ) * 12;
+    const transcriptScore = span.transcript
+      ? scoreSemanticMatch(queryTokens, normalizeSemanticText(span.transcript)) * 8
+      : 0;
+    const chronologyScore = candidate
+      ? scoreTimeBandFit(candidate, input.timeBand, desiredPosition, arrangementSignals) * 18
+      : chronology
+        ? scoreChronologyPosition(chronology, input.chronologyByAssetId, desiredPosition) * 10
         : 0;
-      const chronologyScore = candidate
-        ? scoreTimeBandFit(candidate, input.timeBand, desiredPosition, arrangementSignals) * 18
-        : chronology
-          ? scoreChronologyPosition(chronology, input.chronologyByAssetId, desiredPosition) * 10
-          : 0;
-      const pharosScore = scorePharosMatch(span, input.pharosContext, querySignature) * 12;
-      const keyVideoScore = candidate?.isKeyProcessVideo
-        ? 10 + arrangementSignals.processContinuityStrength * 6
-        : 0;
-      const sourceSpeechScore = candidate?.hasSourceSpeech ? 4 : 0;
-      scored.push({
-        spanId,
-        score: bundleScore + materialScore + placeScore + transcriptScore + chronologyScore + pharosScore + keyVideoScore + sourceSpeechScore,
-        orderIndex: candidate?.orderIndex ?? Number.MAX_SAFE_INTEGER,
-        isKeyProcessVideo: candidate?.isKeyProcessVideo ?? false,
-      });
-    }
+    const pharosScore = scorePharosMatch(span, input.pharosContext, querySignature) * 12;
+    const keyVideoScore = candidate?.isKeyProcessVideo
+      ? 10 + arrangementSignals.processContinuityStrength * 6
+      : 0;
+    const sourceSpeechScore = candidate?.hasSourceSpeech ? 4 : 0;
+    const bundleScore = (bundleIdsBySpanId.get(spanId) ?? []).some(bundleId => targetBundleIdSet.has(bundleId))
+      ? 18
+      : 0;
+    scored.push({
+      spanId,
+      score: bundleScore + materialScore + placeScore + transcriptScore + chronologyScore + pharosScore + keyVideoScore + sourceSpeechScore,
+      orderIndex: candidate?.orderIndex ?? Number.MAX_SAFE_INTEGER,
+      isKeyProcessVideo: candidate?.isKeyProcessVideo ?? false,
+    });
   }
 
   const ranked = scored
     .sort((left, right) => right.score - left.score || left.orderIndex - right.orderIndex);
-  const selectionLimit = resolveSelectionLimit(ranked, arrangementSignals);
-  const prioritized = dedupeRankedSpanIds([
-    ...ranked.filter(item => item.isKeyProcessVideo).slice(0, Math.min(2, selectionLimit)),
-    ...ranked,
-  ]);
-
-  const chosen = prioritized
-    .slice(0, selectionLimit)
+  const chosen = filterNearDuplicateSpans(ranked, input.spansById)
     .sort((left, right) => arrangementSignals.enforceChronology
       ? left.orderIndex - right.orderIndex || right.score - left.score
       : right.score - left.score || left.orderIndex - right.orderIndex,
@@ -749,13 +743,12 @@ function buildSegmentTimeBands(
     }));
   }
 
-  const padding = Math.min(0.16, Math.max(0.06, 0.45 / segmentCount));
   return Array.from({ length: segmentCount }, (_, index) => {
     const baseStart = index / segmentCount;
     const baseEnd = (index + 1) / segmentCount;
     return {
-      startPosition: index === 0 ? 0 : Math.max(0, baseStart - padding),
-      endPosition: index === segmentCount - 1 ? 1 : Math.min(1, baseEnd + padding),
+      startPosition: baseStart,
+      endPosition: baseEnd,
       centerPosition: (baseStart + baseEnd) / 2,
     };
   });
@@ -813,24 +806,76 @@ function scoreTimeBandFit(
   return Math.max(0, 1 - Math.abs(candidate.orderPosition - timeBand.centerPosition) / halfWidth);
 }
 
-function resolveSelectionLimit(
-  ranked: Array<{ isKeyProcessVideo: boolean }>,
-  arrangementSignals: IResolvedArrangementSignals,
-): number {
-  if (!arrangementSignals.enforceChronology) return 3;
-  const keyVideoCount = ranked.filter(item => item.isKeyProcessVideo).length;
-  return Math.min(5, keyVideoCount >= 3 ? 4 : 3);
-}
-
-function dedupeRankedSpanIds<T extends { spanId: string }>(items: T[]): T[] {
-  const seen = new Set<string>();
-  const result: T[] = [];
-  for (const item of items) {
-    if (seen.has(item.spanId)) continue;
-    seen.add(item.spanId);
-    result.push(item);
+function buildBundleIdsBySpanId(
+  bundles: IMaterialBundle[],
+): Map<string, string[]> {
+  const result = new Map<string, string[]>();
+  for (const bundle of bundles) {
+    for (const spanId of bundle.memberSpanIds) {
+      const current = result.get(spanId) ?? [];
+      current.push(bundle.id);
+      result.set(spanId, current);
+    }
   }
   return result;
+}
+
+function filterNearDuplicateSpans<T extends { spanId: string }>(
+  ranked: T[],
+  spansById: Map<string, IKtepSlice>,
+): T[] {
+  const retained: T[] = [];
+  for (const candidate of ranked) {
+    const span = spansById.get(candidate.spanId);
+    if (!span) continue;
+    const duplicate = retained.some(existing => {
+      const existingSpan = spansById.get(existing.spanId);
+      return existingSpan != null && areNearDuplicateSpans(span, existingSpan);
+    });
+    if (duplicate) continue;
+    retained.push(candidate);
+  }
+  return retained;
+}
+
+function areNearDuplicateSpans(left: IKtepSlice, right: IKtepSlice): boolean {
+  if (left.assetId !== right.assetId || left.type !== right.type) return false;
+  return resolveSpanOverlapRatio(left, right) >= 0.6;
+}
+
+function resolveSpanOverlapRatio(left: IKtepSlice, right: IKtepSlice): number {
+  const leftRange = resolvePreferredSpanRange(left);
+  const rightRange = resolvePreferredSpanRange(right);
+  if (!leftRange || !rightRange) return 0;
+  const overlapStart = Math.max(leftRange.startMs, rightRange.startMs);
+  const overlapEnd = Math.min(leftRange.endMs, rightRange.endMs);
+  if (overlapEnd <= overlapStart) return 0;
+  const overlapMs = overlapEnd - overlapStart;
+  const baselineMs = Math.min(leftRange.endMs - leftRange.startMs, rightRange.endMs - rightRange.startMs);
+  if (baselineMs <= 0) return 0;
+  return overlapMs / baselineMs;
+}
+
+function resolvePreferredSpanRange(
+  span: Pick<IKtepSlice, 'sourceInMs' | 'sourceOutMs' | 'editSourceInMs' | 'editSourceOutMs'>,
+): { startMs: number; endMs: number } | null {
+  const editDuration = resolvePositiveDuration(span.editSourceInMs, span.editSourceOutMs);
+  if (editDuration != null) {
+    return {
+      startMs: span.editSourceInMs as number,
+      endMs: span.editSourceOutMs as number,
+    };
+  }
+
+  const sourceDuration = resolvePositiveDuration(span.sourceInMs, span.sourceOutMs);
+  if (sourceDuration != null) {
+    return {
+      startMs: span.sourceInMs as number,
+      endMs: span.sourceOutMs as number,
+    };
+  }
+
+  return null;
 }
 
 function buildPharosOrderMap(
@@ -1206,9 +1251,8 @@ function matchBundlesForQuery(
         ...bundle.placeHints,
       ].join(' '))),
     }))
-    .filter(item => item.score > 0.15)
+    .filter(item => item.score > 0)
     .sort((left, right) => right.score - left.score)
-    .slice(0, 5)
     .map(item => item.bundle.id);
 }
 

@@ -27,6 +27,9 @@ Current stable pipeline:
   - 阻塞项通过 Console 卡片式“素材时间校正”处理，而不是要求用户直接回填 Markdown 表格
   - 用户当前可直接在 UI 中选择 `保持当前 / 使用建议 / 手动修正`
   - 手动修正默认只要求 `正确时间 + 时区`；`正确日期` 会优先按 `suggestedDate`，否则按当前时间在该时区对应的本地日期自动补齐
+  - 项目内跨设备时钟漂移当前也通过这里正式修正：`/ingest-gps` 会并列提供 root 级“设备时钟偏移”面板与单素材 `captureTimeOverrides`
+  - root 级偏移写入 `config/ingest-roots.json` 的 `clockOffsetMs`；单素材 `captureTimeOverrides` 继续作为更高优先级例外层
+  - `media/chronology.json` 的 `sortCapturedAt` 当前是 Script / Timeline 共享的唯一时序真值：优先 `capturedAtOverride`，其次 `asset.capturedAt + root.clockOffsetMs`，最后才回退原始 `asset.capturedAt`
 - official local runtime / monitor entry is `Supervisor + React console (apps/kairos-console/)`
   - `http://127.0.0.1:8940/analyze` is the official Analyze monitor route
   - `http://127.0.0.1:8940/style` is the official workspace-level Style monitor route
@@ -67,14 +70,20 @@ Current stable pipeline:
     - internal arrangement signals resolve that the style is time-axis-strong from the existing style markdown
     - deterministic prep builds monotonic time bands for segments and only retrieves spans inside the legal band
     - downstream timeline assembly re-validates chronology and refuses to silently output a backwards sequence
-  - deterministic prep no longer treats style averages as the primary source of segment length; segment budgets now start from material capacity, while style only nudges pacing and caps
+  - deterministic prep no longer treats style averages or inferred material capacity as the driver of rough-cut duration; `targetDurationMs` stays optional and advisory-only unless the user explicitly sets it
+  - rough-cut recall is now high-recall by default: valid spans should stay in `material-slots / outline / script` unless they are empty, clearly bad, or near-duplicate
+  - `analysis/material-bundles.json` is now a full span index, and `script/material-slots.json` may fan out to many single-span slots instead of one shortlist slot per segment
   - key process videos with real event progression / relationship progression / effective source speech are now protected from being swallowed by broad summary segments
 - project brief now carries one project-level semantic vocab layer for analyze/script:
   - `材料模式短语`
 - subtitles support two formal paths:
   - narration path from `beat.text`
   - source-speech path from `span.transcriptSegments`
-  - source-speech subtitles now run through cleanup and hard cue splitting first; noisy ASR that still cannot produce readable cues falls back to `beat.text`
+  - source-speech subtitles now run through cleanup and hard cue splitting first; noisy ASR that still cannot produce readable cues now stays silent instead of falling back to explanatory narration
+- source-speech rough cut now prefers transcript-driven speech islands over one long enclosing window: short pauses may remain, but long silent gaps should be cut out instead of being carried through a preserved-speech beat
+- source-speech now treats filtered spoken transcript cues as timing truth:
+  - navigation / device-command transcript tails should be filtered out before speech-island building and subtitle generation
+  - coarse transcript segments that split into multiple subtitle cues should be re-timed by cue length / speech pacing, not evenly divided
 - video Analyze now produces formal video `visualSummary + decision` in a single unified VLM pass during `finalize`:
   - with audio: `coarse-scan -> audio-analysis -> finalize -> deferred scene detect(if needed)`
   - without audio: `coarse-scan -> finalize -> deferred scene detect(if needed)`
@@ -96,12 +105,17 @@ Current stable pipeline:
 - analyze now formalizes material-side semantics on each span:
   - `materialPatterns[]`
   - `grounding`
-- drive spans can now carry `speedCandidate` metadata (for example `2x / 5x / 10x` suggestions), but final retiming stays an explicit downstream decision
+- drive / aerial spans can now carry `speedCandidate` metadata (for example `2x / 5x / 10x` suggestions); rough-cut timeline may auto-consume it for silent montage beats, while explicit `beat.actions.speed` still overrides the default
 - a `beat` can now optionally carry explicit `utterances[]` with head / middle / tail pauses, so subtitles only occupy voiced islands while video can continue underneath
 - outline / script now prefer Analyze-provided edit bounds instead of re-centering every span by default; legacy spans without edit bounds still fall back to conservative trimming
-- explicit acceleration now flows through `beat.actions.speed` -> timeline clip `speed` -> NLE export, but only `drive / aerial` clips may consume it; placement also fits clips against `beat.targetDurationMs` instead of drifting with raw source duration
-- when a beat preserves source speech, Kairos now snaps the selected window outward to full `transcriptSegments` boundaries and will extend the beat if needed so the spoken sentence finishes cleanly
-- timeline placement no longer uses single photos as an unbounded way to absorb leftover beat budget; photos keep short natural holds unless the script explicitly asks for a longer hold
+- explicit acceleration now flows through `beat.actions.speed` -> timeline clip `speed` -> NLE export, but only `drive / aerial` clips may consume it; acceleration is for expression and de-duplication, not for meeting a duration target
+- silent `drive / aerial` beats with `speedCandidate` now default to `2x` in rough cut unless the script explicitly requests another speed
+- when a beat preserves source speech, Kairos now snaps the selected window to transcript-driven speech islands and keeps subtitle timing aligned to those source boundaries
+- source-speech clip boundaries should match the filtered spoken transcript window by default instead of carrying fixed extra silence
+- rough-cut timeline placement now keeps effective source windows by default instead of fitting clips against `beat.targetDurationMs`; photos default to `1s` silent holds unless the script explicitly asks for a longer `holdMs`
+- when the same asset contributes both source-speech and silent `drive / aerial` material, source-speech owns the overlapping source window and silent montage may only use the non-overlapping remainder
+- when the same `drive / aerial` asset is reused by later silent montage beats, the later beat should only keep source remainder that has not already been consumed earlier in the rough cut
+- chronology guard 与 selection / beat 排序当前也必须统一读取 `media/chronology.json` 的 `sortCapturedAt`，不再允许 timeline 私自回退到原始 `asset.capturedAt`
 - for styles whose existing main axis resolves to time / route progression, timeline placement now treats chronology as a formal guardrail instead of a soft preference:
   - adjacent beats should keep non-decreasing `capturedAt`
   - multi-selection beats should default to chronological order internally

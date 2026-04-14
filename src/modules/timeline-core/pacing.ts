@@ -59,6 +59,8 @@ interface IResolvedUtterance {
   pauseAfterMs: number;
 }
 
+type ITranscriptSegment = NonNullable<IKtepSlice['transcriptSegments']>[number];
+
 const CDEFAULTS: ISpeechPacingConfig = {
   maxCharsPerCue: 20,
   cjkCharsPerSecond: 3.8,
@@ -68,6 +70,20 @@ const CDEFAULTS: ISpeechPacingConfig = {
   longPauseMs: 320,
   minCueDurationMs: 1100,
 };
+
+const CSOURCE_SPEECH_SHORT_GAP_MS = 1200;
+const CNON_SPOKEN_TRANSCRIPT_PATTERNS: RegExp[] = [
+  /(?:(?:拍摄|拍攝|录制|錄製|录像|錄像)(?:启动|啟動|开始|開始|停止|结束|結束)|(?:启动|啟動|开始|開始|停止|结束|結束)(?:拍摄|拍攝|录制|錄製|录像|錄像))/u,
+  /指令(?:执行|執行)中/u,
+  /限制解除/u,
+  /全力战斗模式/u,
+  /(?:请|請)?集中注意力/u,
+  /(?:保持|请保持|請保持)(?:左侧|左側|右侧|右側).{0,10}(?:主路|行驶|行駛|形式)/u,
+  /^(?:进入|進入).{0,20}隧道$/u,
+  /沿.+继续行驶\d+(?:\.\d+)?公里/u,
+  /前方\d+(?:米|公里)/u,
+  /(?:限速|線速)\d+/u,
+];
 
 export function resolveSpeechPacingConfig(
   config: Partial<ISpeechPacingConfig> = {},
@@ -80,27 +96,17 @@ export function normalizeScriptTiming(
   slices: IKtepSlice[],
   config: Partial<ISpeechPacingConfig> = {},
 ): IKtepScript[] {
-  const cfg = resolveSpeechPacingConfig(config);
   const sliceMap = new Map(slices.map(slice => [slice.id, slice]));
 
   return script.map(segment => {
     if (!segment.beats || segment.beats.length === 0) {
-      return normalizeLegacySegmentTiming(segment, sliceMap, cfg);
+      return normalizeLegacySegmentTiming(segment, sliceMap, config);
     }
 
-    const beats = segment.beats.map(beat => normalizeBeatTiming(segment, beat, sliceMap, cfg));
-    const aggregateDurationMs = beats.reduce(
-      (sum, beat) => sum + resolveBeatTargetDurationMs(beat, sliceMap, cfg),
-      0,
-    );
-    const currentTargetDurationMs = segment.targetDurationMs ?? 0;
-
+    const beats = segment.beats.map(beat => normalizeBeatTiming(segment, beat, sliceMap, config));
     return {
       ...segment,
       beats,
-      ...(aggregateDurationMs > 0 && {
-        targetDurationMs: Math.max(currentTargetDurationMs, aggregateDurationMs),
-      }),
     };
   });
 }
@@ -232,7 +238,10 @@ export function buildSourceSpeechContext(
       typeWeights.set(slice.type, (typeWeights.get(slice.type) ?? 0) + windowDurationMs);
     }
 
-    const transcriptSegments = slice.transcriptSegments ?? [];
+    const transcriptSegments = filterSourceSpeechTranscriptSegments(
+      slice.transcriptSegments ?? [],
+      { startMs: sourceInMs, endMs: sourceOutMs },
+    );
     if (transcriptSegments.length === 0) continue;
 
     for (const transcriptSegment of transcriptSegments) {
@@ -274,33 +283,33 @@ export function shouldPreferSourceSpeech(
   if (beat.actions?.muteSource === true || segment.actions?.muteSource === true) {
     return false;
   }
-  if (beat.actions?.preserveNatSound === true) return true;
-  if (segment.actions?.preserveNatSound === true) return true;
   if (speechContext.transcriptSegmentCount === 0) return false;
-  if (speechContext.speechCoverage < 0.18) return false;
-
-  const beatText = normalizeComparisonText(resolveBeatNarrationText(beat));
-  if (!beatText) return true;
-
   const transcriptText = normalizeComparisonText(speechContext.transcriptText);
   if (!transcriptText) return false;
-
-  if (hasStrongTranscriptContainment(beatText, transcriptText)) {
+  if (shouldPreserveNaturalSound(segment, beat)) return true;
+  if (speechContext.dominantSliceType === 'talking-head') {
     return true;
   }
 
-  const matchScore = computeTranscriptMatchScore(beatText, transcriptText);
-  if (beatText.length >= 6 && matchScore >= 0.6) return true;
+  return speechContext.speechCoverage >= 0.08;
+}
 
-  if (segment.role === 'intro' || segment.role === 'transition' || segment.role === 'outro') {
+export function shouldPreserveNaturalSound(
+  segment: Pick<IKtepScript, 'actions'>,
+  beat: Pick<IKtepScriptBeat, 'actions'>,
+): boolean {
+  if (beat.actions?.muteSource === true || segment.actions?.muteSource === true) {
     return false;
   }
+  return beat.actions?.preserveNatSound === true || segment.actions?.preserveNatSound === true;
+}
 
-  if (speechContext.dominantSliceType === 'talking-head') {
-    return speechContext.speechCoverage >= 0.42 && matchScore >= 0.18;
-  }
-
-  return speechContext.speechCoverage >= 0.72 && matchScore >= 0.3;
+export function filterSourceSpeechTranscriptSegments(
+  transcriptSegments: ITranscriptSegment[] = [],
+  range?: { startMs: number; endMs: number },
+): ITranscriptSegment[] {
+  return findOverlappingTranscriptSegments(transcriptSegments, range)
+    .filter(segment => isSpokenTranscriptSegment(segment.text));
 }
 
 export function splitCueChunks(text: string, maxChars: number): string[] {
@@ -356,44 +365,28 @@ function normalizeBeatTiming(
   segment: IKtepScript,
   beat: IKtepScriptBeat,
   sliceMap: Map<string, IKtepSlice>,
-  config: ISpeechPacingConfig,
+  _config: Partial<ISpeechPacingConfig>,
 ): IKtepScriptBeat {
   const speechContext = buildSourceSpeechContext(beat.selections, sliceMap);
   if (shouldPreferSourceSpeech(segment, beat, speechContext)) {
     const normalizedSelections = normalizeSourceSpeechSelections(beat.selections, sliceMap);
-    const targetDurationMs = sumSelectionDurationsMs(normalizedSelections, sliceMap);
-    if (
-      targetDurationMs === (beat.targetDurationMs ?? 0)
-      && !haveSelectionWindowsChanged(beat.selections, normalizedSelections)
-    ) {
+    if (!haveSelectionWindowsChanged(beat.selections, normalizedSelections)) {
       return beat;
     }
 
     return {
       ...beat,
       selections: normalizedSelections,
-      ...(targetDurationMs > 0 && { targetDurationMs }),
     };
   }
 
-  const estimatedDurationMs = buildNarrationBeatPlan(beat, config).totalDurationMs;
-  if (estimatedDurationMs <= 0) return beat;
-
-  const targetDurationMs = Math.max(beat.targetDurationMs ?? 0, estimatedDurationMs);
-  if (targetDurationMs === beat.targetDurationMs) {
-    return beat;
-  }
-
-  return {
-    ...beat,
-    targetDurationMs,
-  };
+  return beat;
 }
 
 function normalizeLegacySegmentTiming(
   segment: IKtepScript,
   sliceMap: Map<string, IKtepSlice>,
-  config: ISpeechPacingConfig,
+  _config: Partial<ISpeechPacingConfig>,
 ): IKtepScript {
   const narration = segment.narration?.trim();
   if (!narration) return segment;
@@ -409,33 +402,17 @@ function normalizeLegacySegmentTiming(
   const speechContext = buildSourceSpeechContext(legacyBeat.selections, sliceMap);
   if (shouldPreferSourceSpeech(segment, legacyBeat, speechContext)) {
     const normalizedSelections = normalizeSourceSpeechSelections(legacyBeat.selections, sliceMap);
-    const targetDurationMs = sumSelectionDurationsMs(normalizedSelections, sliceMap);
-    if (
-      targetDurationMs === (segment.targetDurationMs ?? 0)
-      && !haveSelectionWindowsChanged(segment.selections ?? [], normalizedSelections)
-    ) {
+    if (!haveSelectionWindowsChanged(segment.selections ?? [], normalizedSelections)) {
       return segment;
     }
 
     return {
       ...segment,
       selections: normalizedSelections,
-      ...(targetDurationMs > 0 && { targetDurationMs }),
     };
   }
 
-  const estimatedDurationMs = estimateNarrationBeatDurationMs(narration, config);
-  if (estimatedDurationMs <= 0) return segment;
-
-  const targetDurationMs = Math.max(segment.targetDurationMs ?? 0, estimatedDurationMs);
-  if (targetDurationMs === segment.targetDurationMs) {
-    return segment;
-  }
-
-  return {
-    ...segment,
-    targetDurationMs,
-  };
+  return segment;
 }
 
 function resolveBeatTargetDurationMs(
@@ -634,26 +611,126 @@ export function normalizeSourceSpeechSelections(
   selections: IKtepScriptSelection[],
   sliceMap: Map<string, IKtepSlice>,
 ): IKtepScriptSelection[] {
-  const transcriptSelections = selections.flatMap(selection => {
+  const spokenSelections: IKtepScriptSelection[] = [];
+  const fallbackSelections: IKtepScriptSelection[] = [];
+  let sawTranscriptOverlap = false;
+
+  for (const selection of selections) {
     const slice = selection.sliceId ? sliceMap.get(selection.sliceId) : undefined;
-    const transcriptRange = resolveSelectionTranscriptRange(selection, slice);
-    if (!transcriptRange) return [];
+    const resolution = resolveSelectionSpeechIslands(selection, slice);
+    if (resolution.hadTranscriptOverlap) {
+      sawTranscriptOverlap = true;
+    }
 
-    return [{
+    if (resolution.islands.length > 0) {
+      spokenSelections.push(...resolution.islands.map(island => ({
       ...selection,
-      sourceInMs: transcriptRange.startMs,
-      sourceOutMs: transcriptRange.endMs,
-    }];
-  });
+      sourceInMs: island.startMs,
+      sourceOutMs: island.endMs,
+      })));
+      continue;
+    }
 
-  if (transcriptSelections.length > 0) {
-    return transcriptSelections;
+    if (!resolution.hadTranscriptOverlap) {
+      fallbackSelections.push(snapSelectionToTranscriptSegments(selection, slice));
+    }
+  }
+
+  if (spokenSelections.length > 0) {
+    return spokenSelections;
+  }
+
+  if (sawTranscriptOverlap) {
+    return [];
+  }
+
+  if (fallbackSelections.length > 0) {
+    return fallbackSelections;
   }
 
   return selections.map(selection => {
     const slice = selection.sliceId ? sliceMap.get(selection.sliceId) : undefined;
     return snapSelectionToTranscriptSegments(selection, slice);
   });
+}
+
+function resolveSelectionSpeechIslands(
+  selection: IKtepScriptSelection,
+  slice?: Pick<
+    IKtepSlice,
+    'sourceInMs' | 'sourceOutMs' | 'editSourceInMs' | 'editSourceOutMs' | 'transcriptSegments'
+  >,
+) : {
+  islands: Array<{ startMs: number; endMs: number }>;
+  hadTranscriptOverlap: boolean;
+} {
+  const selectionRange = resolveSelectionRange(selection, slice);
+  if (!selectionRange) {
+    return {
+      islands: [],
+      hadTranscriptOverlap: false,
+    };
+  }
+
+  const overlappingSegments = findOverlappingTranscriptSegments(
+    slice?.transcriptSegments ?? [],
+    selectionRange,
+  );
+  if (overlappingSegments.length === 0) {
+    const transcriptRange = resolveSelectionTranscriptRange(selection, slice);
+    return {
+      islands: transcriptRange ? [transcriptRange] : [],
+      hadTranscriptOverlap: false,
+    };
+  }
+
+  const spokenSegments = overlappingSegments.filter(segment => isSpokenTranscriptSegment(segment.text));
+  if (spokenSegments.length === 0) {
+    return {
+      islands: [],
+      hadTranscriptOverlap: true,
+    };
+  }
+
+  return {
+    islands: mergeTranscriptSegmentsToSpeechIslands(spokenSegments)
+      .filter(island => island.endMs > island.startMs),
+    hadTranscriptOverlap: true,
+  };
+}
+
+function mergeTranscriptSegmentsToSpeechIslands(
+  segments: ITranscriptSegment[],
+): Array<{ startMs: number; endMs: number }> {
+  const islands: Array<{ startMs: number; endMs: number }> = [];
+  let current: { startMs: number; endMs: number } | null = null;
+
+  for (const segment of segments) {
+    if (!current) {
+      current = {
+        startMs: segment.startMs,
+        endMs: segment.endMs,
+      };
+      continue;
+    }
+
+    if (segment.startMs - current.endMs <= CSOURCE_SPEECH_SHORT_GAP_MS) {
+      current.endMs = Math.max(current.endMs, segment.endMs);
+      continue;
+    }
+
+    islands.push(current);
+    current = {
+      startMs: segment.startMs,
+      endMs: segment.endMs,
+    };
+  }
+
+  if (current) {
+    islands.push(current);
+  }
+
+  return islands;
 }
 
 function sumSelectionDurationsMs(
@@ -685,4 +762,27 @@ function haveSelectionWindowsChanged(
   }
 
   return false;
+}
+
+function findOverlappingTranscriptSegments(
+  transcriptSegments: ITranscriptSegment[] = [],
+  range?: { startMs: number; endMs: number },
+): ITranscriptSegment[] {
+  if (!range) return [];
+
+  return transcriptSegments
+    .filter(segment =>
+      Math.min(range.endMs, segment.endMs) > Math.max(range.startMs, segment.startMs)
+      && sanitizeSubtitleCueText(segment.text).length > 0,
+    )
+    .sort((left, right) => left.startMs - right.startMs);
+}
+
+function isSpokenTranscriptSegment(text: string): boolean {
+  const normalized = sanitizeSubtitleCueText(text)
+    .replace(/\s+/gu, '')
+    .trim();
+  if (!normalized) return false;
+
+  return !CNON_SPOKEN_TRANSCRIPT_PATTERNS.some(pattern => pattern.test(normalized));
 }

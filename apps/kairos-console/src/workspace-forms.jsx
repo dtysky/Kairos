@@ -272,6 +272,96 @@ export function ManualItineraryEditor({ config, setConfig, onSave, busy }) {
   );
 }
 
+export function IngestRootClockEditor({ config, summaries = [], setConfig, onSave, busy }) {
+  const roots = config?.roots || [];
+  const [drafts, setDrafts] = React.useState({});
+
+  React.useEffect(() => {
+    setDrafts(Object.fromEntries(
+      roots.map(root => [root.id, formatClockOffsetMs(root.clockOffsetMs)]),
+    ));
+  }, [roots]);
+
+  if (!config) return null;
+
+  const summariesByRootId = new Map(summaries.map(item => [item.rootId, item]));
+
+  function commitClockOffset(rootId) {
+    const draft = drafts[rootId] ?? '';
+    const parsed = parseClockOffsetInput(draft);
+    const root = roots.find(item => item.id === rootId);
+    if (!root) return;
+    if (parsed === null) {
+      setDrafts(current => ({
+        ...current,
+        [rootId]: formatClockOffsetMs(root.clockOffsetMs),
+      }));
+      return;
+    }
+    setConfig(current => ({
+      ...current,
+      roots: current.roots.map(item => item.id === rootId
+        ? { ...item, clockOffsetMs: parsed }
+        : item),
+    }));
+    setDrafts(current => ({
+      ...current,
+      [rootId]: formatClockOffsetMs(parsed),
+    }));
+  }
+
+  return (
+    <Card className="panel">
+      <SectionHeader title="设备时钟偏移" onSave={onSave} busy={busy} />
+      <p className="muted">
+        用 root 级偏移修正同一设备整批素材的时钟漂移。输入格式推荐 `±HH:MM:SS`；留空表示不施加偏移。
+      </p>
+      {roots.length === 0 ? (
+        <p className="muted">当前还没有可维护的 ingest roots。</p>
+      ) : null}
+      {roots.map(root => {
+        const summary = summariesByRootId.get(root.id);
+        const draftValue = drafts[root.id] ?? formatClockOffsetMs(root.clockOffsetMs);
+        return (
+          <div key={root.id} className="row-card">
+            <div className="row-top">
+              <div>
+                <strong>{root.label || root.id}</strong>
+                <div className="muted capture-time-reason">{root.id}</div>
+              </div>
+              <div className="capture-time-tags">
+                <Tag>{`${summary?.assetCount || 0} assets`}</Tag>
+                {root.category ? <Tag>{root.category}</Tag> : null}
+              </div>
+            </div>
+            <div className="field-grid field-grid-three">
+              <label className="field">
+                <span>统一偏移</span>
+                <input
+                  value={draftValue}
+                  placeholder="例如 -00:10:11"
+                  onChange={event => setDrafts(current => ({
+                    ...current,
+                    [root.id]: event.target.value,
+                  }))}
+                  onBlur={() => commitClockOffset(root.id)}
+                />
+              </label>
+              <Field label="首条锚点" value={formatIngestRootAnchor(summary?.firstAnchor)} onChange={noop} readOnly />
+              <Field label="末条锚点" value={formatIngestRootAnchor(summary?.lastAnchor)} onChange={noop} readOnly />
+            </div>
+            <div className="capture-time-hint">
+              {root.clockOffsetMs == null
+                ? '当前未设置 root 级偏移。需要更细的个别例外时，仍然用下面的单素材时间校正。'
+                : `当前有效偏移：${formatClockOffsetMs(root.clockOffsetMs)}`}
+            </div>
+          </div>
+        );
+      })}
+    </Card>
+  );
+}
+
 export function CaptureTimeOverridesEditor({ config, setConfig, onSave, busy }) {
   if (!config) return null;
   return (
@@ -857,6 +947,39 @@ export function TextAreaField({ label, value, onChange, rows = 4, disabled = fal
       <textarea value={value} disabled={disabled} onChange={event => onChange(event.target.value)} rows={rows} />
     </label>
   );
+}
+
+function formatClockOffsetMs(value) {
+  if (value == null || !Number.isFinite(value) || value === 0) return '';
+  const sign = value < 0 ? '-' : '+';
+  const totalSeconds = Math.round(Math.abs(value) / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return `${sign}${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+function parseClockOffsetInput(value) {
+  const trimmed = String(value || '').trim();
+  if (!trimmed) return undefined;
+  const match = trimmed.match(/^([+-])?(\d{1,2}):(\d{2})(?::(\d{2}))?$/u);
+  if (!match) return null;
+  const sign = match[1] === '-' ? -1 : 1;
+  const hours = Number(match[2] || '0');
+  const minutes = Number(match[3] || '0');
+  const seconds = Number(match[4] || '0');
+  if (minutes >= 60 || seconds >= 60) return null;
+  return sign * ((((hours * 60) + minutes) * 60) + seconds) * 1000;
+}
+
+function formatIngestRootAnchor(anchor) {
+  if (!anchor) return '';
+  const sortTime = anchor.sortCapturedAt || anchor.capturedAt || '';
+  if (!sortTime) return anchor.displayName || anchor.assetId || '';
+  if (anchor.capturedAt && anchor.sortCapturedAt && anchor.capturedAt !== anchor.sortCapturedAt) {
+    return `${anchor.displayName} | ${anchor.capturedAt} -> ${anchor.sortCapturedAt}`;
+  }
+  return `${anchor.displayName} | ${sortTime}`;
 }
 
 export function splitLines(value) {

@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { ILlmClient, ILlmMessage, ILlmOptions } from '../../src/modules/llm/client.js';
 import {
+  buildMaterialBundles,
   buildMaterialSlotsDocument,
   buildSegmentPlanDocument,
   buildProjectOutlineFromPlanning,
@@ -573,6 +574,240 @@ describe('model-driven script preparation', () => {
     expect(slots.segments[0]?.slots[0]?.chosenSpanIds).toEqual(['span-coast']);
   });
 
+  it('indexes every span into material bundles instead of shortlisting a subset', () => {
+    const spans = [
+      {
+        id: 'span-1',
+        assetId: 'asset-1',
+        type: 'drive',
+        sourceInMs: 0,
+        sourceOutMs: 2_000,
+        transcript: '先出发。',
+        materialPatterns: [{ phrase: '路程推进', confidence: 0.8, evidenceRefs: [] }],
+        grounding: { speechMode: 'available', speechValue: 'informative', spatialEvidence: [], pharosRefs: [] },
+        narrativeFunctions: { core: [], extra: [], evidence: [] },
+        shotGrammar: { core: [], extra: [], evidence: [] },
+        viewpointRoles: { core: [], extra: [], evidence: [] },
+        subjectStates: { core: [], extra: [], evidence: [] },
+      },
+      {
+        id: 'span-2',
+        assetId: 'asset-2',
+        type: 'broll',
+        sourceInMs: 2_000,
+        sourceOutMs: 5_000,
+        transcript: '到了入口。',
+        materialPatterns: [{ phrase: '到场第一眼', confidence: 0.8, evidenceRefs: [] }],
+        grounding: { speechMode: 'available', speechValue: 'informative', spatialEvidence: [], pharosRefs: [] },
+        narrativeFunctions: { core: [], extra: [], evidence: [] },
+        shotGrammar: { core: [], extra: [], evidence: [] },
+        viewpointRoles: { core: [], extra: [], evidence: [] },
+        subjectStates: { core: [], extra: [], evidence: [] },
+      },
+      {
+        id: 'span-3',
+        assetId: 'asset-3',
+        type: 'photo',
+        materialPatterns: [{ phrase: '结果照片', confidence: 0.8, evidenceRefs: [] }],
+        grounding: { speechMode: 'none', speechValue: 'none', spatialEvidence: [], pharosRefs: [] },
+        narrativeFunctions: { core: [], extra: [], evidence: [] },
+        shotGrammar: { core: [], extra: [], evidence: [] },
+        viewpointRoles: { core: [], extra: [], evidence: [] },
+        subjectStates: { core: [], extra: [], evidence: [] },
+      },
+    ];
+
+    const bundles = buildMaterialBundles(spans, [
+      {
+        id: 'chronology-1',
+        assetId: 'asset-1',
+        capturedAt: '2026-04-10T08:00:00.000Z',
+        sortCapturedAt: '2026-04-10T08:00:00.000Z',
+        labels: [],
+        placeHints: [],
+        evidence: [],
+      },
+      {
+        id: 'chronology-2',
+        assetId: 'asset-2',
+        capturedAt: '2026-04-10T09:00:00.000Z',
+        sortCapturedAt: '2026-04-10T09:00:00.000Z',
+        labels: [],
+        placeHints: [],
+        evidence: [],
+      },
+    ], null);
+
+    const bundledSpanIds = new Set(bundles.flatMap(bundle => bundle.memberSpanIds));
+    expect(bundledSpanIds).toEqual(new Set(['span-1', 'span-2', 'span-3']));
+  });
+
+  it('keeps high-recall slots and only folds near-duplicate overlaps', () => {
+    const slots = buildMaterialSlotsDocument({
+      projectId: 'project-1',
+      segmentPlan: {
+        id: 'plan-1',
+        projectId: 'project-1',
+        generatedAt: '2026-04-10T00:00:00.000Z',
+        summary: 'test',
+        notes: [],
+        segments: [{
+          id: 'segment-1',
+          title: '主拍过程',
+          intent: '把现场推进过程尽量保留下来。',
+          roleHint: 'scene',
+          notes: ['过程'],
+        }],
+      },
+      bundles: [{
+        id: 'bundle-process',
+        key: '现场过程',
+        label: '现场过程',
+        memberSpanIds: ['span-1', 'span-2', 'span-3', 'span-4', 'span-5', 'span-dup'],
+        representativeSpanIds: ['span-1', 'span-2', 'span-3'],
+        placeHints: [],
+        pharosTripIds: [],
+        notes: ['过程'],
+      }],
+      spans: [
+        {
+          id: 'span-1',
+          assetId: 'asset-1',
+          type: 'drive',
+          sourceInMs: 0,
+          sourceOutMs: 4_000,
+          transcript: '先从停车场过去。',
+          materialPatterns: [{ phrase: '现场过程', confidence: 0.9, evidenceRefs: [] }],
+          grounding: { speechMode: 'available', speechValue: 'informative', spatialEvidence: [], pharosRefs: [] },
+          narrativeFunctions: { core: [], extra: [], evidence: [] },
+          shotGrammar: { core: [], extra: [], evidence: [] },
+          viewpointRoles: { core: [], extra: [], evidence: [] },
+          subjectStates: { core: [], extra: [], evidence: [] },
+        },
+        {
+          id: 'span-dup',
+          assetId: 'asset-1',
+          type: 'drive',
+          sourceInMs: 800,
+          sourceOutMs: 4_200,
+          transcript: '',
+          materialPatterns: [{ phrase: '现场过程', confidence: 0.7, evidenceRefs: [] }],
+          grounding: { speechMode: 'available', speechValue: 'informative', spatialEvidence: [], pharosRefs: [] },
+          narrativeFunctions: { core: [], extra: [], evidence: [] },
+          shotGrammar: { core: [], extra: [], evidence: [] },
+          viewpointRoles: { core: [], extra: [], evidence: [] },
+          subjectStates: { core: [], extra: [], evidence: [] },
+        },
+        {
+          id: 'span-2',
+          assetId: 'asset-2',
+          type: 'broll',
+          sourceInMs: 0,
+          sourceOutMs: 3_000,
+          transcript: '已经看到人群了。',
+          materialPatterns: [{ phrase: '现场过程', confidence: 0.8, evidenceRefs: [] }],
+          grounding: { speechMode: 'available', speechValue: 'informative', spatialEvidence: [], pharosRefs: [] },
+          narrativeFunctions: { core: [], extra: [], evidence: [] },
+          shotGrammar: { core: [], extra: [], evidence: [] },
+          viewpointRoles: { core: [], extra: [], evidence: [] },
+          subjectStates: { core: [], extra: [], evidence: [] },
+        },
+        {
+          id: 'span-3',
+          assetId: 'asset-3',
+          type: 'talking-head',
+          sourceInMs: 0,
+          sourceOutMs: 2_500,
+          transcript: '先试一轮看看。',
+          materialPatterns: [{ phrase: '现场过程', confidence: 0.8, evidenceRefs: [] }],
+          grounding: { speechMode: 'available', speechValue: 'informative', spatialEvidence: [], pharosRefs: [] },
+          narrativeFunctions: { core: [], extra: [], evidence: [] },
+          shotGrammar: { core: [], extra: [], evidence: [] },
+          viewpointRoles: { core: [], extra: [], evidence: [] },
+          subjectStates: { core: [], extra: [], evidence: [] },
+        },
+        {
+          id: 'span-4',
+          assetId: 'asset-4',
+          type: 'photo',
+          materialPatterns: [{ phrase: '现场过程', confidence: 0.8, evidenceRefs: [] }],
+          grounding: { speechMode: 'none', speechValue: 'none', spatialEvidence: [], pharosRefs: [] },
+          narrativeFunctions: { core: [], extra: [], evidence: [] },
+          shotGrammar: { core: [], extra: [], evidence: [] },
+          viewpointRoles: { core: [], extra: [], evidence: [] },
+          subjectStates: { core: [], extra: [], evidence: [] },
+        },
+        {
+          id: 'span-5',
+          assetId: 'asset-5',
+          type: 'broll',
+          sourceInMs: 0,
+          sourceOutMs: 3_200,
+          transcript: '朋友也加入了。',
+          materialPatterns: [{ phrase: '现场过程', confidence: 0.8, evidenceRefs: [] }],
+          grounding: { speechMode: 'available', speechValue: 'informative', spatialEvidence: [], pharosRefs: [] },
+          narrativeFunctions: { core: [], extra: [], evidence: [] },
+          shotGrammar: { core: [], extra: [], evidence: [] },
+          viewpointRoles: { core: [], extra: [], evidence: [] },
+          subjectStates: { core: [], extra: [], evidence: [] },
+        },
+      ],
+      chronology: [
+        { id: 'c-1', assetId: 'asset-1', capturedAt: '2026-04-10T08:00:00.000Z', sortCapturedAt: '2026-04-10T08:00:00.000Z', labels: [], placeHints: [], evidence: [] },
+        { id: 'c-2', assetId: 'asset-2', capturedAt: '2026-04-10T08:10:00.000Z', sortCapturedAt: '2026-04-10T08:10:00.000Z', labels: [], placeHints: [], evidence: [] },
+        { id: 'c-3', assetId: 'asset-3', capturedAt: '2026-04-10T08:20:00.000Z', sortCapturedAt: '2026-04-10T08:20:00.000Z', labels: [], placeHints: [], evidence: [] },
+        { id: 'c-4', assetId: 'asset-4', capturedAt: '2026-04-10T08:30:00.000Z', sortCapturedAt: '2026-04-10T08:30:00.000Z', labels: [], placeHints: [], evidence: [] },
+        { id: 'c-5', assetId: 'asset-5', capturedAt: '2026-04-10T08:40:00.000Z', sortCapturedAt: '2026-04-10T08:40:00.000Z', labels: [], placeHints: [], evidence: [] },
+      ],
+      pharosContext: null,
+      style: {
+        id: 'style-1',
+        name: 'Process First',
+        category: 'process-first',
+        sourceFiles: [],
+        narrative: {
+          introRatio: 0.1,
+          outroRatio: 0.08,
+          avgSegmentDurationSec: 20,
+          brollFrequency: 0.3,
+          pacePattern: '过程优先。',
+        },
+        voice: {
+          person: '1st',
+          tone: '克制',
+          density: 'moderate',
+          sampleTexts: [],
+        },
+        sections: [],
+        parameters: {},
+        arrangementStructure: {
+          primaryAxis: '过程推进',
+          secondaryAxes: [],
+          chapterPrograms: [],
+          chapterSplitPrinciples: [],
+          chapterTransitionNotes: [],
+        },
+        narrationConstraints: {
+          perspective: '第一人称',
+          tone: '克制',
+          informationDensity: '中等',
+          explanationBias: '让过程自己成立',
+          forbiddenPatterns: [],
+          notes: [],
+        },
+        createdAt: '2026-04-10T00:00:00.000Z',
+        updatedAt: '2026-04-10T00:00:00.000Z',
+      },
+    });
+
+    const chosenSpanIds = slots.segments[0]?.slots.flatMap(slot => slot.chosenSpanIds) ?? [];
+    expect(chosenSpanIds).toEqual(['span-1', 'span-2', 'span-3', 'span-4', 'span-5']);
+    expect(chosenSpanIds).not.toContain('span-dup');
+    expect(chosenSpanIds).toHaveLength(5);
+    expect(slots.segments[0]?.slots).toHaveLength(5);
+    expect(slots.segments[0]?.slots.every(slot => slot.chosenSpanIds.length === 1)).toBe(true);
+  });
+
   it('keeps chronology-driven segments inside monotonic time bands', () => {
     const style = {
       id: 'style-chronology',
@@ -745,7 +980,7 @@ describe('model-driven script preparation', () => {
     expect(slots.segments[2]?.slots[0]?.chosenSpanIds[0]).toBe('span-3');
   });
 
-  it('derives missing segment durations from material capacity when no reviewed duration is provided', () => {
+  it('keeps missing segment durations undefined when no reviewed duration is provided', () => {
     const style = {
       id: 'style-chronology',
       name: 'Chronology First',
@@ -888,7 +1123,7 @@ describe('model-driven script preparation', () => {
       pharosContext: null,
     });
 
-    expect(plan.segments[0]?.targetDurationMs).toBeGreaterThan(10_000);
-    expect(plan.segments[1]?.targetDurationMs).toBeGreaterThan(plan.segments[0]?.targetDurationMs ?? 0);
+    expect(plan.segments[0]?.targetDurationMs).toBeUndefined();
+    expect(plan.segments[1]?.targetDurationMs).toBeUndefined();
   });
 });

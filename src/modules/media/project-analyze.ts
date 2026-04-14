@@ -569,6 +569,7 @@ export async function analyzeWorkspaceProjectMedia(
       await loadAssets(projectRoot),
       await loadAssetReports(projectRoot),
       await loadChronology(projectRoot),
+      roots,
     );
     await writeTrackedChronology(chronology);
     await touchProjectUpdatedAt(projectRoot);

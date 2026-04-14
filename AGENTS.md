@@ -102,6 +102,13 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - `coarse-scan` may advance multiple assets in parallel, but each active asset should use at most one coarse keyframe `ffmpeg`
   - `audio-analysis` now means dual health-check routing plus a single chosen ASR source for assets with `protectionAudio`
 - Treat `analysis/prepared-assets/` and `analysis/audio-checkpoints/` as durable Analyze resume caches, not canonical downstream inputs.
+- Treat project-local chronology as a formal shared truth:
+  - `media/chronology.json` `sortCapturedAt` is the ordering truth for Script prep and Timeline placement
+  - `sortCapturedAt` should resolve in this order: asset-level `capturedAtOverride` -> `asset.capturedAt + ingestRoot.clockOffsetMs` -> raw `asset.capturedAt`
+  - changing a root-level clock offset in `/ingest-gps` means chronology truth changed; refresh chronology before trusting downstream ordering
+- Treat `/ingest-gps` as the formal UI for both layers of time repair:
+  - root-level device drift via `config/ingest-roots.json` `clockOffsetMs`
+  - asset-level exceptions via `captureTimeOverrides`
 - Treat `/script` as a preparation surface by default:
   - `/script` first auto-saves the selected style category
   - changing `styleCategory` invalidates the previous script run immediately and should clear stale script artifacts before asking Agent to start over
@@ -111,9 +118,16 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
     - `script/material-overview.facts.json`
     - `script/material-overview.md`
     - `script/segment-plan.json`
-    - `script/material-slots.json`
-    - `analysis/material-bundles.json`
+  - `script/material-slots.json`
+  - `analysis/material-bundles.json`
   - the final `script/current.json` is agent-authored unless a newer design doc says otherwise
+- Treat rough-cut script/timeline defaults as evidence-first:
+  - videos with usable source speech should stay source-speech unless the script explicitly sets `muteSource=true`
+  - photo-only beats should default to `1s` silent holds with no subtitles unless the script explicitly sets `holdMs`
+  - `targetDurationMs` remains optional and advisory-only for rough cut; do not use it as the default driver for trimming or expanding effective source material
+  - rough-cut recall should stay high-recall by default: keep valid spans unless they are empty, clearly bad, or near-duplicate
+  - silent `drive / aerial` beats may auto-consume `speedCandidate` at `2x`; explicit `actions.speed` still overrides the default
+  - source-speech beats should prefer transcript-driven speech islands, keeping only short pauses instead of long silent gaps
 - Reusable style assets are workspace-scoped by default:
   - `config/styles/`
   - `config/style-sources.json`

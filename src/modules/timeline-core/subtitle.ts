@@ -3,8 +3,11 @@ import type { IKtepSubtitle, IKtepScript, IKtepClip, IKtepScriptBeat, IKtepSlice
 import {
   buildNarrationBeatPlan,
   buildSourceSpeechContext,
+  estimateCueDurations,
+  filterSourceSpeechTranscriptSegments,
   sanitizeSubtitleCueText,
   splitCueChunks,
+  shouldPreserveNaturalSound,
   shouldPreferSourceSpeech,
   type ISpeechPacingConfig,
 } from './pacing.js';
@@ -48,10 +51,19 @@ export function planSubtitles(
         .filter(clip => clip.linkedScriptBeatId === beat.id)
         .sort((a, b) => a.timelineInMs - b.timelineInMs);
       if (beatClips.length === 0) continue;
+      if (isPhotoOnlyBeat(beatClips)) continue;
 
+      const speechContext = buildSourceSpeechContext(beatClips, sliceMap);
+      const hasOnlyFilteredTranscript = speechContext.transcriptSegmentCount === 0
+        && hasRawTranscriptOverlap(beatClips, sliceMap);
       const sourceSpeechSubtitles = planSourceSpeechSubtitles(seg, beat, beatClips, sliceMap, cfg);
-      if (sourceSpeechSubtitles.length > 0) {
-        subtitles.push(...sourceSpeechSubtitles);
+      if (shouldPreferSourceSpeech(seg, beat, speechContext)) {
+        if (sourceSpeechSubtitles.length > 0) {
+          subtitles.push(...sourceSpeechSubtitles);
+        }
+        continue;
+      }
+      if (shouldPreserveNaturalSound(seg, beat) || hasOnlyFilteredTranscript) {
         continue;
       }
 
@@ -60,6 +72,39 @@ export function planSubtitles(
   }
 
   return subtitles;
+}
+
+function hasRawTranscriptOverlap(
+  beatClips: IKtepClip[],
+  sliceMap: Map<string, IKtepSlice>,
+): boolean {
+  for (const clip of beatClips) {
+    const slice = clip.sliceId ? sliceMap.get(clip.sliceId) : undefined;
+    const sourceInMs = clip.sourceInMs;
+    const sourceOutMs = clip.sourceOutMs;
+    if (!slice?.transcriptSegments?.length) continue;
+    if (typeof sourceInMs !== 'number' || typeof sourceOutMs !== 'number' || sourceOutMs <= sourceInMs) {
+      continue;
+    }
+
+    const hasOverlap = slice.transcriptSegments.some(segment =>
+      Math.min(sourceOutMs, segment.endMs) > Math.max(sourceInMs, segment.startMs)
+      && sanitizeSubtitleCueText(segment.text).length > 0,
+    );
+    if (hasOverlap) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function isPhotoOnlyBeat(beatClips: IKtepClip[]): boolean {
+  return beatClips.every(clip =>
+    typeof clip.sourceInMs !== 'number'
+    || typeof clip.sourceOutMs !== 'number'
+    || clip.sourceOutMs <= clip.sourceInMs,
+  );
 }
 
 function planNarrationSubtitles(
@@ -118,14 +163,17 @@ function planSourceSpeechSubtitles(
   const subtitles: IKtepSubtitle[] = [];
   for (const clip of beatClips) {
     const slice = clip.sliceId ? sliceMap.get(clip.sliceId) : undefined;
-    const transcriptSegments = slice?.transcriptSegments ?? [];
-    if (transcriptSegments.length === 0) continue;
-
     const sourceInMs = clip.sourceInMs;
     const sourceOutMs = clip.sourceOutMs;
     if (typeof sourceInMs !== 'number' || typeof sourceOutMs !== 'number' || sourceOutMs <= sourceInMs) {
       continue;
     }
+
+    const transcriptSegments = filterSourceSpeechTranscriptSegments(
+      slice?.transcriptSegments ?? [],
+      { startMs: sourceInMs, endMs: sourceOutMs },
+    );
+    if (transcriptSegments.length === 0) continue;
 
     for (const segmentText of transcriptSegments) {
       const overlapStart = Math.max(sourceInMs, segmentText.startMs);
@@ -136,23 +184,18 @@ function planSourceSpeechSubtitles(
       if (!rawText) continue;
 
       const cueTexts = splitCueChunks(rawText, config.maxCharsPerCue);
-      if (shouldFallbackToNarrationSubtitles(rawText, cueTexts, config.maxCharsPerCue)) {
-        return [];
-      }
+      if (shouldSkipSourceSpeechCue(rawText, cueTexts, config.maxCharsPerCue)) continue;
       const totalDuration = overlapEnd - overlapStart;
-      let cursor = 0;
+      const cueTimings = resolveSourceSpeechCueTimings(totalDuration, cueTexts, config);
 
       for (let index = 0; index < cueTexts.length; index++) {
         const text = sanitizeSubtitleCueText(cueTexts[index]);
         if (!text) continue;
 
-        const remaining = cueTexts.length - index;
-        const chunkDuration = remaining === 1
-          ? totalDuration - cursor
-          : Math.max(1, Math.round(totalDuration / cueTexts.length));
-        const chunkStart = overlapStart + cursor;
-        cursor += chunkDuration;
-        const chunkEnd = Math.min(overlapEnd, overlapStart + cursor);
+        const timing = cueTimings[index];
+        if (!timing) continue;
+        const chunkStart = overlapStart + timing.startOffsetMs;
+        const chunkEnd = overlapStart + timing.endOffsetMs;
 
         subtitles.push({
           id: randomUUID(),
@@ -173,24 +216,61 @@ function planSourceSpeechSubtitles(
   return subtitles;
 }
 
-function shouldFallbackToNarrationSubtitles(
+function shouldSkipSourceSpeechCue(
   rawText: string,
   cueTexts: string[],
   maxChars: number,
 ): boolean {
   if (cueTexts.length === 0) return true;
-  if (cueTexts.some(text => text.length > maxChars)) return true;
-  if (cueTexts.length > 4 && rawText.length > maxChars * 3) return true;
+  if (cueTexts.some(text => text.length > maxChars + 4)) return true;
 
   const normalized = rawText.replace(/\s+/gu, '');
-  if (normalized.length >= 12) {
-    const uniqueRatio = new Set(Array.from(normalized)).size / normalized.length;
-    if (uniqueRatio < 0.32) return true;
-  }
-
   if (/(.{1,4})\1{2,}/u.test(normalized)) return true;
   if (/(\S{1,8})(?:\s+\1){2,}/u.test(rawText)) return true;
   return false;
+}
+
+function resolveSourceSpeechCueTimings(
+  totalDurationMs: number,
+  cueTexts: string[],
+  config: ISubtitleConfig,
+): Array<{ startOffsetMs: number; endOffsetMs: number }> {
+  if (cueTexts.length === 0 || totalDurationMs <= 0) return [];
+  if (cueTexts.length === 1) {
+    return [{
+      startOffsetMs: 0,
+      endOffsetMs: totalDurationMs,
+    }];
+  }
+
+  const weights = estimateCueDurations(cueTexts, config);
+  const totalWeight = weights.reduce((sum, value) => sum + value, 0);
+  if (totalWeight <= 0) {
+    return cueTexts.map((_, index) => {
+      const startOffsetMs = Math.round(totalDurationMs * (index / cueTexts.length));
+      const endOffsetMs = index === cueTexts.length - 1
+        ? totalDurationMs
+        : Math.round(totalDurationMs * ((index + 1) / cueTexts.length));
+      return {
+        startOffsetMs,
+        endOffsetMs: Math.max(endOffsetMs, startOffsetMs + 1),
+      };
+    });
+  }
+
+  let cumulativeWeight = 0;
+  return cueTexts.map((_, index) => {
+    const startOffsetMs = Math.round(totalDurationMs * (cumulativeWeight / totalWeight));
+    cumulativeWeight += weights[index] ?? 0;
+    const endOffsetMs = index === cueTexts.length - 1
+      ? totalDurationMs
+      : Math.round(totalDurationMs * (cumulativeWeight / totalWeight));
+
+    return {
+      startOffsetMs,
+      endOffsetMs: Math.max(endOffsetMs, startOffsetMs + 1),
+    };
+  });
 }
 
 function resolveSubtitleBeats(
