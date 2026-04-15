@@ -14,7 +14,6 @@ import type {
   IMediaAnalysisPlan,
   IInterestingWindow,
   IMediaRoot,
-  IProjectPharosShot,
   ITranscriptSegment,
 } from '../../protocol/schema.js';
 import {
@@ -97,6 +96,7 @@ import {
   type IReverseGeocodeService,
 } from './reverse-geocode.js';
 import { loadOrBuildProjectPharosContext, pharosRefsFromMatches } from '../pharos/context.js';
+import { resolvePharosTimedSpatialContext } from '../pharos/gpx-timed.js';
 import { matchAssetToPharos } from '../pharos/matcher.js';
 import {
   hasMeaningfulSpeech,
@@ -474,6 +474,7 @@ export async function analyzeWorkspaceProjectMedia(
         if (shouldDirectMaterializeReport(finalized.report)) {
           const directResult = await generateDirectMaterializationOutput({
             analysis: finalized,
+            pharosContext,
             vocabulary: semanticVocabulary,
           });
           const persistedSlices = consolidatePersistedSpeechSlices(directResult.slices);
@@ -552,6 +553,7 @@ export async function analyzeWorkspaceProjectMedia(
       projectId: input.projectId,
       projectName: project.name,
       projectRoot,
+      pharosContext,
       vocabulary: semanticVocabulary,
       runtimeConfig,
       getMlHandle,
@@ -1692,7 +1694,6 @@ async function finalizePreparedAsset(
     root,
     gpxPaths: input.gpxPaths,
     gpxMatchToleranceMs: input.gpxMatchToleranceMs,
-    pharosContext: input.pharosContext,
     derivedTrack: input.derivedTrack,
   });
   await input.onStageChange?.('finalize', describeFinalizeStage(
@@ -1762,19 +1763,24 @@ async function finalizePreparedAsset(
       summary: planning.visualSummary?.description,
       placeHints: basePlaceHints,
       labels,
-      inferredGps: manualSpatial?.inferredGps,
     },
+  });
+  const pharosSpatial = await resolvePharosTimedSpatialContext({
+    asset: input.prepared.asset,
+    clipType: planning.decision.clipType,
+    pharosContext: input.pharosContext ?? null,
+    pharosMatches,
+    matchToleranceMs: input.gpxMatchToleranceMs,
   });
   const locationResolution = await resolveAnalyzeLocationText({
     clipType: planning.decision.clipType,
     manualSpatial,
-    pharosContext: input.pharosContext,
-    pharosMatches,
+    pharosSpatial,
     reverseGeocodeService: input.reverseGeocodeService,
   });
   const inferredGps = applyAnalyzeLocationText(
-    manualSpatial?.inferredGps
-      ?? buildPharosFallbackInferredGps(input.pharosContext, pharosMatches),
+    pharosSpatial?.inferredGps
+      ?? manualSpatial?.inferredGps,
     locationResolution.locationText,
   );
   const placeHints = dedupeStrings([
@@ -1789,7 +1795,7 @@ async function finalizePreparedAsset(
     keepDecision: planning.decision.keepDecision,
     materializationPath: planning.decision.materializationPath,
     fineScanMode: planning.decision.fineScanMode,
-    gpsSummary: manualSpatial?.gpsSummary,
+    gpsSummary: pharosSpatial?.gpsSummary ?? manualSpatial?.gpsSummary,
     inferredGps,
     summary: planning.visualSummary?.description,
     transcript: audioContext.selectedTranscript?.transcript,
@@ -1833,7 +1839,6 @@ async function resolveManualSpatialContext(input: {
   root?: IMediaRoot;
   gpxPaths?: string[];
   gpxMatchToleranceMs?: number;
-  pharosContext?: Awaited<ReturnType<typeof loadOrBuildProjectPharosContext>> | null;
   derivedTrack?: IProjectDerivedTrack | null;
 }): Promise<IManualSpatialContext | null> {
   return resolveAssetSpatialContext({
@@ -1841,7 +1846,6 @@ async function resolveManualSpatialContext(input: {
     root: input.root,
     gpxPaths: input.gpxPaths,
     gpxMatchToleranceMs: input.gpxMatchToleranceMs,
-    pharosContext: input.pharosContext,
     derivedTrack: input.derivedTrack,
   });
 }
@@ -1855,59 +1859,6 @@ function applyAnalyzeLocationText(
     ...inferredGps,
     locationText: locationText?.trim() || undefined,
   };
-}
-
-function buildPharosFallbackInferredGps(
-  pharosContext: Awaited<ReturnType<typeof loadOrBuildProjectPharosContext>> | null | undefined,
-  pharosMatches: Array<Pick<IAssetCoarseReport['pharosMatches'][number], 'ref' | 'confidence' | 'tripTitle' | 'dayTitle'>>,
-): IInferredGps | undefined {
-  const topMatch = pharosMatches[0];
-  if (!pharosContext || !topMatch) return undefined;
-
-  const shot = pharosContext.shots.find(item => (
-    item.ref.tripId === topMatch.ref.tripId
-    && item.ref.shotId === topMatch.ref.shotId
-  ));
-  if (!shot) return undefined;
-
-  const point = resolvePharosShotRepresentativePoint(shot);
-  if (!point) return undefined;
-
-  const trip = pharosContext.trips.find(item => item.tripId === shot.ref.tripId);
-  return {
-    source: 'pharos',
-    confidence: Math.max(0.35, Math.min(0.85, topMatch.confidence)),
-    lat: point.lat,
-    lng: point.lng,
-    timezone: trip?.timezone,
-    summary: [
-      'pharos',
-      topMatch.tripTitle,
-      topMatch.dayTitle,
-      shot.location,
-      shot.type,
-    ].filter(Boolean).join(' '),
-  };
-}
-
-function resolvePharosShotRepresentativePoint(
-  shot: IProjectPharosShot,
-): { lat: number; lng: number } | null {
-  const actualPoint = shot.actualGpsStart ?? shot.actualGpsEnd;
-  if (actualPoint) {
-    return { lng: actualPoint[0], lat: actualPoint[1] };
-  }
-  if (shot.gps) {
-    return { lng: shot.gps[0], lat: shot.gps[1] };
-  }
-  if (shot.gpsStart && shot.gpsEnd) {
-    return {
-      lng: (shot.gpsStart[0] + shot.gpsEnd[0]) / 2,
-      lat: (shot.gpsStart[1] + shot.gpsEnd[1]) / 2,
-    };
-  }
-  const fallback = shot.gpsStart ?? shot.gpsEnd;
-  return fallback ? { lng: fallback[0], lat: fallback[1] } : null;
 }
 
 async function resolvePreparedAssetPlanning(input: {
@@ -3362,7 +3313,6 @@ async function finalizePhotoPreparedAsset(
     root,
     gpxPaths: input.gpxPaths,
     gpxMatchToleranceMs: input.gpxMatchToleranceMs,
-    pharosContext: input.pharosContext,
     derivedTrack: input.derivedTrack,
   });
   const plan = buildAnalysisPlan({
@@ -3391,19 +3341,24 @@ async function finalizePhotoPreparedAsset(
       summary: visualSummary?.description,
       placeHints: basePlaceHints,
       labels,
-      inferredGps: manualSpatial?.inferredGps,
     },
+  });
+  const pharosSpatial = await resolvePharosTimedSpatialContext({
+    asset: input.prepared.asset,
+    clipType: clipTypeGuess,
+    pharosContext: input.pharosContext ?? null,
+    pharosMatches,
+    matchToleranceMs: input.gpxMatchToleranceMs,
   });
   const locationResolution = await resolveAnalyzeLocationText({
     clipType: clipTypeGuess,
     manualSpatial,
-    pharosContext: input.pharosContext,
-    pharosMatches,
+    pharosSpatial,
     reverseGeocodeService: input.reverseGeocodeService,
   });
   const inferredGps = applyAnalyzeLocationText(
-    manualSpatial?.inferredGps
-      ?? buildPharosFallbackInferredGps(input.pharosContext, pharosMatches),
+    pharosSpatial?.inferredGps
+      ?? manualSpatial?.inferredGps,
     locationResolution.locationText,
   );
   const placeHints = dedupeStrings([
@@ -3417,7 +3372,7 @@ async function finalizePhotoPreparedAsset(
     clipTypeGuess,
     keepDecision: 'keep',
     materializationPath: 'direct',
-    gpsSummary: manualSpatial?.gpsSummary,
+    gpsSummary: pharosSpatial?.gpsSummary ?? manualSpatial?.gpsSummary,
     inferredGps,
     summary: visualSummary?.description,
     pharosMatches,
@@ -3432,6 +3387,7 @@ async function finalizePhotoPreparedAsset(
     fineScanReasons: dedupeStrings([
       'photo-assets-use-direct-materialization',
       ...(manualSpatial?.decisionReasons ?? []),
+      ...(pharosSpatial?.decisionReasons ?? []),
     ]),
   });
 
@@ -3656,30 +3612,34 @@ async function resolveReadyFineScanFrames(
   };
 }
 
-function buildFineScanSlicesFallback(
+async function buildFineScanSlicesFallback(
   effectiveSlices: IKtepSlice[],
   transcript: ITranscriptContext | null | undefined,
+  asset: IKtepAsset,
   report: IAssetCoarseReport,
+  pharosContext: Awaited<ReturnType<typeof loadOrBuildProjectPharosContext>> | null | undefined,
   vocabulary?: {
     materialPatternPhrases?: string[];
   },
-): IKtepSlice[] {
-  return effectiveSlices.map(slice => {
+): Promise<IKtepSlice[]> {
+  return Promise.all(effectiveSlices.map(async slice => {
     const withTranscript = decorateSliceWithTranscript(slice, transcript);
-    return decorateSliceWithSemanticTags({
+    return await decorateSliceWithSemanticTags({
       slice: {
         ...withTranscript,
         pharosRefs: pharosRefsFromMatches(report.pharosMatches),
       },
+      asset,
       clipType: report.clipTypeGuess,
       report,
+      pharosContext,
       vocabulary,
       semanticWindow: withTranscript.semanticKind ? {
         semanticKind: withTranscript.semanticKind,
         reason: 'fine-scan-fallback',
       } : null,
     });
-  });
+  }));
 }
 
 function buildFineScanPlan(input: IBuildFineScanSlicesInput): {
@@ -3875,6 +3835,7 @@ async function ensureFineScanTaskState(input: {
 async function generateFineScanOutput(input: {
   analysis: IFinalizedAssetAnalysis;
   projectRoot: string;
+  pharosContext?: Awaited<ReturnType<typeof loadOrBuildProjectPharosContext>> | null;
   vocabulary?: {
     materialPatternPhrases?: string[];
   };
@@ -3903,10 +3864,12 @@ async function generateFineScanOutput(input: {
   }
 
   if (input.analysis.prepared.asset.kind === 'photo') {
-    const slice = decorateSliceWithSemanticTags({
+    const slice = await decorateSliceWithSemanticTags({
       slice: slicePhoto(input.analysis.prepared.asset),
+      asset: input.analysis.prepared.asset,
       clipType: input.analysis.report.clipTypeGuess,
       report: input.analysis.report,
+      pharosContext: input.pharosContext ?? null,
       vocabulary: input.vocabulary,
     });
     return {
@@ -3941,6 +3904,7 @@ async function generateFineScanOutput(input: {
     report: input.analysis.report,
     transcript: input.analysis.transcript,
     clipType: input.analysis.clipType,
+    pharosContext: input.pharosContext ?? null,
     ml: await input.getMlHandle(),
     performance: input.performance,
   });
@@ -3948,6 +3912,7 @@ async function generateFineScanOutput(input: {
 
 async function generateDirectMaterializationOutput(input: {
   analysis: IFinalizedAssetAnalysis;
+  pharosContext?: Awaited<ReturnType<typeof loadOrBuildProjectPharosContext>> | null;
   vocabulary?: {
     materialPatternPhrases?: string[];
   };
@@ -3962,10 +3927,12 @@ async function generateDirectMaterializationOutput(input: {
   }
 
   if (asset.kind === 'photo') {
-    const slice = decorateSliceWithSemanticTags({
+    const slice = await decorateSliceWithSemanticTags({
       slice: slicePhoto(asset),
+      asset,
       clipType: input.analysis.report.clipTypeGuess,
       report: input.analysis.report,
+      pharosContext: input.pharosContext ?? null,
       vocabulary: input.vocabulary,
       recognition: toRecognitionSummary(input.analysis.visualSummary),
     });
@@ -3996,8 +3963,10 @@ async function generateDirectMaterializationOutput(input: {
         ...withTranscript,
         pharosRefs: pharosRefsFromMatches(input.analysis.report.pharosMatches),
       },
+      asset,
       clipType: input.analysis.report.clipTypeGuess,
       report: input.analysis.report,
+      pharosContext: input.pharosContext ?? null,
       vocabulary: input.vocabulary,
       recognition: toRecognitionSummary(input.analysis.visualSummary),
       semanticWindow: withTranscript.semanticKind ? {
@@ -4008,7 +3977,7 @@ async function generateDirectMaterializationOutput(input: {
   });
 
   return {
-    slices,
+    slices: await Promise.all(slices),
     droppedInvalidSliceCount: 0,
   };
 }
@@ -4274,6 +4243,7 @@ interface IBuildFineScanSlicesInput {
   asset: IKtepAsset;
   localPath: string;
   projectRoot: string;
+  pharosContext?: Awaited<ReturnType<typeof loadOrBuildProjectPharosContext>> | null;
   vocabulary?: {
     materialPatternPhrases?: string[];
   };
@@ -4345,22 +4315,24 @@ async function buildFineScanSlices(
   const plans = buildFineScanKeyframePlans(effectiveSlices);
   if (plans.length === 0 || !input.ml.available) {
     return {
-      slices: effectiveSlices.map(slice => {
+      slices: await Promise.all(effectiveSlices.map(async slice => {
         const withTranscript = decorateSliceWithTranscript(slice, input.transcript);
-        return decorateSliceWithSemanticTags({
+        return await decorateSliceWithSemanticTags({
           slice: {
             ...withTranscript,
             pharosRefs: pharosRefsFromMatches(input.report.pharosMatches),
           },
+          asset: input.asset,
           clipType: input.report.clipTypeGuess,
           report: input.report,
+          pharosContext: input.pharosContext ?? null,
           vocabulary: input.vocabulary,
           semanticWindow: withTranscript.semanticKind ? {
             semanticKind: withTranscript.semanticKind,
             reason: 'fine-scan-no-ml-fallback',
           } : null,
         });
-      }),
+      })),
       droppedInvalidSliceCount: 0,
     };
   }
@@ -4407,13 +4379,15 @@ async function buildFineScanSlices(
       input.transcript,
       recognition?.recognition.evidence,
     );
-    slices.push(decorateSliceWithSemanticTags({
+    slices.push(await decorateSliceWithSemanticTags({
       slice: {
         ...withTranscript,
         pharosRefs: pharosRefsFromMatches(input.report.pharosMatches),
       },
+      asset: input.asset,
       clipType: input.report.clipTypeGuess,
       report: input.report,
+      pharosContext: input.pharosContext ?? null,
       vocabulary: input.vocabulary,
       recognition: recognition?.recognition
         ? {
@@ -4510,6 +4484,7 @@ async function prefetchFineScanTask(input: {
 async function recognizeFineScanTask(input: {
   task: IFineScanTaskState;
   projectRoot: string;
+  pharosContext?: Awaited<ReturnType<typeof loadOrBuildProjectPharosContext>> | null;
   vocabulary?: {
     materialPatternPhrases?: string[];
   };
@@ -4527,13 +4502,15 @@ async function recognizeFineScanTask(input: {
 
   if (input.task.analysis.prepared.asset.kind === 'photo') {
     const baseSlice = updatedCheckpoint.effectiveSlices[0] ?? slicePhoto(input.task.analysis.prepared.asset);
-    const slice = decorateSliceWithSemanticTags({
+    const slice = await decorateSliceWithSemanticTags({
       slice: {
         ...baseSlice,
         pharosRefs: pharosRefsFromMatches(input.task.analysis.report.pharosMatches),
       },
+      asset: input.task.analysis.prepared.asset,
       clipType: input.task.analysis.report.clipTypeGuess,
       report: input.task.analysis.report,
+      pharosContext: input.pharosContext ?? null,
       vocabulary: input.vocabulary,
     });
     slices = [slice];
@@ -4544,10 +4521,12 @@ async function recognizeFineScanTask(input: {
     if (updatedCheckpoint.effectiveSlices.length === 0) {
       slices = [];
     } else if (updatedCheckpoint.keyframePlans.length === 0) {
-      slices = buildFineScanSlicesFallback(
+      slices = await buildFineScanSlicesFallback(
         updatedCheckpoint.effectiveSlices,
         input.task.analysis.transcript,
+        input.task.analysis.prepared.asset,
         input.task.analysis.report,
+        input.pharosContext ?? null,
         input.vocabulary,
       );
     } else {
@@ -4576,13 +4555,15 @@ async function recognizeFineScanTask(input: {
           input.task.analysis.transcript,
           recognition?.recognition.evidence,
         );
-        slices.push(decorateSliceWithSemanticTags({
+        slices.push(await decorateSliceWithSemanticTags({
           slice: {
             ...withTranscript,
             pharosRefs: pharosRefsFromMatches(input.task.analysis.report.pharosMatches),
           },
+          asset: input.task.analysis.prepared.asset,
           clipType: input.task.analysis.report.clipTypeGuess,
           report: input.task.analysis.report,
+          pharosContext: input.pharosContext ?? null,
           vocabulary: input.vocabulary,
           recognition: recognition?.recognition
             ? {
@@ -4638,6 +4619,7 @@ async function runFineScanPipeline(input: {
   projectId: string;
   projectName: string;
   projectRoot: string;
+  pharosContext?: Awaited<ReturnType<typeof loadOrBuildProjectPharosContext>> | null;
   vocabulary?: {
     materialPatternPhrases?: string[];
   };
@@ -4781,6 +4763,7 @@ async function runFineScanPipeline(input: {
           promise: recognizeFineScanTask({
             task: nextRecognitionTask,
             projectRoot: input.projectRoot,
+            pharosContext: input.pharosContext ?? null,
             vocabulary: input.vocabulary,
             runtimeConfig: input.runtimeConfig,
             getMlHandle: input.getMlHandle,

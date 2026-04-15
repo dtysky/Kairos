@@ -124,6 +124,8 @@ flowchart TD
 - `Pharos` 当前不再通过用户填写外部路径接入；每个项目固定扫描 `projects/<projectId>/pharos/`
 - 如果项目迁移后缺少这个目录，Console 当前应先自动补齐，再向用户展示固定目录和投放提示
 - `project-brief.md` 中的 `## Pharos` 当前只承担 trip 筛选语义；未填写时默认纳入全部可解析 trip，填写 `包含 Trip：...` 时只消费这些 trip
+- planned shot 的素材归属当前正式拆成独立时间层：只按 `plan` 里的计划时间段匹配，不再把 shot 的 `actualTime*` 或任意 shot GPS 字段当成 planned shot 归属依据
+- planned shot 的空间真值当前正式拆成独立 GPX 层：无论 `drive` 还是单机位 shot，都只使用 trip `gpx/*.gpx` 按素材/span 时间反算位置；`plan.gps / gps_start / gps_end / actual_gps` 仅保留人读语义
 - `AdoptedMediaVersion` 表示项目当前采用的素材版本，它可以是原始素材，也可以是独立调色链路产出的版本
 - `DaVinciColorChain` 是独立链路，不属于主链中的固定顺序步骤
 - 如果项目没有 `Pharos`，主链允许退化为基于素材、brief、行程和分析结果的兼容路径，但这属于 fallback，而不是正式主定义
@@ -209,8 +211,9 @@ flowchart TD
   - 中国境内坐标优先 Amap，境外优先 Geoapify
   - cache key 固定为 `lng,lat` 各保留 `6` 位小数
   - 地点字符串格式对齐 `../Nostos/tools/scan-tool/geocode.ts` 的 balanced location 规则，优先行政区 + 镇街 + 最近 AOI/POI
-  - `drive` 优先用命中的连续型 `Pharos shot` 首尾 GPS 反查；同地收口为一个地点，不同地点写成 `A -> B`
-  - 非 `drive` 优先用命中的 `Pharos shot` 单点 GPS；没有再回落到当前空间优先级选中的单点 GPS
+  - 如果素材/span 命中了 planned `Pharos shot`，`locationText` 的 Pharos 空间候选只允许来自 trip GPX 的按时取点，而不是 shot 自带 GPS
+  - `drive` 使用素材/span 的首尾时刻各取一个 GPX 点做反查；同地收口为一个地点，不同地点写成 `A -> B`
+  - 非 `drive` 使用素材/span 的中间时刻 GPX 点做反查；没有命中有效 GPX 点时，再回落到当前空间优先级选中的单点 GPS
   - manual-itinerary / route-stage 文本继续留在 `summary`、decision reasons、`routeRole` 等字段，不再冒充 `locationText`
   - 若未配置 `amapWebServiceKey / geoapifyApiKey` 或反查失败，`locationText` 保持空
 
@@ -522,6 +525,12 @@ flowchart TD
 - `manual-itinerary` 不再作为 analyze 时的独立顶层 fallback；它的项目级输出并入 `project-derived-track`
 - 如果用户修改了 `config/manual-itinerary.md`，应先重新跑一次 ingest，让 `gps/derived.json` 刷新后再 analyze
 - 最终采用的空间结果挂在 `IAssetCoarseReport.inferredGps`，而不是回写到素材真值层
+- planned `Pharos shot` 当前不是独立空间优先级层；它只提供“这个素材/span 属于哪个 planned shot”的时间归属语义
+- planned `Pharos shot` 的空间真值统一来自项目内 `project/pharos/<trip_id>/gpx/*.gpx` 的按时取点：
+  - `drive` 使用素材/span 的 start/end 时刻各取一个 GPX 点
+  - 非 `drive` 使用素材/span 的 midpoint 时刻取一个 GPX 点
+  - 若对应时刻没有有效 GPX 点，保留 `pharos ref`，但不产出 `source:'pharos'` 的坐标，也不回退到 shot 的计划/实际 GPS
+- planned shot 若缺少可归一化的 planned time，当前正式视为不可匹配，而不是回退到 `actualTime*` 做弱匹配
 
 ## 7. 正式流程与当前实现的边界
 

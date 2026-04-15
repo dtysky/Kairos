@@ -2,11 +2,14 @@ import type {
   EClipType,
   IAssetCoarseReport,
   IInterestingWindow,
+  IKtepAsset,
   IKtepSlice,
   IMaterialPattern,
+  IProjectPharosContext,
   ISpatialEvidence,
   ISemanticTagSet,
 } from '../../protocol/schema.js';
+import { resolvePharosTimedSpatialContext } from '../pharos/gpx-timed.js';
 
 export function createEmptySemanticTagSet(): ISemanticTagSet {
   return {
@@ -40,12 +43,19 @@ export function createEmptySliceSemantics(): Pick<
   };
 }
 
-export function buildSpatialEvidenceFromReport(
-  report?: Pick<IAssetCoarseReport, 'inferredGps' | 'pharosMatches'>,
-): ISpatialEvidence[] {
+export async function buildSpatialEvidenceFromReport(input: {
+  clipType: EClipType;
+  report?: Pick<IAssetCoarseReport, 'inferredGps' | 'pharosMatches'>;
+  asset?: Pick<IKtepAsset, 'capturedAt' | 'durationMs'>;
+  slice?: Pick<IKtepSlice, 'sourceInMs' | 'sourceOutMs'>;
+  pharosContext?: IProjectPharosContext | null;
+}): Promise<ISpatialEvidence[]> {
   const evidence: ISpatialEvidence[] = [];
-  const inferredGps = report?.inferredGps;
+  const inferredGps = input.report?.inferredGps;
   if (inferredGps) {
+    const primaryPharosRef = inferredGps.source === 'pharos'
+      ? input.report?.pharosMatches?.[0]?.ref
+      : undefined;
     const tier = inferredGps.source === 'embedded'
       ? 'truth'
       : inferredGps.source === 'derived-track'
@@ -60,10 +70,44 @@ export function buildSpatialEvidenceFromReport(
       lng: inferredGps.lng,
       locationText: inferredGps.locationText,
       routeRole: inferredGps.source === 'derived-track' ? 'route-segment' : undefined,
+      pharosRef: primaryPharosRef,
     });
   }
 
-  for (const match of report?.pharosMatches ?? []) {
+  const pharosSpatial = input.asset && input.report?.pharosMatches?.length
+    ? await resolvePharosTimedSpatialContext({
+      asset: input.asset,
+      clipType: input.clipType,
+      pharosContext: input.pharosContext ?? null,
+      pharosMatches: input.report.pharosMatches,
+      sourceInMs: input.slice?.sourceInMs,
+      sourceOutMs: input.slice?.sourceOutMs,
+    })
+    : null;
+  if (pharosSpatial) {
+    for (const candidate of pharosSpatial.locationCandidates) {
+      evidence.push({
+        tier: 'strong-inference',
+        confidence: Math.max(0.35, Math.min(0.9, pharosSpatial.match.confidence)),
+        sourceKinds: ['pharos', 'gpx'],
+        reasons: dedupeStrings([
+          pharosSpatial.gpsSummary,
+          `pharos-gpx-${candidate.role}`,
+        ]),
+        lat: candidate.lat,
+        lng: candidate.lng,
+        routeRole: candidate.role === 'start'
+          ? 'route-start'
+          : candidate.role === 'end'
+            ? 'route-end'
+            : undefined,
+        timeReference: candidate.time,
+        pharosRef: pharosSpatial.match.ref,
+      });
+    }
+  }
+
+  for (const match of input.report?.pharosMatches ?? []) {
     evidence.push({
       tier: 'strong-inference',
       confidence: match.confidence,
@@ -76,10 +120,12 @@ export function buildSpatialEvidenceFromReport(
   return dedupeSpatialEvidence(evidence);
 }
 
-export function decorateSliceWithSemanticTags(input: {
+export async function decorateSliceWithSemanticTags(input: {
   slice: IKtepSlice;
   clipType: EClipType;
   report?: Pick<IAssetCoarseReport, 'inferredGps' | 'pharosMatches' | 'transcript' | 'speechCoverage'>;
+  asset?: Pick<IKtepAsset, 'capturedAt' | 'durationMs'>;
+  pharosContext?: IProjectPharosContext | null;
   recognition?: {
     description?: string;
     sceneType?: string;
@@ -90,7 +136,7 @@ export function decorateSliceWithSemanticTags(input: {
   vocabulary?: {
     materialPatternPhrases?: string[];
   };
-}): IKtepSlice {
+}): Promise<IKtepSlice> {
   const slice: IKtepSlice = {
     ...input.slice,
     materialPatterns: [...(input.slice.materialPatterns ?? [])],
@@ -164,7 +210,13 @@ export function decorateSliceWithSemanticTags(input: {
     };
   }
 
-  const spatialEvidence = buildSpatialEvidenceFromReport(input.report);
+  const spatialEvidence = await buildSpatialEvidenceFromReport({
+    clipType: input.clipType,
+    report: input.report,
+    asset: input.asset,
+    slice,
+    pharosContext: input.pharosContext ?? null,
+  });
   if (spatialEvidence.length > 0) {
     slice.grounding.spatialEvidence = dedupeSpatialEvidence([
       ...slice.grounding.spatialEvidence,

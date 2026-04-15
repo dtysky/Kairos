@@ -71,7 +71,8 @@
     - 中国境内优先 Amap，境外优先 Geoapify；primary provider 为空时允许回退 secondary provider
     - Amap 先 `regeo`，为空时回退 `place/around`
     - Geoapify 先 reverse geocode，为空时回退 places
-    - `drive` 优先用命中的连续型 `Pharos shot` 首尾 GPS 反查；非 `drive` 优先用命中的 `Pharos shot` 单点 GPS；没有再回落到正式空间层选中的单点坐标
+    - 若素材/span 命中了 planned `Pharos shot`，则 `Pharos` 只提供时间归属；空间候选必须来自 trip GPX 的按时取点，而不是 shot 自带 GPS
+    - `drive` 使用素材/span 的首尾时刻各取一个 GPX 点做反查；非 `drive` 使用素材/span 的中间时刻取一个 GPX 点；没有命中有效 GPX 点时，再回落到正式空间层选中的单点坐标
     - manual-itinerary 的 `from / via / to`、trip/day title、route prose 继续留在 `summary / decision reasons / routeRole`，不再直接写进 `locationText`
 6. 正式流程与当前实现的关系已经更明确
    - 正式主链仍以 `Pharos` 为主输入
@@ -213,6 +214,9 @@ flowchart TD
 - `/ingest-gps` 当前应明确展示这个固定目录，并提醒用户把 `trip_id/plan.json`、`record.json` 与 `gpx/` 镜像投放到这里
 - `project-brief.md` 只承担可选 trip 筛选语义，不再配置外部 `Pharos` 目录路径
 - `/ingest-gps` 除了单素材“素材时间校正”卡片外，当前还应并列提供 root 级设备时钟偏移 editor，用 `±HH:MM:SS` 输入并保存 `clockOffsetMs`
+- planned `Pharos shot` 当前正式拆成两层：
+  - shot 归属只按 `plan` 的 planned time segment 匹配，不再把 `actualTime*` 或 shot GPS 字段作为 planned shot 正式匹配依据
+  - 空间位置只按 trip `gpx/*.gpx` 对素材/span 的时间做反算；`plan.gps / gps_start / gps_end / actual_gps` 仅保留人读参考，不再是 Kairos 的正式空间真值
 - 主链消费的是项目当前采用的素材版本，它可以是原始素材，也可以是独立调色链路产出的版本
 - `DaVinci color` 可以独立运行、多次更新，并在需要时产出供主链消费的素材版本
 - 若主链消费的是派生素材版本，则该版本必须保留媒体创建时间、`create_time`、GPS 等关键元信息，避免破坏 chronology、Pharos 对齐与空间推断
@@ -338,7 +342,9 @@ src/modules/ingest/
   - 项目级 `pharos/` 根目录由项目初始化和 Console 配置读取自动准备；用户不需要再手动先建这个根目录
   - `plan.json` 必需，`record.json` 与 `gpx/` 可缺失
   - 解析状态由 Supervisor / Console 显示为 `空 / 解析成功 / 解析失败`
-  - Analyze 的空间优先级为 `embedded > GPX(含 project/pharos/<trip_id>/gpx/*.gpx) > Pharos GPS > project-derived-track`
+  - planned shot 的匹配只按 `plan` 的 planned time segment；若 planned shot 缺少可归一化 planned time，则当前正式视为不可匹配，而不是回退到 `actualTime*`
+  - Analyze 的正式空间优先级为 `embedded > GPX(含 project/pharos/<trip_id>/gpx/*.gpx) > project-derived-track`
+  - `project/pharos/<trip_id>/gpx/*.gpx` 命中后产出的是 `Pharos` 的 GPX-timed 空间候选，而不是 shot 自带 GPS；若对应时刻无有效点，应保留 `pharos ref` 但不产出 `Pharos` 坐标
 
 #### 2.2 Color — 调色辅助
 

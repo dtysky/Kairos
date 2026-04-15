@@ -1075,6 +1075,8 @@ export const IProjectPharosShot = z.object({
   gps: z.tuple([z.number(), z.number()]).optional(),
   gpsStart: z.tuple([z.number(), z.number()]).optional(),
   gpsEnd: z.tuple([z.number(), z.number()]).optional(),
+  plannedTimeStart: z.string().optional(),
+  plannedTimeEnd: z.string().optional(),
   timeWindowStart: z.string().optional(),
   timeWindowEnd: z.string().optional(),
   actualTimeStart: z.string().optional(),

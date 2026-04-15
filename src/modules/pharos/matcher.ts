@@ -3,21 +3,16 @@ import type {
   IPharosMatch,
   IProjectPharosContext,
   IProjectPharosShot,
-  ISpatialEvidence,
   IKtepAsset,
 } from '../../protocol/schema.js';
-import type { IManualSpatialContext } from '../media/manual-spatial.js';
 
 const CTIME_NEAR_TOLERANCE_MS = 30 * 60_000;
 const CTIME_WITHIN_TOLERANCE_MS = 5 * 60_000;
-const CGPS_NEAR_KM = 1.5;
 
 export interface IMatchAssetToPharosInput {
-  asset: Pick<IKtepAsset, 'sourcePath' | 'capturedAt' | 'metadata' | 'embeddedGps'>;
+  asset: Pick<IKtepAsset, 'sourcePath' | 'capturedAt' | 'metadata'>;
   context: IProjectPharosContext | null;
-  report?: Pick<IAssetCoarseReport, 'clipTypeGuess' | 'summary' | 'placeHints' | 'labels' | 'inferredGps'> & {
-    spatialEvidence?: Array<Pick<ISpatialEvidence, 'lat' | 'lng' | 'confidence' | 'tier' | 'locationText'>>;
-  };
+  report?: Pick<IAssetCoarseReport, 'clipTypeGuess' | 'summary' | 'placeHints' | 'labels'>;
   limit?: number;
 }
 
@@ -40,50 +35,6 @@ export function matchAssetToPharos(
     .map(item => item.match);
 }
 
-export function resolvePharosSpatialContext(
-  input: IMatchAssetToPharosInput,
-): IManualSpatialContext | null {
-  const matches = matchAssetToPharos({ ...input, limit: 3 });
-  for (const match of matches) {
-    const shot = input.context?.shots.find(item =>
-      item.ref.tripId === match.ref.tripId
-      && item.ref.shotId === match.ref.shotId,
-    );
-    if (!shot) continue;
-
-    const coordinates = resolveShotCoordinates(shot);
-    if (!coordinates) continue;
-
-    const placeHints = dedupeStrings([
-      shot.location,
-      shot.dayTitle,
-      shot.tripTitle,
-      ...tokenize(shot.description).slice(0, 4),
-    ]);
-    const gpsSummary = buildPharosGpsSummary(shot, match);
-    return {
-      gpsSummary,
-      inferredGps: {
-        source: 'pharos',
-        confidence: Math.max(0.35, Math.min(0.85, match.confidence)),
-        lat: coordinates.lat,
-        lng: coordinates.lng,
-        summary: gpsSummary,
-        timezone: input.context?.trips.find(item => item.tripId === shot.ref.tripId)?.timezone,
-      },
-      placeHints,
-      transport: shot.type === 'continuous' ? 'drive' : undefined,
-      decisionReasons: dedupeStrings([
-        'pharos-match',
-        ...match.matchReasons,
-      ]),
-      locationCandidates: resolveShotLocationCandidates(shot),
-    };
-  }
-
-  return null;
-}
-
 interface IScoredMatch {
   score: number;
   match: IPharosMatch;
@@ -93,23 +44,16 @@ function scoreShotMatch(
   shot: IProjectPharosShot,
   input: IMatchAssetToPharosInput,
 ): IScoredMatch | null {
+  if (!isShotMatchable(shot)) return null;
+
   const reasons: string[] = [];
-  let score = 0;
-
   const timeScore = scoreTimeMatch(input.asset.capturedAt, shot, reasons);
-  score += timeScore;
+  if (timeScore <= 0) return null;
 
-  const gpsScore = scoreGpsMatch(resolveBestGpsCandidate(input.report), shot, reasons);
-  score += gpsScore;
-
-  const deviceScore = scoreDeviceMatch(input.asset, shot, reasons);
-  score += deviceScore;
-
-  const typeScore = scoreClipTypeMatch(input.report?.clipTypeGuess, shot, reasons);
-  score += typeScore;
-
-  const textScore = scoreTextMatch(input.report, shot, reasons);
-  score += textScore;
+  let score = timeScore;
+  score += scoreDeviceMatch(input.asset, shot, reasons);
+  score += scoreClipTypeMatch(input.report?.clipTypeGuess, shot, reasons);
+  score += scoreTextMatch(input.report, shot, reasons);
 
   if (shot.status === 'abandoned') {
     score -= 0.5;
@@ -131,6 +75,13 @@ function scoreShotMatch(
   };
 }
 
+function isShotMatchable(shot: IProjectPharosShot): boolean {
+  if (shot.isExtraShot) {
+    return Boolean(shot.actualTimeStart || shot.actualTimeEnd);
+  }
+  return Boolean(shot.plannedTimeStart || shot.plannedTimeEnd || shot.timeWindowStart || shot.timeWindowEnd);
+}
+
 function scoreTimeMatch(
   capturedAt: string | undefined,
   shot: IProjectPharosShot,
@@ -140,17 +91,23 @@ function scoreTimeMatch(
   const capturedMs = Date.parse(capturedAt);
   if (!Number.isFinite(capturedMs)) return 0;
 
-  const startMs = parseTime(shot.actualTimeStart ?? shot.timeWindowStart);
-  const endMs = parseTime(shot.actualTimeEnd ?? shot.timeWindowEnd);
+  const [startValue, endValue] = shot.isExtraShot
+    ? [shot.actualTimeStart, shot.actualTimeEnd]
+    : [
+      shot.plannedTimeStart ?? shot.timeWindowStart,
+      shot.plannedTimeEnd ?? shot.timeWindowEnd,
+    ];
+  const startMs = parseTime(startValue);
+  const endMs = parseTime(endValue);
 
   if (startMs != null && endMs != null) {
     if (capturedMs >= startMs - CTIME_WITHIN_TOLERANCE_MS && capturedMs <= endMs + CTIME_WITHIN_TOLERANCE_MS) {
-      reasons.push('time:within-window');
+      reasons.push(shot.isExtraShot ? 'actual-time:within-window' : 'planned-time:within-window');
       return shot.type === 'continuous' ? 6.5 : 7;
     }
     const delta = Math.min(Math.abs(capturedMs - startMs), Math.abs(capturedMs - endMs));
     if (delta <= CTIME_NEAR_TOLERANCE_MS) {
-      reasons.push(`time:near-window-${Math.round(delta / 60_000)}m`);
+      reasons.push(`${shot.isExtraShot ? 'actual-time' : 'planned-time'}:near-window-${Math.round(delta / 60_000)}m`);
       return Math.max(1, 4 - delta / CTIME_NEAR_TOLERANCE_MS * 2.5);
     }
     return 0;
@@ -160,35 +117,12 @@ function scoreTimeMatch(
   if (pointMs == null) return 0;
   const delta = Math.abs(capturedMs - pointMs);
   if (delta <= CTIME_WITHIN_TOLERANCE_MS) {
-    reasons.push(`time:near-point-${Math.round(delta / 60_000)}m`);
+    reasons.push(`${shot.isExtraShot ? 'actual-time' : 'planned-time'}:near-point-${Math.round(delta / 60_000)}m`);
     return 5;
   }
   if (delta <= CTIME_NEAR_TOLERANCE_MS) {
-    reasons.push(`time:soft-point-${Math.round(delta / 60_000)}m`);
+    reasons.push(`${shot.isExtraShot ? 'actual-time' : 'planned-time'}:soft-point-${Math.round(delta / 60_000)}m`);
     return 2;
-  }
-  return 0;
-}
-
-function scoreGpsMatch(
-  inferredGps: { lat: number; lng: number; confidence?: number } | undefined,
-  shot: IProjectPharosShot,
-  reasons: string[],
-): number {
-  if (!inferredGps) return 0;
-  const shotCoordinates = resolveShotCoordinates(shot);
-  if (!shotCoordinates) return 0;
-
-  const distanceKm = haversineKm(
-    inferredGps.lat,
-    inferredGps.lng,
-    shotCoordinates.lat,
-    shotCoordinates.lng,
-  );
-  if (!Number.isFinite(distanceKm)) return 0;
-  if (distanceKm <= CGPS_NEAR_KM) {
-    reasons.push(`gps:${distanceKm.toFixed(1)}km`);
-    return Math.max(0.8, 3 - distanceKm);
   }
   return 0;
 }
@@ -266,29 +200,6 @@ function collectAssetDeviceTokens(
   return [...tokens];
 }
 
-function resolveBestGpsCandidate(
-  report: IMatchAssetToPharosInput['report'] | undefined,
-): { lat: number; lng: number; confidence?: number } | undefined {
-  const spatialCandidate = (report?.spatialEvidence ?? [])
-    .filter(item => typeof item.lat === 'number' && typeof item.lng === 'number')
-    .sort((left, right) => (right.confidence ?? 0) - (left.confidence ?? 0))[0];
-  if (spatialCandidate) {
-    return {
-      lat: spatialCandidate.lat as number,
-      lng: spatialCandidate.lng as number,
-      confidence: spatialCandidate.confidence,
-    };
-  }
-  if (report?.inferredGps) {
-    return {
-      lat: report.inferredGps.lat,
-      lng: report.inferredGps.lng,
-      confidence: report.inferredGps.confidence,
-    };
-  }
-  return undefined;
-}
-
 function tokenizeDeviceToken(input: string): string[] {
   return input
     .split(/[^a-zA-Z0-9]+/u)
@@ -306,55 +217,6 @@ function tokenize(input: string): string[] {
 
 function dedupeStrings(values: Array<string | undefined>): string[] {
   return [...new Set(values.map(value => value?.trim()).filter(Boolean) as string[])];
-}
-
-function resolveShotCoordinates(shot: IProjectPharosShot): { lat: number; lng: number } | null {
-  const actualPoint = shot.actualGpsStart ?? shot.actualGpsEnd;
-  if (actualPoint) {
-    return { lng: actualPoint[0], lat: actualPoint[1] };
-  }
-  if (shot.gps) {
-    return { lng: shot.gps[0], lat: shot.gps[1] };
-  }
-  if (shot.gpsStart && shot.gpsEnd) {
-    return {
-      lng: (shot.gpsStart[0] + shot.gpsEnd[0]) / 2,
-      lat: (shot.gpsStart[1] + shot.gpsEnd[1]) / 2,
-    };
-  }
-  const fallback = shot.gpsStart ?? shot.gpsEnd;
-  return fallback ? { lng: fallback[0], lat: fallback[1] } : null;
-}
-
-function resolveShotLocationCandidates(
-  shot: IProjectPharosShot,
-): Array<{ role: 'point' | 'start' | 'end'; lat: number; lng: number }> {
-  const candidates: Array<{ role: 'point' | 'start' | 'end'; lat: number; lng: number }> = [];
-  const start = shot.actualGpsStart ?? shot.gpsStart;
-  const end = shot.actualGpsEnd ?? shot.gpsEnd;
-  if (start) {
-    candidates.push({ role: 'start', lng: start[0], lat: start[1] });
-  }
-  if (end) {
-    candidates.push({ role: 'end', lng: end[0], lat: end[1] });
-  }
-  if (candidates.length > 0) {
-    return candidates;
-  }
-
-  const point = resolveShotCoordinates(shot);
-  return point ? [{ role: 'point', lat: point.lat, lng: point.lng }] : [];
-}
-
-function buildPharosGpsSummary(shot: IProjectPharosShot, match: IPharosMatch): string {
-  return [
-    'pharos',
-    shot.tripTitle,
-    shot.dayTitle,
-    shot.location,
-    shot.type,
-    match.status ? `status:${match.status}` : '',
-  ].filter(Boolean).join(' ');
 }
 
 function parseTime(value: string | undefined): number | null {
@@ -378,15 +240,4 @@ function mapPharosShotTypeToClipType(type: string): IAssetCoarseReport['clipType
 
 function normalizeScore(score: number): number {
   return Math.max(0.05, Math.min(0.99, score / 10));
-}
-
-function haversineKm(latA: number, lngA: number, latB: number, lngB: number): number {
-  const toRadians = (value: number) => value * Math.PI / 180;
-  const earthRadiusKm = 6371;
-  const deltaLat = toRadians(latB - latA);
-  const deltaLng = toRadians(lngB - lngA);
-  const a = Math.sin(deltaLat / 2) ** 2
-    + Math.cos(toRadians(latA)) * Math.cos(toRadians(latB)) * Math.sin(deltaLng / 2) ** 2;
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return earthRadiusKm * c;
 }

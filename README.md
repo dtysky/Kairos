@@ -21,6 +21,8 @@ Current stable pipeline:
   - `project-brief.md` 只允许通过 `## Pharos` / `包含 Trip：...` 做可选 trip 筛选，不再填写外部 `Pharos` 路径
   - `/ingest-gps` 会明确提示这个固定目录，并提醒用户把 `trip_id/plan.json`、`record.json`、`gpx/` 镜像放进来
   - Console 会把 `Pharos` 状态显示为 `空 / 解析成功 / 解析失败`
+  - planned shot 的素材归属当前只按 `plan` 里的计划时间段匹配；`record` 的 actual 时间与 shot 上的 GPS 字段不再参与 planned shot 正式匹配
+  - planned shot 的空间真值当前统一来自 trip `gpx/*.gpx` 按素材/span 时间反算；无论 `drive` 还是单机位 shot，都不再把 `plan.gps / gps_start / gps_end / actual_gps` 当作正式坐标真值
 - `导入与 GPS` 当前正式承载素材时间阻塞与修正：
   - 高置信 `exif` / `manual` 不会再因为文件名日期不同而被硬阻塞
   - 弱时间源会同时校验项目时间线、文件名完整时间戳漂移，以及已纳入 `Pharos` trip 的整体时间边界

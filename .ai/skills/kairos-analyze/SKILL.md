@@ -161,12 +161,16 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
 - 当存在内嵌 GPS 时，`project-derived-track` 和 GPX 都不能覆盖它
 - 当前代码入口仍允许通过 `gpxPaths` 显式注入 1..N 个 GPX 文件路径，用于覆盖默认发现
 - 默认 GPX 命中策略是：从带 `time` 的 `trkpt / rtept / wpt` 中，按 `capturedAt` 选择容差内最近点
+- planned `Pharos shot` 的正式语义当前拆成两层：
+  - 素材归属只按 `plan` 的 planned time segment 匹配，不再让 `actualTime*`、`plan.gps` 或 `actual_gps` 参与 planned shot 正式匹配
+  - 空间位置只按 trip GPX 对素材/span 的时间做反算，不再把 shot 自带计划/实际 GPS 当作正式空间真值
 - `manual-itinerary` 正文不直接参与拍摄时间修正；真正的时间修正入口是它末尾的“素材时间校正”表格，并且只有 rerun ingest 后才会生效
 - 空间推断结果应落在 coarse report，而不是回写素材真值层
 - `locationText` 当前正式只允许来自 reverse geocode：
   - provider 选择、cache key、fallback 与 balanced location 规则对齐 `../Nostos/tools/scan-tool/geocode.ts`
   - 中国境内优先 Amap，境外优先 Geoapify
-  - `drive` 优先使用命中的连续型 `Pharos shot` 首尾 GPS 反查；非 `drive` 优先使用命中的 `Pharos shot` 单点 GPS；没有再回落到正式空间层选中的单点坐标
+  - 若素材/span 命中了 planned `Pharos shot`，则 `drive` 使用首尾时刻各取一个 trip GPX 点做反查；非 `drive` 使用中间时刻的 trip GPX 点做反查
+  - planned shot 命中但对应时刻没有有效 GPX 点时，保留 `pharos ref`，但不产出 `Pharos` 坐标；此时才允许继续回落到正式空间层选中的单点坐标
   - manual-itinerary route prose、trip/day title 与 route-stage 文本只能留在 `summary / decision reasons / routeRole`，不再冒充 `locationText`
 
 ## 默认分析策略

@@ -1473,12 +1473,21 @@ function resolvePharosShotSortKey(
   tripOrder: Map<string, number>,
 ): string {
   const tripIndex = String(tripOrder.get(shot.ref.tripId) ?? Number.MAX_SAFE_INTEGER).padStart(6, '0');
+  const timeReference = shot.isExtraShot
+    ? (
+      shot.actualTimeStart
+      ?? shot.actualTimeEnd
+      ?? shot.date
+    )
+    : (
+      shot.plannedTimeStart
+      ?? shot.timeWindowStart
+      ?? shot.plannedTimeEnd
+      ?? shot.timeWindowEnd
+      ?? shot.date
+    );
   const timeKey = normalizeChronologyKey(
-    shot.actualTimeStart
-    ?? shot.timeWindowStart
-    ?? shot.actualTimeEnd
-    ?? shot.timeWindowEnd
-    ?? shot.date,
+    timeReference,
   ) ?? '9999-12-31t23:59:59.999z';
   const dayKey = String(shot.day ?? Number.MAX_SAFE_INTEGER).padStart(4, '0');
   return `${tripIndex}|${timeKey}|${dayKey}|${shot.ref.shotId}`;
@@ -2118,14 +2127,8 @@ export function buildSpatialStoryContext(
       ?? chronology?.placeHints[0]
       ?? pharosShot?.location
       ?? undefined;
-    const lat = spatialEvidence?.lat
-      ?? pharosShot?.actualGpsStart?.[0]
-      ?? pharosShot?.gpsStart?.[0]
-      ?? pharosShot?.gps?.[0];
-    const lng = spatialEvidence?.lng
-      ?? pharosShot?.actualGpsStart?.[1]
-      ?? pharosShot?.gpsStart?.[1]
-      ?? pharosShot?.gps?.[1];
+    const lat = spatialEvidence?.lat;
+    const lng = spatialEvidence?.lng;
     return {
       spanId: span.id,
       time: chronology?.sortCapturedAt ?? chronology?.capturedAt,

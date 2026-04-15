@@ -1,9 +1,6 @@
 import nodeFetch from 'node-fetch';
 import type {
   EClipType,
-  IPharosMatch,
-  IProjectPharosContext,
-  IProjectPharosShot,
 } from '../../protocol/schema.js';
 import {
   formatReverseGeocodeLocationKey,
@@ -13,6 +10,7 @@ import {
 } from '../../store/reverse-geocode-cache.js';
 import type { IRuntimeConfig } from '../../store/project.js';
 import type { IManualSpatialContext, ISpatialLocationCandidate } from './manual-spatial.js';
+import type { IPharosTimedSpatialContext } from '../pharos/gpx-timed.js';
 
 const CDEFAULT_AMAP_REVERSE_GEOCODE_URL = 'https://restapi.amap.com/v3/geocode/regeo';
 const CDEFAULT_AMAP_NEARBY_SEARCH_URL = 'https://restapi.amap.com/v3/place/around';
@@ -148,8 +146,7 @@ export function isLikelyChinaCoordinate(lat: number, lng: number): boolean {
 export async function resolveAnalyzeLocationText(input: {
   clipType: EClipType;
   manualSpatial?: IManualSpatialContext | null;
-  pharosContext?: IProjectPharosContext | null;
-  pharosMatches?: IPharosMatch[];
+  pharosSpatial?: Pick<IPharosTimedSpatialContext, 'locationCandidates'> | null;
   reverseGeocodeService?: IReverseGeocodeService | null;
 }): Promise<IResolvedAnalyzeLocationText> {
   const candidates = selectPreferredLocationCandidates(input);
@@ -555,17 +552,14 @@ function buildReverseGeocodePlaceHints(entry: IReverseGeocodeCacheEntry): string
 function selectPreferredLocationCandidates(input: {
   clipType: EClipType;
   manualSpatial?: IManualSpatialContext | null;
-  pharosContext?: IProjectPharosContext | null;
-  pharosMatches?: IPharosMatch[];
+  pharosSpatial?: Pick<IPharosTimedSpatialContext, 'locationCandidates'> | null;
 }): ISpatialLocationCandidate[] {
-  const matchedShot = resolveMatchedPharosShot(input.pharosContext ?? null, input.pharosMatches ?? []);
-  if (matchedShot) {
-    const pharosCandidates = input.clipType === 'drive'
-      ? resolvePharosDriveCandidates(matchedShot)
-      : resolvePharosPointCandidates(matchedShot);
-    if (pharosCandidates.length > 0) {
-      return pharosCandidates;
-    }
+  if (input.pharosSpatial?.locationCandidates?.length) {
+    return input.pharosSpatial.locationCandidates.map(candidate => ({
+      role: candidate.role,
+      lat: candidate.lat,
+      lng: candidate.lng,
+    }));
   }
 
   if (input.manualSpatial?.locationCandidates?.length) {
@@ -579,59 +573,6 @@ function selectPreferredLocationCandidates(input: {
     }];
   }
   return [];
-}
-
-function resolveMatchedPharosShot(
-  context: IProjectPharosContext | null,
-  matches: IPharosMatch[],
-): IProjectPharosShot | null {
-  const topMatch = matches[0];
-  if (!context || !topMatch) return null;
-  return context.shots.find(shot =>
-    shot.ref.tripId === topMatch.ref.tripId
-    && shot.ref.shotId === topMatch.ref.shotId,
-  ) ?? null;
-}
-
-function resolvePharosDriveCandidates(shot: IProjectPharosShot): ISpatialLocationCandidate[] {
-  const candidates: ISpatialLocationCandidate[] = [];
-  const start = shot.actualGpsStart ?? shot.gpsStart;
-  const end = shot.actualGpsEnd ?? shot.gpsEnd;
-  if (start) {
-    candidates.push({ role: 'start', lat: start[1], lng: start[0] });
-  }
-  if (end) {
-    candidates.push({ role: 'end', lat: end[1], lng: end[0] });
-  }
-  if (candidates.length > 0) {
-    return candidates;
-  }
-  return resolvePharosPointCandidates(shot);
-}
-
-function resolvePharosPointCandidates(shot: IProjectPharosShot): ISpatialLocationCandidate[] {
-  const point = resolvePharosShotPoint(shot);
-  return point ? [{ role: 'point', ...point }] : [];
-}
-
-function resolvePharosShotPoint(
-  shot: IProjectPharosShot,
-): { lat: number; lng: number } | null {
-  const actualPoint = shot.actualGpsStart ?? shot.actualGpsEnd;
-  if (actualPoint) {
-    return { lng: actualPoint[0], lat: actualPoint[1] };
-  }
-  if (shot.gps) {
-    return { lng: shot.gps[0], lat: shot.gps[1] };
-  }
-  if (shot.gpsStart && shot.gpsEnd) {
-    return {
-      lng: (shot.gpsStart[0] + shot.gpsEnd[0]) / 2,
-      lat: (shot.gpsStart[1] + shot.gpsEnd[1]) / 2,
-    };
-  }
-  const fallback = shot.gpsStart ?? shot.gpsEnd;
-  return fallback ? { lng: fallback[0], lat: fallback[1] } : null;
 }
 
 function resolveDriveLocationText(

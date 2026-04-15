@@ -247,6 +247,11 @@ async function parseTripDirectory(
       if (!shotId) continue;
       const recordEntry = recordMap.get(shotId);
       const status = normalizeShotStatus(recordEntry?.status);
+      const plannedWindow = resolvePlannedShotWindow({
+        shot,
+        date: typeof day.date === 'string' ? day.date : undefined,
+        timeZone: typeof plan.timezone === 'string' ? plan.timezone : undefined,
+      });
       if (shot.priority === 'must') mustCount += 1;
       if (shot.priority === 'optional') optionalCount += 1;
       if (status === 'pending') pendingCount += 1;
@@ -283,16 +288,10 @@ async function parseTripDirectory(
         gps: normalizeCoordinate(shot.gps),
         gpsStart: normalizeCoordinate(shot.gps_start),
         gpsEnd: normalizeCoordinate(shot.gps_end),
-        timeWindowStart: buildTripWindowIso(
-          typeof day.date === 'string' ? day.date : undefined,
-          Array.isArray(shot.time_window) ? shot.time_window[0] : undefined,
-          typeof plan.timezone === 'string' ? plan.timezone : undefined,
-        ),
-        timeWindowEnd: buildTripWindowIso(
-          typeof day.date === 'string' ? day.date : undefined,
-          Array.isArray(shot.time_window) ? shot.time_window[1] : undefined,
-          typeof plan.timezone === 'string' ? plan.timezone : undefined,
-        ),
+        plannedTimeStart: plannedWindow.start,
+        plannedTimeEnd: plannedWindow.end,
+        timeWindowStart: plannedWindow.start,
+        timeWindowEnd: plannedWindow.end,
         actualTimeStart: readNestedString(recordEntry, 'actual_time', 'start'),
         actualTimeEnd: readNestedString(recordEntry, 'actual_time', 'end'),
         actualGpsStart: readNestedCoordinate(recordEntry, 'actual_gps', 'start'),
@@ -306,6 +305,10 @@ async function parseTripDirectory(
           ? (recordEntry.abandon_reason as string | null)
           : undefined,
       });
+
+      if (!plannedWindow.start && !plannedWindow.end) {
+        warnings.push(`Pharos Trip ${tripId} planned shot ${shotId} 缺少可归一化的 planned time，已跳过正式匹配`);
+      }
     }
   }
 
@@ -329,6 +332,8 @@ async function parseTripDirectory(
       devices: typeof shot.device === 'string' ? [shot.device] : [],
       rolls: typeof shot.roll === 'string' ? [shot.roll] : [],
       gps: normalizeCoordinate(shot.gps),
+      plannedTimeStart: undefined,
+      plannedTimeEnd: undefined,
       actualTimeStart: readNestedString(shot, 'time', 'start'),
       actualTimeEnd: readNestedString(shot, 'time', 'end'),
       actualGpsStart: normalizeCoordinate(shot.gps),
@@ -441,6 +446,59 @@ function normalizeCoordinate(value: unknown): [number, number] | undefined {
   const lat = Number(value[1]);
   if (!Number.isFinite(lng) || !Number.isFinite(lat)) return undefined;
   return [lng, lat];
+}
+
+function resolvePlannedShotWindow(input: {
+  shot: Record<string, unknown>;
+  date?: string;
+  timeZone?: string;
+}): { start?: string; end?: string } {
+  const nestedRange = readTimeRangeObject(input.shot.time)
+    ?? readTimeRangeObject(input.shot.planned_time)
+    ?? readTimeRangeObject(input.shot.plannedTime);
+  const arrayRange = Array.isArray(input.shot.time_window)
+    ? input.shot.time_window
+    : Array.isArray(input.shot.planned_time_window)
+      ? input.shot.planned_time_window
+      : null;
+
+  return {
+    start: normalizeTripTimeValue(
+      input.date,
+      nestedRange?.start ?? arrayRange?.[0],
+      input.timeZone,
+    ),
+    end: normalizeTripTimeValue(
+      input.date,
+      nestedRange?.end ?? arrayRange?.[1],
+      input.timeZone,
+    ),
+  };
+}
+
+function readTimeRangeObject(
+  value: unknown,
+): { start?: unknown; end?: unknown } | null {
+  if (!value || typeof value !== 'object') return null;
+  const record = value as Record<string, unknown>;
+  return {
+    start: record.start,
+    end: record.end,
+  };
+}
+
+function normalizeTripTimeValue(
+  date: string | undefined,
+  value: unknown,
+  timeZone: string | undefined,
+): string | undefined {
+  if (typeof value !== 'string' || !value.trim()) return undefined;
+  const trimmed = value.trim();
+  const timestamp = Date.parse(trimmed);
+  if (Number.isFinite(timestamp)) {
+    return new Date(timestamp).toISOString();
+  }
+  return buildTripWindowIso(date, trimmed, timeZone);
 }
 
 function readNestedString(

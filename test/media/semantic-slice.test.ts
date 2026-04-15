@@ -20,8 +20,8 @@ function buildBaseSlice(): IKtepSlice {
 }
 
 describe('decorateSliceWithSemanticTags', () => {
-  it('keeps only material patterns, grounding and semantic tag sets', () => {
-    const result = decorateSliceWithSemanticTags({
+  it('keeps only material patterns, grounding and semantic tag sets', async () => {
+    const result = await decorateSliceWithSemanticTags({
       slice: buildBaseSlice(),
       clipType: 'drive',
       semanticWindow: {
