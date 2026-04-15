@@ -9,6 +9,7 @@ import {
   resolveSelectionTranscriptRange,
   snapSelectionToTranscriptSegments,
 } from '../media/window-policy.js';
+import { estimateTranscriptTextUnits } from '../media/refined-transcript.js';
 
 export interface ISpeechPacingConfig {
   maxCharsPerCue: number;
@@ -320,7 +321,7 @@ export function splitCueChunks(text: string, maxChars: number): string[] {
     const normalized = unit.trim();
     if (!normalized) continue;
 
-    if (normalized.length <= maxChars) {
+    if (measureCueTextUnits(normalized) <= maxChars) {
       chunks.push(normalized);
       continue;
     }
@@ -332,7 +333,7 @@ export function splitCueChunks(text: string, maxChars: number): string[] {
       const part = weak.trim();
       if (!part) continue;
 
-      if (buffer.length > 0 && buffer.length + part.length > maxChars) {
+      if (buffer.length > 0 && measureCueTextUnits(buffer) + measureCueTextUnits(part) > maxChars) {
         chunks.push(buffer.trim());
         buffer = part;
       } else {
@@ -552,8 +553,8 @@ function rebalanceShortChunks(chunks: string[], maxChars: number): string[] {
     const previous = result[result.length - 1];
     if (
       previous
-      && current.length <= 6
-      && previous.length + current.length <= maxChars + 4
+      && measureCueTextUnits(current) <= 6
+      && measureCueTextUnits(previous) + measureCueTextUnits(current) <= maxChars + 4
     ) {
       result[result.length - 1] = `${previous}${current}`;
       continue;
@@ -568,7 +569,7 @@ function rebalanceShortChunks(chunks: string[], maxChars: number): string[] {
 function hardSplitCueChunk(chunk: string, maxChars: number): string[] {
   const normalized = chunk.trim();
   if (!normalized) return [];
-  if (normalized.length <= maxChars) return [normalized];
+  if (measureCueTextUnits(normalized) <= maxChars) return [normalized];
 
   const chars = Array.from(normalized);
   const result: string[] = [];
@@ -605,6 +606,10 @@ function resolveSourceDuration(sourceInMs?: number, sourceOutMs?: number): numbe
   if (sourceInMs == null || sourceOutMs == null) return undefined;
   if (sourceOutMs <= sourceInMs) return undefined;
   return sourceOutMs - sourceInMs;
+}
+
+function measureCueTextUnits(text: string): number {
+  return estimateTranscriptTextUnits(text);
 }
 
 export function normalizeSourceSpeechSelections(

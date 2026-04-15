@@ -43,6 +43,7 @@ export {
 export {
   MlClient,
   type IAsrSegment,
+  type IAsrWord,
   type IMlAsrTiming,
   type IMlVlmTiming,
   type IAsrResult,
@@ -59,6 +60,14 @@ export {
   type IAnalyzeAssetPerformance,
 } from './analyze-profile.js';
 export { transcribe, type ITranscription } from './transcriber.js';
+export {
+  buildTranscriptText,
+  estimateTranscriptTextUnits,
+  isObviousTranscriptHallucination,
+  normalizeAsrSegments,
+  normalizeAsrWords,
+  refineAsrSegments,
+} from './refined-transcript.js';
 export { extractOcr, type IOcrExtraction } from './ocr.js';
 export { estimateDensity, type IDensityInput, type IDensityResult } from './density.js';
 export {

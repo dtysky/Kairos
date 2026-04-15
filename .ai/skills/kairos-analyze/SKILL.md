@@ -195,6 +195,10 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
 
 - 先对视频内主音轨做轻量音频健康检查
 - 提取 `transcript / transcriptSegments / speechCoverage`
+- 当前默认 ASR 质量目标是跨平台一致：
+  - Apple Silicon 默认 `mlx-whisper / whisper-large-v3-turbo`
+  - Windows + CUDA 与 CPU fallback 默认 `transformers / whisper-large-v3-turbo`
+- 后端当前会请求词级时间戳；Analyze 在 TS 侧基于词级停顿、标点与长度约束重建 refined `transcriptSegments`
 - 如果资产已绑定 `protectionAudio`，先对 embedded 与 protection 都做轻量音频健康检查，重点观察低电平、静音比例、语音线索偏弱等问题
 - 把 ASR 命中的语音时间窗并入 `interestingWindows`
 - `interestingWindows` 现在需要区分两层语义：
@@ -202,6 +206,7 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
   - `editStartMs / editEndMs` 作为后续 Script/Timeline 默认消费的 edit-friendly bounds
 - 但要把“极稀疏语音”当噪声处理：如果 `speechCoverage` 低到只剩零星词片段（当前阈值为 `< 0.05`），应直接丢弃整段 transcript 上下文，不写入 coarse report，也不要让它推动 `interestingWindows` 或 fine-scan
 - 不要把“高 coverage 但内容本来就简单/重复”的素材误判为 ASR 故障；那类结果可以保留，只是后续由剪辑策略自己决定值不值得用
+- `report.transcriptSegments` 当前应理解为 refined transcript segmentation，而不是直接照搬后端的粗 segment
 - 当前保护音轨策略是保守 fallback，不是双主音轨竞争：
   - 视频内无线 mic 仍是默认主音轨
   - `protectionAudio` 只是同目录同 basename 的 sidecar 兜底来源

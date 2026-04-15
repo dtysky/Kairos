@@ -24,7 +24,7 @@ def _read_positive_int_env(name: str, default: int) -> int:
     return max(1, value)
 
 
-CASR_BATCH_MAX_ITEMS = _read_positive_int_env("KAIROS_ASR_BATCH_MAX_ITEMS", 4)
+CASR_BATCH_MAX_ITEMS = _read_positive_int_env("KAIROS_ASR_BATCH_MAX_ITEMS", 1)
 CASR_BATCH_MAX_WAIT_MS = _read_positive_int_env("KAIROS_ASR_BATCH_MAX_WAIT_MS", 40)
 CASR_PREPROCESS_MAX_CONCURRENCY = _read_positive_int_env("KAIROS_ASR_PREPROCESS_MAX_CONCURRENCY", 3)
 
@@ -69,7 +69,7 @@ class _AsrBatcher:
         self._thread = threading.Thread(target=self._run, name="kairos-asr-batcher", daemon=True)
         self._thread.start()
 
-    def submit(self, audio_path: str, language: str | None) -> tuple[list[dict], dict]:
+    def submit(self, audio_path: str, language: str | None) -> tuple[list[dict], list[dict], dict]:
         future: Future = Future()
         self._queue.put(_AsrBatchItem(
             audio_path=audio_path,
@@ -109,14 +109,14 @@ class _AsrBatcher:
                 [(item.audio_path, item.language) for item in batch],
                 preprocess_max_concurrency=self._preprocess_max_concurrency,
             )
-            for item, (segments, timing) in zip(batch, results):
+            for item, (segments, words, timing) in zip(batch, results):
                 payload_timing = dict(timing or {})
                 elapsed_ms = (time.perf_counter() - item.submitted_at) * 1000.0
                 queue_wait_ms = max(0.0, elapsed_ms - float(payload_timing.get("totalMs") or 0.0))
                 payload_timing["queueWaitMs"] = queue_wait_ms
                 payload_timing["batched"] = BACKEND == "torch" and len(batch) > 1
                 payload_timing["batchSize"] = len(batch) if BACKEND == "torch" else 1
-                item.future.set_result((segments, payload_timing))
+                item.future.set_result((segments, words, payload_timing))
         except Exception as exc:
             for item in batch:
                 item.future.set_exception(exc)
@@ -161,7 +161,11 @@ def health():
             "asrBatchMaxItems": CASR_BATCH_MAX_ITEMS,
             "asrBatchMaxWaitMs": CASR_BATCH_MAX_WAIT_MS,
             "asrPreprocessMaxConcurrency": CASR_PREPROCESS_MAX_CONCURRENCY,
-            "asrMode": "torch-batched" if BACKEND == "torch" else "mlx-single-inference",
+            "asrMode": (
+                "torch-batched"
+                if BACKEND == "torch" and CASR_BATCH_MAX_ITEMS > 1
+                else ("torch-single-inference" if BACKEND == "torch" else "mlx-single-inference")
+            ),
             "asrQueuedRequests": _asr_batcher.queued_requests(),
         },
     }
@@ -175,8 +179,8 @@ def asr(req: AsrRequest):
         if not req.keep_other_models_loaded:
             _unload_vlm()
         _loaded.add("whisper")
-        segments, timing = _asr_batcher.submit(req.audio_path, req.language)
-        return {"segments": segments, "timing": timing}
+        segments, words, timing = _asr_batcher.submit(req.audio_path, req.language)
+        return {"segments": segments, "words": words, "timing": timing}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

@@ -24,6 +24,9 @@ CWHISPER_MODEL = os.getenv("KAIROS_WHISPER_MODEL", "")
 CSILENCE_GATE_WINDOW_SECONDS = 1.0
 CSILENCE_GATE_RMS_THRESHOLD = 48
 CSILENCE_GATE_PEAK_THRESHOLD = 192
+CTRANSCRIPT_SHORT_PAUSE_SECONDS = 0.22
+CTRANSCRIPT_LONG_PAUSE_SECONDS = 0.48
+CTRANSCRIPT_TARGET_UNITS = 18
 
 
 def _repo_root() -> Path:
@@ -55,7 +58,7 @@ def _resolve_mlx_model_ref() -> str:
 
 
 def _resolve_torch_model_ref() -> str:
-    return "openai/whisper-small"
+    return "openai/whisper-large-v3-turbo"
 
 
 def _extract_audio_wav(media_path: str) -> Path:
@@ -124,37 +127,219 @@ def _has_effective_audio(wav_path: Path) -> tuple[bool, dict]:
         }
 
 
+def _normalize_text(text: str) -> str:
+    return " ".join(str(text or "").strip().split())
+
+
+def _normalize_timestamp_pair(start: float | None, end: float | None) -> tuple[float, float]:
+    normalized_start = max(0.0, float(start or 0.0))
+    normalized_end = max(normalized_start, float(end or normalized_start))
+    return normalized_start, normalized_end
+
+
+def _join_words(words: list[dict]) -> str:
+    result = ""
+    for word in words:
+        text = _normalize_text(word.get("text") or word.get("word") or "")
+        if not text:
+            continue
+        if not result:
+            result = text
+            continue
+
+        previous_char = result[-1]
+        next_char = text[0]
+        should_add_space = (
+            previous_char.isascii()
+            and next_char.isascii()
+            and previous_char.isalnum()
+            and next_char.isalnum()
+        )
+        result += f" {text}" if should_add_space else text
+
+    return (
+        result
+        .replace(" ,", ",")
+        .replace(" .", ".")
+        .replace(" !", "!")
+        .replace(" ?", "?")
+        .replace(" :", ":")
+        .replace(" ;", ";")
+        .replace(" ，", "，")
+        .replace(" 。", "。")
+        .replace(" ！", "！")
+        .replace(" ？", "？")
+        .replace(" ：", "：")
+        .replace(" ；", "；")
+        .strip()
+    )
+
+
+def _estimate_text_units(text: str) -> int:
+    normalized = _normalize_text(text)
+    if not normalized:
+        return 0
+
+    units = 0
+    token = ""
+    token_mode = None
+    for char in normalized:
+        if "\u4e00" <= char <= "\u9fff":
+            units += 1
+            token = ""
+            token_mode = None
+            continue
+        if char.isspace():
+            if token:
+                units += 1
+            token = ""
+            token_mode = None
+            continue
+        if char.isascii() and char.isalnum():
+            mode = "digit" if char.isdigit() else "latin"
+            if token and token_mode != mode:
+                units += 1
+                token = char
+            else:
+                token += char
+            token_mode = mode
+            continue
+        if token:
+            units += 1
+        token = ""
+        token_mode = None
+
+    if token:
+        units += 1
+    return units
+
+
+def _group_words_to_segments(words: list[dict]) -> list[dict]:
+    if not words:
+        return []
+
+    segments: list[dict] = []
+    current: list[dict] = []
+
+    def flush() -> None:
+        nonlocal current
+        if not current:
+            return
+        text = _join_words(current)
+        start = float(current[0].get("start") or 0.0)
+        end = float(current[-1].get("end") or start)
+        current = []
+        if not text or end <= start:
+            return
+        segments.append({
+            "start": start,
+            "end": end,
+            "text": text,
+        })
+
+    for index, word in enumerate(words):
+        current.append(word)
+        text = _join_words(current)
+        next_word = words[index + 1] if index + 1 < len(words) else None
+        pause_after = (
+            max(0.0, float(next_word.get("start") or 0.0) - float(word.get("end") or 0.0))
+            if next_word
+            else float("inf")
+        )
+        should_break = (
+            next_word is None
+            or pause_after >= CTRANSCRIPT_LONG_PAUSE_SECONDS
+            or text.endswith(("。", "！", "？", ".", "!", "?", ";", "；", "…"))
+            or (
+                _estimate_text_units(text) >= CTRANSCRIPT_TARGET_UNITS
+                and (
+                    pause_after >= CTRANSCRIPT_SHORT_PAUSE_SECONDS
+                    or text.endswith(("，", ",", "：", ":", "、"))
+                )
+            )
+        )
+        if should_break:
+            flush()
+
+    flush()
+    return segments
+
+
+def _extract_mlx_words(segment: dict) -> list[dict]:
+    words = []
+    for word in segment.get("words") or []:
+        text = _normalize_text(word.get("word") or word.get("text") or "")
+        if not text:
+            continue
+        start, end = _normalize_timestamp_pair(word.get("start"), word.get("end"))
+        if end <= start:
+            continue
+        words.append({
+            "start": start,
+            "end": end,
+            "text": text,
+        })
+    return words
+
+
+def _extract_torch_words(result: dict) -> list[dict]:
+    words = []
+    for chunk in result.get("chunks") or []:
+        timestamp = chunk.get("timestamp") or (0.0, 0.0)
+        start, end = _normalize_timestamp_pair(
+            timestamp[0] if isinstance(timestamp, (list, tuple)) and len(timestamp) > 0 else 0.0,
+            timestamp[1] if isinstance(timestamp, (list, tuple)) and len(timestamp) > 1 else (
+                timestamp[0] if isinstance(timestamp, (list, tuple)) and len(timestamp) > 0 else 0.0
+            ),
+        )
+        text = _normalize_text(chunk.get("text") or "")
+        if not text or end <= start:
+            continue
+        words.append({
+            "start": start,
+            "end": end,
+            "text": text,
+        })
+    return words
+
+
 # ── MLX backend (mlx-whisper) ────────────────────────────────
 
-def _transcribe_mlx(wav_path: Path, language: str | None) -> list[dict]:
+def _transcribe_mlx(wav_path: Path, language: str | None) -> tuple[list[dict], list[dict]]:
     import mlx_whisper  # type: ignore
 
     model_ref = _resolve_mlx_model_ref()
     kwargs: dict = {
         "path_or_hf_repo": model_ref,
-        "word_timestamps": False,
+        "word_timestamps": True,
     }
     if language:
         kwargs["language"] = language
 
     result = mlx_whisper.transcribe(str(wav_path), **kwargs)
 
-    segments = result.get("segments") or []
-    if not segments:
+    raw_segments = result.get("segments") or []
+    if not raw_segments:
         text = str(result.get("text") or "").strip()
         if not text:
-            return []
-        return [{"start": 0.0, "end": 0.0, "text": text}]
+            return [], []
+        return [{"start": 0.0, "end": 0.0, "text": text}], []
 
-    return [
-        {
-            "start": float(seg.get("start") or 0.0),
-            "end": float(seg.get("end") or 0.0),
-            "text": str(seg.get("text") or "").strip(),
-        }
-        for seg in segments
-        if str(seg.get("text") or "").strip()
-    ]
+    segments = []
+    words = []
+    for seg in raw_segments:
+        text = _normalize_text(seg.get("text") or "")
+        if text:
+            start, end = _normalize_timestamp_pair(seg.get("start"), seg.get("end"))
+            if end > start:
+                segments.append({
+                    "start": start,
+                    "end": end,
+                    "text": text,
+                })
+        words.extend(_extract_mlx_words(seg))
+
+    return segments, words
 
 
 # ── Torch backend (transformers) ─────────────────────────────
@@ -311,8 +496,8 @@ def _build_silent_timing(prepared: dict) -> dict:
     }
 
 
-def _transcribe_torch_batch(prepared_entries: list[dict], languages: list[str | None]) -> list[tuple[list[dict], dict]]:
-    outputs: list[tuple[list[dict], dict] | None] = [None] * len(prepared_entries)
+def _transcribe_torch_batch(prepared_entries: list[dict], languages: list[str | None]) -> list[tuple[list[dict], list[dict], dict]]:
+    outputs: list[tuple[list[dict], list[dict], dict] | None] = [None] * len(prepared_entries)
     load_started_at = time.perf_counter()
     asr = _get_torch_pipeline()
     load_ms = (time.perf_counter() - load_started_at) * 1000.0
@@ -331,8 +516,8 @@ def _transcribe_torch_batch(prepared_entries: list[dict], languages: list[str | 
         batch_result = asr(
             audio_inputs[0] if len(audio_inputs) == 1 else audio_inputs,
             chunk_length_s=30,
-            batch_size=max(1, min(8, len(audio_inputs))),
-            return_timestamps=True,
+            batch_size=max(1, min(2, len(audio_inputs))),
+            return_timestamps="word",
             generate_kwargs=generate_kwargs,
         )
         inference_total_ms = (time.perf_counter() - inference_started_at) * 1000.0
@@ -342,26 +527,15 @@ def _transcribe_torch_batch(prepared_entries: list[dict], languages: list[str | 
         for result_index, entry_index in enumerate(indices):
             prepared = prepared_entries[entry_index]
             result = normalized_results[result_index]
-            chunks = result.get("chunks") or []
-            if not chunks:
+            words = _extract_torch_words(result)
+            if words:
+                segments = _group_words_to_segments(words)
+            else:
                 text = str(result.get("text") or "").strip()
                 segments = [] if not text else [{"start": 0.0, "end": 0.0, "text": text}]
-            else:
-                segments = [
-                    {
-                        "start": float((chunk.get("timestamp") or (0.0, 0.0))[0] or 0.0),
-                        "end": float(
-                            (chunk.get("timestamp") or (0.0, 0.0))[1]
-                            or (chunk.get("timestamp") or (0.0, 0.0))[0]
-                            or 0.0
-                        ),
-                        "text": str(chunk.get("text") or "").strip(),
-                    }
-                    for chunk in chunks
-                    if str(chunk.get("text") or "").strip()
-                ]
             outputs[entry_index] = (
                 segments,
+                words,
                 {
                     "backend": BACKEND,
                     "modelRef": _resolve_torch_model_ref(),
@@ -382,9 +556,9 @@ def _transcribe_torch_batch(prepared_entries: list[dict], languages: list[str | 
 def transcribe_many(
     requests: list[tuple[str, str | None]],
     preprocess_max_concurrency: int = 1,
-) -> list[tuple[list[dict], dict]]:
+) -> list[tuple[list[dict], list[dict], dict]]:
     prepared_entries: list[dict | None] = [None] * len(requests)
-    outputs: list[tuple[list[dict], dict] | None] = [None] * len(requests)
+    outputs: list[tuple[list[dict], list[dict], dict] | None] = [None] * len(requests)
 
     with ThreadPoolExecutor(max_workers=max(1, preprocess_max_concurrency)) as executor:
         future_map = {
@@ -396,7 +570,7 @@ def transcribe_many(
             prepared = future.result()
             prepared["language"] = language
             if not prepared["has_effective_audio"]:
-                outputs[index] = ([], _build_silent_timing(prepared))
+                outputs[index] = ([], [], _build_silent_timing(prepared))
                 prepared["wav_path"].unlink(missing_ok=True)
                 continue
             prepared_entries[index] = prepared
@@ -413,10 +587,11 @@ def transcribe_many(
             if BACKEND == "mlx":
                 for index, prepared in indexed_active_entries:
                     inference_started_at = time.perf_counter()
-                    segments = _transcribe_mlx(prepared["wav_path"], prepared["language"])
+                    segments, words = _transcribe_mlx(prepared["wav_path"], prepared["language"])
                     inference_ms = (time.perf_counter() - inference_started_at) * 1000.0
                     outputs[index] = (
                         segments,
+                        words,
                         {
                             "backend": BACKEND,
                             "modelRef": _resolve_mlx_model_ref(),
@@ -447,5 +622,5 @@ def transcribe_many(
 
 # ── Public API ───────────────────────────────────────────────
 
-def transcribe(audio_path: str, language: str | None = None) -> tuple[list[dict], dict]:
+def transcribe(audio_path: str, language: str | None = None) -> tuple[list[dict], list[dict], dict]:
     return transcribe_many([(audio_path, language)], preprocess_max_concurrency=1)[0]

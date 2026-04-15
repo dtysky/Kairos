@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { IKtepSubtitle, IKtepScript, IKtepClip, IKtepScriptBeat, IKtepSlice } from '../../protocol/schema.js';
+import { estimateTranscriptTextUnits } from '../media/refined-transcript.js';
 import {
   buildNarrationBeatPlan,
   buildSourceSpeechContext,
@@ -183,7 +184,9 @@ function planSourceSpeechSubtitles(
       const rawText = sanitizeSubtitleCueText(segmentText.text);
       if (!rawText) continue;
 
-      const cueTexts = splitCueChunks(rawText, config.maxCharsPerCue);
+      const cueTexts = estimateTranscriptTextUnits(rawText) > config.maxCharsPerCue
+        ? splitCueChunks(rawText, config.maxCharsPerCue)
+        : [rawText];
       if (shouldSkipSourceSpeechCue(rawText, cueTexts, config.maxCharsPerCue)) continue;
       const totalDuration = overlapEnd - overlapStart;
       const cueTimings = resolveSourceSpeechCueTimings(totalDuration, cueTexts, config);
@@ -222,7 +225,7 @@ function shouldSkipSourceSpeechCue(
   maxChars: number,
 ): boolean {
   if (cueTexts.length === 0) return true;
-  if (cueTexts.some(text => text.length > maxChars + 4)) return true;
+  if (cueTexts.some(text => estimateTranscriptTextUnits(text) > maxChars + 4)) return true;
 
   const normalized = rawText.replace(/\s+/gu, '');
   if (/(.{1,4})\1{2,}/u.test(normalized)) return true;

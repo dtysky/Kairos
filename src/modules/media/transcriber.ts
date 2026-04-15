@@ -2,12 +2,19 @@ import type { IKtepEvidence } from '../../protocol/schema.js';
 import type {
   MlClient,
   IAsrSegment,
+  IAsrWord,
   IMlAsrTiming,
   IMlRequestOptions,
 } from './ml-client.js';
+import {
+  buildTranscriptText,
+  normalizeAsrWords,
+  refineAsrSegments,
+} from './refined-transcript.js';
 
 export interface ITranscription {
   segments: IAsrSegment[];
+  words?: IAsrWord[];
   fullText: string;
   evidence: IKtepEvidence[];
   timing?: IMlAsrTiming;
@@ -25,8 +32,15 @@ export async function transcribe(
   const startedAt = Date.now();
   const result = await client.asrDetailed(audioPath, language, options);
   const roundTripMs = Date.now() - startedAt;
-  const segments = result.segments;
-  const fullText = segments.map(s => s.text).join(' ').trim();
+  const words = normalizeAsrWords(result.words ?? []);
+  const segments = refineAsrSegments({
+    segments: result.segments,
+    words,
+  });
+  const fullText = buildTranscriptText({
+    segments,
+    words,
+  });
   const evidence: IKtepEvidence[] = segments
     .filter(s => s.text.trim().length > 0)
     .map(s => ({
@@ -37,6 +51,7 @@ export async function transcribe(
 
   return {
     segments,
+    ...(words.length > 0 ? { words } : {}),
     fullText,
     evidence,
     timing: result.timing,

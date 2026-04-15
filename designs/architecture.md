@@ -12,6 +12,10 @@
 1. `coarse-first analyze` 已把 ASR 纳入视频细扫前链路
    - coarse report / slice 可携带 `transcript / transcriptSegments / speechCoverage`
    - 语音窗口会和视觉窗口一起进入 `interestingWindows`
+   - 当前默认 ASR 质量目标已经切到跨平台同一档：
+     - Apple Silicon 继续使用 `mlx-whisper / whisper-large-v3-turbo`
+     - Windows + CUDA 与 CPU fallback 当前默认使用 `transformers / whisper-large-v3-turbo`
+     - 后端会请求词级时间戳，TS 侧再基于停顿、标点与长度约束重建 refined transcript segments
    - 当前执行顺序已经稳定为：
      - 有音轨视频：`coarse-scan -> audio-analysis -> finalize -> deferred scene detect(if needed)`
      - 无音轨视频：`coarse-scan -> finalize -> deferred scene detect(if needed)`
@@ -22,6 +26,7 @@
    - transcript 不再只是附属说明，而是候选召回和 beat 写作的正式输入
    - 如果某拍最终保留原声，outline / timeline 会把选区优先裁成 transcript-driven speech islands；粗剪时长与字幕以这些语音岛边界为准，不再回退解释性旁白
    - `source-speech` 当前以过滤后的口语 transcript 为真值：导航播报、录制口令和设备提示不应进入 speech islands，也不应成为 source-speech 字幕
+   - Analyze 当前产出的 `transcriptSegments` 已经是 refined transcript segmentation；Timeline 应先信任这些较细的语音段，而不是再次按粗 segment 重新切句
 3. 风格分析与脚本阶段的交接语义已经收口
    - Workspace 风格档案不再只是“叙事语气说明”，还应明确输出阶段节奏、素材角色、运镜语法、功能位分配、素材禁区 / 镜头禁区与稳定参数
    - 这些信息默认是 Script / recall / outline 的直接输入，不应主要依赖 LLM 重新从长文里猜一次镜头组织规则
@@ -33,7 +38,7 @@
    - 原声路径：来自 `slice.transcriptSegments`
    - `preserveNatSound / muteSource` 为显式覆盖；未标注时，只要主视频 selection 有可用 transcript / speech coverage，粗剪默认优先保留原声
    - 对 source-speech 字幕，时间线会先做清洗、强切句与噪声判断；若某个 cue 明显不适合作为成片字幕，只跳过该 cue；只有整段都不可读时，才保留原声且不回退到 `beat.text`
-   - 单个粗 transcript segment 被拆成多条字幕时，时间线应按 cue 长度 / 语速做加权重对时，而不是平均分配整段时长
+   - 只有当 refined transcript cue 仍然过长时，时间线才应做二次硬切；二次硬切要优先依赖停顿 / 边界，再按 cue 长度 / 语速做加权重对时，而不是平均分配整段时长
 5. GPS 链路已形成当前最小闭环
    - 项目内外部轨迹统一收口到 `gps/tracks/*.gpx` 与 `gps/merged.json`
    - `embedded GPS` 的正式语义已扩展为“素材同源且可绑定”的 GPS：文件 metadata / EXIF、同 basename `.SRT`、以及 root 级 DJI FlightRecord 日志切片（按文件头识别，不依赖强文件名）
@@ -86,6 +91,7 @@
    - `finalize` prompt 会限制 `decision_reasons` 为短列表，优先保住结构化 JSON 完整性而不是冗长枚举
    - 保护音轨只在资产已绑定 `protectionAudio` 时进入 `audio-analysis` 路由决策；当前正式策略是 embedded / protection 双健康检查后只跑一侧 ASR
    - 如果 protection 被选中，它会直接成为正式 `report.transcriptSegments` 来源，而不再只是 finalize prompt 的辅助信号
+   - 当前默认 torch ASR 已提到 `whisper-large-v3-turbo`，并默认使用更保守的串行 / 低 batch 口径换取稳定显存与更好的字幕质量
    - 当前 transformers VLM 默认模型改为 `Qwen3.5-9B`：
      - 本地优先目录：`models/Qwen3_5-9B`
      - 默认远端 ID：`Qwen/Qwen3.5-9B`

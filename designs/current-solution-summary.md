@@ -154,6 +154,12 @@ flowchart TD
 - `audio-analysis` 当前已经切到两级素材队列：
   - 本地 health / routing 队列负责 embedded 与 protection 的轻量健康检查
   - ASR 队列只对最终选中的一路音轨转写，并按 free memory 目标并发数动态扩缩
+- 当前默认 ASR 质量目标已经切到跨平台一致：
+  - Apple Silicon 继续使用 `mlx-whisper / whisper-large-v3-turbo`
+  - Windows + CUDA 与 CPU fallback 当前默认使用 `transformers / whisper-large-v3-turbo`
+  - 默认口径不再让 Windows 以较弱 `small` 档换速度
+- ASR 当前会请求词级时间戳；Kairos 在 TS 侧基于词级停顿、标点与长度约束重建更细的 `transcriptSegments`
+- `report.transcriptSegments` 当前正式表示 refined transcript segmentation，而不是直接照搬后端的粗 segment
 - 如果视频绑定了 `protectionAudio`，Analyze 当前会先做双健康检查再选边：
   - `alignment === mismatch` 时强制保留 embedded
   - protection 缺失、不可访问或健康检查失败时回退 embedded
@@ -229,7 +235,8 @@ flowchart TD
 - `source-speech` 当前正式以“过滤后的口语 transcript cues”作为边界真值：
   - clip 默认直接贴 spoken transcript / speech island 边界，不再固定额外吞入前后 `500ms`
   - 导航播报、录制口令、设备提示不再参与 speech island，也不再进入 source-speech 字幕
-  - 一个粗 transcript segment 被拆成多条字幕时，时间码应按 cue 长度 / 语速加权映射，而不是整段平均切分
+  - 时间线当前应优先信任 Analyze 产出的 refined transcript segments；只有单条 cue 仍然过长时，才允许二次硬切
+  - 当仍需拆长 cue 时，时间码应按 cue 长度 / 语速加权映射，而不是整段平均切分
 
 ### Timeline / Export
 

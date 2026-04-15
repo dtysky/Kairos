@@ -157,8 +157,8 @@ const CAUDIO_ANALYSIS_LOCAL_DEFAULTS = {
 } as const;
 const CAUDIO_ANALYSIS_ASR_DEFAULTS = {
   baseConcurrency: 1,
-  maxConcurrency: 4,
-  minFreeMemoryMb: 4096,
+  maxConcurrency: 1,
+  minFreeMemoryMb: 6144,
 } as const;
 const CFINE_SCAN_PREFETCH_DEFAULTS = {
   baseConcurrency: 1,

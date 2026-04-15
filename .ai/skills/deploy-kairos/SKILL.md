@@ -30,11 +30,13 @@ Full deployment guide for a new device. Kairos has three subsystems:
 
 | Platform | ASR | CLIP | VLM | 安装方式 |
 |----------|-----|------|-----|---------|
-| macOS Apple Silicon | **mlx-whisper** (large-v3-turbo) | **mlx_clip** | **mlx-vlm** (Qwen3-VL-4B-8bit) | `pip install -e ".[mlx]"` + `./scripts/ml-models-init.sh` |
-| Windows + NVIDIA GPU | transformers Whisper (CUDA) | open-clip-torch (CUDA) | transformers Qwen3.5-9B (CUDA) | `pip install -e ".[cuda]"` |
-| Linux / macOS Intel | transformers Whisper (CPU) | open-clip-torch (CPU) | transformers Qwen3.5-9B (CPU) | `pip install -e ".[cuda]"` |
+| macOS Apple Silicon | **mlx-whisper** (`whisper-large-v3-turbo`) | **mlx_clip** | **mlx-vlm** (Qwen3-VL-4B-8bit) | `pip install -e ".[mlx]"` + `./scripts/ml-models-init.sh` |
+| Windows + NVIDIA GPU | transformers Whisper (`openai/whisper-large-v3-turbo`) | open-clip-torch (CUDA) | transformers Qwen3.5-9B (CUDA) | `pip install -e ".[cuda]"` |
+| Linux / macOS Intel | transformers Whisper (`openai/whisper-large-v3-turbo`) | open-clip-torch (CPU) | transformers Qwen3.5-9B (CPU) | `pip install -e ".[cuda]"` |
 
 Apple Silicon 上全栈使用 MLX，**不需要 PyTorch**。后端自动检测，也可通过 `KAIROS_ML_BACKEND=mlx|torch` 强制指定。
+
+当前默认 ASR 质量目标已经收口为跨平台一致：Apple Silicon 与 torch 后端都默认跑 `large-v3-turbo` 一档；torch 路径会通过更保守的串行 / 低 batch 默认值换取更稳定的显存占用与更好的字幕质量。
 
 LLM 调用由 Cursor / Codex agent 直接完成，不需要单独配置 LLM API key。
 

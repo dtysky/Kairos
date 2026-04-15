@@ -16,6 +16,12 @@ export interface IAsrSegment {
   text: string;
 }
 
+export interface IAsrWord {
+  start: number;
+  end: number;
+  text: string;
+}
+
 export interface IMlAsrTiming {
   backend?: string;
   modelRef?: string;
@@ -51,6 +57,7 @@ export interface IMlVlmTiming {
 
 export interface IAsrResult {
   segments: IAsrSegment[];
+  words?: IAsrWord[];
   timing?: IMlAsrTiming;
 }
 
