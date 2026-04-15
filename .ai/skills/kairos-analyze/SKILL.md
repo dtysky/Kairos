@@ -202,16 +202,16 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
 - 提取 `transcript / transcriptSegments / speechCoverage`
 - 当前默认 ASR 质量目标是跨平台一致：
   - Apple Silicon 默认 `mlx-whisper / whisper-large-v3-turbo`
-  - Windows + CUDA 与 CPU fallback 优先使用完整可用的本地 `transformers Whisper` checkpoint，目标档位仍优先 `whisper-large-v3-turbo`
+  - Windows + CUDA 与 CPU fallback 优先使用完整可用的本地 `faster-whisper / large-v3`（CTranslate2）checkpoint
 - 项目 Analyze caller 当前默认固定传 `language='zh'`
 - TS 侧会在 refined transcript segmentation 之后统一做 Han 文本简体归一：
   - 只转换 Han 文本为简体中文
   - 规范中文标点与中西文空格
   - 英文、数字和其他脚本保持原样
-- torch 路径不允许在正式 `/asr` 请求里隐式卡住等待远端模型下载：
+- 非 MLX 路径不允许在正式 `/asr` 请求里隐式卡住等待远端模型下载：
   - 大模型 cache 完整时直接使用
   - 只有不完整 cache 时，Analyze 必须回退到完整可用的本地 Whisper checkpoint，而不是把音频分析整个挂死
-- Apple Silicon / MLX 路径当前继续请求词级时间戳；torch 路径当前优先稳定使用 segment 时间戳，规避 `transformers` word-timestamp 卡死
+- Apple Silicon / MLX 与 `faster-whisper` 路径当前都会请求词级时间戳
 - Analyze 在 TS 侧统一重建 refined `transcriptSegments`：
   - 有 `words` 时按词级停顿、标点与长度约束细分
   - 没有 `words` 时按 segment 文本的标点与长度做保守细分

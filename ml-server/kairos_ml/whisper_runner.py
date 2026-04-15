@@ -1,7 +1,7 @@
 """
 ASR runner with two backends:
-  - MLX:   mlx-whisper  (Apple Silicon, no PyTorch)
-  - Torch: transformers pipeline  (CUDA / CPU)
+  - MLX:     mlx-whisper  (Apple Silicon, no PyTorch)
+  - Non-MLX: faster-whisper / CTranslate2  (CUDA / CPU)
 """
 from __future__ import annotations
 
@@ -12,6 +12,7 @@ import json
 import os
 import subprocess
 import time
+import warnings
 import wave
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -20,10 +21,14 @@ from .device import DEVICE, BACKEND
 
 CDEFAULT_MLX_WHISPER = "mlx-community/whisper-large-v3-turbo"
 CLOCAL_MLX_WHISPER = "whisper-large-v3-turbo"
-CDEFAULT_TORCH_WHISPER = "openai/whisper-large-v3-turbo"
-CFALLBACK_TORCH_WHISPER = "openai/whisper-small"
-CLOCAL_TORCH_WHISPER = "whisper-large-v3-turbo"
-CLOCAL_TORCH_WHISPER_FALLBACK = "whisper-small"
+CDEFAULT_NON_MLX_WHISPER = "large-v3"
+CDEFAULT_NON_MLX_WHISPER_REPO = "Systran/faster-whisper-large-v3"
+CFALLBACK_NON_MLX_WHISPER = "small"
+CFALLBACK_NON_MLX_WHISPER_REPO = "Systran/faster-whisper-small"
+CLOCAL_NON_MLX_WHISPER = "whisper-large-v3-ct2"
+CLOCAL_NON_MLX_WHISPER_ALT = "whisper-large-v3"
+CLOCAL_NON_MLX_WHISPER_FALLBACK = "whisper-small-ct2"
+CLOCAL_NON_MLX_WHISPER_FALLBACK_ALT = "whisper-small"
 CWHISPER_MODEL = os.getenv("KAIROS_WHISPER_MODEL", "")
 CSILENCE_GATE_WINDOW_SECONDS = 1.0
 CSILENCE_GATE_RMS_THRESHOLD = 48
@@ -31,6 +36,8 @@ CSILENCE_GATE_PEAK_THRESHOLD = 192
 CTRANSCRIPT_SHORT_PAUSE_SECONDS = 0.22
 CTRANSCRIPT_LONG_PAUSE_SECONDS = 0.48
 CTRANSCRIPT_TARGET_UNITS = 18
+CFASTER_WHISPER_BATCH_SIZE = max(1, int(os.getenv("KAIROS_FASTER_WHISPER_BATCH_SIZE", "8")))
+CFASTER_WHISPER_BEAM_SIZE = max(1, int(os.getenv("KAIROS_FASTER_WHISPER_BEAM_SIZE", "5")))
 
 
 def _repo_root() -> Path:
@@ -84,29 +91,23 @@ def _has_complete_model_file(path: Path) -> bool:
     return resolved is not None and resolved.is_file() and resolved.stat().st_size > 0
 
 
-def _is_complete_transformers_model_dir(model_dir: Path) -> bool:
+def _is_complete_ctranslate2_model_dir(model_dir: Path) -> bool:
     required_files = [
         model_dir / "config.json",
+        model_dir / "model.bin",
     ]
     if not all(_has_complete_model_file(path) for path in required_files):
         return False
 
     tokenizer_candidates = [
         model_dir / "tokenizer.json",
-        model_dir / "vocab.json",
+        model_dir / "vocabulary.json",
+        model_dir / "tokenizer_config.json",
     ]
-    if not any(_has_complete_model_file(path) for path in tokenizer_candidates):
-        return False
-
-    weight_candidates = [
-        model_dir / "model.safetensors",
-        model_dir / "pytorch_model.bin",
-        model_dir / "model.safetensors.index.json",
-    ]
-    return any(_has_complete_model_file(path) for path in weight_candidates)
+    return any(_has_complete_model_file(path) for path in tokenizer_candidates)
 
 
-def _find_complete_hf_snapshot(repo_id: str) -> Path | None:
+def _find_complete_hf_snapshot(repo_id: str, validator) -> Path | None:
     cache_dir = _huggingface_hub_root() / f"models--{repo_id.replace('/', '--')}"
     snapshots_dir = cache_dir / "snapshots"
     if not snapshots_dir.exists():
@@ -118,32 +119,51 @@ def _find_complete_hf_snapshot(repo_id: str) -> Path | None:
         reverse=True,
     )
     for snapshot_dir in snapshot_dirs:
-        if _is_complete_transformers_model_dir(snapshot_dir):
+        if validator(snapshot_dir):
             return snapshot_dir
     return None
 
 
-def _resolve_torch_model_ref() -> str:
+def _first_complete_local_model_dir(candidates: list[Path]) -> Path | None:
+    for candidate in candidates:
+        if _is_complete_ctranslate2_model_dir(candidate):
+            return candidate
+    return None
+
+
+def _resolve_non_mlx_model_ref() -> str:
     if CWHISPER_MODEL:
         return CWHISPER_MODEL
 
-    preferred_local = _repo_root() / "models" / CLOCAL_TORCH_WHISPER
-    if _is_complete_transformers_model_dir(preferred_local):
+    preferred_local = _first_complete_local_model_dir([
+        _repo_root() / "models" / CLOCAL_NON_MLX_WHISPER,
+        _repo_root() / "models" / CLOCAL_NON_MLX_WHISPER_ALT,
+    ])
+    if preferred_local is not None:
         return str(preferred_local)
 
-    preferred_cache = _find_complete_hf_snapshot(CDEFAULT_TORCH_WHISPER)
+    preferred_cache = _find_complete_hf_snapshot(
+        CDEFAULT_NON_MLX_WHISPER_REPO,
+        _is_complete_ctranslate2_model_dir,
+    )
     if preferred_cache is not None:
         return str(preferred_cache)
 
-    fallback_local = _repo_root() / "models" / CLOCAL_TORCH_WHISPER_FALLBACK
-    if _is_complete_transformers_model_dir(fallback_local):
+    fallback_local = _first_complete_local_model_dir([
+        _repo_root() / "models" / CLOCAL_NON_MLX_WHISPER_FALLBACK,
+        _repo_root() / "models" / CLOCAL_NON_MLX_WHISPER_FALLBACK_ALT,
+    ])
+    if fallback_local is not None:
         return str(fallback_local)
 
-    fallback_cache = _find_complete_hf_snapshot(CFALLBACK_TORCH_WHISPER)
+    fallback_cache = _find_complete_hf_snapshot(
+        CFALLBACK_NON_MLX_WHISPER_REPO,
+        _is_complete_ctranslate2_model_dir,
+    )
     if fallback_cache is not None:
         return str(fallback_cache)
 
-    return CDEFAULT_TORCH_WHISPER
+    return CDEFAULT_NON_MLX_WHISPER
 
 
 def _extract_audio_wav(media_path: str) -> Path:
@@ -367,17 +387,14 @@ def _extract_mlx_words(segment: dict) -> list[dict]:
     return words
 
 
-def _extract_torch_words(result: dict) -> list[dict]:
+def _extract_faster_whisper_words(raw_segment) -> list[dict]:
     words = []
-    for chunk in result.get("chunks") or []:
-        timestamp = chunk.get("timestamp") or (0.0, 0.0)
+    for raw_word in getattr(raw_segment, "words", None) or []:
         start, end = _normalize_timestamp_pair(
-            timestamp[0] if isinstance(timestamp, (list, tuple)) and len(timestamp) > 0 else 0.0,
-            timestamp[1] if isinstance(timestamp, (list, tuple)) and len(timestamp) > 1 else (
-                timestamp[0] if isinstance(timestamp, (list, tuple)) and len(timestamp) > 0 else 0.0
-            ),
+            getattr(raw_word, "start", 0.0),
+            getattr(raw_word, "end", getattr(raw_word, "start", 0.0)),
         )
-        text = _normalize_text(chunk.get("text") or "")
+        text = _normalize_text(getattr(raw_word, "word", "") or getattr(raw_word, "text", ""))
         if not text or end <= start:
             continue
         words.append({
@@ -388,25 +405,28 @@ def _extract_torch_words(result: dict) -> list[dict]:
     return words
 
 
-def _extract_torch_segments(result: dict) -> list[dict]:
+def _extract_faster_whisper_result(raw_segments: list[object]) -> tuple[list[dict], list[dict]]:
     segments = []
-    for chunk in result.get("chunks") or []:
-        timestamp = chunk.get("timestamp") or (0.0, 0.0)
+    words = []
+    for raw_segment in raw_segments:
         start, end = _normalize_timestamp_pair(
-            timestamp[0] if isinstance(timestamp, (list, tuple)) and len(timestamp) > 0 else 0.0,
-            timestamp[1] if isinstance(timestamp, (list, tuple)) and len(timestamp) > 1 else (
-                timestamp[0] if isinstance(timestamp, (list, tuple)) and len(timestamp) > 0 else 0.0
-            ),
+            getattr(raw_segment, "start", 0.0),
+            getattr(raw_segment, "end", getattr(raw_segment, "start", 0.0)),
         )
-        text = _normalize_text(chunk.get("text") or "")
+        text = _normalize_text(getattr(raw_segment, "text", ""))
         if not text or end <= start:
+            words.extend(_extract_faster_whisper_words(raw_segment))
             continue
         segments.append({
             "start": start,
             "end": end,
             "text": text,
         })
-    return segments
+        words.extend(_extract_faster_whisper_words(raw_segment))
+
+    if not segments and words:
+        segments = _group_words_to_segments(words)
+    return segments, words
 
 
 # ── MLX backend (mlx-whisper) ────────────────────────────────
@@ -448,47 +468,52 @@ def _transcribe_mlx(wav_path: Path, language: str | None) -> tuple[list[dict], l
     return segments, words
 
 
-# ── Torch backend (transformers) ─────────────────────────────
+# ── Non-MLX backend (faster-whisper / CTranslate2) ───────────
 
 _asr_pipeline = None
 
 
-def _torch_device_str() -> str:
+def _non_mlx_device_str() -> str:
     if DEVICE == "cuda":
-        return "cuda:0"
+        return "cuda"
     return "cpu"
 
 
-def _get_torch_pipeline():
+def _non_mlx_compute_type() -> str:
+    if DEVICE == "cuda":
+        return "float16"
+    return "int8"
+
+
+def _get_non_mlx_asr():
     global _asr_pipeline
     if _asr_pipeline is not None:
         return _asr_pipeline
 
-    import torch
-    from scipy.io import wavfile as _wf  # noqa: F401 — verify scipy
-    from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="pkg_resources is deprecated as an API.*",
+            category=UserWarning,
+        )
+        from faster_whisper import BatchedInferencePipeline, WhisperModel
 
-    model_id = _resolve_torch_model_ref()
-    print(f"[kairos-ml] loading torch whisper model from: {model_id}")
-    use_fp16 = DEVICE == "cuda"
-    torch_dtype = torch.float16 if use_fp16 else torch.float32
-    device_str = _torch_device_str()
-
-    model = AutoModelForSpeechSeq2Seq.from_pretrained(
-        model_id, torch_dtype=torch_dtype,
-        low_cpu_mem_usage=True, use_safetensors=True,
-    ).to(device_str)
-
-    processor = AutoProcessor.from_pretrained(model_id)
-
-    _asr_pipeline = pipeline(
-        "automatic-speech-recognition",
-        model=model,
-        tokenizer=processor.tokenizer,
-        feature_extractor=processor.feature_extractor,
-        torch_dtype=torch_dtype,
-        device=0 if DEVICE == "cuda" else device_str,
+    model_id = _resolve_non_mlx_model_ref()
+    device_str = _non_mlx_device_str()
+    compute_type = _non_mlx_compute_type()
+    model_path = Path(model_id)
+    print(
+        "[kairos-ml] loading faster-whisper model from: "
+        f"{model_id} (device={device_str}, compute_type={compute_type})"
     )
+
+    model = WhisperModel(
+        model_id,
+        device=device_str,
+        compute_type=compute_type,
+        local_files_only=not model_path.exists(),
+    )
+    _asr_pipeline = BatchedInferencePipeline(model=model)
     return _asr_pipeline
 
 
@@ -515,61 +540,6 @@ def unload() -> bool:
     return True
 
 
-def _transcribe_torch(wav_path: Path, language: str | None, asr) -> list[dict]:
-    from scipy.io import wavfile
-
-    sample_rate, samples = wavfile.read(str(wav_path))
-    if len(samples.shape) > 1:
-        samples = samples.mean(axis=1)
-    audio_input = {
-        "array": samples.astype("float32") / 32768.0,
-        "sampling_rate": int(sample_rate),
-    }
-    generate_kwargs: dict = {"task": "transcribe"}
-    if language:
-        generate_kwargs["language"] = language
-
-    result = asr(
-        audio_input,
-        chunk_length_s=30, batch_size=8,
-        return_timestamps=True,
-        generate_kwargs=generate_kwargs,
-    )
-
-    chunks = result.get("chunks") or []
-    if not chunks:
-        text = str(result.get("text") or "").strip()
-        if not text:
-            return []
-        return [{"start": 0.0, "end": 0.0, "text": text}]
-
-    return [
-        {
-            "start": float((chunk.get("timestamp") or (0.0, 0.0))[0] or 0.0),
-            "end": float(
-                (chunk.get("timestamp") or (0.0, 0.0))[1]
-                or (chunk.get("timestamp") or (0.0, 0.0))[0]
-                or 0.0
-            ),
-            "text": str(chunk.get("text") or "").strip(),
-        }
-        for chunk in chunks
-        if str(chunk.get("text") or "").strip()
-    ]
-
-
-def _load_torch_audio_input(wav_path: Path) -> dict:
-    from scipy.io import wavfile
-
-    sample_rate, samples = wavfile.read(str(wav_path))
-    if len(samples.shape) > 1:
-        samples = samples.mean(axis=1)
-    return {
-        "array": samples.astype("float32") / 32768.0,
-        "sampling_rate": int(sample_rate),
-    }
-
-
 def _prepare_transcription_input(media_path: str) -> dict:
     total_started_at = time.perf_counter()
     wav_started_at = time.perf_counter()
@@ -591,7 +561,7 @@ def _prepare_transcription_input(media_path: str) -> dict:
 def _build_silent_timing(prepared: dict) -> dict:
     return {
         "backend": BACKEND,
-        "modelRef": _resolve_mlx_model_ref() if BACKEND == "mlx" else _resolve_torch_model_ref(),
+        "modelRef": _resolve_mlx_model_ref() if BACKEND == "mlx" else _resolve_non_mlx_model_ref(),
         "totalMs": (time.perf_counter() - prepared["total_started_at"]) * 1000.0,
         "loadMs": 0.0,
         "wavExtractMs": prepared["wav_extract_ms"],
@@ -603,61 +573,46 @@ def _build_silent_timing(prepared: dict) -> dict:
     }
 
 
-def _transcribe_torch_batch(prepared_entries: list[dict], languages: list[str | None]) -> list[tuple[list[dict], list[dict], dict]]:
+def _transcribe_non_mlx_batch(prepared_entries: list[dict], languages: list[str | None]) -> list[tuple[list[dict], list[dict], dict]]:
     outputs: list[tuple[list[dict], list[dict], dict] | None] = [None] * len(prepared_entries)
     load_started_at = time.perf_counter()
-    asr = _get_torch_pipeline()
+    asr = _get_non_mlx_asr()
     load_ms = (time.perf_counter() - load_started_at) * 1000.0
 
-    grouped_indices: dict[str | None, list[int]] = {}
     for index, language in enumerate(languages):
-        grouped_indices.setdefault(language, []).append(index)
-
-    for language, indices in grouped_indices.items():
-        audio_inputs = [_load_torch_audio_input(prepared_entries[index]["wav_path"]) for index in indices]
-        generate_kwargs: dict = {"task": "transcribe"}
+        prepared = prepared_entries[index]
+        transcribe_kwargs: dict = {
+            "task": "transcribe",
+            "beam_size": CFASTER_WHISPER_BEAM_SIZE,
+            "batch_size": CFASTER_WHISPER_BATCH_SIZE,
+            "without_timestamps": False,
+            "word_timestamps": True,
+            "vad_filter": False,
+        }
         if language:
-            generate_kwargs["language"] = language
+            transcribe_kwargs["language"] = language
 
         inference_started_at = time.perf_counter()
-        # transformers + word timestamps can hang on some real-world torch/CUDA
-        # inputs; prefer stable segment timestamps here and let TS refine the
-        # transcript further when words are unavailable.
-        batch_result = asr(
-            audio_inputs[0] if len(audio_inputs) == 1 else audio_inputs,
-            chunk_length_s=30,
-            batch_size=1,
-            return_timestamps=True,
-            generate_kwargs=generate_kwargs,
-        )
-        inference_total_ms = (time.perf_counter() - inference_started_at) * 1000.0
-        normalized_results = batch_result if isinstance(batch_result, list) else [batch_result]
-        per_item_inference_ms = inference_total_ms / max(1, len(indices))
+        raw_segments, _info = asr.transcribe(str(prepared["wav_path"]), **transcribe_kwargs)
+        segments, words = _extract_faster_whisper_result(list(raw_segments))
+        inference_ms = (time.perf_counter() - inference_started_at) * 1000.0
 
-        for result_index, entry_index in enumerate(indices):
-            prepared = prepared_entries[entry_index]
-            result = normalized_results[result_index]
-            segments = _extract_torch_segments(result)
-            words: list[dict] = []
-            if not segments:
-                text = str(result.get("text") or "").strip()
-                segments = [] if not text else [{"start": 0.0, "end": 0.0, "text": text}]
-            outputs[entry_index] = (
-                segments,
-                words,
-                {
-                    "backend": BACKEND,
-                    "modelRef": _resolve_torch_model_ref(),
-                    "totalMs": (time.perf_counter() - prepared["total_started_at"]) * 1000.0,
-                    "loadMs": load_ms,
-                    "wavExtractMs": prepared["wav_extract_ms"],
-                    "inferenceMs": per_item_inference_ms,
-                    "silenceGateMs": prepared["silence_gate_ms"],
-                    "skippedSilent": False,
-                    "effectiveAudioDetected": True,
-                    "silenceGateStats": prepared["silence_gate"],
-                },
-            )
+        outputs[index] = (
+            segments,
+            words,
+            {
+                "backend": BACKEND,
+                "modelRef": _resolve_non_mlx_model_ref(),
+                "totalMs": (time.perf_counter() - prepared["total_started_at"]) * 1000.0,
+                "loadMs": load_ms,
+                "wavExtractMs": prepared["wav_extract_ms"],
+                "inferenceMs": inference_ms,
+                "silenceGateMs": prepared["silence_gate_ms"],
+                "skippedSilent": False,
+                "effectiveAudioDetected": True,
+                "silenceGateStats": prepared["silence_gate"],
+            },
+        )
 
     return [item for item in outputs if item is not None]
 
@@ -715,7 +670,7 @@ def transcribe_many(
                         },
                     )
             else:
-                active_results = _transcribe_torch_batch(active_entries, active_languages)
+                active_results = _transcribe_non_mlx_batch(active_entries, active_languages)
                 active_result_index = 0
                 for index, prepared in enumerate(prepared_entries):
                     if prepared is None:

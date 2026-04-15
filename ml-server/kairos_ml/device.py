@@ -4,7 +4,8 @@ Platform / accelerator detection.
 On macOS Apple Silicon the ML server runs a pure-MLX stack (mlx-vlm,
 mlx-whisper, mlx_clip) — no PyTorch required.
 
-On CUDA machines the server uses the PyTorch / transformers stack.
+On CUDA / CPU machines the server keeps the non-MLX stack: faster-whisper
+for ASR plus PyTorch / transformers for VLM and CLIP.
 
 DEVICE is one of: "cuda", "mps", "cpu"
 BACKEND is one of: "mlx", "torch"

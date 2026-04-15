@@ -31,14 +31,14 @@ Full deployment guide for a new device. Kairos has three subsystems:
 | Platform | ASR | CLIP | VLM | 安装方式 |
 |----------|-----|------|-----|---------|
 | macOS Apple Silicon | **mlx-whisper** (`whisper-large-v3-turbo`) | **mlx_clip** | **mlx-vlm** (Qwen3-VL-4B-8bit) | `pip install -e ".[mlx]"` + `./scripts/ml-models-init.sh` |
-| Windows + NVIDIA GPU | transformers Whisper (`openai/whisper-large-v3-turbo`) | open-clip-torch (CUDA) | transformers Qwen3.5-9B (CUDA) | `pip install -e ".[cuda]"` |
-| Linux / macOS Intel | transformers Whisper (`openai/whisper-large-v3-turbo`) | open-clip-torch (CPU) | transformers Qwen3.5-9B (CPU) | `pip install -e ".[cuda]"` |
+| Windows + NVIDIA GPU | **faster-whisper** (`large-v3`) | open-clip-torch (CUDA) | transformers Qwen3.5-9B (CUDA) | `pip install -e ".[cuda]"` |
+| Linux / macOS Intel | **faster-whisper** (`large-v3`) | open-clip-torch (CPU) | transformers Qwen3.5-9B (CPU) | `pip install -e ".[cuda]"` |
 
 Apple Silicon 上全栈使用 MLX，**不需要 PyTorch**。后端自动检测，也可通过 `KAIROS_ML_BACKEND=mlx|torch` 强制指定。
 
-当前默认 ASR 质量目标已经收口为跨平台一致：Apple Silicon 与 torch 后端都优先跑高质量档；torch 路径会通过更保守的串行 / 低 batch / segment-timestamp 默认值换取更稳定的显存占用与更好的字幕质量，MLX 路径则继续保留词级时间戳。
+当前默认 ASR 质量目标已经收口为跨平台一致：Apple Silicon 继续使用 `mlx-whisper / whisper-large-v3-turbo`，非 MLX 路径改为 `faster-whisper / large-v3`，优先保证中文准确率与词级时间戳。
 
-Windows / Linux 的 torch Whisper 当前必须优先使用**完整可用的本地 checkpoint**。如果 `large-v3-turbo` 只有不完整 cache，Kairos 会直接回退到完整可用的本地 Whisper checkpoint，而不是在正式 `/asr` 请求里隐式卡住等待联网下载。因此，离线或受限网络环境下，部署阶段最好预先把目标 Whisper 大模型完整放到本地。
+Windows / Linux 的 `faster-whisper` 当前必须优先使用**完整可用的本地 CTranslate2 checkpoint**。如果 `large-v3` 只有不完整 cache，Kairos 会直接回退到完整可用的本地 Whisper checkpoint，而不是在正式 `/asr` 请求里隐式卡住等待联网下载。因此，离线或受限网络环境下，部署阶段最好预先把目标 Whisper 大模型完整放到本地，或提前写入完整 HF cache。
 
 LLM 调用由 Cursor / Codex agent 直接完成，不需要单独配置 LLM API key。
 
@@ -117,6 +117,8 @@ uv pip install -e ".[cuda]"
 
 在 `Windows + NVIDIA GPU` 上，建议直接使用 **Windows 原生 Python 环境** 启动 `kairos-ml`，
 让推理直接走 `CUDA`。不要从 WSL 拉起推理服务。
+`faster-whisper / CTranslate2` 的最新 GPU 组合默认要求 `CUDA 12 + cuDNN 9`；如果系统里缺少这些运行库，需要按官方建议补齐，或把对应 DLL 放进 `PATH`。
+当前仓库也把非 MLX ASR pin 在 `faster-whisper 1.2.1 + ctranslate2 4.6.0 + setuptools<81`，因为我们在 Windows 上实测过 `ctranslate2 4.7.1` 会在 `WhisperModel(...)` 初始化阶段触发 access violation，而 `4.6.0` 仍需要 `pkg_resources`。
 
 **Linux / macOS Intel（CPU fallback）：**
 
@@ -162,6 +164,7 @@ Apple Silicon 上所有 ML 模型从 Hugging Face Hub 下载到项目本地 `mod
 | 模块 | Hub ID | 本地目录 | 用途 | 大小 |
 |------|--------|---------|------|------|
 | mlx-whisper | `mlx-community/whisper-large-v3-turbo` | `models/whisper-large-v3-turbo/` | 语音转写 (ASR) | ~1.6 GB |
+| faster-whisper ASR | `Systran/faster-whisper-large-v3` | `models/whisper-large-v3-ct2/` | 语音转写 (CUDA / CPU) | ~3 GB |
 | mlx_clip | `openai/clip-vit-base-patch32` | `models/clip-vit-base-patch32/` | 图像嵌入 (CLIP) | ~600 MB |
 | mlx-vlm | `mlx-community/Qwen3-VL-4B-Instruct-8bit` | `models/Qwen3-VL-4B-Instruct-8bit/` | 视觉理解 (Apple Silicon / MLX) | ~4.9 GB |
 | transformers VLM | `Qwen/Qwen3.5-9B` | `models/Qwen3_5-9B/` | 视觉理解 (CUDA / CPU) | ~18-20 GB |
@@ -186,11 +189,13 @@ models/
 └── Qwen3-VL-4B-Instruct-8bit/ # ~4.9 GB
 ```
 
+非 MLX 的 `faster-whisper` 本地目录 `models/whisper-large-v3-ct2/` 目前需要手动预下载；如果没有这个目录，Kairos 也会接受完整的 HF cache（`Systran/faster-whisper-large-v3`）。
+
 **可选覆盖（环境变量）：**
 
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
-| `KAIROS_WHISPER_MODEL` | `mlx-community/whisper-large-v3-turbo` | Whisper 模型 ID 或本地路径 |
+| `KAIROS_WHISPER_MODEL` | MLX: `mlx-community/whisper-large-v3-turbo`；非 MLX: `large-v3` | Whisper 模型 ID 或本地路径 |
 | `KAIROS_VLM_MODEL_ID` | `Qwen/Qwen3.5-9B`（transformers） | VLM 模型 ID |
 | `KAIROS_VLM_MODEL_PATH` | unset | VLM 本地路径（覆盖 ID） |
 | `HF_ENDPOINT` | (HuggingFace 官方) | HF 镜像地址，国内可设为 `https://hf-mirror.com` |
@@ -354,7 +359,7 @@ Windows 补充建议：
 |----------|---------|---------|
 | `KAIROS_ML_URL` | `http://127.0.0.1:8910` | ML server URL (for remote/cross-device) |
 | `KAIROS_ML_BACKEND` | auto-detect | 强制后端: `mlx` / `torch` |
-| `KAIROS_WHISPER_MODEL` | `mlx-community/whisper-large-v3-turbo` | MLX Whisper 模型 ID |
+| `KAIROS_WHISPER_MODEL` | MLX: `mlx-community/whisper-large-v3-turbo`；非 MLX: `large-v3` | Whisper 模型 ID 或本地路径 |
 | `KAIROS_VLM_MODEL_SOURCE` | `auto` | VLM model source: `auto` / `mlx` / `modelscope` / `huggingface` |
 | `KAIROS_VLM_MODEL_ID` | `Qwen/Qwen3.5-9B`（transformers 默认） | VLM model identifier (transformers 模式) |
 | `KAIROS_VLM_MODEL_PATH` | unset | Pre-downloaded local VLM directory (overrides source/id) |

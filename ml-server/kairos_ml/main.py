@@ -114,8 +114,8 @@ class _AsrBatcher:
                 elapsed_ms = (time.perf_counter() - item.submitted_at) * 1000.0
                 queue_wait_ms = max(0.0, elapsed_ms - float(payload_timing.get("totalMs") or 0.0))
                 payload_timing["queueWaitMs"] = queue_wait_ms
-                payload_timing["batched"] = BACKEND == "torch" and len(batch) > 1
-                payload_timing["batchSize"] = len(batch) if BACKEND == "torch" else 1
+                payload_timing["batched"] = False
+                payload_timing["batchSize"] = 1
                 item.future.set_result((segments, words, payload_timing))
         except Exception as exc:
             for item in batch:
@@ -162,9 +162,9 @@ def health():
             "asrBatchMaxWaitMs": CASR_BATCH_MAX_WAIT_MS,
             "asrPreprocessMaxConcurrency": CASR_PREPROCESS_MAX_CONCURRENCY,
             "asrMode": (
-                "torch-batched"
-                if BACKEND == "torch" and CASR_BATCH_MAX_ITEMS > 1
-                else ("torch-single-inference" if BACKEND == "torch" else "mlx-single-inference")
+                "faster-whisper-sequential"
+                if BACKEND == "torch"
+                else "mlx-single-inference"
             ),
             "asrQueuedRequests": _asr_batcher.queued_requests(),
         },
