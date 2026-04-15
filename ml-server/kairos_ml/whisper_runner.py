@@ -20,6 +20,10 @@ from .device import DEVICE, BACKEND
 
 CDEFAULT_MLX_WHISPER = "mlx-community/whisper-large-v3-turbo"
 CLOCAL_MLX_WHISPER = "whisper-large-v3-turbo"
+CDEFAULT_TORCH_WHISPER = "openai/whisper-large-v3-turbo"
+CFALLBACK_TORCH_WHISPER = "openai/whisper-small"
+CLOCAL_TORCH_WHISPER = "whisper-large-v3-turbo"
+CLOCAL_TORCH_WHISPER_FALLBACK = "whisper-small"
 CWHISPER_MODEL = os.getenv("KAIROS_WHISPER_MODEL", "")
 CSILENCE_GATE_WINDOW_SECONDS = 1.0
 CSILENCE_GATE_RMS_THRESHOLD = 48
@@ -57,8 +61,89 @@ def _resolve_mlx_model_ref() -> str:
     return str(local) if local.exists() else CDEFAULT_MLX_WHISPER
 
 
+def _huggingface_hub_root() -> Path:
+    raw = os.getenv("HF_HOME", "").strip()
+    if raw:
+        root = Path(raw)
+        return root / "hub" if (root / "hub").exists() else root
+    return Path.home() / ".cache" / "huggingface" / "hub"
+
+
+def _resolve_path_target(path: Path) -> Path | None:
+    try:
+        resolved = path.resolve(strict=True)
+    except Exception:
+        return None
+    if resolved.name.endswith(".incomplete"):
+        return None
+    return resolved
+
+
+def _has_complete_model_file(path: Path) -> bool:
+    resolved = _resolve_path_target(path)
+    return resolved is not None and resolved.is_file() and resolved.stat().st_size > 0
+
+
+def _is_complete_transformers_model_dir(model_dir: Path) -> bool:
+    required_files = [
+        model_dir / "config.json",
+    ]
+    if not all(_has_complete_model_file(path) for path in required_files):
+        return False
+
+    tokenizer_candidates = [
+        model_dir / "tokenizer.json",
+        model_dir / "vocab.json",
+    ]
+    if not any(_has_complete_model_file(path) for path in tokenizer_candidates):
+        return False
+
+    weight_candidates = [
+        model_dir / "model.safetensors",
+        model_dir / "pytorch_model.bin",
+        model_dir / "model.safetensors.index.json",
+    ]
+    return any(_has_complete_model_file(path) for path in weight_candidates)
+
+
+def _find_complete_hf_snapshot(repo_id: str) -> Path | None:
+    cache_dir = _huggingface_hub_root() / f"models--{repo_id.replace('/', '--')}"
+    snapshots_dir = cache_dir / "snapshots"
+    if not snapshots_dir.exists():
+        return None
+
+    snapshot_dirs = sorted(
+        (path for path in snapshots_dir.iterdir() if path.is_dir()),
+        key=lambda path: path.stat().st_mtime,
+        reverse=True,
+    )
+    for snapshot_dir in snapshot_dirs:
+        if _is_complete_transformers_model_dir(snapshot_dir):
+            return snapshot_dir
+    return None
+
+
 def _resolve_torch_model_ref() -> str:
-    return "openai/whisper-large-v3-turbo"
+    if CWHISPER_MODEL:
+        return CWHISPER_MODEL
+
+    preferred_local = _repo_root() / "models" / CLOCAL_TORCH_WHISPER
+    if _is_complete_transformers_model_dir(preferred_local):
+        return str(preferred_local)
+
+    preferred_cache = _find_complete_hf_snapshot(CDEFAULT_TORCH_WHISPER)
+    if preferred_cache is not None:
+        return str(preferred_cache)
+
+    fallback_local = _repo_root() / "models" / CLOCAL_TORCH_WHISPER_FALLBACK
+    if _is_complete_transformers_model_dir(fallback_local):
+        return str(fallback_local)
+
+    fallback_cache = _find_complete_hf_snapshot(CFALLBACK_TORCH_WHISPER)
+    if fallback_cache is not None:
+        return str(fallback_cache)
+
+    return CDEFAULT_TORCH_WHISPER
 
 
 def _extract_audio_wav(media_path: str) -> Path:
@@ -303,6 +388,27 @@ def _extract_torch_words(result: dict) -> list[dict]:
     return words
 
 
+def _extract_torch_segments(result: dict) -> list[dict]:
+    segments = []
+    for chunk in result.get("chunks") or []:
+        timestamp = chunk.get("timestamp") or (0.0, 0.0)
+        start, end = _normalize_timestamp_pair(
+            timestamp[0] if isinstance(timestamp, (list, tuple)) and len(timestamp) > 0 else 0.0,
+            timestamp[1] if isinstance(timestamp, (list, tuple)) and len(timestamp) > 1 else (
+                timestamp[0] if isinstance(timestamp, (list, tuple)) and len(timestamp) > 0 else 0.0
+            ),
+        )
+        text = _normalize_text(chunk.get("text") or "")
+        if not text or end <= start:
+            continue
+        segments.append({
+            "start": start,
+            "end": end,
+            "text": text,
+        })
+    return segments
+
+
 # ── MLX backend (mlx-whisper) ────────────────────────────────
 
 def _transcribe_mlx(wav_path: Path, language: str | None) -> tuple[list[dict], list[dict]]:
@@ -363,6 +469,7 @@ def _get_torch_pipeline():
     from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 
     model_id = _resolve_torch_model_ref()
+    print(f"[kairos-ml] loading torch whisper model from: {model_id}")
     use_fp16 = DEVICE == "cuda"
     torch_dtype = torch.float16 if use_fp16 else torch.float32
     device_str = _torch_device_str()
@@ -513,11 +620,14 @@ def _transcribe_torch_batch(prepared_entries: list[dict], languages: list[str | 
             generate_kwargs["language"] = language
 
         inference_started_at = time.perf_counter()
+        # transformers + word timestamps can hang on some real-world torch/CUDA
+        # inputs; prefer stable segment timestamps here and let TS refine the
+        # transcript further when words are unavailable.
         batch_result = asr(
             audio_inputs[0] if len(audio_inputs) == 1 else audio_inputs,
             chunk_length_s=30,
-            batch_size=max(1, min(2, len(audio_inputs))),
-            return_timestamps="word",
+            batch_size=1,
+            return_timestamps=True,
             generate_kwargs=generate_kwargs,
         )
         inference_total_ms = (time.perf_counter() - inference_started_at) * 1000.0
@@ -527,10 +637,9 @@ def _transcribe_torch_batch(prepared_entries: list[dict], languages: list[str | 
         for result_index, entry_index in enumerate(indices):
             prepared = prepared_entries[entry_index]
             result = normalized_results[result_index]
-            words = _extract_torch_words(result)
-            if words:
-                segments = _group_words_to_segments(words)
-            else:
+            segments = _extract_torch_segments(result)
+            words: list[dict] = []
+            if not segments:
                 text = str(result.get("text") or "").strip()
                 segments = [] if not text else [{"start": 0.0, "end": 0.0, "text": text}]
             outputs[entry_index] = (

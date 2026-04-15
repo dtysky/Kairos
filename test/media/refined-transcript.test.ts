@@ -48,4 +48,40 @@ describe('refined transcript segmentation', () => {
     });
     expect(keptSegments.map(segment => segment.text)).toEqual(['再来一次再来一次']);
   });
+
+  it('falls back to punctuation-aware segment refinement when word timestamps are unavailable', () => {
+    const segments = refineAsrSegments({
+      segments: [{
+        start: 0,
+        end: 9,
+        text: '今天我们出发，先去码头。然后再去海边',
+      }],
+    });
+
+    expect(segments.map(segment => segment.text)).toEqual([
+      '今天我们出发，',
+      '先去码头。',
+      '然后再去海边',
+    ]);
+    expect(segments[0]?.start).toBe(0);
+    expect(segments[2]?.end).toBe(9);
+    expect((segments[1]?.start ?? 0) >= (segments[0]?.end ?? 0)).toBe(true);
+    expect((segments[2]?.start ?? 0) >= (segments[1]?.end ?? 0)).toBe(true);
+  });
+
+  it('hard-splits long segment-only transcript text when punctuation is absent', () => {
+    const segments = refineAsrSegments({
+      segments: [{
+        start: 0,
+        end: 6,
+        text: '今天我们在外滩拍人像顺便测试字幕分段稳定性看看有没有明显改善',
+      }],
+    });
+
+    expect(segments.length).toBeGreaterThan(1);
+    expect(segments.map(segment => segment.text).join('')).toBe(
+      '今天我们在外滩拍人像顺便测试字幕分段稳定性看看有没有明显改善',
+    );
+    expect(segments[segments.length - 1]?.end).toBe(6);
+  });
 });

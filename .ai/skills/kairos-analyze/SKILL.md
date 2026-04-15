@@ -197,8 +197,14 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
 - 提取 `transcript / transcriptSegments / speechCoverage`
 - 当前默认 ASR 质量目标是跨平台一致：
   - Apple Silicon 默认 `mlx-whisper / whisper-large-v3-turbo`
-  - Windows + CUDA 与 CPU fallback 默认 `transformers / whisper-large-v3-turbo`
-- 后端当前会请求词级时间戳；Analyze 在 TS 侧基于词级停顿、标点与长度约束重建 refined `transcriptSegments`
+  - Windows + CUDA 与 CPU fallback 优先使用完整可用的本地 `transformers Whisper` checkpoint，目标档位仍优先 `whisper-large-v3-turbo`
+- torch 路径不允许在正式 `/asr` 请求里隐式卡住等待远端模型下载：
+  - 大模型 cache 完整时直接使用
+  - 只有不完整 cache 时，Analyze 必须回退到完整可用的本地 Whisper checkpoint，而不是把音频分析整个挂死
+- Apple Silicon / MLX 路径当前继续请求词级时间戳；torch 路径当前优先稳定使用 segment 时间戳，规避 `transformers` word-timestamp 卡死
+- Analyze 在 TS 侧统一重建 refined `transcriptSegments`：
+  - 有 `words` 时按词级停顿、标点与长度约束细分
+  - 没有 `words` 时按 segment 文本的标点与长度做保守细分
 - 如果资产已绑定 `protectionAudio`，先对 embedded 与 protection 都做轻量音频健康检查，重点观察低电平、静音比例、语音线索偏弱等问题
 - 把 ASR 命中的语音时间窗并入 `interestingWindows`
 - `interestingWindows` 现在需要区分两层语义：

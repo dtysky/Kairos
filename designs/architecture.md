@@ -14,8 +14,10 @@
    - 语音窗口会和视觉窗口一起进入 `interestingWindows`
    - 当前默认 ASR 质量目标已经切到跨平台同一档：
      - Apple Silicon 继续使用 `mlx-whisper / whisper-large-v3-turbo`
-     - Windows + CUDA 与 CPU fallback 当前默认使用 `transformers / whisper-large-v3-turbo`
-     - 后端会请求词级时间戳，TS 侧再基于停顿、标点与长度约束重建 refined transcript segments
+     - Windows + CUDA 与 CPU fallback 当前优先使用完整可用的本地 `transformers Whisper` checkpoint，目标档位仍优先 `whisper-large-v3-turbo`
+     - torch 路径不允许在正式 `/asr` 请求里隐式等待远端模型下载；如果目标大模型只有不完整 cache，必须立刻回退到完整可用的本地 Whisper checkpoint
+     - Apple Silicon / MLX 路径继续请求词级时间戳；torch 路径当前优先稳定使用 segment 时间戳，规避 `transformers` 的 word-timestamp 卡死问题
+     - TS 侧统一重建 refined transcript segments：有 `words` 时按词级停顿细分，没有 `words` 时按 segment 文本的标点与长度做保守细分
    - 当前执行顺序已经稳定为：
      - 有音轨视频：`coarse-scan -> audio-analysis -> finalize -> deferred scene detect(if needed)`
      - 无音轨视频：`coarse-scan -> finalize -> deferred scene detect(if needed)`
@@ -91,7 +93,8 @@
    - `finalize` prompt 会限制 `decision_reasons` 为短列表，优先保住结构化 JSON 完整性而不是冗长枚举
    - 保护音轨只在资产已绑定 `protectionAudio` 时进入 `audio-analysis` 路由决策；当前正式策略是 embedded / protection 双健康检查后只跑一侧 ASR
    - 如果 protection 被选中，它会直接成为正式 `report.transcriptSegments` 来源，而不再只是 finalize prompt 的辅助信号
-   - 当前默认 torch ASR 已提到 `whisper-large-v3-turbo`，并默认使用更保守的串行 / 低 batch 口径换取稳定显存与更好的字幕质量
+   - 当前默认 torch ASR 会优先解析完整可用的本地 `whisper-large-v3-turbo`；若只发现不完整 cache，则直接回退到完整可用的本地 Whisper checkpoint，避免 Analyze 因首请求下载卡死
+   - torch 默认继续使用更保守的串行 / 低 batch / segment-timestamp 口径换取稳定显存与更好的字幕质量
    - 当前 transformers VLM 默认模型改为 `Qwen3.5-9B`：
      - 本地优先目录：`models/Qwen3_5-9B`
      - 默认远端 ID：`Qwen/Qwen3.5-9B`

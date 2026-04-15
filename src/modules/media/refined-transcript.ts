@@ -75,7 +75,7 @@ export function refineAsrSegments(input: {
 }): IAsrSegment[] {
   const words = normalizeAsrWords(input.words ?? []);
   if (words.length === 0) {
-    return normalizeAsrSegments(input.segments ?? []);
+    return refineSegmentsWithoutWords(input.segments ?? []);
   }
 
   const refined: IAsrSegment[] = [];
@@ -194,6 +194,91 @@ function normalizeComparisonKey(text: string): string {
     .toLowerCase()
     .replace(/[\s\p{P}\p{S}]+/gu, '')
     .trim();
+}
+
+function refineSegmentsWithoutWords(segments: IAsrSegment[] = []): IAsrSegment[] {
+  const normalized = normalizeAsrSegments(segments);
+  const refined = normalized.flatMap(segment => splitSegmentWithoutWords(segment));
+  return refined.length > 0 ? refined : normalized;
+}
+
+function splitSegmentWithoutWords(segment: IAsrSegment): IAsrSegment[] {
+  const chunks = groupTranscriptTokensToChunks(tokenizeTranscriptText(segment.text));
+  if (chunks.length <= 1) {
+    return [segment];
+  }
+
+  const totalDuration = segment.end - segment.start;
+  const weights = chunks.map(text => Math.max(1, estimateTranscriptTextUnits(text)));
+  const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+  if (totalDuration <= 0 || totalWeight <= 0) {
+    return [segment];
+  }
+
+  const allocated: IAsrSegment[] = [];
+  let consumedWeight = 0;
+  let cursor = segment.start;
+  for (let index = 0; index < chunks.length; index += 1) {
+    const text = normalizeJoinedTranscriptText(chunks[index] ?? '');
+    if (!text || isObviousTranscriptHallucination(text)) continue;
+
+    consumedWeight += weights[index] ?? 0;
+    const rawEnd = index === chunks.length - 1
+      ? segment.end
+      : segment.start + ((totalDuration * consumedWeight) / totalWeight);
+    const end = Math.max(cursor, Math.min(segment.end, rawEnd));
+    if (end <= cursor) continue;
+
+    allocated.push({
+      start: cursor,
+      end,
+      text,
+    });
+    cursor = end;
+  }
+
+  return allocated.length > 0 ? allocated : [segment];
+}
+
+function tokenizeTranscriptText(text: string): string[] {
+  const normalized = normalizeJoinedTranscriptText(text);
+  if (!normalized) return [];
+  return Array.from(
+    normalized.matchAll(/\p{Script=Han}|[A-Za-z]+(?:['’-][A-Za-z0-9]+)*|\d+(?:[.,:/-]\d+)*|[^\s]/gu),
+    match => match[0],
+  );
+}
+
+function groupTranscriptTokensToChunks(tokens: string[]): string[] {
+  if (tokens.length === 0) return [];
+
+  const chunks: string[] = [];
+  let current: string[] = [];
+
+  const flush = () => {
+    if (current.length === 0) return;
+    const text = joinTranscriptTokens(current);
+    current = [];
+    if (!text || isObviousTranscriptHallucination(text)) return;
+    chunks.push(text);
+  };
+
+  for (let index = 0; index < tokens.length; index += 1) {
+    current.push(tokens[index]!);
+    const text = joinTranscriptTokens(current);
+    const textUnits = estimateTranscriptTextUnits(text);
+    const shouldBreak
+      = index === tokens.length - 1
+        || endsWithStrongBreak(text)
+        || textUnits >= CSEGMENT_HARD_MAX_UNITS
+        || (textUnits >= CMIN_BREAK_UNITS && endsWithWeakBreak(text));
+    if (shouldBreak) {
+      flush();
+    }
+  }
+
+  flush();
+  return chunks;
 }
 
 function joinTranscriptTokens(tokens: string[]): string {

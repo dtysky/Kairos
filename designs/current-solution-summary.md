@@ -156,9 +156,15 @@ flowchart TD
   - ASR 队列只对最终选中的一路音轨转写，并按 free memory 目标并发数动态扩缩
 - 当前默认 ASR 质量目标已经切到跨平台一致：
   - Apple Silicon 继续使用 `mlx-whisper / whisper-large-v3-turbo`
-  - Windows + CUDA 与 CPU fallback 当前默认使用 `transformers / whisper-large-v3-turbo`
+  - Windows + CUDA 与 CPU fallback 当前优先使用完整可用的本地 `transformers Whisper` checkpoint，目标档位仍优先 `whisper-large-v3-turbo`
   - 默认口径不再让 Windows 以较弱 `small` 档换速度
-- ASR 当前会请求词级时间戳；Kairos 在 TS 侧基于词级停顿、标点与长度约束重建更细的 `transcriptSegments`
+- torch 路径当前不允许在正式 `/asr` 请求里隐式卡住等待远端模型下载：
+  - 如果 `large-v3-turbo` 已完整预置，本轮就用它
+  - 如果当前只发现不完整 cache，Kairos 应直接回退到完整可用的本地 Whisper checkpoint，而不是把 Analyze 卡死
+- ASR 当前在 Apple Silicon / MLX 路径继续请求词级时间戳；torch 路径暂时优先稳定使用 segment 时间戳，避免 `transformers` 的 word-timestamp 热路径卡死
+- Kairos 在 TS 侧统一重建更细的 `transcriptSegments`：
+  - 有 `words` 时按词级停顿、标点与长度约束细分
+  - 没有 `words` 时按 segment 文本的标点与长度做保守细分
 - `report.transcriptSegments` 当前正式表示 refined transcript segmentation，而不是直接照搬后端的粗 segment
 - 如果视频绑定了 `protectionAudio`，Analyze 当前会先做双健康检查再选边：
   - `alignment === mismatch` 时强制保留 embedded

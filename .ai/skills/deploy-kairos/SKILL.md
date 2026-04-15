@@ -36,7 +36,9 @@ Full deployment guide for a new device. Kairos has three subsystems:
 
 Apple Silicon 上全栈使用 MLX，**不需要 PyTorch**。后端自动检测，也可通过 `KAIROS_ML_BACKEND=mlx|torch` 强制指定。
 
-当前默认 ASR 质量目标已经收口为跨平台一致：Apple Silicon 与 torch 后端都默认跑 `large-v3-turbo` 一档；torch 路径会通过更保守的串行 / 低 batch 默认值换取更稳定的显存占用与更好的字幕质量。
+当前默认 ASR 质量目标已经收口为跨平台一致：Apple Silicon 与 torch 后端都优先跑高质量档；torch 路径会通过更保守的串行 / 低 batch / segment-timestamp 默认值换取更稳定的显存占用与更好的字幕质量，MLX 路径则继续保留词级时间戳。
+
+Windows / Linux 的 torch Whisper 当前必须优先使用**完整可用的本地 checkpoint**。如果 `large-v3-turbo` 只有不完整 cache，Kairos 会直接回退到完整可用的本地 Whisper checkpoint，而不是在正式 `/asr` 请求里隐式卡住等待联网下载。因此，离线或受限网络环境下，部署阶段最好预先把目标 Whisper 大模型完整放到本地。
 
 LLM 调用由 Cursor / Codex agent 直接完成，不需要单独配置 LLM API key。
 
