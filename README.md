@@ -53,7 +53,11 @@ Current stable pipeline:
   - the prep job writes workspace `.tmp/style-analysis/{category}/progress.json`, `analysis/reference-transcripts/`, and `analysis/style-references/`
   - `/style` now resolves the most relevant category in this order: explicit `categoryId` -> live style job -> latest style job -> latest cached style progress -> `defaultCategory` -> first category
   - the `/style` monitor is no longer limited to a coarse stage string; it should show current video context plus concrete `keyframes / vlm / queue` runtime state when available
-  - the final style profile remains agent-authored from those prep outputs
+  - the final style profile remains agent-authored from those prep outputs, but it now goes through a clean-context subagent chain:
+    - deterministic prep writes `analysis/style-references/{category}/agent-summary.json`
+    - `style-profile-synthesizer` reads only that packetized summary and writes `style-draft.json`
+    - `style-profile-reviewer` reads only the draft + packet and writes `style-review.json`
+    - reviewer blockers are a hard gate before `config/styles/{category}.md`
 - the `/script` console page now acts as deterministic script preparation:
   - user first selects a workspace `styleCategory` in `/script`; that selection auto-saves
   - changing `styleCategory` now invalidates the previous script run immediately; Kairos clears the old `material-overview`, brief draft body, arrangement artifacts, outline, and `script/current.json`, then returns the workflow to `await_brief_draft`
@@ -62,7 +66,13 @@ Current stable pipeline:
   - the console now surfaces these handoffs with persistent workflow prompts and explicit hana modal confirmations instead of relying on low-contrast inline copy
   - `/script` validates `store/spans.json`, the selected workspace `styleCategory`, and the matching style profile
   - `/script` now prepares deterministic script inputs such as `script/material-overview.facts.json`, `script/material-overview.md`, `script/segment-plan.json`, `script/material-slots.json`, and `analysis/material-bundles.json`
-  - the final `script/current.json` remains agent-authored
+  - the agent-authored script phase now uses clean-context internal stages instead of one shared writer context:
+    - `script/spatial-story.json` + `script/spatial-story.md` summarize chronology / spans / Pharos / GPS into a narrative-hint layer
+    - `script/agent-contract.json` becomes the single locked truth for goals, constraints, style must/forbidden, GPS hints, Pharos must-cover hints, and chronology guardrails
+    - each generator/reviewer stage reads only its own `script/agent-packets/{stage}.json`
+    - stage reviews write to `script/reviews/{stage}.json`
+    - pipeline state writes to `script/agent-pipeline.json`
+  - the final `script/current.json` remains the only formal script output consumed by timeline/export
   - if the reviewed brief was already user-edited and a fresh initial draft is needed, overwrite permission is granted explicitly from `/script` instead of silent agent overwrite
   - the selected style profile should already expose structured `arrangementStructure`, `narrationConstraints`, rhythm stages, material grammar, camera language, and anti-patterns, so Agent work does not depend on re-inferring everything from a long style essay
   - script prep now follows `Analyze -> Material Overview -> Script Brief -> Segment Plan -> Material Slots -> Bundle Lookup -> Chosen SpanIds -> Beat / Script`

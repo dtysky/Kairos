@@ -1,0 +1,13 @@
+{
+  "projects": {
+    "tmp-current-flow-test-20260401-160735": {
+      "projectId": "tmp-current-flow-test-20260401-160735",
+      "roots": [
+        {
+          "rootId": "root-fixture-media",
+          "localPath": "/Users/dtysky/Downloads/kairos-test"
+        }
+      ]
+    }
+  }
+}

@@ -7,6 +7,7 @@ import type {
   IStyleSourceItem,
 } from '../../protocol/schema.js';
 import {
+  getStyleAgentSummaryPath,
   getStyleReferenceReportsRoot,
   getStyleReferenceTranscriptsRoot,
   getWorkspaceStyleAnalysisClipsRoot,
@@ -596,7 +597,8 @@ export async function prepareWorkspaceStyleAnalysisForAgent(
       };
     }
 
-    const summaryPath = getWorkspaceStyleAnalysisSummaryPath(input.workspaceRoot, category.categoryId);
+    const legacySummaryPath = getWorkspaceStyleAnalysisSummaryPath(input.workspaceRoot, category.categoryId);
+    const agentSummaryPath = getStyleAgentSummaryPath(input.workspaceRoot, category.categoryId);
     const summary: IStylePreparationSummary = {
       categoryId: category.categoryId,
       displayName: category.displayName,
@@ -611,7 +613,10 @@ export async function prepareWorkspaceStyleAnalysisForAgent(
       aggregate: buildSummaryAggregate(agentInputReports),
       agentInputReports,
     };
-    await writeJson(summaryPath, summary);
+    await Promise.all([
+      writeJson(agentSummaryPath, summary),
+      writeJson(legacySummaryPath, summary),
+    ]);
 
     enterStage('complete');
     await writeStyleProgress(progressPath, {
@@ -623,10 +628,11 @@ export async function prepareWorkspaceStyleAnalysisForAgent(
       category,
       detail: {
         totalVideos: videoSources.length,
-        summaryPath,
+        summaryPath: legacySummaryPath,
         message: 'Deterministic prep 已完成，请回到 Agent 生成最终风格档案。',
         outputLinks: [
-          { label: 'combined summary', path: summaryPath, description: '供 Agent 汇总风格 profile 的结构化摘要。' },
+          { label: 'combined summary', path: legacySummaryPath, description: '兼容旧流程的 combined summary。' },
+          { label: 'agent summary', path: agentSummaryPath, description: '供 clean-context subagent 汇总风格 profile 的结构化摘要。' },
           ...reportPaths.map(path => ({ label: basename(path), path, description: '单视频分析结果。' })),
         ],
       },
@@ -642,7 +648,7 @@ export async function prepareWorkspaceStyleAnalysisForAgent(
       categoryId: category.categoryId,
       displayName: category.displayName,
       progressPath,
-      summaryPath,
+      summaryPath: legacySummaryPath,
       reportPaths,
       transcriptPaths,
       videoCount: videoSources.length,

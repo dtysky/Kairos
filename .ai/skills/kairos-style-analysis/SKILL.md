@@ -69,6 +69,11 @@ description: >-
 - 风格分析过程中产生的关键帧、探测结果、临时摘要等中间产物，统一放在 **当前 workspaceRoot** 下的 `.tmp/`，例如 `.tmp/style-analysis/{category}/`
 - 当前正式链路是 `Supervisor deterministic prep -> awaiting_agent -> Agent final style profile`
 - deterministic prep 必须持续写 `.tmp/style-analysis/{category}/progress.json`，并把逐视频报告与 transcript 落到 `analysis/style-references/`、`analysis/reference-transcripts/`
+- final Agent style synthesis 当前正式改成 clean-context subagent 流水线：
+  - deterministic prep 额外写 `analysis/style-references/{category}/agent-summary.json`
+  - `style-profile-synthesizer` 先写 `style-draft.json`
+  - `style-profile-reviewer` 再写 `style-review.json`
+  - reviewer blockers 是落成 `config/styles/{category}.md` 的硬闸门
 - `/style` monitor 默认应回到“最相关的最近分类”，而不是在无显式 `categoryId` 时盲目回 `defaultCategory`
 - `progress.json` 不应只保留粗阶段；至少应能表达当前视频、当前阶段开始时间、`keyframes` 抽帧计数、`vlm` shot-group 识别计数，以及已完成 / 待处理队列摘要
 - 不要把这类临时产物写到 `C:` 盘系统临时目录或用户目录外的随机位置
@@ -296,6 +301,9 @@ type IStyleReferenceVideoAnalysis = {
 - `video A` 先形成自己的风格分析报告
 - `video B` 先形成自己的风格分析报告
 - 最后才做 `A + B + ... => shared style`
+- 这个 shared style 归纳当前必须走两步：
+  - `style-profile-synthesizer` 只读取自己的 packetized summary，并产出结构化草稿
+  - `style-profile-reviewer` 只读取 summary + draft，检查 guidance、过拟合、可执行参数和 anti-pattern 缺口
 
 Agent 综合以上所有数据 + 用户指导词，撰写风格档案 markdown。
 
@@ -544,6 +552,9 @@ await rm(join(workspaceRoot, '.tmp/style-analysis', category), {
 | `<workspaceRoot>/config/styles/{category}.md` | Markdown (带 front-matter) | 该分类的完整风格档案 |
 | `<workspaceRoot>/analysis/reference-transcripts/{category}--{name}.txt` | TXT | ASR 原文备查 |
 | `<workspaceRoot>/analysis/style-references/{category}/{video-stem}.json` | JSON | 单参考视频分析结果 |
+| `<workspaceRoot>/analysis/style-references/{category}/agent-summary.json` | JSON | clean-context synthesize packet |
+| `<workspaceRoot>/analysis/style-references/{category}/style-draft.json` | JSON | synthesize 阶段草稿 |
+| `<workspaceRoot>/analysis/style-references/{category}/style-review.json` | JSON | reviewer 结果与 revision brief |
 
 ## 与下游对接
 

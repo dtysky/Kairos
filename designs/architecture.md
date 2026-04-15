@@ -38,6 +38,11 @@
    - 这里记录的是“观测到的高频偏好”，只有明确写成禁区或硬约束时才应强制下游
    - Script / Timeline 当前会在内部把这些现有 style 信号解析成一个轻量运行时 `ResolvedArrangementSignals`，用于判断当前风格主轴更偏时间推进、空间推进、情感推进还是结果回看；它不是新的公开 schema
    - `/script` 改 `styleCategory` 时，旧的项目级脚本产物现在必须立即整体失效；系统要清空旧 `material-overview`、brief 草稿、outline、arrangement artifacts 和 `script/current.json`，而不是继续让新风格复用旧产物
+   - 风格档案最终落成当前正式改成 clean-context subagent 流水线，而不是一个通用 style prompt 直接吃完整批量报告：
+     - deterministic prep 会额外写 `analysis/style-references/{category}/agent-summary.json`
+     - `style-profile-synthesizer` 只读取自己的 packet / summary，并先写 `style-draft.json`
+     - `style-profile-reviewer` 只读取 summary + draft，并写 `style-review.json`
+     - reviewer blockers 是落成正式 `config/styles/{category}.md` 的硬闸门
 4. 字幕已支持双路径
    - 旁白路径：来自 `beat.text`
    - 原声路径：来自 `slice.transcriptSegments`
@@ -432,7 +437,15 @@ src/modules/script/
      - 刷新 `script/material-overview.facts.json`
      - 刷新 `analysis/material-bundles.json`
      - 成功后推进到 `ready_for_agent`
-  → Agent 再读取 overview + brief + style profile，推进 `segment plan -> material slots -> chosenSpanIds -> outline -> script/current.json`
+  → Agent 再读取 overview + brief + style profile，推进 clean-context staged pipeline：
+     - `script/spatial-story.json` + `script/spatial-story.md` 先把 chronology / spans / Pharos / GPS 真值收口为空间叙事提示
+     - `script/agent-contract.json` 把 goals / constraints / review notes、style must / forbidden、GPS hints、Pharos must-cover hints、chronology guardrails 锁成唯一真值
+     - `segment-architect` 只读取自己的 `script/agent-packets/segment-plan.json`
+     - `route-slot-planner` 只读取自己的 `script/agent-packets/material-slots.json`
+     - `beat-writer` 只读取自己的 `script/agent-packets/script-current.json`
+     - `script-reviewer` 每个阶段都单独审查，并写 `script/reviews/{stage}.json`
+     - 内部推进状态写到 `script/agent-pipeline.json`
+  → Agent staged pipeline 最终再推进 `segment plan -> material slots -> chosenSpanIds -> outline -> script/current.json`
      - `arrangementStructure` 主导结构决策
      - `narrationConstraints` 只弱影响表达
      - 当现有 style 信号明确偏 `chronology / route continuity / continuous process` 时，prep 会先建立单调递增的时间带，再让各段只在合法时间带内召回素材
@@ -451,6 +464,9 @@ src/modules/script/
   - 一层给下游直接消费：参数、禁区、功能位与稳定 section 语义
 - `script` Supervisor job 当前是 prep-only，不负责自动生成 `script/current.json`
 - `script/script-brief.json` 当前是脚本阶段流程状态真值；`script/script-brief.md` 会同步机器可恢复元信息
+- Agent 内部各阶段当前必须遵守两个硬约束：
+  - 独立、干净、最小化上下文，不继承主线程长历史
+  - 独特身份 prompt，不允许复用一个通用 writer prompt
 - 如果用户已经修改过当前 brief，而又想让 Agent 重新生成初版 brief，正式路径是 `/script` 页里的覆盖确认，而不是 Agent 直接覆盖
 - 无 `Pharos` 时，当前实现允许基于素材分析结果、brief 与行程信息走兼容路径
 

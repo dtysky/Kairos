@@ -1,30 +1,18 @@
 import { randomUUID } from 'node:crypto';
 import type {
+  IAgentPacket,
+  IAgentContract,
   IKtepBeatUtterance,
   IKtepScript,
   IKtepScriptBeat,
   IKtepScriptSelection,
+  ISpatialStoryContext,
   IStyleProfile,
 } from '../../protocol/schema.js';
 import type { ILlmClient } from '../llm/client.js';
+import { runJsonPacketAgent } from '../agents/runtime.js';
 import type { IOutlineBeat, IOutlineSegment } from './outline-builder.js';
 import { buildRhythmMaterialPromptLines } from './style-rhythm.js';
-
-const CSYSTEM = `你是一个旅拍纪录片脚本创作者。根据给定的 material overview、段落规划和素材选用结果，为每个段落撰写旁白与 beat。
-
-要求：
-1. 严格遵循风格档案中的编排主轴、章节程序和 narrationConstraints。
-2. beats 是正式编排单元；每个 segment 必须返回 beats 数组。
-3. 每个 beat 至少返回 id, text, selections, linkedSpanIds。
-4. 如果候选素材里带有可用 transcriptSegments / 原声边界，默认把该 beat 写成 source-speech，并设置 preserveNatSound=true；不要再额外写解释性旁白。
-5. 照片 beat 默认静默：可以保留内部说明文字，但不要写 utterances，不要把照片写成需要字幕或口播的段落。
-6. 只有无可用原声的视频，才允许尽可能用 beat.text / utterances 组织旁白。
-7. preserveNatSound=true 时不要再给这个 beat 写 speed。
-8. speed 只能用于纯 drive / aerial montage。
-9. targetDurationMs 是可选审阅提示；除非用户明确要求，否则不要臆造 segment 或 beat 的时长预算。
-10. narration 是整段聚合预览，可选，但必须与 beats 内容一致。
-11. 允许润色和补充，但不要通过删 beat 来压缩召回结果；如果 outline 已给出 beat，就默认保留这些 beat。
-12. 返回 JSON 数组，每个元素包含 id, role, title, narration, targetDurationMs, actions, selections, linkedSpanIds, linkedSliceIds, beats。`;
 
 export interface IScriptGenerationContext {
   materialOverview?: string;
@@ -33,6 +21,9 @@ export interface IScriptGenerationContext {
     constraints?: string[];
     planReviewNotes?: string[];
   };
+  contract?: IAgentContract;
+  spatialStory?: ISpatialStoryContext;
+  stage?: string;
 }
 
 export async function generateScript(
@@ -44,23 +35,57 @@ export async function generateScript(
   const styleText = buildStylePrompt(style);
   const outlineText = buildOutlinePrompt(outline);
   const contextText = buildGenerationContextPrompt(context);
-
-  const raw = await llm.chat([
-    { role: 'system', content: CSYSTEM },
-    { role: 'user', content: `${contextText}\n\n## 风格档案\n\n${styleText}\n\n## 段落规划\n\n${outlineText}`.trim() },
-  ], { jsonMode: true, temperature: 0.7, maxTokens: 4000 });
-
-  let parsed: unknown;
+  const packet: IAgentPacket = {
+    stage: context?.stage ?? 'script-current',
+    identity: 'beat-writer',
+    mission: '只根据 outline、style、contract 与 material overview 写 beat/script。',
+    hardConstraints: [
+      '必须严格遵循 contract、outline 和 style 中已给出的约束。',
+      '缺证据时必须保守，不脑补地点、事件和情绪。',
+      '不要通过删 beat 来掩盖材料密度。',
+    ],
+    allowedInputs: [
+      'material overview',
+      'script brief',
+      'agent contract',
+      'spatial story',
+      'style profile',
+      'outline',
+    ],
+    inputArtifacts: [
+      {
+        label: 'generation-context',
+        summary: 'material overview + brief + contract + spatial story + style + outline',
+        content: {
+          contextText,
+          styleText,
+          outlineText,
+          contract: context?.contract,
+          spatialStory: context?.spatialStory,
+        },
+      },
+    ],
+    outputSchema: {
+      segments: 'IKtepScript[]',
+    },
+    reviewRubric: [],
+  };
+  let raw: unknown;
   try {
-    parsed = JSON.parse(raw);
+    raw = await runJsonPacketAgent<unknown>(
+      llm,
+      'script/beat-writer',
+      packet,
+      { llm: { temperature: 0.7, maxTokens: 4000 } },
+    );
   } catch {
     return buildFallbackScript(outline);
   }
 
-  const segments = Array.isArray(parsed)
-    ? parsed
-    : Array.isArray((parsed as Record<string, unknown>)?.segments)
-      ? (parsed as Record<string, unknown>).segments as unknown[]
+  const segments = Array.isArray(raw)
+    ? raw
+    : Array.isArray((raw as Record<string, unknown>)?.segments)
+      ? (raw as Record<string, unknown>).segments as unknown[]
       : [];
 
   if (segments.length === 0) {

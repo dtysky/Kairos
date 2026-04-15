@@ -47,7 +47,11 @@ Kairos 当前需要区分两层：
   - prep job 负责把 reference transcript、per-video report 与 workspace progress 正式落盘
   - `/style` 默认不再盲目回到 `defaultCategory`；应优先落到“当前最相关”的分类：显式 `categoryId` -> live job -> 最近完成 job -> 最近 cached progress -> `defaultCategory` -> 第一个分类
   - `/style` monitor 不应只显示粗阶段；当前视频、`keyframes` 抽帧进度、`vlm` 识别进度和视频队列摘要都属于正式可见运行态
-  - 最终 `config/styles/{category}.md` 继续由 Agent 基于这些 prep 产物写成
+  - 最终 `config/styles/{category}.md` 继续由 Agent 基于这些 prep 产物写成，但当前正式要求已经改成 clean-context subagent 流水线：
+    - deterministic prep 额外写 `analysis/style-references/{category}/agent-summary.json`
+    - `style-profile-synthesizer` 只读取 packetized summary，先产出 `style-draft.json`
+    - `style-profile-reviewer` 只读取 summary + draft，写 `style-review.json`
+    - reviewer blockers 当前是最终 style profile 的硬闸门；不能再把单次 synthesize 直接落成正式 profile
 - 未来如果引入桌面 UI 或更多 provider / adapter，应建立在这套协议与项目模型上，而不是推翻它
 - 某些项目会直接消费调色后的素材版本而非原始素材；因此主链面向的是“当前采用的素材版本”，而不是固定绑定“永远使用原始素材”
 
@@ -224,6 +228,19 @@ flowchart TD
   - 关键 handoff 会通过持续可见的 workflow prompt 和显式 hana modal 提示用户“下一步去哪里”，而不再只靠淡色行内文案
 - 当前 Console 里的 `script` job 已收口为 **deterministic prep**，只负责校验前置条件并刷新确定性材料
 - `script/current.json` 的唯一正式作者是 **Agent**
+- Agent 内部当前正式要求已经改成 clean-context staged pipeline，而不是单一共享 writer 上下文：
+  - `overview-cartographer` 只写 `script/material-overview.md`
+  - `brief-editor` 只写初版 `script-brief`
+  - `segment-architect` 只写 `script/segment-plan.json`
+  - `route-slot-planner` 只写 `script/material-slots.json`
+  - `beat-writer` 只写 `script/current.json`
+  - `script-reviewer` 只做阶段审查，不直接生成正式稿
+- Script 当前新增一层正式内部提示资产：
+  - `script/spatial-story.json` + `script/spatial-story.md` 用现有 chronology / spans / Pharos / GPS 真值生成空间叙事提示
+  - `script/agent-contract.json` 锁定用户 goals / constraints / review notes、style must / forbidden、GPS narrative hints、Pharos must-cover hints、chronology guardrails
+  - 每个阶段都必须读取各自的 `script/agent-packets/{stage}.json`
+  - reviewer 结果写入 `script/reviews/{stage}.json`
+  - 流水线推进状态写入 `script/agent-pipeline.json`
 - `script/script-brief.json` 当前承载脚本阶段的正式流程状态真值：
   - `choose_style`
   - `await_brief_draft`

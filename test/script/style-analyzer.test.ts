@@ -3,12 +3,12 @@ import type { ILlmClient, ILlmMessage, ILlmOptions } from '../../src/modules/llm
 import { analyzeStyleFromReports } from '../../src/modules/script/style-analyzer.js';
 
 class FakeLlm implements ILlmClient {
-  messages: ILlmMessage[] = [];
+  calls: ILlmMessage[][] = [];
 
   constructor(private response: string) {}
 
   async chat(messages: ILlmMessage[], _opts?: ILlmOptions): Promise<string> {
-    this.messages = messages;
+    this.calls.push(messages);
     return this.response;
   }
 }
@@ -52,7 +52,9 @@ describe('analyzeStyleFromReports', () => {
       transcript: '我们重新回到海边。',
     }]);
 
-    expect(llm.messages[0]?.content).toMatch(/剪辑节奏与素材编排/u);
+    expect(llm.calls[0]?.[0]?.content).toMatch(/style-profile-synthesizer/u);
+    expect(llm.calls[0]?.[1]?.content).toMatch(/agentInputReports/u);
+    expect(llm.calls[1]?.[0]?.content).toMatch(/style-profile-reviewer/u);
     expect(profile.arrangementStructure.primaryAxis).toBe('路线推进');
     expect(profile.arrangementStructure.chapterPrograms[0]?.type).toBe('opening');
     expect(profile.narrationConstraints.perspective).toBe('第一人称贴身观察');

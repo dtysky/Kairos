@@ -93,6 +93,11 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
 - Do not treat stale progress displays as proof that formal processing is alive.
 - Do not silently use legacy monitor paths for new work when `Supervisor + React console` is the official entry.
 - Treat workspace style-analysis as a formal deterministic prep job before Agent style synthesis, not as a UI-only placeholder.
+- Treat final workspace style synthesis as a clean-context subagent chain:
+  - deterministic prep writes `analysis/style-references/<category>/agent-summary.json`
+  - `style-profile-synthesizer` writes `style-draft.json`
+  - `style-profile-reviewer` writes `style-review.json`
+  - reviewer blockers are a hard gate before `config/styles/{category}.md`
 - Treat the end state of every Kairos-managed top-level flow as `ML stopped`.
 - Treat video Analyze as a staged pipeline whose formal semantic decision happens in `finalize`:
   - with audio: `coarse-scan -> audio-analysis -> finalize -> deferred scene detect(if needed)`
@@ -120,7 +125,14 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
     - `script/segment-plan.json`
   - `script/material-slots.json`
   - `analysis/material-bundles.json`
-  - the final `script/current.json` is agent-authored unless a newer design doc says otherwise
+  - Script Agent work now runs as a clean-context staged pipeline:
+    - `script/spatial-story.json` + `script/spatial-story.md`
+    - `script/agent-contract.json`
+    - `script/agent-packets/<stage>.json`
+    - `script/reviews/<stage>.json`
+    - `script/agent-pipeline.json`
+  - the final `script/current.json` is still the only formal script artifact consumed downstream unless a newer design doc says otherwise
+  - each script subagent must have a distinct identity prompt and may only read its own packet, not the main thread history
 - Treat rough-cut script/timeline defaults as evidence-first:
   - videos with usable source speech should stay source-speech unless the script explicitly sets `muteSource=true`
   - photo-only beats should default to `1s` silent holds with no subtitles unless the script explicitly sets `holdMs`

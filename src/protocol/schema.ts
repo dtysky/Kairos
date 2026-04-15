@@ -779,6 +779,7 @@ export const IProjectMaterialOverviewFacts = z.object({
   topMaterialPatterns: z.array(z.string()).default([]),
   clipTypeDistribution: z.record(z.number().int().nonnegative()),
   mainThemes: z.array(z.string()),
+  spatialStorySummary: z.array(z.string()).default([]),
   inferredGaps: z.array(z.string()).default([]),
   pharos: IProjectMaterialOverviewPharos.optional(),
   summary: z.string(),
@@ -842,6 +843,156 @@ export const IMaterialSlotsDocument = z.object({
   segments: z.array(ISegmentMaterialSlotGroup).default([]),
 });
 export type IMaterialSlotsDocument = z.infer<typeof IMaterialSlotsDocument>;
+
+export const IAgentPacketInputArtifact = z.object({
+  label: z.string(),
+  path: z.string().optional(),
+  summary: z.string().optional(),
+  content: z.unknown().optional(),
+});
+export type IAgentPacketInputArtifact = z.infer<typeof IAgentPacketInputArtifact>;
+
+export const IAgentPacket = z.object({
+  stage: z.string(),
+  identity: z.string(),
+  mission: z.string(),
+  hardConstraints: z.array(z.string()).default([]),
+  allowedInputs: z.array(z.string()).default([]),
+  inputArtifacts: z.array(IAgentPacketInputArtifact).default([]),
+  outputSchema: z.record(z.unknown()).default({}),
+  reviewRubric: z.array(z.string()).default([]),
+});
+export type IAgentPacket = z.infer<typeof IAgentPacket>;
+
+export const EStageReviewSeverity = z.enum(['blocker', 'warning']);
+export type EStageReviewSeverity = z.infer<typeof EStageReviewSeverity>;
+
+export const IStageReviewIssue = z.object({
+  code: z.string(),
+  severity: EStageReviewSeverity,
+  message: z.string(),
+  details: z.string().optional(),
+});
+export type IStageReviewIssue = z.infer<typeof IStageReviewIssue>;
+
+export const EStageReviewVerdict = z.enum(['pass', 'revise', 'awaiting_user']);
+export type EStageReviewVerdict = z.infer<typeof EStageReviewVerdict>;
+
+export const IStageReview = z.object({
+  stage: z.string(),
+  identity: z.string(),
+  attempt: z.number().int().positive(),
+  verdict: EStageReviewVerdict,
+  issues: z.array(IStageReviewIssue).default([]),
+  revisionBrief: z.array(z.string()).default([]),
+  reviewedAt: z.string(),
+});
+export type IStageReview = z.infer<typeof IStageReview>;
+
+export const EAgentPipelineStatus = z.enum([
+  'pending',
+  'running',
+  'review_failed',
+  'awaiting_user',
+  'completed',
+]);
+export type EAgentPipelineStatus = z.infer<typeof EAgentPipelineStatus>;
+
+export const IAgentPipelineState = z.object({
+  currentStage: z.string(),
+  stageStatus: EAgentPipelineStatus.default('pending'),
+  attemptCount: z.number().int().nonnegative().default(0),
+  latestReviewResult: z.string().optional(),
+  blockerSummary: z.array(z.string()).default([]),
+  updatedAt: z.string(),
+});
+export type IAgentPipelineState = z.infer<typeof IAgentPipelineState>;
+
+export const ISpatialStoryAnchor = z.object({
+  id: z.string(),
+  title: z.string(),
+  startAt: z.string().optional(),
+  endAt: z.string().optional(),
+  lat: z.number().min(-90).max(90).optional(),
+  lng: z.number().min(-180).max(180).optional(),
+  locationText: z.string().optional(),
+  routeRole: z.string().optional(),
+  spanIds: z.array(z.string()).default([]),
+  pharosRefs: z.array(IPharosRef).default([]),
+});
+export type ISpatialStoryAnchor = z.infer<typeof ISpatialStoryAnchor>;
+
+export const ISpatialStoryTransition = z.object({
+  id: z.string(),
+  fromAnchorId: z.string().optional(),
+  toAnchorId: z.string().optional(),
+  title: z.string(),
+  startAt: z.string().optional(),
+  endAt: z.string().optional(),
+  routeRole: z.string().optional(),
+  spanIds: z.array(z.string()).default([]),
+  pharosRefs: z.array(IPharosRef).default([]),
+});
+export type ISpatialStoryTransition = z.infer<typeof ISpatialStoryTransition>;
+
+export const ISpatialStoryRouteWindow = z.object({
+  id: z.string(),
+  title: z.string(),
+  startAt: z.string().optional(),
+  endAt: z.string().optional(),
+  anchorIds: z.array(z.string()).default([]),
+  spanIds: z.array(z.string()).default([]),
+  notes: z.array(z.string()).default([]),
+});
+export type ISpatialStoryRouteWindow = z.infer<typeof ISpatialStoryRouteWindow>;
+
+export const ESpatialStoryGapKind = z.enum([
+  'weak-location',
+  'route-break',
+  'pharos-uncovered',
+]);
+export type ESpatialStoryGapKind = z.infer<typeof ESpatialStoryGapKind>;
+
+export const ISpatialStoryCoverageGap = z.object({
+  kind: ESpatialStoryGapKind,
+  message: z.string(),
+  spanIds: z.array(z.string()).default([]),
+  pharosRefs: z.array(IPharosRef).default([]),
+});
+export type ISpatialStoryCoverageGap = z.infer<typeof ISpatialStoryCoverageGap>;
+
+export const ISpatialStoryNarrativeHint = z.object({
+  title: z.string(),
+  guidance: z.string(),
+  anchorIds: z.array(z.string()).default([]),
+  spanIds: z.array(z.string()).default([]),
+  pharosRefs: z.array(IPharosRef).default([]),
+});
+export type ISpatialStoryNarrativeHint = z.infer<typeof ISpatialStoryNarrativeHint>;
+
+export const ISpatialStoryContext = z.object({
+  generatedAt: z.string(),
+  anchors: z.array(ISpatialStoryAnchor).default([]),
+  transitions: z.array(ISpatialStoryTransition).default([]),
+  routeWindows: z.array(ISpatialStoryRouteWindow).default([]),
+  coverageGaps: z.array(ISpatialStoryCoverageGap).default([]),
+  narrativeHints: z.array(ISpatialStoryNarrativeHint).default([]),
+});
+export type ISpatialStoryContext = z.infer<typeof ISpatialStoryContext>;
+
+export const IAgentContract = z.object({
+  generatedAt: z.string(),
+  goals: z.array(z.string()).default([]),
+  constraints: z.array(z.string()).default([]),
+  reviewNotes: z.array(z.string()).default([]),
+  styleMust: z.array(z.string()).default([]),
+  styleForbidden: z.array(z.string()).default([]),
+  gpsNarrativeHints: z.array(z.string()).default([]),
+  pharosMustCover: z.array(z.string()).default([]),
+  pharosPendingHints: z.array(z.string()).default([]),
+  chronologyGuardrails: z.array(z.string()).default([]),
+});
+export type IAgentContract = z.infer<typeof IAgentContract>;
 
 // ─── Store ───────────────────────────────────────────────────
 

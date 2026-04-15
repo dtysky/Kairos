@@ -519,6 +519,10 @@ export function normalizeMaterialPath(material: string): string {
     return material.replace(/\//g, '\\');
   }
 
+  if (material.includes('\\')) {
+    return material.replace(/\\/g, '/');
+  }
+
   const wslMountMatch = material.match(/^\/mnt\/([a-zA-Z])\/(.*)$/);
   if (!wslMountMatch) return material;
 

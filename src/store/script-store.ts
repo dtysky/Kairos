@@ -1,16 +1,26 @@
 import { join } from 'node:path';
 import { z } from 'zod';
 import type {
+  IAgentContract,
+  IAgentPacket,
+  IAgentPipelineState,
   IKtepScript,
   IMaterialBundle,
   IMaterialSlotsDocument,
   IProjectMaterialOverviewFacts,
+  ISpatialStoryContext,
+  IStageReview,
   ISegmentPlan,
 } from '../protocol/schema.js';
 import {
+  IAgentContract as ZAgentContract,
+  IAgentPacket as ZAgentPacket,
+  IAgentPipelineState as ZAgentPipelineState,
   IMaterialBundle as ZMaterialBundle,
   IMaterialSlotsDocument as ZMaterialSlotsDocument,
   IProjectMaterialOverviewFacts as ZProjectMaterialOverviewFacts,
+  ISpatialStoryContext as ZSpatialStoryContext,
+  IStageReview as ZStageReview,
   ISegmentPlan as ZSegmentPlan,
 } from '../protocol/schema.js';
 import type { IOutlineSegment } from '../modules/script/outline-builder.js';
@@ -52,6 +62,38 @@ export function getCurrentScriptPath(projectRoot: string): string {
   return join(projectRoot, 'script', 'current.json');
 }
 
+export function getSpatialStoryPath(projectRoot: string): string {
+  return join(projectRoot, 'script', 'spatial-story.json');
+}
+
+export function getSpatialStoryMarkdownPath(projectRoot: string): string {
+  return join(projectRoot, 'script', 'spatial-story.md');
+}
+
+export function getScriptAgentContractPath(projectRoot: string): string {
+  return join(projectRoot, 'script', 'agent-contract.json');
+}
+
+export function getScriptAgentPipelinePath(projectRoot: string): string {
+  return join(projectRoot, 'script', 'agent-pipeline.json');
+}
+
+export function getScriptAgentPacketsRoot(projectRoot: string): string {
+  return join(projectRoot, 'script', 'agent-packets');
+}
+
+export function getScriptAgentPacketPath(projectRoot: string, stage: string): string {
+  return join(getScriptAgentPacketsRoot(projectRoot), `${stage}.json`);
+}
+
+export function getScriptReviewsRoot(projectRoot: string): string {
+  return join(projectRoot, 'script', 'reviews');
+}
+
+export function getScriptReviewPath(projectRoot: string, stage: string): string {
+  return join(getScriptReviewsRoot(projectRoot), `${stage}.json`);
+}
+
 export async function clearScriptArtifactsForStyleChange(projectRoot: string): Promise<void> {
   const { rm } = await import('node:fs/promises');
   await Promise.all([
@@ -68,6 +110,12 @@ export async function clearScriptArtifactsForStyleChange(projectRoot: string): P
     rm(join(projectRoot, 'script', 'arrangement-skeletons.json'), { force: true }),
     rm(join(projectRoot, 'script', 'segment-cards.json'), { force: true }),
     rm(join(projectRoot, 'script', 'arrangement.current.json'), { force: true }),
+    rm(getSpatialStoryPath(projectRoot), { force: true }),
+    rm(getSpatialStoryMarkdownPath(projectRoot), { force: true }),
+    rm(getScriptAgentContractPath(projectRoot), { force: true }),
+    rm(getScriptAgentPipelinePath(projectRoot), { force: true }),
+    rm(getScriptAgentPacketsRoot(projectRoot), { recursive: true, force: true }),
+    rm(getScriptReviewsRoot(projectRoot), { recursive: true, force: true }),
     rm(getOutlinePath(projectRoot), { force: true }),
     rm(getOutlinePromptPath(projectRoot), { force: true }),
     rm(getCurrentScriptPath(projectRoot), { force: true }),
@@ -162,4 +210,88 @@ export async function writeCurrentScript(
   script: IKtepScript[],
 ): Promise<void> {
   await writeJson(getCurrentScriptPath(projectRoot), script);
+}
+
+export async function loadSpatialStory(
+  projectRoot: string,
+): Promise<ISpatialStoryContext | null> {
+  return readJsonOrNull(
+    getSpatialStoryPath(projectRoot),
+    ZSpatialStoryContext,
+  ) as Promise<ISpatialStoryContext | null>;
+}
+
+export async function writeSpatialStory(
+  projectRoot: string,
+  spatialStory: ISpatialStoryContext,
+): Promise<void> {
+  await writeJson(getSpatialStoryPath(projectRoot), spatialStory);
+}
+
+export async function loadScriptAgentContract(
+  projectRoot: string,
+): Promise<IAgentContract | null> {
+  return readJsonOrNull(
+    getScriptAgentContractPath(projectRoot),
+    ZAgentContract,
+  ) as Promise<IAgentContract | null>;
+}
+
+export async function writeScriptAgentContract(
+  projectRoot: string,
+  contract: IAgentContract,
+): Promise<void> {
+  await writeJson(getScriptAgentContractPath(projectRoot), contract);
+}
+
+export async function loadScriptAgentPipeline(
+  projectRoot: string,
+): Promise<IAgentPipelineState | null> {
+  return readJsonOrNull(
+    getScriptAgentPipelinePath(projectRoot),
+    ZAgentPipelineState,
+  ) as Promise<IAgentPipelineState | null>;
+}
+
+export async function writeScriptAgentPipeline(
+  projectRoot: string,
+  pipeline: IAgentPipelineState,
+): Promise<void> {
+  await writeJson(getScriptAgentPipelinePath(projectRoot), pipeline);
+}
+
+export async function loadScriptAgentPacket(
+  projectRoot: string,
+  stage: string,
+): Promise<IAgentPacket | null> {
+  return readJsonOrNull(
+    getScriptAgentPacketPath(projectRoot, stage),
+    ZAgentPacket,
+  ) as Promise<IAgentPacket | null>;
+}
+
+export async function writeScriptAgentPacket(
+  projectRoot: string,
+  stage: string,
+  packet: IAgentPacket,
+): Promise<void> {
+  await writeJson(getScriptAgentPacketPath(projectRoot, stage), packet);
+}
+
+export async function loadScriptStageReview(
+  projectRoot: string,
+  stage: string,
+): Promise<IStageReview | null> {
+  return readJsonOrNull(
+    getScriptReviewPath(projectRoot, stage),
+    ZStageReview,
+  ) as Promise<IStageReview | null>;
+}
+
+export async function writeScriptStageReview(
+  projectRoot: string,
+  stage: string,
+  review: IStageReview,
+): Promise<void> {
+  await writeJson(getScriptReviewPath(projectRoot, stage), review);
 }

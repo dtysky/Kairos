@@ -1,0 +1,15 @@
+{
+  "roots": [
+    {
+      "id": "root-fixture-media",
+      "label": "fixture/media",
+      "enabled": true,
+      "description": "Fixture media root for Jianying spec tests",
+      "notes": [
+        "Used by test/nle/jianying-spec.test.ts"
+      ],
+      "tags": [],
+      "priority": 1
+    }
+  ]
+}

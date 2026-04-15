@@ -18,6 +18,20 @@ description: >-
 - `Material Overview + Script Brief + arrangementStructure + narrationConstraints -> Segment Plan`
 - `Segment Plan -> Material Slots -> Bundle Lookup -> Chosen SpanIds -> Beat / Script`
 
+当前 Agent 执行层还新增了 clean-context subagent 约束：
+- `overview-cartographer` 只写 `script/material-overview.md`
+- `brief-editor` 只写初版 `script-brief`
+- `segment-architect` 只写 `script/segment-plan.json`
+- `route-slot-planner` 只写 `script/material-slots.json`
+- `beat-writer` 只写 `script/current.json`
+- `script-reviewer` 只做审查
+
+每个 subagent 都必须：
+- 只读取自己的 stage packet
+- 使用独立身份 prompt
+- 不继承主线程长历史
+- 缺证据时保守，不脑补
+
 ## 变更工作流规则
 
 只要本轮任务涉及需求、行为、接口、工作流、正式入口或用户路径变更，必须遵守下面顺序：
@@ -130,7 +144,11 @@ agent 在创作旁白时应将其作为额外的创作指导。
 3. 用户回到 `/script` 审查并手动保存 brief
 4. `/script` 会用更显眼的 workflow prompt / modal 提示用户点击 `准备给 Agent`
 5. Console 校验前置条件并刷新 `script/material-overview.facts.json` 与 `analysis/material-bundles.json`
-6. Agent 再继续写正式 `script/current.json`
+6. Agent 再继续跑 clean-context staged pipeline：
+   - 先写 `script/spatial-story.json` / `script/spatial-story.md`
+   - 再写 `script/agent-contract.json`
+   - 然后按 packet 推进 `segment-plan -> material-slots -> script/current.json`
+   - 每个阶段都要经过 `script-reviewer`，review 结果写到 `script/reviews/{stage}.json`
 
 Console prep 不允许做的事：
 - 自动起草初版 `script-brief`
@@ -174,6 +192,7 @@ script/script-brief.md
 - `material overview` 采用文档型输入，结构化事实底稿写入 `script/material-overview.facts.json`。
 - `segment plan`、`material slots`、`outline` 和 `script/current.json` 都应视为 Agent 阶段产物，不再由 Console prep 自动生成。
 - `script/script-brief.json.workflowState` 是脚本阶段的正式流程真值；Agent 应根据它判断当前该做“提示选风格 / 起草 brief / 等待用户审查 / 写正式脚本”中的哪一步。
+- `script/spatial-story.json` / `script/agent-contract.json` / `script/agent-packets/` / `script/reviews/` / `script/agent-pipeline.json` 都属于 Script 内部 orchestration 资产，不改变 Timeline / Export 正式输入协议。
 
 ### Step 3: Agent 生成 Segment Plan 与 Material Slots
 

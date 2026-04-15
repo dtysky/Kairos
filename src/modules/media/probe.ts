@@ -224,10 +224,6 @@ function parseMdlsField(output: string, fieldName: string): string | null {
 }
 
 function buildStableToolExecEnv(): NodeJS.ProcessEnv {
-  if (process.platform === 'win32') {
-    return process.env;
-  }
-
   return {
     ...process.env,
     LC_ALL: 'C',
