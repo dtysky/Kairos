@@ -8,6 +8,13 @@ export interface IManualSpatialContext {
   placeHints: string[];
   transport?: 'drive' | 'walk' | 'train' | 'flight' | 'boat' | 'mixed';
   decisionReasons: string[];
+  locationCandidates?: ISpatialLocationCandidate[];
+}
+
+export interface ISpatialLocationCandidate {
+  role: 'point' | 'start' | 'end';
+  lat: number;
+  lng: number;
 }
 
 export interface IInferManualItineraryGpsInput {
@@ -50,7 +57,6 @@ export async function inferManualItineraryGps(
       lng: matched.coordinates.lng,
       timezone: matched.timezone,
       matchedItinerarySegmentId: matched.segment.id,
-      locationText: matched.locationText,
       summary: gpsSummary,
     },
     placeHints,
@@ -61,6 +67,11 @@ export async function inferManualItineraryGps(
       matched.segment.transport ? `manual-transport:${matched.segment.transport}` : undefined,
       placeHints.length > 0 ? `manual-spatial-hints:${placeHints.length}` : undefined,
     ]),
+    locationCandidates: [{
+      role: 'point',
+      lat: matched.coordinates.lat,
+      lng: matched.coordinates.lng,
+    }],
   };
 }
 

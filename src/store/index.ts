@@ -159,6 +159,16 @@ export {
   type IManualItineraryGeoCacheEntry,
 } from './manual-itinerary-geo.js';
 export {
+  getReverseGeocodeCachePath,
+  loadReverseGeocodeCache,
+  writeReverseGeocodeCache,
+  findReverseGeocodeCacheEntry,
+  formatReverseGeocodeLocationKey,
+  EReverseGeocodeStatus,
+  type IReverseGeocodeCache,
+  type IReverseGeocodeCacheEntry,
+} from './reverse-geocode-cache.js';
+export {
   getProjectGpsRoot,
   getProjectGpsTracksRoot,
   getProjectSameSourceGpsRoot,

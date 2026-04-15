@@ -69,7 +69,6 @@ export function buildSpatialEvidenceFromReport(
       confidence: match.confidence,
       sourceKinds: ['pharos-record'],
       reasons: match.matchReasons ?? [],
-      locationText: [match.tripTitle, match.dayTitle].filter(Boolean).join(' / ') || undefined,
       pharosRef: match.ref,
     });
   }
@@ -197,64 +196,63 @@ function mapMaterialPatterns(input: {
   } | null;
   report?: Pick<IAssetCoarseReport, 'speechCoverage' | 'inferredGps'>;
 }): IMaterialPattern[] {
-  const values: Array<[string, number, string | undefined]> = [];
+  const values: Array<[string, number]> = [];
   const description = input.recognition?.description ?? '';
   const sceneType = input.recognition?.sceneType ?? '';
   const combined = `${description} ${sceneType}`.toLowerCase();
   const hasTranscript = Boolean(input.transcript?.trim());
 
   if (input.clipType === 'aerial') {
-    values.push(['高辨识度地点快速建场', 0.82, description || sceneType]);
+    values.push(['高辨识度地点快速建场', 0.82]);
   }
   if (input.clipType === 'drive') {
-    values.push(['车内向前行进视角', 0.84, description]);
-    values.push(['道路、桥梁、河流或海岸在证明路线', 0.72, description]);
+    values.push(['车内向前行进视角', 0.84]);
+    values.push(['道路、桥梁、河流或海岸在证明路线', 0.72]);
   }
   if (input.clipType === 'timelapse') {
-    values.push(['画面在呈现明显的时间流逝', 0.88, description || sceneType]);
+    values.push(['画面在呈现明显的时间流逝', 0.88]);
   }
   if (input.clipType === 'talking-head') {
-    values.push(['人物正在对镜记录当下感受', 0.78, input.transcript]);
-    values.push(['人物正在解释接下来要做什么', 0.72, input.transcript]);
+    values.push(['人物正在对镜记录当下感受', 0.78]);
+    values.push(['人物正在解释接下来要做什么', 0.72]);
   }
   if (input.semanticKind === 'speech' && input.clipType === 'drive') {
-    values.push(['车内行进中自拍', 0.76, input.transcript]);
+    values.push(['车内行进中自拍', 0.76]);
   }
   if (input.semanticKind === 'speech' && input.clipType !== 'talking-head' && input.clipType !== 'drive') {
-    values.push(['人物正在一边移动一边说话', 0.68, input.transcript]);
+    values.push(['人物正在一边移动一边说话', 0.68]);
   }
   if (hasTranscript) {
-    values.push(['现场人声可以直接使用', 0.74, input.transcript]);
+    values.push(['现场人声可以直接使用', 0.74]);
   }
   if (/follow|跟拍|跟着|tracking/u.test(combined)) {
-    values.push(['镜头在跟着主体持续移动', 0.7, description]);
+    values.push(['镜头在跟着主体持续移动', 0.7]);
   }
   if (/car|interior|车内|驾驶/u.test(combined) && hasTranscript) {
-    values.push(['交通工具内静态自拍', 0.62, description]);
+    values.push(['交通工具内静态自拍', 0.62]);
   }
   if (/market|crowd|traffic|chaos|拥堵|混乱|风险|阻碍/u.test(combined)) {
-    values.push(['现场正在发生现实摩擦或阻碍', 0.7, description || sceneType]);
+    values.push(['现场正在发生现实摩擦或阻碍', 0.7]);
   }
   if (/detail|细节|close|close-up/u.test(combined)) {
-    values.push(['地点局部细节作为记忆点', 0.66, description]);
+    values.push(['地点局部细节作为记忆点', 0.66]);
   }
   if (/first person|first-person|主观|第一人称/u.test(combined)) {
-    values.push(['第一人称日常记录', 0.7, description]);
+    values.push(['第一人称日常记录', 0.7]);
   }
   if (/place|location|landmark|temple|pyramid|site|地点/u.test(combined) && hasTranscript) {
-    values.push(['人物正在介绍地点', 0.68, input.transcript]);
+    values.push(['人物正在介绍地点', 0.68]);
   }
   if ((input.report?.speechCoverage ?? 0) > 0.4 && input.semanticKind !== 'speech') {
-    values.push(['声音信息能补强画面事实', 0.58, input.transcript]);
+    values.push(['声音信息能补强画面事实', 0.58]);
   }
   if (input.report?.inferredGps?.locationText) {
-    values.push(['地点线索可以和时空证据交叉印证', 0.56, input.report.inferredGps.locationText]);
+    values.push(['地点线索可以和时空证据交叉印证', 0.56]);
   }
 
-  return dedupeMaterialPatterns(values.map(([phrase, confidence, excerpt]) => ({
+  return dedupeMaterialPatterns(values.map(([phrase, confidence]) => ({
     phrase,
     confidence: clampConfidence(confidence),
-    excerpt: excerpt?.trim() || undefined,
     evidenceRefs: [],
   })));
 }

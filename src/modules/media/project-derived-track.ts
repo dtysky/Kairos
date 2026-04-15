@@ -8,6 +8,7 @@ import {
   type IProjectDerivedTrack,
   type IProjectDerivedTrackEntry,
 } from '../../store/index.js';
+import type { IReverseGeocodeService } from './reverse-geocode.js';
 import { resolveEmbeddedGpsContext } from './gps-embedded.js';
 import { convertLocalDateTimeToIso } from './timezone-utils.js';
 
@@ -18,6 +19,7 @@ export interface IRefreshProjectDerivedTrackCacheInput {
   projectRoot: string;
   resolveTimezoneFromLocation?: (location: string) => Promise<string | null>;
   geocodeLocation?: (location: string) => Promise<{ lat: number; lng: number } | null>;
+  reverseGeocodeService?: IReverseGeocodeService | null;
 }
 
 export async function refreshProjectDerivedTrackCache(
@@ -40,6 +42,12 @@ export async function refreshProjectDerivedTrackCache(
     entryCount: entries.length,
     entries,
   };
+  await input.reverseGeocodeService?.prewarm(
+    entries.map(entry => ({
+      lat: entry.lat,
+      lng: entry.lng,
+    })),
+  );
   await writeProjectDerivedTrack(input.projectRoot, derivedTrack);
   return derivedTrack;
 }

@@ -102,12 +102,16 @@ function buildDerivedTrackContext(
       sourceAssetId: entry.sourceAssetId,
       sourcePath: entry.sourcePath,
       matchedItinerarySegmentId: entry.matchedItinerarySegmentId,
-      locationText: entry.locationText,
       summary: gpsSummary,
     },
     placeHints,
     transport: entry.transport,
     decisionReasons,
+    locationCandidates: [{
+      role: 'point',
+      lat: entry.lat,
+      lng: entry.lng,
+    }],
   };
 }
 

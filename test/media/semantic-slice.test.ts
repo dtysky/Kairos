@@ -50,6 +50,7 @@ describe('decorateSliceWithSemanticTags', () => {
     });
 
     expect(result.materialPatterns.map(item => item.phrase)).toContain('车内向前行进视角（项目口径）');
+    expect(result.materialPatterns.every(item => item.excerpt == null)).toBe(true);
     expect(result.grounding.speechMode).toBe('preferred');
     expect(result.narrativeFunctions.core).toContain('路上自述');
     expect(result.viewpointRoles.core).toContain('行进中的观察者');

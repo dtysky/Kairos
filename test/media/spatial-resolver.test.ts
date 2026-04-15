@@ -242,9 +242,13 @@ describe('resolveAssetSpatialContext', () => {
       lat: 39.909187,
       lng: 116.397463,
       matchedItinerarySegmentId: 'manual-itinerary-1',
-      locationText: '北京市天安门',
     }));
     expect(result?.gpsSummary).toContain('manual-itinerary-derived');
+    expect(result?.locationCandidates).toEqual([{
+      role: 'point',
+      lat: 39.909187,
+      lng: 116.397463,
+    }]);
   });
 
   it('does not interpolate between sparse derived-track points', async () => {

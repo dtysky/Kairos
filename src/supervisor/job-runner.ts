@@ -1,6 +1,7 @@
 import { join } from 'node:path';
 import {
   analyzeWorkspaceProjectMedia,
+  createProjectReverseGeocodeService,
   importProjectGpxTracks,
   ingestWorkspaceProjectMedia,
   initWorkspaceProject,
@@ -125,10 +126,17 @@ async function runJob(
       if (!projectId) {
         throw new BlockedJobError(['ingest requires projectId']);
       }
+      const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
+      const runtimeConfig = await loadRuntimeConfig(projectRoot);
+      const reverseGeocodeService = await createProjectReverseGeocodeService({
+        projectRoot,
+        runtimeConfig,
+      });
       return {
         result: await ingestWorkspaceProjectMedia({
           workspaceRoot,
           projectId,
+          reverseGeocodeService,
         }),
       };
     }
@@ -137,6 +145,11 @@ async function runJob(
         throw new BlockedJobError(['gps-refresh requires projectId']);
       }
       const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
+      const runtimeConfig = await loadRuntimeConfig(projectRoot);
+      const reverseGeocodeService = await createProjectReverseGeocodeService({
+        projectRoot,
+        runtimeConfig,
+      });
       const importedGpx = toStringArray(args.gpxPaths);
       const imported = importedGpx.length > 0
         ? await importProjectGpxTracks({
@@ -145,7 +158,10 @@ async function runJob(
         })
         : null;
       const merged = await refreshProjectGpsCache(projectRoot);
-      const derived = await refreshProjectDerivedTrackCache({ projectRoot });
+      const derived = await refreshProjectDerivedTrackCache({
+        projectRoot,
+        reverseGeocodeService,
+      });
       return {
         result: {
           imported,
@@ -158,11 +174,18 @@ async function runJob(
       if (!projectId) {
         throw new BlockedJobError(['analyze requires projectId']);
       }
+      const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
+      const runtimeConfig = await loadRuntimeConfig(projectRoot);
+      const reverseGeocodeService = await createProjectReverseGeocodeService({
+        projectRoot,
+        runtimeConfig,
+      });
       return {
         result: await analyzeWorkspaceProjectMedia({
           workspaceRoot,
           projectId,
           assetIds: toStringArray(args.assetIds),
+          reverseGeocodeService,
         }),
       };
     }

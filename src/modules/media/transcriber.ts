@@ -11,6 +11,11 @@ import {
   normalizeAsrWords,
   refineAsrSegments,
 } from './refined-transcript.js';
+import {
+  normalizeHanTextToSimplified,
+  normalizeTranscriptSegmentsToSimplified,
+  normalizeTranscriptWordsToSimplified,
+} from './chinese-transcript.js';
 
 export interface ITranscription {
   segments: IAsrSegment[];
@@ -32,16 +37,17 @@ export async function transcribe(
   const startedAt = Date.now();
   const result = await client.asrDetailed(audioPath, language, options);
   const roundTripMs = Date.now() - startedAt;
-  const words = normalizeAsrWords(result.words ?? []);
+  const words = normalizeTranscriptWordsToSimplified(normalizeAsrWords(result.words ?? []));
   const segments = refineAsrSegments({
-    segments: result.segments,
+    segments: normalizeTranscriptSegmentsToSimplified(result.segments),
     words,
   });
-  const fullText = buildTranscriptText({
-    segments,
+  const simplifiedSegments = normalizeTranscriptSegmentsToSimplified(segments);
+  const fullText = normalizeHanTextToSimplified(buildTranscriptText({
+    segments: simplifiedSegments,
     words,
-  });
-  const evidence: IKtepEvidence[] = segments
+  }));
+  const evidence: IKtepEvidence[] = simplifiedSegments
     .filter(s => s.text.trim().length > 0)
     .map(s => ({
       source: 'asr' as const,
@@ -50,7 +56,7 @@ export async function transcribe(
     }));
 
   return {
-    segments,
+    segments: simplifiedSegments,
     ...(words.length > 0 ? { words } : {}),
     fullText,
     evidence,

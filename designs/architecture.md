@@ -16,14 +16,17 @@
      - Apple Silicon 继续使用 `mlx-whisper / whisper-large-v3-turbo`
      - Windows + CUDA 与 CPU fallback 当前优先使用完整可用的本地 `transformers Whisper` checkpoint，目标档位仍优先 `whisper-large-v3-turbo`
      - torch 路径不允许在正式 `/asr` 请求里隐式等待远端模型下载；如果目标大模型只有不完整 cache，必须立刻回退到完整可用的本地 Whisper checkpoint
+     - Analyze caller 现在默认固定 `language='zh'`；TS 侧会把 Han 文本统一归一为简体中文，再写入 `report.transcript / transcriptSegments / spans`
      - Apple Silicon / MLX 路径继续请求词级时间戳；torch 路径当前优先稳定使用 segment 时间戳，规避 `transformers` 的 word-timestamp 卡死问题
      - TS 侧统一重建 refined transcript segments：有 `words` 时按词级停顿细分，没有 `words` 时按 segment 文本的标点与长度做保守细分
+     - 简体归一只作用于 Han 文本；英文、数字和其他脚本保持原样，不做 LLM 文本纠错
    - 当前执行顺序已经稳定为：
      - 有音轨视频：`coarse-scan -> audio-analysis -> finalize -> deferred scene detect(if needed)`
      - 无音轨视频：`coarse-scan -> finalize -> deferred scene detect(if needed)`
    - `asset report.clipTypeGuess` 是 finalize 后的语义结论；视频素材的正式 `visualSummary + decision` 只在 `finalize` 单次 unified VLM 中产出
    - `talking-head` 当前有 audio-led window strategy，会优先把连续 speech windows 收口成更适合原声消费的窗口
    - `drive` 的 `speech` 和 `visual` windows / slices 已正式分语义，并通过 `semanticKind` 继续向后传递
+   - Analyze 持久化 `store/spans.json` 时，附近 speech windows / shot-split speech slices 应先合并成稳定 source-speech spans；细粒度停顿继续由 `transcriptSegments` 表达
 2. 脚本召回和 outline 已消费 transcript 证据
    - transcript 不再只是附属说明，而是候选召回和 beat 写作的正式输入
    - 如果某拍最终保留原声，outline / timeline 会把选区优先裁成 transcript-driven speech islands；粗剪时长与字幕以这些语音岛边界为准，不再回退解释性旁白
@@ -57,6 +60,14 @@
     - `config/ingest-roots.json` 的 `IMediaRoot.clockOffsetMs?` 表示项目内该 root 的统一时钟偏移
     - 单素材 `captureTimeOverrides` 继续存在，但只作为 root offset 上层例外
     - `media/chronology.json` 的 `sortCapturedAt` 当前是唯一正式时序真值，优先级为 `capturedAtOverride -> asset.capturedAt + root.clockOffsetMs -> asset.capturedAt`
+  - `locationText` 当前正式收口为 reverse geocode 结果，而不是 route prose：
+    - reverse geocode provider 选择、cache key、fallback 与 balanced location 字符串格式对齐 `../Nostos/tools/scan-tool/geocode.ts`
+    - `cache key = lng,lat`，各保留 `6` 位小数
+    - 中国境内优先 Amap，境外优先 Geoapify；primary provider 为空时允许回退 secondary provider
+    - Amap 先 `regeo`，为空时回退 `place/around`
+    - Geoapify 先 reverse geocode，为空时回退 places
+    - `drive` 优先用命中的连续型 `Pharos shot` 首尾 GPS 反查；非 `drive` 优先用命中的 `Pharos shot` 单点 GPS；没有再回落到正式空间层选中的单点坐标
+    - manual-itinerary 的 `from / via / to`、trip/day title、route prose 继续留在 `summary / decision reasons / routeRole`，不再直接写进 `locationText`
 6. 正式流程与当前实现的关系已经更明确
    - 正式主链仍以 `Pharos` 为主输入
    - 当前实现仍是临时承载版本，但已经覆盖主链中的多个阶段
@@ -135,6 +146,9 @@
 - `Span` 当前主承载：
   - `materialPatterns[]`
   - `grounding`
+- Analyze 自动生成的 `materialPatterns` 默认不再带 `excerpt`
+  - 召回继续依赖 `phrase / grounding / span transcript`
+  - `excerpt` 仍保留兼容类型，但不再把整段字幕文本当作 pattern excerpt 持久化
 - 项目级正式词集当前只保留一层，并通过 `config/project-brief.md/.json` 维护：
   - `材料模式短语`
 - Script prep 现在正式改为：

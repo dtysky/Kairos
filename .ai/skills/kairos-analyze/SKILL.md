@@ -163,6 +163,11 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
 - 默认 GPX 命中策略是：从带 `time` 的 `trkpt / rtept / wpt` 中，按 `capturedAt` 选择容差内最近点
 - `manual-itinerary` 正文不直接参与拍摄时间修正；真正的时间修正入口是它末尾的“素材时间校正”表格，并且只有 rerun ingest 后才会生效
 - 空间推断结果应落在 coarse report，而不是回写素材真值层
+- `locationText` 当前正式只允许来自 reverse geocode：
+  - provider 选择、cache key、fallback 与 balanced location 规则对齐 `../Nostos/tools/scan-tool/geocode.ts`
+  - 中国境内优先 Amap，境外优先 Geoapify
+  - `drive` 优先使用命中的连续型 `Pharos shot` 首尾 GPS 反查；非 `drive` 优先使用命中的 `Pharos shot` 单点 GPS；没有再回落到正式空间层选中的单点坐标
+  - manual-itinerary route prose、trip/day title 与 route-stage 文本只能留在 `summary / decision reasons / routeRole`，不再冒充 `locationText`
 
 ## 默认分析策略
 
@@ -198,6 +203,11 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
 - 当前默认 ASR 质量目标是跨平台一致：
   - Apple Silicon 默认 `mlx-whisper / whisper-large-v3-turbo`
   - Windows + CUDA 与 CPU fallback 优先使用完整可用的本地 `transformers Whisper` checkpoint，目标档位仍优先 `whisper-large-v3-turbo`
+- 项目 Analyze caller 当前默认固定传 `language='zh'`
+- TS 侧会在 refined transcript segmentation 之后统一做 Han 文本简体归一：
+  - 只转换 Han 文本为简体中文
+  - 规范中文标点与中西文空格
+  - 英文、数字和其他脚本保持原样
 - torch 路径不允许在正式 `/asr` 请求里隐式卡住等待远端模型下载：
   - 大模型 cache 完整时直接使用
   - 只有不完整 cache 时，Analyze 必须回退到完整可用的本地 Whisper checkpoint，而不是把音频分析整个挂死
@@ -213,6 +223,7 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
 - 但要把“极稀疏语音”当噪声处理：如果 `speechCoverage` 低到只剩零星词片段（当前阈值为 `< 0.05`），应直接丢弃整段 transcript 上下文，不写入 coarse report，也不要让它推动 `interestingWindows` 或 fine-scan
 - 不要把“高 coverage 但内容本来就简单/重复”的素材误判为 ASR 故障；那类结果可以保留，只是后续由剪辑策略自己决定值不值得用
 - `report.transcriptSegments` 当前应理解为 refined transcript segmentation，而不是直接照搬后端的粗 segment
+- `report.transcript`、`report.transcriptSegments`、source-speech spans 与 timeline subtitle 输入当前统一使用简体归一后的文本
 - 当前保护音轨策略是保守 fallback，不是双主音轨竞争：
   - 视频内无线 mic 仍是默认主音轨
   - `protectionAudio` 只是同目录同 basename 的 sidecar 兜底来源
@@ -283,6 +294,11 @@ analysis/asset-reports/<assetId>.json
 - `sourceInMs / sourceOutMs` 继续保留兼容性的 focus/evidence window
 - `editSourceInMs / editSourceOutMs` 承载 edit-friendly bounds，供 Script/Timeline 默认优先使用
 - `drive` slice 可额外挂 `speedCandidate`
+- `source-speech` 的持久化目标是稳定 material span，不是每个短暂停顿都单独落一条：
+  - 附近 speech windows 应先在 Analyze 侧合并后再写入 `store/spans.json`
+  - 细粒度 utterance / pause timing 继续保留在 `transcriptSegments`
+- Analyze 自动生成的 `materialPatterns` 默认不再落 `excerpt`
+  - `excerpt` 字段仅保留兼容可选，新的 Analyze 输出应依赖 `phrase / grounding / transcript`，而不是把整段字幕塞进 pattern
 
 ## 工作流程
 

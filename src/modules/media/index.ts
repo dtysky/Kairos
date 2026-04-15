@@ -61,6 +61,13 @@ export {
 } from './analyze-profile.js';
 export { transcribe, type ITranscription } from './transcriber.js';
 export {
+  createProjectReverseGeocodeService,
+  isLikelyChinaCoordinate,
+  resolveAnalyzeLocationText,
+  type IReverseGeocodeService,
+  type IResolvedAnalyzeLocationText,
+} from './reverse-geocode.js';
+export {
   buildTranscriptText,
   estimateTranscriptTextUnits,
   isObviousTranscriptHallucination,

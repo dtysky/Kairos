@@ -373,6 +373,151 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
     expect(detectShotsMock).not.toHaveBeenCalled();
   });
 
+  it('coalesces nearby direct-path speech windows into one persisted source-speech span', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-analyze-direct-speech-coalesce';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Direct Speech Coalesce Project');
+    const mediaRoot = join(projectRoot, '.tmp', 'fixtures');
+    const mediaPath = join(mediaRoot, 'portrait-talk.mp4');
+
+    await mkdir(mediaRoot, { recursive: true });
+    await writeFile(mediaPath, 'fake-media');
+
+    await writeJson(join(projectRoot, 'config/runtime.json'), {
+      mlServerUrl: 'http://127.0.0.1:8910',
+    });
+    await writeJson(join(projectRoot, 'config/ingest-roots.json'), {
+      roots: [{
+        id: 'root-1',
+        enabled: true,
+        label: 'camera-a',
+        path: mediaRoot,
+      }],
+    });
+    await writeJson(join(projectRoot, 'store/assets.json'), [{
+      id: 'asset-direct-speech',
+      kind: 'video',
+      sourcePath: 'portrait-talk.mp4',
+      displayName: 'portrait-talk.mp4',
+      ingestRootId: 'root-1',
+      durationMs: 40_000,
+      capturedAt: '2026-03-31T08:15:30.000Z',
+      metadata: {
+        hasAudioStream: true,
+      },
+    }]);
+
+    extractKeyframesMock.mockImplementation(async (
+      _filePath: string,
+      outputDir: string,
+      timestampsMs: number[],
+    ) => {
+      await mkdir(outputDir, { recursive: true });
+      return Promise.all(timestampsMs.map(async timeMs => {
+        const framePath = join(outputDir, `frame-${timeMs}.jpg`);
+        await writeFile(framePath, `frame-${timeMs}`);
+        return { timeMs, path: framePath };
+      }));
+    });
+
+    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue({
+      status: 'ok',
+      device: 'apple',
+      backend: 'mlx',
+      models_loaded: [],
+    });
+    vi.spyOn(MlClient.prototype, 'asrDetailed').mockResolvedValue({
+      segments: [
+        { start: 10, end: 12, text: '第一句来了。' },
+        { start: 15.8, end: 17.4, text: '第二句接着说。' },
+        { start: 21.5, end: 23.1, text: '第三句收尾。' },
+      ],
+      timing: {
+        backend: 'mlx',
+        modelRef: 'test-whisper',
+        totalMs: 70,
+        wavExtractMs: 16,
+        inferenceMs: 49,
+      },
+    });
+    vi.spyOn(MlClient.prototype, 'vlmAnalyze').mockImplementation(async (imagePaths, prompt) => {
+      if (prompt.includes('semantic clip type and materialization policy')) {
+        return {
+          description: JSON.stringify({
+            visual_summary: {
+              scene_type: 'portrait',
+              subjects: ['speaker'],
+              mood: 'calm',
+              place_hints: ['studio'],
+              narrative_role: 'detail',
+              description: `Recognized ${imagePaths.length} portrait frames.`,
+            },
+            decision: {
+              clip_type: 'talking-head',
+              keep_decision: 'keep',
+              materialization_path: 'direct',
+              decision_reasons: ['test-direct-speech-coalesce'],
+            },
+          }),
+          timing: {
+            backend: 'mlx',
+            modelRef: 'test-qwen',
+            totalMs: 48,
+            processorMs: 7,
+            generateMs: 34,
+          },
+        };
+      }
+      return {
+        description: JSON.stringify({
+          scene_type: 'portrait',
+          subjects: ['speaker'],
+          mood: 'calm',
+          place_hints: ['studio'],
+          narrative_role: 'detail',
+          description: `Recognized ${imagePaths.length} portrait frames.`,
+        }),
+        timing: {
+          backend: 'mlx',
+          modelRef: 'test-qwen',
+          totalMs: 39,
+          processorMs: 6,
+          generateMs: 27,
+        },
+      };
+    });
+
+    const { analyzeWorkspaceProjectMedia } = await import('../../src/modules/media/project-analyze.js');
+    const result = await analyzeWorkspaceProjectMedia({
+      workspaceRoot,
+      projectId,
+      performanceProfile: {
+        enabled: true,
+        runLabel: 'direct-speech-coalesce',
+      },
+    });
+
+    const slices = JSON.parse(
+      await readFile(getSlicesPath(projectRoot), 'utf-8'),
+    ) as Array<{
+      sourceInMs?: number;
+      sourceOutMs?: number;
+      transcript?: string;
+      transcriptSegments?: Array<{ startMs: number; endMs: number; text: string }>;
+    }>;
+    const speechSlices = slices.filter(slice => typeof slice.transcript === 'string' && slice.transcript.length > 0);
+
+    expect(result.sliceCount).toBe(1);
+    expect(speechSlices).toHaveLength(1);
+    expect(speechSlices[0]?.sourceInMs).toBe(9_500);
+    expect(speechSlices[0]?.sourceOutMs).toBe(24_000);
+    expect(speechSlices[0]?.transcriptSegments).toHaveLength(3);
+    expect(speechSlices[0]?.transcript).toContain('第一句来了。');
+    expect(speechSlices[0]?.transcript).toContain('第二句接着说。');
+    expect(speechSlices[0]?.transcript).toContain('第三句收尾。');
+    expect(detectShotsMock).not.toHaveBeenCalled();
+  });
+
   it('uses audio-led windows and runs deferred scene detect for fragmented talking-head windows', async () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-analyze-audio-led';
@@ -521,6 +666,154 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
     expect(detectShotsMock).toHaveBeenCalledTimes(1);
     expect(profile.ffmpeg.sceneDetectPhases?.finalize?.callCount).toBe(1);
     expect(profile.assets[0]?.sceneDetectPhases?.finalize?.callCount).toBe(1);
+  });
+
+  it('coalesces shot-split talking-head speech slices before persisting spans', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-analyze-full-speech-coalesce';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Full Speech Coalesce Project');
+    const mediaRoot = join(projectRoot, '.tmp', 'fixtures');
+    const mediaPath = join(mediaRoot, 'full-talk.mp4');
+
+    await mkdir(mediaRoot, { recursive: true });
+    await writeFile(mediaPath, 'fake-media');
+
+    await writeJson(join(projectRoot, 'config/runtime.json'), {
+      mlServerUrl: 'http://127.0.0.1:8910',
+    });
+    await writeJson(join(projectRoot, 'config/ingest-roots.json'), {
+      roots: [{
+        id: 'root-1',
+        enabled: true,
+        label: 'camera-a',
+        path: mediaRoot,
+      }],
+    });
+    await writeJson(join(projectRoot, 'store/assets.json'), [{
+      id: 'asset-full-speech',
+      kind: 'video',
+      sourcePath: 'full-talk.mp4',
+      displayName: 'full-talk.mp4',
+      ingestRootId: 'root-1',
+      durationMs: 20_000,
+      capturedAt: '2026-03-31T08:15:30.000Z',
+      metadata: {
+        hasAudioStream: true,
+      },
+    }]);
+
+    detectShotsMock.mockResolvedValue([
+      { timeMs: 10_000, score: 0.92 },
+    ]);
+    extractKeyframesMock.mockImplementation(async (
+      _filePath: string,
+      outputDir: string,
+      timestampsMs: number[],
+    ) => {
+      await mkdir(outputDir, { recursive: true });
+      return Promise.all(timestampsMs.map(async timeMs => {
+        const framePath = join(outputDir, `frame-${timeMs}.jpg`);
+        await writeFile(framePath, `frame-${timeMs}`);
+        return { timeMs, path: framePath };
+      }));
+    });
+
+    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue({
+      status: 'ok',
+      device: 'apple',
+      backend: 'mlx',
+      models_loaded: [],
+    });
+    vi.spyOn(MlClient.prototype, 'asrDetailed').mockResolvedValue({
+      segments: [
+        { start: 4, end: 15, text: '这一整段都在连续说话。' },
+      ],
+      timing: {
+        backend: 'mlx',
+        modelRef: 'test-whisper',
+        totalMs: 67,
+        wavExtractMs: 15,
+        inferenceMs: 46,
+      },
+    });
+    vi.spyOn(MlClient.prototype, 'vlmAnalyze').mockImplementation(async (imagePaths, prompt) => {
+      if (prompt.includes('semantic clip type and materialization policy')) {
+        return {
+          description: JSON.stringify({
+            visual_summary: {
+              scene_type: 'portrait',
+              subjects: ['speaker'],
+              mood: 'focused',
+              place_hints: ['interview room'],
+              narrative_role: 'detail',
+              description: `Recognized ${imagePaths.length} speaking frames.`,
+            },
+            decision: {
+              clip_type: 'talking-head',
+              keep_decision: 'keep',
+              materialization_path: 'fine-scan',
+              fine_scan_mode: 'full',
+              decision_reasons: ['test-full-speech-coalesce'],
+            },
+          }),
+          timing: {
+            backend: 'mlx',
+            modelRef: 'test-qwen',
+            totalMs: 54,
+            processorMs: 7,
+            generateMs: 39,
+          },
+        };
+      }
+      return {
+        description: JSON.stringify({
+          scene_type: 'portrait',
+          subjects: ['speaker'],
+          mood: 'focused',
+          place_hints: ['interview room'],
+          narrative_role: 'detail',
+          description: `Recognized ${imagePaths.length} speaking frames.`,
+        }),
+        timing: {
+          backend: 'mlx',
+          modelRef: 'test-qwen',
+          totalMs: 42,
+          processorMs: 6,
+          generateMs: 30,
+        },
+      };
+    });
+
+    const { analyzeWorkspaceProjectMedia } = await import('../../src/modules/media/project-analyze.js');
+    const result = await analyzeWorkspaceProjectMedia({
+      workspaceRoot,
+      projectId,
+      performanceProfile: {
+        enabled: true,
+        runLabel: 'full-speech-coalesce',
+      },
+    });
+
+    const slices = JSON.parse(
+      await readFile(getSlicesPath(projectRoot), 'utf-8'),
+    ) as Array<{
+      sourceInMs?: number;
+      sourceOutMs?: number;
+      transcript?: string;
+      transcriptSegments?: Array<{ startMs: number; endMs: number; text: string }>;
+    }>;
+    const speechSlices = slices.filter(slice => typeof slice.transcript === 'string' && slice.transcript.length > 0);
+
+    expect(result.sliceCount).toBe(1);
+    expect(speechSlices).toHaveLength(1);
+    expect(speechSlices[0]?.sourceInMs).toBe(0);
+    expect(speechSlices[0]?.sourceOutMs).toBe(20_000);
+    expect(speechSlices[0]?.transcriptSegments).toEqual([{
+      startMs: 4_000,
+      endMs: 15_000,
+      text: '这一整段都在连续说话。',
+    }]);
+    expect(detectShotsMock).toHaveBeenCalledTimes(1);
   });
 
   it('fails the analyze run when unified finalize returns invalid JSON', async () => {

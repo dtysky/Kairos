@@ -76,6 +76,11 @@ Kairos 当前需要区分两层：
 - `span` 当前正式承载三块主信息：
   - `materialPatterns[]`
   - `grounding`
+- Analyze 自动生成的 `materialPatterns` 当前默认不再填 `excerpt`
+  - `excerpt` 字段仅保留兼容可选，不再把整段 transcript / description / itinerary 文本塞进去
+- 对 `source-speech` 而言，`store/spans.json` 当前应持久化“稳定可复用的语音素材 span”，而不是把同一资产里相隔几秒的短语音窗机械拆成多条 span
+  - 细粒度语音边界与停顿继续保留在 `transcriptSegments`
+  - 附近的 speech windows / shot-split speech slices 应先在 Analyze 侧收口，再进入 `spans.json`
 - 项目级正式词集当前只保留一层，并挂到 `project-brief`：
   - `材料模式短语`
 - Script prep 当前正式链路为：
@@ -158,6 +163,10 @@ flowchart TD
   - Apple Silicon 继续使用 `mlx-whisper / whisper-large-v3-turbo`
   - Windows + CUDA 与 CPU fallback 当前优先使用完整可用的本地 `transformers Whisper` checkpoint，目标档位仍优先 `whisper-large-v3-turbo`
   - 默认口径不再让 Windows 以较弱 `small` 档换速度
+- Analyze 当前正式把项目级 ASR caller 固定为中文优先：
+  - `/asr` 请求默认传 `language='zh'`
+  - TS 侧会在 refined transcript segmentation 之后，把 Han 文本统一归一为简体中文
+  - 英文、数字和其他脚本保持原样，不做 LLM 改写
 - torch 路径当前不允许在正式 `/asr` 请求里隐式卡住等待远端模型下载：
   - 如果 `large-v3-turbo` 已完整预置，本轮就用它
   - 如果当前只发现不完整 cache，Kairos 应直接回退到完整可用的本地 Whisper checkpoint，而不是把 Analyze 卡死
@@ -166,6 +175,7 @@ flowchart TD
   - 有 `words` 时按词级停顿、标点与长度约束细分
   - 没有 `words` 时按 segment 文本的标点与长度做保守细分
 - `report.transcriptSegments` 当前正式表示 refined transcript segmentation，而不是直接照搬后端的粗 segment
+- `report.transcript`、`report.transcriptSegments`、source-speech span transcript 与 subtitle 输入当前统一使用简体归一后的文本
 - 如果视频绑定了 `protectionAudio`，Analyze 当前会先做双健康检查再选边：
   - `alignment === mismatch` 时强制保留 embedded
   - protection 缺失、不可访问或健康检查失败时回退 embedded
@@ -191,6 +201,14 @@ flowchart TD
   - `visual` path 面向景色 summary 与 `speedCandidate`
   - 两类窗口不再默认 merge 成同一种“有语音就等于可直接剪原声”的窗口
 - `drive` 类素材可在分析层直接挂 `speedCandidate` metadata（例如 `2x / 5x / 10x` 建议档位），但 Analyze 不直接替下游决定最终速度
+- `locationText` 当前正式改为“由最终选中的 GPS 坐标反查得到的地点名”：
+  - 中国境内坐标优先 Amap，境外优先 Geoapify
+  - cache key 固定为 `lng,lat` 各保留 `6` 位小数
+  - 地点字符串格式对齐 `../Nostos/tools/scan-tool/geocode.ts` 的 balanced location 规则，优先行政区 + 镇街 + 最近 AOI/POI
+  - `drive` 优先用命中的连续型 `Pharos shot` 首尾 GPS 反查；同地收口为一个地点，不同地点写成 `A -> B`
+  - 非 `drive` 优先用命中的 `Pharos shot` 单点 GPS；没有再回落到当前空间优先级选中的单点 GPS
+  - manual-itinerary / route-stage 文本继续留在 `summary`、decision reasons、`routeRole` 等字段，不再冒充 `locationText`
+  - 若未配置 `amapWebServiceKey / geoapifyApiKey` 或反查失败，`locationText` 保持空
 
 ### Script
 
@@ -243,6 +261,7 @@ flowchart TD
   - 导航播报、录制口令、设备提示不再参与 speech island，也不再进入 source-speech 字幕
   - 时间线当前应优先信任 Analyze 产出的 refined transcript segments；只有单条 cue 仍然过长时，才允许二次硬切
   - 当仍需拆长 cue 时，时间码应按 cue 长度 / 语速加权映射，而不是整段平均切分
+  - `spans.json` 不应为同一段 source-speech material 机械保留多条近邻小 span；Analyze 应优先合并附近 speech spans，把真正的语音岛细节留在 `transcriptSegments`
 
 ### Timeline / Export
 

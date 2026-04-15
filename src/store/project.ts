@@ -59,6 +59,8 @@ const IRuntimeConfig = z.object({
   fineScanPrefetchMaxReadyFrameMb: z.number().int().positive().optional(),
   mlServerUrl: z.string().optional(),
   djiOpenAPIKey: z.string().optional(),
+  amapWebServiceKey: z.string().optional(),
+  geoapifyApiKey: z.string().optional(),
   timelineWidth: z.number().int().positive().optional(),
   timelineHeight: z.number().int().positive().optional(),
   timelineFps: z.number().positive().optional(),

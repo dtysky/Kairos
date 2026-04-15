@@ -68,7 +68,6 @@ export function resolvePharosSpatialContext(
         confidence: Math.max(0.35, Math.min(0.85, match.confidence)),
         lat: coordinates.lat,
         lng: coordinates.lng,
-        locationText: shot.location,
         summary: gpsSummary,
         timezone: input.context?.trips.find(item => item.tripId === shot.ref.tripId)?.timezone,
       },
@@ -78,6 +77,7 @@ export function resolvePharosSpatialContext(
         'pharos-match',
         ...match.matchReasons,
       ]),
+      locationCandidates: resolveShotLocationCandidates(shot),
     };
   }
 
@@ -324,6 +324,26 @@ function resolveShotCoordinates(shot: IProjectPharosShot): { lat: number; lng: n
   }
   const fallback = shot.gpsStart ?? shot.gpsEnd;
   return fallback ? { lng: fallback[0], lat: fallback[1] } : null;
+}
+
+function resolveShotLocationCandidates(
+  shot: IProjectPharosShot,
+): Array<{ role: 'point' | 'start' | 'end'; lat: number; lng: number }> {
+  const candidates: Array<{ role: 'point' | 'start' | 'end'; lat: number; lng: number }> = [];
+  const start = shot.actualGpsStart ?? shot.gpsStart;
+  const end = shot.actualGpsEnd ?? shot.gpsEnd;
+  if (start) {
+    candidates.push({ role: 'start', lng: start[0], lat: start[1] });
+  }
+  if (end) {
+    candidates.push({ role: 'end', lng: end[0], lat: end[1] });
+  }
+  if (candidates.length > 0) {
+    return candidates;
+  }
+
+  const point = resolveShotCoordinates(shot);
+  return point ? [{ role: 'point', lat: point.lat, lng: point.lng }] : [];
 }
 
 function buildPharosGpsSummary(shot: IProjectPharosShot, match: IPharosMatch): string {

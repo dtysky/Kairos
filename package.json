@@ -23,6 +23,7 @@
   "dependencies": {
     "dji-log-parser-js": "^0.5.7",
     "node-fetch": "^3.3.2",
+    "opencc-js": "^1.0.5",
     "zod": "^3"
   },
   "devDependencies": {

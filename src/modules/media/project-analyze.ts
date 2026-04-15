@@ -7,12 +7,14 @@ import type {
   IAudioHealthSummary,
   IAssetCoarseReport,
   IDeviceMediaMapFile,
+  IInferredGps,
   IKtepAsset,
   IKtepEvidence,
   IKtepSlice,
   IMediaAnalysisPlan,
   IInterestingWindow,
   IMediaRoot,
+  IProjectPharosShot,
   ITranscriptSegment,
 } from '../../protocol/schema.js';
 import {
@@ -89,6 +91,11 @@ import { sliceInterestingWindows, slicePhoto, sliceVideo } from './slicer.js';
 import { resolveProjectGpxPaths } from './project-gps.js';
 import { resolveAssetSpatialContext } from './spatial-resolver.js';
 import type { IManualSpatialContext } from './manual-spatial.js';
+import {
+  createProjectReverseGeocodeService,
+  resolveAnalyzeLocationText,
+  type IReverseGeocodeService,
+} from './reverse-geocode.js';
 import { loadOrBuildProjectPharosContext, pharosRefsFromMatches } from '../pharos/context.js';
 import { matchAssetToPharos } from '../pharos/matcher.js';
 import {
@@ -120,6 +127,7 @@ export interface IAnalyzeWorkspaceProjectInput {
   budget?: ETargetBudget;
   progressPath?: string;
   performanceProfile?: IAnalyzePerformanceProfileOptions;
+  reverseGeocodeService?: IReverseGeocodeService | null;
 }
 
 export interface IAnalyzeWorkspaceProjectResult {
@@ -217,6 +225,11 @@ export async function analyzeWorkspaceProjectMedia(
     loadProjectDerivedTrack(projectRoot),
     loadProjectBriefConfig(projectRoot),
   ]);
+  const reverseGeocodeService = input.reverseGeocodeService
+    ?? await createProjectReverseGeocodeService({
+      projectRoot,
+      runtimeConfig,
+    });
   const pharosContext = await loadOrBuildProjectPharosContext({
     projectRoot,
     includedTripIds: projectBrief.pharos?.includedTripIds ?? [],
@@ -445,6 +458,7 @@ export async function analyzeWorkspaceProjectMedia(
           gpxPaths,
           gpxMatchToleranceMs: input.gpxMatchToleranceMs,
           budget: input.budget,
+          reverseGeocodeService,
           getMlHandle,
           performance,
           onStageChange: async (_stage, detail) => {
@@ -462,11 +476,12 @@ export async function analyzeWorkspaceProjectMedia(
             analysis: finalized,
             vocabulary: semanticVocabulary,
           });
-          if (directResult.slices.length === 0) {
+          const persistedSlices = consolidatePersistedSpeechSlices(directResult.slices);
+          if (persistedSlices.length === 0) {
             throw new Error(`素材 ${prepared.asset.displayName} 的 direct materialization 未生成任何 spans`);
           }
-          await appendTrackedSlices(prepared.asset, directResult.slices);
-          pendingSlices.push(...directResult.slices);
+          await appendTrackedSlices(prepared.asset, persistedSlices);
+          pendingSlices.push(...persistedSlices);
         }
         await removeAudioAnalysisCheckpoint(projectRoot, prepared.asset.id);
         if (!shouldFineScanReport(finalized.report)) {
@@ -1229,6 +1244,7 @@ interface IFinalizePreparedAssetInput {
   gpxPaths?: string[];
   gpxMatchToleranceMs?: number;
   budget?: ETargetBudget;
+  reverseGeocodeService?: IReverseGeocodeService | null;
   getMlHandle: () => Promise<MlAvailability>;
   onStageChange?: (stage: 'finalize', detail?: string) => Promise<void>;
   performance?: AnalyzePerformanceSession;
@@ -1396,6 +1412,7 @@ interface IAudioAnalysisTaskState {
 
 const CTALKING_HEAD_AUDIO_LED_MIN_SPEECH_COVERAGE = 0.12;
 const CTALKING_HEAD_AUDIO_LED_GAP_MS = 12_000;
+const CPERSISTED_SPEECH_SPAN_MERGE_GAP_MS = 6_000;
 const CDEFERRED_SCENE_DETECT_WINDOW_GAP_MS = 12_000;
 const CSCENIC_DRIVE_KEYWORDS = [
   'landscape',
@@ -1733,7 +1750,7 @@ async function finalizePreparedAsset(
     ...(audioContext.hasAvailableProtectionAudio ? ['protection-audio-available'] : []),
     ...(audioContext.selectedTranscriptSource === 'protection' ? ['protection-audio-fallback'] : []),
   ]);
-  const placeHints = dedupeStrings([
+  const basePlaceHints = dedupeStrings([
     ...(planning.visualSummary?.placeHints ?? []),
     ...(manualSpatial?.placeHints ?? []),
   ]);
@@ -1743,11 +1760,27 @@ async function finalizePreparedAsset(
     report: {
       clipTypeGuess: planning.decision.clipType,
       summary: planning.visualSummary?.description,
-      placeHints,
+      placeHints: basePlaceHints,
       labels,
       inferredGps: manualSpatial?.inferredGps,
     },
   });
+  const locationResolution = await resolveAnalyzeLocationText({
+    clipType: planning.decision.clipType,
+    manualSpatial,
+    pharosContext: input.pharosContext,
+    pharosMatches,
+    reverseGeocodeService: input.reverseGeocodeService,
+  });
+  const inferredGps = applyAnalyzeLocationText(
+    manualSpatial?.inferredGps
+      ?? buildPharosFallbackInferredGps(input.pharosContext, pharosMatches),
+    locationResolution.locationText,
+  );
+  const placeHints = dedupeStrings([
+    ...basePlaceHints,
+    ...locationResolution.placeHints,
+  ]);
 
   const report = buildAssetCoarseReport({
     asset: prepared.asset,
@@ -1757,7 +1790,7 @@ async function finalizePreparedAsset(
     materializationPath: planning.decision.materializationPath,
     fineScanMode: planning.decision.fineScanMode,
     gpsSummary: manualSpatial?.gpsSummary,
-    inferredGps: manualSpatial?.inferredGps,
+    inferredGps,
     summary: planning.visualSummary?.description,
     transcript: audioContext.selectedTranscript?.transcript,
     transcriptSegments: audioContext.selectedTranscript?.segments,
@@ -1811,6 +1844,70 @@ async function resolveManualSpatialContext(input: {
     pharosContext: input.pharosContext,
     derivedTrack: input.derivedTrack,
   });
+}
+
+function applyAnalyzeLocationText(
+  inferredGps: IInferredGps | undefined,
+  locationText: string | undefined,
+): IInferredGps | undefined {
+  if (!inferredGps) return undefined;
+  return {
+    ...inferredGps,
+    locationText: locationText?.trim() || undefined,
+  };
+}
+
+function buildPharosFallbackInferredGps(
+  pharosContext: Awaited<ReturnType<typeof loadOrBuildProjectPharosContext>> | null | undefined,
+  pharosMatches: Array<Pick<IAssetCoarseReport['pharosMatches'][number], 'ref' | 'confidence' | 'tripTitle' | 'dayTitle'>>,
+): IInferredGps | undefined {
+  const topMatch = pharosMatches[0];
+  if (!pharosContext || !topMatch) return undefined;
+
+  const shot = pharosContext.shots.find(item => (
+    item.ref.tripId === topMatch.ref.tripId
+    && item.ref.shotId === topMatch.ref.shotId
+  ));
+  if (!shot) return undefined;
+
+  const point = resolvePharosShotRepresentativePoint(shot);
+  if (!point) return undefined;
+
+  const trip = pharosContext.trips.find(item => item.tripId === shot.ref.tripId);
+  return {
+    source: 'pharos',
+    confidence: Math.max(0.35, Math.min(0.85, topMatch.confidence)),
+    lat: point.lat,
+    lng: point.lng,
+    timezone: trip?.timezone,
+    summary: [
+      'pharos',
+      topMatch.tripTitle,
+      topMatch.dayTitle,
+      shot.location,
+      shot.type,
+    ].filter(Boolean).join(' '),
+  };
+}
+
+function resolvePharosShotRepresentativePoint(
+  shot: IProjectPharosShot,
+): { lat: number; lng: number } | null {
+  const actualPoint = shot.actualGpsStart ?? shot.actualGpsEnd;
+  if (actualPoint) {
+    return { lng: actualPoint[0], lat: actualPoint[1] };
+  }
+  if (shot.gps) {
+    return { lng: shot.gps[0], lat: shot.gps[1] };
+  }
+  if (shot.gpsStart && shot.gpsEnd) {
+    return {
+      lng: (shot.gpsStart[0] + shot.gpsEnd[0]) / 2,
+      lat: (shot.gpsStart[1] + shot.gpsEnd[1]) / 2,
+    };
+  }
+  const fallback = shot.gpsStart ?? shot.gpsEnd;
+  return fallback ? { lng: fallback[0], lat: fallback[1] } : null;
 }
 
 async function resolvePreparedAssetPlanning(input: {
@@ -2555,12 +2652,12 @@ async function transcribeAudioContext(input: {
   }
 
   try {
-    const result = await transcribe(
-      input.ml.client,
-      input.localPath,
-      undefined,
-      { keepOtherModelsLoaded: CAUDIO_ANALYSIS_KEEP_OTHER_MODELS_LOADED },
-    );
+      const result = await transcribe(
+        input.ml.client,
+        input.localPath,
+        'zh',
+        { keepOtherModelsLoaded: CAUDIO_ANALYSIS_KEEP_OTHER_MODELS_LOADED },
+      );
     const segments = result.segments
       .map(segment => ({
         startMs: Math.max(0, Math.round(segment.start * 1000)),
@@ -3282,7 +3379,7 @@ async function finalizePhotoPreparedAsset(
     visualSummary?.sceneType,
     visualSummary?.subjects,
   );
-  const placeHints = dedupeStrings([
+  const basePlaceHints = dedupeStrings([
     ...(visualSummary?.placeHints ?? []),
     ...(manualSpatial?.placeHints ?? []),
   ]);
@@ -3292,11 +3389,27 @@ async function finalizePhotoPreparedAsset(
     report: {
       clipTypeGuess,
       summary: visualSummary?.description,
-      placeHints,
+      placeHints: basePlaceHints,
       labels,
       inferredGps: manualSpatial?.inferredGps,
     },
   });
+  const locationResolution = await resolveAnalyzeLocationText({
+    clipType: clipTypeGuess,
+    manualSpatial,
+    pharosContext: input.pharosContext,
+    pharosMatches,
+    reverseGeocodeService: input.reverseGeocodeService,
+  });
+  const inferredGps = applyAnalyzeLocationText(
+    manualSpatial?.inferredGps
+      ?? buildPharosFallbackInferredGps(input.pharosContext, pharosMatches),
+    locationResolution.locationText,
+  );
+  const placeHints = dedupeStrings([
+    ...basePlaceHints,
+    ...locationResolution.placeHints,
+  ]);
 
   const report = buildAssetCoarseReport({
     asset: input.prepared.asset,
@@ -3305,7 +3418,7 @@ async function finalizePhotoPreparedAsset(
     keepDecision: 'keep',
     materializationPath: 'direct',
     gpsSummary: manualSpatial?.gpsSummary,
-    inferredGps: manualSpatial?.inferredGps,
+    inferredGps,
     summary: visualSummary?.description,
     pharosMatches,
     primaryPharosRef: pharosMatches[0]?.ref,
@@ -3553,19 +3666,19 @@ function buildFineScanSlicesFallback(
 ): IKtepSlice[] {
   return effectiveSlices.map(slice => {
     const withTranscript = decorateSliceWithTranscript(slice, transcript);
-        return decorateSliceWithSemanticTags({
-          slice: {
-            ...withTranscript,
-            pharosRefs: pharosRefsFromMatches(report.pharosMatches),
+    return decorateSliceWithSemanticTags({
+      slice: {
+        ...withTranscript,
+        pharosRefs: pharosRefsFromMatches(report.pharosMatches),
       },
       clipType: report.clipTypeGuess,
       report,
       vocabulary,
       semanticWindow: withTranscript.semanticKind ? {
-            semanticKind: withTranscript.semanticKind,
-            reason: 'fine-scan-fallback',
-          } : null,
-        });
+        semanticKind: withTranscript.semanticKind,
+        reason: 'fine-scan-fallback',
+      } : null,
+    });
   });
 }
 
@@ -4733,13 +4846,14 @@ async function runFineScanPipeline(input: {
     }
 
     const task = preparedTasks[taskIndex];
+    const persistedSlices = consolidatePersistedSpeechSlices(nextEvent.result.slices);
     const finalizedReport = finalizeFineScanReport(
       nextEvent.result.updatedReport,
-      nextEvent.result.slices.length,
+      persistedSlices.length,
     );
-    if (nextEvent.result.slices.length > 0) {
-      await input.appendTrackedSlices(task.analysis.prepared.asset, nextEvent.result.slices);
-      pendingSlices.push(...nextEvent.result.slices);
+    if (persistedSlices.length > 0) {
+      await input.appendTrackedSlices(task.analysis.prepared.asset, persistedSlices);
+      pendingSlices.push(...persistedSlices);
       fineScannedAssetIds.push(task.analysis.prepared.asset.id);
     }
     task.analysis.report = finalizedReport;
@@ -5132,6 +5246,343 @@ function restoreTranscriptContextFromReport(
     speechCoverage: report.speechCoverage ?? 0,
     speechWindows: report.interestingWindows.filter(window => isSpeechSemanticWindow(window)),
   });
+}
+
+function consolidatePersistedSpeechSlices(
+  slices: IKtepSlice[],
+): IKtepSlice[] {
+  if (slices.length < 2) return slices;
+
+  const mergeableEntries = slices
+    .map((slice, index) => ({ slice, index }))
+    .filter((entry): entry is { slice: IKtepSlice; index: number } => isPersistedSpeechSlice(entry.slice));
+  if (mergeableEntries.length < 2) return slices;
+
+  const mergedSpeechEntries: Array<{ slice: IKtepSlice; firstIndex: number }> = [];
+  for (const entry of mergeableEntries.sort((left, right) =>
+    compareSliceRanges(left.slice, right.slice) || left.index - right.index,
+  )) {
+    const previous = mergedSpeechEntries[mergedSpeechEntries.length - 1];
+    if (previous && canMergePersistedSpeechSlices(previous.slice, entry.slice)) {
+      previous.slice = mergePersistedSpeechSlices(previous.slice, entry.slice);
+      continue;
+    }
+    mergedSpeechEntries.push({
+      slice: entry.slice,
+      firstIndex: entry.index,
+    });
+  }
+
+  const mergedIds = new Set(mergeableEntries.map(entry => entry.slice.id));
+  const combined = slices
+    .map((slice, index) => (
+      mergedIds.has(slice.id)
+        ? null
+        : {
+          slice,
+          sortIndex: index,
+        }
+    ))
+    .filter((entry): entry is { slice: IKtepSlice; sortIndex: number } => entry != null);
+
+  combined.push(
+    ...mergedSpeechEntries.map(entry => ({
+      slice: entry.slice,
+      sortIndex: entry.firstIndex,
+    })),
+  );
+
+  return combined
+    .sort((left, right) =>
+      compareSliceRanges(left.slice, right.slice) || left.sortIndex - right.sortIndex,
+    )
+    .map(entry => entry.slice);
+}
+
+function isPersistedSpeechSlice(slice: IKtepSlice): boolean {
+  if (!hasTranscriptOnSlice(slice)) return false;
+  if (slice.semanticKind === 'speech') return true;
+  return slice.grounding.speechMode === 'preferred';
+}
+
+function hasTranscriptOnSlice(slice: IKtepSlice): boolean {
+  return Boolean(
+    slice.transcriptSegments?.some(segment =>
+      segment.endMs > segment.startMs && segment.text.trim().length > 0,
+    )
+    || slice.transcript?.trim(),
+  );
+}
+
+function canMergePersistedSpeechSlices(
+  left: IKtepSlice,
+  right: IKtepSlice,
+): boolean {
+  if (left.assetId !== right.assetId) return false;
+  return resolvePersistedSpeechGapMs(left, right) <= CPERSISTED_SPEECH_SPAN_MERGE_GAP_MS;
+}
+
+function resolvePersistedSpeechGapMs(
+  left: IKtepSlice,
+  right: IKtepSlice,
+): number {
+  const leftEndMs = resolveSliceSpeechEndMs(left)
+    ?? left.sourceOutMs
+    ?? left.editSourceOutMs
+    ?? Number.NEGATIVE_INFINITY;
+  const rightStartMs = resolveSliceSpeechStartMs(right)
+    ?? right.sourceInMs
+    ?? right.editSourceInMs
+    ?? Number.POSITIVE_INFINITY;
+  return rightStartMs - leftEndMs;
+}
+
+function resolveSliceSpeechStartMs(slice: IKtepSlice): number | undefined {
+  const startMs = slice.transcriptSegments
+    ?.filter(segment => segment.endMs > segment.startMs && segment.text.trim().length > 0)
+    .map(segment => segment.startMs);
+  if (!startMs || startMs.length === 0) return undefined;
+  return Math.min(...startMs);
+}
+
+function resolveSliceSpeechEndMs(slice: IKtepSlice): number | undefined {
+  const endMs = slice.transcriptSegments
+    ?.filter(segment => segment.endMs > segment.startMs && segment.text.trim().length > 0)
+    .map(segment => segment.endMs);
+  if (!endMs || endMs.length === 0) return undefined;
+  return Math.max(...endMs);
+}
+
+function mergePersistedSpeechSlices(
+  left: IKtepSlice,
+  right: IKtepSlice,
+): IKtepSlice {
+  const transcriptSegments = mergeTranscriptSegments([
+    ...(left.transcriptSegments ?? []),
+    ...(right.transcriptSegments ?? []),
+  ]);
+  const transcript = buildMergedSliceTranscript(
+    transcriptSegments,
+    [left.transcript, right.transcript],
+  );
+  const sourceInMs = pickDefinedMin([
+    left.sourceInMs,
+    right.sourceInMs,
+  ]);
+  const sourceOutMs = pickDefinedMax([
+    left.sourceOutMs,
+    right.sourceOutMs,
+  ]);
+  const editSourceInMs = pickDefinedMin([
+    left.editSourceInMs,
+    right.editSourceInMs,
+    left.sourceInMs,
+    right.sourceInMs,
+  ]);
+  const editSourceOutMs = pickDefinedMax([
+    left.editSourceOutMs,
+    right.editSourceOutMs,
+    left.sourceOutMs,
+    right.sourceOutMs,
+  ]);
+  const speechCoverage = transcriptSegments.length > 0
+    ? computeSpeechCoverageFromSegments(sourceInMs, sourceOutMs, transcriptSegments)
+    : Math.max(left.speechCoverage ?? 0, right.speechCoverage ?? 0) || undefined;
+
+  return {
+    ...left,
+    semanticKind: left.semanticKind ?? right.semanticKind,
+    sourceInMs,
+    sourceOutMs,
+    editSourceInMs,
+    editSourceOutMs,
+    transcript: transcript || undefined,
+    transcriptSegments: transcriptSegments.length > 0 ? transcriptSegments : undefined,
+    materialPatterns: mergeMaterialPatternsForPersistence(left.materialPatterns, right.materialPatterns),
+    grounding: mergeGroundingForPersistence(left.grounding, right.grounding),
+    narrativeFunctions: mergeSemanticTagSetForPersistence(left.narrativeFunctions, right.narrativeFunctions),
+    shotGrammar: mergeSemanticTagSetForPersistence(left.shotGrammar, right.shotGrammar),
+    viewpointRoles: mergeSemanticTagSetForPersistence(left.viewpointRoles, right.viewpointRoles),
+    subjectStates: mergeSemanticTagSetForPersistence(left.subjectStates, right.subjectStates),
+    evidence: dedupeEvidence([...(left.evidence ?? []), ...(right.evidence ?? [])]),
+    pharosRefs: dedupeByJson([...(left.pharosRefs ?? []), ...(right.pharosRefs ?? [])]),
+    speechCoverage,
+  };
+}
+
+function mergeTranscriptSegments(
+  segments: ITranscriptSegment[],
+): ITranscriptSegment[] {
+  const merged: ITranscriptSegment[] = [];
+  const normalized = segments
+    .map(segment => ({
+      startMs: segment.startMs,
+      endMs: segment.endMs,
+      text: segment.text.trim(),
+    }))
+    .filter(segment => segment.endMs > segment.startMs && segment.text.length > 0)
+    .sort((left, right) =>
+      left.startMs - right.startMs || left.endMs - right.endMs || left.text.localeCompare(right.text),
+    );
+
+  for (const segment of normalized) {
+    const previous = merged[merged.length - 1];
+    if (
+      previous
+      && previous.text === segment.text
+      && segment.startMs <= previous.endMs + 50
+    ) {
+      previous.endMs = Math.max(previous.endMs, segment.endMs);
+      continue;
+    }
+    merged.push(segment);
+  }
+
+  return merged;
+}
+
+function buildMergedSliceTranscript(
+  segments: ITranscriptSegment[],
+  fallbackTexts: Array<string | undefined>,
+): string {
+  if (segments.length > 0) {
+    return segments.map(segment => segment.text).join(' ').trim();
+  }
+  return dedupeStrings(fallbackTexts).join(' ').trim();
+}
+
+function mergeMaterialPatternsForPersistence(
+  left: IKtepSlice['materialPatterns'],
+  right: IKtepSlice['materialPatterns'],
+): IKtepSlice['materialPatterns'] {
+  const seen = new Set<string>();
+  return [...left, ...right].filter(pattern => {
+    const key = `${pattern.phrase}:${pattern.excerpt ?? ''}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function mergeGroundingForPersistence(
+  left: IKtepSlice['grounding'],
+  right: IKtepSlice['grounding'],
+): IKtepSlice['grounding'] {
+  return {
+    speechMode: pickPreferredSpeechMode(left.speechMode, right.speechMode),
+    speechValue: pickPreferredSpeechValue(left.speechValue, right.speechValue),
+    spatialEvidence: dedupeByJson([
+      ...(left.spatialEvidence ?? []),
+      ...(right.spatialEvidence ?? []),
+    ]),
+    pharosRefs: dedupeByJson([
+      ...(left.pharosRefs ?? []),
+      ...(right.pharosRefs ?? []),
+    ]),
+  };
+}
+
+function pickPreferredSpeechMode(
+  left: IKtepSlice['grounding']['speechMode'],
+  right: IKtepSlice['grounding']['speechMode'],
+): IKtepSlice['grounding']['speechMode'] {
+  const priority: Record<IKtepSlice['grounding']['speechMode'], number> = {
+    none: 0,
+    available: 1,
+    preferred: 2,
+  };
+  return priority[right] > priority[left] ? right : left;
+}
+
+function pickPreferredSpeechValue(
+  left: IKtepSlice['grounding']['speechValue'],
+  right: IKtepSlice['grounding']['speechValue'],
+): IKtepSlice['grounding']['speechValue'] {
+  const priority: Record<IKtepSlice['grounding']['speechValue'], number> = {
+    none: 0,
+    mixed: 1,
+    emotional: 2,
+    informative: 3,
+  };
+  return priority[right] > priority[left] ? right : left;
+}
+
+function mergeSemanticTagSetForPersistence(
+  left: IKtepSlice['narrativeFunctions'],
+  right: IKtepSlice['narrativeFunctions'],
+): IKtepSlice['narrativeFunctions'] {
+  return {
+    core: dedupeStrings([...(left.core ?? []), ...(right.core ?? [])]),
+    extra: dedupeStrings([...(left.extra ?? []), ...(right.extra ?? [])]),
+    evidence: dedupeByJson([...(left.evidence ?? []), ...(right.evidence ?? [])]),
+  };
+}
+
+function computeSpeechCoverageFromSegments(
+  sourceInMs: number | undefined,
+  sourceOutMs: number | undefined,
+  segments: ITranscriptSegment[],
+): number | undefined {
+  const durationMs = resolveSliceDurationMs(sourceInMs, sourceOutMs);
+  if (!durationMs || durationMs <= 0) return undefined;
+  const coveredMs = segments.reduce(
+    (sum, segment) => sum + Math.max(0, segment.endMs - segment.startMs),
+    0,
+  );
+  return Math.min(coveredMs / durationMs, 1);
+}
+
+function pickDefinedMin(values: Array<number | undefined>): number | undefined {
+  const defined = values.filter((value): value is number => typeof value === 'number');
+  if (defined.length === 0) return undefined;
+  return Math.min(...defined);
+}
+
+function pickDefinedMax(values: Array<number | undefined>): number | undefined {
+  const defined = values.filter((value): value is number => typeof value === 'number');
+  if (defined.length === 0) return undefined;
+  return Math.max(...defined);
+}
+
+function compareSliceRanges(
+  left: IKtepSlice,
+  right: IKtepSlice,
+): number {
+  const leftStartMs = resolveSliceSpeechStartMs(left)
+    ?? left.sourceInMs
+    ?? left.editSourceInMs
+    ?? Number.POSITIVE_INFINITY;
+  const rightStartMs = resolveSliceSpeechStartMs(right)
+    ?? right.sourceInMs
+    ?? right.editSourceInMs
+    ?? Number.POSITIVE_INFINITY;
+  if (leftStartMs !== rightStartMs) {
+    return leftStartMs - rightStartMs;
+  }
+
+  const leftEndMs = resolveSliceSpeechEndMs(left)
+    ?? left.sourceOutMs
+    ?? left.editSourceOutMs
+    ?? Number.POSITIVE_INFINITY;
+  const rightEndMs = resolveSliceSpeechEndMs(right)
+    ?? right.sourceOutMs
+    ?? right.editSourceOutMs
+    ?? Number.POSITIVE_INFINITY;
+  return leftEndMs - rightEndMs;
+}
+
+function dedupeByJson<T>(
+  values: T[],
+): T[] {
+  const seen = new Set<string>();
+  const deduped: T[] = [];
+  for (const value of values) {
+    const key = JSON.stringify(value);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(value);
+  }
+  return deduped;
 }
 
 function resolveAssetRootAvailable(

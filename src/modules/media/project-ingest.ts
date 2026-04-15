@@ -25,6 +25,7 @@ import {
 import { refreshProjectDerivedTrackCache } from './project-derived-track.js';
 import { probe, type IMediaToolConfig } from './probe.js';
 import { resolveProtectionAudioBinding } from './protection-audio.js';
+import type { IReverseGeocodeService } from './reverse-geocode.js';
 import { resolveMediaRootsForDevice, toPortableRelativePath } from './root-resolver.js';
 import { scanDirectory } from './scanner.js';
 import { prepareRootSameSourceGpsContext, resolveAssetSameSourceGpsBinding } from './same-source-gps.js';
@@ -36,6 +37,7 @@ export interface IIngestWorkspaceProjectInput {
   deviceMapPath?: string;
   resolveTimezoneFromLocation?: (location: string) => Promise<string | null>;
   geocodeLocation?: (location: string) => Promise<{ lat: number; lng: number } | null>;
+  reverseGeocodeService?: IReverseGeocodeService | null;
 }
 
 export interface IIngestedRootSummary {
@@ -115,6 +117,7 @@ export async function ingestWorkspaceProjectMedia(
     projectRoot,
     resolveTimezoneFromLocation: input.resolveTimezoneFromLocation,
     geocodeLocation: input.geocodeLocation,
+    reverseGeocodeService: input.reverseGeocodeService,
   });
   const chronologyCount = await refreshProjectChronology(projectRoot);
   await touchProjectUpdatedAt(projectRoot);

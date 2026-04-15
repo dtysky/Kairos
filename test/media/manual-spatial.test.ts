@@ -92,7 +92,11 @@ describe('manual itinerary redesign', () => {
       lng: 116.397463,
       timezone: 'Asia/Shanghai',
       matchedItinerarySegmentId: 'seg-1',
-      locationText: '北京市天安门',
     }));
+    expect(result?.locationCandidates).toEqual([{
+      role: 'point',
+      lat: 39.909187,
+      lng: 116.397463,
+    }]);
   });
 });

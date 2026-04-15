@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -143,5 +143,39 @@ describe('project derived track cache', () => {
       startTime: '2026-03-31T07:15:00.000Z',
       endTime: '2026-03-31T08:45:00.000Z',
     }));
+  });
+
+  it('prewarms reverse geocode cache with derived coordinates when service is provided', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectRoot = await initWorkspaceProject(workspaceRoot, 'project-d', 'Test Project');
+    const prewarm = vi.fn(async () => undefined);
+
+    await writeJson(join(projectRoot, 'store/assets.json'), [
+      {
+        id: 'asset-1',
+        kind: 'video',
+        sourcePath: 'drone/clip.mp4',
+        displayName: 'clip.mp4',
+        capturedAt: '2026-03-31T08:15:30.000Z',
+        metadata: {
+          rawTags: {
+            location: '+39.555555+116.666666+100.000/',
+          },
+        },
+      },
+    ]);
+
+    await refreshProjectDerivedTrackCache({
+      projectRoot,
+      reverseGeocodeService: {
+        prewarm,
+        reverseGeocode: async () => null,
+      },
+    });
+
+    expect(prewarm).toHaveBeenCalledWith([{
+      lat: 39.555555,
+      lng: 116.666666,
+    }]);
   });
 });
