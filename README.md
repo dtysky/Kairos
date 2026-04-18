@@ -60,7 +60,7 @@ Current stable pipeline:
     - `style-profile-synthesizer` reads only that packetized summary and writes `style-draft.json`
     - `style-profile-reviewer` reads only the draft + packet and writes `style-review.json`
     - reviewer blockers are a hard gate before `config/styles/{category}.md`
-    - formal stage execution should prefer a host packet runner / real subagent chain; direct `ILlmClient` chat is only a compatibility fallback for non-agent hosts and local debugging
+    - formal stage execution must use a host packet runner / real subagent chain; external `ILlmClient` fallback is not allowed on the official path
     - workspace/project runtime may declare that packet runner via `config/runtime.json` `agentPacketRunnerCommand` / `agentPacketRunnerArgs` / `agentPacketRunnerCwd`
 - the `/script` console page now acts as deterministic script preparation:
   - user first selects a workspace `styleCategory` in `/script`; that selection auto-saves
@@ -77,7 +77,7 @@ Current stable pipeline:
     - stage reviews write to `script/reviews/{stage}.json`
     - pipeline state writes to `script/agent-pipeline.json`
     - each stage packet is the only formal subagent context; runtime must not append hidden thread history or duplicate `previousDraft` / `revisionBrief` outside the packet
-    - formal stage execution should prefer a host-level packet runner / real clean-context subagent chain; direct `ILlmClient` chat is only a compatibility fallback for non-agent hosts and local debugging
+    - formal stage execution must use a host-level packet runner / real clean-context subagent chain; external `ILlmClient` fallback is not allowed on the official path
     - workspace/project runtime may declare that packet runner via `config/runtime.json` `agentPacketRunnerCommand` / `agentPacketRunnerArgs` / `agentPacketRunnerCwd`
     - first-attempt stage packets should stay lean and only carry prior drafts on retry / revise paths
   - the final `script/current.json` remains the only formal script output consumed by timeline/export
@@ -95,7 +95,10 @@ Current stable pipeline:
   - deterministic prep no longer treats style averages or inferred material capacity as the driver of rough-cut duration; `targetDurationMs` stays optional and advisory-only unless the user explicitly sets it
   - rough-cut recall is now high-recall by default: valid spans should stay in `material-slots / outline / script` unless they are empty, clearly bad, or near-duplicate
   - `analysis/material-bundles.json` is now a full span index, and `script/material-slots.json` may fan out to many single-span slots instead of one shortlist slot per segment
+  - `material-slots` is now authored formally by deterministic prep; `buildMaterialSlotsDocument()` is the only official writer of `script/material-slots.json`
+  - `route-slot-planner` is no longer a formal recall author; if retained, it may only review or diagnose recall quality and must not rewrite `chosenSpanIds`
   - `material-slots` now treats the deterministic base draft as a high-recall floor: silent `chosenSpanIds` drops are recall regressions that reviewer / runner must block
+  - `beat-writer` now only owns expression fields such as `text`, `utterances`, `notes`, `muteSource`, and `preserveNatSound`; recall facts such as `audioSelections`, `visualSelections`, and `linkedSpanIds` stay locked from deterministic prep / outline
   - key process videos with real event progression / relationship progression / effective source speech are now protected from being swallowed by broad summary segments
 - project brief now carries one project-level semantic vocab layer for analyze/script:
   - `材料模式短语`
@@ -144,6 +147,12 @@ Current stable pipeline:
 - source-speech windows no longer delete companion visuals; `visualSelections[]` stay available for serial cutaway placement while `audioSelections[]` alone define the preserved source audio
 - audible `dialogue` / `nat` clips now receive non-destructive loudness normalization toward `-16 LUFS` with clip gain, with true peak protection capped at `-1 dBTP`
 - rough-cut timeline placement now keeps effective source windows by default instead of fitting clips against `beat.targetDurationMs`; photos default to `1s` silent holds unless the script explicitly asks for a longer `holdMs`
+- Timeline now owns one formal internal substage before `timeline/current.json`:
+  - deterministic prep writes `timeline/rough-cut-base.json`
+  - `segment-cut-refiner` writes `timeline/segment-cuts/<segmentId>.json`
+  - `segment-cut-reviewer` writes `timeline/reviews/<segmentId>.json`
+  - pipeline state writes `timeline/agent-pipeline.json`
+  - official placement / subtitle generation must consume reviewed segment-cut artifacts, not silently fall back to raw `script/current.json` assembly when the review chain is missing or failed
 - when the same asset contributes both source-speech and silent `drive / aerial` material, source-speech owns the overlapping source window and silent montage may only use the non-overlapping remainder
 - when the same `drive / aerial` asset is reused by later silent montage beats, the later beat should only keep source remainder that has not already been consumed earlier in the rough cut
 - chronology guard 与 selection / beat 排序当前也必须统一读取 `media/chronology.json` 的 `sortCapturedAt`，不再允许 timeline 私自回退到原始 `asset.capturedAt`

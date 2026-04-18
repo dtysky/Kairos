@@ -9,13 +9,7 @@ import type {
   ISpatialStoryContext,
   IStyleProfile,
 } from '../../protocol/schema.js';
-import type { ILlmClient } from '../llm/client.js';
-import {
-  isJsonPacketAgentRunner,
-  isLlmClient,
-  LlmJsonPacketAgentRunner,
-  type IJsonPacketAgentRunner,
-} from '../agents/runtime.js';
+import type { IJsonPacketAgentRunner } from '../agents/runtime.js';
 import type { IOutlineBeat, IOutlineSegment } from './outline-builder.js';
 import { buildRhythmMaterialPromptLines } from './style-rhythm.js';
 
@@ -32,19 +26,11 @@ export interface IScriptGenerationContext {
 }
 
 export async function generateScript(
-  runnerOrLlm: IJsonPacketAgentRunner | ILlmClient,
+  agentRunner: IJsonPacketAgentRunner,
   outline: IOutlineSegment[],
   style: IStyleProfile,
   context?: IScriptGenerationContext,
 ): Promise<IKtepScript[]> {
-  const agentRunner = isJsonPacketAgentRunner(runnerOrLlm)
-    ? runnerOrLlm
-    : isLlmClient(runnerOrLlm)
-      ? new LlmJsonPacketAgentRunner(runnerOrLlm)
-      : null;
-  if (!agentRunner) {
-    throw new Error('generateScript requires an agent runner or compatibility llm client');
-  }
   const styleText = buildStylePrompt(style);
   const outlineText = buildOutlinePrompt(outline);
   const contextText = buildGenerationContextPrompt(context);
@@ -56,7 +42,8 @@ export async function generateScript(
       '必须严格遵循 contract、outline 和 style 中已给出的约束。',
       '缺证据时必须保守，不脑补地点、事件和情绪。',
       '不要通过删 beat 来掩盖材料密度。',
-      'source-speech beat 必须显式输出 audioSelections[] 和 visualSelections[]。',
+      '不得改写 outline 已锁定的 audioSelections[]、visualSelections[]、linkedSpanIds 或 linkedSliceIds。',
+      '只允许改写表达层字段：text、utterances、notes、muteSource、preserveNatSound。',
     ],
     allowedInputs: [
       'material overview',
@@ -247,33 +234,28 @@ export function buildOutlinePrompt(outline: IOutlineSegment[]): string {
 function normalizeSegment(raw: unknown, fallback: IOutlineSegment): IKtepScript {
   const source = typeof raw === 'object' && raw ? raw as Record<string, unknown> : {};
   const beats = normalizeBeats(source.beats, fallback.beats);
-  const selections = normalizeSelections(source.selections, fallback.selections);
   const linkedSpanIds = dedupeStrings([
-    ...normalizeStringArray(source.linkedSpanIds),
     ...beats.flatMap(beat => beat.linkedSpanIds),
     ...fallback.spanIds,
   ]);
   const linkedSliceIds = dedupeStrings([
-    ...normalizeStringArray(source.linkedSliceIds),
+    ...beats.flatMap(beat => beat.linkedSliceIds),
     ...linkedSpanIds,
   ]);
 
   return {
-    id: stringValue(source.id) ?? fallback.id,
-    role: normalizeRole(stringValue(source.role), fallback.role),
-    title: stringValue(source.title) ?? fallback.title,
+    id: fallback.id,
+    role: fallback.role,
+    title: fallback.title,
     narration: stringValue(source.narration) ?? mergeBeatNarration(beats),
-    targetDurationMs: positiveNumber(source.targetDurationMs),
-    actions: normalizeActions(source.actions),
-    selections: selections.length > 0 ? selections : undefined,
+    targetDurationMs: fallback.estimatedDurationMs,
+    actions: mergeExpressionActions(source.actions, undefined),
+    selections: fallback.selections.length > 0 ? fallback.selections : undefined,
     linkedSpanIds,
     linkedSliceIds,
-    pharosRefs: mergePharosRefs([
-      ...selections,
-      ...beats.flatMap(beat => collectBeatSelections(beat)),
-    ]),
+    pharosRefs: mergePharosRefs(beats.flatMap(beat => collectBeatSelections(beat))),
     beats,
-    notes: stringValue(source.notes),
+    notes: stringValue(source.notes) ?? (fallback.notes.join(' / ') || undefined),
   };
 }
 
@@ -294,42 +276,13 @@ function normalizeBeats(raw: unknown, fallbackBeats: IOutlineBeat[]): IKtepScrip
   });
 
   const usedIndexes = new Set<number>();
-  const coveredSpanIds = new Set<string>();
-  const beats = fallbackBeats.map((fallback, index) => {
+  return fallbackBeats.map((fallback, index) => {
     const matchedIndex = consumeMatchedBeatIndex(fallback.id, index, rawItems, rawIndexesById, usedIndexes);
-    const normalized = normalizeBeatRecord(
+    return normalizeBeatRecord(
       matchedIndex != null ? rawItems[matchedIndex] : undefined,
       fallback,
     );
-    normalized.linkedSpanIds.forEach(spanId => coveredSpanIds.add(spanId));
-    return normalized;
   });
-
-  rawItems.forEach((item, index) => {
-    if (usedIndexes.has(index)) return;
-    const normalized = normalizeBeatRecord(item);
-    const freshSpanIds = normalized.linkedSpanIds.filter(spanId => !coveredSpanIds.has(spanId));
-    if (freshSpanIds.length === 0) return;
-    const freshAudioSelections = filterSelectionsBySpanIds(normalized.audioSelections, freshSpanIds);
-    const freshVisualSelections = filterSelectionsBySpanIds(normalized.visualSelections, freshSpanIds);
-    beats.push({
-      ...normalized,
-      audioSelections: freshAudioSelections.length > 0 ? freshAudioSelections : normalized.audioSelections,
-      visualSelections: freshVisualSelections.length > 0 ? freshVisualSelections : normalized.visualSelections,
-      linkedSpanIds: freshSpanIds,
-      linkedSliceIds: dedupeStrings([
-        ...normalized.linkedSliceIds,
-        ...freshSpanIds,
-      ]),
-      pharosRefs: mergePharosRefs([
-        ...(freshAudioSelections.length > 0 ? freshAudioSelections : normalized.audioSelections),
-        ...(freshVisualSelections.length > 0 ? freshVisualSelections : normalized.visualSelections),
-      ]),
-    });
-    freshSpanIds.forEach(spanId => coveredSpanIds.add(spanId));
-  });
-
-  return beats;
 }
 
 function consumeMatchedBeatIndex(
@@ -356,32 +309,24 @@ function normalizeBeatRecord(
   fallback?: IOutlineBeat,
 ): IKtepScriptBeat {
   const safeSource = source ?? {};
-  const audioSelections = normalizeSelections(
-    safeSource.audioSelections,
-    fallback?.audioSelections ?? [],
-  );
-  const visualSelections = normalizeSelections(
-    safeSource.visualSelections,
-    fallback?.visualSelections ?? [],
-  );
+  const audioSelections = fallback?.audioSelections ?? [];
+  const visualSelections = fallback?.visualSelections ?? [];
   const linkedSpanIds = dedupeStrings([
-    ...normalizeStringArray(safeSource.linkedSpanIds),
-    ...audioSelections.map(selection => selection.spanId),
-    ...visualSelections.map(selection => selection.spanId),
     ...(fallback?.linkedSpanIds ?? []),
   ]);
   const linkedSliceIds = dedupeStrings([
-    ...normalizeStringArray(safeSource.linkedSliceIds),
     ...linkedSpanIds,
   ]);
   const utterances = normalizeUtterances(safeSource.utterances);
 
   return {
-    id: stringValue(safeSource.id) ?? fallback?.id ?? randomUUID(),
+    id: fallback?.id ?? stringValue(safeSource.id) ?? randomUUID(),
     text: stringValue(safeSource.text) ?? resolveFallbackBeatText(fallback),
     utterances: utterances.length > 0 ? utterances : undefined,
-    targetDurationMs: positiveNumber(safeSource.targetDurationMs),
-    actions: normalizeActions(safeSource.actions),
+    targetDurationMs: undefined,
+    actions: mergeExpressionActions(safeSource.actions, fallback?.sourceSpeechDecision === 'preserve'
+      ? { preserveNatSound: true, muteSource: undefined }
+      : undefined),
     audioSelections,
     visualSelections,
     linkedSpanIds,
@@ -433,40 +378,6 @@ function resolveFallbackBeatText(beat: IOutlineBeat | undefined): string {
   return '';
 }
 
-function normalizeSelections(raw: unknown, fallback: IKtepScriptSelection[]): IKtepScriptSelection[] {
-  if (!Array.isArray(raw) || raw.length === 0) {
-    return fallback;
-  }
-
-  const result: IKtepScriptSelection[] = [];
-  for (const item of raw) {
-    if (!item || typeof item !== 'object') continue;
-    const source = item as Record<string, unknown>;
-    const assetId = stringValue(source.assetId);
-    if (!assetId) continue;
-    result.push({
-      assetId,
-      spanId: stringValue(source.spanId) ?? stringValue(source.sliceId),
-      sliceId: stringValue(source.sliceId) ?? stringValue(source.spanId),
-      sourceInMs: positiveNumber(source.sourceInMs),
-      sourceOutMs: positiveNumber(source.sourceOutMs),
-      notes: stringValue(source.notes),
-      pharosRefs: normalizePharosRefs(source.pharosRefs),
-    });
-  }
-
-  return result.length > 0 ? result : fallback;
-}
-
-function filterSelectionsBySpanIds(
-  selections: IKtepScriptSelection[],
-  spanIds: string[],
-): IKtepScriptSelection[] {
-  return selections.filter(selection =>
-    selection.spanId != null && spanIds.includes(selection.spanId),
-  );
-}
-
 function normalizeUtterances(raw: unknown): IKtepBeatUtterance[] {
   if (!Array.isArray(raw)) return [];
   const utterances: IKtepBeatUtterance[] = [];
@@ -484,36 +395,43 @@ function normalizeUtterances(raw: unknown): IKtepBeatUtterance[] {
   return utterances;
 }
 
-function normalizeActions(raw: unknown): IKtepScript['actions'] | undefined {
-  if (!raw || typeof raw !== 'object') return undefined;
+function mergeExpressionActions(
+  raw: unknown,
+  fallback?: Pick<NonNullable<IKtepScript['actions']>, 'preserveNatSound' | 'muteSource'>,
+): IKtepScript['actions'] | undefined {
+  if (!raw || typeof raw !== 'object') {
+    return fallback && (
+      typeof fallback.preserveNatSound === 'boolean'
+      || typeof fallback.muteSource === 'boolean'
+    )
+      ? {
+        preserveNatSound: fallback.preserveNatSound,
+        muteSource: fallback.muteSource,
+      }
+      : undefined;
+  }
   const source = raw as Record<string, unknown>;
-  const speed = positiveNumber(source.speed);
-  const holdMs = positiveNumber(source.holdMs);
-  const transitionHint = stringValue(source.transitionHint);
-  const preserveNatSound = typeof source.preserveNatSound === 'boolean' ? source.preserveNatSound : undefined;
-  const muteSource = typeof source.muteSource === 'boolean' ? source.muteSource : undefined;
+  const rawPreserveNatSound = source.preserveNatSound;
+  const rawMuteSource = source.muteSource;
+  const preserveNatSound = typeof rawPreserveNatSound === 'boolean' ? rawPreserveNatSound : undefined;
+  const muteSource = typeof rawMuteSource === 'boolean' ? rawMuteSource : undefined;
+  const nextPreserveNatSound = typeof preserveNatSound === 'boolean'
+    ? preserveNatSound
+    : fallback?.preserveNatSound;
+  const nextMuteSource = typeof muteSource === 'boolean'
+    ? muteSource
+    : fallback?.muteSource;
 
   if (
-    typeof speed !== 'number'
-    && typeof holdMs !== 'number'
-    && !transitionHint
-    && typeof preserveNatSound !== 'boolean'
-    && typeof muteSource !== 'boolean'
+    typeof nextPreserveNatSound !== 'boolean'
+    && typeof nextMuteSource !== 'boolean'
   ) {
     return undefined;
   }
 
   return {
-    speed,
-    holdMs,
-    transitionHint: transitionHint === 'cut'
-      || transitionHint === 'cross-dissolve'
-      || transitionHint === 'fade'
-      || transitionHint === 'wipe'
-      ? transitionHint
-      : undefined,
-    preserveNatSound,
-    muteSource,
+    preserveNatSound: nextPreserveNatSound,
+    muteSource: nextMuteSource,
   };
 }
 

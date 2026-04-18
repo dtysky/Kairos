@@ -50,7 +50,7 @@ Kairos 的标准顺序是：
   - `/script` 会用显眼的 workflow prompt / modal 提示“下一步回到 Agent”或“点击准备给 Agent”
   - 再点击 `准备给 Agent`
   - 最后回到 Agent 生成 `script/current.json`
-- 第六步基于脚本和素材构建 `timeline/current.json`
+- 第六步基于脚本和素材进入 `Timeline`：先产出 `timeline/rough-cut-base.json`，再经过 `segment-cut-refiner -> segment-cut-reviewer`，最后才落正式 `timeline/current.json`
 - 第七步在目标 NLE 和导出目录明确后执行 Export
 
 ## 用户真正该编辑的入口
@@ -78,7 +78,7 @@ Kairos 的标准顺序是：
 - 有项目骨架但没有 `store/assets.json`：先做 `Ingest`
 - 有 `store/assets.json` 但没有 `store/slices.json`：先做 `Analyze`
 - 有 `store/slices.json` 但没有 `script/current.json`：先做 `Script`
-- 有 `script/current.json` 但没有 `timeline/current.json`：先做 `Timeline`
+- 有 `script/current.json` 但没有 `timeline/current.json`：先做 `Timeline`（内部会先跑 `rough-cut-base -> segment-cut-refiner -> segment-cut-reviewer`）
 - 有 `timeline/current.json`：进入 `Export` 或迭代修改
 
 如果用户是追加素材，不要回到全新项目口径；应按：

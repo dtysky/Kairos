@@ -20,6 +20,7 @@ alwaysApply: true
 2. 计划确认后，先更新相关设计文档，再开始实现。
 3. 实现完成后，必须回查并同步受影响的设计文档、rules 和 skills，再结束本轮。
 4. 如果变更影响正式入口、监控页、工作流主路径或用户操作方式，还必须同步更新：
+   - `AGENTS.md`
    - `README.md`
    - `designs/current-solution-summary.md`
    - `designs/architecture.md`
@@ -29,4 +30,5 @@ alwaysApply: true
 - 不要在需求尚未收敛前直接改代码。
 - 不要先实现、后补设计文档。
 - 不要只更新代码而遗漏 rules / skills / README / 主设计文档中的正式口径。
+- 不要遗漏 `AGENTS.md` 里的仓库级正式 workflow / runtime 口径同步。
 - 不要把兼容脚本、临时调试入口或历史页面误写成当前正式入口。

@@ -13,3 +13,13 @@ export {
   type IBuildConfig,
   type ITimelineRuntimeConfig,
 } from './timeline-builder.js';
+export {
+  buildProjectTimeline,
+  type IBuildProjectTimelineInput,
+  type IBuildProjectTimelineResult,
+} from './project-timeline.js';
+export {
+  buildDeterministicRoughCutBase,
+  buildTimelineScriptFromSegmentCuts,
+  findSegmentCutBeat,
+} from './segment-cuts.js';

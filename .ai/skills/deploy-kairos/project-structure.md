@@ -32,9 +32,6 @@ Kairos/
 │       │   ├── evidence.ts
 │       │   ├── recognizer.ts
 │       │   └── index.ts
-│       ├── llm/
-│       │   ├── client.ts     # ILlmClient + OpenAIClient
-│       │   └── index.ts
 │       ├── script/           # Script generation + style loading
 │       │   ├── style-analyzer.ts
 │       │   ├── style-loader.ts

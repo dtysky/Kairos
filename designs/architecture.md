@@ -40,19 +40,22 @@
   - Script / Timeline 当前会在内部把这些现有 style 信号解析成一个轻量运行时 `ResolvedArrangementSignals`，用于判断当前风格主轴更偏时间推进、空间推进、情感推进还是结果回看；它不是新的公开 schema
   - `/script` 改 `styleCategory` 时，旧的项目级脚本产物现在必须立即整体失效；系统要清空旧 `material-overview`、brief 草稿、outline、arrangement artifacts 和 `script/current.json`，而不是继续让新风格复用旧产物
   - Script stage packet 现在是 clean-context subagent 的唯一正式输入；runtime 不应再在 packet 之外偷偷附加主线程历史、`previousDraft` 或 `revisionBrief`
-  - 正式 stage 执行后端应优先使用宿主 packet runner / 真实 clean-context subagent 链；直接 `ILlmClient` chat 只作为非 agent 宿主或本地调试的兼容 fallback
+  - 正式 stage 执行后端必须使用宿主 packet runner / 真实 clean-context subagent 链；官方路径不允许外接 `ILlmClient` fallback
   - workspace / project runtime 可通过 `config/runtime.json` 的 `agentPacketRunnerCommand` / `agentPacketRunnerArgs` / `agentPacketRunnerCwd` 声明这个 packet runner
   - 首轮 stage 调用默认应保持 lean packet，只在 reviewer 要求返工时再把 previous draft 带回 writer
    - `script/current.json` 的正式落盘形状固定为 bare `IKtepScript[]`；若 transport 因 JSON-object 模式返回 `{ segments: [...] }`，必须由 stage runner 在持久化前解包，不能变成主代理的临时补锅动作
    - `script-current` 每次 attempt 只允许一次正式 `beat-writer` 调用；不能先额外跑一轮整稿 writer 再进入 reviewer 链
    - writer / reviewer 调用失败时，`script/agent-pipeline.json` 必须立即写出真实失败态，不能继续停留在旧阶段的 `pending`
+   - `buildMaterialSlotsDocument()` 当前是 `script/material-slots.json` 的唯一正式作者；`route-slot-planner` 已退出正式 recall 写入链，只能保留为非权威审查 / 诊断
+   - `beat-writer` 的正式权限当前收缩到表达层：只允许改写 `text / utterances / notes / muteSource / preserveNatSound`，不得改写 `audioSelections / visualSelections / linkedSpanIds`
    - `outline` 在交给 `beat-writer` 前应先做轻量 deterministic 去噪与聚合：明显设备口令 / 导航播报 / noisy-ASR 不应默认视为 source-speech 锚点，连续的非口播证据应合并成更少的 beat
+   - `Script -> Timeline` 之间当前新增一层正式段级粗剪子阶段：deterministic rough-cut base -> `segment-cut-refiner` -> `segment-cut-reviewer` -> `timeline/current.json`
    - 风格档案最终落成当前正式改成 clean-context subagent 流水线，而不是一个通用 style prompt 直接吃完整批量报告：
    - deterministic prep 会额外写 `analysis/style-references/{category}/agent-summary.json`
      - `style-profile-synthesizer` 只读取自己的 packet / summary，并先写 `style-draft.json`
      - `style-profile-reviewer` 只读取 summary + draft，并写 `style-review.json`
      - reviewer blockers 是落成正式 `config/styles/{category}.md` 的硬闸门
-     - 正式执行后端应优先使用宿主 packet runner / 真实 subagent 链；直接 `ILlmClient` chat 只作为非 agent 宿主或本地调试的兼容 fallback
+     - 正式执行后端必须使用宿主 packet runner / 真实 subagent 链；官方路径不允许外接 `ILlmClient` fallback
      - workspace / project runtime 可通过 `config/runtime.json` 的 `agentPacketRunnerCommand` / `agentPacketRunnerArgs` / `agentPacketRunnerCwd` 声明这个 packet runner
 4. 字幕已支持双路径
    - 旁白路径：来自 `beat.text`
@@ -480,7 +483,7 @@ src/modules/script/
      - 当现有 style 信号明确偏 `chronology / route continuity / continuous process` 时，prep 会先建立单调递增的时间带，再让各段只在合法时间带内召回素材
      - style / arrangement signals 只约束顺序、阶段完整、素材角色、功能位和禁区，不默认推出总时长或段落预算
      - 粗剪 recall 默认是高召回保留，不再做固定上限的代表性抽样；`material-bundles` 是全量索引，`material-slots` 可以展开成多 slot / 多 beat，并优先保留过程证据、阶段证据、事件节点和可用原声
-     - `route-slot-planner` / reviewer 链必须把 silent span drops 视为 recall regression；runner 会把 deterministic base 中未被别处合法承接的独立有效 span 恢复回正式 draft
+     - `buildMaterialSlotsDocument()` 直接生成正式 `material-slots`；silent span drops / recall regression 必须由 reviewer / runner 明确拦下，而不是交给 `route-slot-planner` 改写正式 truth
      - 关键过程视频若承载不可替代的时间推进、事件推进、人物关系推进或有效原声，应保留成独立 beat，而不是被 summary 段或更静态的成果材料吞掉
      - `targetDurationMs` 只保留为可选审阅提示；除非用户明确给出成片时长、交付窗口或某段硬时长，否则不要在 brief / segment plan / material-slots / beat 中自动补全，也不再驱动粗剪召回、裁剪或扩展
   → 由 Agent 存储 `script/current.json` + 版本快照
@@ -517,7 +520,10 @@ src/modules/cut/
 **关键流程**：
 ```
 读取脚本
-  → timeline-builder 构建时间线结构（轨道、片段、入出点、转场）
+  → deterministic prep 从 `script/current.json + store/spans.json + media/chronology.json + asset reports` 写 `timeline/rough-cut-base.json`
+  → `segment-cut-refiner` 按段细化 beat 顺序、合法 window、source-speech 保留与 subtitle cue 草稿，并写 `timeline/segment-cuts/<segmentId>.json`
+  → `segment-cut-reviewer` 逐段审查 recall / chronology / speed / subtitle / source-speech guardrails，并写 `timeline/reviews/<segmentId>.json`
+  → reviewer 全部通过后，timeline-builder 再构建时间线结构（轨道、片段、入出点、转场）
   → 若当前 style 主轴偏时间 / 路程推进，则在 placement 阶段复核主 selection 的 chronology，不允许静默输出倒序 timeline
   → MCP 创建达芬奇项目/时间线
   → MCP 导入素材到 Media Pool
@@ -529,6 +535,16 @@ src/modules/cut/
 
 补充口径：
 
+- Timeline 当前正式引入内部段级粗剪资产：
+  - `timeline/rough-cut-base.json`
+  - `timeline/segment-cuts/<segmentId>.json`
+  - `timeline/agent-packets/<segmentId>.json`
+  - `timeline/reviews/<segmentId>.json`
+  - `timeline/agent-pipeline.json`
+- `timeline/rough-cut-base.json` 负责锁定每段的时间带 guard、beat 与 span 归属、可调 window 边界、默认 merged audio units、默认速度建议和 subtitle cue 草稿
+- `segment-cut-refiner` 只允许在本段内拆并 / 重排 beat、在候选边界内调 window、覆盖 `drive / aerial` 速度、细化 source-speech 与 subtitle 切分
+- `segment-cut-reviewer` 必须把召回回退、跨段换料、跨时间带回捞、非 `drive / aerial` 加速、speech window 越界和 chronology / Pharos / style 漂移视为 blocker
+- `placeClips()` 与 `planSubtitles()` 当前必须优先消费 reviewed segment-cut 产物；如果段级审查产物缺失、失败或 reviewer 未通过，Timeline 应明确阻塞，不能静默回退到旧的 raw-beat assembly
 - Timeline placement 不再把单张照片当作默认的预算填充器；若脚本没有显式长停要求，照片应尽量保持短自然停留
 - 当 chronology guardrail 检测到倒序时，placement 会先尝试同段内安全重排；仍无法恢复合法顺序时应直接拒绝生成，而不是静默产出错序成片
 - Script prep 与 Timeline placement 当前共享同一份 chronology 真值；root 级 `clockOffsetMs` 变化后必须先刷新 `media/chronology.json`，再重建 script prep / script / timeline，不能继续沿用旧顺序产物

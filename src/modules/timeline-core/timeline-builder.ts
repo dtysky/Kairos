@@ -4,6 +4,7 @@ import type {
   IKtepTimeline, IKtepDoc, IKtepAsset, IKtepSlice,
   IKtepScript, IKtepProject, IKtepSubtitle,
   IMediaChronology,
+  ISegmentRoughCutPlan,
 } from '../../protocol/schema.js';
 import { CPROTOCOL, CVERSION } from '../../protocol/schema.js';
 import type { IRuntimeConfig } from '../../store/project.js';
@@ -12,6 +13,7 @@ import { planTransitions, type ITransitionConfig } from './transition.js';
 import { planSubtitles, type ISubtitleConfig } from './subtitle.js';
 import { normalizeScriptTiming } from './pacing.js';
 import { validateKtepDoc } from '../../protocol/validator.js';
+import { buildTimelineScriptFromSegmentCuts } from './segment-cuts.js';
 
 export interface IBuildConfig {
   fps: number;
@@ -20,6 +22,7 @@ export interface IBuildConfig {
   name: string;
   assetReports?: IAssetCoarseReport[];
   chronology?: IMediaChronology[];
+  reviewedSegmentCuts?: ISegmentRoughCutPlan[];
   placement?: Partial<IPlacementConfig>;
   transition?: Partial<ITransitionConfig>;
   subtitle?: Partial<ISubtitleConfig>;
@@ -62,14 +65,16 @@ export function buildTimeline(
   config: Partial<IBuildConfig> = {},
 ): IKtepDoc {
   const cfg = resolveTimelineBuildConfig({}, config);
-  const normalizedScript = normalizeScriptTiming(script, slices, cfg.subtitle);
+  const effectiveScript = cfg.reviewedSegmentCuts?.length
+    ? buildTimelineScriptFromSegmentCuts(script, cfg.reviewedSegmentCuts)
+    : normalizeScriptTiming(script, slices, cfg.subtitle);
 
   // 1. Place clips
   const { tracks, clips: rawClips } = placeClips(
-    normalizedScript,
+    effectiveScript,
     slices,
     assets,
-    { ...cfg.placement, chronology: cfg.chronology },
+    { ...cfg.placement, chronology: cfg.chronology, reviewedSegmentCuts: cfg.reviewedSegmentCuts },
     cfg.assetReports,
   );
 
@@ -87,7 +92,12 @@ export function buildTimeline(
   };
 
   // 4. Plan subtitles
-  const subtitles: IKtepSubtitle[] = planSubtitles(normalizedScript, clips, slices, cfg.subtitle);
+  const subtitles: IKtepSubtitle[] = planSubtitles(
+    effectiveScript,
+    clips,
+    slices,
+    { ...cfg.subtitle, reviewedSegmentCuts: cfg.reviewedSegmentCuts },
+  );
 
   // 5. Assemble document
   const doc: IKtepDoc = {
@@ -97,7 +107,7 @@ export function buildTimeline(
     assets,
     spans: slices,
     slices,
-    script: normalizedScript,
+    script: effectiveScript,
     timeline,
     subtitles,
   };

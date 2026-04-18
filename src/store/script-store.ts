@@ -16,6 +16,7 @@ import {
   IAgentContract as ZAgentContract,
   IAgentPacket as ZAgentPacket,
   IAgentPipelineState as ZAgentPipelineState,
+  IKtepScript as ZKtepScript,
   IMaterialBundle as ZMaterialBundle,
   IMaterialSlotsDocument as ZMaterialSlotsDocument,
   IProjectMaterialOverviewFacts as ZProjectMaterialOverviewFacts,
@@ -27,7 +28,7 @@ import type { IOutlineSegment } from '../modules/script/outline-builder.js';
 import { readJsonOrNull, writeJson } from './writer.js';
 
 const IOutlineFile = z.array(z.any());
-const IScriptFile = z.array(z.any());
+const IScriptFile = z.array(ZKtepScript);
 const IMaterialBundleFile = z.array(ZMaterialBundle);
 
 export function getMaterialOverviewFactsPath(projectRoot: string): string {
@@ -119,6 +120,12 @@ export async function clearScriptArtifactsForStyleChange(projectRoot: string): P
     rm(getOutlinePath(projectRoot), { force: true }),
     rm(getOutlinePromptPath(projectRoot), { force: true }),
     rm(getCurrentScriptPath(projectRoot), { force: true }),
+    rm(join(projectRoot, 'timeline', 'rough-cut-base.json'), { force: true }),
+    rm(join(projectRoot, 'timeline', 'segment-cuts'), { recursive: true, force: true }),
+    rm(join(projectRoot, 'timeline', 'agent-packets'), { recursive: true, force: true }),
+    rm(join(projectRoot, 'timeline', 'reviews'), { recursive: true, force: true }),
+    rm(join(projectRoot, 'timeline', 'agent-pipeline.json'), { force: true }),
+    rm(join(projectRoot, 'timeline', 'current.json'), { force: true }),
   ]);
 }
 

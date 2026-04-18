@@ -913,6 +913,90 @@ export const IAgentPipelineState = z.object({
 });
 export type IAgentPipelineState = z.infer<typeof IAgentPipelineState>;
 
+export const ISegmentSelectionWindow = z.object({
+  assetId: z.string(),
+  spanId: z.string().optional(),
+  sliceId: z.string().optional(),
+  defaultSourceInMs: z.number().nonnegative().optional(),
+  defaultSourceOutMs: z.number().nonnegative().optional(),
+  minSourceInMs: z.number().nonnegative().optional(),
+  maxSourceOutMs: z.number().nonnegative().optional(),
+});
+export type ISegmentSelectionWindow = z.infer<typeof ISegmentSelectionWindow>;
+
+export const ISourceSpeechUnit = z.object({
+  assetId: z.string(),
+  spanId: z.string().optional(),
+  sliceId: z.string().optional(),
+  sourceInMs: z.number().nonnegative(),
+  sourceOutMs: z.number().nonnegative(),
+  transcriptText: z.string().optional(),
+});
+export type ISourceSpeechUnit = z.infer<typeof ISourceSpeechUnit>;
+
+export const ISubtitleCueDraft = z.object({
+  id: z.string(),
+  text: z.string(),
+  sourceInMs: z.number().nonnegative().optional(),
+  sourceOutMs: z.number().nonnegative().optional(),
+});
+export type ISubtitleCueDraft = z.infer<typeof ISubtitleCueDraft>;
+
+export const ISegmentRoughCutBeatPlan = z.object({
+  beatId: z.string(),
+  text: z.string(),
+  utterances: z.array(IKtepBeatUtterance).optional(),
+  notes: z.string().optional(),
+  muteSource: z.boolean().optional(),
+  preserveNatSound: z.boolean().optional(),
+  speedSuggestion: z.number().positive().optional(),
+  linkedSpanIds: z.array(z.string()).default([]),
+  linkedSliceIds: z.array(z.string()).default([]),
+  audioSelections: z.array(IKtepScriptSelection).default([]),
+  visualSelections: z.array(IKtepScriptSelection).default([]),
+  candidateWindows: z.array(ISegmentSelectionWindow).default([]),
+  sourceSpeechUnits: z.array(ISourceSpeechUnit).default([]),
+  subtitleCueDrafts: z.array(ISubtitleCueDraft).default([]),
+});
+export type ISegmentRoughCutBeatPlan = z.infer<typeof ISegmentRoughCutBeatPlan>;
+
+export const ISegmentTimeBandGuard = z.object({
+  startPosition: z.number().int().nonnegative(),
+  endPosition: z.number().int().nonnegative(),
+  startSortKey: z.string().optional(),
+  endSortKey: z.string().optional(),
+});
+export type ISegmentTimeBandGuard = z.infer<typeof ISegmentTimeBandGuard>;
+
+export const ISegmentRoughCutPlan = z.object({
+  segmentId: z.string(),
+  segmentTitle: z.string().optional(),
+  timeBandGuard: ISegmentTimeBandGuard,
+  lockedSpanIds: z.array(z.string()).default([]),
+  beats: z.array(ISegmentRoughCutBeatPlan).default([]),
+});
+export type ISegmentRoughCutPlan = z.infer<typeof ISegmentRoughCutPlan>;
+
+export const ITimelineRoughCutBase = z.object({
+  id: z.string(),
+  projectId: z.string(),
+  generatedAt: z.string(),
+  segments: z.array(ISegmentRoughCutPlan).default([]),
+});
+export type ITimelineRoughCutBase = z.infer<typeof ITimelineRoughCutBase>;
+
+export const ISegmentCutReview = z.object({
+  segmentId: z.string(),
+  stage: z.string(),
+  identity: z.string(),
+  attempt: z.number().int().positive(),
+  verdict: EStageReviewVerdict,
+  issues: z.array(IStageReviewIssue).default([]),
+  revisionBrief: z.array(z.string()).default([]),
+  reviewedAt: z.string(),
+});
+export type ISegmentCutReview = z.infer<typeof ISegmentCutReview>;
+
 export const ISpatialStoryAnchor = z.object({
   id: z.string(),
   title: z.string(),

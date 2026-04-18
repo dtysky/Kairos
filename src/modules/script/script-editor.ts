@@ -1,5 +1,5 @@
-import type { IKtepScript } from '../../protocol/schema.js';
-import type { ILlmClient } from '../llm/client.js';
+import type { IAgentPacket, IKtepScript } from '../../protocol/schema.js';
+import type { IJsonPacketAgentRunner } from '../agents/runtime.js';
 
 export function reorderSegments(
   segments: IKtepScript[],
@@ -44,20 +44,54 @@ export function insertSegment(
 }
 
 export async function rewriteNarration(
-  llm: ILlmClient,
+  agentRunner: IJsonPacketAgentRunner,
   segment: IKtepScript,
   instruction: string,
 ): Promise<string> {
-  const raw = await llm.chat([
-    {
-      role: 'system',
-      content: '你是旁白文案编辑。根据用户指令修改旁白。只返回修改后的旁白文本，不要解释。',
+  const packet: IAgentPacket = {
+    stage: 'rewrite-narration',
+    identity: 'narration-rewriter',
+    mission: '只根据当前 segment 的 narration 和明确 instruction 改写旁白文本。',
+    hardConstraints: [
+      '不能改写 beat、selection、linked ids 或其他召回事实。',
+      '不能引入 instruction 之外的新事实。',
+      '只返回改写后的 narration。',
+    ],
+    allowedInputs: [
+      'current script segment',
+      'rewrite instruction',
+    ],
+    inputArtifacts: [
+      {
+        label: 'script-segment',
+        summary: segment.title ?? segment.id,
+        content: segment,
+      },
+      {
+        label: 'rewrite-instruction',
+        summary: instruction,
+        content: { instruction },
+      },
+    ],
+    outputSchema: {
+      narration: 'string',
     },
-    {
-      role: 'user',
-      content: `原文: ${segment.narration}\n\n修改指令: ${instruction}`,
-    },
-  ], { temperature: 0.5 });
+    reviewRubric: [],
+  };
+  const raw = await agentRunner.run<unknown>({
+    promptId: 'script/narration-rewriter',
+    packet,
+    llm: { temperature: 0.5, maxTokens: 1200 },
+  });
 
-  return raw.trim();
+  if (typeof raw === 'string' && raw.trim()) {
+    return raw.trim();
+  }
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+    const narration = (raw as { narration?: unknown }).narration;
+    if (typeof narration === 'string' && narration.trim()) {
+      return narration.trim();
+    }
+  }
+  throw new Error('narration rewrite returned invalid JSON');
 }

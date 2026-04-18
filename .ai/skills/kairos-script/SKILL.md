@@ -9,7 +9,7 @@ description: >-
 
 # Kairos: Phase 3 — Script
 
-加载风格档案 → `/script` 自动保存风格分类 → `[subagent: overview-cartographer]` / `[subagent: brief-editor]` 生成初版 `script-brief` 与材料概览 → 用户审查并手动保存 brief → `/script` 做 deterministic prep → `[subagent: beat-writer]` 写正式脚本。
+加载风格档案 → `/script` 自动保存风格分类 → `[subagent: overview-cartographer]` / `[subagent: brief-editor]` 生成初版 `script-brief` 与材料概览 → 用户审查并手动保存 brief → `/script` 做 deterministic prep → `[subagent: beat-writer]` 只写表达层正式脚本。
 
 **核心特点**：粗剪脚本以证据和素材原声为优先；旁白只是可选表达，不是默认目标。
 
@@ -23,7 +23,8 @@ description: >-
 - `[subagent: overview-cartographer]` 只写 `script/material-overview.md`
 - `[subagent: brief-editor]` 只写初版 `script-brief`
 - `[subagent: segment-architect]` 只写 `script/segment-plan.json`
-- `[subagent: route-slot-planner]` 只写 `script/material-slots.json`
+- `buildMaterialSlotsDocument()` 是 `script/material-slots.json` 的唯一正式作者
+- `[subagent: route-slot-planner]` 如果保留，只能做非权威 recall 审查 / 诊断，不能改写 `chosenSpanIds`
 - `[subagent: beat-writer]` 只写 `script/current.json`
 - `[subagent: script-reviewer]` 只做阶段审查，不直接生成正式稿
 
@@ -33,7 +34,7 @@ description: >-
 - 不继承主线程长历史
 - 缺证据时保守，不脑补
 - stage packet 是唯一正式上下文；runtime 不得在 packet 之外再偷偷附加 `previousDraft`、`revisionBrief` 或主线程历史
-- 正式执行后端应优先使用宿主 packet runner / 真实 clean-context subagent 链；直接 `ILlmClient` chat 只作为非 agent 宿主或本地调试的兼容 fallback
+- 正式执行后端必须使用宿主 packet runner / 真实 clean-context subagent 链；官方路径不允许外接 `ILlmClient` fallback
 
 ## 读者与职责边界
 
@@ -49,6 +50,7 @@ description: >-
 - `targetDurationMs` 只保留为可选审阅提示；除非用户明确给出成片时长、交付窗口或某段硬时长，否则不要在 brief、segment plan、material slots 或 beat 中自动补全。
 - script prep 与 rough-cut recall 默认高召回：优先保留过程证据、阶段证据、事件节点和可用原声，只移除空白、坏段和高重叠近重复。
 - `material-slots` 的 deterministic base draft 是高召回下限；`route-slot-planner` 不能把 base `chosenSpanIds` 静默删掉，reviewer 也必须把 silent span drops 当 blocker。
+- `beat-writer` 只允许改写表达层字段：`text`、`utterances`、`notes`、`muteSource`、`preserveNatSound`；不得增删或改写 `audioSelections`、`visualSelections`、`linkedSpanIds`。
 - `script-reviewer` 的 blocker 是推进下一阶段和落成 `script/current.json` 的硬闸门。
 - `script/current.json` 的正式落盘形状必须是 bare `IKtepScript[]`；如果 transport 返回 `{ "segments": [...] }`，只能由 stage runner 在持久化前解包，不能由 `[main agent]` 事后补写 normalize。
 - `script-current` 每个 attempt 只允许一次正式 `beat-writer` 调用；不要先额外跑一轮 full-script writer 当“预草稿”。
@@ -109,8 +111,8 @@ updateNarration(segments: IKtepScript[], segmentId: string, narration: string): 
 removeSegment(segments: IKtepScript[], segmentId: string): IKtepScript[]
 insertSegment(segments: IKtepScript[], afterId: string | null, segment: IKtepScript): IKtepScript[]
 
-// LLM 辅助改写（需要 ILlmClient，异步）
-rewriteNarration(llm: ILlmClient, segment: IKtepScript, instruction: string): Promise<string>
+// Agent packet runner 辅助改写（异步）
+rewriteNarration(agentRunner: IJsonPacketAgentRunner, segment: IKtepScript, instruction: string): Promise<string>
 // 返回修改后的旁白文本（string），需要再用 updateNarration 替换到数组中
 ```
 
@@ -274,16 +276,18 @@ const spans = await readJson('store/spans.json', z.array(IKtepSlice));
 
 #### [Subagent: route-slot-planner]
 
-生成 `material slots` 时，遵循：
+如果当前宿主仍保留 `route-slot-planner`，它现在只负责 **非权威 recall 审查 / 诊断**，不再写正式 `material-slots`。
+
+审查或诊断时，遵循：
 
 - `segment intent -> slot query -> targetBundles -> bundle lookup -> chosenSpanIds`
 - bundle 命中后，再按 time / GPS / chronology / Pharos day-shot 线索做二次过滤
-- `chosenSpanIds` 是 retrieval 的正式结果回写位
+- `chosenSpanIds` 不是这个阶段可改写的回写位；正式 truth 已由 `buildMaterialSlotsDocument()` 锁定
 - 粗剪默认是高召回保留：
   - 不要再按固定 `3-4` 个 span 上限做代表性抽样
-  - 有信息增量的 span 默认都应进入 `chosenSpanIds`
+  - 有信息增量的 span 默认都应被标记为“应保留”
   - 只应去掉空白、坏段和高重叠近重复
-- deterministic base draft 里的 `chosenSpanIds` 默认继续保留；除非某个 span 已被别的 slot 合法承接，或明确属于空白 / 坏段 / 高重叠近重复，否则不要静默删除
+- deterministic base draft 里的 `chosenSpanIds` 默认继续保留；除非某个 span 已被别的 slot 合法承接，或明确属于空白 / 坏段 / 高重叠近重复，否则不要建议静默删除
 - 对时间主轴强的风格，二次过滤必须服从时间带窗口；局部打分只能在当前窗口里择优，不能跨窗乱拿素材
 - 关键过程视频如果承载不可替代的时间推进、事件推进、人物关系推进或有效原声，应保留为独立 beat，不要让它被更泛的 summary 段或静态成果材料吞掉
 
@@ -306,7 +310,14 @@ beat-writer 需要：
 1. 阅读完整风格档案（`style.rawReference` 或 `buildStylePrompt(style)`），并优先提取其中的 sections / parameters / antiPatterns
 2. 理解叙事骨架的每个段落（`buildOutlinePrompt(outline)`）
 3. 查看每个段落关联的切片证据（scene descriptions, ASR text, place hints）
-4. 为每个段落组织 beat；只有在素材没有可用原声时才补写必要旁白，且严格遵循风格档案
+4. 仅在锁定的 recall 事实之上组织 beat 表达；只有在素材没有可用原声时才补写必要旁白，且严格遵循风格档案
+
+beat-writer 不允许做的事：
+
+- 不要增删 `audioSelections[]`、`visualSelections[]` 或 `linkedSpanIds`
+- 不要把某个 span 挪到别的段落
+- 不要为了时长、文风或“更顺”去回退高召回证据
+- 不要把 `speedCandidate`、source window 或 chronology guard 当作可自由改写的叙事装饰
 
 对于 `intro / montage / transition` 这类高度依赖镜头组织的段落，优先按下面顺序消费风格信息：
 
@@ -330,7 +341,7 @@ beat-writer 需要：
    - 允许用 `beat.text` / `beat.utterances` 完整组织旁白
    - 仍然必须基于切片证据，不要凭空解释
 
-输出格式 — 每个段落一个 `IKtepScript`：
+输出格式 — 每个段落一个 `IKtepScript`，但 recall facts 视为上游已锁定输入：
 
 ```typescript
 const scriptSegment: IKtepScript = {
@@ -339,7 +350,7 @@ const scriptSegment: IKtepScript = {
   title: '段落标题',
   narration: '旁白文本...',
   // targetDurationMs: 30000,  // 可选，仅在用户或交付约束明确要求时填写
-  linkedSliceIds: ['slice-id-1', 'slice-id-2'],
+  linkedSliceIds: ['slice-id-1', 'slice-id-2'], // 仅示意；实际 recall 归属由上游锁定
 };
 ```
 
@@ -403,7 +414,7 @@ const trimmed = removeSegment(segments, segId);
 1. **人称/语气**：严格按照风格档案中的设定（第一人称？平实？感性？）
 2. **旁白克制**：优先使用有效原声；只有无可用原声的视频才补必要旁白，照片不要补写旁白
 3. **风格禁区**：风格档案中列出的禁止表达方式绝对不用
-4. **证据驱动**：旁白应基于切片证据（场景描述、地点线索、ASR 文本），不要凭空编造
+4. **证据驱动**：旁白应基于切片证据（场景描述、地点线索、ASR 文本），不要凭空编造，也不要私改 locked recall facts
 5. **节奏**：开篇引人入胜，主体循序渐进，结尾收束有力，但不要为了时长预算硬做压缩或填充
 6. **原声判断**：不要把“素材里有人说话”和“这段就该静音旁白”画等号；只要原话本身有价值，粗剪默认应保留
 7. **照片处理**：照片默认是一秒静默信息点；只有显式 `holdMs` 才应拉长

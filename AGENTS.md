@@ -98,7 +98,7 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - `style-profile-synthesizer` writes `style-draft.json`
   - `style-profile-reviewer` writes `style-review.json`
   - reviewer blockers are a hard gate before `config/styles/{category}.md`
-  - formal stage execution should prefer a host packet runner / real subagent chain; direct `ILlmClient` chat is only a compatibility fallback for non-agent hosts and local debugging
+  - formal stage execution must use a host packet runner / real subagent chain; external `ILlmClient` fallback is not allowed on the official path
 - Treat the end state of every Kairos-managed top-level flow as `ML stopped`.
 - Treat video Analyze as a staged pipeline whose formal semantic decision happens in `finalize`:
   - with audio: `coarse-scan -> audio-analysis -> finalize -> deferred scene detect(if needed)`
@@ -133,7 +133,7 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - `script/reviews/<stage>.json`
   - `script/agent-pipeline.json`
   - each script stage packet is the only formal subagent context; do not append hidden history or duplicate `previousDraft` / `revisionBrief` outside the packet
-  - formal script stage execution should prefer a host packet runner / real clean-context subagent chain; direct `ILlmClient` chat is only a compatibility fallback for non-agent hosts and local debugging
+  - formal script stage execution must use a host packet runner / real clean-context subagent chain; external `ILlmClient` fallback is not allowed on the official path
   - first-attempt stage packets should stay lean; prior drafts belong on retry paths, not the initial call
   - the final `script/current.json` is still the only formal script artifact consumed downstream unless a newer design doc says otherwise
   - the on-disk `script/current.json` shape is always bare `IKtepScript[]`; transport wrappers such as `{ "segments": [...] }` must be unwrapped inside the stage runner before persist, never by ad-hoc main-agent repair
@@ -142,6 +142,9 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - `script-current` is one formal `beat-writer` pass per attempt; do not pre-run a second full-script writer pass just to make a base draft
   - if a script writer or reviewer call fails, `script/agent-pipeline.json` must record the real failure state immediately instead of leaving stale `pending` / old-stage truth
   - outline prep should filter obvious device-command / noisy-ASR source-speech anchors and merge adjacent non-speech evidence spans before handing off to `beat-writer`
+  - `buildMaterialSlotsDocument()` is now the only formal writer of `script/material-slots.json`; `route-slot-planner` is no longer allowed to rewrite `chosenSpanIds`
+  - `material-slots` remains high-recall by default: process evidence, key event progression, usable source speech, and chronology anchors should stay unless they are empty, clearly bad, or near-duplicate
+  - `beat-writer` may only author expression-layer fields such as `text`, `utterances`, `notes`, `muteSource`, and `preserveNatSound`; recall facts such as `audioSelections`, `visualSelections`, and `linkedSpanIds` remain locked from deterministic prep / outline
 - Treat rough-cut script/timeline defaults as evidence-first:
   - videos with usable source speech should stay source-speech unless the script explicitly sets `muteSource=true`
   - photo-only beats should default to `1s` silent holds with no subtitles unless the script explicitly sets `holdMs`
@@ -155,6 +158,13 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - source-speech placement stays on one serial video track plus one independent `dialogue` audio track; `nat` remains for protection/ambient fallback only
   - source-speech subtitles should follow merged audio units, then split by short clauses instead of raw ASR fragment boundaries
   - audible `dialogue` / `nat` clips should normalize toward `-16 LUFS` by clip gain during export/orchestration, not by rewriting source media
+  - Timeline now has one formal internal review stage before `timeline/current.json`:
+    - deterministic prep writes `timeline/rough-cut-base.json`
+    - `segment-cut-refiner` writes `timeline/segment-cuts/<segmentId>.json`
+    - `segment-cut-reviewer` writes `timeline/reviews/<segmentId>.json`
+    - pipeline state writes `timeline/agent-pipeline.json`
+  - `segment-cut-refiner` may only work within its own segment: split/merge/reorder beats, tune windows inside candidate bounds, refine source-speech handling, and override `drive / aerial` speed
+  - `segment-cut-reviewer` blockers are a hard gate before formal timeline assembly; official Timeline must not silently fall back to raw beat assembly when reviewed segment-cut artifacts are missing or failed
 - Reusable style assets are workspace-scoped by default:
   - `config/styles/`
   - `config/style-sources.json`

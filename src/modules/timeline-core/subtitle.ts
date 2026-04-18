@@ -1,5 +1,13 @@
 import { randomUUID } from 'node:crypto';
-import type { IKtepSubtitle, IKtepScript, IKtepClip, IKtepScriptBeat, IKtepSlice } from '../../protocol/schema.js';
+import type {
+  IKtepSubtitle,
+  IKtepScript,
+  IKtepClip,
+  IKtepScriptBeat,
+  IKtepSlice,
+  ISegmentRoughCutBeatPlan,
+  ISegmentRoughCutPlan,
+} from '../../protocol/schema.js';
 import { estimateTranscriptTextUnits } from '../media/refined-transcript.js';
 import {
   buildNarrationBeatPlan,
@@ -12,9 +20,11 @@ import {
   shouldPreferSourceSpeech,
   type ISpeechPacingConfig,
 } from './pacing.js';
+import { buildTimelineScriptFromSegmentCuts, findSegmentCutBeat } from './segment-cuts.js';
 
 export interface ISubtitleConfig extends ISpeechPacingConfig {
   language: string;
+  reviewedSegmentCuts?: ISegmentRoughCutPlan[];
 }
 
 const CDEFAULTS: ISubtitleConfig = {
@@ -39,10 +49,13 @@ export function planSubtitles(
   config: Partial<ISubtitleConfig> = {},
 ): IKtepSubtitle[] {
   const cfg = { ...CDEFAULTS, ...config };
+  const effectiveScript = cfg.reviewedSegmentCuts?.length
+    ? buildTimelineScriptFromSegmentCuts(script, cfg.reviewedSegmentCuts)
+    : script;
   const subtitles: IKtepSubtitle[] = [];
   const sliceMap = new Map(slices.map(slice => [slice.id, slice]));
 
-  for (const seg of script) {
+  for (const seg of effectiveScript) {
     const segClips = clips.filter(c => c.linkedScriptSegmentId === seg.id);
     if (segClips.length === 0) continue;
 
@@ -59,12 +72,14 @@ export function planSubtitles(
       const speechContext = buildSourceSpeechContext(beat.audioSelections, sliceMap);
       const hasOnlyFilteredTranscript = speechContext.transcriptSegmentCount === 0
         && hasRawTranscriptOverlap(beat.audioSelections, sliceMap);
+      const reviewedBeat = findSegmentCutBeat(cfg.reviewedSegmentCuts, seg.id, beat.id);
       const sourceSpeechSubtitles = planSourceSpeechSubtitles(
         seg,
         beat,
         sourceSpeechClips,
         sliceMap,
         cfg,
+        reviewedBeat,
       );
       if (shouldPreferSourceSpeech(seg, beat, speechContext)) {
         if (sourceSpeechSubtitles.length > 0) {
@@ -165,9 +180,26 @@ function planSourceSpeechSubtitles(
   sourceSpeechClips: IKtepClip[],
   sliceMap: Map<string, IKtepSlice>,
   config: ISubtitleConfig,
+  reviewedBeat?: ISegmentRoughCutBeatPlan | null,
 ): IKtepSubtitle[] {
   const speechContext = buildSourceSpeechContext(beat.audioSelections, sliceMap);
   if (!shouldPreferSourceSpeech(segment, beat, speechContext)) return [];
+
+  const reviewedCueDrafts = (reviewedBeat?.subtitleCueDrafts ?? [])
+    .filter(cue =>
+      typeof cue.sourceInMs === 'number'
+      && typeof cue.sourceOutMs === 'number'
+      && cue.sourceOutMs > cue.sourceInMs
+      && sanitizeSubtitleCueText(cue.text).length > 0,
+    );
+  if (reviewedCueDrafts.length > 0 && sourceSpeechClips.length > 0) {
+    const subtitles = reviewedCueDrafts
+      .map(cue => buildSubtitleFromCueDraft(segment, beat, cue, sourceSpeechClips, config.language))
+      .filter((cue): cue is IKtepSubtitle => cue != null);
+    if (subtitles.length > 0) {
+      return subtitles;
+    }
+  }
 
   const subtitles: IKtepSubtitle[] = [];
   for (const clip of sourceSpeechClips) {
@@ -225,6 +257,39 @@ function planSourceSpeechSubtitles(
   }
 
   return subtitles;
+}
+
+function buildSubtitleFromCueDraft(
+  segment: IKtepScript,
+  beat: IKtepScriptBeat,
+  cue: { id: string; text: string; sourceInMs?: number; sourceOutMs?: number },
+  sourceSpeechClips: IKtepClip[],
+  language: string,
+): IKtepSubtitle | null {
+  if (typeof cue.sourceInMs !== 'number' || typeof cue.sourceOutMs !== 'number') {
+    return null;
+  }
+  for (const clip of sourceSpeechClips) {
+    if (typeof clip.sourceInMs !== 'number' || typeof clip.sourceOutMs !== 'number') continue;
+    const overlapStart = Math.max(cue.sourceInMs, clip.sourceInMs);
+    const overlapEnd = Math.min(cue.sourceOutMs, clip.sourceOutMs);
+    if (overlapEnd <= overlapStart) continue;
+
+    return {
+      id: cue.id,
+      startMs: clip.timelineInMs + (overlapStart - clip.sourceInMs),
+      endMs: Math.max(
+        clip.timelineInMs + (overlapEnd - clip.sourceInMs),
+        clip.timelineInMs + (overlapStart - clip.sourceInMs) + 1,
+      ),
+      text: sanitizeSubtitleCueText(cue.text),
+      language,
+      linkedScriptSegmentId: segment.id,
+      linkedScriptBeatId: beat.id,
+    };
+  }
+
+  return null;
 }
 
 function shouldSkipSourceSpeechCue(

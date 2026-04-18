@@ -52,7 +52,7 @@ Kairos 当前需要区分两层：
     - `style-profile-synthesizer` 只读取 packetized summary，先产出 `style-draft.json`
     - `style-profile-reviewer` 只读取 summary + draft，写 `style-review.json`
     - reviewer blockers 当前是最终 style profile 的硬闸门；不能再把单次 synthesize 直接落成正式 profile
-    - 正式执行后端应优先使用宿主提供的 packet runner / 真实 subagent 链；直接 `ILlmClient` chat 只作为非 agent 宿主或本地调试的兼容 fallback
+    - 正式执行后端必须使用宿主提供的 packet runner / 真实 subagent 链；官方路径不允许外接 `ILlmClient` fallback
     - workspace / project runtime 可通过 `config/runtime.json` 的 `agentPacketRunnerCommand` / `agentPacketRunnerArgs` / `agentPacketRunnerCwd` 声明这个 packet runner
 - 未来如果引入桌面 UI 或更多 provider / adapter，应建立在这套协议与项目模型上，而不是推翻它
 - 某些项目会直接消费调色后的素材版本而非原始素材；因此主链面向的是“当前采用的素材版本”，而不是固定绑定“永远使用原始素材”
@@ -242,9 +242,12 @@ flowchart TD
   - `overview-cartographer` 只写 `script/material-overview.md`
   - `brief-editor` 只写初版 `script-brief`
   - `segment-architect` 只写 `script/segment-plan.json`
-  - `route-slot-planner` 只写 `script/material-slots.json`
-  - `script-reviewer` 审 `material-slots` 时必须把 silent span drops / recall regression 当 blocker
+  - `buildMaterialSlotsDocument()` 当前是 `script/material-slots.json` 的唯一正式作者
+  - `route-slot-planner` 已退出正式写入链；若保留，只能做非权威审查 / 诊断，不能改写 `chosenSpanIds`
   - `beat-writer` 只写 `script/current.json`
+  - `beat-writer` 当前只允许改写表达层字段：`text`、`utterances`、`notes`、`muteSource`、`preserveNatSound`
+  - `beat-writer` 不得增删或改写 `audioSelections`、`visualSelections`、`linkedSpanIds` 这类召回事实
+  - `script-reviewer` 审 `material-slots` 时必须把 silent span drops / recall regression 当 blocker
   - `script-reviewer` 只做阶段审查，不直接生成正式稿
   - `script-reviewer` 的 blocker 是推进下一阶段和落成 `script/current.json` 的硬闸门
   - 如果当前宿主策略或用户授权不允许 formal subagent / reviewer 链执行，主代理必须先停下说明原因，不能继续按“单代理兼任全部阶段”落稿
@@ -255,7 +258,7 @@ flowchart TD
   - reviewer 结果写入 `script/reviews/{stage}.json`
   - 流水线推进状态写入 `script/agent-pipeline.json`
   - packet 是 stage subagent 的唯一正式上下文；runtime 不得在 packet 外重复附加主线程历史、`previousDraft` 或 `revisionBrief`
-  - 正式 script stage 执行后端应优先使用宿主 packet runner / 真实 clean-context subagent 链；直接 `ILlmClient` chat 只作为非 agent 宿主或本地调试的兼容 fallback
+  - 正式 script stage 执行后端必须使用宿主 packet runner / 真实 clean-context subagent 链；官方路径不允许外接 `ILlmClient` fallback
   - workspace / project runtime 可通过 `config/runtime.json` 的 `agentPacketRunnerCommand` / `agentPacketRunnerArgs` / `agentPacketRunnerCwd` 声明这个 packet runner
   - 首轮 stage 调用默认应保持 lean packet，只在 reviewer 要求返工时再把 previous draft 带回 writer
   - `script/current.json` 的正式落盘形状固定为 bare `IKtepScript[]`；若 transport 返回 `{ "segments": [...] }`，必须由 stage runner 在持久化前解包，不能再变成主代理的临时补锅动作
@@ -310,6 +313,12 @@ flowchart TD
 ### Timeline / Export
 
 - 时间线与导出围绕 `KTEP` 展开
+- `Script -> Timeline` 之间当前新增一个正式内部子阶段：
+  - deterministic prep 先写 `timeline/rough-cut-base.json`
+  - `segment-cut-refiner` 再按段写 `timeline/segment-cuts/<segmentId>.json`
+  - `segment-cut-reviewer` 写 `timeline/reviews/<segmentId>.json`
+  - pipeline state 写 `timeline/agent-pipeline.json`
+  - 只有 reviewer 通过后的段级产物，才允许继续落成 `timeline/current.json`
 - 字幕已有两条正式路径：
   - 旁白路径：默认来自 `beat.text`
   - 原声路径：当某拍保留原声时，来自 `beat.audioSelections[]` 对应的 merged audio units
@@ -325,6 +334,13 @@ flowchart TD
 - 当前时间线不再把“短 source + 长 beat”当成默认慢放来源：
   - 对带 `editSourceInMs / editSourceOutMs` 的新 slice，时间线优先使用 edit-friendly bounds
   - 只有旧 slice / 旧 selection 缺少 edit bounds 时，才保留 legacy fallback stretch
+- `timeline/rough-cut-base.json` 当前正式负责锁定每段的：
+  - `segmentId` 与时间带 guard
+  - beat 列表与已锁定 span 归属
+  - 允许调整的候选 window 边界
+  - 默认 speech window / merged audio units
+  - 默认 `speedCandidate` 与 silent montage 的速度建议
+  - 默认 subtitle cue 草稿
 - 时间线当前新增 chronology guardrail：
   - 对主轴明确偏时间/路程推进的风格，placement 会优先保持 beat 内和 beat 间的 `sortCapturedAt` 单调递增
   - placement 会先尝试同段内安全重排；若仍无法恢复合法顺序，则拒绝静默生成错序时间线
@@ -332,12 +348,21 @@ flowchart TD
 - 如果确实需要速度蒙太奇，当前正式路径仍可显式填写 `beat.actions.speed`
 - `IKtepScriptAction.speed` 当前的正式语义是“请求加速”，只有 `drive / aerial` clip 会实际消费；混合 beat 中其他类型 clip 会强制保持 `1x`
 - 对 silent `drive / aerial` 粗剪 beat，如果 Analyze 已给出 `speedCandidate` 且脚本没有显式写 `actions.speed`，时间线默认会按 `2x` 自动加速
+- `segment-cut-refiner` 只允许在本段内拆并 / 重排 beat、在候选边界内调 window、覆盖 `drive / aerial` 速度、细化 source-speech 保留策略与字幕切分
+- `segment-cut-reviewer` 必须把以下问题视为 blocker：
+  - 召回回退或静默丢 span
+  - 跨段换料或跨时间带回捞
+  - 非 `drive / aerial` 素材被加速
+  - source-speech 误判、speech window 越界、字幕不可读或严重错时
+  - chronology / Pharos / style guardrail 漂移
+- `placeClips()` 与 `planSubtitles()` 当前正式优先消费 reviewed segment-cut 产物，而不是把原始 `script/current.json` 当作全部粗剪决策来源
 - `placeClips()` 当前默认按 selection 的自然 source 时长 / edit-friendly bounds 摆放 clip，不再用 `beat.targetDurationMs` 或 `segment.targetDurationMs` 驱动粗剪裁剪与扩展
 - 如果同一 `asset` 同时被召回成 source-speech 与 silent `drive / aerial`，时间线当前正式应先保留 source-speech 窗口，再把 silent montage 裁成非重叠 remainder；重叠部分不得双重入线
 - 如果同一 `drive / aerial asset` 在粗剪里被多个 silent beat 重复引用，后出现的 beat 也必须扣掉前面已经消费过的 source window，只保留新的 remainder，避免同源重复双放
 - `placeClips()` 不再把单张照片当作预算容器；照片默认是 `1s` 静默停留，只有脚本显式要求更长 `holdMs` 时才拉长
 - photo-only beat 当前默认不生成字幕；没有可用原声的视频 beat 允许尽可能用旁白完整组织
 - 时间线 / 草稿输出规格已收口为项目级运行时配置：`timelineWidth / timelineHeight / timelineFps`，默认值为 `3840x2160 @ 30fps`
+- 如果段级审查产物缺失、reviewer 未通过或 packet runner 失败，Timeline 当前必须明确阻塞；不能静默退回旧的 raw-beat assembly
 - 当某拍不走 source speech 时，时间线会把命中的带音轨视频 clip 标记为静音意图；导出到 Jianying 时会落成静音视频片段
 - 剪映导出不再走外部 `jianying-mcp` / 独立 `Jianying Server` 路线，而是由 Node 侧调用 vendored `pyJianYingDraft` 本地 CLI
 - 当前剪映 backend 会直写 `draft_info.json` / `draft_meta_info.json`，并补齐本地素材注册元数据

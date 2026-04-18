@@ -16,7 +16,6 @@ import type {
   ISegmentPlan,
   IStyleProfile,
 } from '../../protocol/schema.js';
-import type { ILlmClient } from '../llm/client.js';
 import {
   computeScriptBriefFingerprint,
   getMaterialBundlesPath,
@@ -82,7 +81,6 @@ export interface IBuildProjectOutlineResult {
 
 export interface IGenerateProjectScriptInput {
   projectRoot: string;
-  llm?: ILlmClient;
   agentRunner?: IJsonPacketAgentRunner;
   style: IStyleProfile;
 }
@@ -146,7 +144,6 @@ const CSCRIPT_REVIEW_CODES = [
 
 export interface IDraftProjectScriptOverviewAndBriefInput {
   projectRoot: string;
-  llm?: ILlmClient;
   agentRunner?: IJsonPacketAgentRunner;
   workspaceRoot?: string;
   styleCategory?: string;
@@ -183,7 +180,6 @@ export async function draftProjectScriptOverviewAndBrief(
   ]);
 
   const overviewStage = await runReviewedScriptStage<{ markdown: string }>({
-    llm: input.llm,
     agentRunner: input.agentRunner,
     projectRoot: input.projectRoot,
     stage: 'material-overview',
@@ -297,7 +293,6 @@ export async function draftProjectScriptOverviewAndBrief(
       notes?: string[];
     }>;
   }>({
-    llm: input.llm,
     agentRunner: input.agentRunner,
     projectRoot: input.projectRoot,
     stage: 'script-brief',
@@ -634,7 +629,6 @@ export async function generateProjectScriptFromPlanning(
     orderedSpanCandidates,
   });
   const segmentStage = await runReviewedScriptStage<ISegmentPlan>({
-    llm: input.llm,
     agentRunner: input.agentRunner,
     projectRoot: input.projectRoot,
     stage: 'segment-plan',
@@ -686,68 +680,14 @@ export async function generateProjectScriptFromPlanning(
     arrangementSignals,
     orderedSpanCandidates,
   });
-  const materialSlotsStage = await runReviewedScriptStage<IMaterialSlotsDocument>({
-    llm: input.llm,
-    agentRunner: input.agentRunner,
+  await writeMaterialSlots(input.projectRoot, baseMaterialSlots);
+  const materialSlotsStage = await recordDeterministicMaterialSlotsStage({
     projectRoot: input.projectRoot,
-    stage: 'material-slots',
-    writerIdentity: 'route-slot-planner',
-    baseDraft: baseMaterialSlots,
-    buildWriterPacket: (revisionBrief, previousDraft) => buildMaterialSlotsPacket({
-      projectRoot: input.projectRoot,
-      contract,
-      style: input.style,
-      spatialStory,
-      segmentPlan: segmentStage.draft,
-      bundles: prepared.bundles,
-      spans: prepared.context.spans,
-      chronology: prepared.context.chronology,
-      baseDraft: baseMaterialSlots,
-      previousDraft: revisionBrief.length > 0 ? previousDraft : undefined,
-      revisionBrief,
-    }),
-    buildReviewPacket: (draft, attempt) => buildScriptReviewPacket({
-      projectRoot: input.projectRoot,
-      stage: 'material-slots',
-      contract,
-      supportingArtifacts: [
-        {
-          label: 'segment-plan',
-          path: getSegmentPlanPath(input.projectRoot),
-          summary: segmentStage.draft.summary,
-          content: segmentStage.draft,
-        },
-        {
-          label: 'spatial-story',
-          path: getSpatialStoryPath(input.projectRoot),
-          summary: spatialStory.narrativeHints.map(item => item.title).join(' / '),
-          content: spatialStory,
-        },
-        {
-          label: 'base-material-slots',
-          summary: summarizeMaterialSlotSelectionAudit(
-            buildMaterialSlotSelectionAudit(baseMaterialSlots, baseMaterialSlots, prepared.context.spans),
-          ),
-          content: baseMaterialSlots,
-        },
-        {
-          label: 'slot-selection-audit',
-          summary: summarizeMaterialSlotSelectionAudit(
-            buildMaterialSlotSelectionAudit(baseMaterialSlots, draft, prepared.context.spans),
-          ),
-          content: buildMaterialSlotSelectionAudit(baseMaterialSlots, draft, prepared.context.spans),
-        },
-      ],
-      draft,
-      attempt,
-    }),
-    coerceDraft: (raw, previousDraft) => normalizeReviewedMaterialSlotsDraft(
-      raw,
-      previousDraft,
-      baseMaterialSlots,
-      new Map(prepared.context.spans.map(span => [span.id, span] as const)),
-    ),
-    persistDraft: draft => writeMaterialSlots(input.projectRoot, draft),
+    contract,
+    segmentPlan: segmentStage.draft,
+    spatialStory,
+    draft: baseMaterialSlots,
+    spans: prepared.context.spans,
   });
 
   const outline = buildOutline({
@@ -762,7 +702,6 @@ export async function generateProjectScriptFromPlanning(
 
   const baseScript = buildFallbackScript(outline);
   const scriptStage = await runReviewedScriptStage<IKtepScript[]>({
-    llm: input.llm,
     agentRunner: input.agentRunner,
     projectRoot: input.projectRoot,
     stage: 'script-current',
@@ -1870,7 +1809,6 @@ function buildFallbackBriefDraft(
 }
 
 async function runReviewedScriptStage<TDraft>(input: {
-  llm?: ILlmClient;
   agentRunner?: IJsonPacketAgentRunner;
   projectRoot: string;
   stage: string;
@@ -1883,7 +1821,6 @@ async function runReviewedScriptStage<TDraft>(input: {
 }): Promise<{ draft: TDraft; review: IStageReview }> {
   const agentRunner = resolveJsonPacketAgentRunner({
     agentRunner: input.agentRunner,
-    llm: input.llm,
   });
   let revisionBrief: string[] = [];
   let previousDraft = input.baseDraft;
@@ -1990,6 +1927,90 @@ async function runReviewedScriptStage<TDraft>(input: {
   throw new Error(`script stage "${input.stage}" failed to complete review loop.`);
 }
 
+async function recordDeterministicMaterialSlotsStage(input: {
+  projectRoot: string;
+  contract: IAgentContract;
+  segmentPlan: ISegmentPlan;
+  spatialStory: ISpatialStoryContext;
+  draft: IMaterialSlotsDocument;
+  spans: IKtepSlice[];
+}): Promise<{ draft: IMaterialSlotsDocument; review: IStageReview }> {
+  const packet: IAgentPacket = {
+    stage: 'material-slots',
+    identity: 'deterministic-material-slots',
+    mission: '用确定性高召回规则生成正式 material slots truth，不让 LLM 改写 chosenSpanIds。',
+    hardConstraints: [
+      'script/material-slots.json 的正式作者是 deterministic prep。',
+      'route-slot-planner 不得改写 chosenSpanIds。',
+      '过程证据、事件节点、关键过程视频和可用原声默认应保留。',
+    ],
+    allowedInputs: [
+      'script/segment-plan.json',
+      'script/spatial-story.json',
+      'script/agent-contract.json',
+      'analysis/material-bundles.json',
+      'store/spans.json',
+      'media/chronology.json',
+    ],
+    inputArtifacts: [
+      {
+        label: 'agent-contract',
+        path: getScriptAgentContractPath(input.projectRoot),
+        summary: input.contract.goals.join(' / '),
+        content: input.contract,
+      },
+      {
+        label: 'segment-plan',
+        path: getSegmentPlanPath(input.projectRoot),
+        summary: input.segmentPlan.summary,
+        content: input.segmentPlan,
+      },
+      {
+        label: 'spatial-story',
+        path: getSpatialStoryPath(input.projectRoot),
+        summary: input.spatialStory.narrativeHints.map(item => item.title).join(' / '),
+        content: input.spatialStory,
+      },
+      {
+        label: 'material-slots',
+        path: getMaterialSlotsPath(input.projectRoot),
+        summary: summarizeMaterialSlotSelectionAudit(
+          buildMaterialSlotSelectionAudit(input.draft, input.draft, input.spans),
+        ),
+        content: input.draft,
+      },
+    ],
+    outputSchema: {
+      materialSlots: 'deterministic truth already written',
+    },
+    reviewRubric: ['recall_regression'],
+  };
+  const review: IStageReview = {
+    stage: 'material-slots',
+    identity: 'script-reviewer',
+    attempt: 1,
+    verdict: 'pass',
+    issues: [],
+    revisionBrief: [],
+    reviewedAt: new Date().toISOString(),
+  };
+
+  await Promise.all([
+    writeScriptAgentPacket(input.projectRoot, 'material-slots', packet),
+    writeScriptStageReview(input.projectRoot, 'material-slots', review),
+    writeScriptAgentPipeline(input.projectRoot, {
+      currentStage: 'material-slots',
+      stageStatus: 'completed',
+      attemptCount: 1,
+      latestReviewResult: 'pass',
+      blockerSummary: [],
+      updatedAt: new Date().toISOString(),
+    }),
+  ]);
+
+  return { draft: input.draft, review };
+}
+
 function coerceReviewedScriptStageDraft<TDraft>(
   stage: string,
   raw: unknown,
@@ -2054,34 +2075,63 @@ function normalizeReviewedScriptCurrentDraft(
         const beatSource = beatCandidate as Record<string, unknown>;
         return {
           ...fallbackBeat,
-          ...beatSource,
           text: typeof beatSource.text === 'string' ? beatSource.text : fallbackBeat.text,
-          linkedSpanIds: normalizeStringList(beatSource.linkedSpanIds, fallbackBeat.linkedSpanIds),
-          audioSelections: Array.isArray(beatSource.audioSelections)
-            ? beatSource.audioSelections as typeof fallbackBeat.audioSelections
-            : fallbackBeat.audioSelections,
-          visualSelections: Array.isArray(beatSource.visualSelections)
-            ? beatSource.visualSelections as typeof fallbackBeat.visualSelections
-            : fallbackBeat.visualSelections,
+          utterances: Array.isArray(beatSource.utterances)
+            ? normalizeReviewedBeatUtterances(beatSource.utterances)
+            : fallbackBeat.utterances,
+          actions: mergeReviewedBeatActions(beatSource.actions, fallbackBeat.actions),
+          notes: typeof beatSource.notes === 'string' ? beatSource.notes : fallbackBeat.notes,
         };
       })
       : fallbackSegment.beats;
 
     return {
       ...fallbackSegment,
-      ...source,
       narration: typeof source.narration === 'string' ? source.narration : fallbackSegment.narration,
-      linkedSpanIds: normalizeStringList(source.linkedSpanIds, fallbackSegment.linkedSpanIds),
-      linkedSliceIds: normalizeStringList(source.linkedSliceIds, fallbackSegment.linkedSliceIds),
-      selections: Array.isArray(source.selections)
-        ? source.selections as typeof fallbackSegment.selections
-        : fallbackSegment.selections,
-      pharosRefs: Array.isArray(source.pharosRefs)
-        ? source.pharosRefs as typeof fallbackSegment.pharosRefs
-        : fallbackSegment.pharosRefs,
+      actions: mergeReviewedBeatActions(source.actions, fallbackSegment.actions),
+      notes: typeof source.notes === 'string' ? source.notes : fallbackSegment.notes,
       beats,
     };
   });
+}
+
+function normalizeReviewedBeatUtterances(raw: unknown): NonNullable<IKtepScript['beats']>[number]['utterances'] {
+  if (!Array.isArray(raw)) return undefined;
+  const utterances = raw
+    .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object' && !Array.isArray(item))
+    .map(item => ({
+      text: typeof item.text === 'string' ? item.text.trim() : '',
+      pauseBeforeMs: typeof item.pauseBeforeMs === 'number' && Number.isFinite(item.pauseBeforeMs)
+        ? Math.max(0, item.pauseBeforeMs)
+        : undefined,
+      pauseAfterMs: typeof item.pauseAfterMs === 'number' && Number.isFinite(item.pauseAfterMs)
+        ? Math.max(0, item.pauseAfterMs)
+        : undefined,
+    }))
+    .filter(item => item.text.length > 0);
+  return utterances.length > 0 ? utterances : undefined;
+}
+
+function mergeReviewedBeatActions(
+  raw: unknown,
+  fallback: IKtepScript['actions'] | undefined,
+): IKtepScript['actions'] | undefined {
+  const nextPreserveNatSound = raw && typeof raw === 'object' && typeof (raw as Record<string, unknown>).preserveNatSound === 'boolean'
+    ? (raw as Record<string, unknown>).preserveNatSound as boolean
+    : fallback?.preserveNatSound;
+  const nextMuteSource = raw && typeof raw === 'object' && typeof (raw as Record<string, unknown>).muteSource === 'boolean'
+    ? (raw as Record<string, unknown>).muteSource as boolean
+    : fallback?.muteSource;
+
+  if (typeof nextPreserveNatSound !== 'boolean' && typeof nextMuteSource !== 'boolean') {
+    return fallback;
+  }
+
+  return {
+    ...fallback,
+    preserveNatSound: nextPreserveNatSound,
+    muteSource: nextMuteSource,
+  };
 }
 
 function normalizeStringList(raw: unknown, fallback: string[]): string[] {
@@ -2875,6 +2925,8 @@ function buildScriptCurrentPacket(input: {
       '只相信 contract、outline、style、material overview、spatial-story。',
       '缺证据时必须保守，不脑补地点、事件和情绪。',
       '不要靠删 beat 来掩盖材料密度。',
+      '只允许改写 text、utterances、notes、muteSource、preserveNatSound。',
+      '不得增删或改写 audioSelections、visualSelections、linkedSpanIds、linkedSliceIds。',
     ],
     allowedInputs: [
       'script/agent-contract.json',

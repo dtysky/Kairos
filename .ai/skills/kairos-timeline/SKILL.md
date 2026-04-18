@@ -8,7 +8,7 @@ description: >-
 
 # Kairos: Phase 4 — Timeline
 
-从脚本 + 切片 + 资产构建完整 KTEP 时间线文档。
+从脚本 + 切片 + 资产构建完整 KTEP 时间线文档，但当前正式入口已经包含一层内部段级粗剪审查链：`rough-cut-base -> segment-cut-refiner -> segment-cut-reviewer -> timeline/current.json`。
 
 ## 变更工作流规则
 
@@ -24,13 +24,28 @@ description: >-
 - `store/assets.json` — 资产列表
 - `store/slices.json` — 切片列表
 - `script/current.json` — 脚本
+- `timeline/rough-cut-base.json` 与 reviewed `timeline/segment-cuts/<segmentId>.json` — 正式 Timeline 内部粗剪输入
 
-三个文件均存在且非空。
+正式 Timeline 运行时，这些文件都必须存在且通过 review；缺失 reviewer 产物时不能静默回退到旧的 raw-beat assembly。
 
 ## 可用工具
 
 ```typescript
-// 一键构建：脚本 → 摆放 → 转场 → 字幕 → 校验 → IKtepDoc
+// 正式入口：rough-cut-base -> reviewed segment cuts -> IKtepDoc
+buildProjectTimeline(
+  input: {
+    projectRoot: string;
+    agentRunner?: IJsonPacketAgentRunner;
+    config?: Partial<IBuildConfig>;
+  },
+): Promise<{
+  doc: IKtepDoc;
+  roughCutBase: ITimelineRoughCutBase;
+  segmentCuts: ISegmentRoughCutPlan[];
+  reviews: ISegmentCutReview[];
+}>
+
+// 低层装配 helper：当 reviewed segment cuts 已经存在时，才直接调用
 buildTimeline(
   project: IKtepProject,
   assets: IKtepAsset[],
@@ -54,7 +69,7 @@ buildTimeline(
 
 // 或分步执行：
 
-// 1. 摆放 clip
+// 1. 摆放 clip（优先消费 reviewed segment cuts）
 placeClips(
   script: IKtepScript[], slices: IKtepSlice[], assets: IKtepAsset[],
   config?: Partial<IPlacementConfig>,
@@ -69,7 +84,7 @@ planTransitions(clips: IKtepClip[], config?: Partial<ITransitionConfig>): IKtepC
 // ITransitionConfig:
 // { defaultType: 'cut', sceneChangeType: 'cross-dissolve', sceneChangeDurationMs: 800 }
 
-// 3. 生成字幕
+// 3. 生成字幕（优先消费 reviewed segment cuts）
 planSubtitles(
   script: IKtepScript[],
   clips: IKtepClip[],
@@ -91,32 +106,18 @@ validateKtepDoc(doc: IKtepDoc): IValidationResult
 ### 快速路径（推荐）
 
 ```typescript
-import { buildTimeline, readJson, writeJson } from 'kairos';
+import { buildProjectTimeline } from 'kairos';
 
-const assets = await readJson('store/assets.json', z.array(IKtepAsset));
-const slices = await readJson('store/slices.json', z.array(IKtepSlice));
-const script = await readJson('script/current.json', z.array(IKtepScript));
-
-const project: IKtepProject = {
-  id: randomUUID(),
-  name: '新西兰纪录片',
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-};
-
-const doc = buildTimeline(project, assets, slices, script, {
-  name: '新西兰纪录片',
-  fps: 30,
-  width: 3840,
-  height: 2160,
+const { doc, roughCutBase, segmentCuts, reviews } = await buildProjectTimeline({
+  projectRoot: 'projects/new-zealand-documentary',
 });
-
-await writeJson('timeline/current.json', doc);
 ```
 
 ### 分步路径（需要精细控制时）
 
 ```typescript
+// 0. 先确保 deterministic rough-cut base 与 reviewed segment cuts 已经存在且通过 blocker gate
+
 const { tracks, clips: rawClips } = placeClips(script, slices, assets, {
   maxSliceDurationMs: 12000,
   photoDefaultMs: 1000,
@@ -147,9 +148,16 @@ Timeline 阶段的字幕已经按素材类型分流：
 - 只有非 source-speech、且不是 photo-only 的 beat，才会按 `beat.text` 或 `beat.utterances[]` 生成 narration 字幕
 - 如果某条视频资产在 Analyze 的 `assetReports` 里被保守推荐切到 `protectionAudio`，且当前 beat 走 source-speech，时间线会把对应原声落到独立 `dialogue` / `nat` 音轨，不依赖视频主轨直接承载原声
 - 当某拍不走 source speech 时，命中的带音轨视频 clip 会被标记为静音意图，供导出适配器把原音压到静音
+- `planSubtitles()` 当前应优先使用 reviewed segment cut 里的 merged audio units、refined windows 与 subtitle cue draft，而不是重新把 `script/current.json` 当成全部 timing truth
 
 ## 画面时长与速度规则
 
+- Timeline 当前正式先读取 `timeline/rough-cut-base.json`：
+  - 锁定 `segmentId`、时间带 guard、beat 与 span 归属
+  - 给出可调整的 candidate window bounds
+  - 给出默认 merged source-speech audio units、subtitle cue draft 和 silent montage 速度建议
+- `segment-cut-refiner` 只允许在本段内拆并 / 重排 beat、在候选边界内调 window、覆盖 `drive / aerial` 速度、细化 source-speech 与字幕切分
+- `segment-cut-reviewer` 必须把召回回退、跨段换料、跨时间带回捞、非 `drive / aerial` 加速、speech window 越界、字幕严重错时，以及 chronology / Pharos / style guardrail 漂移视为 blocker
 - 对 Analyze 新产出的 slice，时间线默认优先使用 `editSourceInMs / editSourceOutMs`，而不是旧的 tight focus window
 - 只有旧 slice / 旧 selection 缺少 edit bounds 时，`placeClips()` 才会回落到 legacy source range
 - 对主轴明确偏时间 / 路程推进的 style，Timeline 还承担最后一层 chronology guardrail：
@@ -175,11 +183,16 @@ Timeline 阶段的字幕已经按素材类型分流：
   - 没有显式长停要求时，单张照片默认 `1000ms`
   - 只有显式 `beat.actions.holdMs` 才应延长照片或静默停留
   - 需要补信息时，优先把有效素材列入时间线，而不是无上限拉长一张照片
+- 如果段级 review 产物缺失、失败或未通过 blocker gate，Timeline 必须直接报错并停止；不要静默回退到旧的脚本直装配路径
 
 ## 产出
 
 | 文件 | 格式 | 内容 |
 |------|------|------|
+| `timeline/rough-cut-base.json` | internal JSON | 确定性段级粗剪底稿 |
+| `timeline/segment-cuts/<segmentId>.json` | internal JSON | reviewer 通过后的段级粗剪稿 |
+| `timeline/reviews/<segmentId>.json` | internal JSON | 段级审查结果 |
+| `timeline/agent-pipeline.json` | internal JSON | 段级粗剪流水线状态 |
 | `timeline/current.json` | `IKtepDoc` | 完整 KTEP 文档（含 project, assets, slices, script, timeline, subtitles） |
 
 ## 决策点

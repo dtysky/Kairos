@@ -8,6 +8,13 @@ alwaysApply: true
 当任务涉及生成、重写、续写、审查或更新 `script/current.json`、旁白、beat 文案或 Script 阶段产物时：
 
 - 必须先读取并遵循 `kairos-script` skill，不能跳过 skill 直接按临时理解执行。
+- 必须遵守 `kairos-script` 里显式标注的 `[main agent]` / `[subagent:*]` 边界；主代理负责 orchestration，subagent 负责各自阶段产物，不能互相偷换。
+- 如果 `kairos-script` 要求 clean-context subagent / reviewer 链，而当前宿主策略或用户授权不允许启动这条链，必须先停下说明原因；不能静默折叠成单代理本地起稿。
+- 如果当前宿主本身是 agent-base 环境，缺 formal stage runner 时必须先说明“宿主 packet runner 未接通 / 未配置”，不要把问题改写成“请用户提供 LLM key”。
+- script stage packet 是 formal subagent 的唯一上下文；不要再在 packet 外重复附加 `previousDraft`、`revisionBrief` 或主线程历史。
+- 当 `kairos-script` 明确写明“风格不驱动默认时长”时，不得从 style 平均章节时长、模板习惯或材料容量自动补总时长、段落预算或 `targetDurationMs`。
+- `buildMaterialSlotsDocument()` 是正式 `material-slots` truth；不要再让 `route-slot-planner` 改写 `chosenSpanIds`。
+- `beat-writer` 只能改写表达层字段（如 `text / utterances / notes / muteSource / preserveNatSound`）；不要让它增删或改写 `audioSelections / visualSelections / linkedSpanIds`。
 - 在判断“风格档案缺失”之前，必须先检查当前项目内是否已有 Script 上下文，例如 `script/script-brief.md`、`config/project-brief.md` 等是否已经记录了本项目本轮要使用的风格参考。
 - 如果 `script/script-brief.md` 已明确记录本轮风格参考，应将其视为当前项目已确认输入并继续执行；除非用户明确改风格、切项目，或该记录与现有文件无法对应。
 - 只有在 skill 要求的关键输入经核对后仍缺失、冲突或无法映射到实际文件时，才能按缺失输入规则停下并询问用户。
@@ -17,3 +24,11 @@ alwaysApply: true
 - 不要在没读 `kairos-script` skill 的情况下直接生成脚本
 - 不要忽略当前项目已经写明的风格参考，又重复向用户追问同一信息
 - 不要只因为当前项目目录下没有 `style-profile` 文件，就跳过对 workspace 级 `config/styles/`、`config/style-sources.json` 与已存在 brief 的核对
+- 不要在未获授权或宿主不支持时，把 subagent / reviewer 链静默折叠成单代理起稿
+- 不要在 agent-host 场景把“formal subagent runner 缺失”错误地转嫁成“用户没给 API key”
+- 不要让 `[main agent]` 事后“补锅”式改写 `script/current.json`，包括把 `{ "segments": [...] }` 再手工 normalize 成正式稿
+- 不要为 `script-current` 额外预跑一轮 full-script writer；正式 `beat-writer` 每次 attempt 只应写一次
+- 不要在 writer / reviewer 已失败后，还让 `script/agent-pipeline.json` 继续停留在旧阶段的 `pending`
+- 不要把风格当作默认时长模板，也不要用 style 平均时长、模板习惯或材料容量自动填写总时长、段落预算或 `targetDurationMs`
+- 不要让 `route-slot-planner` 静默删掉 deterministic base `chosenSpanIds`；对 `material-slots` 的 silent span drops / recall regression 必须显式拦下
+- 不要让 `beat-writer` 借改文案之名改写 locked recall facts（`audioSelections / visualSelections / linkedSpanIds`）

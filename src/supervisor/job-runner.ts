@@ -1,6 +1,8 @@
 import { join } from 'node:path';
 import {
+  AgentRunnerUnavailableError,
   analyzeWorkspaceProjectMedia,
+  buildProjectTimeline,
   createProjectReverseGeocodeService,
   importProjectGpxTracks,
   ingestWorkspaceProjectMedia,
@@ -15,6 +17,7 @@ import {
   resolveWorkspaceProjectRoot,
 } from '../index.js';
 import {
+  loadCurrentScript,
   getMaterialOverviewPath,
   loadOptionalMarkdown,
   loadScriptBriefConfig,
@@ -235,7 +238,31 @@ async function runJob(
         result,
       };
     }
-    case 'timeline':
+    case 'timeline': {
+      if (!projectId) {
+        throw new BlockedJobError(['timeline requires projectId']);
+      }
+      const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
+      const script = await loadCurrentScript(projectRoot);
+      if (!script?.length) {
+        throw new BlockedJobError(['timeline requires existing script/current.json']);
+      }
+      try {
+        return {
+          result: await buildProjectTimeline({
+            projectRoot,
+          }),
+        };
+      } catch (error) {
+        if (error instanceof AgentRunnerUnavailableError) {
+          throw new BlockedJobError([error.message]);
+        }
+        if (error instanceof Error && error.message.includes('awaiting user review')) {
+          throw new BlockedJobError([error.message]);
+        }
+        throw error;
+      }
+    }
     case 'export-jianying':
     case 'export-resolve':
       throw new BlockedJobError([`${jobType} runner is not wired yet in this Supervisor iteration.`]);

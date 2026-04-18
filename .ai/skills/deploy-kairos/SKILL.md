@@ -376,8 +376,6 @@ export KAIROS_ML_URL=http://192.168.1.100:8910
 Kairos 的脚本生成（style analysis, outline, narration）通过 Cursor / Codex agent 直接完成。
 agent 本身就是 LLM，不需要额外配置 API key。
 
-`OpenAIClient` 保留为备用路径，用于未来可能的独立 CLI 模式。
-
 ## Quick Smoke Test
 
 ```bash

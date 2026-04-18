@@ -4,7 +4,6 @@ import type {
   IStageReview,
   IStyleProfile,
 } from '../../protocol/schema.js';
-import type { ILlmClient } from '../llm/client.js';
 import type { IRhythmStats } from '../media/shot-detect.js';
 import type { IShotRecognition } from '../media/recognizer.js';
 import {
@@ -14,7 +13,9 @@ import {
   getStyleReviewPath,
   writeJson,
 } from '../../store/index.js';
-import { runJsonPacketAgent } from '../agents/runtime.js';
+import {
+  type IJsonPacketAgentRunner,
+} from '../agents/runtime.js';
 import {
   CRHYTHM_MATERIAL_PARAMETER_KEYS,
   ensureRhythmMaterialParameterKeys,
@@ -98,7 +99,7 @@ interface IStyleDraftDocument {
 }
 
 export async function analyzeStyle(
-  llm: ILlmClient,
+  agentRunner: IJsonPacketAgentRunner,
   sourceFiles: string[],
   transcripts: string[],
   options?: IAnalyzeStyleOptions,
@@ -108,15 +109,15 @@ export async function analyzeStyle(
     transcript: transcripts[index],
     guidancePrompt: options?.guidancePrompt,
   }));
-  return analyzeStyleFromReports(llm, reports, options);
+  return analyzeStyleFromReports(agentRunner, reports, options);
 }
 
 export async function analyzeStyleFromReports(
-  llm: ILlmClient,
+  agentRunner: IJsonPacketAgentRunner,
   reports: IStyleReferenceVideoAnalysis[],
   options?: IAnalyzeStyleOptions,
 ): Promise<IStyleProfile> {
-  const result = await runStyleProfileAgentPipeline(llm, reports, options);
+  const result = await runStyleProfileAgentPipeline(agentRunner, reports, options);
   if (result.status !== 'completed' || !result.profile) {
     const blockers = result.review.issues
       .filter(issue => issue.severity === 'blocker')
@@ -127,7 +128,7 @@ export async function analyzeStyleFromReports(
 }
 
 export async function runStyleProfileAgentPipeline(
-  llm: ILlmClient,
+  agentRunner: IJsonPacketAgentRunner,
   reports: IStyleReferenceVideoAnalysis[],
   options?: IAnalyzeStyleOptions,
 ): Promise<IAnalyzeStylePipelineResult> {
@@ -142,22 +143,19 @@ export async function runStyleProfileAgentPipeline(
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const synthesisPacket = buildStyleSynthesisPacket(summary, revisionBrief, previousDraft, options);
     await persistStylePacket('style-profile-synthesizer', synthesisPacket, options);
-    const draft = await runJsonPacketAgent<IStyleSynthDraft>(
-      llm,
-      'style/style-profile-synthesizer',
-      synthesisPacket,
-      { revisionBrief, previousDraft },
-    );
+    const draft = await agentRunner.run<IStyleSynthDraft>({
+      promptId: 'style/style-profile-synthesizer',
+      packet: synthesisPacket,
+    });
     await persistStyleDraft({ generatedAt: new Date().toISOString(), attempt, draft }, options);
 
     const reviewPacket = buildStyleReviewPacket(summary, draft, attempt, options);
     await persistStylePacket('style-profile-reviewer', reviewPacket, options);
-    const review = await runJsonPacketAgent<Partial<IStageReview>>(
-      llm,
-      'style/style-profile-reviewer',
-      reviewPacket,
-      { llm: { temperature: 0.1 } },
-    );
+    const review = await agentRunner.run<Partial<IStageReview>>({
+      promptId: 'style/style-profile-reviewer',
+      packet: reviewPacket,
+      llm: { temperature: 0.1 },
+    });
     lastReview = normalizeStageReview(review, {
       stage: 'style-profile',
       identity: 'style-profile-reviewer',
@@ -262,7 +260,7 @@ function buildStyleSynthesisPacket(
         summary: revisionBrief.join(' / '),
         content: revisionBrief,
       } : null,
-      previousDraft ? {
+      revisionBrief.length > 0 && previousDraft ? {
         label: 'previous-draft',
         summary: '上一轮 style 草稿，仅用于修订，不代表正式通过。',
         content: previousDraft,
@@ -406,12 +404,14 @@ function normalizeStageReview(
     ? raw.issues
       .filter((issue): issue is NonNullable<IStageReview['issues']>[number] => Boolean(issue && typeof issue === 'object'))
       .map(issue => ({
-        code: input.defaultCodes.includes(issue.code) ? issue.code : input.defaultCodes[0],
+        code: typeof issue.code === 'string' && issue.code.trim()
+          ? issue.code.trim()
+          : input.defaultCodes[0],
         severity: issue.severity === 'warning' ? 'warning' as const : 'blocker' as const,
         message: typeof issue.message === 'string' && issue.message.trim()
           ? issue.message.trim()
           : 'reviewer returned an empty issue message.',
-        details: typeof issue.details === 'string' && issue.details.trim() ? issue.details.trim() : undefined,
+        details: issue.details,
       }))
     : [];
   const hasBlocker = issues.some(issue => issue.severity === 'blocker');

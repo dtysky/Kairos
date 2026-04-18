@@ -9,6 +9,7 @@ import type {
   IMediaChronology,
   IKtepScriptSelection,
   IKtepScriptBeat,
+  ISegmentRoughCutPlan,
 } from '../../protocol/schema.js';
 import {
   hasExplicitEditRange,
@@ -21,6 +22,7 @@ import {
   shouldPreferSourceSpeech,
 } from './pacing.js';
 import type { IResolvedArrangementSignals } from '../script/arrangement-signals.js';
+import { buildTimelineScriptFromSegmentCuts } from './segment-cuts.js';
 
 export interface IPlacementConfig {
   maxSliceDurationMs: number;
@@ -28,6 +30,7 @@ export interface IPlacementConfig {
   photoDefaultMs: number;
   chronology?: IMediaChronology[];
   arrangementSignals?: IResolvedArrangementSignals;
+  reviewedSegmentCuts?: ISegmentRoughCutPlan[];
 }
 
 const CDEFAULTS: IPlacementConfig = {
@@ -49,6 +52,9 @@ export function placeClips(
   assetReports: IAssetCoarseReport[] = [],
 ): { tracks: IKtepTrack[]; clips: IKtepClip[] } {
   const cfg = { ...CDEFAULTS, ...config };
+  const effectiveScript = cfg.reviewedSegmentCuts?.length
+    ? buildTimelineScriptFromSegmentCuts(script, cfg.reviewedSegmentCuts)
+    : script;
   const sliceMap = new Map(slices.map(s => [s.id, s]));
   const assetMap = new Map(assets.map(a => [a.id, a]));
   const chronologyMap = new Map((cfg.chronology ?? []).map(entry => [entry.assetId, entry]));
@@ -65,7 +71,7 @@ export function placeClips(
   let cursor = 0;
   let previousBeatChronologyKey: string | null = null;
 
-  const preparedSegments = script.map(seg => prepareSegmentPlacement(
+  const preparedSegments = effectiveScript.map(seg => prepareSegmentPlacement(
     seg,
     sliceMap,
     assetMap,
