@@ -29,13 +29,18 @@
 - 渲染采用 `Individual Clips` 语义，并以 Resolve `Group` 为最小正式执行粒度。
 - 输出目录继续镜像来源树，输出文件名保留源文件 `stem`，扩展名统一规范为 `.mp4`。
 - v1 默认输出固定为 `MP4 + H.265 + AAC`，并要求每个 `root` 显式配置目标码率。
-- compatibility gate 对关键元数据做强校验：至少 `capturedAt / create_time / GPS` 保真；源里不存在的字段保持缺失，不写 Kairos 推断伪值。
+- v1 正式纳入 `Group` 级创意 look；look 挂在 Resolve `Group`，不挂在 `Timeline`。
+- `gyro / stabilization / denoise / WB trim / exposure trim` 正式按 Resolve `Clip` 级能力建模，不伪装成 Group 原生能力。
+- v1 的处理参数 schema 直接按 DaVinci 原生对象和术语建，不额外抽象一层通用处理模型。
+- clip 级参数只开放有限正式参数集，不尝试把整个 Resolve Inspector 全量结构化。
+- compatibility gate 对关键元数据做强校验：至少 `capturedAt`、容器 / EXIF 侧 `create_time` 与 GPS 保真；文件系统 `create_time` 只做 best effort 记录，不作为阻塞 promote 的硬门槛；源里不存在的字段保持缺失，不写 Kairos 推断伪值。
 
 本稿当前仍然刻意不解决以下问题，它们留到下一轮：
 
-- 具体节点顺序、参数 schema 与插件映射细节
-- 参考 clip / still 的精确自动选择规则
-- LUT / PowerGrade / 创意 look 是否进入后续版本
+- 参数 schema 与插件映射细节
+- match 的具体执行策略
+- 关键 metadata 的具体保真实现路径
+- `Group` look 的具体载体与参数边界
 
 ## Summary
 
@@ -280,10 +285,59 @@ Resolve `Group` 的正式职责是：
 - 共享输入变换
 - 共享技术基础
 - 组内统一调整
+- 组级创意 look
 
 它不再通过 Kairos 自创的 `grade group` 命名表达；Kairos 只保存“哪个 clip 属于哪个 Resolve `Group`”这一事实。
 
 每条 clip 只能属于一个 Resolve `Group`，不允许为了表达多维处理再保留第二层平行组关系。
+
+#### 候选 `Group` 生成
+
+v1 里的 Resolve `Group` 不是手写空壳对象，而是由 Kairos 先生成候选，再由用户确认。
+
+候选生成只允许使用可解释的技术信号，至少包括：
+
+- 输入 profile / 色彩空间 / 机型来源
+- 亮度环境
+- 是否需要 gyro
+- 是否需要降噪
+
+明确不允许作为 v1 候选生成信号的内容包括：
+
+- `aroll / broll / drive` 这类角色语义
+- Analyze 场景语义
+- 脚本或时间线叙事语义
+- 情绪或风格类黑盒推断
+
+也就是说：
+
+- `Group` 的候选生成可以服务技术链和工作组织
+- 但 v1 不自动推断创意 look
+- 组级创意 look 由用户明确选择、审阅并持久化
+
+候选生成的正式行为是：
+
+- 系统先为每条 clip 生成一份可解释的技术特征摘要
+- 按特征摘要聚合为候选 Resolve `Group`
+- 若已有正式 `Group` 的稳定特征与候选一致，则优先复用现有 `Group`
+- 若没有可复用对象，则创建新的候选 `Group`
+
+#### `groupKey` 与审阅
+
+每个 Resolve `Group` 的长期身份由 `groupKey` 锚定。
+
+`groupKey` 的正式语义是：
+
+- 它是 Kairos 持久化保存的稳定键
+- 它服务于 Resolve 对象复用、manifest 追踪和用户审阅
+- 它不等于用户可见显示名
+
+正式审阅流程是：
+
+- 候选 `Group` 先进入 `draft`
+- 用户可以改显示名、合并、拆分、把 clip 重新分配到别的 `Group`
+- 只有确认后的 `Group` 才进入正式配置并写回 `color/config.json`
+- 已确认 `Group` 的 `groupKey` 后续必须稳定复用
 
 ### 8. `Gallery / Album / Still`
 
@@ -297,6 +351,31 @@ Resolve `Group` 的正式职责是：
 
 系统会先为每个 Group 选候选参考 clip / still，用户可改。
 
+#### 候选参考 still 选择
+
+v1 的候选参考 still 选择必须是可解释的，不能依赖黑盒美学判断。
+
+正式规则如下：
+
+- 只从当前 `Group` 内的 clip 中选择
+- 优先选择技术状态更稳定的 clip
+- 若存在明显异常 clip，应避免把它作为默认参考
+- 若存在多个同样合格的候选，使用稳定次序打破平局
+
+候选评估时至少考虑：
+
+- 是否为可正常处理的视频 clip
+- 是否存在明显异常的单片覆写需求
+- 是否存在明显极端亮度或明显噪点问题
+- 是否属于高运动、参考难度更高的镜头
+
+默认平局规则是：
+
+- 先按 `capturedAt`
+- 再按 `sourceRelativePath`
+
+用户修改后的参考 clip / still 必须持久化到正式配置中，并在后续重跑时默认复用。
+
 ### 9. `Render Queue`
 
 正式渲染采用 Resolve 的 `Render Queue`，语义为：
@@ -306,6 +385,78 @@ Resolve `Group` 的正式职责是：
 - 每次渲染整条源素材，不做裁剪和变速
 
 `Render Queue` 项目是宿主对象；Kairos 只负责记录这次运行对应的计划、manifest、validation 和 promote 结果。
+
+#### `Render Queue` 项命名与身份
+
+v1 需要明确区分：
+
+- Resolve 的 `Render Queue` 项
+- Kairos 的一次运行记录
+
+前者是宿主可见对象，后者是 Kairos 自己的受管记录。
+
+因此：
+
+- `Render Queue` 项本身不作为长期身份锚点
+- 每次执行都对应一个新的 Kairos `batchId`
+- `batchId` 才是本轮 plan / review / manifest / validation / promote 的统一关联键
+
+建议的 `Render Queue` 项显示命名规则为：
+
+- `root__<rootId>__group__<groupKey>__batch__<batchId>`
+
+这个名字只服务于人工排查和宿主定位，不应反向成为 Kairos 的唯一真相。
+
+#### 重跑与复用
+
+同一个 Resolve `Group` 可以被重复执行。
+
+v1 的正式语义是：
+
+- 长期对象继续复用：
+  - `Resolve Project`
+  - `Media Pool / Bin`
+  - root `grading timeline`
+  - Resolve `Group`
+  - `Gallery Album`
+- 一次执行总是新建一轮新的运行记录：
+  - 新的 `batchId`
+  - 新的 staging 输出目录
+  - 新的 manifest / validation 结果
+  - 新的 `Render Queue` 项
+
+如果同一 `Group` 存在多个历史 batch：
+
+- 只有最新且成功通过 validation 的 batch 能成为“待 promote 候选”
+- 已被更新 batch 取代的旧 batch 必须标记为 `superseded`
+- `superseded` 的旧 batch 不允许再 promote，避免把当前输出回滚到非当前审阅版本
+
+#### 渲染完整性与失败语义
+
+v1 不允许把一个 `Group` 的部分成功渲染结果当作可 promote 成果。
+
+正式规则是：
+
+- 某个 `Group` 的目标 clip 集合，在本轮 render 中必须全部形成 staging 输出
+- 只要有任一目标 clip 缺失、渲染失败、路径不对或编码契约不符，该 batch 就不能进入可 promote 状态
+- validation 只对“完整 staging 集合”运行；不完整集合直接记为失败
+
+也就是说，v1 默认不支持：
+
+- partial promote
+- 只替换成功片段、跳过失败片段
+- 在当前素材目录里留下半更新状态
+
+#### staging 目录与 `Render Queue` 的关系
+
+Resolve 的 `Render Queue` 只负责把渲染结果写到 Kairos 提供的 staging 位置。
+
+正式要求是：
+
+- 每个 batch 都有独立 staging 根目录
+- staging 内部必须镜像该 `Group` 对应的 `sourceRelativePath` 树
+- Resolve 不能直接把结果写进当前素材目录
+- Kairos promote 前必须以 manifest 为准重新核对 staging 文件集合
 
 ## Workflow
 
@@ -400,17 +551,48 @@ v1 的正式调色层级固定为：
   - 共享技术基础
   - 组内统一调整
   - 组内 reference still / shot match
+  - 组级创意 look
 - `Clip`
-  - gyro
+  - gyro / stabilization
   - 降噪
-  - 单片差异
-  - 必要覆写
+  - 单片白平衡 / 曝光 trim
+  - 少量必要覆写
 - `Timeline`
   - `root` 级最终收口
   - 允许整体 finishing / output 收口
   - 不承担主要调色职责
 
-### 2. 各层允许承载的处理
+### 2. Resolve 原生节点顺序
+
+v1 的正式节点顺序固定为 Resolve 原生四层：
+
+1. `Group Pre-Clip`
+2. `Clip`
+3. `Group Post-Clip`
+4. `Timeline`
+
+其正式职责分别是：
+
+1. `Group Pre-Clip`
+   - 输入色彩空间归一化
+   - 共享 CST / 输入变换
+   - 该 Group 全体 clip 必须共享的基础技术前处理
+2. `Clip`
+   - gyro
+   - 降噪
+   - 单片白平衡 / 曝光 trim
+   - 单片例外修正
+3. `Group Post-Clip`
+   - 组内统一调整
+   - 组内 reference still / shot match
+   - 该 Group 共享的统一收口
+   - 该 Group 的创意 look
+4. `Timeline`
+   - `root` 级最终收口
+   - 输出级 finishing
+   - 面向该 root 全体输出的最终安全校正
+
+### 3. 各层允许承载的处理
 
 `Group` 层允许承载：
 
@@ -418,10 +600,11 @@ v1 的正式调色层级固定为：
 - 共享 CST / 共享基础技术节点
 - 组内统一白平衡 / 曝光基准
 - 组内 reference still / match 相关节点
+- 组级 LUT / PowerGrade / creative look
 
 `Clip` 层允许承载：
 
-- gyro
+- gyro / stabilization
 - 降噪
 - 单片白平衡 / 曝光 trim
 - 单片例外修正
@@ -433,11 +616,11 @@ v1 的正式调色层级固定为：
 - 统一输出级 finishing
 - 面向该 root 全体输出的最终安全校正
 
-### 3. 各层明确不该承载的处理
+### 4. 各层明确不该承载的处理
 
 `Group` 层不应承载：
 
-- 只对单片成立的 gyro / 降噪
+- 只对单片成立的 gyro / stabilization / 降噪
 - 依赖个别素材问题的修补
 - 跨 Group 的统一风格传递
 
@@ -445,21 +628,24 @@ v1 的正式调色层级固定为：
 
 - 本应被整个 Group 共享的输入变换
 - 需要整组共同维护的统一基础
+- 本应由 Group 统一审阅和持久化的创意 look
 - 本应在 root 最终输出层完成的统一收口
 
 `Timeline` 层不应承载：
 
 - 本应在 `Group` 层共享的技术基础
 - 本应在 `Clip` 层完成的单片修正
+- 大部分风格主语义
 - 叙事或段落级 look 设计
 
-### 4. v1 要覆盖的能力
+### 5. v1 要覆盖的能力
 
 v1 正式纳入以下能力：
 
 - 输入变换 / CST
 - 共享技术基础
-- gyro
+- Group 级 creative look
+- gyro / stabilization
 - 降噪
 - 基础校正
   - 白平衡
@@ -467,7 +653,7 @@ v1 正式纳入以下能力：
 - 组内 reference still / shot match
 - root 级最终收口
 
-### 5. v1 明确不做
+### 6. v1 明确不做
 
 以下能力不进入本稿的 v1：
 
@@ -476,7 +662,6 @@ v1 正式纳入以下能力：
 - 基于 Analyze 语义的镜头聚类
 - 角色驱动的 look 分类
 - 时间戳命名导出
-- LUT / PowerGrade 风格层
 - 复杂二级局部调色
 - 依赖叙事目标的跨 Group 匹配
 
@@ -606,7 +791,6 @@ v1 至少校验以下项目：
 
 - `capturedAt`
 - 容器 / EXIF 侧 creation metadata
-- `create_time`
 - GPS / 空间相关元信息
 - chronology / spatial inference / Pharos 对齐依赖的其他核心字段
 
@@ -615,6 +799,7 @@ v1 至少校验以下项目：
 - 源里已有的关键字段必须保真
 - 源里没有的关键字段保持缺失
 - 不允许写入 Kairos 推断伪值
+- 文件系统 `create_time` 只做 best effort 记录与对照，不作为 v1 promote 的硬阻塞项
 
 ### 3. gate 的结果语义
 
@@ -702,7 +887,15 @@ v1 新增项目级 `color/` 目录，至少包括：
   - root 对应的 Resolve 工程映射
   - `Media Pool / Bin` 镜像状态
   - Resolve `Group` 定义与 clip 分配
+  - `groupKey`
+  - 每个 Group 的技术特征摘要
+  - 每个 Group 的 creative look 配置
   - 每个 Group 的 `Gallery Album / Still`
+  - 默认参考 clip / still
+  - clip 级 materialized 处理配置
+    - `gyro / stabilization`
+    - `denoise`
+    - `wb / exposure trim`
   - `Timeline` 最终收口配置
 - `color/current.json`
   - 当前 UI 状态
@@ -712,6 +905,7 @@ v1 新增项目级 `color/` 目录，至少包括：
 - `color/batches/<batchId>/plan.json`
   - 本轮 Group 计划
   - clip 清单
+  - 候选 `Group` 生成依据
   - 默认参考 clip / still
 - `color/batches/<batchId>/review.json`
   - 用户审阅结果
@@ -723,6 +917,152 @@ v1 新增项目级 `color/` 目录，至少包括：
   - compatibility gate 结果
   - 关键 metadata 校验结果
 
+### 4. `manifest.json` 正式字段契约
+
+`manifest.json` 是 Kairos 对“这次运行实际产生了哪些受管输出”的正式记录。
+
+它的正式职责是：
+
+- 记录本轮目标 clip 集合
+- 记录 staging 结果和 promote 目标之间的一一对应
+- 为 validation 和 promote 提供唯一依据
+- 为后续清理旧受管输出提供上一轮对照
+
+v1 至少需要这些顶层字段：
+
+- `projectId`
+- `rootId`
+- `groupKey`
+- `batchId`
+- `status`
+  - `draft | rendered | validated | promoted | failed | superseded`
+- `sourceRoot`
+- `stagingRoot`
+- `currentRoot`
+- `renderPreset`
+  - `container`
+  - `videoCodec`
+  - `audioCodec`
+  - `bitrate`
+- `filesystemTimestamps`
+  - `sourceCreateTime`
+  - `outputCreateTime`
+- `entries`
+
+每个 `entries[]` 项至少需要：
+
+- `sourceRelativePath`
+- `sourcePath`
+- `sourceStem`
+- `sourceExtension`
+- `normalizedOutputFilename`
+- `stagingRelativePath`
+- `stagingPath`
+- `promoteRelativePath`
+- `promoteTargetPath`
+- `renderStatus`
+  - `pending | rendered | failed`
+- `sourceMetadataSnapshot`
+- `outputMetadataSnapshot`
+
+其中正式约束是：
+
+- `entries[]` 的主键是 `sourceRelativePath`
+- `normalizedOutputFilename` 必须等于 `sourceStem + .mp4`
+- `promoteRelativePath` 必须与 `sourceRelativePath` 的目录部分一致，只允许文件扩展名规范化
+- `outputMetadataSnapshot` 只记录实际探测到的输出事实，不补写推断值
+- 文件系统时间戳只作为辅助记录，不参与 v1 的硬通过判定
+
+`manifest.json` 还应显式记录一份本 batch 的 `managedOutputSet`，语义为：
+
+- 这轮 promote 有权覆盖、创建、删除的受管输出集合
+- 删除范围只允许落在该集合对应的当前输出路径上
+- 删除权限不能越过当前 `Group` 的历史受管边界，更不能触及 `rawPath`
+
+### 5. `validation.json` 正式字段契约
+
+`validation.json` 是 compatibility gate 的正式结果，不是调试日志。
+
+它至少需要这些顶层字段：
+
+- `projectId`
+- `rootId`
+- `groupKey`
+- `batchId`
+- `status`
+  - `pass | fail`
+- `validatedAt`
+- `summary`
+  - `targetCount`
+  - `renderedCount`
+  - `passedCount`
+  - `failedCount`
+- `blockingReasons`
+- `entries`
+
+每个 `entries[]` 项至少需要：
+
+- `sourceRelativePath`
+- `normalizedOutputFilename`
+- `stagingPath`
+- `promoteTargetPath`
+- `checks`
+  - `pathMirror`
+  - `filenameNormalized`
+  - `mediaKind`
+  - `resolution`
+  - `fps`
+  - `duration`
+  - `capturedAt`
+  - `createTime`
+  - `gps`
+  - `filesystemCreateTime`
+- `result`
+  - `pass | fail`
+
+每个 check 的最小结果语义应为：
+
+- `pass`
+- `fail`
+- `not_present_in_source`
+
+其中：
+
+- `not_present_in_source` 只允许用于源里本来缺失的字段
+- 只要任一硬校验项为 `fail`，该 entry 就必须记为 `fail`
+- 只要任一 entry 为 `fail`，整个 `validation.json.status` 就必须是 `fail`
+- `filesystemCreateTime` 允许仅记录 `pass | fail | unknown` 作为辅助信息，但它不会单独把 entry 判为 `fail`
+
+`blockingReasons` 需要面向用户可解释，至少能回答：
+
+- 是哪条 clip 失败
+- 失败发生在路径、媒体参数还是关键 metadata
+- 为什么这会阻止无感 promote
+
+### 6. `current.json` 的运行真相
+
+`color/current.json` 是 `/color` 页面和 Supervisor 之间共享的“当前运行真相”，但它不是长期工程配置。
+
+它至少要区分三类状态：
+
+- 长期存在的 root 工作状态
+  - 是否已镜像 `Media Pool / Bin`
+  - 是否已建立长期 `grading timeline`
+  - 当前正式 `Group` 列表
+- 当前可执行或可 promote 的运行状态
+  - 哪些 `Group` 处于 `ready / running / staged / blocked`
+  - 哪个 batch 是当前待 promote 候选
+- 短期 UI 辅助状态
+  - 当前选中的 root
+  - 当前展开的 Group
+  - 最近一次 validation 摘要
+
+正式约束是：
+
+- 长期配置只写 `config.json`
+- 某次运行的事实只写对应 `batches/<batchId>/...`
+- `current.json` 只保存“当前指向谁”的状态，不复制长期配置和历史详情
+
 ### 4. root-level preset
 
 v1 的输出 preset 以素材根为单位配置，不是全项目统一，也不是逐 Group 配置。
@@ -732,6 +1072,25 @@ v1 的输出 preset 以素材根为单位配置，不是全项目统一，也不
 - 不同素材根常常对应不同机位或不同来源习惯
 - 逐 Group 配置对 v1 来说过细
 - 全项目统一则无法满足真实多机位项目
+
+### 5. v1 参数 schema 原则
+
+v1 的处理参数 schema 直接按 DaVinci 原生对象和语义建模。
+
+正式原则是：
+
+- `Group`、`Clip`、`Timeline` 分别保存各自原生层级允许承载的处理
+- 不再额外抽象一层通用“处理意图协议”
+- v1 只开放有限正式参数集，不试图把整个 Resolve Inspector 或全部节点参数完整映射出来
+
+其中 clip 级正式参数集当前收口为：
+
+- `gyro / stabilization`
+- `denoise`
+- `white balance trim`
+- `exposure trim`
+
+除此之外的 Resolve clip 能力，除非下一轮正式纳入，否则都不进入 v1 schema。
 
 ## Console
 
@@ -806,15 +1165,46 @@ v1 至少拆为：
 - 必须先完成 validation
 - promote 必须等用户确认
 
+### 3. 并发与互斥
+
+v1 不要求 Resolve 侧并发执行多个正式渲染。
+
+正式互斥规则建议为：
+
+- 同一 `rootId + groupKey` 在任意时刻只能有一个活跃 batch
+- 同一 root 的 `promote_group` 不能并发执行
+- 当某个 Group 已经存在 `running` 或 `await_confirm_group` 的 batch 时，新的同组执行请求必须：
+  - 先显式取消旧候选，或
+  - 把旧候选标记为 `superseded`
+
+这样做的目的，是避免：
+
+- staging 与 promote 目标互相覆盖
+- `/color` 页面同时出现多个“当前可 promote”真相
+- 用户把较旧的已审阅结果 promote 到当前目录
+
+### 4. promote 的阻塞条件
+
+`promote_group` 只有在以下条件全部满足时才允许开始：
+
+- 当前 batch 的 `validation.json.status = pass`
+- 当前 batch 未被标记为 `superseded`
+- 当前 batch 仍然是该 `Group` 的最新可 promote 候选
+- 用户已对这次 promote 做显式确认
+
+如果其中任一条件失效：
+
+- promote 必须拒绝执行
+- `/color` 必须提示用户当前候选已失效、被新结果取代或尚未通过 validation
+
 ## Open Items For Next Round
 
-以下两部分被明确留到下一轮讨论，它们不是本稿的缺漏，而是刻意延后冻结：
+以下几部分被明确留到下一轮讨论，它们不是本稿的缺漏，而是刻意延后冻结：
 
 ### 1. 处理链细节
 
 下一轮需要明确：
 
-- `Group / Clip / Timeline` 的具体节点顺序
 - 各处理阶段的可配置参数 schema
 - 单片覆写允许哪些字段
 - 如何映射到具体 Resolve 插件或节点
@@ -823,10 +1213,17 @@ v1 至少拆为：
 
 下一轮需要明确：
 
-- 参考 clip / still 的自动选择规则
 - match 的具体执行策略
-- 是否、何时、如何引入 LUT / PowerGrade / 创意 look
-- 当后续版本需要风格层时，是否挂在 `Group`、`Timeline`，还是独立建模
+- `Group` creative look 的正式字段、参数边界与默认载体
+- LUT / PowerGrade / creative look 之间的最小兼容模型
+
+### 3. metadata 实现细节
+
+下一轮需要明确：
+
+- `capturedAt / create_time / GPS` 在不同容器和编码器下的具体保真方案
+- 哪些 metadata 通过转封装或写回 sidecar 维持，哪些必须由导出工具直接保留
+- 若宿主导出能力无法保留关键 metadata，Kairos 是否需要正式拒绝该 preset
 
 ## Success Criteria
 
@@ -836,12 +1233,18 @@ v1 成功的最低标准是：
 - `/color` 可以独立从 `rawPath` 同步 `Media Pool / Bin`
 - 每个 `root` 只维护一条长期 `grading timeline`
 - 每条 clip 只能属于一个 Resolve `Group`
+- Resolve `Group` 候选生成必须可解释，并可复用既有正式 `Group`
+- 每个 `Group` 都可以持久化自己的 creative look
 - 每个 `Group` 都有自己的 `Gallery Album / Still`
+- 每个 `Group` 的默认参考 still 都能生成、修改并持久化
 - `color` job 可以按 Resolve `Group` 驱动 `Individual Clips` 输出 staging
 - Kairos 可以按 Resolve `Group` 对 staging 做 compatibility gate
+- 每次执行都会生成独立 `batchId`、manifest 和 validation 结果
+- 同组旧 batch 被新 batch 取代后不能再次 promote
 - 输出目录继续镜像来源树
 - 输出文件名保留源 `stem`，扩展名统一为 `.mp4`
 - 源素材音频存在时，默认随导出结果保留
+- clip 级 schema 只开放有限正式参数集，并至少覆盖 `gyro / stabilization`、`denoise`、`WB / exposure trim`
 - 关键 metadata 保真时允许 promote，不保真时阻塞 promote
 - 主链无需理解调色内部状态，继续把当前素材目录当普通素材根使用
 
