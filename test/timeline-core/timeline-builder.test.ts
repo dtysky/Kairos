@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { IKtepAsset, IKtepProject, IKtepScript, IKtepSlice } from '../../src/protocol/schema.js';
 import { buildTimeline, resolveTimelineBuildConfig } from '../../src/modules/timeline-core/timeline-builder.js';
+import { createTestScript } from '../helpers/script-fixtures.js';
 
 const CPROJECT: IKtepProject = {
   id: 'project-1',
@@ -26,7 +27,7 @@ const CSLICES: IKtepSlice[] = [{
   placeHints: [],
 }];
 
-const CSCRIPT: IKtepScript[] = [{
+const CSCRIPT: IKtepScript[] = createTestScript([{
   id: 'segment-1',
   role: 'scene',
   narration: '短句。',
@@ -46,7 +47,7 @@ const CSCRIPT: IKtepScript[] = [{
     }],
     linkedSliceIds: ['slice-1'],
   }],
-}];
+}]);
 
 describe('buildTimeline output spec', () => {
   it('defaults to 4K 30fps', () => {
@@ -115,7 +116,7 @@ describe('buildTimeline output spec', () => {
         placeHints: [],
       },
     ];
-    const script: IKtepScript[] = [{
+    const script: IKtepScript[] = createTestScript([{
       id: 'segment-1',
       role: 'scene',
       narration: '短句。',
@@ -134,7 +135,7 @@ describe('buildTimeline output spec', () => {
           linkedSliceIds: ['slice-early'],
         },
       ],
-    }];
+    }]);
 
     const doc = buildTimeline(CPROJECT, assets, slices, script, {
       chronology: [

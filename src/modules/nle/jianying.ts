@@ -140,6 +140,7 @@ export function buildJianyingConfigFromRuntime(
     draftRoot: runtimeConfig.jianyingDraftRoot,
     pythonPath: runtimeConfig.jianyingPythonPath,
     pyProjectRoot: runtimeConfig.jianyingPyProjectRoot,
+    ffmpegPath: runtimeConfig.ffmpegPath,
     ...overrides,
   };
 }

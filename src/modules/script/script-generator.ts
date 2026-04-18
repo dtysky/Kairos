@@ -10,7 +10,12 @@ import type {
   IStyleProfile,
 } from '../../protocol/schema.js';
 import type { ILlmClient } from '../llm/client.js';
-import { runJsonPacketAgent } from '../agents/runtime.js';
+import {
+  isJsonPacketAgentRunner,
+  isLlmClient,
+  LlmJsonPacketAgentRunner,
+  type IJsonPacketAgentRunner,
+} from '../agents/runtime.js';
 import type { IOutlineBeat, IOutlineSegment } from './outline-builder.js';
 import { buildRhythmMaterialPromptLines } from './style-rhythm.js';
 
@@ -27,11 +32,19 @@ export interface IScriptGenerationContext {
 }
 
 export async function generateScript(
-  llm: ILlmClient,
+  runnerOrLlm: IJsonPacketAgentRunner | ILlmClient,
   outline: IOutlineSegment[],
   style: IStyleProfile,
   context?: IScriptGenerationContext,
 ): Promise<IKtepScript[]> {
+  const agentRunner = isJsonPacketAgentRunner(runnerOrLlm)
+    ? runnerOrLlm
+    : isLlmClient(runnerOrLlm)
+      ? new LlmJsonPacketAgentRunner(runnerOrLlm)
+      : null;
+  if (!agentRunner) {
+    throw new Error('generateScript requires an agent runner or compatibility llm client');
+  }
   const styleText = buildStylePrompt(style);
   const outlineText = buildOutlinePrompt(outline);
   const contextText = buildGenerationContextPrompt(context);
@@ -43,6 +56,7 @@ export async function generateScript(
       '必须严格遵循 contract、outline 和 style 中已给出的约束。',
       '缺证据时必须保守，不脑补地点、事件和情绪。',
       '不要通过删 beat 来掩盖材料密度。',
+      'source-speech beat 必须显式输出 audioSelections[] 和 visualSelections[]。',
     ],
     allowedInputs: [
       'material overview',
@@ -72,12 +86,11 @@ export async function generateScript(
   };
   let raw: unknown;
   try {
-    raw = await runJsonPacketAgent<unknown>(
-      llm,
-      'script/beat-writer',
+    raw = await agentRunner.run<unknown>({
+      promptId: 'script/beat-writer',
       packet,
-      { llm: { temperature: 0.7, maxTokens: 4000 } },
-    );
+      llm: { temperature: 0.7, maxTokens: 4000 },
+    });
   } catch {
     return buildFallbackScript(outline);
   }
@@ -207,6 +220,8 @@ export function buildOutlinePrompt(outline: IOutlineSegment[]): string {
         const details = [
           beat.summary,
           beat.transcript ? `原声: ${beat.transcript}` : '',
+          beat.audioSelections.length > 0 ? `原声锚点: ${beat.audioSelections.length}` : '',
+          beat.visualSelections.length > 0 ? `画面选择: ${beat.visualSelections.length}` : '',
           beat.materialPatterns.length > 0 ? `材料模式: ${beat.materialPatterns.join(', ')}` : '',
           beat.locations.length > 0 ? `地点: ${beat.locations.join(', ')}` : '',
           beat.sourceSpeechDecision ? `原声建议: ${beat.sourceSpeechDecision}` : '',
@@ -253,7 +268,10 @@ function normalizeSegment(raw: unknown, fallback: IOutlineSegment): IKtepScript 
     selections: selections.length > 0 ? selections : undefined,
     linkedSpanIds,
     linkedSliceIds,
-    pharosRefs: mergePharosRefs(selections),
+    pharosRefs: mergePharosRefs([
+      ...selections,
+      ...beats.flatMap(beat => collectBeatSelections(beat)),
+    ]),
     beats,
     notes: stringValue(source.notes),
   };
@@ -292,18 +310,21 @@ function normalizeBeats(raw: unknown, fallbackBeats: IOutlineBeat[]): IKtepScrip
     const normalized = normalizeBeatRecord(item);
     const freshSpanIds = normalized.linkedSpanIds.filter(spanId => !coveredSpanIds.has(spanId));
     if (freshSpanIds.length === 0) return;
-    const freshSelections = normalized.selections.filter(selection =>
-      selection.spanId != null && freshSpanIds.includes(selection.spanId),
-    );
+    const freshAudioSelections = filterSelectionsBySpanIds(normalized.audioSelections, freshSpanIds);
+    const freshVisualSelections = filterSelectionsBySpanIds(normalized.visualSelections, freshSpanIds);
     beats.push({
       ...normalized,
-      selections: freshSelections.length > 0 ? freshSelections : normalized.selections,
+      audioSelections: freshAudioSelections.length > 0 ? freshAudioSelections : normalized.audioSelections,
+      visualSelections: freshVisualSelections.length > 0 ? freshVisualSelections : normalized.visualSelections,
       linkedSpanIds: freshSpanIds,
       linkedSliceIds: dedupeStrings([
         ...normalized.linkedSliceIds,
         ...freshSpanIds,
       ]),
-      pharosRefs: mergePharosRefs(freshSelections.length > 0 ? freshSelections : normalized.selections),
+      pharosRefs: mergePharosRefs([
+        ...(freshAudioSelections.length > 0 ? freshAudioSelections : normalized.audioSelections),
+        ...(freshVisualSelections.length > 0 ? freshVisualSelections : normalized.visualSelections),
+      ]),
     });
     freshSpanIds.forEach(spanId => coveredSpanIds.add(spanId));
   });
@@ -335,10 +356,18 @@ function normalizeBeatRecord(
   fallback?: IOutlineBeat,
 ): IKtepScriptBeat {
   const safeSource = source ?? {};
-  const selections = normalizeSelections(safeSource.selections, fallback?.selections ?? []);
+  const audioSelections = normalizeSelections(
+    safeSource.audioSelections,
+    fallback?.audioSelections ?? [],
+  );
+  const visualSelections = normalizeSelections(
+    safeSource.visualSelections,
+    fallback?.visualSelections ?? [],
+  );
   const linkedSpanIds = dedupeStrings([
     ...normalizeStringArray(safeSource.linkedSpanIds),
-    ...selections.map(selection => selection.spanId),
+    ...audioSelections.map(selection => selection.spanId),
+    ...visualSelections.map(selection => selection.spanId),
     ...(fallback?.linkedSpanIds ?? []),
   ]);
   const linkedSliceIds = dedupeStrings([
@@ -353,15 +382,19 @@ function normalizeBeatRecord(
     utterances: utterances.length > 0 ? utterances : undefined,
     targetDurationMs: positiveNumber(safeSource.targetDurationMs),
     actions: normalizeActions(safeSource.actions),
-    selections,
+    audioSelections,
+    visualSelections,
     linkedSpanIds,
     linkedSliceIds,
-    pharosRefs: mergePharosRefs(selections),
+    pharosRefs: mergePharosRefs([
+      ...audioSelections,
+      ...visualSelections,
+    ]),
     notes: stringValue(safeSource.notes),
   };
 }
 
-function buildFallbackScript(outline: IOutlineSegment[]): IKtepScript[] {
+export function buildFallbackScript(outline: IOutlineSegment[]): IKtepScript[] {
   return outline.map(segment => {
     const beats = segment.beats.map(buildFallbackBeat);
     return {
@@ -385,10 +418,11 @@ function buildFallbackBeat(beat: IOutlineBeat): IKtepScriptBeat {
     id: beat.id,
     text: resolveFallbackBeatText(beat),
     targetDurationMs: undefined,
-    selections: beat.selections,
+    audioSelections: beat.audioSelections,
+    visualSelections: beat.visualSelections,
     linkedSpanIds: beat.linkedSpanIds,
     linkedSliceIds: beat.linkedSpanIds,
-    pharosRefs: mergePharosRefs(beat.selections),
+    pharosRefs: mergePharosRefs(collectBeatSelections(beat)),
     notes: beat.query,
   };
 }
@@ -422,6 +456,15 @@ function normalizeSelections(raw: unknown, fallback: IKtepScriptSelection[]): IK
   }
 
   return result.length > 0 ? result : fallback;
+}
+
+function filterSelectionsBySpanIds(
+  selections: IKtepScriptSelection[],
+  spanIds: string[],
+): IKtepScriptSelection[] {
+  return selections.filter(selection =>
+    selection.spanId != null && spanIds.includes(selection.spanId),
+  );
 }
 
 function normalizeUtterances(raw: unknown): IKtepBeatUtterance[] {
@@ -508,6 +551,33 @@ function mergePharosRefs(selections: IKtepScriptSelection[]): IKtepScript['pharo
     return { tripId, shotId };
   });
   return refs.length > 0 ? refs : undefined;
+}
+
+function collectBeatSelections(
+  beat: Pick<IKtepScriptBeat, 'audioSelections' | 'visualSelections'>,
+): IKtepScriptSelection[] {
+  return dedupeSelections([
+    ...beat.audioSelections,
+    ...beat.visualSelections,
+  ]);
+}
+
+function dedupeSelections(values: IKtepScriptSelection[]): IKtepScriptSelection[] {
+  const seen = new Set<string>();
+  const result: IKtepScriptSelection[] = [];
+  for (const value of values) {
+    const key = [
+      value.assetId,
+      value.spanId ?? '',
+      value.sliceId ?? '',
+      value.sourceInMs ?? '',
+      value.sourceOutMs ?? '',
+    ].join('|');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(value);
+  }
+  return result;
 }
 
 function mergeBeatNarration(beats: IKtepScriptBeat[]): string | undefined {

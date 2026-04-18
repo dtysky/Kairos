@@ -72,7 +72,9 @@ const CDEFAULTS: ISpeechPacingConfig = {
   minCueDurationMs: 1100,
 };
 
-const CSOURCE_SPEECH_SHORT_GAP_MS = 1200;
+const CSOURCE_SPEECH_SHORT_GAP_MS = 3000;
+const CSOURCE_SPEECH_HEAD_BREATHING_MS = 120;
+const CSOURCE_SPEECH_TAIL_BREATHING_MS = 180;
 const CNON_SPOKEN_TRANSCRIPT_PATTERNS: RegExp[] = [
   /(?:(?:拍摄|拍攝|录制|錄製|录像|錄像)(?:启动|啟動|开始|開始|停止|结束|結束)|(?:启动|啟動|开始|開始|停止|结束|結束)(?:拍摄|拍攝|录制|錄製|录像|錄像))/u,
   /指令(?:执行|執行)中/u,
@@ -368,16 +370,16 @@ function normalizeBeatTiming(
   sliceMap: Map<string, IKtepSlice>,
   _config: Partial<ISpeechPacingConfig>,
 ): IKtepScriptBeat {
-  const speechContext = buildSourceSpeechContext(beat.selections, sliceMap);
+  const speechContext = buildSourceSpeechContext(beat.audioSelections, sliceMap);
   if (shouldPreferSourceSpeech(segment, beat, speechContext)) {
-    const normalizedSelections = normalizeSourceSpeechSelections(beat.selections, sliceMap);
-    if (!haveSelectionWindowsChanged(beat.selections, normalizedSelections)) {
+    const normalizedSelections = normalizeSourceSpeechSelections(beat.audioSelections, sliceMap);
+    if (!haveSelectionWindowsChanged(beat.audioSelections, normalizedSelections)) {
       return beat;
     }
 
     return {
       ...beat,
-      selections: normalizedSelections,
+      audioSelections: normalizedSelections,
     };
   }
 
@@ -396,13 +398,14 @@ function normalizeLegacySegmentTiming(
     id: `${segment.id}-legacy-beat`,
     text: narration,
     actions: segment.actions,
-    selections: segment.selections ?? [],
+    audioSelections: segment.selections ?? [],
+    visualSelections: segment.selections ?? [],
     linkedSpanIds: segment.linkedSpanIds,
     linkedSliceIds: segment.linkedSliceIds,
   };
-  const speechContext = buildSourceSpeechContext(legacyBeat.selections, sliceMap);
+  const speechContext = buildSourceSpeechContext(legacyBeat.audioSelections, sliceMap);
   if (shouldPreferSourceSpeech(segment, legacyBeat, speechContext)) {
-    const normalizedSelections = normalizeSourceSpeechSelections(legacyBeat.selections, sliceMap);
+    const normalizedSelections = normalizeSourceSpeechSelections(legacyBeat.audioSelections, sliceMap);
     if (!haveSelectionWindowsChanged(segment.selections ?? [], normalizedSelections)) {
       return segment;
     }
@@ -425,7 +428,7 @@ function resolveBeatTargetDurationMs(
     return beat.targetDurationMs;
   }
 
-  const selectionDurationMs = beat.selections.reduce((sum, selection) => {
+  const selectionDurationMs = beat.visualSelections.reduce((sum, selection) => {
     const slice = selection.sliceId ? sliceMap.get(selection.sliceId) : undefined;
     const sourceInMs = selection.sourceInMs ?? slice?.sourceInMs;
     const sourceOutMs = selection.sourceOutMs ?? slice?.sourceOutMs;
@@ -698,7 +701,7 @@ function resolveSelectionSpeechIslands(
   }
 
   return {
-    islands: mergeTranscriptSegmentsToSpeechIslands(spokenSegments)
+    islands: mergeTranscriptSegmentsToSpeechIslands(spokenSegments, selectionRange)
       .filter(island => island.endMs > island.startMs),
     hadTranscriptOverlap: true,
   };
@@ -706,33 +709,40 @@ function resolveSelectionSpeechIslands(
 
 function mergeTranscriptSegmentsToSpeechIslands(
   segments: ITranscriptSegment[],
+  selectionRange: { startMs: number; endMs: number },
 ): Array<{ startMs: number; endMs: number }> {
   const islands: Array<{ startMs: number; endMs: number }> = [];
-  let current: { startMs: number; endMs: number } | null = null;
+  let current: { startMs: number; endMs: number; tailText: string } | null = null;
 
   for (const segment of segments) {
     if (!current) {
       current = {
         startMs: segment.startMs,
         endMs: segment.endMs,
+        tailText: segment.text,
       };
       continue;
     }
 
-    if (segment.startMs - current.endMs <= CSOURCE_SPEECH_SHORT_GAP_MS) {
+    if (
+      segment.startMs - current.endMs <= CSOURCE_SPEECH_SHORT_GAP_MS
+      && !endsWithStrongSentenceBoundary(current.tailText)
+    ) {
       current.endMs = Math.max(current.endMs, segment.endMs);
+      current.tailText = segment.text;
       continue;
     }
 
-    islands.push(current);
+    islands.push(applySpeechIslandBreathing(current, selectionRange));
     current = {
       startMs: segment.startMs,
       endMs: segment.endMs,
+      tailText: segment.text,
     };
   }
 
   if (current) {
-    islands.push(current);
+    islands.push(applySpeechIslandBreathing(current, selectionRange));
   }
 
   return islands;
@@ -790,4 +800,21 @@ function isSpokenTranscriptSegment(text: string): boolean {
   if (!normalized) return false;
 
   return !CNON_SPOKEN_TRANSCRIPT_PATTERNS.some(pattern => pattern.test(normalized));
+}
+
+function applySpeechIslandBreathing(
+  island: { startMs: number; endMs: number },
+  selectionRange: { startMs: number; endMs: number },
+): { startMs: number; endMs: number } {
+  return {
+    startMs: Math.max(selectionRange.startMs, island.startMs - CSOURCE_SPEECH_HEAD_BREATHING_MS),
+    endMs: Math.min(selectionRange.endMs, island.endMs + CSOURCE_SPEECH_TAIL_BREATHING_MS),
+  };
+}
+
+function endsWithStrongSentenceBoundary(text: string | undefined): boolean {
+  const normalized = (text ?? '').trim()
+    .replace(/[」』”’）】〉》]+$/u, '');
+  if (!normalized) return false;
+  return /[。！？!?；;]$/u.test(normalized);
 }

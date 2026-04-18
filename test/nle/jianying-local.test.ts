@@ -293,7 +293,7 @@ describe('JianyingLocalRunner', () => {
 
 function createTextOnlySpec(): IJianyingDraftSpec {
   return {
-    version: '1.0',
+    version: '2.0',
     backend: 'pyjianyingdraft',
     compatibility: 'legacy-draft-format',
     project: {
@@ -330,7 +330,7 @@ function createTextOnlySpec(): IJianyingDraftSpec {
 
 function createSingleImageSpec(materialPath: string): IJianyingDraftSpec {
   return {
-    version: '1.0',
+    version: '2.0',
     backend: 'pyjianyingdraft',
     compatibility: 'legacy-draft-format',
     project: {
@@ -367,7 +367,7 @@ function createSingleImageSpec(materialPath: string): IJianyingDraftSpec {
 
 function createRetimedSpec(): IJianyingDraftSpec {
   return {
-    version: '1.0',
+    version: '2.0',
     backend: 'pyjianyingdraft',
     compatibility: 'legacy-draft-format',
     project: {

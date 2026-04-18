@@ -75,6 +75,20 @@ describe('buildOutline', () => {
     expect(outline).toHaveLength(1);
     expect(outline[0]?.role).toBe('intro');
     expect(outline[0]?.beats[0]?.linkedSpanIds).toEqual(['span-coast']);
+    expect(outline[0]?.beats[0]?.audioSelections).toEqual([{
+      assetId: 'asset-1',
+      spanId: 'span-coast',
+      sliceId: 'span-coast',
+      sourceInMs: 1_000,
+      sourceOutMs: 7_000,
+    }]);
+    expect(outline[0]?.beats[0]?.visualSelections).toEqual([{
+      assetId: 'asset-1',
+      spanId: 'span-coast',
+      sliceId: 'span-coast',
+      sourceInMs: 1_000,
+      sourceOutMs: 7_000,
+    }]);
     expect(outline[0]?.beats[0]?.sourceSpeechDecision).toBe('preserve');
     expect(outline[0]?.beats[0]?.locations).toContain('Auckland');
   });

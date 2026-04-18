@@ -29,25 +29,36 @@
    - Analyze 持久化 `store/spans.json` 时，附近 speech windows / shot-split speech slices 应先合并成稳定 source-speech spans；细粒度停顿继续由 `transcriptSegments` 表达
 2. 脚本召回和 outline 已消费 transcript 证据
    - transcript 不再只是附属说明，而是候选召回和 beat 写作的正式输入
-   - 如果某拍最终保留原声，outline / timeline 会把选区优先裁成 transcript-driven speech islands；粗剪时长与字幕以这些语音岛边界为准，不再回退解释性旁白
-   - `source-speech` 当前以过滤后的口语 transcript 为真值：导航播报、录制口令和设备提示不应进入 speech islands，也不应成为 source-speech 字幕
+   - `KTEP 2.0` 下 source-speech beat 已改成 `audioSelections[] + visualSelections[]`；前者定义原声 timing truth，后者保留 companion visuals
+   - 如果某拍最终保留原声，outline / timeline 会先把 `audioSelections[]` 组织成 merged audio units；视频仍保持单轨串剪，不再让 speech normalization 破坏性删掉 companion visuals
+   - `source-speech` 当前以过滤后的口语 transcript 为真值：导航播报、录制口令和设备提示不应进入 merged audio units，也不应成为 source-speech 字幕
    - Analyze 当前产出的 `transcriptSegments` 已经是 refined transcript segmentation；Timeline 应先信任这些较细的语音段，而不是再次按粗 segment 重新切句
 3. 风格分析与脚本阶段的交接语义已经收口
    - Workspace 风格档案不再只是“叙事语气说明”，还应明确输出阶段节奏、素材角色、运镜语法、功能位分配、素材禁区 / 镜头禁区与稳定参数
    - 这些信息默认是 Script / recall / outline 的直接输入，不应主要依赖 LLM 重新从长文里猜一次镜头组织规则
    - 这里记录的是“观测到的高频偏好”，只有明确写成禁区或硬约束时才应强制下游
-   - Script / Timeline 当前会在内部把这些现有 style 信号解析成一个轻量运行时 `ResolvedArrangementSignals`，用于判断当前风格主轴更偏时间推进、空间推进、情感推进还是结果回看；它不是新的公开 schema
-   - `/script` 改 `styleCategory` 时，旧的项目级脚本产物现在必须立即整体失效；系统要清空旧 `material-overview`、brief 草稿、outline、arrangement artifacts 和 `script/current.json`，而不是继续让新风格复用旧产物
+  - Script / Timeline 当前会在内部把这些现有 style 信号解析成一个轻量运行时 `ResolvedArrangementSignals`，用于判断当前风格主轴更偏时间推进、空间推进、情感推进还是结果回看；它不是新的公开 schema
+  - `/script` 改 `styleCategory` 时，旧的项目级脚本产物现在必须立即整体失效；系统要清空旧 `material-overview`、brief 草稿、outline、arrangement artifacts 和 `script/current.json`，而不是继续让新风格复用旧产物
+  - Script stage packet 现在是 clean-context subagent 的唯一正式输入；runtime 不应再在 packet 之外偷偷附加主线程历史、`previousDraft` 或 `revisionBrief`
+  - 正式 stage 执行后端应优先使用宿主 packet runner / 真实 clean-context subagent 链；直接 `ILlmClient` chat 只作为非 agent 宿主或本地调试的兼容 fallback
+  - workspace / project runtime 可通过 `config/runtime.json` 的 `agentPacketRunnerCommand` / `agentPacketRunnerArgs` / `agentPacketRunnerCwd` 声明这个 packet runner
+  - 首轮 stage 调用默认应保持 lean packet，只在 reviewer 要求返工时再把 previous draft 带回 writer
+   - `script/current.json` 的正式落盘形状固定为 bare `IKtepScript[]`；若 transport 因 JSON-object 模式返回 `{ segments: [...] }`，必须由 stage runner 在持久化前解包，不能变成主代理的临时补锅动作
+   - `script-current` 每次 attempt 只允许一次正式 `beat-writer` 调用；不能先额外跑一轮整稿 writer 再进入 reviewer 链
+   - writer / reviewer 调用失败时，`script/agent-pipeline.json` 必须立即写出真实失败态，不能继续停留在旧阶段的 `pending`
+   - `outline` 在交给 `beat-writer` 前应先做轻量 deterministic 去噪与聚合：明显设备口令 / 导航播报 / noisy-ASR 不应默认视为 source-speech 锚点，连续的非口播证据应合并成更少的 beat
    - 风格档案最终落成当前正式改成 clean-context subagent 流水线，而不是一个通用 style prompt 直接吃完整批量报告：
-     - deterministic prep 会额外写 `analysis/style-references/{category}/agent-summary.json`
+   - deterministic prep 会额外写 `analysis/style-references/{category}/agent-summary.json`
      - `style-profile-synthesizer` 只读取自己的 packet / summary，并先写 `style-draft.json`
      - `style-profile-reviewer` 只读取 summary + draft，并写 `style-review.json`
      - reviewer blockers 是落成正式 `config/styles/{category}.md` 的硬闸门
+     - 正式执行后端应优先使用宿主 packet runner / 真实 subagent 链；直接 `ILlmClient` chat 只作为非 agent 宿主或本地调试的兼容 fallback
+     - workspace / project runtime 可通过 `config/runtime.json` 的 `agentPacketRunnerCommand` / `agentPacketRunnerArgs` / `agentPacketRunnerCwd` 声明这个 packet runner
 4. 字幕已支持双路径
    - 旁白路径：来自 `beat.text`
-   - 原声路径：来自 `slice.transcriptSegments`
-   - `preserveNatSound / muteSource` 为显式覆盖；未标注时，只要主视频 selection 有可用 transcript / speech coverage，粗剪默认优先保留原声
-   - 对 source-speech 字幕，时间线会先做清洗、强切句与噪声判断；若某个 cue 明显不适合作为成片字幕，只跳过该 cue；只有整段都不可读时，才保留原声且不回退到 `beat.text`
+   - 原声路径：来自 `beat.audioSelections[]` 构建出的 merged audio units
+   - `preserveNatSound / muteSource` 为显式覆盖；未标注时，只要 `audioSelections[]` 有可用 transcript / speech coverage，粗剪默认优先保留原声
+   - 对 source-speech 字幕，时间线会先做清洗、短分句切 cue 与噪声判断；若某个 cue 明显不适合作为成片字幕，只跳过该 cue；只有整段都不可读时，才保留原声且不回退到 `beat.text`
    - 只有当 refined transcript cue 仍然过长时，时间线才应做二次硬切；二次硬切要优先依赖停顿 / 边界，再按 cue 长度 / 语速做加权重对时，而不是平均分配整段时长
 5. GPS 链路已形成当前最小闭环
    - 项目内外部轨迹统一收口到 `gps/tracks/*.gpx` 与 `gps/merged.json`
@@ -94,6 +105,9 @@
    - 显式 `beat.actions.speed` 当前只是请求信号，只有 `drive / aerial` clip 会消费；其他类型 clip 即使同拍也强制保持 `1x`
    - 对 silent `drive / aerial` 粗剪 beat，如果 Analyze 已给出 `speedCandidate` 且脚本没有显式写 `actions.speed`，时间线默认按 `2x` 自动加速
    - clip placement 当前默认保留 selection 的自然 source 时长 / edit-friendly bounds；`targetDurationMs` 在粗剪里只保留为可选审阅提示
+- source-speech 当前正式落成“单视频轨串剪 + 独立 `dialogue` 音频轨”；`nat` 仅保留给 protection/ambient fallback，视频主轨不再承担正式原声音轨职责
+- source-speech audio units 默认按 `<= 3000ms` gap 合并，并在合法范围内保留 `120ms` / `180ms` breathing
+- 最终可听的 `dialogue` / `nat` clip 会在导出编排层做 `-16 LUFS` 目标的非破坏性 clip gain 归一化
 - 如果同一 `asset` 同时产出 source-speech 与 silent `drive / aerial`，时间线应先锁定 source-speech 的 source ranges，再把 silent montage 剪成非重叠 remainder；同一 source window 不得同时出现在两条路径里
   - 如果同一 `drive / aerial asset` 被多个 silent montage beat 重复引用，placement 还应继续扣掉前面已消费的 source ranges；后续 beat 只能使用新的 remainder
      - photo-only beat 默认落成 `1s` 静默镜头；只有显式 `holdMs` 才延长，且默认不生成字幕
@@ -161,6 +175,11 @@
   1. `Analyze -> Material Overview`
   2. `Material Overview + Script Brief + arrangementStructure + narrationConstraints -> Segment Plan`
   3. `Segment Plan -> Material Slots -> Bundle Lookup -> Chosen SpanIds -> Beat / Script`
+- `Chosen SpanIds -> Beat / Script` 不再等价于“一个 chosen span 直接落成一个 beat”：
+  - `material-slots` 负责高召回收集候选 span
+  - `material-slots` 的 deterministic base draft 是 formal high-recall floor；writer 可以补充 / 重排，但不能静默删除 base `chosenSpanIds`
+  - outline 负责在不破坏证据链的前提下做 deterministic 去噪和相邻非口播 evidence 聚合
+  - `beat-writer` 再在这个更干净的 outline 上写正式 `IKtepScript[]`
 - `Bundle` 当前是 `materialPatterns` 粗索引层，不是独立叙事身份
 - `Segment` 当前不再作为固定 archetype 闭集，而是 LLM-first 的项目级动态段落对象
 - `style` 当前应同时提供结构程序层 `arrangementStructure` 与脚本叙述约束层 `narrationConstraints`
@@ -444,20 +463,26 @@ src/modules/script/
      - 刷新 `analysis/material-bundles.json`
      - 成功后推进到 `ready_for_agent`
   → Agent 再读取 overview + brief + style profile，推进 clean-context staged pipeline：
+     - `[main agent]` 只负责路由、状态核对、packet 准备、用户 handoff 与 reviewer 闸门执行
+     - `[main agent]` 不得把缺失的 subagent / reviewer 阶段静默折叠成单代理本地起稿
      - `script/spatial-story.json` + `script/spatial-story.md` 先把 chronology / spans / Pharos / GPS 真值收口为空间叙事提示
      - `script/agent-contract.json` 把 goals / constraints / review notes、style must / forbidden、GPS hints、Pharos must-cover hints、chronology guardrails 锁成唯一真值
      - `segment-architect` 只读取自己的 `script/agent-packets/segment-plan.json`
      - `route-slot-planner` 只读取自己的 `script/agent-packets/material-slots.json`
      - `beat-writer` 只读取自己的 `script/agent-packets/script-current.json`
      - `script-reviewer` 每个阶段都单独审查，并写 `script/reviews/{stage}.json`
+     - `script-reviewer` 的 blocker 是推进下一阶段和落成 `script/current.json` 的硬闸门
+     - 如果当前宿主策略或用户授权不允许 formal subagent / reviewer 链执行，主代理必须先停下说明原因，不能继续按“单代理兼任全部阶段”落稿
      - 内部推进状态写到 `script/agent-pipeline.json`
   → Agent staged pipeline 最终再推进 `segment plan -> material slots -> chosenSpanIds -> outline -> script/current.json`
      - `arrangementStructure` 主导结构决策
      - `narrationConstraints` 只弱影响表达
      - 当现有 style 信号明确偏 `chronology / route continuity / continuous process` 时，prep 会先建立单调递增的时间带，再让各段只在合法时间带内召回素材
-     - 粗剪 recall 默认是高召回保留，不再做固定上限的代表性抽样；`material-bundles` 是全量索引，`material-slots` 可以展开成多 slot / 多 beat
+     - style / arrangement signals 只约束顺序、阶段完整、素材角色、功能位和禁区，不默认推出总时长或段落预算
+     - 粗剪 recall 默认是高召回保留，不再做固定上限的代表性抽样；`material-bundles` 是全量索引，`material-slots` 可以展开成多 slot / 多 beat，并优先保留过程证据、阶段证据、事件节点和可用原声
+     - `route-slot-planner` / reviewer 链必须把 silent span drops 视为 recall regression；runner 会把 deterministic base 中未被别处合法承接的独立有效 span 恢复回正式 draft
      - 关键过程视频若承载不可替代的时间推进、事件推进、人物关系推进或有效原声，应保留成独立 beat，而不是被 summary 段或更静态的成果材料吞掉
-     - `targetDurationMs` 只保留为可选审阅提示，不再驱动粗剪召回、裁剪或扩展
+     - `targetDurationMs` 只保留为可选审阅提示；除非用户明确给出成片时长、交付窗口或某段硬时长，否则不要在 brief / segment plan / material-slots / beat 中自动补全，也不再驱动粗剪召回、裁剪或扩展
   → 由 Agent 存储 `script/current.json` + 版本快照
 ```
 

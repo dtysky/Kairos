@@ -15,7 +15,18 @@ describe('source-speech subtitle planning', () => {
       beats: [{
         id: 'beat-1',
         text: '',
-        selections: [],
+        audioSelections: [{
+          assetId: 'asset-1',
+          sliceId: 'slice-1',
+          sourceInMs: 0,
+          sourceOutMs: 2200,
+        }],
+        visualSelections: [{
+          assetId: 'asset-1',
+          sliceId: 'slice-1',
+          sourceInMs: 0,
+          sourceOutMs: 2200,
+        }],
         linkedSpanIds: [],
         linkedSliceIds: ['slice-1'],
       }],
@@ -31,6 +42,7 @@ describe('source-speech subtitle planning', () => {
       sourceOutMs: 2200,
       timelineInMs: 0,
       timelineOutMs: 2200,
+      audioSource: 'embedded',
       linkedScriptSegmentId: 'seg-1',
       linkedScriptBeatId: 'beat-1',
     }];
@@ -73,7 +85,18 @@ describe('source-speech subtitle planning', () => {
       beats: [{
         id: 'beat-2',
         text: '',
-        selections: [],
+        audioSelections: [{
+          assetId: 'asset-2',
+          sliceId: 'slice-2',
+          sourceInMs: 0,
+          sourceOutMs: 3200,
+        }],
+        visualSelections: [{
+          assetId: 'asset-2',
+          sliceId: 'slice-2',
+          sourceInMs: 0,
+          sourceOutMs: 3200,
+        }],
         linkedSpanIds: [],
         linkedSliceIds: ['slice-2'],
       }],
@@ -89,6 +112,7 @@ describe('source-speech subtitle planning', () => {
       sourceOutMs: 3200,
       timelineInMs: 1000,
       timelineOutMs: 4200,
+      audioSource: 'embedded',
       linkedScriptSegmentId: 'seg-2',
       linkedScriptBeatId: 'beat-2',
     }];

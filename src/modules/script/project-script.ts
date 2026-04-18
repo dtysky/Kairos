@@ -55,9 +55,12 @@ import {
   writeSegmentPlan,
   writeSpatialStory,
 } from '../../store/index.js';
-import { runJsonPacketAgent } from '../agents/runtime.js';
+import {
+  resolveJsonPacketAgentRunner,
+  type IJsonPacketAgentRunner,
+} from '../agents/runtime.js';
 import { buildOutline, type IOutlineSegment } from './outline-builder.js';
-import { buildOutlinePrompt, generateScript } from './script-generator.js';
+import { buildFallbackScript, buildOutlinePrompt } from './script-generator.js';
 import { loadStyleByCategory } from './style-loader.js';
 import {
   resolveArrangementSignals,
@@ -79,7 +82,8 @@ export interface IBuildProjectOutlineResult {
 
 export interface IGenerateProjectScriptInput {
   projectRoot: string;
-  llm: ILlmClient;
+  llm?: ILlmClient;
+  agentRunner?: IJsonPacketAgentRunner;
   style: IStyleProfile;
 }
 
@@ -137,11 +141,13 @@ const CSCRIPT_REVIEW_CODES = [
   'chronology_risk',
   'pharos_mismatch',
   'scope_violation',
+  'recall_regression',
 ] as const;
 
 export interface IDraftProjectScriptOverviewAndBriefInput {
   projectRoot: string;
-  llm: ILlmClient;
+  llm?: ILlmClient;
+  agentRunner?: IJsonPacketAgentRunner;
   workspaceRoot?: string;
   styleCategory?: string;
   style?: IStyleProfile;
@@ -178,6 +184,7 @@ export async function draftProjectScriptOverviewAndBrief(
 
   const overviewStage = await runReviewedScriptStage<{ markdown: string }>({
     llm: input.llm,
+    agentRunner: input.agentRunner,
     projectRoot: input.projectRoot,
     stage: 'material-overview',
     writerIdentity: 'overview-cartographer',
@@ -220,7 +227,7 @@ export async function draftProjectScriptOverviewAndBrief(
           summary: revisionBrief.join(' / '),
           content: revisionBrief,
         } : null,
-        previousDraft ? {
+        revisionBrief.length > 0 && previousDraft ? {
           label: 'previous-draft',
           summary: '上一轮 overview 草稿。',
           content: previousDraft,
@@ -291,6 +298,7 @@ export async function draftProjectScriptOverviewAndBrief(
     }>;
   }>({
     llm: input.llm,
+    agentRunner: input.agentRunner,
     projectRoot: input.projectRoot,
     stage: 'script-brief',
     writerIdentity: 'brief-editor',
@@ -342,7 +350,7 @@ export async function draftProjectScriptOverviewAndBrief(
           summary: revisionBrief.join(' / '),
           content: revisionBrief,
         } : null,
-        previousDraft ? {
+        revisionBrief.length > 0 && previousDraft ? {
           label: 'previous-draft',
           summary: '上一轮 brief 草稿。',
           content: previousDraft,
@@ -627,6 +635,7 @@ export async function generateProjectScriptFromPlanning(
   });
   const segmentStage = await runReviewedScriptStage<ISegmentPlan>({
     llm: input.llm,
+    agentRunner: input.agentRunner,
     projectRoot: input.projectRoot,
     stage: 'segment-plan',
     writerIdentity: 'segment-architect',
@@ -679,6 +688,7 @@ export async function generateProjectScriptFromPlanning(
   });
   const materialSlotsStage = await runReviewedScriptStage<IMaterialSlotsDocument>({
     llm: input.llm,
+    agentRunner: input.agentRunner,
     projectRoot: input.projectRoot,
     stage: 'material-slots',
     writerIdentity: 'route-slot-planner',
@@ -692,7 +702,8 @@ export async function generateProjectScriptFromPlanning(
       bundles: prepared.bundles,
       spans: prepared.context.spans,
       chronology: prepared.context.chronology,
-      baseDraft: previousDraft ?? baseMaterialSlots,
+      baseDraft: baseMaterialSlots,
+      previousDraft: revisionBrief.length > 0 ? previousDraft : undefined,
       revisionBrief,
     }),
     buildReviewPacket: (draft, attempt) => buildScriptReviewPacket({
@@ -712,10 +723,30 @@ export async function generateProjectScriptFromPlanning(
           summary: spatialStory.narrativeHints.map(item => item.title).join(' / '),
           content: spatialStory,
         },
+        {
+          label: 'base-material-slots',
+          summary: summarizeMaterialSlotSelectionAudit(
+            buildMaterialSlotSelectionAudit(baseMaterialSlots, baseMaterialSlots, prepared.context.spans),
+          ),
+          content: baseMaterialSlots,
+        },
+        {
+          label: 'slot-selection-audit',
+          summary: summarizeMaterialSlotSelectionAudit(
+            buildMaterialSlotSelectionAudit(baseMaterialSlots, draft, prepared.context.spans),
+          ),
+          content: buildMaterialSlotSelectionAudit(baseMaterialSlots, draft, prepared.context.spans),
+        },
       ],
       draft,
       attempt,
     }),
+    coerceDraft: (raw, previousDraft) => normalizeReviewedMaterialSlotsDraft(
+      raw,
+      previousDraft,
+      baseMaterialSlots,
+      new Map(prepared.context.spans.map(span => [span.id, span] as const)),
+    ),
     persistDraft: draft => writeMaterialSlots(input.projectRoot, draft),
   });
 
@@ -729,19 +760,10 @@ export async function generateProjectScriptFromPlanning(
     writeFile(getOutlinePromptPath(input.projectRoot), buildOutlinePrompt(outline), 'utf-8'),
   ]);
 
-  const baseScript = await generateScript(input.llm, outline, input.style, {
-    materialOverview,
-    brief: {
-      goals: brief.goalDraft,
-      constraints: brief.constraintDraft,
-      planReviewNotes: brief.planReviewDraft,
-    },
-    contract,
-    spatialStory,
-    stage: 'script-current',
-  });
+  const baseScript = buildFallbackScript(outline);
   const scriptStage = await runReviewedScriptStage<IKtepScript[]>({
     llm: input.llm,
+    agentRunner: input.agentRunner,
     projectRoot: input.projectRoot,
     stage: 'script-current',
     writerIdentity: 'beat-writer',
@@ -779,20 +801,10 @@ export async function generateProjectScriptFromPlanning(
     persistDraft: draft => writeCurrentScript(input.projectRoot, draft),
   });
 
-  await Promise.all([
-    writeScriptAgentPipeline(input.projectRoot, {
-      currentStage: 'script-current',
-      stageStatus: 'completed',
-      attemptCount: 1,
-      latestReviewResult: 'pass',
-      blockerSummary: [],
-      updatedAt: new Date().toISOString(),
-    }),
-    saveScriptBriefConfig(input.projectRoot, {
+  await saveScriptBriefConfig(input.projectRoot, {
       ...brief,
       workflowState: 'script_generated',
-    }),
-  ]);
+    });
 
   return scriptStage.draft;
 }
@@ -1109,21 +1121,13 @@ export function buildMaterialSlotsDocument(input: {
         orderedSpanCandidates,
         timeBand: timeBands[index],
       });
-      const slots = chosenSpanIds.length > 0
-        ? chosenSpanIds.map((spanId, slotIndex) => ({
-          id: `${segment.id}-slot-${slotIndex + 1}`,
-          query,
-          requirement: 'required' as const,
-          targetBundles,
-          chosenSpanIds: [spanId],
-        }))
-        : [{
-          id: `${segment.id}-slot-1`,
-          query,
-          requirement: 'required' as const,
-          targetBundles,
-          chosenSpanIds: [],
-        }];
+      const slots = [{
+        id: `${segment.id}-slot-1`,
+        query,
+        requirement: 'required' as const,
+        targetBundles,
+        chosenSpanIds,
+      }];
 
       return {
         segmentId: segment.id,
@@ -1866,15 +1870,21 @@ function buildFallbackBriefDraft(
 }
 
 async function runReviewedScriptStage<TDraft>(input: {
-  llm: ILlmClient;
+  llm?: ILlmClient;
+  agentRunner?: IJsonPacketAgentRunner;
   projectRoot: string;
   stage: string;
   writerIdentity: 'overview-cartographer' | 'brief-editor' | 'segment-architect' | 'route-slot-planner' | 'beat-writer';
   baseDraft: TDraft;
   buildWriterPacket: (revisionBrief: string[], previousDraft: TDraft) => IAgentPacket;
   buildReviewPacket: (draft: TDraft, attempt: number) => IAgentPacket;
+  coerceDraft?: (raw: unknown, previousDraft: TDraft) => TDraft | null;
   persistDraft: (draft: TDraft) => Promise<void>;
 }): Promise<{ draft: TDraft; review: IStageReview }> {
+  const agentRunner = resolveJsonPacketAgentRunner({
+    agentRunner: input.agentRunner,
+    llm: input.llm,
+  });
   let revisionBrief: string[] = [];
   let previousDraft = input.baseDraft;
 
@@ -1893,26 +1903,61 @@ async function runReviewedScriptStage<TDraft>(input: {
     ]);
     let draftRaw: unknown;
     try {
-      draftRaw = await runJsonPacketAgent<unknown>(
-        input.llm,
-        resolveScriptWriterPromptId(input.writerIdentity),
-        writerPacket,
-        { revisionBrief, previousDraft },
-      );
-    } catch {
-      draftRaw = previousDraft;
+      draftRaw = await agentRunner.run<unknown>({
+        promptId: resolveScriptWriterPromptId(input.writerIdentity),
+        packet: writerPacket,
+      });
+    } catch (error) {
+      await writeScriptAgentPipeline(input.projectRoot, {
+        currentStage: input.stage,
+        stageStatus: 'writer_failed',
+        attemptCount: attempt,
+        latestReviewResult: 'writer_failed',
+        blockerSummary: [formatScriptStageError(error)],
+        updatedAt: new Date().toISOString(),
+      });
+      throw new Error(`script stage "${input.stage}" writer failed: ${formatScriptStageError(error)}`);
     }
-    const draft = coerceReviewedScriptStageDraft(input.stage, draftRaw, previousDraft);
+    const draft = input.coerceDraft
+      ? input.coerceDraft(draftRaw, previousDraft)
+      : coerceReviewedScriptStageDraft(input.stage, draftRaw, previousDraft);
+    if (!draft) {
+      await writeScriptAgentPipeline(input.projectRoot, {
+        currentStage: input.stage,
+        stageStatus: 'writer_failed',
+        attemptCount: attempt,
+        latestReviewResult: 'writer_invalid_output',
+        blockerSummary: ['writer returned invalid stage JSON.'],
+        updatedAt: new Date().toISOString(),
+      });
+      throw new Error(`script stage "${input.stage}" writer returned invalid stage JSON.`);
+    }
     await input.persistDraft(draft);
 
     const reviewPacket = input.buildReviewPacket(draft, attempt);
     await writeScriptAgentPacket(input.projectRoot, `review-${input.stage}`, reviewPacket);
-    const reviewRaw = await runJsonPacketAgent<Partial<IStageReview>>(
-      input.llm,
-      'script/script-reviewer',
-      reviewPacket,
-      { llm: { temperature: 0.1 } },
-    );
+    let reviewRaw: Partial<IStageReview>;
+    try {
+      reviewRaw = await agentRunner.run<Partial<IStageReview>>({
+        promptId: 'script/script-reviewer',
+        packet: reviewPacket,
+        llm: { temperature: 0.1 },
+      });
+    } catch (error) {
+      const review = buildScriptStageErrorReview(input.stage, attempt, error);
+      await Promise.all([
+        writeScriptStageReview(input.projectRoot, input.stage, review),
+        writeScriptAgentPipeline(input.projectRoot, {
+          currentStage: input.stage,
+          stageStatus: 'review_error',
+          attemptCount: attempt,
+          latestReviewResult: 'review_error',
+          blockerSummary: review.issues.map(issue => `${issue.code}: ${issue.message}`),
+          updatedAt: new Date().toISOString(),
+        }),
+      ]);
+      throw new Error(`script stage "${input.stage}" reviewer failed: ${formatScriptStageError(error)}`);
+    }
     const review = normalizeScriptStageReview(reviewRaw, input.stage, attempt);
     await Promise.all([
       writeScriptStageReview(input.projectRoot, input.stage, review),
@@ -1949,18 +1994,18 @@ function coerceReviewedScriptStageDraft<TDraft>(
   stage: string,
   raw: unknown,
   fallback: TDraft,
-): TDraft {
+): TDraft | null {
   if (stage === 'script-current') {
-    return normalizeReviewedScriptCurrentDraft(raw, fallback as IKtepScript[]) as TDraft;
+    return normalizeReviewedScriptCurrentDraft(raw, fallback as IKtepScript[]) as TDraft | null;
   }
 
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
-    return fallback;
+    return null;
   }
 
   const candidate = raw as Record<string, unknown>;
   if (stage === 'material-overview') {
-    return (typeof candidate.markdown === 'string' ? raw : fallback) as TDraft;
+    return (typeof candidate.markdown === 'string' ? raw : null) as TDraft | null;
   }
   if (stage === 'script-brief') {
     return (
@@ -1969,11 +2014,11 @@ function coerceReviewedScriptStageDraft<TDraft>(
       && Array.isArray(candidate.planReviewDraft)
       && Array.isArray(candidate.segments)
         ? raw
-        : fallback
-    ) as TDraft;
+        : null
+    ) as TDraft | null;
   }
   if (stage === 'segment-plan' || stage === 'material-slots') {
-    return (Array.isArray(candidate.segments) ? raw : fallback) as TDraft;
+    return (Array.isArray(candidate.segments) ? raw : null) as TDraft | null;
   }
 
   return raw as TDraft;
@@ -1982,14 +2027,14 @@ function coerceReviewedScriptStageDraft<TDraft>(
 function normalizeReviewedScriptCurrentDraft(
   raw: unknown,
   fallback: IKtepScript[],
-): IKtepScript[] {
+): IKtepScript[] | null {
   const sourceSegments = Array.isArray(raw)
     ? raw
     : Array.isArray((raw as Record<string, unknown> | undefined)?.segments)
       ? (raw as { segments: unknown[] }).segments
       : null;
   if (!sourceSegments) {
-    return fallback;
+    return null;
   }
 
   return fallback.map((fallbackSegment, index) => {
@@ -2012,9 +2057,12 @@ function normalizeReviewedScriptCurrentDraft(
           ...beatSource,
           text: typeof beatSource.text === 'string' ? beatSource.text : fallbackBeat.text,
           linkedSpanIds: normalizeStringList(beatSource.linkedSpanIds, fallbackBeat.linkedSpanIds),
-          selections: Array.isArray(beatSource.selections)
-            ? beatSource.selections as typeof fallbackBeat.selections
-            : fallbackBeat.selections,
+          audioSelections: Array.isArray(beatSource.audioSelections)
+            ? beatSource.audioSelections as typeof fallbackBeat.audioSelections
+            : fallbackBeat.audioSelections,
+          visualSelections: Array.isArray(beatSource.visualSelections)
+            ? beatSource.visualSelections as typeof fallbackBeat.visualSelections
+            : fallbackBeat.visualSelections,
         };
       })
       : fallbackSegment.beats;
@@ -2044,6 +2092,239 @@ function normalizeStringList(raw: unknown, fallback: string[]): string[] {
   return values.length > 0 ? dedupeStrings(values) : fallback;
 }
 
+function normalizeOptionalStringList(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return dedupeStrings(
+    raw.filter((item): item is string => typeof item === 'string' && item.trim().length > 0),
+  );
+}
+
+function normalizeReviewedMaterialSlotsDraft(
+  raw: unknown,
+  fallback: IMaterialSlotsDocument,
+  baseDraft: IMaterialSlotsDocument,
+  spansById: Map<string, IKtepSlice>,
+): IMaterialSlotsDocument | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return null;
+  }
+
+  const candidate = raw as Record<string, unknown>;
+  if (!Array.isArray(candidate.segments)) {
+    return null;
+  }
+
+  const candidateSlotsById = new Map<string, Record<string, unknown>>();
+  const allCandidateSpanIds = new Set<string>();
+  for (const rawSegment of candidate.segments) {
+    if (!rawSegment || typeof rawSegment !== 'object' || Array.isArray(rawSegment)) {
+      continue;
+    }
+    const segment = rawSegment as Record<string, unknown>;
+    if (!Array.isArray(segment.slots)) {
+      continue;
+    }
+    for (const rawSlot of segment.slots) {
+      if (!rawSlot || typeof rawSlot !== 'object' || Array.isArray(rawSlot)) {
+        continue;
+      }
+      const slot = rawSlot as Record<string, unknown>;
+      if (typeof slot.id !== 'string' || slot.id.trim().length === 0) {
+        continue;
+      }
+      candidateSlotsById.set(slot.id, slot);
+      for (const spanId of normalizeOptionalStringList(slot.chosenSpanIds)) {
+        allCandidateSpanIds.add(spanId);
+      }
+    }
+  }
+
+  const baseSegmentsById = new Map(baseDraft.segments.map(segment => [segment.segmentId, segment] as const));
+  const normalizedSegments = fallback.segments.map(fallbackSegment => {
+    const baseSegment = baseSegmentsById.get(fallbackSegment.segmentId) ?? fallbackSegment;
+    const baseSlotsById = new Map(baseSegment.slots.map(slot => [slot.id, slot] as const));
+    const normalizedSlots = fallbackSegment.slots.map(fallbackSlot => {
+      const baseSlot = baseSlotsById.get(fallbackSlot.id) ?? fallbackSlot;
+      const candidateSlot = candidateSlotsById.get(fallbackSlot.id);
+      const candidateChosenSpanIds = candidateSlot && Array.isArray(candidateSlot.chosenSpanIds)
+        ? normalizeOptionalStringList(candidateSlot.chosenSpanIds)
+        : fallbackSlot.chosenSpanIds;
+
+      return {
+        ...fallbackSlot,
+        query: typeof candidateSlot?.query === 'string' && candidateSlot.query.trim().length > 0
+          ? candidateSlot.query.trim()
+          : fallbackSlot.query,
+        requirement: candidateSlot?.requirement === 'optional'
+          ? 'optional' as const
+          : fallbackSlot.requirement,
+        targetBundles: Array.isArray(candidateSlot?.targetBundles)
+          ? normalizeOptionalStringList(candidateSlot.targetBundles)
+          : fallbackSlot.targetBundles,
+        chosenSpanIds: preserveMaterialSlotRecall({
+          baseChosenSpanIds: baseSlot.chosenSpanIds,
+          candidateChosenSpanIds,
+          allCandidateSpanIds,
+          spansById,
+        }),
+      };
+    });
+
+    return {
+      segmentId: fallbackSegment.segmentId,
+      slots: normalizedSlots,
+    };
+  });
+
+  return {
+    id: typeof candidate.id === 'string' && candidate.id.trim().length > 0
+      ? candidate.id.trim()
+      : fallback.id,
+    projectId: typeof candidate.projectId === 'string' && candidate.projectId.trim().length > 0
+      ? candidate.projectId.trim()
+      : fallback.projectId,
+    generatedAt: typeof candidate.generatedAt === 'string' && candidate.generatedAt.trim().length > 0
+      ? candidate.generatedAt.trim()
+      : new Date().toISOString(),
+    segments: normalizedSegments,
+  };
+}
+
+function preserveMaterialSlotRecall(input: {
+  baseChosenSpanIds: string[];
+  candidateChosenSpanIds: string[];
+  allCandidateSpanIds: Set<string>;
+  spansById: Map<string, IKtepSlice>;
+}): string[] {
+  const kept = dedupeStrings(input.candidateChosenSpanIds);
+  const keptSet = new Set(kept);
+  for (const spanId of input.baseChosenSpanIds) {
+    if (keptSet.has(spanId)) continue;
+    if (input.allCandidateSpanIds.has(spanId)) continue;
+    if (isSpanCoveredBySelection(spanId, input.allCandidateSpanIds, input.spansById)) continue;
+    kept.push(spanId);
+    keptSet.add(spanId);
+  }
+  return kept;
+}
+
+function isSpanCoveredBySelection(
+  spanId: string,
+  selectedSpanIds: Set<string>,
+  spansById: Map<string, IKtepSlice>,
+): boolean {
+  const target = spansById.get(spanId);
+  if (!target) return false;
+  for (const selectedSpanId of selectedSpanIds) {
+    if (selectedSpanId === spanId) return true;
+    const selected = spansById.get(selectedSpanId);
+    if (!selected) continue;
+    if (areNearDuplicateSpans(target, selected)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function buildMaterialSlotSelectionAudit(
+  baseDraft: IMaterialSlotsDocument,
+  draft: IMaterialSlotsDocument,
+  spans: IKtepSlice[],
+): {
+  baseSelectedSpanCount: number;
+  draftSelectedSpanCount: number;
+  removedCount: number;
+  addedCount: number;
+  removedBySlot: Array<{
+    slotId: string;
+    removedSpanIds: string[];
+    spans: Array<{ spanId: string; assetId: string; displayName: string; sourceInMs?: number; sourceOutMs?: number }>;
+  }>;
+  addedBySlot: Array<{
+    slotId: string;
+    addedSpanIds: string[];
+    spans: Array<{ spanId: string; assetId: string; displayName: string; sourceInMs?: number; sourceOutMs?: number }>;
+  }>;
+} {
+  const spanById = new Map(spans.map(span => [span.id, span] as const));
+  const baseSlots = new Map(
+    baseDraft.segments.flatMap(segment => segment.slots.map(slot => [slot.id, slot] as const)),
+  );
+  const draftSlots = new Map(
+    draft.segments.flatMap(segment => segment.slots.map(slot => [slot.id, slot] as const)),
+  );
+  const removedBySlot = [...baseSlots.entries()].map(([slotId, baseSlot]) => {
+    const draftSlot = draftSlots.get(slotId);
+    const draftChosen = new Set(draftSlot?.chosenSpanIds ?? []);
+    const removedSpanIds = baseSlot.chosenSpanIds.filter(spanId => !draftChosen.has(spanId));
+    return {
+      slotId,
+      removedSpanIds,
+      spans: removedSpanIds.slice(0, 8).map(spanId => {
+        const span = spanById.get(spanId);
+        return {
+          spanId,
+          assetId: span?.assetId ?? '',
+          displayName: resolveSpanDisplayName(span),
+          sourceInMs: span?.sourceInMs,
+          sourceOutMs: span?.sourceOutMs,
+        };
+      }),
+    };
+  }).filter(item => item.removedSpanIds.length > 0);
+  const addedBySlot = [...draftSlots.entries()].map(([slotId, draftSlot]) => {
+    const baseSlot = baseSlots.get(slotId);
+    const baseChosen = new Set(baseSlot?.chosenSpanIds ?? []);
+    const addedSpanIds = draftSlot.chosenSpanIds.filter(spanId => !baseChosen.has(spanId));
+    return {
+      slotId,
+      addedSpanIds,
+      spans: addedSpanIds.slice(0, 8).map(spanId => {
+        const span = spanById.get(spanId);
+        return {
+          spanId,
+          assetId: span?.assetId ?? '',
+          displayName: resolveSpanDisplayName(span),
+          sourceInMs: span?.sourceInMs,
+          sourceOutMs: span?.sourceOutMs,
+        };
+      }),
+    };
+  }).filter(item => item.addedSpanIds.length > 0);
+
+  return {
+    baseSelectedSpanCount: dedupeStrings(
+      baseDraft.segments.flatMap(segment => segment.slots.flatMap(slot => slot.chosenSpanIds)),
+    ).length,
+    draftSelectedSpanCount: dedupeStrings(
+      draft.segments.flatMap(segment => segment.slots.flatMap(slot => slot.chosenSpanIds)),
+    ).length,
+    removedCount: removedBySlot.reduce((sum, item) => sum + item.removedSpanIds.length, 0),
+    addedCount: addedBySlot.reduce((sum, item) => sum + item.addedSpanIds.length, 0),
+    removedBySlot: removedBySlot.slice(0, 12),
+    addedBySlot: addedBySlot.slice(0, 12),
+  };
+}
+
+function summarizeMaterialSlotSelectionAudit(input: {
+  baseSelectedSpanCount: number;
+  draftSelectedSpanCount: number;
+  removedCount: number;
+  addedCount: number;
+}): string {
+  return [
+    `base ${input.baseSelectedSpanCount} spans`,
+    `draft ${input.draftSelectedSpanCount} spans`,
+    `removed ${input.removedCount}`,
+    `added ${input.addedCount}`,
+  ].join(' / ');
+}
+
+function resolveSpanDisplayName(span: IKtepSlice | undefined): string {
+  if (!span) return 'unknown-span';
+  return `${span.assetId}:${span.type}`;
+}
+
 function normalizeScriptStageReview(
   raw: Partial<IStageReview> | undefined,
   stage: string,
@@ -2053,14 +2334,14 @@ function normalizeScriptStageReview(
     ? raw.issues
       .filter((issue): issue is NonNullable<IStageReview['issues']>[number] => Boolean(issue && typeof issue === 'object'))
       .map(issue => ({
-        code: CSCRIPT_REVIEW_CODES.includes(issue.code as typeof CSCRIPT_REVIEW_CODES[number])
-          ? issue.code
+        code: typeof issue.code === 'string' && issue.code.trim()
+          ? issue.code.trim()
           : CSCRIPT_REVIEW_CODES[0],
         severity: issue.severity === 'warning' ? 'warning' as const : 'blocker' as const,
         message: typeof issue.message === 'string' && issue.message.trim()
           ? issue.message.trim()
           : 'reviewer returned an empty issue message.',
-        details: typeof issue.details === 'string' && issue.details.trim() ? issue.details.trim() : undefined,
+        details: issue.details,
       }))
     : [];
   const hasBlocker = issues.some(issue => issue.severity === 'blocker');
@@ -2103,6 +2384,33 @@ function resolveScriptWriterPromptId(
     case 'beat-writer':
       return 'script/beat-writer';
   }
+}
+
+function buildScriptStageErrorReview(
+  stage: string,
+  attempt: number,
+  error: unknown,
+): IStageReview {
+  return {
+    stage,
+    identity: 'script-reviewer',
+    attempt,
+    verdict: 'awaiting_user',
+    issues: [{
+      code: 'review_transport_error',
+      severity: 'blocker',
+      message: formatScriptStageError(error),
+    }],
+    revisionBrief: ['reviewer 未成功返回，请先保留当前草稿并重试 reviewer。'],
+    reviewedAt: new Date().toISOString(),
+  };
+}
+
+function formatScriptStageError(error: unknown): string {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message.trim();
+  }
+  return 'unknown stage error';
 }
 
 export function buildSpatialStoryContext(
@@ -2379,7 +2687,7 @@ function buildSegmentPlanPacket(input: {
       'script/spatial-story.json',
       'script/agent-contract.json',
       'style profile',
-      'base segment plan draft',
+      'optional previous segment plan draft',
     ],
     inputArtifacts: [
       {
@@ -2422,16 +2730,16 @@ function buildSegmentPlanPacket(input: {
         summary: input.brief.goalDraft.join(' / '),
         content: input.brief,
       },
-      {
-        label: 'base-draft',
-        path: getSegmentPlanPath(input.projectRoot),
-        summary: input.baseDraft.summary,
-        content: input.baseDraft,
-      },
       input.revisionBrief.length > 0 ? {
         label: 'revision-brief',
         summary: input.revisionBrief.join(' / '),
         content: input.revisionBrief,
+      } : null,
+      input.revisionBrief.length > 0 ? {
+        label: 'previous-draft',
+        path: getSegmentPlanPath(input.projectRoot),
+        summary: input.baseDraft.summary,
+        content: input.baseDraft,
       } : null,
     ].filter((item): item is NonNullable<typeof item> => item != null),
     outputSchema: {
@@ -2456,6 +2764,7 @@ function buildMaterialSlotsPacket(input: {
   spans: IKtepSlice[];
   chronology: IScriptPlanningContext['chronology'];
   baseDraft: IMaterialSlotsDocument;
+  previousDraft?: IMaterialSlotsDocument;
   revisionBrief: string[];
 }): IAgentPacket {
   return {
@@ -2466,6 +2775,8 @@ function buildMaterialSlotsPacket(input: {
       '不能改写 segment 结构。',
       '必须服从 chronology / GPS / Pharos guardrails。',
       '缺证据时宁可保守留空，也不要强凑 span。',
+      'base-draft 的 chosenSpanIds 是高召回下限；除非 span 已被别的 slot 合法承接，或明显属于空白 / 坏段 / 高重叠近重复，否则不要静默删除。',
+      'revision-brief 只授权修改被点名的问题位，不要顺手裁掉其他 slot 的过程证据、阶段证据或可用原声。',
     ],
     allowedInputs: [
       'script/segment-plan.json',
@@ -2474,6 +2785,7 @@ function buildMaterialSlotsPacket(input: {
       'script/agent-contract.json',
       'spans / chronology',
       'base material slots draft',
+      'optional previous material slots draft',
     ],
     inputArtifacts: [
       {
@@ -2520,14 +2832,19 @@ function buildMaterialSlotsPacket(input: {
       },
       {
         label: 'base-draft',
-        path: getMaterialSlotsPath(input.projectRoot),
-        summary: `${input.baseDraft.segments.length} 个 segment slot group`,
+        summary: `${input.baseDraft.segments.length} 个 segment slot group，作为高召回保底稿。`,
         content: input.baseDraft,
       },
       input.revisionBrief.length > 0 ? {
         label: 'revision-brief',
         summary: input.revisionBrief.join(' / '),
         content: input.revisionBrief,
+      } : null,
+      input.previousDraft ? {
+        label: 'previous-draft',
+        path: getMaterialSlotsPath(input.projectRoot),
+        summary: `${input.previousDraft.segments.length} 个 segment slot group`,
+        content: input.previousDraft,
       } : null,
     ].filter((item): item is NonNullable<typeof item> => item != null),
     outputSchema: {
@@ -2565,7 +2882,7 @@ function buildScriptCurrentPacket(input: {
       'script/material-overview.md',
       'script/spatial-story.json',
       'style profile',
-      'base script draft',
+      'optional previous script draft',
     ],
     inputArtifacts: [
       {
@@ -2601,16 +2918,16 @@ function buildScriptCurrentPacket(input: {
           parameters: input.style.parameters,
         },
       },
-      {
-        label: 'base-draft',
-        path: getCurrentScriptPath(input.projectRoot),
-        summary: `${input.baseDraft.length} 个 script segment`,
-        content: input.baseDraft,
-      },
       input.revisionBrief.length > 0 ? {
         label: 'revision-brief',
         summary: input.revisionBrief.join(' / '),
         content: input.revisionBrief,
+      } : null,
+      input.revisionBrief.length > 0 ? {
+        label: 'previous-draft',
+        path: getCurrentScriptPath(input.projectRoot),
+        summary: `${input.baseDraft.length} 个 script segment`,
+        content: input.baseDraft,
       } : null,
     ].filter((item): item is NonNullable<typeof item> => item != null),
     outputSchema: {

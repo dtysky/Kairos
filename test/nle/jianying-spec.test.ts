@@ -49,7 +49,7 @@ describe('buildJianyingDraftSpec', () => {
   it('maps muted KTEP clips to zero-volume Jianying segments', async () => {
     const doc: IKtepDoc = {
       protocol: 'kairos.timeline',
-      version: '1.0',
+      version: '2.0',
       project: {
         id: 'project-1',
         name: 'Muted Spec Test',
@@ -97,10 +97,65 @@ describe('buildJianyingDraftSpec', () => {
     });
   });
 
+  it('maps clip-level audioGainDb to Jianying linear volume', async () => {
+    const doc: IKtepDoc = {
+      protocol: 'kairos.timeline',
+      version: '2.0',
+      project: {
+        id: 'project-audio',
+        name: 'Audio Gain Spec Test',
+        createdAt: '2026-04-18T00:00:00.000Z',
+        updatedAt: '2026-04-18T00:00:00.000Z',
+      },
+      assets: [{
+        id: 'asset-audio',
+        kind: 'audio',
+        sourcePath: '/tmp/dialogue.wav',
+        displayName: 'dialogue.wav',
+      }],
+      slices: [],
+      script: [],
+      timeline: {
+        id: 'timeline-audio',
+        name: 'Audio Gain Timeline',
+        fps: 30,
+        resolution: {
+          width: 3840,
+          height: 2160,
+        },
+        tracks: [{
+          id: 'track-dialogue',
+          kind: 'audio',
+          role: 'dialogue',
+          index: 0,
+        }],
+        clips: [{
+          id: 'clip-dialogue',
+          trackId: 'track-dialogue',
+          assetId: 'asset-audio',
+          timelineInMs: 0,
+          timelineOutMs: 1000,
+          sourceInMs: 0,
+          sourceOutMs: 1000,
+          audioGainDb: -6,
+        }],
+      },
+      subtitles: [],
+    };
+
+    const { spec } = await buildJianyingDraftSpec(doc);
+
+    expect(spec.clips[0]).toMatchObject({
+      kind: 'audio',
+      materialPath: '/tmp/dialogue.wav',
+      volume: 0.5012,
+    });
+  });
+
   it('passes explicit clip speed through to Jianying specs', async () => {
     const doc: IKtepDoc = {
       protocol: 'kairos.timeline',
-      version: '1.0',
+      version: '2.0',
       project: {
         id: 'project-2',
         name: 'Speed Spec Test',
@@ -190,7 +245,7 @@ describe('buildJianyingDraftSpec', () => {
   it('splits overlapping subtitles across multiple generated text tracks', async () => {
     const doc: IKtepDoc = {
       protocol: 'kairos.timeline',
-      version: '1.0',
+      version: '2.0',
       project: {
         id: 'project-subtitles',
         name: 'Subtitle Lane Spec Test',
@@ -263,7 +318,7 @@ describe('buildJianyingDraftSpec', () => {
   it('exports protected nat audio clips from a bound video asset', async () => {
     const doc: IKtepDoc = {
       protocol: 'kairos.timeline',
-      version: '1.0',
+      version: '2.0',
       project: {
         id: 'project-3',
         name: 'Protected Audio Spec Test',
@@ -324,6 +379,7 @@ describe('buildJianyingDraftSpec', () => {
             timelineOutMs: 1500,
             sourceInMs: 0,
             sourceOutMs: 1500,
+            audioSource: 'protection',
           },
         ],
       },

@@ -98,7 +98,14 @@ describe('buildStylePrompt', () => {
           title: '出发口播',
           summary: '先把出发交代清楚。',
           query: '出发',
-          selections: [{
+          audioSelections: [{
+            assetId: 'asset-1',
+            spanId: 'span-1',
+            sliceId: 'span-1',
+            sourceInMs: 0,
+            sourceOutMs: 2_000,
+          }],
+          visualSelections: [{
             assetId: 'asset-1',
             spanId: 'span-1',
             sliceId: 'span-1',
@@ -115,7 +122,8 @@ describe('buildStylePrompt', () => {
           title: '路上',
           summary: '再把路上的状态接进来。',
           query: '路上',
-          selections: [{
+          audioSelections: [],
+          visualSelections: [{
             assetId: 'asset-2',
             spanId: 'span-2',
             sliceId: 'span-2',
@@ -138,7 +146,14 @@ describe('buildStylePrompt', () => {
       beats: [{
         id: 'beat-1',
         text: '先把出发交代清楚。',
-        selections: [{
+        audioSelections: [{
+          assetId: 'asset-1',
+          spanId: 'span-1',
+          sliceId: 'span-1',
+          sourceInMs: 0,
+          sourceOutMs: 2_000,
+        }],
+        visualSelections: [{
           assetId: 'asset-1',
           spanId: 'span-1',
           sliceId: 'span-1',
@@ -158,7 +173,8 @@ describe('buildStylePrompt', () => {
       id: 'beat-2',
       text: '',
       linkedSpanIds: ['span-2'],
-      selections: [{
+      audioSelections: [],
+      visualSelections: [{
         assetId: 'asset-2',
         spanId: 'span-2',
         sliceId: 'span-2',
@@ -184,7 +200,14 @@ describe('buildStylePrompt', () => {
           title: '原声收尾',
           summary: '这里不该用到',
           query: '原声收尾',
-          selections: [{
+          audioSelections: [{
+            assetId: 'asset-1',
+            spanId: 'span-1',
+            sliceId: 'span-1',
+            sourceInMs: 0,
+            sourceOutMs: 2_000,
+          }],
+          visualSelections: [{
             assetId: 'asset-1',
             spanId: 'span-1',
             sliceId: 'span-1',
@@ -202,7 +225,8 @@ describe('buildStylePrompt', () => {
           title: '静默回望',
           summary: '如果返程画面不够，不要硬补返程叙事。',
           query: '静默回望',
-          selections: [{
+          audioSelections: [],
+          visualSelections: [{
             assetId: 'asset-2',
             spanId: 'span-2',
             sliceId: 'span-2',

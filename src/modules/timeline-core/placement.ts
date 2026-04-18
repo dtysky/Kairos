@@ -58,6 +58,7 @@ export function placeClips(
   const primaryTrack: IKtepTrack = {
     id: randomUUID(), kind: 'video', role: 'primary', index: 0,
   };
+  let dialogueTrack: IKtepTrack | null = null;
   let natTrack: IKtepTrack | null = null;
 
   const clips: IKtepClip[] = [];
@@ -85,11 +86,144 @@ export function placeClips(
         ? undefined
         : resolveRequestedSpeed(beat.actions?.speed ?? preparedSegment.segment.actions?.speed);
       const provisionalSpeed = explicitSpeed
-        ?? resolveAutoMontageSpeed(preparedBeat.selections, preparedBeat.preferSourceSpeech);
+        ?? resolveAutoMontageSpeed(preparedBeat.visualSelections, preparedBeat.preferSourceSpeech);
+      const requestedHoldMs = resolveRequestedHoldMs(
+        beat.actions?.holdMs ?? preparedSegment.segment.actions?.holdMs,
+      );
+
+      if (preparedBeat.preferSourceSpeech) {
+        const beatChronologyKey = chronologyGuardEnabled
+          ? resolveBeatChronologyKey(preparedBeat.visualSelections, preparedBeat.audioSelections, assetMap, chronologyMap)
+          : null;
+        if (
+          chronologyGuardEnabled
+          && beatChronologyKey
+          && previousBeatChronologyKey
+          && beatChronologyKey.localeCompare(previousBeatChronologyKey) < 0
+        ) {
+          throw new Error(
+            `Chronology guard failed for beat ${beat.id}: ${beatChronologyKey} < ${previousBeatChronologyKey}`,
+          );
+        }
+        if (chronologyGuardEnabled && beatChronologyKey) {
+          previousBeatChronologyKey = beatChronologyKey;
+        }
+
+        if (preparedBeat.audioSelections.length === 0 || preparedBeat.visualSelections.length === 0) {
+          continue;
+        }
+
+        const audioPlacement = buildBeatPlacement(
+          preparedBeat.audioSelections,
+          undefined,
+          undefined,
+          true,
+          assetMap,
+          reportMap,
+          cfg,
+        );
+        if (audioPlacement.entries.length === 0 || audioPlacement.totalDurationMs <= 0) {
+          continue;
+        }
+
+        const videoPlacement = buildBeatPlacement(
+          preparedBeat.visualSelections,
+          undefined,
+          requestedHoldMs,
+          false,
+          assetMap,
+          reportMap,
+          cfg,
+        );
+        if (videoPlacement.entries.length === 0) {
+          continue;
+        }
+
+        if (videoPlacement.totalDurationMs > audioPlacement.totalDurationMs) {
+          fitEntriesToBudget(videoPlacement.entries, audioPlacement.totalDurationMs);
+        } else if (videoPlacement.totalDurationMs < audioPlacement.totalDurationMs) {
+          expandEntriesTowardBudget(videoPlacement.entries, audioPlacement.totalDurationMs, false);
+        }
+
+        const beatStartMs = cursor;
+        let videoCursor = beatStartMs;
+        for (const entry of videoPlacement.entries) {
+          const timelineInMs = videoCursor;
+          const timelineOutMs = videoCursor + entry.timelineDurationMs;
+
+          clips.push({
+            id: randomUUID(),
+            trackId: primaryTrack.id,
+            assetId: entry.asset.id,
+            spanId: entry.selection.spanId ?? entry.selection.sliceId,
+            sliceId: entry.selection.sliceId,
+            sourceInMs: entry.sourceInMs,
+            sourceOutMs: entry.sourceOutMs,
+            ...(entry.appliedSpeed != null && { speed: entry.appliedSpeed }),
+            timelineInMs,
+            timelineOutMs,
+            muteAudio: entry.asset.kind === 'video',
+            linkedScriptSegmentId: preparedSegment.segment.id,
+            linkedScriptBeatId: beat.id,
+            pharosRefs: entry.selection.pharosRefs,
+            transform: entry.isPhoto ? {
+              kenBurns: {
+                startScale: 1.0, endScale: 1.15,
+                startX: 0.5, startY: 0.5,
+                endX: 0.5, endY: 0.4,
+              },
+            } : undefined,
+          });
+
+          videoCursor += entry.timelineDurationMs;
+        }
+
+        let audioCursor = beatStartMs;
+        for (const entry of audioPlacement.entries) {
+          const useProtectionAudio = shouldUseProtectionAudioFallback(entry.asset, entry.report);
+          const targetTrack = useProtectionAudio
+            ? (natTrack ??= {
+              id: randomUUID(),
+              kind: 'audio',
+              role: 'nat',
+              index: 0,
+            })
+            : (dialogueTrack ??= {
+              id: randomUUID(),
+              kind: 'audio',
+              role: 'dialogue',
+              index: 0,
+            });
+          const timelineInMs = audioCursor;
+          const timelineOutMs = audioCursor + entry.timelineDurationMs;
+
+          clips.push({
+            id: randomUUID(),
+            trackId: targetTrack.id,
+            assetId: entry.asset.id,
+            spanId: entry.selection.spanId ?? entry.selection.sliceId,
+            sliceId: entry.selection.sliceId,
+            sourceInMs: entry.sourceInMs,
+            sourceOutMs: entry.sourceOutMs,
+            timelineInMs,
+            timelineOutMs,
+            audioSource: useProtectionAudio ? 'protection' : 'embedded',
+            linkedScriptSegmentId: preparedSegment.segment.id,
+            linkedScriptBeatId: beat.id,
+            pharosRefs: entry.selection.pharosRefs,
+          });
+
+          audioCursor += entry.timelineDurationMs;
+        }
+
+        cursor += audioPlacement.totalDurationMs;
+        continue;
+      }
+
       const overlapTrimmedSelections = preparedBeat.preferSourceSpeech
-        ? preparedBeat.selections
+        ? preparedBeat.visualSelections
         : trimSelectionsAgainstSourceSpeech(
-          preparedBeat.selections,
+          preparedBeat.visualSelections,
           sourceSpeechOwnership,
           provisionalSpeed,
         );
@@ -105,11 +239,8 @@ export function placeClips(
         : dedupedSelections;
       const requestedSpeed = explicitSpeed
         ?? resolveAutoMontageSpeed(orderedSelections, preparedBeat.preferSourceSpeech);
-      const requestedHoldMs = resolveRequestedHoldMs(
-        beat.actions?.holdMs ?? preparedSegment.segment.actions?.holdMs,
-      );
       const beatChronologyKey = chronologyGuardEnabled
-        ? resolveBeatChronologyKey(orderedSelections, assetMap, chronologyMap)
+        ? resolveBeatChronologyKey(orderedSelections, preparedBeat.audioSelections, assetMap, chronologyMap)
         : null;
 
       if (
@@ -209,7 +340,7 @@ export function placeClips(
   }
 
   return {
-    tracks: natTrack ? [primaryTrack, natTrack] : [primaryTrack],
+    tracks: [primaryTrack, dialogueTrack, natTrack].filter((track): track is IKtepTrack => track != null),
     clips,
   };
 }
@@ -222,15 +353,17 @@ interface IResolvedSelection extends IKtepScriptSelection {
   preferredSourceOutMs?: number;
 }
 
-interface IResolvedBeat extends Omit<IKtepScriptBeat, 'selections'> {
-  selections: IResolvedSelection[];
+interface IResolvedBeat extends Omit<IKtepScriptBeat, 'audioSelections' | 'visualSelections'> {
+  audioSelections: IResolvedSelection[];
+  visualSelections: IResolvedSelection[];
 }
 
 interface IPreparedBeatPlacement {
   beat: IResolvedBeat;
   preferSourceSpeech: boolean;
   keepNaturalSound: boolean;
-  selections: IResolvedSelection[];
+  audioSelections: IResolvedSelection[];
+  visualSelections: IResolvedSelection[];
 }
 
 interface IPreparedSegmentPlacement {
@@ -260,8 +393,13 @@ function resolveBeats(
   if (segment.beats && segment.beats.length > 0) {
     return segment.beats.map(beat => ({
       ...beat,
-      selections: resolveSelections(beat.selections, sliceMap),
-    })).filter(beat => beat.selections.length > 0 || beat.text.trim().length > 0);
+      audioSelections: resolveSelections(beat.audioSelections, sliceMap),
+      visualSelections: resolveSelections(beat.visualSelections, sliceMap),
+    })).filter(beat =>
+      beat.audioSelections.length > 0
+      || beat.visualSelections.length > 0
+      || beat.text.trim().length > 0,
+    );
   }
 
   const fallbackSelections = resolveSelections(segment.selections ?? [], sliceMap);
@@ -272,7 +410,8 @@ function resolveBeats(
       text: segment.narration ?? '',
       targetDurationMs: segment.targetDurationMs,
       actions: segment.actions,
-      selections: [selection],
+      audioSelections: [],
+      visualSelections: [selection],
       linkedSpanIds: typeof (selection.spanId ?? selection.sliceId) === 'string'
         ? [selection.spanId ?? selection.sliceId as string]
         : [],
@@ -373,23 +512,36 @@ function prepareSegmentPlacement(
   return {
     segment,
     beats: beats.map(beat => {
-      const initialSelections = beat.selections;
-      const speechContext = buildSourceSpeechContext(initialSelections, sliceMap);
+      const initialAudioSelections = beat.audioSelections;
+      const initialVisualSelections = beat.visualSelections.length > 0
+        ? beat.visualSelections
+        : beat.audioSelections;
+      const speechContext = buildSourceSpeechContext(initialAudioSelections, sliceMap);
       const preferSourceSpeech = shouldPreferSourceSpeech(segment, beat, speechContext);
-      const normalizedSelections = preferSourceSpeech
-        ? normalizeSourceSpeechSelections(initialSelections, sliceMap)
-        : initialSelections;
-      const orderedSelections = chronologyGuardEnabled
-        ? sortSelectionsByChronology(normalizedSelections, assetMap, chronologyMap)
-        : normalizedSelections;
+      const normalizedAudioSelections = preferSourceSpeech
+        ? normalizeSourceSpeechSelections(initialAudioSelections, sliceMap)
+        : initialAudioSelections;
+      const orderedAudioSelections = chronologyGuardEnabled
+        ? sortSelectionsByChronology(normalizedAudioSelections, assetMap, chronologyMap)
+        : normalizedAudioSelections;
+      const orderedVisualSelections = chronologyGuardEnabled
+        ? sortSelectionsByChronology(initialVisualSelections, assetMap, chronologyMap)
+        : initialVisualSelections;
 
       return {
         beat,
         preferSourceSpeech,
         keepNaturalSound: preferSourceSpeech || shouldPreserveNaturalSound(segment, beat),
-        selections: orderedSelections,
+        audioSelections: orderedAudioSelections,
+        visualSelections: orderedVisualSelections.length > 0
+          ? orderedVisualSelections
+          : orderedAudioSelections,
       };
-    }).filter(beat => beat.selections.length > 0 || beat.beat.text.trim().length > 0),
+    }).filter(beat =>
+      beat.audioSelections.length > 0
+      || beat.visualSelections.length > 0
+      || beat.beat.text.trim().length > 0,
+    ),
   };
 }
 
@@ -401,7 +553,7 @@ function buildSourceSpeechOwnership(
   for (const segment of segments) {
     for (const beat of segment.beats) {
       if (!beat.preferSourceSpeech) continue;
-      for (const selection of beat.selections) {
+      for (const selection of beat.audioSelections) {
         if (typeof selection.sourceInMs !== 'number' || typeof selection.sourceOutMs !== 'number') {
           continue;
         }
@@ -672,14 +824,21 @@ function applyChronologyAwareBeatOrdering(
 ): IResolvedBeat[] {
   return beats
     .map((beat, index) => {
-      const orderedSelections = sortSelectionsByChronology(beat.selections, assetMap, chronologyMap);
+      const orderedAudioSelections = sortSelectionsByChronology(beat.audioSelections, assetMap, chronologyMap);
+      const orderedVisualSelections = sortSelectionsByChronology(beat.visualSelections, assetMap, chronologyMap);
       return {
         beat: {
           ...beat,
-          selections: orderedSelections,
+          audioSelections: orderedAudioSelections,
+          visualSelections: orderedVisualSelections,
         },
         index,
-        chronologyKey: resolveBeatChronologyKey(orderedSelections, assetMap, chronologyMap),
+        chronologyKey: resolveBeatChronologyKey(
+          orderedVisualSelections,
+          orderedAudioSelections,
+          assetMap,
+          chronologyMap,
+        ),
       };
     })
     .sort((left, right) => {
@@ -707,11 +866,12 @@ function sortSelectionsByChronology(
 }
 
 function resolveBeatChronologyKey(
-  selections: IResolvedSelection[],
+  visualSelections: IResolvedSelection[],
+  audioSelections: IResolvedSelection[],
   assetMap: Map<string, IKtepAsset>,
   chronologyMap: Map<string, IMediaChronology>,
 ): string | null {
-  for (const selection of selections) {
+  for (const selection of [...visualSelections, ...audioSelections]) {
     const key = resolveSelectionChronologyKey(selection, assetMap, chronologyMap);
     if (key) return key;
   }

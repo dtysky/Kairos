@@ -52,12 +52,20 @@ export function planSubtitles(
         .filter(clip => clip.linkedScriptBeatId === beat.id)
         .sort((a, b) => a.timelineInMs - b.timelineInMs);
       if (beatClips.length === 0) continue;
-      if (isPhotoOnlyBeat(beatClips)) continue;
+      const sourceSpeechClips = beatClips.filter(clip => clip.audioSource != null);
+      const visualBeatClips = beatClips.filter(clip => clip.audioSource == null);
+      if (visualBeatClips.length > 0 && isPhotoOnlyBeat(visualBeatClips)) continue;
 
-      const speechContext = buildSourceSpeechContext(beatClips, sliceMap);
+      const speechContext = buildSourceSpeechContext(beat.audioSelections, sliceMap);
       const hasOnlyFilteredTranscript = speechContext.transcriptSegmentCount === 0
-        && hasRawTranscriptOverlap(beatClips, sliceMap);
-      const sourceSpeechSubtitles = planSourceSpeechSubtitles(seg, beat, beatClips, sliceMap, cfg);
+        && hasRawTranscriptOverlap(beat.audioSelections, sliceMap);
+      const sourceSpeechSubtitles = planSourceSpeechSubtitles(
+        seg,
+        beat,
+        sourceSpeechClips,
+        sliceMap,
+        cfg,
+      );
       if (shouldPreferSourceSpeech(seg, beat, speechContext)) {
         if (sourceSpeechSubtitles.length > 0) {
           subtitles.push(...sourceSpeechSubtitles);
@@ -68,7 +76,7 @@ export function planSubtitles(
         continue;
       }
 
-      subtitles.push(...planNarrationSubtitles(seg, beat, beatClips, cfg));
+      subtitles.push(...planNarrationSubtitles(seg, beat, visualBeatClips, cfg));
     }
   }
 
@@ -76,13 +84,13 @@ export function planSubtitles(
 }
 
 function hasRawTranscriptOverlap(
-  beatClips: IKtepClip[],
+  windows: Array<Pick<IKtepClip, 'sliceId' | 'sourceInMs' | 'sourceOutMs'>>,
   sliceMap: Map<string, IKtepSlice>,
 ): boolean {
-  for (const clip of beatClips) {
-    const slice = clip.sliceId ? sliceMap.get(clip.sliceId) : undefined;
-    const sourceInMs = clip.sourceInMs;
-    const sourceOutMs = clip.sourceOutMs;
+  for (const window of windows) {
+    const slice = window.sliceId ? sliceMap.get(window.sliceId) : undefined;
+    const sourceInMs = window.sourceInMs;
+    const sourceOutMs = window.sourceOutMs;
     if (!slice?.transcriptSegments?.length) continue;
     if (typeof sourceInMs !== 'number' || typeof sourceOutMs !== 'number' || sourceOutMs <= sourceInMs) {
       continue;
@@ -154,15 +162,15 @@ function planNarrationSubtitles(
 function planSourceSpeechSubtitles(
   segment: IKtepScript,
   beat: IKtepScriptBeat,
-  beatClips: IKtepClip[],
+  sourceSpeechClips: IKtepClip[],
   sliceMap: Map<string, IKtepSlice>,
   config: ISubtitleConfig,
 ): IKtepSubtitle[] {
-  const speechContext = buildSourceSpeechContext(beatClips, sliceMap);
+  const speechContext = buildSourceSpeechContext(beat.audioSelections, sliceMap);
   if (!shouldPreferSourceSpeech(segment, beat, speechContext)) return [];
 
   const subtitles: IKtepSubtitle[] = [];
-  for (const clip of beatClips) {
+  for (const clip of sourceSpeechClips) {
     const slice = clip.sliceId ? sliceMap.get(clip.sliceId) : undefined;
     const sourceInMs = clip.sourceInMs;
     const sourceOutMs = clip.sourceOutMs;
@@ -293,7 +301,8 @@ function resolveSubtitleBeats(
   return orderedClips.map((clip, index) => ({
     id: `legacy-beat-${segment.id}-${index + 1}`,
     text: beatTexts[index] ?? '',
-    selections: [],
+    audioSelections: [],
+    visualSelections: [],
     linkedSpanIds: clip.spanId ? [clip.spanId] : [],
     linkedSliceIds: clip.sliceId ? [clip.sliceId] : [],
   }));

@@ -12,7 +12,8 @@ export interface IOutlineBeat {
   title: string;
   summary: string;
   query: string;
-  selections: IKtepScriptSelection[];
+  audioSelections: IKtepScriptSelection[];
+  visualSelections: IKtepScriptSelection[];
   linkedSpanIds: string[];
   transcript?: string;
   materialPatterns: string[];
@@ -35,6 +36,8 @@ export interface IOutlineSegment {
   beats: IOutlineBeat[];
 }
 
+const COUTLINE_SOURCE_SPEECH_GAP_MS = 3000;
+
 export interface IBuildOutlineInput {
   segmentPlan: ISegmentPlan;
   materialSlots: IMaterialSlotsDocument;
@@ -48,10 +51,14 @@ export function buildOutline(input: IBuildOutlineInput): IOutlineSegment[] {
 
   return input.segmentPlan.segments.map((segment, index, allSegments) => {
     const group = slotGroupBySegmentId.get(segment.id);
-    const beats = (group?.slots ?? [])
-      .flatMap(slot => buildBeats(slot.id, slot.query, slot.chosenSpanIds, input.spansById));
+    const slots = coalesceOutlineSlots(group?.slots ?? []);
+    const beats = slots.flatMap(slot =>
+      buildBeats(slot.id, slot.query, slot.chosenSpanIds, input.spansById),
+    );
 
-    const selections = dedupeSelections(beats.flatMap(beat => beat.selections));
+    const selections = dedupeSelections(
+      beats.flatMap(beat => collectBeatSelections(beat)),
+    );
     const spanIds = dedupeStrings(beats.flatMap(beat => beat.linkedSpanIds));
     return {
       id: segment.id,
@@ -73,48 +80,249 @@ function buildBeats(
   chosenSpanIds: string[],
   spansById: Map<string, IKtepSlice>,
 ): IOutlineBeat[] {
-  return chosenSpanIds
-    .map((spanId, index) => buildBeat(`${slotId || randomUUID()}-${index + 1}`, query, spanId, spansById))
+  const spans = chosenSpanIds
+    .map(spanId => spansById.get(spanId))
+    .filter((span): span is IKtepSlice => Boolean(span));
+  const filtered = filterOutlineNoise(spans);
+  const source = filtered.length > 0 ? filtered : spans;
+  const groups = groupBeatSpans(source);
+
+  return groups
+    .map((group, index) => buildBeat(`${slotId || randomUUID()}-${index + 1}`, query, group))
     .filter((beat): beat is IOutlineBeat => Boolean(beat));
 }
 
 function buildBeat(
   beatId: string,
   query: string,
-  chosenSpanId: string,
-  spansById: Map<string, IKtepSlice>,
+  spans: IKtepSlice[],
 ): IOutlineBeat | null {
-  const primary = spansById.get(chosenSpanId);
+  const primary = spans[0];
   if (!primary) return null;
 
-  const selections = [{
-    assetId: primary.assetId,
-    spanId: primary.id,
-    sliceId: primary.id,
-    sourceInMs: primary.sourceInMs,
-    sourceOutMs: primary.sourceOutMs,
-    pharosRefs: primary.pharosRefs,
-  }];
+  const speechSpans = spans.filter(shouldPreserveSourceSpeech);
+  const audioSelections = speechSpans.map(mapSpanToSelection);
+  const visualSelections = spans.map(mapSpanToSelection);
 
-  const locations = dedupeStrings(primary.grounding.spatialEvidence.map(evidence => evidence.locationText));
-  const materialPatterns = dedupeStrings(primary.materialPatterns.map(pattern => pattern.phrase));
-  const transcript = primary.transcript?.trim() || undefined;
+  const locations = dedupeStrings(
+    spans.flatMap(span => span.grounding.spatialEvidence.map(evidence => evidence.locationText)),
+  );
+  const materialPatterns = dedupeStrings(
+    spans.flatMap(span => span.materialPatterns.map(pattern => pattern.phrase)),
+  );
+  const preserveSourceSpeech = audioSelections.length > 0;
+  const transcript = preserveSourceSpeech
+    ? speechSpans
+      .map(span => span.transcript?.trim())
+      .filter((value): value is string => typeof value === 'string' && value.length > 0)
+      .join(' ')
+      || undefined
+    : undefined;
+  const timingAnchor = speechSpans[0] ?? primary;
 
   return {
     id: beatId,
     title: summarizeQuery(query),
-    summary: buildBeatSummary(query, [primary], locations, materialPatterns),
+    summary: buildBeatSummary(query, spans, locations, materialPatterns),
     query,
-    selections,
-    linkedSpanIds: [primary.id],
+    audioSelections,
+    visualSelections,
+    linkedSpanIds: spans.map(span => span.id),
     transcript,
     materialPatterns,
     locations,
-    sourceSpeechDecision: transcript ? 'preserve' : 'rewrite',
+    sourceSpeechDecision: preserveSourceSpeech ? 'preserve' : 'rewrite',
     speedCandidate: primary.speedCandidate,
-    sourceInMs: primary.sourceInMs,
-    sourceOutMs: primary.sourceOutMs,
+    sourceInMs: timingAnchor.sourceInMs,
+    sourceOutMs: timingAnchor.sourceOutMs,
   };
+}
+
+function coalesceOutlineSlots(
+  slots: IMaterialSlotsDocument['segments'][number]['slots'],
+): IMaterialSlotsDocument['segments'][number]['slots'] {
+  const result: IMaterialSlotsDocument['segments'][number]['slots'] = [];
+  for (const slot of slots) {
+    const previous = result[result.length - 1];
+    if (
+      previous
+      && previous.query === slot.query
+      && previous.requirement === slot.requirement
+      && sameStringList(previous.targetBundles, slot.targetBundles)
+    ) {
+      previous.chosenSpanIds = dedupeStrings([
+        ...previous.chosenSpanIds,
+        ...slot.chosenSpanIds,
+      ]);
+      continue;
+    }
+
+    result.push({
+      ...slot,
+      chosenSpanIds: dedupeStrings(slot.chosenSpanIds),
+      targetBundles: [...slot.targetBundles],
+    });
+  }
+
+  return result;
+}
+
+function filterOutlineNoise(spans: IKtepSlice[]): IKtepSlice[] {
+  if (spans.length <= 1) return spans;
+  const filtered = spans.filter(span => !isLikelyNoisyTranscript(span));
+  return filtered.length > 0 ? filtered : spans;
+}
+
+function groupBeatSpans(spans: IKtepSlice[]): IKtepSlice[][] {
+  const groups: IKtepSlice[][] = [];
+  let currentGroup: IKtepSlice[] = [];
+
+  const flushGroup = (): void => {
+    if (currentGroup.length === 0) return;
+    groups.push(currentGroup);
+    currentGroup = [];
+  };
+
+  for (const span of spans) {
+    if (currentGroup.length === 0) {
+      currentGroup = [span];
+      continue;
+    }
+
+    const previous = currentGroup[currentGroup.length - 1];
+    if (!previous) {
+      currentGroup = [span];
+      continue;
+    }
+
+    const currentHasSpeech = currentGroup.some(shouldPreserveSourceSpeech);
+    const nextHasSpeech = shouldPreserveSourceSpeech(span);
+    if (currentHasSpeech && nextHasSpeech) {
+      const previousSpeech = [...currentGroup].reverse().find(shouldPreserveSourceSpeech);
+      if (previousSpeech && shouldMergeSourceSpeechSpans(previousSpeech, span)) {
+        currentGroup.push(span);
+        continue;
+      }
+
+      flushGroup();
+      currentGroup = [span];
+      continue;
+    }
+
+    if (currentHasSpeech || nextHasSpeech) {
+      if (currentGroup.length < 4 && shouldMergeCompanionSpan(previous, span)) {
+        currentGroup.push(span);
+        continue;
+      }
+
+      flushGroup();
+      currentGroup = [span];
+      continue;
+    }
+
+    if (currentGroup.length < 3 && shouldMergeVisualSpans(previous, span)) {
+      currentGroup.push(span);
+      continue;
+    }
+
+    flushGroup();
+    currentGroup = [span];
+  }
+
+  flushGroup();
+  return groups;
+}
+
+function shouldPreserveSourceSpeech(span: IKtepSlice): boolean {
+  const transcript = span.transcript?.trim();
+  if (!transcript) return false;
+  if (isLikelyNoisyTranscript(span)) return false;
+
+  if (span.grounding.speechMode === 'preferred') return true;
+  if (span.grounding.speechValue !== 'none') return true;
+  if ((span.speechCoverage ?? 0) >= 0.18) return true;
+  if ((span.transcriptSegments?.length ?? 0) >= 2) return true;
+  return visibleTranscriptLength(transcript) >= 12;
+}
+
+function isLikelyNoisyTranscript(span: IKtepSlice): boolean {
+  const transcript = span.transcript?.trim();
+  if (!transcript) return false;
+  const normalized = transcript.replace(/\s+/gu, '');
+  const noisyPatterns = [
+    /拍摄启动/u,
+    /停止录像/u,
+    /停止录音/u,
+    /开始录音/u,
+    /指令执行中/u,
+    /重新规划路线/u,
+    /recording\s*(started|stopped)/iu,
+  ];
+  const navigationPatterns = [
+    /前方\d+(米|公里).*(左转|右转|掉头|直行)/u,
+    /请按导航/u,
+    /导航/u,
+    /收费站/u,
+    /服务区/u,
+    /turn\s+(left|right)/iu,
+    /continue\s+straight/iu,
+  ];
+  if (noisyPatterns.some(pattern => pattern.test(normalized))) return true;
+  if (navigationPatterns.some(pattern => pattern.test(normalized))) {
+    return (span.speechCoverage ?? 0) < 0.35 || visibleTranscriptLength(transcript) <= 24;
+  }
+  return false;
+}
+
+function shouldMergeVisualSpans(left: IKtepSlice, right: IKtepSlice): boolean {
+  if (left.assetId === right.assetId) return true;
+  if (left.type === right.type) return true;
+  if (sharesValue(
+    left.materialPatterns.map(pattern => pattern.phrase),
+    right.materialPatterns.map(pattern => pattern.phrase),
+  )) {
+    return true;
+  }
+  return sharesValue(
+    left.grounding.spatialEvidence.map(item => item.locationText),
+    right.grounding.spatialEvidence.map(item => item.locationText),
+  );
+}
+
+function shouldMergeCompanionSpan(left: IKtepSlice, right: IKtepSlice): boolean {
+  return shouldMergeVisualSpans(left, right);
+}
+
+function shouldMergeSourceSpeechSpans(left: IKtepSlice, right: IKtepSlice): boolean {
+  if (left.assetId !== right.assetId) return false;
+  const leftOutMs = left.sourceOutMs;
+  const rightInMs = right.sourceInMs;
+  if (typeof leftOutMs !== 'number' || typeof rightInMs !== 'number') return false;
+  if (rightInMs - leftOutMs > COUTLINE_SOURCE_SPEECH_GAP_MS) return false;
+  return !hasStrongSentenceBoundary(left);
+}
+
+function hasStrongSentenceBoundary(span: IKtepSlice): boolean {
+  const transcript = span.transcript?.trim();
+  if (!transcript) return false;
+  return /[。！？!?；;]$/u.test(transcript);
+}
+
+function sharesValue(left: Array<string | undefined>, right: Array<string | undefined>): boolean {
+  const leftSet = new Set(left.map(value => value?.trim()).filter(Boolean));
+  return right.some(value => {
+    const normalized = value?.trim();
+    return Boolean(normalized && leftSet.has(normalized));
+  });
+}
+
+function sameStringList(left: string[], right: string[]): boolean {
+  if (left.length !== right.length) return false;
+  return left.every((value, index) => value === right[index]);
+}
+
+function visibleTranscriptLength(value: string): number {
+  return value.replace(/[\s\p{P}\p{S}]+/gu, '').length;
 }
 
 function buildBeatSummary(
@@ -125,7 +333,7 @@ function buildBeatSummary(
 ): string {
   const primary = spans[0]!;
   const transcript = primary.transcript?.trim();
-  if (transcript) {
+  if (spans.length === 1 && transcript && shouldPreserveSourceSpeech(primary)) {
     return transcript.slice(0, 120);
   }
 
@@ -141,7 +349,7 @@ function buildBeatSummary(
 
 function estimateDurationMs(beats: IOutlineBeat[]): number {
   const explicit = beats
-    .flatMap(beat => beat.selections)
+    .flatMap(beat => beat.visualSelections)
     .map(selection => {
       if (typeof selection.sourceInMs !== 'number' || typeof selection.sourceOutMs !== 'number') {
         return 0;
@@ -150,6 +358,24 @@ function estimateDurationMs(beats: IOutlineBeat[]): number {
     })
     .reduce((sum, value) => sum + value, 0);
   return explicit > 0 ? explicit : Math.max(1, beats.length) * 12_000;
+}
+
+function mapSpanToSelection(span: IKtepSlice): IKtepScriptSelection {
+  return {
+    assetId: span.assetId,
+    spanId: span.id,
+    sliceId: span.id,
+    sourceInMs: span.sourceInMs,
+    sourceOutMs: span.sourceOutMs,
+    pharosRefs: span.pharosRefs,
+  };
+}
+
+function collectBeatSelections(beat: IOutlineBeat): IKtepScriptSelection[] {
+  return dedupeSelections([
+    ...beat.audioSelections,
+    ...beat.visualSelections,
+  ]);
 }
 
 function normalizeScriptRole(

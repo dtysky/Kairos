@@ -52,6 +52,8 @@ Kairos 当前需要区分两层：
     - `style-profile-synthesizer` 只读取 packetized summary，先产出 `style-draft.json`
     - `style-profile-reviewer` 只读取 summary + draft，写 `style-review.json`
     - reviewer blockers 当前是最终 style profile 的硬闸门；不能再把单次 synthesize 直接落成正式 profile
+    - 正式执行后端应优先使用宿主提供的 packet runner / 真实 subagent 链；直接 `ILlmClient` chat 只作为非 agent 宿主或本地调试的兼容 fallback
+    - workspace / project runtime 可通过 `config/runtime.json` 的 `agentPacketRunnerCommand` / `agentPacketRunnerArgs` / `agentPacketRunnerCwd` 声明这个 packet runner
 - 未来如果引入桌面 UI 或更多 provider / adapter，应建立在这套协议与项目模型上，而不是推翻它
 - 某些项目会直接消费调色后的素材版本而非原始素材；因此主链面向的是“当前采用的素材版本”，而不是固定绑定“永远使用原始素材”
 
@@ -88,7 +90,10 @@ Kairos 当前需要区分两层：
 - 项目级正式词集当前只保留一层，并挂到 `project-brief`：
   - `材料模式短语`
 - Script prep 当前正式链路为：
-  - `Analyze -> Material Overview -> Script Brief -> Segment Plan -> Material Slots -> Bundle Lookup -> Chosen SpanIds -> Beat / Script`
+- `Analyze -> Material Overview -> Script Brief -> Segment Plan -> Material Slots -> Bundle Lookup -> Chosen SpanIds -> Beat / Script`
+- `Chosen SpanIds -> Beat / Script` 不再等价于“一个 chosen span 直接落成一个 beat”
+- `material-slots` 负责高召回收集证据，outline 负责在不破坏证据链的前提下做 deterministic 去噪与相邻非口播 evidence 聚合，再交给 `beat-writer`
+- `material-slots` 的 deterministic base draft 是正式高召回下限；`route-slot-planner` 可以补充 / 重排，但不能把 base `chosenSpanIds` 静默裁掉
 - `Bundle` 当前是 `materialPatterns` 驱动的粗索引入口，不承担叙事骨架身份
 - `Segment` 当前是 LLM-first 的项目级动态段落结果，不是固定 archetype 闭集
 - Timeline / script selection 当前开始优先传递 `spanId`；`sliceId` 只作为兼容字段继续存在一段时间
@@ -231,19 +236,31 @@ flowchart TD
   - 关键 handoff 会通过持续可见的 workflow prompt 和显式 hana modal 提示用户“下一步去哪里”，而不再只靠淡色行内文案
 - 当前 Console 里的 `script` job 已收口为 **deterministic prep**，只负责校验前置条件并刷新确定性材料
 - `script/current.json` 的唯一正式作者是 **Agent**
-- Agent 内部当前正式要求已经改成 clean-context staged pipeline，而不是单一共享 writer 上下文：
+  - Agent 内部当前正式要求已经改成 clean-context staged pipeline，而不是单一共享 writer 上下文：
+  - `[main agent]` 只负责流程路由、前置条件核对、packet 准备、用户 handoff 与 reviewer 闸门执行
+  - `[main agent]` 不得把缺失的 subagent / reviewer 阶段静默折叠成一次本地起稿
   - `overview-cartographer` 只写 `script/material-overview.md`
   - `brief-editor` 只写初版 `script-brief`
   - `segment-architect` 只写 `script/segment-plan.json`
   - `route-slot-planner` 只写 `script/material-slots.json`
+  - `script-reviewer` 审 `material-slots` 时必须把 silent span drops / recall regression 当 blocker
   - `beat-writer` 只写 `script/current.json`
   - `script-reviewer` 只做阶段审查，不直接生成正式稿
-- Script 当前新增一层正式内部提示资产：
+  - `script-reviewer` 的 blocker 是推进下一阶段和落成 `script/current.json` 的硬闸门
+  - 如果当前宿主策略或用户授权不允许 formal subagent / reviewer 链执行，主代理必须先停下说明原因，不能继续按“单代理兼任全部阶段”落稿
+  - Script 当前新增一层正式内部提示资产：
   - `script/spatial-story.json` + `script/spatial-story.md` 用现有 chronology / spans / Pharos / GPS 真值生成空间叙事提示
   - `script/agent-contract.json` 锁定用户 goals / constraints / review notes、style must / forbidden、GPS narrative hints、Pharos must-cover hints、chronology guardrails
   - 每个阶段都必须读取各自的 `script/agent-packets/{stage}.json`
   - reviewer 结果写入 `script/reviews/{stage}.json`
   - 流水线推进状态写入 `script/agent-pipeline.json`
+  - packet 是 stage subagent 的唯一正式上下文；runtime 不得在 packet 外重复附加主线程历史、`previousDraft` 或 `revisionBrief`
+  - 正式 script stage 执行后端应优先使用宿主 packet runner / 真实 clean-context subagent 链；直接 `ILlmClient` chat 只作为非 agent 宿主或本地调试的兼容 fallback
+  - workspace / project runtime 可通过 `config/runtime.json` 的 `agentPacketRunnerCommand` / `agentPacketRunnerArgs` / `agentPacketRunnerCwd` 声明这个 packet runner
+  - 首轮 stage 调用默认应保持 lean packet，只在 reviewer 要求返工时再把 previous draft 带回 writer
+  - `script/current.json` 的正式落盘形状固定为 bare `IKtepScript[]`；若 transport 返回 `{ "segments": [...] }`，必须由 stage runner 在持久化前解包，不能再变成主代理的临时补锅动作
+  - `script-current` 每个 attempt 只允许一次正式 `beat-writer` 调用；不能先额外跑一轮 full-script writer 再进入 reviewer 链
+  - writer / reviewer 调用失败时，`script/agent-pipeline.json` 必须立即写出真实失败态，不能继续停留在旧阶段的 `pending`
 - `script/script-brief.json` 当前承载脚本阶段的正式流程状态真值：
   - `choose_style`
   - `await_brief_draft`
@@ -264,36 +281,47 @@ flowchart TD
   - `segment plan / material slots` 只能在各自合法时间带内召回素材
   - `beat` 顺序默认保持时间单调递增，不允许后段跨窗回捞前段素材
 - Script prep 当前不再为粗剪自动推导总预算：
-  - `targetDurationMs` 继续保留为可选审阅提示，但默认不由 style 平均章节时长、材料容量或 brief 自动补全
+  - style / arrangement signals 只约束顺序、阶段完整、素材角色、功能位和禁区，不默认推出总时长或段落预算
+  - `targetDurationMs` 继续保留为可选审阅提示；除非用户明确给出成片时长、交付窗口或某段硬时长，否则不要在 brief / segment plan / material-slots / beat 中自动补全
   - 粗剪默认目标改为尽量列入有效素材：关键过程视频、可保留原声、阶段证据和事件节点默认都应进入 beat / timeline
 - Script prep 当前不再把粗剪理解成代表性抽样：
   - `analysis/material-bundles.json` 必须覆盖 `store/spans.json` 的全量有效 spans
-  - `material-slots` 可以展开成多 slot / 多 beat 的高召回清单，不再默认一段只保留少数代表素材
-  - 只应移除空白、坏段和高重叠近重复，不应因为“已经有代表镜头”就把其他有效过程素材吞掉
+- `material-slots` 可以展开成多 slot / 多 beat 的高召回清单，优先保留过程证据、阶段证据、事件节点和可用原声，不再默认一段只保留少数代表素材
+- 只应移除空白、坏段和高重叠近重复，不应因为“已经有代表镜头”就把其他有效过程素材吞掉
+- 如果 stage writer 试图把 deterministic base 里的独立有效 span 静默删掉，runner 应先恢复高召回保底，再交 reviewer 判定是否仍有问题
 - 关键过程视频现在有正式 guardrail：
   - 只要某条视频承载不可替代的时间推进、事件推进、人物关系推进或有效原声，就应保留成独立 beat
   - 不允许被泛化的 summary 段落或“更好看”的静态成果材料静默吞掉
 - 当前脚本 / outline 默认优先消费 Analyze 给出的 `editSourceInMs / editSourceOutMs`，而不是继续把 tight evidence window 当成最终可剪子区间
 - 模型仍可把 `selection.sourceInMs / sourceOutMs` 写得更细，但系统会先 clamp 到 outline fallback window，避免再次无意识裁得过短
-- 如果某拍最终保留原声，Script / Timeline 当前会把命中的 `selection.sourceInMs / sourceOutMs` 优先裁成 transcript-driven speech islands，并以这些原声边界作为字幕与时长真值，而不是再回退解释性旁白
-- `source-speech` 当前正式以“过滤后的口语 transcript cues”作为边界真值：
-  - clip 默认直接贴 spoken transcript / speech island 边界，不再固定额外吞入前后 `500ms`
-  - 导航播报、录制口令、设备提示不再参与 speech island，也不再进入 source-speech 字幕
+- `KTEP 2.0` 当前正式把 source-speech beat 升级为双通道：
+  - `audioSelections[]` 负责原声音频锚点与 timing truth
+  - `visualSelections[]` 负责同拍内必须保留的陪衬视觉证据
+  - 旧的 beat 级 `selections[]` 不再是正式协议；项目需要重跑 Script 与 Timeline
+- 如果某拍最终保留原声，Script / Timeline 当前会先按 `audioSelections[]` 构建 merged audio units，而不是破坏性重写整拍画面选择
+- `source-speech` 当前正式以“过滤后的口语 transcript cues + merged audio units”作为边界真值：
+  - 相邻 spoken gaps `<= 3000ms` 且不存在强句末边界时，默认合并成同一个 audio unit
+  - merged unit 默认保留前 `120ms`、后 `180ms` breathing，并严格 clamp 到可用 source range
+  - 导航播报、录制口令、设备提示不再参与 audio unit，也不再进入 source-speech 字幕
   - 时间线当前应优先信任 Analyze 产出的 refined transcript segments；只有单条 cue 仍然过长时，才允许二次硬切
   - 当仍需拆长 cue 时，时间码应按 cue 长度 / 语速加权映射，而不是整段平均切分
-  - `spans.json` 不应为同一段 source-speech material 机械保留多条近邻小 span；Analyze 应优先合并附近 speech spans，把真正的语音岛细节留在 `transcriptSegments`
+  - `spans.json` 不应为同一段 source-speech material 机械保留多条近邻小 span；Analyze 应优先合并附近 speech spans，把真正的语音细节留在 `transcriptSegments`
 
 ### Timeline / Export
 
 - 时间线与导出围绕 `KTEP` 展开
 - 字幕已有两条正式路径：
   - 旁白路径：默认来自 `beat.text`
-  - 原声路径：当某拍保留原声时，可直接来自 `slice.transcriptSegments`
+  - 原声路径：当某拍保留原声时，来自 `beat.audioSelections[]` 对应的 merged audio units
 - 旁白路径已支持显式 `beat.utterances[]`，可以在一个 beat 内表达多段配音与头部 / 中间 / 尾部停顿；字幕只覆盖有声岛，不再默认铺满整个 beat
-- `preserveNatSound / muteSource` 是脚本层的显式覆盖信号；未显式标注时，时间线层当前默认只要主视频 selection 有可用 `transcriptSegments` / `speechCoverage`，就优先保留原声
-- 当视频资产已绑定保护音轨，且 Analyze 的保守推荐明确偏向 `protection` 时，时间线可把视频原音静音，并额外挂一条对齐的 `nat` 音轨作为原声兜底
+- `preserveNatSound / muteSource` 是脚本层的显式覆盖信号；未显式标注时，时间线层当前默认只要 `audioSelections[]` 有可用 `transcriptSegments` / `speechCoverage`，就优先保留原声
+- source-speech 当前正式落成“单视频轨串剪 + 独立 `dialogue` 音频轨”：
+  - `visualSelections[]` 在单条视频轨上顺排，不做双视频轨 overlay
+  - `audioSelections[]` 生成独立 `dialogue` 音频 clip，`nat` 音轨只保留给 protection/ambient fallback
+- 当视频资产已绑定保护音轨，且 Analyze 的保守推荐明确偏向 `protection` 时，时间线会把对应原声 clip 路由到 `nat` 或 `dialogue` fallback，不再依赖视频主轨直接承载原声
 - 当前字幕时长已不再是简单平均分配，而是会参考说话速度和标点停顿做节奏估算
-- 当 beat 走 source speech 时，字幕现在会先做文本清洗与强制分句；若某个 cue 明显噪声化、重复化或清洗后仍不可读，会只跳过该 cue，而不是让整拍静默；若整段都不可读，则保留原声但不再回退到 `beat.text`
+- 当 beat 走 source speech 时，字幕现在会先做文本清洗，再按短分句切 cue；若某个 cue 明显噪声化、重复化或清洗后仍不可读，会只跳过该 cue，而不是让整拍静默；若整段都不可读，则保留原声但不再回退到 `beat.text`
+- 最终可听的 `dialogue` / `nat` clip 当前会在导出编排层做非破坏性响度归一化，目标 `-16 LUFS`，并以 `audioGainDb` 记录 clip gain
 - 当前时间线不再把“短 source + 长 beat”当成默认慢放来源：
   - 对带 `editSourceInMs / editSourceOutMs` 的新 slice，时间线优先使用 edit-friendly bounds
   - 只有旧 slice / 旧 selection 缺少 edit bounds 时，才保留 legacy fallback stretch

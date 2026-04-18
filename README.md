@@ -60,6 +60,8 @@ Current stable pipeline:
     - `style-profile-synthesizer` reads only that packetized summary and writes `style-draft.json`
     - `style-profile-reviewer` reads only the draft + packet and writes `style-review.json`
     - reviewer blockers are a hard gate before `config/styles/{category}.md`
+    - formal stage execution should prefer a host packet runner / real subagent chain; direct `ILlmClient` chat is only a compatibility fallback for non-agent hosts and local debugging
+    - workspace/project runtime may declare that packet runner via `config/runtime.json` `agentPacketRunnerCommand` / `agentPacketRunnerArgs` / `agentPacketRunnerCwd`
 - the `/script` console page now acts as deterministic script preparation:
   - user first selects a workspace `styleCategory` in `/script`; that selection auto-saves
   - changing `styleCategory` now invalidates the previous script run immediately; Kairos clears the old `material-overview`, brief draft body, arrangement artifacts, outline, and `script/current.json`, then returns the workflow to `await_brief_draft`
@@ -74,10 +76,18 @@ Current stable pipeline:
     - each generator/reviewer stage reads only its own `script/agent-packets/{stage}.json`
     - stage reviews write to `script/reviews/{stage}.json`
     - pipeline state writes to `script/agent-pipeline.json`
+    - each stage packet is the only formal subagent context; runtime must not append hidden thread history or duplicate `previousDraft` / `revisionBrief` outside the packet
+    - formal stage execution should prefer a host-level packet runner / real clean-context subagent chain; direct `ILlmClient` chat is only a compatibility fallback for non-agent hosts and local debugging
+    - workspace/project runtime may declare that packet runner via `config/runtime.json` `agentPacketRunnerCommand` / `agentPacketRunnerArgs` / `agentPacketRunnerCwd`
+    - first-attempt stage packets should stay lean and only carry prior drafts on retry / revise paths
   - the final `script/current.json` remains the only formal script output consumed by timeline/export
+  - the on-disk `script/current.json` shape is always bare `IKtepScript[]`; if transport returns an object wrapper such as `{ "segments": [...] }`, the stage runner must unwrap it before persist instead of letting the main agent do ad-hoc normalize/repair
+  - `script-current` is one formal `beat-writer` pass per attempt; do not pre-run an extra full-script writer call just to seed a base draft
+  - if a script writer or reviewer call fails, `script/agent-pipeline.json` must record that real failure state immediately instead of leaving stale `pending` / old-stage truth
   - if the reviewed brief was already user-edited and a fresh initial draft is needed, overwrite permission is granted explicitly from `/script` instead of silent agent overwrite
   - the selected style profile should already expose structured `arrangementStructure`, `narrationConstraints`, rhythm stages, material grammar, camera language, and anti-patterns, so Agent work does not depend on re-inferring everything from a long style essay
   - script prep now follows `Analyze -> Material Overview -> Script Brief -> Segment Plan -> Material Slots -> Bundle Lookup -> Chosen SpanIds -> Beat / Script`
+  - `Chosen SpanIds -> Beat / Script` is no longer equivalent to mechanically emitting one beat per chosen span; outline prep should filter obvious device-command / navigation / noisy-ASR source-speech anchors and merge adjacent non-speech evidence spans before `beat-writer`
   - when the selected style clearly emphasizes chronology / route continuity / continuous process, script prep now enforces ordering in three layers:
     - internal arrangement signals resolve that the style is time-axis-strong from the existing style markdown
     - deterministic prep builds monotonic time bands for segments and only retrieves spans inside the legal band
@@ -85,16 +95,23 @@ Current stable pipeline:
   - deterministic prep no longer treats style averages or inferred material capacity as the driver of rough-cut duration; `targetDurationMs` stays optional and advisory-only unless the user explicitly sets it
   - rough-cut recall is now high-recall by default: valid spans should stay in `material-slots / outline / script` unless they are empty, clearly bad, or near-duplicate
   - `analysis/material-bundles.json` is now a full span index, and `script/material-slots.json` may fan out to many single-span slots instead of one shortlist slot per segment
+  - `material-slots` now treats the deterministic base draft as a high-recall floor: silent `chosenSpanIds` drops are recall regressions that reviewer / runner must block
   - key process videos with real event progression / relationship progression / effective source speech are now protected from being swallowed by broad summary segments
 - project brief now carries one project-level semantic vocab layer for analyze/script:
   - `材料模式短语`
+- `KTEP 2.0` 当前正式把 source-speech beat 升级成双通道模型：
+  - `beat.audioSelections[]` 负责原声锚点与 timing truth
+  - `beat.visualSelections[]` 负责同拍内要保留的陪衬画面证据
+  - 旧的 `beat.selections[]` 不再是正式协议；项目需要重跑 Script 和 Timeline
 - subtitles support two formal paths:
   - narration path from `beat.text`
-  - source-speech path from `span.transcriptSegments`
-  - source-speech subtitles now run through cleanup and hard cue splitting first; noisy ASR that still cannot produce readable cues now stays silent instead of falling back to explanatory narration
-- source-speech rough cut now prefers transcript-driven speech islands over one long enclosing window: short pauses may remain, but long silent gaps should be cut out instead of being carried through a preserved-speech beat
+  - source-speech path from `beat.audioSelections[]` anchored `transcriptSegments`
+  - source-speech subtitles now derive from merged audio units, split by short clauses, and keep noisy unreadable cues silent instead of falling back to explanatory narration
+- source-speech rough cut now groups nearby spoken units inside the same beat instead of forcing one island per selection:
+  - adjacent spoken gaps `<= 3000ms` will merge unless there is a strong sentence boundary
+  - merged windows keep `120ms` head breathing and `180ms` tail breathing inside valid source bounds
 - source-speech now treats filtered spoken transcript cues as timing truth:
-  - navigation / device-command transcript tails should be filtered out before speech-island building and subtitle generation
+  - navigation / device-command transcript tails should be filtered out before audio-unit building and subtitle generation
   - coarse transcript segments that split into multiple subtitle cues should be re-timed by cue length / speech pacing, not evenly divided
 - video Analyze now produces formal video `visualSummary + decision` in a single unified VLM pass during `finalize`:
   - with audio: `coarse-scan -> audio-analysis -> finalize -> deferred scene detect(if needed)`
@@ -123,8 +140,9 @@ Current stable pipeline:
 - outline / script now prefer Analyze-provided edit bounds instead of re-centering every span by default; legacy spans without edit bounds still fall back to conservative trimming
 - explicit acceleration now flows through `beat.actions.speed` -> timeline clip `speed` -> NLE export, but only `drive / aerial` clips may consume it; acceleration is for expression and de-duplication, not for meeting a duration target
 - silent `drive / aerial` beats with `speedCandidate` now default to `2x` in rough cut unless the script explicitly requests another speed
-- when a beat preserves source speech, Kairos now snaps the selected window to transcript-driven speech islands and keeps subtitle timing aligned to those source boundaries
-- source-speech clip boundaries should match the filtered spoken transcript window by default instead of carrying fixed extra silence
+- when a beat preserves source speech, Kairos now keeps video on the single serial `primary` track and carries the audible source on an independent `dialogue` audio track
+- source-speech windows no longer delete companion visuals; `visualSelections[]` stay available for serial cutaway placement while `audioSelections[]` alone define the preserved source audio
+- audible `dialogue` / `nat` clips now receive non-destructive loudness normalization toward `-16 LUFS` with clip gain, with true peak protection capped at `-1 dBTP`
 - rough-cut timeline placement now keeps effective source windows by default instead of fitting clips against `beat.targetDurationMs`; photos default to `1s` silent holds unless the script explicitly asks for a longer `holdMs`
 - when the same asset contributes both source-speech and silent `drive / aerial` material, source-speech owns the overlapping source window and silent montage may only use the non-overlapping remainder
 - when the same `drive / aerial` asset is reused by later silent montage beats, the later beat should only keep source remainder that has not already been consumed earlier in the rough cut

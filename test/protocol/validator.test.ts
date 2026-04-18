@@ -5,7 +5,7 @@ import { validateKtepDoc } from '../../src/protocol/validator.js';
 function buildDoc(sliceType: 'broll' | 'aerial', withSpeed: boolean): IKtepDoc {
   return {
     protocol: 'kairos.timeline',
-    version: '1.0',
+    version: '2.0',
     project: {
       id: 'project-1',
       name: 'Validator Test',
@@ -69,6 +69,30 @@ describe('validateKtepDoc speed whitelist', () => {
 
   it('allows speed on aerial clips', () => {
     const result = validateKtepDoc(buildDoc('aerial', true));
+
+    expect(result.ok).toBe(true);
+  });
+
+  it('allows dialogue audio clips to reference embedded video audio', () => {
+    const doc = buildDoc('aerial', false);
+    doc.timeline.tracks.push({
+      id: 'track-2',
+      kind: 'audio',
+      role: 'dialogue',
+      index: 0,
+    });
+    doc.timeline.clips.push({
+      id: 'clip-2',
+      trackId: 'track-2',
+      assetId: 'asset-1',
+      sourceInMs: 0,
+      sourceOutMs: 1000,
+      timelineInMs: 0,
+      timelineOutMs: 1000,
+      audioSource: 'embedded',
+    });
+
+    const result = validateKtepDoc(doc);
 
     expect(result.ok).toBe(true);
   });

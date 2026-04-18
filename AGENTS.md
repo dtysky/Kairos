@@ -98,6 +98,7 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - `style-profile-synthesizer` writes `style-draft.json`
   - `style-profile-reviewer` writes `style-review.json`
   - reviewer blockers are a hard gate before `config/styles/{category}.md`
+  - formal stage execution should prefer a host packet runner / real subagent chain; direct `ILlmClient` chat is only a compatibility fallback for non-agent hosts and local debugging
 - Treat the end state of every Kairos-managed top-level flow as `ML stopped`.
 - Treat video Analyze as a staged pipeline whose formal semantic decision happens in `finalize`:
   - with audio: `coarse-scan -> audio-analysis -> finalize -> deferred scene detect(if needed)`
@@ -128,18 +129,32 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - Script Agent work now runs as a clean-context staged pipeline:
     - `script/spatial-story.json` + `script/spatial-story.md`
     - `script/agent-contract.json`
-    - `script/agent-packets/<stage>.json`
-    - `script/reviews/<stage>.json`
-    - `script/agent-pipeline.json`
+  - `script/agent-packets/<stage>.json`
+  - `script/reviews/<stage>.json`
+  - `script/agent-pipeline.json`
+  - each script stage packet is the only formal subagent context; do not append hidden history or duplicate `previousDraft` / `revisionBrief` outside the packet
+  - formal script stage execution should prefer a host packet runner / real clean-context subagent chain; direct `ILlmClient` chat is only a compatibility fallback for non-agent hosts and local debugging
+  - first-attempt stage packets should stay lean; prior drafts belong on retry paths, not the initial call
   - the final `script/current.json` is still the only formal script artifact consumed downstream unless a newer design doc says otherwise
+  - the on-disk `script/current.json` shape is always bare `IKtepScript[]`; transport wrappers such as `{ "segments": [...] }` must be unwrapped inside the stage runner before persist, never by ad-hoc main-agent repair
   - each script subagent must have a distinct identity prompt and may only read its own packet, not the main thread history
+  - the main agent may orchestrate packets, user handoff, and reviewer gates, but must not silently replace missing script subagents or collapse the reviewer chain; if formal subagent execution is unavailable, stop and explain first
+  - `script-current` is one formal `beat-writer` pass per attempt; do not pre-run a second full-script writer pass just to make a base draft
+  - if a script writer or reviewer call fails, `script/agent-pipeline.json` must record the real failure state immediately instead of leaving stale `pending` / old-stage truth
+  - outline prep should filter obvious device-command / noisy-ASR source-speech anchors and merge adjacent non-speech evidence spans before handing off to `beat-writer`
 - Treat rough-cut script/timeline defaults as evidence-first:
   - videos with usable source speech should stay source-speech unless the script explicitly sets `muteSource=true`
   - photo-only beats should default to `1s` silent holds with no subtitles unless the script explicitly sets `holdMs`
   - `targetDurationMs` remains optional and advisory-only for rough cut; do not use it as the default driver for trimming or expanding effective source material
+  - style / arrangement signals should constrain order, stage completeness, material roles, and forbidden zones; they should not imply default total duration or per-segment budgets
   - rough-cut recall should stay high-recall by default: keep valid spans unless they are empty, clearly bad, or near-duplicate
   - silent `drive / aerial` beats may auto-consume `speedCandidate` at `2x`; explicit `actions.speed` still overrides the default
-  - source-speech beats should prefer transcript-driven speech islands, keeping only short pauses instead of long silent gaps
+  - source-speech beats now use `audioSelections[]` for preserved audio truth and `visualSelections[]` for companion visuals; do not collapse them back into one `selections[]`
+  - source-speech audio units should merge adjacent spoken gaps `<= 3000ms` unless a strong sentence boundary blocks the merge
+  - merged source-speech units should keep `120ms` head breathing and `180ms` tail breathing inside valid source bounds
+  - source-speech placement stays on one serial video track plus one independent `dialogue` audio track; `nat` remains for protection/ambient fallback only
+  - source-speech subtitles should follow merged audio units, then split by short clauses instead of raw ASR fragment boundaries
+  - audible `dialogue` / `nat` clips should normalize toward `-16 LUFS` by clip gain during export/orchestration, not by rewriting source media
 - Reusable style assets are workspace-scoped by default:
   - `config/styles/`
   - `config/style-sources.json`

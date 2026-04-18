@@ -3,7 +3,7 @@ import { z } from 'zod';
 // ─── Constants ───────────────────────────────────────────────
 
 export const CPROTOCOL = 'kairos.timeline' as const;
-export const CVERSION = '1.0' as const;
+export const CVERSION = '2.0' as const;
 
 // ─── Enums ───────────────────────────────────────────────────
 
@@ -31,7 +31,7 @@ export const ETrackKind = z.enum(['video', 'audio', 'subtitle']);
 export type ETrackKind = z.infer<typeof ETrackKind>;
 
 export const ETrackRole = z.enum([
-  'primary', 'broll', 'voiceover', 'nat', 'music', 'caption',
+  'primary', 'broll', 'voiceover', 'dialogue', 'nat', 'music', 'caption',
 ]);
 export type ETrackRole = z.infer<typeof ETrackRole>;
 
@@ -389,7 +389,8 @@ export const IKtepScriptBeat = z.object({
   utterances: z.array(IKtepBeatUtterance).optional(),
   targetDurationMs: z.number().optional(),
   actions: IKtepScriptAction.optional(),
-  selections: z.array(IKtepScriptSelection),
+  audioSelections: z.array(IKtepScriptSelection),
+  visualSelections: z.array(IKtepScriptSelection),
   linkedSpanIds: z.array(z.string()).default([]),
   linkedSliceIds: z.array(z.string()).default([]),
   pharosRefs: z.array(IPharosRef).optional(),
@@ -455,6 +456,8 @@ export const IKtepClip = z.object({
   sourceInMs: z.number().optional(),
   sourceOutMs: z.number().optional(),
   speed: z.number().positive().optional(),
+  audioGainDb: z.number().optional(),
+  audioSource: z.enum(['embedded', 'protection']).optional(),
   timelineInMs: z.number(),
   timelineOutMs: z.number(),
   transitionIn: IKtepTransition.optional(),
@@ -871,7 +874,7 @@ export const IStageReviewIssue = z.object({
   code: z.string(),
   severity: EStageReviewSeverity,
   message: z.string(),
-  details: z.string().optional(),
+  details: z.unknown().optional(),
 });
 export type IStageReviewIssue = z.infer<typeof IStageReviewIssue>;
 
@@ -892,7 +895,9 @@ export type IStageReview = z.infer<typeof IStageReview>;
 export const EAgentPipelineStatus = z.enum([
   'pending',
   'running',
+  'writer_failed',
   'review_failed',
+  'review_error',
   'awaiting_user',
   'completed',
 ]);

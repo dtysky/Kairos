@@ -73,10 +73,25 @@ export function validateKtepDoc(doc: IKtepDoc): IValidationResult {
           path: `timeline.clips.${clip.id}`,
         });
       }
-      if (asset.kind === 'video' && !asset.protectionAudio) {
+      if (asset.kind === 'video') {
+        if (clip.audioSource === 'embedded') {
+          // Dialogue clips may legally pull embedded source audio from the bound video asset.
+          continue;
+        }
+        if (clip.audioSource === 'protection') {
+          if (!asset.protectionAudio) {
+            errors.push({
+              rule: 'audio-asset-kind',
+              message: `clip ${clip.id}: audio track referencing video asset "${asset.id}" with audioSource=protection requires asset.protectionAudio`,
+              path: `timeline.clips.${clip.id}`,
+            });
+          }
+          continue;
+        }
+
         errors.push({
           rule: 'audio-asset-kind',
-          message: `clip ${clip.id}: audio track referencing video asset "${asset.id}" requires asset.protectionAudio`,
+          message: `clip ${clip.id}: audio track referencing video asset "${asset.id}" must declare audioSource=embedded or audioSource=protection`,
           path: `timeline.clips.${clip.id}`,
         });
       }

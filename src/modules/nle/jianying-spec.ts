@@ -1,4 +1,8 @@
-import { basename } from 'node:path';
+import { execFile } from 'node:child_process';
+import { mkdir } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { basename, join } from 'node:path';
+import { promisify } from 'node:util';
 import type {
   IDeviceMediaMapFile,
   IKtepAsset,
@@ -104,6 +108,7 @@ export interface IJianyingBuilderConfig {
   deviceMapProjectId?: string;
   mediaRoots?: IMediaRoot[];
   deviceMaps?: IDeviceMediaMapFile;
+  ffmpegPath?: string;
 }
 
 const CDEFAULTS = {
@@ -119,6 +124,17 @@ interface IAssetResolutionContext {
   deviceMaps: IDeviceMediaMapFile;
 }
 
+interface IResolvedClipMaterial {
+  materialPath: string;
+  sourceInMs?: number;
+  sourceOutMs?: number;
+  audioGainDb?: number;
+}
+
+const exec = promisify(execFile);
+const C_TARGET_AUDIO_LOUDNESS_LUFS = -16;
+const C_MAX_TRUE_PEAK_DBTP = -1;
+
 export class JianyingDraftBuilder {
   private config: IJianyingBuilderConfig & {
     subtitleY: number;
@@ -127,6 +143,7 @@ export class JianyingDraftBuilder {
   private idMap: INleIdMap;
   private assetPaths = new Map<string, string>();
   private protectionAssetPaths = new Map<string, string>();
+  private dialogueClipMaterialPaths = new Map<string, string>();
   private assetKindMap = new Map<string, IKtepAsset['kind']>();
   private trackKindMap = new Map<string, EJianyingTrackKind>();
   private tracks: IJianyingTrackSpec[] = [];
@@ -138,6 +155,8 @@ export class JianyingDraftBuilder {
   private subtitleTrackNames: string[] = [];
   private warnings = new Set<string>();
   private pathResolutionContextPromise: Promise<IAssetResolutionContext | null> | null = null;
+  private extractedAudioDirPromise: Promise<string> | null = null;
+  private audioGainCache = new Map<string, number>();
 
   constructor(config: IJianyingBuilderConfig = {}) {
     this.config = {
@@ -224,13 +243,16 @@ export class JianyingDraftBuilder {
         throw new Error(`Jianying clip ${clip.id} cannot be placed on track ${clip.trackId}`);
       }
 
-      const materialPath = this.resolveClipMaterialPath(clip, trackKind);
-      if (!materialPath) {
+      const resolvedMaterial = await this.resolveClipMaterial(clip, trackKind);
+      if (!resolvedMaterial) {
         throw new Error(`Jianying clip ${clip.id} references unresolved asset ${clip.assetId}`);
+      }
+      if (resolvedMaterial.audioGainDb != null && clip.audioGainDb == null) {
+        clip.audioGainDb = resolvedMaterial.audioGainDb;
       }
 
       const clipSettings = buildClipSettings(clip);
-      const clipVolume = buildClipVolume(clip);
+      const clipVolume = buildClipVolume(clip, resolvedMaterial.audioGainDb);
       if (clip.transform?.kenBurns) {
         this.warnings.add(
           `Clip ${clip.id} contains kenBurns data, but the pyJianYingDraft backend currently ignores kenBurns motion.`,
@@ -242,11 +264,11 @@ export class JianyingDraftBuilder {
         trackId: clip.trackId,
         trackName,
         kind: trackKind,
-        materialPath,
+        materialPath: resolvedMaterial.materialPath,
         targetStartMs: clip.timelineInMs,
         targetEndMs: clip.timelineOutMs,
-        ...(clip.sourceInMs != null && { sourceInMs: clip.sourceInMs }),
-        ...(clip.sourceOutMs != null && { sourceOutMs: clip.sourceOutMs }),
+        ...(resolvedMaterial.sourceInMs != null && { sourceInMs: resolvedMaterial.sourceInMs }),
+        ...(resolvedMaterial.sourceOutMs != null && { sourceOutMs: resolvedMaterial.sourceOutMs }),
         ...(clip.speed != null && { speed: clip.speed }),
         ...(clipVolume != null && { volume: clipVolume }),
         ...(clipSettings && { clipSettings }),
@@ -433,23 +455,145 @@ export class JianyingDraftBuilder {
     return normalizeMaterialPath(resolved);
   }
 
-  private resolveClipMaterialPath(
+  private async resolveClipMaterial(
     clip: IKtepClip,
     trackKind: EJianyingTrackKind,
-  ): string | undefined {
+  ): Promise<IResolvedClipMaterial | undefined> {
     if (trackKind === 'audio') {
+      const dialogueMaterial = this.dialogueClipMaterialPaths.get(clip.id);
+      if (dialogueMaterial) {
+        return {
+          materialPath: dialogueMaterial,
+          audioGainDb: await this.resolveClipAudioGainDb(clip, dialogueMaterial, true),
+        };
+      }
+
       const protectionPath = this.protectionAssetPaths.get(clip.assetId);
-      if (protectionPath) return protectionPath;
+      if (clip.audioSource === 'protection' && protectionPath) {
+        return {
+          materialPath: protectionPath,
+          sourceInMs: clip.sourceInMs,
+          sourceOutMs: clip.sourceOutMs,
+          audioGainDb: await this.resolveClipAudioGainDb(clip, protectionPath, false),
+        };
+      }
 
       const assetKind = this.assetKindMap.get(clip.assetId);
       if (assetKind === 'video') {
-        throw new Error(
-          `Jianying clip ${clip.id} references video asset ${clip.assetId} on an audio track, but no protection audio path was resolved.`,
-        );
+        const assetPath = this.assetPaths.get(clip.assetId);
+        if (!assetPath) return undefined;
+        const extractedPath = await this.extractDialogueAudioClip(clip, assetPath);
+        this.dialogueClipMaterialPaths.set(clip.id, extractedPath);
+        return {
+          materialPath: extractedPath,
+          audioGainDb: await this.resolveClipAudioGainDb(clip, extractedPath, true),
+        };
       }
+
+      const assetPath = this.assetPaths.get(clip.assetId);
+      if (!assetPath) return undefined;
+      return {
+        materialPath: assetPath,
+        sourceInMs: clip.sourceInMs,
+        sourceOutMs: clip.sourceOutMs,
+        audioGainDb: await this.resolveClipAudioGainDb(clip, assetPath, false),
+      };
     }
 
-    return this.assetPaths.get(clip.assetId);
+    const assetPath = this.assetPaths.get(clip.assetId);
+    if (!assetPath) return undefined;
+    return {
+      materialPath: assetPath,
+      sourceInMs: clip.sourceInMs,
+      sourceOutMs: clip.sourceOutMs,
+    };
+  }
+
+  private async extractDialogueAudioClip(
+    clip: IKtepClip,
+    sourcePath: string,
+  ): Promise<string> {
+    if (isUri(sourcePath)) {
+      throw new Error(`Cannot extract dialogue audio for remote URI asset ${clip.assetId}.`);
+    }
+    const sourceInMs = clip.sourceInMs ?? 0;
+    const sourceOutMs = clip.sourceOutMs;
+    if (sourceOutMs == null || sourceOutMs <= sourceInMs) {
+      throw new Error(`Dialogue clip ${clip.id} is missing a valid source range for audio extraction.`);
+    }
+
+    const audioDir = await this.getExtractedAudioDir();
+    const outputPath = join(audioDir, `${clip.id}.wav`);
+    const ffmpeg = this.config.ffmpegPath?.trim() || 'ffmpeg';
+    await exec(ffmpeg, [
+      '-y',
+      '-ss', msToFfmpegTime(sourceInMs),
+      '-i', sourcePath,
+      '-t', msToFfmpegTime(sourceOutMs - sourceInMs),
+      '-vn',
+      '-ac', '2',
+      '-ar', '48000',
+      '-c:a', 'pcm_s16le',
+      outputPath,
+    ], {
+      maxBuffer: 50 * 1024 * 1024,
+      windowsHide: true,
+    });
+    return normalizeMaterialPath(outputPath);
+  }
+
+  private async getExtractedAudioDir(): Promise<string> {
+    if (!this.extractedAudioDirPromise) {
+      this.extractedAudioDirPromise = (async () => {
+        const root = this.config.projectRoot
+          ? join(this.config.projectRoot, '.tmp', 'jianying-dialogue-audio')
+          : join(tmpdir(), 'kairos-jianying-dialogue-audio');
+        await mkdir(root, { recursive: true });
+        return root;
+      })();
+    }
+    return this.extractedAudioDirPromise;
+  }
+
+  private async resolveClipAudioGainDb(
+    clip: IKtepClip,
+    materialPath: string,
+    extractedClipMaterial: boolean,
+  ): Promise<number | undefined> {
+    if (typeof clip.audioGainDb === 'number' && Number.isFinite(clip.audioGainDb)) {
+      return clip.audioGainDb;
+    }
+    if (isUri(materialPath)) return undefined;
+
+    const cacheKey = extractedClipMaterial
+      ? `material:${materialPath}`
+      : [
+        materialPath,
+        clip.sourceInMs ?? '',
+        clip.sourceOutMs ?? '',
+        clip.audioSource ?? '',
+      ].join('|');
+    const cached = this.audioGainCache.get(cacheKey);
+    if (cached != null) {
+      return cached;
+    }
+
+    const loudness = await measureClipLoudness({
+      materialPath,
+      ffmpegPath: this.config.ffmpegPath,
+      sourceInMs: extractedClipMaterial ? undefined : clip.sourceInMs,
+      sourceOutMs: extractedClipMaterial ? undefined : clip.sourceOutMs,
+    });
+    if (!loudness) return undefined;
+
+    let gainDb = C_TARGET_AUDIO_LOUDNESS_LUFS - loudness.integratedLufs;
+    if (loudness.truePeakDbtp + gainDb > C_MAX_TRUE_PEAK_DBTP) {
+      gainDb = C_MAX_TRUE_PEAK_DBTP - loudness.truePeakDbtp;
+    }
+
+    const normalizedGainDb = Math.round(gainDb * 100) / 100;
+    this.audioGainCache.set(cacheKey, normalizedGainDb);
+    return normalizedGainDb;
   }
 
   private resolveSubtitleLane(
@@ -573,8 +717,11 @@ function buildClipSettings(clip: IKtepClip): IJianyingClipSettings | undefined {
   return Object.keys(settings).length > 0 ? settings : undefined;
 }
 
-function buildClipVolume(clip: IKtepClip): number | undefined {
-  return clip.muteAudio ? 0 : undefined;
+function buildClipVolume(clip: IKtepClip, measuredAudioGainDb?: number): number | undefined {
+  if (clip.muteAudio) return 0;
+  const audioGainDb = measuredAudioGainDb ?? clip.audioGainDb;
+  if (typeof audioGainDb !== 'number' || !Number.isFinite(audioGainDb)) return undefined;
+  return Math.round((10 ** (audioGainDb / 20)) * 10000) / 10000;
 }
 
 function buildTransitionSpec(type: string | undefined, durationMs: number | undefined): IJianyingTransitionSpec | undefined {
@@ -587,6 +734,62 @@ function buildTransitionSpec(type: string | undefined, durationMs: number | unde
     name,
     ...(durationMs != null && { durationMs }),
   };
+}
+
+async function measureClipLoudness(input: {
+  materialPath: string;
+  ffmpegPath?: string;
+  sourceInMs?: number;
+  sourceOutMs?: number;
+}): Promise<{ integratedLufs: number; truePeakDbtp: number } | null> {
+  const ffmpeg = input.ffmpegPath?.trim() || 'ffmpeg';
+  const args = [
+    '-hide_banner',
+    '-nostats',
+    ...(input.sourceInMs != null ? ['-ss', msToFfmpegTime(input.sourceInMs)] : []),
+    '-i', input.materialPath,
+    ...(input.sourceOutMs != null && input.sourceInMs != null && input.sourceOutMs > input.sourceInMs
+      ? ['-t', msToFfmpegTime(input.sourceOutMs - input.sourceInMs)]
+      : []),
+    '-vn',
+    '-af', `loudnorm=I=${C_TARGET_AUDIO_LOUDNESS_LUFS}:TP=${C_MAX_TRUE_PEAK_DBTP}:LRA=11:print_format=json`,
+    '-f', 'null',
+    '-',
+  ];
+
+  try {
+    const { stderr } = await exec(ffmpeg, args, {
+      maxBuffer: 50 * 1024 * 1024,
+      windowsHide: true,
+    });
+    return parseLoudnormMetrics(stderr);
+  } catch (error) {
+    const stderr = typeof error === 'object' && error && 'stderr' in error
+      ? String((error as { stderr?: unknown }).stderr ?? '')
+      : '';
+    return parseLoudnormMetrics(stderr);
+  }
+}
+
+function parseLoudnormMetrics(stderr: string): { integratedLufs: number; truePeakDbtp: number } | null {
+  const match = stderr.match(/\{\s*"input_i"[\s\S]*?\}/u);
+  if (!match) return null;
+
+  try {
+    const payload = JSON.parse(match[0]) as { input_i?: string; input_tp?: string };
+    const integratedLufs = Number(payload.input_i);
+    const truePeakDbtp = Number(payload.input_tp);
+    if (!Number.isFinite(integratedLufs) || !Number.isFinite(truePeakDbtp)) {
+      return null;
+    }
+    return { integratedLufs, truePeakDbtp };
+  } catch {
+    return null;
+  }
+}
+
+function msToFfmpegTime(ms: number): string {
+  return (Math.max(0, ms) / 1000).toFixed(3);
 }
 
 function resolveDeviceMapProjectId(

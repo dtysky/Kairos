@@ -138,14 +138,14 @@ const subtitles = planSubtitles(script, clips, slices, {
 Timeline 阶段的字幕已经按素材类型分流：
 
 - photo-only beat 默认不生成字幕
-- 只要主视频 selection 有可用 `transcriptSegments`，且没有显式 `muteSource=true`，系统默认按 source-speech 生成字幕
-- 对最终走 source-speech 的 beat，时间线会优先把选区裁成 transcript-driven speech islands，并严格按 transcript 时间轴出字幕
-- source-speech 的 clip 边界默认应直接贴过滤后的 spoken transcript / speech island；不要再为了“留空气”固定额外扩前后窗口
-- 导航播报、录制口令、设备提示不应进入 source-speech context、speech islands 或 source-speech 字幕
+- 只要 `beat.audioSelections[]` 有可用 `transcriptSegments`，且没有显式 `muteSource=true`，系统默认按 source-speech 生成字幕
+- 对最终走 source-speech 的 beat，时间线会先把 `audioSelections[]` 组织成 merged audio units，再按这些音频单元生成字幕
+- source-speech audio unit 默认按相邻 gap `<= 3000ms` 合并，且在合法范围内保留前 `120ms`、后 `180ms` breathing
+- 导航播报、录制口令、设备提示不应进入 source-speech context、merged audio units 或 source-speech 字幕
 - 如果 source-speech beat 的某个 ASR cue 清洗后仍不可读，时间线只跳过那个 cue；只有整段都不可读时，才保留原声但不生成字幕，不会回退到 `beat.text`
 - 如果脚本显式要求 `muteSource=true`，即使素材里有 transcript，也会回到 narration 路径
 - 只有非 source-speech、且不是 photo-only 的 beat，才会按 `beat.text` 或 `beat.utterances[]` 生成 narration 字幕
-- 如果某条视频资产在 Analyze 的 `assetReports` 里被保守推荐切到 `protectionAudio`，且当前 beat 走 source-speech，时间线会把视频原音静音，并外挂一条对齐的 `nat` 音轨作为原声 fallback
+- 如果某条视频资产在 Analyze 的 `assetReports` 里被保守推荐切到 `protectionAudio`，且当前 beat 走 source-speech，时间线会把对应原声落到独立 `dialogue` / `nat` 音轨，不依赖视频主轨直接承载原声
 - 当某拍不走 source speech 时，命中的带音轨视频 clip 会被标记为静音意图，供导出适配器把原音压到静音
 
 ## 画面时长与速度规则
@@ -154,7 +154,7 @@ Timeline 阶段的字幕已经按素材类型分流：
 - 只有旧 slice / 旧 selection 缺少 edit bounds 时，`placeClips()` 才会回落到 legacy source range
 - 对主轴明确偏时间 / 路程推进的 style，Timeline 还承担最后一层 chronology guardrail：
   - 相邻 beats 的主 selection `sortCapturedAt` 不应倒退
-  - 同一 beat 内多 selections 默认也应按时间递增
+  - 同一 beat 内多 `audioSelections[]` / `visualSelections[]` 默认也应按时间递增
   - 若检测到倒序，先尝试同段内安全重排；仍无法恢复时应直接报错，而不是静默输出错序时间线
 - Timeline 不应再直接读取原始 `asset.capturedAt` 做排序；chronology guard、beat 排序与 selection 排序都必须统一消费 `media/chronology.json`
 - `media/chronology.json` 当前以 `sortCapturedAt` 作为唯一正式时序真值：
@@ -164,10 +164,12 @@ Timeline 阶段的字幕已经按素材类型分流：
 - 如果确实需要速度变化，仍可显式使用 `beat.actions.speed`
 - 显式 `speed` 现在会进入 timeline clip `speed`，并继续透传到导出层；但只有 `drive / aerial` clip 会实际消费，其他类型即使同拍也会强制保持 `1x`
 - `placeClips()` 现在默认按自然 source 窗口或 edit-friendly bounds 摆放 clip，不再为了 `beat.targetDurationMs` 做压缩、拉伸或预算补齐
+- source-speech beat 当前正式落成“单视频轨串剪 + 独立 `dialogue` 音频轨”；不要引入双视频轨 overlay
 - 对 silent `drive / aerial` 粗剪 beat，如果 selection 自带 `speedCandidate` 且脚本没有显式写 `actions.speed`，时间线默认按 `2x` 自动加速
 - 如果同一 asset 同时被选成 source-speech 和 silent `drive / aerial`，source-speech 优先占用重叠 source window；silent montage 只能消费非重叠 remainder
 - 如果同一 `drive / aerial` asset 被多个 silent montage beat 重复引用，后面的 beat 也必须扣掉前面已经消费过的 source window，只保留新的 remainder
 - 保护音轨 fallback 当前只在 `assetReports` 明确推荐 `protection` 时才会自动路由；默认仍优先保留视频内无线 mic
+- 最终可听的 `dialogue` / `nat` clip 当前应在导出编排层做 `-16 LUFS` 目标的非破坏性 clip gain 归一化
 - `targetDurationMs` 在粗剪路径里只作为 advisory review hint，不再是默认 placement 驱动
 - 照片不再是默认的预算填充器：
   - 没有显式长停要求时，单张照片默认 `1000ms`

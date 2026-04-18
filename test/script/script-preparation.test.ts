@@ -36,6 +36,57 @@ class FakeLlm implements ILlmClient {
 
   async chat(messages: ILlmMessage[], _opts?: ILlmOptions): Promise<string> {
     this.messages = messages;
+    const packetText = messages.find(message => message.role === 'user')?.content ?? '{}';
+    const packet = JSON.parse(packetText) as {
+      packet?: {
+        stage?: string;
+        inputArtifacts?: Array<{ label?: string; content?: unknown }>;
+      };
+    };
+    const stage = packet.packet?.stage;
+    const artifacts = packet.packet?.inputArtifacts ?? [];
+
+    if (stage?.startsWith('review-')) {
+      return JSON.stringify({
+        verdict: 'pass',
+        issues: [],
+        revisionBrief: [],
+      });
+    }
+
+    if (stage === 'segment-plan') {
+      const brief = artifacts.find(artifact => artifact.label === 'script-brief')?.content as {
+        segments?: Array<{
+          segmentId: string;
+          title?: string;
+          intent?: string;
+          targetDurationMs?: number;
+          roleHint?: string;
+          notes?: string[];
+        }>;
+      } | undefined;
+      return JSON.stringify({
+        id: 'plan-1',
+        projectId: 'script-prep-project',
+        generatedAt: '2026-04-09T08:00:00.000Z',
+        summary: '测试用 segment plan',
+        notes: [],
+        segments: (brief?.segments ?? []).map(segment => ({
+          id: segment.segmentId,
+          title: segment.title ?? segment.segmentId,
+          intent: segment.intent ?? '',
+          targetDurationMs: segment.targetDurationMs,
+          roleHint: segment.roleHint,
+          notes: segment.notes ?? [],
+        })),
+      });
+    }
+
+    if (stage === 'material-slots') {
+      const baseDraft = artifacts.find(artifact => artifact.label === 'base-draft')?.content;
+      return JSON.stringify(baseDraft ?? { segments: [] });
+    }
+
     return JSON.stringify([{
       id: 'segment-opening',
       role: 'intro',
@@ -44,9 +95,11 @@ class FakeLlm implements ILlmClient {
       beats: [{
         id: 'beat-1',
         text: '风一进来，路才真的开始。',
-        selections: [{
+        audioSelections: [],
+        visualSelections: [{
           assetId: 'asset-1',
           spanId: 'span-coast',
+          sliceId: 'span-coast',
           sourceInMs: 1_000,
           sourceOutMs: 7_000,
         }],
@@ -804,8 +857,8 @@ describe('model-driven script preparation', () => {
     expect(chosenSpanIds).toEqual(['span-1', 'span-2', 'span-3', 'span-4', 'span-5']);
     expect(chosenSpanIds).not.toContain('span-dup');
     expect(chosenSpanIds).toHaveLength(5);
-    expect(slots.segments[0]?.slots).toHaveLength(5);
-    expect(slots.segments[0]?.slots.every(slot => slot.chosenSpanIds.length === 1)).toBe(true);
+    expect(slots.segments[0]?.slots).toHaveLength(1);
+    expect(slots.segments[0]?.slots[0]?.chosenSpanIds).toEqual(['span-1', 'span-2', 'span-3', 'span-4', 'span-5']);
   });
 
   it('keeps chronology-driven segments inside monotonic time bands', () => {

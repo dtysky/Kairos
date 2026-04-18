@@ -12,6 +12,7 @@ import {
   estimateNarrationDurationMs,
 } from '../../src/modules/timeline-core/pacing.js';
 import { planSubtitles } from '../../src/modules/timeline-core/subtitle.js';
+import { createTestScript } from '../helpers/script-fixtures.js';
 
 const CPROJECT: IKtepProject = {
   id: 'project-1',
@@ -34,62 +35,56 @@ describe('speech-paced subtitles', () => {
   });
 
   it('creates voiced islands for explicit head, middle, and tail pauses', () => {
-    const script: IKtepScript[] = [{
+    const script: IKtepScript[] = createTestScript([{
       id: 'segment-1',
       role: 'scene',
       narration: '先看海。再看天。',
       linkedSliceIds: ['slice-drive'],
-      beats: [
-        {
-          id: 'beat-1',
-          text: '先看海。再看天。',
-          utterances: [
-            {
-              text: '先看海。',
-              pauseBeforeMs: 500,
-              pauseAfterMs: 300,
-            },
-            {
-              text: '再看天。',
-              pauseBeforeMs: 200,
-              pauseAfterMs: 700,
-            },
-          ],
-          selections: [{
-            assetId: 'asset-drive',
-            sliceId: 'slice-drive',
-            sourceInMs: 0,
-            sourceOutMs: 5000,
-          }],
-          linkedSliceIds: ['slice-drive'],
-        },
-      ],
+      beats: [{
+        id: 'beat-1',
+        text: '先看海。再看天。',
+        utterances: [
+          {
+            text: '先看海。',
+            pauseBeforeMs: 500,
+            pauseAfterMs: 300,
+          },
+          {
+            text: '再看天。',
+            pauseBeforeMs: 200,
+            pauseAfterMs: 700,
+          },
+        ],
+        selections: [{
+          assetId: 'asset-drive',
+          sliceId: 'slice-drive',
+          sourceInMs: 0,
+          sourceOutMs: 5_000,
+        }],
+        linkedSliceIds: ['slice-drive'],
+      }],
+    }]);
+    const slices: IKtepSlice[] = [{
+      id: 'slice-drive',
+      assetId: 'asset-drive',
+      type: 'drive',
+      sourceInMs: 0,
+      sourceOutMs: 5_000,
+      labels: [],
+      placeHints: [],
     }];
-    const slices: IKtepSlice[] = [
-      {
-        id: 'slice-drive',
-        assetId: 'asset-drive',
-        type: 'drive',
-        sourceInMs: 0,
-        sourceOutMs: 5000,
-        labels: [],
-        placeHints: [],
-      },
-    ];
-    const clips: IKtepClip[] = [
-      {
-        id: 'clip-1',
-        trackId: 'track-1',
-        assetId: 'asset-drive',
-        sliceId: 'slice-drive',
-        sourceInMs: 0,
-        sourceOutMs: 5000,
-        timelineInMs: 0,
-        timelineOutMs: 5000,
-        linkedScriptSegmentId: 'segment-1',
-        linkedScriptBeatId: 'beat-1',
-      },
-    ];
+    const clips: IKtepClip[] = [{
+      id: 'clip-1',
+      trackId: 'track-1',
+      assetId: 'asset-drive',
+      sliceId: 'slice-drive',
+      sourceInMs: 0,
+      sourceOutMs: 5_000,
+      timelineInMs: 0,
+      timelineOutMs: 5_000,
+      linkedScriptSegmentId: 'segment-1',
+      linkedScriptBeatId: 'beat-1',
+    }];
 
     const subtitles = planSubtitles(script, clips, slices);
 
@@ -108,31 +103,29 @@ describe('speech-paced subtitles', () => {
   });
 
   it('never lets narration subtitles cross clip boundaries', () => {
-    const script: IKtepScript[] = [{
+    const script: IKtepScript[] = createTestScript([{
       id: 'segment-1',
       role: 'scene',
       narration: 'ignored',
       linkedSliceIds: ['slice-1', 'slice-2', 'slice-3'],
-      beats: [
-        {
-          id: 'beat-1',
-          text: '等米尔福德方向真的露出来',
-          selections: [
-            { assetId: 'asset-1', sliceId: 'slice-1', sourceInMs: 0, sourceOutMs: 1000 },
-            { assetId: 'asset-2', sliceId: 'slice-2', sourceInMs: 0, sourceOutMs: 1000 },
-            { assetId: 'asset-3', sliceId: 'slice-3', sourceInMs: 0, sourceOutMs: 5000 },
-          ],
-          linkedSliceIds: ['slice-1', 'slice-2', 'slice-3'],
-        },
-      ],
-    }];
+      beats: [{
+        id: 'beat-1',
+        text: '等米尔福德方向真的露出来',
+        selections: [
+          { assetId: 'asset-1', sliceId: 'slice-1', sourceInMs: 0, sourceOutMs: 1_000 },
+          { assetId: 'asset-2', sliceId: 'slice-2', sourceInMs: 0, sourceOutMs: 1_000 },
+          { assetId: 'asset-3', sliceId: 'slice-3', sourceInMs: 0, sourceOutMs: 5_000 },
+        ],
+        linkedSliceIds: ['slice-1', 'slice-2', 'slice-3'],
+      }],
+    }]);
     const slices: IKtepSlice[] = [
       {
         id: 'slice-1',
         assetId: 'asset-1',
         type: 'photo',
         sourceInMs: 0,
-        sourceOutMs: 1000,
+        sourceOutMs: 1_000,
         labels: [],
         placeHints: [],
       },
@@ -141,7 +134,7 @@ describe('speech-paced subtitles', () => {
         assetId: 'asset-2',
         type: 'photo',
         sourceInMs: 0,
-        sourceOutMs: 1000,
+        sourceOutMs: 1_000,
         labels: [],
         placeHints: [],
       },
@@ -150,7 +143,7 @@ describe('speech-paced subtitles', () => {
         assetId: 'asset-3',
         type: 'broll',
         sourceInMs: 0,
-        sourceOutMs: 5000,
+        sourceOutMs: 5_000,
         labels: [],
         placeHints: [],
       },
@@ -162,9 +155,9 @@ describe('speech-paced subtitles', () => {
         assetId: 'asset-1',
         sliceId: 'slice-1',
         sourceInMs: 0,
-        sourceOutMs: 1000,
+        sourceOutMs: 1_000,
         timelineInMs: 0,
-        timelineOutMs: 1000,
+        timelineOutMs: 1_000,
         linkedScriptSegmentId: 'segment-1',
         linkedScriptBeatId: 'beat-1',
       },
@@ -174,9 +167,9 @@ describe('speech-paced subtitles', () => {
         assetId: 'asset-2',
         sliceId: 'slice-2',
         sourceInMs: 0,
-        sourceOutMs: 1000,
-        timelineInMs: 1000,
-        timelineOutMs: 2000,
+        sourceOutMs: 1_000,
+        timelineInMs: 1_000,
+        timelineOutMs: 2_000,
         linkedScriptSegmentId: 'segment-1',
         linkedScriptBeatId: 'beat-1',
       },
@@ -186,9 +179,9 @@ describe('speech-paced subtitles', () => {
         assetId: 'asset-3',
         sliceId: 'slice-3',
         sourceInMs: 0,
-        sourceOutMs: 5000,
-        timelineInMs: 2000,
-        timelineOutMs: 7000,
+        sourceOutMs: 5_000,
+        timelineInMs: 2_000,
+        timelineOutMs: 7_000,
         linkedScriptSegmentId: 'segment-1',
         linkedScriptBeatId: 'beat-1',
       },
@@ -205,61 +198,54 @@ describe('speech-paced subtitles', () => {
     }
   });
 
-  it('keeps preserveNatSound beats on source transcript timing', () => {
-    const script: IKtepScript[] = [{
+  it('keeps preserveNatSound beats on source transcript timing from dialogue clips', () => {
+    const script: IKtepScript[] = createTestScript([{
       id: 'segment-1',
       role: 'scene',
       narration: 'ignored',
       linkedSliceIds: ['slice-talk'],
-      beats: [
-        {
-          id: 'beat-1',
-          text: '这句旁白不应该被用作字幕',
-          actions: {
-            preserveNatSound: true,
-          },
-          selections: [{
-            assetId: 'asset-talk',
-            sliceId: 'slice-talk',
-            sourceInMs: 0,
-            sourceOutMs: 1200,
-          }],
-          linkedSliceIds: ['slice-talk'],
+      beats: [{
+        id: 'beat-1',
+        text: '这句旁白不应该被用作字幕',
+        actions: {
+          preserveNatSound: true,
         },
-      ],
+        selections: [{
+          assetId: 'asset-talk',
+          sliceId: 'slice-talk',
+          sourceInMs: 0,
+          sourceOutMs: 1_200,
+        }],
+        linkedSliceIds: ['slice-talk'],
+      }],
+    }]);
+    const slices: IKtepSlice[] = [{
+      id: 'slice-talk',
+      assetId: 'asset-talk',
+      type: 'talking-head',
+      sourceInMs: 0,
+      sourceOutMs: 1_200,
+      transcriptSegments: [{
+        startMs: 0,
+        endMs: 1_200,
+        text: '这是现场原话',
+      }],
+      labels: [],
+      placeHints: [],
     }];
-    const slices: IKtepSlice[] = [
-      {
-        id: 'slice-talk',
-        assetId: 'asset-talk',
-        type: 'talking-head',
-        sourceInMs: 0,
-        sourceOutMs: 1200,
-        transcriptSegments: [
-          {
-            startMs: 0,
-            endMs: 1200,
-            text: '这是现场原话',
-          },
-        ],
-        labels: [],
-        placeHints: [],
-      },
-    ];
-    const clips: IKtepClip[] = [
-      {
-        id: 'clip-1',
-        trackId: 'track-1',
-        assetId: 'asset-talk',
-        sliceId: 'slice-talk',
-        sourceInMs: 0,
-        sourceOutMs: 1200,
-        timelineInMs: 0,
-        timelineOutMs: 1200,
-        linkedScriptSegmentId: 'segment-1',
-        linkedScriptBeatId: 'beat-1',
-      },
-    ];
+    const clips: IKtepClip[] = [{
+      id: 'clip-1',
+      trackId: 'track-dialogue',
+      assetId: 'asset-talk',
+      sliceId: 'slice-talk',
+      sourceInMs: 0,
+      sourceOutMs: 1_200,
+      timelineInMs: 0,
+      timelineOutMs: 1_200,
+      audioSource: 'embedded',
+      linkedScriptSegmentId: 'segment-1',
+      linkedScriptBeatId: 'beat-1',
+    }];
 
     const subtitles = planSubtitles(script, clips, slices);
 
@@ -267,66 +253,59 @@ describe('speech-paced subtitles', () => {
     expect(subtitles[0]).toMatchObject({
       text: '这是现场原话',
       startMs: 0,
-      endMs: 1200,
+      endMs: 1_200,
       linkedScriptBeatId: 'beat-1',
     });
   });
 
   it('keeps preserveNatSound beats silent when source-speech transcript looks too noisy', () => {
-    const script: IKtepScript[] = [{
+    const script: IKtepScript[] = createTestScript([{
       id: 'segment-1',
       role: 'scene',
       narration: 'ignored',
       linkedSliceIds: ['slice-talk'],
-      beats: [
-        {
-          id: 'beat-1',
-          text: '先把今天要拍什么说清楚。',
-          actions: {
-            preserveNatSound: true,
-          },
-          selections: [{
-            assetId: 'asset-talk',
-            sliceId: 'slice-talk',
-            sourceInMs: 0,
-            sourceOutMs: 2400,
-          }],
-          linkedSliceIds: ['slice-talk'],
+      beats: [{
+        id: 'beat-1',
+        text: '先把今天要拍什么说清楚。',
+        actions: {
+          preserveNatSound: true,
         },
-      ],
+        selections: [{
+          assetId: 'asset-talk',
+          sliceId: 'slice-talk',
+          sourceInMs: 0,
+          sourceOutMs: 2_400,
+        }],
+        linkedSliceIds: ['slice-talk'],
+      }],
+    }]);
+    const slices: IKtepSlice[] = [{
+      id: 'slice-talk',
+      assetId: 'asset-talk',
+      type: 'talking-head',
+      sourceInMs: 0,
+      sourceOutMs: 2_400,
+      transcriptSegments: [{
+        startMs: 0,
+        endMs: 2_400,
+        text: '导航导航导航导航导航导航',
+      }],
+      labels: [],
+      placeHints: [],
     }];
-    const slices: IKtepSlice[] = [
-      {
-        id: 'slice-talk',
-        assetId: 'asset-talk',
-        type: 'talking-head',
-        sourceInMs: 0,
-        sourceOutMs: 2400,
-        transcriptSegments: [
-          {
-            startMs: 0,
-            endMs: 2400,
-            text: '导航导航导航导航导航导航',
-          },
-        ],
-        labels: [],
-        placeHints: [],
-      },
-    ];
-    const clips: IKtepClip[] = [
-      {
-        id: 'clip-1',
-        trackId: 'track-1',
-        assetId: 'asset-talk',
-        sliceId: 'slice-talk',
-        sourceInMs: 0,
-        sourceOutMs: 2400,
-        timelineInMs: 0,
-        timelineOutMs: 2400,
-        linkedScriptSegmentId: 'segment-1',
-        linkedScriptBeatId: 'beat-1',
-      },
-    ];
+    const clips: IKtepClip[] = [{
+      id: 'clip-1',
+      trackId: 'track-dialogue',
+      assetId: 'asset-talk',
+      sliceId: 'slice-talk',
+      sourceInMs: 0,
+      sourceOutMs: 2_400,
+      timelineInMs: 0,
+      timelineOutMs: 2_400,
+      audioSource: 'embedded',
+      linkedScriptSegmentId: 'segment-1',
+      linkedScriptBeatId: 'beat-1',
+    }];
 
     const subtitles = planSubtitles(script, clips, slices, {
       maxCharsPerCue: 10,
@@ -336,61 +315,54 @@ describe('speech-paced subtitles', () => {
   });
 
   it('keeps long but readable source-speech subtitles instead of silencing the whole beat', () => {
-    const script: IKtepScript[] = [{
+    const script: IKtepScript[] = createTestScript([{
       id: 'segment-1',
       role: 'scene',
       narration: 'ignored',
       linkedSliceIds: ['slice-drive'],
-      beats: [
-        {
-          id: 'beat-1',
-          text: 'ignored',
-          actions: {
-            preserveNatSound: true,
-          },
-          selections: [{
-            assetId: 'asset-drive',
-            sliceId: 'slice-drive',
-            sourceInMs: 0,
-            sourceOutMs: 4_800,
-          }],
-          linkedSliceIds: ['slice-drive'],
+      beats: [{
+        id: 'beat-1',
+        text: 'ignored',
+        actions: {
+          preserveNatSound: true,
         },
-      ],
-    }];
+        selections: [{
+          assetId: 'asset-drive',
+          sliceId: 'slice-drive',
+          sourceInMs: 0,
+          sourceOutMs: 4_800,
+        }],
+        linkedSliceIds: ['slice-drive'],
+      }],
+    }]);
     const readableText = '今天先从这个入口慢慢往里走等朋友到了以后我们再开始拍第一轮照片';
-    const slices: IKtepSlice[] = [
-      {
-        id: 'slice-drive',
-        assetId: 'asset-drive',
-        type: 'drive',
-        sourceInMs: 0,
-        sourceOutMs: 4_800,
-        transcriptSegments: [
-          {
-            startMs: 0,
-            endMs: 4_800,
-            text: readableText,
-          },
-        ],
-        labels: [],
-        placeHints: [],
-      },
-    ];
-    const clips: IKtepClip[] = [
-      {
-        id: 'clip-1',
-        trackId: 'track-1',
-        assetId: 'asset-drive',
-        sliceId: 'slice-drive',
-        sourceInMs: 0,
-        sourceOutMs: 4_800,
-        timelineInMs: 0,
-        timelineOutMs: 4_800,
-        linkedScriptSegmentId: 'segment-1',
-        linkedScriptBeatId: 'beat-1',
-      },
-    ];
+    const slices: IKtepSlice[] = [{
+      id: 'slice-drive',
+      assetId: 'asset-drive',
+      type: 'drive',
+      sourceInMs: 0,
+      sourceOutMs: 4_800,
+      transcriptSegments: [{
+        startMs: 0,
+        endMs: 4_800,
+        text: readableText,
+      }],
+      labels: [],
+      placeHints: [],
+    }];
+    const clips: IKtepClip[] = [{
+      id: 'clip-1',
+      trackId: 'track-dialogue',
+      assetId: 'asset-drive',
+      sliceId: 'slice-drive',
+      sourceInMs: 0,
+      sourceOutMs: 4_800,
+      timelineInMs: 0,
+      timelineOutMs: 4_800,
+      audioSource: 'embedded',
+      linkedScriptSegmentId: 'segment-1',
+      linkedScriptBeatId: 'beat-1',
+    }];
 
     const subtitles = planSubtitles(script, clips, slices, {
       maxCharsPerCue: 6,
@@ -403,60 +375,53 @@ describe('speech-paced subtitles', () => {
   });
 
   it('weights split source-speech cues by cue length instead of evenly dividing the segment', () => {
-    const script: IKtepScript[] = [{
+    const script: IKtepScript[] = createTestScript([{
       id: 'segment-1',
       role: 'scene',
       narration: 'ignored',
       linkedSliceIds: ['slice-drive'],
-      beats: [
-        {
-          id: 'beat-1',
-          text: 'ignored',
-          actions: {
-            preserveNatSound: true,
-          },
-          selections: [{
-            assetId: 'asset-drive',
-            sliceId: 'slice-drive',
-            sourceInMs: 0,
-            sourceOutMs: 4_000,
-          }],
-          linkedSliceIds: ['slice-drive'],
+      beats: [{
+        id: 'beat-1',
+        text: 'ignored',
+        actions: {
+          preserveNatSound: true,
         },
-      ],
+        selections: [{
+          assetId: 'asset-drive',
+          sliceId: 'slice-drive',
+          sourceInMs: 0,
+          sourceOutMs: 4_000,
+        }],
+        linkedSliceIds: ['slice-drive'],
+      }],
+    }]);
+    const slices: IKtepSlice[] = [{
+      id: 'slice-drive',
+      assetId: 'asset-drive',
+      type: 'drive',
+      sourceInMs: 0,
+      sourceOutMs: 4_000,
+      transcriptSegments: [{
+        startMs: 0,
+        endMs: 4_000,
+        text: '短句，后面这一句明显更长一些。',
+      }],
+      labels: [],
+      placeHints: [],
     }];
-    const slices: IKtepSlice[] = [
-      {
-        id: 'slice-drive',
-        assetId: 'asset-drive',
-        type: 'drive',
-        sourceInMs: 0,
-        sourceOutMs: 4_000,
-        transcriptSegments: [
-          {
-            startMs: 0,
-            endMs: 4_000,
-            text: '短句，后面这一句明显更长一些。',
-          },
-        ],
-        labels: [],
-        placeHints: [],
-      },
-    ];
-    const clips: IKtepClip[] = [
-      {
-        id: 'clip-1',
-        trackId: 'track-1',
-        assetId: 'asset-drive',
-        sliceId: 'slice-drive',
-        sourceInMs: 0,
-        sourceOutMs: 4_000,
-        timelineInMs: 0,
-        timelineOutMs: 4_000,
-        linkedScriptSegmentId: 'segment-1',
-        linkedScriptBeatId: 'beat-1',
-      },
-    ];
+    const clips: IKtepClip[] = [{
+      id: 'clip-1',
+      trackId: 'track-dialogue',
+      assetId: 'asset-drive',
+      sliceId: 'slice-drive',
+      sourceInMs: 0,
+      sourceOutMs: 4_000,
+      timelineInMs: 0,
+      timelineOutMs: 4_000,
+      audioSource: 'embedded',
+      linkedScriptSegmentId: 'segment-1',
+      linkedScriptBeatId: 'beat-1',
+    }];
 
     const subtitles = planSubtitles(script, clips, slices, {
       maxCharsPerCue: 8,
@@ -475,361 +440,7 @@ describe('speech-paced subtitles', () => {
       .toBeLessThan(subtitles[1]!.endMs - subtitles[1]!.startMs);
   });
 
-  it('keeps clean source-speech cues even when another transcript segment is skipped as noise', () => {
-    const script: IKtepScript[] = [{
-      id: 'segment-1',
-      role: 'scene',
-      narration: 'ignored',
-      linkedSliceIds: ['slice-drive'],
-      beats: [
-        {
-          id: 'beat-1',
-          text: 'ignored',
-          actions: {
-            preserveNatSound: true,
-          },
-          selections: [{
-            assetId: 'asset-drive',
-            sliceId: 'slice-drive',
-            sourceInMs: 0,
-            sourceOutMs: 2_400,
-          }],
-          linkedSliceIds: ['slice-drive'],
-        },
-      ],
-    }];
-    const slices: IKtepSlice[] = [
-      {
-        id: 'slice-drive',
-        assetId: 'asset-drive',
-        type: 'drive',
-        sourceInMs: 0,
-        sourceOutMs: 2_400,
-        transcriptSegments: [
-          {
-            startMs: 0,
-            endMs: 1_200,
-            text: '导航导航导航导航导航导航',
-          },
-          {
-            startMs: 1_200,
-            endMs: 2_400,
-            text: '现在先从这边进去',
-          },
-        ],
-        labels: [],
-        placeHints: [],
-      },
-    ];
-    const clips: IKtepClip[] = [
-      {
-        id: 'clip-1',
-        trackId: 'track-1',
-        assetId: 'asset-drive',
-        sliceId: 'slice-drive',
-        sourceInMs: 0,
-        sourceOutMs: 2_400,
-        timelineInMs: 0,
-        timelineOutMs: 2_400,
-        linkedScriptSegmentId: 'segment-1',
-        linkedScriptBeatId: 'beat-1',
-      },
-    ];
-
-    const subtitles = planSubtitles(script, clips, slices, {
-      maxCharsPerCue: 10,
-    });
-
-    expect(subtitles).toHaveLength(1);
-    expect(subtitles[0]).toMatchObject({
-      text: '现在先从这边进去',
-      startMs: 1_200,
-      endMs: 2_400,
-    });
-  });
-
-  it('does not fall back to narration subtitles when preserveNatSound only sees command-style transcript', () => {
-    const script: IKtepScript[] = [{
-      id: 'segment-1',
-      role: 'scene',
-      narration: 'ignored',
-      linkedSliceIds: ['slice-drive'],
-      beats: [
-        {
-          id: 'beat-1',
-          text: '这句文字不该被当成旁白字幕',
-          actions: {
-            preserveNatSound: true,
-          },
-          selections: [{
-            assetId: 'asset-drive',
-            sliceId: 'slice-drive',
-            sourceInMs: 0,
-            sourceOutMs: 2_400,
-          }],
-          linkedSliceIds: ['slice-drive'],
-        },
-      ],
-    }];
-    const slices: IKtepSlice[] = [
-      {
-        id: 'slice-drive',
-        assetId: 'asset-drive',
-        type: 'drive',
-        sourceInMs: 0,
-        sourceOutMs: 2_400,
-        transcriptSegments: [
-          {
-            startMs: 0,
-            endMs: 1_200,
-            text: '请集中注意力',
-          },
-          {
-            startMs: 1_200,
-            endMs: 2_400,
-            text: '拍摄启动',
-          },
-        ],
-        labels: [],
-        placeHints: [],
-      },
-    ];
-    const clips: IKtepClip[] = [
-      {
-        id: 'clip-1',
-        trackId: 'track-1',
-        assetId: 'asset-drive',
-        sliceId: 'slice-drive',
-        sourceInMs: 0,
-        sourceOutMs: 2_400,
-        timelineInMs: 0,
-        timelineOutMs: 2_400,
-        linkedScriptSegmentId: 'segment-1',
-        linkedScriptBeatId: 'beat-1',
-      },
-    ];
-
-    const subtitles = planSubtitles(script, clips, slices, {
-      maxCharsPerCue: 10,
-    });
-
-    expect(subtitles).toEqual([]);
-  });
-
-  it('does not fall back to narration subtitles when only command or navigation transcript overlaps a beat', () => {
-    const script: IKtepScript[] = [{
-      id: 'segment-1',
-      role: 'scene',
-      narration: 'ignored',
-      linkedSliceIds: ['slice-drive'],
-      beats: [
-        {
-          id: 'beat-1',
-          text: '这些文字不该在命令尾巴上变成旁白字幕',
-          selections: [{
-            assetId: 'asset-drive',
-            sliceId: 'slice-drive',
-            sourceInMs: 0,
-            sourceOutMs: 6_000,
-          }],
-          linkedSliceIds: ['slice-drive'],
-        },
-      ],
-    }];
-    const slices: IKtepSlice[] = [
-      {
-        id: 'slice-drive',
-        assetId: 'asset-drive',
-        type: 'drive',
-        sourceInMs: 0,
-        sourceOutMs: 6_000,
-        transcriptSegments: [
-          {
-            startMs: 0,
-            endMs: 2_000,
-            text: '指令執行中',
-          },
-          {
-            startMs: 2_000,
-            endMs: 4_000,
-            text: '進入唐澳隧道',
-          },
-          {
-            startMs: 4_000,
-            endMs: 6_000,
-            text: '停止录像',
-          },
-        ],
-        labels: [],
-        placeHints: [],
-      },
-    ];
-    const clips: IKtepClip[] = [
-      {
-        id: 'clip-1',
-        trackId: 'track-1',
-        assetId: 'asset-drive',
-        sliceId: 'slice-drive',
-        sourceInMs: 0,
-        sourceOutMs: 6_000,
-        timelineInMs: 0,
-        timelineOutMs: 6_000,
-        linkedScriptSegmentId: 'segment-1',
-        linkedScriptBeatId: 'beat-1',
-      },
-    ];
-
-    const subtitles = planSubtitles(script, clips, slices, {
-      maxCharsPerCue: 10,
-    });
-
-    expect(subtitles).toEqual([]);
-  });
-
-  it('expands preserveNatSound beats to a full spoken sentence before placement and subtitles', () => {
-    const assets: IKtepAsset[] = [
-      {
-        id: 'asset-talk',
-        kind: 'video',
-        sourcePath: 'talk.mp4',
-        displayName: 'talk.mp4',
-      },
-    ];
-    const slices: IKtepSlice[] = [
-      {
-        id: 'slice-talk',
-        assetId: 'asset-talk',
-        type: 'talking-head',
-        sourceInMs: 0,
-        sourceOutMs: 3_000,
-        transcriptSegments: [
-          {
-            startMs: 0,
-            endMs: 1_800,
-            text: '这是完整的一句话。',
-          },
-        ],
-        labels: [],
-        placeHints: [],
-      },
-    ];
-    const script: IKtepScript[] = [{
-      id: 'segment-1',
-      role: 'scene',
-      narration: 'ignored',
-      targetDurationMs: 600,
-      linkedSliceIds: ['slice-talk'],
-      beats: [
-        {
-          id: 'beat-1',
-          text: '这是完整的一句话。',
-          targetDurationMs: 600,
-          actions: {
-            preserveNatSound: true,
-          },
-          selections: [{
-            assetId: 'asset-talk',
-            sliceId: 'slice-talk',
-            sourceInMs: 300,
-            sourceOutMs: 900,
-          }],
-          linkedSliceIds: ['slice-talk'],
-        },
-      ],
-    }];
-
-    const doc = buildTimeline(CPROJECT, assets, slices, script);
-
-    expect(doc.script?.[0]?.beats[0]?.targetDurationMs).toBe(600);
-    expect(doc.script?.[0]?.beats[0]?.selections).toEqual([{
-      assetId: 'asset-talk',
-      sliceId: 'slice-talk',
-      sourceInMs: 0,
-      sourceOutMs: 1800,
-    }]);
-    expect(doc.timeline.clips[0]).toMatchObject({
-      assetId: 'asset-talk',
-      sourceInMs: 0,
-      sourceOutMs: 1800,
-      timelineInMs: 0,
-      timelineOutMs: 1800,
-    });
-    expect(doc.subtitles).toHaveLength(1);
-    expect(doc.subtitles?.[0]).toMatchObject({
-      text: '这是完整的一句话',
-      startMs: 0,
-      endMs: 1800,
-    });
-  });
-
-  it('anchors short source-speech clips directly to spoken transcript bounds', () => {
-    const assets: IKtepAsset[] = [
-      {
-        id: 'asset-talk',
-        kind: 'video',
-        sourcePath: 'talk.mp4',
-        displayName: 'talk.mp4',
-      },
-    ];
-    const slices: IKtepSlice[] = [
-      {
-        id: 'slice-talk',
-        assetId: 'asset-talk',
-        type: 'broll',
-        sourceInMs: 0,
-        sourceOutMs: 3_000,
-        transcriptSegments: [
-          {
-            startMs: 1_000,
-            endMs: 1_500,
-            text: '来看这里',
-          },
-        ],
-        labels: [],
-        placeHints: [],
-      },
-    ];
-    const script: IKtepScript[] = [{
-      id: 'segment-1',
-      role: 'scene',
-      narration: 'ignored',
-      linkedSliceIds: ['slice-talk'],
-      beats: [
-        {
-          id: 'beat-1',
-          text: '来看这里',
-          actions: {
-            preserveNatSound: true,
-          },
-          selections: [{
-            assetId: 'asset-talk',
-            sliceId: 'slice-talk',
-            sourceInMs: 0,
-            sourceOutMs: 3_000,
-          }],
-          linkedSliceIds: ['slice-talk'],
-        },
-      ],
-    }];
-
-    const doc = buildTimeline(CPROJECT, assets, slices, script);
-
-    expect(doc.timeline.clips[0]).toMatchObject({
-      assetId: 'asset-talk',
-      sourceInMs: 1000,
-      sourceOutMs: 1500,
-      timelineInMs: 0,
-      timelineOutMs: 500,
-    });
-    expect(doc.subtitles).toHaveLength(1);
-    expect(doc.subtitles?.[0]).toMatchObject({
-      text: '来看这里',
-      startMs: 0,
-      endMs: 500,
-    });
-  });
-
-  it('filters non-transcript cutaways out of preserveNatSound beats before subtitle planning', () => {
+  it('keeps companion visuals but still subtitles only from the audio anchor', () => {
     const assets: IKtepAsset[] = [
       {
         id: 'asset-cutaway',
@@ -850,7 +461,7 @@ describe('speech-paced subtitles', () => {
         assetId: 'asset-cutaway',
         type: 'broll',
         sourceInMs: 0,
-        sourceOutMs: 4000,
+        sourceOutMs: 4_000,
         labels: [],
         placeHints: [],
       },
@@ -859,181 +470,120 @@ describe('speech-paced subtitles', () => {
         assetId: 'asset-talk',
         type: 'talking-head',
         sourceInMs: 0,
-        sourceOutMs: 1200,
-        transcriptSegments: [
-          {
-            startMs: 0,
-            endMs: 1200,
-            text: '这是现场原话',
-          },
-        ],
+        sourceOutMs: 1_200,
+        transcriptSegments: [{
+          startMs: 0,
+          endMs: 1_200,
+          text: '这是现场原话',
+        }],
         labels: [],
         placeHints: [],
       },
     ];
-    const script: IKtepScript[] = [{
+    const script: IKtepScript[] = createTestScript([{
       id: 'segment-1',
       role: 'scene',
       narration: 'ignored',
-      targetDurationMs: 5200,
+      targetDurationMs: 5_200,
       linkedSliceIds: ['slice-cutaway', 'slice-talk'],
-      beats: [
-        {
-          id: 'beat-1',
-          text: '这是现场原话',
-          targetDurationMs: 5200,
-          actions: {
-            preserveNatSound: true,
-          },
-          selections: [
-            {
-              assetId: 'asset-cutaway',
-              sliceId: 'slice-cutaway',
-              sourceInMs: 0,
-              sourceOutMs: 4000,
-            },
-            {
-              assetId: 'asset-talk',
-              sliceId: 'slice-talk',
-              sourceInMs: 0,
-              sourceOutMs: 1200,
-            },
-          ],
-          linkedSliceIds: ['slice-cutaway', 'slice-talk'],
+      beats: [{
+        id: 'beat-1',
+        text: '这是现场原话',
+        targetDurationMs: 5_200,
+        actions: {
+          preserveNatSound: true,
         },
-      ],
-    }];
+        audioSelections: [{
+          assetId: 'asset-talk',
+          sliceId: 'slice-talk',
+          sourceInMs: 0,
+          sourceOutMs: 1_200,
+        }],
+        visualSelections: [
+          {
+            assetId: 'asset-cutaway',
+            sliceId: 'slice-cutaway',
+            sourceInMs: 0,
+            sourceOutMs: 4_000,
+          },
+          {
+            assetId: 'asset-talk',
+            sliceId: 'slice-talk',
+            sourceInMs: 0,
+            sourceOutMs: 1_200,
+          },
+        ],
+        linkedSliceIds: ['slice-cutaway', 'slice-talk'],
+      }],
+    }]);
 
     const doc = buildTimeline(CPROJECT, assets, slices, script);
+    const beat = doc.script?.[0]?.beats[0];
 
-    expect(doc.script?.[0]?.beats[0]?.targetDurationMs).toBe(5200);
-    expect(doc.script?.[0]?.beats[0]?.selections).toEqual([{
+    expect(beat?.audioSelections).toEqual([{
       assetId: 'asset-talk',
       sliceId: 'slice-talk',
       sourceInMs: 0,
-      sourceOutMs: 1200,
+      sourceOutMs: 1_200,
     }]);
-    expect(doc.timeline.clips).toHaveLength(1);
-    expect(doc.timeline.clips[0]).toMatchObject({
-      assetId: 'asset-talk',
-      sourceInMs: 0,
-      sourceOutMs: 1200,
-      timelineInMs: 0,
-      timelineOutMs: 1200,
-    });
+    expect(beat?.visualSelections).toEqual([
+      {
+        assetId: 'asset-cutaway',
+        sliceId: 'slice-cutaway',
+        sourceInMs: 0,
+        sourceOutMs: 4_000,
+      },
+      {
+        assetId: 'asset-talk',
+        sliceId: 'slice-talk',
+        sourceInMs: 0,
+        sourceOutMs: 1_200,
+      },
+    ]);
+    expect(doc.timeline.clips).toHaveLength(3);
+    expect(doc.timeline.clips.filter(clip => clip.audioSource == null)).toHaveLength(2);
+    expect(doc.timeline.clips.filter(clip => clip.audioSource != null)).toHaveLength(1);
     expect(doc.subtitles).toHaveLength(1);
     expect(doc.subtitles?.[0]).toMatchObject({
       text: '这是现场原话',
       startMs: 0,
-      endMs: 1200,
+      endMs: 1_200,
     });
-  });
-
-  it('keeps narration beats within the natural clip duration even when the text is longer', () => {
-    const assets: IKtepAsset[] = [
-      {
-        id: 'asset-drive',
-        kind: 'video',
-        sourcePath: 'drive.mp4',
-        displayName: 'drive.mp4',
-      },
-    ];
-    const slices: IKtepSlice[] = [
-      {
-        id: 'slice-drive',
-        assetId: 'asset-drive',
-        type: 'drive',
-        sourceInMs: 0,
-        sourceOutMs: 1000,
-        labels: [],
-        placeHints: [],
-      },
-    ];
-    const script: IKtepScript[] = [{
-      id: 'segment-1',
-      role: 'scene',
-      narration: '旁白',
-      targetDurationMs: 1000,
-      linkedSliceIds: ['slice-drive'],
-      beats: [
-        {
-          id: 'beat-1',
-          text: '今天沿着海边慢慢往前走，我们还要把整段旁白说完整。',
-          targetDurationMs: 1000,
-          actions: {
-            muteSource: true,
-          },
-          selections: [{
-            assetId: 'asset-drive',
-            sliceId: 'slice-drive',
-            sourceInMs: 0,
-            sourceOutMs: 1000,
-          }],
-          linkedSliceIds: ['slice-drive'],
-        },
-      ],
-    }];
-
-    const doc = buildTimeline(CPROJECT, assets, slices, script, {
-      subtitle: {
-        maxCharsPerCue: 12,
-      },
-    });
-
-    expect(doc.script).toBeDefined();
-    expect(doc.script?.[0]?.beats[0]?.targetDurationMs).toBe(1000);
-    expect(doc.script?.[0]?.targetDurationMs).toBe(1000);
-    expect(doc.timeline.clips).toHaveLength(1);
-    expect(doc.timeline.clips[0]).toMatchObject({
-      sourceInMs: 0,
-      sourceOutMs: 1000,
-      timelineInMs: 0,
-    });
-    expect(doc.timeline.clips[0]!.timelineOutMs - doc.timeline.clips[0]!.timelineInMs)
-      .toBe(1000);
-    expect(doc.subtitles?.[0]?.startMs).toBe(0);
-    expect(doc.subtitles?.at(-1)?.endMs).toBeLessThanOrEqual(doc.timeline.clips[0]!.timelineOutMs);
   });
 
   it('skips subtitles entirely for photo-only beats', () => {
-    const script: IKtepScript[] = [{
+    const script: IKtepScript[] = createTestScript([{
       id: 'segment-1',
       role: 'scene',
       narration: 'ignored',
       linkedSliceIds: ['slice-photo'],
-      beats: [
-        {
-          id: 'beat-1',
-          text: '这张照片只是静默停留。',
-          selections: [{
-            assetId: 'asset-photo',
-            sliceId: 'slice-photo',
-          }],
-          linkedSliceIds: ['slice-photo'],
-        },
-      ],
+      beats: [{
+        id: 'beat-1',
+        text: '这张照片只是静默停留。',
+        selections: [{
+          assetId: 'asset-photo',
+          sliceId: 'slice-photo',
+        }],
+        linkedSliceIds: ['slice-photo'],
+      }],
+    }]);
+    const slices: IKtepSlice[] = [{
+      id: 'slice-photo',
+      assetId: 'asset-photo',
+      type: 'photo',
+      labels: [],
+      placeHints: [],
     }];
-    const slices: IKtepSlice[] = [
-      {
-        id: 'slice-photo',
-        assetId: 'asset-photo',
-        type: 'photo',
-        labels: [],
-        placeHints: [],
-      },
-    ];
-    const clips: IKtepClip[] = [
-      {
-        id: 'clip-1',
-        trackId: 'track-1',
-        assetId: 'asset-photo',
-        sliceId: 'slice-photo',
-        timelineInMs: 0,
-        timelineOutMs: 1000,
-        linkedScriptSegmentId: 'segment-1',
-        linkedScriptBeatId: 'beat-1',
-      },
-    ];
+    const clips: IKtepClip[] = [{
+      id: 'clip-1',
+      trackId: 'track-1',
+      assetId: 'asset-photo',
+      sliceId: 'slice-photo',
+      timelineInMs: 0,
+      timelineOutMs: 1_000,
+      linkedScriptSegmentId: 'segment-1',
+      linkedScriptBeatId: 'beat-1',
+    }];
 
     const subtitles = planSubtitles(script, clips, slices);
 
