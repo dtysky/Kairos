@@ -4,6 +4,22 @@
 
 当前状态：评审稿。
 
+2026-04-18 实施范围补记：
+
+- 本轮先实现已冻结的基础设施，不实现 Resolve 自动化执行细节。
+- 本轮正式落地的范围是：
+  - `project-brief` / ingest root / device map 的 `rawPath` / `rawLocalPath` 配置链
+  - 主链 ingest 对嵌套 `rawPath` 子树的显式排除
+  - 项目级 `color/` 最小 store
+  - `Supervisor + React console` 的最小 `/color` 入口与状态面
+  - `/color` 对已配置 `rawPath` 的 root 自动发现、默认命名补齐与派生阻塞态展示
+- 本轮明确不落地：
+  - Resolve `Media Pool / Bin` 真同步
+  - 长期 `grading timeline` 真准备
+  - `Group` 候选生成与 clip 归组
+  - `Render Queue` 执行、`validation` 真校验、`promote` 真覆盖
+- 因此，下文中涉及这些未落地能力的部分，当前仍表示 v1 目标设计，而不是这轮已经完成的实现状态。
+
 本稿的目标不是直接冻结节点参数或插件实现细节，而是先把 Kairos 里的达芬奇调色链正式收口成一条独立工作流，并明确它和主链、素材根、来源目录树、当前素材目录之间的边界。
 
 本稿当前确认的新结论是：

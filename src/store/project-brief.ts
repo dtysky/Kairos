@@ -8,6 +8,7 @@ export interface IProjectBriefTemplateInput {
 
 export interface IProjectBriefPathMapping {
   path: string;
+  rawPath?: string;
   description: string;
   flightRecordPath?: string;
 }
@@ -46,9 +47,11 @@ export function buildProjectBriefTemplate(
     '## 路径映射',
     '',
     '路径：',
+    '原始路径：',
     '说明：',
     '',
     '路径：',
+    '原始路径：',
     '说明：',
     '',
     '## Pharos',
@@ -78,9 +81,11 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
   let inPharos = false;
   let inMaterialPatterns = false;
   let pendingPath: string | null = null;
+  let pendingRawPath: string | null = null;
   let pendingDescription: string | null = null;
   let pendingFlightRecordPath: string | null = null;
   let expectPathValue = false;
+  let expectRawPathValue = false;
   let expectDescriptionValue = false;
   let expectFlightRecordPathValue = false;
   let expectIncludedTripValue = false;
@@ -117,16 +122,19 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
         mappings,
         warnings,
         pendingPath,
+        pendingRawPath,
         pendingDescription,
         pendingFlightRecordPath,
       );
       pendingPath = null;
+      pendingRawPath = null;
       pendingDescription = null;
       pendingFlightRecordPath = null;
       inMappings = false;
       inPharos = true;
       inMaterialPatterns = false;
       expectPathValue = false;
+      expectRawPathValue = false;
       expectDescriptionValue = false;
       expectFlightRecordPathValue = false;
       continue;
@@ -137,16 +145,19 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
         mappings,
         warnings,
         pendingPath,
+        pendingRawPath,
         pendingDescription,
         pendingFlightRecordPath,
       );
       pendingPath = null;
+      pendingRawPath = null;
       pendingDescription = null;
       pendingFlightRecordPath = null;
       inMappings = false;
       inPharos = false;
       inMaterialPatterns = true;
       expectPathValue = false;
+      expectRawPathValue = false;
       expectDescriptionValue = false;
       expectFlightRecordPathValue = false;
       expectIncludedTripValue = false;
@@ -158,16 +169,19 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
         mappings,
         warnings,
         pendingPath,
+        pendingRawPath,
         pendingDescription,
         pendingFlightRecordPath,
       );
       pendingPath = null;
+      pendingRawPath = null;
       pendingDescription = null;
       pendingFlightRecordPath = null;
       inMappings = false;
       inPharos = false;
       inMaterialPatterns = false;
       expectPathValue = false;
+      expectRawPathValue = false;
       expectDescriptionValue = false;
       expectFlightRecordPathValue = false;
       expectIncludedTripValue = false;
@@ -208,10 +222,12 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
         mappings,
         warnings,
         pendingPath,
+        pendingRawPath,
         pendingDescription,
         pendingFlightRecordPath,
       );
       pendingPath = null;
+      pendingRawPath = null;
       pendingDescription = null;
       pendingFlightRecordPath = null;
 
@@ -222,8 +238,21 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
       } else {
         expectPathValue = true;
       }
+      expectRawPathValue = false;
       expectDescriptionValue = false;
       expectFlightRecordPathValue = false;
+      continue;
+    }
+
+    if (line.startsWith('原始路径：')) {
+      const value = line.slice('原始路径：'.length).trim();
+      if (value) {
+        pendingRawPath = value;
+        expectRawPathValue = false;
+      } else {
+        pendingRawPath = null;
+        expectRawPathValue = true;
+      }
       continue;
     }
 
@@ -255,6 +284,12 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
       continue;
     }
 
+    if (expectRawPathValue) {
+      pendingRawPath = line;
+      expectRawPathValue = false;
+      continue;
+    }
+
     if (expectDescriptionValue) {
       pendingDescription = line;
       expectDescriptionValue = false;
@@ -271,6 +306,7 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
     mappings,
     warnings,
     pendingPath,
+    pendingRawPath,
     pendingDescription,
     pendingFlightRecordPath,
   );
@@ -324,6 +360,7 @@ function pushPendingMapping(
   out: IProjectBriefPathMapping[],
   warnings: string[],
   path: string | null,
+  rawPath: string | null,
   description: string | null,
   flightRecordPath: string | null,
 ): void {
@@ -336,6 +373,7 @@ function pushPendingMapping(
     warnings.push(`路径映射缺少说明：${path}`);
     out.push({
       path,
+      rawPath: rawPath ?? undefined,
       description: '（待补充说明）',
       flightRecordPath: flightRecordPath ?? undefined,
     });
@@ -343,6 +381,7 @@ function pushPendingMapping(
   }
   out.push({
     path,
+    rawPath: rawPath ?? undefined,
     description,
     flightRecordPath: flightRecordPath ?? undefined,
   });

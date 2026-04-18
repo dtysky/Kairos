@@ -23,6 +23,8 @@ import {
 import { EmptyPanel, MonitorPage } from './monitor-page.jsx';
 import {
   CaptureTimeOverridesEditor,
+  ColorConfigEditor,
+  ColorCurrentSummary,
   IngestRootClockEditor,
   ManualItineraryEditor,
   ProjectBriefEditor,
@@ -100,6 +102,7 @@ function AppShell() {
   const openReviewCount = reviews.filter(review => review.status === 'open').length;
 
   const setProjectBrief = makeSectionSetter(setConfig, 'projectBrief');
+  const setColorConfig = makeSectionSetter(setConfig, 'colorConfig');
   const setIngestRoots = makeSectionSetter(setConfig, 'ingestRoots');
   const setManualItinerary = makeSectionSetter(setConfig, 'manualItinerary');
   const setScriptBrief = makeSectionSetter(setConfig, 'scriptBrief');
@@ -154,6 +157,7 @@ function AppShell() {
     try {
       const mapping = {
         'project-brief': config.projectBrief,
+        'color-config': config.colorConfig || {},
         'ingest-roots': config.ingestRoots,
         'manual-itinerary': config.manualItinerary,
         'script-brief': config.scriptBrief,
@@ -409,6 +413,19 @@ function AppShell() {
                 />
                 <Route
                   exact
+                  path="/color"
+                  render={() => (
+                    <ColorPage
+                      config={config}
+                      capabilities={capabilities}
+                      setColorConfig={setColorConfig}
+                      saveSection={saveSection}
+                      busy={busy}
+                    />
+                  )}
+                />
+                <Route
+                  exact
                   path="/analyze/monitor"
                   render={() => <Redirect to="/analyze" />}
                 />
@@ -502,6 +519,7 @@ function AppShell() {
 function OverviewPage({ currentProject, activeJobs, services, projectProgress, openReviewCount }) {
   const workflows = [
     { path: '/ingest-gps', label: '导入与 GPS', summary: '维护 project-brief、manual-itinerary 与素材时间校正。' },
+    { path: '/color', label: '达芬奇调色', summary: '查看 colorRoots root 级 read model，并保留 colorConfig advanced fallback。' },
     { path: '/analyze', label: '素材分析', summary: '直接查看分析监控、恢复进度并启动 Analyze。' },
     { path: '/style', label: '风格分析', summary: '维护 Workspace 风格库、style sources，并查看当前分类监控。' },
     { path: '/script', label: '脚本', summary: '维护 script-brief，并准备确定性材料给 Agent 继续写稿。' },
@@ -641,6 +659,46 @@ function IngestGpsPage({
         title="导入 / GPS Review"
         emptyLabel="当前没有 ingest / gps 相关 review。"
         filter={review => ['project-init', 'ingest', 'gps-refresh'].includes(review.stage)}
+      />
+    </div>
+  );
+}
+
+function ColorPage({ config, capabilities, setColorConfig, saveSection, busy }) {
+  if (!config) {
+    return (
+      <div className="route-page">
+        <EmptyPanel label="当前项目配置尚未加载完成。" />
+      </div>
+    );
+  }
+  const colorCapability = resolveColorCapability(capabilities);
+  const colorBlocked = colorCapability?.supported === false;
+  return (
+    <div className="route-page">
+      <RouteIntro
+        title="达芬奇调色"
+        subtitle="这里优先读取 `config.colorRoots` 这个 root 级 read model，同时保留 `colorConfig` 的 advanced JSON fallback，不影响主链 ingest。"
+      />
+      {colorBlocked ? (
+        <WorkflowPrompt
+          eyebrow="Blocked"
+          title="当前 capability 不支持 color"
+          body="capabilities 已明确标记 `color` 不支持。这个页面仍可查看和编辑配置，但不会提供运行入口，也不会影响主链。"
+          tone="error"
+          detail={colorCapability?.reason || colorCapability?.message || '请先确认后端是否已经开放 color 能力。'}
+        />
+      ) : null}
+      <ColorCurrentSummary
+        config={config}
+        capability={colorCapability}
+      />
+      <ColorConfigEditor
+        config={config.colorConfig}
+        setConfig={setColorConfig}
+        onSave={() => saveSection('color-config')}
+        busy={busy['color-config']}
+        capability={colorCapability}
       />
     </div>
   );
@@ -1405,6 +1463,7 @@ function TopNav({ history, location }) {
   const items = [
     { path: '/', label: '总览' },
     { path: '/ingest-gps', label: '导入与 GPS' },
+    { path: '/color', label: '达芬奇调色' },
     { path: '/analyze', label: '素材分析' },
     { path: '/style', label: '风格分析' },
     { path: '/script', label: '脚本' },
@@ -1443,6 +1502,7 @@ function RouteIntro({ title, subtitle }) {
 
 function resolveTopLevelPath(pathname) {
   if (pathname.startsWith('/ingest-gps')) return '/ingest-gps';
+  if (pathname.startsWith('/color')) return '/color';
   if (pathname.startsWith('/analyze')) return '/analyze';
   if (pathname.startsWith('/style')) return '/style';
   if (pathname.startsWith('/script')) return '/script';
@@ -1480,6 +1540,20 @@ function getStyleJobCategoryId(job) {
 
 function getStyleMonitorCategoryId(model) {
   return model?.raw?.category?.categoryId || '';
+}
+
+function resolveColorCapability(capabilities) {
+  const jobCapability = capabilities?.jobs?.find(job => job.jobType === 'color') || null;
+  if (jobCapability) {
+    return jobCapability;
+  }
+  if (typeof capabilities?.color === 'boolean') {
+    return { supported: capabilities.color };
+  }
+  if (capabilities && typeof capabilities.color === 'object') {
+    return capabilities.color;
+  }
+  return null;
 }
 
 function buildStyleSelectionScriptBriefPayload(brief, styleCategory) {

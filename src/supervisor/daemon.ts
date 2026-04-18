@@ -10,7 +10,10 @@ import {
   loadAssets,
   loadAssetReports,
   loadChronology,
+  loadColorConfig,
+  loadColorCurrent,
   loadIngestRoots,
+  loadProjectDeviceMediaMaps,
   listWorkspaceProjects,
   loadManualItineraryConfig,
   loadProjectBriefConfig,
@@ -19,6 +22,7 @@ import {
   saveIngestRoots,
   loadStyleSourcesConfig,
   resolveReviewItem,
+  saveColorConfig,
   saveManualItineraryConfig,
   saveProjectBriefConfig,
   saveScriptBriefConfig,
@@ -27,6 +31,7 @@ import {
   touchProjectUpdatedAt,
   writeChronology,
 } from '../store/index.js';
+import { buildColorWorkspaceState } from '../modules/color/workspace-state.js';
 import {
   buildCaptureTimeReviewItems,
   buildManualCaptureTimeReviewKey,
@@ -165,6 +170,7 @@ async function routeRequest(
         { jobType: 'gps-refresh', executionMode: 'deterministic', supported: true },
         { jobType: 'analyze', executionMode: 'deterministic', supported: true },
         { jobType: 'style-analysis', executionMode: 'deterministic', supported: true, note: 'runs deterministic prep and then hands off to Agent for the final style profile' },
+        { jobType: 'color', executionMode: 'deterministic', supported: false, note: 'current /color covers config and status only; Resolve execution runner is not wired yet' },
         { jobType: 'script', executionMode: 'deterministic', supported: true, note: 'runs only after reviewed brief is saved; advances ready_to_prepare -> ready_for_agent; final script remains agent-authored' },
         { jobType: 'timeline', executionMode: 'deterministic', supported: true, note: 'builds rough-cut-base -> segment-cut review chain; requires a configured host agent packet runner' },
         { jobType: 'export-jianying', executionMode: 'deterministic', supported: false },
@@ -178,14 +184,26 @@ async function routeRequest(
   if (configMatch && method === 'GET') {
     const projectId = decodeURIComponent(configMatch[1]!);
     const projectRoot = join(options.workspaceRoot, 'projects', projectId);
-    const [projectBrief, manualItinerary, scriptBrief, ingestRoots, assets, chronology] = await Promise.all([
+    const [projectBrief, manualItinerary, scriptBrief, ingestRoots, deviceMaps, assets, chronology, colorConfig, colorCurrent] = await Promise.all([
       loadProjectBriefConfig(projectRoot),
       loadManualItineraryConfig(projectRoot),
       loadScriptBriefConfig(projectRoot),
       loadIngestRoots(projectRoot),
+      loadProjectDeviceMediaMaps(projectRoot),
       loadAssets(projectRoot),
       loadChronology(projectRoot),
+      loadColorConfig(projectRoot),
+      loadColorCurrent(projectRoot),
     ]);
+    const ingestRootSummaries = buildIngestRootSummaries(ingestRoots.roots, assets, chronology);
+    const colorWorkspace = buildColorWorkspaceState({
+      projectId,
+      ingestRoots: ingestRoots.roots,
+      deviceProjectMap: deviceMaps.projects[projectId],
+      ingestRootSummaries,
+      colorConfig,
+      colorCurrent,
+    });
     const pharosContext = await loadOrBuildProjectPharosContext({
       projectRoot,
       includedTripIds: projectBrief.pharos?.includedTripIds ?? [],
@@ -195,7 +213,10 @@ async function routeRequest(
       manualItinerary,
       scriptBrief,
       ingestRoots,
-      ingestRootSummaries: buildIngestRootSummaries(ingestRoots.roots, assets, chronology),
+      colorConfig: colorWorkspace.colorConfig,
+      colorCurrent: colorWorkspace.colorCurrent,
+      colorRoots: colorWorkspace.colorRoots,
+      ingestRootSummaries,
       pharosStatus: buildProjectPharosAssetStatus(pharosContext, projectRoot),
       pharosContext,
     });
@@ -252,6 +273,15 @@ async function routeRequest(
     const projectRoot = join(options.workspaceRoot, 'projects', projectId);
     const payload = await readJsonBody(request);
     sendJson(response, 200, await saveScriptBriefConfig(projectRoot, payload));
+    return;
+  }
+
+  const colorConfigMatch = pathname.match(/^\/api\/projects\/([^/]+)\/config\/color-config$/u);
+  if (colorConfigMatch && method === 'PUT') {
+    const projectId = decodeURIComponent(colorConfigMatch[1]!);
+    const projectRoot = join(options.workspaceRoot, 'projects', projectId);
+    const payload = await readJsonBody(request);
+    sendJson(response, 200, await saveColorConfig(projectRoot, payload));
     return;
   }
 

@@ -4,10 +4,14 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   initWorkspaceProject,
+  loadColorConfig,
+  loadColorCurrent,
   loadManualItineraryConfig,
   loadProjectBriefConfig,
   loadScriptBriefConfig,
   loadStyleSourcesConfig,
+  saveColorConfig,
+  saveColorCurrent,
   saveManualItineraryConfig,
   saveProjectBriefConfig,
   saveScriptBriefConfig,
@@ -36,6 +40,8 @@ describe('workspace config sync', () => {
 
     await expect(access(join(projectRoot, 'config', 'styles'))).rejects.toBeTruthy();
     await expect(access(join(projectRoot, 'analysis', 'reference-transcripts'))).rejects.toBeTruthy();
+    await expect(access(join(projectRoot, 'color', 'config.json'))).resolves.toBeUndefined();
+    await expect(access(join(projectRoot, 'color', 'current.json'))).resolves.toBeUndefined();
   });
 
   it('roundtrips project brief into markdown and json', async () => {
@@ -48,6 +54,7 @@ describe('workspace config sync', () => {
       createdAt: '2026-04-05T00:00:00.000Z',
       mappings: [{
         path: 'F:\\media\\camera',
+        rawPath: 'F:\\media\\camera\\raw',
         description: '主机位',
         flightRecordPath: 'F:\\media\\camera\\FlightRecord',
       }],
@@ -57,7 +64,105 @@ describe('workspace config sync', () => {
     const markdown = await readFile(join(projectRoot, 'config', 'project-brief.md'), 'utf-8');
     expect(loaded.mappings).toHaveLength(1);
     expect(markdown).toContain('路径：F:\\media\\camera');
+    expect(markdown).toContain('原始路径：F:\\media\\camera\\raw');
     expect(markdown).toContain('飞行记录路径：F:\\media\\camera\\FlightRecord');
+  });
+
+  it('roundtrips color config and current store', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectRoot = await initWorkspaceProject(workspaceRoot, 'project-color', 'Project Color');
+
+    await saveColorConfig(projectRoot, {
+      roots: [{
+        rootId: 'root-camera',
+        resolveProjectName: 'kairos__project-color',
+        rootNamespace: 'root__root-camera',
+        gradingTimelineName: 'root__root-camera__grading',
+        renderPreset: {
+          container: 'mp4',
+          videoCodec: 'h265',
+          audioCodec: 'aac',
+          bitrateMbps: 120,
+        },
+        groups: [{
+          groupKey: 'camera-log-day',
+          displayName: 'Camera LOG Day',
+          technicalSummary: ['S-Log3', 'daylight'],
+        }],
+      }],
+    });
+
+    await saveColorCurrent(projectRoot, {
+      selectedRootId: 'root-camera',
+      roots: [{
+        rootId: 'root-camera',
+        mirrorStatus: 'ready',
+        timelineStatus: 'missing',
+        latestBatchId: 'batch-1',
+        groups: [{
+          groupKey: 'camera-log-day',
+          status: 'draft',
+        }],
+      }],
+    });
+
+    const loadedConfig = await loadColorConfig(projectRoot);
+    const loadedCurrent = await loadColorCurrent(projectRoot);
+
+    expect(loadedConfig.roots[0]?.renderPreset?.bitrateMbps).toBe(120);
+    expect(loadedConfig.roots[0]?.groups[0]?.groupKey).toBe('camera-log-day');
+    expect(loadedCurrent.selectedRootId).toBe('root-camera');
+    expect(loadedCurrent.roots[0]?.groups[0]?.status).toBe('draft');
+  });
+
+  it('preserves unmatched color roots when saving an active subset', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectRoot = await initWorkspaceProject(workspaceRoot, 'project-color-preserve', 'Project Color Preserve');
+
+    await saveColorConfig(projectRoot, {
+      roots: [{
+        rootId: 'root-active',
+        renderPreset: {
+          container: 'mp4',
+          videoCodec: 'h265',
+          audioCodec: 'aac',
+          bitrateMbps: 120,
+        },
+        groups: [],
+      }, {
+        rootId: 'root-legacy',
+        renderPreset: {
+          container: 'mp4',
+          videoCodec: 'h265',
+          audioCodec: 'aac',
+          bitrateMbps: 60,
+        },
+        groups: [{
+          groupKey: 'legacy-group',
+          technicalSummary: ['legacy'],
+        }],
+      }],
+    });
+
+    await saveColorConfig(projectRoot, {
+      roots: [{
+        rootId: 'root-active',
+        renderPreset: {
+          container: 'mp4',
+          videoCodec: 'h265',
+          audioCodec: 'aac',
+          bitrateMbps: 150,
+        },
+        groups: [],
+      }],
+    });
+
+    const loaded = await loadColorConfig(projectRoot);
+    expect(loaded.roots).toHaveLength(2);
+    expect(loaded.roots[0]?.rootId).toBe('root-active');
+    expect(loaded.roots[0]?.renderPreset?.bitrateMbps).toBe(150);
+    expect(loaded.roots[1]?.rootId).toBe('root-legacy');
+    expect(loaded.roots[1]?.groups[0]?.groupKey).toBe('legacy-group');
   });
 
   it('preserves prose, structured itinerary, and capture overrides', async () => {

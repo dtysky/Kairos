@@ -19,6 +19,9 @@ Kairos 当前需要区分两层：
   - 项目初始化当前会直接创建 `projects/<projectId>/pharos/`
   - Console 读取项目配置时会补齐缺失的 `pharos/` 根目录，并在 `/ingest-gps` 明确提示这个固定投放位置
 - 一条与主链解耦的 `DaVinci color` 独立增强链路
+  - 当前已经有最小 `/color` 控制面与项目级 `color/` store
+  - 当前 `/color` 会自动发现已配置 `rawPath` 的素材根，派生 root 级默认命名与阻塞状态
+  - 当前 `/color` 先收口 root 级配置、状态与主链边界，不等于 Resolve 自动化已经完整接通
 - 一组运行在 Agent 环境中的工作流技能，以及面向不同 NLE / 导出目标的适配层
 
 这意味着：
@@ -28,6 +31,7 @@ Kairos 当前需要区分两层：
 - 仓库根目录的 `AGENTS.md` 是当前 agent 启动时的统一引导入口，用来收口必读文档、rules、skills 和正式运行入口
 - 本地运行与任务编排当前已收口到 `Supervisor + React console (apps/kairos-console/)`
 - `素材分析` 与 `风格分析` 在当前控制台里直接以主路由展示监控，而不是再跳一次独立监控入口
+- `DaVinci color` 当前也已有独立主路由 `/color`，但当前阶段仍以配置/状态面为主
 - 风格档案、风格来源配置与风格分析参考产物当前已收口为 **Workspace 级共享资产**：
   - `config/styles/`
   - `config/style-sources.json`
@@ -56,6 +60,9 @@ Kairos 当前需要区分两层：
     - workspace / project runtime 可通过 `config/runtime.json` 的 `agentPacketRunnerCommand` / `agentPacketRunnerArgs` / `agentPacketRunnerCwd` 声明这个 packet runner
 - 未来如果引入桌面 UI 或更多 provider / adapter，应建立在这套协议与项目模型上，而不是推翻它
 - 某些项目会直接消费调色后的素材版本而非原始素材；因此主链面向的是“当前采用的素材版本”，而不是固定绑定“永远使用原始素材”
+- `project-brief` 的路径映射块当前可选带 `原始路径`
+  - 该字段会同步到 ingest root `rawPath` 与设备映射 `rawLocalPath`
+  - 若 `rawPath` 位于当前素材目录内部，主链 ingest 会显式排除该子树，避免 raw 与当前输出被一起纳入正式扫描
 
 ## 1.1 当前变更纪律
 

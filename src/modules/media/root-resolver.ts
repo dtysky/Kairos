@@ -8,6 +8,7 @@ import type {
 export interface IResolvedMediaRoot {
   root: IMediaRoot;
   localPath: string;
+  rawLocalPath?: string;
   flightRecordPath?: string;
 }
 
@@ -35,6 +36,7 @@ export function resolveMediaRootsForDevice(
       resolved.push({
         root,
         localPath: localRoot.localPath,
+        rawLocalPath: localRoot.rawLocalPath ?? root.rawPath,
         flightRecordPath: localRoot.flightRecordPath,
       });
     } else if (root.path) {

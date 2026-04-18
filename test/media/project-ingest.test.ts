@@ -203,6 +203,73 @@ describe('ingestWorkspaceProjectMedia', () => {
     expect(assets[0]?.ingestRootId).toBe(ingestRoots.roots[0]!.id);
   });
 
+  it('excludes nested rawLocalPath from ingest scan', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-nested-raw';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Nested Raw Project');
+    const mediaRoot = join(workspaceRoot, 'media-root');
+    const rawRoot = join(mediaRoot, 'raw');
+
+    await mkdir(rawRoot, { recursive: true });
+    await writeFile(join(mediaRoot, 'graded.mp4'), '');
+    await writeFile(join(rawRoot, 'source.mov'), '');
+    await writeWorkspaceProjectBrief(workspaceRoot, projectId, [
+      {
+        path: mediaRoot,
+        rawPath: rawRoot,
+        description: '主机位素材',
+      },
+    ]);
+
+    const result = await ingestWorkspaceProjectMedia({
+      workspaceRoot,
+      projectId,
+    });
+
+    expect(result.scannedRoots[0]).toMatchObject({
+      localPath: mediaRoot,
+      scannedFileCount: 1,
+    });
+
+    const assets = await loadAssets(projectRoot);
+    expect(assets).toHaveLength(1);
+    expect(assets[0]?.sourcePath).toBe('graded.mp4');
+  });
+
+  it('keeps scanning current root when rawLocalPath is outside current root', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-external-raw';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'External Raw Project');
+    const mediaRoot = join(workspaceRoot, 'media-root');
+    const rawRoot = join(workspaceRoot, 'raw-root');
+
+    await mkdir(mediaRoot, { recursive: true });
+    await mkdir(rawRoot, { recursive: true });
+    await writeFile(join(mediaRoot, 'graded.mp4'), '');
+    await writeFile(join(mediaRoot, 'graded-2.mp4'), '');
+    await writeFile(join(rawRoot, 'source.mov'), '');
+    await writeWorkspaceProjectBrief(workspaceRoot, projectId, [
+      {
+        path: mediaRoot,
+        rawPath: rawRoot,
+        description: '主机位素材',
+      },
+    ]);
+
+    const result = await ingestWorkspaceProjectMedia({
+      workspaceRoot,
+      projectId,
+    });
+
+    expect(result.scannedRoots[0]).toMatchObject({
+      localPath: mediaRoot,
+      scannedFileCount: 2,
+    });
+
+    const assets = await loadAssets(projectRoot);
+    expect(assets).toHaveLength(2);
+  });
+
   it('does not persist timezone-derived metadata during ingest', async () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-a';

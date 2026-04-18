@@ -1,5 +1,5 @@
 import { readdir, stat } from 'node:fs/promises';
-import { join, extname } from 'node:path';
+import { extname, isAbsolute, join, relative, resolve } from 'node:path';
 import type { EAssetKind } from '../../protocol/schema.js';
 
 const CEXT_VIDEO = new Set([
@@ -17,6 +17,10 @@ export interface IScannedFile {
   sizeBytes: number;
 }
 
+export interface IScanDirectoryOptions {
+  excludeSubtrees?: string[];
+}
+
 export function classifyExt(ext: string): EAssetKind | null {
   const lower = ext.toLowerCase();
   if (CEXT_VIDEO.has(lower)) return 'video';
@@ -25,13 +29,21 @@ export function classifyExt(ext: string): EAssetKind | null {
   return null;
 }
 
-export async function scanDirectory(dir: string): Promise<IScannedFile[]> {
+export async function scanDirectory(
+  dir: string,
+  options: IScanDirectoryOptions = {},
+): Promise<IScannedFile[]> {
   const results: IScannedFile[] = [];
-  await walk(dir, results);
+  const excludeSubtrees = (options.excludeSubtrees ?? []).map(normalizeComparablePath);
+  await walk(dir, results, excludeSubtrees);
   return results;
 }
 
-async function walk(dir: string, out: IScannedFile[]): Promise<void> {
+async function walk(
+  dir: string,
+  out: IScannedFile[],
+  excludeSubtrees: string[],
+): Promise<void> {
   let entries;
   try {
     entries = await readdir(dir, { withFileTypes: true });
@@ -42,7 +54,10 @@ async function walk(dir: string, out: IScannedFile[]): Promise<void> {
   for (const entry of entries) {
     const full = join(dir, entry.name);
     if (entry.isDirectory()) {
-      await walk(full, out);
+      if (shouldExcludePath(full, excludeSubtrees)) {
+        continue;
+      }
+      await walk(full, out, excludeSubtrees);
     } else if (entry.isFile()) {
       const kind = classifyExt(extname(entry.name));
       if (kind) {
@@ -51,4 +66,20 @@ async function walk(dir: string, out: IScannedFile[]): Promise<void> {
       }
     }
   }
+}
+
+function shouldExcludePath(path: string, excludeSubtrees: string[]): boolean {
+  const candidate = normalizeComparablePath(path);
+  return excludeSubtrees.some(excluded => {
+    if (candidate === excluded) return true;
+    const rel = relative(excluded, candidate);
+    return rel.length > 0 && !rel.startsWith('..') && !isAbsolute(rel);
+  });
+}
+
+function normalizeComparablePath(path: string): string {
+  const normalized = resolve(path);
+  return process.platform === 'win32'
+    ? normalized.toLowerCase()
+    : normalized;
 }

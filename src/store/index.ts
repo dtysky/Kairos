@@ -258,6 +258,8 @@ export {
   getManualItineraryConfigPath,
   getScriptBriefConfigPath,
   getWorkspaceStyleSourcesConfigPath,
+  getColorConfigPath,
+  getColorCurrentPath,
   loadProjectBriefConfig,
   saveProjectBriefConfig,
   loadManualItineraryConfig,
@@ -266,6 +268,10 @@ export {
   saveScriptBriefConfig,
   loadStyleSourcesConfig,
   saveStyleSourcesConfig,
+  loadColorConfig,
+  saveColorConfig,
+  loadColorCurrent,
+  saveColorCurrent,
 } from './workspace-config.js';
 export {
   getWorkspaceStyleAnalysisRoot,

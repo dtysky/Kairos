@@ -1,7 +1,13 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { basename, dirname, join, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { IStoreManifest, IMediaRoot, IKtepProject } from '../protocol/schema.js';
+import {
+  IColorConfig,
+  IColorCurrent,
+  IStoreManifest,
+  IMediaRoot,
+  IKtepProject,
+} from '../protocol/schema.js';
 import { readJson, readJsonOrNull, writeJson } from './writer.js';
 import { z } from 'zod';
 import { buildProjectBriefTemplate } from './project-brief.js';
@@ -18,6 +24,8 @@ const CDIRS = [
   'script/versions',
   'timeline',
   'timeline/versions',
+  'color',
+  'color/batches',
   'subtitles',
   'adapters',
   'analysis',
@@ -98,6 +106,8 @@ export async function initProject(
 
   const ingestRoots: IIngestRoots = { roots: [] };
   await writeJson(join(root, 'config/ingest-roots.json'), ingestRoots);
+  await writeJson(join(root, 'color/config.json'), IColorConfig.parse({ roots: [] }));
+  await writeJson(join(root, 'color/current.json'), IColorCurrent.parse({ roots: [] }));
 
   await writeFile(
     join(root, 'config/project-brief.md'),

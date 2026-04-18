@@ -7,6 +7,26 @@
 
 ## 0. 2026-03-31 增补
 
+## 0.4 2026-04-18 DaVinci color 基础设施落地补记
+
+当前实现已先落地 `2026-04-17--davinci-color-independent-workflow-v1` 中已冻结的基础设施部分：
+
+- `project-brief` 路径映射可选带 `原始路径`
+- `IMediaRoot.rawPath` 与设备映射 `rawLocalPath` 已进入正式配置链
+- 若 `rawPath/rawLocalPath` 位于当前素材目录内部，ingest 会把该子树视为正式排除项，而不是把 raw 与当前输出一起扫描
+- 项目级 `color/` 目录已作为独立调色链最小 store 进入项目结构
+- `Supervisor + React console` 已有最小 `/color` 主路由，用于显示 root 级调色配置与当前状态
+- `/color` 当前会自动发现已配置 `rawPath` 的素材根，补齐默认 Resolve 命名 / codec 展示字段，并派生缺失 `rawLocalPath`、缺失 bitrate 等阻塞信息
+
+本轮仍未落地的部分包括：
+
+- Resolve `Media Pool / Bin` 真同步
+- 长期 `grading timeline` 真准备
+- `Group` 候选生成与 clip 归组
+- `Render Queue` 执行、`validation` 真校验与 `promote`
+
+因此当前应把 `/color` 理解为“独立调色链的基础设施与控制面已经入场”，而不是 Resolve 工作流已经全部接通。
+
 当前代码实现相对这份 v2 架构稿，已经覆盖了正式流程中的若干关键阶段：
 
 1. `coarse-first analyze` 已把 ASR 纳入视频细扫前链路

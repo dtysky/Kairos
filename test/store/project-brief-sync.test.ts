@@ -33,9 +33,10 @@ describe('syncWorkspaceProjectBrief', () => {
     const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Test Project');
 
     const cameraRoot = join(workspaceRoot, 'media', 'camera');
+    const cameraRawRoot = join(cameraRoot, 'raw');
     const droneRoot = join(workspaceRoot, 'media', 'drone');
     await writeWorkspaceProjectBrief(workspaceRoot, projectId, [
-      { path: cameraRoot, description: '主机位' },
+      { path: cameraRoot, rawPath: cameraRawRoot, description: '主机位' },
       { path: droneRoot, description: '无人机', flightRecordPath: './FlightRecord' },
     ]);
     const briefContent = await readFile(join(projectRoot, 'config/project-brief.md'), 'utf-8');
@@ -50,6 +51,7 @@ describe('syncWorkspaceProjectBrief', () => {
       enabled: true,
       description: '主机位',
       priority: 1,
+      rawPath: cameraRawRoot,
     });
 
     const ingestRoots = await loadIngestRoots(projectRoot);
@@ -60,6 +62,7 @@ describe('syncWorkspaceProjectBrief', () => {
       {
         rootId: result.ingestRoots[0]!.id,
         localPath: cameraRoot,
+        rawLocalPath: cameraRawRoot,
       },
       {
         rootId: result.ingestRoots[1]!.id,

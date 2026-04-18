@@ -49,6 +49,7 @@ export async function syncProjectBriefMappings(
       enabled: existing?.enabled ?? true,
       clockOffsetMs: existing?.clockOffsetMs,
       path: existing?.path,
+      rawPath: mapping.rawPath?.trim() || undefined,
       description: mapping.description,
       notes: existing?.notes ?? [mapping.description],
       tags: existing?.tags ?? [],
@@ -65,6 +66,9 @@ export async function syncProjectBriefMappings(
       roots: parsed.mappings.map((mapping, index) => ({
         rootId: roots[index].id,
         localPath: normalizeProjectBriefLocalPath(mapping.path),
+        rawLocalPath: mapping.rawPath
+          ? normalizeProjectBriefLocalPath(mapping.rawPath, mapping.path)
+          : undefined,
         flightRecordPath: mapping.flightRecordPath
           ? normalizeProjectBriefLocalPath(mapping.flightRecordPath, mapping.path)
           : undefined,
@@ -84,7 +88,7 @@ export function buildProjectBriefWithMappings(input: {
   name: string;
   description?: string;
   createdAt?: string;
-  mappings: Array<{ path: string; description: string; flightRecordPath?: string }>;
+  mappings: Array<{ path: string; rawPath?: string; description: string; flightRecordPath?: string }>;
   pharos?: { includedTripIds?: string[] };
   materialPatternPhrases?: string[];
 }): string {
@@ -101,15 +105,18 @@ export function buildProjectBriefWithMappings(input: {
   const mappingLines = input.mappings.length > 0
     ? input.mappings.flatMap(mapping => [
       `路径：${mapping.path}`,
+      ...(mapping.rawPath ? [`原始路径：${mapping.rawPath}`] : []),
       `说明：${mapping.description}`,
       ...(mapping.flightRecordPath ? [`飞行记录路径：${mapping.flightRecordPath}`] : []),
       '',
     ])
     : [
       '路径：',
+      '原始路径：',
       '说明：',
       '',
       '路径：',
+      '原始路径：',
       '说明：',
       '',
     ];

@@ -42,6 +42,7 @@ The current official local runtime and monitor path is:
 - `Supervisor + React console (apps/kairos-console/)`
 - Analyze monitor route: `http://127.0.0.1:8940/analyze`
 - Style monitor route: `http://127.0.0.1:8940/style` (workspace-level style library / style-analysis monitor)
+- Color route: `http://127.0.0.1:8940/color` (independent DaVinci color config/status surface; Resolve execution is not fully wired yet)
 
 Operational lesson that must not be forgotten:
 
@@ -90,6 +91,9 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
 
 - Prefer Windows PowerShell in this repository unless the user explicitly asks for WSL or the step is Linux-only.
 - Treat `projects/<projectId>/pharos/` as a project-local fixed inbox: project init should create it, and Console-side project config loading should repair it if it is missing before asking the user to place trip mirrors.
+- Treat `project-brief` path mappings as the formal place to declare both current media roots and optional `原始路径`.
+- Treat nested `rawPath/rawLocalPath` as a formal ingest exclusion boundary: the mainflow should scan the current media directory, but must not recurse into the raw subtree when it lives inside that directory.
+- Treat `/color` as root-discovery-first at this stage: roots with `rawPath` should auto-appear with derived blockers/status, even before Resolve execution is wired.
 - Do not treat stale progress displays as proof that formal processing is alive.
 - Do not silently use legacy monitor paths for new work when `Supervisor + React console` is the official entry.
 - Treat workspace style-analysis as a formal deterministic prep job before Agent style synthesis, not as a UI-only placeholder.

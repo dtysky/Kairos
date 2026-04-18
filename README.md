@@ -32,14 +32,23 @@ Current stable pipeline:
   - 项目内跨设备时钟漂移当前也通过这里正式修正：`/ingest-gps` 会并列提供 root 级“设备时钟偏移”面板与单素材 `captureTimeOverrides`
   - root 级偏移写入 `config/ingest-roots.json` 的 `clockOffsetMs`；单素材 `captureTimeOverrides` 继续作为更高优先级例外层
   - `media/chronology.json` 的 `sortCapturedAt` 当前是 Script / Timeline 共享的唯一时序真值：优先 `capturedAtOverride`，其次 `asset.capturedAt + root.clockOffsetMs`，最后才回退原始 `asset.capturedAt`
+  - `project-brief` 的每个路径映射块现在可选声明 `原始路径`
+  - `原始路径` 会同步到 `config/ingest-roots.json` 的 `rawPath` 与 `config/device-media-maps.local.json` 的 `rawLocalPath`
+  - 若 `rawPath/rawLocalPath` 位于当前素材目录内部，主链 ingest 扫描会显式排除该子树；没有 `rawPath` 的 root 不受影响
 - official local runtime / monitor entry is `Supervisor + React console (apps/kairos-console/)`
   - `http://127.0.0.1:8940/analyze` is the official Analyze monitor route
   - `http://127.0.0.1:8940/style` is the official workspace-level Style monitor route
+  - `http://127.0.0.1:8940/color` is the current independent DaVinci color route for root-level config and status
   - `scripts/kairos-supervisor.* start` only starts `Supervisor + React console`; it does not start ML and does not resume old jobs
   - `progress.json` is only a durable progress cache; a phase is live only when Supervisor still has the matching active job
   - console refresh now prefers the project that currently owns the latest active project-scoped job before falling back to the last locally remembered selection
   - when multiple projects share the same display name, the selector must surface `projectId` to avoid mixing monitor context
   - top-level workflow jobs now always reconcile to `ML stopped` after completion, failure, manual stop, or interruption
+- independent `DaVinci color` chain now has a minimal project-side store:
+  - `projects/<projectId>/color/config.json` stores root-level color config
+  - `projects/<projectId>/color/current.json` stores the current UI/runtime-facing color status snapshot
+  - current `/color` auto-discovers roots that already have `rawPath`, fills default Resolve naming / codec fields for display, and surfaces derived blockers such as missing `rawLocalPath` or missing bitrate
+  - current `/color` still only covers config + status surface; Resolve execution, validation, and promote are still pending
 - reusable style assets now live at workspace scope, not project scope:
   - `config/styles/` stores the shared style library
   - `config/style-sources.json` stores the shared style-source manifest and is the only structured style index

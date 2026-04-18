@@ -94,6 +94,7 @@ export type ICaptureTime = z.infer<typeof ICaptureTime>;
 export const IMediaRoot = z.object({
   id: z.string(),
   path: z.string().optional(),
+  rawPath: z.string().optional(),
   label: z.string().optional(),
   enabled: z.boolean(),
   clockOffsetMs: z.number().int().optional(),
@@ -108,6 +109,7 @@ export type IMediaRoot = z.infer<typeof IMediaRoot>;
 export const IDeviceMediaRootPath = z.object({
   rootId: z.string(),
   localPath: z.string(),
+  rawLocalPath: z.string().optional(),
   flightRecordPath: z.string().optional(),
   exists: z.boolean().optional(),
   lastCheckedAt: z.string().optional(),
@@ -1097,10 +1099,79 @@ export type IStoreManifest = z.infer<typeof IStoreManifest>;
 
 export const IProjectBriefMappingConfig = z.object({
   path: z.string(),
+  rawPath: z.string().optional(),
   description: z.string(),
   flightRecordPath: z.string().optional(),
 });
 export type IProjectBriefMappingConfig = z.infer<typeof IProjectBriefMappingConfig>;
+
+export const IColorRenderPreset = z.object({
+  container: z.string().optional(),
+  videoCodec: z.string().optional(),
+  audioCodec: z.string().optional(),
+  bitrateMbps: z.number().positive().optional(),
+});
+export type IColorRenderPreset = z.infer<typeof IColorRenderPreset>;
+
+export const EColorGroupStatus = z.enum([
+  'draft',
+  'ready',
+  'running',
+  'staged',
+  'blocked',
+]);
+export type EColorGroupStatus = z.infer<typeof EColorGroupStatus>;
+
+export const IColorGroupConfig = z.object({
+  groupKey: z.string(),
+  displayName: z.string().optional(),
+  technicalSummary: z.array(z.string()).default([]),
+  creativeLookKey: z.string().optional(),
+});
+export type IColorGroupConfig = z.infer<typeof IColorGroupConfig>;
+
+export const IColorRootConfig = z.object({
+  rootId: z.string(),
+  resolveProjectName: z.string().optional(),
+  rootNamespace: z.string().optional(),
+  gradingTimelineName: z.string().optional(),
+  renderPreset: IColorRenderPreset.default({}),
+  groups: z.array(IColorGroupConfig).default([]),
+  updatedAt: z.string().optional(),
+});
+export type IColorRootConfig = z.infer<typeof IColorRootConfig>;
+
+export const IColorConfig = z.object({
+  roots: z.array(IColorRootConfig).default([]),
+  updatedAt: z.string().optional(),
+});
+export type IColorConfig = z.infer<typeof IColorConfig>;
+
+export const IColorGroupCurrent = z.object({
+  groupKey: z.string(),
+  status: EColorGroupStatus,
+  latestBatchId: z.string().optional(),
+  blockingReasons: z.array(z.string()).default([]),
+});
+export type IColorGroupCurrent = z.infer<typeof IColorGroupCurrent>;
+
+export const IColorRootCurrent = z.object({
+  rootId: z.string(),
+  mirrorStatus: z.enum(['idle', 'ready', 'synced', 'stale', 'blocked']).optional(),
+  timelineStatus: z.enum(['idle', 'missing', 'ready', 'blocked']).optional(),
+  pendingPromoteGroupKey: z.string().optional(),
+  latestBatchId: z.string().optional(),
+  groups: z.array(IColorGroupCurrent).default([]),
+  blockingReasons: z.array(z.string()).default([]),
+});
+export type IColorRootCurrent = z.infer<typeof IColorRootCurrent>;
+
+export const IColorCurrent = z.object({
+  selectedRootId: z.string().optional(),
+  roots: z.array(IColorRootCurrent).default([]),
+  updatedAt: z.string().optional(),
+});
+export type IColorCurrent = z.infer<typeof IColorCurrent>;
 
 export const IProjectBriefPharosConfig = z.object({
   includedTripIds: z.array(z.string()).default([]),

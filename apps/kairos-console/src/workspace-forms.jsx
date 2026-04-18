@@ -819,6 +819,168 @@ export function StyleSourcesEditor({ config, setConfig, onSave, busy }) {
   );
 }
 
+export function ColorConfigEditor({ config, setConfig, onSave, busy, capability }) {
+  const [draftText, setDraftText] = React.useState(() => stringifyColorConfig(config));
+  const [parseError, setParseError] = React.useState('');
+  const lastSerializedRef = React.useRef(stringifyColorConfig(config));
+
+  React.useEffect(() => {
+    const nextSerialized = stringifyColorConfig(config);
+    if (nextSerialized === lastSerializedRef.current) {
+      return;
+    }
+    lastSerializedRef.current = nextSerialized;
+    setDraftText(nextSerialized);
+    setParseError('');
+  }, [config]);
+
+  const capabilityBlocked = capability?.supported === false;
+
+  function handleDraftChange(value) {
+    setDraftText(value);
+    try {
+      const parsed = parseColorConfigDraft(value);
+      lastSerializedRef.current = JSON.stringify(parsed, null, 2);
+      setConfig(parsed);
+      setParseError('');
+    } catch (error) {
+      setParseError(error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  return (
+    <Card className="panel">
+      <SectionHeader
+        title="Color Config Advanced"
+        onSave={onSave}
+        busy={busy}
+        saveDisabled={Boolean(parseError)}
+      />
+      <p className="muted">
+        这里保留原始 JSON fallback，只用于需要直接改 `colorConfig` 的场景。主视图优先消费 `config.colorRoots` 这个 root 级 read model。
+      </p>
+      {capabilityBlocked ? (
+        <div className="inline-warning">
+          当前 capability 标记 `color` 不支持，无法启动 color 工作流；这里只保留配置查看和保存入口。
+        </div>
+      ) : null}
+      <TextAreaField
+        label="colorConfig JSON"
+        value={draftText}
+        onChange={handleDraftChange}
+        rows={16}
+        disabled={busy}
+      />
+      {parseError ? (
+        <p className="field-help field-help-error">{parseError}</p>
+      ) : (
+        <p className="field-help">
+          JSON 解析成功后会同步到当前配置；保存时会原样写入 `color-config`。
+        </p>
+      )}
+    </Card>
+  );
+}
+
+export function ColorCurrentSummary({ config, capability }) {
+  const effectiveConfig = isPlainObject(config) ? config : {};
+  const rootSummaries = React.useMemo(
+    () => summarizeColorRoots(effectiveConfig),
+    [effectiveConfig],
+  );
+  const legacyColorConfig = isPlainObject(effectiveConfig.colorConfig) ? effectiveConfig.colorConfig : {};
+  const legacyColorCurrent = isPlainObject(effectiveConfig.colorCurrent) ? effectiveConfig.colorCurrent : null;
+  const hasReadModelRoots = Array.isArray(effectiveConfig.colorRoots) && effectiveConfig.colorRoots.some(isPlainObject);
+  const rootCards = React.useMemo(
+    () => buildColorRootCards(effectiveConfig, rootSummaries, legacyColorConfig, legacyColorCurrent),
+    [effectiveConfig, rootSummaries, legacyColorConfig, legacyColorCurrent],
+  );
+  const capabilityLabel = capability?.supported === false
+    ? 'blocked'
+    : capability
+      ? 'supported'
+      : 'unknown';
+
+  return (
+    <Card className="panel">
+      <div className="section-header">
+        <h2>Color Roots</h2>
+        <Tag>{capabilityLabel}</Tag>
+      </div>
+      {hasReadModelRoots ? (
+        <p className="muted">
+          当前优先消费 `config.colorRoots`。每个 root 卡片都直接展示 path / rawPath / 当前状态 / blockers。
+        </p>
+      ) : (
+        <p className="muted">
+          当前还没有 `config.colorRoots`，下面回退到旧的 `colorConfig` / `colorCurrent` 结构。
+        </p>
+      )}
+      <Divider />
+      <div className="stack-list">
+        {rootCards.length > 0 ? (
+          rootCards.map(root => (
+            <div key={root.key} className="row-card">
+              <div className="row-top">
+                <div>
+                  <strong>{root.rootId}</strong>
+                  <div className="muted capture-time-reason">{root.description || '未填写 description'}</div>
+                </div>
+                <div className="capture-time-tags">
+                  <Tag>{root.assetCountText}</Tag>
+                  <Tag>{root.pathText}</Tag>
+                  {root.blockerCountText ? <Tag>{root.blockerCountText}</Tag> : null}
+                </div>
+              </div>
+              <div className="field-grid field-grid-three">
+                <Field label="path" value={root.path || ''} onChange={noop} readOnly />
+                <Field label="localPath" value={root.localPath || ''} onChange={noop} readOnly />
+                <Field label="rawPath" value={root.rawPath || ''} onChange={noop} readOnly />
+                <Field label="rawLocalPath" value={root.rawLocalPath || ''} onChange={noop} readOnly />
+                <Field label="render preset" value={root.renderPresetSummary} onChange={noop} readOnly />
+                <Field label="anchors" value={root.anchorSummary} onChange={noop} readOnly />
+              </div>
+              <div className="capture-time-hint">
+                {root.blockers.length > 0
+                  ? '以下 blocker 是该 root 的主要阻塞条件。'
+                  : '当前没有显式 blocker。'}
+              </div>
+              <div className="capture-time-tags">
+                {root.blockers.length > 0 ? root.blockers.map((blocker, index) => (
+                  <Tag key={`${root.key}:blocker:${index}`}>{blocker}</Tag>
+                )) : <Tag>no blockers</Tag>}
+              </div>
+              <Divider />
+              <div className="monitor-stage-grid">
+                {[
+                  ['timeline', 'Timeline'],
+                  ['mirror', 'Media Pool / Mirror'],
+                  ['group', 'Group'],
+                  ['batch', 'Batch'],
+                ].map(([key, label]) => {
+                  const summary = summarizeColorStatusNode(root.current?.[key] ?? root.current?.[`${key}Status`] ?? root.current?.[`${key}State`] ?? root.current?.[`${key}Phase`]);
+                  return (
+                    <div key={`${root.key}:${key}`} className="monitor-stage-card">
+                      <div className="monitor-stage-head">
+                        <strong>{label}</strong>
+                        <Tag>{summary.status}</Tag>
+                      </div>
+                      <div className="muted">{summary.summary}</div>
+                    </div>
+                  );
+                })}
+              </div>
+              {root.current?.detail ? <p className="field-help">{root.current.detail}</p> : null}
+            </div>
+          ))
+        ) : (
+          <p className="muted">当前还没有可展示的 color root。</p>
+        )}
+      </div>
+    </Card>
+  );
+}
+
 export function ReviewQueuePanel({
   reviews,
   setReviews,
@@ -947,6 +1109,401 @@ export function TextAreaField({ label, value, onChange, rows = 4, disabled = fal
       <textarea value={value} disabled={disabled} onChange={event => onChange(event.target.value)} rows={rows} />
     </label>
   );
+}
+
+function stringifyColorConfig(config) {
+  return JSON.stringify(isPlainObject(config) ? config : {}, null, 2);
+}
+
+function parseColorConfigDraft(value) {
+  const trimmed = String(value || '').trim();
+  if (!trimmed) {
+    return {};
+  }
+  const parsed = JSON.parse(trimmed);
+  if (!isPlainObject(parsed)) {
+    throw new Error('colorConfig 必须是对象');
+  }
+  return parsed;
+}
+
+function summarizeColorRoots(config) {
+  const roots = extractColorRoots(config);
+  return roots.map((root, index) => ({
+    key: String(getColorRootId(root, index)),
+    label: getColorRootLabel(root, index),
+    rawPath: getColorRootRawPath(root),
+    presetSummary: describeColorRenderPreset(getColorRenderPreset(root), getColorRenderPresetBitrate(root)),
+    current: matchesColorRoot(root, resolveColorCurrentRootId(config)),
+  }));
+}
+
+function buildColorRootCards(config, rootSummaries, legacyColorConfig, legacyColorCurrent) {
+  const readModelRoots = Array.isArray(config?.colorRoots)
+    ? config.colorRoots.filter(isPlainObject)
+    : [];
+  if (readModelRoots.length > 0) {
+    return readModelRoots.map((root, index) => normalizeColorRootCard(root, index));
+  }
+  const fallbackRoots = extractColorRoots(legacyColorConfig);
+  if (fallbackRoots.length > 0) {
+    return fallbackRoots.map((root, index) => normalizeColorRootCard({
+      ...root,
+      colorCurrent: legacyColorCurrent,
+    }, index));
+  }
+  if (rootSummaries.length > 0) {
+    return rootSummaries.map((root, index) => normalizeLegacyColorRootCard(root, index));
+  }
+  if (isPlainObject(legacyColorConfig) || isPlainObject(legacyColorCurrent)) {
+    return [normalizeColorRootCard({
+      rootId: 'root-1',
+      description: 'legacy color config',
+      colorConfig: legacyColorConfig,
+      colorCurrent: legacyColorCurrent,
+    }, 0)];
+  }
+  return [];
+}
+
+function extractColorRoots(config) {
+  if (!isPlainObject(config)) {
+    return [];
+  }
+  const candidates = [config.roots, config.rootMappings, config.items, config.entries];
+  for (const candidate of candidates) {
+    if (Array.isArray(candidate)) {
+      return candidate.filter(item => isPlainObject(item));
+    }
+  }
+  if (config.rawPath || config.rawLocalPath || config.renderPreset || config.bitrate) {
+    return [config];
+  }
+  return [];
+}
+
+function normalizeColorRootCard(root, index) {
+  const rootConfig = isPlainObject(root?.colorConfig) ? root.colorConfig : root;
+  const rootCurrent = materializeColorRootCurrent(isPlainObject(root?.colorCurrent) ? root.colorCurrent : null);
+  const blockers = normalizeColorBlockers(root?.blockingReasons || rootConfig?.blockingReasons || rootCurrent?.blockingReasons);
+  const assetCount = Number.isFinite(root?.assetCount) ? root.assetCount : Number(rootConfig?.assetCount);
+  const anchorSummary = describeColorAnchors(root?.firstAnchor || rootConfig?.firstAnchor, root?.lastAnchor || rootConfig?.lastAnchor);
+  const path = getColorStringField(root, ['path']) || getColorStringField(rootConfig, ['path']);
+  const localPath = getColorStringField(root, ['localPath']) || getColorStringField(rootConfig, ['localPath']);
+  const rawPath = getColorStringField(root, ['rawPath']) || getColorStringField(rootConfig, ['rawPath']);
+  const rawLocalPath = getColorStringField(root, ['rawLocalPath']) || getColorStringField(rootConfig, ['rawLocalPath']);
+  return {
+    key: String(getColorRootId(root, index)),
+    rootId: getColorRootId(root, index),
+    description: getColorStringField(root, ['description']) || getColorStringField(rootConfig, ['description']) || getColorRootLabel(root, index),
+    path,
+    localPath,
+    rawPath,
+    rawLocalPath,
+    assetCountText: Number.isFinite(assetCount) ? `${assetCount} assets` : 'assets unknown',
+    pathText: [path || 'no path', localPath || 'no localPath'].filter(Boolean).join(' · '),
+    renderPresetSummary: describeColorRenderPreset(getColorRenderPreset(rootConfig), getColorRenderPresetBitrate(rootConfig)),
+    anchorSummary,
+    blockers,
+    blockerCountText: blockers.length > 0 ? `${blockers.length} blockers` : '',
+    current: rootCurrent,
+  };
+}
+
+function normalizeLegacyColorRootCard(root, index) {
+  const rootConfig = isPlainObject(root?.config) ? root.config : root;
+  return normalizeColorRootCard({
+    ...root,
+    colorConfig: rootConfig,
+    colorCurrent: isPlainObject(root?.current) ? root.current : null,
+  }, index);
+}
+
+function normalizeColorBlockers(value) {
+  if (value == null || value === '') {
+    return [];
+  }
+  const items = Array.isArray(value) ? value : [value];
+  return items.map(item => {
+    if (item == null || item === '') return '';
+    if (typeof item === 'string') return item.trim();
+    if (typeof item === 'number' || typeof item === 'boolean') return String(item);
+    if (isPlainObject(item)) {
+      return getColorStringField(item, ['reason', 'message', 'detail', 'note', 'label', 'title', 'status']) || JSON.stringify(item);
+    }
+    return String(item);
+  }).filter(Boolean);
+}
+
+function describeColorAnchors(firstAnchor, lastAnchor) {
+  const first = formatColorAnchor(firstAnchor);
+  const last = formatColorAnchor(lastAnchor);
+  if (!first && !last) {
+    return 'anchors: 未配置';
+  }
+  if (first === last) {
+    return `anchors: ${first}`;
+  }
+  return `anchors: ${first || 'start'} → ${last || 'end'}`;
+}
+
+function formatColorAnchor(anchor) {
+  if (!anchor) return '';
+  if (typeof anchor === 'string') return anchor;
+  if (typeof anchor === 'number' || typeof anchor === 'boolean') return String(anchor);
+  if (!isPlainObject(anchor)) return String(anchor);
+  const name = getColorStringField(anchor, ['displayName', 'name', 'label', 'title', 'assetName', 'sourceName', 'assetId']);
+  const time = getColorStringField(anchor, ['sortCapturedAt', 'capturedAt', 'time', 'datetime']);
+  if (name && time) {
+    return `${name} | ${time}`;
+  }
+  return name || time || JSON.stringify(anchor);
+}
+
+function getColorRootId(root, index) {
+  return root?.rootId || root?.id || root?.key || root?.name || root?.label || `root-${index + 1}`;
+}
+
+function getColorRootLabel(root, index) {
+  return root?.label || root?.displayName || root?.name || root?.rootId || root?.id || `Root ${index + 1}`;
+}
+
+function getColorRootRawPath(root) {
+  return root?.rawPath || root?.rawLocalPath || root?.sourcePath || root?.path || '';
+}
+
+function getColorRenderPreset(root) {
+  return isPlainObject(root?.renderPreset) ? root.renderPreset : root?.preset || root?.outputPreset || null;
+}
+
+function getColorRenderPresetBitrate(root) {
+  const renderPreset = getColorRenderPreset(root);
+  return renderPreset?.bitrateMbps || renderPreset?.bitrate || root?.bitrateMbps || root?.bitrate || root?.renderBitrate || '';
+}
+
+function describeColorRenderPreset(renderPreset, bitrate) {
+  const parts = [
+    getColorStringField(renderPreset, ['container']),
+    getColorStringField(renderPreset, ['videoCodec', 'videoCodecName']),
+    getColorStringField(renderPreset, ['audioCodec', 'audioCodecName']),
+  ].filter(Boolean);
+  if (bitrate) {
+    parts.push(`bitrate ${bitrate}`);
+  }
+  if (!parts.length) {
+    return 'render preset: 未配置';
+  }
+  return `render preset: ${parts.join(' · ')}`;
+}
+
+function matchesColorRoot(root, currentRootId) {
+  if (!currentRootId || !root) return false;
+  return [
+    root.rootId,
+    root.id,
+    root.key,
+    root.name,
+    root.label,
+  ].filter(Boolean).some(value => String(value) === String(currentRootId));
+}
+
+function resolveColorCurrentRootId(config) {
+  return getColorStringField(config, ['currentRootId', 'activeRootId', 'selectedRootId', 'rootId']);
+}
+
+function materializeColorRootCurrent(current) {
+  if (!isPlainObject(current)) {
+    return current;
+  }
+  const groups = Array.isArray(current.groups)
+    ? current.groups.filter(isPlainObject)
+    : [];
+  const groupSummary = isPlainObject(current.group)
+    ? current.group
+    : buildColorGroupStageSummary(groups);
+  const batchSummary = isPlainObject(current.batch)
+    ? current.batch
+    : buildColorBatchStageSummary(current, groups);
+  return {
+    ...current,
+    group: groupSummary,
+    batch: batchSummary,
+  };
+}
+
+function buildColorGroupStageSummary(groups) {
+  if (!Array.isArray(groups) || groups.length === 0) {
+    return { status: 'empty', summary: '0 groups' };
+  }
+  const counts = {
+    total: groups.length,
+    ready: 0,
+    running: 0,
+    staged: 0,
+    blocked: 0,
+    draft: 0,
+  };
+  for (const group of groups) {
+    const status = getColorStringField(group, ['status', 'state', 'phase']) || 'ready';
+    if (Object.prototype.hasOwnProperty.call(counts, status)) {
+      counts[status] += 1;
+    }
+  }
+  const status = counts.blocked > 0
+    ? 'blocked'
+    : counts.running > 0
+      ? 'running'
+      : counts.staged > 0
+        ? 'staged'
+        : counts.draft > 0
+          ? 'draft'
+          : 'ready';
+  const fragments = [
+    counts.ready > 0 ? `${counts.ready} ready` : '',
+    counts.running > 0 ? `${counts.running} running` : '',
+    counts.staged > 0 ? `${counts.staged} staged` : '',
+    counts.blocked > 0 ? `${counts.blocked} blocked` : '',
+    counts.draft > 0 ? `${counts.draft} draft` : '',
+  ].filter(Boolean);
+  return {
+    status,
+    total: counts.total,
+    ready: counts.ready,
+    current: counts.running + counts.staged,
+    summary: fragments.join(' · ') || `${counts.total} groups`,
+  };
+}
+
+function buildColorBatchStageSummary(current, groups) {
+  const latestBatchId = getColorStringField(current, ['latestBatchId', 'batchId']);
+  const pendingPromoteGroupKey = getColorStringField(current, ['pendingPromoteGroupKey']);
+  if (isPlainObject(current?.batch)) {
+    return current.batch;
+  }
+  if (pendingPromoteGroupKey && latestBatchId) {
+    return {
+      status: 'staged',
+      batchId: latestBatchId,
+      groupKey: pendingPromoteGroupKey,
+      summary: `待 promote · ${pendingPromoteGroupKey}`,
+    };
+  }
+  if (latestBatchId) {
+    return {
+      status: 'ready',
+      batchId: latestBatchId,
+      summary: `latest ${latestBatchId}`,
+    };
+  }
+  if (Array.isArray(groups) && groups.some(group => getColorStringField(group, ['status']) === 'blocked')) {
+    return {
+      status: 'blocked',
+      summary: 'group blocked',
+    };
+  }
+  return {
+    status: 'idle',
+    summary: '尚无 batch',
+  };
+}
+
+function findCurrentColorRoot(current, colorConfig, rootSummaries) {
+  if (isPlainObject(current?.root)) {
+    return current.root;
+  }
+  if (isPlainObject(current?.currentRoot)) {
+    return current.currentRoot;
+  }
+  if (isPlainObject(current?.selectedRoot)) {
+    return current.selectedRoot;
+  }
+  const currentRootId = getColorStringField(current, ['currentRootId', 'activeRootId', 'selectedRootId', 'rootId']);
+  const roots = extractColorRoots(colorConfig);
+  if (currentRootId) {
+    const matchedRoot = roots.find(root => matchesColorRoot(root, currentRootId));
+    if (matchedRoot) {
+      return matchedRoot;
+    }
+  }
+  if (rootSummaries.length === 1) {
+    return roots[0] || null;
+  }
+  if (current?.activeRootIndex != null && roots[current.activeRootIndex]) {
+    return roots[current.activeRootIndex];
+  }
+  return null;
+}
+
+function describeColorRoot(root, current) {
+  const currentRootId = getColorStringField(current, ['currentRootId', 'activeRootId', 'selectedRootId', 'rootId']);
+  if (root) {
+    return getColorRootLabel(root, 0);
+  }
+  if (currentRootId) {
+    return currentRootId;
+  }
+  return '未指定';
+}
+
+function summarizeColorStatusNode(node) {
+  if (node == null || node === '') {
+    return { status: 'empty', summary: '未提供' };
+  }
+  if (typeof node === 'string') {
+    return { status: node, summary: node };
+  }
+  if (typeof node === 'number' || typeof node === 'boolean') {
+    return { status: 'value', summary: String(node) };
+  }
+  if (Array.isArray(node)) {
+    return { status: node.length > 0 ? 'ready' : 'empty', summary: `${node.length} 项` };
+  }
+  if (isPlainObject(node)) {
+    const status = getColorStringField(node, ['status', 'state', 'phase', 'step']) || 'ready';
+    const counts = [
+      formatColorCount(node.current, node.total),
+      formatColorCount(node.completed, node.total),
+      formatColorCount(node.ready, node.total),
+    ].filter(Boolean);
+    const summaryParts = [
+      getColorStringField(node, ['summary', 'message', 'detail', 'note', 'title', 'label']),
+      getColorStringField(node, ['rootId', 'groupKey', 'batchId']),
+      counts[0] || counts[1] || counts[2] || '',
+    ].filter(Boolean);
+    return {
+      status,
+      summary: summaryParts.join(' · ') || '已提供结构化状态',
+    };
+  }
+  return { status: 'value', summary: String(node) };
+}
+
+function formatColorCount(current, total) {
+  if (typeof current !== 'number' && typeof total !== 'number') {
+    return '';
+  }
+  if (typeof total === 'number' && total > 0) {
+    return `${current || 0}/${total}`;
+  }
+  return String(current || 0);
+}
+
+function getColorStringField(object, keys) {
+  if (!isPlainObject(object)) return '';
+  for (const key of keys) {
+    const value = object[key];
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+    if (typeof value === 'number' || typeof value === 'boolean') {
+      return String(value);
+    }
+  }
+  return '';
+}
+
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
 function formatClockOffsetMs(value) {
