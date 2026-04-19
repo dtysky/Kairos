@@ -23,7 +23,6 @@ import {
 import { EmptyPanel, MonitorPage } from './monitor-page.jsx';
 import {
   CaptureTimeOverridesEditor,
-  ColorConfigEditor,
   ColorCurrentSummary,
   IngestRootClockEditor,
   ManualItineraryEditor,
@@ -97,12 +96,21 @@ function AppShell() {
       .filter(job => !(job.jobType === 'script' && job.executionMode === 'agent')),
     [allJobs],
   );
+  const liveProjectJobs = useMemo(
+    () => activeJobs.filter(job => job.projectId === projectId && ['queued', 'running'].includes(job.status)),
+    [activeJobs, projectId],
+  );
   const mlService = services.find(service => service.name === 'ml') || null;
   const dashboardService = services.find(service => service.name === 'dashboard') || null;
   const openReviewCount = reviews.filter(review => review.status === 'open').length;
 
+  useEffect(() => {
+    if (!projectId || liveProjectJobs.length === 0) return undefined;
+    const timer = window.setInterval(() => refreshProject(projectId), 4000);
+    return () => window.clearInterval(timer);
+  }, [projectId, liveProjectJobs.length]);
+
   const setProjectBrief = makeSectionSetter(setConfig, 'projectBrief');
-  const setColorConfig = makeSectionSetter(setConfig, 'colorConfig');
   const setIngestRoots = makeSectionSetter(setConfig, 'ingestRoots');
   const setManualItinerary = makeSectionSetter(setConfig, 'manualItinerary');
   const setScriptBrief = makeSectionSetter(setConfig, 'scriptBrief');
@@ -157,7 +165,6 @@ function AppShell() {
     try {
       const mapping = {
         'project-brief': config.projectBrief,
-        'color-config': config.colorConfig || {},
         'ingest-roots': config.ingestRoots,
         'manual-itinerary': config.manualItinerary,
         'script-brief': config.scriptBrief,
@@ -265,8 +272,15 @@ function AppShell() {
     setBusy(current => ({ ...current, [busyKey]: true }));
     try {
       await startJob(projectId, jobType, args);
+      await refreshProject(projectId).catch(() => undefined);
       await refreshStatus();
-      setMessage(jobType === 'script' ? '' : `已启动 ${jobType}`);
+      setMessage(
+        jobType === 'script'
+          ? ''
+          : jobType === 'color' && args.rootId
+            ? `已启动 color root prep：${args.rootId}`
+            : `已启动 ${jobType}`,
+      );
       setError('');
     } catch (caught) {
       handleError(caught);
@@ -416,11 +430,14 @@ function AppShell() {
                   path="/color"
                   render={() => (
                     <ColorPage
+                      projectId={projectId}
                       config={config}
                       capabilities={capabilities}
-                      setColorConfig={setColorConfig}
+                      jobs={allJobs}
+                      setIngestRoots={setIngestRoots}
                       saveSection={saveSection}
                       busy={busy}
+                      onRunRoot={rootId => runProjectWorkflow('color', { rootId })}
                     />
                   )}
                 />
@@ -519,7 +536,7 @@ function AppShell() {
 function OverviewPage({ currentProject, activeJobs, services, projectProgress, openReviewCount }) {
   const workflows = [
     { path: '/ingest-gps', label: '导入与 GPS', summary: '维护 project-brief、manual-itinerary 与素材时间校正。' },
-    { path: '/color', label: '达芬奇调色', summary: '查看 colorRoots root 级 read model，并保留 colorConfig advanced fallback。' },
+    { path: '/color', label: '达芬奇调色', summary: '维护 root 级 renderPreset，查看约定命名、prep 和当前 color 状态。' },
     { path: '/analyze', label: '素材分析', summary: '直接查看分析监控、恢复进度并启动 Analyze。' },
     { path: '/style', label: '风格分析', summary: '维护 Workspace 风格库、style sources，并查看当前分类监控。' },
     { path: '/script', label: '脚本', summary: '维护 script-brief，并准备确定性材料给 Agent 继续写稿。' },
@@ -664,7 +681,16 @@ function IngestGpsPage({
   );
 }
 
-function ColorPage({ config, capabilities, setColorConfig, saveSection, busy }) {
+function ColorPage({
+  projectId,
+  config,
+  capabilities,
+  jobs,
+  setIngestRoots,
+  saveSection,
+  busy,
+  onRunRoot,
+}) {
   if (!config) {
     return (
       <div className="route-page">
@@ -674,11 +700,12 @@ function ColorPage({ config, capabilities, setColorConfig, saveSection, busy }) 
   }
   const colorCapability = resolveColorCapability(capabilities);
   const colorBlocked = colorCapability?.supported === false;
+  const colorCapabilityDetail = colorCapability?.note || colorCapability?.reason || colorCapability?.message || '';
   return (
     <div className="route-page">
       <RouteIntro
         title="达芬奇调色"
-        subtitle="这里优先读取 `config.colorRoots` 这个 root 级 read model，同时保留 `colorConfig` 的 advanced JSON fallback，不影响主链 ingest。"
+        subtitle="这里优先读取 `config.colorRoots` 这个 root 级 read model；长期配置只保留项目 root 上的 `color.renderPreset`，命名全部按约定生成并只读展示。"
       />
       {colorBlocked ? (
         <WorkflowPrompt
@@ -686,19 +713,26 @@ function ColorPage({ config, capabilities, setColorConfig, saveSection, busy }) 
           title="当前 capability 不支持 color"
           body="capabilities 已明确标记 `color` 不支持。这个页面仍可查看和编辑配置，但不会提供运行入口，也不会影响主链。"
           tone="error"
-          detail={colorCapability?.reason || colorCapability?.message || '请先确认后端是否已经开放 color 能力。'}
+          detail={colorCapabilityDetail || '请先确认后端是否已经开放 color 能力。'}
+        />
+      ) : colorCapabilityDetail ? (
+        <WorkflowPrompt
+          eyebrow="Current Scope"
+          title="当前 color 已支持最小 renderPreset + deterministic prep"
+          body="现在可以直接在 `/color` 里维护 root 级 renderPreset，并运行 `sync_root_bins -> prepare_root_timeline` 的 Kairos 侧 prep。"
+          tone="accent"
+          detail={colorCapabilityDetail}
         />
       ) : null}
       <ColorCurrentSummary
         config={config}
         capability={colorCapability}
-      />
-      <ColorConfigEditor
-        config={config.colorConfig}
-        setConfig={setColorConfig}
-        onSave={() => saveSection('color-config')}
-        busy={busy['color-config']}
-        capability={colorCapability}
+        projectId={projectId}
+        jobs={jobs}
+        setIngestRoots={setIngestRoots}
+        onSaveProjectRoots={() => saveSection('ingest-roots')}
+        busy={busy}
+        onRunRoot={onRunRoot}
       />
     </div>
   );

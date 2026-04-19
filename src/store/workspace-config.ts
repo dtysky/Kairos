@@ -2,7 +2,6 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { basename, dirname, join, resolve } from 'node:path';
 import {
-  IColorConfig,
   IColorCurrent,
   IManualCaptureTimeOverrideConfig,
   IManualItineraryConfig,
@@ -10,7 +9,6 @@ import {
   IScriptBriefSegmentConfig,
   IScriptBriefConfig,
   IStyleSourcesConfig,
-  type IColorConfig as TColorConfig,
   type IColorCurrent as TColorCurrent,
   type IManualCaptureTimeOverrideConfig as TManualCaptureTimeOverrideConfig,
   type IManualItineraryConfig as TManualItineraryConfig,
@@ -59,10 +57,6 @@ export function getScriptBriefConfigPath(projectRoot: string): string {
 
 export function getWorkspaceStyleSourcesConfigPath(workspaceRoot: string): string {
   return join(workspaceRoot, 'config', 'style-sources.json');
-}
-
-export function getColorConfigPath(projectRoot: string): string {
-  return join(projectRoot, 'color', 'config.json');
 }
 
 export function getColorCurrentPath(projectRoot: string): string {
@@ -262,32 +256,6 @@ export async function saveStyleSourcesConfig(
   return normalized;
 }
 
-export async function loadColorConfig(projectRoot: string): Promise<TColorConfig> {
-  const stored = await readJsonOrNull(getColorConfigPath(projectRoot), IColorConfig);
-  return IColorConfig.parse(stored ?? { roots: [] });
-}
-
-export async function saveColorConfig(
-  projectRoot: string,
-  config: TColorConfig,
-): Promise<TColorConfig> {
-  const input = IColorConfig.parse(config);
-  const existing = IColorConfig.parse(
-    await readJsonOrNull(getColorConfigPath(projectRoot), IColorConfig) ?? { roots: [] },
-  );
-  const normalizedInput = normalizeColorConfig(input);
-  const incomingRootIds = new Set(normalizedInput.roots.map(root => root.rootId));
-  const preservedRoots = existing.roots
-    .filter(root => !incomingRootIds.has(root.rootId))
-    .map(root => normalizeColorRoot(root));
-  const normalized = IColorConfig.parse({
-    roots: [...normalizedInput.roots, ...preservedRoots],
-    updatedAt: input.updatedAt ?? new Date().toISOString(),
-  });
-  await writeJson(getColorConfigPath(projectRoot), normalized);
-  return normalized;
-}
-
 export async function loadColorCurrent(projectRoot: string): Promise<TColorCurrent> {
   const stored = await readJsonOrNull(getColorCurrentPath(projectRoot), IColorCurrent);
   return IColorCurrent.parse(stored ?? { roots: [] });
@@ -297,38 +265,20 @@ export async function saveColorCurrent(
   projectRoot: string,
   current: TColorCurrent,
 ): Promise<TColorCurrent> {
-  const normalized = IColorCurrent.parse(current);
+  const input = IColorCurrent.parse(current);
+  const existing = IColorCurrent.parse(
+    await readJsonOrNull(getColorCurrentPath(projectRoot), IColorCurrent) ?? { roots: [] },
+  );
+  const incomingRootIds = new Set(input.roots.map(root => root.rootId));
+  const preservedRoots = existing.roots.filter(root => !incomingRootIds.has(root.rootId));
+  const normalized = IColorCurrent.parse({
+    ...existing,
+    ...input,
+    roots: [...input.roots, ...preservedRoots],
+    updatedAt: input.updatedAt ?? new Date().toISOString(),
+  });
   await writeJson(getColorCurrentPath(projectRoot), normalized);
   return normalized;
-}
-
-function normalizeColorConfig(config: TColorConfig): TColorConfig {
-  return IColorConfig.parse({
-    roots: config.roots.map(root => normalizeColorRoot(root)),
-    updatedAt: config.updatedAt,
-  });
-}
-
-function normalizeColorRoot(root: TColorConfig['roots'][number]): TColorConfig['roots'][number] {
-  return {
-    rootId: root.rootId.trim(),
-    resolveProjectName: root.resolveProjectName?.trim() || undefined,
-    rootNamespace: root.rootNamespace?.trim() || undefined,
-    gradingTimelineName: root.gradingTimelineName?.trim() || undefined,
-    renderPreset: {
-      container: root.renderPreset?.container?.trim() || undefined,
-      videoCodec: root.renderPreset?.videoCodec?.trim() || undefined,
-      audioCodec: root.renderPreset?.audioCodec?.trim() || undefined,
-      bitrateMbps: root.renderPreset?.bitrateMbps,
-    },
-    groups: root.groups.map(group => ({
-      groupKey: group.groupKey.trim(),
-      displayName: group.displayName?.trim() || undefined,
-      technicalSummary: group.technicalSummary.map(item => item.trim()).filter(Boolean),
-      creativeLookKey: group.creativeLookKey?.trim() || undefined,
-    })),
-    updatedAt: root.updatedAt,
-  };
 }
 
 function normalizeDraftLines(lines: string[]): string[] {

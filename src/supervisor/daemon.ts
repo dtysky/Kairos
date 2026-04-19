@@ -10,7 +10,6 @@ import {
   loadAssets,
   loadAssetReports,
   loadChronology,
-  loadColorConfig,
   loadColorCurrent,
   loadIngestRoots,
   loadProjectDeviceMediaMaps,
@@ -22,7 +21,6 @@ import {
   saveIngestRoots,
   loadStyleSourcesConfig,
   resolveReviewItem,
-  saveColorConfig,
   saveManualItineraryConfig,
   saveProjectBriefConfig,
   saveScriptBriefConfig,
@@ -170,7 +168,7 @@ async function routeRequest(
         { jobType: 'gps-refresh', executionMode: 'deterministic', supported: true },
         { jobType: 'analyze', executionMode: 'deterministic', supported: true },
         { jobType: 'style-analysis', executionMode: 'deterministic', supported: true, note: 'runs deterministic prep and then hands off to Agent for the final style profile' },
-        { jobType: 'color', executionMode: 'deterministic', supported: false, note: 'current /color covers config and status only; Resolve execution runner is not wired yet' },
+        { jobType: 'color', executionMode: 'deterministic', supported: true, note: 'supports root-level deterministic prep plus minimal renderPreset editing on project roots; official Python Resolve host execution, group sync, validation, and promote are still pending' },
         { jobType: 'script', executionMode: 'deterministic', supported: true, note: 'runs only after reviewed brief is saved; advances ready_to_prepare -> ready_for_agent; final script remains agent-authored' },
         { jobType: 'timeline', executionMode: 'deterministic', supported: true, note: 'builds rough-cut-base -> segment-cut review chain; requires a configured host agent packet runner' },
         { jobType: 'export-jianying', executionMode: 'deterministic', supported: false },
@@ -184,7 +182,7 @@ async function routeRequest(
   if (configMatch && method === 'GET') {
     const projectId = decodeURIComponent(configMatch[1]!);
     const projectRoot = join(options.workspaceRoot, 'projects', projectId);
-    const [projectBrief, manualItinerary, scriptBrief, ingestRoots, deviceMaps, assets, chronology, colorConfig, colorCurrent] = await Promise.all([
+    const [projectBrief, manualItinerary, scriptBrief, ingestRoots, deviceMaps, assets, chronology, colorCurrent] = await Promise.all([
       loadProjectBriefConfig(projectRoot),
       loadManualItineraryConfig(projectRoot),
       loadScriptBriefConfig(projectRoot),
@@ -192,18 +190,15 @@ async function routeRequest(
       loadProjectDeviceMediaMaps(projectRoot),
       loadAssets(projectRoot),
       loadChronology(projectRoot),
-      loadColorConfig(projectRoot),
       loadColorCurrent(projectRoot),
     ]);
-    const ingestRootSummaries = buildIngestRootSummaries(ingestRoots.roots, assets, chronology);
     const colorWorkspace = buildColorWorkspaceState({
       projectId,
-      ingestRoots: ingestRoots.roots,
+      projectRoots: ingestRoots.roots,
       deviceProjectMap: deviceMaps.projects[projectId],
-      ingestRootSummaries,
-      colorConfig,
       colorCurrent,
     });
+    const ingestRootSummaries = buildIngestRootSummaries(ingestRoots.roots, assets, chronology);
     const pharosContext = await loadOrBuildProjectPharosContext({
       projectRoot,
       includedTripIds: projectBrief.pharos?.includedTripIds ?? [],
@@ -213,7 +208,6 @@ async function routeRequest(
       manualItinerary,
       scriptBrief,
       ingestRoots,
-      colorConfig: colorWorkspace.colorConfig,
       colorCurrent: colorWorkspace.colorCurrent,
       colorRoots: colorWorkspace.colorRoots,
       ingestRootSummaries,
@@ -273,15 +267,6 @@ async function routeRequest(
     const projectRoot = join(options.workspaceRoot, 'projects', projectId);
     const payload = await readJsonBody(request);
     sendJson(response, 200, await saveScriptBriefConfig(projectRoot, payload));
-    return;
-  }
-
-  const colorConfigMatch = pathname.match(/^\/api\/projects\/([^/]+)\/config\/color-config$/u);
-  if (colorConfigMatch && method === 'PUT') {
-    const projectId = decodeURIComponent(colorConfigMatch[1]!);
-    const projectRoot = join(options.workspaceRoot, 'projects', projectId);
-    const payload = await readJsonBody(request);
-    sendJson(response, 200, await saveColorConfig(projectRoot, payload));
     return;
   }
 
@@ -433,6 +418,18 @@ async function startJob(
     restartOf?: string;
   },
 ): Promise<ISupervisorJobRecord> {
+  if (payload.jobType === 'color' && payload.projectId) {
+    const existingJobs = await listJobRecords(workspaceRoot);
+    const activeColorJob = existingJobs.find(job => (
+      job.jobType === 'color'
+      && job.projectId === payload.projectId
+      && ['queued', 'running'].includes(job.status)
+    ));
+    if (activeColorJob) {
+      throw new Error(`project ${payload.projectId} already has an active color job: ${activeColorJob.jobId}`);
+    }
+  }
+
   const jobId = randomUUID();
   const jobRoot = getSupervisorJobRoot(workspaceRoot, jobId);
   await mkdir(jobRoot, { recursive: true });
@@ -441,6 +438,8 @@ async function startJob(
   const resultPath = join(jobRoot, 'result.json');
   const progressPath = payload.jobType === 'analyze' && payload.projectId
     ? getProjectProgressPath(join(workspaceRoot, 'projects', payload.projectId), 'media-analyze')
+    : payload.jobType === 'color' && payload.projectId
+      ? getProjectProgressPath(join(workspaceRoot, 'projects', payload.projectId), 'color')
     : payload.jobType === 'style-analysis'
       ? getWorkspaceStyleAnalysisProgressPath(
         workspaceRoot,
@@ -456,6 +455,7 @@ async function startJob(
     await writeFileSafe(configSnapshotPath, JSON.stringify({
       projectBrief: await loadProjectBriefConfig(projectRoot).catch(() => null),
       ingestRoots: await loadIngestRoots(projectRoot).catch(() => null),
+      colorCurrent: await loadColorCurrent(projectRoot).catch(() => null),
       manualItinerary: await loadManualItineraryConfig(projectRoot).catch(() => null),
       scriptBrief: await loadScriptBriefConfig(projectRoot).catch(() => null),
       pharosContext: await loadOrBuildProjectPharosContext({

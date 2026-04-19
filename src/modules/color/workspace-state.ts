@@ -1,39 +1,11 @@
 import type {
-  IColorConfig,
   IColorCurrent,
   IColorGroupCurrent,
-  IColorRootConfig,
   IColorRootCurrent,
+  IColorRenderPreset,
   IDeviceMediaProjectMap,
   IMediaRoot,
 } from '../../protocol/schema.js';
-
-export interface IColorRootAnchorSummary {
-  assetId: string;
-  displayName: string;
-  capturedAt?: string;
-  sortCapturedAt?: string;
-}
-
-export interface IColorRootInventorySummary {
-  rootId: string;
-  assetCount: number;
-  firstAnchor?: IColorRootAnchorSummary;
-  lastAnchor?: IColorRootAnchorSummary;
-}
-
-export interface IColorRootConfigView extends IColorRootConfig {
-  label?: string;
-  description?: string;
-  path?: string;
-  localPath?: string;
-  rawPath?: string;
-  rawLocalPath?: string;
-  assetCount: number;
-  firstAnchor?: IColorRootAnchorSummary;
-  lastAnchor?: IColorRootAnchorSummary;
-  blockingReasons: string[];
-}
 
 export interface IColorRootCurrentView extends IColorRootCurrent {
   label?: string;
@@ -42,9 +14,6 @@ export interface IColorRootCurrentView extends IColorRootCurrent {
   localPath?: string;
   rawPath?: string;
   rawLocalPath?: string;
-  assetCount: number;
-  firstAnchor?: IColorRootAnchorSummary;
-  lastAnchor?: IColorRootAnchorSummary;
 }
 
 export interface IColorRootWorkspaceSummary {
@@ -55,26 +24,23 @@ export interface IColorRootWorkspaceSummary {
   localPath?: string;
   rawPath: string;
   rawLocalPath?: string;
-  assetCount: number;
-  firstAnchor?: IColorRootAnchorSummary;
-  lastAnchor?: IColorRootAnchorSummary;
+  resolveProjectName: string;
+  rootNamespace: string;
+  gradingTimelineName: string;
+  renderPreset: IColorRenderPreset;
   blockingReasons: string[];
-  colorConfig: IColorRootConfigView;
   colorCurrent: IColorRootCurrentView;
 }
 
 export interface IColorWorkspaceState {
-  colorConfig: IColorConfig & { roots: IColorRootConfigView[] };
   colorCurrent: IColorCurrent & { roots: IColorRootCurrentView[] };
   colorRoots: IColorRootWorkspaceSummary[];
 }
 
 interface IBuildColorWorkspaceStateInput {
   projectId: string;
-  ingestRoots: IMediaRoot[];
+  projectRoots: IMediaRoot[];
   deviceProjectMap?: IDeviceMediaProjectMap;
-  ingestRootSummaries?: IColorRootInventorySummary[];
-  colorConfig: IColorConfig;
   colorCurrent: IColorCurrent;
 }
 
@@ -88,86 +54,56 @@ export function buildColorWorkspaceState(
   input: IBuildColorWorkspaceStateInput,
 ): IColorWorkspaceState {
   const deviceRootById = new Map((input.deviceProjectMap?.roots ?? []).map(root => [root.rootId, root]));
-  const colorConfigByRootId = new Map(input.colorConfig.roots.map(root => [root.rootId, root]));
   const colorCurrentByRootId = new Map(input.colorCurrent.roots.map(root => [root.rootId, root]));
-  const ingestSummaryByRootId = new Map((input.ingestRootSummaries ?? []).map(root => [root.rootId, root]));
 
-  const materializedRoots = input.ingestRoots
+  const materializedRoots = input.projectRoots
     .filter(root => Boolean(trimmed(root.rawPath)))
     .map(root => {
-      const storedConfig = colorConfigByRootId.get(root.id);
       const storedCurrent = colorCurrentByRootId.get(root.id);
       const deviceRoot = deviceRootByRootId(deviceRootById, root.id);
-      const ingestSummary = ingestSummaryByRootId.get(root.id);
-      const groups = mergeGroupCurrent(storedConfig?.groups ?? [], storedCurrent?.groups ?? []);
+      const groups = normalizeGroupCurrent(storedCurrent?.groups ?? []);
+      const renderPreset = materializeRenderPreset(root.color?.renderPreset);
       const derivedBlockers = dedupeStrings([
         !trimmed(deviceRoot?.localPath) ? '当前设备未配置 current localPath，无法在本机覆盖当前素材目录。' : '',
         !trimmed(deviceRoot?.rawLocalPath) ? '当前设备未配置 rawLocalPath，无法在本机访问原始素材。' : '',
-        typeof storedConfig?.renderPreset?.bitrateMbps !== 'number'
-          ? '未配置 root 级目标码率，当前只能查看配置与状态。'
+        !trimmed(root.path) ? '当前 root 未配置 current path，无法确定正式覆盖目录。' : '',
+        typeof renderPreset.bitrateMbps !== 'number'
+          ? '未配置 root 级 renderPreset.bitrateMbps，后续 execute_group 无法启动。'
           : '',
-        storedConfig?.groups?.length
-          ? ''
-          : '当前还没有已确认的 Resolve Group。后续接入执行器前，需要先形成正式 Group 配置。',
       ]);
 
-      const configView: IColorRootConfigView = {
+      const currentView: IColorRootCurrentView = {
         rootId: root.id,
-        resolveProjectName: trimmed(storedConfig?.resolveProjectName) ?? `kairos__${input.projectId}`,
-        rootNamespace: trimmed(storedConfig?.rootNamespace) ?? `root__${root.id}`,
-        gradingTimelineName: trimmed(storedConfig?.gradingTimelineName) ?? `root__${root.id}__grading`,
-        renderPreset: {
-          container: trimmed(storedConfig?.renderPreset?.container) ?? CDEFAULT_RENDER_PRESET.container,
-          videoCodec: trimmed(storedConfig?.renderPreset?.videoCodec) ?? CDEFAULT_RENDER_PRESET.videoCodec,
-          audioCodec: trimmed(storedConfig?.renderPreset?.audioCodec) ?? CDEFAULT_RENDER_PRESET.audioCodec,
-          bitrateMbps: storedConfig?.renderPreset?.bitrateMbps,
-        },
-        groups: storedConfig?.groups ?? [],
-        updatedAt: storedConfig?.updatedAt,
+        mirrorStatus: storedCurrent?.mirrorStatus ?? (trimmed(deviceRoot?.rawLocalPath) ? 'idle' : 'blocked'),
+        timelineStatus: storedCurrent?.timelineStatus ?? (trimmed(deviceRoot?.rawLocalPath) ? 'missing' : 'blocked'),
+        activeStage: trimmed(storedCurrent?.activeStage),
+        currentJobId: trimmed(storedCurrent?.currentJobId),
+        detail: trimmed(storedCurrent?.detail),
+        pendingPromoteGroupKey: storedCurrent?.pendingPromoteGroupKey,
+        latestBatchId: storedCurrent?.latestBatchId,
+        groups,
+        blockingReasons: dedupeStrings([...(storedCurrent?.blockingReasons ?? []), ...derivedBlockers]),
         label: trimmed(root.label),
         description: trimmed(root.description),
         path: trimmed(root.path),
         localPath: trimmed(deviceRoot?.localPath),
         rawPath: trimmed(root.rawPath),
         rawLocalPath: trimmed(deviceRoot?.rawLocalPath),
-        assetCount: ingestSummary?.assetCount ?? 0,
-        firstAnchor: ingestSummary?.firstAnchor,
-        lastAnchor: ingestSummary?.lastAnchor,
-        blockingReasons: derivedBlockers,
-      };
-
-      const currentView: IColorRootCurrentView = {
-        rootId: root.id,
-        mirrorStatus: storedCurrent?.mirrorStatus ?? (trimmed(deviceRoot?.rawLocalPath) ? 'idle' : 'blocked'),
-        timelineStatus: storedCurrent?.timelineStatus ?? (trimmed(deviceRoot?.rawLocalPath) ? 'missing' : 'blocked'),
-        pendingPromoteGroupKey: storedCurrent?.pendingPromoteGroupKey,
-        latestBatchId: storedCurrent?.latestBatchId,
-        groups,
-        blockingReasons: dedupeStrings([...(storedCurrent?.blockingReasons ?? []), ...derivedBlockers]),
-        label: configView.label,
-        description: configView.description,
-        path: configView.path,
-        localPath: configView.localPath,
-        rawPath: configView.rawPath,
-        rawLocalPath: configView.rawLocalPath,
-        assetCount: configView.assetCount,
-        firstAnchor: configView.firstAnchor,
-        lastAnchor: configView.lastAnchor,
       };
 
       return {
         rootId: root.id,
-        label: configView.label,
-        description: configView.description,
-        path: configView.path,
-        localPath: configView.localPath,
-        rawPath: configView.rawPath ?? '',
-        rawLocalPath: configView.rawLocalPath,
-        assetCount: configView.assetCount,
-        firstAnchor: configView.firstAnchor,
-        lastAnchor: configView.lastAnchor,
+        label: currentView.label,
+        description: currentView.description,
+        path: currentView.path,
+        localPath: currentView.localPath,
+        rawPath: currentView.rawPath ?? '',
+        rawLocalPath: currentView.rawLocalPath,
+        resolveProjectName: deriveColorResolveProjectName(input.projectId),
+        rootNamespace: deriveColorRootNamespace(root.id),
+        gradingTimelineName: deriveColorGradingTimelineName(root.id),
+        renderPreset,
         blockingReasons: currentView.blockingReasons,
-        colorConfig: configView,
         colorCurrent: currentView,
       } satisfies IColorRootWorkspaceSummary;
     });
@@ -178,16 +114,11 @@ export function buildColorWorkspaceState(
     : materializedRoots[0]?.rootId;
 
   return {
-    colorConfig: {
-      ...input.colorConfig,
-      roots: materializedRoots.map(root => root.colorConfig),
-      updatedAt: input.colorConfig.updatedAt,
-    },
     colorCurrent: {
       ...input.colorCurrent,
       selectedRootId,
       roots: materializedRoots.map(root => root.colorCurrent),
-      updatedAt: input.colorCurrent.updatedAt ?? input.colorConfig.updatedAt,
+      updatedAt: input.colorCurrent.updatedAt,
     },
     colorRoots: materializedRoots,
   };
@@ -200,43 +131,15 @@ function deviceRootByRootId(
   return deviceRootById.get(rootId);
 }
 
-function mergeGroupCurrent(
-  configuredGroups: NonNullable<IColorRootConfig['groups']>,
+function normalizeGroupCurrent(
   currentGroups: NonNullable<IColorRootCurrent['groups']>,
 ): IColorGroupCurrent[] {
-  const currentByKey = new Map(currentGroups.map(group => [group.groupKey, group]));
-  const merged: IColorGroupCurrent[] = [];
-
-  for (const group of configuredGroups) {
-    const current = currentByKey.get(group.groupKey);
-    if (current) {
-      currentByKey.delete(group.groupKey);
-      merged.push({
-        groupKey: group.groupKey,
-        status: current.status,
-        latestBatchId: current.latestBatchId,
-        blockingReasons: dedupeStrings(current.blockingReasons ?? []),
-      });
-      continue;
-    }
-
-    merged.push({
-      groupKey: group.groupKey,
-      status: 'ready',
-      blockingReasons: [],
-    });
-  }
-
-  for (const current of currentByKey.values()) {
-    merged.push({
-      groupKey: current.groupKey,
-      status: current.status,
-      latestBatchId: current.latestBatchId,
-      blockingReasons: dedupeStrings(current.blockingReasons ?? []),
-    });
-  }
-
-  return merged;
+  return currentGroups.map(current => ({
+    groupKey: current.groupKey,
+    status: current.status,
+    latestBatchId: current.latestBatchId,
+    blockingReasons: dedupeStrings(current.blockingReasons ?? []),
+  }));
 }
 
 function dedupeStrings(values: string[]): string[] {
@@ -254,4 +157,30 @@ function dedupeStrings(values: string[]): string[] {
 function trimmed(value: string | undefined): string | undefined {
   const normalized = value?.trim();
   return normalized ? normalized : undefined;
+}
+
+function materializeRenderPreset(renderPreset?: {
+  container?: string;
+  videoCodec?: string;
+  audioCodec?: string;
+  bitrateMbps?: number;
+}): IColorRenderPreset {
+  return {
+    container: trimmed(renderPreset?.container) ?? CDEFAULT_RENDER_PRESET.container,
+    videoCodec: trimmed(renderPreset?.videoCodec) ?? CDEFAULT_RENDER_PRESET.videoCodec,
+    audioCodec: trimmed(renderPreset?.audioCodec) ?? CDEFAULT_RENDER_PRESET.audioCodec,
+    bitrateMbps: renderPreset?.bitrateMbps,
+  };
+}
+
+export function deriveColorResolveProjectName(projectId: string): string {
+  return `kairos__${projectId}`;
+}
+
+export function deriveColorRootNamespace(rootId: string): string {
+  return `root__${rootId}`;
+}
+
+export function deriveColorGradingTimelineName(rootId: string): string {
+  return `root__${rootId}__grading`;
 }

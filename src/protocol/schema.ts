@@ -91,6 +91,11 @@ export const ICaptureTime = z.object({
 });
 export type ICaptureTime = z.infer<typeof ICaptureTime>;
 
+export const IMediaRootColorConfig = z.object({
+  renderPreset: z.lazy(() => IColorRenderPreset).optional(),
+});
+export type IMediaRootColorConfig = z.infer<typeof IMediaRootColorConfig>;
+
 export const IMediaRoot = z.object({
   id: z.string(),
   path: z.string().optional(),
@@ -103,6 +108,7 @@ export const IMediaRoot = z.object({
   description: z.string().optional(),
   notes: z.array(z.string()).optional(),
   tags: z.array(z.string()).optional(),
+  color: IMediaRootColorConfig.optional(),
 });
 export type IMediaRoot = z.infer<typeof IMediaRoot>;
 
@@ -1157,8 +1163,11 @@ export type IColorGroupCurrent = z.infer<typeof IColorGroupCurrent>;
 
 export const IColorRootCurrent = z.object({
   rootId: z.string(),
-  mirrorStatus: z.enum(['idle', 'ready', 'synced', 'stale', 'blocked']).optional(),
-  timelineStatus: z.enum(['idle', 'missing', 'ready', 'blocked']).optional(),
+  mirrorStatus: z.enum(['idle', 'running', 'ready', 'synced', 'stale', 'blocked']).optional(),
+  timelineStatus: z.enum(['idle', 'running', 'missing', 'ready', 'blocked']).optional(),
+  activeStage: z.string().optional(),
+  currentJobId: z.string().optional(),
+  detail: z.string().optional(),
   pendingPromoteGroupKey: z.string().optional(),
   latestBatchId: z.string().optional(),
   groups: z.array(IColorGroupCurrent).default([]),

@@ -42,7 +42,7 @@ The current official local runtime and monitor path is:
 - `Supervisor + React console (apps/kairos-console/)`
 - Analyze monitor route: `http://127.0.0.1:8940/analyze`
 - Style monitor route: `http://127.0.0.1:8940/style` (workspace-level style library / style-analysis monitor)
-- Color route: `http://127.0.0.1:8940/color` (independent DaVinci color config/status surface; Resolve execution is not fully wired yet)
+- Color route: `http://127.0.0.1:8940/color` (independent DaVinci color render-preset/prep/status surface; Resolve execution is not fully wired yet)
 
 Operational lesson that must not be forgotten:
 
@@ -94,6 +94,8 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
 - Treat `project-brief` path mappings as the formal place to declare both current media roots and optional `原始路径`.
 - Treat nested `rawPath/rawLocalPath` as a formal ingest exclusion boundary: the mainflow should scan the current media directory, but must not recurse into the raw subtree when it lives inside that directory.
 - Treat `/color` as root-discovery-first at this stage: roots with `rawPath` should auto-appear with derived blockers/status, even before Resolve execution is wired.
+- Treat current `color` job support as deterministic prep only: `sync_root_bins -> prepare_root_timeline` may persist Kairos-side truth and progress, but host-side Resolve execution is still not the source of truth.
+- Treat root-level color config as minimal and project-scoped: the only user-maintained long-term field is `root.color.renderPreset` on the project root registry; naming and group structure are derived or host-owned, not user config.
 - Do not treat stale progress displays as proof that formal processing is alive.
 - Do not silently use legacy monitor paths for new work when `Supervisor + React console` is the official entry.
 - Treat workspace style-analysis as a formal deterministic prep job before Agent style synthesis, not as a UI-only placeholder.
@@ -117,7 +119,7 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - `sortCapturedAt` should resolve in this order: asset-level `capturedAtOverride` -> `asset.capturedAt + ingestRoot.clockOffsetMs` -> raw `asset.capturedAt`
   - changing a root-level clock offset in `/ingest-gps` means chronology truth changed; refresh chronology before trusting downstream ordering
 - Treat `/ingest-gps` as the formal UI for both layers of time repair:
-  - root-level device drift via `config/ingest-roots.json` `clockOffsetMs`
+  - root-level device drift via `config/project-roots.json` `clockOffsetMs`
   - asset-level exceptions via `captureTimeOverrides`
 - Treat `/script` as a preparation surface by default:
   - `/script` first auto-saves the selected style category

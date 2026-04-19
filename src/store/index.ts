@@ -28,13 +28,17 @@ export {
 } from './project-brief-sync.js';
 export {
   initProject,
+  getProjectRootsPath,
   loadManifest,
   loadProject,
+  loadProjectRoots,
+  saveProjectRoots,
   loadIngestRoots,
   saveIngestRoots,
   loadRuntimeConfig,
   touchProjectUpdatedAt,
   type IRuntimeConfig,
+  type IProjectRoots,
   type IIngestRoots,
 } from './project.js';
 export {
@@ -258,7 +262,6 @@ export {
   getManualItineraryConfigPath,
   getScriptBriefConfigPath,
   getWorkspaceStyleSourcesConfigPath,
-  getColorConfigPath,
   getColorCurrentPath,
   loadProjectBriefConfig,
   saveProjectBriefConfig,
@@ -268,8 +271,6 @@ export {
   saveScriptBriefConfig,
   loadStyleSourcesConfig,
   saveStyleSourcesConfig,
-  loadColorConfig,
-  saveColorConfig,
   loadColorCurrent,
   saveColorCurrent,
 } from './workspace-config.js';

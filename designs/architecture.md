@@ -7,6 +7,20 @@
 
 ## 0. 2026-03-31 增补
 
+## 0.5 2026-04-19 DaVinci color 最小配置收口补记
+
+当前实现已把独立调色链的长期配置进一步收口为“项目级 root 注册表 + `color/` runtime/archive”：
+
+- 长期用户配置不再写 `projects/<projectId>/color/config.json`
+- root 级长期 color 配置只保留最小 `renderPreset`，并直接挂在项目级 root 注册表 `config/project-roots.json`
+- `resolveProjectName / rootNamespace / gradingTimelineName / Group naming` 全部按约定规则推导，不再是可编辑配置项
+- `/color` 当前只允许编辑 root 级 `renderPreset`，展示约定命名、阻塞原因、current/batch 摘要和 deterministic prep 状态
+- `/color` 不再提供 bootstrap Group、候选 Group 或 raw JSON fallback
+- `projects/<projectId>/color/current.json` 继续承载当前运行真相；`projects/<projectId>/color/batches/<batchId>/...` 保留给 batch/runtime 归档
+- 当前 Resolve 宿主路线冻结为“同机 official Python Scripting API sidecar”，不再把 MCP 作为 color 官方主线
+
+因此，当前 `/color` 应被理解为“项目 root 上的最小 render preset + color runtime/archive + root prep 控制面”。
+
 ## 0.4 2026-04-18 DaVinci color 基础设施落地补记
 
 当前实现已先落地 `2026-04-17--davinci-color-independent-workflow-v1` 中已冻结的基础设施部分：
@@ -14,16 +28,18 @@
 - `project-brief` 路径映射可选带 `原始路径`
 - `IMediaRoot.rawPath` 与设备映射 `rawLocalPath` 已进入正式配置链
 - 若 `rawPath/rawLocalPath` 位于当前素材目录内部，ingest 会把该子树视为正式排除项，而不是把 raw 与当前输出一起扫描
-- 项目级 `color/` 目录已作为独立调色链最小 store 进入项目结构
-- `Supervisor + React console` 已有最小 `/color` 主路由，用于显示 root 级调色配置与当前状态
-- `/color` 当前会自动发现已配置 `rawPath` 的素材根，补齐默认 Resolve 命名 / codec 展示字段，并派生缺失 `rawLocalPath`、缺失 bitrate 等阻塞信息
+- 项目级 `color/` 目录已作为独立调色链最小 runtime/archive store 进入项目结构
+- `Supervisor + React console` 已有最小 `/color` 主路由，用于显示 root 级调色状态与最小 `renderPreset`
+- `/color` 当前会自动发现已配置 `rawPath` 的素材根，补齐约定 Resolve 命名 / codec 展示字段，并派生缺失 `rawLocalPath`、缺失 bitrate 等阻塞信息
+- `Supervisor` 当前已接入 `color` deterministic prep job，可推进 `sync_root_bins -> prepare_root_timeline` 的 Kairos 侧持久化状态与 live progress
+- `/color` 当前只保留 root 级 `renderPreset` 直编；命名与 Group 不再作为用户配置项
 
 本轮仍未落地的部分包括：
 
 - Resolve `Media Pool / Bin` 真同步
-- 长期 `grading timeline` 真准备
-- `Group` 候选生成与 clip 归组
-- `Render Queue` 执行、`validation` 真校验与 `promote`
+- 长期 `grading timeline` 的 Resolve 宿主侧真准备
+- 多 Group 候选生成与 clip 归组
+- `Render Queue` 执行、`execute_group` 真渲染、`validation` 真校验与 `promote`
 
 因此当前应把 `/color` 理解为“独立调色链的基础设施与控制面已经入场”，而不是 Resolve 工作流已经全部接通。
 
@@ -96,7 +112,7 @@
   - 时间阻塞当前只针对弱时间源；高置信 `exif` / `manual` 不会再被文件名日期直接反驳
   - 时间阻塞当前会同时参考项目时间线、文件名完整时间戳漂移，以及已纳入 `Pharos` trip 的整体时间边界
   - 项目内跨设备时钟漂移当前正式通过 ingest root 统一修正，而不是继续让 timeline 末端猜：
-    - `config/ingest-roots.json` 的 `IMediaRoot.clockOffsetMs?` 表示项目内该 root 的统一时钟偏移
+    - `config/project-roots.json` 的 `IMediaRoot.clockOffsetMs?` 表示项目内该 root 的统一时钟偏移
     - 单素材 `captureTimeOverrides` 继续存在，但只作为 root offset 上层例外
     - `media/chronology.json` 的 `sortCapturedAt` 当前是唯一正式时序真值，优先级为 `capturedAtOverride -> asset.capturedAt + root.clockOffsetMs -> asset.capturedAt`
   - `locationText` 当前正式收口为 reverse geocode 结果，而不是 route prose：

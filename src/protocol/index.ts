@@ -20,6 +20,7 @@ export {
   EMaterializationPath,
   EFinalizeFineScanMode,
   ICaptureTime,
+  IMediaRootColorConfig,
   IMediaRoot,
   IKtepEvidence,
   IPharosRef,

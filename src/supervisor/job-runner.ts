@@ -11,6 +11,8 @@ import {
   loadSlices,
   loadProjectStyleByCategory,
   prepareWorkspaceStyleAnalysisForAgent,
+  ColorPrepBlockedError,
+  prepareProjectColorRoot,
   prepareProjectScriptForAgent,
   refreshProjectDerivedTrackCache,
   refreshProjectGpsCache,
@@ -69,7 +71,7 @@ async function main(): Promise<void> {
       await ensureMlServiceRunning(workspaceRoot);
     }
 
-    const execution = await runJob(workspaceRoot, record.jobType, record.projectId, record.args);
+    const execution = await runJob(workspaceRoot, record.jobType, record.projectId, record.args, record.jobId);
     const resultPath = record.resultPath ?? join(getSupervisorJobRoot(workspaceRoot, record.jobId), 'result.json');
     await writeJson(resultPath, execution.result ?? { ok: true });
     await writeJobRecord(workspaceRoot, {
@@ -114,6 +116,7 @@ async function runJob(
   jobType: string,
   projectId: string | undefined,
   args: Record<string, unknown>,
+  jobId?: string,
 ): Promise<IJobExecutionResult> {
   switch (jobType) {
     case 'project-init': {
@@ -237,6 +240,30 @@ async function runJob(
         finalStatus: result.status,
         result,
       };
+    }
+    case 'color': {
+      if (!projectId) {
+        throw new BlockedJobError(['color requires projectId']);
+      }
+      const rootId = toStringValue(args.rootId);
+      if (!rootId) {
+        throw new BlockedJobError(['color deterministic prep requires args.rootId']);
+      }
+      try {
+        return {
+          result: await prepareProjectColorRoot({
+            workspaceRoot,
+            projectId,
+            rootId,
+            jobId,
+          }),
+        };
+      } catch (error) {
+        if (error instanceof ColorPrepBlockedError) {
+          throw new BlockedJobError(error.blockers);
+        }
+        throw error;
+      }
     }
     case 'timeline': {
       if (!projectId) {

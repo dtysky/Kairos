@@ -13,12 +13,25 @@
   - 项目级 `color/` 最小 store
   - `Supervisor + React console` 的最小 `/color` 入口与状态面
   - `/color` 对已配置 `rawPath` 的 root 自动发现、默认命名补齐与派生阻塞态展示
+  - `Supervisor color` deterministic prep job，可推进 `sync_root_bins -> prepare_root_timeline` 的 Kairos 侧状态真相
+  - `/color` 可直接触发 root 级 prep，并展示 live color job / 当前阶段 / 持久化 detail
+  - `/color` 可直接编辑 root 级默认命名与目标码率
+  - 当 root 尚无正式 Group 时，`/color` 会提供一个可采纳的 root-wide bootstrap Group，作为首个正式 Group 的稳定入口
 - 本轮明确不落地：
   - Resolve `Media Pool / Bin` 真同步
-  - 长期 `grading timeline` 真准备
-  - `Group` 候选生成与 clip 归组
-  - `Render Queue` 执行、`validation` 真校验、`promote` 真覆盖
+  - 长期 `grading timeline` 的 Resolve 宿主侧真准备
+  - 多 Group 候选生成与 clip 归组
+  - `Render Queue` 执行、`execute_group` 真渲染、`validation` 真校验、`promote` 真覆盖
 - 因此，下文中涉及这些未落地能力的部分，当前仍表示 v1 目标设计，而不是这轮已经完成的实现状态。
+
+2026-04-19 最小配置补记：
+
+- `color/config.json` 不再作为正式长期配置来源
+- 长期用户配置改挂到项目级 root 注册表 `config/project-roots.json`，且只保留最小 `root.color.renderPreset`
+- `resolveProjectName / rootNamespace / gradingTimelineName / Group naming` 全部按约定生成，只展示，不允许用户配置
+- `/color` 不再提供 bootstrap Group 或 raw JSON fallback
+- `color/` 目录当前只承载 `current.json` 和 `batches/<batchId>/...` 这类 runtime/archive 数据
+- Resolve 宿主路线冻结为同机 official Python Scripting API sidecar，不再把 MCP 作为 color 主线
 
 本稿的目标不是直接冻结节点参数或插件实现细节，而是先把 Kairos 里的达芬奇调色链正式收口成一条独立工作流，并明确它和主链、素材根、来源目录树、当前素材目录之间的边界。
 

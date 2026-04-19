@@ -2,9 +2,8 @@ import { readFile } from 'node:fs/promises';
 import { basename } from 'node:path';
 import type { IDeviceMediaMapFile, IMediaRoot } from '../protocol/schema.js';
 import { loadProjectDeviceMediaMaps, saveProjectDeviceMap } from './device-media-maps.js';
-import { loadIngestRoots } from './project.js';
+import { loadProjectRoots, saveProjectRoots } from './project.js';
 import { buildProjectBriefTemplate, normalizeProjectBriefLocalPath, parseProjectBrief } from './project-brief.js';
-import { writeJson } from './writer.js';
 
 export interface ISyncProjectBriefInput {
   projectId: string;
@@ -26,7 +25,7 @@ export async function syncProjectBriefMappings(
     'utf-8',
   );
   const parsed = parseProjectBrief(content);
-  const existingRoots = await loadIngestRoots(input.projectRoot);
+  const existingRoots = await loadProjectRoots(input.projectRoot);
   const existingDeviceMaps = await loadProjectDeviceMediaMaps(input.projectRoot, input.deviceMapPath);
 
   if (parsed.mappings.length === 0) {
@@ -55,10 +54,11 @@ export async function syncProjectBriefMappings(
       tags: existing?.tags ?? [],
       category: existing?.category,
       priority: existing?.priority ?? (index + 1),
+      color: existing?.color,
     } satisfies IMediaRoot;
   });
 
-  await writeJson(`${input.projectRoot}/config/ingest-roots.json`, { roots });
+  await saveProjectRoots(input.projectRoot, { roots });
   const deviceMaps = await saveProjectDeviceMap(
     input.projectRoot,
     input.projectId,
