@@ -1,4 +1,5 @@
 import type {
+  IColorGroupsSnapshotFile,
   IColorCurrent,
   IColorGroupCurrent,
   IColorRootCurrent,
@@ -29,7 +30,18 @@ export interface IColorRootWorkspaceSummary {
   gradingTimelineName: string;
   renderPreset: IColorRenderPreset;
   blockingReasons: string[];
+  groupsSnapshot?: IColorGroupsSnapshotFile;
+  groups: IColorGroupWorkspaceSummary[];
   colorCurrent: IColorRootCurrentView;
+}
+
+export interface IColorGroupWorkspaceSummary {
+  groupKey: string;
+  displayName: string;
+  clipCount: number;
+  clipKeys: string[];
+  hostSummary: Record<string, unknown>;
+  current: IColorGroupCurrent;
 }
 
 export interface IColorWorkspaceState {
@@ -42,6 +54,10 @@ interface IBuildColorWorkspaceStateInput {
   projectRoots: IMediaRoot[];
   deviceProjectMap?: IDeviceMediaProjectMap;
   colorCurrent: IColorCurrent;
+  runtimeConfig?: {
+    resolveColorPythonPath?: string;
+  };
+  groupSnapshotsByRootId?: Record<string, IColorGroupsSnapshotFile>;
 }
 
 const CDEFAULT_RENDER_PRESET = {
@@ -61,7 +77,7 @@ export function buildColorWorkspaceState(
     .map(root => {
       const storedCurrent = colorCurrentByRootId.get(root.id);
       const deviceRoot = deviceRootByRootId(deviceRootById, root.id);
-      const groups = normalizeGroupCurrent(storedCurrent?.groups ?? []);
+      const groupsSnapshot = input.groupSnapshotsByRootId?.[root.id];
       const renderPreset = materializeRenderPreset(root.color?.renderPreset);
       const derivedBlockers = dedupeStrings([
         !trimmed(deviceRoot?.localPath) ? '当前设备未配置 current localPath，无法在本机覆盖当前素材目录。' : '',
@@ -70,18 +86,32 @@ export function buildColorWorkspaceState(
         typeof renderPreset.bitrateMbps !== 'number'
           ? '未配置 root 级 renderPreset.bitrateMbps，后续 execute_group 无法启动。'
           : '',
+        !trimmed(input.runtimeConfig?.resolveColorPythonPath)
+          ? '未配置 config/runtime.json resolveColorPythonPath，无法调用 official Python Resolve host。'
+          : '',
       ]);
+      const groups = materializeGroupWorkspaceSummaries(
+        groupsSnapshot,
+        storedCurrent?.groups ?? [],
+      );
 
       const currentView: IColorRootCurrentView = {
         rootId: root.id,
         mirrorStatus: storedCurrent?.mirrorStatus ?? (trimmed(deviceRoot?.rawLocalPath) ? 'idle' : 'blocked'),
         timelineStatus: storedCurrent?.timelineStatus ?? (trimmed(deviceRoot?.rawLocalPath) ? 'missing' : 'blocked'),
+        groupSyncStatus: storedCurrent?.groupSyncStatus ?? (
+          trimmed(deviceRoot?.rawLocalPath)
+            ? (groupsSnapshot?.groups?.length ? 'ready' : 'missing')
+            : 'blocked'
+        ),
+        groupSyncAt: storedCurrent?.groupSyncAt ?? groupsSnapshot?.syncedAt,
         activeStage: trimmed(storedCurrent?.activeStage),
         currentJobId: trimmed(storedCurrent?.currentJobId),
         detail: trimmed(storedCurrent?.detail),
         pendingPromoteGroupKey: storedCurrent?.pendingPromoteGroupKey,
+        pendingPromoteBatchId: storedCurrent?.pendingPromoteBatchId,
         latestBatchId: storedCurrent?.latestBatchId,
-        groups,
+        groups: groups.map(group => group.current),
         blockingReasons: dedupeStrings([...(storedCurrent?.blockingReasons ?? []), ...derivedBlockers]),
         label: trimmed(root.label),
         description: trimmed(root.description),
@@ -104,6 +134,8 @@ export function buildColorWorkspaceState(
         gradingTimelineName: deriveColorGradingTimelineName(root.id),
         renderPreset,
         blockingReasons: currentView.blockingReasons,
+        groupsSnapshot,
+        groups,
         colorCurrent: currentView,
       } satisfies IColorRootWorkspaceSummary;
     });
@@ -135,11 +167,65 @@ function normalizeGroupCurrent(
   currentGroups: NonNullable<IColorRootCurrent['groups']>,
 ): IColorGroupCurrent[] {
   return currentGroups.map(current => ({
-    groupKey: current.groupKey,
-    status: current.status,
-    latestBatchId: current.latestBatchId,
-    blockingReasons: dedupeStrings(current.blockingReasons ?? []),
-  }));
+      groupKey: current.groupKey,
+      status: current.status,
+      displayName: trimmed(current.displayName),
+      clipCount: current.clipCount,
+      latestBatchId: current.latestBatchId,
+      latestBatchStatus: current.latestBatchStatus,
+      latestValidationStatus: current.latestValidationStatus,
+      pendingPromoteBatchId: trimmed(current.pendingPromoteBatchId),
+      lastPromotedBatchId: trimmed(current.lastPromotedBatchId),
+      blockingReasons: dedupeStrings(current.blockingReasons ?? []),
+    }));
+}
+
+function materializeGroupWorkspaceSummaries(
+  snapshot: IColorGroupsSnapshotFile | undefined,
+  currentGroups: NonNullable<IColorRootCurrent['groups']>,
+): IColorGroupWorkspaceSummary[] {
+  const normalizedCurrent = normalizeGroupCurrent(currentGroups);
+  const currentByKey = new Map(normalizedCurrent.map(group => [group.groupKey, group]));
+  const snapshotGroups = snapshot?.groups ?? [];
+  const materialized = snapshotGroups.map(group => {
+    const current = currentByKey.get(group.groupKey) ?? {
+      groupKey: group.groupKey,
+      status: group.clipKeys.length > 0 ? 'ready' : 'blocked',
+      displayName: trimmed(group.displayName),
+      clipCount: group.clipKeys.length,
+      blockingReasons: group.clipKeys.length > 0 ? [] : ['该 Group 当前没有可执行 clip。'],
+    };
+    return {
+      groupKey: group.groupKey,
+      displayName: trimmed(group.displayName) ?? group.groupKey,
+      clipCount: group.clipKeys.length,
+      clipKeys: dedupeStrings(group.clipKeys ?? []),
+      hostSummary: isPlainObject(group.hostSummary) ? group.hostSummary : {},
+      current: {
+        ...current,
+        displayName: trimmed(current.displayName) ?? trimmed(group.displayName) ?? group.groupKey,
+        clipCount: current.clipCount ?? group.clipKeys.length,
+      },
+    } satisfies IColorGroupWorkspaceSummary;
+  });
+
+  for (const current of normalizedCurrent) {
+    if (materialized.some(group => group.groupKey === current.groupKey)) continue;
+    materialized.push({
+      groupKey: current.groupKey,
+      displayName: trimmed(current.displayName) ?? current.groupKey,
+      clipCount: current.clipCount ?? 0,
+      clipKeys: [],
+      hostSummary: {},
+      current: {
+        ...current,
+        displayName: trimmed(current.displayName) ?? current.groupKey,
+        clipCount: current.clipCount ?? 0,
+      },
+    });
+  }
+
+  return materialized;
 }
 
 function dedupeStrings(values: string[]): string[] {
@@ -171,6 +257,10 @@ function materializeRenderPreset(renderPreset?: {
     audioCodec: trimmed(renderPreset?.audioCodec) ?? CDEFAULT_RENDER_PRESET.audioCodec,
     bitrateMbps: renderPreset?.bitrateMbps,
   };
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value != null && !Array.isArray(value);
 }
 
 export function deriveColorResolveProjectName(projectId: string): string {

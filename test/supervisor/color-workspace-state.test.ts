@@ -28,6 +28,9 @@ describe('color workspace state', () => {
           localPath: 'F:\\current\\camera',
         }],
       },
+      runtimeConfig: {
+        resolveColorPythonPath: '/usr/bin/python3',
+      },
       colorCurrent: { roots: [] },
     });
 
@@ -40,6 +43,7 @@ describe('color workspace state', () => {
     expect(state.colorRoots[0]?.renderPreset.container).toBe('mp4');
     expect(state.colorRoots[0]?.colorCurrent.mirrorStatus).toBe('blocked');
     expect(state.colorRoots[0]?.colorCurrent.timelineStatus).toBe('blocked');
+    expect(state.colorRoots[0]?.colorCurrent.groupSyncStatus).toBe('blocked');
     expect(state.colorRoots[0]?.blockingReasons).toContain('当前设备未配置 rawLocalPath，无法在本机访问原始素材。');
     expect(state.colorRoots[0]?.blockingReasons).toContain('未配置 root 级 renderPreset.bitrateMbps，后续 execute_group 无法启动。');
     expect(state.colorCurrent.selectedRootId).toBe('root-camera');
@@ -70,14 +74,33 @@ describe('color workspace state', () => {
           rawLocalPath: 'F:\\raw\\camera',
         }],
       },
+      runtimeConfig: {
+        resolveColorPythonPath: '/usr/bin/python3',
+      },
+      groupSnapshotsByRootId: {
+        'root-camera': {
+          rootId: 'root-camera',
+          syncedAt: '2026-04-19T10:00:00.000Z',
+          timelineName: 'root__root-camera__grading',
+          groups: [{
+            groupKey: 'group-day',
+            displayName: 'Day Group',
+            clipKeys: ['day/clip001.mov'],
+            hostSummary: {},
+          }],
+        },
+      },
       colorCurrent: {
         roots: [{
           rootId: 'root-camera',
           mirrorStatus: 'synced',
           timelineStatus: 'ready',
+          groupSyncStatus: 'ready',
           groups: [{
             groupKey: 'group-day',
             status: 'running',
+            displayName: 'Day Group',
+            clipCount: 1,
             latestBatchId: 'batch-2',
           }, {
             groupKey: 'group-legacy',
@@ -92,17 +115,32 @@ describe('color workspace state', () => {
     expect(state.colorRoots[0]?.renderPreset.bitrateMbps).toBe(80);
     expect(state.colorRoots[0]?.colorCurrent.mirrorStatus).toBe('synced');
     expect(state.colorRoots[0]?.colorCurrent.timelineStatus).toBe('ready');
+    expect(state.colorRoots[0]?.colorCurrent.groupSyncStatus).toBe('ready');
+    expect(state.colorRoots[0]?.groups[0]?.displayName).toBe('Day Group');
+    expect(state.colorRoots[0]?.groups[0]?.clipCount).toBe(1);
     expect(state.colorRoots[0]?.colorCurrent.groups).toEqual([
       {
         groupKey: 'group-day',
         status: 'running',
+        displayName: 'Day Group',
+        clipCount: 1,
         latestBatchId: 'batch-2',
+        latestBatchStatus: undefined,
+        latestValidationStatus: undefined,
+        pendingPromoteBatchId: undefined,
+        lastPromotedBatchId: undefined,
         blockingReasons: [],
       },
       {
         groupKey: 'group-legacy',
         status: 'blocked',
+        displayName: 'group-legacy',
+        clipCount: 0,
         latestBatchId: undefined,
+        latestBatchStatus: undefined,
+        latestValidationStatus: undefined,
+        pendingPromoteBatchId: undefined,
+        lastPromotedBatchId: undefined,
         blockingReasons: ['legacy blocked'],
       },
     ]);

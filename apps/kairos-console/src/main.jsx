@@ -278,7 +278,7 @@ function AppShell() {
         jobType === 'script'
           ? ''
           : jobType === 'color' && args.rootId
-            ? `已启动 color root prep：${args.rootId}`
+            ? `已启动 color ${args.action || 'prepare_root'}：${args.rootId}${args.groupKey ? ` / ${args.groupKey}` : ''}${args.batchId ? ` / ${args.batchId}` : ''}`
             : `已启动 ${jobType}`,
       );
       setError('');
@@ -437,7 +437,7 @@ function AppShell() {
                       setIngestRoots={setIngestRoots}
                       saveSection={saveSection}
                       busy={busy}
-                      onRunRoot={rootId => runProjectWorkflow('color', { rootId })}
+                      onRunColorAction={args => runProjectWorkflow('color', args)}
                     />
                   )}
                 />
@@ -536,7 +536,7 @@ function AppShell() {
 function OverviewPage({ currentProject, activeJobs, services, projectProgress, openReviewCount }) {
   const workflows = [
     { path: '/ingest-gps', label: '导入与 GPS', summary: '维护 project-brief、manual-itinerary 与素材时间校正。' },
-    { path: '/color', label: '达芬奇调色', summary: '维护 root 级 renderPreset，查看约定命名、prep 和当前 color 状态。' },
+    { path: '/color', label: '达芬奇调色', summary: '维护 root 级 renderPreset，并执行 prepare / sync groups / validate / promote。' },
     { path: '/analyze', label: '素材分析', summary: '直接查看分析监控、恢复进度并启动 Analyze。' },
     { path: '/style', label: '风格分析', summary: '维护 Workspace 风格库、style sources，并查看当前分类监控。' },
     { path: '/script', label: '脚本', summary: '维护 script-brief，并准备确定性材料给 Agent 继续写稿。' },
@@ -689,7 +689,7 @@ function ColorPage({
   setIngestRoots,
   saveSection,
   busy,
-  onRunRoot,
+  onRunColorAction,
 }) {
   if (!config) {
     return (
@@ -718,8 +718,8 @@ function ColorPage({
       ) : colorCapabilityDetail ? (
         <WorkflowPrompt
           eyebrow="Current Scope"
-          title="当前 color 已支持最小 renderPreset + deterministic prep"
-          body="现在可以直接在 `/color` 里维护 root 级 renderPreset，并运行 `sync_root_bins -> prepare_root_timeline` 的 Kairos 侧 prep。"
+          title="当前 color 已支持 official Python host 闭环入口"
+          body="现在可以在 `/color` 里维护 root 级 renderPreset，并直接触发 `prepare_root / sync_groups / execute_group / validate_batch / promote_batch`。"
           tone="accent"
           detail={colorCapabilityDetail}
         />
@@ -732,7 +732,7 @@ function ColorPage({
         setIngestRoots={setIngestRoots}
         onSaveProjectRoots={() => saveSection('ingest-roots')}
         busy={busy}
-        onRunRoot={onRunRoot}
+        onRunColorAction={onRunColorAction}
       />
     </div>
   );

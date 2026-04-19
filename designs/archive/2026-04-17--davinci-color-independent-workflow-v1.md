@@ -33,6 +33,49 @@
 - `color/` 目录当前只承载 `current.json` 和 `batches/<batchId>/...` 这类 runtime/archive 数据
 - Resolve 宿主路线冻结为同机 official Python Scripting API sidecar，不再把 MCP 作为 color 主线
 
+2026-04-19 执行闭环补记：
+
+- 本轮继续在“不回退最小配置方案”的前提下，补齐三条主能力链：
+  - official Python Resolve host
+  - `sync_groups + execute_group`
+  - `batch manifest + validation + promote`
+- `color` 正式改为 action dispatcher：
+  - `prepare_root`
+  - `sync_groups`
+  - `execute_group`
+  - `validate_batch`
+  - `promote_batch`
+- 兼容当前入口：若 `color` job 只传 `rootId`，默认仍等价于 `prepare_root`
+- 第一版正式 Group 真相范围冻结为 `Root Timeline`
+  - 只同步该 root grading timeline 上实际出现的 clips/group
+- `color/groups/<rootId>.json` 将成为 root 级 formal host snapshot，至少承载：
+  - `rootId`
+  - `syncedAt`
+  - `timelineName`
+  - `groups[]`
+  - 每组的 `groupKey / displayName / clipKeys / hostSummary`
+- `clip` 的正式身份固定为 `rawRelativePath`
+- `execute_group` 必须先依赖已同步的正式 groups；不再提供 bootstrap / implicit group
+- batch archive 正式落盘：
+  - `color/batches/<batchId>/plan.json`
+  - `color/batches/<batchId>/manifest.json`
+  - `color/batches/<batchId>/validation.json`
+  - `color/batches/<batchId>/promote.json`
+- staging 输出固定放在 `projects/<projectId>/.tmp/color/<batchId>/render/`
+- `validate_batch` 在 Node 侧完成，不依赖宿主；当前硬校验继续围绕：
+  - `pathMirror`
+  - `filenameNormalized(.mp4)`
+  - `mediaKind`
+  - `resolution`
+  - `fps`
+  - `duration`
+  - `capturedAt`
+  - `create_time`
+  - `gps`
+  - `filesystemCreateTime` 只记录，不单独阻塞
+- `promote_batch` 只有在 `validation = pass`、该 batch 仍是该 group 最新候选且目标 `path/localPath` 可写时才允许执行
+- `promote` 只按 manifest 的 `managedOutputSet` 覆盖当前素材目录对应目标；禁止触碰 `rawPath`
+
 本稿的目标不是直接冻结节点参数或插件实现细节，而是先把 Kairos 里的达芬奇调色链正式收口成一条独立工作流，并明确它和主链、素材根、来源目录树、当前素材目录之间的边界。
 
 本稿当前确认的新结论是：

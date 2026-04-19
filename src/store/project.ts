@@ -25,6 +25,7 @@ const CDIRS = [
   'timeline',
   'timeline/versions',
   'color',
+  'color/groups',
   'color/batches',
   'subtitles',
   'adapters',
@@ -87,6 +88,8 @@ const IRuntimeConfig = z.object({
   jianyingDraftRoot: z.string().optional(),
   jianyingPythonPath: z.string().optional(),
   jianyingPyProjectRoot: z.string().optional(),
+  resolveColorPythonPath: z.string().optional(),
+  resolveColorScriptApiRoot: z.string().optional(),
 });
 export type IRuntimeConfig = z.infer<typeof IRuntimeConfig>;
 

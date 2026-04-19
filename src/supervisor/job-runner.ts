@@ -12,7 +12,9 @@ import {
   loadProjectStyleByCategory,
   prepareWorkspaceStyleAnalysisForAgent,
   ColorPrepBlockedError,
+  ProjectColorBlockedError,
   prepareProjectColorRoot,
+  runProjectColorAction,
   prepareProjectScriptForAgent,
   refreshProjectDerivedTrackCache,
   refreshProjectGpsCache,
@@ -247,19 +249,28 @@ async function runJob(
       }
       const rootId = toStringValue(args.rootId);
       if (!rootId) {
-        throw new BlockedJobError(['color deterministic prep requires args.rootId']);
+        throw new BlockedJobError(['color requires args.rootId']);
       }
       try {
         return {
-          result: await prepareProjectColorRoot({
+          result: await runProjectColorAction({
             workspaceRoot,
             projectId,
             rootId,
+            action: toStringValue(args.action) as
+              | 'prepare_root'
+              | 'sync_groups'
+              | 'execute_group'
+              | 'validate_batch'
+              | 'promote_batch'
+              | undefined,
+            groupKey: toStringValue(args.groupKey) || undefined,
+            batchId: toStringValue(args.batchId) || undefined,
             jobId,
           }),
         };
       } catch (error) {
-        if (error instanceof ColorPrepBlockedError) {
+        if (error instanceof ProjectColorBlockedError || error instanceof ColorPrepBlockedError) {
           throw new BlockedJobError(error.blockers);
         }
         throw error;

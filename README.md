@@ -38,7 +38,7 @@ Current stable pipeline:
 - official local runtime / monitor entry is `Supervisor + React console (apps/kairos-console/)`
   - `http://127.0.0.1:8940/analyze` is the official Analyze monitor route
   - `http://127.0.0.1:8940/style` is the official workspace-level Style monitor route
-  - `http://127.0.0.1:8940/color` is the current independent DaVinci color route for root-level render preset, prep, and runtime/archive status
+  - `http://127.0.0.1:8940/color` is the current independent DaVinci color route for root-level render preset, action control, and runtime/archive status
   - `scripts/kairos-supervisor.* start` only starts `Supervisor + React console`; it does not start ML and does not resume old jobs
   - `progress.json` is only a durable progress cache; a phase is live only when Supervisor still has the matching active job
   - console refresh now prefers the project that currently owns the latest active project-scoped job before falling back to the last locally remembered selection
@@ -47,13 +47,21 @@ Current stable pipeline:
 - independent `DaVinci color` chain now uses a minimal project-root + runtime/archive split:
   - formal root config now lives on the shared project root registry `config/project-roots.json`; `color` only uses the per-root `color.renderPreset`
   - `resolveProjectName / rootNamespace / gradingTimelineName` are derived by convention, shown in `/color`, and are no longer editable config
-  - `projects/<projectId>/color/current.json` stores the current UI/runtime-facing color status snapshot
-  - `projects/<projectId>/color/batches/<batchId>/...` is reserved for batch/runtime archive
+  - `projects/<projectId>/color/current.json` stores the current root/group runtime truth
+  - `projects/<projectId>/color/groups/<rootId>.json` stores the latest formal host-synced Group snapshot for that root
+  - `projects/<projectId>/color/batches/<batchId>/plan.json|manifest.json|validation.json|promote.json` store batch/runtime archive
   - current `/color` auto-discovers roots that already have `rawPath`, shows derived Resolve naming plus blockers such as missing `rawLocalPath` or missing `renderPreset.bitrateMbps`
-  - current `/color` supports deterministic root prep via Supervisor `color` job: it can persist `sync_root_bins -> prepare_root_timeline` Kairos-side state and live job progress
-  - current `/color` only lets users edit the root-level `renderPreset`; it no longer exposes raw JSON fallback, naming edits, or bootstrap Group adoption
-  - Resolve host automation is now planned against same-machine official Python Scripting API, not MCP
-  - current `/color` still does not do host-backed group sync, render queue execution, validation, or promote
+  - current `/color` still only lets users edit the root-level `renderPreset`; it does not expose raw JSON fallback, naming edits, or bootstrap Group adoption
+  - current `/color` supports an official Python-host-backed Supervisor `color` action chain:
+    - `prepare_root`
+    - `sync_groups`
+    - `execute_group`
+    - `validate_batch`
+    - `promote_batch`
+  - current `prepare_root` now calls the vendored same-machine official Python Resolve sidecar instead of only persisting Kairos-side fake status
+  - current `execute_group` writes `plan + manifest`, `validate_batch` writes formal batch validation, and `promote_batch` only covers the manifest-declared managed output set
+  - current runtime host requirements live in `config/runtime.json` as `resolveColorPythonPath` and optional `resolveColorScriptApiRoot`
+  - Resolve host automation now uses same-machine official Python Scripting API, not MCP
 - reusable style assets now live at workspace scope, not project scope:
   - `config/styles/` stores the shared style library
   - `config/style-sources.json` stores the shared style-source manifest and is the only structured style index
