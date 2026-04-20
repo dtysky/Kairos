@@ -91,9 +91,15 @@ export const ICaptureTime = z.object({
 });
 export type ICaptureTime = z.infer<typeof ICaptureTime>;
 
+export const IMediaRootColorConfig = z.object({
+  renderPreset: z.lazy(() => IColorRenderPreset).optional(),
+});
+export type IMediaRootColorConfig = z.infer<typeof IMediaRootColorConfig>;
+
 export const IMediaRoot = z.object({
   id: z.string(),
   path: z.string().optional(),
+  rawPath: z.string().optional(),
   label: z.string().optional(),
   enabled: z.boolean(),
   clockOffsetMs: z.number().int().optional(),
@@ -102,12 +108,14 @@ export const IMediaRoot = z.object({
   description: z.string().optional(),
   notes: z.array(z.string()).optional(),
   tags: z.array(z.string()).optional(),
+  color: IMediaRootColorConfig.optional(),
 });
 export type IMediaRoot = z.infer<typeof IMediaRoot>;
 
 export const IDeviceMediaRootPath = z.object({
   rootId: z.string(),
   localPath: z.string(),
+  rawLocalPath: z.string().optional(),
   flightRecordPath: z.string().optional(),
   exists: z.boolean().optional(),
   lastCheckedAt: z.string().optional(),
@@ -1097,10 +1105,228 @@ export type IStoreManifest = z.infer<typeof IStoreManifest>;
 
 export const IProjectBriefMappingConfig = z.object({
   path: z.string(),
+  rawPath: z.string().optional(),
   description: z.string(),
   flightRecordPath: z.string().optional(),
 });
 export type IProjectBriefMappingConfig = z.infer<typeof IProjectBriefMappingConfig>;
+
+export const IColorRenderPreset = z.object({
+  container: z.string().optional(),
+  videoCodec: z.string().optional(),
+  audioCodec: z.string().optional(),
+  bitrateMbps: z.number().positive().optional(),
+});
+export type IColorRenderPreset = z.infer<typeof IColorRenderPreset>;
+
+export const EColorGroupStatus = z.enum([
+  'idle',
+  'draft',
+  'ready',
+  'running',
+  'staged',
+  'blocked',
+  'promoted',
+  'failed',
+]);
+export type EColorGroupStatus = z.infer<typeof EColorGroupStatus>;
+
+export const EColorBatchStatus = z.enum([
+  'draft',
+  'rendering',
+  'staged',
+  'validated',
+  'promoted',
+  'failed',
+  'superseded',
+]);
+export type EColorBatchStatus = z.infer<typeof EColorBatchStatus>;
+
+export const EColorValidationStatus = z.enum(['pending', 'pass', 'fail']);
+export type EColorValidationStatus = z.infer<typeof EColorValidationStatus>;
+
+export const EColorValidationCheckResult = z.enum(['pass', 'fail', 'not_present_in_source']);
+export type EColorValidationCheckResult = z.infer<typeof EColorValidationCheckResult>;
+
+export const IColorGroupConfig = z.object({
+  groupKey: z.string(),
+  displayName: z.string().optional(),
+  technicalSummary: z.array(z.string()).default([]),
+  creativeLookKey: z.string().optional(),
+});
+export type IColorGroupConfig = z.infer<typeof IColorGroupConfig>;
+
+export const IColorRootConfig = z.object({
+  rootId: z.string(),
+  resolveProjectName: z.string().optional(),
+  rootNamespace: z.string().optional(),
+  gradingTimelineName: z.string().optional(),
+  renderPreset: IColorRenderPreset.default({}),
+  groups: z.array(IColorGroupConfig).default([]),
+  updatedAt: z.string().optional(),
+});
+export type IColorRootConfig = z.infer<typeof IColorRootConfig>;
+
+export const IColorConfig = z.object({
+  roots: z.array(IColorRootConfig).default([]),
+  updatedAt: z.string().optional(),
+});
+export type IColorConfig = z.infer<typeof IColorConfig>;
+
+export const IColorGroupCurrent = z.object({
+  groupKey: z.string(),
+  status: EColorGroupStatus,
+  displayName: z.string().optional(),
+  clipCount: z.number().int().nonnegative().optional(),
+  latestBatchId: z.string().optional(),
+  latestBatchStatus: EColorBatchStatus.optional(),
+  latestValidationStatus: EColorValidationStatus.optional(),
+  pendingPromoteBatchId: z.string().optional(),
+  lastPromotedBatchId: z.string().optional(),
+  blockingReasons: z.array(z.string()).default([]),
+});
+export type IColorGroupCurrent = z.infer<typeof IColorGroupCurrent>;
+
+export const IColorRootCurrent = z.object({
+  rootId: z.string(),
+  mirrorStatus: z.enum(['idle', 'running', 'ready', 'synced', 'stale', 'blocked']).optional(),
+  timelineStatus: z.enum(['idle', 'running', 'missing', 'ready', 'blocked']).optional(),
+  groupSyncStatus: z.enum(['idle', 'running', 'missing', 'ready', 'blocked']).optional(),
+  groupSyncAt: z.string().optional(),
+  activeStage: z.string().optional(),
+  currentJobId: z.string().optional(),
+  detail: z.string().optional(),
+  pendingPromoteGroupKey: z.string().optional(),
+  pendingPromoteBatchId: z.string().optional(),
+  latestBatchId: z.string().optional(),
+  groups: z.array(IColorGroupCurrent).default([]),
+  blockingReasons: z.array(z.string()).default([]),
+});
+export type IColorRootCurrent = z.infer<typeof IColorRootCurrent>;
+
+export const IColorCurrent = z.object({
+  selectedRootId: z.string().optional(),
+  roots: z.array(IColorRootCurrent).default([]),
+  updatedAt: z.string().optional(),
+});
+export type IColorCurrent = z.infer<typeof IColorCurrent>;
+
+export const IColorGroupSnapshot = z.object({
+  groupKey: z.string(),
+  displayName: z.string().optional(),
+  clipKeys: z.array(z.string()).default([]),
+  hostSummary: z.record(z.unknown()).default({}),
+});
+export type IColorGroupSnapshot = z.infer<typeof IColorGroupSnapshot>;
+
+export const IColorGroupsSnapshotFile = z.object({
+  rootId: z.string(),
+  syncedAt: z.string().optional(),
+  timelineName: z.string().optional(),
+  groups: z.array(IColorGroupSnapshot).default([]),
+});
+export type IColorGroupsSnapshotFile = z.infer<typeof IColorGroupsSnapshotFile>;
+
+export const IColorFileMetadataSnapshot = z.object({
+  mediaKind: EAssetKind.optional(),
+  width: z.number().int().positive().optional(),
+  height: z.number().int().positive().optional(),
+  fps: z.number().positive().optional(),
+  durationMs: z.number().nonnegative().optional(),
+  capturedAt: z.string().optional(),
+  createTime: z.string().optional(),
+  gps: z.tuple([z.number(), z.number()]).optional(),
+  filesystemCreateTime: z.string().optional(),
+});
+export type IColorFileMetadataSnapshot = z.infer<typeof IColorFileMetadataSnapshot>;
+
+export const IColorBatchPlanEntry = z.object({
+  rawRelativePath: z.string(),
+  sourceAbsolutePath: z.string(),
+  sourceMetadataSnapshot: IColorFileMetadataSnapshot.optional(),
+});
+export type IColorBatchPlanEntry = z.infer<typeof IColorBatchPlanEntry>;
+
+export const IColorBatchPlan = z.object({
+  batchId: z.string(),
+  rootId: z.string(),
+  groupKey: z.string(),
+  createdAt: z.string(),
+  stagingRoot: z.string(),
+  renderPreset: IColorRenderPreset,
+  clipKeys: z.array(z.string()).default([]),
+  entries: z.array(IColorBatchPlanEntry).default([]),
+});
+export type IColorBatchPlan = z.infer<typeof IColorBatchPlan>;
+
+export const IColorBatchManifestEntry = z.object({
+  rawRelativePath: z.string(),
+  stagingRelativePath: z.string(),
+  stagingAbsolutePath: z.string(),
+  promoteRelativePath: z.string(),
+  promoteTargetPath: z.string(),
+  normalizedOutputFilename: z.string(),
+  sourceMetadataSnapshot: IColorFileMetadataSnapshot.optional(),
+  outputMetadataSnapshot: IColorFileMetadataSnapshot.optional(),
+});
+export type IColorBatchManifestEntry = z.infer<typeof IColorBatchManifestEntry>;
+
+export const IColorBatchManifest = z.object({
+  batchId: z.string(),
+  rootId: z.string(),
+  groupKey: z.string(),
+  createdAt: z.string(),
+  renderPreset: IColorRenderPreset,
+  managedOutputSet: z.array(z.string()).default([]),
+  entries: z.array(IColorBatchManifestEntry).default([]),
+});
+export type IColorBatchManifest = z.infer<typeof IColorBatchManifest>;
+
+export const IColorBatchValidationChecks = z.object({
+  pathMirror: EColorValidationCheckResult,
+  filenameNormalized: EColorValidationCheckResult,
+  mediaKind: EColorValidationCheckResult,
+  resolution: EColorValidationCheckResult,
+  fps: EColorValidationCheckResult,
+  duration: EColorValidationCheckResult,
+  capturedAt: EColorValidationCheckResult,
+  createTime: EColorValidationCheckResult,
+  gps: EColorValidationCheckResult,
+  filesystemCreateTime: EColorValidationCheckResult,
+});
+export type IColorBatchValidationChecks = z.infer<typeof IColorBatchValidationChecks>;
+
+export const IColorBatchValidationEntry = z.object({
+  rawRelativePath: z.string(),
+  stagingRelativePath: z.string().optional(),
+  promoteTargetPath: z.string().optional(),
+  status: z.enum(['pass', 'fail']),
+  reasons: z.array(z.string()).default([]),
+  checks: IColorBatchValidationChecks,
+});
+export type IColorBatchValidationEntry = z.infer<typeof IColorBatchValidationEntry>;
+
+export const IColorBatchValidation = z.object({
+  batchId: z.string(),
+  rootId: z.string(),
+  groupKey: z.string(),
+  validatedAt: z.string(),
+  status: z.enum(['pass', 'fail']),
+  entries: z.array(IColorBatchValidationEntry).default([]),
+});
+export type IColorBatchValidation = z.infer<typeof IColorBatchValidation>;
+
+export const IColorBatchPromote = z.object({
+  batchId: z.string(),
+  rootId: z.string(),
+  groupKey: z.string(),
+  promotedAt: z.string(),
+  status: z.enum(['completed', 'failed']),
+  outputs: z.array(z.string()).default([]),
+  deletedOutputs: z.array(z.string()).default([]),
+  detail: z.string().optional(),
+});
+export type IColorBatchPromote = z.infer<typeof IColorBatchPromote>;
 
 export const IProjectBriefPharosConfig = z.object({
   includedTripIds: z.array(z.string()).default([]),

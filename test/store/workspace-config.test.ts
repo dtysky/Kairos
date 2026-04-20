@@ -4,10 +4,14 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   initWorkspaceProject,
+  loadColorCurrent,
+  loadIngestRoots,
   loadManualItineraryConfig,
   loadProjectBriefConfig,
   loadScriptBriefConfig,
   loadStyleSourcesConfig,
+  saveColorCurrent,
+  saveIngestRoots,
   saveManualItineraryConfig,
   saveProjectBriefConfig,
   saveScriptBriefConfig,
@@ -36,6 +40,8 @@ describe('workspace config sync', () => {
 
     await expect(access(join(projectRoot, 'config', 'styles'))).rejects.toBeTruthy();
     await expect(access(join(projectRoot, 'analysis', 'reference-transcripts'))).rejects.toBeTruthy();
+    await expect(access(join(projectRoot, 'color', 'config.json'))).rejects.toBeTruthy();
+    await expect(access(join(projectRoot, 'color', 'current.json'))).resolves.toBeUndefined();
   });
 
   it('roundtrips project brief into markdown and json', async () => {
@@ -48,6 +54,7 @@ describe('workspace config sync', () => {
       createdAt: '2026-04-05T00:00:00.000Z',
       mappings: [{
         path: 'F:\\media\\camera',
+        rawPath: 'F:\\media\\camera\\raw',
         description: '主机位',
         flightRecordPath: 'F:\\media\\camera\\FlightRecord',
       }],
@@ -57,7 +64,125 @@ describe('workspace config sync', () => {
     const markdown = await readFile(join(projectRoot, 'config', 'project-brief.md'), 'utf-8');
     expect(loaded.mappings).toHaveLength(1);
     expect(markdown).toContain('路径：F:\\media\\camera');
+    expect(markdown).toContain('原始路径：F:\\media\\camera\\raw');
     expect(markdown).toContain('飞行记录路径：F:\\media\\camera\\FlightRecord');
+  });
+
+  it('roundtrips root-level color renderPreset and color current store', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectRoot = await initWorkspaceProject(workspaceRoot, 'project-color', 'Project Color');
+
+    await saveIngestRoots(projectRoot, {
+      roots: [{
+        id: 'root-camera',
+        path: '/media/current/camera',
+        rawPath: '/media/raw/camera',
+        enabled: true,
+        color: {
+          renderPreset: {
+            container: 'mp4',
+            videoCodec: 'h265',
+            audioCodec: 'aac',
+            bitrateMbps: 120,
+          },
+        },
+      }],
+    });
+
+    await saveColorCurrent(projectRoot, {
+      selectedRootId: 'root-camera',
+      roots: [{
+        rootId: 'root-camera',
+        mirrorStatus: 'ready',
+        timelineStatus: 'missing',
+        latestBatchId: 'batch-1',
+        groups: [{
+          groupKey: 'camera-log-day',
+          status: 'ready',
+        }],
+      }],
+    });
+
+    const loadedRoots = await loadIngestRoots(projectRoot);
+    const loadedCurrent = await loadColorCurrent(projectRoot);
+
+    expect(loadedRoots.roots[0]?.color?.renderPreset?.bitrateMbps).toBe(120);
+    expect(loadedCurrent.selectedRootId).toBe('root-camera');
+    expect(loadedCurrent.roots[0]?.groups[0]?.status).toBe('ready');
+  });
+
+  it('migrates legacy color config renderPreset into project roots on load', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectRoot = await initWorkspaceProject(workspaceRoot, 'project-color-migrate', 'Project Color Migrate');
+
+    await saveIngestRoots(projectRoot, {
+      roots: [{
+        id: 'root-camera',
+        path: '/media/current/camera',
+        rawPath: '/media/raw/camera',
+        enabled: true,
+      }],
+    });
+
+    await writeJson(join(projectRoot, 'color', 'config.json'), {
+      roots: [{
+        rootId: 'root-camera',
+        renderPreset: {
+          container: 'mp4',
+          videoCodec: 'h265',
+          audioCodec: 'aac',
+          bitrateMbps: 150,
+        },
+      }],
+    });
+
+    const loaded = await loadIngestRoots(projectRoot);
+    expect(loaded.roots).toHaveLength(1);
+    expect(loaded.roots[0]?.id).toBe('root-camera');
+    expect(loaded.roots[0]?.color?.renderPreset?.bitrateMbps).toBe(150);
+    expect(loaded.roots[0]?.color?.renderPreset?.container).toBe('mp4');
+  });
+
+  it('preserves unmatched color current roots when saving one root', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectRoot = await initWorkspaceProject(workspaceRoot, 'project-color-current-preserve', 'Project Color Current Preserve');
+
+    await saveColorCurrent(projectRoot, {
+      selectedRootId: 'root-active',
+      roots: [{
+        rootId: 'root-active',
+        mirrorStatus: 'ready',
+        timelineStatus: 'ready',
+        groups: [],
+      }, {
+        rootId: 'root-legacy',
+        mirrorStatus: 'blocked',
+        timelineStatus: 'blocked',
+        detail: 'legacy blocked',
+        groups: [{
+          groupKey: 'legacy-group',
+          status: 'blocked',
+        }],
+      }],
+    });
+
+    await saveColorCurrent(projectRoot, {
+      selectedRootId: 'root-active',
+      roots: [{
+        rootId: 'root-active',
+        mirrorStatus: 'running',
+        timelineStatus: 'idle',
+        groups: [],
+      }],
+    });
+
+    const loaded = await loadColorCurrent(projectRoot);
+    expect(loaded.roots).toHaveLength(2);
+    expect(loaded.selectedRootId).toBe('root-active');
+    expect(loaded.roots[0]?.rootId).toBe('root-active');
+    expect(loaded.roots[0]?.mirrorStatus).toBe('running');
+    expect(loaded.roots[1]?.rootId).toBe('root-legacy');
+    expect(loaded.roots[1]?.detail).toBe('legacy blocked');
   });
 
   it('preserves prose, structured itinerary, and capture overrides', async () => {

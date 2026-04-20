@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { basename } from 'node:path';
+import { basename, isAbsolute, relative, resolve } from 'node:path';
 import type { IKtepAsset, IMediaRoot } from '../../protocol/schema.js';
 import {
   appendAssets,
@@ -87,7 +87,12 @@ export async function ingestWorkspaceProjectMedia(
       warnings.add(warning);
     }
 
-    const files = (await scanDirectory(resolvedRoot.localPath))
+    const files = (await scanDirectory(resolvedRoot.localPath, {
+      excludeSubtrees: resolveNestedRawExclusions(
+        resolvedRoot.localPath,
+        resolvedRoot.rawLocalPath,
+      ),
+    }))
       .filter(file => file.kind !== 'audio');
     scannedRoots.push({
       rootId: resolvedRoot.root.id,
@@ -266,4 +271,22 @@ async function refreshProjectChronology(projectRoot: string): Promise<number> {
   const chronology = buildMediaChronology(assets, reports, existing, roots);
   await writeChronology(projectRoot, chronology);
   return chronology.length;
+}
+
+function resolveNestedRawExclusions(
+  localPath: string,
+  rawLocalPath?: string,
+): string[] {
+  if (!rawLocalPath?.trim()) {
+    return [];
+  }
+
+  const currentRoot = resolve(localPath);
+  const rawRoot = resolve(rawLocalPath);
+  const rel = relative(currentRoot, rawRoot);
+  if (!rel || rel.startsWith('..') || isAbsolute(rel)) {
+    return [];
+  }
+
+  return [rawRoot];
 }

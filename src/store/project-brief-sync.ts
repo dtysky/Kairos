@@ -2,9 +2,8 @@ import { readFile } from 'node:fs/promises';
 import { basename } from 'node:path';
 import type { IDeviceMediaMapFile, IMediaRoot } from '../protocol/schema.js';
 import { loadProjectDeviceMediaMaps, saveProjectDeviceMap } from './device-media-maps.js';
-import { loadIngestRoots } from './project.js';
+import { loadProjectRoots, saveProjectRoots } from './project.js';
 import { buildProjectBriefTemplate, normalizeProjectBriefLocalPath, parseProjectBrief } from './project-brief.js';
-import { writeJson } from './writer.js';
 
 export interface ISyncProjectBriefInput {
   projectId: string;
@@ -26,7 +25,7 @@ export async function syncProjectBriefMappings(
     'utf-8',
   );
   const parsed = parseProjectBrief(content);
-  const existingRoots = await loadIngestRoots(input.projectRoot);
+  const existingRoots = await loadProjectRoots(input.projectRoot);
   const existingDeviceMaps = await loadProjectDeviceMediaMaps(input.projectRoot, input.deviceMapPath);
 
   if (parsed.mappings.length === 0) {
@@ -49,15 +48,17 @@ export async function syncProjectBriefMappings(
       enabled: existing?.enabled ?? true,
       clockOffsetMs: existing?.clockOffsetMs,
       path: existing?.path,
+      rawPath: mapping.rawPath?.trim() || undefined,
       description: mapping.description,
       notes: existing?.notes ?? [mapping.description],
       tags: existing?.tags ?? [],
       category: existing?.category,
       priority: existing?.priority ?? (index + 1),
+      color: existing?.color,
     } satisfies IMediaRoot;
   });
 
-  await writeJson(`${input.projectRoot}/config/ingest-roots.json`, { roots });
+  await saveProjectRoots(input.projectRoot, { roots });
   const deviceMaps = await saveProjectDeviceMap(
     input.projectRoot,
     input.projectId,
@@ -65,6 +66,9 @@ export async function syncProjectBriefMappings(
       roots: parsed.mappings.map((mapping, index) => ({
         rootId: roots[index].id,
         localPath: normalizeProjectBriefLocalPath(mapping.path),
+        rawLocalPath: mapping.rawPath
+          ? normalizeProjectBriefLocalPath(mapping.rawPath, mapping.path)
+          : undefined,
         flightRecordPath: mapping.flightRecordPath
           ? normalizeProjectBriefLocalPath(mapping.flightRecordPath, mapping.path)
           : undefined,
@@ -84,7 +88,7 @@ export function buildProjectBriefWithMappings(input: {
   name: string;
   description?: string;
   createdAt?: string;
-  mappings: Array<{ path: string; description: string; flightRecordPath?: string }>;
+  mappings: Array<{ path: string; rawPath?: string; description: string; flightRecordPath?: string }>;
   pharos?: { includedTripIds?: string[] };
   materialPatternPhrases?: string[];
 }): string {
@@ -101,15 +105,18 @@ export function buildProjectBriefWithMappings(input: {
   const mappingLines = input.mappings.length > 0
     ? input.mappings.flatMap(mapping => [
       `路径：${mapping.path}`,
+      ...(mapping.rawPath ? [`原始路径：${mapping.rawPath}`] : []),
       `说明：${mapping.description}`,
       ...(mapping.flightRecordPath ? [`飞行记录路径：${mapping.flightRecordPath}`] : []),
       '',
     ])
     : [
       '路径：',
+      '原始路径：',
       '说明：',
       '',
       '路径：',
+      '原始路径：',
       '说明：',
       '',
     ];

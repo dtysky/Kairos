@@ -23,6 +23,7 @@ import {
 import { EmptyPanel, MonitorPage } from './monitor-page.jsx';
 import {
   CaptureTimeOverridesEditor,
+  ColorCurrentSummary,
   IngestRootClockEditor,
   ManualItineraryEditor,
   ProjectBriefEditor,
@@ -95,9 +96,19 @@ function AppShell() {
       .filter(job => !(job.jobType === 'script' && job.executionMode === 'agent')),
     [allJobs],
   );
+  const liveProjectJobs = useMemo(
+    () => activeJobs.filter(job => job.projectId === projectId && ['queued', 'running'].includes(job.status)),
+    [activeJobs, projectId],
+  );
   const mlService = services.find(service => service.name === 'ml') || null;
   const dashboardService = services.find(service => service.name === 'dashboard') || null;
   const openReviewCount = reviews.filter(review => review.status === 'open').length;
+
+  useEffect(() => {
+    if (!projectId || liveProjectJobs.length === 0) return undefined;
+    const timer = window.setInterval(() => refreshProject(projectId), 4000);
+    return () => window.clearInterval(timer);
+  }, [projectId, liveProjectJobs.length]);
 
   const setProjectBrief = makeSectionSetter(setConfig, 'projectBrief');
   const setIngestRoots = makeSectionSetter(setConfig, 'ingestRoots');
@@ -261,8 +272,15 @@ function AppShell() {
     setBusy(current => ({ ...current, [busyKey]: true }));
     try {
       await startJob(projectId, jobType, args);
+      await refreshProject(projectId).catch(() => undefined);
       await refreshStatus();
-      setMessage(jobType === 'script' ? '' : `已启动 ${jobType}`);
+      setMessage(
+        jobType === 'script'
+          ? ''
+          : jobType === 'color' && args.rootId
+            ? `已启动 color ${args.action || 'prepare_root'}：${args.rootId}${args.groupKey ? ` / ${args.groupKey}` : ''}${args.batchId ? ` / ${args.batchId}` : ''}`
+            : `已启动 ${jobType}`,
+      );
       setError('');
     } catch (caught) {
       handleError(caught);
@@ -409,6 +427,22 @@ function AppShell() {
                 />
                 <Route
                   exact
+                  path="/color"
+                  render={() => (
+                    <ColorPage
+                      projectId={projectId}
+                      config={config}
+                      capabilities={capabilities}
+                      jobs={allJobs}
+                      setIngestRoots={setIngestRoots}
+                      saveSection={saveSection}
+                      busy={busy}
+                      onRunColorAction={args => runProjectWorkflow('color', args)}
+                    />
+                  )}
+                />
+                <Route
+                  exact
                   path="/analyze/monitor"
                   render={() => <Redirect to="/analyze" />}
                 />
@@ -502,6 +536,7 @@ function AppShell() {
 function OverviewPage({ currentProject, activeJobs, services, projectProgress, openReviewCount }) {
   const workflows = [
     { path: '/ingest-gps', label: '导入与 GPS', summary: '维护 project-brief、manual-itinerary 与素材时间校正。' },
+    { path: '/color', label: '达芬奇调色', summary: '维护 root 级 renderPreset，并执行 prepare / sync groups / validate / promote。' },
     { path: '/analyze', label: '素材分析', summary: '直接查看分析监控、恢复进度并启动 Analyze。' },
     { path: '/style', label: '风格分析', summary: '维护 Workspace 风格库、style sources，并查看当前分类监控。' },
     { path: '/script', label: '脚本', summary: '维护 script-brief，并准备确定性材料给 Agent 继续写稿。' },
@@ -641,6 +676,63 @@ function IngestGpsPage({
         title="导入 / GPS Review"
         emptyLabel="当前没有 ingest / gps 相关 review。"
         filter={review => ['project-init', 'ingest', 'gps-refresh'].includes(review.stage)}
+      />
+    </div>
+  );
+}
+
+function ColorPage({
+  projectId,
+  config,
+  capabilities,
+  jobs,
+  setIngestRoots,
+  saveSection,
+  busy,
+  onRunColorAction,
+}) {
+  if (!config) {
+    return (
+      <div className="route-page">
+        <EmptyPanel label="当前项目配置尚未加载完成。" />
+      </div>
+    );
+  }
+  const colorCapability = resolveColorCapability(capabilities);
+  const colorBlocked = colorCapability?.supported === false;
+  const colorCapabilityDetail = colorCapability?.note || colorCapability?.reason || colorCapability?.message || '';
+  return (
+    <div className="route-page">
+      <RouteIntro
+        title="达芬奇调色"
+        subtitle="这里优先读取 `config.colorRoots` 这个 root 级 read model；长期配置只保留项目 root 上的 `color.renderPreset`，命名全部按约定生成并只读展示。"
+      />
+      {colorBlocked ? (
+        <WorkflowPrompt
+          eyebrow="Blocked"
+          title="当前 capability 不支持 color"
+          body="capabilities 已明确标记 `color` 不支持。这个页面仍可查看和编辑配置，但不会提供运行入口，也不会影响主链。"
+          tone="error"
+          detail={colorCapabilityDetail || '请先确认后端是否已经开放 color 能力。'}
+        />
+      ) : colorCapabilityDetail ? (
+        <WorkflowPrompt
+          eyebrow="Current Scope"
+          title="当前 color 已支持 official Python host 闭环入口"
+          body="现在可以在 `/color` 里维护 root 级 renderPreset，并直接触发 `prepare_root / sync_groups / execute_group / validate_batch / promote_batch`。"
+          tone="accent"
+          detail={colorCapabilityDetail}
+        />
+      ) : null}
+      <ColorCurrentSummary
+        config={config}
+        capability={colorCapability}
+        projectId={projectId}
+        jobs={jobs}
+        setIngestRoots={setIngestRoots}
+        onSaveProjectRoots={() => saveSection('ingest-roots')}
+        busy={busy}
+        onRunColorAction={onRunColorAction}
       />
     </div>
   );
@@ -1405,6 +1497,7 @@ function TopNav({ history, location }) {
   const items = [
     { path: '/', label: '总览' },
     { path: '/ingest-gps', label: '导入与 GPS' },
+    { path: '/color', label: '达芬奇调色' },
     { path: '/analyze', label: '素材分析' },
     { path: '/style', label: '风格分析' },
     { path: '/script', label: '脚本' },
@@ -1443,6 +1536,7 @@ function RouteIntro({ title, subtitle }) {
 
 function resolveTopLevelPath(pathname) {
   if (pathname.startsWith('/ingest-gps')) return '/ingest-gps';
+  if (pathname.startsWith('/color')) return '/color';
   if (pathname.startsWith('/analyze')) return '/analyze';
   if (pathname.startsWith('/style')) return '/style';
   if (pathname.startsWith('/script')) return '/script';
@@ -1480,6 +1574,20 @@ function getStyleJobCategoryId(job) {
 
 function getStyleMonitorCategoryId(model) {
   return model?.raw?.category?.categoryId || '';
+}
+
+function resolveColorCapability(capabilities) {
+  const jobCapability = capabilities?.jobs?.find(job => job.jobType === 'color') || null;
+  if (jobCapability) {
+    return jobCapability;
+  }
+  if (typeof capabilities?.color === 'boolean') {
+    return { supported: capabilities.color };
+  }
+  if (capabilities && typeof capabilities.color === 'object') {
+    return capabilities.color;
+  }
+  return null;
 }
 
 function buildStyleSelectionScriptBriefPayload(brief, styleCategory) {

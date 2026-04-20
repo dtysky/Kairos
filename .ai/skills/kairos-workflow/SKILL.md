@@ -39,6 +39,10 @@ Kairos 将旅拍素材转化为可编辑时间线。流程分为 1 个准备阶�
 
 - 当前正式运行与监控入口是 `Supervisor + React console (apps/kairos-console/)`
 - `Analyze` 与 `Style` 的正式监控路由分别是 `http://127.0.0.1:8940/analyze` 和 `http://127.0.0.1:8940/style`
+- `DaVinci color` 当前已有独立 `/color` 主路由，但当前阶段先承载 root 级最小 `renderPreset`、状态与 prep 入口，不等于 Resolve 执行链已经全量接通
+- `/color` 当前应自动发现已配置 `rawPath` 的素材根，并派生约定命名与阻塞信息；不要把“还没接通 Resolve”误渲染成“没有可显示 root”
+- 当前 `Supervisor color` 已允许做 deterministic prep：`sync_root_bins -> prepare_root_timeline` 会推进 Kairos 侧 current/progress 真相；但这仍不代表 Resolve 宿主侧已经真实完成 Bin / Timeline 同步
+- 当前 color 的长期配置只保留项目级 root 上的 `color.renderPreset`；不要再把 `resolveProjectName / rootNamespace / gradingTimelineName / bootstrap Group` 当成用户配置项
 - `scripts/kairos-supervisor.* start` 只会启动 `Supervisor + React console`；不会自动启动 ML，也不会恢复旧 job
 - `progress.json` 是 durable progress cache，不是 live job 证据
 - Console 刷新时，默认项目上下文应优先跟随最新的 active project-scoped job；没有活跃项目 job 时，才回退到上次本地选择
@@ -116,13 +120,19 @@ await initWorkspaceProject(
 路径：
 F:\你的素材目录
 
+原始路径：
+F:\你的原始素材目录（可选，仅 `/color` 使用）
+
 说明：
 主机位，风景、步行、口播都有
 ```
 
 用户填完 `project-brief.md` 后，不要手工再抄一遍配置；应把它当成路径映射的输入源，同步到：
-- `config/ingest-roots.json`
+- `config/project-roots.json`
 - `config/device-media-maps.local.json`
+
+如果某个 root 配了 `原始路径`，它会进一步同步到 `rawPath/rawLocalPath`。
+当 `rawPath` 位于当前素材目录内部时，Ingest 必须显式排除该 raw 子树，避免把 raw 与当前输出一起纳入主链扫描。
 
 如果下一步就是跑 Ingest，优先直接调用 `ingestWorkspaceProjectMedia()`；当前实现会在检测到
 `project-brief.md` 已配置路径映射时，先自动同步一次再继续扫描。
@@ -136,7 +146,7 @@ F:\你的素材目录
 ```
 project/
 ├── config/
-│   ├── ingest-roots.json    # ← initProject 创建（空 roots）
+│   ├── project-roots.json   # ← initProject 创建（空 roots）
 │   ├── project-brief.md     # ← initProject 创建（项目说明 + 路径映射模板）
 ├── gps/
 │   ├── tracks/              # ← initProject 创建（项目级 GPX 目录）

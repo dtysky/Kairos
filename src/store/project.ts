@@ -1,7 +1,13 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { basename, dirname, join, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { IStoreManifest, IMediaRoot, IKtepProject } from '../protocol/schema.js';
+import {
+  IColorCurrent,
+  IColorConfig,
+  IStoreManifest,
+  IMediaRoot,
+  IKtepProject,
+} from '../protocol/schema.js';
 import { readJson, readJsonOrNull, writeJson } from './writer.js';
 import { z } from 'zod';
 import { buildProjectBriefTemplate } from './project-brief.js';
@@ -18,6 +24,9 @@ const CDIRS = [
   'script/versions',
   'timeline',
   'timeline/versions',
+  'color',
+  'color/groups',
+  'color/batches',
   'subtitles',
   'adapters',
   'analysis',
@@ -30,8 +39,17 @@ const CDIRS = [
   'gps/same-source/tracks',
 ] as const;
 
-const IIngestRoots = z.object({ roots: z.array(IMediaRoot) });
-export type IIngestRoots = z.infer<typeof IIngestRoots>;
+const IProjectRoots = z.object({ roots: z.array(IMediaRoot) });
+export type IProjectRoots = z.infer<typeof IProjectRoots>;
+export type IIngestRoots = IProjectRoots;
+
+export function getProjectRootsPath(root: string): string {
+  return join(root, 'config', 'project-roots.json');
+}
+
+function getLegacyIngestRootsPath(root: string): string {
+  return join(root, 'config', 'ingest-roots.json');
+}
 
 const IRuntimeConfig = z.object({
   ffmpegPath: z.string().optional(),
@@ -67,9 +85,14 @@ const IRuntimeConfig = z.object({
   timelineWidth: z.number().int().positive().optional(),
   timelineHeight: z.number().int().positive().optional(),
   timelineFps: z.number().positive().optional(),
+  agentPacketRunnerCommand: z.string().optional(),
+  agentPacketRunnerArgs: z.array(z.string()).optional(),
+  agentPacketRunnerCwd: z.string().optional(),
   jianyingDraftRoot: z.string().optional(),
   jianyingPythonPath: z.string().optional(),
   jianyingPyProjectRoot: z.string().optional(),
+  resolveColorPythonPath: z.string().optional(),
+  resolveColorScriptApiRoot: z.string().optional(),
 });
 export type IRuntimeConfig = z.infer<typeof IRuntimeConfig>;
 
@@ -99,8 +122,9 @@ export async function initProject(
   };
   await writeJson(join(root, 'store/manifest.json'), manifest);
 
-  const ingestRoots: IIngestRoots = { roots: [] };
-  await writeJson(join(root, 'config/ingest-roots.json'), ingestRoots);
+  const projectRoots: IProjectRoots = { roots: [] };
+  await writeJson(getProjectRootsPath(root), projectRoots);
+  await writeJson(join(root, 'color/current.json'), IColorCurrent.parse({ roots: [] }));
 
   await writeFile(
     join(root, 'config/project-brief.md'),
@@ -127,21 +151,30 @@ export async function loadProject(root: string): Promise<IKtepProject> {
 }
 
 export async function loadIngestRoots(root: string): Promise<IIngestRoots> {
-  const data = await readJsonOrNull(join(root, 'config/ingest-roots.json'), IIngestRoots);
-  return data ?? { roots: [] };
+  return loadProjectRoots(root);
 }
 
 export async function saveIngestRoots(root: string, ingestRoots: IIngestRoots): Promise<IIngestRoots> {
-  const normalized = IIngestRoots.parse({
-    roots: ingestRoots.roots.map(item => ({
-      ...item,
-      label: item.label?.trim() || undefined,
-      description: item.description?.trim() || undefined,
-      notes: item.notes?.map(note => note.trim()).filter(Boolean),
-      tags: item.tags?.map(tag => tag.trim()).filter(Boolean),
-    })),
+  return saveProjectRoots(root, ingestRoots);
+}
+
+export async function loadProjectRoots(root: string): Promise<IProjectRoots> {
+  const stored = await readJsonOrNull(getProjectRootsPath(root), IProjectRoots);
+  const legacyStored = await readJsonOrNull(getLegacyIngestRootsPath(root), IProjectRoots);
+  const storedRoots = normalizeProjectRoots(stored ?? { roots: [] });
+  const legacyRoots = normalizeProjectRoots(legacyStored ?? { roots: [] });
+  const normalized = normalizeProjectRoots({
+    roots: [
+      ...storedRoots.roots,
+      ...legacyRoots.roots.filter(legacyRoot => !storedRoots.roots.some(rootItem => rootItem.id === legacyRoot.id)),
+    ],
   });
-  await writeJson(join(root, 'config/ingest-roots.json'), normalized);
+  return applyLegacyColorRenderPresetMigration(root, normalized);
+}
+
+export async function saveProjectRoots(root: string, projectRoots: IProjectRoots): Promise<IProjectRoots> {
+  const normalized = normalizeProjectRoots(projectRoots);
+  await writeJson(getProjectRootsPath(root), normalized);
   return normalized;
 }
 
@@ -173,4 +206,83 @@ function getRuntimeConfigCandidates(root: string): string[] {
   }
 
   return [...new Set(candidates)];
+}
+
+function normalizeProjectRoots(projectRoots: IProjectRoots): IProjectRoots {
+  return IProjectRoots.parse({
+    roots: projectRoots.roots.map(root => normalizeProjectRoot(root)),
+  });
+}
+
+function normalizeProjectRoot(root: IMediaRoot): IMediaRoot {
+  const renderPreset = root.color?.renderPreset;
+  const normalizedRenderPreset = renderPreset && (
+    renderPreset.container?.trim()
+    || renderPreset.videoCodec?.trim()
+    || renderPreset.audioCodec?.trim()
+    || typeof renderPreset.bitrateMbps === 'number'
+  )
+    ? {
+      container: renderPreset.container?.trim() || undefined,
+      videoCodec: renderPreset.videoCodec?.trim() || undefined,
+      audioCodec: renderPreset.audioCodec?.trim() || undefined,
+      bitrateMbps: renderPreset.bitrateMbps,
+    }
+    : undefined;
+
+  return {
+    ...root,
+    path: root.path?.trim() || undefined,
+    rawPath: root.rawPath?.trim() || undefined,
+    label: root.label?.trim() || undefined,
+    description: root.description?.trim() || undefined,
+    notes: root.notes?.map(note => note.trim()).filter(Boolean),
+    tags: root.tags?.map(tag => tag.trim()).filter(Boolean),
+    color: normalizedRenderPreset
+      ? { renderPreset: normalizedRenderPreset }
+      : undefined,
+  };
+}
+
+async function applyLegacyColorRenderPresetMigration(
+  root: string,
+  projectRoots: IProjectRoots,
+): Promise<IProjectRoots> {
+  const legacyConfig = await readJsonOrNull(join(root, 'color', 'config.json'), IColorConfig);
+  if (!legacyConfig?.roots?.length) {
+    return projectRoots;
+  }
+
+  const legacyRenderPresetByRootId = new Map(
+    legacyConfig.roots
+      .filter(item => item.renderPreset && (
+        item.renderPreset.container
+        || item.renderPreset.videoCodec
+        || item.renderPreset.audioCodec
+        || typeof item.renderPreset.bitrateMbps === 'number'
+      ))
+      .map(item => [item.rootId, item.renderPreset]),
+  );
+
+  if (legacyRenderPresetByRootId.size === 0) {
+    return projectRoots;
+  }
+
+  return normalizeProjectRoots({
+    roots: projectRoots.roots.map(projectRoot => {
+      if (projectRoot.color?.renderPreset) {
+        return projectRoot;
+      }
+      const legacyRenderPreset = legacyRenderPresetByRootId.get(projectRoot.id);
+      if (!legacyRenderPreset) {
+        return projectRoot;
+      }
+      return {
+        ...projectRoot,
+        color: {
+          renderPreset: legacyRenderPreset,
+        },
+      };
+    }),
+  });
 }

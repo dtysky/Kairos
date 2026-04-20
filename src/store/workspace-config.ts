@@ -2,12 +2,14 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { basename, dirname, join, resolve } from 'node:path';
 import {
+  IColorCurrent,
   IManualCaptureTimeOverrideConfig,
   IManualItineraryConfig,
   IProjectBriefConfig,
   IScriptBriefSegmentConfig,
   IScriptBriefConfig,
   IStyleSourcesConfig,
+  type IColorCurrent as TColorCurrent,
   type IManualCaptureTimeOverrideConfig as TManualCaptureTimeOverrideConfig,
   type IManualItineraryConfig as TManualItineraryConfig,
   type IManualItinerarySegmentConfig as TManualItinerarySegmentConfig,
@@ -57,6 +59,10 @@ export function getWorkspaceStyleSourcesConfigPath(workspaceRoot: string): strin
   return join(workspaceRoot, 'config', 'style-sources.json');
 }
 
+export function getColorCurrentPath(projectRoot: string): string {
+  return join(projectRoot, 'color', 'current.json');
+}
+
 export async function loadProjectBriefConfig(projectRoot: string): Promise<TProjectBriefConfig> {
   const stored = await readJsonOrNull(getProjectBriefConfigPath(projectRoot), IProjectBriefConfig);
   if (stored) return IProjectBriefConfig.parse(stored);
@@ -81,6 +87,7 @@ export async function saveProjectBriefConfig(
     ...config,
     mappings: config.mappings.map(mapping => ({
       path: mapping.path.trim(),
+      rawPath: mapping.rawPath?.trim() || undefined,
       description: mapping.description.trim(),
       flightRecordPath: mapping.flightRecordPath?.trim() || undefined,
     })),
@@ -246,6 +253,31 @@ export async function saveStyleSourcesConfig(
   await writeJson(getWorkspaceStyleSourcesConfigPath(workspaceRoot), normalized);
   await syncStyleProfileFrontMatter(workspaceRoot, normalized);
   await removeStaleStyleCatalog(workspaceRoot);
+  return normalized;
+}
+
+export async function loadColorCurrent(projectRoot: string): Promise<TColorCurrent> {
+  const stored = await readJsonOrNull(getColorCurrentPath(projectRoot), IColorCurrent);
+  return IColorCurrent.parse(stored ?? { roots: [] });
+}
+
+export async function saveColorCurrent(
+  projectRoot: string,
+  current: TColorCurrent,
+): Promise<TColorCurrent> {
+  const input = IColorCurrent.parse(current);
+  const existing = IColorCurrent.parse(
+    await readJsonOrNull(getColorCurrentPath(projectRoot), IColorCurrent) ?? { roots: [] },
+  );
+  const incomingRootIds = new Set(input.roots.map(root => root.rootId));
+  const preservedRoots = existing.roots.filter(root => !incomingRootIds.has(root.rootId));
+  const normalized = IColorCurrent.parse({
+    ...existing,
+    ...input,
+    roots: [...input.roots, ...preservedRoots],
+    updatedAt: input.updatedAt ?? new Date().toISOString(),
+  });
+  await writeJson(getColorCurrentPath(projectRoot), normalized);
   return normalized;
 }
 

@@ -7,6 +7,69 @@
 
 ## 0. 2026-03-31 增补
 
+## 0.6 2026-04-19 DaVinci color 执行闭环补记
+
+本轮已冻结的下一步目标，是把独立调色链从“最小配置 + deterministic prep 控制面”补成“官方 Python 宿主 + group sync + execute/validate/promote 闭环”：
+
+- `color` 的长期用户配置仍然只保留项目级 root 注册表上的最小 `root.color.renderPreset`
+- `resolveProjectName / rootNamespace / gradingTimelineName` 继续按约定生成，不回退成用户配置项
+- `ColorExecutor` 作为 color 专用宿主边界正式入场，宿主路线冻结为仓库内置的同机 official Python Scripting API sidecar
+- `Supervisor color` job 将从单一 root prep 扩成 action dispatcher：
+  - `prepare_root`
+  - `sync_groups`
+  - `execute_group`
+  - `validate_batch`
+  - `promote_batch`
+- 正式 Group 真相来自 Resolve 宿主，不再由 Kairos 提供 bootstrap / candidate Group
+- root timeline 是第一版正式 group sync 范围；Kairos 只同步该 root grading timeline 上实际出现的 clips/group
+- `color/groups/<rootId>.json` 将成为 root 级 formal host snapshot
+- `color/batches/<batchId>/plan.json`、`manifest.json`、`validation.json`、`promote.json` 将成为 batch 级正式 archive
+- `color/current.json` 将扩展为 root/group 级 current truth，保存 host prep、group sync、latest batch、latest validation 和 pending promote 指针
+- validation / promote 只依赖 `rawLocalPath + staging + manifest`，不依赖 ingest asset truth
+
+这意味着 `/color` 的官方定位将从“prep/status 面”推进到“独立调色执行控制面”，但仍保持：
+
+- 不与主链耦合
+- 不新增 raw/graded 多版本协议
+- 不把长期配置重新塞回 `color/config.json`
+- 不把 Group 变成 Kairos 自建配置对象
+
+## 0.5 2026-04-19 DaVinci color 最小配置收口补记
+
+当前实现已把独立调色链的长期配置进一步收口为“项目级 root 注册表 + `color/` runtime/archive”：
+
+- 长期用户配置不再写 `projects/<projectId>/color/config.json`
+- root 级长期 color 配置只保留最小 `renderPreset`，并直接挂在项目级 root 注册表 `config/project-roots.json`
+- `resolveProjectName / rootNamespace / gradingTimelineName / Group naming` 全部按约定规则推导，不再是可编辑配置项
+- `/color` 当前只允许编辑 root 级 `renderPreset`，展示约定命名、阻塞原因、current/batch 摘要和 deterministic prep 状态
+- `/color` 不再提供 bootstrap Group、候选 Group 或 raw JSON fallback
+- `projects/<projectId>/color/current.json` 继续承载当前运行真相；`projects/<projectId>/color/batches/<batchId>/...` 保留给 batch/runtime 归档
+- 当前 Resolve 宿主路线冻结为“同机 official Python Scripting API sidecar”，不再把 MCP 作为 color 官方主线
+
+因此，在执行闭环完成前，`/color` 仍应先被理解为“项目 root 上的最小 render preset + color runtime/archive + root prep 控制面”。
+
+## 0.4 2026-04-18 DaVinci color 基础设施落地补记
+
+当前实现已先落地 `2026-04-17--davinci-color-independent-workflow-v1` 中已冻结的基础设施部分：
+
+- `project-brief` 路径映射可选带 `原始路径`
+- `IMediaRoot.rawPath` 与设备映射 `rawLocalPath` 已进入正式配置链
+- 若 `rawPath/rawLocalPath` 位于当前素材目录内部，ingest 会把该子树视为正式排除项，而不是把 raw 与当前输出一起扫描
+- 项目级 `color/` 目录已作为独立调色链最小 runtime/archive store 进入项目结构
+- `Supervisor + React console` 已有最小 `/color` 主路由，用于显示 root 级调色状态与最小 `renderPreset`
+- `/color` 当前会自动发现已配置 `rawPath` 的素材根，补齐约定 Resolve 命名 / codec 展示字段，并派生缺失 `rawLocalPath`、缺失 bitrate 等阻塞信息
+- `Supervisor` 当前已接入 `color` deterministic prep job，可推进 `sync_root_bins -> prepare_root_timeline` 的 Kairos 侧持久化状态与 live progress
+- `/color` 当前只保留 root 级 `renderPreset` 直编；命名与 Group 不再作为用户配置项
+
+本轮仍未落地的部分包括：
+
+- Resolve `Media Pool / Bin` 真同步
+- 长期 `grading timeline` 的 Resolve 宿主侧真准备
+- 多 Group 候选生成与 clip 归组
+- `Render Queue` 执行、`execute_group` 真渲染、`validation` 真校验与 `promote`
+
+因此当前应把 `/color` 理解为“独立调色链的基础设施与控制面已经入场”，而不是 Resolve 工作流已经全部接通。
+
 当前代码实现相对这份 v2 架构稿，已经覆盖了正式流程中的若干关键阶段：
 
 1. `coarse-first analyze` 已把 ASR 纳入视频细扫前链路
@@ -76,7 +139,7 @@
   - 时间阻塞当前只针对弱时间源；高置信 `exif` / `manual` 不会再被文件名日期直接反驳
   - 时间阻塞当前会同时参考项目时间线、文件名完整时间戳漂移，以及已纳入 `Pharos` trip 的整体时间边界
   - 项目内跨设备时钟漂移当前正式通过 ingest root 统一修正，而不是继续让 timeline 末端猜：
-    - `config/ingest-roots.json` 的 `IMediaRoot.clockOffsetMs?` 表示项目内该 root 的统一时钟偏移
+    - `config/project-roots.json` 的 `IMediaRoot.clockOffsetMs?` 表示项目内该 root 的统一时钟偏移
     - 单素材 `captureTimeOverrides` 继续存在，但只作为 root offset 上层例外
     - `media/chronology.json` 的 `sortCapturedAt` 当前是唯一正式时序真值，优先级为 `capturedAtOverride -> asset.capturedAt + root.clockOffsetMs -> asset.capturedAt`
   - `locationText` 当前正式收口为 reverse geocode 结果，而不是 route prose：
@@ -281,8 +344,9 @@ flowchart TD
    ┌────▼────┐   ┌─────▼─────┐  ┌────▼──────┐
    │ FFmpeg  │   │ 本地模型   │  │ DaVinci   │
    │ (子进程) │   │ ONNX/     │  │ Resolve   │
-   └─────────┘   │ Whisper   │  │ (MCP)     │
-                 └───────────┘  └───────────┘
+   └─────────┘   │ Whisper   │  │ (Python   │
+                 └───────────┘  │  Host)    │
+                                └───────────┘
 ```
 
 ## 2. 分层架构
@@ -295,7 +359,7 @@ flowchart TD
 | **ONNX Runtime** | Node.js 绑定 (onnxruntime-node) | CLIP/BLIP 本地推理（视觉特征提取、场景聚类） |
 | **Whisper** | whisper.cpp HTTP server 或 child_process | 语音识别（旁白提取、风格档案分析） |
 | **Agent LLM** | Skill 宿主提供 | 脚本生成、场景总结、精剪建议等所有 LLM 能力（Phase 1 不自行对接云端大模型） |
-| **DaVinci Resolve** | MCP (davinci-resolve-mcp) | 调色、时间线创建、素材导入、渲染 |
+| **DaVinci Resolve** | child_process + official Python Scripting API sidecar | 调色、Group 同步、时间线创建、素材导入、渲染 |
 | **逆地理编码** | HTTP API | GPS 坐标 → 地名 |
 
 ### Layer 1 — 共享基础设施 (`src/infra/`)
@@ -372,63 +436,30 @@ src/modules/ingest/
 
 ```
 src/modules/color/
-├── log-resolver.ts     # 按设备配置解析素材色彩空间（不做自动识别）
-├── cst-mapper.ts       # 色彩空间 → CST/LUT 映射规则
-├── exposure-analyzer.ts # FFmpeg signalstats 分析曝光/白平衡
-├── grade-planner.ts    # 生成调色方案（节点树 + 参数）
-├── resolve-executor.ts # 通过 MCP 在达芬奇中执行调色
+├── workspace-state.ts  # 从项目 root 注册表 + current/groups 生成 /color 读模型
+├── project-color.ts    # color action dispatcher：prepare/sync/execute/validate/promote
+├── resolve-executor.ts # Node ↔ vendored Python Resolve sidecar 边界
 └── index.ts
 ```
 
-**Log 格式配置**（不做自动识别，按拍摄设备配置 + 单素材覆盖）：
-```typescript
-type ColorSpace = 'slog3' | 'dlog-m' | 'rec709' | 'hlg';
-
-// 设备级色彩空间配置：每台设备一个默认 Log 格式
-interface DeviceColorConfig {
-  deviceId: string;        // 设备标识，如 "zve1" / "a7r5" / "mavic4pro"
-  deviceName: string;      // 显示名，如 "Sony ZV-E1"
-  colorSpace: ColorSpace;  // 该设备的默认色彩空间
-}
-
-// 单素材覆盖：针对个别素材指定不同的色彩空间
-interface ClipColorOverride {
-  clipId: string;          // 素材 ID
-  colorSpace: ColorSpace;  // 覆盖的色彩空间
-}
-
-// 项目配置
-interface ColorConfig {
-  devices: DeviceColorConfig[];       // 设备列表
-  clipOverrides?: ClipColorOverride[]; // 单素材覆盖（可选）
-  fallback: ColorSpace;               // 未匹配设备的默认值
-}
-
-// 默认预设
-const defaultColorConfig: ColorConfig = {
-  devices: [
-    { deviceId: 'zve1',      deviceName: 'Sony ZV-E1',       colorSpace: 'slog3' },
-    { deviceId: 'a7r5',      deviceName: 'Sony A7R5',        colorSpace: 'slog3' },
-    { deviceId: 'a7r3',      deviceName: 'Sony A7R3',        colorSpace: 'slog3' },
-    { deviceId: 'mavic4pro', deviceName: 'DJI Mavic 4 Pro',  colorSpace: 'dlog-m' },
-  ],
-  fallback: 'rec709',  // 未关联设备的素材默认为已调色/标准
-};
-// Ingest 阶段通过 EXIF 的 Make/Model 自动关联设备；无法识别设备的素材使用 fallback
-// 用户可对单条素材手动覆盖色彩空间（clipOverrides）
-```
+**当前正式持久化边界**：
+- 长期用户配置只保留在项目级 root 注册表 `config/project-roots.json` 的 `root.color.renderPreset`
+- `resolveProjectName / rootNamespace / gradingTimelineName / group naming` 全部按约定生成，不再是用户配置项
+- `color/current.json` 保存 root/group 级 current truth
+- `color/groups/<rootId>.json` 保存宿主同步下来的正式 Group 快照
+- `color/batches/<batchId>/plan.json|manifest.json|validation.json|promote.json` 保存每次执行归档
 
 **关键流程**：
 ```
-读取素材索引
-  → 按素材的拍摄设备匹配色彩空间配置（EXIF Make/Model → deviceId）
-  → 检查 clipOverrides，单素材覆盖优先
-  → 未匹配设备的使用 fallback（默认 Rec.709）
-  → 按色彩空间分组，确定 CST/LUT 映射
-  → FFmpeg signalstats 分析关键帧的亮度/色度统计
-  → 计算 Lift/Gamma/Gain 校正量（目标：YAVG 归一化到 IRE 40-70）
-  → 生成节点方案：Node1=CST → Node2=曝光校正 → Node3=可选LUT
-  → MCP 调用达芬奇：创建节点树 + 写入参数
+读取项目级 root 注册表 + device map + runtime config
+  → `/color` 自动发现已配置 `rawPath` 的 roots，并派生约定命名与 blockers
+  → `prepare_root` 调用 official Python host，确保 Resolve Project / root namespace / grading timeline 就绪
+  → `sync_groups` 只同步该 root grading timeline 上实际出现的正式 Groups，并写 `color/groups/<rootId>.json`
+  → `execute_group` 按需扫描 `rawLocalPath`，生成 clip inventory，写 `plan.json`
+  → official Python host 把目标 Group 渲染到 `projects/<projectId>/.tmp/color/<batchId>/render/`
+  → Kairos 写 `manifest.json` 并更新 `current.json` 的 latest batch 指针
+  → `validate_batch` 在 Node 侧 probe 原始文件与 staging 输出，对账路径/扩展名/媒体参数/metadata，写 `validation.json`
+  → `promote_batch` 只在 validation=pass 且 batch 仍是该 Group 最新候选时执行，并且只覆盖 manifest 声明的 `managedOutputSet`
 ```
 
 #### 2.3 Script — 脚本生成
@@ -509,8 +540,8 @@ src/modules/script/
 ```
 src/modules/cut/
 ├── timeline-builder.ts  # 从脚本构建时间线数据结构
-├── resolve-importer.ts  # MCP：导入素材到达芬奇 Media Pool
-├── resolve-timeline.ts  # MCP：创建时间线 + 按脚本排列片段
+├── resolve-importer.ts  # official Python host：导入素材到达芬奇 Media Pool
+├── resolve-timeline.ts  # official Python host：创建时间线 + 按脚本排列片段
 ├── subtitle-generator.ts # 从脚本旁白生成字幕轨
 ├── photo-handler.ts     # 照片静帧处理（Ken Burns 参数）
 ├── refine-advisor.ts    # 精剪建议引擎（节奏/转场/B-Roll）
@@ -525,10 +556,10 @@ src/modules/cut/
   → `segment-cut-reviewer` 逐段审查 recall / chronology / speed / subtitle / source-speech guardrails，并写 `timeline/reviews/<segmentId>.json`
   → reviewer 全部通过后，timeline-builder 再构建时间线结构（轨道、片段、入出点、转场）
   → 若当前 style 主轴偏时间 / 路程推进，则在 placement 阶段复核主 selection 的 chronology，不允许静默输出倒序 timeline
-  → MCP 创建达芬奇项目/时间线
-  → MCP 导入素材到 Media Pool
-  → MCP 按时间线结构排列片段
-  → 字幕生成 → MCP 添加字幕轨
+  → official Python host 创建达芬奇项目/时间线
+  → official Python host 导入素材到 Media Pool
+  → official Python host 按时间线结构排列片段
+  → 字幕生成 → official Python host 添加字幕轨
   → 照片素材 → 设置 Ken Burns 效果参数
   → （可选）精剪建议：LLM 分析时间线，给出优化建议
 ```
@@ -645,17 +676,17 @@ interface TranscriptSegment {
 - 本地小模型层不变，直接复用
 - Skill 层的 prompt 模板迁移为 AI Provider 的调用参数
 
-## 4. MCP 集成架构
+## 4. Resolve Host 集成架构
 
-Kairos 作为 MCP Client，通过 davinci-resolve-mcp Server 与达芬奇通信。
+Kairos 当前通过同机 vendored Python sidecar 调用官方 `DaVinci Resolve Scripting API` 与达芬奇通信。
 
 ```
-Kairos (MCP Client)
+Kairos (Node.js Core)
     │
-    │  MCP Protocol (stdio / SSE)
+    │  child_process + structured JSON request/response
     │
     ▼
-davinci-resolve-mcp Server
+vendored resolve-color-host.py
     │
     │  DaVinci Resolve Scripting API (Python)
     │
@@ -663,7 +694,7 @@ davinci-resolve-mcp Server
 DaVinci Resolve Studio (≥18.5)
 ```
 
-### 4.1 MCP 操作分类
+### 4.1 Host 操作分类
 
 | 类别 | 操作 | Resolve API 对象 |
 |------|------|-----------------|
@@ -675,7 +706,8 @@ DaVinci Resolve Studio (≥18.5)
 
 ### 4.2 错误处理
 
-- MCP 连接失败 → 提示用户检查 Resolve 是否运行 + MCP Server 是否启动
+- official Python host 不可调用 → 提示用户检查 `config/runtime.json` 的 `resolveColorPythonPath`
+- sidecar 无法导入 Resolve Scripting API → 提示用户检查 Resolve Studio 安装与 `resolveColorScriptApiRoot`
 - 操作超时 → 重试 3 次，间隔递增
 - Resolve 版本不兼容 → 检测版本号，降级到支持的 API 子集
 - 免费版 → 提示需要 Studio 版本
@@ -807,7 +839,7 @@ interface GradePlan {
                 │
      ┌──────────▼──────────┐     ┌───────────────┐
      │    Cut Module        │────▶│ DaVinci       │
-     │ 脚本 → 时间线 → MCP  │     │ Resolve       │
+     │ 脚本 → 时间线 → Host │     │ Resolve       │
      └─────────────────────┘     └───────────────┘
 ```
 
@@ -825,7 +857,7 @@ interface GradePlan {
 | AI 本地推理 | **onnxruntime-node** | CLIP/BLIP 模型加载 |
 | AI 语音识别 | **whisper.cpp** (child_process) | 旁白转写 |
 | LLM 能力 | **Agent 宿主** | 脚本生成、场景总结等（Phase 1 不引入独立 LLM SDK） |
-| MCP Client | **@modelcontextprotocol/sdk** | MCP 协议通信 |
+| Resolve Host Bridge | **child_process + vendored Python sidecar** | 与同机 Resolve Studio 的官方 Python Scripting API 通信 |
 | 任务队列 | **p-queue** | 并发控制，无 Redis 依赖 |
 | 校验 | **zod** | 配置和数据模型校验 |
 | 测试 | **vitest** | 快、TS 原生支持 |
@@ -900,12 +932,12 @@ kairos/
 - **Whisper 用 whisper.cpp**：child_process 调用，无需额外进程管理
 - 后续若迁移 Tauri，再引入独立 AI Provider 架构
 
-### D3. MCP 优先，子进程 Fallback
+### D3. 同机 Official Python Sidecar 优先
 
-达芬奇操作优先走 MCP：
-- davinci-resolve-mcp 覆盖 100% Resolve API（324 方法）
-- 标准协议，生态兼容
-- 若 MCP Server 不可用，降级到直接调用 Python 脚本（child_process）
+达芬奇自动化当前优先走同机 vendored Python sidecar：
+- 直接调用官方 `DaVinci Resolve Scripting API`
+- Node 侧只保留结构化 request/response contract，不把宿主细节散到 core
+- 运行时只需声明 Python 路径与可选的 Script API 根目录覆盖
 
 ### D4. 代理文件为模型服务
 

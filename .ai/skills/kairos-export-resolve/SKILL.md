@@ -1,9 +1,9 @@
 ---
 name: kairos-export-resolve
 description: >-
-  Export a Kairos KTEP timeline to DaVinci Resolve using an externally configured
-  Resolve MCP server. Use when the user wants a Resolve timeline from the same
-  KTEP document or asks for DaVinci/Resolve export.
+  Export a Kairos KTEP timeline to DaVinci Resolve using the same-machine
+  official Python Resolve host path when available. Use when the user wants a
+  Resolve timeline from the same KTEP document or asks for DaVinci/Resolve export.
 ---
 
 # Kairos: Export To Resolve
@@ -22,9 +22,12 @@ description: >-
 ## 前置条件
 
 - `timeline/current.json` 存在且通过 KTEP 校验
-- 宿主环境已配置外部 `Resolve` / `DaVinci` MCP server
+- 宿主环境已具备同机 official Python Resolve host 条件
+  - 可调用的 Python
+  - Resolve Studio
+  - 可访问的 Resolve Scripting API
 - 目标机器上可访问时间线引用的素材路径
-- Resolve 端具备对应脚本或 MCP 能力
+- Resolve 端具备对应脚本 / Scripting API 能力
 
 ## 输入
 
@@ -38,7 +41,7 @@ description: >-
 ## 执行原则
 
 - 复用 `KTEP` 作为唯一交换协议
-- 在 skill 层编排 Resolve 导出，不把宿主相关 MCP bridge 写回 `Kairos Core`
+- 在 skill 层编排 Resolve 导出，不把宿主相关 bridge 细节写回 `Kairos Core`
 - 若当前仓库的 Resolve 落地能力尚未实现，应明确报告缺失点，而不是假装成功
 
 ## 强规则：本地导出路径安全
@@ -55,7 +58,7 @@ description: >-
 ## 建议流程
 
 1. 读取并校验 `timeline/current.json`
-2. 检查 Resolve MCP 是否已连接
+2. 检查 official Python Resolve host 是否已配置并可调用
 3. 创建或选择 Resolve 项目与时间线
 4. 导入素材并按 `KTEP` 片段摆放
 5. 视目标环境决定是否创建字幕轨或导出 `SRT`
@@ -70,11 +73,11 @@ description: >-
 
 ## 失败时优先检查
 
-- Resolve MCP 是否已配置
+- official Python Resolve host 是否已配置
 - 目标素材路径是否可访问
 - 当前宿主是否真的具备 Resolve 自动化能力
 
 ## 说明
 
 - 这个 skill 是 Phase 5 的 Resolve 目标实现
-- 如果当前设备尚未配置 Resolve MCP，本 skill 应明确指出阻塞条件
+- 如果当前设备尚未配置 official Python Resolve host，本 skill 应明确指出阻塞条件

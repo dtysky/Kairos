@@ -19,6 +19,13 @@ Kairos 当前需要区分两层：
   - 项目初始化当前会直接创建 `projects/<projectId>/pharos/`
   - Console 读取项目配置时会补齐缺失的 `pharos/` 根目录，并在 `/ingest-gps` 明确提示这个固定投放位置
 - 一条与主链解耦的 `DaVinci color` 独立增强链路
+  - 当前已经有最小 `/color` 控制面与项目级 `color/` runtime/archive store
+  - 当前 `/color` 会自动发现已配置 `rawPath` 的素材根，派生约定命名与阻塞状态
+  - 当前 `/color` 已支持 official Python host 驱动的 root/group action 链：`prepare_root -> sync_groups -> execute_group -> validate_batch -> promote_batch`
+  - 当前 `/color` 的长期用户配置已收口到项目级 root 注册表上的最小 `color.renderPreset`
+  - `resolveProjectName / rootNamespace / gradingTimelineName / Group naming` 当前全部按约定生成，只展示，不允许用户配置
+  - 当前 `color/current.json` 承载 root/group current truth，`color/groups/<rootId>.json` 承载 formal host group snapshot，`color/batches/<batchId>/...` 承载 batch archive
+  - 当前 Resolve 宿主路线已经冻结并落地为“同机 vendored official Python Scripting API sidecar”，不再把 MCP 作为 color 主线
 - 一组运行在 Agent 环境中的工作流技能，以及面向不同 NLE / 导出目标的适配层
 
 这意味着：
@@ -28,6 +35,7 @@ Kairos 当前需要区分两层：
 - 仓库根目录的 `AGENTS.md` 是当前 agent 启动时的统一引导入口，用来收口必读文档、rules、skills 和正式运行入口
 - 本地运行与任务编排当前已收口到 `Supervisor + React console (apps/kairos-console/)`
 - `素材分析` 与 `风格分析` 在当前控制台里直接以主路由展示监控，而不是再跳一次独立监控入口
+- `DaVinci color` 当前也已有独立主路由 `/color`，并已收口为最小 `renderPreset` 配置 + root/group action 执行面 + runtime/archive 状态面
 - 风格档案、风格来源配置与风格分析参考产物当前已收口为 **Workspace 级共享资产**：
   - `config/styles/`
   - `config/style-sources.json`
@@ -56,6 +64,9 @@ Kairos 当前需要区分两层：
     - workspace / project runtime 可通过 `config/runtime.json` 的 `agentPacketRunnerCommand` / `agentPacketRunnerArgs` / `agentPacketRunnerCwd` 声明这个 packet runner
 - 未来如果引入桌面 UI 或更多 provider / adapter，应建立在这套协议与项目模型上，而不是推翻它
 - 某些项目会直接消费调色后的素材版本而非原始素材；因此主链面向的是“当前采用的素材版本”，而不是固定绑定“永远使用原始素材”
+- `project-brief` 的路径映射块当前可选带 `原始路径`
+  - 该字段会同步到 ingest root `rawPath` 与设备映射 `rawLocalPath`
+  - 若 `rawPath` 位于当前素材目录内部，主链 ingest 会显式排除该子树，避免 raw 与当前输出被一起纳入正式扫描
 
 ## 1.1 当前变更纪律
 
@@ -141,7 +152,7 @@ flowchart TD
 - 真实本机目录路径不写死进项目，而是通过设备本地映射维护
 - 保留素材真值，例如 `capturedAt`、`rawTags`、基础 metadata
 - 项目内跨设备时钟漂移当前正式收口为 root 级配置，而不是继续让 timeline 末端猜顺序：
-  - `config/ingest-roots.json` 的 `IMediaRoot.clockOffsetMs?` 表示该 ingest root 在当前项目内的统一时钟偏移
+  - `config/project-roots.json` 的 `IMediaRoot.clockOffsetMs?` 表示该素材 root 在当前项目内的统一时钟偏移
   - 单素材 `captureTimeOverrides` 继续存在，但只作为 root offset 之上的例外层
   - `media/chronology.json` 的 `sortCapturedAt` 是正式时序真值，优先级为 `capturedAtOverride -> asset.capturedAt + root.clockOffsetMs -> asset.capturedAt`
 - 对同目录同 basename 的保护音轨 sidecar，当前正式策略是作为视频资产上的 `protectionAudio` 绑定信息记录，而不是重新放开通用独立音频 ingest
@@ -448,8 +459,8 @@ flowchart TD
 
 ### 当前稳定约定
 
-- `config/ingest-roots.json` 保存逻辑素材源，而不是设备绝对路径
-- `config/project-brief.md` 是路径映射的人类输入入口；进入 Ingest 前会同步到 `config/ingest-roots.json` 与 `config/device-media-maps.local.json`
+- `config/project-roots.json` 保存项目级素材 root 注册表，而不是设备绝对路径
+- `config/project-brief.md` 是路径映射的人类输入入口；进入 Ingest 前会同步到 `config/project-roots.json` 与 `config/device-media-maps.local.json`
 - `config/project-brief.json`、`config/manual-itinerary.json`、`script/script-brief.json` 与 `config/review-queue.json` 是当前项目级 Console 结构化事实源
 - `config/style-sources.json` 是当前 **Workspace 级** Console 结构化事实源
 - `project-brief` 的每个 root block 允许额外声明 `飞行记录路径`，作为该素材根目录对应的 DJI FlightRecord 日志入口；实际识别不依赖强文件名，而是以文件头/可解析性为准

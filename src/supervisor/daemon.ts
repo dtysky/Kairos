@@ -10,7 +10,11 @@ import {
   loadAssets,
   loadAssetReports,
   loadChronology,
+  loadColorGroupsSnapshots,
+  loadColorCurrent,
   loadIngestRoots,
+  loadProjectDeviceMediaMaps,
+  loadRuntimeConfig,
   listWorkspaceProjects,
   loadManualItineraryConfig,
   loadProjectBriefConfig,
@@ -27,6 +31,7 @@ import {
   touchProjectUpdatedAt,
   writeChronology,
 } from '../store/index.js';
+import { buildColorWorkspaceState } from '../modules/color/workspace-state.js';
 import {
   buildCaptureTimeReviewItems,
   buildManualCaptureTimeReviewKey,
@@ -165,6 +170,7 @@ async function routeRequest(
         { jobType: 'gps-refresh', executionMode: 'deterministic', supported: true },
         { jobType: 'analyze', executionMode: 'deterministic', supported: true },
         { jobType: 'style-analysis', executionMode: 'deterministic', supported: true, note: 'runs deterministic prep and then hands off to Agent for the final style profile' },
+        { jobType: 'color', executionMode: 'deterministic', supported: true, note: 'supports prepare_root / sync_groups / execute_group / validate_batch / promote_batch through the same-machine official Python Resolve host; requires resolveColorPythonPath in runtime config and a live Resolve Studio scripting environment' },
         { jobType: 'script', executionMode: 'deterministic', supported: true, note: 'runs only after reviewed brief is saved; advances ready_to_prepare -> ready_for_agent; final script remains agent-authored' },
         { jobType: 'timeline', executionMode: 'deterministic', supported: true, note: 'builds rough-cut-base -> segment-cut review chain; requires a configured host agent packet runner' },
         { jobType: 'export-jianying', executionMode: 'deterministic', supported: false },
@@ -178,14 +184,27 @@ async function routeRequest(
   if (configMatch && method === 'GET') {
     const projectId = decodeURIComponent(configMatch[1]!);
     const projectRoot = join(options.workspaceRoot, 'projects', projectId);
-    const [projectBrief, manualItinerary, scriptBrief, ingestRoots, assets, chronology] = await Promise.all([
+    const [projectBrief, manualItinerary, scriptBrief, ingestRoots, deviceMaps, assets, chronology, colorCurrent, runtimeConfig, colorGroupSnapshots] = await Promise.all([
       loadProjectBriefConfig(projectRoot),
       loadManualItineraryConfig(projectRoot),
       loadScriptBriefConfig(projectRoot),
       loadIngestRoots(projectRoot),
+      loadProjectDeviceMediaMaps(projectRoot),
       loadAssets(projectRoot),
       loadChronology(projectRoot),
+      loadColorCurrent(projectRoot),
+      loadRuntimeConfig(projectRoot),
+      loadColorGroupsSnapshots(projectRoot),
     ]);
+    const colorWorkspace = buildColorWorkspaceState({
+      projectId,
+      projectRoots: ingestRoots.roots,
+      deviceProjectMap: deviceMaps.projects[projectId],
+      colorCurrent,
+      runtimeConfig,
+      groupSnapshotsByRootId: colorGroupSnapshots,
+    });
+    const ingestRootSummaries = buildIngestRootSummaries(ingestRoots.roots, assets, chronology);
     const pharosContext = await loadOrBuildProjectPharosContext({
       projectRoot,
       includedTripIds: projectBrief.pharos?.includedTripIds ?? [],
@@ -195,7 +214,9 @@ async function routeRequest(
       manualItinerary,
       scriptBrief,
       ingestRoots,
-      ingestRootSummaries: buildIngestRootSummaries(ingestRoots.roots, assets, chronology),
+      colorCurrent: colorWorkspace.colorCurrent,
+      colorRoots: colorWorkspace.colorRoots,
+      ingestRootSummaries,
       pharosStatus: buildProjectPharosAssetStatus(pharosContext, projectRoot),
       pharosContext,
     });
@@ -403,6 +424,18 @@ async function startJob(
     restartOf?: string;
   },
 ): Promise<ISupervisorJobRecord> {
+  if (payload.jobType === 'color' && payload.projectId) {
+    const existingJobs = await listJobRecords(workspaceRoot);
+    const activeColorJob = existingJobs.find(job => (
+      job.jobType === 'color'
+      && job.projectId === payload.projectId
+      && ['queued', 'running'].includes(job.status)
+    ));
+    if (activeColorJob) {
+      throw new Error(`project ${payload.projectId} already has an active color job: ${activeColorJob.jobId}`);
+    }
+  }
+
   const jobId = randomUUID();
   const jobRoot = getSupervisorJobRoot(workspaceRoot, jobId);
   await mkdir(jobRoot, { recursive: true });
@@ -411,6 +444,8 @@ async function startJob(
   const resultPath = join(jobRoot, 'result.json');
   const progressPath = payload.jobType === 'analyze' && payload.projectId
     ? getProjectProgressPath(join(workspaceRoot, 'projects', payload.projectId), 'media-analyze')
+    : payload.jobType === 'color' && payload.projectId
+      ? getProjectProgressPath(join(workspaceRoot, 'projects', payload.projectId), 'color')
     : payload.jobType === 'style-analysis'
       ? getWorkspaceStyleAnalysisProgressPath(
         workspaceRoot,
@@ -426,6 +461,8 @@ async function startJob(
     await writeFileSafe(configSnapshotPath, JSON.stringify({
       projectBrief: await loadProjectBriefConfig(projectRoot).catch(() => null),
       ingestRoots: await loadIngestRoots(projectRoot).catch(() => null),
+      colorCurrent: await loadColorCurrent(projectRoot).catch(() => null),
+      colorGroups: await loadColorGroupsSnapshots(projectRoot).catch(() => null),
       manualItinerary: await loadManualItineraryConfig(projectRoot).catch(() => null),
       scriptBrief: await loadScriptBriefConfig(projectRoot).catch(() => null),
       pharosContext: await loadOrBuildProjectPharosContext({

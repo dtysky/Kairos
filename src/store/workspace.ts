@@ -52,7 +52,7 @@ export async function syncWorkspaceProjectBrief(
 export async function writeWorkspaceProjectBrief(
   workspaceRoot: string,
   projectId: string,
-  mappings: Array<{ path: string; description: string; flightRecordPath?: string }>,
+  mappings: Array<{ path: string; rawPath?: string; description: string; flightRecordPath?: string }>,
 ): Promise<string> {
   const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
   const project = await loadProject(projectRoot);

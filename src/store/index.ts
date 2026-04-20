@@ -28,13 +28,17 @@ export {
 } from './project-brief-sync.js';
 export {
   initProject,
+  getProjectRootsPath,
   loadManifest,
   loadProject,
+  loadProjectRoots,
+  saveProjectRoots,
   loadIngestRoots,
   saveIngestRoots,
   loadRuntimeConfig,
   touchProjectUpdatedAt,
   type IRuntimeConfig,
+  type IProjectRoots,
   type IIngestRoots,
 } from './project.js';
 export {
@@ -258,6 +262,7 @@ export {
   getManualItineraryConfigPath,
   getScriptBriefConfigPath,
   getWorkspaceStyleSourcesConfigPath,
+  getColorCurrentPath,
   loadProjectBriefConfig,
   saveProjectBriefConfig,
   loadManualItineraryConfig,
@@ -266,7 +271,32 @@ export {
   saveScriptBriefConfig,
   loadStyleSourcesConfig,
   saveStyleSourcesConfig,
+  loadColorCurrent,
+  saveColorCurrent,
 } from './workspace-config.js';
+export {
+  getColorRootPath,
+  getColorGroupsRoot,
+  getColorGroupsSnapshotPath,
+  loadColorGroupsSnapshot,
+  loadColorGroupsSnapshots,
+  saveColorGroupsSnapshot,
+  getColorBatchesRoot,
+  getColorBatchRoot,
+  getColorBatchPlanPath,
+  getColorBatchManifestPath,
+  getColorBatchValidationPath,
+  getColorBatchPromotePath,
+  loadColorBatchPlan,
+  saveColorBatchPlan,
+  loadColorBatchManifest,
+  saveColorBatchManifest,
+  loadColorBatchValidation,
+  saveColorBatchValidation,
+  loadColorBatchPromote,
+  saveColorBatchPromote,
+  readRequiredColorBatchManifest,
+} from './color-store.js';
 export {
   getWorkspaceStyleAnalysisRoot,
   getWorkspaceStyleAnalysisProgressPath,
