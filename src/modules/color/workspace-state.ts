@@ -2,6 +2,7 @@ import type {
   IColorGroupsSnapshotFile,
   IColorCurrent,
   IColorGroupCurrent,
+  IColorHostPreflight,
   IColorRootCurrent,
   IColorRenderPreset,
   IDeviceMediaProjectMap,
@@ -15,6 +16,7 @@ export interface IColorRootCurrentView extends IColorRootCurrent {
   localPath?: string;
   rawPath?: string;
   rawLocalPath?: string;
+  hostPreflight?: IColorHostPreflight;
 }
 
 export interface IColorRootWorkspaceSummary {
@@ -30,6 +32,7 @@ export interface IColorRootWorkspaceSummary {
   gradingTimelineName: string;
   renderPreset: IColorRenderPreset;
   blockingReasons: string[];
+  hostPreflight?: IColorHostPreflight;
   groupsSnapshot?: IColorGroupsSnapshotFile;
   groups: IColorGroupWorkspaceSummary[];
   colorCurrent: IColorRootCurrentView;
@@ -71,6 +74,7 @@ export function buildColorWorkspaceState(
 ): IColorWorkspaceState {
   const deviceRootById = new Map((input.deviceProjectMap?.roots ?? []).map(root => [root.rootId, root]));
   const colorCurrentByRootId = new Map(input.colorCurrent.roots.map(root => [root.rootId, root]));
+  const hostPreflight = materializeHostPreflight(input.colorCurrent.hostPreflight, input.runtimeConfig);
 
   const materializedRoots = input.projectRoots
     .filter(root => Boolean(trimmed(root.rawPath)))
@@ -86,9 +90,7 @@ export function buildColorWorkspaceState(
         typeof renderPreset.bitrateMbps !== 'number'
           ? '未配置 root 级 renderPreset.bitrateMbps，后续 execute_group 无法启动。'
           : '',
-        !trimmed(input.runtimeConfig?.resolveColorPythonPath)
-          ? '未配置 config/runtime.json resolveColorPythonPath，无法调用 official Python Resolve host。'
-          : '',
+        ...(hostPreflight?.status === 'blocked' ? hostPreflight.blockingReasons : []),
       ]);
       const groups = materializeGroupWorkspaceSummaries(
         groupsSnapshot,
@@ -119,6 +121,7 @@ export function buildColorWorkspaceState(
         localPath: trimmed(deviceRoot?.localPath),
         rawPath: trimmed(root.rawPath),
         rawLocalPath: trimmed(deviceRoot?.rawLocalPath),
+        hostPreflight,
       };
 
       return {
@@ -134,6 +137,7 @@ export function buildColorWorkspaceState(
         gradingTimelineName: deriveColorGradingTimelineName(root.id),
         renderPreset,
         blockingReasons: currentView.blockingReasons,
+        hostPreflight,
         groupsSnapshot,
         groups,
         colorCurrent: currentView,
@@ -148,6 +152,7 @@ export function buildColorWorkspaceState(
   return {
     colorCurrent: {
       ...input.colorCurrent,
+      hostPreflight,
       selectedRootId,
       roots: materializedRoots.map(root => root.colorCurrent),
       updatedAt: input.colorCurrent.updatedAt,
@@ -256,6 +261,37 @@ function materializeRenderPreset(renderPreset?: {
     videoCodec: trimmed(renderPreset?.videoCodec) ?? CDEFAULT_RENDER_PRESET.videoCodec,
     audioCodec: trimmed(renderPreset?.audioCodec) ?? CDEFAULT_RENDER_PRESET.audioCodec,
     bitrateMbps: renderPreset?.bitrateMbps,
+  };
+}
+
+function materializeHostPreflight(
+  hostPreflight: IColorCurrent['hostPreflight'],
+  runtimeConfig?: { resolveColorPythonPath?: string },
+): IColorHostPreflight | undefined {
+  const normalized = hostPreflight
+    ? {
+      status: hostPreflight.status ?? 'unknown',
+      checkedAt: trimmed(hostPreflight.checkedAt),
+      productName: trimmed(hostPreflight.productName),
+      versionString: trimmed(hostPreflight.versionString),
+      isStudio: hostPreflight.isStudio,
+      warnings: dedupeStrings(hostPreflight.warnings ?? []),
+      blockingReasons: dedupeStrings(hostPreflight.blockingReasons ?? []),
+      renderSupport: hostPreflight.renderSupport,
+    } satisfies IColorHostPreflight
+    : undefined;
+  if (normalized) return normalized;
+  if (!trimmed(runtimeConfig?.resolveColorPythonPath)) {
+    return {
+      status: 'blocked',
+      warnings: [],
+      blockingReasons: ['未配置 config/runtime.json resolveColorPythonPath，无法调用 official Python Resolve host。'],
+    };
+  }
+  return {
+    status: 'unknown',
+    warnings: [],
+    blockingReasons: [],
   };
 }
 

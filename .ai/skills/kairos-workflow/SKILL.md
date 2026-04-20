@@ -39,9 +39,14 @@ Kairos 将旅拍素材转化为可编辑时间线。流程分为 1 个准备阶�
 
 - 当前正式运行与监控入口是 `Supervisor + React console (apps/kairos-console/)`
 - `Analyze` 与 `Style` 的正式监控路由分别是 `http://127.0.0.1:8940/analyze` 和 `http://127.0.0.1:8940/style`
-- `DaVinci color` 当前已有独立 `/color` 主路由，但当前阶段先承载 root 级最小 `renderPreset`、状态与 prep 入口，不等于 Resolve 执行链已经全量接通
-- `/color` 当前应自动发现已配置 `rawPath` 的素材根，并派生约定命名与阻塞信息；不要把“还没接通 Resolve”误渲染成“没有可显示 root”
-- 当前 `Supervisor color` 已允许做 deterministic prep：`sync_root_bins -> prepare_root_timeline` 会推进 Kairos 侧 current/progress 真相；但这仍不代表 Resolve 宿主侧已经真实完成 Bin / Timeline 同步
+- `DaVinci color` 当前已有独立 `/color` 主路由，正式承担 root 级最小 `renderPreset`、Resolve group 镜像、执行、validation 与 promote 控制
+- `/color` 当前应自动发现已配置 `rawPath` 的素材根，并派生约定命名与阻塞信息；不要把“还没接通全部宿主健壮性”误渲染成“没有可显示 root”
+- 当前 `Supervisor color` 的正式动作链是 `prepare_root -> sync_groups -> execute_group -> validate_batch -> promote_batch`
+- 当前 `prepare_root` 必须真实完成 `rawLocalPath -> Resolve root bins / grading timeline / explainable technical Groups` 的同步，而不是只持久化 Kairos 侧占位状态
+- 当前 Group 真相以 Resolve 为准；用户可直接在 Resolve 中调整 Group，再通过 `/color` 的 `sync_groups` 回写最新现状；不存在额外 `Confirm Groups` 步骤
+- `/color` 当前进入页面或切换项目时会自动执行 host preflight，并允许用户手动 `Recheck Host`
+- 当前 `prepare_root / sync_groups / execute_group` 都必须先通过 host preflight；若宿主 blocked 或当前 render preset 不受支持，应在 Resolve 变更前直接失败
+- `/color` 当前继续保持单页，但 root 卡片会正式展示可折叠的 `Host Diagnostics / Recent Batches / Validation Failures / Promote History`
 - 当前 color 的长期配置只保留项目级 root 上的 `color.renderPreset`；不要再把 `resolveProjectName / rootNamespace / gradingTimelineName / bootstrap Group` 当成用户配置项
 - `scripts/kairos-supervisor.* start` 只会启动 `Supervisor + React console`；不会自动启动 ML，也不会恢复旧 job
 - `progress.json` 是 durable progress cache，不是 live job 证据

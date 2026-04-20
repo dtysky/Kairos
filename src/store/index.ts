@@ -287,6 +287,7 @@ export {
   getColorBatchManifestPath,
   getColorBatchValidationPath,
   getColorBatchPromotePath,
+  listColorBatchIds,
   loadColorBatchPlan,
   saveColorBatchPlan,
   loadColorBatchManifest,
@@ -295,6 +296,8 @@ export {
   saveColorBatchValidation,
   loadColorBatchPromote,
   saveColorBatchPromote,
+  loadColorBatchArchiveItem,
+  loadColorArchiveViews,
   readRequiredColorBatchManifest,
 } from './color-store.js';
 export {

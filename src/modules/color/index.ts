@@ -5,11 +5,13 @@ export {
   executeProjectColorGroup,
   validateProjectColorBatch,
   promoteProjectColorBatch,
+  preflightProjectColorHost,
   ProjectColorBlockedError,
   ColorPrepBlockedError,
   type TProjectColorAction,
   type IProjectColorActionInput,
   type IProjectColorActionResult,
+  type IProjectColorPreflightInput,
   type IPrepareProjectColorRootInput,
   type IPrepareProjectColorRootResult,
 } from './project-color.js';
@@ -26,6 +28,8 @@ export {
   type IColorExecutorSyncGroupsResult,
   type IColorExecutorExecuteGroupInput,
   type IColorExecutorExecuteGroupResult,
+  type IColorExecutorPreflightInput,
+  type IColorExecutorPreflightResult,
   type IResolveColorExecutorConfig,
 } from './resolve-executor.js';
 export {

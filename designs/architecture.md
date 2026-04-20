@@ -7,6 +7,64 @@
 
 ## 0. 2026-03-31 增补
 
+## 0.7 2026-04-20 DaVinci color 健壮性与可观测性补记
+
+在 P0 把单 root 执行闭环接通后，P1 的正式收口点是两件事：
+
+- Resolve host 在动作前先给出可缓存、可重检的 preflight 诊断，而不是等用户点击后才报错
+- `/color` 正式消费 `color/batches/<batchId>/...` archive，把 batch / validation / promote 历史变成单页可观测面
+
+当前冻结后的正式口径如下：
+
+- `Supervisor color` 的正式动作链不变，仍然只有：
+  - `prepare_root`
+  - `sync_groups`
+  - `execute_group`
+  - `validate_batch`
+  - `promote_batch`
+- `preflight` 是 ColorExecutor 与 Python host 的内部辅助操作，不是新的正式 workflow action
+- `color/current.json` 顶层新增 `hostPreflight`，其正式职责是缓存：
+  - `status`
+  - `checkedAt`
+  - `productName`
+  - `versionString`
+  - `isStudio`
+  - `warnings[]`
+  - `blockingReasons[]`
+  - `renderSupport`
+- `renderSupport` 当前是 Node 侧执行守卫的正式输入，至少要覆盖：
+  - container 列表
+  - 每个 container 可用的视频 codec
+  - 是否支持 `AudioCodec`
+  - 是否支持 `VideoQuality`
+- `prepare_root / sync_groups / execute_group` 在真正触发 Resolve 变更前都必须先执行 preflight：
+  - `blocked` 直接拒绝动作
+  - `degraded` 允许进入已知兼容矩阵内的动作
+  - `execute_group` 还必须在 Node 侧先校验当前 root `renderPreset` 是否受宿主支持
+- 当前 color host 的正式兼容下限固定为 `DaVinci Resolve Studio >= 18.5`
+  - 非 Studio：`blocked`
+  - `< 18.5`：`blocked`
+  - `>= 18.5` 且部分能力需要 method probe / legacy path：`degraded`
+- 当前 retry 只覆盖瞬时宿主故障：
+  - host 连接失败
+  - child process timeout
+  - Resolve render timeout
+  - 短时 app unavailable
+- 缺配置、缺素材、render preset 不支持、batch superseded、validation fail 等语义错误不进入 retry
+- `IColorBatchValidation` 当前正式扩展为：
+  - `summary.targetCount / renderedCount / passedCount / failedCount`
+  - `blockingReasons[]`
+- archive 继续保留在 `color/batches/<batchId>/plan.json|manifest.json|validation.json|promote.json`
+- `/color` 当前不把 archive 回写进 `current.json`，而是通过独立聚合视图按 root 展示：
+  - `Recent Batches`
+  - `Validation Failures`
+  - `Promote History`
+- `/color` 当前继续保持单页 root 卡片，但每个 root 现在都带可折叠的：
+  - `Host Diagnostics`
+  - `Recent Batches`
+  - `Validation Failures`
+  - `Promote History`
+
 ## 0.6 2026-04-19 DaVinci color 执行闭环补记
 
 本轮已冻结的下一步目标，是把独立调色链从“最小配置 + deterministic prep 控制面”补成“官方 Python 宿主 + group sync + execute/validate/promote 闭环”：
@@ -26,6 +84,11 @@
 - `color/batches/<batchId>/plan.json`、`manifest.json`、`validation.json`、`promote.json` 将成为 batch 级正式 archive
 - `color/current.json` 将扩展为 root/group 级 current truth，保存 host prep、group sync、latest batch、latest validation 和 pending promote 指针
 - validation / promote 只依赖 `rawLocalPath + staging + manifest`，不依赖 ingest asset truth
+- 当前 P0 正式口径继续收窄为“单 root 真闭环”：
+  - `prepare_root` 必须真实导入 `rawLocalPath` 素材、维护 root bin 镜像、维护可执行 grading timeline
+  - Resolve Groups 由宿主维护并可继续在 Resolve 内调整；`/color` 不再增加独立 `Confirm Groups` 步骤
+  - `sync_groups` 只镜像 Resolve 当前现状；同步后的非空 Group 直接视为 `ready`
+  - `promote_batch` 必须经过 `/color` 二次确认后才能覆盖当前 root 的受管输出
 
 这意味着 `/color` 的官方定位将从“prep/status 面”推进到“独立调色执行控制面”，但仍保持：
 
@@ -46,7 +109,7 @@
 - `projects/<projectId>/color/current.json` 继续承载当前运行真相；`projects/<projectId>/color/batches/<batchId>/...` 保留给 batch/runtime 归档
 - 当前 Resolve 宿主路线冻结为“同机 official Python Scripting API sidecar”，不再把 MCP 作为 color 官方主线
 
-因此，在执行闭环完成前，`/color` 仍应先被理解为“项目 root 上的最小 render preset + color runtime/archive + root prep 控制面”。
+因此，当前 `/color` 应被理解为“项目 root 上的最小 render preset + Resolve-managed groups + runtime/archive + execution/promote 控制面”。
 
 ## 0.4 2026-04-18 DaVinci color 基础设施落地补记
 
@@ -68,7 +131,7 @@
 - 多 Group 候选生成与 clip 归组
 - `Render Queue` 执行、`execute_group` 真渲染、`validation` 真校验与 `promote`
 
-因此当前应把 `/color` 理解为“独立调色链的基础设施与控制面已经入场”，而不是 Resolve 工作流已经全部接通。
+因此当前应把 `/color` 理解为“独立调色链的单 root 官方闭环已经接通，并且正式补上了宿主 preflight / retry / 兼容守卫与 archive 可观测性”。
 
 当前代码实现相对这份 v2 架构稿，已经覆盖了正式流程中的若干关键阶段：
 
@@ -453,13 +516,13 @@ src/modules/color/
 ```
 读取项目级 root 注册表 + device map + runtime config
   → `/color` 自动发现已配置 `rawPath` 的 roots，并派生约定命名与 blockers
-  → `prepare_root` 调用 official Python host，确保 Resolve Project / root namespace / grading timeline 就绪
+  → `prepare_root` 调用 official Python host，真实同步 `rawLocalPath` 到 root namespace bin 树，确保 grading timeline 已装入可执行 clips，并按 explainable technical signals 创建/复用 Resolve Groups
   → `sync_groups` 只同步该 root grading timeline 上实际出现的正式 Groups，并写 `color/groups/<rootId>.json`
   → `execute_group` 按需扫描 `rawLocalPath`，生成 clip inventory，写 `plan.json`
-  → official Python host 把目标 Group 渲染到 `projects/<projectId>/.tmp/color/<batchId>/render/`
+  → official Python host 把目标 Group 渲染到 `projects/<projectId>/.tmp/color/<batchId>/render/`，并保持 staging 目录镜像 `sourceRelativePath`
   → Kairos 写 `manifest.json` 并更新 `current.json` 的 latest batch 指针
   → `validate_batch` 在 Node 侧 probe 原始文件与 staging 输出，对账路径/扩展名/媒体参数/metadata，写 `validation.json`
-  → `promote_batch` 只在 validation=pass 且 batch 仍是该 Group 最新候选时执行，并且只覆盖 manifest 声明的 `managedOutputSet`
+  → `/color` 上的显式确认通过后，`promote_batch` 才会在 validation=pass 且 batch 仍是该 Group 最新候选时执行，并且只覆盖 manifest 声明的 `managedOutputSet`
 ```
 
 #### 2.3 Script — 脚本生成

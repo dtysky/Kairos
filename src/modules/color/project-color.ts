@@ -1,11 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import { copyFile, mkdir, stat, unlink } from 'node:fs/promises';
 import { dirname, join, posix, relative, resolve } from 'node:path';
+import { setTimeout as delay } from 'node:timers/promises';
 import type {
   IColorBatchManifest,
   IColorBatchPlan,
   IColorBatchPromote,
   IColorBatchValidation,
+  IColorHostPreflight,
   IColorFileMetadataSnapshot,
   IColorGroupCurrent,
   IColorGroupsSnapshotFile,
@@ -47,7 +49,9 @@ import {
 } from './workspace-state.js';
 import {
   PythonResolveColorExecutor,
+  ResolveColorHostError,
   ResolveColorExecutorUnavailableError,
+  type IColorExecutorClipInput,
   type IColorExecutor,
 } from './resolve-executor.js';
 
@@ -112,6 +116,13 @@ export interface IPrepareProjectColorRootResult extends IProjectColorActionResul
   timelineStatus?: string;
 }
 
+export interface IProjectColorPreflightInput {
+  workspaceRoot: string;
+  projectId: string;
+  rootId?: string;
+  executor?: IColorExecutor;
+}
+
 export class ProjectColorBlockedError extends Error {
   constructor(public blockers: string[]) {
     super(blockers.join('; '));
@@ -159,6 +170,23 @@ export async function runProjectColorAction(
   }
 }
 
+export async function preflightProjectColorHost(
+  input: IProjectColorPreflightInput,
+): Promise<IColorHostPreflight> {
+  const projectRoot = resolveWorkspaceProjectRoot(input.workspaceRoot, input.projectId);
+  const runtimeConfig = await loadRuntimeConfig(projectRoot);
+  const preflight = await runColorHostPreflight({
+    projectRoot,
+    projectId: input.projectId,
+    rootId: input.rootId,
+    resolveProjectName: deriveColorResolveProjectName(input.projectId),
+    runtimeConfig,
+    executor: input.executor,
+  });
+  await saveColorHostPreflight(projectRoot, preflight);
+  return preflight;
+}
+
 export async function prepareProjectColorRoot(
   input: IPrepareProjectColorRootInput,
 ): Promise<IPrepareProjectColorRootResult> {
@@ -168,9 +196,6 @@ export async function prepareProjectColorRoot(
   const prepBlockers = dedupeStrings([
     !context.rootSummary.rawPath ? '当前 root 未配置 rawPath，无法进入 color prep。' : '',
     !context.rootSummary.rawLocalPath ? '当前设备未配置 rawLocalPath，无法在本机读取原始素材。' : '',
-    !context.runtimeConfig.resolveColorPythonPath?.trim()
-      ? '未配置 config/runtime.json resolveColorPythonPath，无法调用 official Python Resolve host。'
-      : '',
   ]);
   if (prepBlockers.length > 0) {
     await writeRootCurrent(context.projectRoot, context.rootId, current => ({
@@ -193,6 +218,20 @@ export async function prepareProjectColorRoot(
     throw new ColorPrepBlockedError(prepBlockers);
   }
   const executor = resolveColorExecutor(context, input.executor);
+  const hostPreflight = await ensureActionHostPreflight({
+    context,
+    action,
+    executor,
+    progressPath,
+    extra: {
+      projectId: input.projectId,
+      rootId: input.rootId,
+    },
+  });
+  const executorClips = await buildColorExecutorClips(
+    context.rootSummary.rawLocalPath ?? '',
+    context.runtimeConfig,
+  );
 
   await writeRootCurrent(context.projectRoot, context.rootId, current => ({
     ...current,
@@ -216,15 +255,19 @@ export async function prepareProjectColorRoot(
     },
   });
 
-  const prepared = await executor.prepareRoot({
-    projectId: input.projectId,
-    rootId: context.rootId,
-    resolveProjectName: context.rootSummary.resolveProjectName,
-    rootNamespace: context.rootSummary.rootNamespace,
-    gradingTimelineName: context.rootSummary.gradingTimelineName,
-    rawPath: context.rootSummary.rawPath,
-    rawLocalPath: context.rootSummary.rawLocalPath ?? '',
-  });
+  const prepared = await runColorHostWithRetry(
+    () => executor.prepareRoot({
+      projectId: input.projectId,
+      rootId: context.rootId,
+      resolveProjectName: context.rootSummary.resolveProjectName,
+      rootNamespace: context.rootSummary.rootNamespace,
+      gradingTimelineName: context.rootSummary.gradingTimelineName,
+      rawPath: context.rootSummary.rawPath,
+      rawLocalPath: context.rootSummary.rawLocalPath ?? '',
+      clips: executorClips,
+    }),
+    `prepare_root:${context.rootId}`,
+  );
 
   await writeRootCurrent(context.projectRoot, context.rootId, current => ({
     ...current,
@@ -248,18 +291,33 @@ export async function prepareProjectColorRoot(
     },
   });
 
+  if (prepared.groupsSnapshot) {
+    await saveColorGroupsSnapshot(context.projectRoot, prepared.groupsSnapshot);
+  }
+  const syncedGroups = prepared.groupsSnapshot
+    ? materializeCurrentGroupsFromSnapshot(
+      prepared.groupsSnapshot,
+      context.colorCurrent.roots.find(root => root.rootId === context.rootId)?.groups ?? [],
+      context.groupsSnapshot,
+    )
+    : undefined;
   const detail = [
     'Resolve host root prep 已完成。',
-    'Kairos 已持久化 root mirror / timeline current truth。',
-    '下一步可同步正式 Group，或继续执行 batch。'
+    prepared.groupsSnapshot
+      ? `Kairos 已写入 ${prepared.groupsSnapshot.groups.length} 个 Resolve Groups 快照。`
+      : 'Kairos 已持久化 root mirror / timeline current truth。',
+    '如需复核 Resolve 内调整，可继续运行 Sync Groups。'
   ].join(' ');
   const savedCurrent = await writeRootCurrent(context.projectRoot, context.rootId, current => ({
     ...current,
     mirrorStatus: prepared.mirrorStatus,
     timelineStatus: prepared.timelineStatus,
+    groupSyncStatus: prepared.groupsSnapshot ? 'ready' : current.groupSyncStatus,
+    groupSyncAt: prepared.groupsSnapshot?.syncedAt ?? current.groupSyncAt,
     activeStage: undefined,
     currentJobId: undefined,
     detail,
+    groups: syncedGroups ?? current.groups,
     blockingReasons: filterPersistentColorBlockers(current.blockingReasons ?? []),
   }));
   await writeColorProgress(progressPath, action, {
@@ -270,7 +328,9 @@ export async function prepareProjectColorRoot(
     extra: {
       projectId: input.projectId,
       rootId: context.rootId,
+      hostPreflight,
       hostSummary: prepared.hostSummary ?? {},
+      groupCount: prepared.groupsSnapshot?.groups.length,
     },
   });
 
@@ -298,9 +358,6 @@ export async function syncProjectColorGroups(
   const blockers = dedupeStrings([
     !context.rootSummary.rawPath ? '当前 root 未配置 rawPath，无法同步 Groups。' : '',
     !context.rootSummary.rawLocalPath ? '当前设备未配置 rawLocalPath，无法同步 Groups。' : '',
-    !context.runtimeConfig.resolveColorPythonPath?.trim()
-      ? '未配置 config/runtime.json resolveColorPythonPath，无法调用 official Python Resolve host。'
-      : '',
     context.rootSummary.colorCurrent.timelineStatus !== 'ready'
       ? '请先完成 prepare_root，再同步 Resolve Groups。'
       : '',
@@ -313,6 +370,20 @@ export async function syncProjectColorGroups(
     throw new ProjectColorBlockedError(blockers);
   }
   const executor = resolveColorExecutor(context, input.executor);
+  await ensureActionHostPreflight({
+    context,
+    action,
+    executor,
+    progressPath,
+    extra: {
+      projectId: input.projectId,
+      rootId: input.rootId,
+    },
+  });
+  const executorClips = await buildColorExecutorClips(
+    context.rootSummary.rawLocalPath ?? '',
+    context.runtimeConfig,
+  );
 
   await writeRootCurrent(context.projectRoot, context.rootId, current => ({
     ...current,
@@ -329,14 +400,18 @@ export async function syncProjectColorGroups(
     extra: { projectId: input.projectId, rootId: input.rootId },
   });
 
-  const snapshot = await executor.syncGroups({
-    projectId: input.projectId,
-    rootId: input.rootId,
-    resolveProjectName: context.rootSummary.resolveProjectName,
-    gradingTimelineName: context.rootSummary.gradingTimelineName,
-    rawPath: context.rootSummary.rawPath,
-    rawLocalPath: context.rootSummary.rawLocalPath ?? '',
-  });
+  const snapshot = await runColorHostWithRetry(
+    () => executor.syncGroups({
+      projectId: input.projectId,
+      rootId: input.rootId,
+      resolveProjectName: context.rootSummary.resolveProjectName,
+      gradingTimelineName: context.rootSummary.gradingTimelineName,
+      rawPath: context.rootSummary.rawPath,
+      rawLocalPath: context.rootSummary.rawLocalPath ?? '',
+      clips: executorClips,
+    }),
+    `sync_groups:${context.rootId}`,
+  );
   await saveColorGroupsSnapshot(context.projectRoot, snapshot);
 
   const savedCurrent = await writeRootCurrent(context.projectRoot, context.rootId, current => ({
@@ -346,7 +421,7 @@ export async function syncProjectColorGroups(
     activeStage: undefined,
     currentJobId: undefined,
     detail: `已同步 ${snapshot.groups.length} 个 Resolve Groups。`,
-    groups: materializeCurrentGroupsFromSnapshot(snapshot, current.groups ?? []),
+    groups: materializeCurrentGroupsFromSnapshot(snapshot, current.groups ?? [], context.groupsSnapshot),
   }));
   const detail = savedCurrent.roots.find(root => root.rootId === input.rootId)?.detail
     ?? `已同步 ${snapshot.groups.length} 个 Resolve Groups。`;
@@ -391,9 +466,6 @@ export async function executeProjectColorGroup(
     typeof context.rootSummary.renderPreset.bitrateMbps !== 'number'
       ? '未配置 root 级 renderPreset.bitrateMbps，无法启动 execute_group。'
       : '',
-    !context.runtimeConfig.resolveColorPythonPath?.trim()
-      ? '未配置 config/runtime.json resolveColorPythonPath，无法调用 official Python Resolve host。'
-      : '',
   ]);
   if (blockers.length > 0) {
     await failColorAction(context.projectRoot, context.rootId, progressPath, action, blockers, {
@@ -404,6 +476,28 @@ export async function executeProjectColorGroup(
     throw new ProjectColorBlockedError(blockers);
   }
   const executor = resolveColorExecutor(context, input.executor);
+  const hostPreflight = await ensureActionHostPreflight({
+    context,
+    action,
+    executor,
+    progressPath,
+    extra: {
+      projectId: input.projectId,
+      rootId: input.rootId,
+      groupKey,
+    },
+  });
+  const renderPresetBlockers = validateRenderPresetSupport(context.rootSummary.renderPreset, hostPreflight);
+  if (renderPresetBlockers.length > 0) {
+    await failColorAction(context.projectRoot, context.rootId, progressPath, action, renderPresetBlockers, {
+      projectId: input.projectId,
+      rootId: input.rootId,
+      groupKey,
+    }, {
+      persistRootBlockers: false,
+    });
+    throw new ProjectColorBlockedError(renderPresetBlockers);
+  }
 
   const rawInventory = await scanColorRawInventory(context.rootSummary.rawLocalPath ?? '');
   const inventoryByKey = new Map(rawInventory.map(entry => [entry.rawRelativePath, entry]));
@@ -478,19 +572,23 @@ export async function executeProjectColorGroup(
     extra: { projectId: input.projectId, rootId: input.rootId, groupKey, batchId, stagingRoot },
   });
 
-  const rendered = await executor.executeGroup({
-    projectId: input.projectId,
-    rootId: input.rootId,
-    groupKey: groupKey!,
-    resolveProjectName: context.rootSummary.resolveProjectName,
-    gradingTimelineName: context.rootSummary.gradingTimelineName,
-    renderPreset: context.rootSummary.renderPreset,
-    stagingRoot,
-    clips: planEntries.map(entry => ({
-      rawRelativePath: entry.rawRelativePath,
-      sourceAbsolutePath: entry.sourceAbsolutePath,
-    })),
-  });
+  const rendered = await runColorHostWithRetry(
+    () => executor.executeGroup({
+      projectId: input.projectId,
+      rootId: input.rootId,
+      groupKey: groupKey!,
+      resolveProjectName: context.rootSummary.resolveProjectName,
+      gradingTimelineName: context.rootSummary.gradingTimelineName,
+      rawLocalPath: context.rootSummary.rawLocalPath ?? '',
+      renderPreset: context.rootSummary.renderPreset,
+      stagingRoot,
+      clips: planEntries.map(entry => ({
+        rawRelativePath: entry.rawRelativePath,
+        sourceAbsolutePath: entry.sourceAbsolutePath,
+      })),
+    }),
+    `execute_group:${context.rootId}:${groupKey}`,
+  );
 
   const manifestEntries = await Promise.all(
     rendered.entries.map(async entry => {
@@ -641,12 +739,20 @@ export async function validateProjectColorBatch(
   const validationStatus = validationEntries.some(entry => entry.status === 'fail')
     ? 'fail'
     : 'pass';
+  const validationBlockingReasons = dedupeStrings(validationEntries.flatMap(entry => entry.reasons));
   const validation: IColorBatchValidation = {
     batchId: batchId!,
     rootId: input.rootId,
     groupKey: manifest!.groupKey,
     validatedAt: new Date().toISOString(),
     status: validationStatus,
+    summary: {
+      targetCount: plan?.entries.length ?? manifest?.entries.length ?? validationEntries.length,
+      renderedCount: manifest?.entries.length ?? validationEntries.length,
+      passedCount: validationEntries.filter(entry => entry.status === 'pass').length,
+      failedCount: validationEntries.filter(entry => entry.status === 'fail').length,
+    },
+    blockingReasons: validationBlockingReasons,
     entries: validationEntries,
   };
   await saveColorBatchValidation(context.projectRoot, validation);
@@ -663,7 +769,7 @@ export async function validateProjectColorBatch(
       pendingPromoteBatchId: validationStatus === 'pass' ? batchId : undefined,
       blockingReasons: validationStatus === 'pass'
         ? []
-        : dedupeStrings(validationEntries.flatMap(entry => entry.reasons)),
+        : validationBlockingReasons,
     }), {
       pendingPromoteGroupKey: validationStatus === 'pass' ? manifest!.groupKey : undefined,
       pendingPromoteBatchId: validationStatus === 'pass' ? batchId : undefined,
@@ -699,7 +805,7 @@ export async function validateProjectColorBatch(
     detail,
     blockingReasons: validationStatus === 'pass'
       ? []
-      : dedupeStrings(validationEntries.flatMap(entry => entry.reasons)),
+      : validationBlockingReasons,
   };
 }
 
@@ -928,21 +1034,37 @@ function updateGroupCurrentState(
 function materializeCurrentGroupsFromSnapshot(
   snapshot: IColorGroupsSnapshotFile,
   existingGroups: IColorRootCurrent['groups'],
+  previousSnapshot?: IColorGroupsSnapshotFile | null,
 ): IColorGroupCurrent[] {
   const existingByKey = new Map((existingGroups ?? []).map(group => [group.groupKey, group]));
+  const previousByKey = new Map((previousSnapshot?.groups ?? []).map(group => [group.groupKey, group]));
+  const preservedStatuses = new Set<IColorGroupCurrent['status']>(['running', 'staged', 'promoted']);
   return snapshot.groups.map(group => {
     const existing = existingByKey.get(group.groupKey);
+    const previousGroup = previousByKey.get(group.groupKey);
+    const clipKeysChanged = !sameStringSet(previousGroup?.clipKeys ?? [], group.clipKeys ?? []);
+    const nextStatus = preservedStatuses.has(existing?.status ?? 'idle')
+      ? existing!.status
+      : group.clipKeys.length > 0
+        ? 'ready'
+        : 'blocked';
+    const preserveBatchState = Boolean(existing) && (
+      !clipKeysChanged
+      || preservedStatuses.has(existing?.status ?? 'idle')
+    );
     return {
       groupKey: group.groupKey,
-      status: existing?.status ?? (group.clipKeys.length > 0 ? 'ready' : 'blocked'),
+      status: nextStatus,
       displayName: existing?.displayName ?? group.displayName,
       clipCount: group.clipKeys.length,
-      latestBatchId: existing?.latestBatchId,
-      latestBatchStatus: existing?.latestBatchStatus,
-      latestValidationStatus: existing?.latestValidationStatus,
-      pendingPromoteBatchId: existing?.pendingPromoteBatchId,
-      lastPromotedBatchId: existing?.lastPromotedBatchId,
-      blockingReasons: dedupeStrings(existing?.blockingReasons ?? []),
+      latestBatchId: preserveBatchState ? existing?.latestBatchId : undefined,
+      latestBatchStatus: preserveBatchState ? existing?.latestBatchStatus : undefined,
+      latestValidationStatus: preserveBatchState ? existing?.latestValidationStatus : undefined,
+      pendingPromoteBatchId: preserveBatchState ? existing?.pendingPromoteBatchId : undefined,
+      lastPromotedBatchId: preserveBatchState ? existing?.lastPromotedBatchId : undefined,
+      blockingReasons: nextStatus === 'blocked'
+        ? dedupeStrings([...(preserveBatchState ? existing?.blockingReasons ?? [] : []), '该 Group 当前没有可执行 clip。'])
+        : [],
     };
   });
 }
@@ -985,13 +1107,18 @@ async function failColorAction(
   action: TProjectColorAction,
   blockers: string[],
   extra: Record<string, unknown>,
+  options: {
+    persistRootBlockers?: boolean;
+  } = {},
 ) {
   await writeRootCurrent(projectRoot, rootId, current => ({
     ...current,
     activeStage: CCOLOR_STEP_DEFINITIONS[action][0]?.key,
     currentJobId: undefined,
     detail: blockers.join('；'),
-    blockingReasons: dedupeStrings([...(current.blockingReasons ?? []), ...blockers]),
+    blockingReasons: options.persistRootBlockers === false
+      ? current.blockingReasons ?? []
+      : dedupeStrings([...(current.blockingReasons ?? []), ...blockers]),
     ...(action === 'sync_groups' ? { groupSyncStatus: 'blocked' as const } : {}),
   }));
   await writeColorProgress(progressPath, action, {
@@ -1004,7 +1131,14 @@ async function failColorAction(
 }
 
 function filterPersistentColorBlockers(blockers: string[]): string[] {
-  return blockers.filter(blocker => !blocker.includes('resolveColorPythonPath'));
+  return blockers.filter(blocker => (
+    !blocker.includes('resolveColorPythonPath')
+    && !blocker.includes('official Python Resolve host')
+    && !blocker.includes('Resolve Studio')
+    && !blocker.includes('Resolve 版本')
+    && !blocker.includes('renderPreset')
+    && !blocker.includes('render preset')
+  ));
 }
 
 async function scanColorRawInventory(rawLocalPath: string): Promise<Array<{
@@ -1018,6 +1152,38 @@ async function scanColorRawInventory(rawLocalPath: string): Promise<Array<{
       rawRelativePath: normalizePortablePath(toPortableRelativePath(rawLocalPath, file.path)),
       sourceAbsolutePath: resolve(file.path),
     }));
+}
+
+async function buildColorExecutorClips(
+  rawLocalPath: string,
+  runtimeConfig: Awaited<ReturnType<typeof loadRuntimeConfig>>,
+): Promise<IColorExecutorClipInput[]> {
+  const inventory = await scanColorRawInventory(rawLocalPath);
+  return Promise.all(
+    inventory.map(async item => {
+      const probed = await probe(item.sourceAbsolutePath, runtimeConfig).catch(() => null);
+      const captureTime = probed
+        ? await resolveCaptureTime(item.sourceAbsolutePath, probed).catch(() => null)
+        : null;
+      return {
+        rawRelativePath: item.rawRelativePath,
+        sourceAbsolutePath: item.sourceAbsolutePath,
+        capturedAt: captureTime?.capturedAt,
+        width: probed?.width ?? undefined,
+        height: probed?.height ?? undefined,
+        fps: probed?.fps ?? undefined,
+        codec: probed?.codec ?? undefined,
+        rawTags: probed?.rawTags ?? {},
+      } satisfies IColorExecutorClipInput;
+    }),
+  );
+}
+
+function sameStringSet(left: string[], right: string[]): boolean {
+  if (left.length !== right.length) return false;
+  const leftSorted = [...left].sort();
+  const rightSorted = [...right].sort();
+  return leftSorted.every((value, index) => value === rightSorted[index]);
 }
 
 async function buildColorFileMetadataSnapshot(
@@ -1055,6 +1221,224 @@ function parseMaybeNumber(value: string | undefined): number | undefined {
   if (!value?.trim()) return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+async function ensureActionHostPreflight(input: {
+  context: IColorRootContext;
+  action: TProjectColorAction;
+  executor: IColorExecutor;
+  progressPath: string;
+  extra: Record<string, unknown>;
+}): Promise<IColorHostPreflight> {
+  const preflight = await runColorHostPreflight({
+    projectRoot: input.context.projectRoot,
+    projectId: input.context.projectId,
+    rootId: input.context.rootId,
+    resolveProjectName: input.context.rootSummary.resolveProjectName,
+    runtimeConfig: input.context.runtimeConfig,
+    executor: input.executor,
+  });
+  await saveColorHostPreflight(input.context.projectRoot, preflight);
+  if (preflight.status === 'blocked') {
+    const blockers = preflight.blockingReasons.length > 0
+      ? preflight.blockingReasons
+      : ['Resolve host preflight blocked this action.'];
+    await failColorAction(
+      input.context.projectRoot,
+      input.context.rootId,
+      input.progressPath,
+      input.action,
+      blockers,
+      input.extra,
+      { persistRootBlockers: false },
+    );
+    throw new ProjectColorBlockedError(blockers);
+  }
+  await writeRootCurrent(input.context.projectRoot, input.context.rootId, current => ({
+    ...current,
+    blockingReasons: filterPersistentColorBlockers(current.blockingReasons ?? []),
+  }));
+  return preflight;
+}
+
+async function runColorHostPreflight(input: {
+  projectRoot: string;
+  projectId: string;
+  rootId?: string;
+  resolveProjectName: string;
+  runtimeConfig: Awaited<ReturnType<typeof loadRuntimeConfig>>;
+  executor?: IColorExecutor;
+}): Promise<IColorHostPreflight> {
+  if (!input.runtimeConfig.resolveColorPythonPath?.trim()) {
+    return normalizeHostPreflight({
+      status: 'blocked',
+      checkedAt: new Date().toISOString(),
+      warnings: [],
+      blockingReasons: ['未配置 config/runtime.json resolveColorPythonPath，无法调用 official Python Resolve host。'],
+      renderSupport: {
+        containers: [],
+        supportsAudioCodec: false,
+        supportsVideoQuality: false,
+      },
+    });
+  }
+
+  const executor = input.executor ?? new PythonResolveColorExecutor({
+    pythonPath: input.runtimeConfig.resolveColorPythonPath,
+    scriptApiRoot: input.runtimeConfig.resolveColorScriptApiRoot,
+  });
+  try {
+    return normalizeHostPreflight(
+      await runColorHostWithRetry(
+        () => executor.preflight({
+          projectId: input.projectId,
+          rootId: input.rootId,
+          resolveProjectName: input.resolveProjectName,
+        }),
+        `preflight:${input.projectId}:${input.rootId ?? 'all'}`,
+      ),
+    );
+  } catch (error) {
+    if (error instanceof ResolveColorHostError) {
+      return normalizeHostPreflight(mapHostErrorToPreflight(error));
+    }
+    throw error;
+  }
+}
+
+async function saveColorHostPreflight(projectRoot: string, hostPreflight: IColorHostPreflight): Promise<void> {
+  await saveColorCurrent(projectRoot, {
+    roots: [],
+    hostPreflight: normalizeHostPreflight(hostPreflight),
+    updatedAt: new Date().toISOString(),
+  });
+}
+
+async function runColorHostWithRetry<T>(
+  operation: () => Promise<T>,
+  label: string,
+): Promise<T> {
+  const retryDelaysMs = [1000, 2000, 4000];
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= retryDelaysMs.length; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      if (!isRetryableColorHostError(error) || attempt >= retryDelaysMs.length) {
+        throw error;
+      }
+      await delay(retryDelaysMs[attempt]!);
+    }
+  }
+  throw lastError ?? new Error(`Unreachable color host retry state: ${label}`);
+}
+
+function isRetryableColorHostError(error: unknown): boolean {
+  if (!(error instanceof ResolveColorHostError)) return false;
+  return new Set([
+    'resolve_app_unavailable',
+    'resolve_render_timeout',
+    'resolve_color_host_timeout',
+    'resolve_color_host_connection_failed',
+  ]).has(error.code);
+}
+
+function mapHostErrorToPreflight(error: ResolveColorHostError): IColorHostPreflight {
+  return {
+    status: 'blocked',
+    checkedAt: new Date().toISOString(),
+    warnings: [],
+    blockingReasons: dedupeStrings([
+      error.message,
+      ...(extractHostErrorStrings(error.details, 'blockingReasons')),
+    ]),
+    renderSupport: {
+      containers: [],
+      supportsAudioCodec: false,
+      supportsVideoQuality: false,
+    },
+  };
+}
+
+function extractHostErrorStrings(details: unknown, key: string): string[] {
+  if (!details || typeof details !== 'object') return [];
+  const value = (details as Record<string, unknown>)[key];
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === 'string' && Boolean(item.trim()));
+}
+
+function normalizeHostPreflight(preflight: IColorHostPreflight): IColorHostPreflight {
+  return {
+    status: preflight.status ?? 'unknown',
+    checkedAt: preflight.checkedAt ?? new Date().toISOString(),
+    productName: preflight.productName?.trim() || undefined,
+    versionString: preflight.versionString?.trim() || undefined,
+    isStudio: preflight.isStudio,
+    warnings: dedupeStrings(preflight.warnings ?? []),
+    blockingReasons: dedupeStrings(preflight.blockingReasons ?? []),
+    renderSupport: {
+      containers: dedupeRenderSupportContainers(preflight.renderSupport?.containers ?? []),
+      supportsAudioCodec: preflight.renderSupport?.supportsAudioCodec ?? false,
+      supportsVideoQuality: preflight.renderSupport?.supportsVideoQuality ?? false,
+    },
+  };
+}
+
+function dedupeRenderSupportContainers(
+  containers: NonNullable<IColorHostPreflight['renderSupport']>['containers'],
+): NonNullable<IColorHostPreflight['renderSupport']>['containers'] {
+  const byContainer = new Map<string, { container: string; extension?: string; videoCodecs: string[] }>();
+  for (const container of containers ?? []) {
+    const key = container.container?.trim().toLowerCase();
+    if (!key) continue;
+    const videoCodecs = dedupeStrings(container.videoCodecs ?? []);
+    const existing = byContainer.get(key);
+    if (existing) {
+      existing.videoCodecs = dedupeStrings([...existing.videoCodecs, ...videoCodecs]);
+      existing.extension = existing.extension ?? container.extension;
+      continue;
+    }
+    byContainer.set(key, {
+      container: container.container,
+      extension: container.extension,
+      videoCodecs,
+    });
+  }
+  return Array.from(byContainer.values()).sort((left, right) => left.container.localeCompare(right.container));
+}
+
+function validateRenderPresetSupport(
+  renderPreset: IColorRootContext['rootSummary']['renderPreset'],
+  preflight: IColorHostPreflight,
+): string[] {
+  const support = preflight.renderSupport;
+  if (!support) {
+    return ['Resolve host preflight 未返回 renderSupport，无法校验当前 renderPreset。'];
+  }
+  const containerValue = renderPreset.container?.trim();
+  const codecValue = renderPreset.videoCodec?.trim();
+  if (!containerValue || !codecValue) {
+    return ['当前 root 的 renderPreset 缺少 container 或 videoCodec，无法启动 execute_group。'];
+  }
+  const containerKey = containerValue.toLowerCase();
+  const matchedContainer = support.containers.find(container => container.container.trim().toLowerCase() === containerKey);
+  if (!matchedContainer) {
+    return [`当前 Resolve host 不支持 render container: ${containerValue}`];
+  }
+  const codecKey = codecValue.toLowerCase();
+  const matchedCodec = matchedContainer.videoCodecs.some(codec => codec.trim().toLowerCase() === codecKey);
+  if (!matchedCodec) {
+    return [`当前 Resolve host 不支持 ${containerValue} / ${codecValue} 这组 render preset。`];
+  }
+  const blockers: string[] = [];
+  if (renderPreset.audioCodec?.trim() && support.supportsAudioCodec === false) {
+    blockers.push(`当前 Resolve host 不支持 AudioCodec 设置：${renderPreset.audioCodec}`);
+  }
+  if (typeof renderPreset.bitrateMbps === 'number' && support.supportsVideoQuality === false) {
+    blockers.push(`当前 Resolve host 不支持 VideoQuality 设置：${renderPreset.bitrateMbps} Mbps`);
+  }
+  return blockers;
 }
 
 function buildColorValidationChecks(input: {

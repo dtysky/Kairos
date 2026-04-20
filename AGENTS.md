@@ -49,6 +49,7 @@ Operational lesson that must not be forgotten:
 - `scripts/kairos-supervisor.* start` starts `Supervisor + React console`, but does not start ML and does not auto-resume old jobs
 - `projects/<projectId>/.tmp/media-analyze/progress.json` is durable progress cache, not proof that a live analyze job is running
 - `<workspaceRoot>/.tmp/style-analysis/<category>/progress.json` is also durable progress cache, not proof that a live style-analysis job is running
+- `/color` now auto-checks Resolve host preflight on entry and caches it in `color/current.json`; host diagnostics should not wait until an action is clicked
 - `/style` should resolve one category of truth per monitor view; do not mix default-category metadata with another category's latest job/progress
 - `/style` should surface current video context plus `keyframes / vlm / queue` runtime detail when progress data provides it
 - Kairos-managed top-level jobs must end with `ML stopped`, including success, failure, stop, and interrupt paths
@@ -100,6 +101,12 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - `execute_group`
   - `validate_batch`
   - `promote_batch`
+- Treat `prepare_root` as the formal Resolve-side sync step: it must mirror `rawLocalPath` into root bins, ensure the root grading timeline has executable clips, and create or reuse Resolve Groups from explainable technical signals.
+- Treat Resolve as the formal Group truth for color: users may keep adjusting Groups inside Resolve, and `/color` should only mirror them back via `sync_groups`; synced non-empty Groups become `ready` directly, with no extra `/color` confirm step.
+- Treat `color/current.json.hostPreflight` as formal cached host truth for `/color`; blocked/degraded host state should surface before the user starts a color action.
+- Treat `prepare_root / sync_groups / execute_group` as preflight-guarded actions: if Resolve host is blocked or the current render preset is unsupported, fail before Resolve-side mutation.
+- Treat `color/batches/<batchId>/plan.json|manifest.json|validation.json|promote.json` as the read-only source for `/color` archive sections; do not duplicate batch history back into config or ad-hoc UI state.
+- Treat `promote_batch` as a confirm-before-run action from `/color`: validation pass alone is not enough to overwrite managed outputs in the current media root.
 - Treat same-machine official Python Resolve host as the current formal color execution path; do not route color automation back through MCP wording or design assumptions.
 - Treat root-level color config as minimal and project-scoped: the only user-maintained long-term field is `root.color.renderPreset` on the project root registry; naming and group structure are derived or host-owned, not user config.
 - Treat `color/current.json`, `color/groups/<rootId>.json`, and `color/batches/<batchId>/...` as system-maintained runtime/archive truth, not user config.

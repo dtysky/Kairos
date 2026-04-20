@@ -1173,6 +1173,32 @@ export const IColorConfig = z.object({
 });
 export type IColorConfig = z.infer<typeof IColorConfig>;
 
+export const IColorRenderSupportContainer = z.object({
+  container: z.string(),
+  extension: z.string().optional(),
+  videoCodecs: z.array(z.string()).default([]),
+});
+export type IColorRenderSupportContainer = z.infer<typeof IColorRenderSupportContainer>;
+
+export const IColorRenderSupport = z.object({
+  containers: z.array(IColorRenderSupportContainer).default([]),
+  supportsAudioCodec: z.boolean().optional(),
+  supportsVideoQuality: z.boolean().optional(),
+});
+export type IColorRenderSupport = z.infer<typeof IColorRenderSupport>;
+
+export const IColorHostPreflight = z.object({
+  status: z.enum(['unknown', 'ready', 'degraded', 'blocked']).default('unknown'),
+  checkedAt: z.string().optional(),
+  productName: z.string().optional(),
+  versionString: z.string().optional(),
+  isStudio: z.boolean().optional(),
+  warnings: z.array(z.string()).default([]),
+  blockingReasons: z.array(z.string()).default([]),
+  renderSupport: IColorRenderSupport.optional(),
+});
+export type IColorHostPreflight = z.infer<typeof IColorHostPreflight>;
+
 export const IColorGroupCurrent = z.object({
   groupKey: z.string(),
   status: EColorGroupStatus,
@@ -1207,6 +1233,7 @@ export type IColorRootCurrent = z.infer<typeof IColorRootCurrent>;
 export const IColorCurrent = z.object({
   selectedRootId: z.string().optional(),
   roots: z.array(IColorRootCurrent).default([]),
+  hostPreflight: IColorHostPreflight.optional(),
   updatedAt: z.string().optional(),
 });
 export type IColorCurrent = z.infer<typeof IColorCurrent>;
@@ -1306,12 +1333,22 @@ export const IColorBatchValidationEntry = z.object({
 });
 export type IColorBatchValidationEntry = z.infer<typeof IColorBatchValidationEntry>;
 
+export const IColorBatchValidationSummary = z.object({
+  targetCount: z.number().int().nonnegative().default(0),
+  renderedCount: z.number().int().nonnegative().default(0),
+  passedCount: z.number().int().nonnegative().default(0),
+  failedCount: z.number().int().nonnegative().default(0),
+});
+export type IColorBatchValidationSummary = z.infer<typeof IColorBatchValidationSummary>;
+
 export const IColorBatchValidation = z.object({
   batchId: z.string(),
   rootId: z.string(),
   groupKey: z.string(),
   validatedAt: z.string(),
   status: z.enum(['pass', 'fail']),
+  summary: IColorBatchValidationSummary.default({}),
+  blockingReasons: z.array(z.string()).default([]),
   entries: z.array(IColorBatchValidationEntry).default([]),
 });
 export type IColorBatchValidation = z.infer<typeof IColorBatchValidation>;
@@ -1327,6 +1364,25 @@ export const IColorBatchPromote = z.object({
   detail: z.string().optional(),
 });
 export type IColorBatchPromote = z.infer<typeof IColorBatchPromote>;
+
+export const IColorBatchArchiveItem = z.object({
+  batchId: z.string(),
+  rootId: z.string(),
+  groupKey: z.string(),
+  plan: IColorBatchPlan.optional(),
+  manifest: IColorBatchManifest.optional(),
+  validation: IColorBatchValidation.optional(),
+  promote: IColorBatchPromote.optional(),
+});
+export type IColorBatchArchiveItem = z.infer<typeof IColorBatchArchiveItem>;
+
+export const IColorRootArchiveView = z.object({
+  rootId: z.string(),
+  recentBatches: z.array(IColorBatchArchiveItem).default([]),
+  validationFailures: z.array(IColorBatchArchiveItem).default([]),
+  promoteHistory: z.array(IColorBatchArchiveItem).default([]),
+});
+export type IColorRootArchiveView = z.infer<typeof IColorRootArchiveView>;
 
 export const IProjectBriefPharosConfig = z.object({
   includedTripIds: z.array(z.string()).default([]),
