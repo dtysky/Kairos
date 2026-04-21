@@ -28,7 +28,6 @@ import {
 } from '../modules/media/manual-capture-time-shared.js';
 import { buildProjectBriefWithMappings, parseProjectBrief } from './project-brief.js';
 import {
-  loadLegacyColorRenderPresetMap,
   loadPersistedLegacyProjectRoots,
   removeLegacyProjectRootFiles,
 } from './project-root-compat.js';
@@ -68,7 +67,7 @@ const ILegacyProjectBriefMappingConfig = z.object({
       container: z.string().optional(),
       videoCodec: z.string().optional(),
       audioCodec: z.string().optional(),
-      bitrateMbps: z.number().positive().optional(),
+      bitrateKbps: z.number().positive().optional(),
     }).optional(),
     colorSpaceProfile: z.string().optional(),
     transformPresetKey: z.string().optional(),
@@ -114,14 +113,13 @@ export function getColorCurrentPath(projectRoot: string): string {
 }
 
 export async function loadProjectBriefConfig(projectRoot: string): Promise<TProjectBriefConfig> {
-  const [stored, legacyRoots, legacyRenderPresetByRootId] = await Promise.all([
+  const [stored, legacyRoots] = await Promise.all([
     readJsonOrNull(getProjectBriefConfigPath(projectRoot), ILegacyProjectBriefConfig),
     loadPersistedLegacyProjectRoots(projectRoot),
-    loadLegacyColorRenderPresetMap(projectRoot),
   ]);
   if (stored) {
     return IProjectBriefConfig.parse(materializeProjectBriefConfig(
-      mergeLegacyColorRenderPresets(stored, legacyRenderPresetByRootId),
+      stored,
       legacyRoots.roots,
       basename(projectRoot),
     ));
@@ -142,12 +140,9 @@ export async function saveProjectBriefConfig(
   projectRoot: string,
   config: TProjectBriefConfig,
 ): Promise<TProjectBriefConfig> {
-  const [legacyRoots, legacyRenderPresetByRootId] = await Promise.all([
-    loadPersistedLegacyProjectRoots(projectRoot),
-    loadLegacyColorRenderPresetMap(projectRoot),
-  ]);
+  const legacyRoots = await loadPersistedLegacyProjectRoots(projectRoot);
   const normalized = IProjectBriefConfig.parse(materializeProjectBriefConfig(
-    mergeLegacyColorRenderPresets(config, legacyRenderPresetByRootId),
+    config,
     legacyRoots.roots,
     basename(projectRoot),
   ));
@@ -159,47 +154,6 @@ export async function saveProjectBriefConfig(
   );
   await removeLegacyProjectRootFiles(projectRoot);
   return normalized;
-}
-
-function mergeLegacyColorRenderPresets<T extends {
-  mappings?: Array<{
-    rootId?: string;
-    color?: {
-      renderPreset?: {
-        container?: string;
-        videoCodec?: string;
-        audioCodec?: string;
-        bitrateMbps?: number;
-      };
-    };
-  }>;
-}>(config: T, legacyRenderPresetByRootId: Map<string, {
-  container?: string;
-  videoCodec?: string;
-  audioCodec?: string;
-  bitrateMbps?: number;
-}>): T {
-  if (!config.mappings?.length || legacyRenderPresetByRootId.size === 0) {
-    return config;
-  }
-  return {
-    ...config,
-    mappings: config.mappings.map(mapping => {
-      const legacyRenderPreset = mapping.rootId
-        ? legacyRenderPresetByRootId.get(mapping.rootId)
-        : undefined;
-      if (!legacyRenderPreset || mapping.color?.renderPreset) {
-        return mapping;
-      }
-      return {
-        ...mapping,
-        color: {
-          ...(mapping.color ?? {}),
-          renderPreset: legacyRenderPreset,
-        },
-      };
-    }),
-  };
 }
 
 export async function loadManualItineraryConfig(projectRoot: string): Promise<TManualItineraryConfig> {

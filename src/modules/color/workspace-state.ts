@@ -9,6 +9,7 @@ import type {
   IMediaRoot,
 } from '../../protocol/schema.js';
 import type { IResolveColorBackendStatus } from './resolve-executor.js';
+import { materializeColorRenderPreset } from './render-preset.js';
 
 export interface IColorRootCurrentView extends IColorRootCurrent {
   label?: string;
@@ -69,12 +70,6 @@ interface IBuildColorWorkspaceStateInput {
   groupSnapshotsByRootId?: Record<string, IColorGroupsSnapshotFile>;
 }
 
-const CDEFAULT_RENDER_PRESET = {
-  container: 'mp4',
-  videoCodec: 'h265',
-  audioCodec: 'aac',
-} as const;
-
 export function buildColorWorkspaceState(
   input: IBuildColorWorkspaceStateInput,
 ): IColorWorkspaceState {
@@ -94,8 +89,8 @@ export function buildColorWorkspaceState(
       const derivedBlockers = dedupeStrings([
         !trimmed(deviceRoot?.localPath) ? '当前设备未配置 current localPath，无法在本机覆盖当前素材目录。' : '',
         !trimmed(deviceRoot?.rawLocalPath) ? '当前设备未配置 rawLocalPath，无法在本机访问原始素材。' : '',
-        typeof renderPreset.bitrateMbps !== 'number'
-          ? '未配置 root 级 renderPreset.bitrateMbps，后续 execute_group 无法启动。'
+        typeof renderPreset.bitrateKbps !== 'number'
+          ? '未配置 root 级 renderPreset.bitrateKbps（kb/s），后续 execute_root 无法启动。'
           : '',
         ...(hostPreflight?.status === 'blocked' ? hostPreflight.blockingReasons : []),
       ]);
@@ -117,9 +112,11 @@ export function buildColorWorkspaceState(
         activeStage: trimmed(storedCurrent?.activeStage),
         currentJobId: trimmed(storedCurrent?.currentJobId),
         detail: trimmed(storedCurrent?.detail),
-        pendingPromoteGroupKey: storedCurrent?.pendingPromoteGroupKey,
         pendingPromoteBatchId: storedCurrent?.pendingPromoteBatchId,
         latestBatchId: storedCurrent?.latestBatchId,
+        latestBatchStatus: storedCurrent?.latestBatchStatus,
+        latestValidationStatus: storedCurrent?.latestValidationStatus,
+        lastPromotedBatchId: storedCurrent?.lastPromotedBatchId,
         hostSummary: isPlainObject(storedCurrent?.hostSummary) ? storedCurrent.hostSummary : {},
         groups: groups.map(group => group.current),
         blockingReasons: dedupeStrings([
@@ -271,14 +268,14 @@ function materializeRenderPreset(renderPreset?: {
   container?: string;
   videoCodec?: string;
   audioCodec?: string;
-  bitrateMbps?: number;
+  bitrateKbps?: number;
 }): IColorRenderPreset {
-  return {
-    container: trimmed(renderPreset?.container) ?? CDEFAULT_RENDER_PRESET.container,
-    videoCodec: trimmed(renderPreset?.videoCodec) ?? CDEFAULT_RENDER_PRESET.videoCodec,
-    audioCodec: trimmed(renderPreset?.audioCodec) ?? CDEFAULT_RENDER_PRESET.audioCodec,
-    bitrateMbps: renderPreset?.bitrateMbps,
-  };
+  return materializeColorRenderPreset({
+    ...renderPreset,
+    container: trimmed(renderPreset?.container),
+    videoCodec: trimmed(renderPreset?.videoCodec),
+    audioCodec: trimmed(renderPreset?.audioCodec),
+  });
 }
 
 function materializeHostPreflight(

@@ -185,12 +185,10 @@ export async function loadColorBatchArchiveItem(
     loadColorBatchPromote(projectRoot, batchId),
   ]);
   const rootId = plan?.rootId ?? manifest?.rootId ?? validation?.rootId ?? promote?.rootId;
-  const groupKey = plan?.groupKey ?? manifest?.groupKey ?? validation?.groupKey ?? promote?.groupKey;
-  if (!rootId || !groupKey) return null;
+  if (!rootId) return null;
   return IColorBatchArchiveItem.parse({
     batchId,
     rootId,
-    groupKey,
     plan: plan ?? undefined,
     manifest: manifest ?? undefined,
     validation: validation ?? undefined,

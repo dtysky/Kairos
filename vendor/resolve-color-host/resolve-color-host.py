@@ -2,6 +2,8 @@
 import argparse
 import hashlib
 import json
+import re
+import shutil
 import sys
 import time
 from pathlib import Path
@@ -34,8 +36,8 @@ def main() -> int:
             result = prepare_root(resolve, request_input)
         elif operation == "sync_groups":
             result = sync_groups(resolve, request_input)
-        elif operation == "execute_group":
-            result = execute_group(resolve, request_input)
+        elif operation == "execute_root":
+            result = execute_root(resolve, request_input)
         else:
             raise HostError("invalid_operation", f"Unsupported operation: {operation}")
 
@@ -247,60 +249,54 @@ def sync_groups(resolve, payload):
     )
 
 
-def execute_group(resolve, payload):
+def execute_root(resolve, payload):
     project = ensure_project(resolve, payload["resolveProjectName"])
     timeline = ensure_named_timeline(project, payload["gradingTimelineName"])
     require_method(project, "SetCurrentTimeline")(timeline)
-    render_format = normalize_render_format(payload.get("renderPreset", {}))
-    resolved_render_format = set_render_format(project, render_format)
-    safe_call(project, "DeleteAllRenderJobs")
 
-    entries = []
     target_dir = Path(payload["stagingRoot"]).expanduser().resolve()
     target_dir.mkdir(parents=True, exist_ok=True)
+    render_dir = target_dir / "__resolve_render__"
+    prepare_clip_staging_dir(render_dir)
 
-    clip_key_to_item = build_timeline_item_map(timeline, payload["rawLocalPath"])
-    queued_job_ids = []
-    for clip in payload.get("clips", []):
-        clip_key = normalize_portable_path(clip.get("rawRelativePath"))
-        timeline_item = clip_key_to_item.get(clip_key)
-        if timeline_item is None:
-            raise HostError("resolve_group_clip_missing", f"Clip not found on timeline for group render: {clip_key}")
-        relative_dir = portable_parent_dir(clip_key)
-        source_stem = stringify_signal_value(clip.get("sourceStem")) or Path(clip_key).stem
-        output_name = normalize_output_filename(source_stem, resolved_render_format["extension"])
-        output_dir = target_dir / relative_dir if relative_dir else target_dir
-        output_dir.mkdir(parents=True, exist_ok=True)
-        queued_job_ids.append(queue_render_job(
-            project,
-            timeline_item,
-            output_dir,
-            source_stem,
-            resolved_render_format,
-            width=parse_int(clip.get("width")),
-            height=parse_int(clip.get("height")),
-            fps=parse_float(clip.get("fps")),
-        ))
-        entries.append({
-            "rawRelativePath": clip_key,
-            "outputPath": str((output_dir / output_name).resolve()),
-            "normalizedOutputFilename": output_name,
+    render_format = normalize_render_format(payload.get("renderPreset", {}))
+    selected_clips = normalize_render_batch_clips(payload.get("clips"), sanitize_extension(render_format.get("container") or "mp4"))
+    if not selected_clips:
+        raise HostError("resolve_root_batch_empty", "Root batch does not contain any render clips.")
+
+    media_pool = require_method(project, "GetMediaPool")()
+    safe_call(resolve, "OpenPage", "edit")
+    save_project(project)
+    temp_timeline = duplicate_timeline(project, timeline, build_temp_render_timeline_name(payload["gradingTimelineName"]))
+    try:
+        require_method(project, "SetCurrentTimeline")(temp_timeline)
+        prune_timeline_to_selected_clips(temp_timeline, payload["rawLocalPath"], {
+            clip["rawRelativePath"] for clip in selected_clips
         })
-
-    start_rendering(project, queued_job_ids)
-    wait_for_render(project)
-    normalized_entries = normalize_render_outputs(entries)
+        safe_call(resolve, "OpenPage", "deliver")
+        resolved_render_format = set_render_format(project, render_format)
+        selected_clips = normalize_render_batch_clips(payload.get("clips"), resolved_render_format["extension"])
+        safe_call(project, "DeleteAllRenderJobs")
+        queued_job_id = queue_root_render_job(project, render_dir, resolved_render_format, selected_clips)
+        start_rendering(project, [queued_job_id])
+        wait_for_render(project)
+        normalized_entries = adopt_root_render_outputs(render_dir, target_dir, selected_clips, resolved_render_format["extension"])
+    finally:
+        safe_call(project, "SetCurrentTimeline", timeline)
+        safe_call(resolve, "OpenPage", "edit")
+        delete_timeline(media_pool, temp_timeline)
 
     return {
         "renderedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "entries": normalized_entries,
         "hostSummary": {
             "timelineName": payload["gradingTimelineName"],
-            "groupKey": payload["groupKey"],
+            "selectionMode": payload.get("selectionMode") or "all",
+            "clipCount": len(selected_clips),
             "resolvedFormat": resolved_render_format["format"],
             "resolvedCodec": resolved_render_format["videoCodec"],
             "audioCodec": resolved_render_format["audioCodec"],
-            "bitrateMbps": resolved_render_format["bitrateMbps"],
+            "bitrateKbps": resolved_render_format["bitrateKbps"],
         },
     }
 
@@ -420,6 +416,17 @@ def find_named_timeline(project, timeline_name):
         if candidate and safe_call(candidate, "GetName") == timeline_name:
             return candidate
     return None
+
+
+def list_timeline_names(project):
+    names = []
+    count = safe_call(project, "GetTimelineCount") or 0
+    for index in range(1, int(count) + 1):
+        candidate = safe_call(project, "GetTimelineByIndex", index)
+        name = safe_call(candidate, "GetName") if candidate else None
+        if isinstance(name, str) and name:
+            names.append(name)
+    return names
 
 
 def capture_timeline_group_assignments(timeline, raw_local_path):
@@ -1153,12 +1160,12 @@ def normalize_render_format(render_preset):
     container = str(render_preset.get("container") or "mp4").strip()
     video_codec = str(render_preset.get("videoCodec") or "h265").strip()
     audio_codec = str(render_preset.get("audioCodec") or "aac").strip()
-    bitrate = parse_float(render_preset.get("bitrateMbps"))
+    bitrate = parse_float(render_preset.get("bitrateKbps"))
     return {
         "container": container,
         "videoCodec": video_codec,
         "audioCodec": audio_codec,
-        "bitrateMbps": bitrate,
+        "bitrateKbps": bitrate,
     }
 
 
@@ -1177,7 +1184,7 @@ def set_render_format(project, render_format):
         "extension": extension,
         "videoCodec": codec_name,
         "audioCodec": render_format["audioCodec"],
-        "bitrateMbps": render_format["bitrateMbps"],
+        "bitrateKbps": render_format["bitrateKbps"],
     }
 
 
@@ -1214,39 +1221,129 @@ def resolve_render_codec(project, format_name, requested_codec):
     )
 
 
-def queue_render_job(project, timeline_item, target_dir, source_stem, render_format, width=None, height=None, fps=None):
-    mark_in = safe_call(timeline_item, "GetStart") or safe_call(timeline_item, "GetTimelineIn") or 0
-    mark_out = safe_call(timeline_item, "GetEnd") or safe_call(timeline_item, "GetTimelineOut") or mark_in
+def normalize_render_batch_clips(clips, extension):
+    normalized = []
+    for clip in clips or []:
+        clip_key = normalize_portable_path(clip.get("rawRelativePath"))
+        source_path = normalize_filesystem_path(clip.get("sourceAbsolutePath"))
+        source_stem = stringify_signal_value(clip.get("sourceStem")) or Path(clip_key).stem
+        if not clip_key or not source_path or not source_stem:
+            continue
+        normalized.append({
+            "rawRelativePath": clip_key,
+            "sourceAbsolutePath": source_path,
+            "sourceStem": source_stem,
+            "normalizedOutputFilename": normalize_output_filename(source_stem, extension),
+            "width": parse_int(clip.get("width")),
+            "height": parse_int(clip.get("height")),
+            "fps": parse_float(clip.get("fps")),
+        })
+    return normalized
+
+
+def build_temp_render_timeline_name(base_name):
+    fingerprint = hashlib.sha1(f"{base_name}-{time.time()}".encode("utf-8")).hexdigest()[:8]
+    return f"{base_name} [Kairos Render {fingerprint}]"
+
+
+def duplicate_timeline(project, source_timeline, temp_name):
+    timeline_count_before = parse_int(safe_call(project, "GetTimelineCount")) or 0
+    timeline_names_before = set(list_timeline_names(project))
+    require_method(project, "SetCurrentTimeline")(source_timeline)
+    duplicated = safe_call(source_timeline, "DuplicateTimeline", temp_name)
+    if duplicated:
+        return duplicated
+    duplicated = safe_call(source_timeline, "DuplicateTimeline")
+    if duplicated and safe_call(duplicated, "SetName", temp_name) is not False:
+        return duplicated
+    count_after = parse_int(safe_call(project, "GetTimelineCount")) or 0
+    if count_after > timeline_count_before:
+        candidate = safe_call(project, "GetTimelineByIndex", count_after)
+        if candidate and safe_call(candidate, "SetName", temp_name) is not False:
+            return candidate
+    for index in range(1, int(count_after) + 1):
+        candidate = safe_call(project, "GetTimelineByIndex", index)
+        name = safe_call(candidate, "GetName") if candidate else None
+        if isinstance(name, str) and name and name not in timeline_names_before:
+            if safe_call(candidate, "SetName", temp_name) is not False:
+                return candidate
+    existing = find_named_timeline(project, temp_name)
+    if existing:
+        return existing
+    raise HostError("resolve_timeline_duplicate_failed", f"Unable to duplicate render timeline: {temp_name}")
+
+
+def delete_timeline(media_pool, timeline):
+    if timeline is None:
+        return
+    safe_call(media_pool, "DeleteTimelines", [timeline])
+
+
+def prune_timeline_to_selected_clips(timeline, raw_local_path, selected_clip_keys):
+    to_delete = []
+    for track_type in ("video", "audio", "subtitle"):
+        track_count = safe_call(timeline, "GetTrackCount", track_type) or safe_call(timeline, "GetTrackCount", track_type.title()) or 0
+        for track_index in range(1, int(track_count) + 1):
+            items = safe_call(timeline, "GetItemListInTrack", track_type, track_index)
+            if items is None:
+                items = safe_call(timeline, "GetItemsInTrack", track_type, track_index)
+            for item in iter_values(items or []):
+                file_path = extract_clip_like_file_path(item)
+                if not file_path:
+                    continue
+                try:
+                    clip_key = to_portable_relative(raw_local_path, file_path)
+                except ValueError:
+                    continue
+                if clip_key not in selected_clip_keys:
+                    to_delete.append(item)
+    if not to_delete:
+        return
+    result = safe_call(timeline, "DeleteClips", to_delete, False)
+    if result is False:
+        result = safe_call(timeline, "DeleteClips", to_delete)
+    if result is False:
+        raise HostError("resolve_timeline_subset_prune_failed", "Unable to prune temporary render timeline to the selected clips.")
+
+
+def queue_root_render_job(project, target_dir, render_format, clips):
     settings = {
         "TargetDir": str(target_dir),
-        "CustomName": source_stem,
+        "SelectAllFrames": True,
         "UniqueFilenameStyle": 0,
-        "MarkIn": int(mark_in),
-        "MarkOut": int(mark_out),
         "ExportVideo": True,
         "ExportAudio": True,
     }
-    if width:
-        settings["FormatWidth"] = int(width)
-    if height:
-        settings["FormatHeight"] = int(height)
-    if fps:
-        settings["FrameRate"] = float(fps)
+    unique_widths = {clip["width"] for clip in clips if clip.get("width")}
+    unique_heights = {clip["height"] for clip in clips if clip.get("height")}
+    unique_fps_values = {normalize_fps_string(clip.get("fps")) for clip in clips if clip.get("fps")}
+    if len(unique_widths) == 1:
+        settings["FormatWidth"] = int(next(iter(unique_widths)))
+    if len(unique_heights) == 1:
+        settings["FormatHeight"] = int(next(iter(unique_heights)))
+    if len(unique_fps_values) == 1:
+        settings["FrameRate"] = float(next(iter(unique_fps_values)))
     if render_format.get("audioCodec"):
         settings["AudioCodec"] = render_format["audioCodec"]
-    if render_format.get("bitrateMbps"):
-        settings["VideoQuality"] = max(1, int(round(float(render_format["bitrateMbps"]) * 1000)))
+    if render_format.get("bitrateKbps"):
+        settings["VideoQuality"] = max(1, int(round(float(render_format["bitrateKbps"]))))
     result = safe_call(project, "SetRenderSettings", settings)
     if result is False:
         raise HostError(
             "resolve_render_settings_failed",
-            f"Unable to set render settings for {source_stem}",
+            "Unable to set render settings for root render batch",
             {"renderSettings": settings},
         )
     job_id = safe_call(project, "AddRenderJob")
     if job_id is False or job_id is None:
-        raise HostError("resolve_add_render_job_failed", f"Unable to queue render job for {source_stem}")
+        raise HostError("resolve_add_render_job_failed", "Unable to queue render job for root render batch")
     return job_id
+
+
+def prepare_clip_staging_dir(path):
+    if path.exists():
+        shutil.rmtree(path)
+    path.mkdir(parents=True, exist_ok=True)
 
 
 def start_rendering(project, job_ids):
@@ -1271,43 +1368,96 @@ def wait_for_render(project, timeout_seconds=3600):
         time.sleep(1)
 
 
-def normalize_render_outputs(entries):
-    normalized = []
-    for entry in entries:
-        target_path = Path(entry["outputPath"]).resolve()
-        actual_path = resolve_rendered_output(target_path)
-        if actual_path != target_path:
-            if target_path.exists():
-                target_path.unlink()
-            actual_path.replace(target_path)
-        normalized.append({
-            **entry,
-            "outputPath": str(target_path),
-        })
-    return normalized
-
-
-def resolve_rendered_output(target_path):
-    if target_path.exists():
-        return target_path
-    parent = target_path.parent
-    stem = target_path.stem
-    extension = target_path.suffix.lower()
+def adopt_root_render_outputs(render_dir, staging_root, clips, extension):
+    if has_duplicate_source_stems(clips):
+        raise HostError(
+            "resolve_render_output_duplicate_source_stem",
+            "Root render batch contains duplicate source stems; Resolve output binding would be ambiguous.",
+            {
+                "rawRelativePaths": [clip["rawRelativePath"] for clip in clips],
+            },
+        )
     candidates = [
         path
-        for path in parent.iterdir()
-        if path.is_file()
-        and path.suffix.lower() == extension
-        and (path.stem == stem or path.stem.startswith(f"{stem}_") or stem in path.stem)
+        for path in render_dir.rglob("*")
+        if path.is_file() and path.suffix.lower() == f".{extension.lstrip('.').lower()}"
     ]
     if not candidates:
         raise HostError(
             "resolve_render_output_missing",
-            f"Unable to locate rendered output for {target_path.name}",
-            {"targetPath": str(target_path)},
+            "Unable to locate rendered outputs for root render batch.",
+            {"renderDir": str(render_dir)},
         )
-    candidates.sort(key=lambda path: path.stat().st_mtime, reverse=True)
-    return candidates[0]
+
+    normalized_entries = []
+    claimed = []
+    for clip in clips:
+        matching_candidates = [
+            path
+            for path in candidates
+            if path not in claimed and rendered_output_matches_source_stem(path, clip["sourceStem"])
+        ]
+        if not matching_candidates:
+            raise HostError(
+                "resolve_render_output_missing",
+                f"Unable to locate rendered output for {clip['normalizedOutputFilename']}",
+                {
+                    "rawRelativePath": clip["rawRelativePath"],
+                    "candidatePaths": [str(path) for path in sorted(candidates, key=lambda value: value.name)],
+                },
+            )
+        if len(matching_candidates) > 1:
+            raise HostError(
+                "resolve_render_output_ambiguous",
+                f"Multiple rendered outputs matched {clip['normalizedOutputFilename']}",
+                {
+                    "rawRelativePath": clip["rawRelativePath"],
+                    "candidatePaths": [str(path) for path in sorted(matching_candidates, key=lambda value: value.name)],
+                },
+            )
+        actual_path = matching_candidates[0]
+        claimed.append(actual_path)
+        relative_dir = portable_parent_dir(clip["rawRelativePath"])
+        output_dir = staging_root / relative_dir if relative_dir else staging_root
+        output_dir.mkdir(parents=True, exist_ok=True)
+        target_path = (output_dir / clip["normalizedOutputFilename"]).resolve()
+        if target_path.exists():
+            target_path.unlink()
+        actual_path.replace(target_path)
+        normalized_entries.append({
+            "rawRelativePath": clip["rawRelativePath"],
+            "outputPath": str(target_path),
+            "normalizedOutputFilename": clip["normalizedOutputFilename"],
+        })
+
+    unclaimed = [str(path) for path in candidates if path not in claimed]
+    if unclaimed:
+        raise HostError(
+            "resolve_render_output_unclaimed",
+            "Resolve rendered extra outputs that do not map to the selected root batch clips.",
+            {"candidatePaths": unclaimed},
+        )
+    return normalized_entries
+
+
+def rendered_output_matches_source_stem(path, source_stem):
+    candidate_stem = path.stem
+    if not isinstance(candidate_stem, str) or not candidate_stem:
+        return False
+    pattern = re.compile(rf"^{re.escape(source_stem)}(?:[_-]\d+)?$", re.IGNORECASE)
+    return bool(pattern.match(candidate_stem))
+
+
+def has_duplicate_source_stems(clips):
+    seen = set()
+    for clip in clips:
+        stem = str(clip.get("sourceStem") or "").strip().lower()
+        if not stem:
+            continue
+        if stem in seen:
+            return True
+        seen.add(stem)
+    return False
 
 
 def get_resolve_product_name(resolve):
@@ -1381,7 +1531,7 @@ def collect_render_support(project):
     containers = []
     seen_containers = set()
     if not isinstance(formats, dict) or not formats:
-        warnings.append("无法从 Resolve 读取 render formats；execute_group 的格式守卫会按保守模式处理。")
+        warnings.append("无法从 Resolve 读取 render formats；execute_root 的格式守卫会按保守模式处理。")
         degraded = True
         formats = {}
 

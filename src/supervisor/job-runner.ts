@@ -260,11 +260,13 @@ async function runJob(
             action: toStringValue(args.action) as
               | 'prepare_root'
               | 'sync_groups'
-              | 'execute_group'
+              | 'execute_root'
               | 'validate_batch'
               | 'promote_batch'
               | undefined,
-            groupKey: toStringValue(args.groupKey) || undefined,
+            clipKeys: Array.isArray(args.clipKeys)
+              ? args.clipKeys.filter((item): item is string => typeof item === 'string' && Boolean(item.trim()))
+              : undefined,
             batchId: toStringValue(args.batchId) || undefined,
             jobId,
           }),

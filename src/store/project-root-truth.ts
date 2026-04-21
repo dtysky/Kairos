@@ -6,6 +6,7 @@ import {
   type IProjectBriefConfig,
   type IProjectBriefMappingConfig,
 } from '../protocol/schema.js';
+import { normalizeColorRenderPreset } from '../modules/color/render-preset.js';
 
 export type TProjectBriefMappingInput = {
   rootId?: string;
@@ -74,23 +75,7 @@ function normalizePriority(value: unknown, fallback: number): number {
 }
 
 function normalizeRenderPreset(renderPreset?: Partial<IColorRenderPreset>) {
-  const container = trimString(renderPreset?.container);
-  const videoCodec = trimString(renderPreset?.videoCodec);
-  const audioCodec = trimString(renderPreset?.audioCodec);
-  const bitrateMbps = typeof renderPreset?.bitrateMbps === 'number'
-    && Number.isFinite(renderPreset.bitrateMbps)
-    && renderPreset.bitrateMbps > 0
-    ? renderPreset.bitrateMbps
-    : undefined;
-  if (!container && !videoCodec && !audioCodec && typeof bitrateMbps !== 'number') {
-    return undefined;
-  }
-  return {
-    container,
-    videoCodec,
-    audioCodec,
-    bitrateMbps,
-  };
+  return normalizeColorRenderPreset(renderPreset);
 }
 
 function normalizeConfigKey(value: unknown): string | undefined {

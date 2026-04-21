@@ -49,6 +49,7 @@ Current stable pipeline:
   - top-level workflow jobs now always reconcile to `ML stopped` after completion, failure, manual stop, or interruption
 - independent `DaVinci color` chain now uses a minimal project-root + runtime/archive split:
   - formal root config now lives in the shared `config/project-brief.json` mappings; `color` only consumes each root mapping上的最小 `color.renderPreset + color.colorSpaceProfile + color.transformPresetKey`
+    - `color.renderPreset` 当前正式使用 `bitrateKbps`（单位 `kb/s`）；`/color` 不再接受旧的 bitrate 别名字段
   - `color.colorSpaceProfile` is now a technical-input key, not a creative look or full gamut/primaries descriptor
   - workspace-level default transform mapping now lives in `config/color-transform-presets.json`, and workspace-managed LUT assets now live in `config/luts/`
   - `resolveProjectName / rootNamespace / gradingTimelineName` are derived by convention and stay read-only; `/color` keeps them in advanced/debug info instead of editable config
@@ -61,7 +62,7 @@ Current stable pipeline:
   - current `/color` supports a same-machine vendored Resolve backend Supervisor `color` action chain:
     - `prepare_root`
     - `sync_groups`
-    - `execute_group`
+    - `execute_root`
     - `validate_batch`
     - `promote_batch`
   - current `prepare_root` is the formal Resolve-side root sync step: it mirrors `rawLocalPath` into root bins, creates the grading timeline with that root's dominant `(width, height, fps)` spec, auto-syncs any missing same-path workspace LUTs referenced by the current root into the device Resolve default LUT directory when they exist under `config/luts/`, and creates or reuses Resolve Groups from source-truth / root-fallback creative tags
@@ -87,10 +88,17 @@ Current stable pipeline:
     - existing non-empty user grade must not be overwritten
     - if copied LUTs are still invisible to the current Resolve session, `prepare_root` blocks and asks the user to refresh LUT lists or restart Resolve
   - current `/color` now auto-runs Resolve host preflight on page entry / project switch, caches the result at `color/current.json.hostPreflight`, and lets users manually `Recheck Host`
-  - current `prepare_root / sync_groups / execute_group` always guard on that preflight first; blocked host state or unsupported render presets fail before Resolve-side mutation
+  - current `prepare_root / sync_groups / execute_root` always guard on that preflight first; blocked host state or unsupported render presets fail before Resolve-side mutation
   - current Resolve host compatibility floor is `DaVinci Resolve Studio >= 18.5`; non-Studio / lower versions are formal blockers, while partial legacy-call compatibility is surfaced as `degraded`
   - current host retry only covers transient host/app failures with bounded backoff; semantic color failures do not auto-retry
-  - current `execute_group` writes `plan + manifest` with real staging output paths, forces per-clip render `width / height / fps`, and normalizes final filenames to `sourceStem + targetExtension`
+  - current `execute_root` is now root-timeline-truth export:
+    - render preset truth stays on the root; Group no longer decides export config or batch ownership
+    - every batch is root-scoped and may optionally carry `clipKeys[]` as a retry/subset selection; default execution still exports all eligible clips on that root timeline
+    - the vendored Resolve host must render one root-level job per batch from the root grading timeline, not one job per Group or per clip
+    - Resolve temporary suffixed filenames may exist only inside batch-local staging; manifest / validation / promote only consume normalized final names `sourceStem + targetExtension`
+  - current `execute_root` must normalize final output metadata before manifest persist:
+    - `creation_time` is rewritten to the source `capturedAt`
+    - when source GPS exists, container location metadata is rewritten so `ffprobe` can read it back
   - current `validate_batch` writes formal summary counts, top-level blocking reasons, and warning-only diagnostics; `capturedAt / GPS` remain hard gates while `create_time` is warning-only
   - current `promote_batch` requires an explicit `/color` confirmation before it can overwrite managed outputs in the current media root
   - current `/color` stays single-page but now consumes `color/batches/<batchId>/...` as formal read-only archive, with foldable `Host Diagnostics / Recent Batches / Validation Failures / Promote History`

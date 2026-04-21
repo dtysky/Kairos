@@ -83,15 +83,15 @@ export interface IColorExecutorClipInput {
   resolvedLutAbsolutePath?: string;
 }
 
-export interface IColorExecutorExecuteGroupInput {
+export interface IColorExecutorExecuteRootInput {
   projectId: string;
   rootId: string;
-  groupKey: string;
   resolveProjectName: string;
   gradingTimelineName: string;
   rawLocalPath: string;
   renderPreset: IColorRenderPreset;
   stagingRoot: string;
+  selectionMode?: 'all' | 'subset';
   clips: Array<{
     rawRelativePath: string;
     sourceAbsolutePath: string;
@@ -102,7 +102,7 @@ export interface IColorExecutorExecuteGroupInput {
   }>;
 }
 
-export interface IColorExecutorExecuteGroupResult {
+export interface IColorExecutorExecuteRootResult {
   renderedAt: string;
   entries: Array<{
     rawRelativePath: string;
@@ -125,7 +125,7 @@ export interface IColorExecutor {
   preflight(input?: IColorExecutorPreflightInput): Promise<IColorExecutorPreflightResult>;
   prepareRoot(input: IColorExecutorPrepareRootInput): Promise<IColorExecutorPrepareRootResult>;
   syncGroups(input: IColorExecutorSyncGroupsInput): Promise<IColorExecutorSyncGroupsResult>;
-  executeGroup(input: IColorExecutorExecuteGroupInput): Promise<IColorExecutorExecuteGroupResult>;
+  executeRoot(input: IColorExecutorExecuteRootInput): Promise<IColorExecutorExecuteRootResult>;
 }
 
 export interface IResolveColorExecutorConfig {
@@ -204,15 +204,15 @@ export class PythonResolveColorExecutor implements IColorExecutor {
     });
   }
 
-  async executeGroup(input: IColorExecutorExecuteGroupInput): Promise<IColorExecutorExecuteGroupResult> {
-    return this.runRequest<IColorExecutorExecuteGroupResult>({
-      operation: 'execute_group',
+  async executeRoot(input: IColorExecutorExecuteRootInput): Promise<IColorExecutorExecuteRootResult> {
+    return this.runRequest<IColorExecutorExecuteRootResult>({
+      operation: 'execute_root',
       input,
     });
   }
 
   private async runRequest<T>(payload: {
-    operation: 'preflight' | 'prepare_root' | 'sync_groups' | 'execute_group';
+    operation: 'preflight' | 'prepare_root' | 'sync_groups' | 'execute_root';
     input: unknown;
   }): Promise<T> {
     const pythonPath = resolveColorPythonInvocation(this.config);

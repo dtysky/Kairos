@@ -1133,7 +1133,7 @@ export const IColorRenderPreset = z.object({
   container: z.string().optional(),
   videoCodec: z.string().optional(),
   audioCodec: z.string().optional(),
-  bitrateMbps: z.number().positive().optional(),
+  bitrateKbps: z.number().positive().optional(),
 });
 export type IColorRenderPreset = z.infer<typeof IColorRenderPreset>;
 
@@ -1181,6 +1181,9 @@ export type EColorValidationStatus = z.infer<typeof EColorValidationStatus>;
 
 export const EColorValidationCheckResult = z.enum(['pass', 'fail', 'not_present_in_source']);
 export type EColorValidationCheckResult = z.infer<typeof EColorValidationCheckResult>;
+
+export const EColorBatchSelectionMode = z.enum(['all', 'subset']);
+export type EColorBatchSelectionMode = z.infer<typeof EColorBatchSelectionMode>;
 
 export const IColorGroupConfig = z.object({
   groupKey: z.string(),
@@ -1256,9 +1259,11 @@ export const IColorRootCurrent = z.object({
   activeStage: z.string().optional(),
   currentJobId: z.string().optional(),
   detail: z.string().optional(),
-  pendingPromoteGroupKey: z.string().optional(),
   pendingPromoteBatchId: z.string().optional(),
   latestBatchId: z.string().optional(),
+  latestBatchStatus: EColorBatchStatus.optional(),
+  latestValidationStatus: EColorValidationStatus.optional(),
+  lastPromotedBatchId: z.string().optional(),
   hostSummary: z.record(z.unknown()).default({}),
   groups: z.array(IColorGroupCurrent).default([]),
   blockingReasons: z.array(z.string()).default([]),
@@ -1312,10 +1317,10 @@ export type IColorBatchPlanEntry = z.infer<typeof IColorBatchPlanEntry>;
 export const IColorBatchPlan = z.object({
   batchId: z.string(),
   rootId: z.string(),
-  groupKey: z.string(),
   createdAt: z.string(),
   stagingRoot: z.string(),
   renderPreset: IColorRenderPreset,
+  selectionMode: EColorBatchSelectionMode.default('all'),
   clipKeys: z.array(z.string()).default([]),
   entries: z.array(IColorBatchPlanEntry).default([]),
 });
@@ -1336,7 +1341,6 @@ export type IColorBatchManifestEntry = z.infer<typeof IColorBatchManifestEntry>;
 export const IColorBatchManifest = z.object({
   batchId: z.string(),
   rootId: z.string(),
-  groupKey: z.string(),
   createdAt: z.string(),
   renderPreset: IColorRenderPreset,
   managedOutputSet: z.array(z.string()).default([]),
@@ -1380,7 +1384,6 @@ export type IColorBatchValidationSummary = z.infer<typeof IColorBatchValidationS
 export const IColorBatchValidation = z.object({
   batchId: z.string(),
   rootId: z.string(),
-  groupKey: z.string(),
   validatedAt: z.string(),
   status: z.enum(['pass', 'fail']),
   summary: IColorBatchValidationSummary.default({}),
@@ -1393,7 +1396,6 @@ export type IColorBatchValidation = z.infer<typeof IColorBatchValidation>;
 export const IColorBatchPromote = z.object({
   batchId: z.string(),
   rootId: z.string(),
-  groupKey: z.string(),
   promotedAt: z.string(),
   status: z.enum(['completed', 'failed']),
   outputs: z.array(z.string()).default([]),
@@ -1405,7 +1407,6 @@ export type IColorBatchPromote = z.infer<typeof IColorBatchPromote>;
 export const IColorBatchArchiveItem = z.object({
   batchId: z.string(),
   rootId: z.string(),
-  groupKey: z.string(),
   plan: IColorBatchPlan.optional(),
   manifest: IColorBatchManifest.optional(),
   validation: IColorBatchValidation.optional(),

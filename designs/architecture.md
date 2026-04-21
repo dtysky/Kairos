@@ -17,6 +17,13 @@
   - `root.color.renderPreset`
   - `root.color.colorSpaceProfile`
   - `root.color.transformPresetKey?`
+- `root.color.renderPreset` 当前正式口径是：
+  - `container`
+  - `videoCodec`
+  - `audioCodec`
+  - `bitrateKbps?`
+  - UI 文案与用户输入单位统一显示为 `kb/s`
+  - `root.color.renderPreset` 只接受正式字段 `bitrateKbps`；旧 bitrate 别名字段不再参与读取或持久化
 - `color.colorSpaceProfile` 的正式语义改为“技术输入类型 key”，不是 creative look，也不再承载 primaries / gamut 细节
   - 当前 canonical 推荐值先收口为：`slog3 | dlog | dlog-m | hlg | rec709`
   - schema 当前允许开放字符串 key；更细粒度真值只进入内部诊断，不进入主配置 key
@@ -86,10 +93,16 @@
     - `timelineFrameRate`
     - `timelinePlaybackFrameRate`
 - 同一 root 仍然只维护一条 grading timeline；mixed-spec clip 进入该 timeline 时按 Resolve 常规适配
-- `execute_group` 的正式 render 合同已经收紧为：
-  - 每个 clip render 都显式携带源文件自己的 `width / height / fps`
-  - 宿主必须把最终 staging 文件名归一到 `sourceStem + targetExtension`
+- `execute_root` 的正式 render 合同已经收紧为：
+  - root grading timeline 是唯一导出真相；Group 只承担 Resolve 组织 / 诊断 / sync 语义，不再承担 render 配置或 batch ownership
+  - batch 是执行与重试粒度，默认覆盖该 root timeline 上的全部可执行 clips，但允许显式携带 `clipKeys[]` 做 subset / retry
+  - 每个 batch 必须对应一个 Resolve root-level render job；不能再按 Group 或按 clip 排多个 jobs
+  - 正式输出命名仍然固定为 `sourceStem + targetExtension`
+  - Resolve 临时后缀名文件只能作为 batch-local staging 内部中间态，不能直接进入 manifest、validation 或 promote
   - `manifest.entries[].stagingAbsolutePath` 的正式语义是“真实物理输出路径”，不允许再写预测路径
+  - 在写 manifest 前，宿主或 Node 侧必须先对最终输出做 metadata normalize：
+    - `creation_time` 必须改写为源文件 `capturedAt`
+    - 源文件带 GPS 时，最终输出必须带可被 `ffprobe` 读回的容器位置标签
 - 自动 Group 已退出 `colorspace / gamma / codec / resolution / fps` technical fingerprint 语义，改为纯创意标签：
   - `log`
   - `gyro`
@@ -117,10 +130,10 @@
 
 当前冻结后的正式口径如下：
 
-- `Supervisor color` 的正式动作链不变，仍然只有：
+- `Supervisor color` 的正式动作链收口为：
   - `prepare_root`
   - `sync_groups`
-  - `execute_group`
+  - `execute_root`
   - `validate_batch`
   - `promote_batch`
 - `preflight` 是 ColorExecutor 与 Python host 的内部辅助操作，不是新的正式 workflow action
@@ -138,10 +151,10 @@
   - 每个 container 可用的视频 codec
   - 是否支持 `AudioCodec`
   - 是否支持 `VideoQuality`
-- `prepare_root / sync_groups / execute_group` 在真正触发 Resolve 变更前都必须先执行 preflight：
+- `prepare_root / sync_groups / execute_root` 在真正触发 Resolve 变更前都必须先执行 preflight：
   - `blocked` 直接拒绝动作
   - `degraded` 允许进入已知兼容矩阵内的动作
-  - `execute_group` 还必须在 Node 侧先校验当前 root `renderPreset` 是否受宿主支持
+  - `execute_root` 还必须在 Node 侧先校验当前 root `renderPreset` 是否受宿主支持
 - 当前 color host 的正式兼容下限固定为 `DaVinci Resolve Studio >= 18.5`
   - 非 Studio：`blocked`
   - `< 18.5`：`blocked`
@@ -176,14 +189,14 @@
 - `Supervisor color` job 将从单一 root prep 扩成 action dispatcher：
   - `prepare_root`
   - `sync_groups`
-  - `execute_group`
+  - `execute_root`
   - `validate_batch`
   - `promote_batch`
 - 正式 Group 真相来自 Resolve 宿主，不再由 Kairos 提供 bootstrap / candidate Group
 - root timeline 是第一版正式 group sync 范围；Kairos 只同步该 root grading timeline 上实际出现的 clips/group
 - `color/groups/<rootId>.json` 将成为 root 级 formal host snapshot
 - `color/batches/<batchId>/plan.json`、`manifest.json`、`validation.json`、`promote.json` 将成为 batch 级正式 archive
-- `color/current.json` 将扩展为 root/group 级 current truth，保存 host prep、group sync、latest batch、latest validation 和 pending promote 指针
+- `color/current.json` 将扩展为 root 级 current truth，保存 host prep、group sync、latest batch、latest validation 和 pending promote 指针；Group current 只保留诊断/显示所需状态
 - validation / promote 只依赖 `rawLocalPath + staging + manifest`，不依赖 ingest asset truth
 - 当前 P0 正式口径继续收窄为“单 root 真闭环”：
   - `prepare_root` 必须真实导入 `rawLocalPath` 素材、维护 root bin 镜像、维护可执行 grading timeline
@@ -232,7 +245,7 @@
 - Resolve `Media Pool / Bin` 真同步
 - 长期 `grading timeline` 的 Resolve 宿主侧真准备
 - 多 Group 候选生成与 clip 归组
-- `Render Queue` 执行、`execute_group` 真渲染、`validation` 真校验与 `promote`
+- `Render Queue` 执行、`execute_root` 真渲染、`validation` 真校验与 `promote`
 
 因此当前应把 `/color` 理解为“独立调色链的单 root 官方闭环已经接通，并且正式补上了宿主 preflight / retry / 兼容守卫与 archive 可观测性”。
 
@@ -623,11 +636,11 @@ src/modules/color/
   → `/color` 自动发现已配置 `rawPath` 的 roots，并派生约定命名与 blockers
   → `prepare_root` 调用 official Python host，真实同步 `rawLocalPath` 到 root namespace bin 树，确保 grading timeline 已装入可执行 clips，并按 explainable technical signals 创建/复用 Resolve Groups
   → `sync_groups` 只同步该 root grading timeline 上实际出现的正式 Groups，并写 `color/groups/<rootId>.json`
-  → `execute_group` 按需扫描 `rawLocalPath`，生成 clip inventory，写 `plan.json`
+  → `execute_root` 按需扫描 `rawLocalPath`，生成 root clip inventory，并可按 `clipKeys[]` 裁成 batch，写 `plan.json`
   → official Python host 把目标 Group 渲染到 `projects/<projectId>/.tmp/color/<batchId>/render/`，并保持 staging 目录镜像 `sourceRelativePath`
   → Kairos 写 `manifest.json` 并更新 `current.json` 的 latest batch 指针
   → `validate_batch` 在 Node 侧 probe 原始文件与 staging 输出，对账路径/扩展名/媒体参数/metadata，写 `validation.json`
-  → `/color` 上的显式确认通过后，`promote_batch` 才会在 validation=pass 且 batch 仍是该 Group 最新候选时执行，并且只覆盖 manifest 声明的 `managedOutputSet`
+  → `/color` 上的显式确认通过后，`promote_batch` 才会在 validation=pass 且 batch 仍是该 root 最新候选时执行，并且只覆盖 manifest 声明的 `managedOutputSet`
 ```
 
 #### 2.3 Script — 脚本生成

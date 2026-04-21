@@ -21,8 +21,9 @@ Kairos 当前需要区分两层：
 - 一条与主链解耦的 `DaVinci color` 独立增强链路
   - 当前已经有最小 `/color` 控制面与项目级 `color/` runtime/archive store
   - 当前 `/color` 会自动发现已配置 `rawPath` 的素材根，派生约定命名与阻塞状态
-  - 当前 `/color` 已支持同机 vendored Resolve backend 驱动的 root/group action 链：`prepare_root -> sync_groups -> execute_group -> validate_batch -> promote_batch`
+  - 当前 `/color` 已支持同机 vendored Resolve backend 驱动的 root action 链：`prepare_root -> sync_groups -> execute_root -> validate_batch -> promote_batch`
   - 当前 `/color` 的长期用户配置已收口到 `config/project-brief.json` root mapping 上的最小 `color.renderPreset + color.colorSpaceProfile + color.transformPresetKey`
+    - `color.renderPreset` 当前正式使用 `bitrateKbps`（单位 `kb/s`）；不再接受旧的 bitrate 别名字段
     - `color.colorSpaceProfile` 当前正式表示“技术输入类型”，不是 creative look，也不再承载 gamut/primaries 细节
     - workspace 级默认技术预设映射当前正式放在 `config/color-transform-presets.json`
     - workspace 级 LUT 资产当前正式放在 `config/luts/`
@@ -31,7 +32,7 @@ Kairos 当前需要区分两层：
   - `resolveProjectName / rootNamespace / gradingTimelineName / Group naming` 当前全部按约定生成，只展示，不允许用户配置
     - Resolve Project 名称固定为 `${projectBrief.name} [Color]`
     - root namespace / grading timeline 固定从 root `label` 派生
-  - 当前 `color/current.json` 承载 root/group current truth，`color/groups/<rootId>.json` 承载 formal host group snapshot，`color/batches/<batchId>/...` 承载 batch archive
+  - 当前 `color/current.json` 承载 root current truth，`color/groups/<rootId>.json` 承载 formal host group snapshot，`color/batches/<batchId>/...` 承载 root-scoped batch archive
   - 当前 `prepare_root` 已正式承担 `rawLocalPath -> Resolve root bin / grading timeline / Resolve Groups` 的真实同步，不再只是轻量容器占位
     - grading timeline 必须按该 root 的 dominant `(width, height, fps)` 规格创建
     - 自动 Group 只使用创意标签语义：`log / gyro / lowlight`
@@ -52,10 +53,18 @@ Kairos 当前需要区分两层：
     - 已有用户 grade 的 Group 必须跳过，不允许被默认底板覆盖
   - 当前 Group 真相完全以 Resolve 为准；`/color` 通过 `sync_groups` 镜像最新现状，同步后的非空 Group 直接进入 `ready`
   - 当前 `/color` 进入页面或切换项目时会自动执行 Resolve host preflight，并把结果正式缓存到 `color/current.json.hostPreflight`
-  - 当前 `prepare_root / sync_groups / execute_group` 都先经过 preflight 守卫；宿主 blocked 或 render preset 不受支持时，动作会在 Resolve 变更前直接失败
+  - 当前 `prepare_root / sync_groups / execute_root` 都先经过 preflight 守卫；宿主 blocked 或 render preset 不受支持时，动作会在 Resolve 变更前直接失败
   - 当前 color host 的正式兼容下限为 `DaVinci Resolve Studio >= 18.5`；低版本 / 非 Studio 是硬阻塞，部分兼容降级则显示为 `degraded`
   - 当前 host retry 只覆盖短时 host/app 故障，不覆盖缺配置、缺素材、render preset 不支持、validation fail 等语义错误
-  - 当前 `execute_group` 的正式输出命名收口为 `sourceStem + targetExtension`；宿主必须用真实落盘路径写入 manifest
+  - 当前 `execute_root` 的正式导出合同已经切到 “root timeline 是真相，batch 只是 clip 子集执行粒度”：
+    - root `renderPreset` 是唯一导出配置真相；Group 不再决定 render preset、batch 所属或执行顺序
+    - batch 默认覆盖该 root grading timeline 上的全部可执行 clips，但可显式携带 `clipKeys[]` 作为 retry / subset 选择
+    - Resolve 宿主正式要求是一批一个 root-level render job；不能再按 Group 或按 clip 排多个 jobs
+    - 正式输出命名继续收口为 `sourceStem + targetExtension`；宿主必须用真实落盘路径写入 manifest
+    - Resolve 临时后缀名文件只能停留在 batch-local staging 内部，进入 manifest / validation / promote 的只能是归一后的正式文件名
+  - 当前 `execute_root` 在写 manifest 前必须先做最终文件 metadata normalize：
+    - `creation_time` 改写为源文件 `capturedAt`
+    - 源文件带 GPS 时，容器位置标签也必须改写到最终输出，且能被 `ffprobe` 读回
   - 当前 `validate_batch` 已扩展为写入 summary 统计、top-level blockingReasons 和 warning-only 诊断，供 `/color` 直接显示 validation 失败原因
     - `capturedAt / GPS` 仍是硬门槛
     - `create_time` 当前是 warning-only
@@ -73,7 +82,7 @@ Kairos 当前需要区分两层：
 - 只要改动影响正式本地运行入口、Supervisor API、`/analyze`、`/style`、`/color` 或 `apps/kairos-console/`，验证就必须同时包含根仓 `pnpm build` 与 `npm --prefix apps/kairos-console run build`
 - 根仓 `pnpm build` 不能被视为已经覆盖 React console 产物；前端 bundle 必须显式重建
 - `素材分析` 与 `风格分析` 在当前控制台里直接以主路由展示监控，而不是再跳一次独立监控入口
-- `DaVinci color` 当前也已有独立主路由 `/color`，并已收口为最小 `renderPreset` 配置 + root/group action 执行面 + runtime/archive 状态面；正式顺序为 `Prepare Root -> Sync Groups -> Execute -> Validate -> Promote`
+- `DaVinci color` 当前也已有独立主路由 `/color`，并已收口为最小 `renderPreset` 配置（含 `bitrateKbps` / `kb/s`）+ root-level execute/validate/promote 控制面 + runtime/archive 状态面；正式顺序为 `Prepare Root -> Sync Groups -> Execute Root -> Validate -> Promote`
 - `/color` 当前还会主动暴露宿主诊断与 batch 归档，而不是把宿主问题和 validation 历史藏在动作失败或磁盘 JSON 里
 - 风格档案、风格来源配置与风格分析参考产物当前已收口为 **Workspace 级共享资产**：
   - `config/styles/`

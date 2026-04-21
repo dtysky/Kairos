@@ -1,7 +1,9 @@
+import { execFile } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { copyFile, mkdir, stat, unlink } from 'node:fs/promises';
-import { dirname, join, posix, relative, resolve } from 'node:path';
+import { copyFile, mkdir, rename, stat, unlink } from 'node:fs/promises';
+import { dirname, extname, join, posix, relative, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
+import { promisify } from 'node:util';
 import type {
   IColorBatchManifest,
   IColorBatchPlan,
@@ -43,12 +45,14 @@ import { resolveCaptureTime } from '../media/capture-time.js';
 import { probe } from '../media/probe.js';
 import { classifyExt, scanDirectory } from '../media/scanner.js';
 import { toPortableRelativePath } from '../media/root-resolver.js';
+import { toExecutableInputPath } from '../media/tool-path.js';
 import {
   buildColorWorkspaceState,
   deriveColorGradingTimelineName,
   deriveColorResolveProjectName,
   deriveColorRootNamespace,
 } from './workspace-state.js';
+import { readColorRenderPresetBitrateKbps } from './render-preset.js';
 import { extractColorSourceTruth } from './source-truth.js';
 import {
   resolveClipTransformSeeds,
@@ -68,7 +72,7 @@ import {
 export type TProjectColorAction =
   | 'prepare_root'
   | 'sync_groups'
-  | 'execute_group'
+  | 'execute_root'
   | 'validate_batch'
   | 'promote_batch';
 
@@ -80,9 +84,9 @@ const CCOLOR_STEP_DEFINITIONS: Record<TProjectColorAction, Array<{ key: string; 
   sync_groups: [
     { key: 'sync_groups', label: '同步 Resolve Groups' },
   ],
-  execute_group: [
-    { key: 'scan_root_clips', label: '扫描 raw clip inventory' },
-    { key: 'render_group', label: '执行 Group 渲染' },
+  execute_root: [
+    { key: 'scan_root_clips', label: '扫描 root clip inventory' },
+    { key: 'render_root', label: '执行 root 渲染' },
   ],
   validate_batch: [
     { key: 'validate_batch', label: '校验 batch manifest' },
@@ -97,7 +101,7 @@ export interface IProjectColorActionInput {
   projectId: string;
   rootId: string;
   action?: TProjectColorAction;
-  groupKey?: string;
+  clipKeys?: string[];
   batchId?: string;
   jobId?: string;
   progressPath?: string;
@@ -108,7 +112,6 @@ export interface IProjectColorActionResult {
   action: TProjectColorAction;
   projectId: string;
   rootId: string;
-  groupKey?: string;
   batchId?: string;
   detail: string;
   blockingReasons: string[];
@@ -147,6 +150,8 @@ export class ColorPrepBlockedError extends ProjectColorBlockedError {
   }
 }
 
+const exec = promisify(execFile);
+
 interface IColorRootContext {
   workspaceRoot: string;
   projectRoot: string;
@@ -171,8 +176,8 @@ export async function runProjectColorAction(
       });
     case 'sync_groups':
       return syncProjectColorGroups(input);
-    case 'execute_group':
-      return executeProjectColorGroup(input);
+    case 'execute_root':
+      return executeProjectColorRoot(input);
     case 'validate_batch':
       return validateProjectColorBatch(input);
     case 'promote_batch':
@@ -489,30 +494,24 @@ export async function syncProjectColorGroups(
   };
 }
 
-export async function executeProjectColorGroup(
+export async function executeProjectColorRoot(
   input: IProjectColorActionInput,
 ): Promise<IProjectColorActionResult> {
-  const action: TProjectColorAction = 'execute_group';
+  const action: TProjectColorAction = 'execute_root';
   const context = await loadColorRootContext(input.workspaceRoot, input.projectId, input.rootId);
   const progressPath = resolveColorProgressPath(context.projectRoot, input.progressPath);
-  const groupKey = input.groupKey?.trim();
-  const group = groupKey
-    ? context.rootSummary.groups.find(item => item.groupKey === groupKey)
-    : null;
+  const requestedClipKeys = dedupeStrings((input.clipKeys ?? []).map(clipKey => normalizePortablePath(String(clipKey ?? ''))));
   const blockers = dedupeStrings([
-    !groupKey ? 'execute_group requires args.groupKey。' : '',
-    !group ? `当前 root 尚未同步正式 Group：${groupKey ?? '(missing)'}` : '',
     !context.rootSummary.localPath ? '当前设备未配置 current localPath，无法在本机覆盖当前素材目录。' : '',
     !context.rootSummary.rawLocalPath ? '当前设备未配置 rawLocalPath，无法扫描原始素材。' : '',
-    typeof context.rootSummary.renderPreset.bitrateMbps !== 'number'
-      ? '未配置 root 级 renderPreset.bitrateMbps，无法启动 execute_group。'
+    typeof context.rootSummary.renderPreset.bitrateKbps !== 'number'
+      ? '未配置 root 级 renderPreset.bitrateKbps（kb/s），无法启动 execute_root。'
       : '',
   ]);
   if (blockers.length > 0) {
     await failColorAction(context.projectRoot, context.rootId, progressPath, action, blockers, {
       projectId: input.projectId,
       rootId: input.rootId,
-      groupKey,
     });
     throw new ProjectColorBlockedError(blockers);
   }
@@ -525,7 +524,6 @@ export async function executeProjectColorGroup(
     extra: {
       projectId: input.projectId,
       rootId: input.rootId,
-      groupKey,
     },
   });
   const renderPresetBlockers = validateRenderPresetSupport(context.rootSummary.renderPreset, hostPreflight);
@@ -533,7 +531,6 @@ export async function executeProjectColorGroup(
     await failColorAction(context.projectRoot, context.rootId, progressPath, action, renderPresetBlockers, {
       projectId: input.projectId,
       rootId: input.rootId,
-      groupKey,
     }, {
       persistRootBlockers: false,
     });
@@ -542,22 +539,32 @@ export async function executeProjectColorGroup(
 
   const rawInventory = await scanColorRawInventory(context.rootSummary.rawLocalPath ?? '');
   const inventoryByKey = new Map(rawInventory.map(entry => [entry.rawRelativePath, entry]));
-  const missingClipKeys = (group?.clipKeys ?? []).filter(clipKey => !inventoryByKey.has(clipKey));
+  const effectiveClipKeys = requestedClipKeys.length > 0
+    ? requestedClipKeys
+    : rawInventory.map(entry => entry.rawRelativePath);
+  const missingClipKeys = effectiveClipKeys.filter(clipKey => !inventoryByKey.has(clipKey));
   if (missingClipKeys.length > 0) {
-    const missingBlockers = missingClipKeys.map(clipKey => `Group clip 不存在于 rawLocalPath: ${clipKey}`);
+    const missingBlockers = missingClipKeys.map(clipKey => `batch clip 不存在于 rawLocalPath: ${clipKey}`);
     await failColorAction(context.projectRoot, context.rootId, progressPath, action, missingBlockers, {
       projectId: input.projectId,
       rootId: input.rootId,
-      groupKey,
     });
     throw new ProjectColorBlockedError(missingBlockers);
+  }
+  if (effectiveClipKeys.length === 0) {
+    const emptyBlockers = ['当前 root 没有可执行 clip。'];
+    await failColorAction(context.projectRoot, context.rootId, progressPath, action, emptyBlockers, {
+      projectId: input.projectId,
+      rootId: input.rootId,
+    });
+    throw new ProjectColorBlockedError(emptyBlockers);
   }
 
   const batchId = randomUUID();
   const stagingRoot = join(context.projectRoot, '.tmp', 'color', batchId, 'render');
   await mkdir(stagingRoot, { recursive: true });
   const planEntries = await Promise.all(
-    (group?.clipKeys ?? []).map(async clipKey => {
+    effectiveClipKeys.map(async clipKey => {
       const item = inventoryByKey.get(clipKey)!;
       return {
         rawRelativePath: clipKey,
@@ -573,56 +580,66 @@ export async function executeProjectColorGroup(
   const plan: IColorBatchPlan = {
     batchId,
     rootId: input.rootId,
-    groupKey: groupKey!,
     createdAt: new Date().toISOString(),
     stagingRoot,
     renderPreset: context.rootSummary.renderPreset,
-    clipKeys: group?.clipKeys ?? [],
+    selectionMode: requestedClipKeys.length > 0 ? 'subset' : 'all',
+    clipKeys: effectiveClipKeys,
     entries: planEntries,
   };
   await saveColorBatchPlan(context.projectRoot, plan);
 
-  await writeRootCurrent(context.projectRoot, context.rootId, current => updateGroupCurrentState(current, groupKey!, groupCurrent => ({
-    ...groupCurrent,
-    status: 'running',
-    displayName: group?.displayName,
-    clipCount: group?.clipCount,
+  await writeRootCurrent(context.projectRoot, context.rootId, current => ({
+    ...current,
+    activeStage: 'render_root',
+    currentJobId: input.jobId,
+    detail: requestedClipKeys.length > 0
+      ? `正在执行 root batch（${effectiveClipKeys.length} 个 clip 子集）。`
+      : '正在执行 root timeline 渲染。',
     latestBatchId: batchId,
     latestBatchStatus: 'rendering',
     latestValidationStatus: 'pending',
     pendingPromoteBatchId: undefined,
-    blockingReasons: [],
-  }), {
-    activeStage: 'render_group',
-    currentJobId: input.jobId,
-    detail: `正在执行 Group 渲染：${groupKey}`,
-    latestBatchId: batchId,
+    blockingReasons: filterPersistentColorBlockers(current.blockingReasons ?? []),
   }));
   await writeColorProgress(progressPath, action, {
     status: 'running',
     stepIndex: 1,
     current: 0,
-    detail: `正在扫描 ${group?.clipCount ?? 0} 个 raw clips。`,
-    extra: { projectId: input.projectId, rootId: input.rootId, groupKey, batchId },
+    detail: `正在扫描 ${effectiveClipKeys.length} 个 raw clips。`,
+    extra: {
+      projectId: input.projectId,
+      rootId: input.rootId,
+      batchId,
+      clipCount: effectiveClipKeys.length,
+      selectionMode: plan.selectionMode,
+    },
   });
   await writeColorProgress(progressPath, action, {
     status: 'running',
     stepIndex: 2,
     current: 1,
-    detail: `正在执行 Group 渲染：${groupKey}`,
-    extra: { projectId: input.projectId, rootId: input.rootId, groupKey, batchId, stagingRoot },
+    detail: `正在执行 root batch：${batchId}`,
+    extra: {
+      projectId: input.projectId,
+      rootId: input.rootId,
+      batchId,
+      stagingRoot,
+      clipCount: effectiveClipKeys.length,
+      selectionMode: plan.selectionMode,
+    },
   });
 
   const rendered = await runColorHostWithRetry(
-    () => executor.executeGroup({
+    () => executor.executeRoot({
       projectId: input.projectId,
       rootId: input.rootId,
-      groupKey: groupKey!,
       resolveProjectName: context.rootSummary.resolveProjectName,
       gradingTimelineName: context.rootSummary.gradingTimelineName,
       rawLocalPath: context.rootSummary.rawLocalPath ?? '',
       renderPreset: context.rootSummary.renderPreset,
       stagingRoot,
+      selectionMode: plan.selectionMode,
       clips: planEntries.map(entry => ({
         rawRelativePath: entry.rawRelativePath,
         sourceAbsolutePath: entry.sourceAbsolutePath,
@@ -632,11 +649,27 @@ export async function executeProjectColorGroup(
         fps: entry.sourceMetadataSnapshot?.fps,
       })),
     }),
-    `execute_group:${context.rootId}:${groupKey}`,
+    `execute_root:${context.rootId}:${batchId}`,
+  );
+  const planEntryByKey = new Map(planEntries.map(entry => [entry.rawRelativePath, entry]));
+  const normalizedRenderedEntries = await Promise.all(
+    rendered.entries.map(async entry => {
+      const sourceMetadataSnapshot = planEntryByKey.get(entry.rawRelativePath)?.sourceMetadataSnapshot;
+      const normalizedOutputPath = await normalizeRenderedColorOutputMetadata(
+        entry.outputPath,
+        sourceMetadataSnapshot,
+        context.runtimeConfig,
+      );
+      return {
+        ...entry,
+        outputPath: normalizedOutputPath,
+        sourceMetadataSnapshot,
+      };
+    }),
   );
 
   const manifestEntries = await Promise.all(
-    rendered.entries.map(async entry => {
+    normalizedRenderedEntries.map(async entry => {
       const relativeDir = posix.dirname(entry.rawRelativePath);
       const promoteRelativePath = normalizePortablePath(
         relativeDir === '.'
@@ -650,7 +683,7 @@ export async function executeProjectColorGroup(
         promoteRelativePath,
         promoteTargetPath: resolve(join(context.rootSummary.localPath ?? '', ...promoteRelativePath.split('/'))),
         normalizedOutputFilename: entry.normalizedOutputFilename,
-        sourceMetadataSnapshot: planEntries.find(item => item.rawRelativePath === entry.rawRelativePath)?.sourceMetadataSnapshot,
+        sourceMetadataSnapshot: entry.sourceMetadataSnapshot,
         outputMetadataSnapshot: await buildColorFileMetadataSnapshot(entry.outputPath, context.runtimeConfig).catch(() => undefined),
       };
     }),
@@ -658,7 +691,6 @@ export async function executeProjectColorGroup(
   const manifest: IColorBatchManifest = {
     batchId,
     rootId: input.rootId,
-    groupKey: groupKey!,
     createdAt: rendered.renderedAt,
     renderPreset: context.rootSummary.renderPreset,
     managedOutputSet: manifestEntries.map(entry => entry.promoteRelativePath),
@@ -666,24 +698,19 @@ export async function executeProjectColorGroup(
   };
   await saveColorBatchManifest(context.projectRoot, manifest);
 
-  const savedCurrent = await writeRootCurrent(context.projectRoot, context.rootId, current => updateGroupCurrentState(current, groupKey!, groupCurrent => ({
-    ...groupCurrent,
-    status: 'staged',
-    displayName: group?.displayName,
-    clipCount: group?.clipCount,
+  const savedCurrent = await writeRootCurrent(context.projectRoot, context.rootId, current => ({
+    ...current,
+    activeStage: undefined,
+    currentJobId: undefined,
+    detail: `root batch 已完成，待 validation：${batchId}`,
     latestBatchId: batchId,
     latestBatchStatus: 'staged',
     latestValidationStatus: 'pending',
     pendingPromoteBatchId: undefined,
     blockingReasons: [],
-  }), {
-    activeStage: undefined,
-    currentJobId: undefined,
-    detail: `Group 渲染已完成，待 validation：${groupKey}`,
-    latestBatchId: batchId,
   }));
   const detail = savedCurrent.roots.find(root => root.rootId === input.rootId)?.detail
-    ?? `Group 渲染已完成，待 validation：${groupKey}`;
+    ?? `root batch 已完成，待 validation：${batchId}`;
   await writeColorProgress(progressPath, action, {
     status: 'succeeded',
     stepIndex: 2,
@@ -692,8 +719,9 @@ export async function executeProjectColorGroup(
     extra: {
       projectId: input.projectId,
       rootId: input.rootId,
-      groupKey,
       batchId,
+      clipCount: effectiveClipKeys.length,
+      selectionMode: plan.selectionMode,
     },
   });
 
@@ -701,7 +729,6 @@ export async function executeProjectColorGroup(
     action,
     projectId: input.projectId,
     rootId: input.rootId,
-    groupKey,
     batchId,
     detail,
     blockingReasons: [],
@@ -790,7 +817,6 @@ export async function validateProjectColorBatch(
   const validation: IColorBatchValidation = {
     batchId: batchId!,
     rootId: input.rootId,
-    groupKey: manifest!.groupKey,
     validatedAt: new Date().toISOString(),
     status: validationStatus,
     summary: {
@@ -806,11 +832,10 @@ export async function validateProjectColorBatch(
   await saveColorBatchValidation(context.projectRoot, validation);
 
   const currentRoot = context.colorCurrent.roots.find(root => root.rootId === input.rootId);
-  const latestBatchMatches = currentRoot?.groups.find(group => group.groupKey === manifest!.groupKey)?.latestBatchId === batchId;
+  const latestBatchMatches = currentRoot?.latestBatchId === batchId;
   const savedCurrent = await writeRootCurrent(context.projectRoot, context.rootId, current => latestBatchMatches
-    ? updateGroupCurrentState(current, manifest!.groupKey, groupCurrent => ({
-      ...groupCurrent,
-      status: validationStatus === 'pass' ? 'ready' : 'blocked',
+    ? {
+      ...current,
       latestBatchId: batchId,
       latestBatchStatus: validationStatus === 'pass' ? 'validated' : 'failed',
       latestValidationStatus: validationStatus,
@@ -818,13 +843,10 @@ export async function validateProjectColorBatch(
       blockingReasons: validationStatus === 'pass'
         ? []
         : validationBlockingReasons,
-    }), {
-      pendingPromoteGroupKey: validationStatus === 'pass' ? manifest!.groupKey : undefined,
-      pendingPromoteBatchId: validationStatus === 'pass' ? batchId : undefined,
       detail: validationStatus === 'pass'
         ? `batch 已通过 validation，可 promote：${batchId}`
         : `batch validation 失败：${batchId}`,
-    })
+    }
     : {
       ...current,
       detail: `batch ${batchId} 已完成 validation，但它已不是当前最新候选。`,
@@ -848,7 +870,6 @@ export async function validateProjectColorBatch(
     action,
     projectId: input.projectId,
     rootId: input.rootId,
-    groupKey: manifest!.groupKey,
     batchId,
     detail,
     blockingReasons: validationStatus === 'pass'
@@ -868,17 +889,15 @@ export async function promoteProjectColorBatch(
     batchId ? loadColorBatchManifest(context.projectRoot, batchId) : Promise.resolve(null),
     batchId ? loadColorBatchValidation(context.projectRoot, batchId) : Promise.resolve(null),
   ]);
-  const currentGroup = manifest
-    ? context.colorCurrent.roots.find(root => root.rootId === input.rootId)?.groups.find(group => group.groupKey === manifest.groupKey)
-    : null;
+  const currentRoot = context.colorCurrent.roots.find(root => root.rootId === input.rootId) ?? null;
   const blockers = dedupeStrings([
     !batchId ? 'promote_batch requires args.batchId。' : '',
     !manifest ? `缺少 batch manifest: ${batchId ?? '(missing)'}` : '',
     !validation ? `缺少 batch validation: ${batchId ?? '(missing)'}` : '',
     validation && validation.status !== 'pass' ? `batch ${batchId} 尚未通过 validation。` : '',
     !context.rootSummary.localPath ? '当前设备未配置 current localPath，无法覆盖当前素材目录。' : '',
-    !currentGroup ? `当前 root 未记录该 batch 对应的 Group。` : '',
-    currentGroup && currentGroup.latestBatchId !== batchId
+    !currentRoot ? `当前 root 未记录 color current。` : '',
+    currentRoot && currentRoot.latestBatchId !== batchId
       ? `batch ${batchId} 已被更新的候选取代，不能再 promote。`
       : '',
   ]);
@@ -899,8 +918,8 @@ export async function promoteProjectColorBatch(
     extra: { projectId: input.projectId, rootId: input.rootId, batchId },
   });
 
-  const previousPromote = currentGroup?.lastPromotedBatchId
-    ? await loadColorBatchManifest(context.projectRoot, currentGroup.lastPromotedBatchId)
+  const previousPromote = currentRoot?.lastPromotedBatchId
+    ? await loadColorBatchManifest(context.projectRoot, currentRoot.lastPromotedBatchId)
     : null;
   const deletedOutputs = await deleteManagedOutputs(
     context.rootSummary.localPath ?? '',
@@ -911,7 +930,6 @@ export async function promoteProjectColorBatch(
   const promote: IColorBatchPromote = {
     batchId: batchId!,
     rootId: input.rootId,
-    groupKey: manifest!.groupKey,
     promotedAt: new Date().toISOString(),
     status: 'completed',
     outputs: copiedOutputs,
@@ -920,18 +938,14 @@ export async function promoteProjectColorBatch(
   };
   await saveColorBatchPromote(context.projectRoot, promote);
 
-  const savedCurrent = await writeRootCurrent(context.projectRoot, context.rootId, current => updateGroupCurrentState(current, manifest!.groupKey, groupState => ({
-    ...groupState,
-    status: 'promoted',
+  const savedCurrent = await writeRootCurrent(context.projectRoot, context.rootId, current => ({
+    ...current,
     latestBatchId: batchId,
     latestBatchStatus: 'promoted',
     latestValidationStatus: 'pass',
     pendingPromoteBatchId: undefined,
     lastPromotedBatchId: batchId,
     blockingReasons: [],
-  }), {
-    pendingPromoteGroupKey: current.pendingPromoteGroupKey === manifest!.groupKey ? undefined : current.pendingPromoteGroupKey,
-    pendingPromoteBatchId: current.pendingPromoteBatchId === batchId ? undefined : current.pendingPromoteBatchId,
     detail: promote.detail,
   }));
   const detail = savedCurrent.roots.find(root => root.rootId === input.rootId)?.detail ?? promote.detail ?? 'promote 完成。';
@@ -952,7 +966,6 @@ export async function promoteProjectColorBatch(
     action,
     projectId: input.projectId,
     rootId: input.rootId,
-    groupKey: manifest!.groupKey,
     batchId,
     detail,
     blockingReasons: [],
@@ -1027,7 +1040,7 @@ function normalizeColorAction(action?: string): TProjectColorAction {
   switch (normalized) {
     case 'prepare_root':
     case 'sync_groups':
-    case 'execute_group':
+    case 'execute_root':
     case 'validate_batch':
     case 'promote_batch':
       return normalized;
@@ -1057,34 +1070,6 @@ async function writeRootCurrent(
   });
 }
 
-function updateGroupCurrentState(
-  current: IColorRootCurrent,
-  groupKey: string,
-  groupUpdater: (group: IColorGroupCurrent) => IColorGroupCurrent,
-  rootPatch: Partial<IColorRootCurrent> = {},
-): IColorRootCurrent {
-  const groups = [...(current.groups ?? [])];
-  const index = groups.findIndex(group => group.groupKey === groupKey);
-  const baseGroup: IColorGroupCurrent = index >= 0
-    ? groups[index]!
-    : {
-      groupKey,
-      status: 'idle',
-      blockingReasons: [],
-    };
-  const nextGroup = groupUpdater(baseGroup);
-  if (index >= 0) {
-    groups[index] = nextGroup;
-  } else {
-    groups.push(nextGroup);
-  }
-  return {
-    ...current,
-    ...rootPatch,
-    groups,
-  };
-}
-
 function materializeCurrentGroupsFromSnapshot(
   snapshot: IColorGroupsSnapshotFile,
   existingGroups: IColorRootCurrent['groups'],
@@ -1092,32 +1077,18 @@ function materializeCurrentGroupsFromSnapshot(
 ): IColorGroupCurrent[] {
   const existingByKey = new Map((existingGroups ?? []).map(group => [group.groupKey, group]));
   const previousByKey = new Map((previousSnapshot?.groups ?? []).map(group => [group.groupKey, group]));
-  const preservedStatuses = new Set<IColorGroupCurrent['status']>(['running', 'staged', 'promoted']);
   return snapshot.groups.map(group => {
     const existing = existingByKey.get(group.groupKey);
     const previousGroup = previousByKey.get(group.groupKey);
     const clipKeysChanged = !sameStringSet(previousGroup?.clipKeys ?? [], group.clipKeys ?? []);
-    const nextStatus = preservedStatuses.has(existing?.status ?? 'idle')
-      ? existing!.status
-      : group.clipKeys.length > 0
-        ? 'ready'
-        : 'blocked';
-    const preserveBatchState = Boolean(existing) && (
-      !clipKeysChanged
-      || preservedStatuses.has(existing?.status ?? 'idle')
-    );
+    const nextStatus = group.clipKeys.length > 0 ? 'ready' : 'blocked';
     return {
       groupKey: group.groupKey,
       status: nextStatus,
       displayName: existing?.displayName ?? group.displayName,
       clipCount: group.clipKeys.length,
-      latestBatchId: preserveBatchState ? existing?.latestBatchId : undefined,
-      latestBatchStatus: preserveBatchState ? existing?.latestBatchStatus : undefined,
-      latestValidationStatus: preserveBatchState ? existing?.latestValidationStatus : undefined,
-      pendingPromoteBatchId: preserveBatchState ? existing?.pendingPromoteBatchId : undefined,
-      lastPromotedBatchId: preserveBatchState ? existing?.lastPromotedBatchId : undefined,
       blockingReasons: nextStatus === 'blocked'
-        ? dedupeStrings([...(preserveBatchState ? existing?.blockingReasons ?? [] : []), '该 Group 当前没有可执行 clip。'])
+        ? dedupeStrings([...(clipKeysChanged ? [] : existing?.blockingReasons ?? []), '该 Group 当前没有可执行 clip。'])
         : [],
     };
   });
@@ -1355,6 +1326,17 @@ async function buildColorFileMetadataSnapshot(
 }
 
 function extractGpsTuple(rawTags: Record<string, string>): [number, number] | undefined {
+  const iso6709 = firstTrimmedString(
+    rawTags['location'],
+    rawTags['location-eng'],
+    rawTags['location_eng'],
+    rawTags['com.apple.quicktime.location.iso6709'],
+    rawTags['com.apple.quicktime.location_iso6709'],
+  );
+  const parsedIso6709 = parseIso6709(iso6709);
+  if (parsedIso6709) {
+    return [parsedIso6709.lat, parsedIso6709.lng];
+  }
   const lat = parseMaybeNumber(rawTags['gpslatitude']);
   const lng = parseMaybeNumber(rawTags['gpslongitude']);
   if (lat == null || lng == null) return undefined;
@@ -1365,6 +1347,97 @@ function parseMaybeNumber(value: string | undefined): number | undefined {
   if (!value?.trim()) return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function firstTrimmedString(...values: Array<string | undefined>): string | undefined {
+  for (const value of values) {
+    if (!value?.trim()) continue;
+    return value.trim();
+  }
+  return undefined;
+}
+
+function parseIso6709(value?: string): { lat: number; lng: number } | undefined {
+  if (!value) return undefined;
+  const match = value.trim().match(/^([+-]\d{1,2}(?:\.\d+)?)([+-]\d{1,3}(?:\.\d+)?)(?:[+-]\d+(?:\.\d+)?)?\/?$/u);
+  if (!match?.[1] || !match[2]) return undefined;
+  const lat = Number(match[1]);
+  const lng = Number(match[2]);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return undefined;
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return undefined;
+  return { lat, lng };
+}
+
+async function normalizeRenderedColorOutputMetadata(
+  outputPath: string,
+  sourceMetadataSnapshot: IColorFileMetadataSnapshot | undefined,
+  runtimeConfig: Awaited<ReturnType<typeof loadRuntimeConfig>>,
+): Promise<string> {
+  if (!sourceMetadataSnapshot?.capturedAt && !sourceMetadataSnapshot?.gps) {
+    return resolve(outputPath);
+  }
+
+  const ffmpeg = runtimeConfig.ffmpegPath?.trim() || 'ffmpeg';
+  const resolvedOutputPath = resolve(outputPath);
+  const tempPath = join(
+    dirname(resolvedOutputPath),
+    `.kairos-meta-${randomUUID()}${extname(resolvedOutputPath) || '.mp4'}`,
+  );
+  const args = [
+    '-y',
+    '-i',
+    toExecutableInputPath(resolvedOutputPath, ffmpeg),
+    '-map',
+    '0',
+    '-dn',
+    '-c',
+    'copy',
+    '-movflags',
+    'use_metadata_tags',
+  ];
+  if (sourceMetadataSnapshot.capturedAt) {
+    args.push('-metadata', `creation_time=${sourceMetadataSnapshot.capturedAt}`);
+  }
+  if (sourceMetadataSnapshot.gps) {
+    args.push('-metadata', `location=${formatIso6709(sourceMetadataSnapshot.gps)}`);
+  }
+  args.push(toExecutableInputPath(tempPath, ffmpeg));
+
+  try {
+    await exec(ffmpeg, args, {
+      encoding: 'utf8',
+      maxBuffer: 10 * 1024 * 1024,
+      env: buildStableToolExecEnv(),
+      windowsHide: true,
+    });
+    await unlink(resolvedOutputPath).catch(() => undefined);
+    await rename(tempPath, resolvedOutputPath);
+    return resolvedOutputPath;
+  } catch (error) {
+    await unlink(tempPath).catch(() => undefined);
+    throw new Error(
+      `无法归一 color 输出 metadata：${resolvedOutputPath} (${String(error instanceof Error ? error.message : error)})`,
+    );
+  }
+}
+
+function formatIso6709(gps: [number, number]): string {
+  return `${formatSignedCoordinate(gps[0])}${formatSignedCoordinate(gps[1])}/`;
+}
+
+function formatSignedCoordinate(value: number): string {
+  const sign = value >= 0 ? '+' : '-';
+  const normalized = Math.abs(value).toFixed(8).replace(/\.?0+$/u, '');
+  return `${sign}${normalized}`;
+}
+
+function buildStableToolExecEnv(): NodeJS.ProcessEnv {
+  return {
+    ...process.env,
+    LC_ALL: 'C',
+    LANG: 'C',
+    LC_CTYPE: 'C',
+  };
 }
 
 async function ensureActionHostPreflight(input: {
@@ -1561,7 +1634,7 @@ function validateRenderPresetSupport(
   const containerValue = renderPreset.container?.trim();
   const codecValue = renderPreset.videoCodec?.trim();
   if (!containerValue || !codecValue) {
-    return ['当前 root 的 renderPreset 缺少 container 或 videoCodec，无法启动 execute_group。'];
+    return ['当前 root 的 renderPreset 缺少 container 或 videoCodec，无法启动 execute_root。'];
   }
   const containerKey = containerValue.toLowerCase();
   const matchedContainer = support.containers.find(container => container.container.trim().toLowerCase() === containerKey);
@@ -1577,8 +1650,9 @@ function validateRenderPresetSupport(
   if (renderPreset.audioCodec?.trim() && support.supportsAudioCodec === false) {
     blockers.push(`当前 Resolve host 不支持 AudioCodec 设置：${renderPreset.audioCodec}`);
   }
-  if (typeof renderPreset.bitrateMbps === 'number' && support.supportsVideoQuality === false) {
-    blockers.push(`当前 Resolve host 不支持 VideoQuality 设置：${renderPreset.bitrateMbps} Mbps`);
+  const bitrateKbps = readColorRenderPresetBitrateKbps(renderPreset);
+  if (typeof bitrateKbps === 'number' && support.supportsVideoQuality === false) {
+    blockers.push(`当前 Resolve host 不支持 VideoQuality 设置：${bitrateKbps} kb/s`);
   }
   return blockers;
 }

@@ -107,17 +107,20 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
 - Treat current `color` job support as the formal action dispatcher:
   - `prepare_root`
   - `sync_groups`
-  - `execute_group`
+  - `execute_root`
   - `validate_batch`
   - `promote_batch`
 - Treat `prepare_root` as the formal Resolve-side sync step: it must mirror `rawLocalPath` into root bins, ensure the root grading timeline has executable clips, set that timeline to the root dominant `(width, height, fps)` spec, auto-sync any missing workspace-managed LUTs for the current root into the device Resolve default LUT directory, and create or reuse Resolve Groups from source-truth / root-fallback creative tags.
 - Treat Resolve as the formal Group truth for color: users may keep adjusting Groups inside Resolve, and `/color` should only mirror them back via `sync_groups`; synced non-empty Groups become `ready` directly, with no extra `/color` confirm step.
+- Treat root grading timeline as the formal export truth for color: render preset is root-scoped, while batch is only the execution/retry grain and may optionally carry `clipKeys[]` for subset reruns.
+- Treat Resolve Groups as diagnostic/sync truth only after `sync_groups`; they no longer decide render preset, batch ownership, or execution order.
 - Treat `color/current.json.hostPreflight` as formal cached host truth for `/color`; blocked/degraded host state should surface before the user starts a color action.
-- Treat `prepare_root / sync_groups / execute_group` as preflight-guarded actions: if Resolve host is blocked or the current render preset is unsupported, fail before Resolve-side mutation.
+- Treat `prepare_root / sync_groups / execute_root` as preflight-guarded actions: if Resolve host is blocked or the current render preset is unsupported, fail before Resolve-side mutation.
 - Treat `color/batches/<batchId>/plan.json|manifest.json|validation.json|promote.json` as the read-only source for `/color` archive sections; do not duplicate batch history back into config or ad-hoc UI state.
 - Treat `promote_batch` as a confirm-before-run action from `/color`: validation pass alone is not enough to overwrite managed outputs in the current media root.
 - Treat same-machine vendored Resolve backend (`vendor/resolve-color-host/` + fixed `.venv`) as the current formal color execution path; do not route color automation back through MCP wording or design assumptions.
 - Treat root-level color config as minimal and project-scoped: the only user-maintained long-term fields are `root.color.renderPreset`, `root.color.colorSpaceProfile`, and optional `root.color.transformPresetKey` on `config/project-brief.json` mappings; naming and group structure are derived or host-owned, not user config.
+- Treat `root.color.renderPreset.bitrateKbps` (`kb/s`) as the only formal target bitrate field for `/color`; do not read or persist old bitrate alias fields.
 - Treat `color.colorSpaceProfile` as a technical-input key, not a creative look or full gamut/primaries descriptor.
 - Treat clip profile truth priority as `source metadata > XML > root.color.colorSpaceProfile fallback`; unresolved DJI private metadata must remain `unknown`, not guessed `dlog-m`.
 - Treat workspace `config/color-transform-presets.json` as the formal `profile -> { deviceFamily/default -> Resolve LUT path }` mapping, and `config/luts/` as the formal optional workspace LUT asset root for same-path copy-missing sync.

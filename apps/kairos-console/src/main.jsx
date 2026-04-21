@@ -301,7 +301,7 @@ function AppShell() {
         jobType === 'script'
           ? ''
           : jobType === 'color' && args.rootId
-            ? `已启动 color ${args.action || 'prepare_root'}：${args.rootId}${args.groupKey ? ` / ${args.groupKey}` : ''}${args.batchId ? ` / ${args.batchId}` : ''}`
+            ? `已启动 color ${args.action || 'prepare_root'}：${args.rootId}${Array.isArray(args.clipKeys) && args.clipKeys.length > 0 ? ` / subset ${args.clipKeys.length}` : ''}${args.batchId ? ` / ${args.batchId}` : ''}`
             : `已启动 ${jobType}`,
       );
       setError('');

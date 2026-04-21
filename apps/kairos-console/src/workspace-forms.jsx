@@ -1102,6 +1102,30 @@ export function ColorCurrentSummary({
                 >
                   {describeColorRootAction('sync_groups', activeRoot, liveColorJobs, busy)}
                 </Button>
+                <Button
+                  type={canRunColorRootAction('execute_root', activeRoot, capability, liveColorJobs, busy, onRunColorAction) ? 'default' : 'disabled'}
+                  disabled={!canRunColorRootAction('execute_root', activeRoot, capability, liveColorJobs, busy, onRunColorAction)}
+                  onClick={() => onRunColorAction?.({ rootId: activeRoot.rootId, action: 'execute_root' })}
+                >
+                  {describeColorRootAction('execute_root', activeRoot, liveColorJobs, busy)}
+                </Button>
+                <Button
+                  type={canRunColorRootAction('validate_batch', activeRoot, capability, liveColorJobs, busy, onRunColorAction) ? 'default' : 'disabled'}
+                  disabled={!canRunColorRootAction('validate_batch', activeRoot, capability, liveColorJobs, busy, onRunColorAction)}
+                  onClick={() => onRunColorAction?.({ rootId: activeRoot.rootId, action: 'validate_batch', batchId: activeRoot.current?.latestBatchId })}
+                >
+                  {describeColorRootAction('validate_batch', activeRoot, liveColorJobs, busy)}
+                </Button>
+                <Button
+                  type={canRunColorRootAction('promote_batch', activeRoot, capability, liveColorJobs, busy, onRunColorAction) ? 'primary' : 'disabled'}
+                  disabled={!canRunColorRootAction('promote_batch', activeRoot, capability, liveColorJobs, busy, onRunColorAction)}
+                  onClick={() => setPromoteDialog({
+                    rootId: activeRoot.rootId,
+                    batchId: activeRoot.current?.pendingPromoteBatchId || activeRoot.current?.latestBatchId,
+                  })}
+                >
+                  {describeColorRootAction('promote_batch', activeRoot, liveColorJobs, busy)}
+                </Button>
               </div>
             </div>
             <div className="detail">{activeRootHeroDetail}</div>
@@ -1211,12 +1235,12 @@ export function ColorCurrentSummary({
                             disabled={busy?.['project-brief']}
                           />
                           <Field
-                            label="bitrateMbps"
+                            label="bitrateKbps (kb/s)"
                             type="number"
-                            step="0.1"
-                            inputMode="decimal"
-                            value={formatColorBitrateInput(root.bitrateMbps)}
-                            onChange={value => updateProjectRootRenderPreset(setProjectBrief, root.rootId, { bitrateMbps: value })}
+                            step="1"
+                            inputMode="numeric"
+                            value={formatColorBitrateInput(root.bitrateKbps)}
+                            onChange={value => updateProjectRootRenderPreset(setProjectBrief, root.rootId, { bitrateKbps: value })}
                             disabled={busy?.['project-brief']}
                           />
                           <Field
@@ -1243,7 +1267,7 @@ export function ColorCurrentSummary({
                   })}
                 </div>
                 <p className="field-help">
-                  `Prepare Root` 会真正同步 Media Pool / grading timeline，并按素材真值与 root fallback 生成或复用 Resolve Groups。当前详情、Groups 和诊断仍跟随上方选中的 root。
+                  `Prepare Root` 会真正同步 Media Pool / grading timeline，并按素材真值与 root fallback 生成或复用 Resolve Groups。`Execute Root` 会以当前 root grading timeline 作为唯一导出真相；需要重试时再通过 batch `clipKeys[]` 做子集执行。
                 </p>
               </Card>
 
@@ -1253,7 +1277,7 @@ export function ColorCurrentSummary({
                   <Tag>{`${activeRoot.groups.length} 个`}</Tag>
                 </div>
                 <p className="muted color-panel-copy">
-                  Group 是当前 Root 的第二优先区块。这里直接看每组的状态、最新 batch，以及后续执行动作。
+                  Group 现在只作为 Resolve 组织与诊断视图。导出、校验和 Promote 都以 root batch 为单位，不再按 Group 触发。
                 </p>
                 <div className="color-group-list">
                   {activeRoot.groups.length > 0 ? activeRoot.groups.map(group => (
@@ -1261,39 +1285,12 @@ export function ColorCurrentSummary({
                       <div className="color-group-row-top">
                         <div className="color-group-copy">
                           <strong>{group.displayName}</strong>
-                          <div className="muted">{`${group.groupKey} · ${group.clipCount} clips · latest ${group.current?.latestBatchId || 'none'} · validation ${group.current?.latestValidationStatus || 'pending'}`}</div>
+                          <div className="muted">{`${group.groupKey} · ${group.clipCount} clips`}</div>
                           {describeColorTechnicalSignals(group.hostSummary) ? (
                             <div className="muted">{describeColorTechnicalSignals(group.hostSummary)}</div>
                           ) : null}
                         </div>
                         <Tag>{group.current?.status || 'ready'}</Tag>
-                      </div>
-                      <div className="color-group-actions">
-                        <Button
-                          type={canRunColorGroupAction('execute_group', activeRoot, group, capability, liveColorJobs, busy, onRunColorAction) ? 'default' : 'disabled'}
-                          disabled={!canRunColorGroupAction('execute_group', activeRoot, group, capability, liveColorJobs, busy, onRunColorAction)}
-                          onClick={() => onRunColorAction?.({ rootId: activeRoot.rootId, action: 'execute_group', groupKey: group.groupKey })}
-                        >
-                          {describeColorGroupAction('execute_group', group, liveColorJobs, busy)}
-                        </Button>
-                        <Button
-                          type={canRunColorGroupAction('validate_batch', activeRoot, group, capability, liveColorJobs, busy, onRunColorAction) ? 'default' : 'disabled'}
-                          disabled={!canRunColorGroupAction('validate_batch', activeRoot, group, capability, liveColorJobs, busy, onRunColorAction)}
-                          onClick={() => onRunColorAction?.({ rootId: activeRoot.rootId, action: 'validate_batch', groupKey: group.groupKey, batchId: group.current?.latestBatchId })}
-                        >
-                          {describeColorGroupAction('validate_batch', group, liveColorJobs, busy)}
-                        </Button>
-                        <Button
-                          type={canRunColorGroupAction('promote_batch', activeRoot, group, capability, liveColorJobs, busy, onRunColorAction) ? 'primary' : 'disabled'}
-                          disabled={!canRunColorGroupAction('promote_batch', activeRoot, group, capability, liveColorJobs, busy, onRunColorAction)}
-                          onClick={() => setPromoteDialog({
-                            rootId: activeRoot.rootId,
-                            groupKey: group.groupKey,
-                            batchId: group.current?.pendingPromoteBatchId || group.current?.latestBatchId,
-                          })}
-                        >
-                          {describeColorGroupAction('promote_batch', group, liveColorJobs, busy)}
-                        </Button>
                       </div>
                     </div>
                   )) : <p className="muted">当前还没有已同步的正式 Groups。先运行 `Prepare Root`，如你在 Resolve 里做了调整，再执行一次 `Sync Groups`。</p>}
@@ -1370,7 +1367,6 @@ export function ColorCurrentSummary({
                 onRunColorAction?.({
                   rootId: dialog.rootId,
                   action: 'promote_batch',
-                  groupKey: dialog.groupKey,
                   batchId: dialog.batchId,
                 });
               }}
@@ -1382,7 +1378,7 @@ export function ColorCurrentSummary({
       >
         <div className="modal-copy">
           <p>这一步会把当前 batch 的受管输出覆盖回当前素材目录。</p>
-          <p>它不会触碰 `rawPath`，也只会作用于这个 Group manifest 声明的覆盖范围。</p>
+          <p>它不会触碰 `rawPath`，也只会作用于这个 root batch manifest 声明的覆盖范围。</p>
         </div>
       </Modal>
     </div>
@@ -1469,7 +1465,7 @@ function resolveColorRootHeroDetail(root) {
     return `当前有 ${root.blockers.length} 个 blocker。优先处理宿主、路径或 render preset 阻塞后再继续。`;
   }
   if (root.groups.length > 0) {
-    return `当前已同步 ${root.groups.length} 个 Groups，可继续执行、校验或 Promote。`;
+    return `当前已同步 ${root.groups.length} 个 Groups，可继续执行 root batch、校验或 Promote。`;
   }
   if (root.hostPreflight?.status === 'degraded') {
     return '当前 Resolve host 可用但存在兼容降级，建议先复查宿主诊断。';
@@ -1486,29 +1482,26 @@ function resolveColorRootSwitcherSummary(root) {
     return `主 blocker：${root.blockers[0]}`;
   }
   if (root.groups.length > 0) {
-    return `最近 batch：${resolveColorRootLatestBatchId(root) || 'none'}，可继续执行后续动作。`;
+    return `最近 root batch：${resolveColorRootLatestBatchId(root) || 'none'}。`;
   }
   return '等待首次 Prepare / Sync。';
 }
 
 function resolveColorRootLatestBatchId(root) {
-  const latestFromCurrent = getColorStringField(root.current, ['latestBatchId']);
-  if (latestFromCurrent) return latestFromCurrent;
-  const latestFromGroups = (Array.isArray(root.groups) ? root.groups : [])
-    .map(group => getColorStringField(group.current, ['latestBatchId']))
-    .find(Boolean);
-  return latestFromGroups || '';
+  return getColorStringField(root.current, ['latestBatchId']);
 }
 
 function resolveColorRootBatchSummary(root) {
   if (!root) return '尚未产生 batch';
-  const validationStatus = (Array.isArray(root.groups) ? root.groups : [])
-    .map(group => getColorStringField(group.current, ['latestValidationStatus']))
-    .find(Boolean);
+  const validationStatus = getColorStringField(root.current, ['latestValidationStatus']);
   if (validationStatus) {
     return `validation ${validationStatus}`;
   }
-  return root.groups.length > 0 ? '等待下一次 validation' : '尚未产生 batch';
+  const batchStatus = getColorStringField(root.current, ['latestBatchStatus']);
+  if (batchStatus) {
+    return `batch ${batchStatus}`;
+  }
+  return root.groups.length > 0 ? '等待下一次 root batch' : '尚未产生 batch';
 }
 
 function resolveColorStageCardState(status) {
@@ -1644,7 +1637,7 @@ function renderColorRecentBatches(items) {
     <div key={`recent:${item.batchId}`} className="job-item">
       <div>
         <strong>{item.batchId}</strong>
-        <div className="muted">{`${item.groupKey} · ${item.plan?.createdAt || 'unknown time'}`}</div>
+        <div className="muted">{`${describeColorBatchSelection(item.plan)} · ${item.plan?.createdAt || 'unknown time'}`}</div>
         <div className="muted">
           {`targets ${item.plan?.entries?.length || 0} · validation ${item.validation?.status || 'pending'} · promote ${item.promote?.status || 'none'}`}
         </div>
@@ -1664,7 +1657,7 @@ function renderColorValidationFailures(items) {
       <div className="row-top">
         <div>
           <strong>{item.batchId}</strong>
-          <div className="muted">{`${item.groupKey} · ${item.validation?.validatedAt || 'unknown time'}`}</div>
+          <div className="muted">{`${describeColorBatchSelection(item.plan)} · ${item.validation?.validatedAt || 'unknown time'}`}</div>
         </div>
         <Tag>{item.validation?.status || 'fail'}</Tag>
       </div>
@@ -1704,7 +1697,7 @@ function renderColorPromoteHistory(items) {
     <details key={`promote:${item.batchId}`}>
       <summary>
         <strong>{item.batchId}</strong>
-        {` · ${item.groupKey} · ${item.promote?.promotedAt || 'unknown time'} · ${item.promote?.status || 'completed'} · outputs ${item.promote?.outputs?.length || 0} · deleted ${item.promote?.deletedOutputs?.length || 0}`}
+        {` · ${describeColorBatchSelection(item.plan)} · ${item.promote?.promotedAt || 'unknown time'} · ${item.promote?.status || 'completed'} · outputs ${item.promote?.outputs?.length || 0} · deleted ${item.promote?.deletedOutputs?.length || 0}`}
       </summary>
       <div className="stack-list">
         {(item.promote?.outputs || []).length > 0 ? (
@@ -1724,6 +1717,15 @@ function renderColorPromoteHistory(items) {
       </div>
     </details>
   ));
+}
+
+function describeColorBatchSelection(plan) {
+  const mode = getColorStringField(plan, ['selectionMode']) || 'all';
+  const count = Array.isArray(plan?.clipKeys) ? plan.clipKeys.length : (Array.isArray(plan?.entries) ? plan.entries.length : 0);
+  if (mode === 'subset') {
+    return `subset ${count} clips`;
+  }
+  return count > 0 ? `all ${count} clips` : 'all clips';
 }
 
 function buildColorArchiveMap(colorArchive) {
@@ -1825,8 +1827,8 @@ function buildMinimalColorRootCards(config) {
         colorSpaceProfile,
         transformPresetKey,
         transformPresetOptions,
-        bitrateMbps: renderPreset.bitrateMbps,
-        renderPresetSummary: describeColorRenderPreset(renderPreset, renderPreset.bitrateMbps),
+        bitrateKbps: renderPreset.bitrateKbps,
+        renderPresetSummary: describeColorRenderPreset(renderPreset, renderPreset.bitrateKbps),
         pathText: [
           currentPath || 'no current path',
           displayRawPath || 'no raw path',
@@ -1868,8 +1870,8 @@ function buildMinimalColorRootCards(config) {
         colorSpaceProfile,
         transformPresetKey,
         transformPresetOptions,
-        bitrateMbps: renderPreset.bitrateMbps,
-        renderPresetSummary: describeColorRenderPreset(renderPreset, renderPreset.bitrateMbps),
+        bitrateKbps: renderPreset.bitrateKbps,
+        renderPresetSummary: describeColorRenderPreset(renderPreset, renderPreset.bitrateKbps),
         pathText: [
           currentPath || 'no current path',
           displayRawPath || 'no raw path',
@@ -1888,7 +1890,7 @@ function materializeProjectRootRenderPreset(renderPreset) {
     container: normalizeColorOptionalString(renderPreset?.container) || 'mp4',
     videoCodec: normalizeColorOptionalString(renderPreset?.videoCodec || renderPreset?.videoCodecName) || 'h265',
     audioCodec: normalizeColorOptionalString(renderPreset?.audioCodec || renderPreset?.audioCodecName) || 'aac',
-    bitrateMbps: normalizeColorBitrateValue(renderPreset?.bitrateMbps ?? renderPreset?.bitrate),
+    bitrateKbps: normalizeColorBitrateValue(renderPreset?.bitrateKbps),
   };
 }
 
@@ -1978,9 +1980,9 @@ function updateProjectRootRenderPreset(setProjectBrief, rootId, patch) {
       container: normalizeColorOptionalString(patch?.container) || existingPreset.container || 'mp4',
       videoCodec: normalizeColorOptionalString(patch?.videoCodec) || existingPreset.videoCodec || 'h265',
       audioCodec: normalizeColorOptionalString(patch?.audioCodec) || existingPreset.audioCodec || 'aac',
-      bitrateMbps: Object.prototype.hasOwnProperty.call(patch || {}, 'bitrateMbps')
-        ? normalizeColorBitrateValue(patch?.bitrateMbps)
-        : existingPreset.bitrateMbps,
+      bitrateKbps: Object.prototype.hasOwnProperty.call(patch || {}, 'bitrateKbps')
+        ? normalizeColorBitrateValue(patch?.bitrateKbps)
+        : existingPreset.bitrateKbps,
     };
     const nextRoots = [...roots];
     nextRoots[index] = {
@@ -2271,7 +2273,7 @@ function extractColorRoots(config) {
       return candidate.filter(item => isPlainObject(item));
     }
   }
-  if (config.rawPath || config.rawLocalPath || config.renderPreset || config.bitrate) {
+  if (config.rawPath || config.rawLocalPath || config.renderPreset || config.bitrateKbps) {
     return [config];
   }
   return [];
@@ -2292,13 +2294,19 @@ function normalizeColorRootCard(root, index) {
   const localPath = getColorStringField(root, ['localPath']) || getColorStringField(rootConfig, ['localPath']);
   const rawPath = getColorStringField(root, ['rawPath']) || getColorStringField(rootConfig, ['rawPath']);
   const rawLocalPath = getColorStringField(root, ['rawLocalPath']) || getColorStringField(rootConfig, ['rawLocalPath']);
-  const bitrateMbps = getColorRenderPresetBitrate(rootConfig);
+  const bitrateKbps = getColorRenderPresetBitrate(rootConfig);
   const blockers = normalizeColorBlockers(root?.blockingReasons || rootConfig?.blockingReasons || rootCurrent?.blockingReasons)
     .filter(blocker => {
       if (configuredGroups.length > 0 && blocker.includes('当前还没有已确认的 Resolve Group')) {
         return false;
       }
-      if (bitrateMbps && blocker.includes('未配置 root 级目标码率')) {
+      if (
+        bitrateKbps
+        && (
+          blocker.includes('未配置 root 级目标码率')
+          || blocker.includes('renderPreset.bitrateKbps')
+        )
+      ) {
         return false;
       }
       return true;
@@ -2314,10 +2322,10 @@ function normalizeColorRootCard(root, index) {
     resolveProjectName: getColorStringField(rootConfig, ['resolveProjectName']),
     rootNamespace: getColorStringField(rootConfig, ['rootNamespace']),
     gradingTimelineName: getColorStringField(rootConfig, ['gradingTimelineName']),
-    bitrateMbps,
+    bitrateKbps,
     assetCountText: Number.isFinite(assetCount) ? `${assetCount} assets` : 'assets unknown',
     pathText: [path || 'no path', localPath || 'no localPath'].filter(Boolean).join(' · '),
-    renderPresetSummary: describeColorRenderPreset(getColorRenderPreset(rootConfig), bitrateMbps),
+    renderPresetSummary: describeColorRenderPreset(getColorRenderPreset(rootConfig), bitrateKbps),
     anchorSummary,
     blockers,
     blockerCountText: blockers.length > 0 ? `${blockers.length} blockers` : '',
@@ -2400,7 +2408,9 @@ function getColorRenderPreset(root) {
 
 function getColorRenderPresetBitrate(root) {
   const renderPreset = getColorRenderPreset(root);
-  return renderPreset?.bitrateMbps || renderPreset?.bitrate || root?.bitrateMbps || root?.bitrate || root?.renderBitrate || '';
+  return renderPreset?.bitrateKbps
+    || root?.bitrateKbps
+    || '';
 }
 
 function describeColorRenderPreset(renderPreset, bitrate) {
@@ -2410,7 +2420,7 @@ function describeColorRenderPreset(renderPreset, bitrate) {
     getColorStringField(renderPreset, ['audioCodec', 'audioCodecName']),
   ].filter(Boolean);
   if (bitrate) {
-    parts.push(`bitrate ${bitrate}`);
+    parts.push(`bitrate ${bitrate} kb/s`);
   }
   if (!parts.length) {
     return 'render preset: 未配置';
@@ -2463,9 +2473,6 @@ function materializeColorWorkspaceGroup(group) {
     hostSummary: isPlainObject(group?.hostSummary) ? group.hostSummary : {},
     current: {
       ...current,
-      latestBatchId: getColorStringField(current, ['latestBatchId', 'batchId']) || '',
-      latestValidationStatus: getColorStringField(current, ['latestValidationStatus']) || '',
-      pendingPromoteBatchId: getColorStringField(current, ['pendingPromoteBatchId']) || '',
       status: getColorStringField(current, ['status', 'state', 'phase']) || 'ready',
     },
   };
@@ -2526,24 +2533,28 @@ function buildColorGroupStageSummary(groups) {
 
 function buildColorBatchStageSummary(current, groups) {
   const latestBatchId = getColorStringField(current, ['latestBatchId', 'batchId']);
-  const pendingPromoteGroupKey = getColorStringField(current, ['pendingPromoteGroupKey']);
   const pendingPromoteBatchId = getColorStringField(current, ['pendingPromoteBatchId']);
+  const latestBatchStatus = getColorStringField(current, ['latestBatchStatus']);
+  const latestValidationStatus = getColorStringField(current, ['latestValidationStatus']);
   if (isPlainObject(current?.batch)) {
     return current.batch;
   }
-  if (pendingPromoteGroupKey && (pendingPromoteBatchId || latestBatchId)) {
+  if (pendingPromoteBatchId || (latestBatchId && latestValidationStatus === 'pass')) {
     return {
       status: 'staged',
       batchId: pendingPromoteBatchId || latestBatchId,
-      groupKey: pendingPromoteGroupKey,
-      summary: `待 promote · ${pendingPromoteGroupKey}`,
+      summary: '待 promote',
     };
   }
   if (latestBatchId) {
     return {
-      status: 'ready',
+      status: latestBatchStatus || (latestValidationStatus === 'fail' ? 'failed' : 'ready'),
       batchId: latestBatchId,
-      summary: `latest ${latestBatchId}`,
+      summary: latestValidationStatus
+        ? `validation ${latestValidationStatus}`
+        : latestBatchStatus
+          ? `batch ${latestBatchStatus}`
+          : `latest ${latestBatchId}`,
     };
   }
   if (Array.isArray(groups) && groups.some(group => getColorStringField(group, ['status']) === 'blocked')) {
@@ -2696,9 +2707,7 @@ function materializeColorRootConfigDraft(root, existing) {
       container: normalizeColorOptionalString(renderPreset.container) || 'mp4',
       videoCodec: normalizeColorOptionalString(renderPreset.videoCodec ?? renderPreset.videoCodecName) || 'h265',
       audioCodec: normalizeColorOptionalString(renderPreset.audioCodec ?? renderPreset.audioCodecName) || 'aac',
-      bitrateMbps: normalizeColorBitrateValue(
-        renderPreset.bitrateMbps ?? renderPreset.bitrate ?? root?.bitrateMbps,
-      ),
+      bitrateKbps: normalizeColorBitrateValue(renderPreset.bitrateKbps ?? root?.bitrateKbps),
     },
     groups: Array.isArray(baseRoot.groups)
       ? baseRoot.groups.filter(isPlainObject).map(materializeColorGroupDraft)
@@ -2730,9 +2739,8 @@ function applyColorRootDraftPatch(rootConfig, patch) {
   const nextRenderPreset = isPlainObject(nextPatch.renderPreset)
     ? nextPatch.renderPreset
     : {};
-  const hasDirectBitrate = Object.prototype.hasOwnProperty.call(nextPatch, 'bitrateMbps');
-  const hasRenderPresetBitrate = Object.prototype.hasOwnProperty.call(nextRenderPreset, 'bitrateMbps')
-    || Object.prototype.hasOwnProperty.call(nextRenderPreset, 'bitrate');
+  const hasDirectBitrate = Object.prototype.hasOwnProperty.call(nextPatch, 'bitrateKbps');
+  const hasRenderPresetBitrate = Object.prototype.hasOwnProperty.call(nextRenderPreset, 'bitrateKbps');
   return {
     rootId: normalizeColorOptionalString(nextPatch.rootId) || rootConfig.rootId,
     resolveProjectName: normalizeColorOptionalString(nextPatch.resolveProjectName) ?? rootConfig.resolveProjectName,
@@ -2742,11 +2750,11 @@ function applyColorRootDraftPatch(rootConfig, patch) {
       container: normalizeColorOptionalString(nextRenderPreset.container) || rootConfig.renderPreset?.container || 'mp4',
       videoCodec: normalizeColorOptionalString(nextRenderPreset.videoCodec ?? nextRenderPreset.videoCodecName) || rootConfig.renderPreset?.videoCodec || 'h265',
       audioCodec: normalizeColorOptionalString(nextRenderPreset.audioCodec ?? nextRenderPreset.audioCodecName) || rootConfig.renderPreset?.audioCodec || 'aac',
-      bitrateMbps: hasDirectBitrate
-        ? normalizeColorBitrateValue(nextPatch.bitrateMbps)
+      bitrateKbps: hasDirectBitrate
+        ? normalizeColorBitrateValue(nextPatch.bitrateKbps)
         : hasRenderPresetBitrate
-          ? normalizeColorBitrateValue(nextRenderPreset.bitrateMbps ?? nextRenderPreset.bitrate)
-          : normalizeColorBitrateValue(rootConfig.renderPreset?.bitrateMbps),
+          ? normalizeColorBitrateValue(nextRenderPreset.bitrateKbps)
+          : normalizeColorBitrateValue(rootConfig.renderPreset?.bitrateKbps),
     },
     groups: Array.isArray(nextPatch.groups)
       ? nextPatch.groups.filter(isPlainObject).map(materializeColorGroupDraft)
@@ -2816,9 +2824,17 @@ function canRunColorRootAction(action, root, capability, liveJobs, busy, onRunCo
   if (capability?.supported === false) return false;
   if (busy?.['project-brief']) return false;
   if (busy?.['job:color']) return false;
+  if ((liveJobs || []).length > 0) return false;
   if (getColorStringField(root.hostPreflight, ['status']) === 'blocked') return false;
   if (action === 'sync_groups' && getColorStringField(root.current, ['timelineStatus']) !== 'ready') return false;
-  return (liveJobs || []).length === 0;
+  if (action === 'execute_root' && getColorStringField(root.current, ['timelineStatus']) !== 'ready') return false;
+  if (action === 'validate_batch') return Boolean(getColorStringField(root.current, ['latestBatchId']));
+  if (action === 'promote_batch') {
+    return Boolean(getColorStringField(root.current, ['pendingPromoteBatchId']) || (
+      getColorStringField(root.current, ['latestBatchId']) && getColorStringField(root.current, ['latestValidationStatus']) === 'pass'
+    ));
+  }
+  return true;
 }
 
 function describeColorRootAction(action, root, liveJobs, busy) {
@@ -2829,7 +2845,11 @@ function describeColorRootAction(action, root, liveJobs, busy) {
     return '启动中…';
   }
   if (hasLiveColorJobForRoot(liveJobs, root.rootId, action)) {
-    return action === 'sync_groups' ? '同步中…' : '准备中…';
+    if (action === 'sync_groups') return '同步中…';
+    if (action === 'execute_root') return '执行中…';
+    if (action === 'validate_batch') return '校验中…';
+    if (action === 'promote_batch') return '覆盖中…';
+    return '准备中…';
   }
   if ((liveJobs || []).length > 0) {
     return '等待当前 color job…';
@@ -2837,38 +2857,18 @@ function describeColorRootAction(action, root, liveJobs, busy) {
   if (action === 'sync_groups') {
     return getColorStringField(root.current, ['groupSyncStatus']) === 'ready' ? '重同步 Groups' : 'Sync Groups';
   }
+  if (action === 'execute_root') {
+    return getColorStringField(root.current, ['latestBatchId']) ? '重新 Execute Root' : 'Execute Root';
+  }
+  if (action === 'validate_batch') {
+    return 'Validate';
+  }
+  if (action === 'promote_batch') {
+    return 'Promote';
+  }
   const mirrorReady = ['ready', 'synced'].includes(getColorStringField(root.current, ['mirrorStatus']));
   const timelineReady = getColorStringField(root.current, ['timelineStatus']) === 'ready';
   return mirrorReady && timelineReady ? '重跑 Prep' : '准备 Root';
-}
-
-function canRunColorGroupAction(action, root, group, capability, liveJobs, busy, onRunColorAction) {
-  if (typeof onRunColorAction !== 'function') return false;
-  if (capability?.supported === false) return false;
-  if (busy?.['job:color']) return false;
-  if ((liveJobs || []).length > 0) return false;
-  if (getColorStringField(root.hostPreflight, ['status']) === 'blocked') return false;
-  if (action === 'execute_group') return group.clipCount > 0;
-  if (action === 'validate_batch') return Boolean(group.current?.latestBatchId);
-  if (action === 'promote_batch') {
-    return group.clipCount > 0 && Boolean(group.current?.pendingPromoteBatchId || (
-      group.current?.latestBatchId && group.current?.latestValidationStatus === 'pass'
-    ));
-  }
-  return false;
-}
-
-function describeColorGroupAction(action, group, liveJobs, busy) {
-  if (busy?.['job:color']) return '启动中…';
-  if ((liveJobs || []).some(job => getColorJobAction(job) === action)) {
-    if (action === 'execute_group') return '执行中…';
-    if (action === 'validate_batch') return '校验中…';
-    if (action === 'promote_batch') return '覆盖中…';
-  }
-  if (action === 'execute_group') return group.current?.latestBatchId ? '重新 Execute' : 'Execute';
-  if (action === 'validate_batch') return 'Validate';
-  if (action === 'promote_batch') return 'Promote';
-  return action;
 }
 
 function describeColorTechnicalSignals(hostSummary) {

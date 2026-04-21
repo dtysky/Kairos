@@ -41,14 +41,16 @@ Kairos 将旅拍素材转化为可编辑时间线。流程分为 1 个准备阶�
 - `Analyze` 与 `Style` 的正式监控路由分别是 `http://127.0.0.1:8940/analyze` 和 `http://127.0.0.1:8940/style`
 - `DaVinci color` 当前已有独立 `/color` 主路由，正式承担 root 级最小 `renderPreset`、Resolve group 镜像、执行、validation 与 promote 控制
 - `/color` 当前应自动发现已配置 `rawPath` 的素材根，并派生约定命名与阻塞信息；不要把“还没接通全部宿主健壮性”误渲染成“没有可显示 root”
-- 当前 `Supervisor color` 的正式动作链是 `prepare_root -> sync_groups -> execute_group -> validate_batch -> promote_batch`
+- 当前 `Supervisor color` 的正式动作链是 `prepare_root -> sync_groups -> execute_root -> validate_batch -> promote_batch`
 - 当前 `prepare_root` 必须真实完成 `rawLocalPath -> Resolve root bins / grading timeline / explainable technical Groups` 的同步，而不是只持久化 Kairos 侧占位状态
 - 当前 Group 真相以 Resolve 为准；用户可直接在 Resolve 中调整 Group，再通过 `/color` 的 `sync_groups` 回写最新现状；不存在额外 `Confirm Groups` 步骤
 - `/color` 当前进入页面或切换项目时会自动执行 host preflight，并允许用户手动 `Recheck Host`
-- 当前 `prepare_root / sync_groups / execute_group` 都必须先通过 host preflight；若宿主 blocked 或当前 render preset 不受支持，应在 Resolve 变更前直接失败
+- 当前 `prepare_root / sync_groups / execute_root` 都必须先通过 host preflight；若宿主 blocked 或当前 render preset 不受支持，应在 Resolve 变更前直接失败
+- 当前 color 导出真相是 root grading timeline：render preset 是 root 级长期配置，batch 只是执行/重试粒度，可选携带 `clipKeys[]` 做 subset rerun；Resolve Groups 只承担组织与诊断语义，不再决定导出分批
 - `/color` 当前继续保持单页，但页面信息架构正式收口为 `Root 摘要 -> 当前 Root Hero -> 所有 Root 常驻可编辑配置 -> Groups -> 次级诊断/归档`
 - `/color` 上所有 root 的用户可编辑项都必须保持在主信息流中直接可见且同页可维护；折叠区只保留只读的 `Host Diagnostics / Recent Batches / Validation Failures / Promote History` 与技术调试信息
 - 当前 color 的长期配置只保留项目级 root 上的 `color.renderPreset`；不要再把 `resolveProjectName / rootNamespace / gradingTimelineName / bootstrap Group` 当成用户配置项
+- `color.renderPreset` 当前正式 bitrate 字段只有 `bitrateKbps`（`kb/s`）；不要再读取或写回旧 bitrate 别名字段
 - `scripts/kairos-supervisor.* start` 只会启动 `Supervisor + React console`；不会自动启动 ML，也不会恢复旧 job
 - `progress.json` 是 durable progress cache，不是 live job 证据
 - Console 刷新时，默认项目上下文应优先跟随最新的 active project-scoped job；没有活跃项目 job 时，才回退到上次本地选择
