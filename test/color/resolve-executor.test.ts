@@ -1,11 +1,15 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import {
   PythonResolveColorExecutor,
   ResolveColorExecutorUnavailableError,
   ResolveColorHostError,
+  getVendoredResolveColorPythonPath,
+  inspectResolveColorBackend,
+  resolveColorPythonInvocation,
+  resolveColorScriptPath,
 } from '../../src/modules/color/resolve-executor.js';
 
 const tempPaths: string[] = [];
@@ -17,32 +21,39 @@ afterEach(async () => {
 });
 
 describe('PythonResolveColorExecutor', () => {
-  it('requires an explicit runtime python path', async () => {
-    const executor = new PythonResolveColorExecutor();
-    await expect(executor.preflight({
-      projectId: 'project-color',
-      rootId: 'root-camera',
-      resolveProjectName: 'kairos__project-color',
-    })).rejects.toBeInstanceOf(ResolveColorExecutorUnavailableError);
+  it('resolves the fixed vendored backend paths and fails when the .venv is missing', async () => {
+    const backendRoot = await mkdtemp(join(tmpdir(), 'kairos-resolve-executor-missing-venv-'));
+    tempPaths.push(backendRoot);
+    const scriptPath = resolveColorScriptPath(undefined, backendRoot);
+    await writeFile(scriptPath, '# mock resolve host\n', 'utf-8');
+
+    const status = inspectResolveColorBackend(backendRoot);
+    expect(status.available).toBe(false);
+    expect(status.pythonPath).toBe(getVendoredResolveColorPythonPath(backendRoot));
+
+    expect(() => resolveColorPythonInvocation({ backendRoot })).toThrow(ResolveColorExecutorUnavailableError);
+    expect(() => resolveColorPythonInvocation({ backendRoot })).toThrow(/vendored Resolve backend/);
   });
 
   it('writes a structured preflight request and parses JSON stdout', async () => {
-    const requestRoot = await mkdtemp(join(tmpdir(), 'kairos-resolve-executor-preflight-'));
-    tempPaths.push(requestRoot);
+    const backend = await createVendoredBackendRoot('kairos-resolve-executor-preflight-');
 
     const executor = new PythonResolveColorExecutor(
       {
-        pythonPath: 'python-mock',
-        scriptPath: join(requestRoot, 'resolve-color-host.py'),
+        backendRoot: backend.backendRoot,
       },
-      async (_file, args) => {
+      async (file, args) => {
+        expect(file).toBe(backend.pythonPath);
+        expect(args[0]).toBe(backend.scriptPath);
         const requestPath = String(args[2]);
         const request = JSON.parse(await readFile(requestPath, 'utf-8')) as {
           operation: string;
           input: { resolveProjectName: string };
+          scriptApiRoot?: string;
         };
         expect(request.operation).toBe('preflight');
         expect(request.input.resolveProjectName).toBe('kairos__project-color');
+        expect(request).not.toHaveProperty('scriptApiRoot');
         return {
           stdout: JSON.stringify({
             status: 'ready',
@@ -77,14 +88,12 @@ describe('PythonResolveColorExecutor', () => {
   });
 
   it('writes a structured request file and parses JSON stdout', async () => {
-    const requestRoot = await mkdtemp(join(tmpdir(), 'kairos-resolve-executor-'));
-    tempPaths.push(requestRoot);
+    const backend = await createVendoredBackendRoot('kairos-resolve-executor-');
 
     const calls: Array<{ file: string; args: readonly string[] }> = [];
     const executor = new PythonResolveColorExecutor(
       {
-        pythonPath: 'python-mock',
-        scriptPath: join(requestRoot, 'resolve-color-host.py'),
+        backendRoot: backend.backendRoot,
       },
       async (file, args) => {
         calls.push({ file, args });
@@ -135,7 +144,8 @@ describe('PythonResolveColorExecutor', () => {
       }],
     });
 
-    expect(calls[0]?.file).toBe('python-mock');
+    expect(calls[0]?.file).toBe(backend.pythonPath);
+    expect(calls[0]?.args[0]).toBe(backend.scriptPath);
     expect(calls[0]?.args[1]).toBe('--request');
     expect(result.mirrorStatus).toBe('synced');
     expect(result.timelineStatus).toBe('ready');
@@ -201,3 +211,21 @@ describe('PythonResolveColorExecutor', () => {
     });
   });
 });
+
+async function createVendoredBackendRoot(prefix: string) {
+  const backendRoot = await mkdtemp(join(tmpdir(), prefix));
+  tempPaths.push(backendRoot);
+
+  const scriptPath = resolveColorScriptPath(undefined, backendRoot);
+  const pythonPath = getVendoredResolveColorPythonPath(backendRoot);
+  await mkdir(dirname(scriptPath), { recursive: true });
+  await mkdir(dirname(pythonPath), { recursive: true });
+  await writeFile(scriptPath, '# mock resolve host\n', 'utf-8');
+  await writeFile(pythonPath, '', 'utf-8');
+
+  return {
+    backendRoot,
+    scriptPath,
+    pythonPath,
+  };
+}

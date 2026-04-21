@@ -114,7 +114,6 @@ function AppShell() {
   }, [projectId, liveProjectJobs.length]);
 
   const setProjectBrief = makeSectionSetter(setConfig, 'projectBrief');
-  const setIngestRoots = makeSectionSetter(setConfig, 'ingestRoots');
   const setManualItinerary = makeSectionSetter(setConfig, 'manualItinerary');
   const setScriptBrief = makeSectionSetter(setConfig, 'scriptBrief');
 
@@ -439,7 +438,6 @@ function AppShell() {
                     <IngestGpsPage
                       config={config}
                       setProjectBrief={setProjectBrief}
-                      setIngestRoots={setIngestRoots}
                       setManualItinerary={setManualItinerary}
                       saveSection={saveSection}
                       busy={busy}
@@ -459,7 +457,7 @@ function AppShell() {
                       colorArchive={colorArchive}
                       capabilities={capabilities}
                       jobs={allJobs}
-                      setIngestRoots={setIngestRoots}
+                      setProjectBrief={setProjectBrief}
                       saveSection={saveSection}
                       busy={busy}
                       onRunColorAction={args => runProjectWorkflow('color', args)}
@@ -561,8 +559,8 @@ function AppShell() {
 
 function OverviewPage({ currentProject, activeJobs, services, projectProgress, openReviewCount }) {
   const workflows = [
-    { path: '/ingest-gps', label: '导入与 GPS', summary: '维护 project-brief、manual-itinerary 与素材时间校正。' },
-    { path: '/color', label: '达芬奇调色', summary: '维护 root 级 renderPreset，并执行 prepare / sync groups / validate / promote。' },
+    { path: '/ingest-gps', label: '导入与 GPS', summary: '维护单真值素材 Root、manual-itinerary 与素材时间校正。' },
+    { path: '/color', label: '达芬奇调色', summary: '维护 Root render preset，并执行 prepare / sync groups / validate / promote。' },
     { path: '/analyze', label: '素材分析', summary: '直接查看分析监控、恢复进度并启动 Analyze。' },
     { path: '/style', label: '风格分析', summary: '维护 Workspace 风格库、style sources，并查看当前分类监控。' },
     { path: '/script', label: '脚本', summary: '维护 script-brief，并准备确定性材料给 Agent 继续写稿。' },
@@ -651,7 +649,6 @@ function OverviewPage({ currentProject, activeJobs, services, projectProgress, o
 function IngestGpsPage({
   config,
   setProjectBrief,
-  setIngestRoots,
   setManualItinerary,
   saveSection,
   busy,
@@ -668,7 +665,7 @@ function IngestGpsPage({
   }
   return (
     <div className="route-page">
-      <RouteIntro title="导入与 GPS" subtitle="维护项目素材根、行程正文、结构化 segment 与拍摄时间校正。" />
+      <RouteIntro title="导入与 GPS" subtitle="维护单真值素材 Root、行程正文、结构化 segment 与拍摄时间校正。" />
       <ProjectBriefEditor
         config={config.projectBrief}
         pharosStatus={config.pharosStatus}
@@ -683,11 +680,11 @@ function IngestGpsPage({
         busy={busy['manual-itinerary']}
       />
       <IngestRootClockEditor
-        config={config.ingestRoots}
+        config={config.projectBrief}
         summaries={config.ingestRootSummaries || []}
-        setConfig={setIngestRoots}
-        onSave={() => saveSection('ingest-roots')}
-        busy={busy['ingest-roots']}
+        setConfig={setProjectBrief}
+        onSave={() => saveSection('project-brief')}
+        busy={busy['project-brief']}
       />
       <CaptureTimeOverridesEditor
         config={config.manualItinerary}
@@ -713,7 +710,7 @@ function ColorPage({
   colorArchive,
   capabilities,
   jobs,
-  setIngestRoots,
+  setProjectBrief,
   saveSection,
   busy,
   onRunColorAction,
@@ -733,7 +730,7 @@ function ColorPage({
     <div className="route-page">
       <RouteIntro
         title="达芬奇调色"
-        subtitle="这里优先读取 `config.colorRoots` 这个 root 级 read model；长期配置只保留项目 root 上的 `color.renderPreset`，命名全部按约定生成并只读展示。"
+        subtitle="这里优先读取 `config.colorRoots` 这个 root 级 read model；页面按 `Root 摘要 -> 当前 Root Hero -> 所有 Root 常驻可编辑配置 -> Groups -> 次级诊断/归档` 组织。"
       />
       {colorBlocked ? (
         <WorkflowPrompt
@@ -746,8 +743,8 @@ function ColorPage({
       ) : colorCapabilityDetail ? (
         <WorkflowPrompt
           eyebrow="Current Scope"
-          title="当前 color 已支持 official Python host 闭环入口"
-          body="现在可以在 `/color` 里维护 root 级 renderPreset，并按 `Prepare Root -> Sync Groups -> Execute -> Validate -> Promote` 触发 Resolve 闭环。"
+          title="当前 color 已支持 vendored Resolve backend 闭环入口"
+          body="现在可以在 `/color` 同页维护所有 Root 的 render preset，并按 `Prepare Root -> Sync Groups -> Execute -> Validate -> Promote` 触发 Resolve 闭环。"
           tone="accent"
           detail={colorCapabilityDetail}
         />
@@ -758,8 +755,8 @@ function ColorPage({
         capability={colorCapability}
         projectId={projectId}
         jobs={jobs}
-        setIngestRoots={setIngestRoots}
-        onSaveProjectRoots={() => saveSection('ingest-roots')}
+        setProjectBrief={setProjectBrief}
+        onSaveProjectRoots={() => saveSection('project-brief')}
         busy={busy}
         onRunColorAction={onRunColorAction}
         onRequestHostPreflight={onRequestHostPreflight}

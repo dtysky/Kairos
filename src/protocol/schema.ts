@@ -91,8 +91,13 @@ export const ICaptureTime = z.object({
 });
 export type ICaptureTime = z.infer<typeof ICaptureTime>;
 
+export const EColorSourceProfile = z.enum(['slog3', 'dlog', 'dlog-m', 'hlg', 'rec709']);
+export type EColorSourceProfile = z.infer<typeof EColorSourceProfile>;
+
 export const IMediaRootColorConfig = z.object({
   renderPreset: z.lazy(() => IColorRenderPreset).optional(),
+  colorSpaceProfile: z.string().optional(),
+  transformPresetKey: z.string().optional(),
 });
 export type IMediaRootColorConfig = z.infer<typeof IMediaRootColorConfig>;
 
@@ -1104,10 +1109,23 @@ export type IStoreManifest = z.infer<typeof IStoreManifest>;
 // ─── Project Workspace / Review Queue ───────────────────────
 
 export const IProjectBriefMappingConfig = z.object({
+  rootId: z.string(),
   path: z.string(),
   rawPath: z.string().optional(),
   description: z.string(),
   flightRecordPath: z.string().optional(),
+  enabled: z.boolean().optional(),
+  label: z.string().optional(),
+  clockOffsetMs: z.number().int().optional(),
+  priority: z.number().optional(),
+  category: EMediaRootCategory.optional(),
+  notes: z.array(z.string()).optional(),
+  tags: z.array(z.string()).optional(),
+  color: z.object({
+    renderPreset: z.lazy(() => IColorRenderPreset).optional(),
+    colorSpaceProfile: z.string().optional(),
+    transformPresetKey: z.string().optional(),
+  }).optional(),
 });
 export type IProjectBriefMappingConfig = z.infer<typeof IProjectBriefMappingConfig>;
 
@@ -1118,6 +1136,22 @@ export const IColorRenderPreset = z.object({
   bitrateMbps: z.number().positive().optional(),
 });
 export type IColorRenderPreset = z.infer<typeof IColorRenderPreset>;
+
+export const EColorTransformPresetKind = z.enum(['lut']);
+export type EColorTransformPresetKind = z.infer<typeof EColorTransformPresetKind>;
+
+export const IColorTransformPresetDefinition = z.object({
+  kind: EColorTransformPresetKind,
+  displayName: z.string(),
+  lutPath: z.string(),
+});
+export type IColorTransformPresetDefinition = z.infer<typeof IColorTransformPresetDefinition>;
+
+export const IColorTransformPresetsConfig = z.object({
+  profiles: z.record(z.record(z.string())).default({}),
+  discoveredPresets: z.record(IColorTransformPresetDefinition).default({}),
+});
+export type IColorTransformPresetsConfig = z.infer<typeof IColorTransformPresetsConfig>;
 
 export const EColorGroupStatus = z.enum([
   'idle',
@@ -1225,6 +1259,7 @@ export const IColorRootCurrent = z.object({
   pendingPromoteGroupKey: z.string().optional(),
   pendingPromoteBatchId: z.string().optional(),
   latestBatchId: z.string().optional(),
+  hostSummary: z.record(z.unknown()).default({}),
   groups: z.array(IColorGroupCurrent).default([]),
   blockingReasons: z.array(z.string()).default([]),
 });
@@ -1329,6 +1364,7 @@ export const IColorBatchValidationEntry = z.object({
   promoteTargetPath: z.string().optional(),
   status: z.enum(['pass', 'fail']),
   reasons: z.array(z.string()).default([]),
+  warnings: z.array(z.string()).default([]),
   checks: IColorBatchValidationChecks,
 });
 export type IColorBatchValidationEntry = z.infer<typeof IColorBatchValidationEntry>;
@@ -1349,6 +1385,7 @@ export const IColorBatchValidation = z.object({
   status: z.enum(['pass', 'fail']),
   summary: IColorBatchValidationSummary.default({}),
   blockingReasons: z.array(z.string()).default([]),
+  warnings: z.array(z.string()).default([]),
   entries: z.array(IColorBatchValidationEntry).default([]),
 });
 export type IColorBatchValidation = z.infer<typeof IColorBatchValidation>;

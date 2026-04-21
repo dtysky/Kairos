@@ -1,16 +1,18 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { access, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   initWorkspaceProject,
   loadColorCurrent,
+  loadColorTransformPresetsConfig,
   loadIngestRoots,
   loadManualItineraryConfig,
   loadProjectBriefConfig,
   loadScriptBriefConfig,
   loadStyleSourcesConfig,
   saveColorCurrent,
+  saveColorTransformPresetsConfig,
   saveIngestRoots,
   saveManualItineraryConfig,
   saveProjectBriefConfig,
@@ -39,6 +41,7 @@ describe('workspace config sync', () => {
     const projectRoot = await initWorkspaceProject(workspaceRoot, 'project-init', 'Project Init');
 
     await expect(access(join(projectRoot, 'config', 'styles'))).rejects.toBeTruthy();
+    await expect(access(join(projectRoot, 'config', 'project-roots.json'))).rejects.toBeTruthy();
     await expect(access(join(projectRoot, 'analysis', 'reference-transcripts'))).rejects.toBeTruthy();
     await expect(access(join(projectRoot, 'color', 'config.json'))).rejects.toBeTruthy();
     await expect(access(join(projectRoot, 'color', 'current.json'))).resolves.toBeUndefined();
@@ -68,6 +71,163 @@ describe('workspace config sync', () => {
     expect(markdown).toContain('飞行记录路径：F:\\media\\camera\\FlightRecord');
   });
 
+  it('does not treat empty init template rows as configured project brief mappings', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectRoot = await initWorkspaceProject(workspaceRoot, 'project-blank-brief', 'Project Blank Brief');
+
+    const loaded = await loadProjectBriefConfig(projectRoot);
+
+    expect(loaded.mappings).toEqual([]);
+  });
+
+  it('migrates legacy project roots metadata into project brief json and removes legacy roots file on save', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectRoot = await initWorkspaceProject(workspaceRoot, 'project-legacy-roots', 'Project Legacy Roots');
+
+    await writeFile(join(projectRoot, 'config', 'project-brief.md'), [
+      '# Project Legacy Roots',
+      '',
+      '- 项目说明：legacy roots migration',
+      '- 创建日期：2026-04-20T00:00:00.000Z',
+      '',
+      '## 路径映射',
+      '',
+      '路径：/media/current/camera',
+      '原始路径：/media/raw/camera',
+      '说明：主机位',
+      '',
+      '## Pharos',
+      '',
+      '包含 Trip：',
+      '',
+      '## 材料模式短语',
+      '',
+      '- ',
+      '',
+    ].join('\n'), 'utf-8');
+    await writeJson(join(projectRoot, 'config', 'project-roots.json'), {
+      roots: [{
+        id: 'root-camera',
+        path: '/media/current/camera',
+        rawPath: '/media/raw/camera',
+        enabled: false,
+        label: 'Sony Main',
+        description: '旧配置主机位',
+        priority: 9,
+        clockOffsetMs: -611_000,
+        color: {
+          renderPreset: {
+            container: 'mp4',
+            videoCodec: 'h265',
+            audioCodec: 'aac',
+            bitrateMbps: 120,
+          },
+          colorSpaceProfile: 'slog3',
+        },
+      }],
+    });
+
+    const loaded = await loadProjectBriefConfig(projectRoot);
+    expect(loaded.mappings).toEqual([
+      expect.objectContaining({
+        rootId: 'root-camera',
+        path: '/media/current/camera',
+        rawPath: '/media/raw/camera',
+        description: '主机位',
+        enabled: false,
+        label: 'Sony Main',
+        priority: 9,
+        clockOffsetMs: -611_000,
+        color: {
+          renderPreset: {
+            container: 'mp4',
+            videoCodec: 'h265',
+            audioCodec: 'aac',
+            bitrateMbps: 120,
+          },
+          colorSpaceProfile: 'slog3',
+        },
+      }),
+    ]);
+
+    await saveProjectBriefConfig(projectRoot, loaded);
+
+    await expect(access(join(projectRoot, 'config', 'project-roots.json'))).rejects.toBeTruthy();
+    const ingestRoots = await loadIngestRoots(projectRoot);
+    expect(ingestRoots.roots).toEqual([
+      expect.objectContaining({
+        id: 'root-camera',
+        clockOffsetMs: -611_000,
+        label: 'Sony Main',
+      }),
+    ]);
+  });
+
+  it('keeps rootId stable when a saved project brief mapping path changes', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectRoot = await initWorkspaceProject(workspaceRoot, 'project-root-id-stable', 'Project RootId Stable');
+
+    await writeFile(join(projectRoot, 'config', 'project-brief.md'), [
+      '# Project RootId Stable',
+      '',
+      '- 项目说明：path rename test',
+      '- 创建日期：2026-04-20T00:00:00.000Z',
+      '',
+      '## 路径映射',
+      '',
+      '路径：/media/current/camera-a',
+      '说明：主机位 A',
+      '',
+      '## Pharos',
+      '',
+      '包含 Trip：',
+      '',
+      '## 材料模式短语',
+      '',
+      '- ',
+      '',
+    ].join('\n'), 'utf-8');
+
+    const loaded = await loadProjectBriefConfig(projectRoot);
+    const originalRootId = loaded.mappings[0]?.rootId;
+
+    await saveProjectBriefConfig(projectRoot, {
+      ...loaded,
+      mappings: loaded.mappings.map(mapping => ({
+        ...mapping,
+        path: '/media/current/camera-b',
+      })),
+    });
+
+    const updated = await loadProjectBriefConfig(projectRoot);
+    expect(updated.mappings[0]?.rootId).toBe(originalRootId);
+    expect(updated.mappings[0]?.path).toBe('/media/current/camera-b');
+  });
+
+  it('removes legacy root files when saving an empty structured project brief', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectRoot = await initWorkspaceProject(workspaceRoot, 'project-empty-brief', 'Project Empty Brief');
+
+    await writeJson(join(projectRoot, 'config', 'project-roots.json'), {
+      roots: [{
+        id: 'root-camera',
+        path: '/media/current/camera',
+        description: 'legacy root',
+        enabled: true,
+      }],
+    });
+
+    await saveProjectBriefConfig(projectRoot, {
+      name: 'Project Empty Brief',
+      mappings: [],
+      materialPatternPhrases: [],
+    });
+
+    await expect(access(join(projectRoot, 'config', 'project-roots.json'))).rejects.toBeTruthy();
+    const ingestRoots = await loadIngestRoots(projectRoot);
+    expect(ingestRoots.roots).toEqual([]);
+  });
+
   it('roundtrips root-level color renderPreset and color current store', async () => {
     const workspaceRoot = await createWorkspace();
     const projectRoot = await initWorkspaceProject(workspaceRoot, 'project-color', 'Project Color');
@@ -85,6 +245,8 @@ describe('workspace config sync', () => {
             audioCodec: 'aac',
             bitrateMbps: 120,
           },
+          colorSpaceProfile: 'S-Log3',
+          transformPresetKey: 'Sony / SLog3_to_709',
         },
       }],
     });
@@ -107,8 +269,42 @@ describe('workspace config sync', () => {
     const loadedCurrent = await loadColorCurrent(projectRoot);
 
     expect(loadedRoots.roots[0]?.color?.renderPreset?.bitrateMbps).toBe(120);
+    expect(loadedRoots.roots[0]?.color?.colorSpaceProfile).toBe('slog3');
+    expect(loadedRoots.roots[0]?.color?.transformPresetKey).toBe('Sony/SLog3_to_709.cube');
     expect(loadedCurrent.selectedRootId).toBe('root-camera');
     expect(loadedCurrent.roots[0]?.groups[0]?.status).toBe('ready');
+  });
+
+  it('roundtrips workspace color transform presets and normalizes keys/paths', async () => {
+    const workspaceRoot = await createWorkspace();
+    await mkdir(join(workspaceRoot, 'config', 'luts', 'sony'), { recursive: true });
+    await writeFile(join(workspaceRoot, 'config', 'luts', 'sony', 'SLog3_to_709.cube'), 'lut-data', 'utf-8');
+
+    await saveColorTransformPresetsConfig(workspaceRoot, {
+      profiles: {
+        'S-Log3': {
+          default: 'Sony / SLog3_to_709',
+        },
+      },
+    });
+
+    const loaded = await loadColorTransformPresetsConfig(workspaceRoot);
+    expect(loaded).toEqual({
+      profiles: {
+        slog3: {
+          default: 'Sony/SLog3_to_709.cube',
+        },
+      },
+      discoveredPresets: {
+        'sony/SLog3_to_709.cube': {
+          kind: 'lut',
+          displayName: 'sony/SLog3_to_709.cube',
+          lutPath: 'sony/SLog3_to_709.cube',
+        },
+      },
+    });
+    expect(await readFile(join(workspaceRoot, 'config', 'color-transform-presets.json'), 'utf-8')).toContain('"profiles"');
+    expect(await readFile(join(workspaceRoot, 'config', 'color-transform-presets.json'), 'utf-8')).not.toContain('discoveredPresets');
   });
 
   it('migrates legacy color config renderPreset into project roots on load', async () => {

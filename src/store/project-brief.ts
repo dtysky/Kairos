@@ -65,6 +65,66 @@ export function buildProjectBriefTemplate(
   ].join('\n');
 }
 
+export function buildProjectBriefWithMappings(input: {
+  name: string;
+  description?: string;
+  createdAt?: string;
+  mappings: Array<{ path: string; rawPath?: string; description: string; flightRecordPath?: string }>;
+  pharos?: { includedTripIds?: string[] };
+  materialPatternPhrases?: string[];
+}): string {
+  const templateLines = buildProjectBriefTemplate(input)
+    .replace(/\r\n/g, '\n')
+    .split('\n');
+  const mappingHeadingIndex = templateLines.findIndex(line => line.trim() === '## 路径映射');
+  const header = (
+    mappingHeadingIndex >= 0
+      ? templateLines.slice(0, mappingHeadingIndex)
+      : templateLines
+  ).join('\n').trimEnd();
+
+  const mappingLines = input.mappings.length > 0
+    ? input.mappings.flatMap(mapping => [
+      `路径：${mapping.path}`,
+      ...(mapping.rawPath ? [`原始路径：${mapping.rawPath}`] : []),
+      `说明：${mapping.description}`,
+      ...(mapping.flightRecordPath ? [`飞行记录路径：${mapping.flightRecordPath}`] : []),
+      '',
+    ])
+    : [
+      '路径：',
+      '原始路径：',
+      '说明：',
+      '',
+      '路径：',
+      '原始路径：',
+      '说明：',
+      '',
+    ];
+
+  const includedTripIds = input.pharos?.includedTripIds ?? [];
+  const pharosLines = includedTripIds.length > 0
+    ? includedTripIds.flatMap(tripId => [`包含 Trip：${tripId}`, ''])
+    : ['包含 Trip：', ''];
+  const materialPatternPhrases = input.materialPatternPhrases ?? [];
+  const materialPatternLines = materialPatternPhrases.length > 0
+    ? materialPatternPhrases.flatMap(phrase => [`- ${phrase}`, ''])
+    : ['- ', ''];
+
+  return [
+    header,
+    '## 路径映射',
+    '',
+    ...mappingLines,
+    '## Pharos',
+    '',
+    ...pharosLines,
+    '## 材料模式短语',
+    '',
+    ...materialPatternLines,
+  ].join('\n').trimEnd() + '\n';
+}
+
 export function parseProjectBrief(content: string): IParsedProjectBrief {
   const lines = content.replace(/\r\n/g, '\n').split('\n');
   const warnings: string[] = [];

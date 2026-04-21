@@ -1,0 +1,16 @@
+{
+  "profiles": {
+    "slog3": {
+      "default": "Sony/SLog3SGamut3.CineToLC-709.cube"
+    },
+    "dlog": {
+      "Mavic4": "DJI/DJI Mavic 4 Pro D-Log to Rec.709 V1.cube"
+    },
+    "dlog-m": {
+      "Action6": "DJI/DJI OSMO Action 6 D-LogM to Rec.709 LUT-11.17.cube"
+    },
+    "hlg": {
+      "default": ""
+    }
+  }
+}

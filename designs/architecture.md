@@ -7,6 +7,107 @@
 
 ## 0. 2026-03-31 增补
 
+## 0.9 2026-04-21 DaVinci color 技术 profile / transform preset / workspace LUT 同步补记
+
+当前 `/color` 已继续从“root render preset + creative tags”收口到“技术输入真值 + workspace profile/device -> Resolve LUT 映射 + Group Pre-Clip LUT 底板”。
+
+本轮冻结后的正式口径如下：
+
+- root 级长期配置仍然放在 `config/project-brief.json` mappings 上，但正式字段扩成：
+  - `root.color.renderPreset`
+  - `root.color.colorSpaceProfile`
+  - `root.color.transformPresetKey?`
+- `color.colorSpaceProfile` 的正式语义改为“技术输入类型 key”，不是 creative look，也不再承载 primaries / gamut 细节
+  - 当前 canonical 推荐值先收口为：`slog3 | dlog | dlog-m | hlg | rec709`
+  - schema 当前允许开放字符串 key；更细粒度真值只进入内部诊断，不进入主配置 key
+- clip 技术输入真值的正式优先级固定为：
+  1. 素材自身 metadata
+  2. sidecar XML
+  3. root `color.colorSpaceProfile`
+- DJI 路径当前必须先读素材自身私有 metadata；若没有明确真值，正式结果就是 `unknown`
+  - 不允许按机型默认值或模糊 `Dvtm_*` 字段强行识别成 `dlog-m`
+- workspace 技术预设映射当前正式放在：
+  - `config/color-transform-presets.json`
+- workspace LUT 资产当前正式放在：
+  - `config/luts/`
+- `config/color-transform-presets.json` 的正式结构为：
+  - `profiles: { [colorSpaceProfile]: { [deviceFamily|default]: resolveLutPath } }`
+  - 叶子值正式表示 Resolve LUT 相对路径
+  - 用户不手写 regex；Kairos 必须把素材 metadata 真值归一成内置设备族 key，再与配置中的设备族名匹配
+  - `root.color.transformPresetKey` 作为 project/root 级 override 时，也直接表示 Resolve LUT 相对路径
+- 默认技术预设解析优先级固定为：
+  1. `root.color.transformPresetKey`
+  2. `effective colorSpaceProfile + normalized device family -> workspace profiles[...]`
+  3. 无命中则不自动应用默认技术底板
+- `prepare_root` 在任何 Resolve-side mutation 前，必须先做 LUT preflight：
+  - 只同步当前 root 实际引用到且 workspace 中存在同路径文件的 LUT
+  - 同步源固定为 `config/luts/<relative-path>`
+  - 同步目标固定为当前设备 Resolve 默认 LUT 目录
+  - 同步策略固定为“只补缺，不覆盖、不删除、不全量重装”
+  - 若 workspace 中没有同路径 LUT，Kairos 不得立刻 blocked；应继续把该路径作为 Resolve LUT 路径交给宿主验证可见性
+- 默认技术底板当前正式应用在 Resolve `ColorGroup Pre-Clip`
+  - 当前 round 只支持 LUT preset，不纳入 PowerGrade / CST preset 抽象
+  - 应用动作必须通过 `ColorGroup.GetPreClipNodeGraph()` + `Graph.SetLUT()`
+  - 若 Group 为 Kairos 新建，可在空白 Pre-Clip graph 上建立最小节点并套 LUT
+  - 若 Group 已有非空用户 grade，则必须跳过，记录 `skipped-existing-grade`
+  - `sync_groups` 继续只做镜像，不回写任何技术预设
+- 若 LUT 已复制到默认目录，但当前 Resolve 会话仍不可见：
+  - `prepare_root` 需要返回 blocked
+  - blocker 文案必须明确提示用户在 Resolve 里 `Refresh LUT List / Update Lists`，必要时重启 Resolve
+- `/color` read model 与 UI 当前需要明确区分：
+  - `detected profile`
+  - `effective profile`
+  - `root fallback`
+  - `unknown`
+  - `resolvedTransformPresetKey`
+  - `lutSyncStatus`
+  - `transformStatus`
+
+## 0.8 2026-04-20 DaVinci color v2 真值分组与导出合同补记
+
+当前 `/color` 已从“technical fingerprint 驱动的 root prep”继续收口到“素材真值 + root 真值驱动的 Resolve 调色工作流”。
+
+本轮冻结后的正式口径如下：
+
+- root 级长期配置仍然放在 `config/project-brief.json` mappings 上，但正式字段扩成：
+  - `root.color.renderPreset`
+  - `root.color.colorSpaceProfile`
+- `color.colorSpaceProfile` 的语义是“该 root 原始素材默认拍摄色彩配置”，只在 clip 真值缺失时作为 fallback
+  - 当前正式枚举先收口为：`slog3 | dlog | dlog-m | hlg | rec709`
+- Resolve naming 当前固定为人类可读约定：
+  - Resolve Project: `${projectBrief.name} [Color]`
+  - root namespace / grading timeline: 从 root `label` 派生
+- `prepare_root` 在正式创建/复用 grading timeline 前，必须先计算该 root 的 dominant `(width, height, fps)` 组合
+  - timeline 必须显式写入：
+    - `timelineResolutionWidth`
+    - `timelineResolutionHeight`
+    - `timelineOutputResolutionWidth`
+    - `timelineOutputResolutionHeight`
+    - `timelineFrameRate`
+    - `timelinePlaybackFrameRate`
+- 同一 root 仍然只维护一条 grading timeline；mixed-spec clip 进入该 timeline 时按 Resolve 常规适配
+- `execute_group` 的正式 render 合同已经收紧为：
+  - 每个 clip render 都显式携带源文件自己的 `width / height / fps`
+  - 宿主必须把最终 staging 文件名归一到 `sourceStem + targetExtension`
+  - `manifest.entries[].stagingAbsolutePath` 的正式语义是“真实物理输出路径”，不允许再写预测路径
+- 自动 Group 已退出 `colorspace / gamma / codec / resolution / fps` technical fingerprint 语义，改为纯创意标签：
+  - `log`
+  - `gyro`
+  - `lowlight`
+- `log` 的正式判定优先级为：
+  1. 素材显式真值
+  2. root `color.colorSpaceProfile`
+- Sony 路径当前允许从 sidecar / embedded XML 真值读取 `CaptureGammaEquation / CaptureColorPrimaries / Gyroscope`
+- DJI 路径当前必须先解析 `djmd` 私有视频 metadata；若仍无法解出明确 log 真值，才允许回退 root `color.colorSpaceProfile`
+- Group truth 继续以 Resolve 为准：
+  - `/color` 通过 `sync_groups` 镜像 Resolve 当前 group name
+  - `groupKey` 的正式语义改为 normalized Resolve group name slug
+- `validate_batch` 当前继续以媒体参数和 metadata 为主，但 warning 与 blocking 需要分层：
+  - `capturedAt / GPS` 仍是硬阻塞
+  - `create_time` 当前降级为 warning-only
+- `/color` 前后端兼容层必须清掉历史 `resolveColorPythonPath / resolveColorScriptApiRoot` blocker 口径
+  - 新的 host preflight ready/blocked 真值必须覆盖旧缓存，不允许继续显示遗留 Python-path 提示
+
 ## 0.7 2026-04-20 DaVinci color 健壮性与可观测性补记
 
 在 P0 把单 root 执行闭环接通后，P1 的正式收口点是两件事：
@@ -69,7 +170,7 @@
 
 本轮已冻结的下一步目标，是把独立调色链从“最小配置 + deterministic prep 控制面”补成“官方 Python 宿主 + group sync + execute/validate/promote 闭环”：
 
-- `color` 的长期用户配置仍然只保留项目级 root 注册表上的最小 `root.color.renderPreset`
+- `color` 的长期用户配置仍然只保留 `config/project-brief.json` root mappings 上的最小 `root.color.renderPreset`
 - `resolveProjectName / rootNamespace / gradingTimelineName` 继续按约定生成，不回退成用户配置项
 - `ColorExecutor` 作为 color 专用宿主边界正式入场，宿主路线冻结为仓库内置的同机 official Python Scripting API sidecar
 - `Supervisor color` job 将从单一 root prep 扩成 action dispatcher：
@@ -99,12 +200,13 @@
 
 ## 0.5 2026-04-19 DaVinci color 最小配置收口补记
 
-当前实现已把独立调色链的长期配置进一步收口为“项目级 root 注册表 + `color/` runtime/archive”：
+当前实现已把独立调色链的长期配置进一步收口为“`project-brief` 单真值 root 配置 + `color/` runtime/archive”：
 
 - 长期用户配置不再写 `projects/<projectId>/color/config.json`
-- root 级长期 color 配置只保留最小 `renderPreset`，并直接挂在项目级 root 注册表 `config/project-roots.json`
+- root 级长期 color 配置只保留最小 `renderPreset`，并直接挂在 `config/project-brief.json` 对应 root mapping 上
 - `resolveProjectName / rootNamespace / gradingTimelineName / Group naming` 全部按约定规则推导，不再是可编辑配置项
-- `/color` 当前只允许编辑 root 级 `renderPreset`，展示约定命名、阻塞原因、current/batch 摘要和 deterministic prep 状态
+- `/color` 当前只允许编辑 root 级 `renderPreset`；页面信息架构收口为 `Root 摘要 -> 当前 Root Hero -> 所有 Root 常驻可编辑配置 -> Groups -> 次级诊断/归档`
+- 所有 root 的用户可编辑项必须保持在主信息流中直接可见且同页可维护，不允许藏到折叠详情里；高级折叠区只保留只读技术诊断与 archive
 - `/color` 不再提供 bootstrap Group、候选 Group 或 raw JSON fallback
 - `projects/<projectId>/color/current.json` 继续承载当前运行真相；`projects/<projectId>/color/batches/<batchId>/...` 保留给 batch/runtime 归档
 - 当前 Resolve 宿主路线冻结为“同机 official Python Scripting API sidecar”，不再把 MCP 作为 color 官方主线
@@ -116,6 +218,7 @@
 当前实现已先落地 `2026-04-17--davinci-color-independent-workflow-v1` 中已冻结的基础设施部分：
 
 - `project-brief` 路径映射可选带 `原始路径`
+- `/ingest-gps` 当前以结构化 `素材 Root` 编辑器作为正式用户入口，并在保存时把这些字段写入 `project-brief.json` 单真值并回写 `project-brief.md` 镜像
 - `IMediaRoot.rawPath` 与设备映射 `rawLocalPath` 已进入正式配置链
 - 若 `rawPath/rawLocalPath` 位于当前素材目录内部，ingest 会把该子树视为正式排除项，而不是把 raw 与当前输出一起扫描
 - 项目级 `color/` 目录已作为独立调色链最小 runtime/archive store 进入项目结构
@@ -202,7 +305,7 @@
   - 时间阻塞当前只针对弱时间源；高置信 `exif` / `manual` 不会再被文件名日期直接反驳
   - 时间阻塞当前会同时参考项目时间线、文件名完整时间戳漂移，以及已纳入 `Pharos` trip 的整体时间边界
   - 项目内跨设备时钟漂移当前正式通过 ingest root 统一修正，而不是继续让 timeline 末端猜：
-    - `config/project-roots.json` 的 `IMediaRoot.clockOffsetMs?` 表示项目内该 root 的统一时钟偏移
+    - `config/project-brief.json` 对应 mapping 的 `clockOffsetMs?` 表示项目内该 root 的统一时钟偏移
     - 单素材 `captureTimeOverrides` 继续存在，但只作为 root offset 上层例外
     - `media/chronology.json` 的 `sortCapturedAt` 当前是唯一正式时序真值，优先级为 `capturedAtOverride -> asset.capturedAt + root.clockOffsetMs -> asset.capturedAt`
   - `locationText` 当前正式收口为 reverse geocode 结果，而不是 route prose：
@@ -263,6 +366,8 @@
    - `Supervisor` 统一承载本地服务与 job 编排
    - `apps/kairos-console/` 采用 React + 工作流优先路由，而不是单页工作台
    - `Analyze` 与 `Style` 监控当前直接由 `/analyze` 与 `/style` 主路由承载
+   - 只要改动影响正式本地运行入口、Supervisor API、`/analyze`、`/style`、`/color` 或 `apps/kairos-console/`，验证必须同时包含根仓 `pnpm build` 与 `npm --prefix apps/kairos-console run build`
+   - 根仓 `pnpm build` 当前不会产出 React console bundle；前端资产必须单独 build，才能宣称 UI 变更已完成验证
    - `Style` 当前承载的是 **Workspace 级风格库 / 风格来源配置 / style-analysis monitor**，而不是某个单项目私有风格页
    - `/style` 当前必须把 monitor category 解析成单一真值，禁止把默认分类与最近完成 job 的状态混用
    - `/style` monitor 当前正式应展示三层信息：高层阶段、当前视频上下文，以及 `keyframes / vlm / queue` 等细粒度运行态
@@ -499,14 +604,14 @@ src/modules/ingest/
 
 ```
 src/modules/color/
-├── workspace-state.ts  # 从项目 root 注册表 + current/groups 生成 /color 读模型
+├── workspace-state.ts  # 从 `project-brief` root 单真值 + current/groups 生成 /color 读模型
 ├── project-color.ts    # color action dispatcher：prepare/sync/execute/validate/promote
 ├── resolve-executor.ts # Node ↔ vendored Python Resolve sidecar 边界
 └── index.ts
 ```
 
 **当前正式持久化边界**：
-- 长期用户配置只保留在项目级 root 注册表 `config/project-roots.json` 的 `root.color.renderPreset`
+- 长期用户配置只保留在 `config/project-brief.json` root mappings 的 `root.color.renderPreset`
 - `resolveProjectName / rootNamespace / gradingTimelineName / group naming` 全部按约定生成，不再是用户配置项
 - `color/current.json` 保存 root/group 级 current truth
 - `color/groups/<rootId>.json` 保存宿主同步下来的正式 Group 快照
@@ -514,7 +619,7 @@ src/modules/color/
 
 **关键流程**：
 ```
-读取项目级 root 注册表 + device map + runtime config
+读取 `project-brief` 单真值 root 配置 + device map + runtime config
   → `/color` 自动发现已配置 `rawPath` 的 roots，并派生约定命名与 blockers
   → `prepare_root` 调用 official Python host，真实同步 `rawLocalPath` 到 root namespace bin 树，确保 grading timeline 已装入可执行 clips，并按 explainable technical signals 创建/复用 Resolve Groups
   → `sync_groups` 只同步该 root grading timeline 上实际出现的正式 Groups，并写 `color/groups/<rootId>.json`
@@ -741,7 +846,7 @@ interface TranscriptSegment {
 
 ## 4. Resolve Host 集成架构
 
-Kairos 当前通过同机 vendored Python sidecar 调用官方 `DaVinci Resolve Scripting API` 与达芬奇通信。
+Kairos 当前通过同机 vendored Resolve backend（`vendor/resolve-color-host/` + fixed `.venv`）调用官方 `DaVinci Resolve Scripting API` 与达芬奇通信。
 
 ```
 Kairos (Node.js Core)
@@ -749,7 +854,7 @@ Kairos (Node.js Core)
     │  child_process + structured JSON request/response
     │
     ▼
-vendored resolve-color-host.py
+vendor/resolve-color-host/resolve-color-host.py
     │
     │  DaVinci Resolve Scripting API (Python)
     │
@@ -769,8 +874,8 @@ DaVinci Resolve Studio (≥18.5)
 
 ### 4.2 错误处理
 
-- official Python host 不可调用 → 提示用户检查 `config/runtime.json` 的 `resolveColorPythonPath`
-- sidecar 无法导入 Resolve Scripting API → 提示用户检查 Resolve Studio 安装与 `resolveColorScriptApiRoot`
+- vendored Resolve backend 未就绪 → 提示用户检查 `vendor/resolve-color-host/` 与固定 `.venv`
+- sidecar 无法导入 Resolve Scripting API → 提示用户检查 Resolve Studio 安装与默认 Scripting API 位置
 - 操作超时 → 重试 3 次，间隔递增
 - Resolve 版本不兼容 → 检测版本号，降级到支持的 API 子集
 - 免费版 → 提示需要 Studio 版本
@@ -920,7 +1025,7 @@ interface GradePlan {
 | AI 本地推理 | **onnxruntime-node** | CLIP/BLIP 模型加载 |
 | AI 语音识别 | **whisper.cpp** (child_process) | 旁白转写 |
 | LLM 能力 | **Agent 宿主** | 脚本生成、场景总结等（Phase 1 不引入独立 LLM SDK） |
-| Resolve Host Bridge | **child_process + vendored Python sidecar** | 与同机 Resolve Studio 的官方 Python Scripting API 通信 |
+| Resolve Host Bridge | **child_process + vendored Resolve backend** | 与同机 Resolve Studio 的官方 Python Scripting API 通信 |
 | 任务队列 | **p-queue** | 并发控制，无 Redis 依赖 |
 | 校验 | **zod** | 配置和数据模型校验 |
 | 测试 | **vitest** | 快、TS 原生支持 |
@@ -995,12 +1100,12 @@ kairos/
 - **Whisper 用 whisper.cpp**：child_process 调用，无需额外进程管理
 - 后续若迁移 Tauri，再引入独立 AI Provider 架构
 
-### D3. 同机 Official Python Sidecar 优先
+### D3. 同机 Vendored Resolve Backend 优先
 
-达芬奇自动化当前优先走同机 vendored Python sidecar：
+达芬奇自动化当前优先走同机 vendored Resolve backend：
 - 直接调用官方 `DaVinci Resolve Scripting API`
 - Node 侧只保留结构化 request/response contract，不把宿主细节散到 core
-- 运行时只需声明 Python 路径与可选的 Script API 根目录覆盖
+- 官方路径固定收口到 `vendor/resolve-color-host/` 与固定 `.venv`
 
 ### D4. 代理文件为模型服务
 

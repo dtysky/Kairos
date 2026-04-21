@@ -42,11 +42,15 @@ The current official local runtime and monitor path is:
 - `Supervisor + React console (apps/kairos-console/)`
 - Analyze monitor route: `http://127.0.0.1:8940/analyze`
 - Style monitor route: `http://127.0.0.1:8940/style` (workspace-level style library / style-analysis monitor)
-- Color route: `http://127.0.0.1:8940/color` (independent DaVinci color render-preset/action/runtime surface backed by the official Python Resolve host)
+- Color route: `http://127.0.0.1:8940/color` (independent DaVinci color render-preset/action/runtime surface backed by the same-machine vendored Resolve backend)
 
 Operational lesson that must not be forgotten:
 
 - `scripts/kairos-supervisor.* start` starts `Supervisor + React console`, but does not start ML and does not auto-resume old jobs
+- 只要改动影响正式本地运行入口、Supervisor API、`/analyze`、`/style`、`/color` 或 `apps/kairos-console/`，验证必须同时跑：
+  - 根仓 `pnpm build`
+  - `npm --prefix apps/kairos-console run build`
+- 不要把根仓 `pnpm build` 误当成已经覆盖 React console 产物；前端 bundle 需要单独 build
 - `projects/<projectId>/.tmp/media-analyze/progress.json` is durable progress cache, not proof that a live analyze job is running
 - `<workspaceRoot>/.tmp/style-analysis/<category>/progress.json` is also durable progress cache, not proof that a live style-analysis job is running
 - `/color` now auto-checks Resolve host preflight on entry and caches it in `color/current.json`; host diagnostics should not wait until an action is clicked
@@ -92,23 +96,36 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
 
 - Prefer Windows PowerShell in this repository unless the user explicitly asks for WSL or the step is Linux-only.
 - Treat `projects/<projectId>/pharos/` as a project-local fixed inbox: project init should create it, and Console-side project config loading should repair it if it is missing before asking the user to place trip mirrors.
+- Treat `config/project-brief.json` as the single structured truth for root config; `project-brief.md` is only the human-readable mirror.
 - Treat `project-brief` path mappings as the formal place to declare both current media roots and optional `原始路径`.
+- Treat `/ingest-gps` `素材 Root` as the formal structured editor for those path mappings; normal user operation should not be routed back to hand-editing Markdown.
 - Treat nested `rawPath/rawLocalPath` as a formal ingest exclusion boundary: the mainflow should scan the current media directory, but must not recurse into the raw subtree when it lives inside that directory.
 - Treat `/color` as root-discovery-first: roots with `rawPath` should auto-appear with derived blockers/status, and Resolve naming should remain convention-derived and read-only.
+- Treat `/color` main root cards as a two-path UI: user-facing fields are `当前素材路径` and `原始素材路径`; derived Resolve naming belongs in advanced/debug display, not the primary form.
+- Treat `/color` as a dashboard-style surface: `Root 摘要 -> 当前 Root Hero -> 所有 Root 常驻可编辑配置 -> Groups -> 次级诊断/归档`.
+- Treat `/color` user-editable parameters as always-visible controls in the main flow for every root on the same page; collapsed sections must remain read-only diagnostics/archive only.
 - Treat current `color` job support as the formal action dispatcher:
   - `prepare_root`
   - `sync_groups`
   - `execute_group`
   - `validate_batch`
   - `promote_batch`
-- Treat `prepare_root` as the formal Resolve-side sync step: it must mirror `rawLocalPath` into root bins, ensure the root grading timeline has executable clips, and create or reuse Resolve Groups from explainable technical signals.
+- Treat `prepare_root` as the formal Resolve-side sync step: it must mirror `rawLocalPath` into root bins, ensure the root grading timeline has executable clips, set that timeline to the root dominant `(width, height, fps)` spec, auto-sync any missing workspace-managed LUTs for the current root into the device Resolve default LUT directory, and create or reuse Resolve Groups from source-truth / root-fallback creative tags.
 - Treat Resolve as the formal Group truth for color: users may keep adjusting Groups inside Resolve, and `/color` should only mirror them back via `sync_groups`; synced non-empty Groups become `ready` directly, with no extra `/color` confirm step.
 - Treat `color/current.json.hostPreflight` as formal cached host truth for `/color`; blocked/degraded host state should surface before the user starts a color action.
 - Treat `prepare_root / sync_groups / execute_group` as preflight-guarded actions: if Resolve host is blocked or the current render preset is unsupported, fail before Resolve-side mutation.
 - Treat `color/batches/<batchId>/plan.json|manifest.json|validation.json|promote.json` as the read-only source for `/color` archive sections; do not duplicate batch history back into config or ad-hoc UI state.
 - Treat `promote_batch` as a confirm-before-run action from `/color`: validation pass alone is not enough to overwrite managed outputs in the current media root.
-- Treat same-machine official Python Resolve host as the current formal color execution path; do not route color automation back through MCP wording or design assumptions.
-- Treat root-level color config as minimal and project-scoped: the only user-maintained long-term field is `root.color.renderPreset` on the project root registry; naming and group structure are derived or host-owned, not user config.
+- Treat same-machine vendored Resolve backend (`vendor/resolve-color-host/` + fixed `.venv`) as the current formal color execution path; do not route color automation back through MCP wording or design assumptions.
+- Treat root-level color config as minimal and project-scoped: the only user-maintained long-term fields are `root.color.renderPreset`, `root.color.colorSpaceProfile`, and optional `root.color.transformPresetKey` on `config/project-brief.json` mappings; naming and group structure are derived or host-owned, not user config.
+- Treat `color.colorSpaceProfile` as a technical-input key, not a creative look or full gamut/primaries descriptor.
+- Treat clip profile truth priority as `source metadata > XML > root.color.colorSpaceProfile fallback`; unresolved DJI private metadata must remain `unknown`, not guessed `dlog-m`.
+- Treat workspace `config/color-transform-presets.json` as the formal `profile -> { deviceFamily/default -> Resolve LUT path }` mapping, and `config/luts/` as the formal optional workspace LUT asset root for same-path copy-missing sync.
+- Treat current default technical transform application as Group Pre-Clip LUT automation only:
+  - `root.color.transformPresetKey` overrides workspace profile/device mapping and is interpreted as a direct Resolve LUT path
+  - only referenced LUTs for the current root may be synced
+  - LUT sync policy is copy-missing-only into the Resolve default LUT directory when the same relative path exists under `config/luts/`
+  - existing non-empty user grades must not be overwritten by Kairos default transforms
 - Treat `color/current.json`, `color/groups/<rootId>.json`, and `color/batches/<batchId>/...` as system-maintained runtime/archive truth, not user config.
 - Do not treat stale progress displays as proof that formal processing is alive.
 - Do not silently use legacy monitor paths for new work when `Supervisor + React console` is the official entry.
@@ -133,7 +150,7 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - `sortCapturedAt` should resolve in this order: asset-level `capturedAtOverride` -> `asset.capturedAt + ingestRoot.clockOffsetMs` -> raw `asset.capturedAt`
   - changing a root-level clock offset in `/ingest-gps` means chronology truth changed; refresh chronology before trusting downstream ordering
 - Treat `/ingest-gps` as the formal UI for both layers of time repair:
-  - root-level device drift via `config/project-roots.json` `clockOffsetMs`
+  - root-level device drift via `config/project-brief.json` mapping `clockOffsetMs`
   - asset-level exceptions via `captureTimeOverrides`
 - Treat `/script` as a preparation surface by default:
   - `/script` first auto-saves the selected style category

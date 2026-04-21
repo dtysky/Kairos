@@ -13,6 +13,7 @@ import {
   loadChronology,
   loadColorGroupsSnapshots,
   loadColorCurrent,
+  loadColorTransformPresetsConfig,
   loadIngestRoots,
   loadProjectDeviceMediaMaps,
   loadRuntimeConfig,
@@ -32,7 +33,11 @@ import {
   touchProjectUpdatedAt,
   writeChronology,
 } from '../store/index.js';
-import { buildColorWorkspaceState, preflightProjectColorHost } from '../modules/color/index.js';
+import {
+  buildColorWorkspaceState,
+  inspectResolveColorBackend,
+  preflightProjectColorHost,
+} from '../modules/color/index.js';
 import {
   buildCaptureTimeReviewItems,
   buildManualCaptureTimeReviewKey,
@@ -171,7 +176,7 @@ async function routeRequest(
         { jobType: 'gps-refresh', executionMode: 'deterministic', supported: true },
         { jobType: 'analyze', executionMode: 'deterministic', supported: true },
         { jobType: 'style-analysis', executionMode: 'deterministic', supported: true, note: 'runs deterministic prep and then hands off to Agent for the final style profile' },
-        { jobType: 'color', executionMode: 'deterministic', supported: true, note: 'supports prepare_root / sync_groups / execute_group / validate_batch / promote_batch through the same-machine official Python Resolve host; prepare_root now syncs root bins, grading timeline, and Resolve-managed groups, and promote_batch requires explicit UI confirmation' },
+        { jobType: 'color', executionMode: 'deterministic', supported: true, note: 'supports prepare_root / sync_groups / execute_group / validate_batch / promote_batch through the same-machine vendored Resolve backend; prepare_root now syncs root bins, grading timeline, and Resolve-managed groups, and promote_batch requires explicit UI confirmation' },
         { jobType: 'script', executionMode: 'deterministic', supported: true, note: 'runs only after reviewed brief is saved; advances ready_to_prepare -> ready_for_agent; final script remains agent-authored' },
         { jobType: 'timeline', executionMode: 'deterministic', supported: true, note: 'builds rough-cut-base -> segment-cut review chain; requires a configured host agent packet runner' },
         { jobType: 'export-jianying', executionMode: 'deterministic', supported: false },
@@ -185,7 +190,7 @@ async function routeRequest(
   if (configMatch && method === 'GET') {
     const projectId = decodeURIComponent(configMatch[1]!);
     const projectRoot = join(options.workspaceRoot, 'projects', projectId);
-    const [projectBrief, manualItinerary, scriptBrief, ingestRoots, deviceMaps, assets, chronology, colorCurrent, runtimeConfig, colorGroupSnapshots] = await Promise.all([
+    const [projectBrief, manualItinerary, scriptBrief, ingestRoots, deviceMaps, assets, chronology, colorCurrent, runtimeConfig, colorGroupSnapshots, workspaceColorTransformPresets] = await Promise.all([
       loadProjectBriefConfig(projectRoot),
       loadManualItineraryConfig(projectRoot),
       loadScriptBriefConfig(projectRoot),
@@ -196,13 +201,15 @@ async function routeRequest(
       loadColorCurrent(projectRoot),
       loadRuntimeConfig(projectRoot),
       loadColorGroupsSnapshots(projectRoot),
+      loadColorTransformPresetsConfig(options.workspaceRoot).catch(() => ({ profiles: {}, discoveredPresets: {} })),
     ]);
     const colorWorkspace = buildColorWorkspaceState({
       projectId,
+      projectName: projectBrief.name,
       projectRoots: ingestRoots.roots,
       deviceProjectMap: deviceMaps.projects[projectId],
       colorCurrent,
-      runtimeConfig,
+      resolveBackend: inspectResolveColorBackend(),
       groupSnapshotsByRootId: colorGroupSnapshots,
     });
     const ingestRootSummaries = buildIngestRootSummaries(ingestRoots.roots, assets, chronology);
@@ -217,6 +224,7 @@ async function routeRequest(
       ingestRoots,
       colorCurrent: colorWorkspace.colorCurrent,
       colorRoots: colorWorkspace.colorRoots,
+      workspaceColorTransformPresets,
       ingestRootSummaries,
       pharosStatus: buildProjectPharosAssetStatus(pharosContext, projectRoot),
       pharosContext,
@@ -260,7 +268,14 @@ async function routeRequest(
     const projectRoot = join(options.workspaceRoot, 'projects', projectId);
     const payload = await readJsonBody(request);
     const saved = await saveProjectBriefConfig(projectRoot, payload);
-    await syncWorkspaceProjectBrief(options.workspaceRoot, projectId);
+    const [{ ingestRoots }, assets, reports, existing] = await Promise.all([
+      syncWorkspaceProjectBrief(options.workspaceRoot, projectId),
+      loadAssets(projectRoot),
+      loadAssetReports(projectRoot),
+      loadChronology(projectRoot),
+    ]);
+    await writeChronology(projectRoot, buildMediaChronology(assets, reports, existing, ingestRoots));
+    await touchProjectUpdatedAt(projectRoot);
     sendJson(response, 200, saved);
     return;
   }
@@ -496,6 +511,7 @@ async function startJob(
         includedTripIds: (await loadProjectBriefConfig(projectRoot).catch(() => null))?.pharos?.includedTripIds ?? [],
       }).catch(() => null),
       workspaceStyleSources: await loadStyleSourcesConfig(workspaceRoot).catch(() => null),
+      workspaceColorTransformPresets: await loadColorTransformPresetsConfig(workspaceRoot).catch(() => null),
     }, null, 2));
   } else if (payload.jobType === 'style-analysis') {
     await writeFileSafe(configSnapshotPath, JSON.stringify({

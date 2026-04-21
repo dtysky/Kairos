@@ -1,8 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
-import { basename, dirname, join, resolve } from 'node:path';
+import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { basename, dirname, extname, join, relative, resolve } from 'node:path';
+import { z } from 'zod';
 import {
   IColorCurrent,
+  IColorTransformPresetsConfig,
   IManualCaptureTimeOverrideConfig,
   IManualItineraryConfig,
   IProjectBriefConfig,
@@ -10,6 +12,7 @@ import {
   IScriptBriefConfig,
   IStyleSourcesConfig,
   type IColorCurrent as TColorCurrent,
+  type IColorTransformPresetsConfig as TColorTransformPresetsConfig,
   type IManualCaptureTimeOverrideConfig as TManualCaptureTimeOverrideConfig,
   type IManualItineraryConfig as TManualItineraryConfig,
   type IManualItinerarySegmentConfig as TManualItinerarySegmentConfig,
@@ -23,8 +26,13 @@ import {
   isManualCaptureTimeResolved,
   materializeManualCaptureTimeRow,
 } from '../modules/media/manual-capture-time-shared.js';
-import { parseProjectBrief } from './project-brief.js';
-import { buildProjectBriefWithMappings } from './project-brief-sync.js';
+import { buildProjectBriefWithMappings, parseProjectBrief } from './project-brief.js';
+import {
+  loadLegacyColorRenderPresetMap,
+  loadPersistedLegacyProjectRoots,
+  removeLegacyProjectRootFiles,
+} from './project-root-compat.js';
+import { materializeProjectBriefConfig } from './project-root-truth.js';
 import {
   buildScriptBriefTemplate,
   computeScriptBriefFingerprint,
@@ -42,6 +50,40 @@ const CMANUAL_CAPTURE_TIME_HEADING = '## 素材时间校正';
 const CSTRUCTURED_ITINERARY_HEADING = '## 结构化行程';
 const CCOMMENT_GENERATED_START = '<!-- kairos:generated-structured-itinerary:start -->';
 const CCOMMENT_GENERATED_END = '<!-- kairos:generated-structured-itinerary:end -->';
+const ILegacyProjectBriefMappingConfig = z.object({
+  rootId: z.string().optional(),
+  path: z.string().optional(),
+  rawPath: z.string().optional(),
+  description: z.string().optional(),
+  flightRecordPath: z.string().optional(),
+  enabled: z.boolean().optional(),
+  label: z.string().optional(),
+  clockOffsetMs: z.number().int().optional(),
+  priority: z.number().optional(),
+  category: z.string().optional(),
+  notes: z.array(z.string()).optional(),
+  tags: z.array(z.string()).optional(),
+  color: z.object({
+    renderPreset: z.object({
+      container: z.string().optional(),
+      videoCodec: z.string().optional(),
+      audioCodec: z.string().optional(),
+      bitrateMbps: z.number().positive().optional(),
+    }).optional(),
+    colorSpaceProfile: z.string().optional(),
+    transformPresetKey: z.string().optional(),
+  }).optional(),
+});
+const ILegacyProjectBriefConfig = z.object({
+  name: z.string().optional(),
+  description: z.string().optional(),
+  createdAt: z.string().optional(),
+  mappings: z.array(ILegacyProjectBriefMappingConfig).optional(),
+  pharos: z.object({
+    includedTripIds: z.array(z.string()).optional(),
+  }).optional(),
+  materialPatternPhrases: z.array(z.string()).optional(),
+});
 
 export function getProjectBriefConfigPath(projectRoot: string): string {
   return join(projectRoot, 'config', 'project-brief.json');
@@ -59,56 +101,105 @@ export function getWorkspaceStyleSourcesConfigPath(workspaceRoot: string): strin
   return join(workspaceRoot, 'config', 'style-sources.json');
 }
 
+export function getWorkspaceColorTransformPresetsConfigPath(workspaceRoot: string): string {
+  return join(workspaceRoot, 'config', 'color-transform-presets.json');
+}
+
+export function getWorkspaceResolveLutsRoot(workspaceRoot: string): string {
+  return join(workspaceRoot, 'config', 'luts');
+}
+
 export function getColorCurrentPath(projectRoot: string): string {
   return join(projectRoot, 'color', 'current.json');
 }
 
 export async function loadProjectBriefConfig(projectRoot: string): Promise<TProjectBriefConfig> {
-  const stored = await readJsonOrNull(getProjectBriefConfigPath(projectRoot), IProjectBriefConfig);
-  if (stored) return IProjectBriefConfig.parse(stored);
-
+  const [stored, legacyRoots, legacyRenderPresetByRootId] = await Promise.all([
+    readJsonOrNull(getProjectBriefConfigPath(projectRoot), ILegacyProjectBriefConfig),
+    loadPersistedLegacyProjectRoots(projectRoot),
+    loadLegacyColorRenderPresetMap(projectRoot),
+  ]);
+  if (stored) {
+    return IProjectBriefConfig.parse(materializeProjectBriefConfig(
+      mergeLegacyColorRenderPresets(stored, legacyRenderPresetByRootId),
+      legacyRoots.roots,
+      basename(projectRoot),
+    ));
+  }
   const raw = await readFile(join(projectRoot, 'config', 'project-brief.md'), 'utf-8').catch(() => '');
   const parsed = parseProjectBrief(raw);
-  return IProjectBriefConfig.parse({
+  return IProjectBriefConfig.parse(materializeProjectBriefConfig({
     name: parsed.name || basename(projectRoot),
     description: parsed.description,
     createdAt: parsed.createdAt,
     mappings: parsed.mappings,
     pharos: parsed.pharos,
     materialPatternPhrases: parsed.vocabulary.materialPatternPhrases,
-  });
+  }, legacyRoots.roots, basename(projectRoot)));
 }
 
 export async function saveProjectBriefConfig(
   projectRoot: string,
   config: TProjectBriefConfig,
 ): Promise<TProjectBriefConfig> {
-  const normalized = IProjectBriefConfig.parse({
-    ...config,
-    mappings: config.mappings.map(mapping => ({
-      path: mapping.path.trim(),
-      rawPath: mapping.rawPath?.trim() || undefined,
-      description: mapping.description.trim(),
-      flightRecordPath: mapping.flightRecordPath?.trim() || undefined,
-    })),
-    pharos: config.pharos
-      ? {
-        includedTripIds: (config.pharos.includedTripIds ?? [])
-          .map(tripId => tripId.trim())
-          .filter(Boolean),
-      }
-      : undefined,
-    materialPatternPhrases: (config.materialPatternPhrases ?? [])
-      .map(phrase => phrase.trim())
-      .filter(Boolean),
-  });
+  const [legacyRoots, legacyRenderPresetByRootId] = await Promise.all([
+    loadPersistedLegacyProjectRoots(projectRoot),
+    loadLegacyColorRenderPresetMap(projectRoot),
+  ]);
+  const normalized = IProjectBriefConfig.parse(materializeProjectBriefConfig(
+    mergeLegacyColorRenderPresets(config, legacyRenderPresetByRootId),
+    legacyRoots.roots,
+    basename(projectRoot),
+  ));
   await writeJson(getProjectBriefConfigPath(projectRoot), normalized);
   await writeFile(
     join(projectRoot, 'config', 'project-brief.md'),
     buildProjectBriefWithMappings(normalized),
     'utf-8',
   );
+  await removeLegacyProjectRootFiles(projectRoot);
   return normalized;
+}
+
+function mergeLegacyColorRenderPresets<T extends {
+  mappings?: Array<{
+    rootId?: string;
+    color?: {
+      renderPreset?: {
+        container?: string;
+        videoCodec?: string;
+        audioCodec?: string;
+        bitrateMbps?: number;
+      };
+    };
+  }>;
+}>(config: T, legacyRenderPresetByRootId: Map<string, {
+  container?: string;
+  videoCodec?: string;
+  audioCodec?: string;
+  bitrateMbps?: number;
+}>): T {
+  if (!config.mappings?.length || legacyRenderPresetByRootId.size === 0) {
+    return config;
+  }
+  return {
+    ...config,
+    mappings: config.mappings.map(mapping => {
+      const legacyRenderPreset = mapping.rootId
+        ? legacyRenderPresetByRootId.get(mapping.rootId)
+        : undefined;
+      if (!legacyRenderPreset || mapping.color?.renderPreset) {
+        return mapping;
+      }
+      return {
+        ...mapping,
+        color: {
+          ...(mapping.color ?? {}),
+          renderPreset: legacyRenderPreset,
+        },
+      };
+    }),
+  };
 }
 
 export async function loadManualItineraryConfig(projectRoot: string): Promise<TManualItineraryConfig> {
@@ -222,6 +313,42 @@ export async function loadStyleSourcesConfig(
   throw new Error(`workspace style-sources.json is required: ${configPath}`);
 }
 
+export async function loadColorTransformPresetsConfig(
+  workspaceRoot: string,
+): Promise<TColorTransformPresetsConfig> {
+  const configPath = getWorkspaceColorTransformPresetsConfigPath(workspaceRoot);
+  const stored = await readJsonOrNull(configPath, IColorTransformPresetsConfig);
+  const discoveredPresets = await discoverWorkspaceColorTransformPresets(workspaceRoot);
+  return IColorTransformPresetsConfig.parse({
+    profiles: Object.fromEntries(
+      Object.entries(stored?.profiles ?? {})
+        .map(([profile, routes]) => {
+          const normalizedProfile = normalizeColorSpaceProfileKey(profile);
+          const normalizedRoutes = normalizeTransformProfileRoutes(routes);
+          if (!normalizedProfile || !normalizedRoutes || Object.keys(normalizedRoutes).length === 0) {
+            return null;
+          }
+          return [normalizedProfile, normalizedRoutes] as const;
+        })
+        .filter((entry): entry is readonly [string, Record<string, string>] => Boolean(entry)),
+    ),
+    discoveredPresets,
+  });
+}
+
+export async function saveColorTransformPresetsConfig(
+  workspaceRoot: string,
+  config: TColorTransformPresetsConfig,
+): Promise<TColorTransformPresetsConfig> {
+  const normalized = await loadColorTransformPresetsConfigFromInput(config);
+  await mkdir(dirname(getWorkspaceColorTransformPresetsConfigPath(workspaceRoot)), { recursive: true });
+  await mkdir(getWorkspaceResolveLutsRoot(workspaceRoot), { recursive: true });
+  await writeJson(getWorkspaceColorTransformPresetsConfigPath(workspaceRoot), {
+    profiles: normalized.profiles,
+  });
+  return loadColorTransformPresetsConfig(workspaceRoot);
+}
+
 export async function saveStyleSourcesConfig(
   workspaceRoot: string,
   config: TStyleSourcesConfig,
@@ -254,6 +381,147 @@ export async function saveStyleSourcesConfig(
   await syncStyleProfileFrontMatter(workspaceRoot, normalized);
   await removeStaleStyleCatalog(workspaceRoot);
   return normalized;
+}
+
+async function loadColorTransformPresetsConfigFromInput(
+  config: TColorTransformPresetsConfig,
+): Promise<TColorTransformPresetsConfig> {
+  return IColorTransformPresetsConfig.parse({
+    profiles: Object.fromEntries(
+      Object.entries(config?.profiles ?? {})
+        .map(([profile, routes]) => {
+          const normalizedProfile = normalizeColorSpaceProfileKey(profile);
+          const normalizedRoutes = normalizeTransformProfileRoutes(routes);
+          if (!normalizedProfile || !normalizedRoutes || Object.keys(normalizedRoutes).length === 0) {
+            return null;
+          }
+          return [normalizedProfile, normalizedRoutes] as const;
+        })
+        .filter((entry): entry is readonly [string, Record<string, string>] => Boolean(entry)),
+    ),
+    discoveredPresets: {},
+  });
+}
+
+async function discoverWorkspaceColorTransformPresets(
+  workspaceRoot: string,
+): Promise<Record<string, { kind: 'lut'; displayName: string; lutPath: string }>> {
+  const lutRoot = getWorkspaceResolveLutsRoot(workspaceRoot);
+  const relativeLutPaths = await listWorkspaceRelativeLutPaths(lutRoot, lutRoot);
+  const catalog: Record<string, { kind: 'lut'; displayName: string; lutPath: string }> = {};
+  for (const relativeLutPath of relativeLutPaths) {
+    const normalizedLutPath = normalizeResolveLutPath(relativeLutPath);
+    if (!normalizedLutPath || catalog[normalizedLutPath]) continue;
+    catalog[normalizedLutPath] = {
+      kind: 'lut',
+      displayName: buildDiscoveredTransformPresetLabel(normalizedLutPath),
+      lutPath: normalizedLutPath,
+    };
+  }
+  return catalog;
+}
+
+async function listWorkspaceRelativeLutPaths(
+  lutRoot: string,
+  currentDir: string,
+): Promise<string[]> {
+  const entries = await readdir(currentDir, { withFileTypes: true }).catch(error => {
+    if ((error as NodeJS.ErrnoException)?.code === 'ENOENT') return [];
+    throw error;
+  });
+  const relativePaths = await Promise.all(entries.map(async entry => {
+    const absolutePath = join(currentDir, entry.name);
+    if (entry.isDirectory()) {
+      return listWorkspaceRelativeLutPaths(lutRoot, absolutePath);
+    }
+    if (!entry.isFile() || extname(entry.name).toLowerCase() !== '.cube') {
+      return [];
+    }
+    const relativePath = normalizeRelativeLutPath(relative(lutRoot, absolutePath))
+      ?? normalizeRelativeLutPath(entry.name);
+    return relativePath ? [relativePath] : [];
+  }));
+  return relativePaths.flat().sort((left, right) => left.localeCompare(right, 'en'));
+}
+
+function buildDiscoveredTransformPresetLabel(relativeLutPath: string): string {
+  return relativeLutPath;
+}
+
+function normalizeConfigKey(value: unknown): string | undefined {
+  const trimmed = typeof value === 'string' ? value.trim() : '';
+  if (!trimmed) return undefined;
+  const normalized = trimmed
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+  return normalized || undefined;
+}
+
+function normalizeColorSpaceProfileKey(value: unknown): string | undefined {
+  const normalized = normalizeConfigKey(value);
+  if (!normalized) return undefined;
+  if (/^s-?log3$/u.test(normalized)) return 'slog3';
+  if (/^d-?log$/u.test(normalized)) return 'dlog';
+  if (/^d-?log-?m$/u.test(normalized)) return 'dlog-m';
+  if (/^hlg$/u.test(normalized)) return 'hlg';
+  if (/^rec-?709$/u.test(normalized)) return 'rec709';
+  return normalized;
+}
+
+function normalizeRelativeLutPath(value: unknown): string | undefined {
+  const trimmed = typeof value === 'string' ? value.trim() : '';
+  if (!trimmed) return undefined;
+  const normalized = trimmed
+    .replace(/\s*[\\/]+\s*/g, '/')
+    .replace(/^\/+/g, '')
+    .replace(/\/+/g, '/');
+  if (
+    !normalized
+    || normalized.startsWith('..')
+    || normalized.includes('/../')
+    || /^[a-z]:/iu.test(normalized)
+    || normalized.includes('://')
+  ) {
+    return undefined;
+  }
+  return normalized;
+}
+
+function normalizeResolveLutPath(value: unknown, options: { allowEmpty?: boolean } = {}): string | undefined {
+  const normalized = normalizeRelativeLutPath(value);
+  if (!normalized) {
+    return options.allowEmpty && typeof value === 'string' && value.trim() === ''
+      ? ''
+      : undefined;
+  }
+  return normalized.toLowerCase().endsWith('.cube')
+    ? normalized
+    : `${normalized}.cube`;
+}
+
+function normalizeTransformProfileRoutes(value: unknown): Record<string, string> | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const normalized = Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .map(([deviceKey, lutPath]) => {
+        const normalizedDeviceKey = normalizeTransformDeviceKey(deviceKey);
+        const normalizedLutPath = normalizeResolveLutPath(lutPath, { allowEmpty: true });
+        if (!normalizedDeviceKey || typeof normalizedLutPath === 'undefined') return null;
+        return [normalizedDeviceKey, normalizedLutPath] as const;
+      })
+      .filter((entry): entry is readonly [string, string] => Boolean(entry)),
+  );
+  return Object.keys(normalized).length > 0 ? normalized : undefined;
+}
+
+function normalizeTransformDeviceKey(value: unknown): string | undefined {
+  const trimmed = typeof value === 'string' ? value.trim() : '';
+  if (!trimmed) return undefined;
+  return trimmed.toLowerCase() === 'default'
+    ? 'default'
+    : trimmed;
 }
 
 export async function loadColorCurrent(projectRoot: string): Promise<TColorCurrent> {

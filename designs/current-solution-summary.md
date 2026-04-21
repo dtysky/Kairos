@@ -21,20 +21,47 @@ Kairos 当前需要区分两层：
 - 一条与主链解耦的 `DaVinci color` 独立增强链路
   - 当前已经有最小 `/color` 控制面与项目级 `color/` runtime/archive store
   - 当前 `/color` 会自动发现已配置 `rawPath` 的素材根，派生约定命名与阻塞状态
-  - 当前 `/color` 已支持 official Python host 驱动的 root/group action 链：`prepare_root -> sync_groups -> execute_group -> validate_batch -> promote_batch`
-  - 当前 `/color` 的长期用户配置已收口到项目级 root 注册表上的最小 `color.renderPreset`
+  - 当前 `/color` 已支持同机 vendored Resolve backend 驱动的 root/group action 链：`prepare_root -> sync_groups -> execute_group -> validate_batch -> promote_batch`
+  - 当前 `/color` 的长期用户配置已收口到 `config/project-brief.json` root mapping 上的最小 `color.renderPreset + color.colorSpaceProfile + color.transformPresetKey`
+    - `color.colorSpaceProfile` 当前正式表示“技术输入类型”，不是 creative look，也不再承载 gamut/primaries 细节
+    - workspace 级默认技术预设映射当前正式放在 `config/color-transform-presets.json`
+    - workspace 级 LUT 资产当前正式放在 `config/luts/`
+  - 当前 `/color` 的页面结构正式收口为 `Root 摘要 -> 当前 Root Hero -> 所有 Root 常驻可编辑配置 -> Groups -> 次级诊断/归档`
+  - 当前 `/color` 要求所有 root 的用户可编辑项都直接可见且同页可维护；折叠区只保留只读技术信息和 batch/archive 历史
   - `resolveProjectName / rootNamespace / gradingTimelineName / Group naming` 当前全部按约定生成，只展示，不允许用户配置
+    - Resolve Project 名称固定为 `${projectBrief.name} [Color]`
+    - root namespace / grading timeline 固定从 root `label` 派生
   - 当前 `color/current.json` 承载 root/group current truth，`color/groups/<rootId>.json` 承载 formal host group snapshot，`color/batches/<batchId>/...` 承载 batch archive
-  - 当前 `prepare_root` 已正式承担 `rawLocalPath -> Resolve root bin / grading timeline / explainable technical Groups` 的真实同步，不再只是轻量容器占位
+  - 当前 `prepare_root` 已正式承担 `rawLocalPath -> Resolve root bin / grading timeline / Resolve Groups` 的真实同步，不再只是轻量容器占位
+    - grading timeline 必须按该 root 的 dominant `(width, height, fps)` 规格创建
+    - 自动 Group 只使用创意标签语义：`log / gyro / lowlight`
+    - `log` 先读素材显式真值，再回退 root `color.colorSpaceProfile`
+    - 素材真值优先级固定为 `素材自身 metadata > XML > root fallback`
+    - DJI 若解析不到明确技术输入，正式结果就是 `unknown`，不得强行识别成 `dlog-m`
+  - 当前 `prepare_root` 在 Resolve-side mutation 前，还会先做当前 root 的 LUT preflight：
+    - 只同步当前 root 实际引用到且 workspace 中存在同路径文件的 LUT
+    - 同步源固定为 `config/luts/<relative-path>`
+    - 同步目标固定为当前设备 Resolve 默认 LUT 目录
+    - 同步策略固定为“只补缺，不覆盖、不删除”
+  - 当前默认技术预设是 Group Pre-Clip 的技术底板，不是 creative look：
+    - root `color.transformPresetKey` 优先于 workspace profile/device 映射，并直接表示 Resolve LUT 路径
+    - `config/color-transform-presets.json` 维护 `profile -> { deviceFamily/default -> Resolve LUT path }`
+    - 用户不手写 regex；设备族归一与别名匹配由 Kairos 根据素材 metadata 真值内置处理
+    - 当前 round 只支持 LUT preset
+    - 仅在 Kairos 新建或空白 Group Pre-Clip 图上自动应用
+    - 已有用户 grade 的 Group 必须跳过，不允许被默认底板覆盖
   - 当前 Group 真相完全以 Resolve 为准；`/color` 通过 `sync_groups` 镜像最新现状，同步后的非空 Group 直接进入 `ready`
   - 当前 `/color` 进入页面或切换项目时会自动执行 Resolve host preflight，并把结果正式缓存到 `color/current.json.hostPreflight`
   - 当前 `prepare_root / sync_groups / execute_group` 都先经过 preflight 守卫；宿主 blocked 或 render preset 不受支持时，动作会在 Resolve 变更前直接失败
   - 当前 color host 的正式兼容下限为 `DaVinci Resolve Studio >= 18.5`；低版本 / 非 Studio 是硬阻塞，部分兼容降级则显示为 `degraded`
   - 当前 host retry 只覆盖短时 host/app 故障，不覆盖缺配置、缺素材、render preset 不支持、validation fail 等语义错误
-  - 当前 `validate_batch` 已扩展为写入 summary 统计和 top-level blockingReasons，供 `/color` 直接显示 validation 失败原因
+  - 当前 `execute_group` 的正式输出命名收口为 `sourceStem + targetExtension`；宿主必须用真实落盘路径写入 manifest
+  - 当前 `validate_batch` 已扩展为写入 summary 统计、top-level blockingReasons 和 warning-only 诊断，供 `/color` 直接显示 validation 失败原因
+    - `capturedAt / GPS` 仍是硬门槛
+    - `create_time` 当前是 warning-only
   - 当前 `promote_batch` 需要在 `/color` 上做一次显式确认后才允许覆盖受管输出
   - 当前 `/color` 继续保持单页，但已正式消费 `color/batches/<batchId>/plan|manifest|validation|promote` 归档，并按 root 展示可折叠的 `Host Diagnostics / Recent Batches / Validation Failures / Promote History`
-  - 当前 Resolve 宿主路线已经冻结并落地为“同机 vendored official Python Scripting API sidecar”，不再把 MCP 作为 color 主线
+  - 当前 Resolve 宿主路线已经冻结并落地为“同机 vendored Resolve backend（`vendor/resolve-color-host/` + fixed `.venv`）”，不再把 MCP 作为 color 主线
 - 一组运行在 Agent 环境中的工作流技能，以及面向不同 NLE / 导出目标的适配层
 
 这意味着：
@@ -43,6 +70,8 @@ Kairos 当前需要区分两层：
 - 当前的 `Node.js core + Agent skill` 是对正式流程的临时承载形态，而不是正式流程本身的唯一边界
 - 仓库根目录的 `AGENTS.md` 是当前 agent 启动时的统一引导入口，用来收口必读文档、rules、skills 和正式运行入口
 - 本地运行与任务编排当前已收口到 `Supervisor + React console (apps/kairos-console/)`
+- 只要改动影响正式本地运行入口、Supervisor API、`/analyze`、`/style`、`/color` 或 `apps/kairos-console/`，验证就必须同时包含根仓 `pnpm build` 与 `npm --prefix apps/kairos-console run build`
+- 根仓 `pnpm build` 不能被视为已经覆盖 React console 产物；前端 bundle 必须显式重建
 - `素材分析` 与 `风格分析` 在当前控制台里直接以主路由展示监控，而不是再跳一次独立监控入口
 - `DaVinci color` 当前也已有独立主路由 `/color`，并已收口为最小 `renderPreset` 配置 + root/group action 执行面 + runtime/archive 状态面；正式顺序为 `Prepare Root -> Sync Groups -> Execute -> Validate -> Promote`
 - `/color` 当前还会主动暴露宿主诊断与 batch 归档，而不是把宿主问题和 validation 历史藏在动作失败或磁盘 JSON 里
@@ -75,7 +104,7 @@ Kairos 当前需要区分两层：
 - 未来如果引入桌面 UI 或更多 provider / adapter，应建立在这套协议与项目模型上，而不是推翻它
 - 某些项目会直接消费调色后的素材版本而非原始素材；因此主链面向的是“当前采用的素材版本”，而不是固定绑定“永远使用原始素材”
 - `project-brief` 的路径映射块当前可选带 `原始路径`
-  - 该字段会同步到 ingest root `rawPath` 与设备映射 `rawLocalPath`
+  - 该字段会同步到 `project-brief.json` 单真值 mapping 的 `rawPath` 与设备映射 `rawLocalPath`
   - 若 `rawPath` 位于当前素材目录内部，主链 ingest 会显式排除该子树，避免 raw 与当前输出被一起纳入正式扫描
 
 ## 1.1 当前变更纪律
@@ -162,7 +191,7 @@ flowchart TD
 - 真实本机目录路径不写死进项目，而是通过设备本地映射维护
 - 保留素材真值，例如 `capturedAt`、`rawTags`、基础 metadata
 - 项目内跨设备时钟漂移当前正式收口为 root 级配置，而不是继续让 timeline 末端猜顺序：
-  - `config/project-roots.json` 的 `IMediaRoot.clockOffsetMs?` 表示该素材 root 在当前项目内的统一时钟偏移
+  - `config/project-brief.json` 对应 mapping 的 `clockOffsetMs?` 表示该素材 root 在当前项目内的统一时钟偏移
   - 单素材 `captureTimeOverrides` 继续存在，但只作为 root offset 之上的例外层
   - `media/chronology.json` 的 `sortCapturedAt` 是正式时序真值，优先级为 `capturedAtOverride -> asset.capturedAt + root.clockOffsetMs -> asset.capturedAt`
 - 对同目录同 basename 的保护音轨 sidecar，当前正式策略是作为视频资产上的 `protectionAudio` 绑定信息记录，而不是重新放开通用独立音频 ingest
@@ -469,8 +498,9 @@ flowchart TD
 
 ### 当前稳定约定
 
-- `config/project-roots.json` 保存项目级素材 root 注册表，而不是设备绝对路径
-- `config/project-brief.md` 是路径映射的人类输入入口；进入 Ingest 前会同步到 `config/project-roots.json` 与 `config/device-media-maps.local.json`
+- `config/project-brief.json` 保存项目级素材 root 单真值，而不是设备绝对路径
+- `config/project-brief.md` 是路径映射的人类镜像；进入 Ingest 前会同步 `config/device-media-maps.local.json` 与兼容 ingest root 读模型
+- `/ingest-gps` 当前正式用结构化 `素材 Root` 编辑器维护这些路径映射，并在保存时写入 `config/project-brief.json` 后回写 `config/project-brief.md`
 - `config/project-brief.json`、`config/manual-itinerary.json`、`script/script-brief.json` 与 `config/review-queue.json` 是当前项目级 Console 结构化事实源
 - `config/style-sources.json` 是当前 **Workspace 级** Console 结构化事实源
 - `project-brief` 的每个 root block 允许额外声明 `飞行记录路径`，作为该素材根目录对应的 DJI FlightRecord 日志入口；实际识别不依赖强文件名，而是以文件头/可解析性为准
@@ -568,7 +598,7 @@ flowchart TD
   - 手动修正优先填写 `正确时间 + 时区`
   - `正确日期` 优先用 `suggestedDate` 自动补齐；没有时再用当前时间在所选时区对应的本地日期；只有仍无法确定时才需要用户手填
   - `/ingest-gps` 现在应并列提供两层修正 UI：单素材 `CaptureTimeOverridesEditor` 与 root 级设备时钟偏移 editor
-  - root 级 editor 使用 `±HH:MM:SS` 输入，并保存到 matching ingest root 的 `clockOffsetMs`
+  - root 级 editor 使用 `±HH:MM:SS` 输入，并保存到 matching `project-brief` root mapping 的 `clockOffsetMs`
 
 ### 空间
 

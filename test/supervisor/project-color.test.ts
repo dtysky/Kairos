@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import * as mediaProbe from '../../src/modules/media/probe.js';
 import * as captureTime from '../../src/modules/media/capture-time.js';
+import * as resolveExecutor from '../../src/modules/color/resolve-executor.js';
 import {
   ColorPrepBlockedError,
   ProjectColorBlockedError,
@@ -81,18 +82,12 @@ function createFakeExecutor(): IColorExecutor {
           syncedAt: '2026-04-19T09:58:00.000Z',
           timelineName: input.gradingTimelineName,
           groups: [{
-            groupKey: 'tech-day',
-            displayName: 'Day Group',
+            groupKey: 'slog3-gyro',
+            displayName: 'slog3 + gyro',
             clipKeys: ['day1/A001.mov', 'day2/A001.mov'],
             hostSummary: {
               origin: 'prepare_root',
-              fingerprint: 'cameraModel=sony::codecFamily=h265::resolution=3840x2160::fps=30',
-              signals: {
-                cameraModel: 'Sony A7S3',
-                codecFamily: 'h265',
-                resolution: '3840x2160',
-                fps: '30',
-              },
+              creativeTags: ['slog3', 'gyro'],
             },
           }],
         },
@@ -107,18 +102,12 @@ function createFakeExecutor(): IColorExecutor {
         syncedAt: '2026-04-19T10:00:00.000Z',
         timelineName: input.gradingTimelineName,
         groups: [{
-          groupKey: 'tech-day',
-          displayName: 'Day Group',
+          groupKey: 'slog3-gyro',
+          displayName: 'slog3 + gyro',
           clipKeys: ['day1/A001.mov', 'day2/A001.mov'],
           hostSummary: {
             origin: 'resolve',
-            fingerprint: 'cameraModel=sony::codecFamily=h265::resolution=3840x2160::fps=30',
-            signals: {
-              cameraModel: 'Sony A7S3',
-              codecFamily: 'h265',
-              resolution: '3840x2160',
-              fps: '30',
-            },
+            creativeTags: ['slog3', 'gyro'],
           },
         }, {
           groupKey: 'empty-group',
@@ -189,9 +178,6 @@ describe('project color actions', () => {
     const projectId = 'project-color-prepare-snapshot';
     const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Project Color Prepare Snapshot');
     const rawLocalPath = join(projectRoot, '.fixtures', 'raw-camera');
-    await writeFile(join(projectRoot, 'config', 'runtime.json'), JSON.stringify({
-      resolveColorPythonPath: '/usr/bin/python3',
-    }, null, 2));
     await mkdir(join(rawLocalPath, 'day1'), { recursive: true });
     await writeFile(join(rawLocalPath, 'day1', 'A001.mov'), 'raw-a', 'utf-8');
 
@@ -233,10 +219,7 @@ describe('project color actions', () => {
       loadColorCurrent(projectRoot),
     ]);
     expect(snapshot?.groups[0]?.hostSummary.origin).toBe('prepare_root');
-    expect(snapshot?.groups[0]?.hostSummary.signals).toMatchObject({
-      cameraModel: 'Sony A7S3',
-      resolution: '3840x2160',
-    });
+    expect(snapshot?.groups[0]?.hostSummary.creativeTags).toEqual(['slog3', 'gyro']);
     expect(current.roots[0]?.groupSyncStatus).toBe('ready');
     expect(current.roots[0]?.groups[0]?.status).toBe('ready');
   });
@@ -249,9 +232,6 @@ describe('project color actions', () => {
     const currentLocalPath = join(projectRoot, '.fixtures', 'current-camera');
     const rawClipPathA = join(rawLocalPath, 'day1', 'A001.mov');
     const rawClipPathB = join(rawLocalPath, 'day2', 'A001.mov');
-    await writeFile(join(projectRoot, 'config', 'runtime.json'), JSON.stringify({
-      resolveColorPythonPath: '/usr/bin/python3',
-    }, null, 2));
     await mkdir(join(rawLocalPath, 'day1'), { recursive: true });
     await mkdir(join(rawLocalPath, 'day2'), { recursive: true });
     await writeFile(rawClipPathA, 'raw-a', 'utf-8');
@@ -304,7 +284,7 @@ describe('project color actions', () => {
       projectId,
       rootId: 'root-camera',
       action: 'execute_group',
-      groupKey: 'tech-day',
+      groupKey: 'slog3-gyro',
       jobId: 'job-color-execute',
       executor,
     });
@@ -336,18 +316,14 @@ describe('project color actions', () => {
       loadColorCurrent(projectRoot),
     ]);
 
-    expect(groupsSnapshot?.groups[0]?.groupKey).toBe('tech-day');
-    expect(groupsSnapshot?.groups[0]?.hostSummary.fingerprint).toContain('cameraModel=sony');
-    expect(groupsSnapshot?.groups[0]?.hostSummary.signals).toMatchObject({
-      cameraModel: 'Sony A7S3',
-      codecFamily: 'h265',
-    });
+    expect(groupsSnapshot?.groups[0]?.groupKey).toBe('slog3-gyro');
+    expect(groupsSnapshot?.groups[0]?.hostSummary.creativeTags).toEqual(['slog3', 'gyro']);
     expect(plan?.entries.map(entry => entry.rawRelativePath)).toEqual(['day1/A001.mov', 'day2/A001.mov']);
     expect(manifest?.managedOutputSet).toEqual(['day1/A001.mp4', 'day2/A001.mp4']);
     expect(validation?.status).toBe('pass');
     expect(promote?.status).toBe('completed');
-    expect(current.roots[0]?.groups.find(group => group.groupKey === 'tech-day')?.status).toBe('promoted');
-    expect(current.roots[0]?.groups.find(group => group.groupKey === 'tech-day')?.lastPromotedBatchId).toBe(executeResult.batchId);
+    expect(current.roots[0]?.groups.find(group => group.groupKey === 'slog3-gyro')?.status).toBe('promoted');
+    expect(current.roots[0]?.groups.find(group => group.groupKey === 'slog3-gyro')?.lastPromotedBatchId).toBe(executeResult.batchId);
     expect(current.roots[0]?.groups.find(group => group.groupKey === 'empty-group')?.status).toBe('blocked');
     await expect(access(join(currentLocalPath, 'day1', 'A001.mp4'))).resolves.toBeUndefined();
     await expect(access(join(currentLocalPath, 'day2', 'A001.mp4'))).resolves.toBeUndefined();
@@ -371,9 +347,6 @@ describe('project color actions', () => {
     const projectId = 'project-color-blocked';
     const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Project Color Blocked');
 
-    await writeFile(join(projectRoot, 'config', 'runtime.json'), JSON.stringify({
-      resolveColorPythonPath: '/usr/bin/python3',
-    }, null, 2));
     await saveIngestRoots(projectRoot, {
       roots: [{
         id: 'root-camera',
@@ -408,9 +381,6 @@ describe('project color actions', () => {
     const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Project Color Render Preset');
     const rawLocalPath = join(projectRoot, '.fixtures', 'raw-camera');
     const currentLocalPath = join(projectRoot, '.fixtures', 'current-camera');
-    await writeFile(join(projectRoot, 'config', 'runtime.json'), JSON.stringify({
-      resolveColorPythonPath: '/usr/bin/python3',
-    }, null, 2));
     await mkdir(join(rawLocalPath, 'day1'), { recursive: true });
     await writeFile(join(rawLocalPath, 'day1', 'A001.mov'), 'raw-a', 'utf-8');
 
@@ -427,6 +397,7 @@ describe('project color actions', () => {
             audioCodec: 'pcm',
             bitrateMbps: 240,
           },
+          colorSpaceProfile: 'dlog-m',
         },
       }],
     });
@@ -439,7 +410,15 @@ describe('project color actions', () => {
     });
 
     mockColorMetadata();
-    const captured: Array<{ renderPreset: unknown; rawLocalPath: string }> = [];
+    const captured: Array<{
+      renderPreset: unknown;
+      rawLocalPath: string;
+      clips: Array<Record<string, unknown>>;
+    }> = [];
+    const prepared: Array<{
+      timelineSpec: { width: number; height: number; fps: number } | undefined;
+      clips: Array<Record<string, unknown>>;
+    }> = [];
     const executor: IColorExecutor = {
       async preflight() {
         return {
@@ -462,6 +441,10 @@ describe('project color actions', () => {
         };
       },
       async prepareRoot(input) {
+        prepared.push({
+          timelineSpec: input.timelineSpec,
+          clips: input.clips as Array<Record<string, unknown>>,
+        });
         return {
           resolveProjectName: input.resolveProjectName,
           gradingTimelineName: input.gradingTimelineName,
@@ -472,13 +455,12 @@ describe('project color actions', () => {
             syncedAt: '2026-04-19T09:58:00.000Z',
             timelineName: input.gradingTimelineName,
             groups: [{
-              groupKey: 'tech-day',
-              displayName: 'Day Group',
+              groupKey: 'dlog-m',
+              displayName: 'dlog-m',
               clipKeys: ['day1/A001.mov'],
               hostSummary: {
                 origin: 'prepare_root',
-                fingerprint: 'codecFamily=prores',
-                signals: { codecFamily: 'prores' },
+                creativeTags: ['dlog-m'],
               },
             }],
           },
@@ -490,8 +472,8 @@ describe('project color actions', () => {
           syncedAt: '2026-04-19T10:00:00.000Z',
           timelineName: input.gradingTimelineName,
           groups: [{
-            groupKey: 'tech-day',
-            displayName: 'Day Group',
+            groupKey: 'dlog-m',
+            displayName: 'dlog-m',
             clipKeys: ['day1/A001.mov'],
             hostSummary: {},
           }],
@@ -501,6 +483,7 @@ describe('project color actions', () => {
         captured.push({
           renderPreset: input.renderPreset,
           rawLocalPath: input.rawLocalPath,
+          clips: input.clips,
         });
         const outputPath = join(input.stagingRoot, 'day1', 'A001.mov');
         await mkdir(join(input.stagingRoot, 'day1'), { recursive: true });
@@ -536,11 +519,43 @@ describe('project color actions', () => {
       projectId,
       rootId: 'root-camera',
       action: 'execute_group',
-      groupKey: 'tech-day',
+      groupKey: 'dlog-m',
       jobId: 'job-color-execute',
       executor,
     });
 
+    expect(prepared).toEqual([{
+      timelineSpec: {
+        width: 3840,
+        height: 2160,
+        fps: 30,
+      },
+      clips: [{
+        rawRelativePath: 'day1/A001.mov',
+        sourceAbsolutePath: join(rawLocalPath, 'day1', 'A001.mov'),
+        sourceStem: 'A001',
+        capturedAt: '2026-02-01T10:00:00.000Z',
+        width: 3840,
+        height: 2160,
+        fps: 30,
+        codec: 'prores',
+        rawTags: {
+          createdate: '2026:02:01 10:00:00',
+          gpslatitude: '40.1',
+          gpslongitude: '120.2',
+        },
+        detectedProfile: undefined,
+        effectiveProfile: 'dlog-m',
+        profileSource: 'root-fallback',
+        logProfile: 'dlog-m',
+        gyro: undefined,
+        lowlight: undefined,
+        deviceFamilyKeys: [],
+        resolvedTransformPresetKey: undefined,
+        resolvedLutRelativePath: undefined,
+        resolvedLutAbsolutePath: undefined,
+      }],
+    }]);
     expect(captured).toEqual([{
       renderPreset: {
         container: 'mov',
@@ -549,6 +564,14 @@ describe('project color actions', () => {
         bitrateMbps: 240,
       },
       rawLocalPath,
+      clips: [{
+        rawRelativePath: 'day1/A001.mov',
+        sourceAbsolutePath: join(rawLocalPath, 'day1', 'A001.mov'),
+        sourceStem: 'A001',
+        width: 3840,
+        height: 2160,
+        fps: 30,
+      }],
     }]);
   });
 
@@ -560,9 +583,6 @@ describe('project color actions', () => {
     const currentLocalPath = join(projectRoot, '.fixtures', 'current-camera');
     const rawClipPathA = join(rawLocalPath, 'day1', 'A001.mov');
     const rawClipPathB = join(rawLocalPath, 'day2', 'A001.mov');
-    await writeFile(join(projectRoot, 'config', 'runtime.json'), JSON.stringify({
-      resolveColorPythonPath: '/usr/bin/python3',
-    }, null, 2));
     await mkdir(join(rawLocalPath, 'day1'), { recursive: true });
     await mkdir(join(rawLocalPath, 'day2'), { recursive: true });
     await writeFile(rawClipPathA, 'raw-a', 'utf-8');
@@ -602,7 +622,7 @@ describe('project color actions', () => {
       projectId,
       rootId: 'root-camera',
       action: 'execute_group',
-      groupKey: 'tech-day',
+      groupKey: 'slog3-gyro',
       executor,
     });
     await validateProjectColorBatch({
@@ -617,7 +637,7 @@ describe('project color actions', () => {
       projectId,
       rootId: 'root-camera',
       action: 'execute_group',
-      groupKey: 'tech-day',
+      groupKey: 'slog3-gyro',
       executor,
     });
     expect(batch2.batchId).not.toBe(batch1.batchId);
@@ -631,10 +651,18 @@ describe('project color actions', () => {
     })).rejects.toBeInstanceOf(ProjectColorBlockedError);
   });
 
-  it('returns blocked preflight when runtime python path is missing', async () => {
+  it('returns blocked preflight when the vendored resolve backend is missing', async () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-color-preflight-missing-runtime';
     const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Project Color Preflight Missing Runtime');
+    vi.spyOn(resolveExecutor, 'inspectResolveColorBackend').mockReturnValue({
+      available: false,
+      backendRoot: '/vendor/resolve-color-host',
+      pythonPath: '/vendor/resolve-color-host/.venv/bin/python',
+      scriptPath: '/vendor/resolve-color-host/resolve-color-host.py',
+      missingPaths: ['/vendor/resolve-color-host/.venv/bin/python'],
+      blockingReason: '未找到 vendored Resolve backend。 期望脚本：/vendor/resolve-color-host/resolve-color-host.py；期望 Python：/vendor/resolve-color-host/.venv/bin/python。 请先在 /vendor/resolve-color-host 下准备固定 backend 与 .venv。',
+    });
     await saveIngestRoots(projectRoot, {
       roots: [{
         id: 'root-camera',
@@ -651,7 +679,7 @@ describe('project color actions', () => {
     });
 
     expect(result.status).toBe('blocked');
-    expect(result.blockingReasons[0]).toContain('resolveColorPythonPath');
+    expect(result.blockingReasons[0]).toContain('vendored Resolve backend');
     const current = await loadColorCurrent(projectRoot);
     expect(current.hostPreflight?.status).toBe('blocked');
   });
@@ -660,9 +688,6 @@ describe('project color actions', () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-color-preflight-app-down';
     const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Project Color Preflight App Down');
-    await writeFile(join(projectRoot, 'config', 'runtime.json'), JSON.stringify({
-      resolveColorPythonPath: '/usr/bin/python3',
-    }, null, 2));
 
     const result = await preflightProjectColorHost({
       workspaceRoot,
@@ -695,9 +720,6 @@ describe('project color actions', () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-color-preflight-degraded';
     const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Project Color Preflight Degraded');
-    await writeFile(join(projectRoot, 'config', 'runtime.json'), JSON.stringify({
-      resolveColorPythonPath: '/usr/bin/python3',
-    }, null, 2));
 
     const result = await preflightProjectColorHost({
       workspaceRoot,
@@ -746,9 +768,6 @@ describe('project color actions', () => {
     const projectId = 'project-color-retry-success';
     const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Project Color Retry Success');
     const rawLocalPath = join(projectRoot, '.fixtures', 'raw-camera');
-    await writeFile(join(projectRoot, 'config', 'runtime.json'), JSON.stringify({
-      resolveColorPythonPath: '/usr/bin/python3',
-    }, null, 2));
     await mkdir(join(rawLocalPath, 'day1'), { recursive: true });
     await writeFile(join(rawLocalPath, 'day1', 'A001.mov'), 'raw-a', 'utf-8');
     await saveIngestRoots(projectRoot, {
@@ -817,9 +836,6 @@ describe('project color actions', () => {
     const projectId = 'project-color-retry-semantic';
     const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Project Color Retry Semantic');
     const rawLocalPath = join(projectRoot, '.fixtures', 'raw-camera');
-    await writeFile(join(projectRoot, 'config', 'runtime.json'), JSON.stringify({
-      resolveColorPythonPath: '/usr/bin/python3',
-    }, null, 2));
     await mkdir(join(rawLocalPath, 'day1'), { recursive: true });
     await writeFile(join(rawLocalPath, 'day1', 'A001.mov'), 'raw-a', 'utf-8');
     await saveIngestRoots(projectRoot, {
@@ -885,9 +901,6 @@ describe('project color actions', () => {
     const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Project Color Render Support Blocked');
     const rawLocalPath = join(projectRoot, '.fixtures', 'raw-camera');
     const currentLocalPath = join(projectRoot, '.fixtures', 'current-camera');
-    await writeFile(join(projectRoot, 'config', 'runtime.json'), JSON.stringify({
-      resolveColorPythonPath: '/usr/bin/python3',
-    }, null, 2));
     await mkdir(join(rawLocalPath, 'day1'), { recursive: true });
     await writeFile(join(rawLocalPath, 'day1', 'A001.mov'), 'raw-a', 'utf-8');
     await saveIngestRoots(projectRoot, {
@@ -968,7 +981,7 @@ describe('project color actions', () => {
       projectId,
       rootId: 'root-camera',
       action: 'execute_group',
-      groupKey: 'tech-day',
+      groupKey: 'slog3-gyro',
       executor,
     })).rejects.toBeInstanceOf(ProjectColorBlockedError);
     expect(executeCalls).toBe(0);

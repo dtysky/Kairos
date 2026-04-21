@@ -16,6 +16,10 @@ alwaysApply: true
 - `scripts/kairos-supervisor.* start` 只启动 `Supervisor + React console`
 - `scripts/kairos-supervisor.* start` 不会自动启动 ML
 - `scripts/kairos-supervisor.* start` 不会自动恢复旧 job
+- 只要改动影响正式本地运行入口、Supervisor API、`/analyze`、`/style`、`/color` 或 `apps/kairos-console/` 前端，验证就必须同时包含：
+  - 根仓 `pnpm build`
+  - `npm --prefix apps/kairos-console run build`
+- 不要把根仓 `pnpm build` 误当成已经覆盖 React console 产物；前端 bundle 必须单独构建后，才能宣称 UI 变更已完成验证
 
 ## Live Job Truth
 

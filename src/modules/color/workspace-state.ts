@@ -8,14 +8,17 @@ import type {
   IDeviceMediaProjectMap,
   IMediaRoot,
 } from '../../protocol/schema.js';
+import type { IResolveColorBackendStatus } from './resolve-executor.js';
 
 export interface IColorRootCurrentView extends IColorRootCurrent {
   label?: string;
   description?: string;
   path?: string;
   localPath?: string;
+  currentPath?: string;
   rawPath?: string;
   rawLocalPath?: string;
+  displayRawPath?: string;
   hostPreflight?: IColorHostPreflight;
 }
 
@@ -25,12 +28,16 @@ export interface IColorRootWorkspaceSummary {
   description?: string;
   path?: string;
   localPath?: string;
+  currentPath?: string;
   rawPath: string;
   rawLocalPath?: string;
+  displayRawPath?: string;
   resolveProjectName: string;
   rootNamespace: string;
   gradingTimelineName: string;
   renderPreset: IColorRenderPreset;
+  colorSpaceProfile?: string;
+  transformPresetKey?: string;
   blockingReasons: string[];
   hostPreflight?: IColorHostPreflight;
   groupsSnapshot?: IColorGroupsSnapshotFile;
@@ -54,12 +61,11 @@ export interface IColorWorkspaceState {
 
 interface IBuildColorWorkspaceStateInput {
   projectId: string;
+  projectName?: string;
   projectRoots: IMediaRoot[];
   deviceProjectMap?: IDeviceMediaProjectMap;
   colorCurrent: IColorCurrent;
-  runtimeConfig?: {
-    resolveColorPythonPath?: string;
-  };
+  resolveBackend?: IResolveColorBackendStatus;
   groupSnapshotsByRootId?: Record<string, IColorGroupsSnapshotFile>;
 }
 
@@ -74,7 +80,7 @@ export function buildColorWorkspaceState(
 ): IColorWorkspaceState {
   const deviceRootById = new Map((input.deviceProjectMap?.roots ?? []).map(root => [root.rootId, root]));
   const colorCurrentByRootId = new Map(input.colorCurrent.roots.map(root => [root.rootId, root]));
-  const hostPreflight = materializeHostPreflight(input.colorCurrent.hostPreflight, input.runtimeConfig);
+  const hostPreflight = materializeHostPreflight(input.colorCurrent.hostPreflight, input.resolveBackend);
 
   const materializedRoots = input.projectRoots
     .filter(root => Boolean(trimmed(root.rawPath)))
@@ -83,10 +89,11 @@ export function buildColorWorkspaceState(
       const deviceRoot = deviceRootByRootId(deviceRootById, root.id);
       const groupsSnapshot = input.groupSnapshotsByRootId?.[root.id];
       const renderPreset = materializeRenderPreset(root.color?.renderPreset);
+      const colorSpaceProfile = trimmed(root.color?.colorSpaceProfile);
+      const transformPresetKey = trimmed(root.color?.transformPresetKey);
       const derivedBlockers = dedupeStrings([
         !trimmed(deviceRoot?.localPath) ? '当前设备未配置 current localPath，无法在本机覆盖当前素材目录。' : '',
         !trimmed(deviceRoot?.rawLocalPath) ? '当前设备未配置 rawLocalPath，无法在本机访问原始素材。' : '',
-        !trimmed(root.path) ? '当前 root 未配置 current path，无法确定正式覆盖目录。' : '',
         typeof renderPreset.bitrateMbps !== 'number'
           ? '未配置 root 级 renderPreset.bitrateMbps，后续 execute_group 无法启动。'
           : '',
@@ -113,14 +120,20 @@ export function buildColorWorkspaceState(
         pendingPromoteGroupKey: storedCurrent?.pendingPromoteGroupKey,
         pendingPromoteBatchId: storedCurrent?.pendingPromoteBatchId,
         latestBatchId: storedCurrent?.latestBatchId,
+        hostSummary: isPlainObject(storedCurrent?.hostSummary) ? storedCurrent.hostSummary : {},
         groups: groups.map(group => group.current),
-        blockingReasons: dedupeStrings([...(storedCurrent?.blockingReasons ?? []), ...derivedBlockers]),
+        blockingReasons: dedupeStrings([
+          ...filterLegacyResolveRuntimeBlockers(storedCurrent?.blockingReasons ?? []),
+          ...derivedBlockers,
+        ]),
         label: trimmed(root.label),
         description: trimmed(root.description),
         path: trimmed(root.path),
         localPath: trimmed(deviceRoot?.localPath),
+        currentPath: trimmed(deviceRoot?.localPath) ?? trimmed(root.path),
         rawPath: trimmed(root.rawPath),
         rawLocalPath: trimmed(deviceRoot?.rawLocalPath),
+        displayRawPath: trimmed(deviceRoot?.rawLocalPath) ?? trimmed(root.rawPath),
         hostPreflight,
       };
 
@@ -130,12 +143,16 @@ export function buildColorWorkspaceState(
         description: currentView.description,
         path: currentView.path,
         localPath: currentView.localPath,
+        currentPath: currentView.currentPath,
         rawPath: currentView.rawPath ?? '',
         rawLocalPath: currentView.rawLocalPath,
-        resolveProjectName: deriveColorResolveProjectName(input.projectId),
-        rootNamespace: deriveColorRootNamespace(root.id),
-        gradingTimelineName: deriveColorGradingTimelineName(root.id),
+        displayRawPath: currentView.displayRawPath,
+        resolveProjectName: deriveColorResolveProjectName(input.projectName, input.projectId),
+        rootNamespace: deriveColorRootNamespace(currentView.label, root.id),
+        gradingTimelineName: deriveColorGradingTimelineName(currentView.label, root.id),
         renderPreset,
+        colorSpaceProfile,
+        transformPresetKey,
         blockingReasons: currentView.blockingReasons,
         hostPreflight,
         groupsSnapshot,
@@ -266,7 +283,7 @@ function materializeRenderPreset(renderPreset?: {
 
 function materializeHostPreflight(
   hostPreflight: IColorCurrent['hostPreflight'],
-  runtimeConfig?: { resolveColorPythonPath?: string },
+  resolveBackend?: IResolveColorBackendStatus,
 ): IColorHostPreflight | undefined {
   const normalized = hostPreflight
     ? {
@@ -275,17 +292,17 @@ function materializeHostPreflight(
       productName: trimmed(hostPreflight.productName),
       versionString: trimmed(hostPreflight.versionString),
       isStudio: hostPreflight.isStudio,
-      warnings: dedupeStrings(hostPreflight.warnings ?? []),
-      blockingReasons: dedupeStrings(hostPreflight.blockingReasons ?? []),
+      warnings: dedupeStrings(filterLegacyResolveRuntimeBlockers(hostPreflight.warnings ?? [])),
+      blockingReasons: dedupeStrings(filterLegacyResolveRuntimeBlockers(hostPreflight.blockingReasons ?? [])),
       renderSupport: hostPreflight.renderSupport,
     } satisfies IColorHostPreflight
     : undefined;
   if (normalized) return normalized;
-  if (!trimmed(runtimeConfig?.resolveColorPythonPath)) {
+  if (resolveBackend && !resolveBackend.available) {
     return {
       status: 'blocked',
       warnings: [],
-      blockingReasons: ['未配置 config/runtime.json resolveColorPythonPath，无法调用 official Python Resolve host。'],
+      blockingReasons: resolveBackend.blockingReason ? [resolveBackend.blockingReason] : [],
     };
   }
   return {
@@ -299,14 +316,46 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value != null && !Array.isArray(value);
 }
 
-export function deriveColorResolveProjectName(projectId: string): string {
-  return `kairos__${projectId}`;
+export function deriveColorResolveProjectName(projectName?: string, projectId?: string): string {
+  const base = trimmed(projectName) ?? trimmed(projectId);
+  return normalizeResolveDisplayName(
+    `${base || 'Kairos Project'} [Color]`,
+    'Kairos Project [Color]',
+  );
 }
 
-export function deriveColorRootNamespace(rootId: string): string {
-  return `root__${rootId}`;
+export function deriveColorRootNamespace(rootLabel?: string, rootId?: string): string {
+  const base = trimmed(rootLabel) ?? trimmed(rootId);
+  return normalizeResolveDisplayName(
+    `${base || 'Root'} [Color Root]`,
+    'Root [Color Root]',
+  );
 }
 
-export function deriveColorGradingTimelineName(rootId: string): string {
-  return `root__${rootId}__grading`;
+export function deriveColorGradingTimelineName(rootLabel?: string, rootId?: string): string {
+  const base = trimmed(rootLabel) ?? trimmed(rootId);
+  return normalizeResolveDisplayName(
+    `${base || 'Root'} [Color]`,
+    'Root [Color]',
+  );
+}
+
+function normalizeResolveDisplayName(value: string, fallback: string): string {
+  const sanitized = value
+    .replace(/[\\/:*?"<>|]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return (sanitized || fallback).slice(0, 120);
+}
+
+function filterLegacyResolveRuntimeBlockers(values: string[]): string[] {
+  return values.filter(value => {
+    const normalized = value.trim();
+    if (!normalized) return false;
+    return !(
+      normalized.includes('resolveColorPythonPath')
+      || normalized.includes('resolveColorScriptApiRoot')
+      || normalized.includes('config/runtime.json')
+    );
+  });
 }

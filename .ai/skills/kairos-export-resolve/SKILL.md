@@ -2,7 +2,7 @@
 name: kairos-export-resolve
 description: >-
   Export a Kairos KTEP timeline to DaVinci Resolve using the same-machine
-  official Python Resolve host path when available. Use when the user wants a
+  vendored Resolve backend when available. Use when the user wants a
   Resolve timeline from the same KTEP document or asks for DaVinci/Resolve export.
 ---
 
@@ -22,10 +22,11 @@ description: >-
 ## 前置条件
 
 - `timeline/current.json` 存在且通过 KTEP 校验
-- 宿主环境已具备同机 official Python Resolve host 条件
-  - 可调用的 Python
+- 宿主环境已具备同机 vendored Resolve backend 条件
+  - `vendor/resolve-color-host/.venv` 可调用
   - Resolve Studio
-  - 可访问的 Resolve Scripting API
+  - 可访问默认 Resolve Scripting API 位置
+  - 如本轮 Resolve 操作依赖 workspace-managed LUT，`config/color-transform-presets.json` 的 `profile -> { deviceFamily/default -> Resolve LUT path }` 映射，以及 `config/luts/` 中可选的同路径 `.cube` 文件已按当前 root 需求准备好
 - 目标机器上可访问时间线引用的素材路径
 - Resolve 端具备对应脚本 / Scripting API 能力
 
@@ -58,11 +59,14 @@ description: >-
 ## 建议流程
 
 1. 读取并校验 `timeline/current.json`
-2. 检查 official Python Resolve host 是否已配置并可调用
-3. 创建或选择 Resolve 项目与时间线
-4. 导入素材并按 `KTEP` 片段摆放
-5. 视目标环境决定是否创建字幕轨或导出 `SRT`
-6. 返回 Resolve 项目 / 时间线信息和日志
+2. 检查 vendored Resolve backend 是否已就绪并可调用
+3. 若本轮会依赖默认技术 LUT，先确认 workspace LUT 资产与当前设备 Resolve 默认 LUT 目录同步状态
+4. 创建或选择 Resolve 项目与时间线
+  - Color 路径默认使用 `${projectBrief.name} [Color]`
+  - root grading timeline 默认使用 root `label` 派生的人类可读命名
+5. 导入素材并按 `KTEP` 片段摆放
+6. 视目标环境决定是否创建字幕轨或导出 `SRT`
+7. 返回 Resolve 项目 / 时间线信息和日志
 
 ## 推荐产出
 
@@ -73,11 +77,12 @@ description: >-
 
 ## 失败时优先检查
 
-- official Python Resolve host 是否已配置
+- vendored Resolve backend 是否已就绪
+- workspace `config/luts/` 与 Resolve 默认 LUT 目录是否已完成缺失补齐
 - 目标素材路径是否可访问
 - 当前宿主是否真的具备 Resolve 自动化能力
 
 ## 说明
 
 - 这个 skill 是 Phase 5 的 Resolve 目标实现
-- 如果当前设备尚未配置 official Python Resolve host，本 skill 应明确指出阻塞条件
+- 如果当前设备尚未准备好 vendored Resolve backend，本 skill 应明确指出阻塞条件

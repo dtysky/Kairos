@@ -1,6 +1,7 @@
 export { readJson, readJsonOrNull, writeJson } from './writer.js';
 export {
   buildProjectBriefTemplate,
+  buildProjectBriefWithMappings,
   parseProjectBrief,
   normalizeProjectBriefLocalPath,
   type IProjectBriefTemplateInput,
@@ -22,13 +23,11 @@ export {
 } from './script-brief.js';
 export {
   syncProjectBriefMappings,
-  buildProjectBriefWithMappings,
   type ISyncProjectBriefInput,
   type ISyncProjectBriefResult,
 } from './project-brief-sync.js';
 export {
   initProject,
-  getProjectRootsPath,
   loadManifest,
   loadProject,
   loadProjectRoots,
@@ -41,6 +40,9 @@ export {
   type IProjectRoots,
   type IIngestRoots,
 } from './project.js';
+export {
+  getProjectRootsPath,
+} from './project-root-compat.js';
 export {
   IKairosProgress,
   IKairosProgressStep,
@@ -262,6 +264,8 @@ export {
   getManualItineraryConfigPath,
   getScriptBriefConfigPath,
   getWorkspaceStyleSourcesConfigPath,
+  getWorkspaceColorTransformPresetsConfigPath,
+  getWorkspaceResolveLutsRoot,
   getColorCurrentPath,
   loadProjectBriefConfig,
   saveProjectBriefConfig,
@@ -271,6 +275,8 @@ export {
   saveScriptBriefConfig,
   loadStyleSourcesConfig,
   saveStyleSourcesConfig,
+  loadColorTransformPresetsConfig,
+  saveColorTransformPresetsConfig,
   loadColorCurrent,
   saveColorCurrent,
 } from './workspace-config.js';

@@ -27,49 +27,75 @@ Current stable pipeline:
   - 高置信 `exif` / `manual` 不会再因为文件名日期不同而被硬阻塞
   - 弱时间源会同时校验项目时间线、文件名完整时间戳漂移，以及已纳入 `Pharos` trip 的整体时间边界
   - 阻塞项通过 Console 卡片式“素材时间校正”处理，而不是要求用户直接回填 Markdown 表格
+  - `/ingest-gps` 的 `素材 Root` 当前通过结构化表单维护；保存时会把 `config/project-brief.json` 作为单真值落盘，并自动回写 `config/project-brief.md` 镜像，正常操作不要求用户手改 Markdown
   - 用户当前可直接在 UI 中选择 `保持当前 / 使用建议 / 手动修正`
   - 手动修正默认只要求 `正确时间 + 时区`；`正确日期` 会优先按 `suggestedDate`，否则按当前时间在该时区对应的本地日期自动补齐
   - 项目内跨设备时钟漂移当前也通过这里正式修正：`/ingest-gps` 会并列提供 root 级“设备时钟偏移”面板与单素材 `captureTimeOverrides`
-  - root 级偏移写入 `config/project-roots.json` 的 `clockOffsetMs`；单素材 `captureTimeOverrides` 继续作为更高优先级例外层
+  - root 级偏移当前写入 `config/project-brief.json` 对应 mapping 的 `clockOffsetMs`；单素材 `captureTimeOverrides` 继续作为更高优先级例外层
   - `media/chronology.json` 的 `sortCapturedAt` 当前是 Script / Timeline 共享的唯一时序真值：优先 `capturedAtOverride`，其次 `asset.capturedAt + root.clockOffsetMs`，最后才回退原始 `asset.capturedAt`
   - `project-brief` 的每个路径映射块现在可选声明 `原始路径`
-  - `原始路径` 会同步到项目级 root 注册表 `config/project-roots.json` 的 `rawPath` 与 `config/device-media-maps.local.json` 的 `rawLocalPath`
+  - `原始路径` 会同步到 `project-brief.json` 单真值 mapping 的 `rawPath`，并同步到 `config/device-media-maps.local.json` 的 `rawLocalPath`
   - 若 `rawPath/rawLocalPath` 位于当前素材目录内部，主链 ingest 扫描会显式排除该子树；没有 `rawPath` 的 root 不受影响
 - official local runtime / monitor entry is `Supervisor + React console (apps/kairos-console/)`
   - `http://127.0.0.1:8940/analyze` is the official Analyze monitor route
   - `http://127.0.0.1:8940/style` is the official workspace-level Style monitor route
   - `http://127.0.0.1:8940/color` is the current independent DaVinci color route for root-level render preset, action control, and runtime/archive status
+  - if a change affects the official local runtime, Supervisor API, `/analyze`, `/style`, `/color`, or `apps/kairos-console/`, verification is incomplete until both `pnpm build` and `npm --prefix apps/kairos-console run build` succeed
+  - do not treat root `pnpm build` as covering the React console bundle; the console assets must be built explicitly
   - `scripts/kairos-supervisor.* start` only starts `Supervisor + React console`; it does not start ML and does not resume old jobs
   - `progress.json` is only a durable progress cache; a phase is live only when Supervisor still has the matching active job
   - console refresh now prefers the project that currently owns the latest active project-scoped job before falling back to the last locally remembered selection
   - when multiple projects share the same display name, the selector must surface `projectId` to avoid mixing monitor context
   - top-level workflow jobs now always reconcile to `ML stopped` after completion, failure, manual stop, or interruption
 - independent `DaVinci color` chain now uses a minimal project-root + runtime/archive split:
-  - formal root config now lives on the shared project root registry `config/project-roots.json`; `color` only uses the per-root `color.renderPreset`
-  - `resolveProjectName / rootNamespace / gradingTimelineName` are derived by convention, shown in `/color`, and are no longer editable config
+  - formal root config now lives in the shared `config/project-brief.json` mappings; `color` only consumes each root mapping上的最小 `color.renderPreset + color.colorSpaceProfile + color.transformPresetKey`
+  - `color.colorSpaceProfile` is now a technical-input key, not a creative look or full gamut/primaries descriptor
+  - workspace-level default transform mapping now lives in `config/color-transform-presets.json`, and workspace-managed LUT assets now live in `config/luts/`
+  - `resolveProjectName / rootNamespace / gradingTimelineName` are derived by convention and stay read-only; `/color` keeps them in advanced/debug info instead of editable config
   - `projects/<projectId>/color/current.json` stores the current root/group runtime truth
   - `projects/<projectId>/color/groups/<rootId>.json` stores the latest formal host-synced Group snapshot for that root
   - `projects/<projectId>/color/batches/<batchId>/plan.json|manifest.json|validation.json|promote.json` store batch/runtime archive
-  - current `/color` auto-discovers roots that already have `rawPath`, shows derived Resolve naming plus blockers such as missing `rawLocalPath` or missing `renderPreset.bitrateMbps`
-  - current `/color` still only lets users edit the root-level `renderPreset`; it does not expose raw JSON fallback or naming edits
-  - current `/color` supports an official Python-host-backed Supervisor `color` action chain:
+  - current `/color` auto-discovers roots that already have `rawPath`, and the page now follows `Root 摘要 -> 当前 Root Hero -> 所有 Root 常驻可编辑配置 -> Groups -> 次级诊断/归档`
+  - current `/color` keeps all user-editable root parameters visible without opening details; every root's `当前素材路径 / 原始素材路径` and `renderPreset + colorSpaceProfile + transformPresetKey` stay on the same page, while derived Resolve naming stays in advanced/debug info
+  - current `/color` only lets users edit the root-level `renderPreset + colorSpaceProfile + transformPresetKey`; it does not expose raw JSON fallback or naming edits
+  - current `/color` supports a same-machine vendored Resolve backend Supervisor `color` action chain:
     - `prepare_root`
     - `sync_groups`
     - `execute_group`
     - `validate_batch`
     - `promote_batch`
-  - current `prepare_root` is the formal Resolve-side root sync step: it mirrors `rawLocalPath` into root bins, ensures the long-lived grading timeline contains executable clips, and creates or reuses Resolve Groups from explainable technical signals
+  - current `prepare_root` is the formal Resolve-side root sync step: it mirrors `rawLocalPath` into root bins, creates the grading timeline with that root's dominant `(width, height, fps)` spec, auto-syncs any missing same-path workspace LUTs referenced by the current root into the device Resolve default LUT directory when they exist under `config/luts/`, and creates or reuses Resolve Groups from source-truth / root-fallback creative tags
+  - current Resolve naming is human-readable by convention:
+    - Resolve Project: `${projectBrief.name} [Color]`
+    - root namespace / grading timeline: derived from root `label`
   - current Group truth is Resolve-managed: users may keep adjusting Groups in Resolve, and `/color` only mirrors them back through `sync_groups`; synced non-empty Groups become `ready` directly and there is no extra `/color` confirm step
+  - current automatic Groups are creative-tag based, not technical-fingerprint based:
+    - `log`: explicit clip truth first, then root `color.colorSpaceProfile`
+    - `gyro`: explicit metadata truth only
+    - `lowlight`: conservative high-confidence heuristic only
+    - Group key is the normalized Resolve group name slug
+  - current automatic technical transform resolution follows:
+    - clip truth priority is `source metadata > XML > root.color.colorSpaceProfile fallback`
+    - unresolved DJI private metadata remains `unknown`; Kairos must not force `dlog-m`
+    - root-level `color.transformPresetKey` overrides workspace profile/device mapping and is interpreted as a direct Resolve LUT path
+    - otherwise `/color` resolves `effective profile + normalized device family -> config/color-transform-presets.json`
+    - `config/color-transform-presets.json` now persists `profile -> { deviceFamily/default -> Resolve LUT path }`
+    - users do not write regex in config; Kairos normalizes metadata truth into built-in device families such as `Mavic4` or `Action6`
+    - current round only supports workspace-managed `.cube` LUTs, not PowerGrade / CST presets
+  - current Group Pre-Clip auto transform is a technical normalization bed, not a creative look:
+    - it only applies on Kairos-created or otherwise blank Group Pre-Clip graphs
+    - existing non-empty user grade must not be overwritten
+    - if copied LUTs are still invisible to the current Resolve session, `prepare_root` blocks and asks the user to refresh LUT lists or restart Resolve
   - current `/color` now auto-runs Resolve host preflight on page entry / project switch, caches the result at `color/current.json.hostPreflight`, and lets users manually `Recheck Host`
   - current `prepare_root / sync_groups / execute_group` always guard on that preflight first; blocked host state or unsupported render presets fail before Resolve-side mutation
   - current Resolve host compatibility floor is `DaVinci Resolve Studio >= 18.5`; non-Studio / lower versions are formal blockers, while partial legacy-call compatibility is surfaced as `degraded`
   - current host retry only covers transient host/app failures with bounded backoff; semantic color failures do not auto-retry
-  - current `execute_group` writes `plan + manifest` with staging paths that mirror `sourceRelativePath`, `validate_batch` writes formal batch validation, and `promote_batch` only covers the manifest-declared managed output set
-  - current `validate_batch` writes formal summary counts plus top-level blocking reasons, so `/color` can surface validation failures without reopening raw JSON
+  - current `execute_group` writes `plan + manifest` with real staging output paths, forces per-clip render `width / height / fps`, and normalizes final filenames to `sourceStem + targetExtension`
+  - current `validate_batch` writes formal summary counts, top-level blocking reasons, and warning-only diagnostics; `capturedAt / GPS` remain hard gates while `create_time` is warning-only
   - current `promote_batch` requires an explicit `/color` confirmation before it can overwrite managed outputs in the current media root
   - current `/color` stays single-page but now consumes `color/batches/<batchId>/...` as formal read-only archive, with foldable `Host Diagnostics / Recent Batches / Validation Failures / Promote History`
-  - current runtime host requirements live in `config/runtime.json` as `resolveColorPythonPath` and optional `resolveColorScriptApiRoot`
-  - Resolve host automation now uses same-machine official Python Scripting API, not MCP
+  - current Resolve host automation uses the fixed same-machine vendored backend at `vendor/resolve-color-host/` with a fixed `.venv` convention
+  - Resolve host automation now uses the same-machine vendored backend around the official Python Scripting API, not MCP
 - reusable style assets now live at workspace scope, not project scope:
   - `config/styles/` stores the shared style library
   - `config/style-sources.json` stores the shared style-source manifest and is the only structured style index

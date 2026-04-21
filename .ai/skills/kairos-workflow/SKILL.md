@@ -46,7 +46,8 @@ Kairos 将旅拍素材转化为可编辑时间线。流程分为 1 个准备阶�
 - 当前 Group 真相以 Resolve 为准；用户可直接在 Resolve 中调整 Group，再通过 `/color` 的 `sync_groups` 回写最新现状；不存在额外 `Confirm Groups` 步骤
 - `/color` 当前进入页面或切换项目时会自动执行 host preflight，并允许用户手动 `Recheck Host`
 - 当前 `prepare_root / sync_groups / execute_group` 都必须先通过 host preflight；若宿主 blocked 或当前 render preset 不受支持，应在 Resolve 变更前直接失败
-- `/color` 当前继续保持单页，但 root 卡片会正式展示可折叠的 `Host Diagnostics / Recent Batches / Validation Failures / Promote History`
+- `/color` 当前继续保持单页，但页面信息架构正式收口为 `Root 摘要 -> 当前 Root Hero -> 所有 Root 常驻可编辑配置 -> Groups -> 次级诊断/归档`
+- `/color` 上所有 root 的用户可编辑项都必须保持在主信息流中直接可见且同页可维护；折叠区只保留只读的 `Host Diagnostics / Recent Batches / Validation Failures / Promote History` 与技术调试信息
 - 当前 color 的长期配置只保留项目级 root 上的 `color.renderPreset`；不要再把 `resolveProjectName / rootNamespace / gradingTimelineName / bootstrap Group` 当成用户配置项
 - `scripts/kairos-supervisor.* start` 只会启动 `Supervisor + React console`；不会自动启动 ML，也不会恢复旧 job
 - `progress.json` 是 durable progress cache，不是 live job 证据
@@ -119,7 +120,7 @@ await initWorkspaceProject(
 初始化后会自动生成：
 - `config/project-brief.md`
 
-这个文件是给用户自然语言填写项目说明和素材路径映射的入口。后续应先提示用户按下面这种模板补充：
+正常情况下，用户应优先在 `/ingest-gps` 用结构化 `素材 Root` 编辑器维护这些字段；保存时会把 `config/project-brief.json` 作为单真值落盘，并自动回写 `config/project-brief.md` 镜像。如果没有 Console 可用，再按下面这种模板直接补：
 
 ```text
 路径：
@@ -132,15 +133,15 @@ F:\你的原始素材目录（可选，仅 `/color` 使用）
 主机位，风景、步行、口播都有
 ```
 
-用户填完 `project-brief.md` 后，不要手工再抄一遍配置；应把它当成路径映射的输入源，同步到：
-- `config/project-roots.json`
+用户填完 `project-brief.md` 后，不要手工再抄一遍配置；应把它当成路径映射的人类镜像，并同步成：
+- `config/project-brief.json`
 - `config/device-media-maps.local.json`
 
 如果某个 root 配了 `原始路径`，它会进一步同步到 `rawPath/rawLocalPath`。
 当 `rawPath` 位于当前素材目录内部时，Ingest 必须显式排除该 raw 子树，避免把 raw 与当前输出一起纳入主链扫描。
 
 如果下一步就是跑 Ingest，优先直接调用 `ingestWorkspaceProjectMedia()`；当前实现会在检测到
-`project-brief.md` 已配置路径映射时，先自动同步一次再继续扫描。
+`project-brief` 已配置路径映射时，先自动同步一次再继续扫描。
 
 如果当前平台是 Windows，并且后续流程涉及媒体分析或导出，在初始化阶段还应先检查 Windows 原生
 `ffmpeg / ffprobe` 是否存在。优先使用当前平台的原生版本；如果没有自动探测到，先要求在项目的
@@ -151,7 +152,6 @@ F:\你的原始素材目录（可选，仅 `/color` 使用）
 ```
 project/
 ├── config/
-│   ├── project-roots.json   # ← initProject 创建（空 roots）
 │   ├── project-brief.md     # ← initProject 创建（项目说明 + 路径映射模板）
 ├── gps/
 │   ├── tracks/              # ← initProject 创建（项目级 GPX 目录）

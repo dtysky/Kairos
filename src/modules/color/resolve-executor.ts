@@ -1,13 +1,19 @@
 import { execFile, type ExecFileOptionsWithStringEncoding } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import type {
+  EColorSourceProfile,
   IColorHostPreflight,
   IColorGroupsSnapshotFile,
   IColorRenderPreset,
 } from '../../protocol/schema.js';
+import type {
+  IResolveLutSyncSummary,
+  TColorProfileSource,
+} from './transform-presets.js';
 
 const exec = promisify(execFile);
 
@@ -25,6 +31,12 @@ export interface IColorExecutorPrepareRootInput {
   gradingTimelineName: string;
   rawPath: string;
   rawLocalPath: string;
+  timelineSpec?: {
+    width: number;
+    height: number;
+    fps: number;
+  };
+  lutSyncSummary?: IResolveLutSyncSummary;
   clips: IColorExecutorClipInput[];
 }
 
@@ -52,12 +64,23 @@ export interface IColorExecutorSyncGroupsResult extends IColorGroupsSnapshotFile
 export interface IColorExecutorClipInput {
   rawRelativePath: string;
   sourceAbsolutePath: string;
+  sourceStem: string;
   capturedAt?: string;
   width?: number;
   height?: number;
   fps?: number;
   codec?: string;
   rawTags?: Record<string, string>;
+  detectedProfile?: EColorSourceProfile;
+  effectiveProfile?: string;
+  profileSource?: TColorProfileSource;
+  logProfile?: EColorSourceProfile;
+  gyro?: boolean;
+  lowlight?: boolean;
+  deviceFamilyKeys?: string[];
+  resolvedTransformPresetKey?: string;
+  resolvedLutRelativePath?: string;
+  resolvedLutAbsolutePath?: string;
 }
 
 export interface IColorExecutorExecuteGroupInput {
@@ -72,6 +95,10 @@ export interface IColorExecutorExecuteGroupInput {
   clips: Array<{
     rawRelativePath: string;
     sourceAbsolutePath: string;
+    sourceStem: string;
+    width?: number;
+    height?: number;
+    fps?: number;
   }>;
 }
 
@@ -102,15 +129,24 @@ export interface IColorExecutor {
 }
 
 export interface IResolveColorExecutorConfig {
+  backendRoot?: string;
   pythonPath?: string;
-  scriptApiRoot?: string;
   scriptPath?: string;
   workingDirectory?: string;
   timeoutMs?: number;
 }
 
+export interface IResolveColorBackendStatus {
+  available: boolean;
+  backendRoot: string;
+  pythonPath: string;
+  scriptPath: string;
+  missingPaths: string[];
+  blockingReason?: string;
+}
+
 export class ResolveColorExecutorUnavailableError extends Error {
-  constructor(message = 'Color Resolve host requires config/runtime.json resolveColorPythonPath') {
+  constructor(message = inspectResolveColorBackend().blockingReason ?? '未找到 vendored Resolve backend。') {
     super(message);
     this.name = 'ResolveColorExecutorUnavailableError';
   }
@@ -180,12 +216,11 @@ export class PythonResolveColorExecutor implements IColorExecutor {
     input: unknown;
   }): Promise<T> {
     const pythonPath = resolveColorPythonInvocation(this.config);
-    const scriptPath = resolveColorScriptPath(this.config.scriptPath);
+    const scriptPath = resolveColorScriptPath(this.config.scriptPath, this.config.backendRoot);
     const requestRoot = await mkdtemp(join(tmpdir(), 'kairos-resolve-color-'));
     const requestPath = join(requestRoot, 'request.json');
     await writeFile(requestPath, JSON.stringify({
       operation: payload.operation,
-      scriptApiRoot: this.config.scriptApiRoot?.trim() || undefined,
       input: payload.input,
     }, null, 2), 'utf-8');
 
@@ -213,21 +248,68 @@ export class PythonResolveColorExecutor implements IColorExecutor {
 export function resolveColorPythonInvocation(config: IResolveColorExecutorConfig = {}): string {
   const explicit = config.pythonPath?.trim();
   if (!explicit) {
-    throw new ResolveColorExecutorUnavailableError(
-      'Color Resolve host requires config/runtime.json resolveColorPythonPath.',
-    );
+    const backend = inspectResolveColorBackend(config.backendRoot);
+    if (!backend.available) {
+      throw new ResolveColorExecutorUnavailableError(backend.blockingReason);
+    }
+    return backend.pythonPath;
   }
   return explicit;
 }
 
-export function resolveColorScriptPath(scriptPath?: string): string {
-  return resolve(scriptPath ?? join(process.cwd(), 'scripts', 'resolve-color-host.py'));
+export function resolveColorBackendRoot(backendRoot?: string): string {
+  return resolve(backendRoot ?? join(process.cwd(), 'vendor', 'resolve-color-host'));
+}
+
+export function getVendoredResolveColorPythonPath(backendRoot = resolveColorBackendRoot()): string {
+  return process.platform === 'win32'
+    ? join(backendRoot, '.venv', 'Scripts', 'python.exe')
+    : join(backendRoot, '.venv', 'bin', 'python');
+}
+
+export function resolveColorScriptPath(scriptPath?: string, backendRoot?: string): string {
+  return resolve(scriptPath ?? join(resolveColorBackendRoot(backendRoot), 'resolve-color-host.py'));
+}
+
+export function inspectResolveColorBackend(backendRoot?: string): IResolveColorBackendStatus {
+  const resolvedBackendRoot = resolveColorBackendRoot(backendRoot);
+  const pythonPath = getVendoredResolveColorPythonPath(resolvedBackendRoot);
+  const scriptPath = resolveColorScriptPath(undefined, resolvedBackendRoot);
+  const missingPaths = [scriptPath, pythonPath].filter(path => !existsSync(path));
+
+  return {
+    available: missingPaths.length === 0,
+    backendRoot: resolvedBackendRoot,
+    pythonPath,
+    scriptPath,
+    missingPaths,
+    blockingReason: missingPaths.length > 0
+      ? buildMissingResolveColorBackendMessage({
+        backendRoot: resolvedBackendRoot,
+        pythonPath,
+        scriptPath,
+      })
+      : undefined,
+  };
 }
 
 function resolveColorWorkingDirectory(config: IResolveColorExecutorConfig): string {
   return config.workingDirectory?.trim()
     ? resolve(config.workingDirectory)
-    : dirname(resolveColorScriptPath(config.scriptPath));
+    : dirname(resolveColorScriptPath(config.scriptPath, config.backendRoot));
+}
+
+function buildMissingResolveColorBackendMessage(paths: {
+  backendRoot: string;
+  pythonPath: string;
+  scriptPath: string;
+}): string {
+  return (
+    '未找到 vendored Resolve backend。'
+    + ` 期望脚本：${paths.scriptPath}；`
+    + `期望 Python：${paths.pythonPath}。`
+    + ` 请先在 ${paths.backendRoot} 下准备固定 backend 与 .venv。`
+  );
 }
 
 function parseResolveHostPayload<T>(raw: string): T {

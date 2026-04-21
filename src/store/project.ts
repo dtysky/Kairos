@@ -3,7 +3,6 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import {
   IColorCurrent,
-  IColorConfig,
   IStoreManifest,
   IMediaRoot,
   IKtepProject,
@@ -11,9 +10,13 @@ import {
 import { readJson, readJsonOrNull, writeJson } from './writer.js';
 import { z } from 'zod';
 import { buildProjectBriefTemplate } from './project-brief.js';
+import { loadPersistedLegacyProjectRoots } from './project-root-compat.js';
+import { mediaRootsToProjectBriefMappings, projectBriefToMediaRoots } from './project-root-truth.js';
 import {
-  writeScriptBriefTemplate,
-} from './script-brief.js';
+  loadProjectBriefConfig,
+  saveProjectBriefConfig,
+} from './workspace-config.js';
+import { writeScriptBriefTemplate } from './script-brief.js';
 
 const CDIRS = [
   'config',
@@ -42,14 +45,6 @@ const CDIRS = [
 const IProjectRoots = z.object({ roots: z.array(IMediaRoot) });
 export type IProjectRoots = z.infer<typeof IProjectRoots>;
 export type IIngestRoots = IProjectRoots;
-
-export function getProjectRootsPath(root: string): string {
-  return join(root, 'config', 'project-roots.json');
-}
-
-function getLegacyIngestRootsPath(root: string): string {
-  return join(root, 'config', 'ingest-roots.json');
-}
 
 const IRuntimeConfig = z.object({
   ffmpegPath: z.string().optional(),
@@ -88,8 +83,6 @@ const IRuntimeConfig = z.object({
   jianyingDraftRoot: z.string().optional(),
   jianyingPythonPath: z.string().optional(),
   jianyingPyProjectRoot: z.string().optional(),
-  resolveColorPythonPath: z.string().optional(),
-  resolveColorScriptApiRoot: z.string().optional(),
 });
 export type IRuntimeConfig = z.infer<typeof IRuntimeConfig>;
 
@@ -119,8 +112,6 @@ export async function initProject(
   };
   await writeJson(join(root, 'store/manifest.json'), manifest);
 
-  const projectRoots: IProjectRoots = { roots: [] };
-  await writeJson(getProjectRootsPath(root), projectRoots);
   await writeJson(join(root, 'color/current.json'), IColorCurrent.parse({ roots: [] }));
 
   await writeFile(
@@ -156,23 +147,32 @@ export async function saveIngestRoots(root: string, ingestRoots: IIngestRoots): 
 }
 
 export async function loadProjectRoots(root: string): Promise<IProjectRoots> {
-  const stored = await readJsonOrNull(getProjectRootsPath(root), IProjectRoots);
-  const legacyStored = await readJsonOrNull(getLegacyIngestRootsPath(root), IProjectRoots);
-  const storedRoots = normalizeProjectRoots(stored ?? { roots: [] });
-  const legacyRoots = normalizeProjectRoots(legacyStored ?? { roots: [] });
-  const normalized = normalizeProjectRoots({
-    roots: [
-      ...storedRoots.roots,
-      ...legacyRoots.roots.filter(legacyRoot => !storedRoots.roots.some(rootItem => rootItem.id === legacyRoot.id)),
-    ],
-  });
-  return applyLegacyColorRenderPresetMigration(root, normalized);
+  const [projectBrief, legacyRoots] = await Promise.all([
+    loadProjectBriefConfig(root).catch(() => null),
+    loadPersistedLegacyProjectRoots(root),
+  ]);
+  if (projectBrief?.mappings?.length) {
+    return IProjectRoots.parse({
+      roots: projectBriefToMediaRoots(projectBrief),
+    });
+  }
+  return IProjectRoots.parse(legacyRoots);
 }
 
 export async function saveProjectRoots(root: string, projectRoots: IProjectRoots): Promise<IProjectRoots> {
-  const normalized = normalizeProjectRoots(projectRoots);
-  await writeJson(getProjectRootsPath(root), normalized);
-  return normalized;
+  const currentBrief = await loadProjectBriefConfig(root).catch(() => null);
+  const project = currentBrief ? null : await loadProject(root).catch(() => null);
+  const savedBrief = await saveProjectBriefConfig(root, {
+    name: currentBrief?.name ?? project?.name ?? 'Untitled Project',
+    description: currentBrief?.description,
+    createdAt: currentBrief?.createdAt ?? project?.createdAt,
+    mappings: mediaRootsToProjectBriefMappings(projectRoots.roots, currentBrief?.mappings),
+    pharos: currentBrief?.pharos,
+    materialPatternPhrases: currentBrief?.materialPatternPhrases ?? [],
+  });
+  return IProjectRoots.parse({
+    roots: projectBriefToMediaRoots(savedBrief),
+  });
 }
 
 export async function loadRuntimeConfig(root: string): Promise<IRuntimeConfig> {
@@ -203,83 +203,4 @@ function getRuntimeConfigCandidates(root: string): string[] {
   }
 
   return [...new Set(candidates)];
-}
-
-function normalizeProjectRoots(projectRoots: IProjectRoots): IProjectRoots {
-  return IProjectRoots.parse({
-    roots: projectRoots.roots.map(root => normalizeProjectRoot(root)),
-  });
-}
-
-function normalizeProjectRoot(root: IMediaRoot): IMediaRoot {
-  const renderPreset = root.color?.renderPreset;
-  const normalizedRenderPreset = renderPreset && (
-    renderPreset.container?.trim()
-    || renderPreset.videoCodec?.trim()
-    || renderPreset.audioCodec?.trim()
-    || typeof renderPreset.bitrateMbps === 'number'
-  )
-    ? {
-      container: renderPreset.container?.trim() || undefined,
-      videoCodec: renderPreset.videoCodec?.trim() || undefined,
-      audioCodec: renderPreset.audioCodec?.trim() || undefined,
-      bitrateMbps: renderPreset.bitrateMbps,
-    }
-    : undefined;
-
-  return {
-    ...root,
-    path: root.path?.trim() || undefined,
-    rawPath: root.rawPath?.trim() || undefined,
-    label: root.label?.trim() || undefined,
-    description: root.description?.trim() || undefined,
-    notes: root.notes?.map(note => note.trim()).filter(Boolean),
-    tags: root.tags?.map(tag => tag.trim()).filter(Boolean),
-    color: normalizedRenderPreset
-      ? { renderPreset: normalizedRenderPreset }
-      : undefined,
-  };
-}
-
-async function applyLegacyColorRenderPresetMigration(
-  root: string,
-  projectRoots: IProjectRoots,
-): Promise<IProjectRoots> {
-  const legacyConfig = await readJsonOrNull(join(root, 'color', 'config.json'), IColorConfig);
-  if (!legacyConfig?.roots?.length) {
-    return projectRoots;
-  }
-
-  const legacyRenderPresetByRootId = new Map(
-    legacyConfig.roots
-      .filter(item => item.renderPreset && (
-        item.renderPreset.container
-        || item.renderPreset.videoCodec
-        || item.renderPreset.audioCodec
-        || typeof item.renderPreset.bitrateMbps === 'number'
-      ))
-      .map(item => [item.rootId, item.renderPreset]),
-  );
-
-  if (legacyRenderPresetByRootId.size === 0) {
-    return projectRoots;
-  }
-
-  return normalizeProjectRoots({
-    roots: projectRoots.roots.map(projectRoot => {
-      if (projectRoot.color?.renderPreset) {
-        return projectRoot;
-      }
-      const legacyRenderPreset = legacyRenderPresetByRootId.get(projectRoot.id);
-      if (!legacyRenderPreset) {
-        return projectRoot;
-      }
-      return {
-        ...projectRoot,
-        color: {
-          renderPreset: legacyRenderPreset,
-        },
-      };
-    }),
-  });
 }

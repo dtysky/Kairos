@@ -9,6 +9,7 @@ coverage/
 .tmp/
 .venv-jianying-test/
 .venv-*
+vendor/resolve-color-host/.venv/
 __pycache__/
 models
 analysis

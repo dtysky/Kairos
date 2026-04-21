@@ -19,8 +19,11 @@ export {
   PythonResolveColorExecutor,
   ResolveColorExecutorUnavailableError,
   ResolveColorHostError,
+  inspectResolveColorBackend,
+  resolveColorBackendRoot,
   resolveColorPythonInvocation,
   resolveColorScriptPath,
+  getVendoredResolveColorPythonPath,
   type IColorExecutor,
   type IColorExecutorPrepareRootInput,
   type IColorExecutorPrepareRootResult,
@@ -30,6 +33,7 @@ export {
   type IColorExecutorExecuteGroupResult,
   type IColorExecutorPreflightInput,
   type IColorExecutorPreflightResult,
+  type IResolveColorBackendStatus,
   type IResolveColorExecutorConfig,
 } from './resolve-executor.js';
 export {

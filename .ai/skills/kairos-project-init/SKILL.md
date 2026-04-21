@@ -15,7 +15,7 @@ description: >-
 这条 skill 负责：
 - 初始化项目骨架和种子文件
 - 迁移后补齐缺失但可安全重建的初始化内容
-- 把 `config/project-brief.md` 同步成正式 ingest 配置
+- 把 `config/project-brief.json` 维护成正式 root 单真值，并回写 `config/project-brief.md` 镜像
 - 维护项目内的本机私有路径映射
 - 挂接项目级 GPX 和可选 `manual-itinerary`
 - 判断当前项目已经能从哪个阶段继续
@@ -57,7 +57,7 @@ description: >-
   - `subtitles/*`
   - `gps/merged.json`
   - `gps/derived.json`
-- `config/project-brief.md` 是人类可编辑的路径和说明入口；不要优先手改 `ingest-roots.json`
+- `config/project-brief.json` 是正式结构化 root 真值，`config/project-brief.md` 只是人类可读镜像；不要再把 `ingest-roots.json` 当正式事实源
 - `config/device-media-maps.local.json` 是项目内的本机私有映射，方便迁移后重绑路径，但不应当作可同步事实源
 - `store/assets.json[*].sourcePath` 必须保持 root-relative；迁移时不要改写成当前机器绝对路径
 
@@ -88,7 +88,6 @@ project/
 
 - `store/project.json`
 - `store/manifest.json`
-- `config/ingest-roots.json`
 - `config/project-brief.md`
 - `script/script-brief.md`
 - `pharos/`
@@ -161,9 +160,10 @@ const projectRoot = await initWorkspaceProject(
 - 不要为了补一个文件去重跑整套 `initProject()`
 
 4. 维护 `project-brief`
-- 路径映射统一先写到 `config/project-brief.md`
+- 路径映射的正式结构化真值统一写到 `config/project-brief.json`
+- 正常 Console 路径应优先使用 `/ingest-gps` 的结构化 `素材 Root` 编辑器；它保存时会写 `config/project-brief.json`，并自动回写 `config/project-brief.md`
 - `Pharos` 不再通过外部路径字段接入；项目内固定投放位置是 `projects/<projectId>/pharos/`
-- 推荐让用户用自然语言维护：
+- 只有在没有 Console 可用或需要离线修复时，才回到直接维护 Markdown：
 
 ```text
 路径：F:\NZ\Pocket3
@@ -173,10 +173,10 @@ const projectRoot = await initWorkspaceProject(
 说明：无人机，全景与地貌空镜
 ```
 
-5. 从 `project-brief` 同步正式配置
+5. 从 `project-brief` 同步运行态兼容视图
 - 调 `syncWorkspaceProjectBrief(workspaceRoot, projectId)`
 - 会更新：
-  - `config/ingest-roots.json`
+  - 基于 `project-brief.json` 派生的 ingest root 运行态
   - `config/device-media-maps.local.json`
 - 当前实现里，如果 `project-brief.md` 没有任何映射条目，会保留现有 roots 和 device map，不会强行清空
 
@@ -213,8 +213,8 @@ const projectRoot = await initWorkspaceProject(
 |---|---|
 | `store/project.json` + `store/manifest.json` | 项目骨架已经存在 |
 | `pharos/` | `Pharos` 固定镜像根目录已经就位，可直接放入 `trip_id/plan.json + record.json? + gpx/` |
-| `config/project-brief.md` | 可以继续维护素材路径与说明 |
-| `config/ingest-roots.json` + `config/device-media-maps.local.json` | 可以直接进入 Ingest |
+| `config/project-brief.json` + `config/project-brief.md` | 可以继续维护素材路径与说明；Markdown 只是镜像 |
+| `config/device-media-maps.local.json` | 当前机器的 Root 路径映射已就位，可以直接进入 Ingest |
 | `store/assets.json` | 可以跳过首轮 Ingest |
 | `analysis/asset-reports/*.json` + `store/slices.json` | 可以跳过 Analyze |
 | `script/current.json` | 可以跳过 Script 起稿 |

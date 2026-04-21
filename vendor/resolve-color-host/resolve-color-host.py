@@ -2,20 +2,18 @@
 import argparse
 import hashlib
 import json
-import os
 import sys
 import time
 from pathlib import Path
 
 
-CSIGNAL_KEYS = (
-    "colorspace",
-    "gamma",
-    "logProfile",
-    "cameraModel",
-    "codecFamily",
-    "resolution",
-    "fps",
+CCREATIVE_SIGNAL_KEYS = (
+    "slog3",
+    "dlog-m",
+    "hlg",
+    "rec709",
+    "gyro",
+    "lowlight",
 )
 
 
@@ -27,9 +25,8 @@ def main() -> int:
     try:
         payload = json.loads(Path(args.request).read_text(encoding="utf-8"))
         operation = payload.get("operation")
-        script_api_root = payload.get("scriptApiRoot")
         request_input = payload.get("input") or {}
-        resolve = load_resolve(script_api_root)
+        resolve = load_resolve()
 
         if operation == "preflight":
             result = preflight(resolve, request_input)
@@ -77,14 +74,14 @@ class HostError(RuntimeError):
         return payload
 
 
-def load_resolve(script_api_root):
-    append_script_api_paths(script_api_root)
+def load_resolve():
+    append_script_api_paths()
     try:
         import DaVinciResolveScript as dvr_script  # type: ignore
     except Exception as error:
         raise HostError(
             "resolve_script_api_missing",
-            "Unable to import DaVinciResolveScript. Configure resolveColorScriptApiRoot or install the official scripting API.",
+            "Unable to import DaVinciResolveScript from the default Resolve scripting API locations.",
             {"error": str(error)},
         )
     resolve = dvr_script.scriptapp("Resolve")
@@ -96,16 +93,8 @@ def load_resolve(script_api_root):
     return resolve
 
 
-def append_script_api_paths(explicit_root):
+def append_script_api_paths():
     candidates = []
-    if explicit_root:
-        root = Path(explicit_root).expanduser()
-        candidates.extend([root, root / "Modules"])
-
-    env_root = os.environ.get("RESOLVE_SCRIPT_API")
-    if env_root:
-        env_path = Path(env_root).expanduser()
-        candidates.extend([env_path, env_path / "Modules"])
 
     if sys.platform == "darwin":
         base = Path("/Library/Application Support/Blackmagic Design/DaVinci Resolve/Developer/Scripting")
@@ -123,10 +112,12 @@ def append_script_api_paths(explicit_root):
 
 def prepare_root(resolve, payload):
     project = ensure_project(resolve, payload["resolveProjectName"])
+    apply_timeline_spec(project, payload.get("timelineSpec"))
     media_pool = require_method(project, "GetMediaPool")()
     media_storage = require_method(resolve, "GetMediaStorage")()
     namespace_folder = ensure_namespace_folder(media_pool, payload["rootNamespace"])
     timeline = ensure_timeline(project, media_pool, payload["gradingTimelineName"])
+    apply_timeline_spec(project, payload.get("timelineSpec"), timeline)
     clip_requests = normalize_clip_requests(payload.get("clips"))
     previous_group_names_by_clip = capture_timeline_group_assignments(timeline, payload["rawLocalPath"])
 
@@ -143,7 +134,22 @@ def prepare_root(resolve, payload):
     clear_timeline_items(timeline)
     append_clips_to_timeline(project, media_pool, timeline, ordered_entries)
     timeline_item_by_clip_key = build_timeline_item_map(timeline, payload["rawLocalPath"])
-    assign_generated_groups(project, ordered_entries, timeline_item_by_clip_key, previous_group_names_by_clip)
+    group_states = assign_generated_groups(project, ordered_entries, timeline_item_by_clip_key, previous_group_names_by_clip)
+    group_transform_summaries = apply_group_preclip_transforms(project, group_states)
+    transform_blockers = dedupe_strings([
+        summary.get("detail")
+        for summary in group_transform_summaries.values()
+        if isinstance(summary, dict) and str(summary.get("transformStatus") or "").startswith("blocked")
+    ])
+    if transform_blockers:
+        raise HostError(
+            "resolve_group_transform_failed",
+            "Copied LUT is not visible to the current Resolve session. Refresh LUT List in Resolve and retry.",
+            {
+                "blockingReasons": transform_blockers,
+                "groupTransforms": group_transform_summaries,
+            },
+        )
 
     groups_snapshot = build_groups_snapshot(
         payload["rootId"],
@@ -152,6 +158,7 @@ def prepare_root(resolve, payload):
         payload["rawLocalPath"],
         clip_requests,
         origin="prepare_root",
+        group_transform_summaries=group_transform_summaries,
     )
     save_project(project)
     return {
@@ -167,6 +174,14 @@ def prepare_root(resolve, payload):
             "movedClipCount": sync_summary["moved"],
             "reusedClipCount": sync_summary["reused"],
             "groupCount": len(groups_snapshot["groups"]),
+            "lutSyncStatus": (payload.get("lutSyncSummary") or {}).get("status"),
+            "lutSyncTargetRoot": (payload.get("lutSyncSummary") or {}).get("targetRoot"),
+            "lutSyncCopiedCount": (payload.get("lutSyncSummary") or {}).get("copiedCount") or 0,
+            "lutSyncReusedCount": (payload.get("lutSyncSummary") or {}).get("reusedCount") or 0,
+            "resolvedTransformPresetKey": summarize_root_transform_value(group_transform_summaries, "resolvedTransformPresetKey"),
+            "detectedProfile": summarize_root_transform_value(group_transform_summaries, "detectedProfile"),
+            "effectiveProfile": summarize_root_transform_value(group_transform_summaries, "effectiveProfile"),
+            "transformStatus": summarize_root_transform_status(group_transform_summaries),
         },
     }
 
@@ -252,23 +267,33 @@ def execute_group(resolve, payload):
         if timeline_item is None:
             raise HostError("resolve_group_clip_missing", f"Clip not found on timeline for group render: {clip_key}")
         relative_dir = portable_parent_dir(clip_key)
-        output_name = normalize_output_filename(clip_key, resolved_render_format["extension"])
+        source_stem = stringify_signal_value(clip.get("sourceStem")) or Path(clip_key).stem
+        output_name = normalize_output_filename(source_stem, resolved_render_format["extension"])
         output_dir = target_dir / relative_dir if relative_dir else target_dir
         output_dir.mkdir(parents=True, exist_ok=True)
-        output_path = str((output_dir / output_name).resolve())
-        queued_job_ids.append(queue_render_job(project, timeline_item, output_dir, output_name, resolved_render_format))
+        queued_job_ids.append(queue_render_job(
+            project,
+            timeline_item,
+            output_dir,
+            source_stem,
+            resolved_render_format,
+            width=parse_int(clip.get("width")),
+            height=parse_int(clip.get("height")),
+            fps=parse_float(clip.get("fps")),
+        ))
         entries.append({
             "rawRelativePath": clip_key,
-            "outputPath": output_path,
+            "outputPath": str((output_dir / output_name).resolve()),
             "normalizedOutputFilename": output_name,
         })
 
     start_rendering(project, queued_job_ids)
     wait_for_render(project)
+    normalized_entries = normalize_render_outputs(entries)
 
     return {
         "renderedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "entries": entries,
+        "entries": normalized_entries,
         "hostSummary": {
             "timelineName": payload["gradingTimelineName"],
             "groupKey": payload["groupKey"],
@@ -367,6 +392,27 @@ def ensure_named_timeline(project, timeline_name):
     raise HostError("resolve_timeline_missing", f"Missing grading timeline: {timeline_name}")
 
 
+def apply_timeline_spec(project, spec, timeline=None):
+    width = parse_int((spec or {}).get("width"))
+    height = parse_int((spec or {}).get("height"))
+    fps = parse_float((spec or {}).get("fps"))
+    if not width or not height or not fps:
+        return
+    settings = {
+        "timelineResolutionWidth": width,
+        "timelineResolutionHeight": height,
+        "timelineOutputResolutionWidth": width,
+        "timelineOutputResolutionHeight": height,
+        "timelineFrameRate": fps,
+        "timelinePlaybackFrameRate": fps,
+    }
+    for owner in (project, timeline):
+        if owner is None:
+            continue
+        for key, value in settings.items():
+            safe_call(owner, "SetSetting", key, stringify_setting_value(value))
+
+
 def find_named_timeline(project, timeline_name):
     count = safe_call(project, "GetTimelineCount") or 0
     for index in range(1, int(count) + 1):
@@ -452,13 +498,12 @@ def sync_namespace_clips(media_pool, media_storage, namespace_folder, namespace_
                 reused += 1
         clip_by_source_path[source_path] = media_pool_item
         clip_folder_by_source_path[source_path] = target_folder
-        technical = build_clip_technical_summary(media_pool_item, clip_request)
+        creative = build_clip_creative_summary(clip_request)
         prepared_entries.append({
             **clip_request,
             "mediaPoolItem": media_pool_item,
-            "signals": technical["signals"],
-            "fingerprint": technical["fingerprint"],
-            "displayName": technical["displayName"],
+            "creativeTags": creative["creativeTags"],
+            "groupNameSeed": creative["displayName"],
         })
 
     return prepared_entries, {
@@ -550,12 +595,13 @@ def assign_generated_groups(project, clip_entries, timeline_item_by_clip_key, pr
         if isinstance(group_name, str) and group_name.strip():
             existing_groups_by_name[group_name.strip()] = group
 
-    entries_by_fingerprint = {}
+    entries_by_group_name = {}
     for entry in clip_entries:
-        entries_by_fingerprint.setdefault(entry["fingerprint"], []).append(entry)
+        entries_by_group_name.setdefault(entry["groupNameSeed"], []).append(entry)
 
     claimed_group_names = set()
-    for fingerprint, entries in entries_by_fingerprint.items():
+    group_states = {}
+    for group_name_seed, entries in entries_by_group_name.items():
         previous_names = sorted({
             previous_group_names_by_clip.get(entry["rawRelativePath"])
             for entry in entries
@@ -565,13 +611,18 @@ def assign_generated_groups(project, clip_entries, timeline_item_by_clip_key, pr
             desired_group_name = previous_names[0]
         else:
             desired_group_name = ensure_unique_group_name(
-                entries[0]["displayName"],
-                fingerprint,
+                entries[0]["groupNameSeed"],
+                group_name_seed,
                 claimed_group_names,
                 existing_groups_by_name,
             )
         claimed_group_names.add(desired_group_name)
-        color_group = ensure_color_group(project, existing_groups_by_name, desired_group_name)
+        color_group, is_new_group = ensure_color_group(project, existing_groups_by_name, desired_group_name)
+        group_states[desired_group_name] = {
+            "colorGroup": color_group,
+            "isNewGroup": is_new_group,
+            "entries": entries,
+        }
         for entry in entries:
             timeline_item = timeline_item_by_clip_key.get(entry["rawRelativePath"])
             if timeline_item is None:
@@ -591,13 +642,14 @@ def assign_generated_groups(project, clip_entries, timeline_item_by_clip_key, pr
                     "resolve_color_group_assign_failed",
                     f"Unable to assign clip to Resolve group: {entry['rawRelativePath']}",
                 )
+    return group_states
 
 
-def ensure_unique_group_name(base_name, fingerprint, claimed_group_names, existing_groups_by_name):
+def ensure_unique_group_name(base_name, uniqueness_seed, claimed_group_names, existing_groups_by_name):
     candidate = base_name or "Ungrouped"
     if candidate not in claimed_group_names:
         return candidate
-    short_fingerprint = hashlib.sha1(fingerprint.encode("utf-8")).hexdigest()[:8]
+    short_fingerprint = hashlib.sha1(uniqueness_seed.encode("utf-8")).hexdigest()[:8]
     candidate = f"{candidate} [{short_fingerprint}]"
     index = 2
     while candidate in claimed_group_names:
@@ -609,20 +661,20 @@ def ensure_unique_group_name(base_name, fingerprint, claimed_group_names, existi
 def ensure_color_group(project, existing_groups_by_name, group_name):
     existing = existing_groups_by_name.get(group_name)
     if existing:
-        return existing
+        return existing, False
     created = safe_call(project, "AddColorGroup", group_name)
     if created:
         existing_groups_by_name[group_name] = created
-        return created
+        return created, True
     for group in iter_values(safe_call(project, "GetColorGroupsList") or []):
         current_name = safe_call(group, "GetName")
         if current_name == group_name:
             existing_groups_by_name[group_name] = group
-            return group
+            return group, False
     raise HostError("resolve_color_group_missing", f"Unable to create or reuse Resolve group: {group_name}")
 
 
-def build_groups_snapshot(root_id, timeline, timeline_name, raw_local_path, clip_requests, origin):
+def build_groups_snapshot(root_id, timeline, timeline_name, raw_local_path, clip_requests, origin, group_transform_summaries=None):
     clip_requests_by_key = {
         clip["rawRelativePath"]: clip
         for clip in clip_requests
@@ -637,36 +689,46 @@ def build_groups_snapshot(root_id, timeline, timeline_name, raw_local_path, clip
         except ValueError:
             continue
         group_name = extract_group_name(item) or "Ungrouped"
-        technical = build_clip_technical_summary(
-            safe_call(item, "GetMediaPoolItem"),
-            clip_requests_by_key.get(clip_key, {"rawRelativePath": clip_key, "rawTags": {}}),
+        creative = build_clip_creative_summary(
+            clip_requests_by_key.get(clip_key, {"rawRelativePath": clip_key}),
         )
         entry = group_map.setdefault(group_name, {
             "displayName": group_name,
             "clipKeys": [],
-            "signals": [],
-            "fingerprints": [],
+            "creativeTags": [],
+            "clipRequests": [],
         })
         if clip_key not in entry["clipKeys"]:
             entry["clipKeys"].append(clip_key)
-        entry["signals"].append(technical["signals"])
-        entry["fingerprints"].append(technical["fingerprint"])
+        entry["creativeTags"].append(creative["creativeTags"])
+        if clip_requests_by_key.get(clip_key):
+            entry["clipRequests"].append(clip_requests_by_key[clip_key])
 
     groups = []
     for display_name in sorted(group_map):
         entry = group_map[display_name]
-        summary = build_group_technical_summary(entry["signals"], entry["fingerprints"])
+        summary = build_group_creative_summary(entry["creativeTags"])
+        transform_summary = {
+            **build_group_transform_summary(entry["clipRequests"]),
+            **((group_transform_summaries or {}).get(display_name) or {}),
+        }
         groups.append({
-            "groupKey": normalize_group_key(summary["fingerprint"] or display_name),
+            "groupKey": normalize_group_key(display_name),
             "displayName": display_name,
             "clipKeys": entry["clipKeys"],
             "hostSummary": {
                 "timelineName": timeline_name,
                 "groupName": display_name,
                 "origin": origin,
-                "fingerprint": summary["fingerprint"],
-                "signals": summary["signals"],
-                **({"memberFingerprints": summary["memberFingerprints"]} if summary["memberFingerprints"] else {}),
+                "creativeTags": summary["creativeTags"],
+                "detectedProfile": transform_summary.get("detectedProfile"),
+                "effectiveProfile": transform_summary.get("effectiveProfile"),
+                "profileSource": transform_summary.get("profileSource"),
+                "rootFallbackUsed": transform_summary.get("rootFallbackUsed"),
+                "resolvedTransformPresetKey": transform_summary.get("resolvedTransformPresetKey"),
+                "lutSyncStatus": transform_summary.get("lutSyncStatus"),
+                "transformStatus": transform_summary.get("transformStatus"),
+                "detail": transform_summary.get("detail"),
             },
         })
 
@@ -678,154 +740,268 @@ def build_groups_snapshot(root_id, timeline, timeline_name, raw_local_path, clip
     }
 
 
-def build_clip_technical_summary(media_pool_item, clip_request):
-    properties = {}
-    clip_property = safe_call(media_pool_item, "GetClipProperty") if media_pool_item else None
-    if isinstance(clip_property, dict):
-        properties = {
-            normalize_lookup_key(key): stringify_signal_value(value)
-            for key, value in clip_property.items()
-            if stringify_signal_value(value)
-        }
-    raw_tags = normalize_string_map(clip_request.get("rawTags"))
-    normalized_tags = {normalize_lookup_key(key): value for key, value in raw_tags.items()}
-
-    colorspace = first_signal_value(
-        properties,
-        normalized_tags,
-        property_keys=("inputcolorspace", "colorspace", "colorspacetag"),
-        tag_keys=("colorspace", "colorprimaries", "color_primaries", "comappleproappscolorspace"),
-    )
-    gamma = first_signal_value(
-        properties,
-        normalized_tags,
-        property_keys=("inputgamma", "gamma", "gammatag"),
-        tag_keys=("gamma", "transfercharacteristics", "transfer_characteristics"),
-    )
-    log_profile = first_signal_value(
-        properties,
-        normalized_tags,
-        property_keys=("logprofile", "inputgamma", "gamma"),
-        tag_keys=("comappleproappslogprofile", "logprofile", "profile"),
-    )
-    if not log_profile and gamma and "log" in gamma.lower():
-        log_profile = gamma
-    camera_make = first_signal_value(
-        properties,
-        normalized_tags,
-        property_keys=("camera", "camera1", "cameramodel", "make"),
-        tag_keys=("make", "camera", "camera1", "comapplequicktimemake"),
-    )
-    camera_model = first_signal_value(
-        properties,
-        normalized_tags,
-        property_keys=("cameramodel", "model", "camera"),
-        tag_keys=("model", "cameramodel", "comapplequicktimemodel"),
-    )
-    camera_value = join_distinct_parts([camera_make, camera_model])
-    codec = first_signal_value(
-        properties,
-        normalized_tags,
-        property_keys=("codec", "videocodec"),
-        tag_keys=("codec",),
-    ) or clip_request.get("codec")
-    codec_family = normalize_codec_family(codec)
-    resolution_value = first_signal_value(
-        properties,
-        normalized_tags,
-        property_keys=("resolution",),
-        tag_keys=(),
-    )
-    if resolution_value:
-        resolution = normalize_resolution_string(resolution_value)
-    else:
-        resolution = build_resolution_string(clip_request.get("width"), clip_request.get("height"))
-    fps_value = first_signal_value(
-        properties,
-        normalized_tags,
-        property_keys=("fps", "framerate", "clipframerate"),
-        tag_keys=("framerate", "fps"),
-    )
-    fps = normalize_fps_string(fps_value or clip_request.get("fps"))
-
-    signals = {
-        "colorspace": colorspace,
-        "gamma": gamma,
-        "logProfile": log_profile,
-        "cameraModel": camera_value,
-        "codecFamily": codec_family,
-        "resolution": resolution,
-        "fps": fps,
-    }
-    fingerprint = build_signal_fingerprint(signals)
+def build_clip_creative_summary(clip_request):
+    log_profile = normalize_log_profile(clip_request.get("logProfile"))
+    creative_tags = []
+    if log_profile:
+        creative_tags.append(log_profile)
+    if clip_request.get("gyro") is True:
+        creative_tags.append("gyro")
+    if clip_request.get("lowlight") is True:
+        creative_tags.append("lowlight")
     return {
-        "signals": {key: value for key, value in signals.items() if value},
-        "fingerprint": fingerprint,
-        "displayName": build_group_display_name(signals, fingerprint),
+        "creativeTags": creative_tags,
+        "displayName": " + ".join(creative_tags) if creative_tags else "base",
     }
 
 
-def build_group_technical_summary(signal_list, fingerprints):
-    aggregated_signals = {}
-    for key in CSIGNAL_KEYS:
-        values = []
-        seen = set()
-        for signals in signal_list:
-            value = signals.get(key) if isinstance(signals, dict) else None
-            if not isinstance(value, str) or not value.strip() or value in seen:
-                continue
-            seen.add(value)
-            values.append(value)
-        if len(values) == 1:
-            aggregated_signals[key] = values[0]
-        elif len(values) > 1:
-            aggregated_signals[key] = values
-    unique_fingerprints = []
-    seen_fingerprints = set()
-    for fingerprint in fingerprints:
-        if not isinstance(fingerprint, str) or not fingerprint.strip() or fingerprint in seen_fingerprints:
-            continue
-        seen_fingerprints.add(fingerprint)
-        unique_fingerprints.append(fingerprint)
-    if len(unique_fingerprints) == 1:
-        fingerprint = unique_fingerprints[0]
-    elif len(unique_fingerprints) > 1:
-        joined = "|".join(sorted(unique_fingerprints))
-        fingerprint = f"mixed::{hashlib.sha1(joined.encode('utf-8')).hexdigest()[:12]}"
-    else:
-        fingerprint = "ungrouped"
-    return {
-        "fingerprint": fingerprint,
-        "signals": aggregated_signals,
-        "memberFingerprints": unique_fingerprints if len(unique_fingerprints) > 1 else [],
-    }
-
-
-def build_signal_fingerprint(signals):
-    parts = []
-    for key in CSIGNAL_KEYS:
-        value = signals.get(key)
-        if isinstance(value, str) and value.strip():
-            parts.append(f"{key}={normalize_lookup_key(value)}")
-    return "::".join(parts) or "ungrouped"
-
-
-def build_group_display_name(signals, fingerprint):
-    parts = [
-        signals.get("cameraModel"),
-        signals.get("logProfile") or signals.get("gamma"),
-        signals.get("colorspace"),
-        signals.get("codecFamily"),
-        signals.get("resolution"),
-        f"{signals['fps']}fps" if signals.get("fps") else None,
+def build_group_creative_summary(tag_lists):
+    tag_counts = {}
+    for creative_tags in tag_lists:
+        for tag in creative_tags or []:
+            tag_counts[tag] = tag_counts.get(tag, 0) + 1
+    creative_tags = [
+        tag
+        for tag, _count in sorted(
+            tag_counts.items(),
+            key=lambda item: (
+                CCREATIVE_SIGNAL_KEYS.index(item[0]) if item[0] in CCREATIVE_SIGNAL_KEYS else len(CCREATIVE_SIGNAL_KEYS),
+                item[0],
+            ),
+        )
     ]
-    display_name = join_distinct_parts(parts, separator=" | ")
-    if display_name:
-        return display_name
-    if fingerprint == "ungrouped":
-        return "Ungrouped"
-    short_fingerprint = hashlib.sha1(fingerprint.encode("utf-8")).hexdigest()[:8]
-    return f"Technical Group {short_fingerprint}"
+    return {
+        "creativeTags": creative_tags,
+    }
+
+
+def build_group_transform_summary(clip_requests):
+    detected_profiles = dedupe_strings([
+        normalize_log_profile(clip_request.get("detectedProfile"))
+        for clip_request in clip_requests or []
+    ])
+    effective_profiles = dedupe_strings([
+        stringify_signal_value(clip_request.get("effectiveProfile"))
+        for clip_request in clip_requests or []
+    ])
+    profile_sources = dedupe_strings([
+        stringify_signal_value(clip_request.get("profileSource"))
+        for clip_request in clip_requests or []
+    ])
+    preset_keys = dedupe_strings([
+        stringify_signal_value(clip_request.get("resolvedTransformPresetKey"))
+        for clip_request in clip_requests or []
+    ])
+    relative_lut_paths = dedupe_strings([
+        stringify_signal_value(clip_request.get("resolvedLutRelativePath"))
+        for clip_request in clip_requests or []
+    ])
+    absolute_lut_paths = dedupe_strings([
+        normalize_filesystem_path(clip_request.get("resolvedLutAbsolutePath"))
+        for clip_request in clip_requests or []
+    ])
+    if effective_profiles:
+        default_status = "skipped-no-preset"
+    else:
+        default_status = "skipped-unknown-profile"
+    if len(preset_keys) > 1 or len(relative_lut_paths) > 1 or len(absolute_lut_paths) > 1:
+        default_status = "skipped-mixed-preset"
+    return {
+        "detectedProfile": detected_profiles[0] if len(detected_profiles) == 1 else ("mixed" if len(detected_profiles) > 1 else None),
+        "effectiveProfile": effective_profiles[0] if len(effective_profiles) == 1 else ("mixed" if len(effective_profiles) > 1 else None),
+        "profileSource": profile_sources[0] if len(profile_sources) == 1 else ("mixed" if len(profile_sources) > 1 else None),
+        "rootFallbackUsed": "root-fallback" in profile_sources,
+        "resolvedTransformPresetKey": preset_keys[0] if len(preset_keys) == 1 else None,
+        "resolvedLutRelativePath": relative_lut_paths[0] if len(relative_lut_paths) == 1 else None,
+        "resolvedLutAbsolutePath": absolute_lut_paths[0] if len(absolute_lut_paths) == 1 else None,
+        "lutSyncStatus": "ready" if len(relative_lut_paths) == 1 else ("mixed" if len(relative_lut_paths) > 1 else None),
+        "transformStatus": default_status,
+    }
+
+
+def apply_group_preclip_transforms(project, group_states):
+    summaries = {}
+    any_lut_requested = any(
+        stringify_signal_value(clip_request.get("resolvedLutRelativePath"))
+        for state in group_states.values()
+        for clip_request in state.get("entries", [])
+    )
+    if any_lut_requested:
+        safe_call(project, "RefreshLUTList")
+
+    for group_name, state in group_states.items():
+        summary = build_group_transform_summary(state.get("entries", []))
+        color_group = state.get("colorGroup")
+        if color_group is None:
+            summaries[group_name] = {
+                **summary,
+                "transformStatus": "blocked-group-missing",
+                "detail": f"Resolve ColorGroup 不存在：{group_name}",
+            }
+            continue
+        relative_lut_path = summary.get("resolvedLutRelativePath")
+        absolute_lut_path = summary.get("resolvedLutAbsolutePath")
+        if summary.get("transformStatus") == "skipped-mixed-preset":
+            summaries[group_name] = {
+                **summary,
+                "detail": "同一 Resolve Group 内解析出了多个 preset，已跳过默认技术底板。",
+            }
+            continue
+        if not relative_lut_path:
+            summaries[group_name] = summary
+            continue
+        graph = safe_call(color_group, "GetPreClipNodeGraph")
+        if graph is None:
+            summaries[group_name] = {
+                **summary,
+                "transformStatus": "blocked-preclip-graph-unavailable",
+                "detail": f"Resolve 未返回 Group Pre-Clip graph：{group_name}",
+            }
+            continue
+        current_node_count = parse_int(safe_call(graph, "GetNumNodes")) or 0
+        existing_luts = collect_graph_luts(graph)
+        if state.get("isNewGroup") is not True:
+            if lut_matches_any(existing_luts, relative_lut_path, absolute_lut_path):
+                summaries[group_name] = {
+                    **summary,
+                    "transformStatus": "already-applied",
+                    "detail": f"默认技术 LUT 已存在于 Group Pre-Clip：{group_name}",
+                }
+                continue
+            if current_node_count > 0 or existing_luts:
+                summaries[group_name] = {
+                    **summary,
+                    "transformStatus": "skipped-existing-grade",
+                    "detail": f"Group Pre-Clip 已有现存节点或 grade，已跳过默认技术 LUT：{group_name}",
+                }
+                continue
+        ensured_node_count = ensure_preclip_graph_node(graph)
+        if ensured_node_count <= 0:
+            summaries[group_name] = {
+                **summary,
+                "transformStatus": "blocked-preclip-graph-empty",
+                "detail": f"无法为 Group Pre-Clip 创建技术底板节点：{group_name}",
+            }
+            continue
+        applied = apply_graph_lut(graph, relative_lut_path, absolute_lut_path)
+        if not applied:
+            summaries[group_name] = {
+                **summary,
+                "transformStatus": "blocked-lut-not-visible",
+                "detail": f"LUT 当前对 Resolve 不可见，请先 Refresh LUT List / Update Lists：{relative_lut_path}",
+            }
+            continue
+        summaries[group_name] = {
+            **summary,
+            "transformStatus": "applied",
+            "detail": f"已把默认技术 LUT 应用到 Group Pre-Clip：{relative_lut_path}",
+        }
+    return summaries
+
+
+def ensure_preclip_graph_node(graph):
+    node_count = parse_int(safe_call(graph, "GetNumNodes")) or 0
+    if node_count > 0:
+        return node_count
+    for method_name in ("AddSerialNode", "AddCorrectorNode", "AddNode"):
+        safe_call(graph, method_name)
+        node_count = parse_int(safe_call(graph, "GetNumNodes")) or 0
+        if node_count > 0:
+            return node_count
+    return node_count
+
+
+def collect_graph_luts(graph):
+    luts = []
+    node_count = parse_int(safe_call(graph, "GetNumNodes")) or 0
+    for node_index in range(1, int(node_count) + 1):
+        lut_path = stringify_signal_value(safe_call(graph, "GetLUT", node_index))
+        if lut_path:
+            luts.append(lut_path)
+    return dedupe_strings(luts)
+
+
+def lut_matches_any(existing_luts, relative_lut_path, absolute_lut_path):
+    return any(
+        lut_matches(existing_path, relative_lut_path, absolute_lut_path)
+        for existing_path in existing_luts or []
+    )
+
+
+def lut_matches(existing_path, relative_lut_path, absolute_lut_path):
+    normalized_existing = stringify_signal_value(existing_path)
+    if not normalized_existing:
+        return False
+    normalized_relative = stringify_signal_value(relative_lut_path)
+    normalized_absolute = normalize_filesystem_path(absolute_lut_path)
+    if normalized_relative and normalized_existing.replace("\\", "/") == normalized_relative.replace("\\", "/"):
+        return True
+    if normalized_absolute and normalize_filesystem_path(normalized_existing) == normalized_absolute:
+        return True
+    return False
+
+
+def apply_graph_lut(graph, relative_lut_path, absolute_lut_path):
+    for candidate in (relative_lut_path, absolute_lut_path):
+        if not candidate:
+            continue
+        safe_call(graph, "SetLUT", 1, candidate)
+        current_lut = stringify_signal_value(safe_call(graph, "GetLUT", 1))
+        if lut_matches(current_lut, relative_lut_path, absolute_lut_path):
+            return True
+    return False
+
+
+def summarize_root_transform_value(group_transform_summaries, key):
+    values = dedupe_strings([
+        stringify_signal_value((summary or {}).get(key))
+        for summary in (group_transform_summaries or {}).values()
+    ])
+    if len(values) == 1:
+        return values[0]
+    if len(values) > 1:
+        return "mixed"
+    return None
+
+
+def summarize_root_transform_status(group_transform_summaries):
+    statuses = dedupe_strings([
+        stringify_signal_value((summary or {}).get("transformStatus"))
+        for summary in (group_transform_summaries or {}).values()
+    ])
+    if not statuses:
+        return None
+    if "blocked-lut-not-visible" in statuses or any(status.startswith("blocked") for status in statuses):
+        return "blocked"
+    if "applied" in statuses:
+        return "applied"
+    if "already-applied" in statuses:
+        return "already-applied"
+    if "skipped-existing-grade" in statuses:
+        return "skipped-existing-grade"
+    if "skipped-mixed-preset" in statuses:
+        return "skipped-mixed-preset"
+    if "skipped-no-preset" in statuses:
+        return "skipped-no-preset"
+    if "skipped-unknown-profile" in statuses:
+        return "skipped-unknown-profile"
+    return statuses[0]
+
+
+def normalize_log_profile(value):
+    normalized = stringify_signal_value(value)
+    if not normalized:
+        return None
+    lowered = normalized.strip().lower()
+    if "s-log3" in lowered or "slog3" in lowered:
+        return "slog3"
+    if "d-log" in lowered or "dlog" in lowered:
+        return "dlog-m"
+    if lowered == "hlg" or " hlg" in lowered or lowered.startswith("hlg"):
+        return "hlg"
+    if "rec709" in lowered or "rec 709" in lowered or "rec-709" in lowered:
+        return "rec709"
+    return None
 
 
 def normalize_clip_requests(clips):
@@ -838,12 +1014,22 @@ def normalize_clip_requests(clips):
         normalized.append({
             "rawRelativePath": raw_relative_path,
             "sourceAbsolutePath": source_absolute_path,
+            "sourceStem": stringify_signal_value(clip.get("sourceStem")) or Path(raw_relative_path).stem,
             "capturedAt": stringify_signal_value(clip.get("capturedAt")),
             "width": parse_int(clip.get("width")),
             "height": parse_int(clip.get("height")),
             "fps": parse_float(clip.get("fps")),
             "codec": stringify_signal_value(clip.get("codec")),
             "rawTags": normalize_string_map(clip.get("rawTags")),
+            "detectedProfile": normalize_log_profile(clip.get("detectedProfile")),
+            "effectiveProfile": stringify_signal_value(clip.get("effectiveProfile")),
+            "profileSource": stringify_signal_value(clip.get("profileSource")) or "unknown",
+            "logProfile": normalize_log_profile(clip.get("logProfile")),
+            "gyro": clip.get("gyro") is True,
+            "lowlight": clip.get("lowlight") is True,
+            "resolvedTransformPresetKey": stringify_signal_value(clip.get("resolvedTransformPresetKey")),
+            "resolvedLutRelativePath": stringify_signal_value(clip.get("resolvedLutRelativePath")),
+            "resolvedLutAbsolutePath": normalize_filesystem_path(clip.get("resolvedLutAbsolutePath")),
         })
     return normalized
 
@@ -959,9 +1145,8 @@ def normalize_group_key(value):
     return normalized or "ungrouped"
 
 
-def normalize_output_filename(raw_relative_path, extension):
-    stem = Path(raw_relative_path).stem
-    return f"{stem}.{extension.lstrip('.')}"
+def normalize_output_filename(source_stem, extension):
+    return f"{source_stem}.{extension.lstrip('.')}"
 
 
 def normalize_render_format(render_preset):
@@ -1029,17 +1214,24 @@ def resolve_render_codec(project, format_name, requested_codec):
     )
 
 
-def queue_render_job(project, timeline_item, target_dir, output_name, render_format):
+def queue_render_job(project, timeline_item, target_dir, source_stem, render_format, width=None, height=None, fps=None):
     mark_in = safe_call(timeline_item, "GetStart") or safe_call(timeline_item, "GetTimelineIn") or 0
     mark_out = safe_call(timeline_item, "GetEnd") or safe_call(timeline_item, "GetTimelineOut") or mark_in
     settings = {
         "TargetDir": str(target_dir),
-        "CustomName": output_name,
+        "CustomName": source_stem,
+        "UniqueFilenameStyle": 0,
         "MarkIn": int(mark_in),
         "MarkOut": int(mark_out),
         "ExportVideo": True,
         "ExportAudio": True,
     }
+    if width:
+        settings["FormatWidth"] = int(width)
+    if height:
+        settings["FormatHeight"] = int(height)
+    if fps:
+        settings["FrameRate"] = float(fps)
     if render_format.get("audioCodec"):
         settings["AudioCodec"] = render_format["audioCodec"]
     if render_format.get("bitrateMbps"):
@@ -1048,12 +1240,12 @@ def queue_render_job(project, timeline_item, target_dir, output_name, render_for
     if result is False:
         raise HostError(
             "resolve_render_settings_failed",
-            f"Unable to set render settings for {output_name}",
+            f"Unable to set render settings for {source_stem}",
             {"renderSettings": settings},
         )
     job_id = safe_call(project, "AddRenderJob")
     if job_id is False or job_id is None:
-        raise HostError("resolve_add_render_job_failed", f"Unable to queue render job for {output_name}")
+        raise HostError("resolve_add_render_job_failed", f"Unable to queue render job for {source_stem}")
     return job_id
 
 
@@ -1077,6 +1269,45 @@ def wait_for_render(project, timeout_seconds=3600):
         if time.time() - started > timeout_seconds:
             raise HostError("resolve_render_timeout", "Timed out waiting for Resolve rendering")
         time.sleep(1)
+
+
+def normalize_render_outputs(entries):
+    normalized = []
+    for entry in entries:
+        target_path = Path(entry["outputPath"]).resolve()
+        actual_path = resolve_rendered_output(target_path)
+        if actual_path != target_path:
+            if target_path.exists():
+                target_path.unlink()
+            actual_path.replace(target_path)
+        normalized.append({
+            **entry,
+            "outputPath": str(target_path),
+        })
+    return normalized
+
+
+def resolve_rendered_output(target_path):
+    if target_path.exists():
+        return target_path
+    parent = target_path.parent
+    stem = target_path.stem
+    extension = target_path.suffix.lower()
+    candidates = [
+        path
+        for path in parent.iterdir()
+        if path.is_file()
+        and path.suffix.lower() == extension
+        and (path.stem == stem or path.stem.startswith(f"{stem}_") or stem in path.stem)
+    ]
+    if not candidates:
+        raise HostError(
+            "resolve_render_output_missing",
+            f"Unable to locate rendered output for {target_path.name}",
+            {"targetPath": str(target_path)},
+        )
+    candidates.sort(key=lambda path: path.stat().st_mtime, reverse=True)
+    return candidates[0]
 
 
 def get_resolve_product_name(resolve):
@@ -1268,6 +1499,20 @@ def stringify_signal_value(value):
     if isinstance(value, (int, float)) and not isinstance(value, bool):
         return str(value)
     return None
+
+
+def stringify_setting_value(value):
+    if isinstance(value, bool):
+        return "1" if value else "0"
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, float):
+        if abs(value - round(value)) < 0.001:
+            return str(int(round(value)))
+        return f"{value:.3f}".rstrip("0").rstrip(".")
+    if isinstance(value, str):
+        return value
+    return ""
 
 
 def normalize_string_map(value):

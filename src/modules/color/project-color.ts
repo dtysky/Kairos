@@ -26,6 +26,8 @@ import {
   loadColorGroupsSnapshot,
   loadColorGroupsSnapshots,
   loadIngestRoots,
+  loadColorTransformPresetsConfig,
+  loadProjectBriefConfig,
   loadProjectDeviceMediaMaps,
   loadRuntimeConfig,
   resolveWorkspaceProjectRoot,
@@ -47,10 +49,18 @@ import {
   deriveColorResolveProjectName,
   deriveColorRootNamespace,
 } from './workspace-state.js';
+import { extractColorSourceTruth } from './source-truth.js';
+import {
+  resolveClipTransformSeeds,
+  resolveEffectiveColorProfile,
+  syncReferencedResolveLuts,
+  type IResolveLutSyncSummary,
+} from './transform-presets.js';
 import {
   PythonResolveColorExecutor,
   ResolveColorHostError,
   ResolveColorExecutorUnavailableError,
+  inspectResolveColorBackend,
   type IColorExecutorClipInput,
   type IColorExecutor,
 } from './resolve-executor.js';
@@ -138,12 +148,14 @@ export class ColorPrepBlockedError extends ProjectColorBlockedError {
 }
 
 interface IColorRootContext {
+  workspaceRoot: string;
   projectRoot: string;
   projectId: string;
   rootId: string;
   rootSummary: ReturnType<typeof buildColorWorkspaceState>['colorRoots'][number];
   colorCurrent: IColorCurrent;
   runtimeConfig: Awaited<ReturnType<typeof loadRuntimeConfig>>;
+  transformPresetsConfig: Awaited<ReturnType<typeof loadColorTransformPresetsConfig>>;
   groupsSnapshot: IColorGroupsSnapshotFile | null;
 }
 
@@ -174,13 +186,12 @@ export async function preflightProjectColorHost(
   input: IProjectColorPreflightInput,
 ): Promise<IColorHostPreflight> {
   const projectRoot = resolveWorkspaceProjectRoot(input.workspaceRoot, input.projectId);
-  const runtimeConfig = await loadRuntimeConfig(projectRoot);
+  const projectBrief = await loadProjectBriefConfig(projectRoot).catch(() => null);
   const preflight = await runColorHostPreflight({
     projectRoot,
     projectId: input.projectId,
     rootId: input.rootId,
-    resolveProjectName: deriveColorResolveProjectName(input.projectId),
-    runtimeConfig,
+    resolveProjectName: deriveColorResolveProjectName(projectBrief?.name, input.projectId),
     executor: input.executor,
   });
   await saveColorHostPreflight(projectRoot, preflight);
@@ -231,7 +242,29 @@ export async function prepareProjectColorRoot(
   const executorClips = await buildColorExecutorClips(
     context.rootSummary.rawLocalPath ?? '',
     context.runtimeConfig,
+    context.rootSummary.colorSpaceProfile,
   );
+  const syncedClipTransforms = await resolveExecutorClipTransforms(context, executorClips, {
+    syncLuts: false,
+    ignoreBlockers: true,
+  });
+  let preparedClipTransforms: Awaited<ReturnType<typeof resolveExecutorClipTransforms>>;
+  try {
+    preparedClipTransforms = await resolveExecutorClipTransforms(context, executorClips, {
+      syncLuts: true,
+    });
+  } catch (error) {
+    if (error instanceof ProjectColorBlockedError) {
+      await failColorAction(context.projectRoot, context.rootId, progressPath, action, error.blockers, {
+        projectId: input.projectId,
+        rootId: input.rootId,
+      }, {
+        persistRootBlockers: false,
+      });
+    }
+    throw error;
+  }
+  const timelineSpec = selectDominantTimelineSpec(executorClips);
 
   await writeRootCurrent(context.projectRoot, context.rootId, current => ({
     ...current,
@@ -239,7 +272,7 @@ export async function prepareProjectColorRoot(
     timelineStatus: 'idle',
     activeStage: 'sync_root_bins',
     currentJobId: input.jobId,
-    detail: '正在调用 official Python Resolve host 准备项目 / root bin / grading timeline。',
+    detail: '正在调用 vendored Resolve backend 准备项目 / root bin / grading timeline。',
     blockingReasons: filterPersistentColorBlockers(current.blockingReasons ?? []),
   }));
   await writeColorProgress(progressPath, action, {
@@ -264,7 +297,9 @@ export async function prepareProjectColorRoot(
       gradingTimelineName: context.rootSummary.gradingTimelineName,
       rawPath: context.rootSummary.rawPath,
       rawLocalPath: context.rootSummary.rawLocalPath ?? '',
-      clips: executorClips,
+      timelineSpec,
+      lutSyncSummary: preparedClipTransforms.lutSyncSummary,
+      clips: preparedClipTransforms.clips,
     }),
     `prepare_root:${context.rootId}`,
   );
@@ -317,6 +352,7 @@ export async function prepareProjectColorRoot(
     activeStage: undefined,
     currentJobId: undefined,
     detail,
+    hostSummary: prepared.hostSummary ?? current.hostSummary ?? {},
     groups: syncedGroups ?? current.groups,
     blockingReasons: filterPersistentColorBlockers(current.blockingReasons ?? []),
   }));
@@ -330,6 +366,7 @@ export async function prepareProjectColorRoot(
       rootId: context.rootId,
       hostPreflight,
       hostSummary: prepared.hostSummary ?? {},
+      transformWarnings: preparedClipTransforms.warnings,
       groupCount: prepared.groupsSnapshot?.groups.length,
     },
   });
@@ -383,7 +420,12 @@ export async function syncProjectColorGroups(
   const executorClips = await buildColorExecutorClips(
     context.rootSummary.rawLocalPath ?? '',
     context.runtimeConfig,
+    context.rootSummary.colorSpaceProfile,
   );
+  const syncedClipTransforms = await resolveExecutorClipTransforms(context, executorClips, {
+    syncLuts: false,
+    ignoreBlockers: true,
+  });
 
   await writeRootCurrent(context.projectRoot, context.rootId, current => ({
     ...current,
@@ -408,7 +450,7 @@ export async function syncProjectColorGroups(
       gradingTimelineName: context.rootSummary.gradingTimelineName,
       rawPath: context.rootSummary.rawPath,
       rawLocalPath: context.rootSummary.rawLocalPath ?? '',
-      clips: executorClips,
+      clips: syncedClipTransforms.clips,
     }),
     `sync_groups:${context.rootId}`,
   );
@@ -460,7 +502,6 @@ export async function executeProjectColorGroup(
   const blockers = dedupeStrings([
     !groupKey ? 'execute_group requires args.groupKey。' : '',
     !group ? `当前 root 尚未同步正式 Group：${groupKey ?? '(missing)'}` : '',
-    !context.rootSummary.path ? '当前 root 未配置 current path，无法生成 promote 目标。' : '',
     !context.rootSummary.localPath ? '当前设备未配置 current localPath，无法在本机覆盖当前素材目录。' : '',
     !context.rootSummary.rawLocalPath ? '当前设备未配置 rawLocalPath，无法扫描原始素材。' : '',
     typeof context.rootSummary.renderPreset.bitrateMbps !== 'number'
@@ -585,6 +626,10 @@ export async function executeProjectColorGroup(
       clips: planEntries.map(entry => ({
         rawRelativePath: entry.rawRelativePath,
         sourceAbsolutePath: entry.sourceAbsolutePath,
+        sourceStem: deriveSourceStem(entry.rawRelativePath),
+        width: entry.sourceMetadataSnapshot?.width,
+        height: entry.sourceMetadataSnapshot?.height,
+        fps: entry.sourceMetadataSnapshot?.fps,
       })),
     }),
     `execute_group:${context.rootId}:${groupKey}`,
@@ -721,6 +766,7 @@ export async function validateProjectColorBatch(
         sourceMetadata,
         outputMetadata,
       });
+      const warnings = collectValidationWarnings(checks);
       const reasons = collectValidationReasons(checks, {
         sourcePath,
         outputPath: entry.stagingAbsolutePath,
@@ -731,6 +777,7 @@ export async function validateProjectColorBatch(
         promoteTargetPath: entry.promoteTargetPath,
         status: (reasons.length > 0 ? 'fail' : 'pass') as 'pass' | 'fail',
         reasons,
+        warnings,
         checks,
       };
     }),
@@ -753,6 +800,7 @@ export async function validateProjectColorBatch(
       failedCount: validationEntries.filter(entry => entry.status === 'fail').length,
     },
     blockingReasons: validationBlockingReasons,
+    warnings: dedupeStrings(validationEntries.flatMap(entry => entry.warnings ?? [])),
     entries: validationEntries,
   };
   await saveColorBatchValidation(context.projectRoot, validation);
@@ -917,19 +965,25 @@ async function loadColorRootContext(
   rootId: string,
 ): Promise<IColorRootContext> {
   const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
-  const [projectRoots, deviceMaps, colorCurrent, runtimeConfig, groupSnapshotsByRootId] = await Promise.all([
+  const [projectBrief, projectRoots, deviceMaps, colorCurrent, runtimeConfig, groupSnapshotsByRootId, transformPresetsConfig] = await Promise.all([
+    loadProjectBriefConfig(projectRoot).catch(() => null),
     loadIngestRoots(projectRoot),
     loadProjectDeviceMediaMaps(projectRoot),
     loadColorCurrent(projectRoot),
     loadRuntimeConfig(projectRoot),
     loadColorGroupsSnapshots(projectRoot),
+    loadColorTransformPresetsConfig(workspaceRoot).catch(() => ({
+      profiles: {},
+      discoveredPresets: {},
+    })),
   ]);
   const colorWorkspace = buildColorWorkspaceState({
     projectId,
+    projectName: projectBrief?.name,
     projectRoots: projectRoots.roots,
     deviceProjectMap: deviceMaps.projects[projectId],
     colorCurrent,
-    runtimeConfig,
+    resolveBackend: inspectResolveColorBackend(),
     groupSnapshotsByRootId,
   });
   const rootSummary = colorWorkspace.colorRoots.find(root => root.rootId === rootId);
@@ -937,12 +991,14 @@ async function loadColorRootContext(
     throw new ProjectColorBlockedError([`color root 不存在或未配置 rawPath: ${rootId}`]);
   }
   return {
+    workspaceRoot,
     projectRoot,
     projectId,
     rootId,
     rootSummary,
     colorCurrent,
     runtimeConfig,
+    transformPresetsConfig,
     groupsSnapshot: await loadColorGroupsSnapshot(projectRoot, rootId),
   };
 }
@@ -953,10 +1009,7 @@ function resolveColorExecutor(
 ): IColorExecutor {
   if (executor) return executor;
   try {
-    return new PythonResolveColorExecutor({
-      pythonPath: context.runtimeConfig.resolveColorPythonPath,
-      scriptApiRoot: context.runtimeConfig.resolveColorScriptApiRoot,
-    });
+    return new PythonResolveColorExecutor();
   } catch (error) {
     if (error instanceof ResolveColorExecutorUnavailableError) {
       throw new ProjectColorBlockedError([error.message]);
@@ -991,6 +1044,7 @@ async function writeRootCurrent(
   const existing = await loadColorCurrent(projectRoot);
   const currentRoot = existing.roots.find(root => root.rootId === rootId) ?? {
     rootId,
+    hostSummary: {},
     groups: [],
     blockingReasons: [],
   };
@@ -1132,12 +1186,14 @@ async function failColorAction(
 
 function filterPersistentColorBlockers(blockers: string[]): string[] {
   return blockers.filter(blocker => (
-    !blocker.includes('resolveColorPythonPath')
-    && !blocker.includes('official Python Resolve host')
+    !blocker.includes('vendored Resolve backend')
     && !blocker.includes('Resolve Studio')
     && !blocker.includes('Resolve 版本')
     && !blocker.includes('renderPreset')
     && !blocker.includes('render preset')
+    && !blocker.includes('resolveColorPythonPath')
+    && !blocker.includes('resolveColorScriptApiRoot')
+    && !blocker.includes('config/runtime.json')
   ));
 }
 
@@ -1157,6 +1213,7 @@ async function scanColorRawInventory(rawLocalPath: string): Promise<Array<{
 async function buildColorExecutorClips(
   rawLocalPath: string,
   runtimeConfig: Awaited<ReturnType<typeof loadRuntimeConfig>>,
+  rootColorSpaceProfile?: IColorRootContext['rootSummary']['colorSpaceProfile'],
 ): Promise<IColorExecutorClipInput[]> {
   const inventory = await scanColorRawInventory(rawLocalPath);
   return Promise.all(
@@ -1165,18 +1222,105 @@ async function buildColorExecutorClips(
       const captureTime = probed
         ? await resolveCaptureTime(item.sourceAbsolutePath, probed).catch(() => null)
         : null;
+      const sourceTruth = await extractColorSourceTruth(item.sourceAbsolutePath, runtimeConfig).catch(() => ({
+        logProfile: undefined,
+        gyro: undefined,
+        lowlight: undefined,
+        deviceFamilyKeys: [],
+        sourceKinds: [],
+      }));
+      const profileResolution = resolveEffectiveColorProfile(
+        sourceTruth.logProfile,
+        rootColorSpaceProfile,
+      );
       return {
         rawRelativePath: item.rawRelativePath,
         sourceAbsolutePath: item.sourceAbsolutePath,
+        sourceStem: deriveSourceStem(item.rawRelativePath),
         capturedAt: captureTime?.capturedAt,
         width: probed?.width ?? undefined,
         height: probed?.height ?? undefined,
         fps: probed?.fps ?? undefined,
         codec: probed?.codec ?? undefined,
         rawTags: probed?.rawTags ?? {},
+        detectedProfile: profileResolution.detectedProfile,
+        effectiveProfile: profileResolution.effectiveProfile,
+        profileSource: profileResolution.profileSource,
+        logProfile: profileResolution.logProfile,
+        gyro: sourceTruth.gyro,
+        lowlight: sourceTruth.lowlight,
+        deviceFamilyKeys: sourceTruth.deviceFamilyKeys,
       } satisfies IColorExecutorClipInput;
     }),
   );
+}
+
+async function resolveExecutorClipTransforms(
+  context: IColorRootContext,
+  clips: IColorExecutorClipInput[],
+  options: {
+    syncLuts: boolean;
+    ignoreBlockers?: boolean;
+  },
+): Promise<{
+  clips: IColorExecutorClipInput[];
+  warnings: string[];
+  lutSyncSummary: IResolveLutSyncSummary;
+}> {
+  const resolved = resolveClipTransformSeeds(
+    clips.map(clip => ({
+      rawRelativePath: clip.rawRelativePath,
+      detectedProfile: clip.detectedProfile,
+      effectiveProfile: clip.effectiveProfile,
+      profileSource: clip.profileSource ?? 'unknown',
+      logProfile: clip.logProfile,
+      deviceFamilyKeys: clip.deviceFamilyKeys,
+    })),
+    context.transformPresetsConfig,
+    context.rootSummary.transformPresetKey,
+  );
+  if (resolved.blockers.length > 0 && !options.ignoreBlockers) {
+    throw new ProjectColorBlockedError(resolved.blockers);
+  }
+
+  const lutSyncSummary = options.syncLuts
+    ? await syncReferencedResolveLuts({
+      workspaceRoot: context.workspaceRoot,
+      relativeLutPaths: resolved.blockers.length > 0 ? [] : resolved.referencedRelativeLutPaths,
+      resolveLutRoot: resolved.resolveLutRoot,
+    }).catch(error => {
+      throw new ProjectColorBlockedError([String(error instanceof Error ? error.message : error)]);
+    })
+    : {
+      status: resolved.blockers.length > 0
+        ? 'not-needed'
+        : resolved.referencedRelativeLutPaths.length > 0
+          ? 'ready'
+          : 'not-needed',
+      targetRoot: resolved.resolveLutRoot,
+      copiedCount: 0,
+      reusedCount: resolved.blockers.length > 0 ? 0 : resolved.referencedRelativeLutPaths.length,
+      copiedLuts: [],
+      reusedLuts: resolved.blockers.length > 0 ? [] : resolved.referencedRelativeLutPaths,
+    } satisfies IResolveLutSyncSummary;
+
+  const clipByKey = new Map(clips.map(clip => [clip.rawRelativePath, clip]));
+  return {
+    clips: resolved.clips.map(resolvedClip => ({
+      ...clipByKey.get(resolvedClip.rawRelativePath),
+      detectedProfile: resolvedClip.detectedProfile,
+      effectiveProfile: resolvedClip.effectiveProfile,
+      profileSource: resolvedClip.profileSource,
+      logProfile: resolvedClip.logProfile,
+      resolvedTransformPresetKey: resolvedClip.resolvedTransformPresetKey,
+      resolvedLutRelativePath: resolvedClip.resolvedLutRelativePath,
+      resolvedLutAbsolutePath: resolvedClip.resolvedLutAbsolutePath,
+    }) as IColorExecutorClipInput),
+    warnings: resolved.blockers.length > 0
+      ? [...resolved.warnings, ...resolved.blockers]
+      : resolved.warnings,
+    lutSyncSummary,
+  };
 }
 
 function sameStringSet(left: string[], right: string[]): boolean {
@@ -1235,7 +1379,6 @@ async function ensureActionHostPreflight(input: {
     projectId: input.context.projectId,
     rootId: input.context.rootId,
     resolveProjectName: input.context.rootSummary.resolveProjectName,
-    runtimeConfig: input.context.runtimeConfig,
     executor: input.executor,
   });
   await saveColorHostPreflight(input.context.projectRoot, preflight);
@@ -1266,27 +1409,26 @@ async function runColorHostPreflight(input: {
   projectId: string;
   rootId?: string;
   resolveProjectName: string;
-  runtimeConfig: Awaited<ReturnType<typeof loadRuntimeConfig>>;
   executor?: IColorExecutor;
 }): Promise<IColorHostPreflight> {
-  if (!input.runtimeConfig.resolveColorPythonPath?.trim()) {
-    return normalizeHostPreflight({
-      status: 'blocked',
-      checkedAt: new Date().toISOString(),
-      warnings: [],
-      blockingReasons: ['未配置 config/runtime.json resolveColorPythonPath，无法调用 official Python Resolve host。'],
-      renderSupport: {
-        containers: [],
-        supportsAudioCodec: false,
-        supportsVideoQuality: false,
-      },
-    });
+  if (!input.executor) {
+    const resolveBackend = inspectResolveColorBackend();
+    if (!resolveBackend.available) {
+      return normalizeHostPreflight({
+        status: 'blocked',
+        checkedAt: new Date().toISOString(),
+        warnings: [],
+        blockingReasons: resolveBackend.blockingReason ? [resolveBackend.blockingReason] : [],
+        renderSupport: {
+          containers: [],
+          supportsAudioCodec: false,
+          supportsVideoQuality: false,
+        },
+      });
+    }
   }
 
-  const executor = input.executor ?? new PythonResolveColorExecutor({
-    pythonPath: input.runtimeConfig.resolveColorPythonPath,
-    scriptApiRoot: input.runtimeConfig.resolveColorScriptApiRoot,
-  });
+  const executor = input.executor ?? new PythonResolveColorExecutor();
   try {
     return normalizeHostPreflight(
       await runColorHostWithRetry(
@@ -1534,13 +1676,20 @@ function collectValidationReasons(
   if (checks.fps === 'fail') reasons.push('fps mismatch');
   if (checks.duration === 'fail') reasons.push('duration mismatch');
   if (checks.capturedAt === 'fail') reasons.push('capturedAt mismatch');
-  if (checks.createTime === 'fail') reasons.push('create_time mismatch');
   if (checks.gps === 'fail') reasons.push('gps mismatch');
   if (checks.mediaKind === 'fail' || checks.duration === 'fail' || checks.resolution === 'fail') {
     reasons.push(`source=${context.sourcePath}`);
     reasons.push(`output=${context.outputPath}`);
   }
   return dedupeStrings(reasons);
+}
+
+function collectValidationWarnings(
+  checks: ReturnType<typeof buildColorValidationChecks>,
+): string[] {
+  const warnings: string[] = [];
+  if (checks.createTime === 'fail') warnings.push('create_time mismatch');
+  return dedupeStrings(warnings);
 }
 
 async function deleteManagedOutputs(
@@ -1587,4 +1736,43 @@ function dedupeStrings(values: Array<string | undefined>): string[] {
     result.push(normalized);
   }
   return result;
+}
+
+function selectDominantTimelineSpec(
+  clips: IColorExecutorClipInput[],
+): { width: number; height: number; fps: number } | undefined {
+  const counts = new Map<string, { width: number; height: number; fps: number; count: number }>();
+  for (const clip of clips) {
+    if (typeof clip.width !== 'number' || typeof clip.height !== 'number' || typeof clip.fps !== 'number') {
+      continue;
+    }
+    const key = `${clip.width}x${clip.height}@${clip.fps.toFixed(3)}`;
+    const current = counts.get(key);
+    if (current) {
+      current.count += 1;
+      continue;
+    }
+    counts.set(key, {
+      width: clip.width,
+      height: clip.height,
+      fps: clip.fps,
+      count: 1,
+    });
+  }
+  const selected = [...counts.values()]
+    .sort((left, right) => (
+      right.count - left.count
+      || right.width * right.height - left.width * left.height
+      || right.fps - left.fps
+    ))[0];
+  if (!selected) return undefined;
+  return {
+    width: selected.width,
+    height: selected.height,
+    fps: selected.fps,
+  };
+}
+
+function deriveSourceStem(rawRelativePath: string): string {
+  return posix.basename(rawRelativePath, posix.extname(rawRelativePath));
 }
