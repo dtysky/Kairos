@@ -110,10 +110,18 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - `execute_root`
   - `validate_batch`
   - `promote_batch`
-- Treat `prepare_root` as the formal Resolve-side sync step: it must mirror `rawLocalPath` into root bins, ensure the root grading timeline has executable clips, set that timeline to the root dominant `(width, height, fps)` spec, auto-sync any missing workspace-managed LUTs for the current root into the device Resolve default LUT directory, and create or reuse Resolve Groups from source-truth / root-fallback creative tags.
+- Treat `prepare_root` as the formal Resolve-side sync step: it must mirror `rawLocalPath` into root bins, ensure the root grading timeline has executable clips, set that timeline to the root dominant `(width, height, fps)` spec, auto-sync any missing workspace-managed LUTs for the current root into the device Resolve default LUT directory, create or reuse Resolve Groups from `logProfile + lowlight`, preserve same-clip repair grades across reruns via `CopyGrades`, and ensure every executable clip has at least the Kairos-managed repair skeleton slots.
 - Treat Resolve as the formal Group truth for color: users may keep adjusting Groups inside Resolve, and `/color` should only mirror them back via `sync_groups`; synced non-empty Groups become `ready` directly, with no extra `/color` confirm step.
 - Treat root grading timeline as the formal export truth for color: render preset is root-scoped, while batch is only the execution/retry grain and may optionally carry `clipKeys[]` for subset reruns.
 - Treat Resolve Groups as diagnostic/sync truth only after `sync_groups`; they no longer decide render preset, batch ownership, or execution order.
+- Treat Resolve grading truth as layered:
+  - `Group Post-Clip` is the formal creative truth
+  - `Clip` is the formal repair/local-exception layer
+  - `/color` mirrors status for those layers; it does not become the primary creative parameter editor
+- Treat `lowlight` as a first-frame creative classification, not a metadata fallback or noise-only diagnosis.
+- Treat `gyro` as clip-level repair truth only; it must not participate in auto-grouping.
+- Treat the formal clip repair skeleton as `Gyroflow slot -> user local reserved nodes -> Noise Reduction slot`.
+- Treat repair preservation as Resolve `CopyGrades`-based for the same clip across reruns; if public scripting cannot create a missing OFX shell, the formal state must stay `not-seeded`.
 - Treat `color/current.json.hostPreflight` as formal cached host truth for `/color`; blocked/degraded host state should surface before the user starts a color action.
 - Treat `prepare_root / sync_groups / execute_root` as preflight-guarded actions: if Resolve host is blocked or the current render preset is unsupported, fail before Resolve-side mutation.
 - Treat `color/batches/<batchId>/plan.json|manifest.json|validation.json|promote.json` as the read-only source for `/color` archive sections; do not duplicate batch history back into config or ad-hoc UI state.
@@ -130,6 +138,7 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - LUT sync policy is copy-missing-only into the Resolve default LUT directory when the same relative path exists under `config/luts/`
   - existing non-empty user grades must not be overwritten by Kairos default transforms
 - Treat `color/current.json`, `color/groups/<rootId>.json`, and `color/batches/<batchId>/...` as system-maintained runtime/archive truth, not user config.
+- Treat `color/groups/<rootId>.json` as the formal snapshot for both group creative state (`logProfile / lowlight / postClipCreativeStatus`) and clip repair state (`gyroEligible / gyroflowStatus / nrStatus / clipRepairStatus`).
 - Do not treat stale progress displays as proof that formal processing is alive.
 - Do not silently use legacy monitor paths for new work when `Supervisor + React console` is the official entry.
 - Treat workspace style-analysis as a formal deterministic prep job before Agent style synthesis, not as a UI-only placeholder.

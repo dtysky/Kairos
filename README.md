@@ -54,7 +54,7 @@ Current stable pipeline:
   - workspace-level default transform mapping now lives in `config/color-transform-presets.json`, and workspace-managed LUT assets now live in `config/luts/`
   - `resolveProjectName / rootNamespace / gradingTimelineName` are derived by convention and stay read-only; `/color` keeps them in advanced/debug info instead of editable config
   - `projects/<projectId>/color/current.json` stores the current root/group runtime truth
-  - `projects/<projectId>/color/groups/<rootId>.json` stores the latest formal host-synced Group snapshot for that root
+  - `projects/<projectId>/color/groups/<rootId>.json` stores the latest formal host-synced Group + clip repair snapshot for that root
   - `projects/<projectId>/color/batches/<batchId>/plan.json|manifest.json|validation.json|promote.json` store batch/runtime archive
   - current `/color` auto-discovers roots that already have `rawPath`, and the page now follows `Root 摘要 -> 当前 Root Hero -> 所有 Root 常驻可编辑配置 -> Groups -> 次级诊断/归档`
   - current `/color` keeps all user-editable root parameters visible without opening details; every root's `当前素材路径 / 原始素材路径` and `renderPreset + colorSpaceProfile + transformPresetKey` stay on the same page, while derived Resolve naming stays in advanced/debug info
@@ -66,15 +66,28 @@ Current stable pipeline:
     - `validate_batch`
     - `promote_batch`
   - current `prepare_root` is the formal Resolve-side root sync step: it mirrors `rawLocalPath` into root bins, creates the grading timeline with that root's dominant `(width, height, fps)` spec, auto-syncs any missing same-path workspace LUTs referenced by the current root into the device Resolve default LUT directory when they exist under `config/luts/`, and creates or reuses Resolve Groups from source-truth / root-fallback creative tags
+  - current `/color` is now Resolve-first about where grading truth lives:
+    - `Group Post-Clip` is the only formal creative-truth layer
+    - `Clip` is a fixed repair/local-exception layer, not the main creative surface
+    - Kairos only prepares and mirrors those layers; real grading truth still lives inside Resolve
   - current Resolve naming is human-readable by convention:
     - Resolve Project: `${projectBrief.name} [Color]`
     - root namespace / grading timeline: derived from root `label`
   - current Group truth is Resolve-managed: users may keep adjusting Groups in Resolve, and `/color` only mirrors them back through `sync_groups`; synced non-empty Groups become `ready` directly and there is no extra `/color` confirm step
   - current automatic Groups are creative-tag based, not technical-fingerprint based:
     - `log`: explicit clip truth first, then root `color.colorSpaceProfile`
-    - `gyro`: explicit metadata truth only
-    - `lowlight`: conservative high-confidence heuristic only
+    - `lowlight`: first-frame creative classification only; it is a grouping/look hint, not a synonym for “must denoise”
+    - `gyro` is now clip-level repair truth only and no longer participates in group auto-bucketing
     - Group key is the normalized Resolve group name slug
+  - current `prepare_root` must also ensure a fixed clip repair skeleton for every executable clip:
+    - the formal node order is `Gyroflow slot -> user local reserved nodes -> Noise Reduction slot`
+    - repair preservation now uses official Resolve `CopyGrades` only to carry the same clip's existing repair graph across `prepare_root` reruns; Kairos does not pretend it can mint brand-new OFX shells from thin air
+    - when the current clip graph has no prior repair, Kairos lays down the blank skeleton and records missing shells honestly as `not-seeded`
+    - a `Gyroflow` tool copied onto a clip only proves the shell exists; the formal default status remains `ready-to-load`, not `active`
+    - `lowlight=true` is only a creative-first label plus a default repair hint; it does not change the meaning of the `lowlight` label itself
+  - current `sync_groups` mirrors both group creative state and clip repair state:
+    - group-level truth includes `logProfile`, `lowlight`, and `postClipCreativeStatus`
+    - clip-level truth includes `gyroEligible`, `gyroflowStatus`, `nrStatus`, and `clipRepairStatus`
   - current automatic technical transform resolution follows:
     - clip truth priority is `source metadata > XML > root.color.colorSpaceProfile fallback`
     - unresolved DJI private metadata remains `unknown`; Kairos must not force `dlog-m`

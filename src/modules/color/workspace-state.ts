@@ -1,4 +1,5 @@
 import type {
+  IColorClipRepairSnapshot,
   IColorGroupsSnapshotFile,
   IColorCurrent,
   IColorGroupCurrent,
@@ -51,9 +52,15 @@ export interface IColorGroupWorkspaceSummary {
   displayName: string;
   clipCount: number;
   clipKeys: string[];
+  logProfile?: string;
+  lowlight?: string;
+  postClipCreativeStatus?: string;
+  clips: IColorClipRepairWorkspaceSummary[];
   hostSummary: Record<string, unknown>;
   current: IColorGroupCurrent;
 }
+
+export interface IColorClipRepairWorkspaceSummary extends IColorClipRepairSnapshot {}
 
 export interface IColorWorkspaceState {
   colorCurrent: IColorCurrent & { roots: IColorRootCurrentView[] };
@@ -185,18 +192,21 @@ function deviceRootByRootId(
 function normalizeGroupCurrent(
   currentGroups: NonNullable<IColorRootCurrent['groups']>,
 ): IColorGroupCurrent[] {
-  return currentGroups.map(current => ({
-      groupKey: current.groupKey,
-      status: current.status,
-      displayName: trimmed(current.displayName),
-      clipCount: current.clipCount,
-      latestBatchId: current.latestBatchId,
-      latestBatchStatus: current.latestBatchStatus,
-      latestValidationStatus: current.latestValidationStatus,
-      pendingPromoteBatchId: trimmed(current.pendingPromoteBatchId),
-      lastPromotedBatchId: trimmed(current.lastPromotedBatchId),
-      blockingReasons: dedupeStrings(current.blockingReasons ?? []),
-    }));
+    return currentGroups.map(current => ({
+    groupKey: current.groupKey,
+    status: current.status,
+    displayName: trimmed(current.displayName),
+    clipCount: current.clipCount,
+    logProfile: trimmed(current.logProfile),
+    lowlight: current.lowlight,
+    postClipCreativeStatus: current.postClipCreativeStatus,
+    latestBatchId: current.latestBatchId,
+    latestBatchStatus: current.latestBatchStatus,
+    latestValidationStatus: current.latestValidationStatus,
+    pendingPromoteBatchId: trimmed(current.pendingPromoteBatchId),
+    lastPromotedBatchId: trimmed(current.lastPromotedBatchId),
+    blockingReasons: dedupeStrings(current.blockingReasons ?? []),
+  }));
 }
 
 function materializeGroupWorkspaceSummaries(
@@ -219,11 +229,28 @@ function materializeGroupWorkspaceSummaries(
       displayName: trimmed(group.displayName) ?? group.groupKey,
       clipCount: group.clipKeys.length,
       clipKeys: dedupeStrings(group.clipKeys ?? []),
+      logProfile: trimmed(group.logProfile) ?? trimmed(current.logProfile),
+      lowlight: group.lowlight ?? current.lowlight,
+      postClipCreativeStatus: group.postClipCreativeStatus ?? current.postClipCreativeStatus,
+      clips: (group.clips ?? []).map(clip => ({
+        clipKey: clip.clipKey,
+        displayName: trimmed(clip.displayName),
+        logProfile: trimmed(clip.logProfile),
+        lowlight: clip.lowlight,
+        gyroEligible: clip.gyroEligible,
+        gyroflowStatus: clip.gyroflowStatus,
+        nrStatus: clip.nrStatus,
+        clipRepairStatus: clip.clipRepairStatus,
+        hostSummary: isPlainObject(clip.hostSummary) ? clip.hostSummary : {},
+      })),
       hostSummary: isPlainObject(group.hostSummary) ? group.hostSummary : {},
       current: {
         ...current,
         displayName: trimmed(current.displayName) ?? trimmed(group.displayName) ?? group.groupKey,
         clipCount: current.clipCount ?? group.clipKeys.length,
+        logProfile: trimmed(group.logProfile) ?? trimmed(current.logProfile),
+        lowlight: group.lowlight ?? current.lowlight,
+        postClipCreativeStatus: group.postClipCreativeStatus ?? current.postClipCreativeStatus,
       },
     } satisfies IColorGroupWorkspaceSummary;
   });
@@ -235,11 +262,18 @@ function materializeGroupWorkspaceSummaries(
       displayName: trimmed(current.displayName) ?? current.groupKey,
       clipCount: current.clipCount ?? 0,
       clipKeys: [],
+      logProfile: trimmed(current.logProfile),
+      lowlight: current.lowlight,
+      postClipCreativeStatus: current.postClipCreativeStatus,
+      clips: [],
       hostSummary: {},
       current: {
         ...current,
         displayName: trimmed(current.displayName) ?? current.groupKey,
         clipCount: current.clipCount ?? 0,
+        logProfile: trimmed(current.logProfile),
+        lowlight: current.lowlight,
+        postClipCreativeStatus: current.postClipCreativeStatus,
       },
     });
   }

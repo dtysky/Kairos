@@ -75,7 +75,7 @@ export interface IColorExecutorClipInput {
   effectiveProfile?: string;
   profileSource?: TColorProfileSource;
   logProfile?: EColorSourceProfile;
-  gyro?: boolean;
+  gyroEligible?: boolean;
   lowlight?: boolean;
   deviceFamilyKeys?: string[];
   resolvedTransformPresetKey?: string;

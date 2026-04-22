@@ -14,7 +14,6 @@ CCREATIVE_SIGNAL_KEYS = (
     "dlog-m",
     "hlg",
     "rec709",
-    "gyro",
     "lowlight",
 )
 
@@ -122,70 +121,89 @@ def prepare_root(resolve, payload):
     apply_timeline_spec(project, payload.get("timelineSpec"), timeline)
     clip_requests = normalize_clip_requests(payload.get("clips"))
     previous_group_names_by_clip = capture_timeline_group_assignments(timeline, payload["rawLocalPath"])
+    donor_timeline = None
+    if has_timeline_video_items(timeline):
+        donor_timeline = duplicate_timeline(
+            project,
+            timeline,
+            build_temp_render_timeline_name(f"{payload['gradingTimelineName']} [Kairos Repair Donor]"),
+        )
+        safe_call(project, "SetCurrentTimeline", timeline)
 
-    namespace_state = collect_namespace_state(namespace_folder)
-    prepared_entries, sync_summary = sync_namespace_clips(
-        media_pool,
-        media_storage,
-        namespace_folder,
-        namespace_state,
-        clip_requests,
-    )
-    ordered_entries = sort_clip_entries(prepared_entries)
+    try:
+        namespace_state = collect_namespace_state(namespace_folder)
+        prepared_entries, sync_summary = sync_namespace_clips(
+            media_pool,
+            media_storage,
+            namespace_folder,
+            namespace_state,
+            clip_requests,
+        )
+        ordered_entries = sort_clip_entries(prepared_entries)
 
-    clear_timeline_items(timeline)
-    append_clips_to_timeline(project, media_pool, timeline, ordered_entries)
-    timeline_item_by_clip_key = build_timeline_item_map(timeline, payload["rawLocalPath"])
-    group_states = assign_generated_groups(project, ordered_entries, timeline_item_by_clip_key, previous_group_names_by_clip)
-    group_transform_summaries = apply_group_preclip_transforms(project, group_states)
-    transform_blockers = dedupe_strings([
-        summary.get("detail")
-        for summary in group_transform_summaries.values()
-        if isinstance(summary, dict) and str(summary.get("transformStatus") or "").startswith("blocked")
-    ])
-    if transform_blockers:
-        raise HostError(
-            "resolve_group_transform_failed",
-            "Copied LUT is not visible to the current Resolve session. Refresh LUT List in Resolve and retry.",
-            {
-                "blockingReasons": transform_blockers,
-                "groupTransforms": group_transform_summaries,
-            },
+        clear_timeline_items(timeline)
+        append_clips_to_timeline(project, media_pool, timeline, ordered_entries)
+        timeline_item_by_clip_key = build_timeline_item_map(timeline, payload["rawLocalPath"])
+        group_states = assign_generated_groups(project, ordered_entries, timeline_item_by_clip_key, previous_group_names_by_clip)
+        group_transform_summaries = apply_group_preclip_transforms(project, group_states)
+        transform_blockers = dedupe_strings([
+            summary.get("detail")
+            for summary in group_transform_summaries.values()
+            if isinstance(summary, dict) and str(summary.get("transformStatus") or "").startswith("blocked")
+        ])
+        if transform_blockers:
+            raise HostError(
+                "resolve_group_transform_failed",
+                "Copied LUT is not visible to the current Resolve session. Refresh LUT List in Resolve and retry.",
+                {
+                    "blockingReasons": transform_blockers,
+                    "groupTransforms": group_transform_summaries,
+                },
+            )
+
+        repair_seed_by_clip = seed_clip_repairs(
+            timeline,
+            payload["rawLocalPath"],
+            clip_requests,
+            donor_timeline,
         )
 
-    groups_snapshot = build_groups_snapshot(
-        payload["rootId"],
-        timeline,
-        payload["gradingTimelineName"],
-        payload["rawLocalPath"],
-        clip_requests,
-        origin="prepare_root",
-        group_transform_summaries=group_transform_summaries,
-    )
-    save_project(project)
-    return {
-        "resolveProjectName": payload["resolveProjectName"],
-        "gradingTimelineName": payload["gradingTimelineName"],
-        "mirrorStatus": "synced",
-        "timelineStatus": "ready",
-        "groupsSnapshot": groups_snapshot,
-        "hostSummary": {
-            "rootNamespace": payload["rootNamespace"],
-            "clipCount": len(ordered_entries),
-            "importedClipCount": sync_summary["imported"],
-            "movedClipCount": sync_summary["moved"],
-            "reusedClipCount": sync_summary["reused"],
-            "groupCount": len(groups_snapshot["groups"]),
-            "lutSyncStatus": (payload.get("lutSyncSummary") or {}).get("status"),
-            "lutSyncTargetRoot": (payload.get("lutSyncSummary") or {}).get("targetRoot"),
-            "lutSyncCopiedCount": (payload.get("lutSyncSummary") or {}).get("copiedCount") or 0,
-            "lutSyncReusedCount": (payload.get("lutSyncSummary") or {}).get("reusedCount") or 0,
-            "resolvedTransformPresetKey": summarize_root_transform_value(group_transform_summaries, "resolvedTransformPresetKey"),
-            "detectedProfile": summarize_root_transform_value(group_transform_summaries, "detectedProfile"),
-            "effectiveProfile": summarize_root_transform_value(group_transform_summaries, "effectiveProfile"),
-            "transformStatus": summarize_root_transform_status(group_transform_summaries),
-        },
-    }
+        groups_snapshot = build_groups_snapshot(
+            payload["rootId"],
+            timeline,
+            payload["gradingTimelineName"],
+            payload["rawLocalPath"],
+            clip_requests,
+            origin="prepare_root",
+            group_transform_summaries=group_transform_summaries,
+            repair_seed_by_clip=repair_seed_by_clip,
+        )
+        save_project(project)
+        return {
+            "resolveProjectName": payload["resolveProjectName"],
+            "gradingTimelineName": payload["gradingTimelineName"],
+            "mirrorStatus": "synced",
+            "timelineStatus": "ready",
+            "groupsSnapshot": groups_snapshot,
+            "hostSummary": {
+                "rootNamespace": payload["rootNamespace"],
+                "clipCount": len(ordered_entries),
+                "importedClipCount": sync_summary["imported"],
+                "movedClipCount": sync_summary["moved"],
+                "reusedClipCount": sync_summary["reused"],
+                "groupCount": len(groups_snapshot["groups"]),
+                "lutSyncStatus": (payload.get("lutSyncSummary") or {}).get("status"),
+                "lutSyncTargetRoot": (payload.get("lutSyncSummary") or {}).get("targetRoot"),
+                "lutSyncCopiedCount": (payload.get("lutSyncSummary") or {}).get("copiedCount") or 0,
+                "lutSyncReusedCount": (payload.get("lutSyncSummary") or {}).get("reusedCount") or 0,
+                "resolvedTransformPresetKey": summarize_root_transform_value(group_transform_summaries, "resolvedTransformPresetKey"),
+                "detectedProfile": summarize_root_transform_value(group_transform_summaries, "detectedProfile"),
+                "effectiveProfile": summarize_root_transform_value(group_transform_summaries, "effectiveProfile"),
+                "transformStatus": summarize_root_transform_status(group_transform_summaries),
+            },
+        }
+    finally:
+        delete_timeline(media_pool, donor_timeline)
 
 
 def preflight(resolve, payload):
@@ -595,6 +613,185 @@ def build_timeline_item_map(timeline, raw_local_path):
     return clip_key_to_item
 
 
+def has_timeline_video_items(timeline):
+    return next(iter_timeline_video_items(timeline), None) is not None
+
+
+def seed_clip_repairs(timeline, raw_local_path, clip_requests, donor_timeline=None):
+    target_items_by_clip = build_timeline_item_map(timeline, raw_local_path)
+    donor_items_by_clip = build_timeline_item_map(donor_timeline, raw_local_path) if donor_timeline else {}
+    repair_seed_by_clip = {}
+    for clip_request in clip_requests:
+        clip_key = clip_request["rawRelativePath"]
+        target_item = target_items_by_clip.get(clip_key)
+        if target_item is None:
+            raise HostError(
+                "resolve_repair_target_missing",
+                f"Prepared clip is missing from grading timeline after append: {clip_key}",
+            )
+        copied_existing_grade = False
+        donor_item = donor_items_by_clip.get(clip_key)
+        if donor_item is not None and donor_item is not target_item:
+            donor_graph = safe_call(donor_item, "GetNodeGraph")
+            donor_node_count = parse_int(safe_call(donor_graph, "GetNumNodes")) or 0
+            if donor_node_count > 0:
+                result = safe_call(donor_item, "CopyGrades", [target_item])
+                if result is False:
+                    raise HostError(
+                        "resolve_clip_repair_copy_failed",
+                        f"Unable to preserve existing clip repair grade for: {clip_key}",
+                    )
+                copied_existing_grade = True
+
+        target_graph = safe_call(target_item, "GetNodeGraph")
+        ensured_node_count = ensure_graph_node_count(target_graph, 3)
+        seeded_default_nr = False
+        default_nr_enabled = None
+        if target_graph is not None and ensured_node_count >= 3 and not copied_existing_grade:
+            default_nr_enabled = clip_request.get("lowlight") is True
+            seeded_default_nr = safe_call(target_graph, "SetNodeEnabled", 3, default_nr_enabled) is not False
+
+        repair_seed_by_clip[clip_key] = {
+            "copiedExistingGrade": copied_existing_grade,
+            "ensuredNodeCount": ensured_node_count,
+            "seededDefaultNr": seeded_default_nr,
+            "defaultNrEnabled": default_nr_enabled,
+        }
+    return repair_seed_by_clip
+
+
+def ensure_graph_node_count(graph, minimum_count):
+    if graph is None:
+        return 0
+    current_count = parse_int(safe_call(graph, "GetNumNodes")) or 0
+    while current_count < minimum_count:
+        created = False
+        for method_name in ("AddSerialNode", "AddCorrectorNode", "AddNode"):
+            safe_call(graph, method_name)
+            next_count = parse_int(safe_call(graph, "GetNumNodes")) or 0
+            if next_count > current_count:
+                current_count = next_count
+                created = True
+                break
+        if not created:
+            break
+    return current_count
+
+
+def build_clip_repair_snapshot(item, clip_request, repair_seed_state=None):
+    graph = safe_call(item, "GetNodeGraph")
+    node_count = parse_int(safe_call(graph, "GetNumNodes")) or 0
+    tools_by_node = collect_graph_tools_by_node(graph)
+    gyro_shell_present = any(contains_gyroflow_tool(tools) for tools in tools_by_node.values())
+    nr_tool_present = any(contains_noise_reduction_tool(tools) for tools in tools_by_node.values())
+    gyro_eligible = clip_request.get("gyroEligible") is True
+    if not gyro_eligible:
+        gyroflow_status = "not-applicable"
+    elif gyro_shell_present:
+        gyroflow_status = "ready-to-load"
+    else:
+        gyroflow_status = "not-seeded"
+    if nr_tool_present:
+        nr_status = "seeded-enabled"
+    elif repair_seed_state and repair_seed_state.get("seededDefaultNr") is True:
+        nr_status = "seeded-enabled" if repair_seed_state.get("defaultNrEnabled") is True else "seeded-disabled"
+    else:
+        nr_status = "not-seeded"
+    clip_repair_status = determine_clip_repair_status(node_count, gyro_eligible, gyroflow_status, nr_status)
+    return {
+        "clipKey": clip_request["rawRelativePath"],
+        "displayName": clip_request.get("sourceStem") or Path(clip_request["rawRelativePath"]).stem,
+        "logProfile": normalize_log_profile(clip_request.get("logProfile")),
+        "lowlight": clip_request.get("lowlight") is True,
+        "gyroEligible": gyro_eligible,
+        "gyroflowStatus": gyroflow_status,
+        "nrStatus": nr_status,
+        "clipRepairStatus": clip_repair_status,
+        "hostSummary": {
+            "nodeCount": node_count,
+            "toolsByNode": {str(node_index): tools for node_index, tools in sorted(tools_by_node.items())},
+            "copiedExistingGrade": bool(repair_seed_state and repair_seed_state.get("copiedExistingGrade")),
+            "seededDefaultNr": bool(repair_seed_state and repair_seed_state.get("seededDefaultNr")),
+        },
+    }
+
+
+def collect_graph_tools_by_node(graph):
+    tools_by_node = {}
+    if graph is None:
+        return tools_by_node
+    node_count = parse_int(safe_call(graph, "GetNumNodes")) or 0
+    for node_index in range(1, int(node_count) + 1):
+        tools = safe_call(graph, "GetToolsInNode", node_index) or []
+        normalized_tools = dedupe_strings([
+            stringify_signal_value(tool)
+            for tool in iter_values(tools)
+        ])
+        if normalized_tools:
+            tools_by_node[node_index] = normalized_tools
+    return tools_by_node
+
+
+def contains_gyroflow_tool(tools):
+    return any("gyroflow" in str(tool).lower() for tool in tools or [])
+
+
+def contains_noise_reduction_tool(tools):
+    return any(
+        "noise reduction" in str(tool).lower() or "denoise" in str(tool).lower()
+        for tool in tools or []
+    )
+
+
+def determine_clip_repair_status(node_count, gyro_eligible, gyroflow_status, nr_status):
+    if node_count <= 0:
+        return "missing"
+    if node_count < 3:
+        return "partial"
+    if gyro_eligible and gyroflow_status == "not-seeded":
+        return "partial" if nr_status == "not-seeded" else "skeleton-only"
+    if nr_status == "not-seeded":
+        return "skeleton-only"
+    return "ready"
+
+
+def summarize_group_log_profile(clip_requests):
+    log_profiles = dedupe_strings([
+        normalize_log_profile(clip_request.get("logProfile"))
+        for clip_request in clip_requests or []
+    ])
+    if len(log_profiles) == 1:
+        return log_profiles[0]
+    if len(log_profiles) > 1:
+        return "mixed"
+    return "unknown"
+
+
+def summarize_group_lowlight(clip_snapshots):
+    lowlight_values = {
+        "lowlight" if clip.get("lowlight") is True else "base"
+        for clip in clip_snapshots or []
+        if clip.get("lowlight") is not None
+    }
+    if len(lowlight_values) == 1:
+        return next(iter(lowlight_values))
+    if len(lowlight_values) > 1:
+        return "mixed"
+    return None
+
+
+def inspect_group_post_clip_creative_status(color_group):
+    if color_group is None:
+        return "missing"
+    graph = safe_call(color_group, "GetPostClipNodeGraph")
+    if graph is None:
+        return "missing"
+    node_count = parse_int(safe_call(graph, "GetNumNodes")) or 0
+    if node_count <= 0 and not collect_graph_luts(graph):
+        return "empty"
+    return "ready"
+
+
 def assign_generated_groups(project, clip_entries, timeline_item_by_clip_key, previous_group_names_by_clip):
     existing_groups_by_name = {}
     for group in iter_values(safe_call(project, "GetColorGroupsList") or []):
@@ -614,7 +811,11 @@ def assign_generated_groups(project, clip_entries, timeline_item_by_clip_key, pr
             for entry in entries
             if previous_group_names_by_clip.get(entry["rawRelativePath"])
         })
-        if len(previous_names) == 1 and previous_names[0] not in claimed_group_names:
+        if (
+            len(previous_names) == 1
+            and previous_names[0] not in claimed_group_names
+            and normalize_group_key(previous_names[0]) == normalize_group_key(group_name_seed)
+        ):
             desired_group_name = previous_names[0]
         else:
             desired_group_name = ensure_unique_group_name(
@@ -681,7 +882,16 @@ def ensure_color_group(project, existing_groups_by_name, group_name):
     raise HostError("resolve_color_group_missing", f"Unable to create or reuse Resolve group: {group_name}")
 
 
-def build_groups_snapshot(root_id, timeline, timeline_name, raw_local_path, clip_requests, origin, group_transform_summaries=None):
+def build_groups_snapshot(
+    root_id,
+    timeline,
+    timeline_name,
+    raw_local_path,
+    clip_requests,
+    origin,
+    group_transform_summaries=None,
+    repair_seed_by_clip=None,
+):
     clip_requests_by_key = {
         clip["rawRelativePath"]: clip
         for clip in clip_requests
@@ -695,26 +905,35 @@ def build_groups_snapshot(root_id, timeline, timeline_name, raw_local_path, clip
             clip_key = to_portable_relative(raw_local_path, file_path)
         except ValueError:
             continue
+        group = safe_call(item, "GetColorGroup")
         group_name = extract_group_name(item) or "Ungrouped"
-        creative = build_clip_creative_summary(
-            clip_requests_by_key.get(clip_key, {"rawRelativePath": clip_key}),
-        )
+        clip_request = clip_requests_by_key.get(clip_key, {"rawRelativePath": clip_key})
         entry = group_map.setdefault(group_name, {
             "displayName": group_name,
             "clipKeys": [],
-            "creativeTags": [],
             "clipRequests": [],
+            "clipSnapshots": [],
+            "colorGroup": None,
         })
+        if entry["colorGroup"] is None and group:
+            entry["colorGroup"] = group
         if clip_key not in entry["clipKeys"]:
             entry["clipKeys"].append(clip_key)
-        entry["creativeTags"].append(creative["creativeTags"])
         if clip_requests_by_key.get(clip_key):
-            entry["clipRequests"].append(clip_requests_by_key[clip_key])
+            entry["clipRequests"].append(clip_request)
+        entry["clipSnapshots"].append(build_clip_repair_snapshot(
+            item,
+            clip_request,
+            repair_seed_by_clip.get(clip_key) if isinstance(repair_seed_by_clip, dict) else None,
+        ))
 
     groups = []
     for display_name in sorted(group_map):
         entry = group_map[display_name]
-        summary = build_group_creative_summary(entry["creativeTags"])
+        log_profile = summarize_group_log_profile(entry["clipRequests"])
+        lowlight = summarize_group_lowlight(entry["clipSnapshots"])
+        post_clip_creative_status = inspect_group_post_clip_creative_status(entry.get("colorGroup"))
+        summary = build_group_creative_summary(log_profile, lowlight)
         transform_summary = {
             **build_group_transform_summary(entry["clipRequests"]),
             **((group_transform_summaries or {}).get(display_name) or {}),
@@ -723,11 +942,18 @@ def build_groups_snapshot(root_id, timeline, timeline_name, raw_local_path, clip
             "groupKey": normalize_group_key(display_name),
             "displayName": display_name,
             "clipKeys": entry["clipKeys"],
+            "logProfile": log_profile,
+            "lowlight": lowlight,
+            "postClipCreativeStatus": post_clip_creative_status,
+            "clips": entry["clipSnapshots"],
             "hostSummary": {
                 "timelineName": timeline_name,
                 "groupName": display_name,
                 "origin": origin,
                 "creativeTags": summary["creativeTags"],
+                "logProfile": log_profile,
+                "lowlight": lowlight,
+                "postClipCreativeStatus": post_clip_creative_status,
                 "detectedProfile": transform_summary.get("detectedProfile"),
                 "effectiveProfile": transform_summary.get("effectiveProfile"),
                 "profileSource": transform_summary.get("profileSource"),
@@ -752,8 +978,6 @@ def build_clip_creative_summary(clip_request):
     creative_tags = []
     if log_profile:
         creative_tags.append(log_profile)
-    if clip_request.get("gyro") is True:
-        creative_tags.append("gyro")
     if clip_request.get("lowlight") is True:
         creative_tags.append("lowlight")
     return {
@@ -762,21 +986,12 @@ def build_clip_creative_summary(clip_request):
     }
 
 
-def build_group_creative_summary(tag_lists):
-    tag_counts = {}
-    for creative_tags in tag_lists:
-        for tag in creative_tags or []:
-            tag_counts[tag] = tag_counts.get(tag, 0) + 1
-    creative_tags = [
-        tag
-        for tag, _count in sorted(
-            tag_counts.items(),
-            key=lambda item: (
-                CCREATIVE_SIGNAL_KEYS.index(item[0]) if item[0] in CCREATIVE_SIGNAL_KEYS else len(CCREATIVE_SIGNAL_KEYS),
-                item[0],
-            ),
-        )
-    ]
+def build_group_creative_summary(log_profile, lowlight):
+    creative_tags = []
+    if log_profile and log_profile not in ("mixed", "unknown"):
+        creative_tags.append(log_profile)
+    if lowlight == "lowlight":
+        creative_tags.append("lowlight")
     return {
         "creativeTags": creative_tags,
     }
@@ -1032,7 +1247,7 @@ def normalize_clip_requests(clips):
             "effectiveProfile": stringify_signal_value(clip.get("effectiveProfile")),
             "profileSource": stringify_signal_value(clip.get("profileSource")) or "unknown",
             "logProfile": normalize_log_profile(clip.get("logProfile")),
-            "gyro": clip.get("gyro") is True,
+            "gyroEligible": clip.get("gyroEligible") is True,
             "lowlight": clip.get("lowlight") is True,
             "resolvedTransformPresetKey": stringify_signal_value(clip.get("resolvedTransformPresetKey")),
             "resolvedLutRelativePath": stringify_signal_value(clip.get("resolvedLutRelativePath")),

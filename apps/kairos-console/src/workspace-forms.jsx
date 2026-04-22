@@ -1267,7 +1267,7 @@ export function ColorCurrentSummary({
                   })}
                 </div>
                 <p className="field-help">
-                  `Prepare Root` 会真正同步 Media Pool / grading timeline，并按素材真值与 root fallback 生成或复用 Resolve Groups。`Execute Root` 会以当前 root grading timeline 作为唯一导出真相；需要重试时再通过 batch `clipKeys[]` 做子集执行。
+                  `Prepare Root` 会真正同步 Media Pool / grading timeline，并按 `logProfile + lowlight` 生成或复用 Resolve Groups，同时准备 clip repair 骨架。`Group Post-Clip` 是主 creative 真相，`Clip` 只承担 repair / local exception。`Execute Root` 会以当前 root grading timeline 作为唯一导出真相；需要重试时再通过 batch `clipKeys[]` 做子集执行。
                 </p>
               </Card>
 
@@ -1277,7 +1277,7 @@ export function ColorCurrentSummary({
                   <Tag>{`${activeRoot.groups.length} 个`}</Tag>
                 </div>
                 <p className="muted color-panel-copy">
-                  Group 现在只作为 Resolve 组织与诊断视图。导出、校验和 Promote 都以 root batch 为单位，不再按 Group 触发。
+                  `Group Post-Clip` 是 Resolve 里的主 creative 真相；clip repair 只负责 `Gyroflow / NR` 这类局部修复。导出、校验和 Promote 仍然都以 root batch 为单位，不再按 Group 触发。
                 </p>
                 <div className="color-group-list">
                   {activeRoot.groups.length > 0 ? activeRoot.groups.map(group => (
@@ -1286,12 +1286,32 @@ export function ColorCurrentSummary({
                         <div className="color-group-copy">
                           <strong>{group.displayName}</strong>
                           <div className="muted">{`${group.groupKey} · ${group.clipCount} clips`}</div>
+                          {describeColorGroupCreativeState(group) ? (
+                            <div className="muted">{describeColorGroupCreativeState(group)}</div>
+                          ) : null}
                           {describeColorTechnicalSignals(group.hostSummary) ? (
                             <div className="muted">{describeColorTechnicalSignals(group.hostSummary)}</div>
+                          ) : null}
+                          {describeColorClipRepairSummary(group.clips) ? (
+                            <div className="muted">{describeColorClipRepairSummary(group.clips)}</div>
                           ) : null}
                         </div>
                         <Tag>{group.current?.status || 'ready'}</Tag>
                       </div>
+                      {Array.isArray(group.clips) && group.clips.length > 0 ? (
+                        <details className="color-group-clip-details">
+                          <summary>{`Clip Repair (${group.clips.length})`}</summary>
+                          <div className="color-group-clip-list">
+                            {group.clips.map(clip => (
+                              <div key={`${group.groupKey}:${clip.clipKey}`} className="color-group-clip-row">
+                                <strong>{clip.displayName || clip.clipKey}</strong>
+                                <div className="muted">{clip.clipKey}</div>
+                                <div className="muted">{describeColorClipRepairState(clip)}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </details>
+                      ) : null}
                     </div>
                   )) : <p className="muted">当前还没有已同步的正式 Groups。先运行 `Prepare Root`，如你在 Resolve 里做了调整，再执行一次 `Sync Groups`。</p>}
                 </div>
@@ -2470,11 +2490,29 @@ function materializeColorWorkspaceGroup(group) {
     displayName: getColorStringField(group, ['displayName']) || getColorStringField(current, ['displayName']) || 'Unnamed Group',
     clipCount: Number(group?.clipCount || current?.clipCount || 0) || 0,
     clipKeys: Array.isArray(group?.clipKeys) ? group.clipKeys.filter(item => typeof item === 'string' && item.trim()) : [],
+    logProfile: getColorStringField(group, ['logProfile']) || getColorStringField(current, ['logProfile']) || '',
+    lowlight: getColorStringField(group, ['lowlight']) || getColorStringField(current, ['lowlight']) || '',
+    postClipCreativeStatus: getColorStringField(group, ['postClipCreativeStatus']) || getColorStringField(current, ['postClipCreativeStatus']) || '',
+    clips: Array.isArray(group?.clips) ? group.clips.filter(isPlainObject).map(materializeColorWorkspaceClipRepair) : [],
     hostSummary: isPlainObject(group?.hostSummary) ? group.hostSummary : {},
     current: {
       ...current,
       status: getColorStringField(current, ['status', 'state', 'phase']) || 'ready',
     },
+  };
+}
+
+function materializeColorWorkspaceClipRepair(clip) {
+  return {
+    clipKey: getColorStringField(clip, ['clipKey']) || 'clip',
+    displayName: getColorStringField(clip, ['displayName']) || '',
+    logProfile: getColorStringField(clip, ['logProfile']) || '',
+    lowlight: typeof clip?.lowlight === 'boolean' ? clip.lowlight : undefined,
+    gyroEligible: clip?.gyroEligible === true,
+    gyroflowStatus: getColorStringField(clip, ['gyroflowStatus']) || '',
+    nrStatus: getColorStringField(clip, ['nrStatus']) || '',
+    clipRepairStatus: getColorStringField(clip, ['clipRepairStatus']) || '',
+    hostSummary: isPlainObject(clip?.hostSummary) ? clip.hostSummary : {},
   };
 }
 
@@ -2890,6 +2928,55 @@ function describeColorTechnicalSignals(hostSummary) {
   if (lutSyncStatus) details.push(`lut: ${lutSyncStatus}`);
   if (transformStatus) details.push(`transform: ${transformStatus}`);
   return details.join(' · ');
+}
+
+function describeColorGroupCreativeState(group) {
+  const details = [];
+  if (group?.logProfile) details.push(`log: ${group.logProfile}`);
+  if (group?.lowlight) details.push(`lowlight: ${group.lowlight}`);
+  if (group?.postClipCreativeStatus) details.push(`post-clip: ${group.postClipCreativeStatus}`);
+  return details.join(' · ');
+}
+
+function describeColorClipRepairSummary(clips) {
+  if (!Array.isArray(clips) || clips.length === 0) return '';
+  const gyroCounts = countBy(clips.map(clip => clip?.gyroflowStatus || ''));
+  const nrCounts = countBy(clips.map(clip => clip?.nrStatus || ''));
+  const repairCounts = countBy(clips.map(clip => clip?.clipRepairStatus || ''));
+  const details = [];
+  const gyroSummary = summarizeCountMap('gyro', gyroCounts);
+  const nrSummary = summarizeCountMap('nr', nrCounts);
+  const repairSummary = summarizeCountMap('repair', repairCounts);
+  if (gyroSummary) details.push(gyroSummary);
+  if (nrSummary) details.push(nrSummary);
+  if (repairSummary) details.push(repairSummary);
+  return details.join(' · ');
+}
+
+function describeColorClipRepairState(clip) {
+  const details = [];
+  if (clip?.logProfile) details.push(`log: ${clip.logProfile}`);
+  if (typeof clip?.lowlight === 'boolean') details.push(clip.lowlight ? 'lowlight' : 'base');
+  if (clip?.gyroEligible === true) details.push('gyro-eligible');
+  if (clip?.gyroflowStatus) details.push(`gyro: ${clip.gyroflowStatus}`);
+  if (clip?.nrStatus) details.push(`nr: ${clip.nrStatus}`);
+  if (clip?.clipRepairStatus) details.push(`repair: ${clip.clipRepairStatus}`);
+  return details.join(' · ');
+}
+
+function countBy(values) {
+  const counts = new Map();
+  for (const value of values) {
+    const normalized = String(value || '').trim();
+    if (!normalized) continue;
+    counts.set(normalized, (counts.get(normalized) || 0) + 1);
+  }
+  return counts;
+}
+
+function summarizeCountMap(label, counts) {
+  if (!(counts instanceof Map) || counts.size === 0) return '';
+  return `${label}: ${[...counts.entries()].map(([key, value]) => `${key}×${value}`).join(' / ')}`;
 }
 
 function isPlainObject(value) {

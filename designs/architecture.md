@@ -7,6 +7,57 @@
 
 ## 0. 2026-03-31 增补
 
+## 0.10 2026-04-22 DaVinci color Resolve-first creative / clip repair 分层补记
+
+当前 `/color` 已继续从“root export + group sync”推进到“Resolve-first creative truth + clip-level repair skeleton”。
+
+本轮冻结后的正式口径如下：
+
+- Resolve 内的正式调色真相分成三层：
+  - `Group Pre-Clip`：Kairos 自动技术底板（LUT / transform）
+  - `Clip`：固定 repair/local-exception 骨架，不承担主 creative
+  - `Group Post-Clip`：唯一正式 creative 真相
+- `/color` 不新增 creative 参数表单；Kairos 只负责准备结构、镜像状态、执行导出
+- root 级长期配置仍然只保留：
+  - `root.color.renderPreset`
+  - `root.color.colorSpaceProfile`
+  - `root.color.transformPresetKey?`
+- `color/groups/<rootId>.json` 的正式快照语义已扩展为 group + clip 两层：
+  - group 级至少包含 `logProfile`、`lowlight`、`postClipCreativeStatus`
+  - clip 级至少包含 `gyroEligible`、`gyroflowStatus`、`nrStatus`、`clipRepairStatus`
+- 自动 Group 的正式分桶轴当前收口为：
+  - `logProfile`
+  - `lowlight`
+- `gyro` 不再参与 Group 分桶；它正式回到 clip repair 层，只负责说明该 clip 是否需要 `Gyroflow shell`
+- `lowlight` 的正式合同当前收口为：
+  - 来源：每条 clip 的首帧视觉分类
+  - 语义：creative-first 标签，用于 Group creative 分桶，并次级提示 repair 默认态
+  - 约束：不等价于“必须降噪”
+- clip repair 骨架的正式顺序固定为：
+  1. `Gyroflow slot`
+  2. `user local reserved nodes`
+  3. `Noise Reduction slot`
+- repair 骨架的正式路径当前收口为：
+  - 同 clip 旧 repair 在 `prepare_root` 重建 timeline 时通过 Resolve `CopyGrades` 保留
+  - brand-new clip 若没有旧 repair，Kairos 至少铺出空骨架节点，但不会假装自己已经通过公开脚本 API 插入全新的 `Gyroflow / NR` OFX shell
+  - 当前 Resolve 运行态下 `ExportStills(..., drx)` 不稳定且返回失败，不能作为正式主线
+  - 因此 `not-seeded` 是正式允许状态，不是 UI 兜底文案
+- `gyroflowStatus` 当前正式至少包含：
+  - `not-applicable`
+  - `ready-to-load`
+  - `active`
+- `nrStatus` 当前正式至少包含：
+  - `not-seeded`
+  - `seeded-disabled`
+  - `seeded-enabled`
+- 默认 repair 行为当前固定为：
+  - `gyroEligible=true`：若 clip 上已有 `Gyroflow` shell，则状态记 `ready-to-load`；否则诚实记 `not-seeded`
+  - `lowlight=true`：作为 repair 默认提示与组内 creative 语义，不自动伪造一个不可验证的新 `Noise Reduction` shell
+  - `lowlight=false`：保留 base 语义与空骨架，不因此回写任何 creative look
+- `sync_groups` 只镜像 Resolve 当前真相：
+  - 如果用户手动改了 clip repair 或 group creative，Kairos 只回读状态，不做重置
+  - `Gyroflow` 只有在宿主能明确读到已加载/已生效证据时才允许记为 `active`
+
 ## 0.9 2026-04-21 DaVinci color 技术 profile / transform preset / workspace LUT 同步补记
 
 当前 `/color` 已继续从“root render preset + creative tags”收口到“技术输入真值 + workspace profile/device -> Resolve LUT 映射 + Group Pre-Clip LUT 底板”。
@@ -105,8 +156,8 @@
     - 源文件带 GPS 时，最终输出必须带可被 `ffprobe` 读回的容器位置标签
 - 自动 Group 已退出 `colorspace / gamma / codec / resolution / fps` technical fingerprint 语义，改为纯创意标签：
   - `log`
-  - `gyro`
   - `lowlight`
+- `gyro` 已回到 clip repair 维度，不再参与 Group key 生成
 - `log` 的正式判定优先级为：
   1. 素材显式真值
   2. root `color.colorSpaceProfile`

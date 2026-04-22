@@ -11,7 +11,6 @@ const exec = promisify(execFile);
 export interface IColorSourceTruth {
   logProfile?: EColorSourceProfile;
   gyro?: boolean;
-  lowlight?: boolean;
   deviceFamilyKeys: string[];
   sourceKinds: string[];
 }
@@ -51,12 +50,9 @@ export async function extractColorSourceTruth(
 
   const logProfile = sonyTruth.logProfile ?? sonySidecarTruth.logProfile ?? djiTruth.logProfile;
   const gyro = sonyTruth.gyro || sonySidecarTruth.gyro || djiTruth.gyro || undefined;
-  const lowlight = sonyTruth.lowlight || sonySidecarTruth.lowlight || djiTruth.lowlight || undefined;
-
   return {
     logProfile,
     gyro,
-    lowlight,
     deviceFamilyKeys: djiTruth.deviceFamilyKeys ?? [],
     sourceKinds: [...sourceKinds],
   };

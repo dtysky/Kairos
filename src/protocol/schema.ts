@@ -1185,6 +1185,34 @@ export type EColorValidationCheckResult = z.infer<typeof EColorValidationCheckRe
 export const EColorBatchSelectionMode = z.enum(['all', 'subset']);
 export type EColorBatchSelectionMode = z.infer<typeof EColorBatchSelectionMode>;
 
+export const EColorGroupLowlightStatus = z.enum(['base', 'lowlight', 'mixed']);
+export type EColorGroupLowlightStatus = z.infer<typeof EColorGroupLowlightStatus>;
+
+export const EColorGroupPostClipCreativeStatus = z.enum(['missing', 'empty', 'ready']);
+export type EColorGroupPostClipCreativeStatus = z.infer<typeof EColorGroupPostClipCreativeStatus>;
+
+export const EColorGyroflowStatus = z.enum(['not-applicable', 'not-seeded', 'ready-to-load', 'active']);
+export type EColorGyroflowStatus = z.infer<typeof EColorGyroflowStatus>;
+
+export const EColorNoiseReductionStatus = z.enum(['not-seeded', 'seeded-disabled', 'seeded-enabled']);
+export type EColorNoiseReductionStatus = z.infer<typeof EColorNoiseReductionStatus>;
+
+export const EColorClipRepairStatus = z.enum(['missing', 'skeleton-only', 'partial', 'ready']);
+export type EColorClipRepairStatus = z.infer<typeof EColorClipRepairStatus>;
+
+export const IColorClipRepairSnapshot = z.object({
+  clipKey: z.string(),
+  displayName: z.string().optional(),
+  logProfile: z.string().optional(),
+  lowlight: z.boolean().optional(),
+  gyroEligible: z.boolean().optional(),
+  gyroflowStatus: EColorGyroflowStatus.optional(),
+  nrStatus: EColorNoiseReductionStatus.optional(),
+  clipRepairStatus: EColorClipRepairStatus.optional(),
+  hostSummary: z.record(z.unknown()).default({}),
+});
+export type IColorClipRepairSnapshot = z.infer<typeof IColorClipRepairSnapshot>;
+
 export const IColorGroupConfig = z.object({
   groupKey: z.string(),
   displayName: z.string().optional(),
@@ -1241,6 +1269,9 @@ export const IColorGroupCurrent = z.object({
   status: EColorGroupStatus,
   displayName: z.string().optional(),
   clipCount: z.number().int().nonnegative().optional(),
+  logProfile: z.string().optional(),
+  lowlight: EColorGroupLowlightStatus.optional(),
+  postClipCreativeStatus: EColorGroupPostClipCreativeStatus.optional(),
   latestBatchId: z.string().optional(),
   latestBatchStatus: EColorBatchStatus.optional(),
   latestValidationStatus: EColorValidationStatus.optional(),
@@ -1282,6 +1313,10 @@ export const IColorGroupSnapshot = z.object({
   groupKey: z.string(),
   displayName: z.string().optional(),
   clipKeys: z.array(z.string()).default([]),
+  logProfile: z.string().optional(),
+  lowlight: EColorGroupLowlightStatus.optional(),
+  postClipCreativeStatus: EColorGroupPostClipCreativeStatus.optional(),
+  clips: z.array(IColorClipRepairSnapshot).default([]),
   hostSummary: z.record(z.unknown()).default({}),
 });
 export type IColorGroupSnapshot = z.infer<typeof IColorGroupSnapshot>;

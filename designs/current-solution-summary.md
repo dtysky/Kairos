@@ -32,12 +32,14 @@ Kairos 当前需要区分两层：
   - `resolveProjectName / rootNamespace / gradingTimelineName / Group naming` 当前全部按约定生成，只展示，不允许用户配置
     - Resolve Project 名称固定为 `${projectBrief.name} [Color]`
     - root namespace / grading timeline 固定从 root `label` 派生
-  - 当前 `color/current.json` 承载 root current truth，`color/groups/<rootId>.json` 承载 formal host group snapshot，`color/batches/<batchId>/...` 承载 root-scoped batch archive
+  - 当前 `color/current.json` 承载 root current truth，`color/groups/<rootId>.json` 承载 formal host group + clip repair snapshot，`color/batches/<batchId>/...` 承载 root-scoped batch archive
   - 当前 `prepare_root` 已正式承担 `rawLocalPath -> Resolve root bin / grading timeline / Resolve Groups` 的真实同步，不再只是轻量容器占位
     - grading timeline 必须按该 root 的 dominant `(width, height, fps)` 规格创建
-    - 自动 Group 只使用创意标签语义：`log / gyro / lowlight`
+    - 自动 Group 只使用创意标签语义：`log / lowlight`
     - `log` 先读素材显式真值，再回退 root `color.colorSpaceProfile`
-    - 素材真值优先级固定为 `素材自身 metadata > XML > root fallback`
+    - `lowlight` 当前正式由每条 clip 的首帧视觉分类产生，是 creative-first 标签，不是 noise-only 诊断
+    - `gyro` 正式回到 clip repair 维度；它只决定该 clip 是否需要 `Gyroflow shell`，不再参与 Group 分桶
+    - 素材技术真值优先级固定为 `素材自身 metadata > XML > root fallback`
     - DJI 若解析不到明确技术输入，正式结果就是 `unknown`，不得强行识别成 `dlog-m`
   - 当前 `prepare_root` 在 Resolve-side mutation 前，还会先做当前 root 的 LUT preflight：
     - 只同步当前 root 实际引用到且 workspace 中存在同路径文件的 LUT
@@ -52,6 +54,20 @@ Kairos 当前需要区分两层：
     - 仅在 Kairos 新建或空白 Group Pre-Clip 图上自动应用
     - 已有用户 grade 的 Group 必须跳过，不允许被默认底板覆盖
   - 当前 Group 真相完全以 Resolve 为准；`/color` 通过 `sync_groups` 镜像最新现状，同步后的非空 Group 直接进入 `ready`
+  - 当前 Resolve-first creative / repair 分层已经收口为：
+    - `Group Post-Clip` 是唯一主 creative 真相
+    - `Clip` 是固定 repair/local-exception 骨架，不是主 creative 面
+    - `/color` 只准备、镜像并执行这些结构，不把 creative 参数重新搬回 Console
+  - 当前 `prepare_root` 还必须为每条可执行 clip 准备固定 repair 骨架：
+    - 节点顺序固定为 `Gyroflow slot -> user local reserved nodes -> Noise Reduction slot`
+    - 当前正式路径是“同 clip 旧 repair 用 Resolve `CopyGrades` 保留；新 clip 至少铺出空骨架”
+    - 当前 Resolve 运行态下 `ExportStills(..., drx)` 失败不影响正式路径；DRX 不是主线
+    - 宿主当前不能通过公开脚本 API 无中生有地插入全新 `Gyroflow / NR` OFX shell；缺失 shell 必须明确记成 `not-seeded`
+    - `gyroEligible=true` 且 clip 上真实存在 `Gyroflow` 工具时，默认状态只记 `ready-to-load`，不假定已经自动完成 `Load for current file`
+    - `lowlight=true` 只提供 repair 默认提示；它本身仍然是 creative-first 标签
+  - 当前 `sync_groups` 已扩展成 group + clip 双层镜像：
+    - group 侧至少镜像 `logProfile / lowlight / postClipCreativeStatus`
+    - clip 侧至少镜像 `gyroEligible / gyroflowStatus / nrStatus / clipRepairStatus`
   - 当前 `/color` 进入页面或切换项目时会自动执行 Resolve host preflight，并把结果正式缓存到 `color/current.json.hostPreflight`
   - 当前 `prepare_root / sync_groups / execute_root` 都先经过 preflight 守卫；宿主 blocked 或 render preset 不受支持时，动作会在 Resolve 变更前直接失败
   - 当前 color host 的正式兼容下限为 `DaVinci Resolve Studio >= 18.5`；低版本 / 非 Studio 是硬阻塞，部分兼容降级则显示为 `degraded`

@@ -53,6 +53,7 @@ import {
   deriveColorRootNamespace,
 } from './workspace-state.js';
 import { readColorRenderPresetBitrateKbps } from './render-preset.js';
+import { classifyFirstFrameLowlight } from './lowlight-classifier.js';
 import { extractColorSourceTruth } from './source-truth.js';
 import {
   resolveClipTransformSeeds,
@@ -1062,10 +1063,13 @@ async function writeRootCurrent(
     blockingReasons: [],
   };
   const nextRoot = updater(currentRoot);
+  const nextRoots = existing.roots.some(root => root.rootId === rootId)
+    ? existing.roots.map(root => (root.rootId === rootId ? nextRoot : root))
+    : [...existing.roots, nextRoot];
   return saveColorCurrent(projectRoot, {
     ...existing,
     selectedRootId: rootId,
-    roots: [nextRoot],
+    roots: nextRoots,
     updatedAt: new Date().toISOString(),
   });
 }
@@ -1087,6 +1091,9 @@ function materializeCurrentGroupsFromSnapshot(
       status: nextStatus,
       displayName: existing?.displayName ?? group.displayName,
       clipCount: group.clipKeys.length,
+      logProfile: group.logProfile ?? existing?.logProfile,
+      lowlight: group.lowlight ?? existing?.lowlight,
+      postClipCreativeStatus: group.postClipCreativeStatus ?? existing?.postClipCreativeStatus,
       blockingReasons: nextStatus === 'blocked'
         ? dedupeStrings([...(clipKeysChanged ? [] : existing?.blockingReasons ?? []), '该 Group 当前没有可执行 clip。'])
         : [],
@@ -1193,13 +1200,18 @@ async function buildColorExecutorClips(
       const captureTime = probed
         ? await resolveCaptureTime(item.sourceAbsolutePath, probed).catch(() => null)
         : null;
-      const sourceTruth = await extractColorSourceTruth(item.sourceAbsolutePath, runtimeConfig).catch(() => ({
-        logProfile: undefined,
-        gyro: undefined,
-        lowlight: undefined,
-        deviceFamilyKeys: [],
-        sourceKinds: [],
-      }));
+      const [sourceTruth, lowlightClassification] = await Promise.all([
+        extractColorSourceTruth(item.sourceAbsolutePath, runtimeConfig).catch(() => ({
+          logProfile: undefined,
+          gyro: undefined,
+          deviceFamilyKeys: [],
+          sourceKinds: [],
+        })),
+        classifyFirstFrameLowlight(item.sourceAbsolutePath, runtimeConfig).catch(() => ({
+          lowlight: false,
+          metrics: undefined,
+        })),
+      ]);
       const profileResolution = resolveEffectiveColorProfile(
         sourceTruth.logProfile,
         rootColorSpaceProfile,
@@ -1218,8 +1230,8 @@ async function buildColorExecutorClips(
         effectiveProfile: profileResolution.effectiveProfile,
         profileSource: profileResolution.profileSource,
         logProfile: profileResolution.logProfile,
-        gyro: sourceTruth.gyro,
-        lowlight: sourceTruth.lowlight,
+        gyroEligible: sourceTruth.gyro,
+        lowlight: lowlightClassification.lowlight,
         deviceFamilyKeys: sourceTruth.deviceFamilyKeys,
       } satisfies IColorExecutorClipInput;
     }),
