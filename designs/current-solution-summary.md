@@ -56,15 +56,18 @@ Kairos 当前需要区分两层：
   - 当前 Group 真相完全以 Resolve 为准；`/color` 通过 `sync_groups` 镜像最新现状，同步后的非空 Group 直接进入 `ready`
   - 当前 Resolve-first creative / repair 分层已经收口为：
     - `Group Post-Clip` 是唯一主 creative 真相
-    - `Clip` 是固定 repair/local-exception 骨架，不是主 creative 面
+    - `Clip` 是固定 repair/local-exception 层，不是主 creative 面
     - `/color` 只准备、镜像并执行这些结构，不把 creative 参数重新搬回 Console
-  - 当前 `prepare_root` 还必须为每条可执行 clip 准备固定 repair 骨架：
-    - 节点顺序固定为 `Gyroflow slot -> user local reserved nodes -> Noise Reduction slot`
-    - 当前正式路径是“同 clip 旧 repair 用 Resolve `CopyGrades` 保留；新 clip 至少铺出空骨架”
+  - 当前 `prepare_root` 还必须为每条可执行 clip 准备 repair seeding：
+    - 当前正式路径先保留“同 clip 旧 repair 用 Resolve `CopyGrades` 直接沿用”
+    - brand-new clip 若没有旧 repair，Kairos 当前会把 vendored clean donor `DRT` 导入到当前 Resolve project，再从 donor timeline 复制最小 repair graph
+    - 当前 shipped donor matrix 已正式覆盖：
+      - `gyro-only` donor：一层纯 `OFX: Gyroflow`
+      - `nr-only` donor：两层最小图，实际 repair 工具是 `OFX: Noise Reduction`
     - 当前 Resolve 运行态下 `ExportStills(..., drx)` 失败不影响正式路径；DRX 不是主线
-    - 宿主当前不能通过公开脚本 API 无中生有地插入全新 `Gyroflow / NR` OFX shell；缺失 shell 必须明确记成 `not-seeded`
     - `gyroEligible=true` 且 clip 上真实存在 `Gyroflow` 工具时，默认状态只记 `ready-to-load`，不假定已经自动完成 `Load for current file`
     - `lowlight=true` 只提供 repair 默认提示；它本身仍然是 creative-first 标签
+    - `gyroEligible + lowlight` 的 brand-new clip 目前若没有既存 combined repair，formal fallback 先 seed `gyro-only` donor，`nrStatus` 继续诚实停在 `not-seeded`
   - 当前 `sync_groups` 已扩展成 group + clip 双层镜像：
     - group 侧至少镜像 `logProfile / lowlight / postClipCreativeStatus`
     - clip 侧至少镜像 `gyroEligible / gyroflowStatus / nrStatus / clipRepairStatus`

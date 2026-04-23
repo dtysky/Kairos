@@ -9,13 +9,13 @@
 
 ## 0.10 2026-04-22 DaVinci color Resolve-first creative / clip repair 分层补记
 
-当前 `/color` 已继续从“root export + group sync”推进到“Resolve-first creative truth + clip-level repair skeleton”。
+当前 `/color` 已继续从“root export + group sync”推进到“Resolve-first creative truth + clip-level repair seeding”。
 
 本轮冻结后的正式口径如下：
 
 - Resolve 内的正式调色真相分成三层：
   - `Group Pre-Clip`：Kairos 自动技术底板（LUT / transform）
-  - `Clip`：固定 repair/local-exception 骨架，不承担主 creative
+  - `Clip`：repair/local-exception 层，不承担主 creative
   - `Group Post-Clip`：唯一正式 creative 真相
 - `/color` 不新增 creative 参数表单；Kairos 只负责准备结构、镜像状态、执行导出
 - root 级长期配置仍然只保留：
@@ -33,15 +33,14 @@
   - 来源：每条 clip 的首帧视觉分类
   - 语义：creative-first 标签，用于 Group creative 分桶，并次级提示 repair 默认态
   - 约束：不等价于“必须降噪”
-- clip repair 骨架的正式顺序固定为：
-  1. `Gyroflow slot`
-  2. `user local reserved nodes`
-  3. `Noise Reduction slot`
-- repair 骨架的正式路径当前收口为：
+- clip repair 的正式冷启动路径当前收口为：
   - 同 clip 旧 repair 在 `prepare_root` 重建 timeline 时通过 Resolve `CopyGrades` 保留
-  - brand-new clip 若没有旧 repair，Kairos 至少铺出空骨架节点，但不会假装自己已经通过公开脚本 API 插入全新的 `Gyroflow / NR` OFX shell
+  - brand-new clip 若没有旧 repair，Kairos 当前不再走“空骨架 + 缺 shell”主路径，而是导入 vendored clean donor `DRT` timeline，再从 donor timeline 复制最小 repair graph
+  - 当前 shipped donor matrix 正式覆盖：
+    - `gyro-only` donor：一层纯 `OFX: Gyroflow`
+    - `nr-only` donor：两层最小图，实际 repair 工具是 `OFX: Noise Reduction`
   - 当前 Resolve 运行态下 `ExportStills(..., drx)` 不稳定且返回失败，不能作为正式主线
-  - 因此 `not-seeded` 是正式允许状态，不是 UI 兜底文案
+  - 因此 `not-seeded` 仍是正式允许状态，但它现在只表示 donor matrix 不覆盖或 clip 没有旧 repair，不再表示 Kairos 完全没有冷启动 seeding 路径
 - `gyroflowStatus` 当前正式至少包含：
   - `not-applicable`
   - `ready-to-load`
@@ -51,9 +50,10 @@
   - `seeded-disabled`
   - `seeded-enabled`
 - 默认 repair 行为当前固定为：
-  - `gyroEligible=true`：若 clip 上已有 `Gyroflow` shell，则状态记 `ready-to-load`；否则诚实记 `not-seeded`
-  - `lowlight=true`：作为 repair 默认提示与组内 creative 语义，不自动伪造一个不可验证的新 `Noise Reduction` shell
-  - `lowlight=false`：保留 base 语义与空骨架，不因此回写任何 creative look
+  - `gyroEligible=true`：优先保留 clip 既存 repair；brand-new clip 则尝试 seed `gyro-only` donor，成功后状态记 `ready-to-load`
+  - `lowlight=true`：优先保留 clip 既存 repair；brand-new clip 且不需要 gyro 时尝试 seed `nr-only` donor
+  - `gyroEligible + lowlight`：若 clip 已有 combined repair，Kairos 只保留它；brand-new clip 当前 formal fallback 先 seed `gyro-only` donor，`nrStatus` 继续保持 `not-seeded`
+  - `lowlight=false`：保留 base 语义；若没有既存 repair，则不额外 seed `NR` donor，也不因此回写任何 creative look
 - `sync_groups` 只镜像 Resolve 当前真相：
   - 如果用户手动改了 clip repair 或 group creative，Kairos 只回读状态，不做重置
   - `Gyroflow` 只有在宿主能明确读到已加载/已生效证据时才允许记为 `active`

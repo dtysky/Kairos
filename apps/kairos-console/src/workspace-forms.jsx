@@ -1267,7 +1267,7 @@ export function ColorCurrentSummary({
                   })}
                 </div>
                 <p className="field-help">
-                  `Prepare Root` 会真正同步 Media Pool / grading timeline，并按 `logProfile + lowlight` 生成或复用 Resolve Groups，同时准备 clip repair 骨架。`Group Post-Clip` 是主 creative 真相，`Clip` 只承担 repair / local exception。`Execute Root` 会以当前 root grading timeline 作为唯一导出真相；需要重试时再通过 batch `clipKeys[]` 做子集执行。
+                  `Prepare Root` 会真正同步 Media Pool / grading timeline，并按 `logProfile + lowlight` 生成或复用 Resolve Groups，同时按 donor DRT 冷启动播种 clip repair。`Group Post-Clip` 是主 creative 真相，`Clip` 只承担 repair / local exception。`Execute Root` 会以当前 root grading timeline 作为唯一导出真相；需要重试时再通过 batch `clipKeys[]` 做子集执行。
                 </p>
               </Card>
 

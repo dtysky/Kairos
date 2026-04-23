@@ -42,7 +42,7 @@ Kairos 将旅拍素材转化为可编辑时间线。流程分为 1 个准备阶�
 - `DaVinci color` 当前已有独立 `/color` 主路由，正式承担 root 级最小 `renderPreset`、Resolve group 镜像、执行、validation 与 promote 控制
 - `/color` 当前应自动发现已配置 `rawPath` 的素材根，并派生约定命名与阻塞信息；不要把“还没接通全部宿主健壮性”误渲染成“没有可显示 root”
 - 当前 `Supervisor color` 的正式动作链是 `prepare_root -> sync_groups -> execute_root -> validate_batch -> promote_batch`
-- 当前 `prepare_root` 必须真实完成 `rawLocalPath -> Resolve root bins / grading timeline / explainable creative Groups + clip repair skeleton` 的同步，而不是只持久化 Kairos 侧占位状态
+- 当前 `prepare_root` 必须真实完成 `rawLocalPath -> Resolve root bins / grading timeline / explainable creative Groups + clip repair seeding` 的同步，而不是只持久化 Kairos 侧占位状态
 - 当前 Group 真相以 Resolve 为准；用户可直接在 Resolve 中调整 Group，再通过 `/color` 的 `sync_groups` 回写最新现状；不存在额外 `Confirm Groups` 步骤
 - `/color` 当前进入页面或切换项目时会自动执行 host preflight，并允许用户手动 `Recheck Host`
 - 当前 `prepare_root / sync_groups / execute_root` 都必须先通过 host preflight；若宿主 blocked 或当前 render preset 不受支持，应在 Resolve 变更前直接失败
@@ -52,8 +52,11 @@ Kairos 将旅拍素材转化为可编辑时间线。流程分为 1 个准备阶�
   - `Clip` 是固定 repair/local-exception 层，不承担主 creative
   - 自动 Group 当前只按 `logProfile + lowlight` 分桶；`gyro` 是 clip 级 repair 信号，不再参与分桶
 - 当前 `lowlight` 是首帧视觉 creative 标签，不是 metadata fallback，也不等价于“必须降噪”
-- 当前 clip repair 骨架固定为 `Gyroflow slot -> user local reserved nodes -> Noise Reduction slot`
-- repair 当前正式走“同 clip 旧 repair 用 Resolve `CopyGrades` 保留；新 clip 至少铺出空骨架”的路线；如果公开脚本 API 不能创建缺失 OFX shell，状态必须诚实停在 `not-seeded`
+- repair 当前正式走“同 clip 旧 repair 用 Resolve `CopyGrades` 保留；brand-new clip 从 vendored clean donor `DRT` 冷启动 seed”的路线
+- 当前 donor matrix 正式覆盖：
+  - `gyro-only` donor：一层纯 `OFX: Gyroflow`
+  - `nr-only` donor：两层最小图，实际 repair 工具是 `OFX: Noise Reduction`
+- `gyroEligible + lowlight` 的 brand-new clip 当前若没有既存 combined repair，正式 fallback 先 seed `gyro-only` donor，`nrStatus` 仍会诚实显示为 `not-seeded`
 - 复制到 clip 上的 `Gyroflow` 工具默认状态必须记为 `ready-to-load`，不能假定已经自动对当前素材完成 `Load`
 - `/color` 当前继续保持单页，但页面信息架构正式收口为 `Root 摘要 -> 当前 Root Hero -> 所有 Root 常驻可编辑配置 -> Groups -> 次级诊断/归档`
 - `/color` 上所有 root 的用户可编辑项都必须保持在主信息流中直接可见且同页可维护；折叠区只保留只读的 `Host Diagnostics / Recent Batches / Validation Failures / Promote History` 与技术调试信息

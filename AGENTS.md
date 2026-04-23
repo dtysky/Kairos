@@ -110,7 +110,7 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - `execute_root`
   - `validate_batch`
   - `promote_batch`
-- Treat `prepare_root` as the formal Resolve-side sync step: it must mirror `rawLocalPath` into root bins, ensure the root grading timeline has executable clips, set that timeline to the root dominant `(width, height, fps)` spec, auto-sync any missing workspace-managed LUTs for the current root into the device Resolve default LUT directory, create or reuse Resolve Groups from `logProfile + lowlight`, preserve same-clip repair grades across reruns via `CopyGrades`, and ensure every executable clip has at least the Kairos-managed repair skeleton slots.
+- Treat `prepare_root` as the formal Resolve-side sync step: it must mirror `rawLocalPath` into root bins, ensure the root grading timeline has executable clips, set that timeline to the root dominant `(width, height, fps)` spec, auto-sync any missing workspace-managed LUTs for the current root into the device Resolve default LUT directory, create or reuse Resolve Groups from `logProfile + lowlight`, preserve same-clip repair grades across reruns via `CopyGrades`, and cold-seed brand-new clip repair from vendored clean donor `DRT` timelines when no existing repair is present.
 - Treat Resolve as the formal Group truth for color: users may keep adjusting Groups inside Resolve, and `/color` should only mirror them back via `sync_groups`; synced non-empty Groups become `ready` directly, with no extra `/color` confirm step.
 - Treat root grading timeline as the formal export truth for color: render preset is root-scoped, while batch is only the execution/retry grain and may optionally carry `clipKeys[]` for subset reruns.
 - Treat Resolve Groups as diagnostic/sync truth only after `sync_groups`; they no longer decide render preset, batch ownership, or execution order.
@@ -120,8 +120,11 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - `/color` mirrors status for those layers; it does not become the primary creative parameter editor
 - Treat `lowlight` as a first-frame creative classification, not a metadata fallback or noise-only diagnosis.
 - Treat `gyro` as clip-level repair truth only; it must not participate in auto-grouping.
-- Treat the formal clip repair skeleton as `Gyroflow slot -> user local reserved nodes -> Noise Reduction slot`.
-- Treat repair preservation as Resolve `CopyGrades`-based for the same clip across reruns; if public scripting cannot create a missing OFX shell, the formal state must stay `not-seeded`.
+- Treat repair preservation as Resolve `CopyGrades`-based for the same clip across reruns, and treat vendored clean donor `DRT` timelines as the current formal cold-start seeding path for brand-new clips.
+- Treat the current donor matrix as:
+  - `gyro-only` donor: one-node pure `OFX: Gyroflow`
+  - `nr-only` donor: two-node minimal graph whose effective repair tool is `OFX: Noise Reduction`
+  - `gyroEligible + lowlight` brand-new clips currently fall back to `gyro-only` donor first unless an existing combined repair already exists
 - Treat `color/current.json.hostPreflight` as formal cached host truth for `/color`; blocked/degraded host state should surface before the user starts a color action.
 - Treat `prepare_root / sync_groups / execute_root` as preflight-guarded actions: if Resolve host is blocked or the current render preset is unsupported, fail before Resolve-side mutation.
 - Treat `color/batches/<batchId>/plan.json|manifest.json|validation.json|promote.json` as the read-only source for `/color` archive sections; do not duplicate batch history back into config or ad-hoc UI state.

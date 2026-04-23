@@ -17,6 +17,23 @@ CCREATIVE_SIGNAL_KEYS = (
     "lowlight",
 )
 
+CREPAIR_DONOR_SPECS = {
+    "gyro": {
+        "fileName": "gyro-only.drt",
+        "timelineName": "__Kairos Repair Donor Gyro Only",
+        "requiredToolSubstrings": ("gyroflow",),
+        "forbiddenToolSubstrings": ("noise reduction", "denoise"),
+        "expectedNodeCount": 1,
+    },
+    "nr": {
+        "fileName": "nr-only.drt",
+        "timelineName": "__Kairos Repair Donor NR Only",
+        "requiredToolSubstrings": ("noise reduction",),
+        "forbiddenToolSubstrings": ("gyroflow",),
+        "expectedNodeCount": 2,
+    },
+}
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Kairos Resolve color host")
@@ -122,6 +139,7 @@ def prepare_root(resolve, payload):
     clip_requests = normalize_clip_requests(payload.get("clips"))
     previous_group_names_by_clip = capture_timeline_group_assignments(timeline, payload["rawLocalPath"])
     donor_timeline = None
+    repair_donor_timelines = {}
     if has_timeline_video_items(timeline):
         donor_timeline = duplicate_timeline(
             project,
@@ -131,6 +149,9 @@ def prepare_root(resolve, payload):
         safe_call(project, "SetCurrentTimeline", timeline)
 
     try:
+        safe_call(resolve, "OpenPage", "edit")
+        safe_call(project, "SetCurrentTimeline", timeline)
+        repair_donor_timelines = ensure_repair_donor_timelines(project, media_pool)
         namespace_state = collect_namespace_state(namespace_folder)
         prepared_entries, sync_summary = sync_namespace_clips(
             media_pool,
@@ -141,7 +162,13 @@ def prepare_root(resolve, payload):
         )
         ordered_entries = sort_clip_entries(prepared_entries)
 
-        clear_timeline_items(timeline)
+        try:
+            clear_timeline_items(timeline)
+        except HostError as error:
+            if error.code != "resolve_timeline_clear_failed":
+                raise
+            timeline = recreate_timeline(media_pool, project, timeline, payload["gradingTimelineName"])
+            apply_timeline_spec(project, payload.get("timelineSpec"), timeline)
         append_clips_to_timeline(project, media_pool, timeline, ordered_entries)
         timeline_item_by_clip_key = build_timeline_item_map(timeline, payload["rawLocalPath"])
         group_states = assign_generated_groups(project, ordered_entries, timeline_item_by_clip_key, previous_group_names_by_clip)
@@ -166,6 +193,7 @@ def prepare_root(resolve, payload):
             payload["rawLocalPath"],
             clip_requests,
             donor_timeline,
+            repair_donor_timelines,
         )
 
         groups_snapshot = build_groups_snapshot(
@@ -204,6 +232,8 @@ def prepare_root(resolve, payload):
         }
     finally:
         delete_timeline(media_pool, donor_timeline)
+        for donor in repair_donor_timelines.values():
+            delete_timeline(media_pool, donor)
 
 
 def preflight(resolve, payload):
@@ -406,6 +436,25 @@ def ensure_named_timeline(project, timeline_name):
     raise HostError("resolve_timeline_missing", f"Missing grading timeline: {timeline_name}")
 
 
+def recreate_timeline(media_pool, project, timeline, timeline_name):
+    temp_name = build_temp_render_timeline_name(f"{timeline_name} [Kairos Prepare]")
+    replacement = safe_call(media_pool, "CreateEmptyTimeline", temp_name)
+    if not replacement:
+        raise HostError("resolve_timeline_recreate_failed", f"Unable to create replacement grading timeline: {timeline_name}")
+    safe_call(project, "SetCurrentTimeline", replacement)
+    deleted = safe_call(media_pool, "DeleteTimelines", [timeline])
+    if deleted is False:
+        raise HostError("resolve_timeline_recreate_failed", f"Unable to replace locked grading timeline: {timeline_name}")
+    renamed = safe_call(replacement, "SetName", timeline_name)
+    if renamed is False:
+        existing = find_named_timeline(project, timeline_name)
+        if existing is None:
+            raise HostError("resolve_timeline_recreate_failed", f"Unable to restore grading timeline name: {timeline_name}")
+        replacement = existing
+    safe_call(project, "SetCurrentTimeline", replacement)
+    return replacement
+
+
 def apply_timeline_spec(project, spec, timeline=None):
     width = parse_int((spec or {}).get("width"))
     height = parse_int((spec or {}).get("height"))
@@ -585,6 +634,8 @@ def clear_timeline_items(timeline):
         if items:
             result = safe_call(timeline, "DeleteClips", items, False)
             if result is False:
+                result = safe_call(timeline, "DeleteClips", items)
+            if result is False:
                 raise HostError("resolve_timeline_clear_failed", f"Unable to clear {track_type} timeline items")
 
 
@@ -617,9 +668,126 @@ def has_timeline_video_items(timeline):
     return next(iter_timeline_video_items(timeline), None) is not None
 
 
-def seed_clip_repairs(timeline, raw_local_path, clip_requests, donor_timeline=None):
+def get_repair_donor_asset_path(spec):
+    donor_root = Path(__file__).resolve().parent / "donors"
+    candidate = donor_root / str(spec.get("fileName") or "")
+    if not candidate.is_file():
+        raise HostError(
+            "resolve_repair_donor_asset_missing",
+            f"Missing clip repair donor asset: {candidate.name}",
+            {"donorPath": str(candidate)},
+        )
+    return candidate
+
+
+def find_first_timeline_video_item(timeline):
+    return next(iter_timeline_video_items(timeline), None)
+
+
+def clip_like_has_grade_content(item):
+    if item is None:
+        return False
+    graph = safe_call(item, "GetNodeGraph")
+    node_count = parse_int(safe_call(graph, "GetNumNodes")) or 0
+    tools_by_node = collect_graph_tools_by_node(graph)
+    graph_luts = collect_graph_luts(graph)
+    return graph_has_nonblank_content(node_count, tools_by_node, graph_luts)
+
+
+def flatten_graph_tools(tools_by_node):
+    flattened = []
+    for node_index in sorted(tools_by_node):
+        flattened.extend(tools_by_node[node_index])
+    return flattened
+
+
+def repair_donor_matches_spec(timeline, spec):
+    donor_item = find_first_timeline_video_item(timeline)
+    if donor_item is None:
+        return False
+    graph = safe_call(donor_item, "GetNodeGraph")
+    node_count = parse_int(safe_call(graph, "GetNumNodes")) or 0
+    expected_node_count = parse_int(spec.get("expectedNodeCount"))
+    if expected_node_count and node_count != expected_node_count:
+        return False
+    if collect_graph_luts(graph):
+        return False
+    flattened_tools = [str(tool).lower() for tool in flatten_graph_tools(collect_graph_tools_by_node(graph))]
+    required_tool_substrings = tuple(spec.get("requiredToolSubstrings") or ())
+    if any(not any(required in tool for tool in flattened_tools) for required in required_tool_substrings):
+        return False
+    forbidden_tool_substrings = tuple(spec.get("forbiddenToolSubstrings") or ())
+    if any(any(forbidden in tool for tool in flattened_tools) for forbidden in forbidden_tool_substrings):
+        return False
+    return True
+
+
+def ensure_repair_donor_timelines(project, media_pool):
+    donors = {}
+    for donor_kind, spec in CREPAIR_DONOR_SPECS.items():
+        timeline = find_named_timeline(project, spec["timelineName"])
+        if timeline and not repair_donor_matches_spec(timeline, spec):
+            delete_timeline(media_pool, timeline)
+            timeline = None
+        if timeline is None:
+            asset_path = get_repair_donor_asset_path(spec)
+            imported = safe_call(media_pool, "ImportTimelineFromFile", str(asset_path))
+            if not imported:
+                raise HostError(
+                    "resolve_repair_donor_import_failed",
+                    f"Unable to import clip repair donor timeline: {asset_path.name}",
+                    {"donorPath": str(asset_path)},
+                )
+            timeline = imported
+            renamed = safe_call(timeline, "SetName", spec["timelineName"])
+            if renamed is False:
+                existing = find_named_timeline(project, spec["timelineName"])
+                if existing is None:
+                    raise HostError(
+                        "resolve_repair_donor_rename_failed",
+                        f"Unable to rename clip repair donor timeline: {asset_path.name}",
+                        {"donorPath": str(asset_path)},
+                    )
+                timeline = existing
+        if not repair_donor_matches_spec(timeline, spec):
+            raise HostError(
+                "resolve_repair_donor_invalid",
+                f"Imported clip repair donor timeline does not match the expected contract: {spec['fileName']}",
+                {
+                    "timelineName": safe_call(timeline, "GetName") if timeline else None,
+                    "donorPath": str(get_repair_donor_asset_path(spec)),
+                },
+            )
+        donors[donor_kind] = timeline
+    return donors
+
+
+def list_requested_repair_kinds(clip_request):
+    kinds = []
+    if clip_request.get("gyroEligible") is True:
+        kinds.append("gyro")
+    if clip_request.get("lowlight") is True:
+        kinds.append("nr")
+    return kinds
+
+
+def choose_default_repair_donor_kind(clip_request, available_donor_kinds):
+    requested_kinds = list_requested_repair_kinds(clip_request)
+    if "gyro" in requested_kinds and "gyro" in available_donor_kinds:
+        return "gyro"
+    if "nr" in requested_kinds and "nr" in available_donor_kinds:
+        return "nr"
+    return None
+
+
+def seed_clip_repairs(timeline, raw_local_path, clip_requests, donor_timeline=None, repair_donor_timelines=None):
     target_items_by_clip = build_timeline_item_map(timeline, raw_local_path)
     donor_items_by_clip = build_timeline_item_map(donor_timeline, raw_local_path) if donor_timeline else {}
+    donor_source_items = {
+        donor_kind: find_first_timeline_video_item(donor_timeline_item)
+        for donor_kind, donor_timeline_item in (repair_donor_timelines or {}).items()
+        if donor_timeline_item is not None
+    }
     repair_seed_by_clip = {}
     for clip_request in clip_requests:
         clip_key = clip_request["rawRelativePath"]
@@ -630,61 +798,56 @@ def seed_clip_repairs(timeline, raw_local_path, clip_requests, donor_timeline=No
                 f"Prepared clip is missing from grading timeline after append: {clip_key}",
             )
         copied_existing_grade = False
+        seeded_repair_donor_kind = None
         donor_item = donor_items_by_clip.get(clip_key)
-        if donor_item is not None and donor_item is not target_item:
-            donor_graph = safe_call(donor_item, "GetNodeGraph")
-            donor_node_count = parse_int(safe_call(donor_graph, "GetNumNodes")) or 0
-            if donor_node_count > 0:
-                result = safe_call(donor_item, "CopyGrades", [target_item])
+        if donor_item is not None and donor_item is not target_item and clip_like_has_grade_content(donor_item):
+            result = safe_call(donor_item, "CopyGrades", [target_item])
+            if result is False:
+                raise HostError(
+                    "resolve_clip_repair_copy_failed",
+                    f"Unable to preserve existing clip repair grade for: {clip_key}",
+                )
+            copied_existing_grade = True
+        elif donor_source_items:
+            donor_kind = choose_default_repair_donor_kind(clip_request, set(donor_source_items))
+            donor_source_item = donor_source_items.get(donor_kind)
+            if donor_kind and donor_source_item is not None:
+                result = safe_call(donor_source_item, "CopyGrades", [target_item])
                 if result is False:
                     raise HostError(
-                        "resolve_clip_repair_copy_failed",
-                        f"Unable to preserve existing clip repair grade for: {clip_key}",
+                        "resolve_clip_repair_seed_failed",
+                        f"Unable to seed clip repair donor grade for: {clip_key}",
+                        {"repairDonorKind": donor_kind},
                     )
-                copied_existing_grade = True
-
-        target_graph = safe_call(target_item, "GetNodeGraph")
-        ensured_node_count = ensure_graph_node_count(target_graph, 3)
-        seeded_default_nr = False
-        default_nr_enabled = None
-        if target_graph is not None and ensured_node_count >= 3 and not copied_existing_grade:
-            default_nr_enabled = clip_request.get("lowlight") is True
-            seeded_default_nr = safe_call(target_graph, "SetNodeEnabled", 3, default_nr_enabled) is not False
+                seeded_repair_donor_kind = donor_kind
 
         repair_seed_by_clip[clip_key] = {
             "copiedExistingGrade": copied_existing_grade,
-            "ensuredNodeCount": ensured_node_count,
-            "seededDefaultNr": seeded_default_nr,
-            "defaultNrEnabled": default_nr_enabled,
+            "requestedRepairKinds": list_requested_repair_kinds(clip_request),
+            "seededRepairDonorKind": seeded_repair_donor_kind,
+            "availableRepairDonorKinds": sorted(donor_source_items),
         }
     return repair_seed_by_clip
-
-
-def ensure_graph_node_count(graph, minimum_count):
-    if graph is None:
-        return 0
-    current_count = parse_int(safe_call(graph, "GetNumNodes")) or 0
-    while current_count < minimum_count:
-        created = False
-        for method_name in ("AddSerialNode", "AddCorrectorNode", "AddNode"):
-            safe_call(graph, method_name)
-            next_count = parse_int(safe_call(graph, "GetNumNodes")) or 0
-            if next_count > current_count:
-                current_count = next_count
-                created = True
-                break
-        if not created:
-            break
-    return current_count
 
 
 def build_clip_repair_snapshot(item, clip_request, repair_seed_state=None):
     graph = safe_call(item, "GetNodeGraph")
     node_count = parse_int(safe_call(graph, "GetNumNodes")) or 0
     tools_by_node = collect_graph_tools_by_node(graph)
-    gyro_shell_present = any(contains_gyroflow_tool(tools) for tools in tools_by_node.values())
-    nr_tool_present = any(contains_noise_reduction_tool(tools) for tools in tools_by_node.values())
+    graph_luts = collect_graph_luts(graph)
+    node_enabled_by_node = collect_graph_node_enabled(graph, node_count)
+    gyro_shell_present, _gyro_enabled_present = inspect_tool_presence(
+        tools_by_node,
+        node_enabled_by_node,
+        contains_gyroflow_tool,
+    )
+    nr_tool_present, nr_tool_enabled = inspect_tool_presence(
+        tools_by_node,
+        node_enabled_by_node,
+        contains_noise_reduction_tool,
+    )
     gyro_eligible = clip_request.get("gyroEligible") is True
+    lowlight_requested = clip_request.get("lowlight") is True
     if not gyro_eligible:
         gyroflow_status = "not-applicable"
     elif gyro_shell_present:
@@ -692,17 +855,23 @@ def build_clip_repair_snapshot(item, clip_request, repair_seed_state=None):
     else:
         gyroflow_status = "not-seeded"
     if nr_tool_present:
-        nr_status = "seeded-enabled"
-    elif repair_seed_state and repair_seed_state.get("seededDefaultNr") is True:
-        nr_status = "seeded-enabled" if repair_seed_state.get("defaultNrEnabled") is True else "seeded-disabled"
+        nr_status = "seeded-enabled" if nr_tool_enabled else "seeded-disabled"
     else:
         nr_status = "not-seeded"
-    clip_repair_status = determine_clip_repair_status(node_count, gyro_eligible, gyroflow_status, nr_status)
+    clip_repair_status = determine_clip_repair_status(
+        node_count,
+        gyro_eligible,
+        lowlight_requested,
+        gyroflow_status,
+        nr_status,
+        tools_by_node,
+        graph_luts,
+    )
     return {
         "clipKey": clip_request["rawRelativePath"],
         "displayName": clip_request.get("sourceStem") or Path(clip_request["rawRelativePath"]).stem,
         "logProfile": normalize_log_profile(clip_request.get("logProfile")),
-        "lowlight": clip_request.get("lowlight") is True,
+        "lowlight": lowlight_requested,
         "gyroEligible": gyro_eligible,
         "gyroflowStatus": gyroflow_status,
         "nrStatus": nr_status,
@@ -710,8 +879,12 @@ def build_clip_repair_snapshot(item, clip_request, repair_seed_state=None):
         "hostSummary": {
             "nodeCount": node_count,
             "toolsByNode": {str(node_index): tools for node_index, tools in sorted(tools_by_node.items())},
+            "luts": list(graph_luts),
+            "nodeEnabledByNode": {str(node_index): value for node_index, value in sorted(node_enabled_by_node.items())},
             "copiedExistingGrade": bool(repair_seed_state and repair_seed_state.get("copiedExistingGrade")),
-            "seededDefaultNr": bool(repair_seed_state and repair_seed_state.get("seededDefaultNr")),
+            "requestedRepairKinds": list(repair_seed_state.get("requestedRepairKinds") or []) if isinstance(repair_seed_state, dict) else [],
+            "seededRepairDonorKind": stringify_signal_value((repair_seed_state or {}).get("seededRepairDonorKind")) if isinstance(repair_seed_state, dict) else None,
+            "availableRepairDonorKinds": list((repair_seed_state or {}).get("availableRepairDonorKinds") or []) if isinstance(repair_seed_state, dict) else [],
         },
     }
 
@@ -732,6 +905,36 @@ def collect_graph_tools_by_node(graph):
     return tools_by_node
 
 
+def collect_graph_node_enabled(graph, node_count):
+    enabled_by_node = {}
+    if graph is None:
+        return enabled_by_node
+    for node_index in range(1, int(node_count) + 1):
+        enabled_value = safe_call(graph, "GetNodeEnabled", node_index)
+        parsed = parse_bool(enabled_value)
+        if parsed is not None:
+            enabled_by_node[node_index] = parsed
+    return enabled_by_node
+
+
+def inspect_tool_presence(tools_by_node, node_enabled_by_node, predicate):
+    present = False
+    enabled_present = False
+    for node_index, tools in tools_by_node.items():
+        if not predicate(tools):
+            continue
+        present = True
+        if node_enabled_by_node.get(node_index, True) is not False:
+            enabled_present = True
+    return present, enabled_present
+
+
+def graph_has_nonblank_content(node_count, tools_by_node, graph_luts):
+    if tools_by_node or graph_luts:
+        return True
+    return node_count > 1
+
+
 def contains_gyroflow_tool(tools):
     return any("gyroflow" in str(tool).lower() for tool in tools or [])
 
@@ -743,15 +946,24 @@ def contains_noise_reduction_tool(tools):
     )
 
 
-def determine_clip_repair_status(node_count, gyro_eligible, gyroflow_status, nr_status):
-    if node_count <= 0:
-        return "missing"
-    if node_count < 3:
-        return "partial"
+def determine_clip_repair_status(node_count, gyro_eligible, lowlight_requested, gyroflow_status, nr_status, tools_by_node, graph_luts):
+    requested_repairs = []
+    if gyro_eligible:
+        requested_repairs.append("gyro")
+    if lowlight_requested:
+        requested_repairs.append("nr")
+    has_repair_content = graph_has_nonblank_content(node_count, tools_by_node, graph_luts)
+    missing_repairs = []
     if gyro_eligible and gyroflow_status == "not-seeded":
-        return "partial" if nr_status == "not-seeded" else "skeleton-only"
-    if nr_status == "not-seeded":
-        return "skeleton-only"
+        missing_repairs.append("gyro")
+    if lowlight_requested and nr_status == "not-seeded":
+        missing_repairs.append("nr")
+    if not requested_repairs:
+        return "skeleton-only" if has_repair_content else "missing"
+    if len(missing_repairs) == len(requested_repairs):
+        return "partial" if has_repair_content else "missing"
+    if missing_repairs:
+        return "partial"
     return "ready"
 
 
@@ -2005,6 +2217,20 @@ def parse_float(value):
             return float(value)
         except Exception:
             return None
+    return None
+
+
+def parse_bool(value):
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str) and value.strip():
+        lowered = value.strip().lower()
+        if lowered in ("1", "true", "yes", "on"):
+            return True
+        if lowered in ("0", "false", "no", "off"):
+            return False
     return None
 
 

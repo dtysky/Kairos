@@ -79,11 +79,14 @@ Current stable pipeline:
     - `lowlight`: first-frame creative classification only; it is a grouping/look hint, not a synonym for “must denoise”
     - `gyro` is now clip-level repair truth only and no longer participates in group auto-bucketing
     - Group key is the normalized Resolve group name slug
-  - current `prepare_root` must also ensure a fixed clip repair skeleton for every executable clip:
-    - the formal node order is `Gyroflow slot -> user local reserved nodes -> Noise Reduction slot`
-    - repair preservation now uses official Resolve `CopyGrades` only to carry the same clip's existing repair graph across `prepare_root` reruns; Kairos does not pretend it can mint brand-new OFX shells from thin air
-    - when the current clip graph has no prior repair, Kairos lays down the blank skeleton and records missing shells honestly as `not-seeded`
-    - a `Gyroflow` tool copied onto a clip only proves the shell exists; the formal default status remains `ready-to-load`, not `active`
+  - current `prepare_root` must also ensure executable clip repair seeding:
+    - repair preservation still uses official Resolve `CopyGrades` first to carry the same clip's existing repair graph across `prepare_root` reruns
+    - when a brand-new clip has no prior repair, Kairos now imports vendored clean donor `DRT` timelines into the current Resolve project and seeds cold-start repair from those donors
+    - the current shipped donor matrix formally covers `gyro-only` and `nr-only`
+      - `gyro-only` donor is a one-node `OFX: Gyroflow` shell
+      - `nr-only` donor is a two-node minimal graph whose effective repair tool is `OFX: Noise Reduction`
+    - `gyroEligible + lowlight` combined clips still preserve existing combined repair when it already exists, but brand-new clips currently fall back to `gyro-only` donor first and keep `nrStatus = not-seeded`
+    - a `Gyroflow` donor copied onto a clip only proves the shell exists; the formal default status remains `ready-to-load`, not `active`
     - `lowlight=true` is only a creative-first label plus a default repair hint; it does not change the meaning of the `lowlight` label itself
   - current `sync_groups` mirrors both group creative state and clip repair state:
     - group-level truth includes `logProfile`, `lowlight`, and `postClipCreativeStatus`
