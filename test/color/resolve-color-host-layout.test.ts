@@ -73,6 +73,59 @@ print(json.dumps(result, ensure_ascii=False))
   };
 }
 
+async function applyReservedDefaults(payload: {
+  gyroEligible: boolean;
+  resetTailReservedNodes: boolean;
+}) {
+  const code = `
+import importlib.util
+import json
+import sys
+
+host_path = sys.argv[1]
+payload = json.loads(sys.argv[2])
+
+spec = importlib.util.spec_from_file_location("resolve_color_host", host_path)
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+class FakeGraph:
+    def __init__(self):
+        self.calls = []
+
+    def SetNodeEnabled(self, node_index, enabled):
+        self.calls.append([node_index, enabled])
+        return True
+
+class FakeItem:
+    def __init__(self):
+        self.graph = FakeGraph()
+
+    def GetNodeGraph(self):
+        return self.graph
+
+item = FakeItem()
+result = module.apply_reserved_node_defaults(
+    item,
+    {"gyroEligible": payload["gyroEligible"]},
+    payload["resetTailReservedNodes"],
+)
+print(json.dumps({"result": result, "calls": item.graph.calls}, ensure_ascii=False))
+`;
+  const { stdout } = await exec(
+    pythonPath,
+    ['-c', code, hostPath, JSON.stringify(payload)],
+    {
+      encoding: 'utf8',
+      windowsHide: true,
+    },
+  );
+  return JSON.parse(stdout) as {
+    result: { enabled: number[]; disabled: number[] };
+    calls: Array<[number, boolean]>;
+  };
+}
+
 describe('resolve color host clip layout helpers', () => {
   it('treats eligible five-node skeleton as canonical with Gyro enabled and Dehaze/NR disabled', async () => {
     const result = await inspectLayout({
@@ -236,6 +289,38 @@ describe('resolve color host clip layout helpers', () => {
         userEnd: 4,
         nr: 5,
       },
+    });
+  });
+
+  it('reasserts only Gyro on canonical reruns so user tail-node toggles are preserved', async () => {
+    const eligible = await applyReservedDefaults({
+      gyroEligible: true,
+      resetTailReservedNodes: false,
+    });
+    expect(eligible).toEqual({
+      result: { enabled: [1], disabled: [] },
+      calls: [[1, true]],
+    });
+
+    const nonEligible = await applyReservedDefaults({
+      gyroEligible: false,
+      resetTailReservedNodes: false,
+    });
+    expect(nonEligible).toEqual({
+      result: { enabled: [], disabled: [1] },
+      calls: [[1, false]],
+    });
+  });
+
+  it('resets all canonical defaults only when rebuilding from default.drx', async () => {
+    const result = await applyReservedDefaults({
+      gyroEligible: true,
+      resetTailReservedNodes: true,
+    });
+
+    expect(result).toEqual({
+      result: { enabled: [1, 3, 4], disabled: [2, 5] },
+      calls: [[1, true], [2, false], [5, false], [3, true], [4, true]],
     });
   });
 });

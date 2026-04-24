@@ -12,7 +12,8 @@ Read these before doing substantial work:
 2. `designs/current-solution-summary.md`
 3. `designs/architecture.md`
 4. every file under `.ai/rules/`
-5. the relevant skill file(s) under `.ai/skills/`
+5. if the task touches DaVinci Resolve scripting, `/color`, Resolve export, DRX/DRT, LUT automation, Resolve render jobs, Resolve groups, color node graphs, or the vendored Resolve host, read `.ai/knowledge/davinci-resolve-scripting.md`
+6. the relevant skill file(s) under `.ai/skills/`
 
 Direct links:
 
@@ -20,7 +21,8 @@ Direct links:
 2. [designs/current-solution-summary.md](./designs/current-solution-summary.md)
 3. [designs/architecture.md](./designs/architecture.md)
 4. [`.ai/rules/`](./.ai/rules/)
-5. [`.ai/skills/`](./.ai/skills/)
+5. [`.ai/knowledge/davinci-resolve-scripting.md`](./.ai/knowledge/davinci-resolve-scripting.md)
+6. [`.ai/skills/`](./.ai/skills/)
 
 If the task changes requirements, behavior, interfaces, workflow, monitoring, or official entry points, follow the change discipline in [`.ai/rules/change-management-discipline.mdc`](./.ai/rules/change-management-discipline.mdc):
 
@@ -68,6 +70,7 @@ Read every file in [`.ai/rules/`](./.ai/rules/). Current repository rules are:
 
 - [`.ai/rules/blocking-missing-inputs.mdc`](./.ai/rules/blocking-missing-inputs.mdc) — stop and ask the user when a required user-specified input is missing or unreadable
 - [`.ai/rules/change-management-discipline.mdc`](./.ai/rules/change-management-discipline.mdc) — any workflow or behavior change must go through plan -> docs -> implement -> sync
+- [`.ai/rules/davinci-resolve-scripting-docs.mdc`](./.ai/rules/davinci-resolve-scripting-docs.mdc) — DaVinci Resolve scripting tasks must use the local Resolve scripting documentation before implementation
 - [`.ai/rules/draft-target-verification.mdc`](./.ai/rules/draft-target-verification.mdc) — verify the exact existing draft / project target before modifying it
 - [`.ai/rules/export-path-safety.mdc`](./.ai/rules/export-path-safety.mdc) — never overwrite or clear an existing export target
 - [`.ai/rules/master-workflow-user-guidance.mdc`](./.ai/rules/master-workflow-user-guidance.mdc) — explain Kairos as one workflow and route users through the correct phase
@@ -101,6 +104,7 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
 - Treat `/ingest-gps` `素材 Root` as the formal structured editor for those path mappings; normal user operation should not be routed back to hand-editing Markdown.
 - Treat nested `rawPath/rawLocalPath` as a formal ingest exclusion boundary: the mainflow should scan the current media directory, but must not recurse into the raw subtree when it lives inside that directory.
 - Treat `/color` as root-discovery-first: roots with `rawPath` should auto-appear with derived blockers/status, and Resolve naming should remain convention-derived and read-only.
+- Treat `.ai/knowledge/davinci-resolve-scripting.md` as the local working DaVinci Resolve scripting documentation; any DaVinci Resolve scripting, `/color`, Resolve export, DRX/DRT, LUT automation, render job, group, node graph, or vendored host task must read it and then verify version-sensitive methods against the installed Resolve `README.txt`.
 - Treat `/color` main root cards as a two-path UI: user-facing fields are `当前素材路径` and `原始素材路径`; derived Resolve naming belongs in advanced/debug display, not the primary form.
 - Treat `/color` as a dashboard-style surface: `Root 摘要 -> 当前 Root Hero -> 所有 Root 常驻可编辑配置 -> Groups -> 次级诊断/归档`.
 - Treat `/color` user-editable parameters as always-visible controls in the main flow for every root on the same page; collapsed sections must remain read-only diagnostics/archive only.
@@ -126,16 +130,18 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - `/color` mirrors status for those layers; it does not become the primary creative parameter editor
 - Treat `lowlight` as a first-frame creative classification, not a metadata fallback or noise-only diagnosis.
 - Treat `gyro` as clip-level repair truth only; it must not participate in auto-grouping.
-- Treat DJI `dvtm_*` private video telemetry as a formal `gyroEligible` signal, but never as evidence for guessing log profile.
+- Treat `gyroEligible` as the final clip-level Gyro enable decision: first match the current installed Gyroflow/OFX supported device set, then require device-appropriate motion metadata; same-name `.gyroflow` projects may also enable Gyro. DJI `dvtm_*` telemetry alone is not enough to enable Gyro and must not be used to guess log profile.
 - Treat repair preservation as Resolve `CopyGrades`-based for the same clip across reruns, and treat vendored clean donor `DRT` timelines as a host implementation detail for establishing the canonical repair layout when a clip has no existing repair.
 - Treat the canonical clip repair layout as:
   - every executable video clip uses `Gyro -> Dehaze -> User1 -> User2 -> NR`
-  - `Gyro` is always reserved at node 1; `gyroEligible=true` defaults it enabled, `gyroEligible=false` defaults it disabled (`seeded-disabled`)
+  - `Gyro` is always reserved at node 1; every `prepare_root` must reassert node 1 from the final clip Gyro enable decision, so `gyroEligible=true` requests enabled / `ready-to-load` and `gyroEligible=false` requests disabled (`seeded-disabled`)
+  - `ready-to-load` means the Gyroflow OFX shell exists and Kairos requested the correct node enabled state; it does not prove Gyroflow's source-specific `Load for current file` button has executed
   - `Dehaze` is always reserved at node 2 and defaults disabled
   - `User1 / User2` are the minimum user zone, default enabled; users may add more user nodes only between `Dehaze` and `NR`
   - `NR` is always the reserved tail node for video clips, default disabled, and only user-toggled inside Resolve
   - `lowlight` remains a creative/grouping label and status hint; it does not auto-enable `Dehaze` or `NR`
-- Treat non-canonical old clip graphs as `legacy-layout`: this round allows one destructive rebuild from workspace `config/default.drx` when required; rerunning `prepare_root` on canonical clips must preserve the existing clip grade and user zone state, while nodes appended after `NR` intentionally make the graph legacy.
+- Treat non-canonical old clip graphs as `legacy-layout`: this round allows one destructive rebuild from workspace `config/default.drt` when present, otherwise `config/default.drx`; rerunning `prepare_root` on canonical clips must preserve the existing clip grade, user zone state, and user-toggled Dehaze/NR state while still reasserting the Gyro node from the final `gyroEligible` decision; nodes appended after `NR` intentionally make the graph legacy.
+- Prefer `config/default.drt` over `config/default.drx` for clip repair seeding when available: a clean DRT donor path has been live-verified to trigger Gyroflow source loading on render, while DRX is only a layout fallback unless live evidence proves load.
 - Treat `color/current.json.hostPreflight` as formal cached host truth for `/color`; blocked/degraded host state should surface before the user starts a color action.
 - Treat `prepare_root / sync_groups / execute_root / prepare_all_roots / export_all_roots` as preflight-guarded actions: if Resolve host is blocked or the current render preset is unsupported, fail before Resolve-side mutation.
 - Treat `color/batches/<batchId>/plan.json|manifest.json|validation.json|promote.json` as the read-only source for `/color` archive sections; do not duplicate batch history back into config or ad-hoc UI state.

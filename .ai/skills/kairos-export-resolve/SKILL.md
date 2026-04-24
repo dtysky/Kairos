@@ -21,6 +21,7 @@ description: >-
 
 ## 前置条件
 
+- 如果本轮涉及任何 DaVinci Resolve scripting API、Resolve export、DRX/DRT、LUT、render job、Group、node graph 或 vendored Resolve host 行为，先读 `.ai/knowledge/davinci-resolve-scripting.md`，再按安装版 Resolve `README.txt` 校验版本敏感方法。
 - `timeline/current.json` 存在且通过 KTEP 校验
 - 宿主环境已具备同机 vendored Resolve backend 条件
   - `vendor/resolve-color-host/.venv` 可调用

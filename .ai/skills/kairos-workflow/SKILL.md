@@ -40,6 +40,7 @@ Kairos 将旅拍素材转化为可编辑时间线。流程分为 1 个准备阶�
 - 当前正式运行与监控入口是 `Supervisor + React console (apps/kairos-console/)`
 - `Analyze` 与 `Style` 的正式监控路由分别是 `http://127.0.0.1:8940/analyze` 和 `http://127.0.0.1:8940/style`
 - `DaVinci color` 当前已有独立 `/color` 主路由，正式承担 root 级最小 `renderPreset`、Resolve group 镜像、执行、validation 与 promote 控制
+- 任何 DaVinci Resolve scripting、`/color`、Resolve export、DRX/DRT、LUT、render job、Group、node graph 或 vendored Resolve host 任务，必须先读 `.ai/knowledge/davinci-resolve-scripting.md`，再按安装版 Resolve `README.txt` 校验版本敏感 API
 - `/color` 当前应自动发现已配置 `rawPath` 的素材根，并派生约定命名与阻塞信息；不要把“还没接通全部宿主健壮性”误渲染成“没有可显示 root”
 - 当前 `Supervisor color` 的正式动作链是 `prepare_root -> sync_groups -> execute_root -> validate_batch -> promote_batch -> prepare_all_roots -> export_all_roots`
 - 当前 `prepare_root` 必须真实完成 `rawLocalPath -> Resolve root bins / grading timeline / explainable creative Groups + canonical clip repair layout` 的同步，而不是只持久化 Kairos 侧占位状态
@@ -59,13 +60,15 @@ Kairos 将旅拍素材转化为可编辑时间线。流程分为 1 个准备阶�
 - repair 当前正式走“同 clip 旧 repair 用 Resolve `CopyGrades` 保留；没有既存 repair 时建立 canonical clip graph”的路线
 - clip repair 的正式布局固定为：
   - 所有可执行视频 clip：`Gyro -> Dehaze -> User1 -> User2 -> NR`
-  - `Gyro` 固定为第 1 节点；`gyroEligible=true` 默认记为 `ready-to-load`，`gyroEligible=false` 默认记为 `seeded-disabled`
-  - DJI `dvtm_*` 私有视频 telemetry 视为 `gyroEligible` 技术信号，但不能据此猜测 log profile
+  - `Gyro` 固定为第 1 节点；每次 `prepare_root` 都按最终 `gyroEligible` 布尔判定重申 node1 开关，`gyroEligible=true` 请求开启并记为 `ready-to-load`，`gyroEligible=false` 请求关闭并记为 `seeded-disabled`
+  - `ready-to-load` 只表示 Gyroflow OFX shell 存在且 Kairos 已请求正确 node 启停，不表示 Gyroflow 已执行 source-specific `Load for current file`
+  - `gyroEligible` 必须先匹配当前安装 Gyroflow/OFX 官方支持设备，再检查设备对应运动元信息；同名 `.gyroflow` 可开启 Gyro。DJI `dvtm_*` 私有 telemetry 不能单独开启 Gyro，也不能据此猜测 log profile
   - `Dehaze` 固定为第 2 节点且默认禁用
   - `User1 / User2` 是最小用户区，默认开启；用户扩展节点必须放在 `Dehaze` 之后、`NR` 之前
   - `NR` 对所有视频 clip 固定预留在尾部且默认禁用，正式开关入口只有 Resolve
   - `lowlight` 继续只是 creative 标签与状态提示，不自动开启 `Dehaze / NR`
-- 旧非规范 clip graph 记为 `legacy-layout`；本轮允许一次从 workspace `config/default.drx` 破坏性重建到 canonical layout，规范图重跑保留用户区状态；`NR` 后新增节点也视为 legacy
+- 旧非规范 clip graph 记为 `legacy-layout`；本轮允许一次从 workspace `config/default.drt` 破坏性重建到 canonical layout，不存在时回退 `config/default.drx`；规范图重跑保留用户区状态与用户手动切换的 Dehaze/NR 状态，但仍按最终 `gyroEligible` 重申 Gyro node1 开关；`NR` 后新增节点也视为 legacy
+- 优先使用 clean DRT donor 做 clip repair seeding：旧 `gyro-only.drt + CopyGrades + render` 已实测可触发 Gyroflow source-specific load；DRX fallback 只证明 layout，不证明 load
 - `/color` 当前继续保持单页，但页面信息架构正式收口为 `Root 摘要 -> 当前 Root Hero -> 所有 Root 常驻可编辑配置 -> Groups -> 次级诊断/归档`
 - `/color` 上所有 root 的用户可编辑项都必须保持在主信息流中直接可见且同页可维护；折叠区只保留只读的 `Host Diagnostics / Recent Batches / Validation Failures / Promote History` 与技术调试信息
 - 当前 color 的长期配置只保留项目级 root 上的 `color.renderPreset`；不要再把 `resolveProjectName / rootNamespace / gradingTimelineName / bootstrap Group` 当成用户配置项

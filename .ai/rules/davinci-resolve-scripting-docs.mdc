@@ -1,0 +1,32 @@
+---
+description: DaVinci Resolve scripting tasks must use Kairos' local Resolve scripting documentation before implementation
+alwaysApply: true
+---
+
+# DaVinci Resolve Scripting Docs
+
+Whenever a task touches DaVinci Resolve, Resolve scripting, `/color`, Resolve export, DRX/DRT,
+LUT automation, Resolve render jobs, Resolve groups, color node graphs, or the vendored Resolve
+host, first read:
+
+- `.ai/knowledge/davinci-resolve-scripting.md`
+
+Then verify any version-sensitive method against the installed official Resolve scripting docs:
+
+- macOS: `/Library/Application Support/Blackmagic Design/DaVinci Resolve/Developer/Scripting/README.txt`
+- Windows: `%PROGRAMDATA%\Blackmagic Design\DaVinci Resolve\Support\Developer\Scripting\README.txt`
+- Linux: `/opt/resolve/Developer/Scripting/README.txt`
+
+The user-requested online mirror is:
+
+- `https://gist.github.com/X-Raym/2f2bf453fc481b9cca624d7ca0e19de8`
+
+## Hard Rules
+
+- Do not implement Resolve scripting behavior from memory when a local/API doc check is possible.
+- Do not treat the Gist as merely a link index; Kairos' local doc is the working document.
+- Do not claim unsupported API behavior exists unless it is present in the installed docs or proven by live Resolve introspection.
+- Do not claim color node enabled/readback state from `SetNodeEnabled()` alone; official docs expose `SetNodeEnabled()` but not `GetNodeEnabled()`.
+- Do not claim an OFX such as Gyroflow has loaded source-specific data merely because `GetToolsInNode()` shows the OFX shell.
+- Prefer live-verified clean DRT donor paths over DRX-only assumptions for Gyroflow source loading; a DRX repair template is layout evidence, not load evidence, unless a live probe proves otherwise.
+- If live Resolve verification is required, report the exact project/timeline/clips used.

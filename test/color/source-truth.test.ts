@@ -70,6 +70,7 @@ function mockExiftoolFailure(inputPath: string) {
 describe('extractColorSourceTruth', () => {
   it('extracts Sony log and gyro truth from acquisition record metadata', async () => {
     mockExiftoolOutput([
+      '[XML] DeviceModelName : ILCE-7RM5',
       '[XML] AcquisitionRecordGroupItemName : CaptureGammaEquation',
       '[XML] AcquisitionRecordGroupItemValue : s-log3-cine',
       '[XML] AcquisitionRecordChangeTableName : Gyroscope',
@@ -87,7 +88,7 @@ describe('extractColorSourceTruth', () => {
     });
   });
 
-  it('extracts DJI log truth only when private metadata is explicit and marks dvtm telemetry gyro-eligible', async () => {
+  it('keeps unsupported DJI dvtm telemetry gyro-off while preserving log truth', async () => {
     mockExiftoolOutput([
       '[DJI] Protocol : dvtm_Mavic4.proto',
       '[DJI] Dvtm_Mavic4_ColorMode : D-Log M',
@@ -98,9 +99,46 @@ describe('extractColorSourceTruth', () => {
 
     expect(result).toEqual({
       logProfile: 'dlog-m',
-      gyro: true,
+      gyro: undefined,
       lowlight: undefined,
       deviceFamilyKeys: ['Mavic4'],
+      sourceKinds: ['dji-private-video-metadata'],
+    });
+  });
+
+  it('enables gyro for supported DJI devices with dvtm motion metadata', async () => {
+    mockExiftoolOutput([
+      '[DJI] Protocol : dvtm_ac205.proto',
+      '[DJI] Dvtm_ac205_ProductName : DJI OsmoAction5 Pro',
+    ]);
+
+    const { extractColorSourceTruth } = await import('../../src/modules/color/source-truth.js');
+    const result = await extractColorSourceTruth('/tmp/sample.mp4');
+
+    expect(result).toEqual({
+      logProfile: undefined,
+      gyro: true,
+      lowlight: undefined,
+      deviceFamilyKeys: ['Action5'],
+      sourceKinds: ['dji-private-video-metadata'],
+    });
+  });
+
+  it('does not enable gyro for Action6 even when dvtm metadata is present', async () => {
+    mockExiftoolOutput([
+      '[DJI] Protocol : dvtm_ac206.proto',
+      '[DJI] Dvtm_ac206_1-1-10 : DJI OsmoAction6',
+      '[DJI] Dvtm_ac206_3-2-9-1 : 0xd2e7303c',
+    ]);
+
+    const { extractColorSourceTruth } = await import('../../src/modules/color/source-truth.js');
+    const result = await extractColorSourceTruth('/tmp/sample.mp4');
+
+    expect(result).toEqual({
+      logProfile: undefined,
+      gyro: undefined,
+      lowlight: undefined,
+      deviceFamilyKeys: ['Action6'],
       sourceKinds: ['dji-private-video-metadata'],
     });
   });
@@ -116,7 +154,7 @@ describe('extractColorSourceTruth', () => {
 
     expect(result).toEqual({
       logProfile: undefined,
-      gyro: true,
+      gyro: undefined,
       lowlight: undefined,
       deviceFamilyKeys: ['Mavic4'],
       sourceKinds: ['dji-private-video-metadata'],
@@ -130,6 +168,7 @@ describe('extractColorSourceTruth', () => {
     await writeFile(join(tempDir, 'C0340M01.XML'), [
       '<?xml version="1.0" encoding="UTF-8"?>',
       '<NonRealTimeMeta>',
+      '  <Device manufacturer="Sony" modelName="ZV-E1"/>',
       '  <AcquisitionRecord>',
       '    <Group name="CameraUnitMetadataSet">',
       '      <Item name="CaptureGammaEquation" value="s-log3-cine"/>',
@@ -152,6 +191,43 @@ describe('extractColorSourceTruth', () => {
       lowlight: undefined,
       deviceFamilyKeys: [],
       sourceKinds: ['sony-sidecar-xml'],
+    });
+  });
+
+  it('does not enable gyro for unsupported Sony devices even when Gyroscope metadata exists', async () => {
+    mockExiftoolOutput([
+      '[XML] DeviceModelName : ILCE-6000',
+      '[XML] AcquisitionRecordChangeTableName : Gyroscope',
+    ]);
+
+    const { extractColorSourceTruth } = await import('../../src/modules/color/source-truth.js');
+    const result = await extractColorSourceTruth('/tmp/sample.mp4');
+
+    expect(result).toEqual({
+      logProfile: undefined,
+      gyro: undefined,
+      lowlight: undefined,
+      deviceFamilyKeys: [],
+      sourceKinds: ['sony-acquisition-record'],
+    });
+  });
+
+  it('enables gyro when a matching Gyroflow project is present', async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), 'kairos-source-truth-gyroflow-'));
+    tempDirs.push(tempDir);
+    const filePath = join(tempDir, 'clip.mp4');
+    await writeFile(join(tempDir, 'clip.gyroflow'), '{}', 'utf-8');
+    mockExiftoolOutput([], filePath);
+
+    const { extractColorSourceTruth } = await import('../../src/modules/color/source-truth.js');
+    const result = await extractColorSourceTruth(filePath);
+
+    expect(result).toEqual({
+      logProfile: undefined,
+      gyro: true,
+      lowlight: undefined,
+      deviceFamilyKeys: [],
+      sourceKinds: ['gyroflow-project'],
     });
   });
 

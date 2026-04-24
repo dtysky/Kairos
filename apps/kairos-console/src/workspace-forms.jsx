@@ -3052,6 +3052,7 @@ function describeColorClipRepairState(clip) {
   if (typeof clip?.lowlight === 'boolean') details.push(clip.lowlight ? 'lowlight' : 'base');
   if (clip?.gyroEligible === true) details.push('gyro-eligible');
   if (clip?.gyroflowStatus) details.push(`gyro: ${clip.gyroflowStatus}`);
+  if (clip?.gyroflowStatus === 'ready-to-load') details.push('gyro load: pending Resolve');
   if (clip?.dehazeStatus) details.push(`dehaze: ${clip.dehazeStatus}`);
   if (clip?.nrStatus) details.push(`nr: ${clip.nrStatus}`);
   if (clip?.clipRepairStatus) details.push(`repair: ${clip.clipRepairStatus}`);

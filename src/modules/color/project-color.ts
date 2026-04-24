@@ -629,6 +629,7 @@ export async function prepareProjectColorRoot(
         gradingTimelineName: context.rootSummary.gradingTimelineName,
         rawPath: context.rootSummary.rawPath,
         rawLocalPath: context.rootSummary.rawLocalPath ?? '',
+        repairDrtPath: join(context.workspaceRoot, 'config', 'default.drt'),
         repairDrxPath: join(context.workspaceRoot, 'config', 'default.drx'),
         timelineSpec,
         lutSyncSummary: preparedClipTransforms.lutSyncSummary,

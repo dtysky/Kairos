@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
+import { access, readFile, readdir } from 'node:fs/promises';
 import { dirname, extname, join } from 'node:path';
 import { promisify } from 'node:util';
 import { toExecutableInputPath } from '../media/tool-path.js';
@@ -21,6 +21,18 @@ interface IExiftoolLine {
   value: string;
 }
 
+interface ISonySourceTruth {
+  logProfile?: EColorSourceProfile;
+  hasGyroscope?: boolean;
+  deviceModel?: string;
+}
+
+interface IDjiSourceTruth {
+  logProfile?: EColorSourceProfile;
+  gyro?: boolean;
+  deviceFamilyKeys: string[];
+}
+
 export async function extractColorSourceTruth(
   filePath: string,
   tools?: Pick<IMediaToolConfig, 'exiftoolPath'>,
@@ -31,9 +43,9 @@ export async function extractColorSourceTruth(
   const sonyTruth = extractSonyTruth(lines);
   const sonySidecarTruth = await extractSonySidecarTruth(filePath);
   if (sonyTruth.logProfile) sourceKinds.add('sony-acquisition-record');
-  if (sonyTruth.gyro) sourceKinds.add('sony-acquisition-record');
+  if (sonyTruth.hasGyroscope) sourceKinds.add('sony-acquisition-record');
   if (sonySidecarTruth.logProfile) sourceKinds.add('sony-sidecar-xml');
-  if (sonySidecarTruth.gyro) sourceKinds.add('sony-sidecar-xml');
+  if (sonySidecarTruth.hasGyroscope) sourceKinds.add('sony-sidecar-xml');
 
   const hasDjiPrivateMetadata = lines.some(line => (
     line.key.toLowerCase() === 'protocol' && line.value.toLowerCase().includes('dvtm_')
@@ -41,15 +53,25 @@ export async function extractColorSourceTruth(
   if (hasDjiPrivateMetadata) {
     sourceKinds.add('dji-private-video-metadata');
   }
-  const djiTruth = hasDjiPrivateMetadata
+  const djiTruth: IDjiSourceTruth = hasDjiPrivateMetadata
     ? extractDjiPrivateTruth(lines)
-    : {};
+    : { deviceFamilyKeys: [] };
   if (djiTruth.logProfile) {
     sourceKinds.add('dji-private-video-metadata');
   }
 
+  const hasGyroflowProject = await hasGyroflowProjectForFile(filePath);
+  if (hasGyroflowProject) {
+    sourceKinds.add('gyroflow-project');
+  }
+
   const logProfile = sonyTruth.logProfile ?? sonySidecarTruth.logProfile ?? djiTruth.logProfile;
-  const gyro = sonyTruth.gyro || sonySidecarTruth.gyro || djiTruth.gyro || undefined;
+  const gyro = shouldEnableGyroForClip({
+    hasGyroflowProject,
+    sonyTruth,
+    sonySidecarTruth,
+    djiTruth,
+  }) || undefined;
   return {
     logProfile,
     gyro,
@@ -91,7 +113,7 @@ function parseExiftoolLine(line: string): IExiftoolLine | null {
   return { group, key, value };
 }
 
-function extractSonyTruth(lines: IExiftoolLine[]): Partial<IColorSourceTruth> {
+function extractSonyTruth(lines: IExiftoolLine[]): ISonySourceTruth {
   const acquisitionItems = new Map<string, string>();
   for (let index = 0; index < lines.length; index += 1) {
     const current = lines[index];
@@ -108,14 +130,15 @@ function extractSonyTruth(lines: IExiftoolLine[]): Partial<IColorSourceTruth> {
       acquisitionItems.get('CaptureGammaEquation')
       ?? acquisitionItems.get('CodingEquations'),
     ),
-    gyro: lines.some(line => (
+    hasGyroscope: lines.some(line => (
       line.key === 'AcquisitionRecordChangeTableName'
       && line.value.toLowerCase() === 'gyroscope'
     )) || undefined,
+    deviceModel: firstLineValue(lines, ['DeviceModelName', 'Model']),
   };
 }
 
-function extractDjiPrivateTruth(lines: IExiftoolLine[]): Partial<IColorSourceTruth> {
+function extractDjiPrivateTruth(lines: IExiftoolLine[]): IDjiSourceTruth {
   const privateLines = lines.filter(line => (
     line.key.toLowerCase() === 'protocol'
     || line.key.toLowerCase().includes('dvtm_')
@@ -130,11 +153,13 @@ function extractDjiPrivateTruth(lines: IExiftoolLine[]): Partial<IColorSourceTru
     line.key.toLowerCase() === 'protocol'
     && /^dvtm_/iu.test(line.value.trim())
   ));
-  const gyro = (
-    hasDjiTelemetryProtocol
-    || privateLines.some(line => /gyro|gimbal/iu.test(`${line.key} ${line.value}`))
-  ) || undefined;
+  const hasDjiMotionMetadata = hasDjiTelemetryProtocol
+    || privateLines.some(line => line.key.toLowerCase().includes('dvtm_'));
   const deviceFamilyKeys = extractDeviceFamilyKeys(privateLines);
+  const gyro = (
+    hasDjiMotionMetadata
+    && deviceFamilyKeys.some(key => SUPPORTED_GYROFLOW_DJI_DEVICE_KEYS.has(key))
+  ) || undefined;
   return {
     logProfile,
     gyro,
@@ -142,7 +167,7 @@ function extractDjiPrivateTruth(lines: IExiftoolLine[]): Partial<IColorSourceTru
   };
 }
 
-async function extractSonySidecarTruth(filePath: string): Promise<Partial<IColorSourceTruth>> {
+async function extractSonySidecarTruth(filePath: string): Promise<ISonySourceTruth> {
   const xml = await readSonySidecarXml(filePath);
   if (!xml) return {};
 
@@ -159,7 +184,8 @@ async function extractSonySidecarTruth(filePath: string): Promise<Partial<IColor
       acquisitionItems.get('CaptureGammaEquation')
       ?? acquisitionItems.get('CodingEquations'),
     ),
-    gyro: /<ChangeTable\b[^>]*name="Gyroscope"/iu.test(xml) || undefined,
+    hasGyroscope: /<ChangeTable\b[^>]*name="Gyroscope"/iu.test(xml) || undefined,
+    deviceModel: extractSonyXmlDeviceModel(xml),
   };
 }
 
@@ -179,6 +205,65 @@ async function readSonySidecarXml(filePath: string): Promise<string | undefined>
     if (typeof xml === 'string' && xml.trim()) {
       return xml;
     }
+  }
+  return undefined;
+}
+
+async function hasGyroflowProjectForFile(filePath: string): Promise<boolean> {
+  const extension = extname(filePath);
+  const stem = extension ? filePath.slice(0, -extension.length) : filePath;
+  if (await fileExists(`${stem}.gyroflow`)) {
+    return true;
+  }
+
+  const directory = dirname(filePath);
+  const baseName = stem.slice(directory.length > 1 ? directory.length + 1 : 0);
+  const entries = await readdir(directory).catch(() => []);
+  return entries.some(entry => (
+    entry.startsWith(baseName)
+    && entry.toLowerCase().endsWith('.gyroflow')
+  ));
+}
+
+async function fileExists(filePath: string): Promise<boolean> {
+  return access(filePath).then(() => true, () => false);
+}
+
+function shouldEnableSonyGyro(
+  sourceTruth: ISonySourceTruth,
+  sidecarTruth: ISonySourceTruth,
+): boolean {
+  const deviceModel = sourceTruth.deviceModel ?? sidecarTruth.deviceModel;
+  const hasGyroscope = sourceTruth.hasGyroscope === true || sidecarTruth.hasGyroscope === true;
+  return hasGyroscope && isSupportedGyroflowSonyModel(deviceModel);
+}
+
+function shouldEnableGyroForClip(input: {
+  hasGyroflowProject: boolean;
+  sonyTruth: ISonySourceTruth;
+  sonySidecarTruth: ISonySourceTruth;
+  djiTruth: IDjiSourceTruth;
+}): boolean {
+  return input.hasGyroflowProject
+    || shouldEnableSonyGyro(input.sonyTruth, input.sonySidecarTruth)
+    || input.djiTruth.gyro === true;
+}
+
+function firstLineValue(lines: IExiftoolLine[], keys: string[]): string | undefined {
+  const keySet = new Set(keys);
+  return lines.find(line => keySet.has(line.key))?.value;
+}
+
+function extractSonyXmlDeviceModel(xml: string): string | undefined {
+  const patterns = [
+    /<Device\b[^>]*\bmodelName="([^"]+)"/iu,
+    /\bDeviceModelName="([^"]+)"/iu,
+    /<DeviceModelName\b[^>]*>([^<]+)<\/DeviceModelName>/iu,
+  ];
+  for (const pattern of patterns) {
+    const match = xml.match(pattern);
+    const value = match?.[1]?.trim();
+    if (value) return value;
   }
   return undefined;
 }
@@ -236,6 +321,54 @@ const COLOR_DEVICE_FAMILY_MATCHERS: Array<{
   patterns: RegExp[];
 }> = [
   {
+    key: 'Action5',
+    patterns: [
+      /osmoaction5/u,
+      /action5/u,
+    ],
+  },
+  {
+    key: 'Action4',
+    patterns: [
+      /osmoaction4/u,
+      /action4/u,
+    ],
+  },
+  {
+    key: 'Action2',
+    patterns: [
+      /osmoaction2/u,
+      /action2/u,
+    ],
+  },
+  {
+    key: 'Avata2',
+    patterns: [
+      /djiavata2/u,
+      /^avata2$/u,
+    ],
+  },
+  {
+    key: 'Avata',
+    patterns: [
+      /djiavata(?!2)/u,
+      /^avata$/u,
+    ],
+  },
+  {
+    key: 'O3AirUnit',
+    patterns: [
+      /o3airunit/u,
+    ],
+  },
+  {
+    key: 'Neo',
+    patterns: [
+      /djineo/u,
+      /^neo$/u,
+    ],
+  },
+  {
     key: 'Mavic4',
     patterns: [
       /mavic4pro/u,
@@ -252,6 +385,53 @@ const COLOR_DEVICE_FAMILY_MATCHERS: Array<{
     ],
   },
 ];
+
+const SUPPORTED_GYROFLOW_DJI_DEVICE_KEYS = new Set([
+  'Action2',
+  'Action4',
+  'Action5',
+  'Avata',
+  'Avata2',
+  'O3AirUnit',
+  'Neo',
+]);
+
+const SUPPORTED_GYROFLOW_SONY_MODEL_PATTERNS = [
+  /^(ilce)?1$/u,
+  /^(ilce)?7c$/u,
+  /^(ilce)?7rm5$/u,
+  /^a7rv$/u,
+  /^(ilce)?7m4$/u,
+  /^a7iv$/u,
+  /^(ilce)?7sm3$/u,
+  /^a7siii$/u,
+  /^(ilce)?9m2$/u,
+  /^a9ii$/u,
+  /^(ilce)?9m3$/u,
+  /^a9iii$/u,
+  /^ilmefx3$/u,
+  /^fx3$/u,
+  /^ilmefx6$/u,
+  /^fx6$/u,
+  /^ilmefx9$/u,
+  /^fx9$/u,
+  /^dscrx0m2$/u,
+  /^rx0ii$/u,
+  /^dscrx100m7$/u,
+  /^rx100vii$/u,
+  /^zv1$/u,
+  /^zve10$/u,
+  /^zve10m2$/u,
+  /^zve1$/u,
+  /^(ilce)?6700$/u,
+  /^a6700$/u,
+];
+
+function isSupportedGyroflowSonyModel(model: string | undefined): boolean {
+  const normalized = normalizeDeviceCandidateString(model ?? '');
+  return normalized.length > 0
+    && SUPPORTED_GYROFLOW_SONY_MODEL_PATTERNS.some(pattern => pattern.test(normalized));
+}
 
 function buildStableToolExecEnv(): NodeJS.ProcessEnv {
   return {

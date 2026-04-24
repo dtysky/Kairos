@@ -7,6 +7,16 @@
 
 ## 0. 2026-03-31 增补
 
+## 0.12 2026-04-24 DaVinci Resolve scripting 本地知识文档补记
+
+当前 DaVinci Resolve scripting 不再只依赖外部链接或历史实现记忆：
+
+- Kairos 已新增本地工作文档 `.ai/knowledge/davinci-resolve-scripting.md`
+- 该文档吸收用户指定的 X-Raym Gist 镜像与本机 Resolve 官方 `README.txt` 的关键 API 口径
+- 任何 DaVinci Resolve scripting、`/color`、Resolve export、DRX/DRT、LUT automation、render job、Group、node graph 或 vendored Resolve host 任务，必须先读该本地文档
+- 版本敏感方法仍需按当前安装版 Resolve `README.txt` 实测/核对，不能从记忆或旧设计推断
+- 当前明确记录的高风险点包括：官方 docs 有 `SetNodeEnabled()` 但没有可靠 `GetNodeEnabled()`，`GetToolsInNode()` 只能证明 OFX shell 存在，不能证明 Gyroflow 已完成 source-specific load
+
 ## 0.11 2026-04-23 DaVinci color 固定节点图与项目级批处理补记
 
 当前 `/color` 已从 donor/seed 对外语义继续收口到“固定 clip repair 节点图 + 项目级 deterministic orchestration”。
@@ -35,17 +45,19 @@
   - 只要存在失败 root，整个 job 最终记为 failed
 - clip repair 的正式用户口径不再是 donor matrix，而是统一固定五节点图：
   - 所有可执行视频 clip：`Gyro -> Dehaze -> User1 -> User2 -> NR`
-  - `Gyro` 是第 1 个技术头节点，所有 clip 都预留；`gyroEligible=true` 默认开启，`gyroEligible=false` 默认关闭并回读为 `seeded-disabled`
+  - `Gyro` 是第 1 个技术头节点，所有 clip 都预留；每次 `prepare_root` 都按最终 clip Gyro enable 判定重申 node1 开关，`gyroEligible=true` 请求开启并显示为 `ready-to-load`，`gyroEligible=false` 请求关闭并回读为 `seeded-disabled`
+  - `ready-to-load` 只证明 Gyroflow OFX shell 存在且 Kairos 已请求正确 node 启停；它不证明 Gyroflow 已执行 source-specific `Load for current file`
   - `Dehaze` 是第 2 个保留节点，默认禁用
   - `User1 / User2` 是最小 user zone，默认开启；用户只能在 `Dehaze` 之后、`NR` 之前扩展更多用户节点
   - `NR` 是所有视频 clip 的固定尾节点，默认禁用，正式开关入口只在 Resolve
   - `lowlight` 继续是首帧 creative 标签，不自动开启 `Dehaze / NR`
-  - DJI `dvtm_*` 私有视频 telemetry 是正式 `gyroEligible` 技术信号；它只决定 Gyro 默认启停，不允许反推出 log profile
-- `prepare_root` 对 canonical clip graph 的正式行为是“保留现状不重排”：
-  - 规范图重跑时保留现有 clip grade、用户节点顺序，以及用户已手动设置的保留节点开关
+  - `gyroEligible` 是一个最终布尔值：当前安装 Gyroflow/OFX 支持设备匹配 + 对应运动元信息，或同名 `.gyroflow` 工程；DJI `dvtm_*` 只能作为元信息线索，不能单独开启 Gyro，也不允许反推出 log profile
+- `prepare_root` 对 canonical clip graph 的正式行为是“保留现状不重排，但重申最终 Gyro 开关”：
+  - 规范图重跑时保留现有 clip grade、用户节点顺序，以及用户已手动设置的 Dehaze/NR 开关
+  - 规范图重跑仍必须按最终 `gyroEligible` 布尔值重新请求 node1 开/关，因为 Gyro 是技术判断，不是 creative 用户区
   - 中间 user zone 必须保持在 `reservedNodeIndices.userStart -> userEnd` 范围内
 - 缺少固定槽位的旧图正式记为 `legacy-layout`
-  - 本轮允许一次从 workspace `config/default.drx` 破坏性重建到 canonical layout
+  - 本轮允许一次从 workspace `config/default.drt` 破坏性重建到 canonical layout；不存在时回退 `config/default.drx`
   - 如果用户把新节点加在 `NR` 后面，下次 `prepare_root` 也会按 legacy layout 处理并重建
   - 这是 clip repair 迁移代价，不影响 Resolve Group creative 真相
 - `color/groups/<rootId>.json` 的 clip snapshot 正式扩展为：
@@ -87,10 +99,10 @@
   - 同 clip 旧 repair 在 `prepare_root` 重建 timeline 时继续优先通过 Resolve `CopyGrades` 保留
   - brand-new clip 若没有旧 repair，宿主必须建立 canonical layout，而不是把 donor matrix 当成用户口径
   - 所有视频 clip 统一为 `Gyro -> Dehaze -> User1 -> User2 -> NR`
-  - `gyroEligible` 只决定 Gyro 默认启停，不决定是否存在 Gyro 节点
+  - `gyroEligible` 只决定 Gyro 默认/重申启停，不决定是否存在 Gyro 节点
   - `Dehaze / NR` 默认状态都是 `seeded-disabled`
   - 当前 Resolve 运行态下 `ExportStills(..., drx)` 不稳定且返回失败，不能作为正式主线
-  - vendored clean donor `DRT` 若继续存在，只是宿主内部建 canonical graph 的实现手段
+  - clean `DRT` 是优先宿主模板：旧 `gyro-only.drt + CopyGrades + render` 路径已实测能触发 Gyroflow 当前文件加载；`DRX` 只能作为骨架 fallback，不能当成 load 证据
 - `gyroflowStatus` 当前正式至少包含：
   - `not-applicable`
   - `not-seeded`
@@ -102,8 +114,8 @@
   - `seeded-disabled`
   - `seeded-enabled`
 - 默认 repair 行为当前固定为：
-  - `gyroEligible=true`：优先保留 canonical 既存 repair；brand-new / legacy clip 则规范到 `Gyro -> Dehaze -> User1 -> User2 -> NR`，Gyro 默认开启
-  - `gyroEligible=false`：优先保留 canonical 既存 repair；brand-new / legacy clip 同样规范到 `Gyro -> Dehaze -> User1 -> User2 -> NR`，Gyro 默认关闭
+  - `gyroEligible=true`：优先保留 canonical 既存 repair；brand-new / legacy clip 则规范到 `Gyro -> Dehaze -> User1 -> User2 -> NR`，并在每次 `prepare_root` 请求 Gyro 开启
+  - `gyroEligible=false`：优先保留 canonical 既存 repair；brand-new / legacy clip 同样规范到 `Gyro -> Dehaze -> User1 -> User2 -> NR`，并在每次 `prepare_root` 请求 Gyro 关闭
   - `lowlight=true`：继续只影响 creative/group 标签与状态提示，不自动启用 `Dehaze / NR`
   - canonical clip graph 重跑时不重排 user zone
 - `sync_groups` 只镜像 Resolve 当前真相：
@@ -213,8 +225,8 @@
 - `log` 的正式判定优先级为：
   1. 素材显式真值
   2. root `color.colorSpaceProfile`
-- Sony 路径当前允许从 sidecar / embedded XML 真值读取 `CaptureGammaEquation / CaptureColorPrimaries / Gyroscope`
-- DJI 路径当前必须先解析 `djmd` 私有视频 metadata；若仍无法解出明确 log 真值，才允许回退 root `color.colorSpaceProfile`
+- Sony 路径当前允许从 sidecar / embedded XML 真值读取 `CaptureGammaEquation / CaptureColorPrimaries / Gyroscope`，且只有当前 Gyroflow/OFX 支持的 Sony 型号带 `Gyroscope` 时才开启 Gyro
+- DJI 路径当前必须先匹配当前 Gyroflow/OFX 支持的 DJI 设备族，再要求 DJI metadata / `dvtm_*` 运动元信息；不支持的 DJI 型号即使有 `dvtm_*` 也必须关闭 Gyro。若仍无法解出明确 log 真值，才允许回退 root `color.colorSpaceProfile`
 - Group truth 继续以 Resolve 为准：
   - `/color` 通过 `sync_groups` 镜像 Resolve 当前 group name
   - `groupKey` 的正式语义改为 normalized Resolve group name slug

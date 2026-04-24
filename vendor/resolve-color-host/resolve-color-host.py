@@ -121,8 +121,9 @@ def prepare_root(resolve, payload):
     apply_timeline_spec(project, payload.get("timelineSpec"), timeline)
     clip_requests = normalize_clip_requests(payload.get("clips"))
     previous_group_names_by_clip = capture_timeline_group_assignments(timeline, payload["rawLocalPath"])
-    repair_drx_path = get_repair_drx_asset_path(payload)
+    repair_template = get_repair_template_asset(payload)
     donor_timeline = None
+    repair_template_timeline = None
     if has_timeline_video_items(timeline):
         donor_timeline = duplicate_timeline(
             project,
@@ -134,6 +135,11 @@ def prepare_root(resolve, payload):
     try:
         safe_call(resolve, "OpenPage", "edit")
         safe_call(project, "SetCurrentTimeline", timeline)
+        if repair_template["kind"] == "default-drt":
+            repair_template_timeline = import_repair_template_timeline(
+                media_pool,
+                repair_template["path"],
+            )
         namespace_state = collect_namespace_state(namespace_folder)
         prepared_entries, sync_summary = sync_namespace_clips(
             media_pool,
@@ -175,7 +181,8 @@ def prepare_root(resolve, payload):
             payload["rawLocalPath"],
             clip_requests,
             donor_timeline,
-            repair_drx_path,
+            repair_template,
+            repair_template_timeline,
         )
 
         groups_snapshot = build_groups_snapshot(
@@ -214,6 +221,7 @@ def prepare_root(resolve, payload):
         }
     finally:
         delete_timeline(media_pool, donor_timeline)
+        delete_timeline(media_pool, repair_template_timeline)
 
 
 def preflight(resolve, payload):
@@ -648,16 +656,43 @@ def has_timeline_video_items(timeline):
     return next(iter_timeline_video_items(timeline), None) is not None
 
 
-def get_repair_drx_asset_path(payload):
-    explicit = stringify_signal_value(payload.get("repairDrxPath"))
-    candidate = Path(explicit).expanduser() if explicit else Path(__file__).resolve().parents[2] / "config" / "default.drx"
-    if not candidate.is_file():
+def get_repair_template_asset(payload):
+    explicit_drt = stringify_signal_value(payload.get("repairDrtPath"))
+    drt_candidate = Path(explicit_drt).expanduser() if explicit_drt else Path(__file__).resolve().parents[2] / "config" / "default.drt"
+    if drt_candidate.is_file():
+        return {"kind": "default-drt", "path": drt_candidate}
+
+    explicit_drx = stringify_signal_value(payload.get("repairDrxPath"))
+    drx_candidate = Path(explicit_drx).expanduser() if explicit_drx else Path(__file__).resolve().parents[2] / "config" / "default.drx"
+    if not drx_candidate.is_file():
         raise HostError(
-            "resolve_repair_drx_missing",
-            f"Missing clip repair DRX asset: {candidate.name}",
-            {"drxPath": str(candidate)},
+            "resolve_repair_template_missing",
+            f"Missing clip repair template asset: {drx_candidate.name}",
+            {
+                "drtPath": str(drt_candidate),
+                "drxPath": str(drx_candidate),
+            },
         )
-    return candidate
+    return {"kind": "default-drx", "path": drx_candidate}
+
+
+def import_repair_template_timeline(media_pool, template_path):
+    timeline = safe_call(media_pool, "ImportTimelineFromFile", str(template_path))
+    if not timeline:
+        raise HostError(
+            "resolve_repair_template_import_failed",
+            f"Unable to import clip repair template timeline: {template_path.name}",
+            {"drtPath": str(template_path)},
+        )
+    safe_call(timeline, "SetName", build_temp_render_timeline_name("__Kairos Repair Template"))
+    donor_item = find_first_timeline_video_item(timeline)
+    if donor_item is None or not clip_like_has_canonical_repair_layout(donor_item):
+        raise HostError(
+            "resolve_repair_template_invalid",
+            "Imported clip repair DRT does not match the expected Gyro -> Dehaze -> User1 -> User2 -> NR contract.",
+            {"drtPath": str(template_path)},
+        )
+    return timeline
 
 
 def find_first_timeline_video_item(timeline):
@@ -678,9 +713,19 @@ def list_requested_repair_kinds(clip_request):
     return ["gyro", "user1", "user2", "dehaze", "nr"]
 
 
-def seed_clip_repairs(timeline, raw_local_path, clip_requests, donor_timeline=None, repair_drx_path=None):
+def seed_clip_repairs(
+    timeline,
+    raw_local_path,
+    clip_requests,
+    donor_timeline=None,
+    repair_template=None,
+    repair_template_timeline=None,
+):
     target_items_by_clip = build_timeline_item_map(timeline, raw_local_path)
     donor_items_by_clip = build_timeline_item_map(donor_timeline, raw_local_path) if donor_timeline else {}
+    repair_template_kind = stringify_signal_value((repair_template or {}).get("kind"))
+    repair_template_path = (repair_template or {}).get("path")
+    repair_template_source_item = find_first_timeline_video_item(repair_template_timeline) if repair_template_timeline else None
     repair_seed_by_clip = {}
     invalid_repair_layouts = []
     for clip_request in clip_requests:
@@ -694,6 +739,7 @@ def seed_clip_repairs(timeline, raw_local_path, clip_requests, donor_timeline=No
         copied_existing_grade = False
         rebuilt_legacy_grade = False
         seeded_repair_donor_kind = None
+        forced_enabled_node_indices = []
         forced_disabled_node_indices = []
         donor_item = donor_items_by_clip.get(clip_key)
         if (
@@ -709,11 +755,22 @@ def seed_clip_repairs(timeline, raw_local_path, clip_requests, donor_timeline=No
                     f"Unable to preserve existing clip repair grade for: {clip_key}",
             )
             copied_existing_grade = True
-        elif repair_drx_path is not None:
+            node_default_state = apply_reserved_node_defaults(target_item, clip_request, reset_tail_reserved_nodes=False)
+            forced_enabled_node_indices = node_default_state["enabled"]
+            forced_disabled_node_indices = node_default_state["disabled"]
+        elif repair_template_source_item is not None:
             rebuilt_legacy_grade = donor_item is not None and clip_like_has_grade_content(donor_item)
-            apply_repair_drx(target_item, repair_drx_path, clip_key)
-            seeded_repair_donor_kind = "default-drx"
-            forced_disabled_node_indices = apply_seeded_reserved_node_defaults(target_item, clip_request)
+            result = safe_call(repair_template_source_item, "CopyGrades", [target_item])
+            if result is False:
+                raise HostError(
+                    "resolve_clip_repair_seed_failed",
+                    f"Unable to seed clip repair template grade for: {clip_key}",
+                    {"repairTemplateKind": repair_template_kind},
+                )
+            seeded_repair_donor_kind = repair_template_kind or "default-drt"
+            node_default_state = apply_reserved_node_defaults(target_item, clip_request, reset_tail_reserved_nodes=True)
+            forced_enabled_node_indices = node_default_state["enabled"]
+            forced_disabled_node_indices = node_default_state["disabled"]
             if not clip_like_has_canonical_repair_layout(target_item):
                 invalid_repair_layouts.append({
                     "clipKey": clip_key,
@@ -722,7 +779,28 @@ def seed_clip_repairs(timeline, raw_local_path, clip_requests, donor_timeline=No
                         "rebuiltLegacyGrade": rebuilt_legacy_grade,
                         "requestedRepairKinds": list_requested_repair_kinds(clip_request),
                         "seededRepairDonorKind": seeded_repair_donor_kind,
-                        "availableRepairDonorKinds": ["default-drx"],
+                        "availableRepairDonorKinds": [repair_template_kind] if repair_template_kind else [],
+                        "forcedEnabledNodeIndices": forced_enabled_node_indices,
+                        "forcedDisabledNodeIndices": forced_disabled_node_indices,
+                    }),
+                })
+        elif repair_template_path is not None:
+            rebuilt_legacy_grade = donor_item is not None and clip_like_has_grade_content(donor_item)
+            apply_repair_drx(target_item, repair_template_path, clip_key)
+            seeded_repair_donor_kind = repair_template_kind or "default-drx"
+            node_default_state = apply_reserved_node_defaults(target_item, clip_request, reset_tail_reserved_nodes=True)
+            forced_enabled_node_indices = node_default_state["enabled"]
+            forced_disabled_node_indices = node_default_state["disabled"]
+            if not clip_like_has_canonical_repair_layout(target_item):
+                invalid_repair_layouts.append({
+                    "clipKey": clip_key,
+                    "snapshot": build_clip_repair_snapshot(target_item, clip_request, {
+                        "copiedExistingGrade": False,
+                        "rebuiltLegacyGrade": rebuilt_legacy_grade,
+                        "requestedRepairKinds": list_requested_repair_kinds(clip_request),
+                        "seededRepairDonorKind": seeded_repair_donor_kind,
+                        "availableRepairDonorKinds": [repair_template_kind] if repair_template_kind else [],
+                        "forcedEnabledNodeIndices": forced_enabled_node_indices,
                         "forcedDisabledNodeIndices": forced_disabled_node_indices,
                     }),
                 })
@@ -732,7 +810,8 @@ def seed_clip_repairs(timeline, raw_local_path, clip_requests, donor_timeline=No
             "rebuiltLegacyGrade": rebuilt_legacy_grade,
             "requestedRepairKinds": list_requested_repair_kinds(clip_request),
             "seededRepairDonorKind": seeded_repair_donor_kind,
-            "availableRepairDonorKinds": ["default-drx"] if repair_drx_path is not None else [],
+            "availableRepairDonorKinds": [repair_template_kind] if repair_template_kind else [],
+            "forcedEnabledNodeIndices": forced_enabled_node_indices,
             "forcedDisabledNodeIndices": forced_disabled_node_indices,
         }
     if invalid_repair_layouts:
@@ -740,7 +819,8 @@ def seed_clip_repairs(timeline, raw_local_path, clip_requests, donor_timeline=No
             "resolve_repair_drx_invalid",
             "Applied clip repair DRX does not match the expected Gyro -> Dehaze -> User1 -> User2 -> NR contract.",
             {
-                "drxPath": str(repair_drx_path) if repair_drx_path is not None else None,
+                "templateKind": repair_template_kind,
+                "templatePath": str(repair_template_path) if repair_template_path is not None else None,
                 "invalidClipCount": len(invalid_repair_layouts),
                 "invalidClips": invalid_repair_layouts[:20],
             },
@@ -849,6 +929,7 @@ def build_clip_repair_snapshot(item, clip_request, repair_seed_state=None):
             "requestedRepairKinds": list(repair_seed_state.get("requestedRepairKinds") or []) if isinstance(repair_seed_state, dict) else [],
             "seededRepairDonorKind": stringify_signal_value((repair_seed_state or {}).get("seededRepairDonorKind")) if isinstance(repair_seed_state, dict) else None,
             "availableRepairDonorKinds": list((repair_seed_state or {}).get("availableRepairDonorKinds") or []) if isinstance(repair_seed_state, dict) else [],
+            "forcedEnabledNodeIndices": list((repair_seed_state or {}).get("forcedEnabledNodeIndices") or []) if isinstance(repair_seed_state, dict) else [],
             "forcedDisabledNodeIndices": list((repair_seed_state or {}).get("forcedDisabledNodeIndices") or []) if isinstance(repair_seed_state, dict) else [],
         },
     }
@@ -927,27 +1008,30 @@ def contains_dehaze_tool(tools):
     return any("dehaze" in str(tool).lower() for tool in tools or [])
 
 
-def apply_seeded_reserved_node_defaults(item, clip_request):
+def apply_reserved_node_defaults(item, clip_request, reset_tail_reserved_nodes):
     graph = safe_call(item, "GetNodeGraph")
     if graph is None:
-        return []
+        return {"enabled": [], "disabled": []}
+    enabled_nodes = []
     disabled = []
-    node_defaults = {
-        1: clip_request.get("gyroEligible") is True,
-        2: False,
-        5: False,
-    }
+    node_defaults = {1: clip_request.get("gyroEligible") is True}
+    if reset_tail_reserved_nodes:
+        node_defaults.update({2: False, 5: False})
     for node_index, enabled in node_defaults.items():
         result = safe_call(graph, "SetNodeEnabled", node_index, bool(enabled))
         if result is False:
             continue
-        if not enabled:
+        if enabled:
+            enabled_nodes.append(node_index)
+        else:
             disabled.append(node_index)
-    for node_index in (3, 4):
-        result = safe_call(graph, "SetNodeEnabled", node_index, True)
-        if result is False:
-            continue
-    return disabled
+    if reset_tail_reserved_nodes:
+        for node_index in (3, 4):
+            result = safe_call(graph, "SetNodeEnabled", node_index, True)
+            if result is False:
+                continue
+            enabled_nodes.append(node_index)
+    return {"enabled": enabled_nodes, "disabled": disabled}
 
 
 def disable_seeded_reserved_nodes(item, donor_kind):

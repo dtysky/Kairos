@@ -57,6 +57,7 @@ Current stable pipeline:
   - `projects/<projectId>/color/groups/<rootId>.json` stores the latest formal host-synced Group + clip repair snapshot for that root
   - `projects/<projectId>/color/batches/<batchId>/plan.json|manifest.json|validation.json|promote.json` store batch/runtime archive
   - current `/color` auto-discovers roots that already have `rawPath`, and the page now follows `Root 摘要 -> 当前 Root Hero -> 所有 Root 常驻可编辑配置 -> Groups -> 次级诊断/归档`
+  - DaVinci Resolve scripting work now has a local working document at `.ai/knowledge/davinci-resolve-scripting.md`; future Resolve scripting, `/color`, Resolve export, DRX/DRT, LUT, render job, Group, node graph, or vendored host changes must read it first and verify version-sensitive methods against the installed Resolve `README.txt`
   - current `/color` keeps all user-editable root parameters visible without opening details; every root's `当前素材路径 / 原始素材路径` and `renderPreset + colorSpaceProfile + transformPresetKey` stay on the same page, while derived Resolve naming stays in advanced/debug info
   - current `/color` only lets users edit the root-level `renderPreset + colorSpaceProfile + transformPresetKey`; it does not expose raw JSON fallback or naming edits
   - current `/color` supports a same-machine vendored Resolve backend Supervisor `color` action chain:
@@ -88,13 +89,15 @@ Current stable pipeline:
   - current `prepare_root` must also ensure the canonical clip repair layout:
     - repair preservation still uses official Resolve `CopyGrades` first when the same clip already has a canonical repair graph
     - every executable video clip must end up as `Gyro -> Dehaze -> User1 -> User2 -> NR`
-    - `Gyro` is always reserved at node 1; `gyroEligible=true` defaults it to `ready-to-load`, while `gyroEligible=false` keeps the same node seeded but disabled
+    - `Gyro` is always reserved at node 1; every `prepare_root` reasserts node 1 from the final clip Gyro enable decision, so `gyroEligible=true` requests enabled / `ready-to-load`, while `gyroEligible=false` requests disabled / `seeded-disabled`
+    - `ready-to-load` means the Gyroflow OFX shell is present and Kairos requested the correct node enabled state; it is not proof that Gyroflow's source-specific `Load for current file` button has run
     - `Dehaze` is always reserved at node 2 and defaults disabled
     - `User1 / User2` are the minimum user zone and default enabled; users may extend the user zone only between `Dehaze` and the `NR` tail
     - `NR` is always the reserved tail node for video clips, default disabled, and only user-toggled in Resolve
     - `lowlight=true` remains a creative/grouping label; it does not auto-enable `Dehaze` or `NR`
-    - DJI `dvtm_*` private video telemetry is a valid `gyroEligible` signal, but still must not be used to guess log profile
-    - old non-canonical clip graphs are treated as `legacy-layout`; this round allows one destructive rebuild from workspace `config/default.drx`, while canonical reruns preserve user zone state; nodes appended after `NR` are also treated as legacy
+    - `gyroEligible` is computed as one final boolean: current installed Gyroflow/OFX supported device match plus device-appropriate motion metadata, or a same-name `.gyroflow` project. DJI `dvtm_*` telemetry alone never enables Gyro and must not be used to guess log profile
+    - old non-canonical clip graphs are treated as `legacy-layout`; this round allows one destructive rebuild from workspace `config/default.drt` when present, otherwise `config/default.drx`; canonical reruns preserve user zone state and user-toggled Dehaze/NR state; nodes appended after `NR` are also treated as legacy
+    - `config/default.drt` is preferred for true Gyroflow current-file auto-load because the older clean DRT donor path has been live-verified to trigger Gyroflow source loading; `config/default.drx` is a layout fallback and must not be treated as load proof
   - current `sync_groups` mirrors both group creative state and clip repair state:
     - group-level truth includes `logProfile`, `lowlight`, and `postClipCreativeStatus`
     - clip-level truth includes `gyroEligible`, `gyroflowStatus`, `dehazeStatus`, `nrStatus`, `clipRepairStatus`, and `layoutStatus`
