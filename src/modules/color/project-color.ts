@@ -618,22 +618,36 @@ export async function prepareProjectColorRoot(
     },
   });
 
-  const prepared = await runColorHostWithRetry(
-    () => executor.prepareRoot({
+  let prepared: Awaited<ReturnType<IColorExecutor['prepareRoot']>>;
+  try {
+    prepared = await runColorHostWithRetry(
+      () => executor.prepareRoot({
+        projectId: input.projectId,
+        rootId: context.rootId,
+        resolveProjectName: context.rootSummary.resolveProjectName,
+        rootNamespace: context.rootSummary.rootNamespace,
+        gradingTimelineName: context.rootSummary.gradingTimelineName,
+        rawPath: context.rootSummary.rawPath,
+        rawLocalPath: context.rootSummary.rawLocalPath ?? '',
+        repairDrxPath: join(context.workspaceRoot, 'config', 'default.drx'),
+        timelineSpec,
+        lutSyncSummary: preparedClipTransforms.lutSyncSummary,
+        clips: preparedClipTransforms.clips,
+      }),
+      `prepare_root:${context.rootId}`,
+    );
+  } catch (error) {
+    const blockers = [error instanceof Error ? error.message : String(error)];
+    await failColorAction(context.projectRoot, context.rootId, progressPath, action, blockers, {
       projectId: input.projectId,
       rootId: context.rootId,
       resolveProjectName: context.rootSummary.resolveProjectName,
-      rootNamespace: context.rootSummary.rootNamespace,
       gradingTimelineName: context.rootSummary.gradingTimelineName,
-      rawPath: context.rootSummary.rawPath,
-      rawLocalPath: context.rootSummary.rawLocalPath ?? '',
-      repairDrxPath: join(context.workspaceRoot, 'config', 'default.drx'),
-      timelineSpec,
-      lutSyncSummary: preparedClipTransforms.lutSyncSummary,
-      clips: preparedClipTransforms.clips,
-    }),
-    `prepare_root:${context.rootId}`,
-  );
+    }, {
+      suppressProgress: input.suppressProgress,
+    });
+    throw error;
+  }
 
   await writeRootCurrent(context.projectRoot, context.rootId, current => ({
     ...current,
@@ -1542,6 +1556,13 @@ async function failColorAction(
 ) {
   await writeRootCurrent(projectRoot, rootId, current => ({
     ...current,
+    ...(action === 'prepare_root'
+      ? {
+          mirrorStatus: 'blocked' as const,
+          timelineStatus: 'blocked' as const,
+          groupSyncStatus: current.groupSyncStatus,
+        }
+      : {}),
     activeStage: CCOLOR_STEP_DEFINITIONS[action][0]?.key,
     currentJobId: undefined,
     detail: blockers.join('；'),

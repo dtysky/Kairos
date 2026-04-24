@@ -928,6 +928,21 @@ describe('project color actions', () => {
       },
     ]);
     expect(result.detail).toBe('Prepare All Roots 完成：1 个成功，1 个失败。');
+    const colorCurrent = await loadColorCurrent(projectRoot);
+    const failedRoot = colorCurrent.roots.find(root => root.rootId === 'root-z');
+    const readyRoot = colorCurrent.roots.find(root => root.rootId === 'root-a');
+    expect(failedRoot).toMatchObject({
+      mirrorStatus: 'blocked',
+      timelineStatus: 'blocked',
+      detail: 'prepare failed for root-z',
+      blockingReasons: ['prepare failed for root-z'],
+    });
+    expect(failedRoot?.currentJobId).toBeUndefined();
+    expect(readyRoot).toMatchObject({
+      mirrorStatus: 'synced',
+      timelineStatus: 'ready',
+    });
+    expect(readyRoot?.currentJobId).toBeUndefined();
   });
 
   it('rejects rootId for project-scoped color actions', async () => {

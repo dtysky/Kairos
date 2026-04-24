@@ -757,7 +757,7 @@ def apply_repair_drx(item, repair_drx_path, clip_key):
             {"clipKey": clip_key, "drxPath": str(repair_drx_path)},
         )
     try:
-        result = method(str(repair_drx_path))
+        result = method(str(repair_drx_path), 0)
     except Exception as error:
         raise HostError(
             "resolve_repair_drx_apply_failed",
