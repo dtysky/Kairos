@@ -7,6 +7,55 @@
 
 ## 0. 2026-03-31 增补
 
+## 0.11 2026-04-23 DaVinci color 固定节点图与项目级批处理补记
+
+当前 `/color` 已从 donor/seed 对外语义继续收口到“固定 clip repair 节点图 + 项目级 deterministic orchestration”。
+
+本轮冻结后的正式口径如下：
+
+- `Supervisor color` 的正式动作链扩展为：
+  - `prepare_root`
+  - `sync_groups`
+  - `execute_root`
+  - `validate_batch`
+  - `promote_batch`
+  - `prepare_all_roots`
+  - `export_all_roots`
+- `/color` 官方路径继续不引入 agent；项目级批处理也是同一个 deterministic Supervisor color job
+- `prepare_all_roots` 的正式合同是：
+  - 使用当前 `/color` read model 中 enabled roots 的正式 priority 顺序
+  - 顺序对每个 root 执行 `prepare_root`
+  - 任一 root 失败时继续后续 roots
+  - 只要存在失败 root，整个 job 最终记为 failed
+- `export_all_roots` 的正式合同是：
+  - 使用当前 `/color` read model 中 enabled roots 的正式 priority 顺序
+  - 顺序对每个 root 执行 `execute_root -> validate_batch -> promote_batch`
+  - 仅当该 root `validate=pass` 时才允许进入 `promote_batch`
+  - 任一 root 失败时继续后续 roots
+  - 只要存在失败 root，整个 job 最终记为 failed
+- clip repair 的正式用户口径不再是 donor matrix，而是统一固定五节点图：
+  - 所有可执行视频 clip：`Gyro -> Dehaze -> User1 -> User2 -> NR`
+  - `Gyro` 是第 1 个技术头节点，所有 clip 都预留；`gyroEligible=true` 默认开启，`gyroEligible=false` 默认关闭并回读为 `seeded-disabled`
+  - `Dehaze` 是第 2 个保留节点，默认禁用
+  - `User1 / User2` 是最小 user zone，默认开启；用户只能在 `Dehaze` 之后、`NR` 之前扩展更多用户节点
+  - `NR` 是所有视频 clip 的固定尾节点，默认禁用，正式开关入口只在 Resolve
+  - `lowlight` 继续是首帧 creative 标签，不自动开启 `Dehaze / NR`
+- `prepare_root` 对 canonical clip graph 的正式行为是“保留现状不重排”：
+  - 规范图重跑时保留现有 clip grade、用户节点顺序，以及用户已手动设置的保留节点开关
+  - 中间 user zone 必须保持在 `reservedNodeIndices.userStart -> userEnd` 范围内
+- 缺少固定槽位的旧图正式记为 `legacy-layout`
+  - 本轮允许一次从 workspace `config/default.drx` 破坏性重建到 canonical layout
+  - 如果用户把新节点加在 `NR` 后面，下次 `prepare_root` 也会按 legacy layout 处理并重建
+  - 这是 clip repair 迁移代价，不影响 Resolve Group creative 真相
+- `color/groups/<rootId>.json` 的 clip snapshot 正式扩展为：
+  - `gyroEligible`
+  - `gyroflowStatus`
+  - `dehazeStatus`
+  - `nrStatus`
+  - `clipRepairStatus`
+  - `layoutStatus`
+  - `reservedNodeIndices`（含 `userStart / userEnd`）
+
 ## 0.10 2026-04-22 DaVinci color Resolve-first creative / clip repair 分层补记
 
 当前 `/color` 已继续从“root export + group sync”推进到“Resolve-first creative truth + clip-level repair seeding”。
@@ -24,7 +73,7 @@
   - `root.color.transformPresetKey?`
 - `color/groups/<rootId>.json` 的正式快照语义已扩展为 group + clip 两层：
   - group 级至少包含 `logProfile`、`lowlight`、`postClipCreativeStatus`
-  - clip 级至少包含 `gyroEligible`、`gyroflowStatus`、`nrStatus`、`clipRepairStatus`
+  - clip 级至少包含 `gyroEligible`、`gyroflowStatus`、`dehazeStatus`、`nrStatus`、`clipRepairStatus`、`layoutStatus`
 - 自动 Group 的正式分桶轴当前收口为：
   - `logProfile`
   - `lowlight`
@@ -33,16 +82,18 @@
   - 来源：每条 clip 的首帧视觉分类
   - 语义：creative-first 标签，用于 Group creative 分桶，并次级提示 repair 默认态
   - 约束：不等价于“必须降噪”
-- clip repair 的正式冷启动路径当前收口为：
-  - 同 clip 旧 repair 在 `prepare_root` 重建 timeline 时通过 Resolve `CopyGrades` 保留
-  - brand-new clip 若没有旧 repair，Kairos 当前不再走“空骨架 + 缺 shell”主路径，而是导入 vendored clean donor `DRT` timeline，再从 donor timeline 复制最小 repair graph
-  - 当前 shipped donor matrix 正式覆盖：
-    - `gyro-only` donor：一层纯 `OFX: Gyroflow`
-    - `nr-only` donor：两层最小图，实际 repair 工具是 `OFX: Noise Reduction`
+- clip repair 的正式合同当前已收口为固定节点图：
+  - 同 clip 旧 repair 在 `prepare_root` 重建 timeline 时继续优先通过 Resolve `CopyGrades` 保留
+  - brand-new clip 若没有旧 repair，宿主必须建立 canonical layout，而不是把 donor matrix 当成用户口径
+  - 所有视频 clip 统一为 `Gyro -> Dehaze -> User1 -> User2 -> NR`
+  - `gyroEligible` 只决定 Gyro 默认启停，不决定是否存在 Gyro 节点
+  - `Dehaze / NR` 默认状态都是 `seeded-disabled`
   - 当前 Resolve 运行态下 `ExportStills(..., drx)` 不稳定且返回失败，不能作为正式主线
-  - 因此 `not-seeded` 仍是正式允许状态，但它现在只表示 donor matrix 不覆盖或 clip 没有旧 repair，不再表示 Kairos 完全没有冷启动 seeding 路径
+  - vendored clean donor `DRT` 若继续存在，只是宿主内部建 canonical graph 的实现手段
 - `gyroflowStatus` 当前正式至少包含：
   - `not-applicable`
+  - `not-seeded`
+  - `seeded-disabled`
   - `ready-to-load`
   - `active`
 - `nrStatus` 当前正式至少包含：
@@ -50,10 +101,10 @@
   - `seeded-disabled`
   - `seeded-enabled`
 - 默认 repair 行为当前固定为：
-  - `gyroEligible=true`：优先保留 clip 既存 repair；brand-new clip 则尝试 seed `gyro-only` donor，成功后状态记 `ready-to-load`
-  - `lowlight=true`：优先保留 clip 既存 repair；brand-new clip 且不需要 gyro 时尝试 seed `nr-only` donor
-  - `gyroEligible + lowlight`：若 clip 已有 combined repair，Kairos 只保留它；brand-new clip 当前 formal fallback 先 seed `gyro-only` donor，`nrStatus` 继续保持 `not-seeded`
-  - `lowlight=false`：保留 base 语义；若没有既存 repair，则不额外 seed `NR` donor，也不因此回写任何 creative look
+  - `gyroEligible=true`：优先保留 canonical 既存 repair；brand-new / legacy clip 则规范到 `Gyro -> Dehaze -> User1 -> User2 -> NR`，Gyro 默认开启
+  - `gyroEligible=false`：优先保留 canonical 既存 repair；brand-new / legacy clip 同样规范到 `Gyro -> Dehaze -> User1 -> User2 -> NR`，Gyro 默认关闭
+  - `lowlight=true`：继续只影响 creative/group 标签与状态提示，不自动启用 `Dehaze / NR`
+  - canonical clip graph 重跑时不重排 user zone
 - `sync_groups` 只镜像 Resolve 当前真相：
   - 如果用户手动改了 clip repair 或 group creative，Kairos 只回读状态，不做重置
   - `Gyroflow` 只有在宿主能明确读到已加载/已生效证据时才允许记为 `active`

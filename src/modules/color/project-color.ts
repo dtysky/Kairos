@@ -75,7 +75,9 @@ export type TProjectColorAction =
   | 'sync_groups'
   | 'execute_root'
   | 'validate_batch'
-  | 'promote_batch';
+  | 'promote_batch'
+  | 'prepare_all_roots'
+  | 'export_all_roots';
 
 const CCOLOR_STEP_DEFINITIONS: Record<TProjectColorAction, Array<{ key: string; label: string }>> = {
   prepare_root: [
@@ -95,31 +97,62 @@ const CCOLOR_STEP_DEFINITIONS: Record<TProjectColorAction, Array<{ key: string; 
   promote_batch: [
     { key: 'promote_batch', label: '覆盖当前素材目录' },
   ],
+  prepare_all_roots: [
+    { key: 'select_roots', label: '确定目标 roots' },
+    { key: 'prepare_all_roots', label: '顺序准备所有 roots' },
+  ],
+  export_all_roots: [
+    { key: 'select_roots', label: '确定目标 roots' },
+    { key: 'export_all_roots', label: '顺序导出所有 roots' },
+  ],
 };
 
 export interface IProjectColorActionInput {
   workspaceRoot: string;
   projectId: string;
-  rootId: string;
+  rootId?: string;
   action?: TProjectColorAction;
   clipKeys?: string[];
   batchId?: string;
   jobId?: string;
   progressPath?: string;
   executor?: IColorExecutor;
+  suppressProgress?: boolean;
+}
+
+export interface IProjectColorActionRootResult {
+  rootId: string;
+  status: 'succeeded' | 'failed';
+  actionSummary: string;
+  batchId?: string;
+  error?: string;
 }
 
 export interface IProjectColorActionResult {
   action: TProjectColorAction;
   projectId: string;
-  rootId: string;
+  rootId?: string;
   batchId?: string;
   detail: string;
   blockingReasons: string[];
+  roots?: IProjectColorActionRootResult[];
 }
+
+type TWriteColorProgress = (
+  progressPath: string,
+  action: TProjectColorAction,
+  input: {
+    status: 'running' | 'succeeded' | 'failed';
+    stepIndex: number;
+    current: number;
+    detail: string;
+    extra: Record<string, unknown>;
+  },
+) => Promise<void>;
 
 export interface IPrepareProjectColorRootInput extends IProjectColorActionInput {
   action?: 'prepare_root';
+  rootId: string;
 }
 
 export interface IPrepareProjectColorRootResult extends IProjectColorActionResult {
@@ -170,19 +203,55 @@ export async function runProjectColorAction(
 ): Promise<IProjectColorActionResult> {
   const action = normalizeColorAction(input.action);
   switch (action) {
-    case 'prepare_root':
+    case 'prepare_root': {
+      const rootId = input.rootId?.trim();
+      if (!rootId) {
+        throw new ProjectColorBlockedError(['prepare_root requires rootId。']);
+      }
       return prepareProjectColorRoot({
         ...input,
+        rootId,
         action: 'prepare_root',
       });
-    case 'sync_groups':
-      return syncProjectColorGroups(input);
-    case 'execute_root':
-      return executeProjectColorRoot(input);
-    case 'validate_batch':
-      return validateProjectColorBatch(input);
-    case 'promote_batch':
-      return promoteProjectColorBatch(input);
+    }
+    case 'sync_groups': {
+      const rootId = input.rootId?.trim();
+      if (!rootId) {
+        throw new ProjectColorBlockedError(['sync_groups requires rootId。']);
+      }
+      return syncProjectColorGroups({ ...input, rootId });
+    }
+    case 'execute_root': {
+      const rootId = input.rootId?.trim();
+      if (!rootId) {
+        throw new ProjectColorBlockedError(['execute_root requires rootId。']);
+      }
+      return executeProjectColorRoot({ ...input, rootId });
+    }
+    case 'validate_batch': {
+      const rootId = input.rootId?.trim();
+      if (!rootId) {
+        throw new ProjectColorBlockedError(['validate_batch requires rootId。']);
+      }
+      return validateProjectColorBatch({ ...input, rootId });
+    }
+    case 'promote_batch': {
+      const rootId = input.rootId?.trim();
+      if (!rootId) {
+        throw new ProjectColorBlockedError(['promote_batch requires rootId。']);
+      }
+      return promoteProjectColorBatch({ ...input, rootId });
+    }
+    case 'prepare_all_roots':
+      if (input.rootId?.trim()) {
+        throw new ProjectColorBlockedError(['prepare_all_roots is project-scoped and does not accept rootId。']);
+      }
+      return prepareAllProjectColorRoots(input);
+    case 'export_all_roots':
+      if (input.rootId?.trim()) {
+        throw new ProjectColorBlockedError(['export_all_roots is project-scoped and does not accept rootId。']);
+      }
+      return exportAllProjectColorRoots(input);
     default:
       throw new Error(`Unsupported color action: ${action satisfies never}`);
   }
@@ -204,12 +273,265 @@ export async function preflightProjectColorHost(
   return preflight;
 }
 
+export async function prepareAllProjectColorRoots(
+  input: IProjectColorActionInput,
+): Promise<IProjectColorActionResult> {
+  const action: TProjectColorAction = 'prepare_all_roots';
+  const projectRoot = resolveWorkspaceProjectRoot(input.workspaceRoot, input.projectId);
+  const progressPath = resolveColorProgressPath(projectRoot, input.progressPath);
+  const rootSummaries = await loadEnabledProjectColorRootSummaries(input.workspaceRoot, input.projectId);
+  if (rootSummaries.length === 0) {
+    const blockers = ['当前项目没有可执行的 enabled color roots。'];
+    await writeColorProgress(progressPath, action, {
+      status: 'failed',
+      stepIndex: 1,
+      current: 0,
+      detail: blockers[0]!,
+      extra: {
+        projectId: input.projectId,
+        currentRootId: undefined,
+        currentRootIndex: 0,
+        totalRoots: 0,
+        succeededRoots: 0,
+        failedRoots: 0,
+      },
+    });
+    throw new ProjectColorBlockedError(blockers);
+  }
+
+  await writeColorProgress(progressPath, action, {
+    status: 'running',
+    stepIndex: 1,
+    current: 0,
+    detail: `已锁定 ${rootSummaries.length} 个 color roots，准备顺序执行 prepare_root。`,
+    extra: {
+      projectId: input.projectId,
+      currentRootId: rootSummaries[0]?.rootId,
+      currentRootIndex: 0,
+      totalRoots: rootSummaries.length,
+      succeededRoots: 0,
+      failedRoots: 0,
+    },
+  });
+
+  const roots: IProjectColorActionRootResult[] = [];
+  let succeededRoots = 0;
+  let failedRoots = 0;
+  for (const [index, rootSummary] of rootSummaries.entries()) {
+    await writeColorProgress(progressPath, action, {
+      status: 'running',
+      stepIndex: 2,
+      current: index,
+      detail: `正在准备 root ${index + 1}/${rootSummaries.length}：${rootSummary.rootId}`,
+      extra: {
+        projectId: input.projectId,
+        currentRootId: rootSummary.rootId,
+        currentRootIndex: index + 1,
+        totalRoots: rootSummaries.length,
+        succeededRoots,
+        failedRoots,
+      },
+    });
+    try {
+      const result = await prepareProjectColorRoot({
+        ...input,
+        rootId: rootSummary.rootId,
+        action: 'prepare_root',
+        suppressProgress: true,
+      });
+      succeededRoots += 1;
+      roots.push({
+        rootId: rootSummary.rootId,
+        status: 'succeeded',
+        actionSummary: result.detail,
+      });
+    } catch (error) {
+      failedRoots += 1;
+      roots.push({
+        rootId: rootSummary.rootId,
+        status: 'failed',
+        actionSummary: error instanceof Error ? error.message : String(error),
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  const detail = failedRoots > 0
+    ? `Prepare All Roots 完成：${succeededRoots} 个成功，${failedRoots} 个失败。`
+    : `Prepare All Roots 完成：${succeededRoots} 个 roots 全部 ready。`;
+  await writeColorProgress(progressPath, action, {
+    status: failedRoots > 0 ? 'failed' : 'succeeded',
+    stepIndex: 2,
+    current: rootSummaries.length,
+    detail,
+    extra: {
+      projectId: input.projectId,
+      currentRootId: rootSummaries[rootSummaries.length - 1]?.rootId,
+      currentRootIndex: rootSummaries.length,
+      totalRoots: rootSummaries.length,
+      succeededRoots,
+      failedRoots,
+    },
+  });
+
+  return {
+    action,
+    projectId: input.projectId,
+    detail,
+    blockingReasons: roots
+      .filter(root => root.status === 'failed')
+      .map(root => `${root.rootId}: ${root.error || root.actionSummary}`),
+    roots,
+  };
+}
+
+export async function exportAllProjectColorRoots(
+  input: IProjectColorActionInput,
+): Promise<IProjectColorActionResult> {
+  const action: TProjectColorAction = 'export_all_roots';
+  const projectRoot = resolveWorkspaceProjectRoot(input.workspaceRoot, input.projectId);
+  const progressPath = resolveColorProgressPath(projectRoot, input.progressPath);
+  const rootSummaries = await loadEnabledProjectColorRootSummaries(input.workspaceRoot, input.projectId);
+  if (rootSummaries.length === 0) {
+    const blockers = ['当前项目没有可执行的 enabled color roots。'];
+    await writeColorProgress(progressPath, action, {
+      status: 'failed',
+      stepIndex: 1,
+      current: 0,
+      detail: blockers[0]!,
+      extra: {
+        projectId: input.projectId,
+        currentRootId: undefined,
+        currentRootIndex: 0,
+        totalRoots: 0,
+        succeededRoots: 0,
+        failedRoots: 0,
+      },
+    });
+    throw new ProjectColorBlockedError(blockers);
+  }
+
+  await writeColorProgress(progressPath, action, {
+    status: 'running',
+    stepIndex: 1,
+    current: 0,
+    detail: `已锁定 ${rootSummaries.length} 个 color roots，准备顺序执行 export pipeline。`,
+    extra: {
+      projectId: input.projectId,
+      currentRootId: rootSummaries[0]?.rootId,
+      currentRootIndex: 0,
+      totalRoots: rootSummaries.length,
+      succeededRoots: 0,
+      failedRoots: 0,
+    },
+  });
+
+  const roots: IProjectColorActionRootResult[] = [];
+  let succeededRoots = 0;
+  let failedRoots = 0;
+  for (const [index, rootSummary] of rootSummaries.entries()) {
+    await writeColorProgress(progressPath, action, {
+      status: 'running',
+      stepIndex: 2,
+      current: index,
+      detail: `正在导出 root ${index + 1}/${rootSummaries.length}：${rootSummary.rootId}`,
+      extra: {
+        projectId: input.projectId,
+        currentRootId: rootSummary.rootId,
+        currentRootIndex: index + 1,
+        totalRoots: rootSummaries.length,
+        succeededRoots,
+        failedRoots,
+      },
+    });
+    try {
+      const executed = await executeProjectColorRoot({
+        ...input,
+        rootId: rootSummary.rootId,
+        action: 'execute_root',
+        suppressProgress: true,
+      });
+      const validated = await validateProjectColorBatch({
+        ...input,
+        rootId: rootSummary.rootId,
+        action: 'validate_batch',
+        batchId: executed.batchId,
+        suppressProgress: true,
+      });
+      if (validated.blockingReasons.length > 0) {
+        failedRoots += 1;
+        roots.push({
+          rootId: rootSummary.rootId,
+          status: 'failed',
+          batchId: executed.batchId,
+          actionSummary: validated.detail,
+          error: validated.blockingReasons.join('；'),
+        });
+        continue;
+      }
+      const promoted = await promoteProjectColorBatch({
+        ...input,
+        rootId: rootSummary.rootId,
+        action: 'promote_batch',
+        batchId: executed.batchId,
+        suppressProgress: true,
+      });
+      succeededRoots += 1;
+      roots.push({
+        rootId: rootSummary.rootId,
+        status: 'succeeded',
+        batchId: executed.batchId,
+        actionSummary: promoted.detail,
+      });
+    } catch (error) {
+      failedRoots += 1;
+      roots.push({
+        rootId: rootSummary.rootId,
+        status: 'failed',
+        actionSummary: error instanceof Error ? error.message : String(error),
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  const detail = failedRoots > 0
+    ? `Export All Roots 完成：${succeededRoots} 个成功，${failedRoots} 个失败。`
+    : `Export All Roots 完成：${succeededRoots} 个 roots 全部导出并 promote。`;
+  await writeColorProgress(progressPath, action, {
+    status: failedRoots > 0 ? 'failed' : 'succeeded',
+    stepIndex: 2,
+    current: rootSummaries.length,
+    detail,
+    extra: {
+      projectId: input.projectId,
+      currentRootId: rootSummaries[rootSummaries.length - 1]?.rootId,
+      currentRootIndex: rootSummaries.length,
+      totalRoots: rootSummaries.length,
+      succeededRoots,
+      failedRoots,
+    },
+  });
+
+  return {
+    action,
+    projectId: input.projectId,
+    detail,
+    blockingReasons: roots
+      .filter(root => root.status === 'failed')
+      .map(root => `${root.rootId}: ${root.error || root.actionSummary}`),
+    roots,
+  };
+}
+
 export async function prepareProjectColorRoot(
   input: IPrepareProjectColorRootInput,
 ): Promise<IPrepareProjectColorRootResult> {
   const action: TProjectColorAction = 'prepare_root';
   const context = await loadColorRootContext(input.workspaceRoot, input.projectId, input.rootId);
   const progressPath = resolveColorProgressPath(context.projectRoot, input.progressPath);
+  const writeProgress: TWriteColorProgress = input.suppressProgress
+    ? async (..._args) => undefined
+    : writeColorProgress;
   const prepBlockers = dedupeStrings([
     !context.rootSummary.rawPath ? '当前 root 未配置 rawPath，无法进入 color prep。' : '',
     !context.rootSummary.rawLocalPath ? '当前设备未配置 rawLocalPath，无法在本机读取原始素材。' : '',
@@ -225,7 +547,7 @@ export async function prepareProjectColorRoot(
       detail: prepBlockers.join('；'),
       blockingReasons: dedupeStrings([...(current.blockingReasons ?? []), ...prepBlockers]),
     }));
-    await writeColorProgress(progressPath, action, {
+    await writeProgress(progressPath, action, {
       status: 'failed',
       stepIndex: 1,
       current: 0,
@@ -240,6 +562,7 @@ export async function prepareProjectColorRoot(
     action,
     executor,
     progressPath,
+    suppressProgress: input.suppressProgress,
     extra: {
       projectId: input.projectId,
       rootId: input.rootId,
@@ -266,6 +589,7 @@ export async function prepareProjectColorRoot(
         rootId: input.rootId,
       }, {
         persistRootBlockers: false,
+        suppressProgress: input.suppressProgress,
       });
     }
     throw error;
@@ -281,7 +605,7 @@ export async function prepareProjectColorRoot(
     detail: '正在调用 vendored Resolve backend 准备项目 / root bin / grading timeline。',
     blockingReasons: filterPersistentColorBlockers(current.blockingReasons ?? []),
   }));
-  await writeColorProgress(progressPath, action, {
+  await writeProgress(progressPath, action, {
     status: 'running',
     stepIndex: 1,
     current: 0,
@@ -303,6 +627,7 @@ export async function prepareProjectColorRoot(
       gradingTimelineName: context.rootSummary.gradingTimelineName,
       rawPath: context.rootSummary.rawPath,
       rawLocalPath: context.rootSummary.rawLocalPath ?? '',
+      repairDrxPath: join(context.workspaceRoot, 'config', 'default.drx'),
       timelineSpec,
       lutSyncSummary: preparedClipTransforms.lutSyncSummary,
       clips: preparedClipTransforms.clips,
@@ -319,7 +644,7 @@ export async function prepareProjectColorRoot(
     detail: 'Resolve host 已确认 root bin，正在对账 grading timeline。',
     blockingReasons: filterPersistentColorBlockers(current.blockingReasons ?? []),
   }));
-  await writeColorProgress(progressPath, action, {
+  await writeProgress(progressPath, action, {
     status: 'running',
     stepIndex: 2,
     current: 1,
@@ -362,7 +687,7 @@ export async function prepareProjectColorRoot(
     groups: syncedGroups ?? current.groups,
     blockingReasons: filterPersistentColorBlockers(current.blockingReasons ?? []),
   }));
-  await writeColorProgress(progressPath, action, {
+  await writeProgress(progressPath, action, {
     status: 'succeeded',
     stepIndex: 2,
     current: CCOLOR_STEP_DEFINITIONS[action].length,
@@ -396,8 +721,15 @@ export async function syncProjectColorGroups(
   input: IProjectColorActionInput,
 ): Promise<IProjectColorActionResult> {
   const action: TProjectColorAction = 'sync_groups';
-  const context = await loadColorRootContext(input.workspaceRoot, input.projectId, input.rootId);
+  const rootId = input.rootId?.trim();
+  if (!rootId) {
+    throw new ProjectColorBlockedError(['sync_groups requires rootId。']);
+  }
+  const context = await loadColorRootContext(input.workspaceRoot, input.projectId, rootId);
   const progressPath = resolveColorProgressPath(context.projectRoot, input.progressPath);
+  const writeProgress: TWriteColorProgress = input.suppressProgress
+    ? async (..._args) => undefined
+    : writeColorProgress;
   const blockers = dedupeStrings([
     !context.rootSummary.rawPath ? '当前 root 未配置 rawPath，无法同步 Groups。' : '',
     !context.rootSummary.rawLocalPath ? '当前设备未配置 rawLocalPath，无法同步 Groups。' : '',
@@ -408,7 +740,9 @@ export async function syncProjectColorGroups(
   if (blockers.length > 0) {
     await failColorAction(context.projectRoot, context.rootId, progressPath, action, blockers, {
       projectId: input.projectId,
-      rootId: input.rootId,
+      rootId,
+    }, {
+      suppressProgress: input.suppressProgress,
     });
     throw new ProjectColorBlockedError(blockers);
   }
@@ -418,9 +752,10 @@ export async function syncProjectColorGroups(
     action,
     executor,
     progressPath,
+    suppressProgress: input.suppressProgress,
     extra: {
       projectId: input.projectId,
-      rootId: input.rootId,
+      rootId,
     },
   });
   const executorClips = await buildColorExecutorClips(
@@ -440,18 +775,18 @@ export async function syncProjectColorGroups(
     currentJobId: input.jobId,
     detail: '正在从 Resolve root timeline 同步正式 Groups。',
   }));
-  await writeColorProgress(progressPath, action, {
+  await writeProgress(progressPath, action, {
     status: 'running',
     stepIndex: 1,
     current: 0,
     detail: `正在同步 ${context.rootSummary.gradingTimelineName} 的 Groups。`,
-    extra: { projectId: input.projectId, rootId: input.rootId },
+    extra: { projectId: input.projectId, rootId },
   });
 
   const snapshot = await runColorHostWithRetry(
     () => executor.syncGroups({
       projectId: input.projectId,
-      rootId: input.rootId,
+      rootId,
       resolveProjectName: context.rootSummary.resolveProjectName,
       gradingTimelineName: context.rootSummary.gradingTimelineName,
       rawPath: context.rootSummary.rawPath,
@@ -471,17 +806,17 @@ export async function syncProjectColorGroups(
     detail: `已同步 ${snapshot.groups.length} 个 Resolve Groups。`,
     groups: materializeCurrentGroupsFromSnapshot(snapshot, current.groups ?? [], context.groupsSnapshot),
   }));
-  const detail = savedCurrent.roots.find(root => root.rootId === input.rootId)?.detail
+  const detail = savedCurrent.roots.find(root => root.rootId === rootId)?.detail
     ?? `已同步 ${snapshot.groups.length} 个 Resolve Groups。`;
-  await writeColorProgress(progressPath, action, {
+  await writeProgress(progressPath, action, {
     status: 'succeeded',
     stepIndex: 1,
     current: 1,
     detail,
     extra: {
       projectId: input.projectId,
-      rootId: input.rootId,
-      groupsPath: getColorGroupsSnapshotPath(context.projectRoot, input.rootId),
+      rootId,
+      groupsPath: getColorGroupsSnapshotPath(context.projectRoot, rootId),
       groupCount: snapshot.groups.length,
     },
   });
@@ -489,7 +824,7 @@ export async function syncProjectColorGroups(
   return {
     action,
     projectId: input.projectId,
-    rootId: input.rootId,
+    rootId,
     detail,
     blockingReasons: [],
   };
@@ -499,8 +834,15 @@ export async function executeProjectColorRoot(
   input: IProjectColorActionInput,
 ): Promise<IProjectColorActionResult> {
   const action: TProjectColorAction = 'execute_root';
-  const context = await loadColorRootContext(input.workspaceRoot, input.projectId, input.rootId);
+  const rootId = input.rootId?.trim();
+  if (!rootId) {
+    throw new ProjectColorBlockedError(['execute_root requires rootId。']);
+  }
+  const context = await loadColorRootContext(input.workspaceRoot, input.projectId, rootId);
   const progressPath = resolveColorProgressPath(context.projectRoot, input.progressPath);
+  const writeProgress: TWriteColorProgress = input.suppressProgress
+    ? async (..._args) => undefined
+    : writeColorProgress;
   const requestedClipKeys = dedupeStrings((input.clipKeys ?? []).map(clipKey => normalizePortablePath(String(clipKey ?? ''))));
   const blockers = dedupeStrings([
     !context.rootSummary.localPath ? '当前设备未配置 current localPath，无法在本机覆盖当前素材目录。' : '',
@@ -512,7 +854,9 @@ export async function executeProjectColorRoot(
   if (blockers.length > 0) {
     await failColorAction(context.projectRoot, context.rootId, progressPath, action, blockers, {
       projectId: input.projectId,
-      rootId: input.rootId,
+      rootId,
+    }, {
+      suppressProgress: input.suppressProgress,
     });
     throw new ProjectColorBlockedError(blockers);
   }
@@ -522,18 +866,20 @@ export async function executeProjectColorRoot(
     action,
     executor,
     progressPath,
+    suppressProgress: input.suppressProgress,
     extra: {
       projectId: input.projectId,
-      rootId: input.rootId,
+      rootId,
     },
   });
   const renderPresetBlockers = validateRenderPresetSupport(context.rootSummary.renderPreset, hostPreflight);
   if (renderPresetBlockers.length > 0) {
     await failColorAction(context.projectRoot, context.rootId, progressPath, action, renderPresetBlockers, {
       projectId: input.projectId,
-      rootId: input.rootId,
+      rootId,
     }, {
       persistRootBlockers: false,
+      suppressProgress: input.suppressProgress,
     });
     throw new ProjectColorBlockedError(renderPresetBlockers);
   }
@@ -548,7 +894,9 @@ export async function executeProjectColorRoot(
     const missingBlockers = missingClipKeys.map(clipKey => `batch clip 不存在于 rawLocalPath: ${clipKey}`);
     await failColorAction(context.projectRoot, context.rootId, progressPath, action, missingBlockers, {
       projectId: input.projectId,
-      rootId: input.rootId,
+      rootId,
+    }, {
+      suppressProgress: input.suppressProgress,
     });
     throw new ProjectColorBlockedError(missingBlockers);
   }
@@ -556,7 +904,9 @@ export async function executeProjectColorRoot(
     const emptyBlockers = ['当前 root 没有可执行 clip。'];
     await failColorAction(context.projectRoot, context.rootId, progressPath, action, emptyBlockers, {
       projectId: input.projectId,
-      rootId: input.rootId,
+      rootId,
+    }, {
+      suppressProgress: input.suppressProgress,
     });
     throw new ProjectColorBlockedError(emptyBlockers);
   }
@@ -580,7 +930,7 @@ export async function executeProjectColorRoot(
 
   const plan: IColorBatchPlan = {
     batchId,
-    rootId: input.rootId,
+    rootId,
     createdAt: new Date().toISOString(),
     stagingRoot,
     renderPreset: context.rootSummary.renderPreset,
@@ -603,27 +953,27 @@ export async function executeProjectColorRoot(
     pendingPromoteBatchId: undefined,
     blockingReasons: filterPersistentColorBlockers(current.blockingReasons ?? []),
   }));
-  await writeColorProgress(progressPath, action, {
+  await writeProgress(progressPath, action, {
     status: 'running',
     stepIndex: 1,
     current: 0,
     detail: `正在扫描 ${effectiveClipKeys.length} 个 raw clips。`,
     extra: {
       projectId: input.projectId,
-      rootId: input.rootId,
+      rootId,
       batchId,
       clipCount: effectiveClipKeys.length,
       selectionMode: plan.selectionMode,
     },
   });
-  await writeColorProgress(progressPath, action, {
+  await writeProgress(progressPath, action, {
     status: 'running',
     stepIndex: 2,
     current: 1,
     detail: `正在执行 root batch：${batchId}`,
     extra: {
       projectId: input.projectId,
-      rootId: input.rootId,
+      rootId,
       batchId,
       stagingRoot,
       clipCount: effectiveClipKeys.length,
@@ -634,7 +984,7 @@ export async function executeProjectColorRoot(
   const rendered = await runColorHostWithRetry(
     () => executor.executeRoot({
       projectId: input.projectId,
-      rootId: input.rootId,
+      rootId,
       resolveProjectName: context.rootSummary.resolveProjectName,
       gradingTimelineName: context.rootSummary.gradingTimelineName,
       rawLocalPath: context.rootSummary.rawLocalPath ?? '',
@@ -691,7 +1041,7 @@ export async function executeProjectColorRoot(
   );
   const manifest: IColorBatchManifest = {
     batchId,
-    rootId: input.rootId,
+    rootId,
     createdAt: rendered.renderedAt,
     renderPreset: context.rootSummary.renderPreset,
     managedOutputSet: manifestEntries.map(entry => entry.promoteRelativePath),
@@ -710,16 +1060,16 @@ export async function executeProjectColorRoot(
     pendingPromoteBatchId: undefined,
     blockingReasons: [],
   }));
-  const detail = savedCurrent.roots.find(root => root.rootId === input.rootId)?.detail
+  const detail = savedCurrent.roots.find(root => root.rootId === rootId)?.detail
     ?? `root batch 已完成，待 validation：${batchId}`;
-  await writeColorProgress(progressPath, action, {
+  await writeProgress(progressPath, action, {
     status: 'succeeded',
     stepIndex: 2,
     current: 2,
     detail,
     extra: {
       projectId: input.projectId,
-      rootId: input.rootId,
+      rootId,
       batchId,
       clipCount: effectiveClipKeys.length,
       selectionMode: plan.selectionMode,
@@ -729,7 +1079,7 @@ export async function executeProjectColorRoot(
   return {
     action,
     projectId: input.projectId,
-    rootId: input.rootId,
+    rootId,
     batchId,
     detail,
     blockingReasons: [],
@@ -740,8 +1090,15 @@ export async function validateProjectColorBatch(
   input: IProjectColorActionInput,
 ): Promise<IProjectColorActionResult> {
   const action: TProjectColorAction = 'validate_batch';
-  const context = await loadColorRootContext(input.workspaceRoot, input.projectId, input.rootId);
+  const rootId = input.rootId?.trim();
+  if (!rootId) {
+    throw new ProjectColorBlockedError(['validate_batch requires rootId。']);
+  }
+  const context = await loadColorRootContext(input.workspaceRoot, input.projectId, rootId);
   const progressPath = resolveColorProgressPath(context.projectRoot, input.progressPath);
+  const writeProgress: TWriteColorProgress = input.suppressProgress
+    ? async (..._args) => undefined
+    : writeColorProgress;
   const batchId = input.batchId?.trim();
   const blockers = dedupeStrings([
     !batchId ? 'validate_batch requires args.batchId。' : '',
@@ -749,8 +1106,10 @@ export async function validateProjectColorBatch(
   if (blockers.length > 0) {
     await failColorAction(context.projectRoot, context.rootId, progressPath, action, blockers, {
       projectId: input.projectId,
-      rootId: input.rootId,
+      rootId,
       batchId,
+    }, {
+      suppressProgress: input.suppressProgress,
     });
     throw new ProjectColorBlockedError(blockers);
   }
@@ -762,23 +1121,25 @@ export async function validateProjectColorBatch(
   const ioBlockers = dedupeStrings([
     !plan ? `缺少 batch plan: ${batchId}` : '',
     !manifest ? `缺少 batch manifest: ${batchId}` : '',
-    plan && plan.rootId !== input.rootId ? `batch ${batchId} 不属于 root ${input.rootId}` : '',
+    plan && plan.rootId !== rootId ? `batch ${batchId} 不属于 root ${rootId}` : '',
   ]);
   if (ioBlockers.length > 0) {
     await failColorAction(context.projectRoot, context.rootId, progressPath, action, ioBlockers, {
       projectId: input.projectId,
-      rootId: input.rootId,
+      rootId,
       batchId,
+    }, {
+      suppressProgress: input.suppressProgress,
     });
     throw new ProjectColorBlockedError(ioBlockers);
   }
 
-  await writeColorProgress(progressPath, action, {
+  await writeProgress(progressPath, action, {
     status: 'running',
     stepIndex: 1,
     current: 0,
     detail: `正在校验 batch：${batchId}`,
-    extra: { projectId: input.projectId, rootId: input.rootId, batchId },
+    extra: { projectId: input.projectId, rootId, batchId },
   });
 
   const validationEntries = await Promise.all(
@@ -817,7 +1178,7 @@ export async function validateProjectColorBatch(
   const validationBlockingReasons = dedupeStrings(validationEntries.flatMap(entry => entry.reasons));
   const validation: IColorBatchValidation = {
     batchId: batchId!,
-    rootId: input.rootId,
+    rootId,
     validatedAt: new Date().toISOString(),
     status: validationStatus,
     summary: {
@@ -832,7 +1193,7 @@ export async function validateProjectColorBatch(
   };
   await saveColorBatchValidation(context.projectRoot, validation);
 
-  const currentRoot = context.colorCurrent.roots.find(root => root.rootId === input.rootId);
+  const currentRoot = context.colorCurrent.roots.find(root => root.rootId === rootId);
   const latestBatchMatches = currentRoot?.latestBatchId === batchId;
   const savedCurrent = await writeRootCurrent(context.projectRoot, context.rootId, current => latestBatchMatches
     ? {
@@ -852,16 +1213,16 @@ export async function validateProjectColorBatch(
       ...current,
       detail: `batch ${batchId} 已完成 validation，但它已不是当前最新候选。`,
     });
-  const detail = savedCurrent.roots.find(root => root.rootId === input.rootId)?.detail
+  const detail = savedCurrent.roots.find(root => root.rootId === rootId)?.detail
     ?? `batch ${batchId} validation 已完成。`;
-  await writeColorProgress(progressPath, action, {
+  await writeProgress(progressPath, action, {
     status: validationStatus === 'pass' ? 'succeeded' : 'failed',
     stepIndex: 1,
     current: 1,
     detail,
     extra: {
       projectId: input.projectId,
-      rootId: input.rootId,
+      rootId,
       batchId,
       validationStatus,
     },
@@ -870,7 +1231,7 @@ export async function validateProjectColorBatch(
   return {
     action,
     projectId: input.projectId,
-    rootId: input.rootId,
+    rootId,
     batchId,
     detail,
     blockingReasons: validationStatus === 'pass'
@@ -883,14 +1244,21 @@ export async function promoteProjectColorBatch(
   input: IProjectColorActionInput,
 ): Promise<IProjectColorActionResult> {
   const action: TProjectColorAction = 'promote_batch';
-  const context = await loadColorRootContext(input.workspaceRoot, input.projectId, input.rootId);
+  const rootId = input.rootId?.trim();
+  if (!rootId) {
+    throw new ProjectColorBlockedError(['promote_batch requires rootId。']);
+  }
+  const context = await loadColorRootContext(input.workspaceRoot, input.projectId, rootId);
   const progressPath = resolveColorProgressPath(context.projectRoot, input.progressPath);
+  const writeProgress: TWriteColorProgress = input.suppressProgress
+    ? async (..._args) => undefined
+    : writeColorProgress;
   const batchId = input.batchId?.trim();
   const [manifest, validation] = await Promise.all([
     batchId ? loadColorBatchManifest(context.projectRoot, batchId) : Promise.resolve(null),
     batchId ? loadColorBatchValidation(context.projectRoot, batchId) : Promise.resolve(null),
   ]);
-  const currentRoot = context.colorCurrent.roots.find(root => root.rootId === input.rootId) ?? null;
+  const currentRoot = context.colorCurrent.roots.find(root => root.rootId === rootId) ?? null;
   const blockers = dedupeStrings([
     !batchId ? 'promote_batch requires args.batchId。' : '',
     !manifest ? `缺少 batch manifest: ${batchId ?? '(missing)'}` : '',
@@ -905,18 +1273,20 @@ export async function promoteProjectColorBatch(
   if (blockers.length > 0) {
     await failColorAction(context.projectRoot, context.rootId, progressPath, action, blockers, {
       projectId: input.projectId,
-      rootId: input.rootId,
+      rootId,
       batchId,
+    }, {
+      suppressProgress: input.suppressProgress,
     });
     throw new ProjectColorBlockedError(blockers);
   }
 
-  await writeColorProgress(progressPath, action, {
+  await writeProgress(progressPath, action, {
     status: 'running',
     stepIndex: 1,
     current: 0,
     detail: `正在 promote batch：${batchId}`,
-    extra: { projectId: input.projectId, rootId: input.rootId, batchId },
+    extra: { projectId: input.projectId, rootId, batchId },
   });
 
   const previousPromote = currentRoot?.lastPromotedBatchId
@@ -930,7 +1300,7 @@ export async function promoteProjectColorBatch(
   const copiedOutputs = await copyManagedOutputs(context.rootSummary.localPath ?? '', manifest!);
   const promote: IColorBatchPromote = {
     batchId: batchId!,
-    rootId: input.rootId,
+    rootId,
     promotedAt: new Date().toISOString(),
     status: 'completed',
     outputs: copiedOutputs,
@@ -949,15 +1319,15 @@ export async function promoteProjectColorBatch(
     blockingReasons: [],
     detail: promote.detail,
   }));
-  const detail = savedCurrent.roots.find(root => root.rootId === input.rootId)?.detail ?? promote.detail ?? 'promote 完成。';
-  await writeColorProgress(progressPath, action, {
+  const detail = savedCurrent.roots.find(root => root.rootId === rootId)?.detail ?? promote.detail ?? 'promote 完成。';
+  await writeProgress(progressPath, action, {
     status: 'succeeded',
     stepIndex: 1,
     current: 1,
     detail,
     extra: {
       projectId: input.projectId,
-      rootId: input.rootId,
+      rootId,
       batchId,
       outputCount: copiedOutputs.length,
     },
@@ -966,11 +1336,35 @@ export async function promoteProjectColorBatch(
   return {
     action,
     projectId: input.projectId,
-    rootId: input.rootId,
+    rootId,
     batchId,
     detail,
     blockingReasons: [],
   };
+}
+
+async function loadEnabledProjectColorRootSummaries(
+  workspaceRoot: string,
+  projectId: string,
+) {
+  const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
+  const [projectBrief, projectRoots, deviceMaps, colorCurrent, groupSnapshotsByRootId] = await Promise.all([
+    loadProjectBriefConfig(projectRoot).catch(() => null),
+    loadIngestRoots(projectRoot),
+    loadProjectDeviceMediaMaps(projectRoot),
+    loadColorCurrent(projectRoot),
+    loadColorGroupsSnapshots(projectRoot),
+  ]);
+  const colorWorkspace = buildColorWorkspaceState({
+    projectId,
+    projectName: projectBrief?.name,
+    projectRoots: projectRoots.roots.filter(root => root.enabled !== false),
+    deviceProjectMap: deviceMaps.projects[projectId],
+    colorCurrent,
+    resolveBackend: inspectResolveColorBackend(),
+    groupSnapshotsByRootId,
+  });
+  return colorWorkspace.colorRoots;
 }
 
 async function loadColorRootContext(
@@ -1044,6 +1438,8 @@ function normalizeColorAction(action?: string): TProjectColorAction {
     case 'execute_root':
     case 'validate_batch':
     case 'promote_batch':
+    case 'prepare_all_roots':
+    case 'export_all_roots':
       return normalized;
     default:
       throw new Error(`Unsupported color action: ${normalized}`);
@@ -1113,7 +1509,7 @@ async function writeColorProgress(
   },
 ) {
   const definitions = CCOLOR_STEP_DEFINITIONS[action];
-  return writeKairosProgress(progressPath, {
+  await writeKairosProgress(progressPath, {
     status: input.status,
     pipelineKey: 'color',
     pipelineLabel: '达芬奇调色流程',
@@ -1141,6 +1537,7 @@ async function failColorAction(
   extra: Record<string, unknown>,
   options: {
     persistRootBlockers?: boolean;
+    suppressProgress?: boolean;
   } = {},
 ) {
   await writeRootCurrent(projectRoot, rootId, current => ({
@@ -1153,13 +1550,15 @@ async function failColorAction(
       : dedupeStrings([...(current.blockingReasons ?? []), ...blockers]),
     ...(action === 'sync_groups' ? { groupSyncStatus: 'blocked' as const } : {}),
   }));
-  await writeColorProgress(progressPath, action, {
-    status: 'failed',
-    stepIndex: 1,
-    current: 0,
-    detail: blockers.join('；'),
-    extra,
-  });
+  if (!options.suppressProgress) {
+    await writeColorProgress(progressPath, action, {
+      status: 'failed',
+      stepIndex: 1,
+      current: 0,
+      detail: blockers.join('；'),
+      extra,
+    });
+  }
 }
 
 function filterPersistentColorBlockers(blockers: string[]): string[] {
@@ -1457,6 +1856,7 @@ async function ensureActionHostPreflight(input: {
   action: TProjectColorAction;
   executor: IColorExecutor;
   progressPath: string;
+  suppressProgress?: boolean;
   extra: Record<string, unknown>;
 }): Promise<IColorHostPreflight> {
   const preflight = await runColorHostPreflight({
@@ -1478,7 +1878,7 @@ async function ensureActionHostPreflight(input: {
       input.action,
       blockers,
       input.extra,
-      { persistRootBlockers: false },
+      { persistRootBlockers: false, suppressProgress: input.suppressProgress },
     );
     throw new ProjectColorBlockedError(blockers);
   }

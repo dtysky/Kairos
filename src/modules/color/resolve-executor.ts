@@ -31,6 +31,7 @@ export interface IColorExecutorPrepareRootInput {
   gradingTimelineName: string;
   rawPath: string;
   rawLocalPath: string;
+  repairDrxPath?: string;
   timelineSpec?: {
     width: number;
     height: number;

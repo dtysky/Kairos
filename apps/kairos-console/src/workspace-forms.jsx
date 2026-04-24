@@ -958,6 +958,7 @@ export function ColorCurrentSummary({
       ? 'supported'
       : 'unknown';
   const [promoteDialog, setPromoteDialog] = React.useState(null);
+  const [exportAllDialog, setExportAllDialog] = React.useState(false);
   const [sectionOpen, setSectionOpen] = React.useState({});
   const preferredRootId = React.useMemo(
     () => resolvePreferredColorRootId(effectiveConfig, rootCards),
@@ -1027,6 +1028,24 @@ export function ColorCurrentSummary({
                 <Tag>{job.status}</Tag>
               </div>
             ))}
+          </div>
+        ) : null}
+        {rootCards.length > 0 ? (
+          <div className="inline-actions">
+            <Button
+              type={canRunProjectColorAction('prepare_all_roots', rootCards, capability, liveColorJobs, busy, onRunColorAction) ? 'primary' : 'disabled'}
+              disabled={!canRunProjectColorAction('prepare_all_roots', rootCards, capability, liveColorJobs, busy, onRunColorAction)}
+              onClick={() => onRunColorAction?.({ action: 'prepare_all_roots' })}
+            >
+              {describeProjectColorAction('prepare_all_roots', rootCards, liveColorJobs, busy)}
+            </Button>
+            <Button
+              type={canRunProjectColorAction('export_all_roots', rootCards, capability, liveColorJobs, busy, onRunColorAction) ? 'default' : 'disabled'}
+              disabled={!canRunProjectColorAction('export_all_roots', rootCards, capability, liveColorJobs, busy, onRunColorAction)}
+              onClick={() => setExportAllDialog(true)}
+            >
+              {describeProjectColorAction('export_all_roots', rootCards, liveColorJobs, busy)}
+            </Button>
           </div>
         ) : null}
         {rootCards.length > 0 ? (
@@ -1267,7 +1286,7 @@ export function ColorCurrentSummary({
                   })}
                 </div>
                 <p className="field-help">
-                  `Prepare Root` 会真正同步 Media Pool / grading timeline，并按 `logProfile + lowlight` 生成或复用 Resolve Groups，同时按 donor DRT 冷启动播种 clip repair。`Group Post-Clip` 是主 creative 真相，`Clip` 只承担 repair / local exception。`Execute Root` 会以当前 root grading timeline 作为唯一导出真相；需要重试时再通过 batch `clipKeys[]` 做子集执行。
+                  {'`Prepare Root` 会真正同步 Media Pool / grading timeline，并按 `logProfile + lowlight` 生成或复用 Resolve Groups，同时把所有视频 clip repair 收口成统一固定节点图：`Gyro -> Dehaze -> User1 -> User2 -> NR`。`Group Post-Clip` 是主 creative 真相，`Clip` 只承担 repair / local exception。`Prepare All Roots` 和 `Export All Roots` 都会按当前 root priority 顺序执行。'}
                 </p>
               </Card>
 
@@ -1277,7 +1296,7 @@ export function ColorCurrentSummary({
                   <Tag>{`${activeRoot.groups.length} 个`}</Tag>
                 </div>
                 <p className="muted color-panel-copy">
-                  `Group Post-Clip` 是 Resolve 里的主 creative 真相；clip repair 只负责 `Gyroflow / NR` 这类局部修复。导出、校验和 Promote 仍然都以 root batch 为单位，不再按 Group 触发。
+                  {'`Group Post-Clip` 是 Resolve 里的主 creative 真相；clip repair 只负责固定槽位 `Gyro -> Dehaze -> User1 -> User2 -> NR`。`Gyro` 所有 clip 都预留并按资格默认开关，`Dehaze / NR` 默认关闭，正式开关入口只有 Resolve。导出、校验和 Promote 仍然都以 root batch 为单位，不再按 Group 触发。'}
                 </p>
                 <div className="color-group-list">
                   {activeRoot.groups.length > 0 ? activeRoot.groups.map(group => (
@@ -1399,6 +1418,35 @@ export function ColorCurrentSummary({
         <div className="modal-copy">
           <p>这一步会把当前 batch 的受管输出覆盖回当前素材目录。</p>
           <p>它不会触碰 `rawPath`，也只会作用于这个 root batch manifest 声明的覆盖范围。</p>
+        </div>
+      </Modal>
+      <Modal
+        show={exportAllDialog}
+        title="确认 Export All Roots"
+        width={560}
+        cancel={() => setExportAllDialog(false)}
+        footer={(
+          <>
+            <Button type="default" onClick={() => setExportAllDialog(false)}>
+              取消
+            </Button>
+            <Button
+              type="primary"
+              onClick={() => {
+                setExportAllDialog(false);
+                onRunColorAction?.({ action: 'export_all_roots' });
+              }}
+            >
+              确认统一导出
+            </Button>
+          </>
+        )}
+      >
+        <div className="stack-list">
+          <p>{'这会按当前 root priority 顺序执行 `Execute -> Validate -> Promote`。'}</p>
+          <p>每个 root 只有在本 root validation 通过后才会 Promote 到对应当前素材目录。</p>
+          <p>如果某个 root 失败，任务会继续处理后续 roots，但整个 color job 最终会记为 failed。</p>
+          <p>{`本次目标 roots：${rootCards.map(root => root.label || root.rootId).join(' · ')}`}</p>
         </div>
       </Modal>
     </div>
@@ -2510,8 +2558,15 @@ function materializeColorWorkspaceClipRepair(clip) {
     lowlight: typeof clip?.lowlight === 'boolean' ? clip.lowlight : undefined,
     gyroEligible: clip?.gyroEligible === true,
     gyroflowStatus: getColorStringField(clip, ['gyroflowStatus']) || '',
+    dehazeStatus: getColorStringField(clip, ['dehazeStatus']) || '',
     nrStatus: getColorStringField(clip, ['nrStatus']) || '',
     clipRepairStatus: getColorStringField(clip, ['clipRepairStatus']) || '',
+    layoutStatus: getColorStringField(clip, ['layoutStatus']) || getColorStringField(clip?.hostSummary, ['layoutStatus']) || '',
+    reservedNodeIndices: isPlainObject(clip?.reservedNodeIndices)
+      ? clip.reservedNodeIndices
+      : isPlainObject(clip?.hostSummary?.reservedNodeIndices)
+        ? clip.hostSummary.reservedNodeIndices
+        : {},
     hostSummary: isPlainObject(clip?.hostSummary) ? clip.hostSummary : {},
   };
 }
@@ -2843,7 +2898,9 @@ function normalizeColorBitrateValue(value) {
 }
 
 function getColorJobRootId(job) {
-  return getColorStringField(job?.args, ['rootId']) || getColorStringField(job, ['rootId']);
+  return getColorStringField(job?.args, ['rootId'])
+    || getColorStringField(job, ['rootId'])
+    || (['prepare_all_roots', 'export_all_roots'].includes(getColorJobAction(job)) ? 'all-roots' : '');
 }
 
 function getColorJobAction(job) {
@@ -2855,6 +2912,20 @@ function hasLiveColorJobForRoot(liveJobs, rootId, action) {
     String(getColorJobRootId(job)) === String(rootId)
       && (!action || getColorJobAction(job) === action)
   ));
+}
+
+function canRunProjectColorAction(action, roots, capability, liveJobs, busy, onRunColorAction) {
+  if (typeof onRunColorAction !== 'function') return false;
+  if (capability?.supported === false) return false;
+  if (busy?.['project-brief']) return false;
+  if (busy?.['job:color']) return false;
+  if ((liveJobs || []).length > 0) return false;
+  if (!Array.isArray(roots) || roots.length === 0) return false;
+  if (roots.some(root => getColorStringField(root.hostPreflight, ['status']) === 'blocked')) return false;
+  if (action === 'export_all_roots') {
+    return roots.every(root => getColorStringField(root.current, ['timelineStatus']) === 'ready');
+  }
+  return true;
 }
 
 function canRunColorRootAction(action, root, capability, liveJobs, busy, onRunColorAction) {
@@ -2909,6 +2980,22 @@ function describeColorRootAction(action, root, liveJobs, busy) {
   return mirrorReady && timelineReady ? '重跑 Prep' : '准备 Root';
 }
 
+function describeProjectColorAction(action, roots, liveJobs, busy) {
+  if (busy?.['project-brief']) return '保存中…';
+  if (busy?.['job:color']) return '启动中…';
+  if ((liveJobs || []).some(job => getColorJobAction(job) === action)) {
+    return action === 'export_all_roots' ? '统一导出中…' : '统一准备中…';
+  }
+  if ((liveJobs || []).length > 0) return '等待当前 color job…';
+  if (!Array.isArray(roots) || roots.length === 0) return action === 'export_all_roots' ? '无可导出 roots' : '无可准备 roots';
+  if (action === 'export_all_roots') {
+    return roots.every(root => getColorStringField(root.current, ['timelineStatus']) === 'ready')
+      ? 'Export All Roots'
+      : '等待所有 roots ready';
+  }
+  return 'Prepare All Roots';
+}
+
 function describeColorTechnicalSignals(hostSummary) {
   const creativeTags = Array.isArray(hostSummary?.creativeTags)
     ? hostSummary.creativeTags.filter(item => typeof item === 'string' && item.trim()).map(item => item.trim())
@@ -2941,15 +3028,21 @@ function describeColorGroupCreativeState(group) {
 function describeColorClipRepairSummary(clips) {
   if (!Array.isArray(clips) || clips.length === 0) return '';
   const gyroCounts = countBy(clips.map(clip => clip?.gyroflowStatus || ''));
+  const dehazeCounts = countBy(clips.map(clip => clip?.dehazeStatus || ''));
   const nrCounts = countBy(clips.map(clip => clip?.nrStatus || ''));
   const repairCounts = countBy(clips.map(clip => clip?.clipRepairStatus || ''));
+  const layoutCounts = countBy(clips.map(clip => clip?.layoutStatus || ''));
   const details = [];
   const gyroSummary = summarizeCountMap('gyro', gyroCounts);
+  const dehazeSummary = summarizeCountMap('dehaze', dehazeCounts);
   const nrSummary = summarizeCountMap('nr', nrCounts);
   const repairSummary = summarizeCountMap('repair', repairCounts);
+  const layoutSummary = summarizeCountMap('layout', layoutCounts);
   if (gyroSummary) details.push(gyroSummary);
+  if (dehazeSummary) details.push(dehazeSummary);
   if (nrSummary) details.push(nrSummary);
   if (repairSummary) details.push(repairSummary);
+  if (layoutSummary) details.push(layoutSummary);
   return details.join(' · ');
 }
 
@@ -2959,8 +3052,17 @@ function describeColorClipRepairState(clip) {
   if (typeof clip?.lowlight === 'boolean') details.push(clip.lowlight ? 'lowlight' : 'base');
   if (clip?.gyroEligible === true) details.push('gyro-eligible');
   if (clip?.gyroflowStatus) details.push(`gyro: ${clip.gyroflowStatus}`);
+  if (clip?.dehazeStatus) details.push(`dehaze: ${clip.dehazeStatus}`);
   if (clip?.nrStatus) details.push(`nr: ${clip.nrStatus}`);
   if (clip?.clipRepairStatus) details.push(`repair: ${clip.clipRepairStatus}`);
+  if (clip?.layoutStatus) details.push(`layout: ${clip.layoutStatus}`);
+  if (isPlainObject(clip?.reservedNodeIndices)) {
+    const userStart = Number(clip.reservedNodeIndices.userStart);
+    const userEnd = Number(clip.reservedNodeIndices.userEnd);
+    if (Number.isFinite(userStart) && Number.isFinite(userEnd) && userEnd >= userStart) {
+      details.push(`user zone: ${userStart}-${userEnd}`);
+    }
+  }
   return details.join(' · ');
 }
 

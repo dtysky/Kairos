@@ -65,7 +65,13 @@ Current stable pipeline:
     - `execute_root`
     - `validate_batch`
     - `promote_batch`
-  - current `prepare_root` is the formal Resolve-side root sync step: it mirrors `rawLocalPath` into root bins, creates the grading timeline with that root's dominant `(width, height, fps)` spec, auto-syncs any missing same-path workspace LUTs referenced by the current root into the device Resolve default LUT directory when they exist under `config/luts/`, and creates or reuses Resolve Groups from source-truth / root-fallback creative tags
+    - `prepare_all_roots`
+    - `export_all_roots`
+  - current `prepare_root` is the formal Resolve-side root sync step: it mirrors `rawLocalPath` into root bins, creates the grading timeline with that root's dominant `(width, height, fps)` spec, auto-syncs any missing same-path workspace LUTs referenced by the current root into the device Resolve default LUT directory when they exist under `config/luts/`, creates or reuses Resolve Groups from source-truth / root-fallback creative tags, and normalizes clip repair graphs to the canonical fixed layout
+  - current project-level `/color` orchestration is deterministic and agent-free:
+    - `prepare_all_roots` runs `prepare_root` sequentially for all enabled color roots in formal priority order
+    - `export_all_roots` runs `execute_root -> validate_batch -> promote_batch` sequentially for all enabled color roots in formal priority order
+    - project-level actions continue other roots after a per-root failure, but the whole job still fails if any root fails
   - current `/color` is now Resolve-first about where grading truth lives:
     - `Group Post-Clip` is the only formal creative-truth layer
     - `Clip` is a fixed repair/local-exception layer, not the main creative surface
@@ -79,18 +85,18 @@ Current stable pipeline:
     - `lowlight`: first-frame creative classification only; it is a grouping/look hint, not a synonym for “must denoise”
     - `gyro` is now clip-level repair truth only and no longer participates in group auto-bucketing
     - Group key is the normalized Resolve group name slug
-  - current `prepare_root` must also ensure executable clip repair seeding:
-    - repair preservation still uses official Resolve `CopyGrades` first to carry the same clip's existing repair graph across `prepare_root` reruns
-    - when a brand-new clip has no prior repair, Kairos now imports vendored clean donor `DRT` timelines into the current Resolve project and seeds cold-start repair from those donors
-    - the current shipped donor matrix formally covers `gyro-only` and `nr-only`
-      - `gyro-only` donor is a one-node `OFX: Gyroflow` shell
-      - `nr-only` donor is a two-node minimal graph whose effective repair tool is `OFX: Noise Reduction`
-    - `gyroEligible + lowlight` combined clips still preserve existing combined repair when it already exists, but brand-new clips currently fall back to `gyro-only` donor first and keep `nrStatus = not-seeded`
-    - a `Gyroflow` donor copied onto a clip only proves the shell exists; the formal default status remains `ready-to-load`, not `active`
-    - `lowlight=true` is only a creative-first label plus a default repair hint; it does not change the meaning of the `lowlight` label itself
+  - current `prepare_root` must also ensure the canonical clip repair layout:
+    - repair preservation still uses official Resolve `CopyGrades` first when the same clip already has a canonical repair graph
+    - every executable video clip must end up as `Gyro -> Dehaze -> User1 -> User2 -> NR`
+    - `Gyro` is always reserved at node 1; `gyroEligible=true` defaults it to `ready-to-load`, while `gyroEligible=false` keeps the same node seeded but disabled
+    - `Dehaze` is always reserved at node 2 and defaults disabled
+    - `User1 / User2` are the minimum user zone and default enabled; users may extend the user zone only between `Dehaze` and the `NR` tail
+    - `NR` is always the reserved tail node for video clips, default disabled, and only user-toggled in Resolve
+    - `lowlight=true` remains a creative/grouping label; it does not auto-enable `Dehaze` or `NR`
+    - old non-canonical clip graphs are treated as `legacy-layout`; this round allows one destructive rebuild from workspace `config/default.drx`, while canonical reruns preserve user zone state; nodes appended after `NR` are also treated as legacy
   - current `sync_groups` mirrors both group creative state and clip repair state:
     - group-level truth includes `logProfile`, `lowlight`, and `postClipCreativeStatus`
-    - clip-level truth includes `gyroEligible`, `gyroflowStatus`, `nrStatus`, and `clipRepairStatus`
+    - clip-level truth includes `gyroEligible`, `gyroflowStatus`, `dehazeStatus`, `nrStatus`, `clipRepairStatus`, and `layoutStatus`
   - current automatic technical transform resolution follows:
     - clip truth priority is `source metadata > XML > root.color.colorSpaceProfile fallback`
     - unresolved DJI private metadata remains `unknown`; Kairos must not force `dlog-m`
@@ -104,7 +110,7 @@ Current stable pipeline:
     - existing non-empty user grade must not be overwritten
     - if copied LUTs are still invisible to the current Resolve session, `prepare_root` blocks and asks the user to refresh LUT lists or restart Resolve
   - current `/color` now auto-runs Resolve host preflight on page entry / project switch, caches the result at `color/current.json.hostPreflight`, and lets users manually `Recheck Host`
-  - current `prepare_root / sync_groups / execute_root` always guard on that preflight first; blocked host state or unsupported render presets fail before Resolve-side mutation
+  - current `prepare_root / sync_groups / execute_root / prepare_all_roots / export_all_roots` always guard on that preflight first; blocked host state or unsupported render presets fail before Resolve-side mutation
   - current Resolve host compatibility floor is `DaVinci Resolve Studio >= 18.5`; non-Studio / lower versions are formal blockers, while partial legacy-call compatibility is surfaced as `degraded`
   - current host retry only covers transient host/app failures with bounded backoff; semantic color failures do not auto-retry
   - current `execute_root` is now root-timeline-truth export:

@@ -81,6 +81,8 @@ export {
   EColorGyroflowStatus,
   EColorNoiseReductionStatus,
   EColorClipRepairStatus,
+  EColorClipLayoutStatus,
+  IColorClipReservedNodeIndices,
   IColorClipRepairSnapshot,
   IColorGroupSnapshot,
   IColorGroupsSnapshotFile,

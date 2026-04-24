@@ -52,14 +52,13 @@ describe('color store', () => {
     await saveColorBatchPlan(projectRoot, {
       batchId: 'batch-1',
       rootId: 'root-camera',
-      groupKey: 'group-day',
       createdAt: '2026-04-19T10:05:00.000Z',
       stagingRoot: '/tmp/render',
       renderPreset: {
         container: 'mp4',
         videoCodec: 'h265',
         audioCodec: 'aac',
-        bitrateMbps: 120,
+        bitrateKbps: 120,
       },
       clipKeys: ['day/clip001.mov'],
       entries: [{
@@ -70,13 +69,12 @@ describe('color store', () => {
     await saveColorBatchManifest(projectRoot, {
       batchId: 'batch-1',
       rootId: 'root-camera',
-      groupKey: 'group-day',
       createdAt: '2026-04-19T10:06:00.000Z',
       renderPreset: {
         container: 'mp4',
         videoCodec: 'h265',
         audioCodec: 'aac',
-        bitrateMbps: 120,
+        bitrateKbps: 120,
       },
       managedOutputSet: ['day/clip001.mp4'],
       entries: [{
@@ -91,7 +89,6 @@ describe('color store', () => {
     await saveColorBatchValidation(projectRoot, {
       batchId: 'batch-1',
       rootId: 'root-camera',
-      groupKey: 'group-day',
       validatedAt: '2026-04-19T10:07:00.000Z',
       status: 'pass',
       summary: {
@@ -122,7 +119,6 @@ describe('color store', () => {
     await saveColorBatchPromote(projectRoot, {
       batchId: 'batch-1',
       rootId: 'root-camera',
-      groupKey: 'group-day',
       promotedAt: '2026-04-19T10:08:00.000Z',
       status: 'completed',
       outputs: ['day/clip001.mp4'],
@@ -135,7 +131,7 @@ describe('color store', () => {
     expect((await loadColorBatchValidation(projectRoot, 'batch-1'))?.status).toBe('pass');
     expect((await loadColorBatchValidation(projectRoot, 'batch-1'))?.summary.passedCount).toBe(1);
     expect((await loadColorBatchPromote(projectRoot, 'batch-1'))?.status).toBe('completed');
-    expect((await loadColorBatchArchiveItem(projectRoot, 'batch-1'))?.plan?.groupKey).toBe('group-day');
+    expect((await loadColorBatchArchiveItem(projectRoot, 'batch-1'))?.plan?.rootId).toBe('root-camera');
   });
 
   it('aggregates archive views by root with stable sorting', async () => {
@@ -144,14 +140,13 @@ describe('color store', () => {
     await saveColorBatchPlan(projectRoot, {
       batchId: 'batch-new',
       rootId: 'root-camera',
-      groupKey: 'group-day',
       createdAt: '2026-04-19T10:05:00.000Z',
       stagingRoot: '/tmp/render-new',
       renderPreset: {
         container: 'mp4',
         videoCodec: 'h265',
         audioCodec: 'aac',
-        bitrateMbps: 120,
+        bitrateKbps: 120,
       },
       clipKeys: ['day/clip002.mov'],
       entries: [{
@@ -162,7 +157,6 @@ describe('color store', () => {
     await saveColorBatchValidation(projectRoot, {
       batchId: 'batch-new',
       rootId: 'root-camera',
-      groupKey: 'group-day',
       validatedAt: '2026-04-19T10:07:00.000Z',
       status: 'fail',
       summary: {
@@ -193,14 +187,13 @@ describe('color store', () => {
     await saveColorBatchPlan(projectRoot, {
       batchId: 'batch-old',
       rootId: 'root-camera',
-      groupKey: 'group-night',
       createdAt: '2026-04-18T10:05:00.000Z',
       stagingRoot: '/tmp/render-old',
       renderPreset: {
         container: 'mov',
         videoCodec: 'prores',
         audioCodec: 'pcm',
-        bitrateMbps: 240,
+        bitrateKbps: 240,
       },
       clipKeys: ['night/clip001.mov'],
       entries: [{
@@ -211,7 +204,6 @@ describe('color store', () => {
     await saveColorBatchPromote(projectRoot, {
       batchId: 'batch-old',
       rootId: 'root-camera',
-      groupKey: 'group-night',
       promotedAt: '2026-04-19T11:00:00.000Z',
       status: 'completed',
       outputs: ['night/clip001.mov'],

@@ -85,7 +85,13 @@ export function buildColorWorkspaceState(
   const hostPreflight = materializeHostPreflight(input.colorCurrent.hostPreflight, input.resolveBackend);
 
   const materializedRoots = input.projectRoots
-    .filter(root => Boolean(trimmed(root.rawPath)))
+    .filter(root => root.enabled !== false && Boolean(trimmed(root.rawPath)))
+    .sort((left, right) => {
+      const leftPriority = typeof left.priority === 'number' ? left.priority : Number.MAX_SAFE_INTEGER;
+      const rightPriority = typeof right.priority === 'number' ? right.priority : Number.MAX_SAFE_INTEGER;
+      if (leftPriority !== rightPriority) return leftPriority - rightPriority;
+      return (trimmed(left.label) ?? left.id).localeCompare(trimmed(right.label) ?? right.id, 'zh-Hans-CN');
+    })
     .map(root => {
       const storedCurrent = colorCurrentByRootId.get(root.id);
       const deviceRoot = deviceRootByRootId(deviceRootById, root.id);
@@ -239,8 +245,11 @@ function materializeGroupWorkspaceSummaries(
         lowlight: clip.lowlight,
         gyroEligible: clip.gyroEligible,
         gyroflowStatus: clip.gyroflowStatus,
+        dehazeStatus: clip.dehazeStatus,
         nrStatus: clip.nrStatus,
         clipRepairStatus: clip.clipRepairStatus,
+        layoutStatus: clip.layoutStatus,
+        reservedNodeIndices: clip.reservedNodeIndices,
         hostSummary: isPlainObject(clip.hostSummary) ? clip.hostSummary : {},
       })),
       hostSummary: isPlainObject(group.hostSummary) ? group.hostSummary : {},

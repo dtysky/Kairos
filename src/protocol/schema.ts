@@ -1191,7 +1191,7 @@ export type EColorGroupLowlightStatus = z.infer<typeof EColorGroupLowlightStatus
 export const EColorGroupPostClipCreativeStatus = z.enum(['missing', 'empty', 'ready']);
 export type EColorGroupPostClipCreativeStatus = z.infer<typeof EColorGroupPostClipCreativeStatus>;
 
-export const EColorGyroflowStatus = z.enum(['not-applicable', 'not-seeded', 'ready-to-load', 'active']);
+export const EColorGyroflowStatus = z.enum(['not-applicable', 'not-seeded', 'seeded-disabled', 'ready-to-load', 'active']);
 export type EColorGyroflowStatus = z.infer<typeof EColorGyroflowStatus>;
 
 export const EColorNoiseReductionStatus = z.enum(['not-seeded', 'seeded-disabled', 'seeded-enabled']);
@@ -1200,6 +1200,18 @@ export type EColorNoiseReductionStatus = z.infer<typeof EColorNoiseReductionStat
 export const EColorClipRepairStatus = z.enum(['missing', 'skeleton-only', 'partial', 'ready']);
 export type EColorClipRepairStatus = z.infer<typeof EColorClipRepairStatus>;
 
+export const EColorClipLayoutStatus = z.enum(['canonical', 'legacy-layout']);
+export type EColorClipLayoutStatus = z.infer<typeof EColorClipLayoutStatus>;
+
+export const IColorClipReservedNodeIndices = z.object({
+  gyro: z.number().int().positive().optional(),
+  userStart: z.number().int().positive().optional(),
+  userEnd: z.number().int().positive().optional(),
+  dehaze: z.number().int().positive().optional(),
+  nr: z.number().int().positive().optional(),
+});
+export type IColorClipReservedNodeIndices = z.infer<typeof IColorClipReservedNodeIndices>;
+
 export const IColorClipRepairSnapshot = z.object({
   clipKey: z.string(),
   displayName: z.string().optional(),
@@ -1207,8 +1219,11 @@ export const IColorClipRepairSnapshot = z.object({
   lowlight: z.boolean().optional(),
   gyroEligible: z.boolean().optional(),
   gyroflowStatus: EColorGyroflowStatus.optional(),
+  dehazeStatus: EColorNoiseReductionStatus.optional(),
   nrStatus: EColorNoiseReductionStatus.optional(),
   clipRepairStatus: EColorClipRepairStatus.optional(),
+  layoutStatus: EColorClipLayoutStatus.optional(),
+  reservedNodeIndices: IColorClipReservedNodeIndices.optional(),
   hostSummary: z.record(z.unknown()).default({}),
 });
 export type IColorClipRepairSnapshot = z.infer<typeof IColorClipRepairSnapshot>;

@@ -44,7 +44,7 @@ class BlockedJobError extends Error {
 
 interface IJobExecutionResult {
   result?: unknown;
-  finalStatus?: Extract<TSupervisorJobStatus, 'completed' | 'awaiting_agent'>;
+  finalStatus?: Extract<TSupervisorJobStatus, 'completed' | 'awaiting_agent' | 'failed'>;
 }
 
 async function main(): Promise<void> {
@@ -247,29 +247,38 @@ async function runJob(
       if (!projectId) {
         throw new BlockedJobError(['color requires projectId']);
       }
+      const action = toStringValue(args.action) as
+        | 'prepare_root'
+        | 'sync_groups'
+        | 'execute_root'
+        | 'validate_batch'
+        | 'promote_batch'
+        | 'prepare_all_roots'
+        | 'export_all_roots'
+        | undefined;
       const rootId = toStringValue(args.rootId);
-      if (!rootId) {
-        throw new BlockedJobError(['color requires args.rootId']);
+      if (!rootId && !['prepare_all_roots', 'export_all_roots'].includes(action || '')) {
+        throw new BlockedJobError(['color requires args.rootId for root-scoped actions']);
       }
       try {
+        const result = await runProjectColorAction({
+          workspaceRoot,
+          projectId,
+          rootId: rootId || undefined,
+          action,
+          clipKeys: Array.isArray(args.clipKeys)
+            ? args.clipKeys.filter((item): item is string => typeof item === 'string' && Boolean(item.trim()))
+            : undefined,
+          batchId: toStringValue(args.batchId) || undefined,
+          jobId,
+        });
         return {
-          result: await runProjectColorAction({
-            workspaceRoot,
-            projectId,
-            rootId,
-            action: toStringValue(args.action) as
-              | 'prepare_root'
-              | 'sync_groups'
-              | 'execute_root'
-              | 'validate_batch'
-              | 'promote_batch'
-              | undefined,
-            clipKeys: Array.isArray(args.clipKeys)
-              ? args.clipKeys.filter((item): item is string => typeof item === 'string' && Boolean(item.trim()))
-              : undefined,
-            batchId: toStringValue(args.batchId) || undefined,
-            jobId,
-          }),
+          result,
+          finalStatus: ['prepare_all_roots', 'export_all_roots'].includes(action || '')
+            && Array.isArray(result.roots)
+            && result.roots.some(root => root.status === 'failed')
+            ? 'failed'
+            : 'completed',
         };
       } catch (error) {
         if (error instanceof ProjectColorBlockedError || error instanceof ColorPrepBlockedError) {

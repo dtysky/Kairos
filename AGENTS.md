@@ -110,7 +110,13 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - `execute_root`
   - `validate_batch`
   - `promote_batch`
-- Treat `prepare_root` as the formal Resolve-side sync step: it must mirror `rawLocalPath` into root bins, ensure the root grading timeline has executable clips, set that timeline to the root dominant `(width, height, fps)` spec, auto-sync any missing workspace-managed LUTs for the current root into the device Resolve default LUT directory, create or reuse Resolve Groups from `logProfile + lowlight`, preserve same-clip repair grades across reruns via `CopyGrades`, and cold-seed brand-new clip repair from vendored clean donor `DRT` timelines when no existing repair is present.
+  - `prepare_all_roots`
+  - `export_all_roots`
+- Treat `prepare_root` as the formal Resolve-side sync step: it must mirror `rawLocalPath` into root bins, ensure the root grading timeline has executable clips, set that timeline to the root dominant `(width, height, fps)` spec, auto-sync any missing workspace-managed LUTs for the current root into the device Resolve default LUT directory, create or reuse Resolve Groups from `logProfile + lowlight`, preserve same-clip repair grades across reruns via `CopyGrades`, and normalize every executable video clip to the canonical repair layout.
+- Treat `/color` project-level orchestration as deterministic and agent-free:
+  - `prepare_all_roots` runs `prepare_root` sequentially for all enabled color roots in formal priority order
+  - `export_all_roots` runs `execute_root -> validate_batch -> promote_batch` sequentially for all enabled color roots in formal priority order
+  - project-level color actions continue other roots after a per-root failure, but the whole job is still failed if any root fails
 - Treat Resolve as the formal Group truth for color: users may keep adjusting Groups inside Resolve, and `/color` should only mirror them back via `sync_groups`; synced non-empty Groups become `ready` directly, with no extra `/color` confirm step.
 - Treat root grading timeline as the formal export truth for color: render preset is root-scoped, while batch is only the execution/retry grain and may optionally carry `clipKeys[]` for subset reruns.
 - Treat Resolve Groups as diagnostic/sync truth only after `sync_groups`; they no longer decide render preset, batch ownership, or execution order.
@@ -120,13 +126,17 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - `/color` mirrors status for those layers; it does not become the primary creative parameter editor
 - Treat `lowlight` as a first-frame creative classification, not a metadata fallback or noise-only diagnosis.
 - Treat `gyro` as clip-level repair truth only; it must not participate in auto-grouping.
-- Treat repair preservation as Resolve `CopyGrades`-based for the same clip across reruns, and treat vendored clean donor `DRT` timelines as the current formal cold-start seeding path for brand-new clips.
-- Treat the current donor matrix as:
-  - `gyro-only` donor: one-node pure `OFX: Gyroflow`
-  - `nr-only` donor: two-node minimal graph whose effective repair tool is `OFX: Noise Reduction`
-  - `gyroEligible + lowlight` brand-new clips currently fall back to `gyro-only` donor first unless an existing combined repair already exists
+- Treat repair preservation as Resolve `CopyGrades`-based for the same clip across reruns, and treat vendored clean donor `DRT` timelines as a host implementation detail for establishing the canonical repair layout when a clip has no existing repair.
+- Treat the canonical clip repair layout as:
+  - every executable video clip uses `Gyro -> Dehaze -> User1 -> User2 -> NR`
+  - `Gyro` is always reserved at node 1; `gyroEligible=true` defaults it enabled, `gyroEligible=false` defaults it disabled (`seeded-disabled`)
+  - `Dehaze` is always reserved at node 2 and defaults disabled
+  - `User1 / User2` are the minimum user zone, default enabled; users may add more user nodes only between `Dehaze` and `NR`
+  - `NR` is always the reserved tail node for video clips, default disabled, and only user-toggled inside Resolve
+  - `lowlight` remains a creative/grouping label and status hint; it does not auto-enable `Dehaze` or `NR`
+- Treat non-canonical old clip graphs as `legacy-layout`: this round allows one destructive rebuild from workspace `config/default.drx` when required; rerunning `prepare_root` on canonical clips must preserve the existing clip grade and user zone state, while nodes appended after `NR` intentionally make the graph legacy.
 - Treat `color/current.json.hostPreflight` as formal cached host truth for `/color`; blocked/degraded host state should surface before the user starts a color action.
-- Treat `prepare_root / sync_groups / execute_root` as preflight-guarded actions: if Resolve host is blocked or the current render preset is unsupported, fail before Resolve-side mutation.
+- Treat `prepare_root / sync_groups / execute_root / prepare_all_roots / export_all_roots` as preflight-guarded actions: if Resolve host is blocked or the current render preset is unsupported, fail before Resolve-side mutation.
 - Treat `color/batches/<batchId>/plan.json|manifest.json|validation.json|promote.json` as the read-only source for `/color` archive sections; do not duplicate batch history back into config or ad-hoc UI state.
 - Treat `promote_batch` as a confirm-before-run action from `/color`: validation pass alone is not enough to overwrite managed outputs in the current media root.
 - Treat same-machine vendored Resolve backend (`vendor/resolve-color-host/` + fixed `.venv`) as the current formal color execution path; do not route color automation back through MCP wording or design assumptions.
@@ -141,7 +151,7 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - LUT sync policy is copy-missing-only into the Resolve default LUT directory when the same relative path exists under `config/luts/`
   - existing non-empty user grades must not be overwritten by Kairos default transforms
 - Treat `color/current.json`, `color/groups/<rootId>.json`, and `color/batches/<batchId>/...` as system-maintained runtime/archive truth, not user config.
-- Treat `color/groups/<rootId>.json` as the formal snapshot for both group creative state (`logProfile / lowlight / postClipCreativeStatus`) and clip repair state (`gyroEligible / gyroflowStatus / nrStatus / clipRepairStatus`).
+- Treat `color/groups/<rootId>.json` as the formal snapshot for both group creative state (`logProfile / lowlight / postClipCreativeStatus`) and clip repair state (`gyroEligible / gyroflowStatus / dehazeStatus / nrStatus / clipRepairStatus / layoutStatus`).
 - Do not treat stale progress displays as proof that formal processing is alive.
 - Do not silently use legacy monitor paths for new work when `Supervisor + React console` is the official entry.
 - Treat workspace style-analysis as a formal deterministic prep job before Agent style synthesis, not as a UI-only placeholder.

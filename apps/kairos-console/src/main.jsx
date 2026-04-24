@@ -297,11 +297,16 @@ function AppShell() {
       await startJob(projectId, jobType, args);
       await refreshProject(projectId).catch(() => undefined);
       await refreshStatus();
+      const colorAction = typeof args.action === 'string' && args.action.trim()
+        ? args.action.trim()
+        : 'prepare_root';
       setMessage(
         jobType === 'script'
           ? ''
           : jobType === 'color' && args.rootId
-            ? `已启动 color ${args.action || 'prepare_root'}：${args.rootId}${Array.isArray(args.clipKeys) && args.clipKeys.length > 0 ? ` / subset ${args.clipKeys.length}` : ''}${args.batchId ? ` / ${args.batchId}` : ''}`
+            ? `已启动 color ${colorAction}：${args.rootId}${Array.isArray(args.clipKeys) && args.clipKeys.length > 0 ? ` / subset ${args.clipKeys.length}` : ''}${args.batchId ? ` / ${args.batchId}` : ''}`
+            : jobType === 'color'
+              ? `已启动 color ${colorAction}`
             : `已启动 ${jobType}`,
       );
       setError('');
@@ -744,7 +749,7 @@ function ColorPage({
         <WorkflowPrompt
           eyebrow="Current Scope"
           title="当前 color 已支持 vendored Resolve backend 闭环入口"
-          body="现在可以在 `/color` 同页维护所有 Root 的 render preset，并按 `Prepare Root -> Sync Groups -> Execute -> Validate -> Promote` 触发 Resolve 闭环。"
+          body="现在可以在 `/color` 同页维护所有 Root 的 render preset，并按 `Prepare Root -> Sync Groups -> Execute -> Validate -> Promote` 触发单 root 闭环，或按 `Prepare All Roots / Export All Roots` 触发项目级顺序批处理。"
           tone="accent"
           detail={colorCapabilityDetail}
         />

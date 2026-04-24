@@ -7,7 +7,7 @@ const resolveBackendReady = {
   pythonPath: '/vendor/resolve-color-host/.venv/bin/python',
   scriptPath: '/vendor/resolve-color-host/resolve-color-host.py',
   missingPaths: [],
-} as const;
+};
 
 describe('color workspace state', () => {
   it('materializes color roots from ingest roots with rawPath', () => {
@@ -52,7 +52,7 @@ describe('color workspace state', () => {
     expect(state.colorRoots[0]?.colorCurrent.groupSyncStatus).toBe('blocked');
     expect(state.colorRoots[0]?.colorCurrent.hostPreflight?.status).toBe('unknown');
     expect(state.colorRoots[0]?.blockingReasons).toContain('当前设备未配置 rawLocalPath，无法在本机访问原始素材。');
-    expect(state.colorRoots[0]?.blockingReasons).toContain('未配置 root 级 renderPreset.bitrateMbps，后续 execute_group 无法启动。');
+    expect(state.colorRoots[0]?.blockingReasons).toContain('未配置 root 级 renderPreset.bitrateKbps（kb/s），后续 execute_root 无法启动。');
     expect(state.colorCurrent.selectedRootId).toBe('root-camera');
   });
 
@@ -68,7 +68,7 @@ describe('color workspace state', () => {
             container: 'mp4',
             videoCodec: 'h265',
             audioCodec: 'aac',
-            bitrateMbps: 80,
+            bitrateKbps: 80,
           },
         },
         enabled: true,
@@ -91,6 +91,26 @@ describe('color workspace state', () => {
             groupKey: 'group-day',
             displayName: 'Day Group',
             clipKeys: ['day/clip001.mov'],
+            clips: [{
+              clipKey: 'day/clip001.mov',
+              displayName: 'clip001',
+              gyroEligible: true,
+              gyroflowStatus: 'ready-to-load',
+              dehazeStatus: 'seeded-disabled',
+              nrStatus: 'seeded-disabled',
+              clipRepairStatus: 'ready',
+              layoutStatus: 'canonical',
+              reservedNodeIndices: {
+                gyro: 1,
+                dehaze: 2,
+                userStart: 3,
+                userEnd: 4,
+                nr: 5,
+              },
+              hostSummary: {
+                layoutStatus: 'canonical',
+              },
+            }],
             hostSummary: {},
           }],
         },
@@ -132,13 +152,25 @@ describe('color workspace state', () => {
     });
 
     expect(state.colorRoots[0]?.blockingReasons).toEqual([]);
-    expect(state.colorRoots[0]?.renderPreset.bitrateMbps).toBe(80);
+    expect(state.colorRoots[0]?.renderPreset.bitrateKbps).toBe(80);
     expect(state.colorRoots[0]?.colorCurrent.mirrorStatus).toBe('synced');
     expect(state.colorRoots[0]?.colorCurrent.timelineStatus).toBe('ready');
     expect(state.colorRoots[0]?.colorCurrent.groupSyncStatus).toBe('ready');
     expect(state.colorRoots[0]?.hostPreflight?.status).toBe('degraded');
     expect(state.colorRoots[0]?.groups[0]?.displayName).toBe('Day Group');
     expect(state.colorRoots[0]?.groups[0]?.clipCount).toBe(1);
+    expect(state.colorRoots[0]?.groups[0]?.clips[0]).toMatchObject({
+      dehazeStatus: 'seeded-disabled',
+      nrStatus: 'seeded-disabled',
+      layoutStatus: 'canonical',
+      reservedNodeIndices: {
+        gyro: 1,
+        dehaze: 2,
+        userStart: 3,
+        userEnd: 4,
+        nr: 5,
+      },
+    });
     expect(state.colorRoots[0]?.colorCurrent.groups).toEqual([
       {
         groupKey: 'group-day',
@@ -211,7 +243,7 @@ describe('color workspace state', () => {
             container: 'mp4',
             videoCodec: 'h265',
             audioCodec: 'aac',
-            bitrateMbps: 60,
+            bitrateKbps: 60,
           },
         },
         enabled: true,
@@ -245,7 +277,7 @@ describe('color workspace state', () => {
             container: 'mp4',
             videoCodec: 'h265',
             audioCodec: 'aac',
-            bitrateMbps: 80,
+            bitrateKbps: 80,
           },
         },
         enabled: true,
@@ -270,6 +302,6 @@ describe('color workspace state', () => {
     });
 
     expect(state.colorRoots[0]?.hostPreflight?.status).toBe('blocked');
-    expect(state.colorRoots[0]?.blockingReasons[0]).toContain('vendored Resolve backend');
+    expect(state.colorRoots[0]?.blockingReasons.some(reason => reason.includes('vendored Resolve backend'))).toBe(true);
   });
 });
