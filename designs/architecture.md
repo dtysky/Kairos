@@ -40,6 +40,7 @@
   - `User1 / User2` 是最小 user zone，默认开启；用户只能在 `Dehaze` 之后、`NR` 之前扩展更多用户节点
   - `NR` 是所有视频 clip 的固定尾节点，默认禁用，正式开关入口只在 Resolve
   - `lowlight` 继续是首帧 creative 标签，不自动开启 `Dehaze / NR`
+  - DJI `dvtm_*` 私有视频 telemetry 是正式 `gyroEligible` 技术信号；它只决定 Gyro 默认启停，不允许反推出 log profile
 - `prepare_root` 对 canonical clip graph 的正式行为是“保留现状不重排”：
   - 规范图重跑时保留现有 clip grade、用户节点顺序，以及用户已手动设置的保留节点开关
   - 中间 user zone 必须保持在 `reservedNodeIndices.userStart -> userEnd` 范围内

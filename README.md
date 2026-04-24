@@ -93,6 +93,7 @@ Current stable pipeline:
     - `User1 / User2` are the minimum user zone and default enabled; users may extend the user zone only between `Dehaze` and the `NR` tail
     - `NR` is always the reserved tail node for video clips, default disabled, and only user-toggled in Resolve
     - `lowlight=true` remains a creative/grouping label; it does not auto-enable `Dehaze` or `NR`
+    - DJI `dvtm_*` private video telemetry is a valid `gyroEligible` signal, but still must not be used to guess log profile
     - old non-canonical clip graphs are treated as `legacy-layout`; this round allows one destructive rebuild from workspace `config/default.drx`, while canonical reruns preserve user zone state; nodes appended after `NR` are also treated as legacy
   - current `sync_groups` mirrors both group creative state and clip repair state:
     - group-level truth includes `logProfile`, `lowlight`, and `postClipCreativeStatus`

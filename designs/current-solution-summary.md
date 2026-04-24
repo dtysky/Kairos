@@ -39,6 +39,7 @@ Kairos 当前需要区分两层：
     - `log` 先读素材显式真值，再回退 root `color.colorSpaceProfile`
     - `lowlight` 当前正式由每条 clip 的首帧视觉分类产生，是 creative-first 标签，不是 noise-only 诊断
     - `gyro` 正式回到 clip repair 维度；它只决定该 clip 是否需要 `Gyroflow shell`，不再参与 Group 分桶
+    - DJI `dvtm_*` 私有视频 telemetry 是正式 `gyroEligible` 技术信号，但不能用来猜测 log profile
     - 素材技术真值优先级固定为 `素材自身 metadata > XML > root fallback`
     - DJI 若解析不到明确技术输入，正式结果就是 `unknown`，不得强行识别成 `dlog-m`
   - 当前 `prepare_root` 在 Resolve-side mutation 前，还会先做当前 root 的 LUT preflight：

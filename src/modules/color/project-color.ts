@@ -671,36 +671,52 @@ export async function prepareProjectColorRoot(
     },
   });
 
-  if (prepared.groupsSnapshot) {
-    await saveColorGroupsSnapshot(context.projectRoot, prepared.groupsSnapshot);
+  let syncedGroups: ReturnType<typeof materializeCurrentGroupsFromSnapshot> | undefined;
+  let detail: string;
+  let savedCurrent: Awaited<ReturnType<typeof writeRootCurrent>>;
+  try {
+    if (prepared.groupsSnapshot) {
+      await saveColorGroupsSnapshot(context.projectRoot, prepared.groupsSnapshot);
+    }
+    syncedGroups = prepared.groupsSnapshot
+      ? materializeCurrentGroupsFromSnapshot(
+        prepared.groupsSnapshot,
+        context.colorCurrent.roots.find(root => root.rootId === context.rootId)?.groups ?? [],
+        context.groupsSnapshot,
+      )
+      : undefined;
+    detail = [
+      'Resolve host root prep 已完成。',
+      prepared.groupsSnapshot
+        ? `Kairos 已写入 ${prepared.groupsSnapshot.groups.length} 个 Resolve Groups 快照。`
+        : 'Kairos 已持久化 root mirror / timeline current truth。',
+      '如需复核 Resolve 内调整，可继续运行 Sync Groups。'
+    ].join(' ');
+    savedCurrent = await writeRootCurrent(context.projectRoot, context.rootId, current => ({
+      ...current,
+      mirrorStatus: prepared.mirrorStatus,
+      timelineStatus: prepared.timelineStatus,
+      groupSyncStatus: prepared.groupsSnapshot ? 'ready' : current.groupSyncStatus,
+      groupSyncAt: prepared.groupsSnapshot?.syncedAt ?? current.groupSyncAt,
+      activeStage: undefined,
+      currentJobId: undefined,
+      detail,
+      hostSummary: prepared.hostSummary ?? current.hostSummary ?? {},
+      groups: syncedGroups ?? current.groups,
+      blockingReasons: filterPersistentColorBlockers(current.blockingReasons ?? []),
+    }));
+  } catch (error) {
+    const blockers = [error instanceof Error ? error.message : String(error)];
+    await failColorAction(context.projectRoot, context.rootId, progressPath, action, blockers, {
+      projectId: input.projectId,
+      rootId: context.rootId,
+      resolveProjectName: prepared.resolveProjectName,
+      gradingTimelineName: prepared.gradingTimelineName,
+    }, {
+      suppressProgress: input.suppressProgress,
+    });
+    throw error;
   }
-  const syncedGroups = prepared.groupsSnapshot
-    ? materializeCurrentGroupsFromSnapshot(
-      prepared.groupsSnapshot,
-      context.colorCurrent.roots.find(root => root.rootId === context.rootId)?.groups ?? [],
-      context.groupsSnapshot,
-    )
-    : undefined;
-  const detail = [
-    'Resolve host root prep 已完成。',
-    prepared.groupsSnapshot
-      ? `Kairos 已写入 ${prepared.groupsSnapshot.groups.length} 个 Resolve Groups 快照。`
-      : 'Kairos 已持久化 root mirror / timeline current truth。',
-    '如需复核 Resolve 内调整，可继续运行 Sync Groups。'
-  ].join(' ');
-  const savedCurrent = await writeRootCurrent(context.projectRoot, context.rootId, current => ({
-    ...current,
-    mirrorStatus: prepared.mirrorStatus,
-    timelineStatus: prepared.timelineStatus,
-    groupSyncStatus: prepared.groupsSnapshot ? 'ready' : current.groupSyncStatus,
-    groupSyncAt: prepared.groupsSnapshot?.syncedAt ?? current.groupSyncAt,
-    activeStage: undefined,
-    currentJobId: undefined,
-    detail,
-    hostSummary: prepared.hostSummary ?? current.hostSummary ?? {},
-    groups: syncedGroups ?? current.groups,
-    blockingReasons: filterPersistentColorBlockers(current.blockingReasons ?? []),
-  }));
   await writeProgress(progressPath, action, {
     status: 'succeeded',
     stepIndex: 2,

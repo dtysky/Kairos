@@ -682,6 +682,7 @@ def seed_clip_repairs(timeline, raw_local_path, clip_requests, donor_timeline=No
     target_items_by_clip = build_timeline_item_map(timeline, raw_local_path)
     donor_items_by_clip = build_timeline_item_map(donor_timeline, raw_local_path) if donor_timeline else {}
     repair_seed_by_clip = {}
+    invalid_repair_layouts = []
     for clip_request in clip_requests:
         clip_key = clip_request["rawRelativePath"]
         target_item = target_items_by_clip.get(clip_key)
@@ -714,22 +715,17 @@ def seed_clip_repairs(timeline, raw_local_path, clip_requests, donor_timeline=No
             seeded_repair_donor_kind = "default-drx"
             forced_disabled_node_indices = apply_seeded_reserved_node_defaults(target_item, clip_request)
             if not clip_like_has_canonical_repair_layout(target_item):
-                raise HostError(
-                    "resolve_repair_drx_invalid",
-                    "Applied clip repair DRX does not match the expected Gyro -> Dehaze -> User1 -> User2 -> NR contract.",
-                    {
-                        "clipKey": clip_key,
-                        "drxPath": str(repair_drx_path),
-                        "snapshot": build_clip_repair_snapshot(target_item, clip_request, {
-                            "copiedExistingGrade": False,
-                            "rebuiltLegacyGrade": rebuilt_legacy_grade,
-                            "requestedRepairKinds": list_requested_repair_kinds(clip_request),
-                            "seededRepairDonorKind": seeded_repair_donor_kind,
-                            "availableRepairDonorKinds": ["default-drx"],
-                            "forcedDisabledNodeIndices": forced_disabled_node_indices,
-                        }),
-                    },
-                )
+                invalid_repair_layouts.append({
+                    "clipKey": clip_key,
+                    "snapshot": build_clip_repair_snapshot(target_item, clip_request, {
+                        "copiedExistingGrade": False,
+                        "rebuiltLegacyGrade": rebuilt_legacy_grade,
+                        "requestedRepairKinds": list_requested_repair_kinds(clip_request),
+                        "seededRepairDonorKind": seeded_repair_donor_kind,
+                        "availableRepairDonorKinds": ["default-drx"],
+                        "forcedDisabledNodeIndices": forced_disabled_node_indices,
+                    }),
+                })
 
         repair_seed_by_clip[clip_key] = {
             "copiedExistingGrade": copied_existing_grade,
@@ -739,6 +735,16 @@ def seed_clip_repairs(timeline, raw_local_path, clip_requests, donor_timeline=No
             "availableRepairDonorKinds": ["default-drx"] if repair_drx_path is not None else [],
             "forcedDisabledNodeIndices": forced_disabled_node_indices,
         }
+    if invalid_repair_layouts:
+        raise HostError(
+            "resolve_repair_drx_invalid",
+            "Applied clip repair DRX does not match the expected Gyro -> Dehaze -> User1 -> User2 -> NR contract.",
+            {
+                "drxPath": str(repair_drx_path) if repair_drx_path is not None else None,
+                "invalidClipCount": len(invalid_repair_layouts),
+                "invalidClips": invalid_repair_layouts[:20],
+            },
+        )
     return repair_seed_by_clip
 
 
@@ -822,7 +828,7 @@ def build_clip_repair_snapshot(item, clip_request, repair_seed_state=None):
     return {
         "clipKey": clip_request["rawRelativePath"],
         "displayName": clip_request.get("sourceStem") or Path(clip_request["rawRelativePath"]).stem,
-        "logProfile": normalize_log_profile(clip_request.get("logProfile")),
+        "logProfile": normalize_log_profile(clip_request.get("logProfile")) or "unknown",
         "lowlight": lowlight_requested,
         "gyroEligible": gyro_eligible,
         "gyroflowStatus": gyroflow_status,

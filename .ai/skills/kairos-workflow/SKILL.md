@@ -60,6 +60,7 @@ Kairos 将旅拍素材转化为可编辑时间线。流程分为 1 个准备阶�
 - clip repair 的正式布局固定为：
   - 所有可执行视频 clip：`Gyro -> Dehaze -> User1 -> User2 -> NR`
   - `Gyro` 固定为第 1 节点；`gyroEligible=true` 默认记为 `ready-to-load`，`gyroEligible=false` 默认记为 `seeded-disabled`
+  - DJI `dvtm_*` 私有视频 telemetry 视为 `gyroEligible` 技术信号，但不能据此猜测 log profile
   - `Dehaze` 固定为第 2 节点且默认禁用
   - `User1 / User2` 是最小用户区，默认开启；用户扩展节点必须放在 `Dehaze` 之后、`NR` 之前
   - `NR` 对所有视频 clip 固定预留在尾部且默认禁用，正式开关入口只有 Resolve

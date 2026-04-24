@@ -126,7 +126,14 @@ function extractDjiPrivateTruth(lines: IExiftoolLine[]): Partial<IColorSourceTru
     || line.group.toLowerCase().includes('microsoft')
   ));
   const logProfile = extractExplicitLogProfile(privateLines);
-  const gyro = privateLines.some(line => /gyro|gimbal/iu.test(`${line.key} ${line.value}`)) || undefined;
+  const hasDjiTelemetryProtocol = privateLines.some(line => (
+    line.key.toLowerCase() === 'protocol'
+    && /^dvtm_/iu.test(line.value.trim())
+  ));
+  const gyro = (
+    hasDjiTelemetryProtocol
+    || privateLines.some(line => /gyro|gimbal/iu.test(`${line.key} ${line.value}`))
+  ) || undefined;
   const deviceFamilyKeys = extractDeviceFamilyKeys(privateLines);
   return {
     logProfile,

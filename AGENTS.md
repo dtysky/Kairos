@@ -126,6 +126,7 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - `/color` mirrors status for those layers; it does not become the primary creative parameter editor
 - Treat `lowlight` as a first-frame creative classification, not a metadata fallback or noise-only diagnosis.
 - Treat `gyro` as clip-level repair truth only; it must not participate in auto-grouping.
+- Treat DJI `dvtm_*` private video telemetry as a formal `gyroEligible` signal, but never as evidence for guessing log profile.
 - Treat repair preservation as Resolve `CopyGrades`-based for the same clip across reruns, and treat vendored clean donor `DRT` timelines as a host implementation detail for establishing the canonical repair layout when a clip has no existing repair.
 - Treat the canonical clip repair layout as:
   - every executable video clip uses `Gyro -> Dehaze -> User1 -> User2 -> NR`

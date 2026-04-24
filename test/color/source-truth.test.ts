@@ -87,7 +87,7 @@ describe('extractColorSourceTruth', () => {
     });
   });
 
-  it('extracts DJI log truth only when private metadata is explicit', async () => {
+  it('extracts DJI log truth only when private metadata is explicit and marks dvtm telemetry gyro-eligible', async () => {
     mockExiftoolOutput([
       '[DJI] Protocol : dvtm_Mavic4.proto',
       '[DJI] Dvtm_Mavic4_ColorMode : D-Log M',
@@ -98,7 +98,7 @@ describe('extractColorSourceTruth', () => {
 
     expect(result).toEqual({
       logProfile: 'dlog-m',
-      gyro: undefined,
+      gyro: true,
       lowlight: undefined,
       deviceFamilyKeys: ['Mavic4'],
       sourceKinds: ['dji-private-video-metadata'],
@@ -116,7 +116,7 @@ describe('extractColorSourceTruth', () => {
 
     expect(result).toEqual({
       logProfile: undefined,
-      gyro: undefined,
+      gyro: true,
       lowlight: undefined,
       deviceFamilyKeys: ['Mavic4'],
       sourceKinds: ['dji-private-video-metadata'],
