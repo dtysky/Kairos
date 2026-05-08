@@ -51,15 +51,23 @@ Current stable pipeline:
   - `projects/<projectId>/color/groups/<rootId>.json` stores the latest formal host-synced Group snapshot for that root
   - `projects/<projectId>/color/batches/<batchId>/plan.json|manifest.json|validation.json|promote.json` store batch/runtime archive
   - current `/color` auto-discovers roots that already have `rawPath`, shows derived Resolve naming plus blockers such as missing `rawLocalPath` or missing `renderPreset.bitrateMbps`
-  - current `/color` still only lets users edit the root-level `renderPreset`; it does not expose raw JSON fallback, naming edits, or bootstrap Group adoption
+  - current `/color` still only lets users edit the root-level `renderPreset`; it does not expose raw JSON fallback or naming edits
   - current `/color` supports an official Python-host-backed Supervisor `color` action chain:
     - `prepare_root`
     - `sync_groups`
     - `execute_group`
     - `validate_batch`
     - `promote_batch`
-  - current `prepare_root` now calls the vendored same-machine official Python Resolve sidecar instead of only persisting Kairos-side fake status
-  - current `execute_group` writes `plan + manifest`, `validate_batch` writes formal batch validation, and `promote_batch` only covers the manifest-declared managed output set
+  - current `prepare_root` is the formal Resolve-side root sync step: it mirrors `rawLocalPath` into root bins, ensures the long-lived grading timeline contains executable clips, and creates or reuses Resolve Groups from explainable technical signals
+  - current Group truth is Resolve-managed: users may keep adjusting Groups in Resolve, and `/color` only mirrors them back through `sync_groups`; synced non-empty Groups become `ready` directly and there is no extra `/color` confirm step
+  - current `/color` now auto-runs Resolve host preflight on page entry / project switch, caches the result at `color/current.json.hostPreflight`, and lets users manually `Recheck Host`
+  - current `prepare_root / sync_groups / execute_group` always guard on that preflight first; blocked host state or unsupported render presets fail before Resolve-side mutation
+  - current Resolve host compatibility floor is `DaVinci Resolve Studio >= 18.5`; non-Studio / lower versions are formal blockers, while partial legacy-call compatibility is surfaced as `degraded`
+  - current host retry only covers transient host/app failures with bounded backoff; semantic color failures do not auto-retry
+  - current `execute_group` writes `plan + manifest` with staging paths that mirror `sourceRelativePath`, `validate_batch` writes formal batch validation, and `promote_batch` only covers the manifest-declared managed output set
+  - current `validate_batch` writes formal summary counts plus top-level blocking reasons, so `/color` can surface validation failures without reopening raw JSON
+  - current `promote_batch` requires an explicit `/color` confirmation before it can overwrite managed outputs in the current media root
+  - current `/color` stays single-page but now consumes `color/batches/<batchId>/...` as formal read-only archive, with foldable `Host Diagnostics / Recent Batches / Validation Failures / Promote History`
   - current runtime host requirements live in `config/runtime.json` as `resolveColorPythonPath` and optional `resolveColorScriptApiRoot`
   - Resolve host automation now uses same-machine official Python Scripting API, not MCP
 - reusable style assets now live at workspace scope, not project scope:

@@ -8,6 +8,7 @@ import {
   controlMl,
   fetchAnalyzeMonitor,
   fetchCapabilities,
+  fetchProjectColorArchive,
   fetchProjectConfig,
   fetchProjectProgress,
   fetchProjectReviews,
@@ -15,6 +16,7 @@ import {
   fetchWorkspaceStyleConfig,
   fetchWorkspaceStatus,
   resolveProjectReview,
+  runProjectColorPreflight,
   saveProjectSection,
   saveWorkspaceStyleConfig,
   startJob,
@@ -40,6 +42,7 @@ function AppShell() {
   const hydratedProjectSelectionRef = React.useRef(false);
   const [projectId, setProjectId] = useState('');
   const [config, setConfig] = useState(null);
+  const [colorArchive, setColorArchive] = useState({ roots: [] });
   const [savedConfig, setSavedConfig] = useState(null);
   const [styleSources, setStyleSources] = useState(null);
   const [reviews, setReviews] = useState([]);
@@ -131,15 +134,36 @@ function AppShell() {
 
   async function refreshProject(nextProjectId) {
     try {
-      const [nextConfig, nextReviews] = await Promise.all([
+      const [nextConfig, nextReviews, nextColorArchive] = await Promise.all([
         fetchProjectConfig(nextProjectId),
         fetchProjectReviews(nextProjectId),
+        fetchProjectColorArchive(nextProjectId).catch(() => ({ roots: [] })),
       ]);
       setConfig(nextConfig);
+      setColorArchive(nextColorArchive || { roots: [] });
       setSavedConfig(nextConfig);
       setReviews(nextReviews.items || []);
     } catch (caught) {
       handleError(caught);
+    }
+  }
+
+  async function recheckColorHost(nextProjectId, payload = {}, options = {}) {
+    if (!nextProjectId) return;
+    const silent = Boolean(options?.silent);
+    const busyKey = payload?.rootId ? `color:preflight:${payload.rootId}` : 'color:preflight';
+    setBusy(current => ({ ...current, [busyKey]: true }));
+    try {
+      await runProjectColorPreflight(nextProjectId, payload);
+      await refreshProject(nextProjectId);
+      if (!silent) {
+        setMessage(payload?.rootId ? `已刷新 ${payload.rootId} 的 Resolve host 诊断` : '已刷新 Resolve host 诊断');
+      }
+      setError('');
+    } catch (caught) {
+      handleError(caught);
+    } finally {
+      setBusy(current => ({ ...current, [busyKey]: false }));
     }
   }
 
@@ -432,12 +456,14 @@ function AppShell() {
                     <ColorPage
                       projectId={projectId}
                       config={config}
+                      colorArchive={colorArchive}
                       capabilities={capabilities}
                       jobs={allJobs}
                       setIngestRoots={setIngestRoots}
                       saveSection={saveSection}
                       busy={busy}
                       onRunColorAction={args => runProjectWorkflow('color', args)}
+                      onRequestHostPreflight={(payload, options) => recheckColorHost(projectId, payload, options)}
                     />
                   )}
                 />
@@ -684,12 +710,14 @@ function IngestGpsPage({
 function ColorPage({
   projectId,
   config,
+  colorArchive,
   capabilities,
   jobs,
   setIngestRoots,
   saveSection,
   busy,
   onRunColorAction,
+  onRequestHostPreflight,
 }) {
   if (!config) {
     return (
@@ -719,13 +747,14 @@ function ColorPage({
         <WorkflowPrompt
           eyebrow="Current Scope"
           title="当前 color 已支持 official Python host 闭环入口"
-          body="现在可以在 `/color` 里维护 root 级 renderPreset，并直接触发 `prepare_root / sync_groups / execute_group / validate_batch / promote_batch`。"
+          body="现在可以在 `/color` 里维护 root 级 renderPreset，并按 `Prepare Root -> Sync Groups -> Execute -> Validate -> Promote` 触发 Resolve 闭环。"
           tone="accent"
           detail={colorCapabilityDetail}
         />
       ) : null}
       <ColorCurrentSummary
         config={config}
+        colorArchive={colorArchive}
         capability={colorCapability}
         projectId={projectId}
         jobs={jobs}
@@ -733,6 +762,7 @@ function ColorPage({
         onSaveProjectRoots={() => saveSection('ingest-roots')}
         busy={busy}
         onRunColorAction={onRunColorAction}
+        onRequestHostPreflight={onRequestHostPreflight}
       />
     </div>
   );

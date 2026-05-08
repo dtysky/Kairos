@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import type {
+  IColorHostPreflight,
   IColorGroupsSnapshotFile,
   IColorRenderPreset,
 } from '../../protocol/schema.js';
@@ -24,6 +25,7 @@ export interface IColorExecutorPrepareRootInput {
   gradingTimelineName: string;
   rawPath: string;
   rawLocalPath: string;
+  clips: IColorExecutorClipInput[];
 }
 
 export interface IColorExecutorPrepareRootResult {
@@ -31,6 +33,7 @@ export interface IColorExecutorPrepareRootResult {
   gradingTimelineName: string;
   mirrorStatus: 'ready' | 'synced';
   timelineStatus: 'ready';
+  groupsSnapshot?: IColorGroupsSnapshotFile;
   hostSummary?: Record<string, unknown>;
 }
 
@@ -41,9 +44,21 @@ export interface IColorExecutorSyncGroupsInput {
   gradingTimelineName: string;
   rawPath: string;
   rawLocalPath: string;
+  clips: IColorExecutorClipInput[];
 }
 
 export interface IColorExecutorSyncGroupsResult extends IColorGroupsSnapshotFile {}
+
+export interface IColorExecutorClipInput {
+  rawRelativePath: string;
+  sourceAbsolutePath: string;
+  capturedAt?: string;
+  width?: number;
+  height?: number;
+  fps?: number;
+  codec?: string;
+  rawTags?: Record<string, string>;
+}
 
 export interface IColorExecutorExecuteGroupInput {
   projectId: string;
@@ -51,6 +66,7 @@ export interface IColorExecutorExecuteGroupInput {
   groupKey: string;
   resolveProjectName: string;
   gradingTimelineName: string;
+  rawLocalPath: string;
   renderPreset: IColorRenderPreset;
   stagingRoot: string;
   clips: Array<{
@@ -70,7 +86,16 @@ export interface IColorExecutorExecuteGroupResult {
   hostSummary?: Record<string, unknown>;
 }
 
+export interface IColorExecutorPreflightInput {
+  projectId?: string;
+  rootId?: string;
+  resolveProjectName?: string;
+}
+
+export interface IColorExecutorPreflightResult extends IColorHostPreflight {}
+
 export interface IColorExecutor {
+  preflight(input?: IColorExecutorPreflightInput): Promise<IColorExecutorPreflightResult>;
   prepareRoot(input: IColorExecutorPrepareRootInput): Promise<IColorExecutorPrepareRootResult>;
   syncGroups(input: IColorExecutorSyncGroupsInput): Promise<IColorExecutorSyncGroupsResult>;
   executeGroup(input: IColorExecutorExecuteGroupInput): Promise<IColorExecutorExecuteGroupResult>;
@@ -122,6 +147,13 @@ export class PythonResolveColorExecutor implements IColorExecutor {
     private readonly execFileImpl: IExecFile = exec,
   ) {}
 
+  async preflight(input: IColorExecutorPreflightInput = {}): Promise<IColorExecutorPreflightResult> {
+    return this.runRequest<IColorExecutorPreflightResult>({
+      operation: 'preflight',
+      input,
+    });
+  }
+
   async prepareRoot(input: IColorExecutorPrepareRootInput): Promise<IColorExecutorPrepareRootResult> {
     return this.runRequest<IColorExecutorPrepareRootResult>({
       operation: 'prepare_root',
@@ -144,7 +176,7 @@ export class PythonResolveColorExecutor implements IColorExecutor {
   }
 
   private async runRequest<T>(payload: {
-    operation: 'prepare_root' | 'sync_groups' | 'execute_group';
+    operation: 'preflight' | 'prepare_root' | 'sync_groups' | 'execute_group';
     input: unknown;
   }): Promise<T> {
     const pythonPath = resolveColorPythonInvocation(this.config);
@@ -208,13 +240,16 @@ function parseResolveHostPayload<T>(raw: string): T {
 
 function toResolveHostError(error: unknown, requestPath: string): ResolveColorHostError {
   const cause = error as {
+    code?: string | number | null;
+    killed?: boolean;
+    signal?: string | null;
     message?: string;
     stdout?: string;
     stderr?: string;
   };
   const stdout = typeof cause.stdout === 'string' ? cause.stdout : '';
   const stderr = typeof cause.stderr === 'string' ? cause.stderr : '';
-  const payload = parseJsonPayload(stderr, 'stderr') ?? parseJsonPayload(stdout, 'stdout');
+  const payload = tryParseJsonPayload(stderr) ?? tryParseJsonPayload(stdout);
   const details = payload && typeof payload === 'object' ? payload : undefined;
   const message = (
     details
@@ -231,7 +266,7 @@ function toResolveHostError(error: unknown, requestPath: string): ResolveColorHo
     && typeof details.code === 'string'
   )
     ? details.code
-    : 'resolve_color_host_failed';
+    : inferResolveHostErrorCode(cause);
 
   return new ResolveColorHostError({
     message,
@@ -251,4 +286,32 @@ function parseJsonPayload(raw: string, channel: 'stdout' | 'stderr'): unknown | 
   } catch {
     throw new Error(`Resolve color host returned non-JSON ${channel}: ${trimmed}`);
   }
+}
+
+function tryParseJsonPayload(raw: string): unknown | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return null;
+  }
+}
+
+function inferResolveHostErrorCode(cause: {
+  code?: string | number | null;
+  killed?: boolean;
+  signal?: string | null;
+  message?: string;
+}): string {
+  if (typeof cause.message === 'string' && cause.message.toLowerCase().includes('timed out')) {
+    return 'resolve_color_host_timeout';
+  }
+  if (cause.killed && cause.signal) {
+    return 'resolve_color_host_timeout';
+  }
+  if (typeof cause.code === 'string' && ['ENOENT', 'EACCES', 'ECONNREFUSED', 'ECONNRESET'].includes(cause.code)) {
+    return 'resolve_color_host_connection_failed';
+  }
+  return 'resolve_color_host_failed';
 }

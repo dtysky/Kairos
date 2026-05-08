@@ -884,6 +884,7 @@ export function ColorConfigEditor({ config, setConfig, onSave, busy, capability 
 
 export function ColorCurrentSummary({
   config,
+  colorArchive,
   capability,
   projectId,
   jobs = [],
@@ -891,11 +892,16 @@ export function ColorCurrentSummary({
   onSaveProjectRoots,
   busy = {},
   onRunColorAction,
+  onRequestHostPreflight,
 }) {
   const effectiveConfig = isPlainObject(config) ? config : {};
   const rootCards = React.useMemo(
     () => buildMinimalColorRootCards(effectiveConfig),
     [effectiveConfig],
+  );
+  const archiveByRootId = React.useMemo(
+    () => buildColorArchiveMap(colorArchive),
+    [colorArchive],
   );
   const colorJobs = React.useMemo(
     () => (Array.isArray(jobs) ? jobs : [])
@@ -913,6 +919,13 @@ export function ColorCurrentSummary({
     : capability
       ? 'supported'
       : 'unknown';
+  const [promoteDialog, setPromoteDialog] = React.useState(null);
+  const [sectionOpen, setSectionOpen] = React.useState({});
+
+  React.useEffect(() => {
+    if (!projectId || typeof onRequestHostPreflight !== 'function') return;
+    onRequestHostPreflight({}, { silent: true });
+  }, [projectId]);
 
   return (
     <Card className="panel">
@@ -921,7 +934,7 @@ export function ColorCurrentSummary({
         <Tag>{capabilityLabel}</Tag>
       </div>
       <p className="muted">
-        当前优先消费 `config.colorRoots`。长期配置只保留项目 root 上的 `color.renderPreset`；Resolve naming 按约定生成并只读展示。
+        {'当前优先消费 `config.colorRoots`。长期配置只保留项目 root 上的 `color.renderPreset`；/color 现在是 Resolve Groups 的镜像、执行、校验和 Promote 面板，推荐顺序是 `Prepare Root -> Sync Groups -> Execute -> Validate -> Promote`。'}
       </p>
       {colorJobs.length > 0 ? (
         <>
@@ -942,42 +955,58 @@ export function ColorCurrentSummary({
       <Divider />
       <div className="stack-list">
         {rootCards.length > 0 ? (
-          rootCards.map(root => (
-            <div key={root.key} className="row-card">
-              <div className="row-top">
-                <div>
-                  <strong>{root.rootId}</strong>
-                  <div className="muted capture-time-reason">{root.description || '未填写 description'}</div>
-                </div>
-                <div className="actions">
-                  <div className="capture-time-tags">
-                    <Tag>{root.pathText}</Tag>
-                    <Tag>{root.renderPresetSummary}</Tag>
-                    {root.blockerCountText ? <Tag>{root.blockerCountText}</Tag> : null}
+          rootCards.map(root => {
+            const rootArchive = archiveByRootId[root.rootId] || {
+              rootId: root.rootId,
+              recentBatches: [],
+              validationFailures: [],
+              promoteHistory: [],
+            };
+            const preflightBusy = busy?.[`color:preflight:${root.rootId}`] || busy?.['color:preflight'];
+            return (
+              <div key={root.key} className="row-card">
+                <div className="row-top">
+                  <div>
+                    <strong>{root.rootId}</strong>
+                    <div className="muted capture-time-reason">{root.description || '未填写 description'}</div>
                   </div>
-                  <Button
-                    type={busy?.['ingest-roots'] ? 'disabled' : 'default'}
-                    disabled={busy?.['ingest-roots'] || typeof onSaveProjectRoots !== 'function'}
-                    onClick={() => onSaveProjectRoots?.()}
-                  >
-                    {busy?.['ingest-roots'] ? '保存中…' : '保存 Root 配置'}
-                  </Button>
-                  <Button
-                    type={canRunColorRootAction('prepare_root', root, capability, liveColorJobs, busy, onRunColorAction) ? 'primary' : 'disabled'}
-                    disabled={!canRunColorRootAction('prepare_root', root, capability, liveColorJobs, busy, onRunColorAction)}
-                    onClick={() => onRunColorAction?.({ rootId: root.rootId, action: 'prepare_root' })}
-                  >
-                    {describeColorRootAction('prepare_root', root, liveColorJobs, busy)}
-                  </Button>
-                  <Button
-                    type={canRunColorRootAction('sync_groups', root, capability, liveColorJobs, busy, onRunColorAction) ? 'default' : 'disabled'}
-                    disabled={!canRunColorRootAction('sync_groups', root, capability, liveColorJobs, busy, onRunColorAction)}
-                    onClick={() => onRunColorAction?.({ rootId: root.rootId, action: 'sync_groups' })}
-                  >
-                    {describeColorRootAction('sync_groups', root, liveColorJobs, busy)}
-                  </Button>
+                  <div className="actions">
+                    <div className="capture-time-tags">
+                      <Tag>{root.pathText}</Tag>
+                      <Tag>{root.renderPresetSummary}</Tag>
+                      {root.hostPreflight?.status ? <Tag>{`host ${root.hostPreflight.status}`}</Tag> : null}
+                      {root.blockerCountText ? <Tag>{root.blockerCountText}</Tag> : null}
+                    </div>
+                    <Button
+                      type={busy?.['ingest-roots'] ? 'disabled' : 'default'}
+                      disabled={busy?.['ingest-roots'] || typeof onSaveProjectRoots !== 'function'}
+                      onClick={() => onSaveProjectRoots?.()}
+                    >
+                      {busy?.['ingest-roots'] ? '保存中…' : '保存 Root 配置'}
+                    </Button>
+                    <Button
+                      type={preflightBusy ? 'disabled' : 'default'}
+                      disabled={preflightBusy || typeof onRequestHostPreflight !== 'function'}
+                      onClick={() => onRequestHostPreflight?.({ rootId: root.rootId })}
+                    >
+                      {preflightBusy ? '检查中…' : 'Recheck Host'}
+                    </Button>
+                    <Button
+                      type={canRunColorRootAction('prepare_root', root, capability, liveColorJobs, busy, onRunColorAction) ? 'primary' : 'disabled'}
+                      disabled={!canRunColorRootAction('prepare_root', root, capability, liveColorJobs, busy, onRunColorAction)}
+                      onClick={() => onRunColorAction?.({ rootId: root.rootId, action: 'prepare_root' })}
+                    >
+                      {describeColorRootAction('prepare_root', root, liveColorJobs, busy)}
+                    </Button>
+                    <Button
+                      type={canRunColorRootAction('sync_groups', root, capability, liveColorJobs, busy, onRunColorAction) ? 'default' : 'disabled'}
+                      disabled={!canRunColorRootAction('sync_groups', root, capability, liveColorJobs, busy, onRunColorAction)}
+                      onClick={() => onRunColorAction?.({ rootId: root.rootId, action: 'sync_groups' })}
+                    >
+                      {describeColorRootAction('sync_groups', root, liveColorJobs, busy)}
+                    </Button>
+                  </div>
                 </div>
-              </div>
               <div className="field-grid field-grid-three">
                 <Field label="path" value={root.path || ''} onChange={noop} readOnly />
                 <Field label="localPath" value={root.localPath || ''} onChange={noop} readOnly />
@@ -1015,7 +1044,7 @@ export function ColorCurrentSummary({
                 />
               </div>
               <p className="field-help">
-                `resolveProjectName / rootNamespace / gradingTimelineName` 全部按约定生成。正式 Group 由 Resolve 宿主维护，当前页面只展示 current truth。
+                `resolveProjectName / rootNamespace / gradingTimelineName` 全部按约定生成。`Prepare Root` 会真正同步 Media Pool / grading timeline，并按技术信号生成或复用 Resolve Groups。
               </p>
               <div className="capture-time-hint">
                 {root.blockers.length > 0
@@ -1058,6 +1087,9 @@ export function ColorCurrentSummary({
                     <div>
                       <strong>{group.displayName}</strong>
                       <div className="muted">{`${group.groupKey} · ${group.clipCount} clips · latest ${group.current?.latestBatchId || 'none'} · validation ${group.current?.latestValidationStatus || 'pending'}`}</div>
+                      {describeColorTechnicalSignals(group.hostSummary) ? (
+                        <div className="muted">{describeColorTechnicalSignals(group.hostSummary)}</div>
+                      ) : null}
                     </div>
                     <div className="actions">
                       <Tag>{group.current?.status || 'ready'}</Tag>
@@ -1078,9 +1110,8 @@ export function ColorCurrentSummary({
                       <Button
                         type={canRunColorGroupAction('promote_batch', root, group, capability, liveColorJobs, busy, onRunColorAction) ? 'primary' : 'disabled'}
                         disabled={!canRunColorGroupAction('promote_batch', root, group, capability, liveColorJobs, busy, onRunColorAction)}
-                        onClick={() => onRunColorAction?.({
+                        onClick={() => setPromoteDialog({
                           rootId: root.rootId,
-                          action: 'promote_batch',
                           groupKey: group.groupKey,
                           batchId: group.current?.pendingPromoteBatchId || group.current?.latestBatchId,
                         })}
@@ -1089,17 +1120,321 @@ export function ColorCurrentSummary({
                       </Button>
                     </div>
                   </div>
-                )) : <p className="muted">当前还没有已同步的正式 Groups。先运行 `Sync Groups`。</p>}
+                )) : <p className="muted">当前还没有已同步的正式 Groups。先运行 `Prepare Root`，如你在 Resolve 里做了调整，再执行一次 `Sync Groups`。</p>}
               </div>
+              <Divider />
+              <ColorRootArchivePanels
+                root={root}
+                archive={rootArchive}
+                sectionOpen={sectionOpen}
+                setSectionOpen={setSectionOpen}
+              />
               {root.current?.detail ? <p className="field-help">{root.current.detail}</p> : null}
             </div>
-          ))
+            );
+          })
         ) : (
           <p className="muted">当前还没有可展示的 color root。</p>
         )}
       </div>
+      <Modal
+        show={Boolean(promoteDialog)}
+        title="确认 Promote"
+        showClose
+        closeOnClickBg
+        cancel={() => setPromoteDialog(null)}
+        actions={(
+          <div className="actions modal-actions">
+            <Button type="default" onClick={() => setPromoteDialog(null)}>
+              取消
+            </Button>
+            <Button
+              type="primary"
+              onClick={() => {
+                const dialog = promoteDialog;
+                setPromoteDialog(null);
+                if (!dialog?.rootId || !dialog?.batchId) return;
+                onRunColorAction?.({
+                  rootId: dialog.rootId,
+                  action: 'promote_batch',
+                  groupKey: dialog.groupKey,
+                  batchId: dialog.batchId,
+                });
+              }}
+            >
+              确认 Promote
+            </Button>
+          </div>
+        )}
+      >
+        <div className="modal-copy">
+          <p>这一步会把当前 batch 的受管输出覆盖回当前素材目录。</p>
+          <p>它不会触碰 `rawPath`，也只会作用于这个 Group manifest 声明的覆盖范围。</p>
+        </div>
+      </Modal>
     </Card>
   );
+}
+
+function ColorRootArchivePanels({ root, archive, sectionOpen, setSectionOpen }) {
+  const hostSectionKey = `${root.rootId}:host`;
+  const recentSectionKey = `${root.rootId}:recent`;
+  const failuresSectionKey = `${root.rootId}:failures`;
+  const promoteSectionKey = `${root.rootId}:promote`;
+  const hostDefaultOpen = ['blocked', 'degraded'].includes(root.hostPreflight?.status || '');
+  const validationDefaultOpen = Array.isArray(archive?.validationFailures) && archive.validationFailures.length > 0;
+  const sections = [
+    {
+      key: hostSectionKey,
+      title: 'Host Diagnostics',
+      defaultOpen: hostDefaultOpen,
+      body: renderColorHostDiagnostics(root.hostPreflight),
+    },
+    {
+      key: recentSectionKey,
+      title: 'Recent Batches',
+      defaultOpen: true,
+      body: renderColorRecentBatches(archive?.recentBatches),
+    },
+    {
+      key: failuresSectionKey,
+      title: 'Validation Failures',
+      defaultOpen: validationDefaultOpen,
+      body: renderColorValidationFailures(archive?.validationFailures),
+    },
+    {
+      key: promoteSectionKey,
+      title: 'Promote History',
+      defaultOpen: false,
+      body: renderColorPromoteHistory(archive?.promoteHistory),
+    },
+  ];
+
+  return (
+    <div className="stack-list">
+      {sections.map(section => {
+        const open = Object.prototype.hasOwnProperty.call(sectionOpen || {}, section.key)
+          ? Boolean(sectionOpen[section.key])
+          : section.defaultOpen;
+        return (
+          <details
+            key={section.key}
+            open={open}
+            onToggle={event => setSectionOpen(current => ({
+              ...(isPlainObject(current) ? current : {}),
+              [section.key]: Boolean(event.currentTarget.open),
+            }))}
+          >
+            <summary><strong>{section.title}</strong></summary>
+            <div className="stack-list">
+              {section.body}
+            </div>
+          </details>
+        );
+      })}
+    </div>
+  );
+}
+
+function renderColorHostDiagnostics(hostPreflight) {
+  const diagnostics = materializeColorHostPreflight(hostPreflight);
+  if (!diagnostics) {
+    return <p className="muted">当前还没有 Resolve host 诊断缓存。</p>;
+  }
+  return (
+    <>
+      <div className="capture-time-tags">
+        <Tag>{diagnostics.status || 'unknown'}</Tag>
+        {diagnostics.productName ? <Tag>{diagnostics.productName}</Tag> : null}
+        {diagnostics.versionString ? <Tag>{diagnostics.versionString}</Tag> : null}
+        {typeof diagnostics.isStudio === 'boolean' ? <Tag>{diagnostics.isStudio ? 'Studio' : 'Free / Unknown'}</Tag> : null}
+        <Tag>{`containers ${(diagnostics.renderSupport?.containers || []).length}`}</Tag>
+      </div>
+      {diagnostics.checkedAt ? <div className="muted">{`checkedAt · ${diagnostics.checkedAt}`}</div> : null}
+      {diagnostics.blockingReasons?.length ? (
+        <div className="capture-time-tags">
+          {diagnostics.blockingReasons.map((reason, index) => (
+            <Tag key={`host-blocker:${index}`}>{reason}</Tag>
+          ))}
+        </div>
+      ) : <div className="muted">当前没有 host blocker。</div>}
+      {diagnostics.warnings?.length ? (
+        <div className="capture-time-tags">
+          {diagnostics.warnings.map((warning, index) => (
+            <Tag key={`host-warning:${index}`}>{warning}</Tag>
+          ))}
+        </div>
+      ) : null}
+      {(diagnostics.renderSupport?.containers || []).length > 0 ? (
+        <div className="stack-list">
+          {diagnostics.renderSupport.containers.map(container => (
+            <div key={`host-container:${container.container}`} className="job-item">
+              <div>
+                <strong>{container.container}</strong>
+                <div className="muted">
+                  {container.videoCodecs?.length > 0
+                    ? `videoCodec: ${container.videoCodecs.join(' / ')}`
+                    : 'videoCodec: 未探测到'}
+                </div>
+              </div>
+              <Tag>{container.extension || container.container}</Tag>
+            </div>
+          ))}
+          <div className="muted">
+            {`AudioCodec: ${diagnostics.renderSupport.supportsAudioCodec ? 'supported' : 'unsupported'} · VideoQuality: ${diagnostics.renderSupport.supportsVideoQuality ? 'supported' : 'unsupported'}`}
+          </div>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+function renderColorRecentBatches(items) {
+  const batches = Array.isArray(items) ? items : [];
+  if (batches.length === 0) {
+    return <p className="muted">当前还没有 batch archive。</p>;
+  }
+  return batches.map(item => (
+    <div key={`recent:${item.batchId}`} className="job-item">
+      <div>
+        <strong>{item.batchId}</strong>
+        <div className="muted">{`${item.groupKey} · ${item.plan?.createdAt || 'unknown time'}`}</div>
+        <div className="muted">
+          {`targets ${item.plan?.entries?.length || 0} · validation ${item.validation?.status || 'pending'} · promote ${item.promote?.status || 'none'}`}
+        </div>
+      </div>
+      <Tag>{item.validation?.status || item.promote?.status || 'planned'}</Tag>
+    </div>
+  ));
+}
+
+function renderColorValidationFailures(items) {
+  const failures = Array.isArray(items) ? items : [];
+  if (failures.length === 0) {
+    return <p className="muted">当前没有 validation fail 归档。</p>;
+  }
+  return failures.map(item => (
+    <div key={`validation:${item.batchId}`} className="row-card">
+      <div className="row-top">
+        <div>
+          <strong>{item.batchId}</strong>
+          <div className="muted">{`${item.groupKey} · ${item.validation?.validatedAt || 'unknown time'}`}</div>
+        </div>
+        <Tag>{item.validation?.status || 'fail'}</Tag>
+      </div>
+      <div className="muted">
+        {describeColorValidationSummary(item.validation?.summary)}
+      </div>
+      {Array.isArray(item.validation?.blockingReasons) && item.validation.blockingReasons.length > 0 ? (
+        <div className="capture-time-tags">
+          {item.validation.blockingReasons.map((reason, index) => (
+            <Tag key={`validation-reason:${item.batchId}:${index}`}>{reason}</Tag>
+          ))}
+        </div>
+      ) : null}
+      {(item.validation?.entries || []).filter(entry => entry.status === 'fail').map(entry => (
+        <div key={`validation-entry:${item.batchId}:${entry.rawRelativePath}`} className="job-item">
+          <div>
+            <strong>{entry.rawRelativePath}</strong>
+            <div className="muted">{entry.reasons?.join(' · ') || 'validation failed'}</div>
+            <div className="muted">{describeColorValidationChecks(entry.checks)}</div>
+          </div>
+          <Tag>{entry.status}</Tag>
+        </div>
+      ))}
+    </div>
+  ));
+}
+
+function renderColorPromoteHistory(items) {
+  const history = Array.isArray(items) ? items : [];
+  if (history.length === 0) {
+    return <p className="muted">当前还没有 promote 历史。</p>;
+  }
+  return history.map(item => (
+    <details key={`promote:${item.batchId}`}>
+      <summary>
+        <strong>{item.batchId}</strong>
+        {` · ${item.groupKey} · ${item.promote?.promotedAt || 'unknown time'} · ${item.promote?.status || 'completed'} · outputs ${item.promote?.outputs?.length || 0} · deleted ${item.promote?.deletedOutputs?.length || 0}`}
+      </summary>
+      <div className="stack-list">
+        {(item.promote?.outputs || []).length > 0 ? (
+          <div className="capture-time-tags">
+            {item.promote.outputs.map((output, index) => (
+              <Tag key={`promote-output:${item.batchId}:${index}`}>{output}</Tag>
+            ))}
+          </div>
+        ) : <div className="muted">没有 outputs 记录。</div>}
+        {(item.promote?.deletedOutputs || []).length > 0 ? (
+          <div className="capture-time-tags">
+            {item.promote.deletedOutputs.map((output, index) => (
+              <Tag key={`promote-deleted:${item.batchId}:${index}`}>{output}</Tag>
+            ))}
+          </div>
+        ) : <div className="muted">没有 deletedOutputs 记录。</div>}
+      </div>
+    </details>
+  ));
+}
+
+function buildColorArchiveMap(colorArchive) {
+  const roots = Array.isArray(colorArchive?.roots)
+    ? colorArchive.roots.filter(isPlainObject)
+    : [];
+  return roots.reduce((result, root) => {
+    const rootId = getColorStringField(root, ['rootId']);
+    if (!rootId) return result;
+    result[rootId] = {
+      rootId,
+      recentBatches: Array.isArray(root.recentBatches) ? root.recentBatches.filter(isPlainObject) : [],
+      validationFailures: Array.isArray(root.validationFailures) ? root.validationFailures.filter(isPlainObject) : [],
+      promoteHistory: Array.isArray(root.promoteHistory) ? root.promoteHistory.filter(isPlainObject) : [],
+    };
+    return result;
+  }, {});
+}
+
+function materializeColorHostPreflight(hostPreflight) {
+  if (!isPlainObject(hostPreflight)) return null;
+  return {
+    status: getColorStringField(hostPreflight, ['status']) || 'unknown',
+    checkedAt: getColorStringField(hostPreflight, ['checkedAt']),
+    productName: getColorStringField(hostPreflight, ['productName']),
+    versionString: getColorStringField(hostPreflight, ['versionString']),
+    isStudio: typeof hostPreflight.isStudio === 'boolean' ? hostPreflight.isStudio : undefined,
+    warnings: normalizeColorBlockers(hostPreflight.warnings),
+    blockingReasons: normalizeColorBlockers(hostPreflight.blockingReasons),
+    renderSupport: {
+      containers: Array.isArray(hostPreflight.renderSupport?.containers)
+        ? hostPreflight.renderSupport.containers.filter(isPlainObject).map(container => ({
+          container: getColorStringField(container, ['container']) || 'unknown',
+          extension: getColorStringField(container, ['extension']),
+          videoCodecs: Array.isArray(container.videoCodecs)
+            ? container.videoCodecs.filter(item => typeof item === 'string' && item.trim()).map(item => item.trim())
+            : [],
+        }))
+        : [],
+      supportsAudioCodec: Boolean(hostPreflight.renderSupport?.supportsAudioCodec),
+      supportsVideoQuality: Boolean(hostPreflight.renderSupport?.supportsVideoQuality),
+    },
+  };
+}
+
+function describeColorValidationSummary(summary) {
+  if (!isPlainObject(summary)) return 'summary unavailable';
+  return [
+    `targets ${Number(summary.targetCount || 0)}`,
+    `rendered ${Number(summary.renderedCount || 0)}`,
+    `passed ${Number(summary.passedCount || 0)}`,
+    `failed ${Number(summary.failedCount || 0)}`,
+  ].join(' · ');
+}
+
+function describeColorValidationChecks(checks) {
+  if (!isPlainObject(checks)) return 'checks unavailable';
+  return Object.entries(checks)
+    .map(([key, value]) => `${key}:${value}`)
+    .join(' · ');
 }
 
 function buildMinimalColorRootCards(config) {
@@ -1116,6 +1451,7 @@ function buildMinimalColorRootCards(config) {
       const projectRoot = projectRootById.get(String(root.rootId || getColorRootId(root, index)));
       const renderPreset = materializeProjectRootRenderPreset(projectRoot?.color?.renderPreset || root.renderPreset);
       const current = materializeColorRootCurrent(isPlainObject(root.colorCurrent) ? root.colorCurrent : null);
+      const hostPreflight = materializeColorHostPreflight(root.hostPreflight || current?.hostPreflight);
       const blockers = normalizeColorBlockers(root.blockingReasons || current?.blockingReasons);
       return {
         key: String(root.rootId || getColorRootId(root, index)),
@@ -1135,6 +1471,7 @@ function buildMinimalColorRootCards(config) {
           getColorStringField(root, ['path']) || 'no path',
           getColorStringField(root, ['rawPath']) || 'no rawPath',
         ].join(' · '),
+        hostPreflight,
         blockers,
         blockerCountText: blockers.length > 0 ? `${blockers.length} blockers` : '',
         current,
@@ -1167,6 +1504,7 @@ function buildMinimalColorRootCards(config) {
           getColorStringField(root, ['path']) || 'no path',
           getColorStringField(root, ['rawPath']) || 'no rawPath',
         ].join(' · '),
+        hostPreflight: null,
         blockers: [],
         blockerCountText: '',
         current: null,
@@ -1625,6 +1963,7 @@ function materializeColorWorkspaceGroup(group) {
     displayName: getColorStringField(group, ['displayName']) || getColorStringField(current, ['displayName']) || 'Unnamed Group',
     clipCount: Number(group?.clipCount || current?.clipCount || 0) || 0,
     clipKeys: Array.isArray(group?.clipKeys) ? group.clipKeys.filter(item => typeof item === 'string' && item.trim()) : [],
+    hostSummary: isPlainObject(group?.hostSummary) ? group.hostSummary : {},
     current: {
       ...current,
       latestBatchId: getColorStringField(current, ['latestBatchId', 'batchId']) || '',
@@ -1980,6 +2319,7 @@ function canRunColorRootAction(action, root, capability, liveJobs, busy, onRunCo
   if (capability?.supported === false) return false;
   if (busy?.['ingest-roots']) return false;
   if (busy?.['job:color']) return false;
+  if (getColorStringField(root.hostPreflight, ['status']) === 'blocked') return false;
   if (action === 'sync_groups' && getColorStringField(root.current, ['timelineStatus']) !== 'ready') return false;
   return (liveJobs || []).length === 0;
 }
@@ -2010,10 +2350,11 @@ function canRunColorGroupAction(action, root, group, capability, liveJobs, busy,
   if (capability?.supported === false) return false;
   if (busy?.['job:color']) return false;
   if ((liveJobs || []).length > 0) return false;
+  if (getColorStringField(root.hostPreflight, ['status']) === 'blocked') return false;
   if (action === 'execute_group') return group.clipCount > 0;
   if (action === 'validate_batch') return Boolean(group.current?.latestBatchId);
   if (action === 'promote_batch') {
-    return Boolean(group.current?.pendingPromoteBatchId || (
+    return group.clipCount > 0 && Boolean(group.current?.pendingPromoteBatchId || (
       group.current?.latestBatchId && group.current?.latestValidationStatus === 'pass'
     ));
   }
@@ -2031,6 +2372,27 @@ function describeColorGroupAction(action, group, liveJobs, busy) {
   if (action === 'validate_batch') return 'Validate';
   if (action === 'promote_batch') return 'Promote';
   return action;
+}
+
+function describeColorTechnicalSignals(hostSummary) {
+  const signals = isPlainObject(hostSummary?.signals) ? hostSummary.signals : null;
+  if (!signals) return '';
+  return Object.entries(signals)
+    .map(([key, value]) => {
+      const label = key === 'logProfile'
+        ? 'log'
+        : key === 'cameraModel'
+          ? 'camera'
+          : key;
+      const rendered = Array.isArray(value)
+        ? value.join(' / ')
+        : typeof value === 'string' || typeof value === 'number'
+          ? String(value)
+          : '';
+      return rendered ? `${label}: ${rendered}` : '';
+    })
+    .filter(Boolean)
+    .join(' · ');
 }
 
 function isPlainObject(value) {

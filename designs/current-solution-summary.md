@@ -25,6 +25,15 @@ Kairos 当前需要区分两层：
   - 当前 `/color` 的长期用户配置已收口到项目级 root 注册表上的最小 `color.renderPreset`
   - `resolveProjectName / rootNamespace / gradingTimelineName / Group naming` 当前全部按约定生成，只展示，不允许用户配置
   - 当前 `color/current.json` 承载 root/group current truth，`color/groups/<rootId>.json` 承载 formal host group snapshot，`color/batches/<batchId>/...` 承载 batch archive
+  - 当前 `prepare_root` 已正式承担 `rawLocalPath -> Resolve root bin / grading timeline / explainable technical Groups` 的真实同步，不再只是轻量容器占位
+  - 当前 Group 真相完全以 Resolve 为准；`/color` 通过 `sync_groups` 镜像最新现状，同步后的非空 Group 直接进入 `ready`
+  - 当前 `/color` 进入页面或切换项目时会自动执行 Resolve host preflight，并把结果正式缓存到 `color/current.json.hostPreflight`
+  - 当前 `prepare_root / sync_groups / execute_group` 都先经过 preflight 守卫；宿主 blocked 或 render preset 不受支持时，动作会在 Resolve 变更前直接失败
+  - 当前 color host 的正式兼容下限为 `DaVinci Resolve Studio >= 18.5`；低版本 / 非 Studio 是硬阻塞，部分兼容降级则显示为 `degraded`
+  - 当前 host retry 只覆盖短时 host/app 故障，不覆盖缺配置、缺素材、render preset 不支持、validation fail 等语义错误
+  - 当前 `validate_batch` 已扩展为写入 summary 统计和 top-level blockingReasons，供 `/color` 直接显示 validation 失败原因
+  - 当前 `promote_batch` 需要在 `/color` 上做一次显式确认后才允许覆盖受管输出
+  - 当前 `/color` 继续保持单页，但已正式消费 `color/batches/<batchId>/plan|manifest|validation|promote` 归档，并按 root 展示可折叠的 `Host Diagnostics / Recent Batches / Validation Failures / Promote History`
   - 当前 Resolve 宿主路线已经冻结并落地为“同机 vendored official Python Scripting API sidecar”，不再把 MCP 作为 color 主线
 - 一组运行在 Agent 环境中的工作流技能，以及面向不同 NLE / 导出目标的适配层
 
@@ -35,7 +44,8 @@ Kairos 当前需要区分两层：
 - 仓库根目录的 `AGENTS.md` 是当前 agent 启动时的统一引导入口，用来收口必读文档、rules、skills 和正式运行入口
 - 本地运行与任务编排当前已收口到 `Supervisor + React console (apps/kairos-console/)`
 - `素材分析` 与 `风格分析` 在当前控制台里直接以主路由展示监控，而不是再跳一次独立监控入口
-- `DaVinci color` 当前也已有独立主路由 `/color`，并已收口为最小 `renderPreset` 配置 + root/group action 执行面 + runtime/archive 状态面
+- `DaVinci color` 当前也已有独立主路由 `/color`，并已收口为最小 `renderPreset` 配置 + root/group action 执行面 + runtime/archive 状态面；正式顺序为 `Prepare Root -> Sync Groups -> Execute -> Validate -> Promote`
+- `/color` 当前还会主动暴露宿主诊断与 batch 归档，而不是把宿主问题和 validation 历史藏在动作失败或磁盘 JSON 里
 - 风格档案、风格来源配置与风格分析参考产物当前已收口为 **Workspace 级共享资产**：
   - `config/styles/`
   - `config/style-sources.json`

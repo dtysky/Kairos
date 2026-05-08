@@ -42,6 +42,14 @@ export function fetchProjectConfig(projectId) {
   return apiGet(`/api/projects/${encodeURIComponent(projectId)}/config`);
 }
 
+export function fetchProjectColorArchive(projectId) {
+  return apiGet(`/api/projects/${encodeURIComponent(projectId)}/color/archive`);
+}
+
+export function runProjectColorPreflight(projectId, payload = {}) {
+  return apiPost(`/api/projects/${encodeURIComponent(projectId)}/color/preflight`, payload);
+}
+
 export function fetchWorkspaceStyleConfig() {
   return apiGet('/api/workspace/config/style-sources');
 }

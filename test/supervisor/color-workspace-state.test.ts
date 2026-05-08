@@ -44,6 +44,7 @@ describe('color workspace state', () => {
     expect(state.colorRoots[0]?.colorCurrent.mirrorStatus).toBe('blocked');
     expect(state.colorRoots[0]?.colorCurrent.timelineStatus).toBe('blocked');
     expect(state.colorRoots[0]?.colorCurrent.groupSyncStatus).toBe('blocked');
+    expect(state.colorRoots[0]?.colorCurrent.hostPreflight?.status).toBe('unknown');
     expect(state.colorRoots[0]?.blockingReasons).toContain('当前设备未配置 rawLocalPath，无法在本机访问原始素材。');
     expect(state.colorRoots[0]?.blockingReasons).toContain('未配置 root 级 renderPreset.bitrateMbps，后续 execute_group 无法启动。');
     expect(state.colorCurrent.selectedRootId).toBe('root-camera');
@@ -91,6 +92,21 @@ describe('color workspace state', () => {
         },
       },
       colorCurrent: {
+        hostPreflight: {
+          status: 'degraded',
+          checkedAt: '2026-04-20T10:00:00.000Z',
+          warnings: ['legacy probe'],
+          blockingReasons: [],
+          renderSupport: {
+            containers: [{
+              container: 'mp4',
+              extension: 'mp4',
+              videoCodecs: ['h265'],
+            }],
+            supportsAudioCodec: true,
+            supportsVideoQuality: false,
+          },
+        },
         roots: [{
           rootId: 'root-camera',
           mirrorStatus: 'synced',
@@ -116,6 +132,7 @@ describe('color workspace state', () => {
     expect(state.colorRoots[0]?.colorCurrent.mirrorStatus).toBe('synced');
     expect(state.colorRoots[0]?.colorCurrent.timelineStatus).toBe('ready');
     expect(state.colorRoots[0]?.colorCurrent.groupSyncStatus).toBe('ready');
+    expect(state.colorRoots[0]?.hostPreflight?.status).toBe('degraded');
     expect(state.colorRoots[0]?.groups[0]?.displayName).toBe('Day Group');
     expect(state.colorRoots[0]?.groups[0]?.clipCount).toBe(1);
     expect(state.colorRoots[0]?.colorCurrent.groups).toEqual([
@@ -144,5 +161,40 @@ describe('color workspace state', () => {
         blockingReasons: ['legacy blocked'],
       },
     ]);
+  });
+
+  it('projects blocked host preflight into root blockers before actions start', () => {
+    const state = buildColorWorkspaceState({
+      projectId: 'project-color',
+      projectRoots: [{
+        id: 'root-camera',
+        path: '/media/current/camera',
+        rawPath: '/media/raw/camera',
+        enabled: true,
+      }],
+      deviceProjectMap: {
+        projectId: 'project-color',
+        roots: [{
+          rootId: 'root-camera',
+          localPath: 'F:\\current\\camera',
+          rawLocalPath: 'F:\\raw\\camera',
+        }],
+      },
+      runtimeConfig: {
+        resolveColorPythonPath: '/usr/bin/python3',
+      },
+      colorCurrent: {
+        hostPreflight: {
+          status: 'blocked',
+          checkedAt: '2026-04-20T10:00:00.000Z',
+          warnings: [],
+          blockingReasons: ['Resolve is not running'],
+        },
+        roots: [],
+      },
+    });
+
+    expect(state.colorRoots[0]?.blockingReasons).toContain('Resolve is not running');
+    expect(state.colorRoots[0]?.hostPreflight?.status).toBe('blocked');
   });
 });
