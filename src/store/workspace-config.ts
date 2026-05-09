@@ -53,6 +53,10 @@ const ILegacyProjectBriefMappingConfig = z.object({
   rootId: z.string().optional(),
   path: z.string().optional(),
   rawPath: z.string().optional(),
+  alternatePaths: z.array(z.object({
+    path: z.string().optional(),
+    rawPath: z.string().optional(),
+  })).optional(),
   description: z.string().optional(),
   flightRecordPath: z.string().optional(),
   enabled: z.boolean().optional(),
@@ -153,6 +157,7 @@ export async function saveProjectBriefConfig(
     'utf-8',
   );
   await removeLegacyProjectRootFiles(projectRoot);
+  await rm(join(projectRoot, 'config', 'device-media-maps.local.json'), { force: true });
   return normalized;
 }
 

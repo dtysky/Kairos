@@ -101,10 +101,18 @@ export const IMediaRootColorConfig = z.object({
 });
 export type IMediaRootColorConfig = z.infer<typeof IMediaRootColorConfig>;
 
+export const IMediaRootAlternatePath = z.object({
+  path: z.string().optional(),
+  rawPath: z.string().optional(),
+});
+export type IMediaRootAlternatePath = z.infer<typeof IMediaRootAlternatePath>;
+
 export const IMediaRoot = z.object({
   id: z.string(),
   path: z.string().optional(),
   rawPath: z.string().optional(),
+  flightRecordPath: z.string().optional(),
+  alternatePaths: z.array(IMediaRootAlternatePath).optional(),
   label: z.string().optional(),
   enabled: z.boolean(),
   clockOffsetMs: z.number().int().optional(),
@@ -116,27 +124,6 @@ export const IMediaRoot = z.object({
   color: IMediaRootColorConfig.optional(),
 });
 export type IMediaRoot = z.infer<typeof IMediaRoot>;
-
-export const IDeviceMediaRootPath = z.object({
-  rootId: z.string(),
-  localPath: z.string(),
-  rawLocalPath: z.string().optional(),
-  flightRecordPath: z.string().optional(),
-  exists: z.boolean().optional(),
-  lastCheckedAt: z.string().optional(),
-});
-export type IDeviceMediaRootPath = z.infer<typeof IDeviceMediaRootPath>;
-
-export const IDeviceMediaProjectMap = z.object({
-  projectId: z.string(),
-  roots: z.array(IDeviceMediaRootPath),
-});
-export type IDeviceMediaProjectMap = z.infer<typeof IDeviceMediaProjectMap>;
-
-export const IDeviceMediaMapFile = z.object({
-  projects: z.record(IDeviceMediaProjectMap),
-});
-export type IDeviceMediaMapFile = z.infer<typeof IDeviceMediaMapFile>;
 
 // ─── KTEP Core ───────────────────────────────────────────────
 
@@ -1112,6 +1099,7 @@ export const IProjectBriefMappingConfig = z.object({
   rootId: z.string(),
   path: z.string(),
   rawPath: z.string().optional(),
+  alternatePaths: z.array(IMediaRootAlternatePath).optional(),
   description: z.string(),
   flightRecordPath: z.string().optional(),
   enabled: z.boolean().optional(),

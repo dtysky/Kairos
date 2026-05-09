@@ -35,8 +35,13 @@ export function WorkflowPrompt({
   );
 }
 
-export function ProjectBriefEditor({ config, pharosStatus, setConfig, onSave, busy }) {
+export function ProjectBriefEditor({ config, pharosStatus, summaries = [], setConfig, onSave, busy }) {
   if (!config) return null;
+  const summariesByRootId = new Map(
+    (Array.isArray(summaries) ? summaries : [])
+      .filter(isPlainObject)
+      .map(summary => [String(summary.rootId || ''), summary]),
+  );
   const pharosRootPath = pharosStatus?.rootPath || 'projects/<projectId>/pharos';
   const pharosNoticeTitle = pharosStatus?.status === 'success'
     ? 'Pharos 固定目录已接入'
@@ -142,55 +147,141 @@ export function ProjectBriefEditor({ config, pharosStatus, setConfig, onSave, bu
         }))}
       />
       <div className="capture-time-hint">
-        这里维护的是正式素材 Root 单真值，不是手写 Markdown。保存后会写入 `project-brief.json`、同步当前机器的 `device-media-maps`，并把同样内容回写到 `project-brief.md` 镜像。
+        这里维护的是正式素材 Root 单真值，不是手写 Markdown。保存后会写入 `project-brief.json`，回写 `project-brief.md` 镜像，并在运行前自动选择可读路径。
       </div>
       {config.mappings.length === 0 ? (
         <p className="muted">当前还没有素材 Root。点击“添加”后在这里结构化填写 `路径 / 原始路径 / 说明 / FlightRecord`。</p>
       ) : null}
-      {config.mappings.map((mapping, index) => (
-        <div key={mapping.rootId || `project-brief-mapping-${index}`} className="row-card">
-          <div className="row-top">
-            <div>
-              <strong>{`Root ${String(index + 1).padStart(2, '0')}`}</strong>
-              <div className="muted capture-time-reason">{mapping.path || '待填写当前素材路径'}</div>
+      {config.mappings.map((mapping, index) => {
+        const alternates = normalizeAlternatePathDrafts(mapping.alternatePaths);
+        const summary = summariesByRootId.get(String(mapping.rootId || ''));
+        const localPath = summary?.localPath || summary?.pathResolution?.selectedPath || '';
+        const rawLocalPath = summary?.rawLocalPath || summary?.rawPathResolution?.selectedPath || '';
+        const blockers = normalizePathResolutionBlockers(summary);
+        const updateMapping = nextMapping => updateArrayItem(
+          config.mappings,
+          index,
+          nextMapping,
+          next => setConfig(current => ({ ...current, mappings: next })),
+        );
+        const updateAlternates = nextAlternates => updateMapping({
+          ...mapping,
+          alternatePaths: nextAlternates,
+        });
+        return (
+          <div key={mapping.rootId || `project-brief-mapping-${index}`} className="row-card">
+            <div className="row-top">
+              <div>
+                <strong>{`Root ${String(index + 1).padStart(2, '0')}`}</strong>
+                <div className="muted capture-time-reason">{mapping.path || '待填写当前素材路径'}</div>
+              </div>
+              <div className="capture-time-tags">
+                {mapping.rawPath ? <Tag>含原始路径</Tag> : null}
+                {alternates.length > 0 ? <Tag>{`${alternates.length} 组备选`}</Tag> : null}
+                {mapping.flightRecordPath ? <Tag>含 FlightRecord</Tag> : null}
+              </div>
             </div>
-            <div className="capture-time-tags">
-              {mapping.rawPath ? <Tag>含原始路径</Tag> : null}
-              {mapping.flightRecordPath ? <Tag>含 FlightRecord</Tag> : null}
+            <div className={`root-resolution${blockers.length > 0 ? ' has-blockers' : ''}`}>
+              <div>
+                <span>当前使用路径</span>
+                <code>{localPath || '未命中'}</code>
+              </div>
+              <div>
+                <span>当前使用原始路径</span>
+                <code>{rawLocalPath || '未命中'}</code>
+              </div>
+              {blockers.length > 0 ? (
+                <p>{blockers.join(' · ')}</p>
+              ) : null}
             </div>
+            <div className="field-grid field-grid-three">
+              <Field
+                label="路径"
+                value={mapping.path}
+                onChange={value => updateMapping({ ...mapping, path: value })}
+              />
+              <Field
+                label="原始路径"
+                value={mapping.rawPath || ''}
+                onChange={value => updateMapping({ ...mapping, rawPath: value })}
+              />
+              <Field
+                label="FlightRecord"
+                value={mapping.flightRecordPath || ''}
+                onChange={value => updateMapping({ ...mapping, flightRecordPath: value })}
+              />
+            </div>
+            <TextAreaField
+              label="说明"
+              value={mapping.description}
+              onChange={value => updateMapping({ ...mapping, description: value })}
+              rows={3}
+            />
+            <ListToolbar
+              title="备选路径"
+              onAdd={() => updateAlternates([...alternates, createAlternatePathDraft()])}
+            />
+            {alternates.length === 0 ? (
+              <p className="muted">没有备选路径。主路径不可读时不会自动切换到其他目录。</p>
+            ) : null}
+            {alternates.map((alternate, alternateIndex) => (
+              <div key={`alternate-${mapping.rootId || index}-${alternateIndex}`} className="nested-card alternate-path-card">
+                <div className="row-top">
+                  <strong>{`备选路径 ${alternateIndex + 1}`}</strong>
+                  <div className="capture-time-actions">
+                    <Button
+                      size="small"
+                      disabled={alternateIndex === 0}
+                      onClick={() => updateAlternates(moveArrayItem(alternates, alternateIndex, alternateIndex - 1))}
+                    >
+                      上移
+                    </Button>
+                    <Button
+                      size="small"
+                      disabled={alternateIndex === alternates.length - 1}
+                      onClick={() => updateAlternates(moveArrayItem(alternates, alternateIndex, alternateIndex + 1))}
+                    >
+                      下移
+                    </Button>
+                    <Button
+                      type="error"
+                      size="small"
+                      onClick={() => updateAlternates(alternates.filter((_, itemIndex) => itemIndex !== alternateIndex))}
+                    >
+                      删除
+                    </Button>
+                  </div>
+                </div>
+                <div className="field-grid field-grid-three">
+                  <Field
+                    label="备选路径"
+                    value={alternate.path || ''}
+                    onChange={value => updateAlternates(replaceArrayItem(alternates, alternateIndex, {
+                      ...alternate,
+                      path: value,
+                    }))}
+                  />
+                  <Field
+                    label="原始路径"
+                    value={alternate.rawPath || ''}
+                    onChange={value => updateAlternates(replaceArrayItem(alternates, alternateIndex, {
+                      ...alternate,
+                      rawPath: value,
+                    }))}
+                  />
+                </div>
+              </div>
+            ))}
+            <Button
+              type="error"
+              size="small"
+              onClick={() => removeArrayItem(config.mappings, index, next => setConfig(current => ({ ...current, mappings: next })))}
+            >
+              删除 Root
+            </Button>
           </div>
-          <div className="field-grid field-grid-three">
-            <Field
-              label="路径"
-              value={mapping.path}
-              onChange={value => updateArrayItem(config.mappings, index, { ...mapping, path: value }, next => setConfig(current => ({ ...current, mappings: next })))}
-            />
-            <Field
-              label="原始路径"
-              value={mapping.rawPath || ''}
-              onChange={value => updateArrayItem(config.mappings, index, { ...mapping, rawPath: value }, next => setConfig(current => ({ ...current, mappings: next })))}
-            />
-            <Field
-              label="FlightRecord"
-              value={mapping.flightRecordPath || ''}
-              onChange={value => updateArrayItem(config.mappings, index, { ...mapping, flightRecordPath: value }, next => setConfig(current => ({ ...current, mappings: next })))}
-            />
-          </div>
-          <TextAreaField
-            label="说明"
-            value={mapping.description}
-            onChange={value => updateArrayItem(config.mappings, index, { ...mapping, description: value }, next => setConfig(current => ({ ...current, mappings: next })))}
-            rows={3}
-          />
-          <Button
-            type="error"
-            size="small"
-            onClick={() => removeArrayItem(config.mappings, index, next => setConfig(current => ({ ...current, mappings: next })))}
-          >
-            删除
-          </Button>
-        </div>
-      ))}
+        );
+      })}
       <Divider />
       <TextAreaField
         label="材料模式短语（每行一条）"
@@ -1358,9 +1449,9 @@ export function ColorCurrentSummary({
                   <summary><strong>高级 / 调试信息</strong></summary>
                   <div className="field-grid field-grid-three">
                     <Field label="project path" value={activeRoot.path || ''} onChange={noop} readOnly />
-                    <Field label="localPath" value={activeRoot.localPath || ''} onChange={noop} readOnly />
+                    <Field label="解析后 localPath" value={activeRoot.localPath || ''} onChange={noop} readOnly />
                     <Field label="rawPath" value={activeRoot.rawPath || ''} onChange={noop} readOnly />
-                    <Field label="rawLocalPath" value={activeRoot.rawLocalPath || ''} onChange={noop} readOnly />
+                    <Field label="解析后 rawLocalPath" value={activeRoot.rawLocalPath || ''} onChange={noop} readOnly />
                     <Field label="colorSpaceProfile" value={activeRoot.colorSpaceProfile || ''} onChange={noop} readOnly />
                     <Field label="transformPresetKey" value={activeRoot.transformPresetKey || ''} onChange={noop} readOnly />
                     <Field label="detectedProfile" value={getColorStringField(activeRoot.current?.hostSummary, ['detectedProfile']) || ''} onChange={noop} readOnly />
@@ -2025,10 +2116,37 @@ function createProjectBriefMappingDraft(existingMappings) {
     rootId,
     path: '',
     rawPath: '',
+    alternatePaths: [],
     description: '',
     flightRecordPath: '',
     enabled: true,
   };
+}
+
+function createAlternatePathDraft() {
+  return {
+    path: '',
+    rawPath: '',
+  };
+}
+
+function normalizeAlternatePathDrafts(value) {
+  return Array.isArray(value)
+    ? value.filter(isPlainObject).map(item => ({
+      path: String(item.path || ''),
+      rawPath: String(item.rawPath || ''),
+    }))
+    : [];
+}
+
+function normalizePathResolutionBlockers(summary) {
+  if (!isPlainObject(summary)) return [];
+  const blockers = Array.isArray(summary.blockingReasons)
+    ? summary.blockingReasons
+    : [];
+  return blockers
+    .map(item => String(item || '').trim())
+    .filter(Boolean);
 }
 
 function updateProjectRootRenderPreset(setProjectBrief, rootId, patch) {
@@ -3243,6 +3361,18 @@ function updateArrayItem(items, index, nextItem, apply) {
   const next = [...items];
   next[index] = nextItem;
   apply(next);
+}
+
+function replaceArrayItem(items, index, nextItem) {
+  return items.map((item, itemIndex) => itemIndex === index ? nextItem : item);
+}
+
+function moveArrayItem(items, fromIndex, toIndex) {
+  if (toIndex < 0 || toIndex >= items.length || fromIndex === toIndex) return items;
+  const next = [...items];
+  const [item] = next.splice(fromIndex, 1);
+  next.splice(toIndex, 0, item);
+  return next;
 }
 
 function removeArrayItem(items, index, apply) {

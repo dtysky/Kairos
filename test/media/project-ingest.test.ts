@@ -6,11 +6,9 @@ import {
   initWorkspaceProject,
   loadAssets,
   loadIngestRoots,
-  loadProjectDeviceMediaMaps,
   loadProjectDerivedTrack,
   loadProjectSameSourceGpsIndex,
-  saveDeviceProjectMap,
-  writeJson,
+  saveProjectBriefConfig,
   writeWorkspaceProjectBrief,
 } from '../../src/store/index.js';
 import { ingestWorkspaceProjectMedia } from '../../src/modules/media/project-ingest.js';
@@ -189,18 +187,45 @@ describe('ingestWorkspaceProjectMedia', () => {
 
     const ingestRoots = await loadIngestRoots(projectRoot);
     expect(ingestRoots.roots).toHaveLength(1);
-
-    const deviceMaps = await loadProjectDeviceMediaMaps(projectRoot);
-    expect(deviceMaps.projects[projectId]?.roots).toEqual([
-      {
-        rootId: ingestRoots.roots[0]!.id,
-        localPath: mediaRoot,
-      },
-    ]);
+    await expect(readFile(join(projectRoot, 'config/device-media-maps.local.json'), 'utf-8'))
+      .rejects.toMatchObject({ code: 'ENOENT' });
 
     const assets = await loadAssets(projectRoot);
     expect(assets).toHaveLength(1);
     expect(assets[0]?.ingestRootId).toBe(ingestRoots.roots[0]!.id);
+  });
+
+  it('scans the first readable alternate path when the primary path is unavailable', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-brief-alternate';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Test Project');
+    const primaryRoot = join(workspaceRoot, 'missing-media-root');
+    const alternateRoot = join(workspaceRoot, 'alternate-media-root');
+
+    await mkdir(alternateRoot, { recursive: true });
+    await writeFile(join(alternateRoot, 'clip.mp4'), '');
+    await writeWorkspaceProjectBrief(workspaceRoot, projectId, [
+      {
+        path: primaryRoot,
+        alternatePaths: [{ path: alternateRoot }],
+        description: '主机位素材',
+      },
+    ]);
+
+    const result = await ingestWorkspaceProjectMedia({
+      workspaceRoot,
+      projectId,
+    });
+
+    expect(result.missingRoots).toEqual([]);
+    expect(result.scannedRoots[0]).toMatchObject({
+      localPath: alternateRoot,
+      scannedFileCount: 1,
+    });
+
+    const assets = await loadAssets(projectRoot);
+    expect(assets).toHaveLength(1);
+    expect(assets[0]?.sourcePath).toBe('clip.mp4');
   });
 
   it('excludes nested rawLocalPath from ingest scan', async () => {
@@ -275,31 +300,25 @@ describe('ingestWorkspaceProjectMedia', () => {
     const projectId = 'project-a';
     const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Test Project');
     const mediaRoot = join(workspaceRoot, 'media-root');
-    const deviceMapPath = join(workspaceRoot, 'device-media-maps.json');
 
     await mkdir(mediaRoot, { recursive: true });
     await writeFile(join(mediaRoot, '20260331_081530.mp4'), '');
 
-    await writeJson(join(projectRoot, 'config/ingest-roots.json'), {
-      roots: [{
-        id: 'root-1',
+    await saveProjectBriefConfig(projectRoot, {
+      name: 'Test Project',
+      mappings: [{
+        rootId: 'root-1',
+        path: mediaRoot,
         enabled: true,
         label: 'camera-a',
-        defaultTimezone: 'Pacific/Auckland',
+        description: '主机位素材',
       }],
+      materialPatternPhrases: [],
     });
-
-    await saveDeviceProjectMap(projectId, {
-      roots: [{
-        rootId: 'root-1',
-        localPath: mediaRoot,
-      }],
-    }, deviceMapPath);
 
     await ingestWorkspaceProjectMedia({
       workspaceRoot,
       projectId,
-      deviceMapPath,
     });
 
     const assets = await loadAssets(projectRoot);
@@ -367,24 +386,21 @@ describe('ingestWorkspaceProjectMedia', () => {
       'utf-8',
     );
 
-    await writeJson(join(projectRoot, 'config/ingest-roots.json'), {
-      roots: [{
-        id: 'root-1',
+    await saveProjectBriefConfig(projectRoot, {
+      name: 'Test Project',
+      mappings: [{
+        rootId: 'root-1',
+        path: mediaRoot,
         enabled: true,
         label: 'camera-a',
+        description: '主机位素材',
       }],
+      materialPatternPhrases: [],
     });
-    await saveDeviceProjectMap(projectId, {
-      roots: [{
-        rootId: 'root-1',
-        localPath: mediaRoot,
-      }],
-    }, join(workspaceRoot, 'device-media-maps.json'));
 
     const result = await ingestWorkspaceProjectMedia({
       workspaceRoot,
       projectId,
-      deviceMapPath: join(workspaceRoot, 'device-media-maps.json'),
     });
 
     expect(result.missingRoots).toEqual([]);

@@ -674,6 +674,7 @@ function IngestGpsPage({
       <ProjectBriefEditor
         config={config.projectBrief}
         pharosStatus={config.pharosStatus}
+        summaries={config.ingestRootSummaries || []}
         setConfig={setProjectBrief}
         onSave={() => saveSection('project-brief')}
         busy={busy['project-brief']}

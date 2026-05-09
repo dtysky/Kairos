@@ -139,9 +139,10 @@ Kairos 当前需要区分两层：
     - workspace / project runtime 可通过 `config/runtime.json` 的 `agentPacketRunnerCommand` / `agentPacketRunnerArgs` / `agentPacketRunnerCwd` 声明这个 packet runner
 - 未来如果引入桌面 UI 或更多 provider / adapter，应建立在这套协议与项目模型上，而不是推翻它
 - 某些项目会直接消费调色后的素材版本而非原始素材；因此主链面向的是“当前采用的素材版本”，而不是固定绑定“永远使用原始素材”
-- `project-brief` 的路径映射块当前可选带 `原始路径`
-  - 该字段会同步到 `project-brief.json` 单真值 mapping 的 `rawPath` 与设备映射 `rawLocalPath`
-  - 若 `rawPath` 位于当前素材目录内部，主链 ingest 会显式排除该子树，避免 raw 与当前输出被一起纳入正式扫描
+- `project-brief` 的路径映射块当前可选带 `原始路径` 与有序 `备选路径N / 原始路径N`
+  - `project-brief.json` 是路径单真值；运行时直接从 `path -> 备选路径N` 与 `rawPath -> 原始路径N` 中选择当前可读目录
+  - `device-media-maps.local.json` 已退出正式配置与缓存路径
+  - 若解析后的 `rawLocalPath` 位于当前素材目录内部，主链 ingest 会显式排除该子树，避免 raw 与当前输出被一起纳入正式扫描
 
 ## 1.1 当前变更纪律
 
@@ -528,14 +529,14 @@ flowchart TD
 ### 三类边界
 
 - 项目内正式产物：可同步、可复用、可作为正式输入继续流转
-- 设备本地映射：`config/device-media-maps.local.json`，只描述当前设备能访问到的素材真实目录，默认不纳入同步
+- 路径候选解析：`project-brief` 的主路径与备选路径直接解析当前设备可读目录，不再维护单独 device map 文件
 - 临时产物：`.tmp/`，默认不属于 `Canonical Project Store`
 - 可恢复中间态：`analysis/prepared-assets/` 与 `analysis/audio-checkpoints/` 用于跨进程恢复 Analyze；它们是 durable resume cache，不是 Script / Timeline 的正式输入，且在 stage 语义调整后允许安全失效并重建
 
 ### 当前稳定约定
 
-- `config/project-brief.json` 保存项目级素材 root 单真值，而不是设备绝对路径
-- `config/project-brief.md` 是路径映射的人类镜像；进入 Ingest 前会同步 `config/device-media-maps.local.json` 与兼容 ingest root 读模型
+- `config/project-brief.json` 保存项目级素材 root 单真值，包括主路径、原始路径和有序备选路径
+- `config/project-brief.md` 是路径映射的人类镜像；进入 Ingest / Analyze / Export / Color 前直接从这些路径候选解析当前可读目录
 - `/ingest-gps` 当前正式用结构化 `素材 Root` 编辑器维护这些路径映射，并在保存时写入 `config/project-brief.json` 后回写 `config/project-brief.md`
 - `config/project-brief.json`、`config/manual-itinerary.json`、`script/script-brief.json` 与 `config/review-queue.json` 是当前项目级 Console 结构化事实源
 - `config/style-sources.json` 是当前 **Workspace 级** Console 结构化事实源

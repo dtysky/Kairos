@@ -2,11 +2,14 @@ export { scanDirectory, classifyExt, type IScannedFile } from './scanner.js';
 export { buildAssetCoarseReport, type IBuildAssetCoarseReportInput } from './asset-report.js';
 export { buildMediaChronology } from './chronology.js';
 export {
-  resolveMediaRootsForDevice,
+  resolveMediaRoots,
+  resolveMediaRoot,
+  resolveRootPath,
   resolveAssetLocalPath,
   toPortableRelativePath,
   type IResolvedMediaRoot,
   type IMediaRootResolution,
+  type IMediaRootPathResolution,
 } from './root-resolver.js';
 export { probe, type IProbeResult, type IMediaToolConfig } from './probe.js';
 export {

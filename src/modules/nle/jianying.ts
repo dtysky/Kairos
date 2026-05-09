@@ -1,5 +1,4 @@
 import type {
-  IDeviceMediaMapFile,
   IKtepAsset,
   IKtepClip,
   IKtepDoc,
@@ -32,7 +31,6 @@ export interface IJianyingConfig extends IJianyingBuilderConfig, IJianyingLocalC
   subtitleY?: number;
   subtitleSize?: number;
   mediaRoots?: IMediaRoot[];
-  deviceMaps?: IDeviceMediaMapFile;
 }
 
 const CDEFAULTS: IJianyingConfig = {

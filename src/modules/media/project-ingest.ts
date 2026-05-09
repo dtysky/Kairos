@@ -4,7 +4,6 @@ import type { IKtepAsset, IMediaRoot } from '../../protocol/schema.js';
 import {
   appendAssets,
   loadAssetReports,
-  loadProjectDeviceMediaMaps,
   loadIngestRoots,
   loadRuntimeConfig,
   loadChronology,
@@ -26,7 +25,7 @@ import { refreshProjectDerivedTrackCache } from './project-derived-track.js';
 import { probe, type IMediaToolConfig } from './probe.js';
 import { resolveProtectionAudioBinding } from './protection-audio.js';
 import type { IReverseGeocodeService } from './reverse-geocode.js';
-import { resolveMediaRootsForDevice, toPortableRelativePath } from './root-resolver.js';
+import { resolveMediaRoots, toPortableRelativePath } from './root-resolver.js';
 import { scanDirectory } from './scanner.js';
 import { prepareRootSameSourceGpsContext, resolveAssetSameSourceGpsBinding } from './same-source-gps.js';
 import { enforceProjectTimelineConsistency } from './timeline-consistency.js';
@@ -34,7 +33,6 @@ import { enforceProjectTimelineConsistency } from './timeline-consistency.js';
 export interface IIngestWorkspaceProjectInput {
   workspaceRoot: string;
   projectId: string;
-  deviceMapPath?: string;
   resolveTimezoneFromLocation?: (location: string) => Promise<string | null>;
   geocodeLocation?: (location: string) => Promise<{ lat: number; lng: number } | null>;
   reverseGeocodeService?: IReverseGeocodeService | null;
@@ -63,16 +61,14 @@ export async function ingestWorkspaceProjectMedia(
   await syncProjectBriefMappings({
     projectId: input.projectId,
     projectRoot,
-    deviceMapPath: input.deviceMapPath,
   });
-  const [{ roots }, deviceMaps, runtimeConfig] = await Promise.all([
+  const [{ roots }, runtimeConfig] = await Promise.all([
     loadIngestRoots(projectRoot),
-    loadProjectDeviceMediaMaps(projectRoot, input.deviceMapPath),
     loadRuntimeConfig(projectRoot),
   ]);
   const manualCaptureOverrides = await loadManualCaptureTimeOverrides(projectRoot);
 
-  const resolution = resolveMediaRootsForDevice(input.projectId, roots, deviceMaps);
+  const resolution = resolveMediaRoots(roots);
   const scannedRoots: IIngestedRootSummary[] = [];
   const incoming: IKtepAsset[] = [];
   const warnings = new Set<string>();

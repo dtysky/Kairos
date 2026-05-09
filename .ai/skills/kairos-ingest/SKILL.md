@@ -51,18 +51,11 @@ Kairos 现在的项目结构是：
         └── .tmp/
 ```
 
-素材源分成两层：
+素材源统一来自 `config/project-brief.json`：
 
-- 项目内：`config/ingest-roots.json`
-  - 保存逻辑 root
-  - 包括 `id / label / description / notes / tags`
-- 设备本地：`config/device-media-maps.local.json`
-  - 保存 `projectId + rootId -> localPath`
-  - 默认落在当前项目内，但属于本机私有映射，不应纳入项目同步
-
-也就是说：
-- 项目可以同步
-- 素材目录路径不跟着同步
+- 每个 root 保存 `id / label / description / notes / tags`
+- 每个 root 保存主路径、原始路径和可选 `备选路径N / 原始路径N`
+- 运行时从路径候选中选择当前可读目录，不再维护 `device-media-maps.local.json`
 
 ## 可用入口
 
@@ -73,20 +66,11 @@ resolveWorkspaceProjectRoot(workspaceRoot: string, projectId: string): string
 syncWorkspaceProjectBrief(
   workspaceRoot: string,
   projectId: string,
-  deviceMapPath?: string,
 ): Promise<ISyncProjectBriefResult>
-
-saveProjectDeviceMap(
-  projectRoot: string,
-  projectId: string,
-  projectMap: { roots: { rootId: string; localPath: string }[] },
-  filePath?: string,
-): Promise<IDeviceMediaMapFile>
 
 ingestWorkspaceProjectMedia(input: {
   workspaceRoot: string;
   projectId: string;
-  deviceMapPath?: string;
   resolveTimezoneFromLocation?: (location: string) => Promise<string | null>;
   geocodeLocation?: (location: string) => Promise<{ lat: number; lng: number } | null>;
 }): Promise<{
@@ -152,8 +136,8 @@ importProjectGpxTracks(input: {
 ```
 
 然后 agent 应先写/更新 `config/project-brief.md`，再由系统同步成：
-- `projects/<projectId>/config/ingest-roots.json`
-- `projects/<projectId>/config/device-media-maps.local.json`
+- `projects/<projectId>/config/project-brief.json`
+- 兼容 ingest root 读模型
 
 ## 工作流程
 
@@ -167,8 +151,8 @@ importProjectGpxTracks(input: {
 3. 从 `project-brief.md` 同步正式配置
 - `syncWorkspaceProjectBrief()`
 - 会更新：
-  - `config/ingest-roots.json`
-  - `config/device-media-maps.local.json`
+  - `config/project-brief.json`
+  - 兼容 ingest root 读模型
 - 不要手工重复编辑 `ingest-roots.json`
 
 4. 如有必要，再补充逻辑 root 元数据
@@ -180,7 +164,7 @@ importProjectGpxTracks(input: {
   - `notes[]`
 
 5. 跑导入
-- 默认会优先读取项目内 `config/device-media-maps.local.json`
+- 默认从 `project-brief` 主路径和备选路径中选择当前可读目录
 - 如果 `project-brief.md` 已有映射，`ingestWorkspaceProjectMedia()` 会先尝试自动同步一次
 - `.SRT` sidecar 会在素材旁自动发现，不需要单独配置
 - 保护音轨 sidecar 也会按“同目录同 basename”自动发现；第一阶段只做视频资产绑定，不把这些音频重新放回普通素材池
@@ -194,7 +178,6 @@ importProjectGpxTracks(input: {
 const result = await ingestWorkspaceProjectMedia({
   workspaceRoot,
   projectId,
-  deviceMapPath,
   resolveTimezoneFromLocation,
   geocodeLocation,
 });

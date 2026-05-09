@@ -33,6 +33,13 @@ function normalizeProjectRoot(root: IMediaRoot): IMediaRoot {
     ...root,
     path: root.path?.trim() || undefined,
     rawPath: root.rawPath?.trim() || undefined,
+    flightRecordPath: root.flightRecordPath?.trim() || undefined,
+    alternatePaths: root.alternatePaths
+      ?.map(alternate => ({
+        path: alternate.path?.trim() || undefined,
+        rawPath: alternate.rawPath?.trim() || undefined,
+      }))
+      .filter(alternate => alternate.path || alternate.rawPath),
     label: root.label?.trim() || undefined,
     description: root.description?.trim() || undefined,
     notes: root.notes?.map(note => note.trim()).filter(Boolean),

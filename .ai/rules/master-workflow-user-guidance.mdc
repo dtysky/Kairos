@@ -65,7 +65,6 @@ Kairos 的标准顺序是：
 默认不要把这些文件当成人类主编辑入口：
 
 - `config/ingest-roots.json`
-- `config/device-media-maps.local.json`
 - `store/assets.json`
 - `store/slices.json`
 - `timeline/current.json`

@@ -159,10 +159,10 @@ F:\你的原始素材目录（可选，仅 `/color` 使用）
 
 用户填完 `project-brief.md` 后，不要手工再抄一遍配置；应把它当成路径映射的人类镜像，并同步成：
 - `config/project-brief.json`
-- `config/device-media-maps.local.json`
+- 兼容 ingest root 读模型
 
-如果某个 root 配了 `原始路径`，它会进一步同步到 `rawPath/rawLocalPath`。
-当 `rawPath` 位于当前素材目录内部时，Ingest 必须显式排除该 raw 子树，避免把 raw 与当前输出一起纳入主链扫描。
+如果某个 root 配了 `原始路径` 或 `原始路径N`，运行时会解析为当前可读 `rawLocalPath`。
+当解析后的 `rawLocalPath` 位于当前素材目录内部时，Ingest 必须显式排除该 raw 子树，避免把 raw 与当前输出一起纳入主链扫描。
 
 如果下一步就是跑 Ingest，优先直接调用 `ingestWorkspaceProjectMedia()`；当前实现会在检测到
 `project-brief` 已配置路径映射时，先自动同步一次再继续扫描。
@@ -198,7 +198,7 @@ project/
 ```
 
 注意：
-- `config/device-media-maps.local.json` 不是 `initProject` 自动产物，而是在首次同步 `project-brief` 或显式保存项目本机路径映射后生成
+- `device-media-maps.local.json` 已退出正式路径模型；不要再生成或依赖它
 - `config/runtime.json` 现在是可选本地运行时覆盖，不是自动种子文件
 
 后续各阶段产出的文件：

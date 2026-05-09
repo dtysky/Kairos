@@ -22,7 +22,7 @@
   - 文件 `create_time`
   - GPS / 空间相关元信息
   - 后续与 `Pharos`、chronology、空间推断对齐所需的其他核心字段
-- 当前正式项目结构围绕 `projects/<projectId>/`、`config/runtime.json`、logical ingest roots、`config/device-media-maps.local.json`、Workspace 结构化配置 JSON、`gps/tracks/*.gpx`、`gps/merged.json`、`gps/same-source/`、`gps/derived.json` 与项目内 `.tmp/` 展开
+- 当前正式项目结构围绕 `projects/<projectId>/`、`config/runtime.json`、`config/project-brief.json` 的 logical ingest roots 与路径候选、Workspace 结构化配置 JSON、`gps/tracks/*.gpx`、`gps/merged.json`、`gps/same-source/`、`gps/derived.json` 与项目内 `.tmp/` 展开
 - `Pharos` 资产当前固定放在项目内 `pharos/<trip_id>/`，而不是让用户填写外部路径
 - `project-brief.md` 可选带 `## Pharos` 段，只支持 `包含 Trip：...` 形式的 trip 筛选；未填写时默认纳入全部可解析 trip
 - 可复用风格资产当前不属于单项目目录，而是收口为 Workspace 级共享资产
@@ -53,10 +53,10 @@
 - `projects/<project_id>/`
   - 下一阶段的正式设计建议把项目数据统一收口到 Kairos 工程内的 `projects/` 目录
   - 这样便于云同步、多设备共享和项目选择
-- `config/device-media-maps.local.json`
-  - 素材真实目录不再直接写死在正式产物中，而是由当前设备在项目内维护本地路径映射
-  - 该文件属于本机私有配置，应默认忽略，不作为项目同步内容
-  - 每个 root 本地映射现在还可以带 `flightRecordPath`，用于声明该素材源对应的 DJI FlightRecord 目录或文件；实际识别按文件头/可解析性完成
+- `config/project-brief.json`
+  - 素材 root 的正式路径真值，包含主路径、原始路径、FlightRecord 与有序备选路径
+  - 运行时直接从 `path -> 备选路径N` 和 `rawPath -> 原始路径N` 中解析当前可读目录
+  - `device-media-maps.local.json` 已退出正式项目结构；旧文件可删除
 - `config/runtime.json`
   - 当前项目把 `ffmpegPath`、`ffprobePath`、`ffmpegHwaccel`、`analysisProxyWidth`、`analysisProxyPixelFormat`、`sceneDetectFps`、`mlServerUrl`、`djiOpenAPIKey` 等运行时设置落在项目内配置中
   - 时间线 / 草稿输出规格也从这里读取：`timelineWidth`、`timelineHeight`、`timelineFps`

@@ -61,18 +61,6 @@ export {
   type IWorkspaceProjectEntry,
 } from './workspace.js';
 export {
-  getGlobalDeviceMediaMapPath,
-  getProjectDeviceMediaMapPath,
-  getDefaultDeviceMediaMapPath,
-  loadDeviceMediaMaps,
-  loadProjectDeviceMediaMaps,
-  saveDeviceMediaMaps,
-  saveDeviceProjectMap,
-  saveProjectDeviceMap,
-  assignDeviceMediaRoot,
-  assignProjectDeviceMediaRoot,
-} from './device-media-maps.js';
-export {
   getAssetReportsRoot,
   getAssetReportPath,
   loadAssetReport,

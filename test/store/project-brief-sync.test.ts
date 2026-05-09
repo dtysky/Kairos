@@ -5,8 +5,6 @@ import { join } from 'node:path';
 import {
   initWorkspaceProject,
   loadIngestRoots,
-  loadProjectDeviceMediaMaps,
-  saveProjectDeviceMap,
   syncWorkspaceProjectBrief,
   writeJson,
   writeWorkspaceProjectBrief,
@@ -27,7 +25,7 @@ async function createWorkspace(): Promise<string> {
 }
 
 describe('syncWorkspaceProjectBrief', () => {
-  it('writes ingest roots and project-local device maps from project brief mappings', async () => {
+  it('writes ingest roots from project brief mappings and removes legacy device maps', async () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-a';
     const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Test Project');
@@ -35,8 +33,24 @@ describe('syncWorkspaceProjectBrief', () => {
     const cameraRoot = join(workspaceRoot, 'media', 'camera');
     const cameraRawRoot = join(cameraRoot, 'raw');
     const droneRoot = join(workspaceRoot, 'media', 'drone');
+    await writeJson(join(projectRoot, 'config/device-media-maps.local.json'), {
+      projects: {
+        [projectId]: {
+          projectId,
+          roots: [{ rootId: 'old-root', localPath: '/old/path' }],
+        },
+      },
+    });
     await writeWorkspaceProjectBrief(workspaceRoot, projectId, [
-      { path: cameraRoot, rawPath: cameraRawRoot, description: '主机位' },
+      {
+        path: cameraRoot,
+        rawPath: cameraRawRoot,
+        alternatePaths: [{
+          path: join(workspaceRoot, 'media-alt', 'camera'),
+          rawPath: join(workspaceRoot, 'media-alt', 'camera-raw'),
+        }],
+        description: '主机位',
+      },
       { path: droneRoot, description: '无人机', flightRecordPath: './FlightRecord' },
     ]);
     const briefContent = await readFile(join(projectRoot, 'config/project-brief.md'), 'utf-8');
@@ -52,24 +66,17 @@ describe('syncWorkspaceProjectBrief', () => {
       description: '主机位',
       priority: 1,
       rawPath: cameraRawRoot,
+      alternatePaths: [{
+        path: join(workspaceRoot, 'media-alt', 'camera'),
+        rawPath: join(workspaceRoot, 'media-alt', 'camera-raw'),
+      }],
     });
 
     const ingestRoots = await loadIngestRoots(projectRoot);
     expect(ingestRoots.roots).toHaveLength(2);
 
-    const deviceMaps = await loadProjectDeviceMediaMaps(projectRoot);
-    expect(deviceMaps.projects[projectId]?.roots).toEqual([
-      {
-        rootId: result.ingestRoots[0]!.id,
-        localPath: cameraRoot,
-        rawLocalPath: cameraRawRoot,
-      },
-      {
-        rootId: result.ingestRoots[1]!.id,
-        localPath: droneRoot,
-        flightRecordPath: join(droneRoot, 'FlightRecord'),
-      },
-    ]);
+    await expect(readFile(join(projectRoot, 'config/device-media-maps.local.json'), 'utf-8'))
+      .rejects.toMatchObject({ code: 'ENOENT' });
   });
 
   it('keeps existing mappings when project brief has no configured paths', async () => {
@@ -86,11 +93,16 @@ describe('syncWorkspaceProjectBrief', () => {
         priority: 9,
       }],
     });
-    await saveProjectDeviceMap(projectRoot, projectId, {
-      roots: [{
-        rootId: 'root-1',
-        localPath: join(workspaceRoot, 'media-root'),
-      }],
+    await writeJson(join(projectRoot, 'config/device-media-maps.local.json'), {
+      projects: {
+        [projectId]: {
+          projectId,
+          roots: [{
+            rootId: 'root-1',
+            localPath: join(workspaceRoot, 'media-root'),
+          }],
+        },
+      },
     });
 
     const result = await syncWorkspaceProjectBrief(workspaceRoot, projectId);
@@ -105,13 +117,8 @@ describe('syncWorkspaceProjectBrief', () => {
       },
     ]);
 
-    const deviceMaps = await loadProjectDeviceMediaMaps(projectRoot);
-    expect(deviceMaps.projects[projectId]?.roots).toEqual([
-      {
-        rootId: 'root-1',
-        localPath: join(workspaceRoot, 'media-root'),
-      },
-    ]);
+    await expect(readFile(join(projectRoot, 'config/device-media-maps.local.json'), 'utf-8'))
+      .rejects.toMatchObject({ code: 'ENOENT' });
   });
 
   it('preserves root-level clock offsets when syncing mapped roots from project brief', async () => {

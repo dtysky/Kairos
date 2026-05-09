@@ -58,7 +58,7 @@ description: >-
   - `gps/merged.json`
   - `gps/derived.json`
 - `config/project-brief.json` 是正式结构化 root 真值，`config/project-brief.md` 只是人类可读镜像；不要再把 `ingest-roots.json` 当正式事实源
-- `config/device-media-maps.local.json` 是项目内的本机私有映射，方便迁移后重绑路径，但不应当作可同步事实源
+- `device-media-maps.local.json` 已退出正式路径模型；跨设备路径直接通过 `project-brief` 的主路径与 `备选路径N / 原始路径N` 候选解析
 - `store/assets.json[*].sourcePath` 必须保持 root-relative；迁移时不要改写成当前机器绝对路径
 
 ## 当前项目骨架
@@ -94,8 +94,6 @@ project/
 
 ### 后续按需出现的文件
 
-- `config/device-media-maps.local.json`
-  - 首次执行 `syncWorkspaceProjectBrief()` 或 `saveProjectDeviceMap()` 后出现
 - `gps/tracks/*.gpx`
   - 导入项目级 GPX 后出现
 - `gps/merged.json`
@@ -119,8 +117,6 @@ import {
   resolveWorkspaceProjectRoot,
   writeWorkspaceProjectBrief,
   syncWorkspaceProjectBrief,
-  saveProjectDeviceMap,
-  assignProjectDeviceMediaRoot,
   buildProjectBriefTemplate,
   writeScriptBriefTemplate,
   importProjectGpxTracks,
@@ -177,14 +173,13 @@ const projectRoot = await initWorkspaceProject(
 - 调 `syncWorkspaceProjectBrief(workspaceRoot, projectId)`
 - 会更新：
   - 基于 `project-brief.json` 派生的 ingest root 运行态
-  - `config/device-media-maps.local.json`
-- 当前实现里，如果 `project-brief.md` 没有任何映射条目，会保留现有 roots 和 device map，不会强行清空
+  - `project-brief.md` 人类镜像
+- 当前实现里，如果 `project-brief.md` 没有任何映射条目，会保留现有 roots，不会强行清空
 
-6. 只有在确实不想走 `project-brief` 时，才直写本机映射
-- 可用：
-  - `saveProjectDeviceMap()`
-  - `assignProjectDeviceMediaRoot()`
-- 这只是本机便利入口，不应替代 `project-brief` 作为长期事实源
+6. 跨设备路径只通过备选路径维护
+- 在同一个 root block 里补 `备选路径1 / 原始路径1`、`备选路径2 / 原始路径2`
+- 运行时会从主路径和备选路径中选择当前可读目录
+- 不再提供单独的 device map 写入入口
 
 7. 如有项目级 GPS，再挂到项目里
 - 外部 GPX 不要只记在临时路径里，应复制到：
@@ -214,7 +209,7 @@ const projectRoot = await initWorkspaceProject(
 | `store/project.json` + `store/manifest.json` | 项目骨架已经存在 |
 | `pharos/` | `Pharos` 固定镜像根目录已经就位，可直接放入 `trip_id/plan.json + record.json? + gpx/` |
 | `config/project-brief.json` + `config/project-brief.md` | 可以继续维护素材路径与说明；Markdown 只是镜像 |
-| `config/device-media-maps.local.json` | 当前机器的 Root 路径映射已就位，可以直接进入 Ingest |
+| `config/project-brief.json` 中的主/备选路径 | 当前机器能解析到可读 Root 时，可以直接进入 Ingest |
 | `store/assets.json` | 可以跳过首轮 Ingest |
 | `analysis/asset-reports/*.json` + `store/slices.json` | 可以跳过 Analyze |
 | `script/current.json` | 可以跳过 Script 起稿 |
@@ -223,7 +218,7 @@ const projectRoot = await initWorkspaceProject(
 ## 迁移注意点
 
 - 迁移项目时，优先复制整个 `projects/<projectId>/`
-- 到新机器后，第一件事不是改 `assets.json`，而是重绑 `project-brief` / `device-media-maps.local.json`
+- 到新机器后，第一件事不是改 `assets.json`，而是在 `project-brief` 的 root block 中补可读的备选路径
 - 如果素材根目录换了，只改路径映射，不改 `sourcePath`
 - 如果迁移时没带 `gps/tracks/` 或 `gps/merged.json`，后续没有 embedded GPS 的素材会丢掉一层空间证据
 - 如果用户更新过 `manual-itinerary` 但没重新跑 ingest，`gps/derived.json` 会是旧的

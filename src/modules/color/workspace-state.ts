@@ -6,9 +6,13 @@ import type {
   IColorHostPreflight,
   IColorRootCurrent,
   IColorRenderPreset,
-  IDeviceMediaProjectMap,
   IMediaRoot,
 } from '../../protocol/schema.js';
+import {
+  buildRootPathCandidates,
+  resolveMediaRoot,
+  type IMediaRootPathResolution,
+} from '../media/root-resolver.js';
 import type { IResolveColorBackendStatus } from './resolve-executor.js';
 import { materializeColorRenderPreset } from './render-preset.js';
 
@@ -21,6 +25,8 @@ export interface IColorRootCurrentView extends IColorRootCurrent {
   rawPath?: string;
   rawLocalPath?: string;
   displayRawPath?: string;
+  pathResolution?: IMediaRootPathResolution;
+  rawPathResolution?: IMediaRootPathResolution;
   hostPreflight?: IColorHostPreflight;
 }
 
@@ -34,6 +40,8 @@ export interface IColorRootWorkspaceSummary {
   rawPath: string;
   rawLocalPath?: string;
   displayRawPath?: string;
+  pathResolution?: IMediaRootPathResolution;
+  rawPathResolution?: IMediaRootPathResolution;
   resolveProjectName: string;
   rootNamespace: string;
   gradingTimelineName: string;
@@ -71,7 +79,6 @@ interface IBuildColorWorkspaceStateInput {
   projectId: string;
   projectName?: string;
   projectRoots: IMediaRoot[];
-  deviceProjectMap?: IDeviceMediaProjectMap;
   colorCurrent: IColorCurrent;
   resolveBackend?: IResolveColorBackendStatus;
   groupSnapshotsByRootId?: Record<string, IColorGroupsSnapshotFile>;
@@ -80,12 +87,11 @@ interface IBuildColorWorkspaceStateInput {
 export function buildColorWorkspaceState(
   input: IBuildColorWorkspaceStateInput,
 ): IColorWorkspaceState {
-  const deviceRootById = new Map((input.deviceProjectMap?.roots ?? []).map(root => [root.rootId, root]));
   const colorCurrentByRootId = new Map(input.colorCurrent.roots.map(root => [root.rootId, root]));
   const hostPreflight = materializeHostPreflight(input.colorCurrent.hostPreflight, input.resolveBackend);
 
   const materializedRoots = input.projectRoots
-    .filter(root => root.enabled !== false && Boolean(trimmed(root.rawPath)))
+    .filter(root => root.enabled !== false && hasRawPathCandidate(root))
     .sort((left, right) => {
       const leftPriority = typeof left.priority === 'number' ? left.priority : Number.MAX_SAFE_INTEGER;
       const rightPriority = typeof right.priority === 'number' ? right.priority : Number.MAX_SAFE_INTEGER;
@@ -94,14 +100,17 @@ export function buildColorWorkspaceState(
     })
     .map(root => {
       const storedCurrent = colorCurrentByRootId.get(root.id);
-      const deviceRoot = deviceRootByRootId(deviceRootById, root.id);
+      const resolvedRoot = resolveMediaRoot(root);
+      const localPath = trimmed(resolvedRoot.localPath);
+      const rawLocalPath = trimmed(resolvedRoot.rawLocalPath);
+      const canAccessRoot = Boolean(localPath && rawLocalPath);
       const groupsSnapshot = input.groupSnapshotsByRootId?.[root.id];
       const renderPreset = materializeRenderPreset(root.color?.renderPreset);
       const colorSpaceProfile = trimmed(root.color?.colorSpaceProfile);
       const transformPresetKey = trimmed(root.color?.transformPresetKey);
       const derivedBlockers = dedupeStrings([
-        !trimmed(deviceRoot?.localPath) ? '当前设备未配置 current localPath，无法在本机覆盖当前素材目录。' : '',
-        !trimmed(deviceRoot?.rawLocalPath) ? '当前设备未配置 rawLocalPath，无法在本机访问原始素材。' : '',
+        !localPath ? `当前素材路径未命中：${resolvedRoot.localPathResolution.blocker ?? 'path/备选路径均不可读。'}` : '',
+        !rawLocalPath ? `原始素材路径未命中：${resolvedRoot.rawPathResolution.blocker ?? 'rawPath/原始路径备选均不可读。'}` : '',
         typeof renderPreset.bitrateKbps !== 'number'
           ? '未配置 root 级 renderPreset.bitrateKbps（kb/s），后续 execute_root 无法启动。'
           : '',
@@ -114,10 +123,10 @@ export function buildColorWorkspaceState(
 
       const currentView: IColorRootCurrentView = {
         rootId: root.id,
-        mirrorStatus: storedCurrent?.mirrorStatus ?? (trimmed(deviceRoot?.rawLocalPath) ? 'idle' : 'blocked'),
-        timelineStatus: storedCurrent?.timelineStatus ?? (trimmed(deviceRoot?.rawLocalPath) ? 'missing' : 'blocked'),
+        mirrorStatus: storedCurrent?.mirrorStatus ?? (canAccessRoot ? 'idle' : 'blocked'),
+        timelineStatus: storedCurrent?.timelineStatus ?? (canAccessRoot ? 'missing' : 'blocked'),
         groupSyncStatus: storedCurrent?.groupSyncStatus ?? (
-          trimmed(deviceRoot?.rawLocalPath)
+          canAccessRoot
             ? (groupsSnapshot?.groups?.length ? 'ready' : 'missing')
             : 'blocked'
         ),
@@ -139,11 +148,13 @@ export function buildColorWorkspaceState(
         label: trimmed(root.label),
         description: trimmed(root.description),
         path: trimmed(root.path),
-        localPath: trimmed(deviceRoot?.localPath),
-        currentPath: trimmed(deviceRoot?.localPath) ?? trimmed(root.path),
+        localPath,
+        currentPath: localPath ?? trimmed(root.path),
         rawPath: trimmed(root.rawPath),
-        rawLocalPath: trimmed(deviceRoot?.rawLocalPath),
-        displayRawPath: trimmed(deviceRoot?.rawLocalPath) ?? trimmed(root.rawPath),
+        rawLocalPath,
+        displayRawPath: rawLocalPath ?? trimmed(root.rawPath),
+        pathResolution: resolvedRoot.localPathResolution,
+        rawPathResolution: resolvedRoot.rawPathResolution,
         hostPreflight,
       };
 
@@ -157,6 +168,8 @@ export function buildColorWorkspaceState(
         rawPath: currentView.rawPath ?? '',
         rawLocalPath: currentView.rawLocalPath,
         displayRawPath: currentView.displayRawPath,
+        pathResolution: currentView.pathResolution,
+        rawPathResolution: currentView.rawPathResolution,
         resolveProjectName: deriveColorResolveProjectName(input.projectName, input.projectId),
         rootNamespace: deriveColorRootNamespace(currentView.label, root.id),
         gradingTimelineName: deriveColorGradingTimelineName(currentView.label, root.id),
@@ -188,13 +201,6 @@ export function buildColorWorkspaceState(
   };
 }
 
-function deviceRootByRootId(
-  deviceRootById: Map<string, NonNullable<IDeviceMediaProjectMap['roots']>[number]>,
-  rootId: string,
-) {
-  return deviceRootById.get(rootId);
-}
-
 function normalizeGroupCurrent(
   currentGroups: NonNullable<IColorRootCurrent['groups']>,
 ): IColorGroupCurrent[] {
@@ -213,6 +219,10 @@ function normalizeGroupCurrent(
     lastPromotedBatchId: trimmed(current.lastPromotedBatchId),
     blockingReasons: dedupeStrings(current.blockingReasons ?? []),
   }));
+}
+
+function hasRawPathCandidate(root: IMediaRoot): boolean {
+  return buildRootPathCandidates(root, 'rawPath').length > 0;
 }
 
 function materializeGroupWorkspaceSummaries(

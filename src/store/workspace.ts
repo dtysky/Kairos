@@ -39,20 +39,24 @@ export async function initWorkspaceProject(
 export async function syncWorkspaceProjectBrief(
   workspaceRoot: string,
   projectId: string,
-  deviceMapPath?: string,
 ) {
   const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
   return syncProjectBriefMappings({
     projectId,
     projectRoot,
-    deviceMapPath,
   });
 }
 
 export async function writeWorkspaceProjectBrief(
   workspaceRoot: string,
   projectId: string,
-  mappings: Array<{ path: string; rawPath?: string; description: string; flightRecordPath?: string }>,
+  mappings: Array<{
+    path: string;
+    rawPath?: string;
+    alternatePaths?: Array<{ path?: string; rawPath?: string }>;
+    description: string;
+    flightRecordPath?: string;
+  }>,
 ): Promise<string> {
   const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
   const project = await loadProject(projectRoot);

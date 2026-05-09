@@ -58,6 +58,16 @@ describe('workspace config sync', () => {
       mappings: [{
         path: 'F:\\media\\camera',
         rawPath: 'F:\\media\\camera\\raw',
+        alternatePaths: [
+          {
+            path: '/Volumes/Media/camera',
+            rawPath: '/Volumes/Media/camera/raw',
+          },
+          {
+            path: '/mnt/media/camera',
+            rawPath: '/mnt/media/camera/raw',
+          },
+        ],
         description: '主机位',
         flightRecordPath: 'F:\\media\\camera\\FlightRecord',
       }],
@@ -66,8 +76,22 @@ describe('workspace config sync', () => {
     const loaded = await loadProjectBriefConfig(projectRoot);
     const markdown = await readFile(join(projectRoot, 'config', 'project-brief.md'), 'utf-8');
     expect(loaded.mappings).toHaveLength(1);
+    expect(loaded.mappings[0]?.alternatePaths).toEqual([
+      {
+        path: '/Volumes/Media/camera',
+        rawPath: '/Volumes/Media/camera/raw',
+      },
+      {
+        path: '/mnt/media/camera',
+        rawPath: '/mnt/media/camera/raw',
+      },
+    ]);
     expect(markdown).toContain('路径：F:\\media\\camera');
     expect(markdown).toContain('原始路径：F:\\media\\camera\\raw');
+    expect(markdown).toContain('备选路径1：/Volumes/Media/camera');
+    expect(markdown).toContain('原始路径1：/Volumes/Media/camera/raw');
+    expect(markdown).toContain('备选路径2：/mnt/media/camera');
+    expect(markdown).toContain('原始路径2：/mnt/media/camera/raw');
     expect(markdown).toContain('飞行记录路径：F:\\media\\camera\\FlightRecord');
   });
 
@@ -120,7 +144,7 @@ describe('workspace config sync', () => {
             container: 'mp4',
             videoCodec: 'h265',
             audioCodec: 'aac',
-            bitrateMbps: 120,
+            bitrateKbps: 120_000,
           },
           colorSpaceProfile: 'slog3',
         },
@@ -143,7 +167,7 @@ describe('workspace config sync', () => {
             container: 'mp4',
             videoCodec: 'h265',
             audioCodec: 'aac',
-            bitrateMbps: 120,
+            bitrateKbps: 120_000,
           },
           colorSpaceProfile: 'slog3',
         },
@@ -243,7 +267,7 @@ describe('workspace config sync', () => {
             container: 'mp4',
             videoCodec: 'h265',
             audioCodec: 'aac',
-            bitrateMbps: 120,
+            bitrateKbps: 120_000,
           },
           colorSpaceProfile: 'S-Log3',
           transformPresetKey: 'Sony / SLog3_to_709',
@@ -268,7 +292,7 @@ describe('workspace config sync', () => {
     const loadedRoots = await loadIngestRoots(projectRoot);
     const loadedCurrent = await loadColorCurrent(projectRoot);
 
-    expect(loadedRoots.roots[0]?.color?.renderPreset?.bitrateMbps).toBe(120);
+    expect(loadedRoots.roots[0]?.color?.renderPreset?.bitrateKbps).toBe(120_000);
     expect(loadedRoots.roots[0]?.color?.colorSpaceProfile).toBe('slog3');
     expect(loadedRoots.roots[0]?.color?.transformPresetKey).toBe('Sony/SLog3_to_709.cube');
     expect(loadedCurrent.selectedRootId).toBe('root-camera');
@@ -327,7 +351,7 @@ describe('workspace config sync', () => {
           container: 'mp4',
           videoCodec: 'h265',
           audioCodec: 'aac',
-          bitrateMbps: 150,
+          bitrateKbps: 150_000,
         },
       }],
     });
@@ -335,7 +359,7 @@ describe('workspace config sync', () => {
     const loaded = await loadIngestRoots(projectRoot);
     expect(loaded.roots).toHaveLength(1);
     expect(loaded.roots[0]?.id).toBe('root-camera');
-    expect(loaded.roots[0]?.color?.renderPreset?.bitrateMbps).toBe(150);
+    expect(loaded.roots[0]?.color?.renderPreset?.bitrateKbps).toBe(150_000);
     expect(loaded.roots[0]?.color?.renderPreset?.container).toBe('mp4');
   });
 

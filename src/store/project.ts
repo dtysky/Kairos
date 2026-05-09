@@ -3,6 +3,7 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import {
   IColorCurrent,
+  IColorConfig,
   IStoreManifest,
   IMediaRoot,
   IKtepProject,
@@ -80,9 +81,6 @@ const IRuntimeConfig = z.object({
   timelineWidth: z.number().int().positive().optional(),
   timelineHeight: z.number().int().positive().optional(),
   timelineFps: z.number().positive().optional(),
-  agentPacketRunnerCommand: z.string().optional(),
-  agentPacketRunnerArgs: z.array(z.string()).optional(),
-  agentPacketRunnerCwd: z.string().optional(),
   jianyingDraftRoot: z.string().optional(),
   jianyingPythonPath: z.string().optional(),
   jianyingPyProjectRoot: z.string().optional(),
@@ -150,16 +148,20 @@ export async function saveIngestRoots(root: string, ingestRoots: IIngestRoots): 
 }
 
 export async function loadProjectRoots(root: string): Promise<IProjectRoots> {
-  const [projectBrief, legacyRoots] = await Promise.all([
+  const [projectBrief, legacyRoots, legacyColorConfig] = await Promise.all([
     loadProjectBriefConfig(root).catch(() => null),
     loadPersistedLegacyProjectRoots(root),
+    readJsonOrNull(join(root, 'color', 'config.json'), IColorConfig)
+      .then(config => (config ? IColorConfig.parse(config) : null)),
   ]);
   if (projectBrief?.mappings?.length) {
     return IProjectRoots.parse({
-      roots: projectBriefToMediaRoots(projectBrief),
+      roots: applyLegacyColorConfig(projectBriefToMediaRoots(projectBrief), legacyColorConfig),
     });
   }
-  return IProjectRoots.parse(legacyRoots);
+  return IProjectRoots.parse({
+    roots: applyLegacyColorConfig(legacyRoots.roots, legacyColorConfig),
+  });
 }
 
 export async function saveProjectRoots(root: string, projectRoots: IProjectRoots): Promise<IProjectRoots> {
@@ -206,4 +208,34 @@ function getRuntimeConfigCandidates(root: string): string[] {
   }
 
   return [...new Set(candidates)];
+}
+
+function applyLegacyColorConfig(
+  roots: IMediaRoot[],
+  legacyColorConfig: IColorConfig | null,
+): IMediaRoot[] {
+  const legacyColorRootById = new Map((legacyColorConfig?.roots ?? []).map(colorRoot => [colorRoot.rootId, colorRoot]));
+  return roots.map(root => {
+    const legacyColorRoot = legacyColorRootById.get(root.id);
+    const legacyRenderPreset = legacyColorRoot?.renderPreset;
+    if (!legacyRenderPreset || !hasRenderPresetValue(legacyRenderPreset) || root.color?.renderPreset) {
+      return root;
+    }
+    return {
+      ...root,
+      color: {
+        ...(root.color ?? {}),
+        renderPreset: legacyRenderPreset,
+      },
+    };
+  });
+}
+
+function hasRenderPresetValue(renderPreset: NonNullable<IColorConfig['roots'][number]['renderPreset']>): boolean {
+  return Boolean(
+    renderPreset.container
+    || renderPreset.videoCodec
+    || renderPreset.audioCodec
+    || typeof renderPreset.bitrateKbps === 'number',
+  );
 }

@@ -30,7 +30,6 @@ import {
   loadIngestRoots,
   loadColorTransformPresetsConfig,
   loadProjectBriefConfig,
-  loadProjectDeviceMediaMaps,
   loadRuntimeConfig,
   resolveWorkspaceProjectRoot,
   saveColorBatchManifest,
@@ -1379,10 +1378,9 @@ async function loadEnabledProjectColorRootSummaries(
   projectId: string,
 ) {
   const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
-  const [projectBrief, projectRoots, deviceMaps, colorCurrent, groupSnapshotsByRootId] = await Promise.all([
+  const [projectBrief, projectRoots, colorCurrent, groupSnapshotsByRootId] = await Promise.all([
     loadProjectBriefConfig(projectRoot).catch(() => null),
     loadIngestRoots(projectRoot),
-    loadProjectDeviceMediaMaps(projectRoot),
     loadColorCurrent(projectRoot),
     loadColorGroupsSnapshots(projectRoot),
   ]);
@@ -1390,7 +1388,6 @@ async function loadEnabledProjectColorRootSummaries(
     projectId,
     projectName: projectBrief?.name,
     projectRoots: projectRoots.roots.filter(root => root.enabled !== false),
-    deviceProjectMap: deviceMaps.projects[projectId],
     colorCurrent,
     resolveBackend: inspectResolveColorBackend(),
     groupSnapshotsByRootId,
@@ -1404,10 +1401,9 @@ async function loadColorRootContext(
   rootId: string,
 ): Promise<IColorRootContext> {
   const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
-  const [projectBrief, projectRoots, deviceMaps, colorCurrent, runtimeConfig, groupSnapshotsByRootId, transformPresetsConfig] = await Promise.all([
+  const [projectBrief, projectRoots, colorCurrent, runtimeConfig, groupSnapshotsByRootId, transformPresetsConfig] = await Promise.all([
     loadProjectBriefConfig(projectRoot).catch(() => null),
     loadIngestRoots(projectRoot),
-    loadProjectDeviceMediaMaps(projectRoot),
     loadColorCurrent(projectRoot),
     loadRuntimeConfig(projectRoot),
     loadColorGroupsSnapshots(projectRoot),
@@ -1420,7 +1416,6 @@ async function loadColorRootContext(
     projectId,
     projectName: projectBrief?.name,
     projectRoots: projectRoots.roots,
-    deviceProjectMap: deviceMaps.projects[projectId],
     colorCurrent,
     resolveBackend: inspectResolveColorBackend(),
     groupSnapshotsByRootId,

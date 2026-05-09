@@ -15,7 +15,6 @@ import {
   loadColorCurrent,
   loadColorTransformPresetsConfig,
   loadIngestRoots,
-  loadProjectDeviceMediaMaps,
   loadRuntimeConfig,
   listWorkspaceProjects,
   loadManualItineraryConfig,
@@ -43,6 +42,10 @@ import {
   buildManualCaptureTimeReviewKey,
 } from '../modules/media/manual-capture-time-shared.js';
 import { buildMediaChronology } from '../modules/media/chronology.js';
+import {
+  resolveMediaRoot,
+  type IMediaRootPathResolution,
+} from '../modules/media/root-resolver.js';
 import {
   buildProjectPharosAssetStatus,
   loadOrBuildProjectPharosContext,
@@ -190,12 +193,11 @@ async function routeRequest(
   if (configMatch && method === 'GET') {
     const projectId = decodeURIComponent(configMatch[1]!);
     const projectRoot = join(options.workspaceRoot, 'projects', projectId);
-    const [projectBrief, manualItinerary, scriptBrief, ingestRoots, deviceMaps, assets, chronology, colorCurrent, runtimeConfig, colorGroupSnapshots, workspaceColorTransformPresets] = await Promise.all([
+    const [projectBrief, manualItinerary, scriptBrief, ingestRoots, assets, chronology, colorCurrent, runtimeConfig, colorGroupSnapshots, workspaceColorTransformPresets] = await Promise.all([
       loadProjectBriefConfig(projectRoot),
       loadManualItineraryConfig(projectRoot),
       loadScriptBriefConfig(projectRoot),
       loadIngestRoots(projectRoot),
-      loadProjectDeviceMediaMaps(projectRoot),
       loadAssets(projectRoot),
       loadChronology(projectRoot),
       loadColorCurrent(projectRoot),
@@ -207,7 +209,6 @@ async function routeRequest(
       projectId,
       projectName: projectBrief.name,
       projectRoots: ingestRoots.roots,
-      deviceProjectMap: deviceMaps.projects[projectId],
       colorCurrent,
       resolveBackend: inspectResolveColorBackend(),
       groupSnapshotsByRootId: colorGroupSnapshots,
@@ -630,6 +631,11 @@ function buildIngestRootSummaries(
   chronology: IMediaChronology[],
 ): Array<{
   rootId: string;
+  localPath?: string;
+  rawLocalPath?: string;
+  pathResolution: IMediaRootPathResolution;
+  rawPathResolution: IMediaRootPathResolution;
+  blockingReasons: string[];
   assetCount: number;
   firstAnchor?: {
     assetId: string;
@@ -656,6 +662,7 @@ function buildIngestRootSummaries(
   }
 
   return roots.map(root => {
+    const resolvedRoot = resolveMediaRoot(root);
     const entries = [...(grouped.get(root.id) ?? [])].sort((left, right) => {
       const leftChronology = chronologyByAssetId.get(left.id);
       const rightChronology = chronologyByAssetId.get(right.id);
@@ -671,6 +678,16 @@ function buildIngestRootSummaries(
 
     return {
       rootId: root.id,
+      localPath: resolvedRoot.localPath,
+      rawLocalPath: resolvedRoot.rawLocalPath,
+      pathResolution: resolvedRoot.localPathResolution,
+      rawPathResolution: resolvedRoot.rawPathResolution,
+      blockingReasons: [
+        !resolvedRoot.localPath ? resolvedRoot.localPathResolution.blocker : '',
+        root.rawPath || root.alternatePaths?.some(alternate => alternate.rawPath)
+          ? (!resolvedRoot.rawLocalPath ? resolvedRoot.rawPathResolution.blocker : '')
+          : '',
+      ].filter((value): value is string => Boolean(value)),
       assetCount: entries.length,
       firstAnchor: first
         ? {

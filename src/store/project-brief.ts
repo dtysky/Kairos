@@ -9,6 +9,7 @@ export interface IProjectBriefTemplateInput {
 export interface IProjectBriefPathMapping {
   path: string;
   rawPath?: string;
+  alternatePaths?: Array<{ path?: string; rawPath?: string }>;
   description: string;
   flightRecordPath?: string;
 }
@@ -42,7 +43,7 @@ export function buildProjectBriefTemplate(
     '',
     `- 项目说明：${description}`,
     `- 创建日期：${createdAt}`,
-    '- 当前状态：已初始化，待登记素材源与设备路径映射',
+    '- 当前状态：已初始化，待登记素材 Root 与路径候选',
     '',
     '## 路径映射',
     '',
@@ -69,7 +70,13 @@ export function buildProjectBriefWithMappings(input: {
   name: string;
   description?: string;
   createdAt?: string;
-  mappings: Array<{ path: string; rawPath?: string; description: string; flightRecordPath?: string }>;
+  mappings: Array<{
+    path: string;
+    rawPath?: string;
+    alternatePaths?: Array<{ path?: string; rawPath?: string }>;
+    description: string;
+    flightRecordPath?: string;
+  }>;
   pharos?: { includedTripIds?: string[] };
   materialPatternPhrases?: string[];
 }): string {
@@ -84,13 +91,20 @@ export function buildProjectBriefWithMappings(input: {
   ).join('\n').trimEnd();
 
   const mappingLines = input.mappings.length > 0
-    ? input.mappings.flatMap(mapping => [
-      `路径：${mapping.path}`,
-      ...(mapping.rawPath ? [`原始路径：${mapping.rawPath}`] : []),
-      `说明：${mapping.description}`,
-      ...(mapping.flightRecordPath ? [`飞行记录路径：${mapping.flightRecordPath}`] : []),
-      '',
-    ])
+    ? input.mappings.flatMap(mapping => {
+      const alternateLines = (mapping.alternatePaths ?? []).flatMap((alternate, index) => [
+        ...(alternate.path ? [`备选路径${index + 1}：${alternate.path}`] : []),
+        ...(alternate.rawPath ? [`原始路径${index + 1}：${alternate.rawPath}`] : []),
+      ]);
+      return [
+        `路径：${mapping.path}`,
+        ...(mapping.rawPath ? [`原始路径：${mapping.rawPath}`] : []),
+        ...alternateLines,
+        `说明：${mapping.description}`,
+        ...(mapping.flightRecordPath ? [`飞行记录路径：${mapping.flightRecordPath}`] : []),
+        '',
+      ];
+    })
     : [
       '路径：',
       '原始路径：',
@@ -142,10 +156,13 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
   let inMaterialPatterns = false;
   let pendingPath: string | null = null;
   let pendingRawPath: string | null = null;
+  let pendingAlternatePaths = new Map<number, { path?: string; rawPath?: string }>();
   let pendingDescription: string | null = null;
   let pendingFlightRecordPath: string | null = null;
   let expectPathValue = false;
   let expectRawPathValue = false;
+  let expectAlternatePathIndex: number | null = null;
+  let expectAlternateRawPathIndex: number | null = null;
   let expectDescriptionValue = false;
   let expectFlightRecordPathValue = false;
   let expectIncludedTripValue = false;
@@ -183,11 +200,13 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
         warnings,
         pendingPath,
         pendingRawPath,
+        pendingAlternatePaths,
         pendingDescription,
         pendingFlightRecordPath,
       );
       pendingPath = null;
       pendingRawPath = null;
+      pendingAlternatePaths = new Map();
       pendingDescription = null;
       pendingFlightRecordPath = null;
       inMappings = false;
@@ -195,6 +214,8 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
       inMaterialPatterns = false;
       expectPathValue = false;
       expectRawPathValue = false;
+      expectAlternatePathIndex = null;
+      expectAlternateRawPathIndex = null;
       expectDescriptionValue = false;
       expectFlightRecordPathValue = false;
       continue;
@@ -206,11 +227,13 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
         warnings,
         pendingPath,
         pendingRawPath,
+        pendingAlternatePaths,
         pendingDescription,
         pendingFlightRecordPath,
       );
       pendingPath = null;
       pendingRawPath = null;
+      pendingAlternatePaths = new Map();
       pendingDescription = null;
       pendingFlightRecordPath = null;
       inMappings = false;
@@ -218,6 +241,8 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
       inMaterialPatterns = true;
       expectPathValue = false;
       expectRawPathValue = false;
+      expectAlternatePathIndex = null;
+      expectAlternateRawPathIndex = null;
       expectDescriptionValue = false;
       expectFlightRecordPathValue = false;
       expectIncludedTripValue = false;
@@ -230,11 +255,13 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
         warnings,
         pendingPath,
         pendingRawPath,
+        pendingAlternatePaths,
         pendingDescription,
         pendingFlightRecordPath,
       );
       pendingPath = null;
       pendingRawPath = null;
+      pendingAlternatePaths = new Map();
       pendingDescription = null;
       pendingFlightRecordPath = null;
       inMappings = false;
@@ -242,6 +269,8 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
       inMaterialPatterns = false;
       expectPathValue = false;
       expectRawPathValue = false;
+      expectAlternatePathIndex = null;
+      expectAlternateRawPathIndex = null;
       expectDescriptionValue = false;
       expectFlightRecordPathValue = false;
       expectIncludedTripValue = false;
@@ -283,11 +312,13 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
         warnings,
         pendingPath,
         pendingRawPath,
+        pendingAlternatePaths,
         pendingDescription,
         pendingFlightRecordPath,
       );
       pendingPath = null;
       pendingRawPath = null;
+      pendingAlternatePaths = new Map();
       pendingDescription = null;
       pendingFlightRecordPath = null;
 
@@ -299,6 +330,44 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
         expectPathValue = true;
       }
       expectRawPathValue = false;
+      expectAlternatePathIndex = null;
+      expectAlternateRawPathIndex = null;
+      expectDescriptionValue = false;
+      expectFlightRecordPathValue = false;
+      continue;
+    }
+
+    const alternatePathMatch = line.match(/^备选路径\s*(\d+)：(.+)?$/u);
+    if (alternatePathMatch) {
+      const index = Number(alternatePathMatch[1]);
+      const value = (alternatePathMatch[2] ?? '').trim();
+      if (value) {
+        setPendingAlternatePath(pendingAlternatePaths, index, 'path', value);
+        expectAlternatePathIndex = null;
+      } else {
+        expectAlternatePathIndex = index;
+      }
+      expectPathValue = false;
+      expectRawPathValue = false;
+      expectAlternateRawPathIndex = null;
+      expectDescriptionValue = false;
+      expectFlightRecordPathValue = false;
+      continue;
+    }
+
+    const alternateRawPathMatch = line.match(/^原始路径\s*(\d+)：(.+)?$/u);
+    if (alternateRawPathMatch) {
+      const index = Number(alternateRawPathMatch[1]);
+      const value = (alternateRawPathMatch[2] ?? '').trim();
+      if (value) {
+        setPendingAlternatePath(pendingAlternatePaths, index, 'rawPath', value);
+        expectAlternateRawPathIndex = null;
+      } else {
+        expectAlternateRawPathIndex = index;
+      }
+      expectPathValue = false;
+      expectRawPathValue = false;
+      expectAlternatePathIndex = null;
       expectDescriptionValue = false;
       expectFlightRecordPathValue = false;
       continue;
@@ -350,6 +419,18 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
       continue;
     }
 
+    if (expectAlternatePathIndex !== null) {
+      setPendingAlternatePath(pendingAlternatePaths, expectAlternatePathIndex, 'path', line);
+      expectAlternatePathIndex = null;
+      continue;
+    }
+
+    if (expectAlternateRawPathIndex !== null) {
+      setPendingAlternatePath(pendingAlternatePaths, expectAlternateRawPathIndex, 'rawPath', line);
+      expectAlternateRawPathIndex = null;
+      continue;
+    }
+
     if (expectDescriptionValue) {
       pendingDescription = line;
       expectDescriptionValue = false;
@@ -367,6 +448,7 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
     warnings,
     pendingPath,
     pendingRawPath,
+    pendingAlternatePaths,
     pendingDescription,
     pendingFlightRecordPath,
   );
@@ -421,6 +503,7 @@ function pushPendingMapping(
   warnings: string[],
   path: string | null,
   rawPath: string | null,
+  alternatePaths: Map<number, { path?: string; rawPath?: string }>,
   description: string | null,
   flightRecordPath: string | null,
 ): void {
@@ -434,6 +517,7 @@ function pushPendingMapping(
     out.push({
       path,
       rawPath: rawPath ?? undefined,
+      alternatePaths: normalizeAlternatePaths(alternatePaths),
       description: '（待补充说明）',
       flightRecordPath: flightRecordPath ?? undefined,
     });
@@ -442,9 +526,39 @@ function pushPendingMapping(
   out.push({
     path,
     rawPath: rawPath ?? undefined,
+    alternatePaths: normalizeAlternatePaths(alternatePaths),
     description,
     flightRecordPath: flightRecordPath ?? undefined,
   });
+}
+
+function setPendingAlternatePath(
+  alternatePaths: Map<number, { path?: string; rawPath?: string }>,
+  index: number,
+  key: 'path' | 'rawPath',
+  value: string,
+): void {
+  if (!Number.isInteger(index) || index < 1) return;
+  const trimmed = value.trim();
+  if (!trimmed) return;
+  const existing = alternatePaths.get(index) ?? {};
+  alternatePaths.set(index, {
+    ...existing,
+    [key]: trimmed,
+  });
+}
+
+function normalizeAlternatePaths(
+  alternatePaths: Map<number, { path?: string; rawPath?: string }>,
+): Array<{ path?: string; rawPath?: string }> | undefined {
+  const normalized = [...alternatePaths.entries()]
+    .sort((left, right) => left[0] - right[0])
+    .map(([, value]) => ({
+      path: value.path?.trim() || undefined,
+      rawPath: value.rawPath?.trim() || undefined,
+    }))
+    .filter(value => Boolean(value.path || value.rawPath));
+  return normalized.length > 0 ? normalized : undefined;
 }
 
 function findDuplicatePaths(mappings: IProjectBriefPathMapping[]): string[] {

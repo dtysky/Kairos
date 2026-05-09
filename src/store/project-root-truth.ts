@@ -12,6 +12,10 @@ export type TProjectBriefMappingInput = {
   rootId?: string;
   path?: string;
   rawPath?: string;
+  alternatePaths?: Array<{
+    path?: string;
+    rawPath?: string;
+  }>;
   description?: string;
   flightRecordPath?: string;
   enabled?: boolean;
@@ -53,6 +57,19 @@ function trimStringList(values: unknown): string[] | undefined {
     .map(value => trimString(value))
     .filter((value): value is string => Boolean(value));
   return normalized.length > 0 ? [...new Set(normalized)] : undefined;
+}
+
+function normalizeAlternatePaths(
+  values?: Array<{ path?: string; rawPath?: string }>,
+): Array<{ path?: string; rawPath?: string }> | undefined {
+  if (!Array.isArray(values)) return undefined;
+  const normalized = values
+    .map(value => ({
+      path: trimString(value?.path),
+      rawPath: trimString(value?.rawPath),
+    }))
+    .filter(value => Boolean(value.path || value.rawPath));
+  return normalized.length > 0 ? normalized : undefined;
 }
 
 function normalizeCategory(value: unknown): IMediaRoot['category'] {
@@ -198,13 +215,16 @@ function buildMappingFromInput(
   const tags = trimStringList(mapping.tags) ?? trimStringList(legacyRoot?.tags);
   const priority = normalizePriority(mapping.priority, legacyRoot?.priority ?? (index + 1));
   const label = trimString(mapping.label) ?? trimString(legacyRoot?.label) ?? deriveProjectBriefRootLabel(path, index);
+  const alternatePaths = normalizeAlternatePaths(mapping.alternatePaths)
+    ?? normalizeAlternatePaths(legacyRoot?.alternatePaths);
 
   return {
     rootId: explicitRootId ?? legacyRoot?.id ?? derivedRootId,
     path,
     rawPath: rawPath ?? trimString(legacyRoot?.rawPath),
+    alternatePaths,
     description: description ?? trimString(legacyRoot?.description) ?? '（待补充说明）',
-    flightRecordPath,
+    flightRecordPath: flightRecordPath ?? trimString(legacyRoot?.flightRecordPath),
     enabled: typeof mapping.enabled === 'boolean' ? mapping.enabled : legacyRoot?.enabled ?? true,
     label,
     clockOffsetMs: normalizeClockOffset(mapping.clockOffsetMs) ?? legacyRoot?.clockOffsetMs,
@@ -255,6 +275,8 @@ export function projectBriefToMediaRoots(config: Pick<IProjectBriefConfig, 'mapp
     id: mapping.rootId,
     path: trimString(mapping.path),
     rawPath: trimString(mapping.rawPath),
+    flightRecordPath: trimString(mapping.flightRecordPath),
+    alternatePaths: normalizeAlternatePaths(mapping.alternatePaths),
     label: trimString(mapping.label) ?? deriveProjectBriefRootLabel(mapping.path, index),
     enabled: typeof mapping.enabled === 'boolean' ? mapping.enabled : true,
     clockOffsetMs: normalizeClockOffset(mapping.clockOffsetMs),
@@ -296,12 +318,14 @@ export function mediaRootsToProjectBriefMappings(
     const renderPreset = normalizeRenderPreset(root.color?.renderPreset ?? existing?.color?.renderPreset);
     const colorSpaceProfile = normalizeColorSpaceProfile(root.color?.colorSpaceProfile ?? existing?.color?.colorSpaceProfile);
     const transformPresetKey = normalizeTransformPresetKey(root.color?.transformPresetKey ?? existing?.color?.transformPresetKey);
+    const alternatePaths = normalizeAlternatePaths(root.alternatePaths) ?? normalizeAlternatePaths(existing?.alternatePaths);
     result.push({
       rootId: trimString(root.id) ?? existing?.rootId ?? derivedRootId,
       path,
       rawPath: trimString(root.rawPath) ?? trimString(existing?.rawPath),
+      alternatePaths,
       description: trimString(root.description) ?? trimString(existing?.description) ?? '（待补充说明）',
-      flightRecordPath: trimString(existing?.flightRecordPath),
+      flightRecordPath: trimString(root.flightRecordPath) ?? trimString(existing?.flightRecordPath),
       enabled: root.enabled ?? existing?.enabled ?? true,
       label: trimString(root.label) ?? trimString(existing?.label) ?? deriveProjectBriefRootLabel(path, index),
       clockOffsetMs: normalizeClockOffset(root.clockOffsetMs) ?? existing?.clockOffsetMs,

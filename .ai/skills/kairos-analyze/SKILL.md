@@ -54,7 +54,6 @@ analyzeWorkspaceProjectMedia(input: {
   workspaceRoot: string;
   projectId: string;
   assetIds?: string[];
-  deviceMapPath?: string;
   gpxPaths?: string[];
   gpxMatchToleranceMs?: number;
   budget?: 'coarse' | 'standard' | 'deep';
@@ -70,8 +69,8 @@ analyzeWorkspaceProjectMedia(input: {
 }>
 ```
 
-`deviceMapPath` 通常不用显式传。省略时，Analyze 默认读取当前项目内的
-`config/device-media-maps.local.json`。
+Analyze 会从 `project-brief` 的主路径与备选路径中解析当前可读素材目录；
+不再读取 `device-media-maps.local.json`。
 
 ## ML 前置条件
 
@@ -321,7 +320,7 @@ const reports = await loadAssetReports(projectRoot);
 3. 解析真实本机路径
 
 ```typescript
-const localPath = resolveAssetLocalPath(projectId, asset, roots, deviceMaps);
+const localPath = resolveAssetLocalPath(asset, roots);
 ```
 
 4. 生成视觉粗扫结果

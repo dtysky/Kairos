@@ -345,10 +345,10 @@
 
 当前实现已先落地 `2026-04-17--davinci-color-independent-workflow-v1` 中已冻结的基础设施部分：
 
-- `project-brief` 路径映射可选带 `原始路径`
+- `project-brief` 路径映射可选带 `原始路径` 与有序 `备选路径N / 原始路径N`
 - `/ingest-gps` 当前以结构化 `素材 Root` 编辑器作为正式用户入口，并在保存时把这些字段写入 `project-brief.json` 单真值并回写 `project-brief.md` 镜像
-- `IMediaRoot.rawPath` 与设备映射 `rawLocalPath` 已进入正式配置链
-- 若 `rawPath/rawLocalPath` 位于当前素材目录内部，ingest 会把该子树视为正式排除项，而不是把 raw 与当前输出一起扫描
+- `IMediaRoot.rawPath` 与 `alternatePaths` 已进入正式配置链；`device-media-maps.local.json` 不再参与正式路径解析
+- 若解析后的 `rawLocalPath` 位于当前素材目录内部，ingest 会把该子树视为正式排除项，而不是把 raw 与当前输出一起扫描
 - 项目级 `color/` 目录已作为独立调色链最小 runtime/archive store 进入项目结构
 - `Supervisor + React console` 已有最小 `/color` 主路由，用于显示 root 级调色状态与最小 `renderPreset`
 - `/color` 当前会自动发现已配置 `rawPath` 的素材根，补齐约定 Resolve 命名 / codec 展示字段，并派生缺失 `rawLocalPath`、缺失 bitrate 等阻塞信息
@@ -747,7 +747,7 @@ src/modules/color/
 
 **关键流程**：
 ```
-读取 `project-brief` 单真值 root 配置 + device map + runtime config
+读取 `project-brief` 单真值 root 配置 + 路径候选解析结果 + runtime config
   → `/color` 自动发现已配置 `rawPath` 的 roots，并派生约定命名与 blockers
   → `prepare_root` 调用 official Python host，真实同步 `rawLocalPath` 到 root namespace bin 树，确保 grading timeline 已装入可执行 clips，并按 explainable technical signals 创建/复用 Resolve Groups
   → `sync_groups` 只同步该 root grading timeline 上实际出现的正式 Groups，并写 `color/groups/<rootId>.json`

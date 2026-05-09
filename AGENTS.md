@@ -100,9 +100,10 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
 - Prefer Windows PowerShell in this repository unless the user explicitly asks for WSL or the step is Linux-only.
 - Treat `projects/<projectId>/pharos/` as a project-local fixed inbox: project init should create it, and Console-side project config loading should repair it if it is missing before asking the user to place trip mirrors.
 - Treat `config/project-brief.json` as the single structured truth for root config; `project-brief.md` is only the human-readable mirror.
-- Treat `project-brief` path mappings as the formal place to declare both current media roots and optional `原始路径`.
+- Treat `project-brief` path mappings as the only formal place to declare current media roots, optional `原始路径`, and ordered alternates (`备选路径N` / `原始路径N`).
 - Treat `/ingest-gps` `素材 Root` as the formal structured editor for those path mappings; normal user operation should not be routed back to hand-editing Markdown.
-- Treat nested `rawPath/rawLocalPath` as a formal ingest exclusion boundary: the mainflow should scan the current media directory, but must not recurse into the raw subtree when it lives inside that directory.
+- Do not use `device-media-maps.local.json` as a formal config or cache; runtime path resolution must come directly from the readable `project-brief` primary/alternate path candidates.
+- Treat nested resolved `rawLocalPath` as a formal ingest exclusion boundary: the mainflow should scan the resolved current media directory, but must not recurse into the resolved raw subtree when it lives inside that directory.
 - Treat `/color` as root-discovery-first: roots with `rawPath` should auto-appear with derived blockers/status, and Resolve naming should remain convention-derived and read-only.
 - Treat `.ai/knowledge/davinci-resolve-scripting.md` as the local working DaVinci Resolve scripting documentation; any DaVinci Resolve scripting, `/color`, Resolve export, DRX/DRT, LUT automation, render job, group, node graph, or vendored host task must read it and then verify version-sensitive methods against the installed Resolve `README.txt`.
 - Treat `/color` main root cards as a two-path UI: user-facing fields are `当前素材路径` and `原始素材路径`; derived Resolve naming belongs in advanced/debug display, not the primary form.

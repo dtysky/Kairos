@@ -1,7 +1,6 @@
 import { readdir } from 'node:fs/promises';
 import { basename, join, parse } from 'node:path';
 import type {
-  IDeviceMediaMapFile,
   IKtepAsset,
   IMediaRoot,
   IProtectionAudioBinding,
@@ -51,18 +50,16 @@ export async function resolveProtectionAudioBinding(input: {
 }
 
 export function resolveProtectionAudioLocalPath(
-  projectId: string,
   asset: IKtepAsset,
   roots: IMediaRoot[],
-  deviceMaps: IDeviceMediaMapFile,
 ): string | null {
   const sourcePath = asset.protectionAudio?.sourcePath;
   if (!sourcePath) return null;
 
-  return resolveAssetLocalPath(projectId, {
+  return resolveAssetLocalPath({
     ingestRootId: asset.ingestRootId,
     sourcePath,
-  }, roots, deviceMaps);
+  }, roots);
 }
 
 export function canUseProtectionAudio(binding?: IProtectionAudioBinding | null): boolean {

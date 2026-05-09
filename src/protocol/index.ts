@@ -158,9 +158,6 @@ export {
   ISpatialStoryContext,
   IAgentContract,
   IStoreManifest,
-  IDeviceMediaRootPath,
-  IDeviceMediaProjectMap,
-  IDeviceMediaMapFile,
 } from './schema.js';
 
 export {

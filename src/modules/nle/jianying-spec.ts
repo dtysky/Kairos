@@ -1,10 +1,9 @@
 import { execFile } from 'node:child_process';
 import { mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { basename, join } from 'node:path';
+import { join } from 'node:path';
 import { promisify } from 'node:util';
 import type {
-  IDeviceMediaMapFile,
   IKtepAsset,
   IKtepClip,
   IKtepDoc,
@@ -15,7 +14,6 @@ import type {
 import { validateKtepDoc } from '../../protocol/validator.js';
 import { resolveProtectionAudioLocalPath } from '../media/protection-audio.js';
 import { resolveAssetLocalPath } from '../media/root-resolver.js';
-import { loadProjectDeviceMediaMaps } from '../../store/device-media-maps.js';
 import { loadIngestRoots } from '../../store/project.js';
 import type { INleIdMap } from './adapter.js';
 import { createIdMap } from './adapter.js';
@@ -105,9 +103,7 @@ export interface IJianyingBuilderConfig {
   subtitleY?: number;
   subtitleSize?: number;
   projectRoot?: string;
-  deviceMapProjectId?: string;
   mediaRoots?: IMediaRoot[];
-  deviceMaps?: IDeviceMediaMapFile;
   ffmpegPath?: string;
 }
 
@@ -119,9 +115,7 @@ const CDEFAULTS = {
 const CGENERATED_SUBTITLE_TRACK_ID = '__generated_subtitles__';
 
 interface IAssetResolutionContext {
-  projectId: string;
   roots: IMediaRoot[];
-  deviceMaps: IDeviceMediaMapFile;
 }
 
 interface IResolvedClipMaterial {
@@ -354,42 +348,16 @@ export class JianyingDraftBuilder {
   }
 
   private async loadAssetResolutionContext(): Promise<IAssetResolutionContext | null> {
-    if (this.config.mediaRoots && this.config.deviceMaps) {
-      const projectId = resolveDeviceMapProjectId(
-        this.config.projectRoot,
-        this.config.deviceMaps,
-        this.config.deviceMapProjectId,
-        this.projectId,
-      );
-      return {
-        projectId,
-        roots: this.config.mediaRoots,
-        deviceMaps: this.config.deviceMaps,
-      };
+    if (this.config.mediaRoots) {
+      return { roots: this.config.mediaRoots };
     }
 
     if (!this.config.projectRoot) return null;
 
-    const [ingestRoots, deviceMaps] = await Promise.all([
-      this.config.mediaRoots
-        ? Promise.resolve(this.config.mediaRoots)
-        : loadIngestRoots(this.config.projectRoot).then(data => data.roots),
-      this.config.deviceMaps
-        ? Promise.resolve(this.config.deviceMaps)
-        : loadProjectDeviceMediaMaps(this.config.projectRoot),
-    ]);
-
-    const projectId = resolveDeviceMapProjectId(
-      this.config.projectRoot,
-      deviceMaps,
-      this.config.deviceMapProjectId,
-      this.projectId,
-    );
+    const ingestRoots = await loadIngestRoots(this.config.projectRoot).then(data => data.roots);
 
     return {
-      projectId,
       roots: ingestRoots,
-      deviceMaps,
     };
   }
 
@@ -408,11 +376,11 @@ export class JianyingDraftBuilder {
       );
     }
 
-    const resolved = resolveAssetLocalPath(context.projectId, asset, context.roots, context.deviceMaps);
+    const resolved = resolveAssetLocalPath(asset, context.roots);
     if (!resolved) {
       const rootHint = asset.ingestRootId ?? 'unknown-ingest-root';
       throw new Error(
-        `Unable to resolve asset ${asset.id} (${asset.sourcePath}) from ingest root ${rootHint}. Check device media mappings or pass deviceMapProjectId explicitly.`,
+        `Unable to resolve asset ${asset.id} (${asset.sourcePath}) from ingest root ${rootHint}. Check project-brief path candidates.`,
       );
     }
 
@@ -440,15 +408,13 @@ export class JianyingDraftBuilder {
     }
 
     const resolved = resolveProtectionAudioLocalPath(
-      context.projectId,
       asset,
       context.roots,
-      context.deviceMaps,
     );
     if (!resolved) {
       const rootHint = asset.ingestRootId ?? 'unknown-ingest-root';
       throw new Error(
-        `Unable to resolve protection audio for asset ${asset.id} from ingest root ${rootHint}. Check device media mappings or sidecar binding.`,
+        `Unable to resolve protection audio for asset ${asset.id} from ingest root ${rootHint}. Check project-brief path candidates or sidecar binding.`,
       );
     }
 
@@ -790,23 +756,6 @@ function parseLoudnormMetrics(stderr: string): { integratedLufs: number; truePea
 
 function msToFfmpegTime(ms: number): string {
   return (Math.max(0, ms) / 1000).toFixed(3);
-}
-
-function resolveDeviceMapProjectId(
-  projectRoot: string | undefined,
-  deviceMaps: IDeviceMediaMapFile,
-  explicitProjectId: string | undefined,
-  docProjectId: string | undefined,
-): string {
-  if (explicitProjectId?.trim()) return explicitProjectId.trim();
-
-  const projectRootId = projectRoot ? basename(projectRoot) : null;
-  if (projectRootId && deviceMaps.projects[projectRootId]) return projectRootId;
-  if (docProjectId && deviceMaps.projects[docProjectId]) return docProjectId;
-
-  const projectIds = Object.keys(deviceMaps.projects);
-  if (projectIds.length === 1) return projectIds[0]!;
-  return projectRootId ?? docProjectId ?? '';
 }
 
 function createUniqueTrackName(existing: string[], baseName: string): string {

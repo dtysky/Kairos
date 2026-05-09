@@ -6,7 +6,6 @@ import type {
   ETargetBudget,
   IAudioHealthSummary,
   IAssetCoarseReport,
-  IDeviceMediaMapFile,
   IInferredGps,
   IKtepAsset,
   IKtepEvidence,
@@ -24,7 +23,6 @@ import {
   loadAssetReports,
   loadAssets,
   loadChronology,
-  loadProjectDeviceMediaMaps,
   loadIngestRoots,
   loadPreparedAssetCheckpoint,
   loadProjectDerivedTrack,
@@ -77,7 +75,7 @@ import type { IMlVlmTiming } from './ml-client.js';
 import { probe } from './probe.js';
 import { resolveProtectionAudioLocalPath } from './protection-audio.js';
 import { recognizeFrames, recognizeShotGroups, type IRecognition } from './recognizer.js';
-import { resolveAssetLocalPath } from './root-resolver.js';
+import { resolveAssetLocalPath, resolveMediaRoot } from './root-resolver.js';
 import {
   applyAnalysisDecision,
   buildAnalysisPlan,
@@ -121,7 +119,6 @@ export interface IAnalyzeWorkspaceProjectInput {
   workspaceRoot: string;
   projectId: string;
   assetIds?: string[];
-  deviceMapPath?: string;
   gpxPaths?: string[];
   gpxMatchToleranceMs?: number;
   budget?: ETargetBudget;
@@ -214,9 +211,8 @@ export async function analyzeWorkspaceProjectMedia(
     })
     : undefined;
   const performanceProfilePath = performance?.resolveOutputPath(input.performanceProfile?.outputPath);
-  const [{ roots }, deviceMaps, runtimeConfig, assets, existingReports, existingSlices, project, derivedTrack, projectBrief] = await Promise.all([
+  const [{ roots }, runtimeConfig, assets, existingReports, existingSlices, project, derivedTrack, projectBrief] = await Promise.all([
     loadIngestRoots(projectRoot),
-    loadProjectDeviceMediaMaps(projectRoot, input.deviceMapPath),
     loadRuntimeConfig(projectRoot),
     loadAssets(projectRoot),
     loadAssetReports(projectRoot),
@@ -361,7 +357,7 @@ export async function analyzeWorkspaceProjectMedia(
     current: progressBase,
     total: progressTotal,
     unit: 'files',
-    detail: `正在读取项目“${project.name}”的素材与设备映射`,
+    detail: `正在读取项目“${project.name}”的素材与路径候选`,
         extra: {
           projectId: input.projectId,
           projectName: project.name,
@@ -386,7 +382,6 @@ export async function analyzeWorkspaceProjectMedia(
       pendingAssets,
       projectRoot,
       roots,
-      deviceMaps,
       runtimeConfig,
       getMlHandle,
       performance,
@@ -401,7 +396,6 @@ export async function analyzeWorkspaceProjectMedia(
       preparedAnalyses,
       projectRoot,
       roots,
-      deviceMaps,
       runtimeConfig,
       getMlHandle,
       performance,
@@ -452,7 +446,6 @@ export async function analyzeWorkspaceProjectMedia(
           audioContext: audioContextsByAssetId.get(prepared.asset.id),
           projectRoot,
           roots,
-          deviceMaps,
           derivedTrack,
           pharosContext,
           gpxPaths,
@@ -537,7 +530,6 @@ export async function analyzeWorkspaceProjectMedia(
       projectRoot,
       entries: pendingFineScanEntries,
       roots,
-      deviceMaps,
       runtimeConfig,
       getMlHandle,
       performance,
@@ -593,7 +585,7 @@ export async function analyzeWorkspaceProjectMedia(
     performance?.recordChronologyRefresh(Date.now() - chronologyStartedAt);
 
     const missingRoots = roots.filter(
-      root => root.enabled && !resolveAssetRootAvailable(input.projectId, root, deviceMaps),
+      root => root.enabled && !resolveAssetRootAvailable(root),
     );
 
     await writeAnalyzeStepProgress({
@@ -673,7 +665,6 @@ async function runCoarseScanPipeline(input: {
   pendingAssets: IKtepAsset[];
   projectRoot: string;
   roots: IMediaRoot[];
-  deviceMaps: IDeviceMediaMapFile;
   runtimeConfig: IAnalyzeSingleAssetInput['runtimeConfig'];
   getMlHandle: () => Promise<MlAvailability>;
   performance?: AnalyzePerformanceSession;
@@ -687,7 +678,7 @@ async function runCoarseScanPipeline(input: {
 
   const limits = resolveCoarseScanLimits(input.runtimeConfig);
   const tasks: ICoarseScanTaskState[] = input.pendingAssets.map((asset, index) => {
-    const localPath = resolveAssetLocalPath(input.projectId, asset, input.roots, input.deviceMaps);
+    const localPath = resolveAssetLocalPath(asset, input.roots);
     return {
       index,
       asset,
@@ -804,7 +795,6 @@ async function runAudioAnalysisPipeline(input: {
   preparedAnalyses: IPreparedAssetAnalysis[];
   projectRoot: string;
   roots: IMediaRoot[];
-  deviceMaps: IDeviceMediaMapFile;
   runtimeConfig: IAnalyzeSingleAssetInput['runtimeConfig'];
   getMlHandle: () => Promise<MlAvailability>;
   performance?: AnalyzePerformanceSession;
@@ -906,7 +896,6 @@ async function runAudioAnalysisPipeline(input: {
         projectId: input.projectId,
         projectRoot: input.projectRoot,
         roots: input.roots,
-        deviceMaps: input.deviceMaps,
       }));
     }
 
@@ -1019,13 +1008,11 @@ async function runAudioAnalysisLocalTask(input: {
   projectId: string;
   projectRoot: string;
   roots: IMediaRoot[];
-  deviceMaps: IDeviceMediaMapFile;
 }): Promise<IAudioAnalysisTaskState> {
   const protectionAudioLocalPath = await resolveAvailableProtectionAudioLocalPath({
     projectId: input.projectId,
     asset: input.task.prepared.asset,
     roots: input.roots,
-    deviceMaps: input.deviceMaps,
   });
   const hasAvailableProtectionAudio = Boolean(protectionAudioLocalPath);
 
@@ -1059,7 +1046,6 @@ async function runAudioAnalysisLocalTask(input: {
       localVideoPath: input.task.prepared.localPath,
       hasAudioTrack: input.task.prepared.hasAudioTrack,
       roots: input.roots,
-      deviceMaps: input.deviceMaps,
       runtimeConfig: input.task.prepared.runtimeConfig,
       protectionAudioLocalPath,
     })
@@ -1240,7 +1226,6 @@ interface IFinalizePreparedAssetInput {
   audioContext?: IAudioAnalysisContext;
   projectRoot: string;
   roots: IMediaRoot[];
-  deviceMaps: IDeviceMediaMapFile;
   derivedTrack?: IProjectDerivedTrack | null;
   pharosContext?: Awaited<ReturnType<typeof loadOrBuildProjectPharosContext>> | null;
   gpxPaths?: string[];
@@ -1560,7 +1545,6 @@ async function loadOrAnalyzePreparedAudio(input: {
   projectRoot: string;
   prepared: IPreparedAssetAnalysis;
   roots: IMediaRoot[];
-  deviceMaps: IDeviceMediaMapFile;
   ml: MlAvailability;
   onStageChange?: (stage: 'finalize', detail?: string) => Promise<void>;
   performance?: AnalyzePerformanceSession;
@@ -1571,7 +1555,6 @@ async function loadOrAnalyzePreparedAudio(input: {
     projectId: input.projectId,
     asset: input.prepared.asset,
     roots: input.roots,
-    deviceMaps: input.deviceMaps,
   });
   const hasAvailableProtectionAudio = Boolean(protectionAudioLocalPath);
 
@@ -1603,7 +1586,6 @@ async function loadOrAnalyzePreparedAudio(input: {
     localVideoPath: input.prepared.localPath,
     hasAudioTrack: input.prepared.hasAudioTrack,
     roots: input.roots,
-    deviceMaps: input.deviceMaps,
     runtimeConfig: input.prepared.runtimeConfig,
     protectionAudioLocalPath,
   });
@@ -2648,7 +2630,6 @@ export async function evaluateProtectedAudioFallback(input: {
   localVideoPath: string;
   hasAudioTrack: boolean;
   roots: IMediaRoot[];
-  deviceMaps: IDeviceMediaMapFile;
   runtimeConfig: IPreparedAssetAnalysis['runtimeConfig'];
   protectionAudioLocalPath?: string | null;
 }): Promise<{
@@ -2679,7 +2660,6 @@ export async function evaluateProtectedAudioFallback(input: {
     projectId: input.projectId,
     asset: input.asset,
     roots: input.roots,
-    deviceMaps: input.deviceMaps,
   });
   const protectionHealth = protectionLocalPath
     ? summarizeAudioHealth({
@@ -2843,13 +2823,10 @@ async function resolveAvailableProtectionAudioLocalPath(input: {
   projectId: string;
   asset: IKtepAsset;
   roots: IMediaRoot[];
-  deviceMaps: IDeviceMediaMapFile;
 }): Promise<string | null> {
   const localPath = resolveProtectionAudioLocalPath(
-    input.projectId,
     input.asset,
     input.roots,
-    input.deviceMaps,
   );
   if (!localPath) return null;
 
@@ -5174,14 +5151,13 @@ async function loadPendingFineScanAnalyses(input: {
   projectRoot: string;
   entries: IResumeFineScanEntry[];
   roots: IMediaRoot[];
-  deviceMaps: IDeviceMediaMapFile;
   runtimeConfig: IAnalyzeSingleAssetInput['runtimeConfig'];
   getMlHandle: () => Promise<MlAvailability>;
   performance?: AnalyzePerformanceSession;
 }): Promise<IFinalizedAssetAnalysis[]> {
   const analyses: IFinalizedAssetAnalysis[] = [];
   for (const entry of input.entries) {
-    const localPath = resolveAssetLocalPath(input.projectId, entry.asset, input.roots, input.deviceMaps);
+    const localPath = resolveAssetLocalPath(entry.asset, input.roots);
     if (!localPath) continue;
 
     const prepared = await loadPreparedAssetVisualCoarse({
@@ -5568,14 +5544,8 @@ function dedupeByJson<T>(
   return deduped;
 }
 
-function resolveAssetRootAvailable(
-  projectId: string,
-  root: IMediaRoot,
-  deviceMaps: IDeviceMediaMapFile,
-): boolean {
-  const projectMap = deviceMaps.projects[projectId];
-  if (!projectMap) return Boolean(root.path);
-  return projectMap.roots.some(item => item.rootId === root.id) || Boolean(root.path);
+function resolveAssetRootAvailable(root: IMediaRoot): boolean {
+  return Boolean(resolveMediaRoot(root).localPath);
 }
 
 function dedupeStrings(values: Array<string | undefined>): string[] {

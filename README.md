@@ -33,9 +33,10 @@ Current stable pipeline:
   - 项目内跨设备时钟漂移当前也通过这里正式修正：`/ingest-gps` 会并列提供 root 级“设备时钟偏移”面板与单素材 `captureTimeOverrides`
   - root 级偏移当前写入 `config/project-brief.json` 对应 mapping 的 `clockOffsetMs`；单素材 `captureTimeOverrides` 继续作为更高优先级例外层
   - `media/chronology.json` 的 `sortCapturedAt` 当前是 Script / Timeline 共享的唯一时序真值：优先 `capturedAtOverride`，其次 `asset.capturedAt + root.clockOffsetMs`，最后才回退原始 `asset.capturedAt`
-  - `project-brief` 的每个路径映射块现在可选声明 `原始路径`
-  - `原始路径` 会同步到 `project-brief.json` 单真值 mapping 的 `rawPath`，并同步到 `config/device-media-maps.local.json` 的 `rawLocalPath`
-  - 若 `rawPath/rawLocalPath` 位于当前素材目录内部，主链 ingest 扫描会显式排除该子树；没有 `rawPath` 的 root 不受影响
+  - `project-brief` 的每个路径映射块现在可选声明 `原始路径`，并可用 `备选路径N / 原始路径N` 声明跨设备候选路径
+  - 路径解析直接来自 `project-brief.json` 单真值：`path -> 备选路径N` 选择当前可读素材目录，`rawPath -> 原始路径N` 独立选择当前可读原始目录
+  - `device-media-maps.local.json` 不再是正式配置或缓存；旧项目内残留文件可安全删除
+  - 若解析后的 `rawLocalPath` 位于当前素材目录内部，主链 ingest 扫描会显式排除该子树；没有 `rawPath` 的 root 不受影响
 - official local runtime / monitor entry is `Supervisor + React console (apps/kairos-console/)`
   - `http://127.0.0.1:8940/analyze` is the official Analyze monitor route
   - `http://127.0.0.1:8940/style` is the official workspace-level Style monitor route
