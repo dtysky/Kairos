@@ -50,6 +50,18 @@ export function runProjectColorPreflight(projectId, payload = {}) {
   return apiPost(`/api/projects/${encodeURIComponent(projectId)}/color/preflight`, payload);
 }
 
+export function fetchProjectColorOverwritePreview(projectId, payload = {}) {
+  return apiPost(`/api/projects/${encodeURIComponent(projectId)}/color/render-overwrite-preview`, payload);
+}
+
+export function saveProjectColorDrpSnapshot(projectId, payload = {}) {
+  return apiPost(`/api/projects/${encodeURIComponent(projectId)}/color/drp-snapshot`, payload);
+}
+
+export function registerProjectColorDrpSnapshot(projectId, payload = {}) {
+  return apiPost(`/api/projects/${encodeURIComponent(projectId)}/color/drp-snapshot/register`, payload);
+}
+
 export function fetchWorkspaceStyleConfig() {
   return apiGet('/api/workspace/config/style-sources');
 }

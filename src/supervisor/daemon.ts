@@ -13,6 +13,7 @@ import {
   loadChronology,
   loadColorGroupsSnapshots,
   loadColorCurrent,
+  loadColorResolveProjectMap,
   loadColorTransformPresetsConfig,
   loadIngestRoots,
   loadRuntimeConfig,
@@ -21,6 +22,7 @@ import {
   loadProjectBriefConfig,
   loadReviewQueue,
   loadScriptBriefConfig,
+  saveColorCurrent,
   saveIngestRoots,
   loadStyleSourcesConfig,
   resolveReviewItem,
@@ -30,12 +32,16 @@ import {
   saveStyleSourcesConfig,
   syncWorkspaceProjectBrief,
   touchProjectUpdatedAt,
+  writeKairosProgress,
   writeChronology,
 } from '../store/index.js';
 import {
   buildColorWorkspaceState,
   inspectResolveColorBackend,
   preflightProjectColorHost,
+  previewProjectColorOverwrite,
+  registerExternalColorDrpSnapshot,
+  snapshotProjectColorDrp,
 } from '../modules/color/index.js';
 import {
   buildCaptureTimeReviewItems,
@@ -130,6 +136,7 @@ async function routeRequest(
   const pathname = url.pathname;
 
   if (pathname === '/api/status' && method === 'GET') {
+    await reconcileInterruptedJobs(options.workspaceRoot);
     const [projects, jobs, ml] = await Promise.all([
       listWorkspaceProjects(options.workspaceRoot),
       loadJobsWithProgress(options.workspaceRoot),
@@ -179,7 +186,7 @@ async function routeRequest(
         { jobType: 'gps-refresh', executionMode: 'deterministic', supported: true },
         { jobType: 'analyze', executionMode: 'deterministic', supported: true },
         { jobType: 'style-analysis', executionMode: 'deterministic', supported: true, note: 'runs deterministic prep and then hands off to Agent for the final style profile' },
-        { jobType: 'color', executionMode: 'deterministic', supported: true, note: 'supports prepare_root / sync_groups / execute_root / validate_batch / promote_batch / prepare_all_roots / export_all_roots through the same-machine vendored Resolve backend; clip repair now follows the canonical Gyro -> Dehaze -> User1 -> User2 -> NR layout, and promote/export-all still require explicit UI confirmation semantics' },
+        { jobType: 'color', executionMode: 'deterministic', supported: true, note: 'supports prepare_root / sync_groups / execute_root / validate_batch / prepare_all_roots / export_all_roots through the same-machine vendored Resolve backend; clip repair now follows the canonical Gyro -> Dehaze -> User1 -> User2 -> NR layout, and execute/export-all require explicit overwrite confirmation before replacing existing root outputs' },
         { jobType: 'script', executionMode: 'deterministic', supported: true, note: 'runs only after reviewed brief is saved; advances ready_to_prepare -> ready_for_agent; final script remains agent-authored' },
         { jobType: 'timeline', executionMode: 'deterministic', supported: true, note: 'builds rough-cut-base -> segment-cut review chain; requires a configured host agent packet runner' },
         { jobType: 'export-jianying', executionMode: 'deterministic', supported: false },
@@ -193,7 +200,19 @@ async function routeRequest(
   if (configMatch && method === 'GET') {
     const projectId = decodeURIComponent(configMatch[1]!);
     const projectRoot = join(options.workspaceRoot, 'projects', projectId);
-    const [projectBrief, manualItinerary, scriptBrief, ingestRoots, assets, chronology, colorCurrent, runtimeConfig, colorGroupSnapshots, workspaceColorTransformPresets] = await Promise.all([
+    const [
+      projectBrief,
+      manualItinerary,
+      scriptBrief,
+      ingestRoots,
+      assets,
+      chronology,
+      colorCurrent,
+      runtimeConfig,
+      colorGroupSnapshots,
+      workspaceColorTransformPresets,
+      colorResolveProjectMap,
+    ] = await Promise.all([
       loadProjectBriefConfig(projectRoot),
       loadManualItineraryConfig(projectRoot),
       loadScriptBriefConfig(projectRoot),
@@ -204,6 +223,7 @@ async function routeRequest(
       loadRuntimeConfig(projectRoot),
       loadColorGroupsSnapshots(projectRoot),
       loadColorTransformPresetsConfig(options.workspaceRoot).catch(() => ({ profiles: {}, discoveredPresets: {} })),
+      loadColorResolveProjectMap(projectRoot),
     ]);
     const colorWorkspace = buildColorWorkspaceState({
       projectId,
@@ -212,6 +232,7 @@ async function routeRequest(
       colorCurrent,
       resolveBackend: inspectResolveColorBackend(),
       groupSnapshotsByRootId: colorGroupSnapshots,
+      colorResolveProjectMap,
     });
     const ingestRootSummaries = buildIngestRootSummaries(ingestRoots.roots, assets, chronology);
     const pharosContext = await loadOrBuildProjectPharosContext({
@@ -248,6 +269,43 @@ async function routeRequest(
     return;
   }
 
+  const colorDrpSnapshotMatch = pathname.match(/^\/api\/projects\/([^/]+)\/color\/drp-snapshot$/u);
+  if (colorDrpSnapshotMatch && method === 'POST') {
+    const projectId = decodeURIComponent(colorDrpSnapshotMatch[1]!);
+    const payload = await readJsonBody(request).catch(() => ({}));
+    const rootId = typeof payload?.rootId === 'string' && payload.rootId.trim()
+      ? payload.rootId.trim()
+      : undefined;
+    sendJson(response, 200, await snapshotProjectColorDrp({
+      workspaceRoot: options.workspaceRoot,
+      projectId,
+      rootId,
+      mode: 'manual',
+    }));
+    return;
+  }
+
+  const colorDrpRegisterMatch = pathname.match(/^\/api\/projects\/([^/]+)\/color\/drp-snapshot\/register$/u);
+  if (colorDrpRegisterMatch && method === 'POST') {
+    const projectId = decodeURIComponent(colorDrpRegisterMatch[1]!);
+    const payload = await readJsonBody(request).catch(() => ({}));
+    const rootId = typeof payload?.rootId === 'string' && payload.rootId.trim()
+      ? payload.rootId.trim()
+      : undefined;
+    const drpPath = typeof payload?.path === 'string' && payload.path.trim()
+      ? payload.path.trim()
+      : typeof payload?.drpPath === 'string' && payload.drpPath.trim()
+        ? payload.drpPath.trim()
+        : '';
+    sendJson(response, 200, await registerExternalColorDrpSnapshot({
+      workspaceRoot: options.workspaceRoot,
+      projectId,
+      rootId,
+      drpPath,
+    }));
+    return;
+  }
+
   const colorArchiveMatch = pathname.match(/^\/api\/projects\/([^/]+)\/color\/archive$/u);
   if (colorArchiveMatch && method === 'GET') {
     const projectId = decodeURIComponent(colorArchiveMatch[1]!);
@@ -255,6 +313,24 @@ async function routeRequest(
     sendJson(response, 200, {
       roots: Object.values(await loadColorArchiveViews(projectRoot)),
     });
+    return;
+  }
+
+  const colorOverwritePreviewMatch = pathname.match(/^\/api\/projects\/([^/]+)\/color\/render-overwrite-preview$/u);
+  if (colorOverwritePreviewMatch && method === 'POST') {
+    const projectId = decodeURIComponent(colorOverwritePreviewMatch[1]!);
+    const payload = await readJsonBody(request).catch(() => ({}));
+    sendJson(response, 200, await previewProjectColorOverwrite({
+      workspaceRoot: options.workspaceRoot,
+      projectId,
+      rootId: typeof payload?.rootId === 'string' && payload.rootId.trim() ? payload.rootId.trim() : undefined,
+      action: payload?.mode === 'export_all_roots' || payload?.action === 'export_all_roots'
+        ? 'export_all_roots'
+        : 'execute_root',
+      clipKeys: Array.isArray(payload?.clipKeys)
+        ? payload.clipKeys.filter((item: unknown): item is string => typeof item === 'string' && Boolean(item.trim()))
+        : undefined,
+    }));
     return;
   }
 
@@ -466,6 +542,7 @@ async function startJob(
     restartOf?: string;
   },
 ): Promise<ISupervisorJobRecord> {
+  await reconcileInterruptedJobs(workspaceRoot);
   if (payload.jobType === 'color' && payload.projectId) {
     const existingJobs = await listJobRecords(workspaceRoot);
     const activeColorJob = existingJobs.find(job => (
@@ -798,6 +875,90 @@ async function loadJobsWithProgress(workspaceRoot: string): Promise<Array<ISuper
     progress: job.progressPath ? await readJsonFile(job.progressPath) : null,
   })));
   return hydrated;
+}
+
+async function reconcileInterruptedJobs(workspaceRoot: string): Promise<void> {
+  const jobs = await listJobRecords(workspaceRoot);
+  await Promise.all(
+    jobs
+      .filter(job => job.status === 'running' && typeof job.pid === 'number' && !isPidAlive(job.pid))
+      .map(job => markJobInterrupted(workspaceRoot, job)),
+  );
+}
+
+async function markJobInterrupted(workspaceRoot: string, job: ISupervisorJobRecord): Promise<void> {
+  const now = new Date().toISOString();
+  const detail = `interrupted: recorded pid ${job.pid} is no longer running`;
+  await writeJobRecord(workspaceRoot, {
+    ...job,
+    status: 'failed',
+    finishedAt: now,
+    updatedAt: now,
+    lastError: detail,
+    blockers: dedupeTextList([...(job.blockers ?? []), detail]),
+  });
+  if (job.progressPath) {
+    await writeKairosProgress(job.progressPath, {
+      status: 'failed',
+      pipelineKey: job.jobType === 'color' ? 'color' : job.jobType,
+      pipelineLabel: job.jobType === 'color' ? '达芬奇调色流程' : job.jobType,
+      phaseKey: 'interrupted',
+      phaseLabel: 'Interrupted',
+      step: 'interrupted',
+      stepLabel: '进程已中断',
+      stepIndex: 1,
+      stepTotal: 1,
+      current: 0,
+      total: 1,
+      unit: 'step',
+      detail,
+      extra: {
+        jobId: job.jobId,
+        pid: job.pid,
+        projectId: job.projectId,
+      },
+    }).catch(() => undefined);
+  }
+  if (job.jobType === 'color' && job.projectId) {
+    const projectRoot = join(workspaceRoot, 'projects', job.projectId);
+    const current = await loadColorCurrent(projectRoot).catch(() => null);
+    if (current) {
+      await saveColorCurrent(projectRoot, {
+        ...current,
+        roots: current.roots.map(root => root.currentJobId === job.jobId
+          ? {
+              ...root,
+              activeStage: undefined,
+              currentJobId: undefined,
+              detail,
+              blockingReasons: dedupeTextList([...(root.blockingReasons ?? []), detail]),
+            }
+          : root),
+        updatedAt: now,
+      }).catch(() => undefined);
+    }
+  }
+}
+
+function isPidAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function dedupeTextList(values: Array<string | undefined>): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const value of values) {
+    const normalized = value?.trim();
+    if (!normalized || seen.has(normalized)) continue;
+    seen.add(normalized);
+    result.push(normalized);
+  }
+  return result;
 }
 
 function sendJson(response: ServerResponse, statusCode: number, data: unknown): void {

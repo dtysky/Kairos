@@ -65,14 +65,26 @@ description: >-
 4. 创建或选择 Resolve 项目与时间线
   - Color 路径默认使用 `${projectBrief.name} [Color]`
   - root grading timeline 默认使用 root `label` 派生的人类可读命名
+  - `/color` 的 root prepare 默认按 50-clip chunks 分批追加到同一条 root grading timeline；不能为每个 chunk 或子目录创建正式 grading timeline
+  - 自动 DRP 只在 root prepare 全部 chunks 完成后导出一次；人工 `保存 DRP 快照` 应先 `SaveProject()`，再导出轻量 `.drp` 到项目内 `color/resolve-projects/<safe-project-name>/` 并更新 `latest.drp`
 5. 导入素材并按 `KTEP` 片段摆放
 6. 视目标环境决定是否创建字幕轨或导出 `SRT`
 7. 返回 Resolve 项目 / 时间线信息和日志
+
+## `/color` Direct-Root Export Rule
+
+- `execute_root` 必须以 `rawLocalPath` 对应的 Resolve root grading timeline 为导出真相，以当前 root `localPath` 为唯一最终输出 root。
+- 项目目录只允许保存 `color/batches/<batchId>/plan|manifest|validation.json` 等轻量 archive；禁止把大视频 staging 到 `projects/<projectId>/.tmp/`。
+- 覆盖已有最终目标前，必须先生成 `dayX/Cxxxx.ext` 覆盖预览并用 `overwritePlanHash` 锁定确认范围；未确认或 hash 变化时不得启动 Resolve。
+- Resolve 宿主必须按 `rawRelativePath` 父目录复制临时 render timelines，修剪到该目录 clips，直接渲染到最终 `localPath/<relativeDir>/`；所有 render jobs 创建成功后只调用一次 render all。
+- Resolve 输出必须使用 File Name = Source Name；不得设置 `CustomName` 或 `UniqueFilenameStyle`，出现 prefix/suffix 文件名时 batch 失败。
+- `promote_batch` 已退出正式导出链；metadata 修复与 validation 在 `execute_root` 内完成。
 
 ## 推荐产出
 
 - Resolve 项目名
 - 时间线名
+- 最新 `.drp` 快照路径（如本轮触发 Resolve 工程保存）
 - 如有需要，`subtitles/output.srt`
 - 导出日志与失败诊断
 

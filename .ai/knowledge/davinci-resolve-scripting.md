@@ -167,7 +167,10 @@ Kairos checked the local Gyroflow OpenFX bundle and upstream plugin source while
 - `SetNodeEnabled(1, True)` can request that the Gyroflow node be enabled, but it does not trigger `LoadCurrent`.
 - A live probe on project `tmp 调色流程测试 2026-04-20 15 32 30 [Color]`, duplicated timeline `kairos-test action6 [Color]`, and clip `DJI_20260217100743_0227_D.MP4` confirmed that applying `config/default.drx`, calling `SetNodeEnabled` on nodes 1-5, and exporting the current frame still added `0` bytes to `gyroflow-openfx.log`.
 - A second live probe in the same project confirmed that importing `vendor/resolve-color-host/donors/gyro-only.drt`, copying its grade to `DJI_20260217100743_0227_D.MP4`, enabling node 1, and exporting the current frame added Gyroflow log entries for that exact DJI file. This means a clean DRT donor can trigger Gyroflow's own current-file path during render, while the current DRX template does not.
-- For Kairos clip repair, prefer a clean canonical five-node DRT donor when available. Treat DRX as a layout fallback unless a live probe proves that its Gyroflow instance loads the current file.
+- For Kairos bulk clip repair, use a clean canonical five-node DRT donor as the only automatic seed source. Treat DRX as manual diagnostic material only; do not use `ApplyGradeFromDRX()` as a large-batch fallback unless a new live probe proves it is stable and source-correct.
+- ZV-E1 / Sony portrait clips are not inherently ineligible for Gyroflow, but Resolve may rotate input pixels before the OFX plugin sees them. Kairos handles this by choosing source-orientation-specific DRT donors (`default.drt`, `gyroflow-portrait-90.drt`, `gyroflow-portrait--90.drt`) for the Gyroflow OFX setup, while using `TimelineItem:SetProperty()` on the Resolve timeline for final horizontal framing. ffprobe source `rotation=90` is Gyroflow `270`, so it gets `RotationAngle=-90` and `gyroflow-portrait--90.drt`; ffprobe source `rotation=-90/270` is Gyroflow `90`, so it gets `RotationAngle=90` and `gyroflow-portrait-90.drt`. For horizontal-encoded portrait sources, `ZoomX/ZoomY` must compensate Gyroflow/DRT output that otherwise appears as a smaller landscape region inside the horizontal canvas.
+- If a portrait DRT hash is missing or stale on an already prepared root, rerun the affected chunk and reset the stale portrait clip with `ResetAllGrades()` before reapplying the orientation DRT. Live testing showed a fresh single-clip timeline plus the same DRT path is clean, so stale old-clip OFX state must be cleared before DRT reapply.
+- Resolve scripting exposes timeline item transform keys such as `RotationAngle`, `ZoomX`, `ZoomY`, `ZoomGang`, `Pan`, and `Tilt`, but the documented API still does not expose generic Gyroflow OFX parameter setters. Do not replace orientation-specific DRTs with guessed OFX parameter writes.
 
 ### Color Groups
 
@@ -185,7 +188,7 @@ Kairos checked the local Gyroflow OpenFX bundle and upstream plugin source while
 - `album.ImportStills([filePaths])` imports stills.
 - `album.DeleteStills([still])` deletes temporary stills.
 
-Kairos uses DRX as the formal cold-start / legacy-rebuild mechanism for clip repair layout. If a task depends on DRX contents, validate by applying the DRX in Resolve and inspecting the resulting graph.
+Kairos no longer uses DRX as the formal large-batch cold-start / legacy-rebuild mechanism for clip repair layout. If a task depends on DRX contents, validate by applying the DRX manually in Resolve and inspecting the resulting graph; do not route bulk prepare through repeated `ApplyGradeFromDRX()` calls.
 
 ## Known Gaps And Do-Not-Assume Rules
 

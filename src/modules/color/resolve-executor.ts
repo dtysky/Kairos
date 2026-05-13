@@ -8,7 +8,9 @@ import type {
   EColorSourceProfile,
   IColorHostPreflight,
   IColorGroupsSnapshotFile,
+  IColorResolveProjectSnapshot,
   IColorRenderPreset,
+  EColorCastClass,
 } from '../../protocol/schema.js';
 import type {
   IResolveLutSyncSummary,
@@ -32,13 +34,15 @@ export interface IColorExecutorPrepareRootInput {
   rawPath: string;
   rawLocalPath: string;
   repairDrtPath?: string;
-  repairDrxPath?: string;
+  repairTemplates?: Record<string, string | undefined>;
   timelineSpec?: {
     width: number;
     height: number;
     fps: number;
   };
   lutSyncSummary?: IResolveLutSyncSummary;
+  chunkId?: string;
+  resetTimeline?: boolean;
   clips: IColorExecutorClipInput[];
 }
 
@@ -70,6 +74,23 @@ export interface IColorExecutorClipInput {
   capturedAt?: string;
   width?: number;
   height?: number;
+  encodedWidth?: number;
+  encodedHeight?: number;
+  displayWidth?: number;
+  displayHeight?: number;
+  rotationDegrees?: number;
+  orientationStatus?: 'unknown' | 'horizontal' | 'portrait';
+  repairTemplateKey?: string;
+  previousRepairTemplateHash?: string;
+  timelineTransform?: {
+    rotationAngle?: number;
+    zoomX?: number;
+    zoomY?: number;
+    zoomGang?: boolean;
+    pan?: number;
+    tilt?: number;
+  };
+  gyroDataAvailable?: boolean;
   fps?: number;
   codec?: string;
   rawTags?: Record<string, string>;
@@ -79,6 +100,9 @@ export interface IColorExecutorClipInput {
   logProfile?: EColorSourceProfile;
   gyroEligible?: boolean;
   lowlight?: boolean;
+  colorCastClass?: EColorCastClass;
+  colorCastConfidence?: number;
+  colorCastMetrics?: Record<string, unknown>;
   deviceFamilyKeys?: string[];
   resolvedTransformPresetKey?: string;
   resolvedLutRelativePath?: string;
@@ -92,7 +116,7 @@ export interface IColorExecutorExecuteRootInput {
   gradingTimelineName: string;
   rawLocalPath: string;
   renderPreset: IColorRenderPreset;
-  stagingRoot: string;
+  outputRoot: string;
   selectionMode?: 'all' | 'subset';
   clips: Array<{
     rawRelativePath: string;
@@ -110,7 +134,15 @@ export interface IColorExecutorExecuteRootResult {
     rawRelativePath: string;
     outputPath: string;
     normalizedOutputFilename: string;
+    renderJobId?: string;
     hostSummary?: Record<string, unknown>;
+  }>;
+  renderJobs?: Array<{
+    jobId?: string;
+    timelineName?: string;
+    targetDir: string;
+    clipCount?: number;
+    duplicateStemGroup?: string;
   }>;
   hostSummary?: Record<string, unknown>;
 }
@@ -123,11 +155,27 @@ export interface IColorExecutorPreflightInput {
 
 export interface IColorExecutorPreflightResult extends IColorHostPreflight {}
 
+export interface IColorExecutorSaveDrpSnapshotInput {
+  projectId: string;
+  resolveProjectName: string;
+  snapshotRoot: string;
+  snapshotLabel?: string;
+  action?: string;
+  rootId?: string;
+  chunkId?: string;
+}
+
+export interface IColorExecutorSaveDrpSnapshotResult {
+  snapshot: IColorResolveProjectSnapshot;
+  hostSummary?: Record<string, unknown>;
+}
+
 export interface IColorExecutor {
   preflight(input?: IColorExecutorPreflightInput): Promise<IColorExecutorPreflightResult>;
   prepareRoot(input: IColorExecutorPrepareRootInput): Promise<IColorExecutorPrepareRootResult>;
   syncGroups(input: IColorExecutorSyncGroupsInput): Promise<IColorExecutorSyncGroupsResult>;
   executeRoot(input: IColorExecutorExecuteRootInput): Promise<IColorExecutorExecuteRootResult>;
+  saveDrpSnapshot(input: IColorExecutorSaveDrpSnapshotInput): Promise<IColorExecutorSaveDrpSnapshotResult>;
 }
 
 export interface IResolveColorExecutorConfig {
@@ -213,8 +261,15 @@ export class PythonResolveColorExecutor implements IColorExecutor {
     });
   }
 
+  async saveDrpSnapshot(input: IColorExecutorSaveDrpSnapshotInput): Promise<IColorExecutorSaveDrpSnapshotResult> {
+    return this.runRequest<IColorExecutorSaveDrpSnapshotResult>({
+      operation: 'save_drp_snapshot',
+      input,
+    });
+  }
+
   private async runRequest<T>(payload: {
-    operation: 'preflight' | 'prepare_root' | 'sync_groups' | 'execute_root';
+    operation: 'preflight' | 'prepare_root' | 'sync_groups' | 'execute_root' | 'save_drp_snapshot';
     input: unknown;
   }): Promise<T> {
     const pythonPath = resolveColorPythonInvocation(this.config);

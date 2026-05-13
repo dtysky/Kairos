@@ -1,32 +1,39 @@
 import { execFile } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
-import { copyFile, mkdir, rename, stat, unlink } from 'node:fs/promises';
+import { createHash, randomUUID } from 'node:crypto';
+import { copyFile, mkdir, readFile, readdir, rename, stat, unlink } from 'node:fs/promises';
 import { dirname, extname, join, posix, relative, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { promisify } from 'node:util';
 import type {
   IColorBatchManifest,
   IColorBatchPlan,
-  IColorBatchPromote,
+  IColorBatchRenderJob,
   IColorBatchValidation,
+  IColorBatchSidecar,
   IColorHostPreflight,
   IColorFileMetadataSnapshot,
   IColorGroupCurrent,
   IColorGroupsSnapshotFile,
+  IColorClipRepairSnapshot,
+  IColorPrepareChunk,
+  IColorResolveProjectMap,
+  IColorResolveProjectSnapshot,
   IColorRootCurrent,
+  IColorOverwritePreview,
   EColorValidationCheckResult,
   IColorCurrent,
 } from '../../protocol/schema.js';
 import {
   getProjectProgressPath,
+  getColorResolveProjectsRoot,
   getColorGroupsSnapshotPath,
   loadColorBatchManifest,
   loadColorBatchPlan,
-  loadColorBatchPromote,
   loadColorBatchValidation,
   loadColorCurrent,
   loadColorGroupsSnapshot,
   loadColorGroupsSnapshots,
+  loadColorResolveProjectMap,
   loadIngestRoots,
   loadColorTransformPresetsConfig,
   loadProjectBriefConfig,
@@ -34,10 +41,10 @@ import {
   resolveWorkspaceProjectRoot,
   saveColorBatchManifest,
   saveColorBatchPlan,
-  saveColorBatchPromote,
   saveColorBatchValidation,
   saveColorCurrent,
   saveColorGroupsSnapshot,
+  saveColorResolveProjectMap,
   writeKairosProgress,
 } from '../../store/index.js';
 import { resolveCaptureTime } from '../media/capture-time.js';
@@ -53,8 +60,10 @@ import {
 } from './workspace-state.js';
 import { readColorRenderPresetBitrateKbps } from './render-preset.js';
 import { classifyFirstFrameLowlight } from './lowlight-classifier.js';
+import { classifyColorCast } from './color-cast-classifier.js';
 import { extractColorSourceTruth } from './source-truth.js';
 import {
+  detectResolveDefaultLutRoot,
   resolveClipTransformSeeds,
   resolveEffectiveColorProfile,
   syncReferencedResolveLuts,
@@ -67,6 +76,7 @@ import {
   inspectResolveColorBackend,
   type IColorExecutorClipInput,
   type IColorExecutor,
+  type IColorExecutorPrepareRootResult,
 } from './resolve-executor.js';
 
 export type TProjectColorAction =
@@ -76,7 +86,21 @@ export type TProjectColorAction =
   | 'validate_batch'
   | 'promote_batch'
   | 'prepare_all_roots'
-  | 'export_all_roots';
+  | 'export_all_roots'
+  | 'save_drp_snapshot';
+
+const CCOLOR_PREPARE_CHUNK_SIZE = 50;
+const CCOLOR_PREPARE_PROBE_CONCURRENCY = 2;
+const CCOLOR_SIDECAR_EXTENSIONS = new Set(['.srt', '.xml', '.gyroflow', '.wav', '.flac', '.m4a', '.aac', '.mp3']);
+const CCOLOR_REPAIR_TEMPLATE_DEFAULT_KEY = 'default';
+const CCOLOR_REPAIR_TEMPLATE_PORTRAIT_90_KEY = 'portrait-90';
+const CCOLOR_REPAIR_TEMPLATE_PORTRAIT_NEGATIVE_90_KEY = 'portrait--90';
+const CCOLOR_REPAIR_TEMPLATE_DRIFT_DETAIL = '方向 DRT 模板已更新，需重新 seed portrait repair。';
+const CCOLOR_CAST_CONTINUITY_MIN_CANDIDATE_RATIO = 0.03;
+const CCOLOR_CAST_CONTINUITY_MAX_ANCHOR_GAP = 8;
+const CCOLOR_CAST_CONTINUITY_MAX_FORWARD_EXTENSION = 3;
+
+type TColorCastContinuityTarget = 'cool-cyan' | 'green-cyan' | 'green';
 
 const CCOLOR_STEP_DEFINITIONS: Record<TProjectColorAction, Array<{ key: string; label: string }>> = {
   prepare_root: [
@@ -94,7 +118,7 @@ const CCOLOR_STEP_DEFINITIONS: Record<TProjectColorAction, Array<{ key: string; 
     { key: 'validate_batch', label: '校验 batch manifest' },
   ],
   promote_batch: [
-    { key: 'promote_batch', label: '覆盖当前素材目录' },
+    { key: 'promote_batch', label: '已移除的旧 Promote' },
   ],
   prepare_all_roots: [
     { key: 'select_roots', label: '确定目标 roots' },
@@ -103,6 +127,9 @@ const CCOLOR_STEP_DEFINITIONS: Record<TProjectColorAction, Array<{ key: string; 
   export_all_roots: [
     { key: 'select_roots', label: '确定目标 roots' },
     { key: 'export_all_roots', label: '顺序导出所有 roots' },
+  ],
+  save_drp_snapshot: [
+    { key: 'save_drp_snapshot', label: '保存 DRP 快照' },
   ],
 };
 
@@ -113,6 +140,8 @@ export interface IProjectColorActionInput {
   action?: TProjectColorAction;
   clipKeys?: string[];
   batchId?: string;
+  overwriteConfirmed?: boolean;
+  overwritePlanHash?: string;
   jobId?: string;
   progressPath?: string;
   executor?: IColorExecutor;
@@ -251,6 +280,17 @@ export async function runProjectColorAction(
         throw new ProjectColorBlockedError(['export_all_roots is project-scoped and does not accept rootId。']);
       }
       return exportAllProjectColorRoots(input);
+    case 'save_drp_snapshot':
+      return snapshotProjectColorDrp({
+        workspaceRoot: input.workspaceRoot,
+        projectId: input.projectId,
+        rootId: input.rootId,
+        mode: 'manual',
+        executor: input.executor,
+        jobId: input.jobId,
+        progressPath: input.progressPath,
+        suppressProgress: input.suppressProgress,
+      });
     default:
       throw new Error(`Unsupported color action: ${action satisfies never}`);
   }
@@ -270,6 +310,252 @@ export async function preflightProjectColorHost(
   });
   await saveColorHostPreflight(projectRoot, preflight);
   return preflight;
+}
+
+export async function previewProjectColorOverwrite(
+  input: IProjectColorActionInput,
+): Promise<IColorOverwritePreview> {
+  const mode = input.action === 'export_all_roots' ? 'export_all_roots' : 'execute_root';
+  if (mode === 'export_all_roots' && !input.rootId?.trim()) {
+    const rootSummaries = await loadEnabledProjectColorRootSummaries(input.workspaceRoot, input.projectId);
+    const roots = await Promise.all(rootSummaries.map(root => (
+      previewProjectColorOverwrite({
+        ...input,
+        rootId: root.rootId,
+        action: 'execute_root',
+      })
+    )));
+    const rootHashes = Object.fromEntries(
+      roots.map(root => [root.rootId ?? '', root.overwritePlanHash]).filter(([rootId]) => Boolean(rootId)),
+    );
+    const overwritePlanHash = hashColorOverwritePayload({
+      mode,
+      projectId: input.projectId,
+      roots: roots.map(root => ({
+        rootId: root.rootId,
+        overwritePlanHash: root.overwritePlanHash,
+      })),
+    });
+    return {
+      projectId: input.projectId,
+      mode,
+      clipCount: roots.reduce((total, root) => total + root.clipCount, 0),
+      existingCount: roots.reduce((total, root) => total + root.existingCount, 0),
+      targets: roots.flatMap(root => root.targets),
+      byDirectory: mergeColorOverwriteDirectories(roots.flatMap(root => root.byDirectory)),
+      duplicateStemGroups: roots.flatMap(root => root.duplicateStemGroups),
+      overwritePlanHash,
+      rootHashes,
+      roots,
+    };
+  }
+  const rootId = input.rootId?.trim();
+  if (!rootId) {
+    throw new ProjectColorBlockedError(['overwrite preview requires rootId。']);
+  }
+  const context = await loadColorRootContext(input.workspaceRoot, input.projectId, rootId);
+  return buildColorOverwritePreviewForContext(context, input.clipKeys ?? []);
+}
+
+export interface ISnapshotProjectColorDrpInput extends Omit<IProjectColorActionInput, 'action'> {
+  mode?: 'manual' | 'auto';
+  snapshotLabel?: string;
+}
+
+export interface ISnapshotProjectColorDrpResult extends IProjectColorActionResult {
+  snapshot?: IColorResolveProjectSnapshot;
+}
+
+export async function snapshotProjectColorDrp(
+  input: ISnapshotProjectColorDrpInput,
+): Promise<ISnapshotProjectColorDrpResult> {
+  const action: TProjectColorAction = 'save_drp_snapshot';
+  const projectRoot = resolveWorkspaceProjectRoot(input.workspaceRoot, input.projectId);
+  const progressPath = resolveColorProgressPath(projectRoot, input.progressPath);
+  const writeProgress: TWriteColorProgress = input.suppressProgress
+    ? async (..._args) => undefined
+    : writeColorProgress;
+  const context = input.rootId
+    ? await loadColorRootContext(input.workspaceRoot, input.projectId, input.rootId)
+    : null;
+  const projectBrief = context ? null : await loadProjectBriefConfig(projectRoot).catch(() => null);
+  const resolveProjectName = context?.rootSummary.resolveProjectName
+    ?? deriveColorResolveProjectName(projectBrief?.name, input.projectId);
+  const executor = context
+    ? resolveColorExecutor(context, input.executor)
+    : (input.executor ?? new PythonResolveColorExecutor());
+
+  await writeProgress(progressPath, action, {
+    status: 'running',
+    stepIndex: 1,
+    current: 0,
+    detail: '正在保存 Resolve 项目并导出 DRP 快照。',
+    extra: {
+      projectId: input.projectId,
+      rootId: input.rootId,
+      resolveProjectName,
+    },
+  });
+
+  if (context) {
+    await ensureActionHostPreflight({
+      context,
+      action,
+      executor,
+      progressPath,
+      suppressProgress: input.suppressProgress,
+      extra: {
+        projectId: input.projectId,
+        rootId: input.rootId,
+      },
+    });
+  } else {
+    const preflight = await runColorHostPreflight({
+      projectRoot,
+      projectId: input.projectId,
+      resolveProjectName,
+      executor,
+    });
+    await saveColorHostPreflight(projectRoot, preflight);
+    if (preflight.status === 'blocked') {
+      const blockers = preflight.blockingReasons.length > 0
+        ? preflight.blockingReasons
+        : ['Resolve host preflight blocked save_drp_snapshot。'];
+      await writeProgress(progressPath, action, {
+        status: 'failed',
+        stepIndex: 1,
+        current: 0,
+        detail: blockers.join('；'),
+        extra: {
+          projectId: input.projectId,
+          resolveProjectName,
+        },
+      });
+      throw new ProjectColorBlockedError(blockers);
+    }
+  }
+
+  const snapshotRoot = resolveColorDrpSnapshotRoot(projectRoot, resolveProjectName);
+  const saved = await runColorHostWithRetry(
+    () => executor.saveDrpSnapshot({
+      projectId: input.projectId,
+      resolveProjectName,
+      snapshotRoot,
+      snapshotLabel: input.snapshotLabel ?? 'manual',
+      action: input.mode ?? 'manual',
+      rootId: input.rootId,
+    }),
+    `save_drp_snapshot:${input.projectId}:${input.rootId ?? 'project'}`,
+  );
+  const savedSnapshot = normalizeRequiredColorDrpSnapshot(saved.snapshot, resolveProjectName);
+  await recordColorDrpSnapshots(projectRoot, resolveProjectName, [savedSnapshot]);
+  if (input.rootId) {
+    await writeRootCurrent(projectRoot, input.rootId, current => ({
+      ...current,
+      latestDrpSnapshot: savedSnapshot,
+      detail: `已保存 DRP 快照：${savedSnapshot.snapshotPath}`,
+      currentJobId: undefined,
+      activeStage: undefined,
+      blockingReasons: filterPersistentColorBlockers(current.blockingReasons ?? []),
+    }));
+  }
+
+  await writeProgress(progressPath, action, {
+    status: 'succeeded',
+    stepIndex: 1,
+    current: 1,
+    detail: `已保存 DRP 快照：${savedSnapshot.snapshotPath}`,
+    extra: {
+      projectId: input.projectId,
+      rootId: input.rootId,
+      resolveProjectName,
+      snapshotPath: savedSnapshot.snapshotPath,
+      latestPath: savedSnapshot.latestPath,
+    },
+  });
+
+  return {
+    action,
+    projectId: input.projectId,
+    rootId: input.rootId,
+    detail: `已保存 DRP 快照：${savedSnapshot.snapshotPath}`,
+    blockingReasons: [],
+    snapshot: savedSnapshot,
+  };
+}
+
+export interface IRegisterExternalColorDrpSnapshotInput {
+  workspaceRoot: string;
+  projectId: string;
+  drpPath: string;
+  rootId?: string;
+  detail?: string;
+}
+
+export interface IRegisterExternalColorDrpSnapshotResult extends IProjectColorActionResult {
+  snapshot: IColorResolveProjectSnapshot;
+}
+
+export async function registerExternalColorDrpSnapshot(
+  input: IRegisterExternalColorDrpSnapshotInput,
+): Promise<IRegisterExternalColorDrpSnapshotResult> {
+  const projectRoot = resolveWorkspaceProjectRoot(input.workspaceRoot, input.projectId);
+  const projectBrief = await loadProjectBriefConfig(projectRoot).catch(() => null);
+  const sourcePath = resolve(input.drpPath);
+  const sourceStats = await stat(sourcePath).catch(() => null);
+  const blockers = dedupeStrings([
+    !input.drpPath?.trim() ? '登记外部 DRP 需要填写 .drp 路径。' : '',
+    sourceStats && !sourceStats.isFile() ? `登记外部 DRP 不是文件：${sourcePath}` : '',
+    !sourceStats ? `登记外部 DRP 不存在或不可读：${sourcePath}` : '',
+    extname(sourcePath).toLowerCase() !== '.drp' ? `登记外部 DRP 必须是 .drp 文件：${sourcePath}` : '',
+  ]);
+  if (blockers.length > 0) {
+    throw new ProjectColorBlockedError(blockers);
+  }
+  const resolveProjectName = deriveColorResolveProjectName(projectBrief?.name, input.projectId);
+  const snapshotRoot = resolveColorDrpSnapshotRoot(projectRoot, resolveProjectName);
+  const snapshotsRoot = join(snapshotRoot, 'snapshots');
+  await mkdir(snapshotsRoot, { recursive: true });
+  const createdAt = new Date().toISOString();
+  const targetPath = join(
+    snapshotsRoot,
+    `${formatColorSnapshotTimestamp(createdAt)}-external-${hashString(sourcePath).slice(0, 8)}.drp`,
+  );
+  if (resolve(sourcePath) !== resolve(targetPath)) {
+    await copyFile(sourcePath, targetPath);
+  }
+  const latestPath = join(snapshotRoot, 'latest.drp');
+  await mkdir(dirname(latestPath), { recursive: true });
+  if (resolve(targetPath) !== resolve(latestPath)) {
+    await copyFile(targetPath, latestPath);
+  }
+  const snapshot: IColorResolveProjectSnapshot = {
+    projectName: resolveProjectName,
+    snapshotPath: targetPath,
+    latestPath,
+    createdAt,
+    mode: 'external',
+    action: 'register_external_drp',
+    rootId: input.rootId,
+    detail: input.detail ?? `登记外部 DRP：${sourcePath}`,
+  };
+  await recordColorDrpSnapshots(projectRoot, resolveProjectName, [snapshot]);
+  if (input.rootId) {
+    await writeRootCurrent(projectRoot, input.rootId, current => ({
+      ...current,
+      latestDrpSnapshot: snapshot,
+      detail: `已登记外部 DRP：${snapshot.snapshotPath}`,
+      blockingReasons: filterPersistentColorBlockers(current.blockingReasons ?? []),
+    }));
+  }
+  return {
+    action: 'save_drp_snapshot',
+    projectId: input.projectId,
+    rootId: input.rootId,
+    detail: `已登记外部 DRP：${snapshot.snapshotPath}`,
+    blockingReasons: [],
+    snapshot,
+  };
 }
 
 export async function prepareAllProjectColorRoots(
@@ -410,6 +696,31 @@ export async function exportAllProjectColorRoots(
     throw new ProjectColorBlockedError(blockers);
   }
 
+  const overwritePreview = await previewProjectColorOverwrite({
+    ...input,
+    action,
+    rootId: undefined,
+  });
+  const overwriteBlockers = validateColorOverwriteConfirmation(overwritePreview, input);
+  if (overwriteBlockers.length > 0) {
+    await writeColorProgress(progressPath, action, {
+      status: 'failed',
+      stepIndex: 1,
+      current: 0,
+      detail: overwriteBlockers.join('；'),
+      extra: {
+        projectId: input.projectId,
+        currentRootId: undefined,
+        currentRootIndex: 0,
+        totalRoots: rootSummaries.length,
+        succeededRoots: 0,
+        failedRoots: 0,
+        overwritePlanHash: overwritePreview.overwritePlanHash,
+      },
+    });
+    throw new ProjectColorBlockedError(overwriteBlockers);
+  }
+
   await writeColorProgress(progressPath, action, {
     status: 'running',
     stepIndex: 1,
@@ -449,38 +760,26 @@ export async function exportAllProjectColorRoots(
         rootId: rootSummary.rootId,
         action: 'execute_root',
         suppressProgress: true,
+        overwriteConfirmed: overwritePreview.existingCount > 0 ? true : input.overwriteConfirmed,
+        overwritePlanHash: overwritePreview.rootHashes?.[rootSummary.rootId] ?? input.overwritePlanHash,
       });
-      const validated = await validateProjectColorBatch({
-        ...input,
-        rootId: rootSummary.rootId,
-        action: 'validate_batch',
-        batchId: executed.batchId,
-        suppressProgress: true,
-      });
-      if (validated.blockingReasons.length > 0) {
+      if (executed.blockingReasons.length > 0) {
         failedRoots += 1;
         roots.push({
           rootId: rootSummary.rootId,
           status: 'failed',
           batchId: executed.batchId,
-          actionSummary: validated.detail,
-          error: validated.blockingReasons.join('；'),
+          actionSummary: executed.detail,
+          error: executed.blockingReasons.join('；'),
         });
         continue;
       }
-      const promoted = await promoteProjectColorBatch({
-        ...input,
-        rootId: rootSummary.rootId,
-        action: 'promote_batch',
-        batchId: executed.batchId,
-        suppressProgress: true,
-      });
       succeededRoots += 1;
       roots.push({
         rootId: rootSummary.rootId,
         status: 'succeeded',
         batchId: executed.batchId,
-        actionSummary: promoted.detail,
+        actionSummary: executed.detail,
       });
     } catch (error) {
       failedRoots += 1;
@@ -495,7 +794,7 @@ export async function exportAllProjectColorRoots(
 
   const detail = failedRoots > 0
     ? `Export All Roots 完成：${succeededRoots} 个成功，${failedRoots} 个失败。`
-    : `Export All Roots 完成：${succeededRoots} 个 roots 全部导出并 promote。`;
+    : `Export All Roots 完成：${succeededRoots} 个 roots 全部导出并校验完成。`;
   await writeColorProgress(progressPath, action, {
     status: failedRoots > 0 ? 'failed' : 'succeeded',
     stepIndex: 2,
@@ -541,7 +840,7 @@ export async function prepareProjectColorRoot(
       mirrorStatus: 'blocked',
       timelineStatus: 'blocked',
       groupSyncStatus: current.groupSyncStatus,
-      activeStage: 'sync_root_bins',
+      activeStage: undefined,
       currentJobId: undefined,
       detail: prepBlockers.join('；'),
       blockingReasons: dedupeStrings([...(current.blockingReasons ?? []), ...prepBlockers]),
@@ -567,33 +866,25 @@ export async function prepareProjectColorRoot(
       rootId: input.rootId,
     },
   });
-  const executorClips = await buildColorExecutorClips(
-    context.rootSummary.rawLocalPath ?? '',
-    context.runtimeConfig,
-    context.rootSummary.colorSpaceProfile,
-  );
-  const syncedClipTransforms = await resolveExecutorClipTransforms(context, executorClips, {
-    syncLuts: false,
-    ignoreBlockers: true,
-  });
-  let preparedClipTransforms: Awaited<ReturnType<typeof resolveExecutorClipTransforms>>;
-  try {
-    preparedClipTransforms = await resolveExecutorClipTransforms(context, executorClips, {
-      syncLuts: true,
+  const rawInventory = await scanColorRawInventory(context.rootSummary.rawLocalPath ?? '');
+  const existingRootCurrent = context.colorCurrent.roots.find(root => root.rootId === context.rootId);
+  const previousClipSnapshots = buildColorClipRepairSnapshotIndex(context.groupsSnapshot);
+  const repairTemplateHashes = await buildColorRepairTemplateHashes(context.workspaceRoot);
+  const chunks = buildColorPrepareChunks(
+    rawInventory,
+    context.rootSummary.gradingTimelineName,
+    existingRootCurrent?.prepareChunks ?? [],
+  ).map(chunk => refreshPrepareChunkForRepairTemplateDrift(chunk, previousClipSnapshots, repairTemplateHashes));
+  if (chunks.length === 0) {
+    const emptyBlockers = ['当前 root 没有可准备的 raw 视频。'];
+    await failColorAction(context.projectRoot, context.rootId, progressPath, action, emptyBlockers, {
+      projectId: input.projectId,
+      rootId: input.rootId,
+    }, {
+      suppressProgress: input.suppressProgress,
     });
-  } catch (error) {
-    if (error instanceof ProjectColorBlockedError) {
-      await failColorAction(context.projectRoot, context.rootId, progressPath, action, error.blockers, {
-        projectId: input.projectId,
-        rootId: input.rootId,
-      }, {
-        persistRootBlockers: false,
-        suppressProgress: input.suppressProgress,
-      });
-    }
-    throw error;
+    throw new ColorPrepBlockedError(emptyBlockers);
   }
-  const timelineSpec = selectDominantTimelineSpec(executorClips);
 
   await writeRootCurrent(context.projectRoot, context.rootId, current => ({
     ...current,
@@ -601,134 +892,265 @@ export async function prepareProjectColorRoot(
     timelineStatus: 'idle',
     activeStage: 'sync_root_bins',
     currentJobId: input.jobId,
-    detail: '正在调用 vendored Resolve backend 准备项目 / root bin / grading timeline。',
+    detail: `正在按 ${chunks.length} 个 chunks 准备 Resolve root。`,
+    prepareChunks: chunks.map(chunk => materializePrepareChunkForCurrent(chunk, current.prepareChunks ?? [])),
     blockingReasons: filterPersistentColorBlockers(current.blockingReasons ?? []),
   }));
   await writeProgress(progressPath, action, {
     status: 'running',
     stepIndex: 1,
     current: 0,
-    detail: `正在为 ${context.rootId} 准备 Resolve root。`,
+    detail: `已把 ${rawInventory.length} 个 raw clips 拆成 ${chunks.length} 个 chunks。`,
     extra: {
       projectId: input.projectId,
       rootId: context.rootId,
       resolveProjectName: context.rootSummary.resolveProjectName,
-      gradingTimelineName: context.rootSummary.gradingTimelineName,
+      chunkCount: chunks.length,
+      clipCount: rawInventory.length,
     },
   });
 
-  let prepared: Awaited<ReturnType<IColorExecutor['prepareRoot']>>;
-  try {
-    prepared = await runColorHostWithRetry(
-      () => executor.prepareRoot({
+  const transformWarnings: string[] = [];
+  const drpSnapshots: IColorResolveProjectSnapshot[] = [];
+  const preparedClipsForSync: IColorExecutorClipInput[] = [];
+  let lastPreparedMirrorStatus: IColorExecutorPrepareRootResult['mirrorStatus'] | undefined;
+  let lastPreparedHostSummary: Record<string, unknown> | undefined;
+  let lastPreparedResolveProjectName: string | undefined;
+  let completedChunkCount = 0;
+
+  for (const chunk of chunks) {
+    if (chunk.status === 'ready') {
+      const executorClips = buildColorSyncExecutorClipsForInventory(
+        chunk.items,
+        previousClipSnapshots,
+      );
+      const preparedClipTransforms = await resolveExecutorClipTransforms(context, executorClips, {
+        syncLuts: false,
+        ignoreBlockers: true,
+      });
+      preparedClipsForSync.push(...preparedClipTransforms.clips);
+      completedChunkCount += 1;
+      continue;
+    }
+    await writeRootCurrent(context.projectRoot, context.rootId, current => ({
+      ...current,
+      mirrorStatus: 'running',
+      timelineStatus: 'running',
+      activeStage: 'prepare_root_timeline',
+      currentJobId: input.jobId,
+      detail: `正在准备 chunk ${chunk.index + 1}/${chunk.total}：${chunk.timelineName}`,
+      prepareChunks: updatePrepareChunkStatus(current.prepareChunks ?? [], chunk.chunkId, {
+        status: 'running',
+        detail: `正在准备 ${chunk.clipCount} 个 clips。`,
+      }),
+      blockingReasons: filterPersistentColorBlockers(current.blockingReasons ?? []),
+    }));
+    await writeProgress(progressPath, action, {
+      status: 'running',
+      stepIndex: 2,
+      current: chunk.index,
+      detail: `正在准备 chunk ${chunk.index + 1}/${chunk.total}：${chunk.timelineName}`,
+      extra: {
+        projectId: input.projectId,
+        rootId: context.rootId,
+        chunkId: chunk.chunkId,
+        chunkIndex: chunk.index + 1,
+        chunkTotal: chunk.total,
+        clipCount: chunk.clipCount,
+      },
+    });
+
+    try {
+      const executorClips = await buildColorExecutorClipsForInventory(
+        chunk.items,
+        context.runtimeConfig,
+        {
+          workspaceRoot: context.workspaceRoot,
+          rootColorSpaceProfile: context.rootSummary.colorSpaceProfile,
+          rootTransformPresetKey: context.rootSummary.transformPresetKey,
+          transformPresetsConfig: context.transformPresetsConfig,
+        },
+      );
+      const executorClipsWithPreviousRepair = applyPreviousColorRepairSnapshots(
+        executorClips,
+        previousClipSnapshots,
+      );
+      const timelineSpec = selectDominantTimelineSpec(executorClipsWithPreviousRepair);
+      const orientedExecutorClips = applyColorTimelineTransforms(executorClipsWithPreviousRepair, timelineSpec);
+      const preparedClipTransforms = await resolveExecutorClipTransforms(context, orientedExecutorClips, {
+        syncLuts: true,
+      });
+      transformWarnings.push(...preparedClipTransforms.warnings);
+      preparedClipsForSync.push(...applyCurrentColorRepairTemplateHashes(
+        preparedClipTransforms.clips,
+        repairTemplateHashes,
+      ));
+      const resetTimeline = shouldResetColorPrepareTimeline(chunks, chunk);
+      const prepared = await runColorHostWithRetry(
+        () => executor.prepareRoot({
+          projectId: input.projectId,
+          rootId: context.rootId,
+          resolveProjectName: context.rootSummary.resolveProjectName,
+          rootNamespace: context.rootSummary.rootNamespace,
+          gradingTimelineName: context.rootSummary.gradingTimelineName,
+          rawPath: context.rootSummary.rawPath,
+          rawLocalPath: context.rootSummary.rawLocalPath ?? '',
+          repairDrtPath: join(context.workspaceRoot, 'config', 'default.drt'),
+          repairTemplates: buildColorRepairTemplates(context.workspaceRoot),
+          timelineSpec,
+          lutSyncSummary: preparedClipTransforms.lutSyncSummary,
+          clips: preparedClipTransforms.clips,
+          chunkId: chunk.chunkId,
+          resetTimeline,
+        }),
+        `prepare_root:${context.rootId}:${chunk.chunkId}`,
+      );
+      lastPreparedMirrorStatus = prepared.mirrorStatus;
+      lastPreparedHostSummary = prepared.hostSummary;
+      lastPreparedResolveProjectName = prepared.resolveProjectName;
+      const repairSeedNotice = describeRepairSeedNotice(prepared.hostSummary);
+      completedChunkCount += 1;
+      chunk.status = 'ready';
+      chunk.completedAt = new Date().toISOString();
+      await writeRootCurrent(context.projectRoot, context.rootId, current => ({
+        ...current,
+        mirrorStatus: prepared.mirrorStatus,
+        timelineStatus: completedChunkCount === chunks.length ? prepared.timelineStatus : 'running',
+        detail: [
+          `已完成 chunk ${chunk.index + 1}/${chunk.total}：${chunk.timelineName}`,
+          repairSeedNotice,
+        ].filter(Boolean).join(' '),
+        hostSummary: mergeColorHostSummary(current.hostSummary, prepared.hostSummary, chunks),
+        prepareChunks: updatePrepareChunkStatus(current.prepareChunks ?? [], chunk.chunkId, {
+          status: 'ready',
+          completedAt: new Date().toISOString(),
+          detail: `已准备 ${chunk.clipCount} 个 clips。`,
+        }),
+        latestDrpSnapshot: drpSnapshots[drpSnapshots.length - 1] ?? current.latestDrpSnapshot,
+        blockingReasons: filterPersistentColorBlockers(current.blockingReasons ?? []),
+      }));
+    } catch (error) {
+      const blockers = [error instanceof Error ? error.message : String(error)];
+      await writeRootCurrent(context.projectRoot, context.rootId, current => ({
+        ...current,
+        mirrorStatus: 'blocked',
+        timelineStatus: 'blocked',
+        activeStage: undefined,
+        currentJobId: undefined,
+        detail: blockers.join('；'),
+        prepareChunks: updatePrepareChunkStatus(current.prepareChunks ?? [], chunk.chunkId, {
+          status: 'failed',
+          detail: blockers.join('；'),
+        }),
+        blockingReasons: dedupeStrings([...(current.blockingReasons ?? []), ...blockers]),
+      }));
+      await failColorAction(context.projectRoot, context.rootId, progressPath, action, blockers, {
         projectId: input.projectId,
         rootId: context.rootId,
         resolveProjectName: context.rootSummary.resolveProjectName,
-        rootNamespace: context.rootSummary.rootNamespace,
+        gradingTimelineName: context.rootSummary.gradingTimelineName,
+        chunkId: chunk.chunkId,
+      }, {
+        suppressProgress: input.suppressProgress,
+      });
+      throw error;
+    }
+  }
+
+  let detail: string;
+  let savedCurrent: Awaited<ReturnType<typeof writeRootCurrent>>;
+  let mergedSnapshot: IColorGroupsSnapshotFile;
+  let savedDrp: Awaited<ReturnType<IColorExecutor['saveDrpSnapshot']>>;
+  try {
+    mergedSnapshot = await runColorHostWithRetry(
+      () => executor.syncGroups({
+        projectId: input.projectId,
+        rootId: context.rootId,
+        resolveProjectName: context.rootSummary.resolveProjectName,
         gradingTimelineName: context.rootSummary.gradingTimelineName,
         rawPath: context.rootSummary.rawPath,
         rawLocalPath: context.rootSummary.rawLocalPath ?? '',
-        repairDrtPath: join(context.workspaceRoot, 'config', 'default.drt'),
-        repairDrxPath: join(context.workspaceRoot, 'config', 'default.drx'),
-        timelineSpec,
-        lutSyncSummary: preparedClipTransforms.lutSyncSummary,
-        clips: preparedClipTransforms.clips,
+        clips: preparedClipsForSync,
       }),
-      `prepare_root:${context.rootId}`,
+      `sync_groups:${context.rootId}:prepare-complete`,
     );
+    savedDrp = await runColorHostWithRetry(
+      () => executor.saveDrpSnapshot({
+        projectId: input.projectId,
+        resolveProjectName: context.rootSummary.resolveProjectName,
+        snapshotRoot: resolveColorDrpSnapshotRoot(context.projectRoot, context.rootSummary.resolveProjectName),
+        snapshotLabel: `prepare-root-${context.rootId}-complete`,
+        action: 'prepare_root',
+        rootId: context.rootId,
+      }),
+      `save_drp_snapshot:${context.rootId}:prepare-complete`,
+    );
+    const savedSnapshot = normalizeRequiredColorDrpSnapshot(savedDrp.snapshot, context.rootSummary.resolveProjectName);
+    await recordColorDrpSnapshots(context.projectRoot, context.rootSummary.resolveProjectName, [savedSnapshot]);
+    drpSnapshots.push(savedSnapshot);
   } catch (error) {
     const blockers = [error instanceof Error ? error.message : String(error)];
+    await writeRootCurrent(context.projectRoot, context.rootId, current => ({
+      ...current,
+      mirrorStatus: 'blocked',
+      timelineStatus: 'blocked',
+      activeStage: undefined,
+      currentJobId: undefined,
+      detail: blockers.join('；'),
+      blockingReasons: dedupeStrings([...(current.blockingReasons ?? []), ...blockers]),
+    }));
     await failColorAction(context.projectRoot, context.rootId, progressPath, action, blockers, {
       projectId: input.projectId,
       rootId: context.rootId,
       resolveProjectName: context.rootSummary.resolveProjectName,
       gradingTimelineName: context.rootSummary.gradingTimelineName,
+      stage: 'prepare_complete_sync_or_drp',
     }, {
       suppressProgress: input.suppressProgress,
     });
     throw error;
   }
-
-  await writeRootCurrent(context.projectRoot, context.rootId, current => ({
+  const syncedGroups = materializeCurrentGroupsFromSnapshot(
+    mergedSnapshot,
+    context.colorCurrent.roots.find(root => root.rootId === context.rootId)?.groups ?? [],
+    context.groupsSnapshot,
+  );
+  await saveColorGroupsSnapshot(context.projectRoot, mergedSnapshot);
+  const finalRepairSeedNotice = describeRepairSeedNotice(lastPreparedHostSummary);
+  detail = [
+    `Resolve host root prep 已完成：${completedChunkCount}/${chunks.length} chunks ready。`,
+    `Kairos 已写入 ${mergedSnapshot.groups.length} 个 Resolve Groups 快照。`,
+    finalRepairSeedNotice,
+    '如需复核 Resolve 内调整，可继续运行 Sync Groups。',
+  ].filter(Boolean).join(' ');
+  savedCurrent = await writeRootCurrent(context.projectRoot, context.rootId, current => ({
     ...current,
-    mirrorStatus: prepared.mirrorStatus,
-    timelineStatus: 'running',
-    activeStage: 'prepare_root_timeline',
-    currentJobId: input.jobId,
-    detail: 'Resolve host 已确认 root bin，正在对账 grading timeline。',
+    mirrorStatus: lastPreparedMirrorStatus ?? 'synced',
+    timelineStatus: 'ready',
+    groupSyncStatus: 'ready',
+    groupSyncAt: mergedSnapshot.syncedAt ?? current.groupSyncAt,
+    activeStage: undefined,
+    currentJobId: undefined,
+    detail,
+    hostSummary: mergeColorHostSummary(current.hostSummary, lastPreparedHostSummary, chunks),
+    groups: syncedGroups,
+    latestDrpSnapshot: drpSnapshots[drpSnapshots.length - 1] ?? current.latestDrpSnapshot,
     blockingReasons: filterPersistentColorBlockers(current.blockingReasons ?? []),
   }));
   await writeProgress(progressPath, action, {
-    status: 'running',
-    stepIndex: 2,
-    current: 1,
-    detail: `正在准备 ${context.rootSummary.gradingTimelineName}。`,
-    extra: {
-      projectId: input.projectId,
-      rootId: context.rootId,
-      resolveProjectName: prepared.resolveProjectName,
-      gradingTimelineName: prepared.gradingTimelineName,
-    },
-  });
-
-  let syncedGroups: ReturnType<typeof materializeCurrentGroupsFromSnapshot> | undefined;
-  let detail: string;
-  let savedCurrent: Awaited<ReturnType<typeof writeRootCurrent>>;
-  try {
-    if (prepared.groupsSnapshot) {
-      await saveColorGroupsSnapshot(context.projectRoot, prepared.groupsSnapshot);
-    }
-    syncedGroups = prepared.groupsSnapshot
-      ? materializeCurrentGroupsFromSnapshot(
-        prepared.groupsSnapshot,
-        context.colorCurrent.roots.find(root => root.rootId === context.rootId)?.groups ?? [],
-        context.groupsSnapshot,
-      )
-      : undefined;
-    detail = [
-      'Resolve host root prep 已完成。',
-      prepared.groupsSnapshot
-        ? `Kairos 已写入 ${prepared.groupsSnapshot.groups.length} 个 Resolve Groups 快照。`
-        : 'Kairos 已持久化 root mirror / timeline current truth。',
-      '如需复核 Resolve 内调整，可继续运行 Sync Groups。'
-    ].join(' ');
-    savedCurrent = await writeRootCurrent(context.projectRoot, context.rootId, current => ({
-      ...current,
-      mirrorStatus: prepared.mirrorStatus,
-      timelineStatus: prepared.timelineStatus,
-      groupSyncStatus: prepared.groupsSnapshot ? 'ready' : current.groupSyncStatus,
-      groupSyncAt: prepared.groupsSnapshot?.syncedAt ?? current.groupSyncAt,
-      activeStage: undefined,
-      currentJobId: undefined,
-      detail,
-      hostSummary: prepared.hostSummary ?? current.hostSummary ?? {},
-      groups: syncedGroups ?? current.groups,
-      blockingReasons: filterPersistentColorBlockers(current.blockingReasons ?? []),
-    }));
-  } catch (error) {
-    const blockers = [error instanceof Error ? error.message : String(error)];
-    await failColorAction(context.projectRoot, context.rootId, progressPath, action, blockers, {
-      projectId: input.projectId,
-      rootId: context.rootId,
-      resolveProjectName: prepared.resolveProjectName,
-      gradingTimelineName: prepared.gradingTimelineName,
-    }, {
-      suppressProgress: input.suppressProgress,
-    });
-    throw error;
-  }
-  await writeProgress(progressPath, action, {
     status: 'succeeded',
     stepIndex: 2,
-    current: CCOLOR_STEP_DEFINITIONS[action].length,
+    current: chunks.length,
     detail,
     extra: {
       projectId: input.projectId,
       rootId: context.rootId,
       hostPreflight,
-      hostSummary: prepared.hostSummary ?? {},
-      transformWarnings: preparedClipTransforms.warnings,
-      groupCount: prepared.groupsSnapshot?.groups.length,
+      hostSummary: mergeColorHostSummary(lastPreparedHostSummary, savedDrp.hostSummary, chunks),
+      transformWarnings,
+      groupCount: mergedSnapshot.groups.length,
+      chunkCount: chunks.length,
+      drpSnapshotPath: drpSnapshots[drpSnapshots.length - 1]?.snapshotPath,
     },
   });
 
@@ -737,9 +1159,9 @@ export async function prepareProjectColorRoot(
     action,
     projectId: input.projectId,
     rootId: context.rootId,
-    resolveProjectName: prepared.resolveProjectName,
+    resolveProjectName: lastPreparedResolveProjectName ?? context.rootSummary.resolveProjectName,
     rootNamespace: context.rootSummary.rootNamespace,
-    gradingTimelineName: prepared.gradingTimelineName,
+    gradingTimelineName: context.rootSummary.gradingTimelineName,
     mirrorStatus: savedRoot?.mirrorStatus,
     timelineStatus: savedRoot?.timelineStatus,
     blockingReasons: savedRoot?.blockingReasons ?? [],
@@ -760,10 +1182,15 @@ export async function syncProjectColorGroups(
   const writeProgress: TWriteColorProgress = input.suppressProgress
     ? async (..._args) => undefined
     : writeColorProgress;
+  const hasExistingResolveGroupTruth = Boolean(
+    (context.groupsSnapshot?.groups?.length ?? 0) > 0
+    || (context.rootSummary.colorCurrent.groups?.length ?? 0) > 0
+    || context.rootSummary.colorCurrent.groupSyncStatus === 'ready',
+  );
   const blockers = dedupeStrings([
     !context.rootSummary.rawPath ? '当前 root 未配置 rawPath，无法同步 Groups。' : '',
     !context.rootSummary.rawLocalPath ? '当前设备未配置 rawLocalPath，无法同步 Groups。' : '',
-    context.rootSummary.colorCurrent.timelineStatus !== 'ready'
+    context.rootSummary.colorCurrent.timelineStatus !== 'ready' && !hasExistingResolveGroupTruth
       ? '请先完成 prepare_root，再同步 Resolve Groups。'
       : '',
   ]);
@@ -788,10 +1215,9 @@ export async function syncProjectColorGroups(
       rootId,
     },
   });
-  const executorClips = await buildColorExecutorClips(
-    context.rootSummary.rawLocalPath ?? '',
-    context.runtimeConfig,
-    context.rootSummary.colorSpaceProfile,
+  const executorClips = buildColorSyncExecutorClipsForInventory(
+    await scanColorRawInventory(context.rootSummary.rawLocalPath ?? ''),
+    buildColorClipRepairSnapshotIndex(context.groupsSnapshot),
   );
   const syncedClipTransforms = await resolveExecutorClipTransforms(context, executorClips, {
     syncLuts: false,
@@ -813,6 +1239,11 @@ export async function syncProjectColorGroups(
     extra: { projectId: input.projectId, rootId },
   });
 
+  assertClipKeysPreparedByReadyChunks(
+    syncedClipTransforms.clips.map(clip => clip.rawRelativePath),
+    context.colorCurrent.roots.find(root => root.rootId === context.rootId)?.prepareChunks ?? [],
+    'sync_groups',
+  );
   const snapshot = await runColorHostWithRetry(
     () => executor.syncGroups({
       projectId: input.projectId,
@@ -829,11 +1260,14 @@ export async function syncProjectColorGroups(
 
   const savedCurrent = await writeRootCurrent(context.projectRoot, context.rootId, current => ({
     ...current,
+    mirrorStatus: current.mirrorStatus === 'blocked' || !current.mirrorStatus ? 'synced' : current.mirrorStatus,
+    timelineStatus: 'ready',
     groupSyncStatus: 'ready',
     groupSyncAt: snapshot.syncedAt ?? new Date().toISOString(),
     activeStage: undefined,
     currentJobId: undefined,
     detail: `已同步 ${snapshot.groups.length} 个 Resolve Groups。`,
+    blockingReasons: [],
     groups: materializeCurrentGroupsFromSnapshot(snapshot, current.groups ?? [], context.groupsSnapshot),
   }));
   const detail = savedCurrent.roots.find(root => root.rootId === rootId)?.detail
@@ -877,6 +1311,10 @@ export async function executeProjectColorRoot(
   const blockers = dedupeStrings([
     !context.rootSummary.localPath ? '当前设备未配置 current localPath，无法在本机覆盖当前素材目录。' : '',
     !context.rootSummary.rawLocalPath ? '当前设备未配置 rawLocalPath，无法扫描原始素材。' : '',
+    context.rootSummary.localPath && context.rootSummary.rawLocalPath
+      && resolve(context.rootSummary.localPath) === resolve(context.rootSummary.rawLocalPath)
+      ? 'current localPath 与 rawLocalPath 指向同一目录，直接渲染会覆盖原始素材。'
+      : '',
     typeof context.rootSummary.renderPreset.bitrateKbps !== 'number'
       ? '未配置 root 级 renderPreset.bitrateKbps（kb/s），无法启动 execute_root。'
       : '',
@@ -914,22 +1352,25 @@ export async function executeProjectColorRoot(
     throw new ProjectColorBlockedError(renderPresetBlockers);
   }
 
-  const rawInventory = await scanColorRawInventory(context.rootSummary.rawLocalPath ?? '');
-  const inventoryByKey = new Map(rawInventory.map(entry => [entry.rawRelativePath, entry]));
-  const effectiveClipKeys = requestedClipKeys.length > 0
-    ? requestedClipKeys
-    : rawInventory.map(entry => entry.rawRelativePath);
-  const missingClipKeys = effectiveClipKeys.filter(clipKey => !inventoryByKey.has(clipKey));
-  if (missingClipKeys.length > 0) {
-    const missingBlockers = missingClipKeys.map(clipKey => `batch clip 不存在于 rawLocalPath: ${clipKey}`);
-    await failColorAction(context.projectRoot, context.rootId, progressPath, action, missingBlockers, {
+  const overwritePreview = await buildColorOverwritePreviewForContext(context, requestedClipKeys);
+  const overwriteBlockers = [
+    ...validateColorOverwritePlanSafety(overwritePreview),
+    ...validateColorOverwriteConfirmation(overwritePreview, input),
+  ];
+  if (overwriteBlockers.length > 0) {
+    await failColorAction(context.projectRoot, context.rootId, progressPath, action, overwriteBlockers, {
       projectId: input.projectId,
       rootId,
+      overwritePlanHash: overwritePreview.overwritePlanHash,
+      existingCount: overwritePreview.existingCount,
     }, {
       suppressProgress: input.suppressProgress,
     });
-    throw new ProjectColorBlockedError(missingBlockers);
+    throw new ProjectColorBlockedError(overwriteBlockers);
   }
+  const rawInventory = await scanColorRawInventory(context.rootSummary.rawLocalPath ?? '');
+  const inventoryByKey = new Map(rawInventory.map(entry => [entry.rawRelativePath, entry]));
+  const effectiveClipKeys = overwritePreview.targets.map(target => target.rawRelativePath);
   if (effectiveClipKeys.length === 0) {
     const emptyBlockers = ['当前 root 没有可执行 clip。'];
     await failColorAction(context.projectRoot, context.rootId, progressPath, action, emptyBlockers, {
@@ -942,14 +1383,18 @@ export async function executeProjectColorRoot(
   }
 
   const batchId = randomUUID();
-  const stagingRoot = join(context.projectRoot, '.tmp', 'color', batchId, 'render');
-  await mkdir(stagingRoot, { recursive: true });
+  const outputRoot = overwritePreview.outputRoot ?? resolve(context.rootSummary.localPath ?? '');
+  await mkdir(outputRoot, { recursive: true });
+  const previewTargetByKey = new Map(overwritePreview.targets.map(target => [target.rawRelativePath, target]));
   const planEntries = await Promise.all(
     effectiveClipKeys.map(async clipKey => {
       const item = inventoryByKey.get(clipKey)!;
+      const target = previewTargetByKey.get(clipKey)!;
       return {
         rawRelativePath: clipKey,
         sourceAbsolutePath: item.sourceAbsolutePath,
+        sourceStem: target.sourceStem,
+        outputPath: target.outputPath,
         sourceMetadataSnapshot: await buildColorFileMetadataSnapshot(
           item.sourceAbsolutePath,
           context.runtimeConfig,
@@ -962,10 +1407,12 @@ export async function executeProjectColorRoot(
     batchId,
     rootId,
     createdAt: new Date().toISOString(),
-    stagingRoot,
+    outputRoot,
     renderPreset: context.rootSummary.renderPreset,
     selectionMode: requestedClipKeys.length > 0 ? 'subset' : 'all',
     clipKeys: effectiveClipKeys,
+    overwritePlanHash: overwritePreview.overwritePlanHash,
+    renderJobs: [],
     entries: planEntries,
   };
   await saveColorBatchPlan(context.projectRoot, plan);
@@ -1005,36 +1452,47 @@ export async function executeProjectColorRoot(
       projectId: input.projectId,
       rootId,
       batchId,
-      stagingRoot,
+      outputRoot,
       clipCount: effectiveClipKeys.length,
       selectionMode: plan.selectionMode,
     },
   });
 
-  const rendered = await runColorHostWithRetry(
-    () => executor.executeRoot({
-      projectId: input.projectId,
-      rootId,
-      resolveProjectName: context.rootSummary.resolveProjectName,
-      gradingTimelineName: context.rootSummary.gradingTimelineName,
-      rawLocalPath: context.rootSummary.rawLocalPath ?? '',
-      renderPreset: context.rootSummary.renderPreset,
-      stagingRoot,
-      selectionMode: plan.selectionMode,
-      clips: planEntries.map(entry => ({
-        rawRelativePath: entry.rawRelativePath,
-        sourceAbsolutePath: entry.sourceAbsolutePath,
-        sourceStem: deriveSourceStem(entry.rawRelativePath),
-        width: entry.sourceMetadataSnapshot?.width,
-        height: entry.sourceMetadataSnapshot?.height,
-        fps: entry.sourceMetadataSnapshot?.fps,
-      })),
-    }),
-    `execute_root:${context.rootId}:${batchId}`,
+  assertClipKeysPreparedByReadyChunks(
+    planEntries.map(entry => entry.rawRelativePath),
+    context.colorCurrent.roots.find(root => root.rootId === context.rootId)?.prepareChunks ?? [],
+    'execute_root',
   );
   const planEntryByKey = new Map(planEntries.map(entry => [entry.rawRelativePath, entry]));
-  const normalizedRenderedEntries = await Promise.all(
-    rendered.entries.map(async entry => {
+  let rendered: Awaited<ReturnType<IColorExecutor['executeRoot']>>;
+  let finalRenderedEntries: Array<Awaited<ReturnType<IColorExecutor['executeRoot']>>['entries'][number] & {
+    outputPath: string;
+    sourceMetadataSnapshot?: IColorFileMetadataSnapshot;
+  }>;
+  try {
+    rendered = await runColorHostWithRetry(
+      () => executor.executeRoot({
+        projectId: input.projectId,
+        rootId,
+        resolveProjectName: context.rootSummary.resolveProjectName,
+        gradingTimelineName: context.rootSummary.gradingTimelineName,
+        rawLocalPath: context.rootSummary.rawLocalPath ?? '',
+        renderPreset: context.rootSummary.renderPreset,
+        outputRoot,
+        selectionMode: plan.selectionMode,
+        clips: planEntries.map(entry => ({
+          rawRelativePath: entry.rawRelativePath,
+          sourceAbsolutePath: entry.sourceAbsolutePath,
+          sourceStem: entry.sourceStem ?? deriveSourceStem(entry.rawRelativePath),
+          width: entry.sourceMetadataSnapshot?.width,
+          height: entry.sourceMetadataSnapshot?.height,
+          fps: entry.sourceMetadataSnapshot?.fps,
+        })),
+      }),
+      `execute_root:${context.rootId}:${batchId}`,
+    );
+    finalRenderedEntries = await verifyRenderedEntriesAtFinalOutputs(rendered.entries, previewTargetByKey);
+    finalRenderedEntries = await Promise.all(finalRenderedEntries.map(async entry => {
       const sourceMetadataSnapshot = planEntryByKey.get(entry.rawRelativePath)?.sourceMetadataSnapshot;
       const normalizedOutputPath = await normalizeRenderedColorOutputMetadata(
         entry.outputPath,
@@ -1046,26 +1504,47 @@ export async function executeProjectColorRoot(
         outputPath: normalizedOutputPath,
         sourceMetadataSnapshot,
       };
-    }),
-  );
+    }));
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    await failColorAction(context.projectRoot, context.rootId, progressPath, action, [reason], {
+      projectId: input.projectId,
+      rootId,
+      batchId,
+      outputRoot,
+    }, {
+      suppressProgress: input.suppressProgress,
+    });
+    await writeRootCurrent(context.projectRoot, context.rootId, current => ({
+      ...current,
+      latestBatchId: batchId,
+      latestBatchStatus: 'failed',
+      latestValidationStatus: 'pending',
+      pendingPromoteBatchId: undefined,
+    }));
+    throw error;
+  }
 
   const manifestEntries = await Promise.all(
-    normalizedRenderedEntries.map(async entry => {
-      const relativeDir = posix.dirname(entry.rawRelativePath);
-      const promoteRelativePath = normalizePortablePath(
-        relativeDir === '.'
-          ? entry.normalizedOutputFilename
-          : posix.join(relativeDir, entry.normalizedOutputFilename),
-      );
+    finalRenderedEntries.map(async entry => {
+      const planEntry = planEntryByKey.get(entry.rawRelativePath);
+      const sidecars = planEntry
+        ? await mirrorColorSidecarsForEntry({
+          rawLocalPath: context.rootSummary.rawLocalPath ?? '',
+          sourceAbsolutePath: planEntry.sourceAbsolutePath,
+          outputRelativePath: normalizePortablePath(relative(outputRoot, entry.outputPath)),
+          localRootPath: context.rootSummary.localPath ?? '',
+        })
+        : [];
       return {
         rawRelativePath: entry.rawRelativePath,
-        stagingRelativePath: normalizePortablePath(relative(stagingRoot, entry.outputPath)),
-        stagingAbsolutePath: resolve(entry.outputPath),
-        promoteRelativePath,
-        promoteTargetPath: resolve(join(context.rootSummary.localPath ?? '', ...promoteRelativePath.split('/'))),
+        outputPath: resolve(entry.outputPath),
         normalizedOutputFilename: entry.normalizedOutputFilename,
+        sourceStem: planEntry?.sourceStem,
+        renderJobId: entry.renderJobId,
         sourceMetadataSnapshot: entry.sourceMetadataSnapshot,
         outputMetadataSnapshot: await buildColorFileMetadataSnapshot(entry.outputPath, context.runtimeConfig).catch(() => undefined),
+        sidecars,
       };
     }),
   );
@@ -1074,26 +1553,35 @@ export async function executeProjectColorRoot(
     rootId,
     createdAt: rendered.renderedAt,
     renderPreset: context.rootSummary.renderPreset,
-    managedOutputSet: manifestEntries.map(entry => entry.promoteRelativePath),
+    managedOutputSet: manifestEntries.map(entry => normalizePortablePath(relative(outputRoot, entry.outputPath))),
+    managedSidecarSet: manifestEntries.flatMap(entry => entry.sidecars.map(sidecar => sidecar.outputRelativePath)),
+    renderJobs: normalizeColorBatchRenderJobs(rendered.renderJobs ?? []),
+    metadataRepair: {
+      repairedCount: finalRenderedEntries.length,
+      failedOutputs: [],
+      warnings: [],
+    },
     entries: manifestEntries,
   };
   await saveColorBatchManifest(context.projectRoot, manifest);
 
-  const savedCurrent = await writeRootCurrent(context.projectRoot, context.rootId, current => ({
-    ...current,
-    activeStage: undefined,
-    currentJobId: undefined,
-    detail: `root batch 已完成，待 validation：${batchId}`,
-    latestBatchId: batchId,
-    latestBatchStatus: 'staged',
-    latestValidationStatus: 'pending',
-    pendingPromoteBatchId: undefined,
-    blockingReasons: [],
-  }));
-  const detail = savedCurrent.roots.find(root => root.rootId === rootId)?.detail
-    ?? `root batch 已完成，待 validation：${batchId}`;
+  await saveColorBatchPlan(context.projectRoot, {
+    ...plan,
+    renderJobs: manifest.renderJobs,
+    entries: plan.entries,
+  });
+  const validation = await validateProjectColorBatch({
+    ...input,
+    rootId,
+    action: 'validate_batch',
+    batchId,
+    suppressProgress: true,
+  });
+  const detail = validation.blockingReasons.length > 0
+    ? `root batch 已渲染但 validation 失败：${batchId}`
+    : `root batch 已渲染、metadata 已修复并通过 validation：${batchId}`;
   await writeProgress(progressPath, action, {
-    status: 'succeeded',
+    status: validation.blockingReasons.length > 0 ? 'failed' : 'succeeded',
     stepIndex: 2,
     current: 2,
     detail,
@@ -1103,6 +1591,7 @@ export async function executeProjectColorRoot(
       batchId,
       clipCount: effectiveClipKeys.length,
       selectionMode: plan.selectionMode,
+      outputRoot,
     },
   });
 
@@ -1112,7 +1601,7 @@ export async function executeProjectColorRoot(
     rootId,
     batchId,
     detail,
-    blockingReasons: [],
+    blockingReasons: validation.blockingReasons,
   };
 }
 
@@ -1177,23 +1666,24 @@ export async function validateProjectColorBatch(
       const sourcePath = plan?.entries.find(item => item.rawRelativePath === entry.rawRelativePath)?.sourceAbsolutePath
         ?? resolve(join(context.rootSummary.rawLocalPath ?? '', ...entry.rawRelativePath.split('/')));
       const sourceMetadata = await buildColorFileMetadataSnapshot(sourcePath, context.runtimeConfig).catch(() => undefined);
-      const outputMetadata = await buildColorFileMetadataSnapshot(entry.stagingAbsolutePath, context.runtimeConfig).catch(() => undefined);
+      const outputMetadata = await buildColorFileMetadataSnapshot(entry.outputPath, context.runtimeConfig).catch(() => undefined);
+      const outputRelativePath = normalizePortablePath(relative(context.rootSummary.localPath ?? '', entry.outputPath));
       const checks = buildColorValidationChecks({
         rawRelativePath: entry.rawRelativePath,
-        promoteRelativePath: entry.promoteRelativePath,
+        outputRelativePath,
         normalizedOutputFilename: entry.normalizedOutputFilename,
         sourceMetadata,
         outputMetadata,
       });
+      const sidecarReasons = await validateColorSidecars(entry.sidecars ?? []);
       const warnings = collectValidationWarnings(checks);
       const reasons = collectValidationReasons(checks, {
         sourcePath,
-        outputPath: entry.stagingAbsolutePath,
-      });
+        outputPath: entry.outputPath,
+      }).concat(sidecarReasons);
       return {
         rawRelativePath: entry.rawRelativePath,
-        stagingRelativePath: entry.stagingRelativePath,
-        promoteTargetPath: entry.promoteTargetPath,
+        outputPath: entry.outputPath,
         status: (reasons.length > 0 ? 'fail' : 'pass') as 'pass' | 'fail',
         reasons,
         warnings,
@@ -1231,12 +1721,12 @@ export async function validateProjectColorBatch(
       latestBatchId: batchId,
       latestBatchStatus: validationStatus === 'pass' ? 'validated' : 'failed',
       latestValidationStatus: validationStatus,
-      pendingPromoteBatchId: validationStatus === 'pass' ? batchId : undefined,
+      pendingPromoteBatchId: undefined,
       blockingReasons: validationStatus === 'pass'
         ? []
         : validationBlockingReasons,
       detail: validationStatus === 'pass'
-        ? `batch 已通过 validation，可 promote：${batchId}`
+        ? `batch 已通过 validation，并已替换最终 root 目标：${batchId}`
         : `batch validation 失败：${batchId}`,
     }
     : {
@@ -1280,97 +1770,19 @@ export async function promoteProjectColorBatch(
   }
   const context = await loadColorRootContext(input.workspaceRoot, input.projectId, rootId);
   const progressPath = resolveColorProgressPath(context.projectRoot, input.progressPath);
-  const writeProgress: TWriteColorProgress = input.suppressProgress
-    ? async (..._args) => undefined
-    : writeColorProgress;
   const batchId = input.batchId?.trim();
-  const [manifest, validation] = await Promise.all([
-    batchId ? loadColorBatchManifest(context.projectRoot, batchId) : Promise.resolve(null),
-    batchId ? loadColorBatchValidation(context.projectRoot, batchId) : Promise.resolve(null),
-  ]);
-  const currentRoot = context.colorCurrent.roots.find(root => root.rootId === rootId) ?? null;
   const blockers = dedupeStrings([
-    !batchId ? 'promote_batch requires args.batchId。' : '',
-    !manifest ? `缺少 batch manifest: ${batchId ?? '(missing)'}` : '',
-    !validation ? `缺少 batch validation: ${batchId ?? '(missing)'}` : '',
-    validation && validation.status !== 'pass' ? `batch ${batchId} 尚未通过 validation。` : '',
-    !context.rootSummary.localPath ? '当前设备未配置 current localPath，无法覆盖当前素材目录。' : '',
-    !currentRoot ? `当前 root 未记录 color current。` : '',
-    currentRoot && currentRoot.latestBatchId !== batchId
-      ? `batch ${batchId} 已被更新的候选取代，不能再 promote。`
-      : '',
+    '当前 Color Export 已改为按 raw 父目录临时时间线直接渲染到最终 root 目标；promote_batch 已移除。',
+    batchId ? `batch ${batchId} 不需要 promote。` : '',
   ]);
-  if (blockers.length > 0) {
-    await failColorAction(context.projectRoot, context.rootId, progressPath, action, blockers, {
-      projectId: input.projectId,
-      rootId,
-      batchId,
-    }, {
-      suppressProgress: input.suppressProgress,
-    });
-    throw new ProjectColorBlockedError(blockers);
-  }
-
-  await writeProgress(progressPath, action, {
-    status: 'running',
-    stepIndex: 1,
-    current: 0,
-    detail: `正在 promote batch：${batchId}`,
-    extra: { projectId: input.projectId, rootId, batchId },
-  });
-
-  const previousPromote = currentRoot?.lastPromotedBatchId
-    ? await loadColorBatchManifest(context.projectRoot, currentRoot.lastPromotedBatchId)
-    : null;
-  const deletedOutputs = await deleteManagedOutputs(
-    context.rootSummary.localPath ?? '',
-    previousPromote?.managedOutputSet ?? [],
-    manifest?.managedOutputSet ?? [],
-  );
-  const copiedOutputs = await copyManagedOutputs(context.rootSummary.localPath ?? '', manifest!);
-  const promote: IColorBatchPromote = {
-    batchId: batchId!,
-    rootId,
-    promotedAt: new Date().toISOString(),
-    status: 'completed',
-    outputs: copiedOutputs,
-    deletedOutputs,
-    detail: `已 promote ${copiedOutputs.length} 个输出到当前素材目录。`,
-  };
-  await saveColorBatchPromote(context.projectRoot, promote);
-
-  const savedCurrent = await writeRootCurrent(context.projectRoot, context.rootId, current => ({
-    ...current,
-    latestBatchId: batchId,
-    latestBatchStatus: 'promoted',
-    latestValidationStatus: 'pass',
-    pendingPromoteBatchId: undefined,
-    lastPromotedBatchId: batchId,
-    blockingReasons: [],
-    detail: promote.detail,
-  }));
-  const detail = savedCurrent.roots.find(root => root.rootId === rootId)?.detail ?? promote.detail ?? 'promote 完成。';
-  await writeProgress(progressPath, action, {
-    status: 'succeeded',
-    stepIndex: 1,
-    current: 1,
-    detail,
-    extra: {
-      projectId: input.projectId,
-      rootId,
-      batchId,
-      outputCount: copiedOutputs.length,
-    },
-  });
-
-  return {
-    action,
+  await failColorAction(context.projectRoot, context.rootId, progressPath, action, blockers, {
     projectId: input.projectId,
     rootId,
     batchId,
-    detail,
-    blockingReasons: [],
-  };
+  }, {
+    suppressProgress: input.suppressProgress,
+  });
+  throw new ProjectColorBlockedError(blockers);
 }
 
 async function loadEnabledProjectColorRootSummaries(
@@ -1378,11 +1790,12 @@ async function loadEnabledProjectColorRootSummaries(
   projectId: string,
 ) {
   const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
-  const [projectBrief, projectRoots, colorCurrent, groupSnapshotsByRootId] = await Promise.all([
+  const [projectBrief, projectRoots, colorCurrent, groupSnapshotsByRootId, colorResolveProjectMap] = await Promise.all([
     loadProjectBriefConfig(projectRoot).catch(() => null),
     loadIngestRoots(projectRoot),
     loadColorCurrent(projectRoot),
     loadColorGroupsSnapshots(projectRoot),
+    loadColorResolveProjectMap(projectRoot),
   ]);
   const colorWorkspace = buildColorWorkspaceState({
     projectId,
@@ -1391,6 +1804,7 @@ async function loadEnabledProjectColorRootSummaries(
     colorCurrent,
     resolveBackend: inspectResolveColorBackend(),
     groupSnapshotsByRootId,
+    colorResolveProjectMap,
   });
   return colorWorkspace.colorRoots;
 }
@@ -1401,7 +1815,15 @@ async function loadColorRootContext(
   rootId: string,
 ): Promise<IColorRootContext> {
   const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
-  const [projectBrief, projectRoots, colorCurrent, runtimeConfig, groupSnapshotsByRootId, transformPresetsConfig] = await Promise.all([
+  const [
+    projectBrief,
+    projectRoots,
+    colorCurrent,
+    runtimeConfig,
+    groupSnapshotsByRootId,
+    transformPresetsConfig,
+    colorResolveProjectMap,
+  ] = await Promise.all([
     loadProjectBriefConfig(projectRoot).catch(() => null),
     loadIngestRoots(projectRoot),
     loadColorCurrent(projectRoot),
@@ -1411,6 +1833,7 @@ async function loadColorRootContext(
       profiles: {},
       discoveredPresets: {},
     })),
+    loadColorResolveProjectMap(projectRoot),
   ]);
   const colorWorkspace = buildColorWorkspaceState({
     projectId,
@@ -1419,6 +1842,7 @@ async function loadColorRootContext(
     colorCurrent,
     resolveBackend: inspectResolveColorBackend(),
     groupSnapshotsByRootId,
+    colorResolveProjectMap,
   });
   const rootSummary = colorWorkspace.colorRoots.find(root => root.rootId === rootId);
   if (!rootSummary) {
@@ -1466,6 +1890,7 @@ function normalizeColorAction(action?: string): TProjectColorAction {
     case 'promote_batch':
     case 'prepare_all_roots':
     case 'export_all_roots':
+    case 'save_drp_snapshot':
       return normalized;
     default:
       throw new Error(`Unsupported color action: ${normalized}`);
@@ -1481,6 +1906,7 @@ async function writeRootCurrent(
   const currentRoot = existing.roots.find(root => root.rootId === rootId) ?? {
     rootId,
     hostSummary: {},
+    prepareChunks: [],
     groups: [],
     blockingReasons: [],
   };
@@ -1515,12 +1941,164 @@ function materializeCurrentGroupsFromSnapshot(
       clipCount: group.clipKeys.length,
       logProfile: group.logProfile ?? existing?.logProfile,
       lowlight: group.lowlight ?? existing?.lowlight,
+      colorCastClass: group.colorCastClass ?? existing?.colorCastClass,
       postClipCreativeStatus: group.postClipCreativeStatus ?? existing?.postClipCreativeStatus,
       blockingReasons: nextStatus === 'blocked'
         ? dedupeStrings([...(clipKeysChanged ? [] : existing?.blockingReasons ?? []), '该 Group 当前没有可执行 clip。'])
         : [],
     };
   });
+}
+
+function mergeColorHostSummary(
+  current: Record<string, unknown> | undefined,
+  next: Record<string, unknown> | undefined,
+  chunks: IColorPrepareChunkPlan[],
+): Record<string, unknown> {
+  const currentSummary = isPlainObject(current) ? current : {};
+  const nextSummary = isPlainObject(next) ? next : {};
+  const completedChunks = chunks.filter(chunk => chunk.status === 'ready').length;
+  return {
+    ...currentSummary,
+    ...nextSummary,
+    prepareChunkSize: CCOLOR_PREPARE_CHUNK_SIZE,
+    prepareProbeConcurrency: CCOLOR_PREPARE_PROBE_CONCURRENCY,
+    prepareChunkCount: chunks.length,
+    prepareCompletedChunkCount: Math.max(
+      Number(currentSummary.prepareCompletedChunkCount ?? 0),
+      completedChunks,
+    ),
+    prepareClipCount: chunks.reduce((total, chunk) => total + chunk.clipCount, 0),
+    gradingTimelineName: chunks[0]?.timelineName ?? currentSummary.gradingTimelineName ?? nextSummary.gradingTimelineName,
+    prepareTimelineNames: dedupeStrings([
+      ...extractStringArray(currentSummary.prepareTimelineNames),
+      ...extractStringArray(nextSummary.prepareTimelineNames),
+      ...chunks.map(chunk => chunk.timelineName),
+    ]),
+  };
+}
+
+function describeRepairSeedNotice(hostSummary: Record<string, unknown> | undefined): string | undefined {
+  if (!isPlainObject(hostSummary)) return undefined;
+  const status = typeof hostSummary.repairTemplateStatus === 'string'
+    ? hostSummary.repairTemplateStatus.trim()
+    : '';
+  const missingOrientationCount = typeof hostSummary.repairOrientationTemplateMissingClipCount === 'number'
+    ? hostSummary.repairOrientationTemplateMissingClipCount
+    : 0;
+  if (missingOrientationCount > 0) {
+    return `竖屏 Gyro DRT 缺失，已跳过 ${missingOrientationCount} 个竖屏 clip 的自动 Gyro seed；素材、Group 与横屏 transform 已继续准备。`;
+  }
+  if (status !== 'skipped-missing-drt') return undefined;
+  return 'Repair 模板缺失，已跳过自动 repair seed；素材与 Group 已可继续准备。';
+}
+
+function resolveColorDrpSnapshotRoot(projectRoot: string, resolveProjectName: string): string {
+  return join(getColorResolveProjectsRoot(projectRoot), safeColorProjectName(resolveProjectName));
+}
+
+async function recordColorDrpSnapshots(
+  projectRoot: string,
+  resolveProjectName: string,
+  snapshots: IColorResolveProjectSnapshot[],
+): Promise<IColorResolveProjectMap> {
+  const normalizedSnapshots = snapshots
+    .map(snapshot => normalizeColorDrpSnapshot({
+      ...snapshot,
+      projectName: snapshot.projectName || resolveProjectName,
+    }))
+    .filter((snapshot): snapshot is IColorResolveProjectSnapshot => Boolean(snapshot));
+  if (normalizedSnapshots.length === 0) {
+    return loadColorResolveProjectMap(projectRoot);
+  }
+  const existing = await loadColorResolveProjectMap(projectRoot);
+  const safeProjectName = safeColorProjectName(resolveProjectName);
+  const previous = existing.projects[resolveProjectName];
+  const snapshotsByPath = new Map<string, IColorResolveProjectSnapshot>();
+  for (const snapshot of previous?.snapshots ?? []) {
+    snapshotsByPath.set(snapshot.snapshotPath, snapshot);
+  }
+  for (const snapshot of normalizedSnapshots) {
+    snapshotsByPath.set(snapshot.snapshotPath, snapshot);
+  }
+  const orderedSnapshots = [...snapshotsByPath.values()]
+    .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
+  const latestSnapshot = normalizedSnapshots[normalizedSnapshots.length - 1]
+    ?? orderedSnapshots[orderedSnapshots.length - 1]
+    ?? previous?.latestSnapshot;
+  const updatedAt = new Date().toISOString();
+  return saveColorResolveProjectMap(projectRoot, {
+    ...existing,
+    updatedAt,
+    projects: {
+      ...existing.projects,
+      [resolveProjectName]: {
+        projectName: resolveProjectName,
+        safeProjectName,
+        latestSnapshot,
+        snapshots: orderedSnapshots.slice(-200),
+        updatedAt,
+      },
+    },
+  });
+}
+
+function normalizeColorDrpSnapshot(value: Record<string, unknown>): IColorResolveProjectSnapshot | null {
+  const projectName = typeof value.projectName === 'string' && value.projectName.trim()
+    ? value.projectName.trim()
+    : '';
+  const snapshotPath = typeof value.snapshotPath === 'string' && value.snapshotPath.trim()
+    ? value.snapshotPath.trim()
+    : '';
+  const createdAt = typeof value.createdAt === 'string' && value.createdAt.trim()
+    ? value.createdAt.trim()
+    : '';
+  if (!projectName || !snapshotPath || !createdAt) return null;
+  const mode = value.mode === 'manual' || value.mode === 'external' ? value.mode : 'auto';
+  return {
+    projectName,
+    snapshotPath,
+    latestPath: typeof value.latestPath === 'string' && value.latestPath.trim() ? value.latestPath.trim() : undefined,
+    createdAt,
+    mode,
+    action: typeof value.action === 'string' && value.action.trim() ? value.action.trim() : undefined,
+    rootId: typeof value.rootId === 'string' && value.rootId.trim() ? value.rootId.trim() : undefined,
+    chunkId: typeof value.chunkId === 'string' && value.chunkId.trim() ? value.chunkId.trim() : undefined,
+    database: isPlainObject(value.database) ? value.database : undefined,
+    detail: typeof value.detail === 'string' && value.detail.trim() ? value.detail.trim() : undefined,
+  };
+}
+
+function normalizeRequiredColorDrpSnapshot(
+  value: IColorResolveProjectSnapshot | Record<string, unknown>,
+  resolveProjectName: string,
+): IColorResolveProjectSnapshot {
+  const normalized = normalizeColorDrpSnapshot({
+    ...value,
+    projectName: typeof value.projectName === 'string' && value.projectName.trim()
+      ? value.projectName
+      : resolveProjectName,
+  });
+  if (!normalized) {
+    throw new Error('Resolve host returned an invalid DRP snapshot payload.');
+  }
+  return normalized;
+}
+
+function safeColorProjectName(projectName: string): string {
+  const normalized = projectName
+    .trim()
+    .replace(/[^a-zA-Z0-9._-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+  return normalized || `resolve-project-${hashString(projectName).slice(0, 10)}`;
+}
+
+function formatColorSnapshotTimestamp(value: string): string {
+  return value
+    .replace(/[:.]/g, '')
+    .replace(/[^0-9TZ-]/g, '')
+    .replace(/-+/g, '');
 }
 
 async function writeColorProgress(
@@ -1575,7 +2153,7 @@ async function failColorAction(
           groupSyncStatus: current.groupSyncStatus,
         }
       : {}),
-    activeStage: CCOLOR_STEP_DEFINITIONS[action][0]?.key,
+    activeStage: undefined,
     currentJobId: undefined,
     detail: blockers.join('；'),
     blockingReasons: options.persistRootBlockers === false
@@ -1599,35 +2177,283 @@ function filterPersistentColorBlockers(blockers: string[]): string[] {
     !blocker.includes('vendored Resolve backend')
     && !blocker.includes('Resolve Studio')
     && !blocker.includes('Resolve 版本')
+    && !blocker.includes('Unable to import clip repair template timeline')
     && !blocker.includes('renderPreset')
     && !blocker.includes('render preset')
+    && !blocker.includes('Unable to set render settings')
+    && !blocker.includes('Unable to queue render job')
+    && !blocker.includes('Unable to locate rendered output')
     && !blocker.includes('resolveColorPythonPath')
     && !blocker.includes('resolveColorScriptApiRoot')
     && !blocker.includes('config/runtime.json')
   ));
 }
 
-async function scanColorRawInventory(rawLocalPath: string): Promise<Array<{
+interface IColorRawInventoryItem {
   rawRelativePath: string;
   sourceAbsolutePath: string;
-}>> {
+}
+
+interface IColorPrepareChunkPlan extends IColorPrepareChunk {
+  items: IColorRawInventoryItem[];
+}
+
+interface IColorCastPreviewContext {
+  workspaceRoot: string;
+  rootColorSpaceProfile?: IColorRootContext['rootSummary']['colorSpaceProfile'];
+  rootTransformPresetKey?: IColorRootContext['rootSummary']['transformPresetKey'];
+  transformPresetsConfig: Awaited<ReturnType<typeof loadColorTransformPresetsConfig>>;
+}
+
+async function scanColorRawInventory(rawLocalPath: string): Promise<IColorRawInventoryItem[]> {
   const scanned = await scanDirectory(rawLocalPath);
   return scanned
     .filter(file => file.kind === 'video')
     .map(file => ({
       rawRelativePath: normalizePortablePath(toPortableRelativePath(rawLocalPath, file.path)),
       sourceAbsolutePath: resolve(file.path),
-    }));
+    }))
+    .sort((left, right) => left.rawRelativePath.localeCompare(right.rawRelativePath, 'zh-Hans-CN'));
+}
+
+async function buildColorOverwritePreviewForContext(
+  context: IColorRootContext,
+  requestedClipKeys: string[],
+): Promise<IColorOverwritePreview> {
+  const outputRoot = resolve(context.rootSummary.localPath ?? '');
+  const rawRoot = resolve(context.rootSummary.rawLocalPath ?? '');
+  const rawInventory = await scanColorRawInventory(rawRoot);
+  const inventoryByKey = new Map(rawInventory.map(entry => [entry.rawRelativePath, entry]));
+  const effectiveClipKeys = dedupeStrings(requestedClipKeys.map(clipKey => normalizePortablePath(String(clipKey ?? ''))));
+  const selectedKeys = effectiveClipKeys.length > 0
+    ? effectiveClipKeys
+    : rawInventory.map(entry => entry.rawRelativePath);
+  const missingClipKeys = selectedKeys.filter(clipKey => !inventoryByKey.has(clipKey));
+  if (missingClipKeys.length > 0) {
+    throw new ProjectColorBlockedError(missingClipKeys.map(clipKey => `overwrite preview clip 不存在于 rawLocalPath: ${clipKey}`));
+  }
+  const extension = resolveColorRenderExtension(context.rootSummary.renderPreset);
+  const targets = await Promise.all(selectedKeys.map(async rawRelativePath => {
+    const sourceStem = deriveSourceStem(rawRelativePath);
+    const outputPath = resolve(join(
+      outputRoot,
+      ...portableParentDir(rawRelativePath).split('/').filter(Boolean),
+      `${sourceStem}.${extension}`,
+    ));
+    const outputStats = await stat(outputPath).catch(() => null);
+    return {
+      rawRelativePath,
+      sourceStem,
+      outputPath,
+      exists: Boolean(outputStats?.isFile()),
+      sizeBytes: outputStats?.isFile() ? outputStats.size : undefined,
+      modifiedAt: outputStats?.isFile() ? outputStats.mtime.toISOString() : undefined,
+    };
+  }));
+  const duplicateStemGroups = buildDuplicateStemGroups(targets.map(target => ({
+    rawRelativePath: target.rawRelativePath,
+    sourceStem: target.sourceStem,
+  })));
+  const byDirectory = mergeColorOverwriteDirectories(targets.map(target => ({
+    directory: portableParentDir(target.rawRelativePath),
+    clipCount: 1,
+    existingCount: target.exists ? 1 : 0,
+  })));
+  const overwritePlanHash = hashColorOverwritePayload({
+    mode: 'execute_root',
+    projectId: context.projectId,
+    rootId: context.rootId,
+    outputRoot,
+    rawRoot,
+    targets: targets.map(target => ({
+      rawRelativePath: target.rawRelativePath,
+      sourceStem: target.sourceStem,
+      outputPath: target.outputPath,
+      exists: target.exists,
+      sizeBytes: target.sizeBytes,
+      modifiedAt: target.modifiedAt,
+    })),
+  });
+  return {
+    projectId: context.projectId,
+    rootId: context.rootId,
+    mode: 'execute_root',
+    outputRoot,
+    rawRoot,
+    clipCount: targets.length,
+    existingCount: targets.filter(target => target.exists).length,
+    targets,
+    byDirectory,
+    duplicateStemGroups,
+    overwritePlanHash,
+    rootHashes: {
+      [context.rootId]: overwritePlanHash,
+    },
+    roots: [],
+  };
+}
+
+function buildDuplicateStemGroups(items: Array<{ rawRelativePath: string; sourceStem: string }>): IColorOverwritePreview['duplicateStemGroups'] {
+  const byStem = new Map<string, Array<{ rawRelativePath: string; sourceStem: string }>>();
+  for (const item of items) {
+    const relativeDir = portableParentDir(item.rawRelativePath);
+    const key = `${relativeDir}\0${item.sourceStem.trim().toLowerCase()}`;
+    const existing = byStem.get(key);
+    if (existing) {
+      existing.push(item);
+    } else {
+      byStem.set(key, [item]);
+    }
+  }
+  return [...byStem.values()]
+    .filter(group => group.length > 1)
+    .map(group => ({
+      sourceStem: group[0]?.sourceStem ?? '',
+      rawRelativePaths: group.map(item => item.rawRelativePath).sort((left, right) => left.localeCompare(right, 'zh-Hans-CN')),
+    }))
+    .sort((left, right) => left.sourceStem.localeCompare(right.sourceStem, 'zh-Hans-CN'));
+}
+
+function mergeColorOverwriteDirectories(
+  directories: IColorOverwritePreview['byDirectory'],
+): IColorOverwritePreview['byDirectory'] {
+  const byDirectory = new Map<string, { directory: string; clipCount: number; existingCount: number }>();
+  for (const item of directories) {
+    const key = item.directory || '';
+    const existing = byDirectory.get(key);
+    if (existing) {
+      existing.clipCount += item.clipCount;
+      existing.existingCount += item.existingCount;
+    } else {
+      byDirectory.set(key, {
+        directory: key,
+        clipCount: item.clipCount,
+        existingCount: item.existingCount,
+      });
+    }
+  }
+  return [...byDirectory.values()].sort((left, right) => left.directory.localeCompare(right.directory, 'zh-Hans-CN'));
+}
+
+function hashColorOverwritePayload(payload: unknown): string {
+  return createHash('sha256')
+    .update(JSON.stringify(payload))
+    .digest('hex');
+}
+
+function validateColorOverwriteConfirmation(
+  preview: IColorOverwritePreview,
+  input: IProjectColorActionInput,
+): string[] {
+  if (preview.existingCount <= 0) return [];
+  if (input.overwriteConfirmed !== true) {
+    return [
+      `execute_root 将覆盖 ${preview.existingCount} 个已有输出，请先在 /color 覆盖确认窗确认。`,
+      `overwritePlanHash: ${preview.overwritePlanHash}`,
+    ];
+  }
+  if (!input.overwritePlanHash || input.overwritePlanHash !== preview.overwritePlanHash) {
+    return [
+      '覆盖确认已过期：目标文件状态或覆盖范围已变化，请重新打开覆盖确认窗。',
+      `expected overwritePlanHash: ${preview.overwritePlanHash}`,
+      input.overwritePlanHash ? `received overwritePlanHash: ${input.overwritePlanHash}` : 'received overwritePlanHash: (missing)',
+    ];
+  }
+  return [];
+}
+
+function validateColorOverwritePlanSafety(preview: IColorOverwritePreview): string[] {
+  if (!Array.isArray(preview.duplicateStemGroups) || preview.duplicateStemGroups.length === 0) {
+    return [];
+  }
+  return [
+    '同一 raw 父目录内存在重名 source stem；按 day 直接 Source Name 渲染会互相覆盖，已阻止启动 Resolve。',
+    ...preview.duplicateStemGroups.slice(0, 20).map(group => (
+      `${group.sourceStem}: ${group.rawRelativePaths.join(', ')}`
+    )),
+  ];
+}
+
+async function verifyRenderedEntriesAtFinalOutputs(
+  entries: Awaited<ReturnType<IColorExecutor['executeRoot']>>['entries'],
+  previewTargetByKey: Map<string, IColorOverwritePreview['targets'][number]>,
+): Promise<Array<Awaited<ReturnType<IColorExecutor['executeRoot']>>['entries'][number] & { outputPath: string }>> {
+  const entriesByKey = new Map(entries.map(entry => [entry.rawRelativePath, entry]));
+  const missing = [...previewTargetByKey.keys()].filter(clipKey => !entriesByKey.has(clipKey));
+  const extra = entries.filter(entry => !previewTargetByKey.has(entry.rawRelativePath));
+  const blockers = dedupeStrings([
+    ...missing.map(clipKey => `rendered output missing for ${clipKey}`),
+    ...extra.map(entry => `rendered unexpected output: ${entry.rawRelativePath}`),
+  ]);
+  const verified = await Promise.all(entries.map(async entry => {
+    const target = previewTargetByKey.get(entry.rawRelativePath);
+    if (!target) return null;
+    const outputPath = resolve(entry.outputPath);
+    const targetPath = resolve(target.outputPath);
+    if (outputPath !== targetPath) {
+      blockers.push(`rendered output path mismatch for ${entry.rawRelativePath}: expected ${targetPath}, got ${outputPath}`);
+      return null;
+    }
+    const outputStats = await stat(outputPath).catch(() => null);
+    if (!outputStats?.isFile()) {
+      blockers.push(`rendered output file missing: ${outputPath}`);
+      return null;
+    }
+    return {
+      ...entry,
+      outputPath,
+    };
+  }));
+  if (blockers.length > 0) {
+    throw new Error(dedupeStrings(blockers).join('；'));
+  }
+  const finalEntries = [];
+  for (const entry of verified) {
+    if (!entry) continue;
+    finalEntries.push(entry);
+  }
+  return finalEntries;
+}
+
+function normalizeColorBatchRenderJobs(jobs: NonNullable<Awaited<ReturnType<IColorExecutor['executeRoot']>>['renderJobs']>): IColorBatchRenderJob[] {
+  return jobs.map(job => ({
+    jobId: job.jobId,
+    timelineName: job.timelineName,
+    targetDir: job.targetDir,
+    clipCount: job.clipCount ?? 0,
+    duplicateStemGroup: job.duplicateStemGroup,
+  }));
+}
+
+function resolveColorRenderExtension(renderPreset: IColorRootContext['rootSummary']['renderPreset']): string {
+  const container = String(renderPreset.container || 'mp4').trim().toLowerCase();
+  return container === 'mov' ? 'mov' : 'mp4';
+}
+
+function portableParentDir(rawRelativePath: string): string {
+  const normalized = normalizePortablePath(rawRelativePath);
+  const parent = posix.dirname(normalized);
+  return parent === '.' ? '' : parent;
 }
 
 async function buildColorExecutorClips(
   rawLocalPath: string,
   runtimeConfig: Awaited<ReturnType<typeof loadRuntimeConfig>>,
-  rootColorSpaceProfile?: IColorRootContext['rootSummary']['colorSpaceProfile'],
+  previewContext?: IColorCastPreviewContext,
 ): Promise<IColorExecutorClipInput[]> {
   const inventory = await scanColorRawInventory(rawLocalPath);
-  return Promise.all(
-    inventory.map(async item => {
+  return buildColorExecutorClipsForInventory(inventory, runtimeConfig, previewContext);
+}
+
+async function buildColorExecutorClipsForInventory(
+  inventory: IColorRawInventoryItem[],
+  runtimeConfig: Awaited<ReturnType<typeof loadRuntimeConfig>>,
+  previewContext?: IColorCastPreviewContext,
+): Promise<IColorExecutorClipInput[]> {
+  const clips = await mapWithConcurrency(
+    inventory,
+    CCOLOR_PREPARE_PROBE_CONCURRENCY,
+    async item => {
       const probed = await probe(item.sourceAbsolutePath, runtimeConfig).catch(() => null);
       const captureTime = probed
         ? await resolveCaptureTime(item.sourceAbsolutePath, probed).catch(() => null)
@@ -1646,8 +2472,37 @@ async function buildColorExecutorClips(
       ]);
       const profileResolution = resolveEffectiveColorProfile(
         sourceTruth.logProfile,
-        rootColorSpaceProfile,
+        previewContext?.rootColorSpaceProfile,
       );
+      const colorCastPreview = await resolveColorCastPreviewLut(previewContext, {
+        rawRelativePath: item.rawRelativePath,
+        detectedProfile: profileResolution.detectedProfile,
+        effectiveProfile: profileResolution.effectiveProfile,
+        profileSource: profileResolution.profileSource,
+        logProfile: profileResolution.logProfile,
+        deviceFamilyKeys: sourceTruth.deviceFamilyKeys,
+      });
+      const colorCastClassification = colorCastPreview.status === 'missing-technical-lut'
+        ? {
+          colorCastClass: 'unknown' as const,
+          colorCastConfidence: 0,
+          colorCastMetrics: {
+            technicalTransformStatus: colorCastPreview.status,
+            technicalLutRelativePath: colorCastPreview.relativeLutPath,
+          },
+        }
+        : await classifyColorCast(item.sourceAbsolutePath, runtimeConfig, {
+          durationMs: probed?.durationMs,
+          lutPath: colorCastPreview.lutPath,
+        }).catch(() => ({
+          colorCastClass: 'unknown' as const,
+          colorCastConfidence: 0,
+          colorCastMetrics: {
+            technicalTransformStatus: colorCastPreview.status,
+            technicalLutRelativePath: colorCastPreview.relativeLutPath,
+          },
+        }));
+      const orientation = resolveColorClipOrientation(probed);
       return {
         rawRelativePath: item.rawRelativePath,
         sourceAbsolutePath: item.sourceAbsolutePath,
@@ -1655,6 +2510,13 @@ async function buildColorExecutorClips(
         capturedAt: captureTime?.capturedAt,
         width: probed?.width ?? undefined,
         height: probed?.height ?? undefined,
+        encodedWidth: probed?.width ?? undefined,
+        encodedHeight: probed?.height ?? undefined,
+        displayWidth: probed?.displayWidth ?? probed?.width ?? undefined,
+        displayHeight: probed?.displayHeight ?? probed?.height ?? undefined,
+        rotationDegrees: probed?.rotationDegrees ?? undefined,
+        orientationStatus: orientation.orientationStatus,
+        repairTemplateKey: orientation.repairTemplateKey,
         fps: probed?.fps ?? undefined,
         codec: probed?.codec ?? undefined,
         rawTags: probed?.rawTags ?? {},
@@ -1662,12 +2524,665 @@ async function buildColorExecutorClips(
         effectiveProfile: profileResolution.effectiveProfile,
         profileSource: profileResolution.profileSource,
         logProfile: profileResolution.logProfile,
+        gyroDataAvailable: sourceTruth.gyro === true,
         gyroEligible: sourceTruth.gyro,
         lowlight: lowlightClassification.lowlight,
+        colorCastClass: colorCastClassification.colorCastClass,
+        colorCastConfidence: colorCastClassification.colorCastConfidence,
+        colorCastMetrics: {
+          ...colorCastClassification.colorCastMetrics,
+          technicalTransformStatus: colorCastPreview.status,
+          technicalLutRelativePath: colorCastPreview.relativeLutPath,
+        },
         deviceFamilyKeys: sourceTruth.deviceFamilyKeys,
       } satisfies IColorExecutorClipInput;
-    }),
+    },
   );
+  return smoothContinuousColorCastClips(clips);
+}
+
+function smoothContinuousColorCastClips(
+  clips: IColorExecutorClipInput[],
+): IColorExecutorClipInput[] {
+  const sorted = [...clips].sort((left, right) => (
+    left.rawRelativePath.localeCompare(right.rawRelativePath, 'zh-Hans-CN')
+  ));
+  const byKey = new Map(clips.map(clip => [clip.rawRelativePath, clip]));
+  for (const sequence of buildNumericClipSequences(sorted)) {
+    const runs = buildColorCastAnchorRuns(sequence);
+    for (const run of runs) {
+      if (run.anchorIndexes.length < 2) continue;
+      const target = resolveColorCastContinuityTarget(run.anchorClasses);
+      if (!target) continue;
+      const firstAnchor = run.anchorIndexes[0] ?? run.start;
+      const lastAnchor = run.anchorIndexes[run.anchorIndexes.length - 1] ?? run.end;
+      const start = firstAnchor;
+      let end = lastAnchor;
+      while (
+        end < sequence.length - 1
+        && end - lastAnchor < CCOLOR_CAST_CONTINUITY_MAX_FORWARD_EXTENSION
+        && canPromoteByColorCastContinuity(sequence[end + 1], target)
+      ) {
+        end += 1;
+      }
+      for (let index = start; index <= end; index += 1) {
+        const clip = sequence[index];
+        if (!clip || !canPromoteByColorCastContinuity(clip, target)) continue;
+        byKey.set(clip.rawRelativePath, promoteClipToContinuityColorCast(clip, target, run.anchorClipKeys));
+      }
+    }
+  }
+  return clips.map(clip => byKey.get(clip.rawRelativePath) ?? clip);
+}
+
+function buildNumericClipSequences(
+  clips: IColorExecutorClipInput[],
+): IColorExecutorClipInput[][] {
+  const sequences: IColorExecutorClipInput[][] = [];
+  let current: IColorExecutorClipInput[] = [];
+  let previous: ReturnType<typeof parseNumericClipKey> | null = null;
+  let previousLogProfile = '';
+  for (const clip of clips) {
+    const parsed = parseNumericClipKey(clip.rawRelativePath);
+    const logProfile = normalizeClipSequenceLogProfile(clip);
+    if (
+      !parsed
+      || !previous
+      || parsed.parent !== previous.parent
+      || parsed.prefix !== previous.prefix
+      || logProfile !== previousLogProfile
+      || parsed.number < previous.number
+      || parsed.number - previous.number > 3
+    ) {
+      if (current.length > 0) sequences.push(current);
+      current = [clip];
+    } else {
+      current.push(clip);
+    }
+    previous = parsed;
+    previousLogProfile = parsed ? logProfile : '';
+  }
+  if (current.length > 0) sequences.push(current);
+  return sequences;
+}
+
+function normalizeClipSequenceLogProfile(clip: IColorExecutorClipInput): string {
+  return String(clip.logProfile ?? '').trim().toLowerCase();
+}
+
+function parseNumericClipKey(rawRelativePath: string): {
+  parent: string;
+  prefix: string;
+  number: number;
+} | null {
+  const normalized = normalizePortablePath(rawRelativePath);
+  const slashIndex = normalized.lastIndexOf('/');
+  const parent = slashIndex >= 0 ? normalized.slice(0, slashIndex) : '';
+  const filename = slashIndex >= 0 ? normalized.slice(slashIndex + 1) : normalized;
+  const stem = filename.replace(/\.[^.]+$/, '');
+  const match = /^([A-Za-z_-]*?)(\d+)$/.exec(stem);
+  if (!match) return null;
+  return {
+    parent,
+    prefix: match[1] ?? '',
+    number: Number(match[2]),
+  };
+}
+
+function buildColorCastAnchorRuns(sequence: IColorExecutorClipInput[]): Array<{
+  start: number;
+  end: number;
+  anchorIndexes: number[];
+  anchorClipKeys: string[];
+  anchorClasses: TColorCastContinuityTarget[];
+}> {
+  const runs: Array<{
+    start: number;
+    end: number;
+    anchorIndexes: number[];
+    anchorClipKeys: string[];
+    anchorClasses: TColorCastContinuityTarget[];
+  }> = [];
+  let current: {
+    start: number;
+    end: number;
+    anchorIndexes: number[];
+    anchorClipKeys: string[];
+    anchorClasses: TColorCastContinuityTarget[];
+  } | null = null;
+  for (let index = 0; index < sequence.length; index += 1) {
+    const clip = sequence[index];
+    const anchorClass = getColorCastContinuityAnchorClass(clip);
+    if (!clip || !anchorClass) continue;
+    if (!current || index - current.end > CCOLOR_CAST_CONTINUITY_MAX_ANCHOR_GAP) {
+      if (current) runs.push(current);
+      current = {
+        start: index,
+        end: index,
+        anchorIndexes: [index],
+        anchorClipKeys: [clip.rawRelativePath],
+        anchorClasses: [anchorClass],
+      };
+    } else {
+      current.end = index;
+      current.anchorIndexes.push(index);
+      current.anchorClipKeys.push(clip.rawRelativePath);
+      current.anchorClasses.push(anchorClass);
+    }
+  }
+  if (current) runs.push(current);
+  return runs;
+}
+
+function getColorCastContinuityAnchorClass(
+  clip: IColorExecutorClipInput | undefined,
+): TColorCastContinuityTarget | null {
+  if (!clip || clip.lowlight === true || (clip.colorCastConfidence ?? 0) < 0.65) return null;
+  if (clip.colorCastClass === 'cool-cyan' || clip.colorCastClass === 'green' || clip.colorCastClass === 'green-cyan') {
+    return clip.colorCastClass;
+  }
+  return null;
+}
+
+function resolveColorCastContinuityTarget(
+  anchorClasses: TColorCastContinuityTarget[],
+): TColorCastContinuityTarget | null {
+  const classSet = new Set(anchorClasses);
+  if (classSet.has('green-cyan') || (classSet.has('green') && classSet.has('cool-cyan'))) {
+    return 'green-cyan';
+  }
+  if (classSet.has('cool-cyan')) return 'cool-cyan';
+  if (classSet.has('green')) return 'green';
+  return null;
+}
+
+function canPromoteByColorCastContinuity(
+  clip: IColorExecutorClipInput | undefined,
+  target: TColorCastContinuityTarget,
+): clip is IColorExecutorClipInput {
+  if (!clip || clip.lowlight === true) return false;
+  if (clip.colorCastClass === 'warm' && (clip.colorCastConfidence ?? 0) >= 0.55) return false;
+  const medianA = readColorCastMetricNumber(clip, 'medianA');
+  const medianB = readColorCastMetricNumber(clip, 'medianB');
+  const candidatePixelRatio = readColorCastMetricNumber(clip, 'candidatePixelRatio');
+  if (medianA == null || medianB == null || candidatePixelRatio == null) return false;
+  if (candidatePixelRatio < CCOLOR_CAST_CONTINUITY_MIN_CANDIDATE_RATIO) return false;
+  if (target === 'cool-cyan') {
+    return medianA <= 1.5 && medianB <= 1.2;
+  }
+  if (target === 'green') {
+    return medianA <= -2.5 && medianB > -2.0 && medianB < 8;
+  }
+  return medianA <= -2.5 && medianB >= -6.5 && medianB <= 5.5;
+}
+
+function promoteClipToContinuityColorCast(
+  clip: IColorExecutorClipInput,
+  target: TColorCastContinuityTarget,
+  anchorClipKeys: string[],
+): IColorExecutorClipInput {
+  if (clip.colorCastClass === target && (clip.colorCastConfidence ?? 0) >= 0.65) {
+    return clip;
+  }
+  return {
+    ...clip,
+    colorCastClass: target,
+    colorCastConfidence: Math.max(clip.colorCastConfidence ?? 0, 0.66),
+    colorCastMetrics: {
+      ...(clip.colorCastMetrics ?? {}),
+      continuityAdjustedFromClass: clip.colorCastClass,
+      continuityAdjustedFromConfidence: clip.colorCastConfidence,
+      continuityAdjustment: `${target}-sequence`,
+      continuityAnchorClipKeys: anchorClipKeys,
+    },
+  };
+}
+
+function readColorCastMetricNumber(
+  clip: IColorExecutorClipInput,
+  key: string,
+): number | null {
+  const value = clip.colorCastMetrics?.[key];
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+async function resolveColorCastPreviewLut(
+  previewContext: IColorCastPreviewContext | undefined,
+  clip: {
+    rawRelativePath: string;
+    detectedProfile?: IColorExecutorClipInput['detectedProfile'];
+    effectiveProfile?: IColorExecutorClipInput['effectiveProfile'];
+    profileSource: NonNullable<IColorExecutorClipInput['profileSource']>;
+    logProfile?: IColorExecutorClipInput['logProfile'];
+    deviceFamilyKeys?: string[];
+  },
+): Promise<{
+  status: 'source-rgb' | 'technical-lut' | 'missing-technical-lut';
+  lutPath?: string;
+  relativeLutPath?: string;
+}> {
+  if (!previewContext) {
+    return { status: 'source-rgb' };
+  }
+  const workspaceLutRoot = resolve(join(previewContext.workspaceRoot, 'config', 'luts'));
+  const resolved = resolveClipTransformSeeds(
+    [clip],
+    previewContext.transformPresetsConfig,
+    previewContext.rootTransformPresetKey,
+    workspaceLutRoot,
+  );
+  const relativeLutPath = resolved.clips[0]?.resolvedLutRelativePath;
+  if (!relativeLutPath || resolved.blockers.length > 0) {
+    return { status: 'source-rgb' };
+  }
+
+  const workspaceLutPath = resolve(join(workspaceLutRoot, relativeLutPath));
+  if (await isReadableFile(workspaceLutPath)) {
+    return {
+      status: 'technical-lut',
+      lutPath: workspaceLutPath,
+      relativeLutPath,
+    };
+  }
+
+  const resolveLutPath = resolve(join(detectResolveDefaultLutRoot(), relativeLutPath));
+  if (await isReadableFile(resolveLutPath)) {
+    return {
+      status: 'technical-lut',
+      lutPath: resolveLutPath,
+      relativeLutPath,
+    };
+  }
+
+  return {
+    status: 'missing-technical-lut',
+    relativeLutPath,
+  };
+}
+
+async function isReadableFile(filePath: string): Promise<boolean> {
+  return stat(filePath)
+    .then(fileStat => fileStat.isFile())
+    .catch(() => false);
+}
+
+function buildColorSyncExecutorClipsForInventory(
+  inventory: IColorRawInventoryItem[],
+  previousClipSnapshots: Map<string, IColorClipRepairSnapshot>,
+): IColorExecutorClipInput[] {
+  return inventory.map(item => {
+    const previous = previousClipSnapshots.get(item.rawRelativePath);
+    const repairTemplateKey = resolveColorRepairTemplateKeyFromSnapshot(previous);
+    return {
+      rawRelativePath: item.rawRelativePath,
+      sourceAbsolutePath: item.sourceAbsolutePath,
+      sourceStem: deriveSourceStem(item.rawRelativePath),
+      encodedWidth: previous?.encodedWidth,
+      encodedHeight: previous?.encodedHeight,
+      displayWidth: previous?.displayWidth,
+      displayHeight: previous?.displayHeight,
+      rotationDegrees: previous?.rotationDegrees,
+      orientationStatus: previous?.orientationStatus,
+      repairTemplateKey,
+      previousRepairTemplateHash: previous?.repairTemplateKey === repairTemplateKey
+        ? previous?.repairTemplateHash
+        : undefined,
+      timelineTransform: previous?.timelineTransform,
+      logProfile: previous?.logProfile as IColorExecutorClipInput['logProfile'],
+      gyroDataAvailable: previous?.gyroDataAvailable,
+      gyroEligible: previous?.gyroEligible,
+      lowlight: previous?.lowlight,
+      colorCastClass: previous?.colorCastClass,
+      colorCastConfidence: previous?.colorCastConfidence,
+      colorCastMetrics: previous?.colorCastMetrics,
+    };
+  });
+}
+
+function buildColorClipRepairSnapshotIndex(
+  snapshot?: IColorGroupsSnapshotFile | null,
+): Map<string, IColorClipRepairSnapshot> {
+  const indexed = new Map<string, IColorClipRepairSnapshot>();
+  for (const group of snapshot?.groups ?? []) {
+    for (const clip of group.clips ?? []) {
+      if (!clip.clipKey || indexed.has(clip.clipKey)) continue;
+      indexed.set(clip.clipKey, clip);
+    }
+  }
+  return indexed;
+}
+
+function applyPreviousColorRepairSnapshots(
+  clips: IColorExecutorClipInput[],
+  previousClipSnapshots: Map<string, IColorClipRepairSnapshot>,
+): IColorExecutorClipInput[] {
+  return clips.map(clip => {
+    const previous = previousClipSnapshots.get(clip.rawRelativePath);
+    if (!previous?.repairTemplateHash || previous.repairTemplateKey !== clip.repairTemplateKey) return clip;
+    return {
+      ...clip,
+      previousRepairTemplateHash: previous.repairTemplateHash,
+    };
+  });
+}
+
+function applyCurrentColorRepairTemplateHashes(
+  clips: IColorExecutorClipInput[],
+  repairTemplateHashes: Record<string, string | undefined>,
+): IColorExecutorClipInput[] {
+  return clips.map(clip => {
+    const currentHash = repairTemplateHashes[clip.repairTemplateKey ?? CCOLOR_REPAIR_TEMPLATE_DEFAULT_KEY];
+    if (!currentHash) return clip;
+    return {
+      ...clip,
+      previousRepairTemplateHash: currentHash,
+    };
+  });
+}
+
+function resolveColorRepairTemplateKeyFromSnapshot(
+  previous?: IColorClipRepairSnapshot,
+): string | undefined {
+  if (!previous) return undefined;
+  if (previous.orientationStatus !== 'portrait') return previous.repairTemplateKey;
+  return resolveColorClipOrientation({
+    rotationDegrees: previous.rotationDegrees,
+    displayWidth: previous.displayWidth,
+    displayHeight: previous.displayHeight,
+    width: previous.encodedWidth,
+    height: previous.encodedHeight,
+  } as Awaited<ReturnType<typeof probe>>).repairTemplateKey;
+}
+
+function resolveColorClipOrientation(
+  probed: Awaited<ReturnType<typeof probe>> | null,
+): {
+  orientationStatus: IColorExecutorClipInput['orientationStatus'];
+  repairTemplateKey: string;
+} {
+  const rotation = normalizeColorRotationDegrees(probed?.rotationDegrees ?? undefined);
+  const displayWidth = finitePositiveNumber(probed?.displayWidth) ?? finitePositiveNumber(probed?.width);
+  const displayHeight = finitePositiveNumber(probed?.displayHeight) ?? finitePositiveNumber(probed?.height);
+  const rotatedPortrait = rotation === 90 || rotation === -90;
+  const displayPortrait = displayWidth != null && displayHeight != null && displayHeight > displayWidth;
+  const orientationStatus: IColorExecutorClipInput['orientationStatus'] = rotatedPortrait || displayPortrait
+    ? 'portrait'
+    : displayWidth != null && displayHeight != null
+      ? 'horizontal'
+      : 'unknown';
+  return {
+    orientationStatus,
+    repairTemplateKey: orientationStatus === 'portrait'
+      ? resolveColorPortraitRepairTemplateKey(rotation)
+      : CCOLOR_REPAIR_TEMPLATE_DEFAULT_KEY,
+  };
+}
+
+function resolveColorPortraitRepairTemplateKey(
+  ffprobeRotationDegrees: number | undefined,
+): string {
+  if (ffprobeRotationDegrees === -90) return CCOLOR_REPAIR_TEMPLATE_PORTRAIT_90_KEY;
+  return CCOLOR_REPAIR_TEMPLATE_PORTRAIT_NEGATIVE_90_KEY;
+}
+
+function applyColorTimelineTransforms(
+  clips: IColorExecutorClipInput[],
+  timelineSpec: { width: number; height: number; fps: number } | undefined,
+): IColorExecutorClipInput[] {
+  return clips.map(clip => ({
+    ...clip,
+    timelineTransform: resolveColorTimelineTransform(clip, timelineSpec),
+  }));
+}
+
+function resolveColorTimelineTransform(
+  clip: IColorExecutorClipInput,
+  timelineSpec: { width: number; height: number; fps: number } | undefined,
+): IColorExecutorClipInput['timelineTransform'] {
+  if (clip.orientationStatus !== 'portrait') return undefined;
+  const timelineWidth = finitePositiveNumber(timelineSpec?.width);
+  const timelineHeight = finitePositiveNumber(timelineSpec?.height);
+  const displayWidth = finitePositiveNumber(clip.displayWidth) ?? finitePositiveNumber(clip.width);
+  const displayHeight = finitePositiveNumber(clip.displayHeight) ?? finitePositiveNumber(clip.height);
+  if (timelineWidth == null || timelineHeight == null || displayWidth == null || displayHeight == null) {
+    return undefined;
+  }
+  const rotation = normalizeColorRotationDegrees(clip.rotationDegrees);
+  const rotationAngle = rotation === 90
+    ? -90
+    : rotation === -90
+      ? 90
+      : 90;
+  const fillDimensions = resolveColorPortraitFillDimensions(clip, {
+    timelineWidth,
+    timelineHeight,
+    displayWidth,
+    displayHeight,
+    rotation,
+  });
+  const fillScale = roundColorTransformNumber(Math.max(
+    timelineWidth / fillDimensions.width,
+    timelineHeight / fillDimensions.height,
+  ));
+  return {
+    rotationAngle,
+    zoomGang: true,
+    zoomX: fillScale,
+    zoomY: fillScale,
+    pan: 0,
+    tilt: 0,
+  };
+}
+
+function resolveColorPortraitFillDimensions(
+  clip: IColorExecutorClipInput,
+  input: {
+    timelineWidth: number;
+    timelineHeight: number;
+    displayWidth: number;
+    displayHeight: number;
+    rotation: number | undefined;
+  },
+): { width: number; height: number } {
+  const encodedWidth = finitePositiveNumber(clip.encodedWidth) ?? finitePositiveNumber(clip.width);
+  const encodedHeight = finitePositiveNumber(clip.encodedHeight) ?? finitePositiveNumber(clip.height);
+  const isDisplayMatrixPortrait = (
+    (input.rotation === 90 || input.rotation === -90)
+    && encodedWidth != null
+    && encodedHeight != null
+    && encodedWidth > encodedHeight
+    && input.displayHeight > input.displayWidth
+  );
+  if (isDisplayMatrixPortrait) {
+    const shortEdge = Math.min(encodedWidth, encodedHeight);
+    const timelineAspect = input.timelineWidth / input.timelineHeight;
+    return {
+      width: shortEdge,
+      height: shortEdge / timelineAspect,
+    };
+  }
+  return {
+    width: Math.max(input.displayWidth, input.displayHeight),
+    height: Math.min(input.displayWidth, input.displayHeight),
+  };
+}
+
+function buildColorRepairTemplates(workspaceRoot: string): Record<string, string> {
+  return {
+    [CCOLOR_REPAIR_TEMPLATE_DEFAULT_KEY]: join(workspaceRoot, 'config', 'default.drt'),
+    [CCOLOR_REPAIR_TEMPLATE_PORTRAIT_90_KEY]: join(workspaceRoot, 'config', 'gyroflow-portrait-90.drt'),
+    [CCOLOR_REPAIR_TEMPLATE_PORTRAIT_NEGATIVE_90_KEY]: join(workspaceRoot, 'config', 'gyroflow-portrait--90.drt'),
+  };
+}
+
+async function buildColorRepairTemplateHashes(workspaceRoot: string): Promise<Record<string, string | undefined>> {
+  const templates = buildColorRepairTemplates(workspaceRoot);
+  const entries = await Promise.all(Object.entries(templates).map(async ([key, path]) => {
+    const buffer = await readFile(path).catch(() => null);
+    return [key, buffer ? createHash('sha256').update(buffer).digest('hex') : undefined] as const;
+  }));
+  return Object.fromEntries(entries);
+}
+
+function refreshPrepareChunkForRepairTemplateDrift(
+  chunk: IColorPrepareChunkPlan,
+  previousClipSnapshots: Map<string, IColorClipRepairSnapshot>,
+  repairTemplateHashes: Record<string, string | undefined>,
+): IColorPrepareChunkPlan {
+  if (chunk.status !== 'ready') return chunk;
+  const stalePortraitClip = chunk.rawRelativePaths.some(clipKey => {
+    const previous = previousClipSnapshots.get(clipKey);
+    if (previous?.orientationStatus !== 'portrait') return false;
+    const templateKey = resolveColorRepairTemplateKeyFromSnapshot(previous);
+    if (
+      templateKey !== CCOLOR_REPAIR_TEMPLATE_PORTRAIT_90_KEY
+      && templateKey !== CCOLOR_REPAIR_TEMPLATE_PORTRAIT_NEGATIVE_90_KEY
+    ) {
+      return false;
+    }
+    const currentHash = repairTemplateHashes[templateKey];
+    return Boolean(currentHash && previous.repairTemplateHash !== currentHash);
+  });
+  if (!stalePortraitClip) return chunk;
+  return {
+    ...chunk,
+    status: 'pending',
+    completedAt: undefined,
+    detail: CCOLOR_REPAIR_TEMPLATE_DRIFT_DETAIL,
+  };
+}
+
+function shouldResetColorPrepareTimeline(chunks: IColorPrepareChunkPlan[], chunk: IColorPrepareChunkPlan): boolean {
+  if (chunk.detail === CCOLOR_REPAIR_TEMPLATE_DRIFT_DETAIL) return false;
+  return !chunks.some(candidate => candidate.index < chunk.index && candidate.status === 'ready');
+}
+
+function buildColorPrepareChunks(
+  inventory: IColorRawInventoryItem[],
+  baseTimelineName: string,
+  existingChunks: IColorPrepareChunk[],
+): IColorPrepareChunkPlan[] {
+  const chunks: IColorRawInventoryItem[][] = [];
+  for (const [, items] of groupInventoryByTopDirectory(inventory)) {
+    for (let index = 0; index < items.length; index += CCOLOR_PREPARE_CHUNK_SIZE) {
+      chunks.push(items.slice(index, index + CCOLOR_PREPARE_CHUNK_SIZE));
+    }
+  }
+  const total = Math.max(chunks.length, 1);
+  const existingByFingerprint = new Map(
+    existingChunks
+      .filter(chunk => chunk.status === 'ready' && chunk.fingerprint && chunk.timelineName === baseTimelineName)
+      .map(chunk => [chunk.fingerprint!, chunk]),
+  );
+  return chunks.map((items, index) => {
+    const rawRelativePaths = items.map(item => item.rawRelativePath);
+    const fingerprint = hashString(rawRelativePaths.join('\n'));
+    const chunkId = `chunk-${String(index + 1).padStart(3, '0')}`;
+    const previous = existingByFingerprint.get(fingerprint);
+    return {
+      chunkId,
+      index,
+      total,
+      status: previous?.status === 'ready' ? 'ready' : 'pending',
+      timelineName: baseTimelineName,
+      clipCount: items.length,
+      rawRelativePaths,
+      fingerprint,
+      completedAt: previous?.completedAt,
+      detail: previous?.detail,
+      items,
+    };
+  });
+}
+
+function assertClipKeysPreparedByReadyChunks(
+  clipKeys: string[],
+  prepareChunks: IColorPrepareChunk[],
+  action: 'sync_groups' | 'execute_root',
+): void {
+  const readyChunks = prepareChunks.filter(chunk => chunk.status === 'ready');
+  if (readyChunks.length === 0) {
+    return;
+  }
+  const preparedClipKeys = new Set<string>();
+  for (const chunk of readyChunks) {
+    for (const clipKey of chunk.rawRelativePaths ?? []) {
+      preparedClipKeys.add(clipKey);
+    }
+  }
+  const missingPreparedClipKeys = dedupeStrings(clipKeys.filter(clipKey => !preparedClipKeys.has(clipKey)));
+  if (missingPreparedClipKeys.length > 0) {
+    throw new ProjectColorBlockedError([
+      `${action} 有 ${missingPreparedClipKeys.length} 个 clips 尚未在 ready prepare chunk 中出现，请先重新 Prepare Root。`,
+      ...missingPreparedClipKeys.slice(0, 10).map(clipKey => `missing prepared chunk: ${clipKey}`),
+    ]);
+  }
+}
+
+function groupInventoryByTopDirectory(inventory: IColorRawInventoryItem[]): Map<string, IColorRawInventoryItem[]> {
+  const groups = new Map<string, IColorRawInventoryItem[]>();
+  for (const item of inventory) {
+    const [top] = item.rawRelativePath.split('/');
+    const key = item.rawRelativePath.includes('/') ? top ?? '' : '';
+    const existing = groups.get(key);
+    if (existing) {
+      existing.push(item);
+    } else {
+      groups.set(key, [item]);
+    }
+  }
+  return new Map([...groups.entries()].sort(([left], [right]) => left.localeCompare(right, 'zh-Hans-CN')));
+}
+
+function materializePrepareChunkForCurrent(
+  chunk: IColorPrepareChunkPlan,
+  existingChunks: IColorPrepareChunk[],
+): IColorPrepareChunk {
+  const existing = chunk.status === 'ready'
+    ? existingChunks.find(item => item.fingerprint === chunk.fingerprint && item.status === 'ready')
+    : undefined;
+  return {
+    chunkId: chunk.chunkId,
+    index: chunk.index,
+    total: chunk.total,
+    status: existing?.status ?? chunk.status,
+    timelineName: chunk.timelineName,
+    clipCount: chunk.clipCount,
+    rawRelativePaths: chunk.rawRelativePaths,
+    fingerprint: chunk.fingerprint,
+    completedAt: existing?.completedAt ?? chunk.completedAt,
+    detail: existing?.detail ?? chunk.detail,
+  };
+}
+
+function updatePrepareChunkStatus(
+  chunks: IColorPrepareChunk[],
+  chunkId: string,
+  patch: Partial<IColorPrepareChunk>,
+): IColorPrepareChunk[] {
+  return chunks.map(chunk => chunk.chunkId === chunkId ? { ...chunk, ...patch } : chunk);
+}
+
+async function mapWithConcurrency<T, R>(
+  values: T[],
+  concurrency: number,
+  mapper: (value: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = new Array(values.length);
+  let nextIndex = 0;
+  const workerCount = Math.max(1, Math.min(concurrency, values.length || 1));
+  await Promise.all(Array.from({ length: workerCount }, async () => {
+    while (nextIndex < values.length) {
+      const index = nextIndex;
+      nextIndex += 1;
+      results[index] = await mapper(values[index]!, index);
+    }
+  }));
+  return results;
+}
+
+function hashString(value: string): string {
+  return createHash('sha1').update(value).digest('hex');
 }
 
 async function resolveExecutorClipTransforms(
@@ -1760,6 +3275,9 @@ async function buildColorFileMetadataSnapshot(
     mediaKind,
     width: probed.width ?? undefined,
     height: probed.height ?? undefined,
+    displayWidth: probed.displayWidth ?? probed.width ?? undefined,
+    displayHeight: probed.displayHeight ?? probed.height ?? undefined,
+    rotationDegrees: probed.rotationDegrees ?? undefined,
     fps: probed.fps ?? undefined,
     durationMs: probed.durationMs ?? undefined,
     capturedAt: captureTime?.capturedAt,
@@ -1791,6 +3309,23 @@ function parseMaybeNumber(value: string | undefined): number | undefined {
   if (!value?.trim()) return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function finitePositiveNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0
+    ? value
+    : undefined;
+}
+
+function normalizeColorRotationDegrees(value: unknown): number | undefined {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined;
+  let normalized = ((Math.round(value) % 360) + 360) % 360;
+  if (normalized > 180) normalized -= 360;
+  return Object.is(normalized, -0) ? 0 : normalized;
+}
+
+function roundColorTransformNumber(value: number): number {
+  return Math.round(value * 10000) / 10000;
 }
 
 function firstTrimmedString(...values: Array<string | undefined>): string | undefined {
@@ -1854,7 +3389,6 @@ async function normalizeRenderedColorOutputMetadata(
       env: buildStableToolExecEnv(),
       windowsHide: true,
     });
-    await unlink(resolvedOutputPath).catch(() => undefined);
     await rename(tempPath, resolvedOutputPath);
     return resolvedOutputPath;
   } catch (error) {
@@ -2104,7 +3638,7 @@ function validateRenderPresetSupport(
 
 function buildColorValidationChecks(input: {
   rawRelativePath: string;
-  promoteRelativePath: string;
+  outputRelativePath: string;
   normalizedOutputFilename: string;
   sourceMetadata?: IColorFileMetadataSnapshot;
   outputMetadata?: IColorFileMetadataSnapshot;
@@ -2121,10 +3655,10 @@ function buildColorValidationChecks(input: {
   filesystemCreateTime: EColorValidationCheckResult;
 } {
   const expectedRelativeDir = posix.dirname(input.rawRelativePath);
-  const actualRelativeDir = posix.dirname(input.promoteRelativePath);
+  const actualRelativeDir = posix.dirname(input.outputRelativePath);
   return {
     pathMirror: expectedRelativeDir === actualRelativeDir ? 'pass' : 'fail',
-    filenameNormalized: posix.basename(input.promoteRelativePath) === input.normalizedOutputFilename ? 'pass' : 'fail',
+    filenameNormalized: posix.basename(input.outputRelativePath) === input.normalizedOutputFilename ? 'pass' : 'fail',
     mediaKind: compareOptionalValue(input.sourceMetadata?.mediaKind, input.outputMetadata?.mediaKind),
     resolution: compareOptionalTuple(
       input.sourceMetadata?.width,
@@ -2211,38 +3745,87 @@ function collectValidationWarnings(
   return dedupeStrings(warnings);
 }
 
-async function deleteManagedOutputs(
-  localRootPath: string,
-  previousManagedOutputs: string[],
-  nextManagedOutputs: string[],
-): Promise<string[]> {
-  const nextSet = new Set(nextManagedOutputs);
-  const deleted: string[] = [];
-  await Promise.all(
-    previousManagedOutputs
-      .filter(relativePath => !nextSet.has(relativePath))
-      .map(async relativePath => {
-        const target = resolve(join(localRootPath, ...relativePath.split('/')));
-        await unlink(target).catch(() => undefined);
-        deleted.push(relativePath);
-      }),
-  );
-  return deleted.sort();
+async function mirrorColorSidecarsForEntry(input: {
+  rawLocalPath: string;
+  sourceAbsolutePath: string;
+  outputRelativePath: string;
+  localRootPath: string;
+}): Promise<IColorBatchSidecar[]> {
+  const sourceDir = dirname(input.sourceAbsolutePath);
+  const sourceExt = extname(input.sourceAbsolutePath);
+  const sourceFilename = input.sourceAbsolutePath.split(/[\\/]/u).pop() ?? '';
+  const sourceStem = sourceExt ? sourceFilename.slice(0, -sourceExt.length) : sourceFilename;
+  if (!sourceStem) return [];
+  const outputExt = posix.extname(input.outputRelativePath);
+  const outputDir = posix.dirname(input.outputRelativePath);
+  const outputStem = posix.basename(input.outputRelativePath, outputExt);
+  const entries = await readdir(sourceDir, { withFileTypes: true }).catch(() => []);
+  const claimedExtensions = new Set<string>();
+  const sidecars: IColorBatchSidecar[] = [];
+  for (const entry of entries.sort((left, right) => left.name.localeCompare(right.name, 'zh-Hans-CN'))) {
+    if (!entry.isFile()) continue;
+    const extension = extname(entry.name);
+    const extensionKey = extension.toLowerCase();
+    if (!CCOLOR_SIDECAR_EXTENSIONS.has(extensionKey)) continue;
+    if (claimedExtensions.has(extensionKey)) continue;
+    const candidateStem = extension ? entry.name.slice(0, -extension.length) : entry.name;
+    if (candidateStem.toLowerCase() !== sourceStem.toLowerCase()) continue;
+    claimedExtensions.add(extensionKey);
+
+    const sourceAbsolutePath = resolve(join(sourceDir, entry.name));
+    const outputFilename = `${outputStem}${extension}`;
+    const outputRelativePath = normalizePortablePath(
+      outputDir === '.'
+        ? outputFilename
+        : posix.join(outputDir, outputFilename),
+    );
+    const targetPath = resolve(join(input.localRootPath, ...outputRelativePath.split('/')));
+    await mkdir(dirname(targetPath), { recursive: true });
+    await copyFile(sourceAbsolutePath, targetPath);
+    const sourceStats = await stat(sourceAbsolutePath).catch(() => null);
+    sidecars.push({
+      sourceRelativePath: normalizePortablePath(toPortableRelativePath(input.rawLocalPath, sourceAbsolutePath)),
+      sourceAbsolutePath,
+      outputRelativePath,
+      outputPath: targetPath,
+      extension,
+      sizeBytes: sourceStats?.size,
+    });
+  }
+  return sidecars;
 }
 
-async function copyManagedOutputs(localRootPath: string, manifest: IColorBatchManifest): Promise<string[]> {
-  const copied: string[] = [];
-  for (const entry of manifest.entries) {
-    const targetPath = resolve(join(localRootPath, ...entry.promoteRelativePath.split('/')));
-    await mkdir(dirname(targetPath), { recursive: true });
-    await copyFile(entry.stagingAbsolutePath, targetPath);
-    copied.push(entry.promoteRelativePath);
+async function validateColorSidecars(sidecars: IColorBatchSidecar[]): Promise<string[]> {
+  const reasons: string[] = [];
+  for (const sidecar of sidecars) {
+    const sourceStats = await stat(sidecar.sourceAbsolutePath).catch(() => null);
+    const outputStats = await stat(sidecar.outputPath).catch(() => null);
+    if (!sourceStats?.isFile()) {
+      reasons.push(`sidecar source missing: ${sidecar.sourceRelativePath}`);
+      continue;
+    }
+    if (!outputStats?.isFile()) {
+      reasons.push(`sidecar output missing: ${sidecar.outputRelativePath}`);
+      continue;
+    }
+    if (sourceStats.size !== outputStats.size) {
+      reasons.push(`sidecar size mismatch: ${sidecar.sourceRelativePath}`);
+    }
   }
-  return copied.sort();
+  return dedupeStrings(reasons);
 }
 
 function normalizePortablePath(value: string): string {
   return value.replace(/\\/g, '/');
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function extractStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === 'string' && Boolean(item.trim()));
 }
 
 function dedupeStrings(values: Array<string | undefined>): string[] {
@@ -2262,18 +3845,19 @@ function selectDominantTimelineSpec(
 ): { width: number; height: number; fps: number } | undefined {
   const counts = new Map<string, { width: number; height: number; fps: number; count: number }>();
   for (const clip of clips) {
-    if (typeof clip.width !== 'number' || typeof clip.height !== 'number' || typeof clip.fps !== 'number') {
+    const dimensions = resolveColorTimelineSpecDimensions(clip);
+    if (!dimensions || typeof clip.fps !== 'number') {
       continue;
     }
-    const key = `${clip.width}x${clip.height}@${clip.fps.toFixed(3)}`;
+    const key = `${dimensions.width}x${dimensions.height}@${clip.fps.toFixed(3)}`;
     const current = counts.get(key);
     if (current) {
       current.count += 1;
       continue;
     }
     counts.set(key, {
-      width: clip.width,
-      height: clip.height,
+      width: dimensions.width,
+      height: dimensions.height,
       fps: clip.fps,
       count: 1,
     });
@@ -2290,6 +3874,21 @@ function selectDominantTimelineSpec(
     height: selected.height,
     fps: selected.fps,
   };
+}
+
+function resolveColorTimelineSpecDimensions(
+  clip: IColorExecutorClipInput,
+): { width: number; height: number } | undefined {
+  const width = finitePositiveNumber(clip.displayWidth) ?? finitePositiveNumber(clip.width);
+  const height = finitePositiveNumber(clip.displayHeight) ?? finitePositiveNumber(clip.height);
+  if (width == null || height == null) return undefined;
+  if (clip.orientationStatus === 'portrait' || height > width) {
+    return {
+      width: Math.max(width, height),
+      height: Math.min(width, height),
+    };
+  }
+  return { width, height };
 }
 
 function deriveSourceStem(rawRelativePath: string): string {

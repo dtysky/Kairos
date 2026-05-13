@@ -1035,7 +1035,7 @@ pre {
 }
 
 .color-headline-metrics {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
 }
 
 .color-headline-metrics .headline-metric .value.value-compact {
@@ -1046,6 +1046,32 @@ pre {
 
 .color-stage-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.color-drp-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.7fr);
+  gap: 14px;
+  align-items: end;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.52);
+}
+
+.color-drp-copy {
+  min-width: 0;
+}
+
+.color-drp-copy .muted {
+  overflow-wrap: anywhere;
+}
+
+.color-drp-register {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
 }
 
 .color-detail-layout {
@@ -1199,6 +1225,21 @@ pre {
   color: #f5eee4;
   white-space: pre-wrap;
   overflow: auto;
+}
+
+.color-overwrite-preview-list {
+  display: grid;
+  gap: 8px;
+  max-height: 260px;
+  overflow: auto;
+}
+
+.color-overwrite-preview-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 @media (max-width: 1120px) {

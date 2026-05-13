@@ -28,7 +28,6 @@
   - `sync_groups`
   - `execute_root`
   - `validate_batch`
-  - `promote_batch`
   - `prepare_all_roots`
   - `export_all_roots`
 - `/color` 官方路径继续不引入 agent；项目级批处理也是同一个 deterministic Supervisor color job
@@ -39,8 +38,8 @@
   - 只要存在失败 root，整个 job 最终记为 failed
 - `export_all_roots` 的正式合同是：
   - 使用当前 `/color` read model 中 enabled roots 的正式 priority 顺序
-  - 顺序对每个 root 执行 `execute_root -> validate_batch -> promote_batch`
-  - 仅当该 root `validate=pass` 时才允许进入 `promote_batch`
+  - 顺序对每个 root 执行 `execute_root`
+  - 每个 root 的 `execute_root` 内部完成 render all、最终 replace、metadata 修复与 validation
   - 任一 root 失败时继续后续 roots
   - 只要存在失败 root，整个 job 最终记为 failed
 - clip repair 的正式用户口径不再是 donor matrix，而是统一固定五节点图：
@@ -56,8 +55,14 @@
   - 规范图重跑时保留现有 clip grade、用户节点顺序，以及用户已手动设置的 Dehaze/NR 开关
   - 规范图重跑仍必须按最终 `gyroEligible` 布尔值重新请求 node1 开/关，因为 Gyro 是技术判断，不是 creative 用户区
   - 中间 user zone 必须保持在 `reservedNodeIndices.userStart -> userEnd` 范围内
+- ZV-E1 / Sony 竖屏 Gyro 使用方向感知路径：
+  - ffprobe 的 `rotate/display matrix` 解析为 clip orientation truth
+  - 横屏使用 `config/default.drt`；竖屏 timeline transform 跟随 Resolve 显示方向，DRT 选择跟随 Gyroflow 的相反方向口径：ffprobe 源 `rotation=90` 写 `RotationAngle=-90` 并使用 `config/gyroflow-portrait--90.drt`，ffprobe 源 `rotation=-90/270` 写 `RotationAngle=90` 并使用 `config/gyroflow-portrait-90.drt`
+  - 缺少方向 DRT 时只禁用该 clip 的自动 Gyro seed 并标记 `pending-orientation-template`，不阻塞素材导入、Group、LUT 或 timeline transform
+  - 竖屏 clip 会在 timeline item 上自动设置 `RotationAngle / ZoomX / ZoomY / ZoomGang / Pan / Tilt`，默认旋转并放大填满横屏导出；对横向编码但 display-matrix 竖屏的素材，缩放按 Gyroflow/DRT 实际输出的横屏内接画面补偿，避免 3840x2160 画布中只剩约 2160x1216 有效画面
+  - portrait DRT hash 缺失或过期时，`prepare_root` 只重跑命中的 chunk，并对 stale portrait clip 先执行 `ResetAllGrades()` 清掉旧 repair/OFX state，再重新应用方向 DRT；最终 `sync_groups` 必须把当前 DRT hash 持久化回 clip snapshot
 - 缺少固定槽位的旧图正式记为 `legacy-layout`
-  - 本轮允许一次从 workspace `config/default.drt` 破坏性重建到 canonical layout；不存在时回退 `config/default.drx`
+  - 本轮允许在 workspace `config/default.drt` 存在时破坏性重建到 canonical layout；不存在时 bulk prepare 跳过自动 repair seed 并标记 `pending-template`
   - 如果用户把新节点加在 `NR` 后面，下次 `prepare_root` 也会按 legacy layout 处理并重建
   - 这是 clip repair 迁移代价，不影响 Resolve Group creative 真相
 - `color/groups/<rootId>.json` 的 clip snapshot 正式扩展为：
@@ -85,24 +90,29 @@
   - `root.color.colorSpaceProfile`
   - `root.color.transformPresetKey?`
 - `color/groups/<rootId>.json` 的正式快照语义已扩展为 group + clip 两层：
-  - group 级至少包含 `logProfile`、`lowlight`、`postClipCreativeStatus`
+  - group 级至少包含 `logProfile`、`lowlight`、`colorCastClass`、`postClipCreativeStatus`
   - clip 级至少包含 `gyroEligible`、`gyroflowStatus`、`dehazeStatus`、`nrStatus`、`clipRepairStatus`、`layoutStatus`
 - 自动 Group 的正式分桶轴当前收口为：
   - `logProfile`
   - `lowlight`
+  - 高置信 `colorCastClass`
 - `gyro` 不再参与 Group 分桶；它正式回到 clip repair 层，只负责说明该 clip 是否需要 `Gyroflow shell`
 - `lowlight` 的正式合同当前收口为：
   - 来源：每条 clip 的首帧视觉分类
   - 语义：creative-first 标签，用于 Group creative 分桶，并次级提示 repair 默认态
   - 约束：不等价于“必须降噪”
+- `colorCastClass` 的正式合同当前收口为：
+  - 来源：每条 clip 的廉价单帧 proxy 数值分类，默认取 clip 中点帧；若该 clip 能按 workspace profile/device 或 root `transformPresetKey` 解析到技术 LUT，则先用同路径 `.cube` 做 proxy 技术转换，再排除天空、高饱和、底部黄橙遮挡和曝光异常区域后估计中性像素偏移。强冷蓝偏移归入 `cool-cyan`，绿青混合偏移归入 `green-cyan`；`prepare_root` 还会对同一 root / 同一 log profile 内连续素材做轻量平滑，避免单个中点帧偏中性时把连续冷色路段切碎
+  - 语义：用于把 `cool-cyan / green-cyan / green / warm / mixed` 色偏素材拆到独立 Group，方便 `Group Post-Clip` 做白平衡修正
+  - 约束：不判断偏色原因是否一定来自前挡膜；`neutral / unknown` 不参与自动 Group 分桶
 - clip repair 的正式合同当前已收口为固定节点图：
-  - 同 clip 旧 repair 在 `prepare_root` 重建 timeline 时继续优先通过 Resolve `CopyGrades` 保留
+  - 同 clip 旧 repair 在 `prepare_root` rerun 时继续优先通过 Resolve `CopyGrades` 保留；portrait DRT hash 迁移例外，必须先对该 clip 执行 `ResetAllGrades()`，再重新应用方向 DRT
   - brand-new clip 若没有旧 repair，宿主必须建立 canonical layout，而不是把 donor matrix 当成用户口径
   - 所有视频 clip 统一为 `Gyro -> Dehaze -> User1 -> User2 -> NR`
   - `gyroEligible` 只决定 Gyro 默认/重申启停，不决定是否存在 Gyro 节点
   - `Dehaze / NR` 默认状态都是 `seeded-disabled`
   - 当前 Resolve 运行态下 `ExportStills(..., drx)` 不稳定且返回失败，不能作为正式主线
-  - clean `DRT` 是优先宿主模板：旧 `gyro-only.drt + CopyGrades + render` 路径已实测能触发 Gyroflow 当前文件加载；`DRX` 只能作为骨架 fallback，不能当成 load 证据
+  - clean `DRT` 是唯一正式自动宿主模板：旧 `gyro-only.drt + CopyGrades + render` 路径已实测能触发 Gyroflow 当前文件加载；`DRX` 仅保留为人工诊断材料，不能作为 bulk prepare fallback 或 load 证据
 - `gyroflowStatus` 当前正式至少包含：
   - `not-applicable`
   - `not-seeded`
@@ -211,22 +221,25 @@
 - `execute_root` 的正式 render 合同已经收紧为：
   - root grading timeline 是唯一导出真相；Group 只承担 Resolve 组织 / 诊断 / sync 语义，不再承担 render 配置或 batch ownership
   - batch 是执行与重试粒度，默认覆盖该 root timeline 上的全部可执行 clips，但允许显式携带 `clipKeys[]` 做 subset / retry
-  - 每个 batch 必须对应一个 Resolve root-level render job；不能再按 Group 或按 clip 排多个 jobs
-  - 正式输出命名仍然固定为 `sourceStem + targetExtension`
-  - Resolve 临时后缀名文件只能作为 batch-local staging 内部中间态，不能直接进入 manifest、validation 或 promote
-  - `manifest.entries[].stagingAbsolutePath` 的正式语义是“真实物理输出路径”，不允许再写预测路径
-  - 在写 manifest 前，宿主或 Node 侧必须先对最终输出做 metadata normalize：
+  - 覆盖已有最终目标前，Supervisor 必须先生成最终 `dayX/Cxxxx.ext` 覆盖预览，并用 `overwritePlanHash` 锁定确认范围；未确认或 hash 变化时不得启动 Resolve
+  - Resolve 宿主必须先完整生成所有 render jobs，再调用一次 render all；任一 `AddRenderJob()` 失败时不得调用 `StartRendering`
+  - Resolve 宿主按 `rawRelativePath` 父目录分组，为每个目录复制正式 root grading timeline 并修剪到该目录 clips；每个 render job 的 `TargetDir` 直接是最终 `localPath/<relativeDir>/`
+  - 正式输出命名固定为 `sourceStem + targetExtension`，并依赖 Resolve File Name = Source Name；不得设置 `CustomName` 或 `UniqueFilenameStyle`
+  - 项目目录只保存 `color/batches/<batchId>/...` JSON archive，不能作为视频 staging；Kairos 不创建视频 holding 目录，不在 render 后搬运视频
+  - Resolve 完成后必须直接校验最终 `manifest.entries[].outputPath`；出现 prefix/suffix 输出名视为 render setting 失败
+  - Resolve 写入最终路径后，Node 侧必须立即对最终输出做 metadata normalize：
     - `creation_time` 必须改写为源文件 `capturedAt`
     - 源文件带 GPS 时，最终输出必须带可被 `ffprobe` 读回的容器位置标签
 - 自动 Group 已退出 `colorspace / gamma / codec / resolution / fps` technical fingerprint 语义，改为纯创意标签：
   - `log`
   - `lowlight`
+  - 高置信 `colorCastClass`
 - `gyro` 已回到 clip repair 维度，不再参与 Group key 生成
 - `log` 的正式判定优先级为：
-  1. 素材显式真值
+  1. 显式 sidecar 真值
   2. root `color.colorSpaceProfile`
-- Sony 路径当前允许从 sidecar / embedded XML 真值读取 `CaptureGammaEquation / CaptureColorPrimaries / Gyroscope`，且只有当前 Gyroflow/OFX 支持的 Sony 型号带 `Gyroscope` 时才开启 Gyro
-- DJI 路径当前必须先匹配当前 Gyroflow/OFX 支持的 DJI 设备族，再要求 DJI metadata / `dvtm_*` 运动元信息；不支持的 DJI 型号即使有 `dvtm_*` 也必须关闭 Gyro。若仍无法解出明确 log 真值，才允许回退 root `color.colorSpaceProfile`
+- Sony 路径当前只从显式 XML sidecar 读取 `CaptureGammaEquation / CaptureColorPrimaries / Gyroscope`，且只有当前 Gyroflow/OFX 支持的 Sony 型号带 `Gyroscope` 时才开启 Gyro
+- DJI 路径默认不深扫 embedded private telemetry / `dvtm_*`，也不从中推断 log 或 gyro。DJI 若没有同名 `.gyroflow` 或 root `color.colorSpaceProfile` 等显式输入，技术输入正式保持 `unknown`
 - Group truth 继续以 Resolve 为准：
   - `/color` 通过 `sync_groups` 镜像 Resolve 当前 group name
   - `groupKey` 的正式语义改为 normalized Resolve group name slug
@@ -241,7 +254,7 @@
 在 P0 把单 root 执行闭环接通后，P1 的正式收口点是两件事：
 
 - Resolve host 在动作前先给出可缓存、可重检的 preflight 诊断，而不是等用户点击后才报错
-- `/color` 正式消费 `color/batches/<batchId>/...` archive，把 batch / validation / promote 历史变成单页可观测面
+- `/color` 正式消费 `color/batches/<batchId>/...` archive，把 batch / validation 历史变成单页可观测面
 
 当前冻结后的正式口径如下：
 
@@ -250,7 +263,6 @@
   - `sync_groups`
   - `execute_root`
   - `validate_batch`
-  - `promote_batch`
 - `preflight` 是 ColorExecutor 与 Python host 的内部辅助操作，不是新的正式 workflow action
 - `color/current.json` 顶层新增 `hostPreflight`，其正式职责是缓存：
   - `status`
@@ -283,20 +295,18 @@
 - `IColorBatchValidation` 当前正式扩展为：
   - `summary.targetCount / renderedCount / passedCount / failedCount`
   - `blockingReasons[]`
-- archive 继续保留在 `color/batches/<batchId>/plan.json|manifest.json|validation.json|promote.json`
+- archive 继续保留在 `color/batches/<batchId>/plan.json|manifest.json|validation.json`
 - `/color` 当前不把 archive 回写进 `current.json`，而是通过独立聚合视图按 root 展示：
   - `Recent Batches`
   - `Validation Failures`
-  - `Promote History`
 - `/color` 当前继续保持单页 root 卡片，但每个 root 现在都带可折叠的：
   - `Host Diagnostics`
   - `Recent Batches`
   - `Validation Failures`
-  - `Promote History`
 
 ## 0.6 2026-04-19 DaVinci color 执行闭环补记
 
-本轮已冻结的下一步目标，是把独立调色链从“最小配置 + deterministic prep 控制面”补成“官方 Python 宿主 + group sync + execute/validate/promote 闭环”：
+本轮已冻结的下一步目标，是把独立调色链从“最小配置 + deterministic prep 控制面”补成“官方 Python 宿主 + group sync + execute/validate 闭环”：
 
 - `color` 的长期用户配置仍然只保留 `config/project-brief.json` root mappings 上的最小 `root.color.renderPreset`
 - `resolveProjectName / rootNamespace / gradingTimelineName` 继续按约定生成，不回退成用户配置项
@@ -306,18 +316,17 @@
   - `sync_groups`
   - `execute_root`
   - `validate_batch`
-  - `promote_batch`
 - 正式 Group 真相来自 Resolve 宿主，不再由 Kairos 提供 bootstrap / candidate Group
 - root timeline 是第一版正式 group sync 范围；Kairos 只同步该 root grading timeline 上实际出现的 clips/group
 - `color/groups/<rootId>.json` 将成为 root 级 formal host snapshot
-- `color/batches/<batchId>/plan.json`、`manifest.json`、`validation.json`、`promote.json` 将成为 batch 级正式 archive
-- `color/current.json` 将扩展为 root 级 current truth，保存 host prep、group sync、latest batch、latest validation 和 pending promote 指针；Group current 只保留诊断/显示所需状态
-- validation / promote 只依赖 `rawLocalPath + staging + manifest`，不依赖 ingest asset truth
+- `color/batches/<batchId>/plan.json`、`manifest.json`、`validation.json` 将成为 batch 级正式 archive
+- `color/current.json` 将扩展为 root 级 current truth，保存 host prep、group sync、latest batch 和 latest validation；Group current 只保留诊断/显示所需状态
+- validation 只依赖 `rawLocalPath + final output + manifest`，不依赖 ingest asset truth
 - 当前 P0 正式口径继续收窄为“单 root 真闭环”：
   - `prepare_root` 必须真实导入 `rawLocalPath` 素材、维护 root bin 镜像、维护可执行 grading timeline
   - Resolve Groups 由宿主维护并可继续在 Resolve 内调整；`/color` 不再增加独立 `Confirm Groups` 步骤
   - `sync_groups` 只镜像 Resolve 当前现状；同步后的非空 Group 直接视为 `ready`
-  - `promote_batch` 必须经过 `/color` 二次确认后才能覆盖当前 root 的受管输出
+  - 覆盖确认必须发生在 `execute_root` 启动 Resolve 前，并通过 `overwritePlanHash` 锁定最终目标集合
 
 这意味着 `/color` 的官方定位将从“prep/status 面”推进到“独立调色执行控制面”，但仍保持：
 
@@ -339,7 +348,7 @@
 - `projects/<projectId>/color/current.json` 继续承载当前运行真相；`projects/<projectId>/color/batches/<batchId>/...` 保留给 batch/runtime 归档
 - 当前 Resolve 宿主路线冻结为“同机 official Python Scripting API sidecar”，不再把 MCP 作为 color 官方主线
 
-因此，当前 `/color` 应被理解为“项目 root 上的最小 render preset + Resolve-managed groups + runtime/archive + execution/promote 控制面”。
+因此，当前 `/color` 应被理解为“项目 root 上的最小 render preset + Resolve-managed groups + runtime/archive + execution/validation 控制面”。
 
 ## 0.4 2026-04-18 DaVinci color 基础设施落地补记
 
@@ -360,7 +369,7 @@
 - Resolve `Media Pool / Bin` 真同步
 - 长期 `grading timeline` 的 Resolve 宿主侧真准备
 - 多 Group 候选生成与 clip 归组
-- `Render Queue` 执行、`execute_root` 真渲染、`validation` 真校验与 `promote`
+- `Render Queue` 执行、`execute_root` 真渲染与 `validation` 真校验
 
 因此当前应把 `/color` 理解为“独立调色链的单 root 官方闭环已经接通，并且正式补上了宿主 preflight / retry / 兼容守卫与 archive 可观测性”。
 
@@ -733,7 +742,7 @@ src/modules/ingest/
 ```
 src/modules/color/
 ├── workspace-state.ts  # 从 `project-brief` root 单真值 + current/groups 生成 /color 读模型
-├── project-color.ts    # color action dispatcher：prepare/sync/execute/validate/promote
+├── project-color.ts    # color action dispatcher：prepare/sync/execute/validate
 ├── resolve-executor.ts # Node ↔ vendored Python Resolve sidecar 边界
 └── index.ts
 ```
@@ -743,19 +752,20 @@ src/modules/color/
 - `resolveProjectName / rootNamespace / gradingTimelineName / group naming` 全部按约定生成，不再是用户配置项
 - `color/current.json` 保存 root/group 级 current truth
 - `color/groups/<rootId>.json` 保存宿主同步下来的正式 Group 快照
-- `color/batches/<batchId>/plan.json|manifest.json|validation.json|promote.json` 保存每次执行归档
+- `color/batches/<batchId>/plan.json|manifest.json|validation.json` 保存每次执行归档
+- `color/resolve-projects/<safe-project-name>/latest.drp` 与 `color/resolve-project-map.json` 保存 Resolve 工程同步快照 truth
 
 **关键流程**：
 ```
 读取 `project-brief` 单真值 root 配置 + 路径候选解析结果 + runtime config
   → `/color` 自动发现已配置 `rawPath` 的 roots，并派生约定命名与 blockers
-  → `prepare_root` 调用 official Python host，真实同步 `rawLocalPath` 到 root namespace bin 树，确保 grading timeline 已装入可执行 clips，并按 explainable technical signals 创建/复用 Resolve Groups
-  → `sync_groups` 只同步该 root grading timeline 上实际出现的正式 Groups，并写 `color/groups/<rootId>.json`
+  → `prepare_root` 按稳定 50-clip chunks 调用 official Python host，真实同步 `rawLocalPath` 到 root namespace bin 树，把所有 chunks 追加到同一条 root grading timeline，并按 explainable technical signals 创建/复用 Resolve Groups；全部 chunks 完成后才自动导出一次轻量 DRP
+  → `sync_groups` 同步该 root grading timeline 上实际出现的正式 Groups，并写 `color/groups/<rootId>.json`
   → `execute_root` 按需扫描 `rawLocalPath`，生成 root clip inventory，并可按 `clipKeys[]` 裁成 batch，写 `plan.json`
-  → official Python host 把目标 Group 渲染到 `projects/<projectId>/.tmp/color/<batchId>/render/`，并保持 staging 目录镜像 `sourceRelativePath`
-  → Kairos 写 `manifest.json` 并更新 `current.json` 的 latest batch 指针
-  → `validate_batch` 在 Node 侧 probe 原始文件与 staging 输出，对账路径/扩展名/媒体参数/metadata，写 `validation.json`
-  → `/color` 上的显式确认通过后，`promote_batch` 才会在 validation=pass 且 batch 仍是该 root 最新候选时执行，并且只覆盖 manifest 声明的 `managedOutputSet`
+  → official Python host 按 raw 父目录复制临时时间线并直接渲染到当前 root `localPath/<relativeDir>/`
+  → Kairos 校验最终 `dayX/sourceStem.ext` 输出完整且没有 Resolve 前后缀命名
+  → Kairos 修复最终输出 metadata，写 `manifest.json` 并更新 `current.json` 的 latest batch 指针
+  → `validate_batch` 在 Node 侧 probe 原始文件、同名 sidecar 与 root 输出，对账路径/扩展名/媒体参数/metadata，写 `validation.json`
 ```
 
 #### 2.3 Script — 脚本生成
@@ -998,7 +1008,7 @@ DaVinci Resolve Studio (≥18.5)
 | 时间线 | CreateTimeline, AddTrack, AppendToTimeline | Timeline |
 | 素材 | ImportMedia, GetMediaPool, AddSubFolder | MediaPool |
 | 渲染 | AddRenderJob, SetRenderSettings, StartRender | Deliver |
-| 项目 | CreateProject, OpenProject, GetCurrentProject | ProjectManager |
+| 项目 | CreateProject, OpenProject, GetCurrentProject, SaveProject, ExportProject | ProjectManager / Project |
 
 ### 4.2 错误处理
 

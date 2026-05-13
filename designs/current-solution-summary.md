@@ -21,7 +21,7 @@ Kairos 当前需要区分两层：
 - 一条与主链解耦的 `DaVinci color` 独立增强链路
   - 当前已经有最小 `/color` 控制面与项目级 `color/` runtime/archive store
   - 当前 `/color` 会自动发现已配置 `rawPath` 的素材根，派生约定命名与阻塞状态
-  - 当前 `/color` 已支持同机 vendored Resolve backend 驱动的 color action 链：`prepare_root -> sync_groups -> execute_root -> validate_batch -> promote_batch -> prepare_all_roots -> export_all_roots`
+  - 当前 `/color` 已支持同机 vendored Resolve backend 驱动的 color action 链：`prepare_root -> sync_groups -> execute_root -> validate_batch -> prepare_all_roots -> export_all_roots`
   - 当前 `/color` 的长期用户配置已收口到 `config/project-brief.json` root mapping 上的最小 `color.renderPreset + color.colorSpaceProfile + color.transformPresetKey`
     - `color.renderPreset` 当前正式使用 `bitrateKbps`（单位 `kb/s`）；不再接受旧的 bitrate 别名字段
     - `color.colorSpaceProfile` 当前正式表示“技术输入类型”，不是 creative look，也不再承载 gamut/primaries 细节
@@ -34,15 +34,18 @@ Kairos 当前需要区分两层：
     - root namespace / grading timeline 固定从 root `label` 派生
   - 当前 `color/current.json` 承载 root current truth，`color/groups/<rootId>.json` 承载 formal host group + clip repair snapshot，`color/batches/<batchId>/...` 承载 root-scoped batch archive
   - 当前 DaVinci Resolve scripting 相关知识已落成本地文档 `.ai/knowledge/davinci-resolve-scripting.md`；任何 `/color`、Resolve export、DRX/DRT、LUT、render job、Group、node graph 或 vendored host 变更都必须先读该文档，再按安装版 Resolve `README.txt` 校验版本敏感 API
-  - 当前 `prepare_root` 已正式承担 `rawLocalPath -> Resolve root bin / grading timeline / Resolve Groups` 的真实同步，不再只是轻量容器占位
+  - 当前 `prepare_root` 已正式承担 `rawLocalPath -> Resolve root bin / root grading timeline / Resolve Groups` 的真实同步，不再只是轻量容器占位
+  - 当前大素材 root 的 `prepare_root` 默认按稳定顺序拆成 50-clip chunks，并限制本机 probe / source-truth / lowlight 并发，避免一次性把整 root 塞进 Node 和 Resolve host 内存；chunk 只作为导入批次，全部追加到同一条 root grading timeline，chunk 进度与可恢复状态写入 `color/current.json`
+  - 当前自动 DRP 快照只在 root 全部 chunks 导入完成后生成一次；每个 chunk 后只即时 `SaveProject()`，其它 Resolve 工程备份交由用户通过 `/color` 的手动保存或外部 `.drp` 登记入口完成
     - grading timeline 必须按该 root 的 dominant `(width, height, fps)` 规格创建
-    - 自动 Group 只使用创意标签语义：`log / lowlight`
-    - `log` 先读素材显式真值，再回退 root `color.colorSpaceProfile`
+    - 自动 Group 只使用创意标签语义：`log / lowlight / colorCastClass`
+    - `log` 先读显式 sidecar 真值，再回退 root `color.colorSpaceProfile`
     - `lowlight` 当前正式由每条 clip 的首帧视觉分类产生，是 creative-first 标签，不是 noise-only 诊断
+    - `colorCastClass` 当前由便宜的单帧 proxy 数值分类产生：默认取 clip 中点帧；若该 clip 能按 workspace profile/device 或 root `transformPresetKey` 解析到技术 LUT，则先用同路径 `.cube` 做 proxy 技术转换，再排除天空/高饱和/黄橙车头/曝光异常区域并估计中性像素偏移。强冷蓝中性偏移归入 `cool-cyan`，绿青混合中性偏移归入 `green-cyan`，且 `prepare_root` 会对同一 root / 同一 log profile 的连续素材做轻量平滑：夹在多个冷色锚点之间、且指标不冲突的短 clip 会跟随进入同一偏色分桶。它只表示需要单独白平衡/色偏处理的 `cool-cyan / green-cyan / green / warm / mixed` 分桶，不声称色偏原因一定是前挡膜；`neutral / unknown` 不参与分桶以避免 Group 爆炸
     - `gyro` 正式回到 clip repair 维度；它只决定该 clip 的第 1 个 Gyro 节点是否默认/重申开启，不再参与 Group 分桶
-    - `gyroEligible` 是最终布尔判定：先匹配当前安装 Gyroflow/OFX 官方支持设备，再要求该设备对应的运动元信息；同名 `.gyroflow` 视为用户已准备稳定工程。DJI `dvtm_*` 私有 telemetry 只能作为元信息线索，不能单独开启 Gyro，也不能用来猜测 log profile
-    - 素材技术真值优先级固定为 `素材自身 metadata > XML > root fallback`
-    - DJI 若解析不到明确技术输入，正式结果就是 `unknown`，不得强行识别成 `dlog-m`
+    - `gyroEligible` 是显式声明判定：同名 `.gyroflow` 视为用户已准备稳定工程；带 Gyroscope 且型号受支持的 Sony XML sidecar 可开启 Gyro。默认 prepare 不深扫嵌入式私有 telemetry；DJI `dvtm_*` 不扫描、不单独开启 Gyro，也不能用来猜测 log profile
+    - 素材技术真值优先级固定为 `显式 sidecar > root fallback`
+    - DJI 若没有显式技术输入，正式结果就是 `unknown`，不得强行识别成 `dlog-m`
   - 当前 `prepare_root` 在 Resolve-side mutation 前，还会先做当前 root 的 LUT preflight：
     - 只同步当前 root 实际引用到且 workspace 中存在同路径文件的 LUT
     - 同步源固定为 `config/luts/<relative-path>`
@@ -69,34 +72,43 @@ Kairos 当前需要区分两层：
     - `User1 / User2` 是最小用户区，默认开启；用户扩展节点必须放在 `Dehaze` 之后、`NR` 之前
     - `NR` 对所有视频 clip 固定预留在尾部，默认禁用，正式开关入口只有 Resolve
     - `lowlight` 继续是 creative-first 标签，不自动开启 `Dehaze / NR`
-    - 旧非规范 clip 图记为 `legacy-layout`；本轮允许一次破坏性重建到新规范，规范图重跑保留用户区状态与用户手动切换的 Dehaze/NR 状态，但仍会按 `gyroEligible` 重申 Gyro node1 开关；如果用户把节点加到 `NR` 后面，下次 `prepare_root` 也会视为 legacy 并重建
-    - workspace `config/default.drt` 是优先 cold-start / legacy rebuild 来源；不存在时才回退 `config/default.drx`
-    - live Resolve 验证显示，干净 DRT donor 路径可以在渲染时触发 Gyroflow source-specific load；当前 DRX 路径只能作为 layout fallback，不能当成 load 证据
+    - ZV-E1 / Sony 竖屏素材不禁用 Gyro；Kairos 先从 ffprobe 解析 `rotation/display matrix`，timeline 显示旋转继续按 ffprobe 方向取反，但 Gyroflow 日志方向与 ffprobe 口径相反：源 `rotation=90` 会写 `RotationAngle=-90` 并使用 `config/gyroflow-portrait--90.drt`，源 `rotation=-90/270` 会写 `RotationAngle=90` 并使用 `config/gyroflow-portrait-90.drt`
+    - 竖屏方向 DRT 缺失时，素材导入、Group、LUT 和 timeline transform 继续执行，但该 clip 的 Gyro node 不自动开启，并标记 `pending-orientation-template`
+    - 竖屏素材在 root grading timeline 上自动写入 `RotationAngle / ZoomX / ZoomY / ZoomGang / Pan / Tilt`，默认旋转并放大填满横屏单 clip 导出；当 Gyroflow/DRT 输出层把竖屏内容落成横屏帧内的小 16:9 画面时，timeline transform 必须额外放大到填满画布
+    - 如果已有 prepared root 的 portrait DRT hash 缺失或过期，`prepare_root` 只重跑命中的 chunk，并对 stale portrait clip 先执行 `ResetAllGrades()` 清掉旧 repair/OFX state，再重新应用方向 DRT；prepare 完成后的最终 `sync_groups` 会写回当前 DRT hash，后续 hash 未变时仍按 canonical repair preserve 路径执行
+    - 旧非规范 clip 图记为 `legacy-layout`；本轮允许在 workspace `config/default.drt` 存在时破坏性重建到新规范，规范图重跑保留用户区状态与用户手动切换的 Dehaze/NR 状态，但仍会按 `gyroEligible` 重申 Gyro node1 开关；如果 DRT 缺失，bulk prepare 跳过自动 repair seed 并标记 `pending-template`
+    - workspace `config/default.drt` 是唯一正式 cold-start / legacy rebuild 来源；`config/default.drx` 不再作为大批量自动 fallback
+    - live Resolve 验证显示，干净 DRT donor 路径可以在渲染时触发 Gyroflow source-specific load；当前 DRX 路径只能作为人工诊断材料，不能当成 load 证据
   - 当前 `sync_groups` 已扩展成 group + clip 双层镜像：
-    - group 侧至少镜像 `logProfile / lowlight / postClipCreativeStatus`
-    - clip 侧至少镜像 `gyroEligible / gyroflowStatus / dehazeStatus / nrStatus / clipRepairStatus / layoutStatus`
+    - group 侧至少镜像 `logProfile / lowlight / colorCastClass / postClipCreativeStatus`
+    - clip 侧至少镜像 `gyroEligible / gyroflowStatus / dehazeStatus / nrStatus / clipRepairStatus / layoutStatus / orientationStatus / repairTemplateKey / timelineTransform`
   - 当前 `/color` 进入页面或切换项目时会自动执行 Resolve host preflight，并把结果正式缓存到 `color/current.json.hostPreflight`
+  - 当前 `/color` 会把 Resolve 工程同步快照落到项目内 `color/resolve-projects/<safe-project-name>/`；自动快照只在 root prepare 全部 chunks 完成后生成一次，手动 `保存 DRP 快照` 可随时 `SaveProject()` 并导出轻量 `.drp`，两者都会维护 `latest.drp` 与 `color/resolve-project-map.json`；外部 GUI 导出的 `.drp` 可登记为 latest
   - 当前 `prepare_root / sync_groups / execute_root / prepare_all_roots / export_all_roots` 都先经过 preflight 守卫；宿主 blocked 或 render preset 不受支持时，动作会在 Resolve 变更前直接失败
+  - 当前成功重跑 `prepare_root` 会清理上一轮 Resolve host 短时崩溃留下的动作级 blocker；`color/current.json.blockingReasons` 不得在 root 已 `synced/ready` 时继续显示旧的 DRT import 等 transient 错误
   - 当前 color host 的正式兼容下限为 `DaVinci Resolve Studio >= 18.5`；低版本 / 非 Studio 是硬阻塞，部分兼容降级则显示为 `degraded`
   - 当前 host retry 只覆盖短时 host/app 故障，不覆盖缺配置、缺素材、render preset 不支持、validation fail 等语义错误
   - 当前 `execute_root` 的正式导出合同已经切到 “root timeline 是真相，batch 只是 clip 子集执行粒度”：
     - root `renderPreset` 是唯一导出配置真相；Group 不再决定 render preset、batch 所属或执行顺序
     - batch 默认覆盖该 root grading timeline 上的全部可执行 clips，但可显式携带 `clipKeys[]` 作为 retry / subset 选择
-    - Resolve 宿主正式要求是一批一个 root-level render job；不能再按 Group 或按 clip 排多个 jobs
-    - 正式输出命名继续收口为 `sourceStem + targetExtension`；宿主必须用真实落盘路径写入 manifest
-    - Resolve 临时后缀名文件只能停留在 batch-local staging 内部，进入 manifest / validation / promote 的只能是归一后的正式文件名
+    - Resolve 宿主按 `rawRelativePath` 父目录分组，为每个目录复制正式 root grading timeline 并修剪到该目录 clips；所有 render jobs 创建成功后才能调用一次 render all
+    - 正式输出命名继续收口为 `sourceStem + targetExtension`；宿主必须使用 Resolve File Name = Source Name，不设置 `CustomName` 或 prefix/suffix
+    - `execute_root` 必须以当前 root `localPath` 为唯一输出 root；项目目录只保存 batch JSON archive，不能承载视频 staging
+    - 覆盖已有最终目标前，`/color` 必须先生成最终 `dayX/Cxxxx.ext` 覆盖预览并用 `overwritePlanHash` 锁定确认范围；hash 缺失或变化时不允许启动 Resolve
+    - 每个目录级临时时间线直接渲染到最终 `localPath/<relativeDir>/`；Kairos 不再创建视频 holding 目录，也不在 render 后搬运视频
+    - 任一 `AddRenderJob()` 失败时不得启动渲染；若 Resolve 输出出现 `V1-0001_C1611.ext` / `C1611_001.ext` 这类前后缀文件名，batch 直接失败
   - 当前 `execute_root` 在写 manifest 前必须先做最终文件 metadata normalize：
     - `creation_time` 改写为源文件 `capturedAt`
     - 源文件带 GPS 时，容器位置标签也必须改写到最终输出，且能被 `ffprobe` 读回
   - 当前 `validate_batch` 已扩展为写入 summary 统计、top-level blockingReasons 和 warning-only 诊断，供 `/color` 直接显示 validation 失败原因
     - `capturedAt / GPS` 仍是硬门槛
     - `create_time` 当前是 warning-only
-  - 当前 `promote_batch` 需要在 `/color` 上做一次显式确认后才允许覆盖受管输出
+  - 当前 `promote_batch` 已退出正式导出链；视频与同 basename 的 `.srt/.xml/.gyroflow/.wav/.flac/.m4a/.aac/.mp3` sidecar 在 `execute_root` 成功验证后即是当前 root 输出
   - 当前 `/color` 还正式提供项目级批处理入口：
     - `Prepare All Roots`：按当前 read model 的 enabled root priority 顺序依次执行 `prepare_root`
-    - `Export All Roots`：按同一顺序依次执行 `execute_root -> validate_batch -> promote_batch`
+    - `Export All Roots`：按同一顺序依次执行 `execute_root`，每个 root 内部完成 render all、最终 replace、metadata 修复和 validation
     - 项目级动作遇到单个 root 失败时继续后续 roots，但只要存在失败 root，整个 job 最终仍记为 failed
-  - 当前 `/color` 继续保持单页，但已正式消费 `color/batches/<batchId>/plan|manifest|validation|promote` 归档，并按 root 展示可折叠的 `Host Diagnostics / Recent Batches / Validation Failures / Promote History`
+  - 当前 `/color` 继续保持单页，但已正式消费 `color/batches/<batchId>/plan|manifest|validation` 归档，并按 root 展示可折叠的 `Host Diagnostics / Recent Batches / Validation Failures`
   - 当前 Resolve 宿主路线已经冻结并落地为“同机 vendored Resolve backend（`vendor/resolve-color-host/` + fixed `.venv`）”，不再把 MCP 作为 color 主线
 - 一组运行在 Agent 环境中的工作流技能，以及面向不同 NLE / 导出目标的适配层
 
@@ -109,7 +121,7 @@ Kairos 当前需要区分两层：
 - 只要改动影响正式本地运行入口、Supervisor API、`/analyze`、`/style`、`/color` 或 `apps/kairos-console/`，验证就必须同时包含根仓 `pnpm build` 与 `npm --prefix apps/kairos-console run build`
 - 根仓 `pnpm build` 不能被视为已经覆盖 React console 产物；前端 bundle 必须显式重建
 - `素材分析` 与 `风格分析` 在当前控制台里直接以主路由展示监控，而不是再跳一次独立监控入口
-- `DaVinci color` 当前也已有独立主路由 `/color`，并已收口为最小 `renderPreset` 配置（含 `bitrateKbps` / `kb/s`）+ root/project 级 deterministic 控制面 + runtime/archive 状态面；正式顺序为 `Prepare Root -> Sync Groups -> Execute Root -> Validate -> Promote`，并补充 `Prepare All Roots / Export All Roots`
+- `DaVinci color` 当前也已有独立主路由 `/color`，并已收口为最小 `renderPreset` 配置（含 `bitrateKbps` / `kb/s`）+ root/project 级 deterministic 控制面 + runtime/archive 状态面；正式顺序为 `Prepare Root -> Sync Groups -> Execute Root -> Validate`，并补充 `Prepare All Roots / Export All Roots`
 - `/color` 当前还会主动暴露宿主诊断与 batch 归档，而不是把宿主问题和 validation 历史藏在动作失败或磁盘 JSON 里
 - 风格档案、风格来源配置与风格分析参考产物当前已收口为 **Workspace 级共享资产**：
   - `config/styles/`

@@ -400,15 +400,19 @@ export function ManualItineraryEditor({ config, setConfig, onSave, busy }) {
 }
 
 export function IngestRootClockEditor({ config, summaries = [], setConfig, onSave, busy }) {
-  const roots = Array.isArray(config?.mappings)
-    ? config.mappings.filter(isPlainObject)
-    : [];
+  const roots = React.useMemo(
+    () => (Array.isArray(config?.mappings)
+      ? config.mappings.filter(isPlainObject)
+      : []),
+    [config?.mappings],
+  );
   const [drafts, setDrafts] = React.useState({});
 
   React.useEffect(() => {
-    setDrafts(Object.fromEntries(
+    const nextDrafts = Object.fromEntries(
       roots.map(root => [root.rootId, formatClockOffsetMs(root.clockOffsetMs)]),
-    ));
+    );
+    setDrafts(current => areStringRecordsEqual(current, nextDrafts) ? current : nextDrafts);
   }, [roots]);
 
   if (!config) return null;
@@ -1022,6 +1026,8 @@ export function ColorCurrentSummary({
   busy = {},
   onRunColorAction,
   onRequestHostPreflight,
+  onSaveDrpSnapshot,
+  onRegisterDrpSnapshot,
 }) {
   const effectiveConfig = isPlainObject(config) ? config : {};
   const rootCards = React.useMemo(
@@ -1048,9 +1054,9 @@ export function ColorCurrentSummary({
     : capability
       ? 'supported'
       : 'unknown';
-  const [promoteDialog, setPromoteDialog] = React.useState(null);
   const [exportAllDialog, setExportAllDialog] = React.useState(false);
   const [sectionOpen, setSectionOpen] = React.useState({});
+  const [externalDrpPath, setExternalDrpPath] = React.useState('');
   const preferredRootId = React.useMemo(
     () => resolvePreferredColorRootId(effectiveConfig, rootCards),
     [effectiveConfig, rootCards],
@@ -1097,6 +1103,13 @@ export function ColorCurrentSummary({
   const activeRootPreflightBusy = activeRoot
     ? (busy?.[`color:preflight:${activeRoot.rootId}`] || busy?.['color:preflight'])
     : false;
+  const activeRootDrpBusy = activeRoot
+    ? (busy?.[`color:drp-snapshot:${activeRoot.rootId}`] || busy?.['color:drp-snapshot'])
+    : false;
+  const activeRootDrpRegisterBusy = activeRoot
+    ? (busy?.[`color:drp-register:${activeRoot.rootId}`] || busy?.['color:drp-register'])
+    : false;
+  const activeRootLatestDrp = activeRoot?.latestDrpSnapshot || activeRoot?.current?.latestDrpSnapshot || null;
 
   return (
     <div className="color-dashboard">
@@ -1199,6 +1212,13 @@ export function ColorCurrentSummary({
                   {activeRootPreflightBusy ? '检查中…' : 'Recheck Host'}
                 </Button>
                 <Button
+                  type={!activeRootDrpBusy && typeof onSaveDrpSnapshot === 'function' ? 'default' : 'disabled'}
+                  disabled={activeRootDrpBusy || typeof onSaveDrpSnapshot !== 'function'}
+                  onClick={() => onSaveDrpSnapshot?.({ rootId: activeRoot.rootId })}
+                >
+                  {activeRootDrpBusy ? '保存中…' : '保存 DRP 快照'}
+                </Button>
+                <Button
                   type={canRunColorRootAction('prepare_root', activeRoot, capability, liveColorJobs, busy, onRunColorAction) ? 'primary' : 'disabled'}
                   disabled={!canRunColorRootAction('prepare_root', activeRoot, capability, liveColorJobs, busy, onRunColorAction)}
                   onClick={() => onRunColorAction?.({ rootId: activeRoot.rootId, action: 'prepare_root' })}
@@ -1226,19 +1246,43 @@ export function ColorCurrentSummary({
                 >
                   {describeColorRootAction('validate_batch', activeRoot, liveColorJobs, busy)}
                 </Button>
-                <Button
-                  type={canRunColorRootAction('promote_batch', activeRoot, capability, liveColorJobs, busy, onRunColorAction) ? 'primary' : 'disabled'}
-                  disabled={!canRunColorRootAction('promote_batch', activeRoot, capability, liveColorJobs, busy, onRunColorAction)}
-                  onClick={() => setPromoteDialog({
-                    rootId: activeRoot.rootId,
-                    batchId: activeRoot.current?.pendingPromoteBatchId || activeRoot.current?.latestBatchId,
-                  })}
-                >
-                  {describeColorRootAction('promote_batch', activeRoot, liveColorJobs, busy)}
-                </Button>
               </div>
             </div>
             <div className="detail">{activeRootHeroDetail}</div>
+            <div className="color-drp-panel">
+              <div className="color-drp-copy">
+                <strong>Resolve DRP 快照</strong>
+                <div className="muted">
+                  {activeRootLatestDrp?.snapshotPath
+                    ? `latest · ${activeRootLatestDrp.snapshotPath}`
+                    : '还没有 DRP 快照。Resolve scripting 不可用时，用 File -> Export Project... 保存到 snapshots 目录后在这里登记。'}
+                </div>
+                {activeRootLatestDrp?.createdAt ? (
+                  <div className="muted">
+                    {`${activeRootLatestDrp.mode || 'auto'} · ${activeRootLatestDrp.createdAt} · ${activeRootLatestDrp.projectName || activeRoot.resolveProjectName || ''}`}
+                  </div>
+                ) : null}
+              </div>
+              <div className="color-drp-register">
+                <Field
+                  label="登记外部 DRP"
+                  value={externalDrpPath}
+                  onChange={setExternalDrpPath}
+                  placeholder=".../color/resolve-projects/.../snapshots/project.drp"
+                  disabled={activeRootDrpRegisterBusy}
+                />
+                <Button
+                  type={externalDrpPath.trim() && !activeRootDrpRegisterBusy ? 'default' : 'disabled'}
+                  disabled={!externalDrpPath.trim() || activeRootDrpRegisterBusy || typeof onRegisterDrpSnapshot !== 'function'}
+                  onClick={() => {
+                    onRegisterDrpSnapshot?.({ rootId: activeRoot.rootId, path: externalDrpPath.trim() });
+                    setExternalDrpPath('');
+                  }}
+                >
+                  {activeRootDrpRegisterBusy ? '登记中…' : '登记'}
+                </Button>
+              </div>
+            </div>
             {activeRoot.blockers.length > 0 ? (
               <div className="inline-warning">
                 {`主 blocker：${activeRoot.blockers.slice(0, 2).join('；')}`}
@@ -1258,7 +1302,12 @@ export function ColorCurrentSummary({
               <div className="headline-metric">
                 <div className="label">Groups</div>
                 <div className="value">{String(activeRoot.groups.length)}</div>
-                <div className="sub">{activeRoot.groups.length > 0 ? '可进入执行/校验/Promote' : '等待首次 Sync Groups'}</div>
+                <div className="sub">{activeRoot.groups.length > 0 ? '可进入执行/校验' : '等待首次 Sync Groups'}</div>
+              </div>
+              <div className="headline-metric">
+                <div className="label">Chunks</div>
+                <div className="value">{formatColorPrepareChunkCount(activeRoot.current?.prepareChunks)}</div>
+                <div className="sub">{describeColorPrepareChunks(activeRoot.current?.prepareChunks)}</div>
               </div>
               <div className="headline-metric">
                 <div className="label">Latest Batch</div>
@@ -1377,7 +1426,7 @@ export function ColorCurrentSummary({
                   })}
                 </div>
                 <p className="field-help">
-                  {'`Prepare Root` 会真正同步 Media Pool / grading timeline，并按 `logProfile + lowlight` 生成或复用 Resolve Groups，同时把所有视频 clip repair 收口成统一固定节点图：`Gyro -> Dehaze -> User1 -> User2 -> NR`。`Group Post-Clip` 是主 creative 真相，`Clip` 只承担 repair / local exception。`Prepare All Roots` 和 `Export All Roots` 都会按当前 root priority 顺序执行。'}
+                  {'`Prepare Root` 会真正同步 Media Pool / grading timeline，并按 `logProfile + lowlight + 高置信 colorCastClass` 生成或复用 Resolve Groups；横屏使用 `config/default.drt`，竖屏 Sony/ZV-E1 可用方向专用 DRT 自动 Gyro，并会写入 timeline transform 旋转放大为横屏单 clip 导出。`Group Post-Clip` 是主 creative 真相，`Clip` 只承担 repair / local exception。'}
                 </p>
               </Card>
 
@@ -1387,7 +1436,7 @@ export function ColorCurrentSummary({
                   <Tag>{`${activeRoot.groups.length} 个`}</Tag>
                 </div>
                 <p className="muted color-panel-copy">
-                  {'`Group Post-Clip` 是 Resolve 里的主 creative 真相；clip repair 只负责固定槽位 `Gyro -> Dehaze -> User1 -> User2 -> NR`。`Gyro` 所有 clip 都预留并按资格默认开关，`Dehaze / NR` 默认关闭，正式开关入口只有 Resolve。导出、校验和 Promote 仍然都以 root batch 为单位，不再按 Group 触发。'}
+                  {'`Group Post-Clip` 是 Resolve 里的主 creative 真相；clip repair 只负责固定槽位 `Gyro -> Dehaze -> User1 -> User2 -> NR`。没有对应 DRT 模板时 Kairos 会跳过自动 Gyro/repair seed 并标记待初始化；竖屏素材仍会应用横屏 transform。导出会按 raw 父目录拆临时时间线，并直接渲染到最终 root 目标后校验。'}
                 </p>
                 <div className="color-group-list">
                   {activeRoot.groups.length > 0 ? activeRoot.groups.map(group => (
@@ -1459,6 +1508,11 @@ export function ColorCurrentSummary({
                     <Field label="resolvedTransformPresetKey" value={getColorStringField(activeRoot.current?.hostSummary, ['resolvedTransformPresetKey']) || ''} onChange={noop} readOnly />
                     <Field label="lutSyncStatus" value={getColorStringField(activeRoot.current?.hostSummary, ['lutSyncStatus']) || ''} onChange={noop} readOnly />
                     <Field label="transformStatus" value={getColorStringField(activeRoot.current?.hostSummary, ['transformStatus']) || ''} onChange={noop} readOnly />
+                    <Field label="repairTemplateStatus" value={getColorStringField(activeRoot.current?.hostSummary, ['repairTemplateStatus']) || ''} onChange={noop} readOnly />
+                    <Field label="repairSeedSkippedReason" value={getColorStringField(activeRoot.current?.hostSummary, ['repairSeedSkippedReason']) || ''} onChange={noop} readOnly />
+                    <Field label="portraitClipCount" value={String(activeRoot.current?.hostSummary?.portraitClipCount || '')} onChange={noop} readOnly />
+                    <Field label="timelineTransformClipCount" value={String(activeRoot.current?.hostSummary?.timelineTransformClipCount || '')} onChange={noop} readOnly />
+                    <Field label="missingPortraitDrtCount" value={String(activeRoot.current?.hostSummary?.repairOrientationTemplateMissingClipCount || '')} onChange={noop} readOnly />
                     <Field label="resolveProjectName" value={activeRoot.resolveProjectName || ''} onChange={noop} readOnly />
                     <Field label="rootNamespace" value={activeRoot.rootNamespace || ''} onChange={noop} readOnly />
                     <Field label="gradingTimelineName" value={activeRoot.gradingTimelineName || ''} onChange={noop} readOnly />
@@ -1477,40 +1531,6 @@ export function ColorCurrentSummary({
         </>
       ) : null}
 
-      <Modal
-        show={Boolean(promoteDialog)}
-        title="确认 Promote"
-        showClose
-        closeOnClickBg
-        cancel={() => setPromoteDialog(null)}
-        actions={(
-          <div className="actions modal-actions">
-            <Button type="default" onClick={() => setPromoteDialog(null)}>
-              取消
-            </Button>
-            <Button
-              type="primary"
-              onClick={() => {
-                const dialog = promoteDialog;
-                setPromoteDialog(null);
-                if (!dialog?.rootId || !dialog?.batchId) return;
-                onRunColorAction?.({
-                  rootId: dialog.rootId,
-                  action: 'promote_batch',
-                  batchId: dialog.batchId,
-                });
-              }}
-            >
-              确认 Promote
-            </Button>
-          </div>
-        )}
-      >
-        <div className="modal-copy">
-          <p>这一步会把当前 batch 的受管输出覆盖回当前素材目录。</p>
-          <p>它不会触碰 `rawPath`，也只会作用于这个 root batch manifest 声明的覆盖范围。</p>
-        </div>
-      </Modal>
       <Modal
         show={exportAllDialog}
         title="确认 Export All Roots"
@@ -1534,8 +1554,8 @@ export function ColorCurrentSummary({
         )}
       >
         <div className="stack-list">
-          <p>{'这会按当前 root priority 顺序执行 `Execute -> Validate -> Promote`。'}</p>
-          <p>每个 root 只有在本 root validation 通过后才会 Promote 到对应当前素材目录。</p>
+          <p>{'这会按当前 root priority 顺序执行 `Execute -> Validate`。'}</p>
+          <p>每个 root 会按 raw 父目录拆临时时间线，直接渲染到对应当前素材目录并自动修复 metadata。</p>
           <p>如果某个 root 失败，任务会继续处理后续 roots，但整个 color job 最终会记为 failed。</p>
           <p>{`本次目标 roots：${rootCards.map(root => root.label || root.rootId).join(' · ')}`}</p>
         </div>
@@ -1624,7 +1644,7 @@ function resolveColorRootHeroDetail(root) {
     return `当前有 ${root.blockers.length} 个 blocker。优先处理宿主、路径或 render preset 阻塞后再继续。`;
   }
   if (root.groups.length > 0) {
-    return `当前已同步 ${root.groups.length} 个 Groups，可继续执行 root batch、校验或 Promote。`;
+    return `当前已同步 ${root.groups.length} 个 Groups，可继续执行 root batch 或校验。`;
   }
   if (root.hostPreflight?.status === 'degraded') {
     return '当前 Resolve host 可用但存在兼容降级，建议先复查宿主诊断。';
@@ -1663,6 +1683,28 @@ function resolveColorRootBatchSummary(root) {
   return root.groups.length > 0 ? '等待下一次 root batch' : '尚未产生 batch';
 }
 
+function formatColorPrepareChunkCount(chunks) {
+  const list = Array.isArray(chunks) ? chunks.filter(isPlainObject) : [];
+  if (list.length === 0) return 'none';
+  const ready = list.filter(chunk => getColorStringField(chunk, ['status']) === 'ready').length;
+  return `${ready}/${list.length}`;
+}
+
+function describeColorPrepareChunks(chunks) {
+  const list = Array.isArray(chunks) ? chunks.filter(isPlainObject) : [];
+  if (list.length === 0) return '未拆批';
+  const running = list.find(chunk => getColorStringField(chunk, ['status']) === 'running');
+  const failed = list.filter(chunk => getColorStringField(chunk, ['status']) === 'failed').length;
+  if (running) {
+    return `当前 ${Number(running.index ?? 0) + 1}/${Number(running.total ?? list.length)} · ${running.timelineName || running.chunkId}`;
+  }
+  if (failed > 0) {
+    return `${failed} 个 chunk 失败，可重试 Prepare`;
+  }
+  const clipCount = list.reduce((total, chunk) => total + Number(chunk.clipCount || 0), 0);
+  return `${clipCount} clips · 每批最多 50`;
+}
+
 function resolveColorStageCardState(status) {
   const normalized = String(status || '').toLowerCase();
   if (['running', 'queued'].includes(normalized)) return 'active';
@@ -1675,7 +1717,6 @@ function ColorRootArchivePanels({ root, archive, sectionOpen, setSectionOpen }) 
   const hostSectionKey = `${root.rootId}:host`;
   const recentSectionKey = `${root.rootId}:recent`;
   const failuresSectionKey = `${root.rootId}:failures`;
-  const promoteSectionKey = `${root.rootId}:promote`;
   const hostDefaultOpen = ['blocked', 'degraded'].includes(root.hostPreflight?.status || '');
   const validationDefaultOpen = Array.isArray(archive?.validationFailures) && archive.validationFailures.length > 0;
   const sections = [
@@ -1696,12 +1737,6 @@ function ColorRootArchivePanels({ root, archive, sectionOpen, setSectionOpen }) 
       title: 'Validation Failures',
       defaultOpen: validationDefaultOpen,
       body: renderColorValidationFailures(archive?.validationFailures),
-    },
-    {
-      key: promoteSectionKey,
-      title: 'Promote History',
-      defaultOpen: false,
-      body: renderColorPromoteHistory(archive?.promoteHistory),
     },
   ];
 
@@ -1798,10 +1833,10 @@ function renderColorRecentBatches(items) {
         <strong>{item.batchId}</strong>
         <div className="muted">{`${describeColorBatchSelection(item.plan)} · ${item.plan?.createdAt || 'unknown time'}`}</div>
         <div className="muted">
-          {`targets ${item.plan?.entries?.length || 0} · validation ${item.validation?.status || 'pending'} · promote ${item.promote?.status || 'none'}`}
+          {`targets ${item.plan?.entries?.length || 0} · validation ${item.validation?.status || 'pending'}`}
         </div>
       </div>
-      <Tag>{item.validation?.status || item.promote?.status || 'planned'}</Tag>
+      <Tag>{item.validation?.status || 'planned'}</Tag>
     </div>
   ));
 }
@@ -1982,6 +2017,11 @@ function buildMinimalColorRootCards(config) {
         resolveProjectName: getColorStringField(root, ['resolveProjectName']),
         rootNamespace: getColorStringField(root, ['rootNamespace']),
         gradingTimelineName: getColorStringField(root, ['gradingTimelineName']),
+        latestDrpSnapshot: isPlainObject(root.latestDrpSnapshot)
+          ? root.latestDrpSnapshot
+          : isPlainObject(current?.latestDrpSnapshot)
+            ? current.latestDrpSnapshot
+            : null,
         renderPreset,
         colorSpaceProfile,
         transformPresetKey,
@@ -2025,6 +2065,7 @@ function buildMinimalColorRootCards(config) {
         resolveProjectName: '',
         rootNamespace: '',
         gradingTimelineName: '',
+        latestDrpSnapshot: null,
         renderPreset,
         colorSpaceProfile,
         transformPresetKey,
@@ -2658,6 +2699,7 @@ function materializeColorWorkspaceGroup(group) {
     clipKeys: Array.isArray(group?.clipKeys) ? group.clipKeys.filter(item => typeof item === 'string' && item.trim()) : [],
     logProfile: getColorStringField(group, ['logProfile']) || getColorStringField(current, ['logProfile']) || '',
     lowlight: getColorStringField(group, ['lowlight']) || getColorStringField(current, ['lowlight']) || '',
+    colorCastClass: getColorStringField(group, ['colorCastClass']) || getColorStringField(current, ['colorCastClass']) || '',
     postClipCreativeStatus: getColorStringField(group, ['postClipCreativeStatus']) || getColorStringField(current, ['postClipCreativeStatus']) || '',
     clips: Array.isArray(group?.clips) ? group.clips.filter(isPlainObject).map(materializeColorWorkspaceClipRepair) : [],
     hostSummary: isPlainObject(group?.hostSummary) ? group.hostSummary : {},
@@ -2674,6 +2716,22 @@ function materializeColorWorkspaceClipRepair(clip) {
     displayName: getColorStringField(clip, ['displayName']) || '',
     logProfile: getColorStringField(clip, ['logProfile']) || '',
     lowlight: typeof clip?.lowlight === 'boolean' ? clip.lowlight : undefined,
+    colorCastClass: getColorStringField(clip, ['colorCastClass']) || '',
+    colorCastConfidence: Number.isFinite(Number(clip?.colorCastConfidence)) ? Number(clip.colorCastConfidence) : undefined,
+    colorCastMetrics: isPlainObject(clip?.colorCastMetrics) ? clip.colorCastMetrics : {},
+    encodedWidth: Number(clip?.encodedWidth) || undefined,
+    encodedHeight: Number(clip?.encodedHeight) || undefined,
+    displayWidth: Number(clip?.displayWidth) || undefined,
+    displayHeight: Number(clip?.displayHeight) || undefined,
+    rotationDegrees: Number.isFinite(Number(clip?.rotationDegrees)) ? Number(clip.rotationDegrees) : undefined,
+    orientationStatus: getColorStringField(clip, ['orientationStatus']) || '',
+    repairTemplateKey: getColorStringField(clip, ['repairTemplateKey']) || getColorStringField(clip?.hostSummary, ['repairTemplateKey']) || '',
+    timelineTransform: isPlainObject(clip?.timelineTransform)
+      ? clip.timelineTransform
+      : isPlainObject(clip?.hostSummary?.timelineTransform)
+        ? clip.hostSummary.timelineTransform
+        : {},
+    gyroDataAvailable: clip?.gyroDataAvailable === true,
     gyroEligible: clip?.gyroEligible === true,
     gyroflowStatus: getColorStringField(clip, ['gyroflowStatus']) || '',
     dehazeStatus: getColorStringField(clip, ['dehazeStatus']) || '',
@@ -2744,17 +2802,16 @@ function buildColorGroupStageSummary(groups) {
 
 function buildColorBatchStageSummary(current, groups) {
   const latestBatchId = getColorStringField(current, ['latestBatchId', 'batchId']);
-  const pendingPromoteBatchId = getColorStringField(current, ['pendingPromoteBatchId']);
   const latestBatchStatus = getColorStringField(current, ['latestBatchStatus']);
   const latestValidationStatus = getColorStringField(current, ['latestValidationStatus']);
   if (isPlainObject(current?.batch)) {
     return current.batch;
   }
-  if (pendingPromoteBatchId || (latestBatchId && latestValidationStatus === 'pass')) {
+  if (latestBatchId && latestValidationStatus === 'pass') {
     return {
-      status: 'staged',
-      batchId: pendingPromoteBatchId || latestBatchId,
-      summary: '待 promote',
+      status: 'completed',
+      batchId: latestBatchId,
+      summary: '已导出并校验',
     };
   }
   if (latestBatchId) {
@@ -3053,7 +3110,7 @@ function canRunColorRootAction(action, root, capability, liveJobs, busy, onRunCo
   if (busy?.['job:color']) return false;
   if ((liveJobs || []).length > 0) return false;
   if (getColorStringField(root.hostPreflight, ['status']) === 'blocked') return false;
-  if (action === 'sync_groups' && getColorStringField(root.current, ['timelineStatus']) !== 'ready') return false;
+  if (action === 'sync_groups' && !colorRootHasSyncableResolveGroups(root)) return false;
   if (action === 'execute_root' && getColorStringField(root.current, ['timelineStatus']) !== 'ready') return false;
   if (action === 'validate_batch') return Boolean(getColorStringField(root.current, ['latestBatchId']));
   if (action === 'promote_batch') {
@@ -3062,6 +3119,14 @@ function canRunColorRootAction(action, root, capability, liveJobs, busy, onRunCo
     ));
   }
   return true;
+}
+
+function colorRootHasSyncableResolveGroups(root) {
+  if (getColorStringField(root?.current, ['timelineStatus']) === 'ready') return true;
+  if (getColorStringField(root?.current, ['groupSyncStatus']) === 'ready') return true;
+  if (Array.isArray(root?.groups) && root.groups.length > 0) return true;
+  if (Array.isArray(root?.current?.groups) && root.current.groups.length > 0) return true;
+  return false;
 }
 
 function describeColorRootAction(action, root, liveJobs, busy) {
@@ -3127,11 +3192,21 @@ function describeColorTechnicalSignals(hostSummary) {
   const resolvedPreset = getColorStringField(hostSummary, ['resolvedTransformPresetKey']);
   const transformStatus = getColorStringField(hostSummary, ['transformStatus']);
   const lutSyncStatus = getColorStringField(hostSummary, ['lutSyncStatus']);
+  const repairTemplateStatus = getColorStringField(hostSummary, ['repairTemplateStatus']);
+  const repairSeedSkippedReason = getColorStringField(hostSummary, ['repairSeedSkippedReason']);
+  const portraitClipCount = Number(hostSummary?.portraitClipCount || 0);
+  const timelineTransformClipCount = Number(hostSummary?.timelineTransformClipCount || 0);
+  const missingOrientationTemplateCount = Number(hostSummary?.repairOrientationTemplateMissingClipCount || 0);
   if (detectedProfile) details.push(`detected: ${detectedProfile}`);
   if (effectiveProfile) details.push(`effective: ${effectiveProfile}`);
   if (resolvedPreset) details.push(`preset: ${resolvedPreset}`);
   if (lutSyncStatus) details.push(`lut: ${lutSyncStatus}`);
   if (transformStatus) details.push(`transform: ${transformStatus}`);
+  if (portraitClipCount > 0) details.push(`portrait: ${portraitClipCount}`);
+  if (timelineTransformClipCount > 0) details.push(`horizontal transform: ${timelineTransformClipCount}`);
+  if (missingOrientationTemplateCount > 0) details.push(`missing portrait DRT: ${missingOrientationTemplateCount}`);
+  if (repairTemplateStatus) details.push(`repair template: ${repairTemplateStatus}`);
+  if (repairSeedSkippedReason) details.push('repair seed: 待 DRT 模板初始化');
   return details.join(' · ');
 }
 
@@ -3139,6 +3214,7 @@ function describeColorGroupCreativeState(group) {
   const details = [];
   if (group?.logProfile) details.push(`log: ${group.logProfile}`);
   if (group?.lowlight) details.push(`lowlight: ${group.lowlight}`);
+  if (group?.colorCastClass) details.push(`cast: ${group.colorCastClass}`);
   if (group?.postClipCreativeStatus) details.push(`post-clip: ${group.postClipCreativeStatus}`);
   return details.join(' · ');
 }
@@ -3150,12 +3226,18 @@ function describeColorClipRepairSummary(clips) {
   const nrCounts = countBy(clips.map(clip => clip?.nrStatus || ''));
   const repairCounts = countBy(clips.map(clip => clip?.clipRepairStatus || ''));
   const layoutCounts = countBy(clips.map(clip => clip?.layoutStatus || ''));
+  const orientationCounts = countBy(clips.map(clip => clip?.orientationStatus || ''));
+  const templateCounts = countBy(clips.map(clip => clip?.repairTemplateKey || ''));
   const details = [];
+  const orientationSummary = summarizeCountMap('orientation', orientationCounts);
+  const templateSummary = summarizeCountMap('template', templateCounts);
   const gyroSummary = summarizeCountMap('gyro', gyroCounts);
   const dehazeSummary = summarizeCountMap('dehaze', dehazeCounts);
   const nrSummary = summarizeCountMap('nr', nrCounts);
   const repairSummary = summarizeCountMap('repair', repairCounts);
   const layoutSummary = summarizeCountMap('layout', layoutCounts);
+  if (orientationSummary) details.push(orientationSummary);
+  if (templateSummary) details.push(templateSummary);
   if (gyroSummary) details.push(gyroSummary);
   if (dehazeSummary) details.push(dehazeSummary);
   if (nrSummary) details.push(nrSummary);
@@ -3168,12 +3250,34 @@ function describeColorClipRepairState(clip) {
   const details = [];
   if (clip?.logProfile) details.push(`log: ${clip.logProfile}`);
   if (typeof clip?.lowlight === 'boolean') details.push(clip.lowlight ? 'lowlight' : 'base');
+  if (clip?.colorCastClass) {
+    const confidence = Number.isFinite(Number(clip.colorCastConfidence))
+      ? ` ${Math.round(Number(clip.colorCastConfidence) * 100)}%`
+      : '';
+    details.push(`cast: ${clip.colorCastClass}${confidence}`);
+  }
+  if (clip?.orientationStatus) details.push(`orientation: ${clip.orientationStatus}`);
+  if (Number.isFinite(Number(clip?.rotationDegrees))) details.push(`rotation: ${clip.rotationDegrees}`);
+  if (clip?.repairTemplateKey) details.push(`template: ${clip.repairTemplateKey}`);
+  if (isPlainObject(clip?.timelineTransform) && Object.keys(clip.timelineTransform).length > 0) {
+    const rotation = Number.isFinite(Number(clip.timelineTransform.rotationAngle))
+      ? `rot ${clip.timelineTransform.rotationAngle}`
+      : '';
+    const zoom = Number.isFinite(Number(clip.timelineTransform.zoomX))
+      ? `zoom ${clip.timelineTransform.zoomX}`
+      : '';
+    details.push(['horizontal transform', rotation, zoom].filter(Boolean).join(': '));
+  }
+  if (clip?.gyroDataAvailable === true) details.push('gyro-data');
   if (clip?.gyroEligible === true) details.push('gyro-eligible');
   if (clip?.gyroflowStatus) details.push(`gyro: ${clip.gyroflowStatus}`);
   if (clip?.gyroflowStatus === 'ready-to-load') details.push('gyro load: pending Resolve');
   if (clip?.dehazeStatus) details.push(`dehaze: ${clip.dehazeStatus}`);
   if (clip?.nrStatus) details.push(`nr: ${clip.nrStatus}`);
   if (clip?.clipRepairStatus) details.push(`repair: ${clip.clipRepairStatus}`);
+  if (clip?.clipRepairStatus === 'pending-template') details.push('repair seed: 待 DRT 模板初始化');
+  if (clip?.clipRepairStatus === 'pending-orientation-template') details.push('portrait DRT: 缺失，已禁用自动 Gyro');
+  if (getColorStringField(clip?.hostSummary, ['repairSeedSkippedReason'])) details.push('repair seed skipped');
   if (clip?.layoutStatus) details.push(`layout: ${clip.layoutStatus}`);
   if (isPlainObject(clip?.reservedNodeIndices)) {
     const userStart = Number(clip.reservedNodeIndices.userStart);
@@ -3202,6 +3306,13 @@ function summarizeCountMap(label, counts) {
 
 function isPlainObject(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function areStringRecordsEqual(left, right) {
+  const leftKeys = Object.keys(left || {});
+  const rightKeys = Object.keys(right || {});
+  if (leftKeys.length !== rightKeys.length) return false;
+  return leftKeys.every(key => String(left?.[key] ?? '') === String(right?.[key] ?? ''));
 }
 
 function formatClockOffsetMs(value) {

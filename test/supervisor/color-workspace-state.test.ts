@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { mkdtempSync, mkdirSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { buildColorWorkspaceState } from '../../src/modules/color/workspace-state.js';
 
 const resolveBackendReady = {
@@ -9,14 +12,21 @@ const resolveBackendReady = {
   missingPaths: [],
 };
 
+function makeReadableDir(label: string): string {
+  const path = mkdtempSync(join(tmpdir(), `kairos-color-state-${label}-`));
+  mkdirSync(path, { recursive: true });
+  return path;
+}
+
 describe('color workspace state', () => {
   it('materializes color roots from ingest roots with rawPath', () => {
+    const currentDir = makeReadableDir('current');
     const state = buildColorWorkspaceState({
       projectId: 'project-color',
       projectRoots: [
         {
           id: 'root-camera',
-          path: '/media/current/camera',
+          path: currentDir,
           rawPath: '/media/raw/camera',
           label: '主机位',
           description: 'Sony 主机位',
@@ -29,13 +39,6 @@ describe('color workspace state', () => {
           enabled: true,
         },
       ],
-      deviceProjectMap: {
-        projectId: 'project-color',
-        roots: [{
-          rootId: 'root-camera',
-          localPath: 'F:\\current\\camera',
-        }],
-      },
       resolveBackend: resolveBackendReady,
       colorCurrent: { roots: [] },
     });
@@ -51,18 +54,20 @@ describe('color workspace state', () => {
     expect(state.colorRoots[0]?.colorCurrent.timelineStatus).toBe('blocked');
     expect(state.colorRoots[0]?.colorCurrent.groupSyncStatus).toBe('blocked');
     expect(state.colorRoots[0]?.colorCurrent.hostPreflight?.status).toBe('unknown');
-    expect(state.colorRoots[0]?.blockingReasons).toContain('当前设备未配置 rawLocalPath，无法在本机访问原始素材。');
+    expect(state.colorRoots[0]?.blockingReasons.some(reason => reason.startsWith('原始素材路径未命中'))).toBe(true);
     expect(state.colorRoots[0]?.blockingReasons).toContain('未配置 root 级 renderPreset.bitrateKbps（kb/s），后续 execute_root 无法启动。');
     expect(state.colorCurrent.selectedRootId).toBe('root-camera');
   });
 
   it('materializes renderPreset from project roots and keeps current group runtime state', () => {
+    const currentDir = makeReadableDir('current');
+    const rawDir = makeReadableDir('raw');
     const state = buildColorWorkspaceState({
       projectId: 'project-color',
       projectRoots: [{
         id: 'root-camera',
-        path: '/media/current/camera',
-        rawPath: '/media/raw/camera',
+        path: currentDir,
+        rawPath: rawDir,
         color: {
           renderPreset: {
             container: 'mp4',
@@ -73,14 +78,6 @@ describe('color workspace state', () => {
         },
         enabled: true,
       }],
-      deviceProjectMap: {
-        projectId: 'project-color',
-        roots: [{
-          rootId: 'root-camera',
-          localPath: 'F:\\current\\camera',
-          rawLocalPath: 'F:\\raw\\camera',
-        }],
-      },
       resolveBackend: resolveBackendReady,
       groupSnapshotsByRootId: {
         'root-camera': {
@@ -200,22 +197,16 @@ describe('color workspace state', () => {
   });
 
   it('projects blocked host preflight into root blockers before actions start', () => {
+    const currentDir = makeReadableDir('current');
+    const rawDir = makeReadableDir('raw');
     const state = buildColorWorkspaceState({
       projectId: 'project-color',
       projectRoots: [{
         id: 'root-camera',
-        path: '/media/current/camera',
-        rawPath: '/media/raw/camera',
+        path: currentDir,
+        rawPath: rawDir,
         enabled: true,
       }],
-      deviceProjectMap: {
-        projectId: 'project-color',
-        roots: [{
-          rootId: 'root-camera',
-          localPath: 'F:\\current\\camera',
-          rawLocalPath: 'F:\\raw\\camera',
-        }],
-      },
       resolveBackend: resolveBackendReady,
       colorCurrent: {
         hostPreflight: {
@@ -232,12 +223,19 @@ describe('color workspace state', () => {
     expect(state.colorRoots[0]?.hostPreflight?.status).toBe('blocked');
   });
 
-  it('uses current device paths as the visible color paths without requiring project path blockers', () => {
+  it('uses resolved alternate paths as the visible color paths without requiring project path blockers', () => {
+    const currentDir = makeReadableDir('current');
+    const rawDir = makeReadableDir('raw');
     const state = buildColorWorkspaceState({
       projectId: 'project-color',
       projectRoots: [{
         id: 'root-camera',
+        path: '/media/current/camera',
         rawPath: '/media/raw/camera',
+        alternatePaths: [{
+          path: currentDir,
+          rawPath: rawDir,
+        }],
         color: {
           renderPreset: {
             container: 'mp4',
@@ -248,30 +246,24 @@ describe('color workspace state', () => {
         },
         enabled: true,
       }],
-      deviceProjectMap: {
-        projectId: 'project-color',
-        roots: [{
-          rootId: 'root-camera',
-          localPath: 'F:\\current\\camera',
-          rawLocalPath: 'F:\\raw\\camera',
-        }],
-      },
       resolveBackend: resolveBackendReady,
       colorCurrent: { roots: [] },
     });
 
-    expect(state.colorRoots[0]?.currentPath).toBe('F:\\current\\camera');
-    expect(state.colorRoots[0]?.displayRawPath).toBe('F:\\raw\\camera');
-    expect(state.colorRoots[0]?.blockingReasons).not.toContain('当前 root 未配置 current path，无法确定正式覆盖目录。');
+    expect(state.colorRoots[0]?.currentPath).toBe(currentDir);
+    expect(state.colorRoots[0]?.displayRawPath).toBe(rawDir);
+    expect(state.colorRoots[0]?.blockingReasons.some(reason => reason.startsWith('当前素材路径未命中'))).toBe(false);
   });
 
   it('surfaces vendored backend blockers before host preflight is cached', () => {
+    const currentDir = makeReadableDir('current');
+    const rawDir = makeReadableDir('raw');
     const state = buildColorWorkspaceState({
       projectId: 'project-color',
       projectRoots: [{
         id: 'root-camera',
-        path: '/media/current/camera',
-        rawPath: '/media/raw/camera',
+        path: currentDir,
+        rawPath: rawDir,
         color: {
           renderPreset: {
             container: 'mp4',
@@ -282,14 +274,6 @@ describe('color workspace state', () => {
         },
         enabled: true,
       }],
-      deviceProjectMap: {
-        projectId: 'project-color',
-        roots: [{
-          rootId: 'root-camera',
-          localPath: 'F:\\current\\camera',
-          rawLocalPath: 'F:\\raw\\camera',
-        }],
-      },
       resolveBackend: {
         available: false,
         backendRoot: '/vendor/resolve-color-host',

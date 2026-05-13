@@ -56,7 +56,7 @@ Current stable pipeline:
   - `resolveProjectName / rootNamespace / gradingTimelineName` are derived by convention and stay read-only; `/color` keeps them in advanced/debug info instead of editable config
   - `projects/<projectId>/color/current.json` stores the current root/group runtime truth
   - `projects/<projectId>/color/groups/<rootId>.json` stores the latest formal host-synced Group + clip repair snapshot for that root
-  - `projects/<projectId>/color/batches/<batchId>/plan.json|manifest.json|validation.json|promote.json` store batch/runtime archive
+  - `projects/<projectId>/color/batches/<batchId>/plan.json|manifest.json|validation.json` store batch/runtime archive
   - current `/color` auto-discovers roots that already have `rawPath`, and the page now follows `Root 摘要 -> 当前 Root Hero -> 所有 Root 常驻可编辑配置 -> Groups -> 次级诊断/归档`
   - DaVinci Resolve scripting work now has a local working document at `.ai/knowledge/davinci-resolve-scripting.md`; future Resolve scripting, `/color`, Resolve export, DRX/DRT, LUT, render job, Group, node graph, or vendored host changes must read it first and verify version-sensitive methods against the installed Resolve `README.txt`
   - current `/color` keeps all user-editable root parameters visible without opening details; every root's `当前素材路径 / 原始素材路径` and `renderPreset + colorSpaceProfile + transformPresetKey` stay on the same page, while derived Resolve naming stays in advanced/debug info
@@ -66,13 +66,14 @@ Current stable pipeline:
     - `sync_groups`
     - `execute_root`
     - `validate_batch`
-    - `promote_batch`
     - `prepare_all_roots`
     - `export_all_roots`
-  - current `prepare_root` is the formal Resolve-side root sync step: it mirrors `rawLocalPath` into root bins, creates the grading timeline with that root's dominant `(width, height, fps)` spec, auto-syncs any missing same-path workspace LUTs referenced by the current root into the device Resolve default LUT directory when they exist under `config/luts/`, creates or reuses Resolve Groups from source-truth / root-fallback creative tags, and normalizes clip repair graphs to the canonical fixed layout
+  - current `prepare_root` is the formal Resolve-side root sync step: it mirrors `rawLocalPath` into root bins through stable chunks, appends every chunk into the single root grading timeline with the root's dominant `(width, height, fps)` spec, auto-syncs any missing same-path workspace LUTs referenced by the current root into the device Resolve default LUT directory when they exist under `config/luts/`, creates or reuses Resolve Groups from explicit sidecar/root-fallback creative tags, and normalizes clip repair graphs to the canonical fixed layout
+  - current large-root prepare is chunked by default: Kairos processes raw videos in stable 50-clip chunks, limits local probe/source-truth/lowlight concurrency, records chunk progress in `color/current.json`, and can resume after interruption without redoing completed chunks; Resolve must still have one grading timeline per root, with Groups carrying the creative subdivision
+  - current automatic DRP export happens once after a root `prepare_root` finishes all chunks; intermediate chunk imports only call `SaveProject()`, while all other project backups are explicit user actions through `保存 DRP 快照` or external `.drp` registration
   - current project-level `/color` orchestration is deterministic and agent-free:
     - `prepare_all_roots` runs `prepare_root` sequentially for all enabled color roots in formal priority order
-    - `export_all_roots` runs `execute_root -> validate_batch -> promote_batch` sequentially for all enabled color roots in formal priority order
+    - `export_all_roots` runs `execute_root` sequentially for all enabled color roots in formal priority order; each root execution renders, replaces confirmed outputs, repairs metadata, and validates before moving on
     - project-level actions continue other roots after a per-root failure, but the whole job still fails if any root fails
   - current `/color` is now Resolve-first about where grading truth lives:
     - `Group Post-Clip` is the only formal creative-truth layer
@@ -83,8 +84,9 @@ Current stable pipeline:
     - root namespace / grading timeline: derived from root `label`
   - current Group truth is Resolve-managed: users may keep adjusting Groups in Resolve, and `/color` only mirrors them back through `sync_groups`; synced non-empty Groups become `ready` directly and there is no extra `/color` confirm step
   - current automatic Groups are creative-tag based, not technical-fingerprint based:
-    - `log`: explicit clip truth first, then root `color.colorSpaceProfile`
+    - `log`: explicit sidecar truth first, then root `color.colorSpaceProfile`
     - `lowlight`: first-frame creative classification only; it is a grouping/look hint, not a synonym for “must denoise”
+    - `colorCastClass`: cheap numeric color-cast classification samples one proxy frame near the clip midpoint; when the clip resolves to a technical transform LUT, the proxy is transformed through that same workspace/Resolve LUT before neutral-pixel analysis. Strong cold-blue neutral shifts are treated as `cool-cyan`, green/blue mixed neutral shifts as `green-cyan`, and `prepare_root` may smooth a continuous same-root/same-log clip sequence so compatible weak samples between cold-color anchors stay in the same correction Group. High-confidence `cool-cyan / green-cyan / green / warm / mixed` clips may split into separate Groups; `neutral / unknown` clips stay in the base log/lowlight bucket
     - `gyro` is now clip-level repair truth only and no longer participates in group auto-bucketing
     - Group key is the normalized Resolve group name slug
   - current `prepare_root` must also ensure the canonical clip repair layout:
@@ -96,15 +98,18 @@ Current stable pipeline:
     - `User1 / User2` are the minimum user zone and default enabled; users may extend the user zone only between `Dehaze` and the `NR` tail
     - `NR` is always the reserved tail node for video clips, default disabled, and only user-toggled in Resolve
     - `lowlight=true` remains a creative/grouping label; it does not auto-enable `Dehaze` or `NR`
-    - `gyroEligible` is computed as one final boolean: current installed Gyroflow/OFX supported device match plus device-appropriate motion metadata, or a same-name `.gyroflow` project. DJI `dvtm_*` telemetry alone never enables Gyro and must not be used to guess log profile
-    - old non-canonical clip graphs are treated as `legacy-layout`; this round allows one destructive rebuild from workspace `config/default.drt` when present, otherwise `config/default.drx`; canonical reruns preserve user zone state and user-toggled Dehaze/NR state; nodes appended after `NR` are also treated as legacy
-    - `config/default.drt` is preferred for true Gyroflow current-file auto-load because the older clean DRT donor path has been live-verified to trigger Gyroflow source loading; `config/default.drx` is a layout fallback and must not be treated as load proof
+    - `gyroEligible` is computed from explicit declarations only: same-name `.gyroflow` projects enable Gyro; supported Sony XML sidecars with Gyroscope may enable Gyro. Kairos does not deep-scan embedded private telemetry during prepare, and DJI `dvtm_*` telemetry must not be scanned, used to enable Gyro, or used to guess log profile
+    - ZV-E1 / Sony portrait clips may still use Gyro, but only through orientation-aware DRT templates: `config/default.drt` for horizontal clips; ffprobe source `rotation=90` is treated as Gyroflow `270` and uses `config/gyroflow-portrait--90.drt`; ffprobe source `rotation=-90/270` is treated as Gyroflow `90` and uses `config/gyroflow-portrait-90.drt`; missing portrait templates disable the Gyro node for those clips and mark `pending-orientation-template`
+    - portrait clips are automatically rotated and scaled on the Resolve timeline to fill the horizontal root timeline, including the extra fill zoom needed when Gyroflow/DRT emits the portrait image as a smaller landscape region inside a horizontal frame
+    - when a portrait orientation DRT hash is missing or stale in an existing prepared root, `prepare_root` reruns only the affected chunk and resets each stale portrait clip's repair graph before reapplying the orientation DRT; the final sync persists the current DRT hash so later reruns can preserve canonical clip repairs normally
+    - old non-canonical clip graphs are treated as `legacy-layout`; this round allows one destructive rebuild from workspace `config/default.drt` when present; if DRT is missing, bulk prepare skips automatic repair seeding and marks clips `pending-template` instead of falling back to DRX
+    - `config/default.drt` is the only formal automatic repair seed source for bulk prepare because the older clean DRT donor path has been live-verified to trigger Gyroflow source loading; `config/default.drx` is retained for manual diagnostics only and must not be used as a large-batch fallback
   - current `sync_groups` mirrors both group creative state and clip repair state:
-    - group-level truth includes `logProfile`, `lowlight`, and `postClipCreativeStatus`
-    - clip-level truth includes `gyroEligible`, `gyroflowStatus`, `dehazeStatus`, `nrStatus`, `clipRepairStatus`, and `layoutStatus`
+    - group-level truth includes `logProfile`, `lowlight`, `colorCastClass`, and `postClipCreativeStatus`
+    - clip-level truth includes `gyroEligible`, `gyroflowStatus`, `dehazeStatus`, `nrStatus`, `clipRepairStatus`, `layoutStatus`, orientation metadata, repair template key, and applied timeline transform
   - current automatic technical transform resolution follows:
-    - clip truth priority is `source metadata > XML > root.color.colorSpaceProfile fallback`
-    - unresolved DJI private metadata remains `unknown`; Kairos must not force `dlog-m`
+    - clip truth priority is `explicit sidecar > root.color.colorSpaceProfile fallback`
+    - unresolved or embedded DJI private metadata remains `unknown`; Kairos must not scan it during prepare or force `dlog-m`
     - root-level `color.transformPresetKey` overrides workspace profile/device mapping and is interpreted as a direct Resolve LUT path
     - otherwise `/color` resolves `effective profile + normalized device family -> config/color-transform-presets.json`
     - `config/color-transform-presets.json` now persists `profile -> { deviceFamily/default -> Resolve LUT path }`
@@ -115,20 +120,23 @@ Current stable pipeline:
     - existing non-empty user grade must not be overwritten
     - if copied LUTs are still invisible to the current Resolve session, `prepare_root` blocks and asks the user to refresh LUT lists or restart Resolve
   - current `/color` now auto-runs Resolve host preflight on page entry / project switch, caches the result at `color/current.json.hostPreflight`, and lets users manually `Recheck Host`
+  - current `/color` persists Resolve project sync snapshots under `color/resolve-projects/<safe-project-name>/`: root prepare exports one lightweight `.drp` only after all chunks finish, the manual `保存 DRP 快照` action remains available at any time, both update `latest.drp` and `color/resolve-project-map.json`, and externally exported `.drp` files can also be registered as latest
   - current `prepare_root / sync_groups / execute_root / prepare_all_roots / export_all_roots` always guard on that preflight first; blocked host state or unsupported render presets fail before Resolve-side mutation
   - current Resolve host compatibility floor is `DaVinci Resolve Studio >= 18.5`; non-Studio / lower versions are formal blockers, while partial legacy-call compatibility is surfaced as `degraded`
   - current host retry only covers transient host/app failures with bounded backoff; semantic color failures do not auto-retry
   - current `execute_root` is now root-timeline-truth export:
     - render preset truth stays on the root; Group no longer decides export config or batch ownership
     - every batch is root-scoped and may optionally carry `clipKeys[]` as a retry/subset selection; default execution still exports all eligible clips on that root timeline
-    - the vendored Resolve host must render one root-level job per batch from the root grading timeline, not one job per Group or per clip
-    - Resolve temporary suffixed filenames may exist only inside batch-local staging; manifest / validation / promote only consume normalized final names `sourceStem + targetExtension`
+    - before any overwrite, `/color` computes a final-target overwrite preview and requires a matching `overwritePlanHash`; stale or missing confirmation blocks before Resolve mutation
+    - the vendored Resolve host groups clips by `rawRelativePath` parent directory, duplicates the official root grading timeline per directory, prunes each temporary timeline to that directory's clips, queues all render jobs, then calls one render-all operation
+    - each temporary timeline renders directly to the final `localPath/<relativeDir>/` target with Resolve File Name = Source Name; Kairos does not write a video holding directory or move rendered media after render
+    - final outputs are validated as exact `dayX/sourceStem.ext` files; prefix/suffix outputs such as `V1-0001_C1611.ext` are treated as render-setting failures
   - current `execute_root` must normalize final output metadata before manifest persist:
     - `creation_time` is rewritten to the source `capturedAt`
     - when source GPS exists, container location metadata is rewritten so `ffprobe` can read it back
   - current `validate_batch` writes formal summary counts, top-level blocking reasons, and warning-only diagnostics; `capturedAt / GPS` remain hard gates while `create_time` is warning-only
-  - current `promote_batch` requires an explicit `/color` confirmation before it can overwrite managed outputs in the current media root
-  - current `/color` stays single-page but now consumes `color/batches/<batchId>/...` as formal read-only archive, with foldable `Host Diagnostics / Recent Batches / Validation Failures / Promote History`
+  - `promote_batch` is no longer part of the formal color export path; overwrite confirmation happens before `execute_root`, and a successful batch is already adopted after validation
+  - current `/color` stays single-page but now consumes `color/batches/<batchId>/...` as formal read-only archive, with foldable `Host Diagnostics / Recent Batches / Validation Failures`
   - current Resolve host automation uses the fixed same-machine vendored backend at `vendor/resolve-color-host/` with a fixed `.venv` convention
   - Resolve host automation now uses the same-machine vendored backend around the official Python Scripting API, not MCP
 - reusable style assets now live at workspace scope, not project scope:

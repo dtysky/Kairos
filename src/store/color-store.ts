@@ -7,6 +7,7 @@ import {
   IColorBatchPromote,
   IColorBatchValidation,
   IColorGroupsSnapshotFile,
+  IColorResolveProjectMap,
   IColorRootArchiveView,
   type IColorBatchArchiveItem as TColorBatchArchiveItem,
   type IColorBatchManifest as TColorBatchManifest,
@@ -14,6 +15,7 @@ import {
   type IColorBatchPromote as TColorBatchPromote,
   type IColorBatchValidation as TColorBatchValidation,
   type IColorGroupsSnapshotFile as TColorGroupsSnapshotFile,
+  type IColorResolveProjectMap as TColorResolveProjectMap,
   type IColorRootArchiveView as TColorRootArchiveView,
 } from '../protocol/schema.js';
 import { readJson, readJsonOrNull, writeJson } from './writer.js';
@@ -66,6 +68,28 @@ export async function saveColorGroupsSnapshot(
 
 export function getColorBatchesRoot(projectRoot: string): string {
   return join(getColorRootPath(projectRoot), 'batches');
+}
+
+export function getColorResolveProjectsRoot(projectRoot: string): string {
+  return join(getColorRootPath(projectRoot), 'resolve-projects');
+}
+
+export function getColorResolveProjectMapPath(projectRoot: string): string {
+  return join(getColorRootPath(projectRoot), 'resolve-project-map.json');
+}
+
+export async function loadColorResolveProjectMap(projectRoot: string): Promise<TColorResolveProjectMap> {
+  const stored = await readJsonOrNull(getColorResolveProjectMapPath(projectRoot), IColorResolveProjectMap);
+  return stored ? IColorResolveProjectMap.parse(stored) : IColorResolveProjectMap.parse({});
+}
+
+export async function saveColorResolveProjectMap(
+  projectRoot: string,
+  map: TColorResolveProjectMap,
+): Promise<TColorResolveProjectMap> {
+  const normalized = IColorResolveProjectMap.parse(map);
+  await writeJson(getColorResolveProjectMapPath(projectRoot), normalized);
+  return normalized;
 }
 
 export function getColorBatchRoot(projectRoot: string, batchId: string): string {
@@ -178,13 +202,12 @@ export async function loadColorBatchArchiveItem(
   projectRoot: string,
   batchId: string,
 ): Promise<TColorBatchArchiveItem | null> {
-  const [plan, manifest, validation, promote] = await Promise.all([
+  const [plan, manifest, validation] = await Promise.all([
     loadColorBatchPlan(projectRoot, batchId),
     loadColorBatchManifest(projectRoot, batchId),
     loadColorBatchValidation(projectRoot, batchId),
-    loadColorBatchPromote(projectRoot, batchId),
   ]);
-  const rootId = plan?.rootId ?? manifest?.rootId ?? validation?.rootId ?? promote?.rootId;
+  const rootId = plan?.rootId ?? manifest?.rootId ?? validation?.rootId;
   if (!rootId) return null;
   return IColorBatchArchiveItem.parse({
     batchId,
@@ -192,7 +215,6 @@ export async function loadColorBatchArchiveItem(
     plan: plan ?? undefined,
     manifest: manifest ?? undefined,
     validation: validation ?? undefined,
-    promote: promote ?? undefined,
   });
 }
 
@@ -221,17 +243,13 @@ export async function loadColorArchiveViews(
         items.filter(item => item.validation?.status === 'fail'),
         item => item.validation?.validatedAt,
       );
-      const promoteHistory = sortArchiveItems(
-        items.filter(item => Boolean(item.promote)),
-        item => item.promote?.promotedAt,
-      );
       return [
         rootId,
         IColorRootArchiveView.parse({
           rootId,
           recentBatches,
           validationFailures,
-          promoteHistory,
+          promoteHistory: [],
         }),
       ];
     }),

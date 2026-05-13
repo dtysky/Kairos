@@ -9,14 +9,17 @@ import {
   fetchAnalyzeMonitor,
   fetchCapabilities,
   fetchProjectColorArchive,
+  fetchProjectColorOverwritePreview,
   fetchProjectConfig,
   fetchProjectProgress,
   fetchProjectReviews,
   fetchStyleMonitor,
   fetchWorkspaceStyleConfig,
   fetchWorkspaceStatus,
+  registerProjectColorDrpSnapshot,
   resolveProjectReview,
   runProjectColorPreflight,
+  saveProjectColorDrpSnapshot,
   saveProjectSection,
   saveWorkspaceStyleConfig,
   startJob,
@@ -51,6 +54,7 @@ function AppShell() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [workflowDialog, setWorkflowDialog] = useState(null);
+  const [colorOverwriteDialog, setColorOverwriteDialog] = useState(null);
 
   useEffect(() => {
     refreshStatus();
@@ -158,6 +162,40 @@ function AppShell() {
       if (!silent) {
         setMessage(payload?.rootId ? `已刷新 ${payload.rootId} 的 Resolve host 诊断` : '已刷新 Resolve host 诊断');
       }
+      setError('');
+    } catch (caught) {
+      handleError(caught);
+    } finally {
+      setBusy(current => ({ ...current, [busyKey]: false }));
+    }
+  }
+
+  async function saveColorDrpSnapshot(payload = {}) {
+    if (!projectId) return;
+    const busyKey = payload?.rootId ? `color:drp-snapshot:${payload.rootId}` : 'color:drp-snapshot';
+    setBusy(current => ({ ...current, [busyKey]: true }));
+    try {
+      await saveProjectColorDrpSnapshot(projectId, payload);
+      await refreshProject(projectId);
+      await refreshStatus();
+      setMessage('已保存 DRP 快照');
+      setError('');
+    } catch (caught) {
+      handleError(caught);
+    } finally {
+      setBusy(current => ({ ...current, [busyKey]: false }));
+    }
+  }
+
+  async function registerColorDrpSnapshot(payload = {}) {
+    if (!projectId) return;
+    const busyKey = payload?.rootId ? `color:drp-register:${payload.rootId}` : 'color:drp-register';
+    setBusy(current => ({ ...current, [busyKey]: true }));
+    try {
+      await registerProjectColorDrpSnapshot(projectId, payload);
+      await refreshProject(projectId);
+      await refreshStatus();
+      setMessage('已登记外部 DRP');
       setError('');
     } catch (caught) {
       handleError(caught);
@@ -294,12 +332,34 @@ function AppShell() {
     const busyKey = `job:${jobType}`;
     setBusy(current => ({ ...current, [busyKey]: true }));
     try {
-      await startJob(projectId, jobType, args);
-      await refreshProject(projectId).catch(() => undefined);
-      await refreshStatus();
       const colorAction = typeof args.action === 'string' && args.action.trim()
         ? args.action.trim()
         : 'prepare_root';
+      const needsOverwritePreview = jobType === 'color'
+        && ['execute_root', 'export_all_roots'].includes(colorAction)
+        && args.overwriteConfirmed !== true;
+      if (needsOverwritePreview) {
+        const preview = await fetchProjectColorOverwritePreview(projectId, {
+          ...args,
+          action: colorAction,
+        });
+        if ((preview?.existingCount || 0) > 0) {
+          setColorOverwriteDialog({
+            jobType,
+            args: {
+              ...args,
+              action: colorAction,
+            },
+            preview,
+          });
+          setMessage('');
+          setError('');
+          return;
+        }
+      }
+      await startJob(projectId, jobType, args);
+      await refreshProject(projectId).catch(() => undefined);
+      await refreshStatus();
       setMessage(
         jobType === 'script'
           ? ''
@@ -421,6 +481,59 @@ function AppShell() {
                   {workflowDialog?.detail ? <p>{workflowDialog.detail}</p> : null}
                 </div>
               </Modal>
+              <Modal
+                show={Boolean(colorOverwriteDialog)}
+                title="确认覆盖 Color 输出"
+                width={720}
+                showClose
+                closeOnClickBg
+                cancel={() => setColorOverwriteDialog(null)}
+                actions={(
+                  <div className="actions modal-actions">
+                    <Button type="default" onClick={() => setColorOverwriteDialog(null)}>
+                      取消
+                    </Button>
+                    <Button
+                      type="primary"
+                      onClick={() => {
+                        const dialog = colorOverwriteDialog;
+                        setColorOverwriteDialog(null);
+                        if (!dialog) return;
+                        runProjectWorkflow(dialog.jobType, {
+                          ...dialog.args,
+                          overwriteConfirmed: true,
+                          overwritePlanHash: dialog.preview?.overwritePlanHash,
+                        });
+                      }}
+                    >
+                      确认覆盖并导出
+                    </Button>
+                  </div>
+                )}
+              >
+                <div className="modal-copy">
+                  <p>
+                    {`将替换 ${colorOverwriteDialog?.preview?.existingCount || 0} 个已有目标，覆盖范围由当前预览 hash 锁定。`}
+                  </p>
+                  <p>
+                    {`输出 root：${colorOverwriteDialog?.preview?.outputRoot || '多个 roots'}`}
+                  </p>
+                  <p>Resolve 会按 raw 父目录拆临时时间线，直接渲染到最终 root/day 目录。</p>
+                  <div className="color-overwrite-preview-list">
+                    {(colorOverwriteDialog?.preview?.byDirectory || []).slice(0, 12).map(item => (
+                      <div key={item.directory || 'root'} className="color-overwrite-preview-row">
+                        <span>{item.directory || '(root)'}</span>
+                        <strong>{`${item.existingCount}/${item.clipCount}`}</strong>
+                      </div>
+                    ))}
+                  </div>
+                  {(colorOverwriteDialog?.preview?.duplicateStemGroups || []).length > 0 ? (
+                    <p>
+                      {`检测到 ${colorOverwriteDialog.preview.duplicateStemGroups.length} 组同目录重名 stem；导出会在启动 Resolve 前阻塞，请先处理源文件名。`}
+                    </p>
+                  ) : null}
+                </div>
+              </Modal>
 
               <Switch>
                 <Route
@@ -467,6 +580,8 @@ function AppShell() {
                       busy={busy}
                       onRunColorAction={args => runProjectWorkflow('color', args)}
                       onRequestHostPreflight={(payload, options) => recheckColorHost(projectId, payload, options)}
+                      onSaveDrpSnapshot={saveColorDrpSnapshot}
+                      onRegisterDrpSnapshot={registerColorDrpSnapshot}
                     />
                   )}
                 />
@@ -565,7 +680,7 @@ function AppShell() {
 function OverviewPage({ currentProject, activeJobs, services, projectProgress, openReviewCount }) {
   const workflows = [
     { path: '/ingest-gps', label: '导入与 GPS', summary: '维护单真值素材 Root、manual-itinerary 与素材时间校正。' },
-    { path: '/color', label: '达芬奇调色', summary: '维护 Root render preset，并执行 prepare / sync groups / validate / promote。' },
+    { path: '/color', label: '达芬奇调色', summary: '维护 Root render preset，并执行 prepare / sync groups / execute / validate。' },
     { path: '/analyze', label: '素材分析', summary: '直接查看分析监控、恢复进度并启动 Analyze。' },
     { path: '/style', label: '风格分析', summary: '维护 Workspace 风格库、style sources，并查看当前分类监控。' },
     { path: '/script', label: '脚本', summary: '维护 script-brief，并准备确定性材料给 Agent 继续写稿。' },
@@ -721,6 +836,8 @@ function ColorPage({
   busy,
   onRunColorAction,
   onRequestHostPreflight,
+  onSaveDrpSnapshot,
+  onRegisterDrpSnapshot,
 }) {
   if (!config) {
     return (
@@ -750,7 +867,7 @@ function ColorPage({
         <WorkflowPrompt
           eyebrow="Current Scope"
           title="当前 color 已支持 vendored Resolve backend 闭环入口"
-          body="现在可以在 `/color` 同页维护所有 Root 的 render preset，并按 `Prepare Root -> Sync Groups -> Execute -> Validate -> Promote` 触发单 root 闭环，或按 `Prepare All Roots / Export All Roots` 触发项目级顺序批处理。"
+          body="现在可以在 `/color` 同页维护所有 Root 的 render preset，并按 `Prepare Root -> Sync Groups -> Execute -> Validate` 触发单 root 闭环，或按 `Prepare All Roots / Export All Roots` 触发项目级顺序批处理。"
           tone="accent"
           detail={colorCapabilityDetail}
         />
@@ -766,6 +883,8 @@ function ColorPage({
         busy={busy}
         onRunColorAction={onRunColorAction}
         onRequestHostPreflight={onRequestHostPreflight}
+        onSaveDrpSnapshot={onSaveDrpSnapshot}
+        onRegisterDrpSnapshot={onRegisterDrpSnapshot}
       />
     </div>
   );

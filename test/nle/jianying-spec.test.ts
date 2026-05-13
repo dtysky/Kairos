@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { readFile } from 'node:fs/promises';
+import { mkdtemp, readFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import type { IKtepDoc } from '../../src/protocol/schema.js';
@@ -17,8 +18,14 @@ async function loadFixtureDoc(): Promise<IKtepDoc> {
 describe('buildJianyingDraftSpec', () => {
   it('resolves relative asset paths and emits a generated subtitle track', async () => {
     const doc = await loadFixtureDoc();
+    const mediaRoot = await mkdtemp(join(tmpdir(), 'kairos-jianying-media-root-'));
     const { spec, warnings } = await buildJianyingDraftSpec(doc, {
       projectRoot: fixtureProjectRoot,
+      mediaRoots: [{
+        id: 'root-fixture-media',
+        path: mediaRoot,
+        enabled: true,
+      }],
     });
 
     expect(spec.project.name).toBe(doc.project.name);
@@ -32,7 +39,7 @@ describe('buildJianyingDraftSpec', () => {
       }),
     ]));
 
-    expect(spec.clips[0]?.materialPath).toMatch(/^\/Users\/dtysky\/Downloads\/kairos-test\//u);
+    expect(spec.clips[0]?.materialPath).toContain(`${mediaRoot}/`);
 
     const dissolveClip = spec.clips.find(clip => clip.transitionOut?.type === 'cross-dissolve');
     expect(dissolveClip?.transitionOut).toEqual({

@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import * as mediaProbe from '../../src/modules/media/probe.js';
 import * as captureTime from '../../src/modules/media/capture-time.js';
+import * as colorCastClassifier from '../../src/modules/color/color-cast-classifier.js';
 import * as lowlightClassifier from '../../src/modules/color/lowlight-classifier.js';
 import * as resolveExecutor from '../../src/modules/color/resolve-executor.js';
 import * as sourceTruth from '../../src/modules/color/source-truth.js';
@@ -17,7 +19,9 @@ import {
   prepareAllProjectColorRoots,
   prepareProjectColorRoot,
   promoteProjectColorBatch,
+  registerExternalColorDrpSnapshot,
   runProjectColorAction,
+  snapshotProjectColorDrp,
   syncProjectColorGroups,
   validateProjectColorBatch,
 } from '../../src/modules/color/project-color.js';
@@ -36,8 +40,11 @@ import {
   loadColorBatchValidation,
   loadColorCurrent,
   loadColorGroupsSnapshot,
+  loadColorResolveProjectMap,
+  saveColorTransformPresetsConfig,
+  saveColorCurrent,
+  saveColorGroupsSnapshot,
   saveIngestRoots,
-  saveProjectDeviceMap,
 } from '../../src/store/index.js';
 
 const workspaces: string[] = [];
@@ -95,6 +102,18 @@ function buildClipRepairSnapshot(
     displayName: String(clip.sourceStem ?? ''),
     logProfile: typeof clip.logProfile === 'string' ? clip.logProfile : undefined,
     lowlight: clip.lowlight === true,
+    colorCastClass: clip.colorCastClass,
+    colorCastConfidence: clip.colorCastConfidence,
+    colorCastMetrics: clip.colorCastMetrics ?? {},
+    encodedWidth: clip.encodedWidth,
+    encodedHeight: clip.encodedHeight,
+    displayWidth: clip.displayWidth,
+    displayHeight: clip.displayHeight,
+    rotationDegrees: clip.rotationDegrees,
+    orientationStatus: clip.orientationStatus,
+    repairTemplateKey: clip.repairTemplateKey,
+    repairTemplateHash: clip.previousRepairTemplateHash,
+    timelineTransform: clip.timelineTransform,
     gyroEligible,
     gyroflowStatus,
     dehazeStatus: 'seeded-disabled' as const,
@@ -139,6 +158,7 @@ function createFakeExecutor(options: {
   onPrepareRoot?: NonNullable<IColorExecutor['prepareRoot']>;
   onSyncGroups?: NonNullable<IColorExecutor['syncGroups']>;
   onExecuteRoot?: NonNullable<IColorExecutor['executeRoot']>;
+  onSaveDrpSnapshot?: NonNullable<IColorExecutor['saveDrpSnapshot']>;
 } = {}): IColorExecutor {
   return {
     async preflight() {
@@ -174,19 +194,47 @@ function createFakeExecutor(options: {
         input.clips.map(async clip => {
           const relativeParts = clip.rawRelativePath.split('/');
           const outputFilename = `${clip.sourceStem}.${extension}`;
-          const outputPath = join(input.stagingRoot, ...relativeParts.slice(0, -1), outputFilename);
-          await mkdir(join(input.stagingRoot, ...relativeParts.slice(0, -1)), { recursive: true });
+          const outputDir = join(input.outputRoot, ...relativeParts.slice(0, -1));
+          const outputPath = join(outputDir, outputFilename);
+          await mkdir(outputDir, { recursive: true });
           await writeFile(outputPath, `rendered:${clip.rawRelativePath}`, 'utf-8');
           return {
             rawRelativePath: clip.rawRelativePath,
             outputPath,
             normalizedOutputFilename: outputFilename,
+            renderJobId: 'job-main',
           };
         }),
       );
       return {
         renderedAt: '2026-04-19T10:05:00.000Z',
         entries,
+        renderJobs: [{
+          jobId: 'job-main',
+          timelineName: input.gradingTimelineName,
+          targetDir: input.outputRoot,
+          clipCount: input.clips.length,
+        }],
+      };
+    },
+    async saveDrpSnapshot(input) {
+      if (options.onSaveDrpSnapshot) {
+        return options.onSaveDrpSnapshot(input);
+      }
+      const snapshotPath = join(input.snapshotRoot, 'snapshots', `${input.snapshotLabel || 'manual'}.drp`);
+      await mkdir(join(input.snapshotRoot, 'snapshots'), { recursive: true });
+      await writeFile(snapshotPath, 'drp', 'utf-8');
+      return {
+        snapshot: {
+          projectName: input.resolveProjectName,
+          snapshotPath,
+          latestPath: join(input.snapshotRoot, 'latest.drp'),
+          createdAt: '2026-04-19T10:06:00.000Z',
+          mode: input.action === 'manual' ? 'manual' as const : 'auto' as const,
+          action: input.action,
+          rootId: input.rootId,
+          chunkId: (input.chunkId ?? null) as unknown as string | undefined,
+        },
       };
     },
   };
@@ -196,11 +244,19 @@ function mockColorMetadata(options: {
   includeCaptureTime?: boolean;
   includeGps?: boolean;
   codec?: string;
+  width?: number;
+  height?: number;
+  displayWidth?: number;
+  displayHeight?: number;
+  rotationDegrees?: number;
 } = {}) {
   vi.spyOn(mediaProbe, 'probe').mockImplementation(async filePath => ({
     durationMs: 1000,
-    width: 3840,
-    height: 2160,
+    width: options.width ?? 3840,
+    height: options.height ?? 2160,
+    displayWidth: options.displayWidth ?? options.width ?? 3840,
+    displayHeight: options.displayHeight ?? options.height ?? 2160,
+    rotationDegrees: options.rotationDegrees ?? null,
     fps: 30,
     codec: options.codec ?? (filePath.endsWith('.mp4') ? 'h265' : 'prores'),
     hasAudioStream: true,
@@ -231,6 +287,8 @@ function mockColorMetadata(options: {
 function mockClipSignals(options: {
   gyroEligible?: boolean;
   lowlight?: boolean;
+  colorCastClass?: 'neutral' | 'cool-cyan' | 'green-cyan' | 'green' | 'warm' | 'mixed' | 'unknown';
+  colorCastConfidence?: number;
   logProfile?: string;
   deviceFamilyKeys?: string[];
 } = {}) {
@@ -243,6 +301,11 @@ function mockClipSignals(options: {
   vi.spyOn(lowlightClassifier, 'classifyFirstFrameLowlight').mockResolvedValue({
     lowlight: options.lowlight ?? false,
     metrics: undefined,
+  });
+  vi.spyOn(colorCastClassifier, 'classifyColorCast').mockResolvedValue({
+    colorCastClass: options.colorCastClass ?? 'neutral',
+    colorCastConfidence: options.colorCastConfidence ?? 0.9,
+    colorCastMetrics: {},
   });
 }
 
@@ -265,6 +328,7 @@ async function seedSingleRootProject(input: {
   const rootId = input.rootId ?? 'root-camera';
   const rawLocalPath = join(projectRoot, '.fixtures', `${rootId}-raw`);
   const currentLocalPath = join(projectRoot, '.fixtures', `${rootId}-current`);
+  await mkdir(currentLocalPath, { recursive: true });
   for (const rawRelativePath of input.rawFiles ?? ['day1/A001.mov']) {
     const targetPath = join(rawLocalPath, ...rawRelativePath.split('/'));
     await mkdir(join(targetPath, '..'), { recursive: true });
@@ -275,6 +339,10 @@ async function seedSingleRootProject(input: {
       id: rootId,
       path: `/media/current/${rootId}`,
       rawPath: `/media/raw/${rootId}`,
+      alternatePaths: [{
+        path: currentLocalPath,
+        rawPath: input.includeRawLocalPath === false ? undefined : rawLocalPath,
+      }],
       enabled: true,
       color: {
         renderPreset: input.renderPreset ?? {
@@ -287,13 +355,6 @@ async function seedSingleRootProject(input: {
       },
     }],
   });
-  await saveProjectDeviceMap(projectRoot, input.projectId, {
-    roots: [{
-      rootId,
-      localPath: currentLocalPath,
-      rawLocalPath: input.includeRawLocalPath === false ? undefined : rawLocalPath,
-    }],
-  });
   return {
     projectRoot,
     rootId,
@@ -303,7 +364,7 @@ async function seedSingleRootProject(input: {
 }
 
 describe('project color actions', () => {
-  it('persists groups snapshot directly from prepare_root', async () => {
+  it('persists groups snapshot after prepare completion sync', async () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-color-prepare-snapshot';
     const { projectRoot, rootId } = await seedSingleRootProject({
@@ -326,7 +387,7 @@ describe('project color actions', () => {
       loadColorGroupsSnapshot(projectRoot, rootId),
       loadColorCurrent(projectRoot),
     ]);
-    expect(snapshot?.groups[0]?.hostSummary.origin).toBe('prepare_root');
+    expect(snapshot?.groups[0]?.hostSummary.origin).toBe('resolve');
     expect(snapshot?.groups[0]?.clips[0]).toMatchObject({
       gyroEligible: true,
       dehazeStatus: 'seeded-disabled',
@@ -338,7 +399,429 @@ describe('project color actions', () => {
     expect(current.roots[0]?.groups[0]?.status).toBe('ready');
   });
 
-  it('runs prepare -> sync -> execute -> validate -> promote and persists root runtime/archive truth', async () => {
+  it('syncs Resolve groups without re-running first-frame lowlight detection', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-color-sync-lightweight';
+    const { rootId } = await seedSingleRootProject({
+      workspaceRoot,
+      projectId,
+      projectName: 'Project Color Sync Lightweight',
+      rawFiles: ['day1/A001.mov', 'day1/A002.mov'],
+    });
+
+    mockColorMetadata();
+    mockClipSignals({ gyroEligible: true, lowlight: true });
+    const executor = createFakeExecutor();
+    await prepareProjectColorRoot({
+      workspaceRoot,
+      projectId,
+      rootId,
+      executor,
+    });
+
+    const lowlightSpy = vi.mocked(lowlightClassifier.classifyFirstFrameLowlight);
+    const colorCastSpy = vi.mocked(colorCastClassifier.classifyColorCast);
+    lowlightSpy.mockClear();
+    colorCastSpy.mockClear();
+    const syncedInputs: IColorExecutorSyncGroupsInput[] = [];
+    await syncProjectColorGroups({
+      workspaceRoot,
+      projectId,
+      rootId,
+      action: 'sync_groups',
+      jobId: 'job-color-sync-lightweight',
+      executor: createFakeExecutor({
+        onSyncGroups: async input => {
+          syncedInputs.push(input);
+          return buildGroupsSnapshot(input, 'resolve');
+        },
+      }),
+    });
+
+    expect(lowlightSpy).not.toHaveBeenCalled();
+    expect(colorCastSpy).not.toHaveBeenCalled();
+    expect(syncedInputs[0]?.clips.map(clip => clip.lowlight)).toEqual([true, true]);
+    expect(syncedInputs[0]?.clips.map(clip => clip.colorCastClass)).toEqual(['neutral', 'neutral']);
+  });
+
+  it('lets sync_groups recover a stale blocked prepare state when Resolve groups already exist', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-color-sync-recovers-stale-prepare';
+    const { projectRoot, rootId } = await seedSingleRootProject({
+      workspaceRoot,
+      projectId,
+      projectName: 'Project Color Sync Recovers Stale Prepare',
+      rawFiles: ['day1/A001.mov', 'day1/A002.mov'],
+    });
+
+    mockColorMetadata();
+    mockClipSignals({ gyroEligible: true, lowlight: true });
+    const executor = createFakeExecutor();
+    await prepareProjectColorRoot({
+      workspaceRoot,
+      projectId,
+      rootId,
+      executor,
+    });
+
+    const preparedCurrent = await loadColorCurrent(projectRoot);
+    await saveColorCurrent(projectRoot, {
+      ...preparedCurrent,
+      roots: preparedCurrent.roots.map(root => root.rootId === rootId
+        ? {
+            ...root,
+            mirrorStatus: 'blocked',
+            timelineStatus: 'blocked',
+            groupSyncStatus: 'blocked',
+            activeStage: 'sync_root_bins',
+            detail: 'Unable to append clip to grading timeline: day1/A001.mov',
+            blockingReasons: ['Unable to append clip to grading timeline: day1/A001.mov'],
+            prepareChunks: root.prepareChunks.map(chunk => ({ ...chunk, status: 'failed' as const })),
+          }
+        : root),
+    });
+
+    await syncProjectColorGroups({
+      workspaceRoot,
+      projectId,
+      rootId,
+      action: 'sync_groups',
+      jobId: 'job-color-sync-recovers-stale-prepare',
+      executor: createFakeExecutor({
+        onSyncGroups: async input => buildGroupsSnapshot(input, 'resolve'),
+      }),
+    });
+
+    const recoveredCurrent = await loadColorCurrent(projectRoot);
+    const recoveredRoot = recoveredCurrent.roots.find(root => root.rootId === rootId);
+    expect(recoveredRoot).toMatchObject({
+      mirrorStatus: 'synced',
+      timelineStatus: 'ready',
+      groupSyncStatus: 'ready',
+      blockingReasons: [],
+    });
+    expect(recoveredRoot?.activeStage).toBeUndefined();
+    expect(recoveredRoot?.detail).toContain('已同步');
+  });
+
+  it('uses the workspace technical LUT for log color-cast preview', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-color-cast-preview-lut';
+    const { rootId } = await seedSingleRootProject({
+      workspaceRoot,
+      projectId,
+      projectName: 'Project Color Cast Preview LUT',
+    });
+    const relativeLutPath = 'Sony/SLog3SGamut3.CineToLC-709.cube';
+    const lutPath = join(workspaceRoot, 'config', 'luts', 'Sony', 'SLog3SGamut3.CineToLC-709.cube');
+    await mkdir(join(workspaceRoot, 'config', 'luts', 'Sony'), { recursive: true });
+    await writeFile(lutPath, 'TITLE "test lut"\nLUT_3D_SIZE 2\n0 0 0\n0 0 1\n0 1 0\n0 1 1\n1 0 0\n1 0 1\n1 1 0\n1 1 1\n', 'utf-8');
+    await saveColorTransformPresetsConfig(workspaceRoot, {
+      profiles: {
+        slog3: {
+          default: relativeLutPath,
+        },
+      },
+    });
+
+    mockColorMetadata();
+    mockClipSignals({ logProfile: 'slog3' });
+    await prepareProjectColorRoot({
+      workspaceRoot,
+      projectId,
+      rootId,
+      jobId: 'job-color-cast-preview-lut',
+      executor: createFakeExecutor(),
+    });
+
+    expect(colorCastClassifier.classifyColorCast).toHaveBeenCalledWith(
+      expect.stringContaining('A001.mov'),
+      expect.anything(),
+      expect.objectContaining({
+        lutPath,
+      }),
+    );
+  });
+
+  it('promotes a continuous weak cool-blue run into the cool-cyan group', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-color-cool-continuity';
+    const rawFiles = Array.from(
+      { length: 17 },
+      (_, index) => `day11/C${String(1827 + index).padStart(4, '0')}.MP4`,
+    );
+    const { rootId } = await seedSingleRootProject({
+      workspaceRoot,
+      projectId,
+      projectName: 'Project Color Cool Continuity',
+      rawFiles,
+    });
+
+    mockColorMetadata();
+    mockClipSignals({ logProfile: 'slog3' });
+    const anchorStems = new Set(['C1827', 'C1829', 'C1832', 'C1833', 'C1834', 'C1835', 'C1837', 'C1841']);
+    vi.mocked(colorCastClassifier.classifyColorCast).mockImplementation(async filePath => {
+      const stem = String(filePath).match(/C\d{4}/)?.[0] ?? '';
+      if (anchorStems.has(stem)) {
+        return {
+          colorCastClass: 'cool-cyan',
+          colorCastConfidence: 0.72,
+          colorCastMetrics: {
+            medianA: -3,
+            medianB: -4.3,
+            candidatePixelRatio: 0.12,
+          },
+        };
+      }
+      return {
+        colorCastClass: 'neutral',
+        colorCastConfidence: 0.45,
+        colorCastMetrics: {
+          medianA: stem === 'C1842' ? -1.7 : -2.5,
+          medianB: stem === 'C1842' ? 0.8 : -2.0,
+          candidatePixelRatio: 0.14,
+        },
+      };
+    });
+
+    const prepared: IColorExecutorPrepareRootInput[] = [];
+    await prepareProjectColorRoot({
+      workspaceRoot,
+      projectId,
+      rootId,
+      jobId: 'job-color-cool-continuity',
+      executor: createFakeExecutor({
+        onPrepareRoot: async input => {
+          prepared.push(input);
+          return {
+            resolveProjectName: input.resolveProjectName,
+            gradingTimelineName: input.gradingTimelineName,
+            mirrorStatus: 'synced',
+            timelineStatus: 'ready',
+            groupsSnapshot: buildGroupsSnapshot(input, 'prepare_root'),
+            hostSummary: {},
+          };
+        },
+      }),
+    });
+
+    const clips = prepared[0]?.clips ?? [];
+    expect(clips).toHaveLength(17);
+    expect(clips.map(clip => clip.colorCastClass)).toEqual(Array.from({ length: 17 }, () => 'cool-cyan'));
+    expect(clips.find(clip => clip.rawRelativePath.endsWith('C1842.MP4'))?.colorCastMetrics).toMatchObject({
+      continuityAdjustment: 'cool-cyan-sequence',
+      continuityAdjustedFromClass: 'neutral',
+    });
+  });
+
+  it('promotes a continuous weak green-cyan run into the green-cyan group', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-color-green-cyan-continuity';
+    const rawFiles = Array.from(
+      { length: 11 },
+      (_, index) => `day2/C${String(530 + index).padStart(4, '0')}.MP4`,
+    );
+    const { rootId } = await seedSingleRootProject({
+      workspaceRoot,
+      projectId,
+      projectName: 'Project Color Green Cyan Continuity',
+      rawFiles,
+    });
+
+    mockColorMetadata();
+    mockClipSignals({ logProfile: 'slog3' });
+    const metricsByStem = new Map([
+      ['C0530', { colorCastClass: 'green', colorCastConfidence: 0.67, medianA: -5.9, medianB: 0.4 }],
+      ['C0531', { colorCastClass: 'neutral', colorCastConfidence: 0.45, medianA: -4.2, medianB: 0.9 }],
+      ['C0532', { colorCastClass: 'neutral', colorCastConfidence: 0.44, medianA: -2.9, medianB: -1.3 }],
+      ['C0533', { colorCastClass: 'mixed', colorCastConfidence: 0.52, medianA: -3.6, medianB: -2.4 }],
+      ['C0534', { colorCastClass: 'neutral', colorCastConfidence: 0.43, medianA: -3.2, medianB: -1.8 }],
+      ['C0535', { colorCastClass: 'mixed', colorCastConfidence: 0.51, medianA: -4.0, medianB: -3.0 }],
+      ['C0536', { colorCastClass: 'green', colorCastConfidence: 0.64, medianA: -5.6, medianB: -1.3 }],
+      ['C0537', { colorCastClass: 'neutral', colorCastConfidence: 0.42, medianA: -4.2, medianB: -1.5 }],
+      ['C0538', { colorCastClass: 'green-cyan', colorCastConfidence: 0.76, medianA: -5.7, medianB: -4.3 }],
+      ['C0539', { colorCastClass: 'neutral', colorCastConfidence: 0.43, medianA: -2.8, medianB: -1.3 }],
+      ['C0540', { colorCastClass: 'neutral', colorCastConfidence: 0.43, medianA: -2.9, medianB: -1.5 }],
+    ] as const);
+    vi.mocked(colorCastClassifier.classifyColorCast).mockImplementation(async filePath => {
+      const stem = String(filePath).match(/C\d{4}/)?.[0] ?? '';
+      const metrics = metricsByStem.get(stem);
+      return {
+        colorCastClass: metrics?.colorCastClass ?? 'neutral',
+        colorCastConfidence: metrics?.colorCastConfidence ?? 0.4,
+        colorCastMetrics: {
+          medianA: metrics?.medianA ?? 0,
+          medianB: metrics?.medianB ?? 0,
+          candidatePixelRatio: 0.12,
+        },
+      };
+    });
+
+    const prepared: IColorExecutorPrepareRootInput[] = [];
+    await prepareProjectColorRoot({
+      workspaceRoot,
+      projectId,
+      rootId,
+      jobId: 'job-color-green-cyan-continuity',
+      executor: createFakeExecutor({
+        onPrepareRoot: async input => {
+          prepared.push(input);
+          return {
+            resolveProjectName: input.resolveProjectName,
+            gradingTimelineName: input.gradingTimelineName,
+            mirrorStatus: 'synced',
+            timelineStatus: 'ready',
+            groupsSnapshot: buildGroupsSnapshot(input, 'prepare_root'),
+            hostSummary: {},
+          };
+        },
+      }),
+    });
+
+    const clips = prepared[0]?.clips ?? [];
+    expect(clips.map(clip => clip.colorCastClass)).toEqual(Array.from({ length: 11 }, () => 'green-cyan'));
+    expect(clips.find(clip => clip.rawRelativePath.endsWith('C0531.MP4'))?.colorCastMetrics).toMatchObject({
+      continuityAdjustment: 'green-cyan-sequence',
+      continuityAdjustedFromClass: 'neutral',
+    });
+  });
+
+  it('extends a green-cyan run forward only through compatible nearby clips', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-color-green-cyan-forward-continuity';
+    const rawFiles = Array.from(
+      { length: 12 },
+      (_, index) => `day11/C${String(1854 + index).padStart(4, '0')}.MP4`,
+    );
+    const { rootId } = await seedSingleRootProject({
+      workspaceRoot,
+      projectId,
+      projectName: 'Project Color Green Cyan Forward Continuity',
+      rawFiles,
+    });
+
+    mockColorMetadata();
+    mockClipSignals({ logProfile: 'slog3' });
+    const metricsByStem = new Map([
+      ['C1854', { colorCastClass: 'green-cyan', colorCastConfidence: 0.76, medianA: -5.5, medianB: -2.5 }],
+      ['C1855', { colorCastClass: 'green', colorCastConfidence: 0.66, medianA: -6.1, medianB: 0.3 }],
+      ['C1856', { colorCastClass: 'green', colorCastConfidence: 0.64, medianA: -5.6, medianB: 0.8 }],
+      ['C1857', { colorCastClass: 'green-cyan', colorCastConfidence: 0.74, medianA: -5.3, medianB: -3.6 }],
+      ['C1858', { colorCastClass: 'green', colorCastConfidence: 0.70, medianA: -7.1, medianB: 0.6 }],
+      ['C1859', { colorCastClass: 'green', colorCastConfidence: 0.71, medianA: -7.3, medianB: 0.2 }],
+      ['C1860', { colorCastClass: 'green', colorCastConfidence: 0.67, medianA: -6.0, medianB: 1.0 }],
+      ['C1861', { colorCastClass: 'neutral', colorCastConfidence: 0.42, medianA: -2.8, medianB: 3.0 }],
+      ['C1862', { colorCastClass: 'green', colorCastConfidence: 0.67, medianA: -6.1, medianB: 1.0 }],
+      ['C1863', { colorCastClass: 'neutral', colorCastConfidence: 0.44, medianA: -2.9, medianB: 0.6 }],
+      ['C1864', { colorCastClass: 'green-cyan', colorCastConfidence: 0.64, medianA: -5.2, medianB: -2.8 }],
+      ['C1865', { colorCastClass: 'green', colorCastConfidence: 0.64, medianA: -5.2, medianB: 5.1 }],
+    ] as const);
+    vi.mocked(colorCastClassifier.classifyColorCast).mockImplementation(async filePath => {
+      const stem = String(filePath).match(/C\d{4}/)?.[0] ?? '';
+      const metrics = metricsByStem.get(stem);
+      return {
+        colorCastClass: metrics?.colorCastClass ?? 'neutral',
+        colorCastConfidence: metrics?.colorCastConfidence ?? 0.4,
+        colorCastMetrics: {
+          medianA: metrics?.medianA ?? 0,
+          medianB: metrics?.medianB ?? 0,
+          candidatePixelRatio: 0.11,
+        },
+      };
+    });
+
+    const prepared: IColorExecutorPrepareRootInput[] = [];
+    await prepareProjectColorRoot({
+      workspaceRoot,
+      projectId,
+      rootId,
+      jobId: 'job-color-green-cyan-forward-continuity',
+      executor: createFakeExecutor({
+        onPrepareRoot: async input => {
+          prepared.push(input);
+          return {
+            resolveProjectName: input.resolveProjectName,
+            gradingTimelineName: input.gradingTimelineName,
+            mirrorStatus: 'synced',
+            timelineStatus: 'ready',
+            groupsSnapshot: buildGroupsSnapshot(input, 'prepare_root'),
+            hostSummary: {},
+          };
+        },
+      }),
+    });
+
+    const clips = prepared[0]?.clips ?? [];
+    expect(clips.map(clip => clip.colorCastClass)).toEqual(Array.from({ length: 12 }, () => 'green-cyan'));
+    expect(clips.find(clip => clip.rawRelativePath.endsWith('C1865.MP4'))?.colorCastMetrics).toMatchObject({
+      continuityAdjustment: 'green-cyan-sequence',
+    });
+  });
+
+  it('prepares large roots in stable 50 clip chunks and records DRP snapshots', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-color-prepare-chunks';
+    const rawFiles = Array.from({ length: 125 }, (_, index) => `day1/A${String(index + 1).padStart(4, '0')}.mov`);
+    const { projectRoot, rootId } = await seedSingleRootProject({
+      workspaceRoot,
+      projectId,
+      projectName: 'Project Color Prepare Chunks',
+      rawFiles,
+    });
+    mockColorMetadata();
+    mockClipSignals();
+    const preparedChunks: IColorExecutorPrepareRootInput[] = [];
+    const savedDrpSnapshots: string[] = [];
+    const executor = createFakeExecutor({
+      onPrepareRoot: async input => {
+        preparedChunks.push(input);
+        return {
+          resolveProjectName: input.resolveProjectName,
+          gradingTimelineName: input.gradingTimelineName,
+          mirrorStatus: 'synced',
+          timelineStatus: 'ready',
+          groupsSnapshot: buildGroupsSnapshot(input, 'prepare_root'),
+          hostSummary: {},
+        };
+      },
+      onSaveDrpSnapshot: async input => {
+        savedDrpSnapshots.push(input.snapshotLabel ?? '');
+        return createFakeExecutor().saveDrpSnapshot(input);
+      },
+    });
+
+    await prepareProjectColorRoot({
+      workspaceRoot,
+      projectId,
+      rootId,
+      executor,
+    });
+
+    expect(preparedChunks).toHaveLength(3);
+    expect(preparedChunks.map(input => input.clips.length)).toEqual([50, 50, 25]);
+    expect(preparedChunks.every(input => typeof input.repairDrtPath === 'string')).toBe(true);
+    expect(preparedChunks.every(input => !('repairDrxPath' in input))).toBe(true);
+    expect(preparedChunks.map(input => input.gradingTimelineName)).toEqual([
+      'current root-camera [Color]',
+      'current root-camera [Color]',
+      'current root-camera [Color]',
+    ]);
+    expect(preparedChunks.map(input => input.resetTimeline)).toEqual([true, false, false]);
+    expect(savedDrpSnapshots).toEqual([`prepare-root-${rootId}-complete`]);
+    const currentRoot = (await loadColorCurrent(projectRoot)).roots.find(root => root.rootId === rootId);
+    expect(currentRoot?.prepareChunks.map(chunk => chunk.status)).toEqual(['ready', 'ready', 'ready']);
+    expect(currentRoot?.prepareChunks.map(chunk => chunk.timelineName)).toEqual([
+      'current root-camera [Color]',
+      'current root-camera [Color]',
+      'current root-camera [Color]',
+    ]);
+    const resolveMap = await loadColorResolveProjectMap(projectRoot);
+    const latest = resolveMap.projects[preparedChunks[0]!.resolveProjectName]?.latestSnapshot;
+    expect(latest?.action).toBe('prepare_root');
+    expect(latest?.chunkId).toBeUndefined();
+  });
+
+  it('runs prepare -> sync -> execute and persists root runtime/archive truth', async () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-color-closure';
     const { projectRoot, rootId, currentLocalPath } = await seedSingleRootProject({
@@ -374,47 +857,112 @@ describe('project color actions', () => {
       jobId: 'job-color-execute',
       executor,
     });
-    await validateProjectColorBatch({
-      workspaceRoot,
-      projectId,
-      rootId,
-      action: 'validate_batch',
-      batchId: executeResult.batchId,
-      jobId: 'job-color-validate',
-    });
-    await promoteProjectColorBatch({
-      workspaceRoot,
-      projectId,
-      rootId,
-      action: 'promote_batch',
-      batchId: executeResult.batchId,
-      jobId: 'job-color-promote',
-    });
-
-    const [snapshot, plan, manifest, validation, promote, current] = await Promise.all([
+    const [snapshot, plan, manifest, validation, current] = await Promise.all([
       loadColorGroupsSnapshot(projectRoot, rootId),
       loadColorBatchPlan(projectRoot, executeResult.batchId!),
       loadColorBatchManifest(projectRoot, executeResult.batchId!),
       loadColorBatchValidation(projectRoot, executeResult.batchId!),
-      loadColorBatchPromote(projectRoot, executeResult.batchId!),
       loadColorCurrent(projectRoot),
     ]);
 
     expect(snapshot?.groups[0]?.groupKey).toBe('base-group');
     expect(plan?.entries.map(entry => entry.rawRelativePath)).toEqual(['day1/A001.mov', 'day2/A001.mov']);
     expect(plan?.selectionMode).toBe('all');
+    expect(plan?.outputRoot).toBe(currentLocalPath);
+    expect(Object.prototype.hasOwnProperty.call(plan ?? {}, 'holdingRoot')).toBe(false);
     expect(manifest?.managedOutputSet).toEqual(['day1/A001.mp4', 'day2/A001.mp4']);
+    expect(manifest?.entries.map(entry => entry.outputPath)).toEqual([
+      join(currentLocalPath, 'day1', 'A001.mp4'),
+      join(currentLocalPath, 'day2', 'A001.mp4'),
+    ]);
     expect(validation?.status).toBe('pass');
-    expect(promote?.status).toBe('completed');
     expect(current.roots[0]).toMatchObject({
       latestBatchId: executeResult.batchId,
-      latestBatchStatus: 'promoted',
+      latestBatchStatus: 'validated',
       latestValidationStatus: 'pass',
-      lastPromotedBatchId: executeResult.batchId,
     });
 
     expect(await readFile(join(currentLocalPath, 'day1', 'A001.mp4'), 'utf-8')).toBe('rendered:day1/A001.mov');
     expect(await readFile(join(currentLocalPath, 'day2', 'A001.mp4'), 'utf-8')).toBe('rendered:day2/A001.mov');
+  });
+
+  it('mirrors same-basename raw sidecars after direct-root export', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-color-sidecars';
+    const { projectRoot, rootId, rawLocalPath, currentLocalPath } = await seedSingleRootProject({
+      workspaceRoot,
+      projectId,
+      projectName: 'Project Color Sidecars',
+      rawFiles: ['day1/A001.mov'],
+    });
+    await writeFile(join(rawLocalPath, 'day1', 'A001.SRT'), 'subtitle', 'utf-8');
+    await writeFile(join(rawLocalPath, 'day1', 'A001.WAV'), 'audio', 'utf-8');
+    await writeFile(join(rawLocalPath, 'day1', 'A001_notes.srt'), 'not copied', 'utf-8');
+
+    mockColorMetadata();
+    const executor = createFakeExecutor();
+    await prepareProjectColorRoot({ workspaceRoot, projectId, rootId, executor });
+    const executeResult = await executeProjectColorRoot({
+      workspaceRoot,
+      projectId,
+      rootId,
+      action: 'execute_root',
+      executor,
+    });
+    const [manifest, validation] = await Promise.all([
+      loadColorBatchManifest(projectRoot, executeResult.batchId!),
+      loadColorBatchValidation(projectRoot, executeResult.batchId!),
+    ]);
+    expect(manifest?.entries[0]?.sidecars.map(sidecar => sidecar.outputRelativePath)).toEqual([
+      'day1/A001.SRT',
+      'day1/A001.WAV',
+    ]);
+    expect(manifest?.managedSidecarSet).toEqual(['day1/A001.SRT', 'day1/A001.WAV']);
+    expect(validation?.status).toBe('pass');
+    expect(await readFile(join(currentLocalPath, 'day1', 'A001.SRT'), 'utf-8')).toBe('subtitle');
+    expect(await readFile(join(currentLocalPath, 'day1', 'A001.WAV'), 'utf-8')).toBe('audio');
+    await expect(readFile(join(currentLocalPath, 'day1', 'A001_notes.srt'), 'utf-8')).rejects.toThrow();
+  });
+
+  it('marks execute_root failed instead of leaving a stale rendering state', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-color-execute-failed-state';
+    const { projectRoot, rootId } = await seedSingleRootProject({
+      workspaceRoot,
+      projectId,
+      projectName: 'Project Color Execute Failed State',
+      rawFiles: ['day1/A001.mov'],
+    });
+
+    mockColorMetadata();
+    await prepareProjectColorRoot({
+      workspaceRoot,
+      projectId,
+      rootId,
+      executor: createFakeExecutor(),
+    });
+
+    await expect(executeProjectColorRoot({
+      workspaceRoot,
+      projectId,
+      rootId,
+      action: 'execute_root',
+      jobId: 'job-color-execute-failed-state',
+      executor: createFakeExecutor({
+        onExecuteRoot: async () => {
+          throw new Error('render exploded');
+        },
+      }),
+    })).rejects.toThrow('render exploded');
+
+    const savedRoot = (await loadColorCurrent(projectRoot)).roots.find(root => root.rootId === rootId);
+    expect(savedRoot).toMatchObject({
+      latestBatchStatus: 'failed',
+      latestValidationStatus: 'pending',
+      blockingReasons: ['render exploded'],
+    });
+    expect(savedRoot?.activeStage).toBeUndefined();
+    expect(savedRoot?.currentJobId).toBeUndefined();
   });
 
   it('blocks prepare_root when rawLocalPath is missing', async () => {
@@ -437,6 +985,7 @@ describe('project color actions', () => {
 
     const savedCurrent = await loadColorCurrent(projectRoot);
     expect(savedCurrent.roots[0]?.mirrorStatus).toBe('blocked');
+    expect(savedCurrent.roots[0]?.activeStage).toBeUndefined();
     expect(savedCurrent.roots[0]?.detail).toContain('rawLocalPath');
   });
 
@@ -517,8 +1066,17 @@ describe('project color actions', () => {
         rawRelativePath: 'day1/A001.mov',
         sourceAbsolutePath: join(rawLocalPath, 'day1', 'A001.mov'),
         sourceStem: 'A001',
+        capturedAt: undefined,
         width: 3840,
         height: 2160,
+        encodedWidth: 3840,
+        encodedHeight: 2160,
+        displayWidth: 3840,
+        displayHeight: 2160,
+        rotationDegrees: undefined,
+        orientationStatus: 'horizontal',
+        repairTemplateKey: 'default',
+        timelineTransform: undefined,
         fps: 30,
         codec: 'prores',
         rawTags: {},
@@ -526,8 +1084,15 @@ describe('project color actions', () => {
         effectiveProfile: 'dlog-m',
         profileSource: 'detected',
         logProfile: 'dlog-m',
+        gyroDataAvailable: true,
         gyroEligible: true,
         lowlight: true,
+        colorCastClass: 'neutral',
+        colorCastConfidence: 0.9,
+        colorCastMetrics: {
+          technicalTransformStatus: 'source-rgb',
+          technicalLutRelativePath: undefined,
+        },
         deviceFamilyKeys: ['dji-osmo-pocket-3'],
         resolvedTransformPresetKey: undefined,
         resolvedLutRelativePath: undefined,
@@ -553,7 +1118,221 @@ describe('project color actions', () => {
     }]);
   });
 
-  it('rejects promote when the batch has been superseded by a newer latest batch', async () => {
+  it('passes portrait orientation templates and horizontal-fill transform into prepare_root requests', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-color-portrait-transform';
+    const { rootId } = await seedSingleRootProject({
+      workspaceRoot,
+      projectId,
+      projectName: 'Project Color Portrait Transform',
+    });
+
+    mockColorMetadata({
+      width: 3840,
+      height: 2160,
+      displayWidth: 2160,
+      displayHeight: 3840,
+      rotationDegrees: 90,
+    });
+    mockClipSignals({ gyroEligible: true, logProfile: 'slog3' });
+
+    const prepared: Array<Record<string, unknown>> = [];
+    const executor = createFakeExecutor({
+      onPrepareRoot: async input => {
+        prepared.push({
+          repairTemplates: input.repairTemplates,
+          timelineSpec: input.timelineSpec,
+          clips: input.clips,
+        });
+        return {
+          resolveProjectName: input.resolveProjectName,
+          gradingTimelineName: input.gradingTimelineName,
+          mirrorStatus: 'synced',
+          timelineStatus: 'ready',
+          groupsSnapshot: buildGroupsSnapshot(input, 'prepare_root'),
+        };
+      },
+    });
+
+    await prepareProjectColorRoot({
+      workspaceRoot,
+      projectId,
+      rootId,
+      jobId: 'job-color-portrait-prepare',
+      executor,
+    });
+
+    expect(prepared[0]?.repairTemplates).toMatchObject({
+      default: join(workspaceRoot, 'config', 'default.drt'),
+      'portrait-90': join(workspaceRoot, 'config', 'gyroflow-portrait-90.drt'),
+      'portrait--90': join(workspaceRoot, 'config', 'gyroflow-portrait--90.drt'),
+    });
+    expect(prepared[0]?.timelineSpec).toEqual({
+      width: 3840,
+      height: 2160,
+      fps: 30,
+    });
+    expect((prepared[0]?.clips as any[])[0]).toMatchObject({
+      displayWidth: 2160,
+      displayHeight: 3840,
+      rotationDegrees: 90,
+      orientationStatus: 'portrait',
+      repairTemplateKey: 'portrait--90',
+      gyroDataAvailable: true,
+      gyroEligible: true,
+      timelineTransform: {
+        rotationAngle: -90,
+        zoomGang: true,
+        zoomX: 1.7778,
+        zoomY: 1.7778,
+        pan: 0,
+        tilt: 0,
+      },
+    });
+  });
+
+  it('reruns only the stale portrait chunk when a portrait DRT hash is stale', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-color-portrait-template-rebuild';
+    const portraitPath = 'day1/A0000PORTRAIT.MP4';
+    const rawFiles = [
+      portraitPath,
+      ...Array.from({ length: 50 }, (_, index) => `day1/A${String(index + 1).padStart(4, '0')}.MP4`),
+    ];
+    const { projectRoot, rootId } = await seedSingleRootProject({
+      workspaceRoot,
+      projectId,
+      projectName: 'Project Color Portrait Template Reseed',
+      rawFiles,
+    });
+    await mkdir(join(workspaceRoot, 'config'), { recursive: true });
+    await writeFile(join(workspaceRoot, 'config', 'gyroflow-portrait--90.drt'), 'portrait-template-v2', 'utf-8');
+    const currentPortraitTemplateHash = createHash('sha256').update('portrait-template-v2').digest('hex');
+
+    vi.spyOn(mediaProbe, 'probe').mockImplementation(async filePath => {
+      const isPortrait = filePath.endsWith('A0000PORTRAIT.MP4');
+      return {
+        durationMs: 1000,
+        width: 3840,
+        height: 2160,
+        displayWidth: isPortrait ? 2160 : 3840,
+        displayHeight: isPortrait ? 3840 : 2160,
+        rotationDegrees: isPortrait ? 90 : null,
+        fps: 30,
+        codec: 'h265',
+        hasAudioStream: true,
+        audioStreamCount: 1,
+        audioCodec: 'aac',
+        audioSampleRate: 48000,
+        audioChannels: 2,
+        audioBitRate: 192000,
+        rawTags: {},
+      };
+    });
+    vi.spyOn(captureTime, 'resolveCaptureTime').mockResolvedValue(null);
+    mockClipSignals({ gyroEligible: true, logProfile: 'slog3' });
+
+    await prepareProjectColorRoot({
+      workspaceRoot,
+      projectId,
+      rootId,
+      jobId: 'job-color-portrait-template-initial',
+      executor: createFakeExecutor(),
+    });
+
+    const existingSnapshot = await loadColorGroupsSnapshot(projectRoot, rootId);
+    expect(existingSnapshot).toBeTruthy();
+    await saveColorGroupsSnapshot(projectRoot, {
+      ...existingSnapshot!,
+      groups: existingSnapshot!.groups.map(group => ({
+        ...group,
+        clips: group.clips.map(clip => clip.clipKey === portraitPath
+          ? {
+              ...clip,
+              repairTemplateHash: 'stale-template-hash',
+            }
+          : clip),
+      })),
+    });
+
+    const prepareCalls: IColorExecutorPrepareRootInput[] = [];
+    let syncPortraitClip: IColorExecutorClipInput | undefined;
+    await prepareProjectColorRoot({
+      workspaceRoot,
+      projectId,
+      rootId,
+      jobId: 'job-color-portrait-template-rerun',
+      executor: createFakeExecutor({
+        onPrepareRoot: async input => {
+          prepareCalls.push(input);
+          return {
+            resolveProjectName: input.resolveProjectName,
+            gradingTimelineName: input.gradingTimelineName,
+            mirrorStatus: 'synced',
+            timelineStatus: 'ready',
+            groupsSnapshot: buildGroupsSnapshot(input, 'prepare_root'),
+          };
+        },
+        onSyncGroups: async input => {
+          syncPortraitClip = input.clips.find(clip => clip.rawRelativePath === portraitPath);
+          return buildGroupsSnapshot(input, 'resolve');
+        },
+      }),
+    });
+
+    expect(prepareCalls).toHaveLength(1);
+    expect(prepareCalls[0]?.resetTimeline).toBe(false);
+    expect(prepareCalls[0]?.clips.map(clip => clip.rawRelativePath)).toContain(portraitPath);
+    expect(prepareCalls[0]?.clips.find(clip => clip.rawRelativePath === portraitPath)).toMatchObject({
+      previousRepairTemplateHash: 'stale-template-hash',
+      repairTemplateKey: 'portrait--90',
+    });
+    expect(syncPortraitClip).toMatchObject({
+      previousRepairTemplateHash: currentPortraitTemplateHash,
+      repairTemplateKey: 'portrait--90',
+    });
+  });
+
+  it('clears stale transient prepare blockers after a successful rerun', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-color-clear-stale-prepare-blocker';
+    const { projectRoot, rootId } = await seedSingleRootProject({
+      workspaceRoot,
+      projectId,
+      projectName: 'Project Color Clear Stale Prepare Blocker',
+    });
+
+    await saveColorCurrent(projectRoot, {
+      selectedRootId: rootId,
+      roots: [{
+        rootId,
+        mirrorStatus: 'blocked',
+        timelineStatus: 'blocked',
+        detail: 'Unable to import clip repair template timeline: gyroflow-portrait--90.drt',
+        blockingReasons: ['Unable to import clip repair template timeline: gyroflow-portrait--90.drt'],
+      }],
+    });
+
+    mockColorMetadata();
+    mockClipSignals({ gyroEligible: true });
+    const result = await prepareProjectColorRoot({
+      workspaceRoot,
+      projectId,
+      rootId,
+      jobId: 'job-color-clear-stale-prepare-blocker',
+      executor: createFakeExecutor(),
+    });
+
+    expect(result.blockingReasons).toEqual([]);
+    const savedRoot = (await loadColorCurrent(projectRoot)).roots.find(root => root.rootId === rootId);
+    expect(savedRoot).toMatchObject({
+      mirrorStatus: 'synced',
+      timelineStatus: 'ready',
+      blockingReasons: [],
+    });
+  });
+
+  it('rejects legacy promote after direct-root export', async () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-color-superseded';
     const { rootId } = await seedSingleRootProject({
@@ -581,15 +1360,6 @@ describe('project color actions', () => {
       action: 'validate_batch',
       batchId: batch1.batchId,
     });
-    const batch2 = await executeProjectColorRoot({
-      workspaceRoot,
-      projectId,
-      rootId,
-      action: 'execute_root',
-      executor,
-    });
-    expect(batch2.batchId).not.toBe(batch1.batchId);
-
     await expect(promoteProjectColorBatch({
       workspaceRoot,
       projectId,
@@ -656,6 +1426,9 @@ describe('project color actions', () => {
         async executeRoot() {
           throw new Error('not used');
         },
+        async saveDrpSnapshot(input) {
+          return createFakeExecutor().saveDrpSnapshot(input);
+        },
       },
     });
 
@@ -705,6 +1478,46 @@ describe('project color actions', () => {
     expect((await loadColorCurrent(projectRoot)).hostPreflight?.status).toBe('degraded');
   });
 
+  it('saves and registers DRP snapshots as latest Resolve project truth', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-color-drp-snapshot';
+    const { projectRoot, rootId } = await seedSingleRootProject({
+      workspaceRoot,
+      projectId,
+      projectName: 'Project Color DRP Snapshot',
+    });
+    const executor = createFakeExecutor();
+
+    const saved = await snapshotProjectColorDrp({
+      workspaceRoot,
+      projectId,
+      rootId,
+      executor,
+    });
+    expect(saved.snapshot?.mode).toBe('manual');
+    expect((await loadColorResolveProjectMap(projectRoot)).projects[saved.snapshot!.projectName]?.latestSnapshot?.snapshotPath)
+      .toBe(saved.snapshot?.snapshotPath);
+
+    const externalPath = join(projectRoot, '.fixtures', 'manual-export.drp');
+    await mkdir(join(projectRoot, '.fixtures'), { recursive: true });
+    await writeFile(externalPath, 'external drp', 'utf-8');
+    const registered = await registerExternalColorDrpSnapshot({
+      workspaceRoot,
+      projectId,
+      rootId,
+      drpPath: externalPath,
+    });
+    const [resolveMap, current] = await Promise.all([
+      loadColorResolveProjectMap(projectRoot),
+      loadColorCurrent(projectRoot),
+    ]);
+    expect(registered.snapshot.mode).toBe('external');
+    expect(resolveMap.projects[registered.snapshot.projectName]?.latestSnapshot?.snapshotPath)
+      .toBe(registered.snapshot.snapshotPath);
+    expect(current.roots.find(root => root.rootId === rootId)?.latestDrpSnapshot?.snapshotPath)
+      .toBe(registered.snapshot.snapshotPath);
+  });
+
   it('retries transient host failures before succeeding', async () => {
     vi.useFakeTimers();
     const workspaceRoot = await createWorkspace();
@@ -732,11 +1545,14 @@ describe('project color actions', () => {
         }
         return createFakeExecutor().prepareRoot(input);
       },
-      async syncGroups() {
-        throw new Error('not used');
+      async syncGroups(input) {
+        return createFakeExecutor().syncGroups(input);
       },
       async executeRoot() {
         throw new Error('not used');
+      },
+      async saveDrpSnapshot(input) {
+        return createFakeExecutor().saveDrpSnapshot(input);
       },
     };
 
@@ -780,6 +1596,9 @@ describe('project color actions', () => {
       },
       async executeRoot() {
         throw new Error('not used');
+      },
+      async saveDrpSnapshot(input) {
+        return createFakeExecutor().saveDrpSnapshot(input);
       },
     };
 
@@ -851,8 +1670,12 @@ describe('project color actions', () => {
     const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Project Color Prepare All');
     const rawFail = join(projectRoot, '.fixtures', 'root-z-raw');
     const rawReady = join(projectRoot, '.fixtures', 'root-a-raw');
+    const currentFail = join(projectRoot, '.fixtures', 'root-z-current');
+    const currentReady = join(projectRoot, '.fixtures', 'root-a-current');
     await mkdir(join(rawFail, 'day1'), { recursive: true });
     await mkdir(join(rawReady, 'day1'), { recursive: true });
+    await mkdir(currentFail, { recursive: true });
+    await mkdir(currentReady, { recursive: true });
     await writeFile(join(rawFail, 'day1', 'A001.mov'), 'raw-z', 'utf-8');
     await writeFile(join(rawReady, 'day1', 'A001.mov'), 'raw-a', 'utf-8');
     await saveIngestRoots(projectRoot, {
@@ -862,6 +1685,10 @@ describe('project color actions', () => {
         priority: 1,
         path: '/media/current/root-z',
         rawPath: '/media/raw/root-z',
+        alternatePaths: [{
+          path: currentFail,
+          rawPath: rawFail,
+        }],
         enabled: true,
       }, {
         id: 'root-a',
@@ -869,18 +1696,11 @@ describe('project color actions', () => {
         priority: 2,
         path: '/media/current/root-a',
         rawPath: '/media/raw/root-a',
+        alternatePaths: [{
+          path: currentReady,
+          rawPath: rawReady,
+        }],
         enabled: true,
-      }],
-    });
-    await saveProjectDeviceMap(projectRoot, projectId, {
-      roots: [{
-        rootId: 'root-z',
-        localPath: join(projectRoot, '.fixtures', 'root-z-current'),
-        rawLocalPath: rawFail,
-      }, {
-        rootId: 'root-a',
-        localPath: join(projectRoot, '.fixtures', 'root-a-current'),
-        rawLocalPath: rawReady,
       }],
     });
     mockColorMetadata();
@@ -924,7 +1744,7 @@ describe('project color actions', () => {
       {
         rootId: 'root-a',
         status: 'succeeded',
-        actionSummary: 'Resolve host root prep 已完成。 Kairos 已写入 1 个 Resolve Groups 快照。 如需复核 Resolve 内调整，可继续运行 Sync Groups。',
+        actionSummary: 'Resolve host root prep 已完成：1/1 chunks ready。 Kairos 已写入 1 个 Resolve Groups 快照。 如需复核 Resolve 内调整，可继续运行 Sync Groups。',
       },
     ]);
     expect(result.detail).toBe('Prepare All Roots 完成：1 个成功，1 个失败。');
@@ -961,9 +1781,12 @@ describe('project color actions', () => {
     const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Project Color Export All');
     const rawFail = join(projectRoot, '.fixtures', 'root-fail-raw');
     const rawReady = join(projectRoot, '.fixtures', 'root-ready-raw');
+    const currentFail = join(projectRoot, '.fixtures', 'root-fail-current');
     const currentReady = join(projectRoot, '.fixtures', 'root-ready-current');
     await mkdir(join(rawFail, 'day1'), { recursive: true });
     await mkdir(join(rawReady, 'day1'), { recursive: true });
+    await mkdir(currentFail, { recursive: true });
+    await mkdir(currentReady, { recursive: true });
     await writeFile(join(rawFail, 'day1', 'A001.mov'), 'raw-fail', 'utf-8');
     await writeFile(join(rawReady, 'day1', 'A001.mov'), 'raw-ready', 'utf-8');
     await saveIngestRoots(projectRoot, {
@@ -973,6 +1796,10 @@ describe('project color actions', () => {
         priority: 1,
         path: '/media/current/root-fail',
         rawPath: '/media/raw/root-fail',
+        alternatePaths: [{
+          path: currentFail,
+          rawPath: rawFail,
+        }],
         enabled: true,
         color: {
           renderPreset: {
@@ -987,6 +1814,10 @@ describe('project color actions', () => {
         priority: 2,
         path: '/media/current/root-ready',
         rawPath: '/media/raw/root-ready',
+        alternatePaths: [{
+          path: currentReady,
+          rawPath: rawReady,
+        }],
         enabled: true,
         color: {
           renderPreset: {
@@ -996,17 +1827,6 @@ describe('project color actions', () => {
             bitrateKbps: 120,
           },
         },
-      }],
-    });
-    await saveProjectDeviceMap(projectRoot, projectId, {
-      roots: [{
-        rootId: 'root-fail',
-        localPath: join(projectRoot, '.fixtures', 'root-fail-current'),
-        rawLocalPath: rawFail,
-      }, {
-        rootId: 'root-ready',
-        localPath: currentReady,
-        rawLocalPath: rawReady,
       }],
     });
     mockColorMetadata();

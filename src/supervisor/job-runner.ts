@@ -255,9 +255,10 @@ async function runJob(
         | 'promote_batch'
         | 'prepare_all_roots'
         | 'export_all_roots'
+        | 'save_drp_snapshot'
         | undefined;
       const rootId = toStringValue(args.rootId);
-      if (!rootId && !['prepare_all_roots', 'export_all_roots'].includes(action || '')) {
+      if (!rootId && !['prepare_all_roots', 'export_all_roots', 'save_drp_snapshot'].includes(action || '')) {
         throw new BlockedJobError(['color requires args.rootId for root-scoped actions']);
       }
       try {
@@ -270,6 +271,8 @@ async function runJob(
             ? args.clipKeys.filter((item): item is string => typeof item === 'string' && Boolean(item.trim()))
             : undefined,
           batchId: toStringValue(args.batchId) || undefined,
+          overwriteConfirmed: args.overwriteConfirmed === true,
+          overwritePlanHash: toStringValue(args.overwritePlanHash) || undefined,
           jobId,
         });
         return {

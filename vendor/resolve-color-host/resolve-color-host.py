@@ -15,7 +15,14 @@ CCREATIVE_SIGNAL_KEYS = (
     "hlg",
     "rec709",
     "lowlight",
+    "cool-cyan",
+    "green-cyan",
+    "green",
+    "warm",
+    "mixed",
 )
+
+CCOLOR_CAST_GROUP_CLASSES = ("cool-cyan", "green-cyan", "green", "warm", "mixed")
 
 
 def main() -> int:
@@ -37,6 +44,8 @@ def main() -> int:
             result = sync_groups(resolve, request_input)
         elif operation == "execute_root":
             result = execute_root(resolve, request_input)
+        elif operation == "save_drp_snapshot":
+            result = save_drp_snapshot(resolve, request_input)
         else:
             raise HostError("invalid_operation", f"Unsupported operation: {operation}")
 
@@ -118,12 +127,14 @@ def prepare_root(resolve, payload):
     media_storage = require_method(resolve, "GetMediaStorage")()
     namespace_folder = ensure_namespace_folder(media_pool, payload["rootNamespace"])
     timeline = ensure_timeline(project, media_pool, payload["gradingTimelineName"])
+    reset_timeline = payload.get("resetTimeline") is not False
     apply_timeline_spec(project, payload.get("timelineSpec"), timeline)
+    save_project(project, resolve)
     clip_requests = normalize_clip_requests(payload.get("clips"))
     previous_group_names_by_clip = capture_timeline_group_assignments(timeline, payload["rawLocalPath"])
-    repair_template = get_repair_template_asset(payload)
+    repair_templates = get_repair_template_assets(payload)
     donor_timeline = None
-    repair_template_timeline = None
+    repair_template_timelines = {}
     if has_timeline_video_items(timeline):
         donor_timeline = duplicate_timeline(
             project,
@@ -135,11 +146,11 @@ def prepare_root(resolve, payload):
     try:
         safe_call(resolve, "OpenPage", "edit")
         safe_call(project, "SetCurrentTimeline", timeline)
-        if repair_template["kind"] == "default-drt":
-            repair_template_timeline = import_repair_template_timeline(
-                media_pool,
-                repair_template["path"],
-            )
+        repair_template_timelines = import_repair_template_timelines(
+            media_pool,
+            repair_templates,
+            clip_requests,
+        )
         namespace_state = collect_namespace_state(namespace_folder)
         prepared_entries, sync_summary = sync_namespace_clips(
             media_pool,
@@ -148,17 +159,30 @@ def prepare_root(resolve, payload):
             namespace_state,
             clip_requests,
         )
+        save_project(project, resolve)
         ordered_entries = sort_clip_entries(prepared_entries)
 
-        try:
-            clear_timeline_items(timeline)
-        except HostError as error:
-            if error.code != "resolve_timeline_clear_failed":
-                raise
-            timeline = recreate_timeline(media_pool, project, timeline, payload["gradingTimelineName"])
-            apply_timeline_spec(project, payload.get("timelineSpec"), timeline)
-        append_clips_to_timeline(project, media_pool, timeline, ordered_entries)
+        existing_timeline_items_by_clip = {} if reset_timeline else build_timeline_item_map(timeline, payload["rawLocalPath"])
+        if reset_timeline:
+            try:
+                clear_timeline_items(timeline)
+            except HostError as error:
+                if error.code != "resolve_timeline_clear_failed":
+                    raise
+                timeline = recreate_timeline(media_pool, project, timeline, payload["gradingTimelineName"])
+                apply_timeline_spec(project, payload.get("timelineSpec"), timeline)
+            append_entries = ordered_entries
+        else:
+            append_entries = [
+                entry
+                for entry in ordered_entries
+                if entry["rawRelativePath"] not in existing_timeline_items_by_clip
+            ]
+        append_clips_to_timeline(project, media_pool, timeline, append_entries)
+        save_project(project, resolve)
         timeline_item_by_clip_key = build_timeline_item_map(timeline, payload["rawLocalPath"])
+        transform_summary = apply_clip_timeline_transforms(timeline_item_by_clip_key, clip_requests)
+        save_project(project, resolve)
         group_states = assign_generated_groups(project, ordered_entries, timeline_item_by_clip_key, previous_group_names_by_clip)
         group_transform_summaries = apply_group_preclip_transforms(project, group_states)
         transform_blockers = dedupe_strings([
@@ -181,9 +205,10 @@ def prepare_root(resolve, payload):
             payload["rawLocalPath"],
             clip_requests,
             donor_timeline,
-            repair_template,
-            repair_template_timeline,
+            repair_templates,
+            repair_template_timelines,
         )
+        save_project(project, resolve)
 
         groups_snapshot = build_groups_snapshot(
             payload["rootId"],
@@ -195,7 +220,7 @@ def prepare_root(resolve, payload):
             group_transform_summaries=group_transform_summaries,
             repair_seed_by_clip=repair_seed_by_clip,
         )
-        save_project(project)
+        save_project(project, resolve)
         return {
             "resolveProjectName": payload["resolveProjectName"],
             "gradingTimelineName": payload["gradingTimelineName"],
@@ -205,6 +230,11 @@ def prepare_root(resolve, payload):
             "hostSummary": {
                 "rootNamespace": payload["rootNamespace"],
                 "clipCount": len(ordered_entries),
+                "timelineName": payload["gradingTimelineName"],
+                "chunkId": payload.get("chunkId"),
+                "resetTimeline": reset_timeline,
+                "appendedClipCount": len(append_entries),
+                "skippedExistingTimelineClipCount": len(ordered_entries) - len(append_entries),
                 "importedClipCount": sync_summary["imported"],
                 "movedClipCount": sync_summary["moved"],
                 "reusedClipCount": sync_summary["reused"],
@@ -217,11 +247,14 @@ def prepare_root(resolve, payload):
                 "detectedProfile": summarize_root_transform_value(group_transform_summaries, "detectedProfile"),
                 "effectiveProfile": summarize_root_transform_value(group_transform_summaries, "effectiveProfile"),
                 "transformStatus": summarize_root_transform_status(group_transform_summaries),
+                **transform_summary,
+                **summarize_repair_template_state(repair_templates, repair_seed_by_clip),
             },
         }
     finally:
         delete_timeline(media_pool, donor_timeline)
-        delete_timeline(media_pool, repair_template_timeline)
+        for repair_template_timeline in repair_template_timelines.values():
+            delete_timeline(media_pool, repair_template_timeline)
 
 
 def preflight(resolve, payload):
@@ -290,10 +323,8 @@ def execute_root(resolve, payload):
     timeline = ensure_named_timeline(project, payload["gradingTimelineName"])
     require_method(project, "SetCurrentTimeline")(timeline)
 
-    target_dir = Path(payload["stagingRoot"]).expanduser().resolve()
-    target_dir.mkdir(parents=True, exist_ok=True)
-    render_dir = target_dir / "__resolve_render__"
-    prepare_clip_staging_dir(render_dir)
+    output_root = Path(payload["outputRoot"]).expanduser().resolve()
+    output_root.mkdir(parents=True, exist_ok=True)
 
     render_format = normalize_render_format(payload.get("renderPreset", {}))
     selected_clips = normalize_render_batch_clips(payload.get("clips"), sanitize_extension(render_format.get("container") or "mp4"))
@@ -301,38 +332,93 @@ def execute_root(resolve, payload):
         raise HostError("resolve_root_batch_empty", "Root batch does not contain any render clips.")
 
     media_pool = require_method(project, "GetMediaPool")()
+    ensure_render_queue_empty(project)
     safe_call(resolve, "OpenPage", "edit")
-    save_project(project)
-    temp_timeline = duplicate_timeline(project, timeline, build_temp_render_timeline_name(payload["gradingTimelineName"]))
+    save_project(project, resolve)
+    normalized_entries = []
+    render_jobs = []
+    temp_timelines = []
+    render_started = False
     try:
-        require_method(project, "SetCurrentTimeline")(temp_timeline)
-        prune_timeline_to_selected_clips(temp_timeline, payload["rawLocalPath"], {
-            clip["rawRelativePath"] for clip in selected_clips
-        })
         safe_call(resolve, "OpenPage", "deliver")
         resolved_render_format = set_render_format(project, render_format)
         selected_clips = normalize_render_batch_clips(payload.get("clips"), resolved_render_format["extension"])
-        safe_call(project, "DeleteAllRenderJobs")
-        queued_job_id = queue_root_render_job(project, render_dir, resolved_render_format, selected_clips)
-        start_rendering(project, [queued_job_id])
-        wait_for_render(project)
-        normalized_entries = adopt_root_render_outputs(render_dir, target_dir, selected_clips, resolved_render_format["extension"])
+        save_project(project, resolve)
+
+        render_specs = build_day_render_specs(selected_clips, output_root)
+        for spec in render_specs:
+            temp_timeline = duplicate_timeline(project, timeline, build_temp_render_timeline_name(payload["gradingTimelineName"]))
+            temp_timelines.append(temp_timeline)
+            require_method(project, "SetCurrentTimeline")(temp_timeline)
+            selected_keys = {clip["rawRelativePath"] for clip in spec["clips"]}
+            prune_timeline_to_selected_clips(temp_timeline, payload["rawLocalPath"], selected_keys)
+            assert_timeline_contains_selected_clips(temp_timeline, payload["rawLocalPath"], selected_keys)
+            safe_call(resolve, "OpenPage", "deliver")
+            spec["targetDir"].mkdir(parents=True, exist_ok=True)
+            queued_job_id = queue_root_render_job(project, spec["targetDir"], resolved_render_format, spec["clips"])
+            spec["jobId"] = str(queued_job_id)
+            render_jobs.append({
+                "jobId": str(queued_job_id),
+                "timelineName": safe_call(temp_timeline, "GetName") or payload["gradingTimelineName"],
+                "targetDir": str(spec["targetDir"]),
+                "clipCount": len(spec["clips"]),
+            })
+
+        save_project(project, resolve)
+        start_rendering(project, None)
+        render_started = True
+        wait_for_render(project, [job["jobId"] for job in render_jobs])
+        normalized_entries = collect_root_direct_outputs(
+            render_specs,
+            selected_clips,
+            resolved_render_format["extension"],
+        )
     finally:
+        if not render_started:
+            cleanup_created_render_jobs(project, render_jobs)
         safe_call(project, "SetCurrentTimeline", timeline)
         safe_call(resolve, "OpenPage", "edit")
-        delete_timeline(media_pool, temp_timeline)
+        for temp_timeline in temp_timelines:
+            delete_timeline(media_pool, temp_timeline)
+        save_project(project, resolve)
 
+    entries_by_key = {entry["rawRelativePath"]: entry for entry in normalized_entries}
+    normalized_entries = [
+        entries_by_key[clip["rawRelativePath"]]
+        for clip in selected_clips
+        if clip["rawRelativePath"] in entries_by_key
+    ]
     return {
         "renderedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "entries": normalized_entries,
+        "renderJobs": render_jobs,
         "hostSummary": {
             "timelineName": payload["gradingTimelineName"],
             "selectionMode": payload.get("selectionMode") or "all",
             "clipCount": len(selected_clips),
+            "outputRoot": str(output_root),
+            "renderJobCount": len(render_jobs),
             "resolvedFormat": resolved_render_format["format"],
             "resolvedCodec": resolved_render_format["videoCodec"],
             "audioCodec": resolved_render_format["audioCodec"],
             "bitrateKbps": resolved_render_format["bitrateKbps"],
+        },
+    }
+
+
+def save_drp_snapshot(resolve, payload):
+    project = ensure_project(resolve, payload["resolveProjectName"])
+    save_project(project, resolve)
+    snapshot = export_project_snapshot(resolve, project, payload, "manual", "save_drp_snapshot")
+    if not snapshot:
+        raise HostError(
+            "resolve_drp_snapshot_path_missing",
+            "save_drp_snapshot requires snapshotRoot.",
+        )
+    return {
+        "snapshot": snapshot,
+        "hostSummary": {
+            "drpSnapshots": [snapshot],
         },
     }
 
@@ -638,6 +724,50 @@ def append_clips_to_timeline(project, media_pool, timeline, clip_entries):
             )
 
 
+def apply_clip_timeline_transforms(timeline_item_by_clip_key, clip_requests):
+    applied = 0
+    portrait = 0
+    skipped = 0
+    for clip_request in clip_requests:
+        if stringify_signal_value(clip_request.get("orientationStatus")) == "portrait":
+            portrait += 1
+        transform = clip_request.get("timelineTransform")
+        if not isinstance(transform, dict):
+            continue
+        item = timeline_item_by_clip_key.get(clip_request["rawRelativePath"])
+        if item is None:
+            skipped += 1
+            continue
+        apply_timeline_item_transform(item, transform, clip_request["rawRelativePath"])
+        applied += 1
+    return {
+        "portraitClipCount": portrait,
+        "timelineTransformClipCount": applied,
+        "timelineTransformSkippedClipCount": skipped,
+    }
+
+
+def apply_timeline_item_transform(item, transform, clip_key):
+    property_map = {
+        "RotationAngle": transform.get("rotationAngle"),
+        "ZoomGang": transform.get("zoomGang"),
+        "ZoomX": transform.get("zoomX"),
+        "ZoomY": transform.get("zoomY"),
+        "Pan": transform.get("pan"),
+        "Tilt": transform.get("tilt"),
+    }
+    for property_name, value in property_map.items():
+        if value is None:
+            continue
+        result = safe_call(item, "SetProperty", property_name, value)
+        if result is False:
+            raise HostError(
+                "resolve_timeline_transform_failed",
+                f"Unable to set {property_name} for portrait clip: {clip_key}",
+                {"clipKey": clip_key, "property": property_name, "value": value},
+            )
+
+
 def build_timeline_item_map(timeline, raw_local_path):
     clip_key_to_item = {}
     for item in iter_timeline_video_items(timeline):
@@ -656,24 +786,63 @@ def has_timeline_video_items(timeline):
     return next(iter_timeline_video_items(timeline), None) is not None
 
 
-def get_repair_template_asset(payload):
-    explicit_drt = stringify_signal_value(payload.get("repairDrtPath"))
-    drt_candidate = Path(explicit_drt).expanduser() if explicit_drt else Path(__file__).resolve().parents[2] / "config" / "default.drt"
-    if drt_candidate.is_file():
-        return {"kind": "default-drt", "path": drt_candidate}
+def get_repair_template_assets(payload):
+    config_root = Path(__file__).resolve().parents[2] / "config"
+    supplied_templates = payload.get("repairTemplates") if isinstance(payload.get("repairTemplates"), dict) else {}
+    explicit_default_drt = stringify_signal_value(payload.get("repairDrtPath"))
+    candidates = {
+        "default": stringify_signal_value(supplied_templates.get("default"))
+        or explicit_default_drt
+        or str(config_root / "default.drt"),
+        "portrait-90": stringify_signal_value(supplied_templates.get("portrait-90"))
+        or str(config_root / "gyroflow-portrait-90.drt"),
+        "portrait--90": stringify_signal_value(supplied_templates.get("portrait--90"))
+        or str(config_root / "gyroflow-portrait--90.drt"),
+    }
+    return {
+        key: build_repair_template_asset(key, path)
+        for key, path in candidates.items()
+    }
 
-    explicit_drx = stringify_signal_value(payload.get("repairDrxPath"))
-    drx_candidate = Path(explicit_drx).expanduser() if explicit_drx else Path(__file__).resolve().parents[2] / "config" / "default.drx"
-    if not drx_candidate.is_file():
-        raise HostError(
-            "resolve_repair_template_missing",
-            f"Missing clip repair template asset: {drx_candidate.name}",
-            {
-                "drtPath": str(drt_candidate),
-                "drxPath": str(drx_candidate),
-            },
-        )
-    return {"kind": "default-drx", "path": drx_candidate}
+
+def build_repair_template_asset(template_key, path_value):
+    drt_candidate = Path(path_value).expanduser()
+    if drt_candidate.is_file():
+        return {
+            "key": template_key,
+            "kind": "default-drt" if template_key == "default" else "orientation-drt",
+            "status": "default-drt" if template_key == "default" else f"{template_key}-drt",
+            "path": drt_candidate,
+            "drtPath": str(drt_candidate),
+            "hash": hash_file(drt_candidate),
+        }
+
+    if template_key == "default":
+        return {
+            "key": template_key,
+            "kind": "missing-drt",
+            "status": "skipped-missing-drt",
+            "path": None,
+            "drtPath": str(drt_candidate),
+            "skippedReason": "Missing config/default.drt; skipped automatic clip repair seed.",
+        }
+    return {
+        "key": template_key,
+        "kind": "missing-orientation-drt",
+        "status": "skipped-missing-orientation-drt",
+        "path": None,
+        "drtPath": str(drt_candidate),
+        "skippedReason": f"Missing {drt_candidate.name}; skipped automatic portrait Gyro seed.",
+        "disableGyro": True,
+    }
+
+
+def hash_file(path):
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def import_repair_template_timeline(media_pool, template_path):
@@ -695,6 +864,35 @@ def import_repair_template_timeline(media_pool, template_path):
     return timeline
 
 
+def import_repair_template_timelines(media_pool, repair_templates, clip_requests):
+    timelines = {}
+    for template_key in sorted({resolve_clip_repair_template_key(clip) for clip in clip_requests}):
+        template = repair_templates.get(template_key) or repair_templates.get("default")
+        if not template or template.get("path") is None:
+            continue
+        timelines[template_key] = import_repair_template_timeline(media_pool, template["path"])
+    return timelines
+
+
+def resolve_clip_repair_template_key(clip_request):
+    key = stringify_signal_value(clip_request.get("repairTemplateKey"))
+    return key or "default"
+
+
+def get_clip_repair_template(repair_templates, clip_request):
+    key = resolve_clip_repair_template_key(clip_request)
+    return repair_templates.get(key) or repair_templates.get("default") or {}
+
+
+def apply_template_effective_clip_request(clip_request, repair_template):
+    if not repair_template.get("disableGyro"):
+        return clip_request
+    return {
+        **clip_request,
+        "gyroEligible": False,
+    }
+
+
 def find_first_timeline_video_item(timeline):
     return next(iter_timeline_video_items(timeline), None)
 
@@ -713,19 +911,55 @@ def list_requested_repair_kinds(clip_request):
     return ["gyro", "user1", "user2", "dehaze", "nr"]
 
 
+def list_available_repair_donor_kinds(repair_template_kind):
+    return [repair_template_kind] if repair_template_kind in ("default-drt", "orientation-drt") else []
+
+
+def summarize_repair_template_state(repair_templates, repair_seed_by_clip):
+    seed_states = list((repair_seed_by_clip or {}).values())
+    statuses = dedupe_strings([
+        stringify_signal_value(state.get("repairTemplateStatus"))
+        for state in seed_states
+    ])
+    skipped_reasons = dedupe_strings([
+        stringify_signal_value(state.get("repairSeedSkippedReason"))
+        for state in seed_states
+    ])
+    template_paths = {
+        key: stringify_signal_value(template.get("drtPath"))
+        for key, template in (repair_templates or {}).items()
+        if stringify_signal_value(template.get("drtPath"))
+    }
+    summary = {
+        "repairTemplateStatus": statuses[0] if len(statuses) == 1 else ("mixed" if statuses else "unknown"),
+        "repairTemplateStatuses": statuses,
+        "repairTemplatePaths": template_paths,
+        "repairSeededClipCount": sum(1 for state in seed_states if state.get("seededRepairDonorKind")),
+        "repairPreservedClipCount": sum(1 for state in seed_states if state.get("copiedExistingGrade")),
+        "repairResetClipCount": sum(1 for state in seed_states if state.get("resetExistingGradeBeforeTemplate")),
+        "repairSeedSkippedClipCount": sum(1 for state in seed_states if state.get("repairSeedSkippedReason")),
+        "repairOrientationTemplateMissingClipCount": sum(
+            1 for state in seed_states
+            if state.get("repairTemplateStatus") == "skipped-missing-orientation-drt"
+        ),
+        "portraitClipCount": sum(1 for state in seed_states if state.get("orientationStatus") == "portrait"),
+        "timelineTransformClipCount": sum(1 for state in seed_states if state.get("timelineTransform")),
+    }
+    if skipped_reasons:
+        summary["repairSeedSkippedReason"] = "；".join(skipped_reasons)
+    return summary
+
+
 def seed_clip_repairs(
     timeline,
     raw_local_path,
     clip_requests,
     donor_timeline=None,
-    repair_template=None,
-    repair_template_timeline=None,
+    repair_templates=None,
+    repair_template_timelines=None,
 ):
     target_items_by_clip = build_timeline_item_map(timeline, raw_local_path)
     donor_items_by_clip = build_timeline_item_map(donor_timeline, raw_local_path) if donor_timeline else {}
-    repair_template_kind = stringify_signal_value((repair_template or {}).get("kind"))
-    repair_template_path = (repair_template or {}).get("path")
-    repair_template_source_item = find_first_timeline_video_item(repair_template_timeline) if repair_template_timeline else None
     repair_seed_by_clip = {}
     invalid_repair_layouts = []
     for clip_request in clip_requests:
@@ -738,15 +972,33 @@ def seed_clip_repairs(
             )
         copied_existing_grade = False
         rebuilt_legacy_grade = False
+        reset_existing_grade_before_template = False
         seeded_repair_donor_kind = None
         forced_enabled_node_indices = []
         forced_disabled_node_indices = []
+        repair_template_key = resolve_clip_repair_template_key(clip_request)
+        repair_template = get_clip_repair_template(repair_templates or {}, clip_request)
+        effective_clip_request = apply_template_effective_clip_request(clip_request, repair_template)
+        repair_template_kind = stringify_signal_value(repair_template.get("kind"))
+        repair_template_status = stringify_signal_value(repair_template.get("status")) or repair_template_kind
+        repair_template_hash = stringify_signal_value(repair_template.get("hash"))
+        repair_seed_skipped_reason = stringify_signal_value(repair_template.get("skippedReason"))
+        available_repair_donor_kinds = list_available_repair_donor_kinds(repair_template_kind)
+        repair_template_path = repair_template.get("path")
+        repair_template_timeline = (repair_template_timelines or {}).get(repair_template_key)
+        repair_template_source_item = find_first_timeline_video_item(repair_template_timeline) if repair_template_timeline else None
         donor_item = donor_items_by_clip.get(clip_key)
+        force_template_reseed = should_force_repair_template_reseed(
+            clip_request,
+            repair_template,
+            repair_template_source_item,
+        )
         if (
             donor_item is not None
             and donor_item is not target_item
             and clip_like_has_grade_content(donor_item)
             and clip_like_has_canonical_repair_layout(donor_item)
+            and not force_template_reseed
         ):
             result = safe_call(donor_item, "CopyGrades", [target_item])
             if result is False:
@@ -755,20 +1007,23 @@ def seed_clip_repairs(
                     f"Unable to preserve existing clip repair grade for: {clip_key}",
             )
             copied_existing_grade = True
-            node_default_state = apply_reserved_node_defaults(target_item, clip_request, reset_tail_reserved_nodes=False)
+            node_default_state = apply_reserved_node_defaults(target_item, effective_clip_request, reset_tail_reserved_nodes=False)
             forced_enabled_node_indices = node_default_state["enabled"]
             forced_disabled_node_indices = node_default_state["disabled"]
         elif repair_template_source_item is not None:
             rebuilt_legacy_grade = donor_item is not None and clip_like_has_grade_content(donor_item)
+            if force_template_reseed:
+                reset_clip_repair_grade(target_item, clip_key)
+                reset_existing_grade_before_template = True
             result = safe_call(repair_template_source_item, "CopyGrades", [target_item])
             if result is False:
                 raise HostError(
                     "resolve_clip_repair_seed_failed",
                     f"Unable to seed clip repair template grade for: {clip_key}",
-                    {"repairTemplateKind": repair_template_kind},
+                    {"repairTemplateKind": repair_template_kind, "repairTemplateKey": repair_template_key},
                 )
             seeded_repair_donor_kind = repair_template_kind or "default-drt"
-            node_default_state = apply_reserved_node_defaults(target_item, clip_request, reset_tail_reserved_nodes=True)
+            node_default_state = apply_reserved_node_defaults(target_item, effective_clip_request, reset_tail_reserved_nodes=True)
             forced_enabled_node_indices = node_default_state["enabled"]
             forced_disabled_node_indices = node_default_state["disabled"]
             if not clip_like_has_canonical_repair_layout(target_item):
@@ -776,19 +1031,22 @@ def seed_clip_repairs(
                     "clipKey": clip_key,
                     "snapshot": build_clip_repair_snapshot(target_item, clip_request, {
                         "copiedExistingGrade": False,
+                        "resetExistingGradeBeforeTemplate": reset_existing_grade_before_template,
                         "rebuiltLegacyGrade": rebuilt_legacy_grade,
                         "requestedRepairKinds": list_requested_repair_kinds(clip_request),
                         "seededRepairDonorKind": seeded_repair_donor_kind,
-                        "availableRepairDonorKinds": [repair_template_kind] if repair_template_kind else [],
+                        "availableRepairDonorKinds": available_repair_donor_kinds,
                         "forcedEnabledNodeIndices": forced_enabled_node_indices,
                         "forcedDisabledNodeIndices": forced_disabled_node_indices,
+                        "repairTemplateKey": repair_template_key,
+                        "repairTemplateStatus": repair_template_status,
                     }),
                 })
-        elif repair_template_path is not None:
+        elif repair_template_path is not None and repair_template_kind == "default-drx":
             rebuilt_legacy_grade = donor_item is not None and clip_like_has_grade_content(donor_item)
             apply_repair_drx(target_item, repair_template_path, clip_key)
             seeded_repair_donor_kind = repair_template_kind or "default-drx"
-            node_default_state = apply_reserved_node_defaults(target_item, clip_request, reset_tail_reserved_nodes=True)
+            node_default_state = apply_reserved_node_defaults(target_item, effective_clip_request, reset_tail_reserved_nodes=True)
             forced_enabled_node_indices = node_default_state["enabled"]
             forced_disabled_node_indices = node_default_state["disabled"]
             if not clip_like_has_canonical_repair_layout(target_item):
@@ -796,28 +1054,48 @@ def seed_clip_repairs(
                     "clipKey": clip_key,
                     "snapshot": build_clip_repair_snapshot(target_item, clip_request, {
                         "copiedExistingGrade": False,
+                        "resetExistingGradeBeforeTemplate": reset_existing_grade_before_template,
                         "rebuiltLegacyGrade": rebuilt_legacy_grade,
                         "requestedRepairKinds": list_requested_repair_kinds(clip_request),
                         "seededRepairDonorKind": seeded_repair_donor_kind,
-                        "availableRepairDonorKinds": [repair_template_kind] if repair_template_kind else [],
+                        "availableRepairDonorKinds": available_repair_donor_kinds,
                         "forcedEnabledNodeIndices": forced_enabled_node_indices,
                         "forcedDisabledNodeIndices": forced_disabled_node_indices,
+                        "repairTemplateKey": repair_template_key,
+                        "repairTemplateStatus": repair_template_status,
                     }),
                 })
 
-        repair_seed_by_clip[clip_key] = {
+        repair_seed_state = {
             "copiedExistingGrade": copied_existing_grade,
+            "resetExistingGradeBeforeTemplate": reset_existing_grade_before_template,
             "rebuiltLegacyGrade": rebuilt_legacy_grade,
             "requestedRepairKinds": list_requested_repair_kinds(clip_request),
             "seededRepairDonorKind": seeded_repair_donor_kind,
-            "availableRepairDonorKinds": [repair_template_kind] if repair_template_kind else [],
+            "availableRepairDonorKinds": available_repair_donor_kinds,
             "forcedEnabledNodeIndices": forced_enabled_node_indices,
             "forcedDisabledNodeIndices": forced_disabled_node_indices,
+            "repairTemplateKey": repair_template_key,
+            "repairTemplateStatus": repair_template_status,
+            "repairTemplateHash": repair_template_hash,
+            "previousRepairTemplateHash": stringify_signal_value(clip_request.get("previousRepairTemplateHash")),
+            "forcedRepairTemplateReseed": force_template_reseed,
+            "orientationStatus": stringify_signal_value(clip_request.get("orientationStatus")),
+            "timelineTransform": clip_request.get("timelineTransform") if isinstance(clip_request.get("timelineTransform"), dict) else None,
+            "gyroDataAvailable": clip_request.get("gyroDataAvailable") is True or clip_request.get("gyroEligible") is True,
+            "effectiveGyroEligible": effective_clip_request.get("gyroEligible") is True,
         }
+        if (
+            repair_seed_skipped_reason
+            and not copied_existing_grade
+            and not seeded_repair_donor_kind
+        ):
+            repair_seed_state["repairSeedSkippedReason"] = repair_seed_skipped_reason
+        repair_seed_by_clip[clip_key] = repair_seed_state
     if invalid_repair_layouts:
         raise HostError(
-            "resolve_repair_drx_invalid",
-            "Applied clip repair DRX does not match the expected Gyro -> Dehaze -> User1 -> User2 -> NR contract.",
+            "resolve_repair_template_invalid_layout",
+            "Applied clip repair template does not match the expected Gyro -> Dehaze -> User1 -> User2 -> NR contract.",
             {
                 "templateKind": repair_template_kind,
                 "templatePath": str(repair_template_path) if repair_template_path is not None else None,
@@ -858,6 +1136,44 @@ def apply_repair_drx(item, repair_drx_path, clip_key):
         )
 
 
+def should_force_repair_template_reseed(clip_request, repair_template, repair_template_source_item):
+    if repair_template_source_item is None:
+        return False
+    template_key = resolve_clip_repair_template_key(clip_request)
+    if template_key not in ("portrait-90", "portrait--90"):
+        return False
+    current_hash = stringify_signal_value(repair_template.get("hash"))
+    if not current_hash:
+        return False
+    previous_hash = stringify_signal_value(clip_request.get("previousRepairTemplateHash"))
+    return previous_hash != current_hash
+
+
+def reset_clip_repair_grade(item, clip_key):
+    graph = safe_call(item, "GetNodeGraph")
+    method = getattr(graph, "ResetAllGrades", None)
+    if method is None:
+        raise HostError(
+            "resolve_clip_repair_reset_unsupported",
+            f"Resolve NodeGraph is missing ResetAllGrades; cannot reset stale portrait repair for: {clip_key}",
+            {"clipKey": clip_key},
+        )
+    try:
+        result = method()
+    except Exception as error:
+        raise HostError(
+            "resolve_clip_repair_reset_failed",
+            f"Unable to reset stale portrait repair grade for: {clip_key}",
+            {"clipKey": clip_key, "error": str(error)},
+        )
+    if result is False:
+        raise HostError(
+            "resolve_clip_repair_reset_failed",
+            f"Unable to reset stale portrait repair grade for: {clip_key}",
+            {"clipKey": clip_key},
+        )
+
+
 def clip_like_has_canonical_repair_layout(item):
     graph = safe_call(item, "GetNodeGraph")
     node_count = parse_int(safe_call(graph, "GetNumNodes")) or 0
@@ -880,8 +1196,21 @@ def build_clip_repair_snapshot(item, clip_request, repair_seed_state=None):
     lut_by_node = collect_graph_lut_by_node(graph)
     graph_luts = collect_graph_luts(graph)
     node_enabled_by_node = collect_graph_node_enabled(graph, node_count)
-    gyro_eligible = clip_request.get("gyroEligible") is True
+    gyro_eligible = (
+        repair_seed_state.get("effectiveGyroEligible") is True
+        if isinstance(repair_seed_state, dict) and "effectiveGyroEligible" in repair_seed_state
+        else clip_request.get("gyroEligible") is True
+    )
+    gyro_data_available = (
+        repair_seed_state.get("gyroDataAvailable") is True
+        if isinstance(repair_seed_state, dict)
+        else clip_request.get("gyroDataAvailable") is True or clip_request.get("gyroEligible") is True
+    )
     lowlight_requested = clip_request.get("lowlight") is True
+    orientation_status = stringify_signal_value(clip_request.get("orientationStatus"))
+    repair_template_key = stringify_signal_value(clip_request.get("repairTemplateKey"))
+    repair_template_hash = stringify_signal_value((repair_seed_state or {}).get("repairTemplateHash")) if isinstance(repair_seed_state, dict) else stringify_signal_value(clip_request.get("previousRepairTemplateHash"))
+    timeline_transform = clip_request.get("timelineTransform") if isinstance(clip_request.get("timelineTransform"), dict) else None
     layout_state = inspect_clip_repair_layout(
         node_count,
         tools_by_node,
@@ -905,11 +1234,36 @@ def build_clip_repair_snapshot(item, clip_request, repair_seed_state=None):
         tools_by_node,
         graph_luts,
     )
-    return {
+    if (
+        isinstance(repair_seed_state, dict)
+        and repair_seed_state.get("repairSeedSkippedReason")
+        and not repair_seed_state.get("copiedExistingGrade")
+        and not repair_seed_state.get("seededRepairDonorKind")
+        and layout_status != "canonical"
+    ):
+        clip_repair_status = (
+            "pending-orientation-template"
+            if repair_seed_state.get("repairTemplateStatus") == "skipped-missing-orientation-drt"
+            else "pending-template"
+        )
+    snapshot = {
         "clipKey": clip_request["rawRelativePath"],
         "displayName": clip_request.get("sourceStem") or Path(clip_request["rawRelativePath"]).stem,
         "logProfile": normalize_log_profile(clip_request.get("logProfile")) or "unknown",
         "lowlight": lowlight_requested,
+        "colorCastClass": normalize_color_cast_class(clip_request.get("colorCastClass")) or "unknown",
+        "colorCastConfidence": parse_float(clip_request.get("colorCastConfidence")),
+        "colorCastMetrics": clip_request.get("colorCastMetrics") if isinstance(clip_request.get("colorCastMetrics"), dict) else {},
+        "encodedWidth": parse_int(clip_request.get("encodedWidth") or clip_request.get("width")),
+        "encodedHeight": parse_int(clip_request.get("encodedHeight") or clip_request.get("height")),
+        "displayWidth": parse_int(clip_request.get("displayWidth") or clip_request.get("width")),
+        "displayHeight": parse_int(clip_request.get("displayHeight") or clip_request.get("height")),
+        "rotationDegrees": parse_float(clip_request.get("rotationDegrees")),
+        "orientationStatus": orientation_status,
+        "repairTemplateKey": repair_template_key,
+        "repairTemplateHash": repair_template_hash,
+        "timelineTransform": timeline_transform,
+        "gyroDataAvailable": gyro_data_available,
         "gyroEligible": gyro_eligible,
         "gyroflowStatus": gyroflow_status,
         "dehazeStatus": dehaze_status,
@@ -917,22 +1271,46 @@ def build_clip_repair_snapshot(item, clip_request, repair_seed_state=None):
         "clipRepairStatus": clip_repair_status,
         "layoutStatus": layout_status,
         "reservedNodeIndices": reserved_node_indices,
-        "hostSummary": {
-            "nodeCount": node_count,
-            "toolsByNode": {str(node_index): tools for node_index, tools in sorted(tools_by_node.items())},
-            "luts": list(graph_luts),
-            "nodeEnabledByNode": {str(node_index): value for node_index, value in sorted(node_enabled_by_node.items())},
-            "layoutStatus": layout_status,
-            "reservedNodeIndices": reserved_node_indices,
-            "copiedExistingGrade": bool(repair_seed_state and repair_seed_state.get("copiedExistingGrade")),
-            "rebuiltLegacyGrade": bool(repair_seed_state and repair_seed_state.get("rebuiltLegacyGrade")),
+            "hostSummary": {
+                "nodeCount": node_count,
+                "toolsByNode": {str(node_index): tools for node_index, tools in sorted(tools_by_node.items())},
+                "luts": list(graph_luts),
+                "nodeEnabledByNode": {str(node_index): value for node_index, value in sorted(node_enabled_by_node.items())},
+                "layoutStatus": layout_status,
+                "reservedNodeIndices": reserved_node_indices,
+                "copiedExistingGrade": bool(repair_seed_state and repair_seed_state.get("copiedExistingGrade")),
+                "resetExistingGradeBeforeTemplate": bool(repair_seed_state and repair_seed_state.get("resetExistingGradeBeforeTemplate")),
+                "rebuiltLegacyGrade": bool(repair_seed_state and repair_seed_state.get("rebuiltLegacyGrade")),
             "requestedRepairKinds": list(repair_seed_state.get("requestedRepairKinds") or []) if isinstance(repair_seed_state, dict) else [],
             "seededRepairDonorKind": stringify_signal_value((repair_seed_state or {}).get("seededRepairDonorKind")) if isinstance(repair_seed_state, dict) else None,
             "availableRepairDonorKinds": list((repair_seed_state or {}).get("availableRepairDonorKinds") or []) if isinstance(repair_seed_state, dict) else [],
             "forcedEnabledNodeIndices": list((repair_seed_state or {}).get("forcedEnabledNodeIndices") or []) if isinstance(repair_seed_state, dict) else [],
             "forcedDisabledNodeIndices": list((repair_seed_state or {}).get("forcedDisabledNodeIndices") or []) if isinstance(repair_seed_state, dict) else [],
+            "repairTemplateKey": stringify_signal_value((repair_seed_state or {}).get("repairTemplateKey")) if isinstance(repair_seed_state, dict) else repair_template_key,
+            "repairTemplateStatus": stringify_signal_value((repair_seed_state or {}).get("repairTemplateStatus")) if isinstance(repair_seed_state, dict) else None,
+            "repairTemplateHash": repair_template_hash,
+            "previousRepairTemplateHash": stringify_signal_value((repair_seed_state or {}).get("previousRepairTemplateHash")) if isinstance(repair_seed_state, dict) else None,
+            "forcedRepairTemplateReseed": bool(repair_seed_state and repair_seed_state.get("forcedRepairTemplateReseed")),
+            "repairSeedSkippedReason": stringify_signal_value((repair_seed_state or {}).get("repairSeedSkippedReason")) if isinstance(repair_seed_state, dict) else None,
+            "orientationStatus": orientation_status,
+            "timelineTransform": timeline_transform,
         },
     }
+    for optional_key in (
+        "encodedWidth",
+        "encodedHeight",
+        "displayWidth",
+        "displayHeight",
+        "rotationDegrees",
+        "orientationStatus",
+        "repairTemplateKey",
+        "repairTemplateHash",
+        "timelineTransform",
+        "colorCastConfidence",
+    ):
+        if snapshot.get(optional_key) in (None, "", {}):
+            snapshot.pop(optional_key, None)
+    return snapshot
 
 
 def collect_graph_tools_by_node(graph):
@@ -1200,6 +1578,32 @@ def summarize_group_lowlight(clip_snapshots):
     return None
 
 
+def summarize_group_color_cast(clip_snapshots):
+    values = set()
+    for clip in clip_snapshots or []:
+        normalized = normalize_color_cast_class(clip.get("colorCastClass"))
+        if normalized in ("neutral", "unknown"):
+            values.add(normalized)
+        elif should_group_color_cast(normalized, clip.get("colorCastConfidence")):
+            values.add(normalized)
+    if not values:
+        return "unknown"
+    non_neutral_values = {
+        value
+        for value in values
+        if value not in ("neutral", "unknown")
+    }
+    if len(non_neutral_values) == 1:
+        dominant = next(iter(non_neutral_values))
+        if values.issubset({dominant, "neutral", "unknown"}):
+            return dominant
+    if len(non_neutral_values) > 1:
+        return "mixed"
+    if len(values) == 1:
+        return next(iter(values))
+    return "unknown"
+
+
 def inspect_group_post_clip_creative_status(color_group):
     if color_group is None:
         return "missing"
@@ -1352,8 +1756,9 @@ def build_groups_snapshot(
         entry = group_map[display_name]
         log_profile = summarize_group_log_profile(entry["clipRequests"])
         lowlight = summarize_group_lowlight(entry["clipSnapshots"])
+        color_cast = summarize_group_color_cast(entry["clipSnapshots"])
         post_clip_creative_status = inspect_group_post_clip_creative_status(entry.get("colorGroup"))
-        summary = build_group_creative_summary(log_profile, lowlight)
+        summary = build_group_creative_summary(log_profile, lowlight, color_cast)
         transform_summary = {
             **build_group_transform_summary(entry["clipRequests"]),
             **((group_transform_summaries or {}).get(display_name) or {}),
@@ -1364,6 +1769,7 @@ def build_groups_snapshot(
             "clipKeys": entry["clipKeys"],
             "logProfile": log_profile,
             "lowlight": lowlight,
+            "colorCastClass": color_cast,
             "postClipCreativeStatus": post_clip_creative_status,
             "clips": entry["clipSnapshots"],
             "hostSummary": {
@@ -1373,6 +1779,7 @@ def build_groups_snapshot(
                 "creativeTags": summary["creativeTags"],
                 "logProfile": log_profile,
                 "lowlight": lowlight,
+                "colorCastClass": color_cast,
                 "postClipCreativeStatus": post_clip_creative_status,
                 "detectedProfile": transform_summary.get("detectedProfile"),
                 "effectiveProfile": transform_summary.get("effectiveProfile"),
@@ -1395,23 +1802,28 @@ def build_groups_snapshot(
 
 def build_clip_creative_summary(clip_request):
     log_profile = normalize_log_profile(clip_request.get("logProfile"))
+    color_cast = normalize_color_cast_class(clip_request.get("colorCastClass"))
     creative_tags = []
     if log_profile:
         creative_tags.append(log_profile)
     if clip_request.get("lowlight") is True:
         creative_tags.append("lowlight")
+    if should_group_color_cast(color_cast, clip_request.get("colorCastConfidence")):
+        creative_tags.append(color_cast)
     return {
         "creativeTags": creative_tags,
         "displayName": " + ".join(creative_tags) if creative_tags else "base",
     }
 
 
-def build_group_creative_summary(log_profile, lowlight):
+def build_group_creative_summary(log_profile, lowlight, color_cast=None):
     creative_tags = []
     if log_profile and log_profile not in ("mixed", "unknown"):
         creative_tags.append(log_profile)
     if lowlight == "lowlight":
         creative_tags.append("lowlight")
+    if color_cast in CCOLOR_CAST_GROUP_CLASSES:
+        creative_tags.append(color_cast)
     return {
         "creativeTags": creative_tags,
     }
@@ -1640,6 +2052,42 @@ def normalize_log_profile(value):
     return None
 
 
+def normalize_color_cast_class(value):
+    normalized = stringify_signal_value(value)
+    if not normalized:
+        return None
+    lowered = normalized.strip().lower()
+    aliases = {
+        "neutral": "neutral",
+        "none": "neutral",
+        "coolcyan": "cool-cyan",
+        "cool-cyan": "cool-cyan",
+        "cyan": "cool-cyan",
+        "bluegreen": "green-cyan",
+        "greencyan": "green-cyan",
+        "green-cyan": "green-cyan",
+        "green cyan": "green-cyan",
+        "cyan-green": "green-cyan",
+        "cyan green": "green-cyan",
+        "green": "green",
+        "warm": "warm",
+        "mixed": "mixed",
+        "unknown": "unknown",
+    }
+    compact = lowered.replace("_", "").replace(" ", "").replace("-", "")
+    if lowered in aliases:
+        return aliases[lowered]
+    return aliases.get(compact)
+
+
+def should_group_color_cast(value, confidence=None):
+    normalized = normalize_color_cast_class(value)
+    if normalized not in CCOLOR_CAST_GROUP_CLASSES:
+        return False
+    parsed_confidence = parse_float(confidence)
+    return parsed_confidence is not None and parsed_confidence >= 0.65
+
+
 def normalize_clip_requests(clips):
     normalized = []
     for clip in clips or []:
@@ -1654,6 +2102,15 @@ def normalize_clip_requests(clips):
             "capturedAt": stringify_signal_value(clip.get("capturedAt")),
             "width": parse_int(clip.get("width")),
             "height": parse_int(clip.get("height")),
+            "encodedWidth": parse_int(clip.get("encodedWidth")),
+            "encodedHeight": parse_int(clip.get("encodedHeight")),
+            "displayWidth": parse_int(clip.get("displayWidth")),
+            "displayHeight": parse_int(clip.get("displayHeight")),
+            "rotationDegrees": parse_float(clip.get("rotationDegrees")),
+            "orientationStatus": stringify_signal_value(clip.get("orientationStatus")),
+            "repairTemplateKey": stringify_signal_value(clip.get("repairTemplateKey")) or "default",
+            "previousRepairTemplateHash": stringify_signal_value(clip.get("previousRepairTemplateHash")),
+            "timelineTransform": clip.get("timelineTransform") if isinstance(clip.get("timelineTransform"), dict) else None,
             "fps": parse_float(clip.get("fps")),
             "codec": stringify_signal_value(clip.get("codec")),
             "rawTags": normalize_string_map(clip.get("rawTags")),
@@ -1661,8 +2118,12 @@ def normalize_clip_requests(clips):
             "effectiveProfile": stringify_signal_value(clip.get("effectiveProfile")),
             "profileSource": stringify_signal_value(clip.get("profileSource")) or "unknown",
             "logProfile": normalize_log_profile(clip.get("logProfile")),
+            "gyroDataAvailable": clip.get("gyroDataAvailable") is True,
             "gyroEligible": clip.get("gyroEligible") is True,
             "lowlight": clip.get("lowlight") is True,
+            "colorCastClass": normalize_color_cast_class(clip.get("colorCastClass")),
+            "colorCastConfidence": parse_float(clip.get("colorCastConfidence")),
+            "colorCastMetrics": clip.get("colorCastMetrics") if isinstance(clip.get("colorCastMetrics"), dict) else {},
             "resolvedTransformPresetKey": stringify_signal_value(clip.get("resolvedTransformPresetKey")),
             "resolvedLutRelativePath": stringify_signal_value(clip.get("resolvedLutRelativePath")),
             "resolvedLutAbsolutePath": normalize_filesystem_path(clip.get("resolvedLutAbsolutePath")),
@@ -1908,6 +2369,167 @@ def delete_timeline(media_pool, timeline):
     safe_call(media_pool, "DeleteTimelines", [timeline])
 
 
+def ensure_render_queue_empty(project):
+    render_jobs = safe_call(project, "GetRenderJobList")
+    jobs = list(iter_values(render_jobs or []))
+    if jobs:
+        raise HostError(
+            "resolve_render_queue_not_empty",
+            "Resolve Render Queue is not empty. Clear it manually before running Kairos color export.",
+            {"renderJobCount": len(jobs), "renderJobs": normalize_render_job_list_for_error(jobs)},
+        )
+
+
+def normalize_render_job_list_for_error(jobs):
+    normalized = []
+    for job in jobs[:20]:
+        if isinstance(job, dict):
+            normalized.append({
+                key: value
+                for key, value in job.items()
+                if isinstance(value, (str, int, float, bool)) or value is None
+            })
+        else:
+            normalized.append(str(job))
+    return normalized
+
+
+def cleanup_created_render_jobs(project, render_jobs):
+    for job in render_jobs:
+        job_id = job.get("jobId") if isinstance(job, dict) else None
+        if job_id:
+            safe_call(project, "DeleteRenderJob", job_id)
+
+
+def build_day_render_specs(clips, output_root):
+    specs = []
+    clips_by_dir = {}
+    ordered_dirs = []
+    for clip in clips:
+        relative_dir = portable_parent_dir(clip["rawRelativePath"])
+        if relative_dir not in clips_by_dir:
+            clips_by_dir[relative_dir] = []
+            ordered_dirs.append(relative_dir)
+        clips_by_dir[relative_dir].append(clip)
+    conflicts = []
+    for relative_dir in ordered_dirs:
+        dir_clips = clips_by_dir[relative_dir]
+        by_stem = {}
+        for clip in dir_clips:
+            stem_key = str(clip.get("sourceStem") or "").strip().lower()
+            if not stem_key:
+                continue
+            by_stem.setdefault(stem_key, []).append(clip)
+        for stem_key, stem_clips in by_stem.items():
+            if len(stem_clips) > 1:
+                conflicts.append({
+                    "relativeDir": relative_dir,
+                    "sourceStem": stem_clips[0].get("sourceStem") or stem_key,
+                    "rawRelativePaths": [clip["rawRelativePath"] for clip in stem_clips],
+                })
+        target_dir = output_root
+        for segment in [part for part in relative_dir.split("/") if part]:
+            target_dir = target_dir / segment
+        specs.append({
+            "relativeDir": relative_dir,
+            "targetDir": target_dir,
+            "clips": dir_clips,
+        })
+    if conflicts:
+        raise HostError(
+            "resolve_day_render_duplicate_source_stem",
+            "A day-level render group contains duplicate source stems; direct Source Name rendering would overwrite files.",
+            {"conflicts": conflicts},
+        )
+    return specs
+
+
+def collect_root_direct_outputs(render_specs, clips, extension):
+    entries = []
+    for spec in render_specs:
+        entries.extend(collect_direct_outputs_for_clips(
+            spec["targetDir"],
+            spec["clips"],
+            extension,
+            spec.get("jobId"),
+        ))
+    entries_by_key = {entry["rawRelativePath"]: entry for entry in entries}
+    missing = [
+        clip["rawRelativePath"]
+        for clip in clips
+        if clip["rawRelativePath"] not in entries_by_key
+    ]
+    if missing:
+        raise HostError(
+            "resolve_render_output_missing",
+            "Unable to locate every rendered output for root batch.",
+            {"rawRelativePaths": missing},
+        )
+    return [entries_by_key[clip["rawRelativePath"]] for clip in clips]
+
+
+def collect_direct_outputs_for_clips(render_dir, clips, extension, render_job_id=None):
+    if not clips:
+        return []
+    render_dir = Path(render_dir)
+    if not render_dir.is_dir():
+        raise HostError(
+            "resolve_render_output_missing",
+            "Resolve render output directory is missing.",
+            {"renderDir": str(render_dir)},
+        )
+    extension_key = f".{extension.lstrip('.').lower()}"
+    candidates = [
+        path
+        for path in render_dir.iterdir()
+        if path.is_file() and path.suffix.lower() == extension_key
+    ]
+    entries = []
+    for clip in clips:
+        expected_path = (render_dir / clip["normalizedOutputFilename"]).resolve()
+        unexpected_variants = [
+            path.resolve()
+            for path in candidates
+            if path.resolve() != expected_path and rendered_output_is_source_name_variant(path, clip["sourceStem"])
+        ]
+        if unexpected_variants:
+            raise HostError(
+                "resolve_render_output_bad_source_name",
+                f"Resolve rendered {clip['sourceStem']} with a prefix/suffix instead of exact Source Name.",
+                {
+                    "rawRelativePath": clip["rawRelativePath"],
+                    "renderDir": str(render_dir),
+                    "expectedPath": str(expected_path),
+                    "candidatePaths": [str(path) for path in sorted(unexpected_variants, key=lambda value: value.name)],
+                },
+            )
+        if not expected_path.is_file():
+            raise HostError(
+                "resolve_render_output_missing",
+                f"Unable to locate rendered output for {clip['normalizedOutputFilename']}",
+                {
+                    "rawRelativePath": clip["rawRelativePath"],
+                    "renderDir": str(render_dir),
+                    "expectedPath": str(expected_path),
+                    "candidatePaths": [str(path) for path in sorted(candidates, key=lambda value: value.name)],
+                },
+            )
+        entries.append({
+            "rawRelativePath": clip["rawRelativePath"],
+            "outputPath": str(expected_path),
+            "normalizedOutputFilename": clip["normalizedOutputFilename"],
+            "renderJobId": str(render_job_id) if render_job_id is not None else None,
+        })
+    return entries
+
+
+def safe_path_segment(value):
+    text = str(value or "").strip()
+    if not text:
+        return "unnamed"
+    return re.sub(r"[^A-Za-z0-9._-]+", "_", text)
+
+
 def prune_timeline_to_selected_clips(timeline, raw_local_path, selected_clip_keys):
     to_delete = []
     for track_type in ("video", "audio", "subtitle"):
@@ -1935,11 +2557,47 @@ def prune_timeline_to_selected_clips(timeline, raw_local_path, selected_clip_key
         raise HostError("resolve_timeline_subset_prune_failed", "Unable to prune temporary render timeline to the selected clips.")
 
 
+def assert_timeline_contains_selected_clips(timeline, raw_local_path, selected_clip_keys):
+    remaining = []
+    unresolved_count = 0
+    for item in iter_timeline_video_items(timeline):
+        file_path = extract_clip_like_file_path(item)
+        if not file_path:
+            unresolved_count += 1
+            continue
+        try:
+            clip_key = to_portable_relative(raw_local_path, file_path)
+        except ValueError:
+            unresolved_count += 1
+            continue
+        remaining.append(clip_key)
+    remaining_set = set(remaining)
+    selected_set = set(selected_clip_keys)
+    missing = sorted(selected_set - remaining_set)
+    extra = sorted(remaining_set - selected_set)
+    duplicate_remaining = sorted({
+        clip_key
+        for clip_key in remaining
+        if remaining.count(clip_key) > 1
+    })
+    if missing or extra or unresolved_count or duplicate_remaining:
+        raise HostError(
+            "resolve_timeline_subset_verify_failed",
+            "Temporary render timeline does not exactly match the requested day clip set.",
+            {
+                "missing": missing,
+                "extra": extra,
+                "duplicateRemaining": duplicate_remaining,
+                "unresolvedCount": unresolved_count,
+            },
+        )
+
+
 def queue_root_render_job(project, target_dir, render_format, clips):
+    Path(target_dir).mkdir(parents=True, exist_ok=True)
     settings = {
         "TargetDir": str(target_dir),
         "SelectAllFrames": True,
-        "UniqueFilenameStyle": 0,
         "ExportVideo": True,
         "ExportAudio": True,
     }
@@ -1966,13 +2624,7 @@ def queue_root_render_job(project, target_dir, render_format, clips):
     job_id = safe_call(project, "AddRenderJob")
     if job_id is False or job_id is None:
         raise HostError("resolve_add_render_job_failed", "Unable to queue render job for root render batch")
-    return job_id
-
-
-def prepare_clip_staging_dir(path):
-    if path.exists():
-        shutil.rmtree(path)
-    path.mkdir(parents=True, exist_ok=True)
+    return str(job_id)
 
 
 def start_rendering(project, job_ids):
@@ -1981,111 +2633,58 @@ def start_rendering(project, job_ids):
         if result is False:
             result = safe_call(project, "StartRendering", job_ids)
     else:
-        result = safe_call(project, "StartRendering")
+        result = safe_call(project, "StartRendering", False)
+        if result is False:
+            result = safe_call(project, "StartRendering")
     if result is False:
         raise HostError("resolve_start_render_failed", "Unable to start Resolve rendering")
 
 
-def wait_for_render(project, timeout_seconds=3600):
+def wait_for_render(project, job_ids=None, timeout_seconds=3600):
     started = time.time()
     while True:
         in_progress = safe_call(project, "IsRenderingInProgress")
         if not in_progress:
-            return
+            break
         if time.time() - started > timeout_seconds:
             raise HostError("resolve_render_timeout", "Timed out waiting for Resolve rendering")
         time.sleep(1)
-
-
-def adopt_root_render_outputs(render_dir, staging_root, clips, extension):
-    if has_duplicate_source_stems(clips):
-        raise HostError(
-            "resolve_render_output_duplicate_source_stem",
-            "Root render batch contains duplicate source stems; Resolve output binding would be ambiguous.",
-            {
-                "rawRelativePaths": [clip["rawRelativePath"] for clip in clips],
-            },
-        )
-    candidates = [
-        path
-        for path in render_dir.rglob("*")
-        if path.is_file() and path.suffix.lower() == f".{extension.lstrip('.').lower()}"
-    ]
-    if not candidates:
-        raise HostError(
-            "resolve_render_output_missing",
-            "Unable to locate rendered outputs for root render batch.",
-            {"renderDir": str(render_dir)},
-        )
-
-    normalized_entries = []
-    claimed = []
-    for clip in clips:
-        matching_candidates = [
-            path
-            for path in candidates
-            if path not in claimed and rendered_output_matches_source_stem(path, clip["sourceStem"])
-        ]
-        if not matching_candidates:
+    for job_id in job_ids or []:
+        status = safe_call(project, "GetRenderJobStatus", job_id)
+        if render_job_status_failed(status):
             raise HostError(
-                "resolve_render_output_missing",
-                f"Unable to locate rendered output for {clip['normalizedOutputFilename']}",
-                {
-                    "rawRelativePath": clip["rawRelativePath"],
-                    "candidatePaths": [str(path) for path in sorted(candidates, key=lambda value: value.name)],
-                },
+                "resolve_render_failed_or_stopped",
+                "Resolve render job did not complete successfully.",
+                {"jobId": job_id, "renderJobStatus": status},
             )
-        if len(matching_candidates) > 1:
-            raise HostError(
-                "resolve_render_output_ambiguous",
-                f"Multiple rendered outputs matched {clip['normalizedOutputFilename']}",
-                {
-                    "rawRelativePath": clip["rawRelativePath"],
-                    "candidatePaths": [str(path) for path in sorted(matching_candidates, key=lambda value: value.name)],
-                },
-            )
-        actual_path = matching_candidates[0]
-        claimed.append(actual_path)
-        relative_dir = portable_parent_dir(clip["rawRelativePath"])
-        output_dir = staging_root / relative_dir if relative_dir else staging_root
-        output_dir.mkdir(parents=True, exist_ok=True)
-        target_path = (output_dir / clip["normalizedOutputFilename"]).resolve()
-        if target_path.exists():
-            target_path.unlink()
-        actual_path.replace(target_path)
-        normalized_entries.append({
-            "rawRelativePath": clip["rawRelativePath"],
-            "outputPath": str(target_path),
-            "normalizedOutputFilename": clip["normalizedOutputFilename"],
-        })
-
-    unclaimed = [str(path) for path in candidates if path not in claimed]
-    if unclaimed:
-        raise HostError(
-            "resolve_render_output_unclaimed",
-            "Resolve rendered extra outputs that do not map to the selected root batch clips.",
-            {"candidatePaths": unclaimed},
-        )
-    return normalized_entries
 
 
-def rendered_output_matches_source_stem(path, source_stem):
+def rendered_output_is_source_name_variant(path, source_stem):
     candidate_stem = path.stem
     if not isinstance(candidate_stem, str) or not candidate_stem:
         return False
-    pattern = re.compile(rf"^{re.escape(source_stem)}(?:[_-]\d+)?$", re.IGNORECASE)
-    return bool(pattern.match(candidate_stem))
+    pattern = re.compile(rf"(?:^|[_-]){re.escape(source_stem)}(?:[_-]\d+)?$", re.IGNORECASE)
+    return bool(pattern.search(candidate_stem))
 
 
-def has_duplicate_source_stems(clips):
-    seen = set()
-    for clip in clips:
-        stem = str(clip.get("sourceStem") or "").strip().lower()
-        if not stem:
-            continue
-        if stem in seen:
-            return True
-        seen.add(stem)
+def render_job_status_failed(status):
+    if not isinstance(status, dict):
+        return False
+    status_text = str(
+        status.get("JobStatus")
+        or status.get("Status")
+        or status.get("status")
+        or ""
+    ).strip().lower()
+    if any(token in status_text for token in ("fail", "cancel", "stop", "abort", "error")):
+        return True
+    completion = parse_float(
+        status.get("CompletionPercentage")
+        or status.get("Completion")
+        or status.get("completion")
+    )
+    if completion is not None and completion < 100 and not any(token in status_text for token in ("complete", "success", "done")):
+        return True
     return False
 
 
@@ -2200,8 +2799,81 @@ def collect_render_support(project):
     }, warnings, degraded
 
 
-def save_project(project):
-    safe_call(project, "SaveProject")
+def save_project(project, resolve=None):
+    project_manager = safe_call(resolve, "GetProjectManager") if resolve is not None else None
+    saved = safe_call(project_manager, "SaveProject") if project_manager is not None else None
+    if saved is False or saved is None:
+        safe_call(project, "SaveProject")
+
+
+def export_project_snapshot(resolve, project, payload, mode, stage):
+    snapshot_root_value = (
+        stringify_signal_value(payload.get("drpSnapshotRoot"))
+        or stringify_signal_value(payload.get("snapshotRoot"))
+    )
+    if not snapshot_root_value:
+        return None
+    project_manager = require_method(resolve, "GetProjectManager")()
+    project_name = stringify_signal_value(safe_call(project, "GetName")) or payload["resolveProjectName"]
+    snapshot_root = Path(snapshot_root_value).expanduser().resolve()
+    snapshots_root = snapshot_root / "snapshots"
+    snapshots_root.mkdir(parents=True, exist_ok=True)
+    created_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    timestamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
+    label = (
+        stringify_signal_value(payload.get("drpSnapshotLabel"))
+        or stringify_signal_value(payload.get("snapshotLabel"))
+        or stage
+    )
+    chunk_id = stringify_signal_value(payload.get("chunkId"))
+    label_parts = [label, chunk_id]
+    filename = f"{timestamp}-{sanitize_filename('-'.join([part for part in label_parts if part]))}.drp"
+    snapshot_path = snapshots_root / filename
+    exported = safe_call(project_manager, "ExportProject", project_name, str(snapshot_path), False)
+    if exported is False or not snapshot_path.is_file():
+        raise HostError(
+            "resolve_project_export_failed",
+            f"Unable to export Resolve project snapshot: {snapshot_path}",
+            {
+                "projectName": project_name,
+                "snapshotPath": str(snapshot_path),
+            },
+        )
+    latest_path = snapshot_root / "latest.drp"
+    shutil.copy2(snapshot_path, latest_path)
+    return {
+        "projectName": project_name,
+        "snapshotPath": str(snapshot_path),
+        "latestPath": str(latest_path),
+        "createdAt": created_at,
+        "mode": mode,
+        "action": stringify_signal_value(payload.get("action")) or stage,
+        "rootId": stringify_signal_value(payload.get("rootId")),
+        "chunkId": chunk_id,
+        "database": normalize_database_info(safe_call(project_manager, "GetCurrentDatabase")),
+        "detail": f"{stage} exported withStillsAndLUTs=false",
+    }
+
+
+def normalize_database_info(value):
+    if not isinstance(value, dict):
+        return None
+    normalized = {}
+    for key, item in value.items():
+        key_text = stringify_signal_value(key)
+        if not key_text:
+            continue
+        if isinstance(item, (str, int, float, bool)) or item is None:
+            normalized[key_text] = item
+        else:
+            normalized[key_text] = stringify_signal_value(item)
+    return normalized
+
+
+def sanitize_filename(value):
+    text = stringify_signal_value(value) or "snapshot"
+    sanitized = re.sub(r"[^A-Za-z0-9._-]+", "-", text).strip("-")
+    return sanitized or "snapshot"
 
 
 def to_portable_relative(root_path, file_path):

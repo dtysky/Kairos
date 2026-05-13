@@ -9,8 +9,6 @@ vi.mock('node:child_process', () => ({
   execFile: execFileMock,
 }));
 
-type ExecCallback = (error: Error | null, stdout?: string, stderr?: string) => void;
-
 afterEach(() => {
   execFileMock.mockReset();
   vi.resetModules();
@@ -22,146 +20,38 @@ afterEach(async () => {
   await Promise.all(tempDirs.splice(0).map(path => rm(path, { recursive: true, force: true })));
 });
 
-function mockExiftoolOutput(lines: string[], inputPath = '/tmp/sample.mp4') {
-  execFileMock.mockImplementation((
-    file: string,
-    args: string[],
-    optionsOrCallback: { env?: NodeJS.ProcessEnv } | ExecCallback,
-    maybeCallback?: ExecCallback,
-  ) => {
-    const options = typeof optionsOrCallback === 'function'
-      ? undefined
-      : optionsOrCallback;
-    const callback = typeof optionsOrCallback === 'function'
-      ? optionsOrCallback
-      : maybeCallback;
-
-    expect(file).toBe('exiftool');
-    expect(args).toEqual(['-ee', '-a', '-u', '-G1', '-s', inputPath]);
-    expect(options?.env).toMatchObject({
-      LC_ALL: 'C',
-      LANG: 'C',
-      LC_CTYPE: 'C',
-    });
-    callback?.(null, {
-      stdout: lines.join('\n'),
-      stderr: '',
-    } as unknown as string, '');
-  });
-}
-
-function mockExiftoolFailure(inputPath: string) {
-  execFileMock.mockImplementation((
-    file: string,
-    args: string[],
-    _optionsOrCallback: { env?: NodeJS.ProcessEnv } | ExecCallback,
-    maybeCallback?: ExecCallback,
-  ) => {
-    const callback = typeof _optionsOrCallback === 'function'
-      ? _optionsOrCallback
-      : maybeCallback;
-
-    expect(file).toBe('exiftool');
-    expect(args).toEqual(['-ee', '-a', '-u', '-G1', '-s', inputPath]);
-    callback?.(new Error('stdout maxBuffer length exceeded'));
-  });
-}
-
 describe('extractColorSourceTruth', () => {
-  it('extracts Sony log and gyro truth from acquisition record metadata', async () => {
-    mockExiftoolOutput([
-      '[XML] DeviceModelName : ILCE-7RM5',
-      '[XML] AcquisitionRecordGroupItemName : CaptureGammaEquation',
-      '[XML] AcquisitionRecordGroupItemValue : s-log3-cine',
-      '[XML] AcquisitionRecordChangeTableName : Gyroscope',
-    ]);
-
+  it('does not deep-scan embedded private telemetry by default', async () => {
     const { extractColorSourceTruth } = await import('../../src/modules/color/source-truth.js');
-    const result = await extractColorSourceTruth('/tmp/sample.mp4');
+    const result = await extractColorSourceTruth('/tmp/sample.mp4', { exiftoolPath: 'exiftool' });
 
+    expect(execFileMock).not.toHaveBeenCalled();
     expect(result).toEqual({
-      logProfile: 'slog3',
-      gyro: true,
-      lowlight: undefined,
+      logProfile: undefined,
+      gyro: undefined,
       deviceFamilyKeys: [],
-      sourceKinds: ['sony-acquisition-record'],
+      sourceKinds: [],
     });
   });
 
-  it('keeps unsupported DJI dvtm telemetry gyro-off while preserving log truth', async () => {
-    mockExiftoolOutput([
-      '[DJI] Protocol : dvtm_Mavic4.proto',
-      '[DJI] Dvtm_Mavic4_ColorMode : D-Log M',
-    ]);
-
-    const { extractColorSourceTruth } = await import('../../src/modules/color/source-truth.js');
-    const result = await extractColorSourceTruth('/tmp/sample.mp4');
-
-    expect(result).toEqual({
-      logProfile: 'dlog-m',
-      gyro: undefined,
-      lowlight: undefined,
-      deviceFamilyKeys: ['Mavic4'],
-      sourceKinds: ['dji-private-video-metadata'],
+  it('ignores DJI dvtm telemetry unless the user supplies an explicit sidecar or root fallback', async () => {
+    execFileMock.mockImplementation(() => {
+      throw new Error('exiftool should not run for DJI private telemetry');
     });
-  });
-
-  it('enables gyro for supported DJI devices with dvtm motion metadata', async () => {
-    mockExiftoolOutput([
-      '[DJI] Protocol : dvtm_ac205.proto',
-      '[DJI] Dvtm_ac205_ProductName : DJI OsmoAction5 Pro',
-    ]);
 
     const { extractColorSourceTruth } = await import('../../src/modules/color/source-truth.js');
-    const result = await extractColorSourceTruth('/tmp/sample.mp4');
+    const result = await extractColorSourceTruth('/tmp/DJI_0001.MP4');
 
-    expect(result).toEqual({
-      logProfile: undefined,
-      gyro: true,
-      lowlight: undefined,
-      deviceFamilyKeys: ['Action5'],
-      sourceKinds: ['dji-private-video-metadata'],
-    });
-  });
-
-  it('does not enable gyro for Action6 even when dvtm metadata is present', async () => {
-    mockExiftoolOutput([
-      '[DJI] Protocol : dvtm_ac206.proto',
-      '[DJI] Dvtm_ac206_1-1-10 : DJI OsmoAction6',
-      '[DJI] Dvtm_ac206_3-2-9-1 : 0xd2e7303c',
-    ]);
-
-    const { extractColorSourceTruth } = await import('../../src/modules/color/source-truth.js');
-    const result = await extractColorSourceTruth('/tmp/sample.mp4');
-
+    expect(execFileMock).not.toHaveBeenCalled();
     expect(result).toEqual({
       logProfile: undefined,
       gyro: undefined,
-      lowlight: undefined,
-      deviceFamilyKeys: ['Action6'],
-      sourceKinds: ['dji-private-video-metadata'],
+      deviceFamilyKeys: [],
+      sourceKinds: [],
     });
   });
 
-  it('does not guess DJI log profile when private metadata is present but unresolved', async () => {
-    mockExiftoolOutput([
-      '[DJI] Protocol : dvtm_Mavic4.proto',
-      '[DJI] Dvtm_Mavic4_SomeOtherField : Standard',
-    ]);
-
-    const { extractColorSourceTruth } = await import('../../src/modules/color/source-truth.js');
-    const result = await extractColorSourceTruth('/tmp/sample.mp4');
-
-    expect(result).toEqual({
-      logProfile: undefined,
-      gyro: undefined,
-      lowlight: undefined,
-      deviceFamilyKeys: ['Mavic4'],
-      sourceKinds: ['dji-private-video-metadata'],
-    });
-  });
-
-  it('extracts Sony truth from sidecar XML even when exiftool probing fails', async () => {
+  it('extracts Sony truth from explicit sidecar XML', async () => {
     const tempDir = await mkdtemp(join(tmpdir(), 'kairos-source-truth-sidecar-'));
     tempDirs.push(tempDir);
     const filePath = join(tempDir, 'C0340.MP4');
@@ -180,35 +70,41 @@ describe('extractColorSourceTruth', () => {
       '  </AcquisitionRecord>',
       '</NonRealTimeMeta>',
     ].join('\n'), 'utf-8');
-    mockExiftoolFailure(filePath);
 
     const { extractColorSourceTruth } = await import('../../src/modules/color/source-truth.js');
     const result = await extractColorSourceTruth(filePath);
 
+    expect(execFileMock).not.toHaveBeenCalled();
     expect(result).toEqual({
       logProfile: 'slog3',
       gyro: true,
-      lowlight: undefined,
       deviceFamilyKeys: [],
       sourceKinds: ['sony-sidecar-xml'],
     });
   });
 
-  it('does not enable gyro for unsupported Sony devices even when Gyroscope metadata exists', async () => {
-    mockExiftoolOutput([
-      '[XML] DeviceModelName : ILCE-6000',
-      '[XML] AcquisitionRecordChangeTableName : Gyroscope',
-    ]);
+  it('does not enable gyro for unsupported Sony devices even when sidecar Gyroscope exists', async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), 'kairos-source-truth-unsupported-sony-'));
+    tempDirs.push(tempDir);
+    const filePath = join(tempDir, 'C0341.MP4');
+    await writeFile(join(tempDir, 'C0341M01.XML'), [
+      '<NonRealTimeMeta>',
+      '  <Device manufacturer="Sony" modelName="ILCE-6000"/>',
+      '  <AcquisitionRecord>',
+      '    <ChangeTable name="Gyroscope"/>',
+      '  </AcquisitionRecord>',
+      '</NonRealTimeMeta>',
+    ].join('\n'), 'utf-8');
 
     const { extractColorSourceTruth } = await import('../../src/modules/color/source-truth.js');
-    const result = await extractColorSourceTruth('/tmp/sample.mp4');
+    const result = await extractColorSourceTruth(filePath);
 
+    expect(execFileMock).not.toHaveBeenCalled();
     expect(result).toEqual({
       logProfile: undefined,
       gyro: undefined,
-      lowlight: undefined,
       deviceFamilyKeys: [],
-      sourceKinds: ['sony-acquisition-record'],
+      sourceKinds: ['sony-sidecar-xml'],
     });
   });
 
@@ -217,21 +113,20 @@ describe('extractColorSourceTruth', () => {
     tempDirs.push(tempDir);
     const filePath = join(tempDir, 'clip.mp4');
     await writeFile(join(tempDir, 'clip.gyroflow'), '{}', 'utf-8');
-    mockExiftoolOutput([], filePath);
 
     const { extractColorSourceTruth } = await import('../../src/modules/color/source-truth.js');
     const result = await extractColorSourceTruth(filePath);
 
+    expect(execFileMock).not.toHaveBeenCalled();
     expect(result).toEqual({
       logProfile: undefined,
       gyro: true,
-      lowlight: undefined,
       deviceFamilyKeys: [],
       sourceKinds: ['gyroflow-project'],
     });
   });
 
-  it('prefers source metadata over Sony XML sidecar when both are present', async () => {
+  it('uses Sony sidecar truth without embedded metadata priority', async () => {
     const tempDir = await mkdtemp(join(tmpdir(), 'kairos-source-truth-priority-'));
     tempDirs.push(tempDir);
     const filePath = join(tempDir, 'C1493.MP4');
@@ -245,20 +140,16 @@ describe('extractColorSourceTruth', () => {
       '  </AcquisitionRecord>',
       '</NonRealTimeMeta>',
     ].join('\n'), 'utf-8');
-    mockExiftoolOutput([
-      '[XML] AcquisitionRecordGroupItemName : CaptureGammaEquation',
-      '[XML] AcquisitionRecordGroupItemValue : HLG',
-    ], filePath);
 
     const { extractColorSourceTruth } = await import('../../src/modules/color/source-truth.js');
     const result = await extractColorSourceTruth(filePath);
 
+    expect(execFileMock).not.toHaveBeenCalled();
     expect(result).toEqual({
-      logProfile: 'hlg',
+      logProfile: 'slog3',
       gyro: undefined,
-      lowlight: undefined,
       deviceFamilyKeys: [],
-      sourceKinds: ['sony-acquisition-record', 'sony-sidecar-xml'],
+      sourceKinds: ['sony-sidecar-xml'],
     });
   });
 });

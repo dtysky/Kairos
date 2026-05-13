@@ -14,24 +14,37 @@ Expected local layout:
 - `vendor/resolve-color-host/resolve-color-host.py`
 - `vendor/resolve-color-host/.venv/...`
 - `<workspaceRoot>/config/default.drt` (preferred when present)
-- `<workspaceRoot>/config/default.drx`
+- `<workspaceRoot>/config/default.drx` (manual diagnostics only)
 
 The official Kairos `/color` path now assumes this backend directly and no longer reads
 project-level Resolve Python/runtime overrides from `config/runtime.json`.
 
-Clip repair cold-start / legacy rebuild prefers workspace `config/default.drt` when it
-exists, because a clean DRT donor imported into Resolve can preserve Gyroflow's current
-file auto-load behavior. If no DRT exists, the host falls back to `config/default.drx` for
-layout seeding only. The template must apply as:
+Clip repair cold-start / legacy rebuild prefers workspace DRT donors because a clean DRT
+imported into Resolve can preserve Gyroflow's current file auto-load behavior. Horizontal
+clips use `config/default.drt`; Sony/ZV-E1 portrait clips map ffprobe and Gyroflow
+orientation conventions separately. ffprobe source `rotation=90` is Gyroflow `270`
+and uses `config/gyroflow-portrait--90.drt`; ffprobe source `rotation=-90/270` is
+Gyroflow `90` and uses `config/gyroflow-portrait-90.drt`.
+When the orchestrator detects a missing or stale portrait DRT hash in an existing prepared
+root, it reruns only the affected chunk and resets each stale portrait clip graph before
+reapplying the orientation DRT. The completion sync carries the current DRT hash back into
+the clip snapshot.
+If the required DRT does not exist, bulk prepare skips automatic Gyro seeding for those
+clips and marks them as pending template/orientation initialization. Each DRT template must
+apply as:
 
 `Gyro -> Dehaze -> User1 -> User2 -> NR`
 
-The host validates the applied grade before accepting it. If the selected template is
-missing or does not match the five-node contract, `prepare_root` fails instead of silently
-accepting the wrong repair layout.
+The host validates the applied grade before accepting it. If the selected DRT template
+does not match the five-node contract, `prepare_root` fails instead of silently accepting
+the wrong repair layout. `config/default.drx` is retained for manual diagnostics only and
+is not used as a large-batch fallback.
 
 On canonical reruns, the host preserves the existing clip grade, user zone, and
 user-toggled Dehaze/NR state, but it still reasserts node 1 from `gyroEligible` because
 Gyro is a technical repair decision. This is only a node enabled-state request. A clean
-DRT donor may trigger Gyroflow's own current-file loading during render; a DRX fallback
-must not be reported as source-specific Gyroflow load unless live evidence confirms it.
+DRT donor may trigger Gyroflow's own current-file loading during render. Portrait clips are
+also rotated and scaled with timeline item `RotationAngle / ZoomX / ZoomY / ZoomGang / Pan / Tilt`
+so individual renders are horizontal, including extra fill zoom for horizontal-encoded portrait clips where
+Gyroflow/DRT otherwise leaves a smaller landscape image centered in the output frame. DRX-based experiments must not be reported as source-specific Gyroflow load unless live evidence
+confirms it.

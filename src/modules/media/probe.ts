@@ -25,6 +25,9 @@ export interface IProbeResult {
   durationMs: number | null;
   width: number | null;
   height: number | null;
+  displayWidth: number | null;
+  displayHeight: number | null;
+  rotationDegrees: number | null;
   fps: number | null;
   codec: string | null;
   hasAudioStream: boolean;
@@ -62,11 +65,16 @@ export async function probe(filePath: string, tools?: IMediaToolConfig): Promise
   const primaryAudio = audioStreams[0];
   const fmt = data.format ?? {};
   const tags = { ...fmt.tags, ...video?.tags };
+  const rotationDegrees = resolveVideoRotationDegrees(video, tags);
+  const displayDimensions = resolveDisplayDimensions(video?.width, video?.height, rotationDegrees);
 
   return {
     durationMs: fmt.duration ? Math.round(parseFloat(fmt.duration) * 1000) : null,
     width: video?.width ?? null,
     height: video?.height ?? null,
+    displayWidth: displayDimensions.width,
+    displayHeight: displayDimensions.height,
+    rotationDegrees,
     fps: parseFps(video?.r_frame_rate),
     codec: video?.codec_name ?? null,
     hasAudioStream: audioStreams.length > 0,
@@ -126,6 +134,9 @@ async function probePhotoWithExiftool(
     durationMs: null,
     width: parseNumber(tags['imagewidth']),
     height: parseNumber(tags['imageheight']),
+    displayWidth: parseNumber(tags['imagewidth']),
+    displayHeight: parseNumber(tags['imageheight']),
+    rotationDegrees: null,
     fps: null,
     codec: null,
     hasAudioStream: false,
@@ -168,6 +179,9 @@ async function probePhotoWithMdls(
     durationMs: null,
     width: parseNumber(pixelWidth),
     height: parseNumber(pixelHeight),
+    displayWidth: parseNumber(pixelWidth),
+    displayHeight: parseNumber(pixelHeight),
+    rotationDegrees: null,
     fps: null,
     codec: null,
     hasAudioStream: false,
@@ -190,6 +204,39 @@ function parseFps(rate: string | undefined): number | null {
   return Math.round((num / den) * 100) / 100;
 }
 
+function resolveVideoRotationDegrees(
+  video: any,
+  tags: Record<string, unknown>,
+): number | null {
+  const tagRotation = normalizeRotationDegrees(tags?.rotate);
+  if (tagRotation != null) return tagRotation;
+
+  const sideData = Array.isArray(video?.side_data_list) ? video.side_data_list : [];
+  for (const item of sideData) {
+    const type = typeof item?.side_data_type === 'string' ? item.side_data_type.toLowerCase() : '';
+    if (!type.includes('display matrix')) continue;
+    const rotation = normalizeRotationDegrees(item?.rotation);
+    if (rotation != null) return rotation;
+  }
+  return null;
+}
+
+function resolveDisplayDimensions(
+  width: unknown,
+  height: unknown,
+  rotationDegrees: number | null,
+): { width: number | null; height: number | null } {
+  const parsedWidth = parseNumber(width);
+  const parsedHeight = parseNumber(height);
+  if (parsedWidth == null || parsedHeight == null) {
+    return { width: parsedWidth, height: parsedHeight };
+  }
+  if (rotationDegrees != null && Math.abs(rotationDegrees) % 180 === 90) {
+    return { width: parsedHeight, height: parsedWidth };
+  }
+  return { width: parsedWidth, height: parsedHeight };
+}
+
 function flattenTags(tags: Record<string, any> | undefined): Record<string, string> {
   if (!tags) return {};
   const out: Record<string, string> = {};
@@ -199,6 +246,15 @@ function flattenTags(tags: Record<string, any> | undefined): Record<string, stri
     }
   }
   return out;
+}
+
+function normalizeRotationDegrees(value: unknown): number | null {
+  const parsed = parseNumber(value);
+  if (parsed == null) return null;
+  const rounded = Math.round(parsed);
+  let normalized = ((rounded % 360) + 360) % 360;
+  if (normalized > 180) normalized -= 360;
+  return Object.is(normalized, -0) ? 0 : normalized;
 }
 
 function parseNumber(value: unknown): number | null {

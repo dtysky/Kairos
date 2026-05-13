@@ -4,6 +4,8 @@ import type {
   IColorCurrent,
   IColorGroupCurrent,
   IColorHostPreflight,
+  IColorResolveProjectMap,
+  IColorResolveProjectSnapshot,
   IColorRootCurrent,
   IColorRenderPreset,
   IMediaRoot,
@@ -28,6 +30,7 @@ export interface IColorRootCurrentView extends IColorRootCurrent {
   pathResolution?: IMediaRootPathResolution;
   rawPathResolution?: IMediaRootPathResolution;
   hostPreflight?: IColorHostPreflight;
+  latestDrpSnapshot?: IColorResolveProjectSnapshot;
 }
 
 export interface IColorRootWorkspaceSummary {
@@ -50,6 +53,7 @@ export interface IColorRootWorkspaceSummary {
   transformPresetKey?: string;
   blockingReasons: string[];
   hostPreflight?: IColorHostPreflight;
+  latestDrpSnapshot?: IColorResolveProjectSnapshot;
   groupsSnapshot?: IColorGroupsSnapshotFile;
   groups: IColorGroupWorkspaceSummary[];
   colorCurrent: IColorRootCurrentView;
@@ -62,6 +66,7 @@ export interface IColorGroupWorkspaceSummary {
   clipKeys: string[];
   logProfile?: string;
   lowlight?: string;
+  colorCastClass?: string;
   postClipCreativeStatus?: string;
   clips: IColorClipRepairWorkspaceSummary[];
   hostSummary: Record<string, unknown>;
@@ -82,6 +87,7 @@ interface IBuildColorWorkspaceStateInput {
   colorCurrent: IColorCurrent;
   resolveBackend?: IResolveColorBackendStatus;
   groupSnapshotsByRootId?: Record<string, IColorGroupsSnapshotFile>;
+  colorResolveProjectMap?: IColorResolveProjectMap;
 }
 
 export function buildColorWorkspaceState(
@@ -108,6 +114,9 @@ export function buildColorWorkspaceState(
       const renderPreset = materializeRenderPreset(root.color?.renderPreset);
       const colorSpaceProfile = trimmed(root.color?.colorSpaceProfile);
       const transformPresetKey = trimmed(root.color?.transformPresetKey);
+      const resolveProjectName = deriveColorResolveProjectName(input.projectName, input.projectId);
+      const latestDrpSnapshot = storedCurrent?.latestDrpSnapshot
+        ?? resolveLatestDrpSnapshot(input.colorResolveProjectMap, resolveProjectName);
       const derivedBlockers = dedupeStrings([
         !localPath ? `当前素材路径未命中：${resolvedRoot.localPathResolution.blocker ?? 'path/备选路径均不可读。'}` : '',
         !rawLocalPath ? `原始素材路径未命中：${resolvedRoot.rawPathResolution.blocker ?? 'rawPath/原始路径备选均不可读。'}` : '',
@@ -140,6 +149,8 @@ export function buildColorWorkspaceState(
         latestValidationStatus: storedCurrent?.latestValidationStatus,
         lastPromotedBatchId: storedCurrent?.lastPromotedBatchId,
         hostSummary: isPlainObject(storedCurrent?.hostSummary) ? storedCurrent.hostSummary : {},
+        prepareChunks: storedCurrent?.prepareChunks ?? [],
+        latestDrpSnapshot,
         groups: groups.map(group => group.current),
         blockingReasons: dedupeStrings([
           ...filterLegacyResolveRuntimeBlockers(storedCurrent?.blockingReasons ?? []),
@@ -170,7 +181,7 @@ export function buildColorWorkspaceState(
         displayRawPath: currentView.displayRawPath,
         pathResolution: currentView.pathResolution,
         rawPathResolution: currentView.rawPathResolution,
-        resolveProjectName: deriveColorResolveProjectName(input.projectName, input.projectId),
+        resolveProjectName,
         rootNamespace: deriveColorRootNamespace(currentView.label, root.id),
         gradingTimelineName: deriveColorGradingTimelineName(currentView.label, root.id),
         renderPreset,
@@ -178,6 +189,7 @@ export function buildColorWorkspaceState(
         transformPresetKey,
         blockingReasons: currentView.blockingReasons,
         hostPreflight,
+        latestDrpSnapshot,
         groupsSnapshot,
         groups,
         colorCurrent: currentView,
@@ -201,6 +213,15 @@ export function buildColorWorkspaceState(
   };
 }
 
+function resolveLatestDrpSnapshot(
+  map: IColorResolveProjectMap | undefined,
+  projectName: string,
+): IColorResolveProjectSnapshot | undefined {
+  const entries = Object.values(map?.projects ?? {});
+  const matched = entries.find(entry => entry.projectName === projectName);
+  return matched?.latestSnapshot;
+}
+
 function normalizeGroupCurrent(
   currentGroups: NonNullable<IColorRootCurrent['groups']>,
 ): IColorGroupCurrent[] {
@@ -211,6 +232,7 @@ function normalizeGroupCurrent(
     clipCount: current.clipCount,
     logProfile: trimmed(current.logProfile),
     lowlight: current.lowlight,
+    colorCastClass: current.colorCastClass,
     postClipCreativeStatus: current.postClipCreativeStatus,
     latestBatchId: current.latestBatchId,
     latestBatchStatus: current.latestBatchStatus,
@@ -247,12 +269,26 @@ function materializeGroupWorkspaceSummaries(
       clipKeys: dedupeStrings(group.clipKeys ?? []),
       logProfile: trimmed(group.logProfile) ?? trimmed(current.logProfile),
       lowlight: group.lowlight ?? current.lowlight,
+      colorCastClass: group.colorCastClass ?? current.colorCastClass,
       postClipCreativeStatus: group.postClipCreativeStatus ?? current.postClipCreativeStatus,
       clips: (group.clips ?? []).map(clip => ({
         clipKey: clip.clipKey,
         displayName: trimmed(clip.displayName),
         logProfile: trimmed(clip.logProfile),
         lowlight: clip.lowlight,
+        colorCastClass: clip.colorCastClass,
+        colorCastConfidence: clip.colorCastConfidence,
+        colorCastMetrics: clip.colorCastMetrics,
+        encodedWidth: clip.encodedWidth,
+        encodedHeight: clip.encodedHeight,
+        displayWidth: clip.displayWidth,
+        displayHeight: clip.displayHeight,
+        rotationDegrees: clip.rotationDegrees,
+        orientationStatus: clip.orientationStatus,
+        repairTemplateKey: clip.repairTemplateKey,
+        repairTemplateHash: clip.repairTemplateHash,
+        timelineTransform: clip.timelineTransform,
+        gyroDataAvailable: clip.gyroDataAvailable,
         gyroEligible: clip.gyroEligible,
         gyroflowStatus: clip.gyroflowStatus,
         dehazeStatus: clip.dehazeStatus,
@@ -269,6 +305,7 @@ function materializeGroupWorkspaceSummaries(
         clipCount: current.clipCount ?? group.clipKeys.length,
         logProfile: trimmed(group.logProfile) ?? trimmed(current.logProfile),
         lowlight: group.lowlight ?? current.lowlight,
+        colorCastClass: group.colorCastClass ?? current.colorCastClass,
         postClipCreativeStatus: group.postClipCreativeStatus ?? current.postClipCreativeStatus,
       },
     } satisfies IColorGroupWorkspaceSummary;
@@ -283,6 +320,7 @@ function materializeGroupWorkspaceSummaries(
       clipKeys: [],
       logProfile: trimmed(current.logProfile),
       lowlight: current.lowlight,
+      colorCastClass: current.colorCastClass,
       postClipCreativeStatus: current.postClipCreativeStatus,
       clips: [],
       hostSummary: {},
@@ -292,6 +330,7 @@ function materializeGroupWorkspaceSummaries(
         clipCount: current.clipCount ?? 0,
         logProfile: trimmed(current.logProfile),
         lowlight: current.lowlight,
+        colorCastClass: current.colorCastClass,
         postClipCreativeStatus: current.postClipCreativeStatus,
       },
     });
@@ -406,6 +445,8 @@ function filterLegacyResolveRuntimeBlockers(values: string[]): string[] {
       normalized.includes('resolveColorPythonPath')
       || normalized.includes('resolveColorScriptApiRoot')
       || normalized.includes('config/runtime.json')
+      || normalized.includes('Unable to set render settings')
+      || normalized.includes('Unable to locate rendered output')
     );
   });
 }

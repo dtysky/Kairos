@@ -7,7 +7,10 @@ export {
   validateProjectColorBatch,
   promoteProjectColorBatch,
   exportAllProjectColorRoots,
+  snapshotProjectColorDrp,
+  registerExternalColorDrpSnapshot,
   preflightProjectColorHost,
+  previewProjectColorOverwrite,
   ProjectColorBlockedError,
   ColorPrepBlockedError,
   type TProjectColorAction,
@@ -17,7 +20,21 @@ export {
   type IProjectColorPreflightInput,
   type IPrepareProjectColorRootInput,
   type IPrepareProjectColorRootResult,
+  type ISnapshotProjectColorDrpInput,
+  type ISnapshotProjectColorDrpResult,
+  type IRegisterExternalColorDrpSnapshotInput,
+  type IRegisterExternalColorDrpSnapshotResult,
 } from './project-color.js';
+export {
+  classifyColorCast,
+  classifyRgbFrameColorCast,
+  isColorCastGroupClass,
+  shouldSplitColorCastGroup,
+  type IColorCastClassification,
+  type IColorCastFrameMetrics,
+  type IColorCastMetrics,
+  type TColorCastClass,
+} from './color-cast-classifier.js';
 export {
   PythonResolveColorExecutor,
   ResolveColorExecutorUnavailableError,
@@ -36,6 +53,8 @@ export {
   type IColorExecutorExecuteRootResult,
   type IColorExecutorPreflightInput,
   type IColorExecutorPreflightResult,
+  type IColorExecutorSaveDrpSnapshotInput,
+  type IColorExecutorSaveDrpSnapshotResult,
   type IResolveColorBackendStatus,
   type IResolveColorExecutorConfig,
 } from './resolve-executor.js';

@@ -20,6 +20,87 @@ afterEach(() => {
 });
 
 describe('probe', () => {
+  it('extracts video rotation from ffprobe rotate tags and swaps display dimensions', async () => {
+    execFileMock.mockImplementation((
+      file: string,
+      _args: string[],
+      optionsOrCallback: { env?: NodeJS.ProcessEnv } | ExecCallback,
+      maybeCallback?: ExecCallback,
+    ) => {
+      const callback = typeof optionsOrCallback === 'function'
+        ? optionsOrCallback
+        : maybeCallback;
+      if (file === 'ffprobe') {
+        callback?.(null, {
+          stdout: JSON.stringify({
+          streams: [{
+            codec_type: 'video',
+            width: 3840,
+            height: 2160,
+            r_frame_rate: '30000/1001',
+            codec_name: 'h264',
+            tags: { rotate: '90' },
+          }],
+          format: { duration: '1.0', tags: {} },
+          }),
+          stderr: '',
+        } as unknown as string, '');
+        return;
+      }
+      callback?.(new Error(`unexpected command: ${file}`));
+    });
+
+    const { probe } = await import('../../src/modules/media/probe.js');
+    const result = await probe('/tmp/sample.mp4');
+
+    expect(result.rotationDegrees).toBe(90);
+    expect(result.width).toBe(3840);
+    expect(result.height).toBe(2160);
+    expect(result.displayWidth).toBe(2160);
+    expect(result.displayHeight).toBe(3840);
+  });
+
+  it('extracts video rotation from display matrix side data', async () => {
+    execFileMock.mockImplementation((
+      file: string,
+      _args: string[],
+      optionsOrCallback: { env?: NodeJS.ProcessEnv } | ExecCallback,
+      maybeCallback?: ExecCallback,
+    ) => {
+      const callback = typeof optionsOrCallback === 'function'
+        ? optionsOrCallback
+        : maybeCallback;
+      if (file === 'ffprobe') {
+        callback?.(null, {
+          stdout: JSON.stringify({
+          streams: [{
+            codec_type: 'video',
+            width: 3840,
+            height: 2160,
+            r_frame_rate: '25/1',
+            codec_name: 'h265',
+            side_data_list: [{
+              side_data_type: 'Display Matrix',
+              rotation: -90,
+            }],
+          }],
+          format: { duration: '1.0', tags: {} },
+          }),
+          stderr: '',
+        } as unknown as string, '');
+        return;
+      }
+      callback?.(new Error(`unexpected command: ${file}`));
+    });
+
+    const { probe } = await import('../../src/modules/media/probe.js');
+    const result = await probe('/tmp/sample.mp4');
+
+    expect(result.rotationDegrees).toBe(-90);
+    expect(result.displayWidth).toBe(2160);
+    expect(result.displayHeight).toBe(3840);
+  });
+
   it('uses a stable locale env for photo exiftool probes', async () => {
     execFileMock.mockImplementation((
       file: string,

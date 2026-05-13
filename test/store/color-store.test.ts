@@ -53,7 +53,7 @@ describe('color store', () => {
       batchId: 'batch-1',
       rootId: 'root-camera',
       createdAt: '2026-04-19T10:05:00.000Z',
-      stagingRoot: '/tmp/render',
+      outputRoot: '/tmp/current',
       renderPreset: {
         container: 'mp4',
         videoCodec: 'h265',
@@ -79,10 +79,7 @@ describe('color store', () => {
       managedOutputSet: ['day/clip001.mp4'],
       entries: [{
         rawRelativePath: 'day/clip001.mov',
-        stagingRelativePath: 'clip001.mp4',
-        stagingAbsolutePath: '/tmp/render/clip001.mp4',
-        promoteRelativePath: 'day/clip001.mp4',
-        promoteTargetPath: '/tmp/current/day/clip001.mp4',
+        outputPath: '/tmp/current/day/clip001.mp4',
         normalizedOutputFilename: 'clip001.mp4',
       }],
     });
@@ -100,6 +97,7 @@ describe('color store', () => {
       blockingReasons: [],
       entries: [{
         rawRelativePath: 'day/clip001.mov',
+        outputPath: '/tmp/current/day/clip001.mp4',
         status: 'pass',
         reasons: [],
         checks: {
@@ -141,7 +139,7 @@ describe('color store', () => {
       batchId: 'batch-new',
       rootId: 'root-camera',
       createdAt: '2026-04-19T10:05:00.000Z',
-      stagingRoot: '/tmp/render-new',
+      outputRoot: '/tmp/current',
       renderPreset: {
         container: 'mp4',
         videoCodec: 'h265',
@@ -168,6 +166,7 @@ describe('color store', () => {
       blockingReasons: ['duration mismatch'],
       entries: [{
         rawRelativePath: 'day/clip002.mov',
+        outputPath: '/tmp/current/day/clip002.mp4',
         status: 'fail',
         reasons: ['duration mismatch'],
         checks: {
@@ -188,7 +187,7 @@ describe('color store', () => {
       batchId: 'batch-old',
       rootId: 'root-camera',
       createdAt: '2026-04-18T10:05:00.000Z',
-      stagingRoot: '/tmp/render-old',
+      outputRoot: '/tmp/current',
       renderPreset: {
         container: 'mov',
         videoCodec: 'prores',
@@ -213,6 +212,6 @@ describe('color store', () => {
     const archiveViews = await loadColorArchiveViews(projectRoot);
     expect(archiveViews['root-camera']?.recentBatches.map(item => item.batchId)).toEqual(['batch-new', 'batch-old']);
     expect(archiveViews['root-camera']?.validationFailures.map(item => item.batchId)).toEqual(['batch-new']);
-    expect(archiveViews['root-camera']?.promoteHistory.map(item => item.batchId)).toEqual(['batch-old']);
+    expect(archiveViews['root-camera']?.promoteHistory).toEqual([]);
   });
 });
