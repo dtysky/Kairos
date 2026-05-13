@@ -16,4 +16,7 @@ analysis
 config/runtime.json
 config/device-media-maps.local.json
 projects/tmp-*
+projects/*/color/current.json
+projects/*/color/batches/
+projects/*/color/groups/
 */adapters

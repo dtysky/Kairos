@@ -1,0 +1,776 @@
+{
+  "schema": "pharos/gpx-pull-manifest/v1",
+  "tripId": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087",
+  "remoteDir": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx",
+  "generatedAt": "2026-05-08T08:43:17.654Z",
+  "files": [
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-24_0800-1200.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-24_0800-1200.gpx",
+      "size": 403,
+      "lastmod": "Fri, 24 Apr 2026 06:43:04 GMT",
+      "etag": "_8Mdci9lGqAGwbtu_MZzQQ",
+      "localName": "day0-0800-1200.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-24_1200-1600.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-24_1200-1600.gpx",
+      "size": 5673,
+      "lastmod": "Fri, 24 Apr 2026 08:28:51 GMT",
+      "etag": "qkzaatH4Fg5yIdprPpDE0A",
+      "localName": "day0-1200-1600.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-24_1200-1600_part-2.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-24_1200-1600_part-2.gpx",
+      "size": 4046,
+      "lastmod": "Fri, 24 Apr 2026 08:28:58 GMT",
+      "etag": "ugS01u00JyWgf6gwM_uUXQ",
+      "localName": "day0-1200-1600-part2.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-24_1600-2000.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-24_1600-2000.gpx",
+      "size": 379094,
+      "lastmod": "Fri, 24 Apr 2026 12:05:38 GMT",
+      "etag": "y1UpFBphrw9Zgvw54xmaVQ",
+      "localName": "day0-1600-2000.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-24_1600-2000_part-2.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-24_1600-2000_part-2.gpx",
+      "size": 7580,
+      "lastmod": "Fri, 24 Apr 2026 12:05:48 GMT",
+      "etag": "g5sWwLkhvVBhLOYfRjh6KQ",
+      "localName": "day0-1600-2000-part2.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-24_2000-2400.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-24_2000-2400.gpx",
+      "size": 514787,
+      "lastmod": "Fri, 24 Apr 2026 16:21:30 GMT",
+      "etag": "OgnCTv7JOqEYiFGGuPba3Q",
+      "localName": "day0-2000-2400.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-25_0000-0400.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-25_0000-0400.gpx",
+      "size": 30393,
+      "lastmod": "Fri, 24 Apr 2026 23:40:28 GMT",
+      "etag": "XONF4unVlCCKRSKCnEW87Q",
+      "localName": "day1-0000-0400.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-25_0400-0800.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-25_0400-0800.gpx",
+      "size": 7838,
+      "lastmod": "Sat, 25 Apr 2026 00:19:28 GMT",
+      "etag": "6BVOasuoGoZdVRMl0vhNRA",
+      "localName": "day1-0400-0800.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-25_0800-1200.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-25_0800-1200.gpx",
+      "size": 274977,
+      "lastmod": "Sat, 25 Apr 2026 06:35:49 GMT",
+      "etag": "6y6tiANIhzwjEHWOVgWhNQ",
+      "localName": "day1-0800-1200.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-25_1200-1600.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-25_1200-1600.gpx",
+      "size": 184540,
+      "lastmod": "Sat, 25 Apr 2026 08:08:03 GMT",
+      "etag": "PoFWPMaygMm7YkM-W9zteA",
+      "localName": "day1-1200-1600.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-25_1600-2000.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-25_1600-2000.gpx",
+      "size": 232616,
+      "lastmod": "Sat, 25 Apr 2026 13:39:54 GMT",
+      "etag": "0edyqXKfqGCfxa8Fb6H2dA",
+      "localName": "day1-1600-2000.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-25_2000-2400.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-25_2000-2400.gpx",
+      "size": 182273,
+      "lastmod": "Sat, 25 Apr 2026 16:16:35 GMT",
+      "etag": "OwWfa6W4n_y5uLtqIS9fjg",
+      "localName": "day1-2000-2400.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-25_2000-2400_part-2.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-25_2000-2400_part-2.gpx",
+      "size": 445,
+      "lastmod": "Sat, 25 Apr 2026 16:16:41 GMT",
+      "etag": "wRy84imgn-39Fui10VaR2Q",
+      "localName": "day1-2000-2400-part2.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-26_0000-0400.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-26_0000-0400.gpx",
+      "size": 439,
+      "lastmod": "Sat, 25 Apr 2026 20:16:06 GMT",
+      "etag": "VJ4tuc8xvG31C_9p5rU7Pg",
+      "localName": "day2-0000-0400.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-26_0400-0800.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-26_0400-0800.gpx",
+      "size": 125787,
+      "lastmod": "Sun, 26 Apr 2026 00:17:32 GMT",
+      "etag": "5E8MIBbBJRpSl38eG7RDzg",
+      "localName": "day2-0400-0800.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-26_0400-0800_part-2.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-26_0400-0800_part-2.gpx",
+      "size": 8247,
+      "lastmod": "Sun, 26 Apr 2026 00:17:40 GMT",
+      "etag": "BkpXLaDmD6lJpmMk_8VdiA",
+      "localName": "day2-0400-0800-part2.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-26_0800-1200.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-26_0800-1200.gpx",
+      "size": 226722,
+      "lastmod": "Sun, 26 Apr 2026 04:07:20 GMT",
+      "etag": "CAKooMeK1ffi07nDEGDs-g",
+      "localName": "day2-0800-1200.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-26_1200-1600.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-26_1200-1600.gpx",
+      "size": 367852,
+      "lastmod": "Sun, 26 Apr 2026 08:04:14 GMT",
+      "etag": "gxslmtx0rabYV7S-s8Kbkg",
+      "localName": "day2-1200-1600.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-26_1200-1600_part-2.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-26_1200-1600_part-2.gpx",
+      "size": 11022,
+      "lastmod": "Sun, 26 Apr 2026 08:04:35 GMT",
+      "etag": "gUqpaGAMC7WnQBu7gCOG3A",
+      "localName": "day2-1200-1600-part2.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-26_1600-2000.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-26_1600-2000.gpx",
+      "size": 285017,
+      "lastmod": "Sun, 26 Apr 2026 12:10:11 GMT",
+      "etag": "Tph3vywMH1X4DTpxTG0cRg",
+      "localName": "day2-1600-2000.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-26_2000-2400.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-26_2000-2400.gpx",
+      "size": 133900,
+      "lastmod": "Sun, 26 Apr 2026 16:22:39 GMT",
+      "etag": "Wr3hL12xlBcD_yC7SfaskQ",
+      "localName": "day2-2000-2400.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-27_0000-0400.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-27_0000-0400.gpx",
+      "size": 5894,
+      "lastmod": "Sun, 26 Apr 2026 20:03:38 GMT",
+      "etag": "AkjRtHSPTjyDuXdaH1E66w",
+      "localName": "day3-0000-0400.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-27_0000-0400_part-2.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-27_0000-0400_part-2.gpx",
+      "size": 808,
+      "lastmod": "Sun, 26 Apr 2026 20:03:50 GMT",
+      "etag": "2yktQI5pjRdApp57aKPpgw",
+      "localName": "day3-0000-0400-part2.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-27_0400-0800.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-27_0400-0800.gpx",
+      "size": 4425,
+      "lastmod": "Mon, 27 Apr 2026 00:14:42 GMT",
+      "etag": "CfmjjHQyKMb5eRsnw3dSMw",
+      "localName": "day3-0400-0800.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-27_0800-1200.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-27_0800-1200.gpx",
+      "size": 490875,
+      "lastmod": "Mon, 27 Apr 2026 04:20:00 GMT",
+      "etag": "LgK-wRBTL683lDlIfwWEbQ",
+      "localName": "day3-0800-1200.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-27_1200-1600.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-27_1200-1600.gpx",
+      "size": 447448,
+      "lastmod": "Mon, 27 Apr 2026 08:01:06 GMT",
+      "etag": "on-48eM41QconfiL99FGUQ",
+      "localName": "day3-1200-1600.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-27_1600-2000.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-27_1600-2000.gpx",
+      "size": 335394,
+      "lastmod": "Mon, 27 Apr 2026 12:24:23 GMT",
+      "etag": "gyeV7DfQ8ESpgup0zBzmpA",
+      "localName": "day3-1600-2000.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-27_2000-2400.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-27_2000-2400.gpx",
+      "size": 202468,
+      "lastmod": "Mon, 27 Apr 2026 16:09:14 GMT",
+      "etag": "fPDXv_pVC3ZONJe8KgZIGg",
+      "localName": "day3-2000-2400.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-28_0000-0400.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-28_0000-0400.gpx",
+      "size": 439,
+      "lastmod": "Mon, 27 Apr 2026 20:17:48 GMT",
+      "etag": "Qro7H8BDSf21_MBQDm0lyw",
+      "localName": "day4-0000-0400.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-28_0400-0800.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-28_0400-0800.gpx",
+      "size": 34344,
+      "lastmod": "Tue, 28 Apr 2026 00:19:45 GMT",
+      "etag": "Nnj75L-H9STeyXkW_jslFQ",
+      "localName": "day4-0400-0800.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-28_0800-1200.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-28_0800-1200.gpx",
+      "size": 231262,
+      "lastmod": "Tue, 28 Apr 2026 04:09:31 GMT",
+      "etag": "22XBbx66iySDMmxGQcAr-A",
+      "localName": "day4-0800-1200.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-28_0800-1200_part-2.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-28_0800-1200_part-2.gpx",
+      "size": 6329,
+      "lastmod": "Tue, 28 Apr 2026 04:09:55 GMT",
+      "etag": "jtatNCdnilTVcFmJxfGs3g",
+      "localName": "day4-0800-1200-part2.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-28_1200-1600.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-28_1200-1600.gpx",
+      "size": 436873,
+      "lastmod": "Tue, 28 Apr 2026 08:13:36 GMT",
+      "etag": "L6mtAVHcbdYqSuCMPgB4BQ",
+      "localName": "day4-1200-1600.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-28_1600-2000.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-28_1600-2000.gpx",
+      "size": 396300,
+      "lastmod": "Tue, 28 Apr 2026 12:29:37 GMT",
+      "etag": "gMgrZk77CSzZSOKtkeVQhg",
+      "localName": "day4-1600-2000.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-28_2000-2400.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-28_2000-2400.gpx",
+      "size": 72860,
+      "lastmod": "Tue, 28 Apr 2026 16:16:58 GMT",
+      "etag": "VIVYFaOo3h7BQFb-JAL6pw",
+      "localName": "day4-2000-2400.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-29_0000-0400.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-29_0000-0400.gpx",
+      "size": 1520,
+      "lastmod": "Tue, 28 Apr 2026 20:19:16 GMT",
+      "etag": "aj4yVYVFJR5Ld-3oPyJAYg",
+      "localName": "day5-0000-0400.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-29_0400-0800.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-29_0400-0800.gpx",
+      "size": 130013,
+      "lastmod": "Wed, 29 Apr 2026 00:28:01 GMT",
+      "etag": "uOfsYbvj59tkVJCdvCwIQA",
+      "localName": "day5-0400-0800.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-29_0800-1200.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-29_0800-1200.gpx",
+      "size": 464780,
+      "lastmod": "Wed, 29 Apr 2026 04:28:16 GMT",
+      "etag": "HRodswnOT3nvPFOAde3tkw",
+      "localName": "day5-0800-1200.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-29_1200-1600.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-29_1200-1600.gpx",
+      "size": 449952,
+      "lastmod": "Wed, 29 Apr 2026 08:08:27 GMT",
+      "etag": "m7TH2wK8Iz0dbXNuagcPsA",
+      "localName": "day5-1200-1600.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-29_1600-2000.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-29_1600-2000.gpx",
+      "size": 505289,
+      "lastmod": "Wed, 29 Apr 2026 12:25:47 GMT",
+      "etag": "Pn2vfTWDbJCxQoFEeGJ1BQ",
+      "localName": "day5-1600-2000.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-29_2000-2400.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-29_2000-2400.gpx",
+      "size": 241632,
+      "lastmod": "Wed, 29 Apr 2026 16:02:54 GMT",
+      "etag": "nrNjMYlf91WZ6jYHqA9b1g",
+      "localName": "day5-2000-2400.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-29_2000-2400_part-2.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-29_2000-2400_part-2.gpx",
+      "size": 438,
+      "lastmod": "Wed, 29 Apr 2026 16:03:57 GMT",
+      "etag": "ZEaFKJfwBfsMrNXVPAYRFA",
+      "localName": "day5-2000-2400-part2.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-30_0000-0400.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-30_0000-0400.gpx",
+      "size": 6300,
+      "lastmod": "Wed, 29 Apr 2026 20:05:04 GMT",
+      "etag": "7CNoWRp-WEawXWPwMgXeVQ",
+      "localName": "day6-0000-0400.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-30_0000-0400_part-2.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-30_0000-0400_part-2.gpx",
+      "size": 444,
+      "lastmod": "Wed, 29 Apr 2026 20:06:07 GMT",
+      "etag": "GYDec2T2wohFsMC16j1hcA",
+      "localName": "day6-0000-0400-part2.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-30_0400-0800.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-30_0400-0800.gpx",
+      "size": 2936,
+      "lastmod": "Thu, 30 Apr 2026 00:13:29 GMT",
+      "etag": "0QYtvEOF0ATZkit_XZJdLQ",
+      "localName": "day6-0400-0800.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-30_0800-1200.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-30_0800-1200.gpx",
+      "size": 386913,
+      "lastmod": "Thu, 30 Apr 2026 06:03:11 GMT",
+      "etag": "uvrQ8up5md-W2Nd8jPOM3g",
+      "localName": "day6-0800-1200.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-30_1200-1600.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-30_1200-1600.gpx",
+      "size": 284991,
+      "lastmod": "Thu, 30 Apr 2026 08:04:10 GMT",
+      "etag": "eu28fxnFVwZeKlNuddxCoQ",
+      "localName": "day6-1200-1600.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-30_1200-1600_part-2.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-30_1200-1600_part-2.gpx",
+      "size": 50059,
+      "lastmod": "Thu, 30 Apr 2026 08:05:30 GMT",
+      "etag": "mbLbXcBfYQVdgtpVA5HsJQ",
+      "localName": "day6-1200-1600-part2.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-30_1600-2000.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-30_1600-2000.gpx",
+      "size": 485877,
+      "lastmod": "Thu, 30 Apr 2026 12:15:25 GMT",
+      "etag": "9pqV2JCUvTpj88OAPpAvcQ",
+      "localName": "day6-1600-2000.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-30_1600-2000_part-2.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-30_1600-2000_part-2.gpx",
+      "size": 8316,
+      "lastmod": "Thu, 30 Apr 2026 12:18:53 GMT",
+      "etag": "PTA7pNdPE9TLusL98Pay3g",
+      "localName": "day6-1600-2000-part2.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-30_2000-2400.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-30_2000-2400.gpx",
+      "size": 317126,
+      "lastmod": "Thu, 30 Apr 2026 16:14:29 GMT",
+      "etag": "9NMEEDzQ3DId10TobFUb_g",
+      "localName": "day6-2000-2400.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-30_2000-2400_part-2.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-04-30_2000-2400_part-2.gpx",
+      "size": 373,
+      "lastmod": "Thu, 30 Apr 2026 16:14:30 GMT",
+      "etag": "7BqafVEnv7DpSMdvM1YiHQ",
+      "localName": "day6-2000-2400-part2.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-01_0000-0400.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-01_0000-0400.gpx",
+      "size": 542,
+      "lastmod": "Thu, 30 Apr 2026 16:14:31 GMT",
+      "etag": "c7jOoHsc5HdkwanALV4Xpw",
+      "localName": "day7-0000-0400.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-01_0000-0400_part-2.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-01_0000-0400_part-2.gpx",
+      "size": 54785,
+      "lastmod": "Thu, 30 Apr 2026 20:06:16 GMT",
+      "etag": "KuLQUSE1wCGNtQnvdZDMgg",
+      "localName": "day7-0000-0400-part2.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-01_0400-0800.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-01_0400-0800.gpx",
+      "size": 3488,
+      "lastmod": "Fri, 01 May 2026 00:10:13 GMT",
+      "etag": "gjLIcMOD41C3O0yxqev02w",
+      "localName": "day7-0400-0800.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-01_0400-0800_part-2.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-01_0400-0800_part-2.gpx",
+      "size": 1704,
+      "lastmod": "Fri, 01 May 2026 00:11:31 GMT",
+      "etag": "UH0RZOdkOYps8SBPTk7dQw",
+      "localName": "day7-0400-0800-part2.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-01_0800-1200.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-01_0800-1200.gpx",
+      "size": 450364,
+      "lastmod": "Fri, 01 May 2026 04:20:12 GMT",
+      "etag": "JdNlbRg45uT-2dC7fdo6CQ",
+      "localName": "day7-0800-1200.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-01_1200-1600.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-01_1200-1600.gpx",
+      "size": 353146,
+      "lastmod": "Fri, 01 May 2026 08:03:13 GMT",
+      "etag": "m60FxBlqmEk7_yAQFiOOQQ",
+      "localName": "day7-1200-1600.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-01_1200-1600_part-2.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-01_1200-1600_part-2.gpx",
+      "size": 42286,
+      "lastmod": "Fri, 01 May 2026 08:04:57 GMT",
+      "etag": "fP6QbOSBsbgJWj8OA4cATA",
+      "localName": "day7-1200-1600-part2.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-01_1600-2000.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-01_1600-2000.gpx",
+      "size": 168968,
+      "lastmod": "Fri, 01 May 2026 12:04:40 GMT",
+      "etag": "q9W0Hw9NlDj4WfEAvSQNTQ",
+      "localName": "day7-1600-2000.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-01_2000-2400.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-01_2000-2400.gpx",
+      "size": 34899,
+      "lastmod": "Fri, 01 May 2026 16:33:01 GMT",
+      "etag": "RaUoskxlWh6XSf4d1pSSaA",
+      "localName": "day7-2000-2400.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-01_2000-2400_part-2.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-01_2000-2400_part-2.gpx",
+      "size": 3849,
+      "lastmod": "Fri, 01 May 2026 16:33:01 GMT",
+      "etag": "QFmBANk9apbVzspVCE5vDw",
+      "localName": "day7-2000-2400-part2.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-02_0000-0400.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-02_0000-0400.gpx",
+      "size": 42324,
+      "lastmod": "Fri, 01 May 2026 20:09:39 GMT",
+      "etag": "JM7y3cglH958pJzQ--k_Tw",
+      "localName": "day8-0000-0400.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-02_0000-0400_part-2.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-02_0000-0400_part-2.gpx",
+      "size": 8912,
+      "lastmod": "Fri, 01 May 2026 20:10:32 GMT",
+      "etag": "mYEB95ktpQQIULBQNk2XLw",
+      "localName": "day8-0000-0400-part2.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-02_0400-0800.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-02_0400-0800.gpx",
+      "size": 43984,
+      "lastmod": "Sat, 02 May 2026 00:08:37 GMT",
+      "etag": "qvnhFYUMgMZ5gjbj5glikQ",
+      "localName": "day8-0400-0800.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-02_0400-0800_part-2.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-02_0400-0800_part-2.gpx",
+      "size": 12131,
+      "lastmod": "Sat, 02 May 2026 00:09:34 GMT",
+      "etag": "6E8wVMNWQlrKdzE9JOlKaw",
+      "localName": "day8-0400-0800-part2.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-02_0800-1200.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-02_0800-1200.gpx",
+      "size": 303201,
+      "lastmod": "Sat, 02 May 2026 04:16:23 GMT",
+      "etag": "sMnaJ0cU8QvB7CcgUc8DkQ",
+      "localName": "day8-0800-1200.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-02_1200-1600.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-02_1200-1600.gpx",
+      "size": 411588,
+      "lastmod": "Sat, 02 May 2026 08:48:17 GMT",
+      "etag": "mxvzoQVNLUFXxU-In4D7eQ",
+      "localName": "day8-1200-1600.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-02_1600-2000.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-02_1600-2000.gpx",
+      "size": 274353,
+      "lastmod": "Sat, 02 May 2026 13:16:06 GMT",
+      "etag": "aHa2l0i6VGoi_ZPt0u-V4w",
+      "localName": "day8-1600-2000.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-02_2000-2400.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-02_2000-2400.gpx",
+      "size": 40447,
+      "lastmod": "Sat, 02 May 2026 16:20:04 GMT",
+      "etag": "tALdnQbA_K5MA-f5AppMow",
+      "localName": "day8-2000-2400.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-03_0000-0400.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-03_0000-0400.gpx",
+      "size": 10265,
+      "lastmod": "Sat, 02 May 2026 20:30:49 GMT",
+      "etag": "AaUJ5tojedXJgEwCjrBzIw",
+      "localName": "day9-0000-0400.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-03_0400-0800.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-03_0400-0800.gpx",
+      "size": 220492,
+      "lastmod": "Sun, 03 May 2026 00:29:44 GMT",
+      "etag": "zULZercV9mBxd77y_SJ0ZQ",
+      "localName": "day9-0400-0800.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-03_0800-1200.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-03_0800-1200.gpx",
+      "size": 339440,
+      "lastmod": "Sun, 03 May 2026 04:16:19 GMT",
+      "etag": "mH1PVSfjj0xU1nAiFKEESA",
+      "localName": "day9-0800-1200.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-03_0800-1200_part-2.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-03_0800-1200_part-2.gpx",
+      "size": 2608,
+      "lastmod": "Sun, 03 May 2026 04:16:59 GMT",
+      "etag": "lz1ymTKGvos_R9gH0kY-VA",
+      "localName": "day9-0800-1200-part2.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-03_1200-1600.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-03_1200-1600.gpx",
+      "size": 474568,
+      "lastmod": "Sun, 03 May 2026 08:33:44 GMT",
+      "etag": "ZvMrARhz-gqK8BWsYNywyA",
+      "localName": "day9-1200-1600.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-03_1200-1600_part-2.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-03_1200-1600_part-2.gpx",
+      "size": 15267,
+      "lastmod": "Sun, 03 May 2026 08:34:24 GMT",
+      "etag": "tamIU6Xi-Kxmb8kmbWgDaQ",
+      "localName": "day9-1200-1600-part2.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-03_1600-2000.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-03_1600-2000.gpx",
+      "size": 422803,
+      "lastmod": "Sun, 03 May 2026 12:05:08 GMT",
+      "etag": "rqmXwnEyIflK0HDrRUTuMw",
+      "localName": "day9-1600-2000.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-03_2000-2400.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-03_2000-2400.gpx",
+      "size": 23908,
+      "lastmod": "Sun, 03 May 2026 16:14:58 GMT",
+      "etag": "LZmDRDdsaG_KQ9aE7PUKAA",
+      "localName": "day9-2000-2400.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-04_0000-0400.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-04_0000-0400.gpx",
+      "size": 6584,
+      "lastmod": "Sun, 03 May 2026 20:20:13 GMT",
+      "etag": "AVxdCrylBztPE6rZlW566g",
+      "localName": "day10-0000-0400.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-04_0400-0800.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-04_0400-0800.gpx",
+      "size": 199325,
+      "lastmod": "Mon, 04 May 2026 00:09:34 GMT",
+      "etag": "e8iNDYbjDku8Y7IwV6EgOQ",
+      "localName": "day10-0400-0800.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-04_0400-0800_part-2.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-04_0400-0800_part-2.gpx",
+      "size": 39592,
+      "lastmod": "Mon, 04 May 2026 00:12:17 GMT",
+      "etag": "wPSglLwPVxtLGzw1jCTuHA",
+      "localName": "day10-0400-0800-part2.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-04_0800-1200.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-04_0800-1200.gpx",
+      "size": 469812,
+      "lastmod": "Mon, 04 May 2026 04:22:36 GMT",
+      "etag": "6HXTiM0ljHIWGcn7V_zEcw",
+      "localName": "day10-0800-1200.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-04_0800-1200_part-2.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-04_0800-1200_part-2.gpx",
+      "size": 7666,
+      "lastmod": "Mon, 04 May 2026 04:23:23 GMT",
+      "etag": "-1s15Nnoh1eCxSh04WBnDw",
+      "localName": "day10-0800-1200-part2.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-04_1200-1600.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-04_1200-1600.gpx",
+      "size": 524666,
+      "lastmod": "Mon, 04 May 2026 08:46:34 GMT",
+      "etag": "tZ9mAm9sRflU5WNVhzDESg",
+      "localName": "day10-1200-1600.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-04_1600-2000.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-04_1600-2000.gpx",
+      "size": 326295,
+      "lastmod": "Mon, 04 May 2026 12:23:54 GMT",
+      "etag": "jlEXz1XadVNvzLDuTIONeg",
+      "localName": "day10-1600-2000.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-04_2000-2400.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-04_2000-2400.gpx",
+      "size": 116517,
+      "lastmod": "Mon, 04 May 2026 16:29:59 GMT",
+      "etag": "EqDl7kdlgOgAUyD5GMHXmQ",
+      "localName": "day10-2000-2400.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-05_0000-0400.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-05_0000-0400.gpx",
+      "size": 98133,
+      "lastmod": "Mon, 04 May 2026 21:20:34 GMT",
+      "etag": "dva6yU6oeQthw4Mrgy2afg",
+      "localName": "day11-0000-0400.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-05_0000-0400_part-2.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-05_0000-0400_part-2.gpx",
+      "size": 810,
+      "lastmod": "Mon, 04 May 2026 21:21:22 GMT",
+      "etag": "6Eo8g17iqu1tsZ7yHf5gGw",
+      "localName": "day11-0000-0400-part2.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-05_0400-0800.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-05_0400-0800.gpx",
+      "size": 2065,
+      "lastmod": "Tue, 05 May 2026 00:20:00 GMT",
+      "etag": "VngD6h43D7a1yD55VzWdDw",
+      "localName": "day11-0400-0800.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-05_0400-0800_part-2.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-05_0400-0800_part-2.gpx",
+      "size": 810,
+      "lastmod": "Tue, 05 May 2026 00:20:53 GMT",
+      "etag": "RW0c7uTAJV9QY1LvhEIUcw",
+      "localName": "day11-0400-0800-part2.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-05_0800-1200.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-05_0800-1200.gpx",
+      "size": 417943,
+      "lastmod": "Tue, 05 May 2026 04:32:04 GMT",
+      "etag": "O2vDIofRA8e1_cJLGxgkxA",
+      "localName": "day11-0800-1200.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-05_0800-1200_part-2.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-05_0800-1200_part-2.gpx",
+      "size": 11852,
+      "lastmod": "Tue, 05 May 2026 04:33:11 GMT",
+      "etag": "Ec8nV0HMPsQvwJsvL4skQA",
+      "localName": "day11-0800-1200-part2.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-05_1200-1600.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-05_1200-1600.gpx",
+      "size": 360981,
+      "lastmod": "Tue, 05 May 2026 08:17:45 GMT",
+      "etag": "bbO6GGhhBU3CW9pf29QnzQ",
+      "localName": "day11-1200-1600.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-05_1600-2000.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-05_1600-2000.gpx",
+      "size": 302174,
+      "lastmod": "Tue, 05 May 2026 12:06:53 GMT",
+      "etag": "JF_0gSNx0z5ksYjiUrncLQ",
+      "localName": "day11-1600-2000.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-05_2000-2400.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-05_2000-2400.gpx",
+      "size": 227684,
+      "lastmod": "Tue, 05 May 2026 15:42:15 GMT",
+      "etag": "6tFhhQMJIjZEzqX_nJ5k8Q",
+      "localName": "day11-2000-2400.gpx"
+    },
+    {
+      "remoteName": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-05_2000-2400_part-2.gpx",
+      "remotePath": "/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087/gpx/trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-05_2000-2400_part-2.gpx",
+      "size": 10209,
+      "lastmod": "Tue, 05 May 2026 16:14:21 GMT",
+      "etag": "rHkKxom_yvI4uoc0acIwqQ",
+      "localName": "day11-2000-2400-part2.gpx"
+    }
+  ]
+}

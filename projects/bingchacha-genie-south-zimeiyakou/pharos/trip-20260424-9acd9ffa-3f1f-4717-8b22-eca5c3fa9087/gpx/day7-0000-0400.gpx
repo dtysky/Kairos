@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Pyxis" xmlns="http://www.topografix.com/GPX/1/1">
+  <trk>
+    <name>trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087_2026-05-01_0000-0400</name>
+    <trkseg>
+      <trkpt lat="29.6725541" lon="97.8409582">
+        <time>2026-04-30T16:00:34.833Z</time>
+        <speed>0.20015039</speed>
+      </trkpt>
+      <trkpt lat="29.672519" lon="97.8409598">
+        <time>2026-04-30T16:02:14.351Z</time>
+        <speed>0.02095027</speed>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>

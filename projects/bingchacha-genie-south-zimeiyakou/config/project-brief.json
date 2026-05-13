@@ -1,0 +1,71 @@
+{
+  "name": "丙察察格聂南线子梅垭口穿越",
+  "description": "丙察察、格聂南线、子梅垭口穿越剪辑调色项目",
+  "createdAt": "2026-05-09T09:10:59.629Z",
+  "mappings": [
+    {
+      "rootId": "root-draft-1778318452475-huvyid",
+      "path": "/Volumes/SSDMAX/zve1",
+      "rawPath": "/Volumes/SSDMAX/raw/zve1",
+      "description": "VLOG和行车等主要视频",
+      "enabled": true,
+      "label": "SSDMAX/zve1",
+      "priority": 1,
+      "notes": [
+        "VLOG和行车等主要视频"
+      ],
+      "color": {
+        "renderPreset": {
+          "container": "mp4",
+          "videoCodec": "h265",
+          "audioCodec": "aac",
+          "bitrateKbps": 30000
+        }
+      }
+    },
+    {
+      "rootId": "root-draft-1778319636214-bb8ljb",
+      "path": "/Volumes/SSDMAX/drone",
+      "rawPath": "/Volumes/SSDMAX/raw/drone",
+      "description": "航拍视频",
+      "enabled": true,
+      "label": "SSDMAX/drone",
+      "priority": 2,
+      "notes": [
+        "航拍视频"
+      ],
+      "color": {
+        "renderPreset": {
+          "container": "mp4",
+          "videoCodec": "h265",
+          "audioCodec": "aac",
+          "bitrateKbps": 30000
+        },
+        "transformPresetKey": "DJI/DJI Mavic 4 Pro D-Log to Rec.709 V1.cube"
+      }
+    },
+    {
+      "rootId": "root-draft-1778319664359-puaawa",
+      "path": "/Volumes/SSDMAX/ts-final",
+      "description": "延时摄影",
+      "enabled": true,
+      "label": "SSDMAX/ts-final",
+      "priority": 3,
+      "notes": [
+        "延时摄影"
+      ]
+    },
+    {
+      "rootId": "root-draft-1778319790368-3hrfrl",
+      "path": "/Volumes/SSDMAX/photos",
+      "description": "途中拍摄的照片",
+      "enabled": true,
+      "label": "SSDMAX/photos",
+      "priority": 4,
+      "notes": [
+        "途中拍摄的照片"
+      ]
+    }
+  ],
+  "materialPatternPhrases": []
+}

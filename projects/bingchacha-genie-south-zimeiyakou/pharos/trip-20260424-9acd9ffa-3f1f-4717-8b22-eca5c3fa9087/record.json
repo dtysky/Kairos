@@ -1,0 +1,4254 @@
+{
+  "$schema": "pharos/record/v2.0",
+  "trip_id": "trip-20260424-9acd9ffa-3f1f-4717-8b22-eca5c3fa9087",
+  "device_id": "samsung_SM-S9360",
+  "records": [
+    {
+      "shot_id": "399da03f-75bf-4904-a5b7-d84a6eb7c33d",
+      "plan_revision": 20,
+      "status": "abandoned",
+      "abandon_reason": "更换住宿地",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "d1d7d56c-c86c-4fa8-b186-cf61316c0c5e",
+      "plan_revision": 18,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-24T17:00:00+08:00",
+        "end": "2026-04-24T17:15:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          110.0313856,
+          22.1747374
+        ],
+        "end": [
+          110.0313856,
+          22.1747374
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "装车过程、出发宣言，记录旅程起点",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "2df374b6-f7f7-448b-8898-979796fda991",
+      "plan_revision": 16,
+      "status": "abandoned",
+      "abandon_reason": null,
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "8fecd918-d99e-4567-a0ad-69699773106e",
+      "plan_revision": 18,
+      "status": "abandoned",
+      "abandon_reason": "吃饭换地方",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "d0-0002-b2c3-4d4e-9f5a-行车记录",
+      "plan_revision": 20,
+      "status": "unexpected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-24T17:00:00+08:00",
+        "end": "2026-04-24T23:55:00+08:00"
+      },
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": {
+        "pharos:continuous_deviation": {
+          "planned_location": "深圳 → 南宁 全程",
+          "actual_destination": "灵山县",
+          "actual_destination_gps": [
+            109.2569123,
+            22.3899049
+          ],
+          "reason": "临时更换住宿地点",
+          "recorded_at": "2026-04-25T01:03:37.436382Z"
+        }
+      }
+    },
+    {
+      "shot_id": "bd1762cc-e2d4-4a1a-b548-86c235fd5e7f",
+      "plan_revision": 20,
+      "status": "abandoned",
+      "abandon_reason": "更换住宿地",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "996cf7e3-736c-446d-9b92-f50aecc8e520",
+      "plan_revision": 21,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-25T12:32:00+08:00",
+        "end": "2026-04-25T13:05:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          104.9493457,
+          24.8575214
+        ],
+        "end": [
+          104.9493457,
+          24.8575214
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "途中午餐，美食特写+用餐氛围。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "075c4f5c-47f0-4fca-85dc-bb5715fbe760",
+      "plan_revision": 21,
+      "status": "abandoned",
+      "abandon_reason": "没有进景区",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "df3d7315-2bea-4505-b7ea-aed6602b76bc",
+      "plan_revision": 21,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-25T17:05:00+08:00",
+        "end": "2026-04-25T18:00:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          100.4617769,
+          25.5471364
+        ],
+        "end": [
+          100.4617769,
+          25.5471364
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "走进纳灰村/八卦田，田园小路、水车、稻田，建立场景感。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "9df3a3a4-fd7b-4c33-aff5-f66c64b4bba1",
+      "plan_revision": 21,
+      "status": "unexpected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-25T16:30:00+08:00",
+        "end": "2026-04-25T17:30:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          100.4617769,
+          25.5471364
+        ],
+        "end": [
+          100.4617769,
+          25.5471364
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "A7R5",
+          "lens": "20-70mm F4 G",
+          "note": "长焦压缩：村民劳作、炊烟升起、牛羊归家等人文细节。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "383952c0-ba99-409b-a852-3e0c1639243e",
+      "plan_revision": 21,
+      "status": "abandoned",
+      "abandon_reason": "没有来得及进景区",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "5818f481-7510-412d-bf0e-23207f37d418",
+      "plan_revision": 21,
+      "status": "abandoned",
+      "abandon_reason": "没有进景区",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "d18fb45a-7e68-4eb4-8461-d7500b9dd583",
+      "plan_revision": 21,
+      "status": "abandoned",
+      "abandon_reason": "没有进景区",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "41705576-9ad5-4248-94c6-300e21fb6514",
+      "plan_revision": 24,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-25T21:00:00+08:00",
+        "end": "2026-04-25T21:56:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          100.2897601,
+          25.547456
+        ],
+        "end": [
+          100.2897601,
+          25.547456
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "日落收工后转场玉皇顶，夜路上山与抵达花絮，衔接第二天清晨机位。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "d65a123c-dd6b-4b07-84ee-fa09261f0bcb",
+      "plan_revision": 24,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-25T19:57:00+08:00",
+        "end": "2026-04-25T21:00:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          100.3034221,
+          25.5457109
+        ],
+        "end": [
+          100.3034221,
+          25.5457109
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "玉皇顶景区附近晚餐，收工补给，为次日清晨云海日出做准备。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "736825f8-8979-4c1a-9061-f93e2e338e95",
+      "plan_revision": 24,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-25T22:00:00+08:00",
+        "end": "2026-04-25T22:10:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          100.2897601,
+          25.547456
+        ],
+        "end": [
+          100.2897601,
+          25.547456
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "玉皇顶住宿，高位机位落脚，整理器材后早点休息。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "d1-0002-行车记录",
+      "plan_revision": 21,
+      "status": "unexpected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-25T09:30:00+08:00",
+        "end": "2026-04-25T09:55:00+08:00"
+      },
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": {
+        "pharos:continuous_deviation": {
+          "planned_location": "南宁 → 万峰林 → 玉皇顶 全程",
+          "actual_origin": "灵山县",
+          "actual_origin_gps": [
+            109.286418,
+            22.41954
+          ],
+          "actual_destination": "玉皇顶风景区",
+          "actual_destination_gps": [
+            104.944404,
+            24.856702
+          ],
+          "reason": "第一天住宿变更",
+          "recorded_at": "2026-04-25T15:41:47.327183Z"
+        }
+      }
+    },
+    {
+      "shot_id": "5dcb0e42-4ce8-49fa-8877-66a315487ce1",
+      "plan_revision": 21,
+      "status": "unexpected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-26T05:40:00+08:00",
+        "end": "2026-04-26T06:45:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          104.8922253,
+          25.060824
+        ],
+        "end": [
+          104.8922253,
+          25.060824
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "第三视角拍摄：摄影师在玉皇顶架设日出机位，介绍云海与峰丛层次。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "9d620e42-9fed-409d-afa6-62097bad538e",
+      "plan_revision": 21,
+      "status": "abandoned",
+      "abandon_reason": "天气不好，没东西可以拍",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "c0e51f05-afd9-4d4b-a666-9d93752685ef",
+      "plan_revision": 21,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-26T09:20:00+08:00",
+        "end": "2026-04-26T10:55:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          104.8922276,
+          25.0608198
+        ],
+        "end": [
+          104.8922276,
+          25.0608198
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "玉皇顶出发，退房上车，口播今日转场抚仙湖与傍晚日落安排。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "c8c7d6b9-e530-4b51-8cd0-bfa4c821f139",
+      "plan_revision": 21,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-26T11:55:00+08:00",
+        "end": "2026-04-26T13:05:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          100.5416317,
+          25.5111912
+        ],
+        "end": [
+          100.5416317,
+          25.5111912
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "途中午餐，美食特写。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "d50b91ea-a4f9-4d2a-9d1a-64ecc61a6fb9",
+      "plan_revision": 21,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-26T18:35:00+08:00",
+        "end": "2026-04-26T19:00:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          100.5520203,
+          25.5379484
+        ],
+        "end": [
+          100.5520203,
+          25.5379484
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "第三视角拍摄：第一眼看到抚仙湖的反应。",
+          "extensions": null
+        },
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "湖边散步，水质清澈特写，建立场景。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "d6a9a570-89fc-441d-8914-6c83e285aa61",
+      "plan_revision": 21,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-26T18:45:00+08:00",
+        "end": "2026-04-26T19:35:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          100.541122,
+          25.5413615
+        ],
+        "end": [
+          100.541122,
+          25.5413615
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "timelapse",
+          "camera": "A7R5",
+          "lens": "20-70mm F4 G",
+          "note": "湖面日落，长焦压缩远山层次+湖面光影变化。",
+          "extensions": null
+        },
+        {
+          "type": "timelapse",
+          "camera": "A7R3",
+          "lens": "14mm F1.8 GM",
+          "note": "广角湖面全景+天空晚霞，前景选礁石或栈桥。",
+          "extensions": null
+        },
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "第三视角拍摄：摄影师在湖边架延时设备、介绍抚仙湖日落。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "9cb76d4f-a19e-44b8-bd5b-26b61bcfc2b1",
+      "plan_revision": 21,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-26T19:00:00+08:00",
+        "end": "2026-04-26T19:20:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          100.4957519,
+          25.551911
+        ],
+        "end": [
+          100.4957519,
+          25.551911
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": "航拍抚仙湖全景日落",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "4f273f90-6959-4992-a468-d72dee1470cd",
+      "plan_revision": 21,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-26T17:35:00+08:00",
+        "end": "2026-04-26T18:20:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          100.5592327,
+          25.5285495
+        ],
+        "end": [
+          100.5592327,
+          25.5285495
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "抚仙湖当地美食（铜锅鱼是招牌）。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "1682a112-e0d5-46b5-a6cf-459153625b4e",
+      "plan_revision": 21,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-26T20:50:00+08:00",
+        "end": "2026-04-26T21:00:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          100.541122,
+          25.5413615
+        ],
+        "end": [
+          100.541122,
+          25.5413615
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "抚仙湖住宿，收工后整理器材，早点休息等待次日日出。",
+          "extensions": null
+        },
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "夜间备卡、充电、查看天气与日出方位，准备次日清晨机位。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "a2062a99-ee2f-4df0-829b-119adc6d80f0",
+      "plan_revision": 21,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-26T19:35:00+08:00",
+        "end": "2026-04-26T19:45:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          100.4793366,
+          25.5476008
+        ],
+        "end": [
+          100.4793366,
+          25.5476008
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "收工花絮与短暂湖边夜色，拍完即休息，不再熬夜等月落。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "d2-0006-行车记录",
+      "plan_revision": 21,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-26T10:55:00+08:00",
+        "end": "2026-04-26T20:50:00+08:00"
+      },
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "756c1016-f341-43dd-be15-52794862cf2f",
+      "plan_revision": 24,
+      "status": "abandoned",
+      "abandon_reason": "天气恶劣",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "0aebe2bb-5aa0-4f03-8d6c-53d0a8117e55",
+      "plan_revision": 25,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-27T08:55:00+08:00",
+        "end": "2026-04-27T21:20:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392569,
+          22.5504675
+        ],
+        "end": [
+          113.9392569,
+          22.5504675
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "抚仙湖出发，退房上车，口播今日行程（赶路进怒江）。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "b2f91e5d-2874-4d8b-b16e-0e7063491e56",
+      "plan_revision": 24,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-27T12:35:00+08:00",
+        "end": "2026-04-27T13:00:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392588,
+          22.5504687
+        ],
+        "end": [
+          113.9392588,
+          22.5504687
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "途中午餐。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "19225341-378f-4f7c-a579-01bf77423773",
+      "plan_revision": 24,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-27T18:02:00+08:00",
+        "end": "2026-04-27T18:35:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392514,
+          22.5504752
+        ],
+        "end": [
+          113.9392514,
+          22.5504752
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "老虎跳打卡：怒江最窄处，江心巨石激起白浪，峡谷气势磅礴。航拍+手持。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "414c6613-2973-4b4e-9aeb-97c1fe05e3a2",
+      "plan_revision": 24,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-27T18:20:00+08:00",
+        "end": "2026-04-27T18:35:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392507,
+          22.5504737
+        ],
+        "end": [
+          113.9392507,
+          22.5504737
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": "航拍老虎跳峡谷全景，俯瞰怒江最窄处",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "86a90356-c178-4351-afdc-46155b3b4630",
+      "plan_revision": 24,
+      "status": "abandoned",
+      "abandon_reason": null,
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "7175660b-0bf6-47e1-a254-c3df8b55c858",
+      "plan_revision": 25,
+      "status": "abandoned",
+      "abandon_reason": "太晚了",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "b8462403-c30a-4c13-b9cf-3973dbfe4c27",
+      "plan_revision": 25,
+      "status": "abandoned",
+      "abandon_reason": "太晚了",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "9c8f49fa-d703-41dc-9a2f-d686dd16eb78",
+      "plan_revision": 25,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-27T21:05:00+08:00",
+        "end": "2026-04-27T21:30:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392654,
+          22.5504687
+        ],
+        "end": [
+          113.9392654,
+          22.5504687
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "老姆登民宿入住，阳台/窗外皇冠峰夜景。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "d3-0005-行车记录",
+      "plan_revision": 25,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-27T08:50:00+08:00",
+        "end": "2026-04-27T21:20:00+08:00"
+      },
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "4107998a-6faf-41db-9160-a36c09556f81",
+      "plan_revision": 25,
+      "status": "abandoned",
+      "abandon_reason": "天气不行，看不到皇冠峰",
+      "actual_time": {
+        "start": "2026-04-28T05:30:00+08:00",
+        "end": "2026-04-28T07:30:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392652,
+          22.5504692
+        ],
+        "end": [
+          113.9392652,
+          22.5504692
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "timelapse",
+          "camera": "A7R5",
+          "lens": "50-400mm F4.5-6.3",
+          "note": "长焦压缩皇冠峰+怒江峡谷晨雾升腾消散+日出光线变化。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "a47f8c50-5060-45a8-9ac3-594067c6346f",
+      "plan_revision": 25,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-28T06:20:00+08:00",
+        "end": "2026-04-28T08:20:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392551,
+          22.550469
+        ],
+        "end": [
+          113.9392551,
+          22.550469
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "timelapse",
+          "camera": "A7R3",
+          "lens": "14mm F1.8 GM",
+          "note": "广角拍老姆登村全景+怒江峡谷+天空，晨雾升腾过程，与A7R5长焦对切。",
+          "extensions": null
+        },
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "第三视角拍摄：摄影师在晨雾中架设备、介绍老姆登和皇冠峰。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "29b8ff90-c4cc-4b71-8c41-2fe4d14fd284",
+      "plan_revision": 25,
+      "status": "unexpected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-28T08:28:00+08:00",
+        "end": "2026-04-28T09:07:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392642,
+          22.5504666
+        ],
+        "end": [
+          113.9392642,
+          22.5504666
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": "航拍云雾缭绕的老姆登村+怒江峡谷+皇冠峰",
+          "extensions": null
+        },
+        {
+          "type": "timelapse",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": "航拍怒江大峡谷云雾",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "0d96b0ca-c0ba-4c5d-ac6e-73133fc3f4e5",
+      "plan_revision": 27,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-28T10:49:00+08:00",
+        "end": "2026-04-28T11:40:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.8522924,
+          22.5698566
+        ],
+        "end": [
+          113.8522924,
+          22.5698566
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "废弃的怒江旧州府，80年代建筑完好保存。篮球场、八角楼、废弃图书馆，人文纪录片素材。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "abf91ce9-1194-4735-b939-31dc3369ee75",
+      "plan_revision": 27,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-28T11:47:00+08:00",
+        "end": "2026-04-28T11:50:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.8522921,
+          22.5698572
+        ],
+        "end": [
+          113.8522921,
+          22.5698572
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "出发北上，口播今日行程（知子罗→石月亮→怒江第一湾→丙中洛）。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "13257f91-6931-44b0-a5ea-563ebbdd2a56",
+      "plan_revision": 29,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-28T14:58:00+08:00",
+        "end": "2026-04-28T15:02:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.8522974,
+          22.5698612
+        ],
+        "end": [
+          113.8522974,
+          22.5698612
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "石月亮打卡：巨大岩壁天然穿洞，怒江标志性景观。长焦特写穿洞。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "cb80110d-037f-4ae6-8d09-149775b82b6c",
+      "plan_revision": 29,
+      "status": "abandoned",
+      "abandon_reason": "没必要拍摄",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "b086e035-9068-47be-8d6b-4c999b920a12",
+      "plan_revision": 27,
+      "status": "abandoned",
+      "abandon_reason": "修改地点",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "ad924003-b072-4543-bb10-417633c2bce2",
+      "plan_revision": 29,
+      "status": "unexpected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-28T17:26:00+08:00",
+        "end": "2026-04-28T17:28:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.8522967,
+          22.5698616
+        ],
+        "end": [
+          113.8522967,
+          22.5698616
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "第三视角拍摄：摄影师在观景台架延时，判断低云与侧逆光条件，介绍怒江第一湾。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "0feedc00-1999-444c-b5cf-9af2a5e2f766",
+      "plan_revision": 29,
+      "status": "abandoned",
+      "abandon_reason": "不好看，没啥拍的",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "64064921-1afd-4ecd-88fc-b2b03577f4ef",
+      "plan_revision": 29,
+      "status": "abandoned",
+      "abandon_reason": "没去",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "229e9ea0-028b-44f2-97a4-dbdd1dbf2857",
+      "plan_revision": 29,
+      "status": "unexpected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-28T17:46:00+08:00",
+        "end": "2026-04-28T18:10:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.8522866,
+          22.5698646
+        ],
+        "end": [
+          113.8522866,
+          22.5698646
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "雾里村打卡：茶马古道遗存，田园风光，步行进入约20min。",
+          "extensions": null
+        },
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "19ffc930-4f25-4cde-a4df-ac4da355dbe5",
+      "plan_revision": 29,
+      "status": "abandoned",
+      "abandon_reason": "没去",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "57f1df06-015d-4b26-b99a-31f34b2c0bcd",
+      "plan_revision": 29,
+      "status": "unexpected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-28T18:50:00+08:00",
+        "end": "2026-04-28T19:40:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.8522871,
+          22.5698643
+        ],
+        "end": [
+          113.8522871,
+          22.5698643
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "第三视角拍摄：摄影师在丙中洛观景台架设傍晚延时，判断晚霞、低云和村落层次是否成立。",
+          "extensions": null
+        },
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "34149ddf-a0aa-41e8-a916-fe008b528ab5",
+      "plan_revision": 29,
+      "status": "unexpected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-28T20:05:00+08:00",
+        "end": "2026-04-28T21:30:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.8522871,
+          22.5698639
+        ],
+        "end": [
+          113.8522871,
+          22.5698639
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "傍晚收工后入住丙中洛，人神共居的秘境。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "d4-0007-行车记录",
+      "plan_revision": 29,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-28T10:35:00+08:00",
+        "end": "2026-04-28T20:10:00+08:00"
+      },
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "6fe77d01-f7a3-4375-87e2-ec47689a2e1e",
+      "plan_revision": 29,
+      "status": "unexpected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-29T05:30:00+08:00",
+        "end": "2026-04-29T06:30:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392803,
+          22.5504727
+        ],
+        "end": [
+          113.9392803,
+          22.5504727
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "timelapse",
+          "camera": "A7R3",
+          "lens": "20mm F1.8 G",
+          "note": "广角丙中洛全景晨雾延时，与长焦对切。",
+          "extensions": null
+        }
+      ],
+      "extensions": {
+        "pharos:event_deviation": {
+          "planned_location": "丙中洛·贡当神山观景台",
+          "actual_location": "丙中洛观景台",
+          "actual_location_gps": [
+            98.630491,
+            28.01445
+          ],
+          "reason": "贡当神山观景台机位不行",
+          "recorded_at": "2026-05-08T03:15:40.855021Z"
+        }
+      }
+    },
+    {
+      "shot_id": "f0de9d22-67ea-4bfc-a25d-5ba815440be9",
+      "plan_revision": 29,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-29T06:45:00+08:00",
+        "end": "2026-04-29T07:10:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.939253,
+          22.5504776
+        ],
+        "end": [
+          113.939253,
+          22.5504776
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": "航拍晨雾中的丙中洛+怒江第一湾",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "52de150d-23bc-4825-af26-4789295bc2f7",
+      "plan_revision": 29,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-29T07:35:00+08:00",
+        "end": "2026-04-29T07:36:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392826,
+          22.5504701
+        ],
+        "end": [
+          113.9392826,
+          22.5504701
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "口播：今天穿越丙察察，全程270km非铺装路面。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "0ca22278-eaad-4a69-8af6-566a75f76131",
+      "plan_revision": 29,
+      "status": "abandoned",
+      "abandon_reason": "错过了",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "036e7ed1-dadf-4cb5-a186-38704707eb90",
+      "plan_revision": 29,
+      "status": "abandoned",
+      "abandon_reason": "界碑封路，绕路过去的",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "bc99d30d-bc2b-4b84-8573-7d5ec1270a92",
+      "plan_revision": 29,
+      "status": "abandoned",
+      "abandon_reason": "修路改道了，没去",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "8a533a1f-ac31-497f-bf8e-120ae25b68e6",
+      "plan_revision": 29,
+      "status": "abandoned",
+      "abandon_reason": "修路改道了，没过去",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "7a6a7177-cbc3-46ee-855b-ae19f576e00f",
+      "plan_revision": 29,
+      "status": "abandoned",
+      "abandon_reason": "没路过",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "27b5f57d-3439-40d6-9ab3-78bfb2774d47",
+      "plan_revision": 29,
+      "status": "unexpected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-29T09:10:00+08:00",
+        "end": "2026-04-29T09:25:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392752,
+          22.5504703
+        ],
+        "end": [
+          113.9392752,
+          22.5504703
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "大流沙旁边建个了大桥，介绍原先大流沙。",
+          "extensions": null
+        },
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": "从大流沙旁边的大桥，一路跟拍跟车航拍。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "cc863553-92f7-4ea1-8d95-b24dcc304d91",
+      "plan_revision": 29,
+      "status": "abandoned",
+      "abandon_reason": "没看到仙人掌。",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "0fc2bee5-8960-4892-889f-b8ed351ab5fe",
+      "plan_revision": 29,
+      "status": "abandoned",
+      "abandon_reason": "察瓦龙前改道封路，没路过。",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "1c184b4c-4acd-4e0d-b41f-d3b9c777a0c3",
+      "plan_revision": 29,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-29T09:32:00+08:00",
+        "end": "2026-04-29T10:25:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392739,
+          22.5504712
+        ],
+        "end": [
+          113.9392739,
+          22.5504712
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "察瓦龙午餐补给：中途最大补给站，加油+检查车况+午餐。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "2243771d-c098-41ad-914d-9b54d6b10dc8",
+      "plan_revision": 29,
+      "status": "unexpected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-29T11:36:00+08:00",
+        "end": "2026-04-29T11:45:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392625,
+          22.5504749
+        ],
+        "end": [
+          113.9392625,
+          22.5504749
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "怒江与玉曲河交汇，泾渭分明，钢索吊桥。",
+          "extensions": null
+        }
+      ],
+      "extensions": {
+        "pharos:event_deviation": {
+          "planned_location": "怒江大桥（怒江与玉曲河交汇处）",
+          "actual_location": "怒江大桥",
+          "actual_location_gps": [
+            98.366053,
+            28.596617
+          ],
+          "reason": "是丙察察途中的怒江大桥",
+          "recorded_at": "2026-05-08T03:27:16.971140Z"
+        }
+      }
+    },
+    {
+      "shot_id": "eece3216-35d3-4b5f-b5ea-a710a284784c",
+      "plan_revision": 29,
+      "status": "abandoned",
+      "abandon_reason": "拍不了",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "73623f7a-3c13-408b-9fa2-9c5bca3ab030",
+      "plan_revision": 31,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-29T15:00:00+08:00",
+        "end": "2026-04-29T15:55:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392703,
+          22.5504697
+        ],
+        "end": [
+          113.9392703,
+          22.5504697
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "雄珠拉垭口打卡：三大垭口之一，弯道最多，4月底可能残雪。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "3cb890be-a94d-41c5-8d6d-7077a5162c45",
+      "plan_revision": 31,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-29T14:00:00+08:00",
+        "end": "2026-04-29T14:15:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392717,
+          22.5504706
+        ],
+        "end": [
+          113.9392717,
+          22.5504706
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": "航拍盘山公路+雪山全景，同时跟车",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "526e084b-f07e-4695-a8f6-601fba1737f6",
+      "plan_revision": 31,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-29T17:00:00+08:00",
+        "end": "2026-04-29T17:34:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392585,
+          22.5504773
+        ],
+        "end": [
+          113.9392585,
+          22.5504773
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "高山牧场风光，以及寻找加油的故事",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "4e24c050-2878-4439-8ee5-4c03d2883f3a",
+      "plan_revision": 31,
+      "status": "abandoned",
+      "abandon_reason": "没空拍",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "72056570-7eab-47ac-b836-fc2911c2ae22",
+      "plan_revision": 31,
+      "status": "abandoned",
+      "abandon_reason": "直接路过",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "49bf2cf3-4492-462f-b617-299830600464",
+      "plan_revision": 31,
+      "status": "unexpected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-29T18:57:00+08:00",
+        "end": "2026-04-29T19:45:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.939255,
+          22.5504778
+        ],
+        "end": [
+          113.939255,
+          22.5504778
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "三大垭口之三，丙察察最高点，仪式感打卡。",
+          "extensions": null
+        }
+      ],
+      "extensions": {
+        "pharos:event_deviation": {
+          "planned_location": "益秀拉垭口（海拔4706m）",
+          "actual_location": "益秀拉隧道",
+          "reason": "封住了，警察走未完全建成的益秀拉隧道过去的。",
+          "recorded_at": "2026-05-08T04:18:53.328379Z"
+        }
+      }
+    },
+    {
+      "shot_id": "c8000136-d6ca-4d34-9e0a-d70b6860141d",
+      "plan_revision": 31,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-29T20:55:00+08:00",
+        "end": "2026-04-29T22:20:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392561,
+          22.5504766
+        ],
+        "end": [
+          113.9392561,
+          22.5504766
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "丙察察穿越完成！口播总结今日全程。",
+          "extensions": null
+        },
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "察隅晚餐，庆祝丙察察穿越成功。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "d5-0005-行车记录",
+      "plan_revision": 31,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-29T07:35:00+08:00",
+        "end": "2026-04-29T21:10:00+08:00"
+      },
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "d8658957-9830-4788-8a1f-ae65aa53f474",
+      "plan_revision": 31,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-30T08:20:00+08:00",
+        "end": "2026-04-30T09:20:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392519,
+          22.5504713
+        ],
+        "end": [
+          113.9392519,
+          22.5504713
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "口播：赶路日，察隅翻德姆拉山经然乌到左贡460km。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "f6b1e1c6-862a-4dfe-9307-67dcaac3a4ad",
+      "plan_revision": 31,
+      "status": "abandoned",
+      "abandon_reason": "不需要单独记录559",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "a6985cef-e32d-427e-9955-38d1194903bc",
+      "plan_revision": 31,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-30T12:06:00+08:00",
+        "end": "2026-04-30T12:32:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392567,
+          22.5504766
+        ],
+        "end": [
+          113.9392567,
+          22.5504766
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "G559最高点，360°雪山全景，林芝/昌都界山。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "0dfbfd88-fe0c-40b0-8013-4b97c0df8f65",
+      "plan_revision": 31,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-30T12:06:00+08:00",
+        "end": "2026-04-30T12:30:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392569,
+          22.5504773
+        ],
+        "end": [
+          113.9392569,
+          22.5504773
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": "航拍雪山垭口+盘山公路全景，海拔4900m注意电池衰减",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "01d5c63f-2090-41ae-a196-bf604b8a39c3",
+      "plan_revision": 31,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-30T13:05:00+08:00",
+        "end": "2026-04-30T13:30:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392575,
+          22.5504738
+        ],
+        "end": [
+          113.9392575,
+          22.5504738
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "然乌湖快速打卡，湖边停车拍摄雪山+湖面。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "1b221288-f8fd-4107-8d01-1c878abaec16",
+      "plan_revision": 31,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-30T13:09:00+08:00",
+        "end": "2026-04-30T13:30:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392583,
+          22.5504734
+        ],
+        "end": [
+          113.9392583,
+          22.5504734
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": "航拍然乌湖全貌，串珠状湖面+雪山倒影",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "7105f08b-ae28-4ed9-bab5-2433f1e3ab32",
+      "plan_revision": 31,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-30T13:53:00+08:00",
+        "end": "2026-04-30T15:10:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392579,
+          22.5504729
+        ],
+        "end": [
+          113.9392579,
+          22.5504729
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "然乌镇加油+快速午餐补给。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "fae4c784-07f0-447d-b5ca-b3bf73854e5b",
+      "plan_revision": 32,
+      "status": "abandoned",
+      "abandon_reason": "位置不对",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "129742c8-2102-4f74-a487-918595e3b804",
+      "plan_revision": 32,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-30T22:25:00+08:00",
+        "end": "2026-04-30T23:30:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392565,
+          22.5504735
+        ],
+        "end": [
+          113.9392565,
+          22.5504735
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "到达左贡，口播今日赶路总结。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "74ba2ce2-ea6f-431b-aee8-8b2033d1a827",
+      "plan_revision": 32,
+      "status": "unexpected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-30T20:32:00+08:00",
+        "end": "2026-04-30T21:00:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392553,
+          22.5504742
+        ],
+        "end": [
+          113.9392553,
+          22.5504742
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "左贡晚餐记录。",
+          "extensions": null
+        }
+      ],
+      "extensions": {
+        "pharos:event_deviation": {
+          "planned_location": "左贡县城",
+          "actual_location": "八宿县",
+          "actual_location_gps": [
+            96.917708,
+            30.056169
+          ],
+          "reason": "太晚了，途中吃饭了",
+          "recorded_at": "2026-05-08T05:48:16.200608Z"
+        }
+      }
+    },
+    {
+      "shot_id": "d6-0002-行车记录",
+      "plan_revision": 32,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-30T09:00:00+08:00",
+        "end": "2026-04-30T23:10:00+08:00"
+      },
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "ad7b97bb-7910-49a2-aee2-875c665141c7",
+      "plan_revision": 32,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-05-01T09:15:00+08:00",
+        "end": "2026-05-01T09:40:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392559,
+          22.5504743
+        ],
+        "end": [
+          113.9392559,
+          22.5504743
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "口播：今天翻东达山5130m川藏最高垭口，经芒康过金沙江到巴塘。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "0bcef602-901d-49b7-9a9f-2cccbb86f5ad",
+      "plan_revision": 32,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-05-01T10:35:00+08:00",
+        "end": "2026-05-01T10:45:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392525,
+          22.5504768
+        ],
+        "end": [
+          113.9392525,
+          22.5504768
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "川藏线最高垭口，高山草甸+雪山环绕+牦牛群。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "c77db484-6a79-4819-8ace-349e4db19a7e",
+      "plan_revision": 32,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-05-01T10:30:00+08:00",
+        "end": "2026-05-01T10:45:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392499,
+          22.5504777
+        ],
+        "end": [
+          113.9392499,
+          22.5504777
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": "航拍雪山垭口+盘山公路全景，海拔5130m注意电池衰减严重",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "4d15ddf5-0c68-4e96-92f4-56e535bb7ef4",
+      "plan_revision": 32,
+      "status": "abandoned",
+      "abandon_reason": "地点不在今日路线中，昨天已经路过，规划有误",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "282b4b03-827e-4223-842d-a3fd10475380",
+      "plan_revision": 32,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-05-01T11:50:00+08:00",
+        "end": "2026-05-01T12:03:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392528,
+          22.5504788
+        ],
+        "end": [
+          113.9392528,
+          22.5504788
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "觉巴山隧道出来，下望澜沧江峡谷，深切V型谷。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "ff5d60eb-2f7b-4ad5-8c30-89b67f69fdd3",
+      "plan_revision": 32,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-05-01T10:30:00+08:00",
+        "end": "2026-05-01T10:45:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392519,
+          22.5504793
+        ],
+        "end": [
+          113.9392519,
+          22.5504793
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "跨越澜沧江，峡谷+大桥打卡，如美镇午餐补给。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "72182ad9-5853-4ad2-a38f-65106e603298",
+      "plan_revision": 32,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-05-01T14:23:00+08:00",
+        "end": "2026-05-01T14:33:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392519,
+          22.5504792
+        ],
+        "end": [
+          113.9392519,
+          22.5504792
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "芒康路过，滇藏线与川藏线交汇点。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "15bd1d93-61ba-4d92-b1f4-082b070fb1b9",
+      "plan_revision": 32,
+      "status": "abandoned",
+      "abandon_reason": null,
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "633e52e2-f8d0-4eba-9dd6-0e16dbe67764",
+      "plan_revision": 32,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-05-01T16:06:00+08:00",
+        "end": "2026-05-01T16:30:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392513,
+          22.5504789
+        ],
+        "end": [
+          113.9392513,
+          22.5504789
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "金沙江大桥打卡：跨过金沙江从西藏进入四川，仪式感。桥头拍摄。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "6a2802b8-37e8-487b-9e5b-28f18c23168a",
+      "plan_revision": 32,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-05-01T16:10:00+08:00",
+        "end": "2026-05-01T16:40:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392516,
+          22.5504787
+        ],
+        "end": [
+          113.9392516,
+          22.5504787
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": "航拍金沙江大桥+两岸峡谷，注意军事管理区限飞",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "273e4ca7-cb70-421d-94e7-5e10e8246525",
+      "plan_revision": 32,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-05-01T07:06:00+08:00",
+        "end": "2026-05-01T17:30:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392522,
+          22.5504785
+        ],
+        "end": [
+          113.9392522,
+          22.5504785
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "到达巴塘，口播今日总结，正式回到四川。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "b7282b67-139e-4d00-b484-fe73deb8432d",
+      "plan_revision": 32,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-05-01T18:50:00+08:00",
+        "end": "2026-05-01T20:20:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392523,
+          22.5504785
+        ],
+        "end": [
+          113.9392523,
+          22.5504785
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "巴塘晚餐，牦牛肉火锅。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "d7-0002-行车记录",
+      "plan_revision": 32,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-05-01T09:35:00+08:00",
+        "end": "2026-05-01T17:20:00+08:00"
+      },
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "e5f15b15-1c79-4349-8fca-ae3398773ce2",
+      "plan_revision": 32,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-05-02T08:45:00+08:00",
+        "end": "2026-05-02T09:42:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392512,
+          22.5504795
+        ],
+        "end": [
+          113.9392512,
+          22.5504795
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "口播：今天反穿格聂南线到格聂片区，傍晚主拍月照银山，机位优先下则通村高处。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "72f824a8-71f7-444c-aeb3-bc1ef38aec5c",
+      "plan_revision": 32,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-05-02T11:18:00+08:00",
+        "end": "2026-05-02T11:30:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392612,
+          22.5504755
+        ],
+        "end": [
+          113.9392612,
+          22.5504755
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "格聂南线最高垭口，360°雪山全景，垂直落差2500m起点。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "5ad79aaa-7627-40b2-bd78-d4c925ad0b27",
+      "plan_revision": 32,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-05-02T11:17:00+08:00",
+        "end": "2026-05-02T11:30:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392602,
+          22.5504756
+        ],
+        "end": [
+          113.9392602,
+          22.5504756
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": "航拍雪山垭口全景+盘山公路，海拔5020m电池严重衰减",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "aadb7508-b3cd-4f05-9d02-3295b2386643",
+      "plan_revision": 32,
+      "status": "unexpected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-05-02T12:25:00+08:00",
+        "end": "2026-05-02T13:30:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392574,
+          22.5504696
+        ],
+        "end": [
+          113.9392574,
+          22.5504696
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "格木景区高山草甸+雪山，被称为中国阿尔卑斯。",
+          "extensions": null
+        },
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "和村民交谈，吃饭。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "fd8cf581-e2d1-4560-bae6-f45e54b76e42",
+      "plan_revision": 32,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-05-02T13:32:00+08:00",
+        "end": "2026-05-02T14:00:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392561,
+          22.5504764
+        ],
+        "end": [
+          113.9392561,
+          22.5504764
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": "航拍高山牧场+雪山全景",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "b39156c1-5be0-4ef2-aac8-3c8325a2e20c",
+      "plan_revision": 35,
+      "status": "abandoned",
+      "abandon_reason": "路过",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "0ce5f69f-c57b-4d8a-8354-9044f341d542",
+      "plan_revision": 32,
+      "status": "abandoned",
+      "abandon_reason": "来不及去",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "7b2a68c3-d94d-41a3-8025-00a4b0a4f41a",
+      "plan_revision": 32,
+      "status": "abandoned",
+      "abandon_reason": "来不及去",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "244d6bd1-570d-4a43-98f0-57927708c438",
+      "plan_revision": 32,
+      "status": "abandoned",
+      "abandon_reason": "单纯路过。",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "68d08ffc-229d-41c9-8532-3a32c2775cd6",
+      "plan_revision": 32,
+      "status": "abandoned",
+      "abandon_reason": "今天天气不好，单纯路过",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "23061bcc-1ee3-4d09-a6eb-179cb4d01190",
+      "plan_revision": 32,
+      "status": "abandoned",
+      "abandon_reason": "今天天气不好，单纯路过",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "d8-0002-行车记录",
+      "plan_revision": 33,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-05-02T09:45:00+08:00",
+        "end": "2026-05-02T18:42:00+08:00"
+      },
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "25932646-da1c-479a-b2f8-f5b36ee6099a",
+      "plan_revision": 33,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-05-03T05:15:00+08:00",
+        "end": "2026-05-03T07:25:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392676,
+          22.5504688
+        ],
+        "end": [
+          113.9392676,
+          22.5504688
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "出发前的口播，到达现场后口播。",
+          "extensions": null
+        },
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "第三视角拍摄：摄影师在清晨架设三脚架，探索机位。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "78a2bdbe-436e-4383-a26d-14d8d0d4a31f",
+      "plan_revision": 33,
+      "status": "abandoned",
+      "abandon_reason": "天气差，没拍到",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "7a606fe4-71aa-4ad2-bcdd-412fa9e3a8fe",
+      "plan_revision": 33,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-05-03T06:25:00+08:00",
+        "end": "2026-05-03T07:15:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392551,
+          22.5504721
+        ],
+        "end": [
+          113.9392551,
+          22.5504721
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": "清晨低风窗口补拍格聂之眼俯拍全貌，兼顾湖面纹理、倒影与雪山关系",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "9a6f4027-c02c-4388-8e7e-1e417d9c48fb",
+      "plan_revision": 34,
+      "status": "abandoned",
+      "abandon_reason": "不停留",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "0b97356a-28c1-4bbe-9226-adf360e8fe58",
+      "plan_revision": 34,
+      "status": "abandoned",
+      "abandon_reason": "不停留",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "74b3b9d3-e0fd-4346-b3f2-fe65b5dd20d8",
+      "plan_revision": 34,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-05-03T11:20:00+08:00",
+        "end": "2026-05-03T12:33:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392497,
+          22.5504749
+        ],
+        "end": [
+          113.9392497,
+          22.5504749
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "理塘午餐补给，世界高城打卡。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "0df5e877-5986-459a-8b93-b27000be0d46",
+      "plan_revision": 35,
+      "status": "abandoned",
+      "abandon_reason": "天气恶劣，不敢上去",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "756f5c2e-0d3f-46fd-8ee9-ca09abe0ac44",
+      "plan_revision": 35,
+      "status": "abandoned",
+      "abandon_reason": "天气恶劣，不敢上去",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "ebd34549-43c7-4ed0-b3fb-f5eb1e51dc6f",
+      "plan_revision": 34,
+      "status": "abandoned",
+      "abandon_reason": "天气恶劣，没去",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "d9-0002-行车记录",
+      "plan_revision": 35,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-05-03T09:05:00+08:00",
+        "end": "2026-05-03T18:50:00+08:00"
+      },
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "44727805-3d30-4a5d-9476-9a856a2767b7",
+      "plan_revision": 35,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-05-04T05:57:00+08:00",
+        "end": "2026-05-04T06:35:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392606,
+          22.5504755
+        ],
+        "end": [
+          113.9392606,
+          22.5504755
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "没有日出，等到蓝调时刻还是大雪。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "0060a650-9d00-427a-93d0-35616a78de15",
+      "plan_revision": 35,
+      "status": "abandoned",
+      "abandon_reason": "天气恶劣",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "ba5927be-a89d-47c5-b9b8-4cb2859f656d",
+      "plan_revision": 35,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-05-04T06:04:00+08:00",
+        "end": "2026-05-04T06:35:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392595,
+          22.5504762
+        ],
+        "end": [
+          113.9392595,
+          22.5504762
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": "航拍日出金山+子梅垭口全景",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "c68512da-5afd-4ff5-a2b5-d2532d9c067e",
+      "plan_revision": 35,
+      "status": "abandoned",
+      "abandon_reason": "没有拍摄",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "bb6b55ed-1ef1-4002-a8cf-154c8e6fac50",
+      "plan_revision": 35,
+      "status": "abandoned",
+      "abandon_reason": "行程变更",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "dc58be82-f085-4c8b-8b44-fb2f2fa281fe",
+      "plan_revision": 35,
+      "status": "abandoned",
+      "abandon_reason": "行程变更",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "8525d3f2-0d2f-463a-a659-1260c3c379fa",
+      "plan_revision": 35,
+      "status": "abandoned",
+      "abandon_reason": "行程变更",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "ade51913-e35c-4d87-8843-f15e9c3424fd",
+      "plan_revision": 35,
+      "status": "abandoned",
+      "abandon_reason": "行程变更",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "c859d7ab-c4d8-4ba6-913f-f7077ed1d89c",
+      "plan_revision": 35,
+      "status": "abandoned",
+      "abandon_reason": "行程变更",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "5a783e78-21a8-412d-b686-2f2fd02e3929",
+      "plan_revision": 35,
+      "status": "abandoned",
+      "abandon_reason": "行程变更",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "d10-0006-行车记录",
+      "plan_revision": 35,
+      "status": "unexpected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-05-04T16:08:00+08:00",
+        "end": "2026-05-04T16:08:00+08:00"
+      },
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": {
+        "pharos:continuous_deviation": {
+          "planned_location": "上木居 → 成都 全程",
+          "actual_origin": "上木居",
+          "actual_origin_gps": [
+            101.806,
+            29.588
+          ],
+          "actual_destination": "子梅垭口",
+          "actual_destination_gps": [
+            101.721355,
+            29.518239
+          ],
+          "reason": "上木居村到新都桥，放晴，独自折返子梅垭口",
+          "recorded_at": "2026-05-08T08:09:25.117434Z"
+        }
+      }
+    },
+    {
+      "shot_id": "c048a47e-7aea-44e7-8761-2853c375e341",
+      "plan_revision": 35,
+      "status": "abandoned",
+      "abandon_reason": "没有住成都",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "3c1e0ec6-a0ac-4841-a14b-53fb7ab6b916",
+      "plan_revision": 35,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-05-05T18:18:00+08:00",
+        "end": "2026-05-05T18:35:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392569,
+          22.5504731
+        ],
+        "end": [
+          113.9392569,
+          22.5504731
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "飞前收尾口播：11天丙察察格聂贡嘎穿越完成，准备返深。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "d11-0002-行车记录",
+      "plan_revision": 35,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-05-05T18:30:00+08:00",
+        "end": "2026-05-05T19:05:00+08:00"
+      },
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "4fd65644-d042-4ab0-88f3-1ef9093224b9",
+      "plan_revision": 19,
+      "status": "abandoned",
+      "abandon_reason": "今日无法到达",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "25f9b967-82e8-4a1e-9bb0-72172f4dcfaa",
+      "plan_revision": 19,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-24T19:30:00+08:00",
+        "end": "2026-04-24T20:00:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          109.9747689,
+          22.1718318
+        ],
+        "end": [
+          109.9747689,
+          22.1718318
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "23c239b7-913d-4fcc-aa76-f621dc9a48fe",
+      "plan_revision": 20,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-25T00:00:00+08:00",
+        "end": "2026-04-25T00:20:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          109.2457092,
+          22.3831924
+        ],
+        "end": [
+          109.2457092,
+          22.3831924
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "60193f94-0fb9-4723-8699-8c9de0716c0e",
+      "plan_revision": 21,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-25T08:40:00+08:00",
+        "end": "2026-04-25T08:55:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          109.2648117,
+          22.3919969
+        ],
+        "end": [
+          109.2648117,
+          22.3919969
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "f66db152-a615-4c74-aadf-c1c3b36a3c5a",
+      "plan_revision": 22,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-25T18:00:00+08:00",
+        "end": "2026-04-25T19:00:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          100.3729103,
+          25.5606754
+        ],
+        "end": [
+          100.3729103,
+          25.5606754
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "timelapse",
+          "camera": "A7R3",
+          "lens": "20mm F1.8 G",
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "f2729e25-61b4-4e53-8e93-9f7823167072",
+      "plan_revision": 24,
+      "status": "unexpected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-25T18:00:00+08:00",
+        "end": "2026-04-25T19:00:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          100.319599,
+          25.5558937
+        ],
+        "end": [
+          100.319599,
+          25.5558937
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "24cc6d1c-b11a-41f0-85f5-ce41d3ab7078",
+      "plan_revision": 24,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-25T17:00:00+08:00",
+        "end": "2026-04-25T17:10:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          100.322027,
+          25.5563542
+        ],
+        "end": [
+          100.322027,
+          25.5563542
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "3f5e2a59-7c90-4c95-adcb-c626acdaa5e2",
+      "plan_revision": 25,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-27T18:50:00+08:00",
+        "end": "2026-04-27T19:30:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392631,
+          22.5504691
+        ],
+        "end": [
+          113.9392631,
+          22.5504691
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "ca332f7d-a713-4994-a93d-5927c9a4f56c",
+      "plan_revision": 26,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-28T10:42:00+08:00",
+        "end": "2026-04-28T10:46:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392617,
+          22.5504648
+        ],
+        "end": [
+          113.9392617,
+          22.5504648
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "aeb82cde-d75d-434b-9c7c-e79ffc725472",
+      "plan_revision": 27,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-28T09:25:00+08:00",
+        "end": "2026-04-28T09:40:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392569,
+          22.550468
+        ],
+        "end": [
+          113.9392569,
+          22.550468
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "52414a3c-6f33-4ea9-be97-df6cb250a905",
+      "plan_revision": 29,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-28T13:20:00+08:00",
+        "end": "2026-04-28T14:00:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.8522976,
+          22.5698616
+        ],
+        "end": [
+          113.8522976,
+          22.5698616
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "a3bc297c-9330-4766-bfd3-061089f5f11e",
+      "plan_revision": 29,
+      "status": "abandoned",
+      "abandon_reason": null,
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "aa7ab0c0-4c33-4c02-aef0-43448f46770f",
+      "plan_revision": 30,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-29T11:50:00+08:00",
+        "end": "2026-04-29T12:40:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392717,
+          22.5504712
+        ],
+        "end": [
+          113.9392717,
+          22.5504712
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": null,
+          "extensions": null
+        },
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "9c1a6814-c0f8-4bd9-8938-4e93c7086e57",
+      "plan_revision": 31,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-29T13:35:00+08:00",
+        "end": "2026-04-29T14:30:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392778,
+          22.5504688
+        ],
+        "end": [
+          113.9392778,
+          22.5504688
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": null,
+          "extensions": null
+        },
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "f0d59855-89c8-4edf-8b9f-4e398a3b3c8a",
+      "plan_revision": 32,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-04-30T17:59:00+08:00",
+        "end": "2026-04-30T18:30:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.939251,
+          22.5504728
+        ],
+        "end": [
+          113.939251,
+          22.5504728
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": null,
+          "extensions": null
+        },
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "0afb508c-f8a6-446f-b508-276930a0df9a",
+      "plan_revision": 33,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-05-02T18:40:00+08:00",
+        "end": "2026-05-02T20:05:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392582,
+          22.5504737
+        ],
+        "end": [
+          113.9392582,
+          22.5504737
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "ec803e6a-365c-447d-b604-27300893338c",
+      "plan_revision": 34,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-05-03T08:35:00+08:00",
+        "end": "2026-05-03T09:09:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392476,
+          22.5504744
+        ],
+        "end": [
+          113.9392476,
+          22.5504744
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "7589b63d-99b6-4d9d-9892-2500fce46c9b",
+      "plan_revision": 35,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-05-03T18:48:00+08:00",
+        "end": "2026-05-03T20:35:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.9392521,
+          22.5504744
+        ],
+        "end": [
+          113.9392521,
+          22.5504744
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    }
+  ],
+  "extra_shots": [
+    {
+      "id": "extra-001",
+      "day": 6,
+      "kind": null,
+      "location": "559国道",
+      "origin": null,
+      "destination": null,
+      "gps": [
+        97.188491,
+        29.233758
+      ],
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-04-30T10:23:00+08:00",
+        "end": "2026-04-30T10:25:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "559标牌看桑曲",
+      "extensions": null
+    },
+    {
+      "id": "extra-002",
+      "day": 6,
+      "kind": null,
+      "location": "业拉山",
+      "origin": null,
+      "destination": null,
+      "gps": [
+        97.310535,
+        30.156248
+      ],
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-04-30T19:42:00+08:00",
+        "end": "2026-04-30T20:10:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": null,
+          "extensions": null
+        },
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "七十二拐后途中的一个高点，拍到了满月和日落。",
+      "extensions": null
+    },
+    {
+      "id": "extra-003",
+      "day": 8,
+      "kind": null,
+      "location": "扎瓦拉观景台",
+      "origin": null,
+      "destination": null,
+      "gps": [
+        99.331497,
+        29.946515
+      ],
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-05-02T10:45:00+08:00",
+        "end": "2026-05-02T11:05:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": null,
+          "extensions": null
+        },
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": "航拍小雪中跟车，驶入山谷。",
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "格聂南线出发不久，半山腰遇到小雪",
+      "extensions": null
+    },
+    {
+      "id": "extra-004",
+      "day": 8,
+      "kind": null,
+      "location": "扎瓦拉观景台",
+      "origin": null,
+      "destination": null,
+      "gps": [
+        99.331497,
+        29.946515
+      ],
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-05-02T11:34:00+08:00",
+        "end": "2026-05-02T11:50:00+08:00"
+      },
+      "type": "aerial",
+      "device": "Mavic 4 Pro",
+      "actual_captures": [
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "航拍跟车驶入山谷",
+      "extensions": null
+    },
+    {
+      "id": "extra-005",
+      "day": 8,
+      "kind": null,
+      "location": "格聂南线忽然遇到大雪",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-05-02T14:30:00+08:00",
+        "end": "2026-05-02T15:00:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "驾车驶入大雪，下车观景，还有猴子",
+          "extensions": null
+        },
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": "大雪路段跟车",
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "格聂南线途中偶遇大雪",
+      "extensions": null
+    },
+    {
+      "id": "extra-006",
+      "day": 8,
+      "kind": null,
+      "location": "格聂南线大雪林中烂路",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-05-02T15:30:00+08:00",
+        "end": "2026-05-02T15:45:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": null,
+          "extensions": null
+        },
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "林中烂路，旁边河谷",
+      "extensions": null
+    },
+    {
+      "id": "extra-007",
+      "day": 8,
+      "kind": null,
+      "location": "则通村前",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-05-02T16:40:00+08:00",
+        "end": "2026-05-02T16:45:00+08:00"
+      },
+      "type": "aerial",
+      "device": "Mavic 4 Pro",
+      "actual_captures": [
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "则通村前跟车航拍",
+      "extensions": null
+    },
+    {
+      "id": "extra-008",
+      "day": 8,
+      "kind": null,
+      "location": "冷古寺",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-05-02T17:17:00+08:00",
+        "end": "2026-05-02T17:35:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": null,
+          "extensions": null
+        },
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "大雪中的冷古寺",
+      "extensions": null
+    },
+    {
+      "id": "extra-009",
+      "day": 9,
+      "kind": null,
+      "location": "格聂之眼到然日卡村网红公路",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-05-03T07:45:00+08:00",
+        "end": "2026-05-03T08:00:00+08:00"
+      },
+      "type": "aerial",
+      "device": "Mavic 4 Pro",
+      "actual_captures": [
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "网红公路跟人跟车航拍。",
+      "extensions": null
+    },
+    {
+      "id": "extra-010",
+      "day": 9,
+      "kind": null,
+      "location": "格聂南线然日卡村到理塘下山",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-05-03T10:22:00+08:00",
+        "end": "2026-05-03T10:50:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "各种事件的记录",
+          "extensions": null
+        },
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "路面结冰，不断遇到趴窝的车等等事件，使用雪地模式，以及冰面行驶的无人机跟车",
+      "extensions": null
+    },
+    {
+      "id": "extra-011",
+      "day": 9,
+      "kind": null,
+      "location": "新都桥",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-05-03T16:34:00+08:00",
+        "end": "2026-05-03T16:36:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "驶入248国道前，一位同伴身体不适，提前下车",
+      "extensions": null
+    },
+    {
+      "id": "extra-012",
+      "day": 9,
+      "kind": null,
+      "location": "贡嘎山镇003乡道",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-05-03T18:15:00+08:00",
+        "end": "2026-05-03T18:50:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "003乡道的非铺装路段，大雪，赶时间快速通过。",
+      "extensions": null
+    },
+    {
+      "id": "extra-013",
+      "day": 10,
+      "kind": null,
+      "location": "上木居村民宿到子梅垭口",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-05-04T04:50:00+08:00",
+        "end": "2026-05-04T05:56:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "早起出发子梅垭口，还在下雪，很冷，后半段没有车辙，硬着头皮压着积雪上去。",
+      "extensions": null
+    },
+    {
+      "id": "extra-014",
+      "day": 10,
+      "kind": null,
+      "location": "子梅垭口",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-05-04T06:38:00+08:00",
+        "end": "2026-05-04T08:00:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "途中堵车的过程",
+          "extensions": null
+        },
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "无人机炸机，找本地人捡回",
+          "extensions": null
+        },
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": "航拍雪中跟车，放晴后的跟车在山谷中。",
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "航拍跟车下山，堵车，天气忽然放晴，炸机找本地人捡回。",
+      "extensions": null
+    },
+    {
+      "id": "extra-015",
+      "day": 10,
+      "kind": null,
+      "location": "新都桥",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-05-04T11:15:00+08:00",
+        "end": "2026-05-04T12:50:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "送别同伴，整备车辆，充电加油，出发。",
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "天气放晴，决定独自改签折返子梅垭口，送别同伴。",
+      "extensions": null
+    },
+    {
+      "id": "extra-016",
+      "day": 10,
+      "kind": null,
+      "location": "子梅垭口",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-05-04T16:50:00+08:00",
+        "end": "2026-05-04T23:25:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "拍摄整个摄影过程",
+          "extensions": null
+        },
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": "子梅垭口航拍，包括跟人的创作",
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "折返子梅垭口，独自拍摄",
+      "extensions": null
+    },
+    {
+      "id": "extra-017",
+      "day": 10,
+      "kind": null,
+      "location": "子梅垭口",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-05-04T19:00:00+08:00",
+        "end": "2026-05-04T23:40:00+08:00"
+      },
+      "type": "timelapse",
+      "device": "A7R3",
+      "actual_captures": [
+        {
+          "type": "timelapse",
+          "camera": "A7R3",
+          "lens": "14mm F1.8 GM",
+          "note": "广角，第一机位",
+          "extensions": null
+        },
+        {
+          "type": "timelapse",
+          "camera": "A7R5",
+          "lens": "35mm F1.4 GM",
+          "note": "标准焦段，第二机位",
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "子梅垭口延时摄影，日落金山转星轨转月照银山",
+      "extensions": null
+    },
+    {
+      "id": "extra-018",
+      "day": 11,
+      "kind": null,
+      "location": "子梅垭口到上木居村",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-05-05T00:00:00+08:00",
+        "end": "2026-05-05T00:55:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "深夜从子梅垭口下山，返回上木居村住宿。",
+      "extensions": null
+    },
+    {
+      "id": "extra-019",
+      "day": 11,
+      "kind": null,
+      "location": "上木居村",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-05-05T08:35:00+08:00",
+        "end": "2026-05-05T08:45:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "正式出发返程",
+      "extensions": null
+    },
+    {
+      "id": "extra-020",
+      "day": 11,
+      "kind": null,
+      "location": "新都桥",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-05-05T11:10:00+08:00",
+        "end": "2026-05-05T11:55:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "新都桥吃饭休整",
+      "extensions": null
+    },
+    {
+      "id": "extra-021",
+      "day": 11,
+      "kind": "continuous",
+      "location": "上木居村到成都",
+      "origin": "上木居村",
+      "destination": "成都天府机场",
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-05-05T09:00:00+08:00",
+        "end": "2026-05-05T18:30:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": null,
+      "trigger_radius_km": null,
+      "angles": [
+        {
+          "device": "ZV-E1",
+          "roll": "b-roll",
+          "description": "行车全程"
+        }
+      ],
+      "description": "临时改成这一天回成都返程",
+      "extensions": null
+    },
+    {
+      "id": "extra-022",
+      "day": 2,
+      "kind": "event",
+      "location": "滇西的一个服务区",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-04-26T15:20:00+08:00",
+        "end": "2026-04-26T15:40:00+08:00"
+      },
+      "type": "aerial",
+      "device": "Mavic 4 Pro",
+      "actual_captures": [
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "遇到中午，高速上云雾缭绕，航拍",
+      "extensions": null
+    }
+  ],
+  "extensions": null
+}

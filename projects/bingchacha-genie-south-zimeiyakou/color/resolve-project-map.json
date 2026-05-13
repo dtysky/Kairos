@@ -1,0 +1,362 @@
+{
+  "updatedAt": "2026-05-12T14:09:49.932Z",
+  "projects": {
+    "丙察察格聂南线子梅垭口穿越 [Color]": {
+      "projectName": "丙察察格聂南线子梅垭口穿越 [Color]",
+      "safeProjectName": "Color",
+      "latestSnapshot": {
+        "projectName": "丙察察格聂南线子梅垭口穿越 [Color]",
+        "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/snapshots/20260512T140948Z-manual.drp",
+        "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/latest.drp",
+        "createdAt": "2026-05-12T14:09:48Z",
+        "mode": "manual",
+        "action": "manual",
+        "rootId": "root-draft-1778318452475-huvyid",
+        "database": {
+          "DbType": "Disk",
+          "DbName": "Local Database"
+        },
+        "detail": "save_drp_snapshot exported withStillsAndLUTs=false"
+      },
+      "snapshots": [
+        {
+          "projectName": "丙察察格聂南线子梅垭口穿越 [Color]",
+          "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/snapshots/20260509T112707Z-prepare-root-root-draft-1778318452475-huvyid-chunk-001-chunk-001.drp",
+          "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/latest.drp",
+          "createdAt": "2026-05-09T11:27:07Z",
+          "mode": "auto",
+          "action": "prepare_root",
+          "rootId": "root-draft-1778318452475-huvyid",
+          "chunkId": "chunk-001",
+          "database": {
+            "DbType": "Disk",
+            "DbName": "Local Database"
+          },
+          "detail": "prepare_root exported withStillsAndLUTs=false"
+        },
+        {
+          "projectName": "丙察察格聂南线子梅垭口穿越 [Color]",
+          "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/snapshots/20260509T112729Z-prepare-root-root-draft-1778318452475-huvyid-chunk-002-chunk-002.drp",
+          "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/latest.drp",
+          "createdAt": "2026-05-09T11:27:29Z",
+          "mode": "auto",
+          "action": "prepare_root",
+          "rootId": "root-draft-1778318452475-huvyid",
+          "chunkId": "chunk-002",
+          "database": {
+            "DbType": "Disk",
+            "DbName": "Local Database"
+          },
+          "detail": "prepare_root exported withStillsAndLUTs=false"
+        },
+        {
+          "projectName": "丙察察格聂南线子梅垭口穿越 [Color]",
+          "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/snapshots/20260509T112751Z-prepare-root-root-draft-1778318452475-huvyid-chunk-003-chunk-003.drp",
+          "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/latest.drp",
+          "createdAt": "2026-05-09T11:27:51Z",
+          "mode": "auto",
+          "action": "prepare_root",
+          "rootId": "root-draft-1778318452475-huvyid",
+          "chunkId": "chunk-003",
+          "database": {
+            "DbType": "Disk",
+            "DbName": "Local Database"
+          },
+          "detail": "prepare_root exported withStillsAndLUTs=false"
+        },
+        {
+          "projectName": "丙察察格聂南线子梅垭口穿越 [Color]",
+          "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/snapshots/20260509T112803Z-prepare-root-root-draft-1778318452475-huvyid-chunk-004-chunk-004.drp",
+          "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/latest.drp",
+          "createdAt": "2026-05-09T11:28:03Z",
+          "mode": "auto",
+          "action": "prepare_root",
+          "rootId": "root-draft-1778318452475-huvyid",
+          "chunkId": "chunk-004",
+          "database": {
+            "DbType": "Disk",
+            "DbName": "Local Database"
+          },
+          "detail": "prepare_root exported withStillsAndLUTs=false"
+        },
+        {
+          "projectName": "丙察察格聂南线子梅垭口穿越 [Color]",
+          "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/snapshots/20260509T112825Z-prepare-root-root-draft-1778318452475-huvyid-chunk-005-chunk-005.drp",
+          "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/latest.drp",
+          "createdAt": "2026-05-09T11:28:25Z",
+          "mode": "auto",
+          "action": "prepare_root",
+          "rootId": "root-draft-1778318452475-huvyid",
+          "chunkId": "chunk-005",
+          "database": {
+            "DbType": "Disk",
+            "DbName": "Local Database"
+          },
+          "detail": "prepare_root exported withStillsAndLUTs=false"
+        },
+        {
+          "projectName": "丙察察格聂南线子梅垭口穿越 [Color]",
+          "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/snapshots/20260509T112852Z-prepare-root-root-draft-1778318452475-huvyid-chunk-006-chunk-006.drp",
+          "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/latest.drp",
+          "createdAt": "2026-05-09T11:28:52Z",
+          "mode": "auto",
+          "action": "prepare_root",
+          "rootId": "root-draft-1778318452475-huvyid",
+          "chunkId": "chunk-006",
+          "database": {
+            "DbType": "Disk",
+            "DbName": "Local Database"
+          },
+          "detail": "prepare_root exported withStillsAndLUTs=false"
+        },
+        {
+          "projectName": "丙察察格聂南线子梅垭口穿越 [Color]",
+          "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/snapshots/20260509T112905Z-prepare-root-root-draft-1778318452475-huvyid-chunk-007-chunk-007.drp",
+          "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/latest.drp",
+          "createdAt": "2026-05-09T11:29:05Z",
+          "mode": "auto",
+          "action": "prepare_root",
+          "rootId": "root-draft-1778318452475-huvyid",
+          "chunkId": "chunk-007",
+          "database": {
+            "DbType": "Disk",
+            "DbName": "Local Database"
+          },
+          "detail": "prepare_root exported withStillsAndLUTs=false"
+        },
+        {
+          "projectName": "丙察察格聂南线子梅垭口穿越 [Color]",
+          "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/snapshots/20260509T112954Z-prepare-root-root-draft-1778319636214-bb8ljb-chunk-001-chunk-001.drp",
+          "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/latest.drp",
+          "createdAt": "2026-05-09T11:29:54Z",
+          "mode": "auto",
+          "action": "prepare_root",
+          "rootId": "root-draft-1778319636214-bb8ljb",
+          "chunkId": "chunk-001",
+          "database": {
+            "DbType": "Disk",
+            "DbName": "Local Database"
+          },
+          "detail": "prepare_root exported withStillsAndLUTs=false"
+        },
+        {
+          "projectName": "丙察察格聂南线子梅垭口穿越 [Color]",
+          "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/snapshots/20260509T113021Z-prepare-root-root-draft-1778319636214-bb8ljb-chunk-002-chunk-002.drp",
+          "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/latest.drp",
+          "createdAt": "2026-05-09T11:30:21Z",
+          "mode": "auto",
+          "action": "prepare_root",
+          "rootId": "root-draft-1778319636214-bb8ljb",
+          "chunkId": "chunk-002",
+          "database": {
+            "DbType": "Disk",
+            "DbName": "Local Database"
+          },
+          "detail": "prepare_root exported withStillsAndLUTs=false"
+        },
+        {
+          "projectName": "丙察察格聂南线子梅垭口穿越 [Color]",
+          "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/snapshots/20260509T113036Z-prepare-root-root-draft-1778319636214-bb8ljb-chunk-003-chunk-003.drp",
+          "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/latest.drp",
+          "createdAt": "2026-05-09T11:30:36Z",
+          "mode": "auto",
+          "action": "prepare_root",
+          "rootId": "root-draft-1778319636214-bb8ljb",
+          "chunkId": "chunk-003",
+          "database": {
+            "DbType": "Disk",
+            "DbName": "Local Database"
+          },
+          "detail": "prepare_root exported withStillsAndLUTs=false"
+        },
+        {
+          "projectName": "丙察察格聂南线子梅垭口穿越 [Color]",
+          "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/snapshots/20260509T113053Z-prepare-root-root-draft-1778319636214-bb8ljb-chunk-004-chunk-004.drp",
+          "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/latest.drp",
+          "createdAt": "2026-05-09T11:30:53Z",
+          "mode": "auto",
+          "action": "prepare_root",
+          "rootId": "root-draft-1778319636214-bb8ljb",
+          "chunkId": "chunk-004",
+          "database": {
+            "DbType": "Disk",
+            "DbName": "Local Database"
+          },
+          "detail": "prepare_root exported withStillsAndLUTs=false"
+        },
+        {
+          "projectName": "丙察察格聂南线子梅垭口穿越 [Color]",
+          "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/snapshots/20260509T113114Z-prepare-root-root-draft-1778319636214-bb8ljb-chunk-005-chunk-005.drp",
+          "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/latest.drp",
+          "createdAt": "2026-05-09T11:31:14Z",
+          "mode": "auto",
+          "action": "prepare_root",
+          "rootId": "root-draft-1778319636214-bb8ljb",
+          "chunkId": "chunk-005",
+          "database": {
+            "DbType": "Disk",
+            "DbName": "Local Database"
+          },
+          "detail": "prepare_root exported withStillsAndLUTs=false"
+        },
+        {
+          "projectName": "丙察察格聂南线子梅垭口穿越 [Color]",
+          "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/snapshots/20260509T113142Z-prepare-root-root-draft-1778319636214-bb8ljb-chunk-006-chunk-006.drp",
+          "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/latest.drp",
+          "createdAt": "2026-05-09T11:31:42Z",
+          "mode": "auto",
+          "action": "prepare_root",
+          "rootId": "root-draft-1778319636214-bb8ljb",
+          "chunkId": "chunk-006",
+          "database": {
+            "DbType": "Disk",
+            "DbName": "Local Database"
+          },
+          "detail": "prepare_root exported withStillsAndLUTs=false"
+        },
+        {
+          "projectName": "丙察察格聂南线子梅垭口穿越 [Color]",
+          "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/snapshots/20260509T113151Z-prepare-root-root-draft-1778319636214-bb8ljb-chunk-007-chunk-007.drp",
+          "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/latest.drp",
+          "createdAt": "2026-05-09T11:31:51Z",
+          "mode": "auto",
+          "action": "prepare_root",
+          "rootId": "root-draft-1778319636214-bb8ljb",
+          "chunkId": "chunk-007",
+          "database": {
+            "DbType": "Disk",
+            "DbName": "Local Database"
+          },
+          "detail": "prepare_root exported withStillsAndLUTs=false"
+        },
+        {
+          "projectName": "丙察察格聂南线子梅垭口穿越 [Color]",
+          "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/snapshots/20260509T153540Z-prepare-root-root-draft-1778318452475-huvyid-complete.drp",
+          "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/latest.drp",
+          "createdAt": "2026-05-09T15:35:40Z",
+          "mode": "manual",
+          "action": "prepare_root",
+          "rootId": "root-draft-1778318452475-huvyid",
+          "database": {
+            "DbType": "Disk",
+            "DbName": "Local Database"
+          },
+          "detail": "save_drp_snapshot exported withStillsAndLUTs=false"
+        },
+        {
+          "projectName": "丙察察格聂南线子梅垭口穿越 [Color]",
+          "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/snapshots/20260509T153936Z-prepare-root-root-draft-1778319636214-bb8ljb-complete.drp",
+          "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/latest.drp",
+          "createdAt": "2026-05-09T15:39:36Z",
+          "mode": "manual",
+          "action": "prepare_root",
+          "rootId": "root-draft-1778319636214-bb8ljb",
+          "database": {
+            "DbType": "Disk",
+            "DbName": "Local Database"
+          },
+          "detail": "save_drp_snapshot exported withStillsAndLUTs=false"
+        },
+        {
+          "projectName": "丙察察格聂南线子梅垭口穿越 [Color]",
+          "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/snapshots/20260509T163813Z-prepare-root-root-draft-1778318452475-huvyid-complete.drp",
+          "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/latest.drp",
+          "createdAt": "2026-05-09T16:38:13Z",
+          "mode": "manual",
+          "action": "prepare_root",
+          "rootId": "root-draft-1778318452475-huvyid",
+          "database": {
+            "DbType": "Disk",
+            "DbName": "Local Database"
+          },
+          "detail": "save_drp_snapshot exported withStillsAndLUTs=false"
+        },
+        {
+          "projectName": "丙察察格聂南线子梅垭口穿越 [Color]",
+          "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/snapshots/20260509T164609Z-prepare-root-root-draft-1778319636214-bb8ljb-complete.drp",
+          "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/latest.drp",
+          "createdAt": "2026-05-09T16:46:09Z",
+          "mode": "manual",
+          "action": "prepare_root",
+          "rootId": "root-draft-1778319636214-bb8ljb",
+          "database": {
+            "DbType": "Disk",
+            "DbName": "Local Database"
+          },
+          "detail": "save_drp_snapshot exported withStillsAndLUTs=false"
+        },
+        {
+          "projectName": "丙察察格聂南线子梅垭口穿越 [Color]",
+          "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/snapshots/20260509T165508Z-prepare-root-root-draft-1778318452475-huvyid-complete.drp",
+          "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/latest.drp",
+          "createdAt": "2026-05-09T16:55:08Z",
+          "mode": "manual",
+          "action": "prepare_root",
+          "rootId": "root-draft-1778318452475-huvyid",
+          "database": {
+            "DbType": "Disk",
+            "DbName": "Local Database"
+          },
+          "detail": "save_drp_snapshot exported withStillsAndLUTs=false"
+        },
+        {
+          "projectName": "丙察察格聂南线子梅垭口穿越 [Color]",
+          "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/snapshots/20260509T165746Z-prepare-root-root-draft-1778319636214-bb8ljb-complete.drp",
+          "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/latest.drp",
+          "createdAt": "2026-05-09T16:57:46Z",
+          "mode": "manual",
+          "action": "prepare_root",
+          "rootId": "root-draft-1778319636214-bb8ljb",
+          "database": {
+            "DbType": "Disk",
+            "DbName": "Local Database"
+          },
+          "detail": "save_drp_snapshot exported withStillsAndLUTs=false"
+        },
+        {
+          "projectName": "丙察察格聂南线子梅垭口穿越 [Color]",
+          "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/snapshots/20260510T034902Z-prepare-root-root-draft-1778318452475-huvyid-complete.drp",
+          "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/latest.drp",
+          "createdAt": "2026-05-10T03:49:02Z",
+          "mode": "manual",
+          "action": "prepare_root",
+          "rootId": "root-draft-1778318452475-huvyid",
+          "database": {
+            "DbType": "Disk",
+            "DbName": "Local Database"
+          },
+          "detail": "save_drp_snapshot exported withStillsAndLUTs=false"
+        },
+        {
+          "projectName": "丙察察格聂南线子梅垭口穿越 [Color]",
+          "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/snapshots/20260510T043615Z-prepare-root-root-draft-1778318452475-huvyid-complete.drp",
+          "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/latest.drp",
+          "createdAt": "2026-05-10T04:36:15Z",
+          "mode": "manual",
+          "action": "prepare_root",
+          "rootId": "root-draft-1778318452475-huvyid",
+          "database": {
+            "DbType": "Disk",
+            "DbName": "Local Database"
+          },
+          "detail": "save_drp_snapshot exported withStillsAndLUTs=false"
+        },
+        {
+          "projectName": "丙察察格聂南线子梅垭口穿越 [Color]",
+          "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/snapshots/20260512T140948Z-manual.drp",
+          "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/color/resolve-projects/Color/latest.drp",
+          "createdAt": "2026-05-12T14:09:48Z",
+          "mode": "manual",
+          "action": "manual",
+          "rootId": "root-draft-1778318452475-huvyid",
+          "database": {
+            "DbType": "Disk",
+            "DbName": "Local Database"
+          },
+          "detail": "save_drp_snapshot exported withStillsAndLUTs=false"
+        }
+      ],
+      "updatedAt": "2026-05-12T14:09:49.932Z"
+    }
+  }
+}
