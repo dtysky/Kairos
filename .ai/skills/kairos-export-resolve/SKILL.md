@@ -78,6 +78,9 @@ description: >-
 - 覆盖已有最终目标前，必须先生成 `dayX/Cxxxx.ext` 覆盖预览并用 `overwritePlanHash` 锁定确认范围；未确认或 hash 变化时不得启动 Resolve。
 - Resolve 宿主必须按 `rawRelativePath` 父目录复制临时 render timelines，修剪到该目录 clips，直接渲染到最终 `localPath/<relativeDir>/`；所有 render jobs 创建成功后只调用一次 render all。
 - Resolve 输出必须使用 File Name = Source Name；不得设置 `CustomName` 或 `UniqueFilenameStyle`，出现 prefix/suffix 文件名时 batch 失败。
+- Windows Resolve 21 + MP4/H.265 固定码率必须走 host-owned transient render preset：导出 preset XML，写入并验证 `RecordFormatSubType=hvc1_qsv`、`h264_datarate = root.color.renderPreset.bitrateKbps`、`encoder_command_param_map.rc=CBR`、`encoder_command_param_map.bitrate=<bitrateKbps>`；不要在 Windows H.265 上用会被拒绝的公开 `VideoQuality` key 作为正式路径。
+- 非 Windows 主机不要套用上述 transient preset 兼容路径；若 Resolve 接受公开 `VideoQuality`，继续使用公共 render setting 设置 `bitrateKbps`。
+- Windows transient preset 必须清空 `RecordPrefix / RecordSuffix / DestSuffix` 并保持 `RecordClipUniqueName=false`，避免历史自定义名称污染 Source Name 输出。
 - `promote_batch` 已退出正式导出链；metadata 修复与 validation 在 `execute_root` 内完成。
 
 ## 推荐产出

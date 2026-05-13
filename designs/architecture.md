@@ -254,6 +254,10 @@
   - Resolve 宿主必须先完整生成所有 render jobs，再调用一次 render all；任一 `AddRenderJob()` 失败时不得调用 `StartRendering`
   - Resolve 宿主按 `rawRelativePath` 父目录分组，为每个目录复制正式 root grading timeline 并修剪到该目录 clips；每个 render job 的 `TargetDir` 直接是最终 `localPath/<relativeDir>/`
   - 正式输出命名固定为 `sourceStem + targetExtension`，并依赖 Resolve File Name = Source Name；不得设置 `CustomName` 或 `UniqueFilenameStyle`
+  - Windows Resolve 21 + MP4/H.265 固定码率由 host-owned transient render preset 承担：在 queue render jobs 前，Resolve host 必须保存当前格式 preset、导出 XML、写入 `h264_datarate`、`encoder_command_param_map.rc=CBR`、`encoder_command_param_map.bitrate=root.renderPreset.bitrateKbps`、导入并加载，再通过再次导出校验这些值；不得把该平台上会拒绝 H.265 的公开 `VideoQuality` key 当成正式路径
+  - Windows H.265 root 当前正式锁定 Intel Quick Sync：transient preset 必须写入并校验 `RecordFormatSubType=hvc1_qsv`、`h264_profile=2`、`preset=balance`、`rc=CBR`、`bitrate=<bitrateKbps>`；后续 `SetRenderSettings` 只设置目录、帧范围、分辨率、帧率与音频等队列参数，不能再用 `CustomName` 或 prefix/suffix 名称兜底
+  - Windows transient preset 还必须清空 `RecordPrefix / RecordSuffix / DestSuffix` 并保持 `RecordClipUniqueName=false`，防止历史 Deliver 页自定义名称污染正式 Source Name render job
+  - 非 Windows 主机继续走 Resolve 公共 render setting 路径；当 `VideoQuality` 可用时，直接由它承载 `root.renderPreset.bitrateKbps`
   - 项目目录只保存 `color/batches/<batchId>/...` JSON archive，不能作为视频 staging；Kairos 不创建视频 holding 目录，不在 render 后搬运视频
   - Resolve 完成后必须直接校验最终 `manifest.entries[].outputPath`；出现 prefix/suffix 输出名视为 render setting 失败
   - Resolve 写入最终路径后，Node 侧必须立即对最终输出做 metadata normalize：
@@ -306,7 +310,7 @@
   - container 列表
   - 每个 container 可用的视频 codec
   - 是否支持 `AudioCodec`
-  - 是否支持 `VideoQuality`
+  - 是否支持固定码率路径；当前 vendored host 只有在 Windows MP4/H.265 上把 Intel Quick Sync transient render preset 作为正式路径，非 Windows 仍优先使用公开 `VideoQuality`
 - `prepare_root / sync_groups / execute_root` 在真正触发 Resolve 变更前都必须先执行 preflight：
   - `blocked` 直接拒绝动作
   - `degraded` 允许进入已知兼容矩阵内的动作

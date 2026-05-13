@@ -111,6 +111,10 @@ remain in the vendored backend:
 - `project.SetRenderSettings(settings)` sets render settings.
 - `project.SetCurrentRenderFormatAndCodec(format, codec)` sets format/codec.
 - `project.SetCurrentRenderMode(renderMode)` uses `0` for individual clips and `1` for single clip.
+- On Resolve 21.0.0b.28 / Windows, live probing showed MP4/H.265 `SetRenderSettings({"VideoQuality": ...})` returns `False` even though the installed README documents the key. Kairos therefore must not use public `VideoQuality` as the formal fixed-bitrate path for Windows MP4/H.265 `/color` exports; non-Windows hosts that accept `VideoQuality` should keep using the public setting path.
+- For Windows MP4/H.265 `/color` fixed bitrate, the current vendored host path is: `SaveAsNewRenderPreset` on the project, `resolve.ExportRenderPreset(...)`, patch the exported XML (`RecordFormatSubType=hvc1_qsv`, `h264_datarate`, and `encoder_command_param_map.rc=CBR / bitrate=<kbps>`), `resolve.ImportRenderPreset(xmlPath)`, `project.LoadRenderPreset(name)`, then verify by exporting the loaded preset and checking `RecordFormatSubType`, rate control, and bitrate.
+- Clear `RecordPrefix`, `RecordSuffix`, and `DestSuffix` in that Windows transient preset before queueing `/color` jobs; otherwise stale Deliver-page custom names can leak into later Source Name render jobs even when Kairos does not call `SetRenderSettings(CustomName=...)`.
+- `resolve.ExportRenderPreset` / `resolve.ImportRenderPreset` are exposed on the Resolve app object in this installation; import expects the exported preset XML file path, not the outer `.drp` directory.
 - `project.AddRenderJob()` returns a render job id.
 - `project.StartRendering(...)`, `project.StopRendering()`, and `project.IsRenderingInProgress()` control execution.
 - `project.GetRenderJobStatus(jobId)` is the formal polling call.

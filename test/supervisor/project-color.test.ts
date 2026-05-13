@@ -886,6 +886,52 @@ describe('project color actions', () => {
     expect(await readFile(join(currentLocalPath, 'day2', 'A001.mp4'), 'utf-8')).toBe('rendered:day2/A001.mov');
   });
 
+  it('defaults execute_root to synced Resolve group clips instead of raw inventory', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-color-execute-synced-selection';
+    const { projectRoot, rootId, rawLocalPath, currentLocalPath } = await seedSingleRootProject({
+      workspaceRoot,
+      projectId,
+      projectName: 'Project Color Execute Synced Selection',
+      rawFiles: ['day1/A001.mov', 'day1/A002.mov', 'day2/A003.mov'],
+    });
+    const syncedClipKeys = ['day1/A001.mov', 'day2/A003.mov'];
+    const syncedClips: IColorExecutorClipInput[] = syncedClipKeys.map(rawRelativePath => {
+      const filename = rawRelativePath.split('/').at(-1) ?? rawRelativePath;
+      return {
+        rawRelativePath,
+        sourceAbsolutePath: join(rawLocalPath, ...rawRelativePath.split('/')),
+        sourceStem: filename.replace(/\.[^.]+$/, ''),
+      };
+    });
+    await saveColorGroupsSnapshot(projectRoot, buildGroupsSnapshot({
+      rootId,
+      gradingTimelineName: 'Root [Color]',
+      clips: syncedClips,
+    }, 'resolve'));
+
+    mockColorMetadata();
+    let executedClipKeys: string[] = [];
+    const executeResult = await executeProjectColorRoot({
+      workspaceRoot,
+      projectId,
+      rootId,
+      action: 'execute_root',
+      executor: createFakeExecutor({
+        onExecuteRoot: async input => {
+          executedClipKeys = input.clips.map(clip => clip.rawRelativePath);
+          return createFakeExecutor().executeRoot(input);
+        },
+      }),
+    });
+    const plan = await loadColorBatchPlan(projectRoot, executeResult.batchId!);
+
+    expect(plan?.selectionMode).toBe('all');
+    expect(plan?.entries.map(entry => entry.rawRelativePath)).toEqual(syncedClipKeys);
+    expect(executedClipKeys).toEqual(syncedClipKeys);
+    await expect(readFile(join(currentLocalPath, 'day1', 'A002.mp4'), 'utf-8')).rejects.toThrow();
+  });
+
   it('mirrors same-basename raw sidecars after direct-root export', async () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-color-sidecars';
@@ -1829,6 +1875,24 @@ describe('project color actions', () => {
         },
       }],
     });
+    await saveColorGroupsSnapshot(projectRoot, buildGroupsSnapshot({
+      rootId: 'root-fail',
+      gradingTimelineName: 'Fail Root [Color]',
+      clips: [{
+        rawRelativePath: 'day1/A001.mov',
+        sourceAbsolutePath: join(rawFail, 'day1', 'A001.mov'),
+        sourceStem: 'A001',
+      }],
+    }, 'resolve'));
+    await saveColorGroupsSnapshot(projectRoot, buildGroupsSnapshot({
+      rootId: 'root-ready',
+      gradingTimelineName: 'Ready Root [Color]',
+      clips: [{
+        rawRelativePath: 'day1/A001.mov',
+        sourceAbsolutePath: join(rawReady, 'day1', 'A001.mov'),
+        sourceStem: 'A001',
+      }],
+    }, 'resolve'));
     mockColorMetadata();
 
     const result = await exportAllProjectColorRoots({

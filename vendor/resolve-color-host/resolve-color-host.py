@@ -2,9 +2,11 @@
 import argparse
 import hashlib
 import json
+import os
 import re
 import shutil
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -105,19 +107,44 @@ def load_resolve():
 
 def append_script_api_paths():
     candidates = []
+    resolve_app_candidates = []
 
     if sys.platform == "darwin":
         base = Path("/Library/Application Support/Blackmagic Design/DaVinci Resolve/Developer/Scripting")
+        resolve_app_candidates.append(Path("/Applications/DaVinci Resolve/DaVinci Resolve.app/Contents/Libraries/Fusion"))
     elif sys.platform == "win32":
         base = Path("C:/ProgramData/Blackmagic Design/DaVinci Resolve/Support/Developer/Scripting")
+        resolve_app_candidates.extend([
+            Path(os.environ["RESOLVE_SCRIPT_LIB"]).parent if os.environ.get("RESOLVE_SCRIPT_LIB") else None,
+            Path("C:/Applications/Davinci"),
+            Path("C:/Program Files/Blackmagic Design/DaVinci Resolve"),
+        ])
     else:
         base = Path("/opt/resolve/Developer/Scripting")
+        resolve_app_candidates.append(Path("/opt/resolve/libs/Fusion"))
     candidates.extend([base, base / "Modules"])
 
     for candidate in candidates:
         text = str(candidate)
         if candidate.exists() and text not in sys.path:
             sys.path.insert(0, text)
+
+    for candidate in resolve_app_candidates:
+        if candidate is None or not candidate.exists():
+            continue
+        if sys.platform == "win32":
+            lib_path = candidate / "fusionscript.dll"
+            if lib_path.exists() and not os.environ.get("RESOLVE_SCRIPT_LIB"):
+                os.environ["RESOLVE_SCRIPT_LIB"] = str(lib_path)
+        text = str(candidate)
+        if sys.platform == "win32" and hasattr(os, "add_dll_directory"):
+            try:
+                os.add_dll_directory(text)
+            except Exception:
+                pass
+        path_value = os.environ.get("PATH", "")
+        if text not in path_value.split(os.pathsep):
+            os.environ["PATH"] = text + os.pathsep + path_value
 
 
 def prepare_root(resolve, payload):
@@ -339,9 +366,11 @@ def execute_root(resolve, payload):
     render_jobs = []
     temp_timelines = []
     render_started = False
+    transient_render_preset_name = None
     try:
         safe_call(resolve, "OpenPage", "deliver")
         resolved_render_format = set_render_format(project, render_format)
+        transient_render_preset_name = ensure_bitrate_render_preset(resolve, project, resolved_render_format)
         selected_clips = normalize_render_batch_clips(payload.get("clips"), resolved_render_format["extension"])
         save_project(project, resolve)
 
@@ -376,6 +405,8 @@ def execute_root(resolve, payload):
     finally:
         if not render_started:
             cleanup_created_render_jobs(project, render_jobs)
+        if transient_render_preset_name:
+            safe_call(project, "DeleteRenderPreset", transient_render_preset_name)
         safe_call(project, "SetCurrentTimeline", timeline)
         safe_call(resolve, "OpenPage", "edit")
         for temp_timeline in temp_timelines:
@@ -402,6 +433,7 @@ def execute_root(resolve, payload):
             "resolvedCodec": resolved_render_format["videoCodec"],
             "audioCodec": resolved_render_format["audioCodec"],
             "bitrateKbps": resolved_render_format["bitrateKbps"],
+            "bitrateControl": "transient-render-preset" if transient_render_preset_name else None,
         },
     }
 
@@ -2278,6 +2310,348 @@ def set_render_format(project, render_format):
     }
 
 
+def ensure_bitrate_render_preset(resolve, project, render_format):
+    bitrate = parse_int(render_format.get("bitrateKbps"))
+    if not bitrate or not needs_windows_fixed_bitrate_preset(render_format):
+        return None
+    preset_name = build_transient_render_preset_name(render_format, bitrate)
+    export_root = Path(tempfile.mkdtemp(prefix="kairos-resolve-render-preset-"))
+    try:
+        encoding_profile = default_render_encoding_profile(render_format)
+        if encoding_profile:
+            profile_result = safe_call(project, "SetRenderSettings", {"ExportVideo": True, "EncodingProfile": encoding_profile})
+            if profile_result is False:
+                raise HostError(
+                    "resolve_render_preset_profile_failed",
+                    "Unable to set Resolve encoding profile for transient fixed bitrate preset.",
+                    {
+                        "presetName": preset_name,
+                        "bitrateKbps": bitrate,
+                        "encodingProfile": encoding_profile,
+                    },
+                )
+        save_result = safe_call(project, "SaveAsNewRenderPreset", preset_name)
+        if save_result is not True:
+            raise HostError(
+                "resolve_render_preset_save_failed",
+                "Unable to save transient Resolve render preset for fixed bitrate.",
+                {"presetName": preset_name, "bitrateKbps": bitrate},
+            )
+        export_path = export_root / f"{preset_name}.drp"
+        export_result = safe_call(resolve, "ExportRenderPreset", preset_name, str(export_path))
+        if export_result is not True:
+            raise HostError(
+                "resolve_render_preset_export_failed",
+                "Unable to export transient Resolve render preset for fixed bitrate.",
+                {"presetName": preset_name, "bitrateKbps": bitrate, "exportPath": str(export_path)},
+            )
+        preset_xml = find_exported_render_preset_xml(export_path)
+        patch_render_preset_bitrate(preset_xml, bitrate, render_format)
+        safe_call(project, "DeleteRenderPreset", preset_name)
+        import_result = safe_call(resolve, "ImportRenderPreset", str(preset_xml))
+        if import_result is not True:
+            raise HostError(
+                "resolve_render_preset_import_failed",
+                "Unable to import transient Resolve render preset for fixed bitrate.",
+                {"presetName": preset_name, "bitrateKbps": bitrate, "presetXml": str(preset_xml)},
+            )
+        load_result = safe_call(project, "LoadRenderPreset", preset_name)
+        if load_result is not True:
+            raise HostError(
+                "resolve_render_preset_load_failed",
+                "Unable to load transient Resolve render preset for fixed bitrate.",
+                {"presetName": preset_name, "bitrateKbps": bitrate},
+            )
+        verify_transient_render_preset(resolve, project, preset_name, bitrate, render_format)
+        return preset_name
+    except HostError:
+        safe_call(project, "DeleteRenderPreset", preset_name)
+        raise
+    finally:
+        shutil.rmtree(export_root, ignore_errors=True)
+
+
+def build_transient_render_preset_name(render_format, bitrate):
+    fingerprint = hashlib.sha1(
+        json.dumps(
+            {
+                "format": render_format.get("format"),
+                "codec": render_format.get("videoCodec"),
+                "audioCodec": render_format.get("audioCodec"),
+                "bitrateKbps": bitrate,
+                "time": time.time(),
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        ).encode("utf-8"),
+    ).hexdigest()[:10]
+    return f"__kairos_fixed_bitrate_{bitrate}_{fingerprint}__"
+
+
+def default_render_encoding_profile(render_format):
+    if normalize_codec_family(render_format.get("videoCodec")) == "h265":
+        return "Main10"
+    return None
+
+
+def needs_windows_fixed_bitrate_preset(render_format):
+    if sys.platform != "win32":
+        return False
+    container = normalize_lookup_key(str(render_format.get("format") or render_format.get("container") or render_format.get("extension") or ""))
+    codec_family = normalize_codec_family(render_format.get("videoCodec"))
+    return container == "mp4" and codec_family == "h265"
+
+
+def default_render_encoder_subtype(render_format):
+    container = normalize_lookup_key(str(render_format.get("format") or render_format.get("container") or render_format.get("extension") or ""))
+    codec_value = str(render_format.get("videoCodec") or "")
+    codec = normalize_lookup_key(codec_value)
+    codec_family = normalize_codec_family(codec_value)
+    if container == "mp4" and codec_family == "h265":
+        if "nvidia" in codec:
+            return "hvc1_nvenc"
+        if "qsv" in codec or "intel" in codec or needs_windows_fixed_bitrate_preset(render_format):
+            return "hvc1_qsv"
+        return "hvc1_enc"
+    return None
+
+
+def find_exported_render_preset_xml(export_path):
+    candidates = sorted(Path(export_path).glob("*.xml"))
+    if not candidates:
+        raise HostError(
+            "resolve_render_preset_xml_missing",
+            "Resolve exported render preset without an XML payload.",
+            {"exportPath": str(export_path)},
+        )
+    return candidates[0]
+
+
+def patch_render_preset_bitrate(preset_xml, bitrate, render_format=None):
+    try:
+        tree = parse_xml_file_preserving_comments(preset_xml)
+        root = tree.getroot()
+        encoder_subtype = default_render_encoder_subtype(render_format or {})
+        if encoder_subtype:
+            set_xml_text(root, "RecordFormatType", "mp4")
+            set_xml_text(root, "RecordFormatSubType", encoder_subtype)
+        set_xml_text(root, "RecordPrefix", "")
+        set_xml_text(root, "RecordSuffix", "")
+        set_xml_text(root, "DestSuffix", "")
+        set_xml_text(root, "RecordClipUniqueName", "false")
+        set_xml_text(root, "RecordClipUniqueNameStyle", "0")
+        set_xml_text(root, "UsePrefixAndSuffixFromSrc", "0")
+        extra_info = root.find("ExtraInfoMap")
+        if extra_info is None:
+            extra_info = create_xml_child(root, "ExtraInfoMap")
+        current_encoder_map = decode_resolve_string_map(
+            get_extra_info_value(extra_info, "encoder_command_param_map"),
+        )
+        patched_encoder_map = dict(current_encoder_map)
+        patched_encoder_map.update({
+            "rc": "CBR",
+            "quality": "best",
+            "preset": "balance" if encoder_subtype == "hvc1_qsv" else "balanced",
+            "bitrate": str(bitrate),
+            "avbr_convergence": "0",
+            "avbr_accuracy": "0",
+        })
+        patched_encoder_map.pop("icq_quality", None)
+        if encoder_subtype == "hvc1_qsv":
+            patched_encoder_map["icq_quality"] = "2"
+        elif "icq_quality" in current_encoder_map:
+            patched_encoder_map["icq_quality"] = "4"
+        if normalize_codec_family((render_format or {}).get("videoCodec")) == "h265":
+            set_extra_info_value(extra_info, "h264_profile", "2")
+        set_extra_info_value(extra_info, "h264_datarate", str(bitrate))
+        set_extra_info_value(extra_info, "encoder_command_param_map", encode_resolve_string_map(patched_encoder_map))
+        tree.write(preset_xml, encoding="UTF-8", xml_declaration=True)
+    except HostError:
+        raise
+    except Exception as error:
+        raise HostError(
+            "resolve_render_preset_patch_failed",
+            "Unable to patch transient Resolve render preset for fixed bitrate.",
+            {"presetXml": str(preset_xml), "bitrateKbps": bitrate, "error": str(error)},
+        )
+
+
+def verify_transient_render_preset(resolve, project, preset_name, bitrate, render_format):
+    verify_name = f"{preset_name}_verify"
+    export_root = Path(tempfile.mkdtemp(prefix="kairos-resolve-render-preset-verify-"))
+    try:
+        save_result = safe_call(project, "SaveAsNewRenderPreset", verify_name)
+        if save_result is not True:
+            raise HostError(
+                "resolve_render_preset_verify_failed",
+                "Unable to verify transient Resolve render preset bitrate.",
+                {"presetName": preset_name, "bitrateKbps": bitrate, "stage": "save"},
+            )
+        export_path = export_root / f"{verify_name}.drp"
+        export_result = safe_call(resolve, "ExportRenderPreset", verify_name, str(export_path))
+        if export_result is not True:
+            raise HostError(
+                "resolve_render_preset_verify_failed",
+                "Unable to verify transient Resolve render preset bitrate.",
+                {"presetName": preset_name, "bitrateKbps": bitrate, "stage": "export"},
+            )
+        preset_xml = find_exported_render_preset_xml(export_path)
+        tree = parse_xml_file_preserving_comments(preset_xml)
+        root = tree.getroot()
+        extra_info = root.find("ExtraInfoMap")
+        expected_subtype = default_render_encoder_subtype(render_format)
+        verified_subtype = root.findtext("RecordFormatSubType")
+        verified_bitrate = get_extra_info_value(extra_info, "h264_datarate") if extra_info is not None else None
+        verified_encoder_map = decode_resolve_string_map(
+            get_extra_info_value(extra_info, "encoder_command_param_map") if extra_info is not None else None,
+        )
+        verified_map_bitrate = parse_int(verified_encoder_map.get("bitrate"))
+        verified_rate_control = stringify_signal_value(verified_encoder_map.get("rc"))
+        if expected_subtype and verified_subtype != expected_subtype:
+            raise HostError(
+                "resolve_render_preset_encoder_verify_failed",
+                "Resolve did not keep the requested render encoder in the transient render preset.",
+                {
+                    "presetName": preset_name,
+                    "requestedEncoderSubtype": expected_subtype,
+                    "verifiedEncoderSubtype": verified_subtype,
+                },
+            )
+        if verified_rate_control != "CBR":
+            raise HostError(
+                "resolve_render_preset_rate_control_verify_failed",
+                "Resolve did not keep fixed-bitrate rate control in the transient render preset.",
+                {
+                    "presetName": preset_name,
+                    "requestedRateControl": "CBR",
+                    "verifiedRateControl": verified_rate_control,
+                    "verifiedEncoderMap": verified_encoder_map,
+                },
+            )
+        if verified_map_bitrate != bitrate:
+            raise HostError(
+                "resolve_render_preset_bitrate_verify_failed",
+                "Resolve did not keep the requested encoder-map bitrate in the transient render preset.",
+                {
+                    "presetName": preset_name,
+                    "requestedBitrateKbps": bitrate,
+                    "verifiedBitrateKbps": verified_map_bitrate,
+                    "verifiedEncoderMap": verified_encoder_map,
+                },
+            )
+        if parse_int(verified_bitrate) != bitrate:
+            raise HostError(
+                "resolve_render_preset_bitrate_verify_failed",
+                "Resolve did not keep the requested datarate in the transient render preset.",
+                {
+                    "presetName": preset_name,
+                    "requestedBitrateKbps": bitrate,
+                    "verifiedBitrateKbps": verified_bitrate,
+                },
+            )
+    finally:
+        safe_call(project, "DeleteRenderPreset", verify_name)
+        shutil.rmtree(export_root, ignore_errors=True)
+
+
+def parse_xml_file_preserving_comments(path):
+    import xml.etree.ElementTree as ET
+
+    parser = ET.XMLParser(target=ET.TreeBuilder(insert_comments=True))
+    return ET.parse(path, parser=parser)
+
+
+def create_xml_child(parent, tag):
+    import xml.etree.ElementTree as ET
+
+    child = ET.Element(tag)
+    parent.append(child)
+    return child
+
+
+def set_xml_text(parent, tag, value):
+    element = parent.find(tag)
+    if element is None:
+        element = create_xml_child(parent, tag)
+    element.text = value
+    return element
+
+
+def find_extra_info_element(extra_info, key):
+    for element in list(extra_info):
+        db_key = element.find("DbKey")
+        if db_key is not None and (db_key.text or "") == key:
+            return element
+    return None
+
+
+def get_extra_info_value(extra_info, key):
+    element = find_extra_info_element(extra_info, key)
+    if element is None:
+        return None
+    db_val = element.find("DbVal")
+    if db_val is None:
+        return None
+    return db_val.text
+
+
+def set_extra_info_value(extra_info, key, value):
+    import xml.etree.ElementTree as ET
+
+    element = find_extra_info_element(extra_info, key)
+    if element is None:
+        element = ET.Element("Element")
+        db_key = ET.SubElement(element, "DbKey")
+        db_key.text = key
+        db_val = ET.SubElement(element, "DbVal")
+        db_val.text = value
+        extra_info.append(element)
+        return
+    db_val = element.find("DbVal")
+    if db_val is None:
+        db_val = ET.SubElement(element, "DbVal")
+    db_val.text = value
+
+
+def decode_resolve_string_map(value):
+    if not isinstance(value, str) or not value.strip():
+        return {}
+    try:
+        raw = bytes.fromhex(re.sub(r"\s+", "", value))
+        cursor = 0
+
+        def read_u32():
+            nonlocal cursor
+            number = int.from_bytes(raw[cursor:cursor + 4], "big")
+            cursor += 4
+            return number
+
+        result = {}
+        count = read_u32()
+        for _ in range(count):
+            key_length = read_u32()
+            key = raw[cursor:cursor + key_length].decode("utf-16-be")
+            cursor += key_length
+            value_length = read_u32()
+            item = raw[cursor:cursor + value_length].decode("utf-16-be")
+            cursor += value_length
+            result[key] = item
+        return result
+    except Exception:
+        return {}
+
+
+def encode_resolve_string_map(value):
+    items = list((value or {}).items())
+    raw = len(items).to_bytes(4, "big")
+    for key, item in items:
+        key_bytes = str(key).encode("utf-16-be")
+        value_bytes = str(item).encode("utf-16-be")
+        raw += len(key_bytes).to_bytes(4, "big") + key_bytes
+        raw += len(value_bytes).to_bytes(4, "big") + value_bytes
+    return raw.hex()
+
+
 def resolve_render_format(project, requested_container):
     formats = safe_call(project, "GetRenderFormats") or {}
     requested = normalize_lookup_key(requested_container)
@@ -2609,22 +2983,85 @@ def queue_root_render_job(project, target_dir, render_format, clips):
     if len(unique_heights) == 1:
         settings["FormatHeight"] = int(next(iter(unique_heights)))
     if len(unique_fps_values) == 1:
-        settings["FrameRate"] = float(next(iter(unique_fps_values)))
+        settings["FrameRate"] = next(iter(unique_fps_values))
     if render_format.get("audioCodec"):
         settings["AudioCodec"] = render_format["audioCodec"]
-    if render_format.get("bitrateKbps"):
+    if render_format.get("bitrateKbps") and not needs_windows_fixed_bitrate_preset(render_format):
         settings["VideoQuality"] = max(1, int(round(float(render_format["bitrateKbps"]))))
-    result = safe_call(project, "SetRenderSettings", settings)
-    if result is False:
-        raise HostError(
-            "resolve_render_settings_failed",
-            "Unable to set render settings for root render batch",
-            {"renderSettings": settings},
-        )
+    set_root_render_settings(project, settings)
     job_id = safe_call(project, "AddRenderJob")
     if job_id is False or job_id is None:
         raise HostError("resolve_add_render_job_failed", "Unable to queue render job for root render batch")
     return str(job_id)
+
+
+def set_root_render_settings(project, settings):
+    committed_settings = {}
+    attempts = []
+    base_keys = [
+        "TargetDir",
+        "SelectAllFrames",
+        "ExportVideo",
+        "ExportAudio",
+    ]
+    ordered_keys = [
+        "FormatWidth",
+        "FormatHeight",
+        "FrameRate",
+        "AudioCodec",
+        "RateControl",
+        "VideoQuality",
+    ]
+    for key in base_keys:
+        if key in settings:
+            committed_settings[key] = settings[key]
+    apply_root_render_settings_step(project, "base", committed_settings, settings, attempts)
+    for key in ordered_keys:
+        if key not in settings:
+            continue
+        committed_settings[key] = settings[key]
+        apply_root_render_settings_step(project, key, committed_settings, settings, attempts)
+    return committed_settings
+
+
+def apply_root_render_settings_step(project, step_name, step_settings, full_settings, attempts):
+    attempt = {
+        "step": step_name,
+        "settings": dict(step_settings),
+    }
+    attempts.append(attempt)
+    method = getattr(project, "SetRenderSettings", None)
+    if method is None:
+        raise HostError(
+            "resolve_render_settings_failed",
+            "Resolve object is missing SetRenderSettings",
+            {
+                "renderSettings": full_settings,
+                "failedRenderSetting": step_name,
+                "attemptedRenderSettings": attempts,
+            },
+        )
+    error_message = None
+    try:
+        result = method(dict(step_settings))
+    except Exception as error:
+        result = False
+        error_message = str(error)
+    if result is True:
+        return
+    details = {
+        "renderSettings": full_settings,
+        "failedRenderSetting": step_name,
+        "failedRenderSettings": dict(step_settings),
+        "attemptedRenderSettings": attempts,
+    }
+    if error_message:
+        details["error"] = error_message
+    raise HostError(
+        "resolve_render_settings_failed",
+        f"Unable to set render setting {step_name} for root render batch",
+        details,
+    )
 
 
 def start_rendering(project, job_ids):

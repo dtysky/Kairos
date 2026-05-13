@@ -93,6 +93,10 @@ Kairos 当前需要区分两层：
     - batch 默认覆盖该 root grading timeline 上的全部可执行 clips，但可显式携带 `clipKeys[]` 作为 retry / subset 选择
     - Resolve 宿主按 `rawRelativePath` 父目录分组，为每个目录复制正式 root grading timeline 并修剪到该目录 clips；所有 render jobs 创建成功后才能调用一次 render all
     - 正式输出命名继续收口为 `sourceStem + targetExtension`；宿主必须使用 Resolve File Name = Source Name，不设置 `CustomName` 或 prefix/suffix
+    - Windows Resolve 21 + MP4/H.265 固定码率不依赖该平台上不稳定的公开 `VideoQuality` render setting；宿主必须为当前 root 生成、导入、加载并验证 transient render preset，把 `h264_datarate` 与 `encoder_command_param_map.bitrate` 写成 `root.color.renderPreset.bitrateKbps`，并把 `encoder_command_param_map.rc` 固定为 `CBR`
+    - Windows H.265 root 默认走 Intel Quick Sync preset 语义：transient preset 必须写入并校验 `RecordFormatSubType=hvc1_qsv`、`EncodingProfile=Main10` 对应的 `h264_profile=2`、`preset=balance`、`rc=CBR`、`bitrate=<bitrateKbps>`；任一项校验失败不得启动 render
+    - Windows transient preset 同时必须清空 `RecordPrefix / RecordSuffix / DestSuffix` 并保持 `RecordClipUniqueName=false`；随后正式队列化仍按 Source Name，不设置 `CustomName` 或 `UniqueFilenameStyle`
+    - 非 Windows 主机继续走 Resolve 公共 render setting 路径；当 `VideoQuality` 可用时，直接由它承载 `root.color.renderPreset.bitrateKbps`
     - `execute_root` 必须以当前 root `localPath` 为唯一输出 root；项目目录只保存 batch JSON archive，不能承载视频 staging
     - 覆盖已有最终目标前，`/color` 必须先生成最终 `dayX/Cxxxx.ext` 覆盖预览并用 `overwritePlanHash` 锁定确认范围；hash 缺失或变化时不允许启动 Resolve
     - 每个目录级临时时间线直接渲染到最终 `localPath/<relativeDir>/`；Kairos 不再创建视频 holding 目录，也不在 render 后搬运视频

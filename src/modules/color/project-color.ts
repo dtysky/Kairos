@@ -2227,7 +2227,12 @@ async function buildColorOverwritePreviewForContext(
   const effectiveClipKeys = dedupeStrings(requestedClipKeys.map(clipKey => normalizePortablePath(String(clipKey ?? ''))));
   const selectedKeys = effectiveClipKeys.length > 0
     ? effectiveClipKeys
-    : rawInventory.map(entry => entry.rawRelativePath);
+    : resolveSyncedColorRootClipKeys(context);
+  if (selectedKeys.length === 0) {
+    throw new ProjectColorBlockedError([
+      'execute_root 默认导出范围来自最近一次 sync_groups 的 Resolve 时间线 clip 集合；当前没有可用 sync_groups 结果，请先执行 sync_groups，或显式传入 clipKeys。',
+    ]);
+  }
   const missingClipKeys = selectedKeys.filter(clipKey => !inventoryByKey.has(clipKey));
   if (missingClipKeys.length > 0) {
     throw new ProjectColorBlockedError(missingClipKeys.map(clipKey => `overwrite preview clip 不存在于 rawLocalPath: ${clipKey}`));
@@ -2291,6 +2296,15 @@ async function buildColorOverwritePreviewForContext(
     },
     roots: [],
   };
+}
+
+function resolveSyncedColorRootClipKeys(context: IColorRootContext): string[] {
+  return dedupeStrings([
+    ...(context.groupsSnapshot?.groups ?? []).flatMap(group => group.clipKeys ?? []),
+    ...(context.rootSummary.groups ?? []).flatMap(group => group.clipKeys ?? []),
+  ]
+    .map(clipKey => normalizePortablePath(String(clipKey ?? '')))
+    .filter(clipKey => clipKey.length > 0));
 }
 
 function buildDuplicateStemGroups(items: Array<{ rawRelativePath: string; sourceStem: string }>): IColorOverwritePreview['duplicateStemGroups'] {

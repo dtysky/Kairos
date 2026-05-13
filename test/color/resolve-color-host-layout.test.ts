@@ -10,6 +10,10 @@ const pythonPath = process.platform === 'win32'
   ? join(process.cwd(), 'vendor', 'resolve-color-host', '.venv', 'Scripts', 'python.exe')
   : join(process.cwd(), 'vendor', 'resolve-color-host', '.venv', 'bin', 'python');
 
+function toPortableTestPath(value: unknown): string {
+  return String(value ?? '').replace(/\\/g, '/');
+}
+
 async function inspectRenderExportHelper(payload: Record<string, unknown>) {
   const code = `
 import importlib.util
@@ -24,6 +28,8 @@ payload = json.loads(sys.argv[2])
 spec = importlib.util.spec_from_file_location("resolve_color_host", host_path)
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
+if payload.get("platformOverride"):
+    module.sys.platform = payload["platformOverride"]
 
 mode = payload["mode"]
 
@@ -39,8 +45,13 @@ try:
         class FakeProject:
             def __init__(self):
                 self.settings = None
+                self.setting_calls = []
 
             def SetRenderSettings(self, settings):
+                self.setting_calls.append(dict(settings))
+                rejected_keys = set(payload.get("rejectSettingsWithKeys", []))
+                if rejected_keys.intersection(settings.keys()):
+                    return False
                 self.settings = dict(settings)
                 return True
 
@@ -54,7 +65,44 @@ try:
             payload["renderFormat"],
             payload["clips"],
         )
-        result = {"jobId": job_id, "settings": project.settings}
+        result = {"jobId": job_id, "settings": project.settings, "settingCalls": project.setting_calls}
+    elif mode == "patch_preset_bitrate":
+        with tempfile.TemporaryDirectory() as tmpdir:
+            preset_path = Path(tmpdir) / "preset.xml"
+            encoder_map = module.encode_resolve_string_map({
+                "rc": "quality",
+                "quality": "4",
+                "preset": "balanced",
+                "icq_quality": "4",
+                "bitrate": "80000",
+            })
+            preset_path.write_text(f"""<?xml version="1.0" encoding="UTF-8"?>
+<SyRecordInfo>
+ <ExtraInfoMap>
+  <Element>
+   <DbKey>h264_datarate</DbKey>
+   <DbVal>0</DbVal>
+  </Element>
+  <Element>
+   <DbKey>encoder_command_param_map</DbKey>
+   <DbVal>{encoder_map}</DbVal>
+  </Element>
+ </ExtraInfoMap>
+</SyRecordInfo>
+""", encoding="utf-8")
+            module.patch_render_preset_bitrate(preset_path, payload["bitrateKbps"], payload.get("renderFormat", {}))
+            tree = module.parse_xml_file_preserving_comments(preset_path)
+            root = tree.getroot()
+            extra_info = root.find("ExtraInfoMap")
+            result = {
+              "subtype": root.findtext("RecordFormatSubType"),
+              "prefix": root.findtext("RecordPrefix"),
+              "suffix": root.findtext("RecordSuffix"),
+              "datarate": module.get_extra_info_value(extra_info, "h264_datarate"),
+              "encoderMap": module.decode_resolve_string_map(
+                module.get_extra_info_value(extra_info, "encoder_command_param_map"),
+                ),
+            }
     elif mode == "collect_outputs":
         with tempfile.TemporaryDirectory() as tmpdir:
             render_dir = Path(tmpdir)
@@ -584,7 +632,13 @@ describe('resolve color host clip layout helpers', () => {
       ],
     });
 
-    expect(result).toMatchObject({
+    expect({
+      ...result,
+      result: (result.result as Array<Record<string, unknown>>).map(spec => ({
+        ...spec,
+        targetDir: toPortableTestPath(spec.targetDir),
+      })),
+    }).toMatchObject({
       ok: true,
       result: [
         {
@@ -620,6 +674,8 @@ describe('resolve color host clip layout helpers', () => {
       mode: 'queue_settings',
       targetDir: '/Volumes/SSDMAX/zve1/day7',
       renderFormat: {
+        format: 'MP4',
+        videoCodec: 'H265',
         extension: 'mp4',
         audioCodec: 'aac',
         bitrateKbps: 120000,
@@ -638,9 +694,69 @@ describe('resolve color host clip layout helpers', () => {
 
     expect(result.ok).toBe(true);
     const settings = (result.result as { settings: Record<string, unknown> }).settings;
-    expect(settings.TargetDir).toBe('/Volumes/SSDMAX/zve1/day7');
+    expect(toPortableTestPath(settings.TargetDir)).toBe('/Volumes/SSDMAX/zve1/day7');
+    expect(settings.FrameRate).toBe('30');
+    expect(settings.RateControl).toBeUndefined();
+    expect(settings.VideoQuality).toBeUndefined();
     expect(settings.CustomName).toBeUndefined();
     expect(settings.UniqueFilenameStyle).toBeUndefined();
+  });
+
+  it('uses public VideoQuality bitrate outside the Windows H.265 workaround', async () => {
+    const result = await inspectRenderExportHelper({
+      mode: 'queue_settings',
+      platformOverride: 'darwin',
+      targetDir: '/Volumes/SSDMAX/zve1/day7',
+      renderFormat: {
+        format: 'MP4',
+        videoCodec: 'H265',
+        extension: 'mp4',
+        audioCodec: 'aac',
+        bitrateKbps: 30000,
+      },
+      clips: [
+        {
+          rawRelativePath: 'day7/C1610.MP4',
+          sourceStem: 'C1610',
+          normalizedOutputFilename: 'C1610.mp4',
+          width: 3840,
+          height: 2160,
+          fps: 30,
+        },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    const settings = (result.result as { settings: Record<string, unknown> }).settings;
+    expect(settings.VideoQuality).toBe(30000);
+    expect(settings.CustomName).toBeUndefined();
+    expect(settings.UniqueFilenameStyle).toBeUndefined();
+  });
+
+  it('patches transient Resolve render presets to fixed bitrate', async () => {
+    const result = await inspectRenderExportHelper({
+      mode: 'patch_preset_bitrate',
+      bitrateKbps: 30000,
+      renderFormat: {
+        format: 'MP4',
+        videoCodec: 'H265',
+      },
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.result).toMatchObject({
+      subtype: 'hvc1_qsv',
+      prefix: '',
+      suffix: '',
+      datarate: '30000',
+      encoderMap: {
+        rc: 'CBR',
+        quality: 'best',
+        preset: 'balance',
+        icq_quality: '2',
+        bitrate: '30000',
+      },
+    });
   });
 
   it('accepts exact Source Name outputs and rejects Resolve prefix/suffix outputs', async () => {
