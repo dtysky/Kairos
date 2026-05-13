@@ -13,7 +13,7 @@ description: >-
 Kairos 将旅拍素材转化为可编辑时间线。流程分为 1 个准备阶段 + 5 个主阶段，每个阶段有独立的子 skill，本 skill 负责总控。
 
 ```
-[Style Analysis] → Ingest → Analyze → Script → Timeline → Export
+[Edit Rules + optional Style Reference] → Ingest → Analyze → Script → Timeline → Export
 ```
 
 ## 变更工作流规则
@@ -93,18 +93,20 @@ Kairos 将旅拍素材转化为可编辑时间线。流程分为 1 个准备阶�
 - 不要清理由用户本来就在跑的无关外部服务；这里指的是 Kairos 官方管理的 ML service 状态必须回收
 - 如果阶段失败或被用户中断，也要做同样的收尾检查，避免留下孤儿进程
 
-## 准备阶段：Style Analysis（分类风格分析）
+## 准备阶段：Edit Rules + optional Style Reference
 
-**子 skill**: [kairos-style-analysis](../kairos-style-analysis/SKILL.md)
+**相关 skill**: [kairos-style-analysis](../kairos-style-analysis/SKILL.md)
 
-**可选但推荐**。从用户的历史成片中按分类提取风格档案。
+`剪辑规则` 是 Script / Timeline 的正式结构输入，存放在 `<workspaceRoot>/config/edit-rules/`，索引为 `<workspaceRoot>/config/edit-rules.json`。它必须由用户人工维护或明确选择，不能由风格分析自动生成。
+
+Style Analysis 当前是 **可选表达参考**。它从用户历史成片中按分类提取文案、旁白语感、艺术气质和表达禁区，供最终旁白 / 字幕文本使用。
 
 输入：
 - 分类名称（如 `travel-doc`、`city-walk`）
 - 用户指导词（描述分析侧重和创作理念）
 - 该分类的 1-5 个历史作品视频
 
-产出：deterministic prep 先写 `<workspaceRoot>/.tmp/style-analysis/{category}/`、`analysis/reference-transcripts/`、`analysis/style-references/`，随后由 Agent 写 `<workspaceRoot>/config/styles/{category}.md`；分类索引只保留在 `<workspaceRoot>/config/style-sources.json`
+Style Analysis 产出：deterministic prep 先写 `<workspaceRoot>/.tmp/style-analysis/{category}/`、`analysis/reference-transcripts/`、`analysis/style-references/`，随后由 Agent 写 `<workspaceRoot>/config/styles/{category}.md`；分类索引只保留在 `<workspaceRoot>/config/style-sources.json`
 
 当前 Agent 最终风格归纳不再是单 prompt 汇总，而是 clean-context subagent 链：
 - `analysis/style-references/{category}/agent-summary.json`
@@ -112,14 +114,15 @@ Kairos 将旅拍素材转化为可编辑时间线。流程分为 1 个准备阶�
 - `analysis/style-references/{category}/style-review.json`
 - reviewer blockers 通过前，不能落成正式 `config/styles/{category}.md`
 
-可以为不同类型的作品建立多个风格档案，在 Phase 3 选择使用。
-如果用户已有手写风格档案（如 `test/style-profile.md`），可以跳过此步直接使用。
+可以为不同类型的作品建立多个风格参考，在 Phase 3 作为可选表达参考使用。
+如果用户已有手写风格参考（如 `test/style-profile.md`），可以跳过 Style Analysis 直接使用。
 
-风格档案是 Phase 3（Script）的核心输入，决定了旁白的语言风格、叙事结构和情绪表达方式。
+剪辑规则是 Phase 3（Script）和 Phase 4（Timeline）的结构核心输入；风格参考只决定旁白语言、字幕文本和情绪表达气质。
 
 **重要规则**：
-- 风格档案必须由用户人工指定；系统不能根据当前项目素材自动生成、自动挑选或自动推断风格档案。
-- 如果用户没有明确指定风格档案（或明确说明这次不用风格档案），Workflow 必须停在 Script 之前，先向用户确认。
+- 剪辑规则必须由用户人工指定；系统不能根据当前项目素材自动生成、自动挑选或自动推断剪辑规则。
+- 如果用户没有明确指定 `editRuleCategory`，Workflow 必须停在 Script 之前，先向用户确认。
+- 缺少 `styleCategory` 不阻塞粗剪；只在最终旁白 / 字幕表达阶段提示缺参考。
 - `kairos-style-analysis` 只能在用户明确要求做风格分析时执行，不能被 Workflow 隐式触发。
 - `kairos-style-analysis` 当前正式是 `Supervisor deterministic prep -> awaiting_agent -> Agent final profile`，不能再被描述成“UI 上能点但 runner 还没接上”的占位状态
 
@@ -192,12 +195,17 @@ project/
 │   └── manifest.json         # ← initProject 创建（IStoreManifest）
 ├── media/
 ├── .tmp/
-├── script/
-│   ├── script-brief.md       # ← initProject 创建（脚本 brief 初始模板）
-│   └── versions/
-├── timeline/
-│   └── versions/
-├── subtitles/
+├── edits/
+│   └── main/
+│       ├── script/
+│       │   ├── script-brief.md # ← initProject 创建（main edit brief 初始模板）
+│       │   └── versions/
+│       ├── timeline/
+│       │   └── versions/
+│       └── subtitles/
+├── script/                   # legacy alias for edits/main/script
+├── timeline/                 # legacy alias for edits/main/timeline
+├── subtitles/                # legacy alias for edits/main/subtitles
 ├── adapters/
 └── analysis/
     └── asset-reports/
@@ -220,13 +228,15 @@ project/
 ├── store/
 │   ├── assets.json           # Phase 1 (Ingest) 产出；same-source GPS 只保留 lightweight embeddedGps refs
 │   └── slices.json           # Phase 2 (Analyze) 产出
-├── script/
-│   ├── script-brief.md       # Console / Agent 审查入口
-│   └── current.json          # Agent 在 Phase 3 (Script) 产出
-├── timeline/
-│   └── current.json          # Phase 4 (Timeline) 产出 — IKtepDoc
-├── subtitles/
-│   └── *.srt / *.vtt         # Phase 5 (Export) 产出
+├── edits/<editId>/
+│   ├── script/
+│   │   ├── script-brief.md   # Console / Agent 审查入口
+│   │   └── current.json      # Agent 在 Phase 3 (Script) 产出
+│   ├── timeline/
+│   │   ├── current.json      # Phase 4 (Timeline) 产出 — IKtepDoc
+│   │   └── locked-rough-cut.json
+│   └── subtitles/
+│       └── *.srt / *.vtt     # Phase 5 (Export) 产出
 └── analysis/
     └── asset-reports/*.json   # Phase 2 (Analyze) 产出
 ```
@@ -305,31 +315,31 @@ project/
 
 **子 skill**: [kairos-script](../kairos-script/SKILL.md)
 
-输入：素材分析结果（`store/slices.json`、`analysis/asset-reports/`、`media/chronology.json`）+ 风格档案（`<workspaceRoot>/config/styles/{category}.md` 或 `test/style-profile.md`）
-产出：`script/current.json` — `IKtepScript[]`
+输入：素材分析结果（`store/slices.json`、`analysis/asset-reports/`、`media/chronology.json`）+ 剪辑规则（`<workspaceRoot>/config/edit-rules/{category}.md`）+ 可选风格参考（`<workspaceRoot>/config/styles/{category}.md`）
+产出：`edits/<editId>/script/current.json` — `IKtepScript[]`
 
 前置条件：`store/slices.json` 存在且非空
 
 **Agent 决策点**：旁白由 agent 自身直接创作，不需要外部 LLM API。
 
 **重要规则**：
-- 风格档案必须由用户人工指定；不能根据当前项目素材自动生成、自动挑选或自动推断。
-- 如果用户还没有指定风格档案，或没有明确说这次不用风格档案，就不能开始 Script 阶段。
-- 项目只保存 `styleCategory` 选择，不再持有自己的 `config/styles/` 风格库。
+- 剪辑规则必须由用户人工指定；不能根据当前项目素材自动生成、自动挑选或自动推断。
+- 如果用户还没有指定 `editRuleCategory`，就不能开始 Script 阶段。
+- 项目 / edit unit 保存 `editRuleCategory` 与可选 `styleCategory`；不持有自己的 `config/edit-rules/` 或 `config/styles/` 库。
 - `Supervisor + React console` 里的 `script` job 现在只负责 deterministic prep：
   - 校验 `store/slices.json`
-  - 校验 `styleCategory`
-  - 校验 workspace style profile
+  - 校验 `editRuleCategory`
+  - 校验 workspace edit rule
   - 刷新 `analysis/material-digest.json`
-  - 在缺失时写最小 `script/script-brief.md`
-- 正式脚本作者是 Agent；`script/current.json` 不应由 Console / Supervisor 自动写入
+  - 在缺失时写最小 `edits/<editId>/script/script-brief.md`
+- 正式脚本作者是 Agent；`edits/<editId>/script/current.json` 不应由 Console / Supervisor 自动写入
 - Agent 脚本阶段当前正式改成 clean-context staged pipeline：
-  - `script/spatial-story.json` + `script/spatial-story.md`
-  - `script/agent-contract.json`
-  - `script/agent-packets/{stage}.json`
-  - `script/reviews/{stage}.json`
-  - `script/agent-pipeline.json`
-- 用户应先审查 `script/script-brief.md`，再让 Agent 继续推进段落规划、outline 和正式脚本
+  - `edits/<editId>/script/spatial-story.json` + `spatial-story.md`
+  - `edits/<editId>/script/agent-contract.json`
+  - `edits/<editId>/script/agent-packets/{stage}.json`
+  - `edits/<editId>/script/reviews/{stage}.json`
+  - `edits/<editId>/script/agent-pipeline.json`
+- 用户应先审查 `edits/<editId>/script/script-brief.md`，再让 Agent 继续推进段落规划、outline 和正式脚本
 - ASR transcript 已经是正式证据源之一，可参与 candidate recall、outline 和 beat 写作
 - 但“素材里有声音”不等于“成片一定保留原声”；脚本应通过 `preserveNatSound / muteSource` 表达明确意图，未标注时交给 Timeline 自动推论
 - 如果一个 beat 内存在明确的头部 / 中间 / 尾部停顿，Script 阶段应优先写 `beat.utterances[]`，而不是假设字幕会自动在整拍里留白
@@ -338,8 +348,8 @@ project/
 
 **子 skill**: [kairos-timeline](../kairos-timeline/SKILL.md)
 
-输入：`store/assets.json` + `store/slices.json` + `script/current.json`
-产出：`timeline/current.json` — `IKtepDoc`（完整 KTEP 文档）
+输入：`store/assets.json` + `store/slices.json` + `edits/<editId>/script/current.json`
+产出：`edits/<editId>/timeline/current.json` — `IKtepDoc`（完整 KTEP 文档）
 
 前置条件：前 3 阶段产出均存在
 
@@ -356,10 +366,10 @@ project/
 - [kairos-export-jianying](../kairos-export-jianying/SKILL.md) — 导出到剪映
 - [kairos-export-resolve](../kairos-export-resolve/SKILL.md) — 导出到达芬奇
 
-输入：`timeline/current.json`
+输入：`edits/<editId>/timeline/current.json`
 产出：按目标 NLE 生成草稿 / 时间线 + `subtitles/*.srt`
 
-前置条件：`timeline/current.json` 存在且通过 KTEP 校验
+前置条件：`edits/<editId>/timeline/current.json` 存在且通过 KTEP 校验
 
 执行方式：
 - 若用户已明确目标 NLE，直接选择对应导出 skill

@@ -7,6 +7,35 @@
 
 ## 0. 2026-03-31 增补
 
+## 0.13 2026-05-13 剪辑规则与多 Edit Unit 补记
+
+当前 Script / Timeline 结构控制从旧的 workspace style profile 中拆出，正式归到人工维护的 `剪辑规则`：
+
+- `config/edit-rules/` 是 workspace 级剪辑规则库，`config/edit-rules.json` 是分类索引
+- `editRuleCategory` 是 Script / Timeline 结构输入；它独立于可选 `styleCategory`
+- `config/styles/` 与 `config/style-sources.json` 仍由 Style Analysis 维护，但现在只作为文案 / 艺术风格参考，用于最终旁白、字幕文本、语气和表达禁区
+- Style Analysis 不再尝试从参考视频自动抽象正式剪辑规则；缺少 style reference 不阻塞粗剪，只在最终旁白 / 字幕表达阶段提示
+
+旅行类默认剪辑规则的正式顺序是：
+
+1. 先用当前 Pharos `plan / record / gpx` 建构行程整体印象
+2. 再用素材分析结果补漏，重点结合口播、GPS、record 与实际素材缺口
+3. 生成按天、重点时间、行车、航拍与关键事件组织的初版剪辑框架文本
+4. 人工 review 调整结构，通过后才进入第一次粗剪
+5. 人工与 LLM 围绕 Resolve timeline 交互式修改
+6. 第一次粗剪定稿后锁定 Resolve timeline
+7. 读取锁定草稿，生成源语音字幕与单篇旁白稿，人工审查后导入字幕
+
+项目存储也从“一个 project 一个剪辑”扩展为“一个 project 多个 Edit Unit”：
+
+- 共享层仍在 project 根：`pharos/`、`store/`、`analysis/`、`media/chronology.json`、`color/`
+- 剪辑层按 edit 隔离：`edits/<editId>/script/`、`edits/<editId>/timeline/`、`edits/<editId>/subtitles/`
+- legacy 单剪辑路径 `script/`、`timeline/`、`subtitles/` 默认映射为 `edits/main`
+- Script / Timeline / Subtitle API 都应接受可选 `editId`，未传时默认为 `main`
+- Resolve edit mapping 固定为：Project `${projectBrief.name} [Edit]`，Timeline `${editLabel} [${editId}]`
+- 第一次粗剪锁定后写入 `edits/<editId>/timeline/locked-rough-cut.json`
+- v1 post-lock 只正式化字幕与旁白文本；音量均一、BGM、ducking、TTS 暂不纳入正式范围
+
 ## 0.12 2026-04-24 DaVinci Resolve scripting 本地知识文档补记
 
 当前 DaVinci Resolve scripting 不再只依赖外部链接或历史实现记忆：

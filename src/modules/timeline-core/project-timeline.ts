@@ -27,6 +27,7 @@ import {
   writeTimelineRoughCutBase,
   writeTimelineSegmentCut,
   writeTimelineStageReview,
+  normalizeEditId,
 } from '../../store/index.js';
 import type { IJsonPacketAgentRunner } from '../agents/runtime.js';
 import { buildCommandJsonPacketAgentRunnerConfig, resolveJsonPacketAgentRunner } from '../agents/runtime.js';
@@ -48,6 +49,7 @@ const CTIMELINE_REVIEW_CODES = [
 
 export interface IBuildProjectTimelineInput {
   projectRoot: string;
+  editId?: string;
   agentRunner?: IJsonPacketAgentRunner;
   config?: Partial<IBuildConfig>;
 }
@@ -62,6 +64,7 @@ export interface IBuildProjectTimelineResult {
 export async function buildProjectTimeline(
   input: IBuildProjectTimelineInput,
 ): Promise<IBuildProjectTimelineResult> {
+  const editId = normalizeEditId(input.editId);
   const [
     project,
     assets,
@@ -74,13 +77,13 @@ export async function buildProjectTimeline(
     loadProject(input.projectRoot),
     loadAssets(input.projectRoot),
     loadSpans(input.projectRoot),
-    loadCurrentScript(input.projectRoot),
+    loadCurrentScript(input.projectRoot, editId),
     loadChronology(input.projectRoot),
     loadAssetReports(input.projectRoot),
     loadRuntimeConfig(input.projectRoot),
   ]);
   if (!script || script.length === 0) {
-    throw new Error('timeline build requires script/current.json');
+    throw new Error(`timeline build requires edits/${editId}/script/current.json`);
   }
 
   const cfg = resolveTimelineBuildConfig(runtimeConfig, {
@@ -95,7 +98,7 @@ export async function buildProjectTimeline(
     chronology,
     subtitleConfig: cfg.subtitle,
   });
-  await writeTimelineRoughCutBase(input.projectRoot, roughCutBase);
+  await writeTimelineRoughCutBase(input.projectRoot, roughCutBase, editId);
 
   let agentRunner: IJsonPacketAgentRunner;
   try {
@@ -111,7 +114,7 @@ export async function buildProjectTimeline(
       latestReviewResult: 'runner_unavailable',
       blockerSummary: [formatTimelineStageError(error)],
       updatedAt: new Date().toISOString(),
-    });
+    }, editId);
     throw error;
   }
   const sliceMap = new Map(slices.map(slice => [slice.id, slice] as const));
@@ -122,10 +125,11 @@ export async function buildProjectTimeline(
   for (const segmentPlan of roughCutBase.segments) {
     const scriptSegment = script.find(segment => segment.id === segmentPlan.segmentId);
     if (!scriptSegment) {
-      throw new Error(`timeline rough-cut segment "${segmentPlan.segmentId}" does not exist in script/current.json`);
+      throw new Error(`timeline rough-cut segment "${segmentPlan.segmentId}" does not exist in edits/${editId}/script/current.json`);
     }
     const result = await runReviewedSegmentCutStage({
       projectRoot: input.projectRoot,
+      editId,
       agentRunner,
       project,
       scriptSegment,
@@ -143,7 +147,7 @@ export async function buildProjectTimeline(
     reviewedSegmentCuts: segmentCuts,
   });
   await Promise.all([
-    writeJson(getTimelineCurrentPath(input.projectRoot), doc),
+    writeJson(getTimelineCurrentPath(input.projectRoot, editId), doc),
     writeTimelineAgentPipeline(input.projectRoot, {
       currentStage: 'timeline-build',
       stageStatus: 'completed',
@@ -151,7 +155,7 @@ export async function buildProjectTimeline(
       latestReviewResult: 'pass',
       blockerSummary: [],
       updatedAt: new Date().toISOString(),
-    }),
+    }, editId),
   ]);
 
   return {
@@ -164,6 +168,7 @@ export async function buildProjectTimeline(
 
 async function runReviewedSegmentCutStage(input: {
   projectRoot: string;
+  editId?: string;
   agentRunner: IJsonPacketAgentRunner;
   project: IKtepProject;
   scriptSegment: IKtepScript;
@@ -178,6 +183,7 @@ async function runReviewedSegmentCutStage(input: {
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     const packet = buildSegmentCutRefinerPacket({
       projectRoot: input.projectRoot,
+      editId: input.editId,
       segmentPlan: input.segmentPlan,
       scriptSegment: input.scriptSegment,
       chronology: input.chronology,
@@ -185,7 +191,7 @@ async function runReviewedSegmentCutStage(input: {
       revisionBrief,
     });
     await Promise.all([
-      writeTimelineAgentPacket(input.projectRoot, input.segmentPlan.segmentId, packet),
+      writeTimelineAgentPacket(input.projectRoot, input.segmentPlan.segmentId, packet, input.editId),
       writeTimelineAgentPipeline(input.projectRoot, {
         currentStage: `segment-cut:${input.segmentPlan.segmentId}`,
         stageStatus: 'running',
@@ -193,7 +199,7 @@ async function runReviewedSegmentCutStage(input: {
         latestReviewResult: undefined,
         blockerSummary: [],
         updatedAt: new Date().toISOString(),
-      }),
+      }, input.editId),
     ]);
 
     let rawDraft: unknown;
@@ -210,7 +216,7 @@ async function runReviewedSegmentCutStage(input: {
         latestReviewResult: 'writer_failed',
         blockerSummary: [formatTimelineStageError(error)],
         updatedAt: new Date().toISOString(),
-      });
+      }, input.editId);
       throw new Error(`timeline segment-cut refiner failed for ${input.segmentPlan.segmentId}: ${formatTimelineStageError(error)}`);
     }
 
@@ -229,14 +235,15 @@ async function runReviewedSegmentCutStage(input: {
         latestReviewResult: 'writer_invalid_output',
         blockerSummary: ['segment-cut refiner returned invalid JSON'],
         updatedAt: new Date().toISOString(),
-      });
+      }, input.editId);
       throw new Error(`timeline segment-cut refiner returned invalid JSON for ${input.segmentPlan.segmentId}`);
     }
 
-    await writeTimelineSegmentCut(input.projectRoot, draft);
+    await writeTimelineSegmentCut(input.projectRoot, draft, input.editId);
 
     const reviewPacket = buildSegmentCutReviewPacket({
       projectRoot: input.projectRoot,
+      editId: input.editId,
       segmentPlan: input.segmentPlan,
       scriptSegment: input.scriptSegment,
       draft,
@@ -253,7 +260,7 @@ async function runReviewedSegmentCutStage(input: {
     } catch (error) {
       const review = buildTimelineStageErrorReview(input.segmentPlan.segmentId, attempt, error);
       await Promise.all([
-        writeTimelineStageReview(input.projectRoot, review),
+        writeTimelineStageReview(input.projectRoot, review, input.editId),
         writeTimelineAgentPipeline(input.projectRoot, {
           currentStage: `segment-cut:${input.segmentPlan.segmentId}`,
           stageStatus: 'review_error',
@@ -261,14 +268,14 @@ async function runReviewedSegmentCutStage(input: {
           latestReviewResult: 'review_error',
           blockerSummary: review.issues.map(issue => `${issue.code}: ${issue.message}`),
           updatedAt: new Date().toISOString(),
-        }),
+        }, input.editId),
       ]);
       throw new Error(`timeline segment-cut reviewer failed for ${input.segmentPlan.segmentId}: ${formatTimelineStageError(error)}`);
     }
 
     const review = normalizeSegmentCutReview(rawReview, input.segmentPlan.segmentId, attempt);
     await Promise.all([
-      writeTimelineStageReview(input.projectRoot, review),
+      writeTimelineStageReview(input.projectRoot, review, input.editId),
       writeTimelineAgentPipeline(input.projectRoot, {
         currentStage: `segment-cut:${input.segmentPlan.segmentId}`,
         stageStatus: review.verdict === 'pass' ? 'completed' : attempt >= 3 ? 'awaiting_user' : 'review_failed',
@@ -278,7 +285,7 @@ async function runReviewedSegmentCutStage(input: {
           .filter(issue => issue.severity === 'blocker')
           .map(issue => `${issue.code}: ${issue.message}`),
         updatedAt: new Date().toISOString(),
-      }),
+      }, input.editId),
     ]);
     if (review.verdict === 'pass') {
       return { draft, review };
@@ -301,6 +308,7 @@ async function runReviewedSegmentCutStage(input: {
 
 function buildSegmentCutRefinerPacket(input: {
   projectRoot: string;
+  editId?: string;
   segmentPlan: ISegmentRoughCutPlan;
   scriptSegment: IKtepScript;
   chronology: IMediaChronology[];
@@ -320,7 +328,7 @@ function buildSegmentCutRefinerPacket(input: {
     ],
     allowedInputs: [
       'timeline/rough-cut-base.json',
-      'script/current.json current segment',
+      'edits/<editId>/script/current.json current segment',
       'media/chronology.json',
       'optional previous segment-cut draft',
     ],
@@ -368,6 +376,7 @@ function buildSegmentCutRefinerPacket(input: {
 
 function buildSegmentCutReviewPacket(input: {
   projectRoot: string;
+  editId?: string;
   segmentPlan: ISegmentRoughCutPlan;
   scriptSegment: IKtepScript;
   chronology: IMediaChronology[];

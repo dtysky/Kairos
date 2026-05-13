@@ -8,7 +8,9 @@ description: >-
 
 # Kairos: Phase 4 — Timeline
 
-从脚本 + 切片 + 资产构建完整 KTEP 时间线文档，但当前正式入口已经包含一层内部段级粗剪审查链：`rough-cut-base -> segment-cut-refiner -> segment-cut-reviewer -> timeline/current.json`。
+从当前 Edit Unit 的脚本 + 切片 + 资产构建完整 KTEP 时间线文档，但当前正式入口已经包含一层内部段级粗剪审查链：`rough-cut-base -> segment-cut-refiner -> segment-cut-reviewer -> edits/<editId>/timeline/current.json`。
+
+一个 Kairos project 可以包含多个 Edit Unit。Timeline 的正式读写路径是 `edits/<editId>/timeline/`，未传 `editId` 时默认 `main`；旧 `timeline/` 只作为 `edits/main` 兼容路径。DaVinci Resolve edit 映射固定为 Project `${projectBrief.name} [Edit]`，Timeline `${editLabel} [${editId}]`。
 
 ## 变更工作流规则
 
@@ -23,8 +25,8 @@ description: >-
 
 - `store/assets.json` — 资产列表
 - `store/slices.json` — 切片列表
-- `script/current.json` — 脚本
-- `timeline/rough-cut-base.json` 与 reviewed `timeline/segment-cuts/<segmentId>.json` — 正式 Timeline 内部粗剪输入
+- `edits/<editId>/script/current.json` — 当前 Edit Unit 脚本
+- `edits/<editId>/timeline/rough-cut-base.json` 与 reviewed `edits/<editId>/timeline/segment-cuts/<segmentId>.json` — 正式 Timeline 内部粗剪输入
 
 正式 Timeline 运行时，这些文件都必须存在且通过 review；缺失 reviewer 产物时不能静默回退到旧的 raw-beat assembly。
 
@@ -35,6 +37,7 @@ description: >-
 buildProjectTimeline(
   input: {
     projectRoot: string;
+    editId?: string; // default: main
     agentRunner?: IJsonPacketAgentRunner;
     config?: Partial<IBuildConfig>;
   },
@@ -110,6 +113,7 @@ import { buildProjectTimeline } from 'kairos';
 
 const { doc, roughCutBase, segmentCuts, reviews } = await buildProjectTimeline({
   projectRoot: 'projects/new-zealand-documentary',
+  editId: 'main',
 });
 ```
 
@@ -189,11 +193,12 @@ Timeline 阶段的字幕已经按素材类型分流：
 
 | 文件 | 格式 | 内容 |
 |------|------|------|
-| `timeline/rough-cut-base.json` | internal JSON | 确定性段级粗剪底稿 |
-| `timeline/segment-cuts/<segmentId>.json` | internal JSON | reviewer 通过后的段级粗剪稿 |
-| `timeline/reviews/<segmentId>.json` | internal JSON | 段级审查结果 |
-| `timeline/agent-pipeline.json` | internal JSON | 段级粗剪流水线状态 |
-| `timeline/current.json` | `IKtepDoc` | 完整 KTEP 文档（含 project, assets, slices, script, timeline, subtitles） |
+| `edits/<editId>/timeline/rough-cut-base.json` | internal JSON | 确定性段级粗剪底稿 |
+| `edits/<editId>/timeline/segment-cuts/<segmentId>.json` | internal JSON | reviewer 通过后的段级粗剪稿 |
+| `edits/<editId>/timeline/reviews/<segmentId>.json` | internal JSON | 段级审查结果 |
+| `edits/<editId>/timeline/agent-pipeline.json` | internal JSON | 段级粗剪流水线状态 |
+| `edits/<editId>/timeline/current.json` | `IKtepDoc` | 完整 KTEP 文档（含 project, assets, slices, script, timeline, subtitles） |
+| `edits/<editId>/timeline/locked-rough-cut.json` | internal JSON | 第一次粗剪定稿后锁定的 Resolve 草稿读取快照 |
 
 ## 决策点
 

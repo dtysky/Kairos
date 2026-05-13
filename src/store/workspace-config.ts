@@ -5,6 +5,7 @@ import { z } from 'zod';
 import {
   IColorCurrent,
   IColorTransformPresetsConfig,
+  IEditRulesConfig,
   IManualCaptureTimeOverrideConfig,
   IManualItineraryConfig,
   IProjectBriefConfig,
@@ -13,6 +14,7 @@ import {
   IStyleSourcesConfig,
   type IColorCurrent as TColorCurrent,
   type IColorTransformPresetsConfig as TColorTransformPresetsConfig,
+  type IEditRulesConfig as TEditRulesConfig,
   type IManualCaptureTimeOverrideConfig as TManualCaptureTimeOverrideConfig,
   type IManualItineraryConfig as TManualItineraryConfig,
   type IManualItinerarySegmentConfig as TManualItinerarySegmentConfig,
@@ -37,11 +39,17 @@ import {
   computeScriptBriefFingerprint,
   describeScriptBriefWorkflowState,
   getScriptBriefPath,
+  getLegacyScriptBriefPath,
   inferScriptBriefWorkflowState,
   loadOptionalMarkdown,
   parseScriptBriefWorkflowMetadata,
 } from './script-brief.js';
 import { clearScriptArtifactsForStyleChange } from './script-store.js';
+import {
+  getProjectEditScriptRoot,
+  shouldReadLegacyEditPath,
+  normalizeEditId,
+} from './edit-store.js';
 import { getManualItineraryPath, loadManualItinerary } from './spatial-context.js';
 import { readJsonOrNull, writeJson } from './writer.js';
 
@@ -96,12 +104,24 @@ export function getManualItineraryConfigPath(projectRoot: string): string {
   return join(projectRoot, 'config', 'manual-itinerary.json');
 }
 
-export function getScriptBriefConfigPath(projectRoot: string): string {
+export function getScriptBriefConfigPath(projectRoot: string, editId?: string | null): string {
+  return join(getProjectEditScriptRoot(projectRoot, editId), 'script-brief.json');
+}
+
+export function getLegacyScriptBriefConfigPath(projectRoot: string): string {
   return join(projectRoot, 'script', 'script-brief.json');
 }
 
 export function getWorkspaceStyleSourcesConfigPath(workspaceRoot: string): string {
   return join(workspaceRoot, 'config', 'style-sources.json');
+}
+
+export function getWorkspaceEditRulesConfigPath(workspaceRoot: string): string {
+  return join(workspaceRoot, 'config', 'edit-rules.json');
+}
+
+export function getWorkspaceEditRulesRoot(workspaceRoot: string): string {
+  return join(workspaceRoot, 'config', 'edit-rules');
 }
 
 export function getWorkspaceColorTransformPresetsConfigPath(workspaceRoot: string): string {
@@ -207,45 +227,65 @@ export async function saveManualItineraryConfig(
   return normalized;
 }
 
-export async function loadScriptBriefConfig(projectRoot: string): Promise<TScriptBriefConfig> {
-  const stored = await readRawScriptBriefConfig(projectRoot);
+export async function loadScriptBriefConfig(
+  projectRoot: string,
+  editId?: string | null,
+): Promise<TScriptBriefConfig> {
+  const normalizedEditId = normalizeEditId(editId);
+  const stored = await readRawScriptBriefConfig(projectRoot, normalizedEditId);
   if (stored) {
-    return normalizeScriptBriefConfigData(stored, basename(projectRoot));
+    return normalizeScriptBriefConfigData({ ...stored, editId: stored.editId ?? normalizedEditId }, basename(projectRoot));
   }
 
-  const markdown = await loadOptionalMarkdown(getScriptBriefPath(projectRoot));
+  const markdown = await loadOptionalMarkdown(getScriptBriefPath(projectRoot, normalizedEditId))
+    || (shouldReadLegacyEditPath(normalizedEditId)
+      ? await loadOptionalMarkdown(getLegacyScriptBriefPath(projectRoot))
+      : undefined);
   if (!markdown) {
-    return buildDefaultScriptBriefConfig(basename(projectRoot));
+    return buildDefaultScriptBriefConfig(basename(projectRoot), normalizedEditId);
   }
 
-  return parseScriptBriefMarkdown(markdown, basename(projectRoot));
+  return parseScriptBriefMarkdown(markdown, basename(projectRoot), normalizedEditId);
 }
 
 export async function saveScriptBriefConfig(
   projectRoot: string,
   config: TScriptBriefConfig,
+  editId?: string | null,
 ): Promise<TScriptBriefConfig> {
-  const previous = await loadScriptBriefConfig(projectRoot).catch(
-    () => buildDefaultScriptBriefConfig(basename(projectRoot)),
+  const normalizedEditId = normalizeEditId(editId ?? config.editId);
+  const previous = await loadScriptBriefConfig(projectRoot, normalizedEditId).catch(
+    () => buildDefaultScriptBriefConfig(basename(projectRoot), normalizedEditId),
   );
-  const input = normalizeScriptBriefConfigData(config, basename(projectRoot));
+  const input = normalizeScriptBriefConfigData({
+    ...config,
+    editId: normalizedEditId,
+  }, basename(projectRoot));
   const normalized = applyScriptBriefPersistenceRules(input, previous);
+  const editRuleReferenceLabel = await resolveScriptEditRuleReferenceLabel(
+    projectRoot,
+    normalized.editRuleCategory,
+  );
   const styleReferenceLabel = await resolveScriptStyleReferenceLabel(
     projectRoot,
     normalized.styleCategory,
   );
-  await writeJson(getScriptBriefConfigPath(projectRoot), normalized);
+  await writeJson(getScriptBriefConfigPath(projectRoot, normalizedEditId), normalized);
   await writeFile(
-    getScriptBriefPath(projectRoot),
+    getScriptBriefPath(projectRoot, normalizedEditId),
     buildScriptBriefTemplate({
       projectName: normalized.projectName,
       createdAt: normalized.createdAt,
+      editId: normalized.editId,
+      editLabel: normalized.editLabel,
+      editRuleCategory: normalized.editRuleCategory,
       styleCategory: normalized.styleCategory,
       workflowState: normalized.workflowState,
       lastAgentDraftAt: normalized.lastAgentDraftAt,
       lastUserReviewAt: normalized.lastUserReviewAt,
       lastAgentDraftFingerprint: normalized.lastAgentDraftFingerprint,
       briefOverwriteApprovedAt: normalized.briefOverwriteApprovedAt,
+      editRuleReferenceLabel,
       styleReferenceLabel,
       statusText: normalized.statusText,
       goalDraft: normalized.goalDraft,
@@ -255,8 +295,8 @@ export async function saveScriptBriefConfig(
     }),
     'utf-8',
   );
-  if (normalized.styleCategory !== previous.styleCategory) {
-    await clearScriptArtifactsForStyleChange(projectRoot);
+  if (normalized.editRuleCategory !== previous.editRuleCategory) {
+    await clearScriptArtifactsForStyleChange(projectRoot, normalizedEditId);
   }
   return normalized;
 }
@@ -270,6 +310,48 @@ export async function loadStyleSourcesConfig(
     return IStyleSourcesConfig.parse(stored);
   }
   throw new Error(`workspace style-sources.json is required: ${configPath}`);
+}
+
+export async function loadEditRulesConfig(
+  workspaceRoot: string,
+): Promise<TEditRulesConfig> {
+  const configPath = getWorkspaceEditRulesConfigPath(workspaceRoot);
+  const stored = await readJsonOrNull(configPath, IEditRulesConfig);
+  if (stored) {
+    return IEditRulesConfig.parse(stored);
+  }
+  return IEditRulesConfig.parse({
+    defaultCategory: 'travel',
+    categories: [{
+      categoryId: 'travel',
+      displayName: '旅行类默认剪辑规则',
+      description: 'Pharos 行程印象优先，素材分析补漏。',
+      profilePath: 'travel.md',
+      notes: [],
+    }],
+  });
+}
+
+export async function saveEditRulesConfig(
+  workspaceRoot: string,
+  config: TEditRulesConfig,
+): Promise<TEditRulesConfig> {
+  const input = IEditRulesConfig.parse(config);
+  const normalized = IEditRulesConfig.parse({
+    defaultCategory: input.defaultCategory?.trim() || undefined,
+    categories: input.categories.map(category => ({
+      ...category,
+      categoryId: category.categoryId.trim(),
+      displayName: category.displayName.trim(),
+      description: category.description?.trim() || undefined,
+      profilePath: category.profilePath?.trim() || `${category.categoryId.trim()}.md`,
+      notes: category.notes.map(note => note.trim()).filter(Boolean),
+    })),
+  });
+  await mkdir(dirname(getWorkspaceEditRulesConfigPath(workspaceRoot)), { recursive: true });
+  await mkdir(getWorkspaceEditRulesRoot(workspaceRoot), { recursive: true });
+  await writeJson(getWorkspaceEditRulesConfigPath(workspaceRoot), normalized);
+  return normalized;
 }
 
 export async function loadColorTransformPresetsConfig(
@@ -529,9 +611,11 @@ function normalizeScriptBriefSegments(
   }));
 }
 
-function buildDefaultScriptBriefConfig(projectName: string): TScriptBriefConfig {
+function buildDefaultScriptBriefConfig(projectName: string, editId = 'main'): TScriptBriefConfig {
   return IScriptBriefConfig.parse({
     projectName,
+    editId: normalizeEditId(editId),
+    editLabel: normalizeEditId(editId) === 'main' ? 'Main' : normalizeEditId(editId),
     workflowState: 'choose_style',
     statusText: describeScriptBriefWorkflowState('choose_style'),
     goalDraft: [],
@@ -547,6 +631,9 @@ function normalizeScriptBriefConfigData(
 ): TScriptBriefConfig {
   const projectName = stringValue(input.projectName) ?? fallbackProjectName;
   const createdAt = stringValue(input.createdAt);
+  const editId = normalizeEditId(stringValue(input.editId));
+  const editLabel = stringValue(input.editLabel) ?? (editId === 'main' ? 'Main' : editId);
+  const editRuleCategory = stringValue(input.editRuleCategory);
   const styleCategory = stringValue(input.styleCategory);
   const lastAgentDraftAt = stringValue(input.lastAgentDraftAt);
   const lastUserReviewAt = stringValue(input.lastUserReviewAt);
@@ -554,6 +641,7 @@ function normalizeScriptBriefConfigData(
   const briefOverwriteApprovedAt = stringValue(input.briefOverwriteApprovedAt);
   const workflowState = inferScriptBriefWorkflowState({
     workflowState: stringValue(input.workflowState),
+    editRuleCategory,
     styleCategory,
     statusText: stringValue(input.statusText),
     lastAgentDraftAt,
@@ -565,13 +653,16 @@ function normalizeScriptBriefConfigData(
   return IScriptBriefConfig.parse({
     projectName,
     createdAt,
+    editId,
+    editLabel,
+    editRuleCategory,
     styleCategory,
-    workflowState: styleCategory ? workflowState : 'choose_style',
+    workflowState: editRuleCategory ? workflowState : 'choose_style',
     lastAgentDraftAt,
     lastUserReviewAt,
     lastAgentDraftFingerprint,
     briefOverwriteApprovedAt,
-    statusText: describeScriptBriefWorkflowState(styleCategory ? workflowState : 'choose_style'),
+    statusText: describeScriptBriefWorkflowState(editRuleCategory ? workflowState : 'choose_style'),
     goalDraft: normalizeDraftLines(Array.isArray(input.goalDraft) ? input.goalDraft as string[] : []),
     constraintDraft: normalizeDraftLines(Array.isArray(input.constraintDraft) ? input.constraintDraft as string[] : []),
     planReviewDraft: normalizeDraftLines(Array.isArray(input.planReviewDraft) ? input.planReviewDraft as string[] : []),
@@ -585,7 +676,7 @@ function applyScriptBriefPersistenceRules(
   input: TScriptBriefConfig,
   previous: TScriptBriefConfig,
 ): TScriptBriefConfig {
-  const styleChanged = input.styleCategory !== previous.styleCategory;
+  const editRuleChanged = input.editRuleCategory !== previous.editRuleCategory;
   const currentFingerprint = computeScriptBriefFingerprint(input);
   let workflowState = input.workflowState;
   let lastAgentDraftAt = input.lastAgentDraftAt ?? previous.lastAgentDraftAt;
@@ -597,7 +688,7 @@ function applyScriptBriefPersistenceRules(
   let planReviewDraft = input.planReviewDraft;
   let segments = input.segments;
 
-  if (!input.styleCategory) {
+  if (!input.editRuleCategory) {
     return IScriptBriefConfig.parse({
       ...input,
       workflowState: 'choose_style',
@@ -609,7 +700,7 @@ function applyScriptBriefPersistenceRules(
     });
   }
 
-  if (styleChanged) {
+  if (editRuleChanged) {
     workflowState = 'await_brief_draft';
     lastAgentDraftAt = undefined;
     lastUserReviewAt = undefined;
@@ -639,7 +730,7 @@ function applyScriptBriefPersistenceRules(
   } else if (workflowState === 'ready_for_agent' || workflowState === 'script_generated') {
     briefOverwriteApprovedAt = undefined;
   } else if (workflowState === 'await_brief_draft') {
-    if (!input.briefOverwriteApprovedAt && !styleChanged) {
+    if (!input.briefOverwriteApprovedAt && !editRuleChanged) {
       briefOverwriteApprovedAt = undefined;
     }
   }
@@ -670,18 +761,25 @@ function applyScriptBriefPersistenceRules(
 function parseScriptBriefMarkdown(
   markdown: string,
   fallbackProjectName: string,
+  fallbackEditId = 'main',
 ): TScriptBriefConfig {
   const normalized = markdown.replace(/\r\n/gu, '\n');
   const headerMatch = normalized.match(/^#\s+(.+?)(?:\s+—\s+Script Brief)?$/m);
   const projectName = headerMatch?.[1]?.trim() || fallbackProjectName;
   const createdAt = extractMetaLine(normalized, '创建日期');
-  const styleCategory = parseStyleReference(extractMetaLine(normalized, '风格参考'));
+  const editId = parseStyleReference(extractMetaLine(normalized, 'Edit ID')) ?? fallbackEditId;
+  const editRuleCategory = parseStyleReference(extractMetaLine(normalized, '剪辑规则'));
+  const styleCategory = parseStyleReference(
+    extractMetaLine(normalized, '文案风格参考') ?? extractMetaLine(normalized, '风格参考'),
+  );
   const statusText = extractMetaLine(normalized, '当前状态');
   const workflowMetadata = parseScriptBriefWorkflowMetadata(normalized);
 
   return normalizeScriptBriefConfigData({
     projectName,
     createdAt,
+    editId,
+    editRuleCategory: emptyToUndefined(editRuleCategory),
     styleCategory: emptyToUndefined(styleCategory),
     workflowState: workflowMetadata.workflowState,
     lastAgentDraftAt: workflowMetadata.lastAgentDraftAt,
@@ -972,16 +1070,24 @@ function escapeMarkdownCell(value: string): string {
 
 async function readRawScriptBriefConfig(
   projectRoot: string,
+  editId?: string | null,
 ): Promise<Record<string, unknown> | null> {
-  try {
-    const raw = await readFile(getScriptBriefConfigPath(projectRoot), 'utf-8');
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === 'object'
-      ? parsed as Record<string, unknown>
-      : null;
-  } catch {
-    return null;
+  const paths = [
+    getScriptBriefConfigPath(projectRoot, editId),
+    ...(shouldReadLegacyEditPath(editId) ? [getLegacyScriptBriefConfigPath(projectRoot)] : []),
+  ];
+  for (const configPath of paths) {
+    try {
+      const raw = await readFile(configPath, 'utf-8');
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        return parsed as Record<string, unknown>;
+      }
+    } catch {
+      // Try the next compatible location.
+    }
   }
+  return null;
 }
 
 function emptyToUndefined(value?: string | null): string | undefined {
@@ -1025,6 +1131,31 @@ async function resolveScriptStyleReferenceLabel(
     return styleCategory;
   }
   return `${displayName}（${styleCategory}）`;
+}
+
+async function resolveScriptEditRuleReferenceLabel(
+  projectRoot: string,
+  editRuleCategory?: string,
+): Promise<string | undefined> {
+  if (!editRuleCategory) {
+    return undefined;
+  }
+
+  const workspaceRoot = resolveWorkspaceRootFromProjectRoot(projectRoot);
+  if (!workspaceRoot) {
+    return editRuleCategory;
+  }
+
+  const editRules = await loadEditRulesConfig(workspaceRoot).catch(() => null);
+  const matchedCategory = editRules?.categories.find(
+    category => category.categoryId === editRuleCategory,
+  );
+  const displayName = matchedCategory?.displayName?.trim();
+
+  if (!displayName || displayName === editRuleCategory) {
+    return editRuleCategory;
+  }
+  return `${displayName}（${editRuleCategory}）`;
 }
 
 function escapeRegExp(value: string): string {

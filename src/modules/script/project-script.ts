@@ -53,6 +53,7 @@ import {
   writeScriptBriefTemplate,
   writeSegmentPlan,
   writeSpatialStory,
+  normalizeEditId,
 } from '../../store/index.js';
 import {
   resolveJsonPacketAgentRunner,
@@ -61,6 +62,7 @@ import {
 import { buildOutline, type IOutlineSegment } from './outline-builder.js';
 import { buildFallbackScript, buildOutlinePrompt } from './script-generator.js';
 import { loadStyleByCategory } from './style-loader.js';
+import { loadEditRuleByCategory } from './edit-rule-loader.js';
 import {
   resolveArrangementSignals,
   type IResolvedArrangementSignals,
@@ -68,7 +70,9 @@ import {
 
 export interface IBuildProjectOutlineInput {
   projectRoot: string;
+  editId?: string;
   workspaceRoot?: string;
+  editRuleCategory?: string;
   styleCategory?: string;
   style?: IStyleProfile;
 }
@@ -81,20 +85,25 @@ export interface IBuildProjectOutlineResult {
 
 export interface IGenerateProjectScriptInput {
   projectRoot: string;
+  editId?: string;
   agentRunner?: IJsonPacketAgentRunner;
   style: IStyleProfile;
 }
 
 export interface IPrepareProjectScriptForAgentInput {
   projectRoot: string;
+  editId?: string;
   workspaceRoot?: string;
+  editRuleCategory?: string;
   styleCategory?: string;
 }
 
 export interface IPrepareProjectScriptForAgentResult {
   projectId: string;
   projectName: string;
-  styleCategory: string;
+  editId: string;
+  editRuleCategory: string;
+  styleCategory?: string;
   materialOverviewFactsPath: string;
   materialOverviewPath: string;
   materialBundlesPath: string;
@@ -144,8 +153,10 @@ const CSCRIPT_REVIEW_CODES = [
 
 export interface IDraftProjectScriptOverviewAndBriefInput {
   projectRoot: string;
+  editId?: string;
   agentRunner?: IJsonPacketAgentRunner;
   workspaceRoot?: string;
+  editRuleCategory?: string;
   styleCategory?: string;
   style?: IStyleProfile;
 }
@@ -160,10 +171,11 @@ export interface IDraftProjectScriptOverviewAndBriefResult {
 export async function draftProjectScriptOverviewAndBrief(
   input: IDraftProjectScriptOverviewAndBriefInput,
 ): Promise<IDraftProjectScriptOverviewAndBriefResult> {
+  const editId = normalizeEditId(input.editId);
   const style = input.style
-    ?? await resolveStyle(input.projectRoot, input.workspaceRoot, input.styleCategory);
+    ?? await resolveEditRule(input.projectRoot, input.workspaceRoot, input.editRuleCategory);
   const context = await loadScriptPlanningContext(input.projectRoot);
-  const existingBrief = await loadScriptBriefConfig(input.projectRoot);
+  const existingBrief = await loadScriptBriefConfig(input.projectRoot, editId);
   const arrangementSignals = resolveArrangementSignals(style);
   const spatialStory = buildSpatialStoryContext(context);
   const facts = enrichMaterialOverviewFactsWithSpatialStory(
@@ -173,15 +185,16 @@ export async function draftProjectScriptOverviewAndBrief(
   const bundles = buildMaterialBundles(context.spans, context.chronology, context.pharosContext);
 
   await Promise.all([
-    writeMaterialOverviewFacts(input.projectRoot, facts),
+    writeMaterialOverviewFacts(input.projectRoot, facts, editId),
     writeMaterialBundles(input.projectRoot, bundles),
-    writeSpatialStory(input.projectRoot, spatialStory),
-    writeFile(getSpatialStoryMarkdownPath(input.projectRoot), buildSpatialStoryMarkdown(spatialStory), 'utf-8'),
+    writeSpatialStory(input.projectRoot, spatialStory, editId),
+    writeFile(getSpatialStoryMarkdownPath(input.projectRoot, editId), buildSpatialStoryMarkdown(spatialStory), 'utf-8'),
   ]);
 
   const overviewStage = await runReviewedScriptStage<{ markdown: string }>({
     agentRunner: input.agentRunner,
     projectRoot: input.projectRoot,
+    editId,
     stage: 'material-overview',
     writerIdentity: 'overview-cartographer',
     baseDraft: {
@@ -196,20 +209,20 @@ export async function draftProjectScriptOverviewAndBrief(
         '缺证据时必须保守，不把弱线索写成确定事实。',
       ],
       allowedInputs: [
-        'script/material-overview.facts.json',
-        'script/spatial-story.json',
+        'edits/<editId>/script/material-overview.facts.json',
+        'edits/<editId>/script/spatial-story.json',
         'config/project-brief.json',
       ],
       inputArtifacts: [
         {
           label: 'material-overview-facts',
-          path: getMaterialOverviewFactsPath(input.projectRoot),
+          path: getMaterialOverviewFactsPath(input.projectRoot, editId),
           summary: facts.summary,
           content: facts,
         },
         {
           label: 'spatial-story',
-          path: getSpatialStoryPath(input.projectRoot),
+          path: getSpatialStoryPath(input.projectRoot, editId),
           summary: spatialStory.narrativeHints.map(item => item.title).join(' / '),
           content: spatialStory,
         },
@@ -250,19 +263,19 @@ export async function draftProjectScriptOverviewAndBrief(
       inputArtifacts: [
         {
           label: 'material-overview-facts',
-          path: getMaterialOverviewFactsPath(input.projectRoot),
+          path: getMaterialOverviewFactsPath(input.projectRoot, editId),
           summary: facts.summary,
           content: facts,
         },
         {
           label: 'spatial-story',
-          path: getSpatialStoryPath(input.projectRoot),
+          path: getSpatialStoryPath(input.projectRoot, editId),
           summary: spatialStory.narrativeHints.map(item => item.title).join(' / '),
           content: spatialStory,
         },
         {
           label: 'overview-draft',
-          path: getMaterialOverviewPath(input.projectRoot),
+          path: getMaterialOverviewPath(input.projectRoot, editId),
           summary: `第 ${attempt} 轮 overview 草稿。`,
           content: draft,
         },
@@ -275,7 +288,7 @@ export async function draftProjectScriptOverviewAndBrief(
       reviewRubric: [...CSCRIPT_REVIEW_CODES],
     }),
     persistDraft: async draft => {
-      await writeFile(getMaterialOverviewPath(input.projectRoot), draft.markdown.trim(), 'utf-8');
+      await writeFile(getMaterialOverviewPath(input.projectRoot, editId), draft.markdown.trim(), 'utf-8');
     },
   });
 
@@ -295,27 +308,28 @@ export async function draftProjectScriptOverviewAndBrief(
   }>({
     agentRunner: input.agentRunner,
     projectRoot: input.projectRoot,
+    editId,
     stage: 'script-brief',
     writerIdentity: 'brief-editor',
     baseDraft: briefBaseDraft,
     buildWriterPacket: (revisionBrief, previousDraft) => ({
       stage: 'script-brief',
       identity: 'brief-editor',
-      mission: '把项目目标、风格约束、空间叙事提示和材料边界压成可执行的 script brief 草稿。',
+      mission: '把项目目标、剪辑规则、空间叙事提示和材料边界压成可执行的 script brief 草稿。',
       hardConstraints: [
         '只输出结构化 brief，不直接写 beat 或正式脚本。',
         '缺证据时必须保守，不编造不存在的旅程节点或主题。',
       ],
       allowedInputs: [
         'material overview',
-        'style profile',
+        'edit rule',
         'project brief',
         'spatial-story',
       ],
       inputArtifacts: [
         {
           label: 'material-overview',
-          path: getMaterialOverviewPath(input.projectRoot),
+          path: getMaterialOverviewPath(input.projectRoot, editId),
           summary: '已审核通过的 material overview。',
           content: overviewStage.draft,
         },
@@ -336,7 +350,7 @@ export async function draftProjectScriptOverviewAndBrief(
         },
         {
           label: 'spatial-story',
-          path: getSpatialStoryPath(input.projectRoot),
+          path: getSpatialStoryPath(input.projectRoot, editId),
           summary: spatialStory.narrativeHints.map(item => item.title).join(' / '),
           content: spatialStory,
         },
@@ -362,21 +376,21 @@ export async function draftProjectScriptOverviewAndBrief(
     buildReviewPacket: (draft, attempt) => ({
       stage: 'review-script-brief',
       identity: 'script-reviewer',
-      mission: '审查 brief 是否遗漏目标、约束、空间叙事要求和风格禁区。',
+      mission: '审查 brief 是否遗漏目标、剪辑规则、空间叙事要求和结构禁区。',
       hardConstraints: [
         '只审查 brief 草稿，不直接改写。',
         'blocker 必须附 revisionBrief。',
       ],
       allowedInputs: [
         'material overview',
-        'style profile',
+        'edit rule',
         'spatial-story',
         'brief draft',
       ],
       inputArtifacts: [
         {
           label: 'material-overview',
-          path: getMaterialOverviewPath(input.projectRoot),
+          path: getMaterialOverviewPath(input.projectRoot, editId),
           summary: '已审核通过的 material overview。',
           content: overviewStage.draft,
         },
@@ -392,13 +406,13 @@ export async function draftProjectScriptOverviewAndBrief(
         },
         {
           label: 'spatial-story',
-          path: getSpatialStoryPath(input.projectRoot),
+          path: getSpatialStoryPath(input.projectRoot, editId),
           summary: spatialStory.narrativeHints.map(item => item.title).join(' / '),
           content: spatialStory,
         },
         {
           label: 'brief-draft',
-          path: getScriptBriefPath(input.projectRoot),
+          path: getScriptBriefPath(input.projectRoot, editId),
           summary: `第 ${attempt} 轮 brief 草稿。`,
           content: draft,
         },
@@ -414,6 +428,8 @@ export async function draftProjectScriptOverviewAndBrief(
       const nextConfig = {
         ...existingBrief,
         projectName: existingBrief.projectName?.trim() || context.project.name,
+        editId,
+        editRuleCategory: input.editRuleCategory ?? existingBrief.editRuleCategory,
         styleCategory: input.styleCategory ?? existingBrief.styleCategory,
         workflowState: 'review_brief' as const,
         lastAgentDraftAt: new Date().toISOString(),
@@ -431,18 +447,18 @@ export async function draftProjectScriptOverviewAndBrief(
         })),
       };
       nextConfig.lastAgentDraftFingerprint = computeScriptBriefFingerprint(nextConfig);
-      await saveScriptBriefConfig(input.projectRoot, nextConfig);
+      await saveScriptBriefConfig(input.projectRoot, nextConfig, editId);
       await writeScriptBriefTemplate(input.projectRoot, {
         ...nextConfig,
         workflowState: 'review_brief',
-      });
+      }, editId);
     },
   });
 
   return {
-    materialOverviewPath: getMaterialOverviewPath(input.projectRoot),
-    scriptBriefPath: getScriptBriefPath(input.projectRoot),
-    spatialStoryPath: getSpatialStoryPath(input.projectRoot),
+    materialOverviewPath: getMaterialOverviewPath(input.projectRoot, editId),
+    scriptBriefPath: getScriptBriefPath(input.projectRoot, editId),
+    spatialStoryPath: getSpatialStoryPath(input.projectRoot, editId),
     workflowState: 'review_brief',
   };
 }
@@ -450,14 +466,15 @@ export async function draftProjectScriptOverviewAndBrief(
 export async function buildProjectOutlineFromPlanning(
   input: IBuildProjectOutlineInput,
 ): Promise<IBuildProjectOutlineResult> {
+  const editId = normalizeEditId(input.editId);
   const style = input.style
-    ?? await resolveStyle(input.projectRoot, input.workspaceRoot, input.styleCategory);
-  const brief = await loadScriptBriefConfig(input.projectRoot);
+    ?? await resolveEditRule(input.projectRoot, input.workspaceRoot, input.editRuleCategory);
+  const brief = await loadScriptBriefConfig(input.projectRoot, editId);
   ensureScriptGenerationWorkflowState(brief.workflowState);
-  const prepared = await ensureMaterialFactsAndBundles(input.projectRoot);
-  const overviewMarkdown = await loadOptionalMarkdown(getMaterialOverviewPath(input.projectRoot));
+  const prepared = await ensureMaterialFactsAndBundles(input.projectRoot, editId);
+  const overviewMarkdown = await loadOptionalMarkdown(getMaterialOverviewPath(input.projectRoot, editId));
   if (!overviewMarkdown?.trim()) {
-    throw new Error('script generation requires script/material-overview.md');
+    throw new Error(`script generation requires edits/${editId}/script/material-overview.md`);
   }
   const arrangementSignals = resolveArrangementSignals(style);
   const orderedSpanCandidates = buildOrderedSpanCandidates({
@@ -496,10 +513,10 @@ export async function buildProjectOutlineFromPlanning(
   });
 
   await Promise.all([
-    writeSegmentPlan(input.projectRoot, segmentPlan),
-    writeMaterialSlots(input.projectRoot, materialSlots),
-    writeOutline(input.projectRoot, outline),
-    writeFile(getOutlinePromptPath(input.projectRoot), buildOutlinePrompt(outline), 'utf-8'),
+    writeSegmentPlan(input.projectRoot, segmentPlan, editId),
+    writeMaterialSlots(input.projectRoot, materialSlots, editId),
+    writeOutline(input.projectRoot, outline, editId),
+    writeFile(getOutlinePromptPath(input.projectRoot, editId), buildOutlinePrompt(outline), 'utf-8'),
   ]);
 
   return {
@@ -512,25 +529,27 @@ export async function buildProjectOutlineFromPlanning(
 export async function prepareProjectScriptForAgent(
   input: IPrepareProjectScriptForAgentInput,
 ): Promise<IPrepareProjectScriptForAgentResult> {
-  const scriptBriefConfig = await loadScriptBriefConfig(input.projectRoot);
+  const editId = normalizeEditId(input.editId);
+  const scriptBriefConfig = await loadScriptBriefConfig(input.projectRoot, editId);
+  const editRuleCategory = input.editRuleCategory ?? scriptBriefConfig.editRuleCategory;
   const styleCategory = input.styleCategory ?? scriptBriefConfig.styleCategory;
-  if (!styleCategory) {
-    throw new Error('script prep requires styleCategory');
+  if (!editRuleCategory) {
+    throw new Error('script prep requires editRuleCategory');
   }
   if (!input.workspaceRoot) {
-    throw new Error('script prep requires workspaceRoot to resolve style profile');
+    throw new Error('script prep requires workspaceRoot to resolve edit rule');
   }
   if (scriptBriefConfig.workflowState !== 'ready_to_prepare') {
     throw new Error('script prep requires script-brief.workflowState=ready_to_prepare');
   }
 
-  const style = await loadStyleByCategory(`${input.workspaceRoot}/config/styles`, styleCategory);
-  const overviewMarkdown = await loadOptionalMarkdown(getMaterialOverviewPath(input.projectRoot));
+  const style = await loadEditRuleByCategory(input.workspaceRoot, editRuleCategory);
+  const overviewMarkdown = await loadOptionalMarkdown(getMaterialOverviewPath(input.projectRoot, editId));
   if (!overviewMarkdown?.trim()) {
-    throw new Error('script prep requires script/material-overview.md');
+    throw new Error(`script prep requires edits/${editId}/script/material-overview.md`);
   }
 
-  const prepared = await ensureMaterialFactsAndBundles(input.projectRoot);
+  const prepared = await ensureMaterialFactsAndBundles(input.projectRoot, editId);
   const spatialStory = buildSpatialStoryContext(prepared.context);
   const factsWithSpatialStory = enrichMaterialOverviewFactsWithSpatialStory(
     prepared.facts,
@@ -543,13 +562,13 @@ export async function prepareProjectScriptForAgent(
     chronology: prepared.context.chronology,
     pharosContext: prepared.context.pharosContext,
   });
-  await clearObsoleteArrangementArtifacts(input.projectRoot);
+  await clearObsoleteArrangementArtifacts(input.projectRoot, editId);
 
   await Promise.all([
-    writeMaterialOverviewFacts(input.projectRoot, factsWithSpatialStory),
-    writeSpatialStory(input.projectRoot, spatialStory),
-    writeFile(getSpatialStoryMarkdownPath(input.projectRoot), buildSpatialStoryMarkdown(spatialStory), 'utf-8'),
-    writeScriptAgentContract(input.projectRoot, contract),
+    writeMaterialOverviewFacts(input.projectRoot, factsWithSpatialStory, editId),
+    writeSpatialStory(input.projectRoot, spatialStory, editId),
+    writeFile(getSpatialStoryMarkdownPath(input.projectRoot, editId), buildSpatialStoryMarkdown(spatialStory), 'utf-8'),
+    writeScriptAgentContract(input.projectRoot, contract, editId),
     writeScriptAgentPipeline(input.projectRoot, {
       currentStage: 'segment-plan',
       stageStatus: 'pending',
@@ -557,10 +576,12 @@ export async function prepareProjectScriptForAgent(
       latestReviewResult: undefined,
       blockerSummary: [],
       updatedAt: new Date().toISOString(),
-    }),
+    }, editId),
     saveScriptBriefConfig(input.projectRoot, {
       ...scriptBriefConfig,
       projectName: scriptBriefConfig.projectName?.trim() || prepared.context.project.name,
+      editId,
+      editRuleCategory,
       styleCategory,
       workflowState: 'ready_for_agent',
       segments: scriptBriefConfig.segments.map(segment => ({
@@ -568,37 +589,40 @@ export async function prepareProjectScriptForAgent(
         roleHint: segment.roleHint?.trim() || undefined,
         notes: segment.notes ?? [],
       })),
-    }),
+    }, editId),
   ]);
 
   const hasOverview = Boolean(
-    await loadOptionalMarkdown(getMaterialOverviewPath(input.projectRoot)),
+    await loadOptionalMarkdown(getMaterialOverviewPath(input.projectRoot, editId)),
   );
 
   return {
     projectId: prepared.context.project.id,
     projectName: prepared.context.project.name,
+    editId,
+    editRuleCategory,
     styleCategory,
-    materialOverviewFactsPath: getMaterialOverviewFactsPath(input.projectRoot),
-    materialOverviewPath: getMaterialOverviewPath(input.projectRoot),
+    materialOverviewFactsPath: getMaterialOverviewFactsPath(input.projectRoot, editId),
+    materialOverviewPath: getMaterialOverviewPath(input.projectRoot, editId),
     materialBundlesPath: getMaterialBundlesPath(input.projectRoot),
-    scriptBriefPath: getScriptBriefPath(input.projectRoot),
+    scriptBriefPath: getScriptBriefPath(input.projectRoot, editId),
     status: 'awaiting_agent',
     message: hasOverview
-      ? '事实刷新、spatial-story、agent-contract 与 bundle 索引已完成。请回到 Agent，用各自 stage packet 继续生成 segment-plan、material-slots 与 script/current.json。'
-      : '事实刷新、spatial-story、agent-contract 与 bundle 索引已完成。请回到 Agent 先补齐 script/material-overview.md，再用 stage packet 继续生成 segment-plan、material-slots 与 script/current.json。',
+      ? `事实刷新、spatial-story、agent-contract 与 bundle 索引已完成。请回到 Agent，用各自 stage packet 继续生成 edits/${editId}/script/segment-plan.json、material-slots.json 与 current.json。`
+      : `事实刷新、spatial-story、agent-contract 与 bundle 索引已完成。请回到 Agent 先补齐 edits/${editId}/script/material-overview.md，再用 stage packet 继续生成 segment-plan、material-slots 与 current.json。`,
   };
 }
 
 export async function generateProjectScriptFromPlanning(
   input: IGenerateProjectScriptInput,
 ): Promise<IKtepScript[]> {
-  const brief = await loadScriptBriefConfig(input.projectRoot);
+  const editId = normalizeEditId(input.editId);
+  const brief = await loadScriptBriefConfig(input.projectRoot, editId);
   ensureScriptGenerationWorkflowState(brief.workflowState);
-  const prepared = await ensureMaterialFactsAndBundles(input.projectRoot);
-  const materialOverview = await loadOptionalMarkdown(getMaterialOverviewPath(input.projectRoot));
+  const prepared = await ensureMaterialFactsAndBundles(input.projectRoot, editId);
+  const materialOverview = await loadOptionalMarkdown(getMaterialOverviewPath(input.projectRoot, editId));
   if (!materialOverview?.trim()) {
-    throw new Error('script generation requires script/material-overview.md');
+    throw new Error(`script generation requires edits/${editId}/script/material-overview.md`);
   }
   const arrangementSignals = resolveArrangementSignals(input.style);
   const orderedSpanCandidates = buildOrderedSpanCandidates({
@@ -606,7 +630,7 @@ export async function generateProjectScriptFromPlanning(
     chronology: prepared.context.chronology,
     pharosContext: prepared.context.pharosContext,
   });
-  const spatialStory = await ensureSpatialStory(input.projectRoot, prepared.context, prepared.facts);
+  const spatialStory = await ensureSpatialStory(input.projectRoot, prepared.context, prepared.facts, editId);
   const contract = await ensureScriptAgentContract(
     input.projectRoot,
     brief,
@@ -614,6 +638,7 @@ export async function generateProjectScriptFromPlanning(
     spatialStory,
     prepared.context.chronology,
     prepared.context.pharosContext,
+    editId,
   );
 
   const baseSegmentPlan = buildSegmentPlanDocument({
@@ -631,11 +656,13 @@ export async function generateProjectScriptFromPlanning(
   const segmentStage = await runReviewedScriptStage<ISegmentPlan>({
     agentRunner: input.agentRunner,
     projectRoot: input.projectRoot,
+    editId,
     stage: 'segment-plan',
     writerIdentity: 'segment-architect',
     baseDraft: baseSegmentPlan,
     buildWriterPacket: (revisionBrief, previousDraft) => buildSegmentPlanPacket({
       projectRoot: input.projectRoot,
+      editId,
       contract,
       style: input.style,
       materialOverview,
@@ -647,18 +674,19 @@ export async function generateProjectScriptFromPlanning(
     }),
     buildReviewPacket: (draft, attempt) => buildScriptReviewPacket({
       projectRoot: input.projectRoot,
+      editId,
       stage: 'segment-plan',
       contract,
       supportingArtifacts: [
         {
           label: 'material-overview',
-          path: getMaterialOverviewPath(input.projectRoot),
+          path: getMaterialOverviewPath(input.projectRoot, editId),
           summary: '已审核通过的 material overview。',
           content: { markdown: materialOverview },
         },
         {
           label: 'spatial-story',
-          path: getSpatialStoryPath(input.projectRoot),
+          path: getSpatialStoryPath(input.projectRoot, editId),
           summary: spatialStory.narrativeHints.map(item => item.title).join(' / '),
           content: spatialStory,
         },
@@ -666,7 +694,7 @@ export async function generateProjectScriptFromPlanning(
       draft,
       attempt,
     }),
-    persistDraft: draft => writeSegmentPlan(input.projectRoot, draft),
+    persistDraft: draft => writeSegmentPlan(input.projectRoot, draft, editId),
   });
 
   const baseMaterialSlots = buildMaterialSlotsDocument({
@@ -680,9 +708,10 @@ export async function generateProjectScriptFromPlanning(
     arrangementSignals,
     orderedSpanCandidates,
   });
-  await writeMaterialSlots(input.projectRoot, baseMaterialSlots);
+  await writeMaterialSlots(input.projectRoot, baseMaterialSlots, editId);
   const materialSlotsStage = await recordDeterministicMaterialSlotsStage({
     projectRoot: input.projectRoot,
+    editId,
     contract,
     segmentPlan: segmentStage.draft,
     spatialStory,
@@ -696,19 +725,21 @@ export async function generateProjectScriptFromPlanning(
     spansById: new Map(prepared.context.spans.map(span => [span.id, span] as const)),
   });
   await Promise.all([
-    writeOutline(input.projectRoot, outline),
-    writeFile(getOutlinePromptPath(input.projectRoot), buildOutlinePrompt(outline), 'utf-8'),
+    writeOutline(input.projectRoot, outline, editId),
+    writeFile(getOutlinePromptPath(input.projectRoot, editId), buildOutlinePrompt(outline), 'utf-8'),
   ]);
 
   const baseScript = buildFallbackScript(outline);
   const scriptStage = await runReviewedScriptStage<IKtepScript[]>({
     agentRunner: input.agentRunner,
     projectRoot: input.projectRoot,
+    editId,
     stage: 'script-current',
     writerIdentity: 'beat-writer',
     baseDraft: baseScript,
     buildWriterPacket: (revisionBrief, previousDraft) => buildScriptCurrentPacket({
       projectRoot: input.projectRoot,
+      editId,
       contract,
       style: input.style,
       materialOverview,
@@ -719,6 +750,7 @@ export async function generateProjectScriptFromPlanning(
     }),
     buildReviewPacket: (draft, attempt) => buildScriptReviewPacket({
       projectRoot: input.projectRoot,
+      editId,
       stage: 'script-current',
       contract,
       supportingArtifacts: [
@@ -729,7 +761,7 @@ export async function generateProjectScriptFromPlanning(
         },
         {
           label: 'spatial-story',
-          path: getSpatialStoryPath(input.projectRoot),
+          path: getSpatialStoryPath(input.projectRoot, editId),
           summary: spatialStory.narrativeHints.map(item => item.title).join(' / '),
           content: spatialStory,
         },
@@ -737,13 +769,13 @@ export async function generateProjectScriptFromPlanning(
       draft,
       attempt,
     }),
-    persistDraft: draft => writeCurrentScript(input.projectRoot, draft),
+    persistDraft: draft => writeCurrentScript(input.projectRoot, draft, editId),
   });
 
   await saveScriptBriefConfig(input.projectRoot, {
       ...brief,
       workflowState: 'script_generated',
-    });
+    }, editId);
 
   return scriptStage.draft;
 }
@@ -753,6 +785,13 @@ export async function loadProjectStyleByCategory(
   category: string,
 ) : Promise<IStyleProfile> {
   return loadStyleByCategory(`${workspaceRoot}/config/styles`, category);
+}
+
+export async function loadProjectEditRuleByCategory(
+  workspaceRoot: string,
+  category: string,
+) : Promise<IStyleProfile> {
+  return loadEditRuleByCategory(workspaceRoot, category);
 }
 
 export function buildProjectMaterialOverviewFacts(input: IScriptPlanningContext): IProjectMaterialOverviewFacts {
@@ -1502,7 +1541,7 @@ function padMs(value?: number): string {
   return String(safe).padStart(9, '0');
 }
 
-async function ensureMaterialFactsAndBundles(projectRoot: string): Promise<{
+async function ensureMaterialFactsAndBundles(projectRoot: string, editId?: string): Promise<{
   context: IScriptPlanningContext;
   facts: IProjectMaterialOverviewFacts;
   bundles: IMaterialBundle[];
@@ -1512,7 +1551,7 @@ async function ensureMaterialFactsAndBundles(projectRoot: string): Promise<{
   const bundles = buildMaterialBundles(context.spans, context.chronology, context.pharosContext);
 
   await Promise.all([
-    writeMaterialOverviewFacts(projectRoot, facts),
+    writeMaterialOverviewFacts(projectRoot, facts, editId),
     writeMaterialBundles(projectRoot, bundles),
   ]);
 
@@ -1539,32 +1578,34 @@ async function loadScriptPlanningContext(projectRoot: string): Promise<IScriptPl
   };
 }
 
-async function resolveStyle(
+async function resolveEditRule(
   projectRoot: string,
   workspaceRoot?: string,
-  styleCategory?: string,
+  editRuleCategory?: string,
+  editId?: string,
 ): Promise<IStyleProfile> {
   if (!workspaceRoot) {
-    throw new Error('workspaceRoot is required to resolve style profile');
+    throw new Error('workspaceRoot is required to resolve edit rule');
   }
-  const brief = await loadScriptBriefConfig(projectRoot);
-  const category = styleCategory ?? brief.styleCategory;
+  const brief = await loadScriptBriefConfig(projectRoot, editId);
+  const category = editRuleCategory ?? brief.editRuleCategory;
   if (!category) {
-    throw new Error('styleCategory is required to resolve style profile');
+    throw new Error('editRuleCategory is required to resolve edit rule');
   }
-  return loadProjectStyleByCategory(workspaceRoot, category);
+  return loadProjectEditRuleByCategory(workspaceRoot, category);
 }
 
-async function clearObsoleteArrangementArtifacts(projectRoot: string): Promise<void> {
+async function clearObsoleteArrangementArtifacts(projectRoot: string, editId?: string): Promise<void> {
+  const scriptRoot = `${projectRoot}/edits/${normalizeEditId(editId)}/script`;
   await Promise.all([
     rm(`${projectRoot}/analysis/material-digest.json`, { force: true }),
     rm(`${projectRoot}/analysis/motif-bundles.json`, { force: true }),
-    rm(`${projectRoot}/script/segment-plan.drafts.json`, { force: true }),
-    rm(`${projectRoot}/script/segment-plan.approved.json`, { force: true }),
-    rm(`${projectRoot}/script/segment-candidates.json`, { force: true }),
-    rm(`${projectRoot}/script/arrangement-skeletons.json`, { force: true }),
-    rm(`${projectRoot}/script/segment-cards.json`, { force: true }),
-    rm(`${projectRoot}/script/arrangement.current.json`, { force: true }),
+    rm(`${scriptRoot}/segment-plan.drafts.json`, { force: true }),
+    rm(`${scriptRoot}/segment-plan.approved.json`, { force: true }),
+    rm(`${scriptRoot}/segment-candidates.json`, { force: true }),
+    rm(`${scriptRoot}/arrangement-skeletons.json`, { force: true }),
+    rm(`${scriptRoot}/segment-cards.json`, { force: true }),
+    rm(`${scriptRoot}/arrangement.current.json`, { force: true }),
   ]);
 }
 
@@ -1811,6 +1852,7 @@ function buildFallbackBriefDraft(
 async function runReviewedScriptStage<TDraft>(input: {
   agentRunner?: IJsonPacketAgentRunner;
   projectRoot: string;
+  editId?: string;
   stage: string;
   writerIdentity: 'overview-cartographer' | 'brief-editor' | 'segment-architect' | 'route-slot-planner' | 'beat-writer';
   baseDraft: TDraft;
@@ -1828,7 +1870,7 @@ async function runReviewedScriptStage<TDraft>(input: {
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     const writerPacket = input.buildWriterPacket(revisionBrief, previousDraft);
     await Promise.all([
-      writeScriptAgentPacket(input.projectRoot, input.stage, writerPacket),
+      writeScriptAgentPacket(input.projectRoot, input.stage, writerPacket, input.editId),
       writeScriptAgentPipeline(input.projectRoot, {
         currentStage: input.stage,
         stageStatus: 'running',
@@ -1836,7 +1878,7 @@ async function runReviewedScriptStage<TDraft>(input: {
         latestReviewResult: undefined,
         blockerSummary: [],
         updatedAt: new Date().toISOString(),
-      }),
+      }, input.editId),
     ]);
     let draftRaw: unknown;
     try {
@@ -1852,7 +1894,7 @@ async function runReviewedScriptStage<TDraft>(input: {
         latestReviewResult: 'writer_failed',
         blockerSummary: [formatScriptStageError(error)],
         updatedAt: new Date().toISOString(),
-      });
+      }, input.editId);
       throw new Error(`script stage "${input.stage}" writer failed: ${formatScriptStageError(error)}`);
     }
     const draft = input.coerceDraft
@@ -1866,13 +1908,13 @@ async function runReviewedScriptStage<TDraft>(input: {
         latestReviewResult: 'writer_invalid_output',
         blockerSummary: ['writer returned invalid stage JSON.'],
         updatedAt: new Date().toISOString(),
-      });
+      }, input.editId);
       throw new Error(`script stage "${input.stage}" writer returned invalid stage JSON.`);
     }
     await input.persistDraft(draft);
 
     const reviewPacket = input.buildReviewPacket(draft, attempt);
-    await writeScriptAgentPacket(input.projectRoot, `review-${input.stage}`, reviewPacket);
+    await writeScriptAgentPacket(input.projectRoot, `review-${input.stage}`, reviewPacket, input.editId);
     let reviewRaw: Partial<IStageReview>;
     try {
       reviewRaw = await agentRunner.run<Partial<IStageReview>>({
@@ -1883,7 +1925,7 @@ async function runReviewedScriptStage<TDraft>(input: {
     } catch (error) {
       const review = buildScriptStageErrorReview(input.stage, attempt, error);
       await Promise.all([
-        writeScriptStageReview(input.projectRoot, input.stage, review),
+        writeScriptStageReview(input.projectRoot, input.stage, review, input.editId),
         writeScriptAgentPipeline(input.projectRoot, {
           currentStage: input.stage,
           stageStatus: 'review_error',
@@ -1891,13 +1933,13 @@ async function runReviewedScriptStage<TDraft>(input: {
           latestReviewResult: 'review_error',
           blockerSummary: review.issues.map(issue => `${issue.code}: ${issue.message}`),
           updatedAt: new Date().toISOString(),
-        }),
+        }, input.editId),
       ]);
       throw new Error(`script stage "${input.stage}" reviewer failed: ${formatScriptStageError(error)}`);
     }
     const review = normalizeScriptStageReview(reviewRaw, input.stage, attempt);
     await Promise.all([
-      writeScriptStageReview(input.projectRoot, input.stage, review),
+      writeScriptStageReview(input.projectRoot, input.stage, review, input.editId),
       writeScriptAgentPipeline(input.projectRoot, {
         currentStage: input.stage,
         stageStatus: review.verdict === 'pass' ? 'completed' : attempt >= 3 ? 'awaiting_user' : 'review_failed',
@@ -1907,7 +1949,7 @@ async function runReviewedScriptStage<TDraft>(input: {
           .filter(issue => issue.severity === 'blocker')
           .map(issue => `${issue.code}: ${issue.message}`),
         updatedAt: new Date().toISOString(),
-      }),
+      }, input.editId),
     ]);
     if (review.verdict === 'pass') {
       return { draft, review };
@@ -1929,6 +1971,7 @@ async function runReviewedScriptStage<TDraft>(input: {
 
 async function recordDeterministicMaterialSlotsStage(input: {
   projectRoot: string;
+  editId?: string;
   contract: IAgentContract;
   segmentPlan: ISegmentPlan;
   spatialStory: ISpatialStoryContext;
@@ -1940,14 +1983,14 @@ async function recordDeterministicMaterialSlotsStage(input: {
     identity: 'deterministic-material-slots',
     mission: '用确定性高召回规则生成正式 material slots truth，不让 LLM 改写 chosenSpanIds。',
     hardConstraints: [
-      'script/material-slots.json 的正式作者是 deterministic prep。',
+      'edits/<editId>/script/material-slots.json 的正式作者是 deterministic prep。',
       'route-slot-planner 不得改写 chosenSpanIds。',
       '过程证据、事件节点、关键过程视频和可用原声默认应保留。',
     ],
     allowedInputs: [
-      'script/segment-plan.json',
-      'script/spatial-story.json',
-      'script/agent-contract.json',
+      'edits/<editId>/script/segment-plan.json',
+      'edits/<editId>/script/spatial-story.json',
+      'edits/<editId>/script/agent-contract.json',
       'analysis/material-bundles.json',
       'store/spans.json',
       'media/chronology.json',
@@ -1955,25 +1998,25 @@ async function recordDeterministicMaterialSlotsStage(input: {
     inputArtifacts: [
       {
         label: 'agent-contract',
-        path: getScriptAgentContractPath(input.projectRoot),
+        path: getScriptAgentContractPath(input.projectRoot, input.editId),
         summary: input.contract.goals.join(' / '),
         content: input.contract,
       },
       {
         label: 'segment-plan',
-        path: getSegmentPlanPath(input.projectRoot),
+        path: getSegmentPlanPath(input.projectRoot, input.editId),
         summary: input.segmentPlan.summary,
         content: input.segmentPlan,
       },
       {
         label: 'spatial-story',
-        path: getSpatialStoryPath(input.projectRoot),
+        path: getSpatialStoryPath(input.projectRoot, input.editId),
         summary: input.spatialStory.narrativeHints.map(item => item.title).join(' / '),
         content: input.spatialStory,
       },
       {
         label: 'material-slots',
-        path: getMaterialSlotsPath(input.projectRoot),
+        path: getMaterialSlotsPath(input.projectRoot, input.editId),
         summary: summarizeMaterialSlotSelectionAudit(
           buildMaterialSlotSelectionAudit(input.draft, input.draft, input.spans),
         ),
@@ -1996,8 +2039,8 @@ async function recordDeterministicMaterialSlotsStage(input: {
   };
 
   await Promise.all([
-    writeScriptAgentPacket(input.projectRoot, 'material-slots', packet),
-    writeScriptStageReview(input.projectRoot, 'material-slots', review),
+    writeScriptAgentPacket(input.projectRoot, 'material-slots', packet, input.editId),
+    writeScriptStageReview(input.projectRoot, 'material-slots', review, input.editId),
     writeScriptAgentPipeline(input.projectRoot, {
       currentStage: 'material-slots',
       stageStatus: 'completed',
@@ -2005,7 +2048,7 @@ async function recordDeterministicMaterialSlotsStage(input: {
       latestReviewResult: 'pass',
       blockerSummary: [],
       updatedAt: new Date().toISOString(),
-    }),
+    }, input.editId),
   ]);
 
   return { draft: input.draft, review };
@@ -2636,13 +2679,14 @@ async function ensureSpatialStory(
   projectRoot: string,
   context: IScriptPlanningContext,
   facts: IProjectMaterialOverviewFacts,
+  editId?: string,
 ): Promise<ISpatialStoryContext> {
   const spatialStory = buildSpatialStoryContext(context);
   const nextFacts = enrichMaterialOverviewFactsWithSpatialStory(facts, spatialStory);
   await Promise.all([
-    writeMaterialOverviewFacts(projectRoot, nextFacts),
-    writeSpatialStory(projectRoot, spatialStory),
-    writeFile(getSpatialStoryMarkdownPath(projectRoot), buildSpatialStoryMarkdown(spatialStory), 'utf-8'),
+    writeMaterialOverviewFacts(projectRoot, nextFacts, editId),
+    writeSpatialStory(projectRoot, spatialStory, editId),
+    writeFile(getSpatialStoryMarkdownPath(projectRoot, editId), buildSpatialStoryMarkdown(spatialStory), 'utf-8'),
   ]);
   return spatialStory;
 }
@@ -2696,8 +2740,9 @@ async function ensureScriptAgentContract(
   spatialStory: ISpatialStoryContext,
   chronology: IScriptPlanningContext['chronology'],
   pharosContext: IProjectPharosContext | null,
+  editId?: string,
 ): Promise<IAgentContract> {
-  const existing = await loadScriptAgentContract(projectRoot);
+  const existing = await loadScriptAgentContract(projectRoot, editId);
   const next = buildScriptAgentContract({
     brief,
     style,
@@ -2706,13 +2751,14 @@ async function ensureScriptAgentContract(
     pharosContext,
   });
   if (JSON.stringify(existing) !== JSON.stringify(next)) {
-    await writeScriptAgentContract(projectRoot, next);
+    await writeScriptAgentContract(projectRoot, next, editId);
   }
   return next;
 }
 
 function buildSegmentPlanPacket(input: {
   projectRoot: string;
+  editId?: string;
   contract: IAgentContract;
   style: IStyleProfile;
   materialOverview: string;
@@ -2727,34 +2773,34 @@ function buildSegmentPlanPacket(input: {
     identity: 'segment-architect',
     mission: '只生成 segment plan，不直接选具体 span，也不写 beat 文案。',
     hardConstraints: [
-      '只相信 contract、material overview、style 和 spatial-story。',
+      '只相信 contract、material overview、edit rule 和 spatial-story。',
       '缺证据时必须保守，不脑补新节点。',
       '不能忽略 chronology / GPS / Pharos guardrails。',
     ],
     allowedInputs: [
-      'script/material-overview.md',
-      'script/material-overview.facts.json',
-      'script/spatial-story.json',
-      'script/agent-contract.json',
-      'style profile',
+      'edits/<editId>/script/material-overview.md',
+      'edits/<editId>/script/material-overview.facts.json',
+      'edits/<editId>/script/spatial-story.json',
+      'edits/<editId>/script/agent-contract.json',
+      'edit rule',
       'optional previous segment plan draft',
     ],
     inputArtifacts: [
       {
         label: 'agent-contract',
-        path: getScriptAgentContractPath(input.projectRoot),
+        path: getScriptAgentContractPath(input.projectRoot, input.editId),
         summary: input.contract.goals.join(' / '),
         content: input.contract,
       },
       {
         label: 'material-overview',
-        path: getMaterialOverviewPath(input.projectRoot),
+        path: getMaterialOverviewPath(input.projectRoot, input.editId),
         summary: input.facts.summary,
         content: { markdown: input.materialOverview },
       },
       {
         label: 'material-overview-facts',
-        path: getMaterialOverviewFactsPath(input.projectRoot),
+        path: getMaterialOverviewFactsPath(input.projectRoot, input.editId),
         summary: input.facts.summary,
         content: input.facts,
       },
@@ -2770,13 +2816,13 @@ function buildSegmentPlanPacket(input: {
       },
       {
         label: 'spatial-story',
-        path: getSpatialStoryPath(input.projectRoot),
+        path: getSpatialStoryPath(input.projectRoot, input.editId),
         summary: input.spatialStory.narrativeHints.map(item => item.title).join(' / '),
         content: input.spatialStory,
       },
       {
         label: 'script-brief',
-        path: getScriptBriefPath(input.projectRoot),
+        path: getScriptBriefPath(input.projectRoot, input.editId),
         summary: input.brief.goalDraft.join(' / '),
         content: input.brief,
       },
@@ -2787,7 +2833,7 @@ function buildSegmentPlanPacket(input: {
       } : null,
       input.revisionBrief.length > 0 ? {
         label: 'previous-draft',
-        path: getSegmentPlanPath(input.projectRoot),
+        path: getSegmentPlanPath(input.projectRoot, input.editId),
         summary: input.baseDraft.summary,
         content: input.baseDraft,
       } : null,
@@ -2806,6 +2852,7 @@ function buildSegmentPlanPacket(input: {
 
 function buildMaterialSlotsPacket(input: {
   projectRoot: string;
+  editId?: string;
   contract: IAgentContract;
   style: IStyleProfile;
   spatialStory: ISpatialStoryContext;
@@ -2829,10 +2876,10 @@ function buildMaterialSlotsPacket(input: {
       'revision-brief 只授权修改被点名的问题位，不要顺手裁掉其他 slot 的过程证据、阶段证据或可用原声。',
     ],
     allowedInputs: [
-      'script/segment-plan.json',
+      'edits/<editId>/script/segment-plan.json',
       'analysis/material-bundles.json',
-      'script/spatial-story.json',
-      'script/agent-contract.json',
+      'edits/<editId>/script/spatial-story.json',
+      'edits/<editId>/script/agent-contract.json',
       'spans / chronology',
       'base material slots draft',
       'optional previous material slots draft',
@@ -2840,13 +2887,13 @@ function buildMaterialSlotsPacket(input: {
     inputArtifacts: [
       {
         label: 'agent-contract',
-        path: getScriptAgentContractPath(input.projectRoot),
+        path: getScriptAgentContractPath(input.projectRoot, input.editId),
         summary: input.contract.goals.join(' / '),
         content: input.contract,
       },
       {
         label: 'segment-plan',
-        path: getSegmentPlanPath(input.projectRoot),
+        path: getSegmentPlanPath(input.projectRoot, input.editId),
         summary: input.segmentPlan.summary,
         content: input.segmentPlan,
       },
@@ -2858,7 +2905,7 @@ function buildMaterialSlotsPacket(input: {
       },
       {
         label: 'spatial-story',
-        path: getSpatialStoryPath(input.projectRoot),
+        path: getSpatialStoryPath(input.projectRoot, input.editId),
         summary: input.spatialStory.narrativeHints.map(item => item.title).join(' / '),
         content: input.spatialStory,
       },
@@ -2892,7 +2939,7 @@ function buildMaterialSlotsPacket(input: {
       } : null,
       input.previousDraft ? {
         label: 'previous-draft',
-        path: getMaterialSlotsPath(input.projectRoot),
+        path: getMaterialSlotsPath(input.projectRoot, input.editId),
         summary: `${input.previousDraft.segments.length} 个 segment slot group`,
         content: input.previousDraft,
       } : null,
@@ -2909,6 +2956,7 @@ function buildMaterialSlotsPacket(input: {
 
 function buildScriptCurrentPacket(input: {
   projectRoot: string;
+  editId?: string;
   contract: IAgentContract;
   style: IStyleProfile;
   materialOverview: string;
@@ -2922,24 +2970,24 @@ function buildScriptCurrentPacket(input: {
     identity: 'beat-writer',
     mission: '只写 beat/script，不重做章节结构。',
     hardConstraints: [
-      '只相信 contract、outline、style、material overview、spatial-story。',
+      '只相信 contract、outline、edit rule、material overview、spatial-story；表达语气只参考可选 style reference。',
       '缺证据时必须保守，不脑补地点、事件和情绪。',
       '不要靠删 beat 来掩盖材料密度。',
       '只允许改写 text、utterances、notes、muteSource、preserveNatSound。',
       '不得增删或改写 audioSelections、visualSelections、linkedSpanIds、linkedSliceIds。',
     ],
     allowedInputs: [
-      'script/agent-contract.json',
-      'analysis/outline.json',
-      'script/material-overview.md',
-      'script/spatial-story.json',
-      'style profile',
+      'edits/<editId>/script/agent-contract.json',
+      'edits/<editId>/script/outline.json',
+      'edits/<editId>/script/material-overview.md',
+      'edits/<editId>/script/spatial-story.json',
+      'edit rule / optional expression style reference',
       'optional previous script draft',
     ],
     inputArtifacts: [
       {
         label: 'agent-contract',
-        path: getScriptAgentContractPath(input.projectRoot),
+        path: getScriptAgentContractPath(input.projectRoot, input.editId),
         summary: input.contract.goals.join(' / '),
         content: input.contract,
       },
@@ -2950,13 +2998,13 @@ function buildScriptCurrentPacket(input: {
       },
       {
         label: 'material-overview',
-        path: getMaterialOverviewPath(input.projectRoot),
+        path: getMaterialOverviewPath(input.projectRoot, input.editId),
         summary: '已审核通过的 material overview。',
         content: { markdown: input.materialOverview },
       },
       {
         label: 'spatial-story',
-        path: getSpatialStoryPath(input.projectRoot),
+        path: getSpatialStoryPath(input.projectRoot, input.editId),
         summary: input.spatialStory.narrativeHints.map(item => item.title).join(' / '),
         content: input.spatialStory,
       },
@@ -2977,7 +3025,7 @@ function buildScriptCurrentPacket(input: {
       } : null,
       input.revisionBrief.length > 0 ? {
         label: 'previous-draft',
-        path: getCurrentScriptPath(input.projectRoot),
+        path: getCurrentScriptPath(input.projectRoot, input.editId),
         summary: `${input.baseDraft.length} 个 script segment`,
         content: input.baseDraft,
       } : null,
@@ -2991,6 +3039,7 @@ function buildScriptCurrentPacket(input: {
 
 function buildScriptReviewPacket(input: {
   projectRoot: string;
+  editId?: string;
   stage: string;
   contract: IAgentContract;
   supportingArtifacts: Array<{ label: string; path?: string; summary?: string; content?: unknown }>;
@@ -3014,7 +3063,7 @@ function buildScriptReviewPacket(input: {
     inputArtifacts: [
       {
         label: 'agent-contract',
-        path: getScriptAgentContractPath(input.projectRoot),
+        path: getScriptAgentContractPath(input.projectRoot, input.editId),
         summary: input.contract.goals.join(' / '),
         content: input.contract,
       },
@@ -3022,10 +3071,10 @@ function buildScriptReviewPacket(input: {
       {
         label: 'stage-draft',
         path: input.stage === 'segment-plan'
-          ? getSegmentPlanPath(input.projectRoot)
+          ? getSegmentPlanPath(input.projectRoot, input.editId)
           : input.stage === 'material-slots'
-            ? getMaterialSlotsPath(input.projectRoot)
-            : getCurrentScriptPath(input.projectRoot),
+            ? getMaterialSlotsPath(input.projectRoot, input.editId)
+            : getCurrentScriptPath(input.projectRoot, input.editId),
         summary: `第 ${input.attempt} 轮 ${input.stage} 草稿`,
         content: input.draft,
       },

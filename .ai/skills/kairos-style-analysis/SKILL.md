@@ -1,16 +1,19 @@
 ---
 name: kairos-style-analysis
 description: >-
-  Analyze historical video works to extract a detailed style profile by category.
+  Analyze historical video works to extract text/art-style references by category.
   Supports multiple style categories (travel documentary, city walk, etc.) with
-  user-provided guidance prompts. Outputs IStyleProfile compatible with kairos-script.
+  user-provided guidance prompts. Outputs expression references for narration and subtitles,
+  not formal edit rules.
   Use when the user provides reference videos, wants to analyze their style,
   or mentions style, tone, voice, category, or reference works.
 ---
 
-# Kairos: Style Analysis — 分类风格提取
+# Kairos: Style Analysis — 分类文案 / 艺术风格参考提取
 
-从用户的历史成片中提取详细风格档案。支持多分类管理和用户指导词。
+从用户的历史成片中提取文案、旁白语感、艺术气质和表达禁区参考。支持多分类管理和用户指导词。
+
+Style Analysis 当前不再产出或推断正式 `剪辑规则`。正式结构规则由人工维护的 `config/edit-rules/` 提供；Style Analysis 结果只给最终旁白、字幕文本和表达气质阶段参考。
 
 ## 变更工作流规则
 
@@ -25,7 +28,7 @@ description: >-
 
 ### 分类 (Category)
 
-用户的作品可能有多种类型，每种类型有不同的风格：
+用户的作品可能有多种类型，每种类型有不同的文案 / 艺术风格参考：
 
 ```
 <workspaceRoot>/config/
@@ -37,7 +40,7 @@ description: >-
     └── vlog.md                  # 日常 vlog 风格
 ```
 
-每个分类独立分析、独立存储。`config/style-sources.json` 负责 `categoryId -> profilePath/displayName/guidancePrompt/sources`，`config/styles/*.md` 只承载 profile 正文。
+每个分类独立分析、独立存储。`config/style-sources.json` 负责 `categoryId -> profilePath/displayName/guidancePrompt/sources`，`config/styles/*.md` 只承载文案 / 艺术风格参考正文，不承载粗剪结构规则。
 
 ### 指导词 (Guidance Prompt)
 
@@ -47,7 +50,7 @@ description: >-
 - 忽略什么（如"这几个视频的开头广告部分不是我的风格"）
 - 任何创作理念或偏好
 
-指导词会存储在风格档案的 front-matter 中，供后续参考。
+指导词会存储在风格参考的 front-matter 中，供最终旁白和字幕表达阶段参考。
 
 ## 前置条件
 
@@ -69,11 +72,11 @@ description: >-
 - 风格分析过程中产生的关键帧、探测结果、临时摘要等中间产物，统一放在 **当前 workspaceRoot** 下的 `.tmp/`，例如 `.tmp/style-analysis/{category}/`
 - 当前正式链路是 `Supervisor deterministic prep -> awaiting_agent -> Agent final style profile`
 - deterministic prep 必须持续写 `.tmp/style-analysis/{category}/progress.json`，并把逐视频报告与 transcript 落到 `analysis/style-references/`、`analysis/reference-transcripts/`
-- final Agent style synthesis 当前正式改成 clean-context subagent 流水线：
+- final Agent style-reference synthesis 当前正式改成 clean-context subagent 流水线：
   - deterministic prep 额外写 `analysis/style-references/{category}/agent-summary.json`
   - `style-profile-synthesizer` 先写 `style-draft.json`
   - `style-profile-reviewer` 再写 `style-review.json`
-  - reviewer blockers 是落成 `config/styles/{category}.md` 的硬闸门
+  - reviewer blockers 是落成 `config/styles/{category}.md` 的硬闸门；reviewer 也必须阻止把参考视频剪辑节奏误写成正式剪辑规则
 - `/style` monitor 默认应回到“最相关的最近分类”，而不是在无显式 `categoryId` 时盲目回 `defaultCategory`
 - `progress.json` 不应只保留粗阶段；至少应能表达当前视频、当前阶段开始时间、`keyframes` 抽帧计数、`vlm` shot-group 识别计数，以及已完成 / 待处理队列摘要
 - 不要把这类临时产物写到 `C:` 盘系统临时目录或用户目录外的随机位置

@@ -22,6 +22,11 @@ export {
   type IStyleLoadOptions,
 } from './style-loader.js';
 export {
+  loadEditRuleByCategory,
+  loadEditRuleFromMarkdown,
+  listEditRuleCategories,
+} from './edit-rule-loader.js';
+export {
   buildOutline,
   type IBuildOutlineInput,
   type IOutlineBeat,
@@ -32,6 +37,7 @@ export {
   buildProjectOutlineFromPlanning,
   generateProjectScriptFromPlanning,
   prepareProjectScriptForAgent,
+  loadProjectEditRuleByCategory,
   loadProjectStyleByCategory,
   buildProjectMaterialOverviewFacts,
   buildMaterialOverviewMarkdown,

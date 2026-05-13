@@ -123,17 +123,18 @@ Kairos 当前需要区分两层：
 - `素材分析` 与 `风格分析` 在当前控制台里直接以主路由展示监控，而不是再跳一次独立监控入口
 - `DaVinci color` 当前也已有独立主路由 `/color`，并已收口为最小 `renderPreset` 配置（含 `bitrateKbps` / `kb/s`）+ root/project 级 deterministic 控制面 + runtime/archive 状态面；正式顺序为 `Prepare Root -> Sync Groups -> Execute Root -> Validate`，并补充 `Prepare All Roots / Export All Roots`
 - `/color` 当前还会主动暴露宿主诊断与 batch 归档，而不是把宿主问题和 validation 历史藏在动作失败或磁盘 JSON 里
-- 风格档案、风格来源配置与风格分析参考产物当前已收口为 **Workspace 级共享资产**：
+- 剪辑规则、风格来源配置与风格分析参考产物当前已收口为 **Workspace 级共享资产**，但职责已经拆开：
+  - `config/edit-rules/`：人工维护的正式 `剪辑规则` 库，驱动脚本结构、剪辑框架、人工 gate 与粗剪约束
+  - `config/edit-rules.json`：剪辑规则分类索引；项目 / edit unit 只保存 `editRuleCategory`
   - `config/styles/`
   - `config/style-sources.json`
   - `analysis/reference-transcripts/`
   - `analysis/style-references/`
-  - `config/style-sources.json` 是当前唯一正式 style 索引；`config/styles/*.md` 只承载 profile 正文，不再配套 `catalog.json`
-- Workspace 风格档案当前不再只是“给人读的风格长文”，而是 Script 阶段的正式输入之一：
-  - 章节里应尽量明确阶段节奏、素材角色、运镜语言、功能位分配与禁区
-  - 参数表里应尽量提供稳定 key，便于 `script / recall / outline` 直接消费
-  - 这些内容默认表示“观测到的高频偏好”，不是自动变成所有脚本都必须照抄的硬模板
-  - Script / Timeline 内部会从现有 style profile 解析一个小的运行时 `arrangement signals` 层，用来判断当前风格主轴更偏时间推进、空间推进、情感推进还是结果回看；这不是新的公开协议，也不是新的用户配置面
+  - `config/style-sources.json` 是当前唯一正式 style-reference 索引；`config/styles/*.md` 只承载文案 / 艺术气质参考，不再承载粗剪结构规则
+- Workspace 风格档案当前降级为“文案 / 艺术风格参考”：
+  - 风格分析不再尝试从参考视频抽象正式剪辑规则
+  - `config/styles/*.md` 只服务最终旁白、字幕文本、语言气质和表达禁区
+  - 粗剪结构默认不读取 style profile；缺少 style reference 不阻塞 Script / Timeline，只在最终旁白和字幕表达阶段提示缺参考
 - `scripts/kairos-supervisor.* start` 只启动 `Supervisor + React console`，不会顺带拉起 ML，也不会自动恢复旧 job
 - `projects/<projectId>/.tmp/media-analyze/progress.json` 与 `<workspaceRoot>/.tmp/style-analysis/{category}/progress.json` 都只是 durable progress cache，不等于 live job
 - Kairos 官方管理的顶层流程在结束态必须回收到 `ML stopped`
@@ -327,58 +328,61 @@ flowchart TD
 - 当前正式模型是 `segment + beat + selection`
 - `script-brief` 是当前脚本阶段的正式人工审查入口
 - 当前 `/script` 页已经收口为：
-  - 先选择 workspace `styleCategory`，并立即自动保存
-  - 一旦 `styleCategory` 改变，旧的 `material-overview / brief draft / segment-plan / material-slots / outline / script/current.json` 必须立即失效并清空，项目回到“重新起稿”
+  - 先选择 workspace `editRuleCategory`，并立即自动保存；`styleCategory` 只作为可选文案 / 艺术风格参考
+  - 一旦 `editRuleCategory` 改变，当前 edit unit 的旧 `material-overview / brief draft / segment-plan / material-slots / outline / edits/<editId>/script/current.json` 必须立即失效并清空，edit unit 回到“重新起稿”
+  - 单独改变 `styleCategory` 不再清空粗剪结构产物，只影响最终旁白和字幕表达参考
   - Agent 生成初版 `script-brief`
   - 用户在 `/script` 审查并手动保存 brief
   - 用户点击 `准备给 Agent`
   - 关键 handoff 会通过持续可见的 workflow prompt 和显式 hana modal 提示用户“下一步去哪里”，而不再只靠淡色行内文案
 - 当前 Console 里的 `script` job 已收口为 **deterministic prep**，只负责校验前置条件并刷新确定性材料
-- `script/current.json` 的唯一正式作者是 **Agent**
+- `edits/<editId>/script/current.json` 的唯一正式作者是 **Agent**；旧 `script/current.json` 只作为 `edits/main` 兼容读取路径
   - Agent 内部当前正式要求已经改成 clean-context staged pipeline，而不是单一共享 writer 上下文：
   - `[main agent]` 只负责流程路由、前置条件核对、packet 准备、用户 handoff 与 reviewer 闸门执行
   - `[main agent]` 不得把缺失的 subagent / reviewer 阶段静默折叠成一次本地起稿
-  - `overview-cartographer` 只写 `script/material-overview.md`
+  - `overview-cartographer` 只写 `edits/<editId>/script/material-overview.md`
   - `brief-editor` 只写初版 `script-brief`
-  - `segment-architect` 只写 `script/segment-plan.json`
-  - `buildMaterialSlotsDocument()` 当前是 `script/material-slots.json` 的唯一正式作者
+  - `segment-architect` 只写 `edits/<editId>/script/segment-plan.json`
+  - `buildMaterialSlotsDocument()` 当前是 `edits/<editId>/script/material-slots.json` 的唯一正式作者
   - `route-slot-planner` 已退出正式写入链；若保留，只能做非权威审查 / 诊断，不能改写 `chosenSpanIds`
-  - `beat-writer` 只写 `script/current.json`
+  - `beat-writer` 只写 `edits/<editId>/script/current.json`
   - `beat-writer` 当前只允许改写表达层字段：`text`、`utterances`、`notes`、`muteSource`、`preserveNatSound`
   - `beat-writer` 不得增删或改写 `audioSelections`、`visualSelections`、`linkedSpanIds` 这类召回事实
   - `script-reviewer` 审 `material-slots` 时必须把 silent span drops / recall regression 当 blocker
   - `script-reviewer` 只做阶段审查，不直接生成正式稿
-  - `script-reviewer` 的 blocker 是推进下一阶段和落成 `script/current.json` 的硬闸门
+  - `script-reviewer` 的 blocker 是推进下一阶段和落成该 edit unit `edits/<editId>/script/current.json` 的硬闸门
   - 如果当前宿主策略或用户授权不允许 formal subagent / reviewer 链执行，主代理必须先停下说明原因，不能继续按“单代理兼任全部阶段”落稿
   - Script 当前新增一层正式内部提示资产：
-  - `script/spatial-story.json` + `script/spatial-story.md` 用现有 chronology / spans / Pharos / GPS 真值生成空间叙事提示
-  - `script/agent-contract.json` 锁定用户 goals / constraints / review notes、style must / forbidden、GPS narrative hints、Pharos must-cover hints、chronology guardrails
-  - 每个阶段都必须读取各自的 `script/agent-packets/{stage}.json`
-  - reviewer 结果写入 `script/reviews/{stage}.json`
-  - 流水线推进状态写入 `script/agent-pipeline.json`
+  - `edits/<editId>/script/spatial-story.json` + `spatial-story.md` 用现有 chronology / spans / Pharos / GPS 真值生成空间叙事提示
+  - `edits/<editId>/script/agent-contract.json` 锁定用户 goals / constraints / review notes、edit rule must / forbidden、GPS narrative hints、Pharos must-cover hints、chronology guardrails
+  - 每个阶段都必须读取各自的 `edits/<editId>/script/agent-packets/{stage}.json`
+  - reviewer 结果写入 `edits/<editId>/script/reviews/{stage}.json`
+  - 流水线推进状态写入 `edits/<editId>/script/agent-pipeline.json`
   - packet 是 stage subagent 的唯一正式上下文；runtime 不得在 packet 外重复附加主线程历史、`previousDraft` 或 `revisionBrief`
   - 正式 script stage 执行后端必须使用宿主 packet runner / 真实 clean-context subagent 链；官方路径不允许外接 `ILlmClient` fallback
   - workspace / project runtime 可通过 `config/runtime.json` 的 `agentPacketRunnerCommand` / `agentPacketRunnerArgs` / `agentPacketRunnerCwd` 声明这个 packet runner
   - 首轮 stage 调用默认应保持 lean packet，只在 reviewer 要求返工时再把 previous draft 带回 writer
-  - `script/current.json` 的正式落盘形状固定为 bare `IKtepScript[]`；若 transport 返回 `{ "segments": [...] }`，必须由 stage runner 在持久化前解包，不能再变成主代理的临时补锅动作
+  - `edits/<editId>/script/current.json` 的正式落盘形状固定为 bare `IKtepScript[]`；若 transport 返回 `{ "segments": [...] }`，必须由 stage runner 在持久化前解包，不能再变成主代理的临时补锅动作
   - `script-current` 每个 attempt 只允许一次正式 `beat-writer` 调用；不能先额外跑一轮 full-script writer 再进入 reviewer 链
-  - writer / reviewer 调用失败时，`script/agent-pipeline.json` 必须立即写出真实失败态，不能继续停留在旧阶段的 `pending`
-- `script/script-brief.json` 当前承载脚本阶段的正式流程状态真值：
+  - writer / reviewer 调用失败时，`edits/<editId>/script/agent-pipeline.json` 必须立即写出真实失败态，不能继续停留在旧阶段的 `pending`
+- `edits/<editId>/script/script-brief.json` 当前承载脚本阶段的正式流程状态真值：
   - `choose_style`
   - `await_brief_draft`
   - `review_brief`
   - `ready_to_prepare`
   - `ready_for_agent`
   - `script_generated`
-- `script/script-brief.md` 会同步机器可恢复的 workflow 元信息；即使 `.json` 丢失，也能恢复脚本阶段状态
+- `edits/<editId>/script/script-brief.md` 会同步机器可恢复的 workflow 元信息；即使 `.json` 丢失，也能恢复脚本阶段状态；旧 `script/script-brief.*` 只作为 `main` 的兼容读取来源
 - 如果用户已经修改过当前 brief，而又想让 Agent 重新生成初版 brief，正式路径是在 `/script` 点击 `重新生成初版 brief` 并通过 UI 明确确认覆盖
 - 用户审查闸门存在于 Agent 写脚本之前，而不是召回和编排全部完成之后
-- Script 阶段当前从 **Workspace 风格库** 里选择用户指定的 `style category`，项目只保存“本项目使用哪一个分类”，不再把风格档案作为项目内资产持有
-- 当前 style profile 应同时提供两层信息：
-  - 面向人的长文解释：为什么这种 intro / montage 会这样组织
-  - 面向下游的直接提示：节奏阶段、`aerial / timelapse / drive / talking-head / broll / nat sound` 角色、运镜语法、`开场建场 / 地理重置 / 情绪释放` 功能位、素材禁区 / 镜头禁区、稳定参数表
-- Script / recall / outline 当前应优先直接消费这些 style sections / parameters / antiPatterns，而不是只把风格档案当作“语气说明”再让 LLM 从长文里二次猜测镜头组织规则
-- 当现有风格信号明确偏 `chronology / route continuity / continuous process` 时，顺时序不再只是 prompt 偏好，而是脚本编排的正式执行结果：
+- Script 阶段当前从 **Workspace 剪辑规则库** 里选择用户指定的 `editRuleCategory`，项目 / edit unit 只保存“本轮使用哪一个剪辑规则”，不再让风格档案承担结构控制职责
+- 当前旅行类默认剪辑规则固定为：
+  - 先用当前 Pharos `plan / record / gpx` 建构行程整体印象
+  - 再用素材分析补漏，重点结合口播、GPS、record 与实际素材缺口
+  - 先生成按天、重点时间、行车、航拍与关键事件组织的初版剪辑框架文本
+  - 人工 review 调整结构，通过后才进入第一次粗剪
+  - 第一次粗剪定稿后锁定 Resolve timeline，再生成源语音字幕和单篇旁白稿
+- 当现有剪辑规则明确偏 `chronology / route continuity / continuous process` 时，顺时序不再只是 prompt 偏好，而是脚本编排的正式执行结果：
   - Script prep 会先基于 `sortCapturedAt + chronology + Pharos trip/day/shot` 建立单调递增的时间带
   - `segment plan / material slots` 只能在各自合法时间带内召回素材
   - `beat` 顺序默认保持时间单调递增，不允许后段跨窗回捞前段素材
@@ -417,7 +421,7 @@ flowchart TD
   - `segment-cut-refiner` 再按段写 `timeline/segment-cuts/<segmentId>.json`
   - `segment-cut-reviewer` 写 `timeline/reviews/<segmentId>.json`
   - pipeline state 写 `timeline/agent-pipeline.json`
-  - 只有 reviewer 通过后的段级产物，才允许继续落成 `timeline/current.json`
+  - 只有 reviewer 通过后的段级产物，才允许继续落成 `edits/<editId>/timeline/current.json`
 - 字幕已有两条正式路径：
   - 旁白路径：默认来自 `beat.text`
   - 原声路径：当某拍保留原声时，来自 `beat.audioSelections[]` 对应的 merged audio units
@@ -454,7 +458,7 @@ flowchart TD
   - 非 `drive / aerial` 素材被加速
   - source-speech 误判、speech window 越界、字幕不可读或严重错时
   - chronology / Pharos / style guardrail 漂移
-- `placeClips()` 与 `planSubtitles()` 当前正式优先消费 reviewed segment-cut 产物，而不是把原始 `script/current.json` 当作全部粗剪决策来源
+- `placeClips()` 与 `planSubtitles()` 当前正式优先消费 reviewed segment-cut 产物，而不是把原始 `edits/<editId>/script/current.json` 当作全部粗剪决策来源
 - `placeClips()` 当前默认按 selection 的自然 source 时长 / edit-friendly bounds 摆放 clip，不再用 `beat.targetDurationMs` 或 `segment.targetDurationMs` 驱动粗剪裁剪与扩展
 - 如果同一 `asset` 同时被召回成 source-speech 与 silent `drive / aerial`，时间线当前正式应先保留 source-speech 窗口，再把 silent montage 裁成非重叠 remainder；重叠部分不得双重入线
 - 如果同一 `drive / aerial asset` 在粗剪里被多个 silent beat 重复引用，后出现的 beat 也必须扣掉前面已经消费过的 source window，只保留新的 remainder，避免同源重复双放
@@ -469,7 +473,7 @@ flowchart TD
   - 先在 `projects/<projectId>/adapters/jianying-staging/<draftName>` 生成项目内 staging 草稿
   - staging 成功后，再复制到真实 `jianyingDraftRoot/<draftName>`
   - 两侧目录都必须是全新目录，禁止覆盖、清空或删除已有草稿目录
-- 对带 `speed` 的剪映导出，当前适配层会做 backend compatibility normalization，修正 `pyJianYingDraft` 的微秒级重算偏差，但不会回写正式 `timeline/current.json`
+- 对带 `speed` 的剪映导出，当前适配层会做 backend compatibility normalization，修正 `pyJianYingDraft` 的微秒级重算偏差，但不会回写正式 `edits/<editId>/timeline/current.json`
 - Resolve、剪映或其他导出目标都应建立在同一套正式时间线语义之上
 
 ## 3. 协议与数据骨架
@@ -533,6 +537,8 @@ flowchart TD
 
 另外还有一组 **Workspace 级共享资产**，不属于单个项目目录：
 
+- `config/edit-rules/`：正式剪辑规则库
+- `config/edit-rules.json`：剪辑规则分类索引
 - `config/styles/`：正式风格档案库
 - `config/style-sources.json`：风格来源配置
 - `analysis/reference-transcripts/`：风格分析的参考转写
@@ -550,12 +556,14 @@ flowchart TD
 - `config/project-brief.json` 保存项目级素材 root 单真值，包括主路径、原始路径和有序备选路径
 - `config/project-brief.md` 是路径映射的人类镜像；进入 Ingest / Analyze / Export / Color 前直接从这些路径候选解析当前可读目录
 - `/ingest-gps` 当前正式用结构化 `素材 Root` 编辑器维护这些路径映射，并在保存时写入 `config/project-brief.json` 后回写 `config/project-brief.md`
-- `config/project-brief.json`、`config/manual-itinerary.json`、`script/script-brief.json` 与 `config/review-queue.json` 是当前项目级 Console 结构化事实源
+- `config/project-brief.json`、`config/manual-itinerary.json`、`edits/<editId>/script/script-brief.json` 与 `config/review-queue.json` 是当前项目级 Console 结构化事实源
+- `edits/<editId>/script/`、`edits/<editId>/timeline/`、`edits/<editId>/subtitles/` 是正式剪辑层；`script/`、`timeline/`、`subtitles/` 只作为 legacy `edits/main` 兼容路径
 - `config/style-sources.json` 是当前 **Workspace 级** Console 结构化事实源
+- `config/edit-rules.json` 是当前 **Workspace 级** 剪辑规则结构化事实源
 - `project-brief` 的每个 root block 允许额外声明 `飞行记录路径`，作为该素材根目录对应的 DJI FlightRecord 日志入口；实际识别不依赖强文件名，而是以文件头/可解析性为准
 - `config/runtime.json` 是项目级运行时配置入口
 - 如果需要解密 DJI v13/v14 FlightRecord，`config/runtime.json` 可提供 `djiOpenAPIKey`
-- `config/styles/` 保存 **Workspace 级** 正式风格档案；这些档案当前应同时包含长文 section 与可直接被脚本阶段消费的参数 / 禁区 / 节奏语法提示
+- `config/styles/` 保存 **Workspace 级** 文案 / 艺术风格参考；这些档案不再承担粗剪结构规则
 - `gps/tracks/*.gpx` 与 `gps/merged.json` 是当前项目级外部轨迹资源入口
 - `gps/same-source/tracks/*.gpx` 与 `gps/same-source/index.json` 是 dense same-source GPS 的项目内缓存入口，仅用于内部索引 / 惰性查找
 - `gps/derived.json` 是项目级 `project-derived-track` 缓存，统一收口 embedded-derived 与 manual-itinerary-derived 的弱空间来源
@@ -610,12 +618,12 @@ flowchart TD
 
 1. `project brief` 提供全片约束
 2. `material overview` 提供全量素材边界、强弱与缺口
-3. 用户在 `/script` 选择 workspace 风格分类，并自动保存
-4. Agent 生成 `material-overview.md` 与初版 `script-brief`
+3. 用户在 `/script` 选择 workspace `剪辑规则`，并自动保存 `editRuleCategory`
+4. Agent 生成 `edits/<editId>/script/material-overview.md` 与初版 `script-brief`
 5. 用户回到 `/script` 审查并手动保存 brief
 6. `/script` 会通过显眼的 prompt / modal 提示下一步；用户点击 `准备给 Agent` 后，Console 只刷新确定性 prep 材料
 7. Agent 再继续推进 `segment plan`、`material slots`、bundle lookup、`chosenSpanIds`、beat 试写与选择
-8. Agent 写入 `script/current.json`
+8. Agent 写入 `edits/<editId>/script/current.json`
 9. 再由 `selection` 与 `beat` 共同落成时间线和字幕
 
 因此，当前稳定结论包括：

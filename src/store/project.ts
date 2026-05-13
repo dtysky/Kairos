@@ -18,6 +18,7 @@ import {
   saveProjectBriefConfig,
 } from './workspace-config.js';
 import { writeScriptBriefTemplate } from './script-brief.js';
+import { ensureProjectEditDirs } from './edit-store.js';
 
 const CDIRS = [
   'config',
@@ -28,6 +29,13 @@ const CDIRS = [
   'script/versions',
   'timeline',
   'timeline/versions',
+  'edits',
+  'edits/main',
+  'edits/main/script',
+  'edits/main/script/versions',
+  'edits/main/timeline',
+  'edits/main/timeline/versions',
+  'edits/main/subtitles',
   'color',
   'color/groups',
   'color/batches',
@@ -95,6 +103,7 @@ export async function initProject(
   for (const dir of CDIRS) {
     await mkdir(join(root, dir), { recursive: true });
   }
+  await ensureProjectEditDirs(root, 'main');
 
   const now = new Date().toISOString();
 
@@ -128,6 +137,8 @@ export async function initProject(
   await writeScriptBriefTemplate(root, {
     projectName: name,
     createdAt: now,
+    editId: 'main',
+    editLabel: 'Main',
   });
 }
 

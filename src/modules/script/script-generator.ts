@@ -37,9 +37,9 @@ export async function generateScript(
   const packet: IAgentPacket = {
     stage: context?.stage ?? 'script-current',
     identity: 'beat-writer',
-    mission: '只根据 outline、style、contract 与 material overview 写 beat/script。',
+    mission: '只根据 outline、edit rule / expression reference、contract 与 material overview 写 beat/script。',
     hardConstraints: [
-      '必须严格遵循 contract、outline 和 style 中已给出的约束。',
+      '必须严格遵循 contract、outline 和 edit rule 中已给出的结构约束；表达气质只参考可选 style reference。',
       '缺证据时必须保守，不脑补地点、事件和情绪。',
       '不要通过删 beat 来掩盖材料密度。',
       '不得改写 outline 已锁定的 audioSelections[]、visualSelections[]、linkedSpanIds 或 linkedSliceIds。',
@@ -50,13 +50,13 @@ export async function generateScript(
       'script brief',
       'agent contract',
       'spatial story',
-      'style profile',
+      'edit rule / optional expression style reference',
       'outline',
     ],
     inputArtifacts: [
       {
         label: 'generation-context',
-        summary: 'material overview + brief + contract + spatial story + style + outline',
+          summary: 'material overview + brief + contract + spatial story + edit rule / expression reference + outline',
         content: {
           contextText,
           styleText,

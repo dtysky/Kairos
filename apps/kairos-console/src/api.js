@@ -38,8 +38,8 @@ export function fetchCapabilities() {
   return apiGet('/api/capabilities');
 }
 
-export function fetchProjectConfig(projectId) {
-  return apiGet(`/api/projects/${encodeURIComponent(projectId)}/config`);
+export function fetchProjectConfig(projectId, editId) {
+  return apiGet(withEditQuery(`/api/projects/${encodeURIComponent(projectId)}/config`, editId));
 }
 
 export function fetchProjectColorArchive(projectId) {
@@ -66,6 +66,10 @@ export function fetchWorkspaceStyleConfig() {
   return apiGet('/api/workspace/config/style-sources');
 }
 
+export function fetchWorkspaceEditRulesConfig() {
+  return apiGet('/api/workspace/config/edit-rules');
+}
+
 export function fetchProjectReviews(projectId) {
   return apiGet(`/api/projects/${encodeURIComponent(projectId)}/reviews`);
 }
@@ -84,11 +88,18 @@ export function fetchStyleMonitor(categoryId) {
 }
 
 export function saveProjectSection(projectId, sectionKey, payload) {
-  return apiPut(`/api/projects/${encodeURIComponent(projectId)}/config/${sectionKey}`, payload);
+  return apiPut(
+    withEditQuery(`/api/projects/${encodeURIComponent(projectId)}/config/${sectionKey}`, payload?.editId),
+    payload,
+  );
 }
 
 export function saveWorkspaceStyleConfig(payload) {
   return apiPut('/api/workspace/config/style-sources', payload);
+}
+
+export function saveWorkspaceEditRulesConfig(payload) {
+  return apiPut('/api/workspace/config/edit-rules', payload);
 }
 
 export function resolveProjectReview(projectId, reviewId, payload) {
@@ -117,4 +128,9 @@ async function apiSend(method, path, body) {
     throw new Error(await response.text());
   }
   return response.json();
+}
+
+function withEditQuery(path, editId) {
+  if (!editId) return path;
+  return `${path}?editId=${encodeURIComponent(editId)}`;
 }

@@ -5,6 +5,11 @@ import type {
   IScriptBriefConfig as TScriptBriefConfig,
   ISegmentPlanSegment,
 } from '../protocol/schema.js';
+import {
+  getLegacyScriptRoot,
+  getProjectEditScriptRoot,
+  normalizeEditId,
+} from './edit-store.js';
 
 const CSCRIPT_BRIEF_META_PREFIX = '<!-- kairos:script-brief-meta';
 const CSCRIPT_BRIEF_META_SUFFIX = '-->';
@@ -21,12 +26,16 @@ export interface IScriptBriefSegmentTemplateInput {
 export interface IScriptBriefTemplateInput {
   projectName: string;
   createdAt?: string;
+  editId?: string;
+  editLabel?: string;
+  editRuleCategory?: string;
   styleCategory?: string;
   workflowState?: TScriptBriefWorkflowState;
   lastAgentDraftAt?: string;
   lastUserReviewAt?: string;
   lastAgentDraftFingerprint?: string;
   briefOverwriteApprovedAt?: string;
+  editRuleReferenceLabel?: string;
   styleReferenceLabel?: string;
   statusText?: string;
   goalDraft?: string[];
@@ -48,8 +57,16 @@ type TScriptBriefFingerprintInput = Pick<
   'goalDraft' | 'constraintDraft' | 'planReviewDraft' | 'segments'
 >;
 
-export function getScriptBriefPath(projectRoot: string): string {
-  return join(projectRoot, 'script', 'script-brief.md');
+export function getScriptBriefPath(projectRoot: string, editId?: string | null): string {
+  return getEditScriptBriefPath(projectRoot, editId);
+}
+
+export function getEditScriptBriefPath(projectRoot: string, editId?: string | null): string {
+  return join(getProjectEditScriptRoot(projectRoot, editId), 'script-brief.md');
+}
+
+export function getLegacyScriptBriefPath(projectRoot: string): string {
+  return join(getLegacyScriptRoot(projectRoot), 'script-brief.md');
 }
 
 export function describeScriptBriefWorkflowState(
@@ -57,9 +74,9 @@ export function describeScriptBriefWorkflowState(
 ): string {
   switch (workflowState) {
     case 'choose_style':
-      return '请先在 /script 选择风格分类。';
+      return '请先在 /script 选择剪辑规则。';
     case 'await_brief_draft':
-      return '风格已保存，请回到 Agent 同时起草 material-overview.md 和 script-brief。';
+      return '剪辑规则已保存，请回到 Agent 同时起草 material-overview.md 和 script-brief。';
     case 'review_brief':
       return '初版 overview / brief 已生成，请在 /script 审查 brief 并保存。';
     case 'ready_to_prepare':
@@ -69,12 +86,13 @@ export function describeScriptBriefWorkflowState(
     case 'script_generated':
       return '脚本已生成，可继续审稿或进入 Timeline。';
     default:
-      return '请先在 /script 选择风格分类。';
+      return '请先在 /script 选择剪辑规则。';
   }
 }
 
 export function inferScriptBriefWorkflowState(input: {
   workflowState?: string;
+  editRuleCategory?: string;
   styleCategory?: string;
   statusText?: string;
   lastAgentDraftAt?: string;
@@ -86,7 +104,7 @@ export function inferScriptBriefWorkflowState(input: {
     return input.workflowState;
   }
 
-  if (!input.styleCategory?.trim()) {
+  if (!input.editRuleCategory?.trim()) {
     return 'choose_style';
   }
 
@@ -166,6 +184,7 @@ export function buildScriptBriefTemplate(
   const createdAt = input.createdAt ?? new Date().toISOString();
   const workflowState = input.workflowState
     ?? inferScriptBriefWorkflowState({
+      editRuleCategory: input.editRuleCategory,
       styleCategory: input.styleCategory,
       statusText: input.statusText,
       lastAgentDraftAt: input.lastAgentDraftAt,
@@ -175,6 +194,9 @@ export function buildScriptBriefTemplate(
     });
   const styleReference = input.styleReferenceLabel?.trim()
     || input.styleCategory?.trim()
+    || '（可选）';
+  const editRuleReference = input.editRuleReferenceLabel?.trim()
+    || input.editRuleCategory?.trim()
     || '（待指定）';
   const statusText = input.statusText?.trim() || describeScriptBriefWorkflowState(workflowState);
   const segmentEntries = (input.segments ?? [])
@@ -211,7 +233,9 @@ export function buildScriptBriefTemplate(
     }),
     '',
     `- 创建日期：${createdAt}`,
-    `- 风格参考：${styleReference}`,
+    `- Edit ID：${normalizeEditId(input.editId)}`,
+    `- 剪辑规则：${editRuleReference}`,
+    `- 文案风格参考：${styleReference}`,
     `- 当前状态：${statusText}`,
     '',
     '## 全片目标',
@@ -242,8 +266,9 @@ export function buildScriptBriefTemplate(
 export async function writeScriptBriefTemplate(
   projectRoot: string,
   input: IScriptBriefTemplateInput,
+  editId?: string | null,
 ): Promise<string> {
-  const path = getScriptBriefPath(projectRoot);
+  const path = getEditScriptBriefPath(projectRoot, editId ?? input.editId);
   const content = buildScriptBriefTemplate(input);
   await mkdir(dirname(path), { recursive: true });
   await writeFile(path, content, 'utf-8');
@@ -253,15 +278,16 @@ export async function writeScriptBriefTemplate(
 export async function syncScriptBriefSegments(
   projectRoot: string,
   segments: Array<IScriptBriefSegmentTemplateInput | ISegmentPlanSegment>,
+  editId?: string | null,
 ): Promise<string> {
-  const path = getScriptBriefPath(projectRoot);
+  const path = getEditScriptBriefPath(projectRoot, editId);
   const existing = await loadOptionalMarkdown(path);
   if (!existing) {
     const projectName = projectRoot.split(/[\\/]/).pop() ?? 'Kairos Project';
     return writeScriptBriefTemplate(projectRoot, {
       projectName,
       segments: segments.map(normalizeSegmentTemplateInput),
-    });
+    }, editId);
   }
 
   const missing = segments
@@ -277,19 +303,23 @@ export async function syncScriptBriefSegments(
   return next;
 }
 
-export async function loadScriptBrief(projectRoot: string): Promise<string | undefined> {
-  return loadOptionalMarkdown(getScriptBriefPath(projectRoot));
+export async function loadScriptBrief(
+  projectRoot: string,
+  editId?: string | null,
+): Promise<string | undefined> {
+  return loadOptionalMarkdown(getEditScriptBriefPath(projectRoot, editId));
 }
 
 export async function seedScriptBriefDraft(
   projectRoot: string,
   input: IScriptBriefTemplateInput,
+  editId?: string | null,
 ): Promise<string> {
-  const existing = await loadScriptBrief(projectRoot);
+  const existing = await loadScriptBrief(projectRoot, editId ?? input.editId);
   if (!existing || isScriptBriefScaffold(existing)) {
-    return writeScriptBriefTemplate(projectRoot, input);
+    return writeScriptBriefTemplate(projectRoot, input, editId);
   }
-  return syncScriptBriefSegments(projectRoot, input.segments ?? []);
+  return syncScriptBriefSegments(projectRoot, input.segments ?? [], editId ?? input.editId);
 }
 
 export function extractSegmentBrief(
@@ -434,6 +464,7 @@ function isScriptBriefScaffold(content: string): boolean {
   return content.includes('当前状态：待填写脚本创作 brief')
     || content.includes('当前状态：等待用户指定风格后再开始脚本阶段')
     || content.includes('当前状态：请先在 /script 选择风格分类。')
+    || content.includes('当前状态：请先在 /script 选择剪辑规则。')
     || content.includes('这支片想表达什么？')
     || content.includes('### [segment-id] 段落标题');
 }

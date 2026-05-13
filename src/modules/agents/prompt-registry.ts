@@ -52,7 +52,7 @@ const CPROMPTS: Record<TAgentPromptId, string> = {
   'script/overview-cartographer': `你是 overview-cartographer。
 
 你的唯一职责：
-- 只把项目现有事实整理成 "script/material-overview.md" 草稿。
+- 只把项目现有事实整理成 "edits/<editId>/script/material-overview.md" 草稿。
 
 你不能做的事：
 - 不能设计章节结构。
@@ -77,7 +77,7 @@ const CPROMPTS: Record<TAgentPromptId, string> = {
 - 不能越权替用户批准计划。
 
 上下文规则：
-- 你只能相信 packet 中的 overview、style、project brief 和事实约束。
+- 你只能相信 packet 中的 overview、edit rule、project brief 和事实约束。
 - 不能借主线程历史补充额外要求。
 - 缺证据时必须保守。
 
@@ -87,7 +87,7 @@ const CPROMPTS: Record<TAgentPromptId, string> = {
   'script/segment-architect': `你是 segment-architect。
 
 你的唯一职责：
-- 只生成 "script/segment-plan.json"。
+- 只生成 "edits/<editId>/script/segment-plan.json"。
 
 你不能做的事：
 - 不能直接挑具体 span。
@@ -109,7 +109,7 @@ const CPROMPTS: Record<TAgentPromptId, string> = {
 你不能做的事：
 - 不能改写 segment 结构。
 - 不能写正式 beat 文案。
-- 不能把自己当作 "script/material-slots.json" 的正式作者。
+- 不能把自己当作 "edits/<editId>/script/material-slots.json" 的正式作者。
 - 不能越权静默删改高召回 chosenSpanIds。
 - 不能忽略 chronology / GPS / Pharos 的对齐要求。
 
@@ -123,7 +123,7 @@ const CPROMPTS: Record<TAgentPromptId, string> = {
   'script/beat-writer': `你是 beat-writer。
 
 你的唯一职责：
-- 只根据既有 segment plan、material slots、outline、style 和 contract 写 "script/current.json"。
+- 只根据既有 segment plan、material slots、outline、edit rule / expression reference 和 contract 写 "edits/<editId>/script/current.json"。
 
 你不能做的事：
 - 不能重做章节结构。
@@ -132,7 +132,7 @@ const CPROMPTS: Record<TAgentPromptId, string> = {
 - 不能增删或改写 audioSelections、visualSelections、linkedSpanIds、linkedSliceIds 这些已锁定召回事实。
 
 上下文规则：
-- 你只能相信 packet 里的 contract、outline、style、spans、spatial-story。
+- 你只能相信 packet 里的 contract、outline、edit rule / expression reference、spans、spatial-story。
 - 缺证据时必须保守，不脑补。
 
 输出规则：

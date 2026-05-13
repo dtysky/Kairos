@@ -9,7 +9,7 @@ import {
   initWorkspaceProject,
   loadRuntimeConfig,
   loadSlices,
-  loadProjectStyleByCategory,
+  loadProjectEditRuleByCategory,
   prepareWorkspaceStyleAnalysisForAgent,
   ColorPrepBlockedError,
   ProjectColorBlockedError,
@@ -25,6 +25,7 @@ import {
   getMaterialOverviewPath,
   loadOptionalMarkdown,
   loadScriptBriefConfig,
+  normalizeEditId,
   writeJson,
 } from '../store/index.js';
 import {
@@ -202,14 +203,16 @@ async function runJob(
         throw new BlockedJobError(['script requires projectId']);
       }
       const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
+      const editId = normalizeEditId(toStringValue(args.editId));
       const slices = await loadSlices(projectRoot);
       if (slices.length === 0) {
         throw new BlockedJobError(['script prep requires non-empty store/spans.json']);
       }
-      const scriptConfig = await loadScriptBriefConfig(projectRoot);
+      const scriptConfig = await loadScriptBriefConfig(projectRoot, editId);
+      const editRuleCategory = toStringValue(args.editRuleCategory) || scriptConfig.editRuleCategory;
       const styleCategory = toStringValue(args.styleCategory) || scriptConfig.styleCategory;
-      if (!styleCategory) {
-        throw new BlockedJobError(['script prep requires styleCategory in args or script-brief']);
+      if (!editRuleCategory) {
+        throw new BlockedJobError(['script prep requires editRuleCategory in args or script-brief']);
       }
       if (scriptConfig.workflowState !== 'ready_to_prepare') {
         throw new BlockedJobError([
@@ -217,18 +220,20 @@ async function runJob(
         ]);
       }
       try {
-        await loadProjectStyleByCategory(workspaceRoot, styleCategory);
+        await loadProjectEditRuleByCategory(workspaceRoot, editRuleCategory);
       } catch (error) {
         throw new BlockedJobError([error instanceof Error ? error.message : String(error)]);
       }
-      if (!(await loadOptionalMarkdown(getMaterialOverviewPath(projectRoot)))?.trim()) {
-        throw new BlockedJobError(['script prep requires existing script/material-overview.md']);
+      if (!(await loadOptionalMarkdown(getMaterialOverviewPath(projectRoot, editId)))?.trim()) {
+        throw new BlockedJobError([`script prep requires existing edits/${editId}/script/material-overview.md`]);
       }
       return {
         finalStatus: 'awaiting_agent',
         result: await prepareProjectScriptForAgent({
           projectRoot,
+          editId,
           workspaceRoot,
+          editRuleCategory,
           styleCategory,
         }),
       };
@@ -295,14 +300,16 @@ async function runJob(
         throw new BlockedJobError(['timeline requires projectId']);
       }
       const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
-      const script = await loadCurrentScript(projectRoot);
+      const editId = normalizeEditId(toStringValue(args.editId));
+      const script = await loadCurrentScript(projectRoot, editId);
       if (!script?.length) {
-        throw new BlockedJobError(['timeline requires existing script/current.json']);
+        throw new BlockedJobError([`timeline requires existing edits/${editId}/script/current.json`]);
       }
       try {
         return {
           result: await buildProjectTimeline({
             projectRoot,
+            editId,
           }),
         };
       } catch (error) {

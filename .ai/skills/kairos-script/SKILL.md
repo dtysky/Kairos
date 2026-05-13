@@ -1,7 +1,7 @@
 ---
 name: kairos-script
 description: >-
-  Phase 3: Load style profile, build an evidence-driven outline from spans, and
+  Phase 3: Load edit rules, build an evidence-driven outline from spans, and
   write beats or narration only where needed. Use when writing script, beat
   design, source-speech planning, or the user mentions script, story, or
   narrate.
@@ -9,9 +9,9 @@ description: >-
 
 # Kairos: Phase 3 — Script
 
-加载风格档案 → `/script` 自动保存风格分类 → `[subagent: overview-cartographer]` / `[subagent: brief-editor]` 生成初版 `script-brief` 与材料概览 → 用户审查并手动保存 brief → `/script` 做 deterministic prep → `[subagent: beat-writer]` 只写表达层正式脚本。
+加载剪辑规则 → `/script` 自动保存 `editRuleCategory` → `[subagent: overview-cartographer]` / `[subagent: brief-editor]` 生成初版 `script-brief` 与材料概览 → 用户审查并手动保存 brief → `/script` 做 deterministic prep → `[subagent: beat-writer]` 只写表达层正式脚本。
 
-**核心特点**：粗剪脚本以证据和素材原声为优先；旁白只是可选表达，不是默认目标。
+**核心特点**：粗剪结构由人工维护的剪辑规则 + Pharos / 素材证据驱动；风格分析产物只作为最终旁白、字幕和表达气质参考。
 
 当前正式 script prep 链路已经切成：
 - `Analyze -> Material Overview`
@@ -20,12 +20,12 @@ description: >-
 
 当前正式 script agent chain 是：
 - `[main agent]` 只负责流程路由、前置条件核对、packet 准备、用户 handoff 与 reviewer 闸门执行
-- `[subagent: overview-cartographer]` 只写 `script/material-overview.md`
+- `[subagent: overview-cartographer]` 只写 `edits/<editId>/script/material-overview.md`
 - `[subagent: brief-editor]` 只写初版 `script-brief`
-- `[subagent: segment-architect]` 只写 `script/segment-plan.json`
-- `buildMaterialSlotsDocument()` 是 `script/material-slots.json` 的唯一正式作者
+- `[subagent: segment-architect]` 只写 `edits/<editId>/script/segment-plan.json`
+- `buildMaterialSlotsDocument()` 是 `edits/<editId>/script/material-slots.json` 的唯一正式作者
 - `[subagent: route-slot-planner]` 如果保留，只能做非权威 recall 审查 / 诊断，不能改写 `chosenSpanIds`
-- `[subagent: beat-writer]` 只写 `script/current.json`
+- `[subagent: beat-writer]` 只写 `edits/<editId>/script/current.json`
 - `[subagent: script-reviewer]` 只做阶段审查，不直接生成正式稿
 
 每个 subagent 都必须：
@@ -45,16 +45,18 @@ description: >-
 
 ## 硬规则
 
-- 风格档案必须由用户人工指定；系统不能根据当前项目素材自动生成、自动挑选或自动推断风格档案。
-- `style` / `arrangement signals` 只约束顺序、阶段完整、素材角色、功能位和禁区，不默认推出总时长或段落预算。
+- 剪辑规则必须由用户人工指定；系统不能根据当前项目素材或参考成片自动生成、自动挑选或自动推断剪辑规则。
+- `editRule` / `arrangement signals` 只约束顺序、阶段完整、素材角色、功能位和禁区，不默认推出总时长或段落预算。
+- `styleCategory` 独立于 `editRuleCategory`；缺少文案 / 艺术风格参考不阻塞粗剪，只在最终旁白 / 字幕表达阶段提示。
+- 旅行类默认规则必须先用 Pharos 建构整体行程印象，再用素材分析补漏，尤其结合口播、GPS、record 与实际素材缺口。
 - `targetDurationMs` 只保留为可选审阅提示；除非用户明确给出成片时长、交付窗口或某段硬时长，否则不要在 brief、segment plan、material slots 或 beat 中自动补全。
 - script prep 与 rough-cut recall 默认高召回：优先保留过程证据、阶段证据、事件节点和可用原声，只移除空白、坏段和高重叠近重复。
 - `material-slots` 的 deterministic base draft 是高召回下限；`route-slot-planner` 不能把 base `chosenSpanIds` 静默删掉，reviewer 也必须把 silent span drops 当 blocker。
 - `beat-writer` 只允许改写表达层字段：`text`、`utterances`、`notes`、`muteSource`、`preserveNatSound`；不得增删或改写 `audioSelections`、`visualSelections`、`linkedSpanIds`。
-- `script-reviewer` 的 blocker 是推进下一阶段和落成 `script/current.json` 的硬闸门。
-- `script/current.json` 的正式落盘形状必须是 bare `IKtepScript[]`；如果 transport 返回 `{ "segments": [...] }`，只能由 stage runner 在持久化前解包，不能由 `[main agent]` 事后补写 normalize。
+- `script-reviewer` 的 blocker 是推进下一阶段和落成 `edits/<editId>/script/current.json` 的硬闸门。
+- `edits/<editId>/script/current.json` 的正式落盘形状必须是 bare `IKtepScript[]`；如果 transport 返回 `{ "segments": [...] }`，只能由 stage runner 在持久化前解包，不能由 `[main agent]` 事后补写 normalize。
 - `script-current` 每个 attempt 只允许一次正式 `beat-writer` 调用；不要先额外跑一轮 full-script writer 当“预草稿”。
-- writer / reviewer 失败必须立刻写出真实 pipeline 失败态；不能让 `script/agent-pipeline.json` 停在旧阶段的 `pending`。
+- writer / reviewer 失败必须立刻写出真实 pipeline 失败态；不能让 `edits/<editId>/script/agent-pipeline.json` 停在旧阶段的 `pending`。
 - 高召回不等于机械一 span 一 beat：outline 在交给 `beat-writer` 前，应先过滤明显设备口令 / 导航播报 / noisy-ASR 的 source-speech 锚点，并把连续非口播 evidence 聚成更少的 beat。
 - agent-host 场景下，不要把“缺 formal stage runner”翻译成“让用户提供 LLM key”；应先报出宿主 packet runner 缺失或未接通。
 
@@ -80,29 +82,32 @@ description: >-
 ## 前置条件
 
 - `store/spans.json` 存在且非空
-- 风格档案可用（以下方式任选其一）：
-  - 分类档案：`<workspaceRoot>/config/styles/{category}.md`（由 [kairos-style-analysis](../kairos-style-analysis/SKILL.md) 生成）
-  - 手写样板：`test/style-profile.md`
-  - 如果还没有 workspace 风格档案，先执行 [kairos-style-analysis](../kairos-style-analysis/SKILL.md)
+- 剪辑规则可用（以下方式任选其一）：
+  - 分类规则：`<workspaceRoot>/config/edit-rules/{category}.md`
+  - 手写规则样板：`test/edit-rule.md`
+  - 如果还没有 workspace 剪辑规则，应先人工创建或选择默认规则；不要通过风格分析自动生成
+- 文案 / 艺术风格参考可选：
+  - 分类参考：`<workspaceRoot>/config/styles/{category}.md`（由 [kairos-style-analysis](../kairos-style-analysis/SKILL.md) 生成）
+  - 缺少它不阻塞粗剪
 
 **硬性规则**：
-- 如果用户没有明确指定某个风格档案，或没有明确说这次不用风格档案，Script 阶段必须暂停并先向用户确认。
+- 如果用户没有明确指定某个剪辑规则，Script 阶段必须暂停并先向用户确认。
 - `kairos-style-analysis` 只能在用户明确要求做风格分析时执行，不能作为 Script 的隐式前置步骤自动触发。
-- 项目内只保存 `script/script-brief.json.styleCategory` 这类“本项目选哪个 workspace 风格分类”的状态；可复用风格库不再属于项目目录。
+- 项目 / edit unit 内保存 `edits/<editId>/script/script-brief.json.editRuleCategory` 与可选 `styleCategory`；可复用规则库和风格参考库不属于项目目录。
 
 ## 可用工具
 
 ```typescript
-// 从 markdown 文件加载风格档案
-loadStyleFromMarkdown(filePath: string, options?: IStyleLoadOptions): Promise<IStyleProfile>
+// 从 markdown 文件加载剪辑规则
+loadEditRuleFromMarkdown(filePath: string, category?: IEditRuleCategoryConfig): Promise<IStyleProfile>
 
-// 按分类名加载风格档案
-loadStyleByCategory(stylesDir: string, category: string): Promise<IStyleProfile | null>
+// 按分类名加载剪辑规则
+loadEditRuleByCategory(workspaceRoot: string, category: string): Promise<IStyleProfile>
 
-// 列出所有可用的风格分类
-listStyleCategories(stylesDir: string): Promise<IStyleSourceCategoryConfig[]>
+// 列出所有可用的剪辑规则分类
+listEditRuleCategories(workspaceRoot: string): Promise<IEditRuleCategoryConfig[]>
 
-// 生成风格提示词（供 agent 参考）
+// 生成规则提示词（内部暂复用 IStyleProfile 结构，供 agent 参考）
 buildStylePrompt(style: IStyleProfile): string
 
 // 脚本编辑工具（纯函数，同步）
@@ -118,44 +123,46 @@ rewriteNarration(agentRunner: IJsonPacketAgentRunner, segment: IKtepScript, inst
 
 ## 工作流程
 
-### Step 1 [Main Agent]: 加载风格档案
+### Step 1 [Main Agent]: 加载剪辑规则
 
 ```typescript
-// 方式 1：按分类加载（推荐，支持多种风格）
-const stylesDir = join(workspaceRoot, 'config/styles');
-const categories = await listStyleCategories(stylesDir);
+// 方式 1：按分类加载（推荐，支持多种剪辑规则）
+const editRulesDir = join(workspaceRoot, 'config/edit-rules');
+const categories = await listEditRuleCategories(workspaceRoot);
 // 展示可用分类给用户选择，或由用户直接指定
-const style = await loadStyleByCategory(stylesDir, 'travel-doc');
+const editRule = await loadEditRuleByCategory(workspaceRoot, 'travel-doc');
 
 // 方式 2：加载手写样板
-const style = await loadStyleFromMarkdown('test/style-profile.md');
+const editRule = await loadEditRuleFromMarkdown('test/edit-rule.md');
 ```
 
-风格档案包含：叙事结构、语言风格、情绪表达、主题价值观、风格禁区，以及可直接消费的节奏阶段、素材角色、运镜语言、功能位偏好和参数表。
-来源可以是 `kairos-style-analysis` 自动生成，也可以是人工编写。
+剪辑规则包含：叙事结构、阶段顺序、素材角色、运镜/功能位偏好、人工 gate、粗剪约束、结构禁区，以及可直接消费的参数表。
+来源必须是人工维护或项目内明确选择，不能由 `kairos-style-analysis` 自动生成。
 
-当前应优先读取的 style 信号包括：
-- `style.sections` 中关于节奏阶段、素材编排、摄影 / 运镜、镜头功能位的章节
-- `style.parameters` 中的稳定 key-value
-- `style.antiPatterns` 中的风格禁区
+当前应优先读取的 edit-rule 信号包括：
+- `editRule.sections` 中关于 Pharos 行程印象、素材补漏、阶段节奏、素材编排、摄影 / 运镜、镜头功能位的章节
+- `editRule.parameters` 中的稳定 key-value
+- `editRule.antiPatterns` 中的结构禁区
 
-不要把 style profile 只当成一篇“帮助感受语气”的长文；它现在还承担 `recall / outline / intro / montage` 的直接指导输入。
+不要让 style profile 回到结构主控位置；`recall / outline / intro / montage` 的直接指导输入是剪辑规则。
 
-这里的关键前提是：**使用哪一份风格档案，必须由用户手动指定。**
-`[main agent]` 可以列出可用档案供用户选择，但不能自行替用户决定，也不能根据当前素材自动生成一份“临时风格档案”。
+这里的关键前提是：**使用哪一份剪辑规则，必须由用户手动指定。**
+`[main agent]` 可以列出可用规则供用户选择，但不能自行替用户决定，也不能根据当前素材自动生成一份“临时剪辑规则”。
 
 当前 Console 的正式口径是：
 - workspace 风格库维护在 `/style`
-- Script 页先选择 `styleCategory`，并立即自动保存
-- 一旦 `styleCategory` 改变，当前项目应立即清空旧的 `material-overview`、brief 草稿、outline、`segment-plan`、`material-slots` 与 `script/current.json`，再回到 `await_brief_draft`
+- workspace 剪辑规则库维护在 `config/edit-rules/` 与 `config/edit-rules.json`
+- Script 页先选择 `editRuleCategory`，并立即自动保存；`styleCategory` 只是可选表达参考
+- 一旦 `editRuleCategory` 改变，当前 edit unit 应立即清空旧的 `material-overview`、brief 草稿、outline、`segment-plan`、`material-slots` 与 `edits/<editId>/script/current.json`，再回到 `await_brief_draft`
+- 单独改变 `styleCategory` 不清空粗剪结构产物
 - 关键 handoff 会通过持续可见的 workflow prompt 与 hana modal 明确提示“下一步回到 Agent / 点击准备”，而不是只靠轻量行内提示
-- `script/script-brief.json` 内部继续保存 `categoryId`
-- `script/script-brief.md` 可以显示友好名称，但不能替代内部 `categoryId`
+- `edits/<editId>/script/script-brief.json` 内部继续保存 `editRuleCategory`
+- `edits/<editId>/script/script-brief.md` 可以显示友好名称，但不能替代内部 `categoryId`
 
-**注意 `guidancePrompt`**：如果风格档案包含用户指导词（`style.guidancePrompt`），
-agent 在创作旁白时应将其作为额外的创作指导。
+**注意 `guidancePrompt`**：如果文案 / 艺术风格参考包含用户指导词（`style.guidancePrompt`），
+agent 只在最终旁白和字幕表达阶段将其作为额外创作指导。
 
-### Step 2 [Main Agent]: 先让用户在 `/script` 指定风格，再推进初版 brief
+### Step 2 [Main Agent]: 先让用户在 `/script` 指定剪辑规则，再推进初版 brief
 
 当前正式口径分两层：
 
@@ -164,30 +171,30 @@ agent 在创作旁白时应将其作为额外的创作指导。
 
 正式顺序固定为：
 
-1. 用户在 `/script` 选择 `styleCategory`，选择后立即自动保存
-2. `[main agent]` 准备 packet，并调度 `[subagent: overview-cartographer]` / `[subagent: brief-editor]` 读取 style profile、spans、chronology、asset reports、Pharos context，生成 `script/material-overview.md` 与初版 `script-brief`
+1. 用户在 `/script` 选择 `editRuleCategory`，选择后立即自动保存
+2. `[main agent]` 准备 packet，并调度 `[subagent: overview-cartographer]` / `[subagent: brief-editor]` 读取 edit rule、spans、chronology、asset reports、Pharos context，生成 `edits/<editId>/script/material-overview.md` 与初版 `script-brief`
 3. 用户回到 `/script` 审查并手动保存 brief
 4. `/script` 会用更显眼的 workflow prompt / modal 提示用户点击 `准备给 Agent`
-5. Console 校验前置条件并刷新 `script/material-overview.facts.json` 与 `analysis/material-bundles.json`
+5. Console 校验前置条件并刷新 `edits/<editId>/script/material-overview.facts.json` 与 `analysis/material-bundles.json`
 6. `[main agent]` 再继续推进 clean-context staged pipeline：
-   - 先写 `script/spatial-story.json` / `script/spatial-story.md`
-   - 再写 `script/agent-contract.json`
-   - 然后按 packet 推进 `segment-plan -> material-slots -> script/current.json`
-   - 每个阶段都要经过 `script-reviewer`，review 结果写到 `script/reviews/{stage}.json`
+   - 先写 `edits/<editId>/script/spatial-story.json` / `spatial-story.md`
+   - 再写 `edits/<editId>/script/agent-contract.json`
+   - 然后按 packet 推进 `segment-plan -> material-slots -> current.json`
+   - 每个阶段都要经过 `script-reviewer`，review 结果写到 `edits/<editId>/script/reviews/{stage}.json`
 
 Console prep 不允许做的事：
 - 自动起草初版 `script-brief`
-- 自动写 `script/current.json`
+- 自动写 `edits/<editId>/script/current.json`
 - 自动批准 `segment plan`
 - 自动生成并推进 `outline`
 
 #### [Subagent: overview-cartographer]
 
-写 `script/material-overview.md` 时，应根据：
+写 `edits/<editId>/script/material-overview.md` 时，应根据：
 - `analysis/asset-reports/*.json`
 - `media/chronology.json`
 - `store/spans.json`
-- 风格档案
+- 剪辑规则
 
 默认按高召回整理材料：
 - 优先保留过程证据、阶段证据、事件节点和可用原声
@@ -200,9 +207,9 @@ Console prep 不允许做的事：
 - `analysis/asset-reports/*.json`
 - `media/chronology.json`
 - `store/spans.json`
-- 风格档案
+- 剪辑规则
 
-起草 brief 时，不要只总结“语气是什么”，还应把当前选中的风格分类归纳成更可执行的拍法提示，例如：
+起草 brief 时，不要只总结“语气是什么”，还应把当前选中的剪辑规则归纳成更可执行的结构提示，例如：
 - 片头 / montage 应该按哪些节奏阶段推进
 - `aerial / timelapse / drive / talking-head / broll / nat sound` 各自在当前风格里承担什么角色
 - 哪些镜头语法更适合 `开场建场 / 地理重置 / 情绪释放`
@@ -213,7 +220,7 @@ Console prep 不允许做的事：
 补全并审阅一份集中式：
 
 ```text
-script/script-brief.md
+edits/<editId>/script/script-brief.md
 ```
 
 这份 brief 至少要包含：
@@ -231,10 +238,10 @@ script/script-brief.md
 - 覆盖确认必须在 UI 中通过 hana modal 显式完成；确认后，下一次 `[subagent: brief-editor]` 才允许覆盖
 
 **重要规则**：
-- `material overview` 采用文档型输入，结构化事实底稿写入 `script/material-overview.facts.json`。
-- `segment plan`、`material slots`、`outline` 和 `script/current.json` 都应视为 subagent 阶段产物，不再由 Console prep 自动生成。
-- `script/script-brief.json.workflowState` 是脚本阶段的正式流程真值；`[main agent]` 应根据它判断当前该做“提示选风格 / 起草 brief / 等待用户审查 / 写正式脚本”中的哪一步。
-- `script/spatial-story.json` / `script/agent-contract.json` / `script/agent-packets/` / `script/reviews/` / `script/agent-pipeline.json` 都属于 Script 内部 orchestration 资产，不改变 Timeline / Export 正式输入协议。
+- `material overview` 采用文档型输入，结构化事实底稿写入 `edits/<editId>/script/material-overview.facts.json`。
+- `segment plan`、`material slots`、`outline` 和 `edits/<editId>/script/current.json` 都应视为 subagent 阶段产物，不再由 Console prep 自动生成。
+- `edits/<editId>/script/script-brief.json.workflowState` 是脚本阶段的正式流程真值；`[main agent]` 应根据它判断当前该做“提示选剪辑规则 / 起草 brief / 等待用户审查 / 写正式脚本”中的哪一步。
+- `edits/<editId>/script/spatial-story.json` / `agent-contract.json` / `agent-packets/` / `reviews/` / `agent-pipeline.json` 都属于 Script 内部 orchestration 资产，不改变 Timeline / Export 正式输入协议。
 - 首轮 stage packet 默认不应携带 previous draft；只有 reviewer 返工后，writer 才读取 revision brief 与上一轮草稿。
 
 ### Step 3 [Main Agent + Subagents]: 生成 Segment Plan 与 Material Slots
@@ -251,26 +258,26 @@ const spans = await readJson('store/spans.json', z.array(IKtepSlice));
 - `material-bundles` 只用作 `materialPatterns` 驱动的粗索引层，但它现在应覆盖项目内全部有效 spans，而不是被提前缩成 shortlist
 - `segment plan` 只保留段落本体：`id`、`title`、`intent`、可选 `targetDurationMs`、可选 `roleHint` / `notes`
 - `material slots` 只保留运行时薄检索信息：`id`、`query`、`requirement`、`targetBundles`、`chosenSpanIds`
-- 当前 Script 执行层还会基于现有 style profile 解析一个内部 `ResolvedArrangementSignals`：
+- 当前 Script 执行层还会基于现有剪辑规则解析一个内部 `ResolvedArrangementSignals`：
   - 它不是新的公开协议
-  - 它只用于判断当前风格主轴更偏时间推进、空间推进、情感推进还是结果回看
-  - 如果 style 明确强调 `chronology / route continuity / continuous process`，顺时序会成为正式执行约束，而不是只有 prompt 偏好
+  - 它只用于判断当前剪辑主轴更偏时间推进、空间推进、情感推进还是结果回看
+  - 如果 edit rule 明确强调 `chronology / route continuity / continuous process`，顺时序会成为正式执行约束，而不是只有 prompt 偏好
 
 #### [Subagent: segment-architect]
 
-生成 `segment plan` 时，优先用风格档案里的结构化提示，而不是只凭通用直觉：
+生成 `segment plan` 时，优先用剪辑规则里的结构化提示，而不是只凭通用直觉：
 
 - `节奏阶段一 / 二 / 三 / 四...` 决定段落和 beat 的推进方式
 - `chapterPrograms[]` 里的 `materialRoles`、`promotionSignals`、`transitionBias` 决定段落如何长出来
 - `高频运镜 / 低频运镜` 决定镜头语言偏好
 - `开场建场镜头语法 / 地理重置镜头语法 / 情绪释放镜头语法` 决定这些功能位分别该用什么画面组织
 - `素材禁区 / 镜头禁区 / antiPatterns` 决定哪些候选就算“好看”也不该进当前风格
-- 当当前风格主轴明显偏时间 / 路程推进时：
+- 当当前剪辑规则主轴明显偏时间 / 路程推进时：
   - 先按 `capturedAt + chronology + Pharos trip/day/shot` 建立单调递增的时间带
   - 再把段落分配到各自合法时间带里
   - 不允许后段跨窗回捞前段素材来填空
 - `targetDurationMs` 现在只是一种可选审阅提示，不再是粗剪默认预算：
-  - 不要从 style 平均章节时长、材料容量或模板习惯自动补一个预算
+  - 不要从规则样板、材料容量或模板习惯自动补一个预算
   - 先把关键过程视频、可保留原声、结果照片组、事件节点尽量枚举出来
   - 只有用户明确要求某段时长时，才把它写成显式 `targetDurationMs`
 
@@ -288,7 +295,7 @@ const spans = await readJson('store/spans.json', z.array(IKtepSlice));
   - 有信息增量的 span 默认都应被标记为“应保留”
   - 只应去掉空白、坏段和高重叠近重复
 - deterministic base draft 里的 `chosenSpanIds` 默认继续保留；除非某个 span 已被别的 slot 合法承接，或明确属于空白 / 坏段 / 高重叠近重复，否则不要建议静默删除
-- 对时间主轴强的风格，二次过滤必须服从时间带窗口；局部打分只能在当前窗口里择优，不能跨窗乱拿素材
+- 对时间主轴强的剪辑规则，二次过滤必须服从时间带窗口；局部打分只能在当前窗口里择优，不能跨窗乱拿素材
 - 关键过程视频如果承载不可替代的时间推进、事件推进、人物关系推进或有效原声，应保留为独立 beat，不要让它被更泛的 summary 段或静态成果材料吞掉
 
 ### Step 3.5 [Subagent: script-reviewer]: 阶段审查
@@ -296,21 +303,21 @@ const spans = await readJson('store/spans.json', z.array(IKtepSlice));
 每个阶段审查都至少检查：
 
 - stage 产物是否只使用了本阶段 packet 和允许的输入
-- 是否错误地把 style 当成默认总时长或段落预算模板
+- 是否错误地把剪辑规则当成默认总时长或段落预算模板
 - 是否保住了高召回目标，没有把过程证据、阶段证据、事件节点或可用原声提前压缩掉
-- 对时间 / 路程主轴风格，是否遵守 chronology 窗口与阶段顺序
+- 对时间 / 路程主轴规则，是否遵守 chronology 窗口与阶段顺序
 - 如存在 blocker，必须写入 review 并阻止推进下一阶段；不要带着 blocker 继续落稿
 
 ### Step 4 [Subagent: beat-writer]: 编排 beat，并只在必要时写旁白
 
-**这是 beat-writer 把风格约束落到证据上的核心环节。**
+**这是 beat-writer 把剪辑规则与可选表达参考落到证据上的核心环节。**
 
 beat-writer 需要：
 
-1. 阅读完整风格档案（`style.rawReference` 或 `buildStylePrompt(style)`），并优先提取其中的 sections / parameters / antiPatterns
+1. 阅读完整剪辑规则（`editRule.rawReference` 或 `buildStylePrompt(editRule)`），并优先提取其中的 sections / parameters / antiPatterns
 2. 理解叙事骨架的每个段落（`buildOutlinePrompt(outline)`）
 3. 查看每个段落关联的切片证据（scene descriptions, ASR text, place hints）
-4. 仅在锁定的 recall 事实之上组织 beat 表达；只有在素材没有可用原声时才补写必要旁白，且严格遵循风格档案
+4. 仅在锁定的 recall 事实之上组织 beat 表达；只有在素材没有可用原声时才补写必要旁白，并只把可选 style reference 用于语气和表达禁区
 
 beat-writer 不允许做的事：
 
@@ -319,7 +326,7 @@ beat-writer 不允许做的事：
 - 不要为了时长、文风或“更顺”去回退高召回证据
 - 不要把 `speedCandidate`、source window 或 chronology guard 当作可自由改写的叙事装饰
 
-对于 `intro / montage / transition` 这类高度依赖镜头组织的段落，优先按下面顺序消费风格信息：
+对于 `intro / montage / transition` 这类高度依赖镜头组织的段落，优先按下面顺序消费剪辑规则信息：
 
 1. 先看节奏阶段与功能位参数
 2. 再看素材角色参数
@@ -382,7 +389,7 @@ const scriptSegment: IKtepScript = {
 ### Step 5 [Subagent: beat-writer]: 存储
 
 ```typescript
-await writeJson(join(projectRoot, 'script/current.json'), scriptSegments);
+await writeJson(join(projectRoot, 'edits', editId, 'script', 'current.json'), scriptSegments);
 ```
 
 这里的正式作者是 `[subagent: beat-writer]`。
@@ -405,20 +412,20 @@ const trimmed = removeSegment(segments, segId);
 
 | 文件 | 格式 | 内容 |
 |------|------|------|
-| `script/current.json` | `IKtepScript[]` | 完整脚本（含 beat / 必要旁白） |
+| `edits/<editId>/script/current.json` | `IKtepScript[]` | 完整脚本（含 beat / 必要旁白） |
 
 ## 创作指南（适用于 `[subagent: brief-editor]`、`[subagent: segment-architect]`、`[subagent: route-slot-planner]`、`[subagent: beat-writer]`）
 
 `[subagent: brief-editor]`、`[subagent: segment-architect]`、`[subagent: route-slot-planner]`、`[subagent: beat-writer]` 写 script / beat 相关产物时应遵守：
 
-1. **人称/语气**：严格按照风格档案中的设定（第一人称？平实？感性？）
+1. **人称/语气**：有文案 / 艺术风格参考时按其设定；没有时保持克制、证据优先
 2. **旁白克制**：优先使用有效原声；只有无可用原声的视频才补必要旁白，照片不要补写旁白
-3. **风格禁区**：风格档案中列出的禁止表达方式绝对不用
+3. **表达禁区**：剪辑规则的结构禁区必须遵守；style reference 的表达禁区只作用于旁白 / 字幕措辞
 4. **证据驱动**：旁白应基于切片证据（场景描述、地点线索、ASR 文本），不要凭空编造，也不要私改 locked recall facts
 5. **节奏**：开篇引人入胜，主体循序渐进，结尾收束有力，但不要为了时长预算硬做压缩或填充
 6. **原声判断**：不要把“素材里有人说话”和“这段就该静音旁白”画等号；只要原话本身有价值，粗剪默认应保留
 7. **照片处理**：照片默认是一秒静默信息点；只有显式 `holdMs` 才应拉长
-8. **直接消费 style 参数**：优先使用风格档案里已经明确写出的节奏阶段、素材角色、运镜语言、功能位和禁区，不要把这些又退回成纯主观猜测
+8. **直接消费 edit-rule 参数**：优先使用剪辑规则里已经明确写出的阶段顺序、素材角色、运镜语言、功能位和禁区，不要把这些又退回成纯主观猜测
 
 ## 备选路径
 

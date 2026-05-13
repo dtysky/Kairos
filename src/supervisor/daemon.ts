@@ -17,8 +17,10 @@ import {
   loadColorTransformPresetsConfig,
   loadIngestRoots,
   loadRuntimeConfig,
+  loadEditRulesConfig,
   listWorkspaceProjects,
   loadManualItineraryConfig,
+  normalizeEditId,
   loadProjectBriefConfig,
   loadReviewQueue,
   loadScriptBriefConfig,
@@ -29,6 +31,7 @@ import {
   saveManualItineraryConfig,
   saveProjectBriefConfig,
   saveScriptBriefConfig,
+  saveEditRulesConfig,
   saveStyleSourcesConfig,
   syncWorkspaceProjectBrief,
   touchProjectUpdatedAt,
@@ -185,10 +188,10 @@ async function routeRequest(
         { jobType: 'ingest', executionMode: 'deterministic', supported: true },
         { jobType: 'gps-refresh', executionMode: 'deterministic', supported: true },
         { jobType: 'analyze', executionMode: 'deterministic', supported: true },
-        { jobType: 'style-analysis', executionMode: 'deterministic', supported: true, note: 'runs deterministic prep and then hands off to Agent for the final style profile' },
+        { jobType: 'style-analysis', executionMode: 'deterministic', supported: true, note: 'runs deterministic prep and then hands off to Agent for final text/art-style reference; does not generate edit rules' },
         { jobType: 'color', executionMode: 'deterministic', supported: true, note: 'supports prepare_root / sync_groups / execute_root / validate_batch / prepare_all_roots / export_all_roots through the same-machine vendored Resolve backend; clip repair now follows the canonical Gyro -> Dehaze -> User1 -> User2 -> NR layout, and execute/export-all require explicit overwrite confirmation before replacing existing root outputs' },
-        { jobType: 'script', executionMode: 'deterministic', supported: true, note: 'runs only after reviewed brief is saved; advances ready_to_prepare -> ready_for_agent; final script remains agent-authored' },
-        { jobType: 'timeline', executionMode: 'deterministic', supported: true, note: 'builds rough-cut-base -> segment-cut review chain; requires a configured host agent packet runner' },
+        { jobType: 'script', executionMode: 'deterministic', supported: true, note: 'runs per editId only after reviewed brief and editRuleCategory are saved; advances ready_to_prepare -> ready_for_agent; final script remains agent-authored' },
+        { jobType: 'timeline', executionMode: 'deterministic', supported: true, note: 'builds per-edit rough-cut-base -> segment-cut review chain; requires a configured host agent packet runner' },
         { jobType: 'export-jianying', executionMode: 'deterministic', supported: false },
         { jobType: 'export-resolve', executionMode: 'agent', supported: false },
       ],
@@ -200,6 +203,7 @@ async function routeRequest(
   if (configMatch && method === 'GET') {
     const projectId = decodeURIComponent(configMatch[1]!);
     const projectRoot = join(options.workspaceRoot, 'projects', projectId);
+    const editId = normalizeEditId(url.searchParams.get('editId'));
     const [
       projectBrief,
       manualItinerary,
@@ -215,7 +219,7 @@ async function routeRequest(
     ] = await Promise.all([
       loadProjectBriefConfig(projectRoot),
       loadManualItineraryConfig(projectRoot),
-      loadScriptBriefConfig(projectRoot),
+      loadScriptBriefConfig(projectRoot, editId),
       loadIngestRoots(projectRoot),
       loadAssets(projectRoot),
       loadChronology(projectRoot),
@@ -339,6 +343,11 @@ async function routeRequest(
     return;
   }
 
+  if (pathname === '/api/workspace/config/edit-rules' && method === 'GET') {
+    sendJson(response, 200, await loadEditRulesConfig(options.workspaceRoot));
+    return;
+  }
+
   const projectBriefMatch = pathname.match(/^\/api\/projects\/([^/]+)\/config\/project-brief$/u);
   if (projectBriefMatch && method === 'PUT') {
     const projectId = decodeURIComponent(projectBriefMatch[1]!);
@@ -390,13 +399,20 @@ async function routeRequest(
     const projectId = decodeURIComponent(scriptBriefMatch[1]!);
     const projectRoot = join(options.workspaceRoot, 'projects', projectId);
     const payload = await readJsonBody(request);
-    sendJson(response, 200, await saveScriptBriefConfig(projectRoot, payload));
+    const editId = normalizeEditId(url.searchParams.get('editId') ?? payload?.editId);
+    sendJson(response, 200, await saveScriptBriefConfig(projectRoot, payload, editId));
     return;
   }
 
   if (pathname === '/api/workspace/config/style-sources' && method === 'PUT') {
     const payload = await readJsonBody(request);
     sendJson(response, 200, await saveStyleSourcesConfig(options.workspaceRoot, payload));
+    return;
+  }
+
+  if (pathname === '/api/workspace/config/edit-rules' && method === 'PUT') {
+    const payload = await readJsonBody(request);
+    sendJson(response, 200, await saveEditRulesConfig(options.workspaceRoot, payload));
     return;
   }
 
@@ -577,23 +593,26 @@ async function startJob(
 
   if (payload.projectId) {
     const projectRoot = join(workspaceRoot, 'projects', payload.projectId);
+    const editId = normalizeEditId(typeof payload.args?.editId === 'string' ? payload.args.editId : undefined);
     await writeFileSafe(configSnapshotPath, JSON.stringify({
       projectBrief: await loadProjectBriefConfig(projectRoot).catch(() => null),
       ingestRoots: await loadIngestRoots(projectRoot).catch(() => null),
       colorCurrent: await loadColorCurrent(projectRoot).catch(() => null),
       colorGroups: await loadColorGroupsSnapshots(projectRoot).catch(() => null),
       manualItinerary: await loadManualItineraryConfig(projectRoot).catch(() => null),
-      scriptBrief: await loadScriptBriefConfig(projectRoot).catch(() => null),
+      scriptBrief: await loadScriptBriefConfig(projectRoot, editId).catch(() => null),
       pharosContext: await loadOrBuildProjectPharosContext({
         projectRoot,
         includedTripIds: (await loadProjectBriefConfig(projectRoot).catch(() => null))?.pharos?.includedTripIds ?? [],
       }).catch(() => null),
       workspaceStyleSources: await loadStyleSourcesConfig(workspaceRoot).catch(() => null),
+      workspaceEditRules: await loadEditRulesConfig(workspaceRoot).catch(() => null),
       workspaceColorTransformPresets: await loadColorTransformPresetsConfig(workspaceRoot).catch(() => null),
     }, null, 2));
   } else if (payload.jobType === 'style-analysis') {
     await writeFileSafe(configSnapshotPath, JSON.stringify({
       workspaceStyleSources: await loadStyleSourcesConfig(workspaceRoot).catch(() => null),
+      workspaceEditRules: await loadEditRulesConfig(workspaceRoot).catch(() => null),
     }, null, 2));
   }
 

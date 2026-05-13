@@ -1761,6 +1761,9 @@ export type EScriptBriefWorkflowState = z.infer<typeof EScriptBriefWorkflowState
 export const IScriptBriefConfig = z.object({
   projectName: z.string(),
   createdAt: z.string().optional(),
+  editId: z.string().optional(),
+  editLabel: z.string().optional(),
+  editRuleCategory: z.string().optional(),
   styleCategory: z.string().optional(),
   workflowState: EScriptBriefWorkflowState.default('choose_style'),
   lastAgentDraftAt: z.string().optional(),
@@ -1774,6 +1777,21 @@ export const IScriptBriefConfig = z.object({
   segments: z.array(IScriptBriefSegmentConfig).default([]),
 });
 export type IScriptBriefConfig = z.infer<typeof IScriptBriefConfig>;
+
+export const IEditRuleCategoryConfig = z.object({
+  categoryId: z.string(),
+  displayName: z.string(),
+  description: z.string().optional(),
+  profilePath: z.string().optional(),
+  notes: z.array(z.string()).default([]),
+});
+export type IEditRuleCategoryConfig = z.infer<typeof IEditRuleCategoryConfig>;
+
+export const IEditRulesConfig = z.object({
+  defaultCategory: z.string().optional(),
+  categories: z.array(IEditRuleCategoryConfig).default([]),
+});
+export type IEditRulesConfig = z.infer<typeof IEditRulesConfig>;
 
 export const EStyleSourceType = z.enum(['file', 'directory']);
 export type EStyleSourceType = z.infer<typeof EStyleSourceType>;

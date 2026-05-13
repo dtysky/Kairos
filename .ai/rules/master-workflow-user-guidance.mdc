@@ -29,7 +29,7 @@ alwaysApply: true
 
 Kairos 的标准顺序是：
 
-1. 可选的 `Style Analysis`
+1. `Edit Rules` + 可选的 `Style Analysis`
 2. `Project Init`
 3. `Ingest`
 4. `Analyze`
@@ -43,14 +43,14 @@ Kairos 的标准顺序是：
 - 第二步让用户维护 `config/project-brief.md`，把素材根目录和说明写进去
 - 第三步执行 Ingest，把素材扫描进 `store/assets.json`
 - 第四步执行 Analyze，生成 `store/slices.json`、`analysis/asset-reports/*.json`、`media/chronology.json`
-- 第五步在用户明确指定 **workspace 风格分类**（或明确说明这次不用风格档案）后进入 Script：
-  - 先在 `/script` 选择风格分类并自动保存
+- 第五步在用户明确指定 **workspace 剪辑规则分类** 后进入 Script：
+  - 先在 `/script` 选择 `editRuleCategory` 并自动保存；`styleCategory` 只是可选文案 / 艺术风格参考
   - 再由 Agent 生成初版 `script-brief`
   - 用户回到 `/script` 审查并手动保存 brief
   - `/script` 会用显眼的 workflow prompt / modal 提示“下一步回到 Agent”或“点击准备给 Agent”
   - 再点击 `准备给 Agent`
-  - 最后回到 Agent 生成 `script/current.json`
-- 第六步基于脚本和素材进入 `Timeline`：先产出 `timeline/rough-cut-base.json`，再经过 `segment-cut-refiner -> segment-cut-reviewer`，最后才落正式 `timeline/current.json`
+  - 最后回到 Agent 生成 `edits/<editId>/script/current.json`
+- 第六步基于脚本和素材进入 `Timeline`：先产出 `edits/<editId>/timeline/rough-cut-base.json`，再经过 `segment-cut-refiner -> segment-cut-reviewer`，最后才落正式 `edits/<editId>/timeline/current.json`
 - 第七步在目标 NLE 和导出目录明确后执行 Export
 
 ## 用户真正该编辑的入口
@@ -59,15 +59,16 @@ Kairos 的标准顺序是：
 
 - `config/project-brief.md`
 - `config/manual-itinerary.md`
-- `<workspaceRoot>/config/styles/{category}.md` 或用户明确指定的风格档案
-- `script/script-brief.md`
+- `<workspaceRoot>/config/edit-rules/{category}.md` 或用户明确指定的剪辑规则
+- `<workspaceRoot>/config/styles/{category}.md` 或用户明确指定的文案 / 艺术风格参考
+- `edits/<editId>/script/script-brief.md`
 
 默认不要把这些文件当成人类主编辑入口：
 
 - `config/ingest-roots.json`
 - `store/assets.json`
 - `store/slices.json`
-- `timeline/current.json`
+- `edits/<editId>/timeline/current.json`
 
 ## 当前阶段判断
 
@@ -76,9 +77,9 @@ Kairos 的标准顺序是：
 - 没有 `store/project.json` / `store/manifest.json`：先做 `Project Init`
 - 有项目骨架但没有 `store/assets.json`：先做 `Ingest`
 - 有 `store/assets.json` 但没有 `store/slices.json`：先做 `Analyze`
-- 有 `store/slices.json` 但没有 `script/current.json`：先做 `Script`
-- 有 `script/current.json` 但没有 `timeline/current.json`：先做 `Timeline`（内部会先跑 `rough-cut-base -> segment-cut-refiner -> segment-cut-reviewer`）
-- 有 `timeline/current.json`：进入 `Export` 或迭代修改
+- 有 `store/slices.json` 但没有 `edits/main/script/current.json`（或指定 editId 的 script current）：先做 `Script`
+- 有 `edits/<editId>/script/current.json` 但没有 `edits/<editId>/timeline/current.json`：先做 `Timeline`（内部会先跑 `rough-cut-base -> segment-cut-refiner -> segment-cut-reviewer`）
+- 有 `edits/<editId>/timeline/current.json`：进入 `Export`、Resolve timeline 交互修改或迭代修改
 
 如果用户是追加素材，不要回到全新项目口径；应按：
 
@@ -94,7 +95,7 @@ Kairos 的标准顺序是：
 - 在 `Analyze` 前，必须先确认 ML server 可用；不可静默退化成无 ML 分析
 - 在 `Analyze`、`Style Analysis` 或任何可能使用 ML 的正式流程结束后，必须确认 Kairos 官方 ML service 已回收到 `stopped`
 - 如果 ingest 因素材时间冲突被阻塞，必须先把用户引导到 `/ingest-gps` 的“素材时间校正”卡片；默认先填 `正确时间 / 时区`，只有自动补日期失败时才要求再补 `正确日期`
-- 在 `Script` 前，如果用户没有明确指定 workspace 风格分类或明确说这次不用风格档案，必须停下确认
+- 在 `Script` 前，如果用户没有明确指定 workspace 剪辑规则分类，必须停下确认
 - 在 `Script` 阶段，不要把 Console 的 `script` job 描述成“后台自动写稿”；它当前只负责 deterministic prep，不负责起草初版 brief，也不负责写正式脚本
 - 如果用户已经修改过当前 brief，又想回到“重生成初版 brief”，必须把用户引导回 `/script` 走覆盖确认；Agent 不能静默覆盖
 - 在 `Export` 前，必须先确认目标 NLE 和最终输出目录；目标不明确时不能直接写出草稿

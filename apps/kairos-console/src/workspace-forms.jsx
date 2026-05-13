@@ -579,9 +579,11 @@ export function CaptureTimeOverridesEditor({ config, setConfig, onSave, busy }) 
 
 export function ScriptBriefEditor({
   config,
+  editRules,
   styleSources,
   setConfig,
   onSave,
+  onEditRuleCategoryChange,
   onStyleCategoryChange,
   onRequestRegenerate,
   busy,
@@ -590,39 +592,64 @@ export function ScriptBriefEditor({
 }) {
   const [showOverwriteModal, setShowOverwriteModal] = React.useState(false);
   if (!config) return null;
-  const categories = styleSources?.categories || [];
+  const ruleCategories = editRules?.categories || [];
+  const styleCategories = styleSources?.categories || [];
   const workflowState = config.workflowState || 'choose_style';
+  const hasValidEditRuleCategory = !config.editRuleCategory
+    || ruleCategories.some(category => category.categoryId === config.editRuleCategory);
   const hasValidStyleCategory = !config.styleCategory
-    || categories.some(category => category.categoryId === config.styleCategory);
+    || styleCategories.some(category => category.categoryId === config.styleCategory);
   const canEditBrief = workflowState !== 'choose_style' && workflowState !== 'await_brief_draft';
   const canRequestRegenerate = workflowState === 'review_brief' || workflowState === 'ready_to_prepare';
   const currentFingerprint = computeScriptBriefFingerprint(config);
   const userModifiedBrief = Boolean(
     config.lastAgentDraftFingerprint && currentFingerprint !== config.lastAgentDraftFingerprint,
   );
-  const categoryOptions = [
+  const ruleCategoryOptions = [
     { value: '', label: '（待指定）' },
-    ...categories.map(category => ({
+    ...ruleCategories.map(category => ({
+      value: category.categoryId,
+      label: category.displayName,
+    })),
+  ];
+  if (config.editRuleCategory && !hasValidEditRuleCategory) {
+    ruleCategoryOptions.unshift({
+      value: config.editRuleCategory,
+      label: `当前规则已失效：${config.editRuleCategory}`,
+    });
+  }
+  const styleCategoryOptions = [
+    { value: '', label: '（可选）' },
+    ...styleCategories.map(category => ({
       value: category.categoryId,
       label: category.displayName,
     })),
   ];
   if (config.styleCategory && !hasValidStyleCategory) {
-    categoryOptions.unshift({
+    styleCategoryOptions.unshift({
       value: config.styleCategory,
       label: `当前分类已失效：${config.styleCategory}`,
     });
   }
 
-  function handleStyleCategoryChange(value) {
-    const nextStyleCategory = value || undefined;
-    const nextWorkflowState = nextStyleCategory ? 'await_brief_draft' : 'choose_style';
+  function handleEditRuleCategoryChange(value) {
+    const nextEditRuleCategory = value || undefined;
+    const nextWorkflowState = nextEditRuleCategory ? 'await_brief_draft' : 'choose_style';
     setConfig(current => ({
       ...current,
-      styleCategory: nextStyleCategory,
+      editRuleCategory: nextEditRuleCategory,
       workflowState: nextWorkflowState,
       briefOverwriteApprovedAt: undefined,
       statusText: describeScriptWorkflowState(nextWorkflowState),
+    }));
+    onEditRuleCategoryChange?.(nextEditRuleCategory);
+  }
+
+  function handleStyleCategoryChange(value) {
+    const nextStyleCategory = value || undefined;
+    setConfig(current => ({
+      ...current,
+      styleCategory: nextStyleCategory,
     }));
     onStyleCategoryChange?.(nextStyleCategory);
   }
@@ -665,27 +692,37 @@ export function ScriptBriefEditor({
           readOnly
         />
         <SelectField
-          label="风格分类"
+          label="剪辑规则"
+          value={config.editRuleCategory || ''}
+          onChange={handleEditRuleCategoryChange}
+          options={ruleCategoryOptions}
+          disabled={autoSaveBusy || ruleCategoryOptions.length <= 1}
+        />
+        <SelectField
+          label="文案风格参考"
           value={config.styleCategory || ''}
           onChange={handleStyleCategoryChange}
-          options={categoryOptions}
-          disabled={autoSaveBusy || categoryOptions.length <= 1}
-        />
-        <Field
-          label="状态"
-          value={config.statusText || ''}
-          onChange={() => {}}
-          readOnly
+          options={styleCategoryOptions}
+          disabled={autoSaveBusy || styleCategoryOptions.length <= 1}
         />
       </div>
+      <Field
+        label="状态"
+        value={config.statusText || ''}
+        onChange={() => {}}
+        readOnly
+      />
       {autoSaveBusy ? (
-        <p className="field-help">正在自动保存风格分类…</p>
+        <p className="field-help">正在自动保存分类选择…</p>
       ) : null}
       {!autoSaveBusy ? (
-        <p className="field-help">风格分类会自动保存；下面的 brief 内容仍需要手动点击“保存”。</p>
+        <p className="field-help">剪辑规则会自动保存并影响粗剪结构；文案风格参考只影响最终旁白 / 字幕表达。下面的 brief 内容仍需要手动点击“保存”。</p>
+      ) : null}
+      {config.editRuleCategory && !hasValidEditRuleCategory ? (
+        <p className="field-help field-help-error">当前剪辑规则已失效，请从 workspace 剪辑规则库重新选择。</p>
       ) : null}
       {config.styleCategory && !hasValidStyleCategory ? (
-        <p className="field-help field-help-error">当前风格分类已失效，请从 workspace 风格库重新选择。</p>
+        <p className="field-help field-help-error">当前文案风格参考已失效；粗剪可继续，最终旁白 / 字幕阶段需要重新选择。</p>
       ) : null}
       {userModifiedBrief && canRequestRegenerate ? (
         <p className="field-help field-help-error">当前 brief 与最近一次 Agent 初稿不同。重新生成 overview / brief 会覆盖这些修改。</p>
@@ -3549,10 +3586,10 @@ function hashScriptBriefFingerprintPayload(value) {
 }
 
 const SCRIPT_WORKFLOW_STATUS_TEXT = {
-  choose_style: '请先在 /script 选择风格分类。',
-  await_brief_draft: '风格已保存，请回到 Agent 生成 material-overview.md 和初版 brief。',
+  choose_style: '请先在 /script 选择剪辑规则。',
+  await_brief_draft: '剪辑规则已保存，请回到 Agent 生成 material-overview.md 和初版 brief。',
   review_brief: '初版 overview / brief 已生成，请在 /script 审查并保存。',
   ready_to_prepare: 'brief 已保存，请点击 准备给 Agent。',
-  ready_for_agent: '事实刷新与 bundle 索引已完成，请回到 Agent 继续生成 segment-plan、material-slots 与 script/current.json。',
+  ready_for_agent: '事实刷新与 bundle 索引已完成，请回到 Agent 继续生成当前 edit unit 的 segment-plan、material-slots 与 script/current。',
   script_generated: '脚本已生成，可继续审稿或进入 Timeline。',
 };

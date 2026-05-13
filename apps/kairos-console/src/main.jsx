@@ -14,6 +14,7 @@ import {
   fetchProjectProgress,
   fetchProjectReviews,
   fetchStyleMonitor,
+  fetchWorkspaceEditRulesConfig,
   fetchWorkspaceStyleConfig,
   fetchWorkspaceStatus,
   registerProjectColorDrpSnapshot,
@@ -48,6 +49,7 @@ function AppShell() {
   const [colorArchive, setColorArchive] = useState({ roots: [] });
   const [savedConfig, setSavedConfig] = useState(null);
   const [styleSources, setStyleSources] = useState(null);
+  const [editRules, setEditRules] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [projectProgress, setProjectProgress] = useState(null);
   const [busy, setBusy] = useState({});
@@ -59,6 +61,7 @@ function AppShell() {
   useEffect(() => {
     refreshStatus();
     refreshStyleSources();
+    refreshEditRules();
     fetchCapabilities().then(setCapabilities).catch(handleError);
     const timer = window.setInterval(refreshStatus, 4000);
     return () => window.clearInterval(timer);
@@ -212,6 +215,15 @@ function AppShell() {
     }
   }
 
+  async function refreshEditRules() {
+    try {
+      setEditRules(await fetchWorkspaceEditRulesConfig());
+      setError('');
+    } catch (caught) {
+      handleError(caught);
+    }
+  }
+
   async function refreshProjectProgress(nextProjectId) {
     try {
       setProjectProgress(await fetchProjectProgress(nextProjectId));
@@ -281,22 +293,32 @@ function AppShell() {
     );
   }
 
+  async function saveScriptBriefEditRuleCategory(editRuleCategory) {
+    const base = savedConfig?.scriptBrief || config?.scriptBrief;
+    if (!base) return;
+    await saveScriptBriefPayload(
+      buildEditRuleSelectionScriptBriefPayload(base, editRuleCategory),
+      'script-brief:edit-rule',
+      {
+        workflowDialog: editRuleCategory ? buildScriptWorkflowDialog('await_brief_draft') : null,
+        successMessage: editRuleCategory ? '' : '已清除剪辑规则',
+      },
+    );
+  }
+
   async function saveScriptBriefStyleCategory(styleCategory) {
     const base = savedConfig?.scriptBrief || config?.scriptBrief;
     if (!base) return;
     await saveScriptBriefPayload(
-      buildStyleSelectionScriptBriefPayload(base, styleCategory),
+      buildStyleReferenceSelectionScriptBriefPayload(base, styleCategory),
       'script-brief:style',
-      {
-        workflowDialog: styleCategory ? buildScriptWorkflowDialog('await_brief_draft') : null,
-        successMessage: styleCategory ? '' : '已清除风格分类',
-      },
+      { successMessage: styleCategory ? '已保存文案风格参考' : '已清除文案风格参考' },
     );
   }
 
   async function authorizeScriptBriefRegeneration() {
     const base = savedConfig?.scriptBrief || config?.scriptBrief;
-    if (!base?.styleCategory) return;
+    if (!base?.editRuleCategory) return;
     await saveScriptBriefPayload(
       buildRegenerateScriptBriefPayload(base),
       'script-brief:regenerate',
@@ -632,9 +654,11 @@ function AppShell() {
                   render={() => (
                     <ScriptPage
                       config={config?.scriptBrief}
+                      editRules={editRules}
                       styleSources={styleSources}
                       setScriptBrief={setScriptBrief}
                       saveScriptBriefReview={saveScriptBriefReview}
+                      saveScriptBriefEditRuleCategory={saveScriptBriefEditRuleCategory}
                       saveScriptBriefStyleCategory={saveScriptBriefStyleCategory}
                       authorizeScriptBriefRegeneration={authorizeScriptBriefRegeneration}
                       busy={busy}
@@ -1152,9 +1176,11 @@ function StylePage({ config, capabilities, jobs, setStyleSources, onSave, busy, 
 
 function ScriptPage({
   config,
+  editRules,
   styleSources,
   setScriptBrief,
   saveScriptBriefReview,
+  saveScriptBriefEditRuleCategory,
   saveScriptBriefStyleCategory,
   authorizeScriptBriefRegeneration,
   busy,
@@ -1169,16 +1195,20 @@ function ScriptPage({
       && (!projectId || job.projectId === projectId));
   const latestJob = scriptJobs[0] || null;
   const activeScriptJobs = scriptJobs.filter(job => ['queued', 'running', 'blocked'].includes(job.status));
-  const availableCategories = styleSources?.categories || [];
+  const availableRuleCategories = editRules?.categories || [];
+  const availableStyleCategories = styleSources?.categories || [];
   const workflowState = config?.workflowState || 'choose_style';
-  const hasSelectedStyleCategory = Boolean(config?.styleCategory);
-  const hasValidStyleCategory = hasSelectedStyleCategory
-    && availableCategories.some(category => category.categoryId === config?.styleCategory);
-  const canPrepare = hasValidStyleCategory && workflowState === 'ready_to_prepare';
+  const hasSelectedEditRuleCategory = Boolean(config?.editRuleCategory);
+  const hasValidEditRuleCategory = hasSelectedEditRuleCategory
+    && availableRuleCategories.some(category => category.categoryId === config?.editRuleCategory);
+  const hasValidStyleCategory = !config?.styleCategory
+    || availableStyleCategories.some(category => category.categoryId === config?.styleCategory);
+  const canPrepare = hasValidEditRuleCategory && workflowState === 'ready_to_prepare';
   const workflowPrompt = buildScriptWorkflowPrompt({
     config,
-    availableCategories,
-    hasSelectedStyleCategory,
+    availableCategories: availableRuleCategories,
+    hasSelectedEditRuleCategory,
+    hasValidEditRuleCategory,
     hasValidStyleCategory,
     workflowState,
     latestJob,
@@ -1201,7 +1231,7 @@ function ScriptPage({
     <div className="route-page">
       <RouteIntro
         title="脚本"
-        subtitle="先在这里选风格并审查 brief，再点“准备给 Agent”；准备阶段只刷新 facts 和 bundle，正式 `segment-plan / material-slots / script/current.json` 仍由 Agent 生成。"
+        subtitle="先在这里选剪辑规则并审查 brief，再点“准备给 Agent”；风格参考只影响最终旁白和字幕表达。"
       />
       {workflowPrompt ? (
         <WorkflowPrompt
@@ -1217,9 +1247,9 @@ function ScriptPage({
           <h2>Script Preparation</h2>
           <Tag>{latestJob ? formatScriptJobStatus(latestJob.status) : '未运行'}</Tag>
         </div>
-        <p className="muted">这里不会后台自动写稿。点击后只会校验风格与素材前置条件，刷新 `script/material-overview.facts.json` 和 `analysis/material-bundles.json`，并把流程推进到“回到 Agent 继续写正式脚本”。</p>
-        {!availableCategories.length ? (
-          <p className="muted">Workspace 风格库当前没有可选分类；请先到 `/style` 配置或生成风格档案。</p>
+        <p className="muted">这里不会后台自动写稿。点击后只会校验剪辑规则与素材前置条件，刷新 edit-unit facts 和 shared bundle，并把流程推进到“回到 Agent 继续写正式脚本”。</p>
+        {!availableRuleCategories.length ? (
+          <p className="muted">Workspace 剪辑规则库当前没有可选分类；请先补 `config/edit-rules.json` / `config/edit-rules/*.md`。</p>
         ) : null}
         {latestJob ? (
           <div className="job-item">
@@ -1243,13 +1273,15 @@ function ScriptPage({
       </Card>
       <ScriptBriefEditor
         config={config}
+        editRules={editRules}
         styleSources={styleSources}
         setConfig={setScriptBrief}
         onSave={saveScriptBriefReview}
+        onEditRuleCategoryChange={saveScriptBriefEditRuleCategory}
         onStyleCategoryChange={saveScriptBriefStyleCategory}
         onRequestRegenerate={authorizeScriptBriefRegeneration}
         busy={busy['script-brief']}
-        autoSaveBusy={busy['script-brief:style']}
+        autoSaveBusy={busy['script-brief:edit-rule'] || busy['script-brief:style']}
         regenerateBusy={busy['script-brief:regenerate']}
       />
     </div>
@@ -1506,7 +1538,7 @@ function formatScriptJobStatus(status) {
 function describeScriptJob(job) {
   if (!job) return '当前还没有 script preparation 记录。';
   if (job.status === 'awaiting_agent') {
-    return '确定性脚本准备已完成。请回到 Agent 对话继续生成 `script/segment-plan.json`、`script/material-slots.json` 和 `script/current.json`。';
+    return '确定性脚本准备已完成。请回到 Agent 对话继续生成当前 edit unit 的 segment-plan、material-slots 和 script/current。';
   }
   if (job.status === 'blocked') {
     return (job.blockers || []).join('；') || '当前脚本准备被阻塞。';
@@ -1523,7 +1555,8 @@ function describeScriptJob(job) {
 function buildScriptWorkflowPrompt({
   config,
   availableCategories,
-  hasSelectedStyleCategory,
+  hasSelectedEditRuleCategory,
+  hasValidEditRuleCategory,
   hasValidStyleCategory,
   workflowState,
   latestJob,
@@ -1531,32 +1564,40 @@ function buildScriptWorkflowPrompt({
   if (!availableCategories.length) {
     return {
       eyebrow: 'Action Required',
-      title: '先去 /style 准备风格库',
-      body: '当前 workspace 还没有任何可选风格分类。先去 /style 配置或生成风格档案，再回到这里继续脚本流程。',
+      title: '先准备剪辑规则库',
+      body: '当前 workspace 还没有任何可选剪辑规则。先补 config/edit-rules.json 和 config/edit-rules/*.md，再回到这里继续脚本流程。',
       tone: 'warn',
     };
   }
-  if (!hasSelectedStyleCategory) {
+  if (!hasSelectedEditRuleCategory) {
     return {
       eyebrow: 'Action Required',
-      title: '先选择风格分类',
-      body: '在下面选择一个 workspace 风格分类。系统会自动保存，然后下一步就是回到 Agent 生成 material-overview.md 和初版 brief。',
+      title: '先选择剪辑规则',
+      body: '在下面选择一个 workspace 剪辑规则。系统会自动保存，然后下一步就是回到 Agent 生成 material-overview.md 和初版 brief。',
       tone: 'warn',
+    };
+  }
+  if (config?.editRuleCategory && !hasValidEditRuleCategory) {
+    return {
+      eyebrow: 'Blocked',
+      title: '当前剪辑规则已失效',
+      body: '这个项目记录的剪辑规则在 workspace 规则库里已经不存在了。先在下面重新选择一个有效规则，再继续脚本准备。',
+      tone: 'error',
     };
   }
   if (config?.styleCategory && !hasValidStyleCategory) {
     return {
-      eyebrow: 'Blocked',
-      title: '当前风格分类已失效',
-      body: '这个项目记录的风格分类在 workspace 风格库里已经不存在了。先在下面重新选择一个有效分类，再继续脚本准备。',
-      tone: 'error',
+      eyebrow: 'Warning',
+      title: '文案风格参考已失效',
+      body: '粗剪可以继续；最终旁白 / 字幕表达阶段需要重新选择一个有效文案风格参考。',
+      tone: 'warn',
     };
   }
   if (workflowState === 'await_brief_draft') {
     return {
       eyebrow: 'Next Step',
       title: '回到 Agent 生成 overview / brief',
-      body: '风格分类已经保存。下一步不在这里，而是在 Agent 对话里让它同时起草 material-overview.md 和第一版 script-brief。',
+      body: '剪辑规则已经保存。下一步不在这里，而是在 Agent 对话里让它同时起草 material-overview.md 和第一版 script-brief。',
       tone: 'accent',
     };
   }
@@ -1581,7 +1622,7 @@ function buildScriptWorkflowPrompt({
     return {
       eyebrow: 'Ready',
       title: '回到 Agent 继续生成正式脚本',
-      body: 'deterministic prep 已完成。现在请回到 Agent，对它说“继续”，再让它生成正式的 `script/segment-plan.json`、`script/material-slots.json` 和 `script/current.json`。',
+      body: 'deterministic prep 已完成。现在请回到 Agent，对它说“继续”，再让它生成当前 edit unit 的正式 segment-plan、material-slots 和 script/current。',
       detail: latestJob ? describeScriptJob(latestJob) : '',
       tone: 'ok',
     };
@@ -1596,8 +1637,8 @@ function buildScriptWorkflowPrompt({
   }
   return {
     eyebrow: 'Action Required',
-    title: '先选择风格分类',
-    body: '在下面完成风格选择后，系统才知道下一步该把你带去哪个脚本流程状态。',
+    title: '先选择剪辑规则',
+    body: '在下面完成剪辑规则选择后，系统才知道下一步该把你带去哪个脚本流程状态。',
     tone: 'warn',
   };
 }
@@ -1605,7 +1646,7 @@ function buildScriptWorkflowPrompt({
 function buildScriptWorkflowDialog(workflowState) {
   if (workflowState === 'await_brief_draft') {
     return {
-      title: '风格已保存',
+      title: '剪辑规则已保存',
       body: '下一步请回到 Agent，生成 material-overview.md 和初版 brief。',
       detail: '这个 handoff 已经同步到当前页面顶部的 workflow prompt，不用担心关掉弹窗后找不到下一步。',
     };
@@ -1742,20 +1783,27 @@ function resolveColorCapability(capabilities) {
   return null;
 }
 
-function buildStyleSelectionScriptBriefPayload(brief, styleCategory) {
-  const workflowState = styleCategory ? 'await_brief_draft' : 'choose_style';
+function buildEditRuleSelectionScriptBriefPayload(brief, editRuleCategory) {
+  const workflowState = editRuleCategory ? 'await_brief_draft' : 'choose_style';
   return {
     ...brief,
-    styleCategory,
+    editRuleCategory,
     workflowState,
     briefOverwriteApprovedAt: undefined,
     statusText: describeScriptWorkflowState(workflowState),
   };
 }
 
+function buildStyleReferenceSelectionScriptBriefPayload(brief, styleCategory) {
+  return {
+    ...brief,
+    styleCategory: styleCategory || undefined,
+  };
+}
+
 function buildReviewedScriptBriefPayload(brief) {
   const hasAgentDraft = Boolean(brief.lastAgentDraftAt || brief.lastAgentDraftFingerprint);
-  const workflowState = !brief.styleCategory
+  const workflowState = !brief.editRuleCategory
     ? 'choose_style'
     : hasAgentDraft
       ? 'ready_to_prepare'
@@ -1795,8 +1843,8 @@ function makeSectionSetter(setConfig, sectionKey) {
 }
 
 const SCRIPT_WORKFLOW_STATUS_TEXT = {
-  choose_style: '请先在 /script 选择风格分类。',
-  await_brief_draft: '风格已保存，请回到 Agent 生成 material-overview.md 和初版 brief。',
+  choose_style: '请先在 /script 选择剪辑规则。',
+  await_brief_draft: '剪辑规则已保存，请回到 Agent 生成 material-overview.md 和初版 brief。',
   review_brief: '初版 overview / brief 已生成，请在 /script 审查并保存。',
   ready_to_prepare: 'brief 已保存，请点击 准备给 Agent。',
   ready_for_agent: '事实刷新与 bundle 索引已完成，请回到 Agent 继续生成 segment-plan、material-slots 与 script/current.json。',

@@ -139,16 +139,21 @@ Current stable pipeline:
   - current `/color` stays single-page but now consumes `color/batches/<batchId>/...` as formal read-only archive, with foldable `Host Diagnostics / Recent Batches / Validation Failures`
   - current Resolve host automation uses the fixed same-machine vendored backend at `vendor/resolve-color-host/` with a fixed `.venv` convention
   - Resolve host automation now uses the same-machine vendored backend around the official Python Scripting API, not MCP
-- reusable style assets now live at workspace scope, not project scope:
+- workspace edit-rule and style-reference assets now have separate responsibilities:
+  - `config/edit-rules/` stores the workspace-level `剪辑规则` library; these rules are human-maintained and are the formal input for script structure, edit framework generation, human gates, and rough-cut constraints
+  - `config/edit-rules.json` stores the structured edit-rule category index; projects save the selected `editRuleCategory` independently from any prose style category
+  - `config/styles/` and `config/style-sources.json` remain workspace-level text/art-style references produced by style analysis, but they are downgraded to expression guidance for final narration, subtitles, wording tone, and forbidden phrasing
+  - rough-cut structure must default to edit rules plus Pharos/material evidence, not to inferred style-profile structure
+- reusable style-reference assets still live at workspace scope, not project scope:
   - `config/styles/` stores the shared style library
   - `config/style-sources.json` stores the shared style-source manifest and is the only structured style index
   - `analysis/reference-transcripts/` and `analysis/style-references/` store shared style-analysis outputs
   - `config/styles/{category}.md` holds profile content only; it is no longer paired with a separate `catalog.json`
-- workspace style profiles are no longer treated as prose-only references:
-  - each `config/styles/*.md` should carry directly consumable rhythm-stage guidance, material-role guidance, camera/shot-language preferences, function-slot hints, stable parameter keys, and anti-patterns
-  - these style outputs are expected to guide `script` recall / outline / beat writing directly, not only provide high-level narrative tone
-  - script/timeline runtime now resolves a small internal arrangement-signal layer from the existing style profile; it is not a new public schema, but it lets downstream logic tell whether the current style is mainly time/route-driven, space-driven, emotion-driven, or payoff-driven
-- project script work now references a workspace style category instead of owning its own `config/styles/`
+- workspace style profiles are no longer allowed to synthesize new edit rules from reference videos:
+  - each `config/styles/*.md` may still carry literary voice, artistic temperament, narration feel, subtitle wording preferences, and expression anti-patterns
+  - final narration / subtitle text stages may read style references; Script / Timeline rough-cut structure defaults to `config/edit-rules/{category}.md`
+  - missing style references should not block rough-cut generation; they should only surface as a final narration/subtitle expression warning
+- project script work now references a workspace `editRuleCategory` for structure and may optionally reference a workspace `styleCategory` for expression
 - workspace style-analysis now runs as a formal deterministic prep job:
   - `health-check -> clip -> probe -> shot-detect -> transcribe -> keyframes -> vlm -> video-complete -> awaiting_agent|completed`
   - the prep job writes workspace `.tmp/style-analysis/{category}/progress.json`, `analysis/reference-transcripts/`, and `analysis/style-references/`
@@ -162,43 +167,50 @@ Current stable pipeline:
     - formal stage execution must use a host packet runner / real subagent chain; external `ILlmClient` fallback is not allowed on the official path
     - workspace/project runtime may declare that packet runner via `config/runtime.json` `agentPacketRunnerCommand` / `agentPacketRunnerArgs` / `agentPacketRunnerCwd`
 - the `/script` console page now acts as deterministic script preparation:
-  - user first selects a workspace `styleCategory` in `/script`; that selection auto-saves
-  - changing `styleCategory` now invalidates the previous script run immediately; Kairos clears the old `material-overview`, brief draft body, arrangement artifacts, outline, and `script/current.json`, then returns the workflow to `await_brief_draft`
-  - agent then generates `script/material-overview.md` and the initial `script-brief`
+  - user first selects a workspace `editRuleCategory` in `/script`; that selection auto-saves and is independent from optional `styleCategory`
+  - changing `editRuleCategory` now invalidates the previous edit-unit script/timeline run immediately; Kairos clears that edit unit's old `material-overview`, brief draft body, arrangement artifacts, outline, and `edits/<editId>/script/current.json`, then returns the workflow to `await_brief_draft`
+  - changing `styleCategory` alone no longer invalidates rough-cut structure; it only changes later expression guidance for narration/subtitles
+  - agent then generates `edits/<editId>/script/material-overview.md` and the initial `script-brief`
   - user reviews and manually saves the brief in `/script`
   - the console now surfaces these handoffs with persistent workflow prompts and explicit hana modal confirmations instead of relying on low-contrast inline copy
-  - `/script` validates `store/spans.json`, the selected workspace `styleCategory`, and the matching style profile
-  - `/script` now prepares deterministic script inputs such as `script/material-overview.facts.json`, `script/material-overview.md`, `script/segment-plan.json`, `script/material-slots.json`, and `analysis/material-bundles.json`
+  - `/script` validates `store/spans.json`, the selected workspace `editRuleCategory`, and the matching edit-rule profile
+  - `/script` now prepares deterministic edit-unit script inputs such as `edits/<editId>/script/material-overview.facts.json`, `edits/<editId>/script/material-overview.md`, `edits/<editId>/script/segment-plan.json`, `edits/<editId>/script/material-slots.json`, and shared `analysis/material-bundles.json`
   - the agent-authored script phase now uses clean-context internal stages instead of one shared writer context:
     - `script/spatial-story.json` + `script/spatial-story.md` summarize chronology / spans / Pharos / GPS into a narrative-hint layer
     - `script/agent-contract.json` becomes the single locked truth for goals, constraints, style must/forbidden, GPS hints, Pharos must-cover hints, and chronology guardrails
     - each generator/reviewer stage reads only its own `script/agent-packets/{stage}.json`
     - stage reviews write to `script/reviews/{stage}.json`
-    - pipeline state writes to `script/agent-pipeline.json`
+    - pipeline state writes to `edits/<editId>/script/agent-pipeline.json`
     - each stage packet is the only formal subagent context; runtime must not append hidden thread history or duplicate `previousDraft` / `revisionBrief` outside the packet
     - formal stage execution must use a host-level packet runner / real clean-context subagent chain; external `ILlmClient` fallback is not allowed on the official path
     - workspace/project runtime may declare that packet runner via `config/runtime.json` `agentPacketRunnerCommand` / `agentPacketRunnerArgs` / `agentPacketRunnerCwd`
     - first-attempt stage packets should stay lean and only carry prior drafts on retry / revise paths
-  - the final `script/current.json` remains the only formal script output consumed by timeline/export
-  - the on-disk `script/current.json` shape is always bare `IKtepScript[]`; if transport returns an object wrapper such as `{ "segments": [...] }`, the stage runner must unwrap it before persist instead of letting the main agent do ad-hoc normalize/repair
+  - the final `edits/<editId>/script/current.json` remains the only formal script output consumed by that edit unit's timeline/export; legacy `script/current.json` maps to `edits/main`
+  - the on-disk script current shape is always bare `IKtepScript[]`; if transport returns an object wrapper such as `{ "segments": [...] }`, the stage runner must unwrap it before persist instead of letting the main agent do ad-hoc normalize/repair
   - `script-current` is one formal `beat-writer` pass per attempt; do not pre-run an extra full-script writer call just to seed a base draft
-  - if a script writer or reviewer call fails, `script/agent-pipeline.json` must record that real failure state immediately instead of leaving stale `pending` / old-stage truth
+  - if a script writer or reviewer call fails, `edits/<editId>/script/agent-pipeline.json` must record that real failure state immediately instead of leaving stale `pending` / old-stage truth
   - if the reviewed brief was already user-edited and a fresh initial draft is needed, overwrite permission is granted explicitly from `/script` instead of silent agent overwrite
-  - the selected style profile should already expose structured `arrangementStructure`, `narrationConstraints`, rhythm stages, material grammar, camera language, and anti-patterns, so Agent work does not depend on re-inferring everything from a long style essay
+  - the selected edit rule should already expose arrangement, trip-impression, material补漏, rough-cut gates, and forbidden zones; optional style references only tune final text expression
   - script prep now follows `Analyze -> Material Overview -> Script Brief -> Segment Plan -> Material Slots -> Bundle Lookup -> Chosen SpanIds -> Beat / Script`
   - `Chosen SpanIds -> Beat / Script` is no longer equivalent to mechanically emitting one beat per chosen span; outline prep should filter obvious device-command / navigation / noisy-ASR source-speech anchors and merge adjacent non-speech evidence spans before `beat-writer`
-  - when the selected style clearly emphasizes chronology / route continuity / continuous process, script prep now enforces ordering in three layers:
-    - internal arrangement signals resolve that the style is time-axis-strong from the existing style markdown
+  - when the selected edit rule clearly emphasizes chronology / route continuity / continuous process, script prep now enforces ordering in three layers:
+    - internal arrangement signals resolve that the edit rule is time-axis-strong from the rule markdown
     - deterministic prep builds monotonic time bands for segments and only retrieves spans inside the legal band
     - downstream timeline assembly re-validates chronology and refuses to silently output a backwards sequence
   - deterministic prep no longer treats style averages or inferred material capacity as the driver of rough-cut duration; `targetDurationMs` stays optional and advisory-only unless the user explicitly sets it
   - rough-cut recall is now high-recall by default: valid spans should stay in `material-slots / outline / script` unless they are empty, clearly bad, or near-duplicate
-  - `analysis/material-bundles.json` is now a full span index, and `script/material-slots.json` may fan out to many single-span slots instead of one shortlist slot per segment
-  - `material-slots` is now authored formally by deterministic prep; `buildMaterialSlotsDocument()` is the only official writer of `script/material-slots.json`
+  - `analysis/material-bundles.json` is now a full span index, and `edits/<editId>/script/material-slots.json` may fan out to many single-span slots instead of one shortlist slot per segment
+  - `material-slots` is now authored formally by deterministic prep; `buildMaterialSlotsDocument()` is the only official writer of `edits/<editId>/script/material-slots.json`
   - `route-slot-planner` is no longer a formal recall author; if retained, it may only review or diagnose recall quality and must not rewrite `chosenSpanIds`
   - `material-slots` now treats the deterministic base draft as a high-recall floor: silent `chosenSpanIds` drops are recall regressions that reviewer / runner must block
   - `beat-writer` now only owns expression fields such as `text`, `utterances`, `notes`, `muteSource`, and `preserveNatSound`; recall facts such as `audioSelections`, `visualSelections`, and `linkedSpanIds` stay locked from deterministic prep / outline
   - key process videos with real event progression / relationship progression / effective source speech are now protected from being swallowed by broad summary segments
+- a Kairos project may now contain multiple independent `Edit Unit`s over the same shared material workspace:
+  - shared layer stays at project root: `pharos/`, `store/`, `analysis/`, `media/chronology.json`, and `color/`
+  - edit-specific products live under `edits/<editId>/script/`, `edits/<editId>/timeline/`, and `edits/<editId>/subtitles/`
+  - legacy single-edit paths `script/`, `timeline/`, and `subtitles/` are compatibility aliases for `edits/main`
+  - Resolve edit mapping is fixed by convention: Resolve Project `${projectBrief.name} [Edit]`, Resolve Timeline `${editLabel} [${editId}]`
+  - first rough-cut lock writes `edits/<editId>/timeline/locked-rough-cut.json`; v1 post-lock formalizes source-speech subtitles and one reviewed narration text only
 - project brief now carries one project-level semantic vocab layer for analyze/script:
   - `材料模式短语`
 - `KTEP 2.0` 当前正式把 source-speech beat 升级成双通道模型：
@@ -246,12 +258,12 @@ Current stable pipeline:
 - source-speech windows no longer delete companion visuals; `visualSelections[]` stay available for serial cutaway placement while `audioSelections[]` alone define the preserved source audio
 - audible `dialogue` / `nat` clips now receive non-destructive loudness normalization toward `-16 LUFS` with clip gain, with true peak protection capped at `-1 dBTP`
 - rough-cut timeline placement now keeps effective source windows by default instead of fitting clips against `beat.targetDurationMs`; photos default to `1s` silent holds unless the script explicitly asks for a longer `holdMs`
-- Timeline now owns one formal internal substage before `timeline/current.json`:
-  - deterministic prep writes `timeline/rough-cut-base.json`
-  - `segment-cut-refiner` writes `timeline/segment-cuts/<segmentId>.json`
-  - `segment-cut-reviewer` writes `timeline/reviews/<segmentId>.json`
-  - pipeline state writes `timeline/agent-pipeline.json`
-  - official placement / subtitle generation must consume reviewed segment-cut artifacts, not silently fall back to raw `script/current.json` assembly when the review chain is missing or failed
+- Timeline now owns one formal internal substage before `edits/<editId>/timeline/current.json`:
+  - deterministic prep writes `edits/<editId>/timeline/rough-cut-base.json`
+  - `segment-cut-refiner` writes `edits/<editId>/timeline/segment-cuts/<segmentId>.json`
+  - `segment-cut-reviewer` writes `edits/<editId>/timeline/reviews/<segmentId>.json`
+  - pipeline state writes `edits/<editId>/timeline/agent-pipeline.json`
+  - official placement / subtitle generation must consume reviewed segment-cut artifacts, not silently fall back to raw `edits/<editId>/script/current.json` assembly when the review chain is missing or failed
 - when the same asset contributes both source-speech and silent `drive / aerial` material, source-speech owns the overlapping source window and silent montage may only use the non-overlapping remainder
 - when the same `drive / aerial` asset is reused by later silent montage beats, the later beat should only keep source remainder that has not already been consumed earlier in the rough cut
 - chronology guard 与 selection / beat 排序当前也必须统一读取 `media/chronology.json` 的 `sortCapturedAt`，不再允许 timeline 私自回退到原始 `asset.capturedAt`
@@ -269,7 +281,7 @@ Current stable pipeline:
   - both the staging directory and the final draft directory must be brand-new
   - existing draft directories must never be overwritten or deleted
   - modifying an existing draft requires explicit target verification first
-- Jianying export also normalizes retimed clip placement for `pyJianYingDraft` compatibility, so backend microsecond rounding does not mutate the formal `timeline/current.json`
+- Jianying export also normalizes retimed clip placement for `pyJianYingDraft` compatibility, so backend microsecond rounding does not mutate the formal `edits/<editId>/timeline/current.json`
 
 ## Change Discipline
 
