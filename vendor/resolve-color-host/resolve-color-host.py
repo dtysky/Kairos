@@ -2385,7 +2385,7 @@ def write_generated_render_preset_xml(preset_xml, preset_name, bitrate, render_f
         "RecordTotalFrame": "0",
         "RecordOldFrame": "0",
         "RecordNewFrame": "0",
-        "RecordAllowDupImg": "0",
+        "RecordAllowDupImg": "1",
         "RecordClipUniqueName": "false",
         "RecordClipUniqueNameStyle": "0",
         "RecordDigit": "8",
@@ -2479,7 +2479,6 @@ def build_generated_render_preset_extra_info(bitrate, render_format, encoder_sub
     audio_codec = stringify_signal_value((render_format or {}).get("audioCodec")) or "aac"
     encoder_map = {
         "rc": "CBR",
-        "quality": "best",
         "preset": "balance" if encoder_subtype == "hvc1_qsv" else "balanced",
         "init_qpP": "28",
         "init_qpI": "25",
@@ -2563,6 +2562,7 @@ def patch_render_preset_bitrate(preset_xml, bitrate, render_format=None):
         set_xml_text(root, "RecordPrefix", "")
         set_xml_text(root, "RecordSuffix", "")
         set_xml_text(root, "DestSuffix", "")
+        set_xml_text(root, "RecordAllowDupImg", "1")
         set_xml_text(root, "RecordClipUniqueName", "false")
         set_xml_text(root, "RecordClipUniqueNameStyle", "0")
         set_xml_text(root, "UsePrefixAndSuffixFromSrc", "1")
@@ -2585,12 +2585,12 @@ def patch_render_preset_bitrate(preset_xml, bitrate, render_format=None):
         patched_encoder_map = dict(current_encoder_map)
         patched_encoder_map.update({
             "rc": "CBR",
-            "quality": "best",
             "preset": "balance" if encoder_subtype == "hvc1_qsv" else "balanced",
             "bitrate": str(bitrate),
             "avbr_convergence": "0",
             "avbr_accuracy": "0",
         })
+        patched_encoder_map.pop("quality", None)
         patched_encoder_map.pop("icq_quality", None)
         if encoder_subtype == "hvc1_qsv":
             patched_encoder_map["icq_quality"] = "2"
@@ -2634,6 +2634,7 @@ def verify_transient_render_preset(resolve, project, preset_name, bitrate, rende
         expected_subtype = default_render_encoder_subtype(render_format)
         verified_subtype = root.findtext("RecordFormatSubType")
         verified_use_source_name = root.findtext("UsePrefixAndSuffixFromSrc")
+        verified_allow_duplicate_source_names = root.findtext("RecordAllowDupImg")
         verified_folder_fields = {
             "ReelInFolder": root.findtext("ReelInFolder"),
             "ClipInFolder": root.findtext("ClipInFolder"),
@@ -2676,6 +2677,15 @@ def verify_transient_render_preset(resolve, project, preset_name, bitrate, rende
                 {
                     "presetName": preset_name,
                     "usePrefixAndSuffixFromSrc": verified_use_source_name,
+                },
+            )
+        if stringify_signal_value(verified_allow_duplicate_source_names) != "1":
+            raise HostError(
+                "resolve_render_preset_duplicate_name_verify_failed",
+                "Resolve did not keep direct Source Name duplicate handling in the transient render preset.",
+                {
+                    "presetName": preset_name,
+                    "recordAllowDupImg": verified_allow_duplicate_source_names,
                 },
             )
         bad_folder_fields = {
