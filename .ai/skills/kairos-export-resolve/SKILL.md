@@ -80,7 +80,8 @@ description: >-
 - Resolve 输出必须使用 File Name = Source Name；不得设置 `CustomName` 或 `UniqueFilenameStyle`，出现 prefix/suffix 文件名时 batch 失败。
 - Windows Resolve 21 + MP4/H.265 固定码率必须走 host-owned transient render preset：导出 preset XML，写入并验证 `RecordFormatSubType=hvc1_qsv`、`h264_datarate = root.color.renderPreset.bitrateKbps`、`encoder_command_param_map.rc=CBR`、`encoder_command_param_map.bitrate=<bitrateKbps>`；不要在 Windows H.265 上用会被拒绝的公开 `VideoQuality` key 作为正式路径。
 - 非 Windows 主机不要套用上述 transient preset 兼容路径；若 Resolve 接受公开 `VideoQuality`，继续使用公共 render setting 设置 `bitrateKbps`。
-- Windows transient preset 必须清空 `RecordPrefix / RecordSuffix / DestSuffix` 并保持 `RecordClipUniqueName=false`，避免历史自定义名称污染 Source Name 输出。
+- Windows transient preset 必须清空 `RecordPrefix / RecordSuffix / DestSuffix`，保持 `RecordClipUniqueName=false` 且 `UsePrefixAndSuffixFromSrc=1`；`UsePrefixAndSuffixFromSrc=0` 会让 Resolve queue 成 `00000000.mp4 and more`。`CustomClips` 可能 re-export 为 zeros，不能作为 Source Name 成功证据。
+- 每个 `AddRenderJob()` 后必须立刻读取 `GetRenderJobList()` 校验 `OutputFilename` 是否为本批 expected Source Name；不匹配时删除已排 job 并在 `StartRendering()` 前失败。
 - `promote_batch` 已退出正式导出链；metadata 修复与 validation 在 `execute_root` 内完成。
 
 ## 推荐产出

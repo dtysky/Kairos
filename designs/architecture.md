@@ -256,7 +256,8 @@
   - 正式输出命名固定为 `sourceStem + targetExtension`，并依赖 Resolve File Name = Source Name；不得设置 `CustomName` 或 `UniqueFilenameStyle`
   - Windows Resolve 21 + MP4/H.265 固定码率由 host-owned transient render preset 承担：在 queue render jobs 前，Resolve host 必须保存当前格式 preset、导出 XML、写入 `h264_datarate`、`encoder_command_param_map.rc=CBR`、`encoder_command_param_map.bitrate=root.renderPreset.bitrateKbps`、导入并加载，再通过再次导出校验这些值；不得把该平台上会拒绝 H.265 的公开 `VideoQuality` key 当成正式路径
   - Windows H.265 root 当前正式锁定 Intel Quick Sync：transient preset 必须写入并校验 `RecordFormatSubType=hvc1_qsv`、`h264_profile=2`、`preset=balance`、`rc=CBR`、`bitrate=<bitrateKbps>`；后续 `SetRenderSettings` 只设置目录、帧范围、分辨率、帧率与音频等队列参数，不能再用 `CustomName` 或 prefix/suffix 名称兜底
-  - Windows transient preset 还必须清空 `RecordPrefix / RecordSuffix / DestSuffix` 并保持 `RecordClipUniqueName=false`，防止历史 Deliver 页自定义名称污染正式 Source Name render job
+  - Windows transient preset 还必须清空 `RecordPrefix / RecordSuffix / DestSuffix`，保持 `RecordClipUniqueName=false` 且 `UsePrefixAndSuffixFromSrc=1`；`UsePrefixAndSuffixFromSrc=0` 会使 Resolve queue 成 `00000000.mp4 and more`；`CustomClips` 可能 re-export 为 zeros，不能作为 Source Name 成功证据
+  - 每个 `AddRenderJob()` 后必须用 `GetRenderJobList()` 校验 `OutputFilename` 是本批 Source Name；不匹配时删除该 job 并在 `StartRendering()` 前失败，不能等渲染后 validation 才发现
   - 非 Windows 主机继续走 Resolve 公共 render setting 路径；当 `VideoQuality` 可用时，直接由它承载 `root.renderPreset.bitrateKbps`
   - 项目目录只保存 `color/batches/<batchId>/...` JSON archive，不能作为视频 staging；Kairos 不创建视频 holding 目录，不在 render 后搬运视频
   - Resolve 完成后必须直接校验最终 `manifest.entries[].outputPath`；出现 prefix/suffix 输出名视为 render setting 失败

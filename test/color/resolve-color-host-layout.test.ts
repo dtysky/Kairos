@@ -46,6 +46,7 @@ try:
             def __init__(self):
                 self.settings = None
                 self.setting_calls = []
+                self.jobs = []
 
             def SetRenderSettings(self, settings):
                 self.setting_calls.append(dict(settings))
@@ -56,7 +57,21 @@ try:
                 return True
 
             def AddRenderJob(self):
+                output = payload.get("queueOutputFilename")
+                if output is None:
+                    clips = payload["clips"]
+                    output = clips[0]["normalizedOutputFilename"] if clips else ""
+                    if len(clips) > 1:
+                        output = f"{output} and more"
+                self.jobs.append({"JobId": "job-1", "OutputFilename": output})
                 return "job-1"
+
+            def GetRenderJobList(self):
+                return list(self.jobs)
+
+            def DeleteRenderJob(self, job_id):
+                self.jobs = [job for job in self.jobs if job.get("JobId") != job_id]
+                return True
 
         project = FakeProject()
         job_id = module.queue_root_render_job(
@@ -98,6 +113,8 @@ try:
               "subtype": root.findtext("RecordFormatSubType"),
               "prefix": root.findtext("RecordPrefix"),
               "suffix": root.findtext("RecordSuffix"),
+              "usePrefixAndSuffixFromSrc": root.findtext("UsePrefixAndSuffixFromSrc"),
+              "customClips": root.findtext("CustomClips"),
               "datarate": module.get_extra_info_value(extra_info, "h264_datarate"),
               "encoderMap": module.decode_resolve_string_map(
                 module.get_extra_info_value(extra_info, "encoder_command_param_map"),
@@ -733,6 +750,37 @@ describe('resolve color host clip layout helpers', () => {
     expect(settings.UniqueFilenameStyle).toBeUndefined();
   });
 
+  it('rejects queued render jobs when Resolve is not using Source Name filenames', async () => {
+    const result = await inspectRenderExportHelper({
+      mode: 'queue_settings',
+      targetDir: '/Volumes/SSDMAX/zve1/day7',
+      queueOutputFilename: '00000000.mp4 and more',
+      renderFormat: {
+        format: 'MP4',
+        videoCodec: 'H265',
+        extension: 'mp4',
+        audioCodec: 'aac',
+        bitrateKbps: 30000,
+      },
+      clips: [
+        {
+          rawRelativePath: 'day7/C1610.MP4',
+          sourceStem: 'C1610',
+          normalizedOutputFilename: 'C1610.mp4',
+          width: 3840,
+          height: 2160,
+          fps: 30,
+        },
+      ],
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.code).toBe('resolve_render_job_filename_mode_failed');
+    expect(result.details).toMatchObject({
+      outputFilename: '00000000.mp4 and more',
+    });
+  });
+
   it('patches transient Resolve render presets to fixed bitrate', async () => {
     const result = await inspectRenderExportHelper({
       mode: 'patch_preset_bitrate',
@@ -748,6 +796,8 @@ describe('resolve color host clip layout helpers', () => {
       subtype: 'hvc1_qsv',
       prefix: '',
       suffix: '',
+      usePrefixAndSuffixFromSrc: '1',
+      customClips: '',
       datarate: '30000',
       encoderMap: {
         rc: 'CBR',

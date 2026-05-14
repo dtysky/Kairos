@@ -2440,7 +2440,8 @@ def patch_render_preset_bitrate(preset_xml, bitrate, render_format=None):
         set_xml_text(root, "DestSuffix", "")
         set_xml_text(root, "RecordClipUniqueName", "false")
         set_xml_text(root, "RecordClipUniqueNameStyle", "0")
-        set_xml_text(root, "UsePrefixAndSuffixFromSrc", "0")
+        set_xml_text(root, "UsePrefixAndSuffixFromSrc", "1")
+        set_xml_text(root, "CustomClips", "")
         extra_info = root.find("ExtraInfoMap")
         if extra_info is None:
             extra_info = create_xml_child(root, "ExtraInfoMap")
@@ -2501,6 +2502,7 @@ def verify_transient_render_preset(resolve, project, preset_name, bitrate, rende
         extra_info = root.find("ExtraInfoMap")
         expected_subtype = default_render_encoder_subtype(render_format)
         verified_subtype = root.findtext("RecordFormatSubType")
+        verified_use_source_name = root.findtext("UsePrefixAndSuffixFromSrc")
         verified_bitrate = get_extra_info_value(extra_info, "h264_datarate") if extra_info is not None else None
         verified_encoder_map = decode_resolve_string_map(
             get_extra_info_value(extra_info, "encoder_command_param_map") if extra_info is not None else None,
@@ -2526,6 +2528,15 @@ def verify_transient_render_preset(resolve, project, preset_name, bitrate, rende
                     "requestedRateControl": "CBR",
                     "verifiedRateControl": verified_rate_control,
                     "verifiedEncoderMap": verified_encoder_map,
+                },
+            )
+        if verified_use_source_name != "1":
+            raise HostError(
+                "resolve_render_preset_filename_verify_failed",
+                "Resolve did not keep Source Name filename settings in the transient render preset.",
+                {
+                    "presetName": preset_name,
+                    "usePrefixAndSuffixFromSrc": verified_use_source_name,
                 },
             )
         if verified_map_bitrate != bitrate:
@@ -2992,7 +3003,46 @@ def queue_root_render_job(project, target_dir, render_format, clips):
     job_id = safe_call(project, "AddRenderJob")
     if job_id is False or job_id is None:
         raise HostError("resolve_add_render_job_failed", "Unable to queue render job for root render batch")
+    try:
+        assert_render_job_uses_source_names(project, str(job_id), clips)
+    except HostError:
+        safe_call(project, "DeleteRenderJob", str(job_id))
+        raise
     return str(job_id)
+
+
+def assert_render_job_uses_source_names(project, job_id, clips):
+    render_jobs = safe_call(project, "GetRenderJobList")
+    jobs = list(iter_values(render_jobs or []))
+    if not jobs:
+        return
+    target_job = None
+    for job in jobs:
+        if isinstance(job, dict) and stringify_signal_value(job.get("JobId") or job.get("Job ID") or job.get("jobId")) == job_id:
+            target_job = job
+            break
+    if target_job is None:
+        return
+    output_filename = stringify_signal_value(target_job.get("OutputFilename"))
+    if not output_filename:
+        return
+    first_output = output_filename.split(" and more", 1)[0].strip()
+    expected_filenames = {
+        stringify_signal_value(clip.get("normalizedOutputFilename")).lower()
+        for clip in clips
+        if stringify_signal_value(clip.get("normalizedOutputFilename"))
+    }
+    if first_output.lower() in expected_filenames:
+        return
+    raise HostError(
+        "resolve_render_job_filename_mode_failed",
+        "Resolve queued a render job that is not using Source Name filenames.",
+        {
+            "jobId": job_id,
+            "outputFilename": output_filename,
+            "expectedSourceNameFilenames": sorted(expected_filenames),
+        },
+    )
 
 
 def set_root_render_settings(project, settings):
