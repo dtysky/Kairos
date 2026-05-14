@@ -115,6 +115,41 @@ try:
               "suffix": root.findtext("RecordSuffix"),
               "usePrefixAndSuffixFromSrc": root.findtext("UsePrefixAndSuffixFromSrc"),
               "customClips": root.findtext("CustomClips"),
+              "reelInFolder": root.findtext("ReelInFolder"),
+              "clipInFolder": root.findtext("ClipInFolder"),
+              "alternateInFolder": root.findtext("AlternateInFolder"),
+              "useVersionNameForFolder": root.findtext("UseVersionNameForFolder"),
+              "srcDirPreserveLevel": root.findtext("SrcDirPreserveLevel"),
+              "srcDirLevelsMode": root.findtext("SrcDirLevelsMode"),
+              "datarate": module.get_extra_info_value(extra_info, "h264_datarate"),
+              "encoderMap": module.decode_resolve_string_map(
+                module.get_extra_info_value(extra_info, "encoder_command_param_map"),
+                ),
+            }
+    elif mode == "generate_preset_xml":
+        with tempfile.TemporaryDirectory() as tmpdir:
+            preset_path = Path(tmpdir) / "__kairos_generated_test__.xml"
+            module.write_generated_render_preset_xml(
+                preset_path,
+                "__kairos_generated_test__",
+                payload["bitrateKbps"],
+                payload.get("renderFormat", {}),
+            )
+            tree = module.parse_xml_file_preserving_comments(preset_path)
+            root = tree.getroot()
+            extra_info = root.find("ExtraInfoMap")
+            result = {
+              "subtype": root.findtext("RecordFormatSubType"),
+              "prefix": root.findtext("RecordPrefix"),
+              "suffix": root.findtext("RecordSuffix"),
+              "usePrefixAndSuffixFromSrc": root.findtext("UsePrefixAndSuffixFromSrc"),
+              "customClips": root.findtext("CustomClips"),
+              "reelInFolder": root.findtext("ReelInFolder"),
+              "clipInFolder": root.findtext("ClipInFolder"),
+              "alternateInFolder": root.findtext("AlternateInFolder"),
+              "useVersionNameForFolder": root.findtext("UseVersionNameForFolder"),
+              "srcDirPreserveLevel": root.findtext("SrcDirPreserveLevel"),
+              "srcDirLevelsMode": root.findtext("SrcDirLevelsMode"),
               "datarate": module.get_extra_info_value(extra_info, "h264_datarate"),
               "encoderMap": module.decode_resolve_string_map(
                 module.get_extra_info_value(extra_info, "encoder_command_param_map"),
@@ -125,6 +160,7 @@ try:
             render_dir = Path(tmpdir)
             for name in payload.get("files", []):
                 path = render_dir / name
+                path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text("rendered", encoding="utf-8")
             result = module.collect_direct_outputs_for_clips(
                 render_dir,
@@ -781,9 +817,9 @@ describe('resolve color host clip layout helpers', () => {
     });
   });
 
-  it('patches transient Resolve render presets to fixed bitrate', async () => {
+  it('generates clean Resolve render preset XML from Kairos config', async () => {
     const result = await inspectRenderExportHelper({
-      mode: 'patch_preset_bitrate',
+      mode: 'generate_preset_xml',
       bitrateKbps: 30000,
       renderFormat: {
         format: 'MP4',
@@ -798,6 +834,12 @@ describe('resolve color host clip layout helpers', () => {
       suffix: '',
       usePrefixAndSuffixFromSrc: '1',
       customClips: '',
+      reelInFolder: '0',
+      clipInFolder: '0',
+      alternateInFolder: '0',
+      useVersionNameForFolder: '0',
+      srcDirPreserveLevel: '0',
+      srcDirLevelsMode: '0',
       datarate: '30000',
       encoderMap: {
         rc: 'CBR',
@@ -845,6 +887,21 @@ describe('resolve color host clip layout helpers', () => {
     });
     expect(suffixed.ok).toBe(false);
     expect(suffixed.code).toBe('resolve_render_output_bad_source_name');
+  });
+
+  it('promotes Resolve Event_Version nested outputs back to direct root paths', async () => {
+    const nested = await inspectRenderExportHelper({
+      mode: 'collect_outputs',
+      files: ['Event_Version 1_0001_0001/C1611.mp4'],
+      clips: [
+        { rawRelativePath: 'day7/C1611.MP4', sourceStem: 'C1611', normalizedOutputFilename: 'C1611.mp4' },
+      ],
+    });
+
+    expect(nested.ok).toBe(true);
+    const [entry] = nested.result as Array<{ outputPath: string }>;
+    expect(toPortableTestPath(entry.outputPath)).toMatch(/\/C1611\.mp4$/u);
+    expect(toPortableTestPath(entry.outputPath)).not.toContain('Event_Version');
   });
 
   it('blocks when Resolve Render Queue is not empty', async () => {

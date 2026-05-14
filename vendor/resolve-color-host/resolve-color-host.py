@@ -8,6 +8,7 @@ import shutil
 import sys
 import tempfile
 import time
+import uuid
 from pathlib import Path
 
 
@@ -2317,36 +2318,8 @@ def ensure_bitrate_render_preset(resolve, project, render_format):
     preset_name = build_transient_render_preset_name(render_format, bitrate)
     export_root = Path(tempfile.mkdtemp(prefix="kairos-resolve-render-preset-"))
     try:
-        encoding_profile = default_render_encoding_profile(render_format)
-        if encoding_profile:
-            profile_result = safe_call(project, "SetRenderSettings", {"ExportVideo": True, "EncodingProfile": encoding_profile})
-            if profile_result is False:
-                raise HostError(
-                    "resolve_render_preset_profile_failed",
-                    "Unable to set Resolve encoding profile for transient fixed bitrate preset.",
-                    {
-                        "presetName": preset_name,
-                        "bitrateKbps": bitrate,
-                        "encodingProfile": encoding_profile,
-                    },
-                )
-        save_result = safe_call(project, "SaveAsNewRenderPreset", preset_name)
-        if save_result is not True:
-            raise HostError(
-                "resolve_render_preset_save_failed",
-                "Unable to save transient Resolve render preset for fixed bitrate.",
-                {"presetName": preset_name, "bitrateKbps": bitrate},
-            )
-        export_path = export_root / f"{preset_name}.drp"
-        export_result = safe_call(resolve, "ExportRenderPreset", preset_name, str(export_path))
-        if export_result is not True:
-            raise HostError(
-                "resolve_render_preset_export_failed",
-                "Unable to export transient Resolve render preset for fixed bitrate.",
-                {"presetName": preset_name, "bitrateKbps": bitrate, "exportPath": str(export_path)},
-            )
-        preset_xml = find_exported_render_preset_xml(export_path)
-        patch_render_preset_bitrate(preset_xml, bitrate, render_format)
+        preset_xml = export_root / f"{preset_name}.xml"
+        write_generated_render_preset_xml(preset_xml, preset_name, bitrate, render_format)
         safe_call(project, "DeleteRenderPreset", preset_name)
         import_result = safe_call(resolve, "ImportRenderPreset", str(preset_xml))
         if import_result is not True:
@@ -2386,6 +2359,158 @@ def build_transient_render_preset_name(render_format, bitrate):
         ).encode("utf-8"),
     ).hexdigest()[:10]
     return f"__kairos_fixed_bitrate_{bitrate}_{fingerprint}__"
+
+
+def write_generated_render_preset_xml(preset_xml, preset_name, bitrate, render_format):
+    import xml.etree.ElementTree as ET
+
+    encoder_subtype = default_render_encoder_subtype(render_format or {})
+    if not encoder_subtype:
+        raise HostError(
+            "resolve_render_preset_encoder_missing",
+            "Unable to derive Resolve encoder subtype for generated render preset.",
+            {"presetName": preset_name, "renderFormat": render_format},
+        )
+    root = ET.Element("SyRecordInfo", {"DbId": str(uuid.uuid4())})
+    scalar_fields = {
+        "Session": None,
+        "Timeline": None,
+        "UniqueSequenceId": None,
+        "ReplaceHoleWithBlank": "0",
+        "ApplyWfmDuringRecord": "0",
+        "DisableCcDuringRecording": "0",
+        "DisablePtzDuringRecording": "0",
+        "RecordStartFrame": "0",
+        "RecordEndFrame": "0",
+        "RecordTotalFrame": "0",
+        "RecordOldFrame": "0",
+        "RecordNewFrame": "0",
+        "RecordAllowDupImg": "0",
+        "RecordClipUniqueName": "false",
+        "RecordClipUniqueNameStyle": "0",
+        "RecordDigit": "8",
+        "RecordBitDepth": "8",
+        "RecordAsFloat": "false",
+        "FormatWidth": "3840",
+        "FormatHeight": "2160",
+        "FormatPixelAspectRatio": "1",
+        "FormatOption": "-1",
+        "RecordTargetDir": "",
+        "RecordUseTgtTimeCode": "0",
+        "RenderAtSourceResolution": "false",
+        "RecordSetTimelineTimecode": "false",
+        "UseRecordClipStartFrame": "false",
+        "RecordClipStartFrame": "1",
+        "RecordPrefix": "",
+        "RecordSuffix": "",
+        "RecordFormatType": "mp4",
+        "RecordFormatSubType": encoder_subtype,
+        "RecordInFieldMode": "false",
+        "RecordDataLevel": "DATA_LEVEL_AUTO",
+        "RecordQuality": "4",
+        "RecordFPS": "30",
+        "StereoRender": "false",
+        "StereoRenderFrameMeshMode": "-1",
+        "StereoRenderBothEyesSeparately": "false",
+        "StereoRenderSourceType": "0",
+        "UserName": "",
+        "ProjectName": "",
+        "FolderName": "",
+        "SessionName": "",
+        "CreationTime": "",
+        "Status": "READY",
+        "RecordSpeed": "0",
+        "UsePrefixAndSuffixFromSrc": "1",
+        "UseCommercialWorkflow": "0",
+        "AlternateOffset": "0",
+        "ReelInFolder": "0",
+        "ClipInFolder": "0",
+        "AlternateInFolder": "0",
+        "SrcDirPreserveLevel": "0",
+        "SrcDirLevelsMode": "0",
+        "NumFramesOfHandles": "0",
+        "UseVersionNameForFolder": "0",
+        "DestSuffix": "",
+        "RecordInfoName": "",
+        "VersionIdList": "",
+        "VersionNameList": "",
+        "CompletionPercentage": "0",
+        "RecordSlatePreset": "Same as project",
+        "AdditionalOutputFormats": None,
+        "RecordAudioEnabled": "true",
+        "RecordAudioNumChannels": "2",
+        "RecordAudioBitDepth": "16",
+        "CustomClips": "",
+        "DisplayOrder": "-1",
+        "ForceHighestQualitySizing": "0",
+        "ForceHighestQualityDebayerRes": "0",
+        "RecordMode": "RECORD_MODE_NONE",
+    }
+    for tag, value in scalar_fields.items():
+        child = ET.SubElement(root, tag)
+        if value is not None:
+            child.text = value
+    extra_info = ET.SubElement(root, "ExtraInfoMap")
+    for key, value in build_generated_render_preset_extra_info(bitrate, render_format, encoder_subtype).items():
+        element = ET.SubElement(extra_info, "Element")
+        db_key = ET.SubElement(element, "DbKey")
+        db_key.text = key
+        db_val = ET.SubElement(element, "DbVal")
+        db_val.text = value
+    tail_fields = {
+        "UseRenderCachedImagesForRecording": "false",
+        "TgtSysId": "None",
+        "CurSysId": "",
+        "TimeTakenToRenderInMs": "0",
+        "EstimatedTimeRemainingInMs": "0",
+        "ErrorCode": "0",
+        "ErrorStr": "",
+        "ErrorNotified": "true",
+    }
+    for tag, value in tail_fields.items():
+        child = ET.SubElement(root, tag)
+        child.text = value
+    tree = ET.ElementTree(root)
+    preset_xml.parent.mkdir(parents=True, exist_ok=True)
+    tree.write(preset_xml, encoding="UTF-8", xml_declaration=True)
+
+
+def build_generated_render_preset_extra_info(bitrate, render_format, encoder_subtype):
+    audio_codec = stringify_signal_value((render_format or {}).get("audioCodec")) or "aac"
+    encoder_map = {
+        "rc": "CBR",
+        "quality": "best",
+        "preset": "balance" if encoder_subtype == "hvc1_qsv" else "balanced",
+        "init_qpP": "28",
+        "init_qpI": "25",
+        "init_qpB": "31",
+        "bitrate": str(bitrate),
+        "avbr_convergence": "0",
+        "avbr_accuracy": "0",
+    }
+    if encoder_subtype == "hvc1_qsv":
+        encoder_map["icq_quality"] = "2"
+    return {
+        "smpte": "y",
+        "aud_qual": "4",
+        "aud_rate": "320",
+        "aud_codec": audio_codec,
+        "h264_level": "-1",
+        "h264_passes": "1",
+        "subs_enable": "0",
+        "h264_bframes": "1",
+        "h264_profile": "2" if normalize_codec_family((render_format or {}).get("videoCodec")) == "h265" else "0",
+        "h264_datarate": str(bitrate),
+        "h264_iframefreq": "0",
+        "imf_profile_level": "0",
+        "immersive_workflow": "0",
+        "aud_bitrate_strategy": "0",
+        "legacy_player_compat": "0",
+        "network_optimization": "0",
+        "h264_prioritize_speed": "n",
+        "include_spatial_metadata": "0",
+        "encoder_command_param_map": encode_resolve_string_map(encoder_map),
+    }
 
 
 def default_render_encoding_profile(render_format):
@@ -2442,6 +2567,15 @@ def patch_render_preset_bitrate(preset_xml, bitrate, render_format=None):
         set_xml_text(root, "RecordClipUniqueNameStyle", "0")
         set_xml_text(root, "UsePrefixAndSuffixFromSrc", "1")
         set_xml_text(root, "CustomClips", "")
+        set_xml_text(root, "ReelInFolder", "0")
+        set_xml_text(root, "ClipInFolder", "0")
+        set_xml_text(root, "AlternateInFolder", "0")
+        set_xml_text(root, "UseVersionNameForFolder", "0")
+        set_xml_text(root, "SrcDirPreserveLevel", "0")
+        set_xml_text(root, "SrcDirLevelsMode", "0")
+        set_xml_text(root, "FolderName", "")
+        set_xml_text(root, "VersionIdList", "")
+        set_xml_text(root, "VersionNameList", "")
         extra_info = root.find("ExtraInfoMap")
         if extra_info is None:
             extra_info = create_xml_child(root, "ExtraInfoMap")
@@ -2888,6 +3022,10 @@ def collect_direct_outputs_for_clips(render_dir, clips, extension, render_job_id
                     "candidatePaths": [str(path) for path in sorted(unexpected_variants, key=lambda value: value.name)],
                 },
             )
+        nested_output = find_single_nested_source_name_output(render_dir, clip, extension_key)
+        if nested_output is not None and nested_output_should_replace_expected(nested_output, expected_path):
+            promote_nested_source_name_output(nested_output, expected_path, clip)
+            candidates.append(expected_path)
         if not expected_path.is_file():
             raise HostError(
                 "resolve_render_output_missing",
@@ -2906,6 +3044,75 @@ def collect_direct_outputs_for_clips(render_dir, clips, extension, render_job_id
             "renderJobId": str(render_job_id) if render_job_id is not None else None,
         })
     return entries
+
+
+def find_single_nested_source_name_output(render_dir, clip, extension_key):
+    expected_name = stringify_signal_value(clip.get("normalizedOutputFilename"))
+    if not expected_name:
+        return None
+    matches = []
+    for child in sorted(render_dir.iterdir(), key=lambda value: value.name):
+        if not child.is_dir():
+            continue
+        for candidate in sorted(child.iterdir(), key=lambda value: value.name):
+            if candidate.is_file() and candidate.suffix.lower() == extension_key and candidate.name.lower() == expected_name.lower():
+                matches.append(candidate)
+    if len(matches) > 1:
+        raise HostError(
+            "resolve_render_output_nested_ambiguous",
+            f"Resolve rendered multiple nested outputs for {expected_name}.",
+            {
+                "rawRelativePath": clip["rawRelativePath"],
+                "renderDir": str(render_dir),
+                "candidatePaths": [str(path) for path in matches],
+            },
+        )
+    return matches[0] if matches else None
+
+
+def nested_output_should_replace_expected(nested_output, expected_path):
+    if not expected_path.exists():
+        return True
+    if not expected_path.is_file():
+        return True
+    try:
+        return nested_output.stat().st_mtime >= expected_path.stat().st_mtime
+    except OSError:
+        return True
+
+
+def promote_nested_source_name_output(nested_output, expected_path, clip):
+    nested_dir = nested_output.parent
+    nested_files = [path for path in nested_dir.iterdir() if path.is_file()]
+    if len(nested_files) != 1:
+        raise HostError(
+            "resolve_render_output_nested_dir_not_single_file",
+            "Resolve rendered a nested output directory that is not safe to promote.",
+            {
+                "rawRelativePath": clip["rawRelativePath"],
+                "nestedDir": str(nested_dir),
+                "nestedFiles": [str(path) for path in nested_files],
+            },
+        )
+    if expected_path.exists():
+        if expected_path.is_file():
+            expected_path.unlink()
+        else:
+            raise HostError(
+                "resolve_render_output_target_not_file",
+                "Cannot promote Resolve nested output because the final target is not a file.",
+                {
+                    "rawRelativePath": clip["rawRelativePath"],
+                    "nestedOutput": str(nested_output),
+                    "expectedPath": str(expected_path),
+                },
+            )
+    expected_path.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(str(nested_output), str(expected_path))
+    try:
+        nested_dir.rmdir()
+    except OSError:
+        pass
 
 
 def safe_path_segment(value):
