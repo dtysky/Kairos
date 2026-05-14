@@ -2612,18 +2612,15 @@ def patch_render_preset_bitrate(preset_xml, bitrate, render_format=None):
 
 
 def verify_transient_render_preset(resolve, project, preset_name, bitrate, render_format):
-    verify_name = f"{preset_name}_verify"
     export_root = Path(tempfile.mkdtemp(prefix="kairos-resolve-render-preset-verify-"))
     try:
-        save_result = safe_call(project, "SaveAsNewRenderPreset", verify_name)
-        if save_result is not True:
-            raise HostError(
-                "resolve_render_preset_verify_failed",
-                "Unable to verify transient Resolve render preset bitrate.",
-                {"presetName": preset_name, "bitrateKbps": bitrate, "stage": "save"},
-            )
-        export_path = export_root / f"{verify_name}.drp"
-        export_result = safe_call(resolve, "ExportRenderPreset", verify_name, str(export_path))
+        # Resolve 21 on Windows can keep some Deliver-page UI checkboxes sticky
+        # after Import/LoadRenderPreset. SaveAsNewRenderPreset captures that
+        # current UI state, not the imported preset payload, so verify the named
+        # preset directly and let the render-output collector normalize any
+        # one-level Event_Version folders Resolve still materializes at render time.
+        export_path = export_root / f"{preset_name}.drp"
+        export_result = safe_call(resolve, "ExportRenderPreset", preset_name, str(export_path))
         if export_result is not True:
             raise HostError(
                 "resolve_render_preset_verify_failed",
@@ -2637,6 +2634,14 @@ def verify_transient_render_preset(resolve, project, preset_name, bitrate, rende
         expected_subtype = default_render_encoder_subtype(render_format)
         verified_subtype = root.findtext("RecordFormatSubType")
         verified_use_source_name = root.findtext("UsePrefixAndSuffixFromSrc")
+        verified_folder_fields = {
+            "ReelInFolder": root.findtext("ReelInFolder"),
+            "ClipInFolder": root.findtext("ClipInFolder"),
+            "AlternateInFolder": root.findtext("AlternateInFolder"),
+            "UseVersionNameForFolder": root.findtext("UseVersionNameForFolder"),
+            "SrcDirPreserveLevel": root.findtext("SrcDirPreserveLevel"),
+            "SrcDirLevelsMode": root.findtext("SrcDirLevelsMode"),
+        }
         verified_bitrate = get_extra_info_value(extra_info, "h264_datarate") if extra_info is not None else None
         verified_encoder_map = decode_resolve_string_map(
             get_extra_info_value(extra_info, "encoder_command_param_map") if extra_info is not None else None,
@@ -2673,6 +2678,20 @@ def verify_transient_render_preset(resolve, project, preset_name, bitrate, rende
                     "usePrefixAndSuffixFromSrc": verified_use_source_name,
                 },
             )
+        bad_folder_fields = {
+            key: value
+            for key, value in verified_folder_fields.items()
+            if stringify_signal_value(value) != "0"
+        }
+        if bad_folder_fields:
+            raise HostError(
+                "resolve_render_preset_folder_verify_failed",
+                "Resolve did not keep direct-root output folder settings in the transient render preset.",
+                {
+                    "presetName": preset_name,
+                    "folderFields": bad_folder_fields,
+                },
+            )
         if verified_map_bitrate != bitrate:
             raise HostError(
                 "resolve_render_preset_bitrate_verify_failed",
@@ -2695,7 +2714,6 @@ def verify_transient_render_preset(resolve, project, preset_name, bitrate, rende
                 },
             )
     finally:
-        safe_call(project, "DeleteRenderPreset", verify_name)
         shutil.rmtree(export_root, ignore_errors=True)
 
 

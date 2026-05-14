@@ -129,7 +129,7 @@ Current stable pipeline:
     - every batch is root-scoped and may optionally carry `clipKeys[]` as a retry/subset selection; default execution still exports all eligible clips on that root timeline
     - before any overwrite, `/color` computes a final-target overwrite preview and requires a matching `overwritePlanHash`; stale or missing confirmation blocks before Resolve mutation
     - the vendored Resolve host groups clips by `rawRelativePath` parent directory, duplicates the official root grading timeline per directory, prunes each temporary timeline to that directory's clips, queues all render jobs, then calls one render-all operation
-    - each temporary timeline targets the final `localPath/<relativeDir>/` directory with Resolve File Name = Source Name; Kairos does not write a project-level video holding directory, and only normalizes Resolve-created one-level `Event_Version...` folders by promoting the single matching source-name file back to the final target
+    - each temporary timeline targets the final `localPath/<relativeDir>/` directory with Resolve File Name = Source Name; Kairos validates the imported Windows generated named preset directly instead of trusting sticky Deliver-page UI state, does not write a project-level video holding directory, and only normalizes Resolve-created one-level `Event_Version...` folders by promoting the single matching source-name file back to the final target
     - final outputs are validated as exact `dayX/sourceStem.ext` files; prefix/suffix outputs such as `V1-0001_C1611.ext` are treated as render-setting failures
   - current `execute_root` must normalize final output metadata before manifest persist:
     - `creation_time` is rewritten to the source `capturedAt`
