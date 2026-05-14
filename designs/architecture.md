@@ -56,6 +56,8 @@
   - `prepare_root`
   - `sync_groups`
   - `execute_root`
+  - `sync_batch_metadata`
+  - `sync_batch_sidecars`
   - `validate_batch`
   - `prepare_all_roots`
   - `export_all_roots`
@@ -68,7 +70,8 @@
 - `export_all_roots` 的正式合同是：
   - 使用当前 `/color` read model 中 enabled roots 的正式 priority 顺序
   - 顺序对每个 root 执行 `execute_root`
-  - 每个 root 的 `execute_root` 内部完成 render all、最终 replace、metadata 修复与 validation
+  - 每个 root 的 `execute_root` 只完成 render all、最终 replace 和 render manifest 记录
+  - metadata 修复、sidecar 同步与 validation 都是用户后续对单 root/latest batch 手动触发的独立动作
   - 任一 root 失败时继续后续 roots
   - 只要存在失败 root，整个 job 最终记为 failed
 - clip repair 的正式用户口径不再是 donor matrix，而是统一固定五节点图：
@@ -261,9 +264,22 @@
   - 非 Windows 主机继续走 Resolve 公共 render setting 路径；当 `VideoQuality` 可用时，直接由它承载 `root.renderPreset.bitrateKbps`
   - 项目目录只保存 `color/batches/<batchId>/...` JSON archive，不能作为视频 staging；Kairos 不创建视频 holding 目录；仅允许把 Resolve 在最终 TargetDir 内生成的单层 `Event_Version...` 临时子目录中的唯一源名文件提升回最终路径
   - Resolve 完成后必须直接校验最终 `manifest.entries[].outputPath`；出现 prefix/suffix 输出名视为 render setting 失败
-  - Resolve 写入最终路径后，Node 侧必须立即对最终输出做 metadata normalize：
-    - `creation_time` 必须改写为源文件 `capturedAt`
+  - Resolve 完成后 `execute_root` 只写 render manifest：
+    - `latestBatchStatus = rendered`
+    - `latestValidationStatus = pending`
+    - `manifest.metadataRepair.status = pending`
+    - `manifest.managedSidecarSet = []`
+  - `sync_batch_metadata` 是显式后处理动作：
+    - 对指定或 latest batch 的最终输出做 metadata normalize
+    - metadata normalize 必须限流执行并写文件级 progress，不能一次性为整个 root 拉起无界 ffmpeg
+    - `creation_time` 改写为源文件 `capturedAt`
     - 源文件带 GPS 时，最终输出必须带可被 `ffprobe` 读回的容器位置标签
+    - 更新 `manifest.metadataRepair` 和 `entries[].outputMetadataSnapshot`
+  - `sync_batch_sidecars` 是显式后处理动作：
+    - 只同步同 basename `.srt/.wav/.flac/.m4a/.aac/.mp3`
+    - `.xml/.gyroflow` 只服务 prepare/source truth，不作为成片 sidecar 导出
+    - 更新 `entries[].sidecars` 和 `managedSidecarSet`
+  - 后处理动作可在 `manifest.json` 缺失但 `plan.json` 中所有最终输出都已存在时恢复 manifest；这是中断/旧失败 batch 的恢复路径，不允许对缺输出的 batch 伪造成功
 - 自动 Group 已退出 `colorspace / gamma / codec / resolution / fps` technical fingerprint 语义，改为纯创意标签：
   - `log`
   - `lowlight`
@@ -277,8 +293,10 @@
 - Group truth 继续以 Resolve 为准：
   - `/color` 通过 `sync_groups` 镜像 Resolve 当前 group name
   - `groupKey` 的正式语义改为 normalized Resolve group name slug
-- `validate_batch` 当前继续以媒体参数和 metadata 为主，但 warning 与 blocking 需要分层：
-  - `capturedAt / GPS` 仍是硬阻塞
+- `validate_batch` 当前继续以媒体参数、metadata 同步状态与 sidecar 同步状态为主，但 warning 与 blocking 需要分层：
+  - 源有 `capturedAt / GPS` 但 `manifest.metadataRepair.status !== completed` 时是硬阻塞，提示先运行 `sync_batch_metadata`
+  - 源目录存在应同步 sidecar 但 manifest 或最终输出缺失时是硬阻塞，提示先运行 `sync_batch_sidecars`
+  - `.xml/.gyroflow` 不参与 sidecar validation
   - `create_time` 当前降级为 warning-only
 - `/color` 前后端兼容层必须清掉历史 `resolveColorPythonPath / resolveColorScriptApiRoot` blocker 口径
   - 新的 host preflight ready/blocked 真值必须覆盖旧缓存，不允许继续显示遗留 Python-path 提示
@@ -798,8 +816,10 @@ src/modules/color/
   → `execute_root` 按需扫描 `rawLocalPath`，生成 root clip inventory，并可按 `clipKeys[]` 裁成 batch，写 `plan.json`
   → official Python host 按 raw 父目录复制临时时间线并直接渲染到当前 root `localPath/<relativeDir>/`
   → Kairos 校验最终 `dayX/sourceStem.ext` 输出完整且没有 Resolve 前后缀命名
-  → Kairos 修复最终输出 metadata，写 `manifest.json` 并更新 `current.json` 的 latest batch 指针
-  → `validate_batch` 在 Node 侧 probe 原始文件、同名 sidecar 与 root 输出，对账路径/扩展名/媒体参数/metadata，写 `validation.json`
+  → Kairos 写 `manifest.json` 并更新 `current.json` 的 latest batch 指针为 rendered/pending
+  → 用户手动触发 `sync_batch_metadata` 修复最终输出 metadata
+  → 用户手动触发 `sync_batch_sidecars` 同步同 basename 字幕/备份音轨
+  → 用户手动触发 `validate_batch` 在 Node 侧 probe 原始文件、同名 sidecar 与 root 输出，对账路径/扩展名/媒体参数/metadata，写 `validation.json`
 ```
 
 #### 2.3 Script — 脚本生成

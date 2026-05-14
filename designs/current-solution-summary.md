@@ -21,7 +21,7 @@ Kairos 当前需要区分两层：
 - 一条与主链解耦的 `DaVinci color` 独立增强链路
   - 当前已经有最小 `/color` 控制面与项目级 `color/` runtime/archive store
   - 当前 `/color` 会自动发现已配置 `rawPath` 的素材根，派生约定命名与阻塞状态
-  - 当前 `/color` 已支持同机 vendored Resolve backend 驱动的 color action 链：`prepare_root -> sync_groups -> execute_root -> validate_batch -> prepare_all_roots -> export_all_roots`
+  - 当前 `/color` 已支持同机 vendored Resolve backend 驱动的 color action 链：`prepare_root -> sync_groups -> execute_root -> sync_batch_metadata -> sync_batch_sidecars -> validate_batch -> prepare_all_roots -> export_all_roots`
   - 当前 `/color` 的长期用户配置已收口到 `config/project-brief.json` root mapping 上的最小 `color.renderPreset + color.colorSpaceProfile + color.transformPresetKey`
     - `color.renderPreset` 当前正式使用 `bitrateKbps`（单位 `kb/s`）；不再接受旧的 bitrate 别名字段
     - `color.colorSpaceProfile` 当前正式表示“技术输入类型”，不是 creative look，也不再承载 gamut/primaries 细节
@@ -84,7 +84,7 @@ Kairos 当前需要区分两层：
     - clip 侧至少镜像 `gyroEligible / gyroflowStatus / dehazeStatus / nrStatus / clipRepairStatus / layoutStatus / orientationStatus / repairTemplateKey / timelineTransform`
   - 当前 `/color` 进入页面或切换项目时会自动执行 Resolve host preflight，并把结果正式缓存到 `color/current.json.hostPreflight`
   - 当前 `/color` 会把 Resolve 工程同步快照落到项目内 `color/resolve-projects/<safe-project-name>/`；自动快照只在 root prepare 全部 chunks 完成后生成一次，手动 `保存 DRP 快照` 可随时 `SaveProject()` 并导出轻量 `.drp`，两者都会维护 `latest.drp` 与 `color/resolve-project-map.json`；外部 GUI 导出的 `.drp` 可登记为 latest
-  - 当前 `prepare_root / sync_groups / execute_root / prepare_all_roots / export_all_roots` 都先经过 preflight 守卫；宿主 blocked 或 render preset 不受支持时，动作会在 Resolve 变更前直接失败
+  - 当前 `prepare_root / sync_groups / execute_root / prepare_all_roots / export_all_roots` 都先经过 preflight 守卫；宿主 blocked 或 render preset 不受支持时，动作会在 Resolve 变更前直接失败。`sync_batch_metadata / sync_batch_sidecars / validate_batch` 是 Node 侧 batch 后处理/校验动作，不需要 Resolve host preflight
   - 当前成功重跑 `prepare_root` 会清理上一轮 Resolve host 短时崩溃留下的动作级 blocker；`color/current.json.blockingReasons` 不得在 root 已 `synced/ready` 时继续显示旧的 DRT import 等 transient 错误
   - 当前 color host 的正式兼容下限为 `DaVinci Resolve Studio >= 18.5`；低版本 / 非 Studio 是硬阻塞，部分兼容降级则显示为 `degraded`
   - 当前 host retry 只覆盖短时 host/app 故障，不覆盖缺配置、缺素材、render preset 不支持、validation fail 等语义错误
@@ -102,16 +102,22 @@ Kairos 当前需要区分两层：
     - 覆盖已有最终目标前，`/color` 必须先生成最终 `dayX/Cxxxx.ext` 覆盖预览并用 `overwritePlanHash` 锁定确认范围；hash 缺失或变化时不允许启动 Resolve
     - 每个目录级临时时间线直接渲染到最终 `localPath/<relativeDir>/`；Kairos 不创建项目级视频 holding 目录；仅允许把 Resolve 在最终 TargetDir 内生成的单层 `Event_Version...` 临时子目录中的唯一源名文件提升回最终路径
     - 任一 `AddRenderJob()` 失败时不得启动渲染；若 Resolve 输出出现 `V1-0001_C1611.ext` / `C1611_001.ext` 这类前后缀文件名，batch 直接失败
-  - 当前 `execute_root` 在写 manifest 前必须先做最终文件 metadata normalize：
-    - `creation_time` 改写为源文件 `capturedAt`
-    - 源文件带 GPS 时，容器位置标签也必须改写到最终输出，且能被 `ffprobe` 读回
+  - 当前 `execute_root` 成功后只写 render manifest，不再自动修复 metadata、同步 sidecar 或触发 validation：
+    - `latestBatchStatus = rendered`
+    - `latestValidationStatus = pending`
+    - `manifest.metadataRepair.status = pending`
+    - `manifest.managedSidecarSet = []`
+  - 当前 `sync_batch_metadata` 是显式后处理动作：按指定或 latest batch 对最终输出做 metadata normalize，使用受限 ffmpeg 并发并写入文件级进度，更新 `manifest.metadataRepair` 与 `entries[].outputMetadataSnapshot`
+  - 当前 `sync_batch_sidecars` 是显式后处理动作：只复制同 basename 的 `.srt/.wav/.flac/.m4a/.aac/.mp3`，更新 `entries[].sidecars` 与 `managedSidecarSet`；`.xml/.gyroflow` 不作为导出 sidecar
+  - 当前后处理动作允许从 `plan.json + 已存在最终输出` 恢复缺失的 `manifest.json`；只有所有计划输出都已存在时才允许恢复，否则仍视为 render batch 失败并要求重跑 `execute_root`
   - 当前 `validate_batch` 已扩展为写入 summary 统计、top-level blockingReasons 和 warning-only 诊断，供 `/color` 直接显示 validation 失败原因
-    - `capturedAt / GPS` 仍是硬门槛
-    - `create_time` 当前是 warning-only
-  - 当前 `promote_batch` 已退出正式导出链；视频与同 basename 的 `.srt/.xml/.gyroflow/.wav/.flac/.m4a/.aac/.mp3` sidecar 在 `execute_root` 成功验证后即是当前 root 输出
+    - 源有 `capturedAt / GPS` 但 metadata 尚未同步时是硬阻塞，提示先运行 `sync_batch_metadata`
+    - 源目录存在应同步 sidecar 但 manifest/输出缺失时是硬阻塞，提示先运行 `sync_batch_sidecars`
+    - `.xml/.gyroflow` 不参与 sidecar validation
+  - 当前 `promote_batch` 已退出正式导出链；视频在 `execute_root` 渲染成功后成为 rendered batch，metadata / sidecar / validation 由用户在 `/color` 手动触发
   - 当前 `/color` 还正式提供项目级批处理入口：
     - `Prepare All Roots`：按当前 read model 的 enabled root priority 顺序依次执行 `prepare_root`
-    - `Export All Roots`：按同一顺序依次执行 `execute_root`，每个 root 内部完成 render all、最终 replace、metadata 修复和 validation
+    - `Export All Roots`：按同一顺序依次执行 `execute_root`，每个 root 只完成 render all、最终 replace 和 manifest 记录；metadata / sidecar / validation 后处理由用户逐 root 手动触发
     - 项目级动作遇到单个 root 失败时继续后续 roots，但只要存在失败 root，整个 job 最终仍记为 failed
   - 当前 `/color` 继续保持单页，但已正式消费 `color/batches/<batchId>/plan|manifest|validation` 归档，并按 root 展示可折叠的 `Host Diagnostics / Recent Batches / Validation Failures`
   - 当前 Resolve 宿主路线已经冻结并落地为“同机 vendored Resolve backend（`vendor/resolve-color-host/` + fixed `.venv`）”，不再把 MCP 作为 color 主线

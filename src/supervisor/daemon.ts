@@ -189,7 +189,7 @@ async function routeRequest(
         { jobType: 'gps-refresh', executionMode: 'deterministic', supported: true },
         { jobType: 'analyze', executionMode: 'deterministic', supported: true },
         { jobType: 'style-analysis', executionMode: 'deterministic', supported: true, note: 'runs deterministic prep and then hands off to Agent for final text/art-style reference; does not generate edit rules' },
-        { jobType: 'color', executionMode: 'deterministic', supported: true, note: 'supports prepare_root / sync_groups / execute_root / validate_batch / prepare_all_roots / export_all_roots through the same-machine vendored Resolve backend; clip repair now follows the canonical Gyro -> Dehaze -> User1 -> User2 -> NR layout, and execute/export-all require explicit overwrite confirmation before replacing existing root outputs' },
+        { jobType: 'color', executionMode: 'deterministic', supported: true, note: 'supports prepare_root / sync_groups / execute_root / sync_batch_metadata / sync_batch_sidecars / validate_batch / prepare_all_roots / export_all_roots through the same-machine vendored Resolve backend; clip repair now follows the canonical Gyro -> Dehaze -> User1 -> User2 -> NR layout, and execute/export-all require explicit overwrite confirmation before replacing existing root outputs' },
         { jobType: 'script', executionMode: 'deterministic', supported: true, note: 'runs per editId only after reviewed brief and editRuleCategory are saved; advances ready_to_prepare -> ready_for_agent; final script remains agent-authored' },
         { jobType: 'timeline', executionMode: 'deterministic', supported: true, note: 'builds per-edit rough-cut-base -> segment-cut review chain; requires a configured host agent packet runner' },
         { jobType: 'export-jianying', executionMode: 'deterministic', supported: false },
@@ -461,7 +461,7 @@ async function routeRequest(
     }
     sendJson(response, 200, {
       ...job,
-      progress: job.progressPath ? await readJsonFile(job.progressPath) : null,
+      progress: await readJobProgressForStatus(job),
     });
     return;
   }
@@ -891,9 +891,15 @@ async function loadJobsWithProgress(workspaceRoot: string): Promise<Array<ISuper
   const jobs = await listJobRecords(workspaceRoot);
   const hydrated = await Promise.all(jobs.map(async job => ({
     ...job,
-    progress: job.progressPath ? await readJsonFile(job.progressPath) : null,
+    progress: await readJobProgressForStatus(job),
   })));
   return hydrated;
+}
+
+async function readJobProgressForStatus(job: ISupervisorJobRecord): Promise<unknown> {
+  if (!job.progressPath) return null;
+  if (!['queued', 'running'].includes(job.status)) return null;
+  return readJsonFile(job.progressPath);
 }
 
 async function reconcileInterruptedJobs(workspaceRoot: string): Promise<void> {

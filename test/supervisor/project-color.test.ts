@@ -22,6 +22,8 @@ import {
   registerExternalColorDrpSnapshot,
   runProjectColorAction,
   snapshotProjectColorDrp,
+  syncProjectColorBatchMetadata,
+  syncProjectColorBatchSidecars,
   syncProjectColorGroups,
   validateProjectColorBatch,
 } from '../../src/modules/color/project-color.js';
@@ -875,11 +877,16 @@ describe('project color actions', () => {
       join(currentLocalPath, 'day1', 'A001.mp4'),
       join(currentLocalPath, 'day2', 'A001.mp4'),
     ]);
-    expect(validation?.status).toBe('pass');
+    expect(manifest?.metadataRepair).toMatchObject({
+      status: 'pending',
+      repairedCount: 0,
+    });
+    expect(manifest?.managedSidecarSet).toEqual([]);
+    expect(validation).toBeNull();
     expect(current.roots[0]).toMatchObject({
       latestBatchId: executeResult.batchId,
-      latestBatchStatus: 'validated',
-      latestValidationStatus: 'pass',
+      latestBatchStatus: 'rendered',
+      latestValidationStatus: 'pending',
     });
 
     expect(await readFile(join(currentLocalPath, 'day1', 'A001.mp4'), 'utf-8')).toBe('rendered:day1/A001.mov');
@@ -932,7 +939,7 @@ describe('project color actions', () => {
     await expect(readFile(join(currentLocalPath, 'day1', 'A002.mp4'), 'utf-8')).rejects.toThrow();
   });
 
-  it('mirrors same-basename raw sidecars after direct-root export', async () => {
+  it('mirrors same-basename raw sidecars only after manual sidecar sync', async () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-color-sidecars';
     const { projectRoot, rootId, rawLocalPath, currentLocalPath } = await seedSingleRootProject({
@@ -943,6 +950,8 @@ describe('project color actions', () => {
     });
     await writeFile(join(rawLocalPath, 'day1', 'A001.SRT'), 'subtitle', 'utf-8');
     await writeFile(join(rawLocalPath, 'day1', 'A001.WAV'), 'audio', 'utf-8');
+    await writeFile(join(rawLocalPath, 'day1', 'A001.xml'), '<xml/>', 'utf-8');
+    await writeFile(join(rawLocalPath, 'day1', 'A001.gyroflow'), '{}', 'utf-8');
     await writeFile(join(rawLocalPath, 'day1', 'A001_notes.srt'), 'not copied', 'utf-8');
 
     mockColorMetadata();
@@ -955,19 +964,112 @@ describe('project color actions', () => {
       action: 'execute_root',
       executor,
     });
-    const [manifest, validation] = await Promise.all([
-      loadColorBatchManifest(projectRoot, executeResult.batchId!),
-      loadColorBatchValidation(projectRoot, executeResult.batchId!),
-    ]);
+    const manifestBefore = await loadColorBatchManifest(projectRoot, executeResult.batchId!);
+    expect(manifestBefore?.entries[0]?.sidecars).toEqual([]);
+    expect(manifestBefore?.managedSidecarSet).toEqual([]);
+    await expect(readFile(join(currentLocalPath, 'day1', 'A001.SRT'), 'utf-8')).rejects.toThrow();
+    await rm(join(projectRoot, 'color', 'batches', executeResult.batchId!, 'manifest.json'));
+
+    const validationBefore = await validateProjectColorBatch({
+      workspaceRoot,
+      projectId,
+      rootId,
+      action: 'validate_batch',
+      batchId: executeResult.batchId,
+    });
+    expect(validationBefore.blockingReasons).toContain('sidecar sync pending: run sync_batch_sidecars for day1/A001.SRT');
+    const recoveredManifest = await loadColorBatchManifest(projectRoot, executeResult.batchId!);
+    expect(recoveredManifest?.metadataRepair?.warnings).toContain('manifest recovered from plan and existing rendered outputs');
+    expect((await loadColorCurrent(projectRoot)).roots[0]).toMatchObject({
+      latestBatchStatus: 'rendered',
+      latestValidationStatus: 'fail',
+    });
+
+    await syncProjectColorBatchSidecars({
+      workspaceRoot,
+      projectId,
+      rootId,
+      action: 'sync_batch_sidecars',
+      batchId: executeResult.batchId,
+    });
+    const manifest = await loadColorBatchManifest(projectRoot, executeResult.batchId!);
     expect(manifest?.entries[0]?.sidecars.map(sidecar => sidecar.outputRelativePath)).toEqual([
       'day1/A001.SRT',
       'day1/A001.WAV',
     ]);
     expect(manifest?.managedSidecarSet).toEqual(['day1/A001.SRT', 'day1/A001.WAV']);
-    expect(validation?.status).toBe('pass');
+    const validationResult = await validateProjectColorBatch({
+      workspaceRoot,
+      projectId,
+      rootId,
+      action: 'validate_batch',
+      batchId: executeResult.batchId,
+    });
+    expect(validationResult.blockingReasons).toEqual([]);
+    expect((await loadColorBatchValidation(projectRoot, executeResult.batchId!))?.status).toBe('pass');
     expect(await readFile(join(currentLocalPath, 'day1', 'A001.SRT'), 'utf-8')).toBe('subtitle');
     expect(await readFile(join(currentLocalPath, 'day1', 'A001.WAV'), 'utf-8')).toBe('audio');
+    await expect(readFile(join(currentLocalPath, 'day1', 'A001.xml'), 'utf-8')).rejects.toThrow();
+    await expect(readFile(join(currentLocalPath, 'day1', 'A001.gyroflow'), 'utf-8')).rejects.toThrow();
     await expect(readFile(join(currentLocalPath, 'day1', 'A001_notes.srt'), 'utf-8')).rejects.toThrow();
+  });
+
+  it('requires manual metadata sync before validating metadata-bearing outputs', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-color-manual-metadata';
+    const { projectRoot, rootId, currentLocalPath } = await seedSingleRootProject({
+      workspaceRoot,
+      projectId,
+      projectName: 'Project Color Manual Metadata',
+      rawFiles: ['day1/A001.mov'],
+    });
+
+    mockColorMetadata({ includeCaptureTime: true, includeGps: true });
+    const executor = createFakeExecutor();
+    await prepareProjectColorRoot({ workspaceRoot, projectId, rootId, executor });
+    const executeResult = await executeProjectColorRoot({
+      workspaceRoot,
+      projectId,
+      rootId,
+      action: 'execute_root',
+      executor,
+    });
+    const staleTempPath = join(currentLocalPath, 'day1', '.kairos-meta-11111111-2222-3333-4444-555555555555.mp4');
+    await writeFile(staleTempPath, 'stale temp', 'utf-8');
+
+    expect((await loadColorBatchManifest(projectRoot, executeResult.batchId!))?.metadataRepair).toMatchObject({
+      status: 'pending',
+      repairedCount: 0,
+    });
+    const validationBefore = await validateProjectColorBatch({
+      workspaceRoot,
+      projectId,
+      rootId,
+      action: 'validate_batch',
+      batchId: executeResult.batchId,
+    });
+    expect(validationBefore.blockingReasons).toContain('metadata sync pending: run sync_batch_metadata before validate_batch');
+
+    await expect(syncProjectColorBatchMetadata({
+      workspaceRoot,
+      projectId,
+      rootId,
+      action: 'sync_batch_metadata',
+      batchId: executeResult.batchId,
+    })).rejects.toBeInstanceOf(ProjectColorBlockedError);
+    const manifestAfter = await loadColorBatchManifest(projectRoot, executeResult.batchId!);
+    expect(manifestAfter?.metadataRepair?.status).toBe('failed');
+    expect(manifestAfter?.metadataRepair?.failedOutputs[0]?.rawRelativePath).toBe('day1/A001.mov');
+    expect(manifestAfter?.metadataRepair?.warnings).toContain('cleaned 1 stale metadata temp files before metadata sync');
+    await expect(readFile(staleTempPath, 'utf-8')).rejects.toThrow();
+    const progress = JSON.parse(await readFile(join(projectRoot, '.tmp', 'color', 'progress.json'), 'utf-8'));
+    expect(progress).toMatchObject({
+      status: 'failed',
+      phaseKey: 'sync_batch_metadata',
+      current: 1,
+      total: 1,
+      unit: 'file',
+    });
   });
 
   it('marks execute_root failed instead of leaving a stale rendering state', async () => {

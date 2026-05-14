@@ -1156,6 +1156,7 @@ export type EColorGroupStatus = z.infer<typeof EColorGroupStatus>;
 export const EColorBatchStatus = z.enum([
   'draft',
   'rendering',
+  'rendered',
   'staged',
   'validated',
   'promoted',
@@ -1478,6 +1479,24 @@ export const IColorBatchManifestEntry = z.object({
 });
 export type IColorBatchManifestEntry = z.infer<typeof IColorBatchManifestEntry>;
 
+export const EColorMetadataRepairStatus = z.enum(['pending', 'completed', 'failed']);
+export type EColorMetadataRepairStatus = z.infer<typeof EColorMetadataRepairStatus>;
+
+export const IColorMetadataRepairFailedOutput = z.object({
+  rawRelativePath: z.string().optional(),
+  outputPath: z.string(),
+  reason: z.string(),
+});
+export type IColorMetadataRepairFailedOutput = z.infer<typeof IColorMetadataRepairFailedOutput>;
+
+export const IColorBatchMetadataRepair = z.object({
+  status: EColorMetadataRepairStatus.default('pending'),
+  repairedCount: z.number().int().nonnegative().default(0),
+  failedOutputs: z.array(IColorMetadataRepairFailedOutput).default([]),
+  warnings: z.array(z.string()).default([]),
+});
+export type IColorBatchMetadataRepair = z.infer<typeof IColorBatchMetadataRepair>;
+
 export const IColorBatchManifest = z.object({
   batchId: z.string(),
   rootId: z.string(),
@@ -1486,7 +1505,7 @@ export const IColorBatchManifest = z.object({
   managedOutputSet: z.array(z.string()).default([]),
   managedSidecarSet: z.array(z.string()).default([]),
   renderJobs: z.array(IColorBatchRenderJob).default([]),
-  metadataRepair: z.record(z.unknown()).optional(),
+  metadataRepair: IColorBatchMetadataRepair.optional(),
   entries: z.array(IColorBatchManifestEntry).default([]),
 });
 export type IColorBatchManifest = z.infer<typeof IColorBatchManifest>;

@@ -256,6 +256,8 @@ async function runJob(
         | 'prepare_root'
         | 'sync_groups'
         | 'execute_root'
+        | 'sync_batch_metadata'
+        | 'sync_batch_sidecars'
         | 'validate_batch'
         | 'promote_batch'
         | 'prepare_all_roots'

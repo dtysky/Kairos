@@ -1079,11 +1079,11 @@ export function ColorCurrentSummary({
     () => (Array.isArray(jobs) ? jobs : [])
       .filter(job => job?.jobType === 'color')
       .filter(job => !projectId || job.projectId === projectId)
-      .filter(job => ['queued', 'running', 'blocked'].includes(job.status)),
+      .filter(job => ['queued', 'running'].includes(job.status)),
     [jobs, projectId],
   );
   const liveColorJobs = React.useMemo(
-    () => colorJobs.filter(job => ['queued', 'running'].includes(job.status)),
+    () => colorJobs,
     [colorJobs],
   );
   const capabilityLabel = capability?.supported === false
@@ -1137,6 +1137,10 @@ export function ColorCurrentSummary({
   const activeRootTone = resolveColorDashboardTone(activeRootStageStatus);
   const activeRootLatestBatchId = activeRoot ? resolveColorRootLatestBatchId(activeRoot) : '';
   const activeRootHeroDetail = activeRoot ? resolveColorRootHeroDetail(activeRoot) : '';
+  const activeRootLiveJob = activeRoot
+    ? liveColorJobs.find(job => matchesColorRoot({ rootId: getColorJobRootId(job) }, activeRoot.rootId))
+    : null;
+  const activeRootProgress = activeRootLiveJob?.progress || null;
   const activeRootPreflightBusy = activeRoot
     ? (busy?.[`color:preflight:${activeRoot.rootId}`] || busy?.['color:preflight'])
     : false;
@@ -1160,15 +1164,27 @@ export function ColorCurrentSummary({
         </p>
         {colorJobs.length > 0 ? (
           <div className="stack-list color-live-jobs">
-            {colorJobs.map(job => (
-              <div key={job.jobId} className="job-item">
-                <div>
-                  <strong>{getColorJobRootId(job) || job.jobId}</strong>
-                  <div className="muted">{job.progress?.stepLabel || job.progress?.detail || job.status}</div>
+            {colorJobs.map(job => {
+              const progressSummary = formatColorJobProgress(job.progress);
+              const progressPercent = getColorProgressPercent(job.progress);
+              return (
+                <div key={job.jobId} className="job-item color-job-item">
+                  <div className="color-job-copy">
+                    <strong>{getColorJobRootId(job) || job.jobId}</strong>
+                    <div className="muted">{job.progress?.detail || job.progress?.stepLabel || job.status}</div>
+                    {progressSummary ? (
+                      <div className="color-job-progress">
+                        <div className="color-job-progress-bar" aria-hidden="true">
+                          <span style={{ width: `${progressPercent}%` }} />
+                        </div>
+                        <div className="muted color-job-progress-caption">{progressSummary}</div>
+                      </div>
+                    ) : null}
+                  </div>
+                  <Tag>{job.status}</Tag>
                 </div>
-                <Tag>{job.status}</Tag>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : null}
         {rootCards.length > 0 ? (
@@ -1277,6 +1293,20 @@ export function ColorCurrentSummary({
                   {describeColorRootAction('execute_root', activeRoot, liveColorJobs, busy)}
                 </Button>
                 <Button
+                  type={canRunColorRootAction('sync_batch_metadata', activeRoot, capability, liveColorJobs, busy, onRunColorAction) ? 'default' : 'disabled'}
+                  disabled={!canRunColorRootAction('sync_batch_metadata', activeRoot, capability, liveColorJobs, busy, onRunColorAction)}
+                  onClick={() => onRunColorAction?.({ rootId: activeRoot.rootId, action: 'sync_batch_metadata', batchId: activeRoot.current?.latestBatchId })}
+                >
+                  {describeColorRootAction('sync_batch_metadata', activeRoot, liveColorJobs, busy)}
+                </Button>
+                <Button
+                  type={canRunColorRootAction('sync_batch_sidecars', activeRoot, capability, liveColorJobs, busy, onRunColorAction) ? 'default' : 'disabled'}
+                  disabled={!canRunColorRootAction('sync_batch_sidecars', activeRoot, capability, liveColorJobs, busy, onRunColorAction)}
+                  onClick={() => onRunColorAction?.({ rootId: activeRoot.rootId, action: 'sync_batch_sidecars', batchId: activeRoot.current?.latestBatchId })}
+                >
+                  {describeColorRootAction('sync_batch_sidecars', activeRoot, liveColorJobs, busy)}
+                </Button>
+                <Button
                   type={canRunColorRootAction('validate_batch', activeRoot, capability, liveColorJobs, busy, onRunColorAction) ? 'default' : 'disabled'}
                   disabled={!canRunColorRootAction('validate_batch', activeRoot, capability, liveColorJobs, busy, onRunColorAction)}
                   onClick={() => onRunColorAction?.({ rootId: activeRoot.rootId, action: 'validate_batch', batchId: activeRoot.current?.latestBatchId })}
@@ -1286,6 +1316,20 @@ export function ColorCurrentSummary({
               </div>
             </div>
             <div className="detail">{activeRootHeroDetail}</div>
+            {activeRootProgress ? (
+              <div className="color-active-progress">
+                <div className="color-active-progress-top">
+                  <strong>{activeRootProgress.stepLabel || activeRootProgress.step || 'Color job'}</strong>
+                  <span>{formatColorJobProgress(activeRootProgress) || activeRootProgress.status || 'running'}</span>
+                </div>
+                <div className="color-job-progress-bar" aria-hidden="true">
+                  <span style={{ width: `${getColorProgressPercent(activeRootProgress)}%` }} />
+                </div>
+                {activeRootProgress.detail ? (
+                  <div className="muted">{activeRootProgress.detail}</div>
+                ) : null}
+              </div>
+            ) : null}
             <div className="color-drp-panel">
               <div className="color-drp-copy">
                 <strong>Resolve DRP 快照</strong>
@@ -1639,7 +1683,7 @@ function resolveColorDashboardTone(status) {
   const normalized = String(status || '').toLowerCase();
   if (['failed', 'blocked'].includes(normalized)) return 'error';
   if (['degraded', 'missing', 'queued'].includes(normalized)) return 'warn';
-  if (['ready', 'running', 'synced', 'staged', 'promoted', 'completed'].includes(normalized)) return 'ok';
+  if (['ready', 'running', 'synced', 'rendered', 'staged', 'promoted', 'completed'].includes(normalized)) return 'ok';
   return 'default';
 }
 
@@ -1665,6 +1709,8 @@ function formatColorDashboardStatus(status) {
       return 'Staged';
     case 'synced':
       return 'Synced';
+    case 'rendered':
+      return 'Rendered';
     case 'completed':
       return 'Completed';
     default:
@@ -1745,7 +1791,7 @@ function describeColorPrepareChunks(chunks) {
 function resolveColorStageCardState(status) {
   const normalized = String(status || '').toLowerCase();
   if (['running', 'queued'].includes(normalized)) return 'active';
-  if (['ready', 'completed', 'synced', 'promoted', 'staged'].includes(normalized)) return 'completed';
+  if (['ready', 'completed', 'synced', 'rendered', 'promoted', 'staged'].includes(normalized)) return 'completed';
   if (['failed', 'blocked'].includes(normalized)) return 'error';
   return 'idle';
 }
@@ -3119,6 +3165,45 @@ function getColorJobAction(job) {
   return getColorStringField(job?.args, ['action']) || 'prepare_root';
 }
 
+function formatColorJobProgress(progress) {
+  if (!isPlainObject(progress)) return '';
+  const current = Number(progress.current || 0);
+  const total = Number(progress.total || 0);
+  const percent = getColorProgressPercent(progress);
+  if (total > 0) {
+    const unit = formatColorProgressUnit(progress.unit);
+    const failedCount = Number(progress.extra?.failedCount || 0);
+    const failureText = failedCount > 0 ? ` · 失败 ${failedCount}` : '';
+    return `${current}/${total} ${unit} · ${percent.toFixed(1)}%${failureText}`;
+  }
+  return progress.status || '';
+}
+
+function getColorProgressPercent(progress) {
+  if (!isPlainObject(progress)) return 0;
+  const explicitPercent = Number(progress.percent);
+  if (Number.isFinite(explicitPercent)) {
+    return clampPercent(explicitPercent);
+  }
+  const current = Number(progress.current || 0);
+  const total = Number(progress.total || 0);
+  if (!Number.isFinite(current) || !Number.isFinite(total) || total <= 0) {
+    return progress.status === 'succeeded' ? 100 : 0;
+  }
+  return clampPercent((current / total) * 100);
+}
+
+function clampPercent(value) {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(100, value));
+}
+
+function formatColorProgressUnit(unit) {
+  if (unit === 'file') return '文件';
+  if (unit === 'step') return '步骤';
+  return unit || '项';
+}
+
 function hasLiveColorJobForRoot(liveJobs, rootId, action) {
   return (liveJobs || []).some(job => (
     String(getColorJobRootId(job)) === String(rootId)
@@ -3146,10 +3231,12 @@ function canRunColorRootAction(action, root, capability, liveJobs, busy, onRunCo
   if (busy?.['project-brief']) return false;
   if (busy?.['job:color']) return false;
   if ((liveJobs || []).length > 0) return false;
+  if (['sync_batch_metadata', 'sync_batch_sidecars', 'validate_batch'].includes(action)) {
+    return Boolean(getColorStringField(root.current, ['latestBatchId']));
+  }
   if (getColorStringField(root.hostPreflight, ['status']) === 'blocked') return false;
   if (action === 'sync_groups' && !colorRootHasSyncableResolveGroups(root)) return false;
   if (action === 'execute_root' && getColorStringField(root.current, ['timelineStatus']) !== 'ready') return false;
-  if (action === 'validate_batch') return Boolean(getColorStringField(root.current, ['latestBatchId']));
   if (action === 'promote_batch') {
     return Boolean(getColorStringField(root.current, ['pendingPromoteBatchId']) || (
       getColorStringField(root.current, ['latestBatchId']) && getColorStringField(root.current, ['latestValidationStatus']) === 'pass'
@@ -3176,6 +3263,8 @@ function describeColorRootAction(action, root, liveJobs, busy) {
   if (hasLiveColorJobForRoot(liveJobs, root.rootId, action)) {
     if (action === 'sync_groups') return '同步中…';
     if (action === 'execute_root') return '执行中…';
+    if (action === 'sync_batch_metadata') return '同步中…';
+    if (action === 'sync_batch_sidecars') return '同步中…';
     if (action === 'validate_batch') return '校验中…';
     if (action === 'promote_batch') return '覆盖中…';
     return '准备中…';
@@ -3188,6 +3277,12 @@ function describeColorRootAction(action, root, liveJobs, busy) {
   }
   if (action === 'execute_root') {
     return getColorStringField(root.current, ['latestBatchId']) ? '重新 Execute Root' : 'Execute Root';
+  }
+  if (action === 'sync_batch_metadata') {
+    return '同步元信息';
+  }
+  if (action === 'sync_batch_sidecars') {
+    return '同步字幕/备份音轨';
   }
   if (action === 'validate_batch') {
     return 'Validate';

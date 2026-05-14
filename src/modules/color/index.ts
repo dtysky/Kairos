@@ -4,6 +4,8 @@ export {
   prepareAllProjectColorRoots,
   syncProjectColorGroups,
   executeProjectColorRoot,
+  syncProjectColorBatchMetadata,
+  syncProjectColorBatchSidecars,
   validateProjectColorBatch,
   promoteProjectColorBatch,
   exportAllProjectColorRoots,

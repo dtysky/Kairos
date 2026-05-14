@@ -83,6 +83,8 @@ export type TProjectColorAction =
   | 'prepare_root'
   | 'sync_groups'
   | 'execute_root'
+  | 'sync_batch_metadata'
+  | 'sync_batch_sidecars'
   | 'validate_batch'
   | 'promote_batch'
   | 'prepare_all_roots'
@@ -91,7 +93,9 @@ export type TProjectColorAction =
 
 const CCOLOR_PREPARE_CHUNK_SIZE = 50;
 const CCOLOR_PREPARE_PROBE_CONCURRENCY = 2;
-const CCOLOR_SIDECAR_EXTENSIONS = new Set(['.srt', '.xml', '.gyroflow', '.wav', '.flac', '.m4a', '.aac', '.mp3']);
+const CCOLOR_METADATA_SYNC_CONCURRENCY = 2;
+const CCOLOR_METADATA_TEMP_PREFIX = '.kairos-meta-';
+const CCOLOR_SIDECAR_EXTENSIONS = new Set(['.srt', '.wav', '.flac', '.m4a', '.aac', '.mp3']);
 const CCOLOR_REPAIR_TEMPLATE_DEFAULT_KEY = 'default';
 const CCOLOR_REPAIR_TEMPLATE_PORTRAIT_90_KEY = 'portrait-90';
 const CCOLOR_REPAIR_TEMPLATE_PORTRAIT_NEGATIVE_90_KEY = 'portrait--90';
@@ -113,6 +117,12 @@ const CCOLOR_STEP_DEFINITIONS: Record<TProjectColorAction, Array<{ key: string; 
   execute_root: [
     { key: 'scan_root_clips', label: '扫描 root clip inventory' },
     { key: 'render_root', label: '执行 root 渲染' },
+  ],
+  sync_batch_metadata: [
+    { key: 'sync_batch_metadata', label: '同步 batch 元信息' },
+  ],
+  sync_batch_sidecars: [
+    { key: 'sync_batch_sidecars', label: '同步 batch sidecar' },
   ],
   validate_batch: [
     { key: 'validate_batch', label: '校验 batch manifest' },
@@ -173,6 +183,8 @@ type TWriteColorProgress = (
     status: 'running' | 'succeeded' | 'failed';
     stepIndex: number;
     current: number;
+    total?: number;
+    unit?: string;
     detail: string;
     extra: Record<string, unknown>;
   },
@@ -255,6 +267,20 @@ export async function runProjectColorAction(
         throw new ProjectColorBlockedError(['execute_root requires rootId。']);
       }
       return executeProjectColorRoot({ ...input, rootId });
+    }
+    case 'sync_batch_metadata': {
+      const rootId = input.rootId?.trim();
+      if (!rootId) {
+        throw new ProjectColorBlockedError(['sync_batch_metadata requires rootId。']);
+      }
+      return syncProjectColorBatchMetadata({ ...input, rootId });
+    }
+    case 'sync_batch_sidecars': {
+      const rootId = input.rootId?.trim();
+      if (!rootId) {
+        throw new ProjectColorBlockedError(['sync_batch_sidecars requires rootId。']);
+      }
+      return syncProjectColorBatchSidecars({ ...input, rootId });
     }
     case 'validate_batch': {
       const rootId = input.rootId?.trim();
@@ -1492,19 +1518,14 @@ export async function executeProjectColorRoot(
       `execute_root:${context.rootId}:${batchId}`,
     );
     finalRenderedEntries = await verifyRenderedEntriesAtFinalOutputs(rendered.entries, previewTargetByKey);
-    finalRenderedEntries = await Promise.all(finalRenderedEntries.map(async entry => {
+    finalRenderedEntries = finalRenderedEntries.map(entry => {
       const sourceMetadataSnapshot = planEntryByKey.get(entry.rawRelativePath)?.sourceMetadataSnapshot;
-      const normalizedOutputPath = await normalizeRenderedColorOutputMetadata(
-        entry.outputPath,
-        sourceMetadataSnapshot,
-        context.runtimeConfig,
-      );
       return {
         ...entry,
-        outputPath: normalizedOutputPath,
+        outputPath: resolve(entry.outputPath),
         sourceMetadataSnapshot,
       };
-    }));
+    });
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
     await failColorAction(context.projectRoot, context.rootId, progressPath, action, [reason], {
@@ -1528,14 +1549,6 @@ export async function executeProjectColorRoot(
   const manifestEntries = await Promise.all(
     finalRenderedEntries.map(async entry => {
       const planEntry = planEntryByKey.get(entry.rawRelativePath);
-      const sidecars = planEntry
-        ? await mirrorColorSidecarsForEntry({
-          rawLocalPath: context.rootSummary.rawLocalPath ?? '',
-          sourceAbsolutePath: planEntry.sourceAbsolutePath,
-          outputRelativePath: normalizePortablePath(relative(outputRoot, entry.outputPath)),
-          localRootPath: context.rootSummary.localPath ?? '',
-        })
-        : [];
       return {
         rawRelativePath: entry.rawRelativePath,
         outputPath: resolve(entry.outputPath),
@@ -1544,7 +1557,7 @@ export async function executeProjectColorRoot(
         renderJobId: entry.renderJobId,
         sourceMetadataSnapshot: entry.sourceMetadataSnapshot,
         outputMetadataSnapshot: await buildColorFileMetadataSnapshot(entry.outputPath, context.runtimeConfig).catch(() => undefined),
-        sidecars,
+        sidecars: [],
       };
     }),
   );
@@ -1554,10 +1567,11 @@ export async function executeProjectColorRoot(
     createdAt: rendered.renderedAt,
     renderPreset: context.rootSummary.renderPreset,
     managedOutputSet: manifestEntries.map(entry => normalizePortablePath(relative(outputRoot, entry.outputPath))),
-    managedSidecarSet: manifestEntries.flatMap(entry => entry.sidecars.map(sidecar => sidecar.outputRelativePath)),
+    managedSidecarSet: [],
     renderJobs: normalizeColorBatchRenderJobs(rendered.renderJobs ?? []),
     metadataRepair: {
-      repairedCount: finalRenderedEntries.length,
+      status: 'pending',
+      repairedCount: 0,
       failedOutputs: [],
       warnings: [],
     },
@@ -1570,18 +1584,20 @@ export async function executeProjectColorRoot(
     renderJobs: manifest.renderJobs,
     entries: plan.entries,
   });
-  const validation = await validateProjectColorBatch({
-    ...input,
-    rootId,
-    action: 'validate_batch',
-    batchId,
-    suppressProgress: true,
-  });
-  const detail = validation.blockingReasons.length > 0
-    ? `root batch 已渲染但 validation 失败：${batchId}`
-    : `root batch 已渲染、metadata 已修复并通过 validation：${batchId}`;
+  const detail = `root batch 已渲染，等待手动同步元信息 / sidecar / validation：${batchId}`;
+  await writeRootCurrent(context.projectRoot, context.rootId, current => ({
+    ...current,
+    activeStage: undefined,
+    currentJobId: undefined,
+    detail,
+    latestBatchId: batchId,
+    latestBatchStatus: 'rendered',
+    latestValidationStatus: 'pending',
+    pendingPromoteBatchId: undefined,
+    blockingReasons: filterPersistentColorBlockers(current.blockingReasons ?? []),
+  }));
   await writeProgress(progressPath, action, {
-    status: validation.blockingReasons.length > 0 ? 'failed' : 'succeeded',
+    status: 'succeeded',
     stepIndex: 2,
     current: 2,
     detail,
@@ -1601,7 +1617,358 @@ export async function executeProjectColorRoot(
     rootId,
     batchId,
     detail,
-    blockingReasons: validation.blockingReasons,
+    blockingReasons: [],
+  };
+}
+
+export async function syncProjectColorBatchMetadata(
+  input: IProjectColorActionInput,
+): Promise<IProjectColorActionResult> {
+  const action: TProjectColorAction = 'sync_batch_metadata';
+  const rootId = input.rootId?.trim();
+  if (!rootId) {
+    throw new ProjectColorBlockedError(['sync_batch_metadata requires rootId。']);
+  }
+  const context = await loadColorRootContext(input.workspaceRoot, input.projectId, rootId);
+  const progressPath = resolveColorProgressPath(context.projectRoot, input.progressPath);
+  const writeProgress: TWriteColorProgress = input.suppressProgress
+    ? async (..._args) => undefined
+    : writeColorProgress;
+  const batchId = resolveProjectColorActionBatchId(context, input.batchId);
+  if (!batchId) {
+    const blockers = ['sync_batch_metadata requires args.batchId or root latestBatchId。'];
+    await failColorAction(context.projectRoot, context.rootId, progressPath, action, blockers, {
+      projectId: input.projectId,
+      rootId,
+    }, {
+      suppressProgress: input.suppressProgress,
+    });
+    throw new ProjectColorBlockedError(blockers);
+  }
+
+  let archive: Awaited<ReturnType<typeof loadColorBatchArchiveForPostprocess>>;
+  try {
+    archive = await loadColorBatchArchiveForPostprocess(context, batchId);
+  } catch (error) {
+    const ioBlockers = error instanceof ProjectColorBlockedError
+      ? error.blockers
+      : [error instanceof Error ? error.message : String(error)];
+    await failColorAction(context.projectRoot, context.rootId, progressPath, action, ioBlockers, {
+      projectId: input.projectId,
+      rootId,
+      batchId,
+    }, {
+      suppressProgress: input.suppressProgress,
+    });
+    throw new ProjectColorBlockedError(ioBlockers);
+  }
+  const { plan, manifest } = archive;
+  const warnings: string[] = [];
+  const preSyncTempCleanup = await cleanupColorMetadataTempFilesForManifest(manifest);
+  appendColorMetadataTempCleanupWarnings(warnings, preSyncTempCleanup, 'before metadata sync');
+
+  await writeRootCurrent(context.projectRoot, context.rootId, current => ({
+    ...current,
+    activeStage: 'sync_batch_metadata',
+    currentJobId: input.jobId,
+    latestBatchId: batchId,
+    latestBatchStatus: 'rendered',
+    latestValidationStatus: 'pending',
+    detail: `正在同步 batch metadata：${batchId}`,
+    blockingReasons: filterPersistentColorBlockers(current.blockingReasons ?? []),
+  }));
+  await writeProgress(progressPath, action, {
+    status: 'running',
+    stepIndex: 1,
+    current: 0,
+    total: manifest.entries.length,
+    unit: 'file',
+    detail: `正在同步 batch metadata：${batchId}`,
+    extra: {
+      projectId: input.projectId,
+      rootId,
+      batchId,
+      repairedCount: 0,
+      failedCount: 0,
+      concurrency: CCOLOR_METADATA_SYNC_CONCURRENCY,
+    },
+  });
+
+  const planEntryByKey = new Map(plan.entries.map(entry => [entry.rawRelativePath, entry]));
+  let repairedCount = 0;
+  const failedOutputs: NonNullable<IColorBatchManifest['metadataRepair']>['failedOutputs'] = [];
+  let completedCount = 0;
+  let progressWriteChain: Promise<void> = Promise.resolve();
+  const entries = await mapWithConcurrency(manifest.entries, CCOLOR_METADATA_SYNC_CONCURRENCY, async entry => {
+    const planEntry = planEntryByKey.get(entry.rawRelativePath);
+    const sourceMetadataSnapshot = planEntry?.sourceMetadataSnapshot
+      ?? entry.sourceMetadataSnapshot
+      ?? (planEntry?.sourceAbsolutePath
+        ? await buildColorFileMetadataSnapshot(planEntry.sourceAbsolutePath, context.runtimeConfig).catch(() => undefined)
+        : undefined);
+    let outputPath = resolve(entry.outputPath);
+    let outputMetadataSnapshot = await buildColorFileMetadataSnapshot(outputPath, context.runtimeConfig).catch(() => undefined);
+    if (colorMetadataRepairRequired(sourceMetadataSnapshot)) {
+      const outputStats = await stat(outputPath).catch(() => null);
+      if (!outputStats?.isFile()) {
+        failedOutputs.push({
+          rawRelativePath: entry.rawRelativePath,
+          outputPath,
+          reason: 'output file missing',
+        });
+      } else {
+        try {
+          outputPath = await normalizeRenderedColorOutputMetadata(
+            outputPath,
+            sourceMetadataSnapshot,
+            context.runtimeConfig,
+          );
+          repairedCount += 1;
+          outputMetadataSnapshot = await buildColorFileMetadataSnapshot(outputPath, context.runtimeConfig).catch(() => undefined);
+        } catch (error) {
+          failedOutputs.push({
+            rawRelativePath: entry.rawRelativePath,
+            outputPath,
+            reason: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
+    }
+    const updatedEntry = {
+      ...entry,
+      outputPath,
+      sourceMetadataSnapshot: sourceMetadataSnapshot ?? entry.sourceMetadataSnapshot,
+      outputMetadataSnapshot,
+    };
+    await recordMetadataSyncProgress(updatedEntry);
+    return updatedEntry;
+  });
+
+  async function recordMetadataSyncProgress(entry: IColorBatchManifest['entries'][number]): Promise<void> {
+    const currentCount = completedCount + 1;
+    completedCount = currentCount;
+    progressWriteChain = progressWriteChain.then(() => writeProgress(progressPath, action, {
+        status: 'running',
+        stepIndex: 1,
+        current: currentCount,
+        total: manifest.entries.length,
+        unit: 'file',
+        detail: `正在同步 metadata：${currentCount}/${manifest.entries.length} ${entry.rawRelativePath}`,
+        extra: {
+          projectId: input.projectId,
+          rootId,
+          batchId,
+          repairedCount,
+          failedCount: failedOutputs.length,
+          concurrency: CCOLOR_METADATA_SYNC_CONCURRENCY,
+        },
+      }));
+    await progressWriteChain;
+  }
+
+  if (progressWriteChain) {
+    await progressWriteChain;
+  }
+  const postSyncTempCleanup = await cleanupColorMetadataTempFilesForManifest({
+    ...manifest,
+    entries,
+  });
+  appendColorMetadataTempCleanupWarnings(warnings, postSyncTempCleanup, 'after metadata sync');
+
+  const updatedManifest: IColorBatchManifest = {
+    ...manifest,
+    metadataRepair: {
+      status: failedOutputs.length > 0 ? 'failed' : 'completed',
+      repairedCount,
+      failedOutputs,
+      warnings,
+    },
+    entries,
+  };
+  await saveColorBatchManifest(context.projectRoot, updatedManifest);
+
+  const failures = failedOutputs.map(output => `metadata sync failed: ${output.rawRelativePath ?? output.outputPath} (${output.reason})`);
+  const detail = failures.length > 0
+    ? `batch metadata 同步失败：${batchId}`
+    : `batch metadata 已同步：${batchId}`;
+  await writeRootCurrent(context.projectRoot, context.rootId, current => (
+    current.latestBatchId === batchId
+      ? {
+        ...current,
+        activeStage: undefined,
+        currentJobId: undefined,
+        latestBatchId: batchId,
+        latestBatchStatus: 'rendered',
+        latestValidationStatus: 'pending',
+        detail,
+        blockingReasons: failures.length > 0 ? failures : filterPersistentColorBlockers(current.blockingReasons ?? []),
+      }
+      : {
+        ...current,
+        detail: `batch ${batchId} metadata 已同步，但它已不是当前最新候选。`,
+      }
+  ));
+  await writeProgress(progressPath, action, {
+    status: failures.length > 0 ? 'failed' : 'succeeded',
+    stepIndex: 1,
+    current: entries.length,
+    total: manifest.entries.length,
+    unit: 'file',
+    detail,
+    extra: {
+      projectId: input.projectId,
+      rootId,
+      batchId,
+      repairedCount,
+      failedCount: failures.length,
+      concurrency: CCOLOR_METADATA_SYNC_CONCURRENCY,
+    },
+  });
+
+  if (failures.length > 0) {
+    throw new ProjectColorBlockedError(failures);
+  }
+  return {
+    action,
+    projectId: input.projectId,
+    rootId,
+    batchId,
+    detail,
+    blockingReasons: [],
+  };
+}
+
+export async function syncProjectColorBatchSidecars(
+  input: IProjectColorActionInput,
+): Promise<IProjectColorActionResult> {
+  const action: TProjectColorAction = 'sync_batch_sidecars';
+  const rootId = input.rootId?.trim();
+  if (!rootId) {
+    throw new ProjectColorBlockedError(['sync_batch_sidecars requires rootId。']);
+  }
+  const context = await loadColorRootContext(input.workspaceRoot, input.projectId, rootId);
+  const progressPath = resolveColorProgressPath(context.projectRoot, input.progressPath);
+  const writeProgress: TWriteColorProgress = input.suppressProgress
+    ? async (..._args) => undefined
+    : writeColorProgress;
+  const batchId = resolveProjectColorActionBatchId(context, input.batchId);
+  if (!batchId) {
+    const blockers = ['sync_batch_sidecars requires args.batchId or root latestBatchId。'];
+    await failColorAction(context.projectRoot, context.rootId, progressPath, action, blockers, {
+      projectId: input.projectId,
+      rootId,
+    }, {
+      suppressProgress: input.suppressProgress,
+    });
+    throw new ProjectColorBlockedError(blockers);
+  }
+
+  let archive: Awaited<ReturnType<typeof loadColorBatchArchiveForPostprocess>>;
+  try {
+    archive = await loadColorBatchArchiveForPostprocess(context, batchId);
+  } catch (error) {
+    const ioBlockers = error instanceof ProjectColorBlockedError
+      ? error.blockers
+      : [error instanceof Error ? error.message : String(error)];
+    await failColorAction(context.projectRoot, context.rootId, progressPath, action, ioBlockers, {
+      projectId: input.projectId,
+      rootId,
+      batchId,
+    }, {
+      suppressProgress: input.suppressProgress,
+    });
+    throw new ProjectColorBlockedError(ioBlockers);
+  }
+  const { plan, manifest } = archive;
+
+  await writeProgress(progressPath, action, {
+    status: 'running',
+    stepIndex: 1,
+    current: 0,
+    detail: `正在同步 batch sidecar：${batchId}`,
+    extra: { projectId: input.projectId, rootId, batchId },
+  });
+
+  const planEntryByKey = new Map(plan.entries.map(entry => [entry.rawRelativePath, entry]));
+  const failures: string[] = [];
+  const entries = await Promise.all(manifest.entries.map(async entry => {
+    const planEntry = planEntryByKey.get(entry.rawRelativePath);
+    if (!planEntry) {
+      failures.push(`sidecar sync missing plan entry: ${entry.rawRelativePath}`);
+      return entry;
+    }
+    try {
+      const outputRelativePath = normalizePortablePath(relative(
+        context.rootSummary.localPath ?? plan.outputRoot,
+        entry.outputPath,
+      ));
+      const sidecars = await mirrorColorSidecarsForEntry({
+        rawLocalPath: context.rootSummary.rawLocalPath ?? '',
+        sourceAbsolutePath: planEntry.sourceAbsolutePath,
+          outputRelativePath,
+          localRootPath: context.rootSummary.localPath ?? plan.outputRoot,
+      });
+      return {
+        ...entry,
+        sidecars,
+      };
+    } catch (error) {
+      failures.push(`sidecar sync failed: ${entry.rawRelativePath} (${error instanceof Error ? error.message : String(error)})`);
+      return entry;
+    }
+  }));
+
+  const updatedManifest: IColorBatchManifest = {
+    ...manifest,
+    managedSidecarSet: entries.flatMap(entry => (entry.sidecars ?? []).map(sidecar => sidecar.outputRelativePath)),
+    entries,
+  };
+  await saveColorBatchManifest(context.projectRoot, updatedManifest);
+
+  const detail = failures.length > 0
+    ? `batch sidecar 同步失败：${batchId}`
+    : `batch sidecar 已同步：${batchId}`;
+  await writeRootCurrent(context.projectRoot, context.rootId, current => (
+    current.latestBatchId === batchId
+      ? {
+        ...current,
+        activeStage: undefined,
+        currentJobId: undefined,
+        latestBatchId: batchId,
+        latestBatchStatus: 'rendered',
+        latestValidationStatus: 'pending',
+        detail,
+        blockingReasons: failures.length > 0 ? failures : filterPersistentColorBlockers(current.blockingReasons ?? []),
+      }
+      : {
+        ...current,
+        detail: `batch ${batchId} sidecar 已同步，但它已不是当前最新候选。`,
+      }
+  ));
+  await writeProgress(progressPath, action, {
+    status: failures.length > 0 ? 'failed' : 'succeeded',
+    stepIndex: 1,
+    current: 1,
+    detail,
+    extra: {
+      projectId: input.projectId,
+      rootId,
+      batchId,
+      sidecarCount: updatedManifest.managedSidecarSet.length,
+      failedCount: failures.length,
+    },
+  });
+
+  if (failures.length > 0) {
+    throw new ProjectColorBlockedError(failures);
+  }
+  return {
+    action,
+    projectId: input.projectId,
+    rootId,
+    batchId,
+    detail,
+    blockingReasons: [],
   };
 }
 
@@ -1618,9 +1985,9 @@ export async function validateProjectColorBatch(
   const writeProgress: TWriteColorProgress = input.suppressProgress
     ? async (..._args) => undefined
     : writeColorProgress;
-  const batchId = input.batchId?.trim();
+  const batchId = resolveProjectColorActionBatchId(context, input.batchId);
   const blockers = dedupeStrings([
-    !batchId ? 'validate_batch requires args.batchId。' : '',
+    !batchId ? 'validate_batch requires args.batchId or root latestBatchId。' : '',
   ]);
   if (blockers.length > 0) {
     await failColorAction(context.projectRoot, context.rootId, progressPath, action, blockers, {
@@ -1633,16 +2000,13 @@ export async function validateProjectColorBatch(
     throw new ProjectColorBlockedError(blockers);
   }
 
-  const [plan, manifest] = await Promise.all([
-    loadColorBatchPlan(context.projectRoot, batchId!),
-    loadColorBatchManifest(context.projectRoot, batchId!),
-  ]);
-  const ioBlockers = dedupeStrings([
-    !plan ? `缺少 batch plan: ${batchId}` : '',
-    !manifest ? `缺少 batch manifest: ${batchId}` : '',
-    plan && plan.rootId !== rootId ? `batch ${batchId} 不属于 root ${rootId}` : '',
-  ]);
-  if (ioBlockers.length > 0) {
+  let archive: Awaited<ReturnType<typeof loadColorBatchArchiveForPostprocess>>;
+  try {
+    archive = await loadColorBatchArchiveForPostprocess(context, batchId!);
+  } catch (error) {
+    const ioBlockers = error instanceof ProjectColorBlockedError
+      ? error.blockers
+      : [error instanceof Error ? error.message : String(error)];
     await failColorAction(context.projectRoot, context.rootId, progressPath, action, ioBlockers, {
       projectId: input.projectId,
       rootId,
@@ -1652,6 +2016,7 @@ export async function validateProjectColorBatch(
     });
     throw new ProjectColorBlockedError(ioBlockers);
   }
+  const { plan, manifest } = archive;
 
   await writeProgress(progressPath, action, {
     status: 'running',
@@ -1661,13 +2026,16 @@ export async function validateProjectColorBatch(
     extra: { projectId: input.projectId, rootId, batchId },
   });
 
+  const planEntryByKey = new Map(plan.entries.map(entry => [entry.rawRelativePath, entry]));
   const validationEntries = await Promise.all(
-    (manifest?.entries ?? []).map(async entry => {
-      const sourcePath = plan?.entries.find(item => item.rawRelativePath === entry.rawRelativePath)?.sourceAbsolutePath
+    manifest.entries.map(async entry => {
+      const planEntry = planEntryByKey.get(entry.rawRelativePath);
+      const sourcePath = planEntry?.sourceAbsolutePath
         ?? resolve(join(context.rootSummary.rawLocalPath ?? '', ...entry.rawRelativePath.split('/')));
       const sourceMetadata = await buildColorFileMetadataSnapshot(sourcePath, context.runtimeConfig).catch(() => undefined);
       const outputMetadata = await buildColorFileMetadataSnapshot(entry.outputPath, context.runtimeConfig).catch(() => undefined);
-      const outputRelativePath = normalizePortablePath(relative(context.rootSummary.localPath ?? '', entry.outputPath));
+      const outputRoot = context.rootSummary.localPath ?? plan.outputRoot;
+      const outputRelativePath = normalizePortablePath(relative(outputRoot, entry.outputPath));
       const checks = buildColorValidationChecks({
         rawRelativePath: entry.rawRelativePath,
         outputRelativePath,
@@ -1675,12 +2043,31 @@ export async function validateProjectColorBatch(
         sourceMetadata,
         outputMetadata,
       });
-      const sidecarReasons = await validateColorSidecars(entry.sidecars ?? []);
+      const expectedSidecars = planEntry
+        ? await discoverColorSidecarsForEntry({
+          rawLocalPath: context.rootSummary.rawLocalPath ?? '',
+          sourceAbsolutePath: planEntry.sourceAbsolutePath,
+          outputRelativePath,
+          localRootPath: outputRoot,
+        })
+        : [];
+      const sidecarReasons = [
+        ...await validateExpectedColorSidecars(expectedSidecars, entry.sidecars ?? []),
+        ...await validateColorSidecars(entry.sidecars ?? []),
+      ];
       const warnings = collectValidationWarnings(checks);
-      const reasons = collectValidationReasons(checks, {
+      let reasons = collectValidationReasons(checks, {
         sourcePath,
         outputPath: entry.outputPath,
-      }).concat(sidecarReasons);
+      });
+      if (
+        colorMetadataRepairRequired(sourceMetadata)
+        && manifest.metadataRepair?.status !== 'completed'
+      ) {
+        reasons = reasons.filter(reason => !['capturedAt mismatch', 'gps mismatch'].includes(reason));
+        reasons.push('metadata sync pending: run sync_batch_metadata before validate_batch');
+      }
+      reasons = reasons.concat(sidecarReasons);
       return {
         rawRelativePath: entry.rawRelativePath,
         outputPath: entry.outputPath,
@@ -1702,8 +2089,8 @@ export async function validateProjectColorBatch(
     validatedAt: new Date().toISOString(),
     status: validationStatus,
     summary: {
-      targetCount: plan?.entries.length ?? manifest?.entries.length ?? validationEntries.length,
-      renderedCount: manifest?.entries.length ?? validationEntries.length,
+      targetCount: plan.entries.length ?? manifest.entries.length ?? validationEntries.length,
+      renderedCount: manifest.entries.length ?? validationEntries.length,
       passedCount: validationEntries.filter(entry => entry.status === 'pass').length,
       failedCount: validationEntries.filter(entry => entry.status === 'fail').length,
     },
@@ -1719,7 +2106,7 @@ export async function validateProjectColorBatch(
     ? {
       ...current,
       latestBatchId: batchId,
-      latestBatchStatus: validationStatus === 'pass' ? 'validated' : 'failed',
+      latestBatchStatus: validationStatus === 'pass' ? 'validated' : 'rendered',
       latestValidationStatus: validationStatus,
       pendingPromoteBatchId: undefined,
       blockingReasons: validationStatus === 'pass'
@@ -1861,6 +2248,123 @@ async function loadColorRootContext(
   };
 }
 
+function resolveProjectColorActionBatchId(
+  context: IColorRootContext,
+  batchId?: string,
+): string | undefined {
+  return batchId?.trim()
+    || context.colorCurrent.roots.find(root => root.rootId === context.rootId)?.latestBatchId?.trim()
+    || undefined;
+}
+
+function validateColorBatchArchiveForAction(
+  plan: IColorBatchPlan | null,
+  manifest: IColorBatchManifest | null,
+  batchId: string,
+  rootId: string,
+): string[] {
+  return dedupeStrings([
+    !plan ? `缺少 batch plan: ${batchId}` : '',
+    !manifest ? `缺少 batch manifest: ${batchId}` : '',
+    plan && plan.rootId !== rootId ? `batch ${batchId} 不属于 root ${rootId}` : '',
+    manifest && manifest.rootId !== rootId ? `batch manifest ${batchId} 不属于 root ${rootId}` : '',
+  ]);
+}
+
+async function loadColorBatchArchiveForPostprocess(
+  context: IColorRootContext,
+  batchId: string,
+): Promise<{
+  plan: IColorBatchPlan;
+  manifest: IColorBatchManifest;
+  recoveredManifest: boolean;
+}> {
+  const [plan, existingManifest] = await Promise.all([
+    loadColorBatchPlan(context.projectRoot, batchId),
+    loadColorBatchManifest(context.projectRoot, batchId),
+  ]);
+  const baseBlockers = validateColorBatchArchiveForAction(plan, existingManifest, batchId, context.rootId)
+    .filter(blocker => blocker !== `缺少 batch manifest: ${batchId}`);
+  if (baseBlockers.length > 0 || !plan) {
+    throw new ProjectColorBlockedError(baseBlockers);
+  }
+  if (existingManifest) {
+    return {
+      plan,
+      manifest: existingManifest,
+      recoveredManifest: false,
+    };
+  }
+
+  const recovered = await buildRecoveredRenderedColorManifest(context, plan);
+  await saveColorBatchManifest(context.projectRoot, recovered);
+  return {
+    plan,
+    manifest: recovered,
+    recoveredManifest: true,
+  };
+}
+
+async function buildRecoveredRenderedColorManifest(
+  context: IColorRootContext,
+  plan: IColorBatchPlan,
+): Promise<IColorBatchManifest> {
+  const outputRoot = plan.outputRoot || context.rootSummary.localPath;
+  if (!outputRoot) {
+    throw new ProjectColorBlockedError([
+      `缺少 batch manifest: ${plan.batchId}`,
+      '无法从 plan 恢复 manifest：缺少 outputRoot。',
+    ]);
+  }
+  const blockers: string[] = [];
+  const entries = await Promise.all(plan.entries.map(async entry => {
+    const outputPath = entry.outputPath?.trim()
+      ? resolve(entry.outputPath)
+      : resolve(join(outputRoot, ...normalizePortablePath(entry.rawRelativePath).replace(/\.[^/.]+$/u, '.mp4').split('/')));
+    const stats = await stat(outputPath).catch(() => null);
+    if (!stats?.isFile()) {
+      blockers.push(`rendered output missing for manifest recovery: ${entry.rawRelativePath}`);
+    }
+    return {
+      rawRelativePath: entry.rawRelativePath,
+      outputPath,
+      normalizedOutputFilename: posix.basename(normalizePortablePath(outputPath)),
+      sourceStem: entry.sourceStem,
+      sourceMetadataSnapshot: entry.sourceMetadataSnapshot,
+      outputMetadataSnapshot: undefined,
+      sidecars: [],
+    };
+  }));
+  if (blockers.length > 0) {
+    throw new ProjectColorBlockedError([
+      `缺少 batch manifest: ${plan.batchId}`,
+      ...dedupeStrings(blockers),
+    ]);
+  }
+  return {
+    batchId: plan.batchId,
+    rootId: plan.rootId,
+    createdAt: new Date().toISOString(),
+    renderPreset: plan.renderPreset,
+    managedOutputSet: entries.map(entry => normalizePortablePath(relative(outputRoot, entry.outputPath))),
+    managedSidecarSet: [],
+    renderJobs: normalizeColorBatchRenderJobs(plan.renderJobs ?? []),
+    metadataRepair: {
+      status: 'pending',
+      repairedCount: 0,
+      failedOutputs: [],
+      warnings: ['manifest recovered from plan and existing rendered outputs'],
+    },
+    entries,
+  };
+}
+
+function colorMetadataRepairRequired(
+  sourceMetadataSnapshot?: IColorFileMetadataSnapshot,
+): boolean {
+  return Boolean(sourceMetadataSnapshot?.capturedAt || sourceMetadataSnapshot?.gps);
+}
+
 function resolveColorExecutor(
   context: IColorRootContext,
   executor?: IColorExecutor,
@@ -1886,6 +2390,8 @@ function normalizeColorAction(action?: string): TProjectColorAction {
     case 'prepare_root':
     case 'sync_groups':
     case 'execute_root':
+    case 'sync_batch_metadata':
+    case 'sync_batch_sidecars':
     case 'validate_batch':
     case 'promote_batch':
     case 'prepare_all_roots':
@@ -2108,6 +2614,8 @@ async function writeColorProgress(
     status: 'running' | 'succeeded' | 'failed';
     stepIndex: number;
     current: number;
+    total?: number;
+    unit?: string;
     detail: string;
     extra: Record<string, unknown>;
   },
@@ -2125,8 +2633,8 @@ async function writeColorProgress(
     stepTotal: definitions.length,
     stepDefinitions: definitions.map(step => ({ key: step.key, label: step.label })),
     current: input.current,
-    total: definitions.length,
-    unit: 'step',
+    total: input.total ?? definitions.length,
+    unit: input.unit ?? 'step',
     detail: input.detail,
     extra: input.extra,
   });
@@ -2183,6 +2691,13 @@ function filterPersistentColorBlockers(blockers: string[]): string[] {
     && !blocker.includes('Unable to set render settings')
     && !blocker.includes('Unable to queue render job')
     && !blocker.includes('Unable to locate rendered output')
+    && !blocker.includes('Temporary render timeline')
+    && !blocker.includes('Resolve Render Queue is not empty')
+    && !blocker.includes('缺少 batch manifest')
+    && !blocker.includes('metadata sync')
+    && !blocker.includes('sidecar sync')
+    && !blocker.includes('capturedAt mismatch')
+    && !blocker.includes('gps mismatch')
     && !blocker.includes('resolveColorPythonPath')
     && !blocker.includes('resolveColorScriptApiRoot')
     && !blocker.includes('config/runtime.json')
@@ -3413,6 +3928,53 @@ async function normalizeRenderedColorOutputMetadata(
   }
 }
 
+async function cleanupColorMetadataTempFilesForManifest(
+  manifest: Pick<IColorBatchManifest, 'entries'>,
+): Promise<{ deletedCount: number; failedPaths: string[] }> {
+  const outputDirs = Array.from(new Set(
+    manifest.entries
+      .map(entry => entry.outputPath?.trim() ? dirname(resolve(entry.outputPath)) : '')
+      .filter(Boolean),
+  ));
+  let deletedCount = 0;
+  const failedPaths: string[] = [];
+  for (const outputDir of outputDirs) {
+    const dirEntries = await readdir(outputDir, { withFileTypes: true }).catch(() => []);
+    for (const dirEntry of dirEntries) {
+      if (!dirEntry.isFile() || !isColorMetadataTempFilename(dirEntry.name)) continue;
+      const tempPath = join(outputDir, dirEntry.name);
+      try {
+        await unlink(tempPath);
+        deletedCount += 1;
+      } catch {
+        failedPaths.push(tempPath);
+      }
+    }
+  }
+  return {
+    deletedCount,
+    failedPaths,
+  };
+}
+
+function appendColorMetadataTempCleanupWarnings(
+  warnings: string[],
+  cleanup: { deletedCount: number; failedPaths: string[] },
+  label: string,
+): void {
+  if (cleanup.deletedCount > 0) {
+    warnings.push(`cleaned ${cleanup.deletedCount} stale metadata temp files ${label}`);
+  }
+  if (cleanup.failedPaths.length > 0) {
+    warnings.push(`failed to clean ${cleanup.failedPaths.length} metadata temp files ${label}`);
+  }
+}
+
+function isColorMetadataTempFilename(filename: string): boolean {
+  return filename.startsWith(CCOLOR_METADATA_TEMP_PREFIX)
+    && /^\.kairos-meta-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.[a-z0-9]+$/iu.test(filename);
+}
+
 function formatIso6709(gps: [number, number]): string {
   return `${formatSignedCoordinate(gps[0])}${formatSignedCoordinate(gps[1])}/`;
 }
@@ -3765,6 +4327,20 @@ async function mirrorColorSidecarsForEntry(input: {
   outputRelativePath: string;
   localRootPath: string;
 }): Promise<IColorBatchSidecar[]> {
+  const sidecars = await discoverColorSidecarsForEntry(input);
+  for (const sidecar of sidecars) {
+    await mkdir(dirname(sidecar.outputPath), { recursive: true });
+    await copyFile(sidecar.sourceAbsolutePath, sidecar.outputPath);
+  }
+  return sidecars;
+}
+
+async function discoverColorSidecarsForEntry(input: {
+  rawLocalPath: string;
+  sourceAbsolutePath: string;
+  outputRelativePath: string;
+  localRootPath: string;
+}): Promise<IColorBatchSidecar[]> {
   const sourceDir = dirname(input.sourceAbsolutePath);
   const sourceExt = extname(input.sourceAbsolutePath);
   const sourceFilename = input.sourceAbsolutePath.split(/[\\/]/u).pop() ?? '';
@@ -3794,8 +4370,6 @@ async function mirrorColorSidecarsForEntry(input: {
         : posix.join(outputDir, outputFilename),
     );
     const targetPath = resolve(join(input.localRootPath, ...outputRelativePath.split('/')));
-    await mkdir(dirname(targetPath), { recursive: true });
-    await copyFile(sourceAbsolutePath, targetPath);
     const sourceStats = await stat(sourceAbsolutePath).catch(() => null);
     sidecars.push({
       sourceRelativePath: normalizePortablePath(toPortableRelativePath(input.rawLocalPath, sourceAbsolutePath)),
@@ -3809,9 +4383,33 @@ async function mirrorColorSidecarsForEntry(input: {
   return sidecars;
 }
 
+async function validateExpectedColorSidecars(
+  expectedSidecars: IColorBatchSidecar[],
+  manifestSidecars: IColorBatchSidecar[],
+): Promise<string[]> {
+  const reasons: string[] = [];
+  const manifestByOutput = new Map(
+    manifestSidecars.map(sidecar => [normalizePortablePath(sidecar.outputRelativePath).toLowerCase(), sidecar]),
+  );
+  for (const expected of expectedSidecars) {
+    const actual = manifestByOutput.get(normalizePortablePath(expected.outputRelativePath).toLowerCase());
+    const outputStats = await stat(expected.outputPath).catch(() => null);
+    if (!actual || !outputStats?.isFile()) {
+      reasons.push(`sidecar sync pending: run sync_batch_sidecars for ${expected.outputRelativePath}`);
+      continue;
+    }
+    if (typeof expected.sizeBytes === 'number' && outputStats.size !== expected.sizeBytes) {
+      reasons.push(`sidecar size mismatch: ${expected.sourceRelativePath}`);
+    }
+  }
+  return dedupeStrings(reasons);
+}
+
 async function validateColorSidecars(sidecars: IColorBatchSidecar[]): Promise<string[]> {
   const reasons: string[] = [];
   for (const sidecar of sidecars) {
+    const extensionKey = (sidecar.extension || extname(sidecar.outputPath)).toLowerCase();
+    if (!CCOLOR_SIDECAR_EXTENSIONS.has(extensionKey)) continue;
     const sourceStats = await stat(sidecar.sourceAbsolutePath).catch(() => null);
     const outputStats = await stat(sidecar.outputPath).catch(() => null);
     if (!sourceStats?.isFile()) {

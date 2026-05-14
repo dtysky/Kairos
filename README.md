@@ -65,6 +65,8 @@ Current stable pipeline:
     - `prepare_root`
     - `sync_groups`
     - `execute_root`
+    - `sync_batch_metadata`
+    - `sync_batch_sidecars`
     - `validate_batch`
     - `prepare_all_roots`
     - `export_all_roots`
@@ -73,7 +75,7 @@ Current stable pipeline:
   - current automatic DRP export happens once after a root `prepare_root` finishes all chunks; intermediate chunk imports only call `SaveProject()`, while all other project backups are explicit user actions through `保存 DRP 快照` or external `.drp` registration
   - current project-level `/color` orchestration is deterministic and agent-free:
     - `prepare_all_roots` runs `prepare_root` sequentially for all enabled color roots in formal priority order
-    - `export_all_roots` runs `execute_root` sequentially for all enabled color roots in formal priority order; each root execution renders, replaces confirmed outputs, repairs metadata, and validates before moving on
+    - `export_all_roots` runs `execute_root` sequentially for all enabled color roots in formal priority order; each root execution renders and records the batch manifest only, leaving metadata sync, sidecar sync, and validation to explicit user actions
     - project-level actions continue other roots after a per-root failure, but the whole job still fails if any root fails
   - current `/color` is now Resolve-first about where grading truth lives:
     - `Group Post-Clip` is the only formal creative-truth layer
@@ -131,11 +133,16 @@ Current stable pipeline:
     - the vendored Resolve host groups clips by `rawRelativePath` parent directory, duplicates the official root grading timeline per directory, prunes each temporary timeline to that directory's clips, queues all render jobs, then calls one render-all operation
     - each temporary timeline targets the final `localPath/<relativeDir>/` directory with Resolve File Name = Source Name; Kairos validates the imported Windows generated named preset directly instead of trusting sticky Deliver-page UI state, does not write a project-level video holding directory, and only normalizes Resolve-created one-level `Event_Version...` folders by promoting the single matching source-name file back to the final target
     - final outputs are validated as exact `dayX/sourceStem.ext` files; prefix/suffix outputs such as `V1-0001_C1611.ext` are treated as render-setting failures
-  - current `execute_root` must normalize final output metadata before manifest persist:
-    - `creation_time` is rewritten to the source `capturedAt`
-    - when source GPS exists, container location metadata is rewritten so `ffprobe` can read it back
-  - current `validate_batch` writes formal summary counts, top-level blocking reasons, and warning-only diagnostics; `capturedAt / GPS` remain hard gates while `create_time` is warning-only
-  - `promote_batch` is no longer part of the formal color export path; overwrite confirmation happens before `execute_root`, and a successful batch is already adopted after validation
+  - current `execute_root` writes only the render manifest after final output verification:
+    - `latestBatchStatus` becomes `rendered`
+    - `latestValidationStatus` becomes `pending`
+    - `metadataRepair.status` starts as `pending`
+    - `managedSidecarSet` starts empty
+  - current `sync_batch_metadata` is the explicit post-render action that normalizes final output metadata with bounded ffmpeg concurrency and file-level progress, updates `manifest.metadataRepair`, and refreshes `entries[].outputMetadataSnapshot`
+  - current `sync_batch_sidecars` is the explicit post-render action that copies same-basename `.srt/.wav/.flac/.m4a/.aac/.mp3` files to the final output directory and updates `entries[].sidecars` plus `managedSidecarSet`; `.xml` and `.gyroflow` remain source/prepare truth only and are not exported as managed sidecars
+  - current post-render actions can recover a missing `manifest.json` from `plan.json` only when every planned final output already exists; otherwise the batch remains a failed render and must be rerun
+  - current `validate_batch` writes formal summary counts, top-level blocking reasons, and warning-only diagnostics; it fails when source `capturedAt / GPS` still needs `sync_batch_metadata`, or when expected export sidecars still need `sync_batch_sidecars`
+  - `promote_batch` is no longer part of the formal color export path; overwrite confirmation happens before `execute_root`, and a rendered batch is adopted only after the user explicitly runs metadata sync, sidecar sync as needed, and validation
   - current `/color` stays single-page but now consumes `color/batches/<batchId>/...` as formal read-only archive, with foldable `Host Diagnostics / Recent Batches / Validation Failures`
   - current Resolve host automation uses the fixed same-machine vendored backend at `vendor/resolve-color-host/` with a fixed `.venv` convention
   - Resolve host automation now uses the same-machine vendored backend around the official Python Scripting API, not MCP
