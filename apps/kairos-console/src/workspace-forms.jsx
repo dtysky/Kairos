@@ -716,7 +716,7 @@ export function ScriptBriefEditor({
         <p className="field-help">正在自动保存分类选择…</p>
       ) : null}
       {!autoSaveBusy ? (
-        <p className="field-help">剪辑规则会自动保存并影响粗剪结构；文案风格参考只影响最终旁白 / 字幕表达。下面的 brief 内容仍需要手动点击“保存”。</p>
+        <p className="field-help">剪辑规则会自动保存，并先进入 Flow Plan 生成与确认；文案风格参考只影响最终旁白 / 字幕表达。下面的 brief 内容仍需要手动点击“保存”。</p>
       ) : null}
       {config.editRuleCategory && !hasValidEditRuleCategory ? (
         <p className="field-help field-help-error">当前剪辑规则已失效，请从 workspace 剪辑规则库重新选择。</p>
@@ -1507,7 +1507,7 @@ export function ColorCurrentSummary({
                   })}
                 </div>
                 <p className="field-help">
-                  {'`Prepare Root` 会真正同步 Media Pool / grading timeline，并按 `logProfile + lowlight + 高置信 colorCastClass` 生成或复用 Resolve Groups；横屏使用 `config/default.drt`，竖屏 Sony/ZV-E1 可用方向专用 DRT 自动 Gyro，并会写入 timeline transform 旋转放大为横屏单 clip 导出。`Group Post-Clip` 是主 creative 真相，`Clip` 只承担 repair / local exception。'}
+                  {'`Prepare Root` 会真正同步 Media Pool / grading timeline，并以 `logProfile` 为前置轴，再按 `portrait-review -> lowlight -> 高置信 colorCastClass -> 明显 exposureSceneClass` 生成或复用 Resolve Groups；横屏使用 `config/default.drt`，竖屏 Sony/ZV-E1 可用方向专用 DRT 自动 Gyro，并会写入 timeline transform 旋转放大为横屏单 clip 导出。`Group Post-Clip` 是主 creative 真相，`Clip` 只承担 repair / local exception。'}
                 </p>
               </Card>
 
@@ -2781,8 +2781,10 @@ function materializeColorWorkspaceGroup(group) {
     clipCount: Number(group?.clipCount || current?.clipCount || 0) || 0,
     clipKeys: Array.isArray(group?.clipKeys) ? group.clipKeys.filter(item => typeof item === 'string' && item.trim()) : [],
     logProfile: getColorStringField(group, ['logProfile']) || getColorStringField(current, ['logProfile']) || '',
+    orientationStatus: getColorStringField(group, ['orientationStatus']) || getColorStringField(current, ['orientationStatus']) || '',
     lowlight: getColorStringField(group, ['lowlight']) || getColorStringField(current, ['lowlight']) || '',
     colorCastClass: getColorStringField(group, ['colorCastClass']) || getColorStringField(current, ['colorCastClass']) || '',
+    exposureSceneClass: getColorStringField(group, ['exposureSceneClass']) || getColorStringField(current, ['exposureSceneClass']) || '',
     postClipCreativeStatus: getColorStringField(group, ['postClipCreativeStatus']) || getColorStringField(current, ['postClipCreativeStatus']) || '',
     clips: Array.isArray(group?.clips) ? group.clips.filter(isPlainObject).map(materializeColorWorkspaceClipRepair) : [],
     hostSummary: isPlainObject(group?.hostSummary) ? group.hostSummary : {},
@@ -2802,6 +2804,9 @@ function materializeColorWorkspaceClipRepair(clip) {
     colorCastClass: getColorStringField(clip, ['colorCastClass']) || '',
     colorCastConfidence: Number.isFinite(Number(clip?.colorCastConfidence)) ? Number(clip.colorCastConfidence) : undefined,
     colorCastMetrics: isPlainObject(clip?.colorCastMetrics) ? clip.colorCastMetrics : {},
+    exposureSceneClass: getColorStringField(clip, ['exposureSceneClass']) || '',
+    exposureSceneConfidence: Number.isFinite(Number(clip?.exposureSceneConfidence)) ? Number(clip.exposureSceneConfidence) : undefined,
+    exposureSceneMetrics: isPlainObject(clip?.exposureSceneMetrics) ? clip.exposureSceneMetrics : {},
     encodedWidth: Number(clip?.encodedWidth) || undefined,
     encodedHeight: Number(clip?.encodedHeight) || undefined,
     displayWidth: Number(clip?.displayWidth) || undefined,
@@ -3345,8 +3350,10 @@ function describeColorTechnicalSignals(hostSummary) {
 function describeColorGroupCreativeState(group) {
   const details = [];
   if (group?.logProfile) details.push(`log: ${group.logProfile}`);
+  if (group?.orientationStatus) details.push(`orientation: ${group.orientationStatus}`);
   if (group?.lowlight) details.push(`lowlight: ${group.lowlight}`);
   if (group?.colorCastClass) details.push(`cast: ${group.colorCastClass}`);
+  if (group?.exposureSceneClass) details.push(`exposure: ${group.exposureSceneClass}`);
   if (group?.postClipCreativeStatus) details.push(`post-clip: ${group.postClipCreativeStatus}`);
   return details.join(' · ');
 }
@@ -3359,9 +3366,11 @@ function describeColorClipRepairSummary(clips) {
   const repairCounts = countBy(clips.map(clip => clip?.clipRepairStatus || ''));
   const layoutCounts = countBy(clips.map(clip => clip?.layoutStatus || ''));
   const orientationCounts = countBy(clips.map(clip => clip?.orientationStatus || ''));
+  const exposureCounts = countBy(clips.map(clip => clip?.exposureSceneClass || ''));
   const templateCounts = countBy(clips.map(clip => clip?.repairTemplateKey || ''));
   const details = [];
   const orientationSummary = summarizeCountMap('orientation', orientationCounts);
+  const exposureSummary = summarizeCountMap('exposure', exposureCounts);
   const templateSummary = summarizeCountMap('template', templateCounts);
   const gyroSummary = summarizeCountMap('gyro', gyroCounts);
   const dehazeSummary = summarizeCountMap('dehaze', dehazeCounts);
@@ -3369,6 +3378,7 @@ function describeColorClipRepairSummary(clips) {
   const repairSummary = summarizeCountMap('repair', repairCounts);
   const layoutSummary = summarizeCountMap('layout', layoutCounts);
   if (orientationSummary) details.push(orientationSummary);
+  if (exposureSummary) details.push(exposureSummary);
   if (templateSummary) details.push(templateSummary);
   if (gyroSummary) details.push(gyroSummary);
   if (dehazeSummary) details.push(dehazeSummary);
@@ -3387,6 +3397,12 @@ function describeColorClipRepairState(clip) {
       ? ` ${Math.round(Number(clip.colorCastConfidence) * 100)}%`
       : '';
     details.push(`cast: ${clip.colorCastClass}${confidence}`);
+  }
+  if (clip?.exposureSceneClass) {
+    const confidence = Number.isFinite(Number(clip.exposureSceneConfidence))
+      ? ` ${Math.round(Number(clip.exposureSceneConfidence) * 100)}%`
+      : '';
+    details.push(`exposure: ${clip.exposureSceneClass}${confidence}`);
   }
   if (clip?.orientationStatus) details.push(`orientation: ${clip.orientationStatus}`);
   if (Number.isFinite(Number(clip?.rotationDegrees))) details.push(`rotation: ${clip.rotationDegrees}`);

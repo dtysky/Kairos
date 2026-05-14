@@ -6,6 +6,7 @@ import type { IMediaToolConfig } from '../media/probe.js';
 
 const execFileBuffer = promisify(execFile);
 const CLOWLIGHT_PROXY_WIDTH = 160;
+const CLOWLIGHT_SAMPLE_POSITION = 0.50;
 
 export interface IColorLowlightClassification {
   lowlight: boolean;
@@ -20,27 +21,35 @@ export interface IColorLowlightClassification {
   };
 }
 
-export async function classifyFirstFrameLowlight(
+export async function classifyMidpointLowlight(
   filePath: string,
   tools?: Pick<IMediaToolConfig, 'ffmpegPath'>,
+  options: {
+    durationMs?: number | null;
+  } = {},
 ): Promise<IColorLowlightClassification> {
   const ffmpeg = tools?.ffmpegPath?.trim() || 'ffmpeg';
   const inputPath = toExecutableInputPath(filePath, ffmpeg);
-  const { stdout } = await execFileBuffer(ffmpeg, [
-    '-v', 'error',
+  const sampleSeconds = resolveSampleSeconds(options.durationMs);
+  const args = ['-v', 'error'];
+  if (sampleSeconds != null && Number.isFinite(sampleSeconds) && sampleSeconds > 0) {
+    args.push('-ss', sampleSeconds.toFixed(3));
+  }
+  args.push(
     '-i', inputPath,
-    '-vf', `select=eq(n\\,0),scale=${CLOWLIGHT_PROXY_WIDTH}:-1:flags=area,format=rgb24`,
+    '-vf', `scale=${CLOWLIGHT_PROXY_WIDTH}:-1:flags=area,format=rgb24`,
     '-frames:v', '1',
     '-f', 'rawvideo',
     'pipe:1',
-  ], {
+  );
+  const { stdout } = await execFileBuffer(ffmpeg, args, {
     encoding: 'buffer',
     maxBuffer: 8 * 1024 * 1024,
   } satisfies ExecFileOptionsWithBufferEncoding);
 
   const buffer = Buffer.isBuffer(stdout) ? stdout : Buffer.from(stdout);
   if (buffer.length < 3) {
-    throw new Error(`ffmpeg returned no first-frame pixels for ${filePath}`);
+    throw new Error(`ffmpeg returned no lowlight sample pixels for ${filePath}`);
   }
 
   const lumaValues: number[] = [];
@@ -61,7 +70,7 @@ export async function classifyFirstFrameLowlight(
     lumaValues.push(luma);
   }
   if (lumaValues.length === 0) {
-    throw new Error(`ffmpeg returned an empty first-frame sample for ${filePath}`);
+    throw new Error(`ffmpeg returned an empty lowlight sample for ${filePath}`);
   }
 
   const sortedLuma = [...lumaValues].sort((left, right) => left - right);
@@ -85,6 +94,17 @@ export async function classifyFirstFrameLowlight(
     lowlight,
     metrics,
   };
+}
+
+export const classifyFirstFrameLowlight = classifyMidpointLowlight;
+
+function resolveSampleSeconds(durationMs?: number | null): number | undefined {
+  if (!durationMs || durationMs <= 0) return undefined;
+  const durationSeconds = durationMs / 1000;
+  return Math.min(
+    Math.max(0, durationSeconds * CLOWLIGHT_SAMPLE_POSITION),
+    Math.max(0, durationSeconds - 0.25),
+  );
 }
 
 function average(values: number[]): number {

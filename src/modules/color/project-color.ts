@@ -59,8 +59,9 @@ import {
   deriveColorRootNamespace,
 } from './workspace-state.js';
 import { readColorRenderPresetBitrateKbps } from './render-preset.js';
-import { classifyFirstFrameLowlight } from './lowlight-classifier.js';
+import { classifyMidpointLowlight } from './lowlight-classifier.js';
 import { classifyColorCast } from './color-cast-classifier.js';
+import { classifyExposureScene } from './exposure-scene-classifier.js';
 import { extractColorSourceTruth } from './source-truth.js';
 import {
   detectResolveDefaultLutRoot,
@@ -2446,8 +2447,10 @@ function materializeCurrentGroupsFromSnapshot(
       displayName: existing?.displayName ?? group.displayName,
       clipCount: group.clipKeys.length,
       logProfile: group.logProfile ?? existing?.logProfile,
+      orientationStatus: group.orientationStatus ?? existing?.orientationStatus,
       lowlight: group.lowlight ?? existing?.lowlight,
       colorCastClass: group.colorCastClass ?? existing?.colorCastClass,
+      exposureSceneClass: group.exposureSceneClass ?? existing?.exposureSceneClass,
       postClipCreativeStatus: group.postClipCreativeStatus ?? existing?.postClipCreativeStatus,
       blockingReasons: nextStatus === 'blocked'
         ? dedupeStrings([...(clipKeysChanged ? [] : existing?.blockingReasons ?? []), '该 Group 当前没有可执行 clip。'])
@@ -2994,7 +2997,9 @@ async function buildColorExecutorClipsForInventory(
           deviceFamilyKeys: [],
           sourceKinds: [],
         })),
-        classifyFirstFrameLowlight(item.sourceAbsolutePath, runtimeConfig).catch(() => ({
+        classifyMidpointLowlight(item.sourceAbsolutePath, runtimeConfig, {
+          durationMs: probed?.durationMs,
+        }).catch(() => ({
           lowlight: false,
           metrics: undefined,
         })),
@@ -3031,6 +3036,19 @@ async function buildColorExecutorClipsForInventory(
             technicalLutRelativePath: colorCastPreview.relativeLutPath,
           },
         }));
+      const exposureSceneClassification = shouldClassifyExposureScene(colorCastPreview, profileResolution)
+        ? await classifyExposureScene(item.sourceAbsolutePath, runtimeConfig, {
+          durationMs: probed?.durationMs,
+          lutPath: colorCastPreview.lutPath,
+        }).catch(() => buildUnknownExposureSceneClassification({
+          technicalTransformStatus: colorCastPreview.status,
+          technicalLutRelativePath: colorCastPreview.relativeLutPath,
+        }))
+        : buildUnknownExposureSceneClassification({
+          technicalTransformStatus: colorCastPreview.status,
+          technicalLutRelativePath: colorCastPreview.relativeLutPath,
+          exposureSceneSkippedReason: resolveExposureSceneSkippedReason(colorCastPreview, profileResolution),
+        });
       const orientation = resolveColorClipOrientation(probed);
       return {
         rawRelativePath: item.rawRelativePath,
@@ -3060,6 +3078,13 @@ async function buildColorExecutorClipsForInventory(
         colorCastConfidence: colorCastClassification.colorCastConfidence,
         colorCastMetrics: {
           ...colorCastClassification.colorCastMetrics,
+          technicalTransformStatus: colorCastPreview.status,
+          technicalLutRelativePath: colorCastPreview.relativeLutPath,
+        },
+        exposureSceneClass: exposureSceneClassification.exposureSceneClass,
+        exposureSceneConfidence: exposureSceneClassification.exposureSceneConfidence,
+        exposureSceneMetrics: {
+          ...exposureSceneClassification.exposureSceneMetrics,
           technicalTransformStatus: colorCastPreview.status,
           technicalLutRelativePath: colorCastPreview.relativeLutPath,
         },
@@ -3206,7 +3231,12 @@ function buildColorCastAnchorRuns(sequence: IColorExecutorClipInput[]): Array<{
 function getColorCastContinuityAnchorClass(
   clip: IColorExecutorClipInput | undefined,
 ): TColorCastContinuityTarget | null {
-  if (!clip || clip.lowlight === true || (clip.colorCastConfidence ?? 0) < 0.65) return null;
+  if (
+    !clip
+    || clip.lowlight === true
+    || hasWhiteReferenceUnderexposedExposureScene(clip)
+    || (clip.colorCastConfidence ?? 0) < 0.65
+  ) return null;
   if (clip.colorCastClass === 'cool-cyan' || clip.colorCastClass === 'green' || clip.colorCastClass === 'green-cyan') {
     return clip.colorCastClass;
   }
@@ -3229,7 +3259,7 @@ function canPromoteByColorCastContinuity(
   clip: IColorExecutorClipInput | undefined,
   target: TColorCastContinuityTarget,
 ): clip is IColorExecutorClipInput {
-  if (!clip || clip.lowlight === true) return false;
+  if (!clip || clip.lowlight === true || hasWhiteReferenceUnderexposedExposureScene(clip)) return false;
   if (clip.colorCastClass === 'warm' && (clip.colorCastConfidence ?? 0) >= 0.55) return false;
   const medianA = readColorCastMetricNumber(clip, 'medianA');
   const medianB = readColorCastMetricNumber(clip, 'medianB');
@@ -3243,6 +3273,27 @@ function canPromoteByColorCastContinuity(
     return medianA <= -2.5 && medianB > -2.0 && medianB < 8;
   }
   return medianA <= -2.5 && medianB >= -6.5 && medianB <= 5.5;
+}
+
+function hasWhiteReferenceUnderexposedExposureScene(
+  clip: IColorExecutorClipInput | undefined,
+): boolean {
+  if (!clip || clip.exposureSceneClass !== 'underexposed') return false;
+  const metrics = clip.exposureSceneMetrics;
+  const reasons = Array.isArray(metrics?.exposureSceneReasons) ? metrics.exposureSceneReasons : [];
+  if (reasons.some(isWhiteReferenceUnderexposedReason)) return true;
+  const frames = Array.isArray(metrics?.frames) ? metrics.frames : [];
+  return frames.some(frame => (
+    isUnknownRecord(frame) && isWhiteReferenceUnderexposedReason(frame.exposureSceneReason)
+  ));
+}
+
+function isWhiteReferenceUnderexposedReason(value: unknown): boolean {
+  return typeof value === 'string' && value.trim() === 'white-reference-underexposed';
+}
+
+function isUnknownRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function promoteClipToContinuityColorCast(
@@ -3329,6 +3380,50 @@ async function resolveColorCastPreviewLut(
   };
 }
 
+function shouldClassifyExposureScene(
+  preview: {
+    status: 'source-rgb' | 'technical-lut' | 'missing-technical-lut';
+  },
+  profile: ReturnType<typeof resolveEffectiveColorProfile>,
+): boolean {
+  if (preview.status === 'technical-lut') return true;
+  if (preview.status === 'missing-technical-lut') return false;
+  return normalizeExposureProfile(profile.effectiveProfile) === 'rec709';
+}
+
+function resolveExposureSceneSkippedReason(
+  preview: {
+    status: 'source-rgb' | 'technical-lut' | 'missing-technical-lut';
+  },
+  profile: ReturnType<typeof resolveEffectiveColorProfile>,
+): string | undefined {
+  if (preview.status === 'missing-technical-lut') return 'missing-technical-lut';
+  if (preview.status === 'source-rgb' && normalizeExposureProfile(profile.effectiveProfile) !== 'rec709') {
+    return profile.effectiveProfile ? 'requires-technical-transform' : 'unknown-input-profile';
+  }
+  return undefined;
+}
+
+function normalizeExposureProfile(value: unknown): string {
+  return String(value ?? '').trim().toLowerCase();
+}
+
+function buildUnknownExposureSceneClassification(extraMetrics: Record<string, unknown> = {}): {
+  exposureSceneClass: 'unknown';
+  exposureSceneConfidence: number;
+  exposureSceneMetrics: Record<string, unknown>;
+} {
+  return {
+    exposureSceneClass: 'unknown',
+    exposureSceneConfidence: 0,
+    exposureSceneMetrics: {
+      frameCount: 0,
+      classifiedFrameCount: 0,
+      ...extraMetrics,
+    },
+  };
+}
+
 async function isReadableFile(filePath: string): Promise<boolean> {
   return stat(filePath)
     .then(fileStat => fileStat.isFile())
@@ -3364,6 +3459,9 @@ function buildColorSyncExecutorClipsForInventory(
       colorCastClass: previous?.colorCastClass,
       colorCastConfidence: previous?.colorCastConfidence,
       colorCastMetrics: previous?.colorCastMetrics,
+      exposureSceneClass: previous?.exposureSceneClass,
+      exposureSceneConfidence: previous?.exposureSceneConfidence,
+      exposureSceneMetrics: previous?.exposureSceneMetrics,
     };
   });
 }

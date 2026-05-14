@@ -6,6 +6,7 @@ import 'hana-ui/hana-style.scss';
 import './app.scss';
 import {
   controlMl,
+  confirmProjectEditFlowPlan,
   fetchAnalyzeMonitor,
   fetchCapabilities,
   fetchProjectColorArchive,
@@ -414,6 +415,23 @@ function AppShell() {
     }
   }
 
+  async function confirmFlowPlan() {
+    if (!projectId) return;
+    const editId = config?.scriptBrief?.editId || 'main';
+    setBusy(current => ({ ...current, 'edit-flow:confirm': true }));
+    try {
+      await confirmProjectEditFlowPlan(projectId, editId);
+      await refreshProject(projectId);
+      await refreshStatus();
+      setMessage('Flow Plan 已确认');
+      setError('');
+    } catch (caught) {
+      handleError(caught);
+    } finally {
+      setBusy(current => ({ ...current, 'edit-flow:confirm': false }));
+    }
+  }
+
   async function controlMlService(action) {
     const busyKey = `ml:${action}`;
     setBusy(current => ({ ...current, [busyKey]: true }));
@@ -654,6 +672,7 @@ function AppShell() {
                   render={() => (
                     <ScriptPage
                       config={config?.scriptBrief}
+                      editFlowPlan={config?.editFlowPlan}
                       editRules={editRules}
                       styleSources={styleSources}
                       setScriptBrief={setScriptBrief}
@@ -665,6 +684,11 @@ function AppShell() {
                       jobs={allJobs}
                       projectId={projectId}
                       onRun={() => runProjectWorkflow('script')}
+                      onGenerateFlowPlan={() => runProjectWorkflow('edit-flow-plan', {
+                        editId: config?.scriptBrief?.editId || 'main',
+                        editRuleCategory: config?.scriptBrief?.editRuleCategory,
+                      })}
+                      onConfirmFlowPlan={confirmFlowPlan}
                       onWorkflowTransition={workflowState => openWorkflowDialog(buildScriptWorkflowDialog(workflowState))}
                     />
                   )}
@@ -1176,6 +1200,7 @@ function StylePage({ config, capabilities, jobs, setStyleSources, onSave, busy, 
 
 function ScriptPage({
   config,
+  editFlowPlan,
   editRules,
   styleSources,
   setScriptBrief,
@@ -1187,6 +1212,8 @@ function ScriptPage({
   jobs,
   projectId,
   onRun,
+  onGenerateFlowPlan,
+  onConfirmFlowPlan,
   onWorkflowTransition,
 }) {
   const scriptJobs = (jobs || [])
@@ -1204,6 +1231,12 @@ function ScriptPage({
   const hasValidStyleCategory = !config?.styleCategory
     || availableStyleCategories.some(category => category.categoryId === config?.styleCategory);
   const canPrepare = hasValidEditRuleCategory && workflowState === 'ready_to_prepare';
+  const flowPlanMatchesRule = Boolean(
+    editFlowPlan
+    && editFlowPlan.editRuleCategory === config?.editRuleCategory
+    && availableRuleCategories.find(category => category.categoryId === config?.editRuleCategory)?.contentHash === editFlowPlan.editRuleHash,
+  );
+  const hasConfirmedFlowPlan = Boolean(flowPlanMatchesRule && editFlowPlan?.status === 'confirmed');
   const workflowPrompt = buildScriptWorkflowPrompt({
     config,
     availableCategories: availableRuleCategories,
@@ -1247,9 +1280,22 @@ function ScriptPage({
           <h2>Script Preparation</h2>
           <Tag>{latestJob ? formatScriptJobStatus(latestJob.status) : '未运行'}</Tag>
         </div>
-        <p className="muted">这里不会后台自动写稿。点击后只会校验剪辑规则与素材前置条件，刷新 edit-unit facts 和 shared bundle，并把流程推进到“回到 Agent 继续写正式脚本”。</p>
+        <p className="muted">这里不会后台自动写稿。先生成并确认 Flow Plan；之后点击准备只会校验剪辑规则、Flow Plan 与素材前置条件，刷新 edit-unit facts 和 shared bundle，并把流程推进到“回到 Agent 继续写正式脚本”。</p>
         {!availableRuleCategories.length ? (
-          <p className="muted">Workspace 剪辑规则库当前没有可选分类；请先补 `config/edit-rules.json` / `config/edit-rules/*.md`。</p>
+          <p className="muted">Workspace 剪辑规则库当前没有可选分类；请先补 `config/edit-rules/*.md`。</p>
+        ) : null}
+        {hasValidEditRuleCategory ? (
+          <div className="job-item">
+            <div>
+              <strong>Flow Plan</strong>
+              <div className="muted">
+                {editFlowPlan
+                  ? `${editFlowPlan.status}${flowPlanMatchesRule ? '' : ' / stale'} · ${editFlowPlan.steps?.length || 0} steps`
+                  : '尚未生成'}
+              </div>
+            </div>
+            <Tag>{hasConfirmedFlowPlan ? 'confirmed' : flowPlanMatchesRule ? editFlowPlan.status : 'required'}</Tag>
+          </div>
         ) : null}
         {latestJob ? (
           <div className="job-item">
@@ -1262,8 +1308,22 @@ function ScriptPage({
         ) : null}
         <div className="actions">
             <Button
-              type={busy['job:script'] || !canPrepare ? 'disabled' : 'primary'}
-              disabled={busy['job:script'] || !canPrepare}
+              type={busy['job:edit-flow-plan'] || !hasValidEditRuleCategory ? 'disabled' : 'default'}
+              disabled={busy['job:edit-flow-plan'] || !hasValidEditRuleCategory}
+              onClick={onGenerateFlowPlan}
+            >
+              {busy['job:edit-flow-plan'] ? '生成中…' : '生成 Flow Plan'}
+            </Button>
+            <Button
+              type={busy['edit-flow:confirm'] || !flowPlanMatchesRule || editFlowPlan?.status === 'confirmed' ? 'disabled' : 'default'}
+              disabled={busy['edit-flow:confirm'] || !flowPlanMatchesRule || editFlowPlan?.status === 'confirmed'}
+              onClick={onConfirmFlowPlan}
+            >
+              {busy['edit-flow:confirm'] ? '确认中…' : '确认 Flow Plan'}
+            </Button>
+            <Button
+              type={busy['job:script'] || !canPrepare || !hasConfirmedFlowPlan ? 'disabled' : 'primary'}
+              disabled={busy['job:script'] || !canPrepare || !hasConfirmedFlowPlan}
               onClick={onRun}
             >
               {busy['job:script'] ? '准备中…' : '准备给 Agent'}
@@ -1565,7 +1625,7 @@ function buildScriptWorkflowPrompt({
     return {
       eyebrow: 'Action Required',
       title: '先准备剪辑规则库',
-      body: '当前 workspace 还没有任何可选剪辑规则。先补 config/edit-rules.json 和 config/edit-rules/*.md，再回到这里继续脚本流程。',
+      body: '当前 workspace 还没有任何可选剪辑规则。先补 config/edit-rules/*.md，再回到这里继续脚本流程。',
       tone: 'warn',
     };
   }
@@ -1573,7 +1633,7 @@ function buildScriptWorkflowPrompt({
     return {
       eyebrow: 'Action Required',
       title: '先选择剪辑规则',
-      body: '在下面选择一个 workspace 剪辑规则。系统会自动保存，然后下一步就是回到 Agent 生成 material-overview.md 和初版 brief。',
+      body: '在下面选择一个 workspace 剪辑规则。系统会自动保存，然后下一步是生成并确认 Flow Plan。',
       tone: 'warn',
     };
   }

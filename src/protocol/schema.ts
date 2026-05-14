@@ -1180,6 +1180,9 @@ export type EColorGroupLowlightStatus = z.infer<typeof EColorGroupLowlightStatus
 export const EColorCastClass = z.enum(['neutral', 'cool-cyan', 'green-cyan', 'green', 'warm', 'mixed', 'unknown']);
 export type EColorCastClass = z.infer<typeof EColorCastClass>;
 
+export const EColorExposureSceneClass = z.enum(['normal', 'high-contrast', 'overexposed', 'underexposed', 'unknown']);
+export type EColorExposureSceneClass = z.infer<typeof EColorExposureSceneClass>;
+
 export const EColorGroupPostClipCreativeStatus = z.enum(['missing', 'empty', 'ready']);
 export type EColorGroupPostClipCreativeStatus = z.infer<typeof EColorGroupPostClipCreativeStatus>;
 
@@ -1225,6 +1228,9 @@ export const IColorClipRepairSnapshot = z.object({
   colorCastClass: EColorCastClass.optional(),
   colorCastConfidence: z.number().min(0).max(1).optional(),
   colorCastMetrics: z.record(z.unknown()).default({}),
+  exposureSceneClass: EColorExposureSceneClass.optional(),
+  exposureSceneConfidence: z.number().min(0).max(1).optional(),
+  exposureSceneMetrics: z.record(z.unknown()).default({}),
   encodedWidth: z.number().int().positive().optional(),
   encodedHeight: z.number().int().positive().optional(),
   displayWidth: z.number().int().positive().optional(),
@@ -1346,8 +1352,10 @@ export const IColorGroupCurrent = z.object({
   displayName: z.string().optional(),
   clipCount: z.number().int().nonnegative().optional(),
   logProfile: z.string().optional(),
+  orientationStatus: EColorClipOrientationStatus.optional(),
   lowlight: EColorGroupLowlightStatus.optional(),
   colorCastClass: EColorCastClass.optional(),
+  exposureSceneClass: EColorExposureSceneClass.optional(),
   postClipCreativeStatus: EColorGroupPostClipCreativeStatus.optional(),
   latestBatchId: z.string().optional(),
   latestBatchStatus: EColorBatchStatus.optional(),
@@ -1393,8 +1401,10 @@ export const IColorGroupSnapshot = z.object({
   displayName: z.string().optional(),
   clipKeys: z.array(z.string()).default([]),
   logProfile: z.string().optional(),
+  orientationStatus: EColorClipOrientationStatus.optional(),
   lowlight: EColorGroupLowlightStatus.optional(),
   colorCastClass: EColorCastClass.optional(),
+  exposureSceneClass: EColorExposureSceneClass.optional(),
   postClipCreativeStatus: EColorGroupPostClipCreativeStatus.optional(),
   clips: z.array(IColorClipRepairSnapshot).default([]),
   hostSummary: z.record(z.unknown()).default({}),
@@ -1802,6 +1812,8 @@ export const IEditRuleCategoryConfig = z.object({
   displayName: z.string(),
   description: z.string().optional(),
   profilePath: z.string().optional(),
+  rulePath: z.string().optional(),
+  contentHash: z.string().optional(),
   notes: z.array(z.string()).default([]),
 });
 export type IEditRuleCategoryConfig = z.infer<typeof IEditRuleCategoryConfig>;
@@ -1811,6 +1823,53 @@ export const IEditRulesConfig = z.object({
   categories: z.array(IEditRuleCategoryConfig).default([]),
 });
 export type IEditRulesConfig = z.infer<typeof IEditRulesConfig>;
+
+export const IEditRuleMarkdownSource = z.object({
+  categoryId: z.string(),
+  displayName: z.string(),
+  description: z.string().optional(),
+  profilePath: z.string(),
+  absolutePath: z.string().optional(),
+  contentHash: z.string(),
+  frontMatter: z.record(z.string()).default({}),
+  markdown: z.string(),
+});
+export type IEditRuleMarkdownSource = z.infer<typeof IEditRuleMarkdownSource>;
+
+export const EEditFlowPlanStatus = z.enum(['draft', 'confirmed', 'stale']);
+export type EEditFlowPlanStatus = z.infer<typeof EEditFlowPlanStatus>;
+
+export const EEditFlowGate = z.enum(['none', 'human']);
+export type EEditFlowGate = z.infer<typeof EEditFlowGate>;
+
+export const IEditFlowPlanStep = z.object({
+  id: z.string(),
+  capabilityId: z.string(),
+  title: z.string().optional(),
+  inputRefs: z.array(z.string()),
+  outputRefs: z.array(z.string()),
+  gate: EEditFlowGate,
+  notes: z.array(z.string()),
+});
+export type IEditFlowPlanStep = z.infer<typeof IEditFlowPlanStep>;
+
+export const IEditFlowPlan = z.object({
+  schemaVersion: z.literal('1.0'),
+  id: z.string(),
+  projectId: z.string().optional(),
+  editId: z.string(),
+  editRuleCategory: z.string(),
+  editRuleHash: z.string(),
+  generatedAt: z.string(),
+  updatedAt: z.string().optional(),
+  status: EEditFlowPlanStatus,
+  confirmedAt: z.string().optional(),
+  staleReason: z.string().optional(),
+  summary: z.string().optional(),
+  assumptions: z.array(z.string()),
+  steps: z.array(IEditFlowPlanStep),
+});
+export type IEditFlowPlan = z.infer<typeof IEditFlowPlan>;
 
 export const EStyleSourceType = z.enum(['file', 'directory']);
 export type EStyleSourceType = z.infer<typeof EStyleSourceType>;

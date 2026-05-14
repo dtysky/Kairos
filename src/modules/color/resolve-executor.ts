@@ -11,6 +11,7 @@ import type {
   IColorResolveProjectSnapshot,
   IColorRenderPreset,
   EColorCastClass,
+  EColorExposureSceneClass,
 } from '../../protocol/schema.js';
 import type {
   IResolveLutSyncSummary,
@@ -103,6 +104,9 @@ export interface IColorExecutorClipInput {
   colorCastClass?: EColorCastClass;
   colorCastConfidence?: number;
   colorCastMetrics?: Record<string, unknown>;
+  exposureSceneClass?: EColorExposureSceneClass;
+  exposureSceneConfidence?: number;
+  exposureSceneMetrics?: Record<string, unknown>;
   deviceFamilyKeys?: string[];
   resolvedTransformPresetKey?: string;
   resolvedLutRelativePath?: string;

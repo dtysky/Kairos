@@ -38,6 +38,18 @@ export {
   type TColorCastClass,
 } from './color-cast-classifier.js';
 export {
+  classifyExposureScene,
+  classifyRgbFrameExposureScene,
+  type IColorExposureSceneClassification,
+  type IColorExposureSceneFrameMetrics,
+  type IColorExposureSceneMetrics,
+  type TColorExposureSceneClass,
+} from './exposure-scene-classifier.js';
+export {
+  classifyMidpointLowlight,
+  type IColorLowlightClassification,
+} from './lowlight-classifier.js';
+export {
   PythonResolveColorExecutor,
   ResolveColorExecutorUnavailableError,
   ResolveColorHostError,

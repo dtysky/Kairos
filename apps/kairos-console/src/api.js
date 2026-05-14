@@ -70,6 +70,10 @@ export function fetchWorkspaceEditRulesConfig() {
   return apiGet('/api/workspace/config/edit-rules');
 }
 
+export function confirmProjectEditFlowPlan(projectId, editId) {
+  return apiPost(withEditQuery(`/api/projects/${encodeURIComponent(projectId)}/edit-flow/confirm`, editId), { editId });
+}
+
 export function fetchProjectReviews(projectId) {
   return apiGet(`/api/projects/${encodeURIComponent(projectId)}/reviews`);
 }

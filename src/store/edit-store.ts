@@ -34,6 +34,10 @@ export function getProjectEditSubtitlesRoot(projectRoot: string, editId?: string
   return join(getProjectEditRoot(projectRoot, editId), 'subtitles');
 }
 
+export function getProjectEditPlanningRoot(projectRoot: string, editId?: string | null): string {
+  return join(getProjectEditRoot(projectRoot, editId), 'planning');
+}
+
 export function getLegacyScriptRoot(projectRoot: string): string {
   return join(projectRoot, 'script');
 }
@@ -57,6 +61,9 @@ export async function ensureProjectEditDirs(
   await Promise.all([
     mkdir(getProjectEditScriptRoot(projectRoot, editId), { recursive: true }),
     mkdir(join(getProjectEditScriptRoot(projectRoot, editId), 'versions'), { recursive: true }),
+    mkdir(getProjectEditPlanningRoot(projectRoot, editId), { recursive: true }),
+    mkdir(join(getProjectEditPlanningRoot(projectRoot, editId), 'agent-packets'), { recursive: true }),
+    mkdir(join(getProjectEditPlanningRoot(projectRoot, editId), 'reviews'), { recursive: true }),
     mkdir(getProjectEditTimelineRoot(projectRoot, editId), { recursive: true }),
     mkdir(join(getProjectEditTimelineRoot(projectRoot, editId), 'versions'), { recursive: true }),
     mkdir(getProjectEditSubtitlesRoot(projectRoot, editId), { recursive: true }),

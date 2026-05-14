@@ -65,8 +65,10 @@ export interface IColorGroupWorkspaceSummary {
   clipCount: number;
   clipKeys: string[];
   logProfile?: string;
+  orientationStatus?: string;
   lowlight?: string;
   colorCastClass?: string;
+  exposureSceneClass?: string;
   postClipCreativeStatus?: string;
   clips: IColorClipRepairWorkspaceSummary[];
   hostSummary: Record<string, unknown>;
@@ -231,8 +233,10 @@ function normalizeGroupCurrent(
     displayName: trimmed(current.displayName),
     clipCount: current.clipCount,
     logProfile: trimmed(current.logProfile),
+    orientationStatus: current.orientationStatus,
     lowlight: current.lowlight,
     colorCastClass: current.colorCastClass,
+    exposureSceneClass: current.exposureSceneClass,
     postClipCreativeStatus: current.postClipCreativeStatus,
     latestBatchId: current.latestBatchId,
     latestBatchStatus: current.latestBatchStatus,
@@ -268,8 +272,10 @@ function materializeGroupWorkspaceSummaries(
       clipCount: group.clipKeys.length,
       clipKeys: dedupeStrings(group.clipKeys ?? []),
       logProfile: trimmed(group.logProfile) ?? trimmed(current.logProfile),
+      orientationStatus: group.orientationStatus ?? current.orientationStatus,
       lowlight: group.lowlight ?? current.lowlight,
       colorCastClass: group.colorCastClass ?? current.colorCastClass,
+      exposureSceneClass: group.exposureSceneClass ?? current.exposureSceneClass,
       postClipCreativeStatus: group.postClipCreativeStatus ?? current.postClipCreativeStatus,
       clips: (group.clips ?? []).map(clip => ({
         clipKey: clip.clipKey,
@@ -279,6 +285,9 @@ function materializeGroupWorkspaceSummaries(
         colorCastClass: clip.colorCastClass,
         colorCastConfidence: clip.colorCastConfidence,
         colorCastMetrics: clip.colorCastMetrics,
+        exposureSceneClass: clip.exposureSceneClass,
+        exposureSceneConfidence: clip.exposureSceneConfidence,
+        exposureSceneMetrics: clip.exposureSceneMetrics,
         encodedWidth: clip.encodedWidth,
         encodedHeight: clip.encodedHeight,
         displayWidth: clip.displayWidth,
@@ -304,8 +313,10 @@ function materializeGroupWorkspaceSummaries(
         displayName: trimmed(current.displayName) ?? trimmed(group.displayName) ?? group.groupKey,
         clipCount: current.clipCount ?? group.clipKeys.length,
         logProfile: trimmed(group.logProfile) ?? trimmed(current.logProfile),
+        orientationStatus: group.orientationStatus ?? current.orientationStatus,
         lowlight: group.lowlight ?? current.lowlight,
         colorCastClass: group.colorCastClass ?? current.colorCastClass,
+        exposureSceneClass: group.exposureSceneClass ?? current.exposureSceneClass,
         postClipCreativeStatus: group.postClipCreativeStatus ?? current.postClipCreativeStatus,
       },
     } satisfies IColorGroupWorkspaceSummary;
@@ -319,8 +330,10 @@ function materializeGroupWorkspaceSummaries(
       clipCount: current.clipCount ?? 0,
       clipKeys: [],
       logProfile: trimmed(current.logProfile),
+      orientationStatus: current.orientationStatus,
       lowlight: current.lowlight,
       colorCastClass: current.colorCastClass,
+      exposureSceneClass: current.exposureSceneClass,
       postClipCreativeStatus: current.postClipCreativeStatus,
       clips: [],
       hostSummary: {},
@@ -329,8 +342,10 @@ function materializeGroupWorkspaceSummaries(
         displayName: trimmed(current.displayName) ?? current.groupKey,
         clipCount: current.clipCount ?? 0,
         logProfile: trimmed(current.logProfile),
+        orientationStatus: current.orientationStatus,
         lowlight: current.lowlight,
         colorCastClass: current.colorCastClass,
+        exposureSceneClass: current.exposureSceneClass,
         postClipCreativeStatus: current.postClipCreativeStatus,
       },
     });

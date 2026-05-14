@@ -85,10 +85,13 @@ Current stable pipeline:
     - Resolve Project: `${projectBrief.name} [Color]`
     - root namespace / grading timeline: derived from root `label`
   - current Group truth is Resolve-managed: users may keep adjusting Groups in Resolve, and `/color` only mirrors them back through `sync_groups`; synced non-empty Groups become `ready` directly and there is no extra `/color` confirm step
-  - current automatic Groups are creative-tag based, not technical-fingerprint based:
-    - `log`: explicit sidecar truth first, then root `color.colorSpaceProfile`
-    - `lowlight`: first-frame creative classification only; it is a grouping/look hint, not a synonym for “must denoise”
-    - `colorCastClass`: cheap numeric color-cast classification samples one proxy frame near the clip midpoint; when the clip resolves to a technical transform LUT, the proxy is transformed through that same workspace/Resolve LUT before neutral-pixel analysis. Strong cold-blue neutral shifts are treated as `cool-cyan`, green/blue mixed neutral shifts as `green-cyan`, and `prepare_root` may smooth a continuous same-root/same-log clip sequence so compatible weak samples between cold-color anchors stay in the same correction Group. High-confidence `cool-cyan / green-cyan / green / warm / mixed` clips may split into separate Groups; `neutral / unknown` clips stay in the base log/lowlight bucket
+  - current automatic Groups are creative/review-tag based, not technical-fingerprint based:
+    - `log`: explicit sidecar truth first, then root `color.colorSpaceProfile`; it is always the front grouping axis, so later review tags never merge clips across different log profiles
+    - addon priority within each log bucket is first-match: `portrait-review -> lowlight -> high-confidence colorCastClass -> exposureSceneClass`
+    - `portrait-review`: `orientationStatus=portrait` clips split inside their current log bucket for manual review; the existing portrait repair/template and horizontal timeline transform behavior still applies
+    - `lowlight`: clip-midpoint single-frame creative classification only; it is a grouping/look hint, not a synonym for “must denoise”
+    - `colorCastClass`: cheap numeric color-cast classification samples one proxy frame near the clip midpoint; when the clip resolves to a technical transform LUT, the proxy is transformed through that same workspace/Resolve LUT before neutral-pixel analysis. Strong cold-blue neutral shifts are treated as `cool-cyan`, green/blue mixed neutral shifts as `green-cyan`, and `prepare_root` may smooth a continuous same-root/same-log clip sequence so compatible weak samples between cold-color anchors stay in the same correction Group. White-reference underexposed clips block this weak continuity promotion. High-confidence `cool-cyan / green-cyan / green / warm / mixed` clips may split into separate Groups; `neutral / unknown` clips stay in the base log/addon bucket
+    - `exposureSceneClass`: cheap numeric exposure classification samples the same clip-midpoint log-decoded proxy family; obvious `high-contrast / overexposed / underexposed` clips split only after portrait, lowlight, and high-confidence color cast did not match. `high-contrast` includes backlit/silhouette or cabin/window scenes where the highlight area may be narrow but the dark and bright luma tails are far apart. `overexposed` stays conservative and targets clearly clipped or high-bright frames instead of broad washed-road/high-key looks. `underexposed` also includes single-frame white-reference underexposure, where large low-saturation high-key regions such as snow are present but their white point is compressed into gray without a real bright tail; the classifier records white-reference coverage, EV lift-to-target, and predicted post-lift highlight headroom. That subtype keeps `exposureSceneClass=underexposed` but uses `white-reference-underexposed` as the Resolve Group addon.
     - `gyro` is now clip-level repair truth only and no longer participates in group auto-bucketing
     - Group key is the normalized Resolve group name slug
   - current `prepare_root` must also ensure the canonical clip repair layout:
@@ -107,8 +110,8 @@ Current stable pipeline:
     - old non-canonical clip graphs are treated as `legacy-layout`; this round allows one destructive rebuild from workspace `config/default.drt` when present; if DRT is missing, bulk prepare skips automatic repair seeding and marks clips `pending-template` instead of falling back to DRX
     - `config/default.drt` is the only formal automatic repair seed source for bulk prepare because the older clean DRT donor path has been live-verified to trigger Gyroflow source loading; `config/default.drx` is retained for manual diagnostics only and must not be used as a large-batch fallback
   - current `sync_groups` mirrors both group creative state and clip repair state:
-    - group-level truth includes `logProfile`, `lowlight`, `colorCastClass`, and `postClipCreativeStatus`
-    - clip-level truth includes `gyroEligible`, `gyroflowStatus`, `dehazeStatus`, `nrStatus`, `clipRepairStatus`, `layoutStatus`, orientation metadata, repair template key, and applied timeline transform
+    - group-level truth includes `logProfile`, `orientationStatus`, `lowlight`, `colorCastClass`, `exposureSceneClass`, and `postClipCreativeStatus`
+    - clip-level truth includes review signals plus `gyroEligible`, `gyroflowStatus`, `dehazeStatus`, `nrStatus`, `clipRepairStatus`, `layoutStatus`, orientation metadata, repair template key, and applied timeline transform
   - current automatic technical transform resolution follows:
     - clip truth priority is `explicit sidecar > root.color.colorSpaceProfile fallback`
     - unresolved or embedded DJI private metadata remains `unknown`; Kairos must not scan it during prepare or force `dlog-m`
@@ -147,8 +150,9 @@ Current stable pipeline:
   - current Resolve host automation uses the fixed same-machine vendored backend at `vendor/resolve-color-host/` with a fixed `.venv` convention
   - Resolve host automation now uses the same-machine vendored backend around the official Python Scripting API, not MCP
 - workspace edit-rule and style-reference assets now have separate responsibilities:
-  - `config/edit-rules/` stores the workspace-level `剪辑规则` library; these rules are human-maintained and are the formal input for script structure, edit framework generation, human gates, and rough-cut constraints
-  - `config/edit-rules.json` stores the structured edit-rule category index; projects save the selected `editRuleCategory` independently from any prose style category
+  - `config/edit-rules/*.md` stores the workspace-level `剪辑规则` library; these markdown files are human-maintained and are the only rule-content source
+  - the edit-rule list is derived by scanning markdown frontmatter and filenames; projects save the selected `editRuleCategory` independently from any prose style category
+  - an LLM-authored `edits/<editId>/planning/flow-plan.json` turns the selected markdown rule, project context, and the fixed capability catalog into an explicit flow; Script / Timeline require that plan to be human-confirmed before execution
   - `config/styles/` and `config/style-sources.json` remain workspace-level text/art-style references produced by style analysis, but they are downgraded to expression guidance for final narration, subtitles, wording tone, and forbidden phrasing
   - rough-cut structure must default to edit rules plus Pharos/material evidence, not to inferred style-profile structure
 - reusable style-reference assets still live at workspace scope, not project scope:
@@ -175,12 +179,13 @@ Current stable pipeline:
     - workspace/project runtime may declare that packet runner via `config/runtime.json` `agentPacketRunnerCommand` / `agentPacketRunnerArgs` / `agentPacketRunnerCwd`
 - the `/script` console page now acts as deterministic script preparation:
   - user first selects a workspace `editRuleCategory` in `/script`; that selection auto-saves and is independent from optional `styleCategory`
-  - changing `editRuleCategory` now invalidates the previous edit-unit script/timeline run immediately; Kairos clears that edit unit's old `material-overview`, brief draft body, arrangement artifacts, outline, and `edits/<editId>/script/current.json`, then returns the workflow to `await_brief_draft`
+  - changing `editRuleCategory` now invalidates the previous edit-unit planning/script/timeline run immediately; Kairos clears that edit unit's old planning artifacts, `material-overview`, brief draft body, outline, and `edits/<editId>/script/current.json`, then returns the workflow to `await_brief_draft`
   - changing `styleCategory` alone no longer invalidates rough-cut structure; it only changes later expression guidance for narration/subtitles
+  - before deterministic script prep, the Flow Planner must generate `edits/<editId>/planning/flow-plan.json` from the raw edit-rule markdown, capability catalog, project brief, Pharos summary, chronology, and analysis availability; the user must confirm the plan before `material.recall / script.generate / timeline.generate` can run
   - agent then generates `edits/<editId>/script/material-overview.md` and the initial `script-brief`
   - user reviews and manually saves the brief in `/script`
   - the console now surfaces these handoffs with persistent workflow prompts and explicit hana modal confirmations instead of relying on low-contrast inline copy
-  - `/script` validates `store/spans.json`, the selected workspace `editRuleCategory`, and the matching edit-rule profile
+  - `/script` validates `store/spans.json`, the selected workspace `editRuleCategory`, the matching markdown rule hash, and the confirmed Flow Plan
   - `/script` now prepares deterministic edit-unit script inputs such as `edits/<editId>/script/material-overview.facts.json`, `edits/<editId>/script/material-overview.md`, `edits/<editId>/script/segment-plan.json`, `edits/<editId>/script/material-slots.json`, and shared `analysis/material-bundles.json`
   - the agent-authored script phase now uses clean-context internal stages instead of one shared writer context:
     - `script/spatial-story.json` + `script/spatial-story.md` summarize chronology / spans / Pharos / GPS into a narrative-hint layer
@@ -197,13 +202,10 @@ Current stable pipeline:
   - `script-current` is one formal `beat-writer` pass per attempt; do not pre-run an extra full-script writer call just to seed a base draft
   - if a script writer or reviewer call fails, `edits/<editId>/script/agent-pipeline.json` must record that real failure state immediately instead of leaving stale `pending` / old-stage truth
   - if the reviewed brief was already user-edited and a fresh initial draft is needed, overwrite permission is granted explicitly from `/script` instead of silent agent overwrite
-  - the selected edit rule should already expose arrangement, trip-impression, material补漏, rough-cut gates, and forbidden zones; optional style references only tune final text expression
-  - script prep now follows `Analyze -> Material Overview -> Script Brief -> Segment Plan -> Material Slots -> Bundle Lookup -> Chosen SpanIds -> Beat / Script`
+  - code does not parse the edit-rule markdown for arrangement or heuristic weights; rule interpretation happens only inside the Flow Planner and stage agents reading their packets
+  - script prep now follows the confirmed Flow Plan while reusing the existing `Analyze -> Material Overview -> Script Brief -> Segment Plan -> Material Slots -> Bundle Lookup -> Chosen SpanIds -> Beat / Script` implementation
   - `Chosen SpanIds -> Beat / Script` is no longer equivalent to mechanically emitting one beat per chosen span; outline prep should filter obvious device-command / navigation / noisy-ASR source-speech anchors and merge adjacent non-speech evidence spans before `beat-writer`
-  - when the selected edit rule clearly emphasizes chronology / route continuity / continuous process, script prep now enforces ordering in three layers:
-    - internal arrangement signals resolve that the edit rule is time-axis-strong from the rule markdown
-    - deterministic prep builds monotonic time bands for segments and only retrieves spans inside the legal band
-    - downstream timeline assembly re-validates chronology and refuses to silently output a backwards sequence
+  - chronology, route continuity, and continuous-process requirements must enter through the confirmed Flow Plan, reviewed planning artifacts, or explicit script brief fields; code must not infer them by keyword scanning the rule markdown
   - deterministic prep no longer treats style averages or inferred material capacity as the driver of rough-cut duration; `targetDurationMs` stays optional and advisory-only unless the user explicitly sets it
   - rough-cut recall is now high-recall by default: valid spans should stay in `material-slots / outline / script` unless they are empty, clearly bad, or near-duplicate
   - `analysis/material-bundles.json` is now a full span index, and `edits/<editId>/script/material-slots.json` may fan out to many single-span slots instead of one shortlist slot per segment

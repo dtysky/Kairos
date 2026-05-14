@@ -29,6 +29,7 @@ import {
   getLegacyScriptRoot,
   getProjectEditScriptRoot,
   getProjectEditTimelineRoot,
+  getProjectEditPlanningRoot,
   shouldReadLegacyEditPath,
 } from './edit-store.js';
 import { readJsonOrNull, writeJson } from './writer.js';
@@ -128,7 +129,9 @@ export async function clearScriptArtifactsForStyleChange(
   const { rm } = await import('node:fs/promises');
   const scriptRoot = getProjectEditScriptRoot(projectRoot, editId);
   const timelineRoot = getProjectEditTimelineRoot(projectRoot, editId);
+  const planningRoot = getProjectEditPlanningRoot(projectRoot, editId);
   await Promise.all([
+    rm(planningRoot, { recursive: true, force: true }),
     rm(getMaterialOverviewFactsPath(projectRoot, editId), { force: true }),
     rm(getMaterialOverviewPath(projectRoot, editId), { force: true }),
     rm(getMaterialBundlesPath(projectRoot), { force: true }),

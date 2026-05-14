@@ -23,7 +23,7 @@ alwaysApply: true
 
 - 不要在没读 `kairos-script` skill 的情况下直接生成脚本
 - 不要忽略当前项目 / edit unit 已经写明的剪辑规则，又重复向用户追问同一信息
-- 不要只因为当前项目目录下没有规则文件，就跳过对 workspace 级 `config/edit-rules/`、`config/edit-rules.json` 与已存在 brief 的核对
+- 不要只因为当前项目目录下没有规则文件，就跳过对 workspace 级 `config/edit-rules/*.md`、已确认 Flow Plan 与已存在 brief 的核对
 - 不要在未获授权或宿主不支持时，把 subagent / reviewer 链静默折叠成单代理起稿
 - 不要在 agent-host 场景把“formal subagent runner 缺失”错误地转嫁成“用户没给 API key”
 - 不要让 `[main agent]` 事后“补锅”式改写 `script/current.json`，包括把 `{ "segments": [...] }` 再手工 normalize 成正式稿

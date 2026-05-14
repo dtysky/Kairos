@@ -109,12 +109,21 @@ export {
   getProjectEditScriptRoot,
   getProjectEditTimelineRoot,
   getProjectEditSubtitlesRoot,
+  getProjectEditPlanningRoot,
   getLegacyScriptRoot,
   getLegacyTimelineRoot,
   getLegacySubtitlesRoot,
   shouldReadLegacyEditPath,
   ensureProjectEditDirs,
 } from './edit-store.js';
+export {
+  getEditFlowPlanPath,
+  getEditPlanningArtifactPath,
+  getEditPlanningAgentPacketsRoot,
+  getEditPlanningAgentPacketPath,
+  loadEditFlowPlan,
+  writeEditFlowPlan,
+} from './edit-planning-store.js';
 export {
   getMaterialOverviewFactsPath,
   getMaterialOverviewPath,

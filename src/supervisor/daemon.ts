@@ -18,6 +18,7 @@ import {
   loadIngestRoots,
   loadRuntimeConfig,
   loadEditRulesConfig,
+  loadEditFlowPlan,
   listWorkspaceProjects,
   loadManualItineraryConfig,
   normalizeEditId,
@@ -38,6 +39,10 @@ import {
   writeKairosProgress,
   writeChronology,
 } from '../store/index.js';
+import {
+  CEDIT_FLOW_CAPABILITY_CATALOG,
+  confirmEditFlowPlan,
+} from '../modules/edit-flow/index.js';
 import {
   buildColorWorkspaceState,
   inspectResolveColorBackend,
@@ -190,11 +195,14 @@ async function routeRequest(
         { jobType: 'analyze', executionMode: 'deterministic', supported: true },
         { jobType: 'style-analysis', executionMode: 'deterministic', supported: true, note: 'runs deterministic prep and then hands off to Agent for final text/art-style reference; does not generate edit rules' },
         { jobType: 'color', executionMode: 'deterministic', supported: true, note: 'supports prepare_root / sync_groups / execute_root / sync_batch_metadata / sync_batch_sidecars / validate_batch / prepare_all_roots / export_all_roots through the same-machine vendored Resolve backend; clip repair now follows the canonical Gyro -> Dehaze -> User1 -> User2 -> NR layout, and execute/export-all require explicit overwrite confirmation before replacing existing root outputs' },
-        { jobType: 'script', executionMode: 'deterministic', supported: true, note: 'runs per editId only after reviewed brief and editRuleCategory are saved; advances ready_to_prepare -> ready_for_agent; final script remains agent-authored' },
-        { jobType: 'timeline', executionMode: 'deterministic', supported: true, note: 'builds per-edit rough-cut-base -> segment-cut review chain; requires a configured host agent packet runner' },
+        { jobType: 'edit-flow-plan', executionMode: 'agent', supported: true, note: 'LLM reads raw edit-rule markdown plus capability catalog and writes edits/<editId>/planning/flow-plan.json for human confirmation' },
+        { jobType: 'edit-flow-capability', executionMode: 'agent', supported: true, note: 'runs registered planning capabilities such as pharos.parse, trip.event_table, material.archive, and edit.framework' },
+        { jobType: 'script', executionMode: 'deterministic', supported: true, note: 'runs per editId only after reviewed brief, editRuleCategory, and confirmed Flow Plan are saved; advances ready_to_prepare -> ready_for_agent; final script remains agent-authored' },
+        { jobType: 'timeline', executionMode: 'deterministic', supported: true, note: 'builds per-edit rough-cut-base -> segment-cut review chain; requires confirmed Flow Plan and a configured host agent packet runner' },
         { jobType: 'export-jianying', executionMode: 'deterministic', supported: false },
         { jobType: 'export-resolve', executionMode: 'agent', supported: false },
       ],
+      editFlowCapabilities: CEDIT_FLOW_CAPABILITY_CATALOG,
     });
     return;
   }
@@ -216,6 +224,7 @@ async function routeRequest(
       colorGroupSnapshots,
       workspaceColorTransformPresets,
       colorResolveProjectMap,
+      editFlowPlan,
     ] = await Promise.all([
       loadProjectBriefConfig(projectRoot),
       loadManualItineraryConfig(projectRoot),
@@ -228,6 +237,7 @@ async function routeRequest(
       loadColorGroupsSnapshots(projectRoot),
       loadColorTransformPresetsConfig(options.workspaceRoot).catch(() => ({ profiles: {}, discoveredPresets: {} })),
       loadColorResolveProjectMap(projectRoot),
+      loadEditFlowPlan(projectRoot, editId),
     ]);
     const colorWorkspace = buildColorWorkspaceState({
       projectId,
@@ -254,6 +264,31 @@ async function routeRequest(
       ingestRootSummaries,
       pharosStatus: buildProjectPharosAssetStatus(pharosContext, projectRoot),
       pharosContext,
+      editFlowPlan,
+    });
+    return;
+  }
+
+  const editFlowMatch = pathname.match(/^\/api\/projects\/([^/]+)\/edit-flow$/u);
+  if (editFlowMatch && method === 'GET') {
+    const projectId = decodeURIComponent(editFlowMatch[1]!);
+    const projectRoot = join(options.workspaceRoot, 'projects', projectId);
+    const editId = normalizeEditId(url.searchParams.get('editId'));
+    sendJson(response, 200, {
+      flowPlan: await loadEditFlowPlan(projectRoot, editId),
+      capabilities: CEDIT_FLOW_CAPABILITY_CATALOG,
+    });
+    return;
+  }
+
+  const editFlowConfirmMatch = pathname.match(/^\/api\/projects\/([^/]+)\/edit-flow\/confirm$/u);
+  if (editFlowConfirmMatch && method === 'POST') {
+    const projectId = decodeURIComponent(editFlowConfirmMatch[1]!);
+    const projectRoot = join(options.workspaceRoot, 'projects', projectId);
+    const payload = await readJsonBody(request).catch(() => ({}));
+    const editId = normalizeEditId(url.searchParams.get('editId') ?? payload?.editId);
+    sendJson(response, 200, {
+      flowPlan: await confirmEditFlowPlan(options.workspaceRoot, projectRoot, editId),
     });
     return;
   }

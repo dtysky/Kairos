@@ -727,6 +727,7 @@ describe('resolve color host clip layout helpers', () => {
   it('queues Source Name render settings without custom names or filename prefixes', async () => {
     const result = await inspectRenderExportHelper({
       mode: 'queue_settings',
+      platformOverride: 'win32',
       targetDir: '/Volumes/SSDMAX/zve1/day7',
       renderFormat: {
         format: 'MP4',
@@ -831,7 +832,7 @@ describe('resolve color host clip layout helpers', () => {
 
     expect(result.ok).toBe(true);
     expect(result.result).toMatchObject({
-      subtype: 'hvc1_qsv',
+      subtype: 'hvc1_enc',
       prefix: '',
       suffix: '',
       usePrefixAndSuffixFromSrc: '1',
@@ -846,8 +847,7 @@ describe('resolve color host clip layout helpers', () => {
       datarate: '30000',
       encoderMap: {
         rc: 'CBR',
-        preset: 'balance',
-        icq_quality: '2',
+        preset: 'balanced',
         bitrate: '30000',
       },
     });
@@ -1064,7 +1064,7 @@ describe('resolve color host clip layout helpers', () => {
     ]);
   });
 
-  it('only adds color-cast classes to generated groups at high confidence', async () => {
+  it('builds generated groups from log plus the highest-priority review addon', async () => {
     await expect(buildCreativeSummary({
       logProfile: 'slog3',
       lowlight: false,
@@ -1103,6 +1103,97 @@ describe('resolve color host clip layout helpers', () => {
     })).resolves.toEqual({
       creativeTags: ['slog3'],
       displayName: 'slog3',
+    });
+
+    await expect(buildCreativeSummary({
+      logProfile: 'slog3',
+      orientationStatus: 'portrait',
+      lowlight: true,
+      colorCastClass: 'cool-cyan',
+      colorCastConfidence: 0.8,
+      exposureSceneClass: 'overexposed',
+      exposureSceneConfidence: 0.8,
+    })).resolves.toEqual({
+      creativeTags: ['slog3', 'portrait-review'],
+      displayName: 'slog3 + portrait-review',
+    });
+
+    await expect(buildCreativeSummary({
+      logProfile: 'rec709',
+      lowlight: true,
+      colorCastClass: 'cool-cyan',
+      colorCastConfidence: 0.8,
+      exposureSceneClass: 'overexposed',
+      exposureSceneConfidence: 0.8,
+    })).resolves.toEqual({
+      creativeTags: ['rec709', 'lowlight'],
+      displayName: 'rec709 + lowlight',
+    });
+
+    await expect(buildCreativeSummary({
+      logProfile: 'slog3',
+      lowlight: false,
+      colorCastClass: 'neutral',
+      colorCastConfidence: 0.9,
+      exposureSceneClass: 'high-contrast',
+      exposureSceneConfidence: 0.4,
+    })).resolves.toEqual({
+      creativeTags: ['slog3'],
+      displayName: 'slog3',
+    });
+
+    await expect(buildCreativeSummary({
+      logProfile: 'slog3',
+      lowlight: false,
+      colorCastClass: 'neutral',
+      colorCastConfidence: 0.9,
+      exposureSceneClass: 'overexposed',
+      exposureSceneConfidence: 0.8,
+    })).resolves.toEqual({
+      creativeTags: ['slog3', 'overexposed'],
+      displayName: 'slog3 + overexposed',
+    });
+
+    await expect(buildCreativeSummary({
+      logProfile: 'slog3',
+      lowlight: false,
+      colorCastClass: 'neutral',
+      colorCastConfidence: 0.9,
+      exposureSceneClass: 'underexposed',
+      exposureSceneConfidence: 0.8,
+      exposureSceneMetrics: {
+        exposureSceneReasons: ['white-reference-underexposed'],
+      },
+    })).resolves.toEqual({
+      creativeTags: ['slog3', 'white-reference-underexposed'],
+      displayName: 'slog3 + white-reference-underexposed',
+    });
+
+    await expect(buildCreativeSummary({
+      logProfile: 'slog3',
+      lowlight: true,
+      colorCastClass: 'neutral',
+      colorCastConfidence: 0.9,
+      exposureSceneClass: 'underexposed',
+      exposureSceneConfidence: 0.8,
+      exposureSceneMetrics: {
+        exposureSceneReasons: ['white-reference-underexposed'],
+      },
+    })).resolves.toEqual({
+      creativeTags: ['slog3', 'lowlight'],
+      displayName: 'slog3 + lowlight',
+    });
+
+    await expect(buildCreativeSummary({
+      logProfile: 'rec709',
+      lowlight: false,
+      colorCastClass: 'neutral',
+      colorCastConfidence: 0.9,
+      exposureSceneClass: 'overexposed',
+      exposureSceneConfidence: 0.8,
+    })).resolves.toEqual({
+      creativeTags: ['rec709', 'overexposed'],
+      displayName: 'rec709 + overexposed',
     });
 
     await expect(summarizeGroupColorCast([{

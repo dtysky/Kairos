@@ -7,12 +7,28 @@
 
 ## 0. 2026-03-31 增补
 
+## 0.14 2026-05-14 DaVinci color log 前置 review addon 分组补记
+
+当前 `/color` 自动 Group 继续保持 Resolve Group 扁平结构，但分桶语义收口为：
+
+- `logProfile` 是前置分组轴，来自显式 sidecar 真值，缺失时回退 root `color.colorSpaceProfile`
+- 同一 log bucket 内，每条 clip 只选择一个最高优先级 addon，顺序固定为：
+  - `portrait-review`
+  - `lowlight`
+  - 高置信 `colorCastClass`
+  - 明显 `exposureSceneClass`
+- addon 不跨 log 合并；例如 `slog3 + overexposed` 与 `rec709 + overexposed` 是两个不同 Resolve Groups
+- `portrait-review` 来自 `orientationStatus=portrait`，用于在当前 log 下单独交给人工 review；它不改变竖屏 Gyro/DRT、repair template 或横屏 timeline transform 合同
+- `exposureSceneClass` 是解 log / 技术 LUT 后 proxy 画面的 review 信号；仅明显 `high-contrast / overexposed / underexposed` 参与分桶，`normal / unknown` 只作为诊断显示；`high-contrast` 包含逆光/剪影或车内窗外这类高光面积可能较窄但亮暗尾部跨度很大的场景；`overexposed` 保持保守，包含硬剪过曝和高亮面积/亮度明显偏高的画面，不把泛洗白路面或高键灰雾画面批量纳入；`underexposed` 包含单帧雪景等低饱和高键白参考区域被压灰且无真实高光尾部的 `white-reference-underexposed` 诊断，并保留白参考覆盖率、目标 EV 提亮量、提亮后高光余量；该子类保持 `exposureSceneClass=underexposed` 但 Resolve Group addon 使用 `white-reference-underexposed`
+- 这些 review addon 只影响 Resolve Group 分桶和 `/color` 展示，不自动开启 `Dehaze / NR / Gyro`
+
 ## 0.13 2026-05-13 剪辑规则与多 Edit Unit 补记
 
 当前 Script / Timeline 结构控制从旧的 workspace style profile 中拆出，正式归到人工维护的 `剪辑规则`：
 
-- `config/edit-rules/` 是 workspace 级剪辑规则库，`config/edit-rules.json` 是分类索引
+- `config/edit-rules/*.md` 是 workspace 级剪辑规则库和唯一规则正文来源；分类由 markdown frontmatter / 文件名扫描得到
 - `editRuleCategory` 是 Script / Timeline 结构输入；它独立于可选 `styleCategory`
+- `edits/<editId>/planning/flow-plan.json` 是 LLM 基于 raw edit rule、项目上下文和固定 capability catalog 生成的显式执行计划；未人工确认或 hash stale 时，Script / Timeline 不得进入 `material.recall / script.generate / timeline.generate`
 - `config/styles/` 与 `config/style-sources.json` 仍由 Style Analysis 维护，但现在只作为文案 / 艺术风格参考，用于最终旁白、字幕文本、语气和表达禁区
 - Style Analysis 不再尝试从参考视频自动抽象正式剪辑规则；缺少 style reference 不阻塞粗剪，只在最终旁白 / 字幕表达阶段提示
 
@@ -81,7 +97,7 @@
   - `Dehaze` 是第 2 个保留节点，默认禁用
   - `User1 / User2` 是最小 user zone，默认开启；用户只能在 `Dehaze` 之后、`NR` 之前扩展更多用户节点
   - `NR` 是所有视频 clip 的固定尾节点，默认禁用，正式开关入口只在 Resolve
-  - `lowlight` 继续是首帧 creative 标签，不自动开启 `Dehaze / NR`
+  - `lowlight` 继续是中点单帧 creative 标签，不自动开启 `Dehaze / NR`
   - `gyroEligible` 是一个最终布尔值：当前安装 Gyroflow/OFX 支持设备匹配 + 对应运动元信息，或同名 `.gyroflow` 工程；DJI `dvtm_*` 只能作为元信息线索，不能单独开启 Gyro，也不允许反推出 log profile
 - `prepare_root` 对 canonical clip graph 的正式行为是“保留现状不重排，但重申最终 Gyro 开关”：
   - 规范图重跑时保留现有 clip grade、用户节点顺序，以及用户已手动设置的 Dehaze/NR 开关
@@ -122,19 +138,18 @@
   - `root.color.colorSpaceProfile`
   - `root.color.transformPresetKey?`
 - `color/groups/<rootId>.json` 的正式快照语义已扩展为 group + clip 两层：
-  - group 级至少包含 `logProfile`、`lowlight`、`colorCastClass`、`postClipCreativeStatus`
+  - group 级至少包含 `logProfile`、`orientationStatus`、`lowlight`、`colorCastClass`、`exposureSceneClass`、`postClipCreativeStatus`
   - clip 级至少包含 `gyroEligible`、`gyroflowStatus`、`dehazeStatus`、`nrStatus`、`clipRepairStatus`、`layoutStatus`
 - 自动 Group 的正式分桶轴当前收口为：
   - `logProfile`
-  - `lowlight`
-  - 高置信 `colorCastClass`
+  - first-match addon：`portrait-review -> lowlight -> 高置信 colorCastClass -> 明显 exposureSceneClass`
 - `gyro` 不再参与 Group 分桶；它正式回到 clip repair 层，只负责说明该 clip 是否需要 `Gyroflow shell`
 - `lowlight` 的正式合同当前收口为：
-  - 来源：每条 clip 的首帧视觉分类
+  - 来源：每条 clip 的中点单帧视觉分类
   - 语义：creative-first 标签，用于 Group creative 分桶，并次级提示 repair 默认态
   - 约束：不等价于“必须降噪”
 - `colorCastClass` 的正式合同当前收口为：
-  - 来源：每条 clip 的廉价单帧 proxy 数值分类，默认取 clip 中点帧；若该 clip 能按 workspace profile/device 或 root `transformPresetKey` 解析到技术 LUT，则先用同路径 `.cube` 做 proxy 技术转换，再排除天空、高饱和、底部黄橙遮挡和曝光异常区域后估计中性像素偏移。强冷蓝偏移归入 `cool-cyan`，绿青混合偏移归入 `green-cyan`；`prepare_root` 还会对同一 root / 同一 log profile 内连续素材做轻量平滑，避免单个中点帧偏中性时把连续冷色路段切碎
+  - 来源：每条 clip 的廉价单帧 proxy 数值分类，默认取 clip 中点帧；若该 clip 能按 workspace profile/device 或 root `transformPresetKey` 解析到技术 LUT，则先用同路径 `.cube` 做 proxy 技术转换，再排除天空、高饱和、底部黄橙遮挡和曝光异常区域后估计中性像素偏移。强冷蓝偏移归入 `cool-cyan`，绿青混合偏移归入 `green-cyan`；`prepare_root` 还会对同一 root / 同一 log profile 内连续素材做轻量平滑，避免单个中点帧偏中性时把连续冷色路段切碎；已诊断为 `white-reference-underexposed` 的 clip 不参与这种弱连续性提升
   - 语义：用于把 `cool-cyan / green-cyan / green / warm / mixed` 色偏素材拆到独立 Group，方便 `Group Post-Clip` 做白平衡修正
   - 约束：不判断偏色原因是否一定来自前挡膜；`neutral / unknown` 不参与自动 Group 分桶
 - clip repair 的正式合同当前已收口为固定节点图：
@@ -280,10 +295,9 @@
     - `.xml/.gyroflow` 只服务 prepare/source truth，不作为成片 sidecar 导出
     - 更新 `entries[].sidecars` 和 `managedSidecarSet`
   - 后处理动作可在 `manifest.json` 缺失但 `plan.json` 中所有最终输出都已存在时恢复 manifest；这是中断/旧失败 batch 的恢复路径，不允许对缺输出的 batch 伪造成功
-- 自动 Group 已退出 `colorspace / gamma / codec / resolution / fps` technical fingerprint 语义，改为纯创意标签：
+- 自动 Group 已退出 `colorspace / gamma / codec / resolution / fps` technical fingerprint 语义，改为纯创意 / review 标签：
   - `log`
-  - `lowlight`
-  - 高置信 `colorCastClass`
+  - first-match addon：`portrait-review -> lowlight -> 高置信 colorCastClass -> 明显 exposureSceneClass`
 - `gyro` 已回到 clip repair 维度，不再参与 Group key 生成
 - `log` 的正式判定优先级为：
   1. 显式 sidecar 真值
@@ -582,7 +596,7 @@
 
 ## 0.3 2026-04-08 语义准备链更新
 
-当前实现已经开始把旧的 `slice + 五轴语义 + 单阶段 arrangement` 迁到新的 model-driven arrangement 准备链：
+当前实现已经开始把旧的 `slice + 五轴语义 + 单阶段 arrangement` 迁到 Flow Planner 驱动的剪辑准备链：
 
 - Analyze 正式素材单元优先收口为 `Span`
 - 项目内正式持久化路径改为 `store/spans.json`
@@ -595,9 +609,10 @@
 - 项目级正式词集当前只保留一层，并通过 `config/project-brief.md/.json` 维护：
   - `材料模式短语`
 - Script prep 现在正式改为：
-  1. `Analyze -> Material Overview`
-  2. `Material Overview + Script Brief + arrangementStructure + narrationConstraints -> Segment Plan`
-  3. `Segment Plan -> Material Slots -> Bundle Lookup -> Chosen SpanIds -> Beat / Script`
+  1. `Edit Rule Markdown + Capability Catalog + Project Context -> confirmed Flow Plan`
+  2. `Analyze -> Material Overview`
+  3. `Material Overview + Script Brief + confirmed planning artifacts -> Segment Plan`
+  4. `Segment Plan -> Material Slots -> Bundle Lookup -> Chosen SpanIds -> Beat / Script`
 - `Chosen SpanIds -> Beat / Script` 不再等价于“一个 chosen span 直接落成一个 beat”：
   - `material-slots` 负责高召回收集候选 span
   - `material-slots` 的 deterministic base draft 是 formal high-recall floor；writer 可以补充 / 重排，但不能静默删除 base `chosenSpanIds`
@@ -605,7 +620,7 @@
   - `beat-writer` 再在这个更干净的 outline 上写正式 `IKtepScript[]`
 - `Bundle` 当前是 `materialPatterns` 粗索引层，不是独立叙事身份
 - `Segment` 当前不再作为固定 archetype 闭集，而是 LLM-first 的项目级动态段落对象
-- `style` 当前应同时提供结构程序层 `arrangementStructure` 与脚本叙述约束层 `narrationConstraints`
+- `style` 只作为最终表达参考；规则 markdown 不再被代码解析成 `arrangementStructure` 或其他启发式结构信号
 
 ## 0.1 当前变更纪律
 
@@ -868,11 +883,11 @@ src/modules/script/
      - `script-reviewer` 的 blocker 是推进下一阶段和落成 `script/current.json` 的硬闸门
      - 如果当前宿主策略或用户授权不允许 formal subagent / reviewer 链执行，主代理必须先停下说明原因，不能继续按“单代理兼任全部阶段”落稿
      - 内部推进状态写到 `script/agent-pipeline.json`
-  → Agent staged pipeline 最终再推进 `segment plan -> material slots -> chosenSpanIds -> outline -> script/current.json`
-     - `arrangementStructure` 主导结构决策
-     - `narrationConstraints` 只弱影响表达
-     - 当现有 style 信号明确偏 `chronology / route continuity / continuous process` 时，prep 会先建立单调递增的时间带，再让各段只在合法时间带内召回素材
-     - style / arrangement signals 只约束顺序、阶段完整、素材角色、功能位和禁区，不默认推出总时长或段落预算
+  → Agent staged pipeline 最终再按已确认 Flow Plan 推进 `segment plan -> material slots -> chosenSpanIds -> outline -> script/current.json`
+     - Flow Plan 与已审 planning artifacts 主导结构决策
+     - style reference 只弱影响最终表达
+     - 当 chronology / route continuity / continuous process 是当前 edit 的正式约束时，它必须来自确认后的 Flow Plan、已审 planning artifact 或用户 brief，而不是代码关键词解析规则 markdown
+     - edit rule / style 不默认推出总时长或段落预算
      - 粗剪 recall 默认是高召回保留，不再做固定上限的代表性抽样；`material-bundles` 是全量索引，`material-slots` 可以展开成多 slot / 多 beat，并优先保留过程证据、阶段证据、事件节点和可用原声
      - `buildMaterialSlotsDocument()` 直接生成正式 `material-slots`；silent span drops / recall regression 必须由 reviewer / runner 明确拦下，而不是交给 `route-slot-planner` 改写正式 truth
      - 关键过程视频若承载不可替代的时间推进、事件推进、人物关系推进或有效原声，应保留成独立 beat，而不是被 summary 段或更静态的成果材料吞掉

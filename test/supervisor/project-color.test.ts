@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import * as mediaProbe from '../../src/modules/media/probe.js';
 import * as captureTime from '../../src/modules/media/capture-time.js';
 import * as colorCastClassifier from '../../src/modules/color/color-cast-classifier.js';
+import * as exposureSceneClassifier from '../../src/modules/color/exposure-scene-classifier.js';
 import * as lowlightClassifier from '../../src/modules/color/lowlight-classifier.js';
 import * as resolveExecutor from '../../src/modules/color/resolve-executor.js';
 import * as sourceTruth from '../../src/modules/color/source-truth.js';
@@ -107,6 +108,9 @@ function buildClipRepairSnapshot(
     colorCastClass: clip.colorCastClass,
     colorCastConfidence: clip.colorCastConfidence,
     colorCastMetrics: clip.colorCastMetrics ?? {},
+    exposureSceneClass: clip.exposureSceneClass,
+    exposureSceneConfidence: clip.exposureSceneConfidence,
+    exposureSceneMetrics: clip.exposureSceneMetrics ?? {},
     encodedWidth: clip.encodedWidth,
     encodedHeight: clip.encodedHeight,
     displayWidth: clip.displayWidth,
@@ -291,6 +295,8 @@ function mockClipSignals(options: {
   lowlight?: boolean;
   colorCastClass?: 'neutral' | 'cool-cyan' | 'green-cyan' | 'green' | 'warm' | 'mixed' | 'unknown';
   colorCastConfidence?: number;
+  exposureSceneClass?: 'normal' | 'high-contrast' | 'overexposed' | 'underexposed' | 'unknown';
+  exposureSceneConfidence?: number;
   logProfile?: string;
   deviceFamilyKeys?: string[];
 } = {}) {
@@ -300,7 +306,7 @@ function mockClipSignals(options: {
     deviceFamilyKeys: options.deviceFamilyKeys ?? ['sony'],
     sourceKinds: [],
   });
-  vi.spyOn(lowlightClassifier, 'classifyFirstFrameLowlight').mockResolvedValue({
+  vi.spyOn(lowlightClassifier, 'classifyMidpointLowlight').mockResolvedValue({
     lowlight: options.lowlight ?? false,
     metrics: undefined,
   });
@@ -308,6 +314,11 @@ function mockClipSignals(options: {
     colorCastClass: options.colorCastClass ?? 'neutral',
     colorCastConfidence: options.colorCastConfidence ?? 0.9,
     colorCastMetrics: {},
+  });
+  vi.spyOn(exposureSceneClassifier, 'classifyExposureScene').mockResolvedValue({
+    exposureSceneClass: options.exposureSceneClass ?? 'normal',
+    exposureSceneConfidence: options.exposureSceneConfidence ?? 0.9,
+    exposureSceneMetrics: {},
   });
 }
 
@@ -401,7 +412,7 @@ describe('project color actions', () => {
     expect(current.roots[0]?.groups[0]?.status).toBe('ready');
   });
 
-  it('syncs Resolve groups without re-running first-frame lowlight detection', async () => {
+  it('syncs Resolve groups without re-running midpoint lowlight detection', async () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-color-sync-lightweight';
     const { rootId } = await seedSingleRootProject({
@@ -421,10 +432,12 @@ describe('project color actions', () => {
       executor,
     });
 
-    const lowlightSpy = vi.mocked(lowlightClassifier.classifyFirstFrameLowlight);
+    const lowlightSpy = vi.mocked(lowlightClassifier.classifyMidpointLowlight);
     const colorCastSpy = vi.mocked(colorCastClassifier.classifyColorCast);
+    const exposureSpy = vi.mocked(exposureSceneClassifier.classifyExposureScene);
     lowlightSpy.mockClear();
     colorCastSpy.mockClear();
+    exposureSpy.mockClear();
     const syncedInputs: IColorExecutorSyncGroupsInput[] = [];
     await syncProjectColorGroups({
       workspaceRoot,
@@ -442,8 +455,10 @@ describe('project color actions', () => {
 
     expect(lowlightSpy).not.toHaveBeenCalled();
     expect(colorCastSpy).not.toHaveBeenCalled();
+    expect(exposureSpy).not.toHaveBeenCalled();
     expect(syncedInputs[0]?.clips.map(clip => clip.lowlight)).toEqual([true, true]);
     expect(syncedInputs[0]?.clips.map(clip => clip.colorCastClass)).toEqual(['neutral', 'neutral']);
+    expect(syncedInputs[0]?.clips.map(clip => clip.exposureSceneClass)).toEqual(['unknown', 'unknown']);
   });
 
   it('lets sync_groups recover a stale blocked prepare state when Resolve groups already exist', async () => {
@@ -543,6 +558,114 @@ describe('project color actions', () => {
         lutPath,
       }),
     );
+  });
+
+  it('passes log-decoded exposure scene signals into prepare_root clips', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-color-exposure-signals';
+    const { rootId } = await seedSingleRootProject({
+      workspaceRoot,
+      projectId,
+      projectName: 'Project Color Exposure Signals',
+    });
+    const relativeLutPath = 'Sony/SLog3SGamut3.CineToLC-709.cube';
+    const lutPath = join(workspaceRoot, 'config', 'luts', 'Sony', 'SLog3SGamut3.CineToLC-709.cube');
+    await mkdir(join(workspaceRoot, 'config', 'luts', 'Sony'), { recursive: true });
+    await writeFile(lutPath, 'TITLE "test lut"\nLUT_3D_SIZE 2\n0 0 0\n0 0 1\n0 1 0\n0 1 1\n1 0 0\n1 0 1\n1 1 0\n1 1 1\n', 'utf-8');
+    await saveColorTransformPresetsConfig(workspaceRoot, {
+      profiles: {
+        slog3: {
+          default: relativeLutPath,
+        },
+      },
+    });
+
+    mockColorMetadata();
+    mockClipSignals({
+      logProfile: 'slog3',
+      exposureSceneClass: 'overexposed',
+      exposureSceneConfidence: 0.82,
+    });
+
+    const prepared: IColorExecutorPrepareRootInput[] = [];
+    await prepareProjectColorRoot({
+      workspaceRoot,
+      projectId,
+      rootId,
+      jobId: 'job-color-exposure-signals',
+      executor: createFakeExecutor({
+        onPrepareRoot: async input => {
+          prepared.push(input);
+          return {
+            resolveProjectName: input.resolveProjectName,
+            gradingTimelineName: input.gradingTimelineName,
+            mirrorStatus: 'synced',
+            timelineStatus: 'ready',
+            groupsSnapshot: buildGroupsSnapshot(input, 'prepare_root'),
+            hostSummary: {},
+          };
+        },
+      }),
+    });
+
+    expect(exposureSceneClassifier.classifyExposureScene).toHaveBeenCalledWith(
+      expect.stringContaining('A001.mov'),
+      expect.anything(),
+      expect.objectContaining({
+        lutPath,
+      }),
+    );
+    expect(prepared[0]?.clips[0]).toMatchObject({
+      exposureSceneClass: 'overexposed',
+      exposureSceneConfidence: 0.82,
+      exposureSceneMetrics: expect.objectContaining({
+        technicalTransformStatus: 'technical-lut',
+        technicalLutRelativePath: relativeLutPath,
+      }),
+    });
+  });
+
+  it('does not classify exposure when a log clip has no technical LUT preview', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-color-exposure-missing-lut';
+    const { rootId } = await seedSingleRootProject({
+      workspaceRoot,
+      projectId,
+      projectName: 'Project Color Exposure Missing LUT',
+    });
+
+    mockColorMetadata();
+    mockClipSignals({ logProfile: 'slog3' });
+
+    const prepared: IColorExecutorPrepareRootInput[] = [];
+    await prepareProjectColorRoot({
+      workspaceRoot,
+      projectId,
+      rootId,
+      jobId: 'job-color-exposure-missing-lut',
+      executor: createFakeExecutor({
+        onPrepareRoot: async input => {
+          prepared.push(input);
+          return {
+            resolveProjectName: input.resolveProjectName,
+            gradingTimelineName: input.gradingTimelineName,
+            mirrorStatus: 'synced',
+            timelineStatus: 'ready',
+            groupsSnapshot: buildGroupsSnapshot(input, 'prepare_root'),
+            hostSummary: {},
+          };
+        },
+      }),
+    });
+
+    expect(exposureSceneClassifier.classifyExposureScene).not.toHaveBeenCalled();
+    expect(prepared[0]?.clips[0]).toMatchObject({
+      exposureSceneClass: 'unknown',
+      exposureSceneConfidence: 0,
+      exposureSceneMetrics: expect.objectContaining({
+        exposureSceneSkippedReason: 'requires-technical-transform',
+      }),
+    });
   });
 
   it('promotes a continuous weak cool-blue run into the cool-cyan group', async () => {
@@ -685,6 +808,108 @@ describe('project color actions', () => {
     expect(clips.find(clip => clip.rawRelativePath.endsWith('C0531.MP4'))?.colorCastMetrics).toMatchObject({
       continuityAdjustment: 'green-cyan-sequence',
       continuityAdjustedFromClass: 'neutral',
+    });
+  });
+
+  it('keeps white-reference underexposed clips out of weak green-cyan continuity', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-color-green-cyan-white-reference-guard';
+    const rawFiles = Array.from(
+      { length: 5 },
+      (_, index) => `day2/C${String(530 + index).padStart(4, '0')}.MP4`,
+    );
+    const { rootId } = await seedSingleRootProject({
+      workspaceRoot,
+      projectId,
+      projectName: 'Project Color Green Cyan White Reference Guard',
+      rawFiles,
+    });
+    const relativeLutPath = 'Sony/SLog3SGamut3.CineToLC-709.cube';
+    const lutPath = join(workspaceRoot, 'config', 'luts', 'Sony', 'SLog3SGamut3.CineToLC-709.cube');
+    await mkdir(join(workspaceRoot, 'config', 'luts', 'Sony'), { recursive: true });
+    await writeFile(lutPath, 'TITLE "test lut"\nLUT_3D_SIZE 2\n0 0 0\n0 0 1\n0 1 0\n0 1 1\n1 0 0\n1 0 1\n1 1 0\n1 1 1\n', 'utf-8');
+    await saveColorTransformPresetsConfig(workspaceRoot, {
+      profiles: {
+        slog3: {
+          default: relativeLutPath,
+        },
+      },
+    });
+
+    mockColorMetadata();
+    mockClipSignals({ logProfile: 'slog3' });
+    const metricsByStem = new Map([
+      ['C0530', { colorCastClass: 'green', colorCastConfidence: 0.67, medianA: -5.9, medianB: 0.4 }],
+      ['C0531', { colorCastClass: 'neutral', colorCastConfidence: 0.45, medianA: -4.2, medianB: 0.9 }],
+      ['C0532', { colorCastClass: 'neutral', colorCastConfidence: 0.44, medianA: -3.6, medianB: -2.4 }],
+      ['C0533', { colorCastClass: 'neutral', colorCastConfidence: 0.43, medianA: -3.2, medianB: -1.8 }],
+      ['C0534', { colorCastClass: 'green-cyan', colorCastConfidence: 0.76, medianA: -5.7, medianB: -4.3 }],
+    ] as const);
+    vi.mocked(colorCastClassifier.classifyColorCast).mockImplementation(async filePath => {
+      const stem = String(filePath).match(/C\d{4}/)?.[0] ?? '';
+      const metrics = metricsByStem.get(stem);
+      return {
+        colorCastClass: metrics?.colorCastClass ?? 'neutral',
+        colorCastConfidence: metrics?.colorCastConfidence ?? 0.4,
+        colorCastMetrics: {
+          medianA: metrics?.medianA ?? 0,
+          medianB: metrics?.medianB ?? 0,
+          candidatePixelRatio: 0.12,
+        },
+      };
+    });
+    vi.mocked(exposureSceneClassifier.classifyExposureScene).mockImplementation(async filePath => {
+      const stem = String(filePath).match(/C\d{4}/)?.[0] ?? '';
+      if (stem === 'C0532') {
+        return {
+          exposureSceneClass: 'underexposed',
+          exposureSceneConfidence: 0.72,
+          exposureSceneMetrics: {
+            exposureSceneReasons: ['white-reference-underexposed'],
+          },
+        };
+      }
+      return {
+        exposureSceneClass: 'normal',
+        exposureSceneConfidence: 0.9,
+        exposureSceneMetrics: {},
+      };
+    });
+
+    const prepared: IColorExecutorPrepareRootInput[] = [];
+    await prepareProjectColorRoot({
+      workspaceRoot,
+      projectId,
+      rootId,
+      jobId: 'job-color-green-cyan-white-reference-guard',
+      executor: createFakeExecutor({
+        onPrepareRoot: async input => {
+          prepared.push(input);
+          return {
+            resolveProjectName: input.resolveProjectName,
+            gradingTimelineName: input.gradingTimelineName,
+            mirrorStatus: 'synced',
+            timelineStatus: 'ready',
+            groupsSnapshot: buildGroupsSnapshot(input, 'prepare_root'),
+            hostSummary: {},
+          };
+        },
+      }),
+    });
+
+    const clips = prepared[0]?.clips ?? [];
+    expect(clips.map(clip => clip.colorCastClass)).toEqual([
+      'green-cyan',
+      'green-cyan',
+      'neutral',
+      'green-cyan',
+      'green-cyan',
+    ]);
+    expect(clips.find(clip => clip.rawRelativePath.endsWith('C0532.MP4'))).toMatchObject({
+      exposureSceneClass: 'underexposed',
+      exposureSceneMetrics: expect.objectContaining({
+        exposureSceneReasons: ['white-reference-underexposed'],
+      }),
     });
   });
 
@@ -1240,6 +1465,15 @@ describe('project color actions', () => {
         colorCastMetrics: {
           technicalTransformStatus: 'source-rgb',
           technicalLutRelativePath: undefined,
+        },
+        exposureSceneClass: 'unknown',
+        exposureSceneConfidence: 0,
+        exposureSceneMetrics: {
+          frameCount: 0,
+          classifiedFrameCount: 0,
+          technicalTransformStatus: 'source-rgb',
+          technicalLutRelativePath: undefined,
+          exposureSceneSkippedReason: 'requires-technical-transform',
         },
         deviceFamilyKeys: ['dji-osmo-pocket-3'],
         resolvedTransformPresetKey: undefined,

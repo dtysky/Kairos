@@ -1,10 +1,11 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { basename, dirname, extname, join, relative, resolve } from 'node:path';
 import { z } from 'zod';
 import {
   IColorCurrent,
   IColorTransformPresetsConfig,
+  IEditRuleCategoryConfig,
   IEditRulesConfig,
   IManualCaptureTimeOverrideConfig,
   IManualItineraryConfig,
@@ -315,20 +316,10 @@ export async function loadStyleSourcesConfig(
 export async function loadEditRulesConfig(
   workspaceRoot: string,
 ): Promise<TEditRulesConfig> {
-  const configPath = getWorkspaceEditRulesConfigPath(workspaceRoot);
-  const stored = await readJsonOrNull(configPath, IEditRulesConfig);
-  if (stored) {
-    return IEditRulesConfig.parse(stored);
-  }
+  const categories = await discoverWorkspaceEditRuleCategories(workspaceRoot);
   return IEditRulesConfig.parse({
-    defaultCategory: 'travel',
-    categories: [{
-      categoryId: 'travel',
-      displayName: '旅行类默认剪辑规则',
-      description: 'Pharos 行程印象优先，素材分析补漏。',
-      profilePath: 'travel.md',
-      notes: [],
-    }],
+    defaultCategory: categories[0]?.categoryId,
+    categories,
   });
 }
 
@@ -336,22 +327,60 @@ export async function saveEditRulesConfig(
   workspaceRoot: string,
   config: TEditRulesConfig,
 ): Promise<TEditRulesConfig> {
-  const input = IEditRulesConfig.parse(config);
-  const normalized = IEditRulesConfig.parse({
-    defaultCategory: input.defaultCategory?.trim() || undefined,
-    categories: input.categories.map(category => ({
-      ...category,
-      categoryId: category.categoryId.trim(),
-      displayName: category.displayName.trim(),
-      description: category.description?.trim() || undefined,
-      profilePath: category.profilePath?.trim() || `${category.categoryId.trim()}.md`,
-      notes: category.notes.map(note => note.trim()).filter(Boolean),
-    })),
-  });
-  await mkdir(dirname(getWorkspaceEditRulesConfigPath(workspaceRoot)), { recursive: true });
   await mkdir(getWorkspaceEditRulesRoot(workspaceRoot), { recursive: true });
-  await writeJson(getWorkspaceEditRulesConfigPath(workspaceRoot), normalized);
-  return normalized;
+  const input = IEditRulesConfig.parse(config);
+  const discovered = await loadEditRulesConfig(workspaceRoot);
+  const defaultCategory = input.defaultCategory?.trim();
+  if (!defaultCategory || discovered.categories.some(category => category.categoryId === defaultCategory)) {
+    return IEditRulesConfig.parse({
+      ...discovered,
+      defaultCategory: defaultCategory || discovered.defaultCategory,
+    });
+  }
+  return discovered;
+}
+
+async function discoverWorkspaceEditRuleCategories(
+  workspaceRoot: string,
+): Promise<TEditRulesConfig['categories']> {
+  const root = getWorkspaceEditRulesRoot(workspaceRoot);
+  const entries = await readdir(root, { withFileTypes: true }).catch(() => []);
+  const categories = await Promise.all(entries
+    .filter(entry => entry.isFile())
+    .map(entry => entry.name)
+    .filter(fileName => fileName.endsWith('.md') && !fileName.endsWith('.bak.md') && !fileName.startsWith('.'))
+    .sort((left, right) => left.localeCompare(right))
+    .map(async fileName => {
+      const profilePath = fileName;
+      const absolutePath = join(root, fileName);
+      const markdown = await readFile(absolutePath, 'utf-8').catch(() => '');
+      const { frontMatter } = splitFrontMatter(markdown);
+      const categoryId = normalizeEditRuleCategoryId(
+        frontMatter.category || frontMatter.categoryId || fileName.slice(0, -extname(fileName).length),
+      );
+      const displayName = (frontMatter.name || frontMatter.title || categoryId).trim();
+      const contentHash = createHash('sha256').update(markdown).digest('hex');
+      return IEditRuleCategoryConfig.parse({
+        categoryId,
+        displayName,
+        description: frontMatter.description?.trim() || undefined,
+        profilePath,
+        rulePath: profilePath,
+        contentHash,
+        notes: [],
+      });
+    }));
+  return categories.filter(category => Boolean(category.categoryId));
+}
+
+function normalizeEditRuleCategoryId(value: string): string {
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/gu, '-')
+    .replace(/-+/gu, '-')
+    .replace(/^-|-$/gu, '');
+  return normalized || 'edit-rule';
 }
 
 export async function loadColorTransformPresetsConfig(

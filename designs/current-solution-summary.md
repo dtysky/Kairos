@@ -38,10 +38,13 @@ Kairos 当前需要区分两层：
   - 当前大素材 root 的 `prepare_root` 默认按稳定顺序拆成 50-clip chunks，并限制本机 probe / source-truth / lowlight 并发，避免一次性把整 root 塞进 Node 和 Resolve host 内存；chunk 只作为导入批次，全部追加到同一条 root grading timeline，chunk 进度与可恢复状态写入 `color/current.json`
   - 当前自动 DRP 快照只在 root 全部 chunks 导入完成后生成一次；每个 chunk 后只即时 `SaveProject()`，其它 Resolve 工程备份交由用户通过 `/color` 的手动保存或外部 `.drp` 登记入口完成
     - grading timeline 必须按该 root 的 dominant `(width, height, fps)` 规格创建
-    - 自动 Group 只使用创意标签语义：`log / lowlight / colorCastClass`
+    - 自动 Group 只使用创意 / review 标签语义；`log` 是前置分组轴，后续 addon 只在同一 log bucket 内叠加，不跨 log 合并
     - `log` 先读显式 sidecar 真值，再回退 root `color.colorSpaceProfile`
-    - `lowlight` 当前正式由每条 clip 的首帧视觉分类产生，是 creative-first 标签，不是 noise-only 诊断
-    - `colorCastClass` 当前由便宜的单帧 proxy 数值分类产生：默认取 clip 中点帧；若该 clip 能按 workspace profile/device 或 root `transformPresetKey` 解析到技术 LUT，则先用同路径 `.cube` 做 proxy 技术转换，再排除天空/高饱和/黄橙车头/曝光异常区域并估计中性像素偏移。强冷蓝中性偏移归入 `cool-cyan`，绿青混合中性偏移归入 `green-cyan`，且 `prepare_root` 会对同一 root / 同一 log profile 的连续素材做轻量平滑：夹在多个冷色锚点之间、且指标不冲突的短 clip 会跟随进入同一偏色分桶。它只表示需要单独白平衡/色偏处理的 `cool-cyan / green-cyan / green / warm / mixed` 分桶，不声称色偏原因一定是前挡膜；`neutral / unknown` 不参与分桶以避免 Group 爆炸
+    - 当前每条 clip 在其 `logProfile` 下只选择一个最高优先级 addon：`portrait-review -> lowlight -> colorCastClass -> exposureSceneClass`
+    - `portrait-review` 当前由 `orientationStatus=portrait` 产生，用于把竖屏素材在当前 log 下拆出单独 Group 供人工 review；它不改变竖屏 repair/template 或横屏 timeline transform 规则
+    - `lowlight` 当前正式由每条 clip 的中点单帧视觉分类产生，是 creative-first 标签，不是 noise-only 诊断
+    - `colorCastClass` 当前由便宜的单帧 proxy 数值分类产生：默认取 clip 中点帧；若该 clip 能按 workspace profile/device 或 root `transformPresetKey` 解析到技术 LUT，则先用同路径 `.cube` 做 proxy 技术转换，再排除天空/高饱和/黄橙车头/曝光异常区域并估计中性像素偏移。强冷蓝中性偏移归入 `cool-cyan`，绿青混合中性偏移归入 `green-cyan`，且 `prepare_root` 会对同一 root / 同一 log profile 的连续素材做轻量平滑：夹在多个冷色锚点之间、且指标不冲突的短 clip 会跟随进入同一偏色分桶；已诊断为 `white-reference-underexposed` 的 clip 不参与这种弱连续性提升。它只表示需要单独白平衡/色偏处理的 `cool-cyan / green-cyan / green / warm / mixed` 分桶，不声称色偏原因一定是前挡膜；`neutral / unknown` 不参与分桶以避免 Group 爆炸
+    - `exposureSceneClass` 当前由便宜的中点单帧 proxy 数值分类产生，并且必须基于解 log / 技术 LUT 后的 proxy 画面；只有明显 `high-contrast / overexposed / underexposed` 在未命中更高优先级 addon 时才参与分桶，`normal / unknown` 不参与分桶；`high-contrast` 也覆盖逆光/剪影或车内窗外这类高光面积可能较窄但亮暗尾部跨度很大的场景；`overexposed` 保持保守，只覆盖明确剪白或高亮面积/亮度明显偏高的画面，不再把泛洗白路面或高键灰雾画面批量纳入；`underexposed` 也覆盖雪景等低饱和高键白参考区域被压灰且无真实高光尾部的场景，metrics 需保留 `white-reference-underexposed` 诊断原因以及白参考覆盖率、目标 EV 提亮量、提亮后高光余量；该子类保持 `exposureSceneClass=underexposed`，但 Resolve Group addon 使用 `white-reference-underexposed`
     - `gyro` 正式回到 clip repair 维度；它只决定该 clip 的第 1 个 Gyro 节点是否默认/重申开启，不再参与 Group 分桶
     - `gyroEligible` 是显式声明判定：同名 `.gyroflow` 视为用户已准备稳定工程；带 Gyroscope 且型号受支持的 Sony XML sidecar 可开启 Gyro。默认 prepare 不深扫嵌入式私有 telemetry；DJI `dvtm_*` 不扫描、不单独开启 Gyro，也不能用来猜测 log profile
     - 素材技术真值优先级固定为 `显式 sidecar > root fallback`
@@ -80,7 +83,7 @@ Kairos 当前需要区分两层：
     - workspace `config/default.drt` 是唯一正式 cold-start / legacy rebuild 来源；`config/default.drx` 不再作为大批量自动 fallback
     - live Resolve 验证显示，干净 DRT donor 路径可以在渲染时触发 Gyroflow source-specific load；当前 DRX 路径只能作为人工诊断材料，不能当成 load 证据
   - 当前 `sync_groups` 已扩展成 group + clip 双层镜像：
-    - group 侧至少镜像 `logProfile / lowlight / colorCastClass / postClipCreativeStatus`
+    - group 侧至少镜像 `logProfile / orientationStatus / lowlight / colorCastClass / exposureSceneClass / postClipCreativeStatus`
     - clip 侧至少镜像 `gyroEligible / gyroflowStatus / dehazeStatus / nrStatus / clipRepairStatus / layoutStatus / orientationStatus / repairTemplateKey / timelineTransform`
   - 当前 `/color` 进入页面或切换项目时会自动执行 Resolve host preflight，并把结果正式缓存到 `color/current.json.hostPreflight`
   - 当前 `/color` 会把 Resolve 工程同步快照落到项目内 `color/resolve-projects/<safe-project-name>/`；自动快照只在 root prepare 全部 chunks 完成后生成一次，手动 `保存 DRP 快照` 可随时 `SaveProject()` 并导出轻量 `.drp`，两者都会维护 `latest.drp` 与 `color/resolve-project-map.json`；外部 GUI 导出的 `.drp` 可登记为 latest
@@ -135,8 +138,9 @@ Kairos 当前需要区分两层：
 - `DaVinci color` 当前也已有独立主路由 `/color`，并已收口为最小 `renderPreset` 配置（含 `bitrateKbps` / `kb/s`）+ root/project 级 deterministic 控制面 + runtime/archive 状态面；正式顺序为 `Prepare Root -> Sync Groups -> Execute Root -> Validate`，并补充 `Prepare All Roots / Export All Roots`
 - `/color` 当前还会主动暴露宿主诊断与 batch 归档，而不是把宿主问题和 validation 历史藏在动作失败或磁盘 JSON 里
 - 剪辑规则、风格来源配置与风格分析参考产物当前已收口为 **Workspace 级共享资产**，但职责已经拆开：
-  - `config/edit-rules/`：人工维护的正式 `剪辑规则` 库，驱动脚本结构、剪辑框架、人工 gate 与粗剪约束
-  - `config/edit-rules.json`：剪辑规则分类索引；项目 / edit unit 只保存 `editRuleCategory`
+  - `config/edit-rules/*.md`：人工维护的正式 `剪辑规则` 库，也是唯一规则正文来源；规则列表由 markdown frontmatter / 文件名扫描得到
+  - 项目 / edit unit 只保存 `editRuleCategory`；代码不再从 `config/edit-rules.json` 读取规则正文或派生结构
+  - `edits/<editId>/planning/flow-plan.json`：LLM 基于规则 markdown、项目上下文和固定能力目录生成的显式执行计划，人工确认后才允许进入 `material.recall / script.generate / timeline.generate`
   - `config/styles/`
   - `config/style-sources.json`
   - `analysis/reference-transcripts/`
@@ -387,18 +391,20 @@ flowchart TD
 - 如果用户已经修改过当前 brief，而又想让 Agent 重新生成初版 brief，正式路径是在 `/script` 点击 `重新生成初版 brief` 并通过 UI 明确确认覆盖
 - 用户审查闸门存在于 Agent 写脚本之前，而不是召回和编排全部完成之后
 - Script 阶段当前从 **Workspace 剪辑规则库** 里选择用户指定的 `editRuleCategory`，项目 / edit unit 只保存“本轮使用哪一个剪辑规则”，不再让风格档案承担结构控制职责
-- 当前旅行类默认剪辑规则固定为：
-  - 先用当前 Pharos `plan / record / gpx` 建构行程整体印象
-  - 再用素材分析补漏，重点结合口播、GPS、record 与实际素材缺口
-  - 先生成按天、重点时间、行车、航拍与关键事件组织的初版剪辑框架文本
-  - 人工 review 调整结构，通过后才进入第一次粗剪
-  - 第一次粗剪定稿后锁定 Resolve timeline，再生成源语音字幕和单篇旁白稿
-- 当现有剪辑规则明确偏 `chronology / route continuity / continuous process` 时，顺时序不再只是 prompt 偏好，而是脚本编排的正式执行结果：
-  - Script prep 会先基于 `sortCapturedAt + chronology + Pharos trip/day/shot` 建立单调递增的时间带
-  - `segment plan / material slots` 只能在各自合法时间带内召回素材
-  - `beat` 顺序默认保持时间单调递增，不允许后段跨窗回捞前段素材
+- Edit Flow Planner 是规则解释的唯一代码入口：它把 raw markdown、能力目录、project brief、Pharos / chronology / analysis 可用性摘要交给 LLM，生成 `flow-plan.json`；后续代码只执行已确认 plan 中的 `capabilityId / inputRefs / outputRefs / gate`
+- 当前能力目录 v1 是固定注册表，而不是从某个规则样例反推：
+  - `pharos.parse`
+  - `trip.event_table`
+  - `material.archive`
+  - `edit.framework`
+  - `material.recall`
+  - `script.generate`
+  - `timeline.generate`
+  - `resolve.lock_rough_cut`
+  - `postlock.subtitle_narration`
+- 规则 markdown 只给 Flow Planner 和后续 stage agents 阅读；代码不得关键词解析 markdown 正文来推断 chronology、素材权重、默认章节或结构禁区
 - Script prep 当前不再为粗剪自动推导总预算：
-  - style / arrangement signals 只约束顺序、阶段完整、素材角色、功能位和禁区，不默认推出总时长或段落预算
+  - confirmed Flow Plan / reviewed planning artifacts 只约束顺序、阶段完整、素材角色、功能位和禁区，不默认推出总时长或段落预算
   - `targetDurationMs` 继续保留为可选审阅提示；除非用户明确给出成片时长、交付窗口或某段硬时长，否则不要在 brief / segment plan / material-slots / beat 中自动补全
   - 粗剪默认目标改为尽量列入有效素材：关键过程视频、可保留原声、阶段证据和事件节点默认都应进入 beat / timeline
 - Script prep 当前不再把粗剪理解成代表性抽样：
@@ -549,7 +555,7 @@ flowchart TD
 另外还有一组 **Workspace 级共享资产**，不属于单个项目目录：
 
 - `config/edit-rules/`：正式剪辑规则库
-- `config/edit-rules.json`：剪辑规则分类索引
+- `config/edit-rules/*.md`：正式剪辑规则库，frontmatter / 文件名即分类发现来源
 - `config/styles/`：正式风格档案库
 - `config/style-sources.json`：风格来源配置
 - `analysis/reference-transcripts/`：风格分析的参考转写
@@ -570,7 +576,7 @@ flowchart TD
 - `config/project-brief.json`、`config/manual-itinerary.json`、`edits/<editId>/script/script-brief.json` 与 `config/review-queue.json` 是当前项目级 Console 结构化事实源
 - `edits/<editId>/script/`、`edits/<editId>/timeline/`、`edits/<editId>/subtitles/` 是正式剪辑层；`script/`、`timeline/`、`subtitles/` 只作为 legacy `edits/main` 兼容路径
 - `config/style-sources.json` 是当前 **Workspace 级** Console 结构化事实源
-- `config/edit-rules.json` 是当前 **Workspace 级** 剪辑规则结构化事实源
+- `config/edit-rules/*.md` 是当前 **Workspace 级** 剪辑规则事实源；`edits/<editId>/planning/flow-plan.json` 是每个 edit unit 的已确认执行计划
 - `project-brief` 的每个 root block 允许额外声明 `飞行记录路径`，作为该素材根目录对应的 DJI FlightRecord 日志入口；实际识别不依赖强文件名，而是以文件头/可解析性为准
 - `config/runtime.json` 是项目级运行时配置入口
 - 如果需要解密 DJI v13/v14 FlightRecord，`config/runtime.json` 可提供 `djiOpenAPIKey`
@@ -630,12 +636,13 @@ flowchart TD
 1. `project brief` 提供全片约束
 2. `material overview` 提供全量素材边界、强弱与缺口
 3. 用户在 `/script` 选择 workspace `剪辑规则`，并自动保存 `editRuleCategory`
-4. Agent 生成 `edits/<editId>/script/material-overview.md` 与初版 `script-brief`
-5. 用户回到 `/script` 审查并手动保存 brief
-6. `/script` 会通过显眼的 prompt / modal 提示下一步；用户点击 `准备给 Agent` 后，Console 只刷新确定性 prep 材料
-7. Agent 再继续推进 `segment plan`、`material slots`、bundle lookup、`chosenSpanIds`、beat 试写与选择
-8. Agent 写入 `edits/<editId>/script/current.json`
-9. 再由 `selection` 与 `beat` 共同落成时间线和字幕
+4. Edit Flow Planner 读取规则 markdown、能力目录和项目上下文，生成 `edits/<editId>/planning/flow-plan.json`
+5. 用户确认 flow plan 后，Agent 生成 `edits/<editId>/script/material-overview.md` 与初版 `script-brief`
+6. 用户回到 `/script` 审查并手动保存 brief
+7. `/script` 会通过显眼的 prompt / modal 提示下一步；用户点击 `准备给 Agent` 后，Console 只刷新确定性 prep 材料
+8. Agent 再按已确认 Flow Plan 继续推进 `segment plan`、`material slots`、bundle lookup、`chosenSpanIds`、beat 试写与选择
+9. Agent 写入 `edits/<editId>/script/current.json`
+10. 再由 `selection` 与 `beat` 共同落成时间线和字幕
 
 因此，当前稳定结论包括：
 

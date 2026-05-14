@@ -57,9 +57,11 @@ Kairos 将旅拍素材转化为可编辑时间线。流程分为 1 个准备阶�
 - 当前 color creative / repair 真相已经分层：
   - `Group Post-Clip` 是唯一正式 creative 真相
   - `Clip` 是固定 repair/local-exception 层，不承担主 creative
-  - 自动 Group 当前按 `logProfile + lowlight + 高置信 colorCastClass` 分桶；`gyro` 是 clip 级 repair 信号，不再参与分桶
-- 当前 `lowlight` 是首帧视觉 creative 标签，不是 metadata fallback，也不等价于“必须降噪”
-- 当前 `colorCastClass` 是便宜数值色偏标签：默认取 clip 中点单帧 proxy；若能解析到当前 root/profile 的技术 LUT，则先用同路径 `.cube` 转换 proxy，再做中性区域色偏判断。强冷蓝偏移归入 `cool-cyan`，绿青混合偏移归入 `green-cyan`，且 `prepare_root` 会对同一 root / 同一 log profile 内连续素材做轻量平滑，避免一个中点帧偏中性就切碎连续冷色路段。它只用于把 `cool-cyan / green-cyan / green / warm / mixed` 素材拆到独立 Group；不判断原因是否一定是前挡膜，`neutral / unknown` 不参与分桶
+  - 自动 Group 当前以 `logProfile` 为前置分组轴，再在同一 log bucket 内按 first-match addon 分桶：`portrait-review -> lowlight -> 高置信 colorCastClass -> 明显 exposureSceneClass`；`gyro` 是 clip 级 repair 信号，不再参与分桶
+- 当前 `lowlight` 是中点单帧视觉 creative 标签，不是 metadata fallback，也不等价于“必须降噪”
+- 当前 `colorCastClass` 是便宜数值色偏标签：默认取 clip 中点单帧 proxy；若能解析到当前 root/profile 的技术 LUT，则先用同路径 `.cube` 转换 proxy，再做中性区域色偏判断。强冷蓝偏移归入 `cool-cyan`，绿青混合偏移归入 `green-cyan`，且 `prepare_root` 会对同一 root / 同一 log profile 内连续素材做轻量平滑，避免一个中点帧偏中性就切碎连续冷色路段；已诊断为 `white-reference-underexposed` 的 clip 不参与这种弱连续性提升。它只用于把 `cool-cyan / green-cyan / green / warm / mixed` 素材拆到独立 Group；不判断原因是否一定是前挡膜，`neutral / unknown` 不参与分桶
+- 当前 `portrait-review` 是 `orientationStatus=portrait` 的 review addon，用于把竖屏素材在当前 log 下拆成单独 Group 给人工 review；它不改变竖屏 Gyro/DRT、repair template 或横屏 timeline transform 合同
+- 当前 `exposureSceneClass` 是解 log / 技术 LUT 后 proxy 画面的便宜数值曝光标签；只有明显 `high-contrast / overexposed / underexposed` 在未命中更高优先级 addon 时才拆 Group，`normal / unknown` 仅作为诊断显示；`high-contrast` 也覆盖逆光/剪影或车内窗外这类高光面积可能较窄但亮暗尾部跨度很大的场景；`overexposed` 保持保守，只覆盖明确剪白或高亮面积/亮度明显偏高的画面，不再把泛洗白路面或高键灰雾画面批量纳入；`underexposed` 也覆盖单帧雪景等低饱和高键白参考区域被压灰且无真实高光尾部的 `white-reference-underexposed` 诊断，metrics 保留白参考覆盖率、目标 EV 提亮量、提亮后高光余量；该子类保持 `exposureSceneClass=underexposed` 但 Resolve Group addon 使用 `white-reference-underexposed`
 - repair 当前正式走“同 clip 旧 repair 用 Resolve `CopyGrades` 保留；没有既存 repair 时建立 canonical clip graph”的路线
 - clip repair 的正式布局固定为：
   - 所有可执行视频 clip：`Gyro -> Dehaze -> User1 -> User2 -> NR`
@@ -97,7 +99,9 @@ Kairos 将旅拍素材转化为可编辑时间线。流程分为 1 个准备阶�
 
 **相关 skill**: [kairos-style-analysis](../kairos-style-analysis/SKILL.md)
 
-`剪辑规则` 是 Script / Timeline 的正式结构输入，存放在 `<workspaceRoot>/config/edit-rules/`，索引为 `<workspaceRoot>/config/edit-rules.json`。它必须由用户人工维护或明确选择，不能由风格分析自动生成。
+`剪辑规则` 是 Script / Timeline 的正式结构输入，存放在 `<workspaceRoot>/config/edit-rules/*.md`。规则正文只来自这些人工维护的 markdown；分类通过 frontmatter / 文件名扫描得到，不能由风格分析自动生成。
+
+每个 edit unit 还必须先生成并人工确认 `edits/<editId>/planning/flow-plan.json`。Flow Plan 由 LLM 读取 raw edit-rule markdown、项目上下文和固定能力目录后生成；代码只执行确认后的 `capabilityId / inputRefs / outputRefs / gate`，不关键词解析 markdown 正文。
 
 Style Analysis 当前是 **可选表达参考**。它从用户历史成片中按分类提取文案、旁白语感、艺术气质和表达禁区，供最终旁白 / 字幕文本使用。
 
@@ -122,6 +126,7 @@ Style Analysis 产出：deterministic prep 先写 `<workspaceRoot>/.tmp/style-an
 **重要规则**：
 - 剪辑规则必须由用户人工指定；系统不能根据当前项目素材自动生成、自动挑选或自动推断剪辑规则。
 - 如果用户没有明确指定 `editRuleCategory`，Workflow 必须停在 Script 之前，先向用户确认。
+- 如果当前 edit unit 没有确认且 hash 未过期的 Flow Plan，Workflow 必须停在 Script / Timeline 之前，先运行 Flow Planner 并等待用户确认。
 - 缺少 `styleCategory` 不阻塞粗剪；只在最终旁白 / 字幕表达阶段提示缺参考。
 - `kairos-style-analysis` 只能在用户明确要求做风格分析时执行，不能被 Workflow 隐式触发。
 - `kairos-style-analysis` 当前正式是 `Supervisor deterministic prep -> awaiting_agent -> Agent final profile`，不能再被描述成“UI 上能点但 runner 还没接上”的占位状态
@@ -315,7 +320,7 @@ project/
 
 **子 skill**: [kairos-script](../kairos-script/SKILL.md)
 
-输入：素材分析结果（`store/slices.json`、`analysis/asset-reports/`、`media/chronology.json`）+ 剪辑规则（`<workspaceRoot>/config/edit-rules/{category}.md`）+ 可选风格参考（`<workspaceRoot>/config/styles/{category}.md`）
+输入：素材分析结果（`store/slices.json`、`analysis/asset-reports/`、`media/chronology.json`）+ 剪辑规则（`<workspaceRoot>/config/edit-rules/{category}.md`）+ 已确认 Flow Plan（`edits/<editId>/planning/flow-plan.json`）+ 可选风格参考（`<workspaceRoot>/config/styles/{category}.md`）
 产出：`edits/<editId>/script/current.json` — `IKtepScript[]`
 
 前置条件：`store/slices.json` 存在且非空
@@ -325,11 +330,13 @@ project/
 **重要规则**：
 - 剪辑规则必须由用户人工指定；不能根据当前项目素材自动生成、自动挑选或自动推断。
 - 如果用户还没有指定 `editRuleCategory`，就不能开始 Script 阶段。
+- 如果当前 edit unit 没有 confirmed 且 hash 未过期的 `flow-plan.json`，就不能开始 Script / Timeline 阶段。
 - 项目 / edit unit 保存 `editRuleCategory` 与可选 `styleCategory`；不持有自己的 `config/edit-rules/` 或 `config/styles/` 库。
 - `Supervisor + React console` 里的 `script` job 现在只负责 deterministic prep：
   - 校验 `store/slices.json`
   - 校验 `editRuleCategory`
-  - 校验 workspace edit rule
+  - 校验 workspace edit rule markdown hash
+  - 校验 confirmed Flow Plan
   - 刷新 `analysis/material-digest.json`
   - 在缺失时写最小 `edits/<editId>/script/script-brief.md`
 - 正式脚本作者是 Agent；`edits/<editId>/script/current.json` 不应由 Console / Supervisor 自动写入

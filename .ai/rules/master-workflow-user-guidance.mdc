@@ -45,6 +45,7 @@ Kairos 的标准顺序是：
 - 第四步执行 Analyze，生成 `store/slices.json`、`analysis/asset-reports/*.json`、`media/chronology.json`
 - 第五步在用户明确指定 **workspace 剪辑规则分类** 后进入 Script：
   - 先在 `/script` 选择 `editRuleCategory` 并自动保存；`styleCategory` 只是可选文案 / 艺术风格参考
+  - 运行 Edit Flow Planner，生成并人工确认 `edits/<editId>/planning/flow-plan.json`
   - 再由 Agent 生成初版 `script-brief`
   - 用户回到 `/script` 审查并手动保存 brief
   - `/script` 会用显眼的 workflow prompt / modal 提示“下一步回到 Agent”或“点击准备给 Agent”

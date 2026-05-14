@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type {
   IAgentPacket,
+  IAgentPacketInputArtifact,
   IKtepProject,
   IKtepScript,
   IKtepScriptSelection,
@@ -20,6 +21,7 @@ import {
   loadCurrentScript,
   loadProject,
   loadRuntimeConfig,
+  loadScriptBriefConfig,
   loadSpans,
   writeJson,
   writeTimelineAgentPacket,
@@ -31,6 +33,10 @@ import {
 } from '../../store/index.js';
 import type { IJsonPacketAgentRunner } from '../agents/runtime.js';
 import { buildCommandJsonPacketAgentRunnerConfig, resolveJsonPacketAgentRunner } from '../agents/runtime.js';
+import {
+  assertConfirmedEditFlowPlan,
+  loadEditPlanningPacketArtifacts,
+} from '../edit-flow/index.js';
 import { buildDeterministicRoughCutBase, buildSegmentRoughCutBeatPlan } from './segment-cuts.js';
 import { buildTimeline, resolveTimelineBuildConfig, type IBuildConfig } from './timeline-builder.js';
 import { resolveSpeechPacingConfig, type ISpeechPacingConfig } from './pacing.js';
@@ -50,6 +56,8 @@ const CTIMELINE_REVIEW_CODES = [
 export interface IBuildProjectTimelineInput {
   projectRoot: string;
   editId?: string;
+  workspaceRoot?: string;
+  editRuleCategory?: string;
   agentRunner?: IJsonPacketAgentRunner;
   config?: Partial<IBuildConfig>;
 }
@@ -85,6 +93,21 @@ export async function buildProjectTimeline(
   if (!script || script.length === 0) {
     throw new Error(`timeline build requires edits/${editId}/script/current.json`);
   }
+  if (input.workspaceRoot) {
+    const scriptBrief = await loadScriptBriefConfig(input.projectRoot, editId);
+    const editRuleCategory = input.editRuleCategory ?? scriptBrief.editRuleCategory;
+    if (!editRuleCategory) {
+      throw new Error('timeline build requires editRuleCategory to validate confirmed Flow Plan');
+    }
+    await assertConfirmedEditFlowPlan({
+      workspaceRoot: input.workspaceRoot,
+      projectRoot: input.projectRoot,
+      editId,
+      editRuleCategory,
+      requiredCapabilityIds: ['timeline.generate'],
+    });
+  }
+  const planningArtifacts = await loadEditPlanningPacketArtifacts(input.projectRoot, editId);
 
   const cfg = resolveTimelineBuildConfig(runtimeConfig, {
     ...input.config,
@@ -137,6 +160,7 @@ export async function buildProjectTimeline(
       sliceMap,
       chronology,
       subtitleConfig,
+      planningArtifacts,
     });
     segmentCuts.push(result.draft);
     reviews.push(result.review);
@@ -176,6 +200,7 @@ async function runReviewedSegmentCutStage(input: {
   sliceMap: Map<string, IKtepSlice>;
   chronology: IMediaChronology[];
   subtitleConfig: ISpeechPacingConfig;
+  planningArtifacts?: IAgentPacketInputArtifact[];
 }): Promise<{ draft: ISegmentRoughCutPlan; review: ISegmentCutReview }> {
   let previousDraft = input.segmentPlan;
   let revisionBrief: string[] = [];
@@ -187,6 +212,7 @@ async function runReviewedSegmentCutStage(input: {
       segmentPlan: input.segmentPlan,
       scriptSegment: input.scriptSegment,
       chronology: input.chronology,
+      planningArtifacts: input.planningArtifacts,
       previousDraft,
       revisionBrief,
     });
@@ -249,6 +275,7 @@ async function runReviewedSegmentCutStage(input: {
       draft,
       attempt,
       chronology: input.chronology,
+      planningArtifacts: input.planningArtifacts,
     });
     let rawReview: Partial<ISegmentCutReview>;
     try {
@@ -312,6 +339,7 @@ function buildSegmentCutRefinerPacket(input: {
   segmentPlan: ISegmentRoughCutPlan;
   scriptSegment: IKtepScript;
   chronology: IMediaChronology[];
+  planningArtifacts?: IAgentPacketInputArtifact[];
   previousDraft: ISegmentRoughCutPlan;
   revisionBrief: string[];
 }): IAgentPacket {
@@ -330,6 +358,7 @@ function buildSegmentCutRefinerPacket(input: {
       'timeline/rough-cut-base.json',
       'edits/<editId>/script/current.json current segment',
       'media/chronology.json',
+      'confirmed Flow Plan / planning artifacts',
       'optional previous segment-cut draft',
     ],
     inputArtifacts: [
@@ -351,6 +380,7 @@ function buildSegmentCutRefinerPacket(input: {
         summary: `${input.chronology.length} chronology items`,
         content: input.chronology,
       },
+      ...(input.planningArtifacts ?? []),
       input.revisionBrief.length > 0
         ? {
           label: 'revision-brief',
@@ -380,6 +410,7 @@ function buildSegmentCutReviewPacket(input: {
   segmentPlan: ISegmentRoughCutPlan;
   scriptSegment: IKtepScript;
   chronology: IMediaChronology[];
+  planningArtifacts?: IAgentPacketInputArtifact[];
   draft: ISegmentRoughCutPlan;
   attempt: number;
 }): IAgentPacket {
@@ -397,6 +428,7 @@ function buildSegmentCutReviewPacket(input: {
       'segment-cut audit',
       'script segment',
       'chronology snapshot',
+      'confirmed Flow Plan / planning artifacts',
     ],
     inputArtifacts: [
       {
@@ -419,6 +451,7 @@ function buildSegmentCutReviewPacket(input: {
         summary: `${input.chronology.length} chronology items`,
         content: input.chronology,
       },
+      ...(input.planningArtifacts ?? []),
       {
         label: 'segment-cut-draft',
         summary: `第 ${input.attempt} 轮 segment-cut 草稿`,

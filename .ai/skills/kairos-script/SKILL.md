@@ -9,13 +9,14 @@ description: >-
 
 # Kairos: Phase 3 — Script
 
-加载剪辑规则 → `/script` 自动保存 `editRuleCategory` → `[subagent: overview-cartographer]` / `[subagent: brief-editor]` 生成初版 `script-brief` 与材料概览 → 用户审查并手动保存 brief → `/script` 做 deterministic prep → `[subagent: beat-writer]` 只写表达层正式脚本。
+加载剪辑规则 → `/script` 自动保存 `editRuleCategory` → Edit Flow Planner 生成并等待人工确认 `edits/<editId>/planning/flow-plan.json` → `[subagent: overview-cartographer]` / `[subagent: brief-editor]` 生成初版 `script-brief` 与材料概览 → 用户审查并手动保存 brief → `/script` 做 deterministic prep → `[subagent: beat-writer]` 只写表达层正式脚本。
 
 **核心特点**：粗剪结构由人工维护的剪辑规则 + Pharos / 素材证据驱动；风格分析产物只作为最终旁白、字幕和表达气质参考。
 
 当前正式 script prep 链路已经切成：
+- `Edit Rule Markdown + Capability Catalog + Project Context -> confirmed Flow Plan`
 - `Analyze -> Material Overview`
-- `Material Overview + Script Brief + arrangementStructure + narrationConstraints -> Segment Plan`
+- `Material Overview + Script Brief + confirmed planning artifacts -> Segment Plan`
 - `Segment Plan -> Material Slots -> Bundle Lookup -> Chosen SpanIds -> Beat / Script`
 
 当前正式 script agent chain 是：
@@ -46,7 +47,8 @@ description: >-
 ## 硬规则
 
 - 剪辑规则必须由用户人工指定；系统不能根据当前项目素材或参考成片自动生成、自动挑选或自动推断剪辑规则。
-- `editRule` / `arrangement signals` 只约束顺序、阶段完整、素材角色、功能位和禁区，不默认推出总时长或段落预算。
+- 剪辑规则正文只给 Flow Planner 和 stage agents 阅读；代码只能读取已确认 Flow Plan 里的 `capabilityId / inputRefs / outputRefs / gate`，不能关键词解析 markdown 正文生成 arrangement heuristics。
+- `editRule` / Flow Plan 只约束顺序、阶段完整、素材角色、功能位和禁区，不默认推出总时长或段落预算。
 - `styleCategory` 独立于 `editRuleCategory`；缺少文案 / 艺术风格参考不阻塞粗剪，只在最终旁白 / 字幕表达阶段提示。
 - 旅行类默认规则必须先用 Pharos 建构整体行程印象，再用素材分析补漏，尤其结合口播、GPS、record 与实际素材缺口。
 - `targetDurationMs` 只保留为可选审阅提示；除非用户明确给出成片时长、交付窗口或某段硬时长，否则不要在 brief、segment plan、material slots 或 beat 中自动补全。
@@ -86,6 +88,7 @@ description: >-
   - 分类规则：`<workspaceRoot>/config/edit-rules/{category}.md`
   - 手写规则样板：`test/edit-rule.md`
   - 如果还没有 workspace 剪辑规则，应先人工创建或选择默认规则；不要通过风格分析自动生成
+- 当前 edit unit 已有人工确认且未过期的 `edits/<editId>/planning/flow-plan.json`
 - 文案 / 艺术风格参考可选：
   - 分类参考：`<workspaceRoot>/config/styles/{category}.md`（由 [kairos-style-analysis](../kairos-style-analysis/SKILL.md) 生成）
   - 缺少它不阻塞粗剪
@@ -98,17 +101,19 @@ description: >-
 ## 可用工具
 
 ```typescript
-// 从 markdown 文件加载剪辑规则
-loadEditRuleFromMarkdown(filePath: string, category?: IEditRuleCategoryConfig): Promise<IStyleProfile>
+// 从 markdown 文件加载剪辑规则；只返回 raw markdown、frontmatter、hash 和路径，不解析为 style profile
+loadEditRuleFromMarkdown(filePath: string, category?: IEditRuleCategoryConfig): Promise<IEditRuleMarkdownSource>
 
 // 按分类名加载剪辑规则
-loadEditRuleByCategory(workspaceRoot: string, category: string): Promise<IStyleProfile>
+loadEditRuleByCategory(workspaceRoot: string, category: string): Promise<IEditRuleMarkdownSource>
 
 // 列出所有可用的剪辑规则分类
 listEditRuleCategories(workspaceRoot: string): Promise<IEditRuleCategoryConfig[]>
 
-// 生成规则提示词（内部暂复用 IStyleProfile 结构，供 agent 参考）
-buildStylePrompt(style: IStyleProfile): string
+// Flow Planner / gate
+generateEditFlowPlan(input): Promise<IEditFlowPlan>
+confirmEditFlowPlan(projectRoot: string, editId?: string): Promise<IEditFlowPlan>
+assertConfirmedEditFlowPlan(input): Promise<IEditFlowPlan>
 
 // 脚本编辑工具（纯函数，同步）
 reorderSegments(segments: IKtepScript[], order: string[]): IKtepScript[]
@@ -136,24 +141,20 @@ const editRule = await loadEditRuleByCategory(workspaceRoot, 'travel-doc');
 const editRule = await loadEditRuleFromMarkdown('test/edit-rule.md');
 ```
 
-剪辑规则包含：叙事结构、阶段顺序、素材角色、运镜/功能位偏好、人工 gate、粗剪约束、结构禁区，以及可直接消费的参数表。
+剪辑规则包含：叙事结构、阶段顺序、素材角色、运镜/功能位偏好、人工 gate、粗剪约束、结构禁区，以及作者写给 Flow Planner 的自然语言规则。
 来源必须是人工维护或项目内明确选择，不能由 `kairos-style-analysis` 自动生成。
 
-当前应优先读取的 edit-rule 信号包括：
-- `editRule.sections` 中关于 Pharos 行程印象、素材补漏、阶段节奏、素材编排、摄影 / 运镜、镜头功能位的章节
-- `editRule.parameters` 中的稳定 key-value
-- `editRule.antiPatterns` 中的结构禁区
-
-不要让 style profile 回到结构主控位置；`recall / outline / intro / montage` 的直接指导输入是剪辑规则。
+代码不得把 edit-rule markdown 解析成 `sections / parameters / antiPatterns / arrangementStructure` 之类结构控制字段；这些判断只能由 Flow Planner 或具体 stage agent 在 packet 内完成。
 
 这里的关键前提是：**使用哪一份剪辑规则，必须由用户手动指定。**
 `[main agent]` 可以列出可用规则供用户选择，但不能自行替用户决定，也不能根据当前素材自动生成一份“临时剪辑规则”。
 
 当前 Console 的正式口径是：
 - workspace 风格库维护在 `/style`
-- workspace 剪辑规则库维护在 `config/edit-rules/` 与 `config/edit-rules.json`
+- workspace 剪辑规则库维护在 `config/edit-rules/*.md`
 - Script 页先选择 `editRuleCategory`，并立即自动保存；`styleCategory` 只是可选表达参考
-- 一旦 `editRuleCategory` 改变，当前 edit unit 应立即清空旧的 `material-overview`、brief 草稿、outline、`segment-plan`、`material-slots` 与 `edits/<editId>/script/current.json`，再回到 `await_brief_draft`
+- 一旦 `editRuleCategory` 改变，当前 edit unit 应立即清空旧的 planning、`material-overview`、brief 草稿、outline、`segment-plan`、`material-slots` 与 `edits/<editId>/script/current.json`，再回到 `await_brief_draft`
+- Script prep 和 Timeline 必须先确认 `edits/<editId>/planning/flow-plan.json`
 - 单独改变 `styleCategory` 不清空粗剪结构产物
 - 关键 handoff 会通过持续可见的 workflow prompt 与 hana modal 明确提示“下一步回到 Agent / 点击准备”，而不是只靠轻量行内提示
 - `edits/<editId>/script/script-brief.json` 内部继续保存 `editRuleCategory`
@@ -314,7 +315,7 @@ const spans = await readJson('store/spans.json', z.array(IKtepSlice));
 
 beat-writer 需要：
 
-1. 阅读完整剪辑规则（`editRule.rawReference` 或 `buildStylePrompt(editRule)`），并优先提取其中的 sections / parameters / antiPatterns
+1. 阅读已确认 Flow Plan、已审 planning artifacts，以及作为 raw markdown artifact 注入的完整剪辑规则
 2. 理解叙事骨架的每个段落（`buildOutlinePrompt(outline)`）
 3. 查看每个段落关联的切片证据（scene descriptions, ASR text, place hints）
 4. 仅在锁定的 recall 事实之上组织 beat 表达；只有在素材没有可用原声时才补写必要旁白，并只把可选 style reference 用于语气和表达禁区

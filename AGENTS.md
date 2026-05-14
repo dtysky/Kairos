@@ -116,7 +116,7 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - `validate_batch`
   - `prepare_all_roots`
   - `export_all_roots`
-- Treat `prepare_root` as the formal Resolve-side sync step: it must mirror `rawLocalPath` into root bins, ensure the root grading timeline has executable clips, set that timeline to the root dominant `(width, height, fps)` spec, auto-sync any missing workspace-managed LUTs for the current root into the device Resolve default LUT directory, create or reuse Resolve Groups from `logProfile + lowlight`, preserve same-clip repair grades across reruns via `CopyGrades`, and normalize every executable video clip to the canonical repair layout.
+- Treat `prepare_root` as the formal Resolve-side sync step: it must mirror `rawLocalPath` into root bins, ensure the root grading timeline has executable clips, set that timeline to the root dominant `(width, height, fps)` spec, auto-sync any missing workspace-managed LUTs for the current root into the device Resolve default LUT directory, create or reuse Resolve Groups from `logProfile + first-match review addon`, preserve same-clip repair grades across reruns via `CopyGrades`, and normalize every executable video clip to the canonical repair layout.
 - Treat `/color` project-level orchestration as deterministic and agent-free:
   - `prepare_all_roots` runs `prepare_root` sequentially for all enabled color roots in formal priority order
   - `export_all_roots` runs `execute_root` sequentially for all enabled color roots in formal priority order; each root execution renders, replaces confirmed outputs, repairs metadata, and validates before the next root
@@ -128,7 +128,10 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - `Group Post-Clip` is the formal creative truth
   - `Clip` is the formal repair/local-exception layer
   - `/color` mirrors status for those layers; it does not become the primary creative parameter editor
-- Treat `lowlight` as a first-frame creative classification, not a metadata fallback or noise-only diagnosis.
+- Treat automatic `/color` grouping as `logProfile` first, then exactly one addon within that log bucket by priority: `portrait-review -> lowlight -> colorCastClass -> exposureSceneClass`; never merge the same addon across different log profiles.
+- Treat `lowlight` as a clip-midpoint single-frame creative classification, not a metadata fallback or noise-only diagnosis.
+- Treat `colorCastClass` as a high-confidence review addon after portrait and lowlight; `neutral / unknown` do not split groups, and weak color-cast continuity smoothing must not promote clips already diagnosed as white-reference underexposed.
+- Treat `exposureSceneClass` as a post-technical-transform review addon after portrait, lowlight, and high-confidence color cast; only obvious `high-contrast / overexposed / underexposed` clips split groups, including backlit/silhouette or cabin/window high contrast where the highlight area may be narrow but the luma tail is large, clearly clipped/high-bright overexposure, and white-reference underexposure where snow or other low-saturation high-key areas are compressed gray without a real bright tail. White-reference underexposure remains a single-frame decision and should use white-reference coverage, EV lift-to-target, and predicted post-lift highlight headroom instead of continuity propagation. White-reference underexposure uses `logProfile + white-reference-underexposed` as the Resolve Group addon while keeping `exposureSceneClass=underexposed`; it must not auto-enable `Dehaze / NR`.
 - Treat `gyro` as clip-level repair truth only; it must not participate in auto-grouping.
 - Treat `gyroEligible` as the final clip-level Gyro enable decision: first match the current installed Gyroflow/OFX supported device set, then require device-appropriate motion metadata; same-name `.gyroflow` projects may also enable Gyro. DJI `dvtm_*` telemetry alone is not enough to enable Gyro and must not be used to guess log profile.
 - Treat repair preservation as Resolve `CopyGrades`-based for the same clip across reruns, and treat vendored clean donor `DRT` timelines as a host implementation detail for establishing the canonical repair layout when a clip has no existing repair.
@@ -164,7 +167,7 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - LUT sync policy is copy-missing-only into the Resolve default LUT directory when the same relative path exists under `config/luts/`
   - existing non-empty user grades must not be overwritten by Kairos default transforms
 - Treat `color/current.json`, `color/groups/<rootId>.json`, and `color/batches/<batchId>/...` as system-maintained runtime/archive truth, not user config.
-- Treat `color/groups/<rootId>.json` as the formal snapshot for both group creative state (`logProfile / lowlight / postClipCreativeStatus`) and clip repair state (`gyroEligible / gyroflowStatus / dehazeStatus / nrStatus / clipRepairStatus / layoutStatus`).
+- Treat `color/groups/<rootId>.json` as the formal snapshot for both group creative/review state (`logProfile / orientationStatus / lowlight / colorCastClass / exposureSceneClass / postClipCreativeStatus`) and clip repair state (`gyroEligible / gyroflowStatus / dehazeStatus / nrStatus / clipRepairStatus / layoutStatus`).
 - Do not treat stale progress displays as proof that formal processing is alive.
 - Do not silently use legacy monitor paths for new work when `Supervisor + React console` is the official entry.
 - Treat workspace style-analysis as a formal deterministic prep job before Agent style synthesis, not as a UI-only placeholder.
@@ -191,20 +194,24 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - root-level device drift via `config/project-brief.json` mapping `clockOffsetMs`
   - asset-level exceptions via `captureTimeOverrides`
 - Treat workspace `剪辑规则` as the formal structure-control asset for Script / Timeline:
-  - `config/edit-rules/` is the human-maintained edit-rule library
-  - `config/edit-rules.json` is the structured edit-rule category index
+  - `config/edit-rules/*.md` is the human-maintained edit-rule library and the only rule-content source
+  - rule categories are discovered by scanning markdown frontmatter / filenames; do not treat `config/edit-rules.json` as rule truth for new work
   - `editRuleCategory` is independent from `styleCategory`
+  - `edits/<editId>/planning/flow-plan.json` is the explicit LLM-authored execution plan derived from the selected rule markdown, project context, and the fixed capability catalog
+  - Script / Timeline must not execute `material.recall`, `script.generate`, or `timeline.generate` unless that Flow Plan is confirmed and matches the current edit-rule hash
+  - code must only parse Flow Plan fields such as `capabilityId`, `inputRefs`, `outputRefs`, and `gate`; it must not keyword-parse edit-rule markdown into arrangement heuristics
   - style analysis output in `config/styles/` is downgraded to text/art-style reference for final narration/subtitle expression and must not be used as the default rough-cut structure source
 - Treat a Kairos project as a shared material workspace that may contain multiple independent Edit Units:
   - shared truth stays at project root: `pharos/`, `store/`, `analysis/`, `media/chronology.json`, `color/`
-  - edit-specific truth lives under `edits/<editId>/script/`, `edits/<editId>/timeline/`, and `edits/<editId>/subtitles/`
+  - edit-specific truth lives under `edits/<editId>/planning/`, `edits/<editId>/script/`, `edits/<editId>/timeline/`, and `edits/<editId>/subtitles/`
   - legacy `script/`, `timeline/`, and `subtitles/` map to `edits/main`
   - Script / Timeline / Subtitle APIs must accept optional `editId`, defaulting to `main`
   - Resolve edit naming is deterministic: Project `${projectBrief.name} [Edit]`, Timeline `${editLabel} [${editId}]`
   - locked first rough cuts persist to `edits/<editId>/timeline/locked-rough-cut.json`
 - Treat `/script` as a preparation surface by default:
   - `/script` first auto-saves the selected `editRuleCategory`; optional `styleCategory` is only expression reference
-  - changing `editRuleCategory` invalidates the previous edit-unit script/timeline run immediately and should clear stale edit-specific artifacts before asking Agent to start over
+  - changing `editRuleCategory` invalidates the previous edit-unit planning/script/timeline run immediately and should clear stale edit-specific artifacts before asking Agent to start over
+  - after selecting an edit rule, run the Edit Flow Planner and require human confirmation of `edits/<editId>/planning/flow-plan.json` before script prep or timeline generation
   - changing `styleCategory` alone must not clear rough-cut structure artifacts
   - Agent drafts `edits/<editId>/script/material-overview.md` and the initial edit-unit `script-brief`
   - user reviews and manually saves the brief in `/script`
@@ -237,7 +244,7 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - videos with usable source speech should stay source-speech unless the script explicitly sets `muteSource=true`
   - photo-only beats should default to `1s` silent holds with no subtitles unless the script explicitly sets `holdMs`
   - `targetDurationMs` remains optional and advisory-only for rough cut; do not use it as the default driver for trimming or expanding effective source material
-  - edit rules / arrangement signals should constrain order, stage completeness, material roles, and forbidden zones; they should not imply default total duration or per-segment budgets
+  - confirmed Flow Plan / reviewed planning artifacts should constrain order, stage completeness, material roles, and forbidden zones; they should not imply default total duration or per-segment budgets
   - rough-cut recall should stay high-recall by default: keep valid spans unless they are empty, clearly bad, or near-duplicate
   - silent `drive / aerial` beats may auto-consume `speedCandidate` at `2x`; explicit `actions.speed` still overrides the default
   - source-speech beats now use `audioSelections[]` for preserved audio truth and `visualSelections[]` for companion visuals; do not collapse them back into one `selections[]`
