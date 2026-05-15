@@ -15,6 +15,7 @@ mlx = [
     "mlx-vlm",
     "mlx-whisper",
     "mlx_clip @ git+https://github.com/harperreed/mlx_clip.git",
+    "modelscope",
 ]
 
 # CUDA / CPU: faster-whisper ASR + PyTorch VLM/CLIP stack

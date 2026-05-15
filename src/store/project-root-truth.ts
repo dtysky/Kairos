@@ -1,7 +1,9 @@
 import { basename } from 'node:path';
 import {
+  ICaptureTimePolicyConfig,
   EMediaRootCategory,
   type IColorRenderPreset,
+  type ICaptureTimePolicyConfig as TCaptureTimePolicyConfig,
   type IMediaRoot,
   type IProjectBriefConfig,
   type IProjectBriefMappingConfig,
@@ -25,6 +27,7 @@ export type TProjectBriefMappingInput = {
   category?: string;
   notes?: string[];
   tags?: string[];
+  captureTimePolicy?: Partial<TCaptureTimePolicyConfig>;
   color?: {
     renderPreset?: Partial<IColorRenderPreset>;
     colorSpaceProfile?: string;
@@ -93,6 +96,23 @@ function normalizePriority(value: unknown, fallback: number): number {
 
 function normalizeRenderPreset(renderPreset?: Partial<IColorRenderPreset>) {
   return normalizeColorRenderPreset(renderPreset);
+}
+
+function normalizeCaptureTimePolicy(value: unknown): TCaptureTimePolicyConfig | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const parsed = ICaptureTimePolicyConfig.safeParse(value);
+  if (!parsed.success) return undefined;
+  const requiredKinds = parsed.data.requiredKinds
+    ? [...new Set(parsed.data.requiredKinds)]
+    : undefined;
+  if (parsed.data.mode === 'auto' && !requiredKinds?.length && !trimString(parsed.data.reason)) {
+    return undefined;
+  }
+  return {
+    mode: parsed.data.mode,
+    ...(requiredKinds?.length ? { requiredKinds } : {}),
+    ...(trimString(parsed.data.reason) ? { reason: trimString(parsed.data.reason) } : {}),
+  };
 }
 
 function normalizeConfigKey(value: unknown): string | undefined {
@@ -211,6 +231,7 @@ function buildMappingFromInput(
   const renderPreset = normalizeRenderPreset(mapping.color?.renderPreset ?? legacyRoot?.color?.renderPreset);
   const colorSpaceProfile = normalizeColorSpaceProfile(mapping.color?.colorSpaceProfile ?? legacyRoot?.color?.colorSpaceProfile);
   const transformPresetKey = normalizeTransformPresetKey(mapping.color?.transformPresetKey ?? legacyRoot?.color?.transformPresetKey);
+  const captureTimePolicy = normalizeCaptureTimePolicy(mapping.captureTimePolicy ?? legacyRoot?.captureTimePolicy);
   const notes = trimStringList(mapping.notes) ?? trimStringList(legacyRoot?.notes) ?? (description ? [description] : undefined);
   const tags = trimStringList(mapping.tags) ?? trimStringList(legacyRoot?.tags);
   const priority = normalizePriority(mapping.priority, legacyRoot?.priority ?? (index + 1));
@@ -232,6 +253,7 @@ function buildMappingFromInput(
     category: normalizeCategory(mapping.category) ?? legacyRoot?.category,
     notes,
     tags,
+    captureTimePolicy,
     color: renderPreset || colorSpaceProfile || transformPresetKey
       ? {
         ...(renderPreset ? { renderPreset } : {}),
@@ -285,6 +307,7 @@ export function projectBriefToMediaRoots(config: Pick<IProjectBriefConfig, 'mapp
     description: trimString(mapping.description),
     notes: trimStringList(mapping.notes) ?? (trimString(mapping.description) ? [trimString(mapping.description)!] : undefined),
     tags: trimStringList(mapping.tags),
+    captureTimePolicy: normalizeCaptureTimePolicy(mapping.captureTimePolicy),
     color: (() => {
       const renderPreset = normalizeRenderPreset(mapping.color?.renderPreset);
       const colorSpaceProfile = normalizeColorSpaceProfile(mapping.color?.colorSpaceProfile);
@@ -318,6 +341,7 @@ export function mediaRootsToProjectBriefMappings(
     const renderPreset = normalizeRenderPreset(root.color?.renderPreset ?? existing?.color?.renderPreset);
     const colorSpaceProfile = normalizeColorSpaceProfile(root.color?.colorSpaceProfile ?? existing?.color?.colorSpaceProfile);
     const transformPresetKey = normalizeTransformPresetKey(root.color?.transformPresetKey ?? existing?.color?.transformPresetKey);
+    const captureTimePolicy = normalizeCaptureTimePolicy(root.captureTimePolicy ?? existing?.captureTimePolicy);
     const alternatePaths = normalizeAlternatePaths(root.alternatePaths) ?? normalizeAlternatePaths(existing?.alternatePaths);
     result.push({
       rootId: trimString(root.id) ?? existing?.rootId ?? derivedRootId,
@@ -333,6 +357,7 @@ export function mediaRootsToProjectBriefMappings(
       category: normalizeCategory(root.category) ?? existing?.category,
       notes: trimStringList(root.notes) ?? trimStringList(existing?.notes) ?? (trimString(root.description) ? [trimString(root.description)!] : undefined),
       tags: trimStringList(root.tags) ?? trimStringList(existing?.tags),
+      captureTimePolicy,
       color: renderPreset || colorSpaceProfile || transformPresetKey
         ? {
           ...(renderPreset ? { renderPreset } : {}),

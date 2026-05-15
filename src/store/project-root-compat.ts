@@ -95,9 +95,12 @@ function normalizeResolveLutPath(value: string): string | undefined {
     : `${normalized}.cube`;
 }
 
-function normalizeProjectRoots(projectRoots: { roots: IMediaRoot[] }): { roots: IMediaRoot[] } {
+function normalizeProjectRoots(projectRoots: unknown): { roots: IMediaRoot[] } {
+  const input = (projectRoots && typeof projectRoots === 'object')
+    ? projectRoots
+    : { roots: [] };
   return IProjectRootsFile.parse({
-    roots: projectRoots.roots.map(root => normalizeProjectRoot(root)),
+    roots: IProjectRootsFile.parse(input).roots.map(root => normalizeProjectRoot(root)),
   });
 }
 

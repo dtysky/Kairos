@@ -6,7 +6,12 @@ import { readJsonOrNull, writeJson } from './writer.js';
 export interface IMergeResult {
   assets: IKtepAsset[];
   added: IKtepAsset[];
+  pruned: IKtepAsset[];
   duplicateCount: number;
+}
+
+export interface IAssetMergeOptions {
+  replaceRootIds?: string[];
 }
 
 export function getAssetsPath(projectRoot: string): string {
@@ -47,8 +52,10 @@ export function buildAssetMergeKey(
 export function mergeAssets(
   existing: IKtepAsset[],
   incoming: IKtepAsset[],
+  options: IAssetMergeOptions = {},
 ): IMergeResult {
   const existingByKey = new Map(existing.map(asset => [buildAssetMergeKey(asset), asset]));
+  const incomingKeys = new Set<string>();
   const added: IKtepAsset[] = [];
   let duplicateCount = 0;
 
@@ -56,6 +63,7 @@ export function mergeAssets(
 
   for (const asset of incoming) {
     const key = buildAssetMergeKey(asset);
+    incomingKeys.add(key);
     const current = existingByKey.get(key);
     if (current) {
       duplicateCount++;
@@ -67,9 +75,24 @@ export function mergeAssets(
     added.push(stamped);
   }
 
+  const replaceRootIds = new Set((options.replaceRootIds ?? []).filter(Boolean));
+  const pruned: IKtepAsset[] = [];
+  const assets = [...existingByKey.values()].filter(asset => {
+    if (
+      asset.ingestRootId
+      && replaceRootIds.has(asset.ingestRootId)
+      && !incomingKeys.has(buildAssetMergeKey(asset))
+    ) {
+      pruned.push(asset);
+      return false;
+    }
+    return true;
+  });
+
   return {
-    assets: [...existingByKey.values()],
+    assets,
     added,
+    pruned,
     duplicateCount,
   };
 }
@@ -105,10 +128,11 @@ export function mergeSlices(
 export async function appendAssets(
   projectRoot: string,
   incoming: IKtepAsset[],
+  options: IAssetMergeOptions = {},
 ): Promise<IMergeResult> {
   const assetsPath = getAssetsPath(projectRoot);
   const existing = await loadAssets(projectRoot);
-  const result = mergeAssets(existing, incoming);
+  const result = mergeAssets(existing, incoming, options);
   await writeJson(assetsPath, result.assets);
   return result;
 }

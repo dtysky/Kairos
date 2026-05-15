@@ -12,6 +12,11 @@ export interface IProjectBriefPathMapping {
   alternatePaths?: Array<{ path?: string; rawPath?: string }>;
   description: string;
   flightRecordPath?: string;
+  captureTimePolicy?: {
+    mode: 'auto' | 'manual-required';
+    requiredKinds?: Array<'video' | 'photo'>;
+    reason?: string;
+  };
 }
 
 export interface IProjectBriefPharosConfig {
@@ -76,6 +81,7 @@ export function buildProjectBriefWithMappings(input: {
     alternatePaths?: Array<{ path?: string; rawPath?: string }>;
     description: string;
     flightRecordPath?: string;
+    captureTimePolicy?: IProjectBriefPathMapping['captureTimePolicy'];
   }>;
   pharos?: { includedTripIds?: string[] };
   materialPatternPhrases?: string[];
@@ -102,6 +108,7 @@ export function buildProjectBriefWithMappings(input: {
         ...alternateLines,
         `说明：${mapping.description}`,
         ...(mapping.flightRecordPath ? [`飞行记录路径：${mapping.flightRecordPath}`] : []),
+        ...(renderCaptureTimePolicyLine(mapping.captureTimePolicy) ? [renderCaptureTimePolicyLine(mapping.captureTimePolicy)!] : []),
         '',
       ];
     })
@@ -159,6 +166,7 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
   let pendingAlternatePaths = new Map<number, { path?: string; rawPath?: string }>();
   let pendingDescription: string | null = null;
   let pendingFlightRecordPath: string | null = null;
+  let pendingCaptureTimePolicy: IProjectBriefPathMapping['captureTimePolicy'] | null = null;
   let expectPathValue = false;
   let expectRawPathValue = false;
   let expectAlternatePathIndex: number | null = null;
@@ -203,12 +211,14 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
         pendingAlternatePaths,
         pendingDescription,
         pendingFlightRecordPath,
+        pendingCaptureTimePolicy,
       );
       pendingPath = null;
       pendingRawPath = null;
       pendingAlternatePaths = new Map();
       pendingDescription = null;
       pendingFlightRecordPath = null;
+      pendingCaptureTimePolicy = null;
       inMappings = false;
       inPharos = true;
       inMaterialPatterns = false;
@@ -230,12 +240,14 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
         pendingAlternatePaths,
         pendingDescription,
         pendingFlightRecordPath,
+        pendingCaptureTimePolicy,
       );
       pendingPath = null;
       pendingRawPath = null;
       pendingAlternatePaths = new Map();
       pendingDescription = null;
       pendingFlightRecordPath = null;
+      pendingCaptureTimePolicy = null;
       inMappings = false;
       inPharos = false;
       inMaterialPatterns = true;
@@ -258,12 +270,14 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
         pendingAlternatePaths,
         pendingDescription,
         pendingFlightRecordPath,
+        pendingCaptureTimePolicy,
       );
       pendingPath = null;
       pendingRawPath = null;
       pendingAlternatePaths = new Map();
       pendingDescription = null;
       pendingFlightRecordPath = null;
+      pendingCaptureTimePolicy = null;
       inMappings = false;
       inPharos = false;
       inMaterialPatterns = false;
@@ -315,12 +329,14 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
         pendingAlternatePaths,
         pendingDescription,
         pendingFlightRecordPath,
+        pendingCaptureTimePolicy,
       );
       pendingPath = null;
       pendingRawPath = null;
       pendingAlternatePaths = new Map();
       pendingDescription = null;
       pendingFlightRecordPath = null;
+      pendingCaptureTimePolicy = null;
 
       const value = line.slice('路径：'.length).trim();
       if (value) {
@@ -407,6 +423,12 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
       continue;
     }
 
+    if (line.startsWith('拍摄时间规则：') || line.startsWith('时间规则：')) {
+      const value = line.slice(line.indexOf('：') + 1).trim();
+      pendingCaptureTimePolicy = parseCaptureTimePolicyLine(value);
+      continue;
+    }
+
     if (expectPathValue) {
       pendingPath = line;
       expectPathValue = false;
@@ -451,6 +473,7 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
     pendingAlternatePaths,
     pendingDescription,
     pendingFlightRecordPath,
+    pendingCaptureTimePolicy,
   );
 
   const duplicatePaths = findDuplicatePaths(mappings);
@@ -498,6 +521,41 @@ function dedupeTrimmedStrings(values: string[]): string[] {
   return [...new Set(values.map(value => value.trim()).filter(Boolean))];
 }
 
+function renderCaptureTimePolicyLine(
+  policy?: IProjectBriefPathMapping['captureTimePolicy'],
+): string | null {
+  if (!policy || policy.mode !== 'manual-required') return null;
+  const kinds = (policy.requiredKinds?.length ? policy.requiredKinds : ['video', 'photo'])
+    .filter(kind => kind === 'video' || kind === 'photo')
+    .join(',');
+  const reason = policy.reason?.trim();
+  return `拍摄时间规则：manual-required(${kinds})${reason ? `；${reason}` : ''}`;
+}
+
+function parseCaptureTimePolicyLine(value: string): IProjectBriefPathMapping['captureTimePolicy'] | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const normalized = trimmed.toLowerCase();
+  const isManualRequired = normalized.includes('manual-required')
+    || normalized.includes('必须')
+    || normalized.includes('手动')
+    || normalized.includes('人工');
+  if (!isManualRequired) {
+    return { mode: 'auto' };
+  }
+
+  const requiredKinds: Array<'video' | 'photo'> = [];
+  if (/video|视频|延时/u.test(normalized)) requiredKinds.push('video');
+  if (/photo|照片|图片/u.test(normalized)) requiredKinds.push('photo');
+  const [, reasonPart] = trimmed.split(/[；;]/u);
+  const reason = reasonPart?.trim();
+  return {
+    mode: 'manual-required',
+    ...(requiredKinds.length ? { requiredKinds: [...new Set(requiredKinds)] } : {}),
+    ...(reason ? { reason } : {}),
+  };
+}
+
 function pushPendingMapping(
   out: IProjectBriefPathMapping[],
   warnings: string[],
@@ -506,6 +564,7 @@ function pushPendingMapping(
   alternatePaths: Map<number, { path?: string; rawPath?: string }>,
   description: string | null,
   flightRecordPath: string | null,
+  captureTimePolicy: IProjectBriefPathMapping['captureTimePolicy'] | null,
 ): void {
   if (!path && !description) return;
   if (!path) {
@@ -520,6 +579,7 @@ function pushPendingMapping(
       alternatePaths: normalizeAlternatePaths(alternatePaths),
       description: '（待补充说明）',
       flightRecordPath: flightRecordPath ?? undefined,
+      captureTimePolicy: captureTimePolicy ?? undefined,
     });
     return;
   }
@@ -529,6 +589,7 @@ function pushPendingMapping(
     alternatePaths: normalizeAlternatePaths(alternatePaths),
     description,
     flightRecordPath: flightRecordPath ?? undefined,
+    captureTimePolicy: captureTimePolicy ?? undefined,
   });
 }
 

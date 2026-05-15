@@ -27,9 +27,10 @@ import {
   loadScriptBriefConfig,
   saveColorCurrent,
   saveIngestRoots,
-  loadStyleSourcesConfig,
   resolveReviewItem,
+  saveReviewQueue,
   saveManualItineraryConfig,
+  loadStyleSourcesConfig,
   saveProjectBriefConfig,
   saveScriptBriefConfig,
   saveEditRulesConfig,
@@ -51,10 +52,6 @@ import {
   registerExternalColorDrpSnapshot,
   snapshotProjectColorDrp,
 } from '../modules/color/index.js';
-import {
-  buildCaptureTimeReviewItems,
-  buildManualCaptureTimeReviewKey,
-} from '../modules/media/manual-capture-time-shared.js';
 import { buildMediaChronology } from '../modules/media/chronology.js';
 import {
   resolveMediaRoot,
@@ -190,10 +187,11 @@ async function routeRequest(
     sendJson(response, 200, {
       jobs: [
         { jobType: 'project-init', executionMode: 'deterministic', supported: true },
-        { jobType: 'ingest', executionMode: 'deterministic', supported: true },
-        { jobType: 'gps-refresh', executionMode: 'deterministic', supported: true },
-        { jobType: 'analyze', executionMode: 'deterministic', supported: true },
-        { jobType: 'style-analysis', executionMode: 'deterministic', supported: true, note: 'runs deterministic prep and then hands off to Agent for final text/art-style reference; does not generate edit rules' },
+	        { jobType: 'ingest', executionMode: 'deterministic', supported: true },
+	        { jobType: 'gps-refresh', executionMode: 'deterministic', supported: true },
+	        { jobType: 'analyze', executionMode: 'deterministic', supported: true },
+	        { jobType: 'spatial-refresh', executionMode: 'deterministic', supported: true, note: 'refreshes existing Analyze GPS / Pharos fields, chronology, and span grounding without running ML' },
+	        { jobType: 'style-analysis', executionMode: 'deterministic', supported: true, note: 'runs deterministic prep and then hands off to Agent for final text/art-style reference; does not generate edit rules' },
         { jobType: 'color', executionMode: 'deterministic', supported: true, note: 'supports prepare_root / sync_groups / execute_root / sync_batch_metadata / sync_batch_sidecars / validate_batch / prepare_all_roots / export_all_roots through the same-machine vendored Resolve backend; clip repair now follows the canonical Gyro -> Dehaze -> User1 -> User2 -> NR layout, and execute/export-all require explicit overwrite confirmation before replacing existing root outputs' },
         { jobType: 'edit-flow-plan', executionMode: 'agent', supported: true, note: 'LLM reads raw edit-rule markdown plus capability catalog and writes edits/<editId>/planning/flow-plan.json for human confirmation' },
         { jobType: 'edit-flow-capability', executionMode: 'agent', supported: true, note: 'runs registered planning capabilities such as pharos.parse, trip.event_table, material.archive, and edit.framework' },
@@ -407,7 +405,7 @@ async function routeRequest(
     const projectRoot = join(options.workspaceRoot, 'projects', projectId);
     const payload = await readJsonBody(request);
     const saved = await saveManualItineraryConfig(projectRoot, payload);
-    await syncCaptureTimeReviewsFromConfig(projectId, projectRoot);
+    await syncCaptureTimeReviewsFromConfig(projectRoot);
     sendJson(response, 200, saved);
     return;
   }
@@ -455,7 +453,7 @@ async function routeRequest(
   if (reviewMatch && method === 'GET') {
     const projectId = decodeURIComponent(reviewMatch[1]!);
     const projectRoot = join(options.workspaceRoot, 'projects', projectId);
-    await syncCaptureTimeReviewsFromConfig(projectId, projectRoot);
+    await syncCaptureTimeReviewsFromConfig(projectRoot);
     sendJson(response, 200, await loadReviewQueue(projectRoot));
     return;
   }
@@ -470,9 +468,6 @@ async function routeRequest(
     if (!review) {
       sendJson(response, 404, { error: 'review not found' });
       return;
-    }
-    if (review.kind === 'capture-time-correction') {
-      await applyCaptureTimeReviewResolution(projectRoot, review);
     }
     sendJson(response, 200, review);
     return;
@@ -594,17 +589,28 @@ async function startJob(
   },
 ): Promise<ISupervisorJobRecord> {
   await reconcileInterruptedJobs(workspaceRoot);
-  if (payload.jobType === 'color' && payload.projectId) {
-    const existingJobs = await listJobRecords(workspaceRoot);
-    const activeColorJob = existingJobs.find(job => (
+	  if (payload.jobType === 'color' && payload.projectId) {
+	    const existingJobs = await listJobRecords(workspaceRoot);
+	    const activeColorJob = existingJobs.find(job => (
       job.jobType === 'color'
       && job.projectId === payload.projectId
       && ['queued', 'running'].includes(job.status)
     ));
     if (activeColorJob) {
-      throw new Error(`project ${payload.projectId} already has an active color job: ${activeColorJob.jobId}`);
-    }
-  }
+	      throw new Error(`project ${payload.projectId} already has an active color job: ${activeColorJob.jobId}`);
+	    }
+	  }
+	  if (['analyze', 'spatial-refresh'].includes(payload.jobType) && payload.projectId) {
+	    const existingJobs = await listJobRecords(workspaceRoot);
+	    const activeAnalyzeJob = existingJobs.find(job => (
+	      ['analyze', 'spatial-refresh'].includes(job.jobType)
+	      && job.projectId === payload.projectId
+	      && ['queued', 'running'].includes(job.status)
+	    ));
+	    if (activeAnalyzeJob) {
+	      throw new Error(`project ${payload.projectId} already has an active analyze/spatial job: ${activeAnalyzeJob.jobId}`);
+	    }
+	  }
 
   const jobId = randomUUID();
   const jobRoot = getSupervisorJobRoot(workspaceRoot, jobId);
@@ -612,8 +618,8 @@ async function startJob(
   const stdoutPath = join(jobRoot, 'stdout.log');
   const stderrPath = join(jobRoot, 'stderr.log');
   const resultPath = join(jobRoot, 'result.json');
-  const progressPath = payload.jobType === 'analyze' && payload.projectId
-    ? getProjectProgressPath(join(workspaceRoot, 'projects', payload.projectId), 'media-analyze')
+	  const progressPath = ['analyze', 'spatial-refresh'].includes(payload.jobType) && payload.projectId
+	    ? getProjectProgressPath(join(workspaceRoot, 'projects', payload.projectId), 'media-analyze')
     : payload.jobType === 'color' && payload.projectId
       ? getProjectProgressPath(join(workspaceRoot, 'projects', payload.projectId), 'color')
     : payload.jobType === 'style-analysis'
@@ -713,47 +719,11 @@ async function resolveStyleAnalysisCategoryId(
   return categoryId;
 }
 
-async function applyCaptureTimeReviewResolution(
-  projectRoot: string,
-  review: Awaited<ReturnType<typeof resolveReviewItem>> extends infer T ? NonNullable<T> : never,
-): Promise<void> {
-  const config = await loadManualItineraryConfig(projectRoot);
-  const correctedDate = review.fields.find(field => field.key === 'correctedDate')?.value?.trim();
-  const correctedTime = review.fields.find(field => field.key === 'correctedTime')?.value?.trim();
-  const timezone = review.fields.find(field => field.key === 'timezone')?.value?.trim();
-  const key = buildManualCaptureTimeReviewKey(review.rootRef, review.sourcePath ?? '');
-  const existingByKey = new Map(config.captureTimeOverrides.map(item => [
-    buildManualCaptureTimeReviewKey(item.rootRef, item.sourcePath),
-    item,
-  ]));
-  const current = existingByKey.get(key);
-  const next = {
-    rootRef: review.rootRef,
-    sourcePath: review.sourcePath ?? current?.sourcePath ?? '',
-    currentCapturedAt: current?.currentCapturedAt,
-    currentSource: current?.currentSource,
-    suggestedDate: current?.suggestedDate,
-    suggestedTime: current?.suggestedTime,
-    correctedDate,
-    correctedTime,
-    timezone,
-    note: review.note ?? current?.note,
-  };
-  existingByKey.set(key, next);
-  await saveManualItineraryConfig(projectRoot, {
-    ...config,
-    captureTimeOverrides: [...existingByKey.values()],
-  });
-}
-
-async function syncCaptureTimeReviewsFromConfig(projectId: string, projectRoot: string): Promise<void> {
-  const config = await loadManualItineraryConfig(projectRoot);
+async function syncCaptureTimeReviewsFromConfig(projectRoot: string): Promise<void> {
   const queue = await loadReviewQueue(projectRoot);
   const preserved = queue.items.filter(item => item.kind !== 'capture-time-correction');
-  const captureItems = buildCaptureTimeReviewItems(projectId, config.captureTimeOverrides);
-  await writeFileSafe(join(projectRoot, 'config', 'review-queue.json'), JSON.stringify({
-    items: [...preserved, ...captureItems],
-  }, null, 2));
+  if (preserved.length === queue.items.length) return;
+  await saveReviewQueue(projectRoot, { items: preserved });
 }
 
 function buildIngestRootSummaries(

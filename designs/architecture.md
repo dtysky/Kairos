@@ -7,6 +7,22 @@
 
 ## 0. 2026-03-31 增补
 
+## 0.15 2026-05-15 Ingest / Pharos / 手动时间 Gate 补记
+
+当前 Ingest / GPS 刷新正式承担 Pharos context 和素材时间 gate：
+
+- 项目内 `pharos/<trip_id>/plan.json + record.json? + gpx/` 是 Pharos 的固定输入目录；`analysis/pharos-context.json` 必须带有输入 fingerprint
+- fingerprint 覆盖 trip 筛选、`plan.json`、`record.json`、`gpx/*.gpx` 的相对路径、大小与修改时间；fingerprint 缺失或变化时，Ingest / GPS 刷新必须自动重建 context，避免复用 stale empty cache
+- `gps-refresh` 不扫描素材，但应刷新项目 GPX merged cache、`gps/derived.json` 与 Pharos context；`ingest` 在扫描素材后也必须刷新同一套空间/Pharos 缓存
+- Analyze 不隐式补跑 Pharos 解析，只消费最近一次 Ingest / GPS 刷新的 `analysis/pharos-context.json`
+- Pharos 上游协议 hash 不匹配时，必须先同步当前 `../Pharos/designs` 到 Kairos 设计文档、rules、skills、实现/测试影响，并刷新 `.ai/pharos-protocol-baseline.json`；baseline 未重新匹配前不继续普通 Pharos 功能工作
+- 素材 root 可声明 `captureTimePolicy`：
+  - `mode: "auto"` 是默认行为
+  - `mode: "manual-required"` 表示该 root 的指定素材类型不可信任容器 / EXIF / 文件名 / filesystem 时间，必须由单素材手动时间修正落成 `manual` capture time
+  - `requiredKinds` 默认覆盖所有可导入图片/视频；延时导出 root 可只声明 `["video"]`
+- `manual-required` 生成的素材时间 blocker 必须要求显式日期和时间；不能用当前文件时间或建议日期自动补齐日期后视为已解决
+- 对本次成功扫描到的 root，Ingest 以当前扫描结果为准剪掉该 root 中已经不存在的旧资产；missing root 的既有资产保持不动，避免未挂载磁盘导致误删
+
 ## 0.14 2026-05-14 DaVinci color log 前置 review addon 分组补记
 
 当前 `/color` 自动 Group 继续保持 Resolve Group 扁平结构，但分桶语义收口为：
@@ -422,6 +438,8 @@
 
 - `project-brief` 路径映射可选带 `原始路径` 与有序 `备选路径N / 原始路径N`
 - `/ingest-gps` 当前以结构化 `素材 Root` 编辑器作为正式用户入口，并在保存时把这些字段写入 `project-brief.json` 单真值并回写 `project-brief.md` 镜像
+- `/ingest-gps` 同时是正式 Ingest / GPS 刷新控制面：保存配置不会自动重扫，`运行 Ingest` 触发 Supervisor `ingest` job 并刷新资产、同源 GPS、derived track、Pharos context 与 chronology；`刷新 GPS 缓存` 触发 `gps-refresh` job，只刷新项目级 GPX merged cache、`gps/derived.json` 与 `analysis/pharos-context.json`
+- `/analyze` 不隐式补跑 ingest；它只读取既有 `store/assets.json`、项目 GPX / `gps/derived.json`、Pharos GPX 与 chronology，并提供 `刷新空间结果` 的 `spatial-refresh` 轻量入口来修补已有 Analyze 产物空间层
 - `IMediaRoot.rawPath` 与 `alternatePaths` 已进入正式配置链；`device-media-maps.local.json` 不再参与正式路径解析
 - 若解析后的 `rawLocalPath` 位于当前素材目录内部，ingest 会把该子树视为正式排除项，而不是把 raw 与当前输出一起扫描
 - 项目级 `color/` 目录已作为独立调色链最小 runtime/archive store 进入项目结构
@@ -500,7 +518,8 @@
    - `embedded GPS` 的正式语义已扩展为“素材同源且可绑定”的 GPS：文件 metadata / EXIF、同 basename `.SRT`、以及 root 级 DJI FlightRecord 日志切片（按文件头识别，不依赖强文件名）
    - dense same-source 轨迹现在会规范化写到 `gps/same-source/tracks/*.gpx` + `gps/same-source/index.json`，资产上只保留轻量 `embeddedGps` 引用
    - ingest 会额外刷新 `gps/derived.json`，把 embedded-derived sparse points 与 manual-itinerary-derived sparse windows 统一编译成 `project-derived-track`
-   - Analyze 默认遵循 `embedded GPS > project GPX > project-derived-track`
+   - Analyze 默认遵循 `embedded GPS > Pharos GPX > 普通 project GPX > project-derived-track`
+   - `/analyze` 的 `spatial-refresh` deterministic job 可在不启动 ML、不抽帧、不转写的情况下刷新已有 `asset-reports`、`chronology` 与 `spans grounding` 的空间层；它只消费已经写入 `store/assets.json` 的 embedded GPS 绑定，不能替代 Ingest 发现新 `.SRT`、FlightRecord、root 或 capture-time 修正
    - DJI / QuickTime / EXIF 的 embedded GPS 解析已覆盖更宽字段变体，而不再只看最小 key 集
    - 照片的拍摄时间已切到 EXIF 原始时间链：`DateTimeOriginal(+OffsetTimeOriginal) > CreateDate(+OffsetTimeDigitized/OffsetTime) > GPSDateTime > container > filename > filesystem`
    - 照片若自身 EXIF 带 GPS，会直接写成 `embeddedGps(metadata)` 真值；只有没有自身 GPS 时，才继续走 project GPX / `project-derived-track` 的时间匹配
@@ -561,10 +580,12 @@
    - 如果 protection 被选中，它会直接成为正式 `report.transcriptSegments` 来源，而不再只是 finalize prompt 的辅助信号
    - 当前默认非 MLX ASR 会优先解析完整可用的本地 `faster-whisper large-v3` / CTranslate2 checkpoint；若只发现不完整 cache，则直接回退到完整可用的本地 Whisper checkpoint，避免 Analyze 因首请求下载卡死
    - 当前默认非 MLX ASR 会在同一常驻 `faster-whisper` 模型上顺序处理活跃素材，优先保证 `large-v3` 文本质量与词级时间戳稳定性
-   - 当前 transformers VLM 默认模型改为 `Qwen3.5-9B`：
-     - 本地优先目录：`models/Qwen3_5-9B`
-     - 默认远端 ID：`Qwen/Qwen3.5-9B`
-     - Apple Silicon 的 MLX 路径继续使用 `Qwen3-VL-4B-Instruct-8bit`，直到引入兼容的 MLX 版本
+   - 当前 VLM 默认模型改为 `Qwen3.5-9B`：
+     - Apple Silicon / MLX 本地优先目录：`models/Qwen3.5-9B-MLX-8bit`
+     - Apple Silicon / MLX 默认远端 ID：`mlx-community/Qwen3.5-9B-MLX-8bit`
+     - Apple Silicon / MLX 仍保留旧本地目录 `models/Qwen3-VL-4B-Instruct-8bit` 作为 fallback
+     - transformers 本地优先目录：`models/Qwen3_5-9B`
+     - transformers 默认远端 ID：`Qwen/Qwen3.5-9B`
 10. 本地运行时与控制台已经形成当前正式操作面
    - `Supervisor` 统一承载本地服务与 job 编排
    - `apps/kairos-console/` 采用 React + 工作流优先路由，而不是单页工作台
@@ -572,11 +593,13 @@
    - 只要改动影响正式本地运行入口、Supervisor API、`/analyze`、`/style`、`/color` 或 `apps/kairos-console/`，验证必须同时包含根仓 `pnpm build` 与 `npm --prefix apps/kairos-console run build`
    - 根仓 `pnpm build` 当前不会产出 React console bundle；前端资产必须单独 build，才能宣称 UI 变更已完成验证
    - `Style` 当前承载的是 **Workspace 级风格库 / 风格来源配置 / style-analysis monitor**，而不是某个单项目私有风格页
+   - `/ingest-gps` 当前承载 `ingest` 与 `gps-refresh` job 的正式按钮入口；按钮状态与最近结果必须来自 Supervisor job record
+   - `/analyze` 当前同时承载 `analyze` 与 `spatial-refresh` job 的正式按钮入口；页面必须分别显示活跃 Analyze 与空间刷新 job，避免把轻量刷新误读成重跑 Analyze
    - `/style` 当前必须把 monitor category 解析成单一真值，禁止把默认分类与最近完成 job 的状态混用
    - `/style` monitor 当前正式应展示三层信息：高层阶段、当前视频上下文，以及 `keyframes / vlm / queue` 等细粒度运行态
    - `scripts/kairos-supervisor.* start` 当前只负责拉起 `Supervisor + React console`；不会自动拉起 ML，也不会恢复旧 job
    - `progress.json` 当前必须被理解为 durable cache，而不是 live job 证据；live 状态只来自 Supervisor job record
-   - 顶层 Kairos job 的结束态统一要求 `ML stopped`
+   - ML-backed 顶层 Kairos job 的结束态统一要求 `ML stopped`；`spatial-refresh` 是 no-ML repair job，不进入 ML lifecycle
    - Console 刷新时，默认项目上下文优先跟随最新的 active project-scoped job；没有活跃项目 job 时才回退到本地记忆的选择
    - 当多个项目 display name 相同，项目选择器必须显式展示 `projectId`，避免监控与配置页混到旧项目
    - 旧 `/analyze/monitor` 与 `/style/monitor/:categoryId?` 仅保留兼容跳转
@@ -671,8 +694,10 @@ flowchart TD
 - `/ingest-gps` 当前应明确展示这个固定目录，并提醒用户把 `trip_id/plan.json`、`record.json` 与 `gpx/` 镜像投放到这里
 - `project-brief.md` 只承担可选 trip 筛选语义，不再配置外部 `Pharos` 目录路径
 - `/ingest-gps` 除了单素材“素材时间校正”卡片外，当前还应并列提供 root 级设备时钟偏移 editor，用 `±HH:MM:SS` 输入并保存 `clockOffsetMs`
+- 单素材拍摄时间修正只能通过“素材时间校正”卡片 / `config/manual-itinerary.json.captureTimeOverrides` 维护；`导入 / GPS Review` 不再显示或反写 `capture-time-correction`，避免同一素材被两份表单覆盖
+- `/ingest-gps` 保存配置后必须让用户显式运行 `运行 Ingest` 或 `刷新 GPS 缓存`；Analyze 前如果用户刚改过素材 Root、FlightRecord、manual-itinerary、root 时钟偏移或 capture-time overrides，应先完成对应刷新
 - planned `Pharos shot` 当前正式拆成两层：
-  - shot 归属只按 `plan` 的 planned time segment 匹配，不再把 `actualTime*` 或 shot GPS 字段作为 planned shot 正式匹配依据
+  - shot 归属优先按 `record.json.actual_time` 匹配；只有该 shot 没有可用 actual time 时，才回退到 `plan` 的 planned time segment；shot GPS 字段不参与时间归属
   - 空间位置只按 trip `gpx/*.gpx` 对素材/span 的时间做反算；`plan.gps / gps_start / gps_end / actual_gps` 仅保留人读参考，不再是 Kairos 的正式空间真值
 - 主链消费的是项目当前采用的素材版本，它可以是原始素材，也可以是独立调色链路产出的版本
 - `DaVinci color` 可以独立运行、多次更新，并在需要时产出供主链消费的素材版本
@@ -785,7 +810,8 @@ src/modules/ingest/
   → ingest 刷新项目级 `gps/derived.json`，统一收口 embedded-derived sparse points 与 `manual-itinerary` 编译结果
   → 若弱时间源与项目时间线、文件名完整时间戳或已纳入 `Pharos` trip 边界明显冲突，把待校正素材追加到 `config/manual-itinerary.md` 的“素材时间校正”配置，并阻塞后续 Analyze
   → Console 的 `/ingest-gps` 当前会把这些阻塞项渲染成卡片式修正器，支持 `保持当前 / 使用建议 / 手动修正`
-  → Analyze 若内嵌 GPS 不可用，则先走项目级 `gps/merged.json` / `gps/tracks/*.gpx` 时间匹配，再回落 `gps/derived.json` 的保守匹配（无插值）
+  → Console 的 `/ingest-gps` 通过 Supervisor `ingest` job 显式触发上述扫描和刷新；单纯保存配置不会自动执行
+  → Analyze 若内嵌 GPS 不可用，则先走 Pharos GPX timed spatial，再走普通项目级 `gps/merged.json` / `gps/tracks/*.gpx` 时间匹配，最后回落 `gps/derived.json` 的保守匹配（无插值）
   → FFmpeg 生成 720p 代理文件（后台队列）
   → CLIP 提取代理文件视觉特征 → 向量聚类 → LLM 生成场景描述
   → 写入 media/index.json + media/scenes.json
@@ -800,8 +826,9 @@ src/modules/ingest/
   - 项目级 `pharos/` 根目录由项目初始化和 Console 配置读取自动准备；用户不需要再手动先建这个根目录
   - `plan.json` 必需，`record.json` 与 `gpx/` 可缺失
   - 解析状态由 Supervisor / Console 显示为 `空 / 解析成功 / 解析失败`
-  - planned shot 的匹配只按 `plan` 的 planned time segment；若 planned shot 缺少可归一化 planned time，则当前正式视为不可匹配，而不是回退到 `actualTime*`
-  - Analyze 的正式空间优先级为 `embedded > GPX(含 project/pharos/<trip_id>/gpx/*.gpx) > project-derived-track`
+  - planned shot 的匹配优先按 `record.json.actual_time`，没有 actual time 时才回退到 `plan` 的 planned time segment；两者都缺少可归一化时间时才视为不可匹配
+  - Analyze 的正式空间优先级为 `embedded > Pharos GPX > 普通 project GPX > project-derived-track`
+  - 同名 `.SRT` / DJI FlightRecord 绑定后的 same-source 轨迹属于 `embedded`，必须压过 Pharos GPX；Pharos GPX 不能覆盖素材同源 GPS 真值
   - `project/pharos/<trip_id>/gpx/*.gpx` 命中后产出的是 `Pharos` 的 GPX-timed 空间候选，而不是 shot 自带 GPS；若对应时刻无有效点，应保留 `pharos ref` 但不产出 `Pharos` 坐标
 
 #### 2.2 Color — 调色辅助

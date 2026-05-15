@@ -15,6 +15,7 @@
 
 路径：/Volumes/SSDMAX/ts-final
 说明：延时摄影
+拍摄时间规则：manual-required(video)；延时视频导出时间不可信，必须人工确认拍摄日期和时间
 
 路径：/Volumes/SSDMAX/photos
 说明：途中拍摄的照片

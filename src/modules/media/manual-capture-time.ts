@@ -1,12 +1,9 @@
-import { basename } from 'node:path';
 import {
   loadManualItineraryConfig,
-  loadProject,
   replaceReviewItemsByMatcher,
   saveManualItineraryConfig,
 } from '../../store/index.js';
 import {
-  buildCaptureTimeReviewItems,
   buildManualCaptureTimeReviewKey,
   isManualCaptureTimeResolved,
   resolveManualCaptureTimeRow,
@@ -19,6 +16,7 @@ export interface IManualCaptureTimeOverride {
   timezone?: string;
   correctedDate: string;
   correctedTime: string;
+  requiresExplicitDate?: boolean;
   note?: string;
 }
 
@@ -30,6 +28,7 @@ export interface IManualCaptureTimeBlocker {
   suggestedDate?: string;
   suggestedTime?: string;
   timezone?: string;
+  requiresExplicitDate?: boolean;
   note?: string;
 }
 
@@ -56,6 +55,7 @@ export async function loadManualCaptureTimeOverrides(
       timezone: resolved.timezone,
       correctedDate: resolved.correctedDate,
       correctedTime: resolved.correctedTime,
+      requiresExplicitDate: row.requiresExplicitDate,
       note: row.note,
     });
   }
@@ -78,10 +78,7 @@ export async function syncManualCaptureTimeBlockers(
   projectRoot: string,
   blockers: IManualCaptureTimeBlocker[],
 ): Promise<{ blockerCount: number; updated: boolean }> {
-  const [currentConfig, project] = await Promise.all([
-    loadManualItineraryConfig(projectRoot),
-    loadProject(projectRoot).catch(() => null),
-  ]);
+  const currentConfig = await loadManualItineraryConfig(projectRoot);
   const existingRows = currentConfig.captureTimeOverrides;
   const existingByKey = new Map(existingRows.map(row => [
     buildManualCaptureTimeKey(row.rootRef, row.sourcePath),
@@ -117,11 +114,7 @@ export async function syncManualCaptureTimeBlockers(
     ...currentConfig,
     captureTimeOverrides: nextRows,
   });
-  await replaceReviewItemsByMatcher(
-    projectRoot,
-    buildCaptureTimeReviewItems(project?.id ?? basename(projectRoot), nextRows),
-    item => item.kind === 'capture-time-correction',
-  );
+  await replaceReviewItemsByMatcher(projectRoot, [], item => item.kind === 'capture-time-correction');
   return {
     blockerCount: mergedRows.length,
     updated: true,

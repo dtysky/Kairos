@@ -179,6 +179,7 @@ export function ProjectBriefEditor({ config, pharosStatus, summaries = [], setCo
                 {mapping.rawPath ? <Tag>含原始路径</Tag> : null}
                 {alternates.length > 0 ? <Tag>{`${alternates.length} 组备选`}</Tag> : null}
                 {mapping.flightRecordPath ? <Tag>含 FlightRecord</Tag> : null}
+                {mapping.captureTimePolicy?.mode === 'manual-required' ? <Tag>手动时间</Tag> : null}
               </div>
             </div>
             <div className={`root-resolution${blockers.length > 0 ? ' has-blockers' : ''}`}>
@@ -209,6 +210,52 @@ export function ProjectBriefEditor({ config, pharosStatus, summaries = [], setCo
                 label="FlightRecord"
                 value={mapping.flightRecordPath || ''}
                 onChange={value => updateMapping({ ...mapping, flightRecordPath: value })}
+              />
+              <SelectField
+                label="拍摄时间规则"
+                value={mapping.captureTimePolicy?.mode || 'auto'}
+                onChange={value => updateMapping({
+                  ...mapping,
+                  captureTimePolicy: value === 'manual-required'
+                    ? {
+                      mode: 'manual-required',
+                      requiredKinds: normalizeCaptureTimePolicyKinds(mapping.captureTimePolicy?.requiredKinds, ['video']),
+                      reason: mapping.captureTimePolicy?.reason || '',
+                    }
+                    : undefined,
+                })}
+                options={[
+                  { value: 'auto', label: '自动解析' },
+                  { value: 'manual-required', label: '必须手动确认' },
+                ]}
+              />
+              <Field
+                label="需确认类型"
+                value={(mapping.captureTimePolicy?.requiredKinds || []).join('/')}
+                placeholder="video/photo"
+                disabled={mapping.captureTimePolicy?.mode !== 'manual-required'}
+                onChange={value => updateMapping({
+                  ...mapping,
+                  captureTimePolicy: {
+                    ...(mapping.captureTimePolicy || { mode: 'manual-required' }),
+                    mode: 'manual-required',
+                    requiredKinds: normalizeCaptureTimePolicyKinds(splitList(value), ['video']),
+                  },
+                })}
+              />
+              <Field
+                label="时间规则备注"
+                value={mapping.captureTimePolicy?.reason || ''}
+                disabled={mapping.captureTimePolicy?.mode !== 'manual-required'}
+                onChange={value => updateMapping({
+                  ...mapping,
+                  captureTimePolicy: {
+                    ...(mapping.captureTimePolicy || { mode: 'manual-required' }),
+                    mode: 'manual-required',
+                    requiredKinds: normalizeCaptureTimePolicyKinds(mapping.captureTimePolicy?.requiredKinds, ['video']),
+                    reason: value,
+                  },
+                })}
               />
             </div>
             <TextAreaField
@@ -517,15 +564,15 @@ export function CaptureTimeOverridesEditor({ config, setConfig, onSave, busy }) 
           </div>
           <div className="capture-time-actions">
             <Button
-              type={item.currentCapturedAt ? 'default' : 'disabled'}
-              disabled={!item.currentCapturedAt}
+              type={item.currentCapturedAt && !item.requiresExplicitDate ? 'default' : 'disabled'}
+              disabled={!item.currentCapturedAt || item.requiresExplicitDate}
               onClick={() => applyCaptureTimeAction(config.captureTimeOverrides, index, buildKeepCurrentOverride(item), next => setConfig(current => ({ ...current, captureTimeOverrides: next })))}
             >
               保持当前
             </Button>
             <Button
-              type={item.suggestedTime ? 'default' : 'disabled'}
-              disabled={!item.suggestedTime}
+              type={item.suggestedTime && !item.requiresExplicitDate ? 'default' : 'disabled'}
+              disabled={!item.suggestedTime || item.requiresExplicitDate}
               onClick={() => applyCaptureTimeAction(config.captureTimeOverrides, index, buildSuggestedOverride(item), next => setConfig(current => ({ ...current, captureTimeOverrides: next })))}
             >
               使用建议
@@ -544,7 +591,9 @@ export function CaptureTimeOverridesEditor({ config, setConfig, onSave, busy }) 
             <Field label="建议时区" value={item.timezone || ''} onChange={noop} readOnly />
           </div>
           <div className="capture-time-hint">
-            正常情况下先填“正确时间 / 时区”就够了。若能推导，系统会自动补齐日期；只有无法推导时才需要手填“正确日期”。
+            {item.requiresExplicitDate
+              ? '该素材所在 Root 要求人工确认拍摄时间，必须显式填写“正确日期 / 正确时间 / 时区”。'
+              : '正常情况下先填“正确时间 / 时区”就够了。若能推导，系统会自动补齐日期；只有无法推导时才需要手填“正确日期”。'}
           </div>
           <div className="field-grid field-grid-three">
             <Field
@@ -3508,6 +3557,19 @@ export function splitList(value) {
   return value.split('/').map(item => item.trim()).filter(Boolean);
 }
 
+function normalizeCaptureTimePolicyKinds(value, fallback = []) {
+  const normalized = (Array.isArray(value) ? value : [])
+    .map(item => String(item || '').trim().toLowerCase())
+    .map(item => {
+      if (['video', '视频', '延时'].includes(item)) return 'video';
+      if (['photo', '照片', '图片'].includes(item)) return 'photo';
+      return '';
+    })
+    .filter(Boolean);
+  const deduped = [...new Set(normalized)];
+  return deduped.length > 0 ? deduped : fallback;
+}
+
 function applyCaptureTimeAction(items, index, partial, apply) {
   const next = [...items];
   next[index] = {
@@ -3544,6 +3606,7 @@ function buildKeepCurrentOverride(item) {
 }
 
 function suggestedDatePlaceholder(item) {
+  if (item.requiresExplicitDate) return '必须填写 YYYY-MM-DD';
   if (item.suggestedDate) return item.suggestedDate;
   const current = deriveCurrentLocalDateTime(item.currentCapturedAt, item.timezone);
   if (current?.date) {
@@ -3553,6 +3616,7 @@ function suggestedDatePlaceholder(item) {
 }
 
 function requiresExplicitDate(item) {
+  if (item.requiresExplicitDate) return true;
   if (!normalizeCaptureTime(item.correctedTime)) return false;
   return !item.correctedDate && !item.suggestedDate && !deriveCurrentLocalDateTime(item.currentCapturedAt, item.timezone);
 }

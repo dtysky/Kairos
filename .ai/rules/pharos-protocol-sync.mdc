@@ -1,5 +1,5 @@
 ---
-description: 任何 Pharos 相关实现前，都必须先校验兄弟仓库协议文档是否变更并完成同步判断
+description: 任何 Pharos 相关实现前，都必须先校验兄弟仓库协议文档；若不匹配，必须先完成协议同步并刷新基线
 alwaysApply: true
 ---
 
@@ -22,9 +22,14 @@ alwaysApply: true
 
 1. 先运行 `node scripts/pharos-protocol-hash.mjs`，读取当前 `../Pharos/designs` 的文件级 hash 与组合 hash。
 2. 将结果与 `.ai/pharos-protocol-baseline.json` 对比。
-3. 如果基线缺失或 hash 不一致，必须先重新阅读 `../Pharos/designs` 下相关协议文档，再进入计划或实现。
-4. 只有在 Kairos 侧规则、设计文档、skills 与实现已经同步后，才允许更新 `.ai/pharos-protocol-baseline.json`。
-5. 完成 Pharos 相关实现时，应在结果说明中明确本轮校验到的 `combinedSha256`，避免口径漂移。
+3. 如果基线缺失或 hash 不一致，当前任务必须先变成“Pharos 协议同步”：
+   - 重新阅读 `../Pharos/designs` 下当前协议文档，至少覆盖 `protocol.md` 与本轮差异相关文档。
+   - 先同步 Kairos 侧设计文档、rules 与相关 skills，明确协议变化如何影响当前流程。
+   - 再修改实现与测试，或在设计文档中明确记录“本轮协议差异不影响 Kairos 代码”。
+   - 完成同步后运行 `node scripts/pharos-protocol-hash.mjs --write-baseline` 刷新 `.ai/pharos-protocol-baseline.json`。
+   - 随后运行 `node scripts/pharos-protocol-hash.mjs --check`，确认 `baselineMatches: true` 后，才允许继续后续 Pharos 功能工作。
+4. 如果 hash 已匹配，可直接按当前 Kairos 设计与技能继续；同一工作树内不需要反复重读同一份协议。
+5. 完成 Pharos 相关实现时，应在结果说明中明确本轮校验到的 `combinedSha256` 与 baseline 是否已匹配，避免口径漂移。
 
 ## 禁止行为
 
@@ -32,3 +37,4 @@ alwaysApply: true
 - 不要把旧印象当成 `Pharos` 当前协议真值。
 - 不要只读 Kairos 自己的设计文档就开始实现 Pharos 集成。
 - 不要在 Kairos 侧尚未同步时就刷新基线文件，掩盖协议漂移。
+- 不要在 baseline 仍不匹配时继续普通 Pharos 功能实现；除非确实被外部阻塞，并在结果中说明阻塞原因。

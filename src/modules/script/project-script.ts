@@ -1454,19 +1454,13 @@ function resolvePharosShotSortKey(
   tripOrder: Map<string, number>,
 ): string {
   const tripIndex = String(tripOrder.get(shot.ref.tripId) ?? Number.MAX_SAFE_INTEGER).padStart(6, '0');
-  const timeReference = shot.isExtraShot
-    ? (
-      shot.actualTimeStart
-      ?? shot.actualTimeEnd
-      ?? shot.date
-    )
-    : (
-      shot.plannedTimeStart
-      ?? shot.timeWindowStart
-      ?? shot.plannedTimeEnd
-      ?? shot.timeWindowEnd
-      ?? shot.date
-    );
+  const timeReference = shot.actualTimeStart
+    ?? shot.actualTimeEnd
+    ?? shot.plannedTimeStart
+    ?? shot.timeWindowStart
+    ?? shot.plannedTimeEnd
+    ?? shot.timeWindowEnd
+    ?? shot.date;
   const timeKey = normalizeChronologyKey(
     timeReference,
   ) ?? '9999-12-31t23:59:59.999z';

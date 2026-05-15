@@ -71,6 +71,9 @@ analyzeWorkspaceProjectMedia(input: {
 
 Analyze 会从 `project-brief` 的主路径与备选路径中解析当前可读素材目录；
 不再读取 `device-media-maps.local.json`。
+Analyze 不会隐式补跑 `ingest`、`gps-refresh` 或 Pharos parse。如果用户刚在 `/ingest-gps` 修改过素材 Root、FlightRecord、manual-itinerary、root 时钟偏移、capture-time overrides 或项目内 `pharos/`，必须先回到 `/ingest-gps` 显式点击 `运行 Ingest`；如果只修改了 GPX、Pharos 或 manual-itinerary 空间线索，可先点击 `刷新 GPS 缓存`。
+
+`/analyze` 还提供 `刷新空间结果`，对应 Supervisor `spatial-refresh` job。它是 no-ML deterministic repair job：先刷新项目 GPX merged cache、`gps/derived.json` 和 `analysis/pharos-context.json`，再只修补已有 `analysis/asset-reports/*.json`、`media/chronology.json` 与 `store/spans.json` 中的 GPS / Pharos / reverse-geocode 空间字段。它不抽帧、不转写、不跑 VLM、不生成缺失 report，也不替代 Ingest 发现新的 `.SRT`、FlightRecord、素材 root 或 capture-time 修正。
 
 ## ML 前置条件
 
@@ -88,13 +91,16 @@ Analyze 会从 `project-brief` 的主路径与备选路径中解析当前可读�
 
 开始 Analyze 之前，至少要明确告诉用户：
 
-- 当前空间优先级是：`embedded GPS > project GPX > project-derived-track > none`
+- 当前空间优先级是：`embedded GPS > Pharos GPX > 普通 project GPX > project-derived-track > none`
 - `manual-itinerary` 不再作为 Analyze 阶段的独立顶层 fallback；它会在 ingest 时被编译进 `gps/derived.json`
+- `Pharos` 解析不在 Analyze 阶段临时补跑；它应由 Ingest / GPS 刷新写入最新 `analysis/pharos-context.json`
 - `manual-itinerary` 正文不直接修正拍摄时间，但它末尾的“素材时间校正”表格会在 ingest 时作为 `manual` capture time 真值被消费
 - 如果项目里没有 `gps/merged.json` / `gps/tracks/*.gpx`，也没有 `gps/derived.json`，那么**没有 embedded GPS 的素材将拿不到空间 fallback**
 - 如果用户刚修改过 `config/manual-itinerary.md` 但还没重新跑 ingest，必须明确提醒：当前 `gps/derived.json` 可能还是旧的
 - 如果用户手里有 sidecar `.SRT` 或 DJI FlightRecord 日志，必须提醒：这类数据走的是 `embedded GPS` 标准链路，不是普通项目 GPX
 - 如果 `config/manual-itinerary.md` 末尾存在未填写完的“素材时间校正”表格，或者用户刚填完还没 rerun ingest，Analyze 必须停下，先让用户刷新 ingest
+- 如果 root 级 `captureTimePolicy.mode=manual-required` 生成了“素材时间校正”项，必须确认这些条目已经显式填写 `正确日期 / 正确时间 / 时区` 并 rerun ingest，不能接受自动建议日期替代人工确认
+- 不要把 `导入 / GPS Review` 当成第二份 capture-time 输入；Analyze 只看 rerun ingest 后的 `manual` capture time / chronology 结果
 
 在提示规则后，还必须指导用户当前可选动作：
 
@@ -105,6 +111,8 @@ Analyze 会从 `project-brief` 的主路径与备选路径中解析当前可读�
   - 只有需要限制到特定素材源或路径前缀时，再补 `素材源:` / `路径:` 这类结构化字段
 - `.SRT` 如果和素材同 basename 放在素材旁，ingest 会自动发现，不需要单独导入
 - 如果选择填写或修改了 `manual-itinerary`，先重新跑一次 ingest，刷新 `gps/derived.json`
+- 如果只需要刷新已有 GPX / Pharos / manual-itinerary 空间缓存，可在 `/ingest-gps` 使用 `刷新 GPS 缓存`；如果已有 Analyze report 也需要同步新空间结果，再到 `/analyze` 点击 `刷新空间结果`
+- 需要应用素材时间修正或同源 GPS / FlightRecord 绑定时必须跑 `运行 Ingest`
 - 如果 ingest 已把待校正素材写进 `manual-itinerary` 末尾表格，必须先让用户填写 `正确日期 / 正确时间 / 时区`，再 rerun ingest
 - 或明确接受“部分素材没有空间结果”后继续
 
@@ -137,9 +145,10 @@ buildMediaChronology(...)
 Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
 
 1. `embedded GPS`
-2. `project GPX`
-3. `project-derived-track`
-4. 无空间结果
+2. `Pharos GPX`
+3. 普通 `project GPX`
+4. `project-derived-track`
+5. 无空间结果
 
 规则：
 
@@ -148,21 +157,24 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
 - 当前内嵌 GPS 解析已覆盖更宽的 QuickTime / EXIF 变体：`location`、`location-eng`、`com.apple.quicktime.location.iso6709`、`com.apple.quicktime.location_iso6709`、`GPSLatitude/GPSLongitude(+Ref)` 以及简单 rational / DMS 风格坐标
 - DJI FlightRecord 日志不是普通项目 GPX；它只有在 ingest 时被识别并成功切到某个素材的时间段后，才按 `embedded GPS` 进入主链
 - ingest 会把 dense sidecar / FlightRecord 轨迹规范化写到 `gps/same-source/tracks/*.gpx` + `gps/same-source/index.json`；Analyze 看到的仍然是资产上的轻量 `embeddedGps` 引用，不应把这套内部 cache 当成第二优先级 `project GPX`
-- 如果没有可用内嵌 GPS，Analyze 会先看显式传入的 `gpxPaths`
-- 如果调用方没有显式传入 `gpxPaths`，Analyze 默认读取项目内 `gps/merged.json`；若 merged cache 不存在，再回落到 `gps/tracks/*.gpx`
-- 如果没有 GPX 命中，Analyze 再读取项目内 `gps/derived.json`，把它作为第三优先级空间层
+- 如果没有可用内嵌 GPS，Analyze 会先看已匹配 planned shot 对应的 Pharos trip GPX timed spatial
+- Pharos GPX 只来自 `pharos/<trip_id>/gpx/*.gpx` 的按时取点；planned shot 本身的计划/实际 GPS 字段不作为正式坐标真值
+- 如果没有可用 Pharos GPX，Analyze 会再看显式传入的普通 `gpxPaths`
+- 如果调用方没有显式传入普通 `gpxPaths`，Analyze 默认读取项目内 `gps/merged.json`；若 merged cache 不存在，再回落到 `gps/tracks/*.gpx`
+- 如果没有 GPX 命中，Analyze 再读取项目内 `gps/derived.json`，把它作为第四优先级空间层
 - `project-derived-track` 当前 v1 只做保守匹配：
   - embedded-derived 条目只允许 sparse nearest-point 命中
   - manual-itinerary-derived 条目只允许 ingest 预编译好的 bounded window / anchor 命中
   - 不做跨 gap 插值
 - `manual-itinerary` 不再直接参与 Analyze 匹配；它只能先通过 ingest 编译进 `project-derived-track`
 - 如果 `manual-itinerary` 在上次 ingest 之后被修改，先 rerun ingest，再 analyze
-- 当存在内嵌 GPS 时，`project-derived-track` 和 GPX 都不能覆盖它
+- 当存在内嵌 GPS 时，`project-derived-track`、普通项目 GPX 和 Pharos GPX 都不能覆盖它；同名 `.SRT` / DJI FlightRecord 成功绑定后也属于这一层
 - 当前代码入口仍允许通过 `gpxPaths` 显式注入 1..N 个 GPX 文件路径，用于覆盖默认发现
 - 默认 GPX 命中策略是：从带 `time` 的 `trkpt / rtept / wpt` 中，按 `capturedAt` 选择容差内最近点
 - planned `Pharos shot` 的正式语义当前拆成两层：
-  - 素材归属只按 `plan` 的 planned time segment 匹配，不再让 `actualTime*`、`plan.gps` 或 `actual_gps` 参与 planned shot 正式匹配
+  - 素材归属优先按 `record.json.actual_time` 匹配；只有该 shot 缺少可用 actual time 时才回退到 `plan` 的 planned time segment；`plan.gps` 或 `actual_gps` 不参与时间归属
   - 空间位置只按 trip GPX 对素材/span 的时间做反算，不再把 shot 自带计划/实际 GPS 当作正式空间真值
+- Pharos 协议 hash 与 `.ai/pharos-protocol-baseline.json` 不匹配时，必须先完成协议同步并刷新 baseline；Analyze 不应基于旧协议假设继续解释 Pharos context
 - `manual-itinerary` 正文不直接参与拍摄时间修正；真正的时间修正入口是它末尾的“素材时间校正”表格，并且只有 rerun ingest 后才会生效
 - 空间推断结果应落在 coarse report，而不是回写素材真值层
 - `locationText` 当前正式只允许来自 reverse geocode：
@@ -171,6 +183,28 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
   - 若素材/span 命中了 planned `Pharos shot`，则 `drive` 使用首尾时刻各取一个 trip GPX 点做反查；非 `drive` 使用中间时刻的 trip GPX 点做反查
   - planned shot 命中但对应时刻没有有效 GPX 点时，保留 `pharos ref`，但不产出 `Pharos` 坐标；此时才允许继续回落到正式空间层选中的单点坐标
   - manual-itinerary route prose、trip/day title 与 route-stage 文本只能留在 `summary / decision reasons / routeRole`，不再冒充 `locationText`
+
+## 轻量空间刷新
+
+当用户已经跑过 Analyze，并且只是空间规则、Pharos context、GPX、derived-track 或 reverse-geocode 逻辑变化时，优先使用 `/analyze` 的 `刷新空间结果`，而不是重跑完整 Analyze。
+
+`spatial-refresh` 的正式刷新范围：
+
+- 已有 `analysis/asset-reports/*.json` 的 `gpsSummary / inferredGps / pharosMatches / primaryPharosRef / pharosMatchConfidence / pharosStatus / pharosDayTitle / locationText / placeHints`
+- `media/chronology.json` 的空间 evidence 与 Pharos 字段
+- `store/spans.json` 中已有 span 的 `grounding.spatialEvidence` 和 report-derived `pharosRefs`
+
+`spatial-refresh` 必须保留原 report / span 的 ML、ASR、视觉与切片语义字段，例如 `summary / labels / transcript / transcriptSegments / sampleFrames / interestingWindows / fine-scan` 相关字段、`materialPatterns` 和 narrative tags。
+
+不能使用 `spatial-refresh` 的场景：
+
+- 新增或修改同名 `.SRT`
+- 新增或修改 FlightRecord
+- 修改素材 root / path mapping
+- 修改 root clock offset、capture-time override 或 `captureTimePolicy`
+- 缺少正式 Analyze report 的素材
+
+这些情况必须先跑 Ingest，必要时再跑正式 Analyze 或 `spatial-refresh`。
 
 ## 默认分析策略
 
@@ -361,6 +395,7 @@ const localPath = resolveAssetLocalPath(asset, roots);
 - 只要开始执行一个可能持续较久的 Analyze，就应同步启动或刷新本地监控面板，而不是只在后台静默运行
 - 启动 Analyze 后，agent 应主动把监控面板 URL 告诉用户；如果分析已经开始但面板还没打开，应立即补开
 - 正式 Analyze 监控路由是 `http://127.0.0.1:8940/analyze`
+- `/analyze` 页面会同时显示活跃 `analyze` 与 `spatial-refresh` job；`spatial-refresh` 写同一个 `.tmp/media-analyze/progress.json`，但它是轻量空间刷新，不代表在重跑 VLM / ASR
 - `React console` 最终仍读取项目内 `.tmp/media-analyze/progress.json`，因此当前项目上下文必须正确，不能把面板混到别的项目进度目录
 - Console 刷新时，默认项目上下文应优先跟随最新的 active project-scoped job；只有当前没有活跃项目 job 时，才回退到本地记忆的上次选择
 - 如果多个项目 display name 相同，项目选择器必须直接显示 `projectId`，避免把 Analyze monitor 请求到同名旧项目
@@ -371,15 +406,15 @@ const localPath = resolveAssetLocalPath(asset, roots);
   - `粗扫队列`：素材级抽帧 worker、prepared checkpoint、活跃素材
   - `音频队列`：local health/routing、ASR queue、活跃素材
   - `细扫流水线`：`已预抽 / 已识别 / ready queue / active workers`
-- Analyze 正常结束、失败退出或用户中断后，必须把 Kairos 官方管理的 ML service 对账回 `stopped`；监控面板和其他本轮辅助进程也要同步收尾
+- Analyze 正常结束、失败退出或用户中断后，必须把 Kairos 官方管理的 ML service 对账回 `stopped`；`spatial-refresh` 不启动也不停止 ML；监控面板和其他本轮辅助进程也要同步收尾
 - 清理边界只包含 agent 本轮主动启动的进程；不要顺手杀掉用户原本就在跑的 ML 服务、别的项目面板或无关后台服务
 
 - 遇到“页面看起来还在跑，但 GPU / ML 没动静”时，必须先按这个顺序核查，而不是盲目重启或沿用旧结论：
-  - `Supervisor` 当前是否真的存在 `running analyze` job
+  - `Supervisor` 当前是否真的存在 `running analyze` 或 `running spatial-refresh` job
   - `progress.json` 的 `LastWriteTime / updatedAt` 是否持续推进
   - GPU / ML 活跃迹象是否与当前 phase 相符
-- 如果正式流程没起来，就要先查为什么没有 live analyze job；不要把 stale `progress.json` 当成“正式流程其实已经在跑”
-- 如果 `Supervisor` 已启动但没有 `running analyze` job，需要显式重新发起 analyze；不要假设 `Supervisor` 重启会帮你自动恢复
+- 如果正式流程没起来，就要先查为什么没有 live analyze / spatial-refresh job；不要把 stale `progress.json` 当成“正式流程其实已经在跑”
+- 如果 `Supervisor` 已启动但没有 `running analyze` 或 `running spatial-refresh` job，需要显式重新发起对应 job；不要假设 `Supervisor` 重启会帮你自动恢复
 
 - 默认进度文件建议写到：
 
@@ -429,7 +464,7 @@ scripts/kairos-supervisor.sh
   - `full/windowed` 两种 slice 产出
   - chronology 刷新
   - 视频内语音的 ASR -> speech windows -> transcript/slice 贯通
-  - `embedded GPS > project GPX > project-derived-track` 空间优先级
+  - `embedded GPS > Pharos GPX > 普通 project GPX > project-derived-track` 空间优先级
   - 更宽的 DJI / QuickTime / EXIF embedded GPS 解析
   - sidecar `.SRT` 与 root 级 DJI FlightRecord 日志的同源 GPS 绑定
   - 项目级 `gps/tracks/*.gpx` + `gps/merged.json` + `gps/derived.json` 默认发现

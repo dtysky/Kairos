@@ -1,25 +1,27 @@
 import { join } from 'node:path';
 import {
-  AgentRunnerUnavailableError,
-  analyzeWorkspaceProjectMedia,
-  buildProjectTimeline,
-  createProjectReverseGeocodeService,
-  importProjectGpxTracks,
-  ingestWorkspaceProjectMedia,
-  initWorkspaceProject,
-  loadRuntimeConfig,
-  loadSlices,
+	  AgentRunnerUnavailableError,
+	  analyzeWorkspaceProjectMedia,
+	  buildProjectTimeline,
+	  createProjectReverseGeocodeService,
+	  importProjectGpxTracks,
+	  ingestWorkspaceProjectMedia,
+	  initWorkspaceProject,
+	  loadProjectBriefConfig,
+	  loadRuntimeConfig,
+	  loadSlices,
   loadProjectEditRuleByCategory,
   assertConfirmedEditFlowPlan,
   generateEditFlowPlan,
   runEditPlanningDocumentCapability,
-  prepareWorkspaceStyleAnalysisForAgent,
-  ColorPrepBlockedError,
-  ProjectColorBlockedError,
-  prepareProjectColorRoot,
-  runProjectColorAction,
-  prepareProjectScriptForAgent,
-  refreshProjectDerivedTrackCache,
+	  prepareWorkspaceStyleAnalysisForAgent,
+	  ColorPrepBlockedError,
+	  ProjectColorBlockedError,
+	  prepareProjectColorRoot,
+	  refreshAnalyzeSpatialResults,
+	  runProjectColorAction,
+	  prepareProjectScriptForAgent,
+	  refreshProjectDerivedTrackCache,
   refreshProjectGpsCache,
   resolveWorkspaceProjectRoot,
 } from '../index.js';
@@ -38,6 +40,7 @@ import {
   type TSupervisorJobStatus,
 } from './state.js';
 import { ensureMlServiceRunning, stopMlService } from './runtime.js';
+import { loadOrBuildProjectPharosContext } from '../modules/pharos/context.js';
 
 class BlockedJobError extends Error {
   constructor(public blockers: string[]) {
@@ -72,8 +75,11 @@ async function main(): Promise<void> {
     updatedAt: startedAt,
   });
 
+  let shouldStopMlAfterRun = record.jobType !== 'spatial-refresh';
   try {
-    if (await shouldEnsureManagedMl(workspaceRoot, record.jobType, record.projectId)) {
+    const shouldManageMl = await shouldEnsureManagedMl(workspaceRoot, record.jobType, record.projectId);
+    if (shouldManageMl) {
+      shouldStopMlAfterRun = true;
       await ensureMlServiceRunning(workspaceRoot);
     }
 
@@ -113,7 +119,9 @@ async function main(): Promise<void> {
     });
     throw error;
   } finally {
-    await stopMlService(workspaceRoot).catch(() => undefined);
+    if (shouldStopMlAfterRun) {
+      await stopMlService(workspaceRoot).catch(() => undefined);
+    }
   }
 }
 
@@ -174,18 +182,29 @@ async function runJob(
         projectRoot,
         reverseGeocodeService,
       });
+      const projectBrief = await loadProjectBriefConfig(projectRoot);
+      const pharos = await loadOrBuildProjectPharosContext({
+        projectRoot,
+        includedTripIds: projectBrief.pharos?.includedTripIds ?? [],
+      });
+      if (pharos.status === 'failure') {
+        throw new BlockedJobError(pharos.errors.length > 0
+          ? pharos.errors
+          : ['Pharos context 解析失败']);
+      }
       return {
         result: {
           imported,
           merged,
           derived,
+          pharos,
         },
       };
     }
-    case 'analyze': {
-      if (!projectId) {
-        throw new BlockedJobError(['analyze requires projectId']);
-      }
+	    case 'analyze': {
+	      if (!projectId) {
+	        throw new BlockedJobError(['analyze requires projectId']);
+	      }
       const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
       const runtimeConfig = await loadRuntimeConfig(projectRoot);
       const reverseGeocodeService = await createProjectReverseGeocodeService({
@@ -198,9 +217,27 @@ async function runJob(
           projectId,
           assetIds: toStringArray(args.assetIds),
           reverseGeocodeService,
-        }),
-      };
-    }
+	        }),
+	      };
+	    }
+	    case 'spatial-refresh': {
+	      if (!projectId) {
+	        throw new BlockedJobError(['spatial-refresh requires projectId']);
+	      }
+	      const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
+	      const runtimeConfig = await loadRuntimeConfig(projectRoot);
+	      const reverseGeocodeService = await createProjectReverseGeocodeService({
+	        projectRoot,
+	        runtimeConfig,
+	      });
+	      return {
+	        result: await refreshAnalyzeSpatialResults({
+	          workspaceRoot,
+	          projectId,
+	          reverseGeocodeService,
+	        }),
+	      };
+	    }
     case 'script': {
       if (!projectId) {
         throw new BlockedJobError(['script requires projectId']);

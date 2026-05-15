@@ -114,6 +114,7 @@ import {
   createEmptySliceSemantics,
   decorateSliceWithSemanticTags,
 } from './semantic-slice.js';
+import { resolveAnalyzePrimarySpatial } from './spatial-priority.js';
 
 export interface IAnalyzeWorkspaceProjectInput {
   workspaceRoot: string;
@@ -236,7 +237,6 @@ export async function analyzeWorkspaceProjectMedia(
   const gpxPaths = await resolveProjectGpxPaths({
     projectRoot,
     gpxPaths: input.gpxPaths,
-    pharosGpxPaths: pharosContext.gpxFiles.map(file => file.path),
   });
 
   const requestedScope = input.assetIds?.length
@@ -1760,9 +1760,12 @@ async function finalizePreparedAsset(
     pharosSpatial,
     reverseGeocodeService: input.reverseGeocodeService,
   });
+  const primarySpatial = resolveAnalyzePrimarySpatial({
+    manualSpatial,
+    pharosSpatial,
+  });
   const inferredGps = applyAnalyzeLocationText(
-    pharosSpatial?.inferredGps
-      ?? manualSpatial?.inferredGps,
+    primarySpatial.inferredGps,
     locationResolution.locationText,
   );
   const placeHints = dedupeStrings([
@@ -1777,7 +1780,7 @@ async function finalizePreparedAsset(
     keepDecision: planning.decision.keepDecision,
     materializationPath: planning.decision.materializationPath,
     fineScanMode: planning.decision.fineScanMode,
-    gpsSummary: pharosSpatial?.gpsSummary ?? manualSpatial?.gpsSummary,
+    gpsSummary: primarySpatial.gpsSummary,
     inferredGps,
     summary: planning.visualSummary?.description,
     transcript: audioContext.selectedTranscript?.transcript,
@@ -3333,9 +3336,12 @@ async function finalizePhotoPreparedAsset(
     pharosSpatial,
     reverseGeocodeService: input.reverseGeocodeService,
   });
+  const primarySpatial = resolveAnalyzePrimarySpatial({
+    manualSpatial,
+    pharosSpatial,
+  });
   const inferredGps = applyAnalyzeLocationText(
-    pharosSpatial?.inferredGps
-      ?? manualSpatial?.inferredGps,
+    primarySpatial.inferredGps,
     locationResolution.locationText,
   );
   const placeHints = dedupeStrings([
@@ -3349,7 +3355,7 @@ async function finalizePhotoPreparedAsset(
     clipTypeGuess,
     keepDecision: 'keep',
     materializationPath: 'direct',
-    gpsSummary: pharosSpatial?.gpsSummary ?? manualSpatial?.gpsSummary,
+    gpsSummary: primarySpatial.gpsSummary,
     inferredGps,
     summary: visualSummary?.description,
     pharosMatches,

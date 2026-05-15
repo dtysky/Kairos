@@ -12,6 +12,7 @@ type TManualCaptureRow = Pick<
   | 'currentSource'
   | 'suggestedDate'
   | 'suggestedTime'
+  | 'requiresExplicitDate'
   | 'correctedDate'
   | 'correctedTime'
   | 'timezone'
@@ -55,7 +56,7 @@ export function normalizeManualCaptureTimezone(value?: string): string | undefin
 }
 
 export function inferManualCaptureDate(
-  row: Pick<TManualCaptureRow, 'correctedDate' | 'suggestedDate' | 'currentCapturedAt' | 'timezone'>,
+  row: Pick<TManualCaptureRow, 'correctedDate' | 'suggestedDate' | 'currentCapturedAt' | 'timezone' | 'requiresExplicitDate'>,
 ): {
   date: string;
   source: IResolvedManualCaptureTimeRow['correctedDateSource'];
@@ -66,6 +67,10 @@ export function inferManualCaptureDate(
       date: manualDate,
       source: 'manual',
     };
+  }
+
+  if (row.requiresExplicitDate) {
+    return null;
   }
 
   const suggestedDate = normalizeManualCaptureDate(row.suggestedDate);
@@ -123,6 +128,7 @@ export function materializeManualCaptureTimeRow(
     currentSource: row.currentSource?.trim() || undefined,
     suggestedDate: normalizeManualCaptureDate(row.suggestedDate),
     suggestedTime: normalizeManualCaptureTime(row.suggestedTime),
+    requiresExplicitDate: row.requiresExplicitDate || undefined,
     correctedDate: resolved?.correctedDate ?? normalizeManualCaptureDate(row.correctedDate),
     correctedTime: normalizeManualCaptureTime(row.correctedTime),
     timezone: normalizeManualCaptureTimezone(row.timezone),
@@ -135,8 +141,9 @@ export function isManualCaptureTimeResolved(row: TManualCaptureRow): boolean {
 }
 
 export function manualCaptureTimeRequiresExplicitDate(
-  row: Pick<TManualCaptureRow, 'correctedDate' | 'suggestedDate' | 'currentCapturedAt' | 'correctedTime' | 'timezone'>,
+  row: Pick<TManualCaptureRow, 'correctedDate' | 'suggestedDate' | 'currentCapturedAt' | 'correctedTime' | 'timezone' | 'requiresExplicitDate'>,
 ): boolean {
+  if (row.requiresExplicitDate && !normalizeManualCaptureDate(row.correctedDate)) return true;
   if (!normalizeManualCaptureTime(row.correctedTime)) return false;
   return inferManualCaptureDate(row) == null;
 }

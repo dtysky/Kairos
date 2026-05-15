@@ -76,10 +76,7 @@ function scoreShotMatch(
 }
 
 function isShotMatchable(shot: IProjectPharosShot): boolean {
-  if (shot.isExtraShot) {
-    return Boolean(shot.actualTimeStart || shot.actualTimeEnd);
-  }
-  return Boolean(shot.plannedTimeStart || shot.plannedTimeEnd || shot.timeWindowStart || shot.timeWindowEnd);
+  return resolveShotMatchWindow(shot) != null;
 }
 
 function scoreTimeMatch(
@@ -91,23 +88,18 @@ function scoreTimeMatch(
   const capturedMs = Date.parse(capturedAt);
   if (!Number.isFinite(capturedMs)) return 0;
 
-  const [startValue, endValue] = shot.isExtraShot
-    ? [shot.actualTimeStart, shot.actualTimeEnd]
-    : [
-      shot.plannedTimeStart ?? shot.timeWindowStart,
-      shot.plannedTimeEnd ?? shot.timeWindowEnd,
-    ];
-  const startMs = parseTime(startValue);
-  const endMs = parseTime(endValue);
+  const window = resolveShotMatchWindow(shot);
+  if (!window) return 0;
+  const { startMs, endMs, reasonPrefix } = window;
 
   if (startMs != null && endMs != null) {
     if (capturedMs >= startMs - CTIME_WITHIN_TOLERANCE_MS && capturedMs <= endMs + CTIME_WITHIN_TOLERANCE_MS) {
-      reasons.push(shot.isExtraShot ? 'actual-time:within-window' : 'planned-time:within-window');
+      reasons.push(`${reasonPrefix}:within-window`);
       return shot.type === 'continuous' ? 6.5 : 7;
     }
     const delta = Math.min(Math.abs(capturedMs - startMs), Math.abs(capturedMs - endMs));
     if (delta <= CTIME_NEAR_TOLERANCE_MS) {
-      reasons.push(`${shot.isExtraShot ? 'actual-time' : 'planned-time'}:near-window-${Math.round(delta / 60_000)}m`);
+      reasons.push(`${reasonPrefix}:near-window-${Math.round(delta / 60_000)}m`);
       return Math.max(1, 4 - delta / CTIME_NEAR_TOLERANCE_MS * 2.5);
     }
     return 0;
@@ -117,14 +109,44 @@ function scoreTimeMatch(
   if (pointMs == null) return 0;
   const delta = Math.abs(capturedMs - pointMs);
   if (delta <= CTIME_WITHIN_TOLERANCE_MS) {
-    reasons.push(`${shot.isExtraShot ? 'actual-time' : 'planned-time'}:near-point-${Math.round(delta / 60_000)}m`);
+    reasons.push(`${reasonPrefix}:near-point-${Math.round(delta / 60_000)}m`);
     return 5;
   }
   if (delta <= CTIME_NEAR_TOLERANCE_MS) {
-    reasons.push(`${shot.isExtraShot ? 'actual-time' : 'planned-time'}:soft-point-${Math.round(delta / 60_000)}m`);
+    reasons.push(`${reasonPrefix}:soft-point-${Math.round(delta / 60_000)}m`);
     return 2;
   }
   return 0;
+}
+
+interface IShotMatchWindow {
+  startMs: number | null;
+  endMs: number | null;
+  reasonPrefix: 'actual-time' | 'planned-time';
+}
+
+function resolveShotMatchWindow(shot: IProjectPharosShot): IShotMatchWindow | null {
+  const actualStartMs = parseTime(shot.actualTimeStart);
+  const actualEndMs = parseTime(shot.actualTimeEnd);
+  if (actualStartMs != null || actualEndMs != null) {
+    return {
+      startMs: actualStartMs,
+      endMs: actualEndMs,
+      reasonPrefix: 'actual-time',
+    };
+  }
+
+  const plannedStartMs = parseTime(shot.plannedTimeStart ?? shot.timeWindowStart);
+  const plannedEndMs = parseTime(shot.plannedTimeEnd ?? shot.timeWindowEnd);
+  if (plannedStartMs != null || plannedEndMs != null) {
+    return {
+      startMs: plannedStartMs,
+      endMs: plannedEndMs,
+      reasonPrefix: 'planned-time',
+    };
+  }
+
+  return null;
 }
 
 function scoreDeviceMatch(

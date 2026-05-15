@@ -99,6 +99,11 @@ export {
   type IAnalyzeWorkspaceProjectResult,
 } from './project-analyze.js';
 export {
+  refreshAnalyzeSpatialResults,
+  type IRefreshAnalyzeSpatialResultsInput,
+  type IRefreshAnalyzeSpatialResultsResult,
+} from './spatial-refresh.js';
+export {
   inferManualItineraryGps,
   type IManualSpatialContext,
   type IInferManualItineraryGpsInput,

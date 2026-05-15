@@ -1,5 +1,6 @@
-import { access, readdir, readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { createHash } from 'node:crypto';
+import { access, readdir, readFile, stat } from 'node:fs/promises';
+import { join, relative } from 'node:path';
 import type {
   IPharosMatch,
   IPharosRef,
@@ -37,6 +38,7 @@ export interface IProjectPharosAssetStatus {
 export async function loadOrBuildProjectPharosContext(
   input: ILoadOrBuildProjectPharosContextInput,
 ): Promise<IProjectPharosContext> {
+  const sourceFingerprint = await computeProjectPharosSourceFingerprint(input);
   if (!input.forceRefresh) {
     const existing = await loadProjectPharosContext(input.projectRoot);
     const existingIncluded = normalizeTripIds(existing?.includedTripIds ?? []);
@@ -45,6 +47,7 @@ export async function loadOrBuildProjectPharosContext(
       existing
       && existing.schemaVersion === '1.0'
       && JSON.stringify(existingIncluded) === JSON.stringify(requestedIncluded)
+      && existing.sourceFingerprint === sourceFingerprint
     ) {
       return existing;
     }
@@ -59,6 +62,7 @@ export async function buildProjectPharosContext(
   input: ILoadOrBuildProjectPharosContextInput,
 ): Promise<IProjectPharosContext> {
   const rootPath = await ensureProjectPharosRoot(input.projectRoot);
+  const sourceFingerprint = await computeProjectPharosSourceFingerprint(input);
   const includedTripIds = normalizeTripIds(input.includedTripIds ?? []);
   const warnings: string[] = [];
   const errors: string[] = [];
@@ -83,6 +87,7 @@ export async function buildProjectPharosContext(
       includedTripIds,
       warnings,
       errors: includedTripIds.length > 0 ? [`未找到项目要求的 Pharos Trip：${includedTripIds.join('、')}`] : [],
+      sourceFingerprint,
       trips: [],
       shots: [],
       gpxFiles: [],
@@ -126,10 +131,63 @@ export async function buildProjectPharosContext(
     includedTripIds,
     warnings: dedupeStrings(warnings),
     errors: dedupeStrings(errors),
+    sourceFingerprint,
     trips,
     shots,
     gpxFiles,
   };
+}
+
+export async function computeProjectPharosSourceFingerprint(
+  input: Pick<ILoadOrBuildProjectPharosContextInput, 'projectRoot' | 'includedTripIds'>,
+): Promise<string> {
+  const rootPath = await ensureProjectPharosRoot(input.projectRoot);
+  const includedTripIds = normalizeTripIds(input.includedTripIds ?? []);
+  const dirEntries = await readdir(rootPath, { withFileTypes: true }).catch(() => []);
+  const discoveredTripIds = dirEntries
+    .filter(entry => entry.isDirectory())
+    .map(entry => entry.name)
+    .sort((left, right) => left.localeCompare(right));
+  const effectiveTripIds = includedTripIds.length > 0 ? includedTripIds : discoveredTripIds;
+  const entries: Array<Record<string, unknown>> = [
+    { kind: 'includedTripIds', value: includedTripIds },
+    { kind: 'discoveredTripIds', value: discoveredTripIds },
+  ];
+
+  for (const tripId of effectiveTripIds) {
+    const tripRoot = join(rootPath, tripId);
+    entries.push({ kind: 'trip', tripId, exists: discoveredTripIds.includes(tripId) });
+    for (const filename of ['plan.json', 'record.json']) {
+      await appendFingerprintFile(entries, rootPath, join(tripRoot, filename));
+    }
+
+    const gpxRoot = join(tripRoot, 'gpx');
+    const gpxEntries = await readdir(gpxRoot, { withFileTypes: true }).catch(() => []);
+    for (const entry of gpxEntries
+      .filter(item => item.isFile() && item.name.toLowerCase().endsWith('.gpx'))
+      .sort((left, right) => left.name.localeCompare(right.name))) {
+      await appendFingerprintFile(entries, rootPath, join(gpxRoot, entry.name));
+    }
+  }
+
+  return createHash('sha256')
+    .update(JSON.stringify(entries))
+    .digest('hex');
+}
+
+async function appendFingerprintFile(
+  entries: Array<Record<string, unknown>>,
+  rootPath: string,
+  filePath: string,
+): Promise<void> {
+  const fileStat = await stat(filePath).catch(() => null);
+  entries.push({
+    kind: 'file',
+    path: relative(rootPath, filePath).replace(/\\/gu, '/'),
+    exists: Boolean(fileStat?.isFile()),
+    size: fileStat?.isFile() ? fileStat.size : undefined,
+    mtimeMs: fileStat?.isFile() ? Math.trunc(fileStat.mtimeMs) : undefined,
+  });
 }
 
 export function buildProjectPharosAssetStatus(
@@ -252,6 +310,7 @@ async function parseTripDirectory(
         date: typeof day.date === 'string' ? day.date : undefined,
         timeZone: typeof plan.timezone === 'string' ? plan.timezone : undefined,
       });
+      const actualWindow = resolveRecordActualWindow(recordEntry);
       if (shot.priority === 'must') mustCount += 1;
       if (shot.priority === 'optional') optionalCount += 1;
       if (status === 'pending') pendingCount += 1;
@@ -292,8 +351,8 @@ async function parseTripDirectory(
         plannedTimeEnd: plannedWindow.end,
         timeWindowStart: plannedWindow.start,
         timeWindowEnd: plannedWindow.end,
-        actualTimeStart: readNestedString(recordEntry, 'actual_time', 'start'),
-        actualTimeEnd: readNestedString(recordEntry, 'actual_time', 'end'),
+        actualTimeStart: actualWindow.start,
+        actualTimeEnd: actualWindow.end,
         actualGpsStart: readNestedCoordinate(recordEntry, 'actual_gps', 'start'),
         actualGpsEnd: readNestedCoordinate(recordEntry, 'actual_gps', 'end'),
         status,
@@ -306,8 +365,8 @@ async function parseTripDirectory(
           : undefined,
       });
 
-      if (!plannedWindow.start && !plannedWindow.end) {
-        warnings.push(`Pharos Trip ${tripId} planned shot ${shotId} 缺少可归一化的 planned time，已跳过正式匹配`);
+      if (!plannedWindow.start && !plannedWindow.end && !actualWindow.start && !actualWindow.end) {
+        warnings.push(`Pharos Trip ${tripId} planned shot ${shotId} 缺少可归一化的 planned/record time，已跳过正式匹配`);
       }
     }
   }
@@ -334,8 +393,8 @@ async function parseTripDirectory(
       gps: normalizeCoordinate(shot.gps),
       plannedTimeStart: undefined,
       plannedTimeEnd: undefined,
-      actualTimeStart: readNestedString(shot, 'time', 'start'),
-      actualTimeEnd: readNestedString(shot, 'time', 'end'),
+      actualTimeStart: normalizeRecordTimeValue(readNestedString(shot, 'time', 'start')),
+      actualTimeEnd: normalizeRecordTimeValue(readNestedString(shot, 'time', 'end')),
       actualGpsStart: normalizeCoordinate(shot.gps),
       actualGpsEnd: normalizeCoordinate(shot.gps),
       status: 'unexpected',
@@ -476,6 +535,15 @@ function resolvePlannedShotWindow(input: {
   };
 }
 
+function resolveRecordActualWindow(
+  recordEntry: Record<string, unknown> | undefined,
+): { start?: string; end?: string } {
+  return {
+    start: normalizeRecordTimeValue(readNestedString(recordEntry, 'actual_time', 'start')),
+    end: normalizeRecordTimeValue(readNestedString(recordEntry, 'actual_time', 'end')),
+  };
+}
+
 function readTimeRangeObject(
   value: unknown,
 ): { start?: unknown; end?: unknown } | null {
@@ -499,6 +567,12 @@ function normalizeTripTimeValue(
     return new Date(timestamp).toISOString();
   }
   return buildTripWindowIso(date, trimmed, timeZone);
+}
+
+function normalizeRecordTimeValue(value: string | undefined): string | undefined {
+  if (!value?.trim()) return undefined;
+  const timestamp = Date.parse(value.trim());
+  return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : undefined;
 }
 
 function readNestedString(

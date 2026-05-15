@@ -53,7 +53,14 @@
       "priority": 3,
       "notes": [
         "延时摄影"
-      ]
+      ],
+      "captureTimePolicy": {
+        "mode": "manual-required",
+        "requiredKinds": [
+          "video"
+        ],
+        "reason": "延时视频导出时间不可信，必须人工确认拍摄日期和时间"
+      }
     },
     {
       "rootId": "root-draft-1778319790368-3hrfrl",

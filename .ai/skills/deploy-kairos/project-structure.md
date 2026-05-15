@@ -60,22 +60,22 @@ Kairos/
 │       ├── whisper_runner.py # ASR (MLX: whisper-large-v3-turbo / Torch: whisper-small)
 │       ├── ocr_runner.py     # OCR via PaddleOCR/EasyOCR
 │       ├── clip_runner.py    # Image embeddings (MLX: mlx_clip / Torch: open-clip)
-│       └── vlm_runner.py     # VLM (MLX: Qwen3-VL-4B-8bit / Torch: Qwen3.5-9B)
+│       └── vlm_runner.py     # VLM (MLX: Qwen3.5-9B-MLX-8bit / Torch: Qwen3.5-9B)
 │
 ├── scripts/
 │   ├── kairos-supervisor.sh  # macOS/Linux: start/stop/status Supervisor + React console
 │   ├── kairos-supervisor.ps1 # Windows PowerShell: start/stop/status Supervisor + React console
 │   ├── ml-server.sh          # macOS/Linux: start/stop/status ML server
 │   ├── ml-server.ps1         # Windows PowerShell: start/stop/status ML server
-│   ├── ml-models-init.sh     # macOS: pre-download all MLX models from HF Hub
+│   ├── ml-models-init.sh     # macOS: pre-download all MLX models
 │
 ├── apps/
 │   └── kairos-console/       # Official React console served by Supervisor (`/analyze`, `/style`, ...)
 │
-├── models/                   # ML model weights (gitignored, ~7 GB total)
+├── models/                   # ML model weights (gitignored)
 │   ├── whisper-large-v3-turbo/     # mlx-whisper ASR model
 │   ├── clip-vit-base-patch32/      # mlx_clip embedding model
-│   ├── Qwen3-VL-4B-Instruct-8bit/ # mlx-vlm model (Apple Silicon)
+│   ├── Qwen3.5-9B-MLX-8bit/       # mlx-vlm model (Apple Silicon)
 │   └── Qwen3_5-9B/                # transformers VLM model (CUDA / CPU)
 │
 ├── vendor/

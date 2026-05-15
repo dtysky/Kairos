@@ -31,9 +31,9 @@ Kairos 将旅拍素材转化为可编辑时间线。流程分为 1 个准备阶�
 
 1. 运行 `node scripts/pharos-protocol-hash.mjs`
 2. 将结果与 `.ai/pharos-protocol-baseline.json` 对比
-3. 如果 hash 不一致，先重读 `../Pharos/designs/` 下相关协议文档，再给计划或实现
+3. 如果 hash 不一致，先把本轮任务切到 Pharos 协议同步：重读当前 `../Pharos/designs`、同步 Kairos 设计文档 / rules / skills / 代码影响、运行 `node scripts/pharos-protocol-hash.mjs --write-baseline`，再用 `--check` 确认 baseline 已匹配
 
-不要只根据 Kairos 仓库里的旧设计印象实现 `Pharos` 集成。
+不要只根据 Kairos 仓库里的旧设计印象实现 `Pharos` 集成；baseline 仍不匹配时，不要继续普通 Pharos 功能工作。
 
 ## 正式控制面
 
@@ -272,8 +272,12 @@ project/
 
 补充口径：
 - dense sidecar `.SRT` / DJI FlightRecord 轨迹会规范化写到 `gps/same-source/tracks/*.gpx` + `gps/same-source/index.json`
-- 这套内部 GPX 只用于 same-source 索引 / 惰性查找，不改变 `embedded GPS > project GPX > project-derived-track` 的正式优先级
+- 这套内部 GPX 只用于 same-source 索引 / 惰性查找，不改变 `embedded GPS > Pharos GPX > 普通 project GPX > project-derived-track` 的正式优先级；Pharos GPX 不能覆盖同名 `.SRT` / FlightRecord 绑定出的 embedded GPS
 - 照片拍摄时间默认优先吃 EXIF 原始时间和时区；如果照片自身带 GPS，也应直接作为 `embedded GPS` 真值
+- Ingest / GPS 刷新负责解析项目内固定 `pharos/` 并刷新 `analysis/pharos-context.json`；Analyze 只消费该 cache，不临时补跑 Pharos parse
+- Pharos planned shot 归属优先使用 `record.json.actual_time`；只有缺少可用 actual time 时才回退到 `plan` 的 planned time segment，空间仍只从 trip GPX 按时间反算
+- 对本次成功扫描到的 root，Ingest 会剪掉该 root 下磁盘已不存在的旧资产；missing root 的旧资产保持不动
+- root 可声明 `captureTimePolicy.mode=manual-required`；命中素材必须由用户显式补 `正确日期 / 正确时间 / 时区` 后 rerun ingest
 - 如果 ingest 发现素材时间和项目时间线明显冲突，必须把待校正项追加到 `config/manual-itinerary.md` 末尾的“素材时间校正”表格，并阻塞后续阶段
 
 ### Phase 2: Analyze (素材分析)
@@ -291,17 +295,24 @@ project/
 **强规则**：
 - Workflow 在进入 Analyze 前，必须先执行一次 GPS 规则提示，不能直接开跑
 - Workflow 在真正启动 Analyze 前，还必须确认 ML server 可用；如果 health check 不通，应该直接停在这里并提示用户修复，而不是静默退化成无 ML 分析
-- 至少要向用户说明：`embedded GPS > project GPX > project-derived-track > none`
+- 至少要向用户说明：`embedded GPS > Pharos GPX > 普通 project GPX > project-derived-track > none`
 - 必须结合当前项目状态指出：是否已有项目级 GPX、是否已有 `gps/derived.json`、是否已有 `config/manual-itinerary.md`
+- 必须结合当前项目状态指出：是否已有已刷新 `analysis/pharos-context.json`，以及其中 Pharos 状态是否为 `success / empty / failure`
 - 如果缺少 GPX 且缺少 `gps/derived.json`，必须明确提示：没有 embedded GPS 的素材将没有空间 fallback
 - 如果用户刚修改了 `manual-itinerary` 但还没重新跑 ingest，必须明确提示：需要先刷新 `gps/derived.json`
 - 如果 `manual-itinerary` 末尾“素材时间校正”表格还有未填写或未重新 ingest 应用的条目，Workflow 必须停在 Analyze 之前
+- 对拍摄时间修正，Workflow 只能引导用户维护 `/ingest-gps` 的“素材时间校正”；`导入 / GPS Review` 不应再要求用户重复填写同一素材
 - 如果用户手里拿的是 sidecar `.SRT` 或 DJI FlightRecord 日志，必须明确提示：这类输入属于 `embedded GPS` 标准链路，不是普通 GPX
 - 必须指导用户选择：补 GPX、给对应 root 配置 `飞行记录路径`、填写/更新 `manual-itinerary` 后 rerun ingest，或明确接受“部分素材没有空间结果”后继续
   - 当用户选择填写 `manual-itinerary` 时，默认应推荐一句自然语言一段，而不是要求先写成 key-value 表单
   - 推荐示例：`2026.02.17，早上九点左右，开车从新西兰皇后镇出发`
 - 如果是时间线冲突导致的阻塞，必须明确指导用户去填 `manual-itinerary` 末尾表格里的 `正确日期 / 正确时间 / 时区`，然后 rerun ingest
+- 如果是 root 级 `manual-required` 时间策略导致的阻塞，必须明确说明这不是弱时间猜测，而是该 root 被标记为必须人工确认；用户必须显式填写完整日期、时间和时区
 - 只有在用户明确确认继续后，才可以调用 Analyze
+
+轻量空间刷新：
+- 如果已有 `analysis/asset-reports/*.json`、`store/spans.json` 和 `media/chronology.json`，且用户只是改变了 GPS / Pharos context / 空间优先级 / reverse-geocode 逻辑，应优先在 `/analyze` 点击 `刷新空间结果`
+- `spatial-refresh` 只修补已有 Analyze 产物中的空间层，不启动 ML，不生成缺失 report，不替代 Ingest 扫描新 `.SRT`、FlightRecord、root 或 capture-time 修正
 
 当前分析链路除了视觉粗扫/细扫，还会在符合条件的视频上补充 ASR：
 - 结构上更准确的理解是：
@@ -417,9 +428,15 @@ if (!assets || assets.length === 0) {
 已有项目 → 追加 Ingest → 增量 Analyze → 重写 Script → 重建 Timeline → 重新 Export
 ```
 
+如果只是空间规则、GPX、Pharos context 或 reverse-geocode 逻辑变化，且已有 Analyze 产物完整，则可走更轻的：
+
+```
+已有项目 → /analyze 刷新空间结果 → 视需要重写 Script / Timeline
+```
+
 ### 追加流程
 
-1. **追加导入**：`kairos-ingest` 的增量模式，按 `sourcePath` 自动去重
+1. **追加导入**：`kairos-ingest` 的增量模式，按 `ingestRootId + sourcePath` 自动去重；对本次成功扫描到的 root，也会剪掉该 root 下已经不在磁盘扫描结果中的旧资产
 
 ```typescript
 const result = await appendAssets(projectRoot, newAssets);

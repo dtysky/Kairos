@@ -75,6 +75,11 @@ const ILegacyProjectBriefMappingConfig = z.object({
   category: z.string().optional(),
   notes: z.array(z.string()).optional(),
   tags: z.array(z.string()).optional(),
+  captureTimePolicy: z.object({
+    mode: z.enum(['auto', 'manual-required']).optional(),
+    requiredKinds: z.array(z.enum(['video', 'photo'])).optional(),
+    reason: z.string().optional(),
+  }).optional(),
   color: z.object({
     renderPreset: z.object({
       container: z.string().optional(),
@@ -930,6 +935,7 @@ function parseManualCaptureRow(line: string): TManualCaptureTimeOverrideConfig |
     .map(value => value.trim().replace(/\\\|/gu, '|'));
   if (cells.length < 11) return null;
   if (!cells[2]) return null;
+  const hasExplicitDateColumn = cells.length >= 12;
 
   return IManualCaptureTimeOverrideConfig.parse({
     rootRef: emptyToUndefined(cells[1]),
@@ -938,10 +944,13 @@ function parseManualCaptureRow(line: string): TManualCaptureTimeOverrideConfig |
     currentSource: emptyToUndefined(cells[4]),
     suggestedDate: emptyToUndefined(cells[5]),
     suggestedTime: emptyToUndefined(cells[6]),
-    correctedDate: emptyToUndefined(cells[7]),
-    correctedTime: emptyToUndefined(cells[8]),
-    timezone: emptyToUndefined(cells[9]),
-    note: emptyToUndefined(cells[10]),
+    requiresExplicitDate: hasExplicitDateColumn
+      ? parseBooleanCell(cells[7])
+      : undefined,
+    correctedDate: emptyToUndefined(cells[hasExplicitDateColumn ? 8 : 7]),
+    correctedTime: emptyToUndefined(cells[hasExplicitDateColumn ? 9 : 8]),
+    timezone: emptyToUndefined(cells[hasExplicitDateColumn ? 10 : 9]),
+    note: emptyToUndefined(cells[hasExplicitDateColumn ? 11 : 10]),
   });
 }
 
@@ -1001,6 +1010,7 @@ function renderManualCaptureSection(rows: TManualCaptureTimeOverrideConfig[]): s
     '当前来源',
     '建议日期',
     '建议时间',
+    '必须填日期',
     '正确日期',
     '正确时间',
     '时区',
@@ -1009,7 +1019,7 @@ function renderManualCaptureSection(rows: TManualCaptureTimeOverrideConfig[]): s
   return [
     CMANUAL_CAPTURE_TIME_HEADING,
     '',
-    '以下素材的拍摄时间和项目时间线明显不一致。请优先填写“正确时间 / 时区”；如可推导，系统会自动补齐正确日期。未解决的行会阻塞后续 Analyze。',
+    '以下素材的拍摄时间和项目时间线明显不一致。普通行请优先填写“正确时间 / 时区”；如可推导，系统会自动补齐正确日期。标记“必须填日期”的行需要显式填写正确日期。未解决的行会阻塞后续 Analyze。',
     '',
     `| ${header.join(' | ')} |`,
     `| ${header.map(() => '---').join(' | ')} |`,
@@ -1023,6 +1033,7 @@ function renderManualCaptureSection(rows: TManualCaptureTimeOverrideConfig[]): s
         row.currentSource ?? '',
         row.suggestedDate ?? '',
         row.suggestedTime ?? '',
+        row.requiresExplicitDate ? '是' : '',
         row.correctedDate ?? '',
         row.correctedTime ?? '',
         row.timezone ?? '',
@@ -1122,6 +1133,14 @@ async function readRawScriptBriefConfig(
 function emptyToUndefined(value?: string | null): string | undefined {
   const trimmed = value?.trim();
   return trimmed ? trimmed : undefined;
+}
+
+function parseBooleanCell(value?: string | null): boolean | undefined {
+  const normalized = value?.trim().toLowerCase();
+  if (!normalized) return undefined;
+  return ['1', 'true', 'yes', 'y', '是', '必填', 'required'].includes(normalized)
+    ? true
+    : undefined;
 }
 
 function stringValue(value: unknown): string | undefined {

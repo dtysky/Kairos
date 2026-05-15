@@ -283,6 +283,7 @@ export async function runEditPlanningDocumentCapability(input: {
     await loadOrBuildProjectPharosContext({
       projectRoot: input.projectRoot,
       includedTripIds: projectBrief.pharos?.includedTripIds ?? [],
+      forceRefresh: true,
     });
     return {
       capabilityId: input.capabilityId,

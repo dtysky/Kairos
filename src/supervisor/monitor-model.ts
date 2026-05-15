@@ -114,6 +114,8 @@ interface IAnalyzeProgressPayload {
   fileName?: string;
   etaSeconds?: number;
   updatedAt?: string;
+  pipelineKey?: string;
+  pipelineLabel?: string;
   stepIndex?: number;
   stepDefinitions?: Array<{ key: string; label: string }>;
   extra?: {
@@ -223,6 +225,9 @@ const CANALYZE_STEP_DESCRIPTIONS: Record<string, string> = {
   'fine-scan-prefetch': '为待细扫素材预抽关键帧，并准备识别所需中间态。',
   'fine-scan-recognition': '消费已准备好的关键帧，生成细扫切片与视觉理解结果。',
   chronology: '刷新 chronology 与项目级时间视图。',
+  inputs: '刷新 project GPX、derived track 与 Pharos context 等轻量空间输入。',
+  reports: '只重算已有 asset-reports 的 GPS / Pharos 空间字段。',
+  downstream: '把新的空间字段同步到 chronology 与 spans grounding。',
 };
 
 const CSTYLE_STAGE_ORDER = [
@@ -247,10 +252,10 @@ export async function buildAnalyzeMonitorModel(
   const projectEntry = (await listWorkspaceProjects(workspaceRoot))
     .find(item => item.projectId === projectId);
   const jobs = await listJobRecords(workspaceRoot);
-  const latestJob = jobs.find(job => job.projectId === projectId && job.jobType === 'analyze') ?? null;
+  const latestJob = jobs.find(job => job.projectId === projectId && isAnalyzeMonitorJob(job)) ?? null;
   const liveJob = jobs.find(job =>
     job.projectId === projectId
-      && job.jobType === 'analyze'
+      && isAnalyzeMonitorJob(job)
       && isLiveJobStatus(job.status),
   ) ?? null;
   const [reportCount, preparedCount, audioCheckpointCount] = await Promise.all([
@@ -266,6 +271,8 @@ export async function buildAnalyzeMonitorModel(
     : undefined;
   const stepDefinitions = buildAnalyzeSteps(progress);
   const projectName = progress?.extra?.projectName ?? projectEntry?.project.name ?? projectId;
+  const flowLabel = progress?.pipelineLabel
+    ?? (liveJob?.jobType === 'spatial-refresh' ? 'Analyze 空间结果刷新' : 'media-analyze');
   const monitorStatus = resolveMonitorStatus({
     liveJobStatus: liveJob?.status,
     latestJobStatus: latestJob?.status,
@@ -336,10 +343,10 @@ export async function buildAnalyzeMonitorModel(
 
   return {
     title: '素材分析',
-    subtitle: `${projectName} · 粗扫优先的项目级素材理解与细扫恢复监控`,
+    subtitle: `${projectName} · 粗扫优先的项目级素材理解、轻量空间刷新与细扫恢复监控`,
     chips: [
       { label: `项目 ${projectName}` },
-      { label: '流程 media-analyze' },
+      { label: `流程 ${flowLabel}` },
       { label: statusLabel(monitorStatus), tone: toneForStatus(monitorStatus) },
     ],
     metrics: [
@@ -390,6 +397,10 @@ export async function buildAnalyzeMonitorModel(
     raw: progress,
     latestJob,
   };
+}
+
+function isAnalyzeMonitorJob(job: ISupervisorJobRecord): boolean {
+  return job.jobType === 'analyze' || job.jobType === 'spatial-refresh';
 }
 
 export async function buildStyleMonitorModel(

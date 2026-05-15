@@ -13,6 +13,12 @@ alwaysApply: true
 - 正式监控路由是：
   - `http://127.0.0.1:8940/analyze`
   - `http://127.0.0.1:8940/style`
+- 正式 Ingest / GPS 刷新入口是 `http://127.0.0.1:8940/ingest-gps`；它应通过 Supervisor `ingest` / `gps-refresh` job 显式运行，保存配置本身不代表刷新已经执行
+- `ingest` 的正式刷新范围包括 `store/assets.json`、`gps/derived.json`、`analysis/pharos-context.json` 与 `media/chronology.json`；对成功扫描到的 root，磁盘上已删除的旧资产应从资产索引中移除
+- `gps-refresh` 的正式刷新范围包括项目级 GPX merged cache、`gps/derived.json` 与 `analysis/pharos-context.json`；它不扫描素材目录
+- `analysis/pharos-context.json` 是 Ingest/GPS 刷新的 Pharos context cache，必须按项目内 `pharos/` 输入 fingerprint 自动失效；不要把 stale empty context 当成当前 Pharos 真相
+- `/analyze` 的 `刷新空间结果` 是 Supervisor `spatial-refresh` deterministic job：刷新已有 `analysis/asset-reports/*.json`、`media/chronology.json` 与 `store/spans.json` 的 GPS / Pharos / reverse-geocode 空间层，不扫描素材、不抽帧、不转写、不生成缺失 report
+- `spatial-refresh` 只消费已经写入 `store/assets.json` 的 embedded GPS 绑定；新增或修改 `.SRT`、FlightRecord、素材 root、root 时钟偏移或 capture-time override 后，仍必须先运行 `ingest`
 - `scripts/kairos-supervisor.* start` 只启动 `Supervisor + React console`
 - `scripts/kairos-supervisor.* start` 不会自动启动 ML
 - `scripts/kairos-supervisor.* start` 不会自动恢复旧 job
@@ -24,12 +30,13 @@ alwaysApply: true
 ## Live Job Truth
 
 - `progress.json` 只是 durable progress cache，不等于 live job
-- `projects/<projectId>/.tmp/media-analyze/progress.json` 不是 Analyze 仍在运行的证据
+- `projects/<projectId>/.tmp/media-analyze/progress.json` 不是 Analyze 或 spatial-refresh 仍在运行的证据
+- `projects/<projectId>/analysis/pharos-context.json` 也不是 Pharos 输入没有变化的证据；判断是否最新必须看 cache 内的 source fingerprint
 - `<workspaceRoot>/.tmp/style-analysis/<category>/progress.json` 也不是 style-analysis 仍在运行的证据
 - 判断“流程是否真的还在跑”，必须至少同时核对：
   - Supervisor 中是否存在匹配的 active job
   - `progress.json.updatedAt` 是否持续推进
-  - GPU / ML / worker 活动是否和当前 phase 一致
+  - GPU / ML / worker 活动是否和当前 phase 一致；`spatial-refresh` 是 no-ML job，不应期待 GPU / ML 活动
 
 ## Capability Truth
 
@@ -39,7 +46,8 @@ alwaysApply: true
 
 ## ML Lifecycle Truth
 
-- Kairos 官方管理的顶层流程结束态必须是 `ML stopped`
-- 这里的顶层流程至少包括：`project-init`、`ingest`、`gps-refresh`、`analyze`、`style-analysis`、`script`、`timeline`、`export`
+- Kairos 官方管理且会使用 / 管理 ML 的顶层流程结束态必须是 `ML stopped`
+- 这里的 ML-backed 顶层流程至少包括：`analyze`、`style-analysis`，以及未来明确接入 ML lifecycle 的正式流程
+- `spatial-refresh` 是 no-ML repair job，必须不启动 ML，也不为了收尾而停止用户或其他流程正在使用的 ML
 - 结束路径包括：正常完成、失败退出、用户 stop、restart 前置 stop、以及中断收尾
 - 低层调试命令可以单独启动 ML，但正式流程收尾时仍必须把 Kairos 官方 ML service 对账回 `stopped`

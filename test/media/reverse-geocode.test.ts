@@ -91,4 +91,45 @@ describe('resolveAnalyzeLocationText', () => {
     expect(result.placeHints).toContain('香港');
     expect(result.placeHints).toContain('香港岛');
   });
+
+  it('uses embedded GPS coordinate ahead of Pharos candidates', async () => {
+    const result = await resolveAnalyzeLocationText({
+      clipType: 'broll',
+      manualSpatial: {
+        placeHints: [],
+        decisionReasons: ['embedded-gps'],
+        inferredGps: {
+          source: 'embedded',
+          embeddedOriginType: 'sidecar-srt',
+          confidence: 0.98,
+          lat: 29.6101,
+          lng: 101.7832,
+        },
+      },
+      pharosSpatial: {
+        locationCandidates: [{
+          role: 'point',
+          lat: 30.0500,
+          lng: 102.0300,
+        }],
+      },
+      reverseGeocodeService: createReverseGeocodeService({
+        '29.6101,101.7832': {
+          locationText: '四川省，甘孜藏族自治州，康定市 · 子梅垭口',
+          province: '四川省',
+          city: '甘孜藏族自治州',
+          district: '康定市',
+        },
+        '30.05,102.03': {
+          locationText: '四川省，甘孜藏族自治州，泸定县 · 其他点',
+          province: '四川省',
+          city: '甘孜藏族自治州',
+          district: '泸定县',
+        },
+      }),
+    });
+
+    expect(result.locationText).toBe('四川省，甘孜藏族自治州，康定市 · 子梅垭口');
+    expect(result.locationText).not.toContain('其他点');
+  });
 });

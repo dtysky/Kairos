@@ -92,6 +92,46 @@ describe('buildAnalyzeMonitorModel', () => {
       activeRecognition: 1,
     });
   });
+
+  it('treats spatial-refresh as an active analyze monitor job', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-monitor-spatial-refresh';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Spatial Refresh Project');
+    const progressRoot = join(projectRoot, '.tmp', 'media-analyze');
+    await mkdir(progressRoot, { recursive: true });
+    await writeJson(join(progressRoot, 'progress.json'), {
+      status: 'running',
+      pipelineKey: 'spatial-refresh',
+      pipelineLabel: 'Analyze 空间结果刷新',
+      step: 'reports',
+      stepLabel: '修补 asset-reports',
+      stepIndex: 2,
+      current: 4,
+      total: 10,
+      stepDefinitions: [
+        { key: 'inputs', label: '刷新空间输入' },
+        { key: 'reports', label: '修补 asset-reports' },
+        { key: 'downstream', label: '刷新 chronology / spans' },
+      ],
+    });
+    await writeJobRecord(workspaceRoot, {
+      jobId: 'spatial-refresh-live',
+      jobType: 'spatial-refresh',
+      executionMode: 'deterministic',
+      projectId,
+      args: {},
+      status: 'running',
+      updatedAt: '2026-04-10T12:05:00.000Z',
+      blockers: [],
+    });
+
+    const model = await buildAnalyzeMonitorModel(workspaceRoot, projectId);
+
+    expect(model.latestJob?.jobType).toBe('spatial-refresh');
+    expect(model.progress.status).toBe('running');
+    expect(model.chips.map(chip => chip.label)).toContain('流程 Analyze 空间结果刷新');
+    expect(model.stepDefinitions.map(step => step.key)).toEqual(['inputs', 'reports', 'downstream']);
+  });
 });
 
 describe('buildStyleMonitorModel', () => {

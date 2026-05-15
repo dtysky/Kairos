@@ -35,7 +35,7 @@ If the task touches `Pharos`, first follow [`.ai/rules/pharos-protocol-sync.mdc`
 
 1. run `node scripts/pharos-protocol-hash.mjs`
 2. compare against `.ai/pharos-protocol-baseline.json`
-3. if hash changed, re-read `../Pharos/designs/` before planning or implementing
+3. if hash changed, treat it as a mandatory protocol-sync task first: re-read current `../Pharos/designs/`, sync Kairos docs/rules/skills/code impact, run `node scripts/pharos-protocol-hash.mjs --write-baseline`, then verify `node scripts/pharos-protocol-hash.mjs --check` before ordinary Pharos work continues
 
 ## Official Runtime Entry
 
@@ -102,6 +102,10 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
 - Treat `config/project-brief.json` as the single structured truth for root config; `project-brief.md` is only the human-readable mirror.
 - Treat `project-brief` path mappings as the only formal place to declare current media roots, optional `原始路径`, and ordered alternates (`备选路径N` / `原始路径N`).
 - Treat `/ingest-gps` `素材 Root` as the formal structured editor for those path mappings; normal user operation should not be routed back to hand-editing Markdown.
+- Treat `/ingest-gps` as the formal Ingest / GPS refresh control surface: saving config does not scan media, `运行 Ingest` must trigger the Supervisor `ingest` job, and `刷新 GPS 缓存` must trigger `gps-refresh`.
+- Treat Ingest / GPS refresh as the formal Pharos parse point: both `运行 Ingest` and `刷新 GPS 缓存` refresh `analysis/pharos-context.json`, which must invalidate by project-local `pharos/` input fingerprint.
+- Treat `captureTimePolicy.mode=manual-required` on a root as a hard manual-time gate: matching assets require explicit `正确日期 / 正确时间 / 时区` before Analyze.
+- Treat `/analyze` as a consumer of existing assets, GPS caches, Pharos context, and chronology, not an implicit ingest runner; after changing roots, FlightRecord, manual-itinerary, Pharos files, root clock offset, or capture-time overrides, refresh from `/ingest-gps` before trusting Analyze.
 - Do not use `device-media-maps.local.json` as a formal config or cache; runtime path resolution must come directly from the readable `project-brief` primary/alternate path candidates.
 - Treat nested resolved `rawLocalPath` as a formal ingest exclusion boundary: the mainflow should scan the resolved current media directory, but must not recurse into the resolved raw subtree when it lives inside that directory.
 - Treat `/color` as root-discovery-first: roots with `rawPath` should auto-appear with derived blockers/status, and Resolve naming should remain convention-derived and read-only.
@@ -192,7 +196,9 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - changing a root-level clock offset in `/ingest-gps` means chronology truth changed; refresh chronology before trusting downstream ordering
 - Treat `/ingest-gps` as the formal UI for both layers of time repair:
   - root-level device drift via `config/project-brief.json` mapping `clockOffsetMs`
+  - root-level manual-required time policy via `config/project-brief.json` mapping `captureTimePolicy`
   - asset-level exceptions via `captureTimeOverrides`
+  - after edits, user must explicitly run `运行 Ingest` before those changes update `store/assets.json / gps/derived.json / analysis/pharos-context.json / media/chronology.json`
 - Treat workspace `剪辑规则` as the formal structure-control asset for Script / Timeline:
   - `config/edit-rules/*.md` is the human-maintained edit-rule library and the only rule-content source
   - rule categories are discovered by scanning markdown frontmatter / filenames; do not treat `config/edit-rules.json` as rule truth for new work
@@ -267,4 +273,4 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - `analysis/style-references/`
   - `config/style-sources.json` is the only structured style index; `config/styles/*.md` only hold profile content
 - When in doubt about phase routing, start from [`.ai/skills/kairos-workflow/SKILL.md`](./.ai/skills/kairos-workflow/SKILL.md) and then move to the concrete phase skill.
-- When the task touches `Pharos`, treat `../Pharos/designs` as the upstream protocol source of truth and verify its current combined hash before relying on memory.
+- When the task touches `Pharos`, treat `../Pharos/designs` as the upstream protocol source of truth. A hash mismatch is not just a reminder to reread; it must be resolved by syncing Kairos-side protocol assumptions and refreshing the baseline before continuing ordinary Pharos implementation.

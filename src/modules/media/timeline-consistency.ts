@@ -79,6 +79,7 @@ export function detectProjectTimelineBlockers(input: {
   const range = getItineraryDateRange(input.itinerary);
   const defaultTimezone = inferDefaultTimezone(input.geoCache, input.pharosContext ?? null);
   const knownRootIds = new Set(input.roots.map(root => root.id));
+  const rootsById = new Map(input.roots.map(root => [root.id, root]));
   const blockers: IProjectTimelineBlocker[] = [];
 
   for (const asset of input.assets) {
@@ -86,6 +87,8 @@ export function detectProjectTimelineBlockers(input: {
 
     const reasons: string[] = [];
     const source = asset.captureTimeSource ?? '';
+    const root = asset.ingestRootId ? rootsById.get(asset.ingestRootId) : undefined;
+    const manualRequired = isManualCaptureTimeRequired(asset, root);
     const weakSource = isWeakCaptureTimeSource(source);
     const filenameHint = extractFilenameCaptureTimeHint(
       basename(asset.sourcePath || asset.displayName || ''),
@@ -98,6 +101,12 @@ export function detectProjectTimelineBlockers(input: {
       filenameHint?.date ?? normalizeIsoDate(asset.capturedAt) ?? undefined,
     ) ?? defaultTimezone;
     const capturedDate = normalizeTimelineDate(asset.capturedAt, effectiveTimezone);
+
+    if (manualRequired && source !== 'manual') {
+      const reason = root?.captureTimePolicy?.reason?.trim()
+        || '该素材 Root 已标记为拍摄时间必须人工确认';
+      reasons.push(reason);
+    }
 
     if (
       weakSource
@@ -133,12 +142,21 @@ export function detectProjectTimelineBlockers(input: {
       suggestedDate: filenameHint?.date,
       suggestedTime: filenameHint?.time,
       timezone: effectiveTimezone,
+      requiresExplicitDate: manualRequired && source !== 'manual',
       note: reasons.join('；'),
       reasons,
     });
   }
 
   return blockers;
+}
+
+function isManualCaptureTimeRequired(asset: IKtepAsset, root?: IMediaRoot): boolean {
+  if (!root?.captureTimePolicy || root.captureTimePolicy.mode !== 'manual-required') return false;
+  if (asset.kind === 'audio') return false;
+  const requiredKinds = root.captureTimePolicy.requiredKinds;
+  if (!requiredKinds?.length) return asset.kind === 'video' || asset.kind === 'photo';
+  return requiredKinds.includes(asset.kind as 'video' | 'photo');
 }
 
 function getItineraryDateRange(itinerary: ILoadedManualItinerary): {

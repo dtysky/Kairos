@@ -594,7 +594,10 @@ function AppShell() {
                   path="/ingest-gps"
                   render={() => (
                     <IngestGpsPage
+                      projectId={projectId}
                       config={config}
+                      capabilities={capabilities}
+                      jobs={allJobs}
                       setProjectBrief={setProjectBrief}
                       setManualItinerary={setManualItinerary}
                       saveSection={saveSection}
@@ -602,6 +605,8 @@ function AppShell() {
                       reviews={reviews}
                       setReviews={setReviews}
                       resolveReview={resolveReview}
+                      onRunIngest={() => runProjectWorkflow('ingest')}
+                      onRunGpsRefresh={() => runProjectWorkflow('gps-refresh')}
                     />
                   )}
                 />
@@ -637,12 +642,13 @@ function AppShell() {
                     <AnalyzePage
                       projectId={projectId}
                       projectProgress={projectProgress}
-                      activeJobs={activeJobs}
-                      capabilities={capabilities}
-                      busy={busy}
-                      onRun={() => runProjectWorkflow('analyze')}
-                    />
-                  )}
+	                      activeJobs={activeJobs}
+	                      capabilities={capabilities}
+	                      busy={busy}
+	                      onRun={() => runProjectWorkflow('analyze')}
+	                      onRunSpatialRefresh={() => runProjectWorkflow('spatial-refresh')}
+	                    />
+	                  )}
                 />
                 <Route
                   exact
@@ -815,7 +821,10 @@ function OverviewPage({ currentProject, activeJobs, services, projectProgress, o
 }
 
 function IngestGpsPage({
+  projectId,
   config,
+  capabilities,
+  jobs,
   setProjectBrief,
   setManualItinerary,
   saveSection,
@@ -823,6 +832,8 @@ function IngestGpsPage({
   reviews,
   setReviews,
   resolveReview,
+  onRunIngest,
+  onRunGpsRefresh,
 }) {
   if (!config) {
     return (
@@ -834,6 +845,14 @@ function IngestGpsPage({
   return (
     <div className="route-page">
       <RouteIntro title="导入与 GPS" subtitle="维护单真值素材 Root、行程正文、结构化 segment 与拍摄时间校正。" />
+      <IngestGpsActionPanel
+        projectId={projectId}
+        capabilities={capabilities}
+        jobs={jobs}
+        busy={busy}
+        onRunIngest={onRunIngest}
+        onRunGpsRefresh={onRunGpsRefresh}
+      />
       <ProjectBriefEditor
         config={config.projectBrief}
         pharosStatus={config.pharosStatus}
@@ -867,9 +886,89 @@ function IngestGpsPage({
         onResolve={resolveReview}
         title="导入 / GPS Review"
         emptyLabel="当前没有 ingest / gps 相关 review。"
-        filter={review => ['project-init', 'ingest', 'gps-refresh'].includes(review.stage)}
+        filter={review => review.kind !== 'capture-time-correction' && ['project-init', 'ingest', 'gps-refresh'].includes(review.stage)}
       />
     </div>
+  );
+}
+
+function IngestGpsActionPanel({
+  projectId,
+  capabilities,
+  jobs,
+  busy,
+  onRunIngest,
+  onRunGpsRefresh,
+}) {
+  const ingestCapability = capabilities?.jobs?.find(job => job.jobType === 'ingest');
+  const gpsRefreshCapability = capabilities?.jobs?.find(job => job.jobType === 'gps-refresh');
+  const workflowJobs = (jobs || [])
+    .filter(job => ['ingest', 'gps-refresh'].includes(job.jobType))
+    .filter(job => !projectId || job.projectId === projectId);
+  const activeIngestJobs = workflowJobs.filter(job => job.jobType === 'ingest' && isLiveSupervisorJob(job));
+  const activeGpsRefreshJobs = workflowJobs.filter(job => job.jobType === 'gps-refresh' && isLiveSupervisorJob(job));
+  const latestJob = workflowJobs[0] || null;
+  const canRunIngest = Boolean(projectId)
+    && ingestCapability?.supported !== false
+    && !busy['job:ingest']
+    && activeIngestJobs.length === 0;
+  const canRunGpsRefresh = Boolean(projectId)
+    && gpsRefreshCapability?.supported !== false
+    && !busy['job:gps-refresh']
+    && activeGpsRefreshJobs.length === 0;
+
+  return (
+    <Card className="panel">
+      <div className="section-header">
+        <h2>导入与 GPS 刷新</h2>
+        <Tag>{latestJob ? formatIngestGpsJobStatus(latestJob.status) : '未运行'}</Tag>
+      </div>
+      <p className="muted">保存配置只落盘；需要更新资产、同源 GPS、derived track 或 chronology 时，在这里显式运行。</p>
+      <div className="actions">
+        <Button
+          type={canRunIngest ? 'primary' : 'disabled'}
+          disabled={!canRunIngest}
+          onClick={onRunIngest}
+        >
+          {busy['job:ingest'] ? '启动中…' : activeIngestJobs.length > 0 ? 'Ingest 运行中…' : '运行 Ingest'}
+        </Button>
+        <Button
+          type={canRunGpsRefresh ? 'default' : 'disabled'}
+          disabled={!canRunGpsRefresh}
+          onClick={onRunGpsRefresh}
+        >
+          {busy['job:gps-refresh'] ? '启动中…' : activeGpsRefreshJobs.length > 0 ? 'GPS 刷新中…' : '刷新 GPS 缓存'}
+        </Button>
+      </div>
+      <div className="stack-list">
+        {latestJob ? (
+          <div className="job-item">
+            <div>
+              <strong>{describeIngestGpsJobTitle(latestJob)}</strong>
+              <div className="muted">{describeIngestGpsJob(latestJob)}</div>
+              {latestJob.resultPath ? <div className="muted">{`结果：${latestJob.resultPath}`}</div> : null}
+            </div>
+            <Tag>{formatIngestGpsJobStatus(latestJob.status)}</Tag>
+          </div>
+        ) : (
+          <div className="job-item">
+            <div>
+              <strong>尚未运行</strong>
+              <div className="muted">修改素材 Root、FlightRecord、时间校正或行程后，先运行 Ingest 再进入 Analyze。</div>
+            </div>
+            <Tag>idle</Tag>
+          </div>
+        )}
+        {latestJob?.blockers?.length ? (
+          <div className="pipeline-footnote">
+            {`Blockers：${latestJob.blockers.join('；')}`}
+          </div>
+        ) : null}
+        <div className="pipeline-footnote">
+          {`活跃 ingest ${activeIngestJobs.length} · 活跃 gps-refresh ${activeGpsRefreshJobs.length}`}
+        </div>
+      </div>
+    </Card>
   );
 }
 
@@ -938,13 +1037,21 @@ function ColorPage({
   );
 }
 
-function AnalyzePage({ projectId, projectProgress, activeJobs, capabilities, busy, onRun }) {
-  const analyzeJobs = activeJobs.filter(job => job.jobType === 'analyze');
+function AnalyzePage({ projectId, projectProgress, activeJobs, capabilities, busy, onRun, onRunSpatialRefresh }) {
+  const analyzeJobs = activeJobs.filter(job => job.projectId === projectId && job.jobType === 'analyze');
+  const spatialRefreshJobs = activeJobs.filter(job => job.projectId === projectId && job.jobType === 'spatial-refresh');
   const analyzeCapability = capabilities?.jobs?.find(job => job.jobType === 'analyze');
+  const spatialRefreshCapability = capabilities?.jobs?.find(job => job.jobType === 'spatial-refresh');
   const canStartAnalyze = Boolean(projectId)
     && !busy['job:analyze']
+    && spatialRefreshJobs.length === 0
     && analyzeJobs.length === 0
     && analyzeCapability?.supported !== false;
+  const canStartSpatialRefresh = Boolean(projectId)
+    && !busy['job:spatial-refresh']
+    && analyzeJobs.length === 0
+    && spatialRefreshJobs.length === 0
+    && spatialRefreshCapability?.supported !== false;
   return (
     <MonitorLoader
       kind="analyze"
@@ -953,32 +1060,40 @@ function AnalyzePage({ projectId, projectProgress, activeJobs, capabilities, bus
       toolbar={model => (
         <>
           <div className="monitor-toolbar-group">
-          <Button
-            type={canStartAnalyze ? 'primary' : 'disabled'}
-            disabled={!canStartAnalyze}
-            onClick={onRun}
-          >
-            {busy['job:analyze'] ? '启动中…' : analyzeJobs.length > 0 ? 'Analyze 运行中…' : '启动 Analyze'}
-          </Button>
-          </div>
-          <div className="monitor-toolbar-meta">
-            <span>{`活跃 job ${analyzeJobs.length}`}</span>
-            {renderAnalyzeToolbarMeta(model, projectProgress)}
-          </div>
+	          <Button
+	            type={canStartAnalyze ? 'primary' : 'disabled'}
+	            disabled={!canStartAnalyze}
+	            onClick={onRun}
+	          >
+	            {busy['job:analyze'] ? '启动中…' : analyzeJobs.length > 0 ? 'Analyze 运行中…' : '启动 Analyze'}
+	          </Button>
+	          <Button
+	            type={canStartSpatialRefresh ? 'default' : 'disabled'}
+	            disabled={!canStartSpatialRefresh}
+	            onClick={onRunSpatialRefresh}
+	          >
+	            {busy['job:spatial-refresh'] ? '启动中…' : spatialRefreshJobs.length > 0 ? '空间刷新中…' : '刷新空间结果'}
+	          </Button>
+	          </div>
+	          <div className="monitor-toolbar-meta">
+	            <span>{`活跃 analyze ${analyzeJobs.length} · 空间刷新 ${spatialRefreshJobs.length}`}</span>
+	            {renderAnalyzeToolbarMeta(model, projectProgress)}
+	          </div>
         </>
       )}
       afterMonitor={model => (
         <AnalyzeAfterMonitor
           model={model}
-          projectProgress={projectProgress}
-          analyzeJobs={analyzeJobs}
-        />
+	          projectProgress={projectProgress}
+	          analyzeJobs={analyzeJobs}
+	          spatialRefreshJobs={spatialRefreshJobs}
+	        />
       )}
     />
   );
 }
 
-function AnalyzeAfterMonitor({ model, projectProgress, analyzeJobs }) {
+function AnalyzeAfterMonitor({ model, projectProgress, analyzeJobs, spatialRefreshJobs }) {
   const progress = model?.progress || projectProgress || null;
   const pipelines = model?.pipelines || [];
   const coarsePipeline = pipelines.find(item => item.kind === 'coarse-scan') || null;
@@ -1013,11 +1128,12 @@ function AnalyzeAfterMonitor({ model, projectProgress, analyzeJobs }) {
           {progress?.detail || '当前 Analyze 已按 coarse-scan / audio-analysis / fine-scan 三段并发状态写入结构化监控。'}
         </div>
       </Card>
-      <Card className="panel">
-        <div className="section-header">
-          <h2>活跃 Analyze Job</h2>
-          <Tag>{`${analyzeJobs.length} 个`}</Tag>
-        </div>
+	      <Card className="panel">
+	        <div className="section-header">
+	          <h2>活跃 Analyze / 空间刷新 Job</h2>
+	          <Tag>{`${analyzeJobs.length + spatialRefreshJobs.length} 个`}</Tag>
+	        </div>
+	        <p className="muted">如果刚修改过 `/ingest-gps` 的素材 Root、FlightRecord、manual-itinerary 或时间校正，请先回到 `/ingest-gps` 运行 Ingest；Analyze 不会自动补跑导入。</p>
         <div className="stack-list">
           <div className="job-item">
             <div>
@@ -1031,13 +1147,13 @@ function AnalyzeAfterMonitor({ model, projectProgress, analyzeJobs }) {
               {`当前素材：${progress?.fileName || projectProgress?.fileName}`}
             </div>
           ) : null}
-          {analyzeJobs.length === 0 ? <p className="muted">当前没有受控 analyze job。若仍有进度推进，可能是孤儿 worker。</p> : null}
-          {analyzeJobs.map(job => (
-            <div key={job.jobId} className="job-item">
-              <div>
-                <strong>{job.jobId.slice(0, 8)}</strong>
-                <div className="muted">{job.progress?.stepLabel || job.updatedAt}</div>
-              </div>
+	          {analyzeJobs.length + spatialRefreshJobs.length === 0 ? <p className="muted">当前没有受控 analyze / spatial-refresh job。若仍有进度推进，可能是孤儿 worker。</p> : null}
+	          {[...analyzeJobs, ...spatialRefreshJobs].map(job => (
+	            <div key={job.jobId} className="job-item">
+	              <div>
+	                <strong>{`${job.jobType} ${job.jobId.slice(0, 8)}`}</strong>
+	                <div className="muted">{job.progress?.stepLabel || job.updatedAt}</div>
+	              </div>
               <Tag>{job.status}</Tag>
             </div>
           ))}
@@ -1582,6 +1698,50 @@ function formatBytes(bytes) {
     return `${(value / 1024).toFixed(1)} KB`;
   }
   return `${value} B`;
+}
+
+function isLiveSupervisorJob(job) {
+  return ['queued', 'running'].includes(job?.status);
+}
+
+function formatIngestGpsJobStatus(status) {
+  if (status === 'running') return '运行中';
+  if (status === 'queued') return '排队中';
+  if (status === 'blocked') return '已阻塞';
+  if (status === 'completed') return '已完成';
+  if (status === 'failed') return '失败';
+  if (status === 'stopped') return '已停止';
+  return status || '未运行';
+}
+
+function describeIngestGpsJobTitle(job) {
+  if (!job) return '尚未运行';
+  if (job.jobType === 'gps-refresh') return '最近一次 GPS 缓存刷新';
+  return '最近一次 Ingest';
+}
+
+function describeIngestGpsJob(job) {
+  if (!job) return '当前还没有 ingest / gps-refresh job。';
+  if (job.status === 'blocked') {
+    return (job.blockers || []).join('；') || '当前刷新被阻塞。';
+  }
+  if (job.status === 'running' || job.status === 'queued') {
+    return job.jobType === 'gps-refresh'
+      ? '正在刷新项目 GPX merged cache 与 derived track。'
+      : '正在扫描素材并刷新 assets、同源 GPS、derived track 与 chronology。';
+  }
+  if (job.status === 'completed') {
+    return job.jobType === 'gps-refresh'
+      ? 'GPS 缓存刷新完成；Analyze 会消费最新项目 GPX / derived track。'
+      : 'Ingest 已完成；Analyze 可以消费最新 assets / GPS / chronology。';
+  }
+  if (job.status === 'failed') {
+    return job.lastError || '刷新失败，请查看 job 日志。';
+  }
+  if (job.status === 'stopped') {
+    return '刷新已停止。';
+  }
+  return job.updatedAt || '';
 }
 
 function formatScriptJobStatus(status) {

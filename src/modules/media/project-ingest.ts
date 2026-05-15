@@ -8,6 +8,7 @@ import {
   loadRuntimeConfig,
   loadChronology,
   loadAssets,
+  loadProjectBriefConfig,
   resolveWorkspaceProjectRoot,
   syncProjectBriefMappings,
   touchProjectUpdatedAt,
@@ -29,6 +30,7 @@ import { resolveMediaRoots, toPortableRelativePath } from './root-resolver.js';
 import { scanDirectory } from './scanner.js';
 import { prepareRootSameSourceGpsContext, resolveAssetSameSourceGpsBinding } from './same-source-gps.js';
 import { enforceProjectTimelineConsistency } from './timeline-consistency.js';
+import { loadOrBuildProjectPharosContext } from '../pharos/context.js';
 
 export interface IIngestWorkspaceProjectInput {
   workspaceRoot: string;
@@ -62,10 +64,16 @@ export async function ingestWorkspaceProjectMedia(
     projectId: input.projectId,
     projectRoot,
   });
-  const [{ roots }, runtimeConfig] = await Promise.all([
+  const [{ roots }, runtimeConfig, projectBrief] = await Promise.all([
     loadIngestRoots(projectRoot),
     loadRuntimeConfig(projectRoot),
+    loadProjectBriefConfig(projectRoot),
   ]);
+  const pharosContext = await loadOrBuildProjectPharosContext({
+    projectRoot,
+    includedTripIds: projectBrief.pharos?.includedTripIds ?? [],
+  });
+  assertProjectPharosContextReady(pharosContext);
   const manualCaptureOverrides = await loadManualCaptureTimeOverrides(projectRoot);
 
   const resolution = resolveMediaRoots(roots);
@@ -113,7 +121,9 @@ export async function ingestWorkspaceProjectMedia(
     }
   }
 
-  const merge = await appendAssets(projectRoot, incoming);
+  const merge = await appendAssets(projectRoot, incoming, {
+    replaceRootIds: scannedRoots.map(root => root.rootId),
+  });
   await refreshProjectDerivedTrackCache({
     projectRoot,
     resolveTimezoneFromLocation: input.resolveTimezoneFromLocation,
@@ -136,6 +146,16 @@ export async function ingestWorkspaceProjectMedia(
     chronologyCount,
     warnings: [...warnings],
   };
+}
+
+function assertProjectPharosContextReady(
+  context: Awaited<ReturnType<typeof loadOrBuildProjectPharosContext>>,
+): void {
+  if (context.status !== 'failure') return;
+  const detail = context.errors.length > 0
+    ? context.errors.join('；')
+    : 'Pharos context 解析失败。';
+  throw new Error(`Pharos 解析失败，已阻塞 Ingest/GPS：${detail}`);
 }
 
 async function buildAssetFromScan(

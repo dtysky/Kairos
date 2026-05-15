@@ -30,7 +30,7 @@ Full deployment guide for a new device. Kairos has three subsystems:
 
 | Platform | ASR | CLIP | VLM | 安装方式 |
 |----------|-----|------|-----|---------|
-| macOS Apple Silicon | **mlx-whisper** (`whisper-large-v3-turbo`) | **mlx_clip** | **mlx-vlm** (Qwen3-VL-4B-8bit) | `pip install -e ".[mlx]"` + `./scripts/ml-models-init.sh` |
+| macOS Apple Silicon | **mlx-whisper** (`whisper-large-v3-turbo`) | **mlx_clip** | **mlx-vlm** (Qwen3.5-9B-MLX-8bit) | `pip install -e ".[mlx]"` + `./scripts/ml-models-init.sh` |
 | Windows + NVIDIA GPU | **faster-whisper** (`large-v3`) | open-clip-torch (CUDA) | transformers Qwen3.5-9B (CUDA) | `pip install -e ".[cuda]"` |
 | Linux / macOS Intel | **faster-whisper** (`large-v3`) | open-clip-torch (CPU) | transformers Qwen3.5-9B (CPU) | `pip install -e ".[cuda]"` |
 
@@ -140,8 +140,8 @@ VLM 后端通过 `KAIROS_VLM_MODEL_SOURCE` 控制，默认 `auto`：
 
 | `KAIROS_VLM_MODEL_SOURCE` | 行为 |
 |---|---|
-| `auto`（默认） | macOS → mlx-vlm，CUDA / CPU → transformers + local `models/Qwen3_5-9B` or `Qwen/Qwen3.5-9B` |
-| `mlx` | 强制 mlx-vlm，默认模型 `mlx-community/Qwen3-VL-4B-Instruct-8bit` |
+| `auto`（默认） | macOS → mlx-vlm + local `models/Qwen3.5-9B-MLX-8bit` or `mlx-community/Qwen3.5-9B-MLX-8bit`，CUDA / CPU → transformers + local `models/Qwen3_5-9B` or `Qwen/Qwen3.5-9B` |
+| `mlx` | 强制 mlx-vlm，默认模型 `mlx-community/Qwen3.5-9B-MLX-8bit` |
 | `modelscope` | 强制 transformers，从 ModelScope 下载 |
 | `huggingface` | 强制 transformers，从 HuggingFace 下载 |
 
@@ -149,15 +149,15 @@ Optional overrides:
 
 ```bash
 export KAIROS_VLM_MODEL_SOURCE=auto          # auto / mlx / modelscope / huggingface
-export KAIROS_VLM_MODEL_ID=Qwen/Qwen3.5-9B   # transformers 模式下的模型 ID
+export KAIROS_VLM_MODEL_ID=Qwen/Qwen3.5-9B   # transformers 模式下的模型 ID；MLX 可设 mlx-community/Qwen3.5-9B-MLX-8bit
 # Optional: point to a pre-downloaded local directory (overrides source/id)
 export KAIROS_VLM_MODEL_PATH=/path/to/Qwen3_5-9B
 ```
 
 ### 3d. Pre-download MLX models (Apple Silicon only)
 
-Apple Silicon 上所有 ML 模型从 Hugging Face Hub 下载到项目本地 `models/` 目录（已在 `.gitignore` 中排除）。
-各 runner 的加载优先级：**环境变量覆盖 > `models/` 本地目录 > HF Hub 自动下载**。
+Apple Silicon 上所有 ML 模型下载到项目本地 `models/` 目录（已在 `.gitignore` 中排除）。当前 VLM 初始化脚本默认从 ModelScope 下载 `Qwen3.5-9B-MLX-8bit`，其它模型仍按各自工具链下载。
+各 runner 的加载优先级：**环境变量覆盖 > `models/` 本地目录 > Hub 自动下载**。
 
 **模型清单：**
 
@@ -166,7 +166,7 @@ Apple Silicon 上所有 ML 模型从 Hugging Face Hub 下载到项目本地 `mod
 | mlx-whisper | `mlx-community/whisper-large-v3-turbo` | `models/whisper-large-v3-turbo/` | 语音转写 (ASR) | ~1.6 GB |
 | faster-whisper ASR | `Systran/faster-whisper-large-v3` | `models/whisper-large-v3-ct2/` | 语音转写 (CUDA / CPU) | ~3 GB |
 | mlx_clip | `openai/clip-vit-base-patch32` | `models/clip-vit-base-patch32/` | 图像嵌入 (CLIP) | ~600 MB |
-| mlx-vlm | `mlx-community/Qwen3-VL-4B-Instruct-8bit` | `models/Qwen3-VL-4B-Instruct-8bit/` | 视觉理解 (Apple Silicon / MLX) | ~4.9 GB |
+| mlx-vlm | `mlx-community/Qwen3.5-9B-MLX-8bit` | `models/Qwen3.5-9B-MLX-8bit/` | 视觉理解 (Apple Silicon / MLX) | ~10 GB |
 | transformers VLM | `Qwen/Qwen3.5-9B` | `models/Qwen3_5-9B/` | 视觉理解 (CUDA / CPU) | ~18-20 GB |
 
 **一键初始化：**
@@ -186,7 +186,7 @@ Apple Silicon 上所有 ML 模型从 Hugging Face Hub 下载到项目本地 `mod
 models/
 ├── whisper-large-v3-turbo/     # ~1.6 GB
 ├── clip-vit-base-patch32/      # ~600 MB
-└── Qwen3-VL-4B-Instruct-8bit/ # ~4.9 GB
+└── Qwen3.5-9B-MLX-8bit/       # ~10 GB
 ```
 
 非 MLX 的 `faster-whisper` 本地目录 `models/whisper-large-v3-ct2/` 目前需要手动预下载；如果没有这个目录，Kairos 也会接受完整的 HF cache（`Systran/faster-whisper-large-v3`）。
@@ -196,7 +196,9 @@ models/
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
 | `KAIROS_WHISPER_MODEL` | MLX: `mlx-community/whisper-large-v3-turbo`；非 MLX: `large-v3` | Whisper 模型 ID 或本地路径 |
-| `KAIROS_VLM_MODEL_ID` | `Qwen/Qwen3.5-9B`（transformers） | VLM 模型 ID |
+| `KAIROS_VLM_MODEL_ID` | MLX: `mlx-community/Qwen3.5-9B-MLX-8bit`；transformers: `Qwen/Qwen3.5-9B` | VLM 模型 ID |
+| `KAIROS_VLM_MODEL_LOCAL` | `Qwen3.5-9B-MLX-8bit` | `scripts/ml-models-init.sh` 写入的本地 VLM 目录名 |
+| `KAIROS_VLM_DOWNLOAD_SOURCE` | `modelscope` | `scripts/ml-models-init.sh` 的 VLM 下载源；可设 `huggingface` |
 | `KAIROS_VLM_MODEL_PATH` | unset | VLM 本地路径（覆盖 ID） |
 | `HF_ENDPOINT` | (HuggingFace 官方) | HF 镜像地址，国内可设为 `https://hf-mirror.com` |
 
@@ -361,7 +363,9 @@ Windows 补充建议：
 | `KAIROS_ML_BACKEND` | auto-detect | 强制后端: `mlx` / `torch` |
 | `KAIROS_WHISPER_MODEL` | MLX: `mlx-community/whisper-large-v3-turbo`；非 MLX: `large-v3` | Whisper 模型 ID 或本地路径 |
 | `KAIROS_VLM_MODEL_SOURCE` | `auto` | VLM model source: `auto` / `mlx` / `modelscope` / `huggingface` |
-| `KAIROS_VLM_MODEL_ID` | `Qwen/Qwen3.5-9B`（transformers 默认） | VLM model identifier (transformers 模式) |
+| `KAIROS_VLM_MODEL_ID` | MLX: `mlx-community/Qwen3.5-9B-MLX-8bit`；transformers: `Qwen/Qwen3.5-9B` | VLM model identifier |
+| `KAIROS_VLM_MODEL_LOCAL` | `Qwen3.5-9B-MLX-8bit` | Local VLM directory name used by `scripts/ml-models-init.sh` |
+| `KAIROS_VLM_DOWNLOAD_SOURCE` | `modelscope` | VLM predownload source for `scripts/ml-models-init.sh` (`modelscope` / `huggingface`) |
 | `KAIROS_VLM_MODEL_PATH` | unset | Pre-downloaded local VLM directory (overrides source/id) |
 | `HF_ENDPOINT` | (HuggingFace 官方) | HF 镜像地址，国内可设为 `https://hf-mirror.com` |
 

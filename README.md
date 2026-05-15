@@ -21,13 +21,22 @@ Current stable pipeline:
   - `project-brief.md` 只允许通过 `## Pharos` / `包含 Trip：...` 做可选 trip 筛选，不再填写外部 `Pharos` 路径
   - `/ingest-gps` 会明确提示这个固定目录，并提醒用户把 `trip_id/plan.json`、`record.json`、`gpx/` 镜像放进来
   - Console 会把 `Pharos` 状态显示为 `空 / 解析成功 / 解析失败`
-  - planned shot 的素材归属当前只按 `plan` 里的计划时间段匹配；`record` 的 actual 时间与 shot 上的 GPS 字段不再参与 planned shot 正式匹配
+  - `Pharos` context 的刷新归属于 Ingest / GPS 刷新；`analysis/pharos-context.json` 会按项目内 `pharos/` 输入 fingerprint 自动失效并重建，Analyze 只消费已刷新的 context
+  - planned shot 的素材归属优先按 `record.json` 的 `actual_time` 匹配；只有该 shot 没有可用 actual time 时，才回退到 `plan` 的 planned time segment
   - planned shot 的空间真值当前统一来自 trip `gpx/*.gpx` 按素材/span 时间反算；无论 `drive` 还是单机位 shot，都不再把 `plan.gps / gps_start / gps_end / actual_gps` 当作正式坐标真值
+  - 如果素材已有 `embedded GPS`，包括成功绑定的同名 `.SRT` 或 DJI FlightRecord，Pharos GPX 不允许覆盖这个素材同源真值
 - `导入与 GPS` 当前正式承载素材时间阻塞与修正：
   - 高置信 `exif` / `manual` 不会再因为文件名日期不同而被硬阻塞
   - 弱时间源会同时校验项目时间线、文件名完整时间戳漂移，以及已纳入 `Pharos` trip 的整体时间边界
+  - 每个素材 root 可声明 `captureTimePolicy.mode = manual-required`，用于延时导出等容器时间不可信的目录；命中的素材必须通过单素材手动时间修正后才允许进入 Analyze
   - 阻塞项通过 Console 卡片式“素材时间校正”处理，而不是要求用户直接回填 Markdown 表格
+  - “素材时间校正”是拍摄时间修正的唯一编辑入口；`导入 / GPS Review` 不再承载同一批 capture-time 字段，避免用户重复填写或被 review 镜像反写覆盖
   - `/ingest-gps` 的 `素材 Root` 当前通过结构化表单维护；保存时会把 `config/project-brief.json` 作为单真值落盘，并自动回写 `config/project-brief.md` 镜像，正常操作不要求用户手改 Markdown
+  - `/ingest-gps` 现在也是正式 Ingest / GPS 刷新入口：保存配置不会自动重扫，用户需要显式点击 `运行 Ingest` 扫描素材、剪掉已扫描 root 中不存在的旧资产，并刷新 `store/assets.json / gps/derived.json / analysis/pharos-context.json / media/chronology.json`
+  - `/ingest-gps` 还提供轻量 `刷新 GPS 缓存`，刷新项目 GPX merged cache、derived track 与 Pharos context，适合 GPX、Pharos 或 manual-itinerary 空间信息变化后使用
+  - `/analyze` 不会隐式补跑 ingest；如果刚改过素材 Root、FlightRecord、manual-itinerary、root 时钟偏移或 capture-time overrides，应先回到 `/ingest-gps` 运行对应刷新
+  - `/analyze` 额外提供 `刷新空间结果`：它触发 Supervisor `spatial-refresh` job，只刷新已有 `analysis/asset-reports/*.json`、`media/chronology.json` 与 `store/spans.json` 里的 GPS / Pharos / reverse-geocode 空间层，不重跑 VLM、ASR、抽帧、coarse-scan 或 fine-scan
+  - `spatial-refresh` 只消费已经写入 `store/assets.json` 的 embedded GPS 绑定；新增或修改同名 `.SRT`、FlightRecord、素材 root 或时间校正后，仍必须先跑 `/ingest-gps` 的 `运行 Ingest`
   - 用户当前可直接在 UI 中选择 `保持当前 / 使用建议 / 手动修正`
   - 手动修正默认只要求 `正确时间 + 时区`；`正确日期` 会优先按 `suggestedDate`，否则按当前时间在该时区对应的本地日期自动补齐
   - 项目内跨设备时钟漂移当前也通过这里正式修正：`/ingest-gps` 会并列提供 root 级“设备时钟偏移”面板与单素材 `captureTimeOverrides`
@@ -45,9 +54,10 @@ Current stable pipeline:
   - do not treat root `pnpm build` as covering the React console bundle; the console assets must be built explicitly
   - `scripts/kairos-supervisor.* start` only starts `Supervisor + React console`; it does not start ML and does not resume old jobs
   - `progress.json` is only a durable progress cache; a phase is live only when Supervisor still has the matching active job
+  - `/analyze` 会同时展示活跃 `analyze` 与 `spatial-refresh` job；后者是 no-ML deterministic repair job，不会启动或停止 ML
   - console refresh now prefers the project that currently owns the latest active project-scoped job before falling back to the last locally remembered selection
   - when multiple projects share the same display name, the selector must surface `projectId` to avoid mixing monitor context
-  - top-level workflow jobs now always reconcile to `ML stopped` after completion, failure, manual stop, or interruption
+  - ML-backed top-level workflow jobs now always reconcile to `ML stopped` after completion, failure, manual stop, or interruption
 - independent `DaVinci color` chain now uses a minimal project-root + runtime/archive split:
   - formal root config now lives in the shared `config/project-brief.json` mappings; `color` only consumes each root mapping上的最小 `color.renderPreset + color.colorSpaceProfile + color.transformPresetKey`
     - `color.renderPreset` 当前正式使用 `bitrateKbps`（单位 `kb/s`）；`/color` 不再接受旧的 bitrate 别名字段
@@ -247,7 +257,7 @@ Current stable pipeline:
   - for assets with `protectionAudio`, Analyze now performs dual lightweight health checks first, routes to a single chosen ASR source, and promotes that chosen transcript to the formal downstream transcript
   - non-MLX ASR paths (`Windows + CUDA`, `Linux`, `CPU fallback`) now default to `faster-whisper / large-v3` so Chinese-first Analyze gets the higher-accuracy checkpoint plus word-level timestamps; Apple Silicon remains on `mlx-whisper / whisper-large-v3-turbo`
   - Analyze now treats `Whisper` and `VLM` as mutually exclusive residents during the ASR/finalize handoff; entering `VLM` must unload `Whisper` first instead of keeping both models hot
-  - on transformers-backed VLM paths (`Windows + CUDA`, `Linux`, `CPU fallback`), the default local/current model is now `models/Qwen3_5-9B` / `Qwen/Qwen3.5-9B`; the MLX path remains on `Qwen3-VL-4B-Instruct-8bit` until a dedicated MLX-packaged Qwen3.5 artifact is adopted
+  - VLM defaults now use Qwen3.5-9B across both current backends: Apple Silicon / MLX prefers `models/Qwen3.5-9B-MLX-8bit` / `mlx-community/Qwen3.5-9B-MLX-8bit` and falls back to the legacy `models/Qwen3-VL-4B-Instruct-8bit`; transformers paths (`Windows + CUDA`, `Linux`, `CPU fallback`) prefer `models/Qwen3_5-9B` / `Qwen/Qwen3.5-9B`
 - Analyze durable resume caches are stage-local internals:
   - `analysis/prepared-assets/` stores coarse prepared inputs, not finalized visual semantics
   - `analysis/audio-checkpoints/` stores selected-transcript, audio-health, and protection-routing intermediate state
@@ -300,6 +310,8 @@ For any requirement, behavior, workflow, protocol, or official entry change, Kai
 2. update the relevant design docs before implementation
 3. implement the change
 4. review and sync the impacted design docs, rules, and skills before closing the task
+
+For Pharos-related work, `node scripts/pharos-protocol-hash.mjs` is a hard gate. If the hash differs from `.ai/pharos-protocol-baseline.json`, finish the protocol sync first: re-read current `../Pharos/designs`, update Kairos docs/rules/skills/code impact, write the new baseline, and verify `--check` passes before continuing ordinary feature work.
 
 If the change affects official user paths, monitoring, or workflow entry points, also update:
 

@@ -77,9 +77,9 @@ description: >-
 
 1. 运行 `node scripts/pharos-protocol-hash.mjs`
 2. 对比 `.ai/pharos-protocol-baseline.json`
-3. 若 hash 不一致，先阅读 `../Pharos/designs/` 下当前协议文档，再继续设计或实现
+3. 若 hash 不一致，先完成 Pharos 协议同步：阅读当前 `../Pharos/designs`、同步 Kairos 设计文档 / rules / skills / 代码影响、刷新 `.ai/pharos-protocol-baseline.json` 并用 `--check` 验证匹配，再继续脚本设计或实现
 
-不要把旧版 `Pharos` 结构记忆直接当成当前脚本阶段的正式输入真值。
+不要把旧版 `Pharos` 结构记忆直接当成当前脚本阶段的正式输入真值；baseline 未匹配时不要继续普通 Pharos 脚本工作。
 
 ## 前置条件
 

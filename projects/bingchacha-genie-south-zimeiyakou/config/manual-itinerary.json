@@ -1,0 +1,94 @@
+{
+  "prose": "",
+  "segments": [],
+  "captureTimeOverrides": [
+    {
+      "rootRef": "root-draft-1778319664359-puaawa",
+      "sourcePath": "20260426_抚仙湖日落1.mp4",
+      "currentCapturedAt": "2026-04-26T14:49:48.000Z",
+      "currentSource": "container",
+      "requiresExplicitDate": true,
+      "correctedDate": "2026-04-26",
+      "correctedTime": "19:25:00",
+      "timezone": "Asia/Shanghai",
+      "note": "延时视频导出时间不可信，必须人工确认拍摄日期和时间"
+    },
+    {
+      "rootRef": "root-draft-1778319664359-puaawa",
+      "sourcePath": "20260426_抚仙湖日落2.mp4",
+      "currentCapturedAt": "2026-04-26T14:50:18.000Z",
+      "currentSource": "container",
+      "requiresExplicitDate": true,
+      "correctedDate": "2026-04-26",
+      "correctedTime": "19:25:00",
+      "timezone": "Asia/Shanghai",
+      "note": "延时视频导出时间不可信，必须人工确认拍摄日期和时间"
+    },
+    {
+      "rootRef": "root-draft-1778319664359-puaawa",
+      "sourcePath": "20260428_老姆登村晨雾1.mp4",
+      "currentCapturedAt": "2026-05-01T15:11:22.000Z",
+      "currentSource": "container",
+      "requiresExplicitDate": true,
+      "correctedDate": "2026-04-28",
+      "correctedTime": "08:20:00",
+      "timezone": "Asia/Shanghai",
+      "note": "延时视频导出时间不可信，必须人工确认拍摄日期和时间"
+    },
+    {
+      "rootRef": "root-draft-1778319664359-puaawa",
+      "sourcePath": "20260428_老姆登村晨雾2.mp4",
+      "currentCapturedAt": "2026-05-01T15:40:26.000Z",
+      "currentSource": "container",
+      "requiresExplicitDate": true,
+      "correctedDate": "2026-04-28",
+      "correctedTime": "09:00:00",
+      "timezone": "Asia/Shanghai",
+      "note": "延时视频导出时间不可信，必须人工确认拍摄日期和时间"
+    },
+    {
+      "rootRef": "root-draft-1778319664359-puaawa",
+      "sourcePath": "20260429_丙中洛晨雾.mp4",
+      "currentCapturedAt": "2026-05-01T15:00:05.000Z",
+      "currentSource": "container",
+      "requiresExplicitDate": true,
+      "correctedDate": "2026-04-29",
+      "correctedTime": "07:25:00",
+      "timezone": "Asia/Shanghai",
+      "note": "延时视频导出时间不可信，必须人工确认拍摄日期和时间"
+    },
+    {
+      "rootRef": "root-draft-1778319664359-puaawa",
+      "sourcePath": "20260504_子梅垭口贡嘎雪山日落转星空转月升1.mp4",
+      "currentCapturedAt": "2026-05-06T14:23:40.000Z",
+      "currentSource": "container",
+      "requiresExplicitDate": true,
+      "correctedDate": "2026-05-04",
+      "correctedTime": "23:52:00",
+      "timezone": "Asia/Shanghai",
+      "note": "延时视频导出时间不可信，必须人工确认拍摄日期和时间"
+    },
+    {
+      "rootRef": "root-draft-1778319664359-puaawa",
+      "sourcePath": "20260504_子梅垭口贡嘎雪山日落转星空转月升2.mp4",
+      "currentCapturedAt": "2026-05-06T19:24:12.000Z",
+      "currentSource": "container",
+      "requiresExplicitDate": true,
+      "correctedDate": "2026-05-04",
+      "correctedTime": "23:52:00",
+      "timezone": "Asia/Shanghai",
+      "note": "延时视频导出时间不可信，必须人工确认拍摄日期和时间"
+    },
+    {
+      "rootRef": "root-draft-1778319664359-puaawa",
+      "sourcePath": "20260504_子梅垭口贡嘎雪山日落转星空转月升3.mp4",
+      "currentCapturedAt": "2026-05-07T08:35:53.000Z",
+      "currentSource": "container",
+      "requiresExplicitDate": true,
+      "correctedDate": "2026-05-04",
+      "correctedTime": "23:52:00",
+      "timezone": "Asia/Shanghai",
+      "note": "延时视频导出时间不可信，必须人工确认拍摄日期和时间"
+    }
+  ]
+}

@@ -46,6 +46,12 @@ export const ECaptureTimeSource = z.enum([
 ]);
 export type ECaptureTimeSource = z.infer<typeof ECaptureTimeSource>;
 
+export const ECaptureTimePolicyMode = z.enum(['auto', 'manual-required']);
+export type ECaptureTimePolicyMode = z.infer<typeof ECaptureTimePolicyMode>;
+
+export const ECaptureTimePolicyKind = z.enum(['video', 'photo']);
+export type ECaptureTimePolicyKind = z.infer<typeof ECaptureTimePolicyKind>;
+
 export const EMediaRootCategory = z.enum([
   'camera', 'drone', 'phone', 'audio', 'exports', 'mixed',
 ]);
@@ -101,6 +107,13 @@ export const IMediaRootColorConfig = z.object({
 });
 export type IMediaRootColorConfig = z.infer<typeof IMediaRootColorConfig>;
 
+export const ICaptureTimePolicyConfig = z.object({
+  mode: ECaptureTimePolicyMode.default('auto'),
+  requiredKinds: z.array(ECaptureTimePolicyKind).optional(),
+  reason: z.string().optional(),
+});
+export type ICaptureTimePolicyConfig = z.infer<typeof ICaptureTimePolicyConfig>;
+
 export const IMediaRootAlternatePath = z.object({
   path: z.string().optional(),
   rawPath: z.string().optional(),
@@ -121,6 +134,7 @@ export const IMediaRoot = z.object({
   description: z.string().optional(),
   notes: z.array(z.string()).optional(),
   tags: z.array(z.string()).optional(),
+  captureTimePolicy: ICaptureTimePolicyConfig.optional(),
   color: IMediaRootColorConfig.optional(),
 });
 export type IMediaRoot = z.infer<typeof IMediaRoot>;
@@ -1109,6 +1123,7 @@ export const IProjectBriefMappingConfig = z.object({
   category: EMediaRootCategory.optional(),
   notes: z.array(z.string()).optional(),
   tags: z.array(z.string()).optional(),
+  captureTimePolicy: ICaptureTimePolicyConfig.optional(),
   color: z.object({
     renderPreset: z.lazy(() => IColorRenderPreset).optional(),
     colorSpaceProfile: z.string().optional(),
@@ -1724,6 +1739,7 @@ export const IProjectPharosContext = z.object({
   includedTripIds: z.array(z.string()).default([]),
   warnings: z.array(z.string()).default([]),
   errors: z.array(z.string()).default([]),
+  sourceFingerprint: z.string().optional(),
   trips: z.array(IProjectPharosTripSummary).default([]),
   shots: z.array(IProjectPharosShot).default([]),
   gpxFiles: z.array(IProjectPharosGpxSummary).default([]),
@@ -1753,6 +1769,7 @@ export const IManualCaptureTimeOverrideConfig = z.object({
   currentSource: z.string().optional(),
   suggestedDate: z.string().optional(),
   suggestedTime: z.string().optional(),
+  requiresExplicitDate: z.boolean().optional(),
   correctedDate: z.string().optional(),
   correctedTime: z.string().optional(),
   timezone: z.string().optional(),

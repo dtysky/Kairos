@@ -1,0 +1,3373 @@
+{
+  "schemaVersion": "1.0",
+  "updatedAt": "2026-05-15T08:11:33.963Z",
+  "trackCount": 374,
+  "tracks": [
+    {
+      "id": "sidecar-srt-00d856a587315100",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-00d856a587315100.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day3/DJI_20260427182213_0631_D.SRT",
+      "pointCount": 570,
+      "startTime": "2026-04-27T10:22:13.000Z",
+      "endTime": "2026-04-27T10:22:22.492Z"
+    },
+    {
+      "id": "sidecar-srt-00dc9430d4b7d812",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-00dc9430d4b7d812.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503063440_0185_D.SRT",
+      "pointCount": 3956,
+      "startTime": "2026-05-02T22:34:41.000Z",
+      "endTime": "2026-05-02T22:35:46.984Z"
+    },
+    {
+      "id": "sidecar-srt-01959be98f1ce786",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-01959be98f1ce786.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504174004_0532_D.SRT",
+      "pointCount": 609,
+      "startTime": "2026-05-04T09:40:05.000Z",
+      "endTime": "2026-05-04T09:40:15.143Z"
+    },
+    {
+      "id": "sidecar-srt-0420c3093c51d3f3",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-0420c3093c51d3f3.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503065210_0234_D.SRT",
+      "pointCount": 697,
+      "startTime": "2026-05-02T22:52:11.000Z",
+      "endTime": "2026-05-02T22:52:22.611Z"
+    },
+    {
+      "id": "sidecar-srt-04a3d5f1c30101a2",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-04a3d5f1c30101a2.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504191830_0603_D.SRT",
+      "pointCount": 1287,
+      "startTime": "2026-05-04T11:18:31.000Z",
+      "endTime": "2026-05-04T11:18:52.455Z"
+    },
+    {
+      "id": "sidecar-srt-04e722149984ad52",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-04e722149984ad52.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day3/DJI_20260427153504_0611_D.SRT",
+      "pointCount": 1986,
+      "startTime": "2026-04-27T07:35:04.000Z",
+      "endTime": "2026-04-27T07:35:37.117Z"
+    },
+    {
+      "id": "sidecar-srt-05e82e3c1d890884",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-05e82e3c1d890884.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428083305_0122_D.SRT",
+      "pointCount": 2194,
+      "startTime": "2026-04-28T00:33:05.000Z",
+      "endTime": "2026-04-28T00:33:41.587Z"
+    },
+    {
+      "id": "sidecar-srt-062d64daf31710ef",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-062d64daf31710ef.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425181913_0120_D.SRT",
+      "pointCount": 890,
+      "startTime": "2026-04-25T10:19:14.000Z",
+      "endTime": "2026-04-25T10:19:28.831Z"
+    },
+    {
+      "id": "sidecar-srt-0706c66e0cccb5ec",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-0706c66e0cccb5ec.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day2/DJI_20260426110100_0047_D.SRT",
+      "pointCount": 1380,
+      "startTime": "2026-04-26T03:01:01.000Z",
+      "endTime": "2026-04-26T03:01:24.006Z"
+    },
+    {
+      "id": "sidecar-srt-0747fb0a64b51153",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-0747fb0a64b51153.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429064904_0984_D.SRT",
+      "pointCount": 2950,
+      "startTime": "2026-04-28T22:49:05.000Z",
+      "endTime": "2026-04-28T22:49:54.200Z"
+    },
+    {
+      "id": "sidecar-srt-07be48d3f5949036",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-07be48d3f5949036.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502105222_0830_D.SRT",
+      "pointCount": 9630,
+      "startTime": "2026-05-02T02:52:23.000Z",
+      "endTime": "2026-05-02T02:55:03.650Z"
+    },
+    {
+      "id": "sidecar-srt-07f8084592d6ccfc",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-07f8084592d6ccfc.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504194243_0673_D.SRT",
+      "pointCount": 2730,
+      "startTime": "2026-05-04T11:42:44.000Z",
+      "endTime": "2026-05-04T11:43:29.530Z"
+    },
+    {
+      "id": "sidecar-srt-081be0fb111aae48",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-081be0fb111aae48.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day7/DJI_20260501103110_0695_D.SRT",
+      "pointCount": 3832,
+      "startTime": "2026-05-01T02:31:11.000Z",
+      "endTime": "2026-05-01T02:32:14.916Z"
+    },
+    {
+      "id": "sidecar-srt-08a99b08de309a3e",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-08a99b08de309a3e.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503064502_0225_D.SRT",
+      "pointCount": 1626,
+      "startTime": "2026-05-02T22:45:02.000Z",
+      "endTime": "2026-05-02T22:45:29.110Z"
+    },
+    {
+      "id": "sidecar-srt-095ecc1018010ddd",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-095ecc1018010ddd.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day2/DJI_20260426190355_0431_D.SRT",
+      "pointCount": 892,
+      "startTime": "2026-04-26T11:03:56.000Z",
+      "endTime": "2026-04-26T11:04:10.864Z"
+    },
+    {
+      "id": "sidecar-srt-09fb98f96d0c6217",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-09fb98f96d0c6217.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502135626_0005_D.SRT",
+      "pointCount": 6393,
+      "startTime": "2026-05-02T05:56:26.000Z",
+      "endTime": "2026-05-02T05:58:12.643Z"
+    },
+    {
+      "id": "sidecar-srt-0a86895421b6ab12",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-0a86895421b6ab12.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428175501_0778_D.SRT",
+      "pointCount": 498,
+      "startTime": "2026-04-28T09:55:02.000Z",
+      "endTime": "2026-04-28T09:55:10.291Z"
+    },
+    {
+      "id": "sidecar-srt-0b95ade7127b859b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-0b95ade7127b859b.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429091812_0132_D.SRT",
+      "pointCount": 254,
+      "startTime": "2026-04-29T01:18:12.000Z",
+      "endTime": "2026-04-29T01:18:16.220Z"
+    },
+    {
+      "id": "sidecar-srt-0d61e328b9afcf60",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-0d61e328b9afcf60.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425185235_0194_D.SRT",
+      "pointCount": 1637,
+      "startTime": "2026-04-25T10:52:36.000Z",
+      "endTime": "2026-04-25T10:53:03.287Z"
+    },
+    {
+      "id": "sidecar-srt-0e4c959c9c24cd69",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-0e4c959c9c24cd69.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504202501_0801_D.SRT",
+      "pointCount": 755,
+      "startTime": "2026-05-04T12:25:01.000Z",
+      "endTime": "2026-05-04T12:25:13.579Z"
+    },
+    {
+      "id": "sidecar-srt-0f837b090679a87f",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-0f837b090679a87f.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429065500_0017_D.SRT",
+      "pointCount": 1226,
+      "startTime": "2026-04-28T22:55:01.000Z",
+      "endTime": "2026-04-28T22:55:21.437Z"
+    },
+    {
+      "id": "sidecar-srt-10ad261864c328df",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-10ad261864c328df.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502112531_0860_D.SRT",
+      "pointCount": 632,
+      "startTime": "2026-05-02T03:25:32.000Z",
+      "endTime": "2026-05-02T03:25:42.526Z"
+    },
+    {
+      "id": "sidecar-srt-10f233e58a17a05f",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-10f233e58a17a05f.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429152009_0315_D.SRT",
+      "pointCount": 410,
+      "startTime": "2026-04-29T07:20:10.000Z",
+      "endTime": "2026-04-29T07:20:16.823Z"
+    },
+    {
+      "id": "sidecar-srt-1152899618c47cb9",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-1152899618c47cb9.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504191740_0598_D.SRT",
+      "pointCount": 840,
+      "startTime": "2026-05-04T11:17:40.000Z",
+      "endTime": "2026-05-04T11:17:53.997Z"
+    },
+    {
+      "id": "sidecar-srt-116185cb8d7d314d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-116185cb8d7d314d.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429065102_0995_D.SRT",
+      "pointCount": 743,
+      "startTime": "2026-04-28T22:51:03.000Z",
+      "endTime": "2026-04-28T22:51:15.378Z"
+    },
+    {
+      "id": "sidecar-srt-125a827fcc93ef81",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-125a827fcc93ef81.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day7/DJI_20260501161526_0735_D.SRT",
+      "pointCount": 152,
+      "startTime": "2026-05-01T08:15:26.000Z",
+      "endTime": "2026-05-01T08:15:28.518Z"
+    },
+    {
+      "id": "sidecar-srt-12696a81e50de94b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-12696a81e50de94b.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504192155_0632_D.SRT",
+      "pointCount": 927,
+      "startTime": "2026-05-04T11:21:55.000Z",
+      "endTime": "2026-05-04T11:22:10.448Z"
+    },
+    {
+      "id": "sidecar-srt-13c00ac7e2eeca1d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-13c00ac7e2eeca1d.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425184550_0162_D.SRT",
+      "pointCount": 1124,
+      "startTime": "2026-04-25T10:45:51.000Z",
+      "endTime": "2026-04-25T10:46:09.735Z"
+    },
+    {
+      "id": "sidecar-srt-14fd9f278d4fafc6",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-14fd9f278d4fafc6.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428104246_0222_D.SRT",
+      "pointCount": 3464,
+      "startTime": "2026-04-28T02:42:46.000Z",
+      "endTime": "2026-04-28T02:43:43.776Z"
+    },
+    {
+      "id": "sidecar-srt-15228857e9b6bc26",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-15228857e9b6bc26.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day3/DJI_20260427153700_0624_D.SRT",
+      "pointCount": 1645,
+      "startTime": "2026-04-27T07:37:00.000Z",
+      "endTime": "2026-04-27T07:37:27.427Z"
+    },
+    {
+      "id": "sidecar-srt-1529a1959471b977",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-1529a1959471b977.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day7/DJI_20260501161210_0720_D.SRT",
+      "pointCount": 879,
+      "startTime": "2026-05-01T08:12:11.000Z",
+      "endTime": "2026-05-01T08:12:25.647Z"
+    },
+    {
+      "id": "sidecar-srt-17894b5e5bd1f6dd",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-17894b5e5bd1f6dd.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day3/DJI_20260427153209_0587_D.SRT",
+      "pointCount": 634,
+      "startTime": "2026-04-27T07:32:09.000Z",
+      "endTime": "2026-04-27T07:32:19.560Z"
+    },
+    {
+      "id": "sidecar-srt-184e11f5f3ec6fcf",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-184e11f5f3ec6fcf.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425185314_0195_D.SRT",
+      "pointCount": 1704,
+      "startTime": "2026-04-25T10:53:14.000Z",
+      "endTime": "2026-04-25T10:53:42.412Z"
+    },
+    {
+      "id": "sidecar-srt-1a32dcd77b861843",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-1a32dcd77b861843.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430200307_0654_D.SRT",
+      "pointCount": 1314,
+      "startTime": "2026-04-30T12:03:07.000Z",
+      "endTime": "2026-04-30T12:03:28.905Z"
+    },
+    {
+      "id": "sidecar-srt-1a7c4687b4c7859d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-1a7c4687b4c7859d.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429070332_0063_D.SRT",
+      "pointCount": 496,
+      "startTime": "2026-04-28T23:03:32.000Z",
+      "endTime": "2026-04-28T23:03:40.257Z"
+    },
+    {
+      "id": "sidecar-srt-1b2f9c27797e8afc",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-1b2f9c27797e8afc.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428191420_0928_D.SRT",
+      "pointCount": 997,
+      "startTime": "2026-04-28T11:14:20.000Z",
+      "endTime": "2026-04-28T11:14:36.616Z"
+    },
+    {
+      "id": "sidecar-srt-1c57a1b7d4c17c16",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-1c57a1b7d4c17c16.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503063039_0160_D.SRT",
+      "pointCount": 470,
+      "startTime": "2026-05-02T22:30:39.000Z",
+      "endTime": "2026-05-02T22:30:46.824Z"
+    },
+    {
+      "id": "sidecar-srt-1c90ce009704eee3",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-1c90ce009704eee3.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429140836_0265_D.SRT",
+      "pointCount": 591,
+      "startTime": "2026-04-29T06:08:37.000Z",
+      "endTime": "2026-04-29T06:08:46.842Z"
+    },
+    {
+      "id": "sidecar-srt-1ca6b6a45e2c5311",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-1ca6b6a45e2c5311.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503064250_0214_D.SRT",
+      "pointCount": 963,
+      "startTime": "2026-05-02T22:42:51.000Z",
+      "endTime": "2026-05-02T22:43:07.049Z"
+    },
+    {
+      "id": "sidecar-srt-1f24f1d25430e2a1",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-1f24f1d25430e2a1.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day3/DJI_20260427182924_0687_D.SRT",
+      "pointCount": 1116,
+      "startTime": "2026-04-27T10:29:24.000Z",
+      "endTime": "2026-04-27T10:29:42.602Z"
+    },
+    {
+      "id": "sidecar-srt-1f552cd5ad0cda34",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-1f552cd5ad0cda34.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429123751_0220_D.SRT",
+      "pointCount": 1477,
+      "startTime": "2026-04-29T04:37:51.000Z",
+      "endTime": "2026-04-29T04:38:15.625Z"
+    },
+    {
+      "id": "sidecar-srt-1f6de77a4e088ef4",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-1f6de77a4e088ef4.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429091621_0119_D.SRT",
+      "pointCount": 2864,
+      "startTime": "2026-04-29T01:16:21.000Z",
+      "endTime": "2026-04-29T01:17:08.765Z"
+    },
+    {
+      "id": "sidecar-srt-1f83d34492752b32",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-1f83d34492752b32.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430120652_0271_D.SRT",
+      "pointCount": 832,
+      "startTime": "2026-04-30T04:06:52.000Z",
+      "endTime": "2026-04-30T04:07:05.863Z"
+    },
+    {
+      "id": "sidecar-srt-20264ec7009fbc06",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-20264ec7009fbc06.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428104401_0223_D.SRT",
+      "pointCount": 986,
+      "startTime": "2026-04-28T02:44:01.000Z",
+      "endTime": "2026-04-28T02:44:17.433Z"
+    },
+    {
+      "id": "sidecar-srt-21aecd48999b194b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-21aecd48999b194b.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428082700_0060_D.SRT",
+      "pointCount": 5789,
+      "startTime": "2026-04-28T00:27:01.000Z",
+      "endTime": "2026-04-28T00:28:37.566Z"
+    },
+    {
+      "id": "sidecar-srt-226a6d7f55802661",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-226a6d7f55802661.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502154234_0072_D.SRT",
+      "pointCount": 772,
+      "startTime": "2026-05-02T07:42:34.000Z",
+      "endTime": "2026-05-02T07:42:46.862Z"
+    },
+    {
+      "id": "sidecar-srt-2282bf37b51687a0",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-2282bf37b51687a0.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429141333_0279_D.SRT",
+      "pointCount": 3689,
+      "startTime": "2026-04-29T06:13:33.000Z",
+      "endTime": "2026-04-29T06:14:34.530Z"
+    },
+    {
+      "id": "sidecar-srt-2415fe28bd4e6d18",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-2415fe28bd4e6d18.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429065337_0010_D.SRT",
+      "pointCount": 1779,
+      "startTime": "2026-04-28T22:53:38.000Z",
+      "endTime": "2026-04-28T22:54:07.663Z"
+    },
+    {
+      "id": "sidecar-srt-244b1ada1b78dc24",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-244b1ada1b78dc24.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502134332_0982_D.SRT",
+      "pointCount": 2536,
+      "startTime": "2026-05-02T05:43:33.000Z",
+      "endTime": "2026-05-02T05:44:15.293Z"
+    },
+    {
+      "id": "sidecar-srt-249e1a9eb2c64f42",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-249e1a9eb2c64f42.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502164406_0103_D.SRT",
+      "pointCount": 750,
+      "startTime": "2026-05-02T08:44:06.000Z",
+      "endTime": "2026-05-02T08:44:18.495Z"
+    },
+    {
+      "id": "sidecar-srt-24b51b46cf853489",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-24b51b46cf853489.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504202929_0818_D.SRT",
+      "pointCount": 963,
+      "startTime": "2026-05-04T12:29:30.000Z",
+      "endTime": "2026-05-04T12:29:46.049Z"
+    },
+    {
+      "id": "sidecar-srt-24e831e7b79fa11f",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-24e831e7b79fa11f.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504075304_0479_D.SRT",
+      "pointCount": 1953,
+      "startTime": "2026-05-03T23:53:04.000Z",
+      "endTime": "2026-05-03T23:53:36.566Z"
+    },
+    {
+      "id": "sidecar-srt-25f2903d9fa94341",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-25f2903d9fa94341.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428083958_0167_D.SRT",
+      "pointCount": 1346,
+      "startTime": "2026-04-28T00:39:58.000Z",
+      "endTime": "2026-04-28T00:40:20.439Z"
+    },
+    {
+      "id": "sidecar-srt-2632ca6f3d0b6100",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-2632ca6f3d0b6100.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503070556_0255_D.SRT",
+      "pointCount": 667,
+      "startTime": "2026-05-02T23:05:57.000Z",
+      "endTime": "2026-05-02T23:06:08.110Z"
+    },
+    {
+      "id": "sidecar-srt-26af60a903a05f31",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-26af60a903a05f31.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day3/DJI_20260427152526_0546_D.SRT",
+      "pointCount": 1775,
+      "startTime": "2026-04-27T07:25:26.000Z",
+      "endTime": "2026-04-27T07:25:55.596Z"
+    },
+    {
+      "id": "sidecar-srt-288d141434dcd25c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-288d141434dcd25c.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504064457_0393_D.SRT",
+      "pointCount": 2547,
+      "startTime": "2026-05-03T22:44:57.000Z",
+      "endTime": "2026-05-03T22:45:39.476Z"
+    },
+    {
+      "id": "sidecar-srt-29560f3cc5f95e97",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-29560f3cc5f95e97.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day2/DJI_20260426171727_0400_D.SRT",
+      "pointCount": 973,
+      "startTime": "2026-04-26T09:17:28.000Z",
+      "endTime": "2026-04-26T09:17:44.216Z"
+    },
+    {
+      "id": "sidecar-srt-2a37ef13c8d1dbbe",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-2a37ef13c8d1dbbe.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429140929_0267_D.SRT",
+      "pointCount": 408,
+      "startTime": "2026-04-29T06:09:30.000Z",
+      "endTime": "2026-04-29T06:09:36.789Z"
+    },
+    {
+      "id": "sidecar-srt-2b0b0ad98bc57507",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-2b0b0ad98bc57507.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429141233_0278_D.SRT",
+      "pointCount": 2085,
+      "startTime": "2026-04-29T06:12:33.000Z",
+      "endTime": "2026-04-29T06:13:07.768Z"
+    },
+    {
+      "id": "sidecar-srt-2b1a509b5afb0e9e",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-2b1a509b5afb0e9e.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503063207_0168_D.SRT",
+      "pointCount": 563,
+      "startTime": "2026-05-02T22:32:07.000Z",
+      "endTime": "2026-05-02T22:32:16.375Z"
+    },
+    {
+      "id": "sidecar-srt-2c4c36f9c4f99f9e",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-2c4c36f9c4f99f9e.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429122604_0195_D.SRT",
+      "pointCount": 3064,
+      "startTime": "2026-04-29T04:26:04.000Z",
+      "endTime": "2026-04-29T04:26:55.102Z"
+    },
+    {
+      "id": "sidecar-srt-2cd4f8ea8a349f75",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-2cd4f8ea8a349f75.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430200815_0669_D.SRT",
+      "pointCount": 98,
+      "startTime": "2026-04-30T12:08:15.000Z",
+      "endTime": "2026-04-30T12:08:16.617Z"
+    },
+    {
+      "id": "sidecar-srt-2cd8c04a1796f44c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-2cd8c04a1796f44c.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428104428_0224_D.SRT",
+      "pointCount": 4419,
+      "startTime": "2026-04-28T02:44:28.000Z",
+      "endTime": "2026-04-28T02:45:41.709Z"
+    },
+    {
+      "id": "sidecar-srt-2e93dbb6d3c5cdff",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-2e93dbb6d3c5cdff.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503063727_0193_D.SRT",
+      "pointCount": 3366,
+      "startTime": "2026-05-02T22:37:27.000Z",
+      "endTime": "2026-05-02T22:38:23.141Z"
+    },
+    {
+      "id": "sidecar-srt-2eba483c43d77d8d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-2eba483c43d77d8d.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day3/DJI_20260427152844_0565_D.SRT",
+      "pointCount": 804,
+      "startTime": "2026-04-27T07:28:44.000Z",
+      "endTime": "2026-04-27T07:28:57.396Z"
+    },
+    {
+      "id": "sidecar-srt-2ef4b2a0f644ad1d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-2ef4b2a0f644ad1d.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502113317_0895_D.SRT",
+      "pointCount": 2604,
+      "startTime": "2026-05-02T03:33:18.000Z",
+      "endTime": "2026-05-02T03:34:01.427Z"
+    },
+    {
+      "id": "sidecar-srt-2f3e5af394192c2c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-2f3e5af394192c2c.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502105033_0822_D.SRT",
+      "pointCount": 734,
+      "startTime": "2026-05-02T02:50:34.000Z",
+      "endTime": "2026-05-02T02:50:46.228Z"
+    },
+    {
+      "id": "sidecar-srt-2f98283544dbc770",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-2f98283544dbc770.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428084103_0177_D.SRT",
+      "pointCount": 959,
+      "startTime": "2026-04-28T00:41:03.000Z",
+      "endTime": "2026-04-28T00:41:18.982Z"
+    },
+    {
+      "id": "sidecar-srt-2fe910ba1074a118",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-2fe910ba1074a118.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day3/DJI_20260427182510_0656_D.SRT",
+      "pointCount": 518,
+      "startTime": "2026-04-27T10:25:10.000Z",
+      "endTime": "2026-04-27T10:25:18.624Z"
+    },
+    {
+      "id": "sidecar-srt-311ab7a880392d0b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-311ab7a880392d0b.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day2/DJI_20260426190621_0439_D.SRT",
+      "pointCount": 828,
+      "startTime": "2026-04-26T11:06:21.000Z",
+      "endTime": "2026-04-26T11:06:34.797Z"
+    },
+    {
+      "id": "sidecar-srt-3145e351ff73ecde",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-3145e351ff73ecde.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day7/DJI_20260501103941_0706_D.SRT",
+      "pointCount": 1489,
+      "startTime": "2026-05-01T02:39:41.000Z",
+      "endTime": "2026-05-01T02:40:05.825Z"
+    },
+    {
+      "id": "sidecar-srt-3164a5e843fe7f7c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-3164a5e843fe7f7c.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502114119_0917_D.SRT",
+      "pointCount": 3448,
+      "startTime": "2026-05-02T03:41:20.000Z",
+      "endTime": "2026-05-02T03:42:17.509Z"
+    },
+    {
+      "id": "sidecar-srt-32bb58a034ad5346",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-32bb58a034ad5346.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day3/DJI_20260427153416_0607_D.SRT",
+      "pointCount": 2026,
+      "startTime": "2026-04-27T07:34:16.000Z",
+      "endTime": "2026-04-27T07:34:49.784Z"
+    },
+    {
+      "id": "sidecar-srt-34271394d402dfbe",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-34271394d402dfbe.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429134218_0234_D.SRT",
+      "pointCount": 1917,
+      "startTime": "2026-04-29T05:42:18.000Z",
+      "endTime": "2026-04-29T05:42:49.966Z"
+    },
+    {
+      "id": "sidecar-srt-34f355260afe9ca6",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-34f355260afe9ca6.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430132539_0496_D.SRT",
+      "pointCount": 1984,
+      "startTime": "2026-04-30T05:25:39.000Z",
+      "endTime": "2026-04-30T05:26:12.083Z"
+    },
+    {
+      "id": "sidecar-srt-358338fed01a2074",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-358338fed01a2074.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425182204_0124_D.SRT",
+      "pointCount": 627,
+      "startTime": "2026-04-25T10:22:04.000Z",
+      "endTime": "2026-04-25T10:22:14.443Z"
+    },
+    {
+      "id": "sidecar-srt-377f398a4682d25b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-377f398a4682d25b.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502133521_0956_D.SRT",
+      "pointCount": 1359,
+      "startTime": "2026-05-02T05:35:22.000Z",
+      "endTime": "2026-05-02T05:35:44.656Z"
+    },
+    {
+      "id": "sidecar-srt-379c21225f919eb3",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-379c21225f919eb3.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425095051_0036_D.SRT",
+      "pointCount": 743,
+      "startTime": "2026-04-25T01:50:52.000Z",
+      "endTime": "2026-04-25T01:51:04.378Z"
+    },
+    {
+      "id": "sidecar-srt-37f233b2a664de01",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-37f233b2a664de01.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503063900_0206_D.SRT",
+      "pointCount": 2154,
+      "startTime": "2026-05-02T22:39:00.000Z",
+      "endTime": "2026-05-02T22:39:35.920Z"
+    },
+    {
+      "id": "sidecar-srt-3a6a8d3acae6a57e",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-3a6a8d3acae6a57e.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425182729_0147_D.SRT",
+      "pointCount": 2016,
+      "startTime": "2026-04-25T10:27:30.000Z",
+      "endTime": "2026-04-25T10:28:03.617Z"
+    },
+    {
+      "id": "sidecar-srt-3b1a2c18afb44a43",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-3b1a2c18afb44a43.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428083211_0117_D.SRT",
+      "pointCount": 1095,
+      "startTime": "2026-04-28T00:32:11.000Z",
+      "endTime": "2026-04-28T00:32:29.251Z"
+    },
+    {
+      "id": "sidecar-srt-3ba11ce9b6952798",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-3ba11ce9b6952798.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502145710_0028_D.SRT",
+      "pointCount": 3204,
+      "startTime": "2026-05-02T06:57:10.000Z",
+      "endTime": "2026-05-02T06:58:03.438Z"
+    },
+    {
+      "id": "sidecar-srt-3c6c65f439729971",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-3c6c65f439729971.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429091340_0095_D.SRT",
+      "pointCount": 862,
+      "startTime": "2026-04-29T01:13:41.000Z",
+      "endTime": "2026-04-29T01:13:55.364Z"
+    },
+    {
+      "id": "sidecar-srt-3d76367e7dd3c960",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-3d76367e7dd3c960.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430181623_0596_D.SRT",
+      "pointCount": 710,
+      "startTime": "2026-04-30T10:16:23.000Z",
+      "endTime": "2026-04-30T10:16:34.828Z"
+    },
+    {
+      "id": "sidecar-srt-3e1b6a3d429ce32a",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-3e1b6a3d429ce32a.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504064052_0392_D.SRT",
+      "pointCount": 10122,
+      "startTime": "2026-05-03T22:40:53.000Z",
+      "endTime": "2026-05-03T22:43:41.858Z"
+    },
+    {
+      "id": "sidecar-srt-3e6bee87a275e8b5",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-3e6bee87a275e8b5.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day2/DJI_20260426134921_0293_D.SRT",
+      "pointCount": 359,
+      "startTime": "2026-04-26T05:49:21.000Z",
+      "endTime": "2026-04-26T05:49:26.972Z"
+    },
+    {
+      "id": "sidecar-srt-3e76c5d0a34bf9f8",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-3e76c5d0a34bf9f8.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502114527_0920_D.SRT",
+      "pointCount": 8069,
+      "startTime": "2026-05-02T03:45:27.000Z",
+      "endTime": "2026-05-02T03:47:41.606Z"
+    },
+    {
+      "id": "sidecar-srt-3ea7911e0a316c4b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-3ea7911e0a316c4b.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day2/DJI_20260426134051_0232_D.SRT",
+      "pointCount": 2811,
+      "startTime": "2026-04-26T05:40:51.000Z",
+      "endTime": "2026-04-26T05:41:37.881Z"
+    },
+    {
+      "id": "sidecar-srt-3f36cb86942a7078",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-3f36cb86942a7078.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428083655_0141_D.SRT",
+      "pointCount": 2889,
+      "startTime": "2026-04-28T00:36:55.000Z",
+      "endTime": "2026-04-28T00:37:43.182Z"
+    },
+    {
+      "id": "sidecar-srt-3f4a1f3fcea69c43",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-3f4a1f3fcea69c43.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504062837_0382_D.SRT",
+      "pointCount": 1700,
+      "startTime": "2026-05-03T22:28:38.000Z",
+      "endTime": "2026-05-03T22:29:06.345Z"
+    },
+    {
+      "id": "sidecar-srt-42730b1665d64b4c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-42730b1665d64b4c.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504191737_0597_D.SRT",
+      "pointCount": 20,
+      "startTime": "2026-05-04T11:17:37.000Z",
+      "endTime": "2026-05-04T11:17:37.316Z"
+    },
+    {
+      "id": "sidecar-srt-433c1ea09a2baa05",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-433c1ea09a2baa05.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428193027_0946_D.SRT",
+      "pointCount": 565,
+      "startTime": "2026-04-28T11:30:28.000Z",
+      "endTime": "2026-04-28T11:30:37.409Z"
+    },
+    {
+      "id": "sidecar-srt-435147cb65ad57a5",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-435147cb65ad57a5.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504060851_0329_D.SRT",
+      "pointCount": 6823,
+      "startTime": "2026-05-03T22:08:51.000Z",
+      "endTime": "2026-05-03T22:10:44.818Z"
+    },
+    {
+      "id": "sidecar-srt-44ae82da042dd79b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-44ae82da042dd79b.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425181024_0035_D.SRT",
+      "pointCount": 505,
+      "startTime": "2026-04-25T10:10:24.000Z",
+      "endTime": "2026-04-25T10:10:32.408Z"
+    },
+    {
+      "id": "sidecar-srt-44d862b7f10a4538",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-44d862b7f10a4538.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430131820_0476_D.SRT",
+      "pointCount": 496,
+      "startTime": "2026-04-30T05:18:20.000Z",
+      "endTime": "2026-04-30T05:18:28.255Z"
+    },
+    {
+      "id": "sidecar-srt-4560a621b953dc5b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-4560a621b953dc5b.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day2/DJI_20260426135134_0301_D.SRT",
+      "pointCount": 2273,
+      "startTime": "2026-04-26T05:51:34.000Z",
+      "endTime": "2026-04-26T05:52:11.905Z"
+    },
+    {
+      "id": "sidecar-srt-457971a5ccb0f0e5",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-457971a5ccb0f0e5.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502133500_0952_D.SRT",
+      "pointCount": 750,
+      "startTime": "2026-05-02T05:35:00.000Z",
+      "endTime": "2026-05-02T05:35:12.495Z"
+    },
+    {
+      "id": "sidecar-srt-45f0feb2f175e21b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-45f0feb2f175e21b.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day3/DJI_20260427142522_0523_D.SRT",
+      "pointCount": 1727,
+      "startTime": "2026-04-27T06:25:23.000Z",
+      "endTime": "2026-04-27T06:25:51.796Z"
+    },
+    {
+      "id": "sidecar-srt-480d1ec92333df88",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-480d1ec92333df88.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429092136_0142_D.SRT",
+      "pointCount": 2656,
+      "startTime": "2026-04-29T01:21:37.000Z",
+      "endTime": "2026-04-29T01:22:21.295Z"
+    },
+    {
+      "id": "sidecar-srt-4951800c62009a9f",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-4951800c62009a9f.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425184623_0163_D.SRT",
+      "pointCount": 1051,
+      "startTime": "2026-04-25T10:46:23.000Z",
+      "endTime": "2026-04-25T10:46:40.517Z"
+    },
+    {
+      "id": "sidecar-srt-49d490f8360fec85",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-49d490f8360fec85.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503063006_0159_D.SRT",
+      "pointCount": 1510,
+      "startTime": "2026-05-02T22:30:06.000Z",
+      "endTime": "2026-05-02T22:30:31.175Z"
+    },
+    {
+      "id": "sidecar-srt-4a3c9d98563a7978",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-4a3c9d98563a7978.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430200156_0650_D.SRT",
+      "pointCount": 1720,
+      "startTime": "2026-04-30T12:01:56.000Z",
+      "endTime": "2026-04-30T12:02:24.679Z"
+    },
+    {
+      "id": "sidecar-srt-4ab308e524f20bb5",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-4ab308e524f20bb5.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430131545_0463_D.SRT",
+      "pointCount": 1502,
+      "startTime": "2026-04-30T05:15:46.000Z",
+      "endTime": "2026-04-30T05:16:11.042Z"
+    },
+    {
+      "id": "sidecar-srt-4af62d3d64b9c90f",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-4af62d3d64b9c90f.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504174022_0533_D.SRT",
+      "pointCount": 405,
+      "startTime": "2026-05-04T09:40:22.000Z",
+      "endTime": "2026-05-04T09:40:28.739Z"
+    },
+    {
+      "id": "sidecar-srt-4c56d0bb0fff4712",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-4c56d0bb0fff4712.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430181457_0592_D.SRT",
+      "pointCount": 611,
+      "startTime": "2026-04-30T10:14:57.000Z",
+      "endTime": "2026-04-30T10:15:07.176Z"
+    },
+    {
+      "id": "sidecar-srt-4d03387fe8e60188",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-4d03387fe8e60188.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502145610_0024_D.SRT",
+      "pointCount": 1217,
+      "startTime": "2026-05-02T06:56:11.000Z",
+      "endTime": "2026-05-02T06:56:31.287Z"
+    },
+    {
+      "id": "sidecar-srt-4ef41b4f85803c1d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-4ef41b4f85803c1d.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502133554_0960_D.SRT",
+      "pointCount": 1188,
+      "startTime": "2026-05-02T05:35:54.000Z",
+      "endTime": "2026-05-02T05:36:13.803Z"
+    },
+    {
+      "id": "sidecar-srt-4f87e028a1b6ebde",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-4f87e028a1b6ebde.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day7/DJI_20260501162028_0754_D.SRT",
+      "pointCount": 2456,
+      "startTime": "2026-05-01T08:20:28.000Z",
+      "endTime": "2026-05-01T08:21:08.958Z"
+    },
+    {
+      "id": "sidecar-srt-4fc55634bbccc6cb",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-4fc55634bbccc6cb.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429065133_0999_D.SRT",
+      "pointCount": 519,
+      "startTime": "2026-04-28T22:51:33.000Z",
+      "endTime": "2026-04-28T22:51:41.641Z"
+    },
+    {
+      "id": "sidecar-srt-4fcbebfb377a59e6",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-4fcbebfb377a59e6.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425125815_0078_D.SRT",
+      "pointCount": 1287,
+      "startTime": "2026-04-25T04:58:16.000Z",
+      "endTime": "2026-04-25T04:58:37.455Z"
+    },
+    {
+      "id": "sidecar-srt-5027b975d10cb1de",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-5027b975d10cb1de.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425170016_0001_D.SRT",
+      "pointCount": 944,
+      "startTime": "2026-04-25T09:00:17.000Z",
+      "endTime": "2026-04-25T09:00:32.732Z"
+    },
+    {
+      "id": "sidecar-srt-507ed097ca120722",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-507ed097ca120722.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425170452_0024_D.SRT",
+      "pointCount": 1863,
+      "startTime": "2026-04-25T09:04:52.000Z",
+      "endTime": "2026-04-25T09:05:23.065Z"
+    },
+    {
+      "id": "sidecar-srt-50b80be836277574",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-50b80be836277574.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503064558_0226_D.SRT",
+      "pointCount": 2139,
+      "startTime": "2026-05-02T22:45:59.000Z",
+      "endTime": "2026-05-02T22:46:34.669Z"
+    },
+    {
+      "id": "sidecar-srt-51104f36934e6421",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-51104f36934e6421.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504173843_0529_D.SRT",
+      "pointCount": 1248,
+      "startTime": "2026-05-04T09:38:44.000Z",
+      "endTime": "2026-05-04T09:39:04.804Z"
+    },
+    {
+      "id": "sidecar-srt-51a163a287073d03",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-51a163a287073d03.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429122954_0201_D.SRT",
+      "pointCount": 3363,
+      "startTime": "2026-04-29T04:29:55.000Z",
+      "endTime": "2026-04-29T04:30:51.091Z"
+    },
+    {
+      "id": "sidecar-srt-51a218e8bf109823",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-51a218e8bf109823.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430131045_0418_D.SRT",
+      "pointCount": 1392,
+      "startTime": "2026-04-30T05:10:45.000Z",
+      "endTime": "2026-04-30T05:11:08.206Z"
+    },
+    {
+      "id": "sidecar-srt-526cbecc7df4c2ff",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-526cbecc7df4c2ff.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day3/DJI_20260427152926_0566_D.SRT",
+      "pointCount": 1761,
+      "startTime": "2026-04-27T07:29:26.000Z",
+      "endTime": "2026-04-27T07:29:55.363Z"
+    },
+    {
+      "id": "sidecar-srt-5317943c96d8ae03",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-5317943c96d8ae03.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day7/DJI_20260501162233_0759_D.SRT",
+      "pointCount": 514,
+      "startTime": "2026-05-01T08:22:33.000Z",
+      "endTime": "2026-05-01T08:22:41.558Z"
+    },
+    {
+      "id": "sidecar-srt-54aaa5c79b188a57",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-54aaa5c79b188a57.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430131030_0417_D.SRT",
+      "pointCount": 499,
+      "startTime": "2026-04-30T05:10:31.000Z",
+      "endTime": "2026-04-30T05:10:39.308Z"
+    },
+    {
+      "id": "sidecar-srt-55444c89d6362d9d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-55444c89d6362d9d.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429065526_0018_D.SRT",
+      "pointCount": 668,
+      "startTime": "2026-04-28T22:55:26.000Z",
+      "endTime": "2026-04-28T22:55:37.127Z"
+    },
+    {
+      "id": "sidecar-srt-565de642cb0cc917",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-565de642cb0cc917.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day7/DJI_20260501163647_0821_D.SRT",
+      "pointCount": 1376,
+      "startTime": "2026-05-01T08:36:47.000Z",
+      "endTime": "2026-05-01T08:37:09.939Z"
+    },
+    {
+      "id": "sidecar-srt-56631f2a81702bd6",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-56631f2a81702bd6.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503080037_0290_D.SRT",
+      "pointCount": 585,
+      "startTime": "2026-05-03T00:00:38.000Z",
+      "endTime": "2026-05-03T00:00:47.742Z"
+    },
+    {
+      "id": "sidecar-srt-56e14b37606b6464",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-56e14b37606b6464.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429122259_0190_D.SRT",
+      "pointCount": 4921,
+      "startTime": "2026-04-29T04:22:59.000Z",
+      "endTime": "2026-04-29T04:24:21.084Z"
+    },
+    {
+      "id": "sidecar-srt-5ab4e3c43f9b1331",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-5ab4e3c43f9b1331.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429070132_0050_D.SRT",
+      "pointCount": 891,
+      "startTime": "2026-04-28T23:01:33.000Z",
+      "endTime": "2026-04-28T23:01:47.848Z"
+    },
+    {
+      "id": "sidecar-srt-5adfcbd319aece38",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-5adfcbd319aece38.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504174705_0574_D.SRT",
+      "pointCount": 783,
+      "startTime": "2026-05-04T09:47:06.000Z",
+      "endTime": "2026-05-04T09:47:19.046Z"
+    },
+    {
+      "id": "sidecar-srt-5baa2fee8330eb85",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-5baa2fee8330eb85.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502145819_0032_D.SRT",
+      "pointCount": 1745,
+      "startTime": "2026-05-02T06:58:19.000Z",
+      "endTime": "2026-05-02T06:58:48.096Z"
+    },
+    {
+      "id": "sidecar-srt-5ca6b90d149f51fe",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-5ca6b90d149f51fe.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429121155_0166_D.SRT",
+      "pointCount": 1709,
+      "startTime": "2026-04-29T04:11:55.000Z",
+      "endTime": "2026-04-29T04:12:23.495Z"
+    },
+    {
+      "id": "sidecar-srt-5ce17dccb0c86fa6",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-5ce17dccb0c86fa6.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429123624_0216_D.SRT",
+      "pointCount": 3745,
+      "startTime": "2026-04-29T04:36:25.000Z",
+      "endTime": "2026-04-29T04:37:27.464Z"
+    },
+    {
+      "id": "sidecar-srt-5cfbb90ba8953d14",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-5cfbb90ba8953d14.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503070330_0245_D.SRT",
+      "pointCount": 545,
+      "startTime": "2026-05-02T23:03:30.000Z",
+      "endTime": "2026-05-02T23:03:39.075Z"
+    },
+    {
+      "id": "sidecar-srt-5e648eae9e513cd5",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-5e648eae9e513cd5.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504194522_0675_D.SRT",
+      "pointCount": 680,
+      "startTime": "2026-05-04T11:45:23.000Z",
+      "endTime": "2026-05-04T11:45:34.327Z"
+    },
+    {
+      "id": "sidecar-srt-5edc02d112068d08",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-5edc02d112068d08.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428083236_0118_D.SRT",
+      "pointCount": 685,
+      "startTime": "2026-04-28T00:32:36.000Z",
+      "endTime": "2026-04-28T00:32:47.411Z"
+    },
+    {
+      "id": "sidecar-srt-5f6d7ac6c6fd6421",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-5f6d7ac6c6fd6421.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430120649_0270_D.SRT",
+      "pointCount": 44,
+      "startTime": "2026-04-30T04:06:49.000Z",
+      "endTime": "2026-04-30T04:06:49.716Z"
+    },
+    {
+      "id": "sidecar-srt-5f9963d9739eef26",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-5f9963d9739eef26.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429121510_0183_D.SRT",
+      "pointCount": 16999,
+      "startTime": "2026-04-29T04:15:10.000Z",
+      "endTime": "2026-04-29T04:19:53.595Z"
+    },
+    {
+      "id": "sidecar-srt-60188db939a553e6",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-60188db939a553e6.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504062424_0367_D.SRT",
+      "pointCount": 1503,
+      "startTime": "2026-05-03T22:24:25.000Z",
+      "endTime": "2026-05-03T22:24:50.058Z"
+    },
+    {
+      "id": "sidecar-srt-60394787681014d6",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-60394787681014d6.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428084823_0201_D.SRT",
+      "pointCount": 1738,
+      "startTime": "2026-04-28T00:48:23.000Z",
+      "endTime": "2026-04-28T00:48:51.979Z"
+    },
+    {
+      "id": "sidecar-srt-604371e4deb3d59f",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-604371e4deb3d59f.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429070601_0088_D.SRT",
+      "pointCount": 675,
+      "startTime": "2026-04-28T23:06:02.000Z",
+      "endTime": "2026-04-28T23:06:13.244Z"
+    },
+    {
+      "id": "sidecar-srt-617de88ec64c586d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-617de88ec64c586d.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504073033_0437_D.SRT",
+      "pointCount": 1050,
+      "startTime": "2026-05-03T23:30:34.000Z",
+      "endTime": "2026-05-03T23:30:51.500Z"
+    },
+    {
+      "id": "sidecar-srt-618ecc4eb1fd13ea",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-618ecc4eb1fd13ea.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430122443_0386_D.SRT",
+      "pointCount": 1483,
+      "startTime": "2026-04-30T04:24:43.000Z",
+      "endTime": "2026-04-30T04:25:07.725Z"
+    },
+    {
+      "id": "sidecar-srt-619f158778ea161f",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-619f158778ea161f.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day7/DJI_20260501162937_0803_D.SRT",
+      "pointCount": 567,
+      "startTime": "2026-05-01T08:29:38.000Z",
+      "endTime": "2026-05-01T08:29:47.442Z"
+    },
+    {
+      "id": "sidecar-srt-63d96030f80edd3d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-63d96030f80edd3d.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day2/DJI_20260426135348_0335_D.SRT",
+      "pointCount": 4336,
+      "startTime": "2026-04-26T05:53:49.000Z",
+      "endTime": "2026-04-26T05:55:01.324Z"
+    },
+    {
+      "id": "sidecar-srt-662032e3573b885b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-662032e3573b885b.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428175318_0764_D.SRT",
+      "pointCount": 1233,
+      "startTime": "2026-04-28T09:53:18.000Z",
+      "endTime": "2026-04-28T09:53:38.554Z"
+    },
+    {
+      "id": "sidecar-srt-66a8116a7493bc58",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-66a8116a7493bc58.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day3/DJI_20260427153037_0571_D.SRT",
+      "pointCount": 767,
+      "startTime": "2026-04-27T07:30:37.000Z",
+      "endTime": "2026-04-27T07:30:49.779Z"
+    },
+    {
+      "id": "sidecar-srt-6724970be0ebf02d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-6724970be0ebf02d.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429092118_0141_D.SRT",
+      "pointCount": 821,
+      "startTime": "2026-04-29T01:21:18.000Z",
+      "endTime": "2026-04-29T01:21:31.680Z"
+    },
+    {
+      "id": "sidecar-srt-68044c07a12e28d8",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-68044c07a12e28d8.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428104140_0221_D.SRT",
+      "pointCount": 2220,
+      "startTime": "2026-04-28T02:41:41.000Z",
+      "endTime": "2026-04-28T02:42:18.021Z"
+    },
+    {
+      "id": "sidecar-srt-6899c32398c15036",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-6899c32398c15036.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day3/DJI_20260427142254_0508_D.SRT",
+      "pointCount": 1962,
+      "startTime": "2026-04-27T06:22:55.000Z",
+      "endTime": "2026-04-27T06:23:27.716Z"
+    },
+    {
+      "id": "sidecar-srt-689f59ef6cf0b561",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-689f59ef6cf0b561.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day7/DJI_20260501163005_0804_D.SRT",
+      "pointCount": 1538,
+      "startTime": "2026-05-01T08:30:06.000Z",
+      "endTime": "2026-05-01T08:30:31.642Z"
+    },
+    {
+      "id": "sidecar-srt-690dd1c026868caa",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-690dd1c026868caa.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430195909_0640_D.SRT",
+      "pointCount": 917,
+      "startTime": "2026-04-30T11:59:09.000Z",
+      "endTime": "2026-04-30T11:59:24.281Z"
+    },
+    {
+      "id": "sidecar-srt-69756f76fcd17414",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-69756f76fcd17414.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day2/DJI_20260426134235_0245_D.SRT",
+      "pointCount": 1118,
+      "startTime": "2026-04-26T05:42:35.000Z",
+      "endTime": "2026-04-26T05:42:53.635Z"
+    },
+    {
+      "id": "sidecar-srt-6a9aa2712a26acba",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-6a9aa2712a26acba.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428175243_0760_D.SRT",
+      "pointCount": 573,
+      "startTime": "2026-04-28T09:52:44.000Z",
+      "endTime": "2026-04-28T09:52:53.542Z"
+    },
+    {
+      "id": "sidecar-srt-6aa0f64d30f73f60",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-6aa0f64d30f73f60.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425181601_0104_D.SRT",
+      "pointCount": 1037,
+      "startTime": "2026-04-25T10:16:01.000Z",
+      "endTime": "2026-04-25T10:16:18.284Z"
+    },
+    {
+      "id": "sidecar-srt-6bfeee7f8fca936a",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-6bfeee7f8fca936a.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504060511_0323_D.SRT",
+      "pointCount": 410,
+      "startTime": "2026-05-03T22:05:11.000Z",
+      "endTime": "2026-05-03T22:05:17.823Z"
+    },
+    {
+      "id": "sidecar-srt-6fdf8215ca4bb233",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-6fdf8215ca4bb233.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430120725_0272_D.SRT",
+      "pointCount": 94,
+      "startTime": "2026-04-30T04:07:25.000Z",
+      "endTime": "2026-04-30T04:07:26.550Z"
+    },
+    {
+      "id": "sidecar-srt-70a9d970c7593f01",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-70a9d970c7593f01.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425170148_0006_D.SRT",
+      "pointCount": 186,
+      "startTime": "2026-04-25T09:01:49.000Z",
+      "endTime": "2026-04-25T09:01:52.085Z"
+    },
+    {
+      "id": "sidecar-srt-70c79ff940c2a291",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-70c79ff940c2a291.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504193050_0650_D.SRT",
+      "pointCount": 47,
+      "startTime": "2026-05-04T11:30:50.000Z",
+      "endTime": "2026-05-04T11:30:50.766Z"
+    },
+    {
+      "id": "sidecar-srt-7191c49b3f7c6abe",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-7191c49b3f7c6abe.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503070212_0244_D.SRT",
+      "pointCount": 1335,
+      "startTime": "2026-05-02T23:02:13.000Z",
+      "endTime": "2026-05-02T23:02:35.255Z"
+    },
+    {
+      "id": "sidecar-srt-730bd9bd66bdd6f8",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-730bd9bd66bdd6f8.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502153850_0039_D.SRT",
+      "pointCount": 55,
+      "startTime": "2026-05-02T07:38:51.000Z",
+      "endTime": "2026-05-02T07:38:51.900Z"
+    },
+    {
+      "id": "sidecar-srt-732525c0690a0414",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-732525c0690a0414.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503063235_0169_D.SRT",
+      "pointCount": 2231,
+      "startTime": "2026-05-02T22:32:35.000Z",
+      "endTime": "2026-05-02T22:33:12.204Z"
+    },
+    {
+      "id": "sidecar-srt-732ef52fa539c672",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-732ef52fa539c672.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504192101_0631_D.SRT",
+      "pointCount": 1034,
+      "startTime": "2026-05-04T11:21:02.000Z",
+      "endTime": "2026-05-04T11:21:19.233Z"
+    },
+    {
+      "id": "sidecar-srt-738416db3797a95b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-738416db3797a95b.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503065419_0239_D.SRT",
+      "pointCount": 2306,
+      "startTime": "2026-05-02T22:54:19.000Z",
+      "endTime": "2026-05-02T22:54:57.446Z"
+    },
+    {
+      "id": "sidecar-srt-73cba93d033977ae",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-73cba93d033977ae.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day2/DJI_20260426110336_0058_D.SRT",
+      "pointCount": 2523,
+      "startTime": "2026-04-26T03:03:36.000Z",
+      "endTime": "2026-04-26T03:04:18.076Z"
+    },
+    {
+      "id": "sidecar-srt-743a5b28bdf2d489",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-743a5b28bdf2d489.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day3/DJI_20260427141923_0479_D.SRT",
+      "pointCount": 2137,
+      "startTime": "2026-04-27T06:19:24.000Z",
+      "endTime": "2026-04-27T06:19:59.636Z"
+    },
+    {
+      "id": "sidecar-srt-7503a39a24e423df",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-7503a39a24e423df.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429092018_0140_D.SRT",
+      "pointCount": 3091,
+      "startTime": "2026-04-29T01:20:18.000Z",
+      "endTime": "2026-04-29T01:21:09.553Z"
+    },
+    {
+      "id": "sidecar-srt-760915e9bf796f0e",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-760915e9bf796f0e.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504173448_0492_D.SRT",
+      "pointCount": 1694,
+      "startTime": "2026-05-04T09:34:49.000Z",
+      "endTime": "2026-05-04T09:35:17.245Z"
+    },
+    {
+      "id": "sidecar-srt-76d8c6bd6df73dca",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-76d8c6bd6df73dca.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429065005_0988_D.SRT",
+      "pointCount": 1724,
+      "startTime": "2026-04-28T22:50:06.000Z",
+      "endTime": "2026-04-28T22:50:34.745Z"
+    },
+    {
+      "id": "sidecar-srt-77b89db06f7dc923",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-77b89db06f7dc923.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430121410_0349_D.SRT",
+      "pointCount": 2368,
+      "startTime": "2026-04-30T04:14:10.000Z",
+      "endTime": "2026-04-30T04:14:49.490Z"
+    },
+    {
+      "id": "sidecar-srt-79eebf8e75644ee6",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-79eebf8e75644ee6.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503074659_0268_D.SRT",
+      "pointCount": 784,
+      "startTime": "2026-05-02T23:46:59.000Z",
+      "endTime": "2026-05-02T23:47:12.062Z"
+    },
+    {
+      "id": "sidecar-srt-7a7fe92c9a7ff548",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-7a7fe92c9a7ff548.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day2/DJI_20260426190443_0435_D.SRT",
+      "pointCount": 1719,
+      "startTime": "2026-04-26T11:04:43.000Z",
+      "endTime": "2026-04-26T11:05:11.662Z"
+    },
+    {
+      "id": "sidecar-srt-7b748393ca89e313",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-7b748393ca89e313.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428191012_0916_D.SRT",
+      "pointCount": 1420,
+      "startTime": "2026-04-28T11:10:13.000Z",
+      "endTime": "2026-04-28T11:10:36.674Z"
+    },
+    {
+      "id": "sidecar-srt-7bbbf0f3c59db1d3",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-7bbbf0f3c59db1d3.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day2/DJI_20260426134755_0282_D.SRT",
+      "pointCount": 550,
+      "startTime": "2026-04-26T05:47:55.000Z",
+      "endTime": "2026-04-26T05:48:04.158Z"
+    },
+    {
+      "id": "sidecar-srt-7d05573c59ed51cb",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-7d05573c59ed51cb.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430181253_0584_D.SRT",
+      "pointCount": 2695,
+      "startTime": "2026-04-30T10:12:54.000Z",
+      "endTime": "2026-04-30T10:13:38.946Z"
+    },
+    {
+      "id": "sidecar-srt-7dc13de6575bf9dc",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-7dc13de6575bf9dc.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day3/DJI_20260427182722_0676_D.SRT",
+      "pointCount": 819,
+      "startTime": "2026-04-27T10:27:23.000Z",
+      "endTime": "2026-04-27T10:27:36.646Z"
+    },
+    {
+      "id": "sidecar-srt-7f0f62debf89384e",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-7f0f62debf89384e.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425181034_0036_D.SRT",
+      "pointCount": 1011,
+      "startTime": "2026-04-25T10:10:34.000Z",
+      "endTime": "2026-04-25T10:10:50.850Z"
+    },
+    {
+      "id": "sidecar-srt-7f3ee6b1bc29a54d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-7f3ee6b1bc29a54d.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429065650_0025_D.SRT",
+      "pointCount": 3713,
+      "startTime": "2026-04-28T22:56:51.000Z",
+      "endTime": "2026-04-28T22:57:52.930Z"
+    },
+    {
+      "id": "sidecar-srt-7fe6593c3c0ec87f",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-7fe6593c3c0ec87f.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504072911_0409_D.SRT",
+      "pointCount": 189,
+      "startTime": "2026-05-03T23:29:11.000Z",
+      "endTime": "2026-05-03T23:29:14.135Z"
+    },
+    {
+      "id": "sidecar-srt-818c670854af4059",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-818c670854af4059.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425181129_0038_D.SRT",
+      "pointCount": 884,
+      "startTime": "2026-04-25T10:11:30.000Z",
+      "endTime": "2026-04-25T10:11:44.731Z"
+    },
+    {
+      "id": "sidecar-srt-8257a76d52ae8d10",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-8257a76d52ae8d10.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430122152_0379_D.SRT",
+      "pointCount": 2314,
+      "startTime": "2026-04-30T04:21:52.000Z",
+      "endTime": "2026-04-30T04:22:30.580Z"
+    },
+    {
+      "id": "sidecar-srt-834b370482863e03",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-834b370482863e03.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503064440_0224_D.SRT",
+      "pointCount": 990,
+      "startTime": "2026-05-02T22:44:40.000Z",
+      "endTime": "2026-05-02T22:44:56.499Z"
+    },
+    {
+      "id": "sidecar-srt-83c0e441db411f15",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-83c0e441db411f15.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504174515_0573_D.SRT",
+      "pointCount": 699,
+      "startTime": "2026-05-04T09:45:15.000Z",
+      "endTime": "2026-05-04T09:45:26.644Z"
+    },
+    {
+      "id": "sidecar-srt-83d2235eada8e910",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-83d2235eada8e910.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502113704_0909_D.SRT",
+      "pointCount": 7817,
+      "startTime": "2026-05-02T03:37:04.000Z",
+      "endTime": "2026-05-02T03:39:14.402Z"
+    },
+    {
+      "id": "sidecar-srt-860acad601996ae9",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-860acad601996ae9.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429134404_0245_D.SRT",
+      "pointCount": 1029,
+      "startTime": "2026-04-29T05:44:04.000Z",
+      "endTime": "2026-04-29T05:44:21.150Z"
+    },
+    {
+      "id": "sidecar-srt-869e3d53d55686f0",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-869e3d53d55686f0.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504072611_0394_D.SRT",
+      "pointCount": 904,
+      "startTime": "2026-05-03T23:26:12.000Z",
+      "endTime": "2026-05-03T23:26:27.065Z"
+    },
+    {
+      "id": "sidecar-srt-870abad69f8176c0",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-870abad69f8176c0.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day2/DJI_20260426110019_0046_D.SRT",
+      "pointCount": 762,
+      "startTime": "2026-04-26T03:00:20.000Z",
+      "endTime": "2026-04-26T03:00:32.695Z"
+    },
+    {
+      "id": "sidecar-srt-87225a03c1697622",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-87225a03c1697622.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503065146_0233_D.SRT",
+      "pointCount": 74,
+      "startTime": "2026-05-02T22:51:47.000Z",
+      "endTime": "2026-05-02T22:51:48.217Z"
+    },
+    {
+      "id": "sidecar-srt-87b3ed7c6ad25480",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-87b3ed7c6ad25480.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428180702_0901_D.SRT",
+      "pointCount": 626,
+      "startTime": "2026-04-28T10:07:03.000Z",
+      "endTime": "2026-04-28T10:07:13.426Z"
+    },
+    {
+      "id": "sidecar-srt-87c535dbad945029",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-87c535dbad945029.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504193027_0649_D.SRT",
+      "pointCount": 1196,
+      "startTime": "2026-05-04T11:30:28.000Z",
+      "endTime": "2026-05-04T11:30:47.936Z"
+    },
+    {
+      "id": "sidecar-srt-8869fa6a4ca0be6b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-8869fa6a4ca0be6b.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425095137_0046_D.SRT",
+      "pointCount": 939,
+      "startTime": "2026-04-25T01:51:38.000Z",
+      "endTime": "2026-04-25T01:51:53.645Z"
+    },
+    {
+      "id": "sidecar-srt-891c689ece1c99a9",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-891c689ece1c99a9.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day2/DJI_20260426134658_0275_D.SRT",
+      "pointCount": 1642,
+      "startTime": "2026-04-26T05:46:59.000Z",
+      "endTime": "2026-04-26T05:47:26.377Z"
+    },
+    {
+      "id": "sidecar-srt-89e5ef1b9c5c3f7b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-89e5ef1b9c5c3f7b.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502153915_0040_D.SRT",
+      "pointCount": 2109,
+      "startTime": "2026-05-02T07:39:16.000Z",
+      "endTime": "2026-05-02T07:39:51.169Z"
+    },
+    {
+      "id": "sidecar-srt-8a181a710da38d73",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-8a181a710da38d73.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429141012_0271_D.SRT",
+      "pointCount": 5564,
+      "startTime": "2026-04-29T06:10:12.000Z",
+      "endTime": "2026-04-29T06:11:44.812Z"
+    },
+    {
+      "id": "sidecar-srt-8af9ca497a3ab95d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-8af9ca497a3ab95d.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503065336_0238_D.SRT",
+      "pointCount": 1323,
+      "startTime": "2026-05-02T22:53:37.000Z",
+      "endTime": "2026-05-02T22:53:59.050Z"
+    },
+    {
+      "id": "sidecar-srt-8baceb69b8ef33ec",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-8baceb69b8ef33ec.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day7/DJI_20260501161228_0721_D.SRT",
+      "pointCount": 1028,
+      "startTime": "2026-05-01T08:12:28.000Z",
+      "endTime": "2026-05-01T08:12:45.133Z"
+    },
+    {
+      "id": "sidecar-srt-8c0980f4e7a53ee3",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-8c0980f4e7a53ee3.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day7/DJI_20260501162207_0758_D.SRT",
+      "pointCount": 319,
+      "startTime": "2026-05-01T08:22:07.000Z",
+      "endTime": "2026-05-01T08:22:12.304Z"
+    },
+    {
+      "id": "sidecar-srt-8d142bf5afb88fb0",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-8d142bf5afb88fb0.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425170633_0034_D.SRT",
+      "pointCount": 1112,
+      "startTime": "2026-04-25T09:06:34.000Z",
+      "endTime": "2026-04-25T09:06:52.535Z"
+    },
+    {
+      "id": "sidecar-srt-8d2bebbd04332b8a",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-8d2bebbd04332b8a.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504174040_0534_D.SRT",
+      "pointCount": 542,
+      "startTime": "2026-05-04T09:40:41.000Z",
+      "endTime": "2026-05-04T09:40:50.025Z"
+    },
+    {
+      "id": "sidecar-srt-8fa7467c0888015d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-8fa7467c0888015d.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430132327_0491_D.SRT",
+      "pointCount": 877,
+      "startTime": "2026-04-30T05:23:27.000Z",
+      "endTime": "2026-04-30T05:23:41.614Z"
+    },
+    {
+      "id": "sidecar-srt-8fd3ba7ce466bdbe",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-8fd3ba7ce466bdbe.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429070032_0043_D.SRT",
+      "pointCount": 573,
+      "startTime": "2026-04-28T23:00:32.000Z",
+      "endTime": "2026-04-28T23:00:41.542Z"
+    },
+    {
+      "id": "sidecar-srt-9026f310fd8fb8b6",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-9026f310fd8fb8b6.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430200651_0668_D.SRT",
+      "pointCount": 4890,
+      "startTime": "2026-04-30T12:06:52.000Z",
+      "endTime": "2026-04-30T12:08:13.567Z"
+    },
+    {
+      "id": "sidecar-srt-91849f493b6ffee5",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-91849f493b6ffee5.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425184839_0183_D.SRT",
+      "pointCount": 799,
+      "startTime": "2026-04-25T10:48:39.000Z",
+      "endTime": "2026-04-25T10:48:52.309Z"
+    },
+    {
+      "id": "sidecar-srt-91a0799af728ab34",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-91a0799af728ab34.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428191324_0924_D.SRT",
+      "pointCount": 1763,
+      "startTime": "2026-04-28T11:13:24.000Z",
+      "endTime": "2026-04-28T11:13:53.396Z"
+    },
+    {
+      "id": "sidecar-srt-925b8a5a84ac3a4e",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-925b8a5a84ac3a4e.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430131847_0477_D.SRT",
+      "pointCount": 3578,
+      "startTime": "2026-04-30T05:18:47.000Z",
+      "endTime": "2026-04-30T05:19:46.678Z"
+    },
+    {
+      "id": "sidecar-srt-9265e3ec200bf02a",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-9265e3ec200bf02a.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430120759_0279_D.SRT",
+      "pointCount": 8196,
+      "startTime": "2026-04-30T04:07:59.000Z",
+      "endTime": "2026-04-30T04:10:15.725Z"
+    },
+    {
+      "id": "sidecar-srt-938674698549d75d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-938674698549d75d.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430180352_0513_D.SRT",
+      "pointCount": 1151,
+      "startTime": "2026-04-30T10:03:52.000Z",
+      "endTime": "2026-04-30T10:04:11.186Z"
+    },
+    {
+      "id": "sidecar-srt-93aea7a7f390a608",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-93aea7a7f390a608.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430131230_0452_D.SRT",
+      "pointCount": 2024,
+      "startTime": "2026-04-30T05:12:30.000Z",
+      "endTime": "2026-04-30T05:13:03.751Z"
+    },
+    {
+      "id": "sidecar-srt-93cdff00cb8e7de7",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-93cdff00cb8e7de7.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429145736_0228_D.SRT",
+      "pointCount": 11737,
+      "startTime": "2026-04-29T06:57:36.000Z",
+      "endTime": "2026-04-29T07:00:51.803Z"
+    },
+    {
+      "id": "sidecar-srt-94909ded2ff78981",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-94909ded2ff78981.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day3/DJI_20260427152802_0557_D.SRT",
+      "pointCount": 141,
+      "startTime": "2026-04-27T07:28:02.000Z",
+      "endTime": "2026-04-27T07:28:04.335Z"
+    },
+    {
+      "id": "sidecar-srt-966b598c85813dae",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-966b598c85813dae.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430181408_0591_D.SRT",
+      "pointCount": 1872,
+      "startTime": "2026-04-30T10:14:09.000Z",
+      "endTime": "2026-04-30T10:14:40.215Z"
+    },
+    {
+      "id": "sidecar-srt-96fab3feb285fe64",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-96fab3feb285fe64.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429092326_0152_D.SRT",
+      "pointCount": 280,
+      "startTime": "2026-04-29T01:23:26.000Z",
+      "endTime": "2026-04-29T01:23:30.654Z"
+    },
+    {
+      "id": "sidecar-srt-97d177432cfd332f",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-97d177432cfd332f.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430122612_0405_D.SRT",
+      "pointCount": 572,
+      "startTime": "2026-04-30T04:26:13.000Z",
+      "endTime": "2026-04-30T04:26:22.525Z"
+    },
+    {
+      "id": "sidecar-srt-9875be0aa9060285",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-9875be0aa9060285.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day2/DJI_20260426164257_0369_D.SRT",
+      "pointCount": 3161,
+      "startTime": "2026-04-26T08:42:57.000Z",
+      "endTime": "2026-04-26T08:43:49.720Z"
+    },
+    {
+      "id": "sidecar-srt-989813ed94ceae7b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-989813ed94ceae7b.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day3/DJI_20260427152409_0533_D.SRT",
+      "pointCount": 1924,
+      "startTime": "2026-04-27T07:24:10.000Z",
+      "endTime": "2026-04-27T07:24:42.082Z"
+    },
+    {
+      "id": "sidecar-srt-989bb66b3484652b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-989bb66b3484652b.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day7/DJI_20260501103002_0691_D.SRT",
+      "pointCount": 361,
+      "startTime": "2026-05-01T02:30:03.000Z",
+      "endTime": "2026-05-01T02:30:09.005Z"
+    },
+    {
+      "id": "sidecar-srt-98a4f9a965670c96",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-98a4f9a965670c96.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504173914_0530_D.SRT",
+      "pointCount": 506,
+      "startTime": "2026-05-04T09:39:14.000Z",
+      "endTime": "2026-05-04T09:39:22.424Z"
+    },
+    {
+      "id": "sidecar-srt-992276da5d7f9ca1",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-992276da5d7f9ca1.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430121454_0350_D.SRT",
+      "pointCount": 750,
+      "startTime": "2026-04-30T04:14:54.000Z",
+      "endTime": "2026-04-30T04:15:06.495Z"
+    },
+    {
+      "id": "sidecar-srt-996e29ae020451ba",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-996e29ae020451ba.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428190720_0903_D.SRT",
+      "pointCount": 924,
+      "startTime": "2026-04-28T11:07:21.000Z",
+      "endTime": "2026-04-28T11:07:36.398Z"
+    },
+    {
+      "id": "sidecar-srt-999895fa99922ca0",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-999895fa99922ca0.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430180827_0544_D.SRT",
+      "pointCount": 1529,
+      "startTime": "2026-04-30T10:08:28.000Z",
+      "endTime": "2026-04-30T10:08:53.492Z"
+    },
+    {
+      "id": "sidecar-srt-99c89e6147b61404",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-99c89e6147b61404.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428083451_0134_D.SRT",
+      "pointCount": 3397,
+      "startTime": "2026-04-28T00:34:51.000Z",
+      "endTime": "2026-04-28T00:35:47.658Z"
+    },
+    {
+      "id": "sidecar-srt-9b05400212aae868",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-9b05400212aae868.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429065945_0039_D.SRT",
+      "pointCount": 474,
+      "startTime": "2026-04-28T22:59:45.000Z",
+      "endTime": "2026-04-28T22:59:52.890Z"
+    },
+    {
+      "id": "sidecar-srt-9bca83a020185f09",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-9bca83a020185f09.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day2/DJI_20260426164444_0382_D.SRT",
+      "pointCount": 1159,
+      "startTime": "2026-04-26T08:44:44.000Z",
+      "endTime": "2026-04-26T08:45:03.319Z"
+    },
+    {
+      "id": "sidecar-srt-9be27537e222d208",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-9be27537e222d208.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430121020_0345_D.SRT",
+      "pointCount": 2487,
+      "startTime": "2026-04-30T04:10:21.000Z",
+      "endTime": "2026-04-30T04:11:02.475Z"
+    },
+    {
+      "id": "sidecar-srt-9c6d73ff795377fd",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-9c6d73ff795377fd.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502113442_0902_D.SRT",
+      "pointCount": 5923,
+      "startTime": "2026-05-02T03:34:42.000Z",
+      "endTime": "2026-05-02T03:36:20.802Z"
+    },
+    {
+      "id": "sidecar-srt-9c8ce398a3fa1be3",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-9c8ce398a3fa1be3.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day3/DJI_20260427153019_0570_D.SRT",
+      "pointCount": 873,
+      "startTime": "2026-04-27T07:30:20.000Z",
+      "endTime": "2026-04-27T07:30:34.547Z"
+    },
+    {
+      "id": "sidecar-srt-9cc73650cf70a0ac",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-9cc73650cf70a0ac.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430180934_0548_D.SRT",
+      "pointCount": 776,
+      "startTime": "2026-04-30T10:09:34.000Z",
+      "endTime": "2026-04-30T10:09:46.929Z"
+    },
+    {
+      "id": "sidecar-srt-9cdabc4e831d6390",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-9cdabc4e831d6390.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502164101_0096_D.SRT",
+      "pointCount": 8139,
+      "startTime": "2026-05-02T08:41:02.000Z",
+      "endTime": "2026-05-02T08:43:17.774Z"
+    },
+    {
+      "id": "sidecar-srt-9d2b53adcfd6d37f",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-9d2b53adcfd6d37f.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430132635_0497_D.SRT",
+      "pointCount": 7131,
+      "startTime": "2026-04-30T05:26:35.000Z",
+      "endTime": "2026-04-30T05:28:33.956Z"
+    },
+    {
+      "id": "sidecar-srt-9db787929d9905f8",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-9db787929d9905f8.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425095417_0077_D.SRT",
+      "pointCount": 1227,
+      "startTime": "2026-04-25T01:54:18.000Z",
+      "endTime": "2026-04-25T01:54:38.454Z"
+    },
+    {
+      "id": "sidecar-srt-9e231e8ec487f98c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-9e231e8ec487f98c.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day3/DJI_20260427182246_0638_D.SRT",
+      "pointCount": 746,
+      "startTime": "2026-04-27T10:22:46.000Z",
+      "endTime": "2026-04-27T10:22:58.428Z"
+    },
+    {
+      "id": "sidecar-srt-9e80179f709b621d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-9e80179f709b621d.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day7/DJI_20260501161330_0728_D.SRT",
+      "pointCount": 4174,
+      "startTime": "2026-05-01T08:13:30.000Z",
+      "endTime": "2026-05-01T08:14:39.621Z"
+    },
+    {
+      "id": "sidecar-srt-9ec44dd321889ad9",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-9ec44dd321889ad9.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430131504_0459_D.SRT",
+      "pointCount": 36,
+      "startTime": "2026-04-30T05:15:04.000Z",
+      "endTime": "2026-04-30T05:15:04.583Z"
+    },
+    {
+      "id": "sidecar-srt-9f6eaa1d90b1a1d9",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-9f6eaa1d90b1a1d9.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day7/DJI_20260501103911_0705_D.SRT",
+      "pointCount": 562,
+      "startTime": "2026-05-01T02:39:11.000Z",
+      "endTime": "2026-05-01T02:39:20.359Z"
+    },
+    {
+      "id": "sidecar-srt-9f92b28c81cbabe2",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-9f92b28c81cbabe2.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503062948_0158_D.SRT",
+      "pointCount": 528,
+      "startTime": "2026-05-02T22:29:48.000Z",
+      "endTime": "2026-05-02T22:29:56.791Z"
+    },
+    {
+      "id": "sidecar-srt-9fdd85cb9fe9e138",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-9fdd85cb9fe9e138.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429123329_0205_D.SRT",
+      "pointCount": 5183,
+      "startTime": "2026-04-29T04:33:29.000Z",
+      "endTime": "2026-04-29T04:34:55.456Z"
+    },
+    {
+      "id": "sidecar-srt-9fe239cc90d65879",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-9fe239cc90d65879.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430132347_0492_D.SRT",
+      "pointCount": 1762,
+      "startTime": "2026-04-30T05:23:47.000Z",
+      "endTime": "2026-04-30T05:24:16.379Z"
+    },
+    {
+      "id": "sidecar-srt-9ffaebfd33a71dcb",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-9ffaebfd33a71dcb.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504174454_0572_D.SRT",
+      "pointCount": 432,
+      "startTime": "2026-05-04T09:44:54.000Z",
+      "endTime": "2026-05-04T09:45:01.190Z"
+    },
+    {
+      "id": "sidecar-srt-a0128c8f2a07a4a2",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-a0128c8f2a07a4a2.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day2/DJI_20260426164100_0350_D.SRT",
+      "pointCount": 885,
+      "startTime": "2026-04-26T08:41:01.000Z",
+      "endTime": "2026-04-26T08:41:15.748Z"
+    },
+    {
+      "id": "sidecar-srt-a10022d52aef1b22",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-a10022d52aef1b22.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502105802_0844_D.SRT",
+      "pointCount": 1485,
+      "startTime": "2026-05-02T02:58:02.000Z",
+      "endTime": "2026-05-02T02:58:26.758Z"
+    },
+    {
+      "id": "sidecar-srt-a16b55fc47931499",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-a16b55fc47931499.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425181848_0119_D.SRT",
+      "pointCount": 1374,
+      "startTime": "2026-04-25T10:18:48.000Z",
+      "endTime": "2026-04-25T10:19:10.906Z"
+    },
+    {
+      "id": "sidecar-srt-a2946fbc52abf32f",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-a2946fbc52abf32f.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502114223_0918_D.SRT",
+      "pointCount": 5015,
+      "startTime": "2026-05-02T03:42:24.000Z",
+      "endTime": "2026-05-02T03:43:47.653Z"
+    },
+    {
+      "id": "sidecar-srt-a2a662a2d112507f",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-a2a662a2d112507f.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425130147_0098_D.SRT",
+      "pointCount": 549,
+      "startTime": "2026-04-25T05:01:48.000Z",
+      "endTime": "2026-04-25T05:01:57.142Z"
+    },
+    {
+      "id": "sidecar-srt-a31f74c3f21a1b1a",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-a31f74c3f21a1b1a.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day3/DJI_20260427142341_0512_D.SRT",
+      "pointCount": 1564,
+      "startTime": "2026-04-27T06:23:42.000Z",
+      "endTime": "2026-04-27T06:24:08.076Z"
+    },
+    {
+      "id": "sidecar-srt-a4788f9460179c57",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-a4788f9460179c57.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day7/DJI_20260501104024_0713_D.SRT",
+      "pointCount": 567,
+      "startTime": "2026-05-01T02:40:25.000Z",
+      "endTime": "2026-05-01T02:40:34.442Z"
+    },
+    {
+      "id": "sidecar-srt-a541600c08cb4e3d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-a541600c08cb4e3d.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429123509_0209_D.SRT",
+      "pointCount": 1178,
+      "startTime": "2026-04-29T04:35:10.000Z",
+      "endTime": "2026-04-29T04:35:29.636Z"
+    },
+    {
+      "id": "sidecar-srt-a5c5b1542eb31fba",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-a5c5b1542eb31fba.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504193201_0651_D.SRT",
+      "pointCount": 6517,
+      "startTime": "2026-05-04T11:32:01.000Z",
+      "endTime": "2026-05-04T11:33:49.712Z"
+    },
+    {
+      "id": "sidecar-srt-a76684420cd1cc2f",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-a76684420cd1cc2f.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425185903_0219_D.SRT",
+      "pointCount": 2312,
+      "startTime": "2026-04-25T10:59:04.000Z",
+      "endTime": "2026-04-25T10:59:42.556Z"
+    },
+    {
+      "id": "sidecar-srt-a768935d1e1a3118",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-a768935d1e1a3118.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day2/DJI_20260426134613_0271_D.SRT",
+      "pointCount": 1373,
+      "startTime": "2026-04-26T05:46:14.000Z",
+      "endTime": "2026-04-26T05:46:36.889Z"
+    },
+    {
+      "id": "sidecar-srt-a7a3adab9ecf37b8",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-a7a3adab9ecf37b8.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429134305_0238_D.SRT",
+      "pointCount": 675,
+      "startTime": "2026-04-29T05:43:06.000Z",
+      "endTime": "2026-04-29T05:43:17.244Z"
+    },
+    {
+      "id": "sidecar-srt-a8a5010d280ab6c1",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-a8a5010d280ab6c1.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502105828_0845_D.SRT",
+      "pointCount": 1411,
+      "startTime": "2026-05-02T02:58:29.000Z",
+      "endTime": "2026-05-02T02:58:52.523Z"
+    },
+    {
+      "id": "sidecar-srt-a9539847bc8b1fb2",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-a9539847bc8b1fb2.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504063827_0391_D.SRT",
+      "pointCount": 7566,
+      "startTime": "2026-05-03T22:38:28.000Z",
+      "endTime": "2026-05-03T22:40:34.214Z"
+    },
+    {
+      "id": "sidecar-srt-abea454e9cf125c5",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-abea454e9cf125c5.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day7/DJI_20260501162424_0763_D.SRT",
+      "pointCount": 1783,
+      "startTime": "2026-05-01T08:24:24.000Z",
+      "endTime": "2026-05-01T08:24:53.730Z"
+    },
+    {
+      "id": "sidecar-srt-ac4a9dd86ccb3eb8",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-ac4a9dd86ccb3eb8.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504202241_0796_D.SRT",
+      "pointCount": 1609,
+      "startTime": "2026-05-04T12:22:42.000Z",
+      "endTime": "2026-05-04T12:23:08.827Z"
+    },
+    {
+      "id": "sidecar-srt-ac60daa2e164e2ed",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-ac60daa2e164e2ed.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502105858_0846_D.SRT",
+      "pointCount": 4796,
+      "startTime": "2026-05-02T02:58:58.000Z",
+      "endTime": "2026-05-02T03:00:17.999Z"
+    },
+    {
+      "id": "sidecar-srt-ac743c9795cdc3ca",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-ac743c9795cdc3ca.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430181140_0580_D.SRT",
+      "pointCount": 2879,
+      "startTime": "2026-04-30T10:11:40.000Z",
+      "endTime": "2026-04-30T10:12:28.016Z"
+    },
+    {
+      "id": "sidecar-srt-acae809ee4c6afb6",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-acae809ee4c6afb6.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430195754_0624_D.SRT",
+      "pointCount": 618,
+      "startTime": "2026-04-30T11:57:54.000Z",
+      "endTime": "2026-04-30T11:58:04.293Z"
+    },
+    {
+      "id": "sidecar-srt-acbab1d9215c646a",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-acbab1d9215c646a.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429134128_0233_D.SRT",
+      "pointCount": 1923,
+      "startTime": "2026-04-29T05:41:29.000Z",
+      "endTime": "2026-04-29T05:42:01.066Z"
+    },
+    {
+      "id": "sidecar-srt-ae4a581df428d103",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-ae4a581df428d103.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425184425_0155_D.SRT",
+      "pointCount": 1199,
+      "startTime": "2026-04-25T10:44:25.000Z",
+      "endTime": "2026-04-25T10:44:44.986Z"
+    },
+    {
+      "id": "sidecar-srt-ae89b0ce85e4edaf",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-ae89b0ce85e4edaf.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430122034_0369_D.SRT",
+      "pointCount": 1836,
+      "startTime": "2026-04-30T04:20:35.000Z",
+      "endTime": "2026-04-30T04:21:05.614Z"
+    },
+    {
+      "id": "sidecar-srt-af84864b82653e8c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-af84864b82653e8c.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502113932_0910_D.SRT",
+      "pointCount": 3773,
+      "startTime": "2026-05-02T03:39:32.000Z",
+      "endTime": "2026-05-02T03:40:34.931Z"
+    },
+    {
+      "id": "sidecar-srt-b0827eb9806bb906",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-b0827eb9806bb906.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503070343_0246_D.SRT",
+      "pointCount": 1288,
+      "startTime": "2026-05-02T23:03:43.000Z",
+      "endTime": "2026-05-02T23:04:04.471Z"
+    },
+    {
+      "id": "sidecar-srt-b1abc0a10526483a",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-b1abc0a10526483a.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day2/DJI_20260426164118_0351_D.SRT",
+      "pointCount": 339,
+      "startTime": "2026-04-26T08:41:18.000Z",
+      "endTime": "2026-04-26T08:41:23.638Z"
+    },
+    {
+      "id": "sidecar-srt-b302377e26a66984",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-b302377e26a66984.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502105104_0826_D.SRT",
+      "pointCount": 434,
+      "startTime": "2026-05-02T02:51:04.000Z",
+      "endTime": "2026-05-02T02:51:11.223Z"
+    },
+    {
+      "id": "sidecar-srt-b38b99e307d4930c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-b38b99e307d4930c.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503074844_0278_D.SRT",
+      "pointCount": 1936,
+      "startTime": "2026-05-02T23:48:45.000Z",
+      "endTime": "2026-05-02T23:49:17.283Z"
+    },
+    {
+      "id": "sidecar-srt-b4c9044f1bcee46c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-b4c9044f1bcee46c.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428190941_0912_D.SRT",
+      "pointCount": 1025,
+      "startTime": "2026-04-28T11:09:42.000Z",
+      "endTime": "2026-04-28T11:09:59.083Z"
+    },
+    {
+      "id": "sidecar-srt-b6f3cf240599a177",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-b6f3cf240599a177.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504075003_0478_D.SRT",
+      "pointCount": 9691,
+      "startTime": "2026-05-03T23:50:03.000Z",
+      "endTime": "2026-05-03T23:52:44.668Z"
+    },
+    {
+      "id": "sidecar-srt-b735b72dcdc58f0a",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-b735b72dcdc58f0a.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504174103_0535_D.SRT",
+      "pointCount": 500,
+      "startTime": "2026-05-04T09:41:03.000Z",
+      "endTime": "2026-05-04T09:41:11.322Z"
+    },
+    {
+      "id": "sidecar-srt-b75a522ed0001943",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-b75a522ed0001943.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429065200_0002_D.SRT",
+      "pointCount": 2091,
+      "startTime": "2026-04-28T22:52:00.000Z",
+      "endTime": "2026-04-28T22:52:34.869Z"
+    },
+    {
+      "id": "sidecar-srt-b767d42d43f2fbba",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-b767d42d43f2fbba.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502154207_0065_D.SRT",
+      "pointCount": 555,
+      "startTime": "2026-05-02T07:42:07.000Z",
+      "endTime": "2026-05-02T07:42:16.242Z"
+    },
+    {
+      "id": "sidecar-srt-b79040339c4e9445",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-b79040339c4e9445.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430180635_0527_D.SRT",
+      "pointCount": 1202,
+      "startTime": "2026-04-30T10:06:36.000Z",
+      "endTime": "2026-04-30T10:06:56.036Z"
+    },
+    {
+      "id": "sidecar-srt-b89b317414c951fc",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-b89b317414c951fc.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428083804_0145_D.SRT",
+      "pointCount": 453,
+      "startTime": "2026-04-28T00:38:04.000Z",
+      "endTime": "2026-04-28T00:38:11.540Z"
+    },
+    {
+      "id": "sidecar-srt-babc490dfb2d1b9c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-babc490dfb2d1b9c.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429122439_0191_D.SRT",
+      "pointCount": 3197,
+      "startTime": "2026-04-29T04:24:40.000Z",
+      "endTime": "2026-04-29T04:25:33.321Z"
+    },
+    {
+      "id": "sidecar-srt-bc1e28b21e2bda3b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-bc1e28b21e2bda3b.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502134141_0974_D.SRT",
+      "pointCount": 2568,
+      "startTime": "2026-05-02T05:41:41.000Z",
+      "endTime": "2026-05-02T05:42:23.827Z"
+    },
+    {
+      "id": "sidecar-srt-bc9acf140cac9fc9",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-bc9acf140cac9fc9.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429133921_0227_D.SRT",
+      "pointCount": 352,
+      "startTime": "2026-04-29T05:39:22.000Z",
+      "endTime": "2026-04-29T05:39:27.855Z"
+    },
+    {
+      "id": "sidecar-srt-bd774d7c6271033d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-bd774d7c6271033d.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428084730_0200_D.SRT",
+      "pointCount": 1287,
+      "startTime": "2026-04-28T00:47:31.000Z",
+      "endTime": "2026-04-28T00:47:52.455Z"
+    },
+    {
+      "id": "sidecar-srt-bd9fa79234759529",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-bd9fa79234759529.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425181541_0103_D.SRT",
+      "pointCount": 831,
+      "startTime": "2026-04-25T10:15:41.000Z",
+      "endTime": "2026-04-25T10:15:54.847Z"
+    },
+    {
+      "id": "sidecar-srt-be89da5b1d0b4228",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-be89da5b1d0b4228.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day3/DJI_20260427142049_0486_D.SRT",
+      "pointCount": 2837,
+      "startTime": "2026-04-27T06:20:50.000Z",
+      "endTime": "2026-04-27T06:21:37.315Z"
+    },
+    {
+      "id": "sidecar-srt-be9ced8507b416f5",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-be9ced8507b416f5.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504074812_0474_D.SRT",
+      "pointCount": 1946,
+      "startTime": "2026-05-03T23:48:12.000Z",
+      "endTime": "2026-05-03T23:48:44.449Z"
+    },
+    {
+      "id": "sidecar-srt-befe45e9b48af0cc",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-befe45e9b48af0cc.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425125909_0079_D.SRT",
+      "pointCount": 1804,
+      "startTime": "2026-04-25T04:59:10.000Z",
+      "endTime": "2026-04-25T04:59:40.080Z"
+    },
+    {
+      "id": "sidecar-srt-bf0129e10d12c304",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-bf0129e10d12c304.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430131635_0465_D.SRT",
+      "pointCount": 1400,
+      "startTime": "2026-04-30T05:16:36.000Z",
+      "endTime": "2026-04-30T05:16:59.340Z"
+    },
+    {
+      "id": "sidecar-srt-bfda7ef322785222",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-bfda7ef322785222.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429091423_0100_D.SRT",
+      "pointCount": 529,
+      "startTime": "2026-04-29T01:14:23.000Z",
+      "endTime": "2026-04-29T01:14:31.808Z"
+    },
+    {
+      "id": "sidecar-srt-c188c22bc919457c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c188c22bc919457c.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504072712_0399_D.SRT",
+      "pointCount": 732,
+      "startTime": "2026-05-03T23:27:12.000Z",
+      "endTime": "2026-05-03T23:27:24.195Z"
+    },
+    {
+      "id": "sidecar-srt-c1b9b8bc15ccad10",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c1b9b8bc15ccad10.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504062603_0369_D.SRT",
+      "pointCount": 884,
+      "startTime": "2026-05-03T22:26:03.000Z",
+      "endTime": "2026-05-03T22:26:17.731Z"
+    },
+    {
+      "id": "sidecar-srt-c1e091007d55a1a5",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c1e091007d55a1a5.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504063100_0389_D.SRT",
+      "pointCount": 907,
+      "startTime": "2026-05-03T22:31:01.000Z",
+      "endTime": "2026-05-03T22:31:16.115Z"
+    },
+    {
+      "id": "sidecar-srt-c2c53dceef078154",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c2c53dceef078154.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504060807_0327_D.SRT",
+      "pointCount": 166,
+      "startTime": "2026-05-03T22:08:08.000Z",
+      "endTime": "2026-05-03T22:08:10.752Z"
+    },
+    {
+      "id": "sidecar-srt-c35f996f304e9f09",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c35f996f304e9f09.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428175402_0768_D.SRT",
+      "pointCount": 712,
+      "startTime": "2026-04-28T09:54:03.000Z",
+      "endTime": "2026-04-28T09:54:14.861Z"
+    },
+    {
+      "id": "sidecar-srt-c421b9c7fa2153ec",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c421b9c7fa2153ec.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430181946_0609_D.SRT",
+      "pointCount": 796,
+      "startTime": "2026-04-30T10:19:46.000Z",
+      "endTime": "2026-04-30T10:19:59.263Z"
+    },
+    {
+      "id": "sidecar-srt-c45cb637a4b262fb",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c45cb637a4b262fb.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day2/DJI_20260426134842_0289_D.SRT",
+      "pointCount": 1307,
+      "startTime": "2026-04-26T05:48:43.000Z",
+      "endTime": "2026-04-26T05:49:04.788Z"
+    },
+    {
+      "id": "sidecar-srt-c4dedfc29dddcdd5",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c4dedfc29dddcdd5.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428090604_0205_D.SRT",
+      "pointCount": 2000,
+      "startTime": "2026-04-28T01:06:04.000Z",
+      "endTime": "2026-04-28T01:06:37.350Z"
+    },
+    {
+      "id": "sidecar-srt-c4fe7ab2299139bd",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c4fe7ab2299139bd.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502112910_0885_D.SRT",
+      "pointCount": 2454,
+      "startTime": "2026-05-02T03:29:11.000Z",
+      "endTime": "2026-05-02T03:29:51.925Z"
+    },
+    {
+      "id": "sidecar-srt-c6391462d2d33007",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c6391462d2d33007.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day2/DJI_20260426190219_0417_D.SRT",
+      "pointCount": 1042,
+      "startTime": "2026-04-26T11:02:20.000Z",
+      "endTime": "2026-04-26T11:02:37.367Z"
+    },
+    {
+      "id": "sidecar-srt-c6e2504fb583f043",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c6e2504fb583f043.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428084223_0185_D.SRT",
+      "pointCount": 265,
+      "startTime": "2026-04-28T00:42:23.000Z",
+      "endTime": "2026-04-28T00:42:27.402Z"
+    },
+    {
+      "id": "sidecar-srt-c7ad2df68687d989",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c7ad2df68687d989.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428084248_0189_D.SRT",
+      "pointCount": 5186,
+      "startTime": "2026-04-28T00:42:48.000Z",
+      "endTime": "2026-04-28T00:44:14.506Z"
+    },
+    {
+      "id": "sidecar-srt-c7c8b0af1405b4a3",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c7c8b0af1405b4a3.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430195615_0610_D.SRT",
+      "pointCount": 1328,
+      "startTime": "2026-04-30T11:56:16.000Z",
+      "endTime": "2026-04-30T11:56:38.139Z"
+    },
+    {
+      "id": "sidecar-srt-c7f49ff6b4aa548b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c7f49ff6b4aa548b.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429092336_0153_D.SRT",
+      "pointCount": 195,
+      "startTime": "2026-04-29T01:23:36.000Z",
+      "endTime": "2026-04-29T01:23:39.236Z"
+    },
+    {
+      "id": "sidecar-srt-c8a7f99da51513d0",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c8a7f99da51513d0.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429122719_0199_D.SRT",
+      "pointCount": 1635,
+      "startTime": "2026-04-29T04:27:19.000Z",
+      "endTime": "2026-04-29T04:27:46.261Z"
+    },
+    {
+      "id": "sidecar-srt-c94b6906e11818f4",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c94b6906e11818f4.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503070415_0247_D.SRT",
+      "pointCount": 312,
+      "startTime": "2026-05-02T23:04:15.000Z",
+      "endTime": "2026-05-02T23:04:20.188Z"
+    },
+    {
+      "id": "sidecar-srt-c95108b701d42d21",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c95108b701d42d21.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day3/DJI_20260427183327_0703_D.SRT",
+      "pointCount": 819,
+      "startTime": "2026-04-27T10:33:28.000Z",
+      "endTime": "2026-04-27T10:33:41.646Z"
+    },
+    {
+      "id": "sidecar-srt-c981ff82685ccdd1",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c981ff82685ccdd1.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503104311_0297_D.SRT",
+      "pointCount": 4587,
+      "startTime": "2026-05-03T02:43:12.000Z",
+      "endTime": "2026-05-03T02:44:28.512Z"
+    },
+    {
+      "id": "sidecar-srt-ca14bf8627fd0ddf",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-ca14bf8627fd0ddf.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504194332_0674_D.SRT",
+      "pointCount": 5717,
+      "startTime": "2026-05-04T11:43:32.000Z",
+      "endTime": "2026-05-04T11:45:07.365Z"
+    },
+    {
+      "id": "sidecar-srt-cac2e1104f0de3dd",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-cac2e1104f0de3dd.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430180523_0526_D.SRT",
+      "pointCount": 2098,
+      "startTime": "2026-04-30T10:05:24.000Z",
+      "endTime": "2026-04-30T10:05:58.985Z"
+    },
+    {
+      "id": "sidecar-srt-cb700f6e42879fc4",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-cb700f6e42879fc4.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day2/DJI_20260426190316_0427_D.SRT",
+      "pointCount": 1268,
+      "startTime": "2026-04-26T11:03:17.000Z",
+      "endTime": "2026-04-26T11:03:38.138Z"
+    },
+    {
+      "id": "sidecar-srt-cc015b849d595e54",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-cc015b849d595e54.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428180302_0890_D.SRT",
+      "pointCount": 1780,
+      "startTime": "2026-04-28T10:03:02.000Z",
+      "endTime": "2026-04-28T10:03:31.680Z"
+    },
+    {
+      "id": "sidecar-srt-cdba244630a4e85c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-cdba244630a4e85c.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504173927_0531_D.SRT",
+      "pointCount": 704,
+      "startTime": "2026-05-04T09:39:27.000Z",
+      "endTime": "2026-05-04T09:39:38.728Z"
+    },
+    {
+      "id": "sidecar-srt-cde0999555d904f2",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-cde0999555d904f2.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day3/DJI_20260427182816_0686_D.SRT",
+      "pointCount": 1080,
+      "startTime": "2026-04-27T10:28:16.000Z",
+      "endTime": "2026-04-27T10:28:34.001Z"
+    },
+    {
+      "id": "sidecar-srt-cdfdc940a4fa7201",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-cdfdc940a4fa7201.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503104435_0298_D.SRT",
+      "pointCount": 4392,
+      "startTime": "2026-05-03T02:44:35.000Z",
+      "endTime": "2026-05-03T02:45:48.241Z"
+    },
+    {
+      "id": "sidecar-srt-cf5444673ae4ca68",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-cf5444673ae4ca68.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504062350_0366_D.SRT",
+      "pointCount": 1052,
+      "startTime": "2026-05-03T22:23:51.000Z",
+      "endTime": "2026-05-03T22:24:08.534Z"
+    },
+    {
+      "id": "sidecar-srt-cfb223c56b301667",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-cfb223c56b301667.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430200432_0655_D.SRT",
+      "pointCount": 999,
+      "startTime": "2026-04-30T12:04:32.000Z",
+      "endTime": "2026-04-30T12:04:48.650Z"
+    },
+    {
+      "id": "sidecar-srt-d10c251ef6ed654f",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-d10c251ef6ed654f.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503070740_0265_D.SRT",
+      "pointCount": 1138,
+      "startTime": "2026-05-02T23:07:40.000Z",
+      "endTime": "2026-05-02T23:07:58.969Z"
+    },
+    {
+      "id": "sidecar-srt-d11c25631635801e",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-d11c25631635801e.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428191251_0923_D.SRT",
+      "pointCount": 885,
+      "startTime": "2026-04-28T11:12:52.000Z",
+      "endTime": "2026-04-28T11:13:06.748Z"
+    },
+    {
+      "id": "sidecar-srt-d2a40139338040f8",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-d2a40139338040f8.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429091906_0139_D.SRT",
+      "pointCount": 4068,
+      "startTime": "2026-04-29T01:19:07.000Z",
+      "endTime": "2026-04-29T01:20:14.853Z"
+    },
+    {
+      "id": "sidecar-srt-d3519f50b942e1cf",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-d3519f50b942e1cf.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day3/DJI_20260427152704_0556_D.SRT",
+      "pointCount": 1623,
+      "startTime": "2026-04-27T07:27:05.000Z",
+      "endTime": "2026-04-27T07:27:32.060Z"
+    },
+    {
+      "id": "sidecar-srt-d3bbccf88e609d71",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-d3bbccf88e609d71.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day3/DJI_20260427183300_0702_D.SRT",
+      "pointCount": 738,
+      "startTime": "2026-04-27T10:33:00.000Z",
+      "endTime": "2026-04-27T10:33:12.292Z"
+    },
+    {
+      "id": "sidecar-srt-d479345933b94461",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-d479345933b94461.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502105653_0843_D.SRT",
+      "pointCount": 1690,
+      "startTime": "2026-05-02T02:56:53.000Z",
+      "endTime": "2026-05-02T02:57:21.178Z"
+    },
+    {
+      "id": "sidecar-srt-d58ed513cc122592",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-d58ed513cc122592.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425181703_0109_D.SRT",
+      "pointCount": 905,
+      "startTime": "2026-04-25T10:17:04.000Z",
+      "endTime": "2026-04-25T10:17:19.081Z"
+    },
+    {
+      "id": "sidecar-srt-d59c03ec09b81d1c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-d59c03ec09b81d1c.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429134441_0249_D.SRT",
+      "pointCount": 2315,
+      "startTime": "2026-04-29T05:44:42.000Z",
+      "endTime": "2026-04-29T05:45:20.606Z"
+    },
+    {
+      "id": "sidecar-srt-d6bd160e3c3bc042",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-d6bd160e3c3bc042.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day3/DJI_20260427153235_0588_D.SRT",
+      "pointCount": 1520,
+      "startTime": "2026-04-27T07:32:35.000Z",
+      "endTime": "2026-04-27T07:33:00.342Z"
+    },
+    {
+      "id": "sidecar-srt-d72eeee8a6a854f8",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-d72eeee8a6a854f8.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428193524_0972_D.SRT",
+      "pointCount": 1207,
+      "startTime": "2026-04-28T11:35:24.000Z",
+      "endTime": "2026-04-28T11:35:44.120Z"
+    },
+    {
+      "id": "sidecar-srt-d83023d388c4b9a5",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-d83023d388c4b9a5.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503063551_0186_D.SRT",
+      "pointCount": 829,
+      "startTime": "2026-05-02T22:35:51.000Z",
+      "endTime": "2026-05-02T22:36:04.813Z"
+    },
+    {
+      "id": "sidecar-srt-d8e2434f43421447",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-d8e2434f43421447.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425095020_0032_D.SRT",
+      "pointCount": 922,
+      "startTime": "2026-04-25T01:50:21.000Z",
+      "endTime": "2026-04-25T01:50:36.365Z"
+    },
+    {
+      "id": "sidecar-srt-d8ec2242011cdacf",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-d8ec2242011cdacf.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429134008_0232_D.SRT",
+      "pointCount": 4693,
+      "startTime": "2026-04-29T05:40:08.000Z",
+      "endTime": "2026-04-29T05:41:26.280Z"
+    },
+    {
+      "id": "sidecar-srt-d938b2bb2e5893e7",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-d938b2bb2e5893e7.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day2/DJI_20260426110219_0054_D.SRT",
+      "pointCount": 3931,
+      "startTime": "2026-04-26T03:02:20.000Z",
+      "endTime": "2026-04-26T03:03:25.567Z"
+    },
+    {
+      "id": "sidecar-srt-d9abc53f4b26a2d0",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-d9abc53f4b26a2d0.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503070832_0267_D.SRT",
+      "pointCount": 3246,
+      "startTime": "2026-05-02T23:08:32.000Z",
+      "endTime": "2026-05-02T23:09:26.139Z"
+    },
+    {
+      "id": "sidecar-srt-da394c0e069f2bcb",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-da394c0e069f2bcb.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502134004_0970_D.SRT",
+      "pointCount": 412,
+      "startTime": "2026-05-02T05:40:04.000Z",
+      "endTime": "2026-05-02T05:40:10.856Z"
+    },
+    {
+      "id": "sidecar-srt-da8a6de08b4a6d3e",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-da8a6de08b4a6d3e.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425130059_0094_D.SRT",
+      "pointCount": 1909,
+      "startTime": "2026-04-25T05:01:00.000Z",
+      "endTime": "2026-04-25T05:01:31.832Z"
+    },
+    {
+      "id": "sidecar-srt-dae629ae63d6403b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-dae629ae63d6403b.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425185705_0206_D.SRT",
+      "pointCount": 1519,
+      "startTime": "2026-04-25T10:57:05.000Z",
+      "endTime": "2026-04-25T10:57:30.325Z"
+    },
+    {
+      "id": "sidecar-srt-db8ca573a6d1e85a",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-db8ca573a6d1e85a.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502154322_0085_D.SRT",
+      "pointCount": 449,
+      "startTime": "2026-05-02T07:43:23.000Z",
+      "endTime": "2026-05-02T07:43:30.473Z"
+    },
+    {
+      "id": "sidecar-srt-dbe958e846d0b069",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-dbe958e846d0b069.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429065149_0001_D.SRT",
+      "pointCount": 233,
+      "startTime": "2026-04-28T22:51:50.000Z",
+      "endTime": "2026-04-28T22:51:53.870Z"
+    },
+    {
+      "id": "sidecar-srt-dce49d343617207a",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-dce49d343617207a.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428193246_0953_D.SRT",
+      "pointCount": 921,
+      "startTime": "2026-04-28T11:32:46.000Z",
+      "endTime": "2026-04-28T11:33:01.348Z"
+    },
+    {
+      "id": "sidecar-srt-dd2c4cbf2c97d3c0",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-dd2c4cbf2c97d3c0.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429141659_0286_D.SRT",
+      "pointCount": 656,
+      "startTime": "2026-04-29T06:16:59.000Z",
+      "endTime": "2026-04-29T06:17:09.927Z"
+    },
+    {
+      "id": "sidecar-srt-ded6898f4982f8bb",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-ded6898f4982f8bb.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425170217_0013_D.SRT",
+      "pointCount": 1742,
+      "startTime": "2026-04-25T09:02:17.000Z",
+      "endTime": "2026-04-25T09:02:46.046Z"
+    },
+    {
+      "id": "sidecar-srt-df2c55456b38a33d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-df2c55456b38a33d.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429121316_0173_D.SRT",
+      "pointCount": 1589,
+      "startTime": "2026-04-29T04:13:17.000Z",
+      "endTime": "2026-04-29T04:13:43.493Z"
+    },
+    {
+      "id": "sidecar-srt-dff9ab6f3537f431",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-dff9ab6f3537f431.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day2/DJI_20260426171603_0390_D.SRT",
+      "pointCount": 2033,
+      "startTime": "2026-04-26T09:16:03.000Z",
+      "endTime": "2026-04-26T09:16:36.901Z"
+    },
+    {
+      "id": "sidecar-srt-e0068aea465a6d5d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-e0068aea465a6d5d.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day7/DJI_20260501163509_0820_D.SRT",
+      "pointCount": 791,
+      "startTime": "2026-05-01T08:35:10.000Z",
+      "endTime": "2026-05-01T08:35:23.179Z"
+    },
+    {
+      "id": "sidecar-srt-e040a5ac5f454251",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-e040a5ac5f454251.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503063950_0207_D.SRT",
+      "pointCount": 1529,
+      "startTime": "2026-05-02T22:39:50.000Z",
+      "endTime": "2026-05-02T22:40:15.492Z"
+    },
+    {
+      "id": "sidecar-srt-e0b612a3316a90b3",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-e0b612a3316a90b3.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429122753_0200_D.SRT",
+      "pointCount": 5242,
+      "startTime": "2026-04-29T04:27:53.000Z",
+      "endTime": "2026-04-29T04:29:20.440Z"
+    },
+    {
+      "id": "sidecar-srt-e1214a7326fb349b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-e1214a7326fb349b.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425170321_0020_D.SRT",
+      "pointCount": 1160,
+      "startTime": "2026-04-25T09:03:21.000Z",
+      "endTime": "2026-04-25T09:03:40.336Z"
+    },
+    {
+      "id": "sidecar-srt-e22894a9fcac6872",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-e22894a9fcac6872.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425181624_0105_D.SRT",
+      "pointCount": 464,
+      "startTime": "2026-04-25T10:16:24.000Z",
+      "endTime": "2026-04-25T10:16:31.724Z"
+    },
+    {
+      "id": "sidecar-srt-e22c9817e03d06e8",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-e22c9817e03d06e8.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425170055_0002_D.SRT",
+      "pointCount": 987,
+      "startTime": "2026-04-25T09:00:56.000Z",
+      "endTime": "2026-04-25T09:01:12.449Z"
+    },
+    {
+      "id": "sidecar-srt-e2b98f0f5559104b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-e2b98f0f5559104b.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504192310_0633_D.SRT",
+      "pointCount": 484,
+      "startTime": "2026-05-04T11:23:10.000Z",
+      "endTime": "2026-05-04T11:23:18.057Z"
+    },
+    {
+      "id": "sidecar-srt-e3491784c55c7acd",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-e3491784c55c7acd.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503070503_0251_D.SRT",
+      "pointCount": 1310,
+      "startTime": "2026-05-02T23:05:04.000Z",
+      "endTime": "2026-05-02T23:05:25.838Z"
+    },
+    {
+      "id": "sidecar-srt-e3e544263b397d3b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-e3e544263b397d3b.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504202554_0802_D.SRT",
+      "pointCount": 992,
+      "startTime": "2026-05-04T12:25:54.000Z",
+      "endTime": "2026-05-04T12:26:10.533Z"
+    },
+    {
+      "id": "sidecar-srt-e445439cc9b9192c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-e445439cc9b9192c.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430180710_0531_D.SRT",
+      "pointCount": 918,
+      "startTime": "2026-04-30T10:07:10.000Z",
+      "endTime": "2026-04-30T10:07:25.298Z"
+    },
+    {
+      "id": "sidecar-srt-e4dcb65da7ac6fb0",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-e4dcb65da7ac6fb0.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429142028_0311_D.SRT",
+      "pointCount": 2467,
+      "startTime": "2026-04-29T06:20:29.000Z",
+      "endTime": "2026-04-29T06:21:10.142Z"
+    },
+    {
+      "id": "sidecar-srt-e7a9001079291ec8",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-e7a9001079291ec8.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425185004_0187_D.SRT",
+      "pointCount": 920,
+      "startTime": "2026-04-25T10:50:05.000Z",
+      "endTime": "2026-04-25T10:50:20.331Z"
+    },
+    {
+      "id": "sidecar-srt-e7d261af28780191",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-e7d261af28780191.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day3/DJI_20260427142428_0513_D.SRT",
+      "pointCount": 1326,
+      "startTime": "2026-04-27T06:24:28.000Z",
+      "endTime": "2026-04-27T06:24:50.105Z"
+    },
+    {
+      "id": "sidecar-srt-e99025040dcbd822",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-e99025040dcbd822.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504060834_0328_D.SRT",
+      "pointCount": 744,
+      "startTime": "2026-05-03T22:08:35.000Z",
+      "endTime": "2026-05-03T22:08:47.395Z"
+    },
+    {
+      "id": "sidecar-srt-ea30258d35d23e0c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-ea30258d35d23e0c.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430131802_0475_D.SRT",
+      "pointCount": 806,
+      "startTime": "2026-04-30T05:18:03.000Z",
+      "endTime": "2026-04-30T05:18:16.426Z"
+    },
+    {
+      "id": "sidecar-srt-ea9427e07380fe99",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-ea9427e07380fe99.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day1/DJI_20260425181107_0037_D.SRT",
+      "pointCount": 711,
+      "startTime": "2026-04-25T10:11:07.000Z",
+      "endTime": "2026-04-25T10:11:18.845Z"
+    },
+    {
+      "id": "sidecar-srt-eac232dcc5a53647",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-eac232dcc5a53647.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day3/DJI_20260427182336_0649_D.SRT",
+      "pointCount": 2143,
+      "startTime": "2026-04-27T10:23:37.000Z",
+      "endTime": "2026-04-27T10:24:12.736Z"
+    },
+    {
+      "id": "sidecar-srt-ead41b283125459d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-ead41b283125459d.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504062519_0368_D.SRT",
+      "pointCount": 2133,
+      "startTime": "2026-05-03T22:25:19.000Z",
+      "endTime": "2026-05-03T22:25:54.569Z"
+    },
+    {
+      "id": "sidecar-srt-eb6b8fca14893165",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-eb6b8fca14893165.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428084139_0178_D.SRT",
+      "pointCount": 902,
+      "startTime": "2026-04-28T00:41:39.000Z",
+      "endTime": "2026-04-28T00:41:54.031Z"
+    },
+    {
+      "id": "sidecar-srt-ec54676a2bc33f1c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-ec54676a2bc33f1c.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day2/DJI_20260426134340_0255_D.SRT",
+      "pointCount": 4504,
+      "startTime": "2026-04-26T05:43:41.000Z",
+      "endTime": "2026-04-26T05:44:56.127Z"
+    },
+    {
+      "id": "sidecar-srt-ec8df727e9054ae1",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-ec8df727e9054ae1.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430132058_0478_D.SRT",
+      "pointCount": 100,
+      "startTime": "2026-04-30T05:20:58.000Z",
+      "endTime": "2026-04-30T05:20:59.651Z"
+    },
+    {
+      "id": "sidecar-srt-edbea1fe08e9ada0",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-edbea1fe08e9ada0.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502133436_0948_D.SRT",
+      "pointCount": 560,
+      "startTime": "2026-05-02T05:34:36.000Z",
+      "endTime": "2026-05-02T05:34:45.325Z"
+    },
+    {
+      "id": "sidecar-srt-ee7e079f3f2f8789",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-ee7e079f3f2f8789.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429065839_0035_D.SRT",
+      "pointCount": 1814,
+      "startTime": "2026-04-28T22:58:39.000Z",
+      "endTime": "2026-04-28T22:59:09.247Z"
+    },
+    {
+      "id": "sidecar-srt-eec7de0a684eafe7",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-eec7de0a684eafe7.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429152330_0326_D.SRT",
+      "pointCount": 3085,
+      "startTime": "2026-04-29T07:23:31.000Z",
+      "endTime": "2026-04-29T07:24:22.453Z"
+    },
+    {
+      "id": "sidecar-srt-f114880d2e32056c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-f114880d2e32056c.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430130941_0410_D.SRT",
+      "pointCount": 1334,
+      "startTime": "2026-04-30T05:09:41.000Z",
+      "endTime": "2026-04-30T05:10:03.239Z"
+    },
+    {
+      "id": "sidecar-srt-f1955a39d30830ed",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-f1955a39d30830ed.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429065251_0003_D.SRT",
+      "pointCount": 917,
+      "startTime": "2026-04-28T22:52:52.000Z",
+      "endTime": "2026-04-28T22:53:07.281Z"
+    },
+    {
+      "id": "sidecar-srt-f19a8d30128799aa",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-f19a8d30128799aa.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503075118_0282_D.SRT",
+      "pointCount": 1851,
+      "startTime": "2026-05-02T23:51:18.000Z",
+      "endTime": "2026-05-02T23:51:48.857Z"
+    },
+    {
+      "id": "sidecar-srt-f272da404d316107",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-f272da404d316107.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503075305_0283_D.SRT",
+      "pointCount": 23897,
+      "startTime": "2026-05-02T23:53:06.000Z",
+      "endTime": "2026-05-02T23:59:44.681Z"
+    },
+    {
+      "id": "sidecar-srt-f2a30cff50cf025a",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-f2a30cff50cf025a.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429140853_0266_D.SRT",
+      "pointCount": 1999,
+      "startTime": "2026-04-29T06:08:53.000Z",
+      "endTime": "2026-04-29T06:09:26.334Z"
+    },
+    {
+      "id": "sidecar-srt-f2a563b25429cc3f",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-f2a563b25429cc3f.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502114350_0919_D.SRT",
+      "pointCount": 2124,
+      "startTime": "2026-05-02T03:43:50.000Z",
+      "endTime": "2026-05-02T03:44:25.419Z"
+    },
+    {
+      "id": "sidecar-srt-f484dce77f7a9a19",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-f484dce77f7a9a19.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502134321_0981_D.SRT",
+      "pointCount": 453,
+      "startTime": "2026-05-02T05:43:22.000Z",
+      "endTime": "2026-05-02T05:43:29.540Z"
+    },
+    {
+      "id": "sidecar-srt-f4e92cbbdc953508",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-f4e92cbbdc953508.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504202439_0800_D.SRT",
+      "pointCount": 548,
+      "startTime": "2026-05-04T12:24:40.000Z",
+      "endTime": "2026-05-04T12:24:49.125Z"
+    },
+    {
+      "id": "sidecar-srt-f53f63f2b6e65a66",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-f53f63f2b6e65a66.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503065946_0240_D.SRT",
+      "pointCount": 712,
+      "startTime": "2026-05-02T22:59:46.000Z",
+      "endTime": "2026-05-02T22:59:57.861Z"
+    },
+    {
+      "id": "sidecar-srt-f543c8f4cbdc708d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-f543c8f4cbdc708d.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day9/DJI_20260503070801_0266_D.SRT",
+      "pointCount": 1227,
+      "startTime": "2026-05-02T23:08:02.000Z",
+      "endTime": "2026-05-02T23:08:22.453Z"
+    },
+    {
+      "id": "sidecar-srt-f6ee89c6075917f2",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-f6ee89c6075917f2.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day2/DJI_20260426110533_0059_D.SRT",
+      "pointCount": 5524,
+      "startTime": "2026-04-26T03:05:33.000Z",
+      "endTime": "2026-04-26T03:07:05.145Z"
+    },
+    {
+      "id": "sidecar-srt-f8215522dfd3d7ba",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-f8215522dfd3d7ba.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430131612_0464_D.SRT",
+      "pointCount": 915,
+      "startTime": "2026-04-30T05:16:13.000Z",
+      "endTime": "2026-04-30T05:16:28.248Z"
+    },
+    {
+      "id": "sidecar-srt-f94caed84531a24f",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-f94caed84531a24f.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430130909_0406_D.SRT",
+      "pointCount": 1012,
+      "startTime": "2026-04-30T05:09:10.000Z",
+      "endTime": "2026-04-30T05:09:26.866Z"
+    },
+    {
+      "id": "sidecar-srt-fa1990b31c880941",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-fa1990b31c880941.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504174732_0575_D.SRT",
+      "pointCount": 75,
+      "startTime": "2026-05-04T09:47:33.000Z",
+      "endTime": "2026-05-04T09:47:34.233Z"
+    },
+    {
+      "id": "sidecar-srt-fb4ee5656e3e3ce2",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-fb4ee5656e3e3ce2.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day2/DJI_20260426191104_0449_D.SRT",
+      "pointCount": 1684,
+      "startTime": "2026-04-26T11:11:04.000Z",
+      "endTime": "2026-04-26T11:11:32.078Z"
+    },
+    {
+      "id": "sidecar-srt-fbe4efaabc06213d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-fbe4efaabc06213d.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day5/DJI_20260429133932_0228_D.SRT",
+      "pointCount": 217,
+      "startTime": "2026-04-29T05:39:32.000Z",
+      "endTime": "2026-04-29T05:39:35.603Z"
+    },
+    {
+      "id": "sidecar-srt-fc43b2905df1263d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-fc43b2905df1263d.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day8/DJI_20260502154344_0089_D.SRT",
+      "pointCount": 517,
+      "startTime": "2026-05-02T07:43:44.000Z",
+      "endTime": "2026-05-02T07:43:52.608Z"
+    },
+    {
+      "id": "sidecar-srt-fd355725d89c0fcb",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-fd355725d89c0fcb.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day3/DJI_20260427182624_0672_D.SRT",
+      "pointCount": 2240,
+      "startTime": "2026-04-27T10:26:24.000Z",
+      "endTime": "2026-04-27T10:27:01.354Z"
+    },
+    {
+      "id": "sidecar-srt-fde589087a529030",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-fde589087a529030.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day4/DJI_20260428084640_0199_D.SRT",
+      "pointCount": 1250,
+      "startTime": "2026-04-28T00:46:40.000Z",
+      "endTime": "2026-04-28T00:47:00.837Z"
+    },
+    {
+      "id": "sidecar-srt-fe4d837734654c0d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-fe4d837734654c0d.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day10/DJI_20260504063129_0390_D.SRT",
+      "pointCount": 1601,
+      "startTime": "2026-05-03T22:31:30.000Z",
+      "endTime": "2026-05-03T22:31:56.693Z"
+    },
+    {
+      "id": "sidecar-srt-feefd7c8aed67a4a",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-feefd7c8aed67a4a.gpx",
+      "sourcePath": "/Volumes/SSDMAX/drone/day6/DJI_20260430181057_0573_D.SRT",
+      "pointCount": 776,
+      "startTime": "2026-04-30T10:10:57.000Z",
+      "endTime": "2026-04-30T10:11:09.929Z"
+    }
+  ]
+}

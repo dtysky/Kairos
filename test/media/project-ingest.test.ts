@@ -295,6 +295,89 @@ describe('ingestWorkspaceProjectMedia', () => {
     expect(assets).toHaveLength(2);
   });
 
+  it('prunes stale assets only for roots scanned in the current ingest', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-prune-scanned-root';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Prune Project');
+    const mediaRoot = join(workspaceRoot, 'media-root');
+
+    await mkdir(mediaRoot, { recursive: true });
+    await writeFile(join(mediaRoot, 'keep.mp4'), '');
+    await writeFile(join(mediaRoot, 'delete-me.mp4'), '');
+    await writeWorkspaceProjectBrief(workspaceRoot, projectId, [{
+      path: mediaRoot,
+      description: '主机位素材',
+    }]);
+
+    await ingestWorkspaceProjectMedia({ workspaceRoot, projectId });
+    await rm(join(mediaRoot, 'delete-me.mp4'), { force: true });
+
+    const result = await ingestWorkspaceProjectMedia({ workspaceRoot, projectId });
+    expect(result.merge.pruned.map(asset => asset.sourcePath)).toEqual(['delete-me.mp4']);
+
+    const assets = await loadAssets(projectRoot);
+    expect(assets.map(asset => asset.sourcePath)).toEqual(['keep.mp4']);
+  });
+
+  it('blocks manual-required root videos until explicit manual capture time is filled', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-manual-required-root';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Manual Required Project');
+    const mediaRoot = join(workspaceRoot, 'timelapse-root');
+
+    await mkdir(mediaRoot, { recursive: true });
+    await writeFile(join(mediaRoot, 'timelapse.mp4'), '');
+    await saveProjectBriefConfig(projectRoot, {
+      name: 'Manual Required Project',
+      mappings: [{
+        rootId: 'root-ts',
+        path: mediaRoot,
+        enabled: true,
+        label: 'timelapse',
+        description: '延时摄影',
+        captureTimePolicy: {
+          mode: 'manual-required',
+          requiredKinds: ['video'],
+          reason: '延时视频导出时间不可信，必须人工确认拍摄日期和时间',
+        },
+      }],
+      materialPatternPhrases: [],
+    });
+
+    await expect(ingestWorkspaceProjectMedia({
+      workspaceRoot,
+      projectId,
+    })).rejects.toThrow(/拍摄时间与项目时间线明显不一致/u);
+
+    let manualItinerary = await readFile(join(projectRoot, 'config/manual-itinerary.md'), 'utf-8');
+    expect(manualItinerary).toContain('必须填日期');
+    expect(manualItinerary).toContain('timelapse.mp4');
+
+    manualItinerary = manualItinerary
+      .split('\n')
+      .map(line => {
+        if (!line.includes('| root-ts | timelapse.mp4 |')) return line;
+        const cells = line.split('|').map(cell => cell.trim());
+        cells[1] = '已填写';
+        cells[9] = '2026-05-01';
+        cells[10] = '06:00:00';
+        cells[11] = 'Asia/Shanghai';
+        return `| ${cells.slice(1, -1).join(' | ')} |`;
+      })
+      .join('\n');
+    await writeFile(join(projectRoot, 'config/manual-itinerary.md'), manualItinerary, 'utf-8');
+
+    const result = await ingestWorkspaceProjectMedia({
+      workspaceRoot,
+      projectId,
+    });
+    expect(result.missingRoots).toEqual([]);
+    const assets = await loadAssets(projectRoot);
+    expect(assets[0]).toEqual(expect.objectContaining({
+      captureTimeSource: 'manual',
+    }));
+  });
+
   it('does not persist timezone-derived metadata during ingest', async () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-a';

@@ -1,6 +1,6 @@
 """
 VLM (Vision Language Model) runner with two backends:
-  - MLX:   mlx-vlm + Qwen3-VL quantized  (Apple Silicon, no PyTorch)
+  - MLX:   mlx-vlm + Qwen3.5 / Qwen3-VL quantized  (Apple Silicon, no PyTorch)
   - Torch: transformers + Qwen3.5 / Qwen3-VL  (CUDA / CPU)
 """
 from __future__ import annotations
@@ -22,8 +22,10 @@ CMODEL_SOURCE = os.getenv("KAIROS_VLM_MODEL_SOURCE", "auto")
 CMODEL_ID = os.getenv("KAIROS_VLM_MODEL_ID", "")
 CMODEL_PATH = os.getenv("KAIROS_VLM_MODEL_PATH")
 
-CDEFAULT_MLX_MODEL = "mlx-community/Qwen3-VL-4B-Instruct-8bit"
-CLOCAL_MLX_VLM = "Qwen3-VL-4B-Instruct-8bit"
+CDEFAULT_MLX_MODEL = "mlx-community/Qwen3.5-9B-MLX-8bit"
+CLOCAL_MLX_VLM = "Qwen3.5-9B-MLX-8bit"
+CLOCAL_MLX_VLM_UNDERSCORE = "Qwen3_5-9B-MLX-8bit"
+CLEGACY_LOCAL_MLX_VLM = "Qwen3-VL-4B-Instruct-8bit"
 CDEFAULT_CUDA_MODEL = "Qwen/Qwen3.5-9B"
 CLOCAL_TORCH_VLM = "Qwen3_5-9B"
 CLEGACY_LOCAL_TORCH_VLM = "Qwen3-VL-4B-Instruct"
@@ -41,8 +43,11 @@ def _repo_root() -> Path:
 def _resolve_mlx_ref() -> str:
     if CMODEL_PATH or CMODEL_ID:
         return CMODEL_PATH or CMODEL_ID
-    local = _repo_root() / "models" / CLOCAL_MLX_VLM
-    return str(local) if local.exists() else CDEFAULT_MLX_MODEL
+    for local_name in (CLOCAL_MLX_VLM, CLOCAL_MLX_VLM_UNDERSCORE, CLEGACY_LOCAL_MLX_VLM):
+        local = _repo_root() / "models" / local_name
+        if local.exists():
+            return str(local)
+    return CDEFAULT_MLX_MODEL
 
 
 def _load_mlx() -> tuple[float, str]:
@@ -80,9 +85,14 @@ def _analyze_mlx(image_paths: list[str], prompt: str, max_tokens: int | None = N
         "Return only one JSON object and do not wrap it in markdown."
     )
     prep_started_at = time.perf_counter()
+    chat_template_kwargs = {
+        "num_images": len(abs_paths),
+    }
+    if _is_qwen35_ref(_resolve_mlx_ref()):
+        chat_template_kwargs["enable_thinking"] = False
     formatted = apply_chat_template(
         _processor, _model.config, prompt_text,
-        num_images=len(abs_paths),
+        **chat_template_kwargs,
     )
     processor_ms = (time.perf_counter() - prep_started_at) * 1000.0
     generate_started_at = time.perf_counter()
@@ -145,6 +155,11 @@ def _resolve_transformers_model_class(model_ref: str):
 
 def _should_disable_thinking() -> bool:
     return _model_type == "qwen3_5"
+
+
+def _is_qwen35_ref(model_ref: str) -> bool:
+    normalized = model_ref.lower().replace("_", ".")
+    return "qwen3.5" in normalized or "qwen35" in normalized
 
 
 def _strip_reasoning_output(text: str) -> str:

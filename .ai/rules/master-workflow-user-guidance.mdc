@@ -23,7 +23,7 @@ alwaysApply: true
 - 当前正式控制面是 `Supervisor + React console (apps/kairos-console/)`；`/analyze` 与 `/style` 是正式监控路由，旧静态监控页和兼容脚本不能再被解释成新的正式入口。
 - `scripts/kairos-supervisor.* start` 只会启动 `Supervisor + React console`，不会顺带启动 ML，也不会恢复旧 job。
 - `progress.json` 只能被解释成 durable cache；“是否还在跑”必须看 live job record。
-- Kairos 官方管理的顶层流程结束态必须是 `ML stopped`。
+- ML-backed Kairos 官方流程结束态必须是 `ML stopped`；`spatial-refresh` 是 `/analyze` 的 no-ML 空间修补 job，不进入 ML lifecycle。
 
 ## 对用户的标准流程口径
 
@@ -78,6 +78,7 @@ Kairos 的标准顺序是：
 - 没有 `store/project.json` / `store/manifest.json`：先做 `Project Init`
 - 有项目骨架但没有 `store/assets.json`：先做 `Ingest`
 - 有 `store/assets.json` 但没有 `store/slices.json`：先做 `Analyze`
+- 如果已有 `store/slices.json` 和 `analysis/asset-reports/*.json`，用户只改了 GPS / Pharos context / 空间优先级 / reverse-geocode 逻辑，优先在 `/analyze` 运行 `刷新空间结果`，不要默认重跑完整 Analyze
 - 有 `store/slices.json` 但没有 `edits/main/script/current.json`（或指定 editId 的 script current）：先做 `Script`
 - 有 `edits/<editId>/script/current.json` 但没有 `edits/<editId>/timeline/current.json`：先做 `Timeline`（内部会先跑 `rough-cut-base -> segment-cut-refiner -> segment-cut-reviewer`）
 - 有 `edits/<editId>/timeline/current.json`：进入 `Export`、Resolve timeline 交互修改或迭代修改
@@ -92,10 +93,14 @@ Kairos 的标准顺序是：
 
 ## 必须阻塞并先说明的停点
 
-- 在 `Analyze` 前，必须先说明 GPS 优先级：`embedded GPS > project GPX > project-derived-track > none`
+- 在 `Analyze` 前，必须先说明 GPS 优先级：`embedded GPS > Pharos GPX > 普通 project GPX > project-derived-track > none`
 - 在 `Analyze` 前，必须先确认 ML server 可用；不可静默退化成无 ML 分析
 - 在 `Analyze`、`Style Analysis` 或任何可能使用 ML 的正式流程结束后，必须确认 Kairos 官方 ML service 已回收到 `stopped`
 - 如果 ingest 因素材时间冲突被阻塞，必须先把用户引导到 `/ingest-gps` 的“素材时间校正”卡片；默认先填 `正确时间 / 时区`，只有自动补日期失败时才要求再补 `正确日期`
+- “素材时间校正”是 capture-time 修正的唯一编辑入口；不要要求用户再去 `导入 / GPS Review` 填同一批字段
+- 如果 root 声明了 `captureTimePolicy.mode=manual-required`，对应素材的时间阻塞必须要求用户显式填写 `正确日期 / 正确时间 / 时区`；不能用当前文件时间或建议日期自动代填后继续 Analyze
+- 如果用户刚更新了项目内 `pharos/`，必须先引导到 `/ingest-gps` 运行 `刷新 GPS 缓存` 或 `运行 Ingest`，让 `analysis/pharos-context.json` 重新解析后再进入 Analyze
+- 如果用户只是需要让旧 `asset-reports / chronology / spans` 采用新的 GPS / Pharos 空间结果，应引导到 `/analyze` 点击 `刷新空间结果`；它不会补扫新素材或新 sidecar
 - 在 `Script` 前，如果用户没有明确指定 workspace 剪辑规则分类，必须停下确认
 - 在 `Script` 阶段，不要把 Console 的 `script` job 描述成“后台自动写稿”；它当前只负责 deterministic prep，不负责起草初版 brief，也不负责写正式脚本
 - 如果用户已经修改过当前 brief，又想回到“重生成初版 brief”，必须把用户引导回 `/script` 走覆盖确认；Agent 不能静默覆盖

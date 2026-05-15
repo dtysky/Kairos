@@ -11,6 +11,7 @@ import {
 import type { IRuntimeConfig } from '../../store/project.js';
 import type { IManualSpatialContext, ISpatialLocationCandidate } from './manual-spatial.js';
 import type { IPharosTimedSpatialContext } from '../pharos/gpx-timed.js';
+import { hasEmbeddedSpatialTruth } from './spatial-priority.js';
 
 const CDEFAULT_AMAP_REVERSE_GEOCODE_URL = 'https://restapi.amap.com/v3/geocode/regeo';
 const CDEFAULT_AMAP_NEARBY_SEARCH_URL = 'https://restapi.amap.com/v3/place/around';
@@ -554,6 +555,10 @@ function selectPreferredLocationCandidates(input: {
   manualSpatial?: IManualSpatialContext | null;
   pharosSpatial?: Pick<IPharosTimedSpatialContext, 'locationCandidates'> | null;
 }): ISpatialLocationCandidate[] {
+  if (hasEmbeddedSpatialTruth(input.manualSpatial)) {
+    return resolveManualLocationCandidates(input.manualSpatial);
+  }
+
   if (input.pharosSpatial?.locationCandidates?.length) {
     return input.pharosSpatial.locationCandidates.map(candidate => ({
       role: candidate.role,
@@ -562,14 +567,20 @@ function selectPreferredLocationCandidates(input: {
     }));
   }
 
-  if (input.manualSpatial?.locationCandidates?.length) {
-    return input.manualSpatial.locationCandidates;
+  return resolveManualLocationCandidates(input.manualSpatial);
+}
+
+function resolveManualLocationCandidates(
+  manualSpatial?: IManualSpatialContext | null,
+): ISpatialLocationCandidate[] {
+  if (manualSpatial?.locationCandidates?.length) {
+    return manualSpatial.locationCandidates;
   }
-  if (input.manualSpatial?.inferredGps) {
+  if (manualSpatial?.inferredGps) {
     return [{
       role: 'point',
-      lat: input.manualSpatial.inferredGps.lat,
-      lng: input.manualSpatial.inferredGps.lng,
+      lat: manualSpatial.inferredGps.lat,
+      lng: manualSpatial.inferredGps.lng,
     }];
   }
   return [];

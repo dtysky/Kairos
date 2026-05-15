@@ -59,7 +59,54 @@ function makeContext(shots: IProjectPharosShot[]): IProjectPharosContext {
 }
 
 describe('Pharos context + matcher', () => {
-  it('warns when a planned shot has no normalized planned time', async () => {
+  it('uses record actual_time for continuous shots without planned time', async () => {
+    const projectRoot = await mkdtemp(join(tmpdir(), 'kairos-pharos-context-'));
+    try {
+      const tripRoot = join(projectRoot, 'pharos', 'trip-1');
+      await mkdir(tripRoot, { recursive: true });
+      await writeFile(join(tripRoot, 'plan.json'), JSON.stringify({
+        $schema: 'pharos/plan/1.0',
+        trip_id: 'trip-1',
+        title: 'Trip 1',
+        timezone: 'Asia/Shanghai',
+        days: [{
+          day: 1,
+          date: '2026-04-12',
+          title: 'Day 1',
+          shots: [{
+            id: 'drive-1',
+            location: '幸福港湾',
+            description: '去程车拍',
+            type: 'continuous',
+            priority: 'must',
+          }],
+        }],
+      }, null, 2));
+      await writeFile(join(tripRoot, 'record.json'), JSON.stringify({
+        $schema: 'pharos/record/1.0',
+        trip_id: 'trip-1',
+        records: [{
+          shot_id: 'drive-1',
+          status: 'expected',
+          actual_time: {
+            start: '2026-04-12T08:00:00+08:00',
+            end: '2026-04-12T08:20:00+08:00',
+          },
+        }],
+      }, null, 2));
+
+      const context = await buildProjectPharosContext({ projectRoot });
+      expect(context.shots).toHaveLength(1);
+      expect(context.shots[0]?.plannedTimeStart).toBeUndefined();
+      expect(context.shots[0]?.actualTimeStart).toBe('2026-04-12T00:00:00.000Z');
+      expect(context.shots[0]?.actualTimeEnd).toBe('2026-04-12T00:20:00.000Z');
+      expect(context.warnings.some(item => item.includes('drive-1'))).toBe(false);
+    } finally {
+      await rm(projectRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('warns when a planned shot has neither normalized planned nor record time', async () => {
     const projectRoot = await mkdtemp(join(tmpdir(), 'kairos-pharos-context-'));
     try {
       const tripRoot = join(projectRoot, 'pharos', 'trip-1');
@@ -86,16 +133,17 @@ describe('Pharos context + matcher', () => {
       const context = await buildProjectPharosContext({ projectRoot });
       expect(context.shots).toHaveLength(1);
       expect(context.shots[0]?.plannedTimeStart).toBeUndefined();
-      expect(context.warnings.some(item => item.includes('drive-1') && item.includes('planned time'))).toBe(true);
+      expect(context.shots[0]?.actualTimeStart).toBeUndefined();
+      expect(context.warnings.some(item => item.includes('drive-1') && item.includes('planned/record time'))).toBe(true);
     } finally {
       await rm(projectRoot, { recursive: true, force: true });
     }
   });
 
-  it('matches planned shots by planned time instead of actual GPS or actual time', () => {
+  it('prefers record actual_time and falls back to planned time only when actual time is absent', () => {
     const context = makeContext([
       makeShot({
-        ref: { tripId: 'trip-1', shotId: 'planned-correct' },
+        ref: { tripId: 'trip-1', shotId: 'planned-overridden-by-actual' },
         plannedTimeStart: '2026-04-12T10:00:00.000Z',
         plannedTimeEnd: '2026-04-12T10:30:00.000Z',
         actualTimeStart: '2026-04-12T20:00:00.000Z',
@@ -105,7 +153,7 @@ describe('Pharos context + matcher', () => {
         device: 'ZV-E1',
       }),
       makeShot({
-        ref: { tripId: 'trip-1', shotId: 'wrong-actual' },
+        ref: { tripId: 'trip-1', shotId: 'actual-correct' },
         plannedTimeStart: '2026-04-12T12:00:00.000Z',
         plannedTimeEnd: '2026-04-12T12:30:00.000Z',
         actualTimeStart: '2026-04-12T10:05:00.000Z',
@@ -115,13 +163,19 @@ describe('Pharos context + matcher', () => {
         device: 'ZV-E1',
       }),
       makeShot({
-        ref: { tripId: 'trip-1', shotId: 'blocked-no-plan' },
+        ref: { tripId: 'trip-1', shotId: 'planned-fallback' },
+        location: '幸福港湾',
+        description: '计划时间备用匹配',
+        plannedTimeStart: '2026-04-12T10:00:00.000Z',
+        plannedTimeEnd: '2026-04-12T10:30:00.000Z',
+        device: 'ZV-E1',
+      }),
+      makeShot({
+        ref: { tripId: 'trip-1', shotId: 'blocked-no-time' },
         plannedTimeStart: undefined,
         plannedTimeEnd: undefined,
         timeWindowStart: undefined,
         timeWindowEnd: undefined,
-        actualTimeStart: '2026-04-12T10:10:00.000Z',
-        actualTimeEnd: '2026-04-12T10:15:00.000Z',
         device: 'ZV-E1',
       }),
     ]);
@@ -143,8 +197,10 @@ describe('Pharos context + matcher', () => {
       },
     });
 
-    expect(matches[0]?.ref.shotId).toBe('planned-correct');
-    expect(matches[0]?.matchReasons.some(reason => reason.startsWith('planned-time:'))).toBe(true);
-    expect(matches.some(match => match.ref.shotId === 'blocked-no-plan')).toBe(false);
+    expect(matches[0]?.ref.shotId).toBe('actual-correct');
+    expect(matches[0]?.matchReasons.some(reason => reason.startsWith('actual-time:'))).toBe(true);
+    expect(matches.some(match => match.ref.shotId === 'planned-fallback')).toBe(true);
+    expect(matches.some(match => match.ref.shotId === 'planned-overridden-by-actual')).toBe(false);
+    expect(matches.some(match => match.ref.shotId === 'blocked-no-time')).toBe(false);
   });
 });

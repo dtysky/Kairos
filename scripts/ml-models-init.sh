@@ -10,8 +10,9 @@ WHISPER_REPO="${KAIROS_WHISPER_MODEL:-mlx-community/whisper-large-v3-turbo}"
 WHISPER_LOCAL="whisper-large-v3-turbo"
 CLIP_REPO="openai/clip-vit-base-patch32"
 CLIP_LOCAL="clip-vit-base-patch32"
-VLM_REPO="${KAIROS_VLM_MODEL_ID:-mlx-community/Qwen3-VL-4B-Instruct-8bit}"
-VLM_LOCAL="Qwen3-VL-4B-Instruct-8bit"
+VLM_REPO="${KAIROS_VLM_MODEL_ID:-mlx-community/Qwen3.5-9B-MLX-8bit}"
+VLM_LOCAL="${KAIROS_VLM_MODEL_LOCAL:-Qwen3.5-9B-MLX-8bit}"
+VLM_DOWNLOAD_SOURCE="${KAIROS_VLM_DOWNLOAD_SOURCE:-modelscope}"
 
 if [[ ! -x "$VENV_PYTHON" ]]; then
     echo "ERROR: .venv-ml/bin/python not found."
@@ -40,6 +41,8 @@ if [[ -n "${HF_ENDPOINT:-}" ]]; then
     echo "HF mirror: $HF_ENDPOINT"
     echo ""
 fi
+echo "VLM source: $VLM_DOWNLOAD_SOURCE"
+echo ""
 
 echo "[1/3] Downloading Whisper: $WHISPER_REPO"
 "$VENV_PYTHON" -c "
@@ -58,11 +61,19 @@ print('  -> done')
 
 echo ""
 echo "[3/3] Downloading VLM: $VLM_REPO"
-"$VENV_PYTHON" -c "
+if [[ "$VLM_DOWNLOAD_SOURCE" == "modelscope" ]]; then
+    "$VENV_PYTHON" -c "
+from modelscope.hub.snapshot_download import snapshot_download
+snapshot_download('${VLM_REPO}', local_dir='${MODELS_DIR}/${VLM_LOCAL}')
+print('  -> done')
+"
+else
+    "$VENV_PYTHON" -c "
 from huggingface_hub import snapshot_download
 snapshot_download('${VLM_REPO}', local_dir='${MODELS_DIR}/${VLM_LOCAL}')
 print('  -> done')
 "
+fi
 
 echo ""
 echo "=== All models initialized ==="

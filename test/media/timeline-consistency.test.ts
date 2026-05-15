@@ -95,6 +95,57 @@ describe('timeline consistency blocking', () => {
     expect(blockers).toEqual([]);
   });
 
+  it('blocks manual-required root videos until capture time is manually confirmed', () => {
+    const blockers = detectProjectTimelineBlockers({
+      assets: [{
+        id: 'asset-timelapse',
+        kind: 'video',
+        sourcePath: 'timelapse.mp4',
+        displayName: 'timelapse.mp4',
+        ingestRootId: 'root-ts',
+        capturedAt: '2026-05-07T09:00:00.000Z',
+        captureTimeSource: 'container',
+      }, {
+        id: 'asset-manual',
+        kind: 'video',
+        sourcePath: 'timelapse-fixed.mp4',
+        displayName: 'timelapse-fixed.mp4',
+        ingestRootId: 'root-ts',
+        capturedAt: '2026-05-01T22:00:00.000Z',
+        captureTimeSource: 'manual',
+      }, {
+        id: 'asset-photo',
+        kind: 'photo',
+        sourcePath: 'cover.jpg',
+        displayName: 'cover.jpg',
+        ingestRootId: 'root-ts',
+        capturedAt: '2026-05-07T09:00:00.000Z',
+        captureTimeSource: 'filesystem',
+      }],
+      roots: [{
+        id: 'root-ts',
+        enabled: true,
+        captureTimePolicy: {
+          mode: 'manual-required',
+          requiredKinds: ['video'],
+          reason: '延时视频导出时间不可信，必须人工确认拍摄日期和时间',
+        },
+      }],
+      itinerary: {
+        segments: [],
+        warnings: [],
+      },
+      geoCache: null,
+    });
+
+    expect(blockers).toHaveLength(1);
+    expect(blockers[0]).toEqual(expect.objectContaining({
+      sourcePath: 'timelapse.mp4',
+      requiresExplicitDate: true,
+    }));
+    expect(blockers[0]?.note).toContain('延时视频导出时间不可信');
+  });
+
   it('flags weak videos when filename timestamp drift exceeds the residual threshold', () => {
     const blockers = detectProjectTimelineBlockers({
       assets: [{
