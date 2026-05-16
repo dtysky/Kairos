@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { getAnalyzePerformanceProfilePath } from '../../src/modules/media/analyze-profile.js';
 import {
   analyzeWorkspaceProjectMedia,
+  resolveAnalyzeInitialProgressStep,
   resolveDynamicStageTargetConcurrency,
   resolveFineScanPrefetchTargetConcurrency,
 } from '../../src/modules/media/project-analyze.js';
@@ -29,6 +30,23 @@ async function createWorkspace(): Promise<string> {
 }
 
 describe('analyzeWorkspaceProjectMedia', () => {
+  it('derives the initial live progress stage from pending analyze artifacts', () => {
+    expect(resolveAnalyzeInitialProgressStep({
+      pendingAssetCount: 1,
+      pendingFineScanCount: 1395,
+    })).toBe('prepare');
+
+    expect(resolveAnalyzeInitialProgressStep({
+      pendingAssetCount: 0,
+      pendingFineScanCount: 1395,
+    })).toBe('fine-scan-prefetch');
+
+    expect(resolveAnalyzeInitialProgressStep({
+      pendingAssetCount: 0,
+      pendingFineScanCount: 0,
+    })).toBe('chronology');
+  });
+
   it('pauses fine-scan prefetch when ready caches exceed configured limits', () => {
     expect(resolveFineScanPrefetchTargetConcurrency({
       limits: {

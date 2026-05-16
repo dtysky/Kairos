@@ -31,6 +31,7 @@ alwaysApply: true
 
 - `progress.json` 只是 durable progress cache，不等于 live job
 - `projects/<projectId>/.tmp/media-analyze/progress.json` 不是 Analyze 或 spatial-refresh 仍在运行的证据
+- Analyze 续跑不能把 `progress.json.step` 当恢复指针；启动后必须从真实产物推导待办。若 coarse report 已全部存在且仅剩 fine-scan，首个 live progress 应进入 `fine-scan-prefetch`，不能误写回 `prepare`。
 - `projects/<projectId>/analysis/pharos-context.json` 也不是 Pharos 输入没有变化的证据；判断是否最新必须看 cache 内的 source fingerprint
 - `<workspaceRoot>/.tmp/style-analysis/<category>/progress.json` 也不是 style-analysis 仍在运行的证据
 - 判断“流程是否真的还在跑”，必须至少同时核对：

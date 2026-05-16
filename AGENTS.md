@@ -54,6 +54,7 @@ Operational lesson that must not be forgotten:
   - `npm --prefix apps/kairos-console run build`
 - 不要把根仓 `pnpm build` 误当成已经覆盖 React console 产物；前端 bundle 需要单独 build
 - `projects/<projectId>/.tmp/media-analyze/progress.json` is durable progress cache, not proof that a live analyze job is running
+- Analyze resume derives the first live stage from actual artifacts, not from `progress.json.step`: if coarse reports are complete and only fine-scan work remains, the monitor should enter `fine-scan-prefetch` instead of briefly resetting to `prepare`.
 - `<workspaceRoot>/.tmp/style-analysis/<category>/progress.json` is also durable progress cache, not proof that a live style-analysis job is running
 - `/color` now auto-checks Resolve host preflight on entry and caches it in `color/current.json`; host diagnostics should not wait until an action is clicked
 - `/style` should resolve one category of truth per monitor view; do not mix default-category metadata with another category's latest job/progress

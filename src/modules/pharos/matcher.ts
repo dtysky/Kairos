@@ -6,9 +6,6 @@ import type {
   IKtepAsset,
 } from '../../protocol/schema.js';
 
-const CTIME_NEAR_TOLERANCE_MS = 30 * 60_000;
-const CTIME_WITHIN_TOLERANCE_MS = 5 * 60_000;
-
 export interface IMatchAssetToPharosInput {
   asset: Pick<IKtepAsset, 'sourcePath' | 'capturedAt' | 'metadata'>;
   context: IProjectPharosContext | null;
@@ -31,7 +28,7 @@ export function matchAssetToPharos(
       right.score - left.score
       || left.match.ref.tripId.localeCompare(right.match.ref.tripId)
       || left.match.ref.shotId.localeCompare(right.match.ref.shotId))
-    .slice(0, input.limit ?? 3)
+    .slice(0, input.limit ?? matches.length)
     .map(item => item.match);
 }
 
@@ -44,8 +41,6 @@ function scoreShotMatch(
   shot: IProjectPharosShot,
   input: IMatchAssetToPharosInput,
 ): IScoredMatch | null {
-  if (!isShotMatchable(shot)) return null;
-
   const reasons: string[] = [];
   const timeScore = scoreTimeMatch(input.asset.capturedAt, shot, reasons);
   if (timeScore <= 0) return null;
@@ -55,9 +50,7 @@ function scoreShotMatch(
   score += scoreClipTypeMatch(input.report?.clipTypeGuess, shot, reasons);
   score += scoreTextMatch(input.report, shot, reasons);
 
-  if (shot.status === 'abandoned') {
-    score -= 0.5;
-  } else if (shot.status === 'expected') {
+  if (shot.status === 'expected') {
     score += 0.4;
   }
 
@@ -70,13 +63,12 @@ function scoreShotMatch(
       status: shot.status,
       tripTitle: shot.tripTitle,
       dayTitle: shot.dayTitle,
+      shotKind: shot.type,
+      shotLocation: shot.location,
+      shotDescription: shot.description,
       matchReasons: dedupeStrings(reasons),
     },
   };
-}
-
-function isShotMatchable(shot: IProjectPharosShot): boolean {
-  return resolveShotMatchWindow(shot) != null;
 }
 
 function scoreTimeMatch(
@@ -84,69 +76,19 @@ function scoreTimeMatch(
   shot: IProjectPharosShot,
   reasons: string[],
 ): number {
+  if (shot.status !== 'expected' && shot.status !== 'unexpected') return 0;
   if (!capturedAt) return 0;
   const capturedMs = Date.parse(capturedAt);
   if (!Number.isFinite(capturedMs)) return 0;
 
-  const window = resolveShotMatchWindow(shot);
-  if (!window) return 0;
-  const { startMs, endMs, reasonPrefix } = window;
-
-  if (startMs != null && endMs != null) {
-    if (capturedMs >= startMs - CTIME_WITHIN_TOLERANCE_MS && capturedMs <= endMs + CTIME_WITHIN_TOLERANCE_MS) {
-      reasons.push(`${reasonPrefix}:within-window`);
-      return shot.type === 'continuous' ? 6.5 : 7;
-    }
-    const delta = Math.min(Math.abs(capturedMs - startMs), Math.abs(capturedMs - endMs));
-    if (delta <= CTIME_NEAR_TOLERANCE_MS) {
-      reasons.push(`${reasonPrefix}:near-window-${Math.round(delta / 60_000)}m`);
-      return Math.max(1, 4 - delta / CTIME_NEAR_TOLERANCE_MS * 2.5);
-    }
-    return 0;
-  }
-
-  const pointMs = startMs ?? endMs;
-  if (pointMs == null) return 0;
-  const delta = Math.abs(capturedMs - pointMs);
-  if (delta <= CTIME_WITHIN_TOLERANCE_MS) {
-    reasons.push(`${reasonPrefix}:near-point-${Math.round(delta / 60_000)}m`);
-    return 5;
-  }
-  if (delta <= CTIME_NEAR_TOLERANCE_MS) {
-    reasons.push(`${reasonPrefix}:soft-point-${Math.round(delta / 60_000)}m`);
-    return 2;
-  }
-  return 0;
-}
-
-interface IShotMatchWindow {
-  startMs: number | null;
-  endMs: number | null;
-  reasonPrefix: 'actual-time' | 'planned-time';
-}
-
-function resolveShotMatchWindow(shot: IProjectPharosShot): IShotMatchWindow | null {
   const actualStartMs = parseTime(shot.actualTimeStart);
   const actualEndMs = parseTime(shot.actualTimeEnd);
-  if (actualStartMs != null || actualEndMs != null) {
-    return {
-      startMs: actualStartMs,
-      endMs: actualEndMs,
-      reasonPrefix: 'actual-time',
-    };
-  }
+  if (actualStartMs == null || actualEndMs == null) return 0;
+  if (actualEndMs < actualStartMs) return 0;
+  if (capturedMs < actualStartMs || capturedMs > actualEndMs) return 0;
 
-  const plannedStartMs = parseTime(shot.plannedTimeStart ?? shot.timeWindowStart);
-  const plannedEndMs = parseTime(shot.plannedTimeEnd ?? shot.timeWindowEnd);
-  if (plannedStartMs != null || plannedEndMs != null) {
-    return {
-      startMs: plannedStartMs,
-      endMs: plannedEndMs,
-      reasonPrefix: 'planned-time',
-    };
-  }
-
-  return null;
+  reasons.push('actual-time:within-window');
+  return shot.type === 'continuous' ? 6.5 : 7;
 }
 
 function scoreDeviceMatch(

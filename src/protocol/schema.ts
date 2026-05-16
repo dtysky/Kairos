@@ -171,6 +171,9 @@ export const IPharosMatch = z.object({
   status: EPharosShotMatchStatus.optional(),
   tripTitle: z.string().optional(),
   dayTitle: z.string().optional(),
+  shotKind: z.string().optional(),
+  shotLocation: z.string().optional(),
+  shotDescription: z.string().optional(),
   matchReasons: z.array(z.string()).default([]),
 });
 export type IPharosMatch = z.infer<typeof IPharosMatch>;

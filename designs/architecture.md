@@ -577,6 +577,7 @@
    - unified `finalize` 的每次原始 VLM 输出会写入 `projects/<projectId>/.tmp/media-analyze/finalize-attempts/<assetId>/attempt-*.json`，用于区分 token 截断和普通格式漂移
    - `asset report` 新增 `fineScanCompletedAt / fineScanSliceCount`，用于恢复 `fine-scan`
    - `retry / resume` 后 ETA 改为按当前阶段重新估算，且当前阶段完成样本少于 `3` 条时不显示 ETA
+   - 新 analyze job 的首个 live stage 必须由真实待办推导：如果 `pendingAssets=0` 但存在待恢复的 fine-scan report/checkpoint，首个 progress 写入应为 `fine-scan-prefetch`，而不是无条件回到 `prepare`
    - ML server 会在 `VLM` 和 `Whisper` 之间互斥卸载，避免两套模型同时常驻显存
    - `audio-analysis -> finalize` 的正式切换也遵守同一条规则：进入 `VLM` 前必须先卸载 `Whisper`，不再为单素材热路径保留双驻留
    - 当 unified `finalize` 返回 invalid JSON 时，Analyze 当前会按更高 VLM token 预算自动重试；默认重试序列为 `512 -> 768 -> 1152`
@@ -702,7 +703,7 @@ flowchart TD
 - 单素材拍摄时间修正只能通过“素材时间校正”卡片 / `config/manual-itinerary.json.captureTimeOverrides` 维护；`导入 / GPS Review` 不再显示或反写 `capture-time-correction`，避免同一素材被两份表单覆盖
 - `/ingest-gps` 保存配置后必须让用户显式运行 `运行 Ingest` 或 `刷新 GPS 缓存`；Analyze 前如果用户刚改过素材 Root、FlightRecord、manual-itinerary、root 时钟偏移或 capture-time overrides，应先完成对应刷新
 - planned `Pharos shot` 当前正式拆成两层：
-  - shot 归属优先按 `record.json.actual_time` 匹配；只有该 shot 没有可用 actual time 时，才回退到 `plan` 的 planned time segment；shot GPS 字段不参与时间归属
+  - shot 归属只按 `record.json.actual_time` 精确匹配；`expected / unexpected` 且有完整 actual time 的记录才可绑定素材，`pending / abandoned` 和 planned time segment 不参与素材归属；shot GPS 字段不参与时间归属
   - 空间位置只按 trip `gpx/*.gpx` 对素材/span 的时间做反算；`plan.gps / gps_start / gps_end / actual_gps` 仅保留人读参考，不再是 Kairos 的正式空间真值
 - 主链消费的是项目当前采用的素材版本，它可以是原始素材，也可以是独立调色链路产出的版本
 - `DaVinci color` 可以独立运行、多次更新，并在需要时产出供主链消费的素材版本
@@ -831,7 +832,7 @@ src/modules/ingest/
   - 项目级 `pharos/` 根目录由项目初始化和 Console 配置读取自动准备；用户不需要再手动先建这个根目录
   - `plan.json` 必需，`record.json` 与 `gpx/` 可缺失
   - 解析状态由 Supervisor / Console 显示为 `空 / 解析成功 / 解析失败`
-  - planned shot 的匹配优先按 `record.json.actual_time`，没有 actual time 时才回退到 `plan` 的 planned time segment；两者都缺少可归一化时间时才视为不可匹配
+  - planned shot 的素材归属只按 `record.json.actual_time` 精确匹配；没有完整 actual time、`pending` 或 `abandoned` 的 shot 均不可匹配素材，其中 `abandoned` 是主动放弃，不作为缺失素材
   - Analyze 的正式空间优先级为 `embedded > Pharos GPX > 普通 project GPX > project-derived-track`
   - 同名 `.SRT` / DJI FlightRecord 绑定后的 same-source 轨迹属于 `embedded`，必须压过 Pharos GPX；Pharos GPX 不能覆盖素材同源 GPS 真值
   - `project/pharos/<trip_id>/gpx/*.gpx` 命中后产出的是 `Pharos` 的 GPX-timed 空间候选，而不是 shot 自带 GPS；若对应时刻无有效点，应保留 `pharos ref` 但不产出 `Pharos` 坐标

@@ -148,6 +148,30 @@ const CANALYZE_STEP_DEFINITIONS = [
   { key: 'fine-scan-recognition', label: '识别细扫素材' },
   { key: 'chronology', label: '刷新时间视图' },
 ] as const;
+type TAnalyzeStepKey = typeof CANALYZE_STEP_DEFINITIONS[number]['key'];
+
+export function resolveAnalyzeInitialProgressStep(input: {
+  pendingAssetCount: number;
+  pendingFineScanCount: number;
+}): TAnalyzeStepKey {
+  if (input.pendingAssetCount > 0) return 'prepare';
+  if (input.pendingFineScanCount > 0) return 'fine-scan-prefetch';
+  return 'chronology';
+}
+
+function describeAnalyzeInitialProgress(input: {
+  step: TAnalyzeStepKey;
+  projectName: string;
+  pendingFineScanCount: number;
+}): string {
+  if (input.step === 'fine-scan-prefetch') {
+    return `已完成统一素材分析，正在恢复 ${input.pendingFineScanCount} 条待细扫素材`;
+  }
+  if (input.step === 'chronology') {
+    return '当前没有待分析素材，正在刷新 chronology 视图';
+  }
+  return `正在读取项目“${input.projectName}”的素材与路径候选`;
+}
 // Analyze now treats ASR and finalize VLM as separate stages. Entering one
 // stage must unload the other model instead of keeping both resident.
 const CAUDIO_ANALYSIS_KEEP_OTHER_MODELS_LOADED = false;
@@ -312,7 +336,7 @@ export async function analyzeWorkspaceProjectMedia(
     if (!performance || !performanceProfilePath) return;
     await performance.write(performanceProfilePath);
   };
-  const resolveStepMeta = (step: typeof CANALYZE_STEP_DEFINITIONS[number]['key']) => {
+  const resolveStepMeta = (step: TAnalyzeStepKey) => {
     const stepIndex = CANALYZE_STEP_DEFINITIONS.findIndex(item => item.key === step);
     const definition = CANALYZE_STEP_DEFINITIONS[stepIndex];
     if (!definition) {
@@ -349,19 +373,33 @@ export async function analyzeWorkspaceProjectMedia(
     });
   };
 
+  const initialProgressStep = resolveAnalyzeInitialProgressStep({
+    pendingAssetCount: pendingAssets.length,
+    pendingFineScanCount: pendingFineScanEntries.length,
+  });
+  const initialProgressIndex = initialProgressStep === 'prepare'
+    ? progressBase
+    : progressTotal;
+
   await writeAnalyzeStepProgress({
-    step: 'prepare',
+    step: initialProgressStep,
     status: 'running',
-    fileIndex: progressBase,
+    fileIndex: initialProgressIndex,
     fileTotal: progressTotal,
-    current: progressBase,
+    current: initialProgressIndex,
     total: progressTotal,
     unit: 'files',
-    detail: `正在读取项目“${project.name}”的素材与路径候选`,
-        extra: {
-          projectId: input.projectId,
-          projectName: project.name,
-        },
+    detail: describeAnalyzeInitialProgress({
+      step: initialProgressStep,
+      projectName: project.name,
+      pendingFineScanCount: pendingFineScanEntries.length,
+    }),
+    extra: {
+      projectId: input.projectId,
+      projectName: project.name,
+      pendingAssetCount: pendingAssets.length,
+      pendingFineScanCount: pendingFineScanEntries.length,
+    },
   });
 
   try {
@@ -1354,7 +1392,7 @@ interface IFinalizeFailure {
 }
 
 interface IAnalyzeStepProgressInput {
-  step: typeof CANALYZE_STEP_DEFINITIONS[number]['key'];
+  step: TAnalyzeStepKey;
   fileIndex?: number;
   fileTotal?: number;
   current?: number;

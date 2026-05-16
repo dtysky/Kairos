@@ -327,7 +327,7 @@ async function parseTripDirectory(
         dayTitle: typeof day.title === 'string' ? day.title : undefined,
         location: typeof shot.location === 'string' ? shot.location : '未知地点',
         description: typeof shot.description === 'string' ? shot.description : '',
-        type: typeof shot.type === 'string' ? shot.type : 'unknown',
+        type: resolveShotType(shot),
         priority: shot.priority === 'must' || shot.priority === 'optional'
           ? shot.priority
           : undefined,
@@ -385,7 +385,7 @@ async function parseTripDirectory(
       day: typeof shot.day === 'number' ? shot.day : undefined,
       location: typeof shot.location === 'string' ? shot.location : '未知地点',
       description: typeof shot.description === 'string' ? shot.description : '',
-      type: typeof shot.type === 'string' ? shot.type : 'unknown',
+      type: resolveExtraShotType(shot),
       device: typeof shot.device === 'string' ? shot.device : undefined,
       roll: typeof shot.roll === 'string' ? shot.roll : undefined,
       devices: typeof shot.device === 'string' ? [shot.device] : [],
@@ -497,6 +497,30 @@ function normalizeShotStatus(value: unknown): IProjectPharosShot['status'] {
   return value === 'expected' || value === 'unexpected' || value === 'abandoned'
     ? value
     : 'pending';
+}
+
+function resolveShotType(shot: Record<string, unknown>): string {
+  const kind = readFlatString(shot, 'kind');
+  if (kind) return kind;
+  return readFlatString(shot, 'type') ?? 'unknown';
+}
+
+function resolveExtraShotType(shot: Record<string, unknown>): string {
+  const kind = readFlatString(shot, 'kind');
+  if (kind) return kind;
+
+  const legacyType = readFlatString(shot, 'type');
+  return legacyType === 'continuous' ? 'continuous' : 'event';
+}
+
+function readFlatString(
+  value: Record<string, unknown>,
+  key: string,
+): string | undefined {
+  const resolved = value[key];
+  if (typeof resolved !== 'string') return undefined;
+  const trimmed = resolved.trim();
+  return trimmed || undefined;
 }
 
 function normalizeCoordinate(value: unknown): [number, number] | undefined {

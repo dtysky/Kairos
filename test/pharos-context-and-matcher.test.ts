@@ -77,7 +77,7 @@ describe('Pharos context + matcher', () => {
             id: 'drive-1',
             location: '幸福港湾',
             description: '去程车拍',
-            type: 'continuous',
+            kind: 'continuous',
             priority: 'must',
           }],
         }],
@@ -97,6 +97,7 @@ describe('Pharos context + matcher', () => {
 
       const context = await buildProjectPharosContext({ projectRoot });
       expect(context.shots).toHaveLength(1);
+      expect(context.shots[0]?.type).toBe('continuous');
       expect(context.shots[0]?.plannedTimeStart).toBeUndefined();
       expect(context.shots[0]?.actualTimeStart).toBe('2026-04-12T00:00:00.000Z');
       expect(context.shots[0]?.actualTimeEnd).toBe('2026-04-12T00:20:00.000Z');
@@ -140,10 +141,11 @@ describe('Pharos context + matcher', () => {
     }
   });
 
-  it('prefers record actual_time and falls back to planned time only when actual time is absent', () => {
+  it('matches only exact executed actual_time windows without planned fallback or tolerance', () => {
     const context = makeContext([
       makeShot({
         ref: { tripId: 'trip-1', shotId: 'planned-overridden-by-actual' },
+        status: 'expected',
         plannedTimeStart: '2026-04-12T10:00:00.000Z',
         plannedTimeEnd: '2026-04-12T10:30:00.000Z',
         actualTimeStart: '2026-04-12T20:00:00.000Z',
@@ -154,6 +156,7 @@ describe('Pharos context + matcher', () => {
       }),
       makeShot({
         ref: { tripId: 'trip-1', shotId: 'actual-correct' },
+        status: 'expected',
         plannedTimeStart: '2026-04-12T12:00:00.000Z',
         plannedTimeEnd: '2026-04-12T12:30:00.000Z',
         actualTimeStart: '2026-04-12T10:05:00.000Z',
@@ -164,6 +167,7 @@ describe('Pharos context + matcher', () => {
       }),
       makeShot({
         ref: { tripId: 'trip-1', shotId: 'planned-fallback' },
+        status: 'expected',
         location: '幸福港湾',
         description: '计划时间备用匹配',
         plannedTimeStart: '2026-04-12T10:00:00.000Z',
@@ -171,11 +175,19 @@ describe('Pharos context + matcher', () => {
         device: 'ZV-E1',
       }),
       makeShot({
-        ref: { tripId: 'trip-1', shotId: 'blocked-no-time' },
-        plannedTimeStart: undefined,
-        plannedTimeEnd: undefined,
-        timeWindowStart: undefined,
-        timeWindowEnd: undefined,
+        ref: { tripId: 'trip-1', shotId: 'end-tolerance-old-bug' },
+        status: 'expected',
+        actualTimeStart: '2026-04-12T09:50:00.000Z',
+        actualTimeEnd: '2026-04-12T10:14:59.999Z',
+        device: 'ZV-E1',
+      }),
+      makeShot({
+        ref: { tripId: 'trip-1', shotId: 'abandoned-planned-covering' },
+        status: 'abandoned',
+        plannedTimeStart: '2026-04-12T10:00:00.000Z',
+        plannedTimeEnd: '2026-04-12T10:30:00.000Z',
+        actualTimeStart: '2026-04-12T10:05:00.000Z',
+        actualTimeEnd: '2026-04-12T10:25:00.000Z',
         device: 'ZV-E1',
       }),
     ]);
@@ -198,9 +210,60 @@ describe('Pharos context + matcher', () => {
     });
 
     expect(matches[0]?.ref.shotId).toBe('actual-correct');
-    expect(matches[0]?.matchReasons.some(reason => reason.startsWith('actual-time:'))).toBe(true);
-    expect(matches.some(match => match.ref.shotId === 'planned-fallback')).toBe(true);
+    expect(matches[0]?.matchReasons).toContain('actual-time:within-window');
+    expect(matches[0]?.shotLocation).toBe('陌上花公园');
+    expect(matches.some(match => match.ref.shotId === 'planned-fallback')).toBe(false);
     expect(matches.some(match => match.ref.shotId === 'planned-overridden-by-actual')).toBe(false);
-    expect(matches.some(match => match.ref.shotId === 'blocked-no-time')).toBe(false);
+    expect(matches.some(match => match.ref.shotId === 'end-tolerance-old-bug')).toBe(false);
+    expect(matches.some(match => match.ref.shotId === 'abandoned-planned-covering')).toBe(false);
+  });
+
+  it('keeps multiple exact actual-time candidates and ranks the primary first', () => {
+    const context = makeContext([
+      makeShot({
+        ref: { tripId: 'trip-1', shotId: 'continuous-drive' },
+        status: 'unexpected',
+        type: 'continuous',
+        location: '深圳到南宁',
+        description: '全程行车记录',
+        actualTimeStart: '2026-04-12T10:00:00.000Z',
+        actualTimeEnd: '2026-04-12T11:00:00.000Z',
+        devices: ['ZV-E1'],
+      }),
+      makeShot({
+        ref: { tripId: 'trip-1', shotId: 'event-covering' },
+        status: 'expected',
+        type: 'event',
+        location: '出发点',
+        description: '出发口播',
+        actualTimeStart: '2026-04-12T10:10:00.000Z',
+        actualTimeEnd: '2026-04-12T10:20:00.000Z',
+      }),
+    ]);
+
+    const matches = matchAssetToPharos({
+      asset: {
+        sourcePath: 'zve1/day0/C0001.MP4',
+        capturedAt: '2026-04-12T10:15:00.000Z',
+        metadata: {
+          cameraModel: 'Sony ZV-E1',
+        },
+      },
+      context,
+      report: {
+        clipTypeGuess: 'drive',
+        summary: '开车从深圳去南宁',
+        placeHints: ['深圳到南宁'],
+        labels: ['drive'],
+      },
+    });
+
+    expect(matches.map(match => match.ref.shotId)).toEqual(['continuous-drive', 'event-covering']);
+    expect(matches[0]?.shotKind).toBe('continuous');
+    expect(matches[0]?.matchReasons).toEqual(expect.arrayContaining([
+      'actual-time:within-window',
+      'device:zv',
+      'clip-type:drive',
+    ]));
   });
 });

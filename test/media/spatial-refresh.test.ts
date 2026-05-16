@@ -140,11 +140,14 @@ describe('refreshAnalyzeSpatialResults', () => {
     }));
     expect(reports.get(embeddedAsset.id)?.gpsSummary).toContain('embedded');
     expect(reports.get(embeddedAsset.id)?.pharosMatches.length).toBeGreaterThan(0);
+    expect(reports.get(embeddedAsset.id)?.pharosMatches.some(match => match.ref.shotId === 'abandoned-1')).toBe(false);
+    expect(reports.get(embeddedAsset.id)?.pharosMatches[0]?.shotKind).toBe('continuous');
     expect(reports.get(pharosAsset.id)?.inferredGps).toEqual(expect.objectContaining({
       source: 'pharos',
       lat: 31.1,
       lng: 101.1,
     }));
+    expect(reports.get(pharosAsset.id)?.pharosMatches.map(match => match.ref.shotId)).toEqual(['drive-1']);
     expect(reports.get(gpxAsset.id)?.inferredGps).toEqual(expect.objectContaining({
       source: 'gpx',
       lat: 40,
@@ -193,7 +196,14 @@ async function seedProjectPharos(projectRoot: string): Promise<void> {
         id: 'drive-1',
         location: 'Pharos Road',
         description: 'continuous drive',
-        type: 'continuous',
+        kind: 'continuous',
+        priority: 'must',
+      }, {
+        id: 'abandoned-1',
+        location: 'Old Plan',
+        description: 'abandoned planned shot covering the same time',
+        kind: 'event',
+        time_window: ['00:00', '00:10'],
         priority: 'must',
       }],
     }],
@@ -208,6 +218,11 @@ async function seedProjectPharos(projectRoot: string): Promise<void> {
         start: '2026-04-12T00:00:00.000Z',
         end: '2026-04-12T00:10:00.000Z',
       },
+    }, {
+      shot_id: 'abandoned-1',
+      status: 'abandoned',
+      actual_time: null,
+      abandon_reason: 'changed route',
     }],
   }, null, 2));
   await writeFile(join(tripRoot, 'gpx', 'pharos-track.gpx'), [

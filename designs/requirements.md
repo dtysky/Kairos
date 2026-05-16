@@ -115,7 +115,7 @@ Kairos 面向专业旅行摄影师 / 纪录片创作者，解决旅拍后期中�
 |------|------|
 | 分镜数据读取 | 读取 Pharos 的可交换分镜 JSON 数据（含分镜类型、描述、设备、优先级） |
 | 拍摄记录匹配 | 关联 Pharos 移动端的实际拍摄记录（时间、GPS、完成状态） |
-| 素材-分镜关联 | 利用分镜的拍摄时间+GPS 精确匹配素材，而非盲猜 |
+| 素材-分镜关联 | 只用 `record.json.actual_time` 对 `expected / unexpected` 记录精确匹配素材；planned time 不参与素材归属，`abandoned` 不匹配也不算缺失 |
 
 **注意**：正式流程仍以 Pharos 为主输入；当前实现同时兼容没有 Pharos 时的 fallback 路径，但这不改变 Pharos-first 的正式定义。
 

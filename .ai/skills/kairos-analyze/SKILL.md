@@ -172,7 +172,7 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
 - 当前代码入口仍允许通过 `gpxPaths` 显式注入 1..N 个 GPX 文件路径，用于覆盖默认发现
 - 默认 GPX 命中策略是：从带 `time` 的 `trkpt / rtept / wpt` 中，按 `capturedAt` 选择容差内最近点
 - planned `Pharos shot` 的正式语义当前拆成两层：
-  - 素材归属优先按 `record.json.actual_time` 匹配；只有该 shot 缺少可用 actual time 时才回退到 `plan` 的 planned time segment；`plan.gps` 或 `actual_gps` 不参与时间归属
+  - 素材归属只按 `record.json.actual_time` 精确匹配；只有 `expected / unexpected` 且有完整 actual time 的记录可绑定素材，`pending / abandoned` 和 planned time segment 不参与素材归属；`plan.gps` 或 `actual_gps` 不参与时间归属
   - 空间位置只按 trip GPX 对素材/span 的时间做反算，不再把 shot 自带计划/实际 GPS 当作正式空间真值
 - Pharos 协议 hash 与 `.ai/pharos-protocol-baseline.json` 不匹配时，必须先完成协议同步并刷新 baseline；Analyze 不应基于旧协议假设继续解释 Pharos context
 - `manual-itinerary` 正文不直接参与拍摄时间修正；真正的时间修正入口是它末尾的“素材时间校正”表格，并且只有 rerun ingest 后才会生效
@@ -315,6 +315,7 @@ analysis/asset-reports/<assetId>.json
   - 当前正式口径是 `selectedTranscript / selectedTranscriptSource / embeddedHealth / protectionHealth / protectedAudio / decisionHints`
 - report 里的 `fineScanCompletedAt / fineScanSliceCount` 用来标记 `fine-scan` 是否真正完成
 - `analysis/fine-scan-checkpoints/<assetId>.json` 只代表 fine-scan 的 durable 中间态，不代表当前一定存在 live fine-scan worker
+- 新启动的 Analyze job 不读取 `progress.json.step` 作为恢复指针，而是重新计算 `pendingAssets` 和 `pendingFineScanEntries`；如果 `pendingAssets=0` 且存在待 fine-scan report，首个 live progress 必须直接写 `fine-scan-prefetch`，避免监控页误显示“从 prepare 重新开始”。
 - `retry / resume` 后 ETA 不继承上一轮估算，而是按当前阶段重新估；当前阶段完成数 `< 3` 时，面板不显示 ETA
 
 ### 4. 只对重点内容产出 slices

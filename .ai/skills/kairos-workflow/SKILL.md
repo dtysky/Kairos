@@ -277,7 +277,7 @@ project/
 - 这套内部 GPX 只用于 same-source 索引 / 惰性查找，不改变 `embedded GPS > Pharos GPX > 普通 project GPX > project-derived-track` 的正式优先级；Pharos GPX 不能覆盖同名 `.SRT` / FlightRecord 绑定出的 embedded GPS
 - 照片拍摄时间默认优先吃 EXIF 原始时间和时区；如果照片自身带 GPS，也应直接作为 `embedded GPS` 真值
 - Ingest / GPS 刷新负责解析项目内固定 `pharos/` 并刷新 `analysis/pharos-context.json`；Analyze 只消费该 cache，不临时补跑 Pharos parse
-- Pharos planned shot 归属优先使用 `record.json.actual_time`；只有缺少可用 actual time 时才回退到 `plan` 的 planned time segment，空间仍只从 trip GPX 按时间反算
+- Pharos planned shot 归属只使用 `record.json.actual_time` 精确匹配；`expected / unexpected` 且有完整 actual time 的记录才可绑定素材，`pending / abandoned` 和 planned time segment 不参与素材归属，空间仍只从 trip GPX 按时间反算
 - 对本次成功扫描到的 root，Ingest 会剪掉该 root 下磁盘已不存在的旧资产；missing root 的旧资产保持不动
 - root 可声明 `captureTimePolicy.mode=manual-required`；命中素材必须由用户显式补 `正确日期 / 正确时间 / 时区` 后 rerun ingest
 - 如果 ingest 发现素材时间和项目时间线明显冲突，必须把待校正项追加到 `config/manual-itinerary.md` 末尾的“素材时间校正”表格，并阻塞后续阶段

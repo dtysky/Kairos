@@ -54,7 +54,7 @@ function makeMatch(ref: IPharosMatch['ref']): IPharosMatch {
   return {
     ref,
     confidence: 0.82,
-    matchReasons: ['planned-time:within-window'],
+    matchReasons: ['actual-time:within-window'],
   };
 }
 

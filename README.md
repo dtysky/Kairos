@@ -54,6 +54,7 @@ Current stable pipeline:
   - do not treat root `pnpm build` as covering the React console bundle; the console assets must be built explicitly
   - `scripts/kairos-supervisor.* start` only starts `Supervisor + React console`; it does not start ML and does not resume old jobs
   - `progress.json` is only a durable progress cache; a phase is live only when Supervisor still has the matching active job
+  - Analyze resume does not trust `progress.json.step` as a restart pointer; each new analyze job derives pending work from `analysis/asset-reports`, `analysis/prepared-assets`, `analysis/fine-scan-checkpoints`, and `store/spans.json`. When all coarse reports already exist and only fine-scan remains, the first live progress write must surface `fine-scan-prefetch` instead of resetting the monitor back to `prepare`.
   - `/analyze` 会同时展示活跃 `analyze` 与 `spatial-refresh` job；后者是 no-ML deterministic repair job，不会启动或停止 ML
   - console refresh now prefers the project that currently owns the latest active project-scoped job before falling back to the last locally remembered selection
   - when multiple projects share the same display name, the selector must surface `projectId` to avoid mixing monitor context

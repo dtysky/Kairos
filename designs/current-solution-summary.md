@@ -249,7 +249,7 @@ flowchart TD
 - 如果项目迁移后缺少这个目录，Console 当前应先自动补齐，再向用户展示固定目录和投放提示
 - `project-brief.md` 中的 `## Pharos` 当前只承担 trip 筛选语义；未填写时默认纳入全部可解析 trip，填写 `包含 Trip：...` 时只消费这些 trip
 - `Pharos` 解析当前属于 Ingest / GPS 刷新阶段：`analysis/pharos-context.json` 保存项目内 `pharos/` 输入 fingerprint，`plan.json / record.json / gpx/*.gpx` 或 trip 筛选变化时必须自动重建；Analyze 不隐式补跑 Pharos 解析
-- planned shot 的素材归属当前正式拆成独立时间层：优先按 `record.json` 的 `actual_time` 匹配，只有该 shot 缺少可用 actual time 时才回退到 `plan` 的 planned time segment；shot GPS 字段不参与时间归属
+- planned shot 的素材归属当前正式拆成独立时间层：只按 `record.json` 的 `actual_time` 精确匹配，只有 `expected / unexpected` 且有完整 actual time 的记录可绑定素材；`pending / abandoned` 与 `plan` 的 planned time segment 不参与素材归属，shot GPS 字段不参与时间归属
 - planned shot 的空间真值当前正式拆成独立 GPX 层：无论 `drive` 还是单机位 shot，都只使用 trip `gpx/*.gpx` 按素材/span 时间反算位置；`plan.gps / gps_start / gps_end / actual_gps` 仅保留人读语义
 - Pharos 上游协议 hash 不匹配时，Kairos 必须先完成协议同步：重读当前 `../Pharos/designs`、同步设计文档 / rules / skills / 代码影响、刷新 `.ai/pharos-protocol-baseline.json` 并验证匹配后，才继续普通 Pharos 实现
 - `AdoptedMediaVersion` 表示项目当前采用的素材版本，它可以是原始素材，也可以是独立调色链路产出的版本
@@ -636,6 +636,7 @@ flowchart TD
   - `Supervisor` job 里是否存在 `running analyze` 或 `running spatial-refresh`
   - `progress.json` 的 `LastWriteTime / updatedAt` 是否仍在推进
   - 对 `analyze`，GPU / ML 是否出现与当前阶段一致的活跃迹象；对 `spatial-refresh`，不应期待 ML 活动
+- Analyze 新 job 的续跑阶段不读取 `progress.json.step` 作为恢复指针，而是重新从 `analysis/asset-reports`、`analysis/prepared-assets`、`analysis/fine-scan-checkpoints` 与 `store/spans.json` 推导待办；如果 coarse report 已全部存在且只剩 fine-scan，首个 live progress 应直接显示 `fine-scan-prefetch`，不能把监控页误拉回 `prepare`。
 - workspace `style-analysis` 也遵守同一条 live-job 规则；stale progress 只能显示 cached/idle，不能伪装成仍在运行
 
 ### 元信息保真原则
@@ -736,7 +737,7 @@ flowchart TD
   - 非 `drive` 使用素材/span 的 midpoint 时刻取一个 GPX 点
   - 若对应时刻没有有效 GPX 点，保留 `pharos ref`，但不产出 `source:'pharos'` 的坐标，也不回退到 shot 的计划/实际 GPS
 - 如果素材已有 `embedded GPS`，包括同名 `.SRT` 或 DJI FlightRecord 成功绑定后的 same-source 轨迹，Pharos GPX 只能保留 shot 归属 / route evidence，不能覆盖最终 `inferredGps`
-- planned shot 若缺少 `record.json.actual_time`，才回退到 `plan` 的 planned time；两者都缺少可归一化时间时，当前正式视为不可匹配
+- planned shot 若缺少完整 `record.json.actual_time`，当前正式视为不可匹配素材；planned time 只保留计划/展示语义，不再作为素材归属 fallback
 
 ## 7. 正式流程与当前实现的边界
 
