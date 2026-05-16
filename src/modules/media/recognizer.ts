@@ -2,14 +2,15 @@ import type { IKtepEvidence } from '../../protocol/schema.js';
 import type { MlClient, IMlVlmTiming } from './ml-client.js';
 import type { IShotKeyframeGroup } from './keyframe.js';
 
-const CVLM_PROMPT = `Analyze this image from a travel video. Return only a raw JSON object with:
-- scene_type: one of "landscape", "cityscape", "driving", "aerial", "food", "portrait", "activity", "landmark", "nature", "interior"
-- subjects: string[] of main subjects/objects
-- mood: one of "calm", "energetic", "dramatic", "cozy", "melancholic", "joyful"
-- place_hints: string[] of any recognizable location clues
-- narrative_role: one of "intro", "establishing", "detail", "transition", "climax", "filler"
-- description: one sentence summary
-Do not use markdown fences or any extra explanation.`;
+const CFINE_SCAN_MAX_TOKENS = 96;
+
+const CVLM_PROMPT = `Analyze these travel-video frames. Return only a compact JSON object:
+{"description":"one short factual visual observation in Chinese or English"}
+Rules:
+- description must be one sentence, at most 32 words.
+- Describe only visible visual facts in the frames.
+- Do not include route ownership, day labels, GPS coordinates, timestamps, Pharos ids, or trip names.
+- Do not include markdown or extra explanation.`;
 
 export interface IRecognition {
   sceneType: string;
@@ -49,39 +50,66 @@ export async function recognizeFrames(
   imagePaths: string[],
 ): Promise<IRecognition> {
   const startedAt = Date.now();
-  const result = await client.vlmAnalyze(imagePaths, CVLM_PROMPT);
+  const result = await client.vlmAnalyze(imagePaths, CVLM_PROMPT, {
+    maxTokens: CFINE_SCAN_MAX_TOKENS,
+  });
   const roundTripMs = Date.now() - startedAt;
 
-  let parsed: any;
+  let parsed: Record<string, unknown> = {};
   try {
     const jsonMatch = result.description.match(/\{[\s\S]*\}/);
-    parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
-  } catch {
+    if (jsonMatch) {
+      const parsedJson = JSON.parse(jsonMatch[0]);
+      parsed = parsedJson && typeof parsedJson === 'object' && !Array.isArray(parsedJson)
+        ? parsedJson as Record<string, unknown>
+        : {};
+    }
+  } catch (error) {
+    void error;
     parsed = {};
   }
 
   const evidence: IKtepEvidence[] = [];
-  if (parsed.description) {
+  if (typeof parsed.description === 'string' && parsed.description) {
     evidence.push({ source: 'vision', value: parsed.description, confidence: 0.7 });
   }
-  if (parsed.place_hints) {
+  if (Array.isArray(parsed.place_hints)) {
     for (const hint of parsed.place_hints) {
+      if (typeof hint !== 'string') continue;
       evidence.push({ source: 'vision', value: `place:${hint}`, confidence: 0.5 });
     }
   }
 
   return {
-    sceneType: parsed.scene_type ?? 'unknown',
-    subjects: parsed.subjects ?? [],
-    mood: parsed.mood ?? 'unknown',
-    placeHints: parsed.place_hints ?? [],
-    narrativeRole: parsed.narrative_role ?? 'filler',
-    description: parsed.description ?? '',
+    sceneType: typeof parsed.scene_type === 'string' ? parsed.scene_type : 'unknown',
+    subjects: Array.isArray(parsed.subjects)
+      ? parsed.subjects.filter((item): item is string => typeof item === 'string')
+      : [],
+    mood: typeof parsed.mood === 'string' ? parsed.mood : 'unknown',
+    placeHints: Array.isArray(parsed.place_hints)
+      ? parsed.place_hints.filter((item): item is string => typeof item === 'string')
+      : [],
+    narrativeRole: typeof parsed.narrative_role === 'string' ? parsed.narrative_role : 'filler',
+    description: normalizeRecognitionDescription(parsed.description, result.description),
     evidence,
     timing: result.timing,
     roundTripMs,
     imageCount: imagePaths.length,
   };
+}
+
+function normalizeRecognitionDescription(
+  parsedDescription: unknown,
+  responseText: string,
+): string {
+  const description = typeof parsedDescription === 'string'
+    ? parsedDescription.trim()
+    : '';
+  if (description) return description;
+  return responseText
+    .replace(/```(?:json)?/giu, '')
+    .replace(/```/gu, '')
+    .trim();
 }
 
 export async function recognizeShotGroups(

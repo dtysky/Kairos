@@ -42,11 +42,8 @@ describe('buildOutline', () => {
         sourceInMs: 1_000,
         sourceOutMs: 7_000,
         transcript: '海边很安静。',
-        materialPatterns: [{
-          phrase: '高辨识度地点快速建场',
-          confidence: 0.82,
-          evidenceRefs: [],
-        }],
+        visualObservation: '海边空镜很安静。',
+        materialPatterns: ['高辨识度地点快速建场'],
         grounding: {
           speechMode: 'available',
           speechValue: 'emotional',
@@ -54,15 +51,10 @@ describe('buildOutline', () => {
             tier: 'strong-inference',
             confidence: 0.8,
             sourceKinds: ['vision'],
-            reasons: ['test'],
             locationText: 'Auckland',
           }],
           pharosRefs: [],
         },
-        narrativeFunctions: { core: [], extra: [], evidence: [] },
-        shotGrammar: { core: [], extra: [], evidence: [] },
-        viewpointRoles: { core: [], extra: [], evidence: [] },
-        subjectStates: { core: [], extra: [], evidence: [] },
       }],
     ]);
 

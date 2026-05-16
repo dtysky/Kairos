@@ -33,6 +33,7 @@ describe('buildAssetCoarseReport', () => {
     expect(report.keepDecision).toBe('keep');
     expect(report.materializationPath).toBe('direct');
     expect(report.fineScanMode).toBeUndefined();
+    expect('materialPatterns' in report).toBe(false);
   });
 
   it('writes explicit fine-scan decisions for retained video assets', () => {

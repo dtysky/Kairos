@@ -55,6 +55,13 @@ Operational lesson that must not be forgotten:
 - 不要把根仓 `pnpm build` 误当成已经覆盖 React console 产物；前端 bundle 需要单独 build
 - `projects/<projectId>/.tmp/media-analyze/progress.json` is durable progress cache, not proof that a live analyze job is running
 - Analyze resume derives the first live stage from actual artifacts, not from `progress.json.step`: if coarse reports are complete and only fine-scan work remains, the monitor should enter `fine-scan-prefetch` instead of briefly resetting to `prepare`.
+- Analyze fact truth lives in `analysis/asset-reports/*.json`; `store/spans.json` and `media/chronology.json` are downstream indexes explicitly rebuilt from `/chronology`.
+- In asset reports, `interestingWindows[]` is the pre-fine-scan plan and `fineScanWindows[]` is the post-fine-scan recognized/dropped window result; existing complete `fineScanWindows` must be reused for span rebuilds instead of rerunning visual analysis.
+- Analyze must not append or rebuild spans during coarse/direct, fine-scan, or finalize; `/chronology` `span-rebuild` explicitly rebuilds `store/spans.json` and `store/spans.meta.json` from `store/assets.json + analysis/asset-reports/*.json`, then uses the local qwen text LM through the ML service to derive Chinese `materialPatterns[]` from each span's `type / semanticKind / transcript / visualObservation` only; LM returns ordered pattern rows and code maps them back to spans by chunk order.
+- `materialPatterns[]` remains `string[]`, with exactly four deterministic leading tags followed by up to two free tags: controlled `视角类型`, extractive `当前环境`, natural observable `天气光线`, binary `口播语音` (`有口播语音` / `无口播语音`), then optional short factual entries 5-6.
+- `/chronology` must surface active `span-rebuild` progress from `.tmp/chronology/progress.json`, including 10-span text-LM chunk progress, retry/repair count, warning state, and the `.tmp/chronology/span-rebuild.partial.json` checkpoint for completed materialPatterns.
+- `span-rebuild` must not write `speedCandidate`, `pharosRefs`, `grounding`, `spatialEvidence`, `location`, `routeRole`, or chronology event fields; speed strategy is a later downstream flow.
+- `/chronology` `chronology-build` requires fresh spans, then rebuilds `media/chronology.json` from assets + spans + root time + Pharos context.
 - `<workspaceRoot>/.tmp/style-analysis/<category>/progress.json` is also durable progress cache, not proof that a live style-analysis job is running
 - `/color` now auto-checks Resolve host preflight on entry and caches it in `color/current.json`; host diagnostics should not wait until an action is clicked
 - `/style` should resolve one category of truth per monitor view; do not mix default-category metadata with another category's latest job/progress
@@ -106,7 +113,7 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
 - Treat `/ingest-gps` as the formal Ingest / GPS refresh control surface: saving config does not scan media, `运行 Ingest` must trigger the Supervisor `ingest` job, and `刷新 GPS 缓存` must trigger `gps-refresh`.
 - Treat Ingest / GPS refresh as the formal Pharos parse point: both `运行 Ingest` and `刷新 GPS 缓存` refresh `analysis/pharos-context.json`, which must invalidate by project-local `pharos/` input fingerprint.
 - Treat `captureTimePolicy.mode=manual-required` on a root as a hard manual-time gate: matching assets require explicit `正确日期 / 正确时间 / 时区` before Analyze.
-- Treat `/analyze` as a consumer of existing assets, GPS caches, Pharos context, and chronology, not an implicit ingest runner; after changing roots, FlightRecord, manual-itinerary, Pharos files, root clock offset, or capture-time overrides, refresh from `/ingest-gps` before trusting Analyze.
+- Treat `/analyze` as a consumer of existing assets, GPS caches, and Pharos context, not an implicit ingest runner and not a span/chronology builder; after changing roots, FlightRecord, manual-itinerary, Pharos files, root clock offset, or capture-time overrides, refresh from `/ingest-gps` before trusting Analyze, then return to `/chronology` to rebuild spans/chronology.
 - Do not use `device-media-maps.local.json` as a formal config or cache; runtime path resolution must come directly from the readable `project-brief` primary/alternate path candidates.
 - Treat nested resolved `rawLocalPath` as a formal ingest exclusion boundary: the mainflow should scan the resolved current media directory, but must not recurse into the resolved raw subtree when it lives inside that directory.
 - Treat `/color` as root-discovery-first: roots with `rawPath` should auto-appear with derived blockers/status, and Resolve naming should remain convention-derived and read-only.
@@ -194,12 +201,12 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
 - Treat project-local chronology as a formal shared truth:
   - `media/chronology.json` `sortCapturedAt` is the ordering truth for Script prep and Timeline placement
   - `sortCapturedAt` should resolve in this order: asset-level `capturedAtOverride` -> `asset.capturedAt + ingestRoot.clockOffsetMs` -> raw `asset.capturedAt`
-  - changing a root-level clock offset in `/ingest-gps` means chronology truth changed; refresh chronology before trusting downstream ordering
+  - changing a root-level clock offset in `/ingest-gps` means span/chronology truth changed; rerun `/chronology` span-rebuild and chronology-build before trusting downstream ordering
 - Treat `/ingest-gps` as the formal UI for both layers of time repair:
   - root-level device drift via `config/project-brief.json` mapping `clockOffsetMs`
   - root-level manual-required time policy via `config/project-brief.json` mapping `captureTimePolicy`
   - asset-level exceptions via `captureTimeOverrides`
-  - after edits, user must explicitly run `运行 Ingest` before those changes update `store/assets.json / gps/derived.json / analysis/pharos-context.json / media/chronology.json`
+  - after edits, user must explicitly run `运行 Ingest` before those changes update `store/assets.json / gps/derived.json / analysis/pharos-context.json`; then explicitly refresh spans / chronology from `/chronology`
 - Treat workspace `剪辑规则` as the formal structure-control asset for Script / Timeline:
   - `config/edit-rules/*.md` is the human-maintained edit-rule library and the only rule-content source
   - rule categories are discovered by scanning markdown frontmatter / filenames; do not treat `config/edit-rules.json` as rule truth for new work
@@ -255,7 +262,7 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - `targetDurationMs` remains optional and advisory-only for rough cut; do not use it as the default driver for trimming or expanding effective source material
   - confirmed Flow Plan / reviewed planning artifacts should constrain order, stage completeness, material roles, and forbidden zones; they should not imply default total duration or per-segment budgets
   - rough-cut recall should stay high-recall by default: keep valid spans unless they are empty, clearly bad, or near-duplicate
-  - silent `drive / aerial` beats may auto-consume `speedCandidate` at `2x`; explicit `actions.speed` still overrides the default
+  - speed strategy no longer comes from spans; silent `drive / aerial` beats only consume explicit `actions.speed` until the separate speed flow is designed
   - source-speech beats now use `audioSelections[]` for preserved audio truth and `visualSelections[]` for companion visuals; do not collapse them back into one `selections[]`
   - source-speech audio units should merge adjacent spoken gaps `<= 3000ms` unless a strong sentence boundary blocks the merge
   - merged source-speech units should keep `120ms` head breathing and `180ms` tail breathing inside valid source bounds

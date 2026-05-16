@@ -57,7 +57,7 @@ async function createWorkspace(): Promise<string> {
 }
 
 describe('analyzeWorkspaceProjectMedia profiling', () => {
-  it('materializes direct-path visual assets into spans without entering fine-scan', async () => {
+  it('materializes direct-path visual assets into reports without writing spans', async () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-analyze-direct-materialization';
     const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Direct Materialization Project');
@@ -174,16 +174,13 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       materializationPath?: string;
       fineScanMode?: string;
     };
-    const slices = JSON.parse(
-      await readFile(getSlicesPath(projectRoot), 'utf-8'),
-    ) as Array<{ assetId: string; materialPatterns?: Array<{ phrase: string }> }>;
 
     expect(report.keepDecision).toBe('keep');
     expect(report.materializationPath).toBe('direct');
     expect(report.fineScanMode).toBeUndefined();
     expect(result.fineScannedAssetIds).toEqual([]);
-    expect(result.sliceCount).toBeGreaterThan(0);
-    expect(slices.some(slice => slice.assetId === 'asset-direct')).toBe(true);
+    expect(result.sliceCount).toBe(0);
+    await expect(access(getSlicesPath(projectRoot))).rejects.toThrow();
     expect(detectShotsMock).not.toHaveBeenCalled();
   });
 
@@ -313,7 +310,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
     });
 
     expect(result.reportCount).toBe(1);
-    expect(result.sliceCount).toBeGreaterThan(0);
+    expect(result.sliceCount).toBe(0);
     expect(result.performanceProfilePath).toBe(getAnalyzePerformanceProfilePath(projectRoot));
 
     const profile = JSON.parse(
@@ -356,14 +353,14 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
     expect(profile.ffmpeg.fineKeyframeCount).toBeGreaterThan(0);
     expect(profile.io.progressWriteCount).toBeGreaterThan(0);
     expect(profile.io.reportWriteCount).toBeGreaterThan(0);
-    expect(profile.io.sliceAppendCount).toBe(1);
+    expect(profile.io.sliceAppendCount).toBe(0);
     expect(profile.assets).toHaveLength(1);
     expect(profile.assets[0]?.assetId).toBe('asset-1');
     expect(profile.assets[0]?.vlm?.finalizeRequestCount).toBe(1);
     expect(profile.assets[0]?.vlm?.fineRequestCount).toBeGreaterThan(0);
     expect(profile.assets[0]?.sceneDetectPhases?.finalize?.callCount).toBe(0);
     expect(profile.assets[0]?.asr?.embeddedRequestCount).toBe(1);
-    expect(profile.assets[0]?.appendedSliceCount).toBe(result.sliceCount);
+    expect(profile.assets[0]?.appendedSliceCount).toBe(0);
     expect(asrSpy.mock.calls[0]?.[2]).toEqual({ keepOtherModelsLoaded: false });
     const finalizeVlmCall = vlmSpy.mock.calls.find(call => call[1]?.includes('semantic clip type and materialization policy'));
     expect(finalizeVlmCall?.[2]).toEqual(expect.objectContaining({
@@ -373,7 +370,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
     expect(detectShotsMock).not.toHaveBeenCalled();
   });
 
-  it('coalesces nearby direct-path speech windows into one persisted source-speech span', async () => {
+  it('keeps nearby direct-path speech evidence in reports without persisting spans', async () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-analyze-direct-speech-coalesce';
     const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Direct Speech Coalesce Project');
@@ -497,24 +494,13 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       },
     });
 
-    const slices = JSON.parse(
-      await readFile(getSlicesPath(projectRoot), 'utf-8'),
-    ) as Array<{
-      sourceInMs?: number;
-      sourceOutMs?: number;
-      transcript?: string;
-      transcriptSegments?: Array<{ startMs: number; endMs: number; text: string }>;
-    }>;
-    const speechSlices = slices.filter(slice => typeof slice.transcript === 'string' && slice.transcript.length > 0);
+    const report = JSON.parse(
+      await readFile(getAssetReportPath(projectRoot, 'asset-direct-speech'), 'utf-8'),
+    ) as { materializationPath?: string; interestingWindows: Array<{ semanticKind?: string }> };
 
-    expect(result.sliceCount).toBe(1);
-    expect(speechSlices).toHaveLength(1);
-    expect(speechSlices[0]?.sourceInMs).toBe(9_500);
-    expect(speechSlices[0]?.sourceOutMs).toBe(24_000);
-    expect(speechSlices[0]?.transcriptSegments).toHaveLength(3);
-    expect(speechSlices[0]?.transcript).toContain('第一句来了。');
-    expect(speechSlices[0]?.transcript).toContain('第二句接着说。');
-    expect(speechSlices[0]?.transcript).toContain('第三句收尾。');
+    expect(result.sliceCount).toBe(0);
+    expect(report.interestingWindows.some(window => window.semanticKind === 'speech')).toBe(true);
+    await expect(access(getSlicesPath(projectRoot))).rejects.toThrow();
     expect(detectShotsMock).not.toHaveBeenCalled();
   });
 
@@ -668,7 +654,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
     expect(profile.assets[0]?.sceneDetectPhases?.finalize?.callCount).toBe(1);
   });
 
-  it('coalesces shot-split talking-head speech slices before persisting spans', async () => {
+  it('keeps shot-split talking-head fine-scan evidence in reports without persisting spans', async () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-analyze-full-speech-coalesce';
     const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Full Speech Coalesce Project');
@@ -794,25 +780,13 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       },
     });
 
-    const slices = JSON.parse(
-      await readFile(getSlicesPath(projectRoot), 'utf-8'),
-    ) as Array<{
-      sourceInMs?: number;
-      sourceOutMs?: number;
-      transcript?: string;
-      transcriptSegments?: Array<{ startMs: number; endMs: number; text: string }>;
-    }>;
-    const speechSlices = slices.filter(slice => typeof slice.transcript === 'string' && slice.transcript.length > 0);
+    const report = JSON.parse(
+      await readFile(getAssetReportPath(projectRoot, 'asset-full-speech'), 'utf-8'),
+    ) as { fineScanWindows: Array<{ status: string; semanticKind?: string }> };
 
-    expect(result.sliceCount).toBe(1);
-    expect(speechSlices).toHaveLength(1);
-    expect(speechSlices[0]?.sourceInMs).toBe(0);
-    expect(speechSlices[0]?.sourceOutMs).toBe(20_000);
-    expect(speechSlices[0]?.transcriptSegments).toEqual([{
-      startMs: 4_000,
-      endMs: 15_000,
-      text: '这一整段都在连续说话。',
-    }]);
+    expect(result.sliceCount).toBe(0);
+    expect(report.fineScanWindows.some(window => window.status === 'recognized')).toBe(true);
+    await expect(access(getSlicesPath(projectRoot))).rejects.toThrow();
     expect(detectShotsMock).toHaveBeenCalledTimes(1);
   });
 
@@ -1054,7 +1028,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
     const report = JSON.parse(await readFile(getAssetReportPath(projectRoot, 'asset-retry'), 'utf-8')) as { clipTypeGuess: string; keepDecision: string; };
     expect(report.clipTypeGuess).toBe('broll');
     expect(report.keepDecision).toBe('keep');
-    await expect(access(join(projectRoot, 'media', 'chronology.json'))).resolves.toBeUndefined();
+    await expect(access(join(projectRoot, 'media', 'chronology.json'))).rejects.toThrow();
   });
 
   it('runs deferred scene detect for scenic drives using finalize VLM semantics', async () => {
@@ -1186,7 +1160,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
 
     expect(report.fineScanMode).toBe('windowed');
     expect(report.fineScanReasons).toContain('guardrail:interesting-window-promoted');
-    expect(result.sliceCount).toBeGreaterThan(0);
+    expect(result.sliceCount).toBe(0);
     expect(report.interestingWindows.some(window => window.semanticKind === 'visual')).toBe(true);
     expect(detectShotsMock).toHaveBeenCalledTimes(1);
     expect(detectShotsMock.mock.calls[0]?.[3]).toMatchObject({
@@ -1199,7 +1173,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
   });
 
 
-  it('keeps drive speech and visual windows separate through slices', async () => {
+  it('keeps drive speech and visual windows separate in reports', async () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-analyze-drive-semantics';
     const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Drive Window Semantics Project');
@@ -1335,36 +1309,22 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
         speedCandidate?: { suggestedSpeeds: number[] };
       }>;
     };
-    const slices = JSON.parse(
-      await readFile(getSlicesPath(projectRoot), 'utf-8'),
-    ) as Array<{
-      semanticKind?: string;
-      transcript?: string;
-      speedCandidate?: { suggestedSpeeds: number[] };
-    }>;
 
     const speechWindows = report.interestingWindows.filter(window => window.semanticKind === 'speech');
     const visualWindows = report.interestingWindows.filter(window => window.semanticKind === 'visual');
-    const speechSlices = slices.filter(slice => slice.semanticKind === 'speech');
-    const visualSlices = slices.filter(slice => slice.semanticKind === 'visual');
 
     expect(report.fineScanMode).toBe('windowed');
     expect(speechWindows.length).toBeGreaterThan(0);
     expect(visualWindows.length).toBeGreaterThan(0);
     expect(speechWindows.every(window => window.speedCandidate == null)).toBe(true);
     expect(visualWindows.some(window => window.speedCandidate != null)).toBe(true);
-    expect(speechSlices.length).toBeGreaterThan(0);
-    expect(visualSlices.length).toBeGreaterThan(0);
-    expect(speechSlices.every(slice => typeof slice.transcript === 'string' && slice.transcript.length > 0)).toBe(true);
-    expect(visualSlices.every(slice => slice.transcript == null)).toBe(true);
-    expect(speechSlices.every(slice => slice.speedCandidate == null)).toBe(true);
-    expect(visualSlices.some(slice => slice.speedCandidate != null)).toBe(true);
     expect(detectShotsMock).toHaveBeenCalledTimes(1);
     expect(detectShotsMock.mock.calls[0]?.[3]).toMatchObject({
       clipType: 'drive',
       durationMs: 180_000,
     });
-    expect(result.sliceCount).toBe(slices.length);
+    expect(result.sliceCount).toBe(0);
+    await expect(access(getSlicesPath(projectRoot))).rejects.toThrow();
   });
 
   it('keeps non-scenic drives out of deferred scene detect', async () => {
@@ -1491,7 +1451,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
 
     expect(report.materializationPath).toBe('direct');
     expect(report.fineScanMode).toBeUndefined();
-    expect(result.sliceCount).toBeGreaterThan(0);
+    expect(result.sliceCount).toBe(0);
     expect(detectShotsMock).not.toHaveBeenCalled();
     expect(profile.ffmpeg.sceneDetectCallCount).toBe(0);
   });
@@ -1624,7 +1584,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
     };
 
     expect(report.fineScanMode).toBe('full');
-    expect(result.sliceCount).toBeGreaterThan(1);
+    expect(result.sliceCount).toBe(0);
     expect(detectShotsMock).toHaveBeenCalledTimes(1);
     expect(profile.ffmpeg.sceneDetectCallCount).toBe(1);
     expect(profile.ffmpeg.sceneDetectPhases?.prepare?.callCount).toBe(0);
@@ -1727,8 +1687,13 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
         type: 'broll',
         sourceInMs: 0,
         sourceOutMs: 3_000,
-        labels: ['broll'],
-        placeHints: [],
+        materialPatterns: [],
+        grounding: {
+          speechMode: 'none',
+          speechValue: 'none',
+          spatialEvidence: [],
+          pharosRefs: [],
+        },
       }],
       keyframePlans: [{
         shotId: 'slice-resume',
@@ -1777,13 +1742,158 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       },
     });
 
-    const slices = JSON.parse(
-      await readFile(getSlicesPath(projectRoot), 'utf-8'),
-    ) as Array<{ assetId: string }>;
-
     expect(extractKeyframesMock).not.toHaveBeenCalled();
-    expect(result.sliceCount).toBeGreaterThan(0);
-    expect(slices.some(slice => slice.assetId === 'asset-resume')).toBe(true);
+    expect(result.sliceCount).toBe(0);
+    await expect(access(getSlicesPath(projectRoot))).rejects.toThrow();
+  });
+
+  it('does not run deferred scene detect concurrently while rebuilding missing fine-scan task state', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-analyze-fine-scan-planning-concurrency';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Fine Scan Planning Concurrency');
+    const mediaRoot = join(projectRoot, '.tmp', 'fixtures');
+    const assetCount = 4;
+
+    await mkdir(mediaRoot, { recursive: true });
+    await writeJson(join(projectRoot, 'config/runtime.json'), {
+      mlServerUrl: 'http://127.0.0.1:8910',
+    });
+    await writeJson(join(projectRoot, 'config/ingest-roots.json'), {
+      roots: [{
+        id: 'root-1',
+        enabled: true,
+        label: 'camera-a',
+        path: mediaRoot,
+      }],
+    });
+
+    const assets = [];
+    for (let index = 0; index < assetCount; index++) {
+      const assetId = `asset-full-${index}`;
+      const sourcePath = `${assetId}.mp4`;
+      const mediaPath = join(mediaRoot, sourcePath);
+      const sampleFramePath = join(projectRoot, '.tmp', 'media-analyze', assetId, 'kf_0.jpg');
+      await mkdir(join(projectRoot, '.tmp', 'media-analyze', assetId), { recursive: true });
+      await writeFile(mediaPath, 'fake-media');
+      await writeFile(sampleFramePath, 'sample-frame');
+      assets.push({
+        id: assetId,
+        kind: 'video',
+        sourcePath,
+        displayName: sourcePath,
+        ingestRootId: 'root-1',
+        durationMs: 4_000,
+        capturedAt: '2026-03-31T08:15:30.000Z',
+        metadata: {
+          hasAudioStream: false,
+        },
+      });
+      await writeJson(getAssetReportPath(projectRoot, assetId), {
+        assetId,
+        ingestRootId: 'root-1',
+        durationMs: 4_000,
+        clipTypeGuess: 'broll',
+        densityScore: 0.5,
+        summary: 'Pending full fine-scan report.',
+        labels: ['broll'],
+        placeHints: [],
+        rootNotes: [],
+        sampleFrames: [{
+          timeMs: 0,
+          path: sampleFramePath,
+        }],
+        interestingWindows: [{
+          startMs: 0,
+          endMs: 4_000,
+          reason: 'full-mode-test',
+        }],
+        keepDecision: 'keep',
+        materializationPath: 'fine-scan',
+        fineScanMode: 'full',
+        fineScanReasons: ['resume-full-test'],
+        createdAt: '2026-03-31T08:15:30.000Z',
+        updatedAt: '2026-03-31T08:15:30.000Z',
+      });
+      await writePreparedAssetCheckpoint(projectRoot, {
+        schemaVersion: 2,
+        assetId,
+        shotBoundaries: [],
+        shotBoundariesResolved: false,
+        sampleFrames: [{
+          timeMs: 0,
+          path: sampleFramePath,
+        }],
+        coarseSampleTimestamps: [0],
+        hasAudioTrack: false,
+        sourceContext: {
+          ingestRootId: 'root-1',
+          rootLabel: 'camera-a',
+          rootDescription: 'Planning concurrency fixture root',
+          rootNotes: [],
+        },
+      });
+    }
+    await writeJson(join(projectRoot, 'store/assets.json'), assets);
+
+    let activeSceneDetects = 0;
+    let maxActiveSceneDetects = 0;
+    detectShotsMock.mockImplementation(async () => {
+      activeSceneDetects += 1;
+      maxActiveSceneDetects = Math.max(maxActiveSceneDetects, activeSceneDetects);
+      await new Promise(resolve => setTimeout(resolve, 10));
+      activeSceneDetects -= 1;
+      return [{ timeMs: 2_000, score: 0.91 }];
+    });
+    extractKeyframesMock.mockImplementation(async (
+      _filePath: string,
+      outputDir: string,
+      timestampsMs: number[],
+    ) => {
+      await mkdir(outputDir, { recursive: true });
+      return Promise.all(timestampsMs.map(async timeMs => {
+        const framePath = join(outputDir, `frame-${timeMs}.jpg`);
+        await writeFile(framePath, `frame-${timeMs}`);
+        return { timeMs, path: framePath };
+      }));
+    });
+
+    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue({
+      status: 'ok',
+      device: 'apple',
+      backend: 'mlx',
+      models_loaded: [],
+    });
+    vi.spyOn(MlClient.prototype, 'vlmAnalyze').mockResolvedValue({
+      description: JSON.stringify({
+        scene_type: 'landscape',
+        subjects: ['road'],
+        mood: 'calm',
+        place_hints: [],
+        narrative_role: 'detail',
+        description: 'Recognized bounded fine-scan frame group.',
+        material_patterns: ['roadside landscape'],
+      }),
+      timing: {
+        backend: 'mlx',
+        modelRef: 'test-qwen',
+        totalMs: 41,
+        processorMs: 7,
+        generateMs: 28,
+      },
+    });
+
+    const { analyzeWorkspaceProjectMedia } = await import('../../src/modules/media/project-analyze.js');
+    await analyzeWorkspaceProjectMedia({
+      workspaceRoot,
+      projectId,
+      performanceProfile: {
+        enabled: true,
+        runLabel: 'fine-scan-planning-concurrency',
+      },
+    });
+
+    expect(detectShotsMock).toHaveBeenCalledTimes(assetCount);
+    expect(maxActiveSceneDetects).toBe(1);
   });
 
   it('skips fine-scan resume when a pending report has no prepared checkpoint', async () => {
@@ -1865,11 +1975,10 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
         runLabel: 'fine-scan-skip-missing-prepared',
       },
     });
-
     expect(result.reportCount).toBe(0);
     expect(result.sliceCount).toBe(0);
-    expect(result.fineScannedAssetIds).toEqual([]);
     expect(extractKeyframesMock).not.toHaveBeenCalled();
     await expect(access(preparedCheckpointPath)).rejects.toThrow();
+    await expect(access(getSlicesPath(projectRoot))).rejects.toThrow();
   });
 });

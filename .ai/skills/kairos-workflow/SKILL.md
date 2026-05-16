@@ -13,7 +13,7 @@ description: >-
 Kairos 将旅拍素材转化为可编辑时间线。流程分为 1 个准备阶段 + 5 个主阶段，每个阶段有独立的子 skill，本 skill 负责总控。
 
 ```
-[Edit Rules + optional Style Reference] → Ingest → Analyze → Script → Timeline → Export
+[Edit Rules + optional Style Reference] → Ingest → Analyze → Chronology(Spans + Review) → Script → Timeline → Export
 ```
 
 ## 变更工作流规则
@@ -234,7 +234,8 @@ project/
 │   └── derived.json          # project-derived-track cache
 ├── store/
 │   ├── assets.json           # Phase 1 (Ingest) 产出；same-source GPS 只保留 lightweight embeddedGps refs
-│   └── slices.json           # Phase 2 (Analyze) 产出
+│   ├── spans.json            # /chronology span-rebuild 产出
+│   └── spans.meta.json       # /chronology span-rebuild freshness/hash
 ├── edits/<editId>/
 │   ├── script/
 │   │   ├── script-brief.md   # Console / Agent 审查入口
@@ -289,8 +290,6 @@ project/
 输入：`store/assets.json`
 产出：
 - `analysis/asset-reports/*.json` — 单素材 coarse report
-- `store/slices.json` — `IKtepSlice[]`
-- `media/chronology.json` — 时间排序视图
 
 前置条件：`store/assets.json` 存在且非空
 
@@ -312,9 +311,17 @@ project/
 - 如果是 root 级 `manual-required` 时间策略导致的阻塞，必须明确说明这不是弱时间猜测，而是该 root 被标记为必须人工确认；用户必须显式填写完整日期、时间和时区
 - 只有在用户明确确认继续后，才可以调用 Analyze
 
+Chronology 审查：
+- `/chronology` 是 Analyze 和 Script 之间的正式审查页，提供 `生成素材片段与模式` 与 `生成/刷新编年史` 两步，并展示 active job 的 3-span text-LM chunk / retry / warning 进度
+- `span-rebuild` 只读取 `store/assets.json + analysis/asset-reports/*.json`，再用本地 qwen 文本 LM 从每个 span 的最小文本事实按 3 个 span 一批生成中文 `materialPatterns[]`；LM 只返回 ordered rows，代码按 chunk 顺序写回 spans；已完成 checkpoint 写 `.tmp/chronology/span-rebuild.partial.json`，全量成功后才写正式 `store/spans.json + store/spans.meta.json`
+- `chronology-build` 要求 spans fresh，再从 assets + fresh spans + root time + Pharos context 写 Chronology V2，默认 `draft`
+- 用户必须在 `/chronology` 确认 Chronology V2 后，Script / Timeline 才能继续
+- 旧数组 v1、`draft` 或 `stale` chronology 都应阻塞 Script / Timeline，并提示重建或确认
+- Pharos 只作为生成 chronology 的输入；正式 chronology event 不暴露 Pharos/source/origin 等生成痕迹
+
 轻量空间刷新：
-- 如果已有 `analysis/asset-reports/*.json`、`store/spans.json` 和 `media/chronology.json`，且用户只是改变了 GPS / Pharos context / 空间优先级 / reverse-geocode 逻辑，应优先在 `/analyze` 点击 `刷新空间结果`
-- `spatial-refresh` 只修补已有 Analyze 产物中的空间层，不启动 ML，不生成缺失 report，不替代 Ingest 扫描新 `.SRT`、FlightRecord、root 或 capture-time 修正
+- 如果已有 `analysis/asset-reports/*.json`，且用户只是改变了 GPS / Pharos context / 空间优先级 / reverse-geocode 逻辑，应优先在 `/chronology` 触发 `spatial-refresh`
+- `spatial-refresh` 只修补已有 Analyze report 的空间层，不启动 ML，不生成缺失 report，不重建 spans/chronology，只标记它们 stale，不替代 Ingest 扫描新 `.SRT`、FlightRecord、root 或 capture-time 修正
 
 当前分析链路除了视觉粗扫/细扫，还会在符合条件的视频上补充 ASR：
 - 结构上更准确的理解是：
@@ -324,7 +331,7 @@ project/
 - `audio-analysis` 当前是两级素材队列：先做本地健康检查/保护音轨选边，再把最终选中的一路送入 ASR 队列
 - coarse report 会带 `transcript / transcriptSegments / speechCoverage`
 - 语音时间窗会参与 fine-scan window 生成
-- chronology 会写入部分 ASR evidence
+- chronology 会把 ASR/空间/Pharos 等输入折叠成普通 `event / route / gap`，但正式事件不写入 ASR anchors、source、origin 或 Pharos refs
 - 对带 `protectionAudio` 的素材，当前正式策略是双健康检查后只跑一侧 ASR；如果 protection 被选中，它就直接成为正式 transcript 来源
 - 当前正式项目的音频分析主路径指的是“视频素材里的音轨”，不是独立纯音频资产
 - 如果后续项目真的引入独立音频素材，再补单独 analyze 分支；当前不要把这点和视频内语音 ASR 混为一谈
@@ -333,10 +340,10 @@ project/
 
 **子 skill**: [kairos-script](../kairos-script/SKILL.md)
 
-输入：素材分析结果（`store/slices.json`、`analysis/asset-reports/`、`media/chronology.json`）+ 剪辑规则（`<workspaceRoot>/config/edit-rules/{category}.md`）+ 已确认 Flow Plan（`edits/<editId>/planning/flow-plan.json`）+ 可选风格参考（`<workspaceRoot>/config/styles/{category}.md`）
+输入：素材分析结果（fresh `store/spans.json`、`analysis/asset-reports/`、已确认 Chronology V2 `media/chronology.json`）+ 剪辑规则（`<workspaceRoot>/config/edit-rules/{category}.md`）+ 已确认 Flow Plan（`edits/<editId>/planning/flow-plan.json`）+ 可选风格参考（`<workspaceRoot>/config/styles/{category}.md`）
 产出：`edits/<editId>/script/current.json` — `IKtepScript[]`
 
-前置条件：`store/slices.json` 存在且非空
+前置条件：`store/spans.json` 存在且非空，`store/spans.meta.json` 为 fresh，且 Chronology V2 confirmed
 
 **Agent 决策点**：旁白由 agent 自身直接创作，不需要外部 LLM API。
 
@@ -346,7 +353,7 @@ project/
 - 如果当前 edit unit 没有 confirmed 且 hash 未过期的 `flow-plan.json`，就不能开始 Script / Timeline 阶段。
 - 项目 / edit unit 保存 `editRuleCategory` 与可选 `styleCategory`；不持有自己的 `config/edit-rules/` 或 `config/styles/` 库。`styleCategory` 是单一风格档案选择，具体层使用权只来自 confirmed Flow Plan 的 `styleUsage`。
 - `Supervisor + React console` 里的 `script` job 现在只负责 deterministic prep：
-  - 校验 `store/slices.json`
+  - 校验 fresh `store/spans.json`
   - 校验 `editRuleCategory`
   - 校验 workspace edit rule markdown hash
   - 校验 confirmed Flow Plan
@@ -368,7 +375,7 @@ project/
 
 **子 skill**: [kairos-timeline](../kairos-timeline/SKILL.md)
 
-输入：`store/assets.json` + `store/slices.json` + `edits/<editId>/script/current.json`
+输入：`store/assets.json` + fresh `store/spans.json` + confirmed `media/chronology.json` + `edits/<editId>/script/current.json`
 产出：`edits/<editId>/timeline/current.json` — `IKtepDoc`（完整 KTEP 文档）
 
 前置条件：前 3 阶段产出均存在
@@ -433,7 +440,7 @@ if (!assets || assets.length === 0) {
 如果只是空间规则、GPX、Pharos context 或 reverse-geocode 逻辑变化，且已有 Analyze 产物完整，则可走更轻的：
 
 ```
-已有项目 → /analyze 刷新空间结果 → 视需要重写 Script / Timeline
+已有项目 → /chronology spatial-refresh → 生成素材片段与模式 → 生成/刷新编年史 → 确认 chronology → 视需要重写 Script / Timeline
 ```
 
 ### 追加流程
@@ -446,12 +453,13 @@ const result = await appendAssets(projectRoot, newAssets);
 // result.duplicateCount — 跳过的重复
 ```
 
-2. **增量分析**：`kairos-analyze` 自动识别未分析的资产，仅对新素材执行分析
+2. **增量分析**：`kairos-analyze` 自动识别缺少 report 的资产，仅对新素材执行分析；Analyze 完成后到 `/chronology` 重建 spans / chronology
 
 ```typescript
-const toAnalyze = findUnanalyzedAssets(allAssets, existingSlices);
+const toAnalyze = findUnanalyzedAssets(allAssets, existingReports);
 // 仅对 toAnalyze 中的资产做镜头检测、ML 分析
-await appendSlices(projectRoot, newSlices);
+await analyzeWorkspaceProjectMedia({ workspaceRoot, projectId, assetIds: toAnalyze.map((asset) => asset.id) });
+// 然后从 /chronology 显式运行 span-rebuild（需要本地 qwen 文本 LM / ML 服务）与 chronology-build
 ```
 
 3. **重新创作**：Phase 3-5 需要在新素材的基础上重新执行
@@ -463,8 +471,8 @@ await appendSlices(projectRoot, newSlices);
 
 - 每个资产有 `ingestedAt` 时间戳，可以区分不同批次
 - 可以用 `ingestRootId` 标记批次来源
-- 已有的切片和证据不会丢失，新分析结果追加到后面
-- 如果需要重新分析某个旧资产，`appendSlices` 会替换该资产的旧切片
+- 已有的 reports 和证据不会丢失，新分析结果追加到后面
+- 如果需要重新分析某个旧资产，重新写入该资产 report 后必须显式运行 `span-rebuild`
 
 ## 迭代修改
 

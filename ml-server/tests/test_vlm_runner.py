@@ -69,6 +69,17 @@ class VlmRunnerTests(unittest.TestCase):
              mock.patch.object(vlm_runner, "DEVICE", "cuda"):
             self.assertIsNone(vlm_runner._windows_safe_transformers_global_workers())
 
+    def test_generate_text_uses_qwen_without_image_inputs(self):
+        with mock.patch.object(vlm_runner, "BACKEND", "torch"), \
+             mock.patch.object(vlm_runner, "_load_transformers", return_value=(12.0, "qwen-text")), \
+             mock.patch.object(vlm_runner, "_analyze_transformers", return_value=('{"items":[]}', {"loadMs": 0.0})) as analyze:
+            text, timing = vlm_runner.generate_text("生成素材模式", max_tokens=128)
+
+        analyze.assert_called_once_with([], "生成素材模式", max_tokens=128)
+        self.assertEqual(text, '{"items":[]}')
+        self.assertEqual(timing["loadMs"], 12.0)
+        self.assertEqual(timing["modelRef"], "qwen-text")
+
 
 if __name__ == "__main__":
     unittest.main()

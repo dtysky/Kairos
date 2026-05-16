@@ -6,7 +6,7 @@ import type {
   IKtepScript,
   IKtepSlice,
   IKtepAsset,
-  IMediaChronology,
+  IChronologyAssetIndex,
   IKtepScriptSelection,
   IKtepScriptBeat,
   ISegmentRoughCutPlan,
@@ -28,7 +28,7 @@ export interface IPlacementConfig {
   maxSliceDurationMs: number;
   defaultTransitionMs: number;
   photoDefaultMs: number;
-  chronology?: IMediaChronology[];
+  chronology?: IChronologyAssetIndex[];
   arrangementSignals?: IResolvedArrangementSignals;
   reviewedSegmentCuts?: ISegmentRoughCutPlan[];
 }
@@ -91,8 +91,7 @@ export function placeClips(
       const explicitSpeed = preparedBeat.preferSourceSpeech
         ? undefined
         : resolveRequestedSpeed(beat.actions?.speed ?? preparedSegment.segment.actions?.speed);
-      const provisionalSpeed = explicitSpeed
-        ?? resolveAutoMontageSpeed(preparedBeat.visualSelections, preparedBeat.preferSourceSpeech);
+      const provisionalSpeed = explicitSpeed;
       const requestedHoldMs = resolveRequestedHoldMs(
         beat.actions?.holdMs ?? preparedSegment.segment.actions?.holdMs,
       );
@@ -243,8 +242,7 @@ export function placeClips(
       const orderedSelections = chronologyGuardEnabled
         ? sortSelectionsByChronology(dedupedSelections, assetMap, chronologyMap)
         : dedupedSelections;
-      const requestedSpeed = explicitSpeed
-        ?? resolveAutoMontageSpeed(orderedSelections, preparedBeat.preferSourceSpeech);
+      const requestedSpeed = explicitSpeed;
       const beatChronologyKey = chronologyGuardEnabled
         ? resolveBeatChronologyKey(orderedSelections, preparedBeat.audioSelections, assetMap, chronologyMap)
         : null;
@@ -354,7 +352,6 @@ export function placeClips(
 interface IResolvedSelection extends IKtepScriptSelection {
   sliceType?: IKtepSlice['type'];
   hasExplicitEditRange?: boolean;
-  speedCandidate?: IKtepSlice['speedCandidate'];
   preferredSourceInMs?: number;
   preferredSourceOutMs?: number;
 }
@@ -445,7 +442,6 @@ function resolveSelections(
       preferredSourceOutMs: preferredRange?.endMs ?? selection.sourceOutMs ?? slice?.sourceOutMs,
       sliceType: slice?.type,
       hasExplicitEditRange: slice ? hasExplicitEditRange(slice) : false,
-      speedCandidate: slice?.speedCandidate,
     };
   }).filter(selection => selection.assetId.length > 0);
 }
@@ -485,20 +481,6 @@ function resolveRequestedSpeed(speed?: number): number | undefined {
   return speed;
 }
 
-function resolveAutoMontageSpeed(
-  selections: IResolvedSelection[],
-  preferSourceSpeech: boolean,
-): number | undefined {
-  if (preferSourceSpeech || selections.length === 0) return undefined;
-  if (!selections.every(selection =>
-    isSpeedEligibleSliceType(selection.sliceType)
-    && (selection.speedCandidate?.suggestedSpeeds?.length ?? 0) > 0,
-  )) {
-    return undefined;
-  }
-  return 2;
-}
-
 function resolveRequestedHoldMs(holdMs?: number): number | undefined {
   if (typeof holdMs !== 'number' || !Number.isFinite(holdMs) || holdMs <= 0) return undefined;
   return Math.round(holdMs);
@@ -508,7 +490,7 @@ function prepareSegmentPlacement(
   segment: IKtepScript,
   sliceMap: Map<string, IKtepSlice>,
   assetMap: Map<string, IKtepAsset>,
-  chronologyMap: Map<string, IMediaChronology>,
+  chronologyMap: Map<string, IChronologyAssetIndex>,
   chronologyGuardEnabled: boolean,
 ): IPreparedSegmentPlacement {
   const beats = chronologyGuardEnabled
@@ -826,7 +808,7 @@ function buildPlacementEntry(
 function applyChronologyAwareBeatOrdering(
   beats: IResolvedBeat[],
   assetMap: Map<string, IKtepAsset>,
-  chronologyMap: Map<string, IMediaChronology>,
+  chronologyMap: Map<string, IChronologyAssetIndex>,
 ): IResolvedBeat[] {
   return beats
     .map((beat, index) => {
@@ -859,7 +841,7 @@ function applyChronologyAwareBeatOrdering(
 function sortSelectionsByChronology(
   selections: IResolvedSelection[],
   assetMap: Map<string, IKtepAsset>,
-  chronologyMap: Map<string, IMediaChronology>,
+  chronologyMap: Map<string, IChronologyAssetIndex>,
 ): IResolvedSelection[] {
   return [...selections].sort((left, right) => {
     const leftKey = resolveSelectionChronologyKey(left, assetMap, chronologyMap);
@@ -875,7 +857,7 @@ function resolveBeatChronologyKey(
   visualSelections: IResolvedSelection[],
   audioSelections: IResolvedSelection[],
   assetMap: Map<string, IKtepAsset>,
-  chronologyMap: Map<string, IMediaChronology>,
+  chronologyMap: Map<string, IChronologyAssetIndex>,
 ): string | null {
   for (const selection of [...visualSelections, ...audioSelections]) {
     const key = resolveSelectionChronologyKey(selection, assetMap, chronologyMap);
@@ -887,11 +869,10 @@ function resolveBeatChronologyKey(
 function resolveSelectionChronologyKey(
   selection: Pick<IResolvedSelection, 'assetId' | 'sourceInMs'>,
   assetMap: Map<string, IKtepAsset>,
-  chronologyMap: Map<string, IMediaChronology>,
+  chronologyMap: Map<string, IChronologyAssetIndex>,
 ): string | null {
   const chronology = chronologyMap.get(selection.assetId);
   const capturedAt = chronology?.sortCapturedAt?.trim()
-    || chronology?.capturedAt?.trim()
     || assetMap.get(selection.assetId)?.capturedAt?.trim();
   if (!capturedAt) return null;
   return `${capturedAt}|${String(Math.max(0, Math.round(selection.sourceInMs ?? 0))).padStart(9, '0')}`;

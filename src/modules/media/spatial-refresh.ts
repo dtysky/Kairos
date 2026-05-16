@@ -2,31 +2,25 @@ import type {
   IAssetCoarseReport,
   IInferredGps,
   IKtepAsset,
-  IKtepSlice,
   IMediaRoot,
 } from '../../protocol/schema.js';
 import {
   getProjectProgressPath,
-  getSpansPath,
   loadAssetReports,
   loadAssets,
-  loadChronology,
   loadIngestRoots,
   loadProjectBriefConfig,
   loadRuntimeConfig,
-  loadSlices,
+  markChronologyStale,
+  markSpansStale,
   resolveWorkspaceProjectRoot,
   touchProjectUpdatedAt,
   writeAssetReport,
-  writeChronology,
-  writeJson,
   writeKairosProgress,
 } from '../../store/index.js';
-import { loadOrBuildProjectPharosContext, pharosRefsFromMatches } from '../pharos/context.js';
+import { loadOrBuildProjectPharosContext } from '../pharos/context.js';
 import { resolvePharosTimedSpatialContext } from '../pharos/gpx-timed.js';
 import { matchAssetToPharos } from '../pharos/matcher.js';
-import { buildMediaChronology } from './chronology.js';
-import type { IManualSpatialContext } from './manual-spatial.js';
 import { refreshProjectDerivedTrackCache } from './project-derived-track.js';
 import { refreshProjectGpsCache, resolveProjectGpxPaths } from './project-gps.js';
 import {
@@ -34,7 +28,6 @@ import {
   resolveAnalyzeLocationText,
   type IReverseGeocodeService,
 } from './reverse-geocode.js';
-import { buildSpatialEvidenceFromReport } from './semantic-slice.js';
 import { resolveAssetSpatialContext } from './spatial-resolver.js';
 import { resolveAnalyzePrimarySpatial } from './spatial-priority.js';
 
@@ -51,9 +44,8 @@ export interface IRefreshAnalyzeSpatialResultsResult {
   updatedReportCount: number;
   skippedReportCount: number;
   missingAssetReportCount: number;
-  spanCount: number;
-  updatedSpanCount: number;
-  chronologyCount: number;
+  spansMarkedStale: boolean;
+  chronologyMarkedStale: boolean;
   pharosMatchCount: number;
   embeddedPreservedCount: number;
 }
@@ -71,7 +63,7 @@ export async function refreshAnalyzeSpatialResults(
     stepDefinitions: [
       { key: 'inputs', label: '刷新空间输入' },
       { key: 'reports', label: '修补 asset-reports' },
-      { key: 'downstream', label: '刷新 chronology / spans' },
+      { key: 'stale', label: '标记下游过期' },
     ],
   };
 
@@ -110,12 +102,10 @@ export async function refreshAnalyzeSpatialResults(
       : 'Pharos context 解析失败');
   }
 
-  const [assets, reports, ingestRoots, existingChronology, existingSlices] = await Promise.all([
+  const [assets, reports, ingestRoots] = await Promise.all([
     loadAssets(projectRoot),
     loadAssetReports(projectRoot),
     loadIngestRoots(projectRoot),
-    loadChronology(projectRoot),
-    loadSlices(projectRoot),
   ]);
   const roots = ingestRoots.roots;
   const assetMap = new Map(assets.map(asset => [asset.id, asset]));
@@ -194,28 +184,21 @@ export async function refreshAnalyzeSpatialResults(
   await writeKairosProgress(progressPath, {
     ...progressBase,
     status: 'running',
-    step: 'downstream',
-    stepLabel: '刷新 chronology / spans',
+    step: 'stale',
+    stepLabel: '标记下游过期',
     stepIndex: 3,
     stepTotal: 3,
     current: 2,
     total: 3,
     unit: 'step',
-    detail: '正在用新的 report 空间字段刷新 chronology 和 spans grounding',
+    detail: '正在标记 spans 和 chronology 过期',
     extra: { projectId: input.projectId, updatedReportCount },
   });
 
-  const chronology = buildMediaChronology(assets, refreshedReports, existingChronology, roots);
-  await writeChronology(projectRoot, chronology);
-
-  const refreshedReportMap = new Map(refreshedReports.map(report => [report.assetId, report]));
-  const refreshedSlices = await refreshSlicesSpatialGrounding({
-    slices: existingSlices,
-    assetsById: assetMap,
-    reportsByAssetId: refreshedReportMap,
-    pharosContext,
-  });
-  await writeJson(getSpansPath(projectRoot), refreshedSlices.slices);
+  const [staleSpans, staleChronology] = await Promise.all([
+    markSpansStale(projectRoot, 'spatial-refresh updated asset report spatial fields; rerun /chronology span-rebuild'),
+    markChronologyStale(projectRoot),
+  ]);
   await touchProjectUpdatedAt(projectRoot);
 
   const result: IRefreshAnalyzeSpatialResultsResult = {
@@ -224,9 +207,8 @@ export async function refreshAnalyzeSpatialResults(
     updatedReportCount,
     skippedReportCount: reports.length - updatedReportCount,
     missingAssetReportCount,
-    spanCount: existingSlices.length,
-    updatedSpanCount: refreshedSlices.updatedCount,
-    chronologyCount: chronology.length,
+    spansMarkedStale: staleSpans != null,
+    chronologyMarkedStale: staleChronology != null,
     pharosMatchCount,
     embeddedPreservedCount,
   };
@@ -234,15 +216,15 @@ export async function refreshAnalyzeSpatialResults(
   await writeKairosProgress(progressPath, {
     ...progressBase,
     status: 'succeeded',
-    step: 'downstream',
-    stepLabel: '刷新 chronology / spans',
+    step: 'stale',
+    stepLabel: '标记下游过期',
     stepIndex: 3,
     stepTotal: 3,
     current: 3,
     total: 3,
     unit: 'step',
     etaSeconds: 0,
-    detail: `空间刷新完成：更新 ${updatedReportCount} 条 report，刷新 ${refreshedSlices.updatedCount} 条 span`,
+    detail: `空间刷新完成：更新 ${updatedReportCount} 条 report；请重新生成 spans 与 chronology`,
     extra: { projectId: input.projectId, ...result },
   });
 
@@ -325,43 +307,6 @@ async function refreshReportSpatialFields(input: {
       && inferredGps?.source === 'embedded',
     ),
   };
-}
-
-async function refreshSlicesSpatialGrounding(input: {
-  slices: IKtepSlice[];
-  assetsById: Map<string, IKtepAsset>;
-  reportsByAssetId: Map<string, IAssetCoarseReport>;
-  pharosContext: Awaited<ReturnType<typeof loadOrBuildProjectPharosContext>>;
-}): Promise<{ slices: IKtepSlice[]; updatedCount: number }> {
-  let updatedCount = 0;
-  const slices = await Promise.all(input.slices.map(async slice => {
-    const report = input.reportsByAssetId.get(slice.assetId);
-    if (!report) return slice;
-    const asset = input.assetsById.get(slice.assetId);
-    const spatialEvidence = await buildSpatialEvidenceFromReport({
-      clipType: report.clipTypeGuess,
-      report,
-      asset,
-      slice,
-      pharosContext: input.pharosContext,
-    });
-    const pharosRefs = pharosRefsFromMatches(report.pharosMatches);
-    const refreshed: IKtepSlice = {
-      ...slice,
-      pharosRefs,
-      grounding: {
-        speechMode: slice.grounding?.speechMode ?? 'none',
-        speechValue: slice.grounding?.speechValue ?? 'none',
-        spatialEvidence,
-        pharosRefs,
-      },
-    };
-    if (JSON.stringify(slice) !== JSON.stringify(refreshed)) {
-      updatedCount += 1;
-    }
-    return refreshed;
-  }));
-  return { slices, updatedCount };
 }
 
 function hasSpatialReportChanged(

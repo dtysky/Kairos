@@ -16,12 +16,12 @@ import {
   getEditPlanningArtifactPath,
   loadAssetReports,
   loadAssets,
-  loadChronology,
+  loadChronologyReviewState,
   loadEditFlowPlan,
   loadProject,
   loadProjectBriefConfig,
   loadRuntimeConfig,
-  loadSpans,
+  assertFreshSpans,
   normalizeEditId,
   writeEditFlowPlan,
 } from '../../store/index.js';
@@ -68,13 +68,13 @@ export async function generateEditFlowPlan(
     ? await loadStyleByCategory(`${input.workspaceRoot}/config/styles`, input.styleCategory)
     : null;
   const styleProfileHash = styleProfile ? computeStyleProfileHash(styleProfile) : undefined;
-  const [editRule, project, projectBrief, assets, spans, chronology, assetReports, runtimeConfig] = await Promise.all([
+  const [editRule, project, projectBrief, assets, spans, chronologyState, assetReports, runtimeConfig] = await Promise.all([
     loadEditRuleByCategory(input.workspaceRoot, input.editRuleCategory),
     loadProject(input.projectRoot),
     loadProjectBriefConfig(input.projectRoot),
     loadAssets(input.projectRoot),
-    loadSpans(input.projectRoot),
-    loadChronology(input.projectRoot),
+    assertFreshSpans(input.projectRoot).then(result => result.spans),
+    loadChronologyReviewState(input.projectRoot),
     loadAssetReports(input.projectRoot),
     loadRuntimeConfig(input.projectRoot),
   ]);
@@ -96,7 +96,8 @@ export async function generateEditFlowPlan(
       gpxFiles: pharosContext.gpxFiles.length,
       assets: assets.length,
       spans: spans.length,
-      chronologyItems: chronology.length,
+      chronologyItems: chronologyState.chronology?.events.length ?? 0,
+      chronologyStatus: chronologyState.chronology?.status ?? (chronologyState.blocked ? 'blocked' : 'missing'),
       assetReports: assetReports.length,
     },
   };
@@ -351,11 +352,11 @@ export async function runEditPlanningDocumentCapability(input: {
     requiredCapabilityIds: [input.capabilityId],
   });
 
-  const [editRule, assets, spans, chronology, assetReports, runtimeConfig, planningArtifacts] = await Promise.all([
+  const [editRule, assets, spans, chronologyState, assetReports, runtimeConfig, planningArtifacts] = await Promise.all([
     loadEditRuleByCategory(input.workspaceRoot, input.editRuleCategory),
     loadAssets(input.projectRoot),
-    loadSpans(input.projectRoot),
-    loadChronology(input.projectRoot),
+    assertFreshSpans(input.projectRoot).then(result => result.spans),
+    loadChronologyReviewState(input.projectRoot),
     loadAssetReports(input.projectRoot),
     loadRuntimeConfig(input.projectRoot),
     loadEditPlanningPacketArtifacts(input.projectRoot, editId),
@@ -397,7 +398,8 @@ export async function runEditPlanningDocumentCapability(input: {
         summary: `${assets.length} assets / ${spans.length} spans / ${assetReports.length} reports`,
         content: {
           pharosContext,
-          chronology,
+          chronology: chronologyState.chronology,
+          chronologyMessage: chronologyState.message,
           spans,
           assetReports,
         },

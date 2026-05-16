@@ -1037,6 +1037,103 @@ pre {
   line-height: 1.5;
 }
 
+.chronology-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.chronology-progress {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid rgba(184, 90, 45, 0.18);
+  border-radius: 8px;
+  background: rgba(184, 90, 45, 0.06);
+}
+
+.chronology-progress-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.chronology-progress-block {
+  margin-top: 0;
+}
+
+.chronology-progress-metrics {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 0;
+}
+
+.chronology-shot-list {
+  display: grid;
+  gap: 12px;
+}
+
+.chronology-row {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 170px;
+  gap: 14px;
+  align-items: start;
+}
+
+.chronology-row-select {
+  padding-top: 8px;
+}
+
+.chronology-row-main {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.chronology-row-meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.chronology-title-input,
+.chronology-row-main textarea,
+.chronology-row-fields input,
+.chronology-row-actions select {
+  width: 100%;
+  border: 1px solid rgba(24, 24, 24, 0.12);
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font: inherit;
+}
+
+.chronology-title-input {
+  font-weight: 700;
+}
+
+.chronology-row-main textarea {
+  resize: vertical;
+  min-height: 58px;
+}
+
+.chronology-row-fields {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.chronology-row-actions {
+  display: grid;
+  gap: 8px;
+}
+
 .color-dashboard {
   display: grid;
   gap: 20px;
@@ -1426,6 +1523,19 @@ pre {
 
   .color-detail-layout {
     grid-template-columns: 1fr;
+  }
+
+  .chronology-row {
+    grid-template-columns: 24px minmax(0, 1fr);
+  }
+
+  .chronology-row-actions {
+    grid-column: 2;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .chronology-row-fields {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

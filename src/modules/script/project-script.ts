@@ -4,6 +4,7 @@ import type {
   IAgentContract,
   IAgentPacket,
   IAgentPipelineState,
+  IChronologyAssetIndex,
   IKtepScript,
   IKtepSlice,
   IMaterialBundle,
@@ -11,6 +12,7 @@ import type {
   IPharosRef,
   IProjectMaterialOverviewFacts,
   IProjectPharosContext,
+  IProjectChronology,
   ISpatialStoryContext,
   IStageReview,
   ISegmentPlan,
@@ -35,14 +37,14 @@ import {
   getSegmentPlanPath,
   loadCurrentScript,
   loadAssets,
-  loadChronology,
+  assertConfirmedProjectChronology,
   loadScriptAgentContract,
   loadOptionalMarkdown,
   loadProject,
   loadProjectBriefConfig,
   loadProjectPharosContext,
   loadScriptBriefConfig,
-  loadSpans,
+  assertFreshSpans,
   saveScriptBriefConfig,
   writeScriptAgentContract,
   writeScriptAgentPacket,
@@ -125,7 +127,8 @@ interface IScriptPlanningContext {
   projectBrief: Awaited<ReturnType<typeof loadProjectBriefConfig>>;
   assets: Awaited<ReturnType<typeof loadAssets>>;
   spans: IKtepSlice[];
-  chronology: Awaited<ReturnType<typeof loadChronology>>;
+  chronology: IChronologyAssetIndex[];
+  chronologyDocument: IProjectChronology;
   pharosContext: IProjectPharosContext | null;
 }
 
@@ -578,7 +581,7 @@ export async function prepareProjectScriptForAgent(
     brief: scriptBriefConfig,
     editRule,
     spatialStory,
-    chronology: prepared.context.chronology,
+    chronology: prepared.context.chronologyDocument,
     pharosContext: prepared.context.pharosContext,
   });
   await clearObsoleteArrangementArtifacts(input.projectRoot, editId);
@@ -666,7 +669,7 @@ export async function generateProjectScriptFromPlanning(
     brief,
     editRule,
     spatialStory,
-    prepared.context.chronology,
+    prepared.context.chronologyDocument,
     prepared.context.pharosContext,
     editId,
   );
@@ -891,11 +894,12 @@ export async function loadProjectEditRuleByCategory(
 
 export function buildProjectMaterialOverviewFacts(input: IScriptPlanningContext): IProjectMaterialOverviewFacts {
   const chronologyByAssetId = new Map(input.chronology.map(item => [item.assetId, item] as const));
+  const spansByAssetId = groupSpansByAssetId(input.spans);
   const durations = input.assets
     .map(asset => asset.durationMs)
     .filter((value): value is number => typeof value === 'number' && value > 0);
   const capturedTimes = input.chronology
-    .map(item => item.sortCapturedAt ?? item.capturedAt)
+    .map(item => item.sortCapturedAt)
     .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
     .sort();
 
@@ -918,13 +922,16 @@ export function buildProjectMaterialOverviewFacts(input: IScriptPlanningContext)
       materialPatterns: [],
     };
     const chronology = chronologyByAssetId.get(asset.id);
+    const assetSpans = spansByAssetId.get(asset.id) ?? [];
     current.assetCount += 1;
     current.durationMs += asset.durationMs ?? 0;
-    current.labels.push(...(chronology?.labels ?? []));
-    current.placeHints.push(...(chronology?.placeHints ?? []));
-    current.materialPatterns.push(...input.spans
-      .filter(span => span.assetId === asset.id)
-      .flatMap(span => span.materialPatterns.map(pattern => pattern.phrase)));
+    if (chronology?.sortCapturedAt) {
+      current.labels.push('chronology-indexed');
+    }
+    current.placeHints.push(...assetSpans.flatMap(span =>
+      span.grounding.spatialEvidence.map(evidence => evidence.locationText),
+    ).filter((value): value is string => typeof value === 'string' && value.trim().length > 0));
+    current.materialPatterns.push(...assetSpans.flatMap(span => span.materialPatterns));
     roots.set(key, current);
   }
 
@@ -933,10 +940,15 @@ export function buildProjectMaterialOverviewFacts(input: IScriptPlanningContext)
     return result;
   }, {});
 
-  const topLabels = pickTopValues(input.chronology.flatMap(item => item.labels), 8);
-  const topPlaceHints = pickTopValues(input.chronology.flatMap(item => item.placeHints), 8);
+  const topLabels = pickTopValues(input.spans.flatMap(span => span.materialPatterns), 8);
+  const topPlaceHints = pickTopValues(
+    input.spans
+      .flatMap(span => span.grounding.spatialEvidence.map(evidence => evidence.locationText))
+      .filter((value): value is string => typeof value === 'string' && value.trim().length > 0),
+    8,
+  );
   const topMaterialPatterns = pickTopValues(
-    input.spans.flatMap(span => span.materialPatterns.map(pattern => pattern.phrase)),
+    input.spans.flatMap(span => span.materialPatterns),
     10,
   );
   const mainThemes = topMaterialPatterns.length > 0 ? topMaterialPatterns.slice(0, 5) : topLabels.slice(0, 5);
@@ -1031,12 +1043,21 @@ export function buildMaterialOverviewMarkdown(facts: IProjectMaterialOverviewFac
   return sections.filter(Boolean).join('\n');
 }
 
+function groupSpansByAssetId(spans: IKtepSlice[]): Map<string, IKtepSlice[]> {
+  const grouped = new Map<string, IKtepSlice[]>();
+  for (const span of spans) {
+    const current = grouped.get(span.assetId) ?? [];
+    current.push(span);
+    grouped.set(span.assetId, current);
+  }
+  return grouped;
+}
+
 export function buildMaterialBundles(
   spans: IKtepSlice[],
   chronology: IScriptPlanningContext['chronology'],
   pharosContext: IProjectPharosContext | null,
 ): IMaterialBundle[] {
-  const chronologyByAssetId = new Map(chronology.map(item => [item.assetId, item] as const));
   const pharosShotByRef = new Map(
     (pharosContext?.shots ?? []).map(shot => [`${shot.ref.tripId}:${shot.ref.shotId}`, shot] as const),
   );
@@ -1052,7 +1073,6 @@ export function buildMaterialBundles(
   return [...grouped.entries()].map(([key, members]) => {
     const placeHints = dedupeStrings([
       ...members.flatMap(span => span.grounding.spatialEvidence.map(evidence => evidence.locationText)),
-      ...members.flatMap(span => chronologyByAssetId.get(span.assetId)?.placeHints ?? []),
     ]);
     const pharosTripIds = dedupeStrings(members.flatMap(span => span.pharosRefs?.map(ref => ref.tripId) ?? []));
     const representativeSpanIds = [...members]
@@ -1069,7 +1089,7 @@ export function buildMaterialBundles(
       placeHints,
       pharosTripIds,
       notes: dedupeStrings([
-        ...members.flatMap(span => span.materialPatterns.map(pattern => pattern.phrase)),
+        ...members.flatMap(span => span.materialPatterns),
         ...members.flatMap(span => span.grounding.spatialEvidence.map(evidence => evidence.locationText)),
       ]).slice(0, 8),
     } satisfies IMaterialBundle;
@@ -1261,7 +1281,7 @@ export function resolveChosenSpanIds(input: {
     const chronology = input.chronologyByAssetId.get(span.assetId);
     const candidate = candidateBySpanId.get(spanId);
     const materialScore = Math.max(
-      ...span.materialPatterns.map(pattern => scoreSemanticMatch(queryTokens, normalizeSemanticText(pattern.phrase))),
+      ...span.materialPatterns.map(pattern => scoreSemanticMatch(queryTokens, normalizeSemanticText(pattern))),
       0,
     ) * 30;
     const placeScore = Math.max(
@@ -1496,7 +1516,7 @@ function resolveSpanSortKey(
   chronology: IScriptPlanningContext['chronology'][number] | undefined,
   pharosOrderMap: Map<string, string>,
 ): string {
-  const chronologyKey = normalizeChronologyKey(chronology?.sortCapturedAt ?? chronology?.capturedAt);
+  const chronologyKey = normalizeChronologyKey(chronology?.sortCapturedAt);
   if (chronologyKey) {
     return `0|${chronologyKey}|${padMs(span.sourceInMs)}|${span.id}`;
   }
@@ -1544,7 +1564,7 @@ function resolveKeyProcessScore(
 
   const processText = normalizeSemanticText([
     span.transcript ?? '',
-    ...span.materialPatterns.map(pattern => pattern.phrase),
+    ...span.materialPatterns,
     ...span.grounding.spatialEvidence.map(evidence => evidence.locationText ?? ''),
   ].join(' '));
   if (
@@ -1616,12 +1636,12 @@ async function ensureMaterialFactsAndBundles(projectRoot: string, editId?: strin
 }
 
 async function loadScriptPlanningContext(projectRoot: string): Promise<IScriptPlanningContext> {
-  const [project, projectBrief, assets, spans, chronology, pharosContext] = await Promise.all([
+  const [project, projectBrief, assets, freshSpans, chronologyDocument, pharosContext] = await Promise.all([
     loadProject(projectRoot),
     loadProjectBriefConfig(projectRoot),
     loadAssets(projectRoot),
-    loadSpans(projectRoot),
-    loadChronology(projectRoot),
+    assertFreshSpans(projectRoot),
+    assertConfirmedProjectChronology(projectRoot),
     loadProjectPharosContext(projectRoot),
   ]);
 
@@ -1629,8 +1649,9 @@ async function loadScriptPlanningContext(projectRoot: string): Promise<IScriptPl
     project,
     projectBrief,
     assets,
-    spans,
-    chronology,
+    spans: freshSpans.spans,
+    chronology: chronologyDocument.assetIndex,
+    chronologyDocument,
     pharosContext,
   };
 }
@@ -1740,11 +1761,19 @@ function ensureScriptGenerationWorkflowState(workflowState: string | undefined):
 }
 
 function resolveBundleKey(span: IKtepSlice): string {
-  const topPattern = span.materialPatterns[0]?.phrase?.trim();
-  if (topPattern) return topPattern;
+  const slotKey = resolveMaterialPatternSlotKey(span.materialPatterns);
+  if (slotKey) return slotKey;
   const topLocation = span.grounding.spatialEvidence.find(item => item.locationText)?.locationText;
   if (topLocation) return `${span.type}:${topLocation}`;
   return `type:${span.type}`;
+}
+
+function resolveMaterialPatternSlotKey(materialPatterns: string[]): string | undefined {
+  const slotTags = materialPatterns
+    .slice(0, 3)
+    .map(pattern => pattern.trim())
+    .filter(Boolean);
+  return slotTags.length > 0 ? slotTags.join(' / ') : undefined;
 }
 
 function resolveBundleLabel(
@@ -1767,7 +1796,6 @@ function scoreRepresentativeSpan(span: IKtepSlice): number {
     (span.transcript?.trim() ? 8 : 0)
     + span.materialPatterns.length * 3
     + span.grounding.spatialEvidence.length * 2
-    + (span.speedCandidate ? 1 : 0)
   );
 }
 
@@ -2546,14 +2574,13 @@ export function buildSpatialStoryContext(
     const hasDirectSpatialAnchor = span.grounding.spatialEvidence.length > 0
       || pharosRefs.length > 0;
     const locationText = spatialEvidence?.locationText
-      ?? chronology?.placeHints[0]
       ?? pharosShot?.location
       ?? undefined;
     const lat = spatialEvidence?.lat;
     const lng = spatialEvidence?.lng;
     return {
       spanId: span.id,
-      time: chronology?.sortCapturedAt ?? chronology?.capturedAt,
+      time: chronology?.sortCapturedAt,
       locationText,
       lat,
       lng,
@@ -2716,9 +2743,21 @@ export function buildScriptAgentContract(input: {
   brief: Awaited<ReturnType<typeof loadScriptBriefConfig>>;
   editRule: IEditRuleMarkdownSource;
   spatialStory: ISpatialStoryContext;
-  chronology: IScriptPlanningContext['chronology'];
+  chronology: IProjectChronology | IChronologyAssetIndex[];
   pharosContext: IProjectPharosContext | null;
 }): IAgentContract {
+  const chronologyDocument = Array.isArray(input.chronology)
+    ? {
+      status: 'confirmed' as const,
+      assetIndex: input.chronology,
+      events: [],
+    }
+    : input.chronology;
+  const eventTimes = chronologyDocument.events
+    .flatMap(event => [event.startAt, event.endAt])
+    .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+    .sort();
+  const confirmedEventCount = chronologyDocument.events.filter(event => event.reviewStatus === 'confirmed').length;
   return {
     generatedAt: new Date().toISOString(),
     goals: dedupeStrings(input.brief.goalDraft),
@@ -2744,8 +2783,12 @@ export function buildScriptAgentContract(input: {
         .map(shot => `${shot.tripTitle ?? shot.ref.tripId} / ${shot.location}`),
     ),
     chronologyGuardrails: dedupeStrings([
-      input.chronology[0]?.sortCapturedAt ? `chronology 起点：${input.chronology[0].sortCapturedAt}` : undefined,
-      input.chronology.at(-1)?.sortCapturedAt ? `chronology 终点：${input.chronology.at(-1)?.sortCapturedAt}` : undefined,
+      `chronology status=${chronologyDocument.status}`,
+      `chronology events=${chronologyDocument.events.length}, confirmed=${confirmedEventCount}`,
+      chronologyDocument.assetIndex[0]?.sortCapturedAt ? `asset 起点：${chronologyDocument.assetIndex[0].sortCapturedAt}` : undefined,
+      chronologyDocument.assetIndex.at(-1)?.sortCapturedAt ? `asset 终点：${chronologyDocument.assetIndex.at(-1)?.sortCapturedAt}` : undefined,
+      eventTimes[0] ? `event 起点：${eventTimes[0]}` : undefined,
+      eventTimes.at(-1) ? `event 终点：${eventTimes.at(-1)}` : undefined,
     ]),
   };
 }
@@ -2755,7 +2798,7 @@ async function ensureScriptAgentContract(
   brief: Awaited<ReturnType<typeof loadScriptBriefConfig>>,
   editRule: IEditRuleMarkdownSource,
   spatialStory: ISpatialStoryContext,
-  chronology: IScriptPlanningContext['chronology'],
+  chronology: IProjectChronology,
   pharosContext: IProjectPharosContext | null,
   editId?: string,
 ): Promise<IAgentContract> {
@@ -2923,7 +2966,7 @@ function buildMaterialSlotsPacket(input: {
       },
       {
         label: 'span-facts',
-        summary: `${input.spans.length} 个 spans + ${input.chronology.length} 条 chronology`,
+        summary: `${input.spans.length} 个 spans + ${input.chronology.length} 条 chronology asset anchors`,
         content: {
           spans: input.spans,
           chronology: input.chronology,
@@ -3127,7 +3170,7 @@ function scoreChronologyPosition(
   desiredPosition: number,
 ): number {
   const ordered = [...chronologyByAssetId.values()]
-    .sort((left, right) => String(left.sortCapturedAt ?? left.capturedAt ?? '').localeCompare(String(right.sortCapturedAt ?? right.capturedAt ?? '')));
+    .sort((left, right) => String(left.sortCapturedAt ?? '').localeCompare(String(right.sortCapturedAt ?? '')));
   const index = ordered.findIndex(item => item.assetId === chronology.assetId);
   if (index < 0 || ordered.length <= 1) return 0;
   const actualPosition = index / (ordered.length - 1);

@@ -5,7 +5,7 @@ import type {
   IKtepScriptBeat,
   IKtepScriptSelection,
   IKtepSlice,
-  IMediaChronology,
+  IChronologyAssetIndex,
   ISegmentRoughCutBeatPlan,
   ISegmentRoughCutPlan,
   ITimelineRoughCutBase,
@@ -30,7 +30,7 @@ export function buildDeterministicRoughCutBase(input: {
   projectId: string;
   script: IKtepScript[];
   slices: IKtepSlice[];
-  chronology?: IMediaChronology[];
+  chronology?: IChronologyAssetIndex[];
   subtitleConfig?: Partial<ISpeechPacingConfig>;
 }): ITimelineRoughCutBase {
   const sliceMap = new Map(input.slices.map(slice => [slice.id, slice] as const));
@@ -60,7 +60,7 @@ export function buildDeterministicRoughCutBase(input: {
           return chronology
             ? {
               position: chronology.index,
-              sortKey: chronology.entry.sortCapturedAt ?? chronology.entry.capturedAt ?? '',
+              sortKey: chronology.entry.sortCapturedAt ?? '',
             }
             : null;
         })
@@ -319,18 +319,10 @@ function buildBeatFromSegmentCut(beat: ISegmentRoughCutBeatPlan): IKtepScriptBea
 
 function resolveBeatSpeedSuggestion(
   beat: IKtepScriptBeat,
-  sliceMap: Map<string, IKtepSlice>,
+  _sliceMap: Map<string, IKtepSlice>,
 ): number | undefined {
   if (typeof beat.actions?.speed === 'number' && beat.actions.speed > 0) {
     return beat.actions.speed;
-  }
-  const silentMontageSelections = beat.visualSelections.length > 0 ? beat.visualSelections : beat.audioSelections;
-  for (const selection of silentMontageSelections) {
-    const slice = selection.sliceId ? sliceMap.get(selection.sliceId) : undefined;
-    const speedCandidate = slice?.speedCandidate;
-    if (speedCandidate?.suggestedSpeeds?.includes(2)) {
-      return 2;
-    }
   }
   return undefined;
 }

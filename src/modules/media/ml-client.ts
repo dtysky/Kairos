@@ -72,6 +72,11 @@ export interface IVlmResult {
   timing?: IMlVlmTiming;
 }
 
+export interface ITextGenerateResult {
+  text: string;
+  timing?: IMlVlmTiming;
+}
+
 export interface IMlHealth {
   status: string;
   device: string;
@@ -144,6 +149,17 @@ export class MlClient {
   ): Promise<IVlmResult> {
     return this.post<IVlmResult>('/vlm/analyze', {
       image_paths: imagePaths.map(path => this.normalizePath(path)),
+      prompt,
+      keep_other_models_loaded: options?.keepOtherModelsLoaded ?? false,
+      max_tokens: options?.maxTokens,
+    });
+  }
+
+  async textGenerate(
+    prompt: string,
+    options?: IMlRequestOptions,
+  ): Promise<ITextGenerateResult> {
+    return this.post<ITextGenerateResult>('/text/generate', {
       prompt,
       keep_other_models_loaded: options?.keepOtherModelsLoaded ?? false,
       max_tokens: options?.maxTokens,

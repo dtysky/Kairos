@@ -10,8 +10,11 @@ import {
   resolveFineScanPrefetchTargetConcurrency,
 } from '../../src/modules/media/project-analyze.js';
 import {
+  getAssetReportPath,
   getProjectProgressPath,
+  getSpansPath,
   initWorkspaceProject,
+  loadSpansMeta,
   writeJson,
 } from '../../src/store/index.js';
 
@@ -222,5 +225,79 @@ describe('analyzeWorkspaceProjectMedia', () => {
     );
     expect(manualItinerary).toContain('## 素材时间校正');
     expect(manualItinerary).toContain('20260331_081530.mp4');
+  });
+
+  it('does not rebuild spans from existing asset reports during Analyze', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-analyze-report-rebuild';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Test Project');
+    const progressPath = getProjectProgressPath(projectRoot, 'media-analyze');
+
+    await writeJson(join(projectRoot, 'config/runtime.json'), {
+      mlServerUrl: 'http://127.0.0.1:1',
+    });
+    await writeJson(join(projectRoot, 'store/assets.json'), [{
+      id: 'asset-1',
+      kind: 'video',
+      sourcePath: 'clip.mp4',
+      displayName: 'clip.mp4',
+      durationMs: 10_000,
+      capturedAt: '2026-03-31T08:15:30.000Z',
+    }]);
+    await writeJson(getAssetReportPath(projectRoot, 'asset-1'), {
+      assetId: 'asset-1',
+      durationMs: 10_000,
+      clipTypeGuess: 'drive',
+      keepDecision: 'keep',
+      materializationPath: 'direct',
+      densityScore: 0.5,
+      summary: '车窗外是雨天道路。',
+      materialPatterns: ['雨天道路'],
+      labels: ['drive-label-should-not-be-pattern'],
+      placeHints: [],
+      rootNotes: [],
+      sampleFrames: [],
+      interestingWindows: [{
+        startMs: 1000,
+        endMs: 3000,
+        editStartMs: 800,
+        editEndMs: 3500,
+        reason: 'direct-window',
+      }],
+      fineScanReasons: [],
+      createdAt: '2026-03-31T08:16:00.000Z',
+      updatedAt: '2026-03-31T08:16:00.000Z',
+    });
+    await writeJson(getSpansPath(projectRoot), [{
+      id: 'legacy-span',
+      assetId: 'asset-1',
+      type: 'drive',
+      materialPatterns: [{ phrase: '旧对象', confidence: 0.9 }],
+    }]);
+    await writeJson(join(projectRoot, 'store', 'spans.meta.json'), {
+      schemaVersion: '1.0',
+      status: 'fresh',
+      generatedAt: '2026-03-31T08:00:00.000Z',
+      inputsHash: 'old-hash',
+      assetCount: 1,
+      reportCount: 1,
+      spanCount: 1,
+      warnings: [],
+    });
+
+    const result = await analyzeWorkspaceProjectMedia({
+      workspaceRoot,
+      projectId,
+      progressPath,
+    });
+
+    expect(result.mlUsed).toBe(false);
+    expect(result.sliceCount).toBe(0);
+    const rawSpans = JSON.parse(await readFile(getSpansPath(projectRoot), 'utf-8')) as Array<{ id: string }>;
+    expect(rawSpans).toEqual([expect.objectContaining({ id: 'legacy-span' })]);
+    expect(await loadSpansMeta(projectRoot)).toMatchObject({
+      status: 'stale',
+      inputsHash: 'old-hash',
+    });
   });
 });

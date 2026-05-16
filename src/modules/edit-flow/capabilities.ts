@@ -34,8 +34,8 @@ export const CEDIT_FLOW_CAPABILITY_CATALOG: IEditFlowCapability[] = [
   },
   {
     capabilityId: 'trip.event_table',
-    title: 'Trip Event Table',
-    summary: 'LLM planning document that integrates Pharos, chronology, GPS, ASR, and asset reports into a reviewed trip/event table.',
+    title: 'Chronology Event Table',
+    summary: 'Planning document that reviews confirmed Chronology V2 events, gaps, route continuity, GPS, ASR, and asset reports without adding formal source/origin fields.',
     stableInputs: ['analysis/pharos-context.json', 'media/chronology.json', 'store/spans.json', 'analysis/asset-reports/*.json'],
     stableOutputs: ['edits/<editId>/planning/event-table.md'],
     gate: 'human',

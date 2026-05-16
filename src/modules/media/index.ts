@@ -2,6 +2,10 @@ export { scanDirectory, classifyExt, type IScannedFile } from './scanner.js';
 export { buildAssetCoarseReport, type IBuildAssetCoarseReportInput } from './asset-report.js';
 export { buildMediaChronology } from './chronology.js';
 export {
+  buildProjectChronology,
+  type IProjectChronologyBuildResult,
+} from './chronology-build.js';
+export {
   resolveMediaRoots,
   resolveMediaRoot,
   resolveRootPath,
@@ -52,6 +56,7 @@ export {
   type IAsrResult,
   type IOcrResult,
   type IVlmResult,
+  type ITextGenerateResult,
   type IMlHealth,
 } from './ml-client.js';
 export {
@@ -103,6 +108,13 @@ export {
   type IRefreshAnalyzeSpatialResultsInput,
   type IRefreshAnalyzeSpatialResultsResult,
 } from './spatial-refresh.js';
+export {
+  buildAnalyzeSpansFromReports,
+  buildMaterialSpansFromReports,
+  rebuildProjectSpans,
+  type IProjectSpanRebuildResult,
+  type ISpanRebuildResult,
+} from './span-rebuild.js';
 export {
   inferManualItineraryGps,
   type IManualSpatialContext,

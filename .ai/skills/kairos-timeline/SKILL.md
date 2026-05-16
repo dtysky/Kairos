@@ -24,7 +24,8 @@ description: >-
 ## 前置条件
 
 - `store/assets.json` — 资产列表
-- `store/slices.json` — 切片列表
+- `store/spans.json` — 素材片段索引
+- `store/spans.meta.json` — 必须为 `status=fresh`
 - `edits/<editId>/script/current.json` — 当前 Edit Unit 脚本
 - `edits/<editId>/timeline/rough-cut-base.json` 与 reviewed `edits/<editId>/timeline/segment-cuts/<segmentId>.json` — 正式 Timeline 内部粗剪输入
 
@@ -161,23 +162,25 @@ Timeline 阶段的字幕已经按素材类型分流：
   - 给出可调整的 candidate window bounds
   - 给出默认 merged source-speech audio units、subtitle cue draft 和 silent montage 速度建议
 - `segment-cut-refiner` 只允许在本段内拆并 / 重排 beat、在候选边界内调 window、覆盖 `drive / aerial` 速度、细化 source-speech 与字幕切分
-- `segment-cut-reviewer` 必须把召回回退、跨段换料、跨时间带回捞、非 `drive / aerial` 加速、speech window 越界、字幕严重错时，以及 chronology / Pharos / style guardrail 漂移视为 blocker
+- `segment-cut-reviewer` 必须把召回回退、跨段换料、跨时间带回捞、非 `drive / aerial` 加速、speech window 越界、字幕严重错时，以及 chronology / style guardrail 漂移视为 blocker
 - 对 Analyze 新产出的 slice，时间线默认优先使用 `editSourceInMs / editSourceOutMs`，而不是旧的 tight focus window
 - 只有旧 slice / 旧 selection 缺少 edit bounds 时，`placeClips()` 才会回落到 legacy source range
 - 对主轴明确偏时间 / 路程推进的 style，Timeline 还承担最后一层 chronology guardrail：
   - 相邻 beats 的主 selection `sortCapturedAt` 不应倒退
   - 同一 beat 内多 `audioSelections[]` / `visualSelections[]` 默认也应按时间递增
   - 若检测到倒序，先尝试同段内安全重排；仍无法恢复时应直接报错，而不是静默输出错序时间线
-- Timeline 不应再直接读取原始 `asset.capturedAt` 做排序；chronology guard、beat 排序与 selection 排序都必须统一消费 `media/chronology.json`
-- `media/chronology.json` 当前以 `sortCapturedAt` 作为唯一正式时序真值：
+- Timeline 不应再直接读取原始 `asset.capturedAt` 做排序；chronology guard、beat 排序与 selection 排序都必须统一消费已确认的 Chronology V2 `media/chronology.json`
+- `media/chronology.json` 当前以 `assetIndex[].sortCapturedAt` 作为唯一正式素材排序真值：
   - 优先 `capturedAtOverride`
   - 其次 `asset.capturedAt + ingestRoot.clockOffsetMs`
   - 最后才回退原始 `asset.capturedAt`
+- Timeline 必须在构建前阻塞旧数组 v1、`draft` 或 `stale` chronology，并要求先回到 `/chronology` 重建/确认；Timeline 不消费 Pharos/source/origin 等生成痕迹
+- Timeline 也必须在构建前阻塞缺失或 `status=stale` 的 `store/spans.meta.json`，要求先回到 `/chronology` 重新 `span-rebuild`
 - 如果确实需要速度变化，仍可显式使用 `beat.actions.speed`
 - 显式 `speed` 现在会进入 timeline clip `speed`，并继续透传到导出层；但只有 `drive / aerial` clip 会实际消费，其他类型即使同拍也会强制保持 `1x`
 - `placeClips()` 现在默认按自然 source 窗口或 edit-friendly bounds 摆放 clip，不再为了 `beat.targetDurationMs` 做压缩、拉伸或预算补齐
 - source-speech beat 当前正式落成“单视频轨串剪 + 独立 `dialogue` 音频轨”；不要引入双视频轨 overlay
-- 对 silent `drive / aerial` 粗剪 beat，如果 selection 自带 `speedCandidate` 且脚本没有显式写 `actions.speed`，时间线默认按 `2x` 自动加速
+- 时间线不再从 span / selection 的 `speedCandidate` 自动推导速度；silent `drive / aerial` 如果需要加速，必须来自显式 `beat.actions.speed` 或后续独立速度流程
 - 如果同一 asset 同时被选成 source-speech 和 silent `drive / aerial`，source-speech 优先占用重叠 source window；silent montage 只能消费非重叠 remainder
 - 如果同一 `drive / aerial` asset 被多个 silent montage beat 重复引用，后面的 beat 也必须扣掉前面已经消费过的 source window，只保留新的 remainder
 - 保护音轨 fallback 当前只在 `assetReports` 明确推荐 `protection` 时才会自动路由；默认仍优先保留视频内无线 mic

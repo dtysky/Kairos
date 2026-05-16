@@ -1,3 +1,5 @@
+import { buildSpanMaterialPatternsSystemPrompt } from './span-material-pattern-spec.js';
+
 export type TAgentPromptId =
   | 'style/style-profile-synthesizer'
   | 'style/style-profile-reviewer'
@@ -10,6 +12,7 @@ export type TAgentPromptId =
   | 'script/script-reviewer'
   | 'edit-flow/planner'
   | 'edit-flow/planning-documenter'
+  | 'media/span-material-patterns'
   | 'timeline/segment-cut-refiner'
   | 'timeline/segment-cut-reviewer';
 
@@ -256,6 +259,8 @@ const CPROMPTS: Record<TAgentPromptId, string> = {
 
 输出规则：
 - 严格返回 { "markdown": string }。`,
+
+  'media/span-material-patterns': buildSpanMaterialPatternsSystemPrompt(),
 };
 
 export function getAgentPrompt(id: TAgentPromptId): string {

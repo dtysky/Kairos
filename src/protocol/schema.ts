@@ -62,7 +62,7 @@ export const EClipType = z.enum([
 ]);
 export type EClipType = z.infer<typeof EClipType>;
 
-export const EWindowSemantic = z.enum(['speech', 'visual']);
+export const EWindowSemantic = z.enum(['speech', 'visual', 'mixed']);
 export type EWindowSemantic = z.infer<typeof EWindowSemantic>;
 
 export const ESamplingProfile = z.enum(['dense', 'balanced', 'sparse']);
@@ -273,7 +273,6 @@ export const ISpatialEvidence = z.object({
   tier: ESemanticEvidenceTier,
   confidence: z.number().min(0).max(1),
   sourceKinds: z.array(z.string()).default([]),
-  reasons: z.array(z.string()).default([]),
   lat: z.number().min(-90).max(90).optional(),
   lng: z.number().min(-180).max(180).optional(),
   locationText: z.string().optional(),
@@ -314,12 +313,7 @@ export const IKtepAsset = z.object({
 });
 export type IKtepAsset = z.infer<typeof IKtepAsset>;
 
-export const IMaterialPattern = z.object({
-  phrase: z.string(),
-  confidence: z.number().min(0).max(1),
-  excerpt: z.string().optional(),
-  evidenceRefs: z.array(z.string()).default([]),
-});
+export const IMaterialPattern = z.string();
 export type IMaterialPattern = z.infer<typeof IMaterialPattern>;
 
 export const IKtepSpan = z.object({
@@ -333,6 +327,7 @@ export const IKtepSpan = z.object({
   editSourceOutMs: z.number().optional(),
   transcript: z.string().optional(),
   transcriptSegments: z.array(ITranscriptSegment).optional(),
+  visualObservation: z.string().optional(),
   materialPatterns: z.array(IMaterialPattern).default([]),
   grounding: ISpanGrounding.default({
     speechMode: 'none',
@@ -340,27 +335,6 @@ export const IKtepSpan = z.object({
     spatialEvidence: [],
     pharosRefs: [],
   }),
-  narrativeFunctions: ISemanticTagSet.default({
-    core: [],
-    extra: [],
-    evidence: [],
-  }),
-  shotGrammar: ISemanticTagSet.default({
-    core: [],
-    extra: [],
-    evidence: [],
-  }),
-  viewpointRoles: ISemanticTagSet.default({
-    core: [],
-    extra: [],
-    evidence: [],
-  }),
-  subjectStates: ISemanticTagSet.default({
-    core: [],
-    extra: [],
-    evidence: [],
-  }),
-  evidence: z.array(IKtepEvidence).optional(),
   pharosRefs: z.array(IPharosRef).optional(),
   speechCoverage: z.number().min(0).max(1).optional(),
   speedCandidate: z.object({
@@ -368,10 +342,22 @@ export const IKtepSpan = z.object({
     rationale: z.string(),
     confidence: z.number().min(0).max(1).optional(),
   }).optional(),
-});
+}).strict();
 export type IKtepSpan = z.infer<typeof IKtepSpan>;
 export const IKtepSlice = IKtepSpan;
 export type IKtepSlice = IKtepSpan;
+
+export const ISpansMeta = z.object({
+  schemaVersion: z.literal('1.0'),
+  status: z.enum(['fresh', 'stale']),
+  generatedAt: z.string(),
+  inputsHash: z.string(),
+  assetCount: z.number().int().nonnegative(),
+  reportCount: z.number().int().nonnegative(),
+  spanCount: z.number().int().nonnegative(),
+  warnings: z.array(z.string()).default([]),
+}).strict();
+export type ISpansMeta = z.infer<typeof ISpansMeta>;
 
 export const IKtepScriptAction = z.object({
   speed: z.number().positive().optional(),
@@ -728,6 +714,26 @@ export const IProtectedAudioAssessment = z.object({
 });
 export type IProtectedAudioAssessment = z.infer<typeof IProtectedAudioAssessment>;
 
+export const EFineScanWindowStatus = z.enum(['recognized', 'dropped']);
+export type EFineScanWindowStatus = z.infer<typeof EFineScanWindowStatus>;
+
+export const IFineScanWindow = z.object({
+  windowId: z.string(),
+  sourceInMs: z.number().optional(),
+  sourceOutMs: z.number().optional(),
+  editSourceInMs: z.number().optional(),
+  editSourceOutMs: z.number().optional(),
+  semanticKind: EWindowSemantic.optional(),
+  reason: z.string().optional(),
+  speedCandidate: ISpeedCandidateHint.optional(),
+  frameTimestampsMs: z.array(z.number()).default([]),
+  framePaths: z.array(z.string()).default([]),
+  visualObservation: z.string().optional(),
+  status: EFineScanWindowStatus,
+  dropReason: z.string().optional(),
+});
+export type IFineScanWindow = z.infer<typeof IFineScanWindow>;
+
 export const IAssetCoarseReport = z.object({
   assetId: z.string(),
   ingestRootId: z.string().optional(),
@@ -754,6 +760,7 @@ export const IAssetCoarseReport = z.object({
   rootNotes: z.array(z.string()),
   sampleFrames: z.array(ICoarseSample),
   interestingWindows: z.array(IInterestingWindow),
+  fineScanWindows: z.array(IFineScanWindow).default([]),
   fineScanReasons: z.array(z.string()),
   fineScanCompletedAt: z.string().optional(),
   fineScanSliceCount: z.number().int().min(0).optional(),
@@ -762,35 +769,49 @@ export const IAssetCoarseReport = z.object({
 });
 export type IAssetCoarseReport = z.infer<typeof IAssetCoarseReport>;
 
-export const IChronologyCorrection = z.object({
-  capturedAtOverride: z.string().optional(),
-  summaryOverride: z.string().optional(),
-  labelsAdd: z.array(z.string()).optional(),
-  labelsRemove: z.array(z.string()).optional(),
-  reason: z.string().optional(),
-  updatedAt: z.string(),
-});
-export type IChronologyCorrection = z.infer<typeof IChronologyCorrection>;
+export const EChronologyStatus = z.enum(['draft', 'confirmed', 'stale']);
+export type EChronologyStatus = z.infer<typeof EChronologyStatus>;
 
-export const IMediaChronology = z.object({
-  id: z.string(),
+export const EChronologyEventKind = z.enum(['event', 'route', 'gap']);
+export type EChronologyEventKind = z.infer<typeof EChronologyEventKind>;
+
+export const EChronologyReviewStatus = z.enum(['pending', 'confirmed', 'rejected']);
+export type EChronologyReviewStatus = z.infer<typeof EChronologyReviewStatus>;
+
+export const IChronologyAssetIndex = z.object({
   assetId: z.string(),
-  ingestRootId: z.string().optional(),
-  capturedAt: z.string().optional(),
   sortCapturedAt: z.string().optional(),
-  captureTimeSource: ECaptureTimeSource.optional(),
-  captureTimeConfidence: z.number().min(0).max(1).optional(),
+}).strict();
+export type IChronologyAssetIndex = z.infer<typeof IChronologyAssetIndex>;
+
+export const IChronologyEvent = z.object({
+  id: z.string(),
+  kind: EChronologyEventKind,
+  reviewStatus: EChronologyReviewStatus,
+  title: z.string(),
   summary: z.string().optional(),
-  labels: z.array(z.string()),
-  placeHints: z.array(z.string()),
-  evidence: z.array(IKtepEvidence),
-  pharosMatches: z.array(IPharosMatch).default([]),
-  primaryPharosRef: IPharosRef.optional(),
-  pharosStatus: EPharosShotMatchStatus.optional(),
-  pharosDayTitle: z.string().optional(),
-  correction: IChronologyCorrection.optional(),
-});
-export type IMediaChronology = z.infer<typeof IMediaChronology>;
+  startAt: z.string().optional(),
+  endAt: z.string().optional(),
+  location: z.string().optional(),
+  route: z.object({
+    from: z.string().optional(),
+    to: z.string().optional(),
+  }).strict().optional(),
+  spanIds: z.array(z.string()),
+}).strict();
+export type IChronologyEvent = z.infer<typeof IChronologyEvent>;
+
+export const IProjectChronology = z.object({
+  schemaVersion: z.literal('2.0'),
+  status: EChronologyStatus,
+  generatedAt: z.string(),
+  updatedAt: z.string().optional(),
+  confirmedAt: z.string().optional(),
+  inputsHash: z.string(),
+  assetIndex: z.array(IChronologyAssetIndex),
+  events: z.array(IChronologyEvent),
+}).strict();
+export type IProjectChronology = z.infer<typeof IProjectChronology>;
 
 // ─── Model-Driven Script Prep ──────────────────────────────
 

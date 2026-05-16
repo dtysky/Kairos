@@ -50,7 +50,8 @@ description: >-
   - `store/project.json`
   - `store/manifest.json`
   - `store/assets.json`
-  - `store/slices.json`
+  - `store/spans.json`
+  - `store/spans.meta.json`
   - `analysis/asset-reports/*.json`
   - `script/current.json`
   - `timeline/current.json`
@@ -211,7 +212,7 @@ const projectRoot = await initWorkspaceProject(
 | `config/project-brief.json` + `config/project-brief.md` | 可以继续维护素材路径与说明；Markdown 只是镜像 |
 | `config/project-brief.json` 中的主/备选路径 | 当前机器能解析到可读 Root 时，可以直接进入 Ingest |
 | `store/assets.json` | 可以跳过首轮 Ingest |
-| `analysis/asset-reports/*.json` + `store/slices.json` | 可以跳过 Analyze |
+| `analysis/asset-reports/*.json` | 可以跳过 Analyze；仍需在 `/chronology` 确认 fresh spans 与 chronology |
 | `script/current.json` | 可以跳过 Script 起稿 |
 | `timeline/current.json` | 可以直接做导出或继续改时间线 |
 

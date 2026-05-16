@@ -7,7 +7,7 @@ import type {
   IKtepScriptSelection,
   IKtepSlice,
   IStageReviewIssue,
-  IMediaChronology,
+  IProjectChronology,
   ISegmentCutReview,
   ISegmentRoughCutBeatPlan,
   ISegmentRoughCutPlan,
@@ -17,12 +17,12 @@ import {
   getTimelineCurrentPath,
   loadAssets,
   loadAssetReports,
-  loadChronology,
+  assertConfirmedProjectChronology,
   loadCurrentScript,
   loadProject,
   loadRuntimeConfig,
   loadScriptBriefConfig,
-  loadSpans,
+  assertFreshSpans,
   writeJson,
   writeTimelineAgentPacket,
   writeTimelineAgentPipeline,
@@ -76,17 +76,17 @@ export async function buildProjectTimeline(
   const [
     project,
     assets,
-    slices,
+    freshSpans,
     script,
-    chronology,
+    chronologyDocument,
     assetReports,
     runtimeConfig,
   ] = await Promise.all([
     loadProject(input.projectRoot),
     loadAssets(input.projectRoot),
-    loadSpans(input.projectRoot),
+    assertFreshSpans(input.projectRoot),
     loadCurrentScript(input.projectRoot, editId),
-    loadChronology(input.projectRoot),
+    assertConfirmedProjectChronology(input.projectRoot),
     loadAssetReports(input.projectRoot),
     loadRuntimeConfig(input.projectRoot),
   ]);
@@ -111,14 +111,15 @@ export async function buildProjectTimeline(
 
   const cfg = resolveTimelineBuildConfig(runtimeConfig, {
     ...input.config,
-    chronology,
+    chronology: chronologyDocument.assetIndex,
     assetReports,
   });
+  const slices = freshSpans.spans;
   const roughCutBase = buildDeterministicRoughCutBase({
     projectId: project.id,
     script,
     slices,
-    chronology,
+    chronology: chronologyDocument.assetIndex,
     subtitleConfig: cfg.subtitle,
   });
   await writeTimelineRoughCutBase(input.projectRoot, roughCutBase, editId);
@@ -158,7 +159,7 @@ export async function buildProjectTimeline(
       scriptSegment,
       segmentPlan,
       sliceMap,
-      chronology,
+      chronology: chronologyDocument,
       subtitleConfig,
       planningArtifacts,
     });
@@ -198,7 +199,7 @@ async function runReviewedSegmentCutStage(input: {
   scriptSegment: IKtepScript;
   segmentPlan: ISegmentRoughCutPlan;
   sliceMap: Map<string, IKtepSlice>;
-  chronology: IMediaChronology[];
+  chronology: IProjectChronology;
   subtitleConfig: ISpeechPacingConfig;
   planningArtifacts?: IAgentPacketInputArtifact[];
 }): Promise<{ draft: ISegmentRoughCutPlan; review: ISegmentCutReview }> {
@@ -338,7 +339,7 @@ function buildSegmentCutRefinerPacket(input: {
   editId?: string;
   segmentPlan: ISegmentRoughCutPlan;
   scriptSegment: IKtepScript;
-  chronology: IMediaChronology[];
+  chronology: IProjectChronology;
   planningArtifacts?: IAgentPacketInputArtifact[];
   previousDraft: ISegmentRoughCutPlan;
   revisionBrief: string[];
@@ -377,7 +378,7 @@ function buildSegmentCutRefinerPacket(input: {
       },
       {
         label: 'chronology-snapshot',
-        summary: `${input.chronology.length} chronology items`,
+        summary: `${input.chronology.events.length} chronology events / ${input.chronology.assetIndex.length} asset anchors`,
         content: input.chronology,
       },
       ...(input.planningArtifacts ?? []),
@@ -409,7 +410,7 @@ function buildSegmentCutReviewPacket(input: {
   editId?: string;
   segmentPlan: ISegmentRoughCutPlan;
   scriptSegment: IKtepScript;
-  chronology: IMediaChronology[];
+  chronology: IProjectChronology;
   planningArtifacts?: IAgentPacketInputArtifact[];
   draft: ISegmentRoughCutPlan;
   attempt: number;
@@ -448,7 +449,7 @@ function buildSegmentCutReviewPacket(input: {
       },
       {
         label: 'chronology-snapshot',
-        summary: `${input.chronology.length} chronology items`,
+        summary: `${input.chronology.events.length} chronology events / ${input.chronology.assetIndex.length} asset anchors`,
         content: input.chronology,
       },
       ...(input.planningArtifacts ?? []),

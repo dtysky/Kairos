@@ -224,10 +224,10 @@ const CANALYZE_STEP_DESCRIPTIONS: Record<string, string> = {
   finalize: '统一完成视觉总结、clip type 判断与 fine-scan 策略决策。',
   'fine-scan-prefetch': '为待细扫素材预抽关键帧，并准备识别所需中间态。',
   'fine-scan-recognition': '消费已准备好的关键帧，生成细扫切片与视觉理解结果。',
-  chronology: '刷新 chronology 与项目级时间视图。',
+  chronology: '素材分析已完成；spans / chronology 请到 /chronology 显式生成。',
   inputs: '刷新 project GPX、derived track 与 Pharos context 等轻量空间输入。',
   reports: '只重算已有 asset-reports 的 GPS / Pharos 空间字段。',
-  downstream: '把新的空间字段同步到 chronology 与 spans grounding。',
+  stale: '标记 spans 与 chronology stale，等待 /chronology 显式重建。',
 };
 
 const CSTYLE_STAGE_ORDER = [
@@ -392,7 +392,6 @@ export async function buildAnalyzeMonitorModel(
       outputItem('prepared-assets', getPreparedAssetCheckpointRoot(projectRoot), 'coarse-scan 阶段生成的 prepared inputs checkpoint。', preparedCount > 0),
       outputItem('audio-checkpoints', getAudioAnalysisCheckpointRoot(projectRoot), 'audio-analysis 阶段可恢复的 transcript / protection 决策辅助 checkpoint。', audioCheckpointCount > 0),
       outputItem('fine-scan-checkpoints', getFineScanCheckpointRoot(projectRoot), '细扫预抽帧与识别阶段的恢复 checkpoint。', fineScanCheckpointSummary.total > 0),
-      outputItem('chronology.json', join(projectRoot, 'media', 'chronology.json'), '项目时间视图与后续编辑的时序基础。'),
     ]),
     raw: progress,
     latestJob,
@@ -504,7 +503,7 @@ function buildAnalyzeSteps(progress: IAnalyzeProgressPayload | null): IMonitorSt
       { key: 'finalize', label: '统一完成素材分析' },
       { key: 'fine-scan-prefetch', label: '预抽细扫关键帧' },
       { key: 'fine-scan-recognition', label: '识别细扫素材' },
-      { key: 'chronology', label: '刷新时间视图' },
+      { key: 'chronology', label: '完成素材分析' },
     ];
   const activeIndex = Math.max(0, Number(progress?.stepIndex ?? 1) - 1);
   const isComplete = progress?.status === 'completed';

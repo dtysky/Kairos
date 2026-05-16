@@ -74,6 +74,22 @@ export function confirmProjectEditFlowPlan(projectId, editId) {
   return apiPost(withEditQuery(`/api/projects/${encodeURIComponent(projectId)}/edit-flow/confirm`, editId), { editId });
 }
 
+export function confirmProjectChronology(projectId) {
+  return apiPost(`/api/projects/${encodeURIComponent(projectId)}/chronology/confirm`, {});
+}
+
+export function updateProjectChronologyEvent(projectId, eventId, payload) {
+  return apiPut(`/api/projects/${encodeURIComponent(projectId)}/chronology/events/${encodeURIComponent(eventId)}`, payload);
+}
+
+export function mergeProjectChronologyEvents(projectId, eventIds) {
+  return apiPost(`/api/projects/${encodeURIComponent(projectId)}/chronology/events/merge`, { eventIds });
+}
+
+export function splitProjectChronologyEvent(projectId, eventId) {
+  return apiPost(`/api/projects/${encodeURIComponent(projectId)}/chronology/events/${encodeURIComponent(eventId)}/split`, {});
+}
+
 export function fetchProjectReviews(projectId) {
   return apiGet(`/api/projects/${encodeURIComponent(projectId)}/reviews`);
 }

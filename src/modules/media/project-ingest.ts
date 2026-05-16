@@ -1,22 +1,19 @@
 import { randomUUID } from 'node:crypto';
 import { basename, isAbsolute, relative, resolve } from 'node:path';
-import type { IKtepAsset, IMediaRoot } from '../../protocol/schema.js';
+import type { IKtepAsset, IMediaRoot, IProjectPharosContext } from '../../protocol/schema.js';
 import {
   appendAssets,
-  loadAssetReports,
   loadIngestRoots,
   loadRuntimeConfig,
-  loadChronology,
-  loadAssets,
   loadProjectBriefConfig,
+  markChronologyStale,
+  markSpansStale,
   resolveWorkspaceProjectRoot,
   syncProjectBriefMappings,
   touchProjectUpdatedAt,
-  writeChronology,
   type IMergeResult,
 } from '../../store/index.js';
 import { resolveCaptureTime } from './capture-time.js';
-import { buildMediaChronology } from './chronology.js';
 import { resolveEmbeddedGpsBinding } from './gps-embedded.js';
 import {
   findManualCaptureTimeOverride,
@@ -52,7 +49,8 @@ export interface IIngestWorkspaceProjectResult {
   scannedRoots: IIngestedRootSummary[];
   missingRoots: IMediaRoot[];
   merge: IMergeResult;
-  chronologyCount: number;
+  spansMarkedStale: boolean;
+  chronologyMarkedStale: boolean;
   warnings: string[];
 }
 
@@ -130,7 +128,10 @@ export async function ingestWorkspaceProjectMedia(
     geocodeLocation: input.geocodeLocation,
     reverseGeocodeService: input.reverseGeocodeService,
   });
-  const chronologyCount = await refreshProjectChronology(projectRoot);
+  const [staleSpans, staleChronology] = await Promise.all([
+    markSpansStale(projectRoot, 'ingest updated assets or spatial inputs; rerun /chronology span-rebuild'),
+    markChronologyStale(projectRoot),
+  ]);
   await touchProjectUpdatedAt(projectRoot);
   await enforceProjectTimelineConsistency({
     projectRoot,
@@ -143,7 +144,8 @@ export async function ingestWorkspaceProjectMedia(
     scannedRoots,
     missingRoots: resolution.missing,
     merge,
-    chronologyCount,
+    spansMarkedStale: staleSpans != null,
+    chronologyMarkedStale: staleChronology != null,
     warnings: [...warnings],
   };
 }
@@ -278,18 +280,6 @@ async function safeProbe(
       rawTags: {},
     };
   }
-}
-
-async function refreshProjectChronology(projectRoot: string): Promise<number> {
-  const [assets, reports, existing, { roots }] = await Promise.all([
-    loadAssets(projectRoot),
-    loadAssetReports(projectRoot),
-    loadChronology(projectRoot),
-    loadIngestRoots(projectRoot),
-  ]);
-  const chronology = buildMediaChronology(assets, reports, existing, roots);
-  await writeChronology(projectRoot, chronology);
-  return chronology.length;
 }
 
 function resolveNestedRawExclusions(

@@ -212,9 +212,6 @@ export function buildOutlinePrompt(outline: IOutlineSegment[]): string {
           beat.materialPatterns.length > 0 ? `材料模式: ${beat.materialPatterns.join(', ')}` : '',
           beat.locations.length > 0 ? `地点: ${beat.locations.join(', ')}` : '',
           beat.sourceSpeechDecision ? `原声建议: ${beat.sourceSpeechDecision}` : '',
-          beat.speedCandidate
-            ? `速度候选: ${beat.speedCandidate.suggestedSpeeds.join('x / ')}x`
-            : '',
         ].filter(Boolean).join(' | ');
         return `   - ${beatIndex + 1}. ${beat.title}${details ? ` | ${details}` : ''}`;
       })

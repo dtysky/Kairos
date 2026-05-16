@@ -47,6 +47,11 @@ class VlmRequest(BaseModel):
     keep_other_models_loaded: bool = False
     max_tokens: int | None = None
 
+class TextGenerateRequest(BaseModel):
+    prompt: str
+    keep_other_models_loaded: bool = False
+    max_tokens: int | None = None
+
 # ─── State ────────────────────────────────────────────────────
 
 _loaded: set[str] = set()
@@ -218,6 +223,22 @@ def vlm_analyze(req: VlmRequest):
         _loaded.add("vlm")
         description, timing = analyze(req.image_paths, req.prompt, max_tokens=req.max_tokens)
         return {"description": description, "timing": timing}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/text/generate")
+def text_generate(req: TextGenerateRequest):
+    try:
+        # Text generation reuses the qwen VLM/text residency path but does not
+        # open image inputs. It still unloads Whisper by default to keep the
+        # same one-heavy-model-at-a-time policy as VLM analysis.
+        if not req.keep_other_models_loaded:
+            _unload_whisper()
+        from .vlm_runner import generate_text
+        _loaded.add("vlm")
+        text, timing = generate_text(req.prompt, max_tokens=req.max_tokens)
+        return {"text": text, "timing": timing}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

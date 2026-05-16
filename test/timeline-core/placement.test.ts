@@ -128,7 +128,7 @@ describe('placeClips', () => {
     ]);
   });
 
-  it('auto-applies 2x speed for silent drive rough cuts when speedCandidate is present', () => {
+  it('keeps silent drive rough cuts at real time unless the script explicitly asks for speed', () => {
     const assets: IKtepAsset[] = [{
       id: 'asset-drive',
       kind: 'video',
@@ -141,10 +141,6 @@ describe('placeClips', () => {
       type: 'drive',
       sourceInMs: 0,
       sourceOutMs: 10_000,
-      speedCandidate: {
-        sourceWindow: { startMs: 0, endMs: 10_000 },
-        suggestedSpeeds: [2, 5],
-      },
       labels: [],
       placeHints: [],
     }];
@@ -155,7 +151,7 @@ describe('placeClips', () => {
       linkedSliceIds: ['slice-drive'],
       beats: [{
         id: 'beat-1',
-        text: '静默行车素材默认加到 2x。',
+        text: '静默行车素材默认保持原速。',
         actions: {
           muteSource: true,
         },
@@ -175,10 +171,10 @@ describe('placeClips', () => {
     expect(clips[0]).toMatchObject({
       sourceInMs: 0,
       sourceOutMs: 10_000,
-      speed: 2,
       timelineInMs: 0,
-      timelineOutMs: 5_000,
+      timelineOutMs: 10_000,
     });
+    expect(clips[0]?.speed).toBeUndefined();
   });
 
   it('creates a dialogue track for embedded source speech while keeping video on the primary track', () => {

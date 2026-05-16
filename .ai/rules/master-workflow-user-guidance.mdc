@@ -23,7 +23,7 @@ alwaysApply: true
 - 当前正式控制面是 `Supervisor + React console (apps/kairos-console/)`；`/analyze` 与 `/style` 是正式监控路由，旧静态监控页和兼容脚本不能再被解释成新的正式入口。
 - `scripts/kairos-supervisor.* start` 只会启动 `Supervisor + React console`，不会顺带启动 ML，也不会恢复旧 job。
 - `progress.json` 只能被解释成 durable cache；“是否还在跑”必须看 live job record。
-- ML-backed Kairos 官方流程结束态必须是 `ML stopped`；`spatial-refresh` 是 `/analyze` 的 no-ML 空间修补 job，不进入 ML lifecycle。
+- ML-backed Kairos 官方流程结束态必须是 `ML stopped`；`spatial-refresh / chronology-build` 是 `/chronology` 的 no-ML deterministic job，`span-rebuild` 会进入 ML lifecycle 调用本地 qwen 文本 LM，但不重跑 VLM / ASR。
 
 ## 对用户的标准流程口径
 
@@ -33,17 +33,19 @@ Kairos 的标准顺序是：
 2. `Project Init`
 3. `Ingest`
 4. `Analyze`
-5. `Script`
-6. `Timeline`
-7. `Export`
+5. `Chronology Review`
+6. `Script`
+7. `Timeline`
+8. `Export`
 
 向用户解释“怎么用”时，默认按下面的口径组织：
 
 - 第一步先确认项目是否已经初始化；如果没有，先建立 `projects/<projectId>/`
 - 第二步让用户维护 `config/project-brief.md`，把素材根目录和说明写进去
 - 第三步执行 Ingest，把素材扫描进 `store/assets.json`
-- 第四步执行 Analyze，生成 `store/slices.json`、`analysis/asset-reports/*.json`、`media/chronology.json`
-- 第五步在用户明确指定 **workspace 剪辑规则分类** 后进入 Script：
+- 第四步执行 Analyze，只生成 `analysis/asset-reports/*.json` 作为分析事实真相
+- 第五步进入 `/chronology`：先显式生成 fresh `store/spans.json`，再生成、审查并确认 Chronology V2；Script / Timeline 只消费 fresh spans + `schemaVersion=2.0` 且 `status=confirmed` 的 chronology
+- 第六步在用户明确指定 **workspace 剪辑规则分类** 后进入 Script：
   - 先在 `/script` 选择 `editRuleCategory` 并自动保存；`styleCategory` 是可选 layered-v1 风格档案，具体三层使用由 confirmed Flow Plan 的 `styleUsage` 决定
   - 运行 Edit Flow Planner，生成并人工确认 `edits/<editId>/planning/flow-plan.json`
   - 再由 Agent 生成初版 `script-brief`
@@ -51,8 +53,8 @@ Kairos 的标准顺序是：
   - `/script` 会用显眼的 workflow prompt / modal 提示“下一步回到 Agent”或“点击准备给 Agent”
   - 再点击 `准备给 Agent`
   - 最后回到 Agent 生成 `edits/<editId>/script/current.json`
-- 第六步基于脚本和素材进入 `Timeline`：先产出 `edits/<editId>/timeline/rough-cut-base.json`，再经过 `segment-cut-refiner -> segment-cut-reviewer`，最后才落正式 `edits/<editId>/timeline/current.json`
-- 第七步在目标 NLE 和导出目录明确后执行 Export
+- 第七步基于脚本和素材进入 `Timeline`：先产出 `edits/<editId>/timeline/rough-cut-base.json`，再经过 `segment-cut-refiner -> segment-cut-reviewer`，最后才落正式 `edits/<editId>/timeline/current.json`
+- 第八步在目标 NLE 和导出目录明确后执行 Export
 
 ## 用户真正该编辑的入口
 
@@ -68,7 +70,8 @@ Kairos 的标准顺序是：
 
 - `config/ingest-roots.json`
 - `store/assets.json`
-- `store/slices.json`
+- `store/spans.json`
+- `store/spans.meta.json`
 - `edits/<editId>/timeline/current.json`
 
 ## 当前阶段判断
@@ -77,9 +80,11 @@ Kairos 的标准顺序是：
 
 - 没有 `store/project.json` / `store/manifest.json`：先做 `Project Init`
 - 有项目骨架但没有 `store/assets.json`：先做 `Ingest`
-- 有 `store/assets.json` 但没有 `store/slices.json`：先做 `Analyze`
-- 如果已有 `store/slices.json` 和 `analysis/asset-reports/*.json`，用户只改了 GPS / Pharos context / 空间优先级 / reverse-geocode 逻辑，优先在 `/analyze` 运行 `刷新空间结果`，不要默认重跑完整 Analyze
-- 有 `store/slices.json` 但没有 `edits/main/script/current.json`（或指定 editId 的 script current）：先做 `Script`
+- 有 `store/assets.json` 但缺少对应 `analysis/asset-reports/*.json`：先做 `Analyze`
+- 如果已有完整 `analysis/asset-reports/*.json`，用户只改了 span 派生口径，优先去 `/chronology` 运行 `生成素材片段与模式`，不能默认重跑完整 Analyze
+- 如果用户只改了 GPS / Pharos context / 空间优先级 / reverse-geocode 逻辑，先运行 `spatial-refresh` 修补 reports，再回 `/chronology` 重新生成 spans 和 chronology
+- 有 `store/spans.json` 但缺 fresh `store/spans.meta.json`，或 `media/chronology.json` 缺失、仍是旧数组 v1、或不是 `status=confirmed` 的 Chronology V2：先去 `/chronology` 生成素材片段与模式、生成/审查/确认 chronology
+- 有 fresh `store/spans.json` 与 confirmed chronology 但没有 `edits/main/script/current.json`（或指定 editId 的 script current）：先做 `Script`
 - 有 `edits/<editId>/script/current.json` 但没有 `edits/<editId>/timeline/current.json`：先做 `Timeline`（内部会先跑 `rough-cut-base -> segment-cut-refiner -> segment-cut-reviewer`）
 - 有 `edits/<editId>/timeline/current.json`：进入 `Export`、Resolve timeline 交互修改或迭代修改
 
@@ -100,7 +105,8 @@ Kairos 的标准顺序是：
 - “素材时间校正”是 capture-time 修正的唯一编辑入口；不要要求用户再去 `导入 / GPS Review` 填同一批字段
 - 如果 root 声明了 `captureTimePolicy.mode=manual-required`，对应素材的时间阻塞必须要求用户显式填写 `正确日期 / 正确时间 / 时区`；不能用当前文件时间或建议日期自动代填后继续 Analyze
 - 如果用户刚更新了项目内 `pharos/`，必须先引导到 `/ingest-gps` 运行 `刷新 GPS 缓存` 或 `运行 Ingest`，让 `analysis/pharos-context.json` 重新解析后再进入 Analyze
-- 如果用户只是需要让旧 `asset-reports / chronology / spans` 采用新的 GPS / Pharos 空间结果，应引导到 `/analyze` 点击 `刷新空间结果`；它不会补扫新素材或新 sidecar
+- 如果用户只是需要让旧 `asset-reports` 采用新的 GPS / Pharos 空间结果，应引导到 `/chronology` 的空间刷新入口；它不会补扫新素材或新 sidecar，完成后还需要重新生成 spans / chronology
+- 在 `Script` 或 `Timeline` 前，如果 spans 不 fresh，或 chronology 不是已确认 Chronology V2，必须先把用户引导到 `/chronology`；不要让下游消费旧 v1 数组、未确认草稿或 stale spans
 - 在 `Script` 前，如果用户没有明确指定 workspace 剪辑规则分类，必须停下确认
 - 如果剪辑规则要求使用风格层，但用户没有选择 `styleCategory`，或选择的是 legacy 非 layered-v1 档案，必须先引导用户选择 / 重跑 `/style`，不能继续确认 Flow Plan 或进入 Script prep
 - 在 `Script` 阶段，不要把 Console 的 `script` job 描述成“后台自动写稿”；它当前只负责 deterministic prep，不负责起草初版 brief，也不负责写正式脚本
@@ -118,6 +124,6 @@ Kairos 的标准顺序是：
 
 - 不要把 `kairos-workflow` skill 当成单个 phase 的替代实现
 - 不要跳过 `Project Init` 就直接假设项目配置已正确
-- 不要让用户直接维护 `assets.json` / `slices.json` 这类派生产物
+- 不要让用户直接维护 `assets.json` / `spans.json` / `spans.meta.json` 这类派生产物
 - 不要在风格未确认的情况下直接进入 Script
 - 不要在导出目标未确认时直接进入 Export

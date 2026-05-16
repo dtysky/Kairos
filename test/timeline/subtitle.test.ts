@@ -64,10 +64,6 @@ describe('source-speech subtitle planning', () => {
         spatialEvidence: [],
         pharosRefs: [],
       },
-      narrativeFunctions: { core: [], extra: [], evidence: [] },
-      shotGrammar: { core: [], extra: [], evidence: [] },
-      viewpointRoles: { core: [], extra: [], evidence: [] },
-      subjectStates: { core: [], extra: [], evidence: [] },
     }];
 
     const subtitles = planSubtitles(script, clips, slices, { maxCharsPerCue: 20 });
@@ -133,10 +129,6 @@ describe('source-speech subtitle planning', () => {
         spatialEvidence: [],
         pharosRefs: [],
       },
-      narrativeFunctions: { core: [], extra: [], evidence: [] },
-      shotGrammar: { core: [], extra: [], evidence: [] },
-      viewpointRoles: { core: [], extra: [], evidence: [] },
-      subjectStates: { core: [], extra: [], evidence: [] },
     }];
 
     const subtitles = planSubtitles(script, clips, slices, { maxCharsPerCue: 20 });

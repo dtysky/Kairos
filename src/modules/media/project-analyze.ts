@@ -6,9 +6,9 @@ import type {
   ETargetBudget,
   IAudioHealthSummary,
   IAssetCoarseReport,
+  IFineScanWindow,
   IInferredGps,
   IKtepAsset,
-  IKtepEvidence,
   IKtepSlice,
   IMediaAnalysisPlan,
   IInterestingWindow,
@@ -16,29 +16,27 @@ import type {
   ITranscriptSegment,
 } from '../../protocol/schema.js';
 import {
-  appendSlices,
   estimateRemainingSeconds,
   findUnreportedAssets,
   loadAudioAnalysisCheckpoint,
   loadAssetReports,
   loadAssets,
-  loadChronology,
   loadIngestRoots,
   loadPreparedAssetCheckpoint,
   loadProjectDerivedTrack,
   loadProject,
   loadRuntimeConfig,
-  loadSlices,
   removeAudioAnalysisCheckpoint,
   removePreparedAssetCheckpoint,
   resolveWorkspaceProjectRoot,
   getProjectProgressPath,
   loadFineScanCheckpoint,
   loadProjectBriefConfig,
+  markChronologyStale,
+  markSpansStale,
   touchProjectUpdatedAt,
   writeJson,
   writeKairosProgress,
-  writeChronology,
   writeAssetReport,
   writeAudioAnalysisCheckpoint,
   writeFineScanCheckpoint,
@@ -59,7 +57,6 @@ import {
   recommendProtectedAudioFallback,
   summarizeAudioHealth,
 } from './audio-health.js';
-import { buildMediaChronology } from './chronology.js';
 import { estimateDensity, type IDensityResult } from './density.js';
 import {
   uniformTimestamps,
@@ -74,7 +71,7 @@ import { MlClient } from './ml-client.js';
 import type { IMlVlmTiming } from './ml-client.js';
 import { probe } from './probe.js';
 import { resolveProtectionAudioLocalPath } from './protection-audio.js';
-import { recognizeFrames, recognizeShotGroups, type IRecognition } from './recognizer.js';
+import { recognizeFrames, recognizeShotGroups, type IRecognition, type IShotRecognition } from './recognizer.js';
 import { resolveAssetLocalPath, resolveMediaRoot } from './root-resolver.js';
 import {
   applyAnalysisDecision,
@@ -84,7 +81,7 @@ import {
   pickCoarseSampleCount,
 } from './sampler.js';
 import { detectShots, type IShotBoundary } from './shot-detect.js';
-import { sliceInterestingWindows, slicePhoto, sliceVideo } from './slicer.js';
+import { sliceInterestingWindows, sliceVideo } from './slicer.js';
 import { resolveProjectGpxPaths } from './project-gps.js';
 import { resolveAssetSpatialContext } from './spatial-resolver.js';
 import type { IManualSpatialContext } from './manual-spatial.js';
@@ -93,7 +90,7 @@ import {
   resolveAnalyzeLocationText,
   type IReverseGeocodeService,
 } from './reverse-geocode.js';
-import { loadOrBuildProjectPharosContext, pharosRefsFromMatches } from '../pharos/context.js';
+import { loadOrBuildProjectPharosContext } from '../pharos/context.js';
 import { resolvePharosTimedSpatialContext } from '../pharos/gpx-timed.js';
 import { matchAssetToPharos } from '../pharos/matcher.js';
 import {
@@ -110,10 +107,6 @@ import {
   mergeInterestingWindowsByPreferredBounds,
   resolveWindowPreferredRange,
 } from './window-policy.js';
-import {
-  createEmptySliceSemantics,
-  decorateSliceWithSemanticTags,
-} from './semantic-slice.js';
 import { resolveAnalyzePrimarySpatial } from './spatial-priority.js';
 
 export interface IAnalyzeWorkspaceProjectInput {
@@ -146,7 +139,7 @@ const CANALYZE_STEP_DEFINITIONS = [
   { key: 'finalize', label: '统一完成素材分析' },
   { key: 'fine-scan-prefetch', label: '预抽细扫关键帧' },
   { key: 'fine-scan-recognition', label: '识别细扫素材' },
-  { key: 'chronology', label: '刷新时间视图' },
+  { key: 'chronology', label: '完成素材分析' },
 ] as const;
 type TAnalyzeStepKey = typeof CANALYZE_STEP_DEFINITIONS[number]['key'];
 
@@ -168,7 +161,7 @@ function describeAnalyzeInitialProgress(input: {
     return `已完成统一素材分析，正在恢复 ${input.pendingFineScanCount} 条待细扫素材`;
   }
   if (input.step === 'chronology') {
-    return '当前没有待分析素材，正在刷新 chronology 视图';
+    return '当前没有待分析素材；如需更新 spans / chronology，请前往 /chronology';
   }
   return `正在读取项目“${input.projectName}”的素材与路径候选`;
 }
@@ -236,12 +229,11 @@ export async function analyzeWorkspaceProjectMedia(
     })
     : undefined;
   const performanceProfilePath = performance?.resolveOutputPath(input.performanceProfile?.outputPath);
-  const [{ roots }, runtimeConfig, assets, existingReports, existingSlices, project, derivedTrack, projectBrief] = await Promise.all([
+  const [{ roots }, runtimeConfig, assets, existingReports, project, derivedTrack, projectBrief] = await Promise.all([
     loadIngestRoots(projectRoot),
     loadRuntimeConfig(projectRoot),
     loadAssets(projectRoot),
     loadAssetReports(projectRoot),
-    loadSlices(projectRoot),
     loadProject(projectRoot),
     loadProjectDerivedTrack(projectRoot),
     loadProjectBriefConfig(projectRoot),
@@ -272,7 +264,7 @@ export async function analyzeWorkspaceProjectMedia(
   ));
   const pendingAssets = selectPendingAssets(assets, existingReports, input.assetIds);
   const pendingFineScanEntries = !input.assetIds?.length
-    ? selectPendingFineScanEntries(assets, existingReports, existingSlices)
+    ? selectPendingFineScanEntries(assets, existingReports)
     : [];
   const progressTotal = progressScopeAssets.length;
   const progressBase = Math.max(0, progressTotal - pendingAssets.length);
@@ -283,7 +275,6 @@ export async function analyzeWorkspaceProjectMedia(
   performance?.setAssetCount(pendingAssets.length);
   const analyzedAssetIds: string[] = [];
   const fineScannedAssetIds: string[] = [];
-  const pendingSlices: IKtepSlice[] = [];
   const preparedAnalyses: IPreparedAssetAnalysis[] = [];
   const finalizedAnalyses: IFinalizedAssetAnalysis[] = [];
   let performanceFailureHandled = false;
@@ -316,21 +307,6 @@ export async function analyzeWorkspaceProjectMedia(
     const writeStartedAt = Date.now();
     await writeAssetReport(projectRoot, report);
     performance?.recordReportWrite(asset, Date.now() - writeStartedAt);
-  };
-  const appendTrackedSlices = async (
-    asset: IKtepAsset,
-    slices: IKtepSlice[],
-  ) => {
-    const writeStartedAt = Date.now();
-    await appendSlices(projectRoot, slices);
-    performance?.recordSliceAppend(asset, slices.length, Date.now() - writeStartedAt);
-  };
-  const writeTrackedChronology = async (
-    chronology: Awaited<ReturnType<typeof loadChronology>>,
-  ) => {
-    const writeStartedAt = Date.now();
-    await writeChronology(projectRoot, chronology);
-    performance?.recordChronologyWrite(Date.now() - writeStartedAt);
   };
   const flushPerformance = async () => {
     if (!performance || !performanceProfilePath) return;
@@ -502,19 +478,6 @@ export async function analyzeWorkspaceProjectMedia(
         performance?.recordStage(prepared.asset, 'finalize', Date.now() - finalizeStartedAt);
 
         await writeTrackedReport(prepared.asset, finalized.report);
-        if (shouldDirectMaterializeReport(finalized.report)) {
-          const directResult = await generateDirectMaterializationOutput({
-            analysis: finalized,
-            pharosContext,
-            vocabulary: semanticVocabulary,
-          });
-          const persistedSlices = consolidatePersistedSpeechSlices(directResult.slices);
-          if (persistedSlices.length === 0) {
-            throw new Error(`素材 ${prepared.asset.displayName} 的 direct materialization 未生成任何 spans`);
-          }
-          await appendTrackedSlices(prepared.asset, persistedSlices);
-          pendingSlices.push(...persistedSlices);
-        }
         await removeAudioAnalysisCheckpoint(projectRoot, prepared.asset.id);
         if (!shouldFineScanReport(finalized.report)) {
           await removePreparedAssetCheckpoint(projectRoot, prepared.asset.id);
@@ -590,37 +553,14 @@ export async function analyzeWorkspaceProjectMedia(
       performance,
       writeTrackedProgress,
       writeTrackedReport,
-      appendTrackedSlices,
     });
-    pendingSlices.push(...fineScanResult.pendingSlices);
     fineScannedAssetIds.push(...fineScanResult.fineScannedAssetIds);
 
-    await writeAnalyzeStepProgress({
-      step: 'chronology',
-      fileIndex: progressTotal,
-      fileTotal: progressTotal,
-      current: progressTotal,
-      total: progressTotal,
-      unit: 'files',
-      etaSeconds: 0,
-      detail: '正在按拍摄时间刷新 chronology 视图',
-      extra: {
-        projectId: input.projectId,
-        projectName: project.name,
-        fineScannedAssetCount: fineScannedAssetIds.length,
-      },
-    });
-
-    const chronologyStartedAt = Date.now();
-    const chronology = buildMediaChronology(
-      await loadAssets(projectRoot),
-      await loadAssetReports(projectRoot),
-      await loadChronology(projectRoot),
-      roots,
-    );
-    await writeTrackedChronology(chronology);
+    await Promise.all([
+      markSpansStale(projectRoot, 'analyze updated asset reports; rerun /chronology span-rebuild'),
+      markChronologyStale(projectRoot),
+    ]);
     await touchProjectUpdatedAt(projectRoot);
-    performance?.recordChronologyRefresh(Date.now() - chronologyStartedAt);
 
     const missingRoots = roots.filter(
       root => root.enabled && !resolveAssetRootAvailable(root),
@@ -635,13 +575,14 @@ export async function analyzeWorkspaceProjectMedia(
       total: progressTotal,
       unit: 'files',
       etaSeconds: 0,
-      detail: `已完成 ${analyzedAssetIds.length} 条素材分析，自动细扫 ${fineScannedAssetIds.length} 条`,
+      detail: `已完成 ${analyzedAssetIds.length} 条素材分析，自动细扫 ${fineScannedAssetIds.length} 条；请到 /chronology 生成素材片段与模式，再生成编年史`,
       extra: {
         projectId: input.projectId,
         projectName: project.name,
         analyzedAssetIds,
         fineScannedAssetIds,
-        chronologyCount: chronology.length,
+        spansGenerated: false,
+        chronologyGenerated: false,
       },
     });
     performance?.finalizeSuccess({
@@ -658,7 +599,7 @@ export async function analyzeWorkspaceProjectMedia(
       fineScannedAssetIds,
       missingRoots,
       reportCount: analyzedAssetIds.length,
-      sliceCount: pendingSlices.length,
+      sliceCount: 0,
       mlUsed,
       performanceProfilePath,
     };
@@ -1308,7 +1249,7 @@ interface IFineScanTaskState {
 
 interface IFineScanRecognitionResult {
   task: IFineScanTaskState;
-  slices: IKtepSlice[];
+  fineScanWindows: IFineScanWindow[];
   updatedReport: IAssetCoarseReport;
   droppedInvalidSliceCount: number;
 }
@@ -1321,11 +1262,6 @@ interface IPreparedAssetPlanningContext {
   decision: IAnalysisDecision;
   finalPlan: IMediaAnalysisPlan;
   decisionReasons: string[];
-}
-
-interface IFineScanSlicesResult {
-  slices: IKtepSlice[];
-  droppedInvalidSliceCount: number;
 }
 
 interface ITranscribedAudioContext {
@@ -1376,12 +1312,6 @@ function shouldFineScanReport(
   report: Pick<IAssetCoarseReport, 'keepDecision' | 'materializationPath'>,
 ): boolean {
   return report.keepDecision === 'keep' && report.materializationPath === 'fine-scan';
-}
-
-function shouldDirectMaterializeReport(
-  report: Pick<IAssetCoarseReport, 'keepDecision' | 'materializationPath'>,
-): boolean {
-  return report.keepDecision === 'keep' && report.materializationPath === 'direct';
 }
 
 interface IFinalizeFailure {
@@ -3193,21 +3123,12 @@ function resolveHeuristicClipType(prepared: IPreparedAssetAnalysis): EClipType {
 function decorateSliceWithTranscript(
   slice: IKtepSlice,
   transcript?: ITranscriptContext | null,
-  extraEvidence: IKtepEvidence[] = [],
 ): IKtepSlice {
   if (!transcript || !transcript.transcript || (slice.type === 'drive' && slice.semanticKind === 'visual')) {
-    const evidence = dedupeEvidence([...(slice.evidence ?? []), ...extraEvidence]);
-    return evidence.length > 0
-      ? { ...slice, evidence }
-      : slice;
+    return slice;
   }
 
   const match = collectTranscriptForSlice(slice, transcript);
-  const evidence = dedupeEvidence([
-    ...(slice.evidence ?? []),
-    ...match.evidence,
-    ...extraEvidence,
-  ]);
   const grounding: IKtepSlice['grounding'] = {
     ...slice.grounding,
     speechMode: match.transcript
@@ -3223,7 +3144,6 @@ function decorateSliceWithTranscript(
     transcript: match.transcript ?? slice.transcript,
     transcriptSegments: match.transcriptSegments ?? slice.transcriptSegments,
     grounding,
-    evidence: evidence.length > 0 ? evidence : undefined,
     speechCoverage: match.speechCoverage ?? slice.speechCoverage,
   };
 }
@@ -3234,7 +3154,6 @@ function collectTranscriptForSlice(
 ): {
   transcript?: string;
   transcriptSegments?: ITranscriptSegment[];
-  evidence: IKtepEvidence[];
   speechCoverage?: number;
 } {
   if (transcript.segments.length === 0) {
@@ -3247,7 +3166,6 @@ function collectTranscriptForSlice(
           text: transcript.transcript,
         }]
         : undefined,
-      evidence: transcript.evidence,
       speechCoverage: transcript.speechCoverage,
     };
   }
@@ -3259,7 +3177,7 @@ function collectTranscriptForSlice(
   );
 
   if (overlapped.length === 0) {
-    return { evidence: [] };
+    return {};
   }
 
   const clippedSegments = overlapped
@@ -3280,11 +3198,6 @@ function collectTranscriptForSlice(
   return {
     transcript: excerpt || undefined,
     transcriptSegments: clippedSegments,
-    evidence: clippedSegments.map(segment => ({
-      source: 'asr',
-      value: segment.text,
-      confidence: 0.8,
-    })),
     speechCoverage: sliceDurationMs && sliceDurationMs > 0
       ? Math.min(speechMs / sliceDurationMs, 1)
       : transcript.speechCoverage,
@@ -3633,36 +3546,6 @@ async function resolveReadyFineScanFrames(
   };
 }
 
-async function buildFineScanSlicesFallback(
-  effectiveSlices: IKtepSlice[],
-  transcript: ITranscriptContext | null | undefined,
-  asset: IKtepAsset,
-  report: IAssetCoarseReport,
-  pharosContext: Awaited<ReturnType<typeof loadOrBuildProjectPharosContext>> | null | undefined,
-  vocabulary?: {
-    materialPatternPhrases?: string[];
-  },
-): Promise<IKtepSlice[]> {
-  return Promise.all(effectiveSlices.map(async slice => {
-    const withTranscript = decorateSliceWithTranscript(slice, transcript);
-    return await decorateSliceWithSemanticTags({
-      slice: {
-        ...withTranscript,
-        pharosRefs: pharosRefsFromMatches(report.pharosMatches),
-      },
-      asset,
-      clipType: report.clipTypeGuess,
-      report,
-      pharosContext,
-      vocabulary,
-      semanticWindow: withTranscript.semanticKind ? {
-        semanticKind: withTranscript.semanticKind,
-        reason: 'fine-scan-fallback',
-      } : null,
-    });
-  }));
-}
-
 function buildFineScanPlan(input: IBuildFineScanSlicesInput): {
   effectiveSlices: IKtepSlice[];
   keyframePlans: IShotKeyframePlan[];
@@ -3765,47 +3648,11 @@ async function ensureFineScanTaskState(input: {
   }
 
   if (input.analysis.prepared.asset.kind === 'audio') {
-    const checkpoint: IFineScanCheckpoint = {
-      assetId,
-      status: 'frames-ready',
-      effectiveSlices: [],
-      keyframePlans: [],
-      timestampsMs: [],
-      expectedFramePaths: [],
-      readyFrameCount: 0,
-      readyFrameBytes: 0,
-      droppedInvalidSliceCount: 0,
-      updatedAt: new Date().toISOString(),
-    };
-    await writeFineScanCheckpoint(input.projectRoot, checkpoint);
-    return {
-      analysis: input.analysis,
-      checkpoint,
-      plannedAtMs: Date.now(),
-      persisted: false,
-    };
+    throw new Error(`asset report ${assetId} requests fine-scan for an audio asset; rerun Analyze to regenerate the report.`);
   }
 
   if (input.analysis.prepared.asset.kind === 'photo') {
-    const checkpoint: IFineScanCheckpoint = {
-      assetId,
-      status: 'frames-ready',
-      effectiveSlices: [slicePhoto(input.analysis.prepared.asset)],
-      keyframePlans: [],
-      timestampsMs: [],
-      expectedFramePaths: [],
-      readyFrameCount: 0,
-      readyFrameBytes: 0,
-      droppedInvalidSliceCount: 0,
-      updatedAt: new Date().toISOString(),
-    };
-    await writeFineScanCheckpoint(input.projectRoot, checkpoint);
-    return {
-      analysis: input.analysis,
-      checkpoint,
-      plannedAtMs: Date.now(),
-      persisted: false,
-    };
+    throw new Error(`asset report ${assetId} requests fine-scan for a photo asset; rerun Analyze to regenerate the report.`);
   }
 
   let prepared = input.analysis.prepared;
@@ -3850,156 +3697,6 @@ async function ensureFineScanTaskState(input: {
     checkpoint,
     plannedAtMs: Date.now(),
     persisted: false,
-  };
-}
-
-async function generateFineScanOutput(input: {
-  analysis: IFinalizedAssetAnalysis;
-  projectRoot: string;
-  pharosContext?: Awaited<ReturnType<typeof loadOrBuildProjectPharosContext>> | null;
-  vocabulary?: {
-    materialPatternPhrases?: string[];
-  };
-  roots: IMediaRoot[];
-  runtimeConfig: {
-    ffmpegPath?: string;
-    ffprobePath?: string;
-    ffmpegHwaccel?: string;
-    analysisProxyWidth?: number;
-    analysisProxyPixelFormat?: string;
-    sceneDetectFps?: number;
-    sceneDetectScaleWidth?: number;
-    keyframeExtractConcurrency?: number;
-    fineScanPrefetchBaseConcurrency?: number;
-    fineScanPrefetchMaxConcurrency?: number;
-    fineScanPrefetchMinFreeMemoryMb?: number;
-    fineScanPrefetchMaxReadyAssets?: number;
-    fineScanPrefetchMaxReadyFrameMb?: number;
-    mlServerUrl?: string;
-  };
-  getMlHandle: () => Promise<MlAvailability>;
-  performance?: AnalyzePerformanceSession;
-}): Promise<IFineScanSlicesResult> {
-  if (!shouldFineScanReport(input.analysis.report)) {
-    return { slices: [], droppedInvalidSliceCount: 0 };
-  }
-
-  if (input.analysis.prepared.asset.kind === 'photo') {
-    const slice = await decorateSliceWithSemanticTags({
-      slice: slicePhoto(input.analysis.prepared.asset),
-      asset: input.analysis.prepared.asset,
-      clipType: input.analysis.report.clipTypeGuess,
-      report: input.analysis.report,
-      pharosContext: input.pharosContext ?? null,
-      vocabulary: input.vocabulary,
-    });
-    return {
-      slices: [slice],
-      droppedInvalidSliceCount: 0,
-    };
-  }
-
-  if (input.analysis.prepared.asset.kind === 'audio') {
-    return { slices: [], droppedInvalidSliceCount: 0 };
-  }
-
-  let prepared = input.analysis.prepared;
-  if (input.analysis.report.fineScanMode === 'full' && !prepared.shotBoundariesResolved) {
-    prepared = await runDeferredSceneDetect({
-      prepared,
-      phase: 'fine-scan',
-      clipType: input.analysis.clipType,
-      performance: input.performance,
-    });
-    input.analysis.prepared = prepared;
-  }
-
-  return buildFineScanSlices({
-    asset: prepared.asset,
-    localPath: prepared.localPath,
-    projectRoot: input.projectRoot,
-    vocabulary: input.vocabulary,
-    roots: input.roots,
-    runtimeConfig: input.runtimeConfig,
-    shotBoundaries: prepared.shotBoundaries,
-    report: input.analysis.report,
-    transcript: input.analysis.transcript,
-    clipType: input.analysis.clipType,
-    pharosContext: input.pharosContext ?? null,
-    ml: await input.getMlHandle(),
-    performance: input.performance,
-  });
-}
-
-async function generateDirectMaterializationOutput(input: {
-  analysis: IFinalizedAssetAnalysis;
-  pharosContext?: Awaited<ReturnType<typeof loadOrBuildProjectPharosContext>> | null;
-  vocabulary?: {
-    materialPatternPhrases?: string[];
-  };
-}): Promise<IFineScanSlicesResult> {
-  if (!shouldDirectMaterializeReport(input.analysis.report)) {
-    return { slices: [], droppedInvalidSliceCount: 0 };
-  }
-
-  const asset = input.analysis.prepared.asset;
-  if (asset.kind === 'audio') {
-    return { slices: [], droppedInvalidSliceCount: 0 };
-  }
-
-  if (asset.kind === 'photo') {
-    const slice = await decorateSliceWithSemanticTags({
-      slice: slicePhoto(asset),
-      asset,
-      clipType: input.analysis.report.clipTypeGuess,
-      report: input.analysis.report,
-      pharosContext: input.pharosContext ?? null,
-      vocabulary: input.vocabulary,
-      recognition: toRecognitionSummary(input.analysis.visualSummary),
-    });
-    return {
-      slices: [slice],
-      droppedInvalidSliceCount: 0,
-    };
-  }
-
-  const directWindows = input.analysis.report.interestingWindows.length > 0
-    ? input.analysis.report.interestingWindows
-    : typeof asset.durationMs === 'number' && asset.durationMs > 0
-      ? [{
-        startMs: 0,
-        endMs: asset.durationMs,
-        reason: 'direct-whole-asset-window',
-      }]
-      : [];
-  const baseSlices = sliceInterestingWindows(
-    asset,
-    directWindows,
-    mapClipTypeToSliceType(input.analysis.clipType),
-  );
-  const slices = baseSlices.map(slice => {
-    const withTranscript = decorateSliceWithTranscript(slice, input.analysis.transcript);
-    return decorateSliceWithSemanticTags({
-      slice: {
-        ...withTranscript,
-        pharosRefs: pharosRefsFromMatches(input.analysis.report.pharosMatches),
-      },
-      asset,
-      clipType: input.analysis.report.clipTypeGuess,
-      report: input.analysis.report,
-      pharosContext: input.pharosContext ?? null,
-      vocabulary: input.vocabulary,
-      recognition: toRecognitionSummary(input.analysis.visualSummary),
-      semanticWindow: withTranscript.semanticKind ? {
-        semanticKind: withTranscript.semanticKind,
-        reason: 'direct-materialization',
-      } : null,
-    });
-  });
-
-  return {
-    slices: await Promise.all(slices),
-    droppedInvalidSliceCount: 0,
   };
 }
 
@@ -4293,142 +3990,46 @@ interface IBuildFineScanSlicesInput {
   performance?: AnalyzePerformanceSession;
 }
 
-async function buildFineScanSlices(
-  input: IBuildFineScanSlicesInput,
-): Promise<IFineScanSlicesResult> {
-  if (!shouldFineScanReport(input.report)) {
-    return { slices: [], droppedInvalidSliceCount: 0 };
-  }
-
-  const baseSlices = input.report.fineScanMode === 'full'
-    ? sliceVideo(input.asset, input.shotBoundaries)
-    : sliceInterestingWindows(
-      input.asset,
-      input.report.interestingWindows,
-      mapClipTypeToSliceType(input.clipType),
-    );
-  const rawSlices = baseSlices.length > 0
-    ? baseSlices
-    : input.report.fineScanMode === 'windowed' && (input.asset.durationMs ?? 0) > 0
-      ? sliceInterestingWindows(
-        input.asset,
-        [{
-          startMs: 0,
-          endMs: input.asset.durationMs ?? 0,
-          ...(input.clipType === 'drive' ? { semanticKind: 'visual' as const } : {}),
-          reason: 'whole-asset-window-fallback',
-        }],
-        mapClipTypeToSliceType(input.clipType),
-      )
-      : baseSlices;
-  const effectiveSlices = rawSlices.map(slice =>
-    applySliceWindowSemantics(
-      slice,
-      input.clipType,
-      input.asset.durationMs ?? 0,
-    ),
-  );
-
-  if (effectiveSlices.length === 0) {
-    return { slices: [], droppedInvalidSliceCount: 0 };
-  }
-
-  const plans = buildFineScanKeyframePlans(effectiveSlices);
-  if (plans.length === 0 || !input.ml.available) {
-    return {
-      slices: await Promise.all(effectiveSlices.map(async slice => {
-        const withTranscript = decorateSliceWithTranscript(slice, input.transcript);
-        return await decorateSliceWithSemanticTags({
-          slice: {
-            ...withTranscript,
-            pharosRefs: pharosRefsFromMatches(input.report.pharosMatches),
-          },
-          asset: input.asset,
-          clipType: input.report.clipTypeGuess,
-          report: input.report,
-          pharosContext: input.pharosContext ?? null,
-          vocabulary: input.vocabulary,
-          semanticWindow: withTranscript.semanticKind ? {
-            semanticKind: withTranscript.semanticKind,
-            reason: 'fine-scan-no-ml-fallback',
-          } : null,
-        });
-      })),
-      droppedInvalidSliceCount: 0,
-    };
-  }
-
-  const timestamps = [...new Set(plans.flatMap(plan => plan.timestampsMs))].sort((a, b) => a - b);
-  const fineKeyframeStartedAt = Date.now();
-  const extractedFrames = await extractKeyframes(
-    input.localPath,
-    join(buildAssetTempDir(input.projectRoot, input.asset.id), 'fine-scan'),
-    timestamps,
-    input.runtimeConfig,
-  );
-  input.performance?.recordKeyframeExtract({
-    asset: input.asset,
-    phase: 'fine',
-    elapsedMs: Date.now() - fineKeyframeStartedAt,
-    keyframeCount: extractedFrames.length,
-  });
-  const keyframes = await filterExistingKeyframes(extractedFrames);
-  const groups = groupKeyframesByShot(plans, keyframes);
-  const recognitions = await recognizeShotGroups(input.ml.client, groups);
-  for (const recognition of recognitions) {
-    input.performance?.recordVlm({
-      asset: input.asset,
-      phase: 'fine',
-      imageCount: recognition.framePaths.length,
-      roundTripMs: recognition.recognition.roundTripMs,
-      timing: recognition.recognition.timing,
-    });
-  }
-  const recognitionMap = new Map(recognitions.map(item => [item.shotId, item]));
-
-  const slices: IKtepSlice[] = [];
-  let droppedInvalidSliceCount = 0;
-
-  for (const slice of effectiveSlices) {
-    const recognition = recognitionMap.get(slice.id);
-    if (recognition && isLikelyInvalidVisualSegment(recognition.recognition.description)) {
-      droppedInvalidSliceCount += 1;
-      continue;
-    }
-    const withTranscript = decorateSliceWithTranscript(
-      slice,
-      input.transcript,
-      recognition?.recognition.evidence,
-    );
-    slices.push(await decorateSliceWithSemanticTags({
-      slice: {
-        ...withTranscript,
-        pharosRefs: pharosRefsFromMatches(input.report.pharosMatches),
-      },
-      asset: input.asset,
-      clipType: input.report.clipTypeGuess,
-      report: input.report,
-      pharosContext: input.pharosContext ?? null,
-      vocabulary: input.vocabulary,
-      recognition: recognition?.recognition
-        ? {
-          description: recognition.recognition.description,
-          sceneType: recognition.recognition.sceneType,
-          subjects: recognition.recognition.subjects,
-          placeHints: recognition.recognition.placeHints,
-        }
-        : null,
-      semanticWindow: withTranscript.semanticKind ? {
-        semanticKind: withTranscript.semanticKind,
-        reason: recognition?.recognition.description ?? 'fine-scan-window',
-      } : null,
-    }));
-  }
-
+function buildFineScanWindowFromSlice(input: {
+  slice: IKtepSlice;
+  report: IAssetCoarseReport;
+  keyframePlans: IShotKeyframePlan[];
+  recognition: IShotRecognition;
+  status: IFineScanWindow['status'];
+  dropReason?: string;
+}): IFineScanWindow {
+  const matchedWindow = findMatchingInterestingWindow(input.report.interestingWindows, input.slice);
+  const plan = input.keyframePlans.find(item => item.shotId === input.slice.id);
   return {
-    slices,
-    droppedInvalidSliceCount,
+    windowId: input.slice.id,
+    sourceInMs: input.slice.sourceInMs,
+    sourceOutMs: input.slice.sourceOutMs,
+    editSourceInMs: input.slice.editSourceInMs,
+    editSourceOutMs: input.slice.editSourceOutMs,
+    semanticKind: input.slice.semanticKind,
+    reason: matchedWindow?.reason,
+    speedCandidate: input.slice.speedCandidate ?? matchedWindow?.speedCandidate,
+    frameTimestampsMs: plan?.timestampsMs ?? [],
+    framePaths: input.recognition.framePaths,
+    visualObservation: input.recognition.recognition.description?.trim() || undefined,
+    status: input.status,
+    dropReason: input.dropReason,
   };
+}
+
+function findMatchingInterestingWindow(
+  windows: IInterestingWindow[],
+  slice: IKtepSlice,
+): IInterestingWindow | undefined {
+  return windows.find(window =>
+    sameOptionalNumber(window.startMs, slice.sourceInMs)
+    && sameOptionalNumber(window.endMs, slice.sourceOutMs),
+  );
+}
+
+function sameOptionalNumber(left: number | undefined, right: number | undefined): boolean {
+  if (left == null || right == null) return false;
+  return Math.abs(left - right) <= 1;
 }
 
 async function prefetchFineScanTask(input: {
@@ -4452,7 +4053,7 @@ async function prefetchFineScanTask(input: {
       checkpoint.timestampsMs,
       input.runtimeConfig,
       { concurrencyOverride: 1 },
-    );
+    ) ?? [];
     input.performance?.recordKeyframeExtract({
       asset: task.analysis.prepared.asset,
       phase: 'fine',
@@ -4518,41 +4119,26 @@ async function recognizeFineScanTask(input: {
     status: 'recognizing',
   };
   await writeFineScanCheckpoint(input.projectRoot, updatedCheckpoint);
-  let slices: IKtepSlice[] = [];
+  let fineScanWindows: IFineScanWindow[] = [];
   let droppedInvalidSliceCount = 0;
 
   if (input.task.analysis.prepared.asset.kind === 'photo') {
-    const baseSlice = updatedCheckpoint.effectiveSlices[0] ?? slicePhoto(input.task.analysis.prepared.asset);
-    const slice = await decorateSliceWithSemanticTags({
-      slice: {
-        ...baseSlice,
-        pharosRefs: pharosRefsFromMatches(input.task.analysis.report.pharosMatches),
-      },
-      asset: input.task.analysis.prepared.asset,
-      clipType: input.task.analysis.report.clipTypeGuess,
-      report: input.task.analysis.report,
-      pharosContext: input.pharosContext ?? null,
-      vocabulary: input.vocabulary,
-    });
-    slices = [slice];
+    throw new Error(`asset report ${input.task.analysis.prepared.asset.id} requests fine-scan for a photo asset; rerun Analyze to regenerate the report.`);
   } else if (input.task.analysis.prepared.asset.kind === 'audio') {
-    slices = [];
+    throw new Error(`asset report ${input.task.analysis.prepared.asset.id} requests fine-scan for an audio asset; rerun Analyze to regenerate the report.`);
   } else {
     const readyFrames = await resolveReadyFineScanFrames(updatedCheckpoint);
     if (updatedCheckpoint.effectiveSlices.length === 0) {
-      slices = [];
+      throw new Error(`asset report ${input.task.analysis.prepared.asset.id} requires fine-scan but has no effective fine-scan windows; rerun Analyze/fine-scan for this asset.`);
     } else if (updatedCheckpoint.keyframePlans.length === 0) {
-      slices = await buildFineScanSlicesFallback(
-        updatedCheckpoint.effectiveSlices,
-        input.task.analysis.transcript,
-        input.task.analysis.prepared.asset,
-        input.task.analysis.report,
-        input.pharosContext ?? null,
-        input.vocabulary,
-      );
+      throw new Error(`asset report ${input.task.analysis.prepared.asset.id} requires fine-scan but has no keyframe plan; rerun Analyze/fine-scan for this asset.`);
     } else {
       const ml = await input.getMlHandle();
       const groups = groupKeyframesByShot(updatedCheckpoint.keyframePlans, readyFrames.frames);
+      const emptyGroup = groups.find(group => group.frames.length === 0);
+      if (emptyGroup) {
+        throw new Error(`asset report ${input.task.analysis.prepared.asset.id} fine-scan keyframes are unavailable for window ${emptyGroup.shotId}; rerun Analyze/fine-scan for this asset.`);
+      }
       const recognitions = await recognizeShotGroups(ml.client, groups);
       for (const recognition of recognitions) {
         input.performance?.recordVlm({
@@ -4567,37 +4153,27 @@ async function recognizeFineScanTask(input: {
 
       for (const slice of updatedCheckpoint.effectiveSlices) {
         const recognition = recognitionMap.get(slice.id);
-        if (recognition && isLikelyInvalidVisualSegment(recognition.recognition.description)) {
+        if (!recognition) {
+          throw new Error(`asset report ${input.task.analysis.prepared.asset.id} fine-scan window ${slice.id} has no VLM recognition result; rerun Analyze/fine-scan for this asset.`);
+        }
+        if (isLikelyInvalidVisualSegment(recognition.recognition.description)) {
           droppedInvalidSliceCount += 1;
+          fineScanWindows.push(buildFineScanWindowFromSlice({
+            slice,
+            report: input.task.analysis.report,
+            keyframePlans: updatedCheckpoint.keyframePlans,
+            recognition,
+            status: 'dropped',
+            dropReason: 'invalid-dark-recording',
+          }));
           continue;
         }
-        const withTranscript = decorateSliceWithTranscript(
+        fineScanWindows.push(buildFineScanWindowFromSlice({
           slice,
-          input.task.analysis.transcript,
-          recognition?.recognition.evidence,
-        );
-        slices.push(await decorateSliceWithSemanticTags({
-          slice: {
-            ...withTranscript,
-            pharosRefs: pharosRefsFromMatches(input.task.analysis.report.pharosMatches),
-          },
-          asset: input.task.analysis.prepared.asset,
-          clipType: input.task.analysis.report.clipTypeGuess,
           report: input.task.analysis.report,
-          pharosContext: input.pharosContext ?? null,
-          vocabulary: input.vocabulary,
-          recognition: recognition?.recognition
-            ? {
-              description: recognition.recognition.description,
-              sceneType: recognition.recognition.sceneType,
-              subjects: recognition.recognition.subjects,
-              placeHints: recognition.recognition.placeHints,
-            }
-            : null,
-          semanticWindow: withTranscript.semanticKind ? {
-            semanticKind: withTranscript.semanticKind,
-            reason: recognition?.recognition.description ?? 'fine-scan-window',
-          } : null,
+          keyframePlans: updatedCheckpoint.keyframePlans,
+          recognition,
+          status: 'recognized',
         }));
       }
     }
@@ -4608,10 +4184,10 @@ async function recognizeFineScanTask(input: {
       ...input.task,
       checkpoint: updatedCheckpoint,
     },
-    slices,
+    fineScanWindows,
     updatedReport: reconcileFineScanReport({
       report: input.task.analysis.report,
-      slices,
+      fineScanWindows,
       droppedInvalidSliceCount,
     }),
     droppedInvalidSliceCount,
@@ -4649,30 +4225,30 @@ async function runFineScanPipeline(input: {
   performance?: AnalyzePerformanceSession;
   writeTrackedProgress: (payload: Parameters<typeof writeKairosProgress>[1]) => Promise<unknown>;
   writeTrackedReport: (asset: IKtepAsset, report: IAssetCoarseReport) => Promise<void>;
-  appendTrackedSlices: (asset: IKtepAsset, slices: IKtepSlice[]) => Promise<void>;
 }): Promise<{
-  pendingSlices: IKtepSlice[];
   fineScannedAssetIds: string[];
 }> {
-  const preparedTasks = (
-    await Promise.all(input.fineScanCandidates.map(async analysis => ensureFineScanTaskState({
+  const preparedTasks: IFineScanTaskState[] = [];
+  for (const analysis of input.fineScanCandidates) {
+    const task = await ensureFineScanTaskState({
       analysis,
       projectRoot: input.projectRoot,
       runtimeConfig: input.runtimeConfig,
       getMlHandle: input.getMlHandle,
       performance: input.performance,
-    })))
-  ).filter((task): task is IFineScanTaskState => Boolean(task));
+    });
+    if (task) {
+      preparedTasks.push(task);
+    }
+  }
 
   if (preparedTasks.length === 0) {
     return {
-      pendingSlices: [],
       fineScannedAssetIds: [],
     };
   }
 
   const limits = resolveFineScanPrefetchLimits(input.runtimeConfig);
-  const pendingSlices: IKtepSlice[] = [];
   const fineScannedAssetIds: string[] = [];
   const activePrefetches = new Map<string, Promise<IFineScanTaskState>>();
   let activeRecognition: { assetId: string; promise: Promise<IFineScanRecognitionResult> } | null = null;
@@ -4850,16 +4426,14 @@ async function runFineScanPipeline(input: {
     }
 
     const task = preparedTasks[taskIndex];
-    const persistedSlices = consolidatePersistedSpeechSlices(nextEvent.result.slices);
+    const recognizedWindowCount = nextEvent.result.fineScanWindows
+      .filter(window => window.status === 'recognized')
+      .length;
     const finalizedReport = finalizeFineScanReport(
       nextEvent.result.updatedReport,
-      persistedSlices.length,
+      recognizedWindowCount,
     );
-    if (persistedSlices.length > 0) {
-      await input.appendTrackedSlices(task.analysis.prepared.asset, persistedSlices);
-      pendingSlices.push(...persistedSlices);
-      fineScannedAssetIds.push(task.analysis.prepared.asset.id);
-    }
+    fineScannedAssetIds.push(task.analysis.prepared.asset.id);
     task.analysis.report = finalizedReport;
     await input.writeTrackedReport(task.analysis.prepared.asset, finalizedReport);
     await removePreparedAssetCheckpoint(input.projectRoot, task.analysis.prepared.asset.id);
@@ -4897,14 +4471,13 @@ async function runFineScanPipeline(input: {
     await writeFineScanProgress(
       'fine-scan-recognition',
       preparedTasks[taskIndex],
-      nextEvent.result.slices.length > 0
-        ? `已为 ${task.analysis.prepared.asset.displayName} 生成 ${nextEvent.result.slices.length} 个候选切片`
+      recognizedWindowCount > 0
+        ? `已为 ${task.analysis.prepared.asset.displayName} 写入 ${recognizedWindowCount} 个细扫窗口`
         : `已完成 ${task.analysis.prepared.asset.displayName} 的细扫识别`,
     );
   }
 
   return {
-    pendingSlices,
     fineScannedAssetIds,
   };
 }
@@ -5031,24 +4604,29 @@ function applySliceWindowSemantics(
     speedCandidate: buildDriveSpeedCandidate(
       assetDurationMs,
       editEndMs - editStartMs,
-      `drive:${result.narrativeFunctions.core[0] ?? result.shotGrammar.core[0] ?? 'fine-scan-slice'}`,
+      'drive:fine-scan-slice',
     ),
   };
 }
 
 function reconcileFineScanReport(input: {
   report: IAssetCoarseReport;
-  slices: IKtepSlice[];
+  fineScanWindows: IFineScanWindow[];
   droppedInvalidSliceCount: number;
 }): IAssetCoarseReport {
-  if (input.droppedInvalidSliceCount <= 0) return input.report;
+  const reportWithWindows: IAssetCoarseReport = {
+    ...input.report,
+    fineScanWindows: input.fineScanWindows,
+  };
 
-  if (input.slices.length > 0) {
+  if (input.droppedInvalidSliceCount <= 0) return reportWithWindows;
+
+  if (input.fineScanWindows.some(window => window.status === 'recognized')) {
     return {
-      ...input.report,
+      ...reportWithWindows,
       fineScanReasons: [
         ...new Set([
-          ...input.report.fineScanReasons,
+          ...reportWithWindows.fineScanReasons,
           `dropped-invalid-slices:${input.droppedInvalidSliceCount}`,
         ]),
       ],
@@ -5056,13 +4634,13 @@ function reconcileFineScanReport(input: {
   }
 
   return {
-    ...input.report,
+    ...reportWithWindows,
     keepDecision: 'drop',
     materializationPath: undefined,
     fineScanMode: undefined,
     fineScanReasons: [
       ...new Set([
-        ...input.report.fineScanReasons,
+        ...reportWithWindows.fineScanReasons,
         'fine-scan-suppressed:invalid-dark-recording',
       ]),
     ],
@@ -5079,23 +4657,6 @@ function finalizeFineScanReport(
     fineScanCompletedAt: now,
     fineScanSliceCount: sliceCount,
     updatedAt: now,
-  };
-}
-
-function toRecognitionSummary(
-  recognition?: IRecognition | null,
-): {
-  description?: string;
-  sceneType?: string;
-  subjects?: string[];
-  placeHints?: string[];
-} | null {
-  if (!recognition) return null;
-  return {
-    description: recognition.description,
-    sceneType: recognition.sceneType,
-    subjects: recognition.subjects,
-    placeHints: recognition.placeHints,
   };
 }
 
@@ -5158,17 +4719,14 @@ function selectPendingAssets(
 function selectPendingFineScanEntries(
   assets: IKtepAsset[],
   reports: IAssetCoarseReport[],
-  slices: IKtepSlice[],
 ): IResumeFineScanEntry[] {
   const assetById = new Map(
     assets
       .filter(asset => asset.kind !== 'audio')
       .map(asset => [asset.id, asset] as const),
   );
-  const sliceAssetIds = new Set(slices.map(slice => slice.assetId));
-
   return reports
-    .filter(report => shouldFineScanReport(report) && !isFineScanComplete(report, sliceAssetIds))
+    .filter(report => shouldFineScanReport(report) && !isFineScanComplete(report))
     .map(report => ({
       asset: assetById.get(report.assetId),
       report,
@@ -5178,7 +4736,6 @@ function selectPendingFineScanEntries(
 
 function isFineScanComplete(
   report: IAssetCoarseReport,
-  sliceAssetIds: Set<string>,
 ): boolean {
   if (!shouldFineScanReport(report)) return true;
   if (typeof report.fineScanCompletedAt === 'string' && report.fineScanCompletedAt.trim().length > 0) {
@@ -5187,7 +4744,7 @@ function isFineScanComplete(
   if (typeof report.fineScanSliceCount === 'number') {
     return true;
   }
-  return sliceAssetIds.has(report.assetId);
+  return (report.fineScanWindows ?? []).length > 0;
 }
 
 async function loadPendingFineScanAnalyses(input: {
@@ -5401,13 +4958,9 @@ function mergePersistedSpeechSlices(
     editSourceOutMs,
     transcript: transcript || undefined,
     transcriptSegments: transcriptSegments.length > 0 ? transcriptSegments : undefined,
+    visualObservation: left.visualObservation ?? right.visualObservation,
     materialPatterns: mergeMaterialPatternsForPersistence(left.materialPatterns, right.materialPatterns),
     grounding: mergeGroundingForPersistence(left.grounding, right.grounding),
-    narrativeFunctions: mergeSemanticTagSetForPersistence(left.narrativeFunctions, right.narrativeFunctions),
-    shotGrammar: mergeSemanticTagSetForPersistence(left.shotGrammar, right.shotGrammar),
-    viewpointRoles: mergeSemanticTagSetForPersistence(left.viewpointRoles, right.viewpointRoles),
-    subjectStates: mergeSemanticTagSetForPersistence(left.subjectStates, right.subjectStates),
-    evidence: dedupeEvidence([...(left.evidence ?? []), ...(right.evidence ?? [])]),
     pharosRefs: dedupeByJson([...(left.pharosRefs ?? []), ...(right.pharosRefs ?? [])]),
     speechCoverage,
   };
@@ -5460,7 +5013,8 @@ function mergeMaterialPatternsForPersistence(
 ): IKtepSlice['materialPatterns'] {
   const seen = new Set<string>();
   return [...left, ...right].filter(pattern => {
-    const key = `${pattern.phrase}:${pattern.excerpt ?? ''}`;
+    const key = pattern.trim();
+    if (!key) return false;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
@@ -5508,17 +5062,6 @@ function pickPreferredSpeechValue(
     informative: 3,
   };
   return priority[right] > priority[left] ? right : left;
-}
-
-function mergeSemanticTagSetForPersistence(
-  left: IKtepSlice['narrativeFunctions'],
-  right: IKtepSlice['narrativeFunctions'],
-): IKtepSlice['narrativeFunctions'] {
-  return {
-    core: dedupeStrings([...(left.core ?? []), ...(right.core ?? [])]),
-    extra: dedupeStrings([...(left.extra ?? []), ...(right.extra ?? [])]),
-    evidence: dedupeByJson([...(left.evidence ?? []), ...(right.evidence ?? [])]),
-  };
 }
 
 function computeSpeechCoverageFromSegments(
@@ -5604,16 +5147,4 @@ function resolveSliceDurationMs(sourceInMs?: number, sourceOutMs?: number): numb
   if (sourceInMs == null || sourceOutMs == null) return undefined;
   if (sourceOutMs <= sourceInMs) return undefined;
   return sourceOutMs - sourceInMs;
-}
-
-function dedupeEvidence(evidence: IKtepEvidence[]): IKtepEvidence[] {
-  const seen = new Set<string>();
-  const deduped: IKtepEvidence[] = [];
-  for (const item of evidence) {
-    const key = `${item.source}:${item.value}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    deduped.push(item);
-  }
-  return deduped;
 }

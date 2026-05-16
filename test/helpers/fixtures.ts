@@ -1,20 +1,13 @@
 import type {
   IKtepAsset,
+  IChronologyAssetIndex,
+  IProjectChronology,
   IKtepScriptSelection,
   IKtepSlice,
-  IMediaChronology,
   IStyleProfile,
 } from '../../src/protocol/index.js';
 
 const CNOW = '2026-04-18T00:00:00.000Z';
-
-function createEmptyTagSet() {
-  return {
-    core: [],
-    extra: [],
-    evidence: [],
-  };
-}
 
 export function createStyleProfile(overrides: Partial<IStyleProfile> = {}): IStyleProfile {
   return {
@@ -105,6 +98,7 @@ export function createSlice(overrides: Partial<IKtepSlice> & Pick<IKtepSlice, 'i
     editSourceOutMs: overrides.editSourceOutMs,
     transcript: overrides.transcript,
     transcriptSegments: overrides.transcriptSegments,
+    visualObservation: overrides.visualObservation,
     materialPatterns: overrides.materialPatterns ?? [],
     grounding: overrides.grounding ?? {
       speechMode: 'none',
@@ -112,34 +106,33 @@ export function createSlice(overrides: Partial<IKtepSlice> & Pick<IKtepSlice, 'i
       spatialEvidence: [],
       pharosRefs: [],
     },
-    narrativeFunctions: overrides.narrativeFunctions ?? createEmptyTagSet(),
-    shotGrammar: overrides.shotGrammar ?? createEmptyTagSet(),
-    viewpointRoles: overrides.viewpointRoles ?? createEmptyTagSet(),
-    subjectStates: overrides.subjectStates ?? createEmptyTagSet(),
-    evidence: overrides.evidence,
     pharosRefs: overrides.pharosRefs,
     speechCoverage: overrides.speechCoverage,
     speedCandidate: overrides.speedCandidate,
   };
 }
 
-export function createChronology(overrides: Partial<IMediaChronology> & Pick<IMediaChronology, 'id' | 'assetId'>): IMediaChronology {
+export function createChronology(
+  overrides: Partial<IChronologyAssetIndex> & { assetId: string; id?: string; capturedAt?: string },
+): IChronologyAssetIndex {
   return {
-    id: overrides.id,
     assetId: overrides.assetId,
-    ingestRootId: overrides.ingestRootId,
-    capturedAt: overrides.capturedAt ?? CNOW,
     sortCapturedAt: overrides.sortCapturedAt ?? overrides.capturedAt ?? CNOW,
-    captureTimeSource: overrides.captureTimeSource,
-    captureTimeConfidence: overrides.captureTimeConfidence,
-    summary: overrides.summary,
-    labels: overrides.labels ?? [],
-    placeHints: overrides.placeHints ?? [],
-    evidence: overrides.evidence ?? [],
-    pharosMatches: overrides.pharosMatches ?? [],
-    primaryPharosRef: overrides.primaryPharosRef,
-    pharosStatus: overrides.pharosStatus,
-    pharosDayTitle: overrides.pharosDayTitle,
-    correction: overrides.correction,
+  };
+}
+
+export function createProjectChronology(
+  assetIndex: IChronologyAssetIndex[],
+  overrides: Partial<IProjectChronology> = {},
+): IProjectChronology {
+  return {
+    schemaVersion: '2.0',
+    status: 'confirmed',
+    generatedAt: CNOW,
+    confirmedAt: CNOW,
+    inputsHash: 'test-inputs',
+    assetIndex,
+    events: [],
+    ...overrides,
   };
 }

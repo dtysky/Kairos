@@ -8,9 +8,10 @@ import {
   getProjectProgressPath,
   getWorkspaceStyleAnalysisProgressPath,
   loadAssets,
-  loadAssetReports,
   loadColorArchiveViews,
-  loadChronology,
+  loadChronologyReviewState,
+  loadSpans,
+  loadSpansMeta,
   loadColorGroupsSnapshots,
   loadColorCurrent,
   loadColorResolveProjectMap,
@@ -38,7 +39,12 @@ import {
   syncWorkspaceProjectBrief,
   touchProjectUpdatedAt,
   writeKairosProgress,
-  writeChronology,
+  markChronologyStale,
+  markSpansStale,
+  confirmChronology,
+  updateChronologyEvent,
+  mergeChronologyEvents,
+  splitChronologyEvent,
 } from '../store/index.js';
 import {
   CEDIT_FLOW_CAPABILITY_CATALOG,
@@ -56,7 +62,6 @@ import {
   registerExternalColorDrpSnapshot,
   snapshotProjectColorDrp,
 } from '../modules/color/index.js';
-import { buildMediaChronology } from '../modules/media/chronology.js';
 import {
   resolveMediaRoot,
   type IMediaRootPathResolution,
@@ -66,7 +71,7 @@ import {
   loadOrBuildProjectPharosContext,
 } from '../modules/pharos/context.js';
 import { getMlServiceStatus, startMlService, stopMlService } from './runtime.js';
-import type { IKtepAsset, IMediaChronology, IMediaRoot } from '../protocol/schema.js';
+import type { IKtepAsset, IProjectChronology, IMediaRoot } from '../protocol/schema.js';
 import {
   getSupervisorJobRoot,
   listJobRecords,
@@ -75,6 +80,7 @@ import {
   writeServiceRecord,
   type ISupervisorJobRecord,
   type ISupervisorServiceRecord,
+  type TSupervisorExecutionMode,
 } from './state.js';
 import { buildAnalyzeMonitorModel, buildStyleMonitorModel } from './monitor-model.js';
 
@@ -194,7 +200,9 @@ async function routeRequest(
 	        { jobType: 'ingest', executionMode: 'deterministic', supported: true },
 	        { jobType: 'gps-refresh', executionMode: 'deterministic', supported: true },
 	        { jobType: 'analyze', executionMode: 'deterministic', supported: true },
-	        { jobType: 'spatial-refresh', executionMode: 'deterministic', supported: true, note: 'refreshes existing Analyze GPS / Pharos fields, chronology, and span grounding without running ML' },
+	        { jobType: 'spatial-refresh', executionMode: 'deterministic', supported: true, note: 'refreshes existing Analyze GPS / Pharos report fields and marks spans/chronology stale without running ML' },
+        { jobType: 'span-rebuild', executionMode: 'deterministic', supported: true, note: 'deterministically slices assets/reports, then uses the local qwen text LM to generate Chinese materialPatterns from minimal span facts' },
+        { jobType: 'chronology-build', executionMode: 'deterministic', supported: true, note: 'requires fresh spans and rebuilds draft Chronology V2 for review' },
 	        { jobType: 'style-analysis', executionMode: 'deterministic', supported: true, note: 'runs deterministic prep and then hands off to Agent for final text/art-style reference; does not generate edit rules' },
         { jobType: 'color', executionMode: 'deterministic', supported: true, note: 'supports prepare_root / sync_groups / execute_root / sync_batch_metadata / sync_batch_sidecars / validate_batch / prepare_all_roots / export_all_roots through the same-machine vendored Resolve backend; clip repair now follows the canonical Gyro -> Dehaze -> User1 -> User2 -> NR layout, and execute/export-all require explicit overwrite confirmation before replacing existing root outputs' },
         { jobType: 'edit-flow-plan', executionMode: 'agent', supported: true, note: 'LLM reads raw edit-rule markdown plus capability catalog and writes edits/<editId>/planning/flow-plan.json for human confirmation' },
@@ -220,7 +228,9 @@ async function routeRequest(
       scriptBrief,
       ingestRoots,
       assets,
-      chronology,
+      spans,
+      spansMeta,
+      chronologyState,
       colorCurrent,
       runtimeConfig,
       colorGroupSnapshots,
@@ -233,7 +243,9 @@ async function routeRequest(
       loadScriptBriefConfig(projectRoot, editId),
       loadIngestRoots(projectRoot),
       loadAssets(projectRoot),
-      loadChronology(projectRoot),
+      loadSpans(projectRoot),
+      loadSpansMeta(projectRoot),
+      loadChronologyReviewState(projectRoot),
       loadColorCurrent(projectRoot),
       loadRuntimeConfig(projectRoot),
       loadColorGroupsSnapshots(projectRoot),
@@ -250,7 +262,7 @@ async function routeRequest(
       groupSnapshotsByRootId: colorGroupSnapshots,
       colorResolveProjectMap,
     });
-    const ingestRootSummaries = buildIngestRootSummaries(ingestRoots.roots, assets, chronology);
+    const ingestRootSummaries = buildIngestRootSummaries(ingestRoots.roots, assets, chronologyState.chronology);
     const pharosContext = await loadOrBuildProjectPharosContext({
       projectRoot,
       includedTripIds: projectBrief.pharos?.includedTripIds ?? [],
@@ -266,6 +278,13 @@ async function routeRequest(
       ingestRootSummaries,
       pharosStatus: buildProjectPharosAssetStatus(pharosContext, projectRoot),
       pharosContext,
+      spans: {
+        count: spans.length,
+        meta: spansMeta,
+        status: spansMeta?.status ?? 'missing',
+        fresh: spans.length > 0 && spansMeta?.status === 'fresh' && spansMeta.spanCount === spans.length,
+      },
+      chronology: chronologyState,
       editFlowPlan,
     });
     return;
@@ -291,6 +310,53 @@ async function routeRequest(
     const editId = normalizeEditId(url.searchParams.get('editId') ?? payload?.editId);
     sendJson(response, 200, {
       flowPlan: await confirmEditFlowPlan(options.workspaceRoot, projectRoot, editId),
+    });
+    return;
+  }
+
+  const chronologyConfirmMatch = pathname.match(/^\/api\/projects\/([^/]+)\/chronology\/confirm$/u);
+  if (chronologyConfirmMatch && method === 'POST') {
+    const projectId = decodeURIComponent(chronologyConfirmMatch[1]!);
+    const projectRoot = join(options.workspaceRoot, 'projects', projectId);
+    sendJson(response, 200, {
+      chronology: await confirmChronology(projectRoot),
+    });
+    return;
+  }
+
+  const chronologyMergeMatch = pathname.match(/^\/api\/projects\/([^/]+)\/chronology\/events\/merge$/u);
+  if (chronologyMergeMatch && method === 'POST') {
+    const projectId = decodeURIComponent(chronologyMergeMatch[1]!);
+    const projectRoot = join(options.workspaceRoot, 'projects', projectId);
+    const payload = await readJsonBody(request).catch(() => ({}));
+    const eventIds = Array.isArray(payload?.eventIds)
+      ? payload.eventIds.filter((item: unknown): item is string => typeof item === 'string' && Boolean(item.trim()))
+      : [];
+    sendJson(response, 200, {
+      chronology: await mergeChronologyEvents(projectRoot, eventIds),
+    });
+    return;
+  }
+
+  const chronologyEventMatch = pathname.match(/^\/api\/projects\/([^/]+)\/chronology\/events\/([^/]+)$/u);
+  if (chronologyEventMatch && method === 'PUT') {
+    const projectId = decodeURIComponent(chronologyEventMatch[1]!);
+    const eventId = decodeURIComponent(chronologyEventMatch[2]!);
+    const projectRoot = join(options.workspaceRoot, 'projects', projectId);
+    const payload = await readJsonBody(request).catch(() => ({}));
+    sendJson(response, 200, {
+      chronology: await updateChronologyEvent(projectRoot, eventId, payload ?? {}),
+    });
+    return;
+  }
+
+  const chronologySplitMatch = pathname.match(/^\/api\/projects\/([^/]+)\/chronology\/events\/([^/]+)\/split$/u);
+  if (chronologySplitMatch && method === 'POST') {
+    const projectId = decodeURIComponent(chronologySplitMatch[1]!);
+    const eventId = decodeURIComponent(chronologySplitMatch[2]!);
+    const projectRoot = join(options.workspaceRoot, 'projects', projectId);
+    sendJson(response, 200, {
+      chronology: await splitChronologyEvent(projectRoot, eventId),
     });
     return;
   }
@@ -391,13 +457,11 @@ async function routeRequest(
     const projectRoot = join(options.workspaceRoot, 'projects', projectId);
     const payload = await readJsonBody(request);
     const saved = await saveProjectBriefConfig(projectRoot, payload);
-    const [{ ingestRoots }, assets, reports, existing] = await Promise.all([
+    await Promise.all([
       syncWorkspaceProjectBrief(options.workspaceRoot, projectId),
-      loadAssets(projectRoot),
-      loadAssetReports(projectRoot),
-      loadChronology(projectRoot),
+      markSpansStale(projectRoot, 'project-brief changed; rerun /chronology span-rebuild'),
+      markChronologyStale(projectRoot),
     ]);
-    await writeChronology(projectRoot, buildMediaChronology(assets, reports, existing, ingestRoots));
     await touchProjectUpdatedAt(projectRoot);
     sendJson(response, 200, saved);
     return;
@@ -410,6 +474,10 @@ async function routeRequest(
     const payload = await readJsonBody(request);
     const saved = await saveManualItineraryConfig(projectRoot, payload);
     await syncCaptureTimeReviewsFromConfig(projectRoot);
+    await Promise.all([
+      markSpansStale(projectRoot, 'manual itinerary changed; refresh ingest/spatial context and rerun /chronology span-rebuild'),
+      markChronologyStale(projectRoot),
+    ]);
     sendJson(response, 200, saved);
     return;
   }
@@ -420,12 +488,10 @@ async function routeRequest(
     const projectRoot = join(options.workspaceRoot, 'projects', projectId);
     const payload = await readJsonBody(request);
     const saved = await saveIngestRoots(projectRoot, payload);
-    const [assets, reports, existing] = await Promise.all([
-      loadAssets(projectRoot),
-      loadAssetReports(projectRoot),
-      loadChronology(projectRoot),
+    await Promise.all([
+      markSpansStale(projectRoot, 'ingest roots changed; rerun /chronology span-rebuild'),
+      markChronologyStale(projectRoot),
     ]);
-    await writeChronology(projectRoot, buildMediaChronology(assets, reports, existing, saved.roots));
     await touchProjectUpdatedAt(projectRoot);
     sendJson(response, 200, saved);
     return;
@@ -604,15 +670,15 @@ async function startJob(
 	      throw new Error(`project ${payload.projectId} already has an active color job: ${activeColorJob.jobId}`);
 	    }
 	  }
-	  if (['analyze', 'spatial-refresh'].includes(payload.jobType) && payload.projectId) {
+	  if (['analyze', 'spatial-refresh', 'span-rebuild', 'chronology-build'].includes(payload.jobType) && payload.projectId) {
 	    const existingJobs = await listJobRecords(workspaceRoot);
 	    const activeAnalyzeJob = existingJobs.find(job => (
-	      ['analyze', 'spatial-refresh'].includes(job.jobType)
+	      ['analyze', 'spatial-refresh', 'span-rebuild', 'chronology-build'].includes(job.jobType)
 	      && job.projectId === payload.projectId
 	      && ['queued', 'running'].includes(job.status)
 	    ));
 	    if (activeAnalyzeJob) {
-	      throw new Error(`project ${payload.projectId} already has an active analyze/spatial job: ${activeAnalyzeJob.jobId}`);
+	      throw new Error(`project ${payload.projectId} already has an active analyze/chronology job: ${activeAnalyzeJob.jobId}`);
 	    }
 	  }
 
@@ -624,6 +690,8 @@ async function startJob(
   const resultPath = join(jobRoot, 'result.json');
 	  const progressPath = ['analyze', 'spatial-refresh'].includes(payload.jobType) && payload.projectId
 	    ? getProjectProgressPath(join(workspaceRoot, 'projects', payload.projectId), 'media-analyze')
+    : ['span-rebuild', 'chronology-build'].includes(payload.jobType) && payload.projectId
+      ? getProjectProgressPath(join(workspaceRoot, 'projects', payload.projectId), 'chronology')
     : payload.jobType === 'color' && payload.projectId
       ? getProjectProgressPath(join(workspaceRoot, 'projects', payload.projectId), 'color')
     : payload.jobType === 'style-analysis'
@@ -664,7 +732,7 @@ async function startJob(
   const record: ISupervisorJobRecord = {
     jobId,
     jobType: payload.jobType,
-    executionMode: 'deterministic',
+    executionMode: resolveJobExecutionMode(payload.jobType),
     projectId: payload.projectId,
     args: payload.args ?? {},
     status: 'queued',
@@ -723,6 +791,12 @@ async function resolveStyleAnalysisCategoryId(
   return categoryId;
 }
 
+function resolveJobExecutionMode(jobType: string): TSupervisorExecutionMode {
+  return ['edit-flow-plan', 'edit-flow-capability', 'export-resolve'].includes(jobType)
+    ? 'agent'
+    : 'deterministic';
+}
+
 async function syncCaptureTimeReviewsFromConfig(projectRoot: string): Promise<void> {
   const queue = await loadReviewQueue(projectRoot);
   const preserved = queue.items.filter(item => item.kind !== 'capture-time-correction');
@@ -733,7 +807,7 @@ async function syncCaptureTimeReviewsFromConfig(projectRoot: string): Promise<vo
 function buildIngestRootSummaries(
   roots: IMediaRoot[],
   assets: IKtepAsset[],
-  chronology: IMediaChronology[],
+  chronology: IProjectChronology | null,
 ): Array<{
   rootId: string;
   localPath?: string;
@@ -755,7 +829,7 @@ function buildIngestRootSummaries(
     sortCapturedAt?: string;
   };
 }> {
-  const chronologyByAssetId = new Map(chronology.map(entry => [entry.assetId, entry]));
+  const chronologyByAssetId = new Map((chronology?.assetIndex ?? []).map(entry => [entry.assetId, entry]));
   const grouped = new Map<string, IKtepAsset[]>();
 
   for (const asset of assets) {
@@ -771,8 +845,8 @@ function buildIngestRootSummaries(
     const entries = [...(grouped.get(root.id) ?? [])].sort((left, right) => {
       const leftChronology = chronologyByAssetId.get(left.id);
       const rightChronology = chronologyByAssetId.get(right.id);
-      const leftKey = leftChronology?.sortCapturedAt ?? leftChronology?.capturedAt ?? left.capturedAt ?? '';
-      const rightKey = rightChronology?.sortCapturedAt ?? rightChronology?.capturedAt ?? right.capturedAt ?? '';
+      const leftKey = leftChronology?.sortCapturedAt ?? left.capturedAt ?? '';
+      const rightKey = rightChronology?.sortCapturedAt ?? right.capturedAt ?? '';
       if (leftKey !== rightKey) return leftKey.localeCompare(rightKey);
       return left.id.localeCompare(right.id);
     });
@@ -798,7 +872,7 @@ function buildIngestRootSummaries(
         ? {
           assetId: first.id,
           displayName: first.displayName ?? first.id,
-          capturedAt: firstChronology?.capturedAt ?? first.capturedAt,
+          capturedAt: first.capturedAt,
           sortCapturedAt: firstChronology?.sortCapturedAt ?? first.capturedAt,
         }
         : undefined,
@@ -806,7 +880,7 @@ function buildIngestRootSummaries(
         ? {
           assetId: last.id,
           displayName: last.displayName ?? last.id,
-          capturedAt: lastChronology?.capturedAt ?? last.capturedAt,
+          capturedAt: last.capturedAt,
           sortCapturedAt: lastChronology?.sortCapturedAt ?? last.capturedAt,
         }
         : undefined,

@@ -6,6 +6,7 @@ import 'hana-ui/hana-style.scss';
 import './app.scss';
 import {
   controlMl,
+  confirmProjectChronology,
   confirmProjectEditFlowPlan,
   fetchAnalyzeMonitor,
   fetchCapabilities,
@@ -20,12 +21,15 @@ import {
   fetchWorkspaceStatus,
   registerProjectColorDrpSnapshot,
   resolveProjectReview,
+  mergeProjectChronologyEvents,
   runProjectColorPreflight,
   saveProjectColorDrpSnapshot,
   saveProjectSection,
   saveWorkspaceStyleConfig,
   startJob,
   startWorkspaceJob,
+  splitProjectChronologyEvent,
+  updateProjectChronologyEvent,
 } from './api.js';
 import { EmptyPanel, MonitorPage } from './monitor-page.jsx';
 import {
@@ -432,6 +436,69 @@ function AppShell() {
     }
   }
 
+  async function confirmChronology() {
+    if (!projectId) return;
+    setBusy(current => ({ ...current, 'chronology:confirm': true }));
+    try {
+      await confirmProjectChronology(projectId);
+      await refreshProject(projectId);
+      await refreshStatus();
+      setMessage('Chronology 已确认');
+      setError('');
+    } catch (caught) {
+      handleError(caught);
+    } finally {
+      setBusy(current => ({ ...current, 'chronology:confirm': false }));
+    }
+  }
+
+  async function saveChronologyEvent(eventId, payload) {
+    if (!projectId || !eventId) return;
+    const busyKey = `chronology:event:${eventId}`;
+    setBusy(current => ({ ...current, [busyKey]: true }));
+    try {
+      await updateProjectChronologyEvent(projectId, eventId, payload);
+      await refreshProject(projectId);
+      setMessage('Chronology event 已更新');
+      setError('');
+    } catch (caught) {
+      handleError(caught);
+    } finally {
+      setBusy(current => ({ ...current, [busyKey]: false }));
+    }
+  }
+
+  async function mergeChronologyEvents(eventIds) {
+    if (!projectId || eventIds.length < 2) return;
+    setBusy(current => ({ ...current, 'chronology:merge': true }));
+    try {
+      await mergeProjectChronologyEvents(projectId, eventIds);
+      await refreshProject(projectId);
+      setMessage('Chronology events 已合并');
+      setError('');
+    } catch (caught) {
+      handleError(caught);
+    } finally {
+      setBusy(current => ({ ...current, 'chronology:merge': false }));
+    }
+  }
+
+  async function splitChronologyEvent(eventId) {
+    if (!projectId || !eventId) return;
+    const busyKey = `chronology:split:${eventId}`;
+    setBusy(current => ({ ...current, [busyKey]: true }));
+    try {
+      await splitProjectChronologyEvent(projectId, eventId);
+      await refreshProject(projectId);
+      setMessage('Chronology event 已拆分');
+      setError('');
+    } catch (caught) {
+      handleError(caught);
+    } finally {
+      setBusy(current => ({ ...current, [busyKey]: false }));
+    }
+  }
+
   async function controlMlService(action) {
     const busyKey = `ml:${action}`;
     setBusy(current => ({ ...current, [busyKey]: true }));
@@ -646,9 +713,29 @@ function AppShell() {
 	                      capabilities={capabilities}
 	                      busy={busy}
 	                      onRun={() => runProjectWorkflow('analyze')}
-	                      onRunSpatialRefresh={() => runProjectWorkflow('spatial-refresh')}
 	                    />
 	                  )}
+                />
+                <Route
+                  exact
+                  path="/chronology"
+                  render={() => (
+                    <ChronologyPage
+                      projectId={projectId}
+                      config={config?.chronology}
+                      spans={config?.spans}
+                      capabilities={capabilities}
+                      jobs={activeJobs}
+                      busy={busy}
+                      onRunSpatialRefresh={() => runProjectWorkflow('spatial-refresh')}
+                      onRunSpanRebuild={() => runProjectWorkflow('span-rebuild')}
+                      onRunChronologyBuild={() => runProjectWorkflow('chronology-build')}
+                      onConfirm={confirmChronology}
+                      onSaveEvent={saveChronologyEvent}
+                      onMergeEvents={mergeChronologyEvents}
+                      onSplitEvent={splitChronologyEvent}
+                    />
+                  )}
                 />
                 <Route
                   exact
@@ -737,7 +824,8 @@ function OverviewPage({ currentProject, activeJobs, services, projectProgress, o
     { path: '/ingest-gps', label: '导入与 GPS', summary: '维护单真值素材 Root、manual-itinerary 与素材时间校正。' },
     { path: '/color', label: '达芬奇调色', summary: '维护 Root render preset，并执行 prepare / sync groups / execute / validate。' },
     { path: '/analyze', label: '素材分析', summary: '直接查看分析监控、恢复进度并启动 Analyze。' },
-    { path: '/style', label: '风格分析', summary: '管理风格档案、参考素材和当前分析进度。' },
+    { path: '/chronology', label: '编年史', summary: '审查 Chronology V2 的事件、路线、缺口和确认状态。' },
+    { path: '/style', label: '风格分析', summary: '维护 Workspace 风格库、style sources、风格档案和当前分类监控。' },
     { path: '/script', label: '脚本', summary: '维护 script-brief，并准备确定性材料给 Agent 继续写稿。' },
     { path: '/timeline-export', label: '时间线与导出', summary: '查看时间线和导出阶段的能力与 blocker。' },
     { path: '/project', label: '项目', summary: '查看全量 Review Queue 与服务诊断。' },
@@ -1038,21 +1126,13 @@ function ColorPage({
   );
 }
 
-function AnalyzePage({ projectId, projectProgress, activeJobs, capabilities, busy, onRun, onRunSpatialRefresh }) {
+function AnalyzePage({ projectId, projectProgress, activeJobs, capabilities, busy, onRun }) {
   const analyzeJobs = activeJobs.filter(job => job.projectId === projectId && job.jobType === 'analyze');
-  const spatialRefreshJobs = activeJobs.filter(job => job.projectId === projectId && job.jobType === 'spatial-refresh');
   const analyzeCapability = capabilities?.jobs?.find(job => job.jobType === 'analyze');
-  const spatialRefreshCapability = capabilities?.jobs?.find(job => job.jobType === 'spatial-refresh');
   const canStartAnalyze = Boolean(projectId)
     && !busy['job:analyze']
-    && spatialRefreshJobs.length === 0
     && analyzeJobs.length === 0
     && analyzeCapability?.supported !== false;
-  const canStartSpatialRefresh = Boolean(projectId)
-    && !busy['job:spatial-refresh']
-    && analyzeJobs.length === 0
-    && spatialRefreshJobs.length === 0
-    && spatialRefreshCapability?.supported !== false;
   return (
     <MonitorLoader
       kind="analyze"
@@ -1068,16 +1148,9 @@ function AnalyzePage({ projectId, projectProgress, activeJobs, capabilities, bus
 	          >
 	            {busy['job:analyze'] ? '启动中…' : analyzeJobs.length > 0 ? 'Analyze 运行中…' : '启动 Analyze'}
 	          </Button>
-	          <Button
-	            type={canStartSpatialRefresh ? 'default' : 'disabled'}
-	            disabled={!canStartSpatialRefresh}
-	            onClick={onRunSpatialRefresh}
-	          >
-	            {busy['job:spatial-refresh'] ? '启动中…' : spatialRefreshJobs.length > 0 ? '空间刷新中…' : '刷新空间结果'}
-	          </Button>
 	          </div>
 	          <div className="monitor-toolbar-meta">
-	            <span>{`活跃 analyze ${analyzeJobs.length} · 空间刷新 ${spatialRefreshJobs.length}`}</span>
+	            <span>{`活跃 analyze ${analyzeJobs.length}`}</span>
 	            {renderAnalyzeToolbarMeta(model, projectProgress)}
 	          </div>
         </>
@@ -1087,14 +1160,13 @@ function AnalyzePage({ projectId, projectProgress, activeJobs, capabilities, bus
           model={model}
 	          projectProgress={projectProgress}
 	          analyzeJobs={analyzeJobs}
-	          spatialRefreshJobs={spatialRefreshJobs}
 	        />
       )}
     />
   );
 }
 
-function AnalyzeAfterMonitor({ model, projectProgress, analyzeJobs, spatialRefreshJobs }) {
+function AnalyzeAfterMonitor({ model, projectProgress, analyzeJobs }) {
   const progress = model?.progress || projectProgress || null;
   const pipelines = model?.pipelines || [];
   const coarsePipeline = pipelines.find(item => item.kind === 'coarse-scan') || null;
@@ -1131,8 +1203,8 @@ function AnalyzeAfterMonitor({ model, projectProgress, analyzeJobs, spatialRefre
       </Card>
 	      <Card className="panel">
 	        <div className="section-header">
-	          <h2>活跃 Analyze / 空间刷新 Job</h2>
-	          <Tag>{`${analyzeJobs.length + spatialRefreshJobs.length} 个`}</Tag>
+	          <h2>活跃 Analyze Job</h2>
+	          <Tag>{`${analyzeJobs.length} 个`}</Tag>
 	        </div>
 	        <p className="muted">如果刚修改过 `/ingest-gps` 的素材 Root、FlightRecord、manual-itinerary 或时间校正，请先回到 `/ingest-gps` 运行 Ingest；Analyze 不会自动补跑导入。</p>
         <div className="stack-list">
@@ -1148,8 +1220,8 @@ function AnalyzeAfterMonitor({ model, projectProgress, analyzeJobs, spatialRefre
               {`当前素材：${progress?.fileName || projectProgress?.fileName}`}
             </div>
           ) : null}
-	          {analyzeJobs.length + spatialRefreshJobs.length === 0 ? <p className="muted">当前没有受控 analyze / spatial-refresh job。若仍有进度推进，可能是孤儿 worker。</p> : null}
-	          {[...analyzeJobs, ...spatialRefreshJobs].map(job => (
+	          {analyzeJobs.length === 0 ? <p className="muted">当前没有受控 analyze job。若仍有进度推进，可能是孤儿 worker。</p> : null}
+	          {analyzeJobs.map(job => (
 	            <div key={job.jobId} className="job-item">
 	              <div>
 	                <strong>{`${job.jobType} ${job.jobId.slice(0, 8)}`}</strong>
@@ -1246,6 +1318,378 @@ function PipelineMetricCard({ label, value, sub }) {
       {sub ? <div className="sub">{sub}</div> : null}
     </div>
   );
+}
+
+function ChronologyProgressPanel({ jobs }) {
+  const latestJob = [...(jobs || [])].sort(compareActiveProjectJobs)[0] || null;
+  if (!latestJob) return null;
+  const progress = latestJob.progress || null;
+  const percent = resolveProgressPercent(progress);
+  const extra = progress?.extra || {};
+  const blockers = latestJob.blockers || [];
+  const captionLeft = progress
+    ? `${progress.current || 0}/${progress.total || 0} ${progress.unit || 'step'}`
+    : blockers.join('；') || latestJob.lastError || '等待任务写入进度';
+  const captionRight = progress?.fileTotal
+    ? `chunk ${progress.fileIndex || 0}/${progress.fileTotal}`
+    : latestJob.updatedAt || '';
+  const isBlockedWithoutProgress = latestJob.status === 'blocked' && !progress;
+
+  return (
+    <div className="chronology-progress">
+      <div className="chronology-progress-top">
+        <div>
+          <strong>{describeChronologyJobTitle(latestJob)}</strong>
+          <div className="muted">{progress?.detail || progress?.stepLabel || blockers.join('；') || latestJob.lastError || latestJob.jobId}</div>
+        </div>
+        <Tag>{latestJob.status}</Tag>
+      </div>
+      {progress ? (
+        <div className="progress-block chronology-progress-block">
+          <div className="bar-shell">
+            <div className="bar-fill" style={{ width: `${percent}%` }} />
+          </div>
+          <div className="progress-caption">
+            <span>{captionLeft}</span>
+            <span>{captionRight}</span>
+          </div>
+        </div>
+      ) : null}
+      {isBlockedWithoutProgress ? (
+        <div className="pipeline-footnote">
+          当前没有写入新的 spans；请确认本地 qwen 文本 LM / ML 服务可用后重新运行。
+        </div>
+      ) : (
+        <div className="pipeline-metric-grid chronology-progress-metrics">
+          <PipelineMetricCard label="阶段" value={progress?.stepLabel || progress?.step || latestJob.status} sub={progress?.phaseLabel || latestJob.executionMode} />
+          <PipelineMetricCard label="素材片段" value={String(extra.spanCount ?? 0)} sub={extra.inputsHash ? `input ${String(extra.inputsHash).slice(0, 12)}` : 'span rebuild 输出'} />
+          <PipelineMetricCard label="重试" value={String(extra.retryCount ?? 0)} sub={`warnings ${extra.warningCount ?? blockers.length ?? 0}`} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ChronologyPage({
+  projectId,
+  config,
+  spans,
+  capabilities,
+  jobs,
+  busy,
+  onRunSpatialRefresh,
+  onRunSpanRebuild,
+  onRunChronologyBuild,
+  onConfirm,
+  onSaveEvent,
+  onMergeEvents,
+  onSplitEvent,
+}) {
+  const chronology = config?.chronology || null;
+  const events = chronology?.events || [];
+  const chronologyJobs = (jobs || []).filter(job =>
+    job.projectId === projectId && ['spatial-refresh', 'span-rebuild', 'chronology-build'].includes(job.jobType));
+  const activeChronologyJobs = chronologyJobs.filter(isLiveSupervisorJob);
+  const blockedChronologyJobs = chronologyJobs.filter(job => job.status === 'blocked');
+  const spatialRefreshJobs = activeChronologyJobs.filter(job => job.jobType === 'spatial-refresh');
+  const spanRebuildJobs = activeChronologyJobs.filter(job => job.jobType === 'span-rebuild');
+  const chronologyBuildJobs = activeChronologyJobs.filter(job => job.jobType === 'chronology-build');
+  const spatialRefreshCapability = capabilities?.jobs?.find(job => job.jobType === 'spatial-refresh');
+  const spanRebuildCapability = capabilities?.jobs?.find(job => job.jobType === 'span-rebuild');
+  const chronologyBuildCapability = capabilities?.jobs?.find(job => job.jobType === 'chronology-build');
+  const canStartSpatialRefresh = Boolean(projectId)
+    && !busy['job:spatial-refresh']
+    && activeChronologyJobs.length === 0
+    && spatialRefreshCapability?.supported !== false;
+  const canStartSpanRebuild = Boolean(projectId)
+    && !busy['job:span-rebuild']
+    && activeChronologyJobs.length === 0
+    && spanRebuildCapability?.supported !== false;
+  const hasFreshSpans = Boolean(spans?.fresh);
+  const canStartChronologyBuild = Boolean(projectId)
+    && hasFreshSpans
+    && !busy['job:chronology-build']
+    && activeChronologyJobs.length === 0
+    && chronologyBuildCapability?.supported !== false;
+  const [kindFilter, setKindFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [dayFilter, setDayFilter] = useState('all');
+  const [selected, setSelected] = useState({});
+  const [drafts, setDrafts] = useState({});
+
+  useEffect(() => {
+    setSelected({});
+    setDrafts({});
+  }, [chronology?.inputsHash, chronology?.updatedAt]);
+
+  const days = useMemo(() => dedupeUiStrings(events
+    .map(event => resolveChronologyDay(event))
+    .filter(Boolean)), [events]);
+  const filteredEvents = events.filter(event => {
+    if (kindFilter !== 'all' && event.kind !== kindFilter) return false;
+    if (statusFilter !== 'all' && event.reviewStatus !== statusFilter) return false;
+    if (dayFilter !== 'all' && resolveChronologyDay(event) !== dayFilter) return false;
+    return true;
+  });
+  const selectedEventIds = Object.entries(selected)
+    .filter(([, value]) => Boolean(value))
+    .map(([eventId]) => eventId)
+    .filter(eventId => events.some(event => event.id === eventId));
+
+  function updateDraft(event, patch) {
+    setDrafts(current => ({
+      ...current,
+      [event.id]: {
+        ...(current[event.id] || event),
+        ...patch,
+      },
+    }));
+  }
+
+  function saveDraft(event) {
+    const draft = drafts[event.id] || event;
+    onSaveEvent(event.id, {
+      kind: draft.kind,
+      reviewStatus: draft.reviewStatus,
+      title: draft.title,
+      summary: draft.summary,
+      startAt: draft.startAt,
+      endAt: draft.endAt,
+      location: draft.location,
+      route: draft.route,
+    });
+  }
+
+  return (
+    <div className="route-page">
+      <RouteIntro
+        title="编年史"
+        subtitle="审查项目级 Chronology V2：事件、路线、缺口、时间地点、确认状态和关联 span。"
+      />
+      <Card className="panel">
+        <div className="section-header">
+          <h2>生成链路</h2>
+          <Tag>{`spans ${spans?.status || 'missing'} · ${spans?.count || 0}`}</Tag>
+        </div>
+        <div className="chronology-toolbar">
+          <div className="monitor-toolbar-group">
+            <Button
+              type={canStartSpanRebuild ? 'primary' : 'disabled'}
+              disabled={!canStartSpanRebuild}
+              onClick={onRunSpanRebuild}
+            >
+              {busy['job:span-rebuild'] || spanRebuildJobs.length > 0 ? '生成中…' : '生成素材片段与模式'}
+            </Button>
+            <Button
+              type={canStartChronologyBuild ? 'primary' : 'disabled'}
+              disabled={!canStartChronologyBuild}
+              onClick={onRunChronologyBuild}
+            >
+              {busy['job:chronology-build'] || chronologyBuildJobs.length > 0 ? '刷新中…' : '生成/刷新编年史'}
+            </Button>
+            <Button
+              type={canStartSpatialRefresh ? 'default' : 'disabled'}
+              disabled={!canStartSpatialRefresh}
+              onClick={onRunSpatialRefresh}
+            >
+              {busy['job:spatial-refresh'] || spatialRefreshJobs.length > 0 ? '刷新中…' : '刷新时空真相'}
+            </Button>
+          </div>
+          <div className="monitor-toolbar-meta">
+            <span>{activeChronologyJobs.length > 0 ? `${activeChronologyJobs.length} 个任务运行中` : '当前无 chronology 任务'}</span>
+            {blockedChronologyJobs.length > 0 ? <span>{`${blockedChronologyJobs.length} 个任务已阻塞`}</span> : null}
+            {spans?.meta?.inputsHash ? <span>{`spans input ${spans.meta.inputsHash.slice(0, 12)}`}</span> : null}
+          </div>
+        </div>
+        <ChronologyProgressPanel jobs={chronologyJobs} />
+        {spans?.meta?.warnings?.length ? (
+          <div className="pipeline-footnote">
+            {`${activeChronologyJobs.length > 0 || blockedChronologyJobs.length > 0 ? '上次 spans warning：' : ''}${spans.meta.warnings.slice(0, 3).join('；')}`}
+          </div>
+        ) : null}
+      </Card>
+      {config?.blocked ? (
+        <WorkflowPrompt
+          eyebrow="Blocked"
+          title="Chronology 需要重建"
+          body={config.message || '当前 chronology 不可用。先刷新空间结果或重新 Analyze，再回到这里确认。'}
+          tone="error"
+        />
+      ) : null}
+      <Card className="panel">
+        <div className="section-header">
+          <h2>Chronology V2</h2>
+          <Tag>{chronology ? `${chronology.status} · ${events.length} events` : 'missing'}</Tag>
+        </div>
+        <div className="chronology-toolbar">
+          <div className="monitor-toolbar-group">
+            <select value={dayFilter} onChange={event => setDayFilter(event.target.value)}>
+              <option value="all">全部日期</option>
+              {days.map(day => <option key={day} value={day}>{day}</option>)}
+            </select>
+            <select value={kindFilter} onChange={event => setKindFilter(event.target.value)}>
+              <option value="all">全部类型</option>
+              <option value="event">event</option>
+              <option value="route">route</option>
+              <option value="gap">gap</option>
+            </select>
+            <select value={statusFilter} onChange={event => setStatusFilter(event.target.value)}>
+              <option value="all">全部状态</option>
+              <option value="pending">pending</option>
+              <option value="confirmed">confirmed</option>
+              <option value="rejected">rejected</option>
+            </select>
+          </div>
+          <div className="actions">
+            <Button
+              type={selectedEventIds.length >= 2 && !busy['chronology:merge'] ? 'default' : 'disabled'}
+              disabled={selectedEventIds.length < 2 || busy['chronology:merge']}
+              onClick={() => onMergeEvents(selectedEventIds)}
+            >
+              合并
+            </Button>
+            <Button
+              type={chronology && !busy['chronology:confirm'] ? 'primary' : 'disabled'}
+              disabled={!chronology || busy['chronology:confirm']}
+              onClick={onConfirm}
+            >
+              {busy['chronology:confirm'] ? '确认中…' : '确认全部'}
+            </Button>
+          </div>
+        </div>
+        <div className="pipeline-footnote">
+          {chronology
+            ? `schema ${chronology.schemaVersion} · inputs ${chronology.inputsHash?.slice(0, 12) || 'unknown'} · asset anchors ${chronology.assetIndex?.length || 0}`
+            : '尚未生成 Chronology V2。'}
+        </div>
+      </Card>
+      <div className="chronology-shot-list">
+        {filteredEvents.length === 0 ? (
+          <EmptyPanel label="当前过滤条件下没有 chronology event。" />
+        ) : filteredEvents.map(event => {
+          const draft = drafts[event.id] || event;
+          return (
+            <Card key={event.id} className="chronology-row">
+              <div className="chronology-row-select">
+                <input
+                  type="checkbox"
+                  checked={Boolean(selected[event.id])}
+                  onChange={changeEvent => setSelected(current => ({
+                    ...current,
+                    [event.id]: changeEvent.target.checked,
+                  }))}
+                />
+              </div>
+              <div className="chronology-row-main">
+                <div className="chronology-row-meta">
+                  <Tag>{draft.kind}</Tag>
+                  <Tag>{draft.reviewStatus}</Tag>
+                  <span>{formatChronologyTimeRange(draft)}</span>
+                  <span>{draft.spanIds?.length || 0} spans</span>
+                </div>
+                <input
+                  className="chronology-title-input"
+                  value={draft.title || ''}
+                  onChange={changeEvent => updateDraft(event, { title: changeEvent.target.value })}
+                />
+                <textarea
+                  value={draft.summary || ''}
+                  onChange={changeEvent => updateDraft(event, { summary: changeEvent.target.value })}
+                  rows={2}
+                />
+                <div className="chronology-row-fields">
+                  <input
+                    value={draft.startAt || ''}
+                    onChange={changeEvent => updateDraft(event, { startAt: changeEvent.target.value })}
+                    placeholder="startAt"
+                  />
+                  <input
+                    value={draft.endAt || ''}
+                    onChange={changeEvent => updateDraft(event, { endAt: changeEvent.target.value })}
+                    placeholder="endAt"
+                  />
+                  <input
+                    value={draft.location || ''}
+                    onChange={changeEvent => updateDraft(event, { location: changeEvent.target.value })}
+                    placeholder="location"
+                  />
+                  <input
+                    value={draft.route?.from || ''}
+                    onChange={changeEvent => updateDraft(event, { route: { ...(draft.route || {}), from: changeEvent.target.value } })}
+                    placeholder="from"
+                  />
+                  <input
+                    value={draft.route?.to || ''}
+                    onChange={changeEvent => updateDraft(event, { route: { ...(draft.route || {}), to: changeEvent.target.value } })}
+                    placeholder="to"
+                  />
+                </div>
+              </div>
+              <div className="chronology-row-actions">
+                <select value={draft.kind} onChange={changeEvent => updateDraft(event, { kind: changeEvent.target.value })}>
+                  <option value="event">event</option>
+                  <option value="route">route</option>
+                  <option value="gap">gap</option>
+                </select>
+                <select value={draft.reviewStatus} onChange={changeEvent => updateDraft(event, { reviewStatus: changeEvent.target.value })}>
+                  <option value="pending">pending</option>
+                  <option value="confirmed">confirmed</option>
+                  <option value="rejected">rejected</option>
+                </select>
+                <Button
+                  type={busy[`chronology:event:${event.id}`] ? 'disabled' : 'default'}
+                  disabled={busy[`chronology:event:${event.id}`]}
+                  onClick={() => saveDraft(event)}
+                >
+                  保存
+                </Button>
+                <Button
+                  type="default"
+                  onClick={() => onSaveEvent(event.id, { reviewStatus: 'confirmed' })}
+                >
+                  确认
+                </Button>
+                <Button
+                  type="default"
+                  onClick={() => onSaveEvent(event.id, { reviewStatus: 'rejected' })}
+                >
+                  驳回
+                </Button>
+                <Button
+                  type={(event.spanIds?.length || 0) > 1 && !busy[`chronology:split:${event.id}`] ? 'default' : 'disabled'}
+                  disabled={(event.spanIds?.length || 0) <= 1 || busy[`chronology:split:${event.id}`]}
+                  onClick={() => onSplitEvent(event.id)}
+                >
+                  拆分
+                </Button>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function resolveChronologyDay(event) {
+  const value = event.startAt || event.endAt || '';
+  return value.slice(0, 10);
+}
+
+function formatChronologyTimeRange(event) {
+  const start = formatChronologyTime(event.startAt);
+  const end = formatChronologyTime(event.endAt);
+  if (start && end && start !== end) return `${start} - ${end}`;
+  return start || end || '未定时间';
+}
+
+function formatChronologyTime(value) {
+  if (!value) return '';
+  return value.replace('T', ' ').replace('.000Z', 'Z').slice(0, 19);
+}
+
+function dedupeUiStrings(values) {
+  return Array.from(new Set(values.filter(value => typeof value === 'string' && value.trim().length > 0)));
 }
 
 function StylePage({ config, capabilities, jobs, setStyleSources, onSave, busy, onRun, location, history }) {
@@ -1701,6 +2145,25 @@ function formatBytes(bytes) {
   return `${value} B`;
 }
 
+function resolveProgressPercent(progress) {
+  if (!progress) return 0;
+  if (typeof progress.percent === 'number') {
+    return Math.max(0, Math.min(100, progress.percent));
+  }
+  if (typeof progress.total === 'number' && progress.total > 0) {
+    return Math.max(0, Math.min(100, Math.round(((progress.current || 0) / progress.total) * 100)));
+  }
+  return progress.status === 'succeeded' ? 100 : 0;
+}
+
+function describeChronologyJobTitle(job) {
+  if (!job) return 'Chronology 任务';
+  if (job.jobType === 'span-rebuild') return '生成素材片段与素材模式';
+  if (job.jobType === 'chronology-build') return '生成/刷新编年史';
+  if (job.jobType === 'spatial-refresh') return '刷新时空真相';
+  return job.jobType;
+}
+
 function isLiveSupervisorJob(job) {
   return ['queued', 'running'].includes(job?.status);
 }
@@ -1729,12 +2192,12 @@ function describeIngestGpsJob(job) {
   if (job.status === 'running' || job.status === 'queued') {
     return job.jobType === 'gps-refresh'
       ? '正在刷新项目 GPX merged cache 与 derived track。'
-      : '正在扫描素材并刷新 assets、同源 GPS、derived track 与 chronology。';
+      : '正在扫描素材并刷新 assets、同源 GPS、derived track 与 Pharos context。';
   }
   if (job.status === 'completed') {
     return job.jobType === 'gps-refresh'
       ? 'GPS 缓存刷新完成；Analyze 会消费最新项目 GPX / derived track。'
-      : 'Ingest 已完成；Analyze 可以消费最新 assets / GPS / chronology。';
+      : 'Ingest 已完成；Analyze 可以消费最新 assets / GPS；spans 与 chronology 需在 /chronology 重新生成。';
   }
   if (job.status === 'failed') {
     return job.lastError || '刷新失败，请查看 job 日志。';
@@ -1913,6 +2376,7 @@ function TopNav({ history, location }) {
     { path: '/ingest-gps', label: '导入与 GPS' },
     { path: '/color', label: '达芬奇调色' },
     { path: '/analyze', label: '素材分析' },
+    { path: '/chronology', label: '编年史' },
     { path: '/style', label: '风格分析' },
     { path: '/script', label: '脚本' },
     { path: '/timeline-export', label: '时间线与导出' },
@@ -1952,6 +2416,7 @@ function resolveTopLevelPath(pathname) {
   if (pathname.startsWith('/ingest-gps')) return '/ingest-gps';
   if (pathname.startsWith('/color')) return '/color';
   if (pathname.startsWith('/analyze')) return '/analyze';
+  if (pathname.startsWith('/chronology')) return '/chronology';
   if (pathname.startsWith('/style')) return '/style';
   if (pathname.startsWith('/script')) return '/script';
   if (pathname.startsWith('/timeline-export')) return '/timeline-export';

@@ -32,16 +32,19 @@ Current stable pipeline:
   - 阻塞项通过 Console 卡片式“素材时间校正”处理，而不是要求用户直接回填 Markdown 表格
   - “素材时间校正”是拍摄时间修正的唯一编辑入口；`导入 / GPS Review` 不再承载同一批 capture-time 字段，避免用户重复填写或被 review 镜像反写覆盖
   - `/ingest-gps` 的 `素材 Root` 当前通过结构化表单维护；保存时会把 `config/project-brief.json` 作为单真值落盘，并自动回写 `config/project-brief.md` 镜像，正常操作不要求用户手改 Markdown
-  - `/ingest-gps` 现在也是正式 Ingest / GPS 刷新入口：保存配置不会自动重扫，用户需要显式点击 `运行 Ingest` 扫描素材、剪掉已扫描 root 中不存在的旧资产，并刷新 `store/assets.json / gps/derived.json / analysis/pharos-context.json / media/chronology.json`
+  - `/ingest-gps` 现在也是正式 Ingest / GPS 刷新入口：保存配置不会自动重扫，用户需要显式点击 `运行 Ingest` 扫描素材、剪掉已扫描 root 中不存在的旧资产，并刷新 `store/assets.json / gps/derived.json / analysis/pharos-context.json`；这会让既有 spans / chronology 过期，但不会自动重建它们
   - `/ingest-gps` 还提供轻量 `刷新 GPS 缓存`，刷新项目 GPX merged cache、derived track 与 Pharos context，适合 GPX、Pharos 或 manual-itinerary 空间信息变化后使用
   - `/analyze` 不会隐式补跑 ingest；如果刚改过素材 Root、FlightRecord、manual-itinerary、root 时钟偏移或 capture-time overrides，应先回到 `/ingest-gps` 运行对应刷新
-  - `/analyze` 额外提供 `刷新空间结果`：它触发 Supervisor `spatial-refresh` job，只刷新已有 `analysis/asset-reports/*.json`、`media/chronology.json` 与 `store/spans.json` 里的 GPS / Pharos / reverse-geocode 空间层，不重跑 VLM、ASR、抽帧、coarse-scan 或 fine-scan
+  - `/analyze` 不生成 `store/spans.json` 或 `media/chronology.json`；它只产出 / 刷新 `analysis/asset-reports/*.json`
+  - `/chronology` 是 Analyze 和 Script 之间的正式审查页；先显式点击 `生成素材片段与模式` 运行 `span-rebuild`，由本地 qwen 文本 LM 根据每个 span 的最小文本事实生成中文 `materialPatterns[]`，LM 只返回按输入顺序排列的短语行并由代码写回 spans，全量成功后写入 stripped `store/spans.json` 与 `store/spans.meta.json`，再点击 `生成/刷新编年史` 运行 `chronology-build`
+  - Script / Timeline 只消费 fresh spans 加 `schemaVersion=2.0` 且 `status=confirmed` 的项目级编年史
+  - `spatial-refresh` 当前归到 `/chronology` 审查语境中：它只刷新已有 `analysis/asset-reports/*.json` 的 GPS / Pharos / reverse-geocode 空间字段，并标记 spans / chronology stale，不自动重建，不重跑 VLM、ASR、抽帧、coarse-scan 或 fine-scan
   - `spatial-refresh` 只消费已经写入 `store/assets.json` 的 embedded GPS 绑定；新增或修改同名 `.SRT`、FlightRecord、素材 root 或时间校正后，仍必须先跑 `/ingest-gps` 的 `运行 Ingest`
   - 用户当前可直接在 UI 中选择 `保持当前 / 使用建议 / 手动修正`
   - 手动修正默认只要求 `正确时间 + 时区`；`正确日期` 会优先按 `suggestedDate`，否则按当前时间在该时区对应的本地日期自动补齐
   - 项目内跨设备时钟漂移当前也通过这里正式修正：`/ingest-gps` 会并列提供 root 级“设备时钟偏移”面板与单素材 `captureTimeOverrides`
   - root 级偏移当前写入 `config/project-brief.json` 对应 mapping 的 `clockOffsetMs`；单素材 `captureTimeOverrides` 继续作为更高优先级例外层
-  - `media/chronology.json` 的 `sortCapturedAt` 当前是 Script / Timeline 共享的唯一时序真值：优先 `capturedAtOverride`，其次 `asset.capturedAt + root.clockOffsetMs`，最后才回退原始 `asset.capturedAt`
+  - `media/chronology.json` 的 `assetIndex[].sortCapturedAt` 当前是 Script / Timeline 共享的唯一素材排序真值：优先 `capturedAtOverride`，其次 `asset.capturedAt + root.clockOffsetMs`，最后才回退原始 `asset.capturedAt`
   - `project-brief` 的每个路径映射块现在可选声明 `原始路径`，并可用 `备选路径N / 原始路径N` 声明跨设备候选路径
   - 路径解析直接来自 `project-brief.json` 单真值：`path -> 备选路径N` 选择当前可读素材目录，`rawPath -> 原始路径N` 独立选择当前可读原始目录
   - `device-media-maps.local.json` 不再是正式配置或缓存；旧项目内残留文件可安全删除
@@ -54,8 +57,8 @@ Current stable pipeline:
   - do not treat root `pnpm build` as covering the React console bundle; the console assets must be built explicitly
   - `scripts/kairos-supervisor.* start` only starts `Supervisor + React console`; it does not start ML and does not resume old jobs
   - `progress.json` is only a durable progress cache; a phase is live only when Supervisor still has the matching active job
-  - Analyze resume does not trust `progress.json.step` as a restart pointer; each new analyze job derives pending work from `analysis/asset-reports`, `analysis/prepared-assets`, `analysis/fine-scan-checkpoints`, and `store/spans.json`. When all coarse reports already exist and only fine-scan remains, the first live progress write must surface `fine-scan-prefetch` instead of resetting the monitor back to `prepare`.
-  - `/analyze` 会同时展示活跃 `analyze` 与 `spatial-refresh` job；后者是 no-ML deterministic repair job，不会启动或停止 ML
+  - Analyze resume does not trust `progress.json.step` as a restart pointer; each new analyze job derives pending work from `analysis/asset-reports`, `analysis/prepared-assets`, and `analysis/fine-scan-checkpoints`. It no longer rebuilds spans or chronology at the end. When all coarse reports already exist and only fine-scan remains, the first live progress write must surface `fine-scan-prefetch` instead of resetting the monitor back to `prepare`.
+  - `/chronology` 会展示活跃 `spatial-refresh / span-rebuild / chronology-build` jobs；`spatial-refresh / chronology-build` 不跑 ML，`span-rebuild` 会启动本地 ML 服务并按 10 个 span 一批调用 qwen 文本 LM 做纯文本 materialPatterns 归纳，LM 只返回 ordered rows，不重跑 VLM / ASR，并把 chunk/retry/repair/warning 进度写入 `projects/<projectId>/.tmp/chronology/progress.json`，已完成部分写入 `.tmp/chronology/span-rebuild.partial.json` 作为 checkpoint；正式 `store/spans.json` 仍只在全量成功后写入
   - console refresh now prefers the project that currently owns the latest active project-scoped job before falling back to the last locally remembered selection
   - when multiple projects share the same display name, the selector must surface `projectId` to avoid mixing monitor context
   - ML-backed top-level workflow jobs now always reconcile to `ML stopped` after completion, failure, manual stop, or interruption
@@ -269,14 +272,23 @@ Current stable pipeline:
   - coarse reports keep `interestingWindows[].startMs/endMs` as focus/evidence windows
   - edit-ready bounds travel alongside them as `interestingWindows[].editStartMs/editEndMs`
   - persisted `store/spans.json` keeps `sourceInMs/sourceOutMs` plus wider `editSourceInMs/editSourceOutMs`
-- analyze now formalizes material-side semantics on each span:
-  - `materialPatterns[]`
-  - `grounding`
-- drive / aerial spans can now carry `speedCandidate` metadata (for example `2x / 5x / 10x` suggestions); rough-cut timeline may auto-consume it for silent montage beats, while explicit `beat.actions.speed` still overrides the default
+- Analyze now treats asset reports as the durable analysis truth:
+  - `analysis/asset-reports/*.json` keeps coarse visual/audio/GPS/Pharos facts plus fine-scan window observations
+  - `interestingWindows[]` remains the pre-fine-scan plan: candidate windows, edit bounds, reasons, and optional analysis hints
+  - `fineScanWindows[]` is the post-fine-scan result: recognized/dropped status, frame references, window timing, and one `visualObservation`
+  - Analyze does not append spans during coarse/direct or fine-scan and does not rebuild chronology; `/chronology` runs explicit downstream rebuild jobs
+- Span rebuild now keeps span semantics intentionally small:
+  - `store/spans.json` is only a material segment index derived from `store/assets.json` and `analysis/asset-reports/*.json`; `span-rebuild` uses the local qwen text LM through the ML service for material pattern text generation only
+  - generated spans may include `assetId / type / semanticKind / sourceInMs / sourceOutMs / editSourceInMs / editSourceOutMs / transcript / transcriptSegments / visualObservation / materialPatterns / speechCoverage`
+  - generated spans must not persist `speedCandidate / pharosRefs / grounding / spatialEvidence / location / routeRole / chronology event` fields
+  - `store/spans.meta.json` records freshness, input hash, counts, and warnings; hash excludes speed hints, Pharos, GPS cache, and chronology
+  - `materialPatterns` is a Chinese `string[]` derived only from span `type / semanticKind / transcript / visualObservation`, not labels, report summary, GPS, Pharos, time ownership, or span ids; the first four entries are deterministic positional tags: controlled `视角类型`, extractive `当前环境`, natural observable `天气光线`, and binary `口播语音`, followed by up to two short factual free tags; the LM returns ordered rows and `span-rebuild` maps/repairs them back by chunk order
+  - `visualObservation` is one span-level visual fact sentence, sourced from fine-scan when present or direct/coarse report facts when materialized directly
+  - the old persisted span semantic tree (`narrativeFunctions / shotGrammar / viewpointRoles / subjectStates / span.evidence`) is no longer part of the formal span protocol
 - a `beat` can now optionally carry explicit `utterances[]` with head / middle / tail pauses, so subtitles only occupy voiced islands while video can continue underneath
 - outline / script now prefer Analyze-provided edit bounds instead of re-centering every span by default; legacy spans without edit bounds still fall back to conservative trimming
 - explicit acceleration now flows through `beat.actions.speed` -> timeline clip `speed` -> NLE export, but only `drive / aerial` clips may consume it; acceleration is for expression and de-duplication, not for meeting a duration target
-- silent `drive / aerial` beats with `speedCandidate` now default to `2x` in rough cut unless the script explicitly requests another speed
+- speed strategy no longer comes from spans; future speed planning is a separate downstream flow
 - when a beat preserves source speech, Kairos now keeps video on the single serial `primary` track and carries the audible source on an independent `dialogue` audio track
 - source-speech windows no longer delete companion visuals; `visualSelections[]` stay available for serial cutaway placement while `audioSelections[]` alone define the preserved source audio
 - audible `dialogue` / `nat` clips now receive non-destructive loudness normalization toward `-16 LUFS` with clip gain, with true peak protection capped at `-1 dBTP`

@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import type {
   IAssetCoarseReport,
+  IChronologyAssetIndex,
   IKtepTimeline, IKtepDoc, IKtepAsset, IKtepSlice,
   IKtepScript, IKtepProject, IKtepSubtitle,
-  IMediaChronology,
   ISegmentRoughCutPlan,
 } from '../../protocol/schema.js';
 import { CPROTOCOL, CVERSION } from '../../protocol/schema.js';
@@ -21,7 +21,7 @@ export interface IBuildConfig {
   height: number;
   name: string;
   assetReports?: IAssetCoarseReport[];
-  chronology?: IMediaChronology[];
+  chronology?: IChronologyAssetIndex[];
   reviewedSegmentCuts?: ISegmentRoughCutPlan[];
   placement?: Partial<IPlacementConfig>;
   transition?: Partial<ITransitionConfig>;

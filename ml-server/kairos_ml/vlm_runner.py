@@ -280,7 +280,10 @@ def _analyze_transformers(image_paths: list[str], prompt: str, max_tokens: int |
     images = [Image.open(p).convert("RGB") for p in image_paths]
     image_open_ms = (time.perf_counter() - image_open_started_at) * 1000.0
     processor_started_at = time.perf_counter()
-    inputs = _processor(text=[text], images=images, padding=True, return_tensors="pt")
+    if images:
+        inputs = _processor(text=[text], images=images, padding=True, return_tensors="pt")
+    else:
+        inputs = _processor(text=[text], padding=True, return_tensors="pt")
     processor_ms = (time.perf_counter() - processor_started_at) * 1000.0
     inputs.pop("token_type_ids", None)
     h2d_ms = 0.0
@@ -327,6 +330,21 @@ def analyze(image_paths: list[str], prompt: str, max_tokens: int | None = None) 
         return description, timing
     load_ms, model_ref = _load_transformers()
     description, timing = _analyze_transformers(image_paths, prompt, max_tokens=max_tokens)
+    timing["loadMs"] = load_ms
+    timing["modelRef"] = model_ref
+    return description, timing
+
+
+def generate_text(prompt: str, max_tokens: int | None = None) -> tuple[str, dict]:
+    if BACKEND == "mlx":
+        load_ms, model_ref = _load_mlx()
+        description, timing = _analyze_mlx([], prompt, max_tokens=max_tokens)
+        timing["loadMs"] = load_ms
+        timing["modelRef"] = model_ref
+        return description, timing
+
+    load_ms, model_ref = _load_transformers()
+    description, timing = _analyze_transformers([], prompt, max_tokens=max_tokens)
     timing["loadMs"] = load_ms
     timing["modelRef"] = model_ref
     return description, timing

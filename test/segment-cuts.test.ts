@@ -4,7 +4,7 @@ import { buildDeterministicRoughCutBase } from '../src/modules/timeline-core/seg
 import { createChronology, createSelection, createSlice } from './helpers/fixtures.js';
 
 describe('buildDeterministicRoughCutBase', () => {
-  it('keeps silent drive beats at the default 2x speed suggestion', () => {
+  it('does not derive silent drive speed suggestions from spans', () => {
     const driveSelection = createSelection({
       assetId: 'asset-drive',
       spanId: 'slice-drive',
@@ -19,10 +19,6 @@ describe('buildDeterministicRoughCutBase', () => {
       sourceOutMs: 5_000,
       editSourceInMs: 0,
       editSourceOutMs: 5_000,
-      speedCandidate: {
-        suggestedSpeeds: [2, 5],
-        rationale: 'continuous-drive-window',
-      },
     });
     const script: IKtepScript[] = [{
       id: 'segment-1',
@@ -52,7 +48,7 @@ describe('buildDeterministicRoughCutBase', () => {
     });
 
     expect(roughCutBase.segments[0]?.lockedSpanIds).toEqual(['slice-drive']);
-    expect(roughCutBase.segments[0]?.beats[0]?.speedSuggestion).toBe(2);
+    expect(roughCutBase.segments[0]?.beats[0]?.speedSuggestion).toBeUndefined();
   });
 
   it('derives source-speech units and cue drafts from the locked speech window', () => {

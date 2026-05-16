@@ -73,26 +73,7 @@ export async function removeFineScanCheckpoint(
 function normalizeCheckpointSlice(slice: IKtepSlice): IKtepSlice {
   return {
     ...slice,
-    narrativeFunctions: {
-      core: slice.narrativeFunctions?.core ?? [],
-      extra: slice.narrativeFunctions?.extra ?? [],
-      evidence: slice.narrativeFunctions?.evidence ?? [],
-    },
-    shotGrammar: {
-      core: slice.shotGrammar?.core ?? [],
-      extra: slice.shotGrammar?.extra ?? [],
-      evidence: slice.shotGrammar?.evidence ?? [],
-    },
-    viewpointRoles: {
-      core: slice.viewpointRoles?.core ?? [],
-      extra: slice.viewpointRoles?.extra ?? [],
-      evidence: slice.viewpointRoles?.evidence ?? [],
-    },
-    subjectStates: {
-      core: slice.subjectStates?.core ?? [],
-      extra: slice.subjectStates?.extra ?? [],
-      evidence: slice.subjectStates?.evidence ?? [],
-    },
+    materialPatterns: slice.materialPatterns ?? [],
     grounding: {
       speechMode: slice.grounding?.speechMode ?? 'none',
       speechValue: slice.grounding?.speechValue ?? 'none',

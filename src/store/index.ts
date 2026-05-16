@@ -99,7 +99,16 @@ export {
 export {
   getChronologyPath,
   loadChronology,
+  loadChronologyForRebuild,
+  loadChronologyReviewState,
+  assertConfirmedProjectChronology,
   writeChronology,
+  markChronologyStale,
+  confirmChronology,
+  updateChronologyEvent,
+  mergeChronologyEvents,
+  splitChronologyEvent,
+  ChronologyV1UnsupportedError,
 } from './chronology.js';
 export {
   CDEFAULT_EDIT_ID,
@@ -189,18 +198,21 @@ export {
 export {
   getAssetsPath,
   getSpansPath,
+  getSpansMetaPath,
   getSlicesPath,
   loadAssets,
   loadSpans,
+  loadSpansMeta,
   loadSlices,
+  writeSpansMeta,
+  markSpansStale,
+  assertFreshSpans,
   buildAssetMergeKey,
   mergeAssets,
   findUnanalyzedAssets,
   mergeSpans,
   mergeSlices,
   appendAssets,
-  appendSpans,
-  appendSlices,
   type IMergeResult,
 } from './incremental.js';
 export {

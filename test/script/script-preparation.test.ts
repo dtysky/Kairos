@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { createHash } from 'node:crypto';
 import { access, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -13,7 +14,6 @@ import {
 } from '../../src/modules/script/project-script.js';
 import { resolveArrangementSignals } from '../../src/modules/script/arrangement-signals.js';
 import { loadStyleFromMarkdown } from '../../src/modules/script/style-loader.js';
-import { loadEditRuleByCategory } from '../../src/modules/script/edit-rule-loader.js';
 import {
   getCurrentScriptPath,
   getMaterialBundlesPath,
@@ -23,6 +23,7 @@ import {
   getOutlinePath,
   getScriptBriefPath,
   getSegmentPlanPath,
+  getSpansMetaPath,
   initWorkspaceProject,
   loadCurrentScript,
   loadMaterialBundles,
@@ -30,39 +31,33 @@ import {
   loadScriptBriefConfig,
   saveScriptBriefConfig,
   saveStyleSourcesConfig,
-  writeEditFlowPlan,
   writeJson,
 } from '../../src/store/index.js';
-
-const CTEST_EDIT_RULE_CATEGORY = 'travel-doc-rule';
 
 class FakeAgentRunner implements IJsonPacketAgentRunner {
   calls: IJsonPacketAgentInvocation[] = [];
 
   async run<T>(input: IJsonPacketAgentInvocation): Promise<T> {
     this.calls.push(input);
-    const stage = input.packet.stage;
-    const artifacts = input.packet.inputArtifacts ?? [];
-
-    if (stage?.startsWith('review-')) {
+    if (input.promptId === 'script/script-reviewer') {
       return {
         verdict: 'pass',
         issues: [],
         revisionBrief: [],
       } as T;
     }
-
-    if (stage === 'segment-plan') {
-      const brief = artifacts.find(artifact => artifact.label === 'script-brief')?.content as {
-        segments?: Array<{
-          segmentId: string;
-          title?: string;
-          intent?: string;
-          targetDurationMs?: number;
-          roleHint?: string;
-          notes?: string[];
-        }>;
-      } | undefined;
+    if (input.promptId === 'script/segment-architect') {
+      const brief = input.packet.inputArtifacts
+        .find(artifact => artifact.label === 'script-brief')?.content as {
+          segments?: Array<{
+            segmentId: string;
+            title?: string;
+            intent?: string;
+            targetDurationMs?: number;
+            roleHint?: string;
+            notes?: string[];
+          }>;
+        } | undefined;
       return {
         id: 'plan-1',
         projectId: 'script-prep-project',
@@ -79,31 +74,29 @@ class FakeAgentRunner implements IJsonPacketAgentRunner {
         })),
       } as T;
     }
-
-    if (stage === 'material-slots') {
-      const baseDraft = artifacts.find(artifact => artifact.label === 'base-draft')?.content;
-      return (baseDraft ?? { segments: [] }) as T;
-    }
-
-    return [{
-      id: 'segment-opening',
-      role: 'intro',
-      title: '进入海边',
-      narration: '风一进来，路才真的开始。',
-      beats: [{
-        id: 'beat-1',
-        text: '风一进来，路才真的开始。',
-        audioSelections: [],
-        visualSelections: [{
-          assetId: 'asset-1',
-          spanId: 'span-coast',
-          sliceId: 'span-coast',
-          sourceInMs: 1_000,
-          sourceOutMs: 7_000,
+    if (input.promptId === 'script/beat-writer') {
+      return [{
+        id: 'segment-opening',
+        role: 'intro',
+        title: '进入海边',
+        narration: '风一进来，路才真的开始。',
+        beats: [{
+          id: 'beat-1',
+          text: '风一进来，路才真的开始。',
+          audioSelections: [],
+          visualSelections: [{
+            assetId: 'asset-1',
+            spanId: 'span-coast',
+            sliceId: 'span-coast',
+            sourceInMs: 1_000,
+            sourceOutMs: 7_000,
+          }],
+          linkedSpanIds: ['span-coast'],
         }],
         linkedSpanIds: ['span-coast'],
-      }],
-    }] as T;
+      }] as T;
+    }
+    throw new Error(`Unexpected promptId: ${input.promptId}`);
   }
 }
 
@@ -119,55 +112,24 @@ async function createWorkspace(): Promise<string> {
   return workspaceRoot;
 }
 
-async function seedConfirmedEditFlowPlan(workspaceRoot: string, projectRoot: string): Promise<void> {
-  await mkdir(join(workspaceRoot, 'config', 'edit-rules'), { recursive: true });
-  await writeFile(join(workspaceRoot, 'config', 'edit-rules', `${CTEST_EDIT_RULE_CATEGORY}.md`), [
-    '---',
-    'name: Travel Doc Rule',
-    `category: ${CTEST_EDIT_RULE_CATEGORY}`,
-    '---',
-    '# Travel Doc Rule',
-    '',
-    '以确认后的 Flow Plan 控制素材召回与脚本生成，风格档案只作为授权层输入。',
-    '',
-  ].join('\n'), 'utf-8');
-  const editRule = await loadEditRuleByCategory(workspaceRoot, CTEST_EDIT_RULE_CATEGORY);
-  await writeEditFlowPlan(projectRoot, {
-    schemaVersion: '1.0',
-    id: 'test-flow-plan',
-    editId: 'main',
-    editRuleCategory: editRule.categoryId,
-    editRuleHash: editRule.contentHash,
-    generatedAt: '2026-04-09T08:00:00.000Z',
-    status: 'confirmed',
-    confirmedAt: '2026-04-09T08:01:00.000Z',
-    assumptions: [],
-    steps: [
-      {
-        id: 'material-recall',
-        capabilityId: 'material.recall',
-        inputRefs: [],
-        outputRefs: [],
-        gate: 'human',
-        notes: [],
-      },
-      {
-        id: 'script-generate',
-        capabilityId: 'script.generate',
-        inputRefs: [],
-        outputRefs: [],
-        gate: 'human',
-        notes: [],
-      },
-    ],
-  });
-}
-
 async function seedProject(workspaceRoot: string): Promise<string> {
   const projectRoot = await initWorkspaceProject(workspaceRoot, 'script-prep-project', 'Script Prep Project');
   const styleRoot = join(workspaceRoot, 'config', 'styles');
+  const editRuleRoot = join(workspaceRoot, 'config', 'edit-rules');
   const now = '2026-04-09T08:00:00.000Z';
+  const editRuleMarkdown = [
+    '---',
+    'category: travel-flow',
+    'title: Travel Flow',
+    '---',
+    '# Travel Flow',
+    '',
+    'Use explicit material recall before script generation.',
+  ].join('\n');
+  const editRuleHash = createHash('sha256').update(editRuleMarkdown).digest('hex');
 
+  await mkdir(editRuleRoot, { recursive: true });
+  await writeFile(join(editRuleRoot, 'travel-flow.md'), editRuleMarkdown, 'utf-8');
   await saveStyleSourcesConfig(workspaceRoot, {
     defaultCategory: 'travel-doc',
     categories: [{
@@ -215,12 +177,9 @@ async function seedProject(workspaceRoot: string): Promise<string> {
     type: 'broll',
     sourceInMs: 1_000,
     sourceOutMs: 7_000,
+    visualObservation: '海边步行镜头。',
     transcript: '海边很安静。',
-    materialPatterns: [{
-      phrase: '高辨识度地点快速建场',
-      confidence: 0.82,
-      evidenceRefs: [],
-    }],
+    materialPatterns: ['高辨识度地点快速建场'],
     grounding: {
       speechMode: 'available',
       speechValue: 'emotional',
@@ -228,31 +187,45 @@ async function seedProject(workspaceRoot: string): Promise<string> {
         tier: 'strong-inference',
         confidence: 0.8,
         sourceKinds: ['vision'],
-        reasons: ['coastal-walk'],
         locationText: 'Auckland',
       }],
       pharosRefs: [],
     },
-    narrativeFunctions: { core: [], extra: [], evidence: [] },
-    shotGrammar: { core: [], extra: [], evidence: [] },
-    viewpointRoles: { core: [], extra: [], evidence: [] },
-    subjectStates: { core: [], extra: [], evidence: [] },
   }]);
-  await writeJson(join(projectRoot, 'media', 'chronology.json'), [{
-    id: 'chronology-1',
-    assetId: 'asset-1',
-    ingestRootId: 'root-1',
-    capturedAt: now,
-    sortCapturedAt: now,
-    summary: '海边步行镜头',
-    labels: ['coast', 'walk'],
-    placeHints: ['Auckland'],
-    evidence: [],
-  }]);
+  await writeJson(getSpansMetaPath(projectRoot), {
+    schemaVersion: '1.0',
+    status: 'fresh',
+    generatedAt: now,
+    inputsHash: 'test-spans',
+    assetCount: 1,
+    reportCount: 0,
+    spanCount: 1,
+    warnings: [],
+  });
+  await writeJson(join(projectRoot, 'media', 'chronology.json'), {
+    schemaVersion: '2.0',
+    status: 'confirmed',
+    generatedAt: now,
+    confirmedAt: now,
+    inputsHash: 'test-inputs',
+    assetIndex: [{
+      assetId: 'asset-1',
+      sortCapturedAt: now,
+    }],
+    events: [{
+      id: 'event-1',
+      kind: 'event',
+      reviewStatus: 'confirmed',
+      title: '海边步行镜头',
+      startAt: now,
+      location: 'Auckland',
+      spanIds: ['span-coast'],
+    }],
+  });
 
   await saveScriptBriefConfig(projectRoot, {
     projectName: 'Script Prep Project',
-    editRuleCategory: CTEST_EDIT_RULE_CATEGORY,
+    editRuleCategory: 'travel-flow',
     styleCategory: 'travel-doc',
     workflowState: 'review_brief',
     lastAgentDraftAt: '2026-04-09T07:30:00.000Z',
@@ -270,7 +243,7 @@ async function seedProject(workspaceRoot: string): Promise<string> {
   });
   await saveScriptBriefConfig(projectRoot, {
     projectName: 'Script Prep Project',
-    editRuleCategory: CTEST_EDIT_RULE_CATEGORY,
+    editRuleCategory: 'travel-flow',
     styleCategory: 'travel-doc',
     workflowState: 'ready_to_prepare',
     lastAgentDraftAt: '2026-04-09T07:30:00.000Z',
@@ -286,8 +259,37 @@ async function seedProject(workspaceRoot: string): Promise<string> {
       notes: ['少解释，多观察'],
     }],
   });
-
-  await seedConfirmedEditFlowPlan(workspaceRoot, projectRoot);
+  await mkdir(join(projectRoot, 'edits', 'main', 'planning'), { recursive: true });
+  await writeJson(join(projectRoot, 'edits', 'main', 'planning', 'flow-plan.json'), {
+    schemaVersion: '1.0',
+    id: 'flow-plan-1',
+    projectId: 'script-prep-project',
+    editId: 'main',
+    editRuleCategory: 'travel-flow',
+    editRuleHash,
+    generatedAt: now,
+    updatedAt: now,
+    status: 'confirmed',
+    confirmedAt: now,
+    assumptions: [],
+    steps: [{
+      id: 'material',
+      capabilityId: 'material.recall',
+      title: 'Recall material',
+      inputRefs: ['spans'],
+      outputRefs: ['material-slots'],
+      gate: 'none',
+      notes: [],
+    }, {
+      id: 'script',
+      capabilityId: 'script.generate',
+      title: 'Generate script',
+      inputRefs: ['material-slots'],
+      outputRefs: ['script-current'],
+      gate: 'none',
+      notes: [],
+    }],
+  });
 
   return projectRoot;
 }
@@ -393,7 +395,7 @@ describe('model-driven script preparation', () => {
     await saveScriptBriefConfig(projectRoot, {
       projectName: 'Script Prep Project',
       createdAt: '2026-04-09T08:00:00.000Z',
-      editRuleCategory: CTEST_EDIT_RULE_CATEGORY,
+      editRuleCategory: 'travel-flow',
       styleCategory: 'event-doc',
       workflowState: 'await_brief_draft',
       goalDraft: ['new expression goal'],
@@ -529,6 +531,7 @@ describe('model-driven script preparation', () => {
     const agentRunner = new FakeAgentRunner();
     await expect(generateProjectScriptFromPlanning({
       projectRoot,
+      workspaceRoot,
       agentRunner,
       style: {
         id: 'style-1',
@@ -606,11 +609,7 @@ describe('model-driven script preparation', () => {
         sourceInMs: 1_000,
         sourceOutMs: 7_000,
         transcript: '海边很安静。',
-        materialPatterns: [{
-          phrase: '高辨识度地点快速建场',
-          confidence: 0.82,
-          evidenceRefs: [],
-        }],
+        materialPatterns: [''],
         grounding: {
           speechMode: 'available',
           speechValue: 'emotional',
@@ -618,15 +617,10 @@ describe('model-driven script preparation', () => {
             tier: 'strong-inference',
             confidence: 0.8,
             sourceKinds: ['vision'],
-            reasons: ['test'],
             locationText: 'Auckland',
           }],
           pharosRefs: [],
         },
-        narrativeFunctions: { core: [], extra: [], evidence: [] },
-        shotGrammar: { core: [], extra: [], evidence: [] },
-        viewpointRoles: { core: [], extra: [], evidence: [] },
-        subjectStates: { core: [], extra: [], evidence: [] },
       }],
       chronology: [{
         id: 'chronology-1',
@@ -687,12 +681,8 @@ describe('model-driven script preparation', () => {
         sourceInMs: 0,
         sourceOutMs: 2_000,
         transcript: '先出发。',
-        materialPatterns: [{ phrase: '路程推进', confidence: 0.8, evidenceRefs: [] }],
+        materialPatterns: ['第一人称行车', '山路', '晴天', '无口播语音', '连续弯道'],
         grounding: { speechMode: 'available', speechValue: 'informative', spatialEvidence: [], pharosRefs: [] },
-        narrativeFunctions: { core: [], extra: [], evidence: [] },
-        shotGrammar: { core: [], extra: [], evidence: [] },
-        viewpointRoles: { core: [], extra: [], evidence: [] },
-        subjectStates: { core: [], extra: [], evidence: [] },
       },
       {
         id: 'span-2',
@@ -701,23 +691,15 @@ describe('model-driven script preparation', () => {
         sourceInMs: 2_000,
         sourceOutMs: 5_000,
         transcript: '到了入口。',
-        materialPatterns: [{ phrase: '到场第一眼', confidence: 0.8, evidenceRefs: [] }],
+        materialPatterns: ['第一人称行车', '山路', '晴天', '有口播语音', '安全提醒'],
         grounding: { speechMode: 'available', speechValue: 'informative', spatialEvidence: [], pharosRefs: [] },
-        narrativeFunctions: { core: [], extra: [], evidence: [] },
-        shotGrammar: { core: [], extra: [], evidence: [] },
-        viewpointRoles: { core: [], extra: [], evidence: [] },
-        subjectStates: { core: [], extra: [], evidence: [] },
       },
       {
         id: 'span-3',
         assetId: 'asset-3',
         type: 'photo',
-        materialPatterns: [{ phrase: '结果照片', confidence: 0.8, evidenceRefs: [] }],
+        materialPatterns: ['照片记录', '海岸湖边', '晚霞', '无口播语音'],
         grounding: { speechMode: 'none', speechValue: 'none', spatialEvidence: [], pharosRefs: [] },
-        narrativeFunctions: { core: [], extra: [], evidence: [] },
-        shotGrammar: { core: [], extra: [], evidence: [] },
-        viewpointRoles: { core: [], extra: [], evidence: [] },
-        subjectStates: { core: [], extra: [], evidence: [] },
       },
     ];
 
@@ -744,6 +726,8 @@ describe('model-driven script preparation', () => {
 
     const bundledSpanIds = new Set(bundles.flatMap(bundle => bundle.memberSpanIds));
     expect(bundledSpanIds).toEqual(new Set(['span-1', 'span-2', 'span-3']));
+    expect(bundles.find(bundle => bundle.key === '第一人称行车 / 山路 / 晴天')?.memberSpanIds)
+      .toEqual(['span-1', 'span-2']);
   });
 
   it('keeps high-recall slots and only folds near-duplicate overlaps', () => {
@@ -781,12 +765,8 @@ describe('model-driven script preparation', () => {
           sourceInMs: 0,
           sourceOutMs: 4_000,
           transcript: '先从停车场过去。',
-          materialPatterns: [{ phrase: '现场过程', confidence: 0.9, evidenceRefs: [] }],
+          materialPatterns: [''],
           grounding: { speechMode: 'available', speechValue: 'informative', spatialEvidence: [], pharosRefs: [] },
-          narrativeFunctions: { core: [], extra: [], evidence: [] },
-          shotGrammar: { core: [], extra: [], evidence: [] },
-          viewpointRoles: { core: [], extra: [], evidence: [] },
-          subjectStates: { core: [], extra: [], evidence: [] },
         },
         {
           id: 'span-dup',
@@ -795,12 +775,8 @@ describe('model-driven script preparation', () => {
           sourceInMs: 800,
           sourceOutMs: 4_200,
           transcript: '',
-          materialPatterns: [{ phrase: '现场过程', confidence: 0.7, evidenceRefs: [] }],
+          materialPatterns: [''],
           grounding: { speechMode: 'available', speechValue: 'informative', spatialEvidence: [], pharosRefs: [] },
-          narrativeFunctions: { core: [], extra: [], evidence: [] },
-          shotGrammar: { core: [], extra: [], evidence: [] },
-          viewpointRoles: { core: [], extra: [], evidence: [] },
-          subjectStates: { core: [], extra: [], evidence: [] },
         },
         {
           id: 'span-2',
@@ -809,12 +785,8 @@ describe('model-driven script preparation', () => {
           sourceInMs: 0,
           sourceOutMs: 3_000,
           transcript: '已经看到人群了。',
-          materialPatterns: [{ phrase: '现场过程', confidence: 0.8, evidenceRefs: [] }],
+          materialPatterns: [''],
           grounding: { speechMode: 'available', speechValue: 'informative', spatialEvidence: [], pharosRefs: [] },
-          narrativeFunctions: { core: [], extra: [], evidence: [] },
-          shotGrammar: { core: [], extra: [], evidence: [] },
-          viewpointRoles: { core: [], extra: [], evidence: [] },
-          subjectStates: { core: [], extra: [], evidence: [] },
         },
         {
           id: 'span-3',
@@ -823,23 +795,15 @@ describe('model-driven script preparation', () => {
           sourceInMs: 0,
           sourceOutMs: 2_500,
           transcript: '先试一轮看看。',
-          materialPatterns: [{ phrase: '现场过程', confidence: 0.8, evidenceRefs: [] }],
+          materialPatterns: [''],
           grounding: { speechMode: 'available', speechValue: 'informative', spatialEvidence: [], pharosRefs: [] },
-          narrativeFunctions: { core: [], extra: [], evidence: [] },
-          shotGrammar: { core: [], extra: [], evidence: [] },
-          viewpointRoles: { core: [], extra: [], evidence: [] },
-          subjectStates: { core: [], extra: [], evidence: [] },
         },
         {
           id: 'span-4',
           assetId: 'asset-4',
           type: 'photo',
-          materialPatterns: [{ phrase: '现场过程', confidence: 0.8, evidenceRefs: [] }],
+          materialPatterns: [''],
           grounding: { speechMode: 'none', speechValue: 'none', spatialEvidence: [], pharosRefs: [] },
-          narrativeFunctions: { core: [], extra: [], evidence: [] },
-          shotGrammar: { core: [], extra: [], evidence: [] },
-          viewpointRoles: { core: [], extra: [], evidence: [] },
-          subjectStates: { core: [], extra: [], evidence: [] },
         },
         {
           id: 'span-5',
@@ -848,12 +812,8 @@ describe('model-driven script preparation', () => {
           sourceInMs: 0,
           sourceOutMs: 3_200,
           transcript: '朋友也加入了。',
-          materialPatterns: [{ phrase: '现场过程', confidence: 0.8, evidenceRefs: [] }],
+          materialPatterns: [''],
           grounding: { speechMode: 'available', speechValue: 'informative', spatialEvidence: [], pharosRefs: [] },
-          narrativeFunctions: { core: [], extra: [], evidence: [] },
-          shotGrammar: { core: [], extra: [], evidence: [] },
-          viewpointRoles: { core: [], extra: [], evidence: [] },
-          subjectStates: { core: [], extra: [], evidence: [] },
         },
       ],
       chronology: [
@@ -905,11 +865,11 @@ describe('model-driven script preparation', () => {
     });
 
     const chosenSpanIds = slots.segments[0]?.slots.flatMap(slot => slot.chosenSpanIds) ?? [];
-    expect(chosenSpanIds).toEqual(expect.arrayContaining(['span-1', 'span-2', 'span-3', 'span-4', 'span-5']));
+    expect(chosenSpanIds).toEqual(['span-1', 'span-2', 'span-3', 'span-5', 'span-4']);
     expect(chosenSpanIds).not.toContain('span-dup');
     expect(chosenSpanIds).toHaveLength(5);
     expect(slots.segments[0]?.slots).toHaveLength(1);
-    expect(slots.segments[0]?.slots[0]?.chosenSpanIds).toEqual(chosenSpanIds);
+    expect(slots.segments[0]?.slots[0]?.chosenSpanIds).toEqual(['span-1', 'span-2', 'span-3', 'span-5', 'span-4']);
   });
 
   it('keeps chronology-driven segments inside monotonic time bands', () => {
@@ -1010,12 +970,8 @@ describe('model-driven script preparation', () => {
           sourceInMs: 0,
           sourceOutMs: 4_000,
           transcript: '先出发。',
-          materialPatterns: [{ phrase: '路程推进', confidence: 0.8, evidenceRefs: [] }],
+          materialPatterns: [''],
           grounding: { speechMode: 'available', speechValue: 'informative', spatialEvidence: [], pharosRefs: [] },
-          narrativeFunctions: { core: [], extra: [], evidence: [] },
-          shotGrammar: { core: [], extra: [], evidence: [] },
-          viewpointRoles: { core: [], extra: [], evidence: [] },
-          subjectStates: { core: [], extra: [], evidence: [] },
         },
         {
           id: 'span-2',
@@ -1024,12 +980,8 @@ describe('model-driven script preparation', () => {
           sourceInMs: 0,
           sourceOutMs: 4_000,
           transcript: '现在正在路上。',
-          materialPatterns: [{ phrase: '路程推进', confidence: 0.8, evidenceRefs: [] }],
+          materialPatterns: [''],
           grounding: { speechMode: 'available', speechValue: 'informative', spatialEvidence: [], pharosRefs: [] },
-          narrativeFunctions: { core: [], extra: [], evidence: [] },
-          shotGrammar: { core: [], extra: [], evidence: [] },
-          viewpointRoles: { core: [], extra: [], evidence: [] },
-          subjectStates: { core: [], extra: [], evidence: [] },
         },
         {
           id: 'span-3',
@@ -1038,12 +990,8 @@ describe('model-driven script preparation', () => {
           sourceInMs: 0,
           sourceOutMs: 4_000,
           transcript: '已经到场了。',
-          materialPatterns: [{ phrase: '路程推进', confidence: 0.8, evidenceRefs: [] }],
+          materialPatterns: [''],
           grounding: { speechMode: 'available', speechValue: 'informative', spatialEvidence: [], pharosRefs: [] },
-          narrativeFunctions: { core: [], extra: [], evidence: [] },
-          shotGrammar: { core: [], extra: [], evidence: [] },
-          viewpointRoles: { core: [], extra: [], evidence: [] },
-          subjectStates: { core: [], extra: [], evidence: [] },
         },
       ],
       chronology: [
@@ -1183,12 +1131,8 @@ describe('model-driven script preparation', () => {
           sourceInMs: 0,
           sourceOutMs: 6_000,
           transcript: '先出发。',
-          materialPatterns: [{ phrase: '路程推进', confidence: 0.8, evidenceRefs: [] }],
+          materialPatterns: [''],
           grounding: { speechMode: 'available', speechValue: 'informative', spatialEvidence: [], pharosRefs: [] },
-          narrativeFunctions: { core: [], extra: [], evidence: [] },
-          shotGrammar: { core: [], extra: [], evidence: [] },
-          viewpointRoles: { core: [], extra: [], evidence: [] },
-          subjectStates: { core: [], extra: [], evidence: [] },
         },
         {
           id: 'span-b',
@@ -1197,12 +1141,8 @@ describe('model-driven script preparation', () => {
           sourceInMs: 0,
           sourceOutMs: 8_000,
           transcript: '路上继续推进。',
-          materialPatterns: [{ phrase: '路程推进', confidence: 0.8, evidenceRefs: [] }],
+          materialPatterns: [''],
           grounding: { speechMode: 'available', speechValue: 'informative', spatialEvidence: [], pharosRefs: [] },
-          narrativeFunctions: { core: [], extra: [], evidence: [] },
-          shotGrammar: { core: [], extra: [], evidence: [] },
-          viewpointRoles: { core: [], extra: [], evidence: [] },
-          subjectStates: { core: [], extra: [], evidence: [] },
         },
         {
           id: 'span-c',
@@ -1211,12 +1151,8 @@ describe('model-driven script preparation', () => {
           sourceInMs: 0,
           sourceOutMs: 8_000,
           transcript: '路上继续推进。',
-          materialPatterns: [{ phrase: '路程推进', confidence: 0.8, evidenceRefs: [] }],
+          materialPatterns: [''],
           grounding: { speechMode: 'available', speechValue: 'informative', spatialEvidence: [], pharosRefs: [] },
-          narrativeFunctions: { core: [], extra: [], evidence: [] },
-          shotGrammar: { core: [], extra: [], evidence: [] },
-          viewpointRoles: { core: [], extra: [], evidence: [] },
-          subjectStates: { core: [], extra: [], evidence: [] },
         },
       ],
       chronology: [

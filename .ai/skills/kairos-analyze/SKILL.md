@@ -2,8 +2,9 @@
 name: kairos-analyze
 description: >-
   Phase 2: Coarse-first media analysis for Kairos editing projects. Builds
-  asset-level reports, updates chronology, and automatically decides whether to
-  fine-scan specific assets into spans. Use when analyzing project footage for
+  asset-level reports only; spans and chronology are explicit downstream
+  /chronology jobs. It automatically decides whether to fine-scan specific
+  assets into report windows. Use when analyzing project footage for
   editing preparation. This is separate from style-analysis.
 ---
 
@@ -14,14 +15,12 @@ description: >-
 它的目标是：
 - 先对全量素材做轻量粗扫
 - 落单素材报告 `analysis/asset-reports/<assetId>.json`
-- 自动判断哪些素材值得细扫
-- 只对重点素材生成 `store/spans.json`
-- 更新 `media/chronology.json`
+- 自动判断哪些素材值得细扫，并把细扫结果写回 report 的 `fineScanWindows[]`
 - 在有空间线索时，为 coarse report 挂上 GPS / 地点上下文
 
 当前 v1 的正式 Analyze 语义口径是：
-- `Asset Evidence -> Span`
-- `Span` 当前主承载 `materialPatterns[] / localEditingIntent / grounding`
+- `Asset Report Truth -> Explicit Span Rebuild -> Chronology Review`
+- `Span` 当前只承载素材片段事实索引，不承载 Pharos/GPS/route/speed 决策
 - `slice` 仅作为兼容命名继续存在于少量代码和导出字段中
 
 ## 变更工作流规则
@@ -73,7 +72,7 @@ Analyze 会从 `project-brief` 的主路径与备选路径中解析当前可读�
 不再读取 `device-media-maps.local.json`。
 Analyze 不会隐式补跑 `ingest`、`gps-refresh` 或 Pharos parse。如果用户刚在 `/ingest-gps` 修改过素材 Root、FlightRecord、manual-itinerary、root 时钟偏移、capture-time overrides 或项目内 `pharos/`，必须先回到 `/ingest-gps` 显式点击 `运行 Ingest`；如果只修改了 GPX、Pharos 或 manual-itinerary 空间线索，可先点击 `刷新 GPS 缓存`。
 
-`/analyze` 还提供 `刷新空间结果`，对应 Supervisor `spatial-refresh` job。它是 no-ML deterministic repair job：先刷新项目 GPX merged cache、`gps/derived.json` 和 `analysis/pharos-context.json`，再只修补已有 `analysis/asset-reports/*.json`、`media/chronology.json` 与 `store/spans.json` 中的 GPS / Pharos / reverse-geocode 空间字段。它不抽帧、不转写、不跑 VLM、不生成缺失 report，也不替代 Ingest 发现新的 `.SRT`、FlightRecord、素材 root 或 capture-time 修正。
+`spatial-refresh` 是 no-ML deterministic repair job：先刷新项目 GPX merged cache、`gps/derived.json` 和 `analysis/pharos-context.json`，再只修补已有 `analysis/asset-reports/*.json` 中的 GPS / Pharos / reverse-geocode 空间字段，并标记 spans / chronology stale。它不抽帧、不转写、不跑 VLM、不生成缺失 report，也不自动重建 `store/spans.json` 或 `media/chronology.json`，也不替代 Ingest 发现新的 `.SRT`、FlightRecord、素材 root 或 capture-time 修正。
 
 ## ML 前置条件
 
@@ -100,7 +99,7 @@ Analyze 不会隐式补跑 `ingest`、`gps-refresh` 或 Pharos parse。如果用
 - 如果用户手里有 sidecar `.SRT` 或 DJI FlightRecord 日志，必须提醒：这类数据走的是 `embedded GPS` 标准链路，不是普通项目 GPX
 - 如果 `config/manual-itinerary.md` 末尾存在未填写完的“素材时间校正”表格，或者用户刚填完还没 rerun ingest，Analyze 必须停下，先让用户刷新 ingest
 - 如果 root 级 `captureTimePolicy.mode=manual-required` 生成了“素材时间校正”项，必须确认这些条目已经显式填写 `正确日期 / 正确时间 / 时区` 并 rerun ingest，不能接受自动建议日期替代人工确认
-- 不要把 `导入 / GPS Review` 当成第二份 capture-time 输入；Analyze 只看 rerun ingest 后的 `manual` capture time / chronology 结果
+- 不要把 `导入 / GPS Review` 当成第二份 capture-time 输入；Analyze 只看 rerun ingest 后的 `manual` capture time / asset truth，chronology 需要之后在 `/chronology` 显式刷新
 
 在提示规则后，还必须指导用户当前可选动作：
 
@@ -111,7 +110,7 @@ Analyze 不会隐式补跑 `ingest`、`gps-refresh` 或 Pharos parse。如果用
   - 只有需要限制到特定素材源或路径前缀时，再补 `素材源:` / `路径:` 这类结构化字段
 - `.SRT` 如果和素材同 basename 放在素材旁，ingest 会自动发现，不需要单独导入
 - 如果选择填写或修改了 `manual-itinerary`，先重新跑一次 ingest，刷新 `gps/derived.json`
-- 如果只需要刷新已有 GPX / Pharos / manual-itinerary 空间缓存，可在 `/ingest-gps` 使用 `刷新 GPS 缓存`；如果已有 Analyze report 也需要同步新空间结果，再到 `/analyze` 点击 `刷新空间结果`
+- 如果只需要刷新已有 GPX / Pharos / manual-itinerary 空间缓存，可在 `/ingest-gps` 使用 `刷新 GPS 缓存`；如果已有 Analyze report 也需要同步新空间结果，再到 `/chronology` 触发 `spatial-refresh`，随后重新生成 spans / chronology
 - 需要应用素材时间修正或同源 GPS / FlightRecord 绑定时必须跑 `运行 Ingest`
 - 如果 ingest 已把待校正素材写进 `manual-itinerary` 末尾表格，必须先让用户填写 `正确日期 / 正确时间 / 时区`，再 rerun ingest
 - 或明确接受“部分素材没有空间结果”后继续
@@ -123,7 +122,7 @@ Analyze 不会隐式补跑 `ingest`、`gps-refresh` 或 Pharos parse。如果用
 - Analyze 前必须确认当前项目不存在“素材时间和项目时间线明显冲突”的阻塞项
 - 这类阻塞项由 ingest 自动写入 `config/manual-itinerary.md` 末尾的“素材时间校正”表格
 - 只要表格里还有未填写或尚未重新 ingest 应用的条目，Analyze 就必须直接停掉，不能继续消耗 ML 预算
-- agent 必须明确告诉用户：先填写表格，再 rerun ingest，确认 `store/assets.json / media/chronology.json / gps/derived.json` 已刷新后，才能继续 Analyze
+- agent 必须明确告诉用户：先填写表格，再 rerun ingest，确认 `store/assets.json / gps/derived.json` 已刷新后，才能继续 Analyze；Analyze 完成后再去 `/chronology` 重建 spans / chronology
 
 底层会复用这些工具：
 
@@ -137,7 +136,8 @@ recognizeFrames(...)
 sliceVideo(...)
 sliceInterestingWindows(...)
 buildAssetCoarseReport(...)
-buildMediaChronology(...)
+rebuildProjectSpans(...)
+buildProjectChronology(...)
 ```
 
 ## 空间上下文优先级
@@ -186,15 +186,14 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
 
 ## 轻量空间刷新
 
-当用户已经跑过 Analyze，并且只是空间规则、Pharos context、GPX、derived-track 或 reverse-geocode 逻辑变化时，优先使用 `/analyze` 的 `刷新空间结果`，而不是重跑完整 Analyze。
+当用户已经跑过 Analyze，并且只是空间规则、Pharos context、GPX、derived-track 或 reverse-geocode 逻辑变化时，优先使用 `/chronology` 的 `spatial-refresh`，而不是重跑完整 Analyze。
 
 `spatial-refresh` 的正式刷新范围：
 
 - 已有 `analysis/asset-reports/*.json` 的 `gpsSummary / inferredGps / pharosMatches / primaryPharosRef / pharosMatchConfidence / pharosStatus / pharosDayTitle / locationText / placeHints`
-- `media/chronology.json` 的空间 evidence 与 Pharos 字段
-- `store/spans.json` 中已有 span 的 `grounding.spatialEvidence` 和 report-derived `pharosRefs`
+- 标记 `store/spans.meta.json` 与 `media/chronology.json` stale，要求用户随后显式运行 `span-rebuild` 与 `chronology-build`
 
-`spatial-refresh` 必须保留原 report / span 的 ML、ASR、视觉与切片语义字段，例如 `summary / labels / transcript / transcriptSegments / sampleFrames / interestingWindows / fine-scan` 相关字段、`materialPatterns` 和 narrative tags。
+`spatial-refresh` 必须保留原 report 的 ML、ASR、视觉与细扫事实字段，例如 `summary / labels / transcript / transcriptSegments / sampleFrames / interestingWindows / fineScanWindows`。它只刷新空间 / Pharos 派生层，不重建 downstream indexes。
 
 不能使用 `spatial-refresh` 的场景：
 
@@ -287,7 +286,7 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
 
 - `talking-head / speech-window`：保持更紧的 edit bounds，避免破坏原声链路
 - `broll / aerial / timelapse / unknown`：把 focus window 扩成更可剪的 edit bounds
-- `drive`：除了更宽的 edit bounds，还应额外挂 `speedCandidate` metadata（例如 `2x / 5x / 10x` 建议），但不要在 Analyze 阶段直接决定最终 speed
+  - `drive`：只给出更宽的 edit bounds；speed 策略不进入 span 生成流程，后续单独设计
 
 输出：
 - `shouldFineScan`
@@ -318,25 +317,32 @@ analysis/asset-reports/<assetId>.json
 - 新启动的 Analyze job 不读取 `progress.json.step` 作为恢复指针，而是重新计算 `pendingAssets` 和 `pendingFineScanEntries`；如果 `pendingAssets=0` 且存在待 fine-scan report，首个 live progress 必须直接写 `fine-scan-prefetch`，避免监控页误显示“从 prepare 重新开始”。
 - `retry / resume` 后 ETA 不继承上一轮估算，而是按当前阶段重新估；当前阶段完成数 `< 3` 时，面板不显示 ETA
 
-### 4. 只对重点内容产出 slices
+### 4. report -> spans 派生索引
 
-- `full`
-  - 对整条素材切成 shot slices
-- `windowed`
-  - 只把 `interestingWindows` 变成 slices
-- `skip`
-  - 只保留 coarse report，不生成 slices
+Analyze 运行过程中和阶段末都不再写 `store/spans.json`；span 由 `/chronology` 的 `span-rebuild` 显式生成：
 
-`store/slices.json` 的当前正式语义：
+- `direct`
+  - 只写 asset report，span 后续从 report `summary / interestingWindows` 派生；`materialPatterns` 只在 span 重建阶段由本地 qwen 文本 LM 从 span 级文本事实生成
+- `fine-scan`
+  - 只写 report `fineScanWindows[]`；recognized/dropped 都保存，只有 recognized 窗口可派生 span；窗口内不保存 `recognitionRaw` 或 `materialPatterns`
+- `skip/drop`
+  - 只保留 report，不派生 span
 
+如果 fine-scan report 缺少完整 `fineScanWindows[]`，新版 span 重建必须失败并提示重新 Analyze/fine-scan；不能用旧 spans 或空 recognized window 兜底。
+
+`store/spans.json` 的当前正式语义：
+
+- 只读取 `store/assets.json` 与 `analysis/asset-reports/*.json` 生成，不读取 Pharos context、GPS cache 或 chronology
 - `sourceInMs / sourceOutMs` 继续保留兼容性的 focus/evidence window
 - `editSourceInMs / editSourceOutMs` 承载 edit-friendly bounds，供 Script/Timeline 默认优先使用
-- `drive` slice 可额外挂 `speedCandidate`
-- `source-speech` 的持久化目标是稳定 material span，不是每个短暂停顿都单独落一条：
-  - 附近 speech windows 应先在 Analyze 侧合并后再写入 `store/spans.json`
-  - 细粒度 utterance / pause timing 继续保留在 `transcriptSegments`
-- Analyze 自动生成的 `materialPatterns` 默认不再落 `excerpt`
-  - `excerpt` 字段仅保留兼容可选，新的 Analyze 输出应依赖 `phrase / grounding / transcript`，而不是把整段字幕塞进 pattern
+- 不写 `speedCandidate / pharosRefs / grounding / spatialEvidence / location / routeRole / chronology event`
+- `source-speech` 的持久化目标是素材事实窗口；只合并同 asset、同 semanticKind、重叠或间隔 `<=250ms` 的近重复窗口，不做 6000ms 口播合并
+- 细粒度 utterance / pause timing 继续保留在 `transcriptSegments`
+- `materialPatterns` 固定为中文 `string[]`，只保存脚本阶段可消费的素材事实短语；前四项固定为确定性 `视角类型 / 当前环境 / 天气光线 / 口播语音`，其中视角来自受控词表，环境是从当前 span 文本事实提取的短语，天气光线只写可观察自然现象，口播语音只写 `有口播语音 / 无口播语音`；第 5-6 项最多两个短 factual free tags
+- `visualObservation?: string` 保存 span 级一句视觉事实描述
+- GPS / 时间 / Pharos 归属不进入 `materialPatterns`，应从 chronology / spatial / Pharos context 层 join
+- 旧五轴语义树 `narrativeFunctions / shotGrammar / viewpointRoles / subjectStates / span.evidence` 不再属于正式 span 输出
+- `store/spans.meta.json` 固定记录 freshness、input hash、counts 和 warnings；hash 不包含 labels、speed hints、Pharos、GPS cache 或 chronology，但包含 material-pattern prompt version
 
 ## 工作流程
 
@@ -379,14 +385,26 @@ const localPath = resolveAssetLocalPath(asset, roots);
 - `speechCoverage`
 - 可选 `protectedAudio` 注释与保守推荐
 - `interestingWindows`
+- `fineScanWindows`（仅细扫完成或 dropped 细扫窗口时写入）
 - `shouldFineScan`
 - `fineScanMode`
 
-注意：当前 `interestingWindows` 不是“单一最终剪辑窗口”，而是 `focus window + edit-friendly bounds` 的组合结构。
+注意：当前 `interestingWindows` 不是“单一最终剪辑窗口”，而是细扫前计划；`fineScanWindows` 才是细扫后的窗口观察结果。只要 asset report 已有完整 coarse facts 和 `fineScanWindows`，`span-rebuild` 不应重新视觉分析或重跑 ASR；它只启动本地 ML 服务调用 qwen 文本 LM，对纯文本 span facts 生成 ordered `materialPatterns[]` 行，再由代码按 chunk 顺序写回 spans，修补前四个确定性槽，并最多保留两个自由标签。
 
-8. 自动决定是否细扫并生成 slices
+## Chronology V2
 
-9. 更新 chronology
+- `media/chronology.json` 是项目级编年史文档，不是一素材一行的摘要表。
+- 正式 schema 只暴露 `schemaVersion/status/generatedAt/updatedAt/confirmedAt/inputsHash/assetIndex/events`。
+- `events[]` 只允许 `event / route / gap`、`reviewStatus`、标题摘要、时间地点、路线和 `spanIds`；不得写入 Pharos、`origin`、`source`、`confidence`、`assetIds`、`materialChannels` 或 `speechAnchors`。
+- `assetIndex[]` 只保留 `assetId / sortCapturedAt`，供下游排序；素材集合必须从 `spanIds -> spans -> assetId` 反查。
+- Pharos 只作为生成输入；生成后必须折叠成普通事件、路线或缺口。
+- `gap` 可以没有 `spanIds`，表示行程确认存在但素材未覆盖或待补。
+- 行车过程中的车内自拍口播默认并入同一个 `route` event；只有口播表达改线、事故、到达、停车、住宿、餐食、景点进入等真实行程状态变化时，才拆成独立 `event`。
+- `chronology-build` 写出的 V2 默认是 `draft`，必须经 `/chronology` 人工确认后 Script / Timeline 才能消费。
+
+8. 自动决定是否细扫，并只把结果写入 `fineScanWindows`
+
+9. 阶段结束；后续由 `/chronology` 显式运行 `span-rebuild` 和 `chronology-build`
 
 ## 进度展示
 
@@ -396,8 +414,8 @@ const localPath = resolveAssetLocalPath(asset, roots);
 - 只要开始执行一个可能持续较久的 Analyze，就应同步启动或刷新本地监控面板，而不是只在后台静默运行
 - 启动 Analyze 后，agent 应主动把监控面板 URL 告诉用户；如果分析已经开始但面板还没打开，应立即补开
 - 正式 Analyze 监控路由是 `http://127.0.0.1:8940/analyze`
-- `/analyze` 页面会同时显示活跃 `analyze` 与 `spatial-refresh` job；`spatial-refresh` 写同一个 `.tmp/media-analyze/progress.json`，但它是轻量空间刷新，不代表在重跑 VLM / ASR
-- `React console` 最终仍读取项目内 `.tmp/media-analyze/progress.json`，因此当前项目上下文必须正确，不能把面板混到别的项目进度目录
+- `/chronology` 页面会显示活跃 `spatial-refresh / span-rebuild / chronology-build` jobs；`spatial-refresh / chronology-build` 不启动 Kairos ML，`span-rebuild` 会启动本地 ML 服务按 10 个 span 一批调用 qwen 文本 LM 做纯文本 materialPatterns 归纳，LM 只返回 ordered rows，代码按 chunk 顺序写回 spans，但不重跑 VLM / ASR，并显示 `.tmp/chronology/progress.json` 中的 chunk/retry/repair/warning 进度；已完成 materialPatterns checkpoint 写入 `.tmp/chronology/span-rebuild.partial.json`，正式 `store/spans.json` 只在全量成功后写入
+- `React console` 的 Analyze 监控读取项目内 `.tmp/media-analyze/progress.json`，Chronology 监控读取 `.tmp/chronology/progress.json`；当前项目上下文必须正确，不能把面板混到别的项目进度目录
 - Console 刷新时，默认项目上下文应优先跟随最新的 active project-scoped job；只有当前没有活跃项目 job 时，才回退到本地记忆的上次选择
 - 如果多个项目 display name 相同，项目选择器必须直接显示 `projectId`，避免把 Analyze monitor 请求到同名旧项目
 - `scripts/kairos-supervisor.ps1/.sh start` 只会启动 `Supervisor + React console`，不会自动恢复旧的 analyze job；服务起来不等于分析已经重新开始
@@ -411,11 +429,11 @@ const localPath = resolveAssetLocalPath(asset, roots);
 - 清理边界只包含 agent 本轮主动启动的进程；不要顺手杀掉用户原本就在跑的 ML 服务、别的项目面板或无关后台服务
 
 - 遇到“页面看起来还在跑，但 GPU / ML 没动静”时，必须先按这个顺序核查，而不是盲目重启或沿用旧结论：
-  - `Supervisor` 当前是否真的存在 `running analyze` 或 `running spatial-refresh` job
+  - `Supervisor` 当前是否真的存在 `running analyze` job；若是在 `/chronology` 页面，则核查 `spatial-refresh / span-rebuild / chronology-build`
   - `progress.json` 的 `LastWriteTime / updatedAt` 是否持续推进
   - GPU / ML 活跃迹象是否与当前 phase 相符
-- 如果正式流程没起来，就要先查为什么没有 live analyze / spatial-refresh job；不要把 stale `progress.json` 当成“正式流程其实已经在跑”
-- 如果 `Supervisor` 已启动但没有 `running analyze` 或 `running spatial-refresh` job，需要显式重新发起对应 job；不要假设 `Supervisor` 重启会帮你自动恢复
+- 如果正式流程没起来，就要先查为什么没有 live job；不要把 stale `progress.json` 当成“正式流程其实已经在跑”
+- 如果 `Supervisor` 已启动但没有对应 running job，需要显式重新发起；不要假设 `Supervisor` 重启会帮你自动恢复
 
 - 默认进度文件建议写到：
 
@@ -452,9 +470,10 @@ scripts/kairos-supervisor.sh
 
 | 文件 | 内容 |
 |------|------|
-| `analysis/asset-reports/*.json` | 单素材粗扫报告（含 focus windows、edit bounds、可选 drive speed candidate） |
-| `store/slices.json` | 只包含自动进入细扫的重点素材切片；保留 `sourceIn/out` 兼容字段，并额外写入 `editSourceIn/out` |
-| `media/chronology.json` | 带 summary/labels/ASR evidence 的时间排序视图 |
+| `analysis/asset-reports/*.json` | 单素材粗扫报告（含 focus windows、edit bounds、ASR、fine-scan windows、空间字段） |
+| `store/spans.json` | 由 `/chronology` 的 `span-rebuild` 显式生成的 stripped 素材片段索引 |
+| `store/spans.meta.json` | spans freshness / hash / counts / warnings |
+| `media/chronology.json` | 由 `/chronology` 的 `chronology-build` 显式生成的 Chronology V2 项目级编年史 |
 
 ## 当前实现边界
 
@@ -463,7 +482,7 @@ scripts/kairos-supervisor.sh
   - coarse report 落盘
   - 自动 fine-scan 决策
   - `full/windowed` 两种 slice 产出
-  - chronology 刷新
+  - 显式 span rebuild / chronology build 准备链
   - 视频内语音的 ASR -> speech windows -> transcript/slice 贯通
   - `embedded GPS > Pharos GPX > 普通 project GPX > project-derived-track` 空间优先级
   - 更宽的 DJI / QuickTime / EXIF embedded GPS 解析

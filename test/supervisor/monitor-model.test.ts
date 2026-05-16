@@ -111,7 +111,7 @@ describe('buildAnalyzeMonitorModel', () => {
       stepDefinitions: [
         { key: 'inputs', label: '刷新空间输入' },
         { key: 'reports', label: '修补 asset-reports' },
-        { key: 'downstream', label: '刷新 chronology / spans' },
+        { key: 'stale', label: '标记下游过期' },
       ],
     });
     await writeJobRecord(workspaceRoot, {
@@ -130,7 +130,7 @@ describe('buildAnalyzeMonitorModel', () => {
     expect(model.latestJob?.jobType).toBe('spatial-refresh');
     expect(model.progress.status).toBe('running');
     expect(model.chips.map(chip => chip.label)).toContain('流程 Analyze 空间结果刷新');
-    expect(model.stepDefinitions.map(step => step.key)).toEqual(['inputs', 'reports', 'downstream']);
+    expect(model.stepDefinitions.map(step => step.key)).toEqual(['inputs', 'reports', 'stale']);
   });
 });
 

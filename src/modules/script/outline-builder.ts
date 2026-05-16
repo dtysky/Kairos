@@ -19,7 +19,6 @@ export interface IOutlineBeat {
   materialPatterns: string[];
   locations: string[];
   sourceSpeechDecision?: 'preserve' | 'rewrite';
-  speedCandidate?: IKtepSlice['speedCandidate'];
   sourceInMs?: number;
   sourceOutMs?: number;
 }
@@ -108,7 +107,7 @@ function buildBeat(
     spans.flatMap(span => span.grounding.spatialEvidence.map(evidence => evidence.locationText)),
   );
   const materialPatterns = dedupeStrings(
-    spans.flatMap(span => span.materialPatterns.map(pattern => pattern.phrase)),
+    spans.flatMap(span => span.materialPatterns),
   );
   const preserveSourceSpeech = audioSelections.length > 0;
   const transcript = preserveSourceSpeech
@@ -132,7 +131,6 @@ function buildBeat(
     materialPatterns,
     locations,
     sourceSpeechDecision: preserveSourceSpeech ? 'preserve' : 'rewrite',
-    speedCandidate: primary.speedCandidate,
     sourceInMs: timingAnchor.sourceInMs,
     sourceOutMs: timingAnchor.sourceOutMs,
   };
@@ -278,8 +276,8 @@ function shouldMergeVisualSpans(left: IKtepSlice, right: IKtepSlice): boolean {
   if (left.assetId === right.assetId) return true;
   if (left.type === right.type) return true;
   if (sharesValue(
-    left.materialPatterns.map(pattern => pattern.phrase),
-    right.materialPatterns.map(pattern => pattern.phrase),
+    left.materialPatterns,
+    right.materialPatterns,
   )) {
     return true;
   }
@@ -339,10 +337,9 @@ function buildBeatSummary(
 
   const summary = dedupeStrings([
     query,
+    primary.visualObservation,
     materialPatterns[0],
     locations[0],
-    primary.narrativeFunctions?.core?.[0],
-    primary.shotGrammar?.core?.[0],
   ]);
   return summary.join(' / ') || '根据已选素材推进该段落。';
 }

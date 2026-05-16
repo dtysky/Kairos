@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -11,11 +11,12 @@ import { refreshAnalyzeSpatialResults } from '../../src/modules/media/spatial-re
 import {
   getAssetReportPath,
   getAssetsPath,
+  getSpansMetaPath,
   getSpansPath,
   initWorkspaceProject,
   loadAssetReports,
   loadChronology,
-  loadSlices,
+  loadSpansMeta,
   saveIngestRoots,
   writeJson,
 } from '../../src/store/index.js';
@@ -32,7 +33,7 @@ afterEach(async () => {
 });
 
 describe('refreshAnalyzeSpatialResults', () => {
-  it('refreshes existing report GPS priority, chronology, and span grounding without re-analysis', async () => {
+  it('refreshes report GPS priority and marks spans/chronology stale without rebuilding them', async () => {
     const workspaceRoot = await mkdtemp(join(tmpdir(), 'kairos-spatial-refresh-'));
     workspaces.push(workspaceRoot);
     const projectRoot = await initWorkspaceProject(workspaceRoot, 'project-spatial-refresh', 'Spatial Refresh');
@@ -80,6 +81,7 @@ describe('refreshAnalyzeSpatialResults', () => {
     await writeJson(getAssetReportPath(projectRoot, embeddedAsset.id), makeReport({
       assetId: embeddedAsset.id,
       ingestRootId: 'root-a',
+      labels: ['保留的语义'],
       inferredGps: {
         source: 'pharos',
         confidence: 0.7,
@@ -106,7 +108,7 @@ describe('refreshAnalyzeSpatialResults', () => {
       createSlice({
         id: 'slice-embedded',
         assetId: embeddedAsset.id,
-        materialPatterns: [{ phrase: '保留的语义', confidence: 0.9, evidenceRefs: [] }],
+        materialPatterns: ['旧 span 不应作为刷新真相'],
         grounding: {
           speechMode: 'available',
           speechValue: 'informative',
@@ -114,7 +116,6 @@ describe('refreshAnalyzeSpatialResults', () => {
             tier: 'strong-inference',
             confidence: 0.2,
             sourceKinds: ['old-pharos'],
-            reasons: ['stale'],
             lat: 31,
             lng: 101,
           }],
@@ -122,6 +123,31 @@ describe('refreshAnalyzeSpatialResults', () => {
         },
       }),
     ]);
+    await writeJson(getSpansMetaPath(projectRoot), {
+      schemaVersion: '1.0',
+      status: 'fresh',
+      generatedAt: '2026-04-12T00:00:00.000Z',
+      inputsHash: 'old-span-hash',
+      assetCount: 3,
+      reportCount: 3,
+      spanCount: 1,
+      warnings: [],
+    });
+    await writeJson(join(projectRoot, 'media', 'chronology.json'), {
+      schemaVersion: '2.0',
+      status: 'confirmed',
+      generatedAt: '2026-04-12T00:00:00.000Z',
+      confirmedAt: '2026-04-12T00:00:00.000Z',
+      inputsHash: 'old-chronology-hash',
+      assetIndex: [{ assetId: embeddedAsset.id, sortCapturedAt: embeddedAsset.capturedAt }],
+      events: [{
+        id: 'event-old',
+        kind: 'event',
+        reviewStatus: 'confirmed',
+        title: '旧事件',
+        spanIds: ['slice-embedded'],
+      }],
+    });
 
     const result = await refreshAnalyzeSpatialResults({
       workspaceRoot,
@@ -153,17 +179,18 @@ describe('refreshAnalyzeSpatialResults', () => {
       lat: 40,
       lng: 110,
     }));
+    expect(result.spansMarkedStale).toBe(true);
+    expect(result.chronologyMarkedStale).toBe(true);
 
     const chronology = await loadChronology(projectRoot);
-    expect(chronology.find(item => item.assetId === embeddedAsset.id)?.evidence.some(item =>
-      item.source === 'gps' && item.value.includes('embedded'))).toBe(true);
-
-    const slices = await loadSlices(projectRoot);
-    const refreshedSlice = slices.find(slice => slice.id === 'slice-embedded');
-    expect(refreshedSlice?.materialPatterns?.[0]?.phrase).toBe('保留的语义');
-    expect(refreshedSlice?.grounding.spatialEvidence.some(item => item.sourceKinds.includes('old-pharos'))).toBe(false);
-    expect(refreshedSlice?.grounding.spatialEvidence.some(item => item.sourceKinds.includes('embedded'))).toBe(true);
-    expect(refreshedSlice?.grounding.pharosRefs.length).toBeGreaterThan(0);
+    expect(chronology?.schemaVersion).toBe('2.0');
+    expect(chronology?.status).toBe('stale');
+    expect(chronology?.events[0]?.title).toBe('旧事件');
+    expect(await loadSpansMeta(projectRoot)).toMatchObject({
+      status: 'stale',
+      inputsHash: 'old-span-hash',
+    });
+    expect(await readFile(getSpansPath(projectRoot), 'utf-8')).toContain('旧 span 不应作为刷新真相');
   });
 });
 
@@ -244,6 +271,7 @@ function makeReport(input: {
   gpsSummary?: string;
   inferredGps?: IInferredGps;
   pharosMatches?: IAssetCoarseReport['pharosMatches'];
+  labels?: string[];
 }): IAssetCoarseReport {
   return {
     assetId: input.assetId,
@@ -255,9 +283,9 @@ function makeReport(input: {
     densityScore: 0.5,
     gpsSummary: input.gpsSummary,
     inferredGps: input.inferredGps,
-    summary: 'Pharos Road continuous drive',
+    summary: 'Continuous mountain road drive',
     pharosMatches: input.pharosMatches ?? [],
-    labels: ['drive'],
+    labels: input.labels ?? ['drive'],
     placeHints: [],
     rootNotes: [],
     sampleFrames: [],

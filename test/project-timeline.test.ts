@@ -7,6 +7,7 @@ import type { IJsonPacketAgentRunner, IJsonPacketAgentInvocation } from '../src/
 import { buildProjectTimeline } from '../src/modules/timeline-core/project-timeline.js';
 import {
   getAssetsPath,
+  getSpansMetaPath,
   getSpansPath,
   initProject,
   loadTimelineAgentPipeline,
@@ -19,6 +20,7 @@ import {
 } from '../src/store/index.js';
 import {
   createChronology,
+  createProjectChronology,
   createSelection,
   createSlice,
   createVideoAsset,
@@ -32,6 +34,12 @@ afterEach(async () => {
 });
 
 describe('buildProjectTimeline', () => {
+  it('blocks legacy chronology before building timeline', async () => {
+    const { projectRoot } = await createTimelineProjectFixture({ legacyChronology: true });
+
+    await expect(buildProjectTimeline({ projectRoot })).rejects.toThrow(/legacy v1.*Chronology V2/u);
+  });
+
   it('writes the reviewed segment-cut pipeline artifacts and assembles timeline/current from them', async () => {
     const { projectRoot } = await createTimelineProjectFixture();
     const agentRunner: IJsonPacketAgentRunner = {
@@ -141,7 +149,9 @@ describe('buildProjectTimeline', () => {
   });
 });
 
-async function createTimelineProjectFixture(): Promise<{ projectRoot: string; script: IKtepScript[] }> {
+async function createTimelineProjectFixture(
+  options: { legacyChronology?: boolean } = {},
+): Promise<{ projectRoot: string; script: IKtepScript[] }> {
   const projectRoot = await mkdtemp(join(tmpdir(), 'kairos-project-timeline-'));
   cTempRoots.push(projectRoot);
   await initProject(projectRoot, 'Timeline Fixture');
@@ -238,7 +248,19 @@ async function createTimelineProjectFixture(): Promise<{ projectRoot: string; sc
   await Promise.all([
     writeJson(getAssetsPath(projectRoot), assets),
     writeJson(getSpansPath(projectRoot), slices),
-    writeChronology(projectRoot, chronology),
+    writeJson(getSpansMetaPath(projectRoot), {
+      schemaVersion: '1.0',
+      status: 'fresh',
+      generatedAt: '2026-04-18T00:00:00.000Z',
+      inputsHash: 'test-spans',
+      assetCount: assets.length,
+      reportCount: 0,
+      spanCount: slices.length,
+      warnings: [],
+    }),
+    options.legacyChronology
+      ? writeJson(join(projectRoot, 'media', 'chronology.json'), chronology)
+      : writeChronology(projectRoot, createProjectChronology(chronology)),
     writeCurrentScript(projectRoot, script),
   ]);
 

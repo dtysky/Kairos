@@ -14,13 +14,12 @@ function buildBaseSlice(): IKtepSlice {
     transcript: '我们继续往前开，先去看看下一站。',
     transcriptSegments: [],
     ...createEmptySliceSemantics(),
-    evidence: [],
     pharosRefs: [],
   };
 }
 
 describe('decorateSliceWithSemanticTags', () => {
-  it('keeps only material patterns, grounding and semantic tag sets', async () => {
+  it('keeps model material patterns as strings and span visualObservation', async () => {
     const result = await decorateSliceWithSemanticTags({
       slice: buildBaseSlice(),
       clipType: 'drive',
@@ -33,6 +32,7 @@ describe('decorateSliceWithSemanticTags', () => {
         sceneType: 'road',
         subjects: [],
         placeHints: [],
+        materialPatterns: ['车内向前行进视角'],
       },
       report: {
         transcript: '我们继续往前开，先去看看下一站。',
@@ -49,11 +49,9 @@ describe('decorateSliceWithSemanticTags', () => {
       },
     });
 
-    expect(result.materialPatterns.map(item => item.phrase)).toContain('车内向前行进视角（项目口径）');
-    expect(result.materialPatterns.every(item => item.excerpt == null)).toBe(true);
+    expect(result.materialPatterns).toContain('车内向前行进视角');
+    expect(result.visualObservation).toBe('car interior forward view');
     expect(result.grounding.speechMode).toBe('preferred');
-    expect(result.narrativeFunctions.core).toContain('路上自述');
-    expect(result.viewpointRoles.core).toContain('行进中的观察者');
     expect('localEditingIntent' in result).toBe(false);
   });
 });

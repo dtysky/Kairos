@@ -85,7 +85,7 @@ description: >-
 
 ## 前置条件
 
-- `store/spans.json` 存在且非空
+- `store/spans.json` 存在且非空，且 `store/spans.meta.json` 为 `status=fresh`
 - 剪辑规则可用（以下方式任选其一）：
   - 分类规则：`<workspaceRoot>/config/edit-rules/{category}.md`
   - 手写规则样板：`test/edit-rule.md`
@@ -176,7 +176,7 @@ agent 只在最终旁白和字幕表达阶段将其作为额外创作指导。
 正式顺序固定为：
 
 1. 用户在 `/script` 选择 `editRuleCategory`，选择后立即自动保存
-2. `[main agent]` 准备 packet，并调度 `[subagent: overview-cartographer]` / `[subagent: brief-editor]` 读取 edit rule、spans、chronology、asset reports、Pharos context，生成 `edits/<editId>/script/material-overview.md` 与初版 `script-brief`
+2. `[main agent]` 准备 packet，并调度 `[subagent: overview-cartographer]` / `[subagent: brief-editor]` 读取 edit rule、fresh spans、已确认 chronology、asset reports，生成 `edits/<editId>/script/material-overview.md` 与初版 `script-brief`
 3. 用户回到 `/script` 审查并手动保存 brief
 4. `/script` 会用更显眼的 workflow prompt / modal 提示用户点击 `准备给 Agent`
 5. Console 校验前置条件并刷新 `edits/<editId>/script/material-overview.facts.json` 与 `analysis/material-bundles.json`
@@ -196,7 +196,7 @@ Console prep 不允许做的事：
 
 写 `edits/<editId>/script/material-overview.md` 时，应根据：
 - `analysis/asset-reports/*.json`
-- `media/chronology.json`
+- 已确认的 Chronology V2 `media/chronology.json`
 - `store/spans.json`
 - 剪辑规则
 
@@ -209,7 +209,7 @@ Console prep 不允许做的事：
 
 起草初版 brief 时，应根据：
 - `analysis/asset-reports/*.json`
-- `media/chronology.json`
+- 已确认的 Chronology V2 `media/chronology.json`
 - `store/spans.json`
 - 剪辑规则
 
@@ -220,6 +220,8 @@ Console prep 不允许做的事：
 - 明确的素材禁区 / 镜头禁区是什么
 - 对时间驱动 / 路程驱动风格，只把“顺序正确、阶段完整、素材角色如何分配”写成结构约束，不要把它翻译成默认总时长或段落预算
 - 除非用户明确给出成片时长、交付窗口或某段硬时长，否则 brief 不应预填总时长或每段预算
+- Script prep 必须先验证 `store/spans.meta.json` 是 fresh，并验证 `media/chronology.json` 是 `schemaVersion=2.0` 且 `status=confirmed`；缺失 / stale spans、旧数组 v1、`draft` 或 `stale` chronology 都要阻塞并要求回到 `/chronology` 重建/确认
+- Script 只消费已确认 chronology 中折叠后的 `event / route / gap`，不得要求 chronology event 暴露 Pharos/source/origin 等生成痕迹，也不得绕过 chronology 直接把 Pharos 当下游主轴
 
 补全并审阅一份集中式：
 
@@ -258,7 +260,8 @@ const spans = await readJson('store/spans.json', z.array(IKtepSlice));
 
 - `span.sourceInMs / sourceOutMs` 是 focus/evidence window
 - `span.editSourceInMs / editSourceOutMs` 是 Analyze 已经扩好的 edit-friendly bounds
-- `span.materialPatterns[]` 是材料模式短语
+- `span.visualObservation?` 是一句视觉事实描述
+- `span.materialPatterns: string[]` 是 span-rebuild 阶段由本地 qwen 文本 LM 从 `type / semanticKind / transcript / visualObservation` 生成的中文材料模式短语；LM 只返回按输入顺序排列的短语行，由代码按 chunk 顺序写回 span；不要读取旧 `{ phrase, confidence }` 对象，也不要从 `labels`、GPS、Pharos 或 `type` 直接推导脚本语义
 - `material-bundles` 只用作 `materialPatterns` 驱动的粗索引层，但它现在应覆盖项目内全部有效 spans，而不是被提前缩成 shortlist
 - `segment plan` 只保留段落本体：`id`、`title`、`intent`、可选 `targetDurationMs`、可选 `roleHint` / `notes`
 - `material slots` 只保留运行时薄检索信息：`id`、`query`、`requirement`、`targetBundles`、`chosenSpanIds`
@@ -277,7 +280,7 @@ const spans = await readJson('store/spans.json', z.array(IKtepSlice));
 - `开场建场镜头语法 / 地理重置镜头语法 / 情绪释放镜头语法` 决定这些功能位分别该用什么画面组织
 - `素材禁区 / 镜头禁区 / antiPatterns` 决定哪些候选就算“好看”也不该进当前风格
 - 当当前剪辑规则主轴明显偏时间 / 路程推进时：
-  - 先按 `capturedAt + chronology + Pharos trip/day/shot` 建立单调递增的时间带
+  - 先按 `capturedAt + chronology event/route/gap` 建立单调递增的时间带
   - 再把段落分配到各自合法时间带里
   - 不允许后段跨窗回捞前段素材来填空
 - `targetDurationMs` 现在只是一种可选审阅提示，不再是粗剪默认预算：
@@ -292,7 +295,7 @@ const spans = await readJson('store/spans.json', z.array(IKtepSlice));
 审查或诊断时，遵循：
 
 - `segment intent -> slot query -> targetBundles -> bundle lookup -> chosenSpanIds`
-- bundle 命中后，再按 time / GPS / chronology / Pharos day-shot 线索做二次过滤
+- bundle 命中后，再按 time / GPS / chronology 线索做二次过滤
 - `chosenSpanIds` 不是这个阶段可改写的回写位；正式 truth 已由 `buildMaterialSlotsDocument()` 锁定
 - 粗剪默认是高召回保留：
   - 不要再按固定 `3-4` 个 span 上限做代表性抽样
@@ -328,7 +331,7 @@ beat-writer 不允许做的事：
 - 不要增删 `audioSelections[]`、`visualSelections[]` 或 `linkedSpanIds`
 - 不要把某个 span 挪到别的段落
 - 不要为了时长、文风或“更顺”去回退高召回证据
-- 不要把 `speedCandidate`、source window 或 chronology guard 当作可自由改写的叙事装饰
+- 不要把 source window 或 chronology guard 当作可自由改写的叙事装饰；speed 策略只来自显式 `actions.speed` 或后续独立速度流程
 
 对于 `intro / montage / transition` 这类高度依赖镜头组织的段落，优先按下面顺序消费剪辑规则信息：
 
@@ -384,7 +387,7 @@ const scriptSegment: IKtepScript = {
 - 照片 beat 默认是静默画面：不要写 `utterances`，也不要用照片承接 narration
 - 对于无可用原声的视频，如果需要旁白，请直接在 `beat.text` / `beat.utterances[]` 里把文字结构写完整
 - 如果这拍旁白在头部 / 中间 / 尾部需要明确留白，不要只把话全塞进 `beat.text`；应直接写 `beat.utterances[]` 把 pause 表达出来
-- 如果候选 beat 提示了 `speedCandidate`（例如 `2x / 5x / 10x`），下游 rough cut 对 silent `drive / aerial` 已会默认按 `2x` 自动加速；只有你明确想覆盖这个默认时才填写 `actions.speed`
+- 如果确实需要速度变化，必须显式填写 `actions.speed`；当前 rough cut 不再从 span 的 `speedCandidate` 自动推导速度
 - `targetDurationMs` 不再驱动粗剪 placement；不要为了对齐预算而压缩原话、吞掉关键过程，或拉长照片
 - 如果脚本没有显式写这两个动作，时间线阶段会根据 `transcriptSegments / speechCoverage / muteSource` 默认推论；这个默认现在偏向“有可用原声就保原声”
 - 对于最终走 source-speech 的 beat，时间线会先把 `audioSelections[]` 并成 merged audio units，再按短分句产字幕；如果某个 cue 清洗后不可读，会只跳过那个 cue；只有整段都不可读时才保留原声且不生成字幕

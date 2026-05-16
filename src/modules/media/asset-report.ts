@@ -10,6 +10,7 @@ import type {
   ITranscriptSegment,
   IPharosMatch,
   IPharosRef,
+  IFineScanWindow,
 } from '../../protocol/schema.js';
 import type { IKeyframeResult } from './keyframe.js';
 
@@ -38,6 +39,7 @@ export interface IBuildAssetCoarseReportInput {
   materializationPath?: EMaterializationPath;
   fineScanReasons?: string[];
   fineScanMode?: EFinalizeFineScanMode;
+  fineScanWindows?: IFineScanWindow[];
 }
 
 export function buildAssetCoarseReport(
@@ -82,6 +84,7 @@ export function buildAssetCoarseReport(
       summary: input.sampleFrameSummaries?.[index],
     })),
     interestingWindows: input.plan.interestingWindows,
+    fineScanWindows: input.fineScanWindows ?? [],
     fineScanReasons: dedupe(input.fineScanReasons ?? []),
     createdAt: now,
     updatedAt: now,

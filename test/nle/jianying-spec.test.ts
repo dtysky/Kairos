@@ -39,7 +39,7 @@ describe('buildJianyingDraftSpec', () => {
       }),
     ]));
 
-    expect(spec.clips[0]?.materialPath).toContain(`${mediaRoot}/`);
+    expect(spec.clips[0]?.materialPath).toContain(`${mediaRoot.replace(/\\/gu, '/')}/`);
 
     const dissolveClip = spec.clips.find(clip => clip.transitionOut?.type === 'cross-dissolve');
     expect(dissolveClip?.transitionOut).toEqual({
@@ -181,26 +181,8 @@ describe('buildJianyingDraftSpec', () => {
         type: 'drive',
         sourceInMs: 0,
         sourceOutMs: 10_000,
-        narrativeFunctions: {
-          core: ['route-advance'],
-          extra: [],
-          evidence: [],
-        },
-        shotGrammar: {
-          core: ['windshield-drive'],
-          extra: [],
-          evidence: [],
-        },
-        viewpointRoles: {
-          core: ['driving-selfie'],
-          extra: [],
-          evidence: [],
-        },
-        subjectStates: {
-          core: ['en-route'],
-          extra: [],
-          evidence: [],
-        },
+        visualObservation: 'windshield drive on a route',
+        materialPatterns: ['route advance', 'windshield drive'],
         grounding: {
           speechMode: 'none',
           speechValue: 'none',

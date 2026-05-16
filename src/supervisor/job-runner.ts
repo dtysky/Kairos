@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
 	  AgentRunnerUnavailableError,
@@ -9,7 +10,8 @@ import {
 	  initWorkspaceProject,
 	  loadProjectBriefConfig,
 	  loadRuntimeConfig,
-	  loadSlices,
+  buildProjectChronology,
+  rebuildProjectSpans,
   loadProjectEditRuleByCategory,
   assertConfirmedEditFlowPlan,
   generateEditFlowPlan,
@@ -23,14 +25,18 @@ import {
 	  prepareProjectScriptForAgent,
 	  refreshProjectDerivedTrackCache,
   refreshProjectGpsCache,
+  MlClient,
+  MlJsonPacketAgentRunner,
   resolveWorkspaceProjectRoot,
 } from '../index.js';
 import {
   loadCurrentScript,
+  assertFreshSpans,
   getMaterialOverviewPath,
   loadOptionalMarkdown,
   loadScriptBriefConfig,
   normalizeEditId,
+  writeKairosProgress,
   writeJson,
 } from '../store/index.js';
 import {
@@ -75,7 +81,7 @@ async function main(): Promise<void> {
     updatedAt: startedAt,
   });
 
-  let shouldStopMlAfterRun = record.jobType !== 'spatial-refresh';
+  let shouldStopMlAfterRun = false;
   try {
     const shouldManageMl = await shouldEnsureManagedMl(workspaceRoot, record.jobType, record.projectId);
     if (shouldManageMl) {
@@ -97,6 +103,7 @@ async function main(): Promise<void> {
     });
   } catch (error) {
     if (error instanceof BlockedJobError) {
+      await writeJobFailureProgress(record, 'blocked', error.message).catch(() => undefined);
       await writeJobRecord(workspaceRoot, {
         ...record,
         status: 'blocked',
@@ -109,6 +116,11 @@ async function main(): Promise<void> {
       return;
     }
 
+    await writeJobFailureProgress(
+      record,
+      'failed',
+      error instanceof Error ? error.message : String(error),
+    ).catch(() => undefined);
     await writeJobRecord(workspaceRoot, {
       ...record,
       status: 'failed',
@@ -238,16 +250,47 @@ async function runJob(
 	        }),
 	      };
 	    }
+    case 'span-rebuild': {
+      if (!projectId) {
+        throw new BlockedJobError(['span-rebuild requires projectId']);
+      }
+      const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
+      const runtimeConfig = await loadRuntimeConfig(projectRoot);
+      try {
+        return {
+          result: await rebuildProjectSpans({
+            workspaceRoot,
+            projectId,
+            agentRunner: new MlJsonPacketAgentRunner(new MlClient(runtimeConfig.mlServerUrl)),
+          }),
+        };
+      } catch (error) {
+        if (error instanceof AgentRunnerUnavailableError) {
+          throw new BlockedJobError([error.message]);
+        }
+        throw error;
+      }
+    }
+    case 'chronology-build': {
+      if (!projectId) {
+        throw new BlockedJobError(['chronology-build requires projectId']);
+      }
+      return {
+        result: await buildProjectChronology({
+          workspaceRoot,
+          projectId,
+        }),
+      };
+    }
     case 'script': {
       if (!projectId) {
         throw new BlockedJobError(['script requires projectId']);
       }
       const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
       const editId = normalizeEditId(toStringValue(args.editId));
-      const slices = await loadSlices(projectRoot);
-      if (slices.length === 0) {
-        throw new BlockedJobError(['script prep requires non-empty store/spans.json']);
-      }
+      await assertFreshSpans(projectRoot).catch(error => {
+        throw new BlockedJobError([error instanceof Error ? error.message : String(error)]);
+      });
       const scriptConfig = await loadScriptBriefConfig(projectRoot, editId);
       const editRuleCategory = toStringValue(args.editRuleCategory) || scriptConfig.editRuleCategory;
       const styleCategory = toStringValue(args.styleCategory) || scriptConfig.styleCategory;
@@ -413,6 +456,9 @@ async function runJob(
       }
       const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
       const editId = normalizeEditId(toStringValue(args.editId));
+      await assertFreshSpans(projectRoot).catch(error => {
+        throw new BlockedJobError([error instanceof Error ? error.message : String(error)]);
+      });
       const script = await loadCurrentScript(projectRoot, editId);
       if (!script?.length) {
         throw new BlockedJobError([`timeline requires existing edits/${editId}/script/current.json`]);
@@ -468,7 +514,7 @@ async function shouldEnsureManagedMl(
   jobType: string,
   projectId?: string,
 ): Promise<boolean> {
-  if (!['analyze', 'style-analysis'].includes(jobType)) {
+  if (!['analyze', 'span-rebuild', 'style-analysis'].includes(jobType)) {
     return false;
   }
 
@@ -487,6 +533,115 @@ function isLocalMlUrl(value?: string): boolean {
   } catch {
     return true;
   }
+}
+
+async function writeJobFailureProgress(
+  record: NonNullable<Awaited<ReturnType<typeof loadJobRecord>>>,
+  status: 'blocked' | 'failed',
+  detail: string,
+): Promise<void> {
+  if (!record.progressPath) return;
+  const existing = await readExistingProgress(record.progressPath);
+  const identity = inferProgressIdentity(record.jobType);
+  await writeKairosProgress(record.progressPath, {
+    status: 'failed',
+    pipelineKey: getStringField(existing, 'pipelineKey') ?? identity.pipelineKey,
+    pipelineLabel: getStringField(existing, 'pipelineLabel') ?? identity.pipelineLabel,
+    phaseKey: getStringField(existing, 'phaseKey') ?? identity.phaseKey,
+    phaseLabel: getStringField(existing, 'phaseLabel') ?? identity.phaseLabel,
+    step: getStringField(existing, 'step') ?? status,
+    stepLabel: getStringField(existing, 'stepLabel') ?? (status === 'blocked' ? '已阻塞' : '已失败'),
+    stepIndex: getNumberField(existing, 'stepIndex') ?? 1,
+    stepTotal: getNumberField(existing, 'stepTotal') ?? 1,
+    stepDefinitions: getStepDefinitions(existing),
+    fileName: getStringField(existing, 'fileName'),
+    fileIndex: getNumberField(existing, 'fileIndex'),
+    fileTotal: getNumberField(existing, 'fileTotal'),
+    current: getNumberField(existing, 'current'),
+    total: getNumberField(existing, 'total'),
+    unit: getStringField(existing, 'unit') ?? 'step',
+    detail,
+    extra: {
+      ...(isRecord(existing?.extra) ? existing.extra : {}),
+      jobId: record.jobId,
+      jobStatus: status,
+      projectId: record.projectId,
+    },
+  });
+}
+
+async function readExistingProgress(path: string): Promise<Record<string, unknown> | null> {
+  try {
+    const raw = await readFile(path, 'utf-8');
+    const parsed = JSON.parse(raw) as unknown;
+    return isRecord(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function inferProgressIdentity(jobType: string): {
+  pipelineKey: string;
+  pipelineLabel: string;
+  phaseKey: string;
+  phaseLabel: string;
+} {
+  if (jobType === 'span-rebuild') {
+    return {
+      pipelineKey: 'chronology',
+      pipelineLabel: 'Chronology 生成链路',
+      phaseKey: 'span-rebuild',
+      phaseLabel: '生成素材片段与模式',
+    };
+  }
+  if (jobType === 'chronology-build') {
+    return {
+      pipelineKey: 'chronology',
+      pipelineLabel: 'Chronology 生成链路',
+      phaseKey: 'chronology-build',
+      phaseLabel: '生成/刷新编年史',
+    };
+  }
+  if (jobType === 'spatial-refresh') {
+    return {
+      pipelineKey: 'media-analyze',
+      pipelineLabel: '素材分析流程',
+      phaseKey: 'spatial-refresh',
+      phaseLabel: '刷新空间信息',
+    };
+  }
+  return {
+    pipelineKey: jobType === 'analyze' ? 'media-analyze' : jobType,
+    pipelineLabel: jobType === 'analyze' ? '素材分析流程' : jobType,
+    phaseKey: jobType,
+    phaseLabel: jobType,
+  };
+}
+
+function getStepDefinitions(
+  record: Record<string, unknown> | null | undefined,
+): Array<{ key: string; label: string }> | undefined {
+  if (!Array.isArray(record?.stepDefinitions)) return undefined;
+  const steps = record.stepDefinitions.filter((item): item is { key: string; label: string } => (
+    isRecord(item)
+    && typeof item.key === 'string'
+    && typeof item.label === 'string'
+  ));
+  return steps.length > 0 ? steps : undefined;
+}
+
+function getStringField(record: Record<string, unknown> | null | undefined, key: string): string | undefined {
+  const value = record?.[key];
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
+}
+
+function getNumberField(record: Record<string, unknown> | null | undefined, key: string): number | undefined {
+  const value = record?.[key];
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function parseArgs(argv: string[]): Record<string, string> {
