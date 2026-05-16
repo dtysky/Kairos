@@ -15,6 +15,7 @@ import type {
   IStageReview,
   ISegmentPlan,
   IStyleProfile,
+  IStyleUsage,
   IEditRuleMarkdownSource,
   IAgentPacketInputArtifact,
 } from '../../protocol/schema.js';
@@ -636,10 +637,12 @@ export async function generateProjectScriptFromPlanning(
 ): Promise<IKtepScript[]> {
   const editId = normalizeEditId(input.editId);
   const brief = await loadScriptBriefConfig(input.projectRoot, editId);
+  ensureScriptGenerationWorkflowState(brief.workflowState);
   const editRule = input.editRule
     ?? await resolveEditRule(input.projectRoot, input.workspaceRoot, input.editRuleCategory ?? brief.editRuleCategory, editId);
+  let confirmedPlan: Awaited<ReturnType<typeof assertConfirmedEditFlowPlan>> | null = null;
   if (input.workspaceRoot) {
-    await assertConfirmedEditFlowPlan({
+    confirmedPlan = await assertConfirmedEditFlowPlan({
       workspaceRoot: input.workspaceRoot,
       projectRoot: input.projectRoot,
       editId,
@@ -647,7 +650,6 @@ export async function generateProjectScriptFromPlanning(
       requiredCapabilityIds: ['material.recall', 'script.generate'],
     });
   }
-  ensureScriptGenerationWorkflowState(brief.workflowState);
   const prepared = await ensureMaterialFactsAndBundles(input.projectRoot, editId);
   const materialOverview = await loadOptionalMarkdown(getMaterialOverviewPath(input.projectRoot, editId));
   if (!materialOverview?.trim()) {
@@ -669,6 +671,12 @@ export async function generateProjectScriptFromPlanning(
     editId,
   );
   const planningArtifacts = await loadEditPlanningPacketArtifacts(input.projectRoot, editId);
+  const styleArtifacts = input.workspaceRoot && confirmedPlan?.styleUsage
+    ? await buildAuthorizedStyleLayerArtifacts({
+      workspaceRoot: input.workspaceRoot,
+      styleUsage: confirmedPlan.styleUsage,
+    })
+    : [];
 
   const baseSegmentPlan = buildSegmentPlanDocument({
     projectId: prepared.context.project.id,
@@ -693,7 +701,7 @@ export async function generateProjectScriptFromPlanning(
       editId,
       contract,
       editRule,
-      planningArtifacts,
+      planningArtifacts: filterStyleArtifactsForStage([...planningArtifacts, ...styleArtifacts], 'segment-plan'),
       materialOverview,
       facts: prepared.facts,
       spatialStory,
@@ -714,6 +722,7 @@ export async function generateProjectScriptFromPlanning(
           content: { markdown: materialOverview },
         },
         ...planningArtifacts,
+        ...filterStyleArtifactsForStage(styleArtifacts, 'segment-plan'),
         {
           label: 'spatial-story',
           path: getSpatialStoryPath(input.projectRoot, editId),
@@ -742,7 +751,7 @@ export async function generateProjectScriptFromPlanning(
     editId,
     contract,
     segmentPlan: segmentStage.draft,
-    planningArtifacts,
+    planningArtifacts: filterStyleArtifactsForStage([...planningArtifacts, ...styleArtifacts], 'material-slots'),
     spatialStory,
     draft: baseMaterialSlots,
     spans: prepared.context.spans,
@@ -771,7 +780,7 @@ export async function generateProjectScriptFromPlanning(
       editId,
       contract,
       editRule,
-      planningArtifacts,
+      planningArtifacts: filterStyleArtifactsForStage([...planningArtifacts, ...styleArtifacts], 'script-current'),
       materialOverview,
       spatialStory,
       outline,
@@ -790,6 +799,7 @@ export async function generateProjectScriptFromPlanning(
           content: outline,
         },
         ...planningArtifacts,
+        ...filterStyleArtifactsForStage(styleArtifacts, 'script-current'),
         {
           label: 'spatial-story',
           path: getSpatialStoryPath(input.projectRoot, editId),
@@ -816,6 +826,60 @@ export async function loadProjectStyleByCategory(
   category: string,
 ) : Promise<IStyleProfile> {
   return loadStyleByCategory(`${workspaceRoot}/config/styles`, category);
+}
+
+async function buildAuthorizedStyleLayerArtifacts(input: {
+  workspaceRoot: string;
+  styleUsage: IStyleUsage;
+}): Promise<IAgentPacketInputArtifact[]> {
+  if (!input.styleUsage.styleCategory) return [];
+  const style = await loadProjectStyleByCategory(input.workspaceRoot, input.styleUsage.styleCategory);
+  if (style.styleProfileVersion !== 'layered-v1' || !style.layers) {
+    throw new Error(`style profile "${input.styleUsage.styleCategory}" is not layered-v1`);
+  }
+  return (['literary', 'artistic', 'editingTechnical'] as const)
+    .flatMap(layerKey => {
+      const usage = input.styleUsage.layers[layerKey];
+      if (usage.mode === 'off') return [];
+      const layer = style.layers![layerKey];
+      return [{
+        label: `style-layer-${layerKey}`,
+        summary: `${style.name} / ${layerKey} / ${usage.mode}`,
+        content: {
+          styleCategory: input.styleUsage.styleCategory,
+          styleProfileVersion: style.styleProfileVersion,
+          styleProfileHash: input.styleUsage.styleProfileHash,
+          layer: layerKey,
+          mode: usage.mode,
+          appliesTo: usage.appliesTo.length > 0
+            ? usage.appliesTo
+            : defaultStyleLayerStages(layerKey),
+          rationale: usage.rationale,
+          summary: layer.summary,
+          confidence: layer.confidence,
+          evidenceNotes: layer.evidenceNotes,
+          parameters: layer.parameters,
+          antiPatterns: layer.antiPatterns,
+        },
+      }];
+    });
+}
+
+function filterStyleArtifactsForStage(
+  artifacts: IAgentPacketInputArtifact[],
+  stage: 'segment-plan' | 'material-slots' | 'script-current',
+): IAgentPacketInputArtifact[] {
+  return artifacts.filter(artifact => {
+    if (!artifact.label.startsWith('style-layer-')) return true;
+    const content = artifact.content as { appliesTo?: string[] } | undefined;
+    const appliesTo = Array.isArray(content?.appliesTo) ? content.appliesTo : [];
+    return appliesTo.length === 0 || appliesTo.includes(stage);
+  });
+}
+
+function defaultStyleLayerStages(layerKey: 'literary' | 'artistic' | 'editingTechnical'): string[] {
+  if (layerKey === 'literary') return ['script-current'];
+  return ['segment-plan', 'material-slots', 'script-current'];
 }
 
 export async function loadProjectEditRuleByCategory(

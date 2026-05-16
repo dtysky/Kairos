@@ -589,10 +589,36 @@ export const IStyleNarrationConstraints = z.object({
 });
 export type IStyleNarrationConstraints = z.infer<typeof IStyleNarrationConstraints>;
 
+export const EStyleProfileVersion = z.enum(['legacy', 'layered-v1']);
+export type EStyleProfileVersion = z.infer<typeof EStyleProfileVersion>;
+
+export const EStyleLayerKey = z.enum(['literary', 'artistic', 'editingTechnical']);
+export type EStyleLayerKey = z.infer<typeof EStyleLayerKey>;
+
+export const EStyleUsageMode = z.enum(['off', 'soft', 'hard']);
+export type EStyleUsageMode = z.infer<typeof EStyleUsageMode>;
+
+export const IStyleLayer = z.object({
+  summary: z.string().default('未明确'),
+  confidence: z.number().min(0).max(1).default(0),
+  evidenceNotes: z.array(z.string()).default([]),
+  parameters: z.record(z.string()).default({}),
+  antiPatterns: z.array(z.string()).default([]),
+});
+export type IStyleLayer = z.infer<typeof IStyleLayer>;
+
+export const IStyleLayers = z.object({
+  literary: IStyleLayer,
+  artistic: IStyleLayer,
+  editingTechnical: IStyleLayer,
+});
+export type IStyleLayers = z.infer<typeof IStyleLayers>;
+
 export const IStyleProfile = z.object({
   id: z.string(),
   name: z.string(),
   category: z.string().optional(),
+  styleProfileVersion: EStyleProfileVersion.default('legacy'),
   guidancePrompt: z.string().optional(),
   sourceFiles: z.array(z.string()),
   narrative: IStyleNarrative,
@@ -601,12 +627,37 @@ export const IStyleProfile = z.object({
   sections: z.array(IStyleSection).optional(),
   antiPatterns: z.array(z.string()).optional(),
   parameters: z.record(z.string()).optional(),
+  layers: IStyleLayers.optional(),
   arrangementStructure: IStyleArrangementStructure,
   narrationConstraints: IStyleNarrationConstraints,
   createdAt: z.string(),
   updatedAt: z.string(),
 });
 export type IStyleProfile = z.infer<typeof IStyleProfile>;
+
+export const IStyleUsageLayer = z.object({
+  mode: EStyleUsageMode.default('off'),
+  appliesTo: z.array(z.string()).default([]),
+  rationale: z.string().optional(),
+});
+export type IStyleUsageLayer = z.infer<typeof IStyleUsageLayer>;
+
+export const IStyleUsage = z.object({
+  styleCategory: z.string().optional(),
+  styleProfileHash: z.string().optional(),
+  styleProfileVersion: EStyleProfileVersion.optional(),
+  layers: z.object({
+    literary: IStyleUsageLayer.default({ mode: 'off', appliesTo: [] }),
+    artistic: IStyleUsageLayer.default({ mode: 'off', appliesTo: [] }),
+    editingTechnical: IStyleUsageLayer.default({ mode: 'off', appliesTo: [] }),
+  }).default({
+    literary: { mode: 'off', appliesTo: [] },
+    artistic: { mode: 'off', appliesTo: [] },
+    editingTechnical: { mode: 'off', appliesTo: [] },
+  }),
+  rationale: z.string().optional(),
+});
+export type IStyleUsage = z.infer<typeof IStyleUsage>;
 
 // ─── Media Analysis ─────────────────────────────────────────
 
@@ -1884,6 +1935,7 @@ export const IEditFlowPlan = z.object({
   staleReason: z.string().optional(),
   summary: z.string().optional(),
   assumptions: z.array(z.string()),
+  styleUsage: IStyleUsage.optional(),
   steps: z.array(IEditFlowPlanStep),
 });
 export type IEditFlowPlan = z.infer<typeof IEditFlowPlan>;

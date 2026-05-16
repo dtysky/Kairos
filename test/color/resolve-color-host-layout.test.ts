@@ -14,6 +14,10 @@ function toPortableTestPath(value: unknown): string {
   return String(value ?? '').replace(/\\/g, '/');
 }
 
+function getTestOutputRoot(): string {
+  return join(tmpdir(), 'kairos-resolve-color-host-layout-test', 'zve1');
+}
+
 async function inspectRenderExportHelper(payload: Record<string, unknown>) {
   const code = `
 import importlib.util
@@ -677,9 +681,10 @@ print(json.dumps({"colorCastClass": module.summarize_group_color_cast(clips)}, e
 
 describe('resolve color host clip layout helpers', () => {
   it('builds day-level render specs with final target directories', async () => {
+    const outputRoot = getTestOutputRoot();
     const result = await inspectRenderExportHelper({
       mode: 'day_specs',
-      outputRoot: '/Volumes/SSDMAX/zve1',
+      outputRoot,
       clips: [
         { rawRelativePath: 'day7/C1610.MP4', sourceStem: 'C1610', normalizedOutputFilename: 'C1610.mp4' },
         { rawRelativePath: 'day7/C1611.MP4', sourceStem: 'C1611', normalizedOutputFilename: 'C1611.mp4' },
@@ -698,12 +703,12 @@ describe('resolve color host clip layout helpers', () => {
       result: [
         {
           relativeDir: 'day7',
-          targetDir: '/Volumes/SSDMAX/zve1/day7',
+          targetDir: toPortableTestPath(join(outputRoot, 'day7')),
           clipKeys: ['day7/C1610.MP4', 'day7/C1611.MP4'],
         },
         {
           relativeDir: 'day9',
-          targetDir: '/Volumes/SSDMAX/zve1/day9',
+          targetDir: toPortableTestPath(join(outputRoot, 'day9')),
           clipKeys: ['day9/C1610.MP4'],
         },
       ],
@@ -713,7 +718,7 @@ describe('resolve color host clip layout helpers', () => {
   it('blocks day-level render specs when a day contains duplicate stems', async () => {
     const result = await inspectRenderExportHelper({
       mode: 'day_specs',
-      outputRoot: '/Volumes/SSDMAX/zve1',
+      outputRoot: getTestOutputRoot(),
       clips: [
         { rawRelativePath: 'day7/C1610.MP4', sourceStem: 'C1610', normalizedOutputFilename: 'C1610.mp4' },
         { rawRelativePath: 'day7/C1610-copy.MP4', sourceStem: 'C1610', normalizedOutputFilename: 'C1610.mp4' },
@@ -725,10 +730,11 @@ describe('resolve color host clip layout helpers', () => {
   });
 
   it('queues Source Name render settings without custom names or filename prefixes', async () => {
+    const targetDir = join(getTestOutputRoot(), 'day7');
     const result = await inspectRenderExportHelper({
       mode: 'queue_settings',
       platformOverride: 'win32',
-      targetDir: '/Volumes/SSDMAX/zve1/day7',
+      targetDir,
       renderFormat: {
         format: 'MP4',
         videoCodec: 'H265',
@@ -750,7 +756,7 @@ describe('resolve color host clip layout helpers', () => {
 
     expect(result.ok).toBe(true);
     const settings = (result.result as { settings: Record<string, unknown> }).settings;
-    expect(toPortableTestPath(settings.TargetDir)).toBe('/Volumes/SSDMAX/zve1/day7');
+    expect(toPortableTestPath(settings.TargetDir)).toBe(toPortableTestPath(targetDir));
     expect(settings.FrameRate).toBe('30');
     expect(settings.RateControl).toBeUndefined();
     expect(settings.VideoQuality).toBeUndefined();
@@ -762,7 +768,7 @@ describe('resolve color host clip layout helpers', () => {
     const result = await inspectRenderExportHelper({
       mode: 'queue_settings',
       platformOverride: 'darwin',
-      targetDir: '/Volumes/SSDMAX/zve1/day7',
+      targetDir: join(getTestOutputRoot(), 'day7'),
       renderFormat: {
         format: 'MP4',
         videoCodec: 'H265',
@@ -792,7 +798,7 @@ describe('resolve color host clip layout helpers', () => {
   it('rejects queued render jobs when Resolve is not using Source Name filenames', async () => {
     const result = await inspectRenderExportHelper({
       mode: 'queue_settings',
-      targetDir: '/Volumes/SSDMAX/zve1/day7',
+      targetDir: join(getTestOutputRoot(), 'day7'),
       queueOutputFilename: '00000000.mp4 and more',
       renderFormat: {
         format: 'MP4',

@@ -19,6 +19,8 @@ export {
   parseStyleMarkdown,
   buildFrontMatter,
   deriveStyleProtocolV2Fields,
+  computeStyleProfileHash,
+  isLayeredStyleProfile,
   type IStyleLoadOptions,
 } from './style-loader.js';
 export {

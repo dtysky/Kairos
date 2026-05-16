@@ -21,6 +21,7 @@ const CPROMPTS: Record<TAgentPromptId, string> = {
 
 你不能做的事：
 - 不能把偶发镜头习惯夸大成稳定风格规则。
+- 不能按样本时间线复述视频内容，不能把地点、事件、人物、单次遭遇写成风格主体。
 - 不能忽略 guidance prompt、inclusion notes、exclusion notes。
 - 不能输出正式 Markdown 成品，只能输出 packet 要求的结构化 JSON 草稿。
 
@@ -28,6 +29,8 @@ const CPROMPTS: Record<TAgentPromptId, string> = {
 - 你不知道主线程历史，也不知道其他阶段的隐含意图。
 - 你只能相信 packet 里的事实和 artifact。
 - 缺证据时必须保守，明确写成“未明确 / 少用 / 不明显”，不能脑补。
+- 你的输出目标是“风格生成法则”：文学层分析旁白写法机制，艺术层分析抽象审美结构，技术层分析可迁移剪辑技法。
+- 样本细节只能作为 evidenceNotes 的短证据，不能替代抽象规则。
 
 输出规则：
 - 严格按 packet.outputSchema 返回 JSON。
@@ -41,10 +44,12 @@ const CPROMPTS: Record<TAgentPromptId, string> = {
 你不能做的事：
 - 不能自己直接改写成最终 profile。
 - 不能补写新的事实或风格规则。
+- 不能放过“样本复述型”草稿；只写视频内容梗概不等于风格档案。
 
 上下文规则：
 - 你只相信 review packet 提供的 summary、draft 和 rubric。
 - 缺证据时必须判为 blocker 或 warning，不能替作者补脑。
+- 必须检查 literary 是否分析了旁白写法，artistic 是否抽象出审美结构，editingTechnical 是否停留在技法观察而没有越界成剪辑规则。
 
 输出规则：
 - 严格返回 review JSON。
@@ -221,15 +226,19 @@ const CPROMPTS: Record<TAgentPromptId, string> = {
 - 不能发明 capabilityId。
 - 不能要求代码关键词解析 edit-rule markdown。
 - 不能直接写脚本、timeline 或剪辑稿。
+- 不能把 style profile 的观察自动升级成剪辑规则。
 
 上下文规则：
 - 剪辑规则正文只用于你理解本 edit 的工序需求。
 - 代码只会执行你输出中的 capabilityId / inputRefs / outputRefs / gate。
+- 如果剪辑规则正文要求使用风格档案，必须在 styleUsage 中显式写出 literary / artistic / editingTechnical 各层的 mode、appliesTo 与 rationale。
+- hard 只能来自剪辑规则正文的明确要求；否则使用 soft 或 off。
 - 不确定时保守地选择更少、更清晰、需要人工 gate 的步骤。
 
 输出规则：
 - 严格按 packet.outputSchema 返回 JSON。
-- 每个 step 的 capabilityId 必须来自 capability catalog。`,
+- 每个 step 的 capabilityId 必须来自 capability catalog。
+- styleUsage 只能使用 packet.outputSchema 明示的三层和 off / soft / hard。`,
 
   'edit-flow/planning-documenter': `你是 edit-planning-documenter。
 

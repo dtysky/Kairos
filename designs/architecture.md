@@ -40,13 +40,18 @@
 
 ## 0.13 2026-05-13 剪辑规则与多 Edit Unit 补记
 
-当前 Script / Timeline 结构控制从旧的 workspace style profile 中拆出，正式归到人工维护的 `剪辑规则`：
+当前 Script / Timeline 结构控制从旧的 workspace style profile 中拆出，正式归到人工维护的 `剪辑规则`；Style Analysis 现在提供可被剪辑规则显式授权消费的分层风格档案：
 
 - `config/edit-rules/*.md` 是 workspace 级剪辑规则库和唯一规则正文来源；分类由 markdown frontmatter / 文件名扫描得到
 - `editRuleCategory` 是 Script / Timeline 结构输入；它独立于可选 `styleCategory`
 - `edits/<editId>/planning/flow-plan.json` 是 LLM 基于 raw edit rule、项目上下文和固定 capability catalog 生成的显式执行计划；未人工确认或 hash stale 时，Script / Timeline 不得进入 `material.recall / script.generate / timeline.generate`
-- `config/styles/` 与 `config/style-sources.json` 仍由 Style Analysis 维护，但现在只作为文案 / 艺术风格参考，用于最终旁白、字幕文本、语气和表达禁区
-- Style Analysis 不再尝试从参考视频自动抽象正式剪辑规则；缺少 style reference 不阻塞粗剪，只在最终旁白 / 字幕表达阶段提示
+- `config/styles/` 与 `config/style-sources.json` 仍由 Style Analysis 维护；新的正式 profile 必须是 `styleProfileVersion=layered-v1`
+- `layered-v1` 固定包含 `literary / artistic / editingTechnical` 三层：文学表达、影像审美、剪辑技法分析
+- `layered-v1` 正文必须写抽象“风格生成法则”，不得按参考视频时间线复述样本内容：`literary` 分析旁白写法机制，`artistic` 分析审美母题 / 情绪光谱 / 空间时间观，`editingTechnical` 分析可迁移剪辑技法
+- 样本地名、事件、人物和单次遭遇只能作为短证据进入 `evidenceNotes`，不得成为 layer summary 或章节主体；`style-profile-reviewer` 必须用 blocker 拦截复述型草稿
+- Style Analysis 不再尝试从参考视频自动抽象正式剪辑规则；三层内容默认只是观察和软偏好
+- Flow Planner 必须把剪辑规则自由正文中对风格层的使用意图结构化写入 `flow-plan.json.styleUsage`；代码只读取 `styleUsage`，不得关键词解析 edit-rule markdown
+- 当剪辑规则要求风格层而 `styleCategory` 缺失，或选中的 profile 仍是 legacy 非分层格式时，Flow Plan 不能确认，Script prep 必须阻塞并提示重跑 `/style`
 
 旅行类默认剪辑规则的正式顺序是：
 
@@ -484,11 +489,11 @@
    - `source-speech` 当前以过滤后的口语 transcript 为真值：导航播报、录制口令和设备提示不应进入 merged audio units，也不应成为 source-speech 字幕
    - Analyze 当前产出的 `transcriptSegments` 已经是 refined transcript segmentation；Timeline 应先信任这些较细的语音段，而不是再次按粗 segment 重新切句
 3. 风格分析与脚本阶段的交接语义已经收口
-   - Workspace 风格档案不再只是“叙事语气说明”，还应明确输出阶段节奏、素材角色、运镜语法、功能位分配、素材禁区 / 镜头禁区与稳定参数
-   - 这些信息默认是 Script / recall / outline 的直接输入，不应主要依赖 LLM 重新从长文里猜一次镜头组织规则
-   - 这里记录的是“观测到的高频偏好”，只有明确写成禁区或硬约束时才应强制下游
-  - Script / Timeline 当前会在内部把这些现有 style 信号解析成一个轻量运行时 `ResolvedArrangementSignals`，用于判断当前风格主轴更偏时间推进、空间推进、情感推进还是结果回看；它不是新的公开 schema
-  - `/script` 改 `styleCategory` 时，旧的项目级脚本产物现在必须立即整体失效；系统要清空旧 `material-overview`、brief 草稿、outline、arrangement artifacts 和 `script/current.json`，而不是继续让新风格复用旧产物
+   - Workspace 风格档案必须落成 `layered-v1`：`literary` 写旁白 / 字幕语气，`artistic` 写影像气质 / 审美母题，`editingTechnical` 写剪辑节奏 / 镜头语法 / 素材角色
+   - 这些信息不会自动成为 Script / recall / outline 的输入；剪辑规则自由正文必须先说明要使用哪些层，再由 Flow Planner 写入 confirmed `flow-plan.json.styleUsage`
+   - 这里记录的是“观测到的高频偏好”，只有剪辑规则或 confirmed Flow Plan 明确提升为 `hard` 时才是硬约束
+  - Script / Timeline 不再从 style profile 长文里解析结构启发式；stage packet 只能注入 `styleUsage` 授权的层
+  - `/script` 改 `styleCategory` 时按 confirmed `styleUsage` 决定失效范围：`artistic / editingTechnical` 参与 planning / recall 时清空 planning 与脚本结构产物；只有 `literary` 时只清空表达阶段脚本 / 字幕产物
   - Script stage packet 现在是 clean-context subagent 的唯一正式输入；runtime 不应再在 packet 之外偷偷附加主线程历史、`previousDraft` 或 `revisionBrief`
   - 正式 stage 执行后端必须使用宿主 packet runner / 真实 clean-context subagent 链；官方路径不允许外接 `ILlmClient` fallback
   - workspace / project runtime 可通过 `config/runtime.json` 的 `agentPacketRunnerCommand` / `agentPacketRunnerArgs` / `agentPacketRunnerCwd` 声明这个 packet runner
@@ -502,9 +507,9 @@
    - `Script -> Timeline` 之间当前新增一层正式段级粗剪子阶段：deterministic rough-cut base -> `segment-cut-refiner` -> `segment-cut-reviewer` -> `timeline/current.json`
    - 风格档案最终落成当前正式改成 clean-context subagent 流水线，而不是一个通用 style prompt 直接吃完整批量报告：
    - deterministic prep 会额外写 `analysis/style-references/{category}/agent-summary.json`
-     - `style-profile-synthesizer` 只读取自己的 packet / summary，并先写 `style-draft.json`
+     - `style-profile-synthesizer` 只读取自己的 packet / summary，并先写三层 `style-draft.json`
      - `style-profile-reviewer` 只读取 summary + draft，并写 `style-review.json`
-     - reviewer blockers 是落成正式 `config/styles/{category}.md` 的硬闸门
+     - reviewer blockers 是落成正式 `config/styles/{category}.md` 的硬闸门，缺层、过拟合、技术层越界成剪辑规则都必须阻塞
      - 正式执行后端必须使用宿主 packet runner / 真实 subagent 链；官方路径不允许外接 `ILlmClient` fallback
      - workspace / project runtime 可通过 `config/runtime.json` 的 `agentPacketRunnerCommand` / `agentPacketRunnerArgs` / `agentPacketRunnerCwd` 声明这个 packet runner
 4. 字幕已支持双路径

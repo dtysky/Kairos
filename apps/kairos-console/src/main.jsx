@@ -313,7 +313,7 @@ function AppShell() {
     await saveScriptBriefPayload(
       buildStyleReferenceSelectionScriptBriefPayload(base, styleCategory),
       'script-brief:style',
-      { successMessage: styleCategory ? '已保存文案风格参考' : '已清除文案风格参考' },
+      { successMessage: styleCategory ? '已保存风格档案' : '已清除风格档案' },
     );
   }
 
@@ -693,6 +693,7 @@ function AppShell() {
                       onGenerateFlowPlan={() => runProjectWorkflow('edit-flow-plan', {
                         editId: config?.scriptBrief?.editId || 'main',
                         editRuleCategory: config?.scriptBrief?.editRuleCategory,
+                        styleCategory: config?.scriptBrief?.styleCategory,
                       })}
                       onConfirmFlowPlan={confirmFlowPlan}
                       onWorkflowTransition={workflowState => openWorkflowDialog(buildScriptWorkflowDialog(workflowState))}
@@ -736,7 +737,7 @@ function OverviewPage({ currentProject, activeJobs, services, projectProgress, o
     { path: '/ingest-gps', label: '导入与 GPS', summary: '维护单真值素材 Root、manual-itinerary 与素材时间校正。' },
     { path: '/color', label: '达芬奇调色', summary: '维护 Root render preset，并执行 prepare / sync groups / execute / validate。' },
     { path: '/analyze', label: '素材分析', summary: '直接查看分析监控、恢复进度并启动 Analyze。' },
-    { path: '/style', label: '风格分析', summary: '维护 Workspace 风格库、style sources，并查看当前分类监控。' },
+    { path: '/style', label: '风格分析', summary: '管理风格档案、参考素材和当前分析进度。' },
     { path: '/script', label: '脚本', summary: '维护 script-brief，并准备确定性材料给 Agent 继续写稿。' },
     { path: '/timeline-export', label: '时间线与导出', summary: '查看时间线和导出阶段的能力与 blocker。' },
     { path: '/project', label: '项目', summary: '查看全量 Review Queue 与服务诊断。' },
@@ -1292,11 +1293,11 @@ function StylePage({ config, capabilities, jobs, setStyleSources, onSave, busy, 
               disabled={!canStartStyleAnalysis}
               onClick={() => onRun(resolvedCategoryId)}
             >
-              {busy['job:style-analysis'] ? '启动中…' : activeStyleJobs.length > 0 ? 'Style Prep 运行中…' : '启动 Style Prep'}
+              {busy['job:style-analysis'] ? '启动中…' : activeStyleJobs.length > 0 ? '风格分析运行中…' : '分析当前风格'}
             </Button>
           </div>
           <div className="monitor-toolbar-meta">
-            <span>{`${config.categories.length} 个分类`}</span>
+            <span>{`${config.categories.length} 个风格档案`}</span>
             {resolvedCategoryId ? <span>{resolvedCategoryId}</span> : null}
           </div>
           </>

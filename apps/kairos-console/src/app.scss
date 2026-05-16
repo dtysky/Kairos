@@ -356,6 +356,103 @@ pre {
   margin-top: 14px;
 }
 
+.style-category-list {
+  display: grid;
+  gap: 12px;
+}
+
+.style-category-details,
+.style-source-details {
+  display: block;
+}
+
+.style-category-details > summary,
+.style-source-details > summary,
+.style-advanced-details > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.style-category-details > summary::-webkit-details-marker,
+.style-source-details > summary::-webkit-details-marker,
+.style-advanced-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.style-category-summary,
+.style-source-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.style-category-summary::after,
+.style-source-summary::after,
+.style-advanced-details > summary::after {
+  content: "展开";
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.style-category-details[open] > .style-category-summary::after,
+.style-source-details[open] > .style-source-summary::after,
+.style-advanced-details[open] > summary::after {
+  content: "收起";
+}
+
+.style-category-title {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.style-category-title strong,
+.style-source-summary > span {
+  overflow-wrap: anywhere;
+}
+
+.style-category-title span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.style-category-tags {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.style-category-edit,
+.style-source-edit {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.style-advanced-details {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(24, 24, 24, 0.03);
+  border: 1px solid rgba(24, 24, 24, 0.06);
+}
+
+.style-advanced-details > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 700;
+}
+
+.style-advanced-details[open] > .field-grid,
+.style-advanced-details[open] > .checkbox-row {
+  margin-top: 12px;
+}
+
 .capture-time-card {
   display: grid;
   gap: 12px;
@@ -1282,6 +1379,11 @@ pre {
   overflow: auto;
 }
 
+.monitor-raw-details > summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
 .color-overwrite-preview-list {
   display: grid;
   gap: 8px;
@@ -1344,6 +1446,8 @@ pre {
   .job-item,
   .output-row,
   .status-row,
+  .style-category-summary,
+  .style-source-summary,
   .progress-caption {
     flex-direction: column;
     align-items: stretch;

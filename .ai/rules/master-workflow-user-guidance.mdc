@@ -44,7 +44,7 @@ Kairos 的标准顺序是：
 - 第三步执行 Ingest，把素材扫描进 `store/assets.json`
 - 第四步执行 Analyze，生成 `store/slices.json`、`analysis/asset-reports/*.json`、`media/chronology.json`
 - 第五步在用户明确指定 **workspace 剪辑规则分类** 后进入 Script：
-  - 先在 `/script` 选择 `editRuleCategory` 并自动保存；`styleCategory` 只是可选文案 / 艺术风格参考
+  - 先在 `/script` 选择 `editRuleCategory` 并自动保存；`styleCategory` 是可选 layered-v1 风格档案，具体三层使用由 confirmed Flow Plan 的 `styleUsage` 决定
   - 运行 Edit Flow Planner，生成并人工确认 `edits/<editId>/planning/flow-plan.json`
   - 再由 Agent 生成初版 `script-brief`
   - 用户回到 `/script` 审查并手动保存 brief
@@ -102,6 +102,7 @@ Kairos 的标准顺序是：
 - 如果用户刚更新了项目内 `pharos/`，必须先引导到 `/ingest-gps` 运行 `刷新 GPS 缓存` 或 `运行 Ingest`，让 `analysis/pharos-context.json` 重新解析后再进入 Analyze
 - 如果用户只是需要让旧 `asset-reports / chronology / spans` 采用新的 GPS / Pharos 空间结果，应引导到 `/analyze` 点击 `刷新空间结果`；它不会补扫新素材或新 sidecar
 - 在 `Script` 前，如果用户没有明确指定 workspace 剪辑规则分类，必须停下确认
+- 如果剪辑规则要求使用风格层，但用户没有选择 `styleCategory`，或选择的是 legacy 非 layered-v1 档案，必须先引导用户选择 / 重跑 `/style`，不能继续确认 Flow Plan 或进入 Script prep
 - 在 `Script` 阶段，不要把 Console 的 `script` job 描述成“后台自动写稿”；它当前只负责 deterministic prep，不负责起草初版 brief，也不负责写正式脚本
 - 如果用户已经修改过当前 brief，又想回到“重生成初版 brief”，必须把用户引导回 `/script` 走覆盖确认；Agent 不能静默覆盖
 - 在 `Export` 前，必须先确认目标 NLE 和最终输出目录；目标不明确时不能直接写出草稿

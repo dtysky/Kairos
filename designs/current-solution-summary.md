@@ -145,11 +145,15 @@ Kairos 当前需要区分两层：
   - `config/style-sources.json`
   - `analysis/reference-transcripts/`
   - `analysis/style-references/`
-  - `config/style-sources.json` 是当前唯一正式 style-reference 索引；`config/styles/*.md` 只承载文案 / 艺术气质参考，不再承载粗剪结构规则
-- Workspace 风格档案当前降级为“文案 / 艺术风格参考”：
-  - 风格分析不再尝试从参考视频抽象正式剪辑规则
-  - `config/styles/*.md` 只服务最终旁白、字幕文本、语言气质和表达禁区
-  - 粗剪结构默认不读取 style profile；缺少 style reference 不阻塞 Script / Timeline，只在最终旁白和字幕表达阶段提示缺参考
+  - `config/style-sources.json` 是当前唯一正式 style-reference 索引；`config/styles/*.md` 是 profile 正文，不再维护独立 `catalog.json`
+- Workspace 风格档案当前升级为 `layered-v1` 分层档案：
+  - 每个 `styleCategory` 仍对应一个 `config/styles/{category}.md`，front matter 必须带 `styleProfileVersion: layered-v1`
+  - 正文固定分为 `literary`（文学 / 旁白字幕表达）、`artistic`（影像气质 / 审美母题）与 `editingTechnical`（剪辑节奏 / 镜头语法 / 素材角色）三层
+  - 正文必须抽象为“风格生成法则”，不能复述参考视频内容；`literary` 分析旁白写法机制，`artistic` 分析审美母题 / 情绪光谱 / 空间时间观，`editingTechnical` 分析可迁移剪辑技法
+  - 样本地名、事件、人物和单次遭遇只能作为 `evidenceNotes` 或短例证，不能成为 layer summary 或章节主体；reviewer 必须阻塞复述型草稿
+  - 风格分析不生成正式剪辑规则；三层内容默认只是 evidence-backed observation / soft preference
+  - 只有剪辑规则自由正文经 Flow Planner 结构化写入 confirmed `flow-plan.json.styleUsage` 后，脚本阶段才允许读取对应层；`hard` 约束只能来自剪辑规则或 confirmed Flow Plan 的显式提升
+  - 如果剪辑规则要求使用风格层而 `/script` 未选择 `styleCategory`，或选择的是旧的 legacy 非分层 profile，Flow Plan 不能确认，Script prep 必须阻塞并提示重跑 `/style`
 - `scripts/kairos-supervisor.* start` 只启动 `Supervisor + React console`，不会顺带拉起 ML，也不会自动恢复旧 job
 - `projects/<projectId>/.tmp/media-analyze/progress.json` 与 `<workspaceRoot>/.tmp/style-analysis/{category}/progress.json` 都只是 durable progress cache，不等于 live job
 - Kairos 官方管理的 ML-backed 顶层流程在结束态必须回收到 `ML stopped`；`spatial-refresh` 是 no-ML repair job，不进入 ML lifecycle
@@ -160,9 +164,9 @@ Kairos 当前需要区分两层：
   - `/style` monitor 不应只显示粗阶段；当前视频、`keyframes` 抽帧进度、`vlm` 识别进度和视频队列摘要都属于正式可见运行态
   - 最终 `config/styles/{category}.md` 继续由 Agent 基于这些 prep 产物写成，但当前正式要求已经改成 clean-context subagent 流水线：
     - deterministic prep 额外写 `analysis/style-references/{category}/agent-summary.json`
-    - `style-profile-synthesizer` 只读取 packetized summary，先产出 `style-draft.json`
+    - `style-profile-synthesizer` 只读取 packetized summary，先产出包含三层的 `style-draft.json`
     - `style-profile-reviewer` 只读取 summary + draft，写 `style-review.json`
-    - reviewer blockers 当前是最终 style profile 的硬闸门；不能再把单次 synthesize 直接落成正式 profile
+    - reviewer blockers 当前是最终 style profile 的硬闸门；缺层、证据不足却强断言、或把 `editingTechnical` 冒充新剪辑规则都必须阻塞
     - 正式执行后端必须使用宿主提供的 packet runner / 真实 subagent 链；官方路径不允许外接 `ILlmClient` fallback
     - workspace / project runtime 可通过 `config/runtime.json` 的 `agentPacketRunnerCommand` / `agentPacketRunnerArgs` / `agentPacketRunnerCwd` 声明这个 packet runner
 - 未来如果引入桌面 UI 或更多 provider / adapter，应建立在这套协议与项目模型上，而不是推翻它
@@ -355,9 +359,9 @@ flowchart TD
 - 当前正式模型是 `segment + beat + selection`
 - `script-brief` 是当前脚本阶段的正式人工审查入口
 - 当前 `/script` 页已经收口为：
-  - 先选择 workspace `editRuleCategory`，并立即自动保存；`styleCategory` 只作为可选文案 / 艺术风格参考
+  - 先选择 workspace `editRuleCategory`，并立即自动保存；`styleCategory` 是单一风格档案选择，内部三层是否进入脚本由 confirmed Flow Plan 的 `styleUsage` 决定
   - 一旦 `editRuleCategory` 改变，当前 edit unit 的旧 `material-overview / brief draft / segment-plan / material-slots / outline / edits/<editId>/script/current.json` 必须立即失效并清空，edit unit 回到“重新起稿”
-  - 单独改变 `styleCategory` 不再清空粗剪结构产物，只影响最终旁白和字幕表达参考
+  - 单独改变 `styleCategory` 时，若已确认的 `styleUsage` 使用了 `artistic` 或 `editingTechnical` 参与 planning / recall，则 planning 和脚本结构产物失效；若只使用 `literary`，则只清空表达阶段脚本 / 字幕产物
   - Agent 生成初版 `script-brief`
   - 用户在 `/script` 审查并手动保存 brief
   - 用户点击 `准备给 Agent`

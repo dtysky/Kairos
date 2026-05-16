@@ -33,9 +33,9 @@ export async function loadEditFlowPlan(
   projectRoot: string,
   editId?: string | null,
 ): Promise<IEditFlowPlan | null> {
-  const primary = await readJsonOrNull(getEditFlowPlanPath(projectRoot, editId), ZEditFlowPlan);
+  const primary = await readJsonOrNull(getEditFlowPlanPath(projectRoot, editId), ZEditFlowPlan) as IEditFlowPlan | null;
   if (primary || !shouldReadLegacyEditPath(editId)) return primary;
-  return readJsonOrNull(join(projectRoot, 'planning', 'flow-plan.json'), ZEditFlowPlan);
+  return readJsonOrNull(join(projectRoot, 'planning', 'flow-plan.json'), ZEditFlowPlan) as Promise<IEditFlowPlan | null>;
 }
 
 export async function writeEditFlowPlan(

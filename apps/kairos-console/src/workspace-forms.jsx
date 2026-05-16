@@ -671,7 +671,7 @@ export function ScriptBriefEditor({
     { value: '', label: '（可选）' },
     ...styleCategories.map(category => ({
       value: category.categoryId,
-      label: category.displayName,
+      label: `${category.displayName}${category.profileStatus === 'layered-v1' ? ' · layered-v1' : category.profileStatus === 'legacy' ? ' · legacy' : category.profileStatus === 'missing' ? ' · missing' : ''}`,
     })),
   ];
   if (config.styleCategory && !hasValidStyleCategory) {
@@ -748,7 +748,7 @@ export function ScriptBriefEditor({
           disabled={autoSaveBusy || ruleCategoryOptions.length <= 1}
         />
         <SelectField
-          label="文案风格参考"
+          label="风格档案"
           value={config.styleCategory || ''}
           onChange={handleStyleCategoryChange}
           options={styleCategoryOptions}
@@ -765,13 +765,13 @@ export function ScriptBriefEditor({
         <p className="field-help">正在自动保存分类选择…</p>
       ) : null}
       {!autoSaveBusy ? (
-        <p className="field-help">剪辑规则会自动保存，并先进入 Flow Plan 生成与确认；文案风格参考只影响最终旁白 / 字幕表达。下面的 brief 内容仍需要手动点击“保存”。</p>
+        <p className="field-help">剪辑规则会自动保存，并先进入 Flow Plan 生成与确认；风格档案仍只选一个分类，具体使用文学 / 艺术 / 剪辑技法哪几层由 confirmed Flow Plan 决定。下面的 brief 内容仍需要手动点击“保存”。</p>
       ) : null}
       {config.editRuleCategory && !hasValidEditRuleCategory ? (
         <p className="field-help field-help-error">当前剪辑规则已失效，请从 workspace 剪辑规则库重新选择。</p>
       ) : null}
       {config.styleCategory && !hasValidStyleCategory ? (
-        <p className="field-help field-help-error">当前文案风格参考已失效；粗剪可继续，最终旁白 / 字幕阶段需要重新选择。</p>
+        <p className="field-help field-help-error">当前风格档案已失效；如果剪辑规则要求风格层，请重新选择或运行 /style 生成 layered-v1 档案。</p>
       ) : null}
       {userModifiedBrief && canRequestRegenerate ? (
         <p className="field-help field-help-error">当前 brief 与最近一次 Agent 初稿不同。重新生成 overview / brief 会覆盖这些修改。</p>
@@ -893,20 +893,29 @@ export function ScriptBriefEditor({
 
 export function StyleSourcesEditor({ config, setConfig, onSave, busy }) {
   if (!config) return null;
+  const categories = Array.isArray(config.categories) ? config.categories : [];
+  const defaultCategoryOptions = [
+    { value: '', label: '未指定' },
+    ...categories.map(category => ({
+      value: category.categoryId,
+      label: category.displayName || category.categoryId || '未命名档案',
+    })),
+  ];
   return (
     <Card className="panel">
-      <SectionHeader title="Style Sources" onSave={onSave} busy={busy} />
-      <Field
-        label="默认分类"
+      <SectionHeader title="风格档案" onSave={onSave} busy={busy} actions={<Tag>{`${categories.length} 个`}</Tag>} />
+      <SelectField
+        label="默认档案"
         value={config.defaultCategory || ''}
+        options={defaultCategoryOptions}
         onChange={value => setConfig(current => ({ ...current, defaultCategory: value }))}
       />
       <Divider />
       <ListToolbar
-        title="Style Category"
+        title="档案列表"
         onAdd={() => setConfig(current => ({
           ...current,
-          categories: [...current.categories, {
+          categories: [...(current.categories || []), {
             categoryId: `category-${Date.now()}`,
             displayName: '新分类',
             guidancePrompt: '',
@@ -918,124 +927,186 @@ export function StyleSourcesEditor({ config, setConfig, onSave, busy }) {
           }],
         }))}
       />
-      {config.categories.map((category, index) => (
-        <div key={category.categoryId || index} className="row-card">
-          <div className="field-grid field-grid-three">
-            <Field
-              label="categoryId"
-              value={category.categoryId}
-              onChange={value => updateArrayItem(config.categories, index, { ...category, categoryId: value }, next => setConfig(current => ({ ...current, categories: next })))}
-            />
-            <Field
-              label="显示名"
-              value={category.displayName}
-              onChange={value => updateArrayItem(config.categories, index, { ...category, displayName: value }, next => setConfig(current => ({ ...current, categories: next })))}
-            />
-            <Field
-              label="profilePath"
-              value={category.profilePath || ''}
-              onChange={value => updateArrayItem(config.categories, index, { ...category, profilePath: value }, next => setConfig(current => ({ ...current, categories: next })))}
-            />
-          </div>
-          <TextAreaField
-            label="Guidance Prompt"
-            value={category.guidancePrompt || ''}
-            onChange={value => updateArrayItem(config.categories, index, { ...category, guidancePrompt: value }, next => setConfig(current => ({ ...current, categories: next })))}
-          />
-          <TextAreaField
-            label="Inclusion"
-            value={category.inclusionNotes || ''}
-            onChange={value => updateArrayItem(config.categories, index, { ...category, inclusionNotes: value }, next => setConfig(current => ({ ...current, categories: next })))}
-          />
-          <TextAreaField
-            label="Exclusion"
-            value={category.exclusionNotes || ''}
-            onChange={value => updateArrayItem(config.categories, index, { ...category, exclusionNotes: value }, next => setConfig(current => ({ ...current, categories: next })))}
-          />
-          <label className="checkbox-row">
-            <input
-              type="checkbox"
-              checked={Boolean(category.overwriteExisting)}
-              onChange={event => updateArrayItem(config.categories, index, { ...category, overwriteExisting: event.target.checked }, next => setConfig(current => ({ ...current, categories: next })))}
-            />
-            覆盖已有 profile
-          </label>
-          <Divider />
-          <ListToolbar
-            title="Reference Source"
-            onAdd={() => updateArrayItem(config.categories, index, {
-              ...category,
-              sources: [...category.sources, {
-                id: `source-${Date.now()}`,
-                type: 'file',
-                path: '',
-                rangeStart: '',
-                rangeEnd: '',
-                note: '',
-                includeNotes: '',
-                excludeNotes: '',
-              }],
-            }, next => setConfig(current => ({ ...current, categories: next })))}
-          />
-          {category.sources.map((source, sourceIndex) => (
-            <div key={source.id || sourceIndex} className="nested-card">
-              <div className="field-grid field-grid-three">
-                <Field
-                  label="类型"
-                  value={source.type}
-                  onChange={value => updateNestedArrayItem(config.categories, index, 'sources', sourceIndex, { ...source, type: value }, next => setConfig(current => ({ ...current, categories: next })))}
+      <div className="style-category-list">
+        {categories.map((category, index) => {
+          const sources = Array.isArray(category.sources) ? category.sources : [];
+          const isDefault = category.categoryId && category.categoryId === config.defaultCategory;
+          return (
+            <details
+              key={category.categoryId || index}
+              className="row-card style-category-details"
+              open={!category.categoryId || !category.displayName}
+            >
+              <summary className="style-category-summary">
+                <div className="style-category-title">
+                  <strong>{category.displayName || category.categoryId || '未命名档案'}</strong>
+                  <span>{category.categoryId || '未设置内部 ID'}</span>
+                </div>
+                <div className="style-category-tags">
+                  {isDefault ? <Tag>默认</Tag> : null}
+                  <Tag>{formatStyleProfileStatus(category)}</Tag>
+                  <Tag>{`${sources.length} 个参考素材`}</Tag>
+                </div>
+              </summary>
+
+              <div className="style-category-edit">
+                <div className="field-grid field-grid-three">
+                  <Field
+                    label="显示名"
+                    value={category.displayName}
+                    onChange={value => updateArrayItem(categories, index, { ...category, displayName: value }, next => setConfig(current => ({ ...current, categories: next })))}
+                  />
+                  <Field
+                    label="内部 ID"
+                    value={category.categoryId}
+                    onChange={value => updateArrayItem(categories, index, { ...category, categoryId: value }, next => setConfig(current => ({ ...current, categories: next })))}
+                  />
+                  <Field
+                    label="档案文件"
+                    value={category.profilePath || ''}
+                    onChange={value => updateArrayItem(categories, index, { ...category, profilePath: value }, next => setConfig(current => ({ ...current, categories: next })))}
+                  />
+                </div>
+                <TextAreaField
+                  label="分析重点"
+                  value={category.guidancePrompt || ''}
+                  rows={3}
+                  onChange={value => updateArrayItem(categories, index, { ...category, guidancePrompt: value }, next => setConfig(current => ({ ...current, categories: next })))}
                 />
-                <Field
-                  label="路径"
-                  value={source.path}
-                  onChange={value => updateNestedArrayItem(config.categories, index, 'sources', sourceIndex, { ...source, path: value }, next => setConfig(current => ({ ...current, categories: next })))}
+                <details className="style-advanced-details">
+                  <summary>取舍边界</summary>
+                  <div className="field-grid field-grid-two">
+                    <TextAreaField
+                      label="重点保留"
+                      value={category.inclusionNotes || ''}
+                      rows={3}
+                      onChange={value => updateArrayItem(categories, index, { ...category, inclusionNotes: value }, next => setConfig(current => ({ ...current, categories: next })))}
+                    />
+                    <TextAreaField
+                      label="不要学习"
+                      value={category.exclusionNotes || ''}
+                      rows={3}
+                      onChange={value => updateArrayItem(categories, index, { ...category, exclusionNotes: value }, next => setConfig(current => ({ ...current, categories: next })))}
+                    />
+                  </div>
+                  <label className="checkbox-row">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(category.overwriteExisting)}
+                      onChange={event => updateArrayItem(categories, index, { ...category, overwriteExisting: event.target.checked }, next => setConfig(current => ({ ...current, categories: next })))}
+                    />
+                    覆盖已有档案
+                  </label>
+                </details>
+                <Divider />
+                <ListToolbar
+                  title="参考素材"
+                  onAdd={() => updateArrayItem(categories, index, {
+                    ...category,
+                    sources: [...sources, {
+                      id: `source-${Date.now()}`,
+                      type: 'file',
+                      path: '',
+                      rangeStart: '',
+                      rangeEnd: '',
+                      note: '',
+                      includeNotes: '',
+                      excludeNotes: '',
+                    }],
+                  }, next => setConfig(current => ({ ...current, categories: next })))}
                 />
-                <Field
-                  label="范围开始"
-                  value={source.rangeStart || ''}
-                  onChange={value => updateNestedArrayItem(config.categories, index, 'sources', sourceIndex, { ...source, rangeStart: value }, next => setConfig(current => ({ ...current, categories: next })))}
-                />
-                <Field
-                  label="范围结束"
-                  value={source.rangeEnd || ''}
-                  onChange={value => updateNestedArrayItem(config.categories, index, 'sources', sourceIndex, { ...source, rangeEnd: value }, next => setConfig(current => ({ ...current, categories: next })))}
-                />
+                {sources.length === 0 ? (
+                  <p className="field-help">暂无参考素材</p>
+                ) : null}
+                {sources.map((source, sourceIndex) => (
+                  <details key={source.id || sourceIndex} className="nested-card style-source-details">
+                    <summary className="style-source-summary">
+                      <span>{source.path || '未填写路径'}</span>
+                      <div className="style-category-tags">
+                        <Tag>{source.type || 'file'}</Tag>
+                        {source.rangeStart || source.rangeEnd ? <Tag>{`${source.rangeStart || '开始'} - ${source.rangeEnd || '结束'}`}</Tag> : null}
+                      </div>
+                    </summary>
+                    <div className="style-source-edit">
+                      <div className="field-grid field-grid-three">
+                        <Field
+                          label="类型"
+                          value={source.type}
+                          onChange={value => updateNestedArrayItem(categories, index, 'sources', sourceIndex, { ...source, type: value }, next => setConfig(current => ({ ...current, categories: next })))}
+                        />
+                        <Field
+                          label="路径"
+                          value={source.path}
+                          onChange={value => updateNestedArrayItem(categories, index, 'sources', sourceIndex, { ...source, path: value }, next => setConfig(current => ({ ...current, categories: next })))}
+                        />
+                        <Field
+                          label="范围开始"
+                          value={source.rangeStart || ''}
+                          onChange={value => updateNestedArrayItem(categories, index, 'sources', sourceIndex, { ...source, rangeStart: value }, next => setConfig(current => ({ ...current, categories: next })))}
+                        />
+                        <Field
+                          label="范围结束"
+                          value={source.rangeEnd || ''}
+                          onChange={value => updateNestedArrayItem(categories, index, 'sources', sourceIndex, { ...source, rangeEnd: value }, next => setConfig(current => ({ ...current, categories: next })))}
+                        />
+                      </div>
+                      <TextAreaField
+                        label="备注"
+                        value={source.note || ''}
+                        rows={3}
+                        onChange={value => updateNestedArrayItem(categories, index, 'sources', sourceIndex, { ...source, note: value }, next => setConfig(current => ({ ...current, categories: next })))}
+                      />
+                      <div className="field-grid field-grid-two">
+                        <TextAreaField
+                          label="这条素材要看什么"
+                          value={source.includeNotes || ''}
+                          rows={3}
+                          onChange={value => updateNestedArrayItem(categories, index, 'sources', sourceIndex, { ...source, includeNotes: value }, next => setConfig(current => ({ ...current, categories: next })))}
+                        />
+                        <TextAreaField
+                          label="这条素材不要学什么"
+                          value={source.excludeNotes || ''}
+                          rows={3}
+                          onChange={value => updateNestedArrayItem(categories, index, 'sources', sourceIndex, { ...source, excludeNotes: value }, next => setConfig(current => ({ ...current, categories: next })))}
+                        />
+                      </div>
+                      <Button
+                        type="error"
+                        size="small"
+                        onClick={() => removeNestedArrayItem(categories, index, 'sources', sourceIndex, next => setConfig(current => ({ ...current, categories: next })))}
+                      >
+                        删除来源
+                      </Button>
+                    </div>
+                  </details>
+                ))}
+                <Button
+                  type="error"
+                  size="small"
+                  onClick={() => removeArrayItem(categories, index, next => setConfig(current => ({ ...current, categories: next })))}
+                >
+                  删除档案
+                </Button>
               </div>
-              <TextAreaField
-                label="备注"
-                value={source.note || ''}
-                onChange={value => updateNestedArrayItem(config.categories, index, 'sources', sourceIndex, { ...source, note: value }, next => setConfig(current => ({ ...current, categories: next })))}
-              />
-              <TextAreaField
-                label="Include"
-                value={source.includeNotes || ''}
-                onChange={value => updateNestedArrayItem(config.categories, index, 'sources', sourceIndex, { ...source, includeNotes: value }, next => setConfig(current => ({ ...current, categories: next })))}
-              />
-              <TextAreaField
-                label="Exclude"
-                value={source.excludeNotes || ''}
-                onChange={value => updateNestedArrayItem(config.categories, index, 'sources', sourceIndex, { ...source, excludeNotes: value }, next => setConfig(current => ({ ...current, categories: next })))}
-              />
-              <Button
-                type="error"
-                size="small"
-                onClick={() => removeNestedArrayItem(config.categories, index, 'sources', sourceIndex, next => setConfig(current => ({ ...current, categories: next })))}
-              >
-                删除来源
-              </Button>
-            </div>
-          ))}
-          <Button
-            type="error"
-            size="small"
-            onClick={() => removeArrayItem(config.categories, index, next => setConfig(current => ({ ...current, categories: next })))}
-          >
-            删除分类
-          </Button>
-        </div>
-      ))}
+            </details>
+          );
+        })}
+      </div>
+      {categories.length === 0 ? (
+        <p className="field-help">暂无风格档案</p>
+      ) : null}
     </Card>
   );
+}
+
+function formatStyleProfileStatus(category) {
+  if (category.profileStatus === 'layered-v1') {
+    const layerCount = Array.isArray(category.availableLayers) ? category.availableLayers.length : 3;
+    return layerCount >= 3 ? '三层可用' : `${layerCount}/3 层可用`;
+  }
+  if (category.profileStatus === 'legacy') return '旧档案';
+  if (category.profileStatus === 'missing') return '未生成';
+  return '未检查';
 }
 
 export function ColorConfigEditor({ config, setConfig, onSave, busy, capability }) {

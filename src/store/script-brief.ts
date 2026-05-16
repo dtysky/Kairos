@@ -235,7 +235,7 @@ export function buildScriptBriefTemplate(
     `- 创建日期：${createdAt}`,
     `- Edit ID：${normalizeEditId(input.editId)}`,
     `- 剪辑规则：${editRuleReference}`,
-    `- 文案风格参考：${styleReference}`,
+    `- 风格档案：${styleReference}`,
     `- 当前状态：${statusText}`,
     '',
     '## 全片目标',

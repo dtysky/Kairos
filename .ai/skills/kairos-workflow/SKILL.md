@@ -103,7 +103,9 @@ Kairos 将旅拍素材转化为可编辑时间线。流程分为 1 个准备阶�
 
 每个 edit unit 还必须先生成并人工确认 `edits/<editId>/planning/flow-plan.json`。Flow Plan 由 LLM 读取 raw edit-rule markdown、项目上下文和固定能力目录后生成；代码只执行确认后的 `capabilityId / inputRefs / outputRefs / gate`，不关键词解析 markdown 正文。
 
-Style Analysis 当前是 **可选表达参考**。它从用户历史成片中按分类提取文案、旁白语感、艺术气质和表达禁区，供最终旁白 / 字幕文本使用。
+Style Analysis 当前是 **可选 layered-v1 分层风格档案**。它从用户历史成片中按分类提取 `literary / artistic / editingTechnical` 三层：文学表达、影像审美、剪辑技法观察。它不生成正式剪辑规则；只有剪辑规则自由正文经 Flow Planner 写入 confirmed `flow-plan.json.styleUsage` 后，脚本阶段才可读取被授权的层。
+
+风格档案正文必须是抽象“生成法则”，不是参考视频内容复述：`literary` 分析旁白写法机制，`artistic` 分析审美母题 / 情绪光谱 / 空间时间观，`editingTechnical` 分析可迁移剪辑技法。样本地名、事件和人物只能作为简短证据，不能成为层 summary 或章节主体。
 
 输入：
 - 分类名称（如 `travel-doc`、`city-walk`）
@@ -127,7 +129,7 @@ Style Analysis 产出：deterministic prep 先写 `<workspaceRoot>/.tmp/style-an
 - 剪辑规则必须由用户人工指定；系统不能根据当前项目素材自动生成、自动挑选或自动推断剪辑规则。
 - 如果用户没有明确指定 `editRuleCategory`，Workflow 必须停在 Script 之前，先向用户确认。
 - 如果当前 edit unit 没有确认且 hash 未过期的 Flow Plan，Workflow 必须停在 Script / Timeline 之前，先运行 Flow Planner 并等待用户确认。
-- 缺少 `styleCategory` 不阻塞粗剪；只在最终旁白 / 字幕表达阶段提示缺参考。
+- 缺少 `styleCategory` 默认不阻塞粗剪；但如果剪辑规则要求使用风格层，Flow Plan 不能确认，Script prep 必须阻塞到用户选择 / 重跑可用的 `layered-v1` 档案。
 - `kairos-style-analysis` 只能在用户明确要求做风格分析时执行，不能被 Workflow 隐式触发。
 - `kairos-style-analysis` 当前正式是 `Supervisor deterministic prep -> awaiting_agent -> Agent final profile`，不能再被描述成“UI 上能点但 runner 还没接上”的占位状态
 
@@ -342,7 +344,7 @@ project/
 - 剪辑规则必须由用户人工指定；不能根据当前项目素材自动生成、自动挑选或自动推断。
 - 如果用户还没有指定 `editRuleCategory`，就不能开始 Script 阶段。
 - 如果当前 edit unit 没有 confirmed 且 hash 未过期的 `flow-plan.json`，就不能开始 Script / Timeline 阶段。
-- 项目 / edit unit 保存 `editRuleCategory` 与可选 `styleCategory`；不持有自己的 `config/edit-rules/` 或 `config/styles/` 库。
+- 项目 / edit unit 保存 `editRuleCategory` 与可选 `styleCategory`；不持有自己的 `config/edit-rules/` 或 `config/styles/` 库。`styleCategory` 是单一风格档案选择，具体层使用权只来自 confirmed Flow Plan 的 `styleUsage`。
 - `Supervisor + React console` 里的 `script` job 现在只负责 deterministic prep：
   - 校验 `store/slices.json`
   - 校验 `editRuleCategory`

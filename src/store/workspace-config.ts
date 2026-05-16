@@ -22,6 +22,7 @@ import {
   type IProjectBriefConfig as TProjectBriefConfig,
   type IScriptBriefConfig as TScriptBriefConfig,
   type IScriptBriefSegmentConfig as TScriptBriefSegmentConfig,
+  type IStyleUsage as TStyleUsage,
   type IStyleSourcesConfig as TStyleSourcesConfig,
 } from '../protocol/schema.js';
 import { buildFrontMatter } from '../modules/script/style-loader.js';
@@ -45,7 +46,11 @@ import {
   loadOptionalMarkdown,
   parseScriptBriefWorkflowMetadata,
 } from './script-brief.js';
-import { clearScriptArtifactsForStyleChange } from './script-store.js';
+import {
+  clearScriptArtifactsForStyleChange,
+  clearScriptExpressionArtifactsForStyleChange,
+} from './script-store.js';
+import { loadEditFlowPlan } from './edit-planning-store.js';
 import {
   getProjectEditScriptRoot,
   shouldReadLegacyEditPath,
@@ -303,6 +308,13 @@ export async function saveScriptBriefConfig(
   );
   if (normalized.editRuleCategory !== previous.editRuleCategory) {
     await clearScriptArtifactsForStyleChange(projectRoot, normalizedEditId);
+  } else if (normalized.styleCategory !== previous.styleCategory) {
+    const flowPlan = await loadEditFlowPlan(projectRoot, normalizedEditId).catch(() => null);
+    if (flowPlan?.styleUsage && styleUsageAffectsPlanning(flowPlan.styleUsage)) {
+      await clearScriptArtifactsForStyleChange(projectRoot, normalizedEditId);
+    } else {
+      await clearScriptExpressionArtifactsForStyleChange(projectRoot, normalizedEditId);
+    }
   }
   return normalized;
 }
@@ -422,6 +434,11 @@ export async function saveColorTransformPresetsConfig(
     profiles: normalized.profiles,
   });
   return loadColorTransformPresetsConfig(workspaceRoot);
+}
+
+function styleUsageAffectsPlanning(styleUsage: TStyleUsage): boolean {
+  return styleUsage.layers.artistic.mode !== 'off'
+    || styleUsage.layers.editingTechnical.mode !== 'off';
 }
 
 export async function saveStyleSourcesConfig(
@@ -804,7 +821,9 @@ function parseScriptBriefMarkdown(
   const editId = parseStyleReference(extractMetaLine(normalized, 'Edit ID')) ?? fallbackEditId;
   const editRuleCategory = parseStyleReference(extractMetaLine(normalized, '剪辑规则'));
   const styleCategory = parseStyleReference(
-    extractMetaLine(normalized, '文案风格参考') ?? extractMetaLine(normalized, '风格参考'),
+    extractMetaLine(normalized, '风格档案')
+      ?? extractMetaLine(normalized, '文案风格参考')
+      ?? extractMetaLine(normalized, '风格参考'),
   );
   const statusText = extractMetaLine(normalized, '当前状态');
   const workflowMetadata = parseScriptBriefWorkflowMetadata(normalized);
@@ -837,7 +856,14 @@ function extractMetaLine(markdown: string, key: string): string | undefined {
 function parseStyleReference(value?: string): string | undefined {
   const trimmed = value?.trim();
   if (!trimmed) return undefined;
-  if (trimmed === '（待指定）' || trimmed === '(待指定)' || trimmed === '待指定') {
+  if (
+    trimmed === '（待指定）'
+    || trimmed === '(待指定)'
+    || trimmed === '待指定'
+    || trimmed === '（可选）'
+    || trimmed === '(可选)'
+    || trimmed === '可选'
+  ) {
     return undefined;
   }
   const explicitCategory = trimmed.match(/[（(]([A-Za-z0-9][A-Za-z0-9_-]*)[）)]\s*$/u);

@@ -52,6 +52,85 @@ describe('style-loader', () => {
     expect(style?.name).toBe('Travel Doc');
     expect(style?.category).toBe('travel-doc');
     expect(style?.guidancePrompt).toBe('重点关注旅行纪录片的叙事推进。');
+    expect(style?.styleProfileVersion).toBe('legacy');
+  });
+
+  it('parses layered-v1 profiles with required literary, artistic, and editing technical layers', async () => {
+    const workspaceRoot = await createWorkspace();
+    const stylesDir = join(workspaceRoot, 'config', 'styles');
+
+    await saveStyleSourcesConfig(workspaceRoot, {
+      defaultCategory: 'layered-doc',
+      categories: [{
+        categoryId: 'layered-doc',
+        displayName: 'Layered Doc',
+        overwriteExisting: false,
+        profilePath: 'layered-doc.md',
+        sources: [],
+      }],
+    });
+    await writeFile(join(stylesDir, 'layered-doc.md'), [
+      '---',
+      'name: Layered Doc',
+      'category: layered-doc',
+      'styleProfileVersion: layered-v1',
+      '---',
+      '# Layered Doc',
+      '',
+      '## 文学风格',
+      '',
+      'summary: 克制第一人称旁白。',
+      'confidence: 0.8',
+      '',
+      '## 艺术风格',
+      '',
+      'summary: 空间辽阔，情绪克制。',
+      'confidence: 0.7',
+      '',
+      '## 技术分析（剪辑技法）',
+      '',
+      'summary: 用行车镜头承担地理推进。',
+      'confidence: 0.75',
+      '',
+    ].join('\n'), 'utf-8');
+
+    const style = await loadStyleByCategory(stylesDir, 'layered-doc');
+
+    expect(style.styleProfileVersion).toBe('layered-v1');
+    expect(style.layers?.literary.summary).toBe('克制第一人称旁白。');
+    expect(style.layers?.artistic.confidence).toBe(0.7);
+    expect(style.layers?.editingTechnical.parameters.summary).toBe('用行车镜头承担地理推进。');
+  });
+
+  it('rejects incomplete layered-v1 profiles', async () => {
+    const workspaceRoot = await createWorkspace();
+    const stylesDir = join(workspaceRoot, 'config', 'styles');
+
+    await saveStyleSourcesConfig(workspaceRoot, {
+      defaultCategory: 'broken-doc',
+      categories: [{
+        categoryId: 'broken-doc',
+        displayName: 'Broken Doc',
+        overwriteExisting: false,
+        profilePath: 'broken-doc.md',
+        sources: [],
+      }],
+    });
+    await writeFile(join(stylesDir, 'broken-doc.md'), [
+      '---',
+      'name: Broken Doc',
+      'category: broken-doc',
+      'styleProfileVersion: layered-v1',
+      '---',
+      '# Broken Doc',
+      '',
+      '## 文学风格',
+      '',
+      'summary: 只有文学层。',
+      '',
+    ].join('\n'), 'utf-8');
+
+    await expect(loadStyleByCategory(stylesDir, 'broken-doc')).rejects.toThrow('missing required section');
   });
 
   it('fails when the requested category is not registered in style-sources.json', async () => {

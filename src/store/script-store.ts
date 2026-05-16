@@ -30,6 +30,7 @@ import {
   getProjectEditScriptRoot,
   getProjectEditTimelineRoot,
   getProjectEditPlanningRoot,
+  getProjectEditSubtitlesRoot,
   shouldReadLegacyEditPath,
 } from './edit-store.js';
 import { readJsonOrNull, writeJson } from './writer.js';
@@ -161,6 +162,20 @@ export async function clearScriptArtifactsForStyleChange(
     rm(join(timelineRoot, 'agent-pipeline.json'), { force: true }),
     rm(join(timelineRoot, 'current.json'), { force: true }),
     rm(join(timelineRoot, 'locked-rough-cut.json'), { force: true }),
+  ]);
+}
+
+export async function clearScriptExpressionArtifactsForStyleChange(
+  projectRoot: string,
+  editId?: string | null,
+): Promise<void> {
+  const { rm } = await import('node:fs/promises');
+  await Promise.all([
+    rm(getCurrentScriptPath(projectRoot, editId), { force: true }),
+    rm(getScriptAgentPipelinePath(projectRoot, editId), { force: true }),
+    rm(getScriptAgentPacketsRoot(projectRoot, editId), { recursive: true, force: true }),
+    rm(getScriptReviewsRoot(projectRoot, editId), { recursive: true, force: true }),
+    rm(getProjectEditSubtitlesRoot(projectRoot, editId), { recursive: true, force: true }),
   ]);
 }
 

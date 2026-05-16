@@ -134,8 +134,10 @@ export function MonitorPage({ model, emptyLabel, toolbar, afterMonitor }) {
       </Card>
 
       <Card className="monitor-panel section-panel">
-        <h2>原始进度数据</h2>
-        <pre className="raw-json">{JSON.stringify(model.raw, null, 2)}</pre>
+        <details className="monitor-raw-details">
+          <summary>原始进度数据</summary>
+          <pre className="raw-json">{JSON.stringify(model.raw, null, 2)}</pre>
+        </details>
       </Card>
 
       {afterMonitor || null}

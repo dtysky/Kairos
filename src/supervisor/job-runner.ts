@@ -293,6 +293,7 @@ async function runJob(
       const editId = normalizeEditId(toStringValue(args.editId));
       const scriptConfig = await loadScriptBriefConfig(projectRoot, editId);
       const editRuleCategory = toStringValue(args.editRuleCategory) || scriptConfig.editRuleCategory;
+      const styleCategory = toStringValue(args.styleCategory) || scriptConfig.styleCategory;
       if (!editRuleCategory) {
         throw new BlockedJobError(['edit-flow-plan requires editRuleCategory in args or script-brief']);
       }
@@ -304,6 +305,7 @@ async function runJob(
             projectRoot,
             editId,
             editRuleCategory,
+            styleCategory,
           }),
         };
       } catch (error) {

@@ -2,6 +2,8 @@ import { randomUUID } from 'node:crypto';
 import type {
   IAgentPacket,
   IStageReview,
+  IStyleLayer,
+  IStyleLayers,
   IStyleProfile,
 } from '../../protocol/schema.js';
 import type { IRhythmStats } from '../media/shot-detect.js';
@@ -28,6 +30,20 @@ const CSTYLE_REVIEW_CODES = [
   'missing_executable_parameters',
   'weak_evidence_generalization',
   'anti_pattern_missing',
+  'missing_required_layers',
+  'technical_layer_scope_leak',
+  'sample_recap_instead_of_style',
+  'literary_mechanics_missing',
+  'artistic_abstraction_missing',
+] as const;
+
+const CSTYLE_ABSTRACTION_CONTRACT = [
+  '最终 style profile 必须写“风格生成法则 / 风格机制”，不是按样本时间线复述参考视频发生了什么。',
+  '样本里的地点、事件、人物、地名、单次遭遇只能作为 evidenceNotes 的短证据；不得成为 summary、section 主体或层标题。',
+  '文学风格必须重点分析旁白写法：叙述视角、句式、转场词、用词偏好、信息密度、情绪调度、事实与判断的关系。',
+  '艺术风格必须抽象到审美母题、情绪光谱、空间/时间观、画面组织原则和价值取向；不得写成具体地貌或景点清单。',
+  '技术分析必须描述可迁移剪辑技法：结构模板、节奏伸缩、镜头语法、素材角色和声画组织；不得把观察写成硬剪辑规则。',
+  '允许少量示例，但示例只用于证明抽象规则；每条规则应先写机制，再写证据。',
 ] as const;
 
 export interface IStyleReferenceVideoAnalysis {
@@ -72,6 +88,7 @@ interface IStyleSynthDraft {
   sections?: Array<{ title?: string; content?: string; tags?: string[] }>;
   antiPatterns?: string[];
   parameters?: Record<string, string>;
+  layers?: Partial<Record<'literary' | 'artistic' | 'editingTechnical', Partial<IStyleLayer>>>;
 }
 
 interface IStylePreparationSummaryDocument {
@@ -238,8 +255,11 @@ function buildStyleSynthesisPacket(
     hardConstraints: [
       '只相信 packet 提供的 summary、per-video reports、guidance、inclusion/exclusion notes。',
       '不要把偶发特征夸大成稳定规则。',
+      ...CSTYLE_ABSTRACTION_CONTRACT,
       '缺证据时必须写成“未明确 / 少用 / 不明显 / 偶尔出现”。',
       '不要输出正式 markdown 成品，只输出结构化草稿 JSON。',
+      '必须输出 literary / artistic / editingTechnical 三层；证据不足的层也必须保留并写“未明确 / 不明显”。',
+      'editingTechnical 只描述剪辑技法观察，不得冒充正式剪辑规则。',
     ],
     allowedInputs: [
       'analysis/style-references/{category}/agent-summary.json',
@@ -283,6 +303,11 @@ function buildStyleSynthesisPacket(
       sections: 'Array<{ title, content, tags? }>',
       antiPatterns: 'string[]',
       parameters: 'Record<string, string>',
+      layers: {
+        literary: '{ summary: 抽象旁白写法机制, confidence, evidenceNotes[], parameters: 句式/词汇/视角/情绪调度, antiPatterns[] }',
+        artistic: '{ summary: 抽象审美结构与母题, confidence, evidenceNotes[], parameters: 母题/情绪光谱/空间观/时间观/价值取向, antiPatterns[] }',
+        editingTechnical: '{ summary: 可迁移剪辑技法观察, confidence, evidenceNotes[], parameters: 结构模板/节奏/镜头语法/素材角色, antiPatterns[] }',
+      },
     },
     reviewRubric: [...CSTYLE_REVIEW_CODES],
   };
@@ -297,11 +322,16 @@ function buildStyleReviewPacket(
   return {
     stage: 'style-profile-reviewer',
     identity: 'style-profile-reviewer',
-    mission: '审查 style 草稿是否真正尊重 guidance、避免过拟合，并补齐可执行参数与 anti-pattern。',
+    mission: '审查 style 草稿是否真正尊重 guidance、避免过拟合，并补齐三层、可执行参数与 anti-pattern。',
     hardConstraints: [
       '只根据 summary、draft 和 rubric 审查，不直接改写正式 profile。',
       '存在 blocker 时必须给 revisionBrief。',
       '缺证据时必须保守地判为 blocker 或 warning。',
+      '必须确认 literary / artistic / editingTechnical 三层都存在。',
+      '必须阻止 editingTechnical 被写成新的剪辑规则或硬结构模板。',
+      '如果草稿主体是在复述样本内容、地点或事件，而不是抽象生成法则，必须用 sample_recap_instead_of_style 判 blocker。',
+      '如果 literary 没有分析旁白写法机制，必须用 literary_mechanics_missing 判 blocker。',
+      '如果 artistic 停留在具体地貌/景点/物件清单，没有抽象审美结构，必须用 artistic_abstraction_missing 判 blocker。',
     ],
     allowedInputs: [
       'style-agent-summary',
@@ -344,6 +374,10 @@ function buildStyleProfileFromDraft(
     normalizeParameters(draft.parameters),
     '未明确',
   );
+  const antiPatterns = Array.isArray(draft.antiPatterns)
+    ? draft.antiPatterns.filter((item): item is string => typeof item === 'string')
+    : [];
+  const layers = normalizeStyleLayers(draft);
   const sections = normalizeSections(
     Array.isArray(draft.sections)
       ? draft.sections.map((section, index) => ({
@@ -355,10 +389,8 @@ function buildStyleProfileFromDraft(
       : [],
     parameters,
     draft.narrative?.pacePattern,
+    layers,
   );
-  const antiPatterns = Array.isArray(draft.antiPatterns)
-    ? draft.antiPatterns.filter((item): item is string => typeof item === 'string')
-    : [];
   const voice = {
     person: normalizeVoicePerson(draft.voice?.person),
     tone: typeof draft.voice?.tone === 'string' ? draft.voice.tone : '平实克制',
@@ -372,6 +404,7 @@ function buildStyleProfileFromDraft(
   return {
     id: randomUUID(),
     name: '自动分析风格',
+    styleProfileVersion: 'layered-v1',
     sourceFiles: reports.map(report => report.sourceFile),
     narrative: {
       introRatio: typeof draft.narrative?.introRatio === 'number' ? draft.narrative.introRatio : 0.08,
@@ -384,6 +417,7 @@ function buildStyleProfileFromDraft(
     sections,
     antiPatterns,
     parameters,
+    layers,
     arrangementStructure: derived.arrangementStructure,
     narrationConstraints: derived.narrationConstraints,
     createdAt: now,
@@ -513,12 +547,78 @@ function normalizeParameters(raw: unknown): Record<string, string> {
   );
 }
 
+function normalizeStyleLayers(draft: IStyleSynthDraft): IStyleLayers {
+  return {
+    literary: normalizeStyleLayer(draft.layers?.literary, {
+      summary: draft.voice?.tone ? `旁白语气：${draft.voice.tone}` : '未明确',
+      parameters: normalizeParameters({
+        person: draft.voice?.person,
+        tone: draft.voice?.tone,
+        density: draft.voice?.density,
+      }),
+    }),
+    artistic: normalizeStyleLayer(draft.layers?.artistic, {
+      summary: findSectionContent(draft.sections, /艺术|影像|画面|审美/u) ?? '未明确',
+    }),
+    editingTechnical: normalizeStyleLayer(draft.layers?.editingTechnical, {
+      summary: findSectionContent(draft.sections, /技术|剪辑|节奏|素材编排/u)
+        ?? draft.narrative?.pacePattern
+        ?? '未明确',
+      parameters: normalizeParameters(draft.parameters),
+    }),
+  };
+}
+
+function normalizeStyleLayer(
+  raw: Partial<IStyleLayer> | undefined,
+  fallback: { summary: string; parameters?: Record<string, string> },
+): IStyleLayer {
+  const summary = typeof raw?.summary === 'string' && raw.summary.trim()
+    ? raw.summary.trim()
+    : fallback.summary.trim() || '未明确';
+  const confidence = typeof raw?.confidence === 'number' && Number.isFinite(raw.confidence)
+    ? Math.max(0, Math.min(1, raw.confidence))
+    : summary === '未明确'
+      ? 0
+      : 0.45;
+  return {
+    summary,
+    confidence,
+    evidenceNotes: Array.isArray(raw?.evidenceNotes)
+      ? raw.evidenceNotes.filter(isNonEmptyString)
+      : [],
+    parameters: {
+      ...(fallback.parameters ?? {}),
+      ...normalizeParameters(raw?.parameters),
+    },
+    antiPatterns: Array.isArray(raw?.antiPatterns)
+      ? raw.antiPatterns.filter(isNonEmptyString)
+      : [],
+  };
+}
+
+function findSectionContent(
+  sections: IStyleSynthDraft['sections'],
+  pattern: RegExp,
+): string | undefined {
+  return sections
+    ?.find(section => typeof section?.title === 'string' && pattern.test(section.title))
+    ?.content
+    ?.trim();
+}
+
 function normalizeSections(
   sections: IStyleProfile['sections'],
   parameters: Record<string, string>,
   pacePattern?: string,
+  layers?: IStyleLayers,
 ): NonNullable<IStyleProfile['sections']> {
   const normalized = (sections ?? []).map(section => ({ ...section }));
+  if (layers) {
+    ensureLayerSection(normalized, '文学风格', layers.literary, ['literary']);
+    ensureLayerSection(normalized, '艺术风格', layers.artistic, ['artistic']);
+    ensureLayerSection(normalized, '技术分析（剪辑技法）', layers.editingTechnical, ['editingTechnical']);
+  }
   const rhythmIndex = normalized.findIndex(section =>
     section.title.includes('节奏') || section.title.includes('素材编排'),
   );
@@ -544,6 +644,30 @@ function normalizeSections(
       tags: ['material-grammar', 'rhythm'],
     },
   ];
+}
+
+function ensureLayerSection(
+  sections: NonNullable<IStyleProfile['sections']>,
+  title: string,
+  layer: IStyleLayer,
+  tags: string[],
+): void {
+  if (sections.some(section => section.title.trim() === title)) return;
+  sections.unshift({
+    id: `section-layer-${tags[0]}`,
+    title,
+    content: [
+      layer.summary,
+      '',
+      ...Object.entries(layer.parameters).map(([key, value]) => `${key}：${value}`),
+      layer.antiPatterns.length > 0 ? `禁区：${layer.antiPatterns.join(' / ')}` : '',
+    ].filter(Boolean).join('\n'),
+    tags,
+  });
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
 }
 
 function buildRhythmContractBlock(

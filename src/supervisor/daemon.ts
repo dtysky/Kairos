@@ -45,6 +45,10 @@ import {
   confirmEditFlowPlan,
 } from '../modules/edit-flow/index.js';
 import {
+  isLayeredStyleProfile,
+  loadStyleByCategory,
+} from '../modules/script/style-loader.js';
+import {
   buildColorWorkspaceState,
   inspectResolveColorBackend,
   preflightProjectColorHost,
@@ -372,7 +376,7 @@ async function routeRequest(
   }
 
   if (pathname === '/api/workspace/config/style-sources' && method === 'GET') {
-    sendJson(response, 200, await loadStyleSourcesConfig(options.workspaceRoot));
+    sendJson(response, 200, await buildStyleSourcesReadModel(options.workspaceRoot));
     return;
   }
 
@@ -989,6 +993,28 @@ function dedupeTextList(values: Array<string | undefined>): string[] {
     result.push(normalized);
   }
   return result;
+}
+
+async function buildStyleSourcesReadModel(workspaceRoot: string): Promise<unknown> {
+  const config = await loadStyleSourcesConfig(workspaceRoot);
+  const categories = await Promise.all(config.categories.map(async category => {
+    const profile = await loadStyleByCategory(`${workspaceRoot}/config/styles`, category.categoryId)
+      .catch(() => null);
+    return {
+      ...category,
+      profileStatus: profile
+        ? isLayeredStyleProfile(profile) ? 'layered-v1' : 'legacy'
+        : 'missing',
+      styleProfileVersion: profile?.styleProfileVersion,
+      availableLayers: profile?.layers
+        ? Object.keys(profile.layers)
+        : [],
+    };
+  }));
+  return {
+    ...config,
+    categories,
+  };
 }
 
 function sendJson(response: ServerResponse, statusCode: number, data: unknown): void {

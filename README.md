@@ -163,18 +163,21 @@ Current stable pipeline:
   - `config/edit-rules/*.md` stores the workspace-level `剪辑规则` library; these markdown files are human-maintained and are the only rule-content source
   - the edit-rule list is derived by scanning markdown frontmatter and filenames; projects save the selected `editRuleCategory` independently from any prose style category
   - an LLM-authored `edits/<editId>/planning/flow-plan.json` turns the selected markdown rule, project context, and the fixed capability catalog into an explicit flow; Script / Timeline require that plan to be human-confirmed before execution
-  - `config/styles/` and `config/style-sources.json` remain workspace-level text/art-style references produced by style analysis, but they are downgraded to expression guidance for final narration, subtitles, wording tone, and forbidden phrasing
-  - rough-cut structure must default to edit rules plus Pharos/material evidence, not to inferred style-profile structure
+  - `config/styles/` and `config/style-sources.json` remain workspace-level style-profile assets produced by Style Analysis; new formal profiles use `styleProfileVersion: layered-v1`
+  - a `layered-v1` style profile has exactly three layers: `literary` for narration/subtitle wording, `artistic` for image temperament and visual motifs, and `editingTechnical` for editing rhythm, shot grammar, and material-role patterns
+  - profile prose must describe abstract style-generation rules, not retell the reference videos; `literary` focuses on narration mechanics, `artistic` on aesthetic motifs / emotional spectrum / space-time logic, and `editingTechnical` on transferable editing techniques
+  - concrete sample places, events, people, or one-off incidents are allowed only as short evidence notes, not as layer summaries or section bodies
+  - rough-cut structure still defaults to edit rules plus Pharos/material evidence; style layers only enter Script / Timeline when the selected edit rule's free text leads the Flow Planner to write confirmed `styleUsage` into `edits/<editId>/planning/flow-plan.json`
 - reusable style-reference assets still live at workspace scope, not project scope:
   - `config/styles/` stores the shared style library
   - `config/style-sources.json` stores the shared style-source manifest and is the only structured style index
   - `analysis/reference-transcripts/` and `analysis/style-references/` store shared style-analysis outputs
   - `config/styles/{category}.md` holds profile content only; it is no longer paired with a separate `catalog.json`
 - workspace style profiles are no longer allowed to synthesize new edit rules from reference videos:
-  - each `config/styles/*.md` may still carry literary voice, artistic temperament, narration feel, subtitle wording preferences, and expression anti-patterns
-  - final narration / subtitle text stages may read style references; Script / Timeline rough-cut structure defaults to `config/edit-rules/{category}.md`
-  - missing style references should not block rough-cut generation; they should only surface as a final narration/subtitle expression warning
-- project script work now references a workspace `editRuleCategory` for structure and may optionally reference a workspace `styleCategory` for expression
+  - each `config/styles/*.md` may carry literary voice, artistic temperament, editing-technical observations, and layer-specific anti-patterns
+  - style observations are not formal edit rules by themselves; only the human-maintained edit rule and confirmed Flow Plan can promote a style layer from observation to hard constraint
+  - when an edit rule requests style layers, missing `styleCategory` or a legacy non-layered profile blocks Flow Plan confirmation / Script prep until the user selects or regenerates a `layered-v1` profile
+- project script work now references a workspace `editRuleCategory` for structure and may optionally reference one workspace `styleCategory`; layer usage is controlled by the confirmed Flow Plan, not by per-layer UI selectors
 - workspace style-analysis now runs as a formal deterministic prep job:
   - `health-check -> clip -> probe -> shot-detect -> transcribe -> keyframes -> vlm -> video-complete -> awaiting_agent|completed`
   - the prep job writes workspace `.tmp/style-analysis/{category}/progress.json`, `analysis/reference-transcripts/`, and `analysis/style-references/`
@@ -184,13 +187,13 @@ Current stable pipeline:
     - deterministic prep writes `analysis/style-references/{category}/agent-summary.json`
     - `style-profile-synthesizer` reads only that packetized summary and writes `style-draft.json`
     - `style-profile-reviewer` reads only the draft + packet and writes `style-review.json`
-    - reviewer blockers are a hard gate before `config/styles/{category}.md`
+    - reviewer blockers are a hard gate before `config/styles/{category}.md`, including missing layers, reference-video recaps masquerading as style profiles, missing literary writing mechanics, insufficient artistic abstraction, overfitted layer claims, and editing-technical claims that pretend to be new edit rules
     - formal stage execution must use a host packet runner / real subagent chain; external `ILlmClient` fallback is not allowed on the official path
     - workspace/project runtime may declare that packet runner via `config/runtime.json` `agentPacketRunnerCommand` / `agentPacketRunnerArgs` / `agentPacketRunnerCwd`
 - the `/script` console page now acts as deterministic script preparation:
   - user first selects a workspace `editRuleCategory` in `/script`; that selection auto-saves and is independent from optional `styleCategory`
   - changing `editRuleCategory` now invalidates the previous edit-unit planning/script/timeline run immediately; Kairos clears that edit unit's old planning artifacts, `material-overview`, brief draft body, outline, and `edits/<editId>/script/current.json`, then returns the workflow to `await_brief_draft`
-  - changing `styleCategory` alone no longer invalidates rough-cut structure; it only changes later expression guidance for narration/subtitles
+  - changing `styleCategory` invalidates according to confirmed `styleUsage`: if the plan used `artistic` or `editingTechnical` for planning/recall, Kairos clears planning/script structure artifacts; if the plan only used `literary`, Kairos clears only expression-stage script/subtitle artifacts
   - before deterministic script prep, the Flow Planner must generate `edits/<editId>/planning/flow-plan.json` from the raw edit-rule markdown, capability catalog, project brief, Pharos summary, chronology, and analysis availability; the user must confirm the plan before `material.recall / script.generate / timeline.generate` can run
   - agent then generates `edits/<editId>/script/material-overview.md` and the initial `script-brief`
   - user reviews and manually saves the brief in `/script`

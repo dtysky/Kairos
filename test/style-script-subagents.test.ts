@@ -2,14 +2,13 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { afterEach, describe, expect, it } from 'vitest';
-import type { ILlmClient, ILlmMessage, ILlmOptions } from '../src/modules/llm/client.js';
+import type { IJsonPacketAgentInvocation, IJsonPacketAgentRunner } from '../src/modules/agents/runtime.js';
 import {
   buildScriptAgentContract,
   buildSpatialStoryContext,
   runStyleProfileAgentPipeline,
   type IStyleReferenceVideoAnalysis,
 } from '../src/modules/script/index.js';
-import type { IStyleProfile } from '../src/protocol/schema.js';
 import {
   getStyleAgentPacketPath,
   getStyleAgentSummaryPath,
@@ -17,18 +16,18 @@ import {
   getStyleReviewPath,
 } from '../src/store/index.js';
 
-class MockLlmClient implements ILlmClient {
-  readonly calls: Array<{ messages: ILlmMessage[]; opts?: ILlmOptions }> = [];
+class MockAgentRunner implements IJsonPacketAgentRunner {
+  readonly calls: IJsonPacketAgentInvocation[] = [];
 
   constructor(private readonly responses: string[]) {}
 
-  async chat(messages: ILlmMessage[], opts?: ILlmOptions): Promise<string> {
-    this.calls.push({ messages, opts });
+  async run<T>(input: IJsonPacketAgentInvocation): Promise<T> {
+    this.calls.push(input);
     const next = this.responses.shift();
     if (typeof next !== 'string') {
-      throw new Error('MockLlmClient ran out of responses.');
+      throw new Error('MockAgentRunner ran out of responses.');
     }
-    return next;
+    return JSON.parse(next) as T;
   }
 }
 
@@ -65,7 +64,7 @@ describe('style + script clean-context subagents', () => {
       }],
     }];
 
-    const llm = new MockLlmClient([
+    const agentRunner = new MockAgentRunner([
       JSON.stringify({
         narrative: {
           introRatio: 0.1,
@@ -124,6 +123,29 @@ describe('style + script clean-context subagents', () => {
           旁白视角: '第一人称',
           aerial角色: '少用',
         },
+        layers: {
+          literary: {
+            summary: '第一人称、克制表达。',
+            confidence: 'high',
+            evidenceNotes: ['旁白样例保持克制。'],
+            parameters: { voice: '第一人称' },
+            antiPatterns: ['不要为了抒情而打断路线推进'],
+          },
+          artistic: {
+            summary: '路线空间推进，地点和过程自己说话。',
+            confidence: 'moderate',
+            evidenceNotes: ['空间推进反复出现。'],
+            parameters: { motif: '路线' },
+            antiPatterns: [],
+          },
+          editingTechnical: {
+            summary: '稳步推进，按空间阶段切。',
+            confidence: 'high',
+            evidenceNotes: ['cutsPerMinute 和 shotRecognitions 支持。'],
+            parameters: { pace: '稳步推进' },
+            antiPatterns: [],
+          },
+        },
       }),
       JSON.stringify({
         verdict: 'pass',
@@ -132,7 +154,7 @@ describe('style + script clean-context subagents', () => {
       }),
     ]);
 
-    const result = await runStyleProfileAgentPipeline(llm, reports, {
+    const result = await runStyleProfileAgentPipeline(agentRunner, reports, {
       workspaceRoot,
       categoryId: 'travel-doc',
       displayName: 'Travel Doc',
@@ -145,8 +167,20 @@ describe('style + script clean-context subagents', () => {
     expect(await readFile(getStyleAgentSummaryPath(workspaceRoot, 'travel-doc'), 'utf-8')).toContain('travel-doc');
     expect(await readFile(getStyleDraftPath(workspaceRoot, 'travel-doc'), 'utf-8')).toContain('不要为了抒情而打断路线推进');
     expect(await readFile(getStyleReviewPath(workspaceRoot, 'travel-doc'), 'utf-8')).toContain('"verdict": "pass"');
-    expect(await readFile(getStyleAgentPacketPath(workspaceRoot, 'travel-doc', 'style-profile-synthesizer'), 'utf-8')).toContain('"identity": "style-profile-synthesizer"');
-    expect(llm.calls).toHaveLength(4);
+    const styleSynthPacket = await readFile(getStyleAgentPacketPath(workspaceRoot, 'travel-doc', 'style-profile-synthesizer'), 'utf-8');
+    const styleReviewPacket = await readFile(getStyleAgentPacketPath(workspaceRoot, 'travel-doc', 'style-profile-reviewer'), 'utf-8');
+    expect(styleSynthPacket).toContain('"identity": "style-profile-synthesizer"');
+    expect(styleSynthPacket).toContain('风格生成法则');
+    expect(styleSynthPacket).toContain('文学风格必须重点分析旁白写法');
+    expect(styleReviewPacket).toContain('sample_recap_instead_of_style');
+    expect(styleReviewPacket).toContain('literary_mechanics_missing');
+    expect(styleReviewPacket).toContain('artistic_abstraction_missing');
+    expect(agentRunner.calls.map(call => call.promptId)).toEqual([
+      'style/style-profile-synthesizer',
+      'style/style-profile-reviewer',
+      'style/style-profile-synthesizer',
+      'style/style-profile-reviewer',
+    ]);
   });
 
   it('builds spatial story narrative hints and folds them into script agent contract', () => {
@@ -279,62 +313,37 @@ describe('style + script clean-context subagents', () => {
     expect(spatialStory.coverageGaps.some(gap => gap.kind === 'weak-location')).toBe(true);
     expect(spatialStory.coverageGaps.some(gap => gap.kind === 'pharos-uncovered')).toBe(true);
 
-    const style: IStyleProfile = {
-      id: 'style-1',
-      name: 'Travel',
-      sourceFiles: [],
-      narrative: {
-        introRatio: 0.1,
-        outroRatio: 0.05,
-        avgSegmentDurationSec: 25,
-        brollFrequency: 0.2,
-        pacePattern: '路线推进',
-      },
-      voice: {
-        person: '1st',
-        tone: '克制',
-        density: 'moderate',
-        sampleTexts: [],
-      },
-      sections: [],
-      antiPatterns: ['不要跳过空间过渡'],
-      parameters: {},
-      arrangementStructure: {
-        primaryAxis: 'route progression',
-        secondaryAxes: [],
-        chapterPrograms: [],
-        chapterSplitPrinciples: ['按路线阶段切段'],
-        chapterTransitionNotes: ['转场要保留地点转换'],
-      },
-      narrationConstraints: {
-        perspective: '第一人称',
-        tone: '克制',
-        informationDensity: 'moderate',
-        explanationBias: 'low',
-        forbiddenPatterns: ['不要空泛抒情'],
-        notes: ['尽量让空间关系自己说话'],
-      },
-      createdAt: '2026-01-01T00:00:00.000Z',
-      updatedAt: '2026-01-01T00:00:00.000Z',
-    };
-
     const contract = buildScriptAgentContract({
       brief: {
         projectName: 'Project 1',
+        editRuleCategory: 'travel-doc',
         workflowState: 'ready_for_agent',
         goalDraft: ['按路线推进讲清这段旅程'],
         constraintDraft: ['不要打断 chronology'],
         planReviewDraft: ['检查地点切换是否清楚'],
         segments: [],
       } as Parameters<typeof buildScriptAgentContract>[0]['brief'],
-      style,
+      editRule: {
+        categoryId: 'travel-doc',
+        displayName: 'Travel Doc Rule',
+        description: undefined,
+        absolutePath: '/tmp/travel-doc.md',
+        relativePath: 'travel-doc.md',
+        contentHash: 'hash-a',
+        frontMatter: {},
+        markdown: '# Travel Doc Rule\n\n按路线推进讲清空间转换。',
+      },
       spatialStory,
       chronology: context.chronology,
       pharosContext: context.pharosContext,
     });
 
     expect(contract.gpsNarrativeHints[0]).toContain('Town A');
-    expect(contract.styleForbidden).toEqual(expect.arrayContaining(['不要跳过空间过渡', '不要空泛抒情']));
+    expect(contract.styleMust).toEqual(expect.arrayContaining([
+      'editRuleCategory=travel-doc',
+      'editRuleHash=hash-a',
+    ]));
+    expect(contract.styleForbidden).toContain('不要从剪辑规则 markdown 外推默认总时长、段落预算或隐藏启发式权重。');
     expect(contract.pharosPendingHints.some(item => item.includes('Town B'))).toBe(true);
     expect(contract.chronologyGuardrails.some(item => item.includes('chronology'))).toBe(true);
   });

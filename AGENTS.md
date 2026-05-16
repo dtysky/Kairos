@@ -206,7 +206,9 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - `edits/<editId>/planning/flow-plan.json` is the explicit LLM-authored execution plan derived from the selected rule markdown, project context, and the fixed capability catalog
   - Script / Timeline must not execute `material.recall`, `script.generate`, or `timeline.generate` unless that Flow Plan is confirmed and matches the current edit-rule hash
   - code must only parse Flow Plan fields such as `capabilityId`, `inputRefs`, `outputRefs`, and `gate`; it must not keyword-parse edit-rule markdown into arrangement heuristics
-  - style analysis output in `config/styles/` is downgraded to text/art-style reference for final narration/subtitle expression and must not be used as the default rough-cut structure source
+  - style analysis output in `config/styles/` is now a `layered-v1` profile with `literary / artistic / editingTechnical` layers; these layers are not formal edit rules by themselves
+  - Flow Planner must structure any edit-rule-requested style use into confirmed `flow-plan.json.styleUsage`; code may only inject style layers authorized there and must not keyword-parse edit-rule markdown or legacy style prose
+  - if `styleUsage` needs any style layer but `styleCategory` is missing or the selected profile is legacy non-layered, Flow Plan confirmation / Script prep must block and ask the user to choose or regenerate a `layered-v1` profile
 - Treat a Kairos project as a shared material workspace that may contain multiple independent Edit Units:
   - shared truth stays at project root: `pharos/`, `store/`, `analysis/`, `media/chronology.json`, `color/`
   - edit-specific truth lives under `edits/<editId>/planning/`, `edits/<editId>/script/`, `edits/<editId>/timeline/`, and `edits/<editId>/subtitles/`
@@ -215,10 +217,10 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - Resolve edit naming is deterministic: Project `${projectBrief.name} [Edit]`, Timeline `${editLabel} [${editId}]`
   - locked first rough cuts persist to `edits/<editId>/timeline/locked-rough-cut.json`
 - Treat `/script` as a preparation surface by default:
-  - `/script` first auto-saves the selected `editRuleCategory`; optional `styleCategory` is only expression reference
+  - `/script` first auto-saves the selected `editRuleCategory`; optional `styleCategory` selects one layered style profile, while actual layer consumption is controlled by confirmed `styleUsage`
   - changing `editRuleCategory` invalidates the previous edit-unit planning/script/timeline run immediately and should clear stale edit-specific artifacts before asking Agent to start over
   - after selecting an edit rule, run the Edit Flow Planner and require human confirmation of `edits/<editId>/planning/flow-plan.json` before script prep or timeline generation
-  - changing `styleCategory` alone must not clear rough-cut structure artifacts
+  - changing `styleCategory` invalidates according to confirmed `styleUsage`: if `artistic` or `editingTechnical` participated in planning / recall, clear planning and script structure artifacts; if only `literary` was used, clear only expression-stage script/subtitle artifacts
   - Agent drafts `edits/<editId>/script/material-overview.md` and the initial edit-unit `script-brief`
   - user reviews and manually saves the brief in `/script`
   - Console / Supervisor then prepare deterministic script inputs

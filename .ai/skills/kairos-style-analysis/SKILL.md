@@ -1,19 +1,20 @@
 ---
 name: kairos-style-analysis
 description: >-
-  Analyze historical video works to extract text/art-style references by category.
+  Analyze historical video works to extract layered-v1 style profiles by category.
   Supports multiple style categories (travel documentary, city walk, etc.) with
-  user-provided guidance prompts. Outputs expression references for narration and subtitles,
+  user-provided guidance prompts. Outputs literary, artistic, and editing-technical
+  style layers that may be consumed only when edit rules / Flow Plan authorize them,
   not formal edit rules.
   Use when the user provides reference videos, wants to analyze their style,
   or mentions style, tone, voice, category, or reference works.
 ---
 
-# Kairos: Style Analysis — 分类文案 / 艺术风格参考提取
+# Kairos: Style Analysis — layered-v1 分层风格档案提取
 
-从用户的历史成片中提取文案、旁白语感、艺术气质和表达禁区参考。支持多分类管理和用户指导词。
+从用户的历史成片中提取分层风格档案。支持多分类管理和用户指导词。
 
-Style Analysis 当前不再产出或推断正式 `剪辑规则`。正式结构规则由人工维护的 `config/edit-rules/` 提供；Style Analysis 结果只给最终旁白、字幕文本和表达气质阶段参考。
+Style Analysis 当前不产出或推断正式 `剪辑规则`。正式结构规则由人工维护的 `config/edit-rules/` 提供；Style Analysis 结果落成 `styleProfileVersion: layered-v1`，包含 `literary / artistic / editingTechnical` 三层。脚本阶段只有在剪辑规则自由正文经 Flow Planner 写入 confirmed `flow-plan.json.styleUsage` 后，才可读取被授权的层。
 
 ## 变更工作流规则
 
@@ -28,7 +29,7 @@ Style Analysis 当前不再产出或推断正式 `剪辑规则`。正式结构�
 
 ### 分类 (Category)
 
-用户的作品可能有多种类型，每种类型有不同的文案 / 艺术风格参考：
+用户的作品可能有多种类型，每种类型有一份 layered-v1 风格档案：
 
 ```
 <workspaceRoot>/config/
@@ -40,7 +41,26 @@ Style Analysis 当前不再产出或推断正式 `剪辑规则`。正式结构�
     └── vlog.md                  # 日常 vlog 风格
 ```
 
-每个分类独立分析、独立存储。`config/style-sources.json` 负责 `categoryId -> profilePath/displayName/guidancePrompt/sources`，`config/styles/*.md` 只承载文案 / 艺术风格参考正文，不承载粗剪结构规则。
+每个分类独立分析、独立存储。`config/style-sources.json` 负责 `categoryId -> profilePath/displayName/guidancePrompt/sources`，`config/styles/*.md` 是主档案。新档案 front matter 必须包含 `styleProfileVersion: layered-v1`，正文固定包含：
+
+- `## 文学风格`：旁白 / 字幕 / 文案语气、句式、人称、表达禁区。
+- `## 艺术风格`：影像气质、审美母题、情绪光谱、画面语言。
+- `## 技术分析（剪辑技法）`：剪辑节奏、镜头语法、素材角色、转场和声画组织；不覆盖调色、机型、曝光、音频工程诊断。
+
+### 抽象生成法则（强制）
+
+风格档案必须是“风格生成法则”，不是参考视频内容复述。`test/style-profile.md` 是当前写法标杆：它会引用样本，但引用只服务于抽象规则；主体写的是叙事结构、旁白写法、情绪调度、审美母题、镜头语法、禁区和参数。
+
+生成 `layered-v1` 时必须遵守：
+
+- **先写机制，再写证据**：每个结论先说明可迁移风格法则，再用少量样本事实证明；不得按样本时间线、地点或事件顺序复述。
+- **文学风格重点分析旁白写法**：叙述视角、句式长短、转场词、用词偏好、信息密度、情绪词等级、事实与判断的先后关系、口语与书面语的混合方式。
+- **艺术风格重点分析抽象审美结构**：审美母题、情绪光谱、空间观、时间观、人物与环境关系、光线 / 色温 / 运动的情绪映射、价值观；不得写成具体地貌、景点或物件清单。
+- **技术分析重点分析剪辑技法**：结构模板、段落节奏、镜头语法、素材角色、转场和声画组织；不得越界成正式剪辑规则。
+- **样本细节只能做 evidence**：地名、人物、单次遭遇、具体餐食、具体景点只允许出现在 `evidenceNotes` 或简短例证里，不能成为 summary 或章节主体。
+- **Reviewer 必须拦截复述型草稿**：如果草稿主体是在讲参考视频发生了什么，而不是抽象风格机制，必须判 blocker。
+
+旧的未分层 `config/styles/*.md` 视为 legacy。若剪辑规则要求使用风格层，legacy profile 必须阻塞并提示用户重跑 `/style` 或人工改写为 layered-v1。
 
 ### 指导词 (Guidance Prompt)
 
@@ -72,11 +92,11 @@ Style Analysis 当前不再产出或推断正式 `剪辑规则`。正式结构�
 - 风格分析过程中产生的关键帧、探测结果、临时摘要等中间产物，统一放在 **当前 workspaceRoot** 下的 `.tmp/`，例如 `.tmp/style-analysis/{category}/`
 - 当前正式链路是 `Supervisor deterministic prep -> awaiting_agent -> Agent final style profile`
 - deterministic prep 必须持续写 `.tmp/style-analysis/{category}/progress.json`，并把逐视频报告与 transcript 落到 `analysis/style-references/`、`analysis/reference-transcripts/`
-- final Agent style-reference synthesis 当前正式改成 clean-context subagent 流水线：
+- final Agent style synthesis 当前正式是 clean-context subagent 流水线：
   - deterministic prep 额外写 `analysis/style-references/{category}/agent-summary.json`
-  - `style-profile-synthesizer` 先写 `style-draft.json`
+  - `style-profile-synthesizer` 先写三层 `style-draft.json`
   - `style-profile-reviewer` 再写 `style-review.json`
-  - reviewer blockers 是落成 `config/styles/{category}.md` 的硬闸门；reviewer 也必须阻止把参考视频剪辑节奏误写成正式剪辑规则
+  - reviewer blockers 是落成 `config/styles/{category}.md` 的硬闸门；reviewer 必须阻止缺层、证据不足却强断言、以及把 `editingTechnical` 冒充正式剪辑规则
 - `/style` monitor 默认应回到“最相关的最近分类”，而不是在无显式 `categoryId` 时盲目回 `defaultCategory`
 - `progress.json` 不应只保留粗阶段；至少应能表达当前视频、当前阶段开始时间、`keyframes` 抽帧计数、`vlm` shot-group 识别计数，以及已完成 / 待处理队列摘要
 - 不要把这类临时产物写到 `C:` 盘系统临时目录或用户目录外的随机位置
@@ -325,6 +345,27 @@ const header = buildFrontMatter({
 });
 const markdownContent = header + bodyMarkdown;
 ```
+
+**分层抽象写作合同（当前默认口径）**：
+
+- `## 文学风格` 不是“说了哪些地方 / 哪些事件”，而是旁白生成法则：
+  - 叙事视角：第一人称 / 我们 / 外部解说如何切换
+  - 句式：短句、中长句、排比、转折、近指、无主语省略等是否稳定
+  - 用词：高频情绪词、空间词、时间词、转场词、禁用词
+  - 信息密度：事实、地名、历史、价格、路况、主观判断如何排序
+  - 情绪调度：何时克制、何时抬升、何时留白
+- `## 艺术风格` 不是“出现了哪些具体风景”，而是审美生成法则：
+  - 审美母题：路线、边界、尺度、等待、孤独、历史、文明对比等
+  - 空间观：空间是背景、阻力、角色还是情绪压力来源
+  - 时间观：天光、昼夜、季节、等待、疲惫如何影响情绪
+  - 画面组织：大景 / 细节 / 人物 / 环境之间的关系
+  - 价值观：敬畏、自由、克制、亲历、反消费式旅游等
+- `## 技术分析（剪辑技法）` 不是正式剪辑规则，而是可迁移技法观察：
+  - 结构模板、段落微循环、节奏伸缩
+  - `aerial / timelapse / drive / talking-head / broll / nat sound` 的角色
+  - 开场建场、地理重置、情绪释放、收束的镜头语法
+  - 声画组织与环境声使用倾向
+- 每层都要有 `summary / confidence / evidenceNotes / parameters / antiPatterns` 对应信息；证据不足写 `未明确 / 不明显 / 少用`，不得省略。
 
 **节奏 / 素材 / 运镜章节合同（当前默认口径）**：
 

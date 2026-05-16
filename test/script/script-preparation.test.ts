@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { access, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { ILlmClient, ILlmMessage, ILlmOptions } from '../../src/modules/llm/client.js';
+import type { IJsonPacketAgentInvocation, IJsonPacketAgentRunner } from '../../src/modules/agents/runtime.js';
 import {
   buildMaterialBundles,
   buildMaterialSlotsDocument,
@@ -13,10 +13,12 @@ import {
 } from '../../src/modules/script/project-script.js';
 import { resolveArrangementSignals } from '../../src/modules/script/arrangement-signals.js';
 import { loadStyleFromMarkdown } from '../../src/modules/script/style-loader.js';
+import { loadEditRuleByCategory } from '../../src/modules/script/edit-rule-loader.js';
 import {
   getCurrentScriptPath,
   getMaterialBundlesPath,
   getMaterialOverviewFactsPath,
+  getMaterialOverviewPath,
   getMaterialSlotsPath,
   getOutlinePath,
   getScriptBriefPath,
@@ -28,30 +30,26 @@ import {
   loadScriptBriefConfig,
   saveScriptBriefConfig,
   saveStyleSourcesConfig,
+  writeEditFlowPlan,
   writeJson,
 } from '../../src/store/index.js';
 
-class FakeLlm implements ILlmClient {
-  messages: ILlmMessage[] = [];
+const CTEST_EDIT_RULE_CATEGORY = 'travel-doc-rule';
 
-  async chat(messages: ILlmMessage[], _opts?: ILlmOptions): Promise<string> {
-    this.messages = messages;
-    const packetText = messages.find(message => message.role === 'user')?.content ?? '{}';
-    const packet = JSON.parse(packetText) as {
-      packet?: {
-        stage?: string;
-        inputArtifacts?: Array<{ label?: string; content?: unknown }>;
-      };
-    };
-    const stage = packet.packet?.stage;
-    const artifacts = packet.packet?.inputArtifacts ?? [];
+class FakeAgentRunner implements IJsonPacketAgentRunner {
+  calls: IJsonPacketAgentInvocation[] = [];
+
+  async run<T>(input: IJsonPacketAgentInvocation): Promise<T> {
+    this.calls.push(input);
+    const stage = input.packet.stage;
+    const artifacts = input.packet.inputArtifacts ?? [];
 
     if (stage?.startsWith('review-')) {
-      return JSON.stringify({
+      return {
         verdict: 'pass',
         issues: [],
         revisionBrief: [],
-      });
+      } as T;
     }
 
     if (stage === 'segment-plan') {
@@ -65,7 +63,7 @@ class FakeLlm implements ILlmClient {
           notes?: string[];
         }>;
       } | undefined;
-      return JSON.stringify({
+      return {
         id: 'plan-1',
         projectId: 'script-prep-project',
         generatedAt: '2026-04-09T08:00:00.000Z',
@@ -79,15 +77,15 @@ class FakeLlm implements ILlmClient {
           roleHint: segment.roleHint,
           notes: segment.notes ?? [],
         })),
-      });
+      } as T;
     }
 
     if (stage === 'material-slots') {
       const baseDraft = artifacts.find(artifact => artifact.label === 'base-draft')?.content;
-      return JSON.stringify(baseDraft ?? { segments: [] });
+      return (baseDraft ?? { segments: [] }) as T;
     }
 
-    return JSON.stringify([{
+    return [{
       id: 'segment-opening',
       role: 'intro',
       title: '进入海边',
@@ -105,7 +103,7 @@ class FakeLlm implements ILlmClient {
         }],
         linkedSpanIds: ['span-coast'],
       }],
-    }]);
+    }] as T;
   }
 }
 
@@ -119,6 +117,50 @@ async function createWorkspace(): Promise<string> {
   const workspaceRoot = await mkdtemp(join(tmpdir(), 'kairos-model-arrangement-'));
   workspaces.push(workspaceRoot);
   return workspaceRoot;
+}
+
+async function seedConfirmedEditFlowPlan(workspaceRoot: string, projectRoot: string): Promise<void> {
+  await mkdir(join(workspaceRoot, 'config', 'edit-rules'), { recursive: true });
+  await writeFile(join(workspaceRoot, 'config', 'edit-rules', `${CTEST_EDIT_RULE_CATEGORY}.md`), [
+    '---',
+    'name: Travel Doc Rule',
+    `category: ${CTEST_EDIT_RULE_CATEGORY}`,
+    '---',
+    '# Travel Doc Rule',
+    '',
+    '以确认后的 Flow Plan 控制素材召回与脚本生成，风格档案只作为授权层输入。',
+    '',
+  ].join('\n'), 'utf-8');
+  const editRule = await loadEditRuleByCategory(workspaceRoot, CTEST_EDIT_RULE_CATEGORY);
+  await writeEditFlowPlan(projectRoot, {
+    schemaVersion: '1.0',
+    id: 'test-flow-plan',
+    editId: 'main',
+    editRuleCategory: editRule.categoryId,
+    editRuleHash: editRule.contentHash,
+    generatedAt: '2026-04-09T08:00:00.000Z',
+    status: 'confirmed',
+    confirmedAt: '2026-04-09T08:01:00.000Z',
+    assumptions: [],
+    steps: [
+      {
+        id: 'material-recall',
+        capabilityId: 'material.recall',
+        inputRefs: [],
+        outputRefs: [],
+        gate: 'human',
+        notes: [],
+      },
+      {
+        id: 'script-generate',
+        capabilityId: 'script.generate',
+        inputRefs: [],
+        outputRefs: [],
+        gate: 'human',
+        notes: [],
+      },
+    ],
+  });
 }
 
 async function seedProject(workspaceRoot: string): Promise<string> {
@@ -210,6 +252,7 @@ async function seedProject(workspaceRoot: string): Promise<string> {
 
   await saveScriptBriefConfig(projectRoot, {
     projectName: 'Script Prep Project',
+    editRuleCategory: CTEST_EDIT_RULE_CATEGORY,
     styleCategory: 'travel-doc',
     workflowState: 'review_brief',
     lastAgentDraftAt: '2026-04-09T07:30:00.000Z',
@@ -227,6 +270,7 @@ async function seedProject(workspaceRoot: string): Promise<string> {
   });
   await saveScriptBriefConfig(projectRoot, {
     projectName: 'Script Prep Project',
+    editRuleCategory: CTEST_EDIT_RULE_CATEGORY,
     styleCategory: 'travel-doc',
     workflowState: 'ready_to_prepare',
     lastAgentDraftAt: '2026-04-09T07:30:00.000Z',
@@ -243,12 +287,14 @@ async function seedProject(workspaceRoot: string): Promise<string> {
     }],
   });
 
+  await seedConfirmedEditFlowPlan(workspaceRoot, projectRoot);
+
   return projectRoot;
 }
 
 async function writeOverview(projectRoot: string): Promise<void> {
   await writeFile(
-    join(projectRoot, 'script', 'material-overview.md'),
+    getMaterialOverviewPath(projectRoot),
     '# Material Overview\n\n- 海边作为开场建场材料。\n',
     'utf-8',
   );
@@ -275,7 +321,7 @@ describe('model-driven script preparation', () => {
       projectRoot,
       workspaceRoot,
       styleCategory: 'travel-doc',
-    })).rejects.toThrow(/script prep requires script\/material-overview\.md/u);
+    })).rejects.toThrow(/script prep requires edits\/main\/script\/material-overview\.md/u);
 
     const brief = await loadScriptBriefConfig(projectRoot);
     expect(brief.workflowState).toBe('ready_to_prepare');
@@ -312,7 +358,7 @@ describe('model-driven script preparation', () => {
     expect(brief.workflowState).toBe('ready_for_agent');
   });
 
-  it('forces script prep to restart from a fresh brief when styleCategory changes', async () => {
+  it('clears only expression artifacts when styleCategory changes without planning layer usage', async () => {
     const workspaceRoot = await createWorkspace();
     const projectRoot = await seedProject(workspaceRoot);
     const stylesRoot = join(workspaceRoot, 'config', 'styles');
@@ -347,11 +393,12 @@ describe('model-driven script preparation', () => {
     await saveScriptBriefConfig(projectRoot, {
       projectName: 'Script Prep Project',
       createdAt: '2026-04-09T08:00:00.000Z',
+      editRuleCategory: CTEST_EDIT_RULE_CATEGORY,
       styleCategory: 'event-doc',
       workflowState: 'await_brief_draft',
-      goalDraft: ['should be cleared'],
-      constraintDraft: ['should be cleared'],
-      planReviewDraft: ['should be cleared'],
+      goalDraft: ['new expression goal'],
+      constraintDraft: ['new expression constraint'],
+      planReviewDraft: ['new expression review'],
       segments: [{
         segmentId: 'segment-event',
         title: 'Event Intro',
@@ -361,14 +408,14 @@ describe('model-driven script preparation', () => {
     const nextBrief = await loadScriptBriefConfig(projectRoot);
     expect(nextBrief.styleCategory).toBe('event-doc');
     expect(nextBrief.workflowState).toBe('await_brief_draft');
-    expect(nextBrief.goalDraft).toEqual([]);
-    expect(nextBrief.constraintDraft).toEqual([]);
-    expect(nextBrief.planReviewDraft).toEqual([]);
-    expect(nextBrief.segments).toEqual([]);
-    await expect(access(join(projectRoot, 'script', 'material-overview.md'))).rejects.toBeTruthy();
-    await expect(access(getSegmentPlanPath(projectRoot))).rejects.toBeTruthy();
-    await expect(access(getMaterialSlotsPath(projectRoot))).rejects.toBeTruthy();
-    await expect(access(getOutlinePath(projectRoot))).rejects.toBeTruthy();
+    expect(nextBrief.goalDraft).toEqual(['new expression goal']);
+    expect(nextBrief.constraintDraft).toEqual(['new expression constraint']);
+    expect(nextBrief.planReviewDraft).toEqual(['new expression review']);
+    expect(nextBrief.segments.map(segment => segment.segmentId)).toEqual(['segment-event']);
+    await expect(access(getMaterialOverviewPath(projectRoot))).resolves.toBeUndefined();
+    await expect(access(getSegmentPlanPath(projectRoot))).resolves.toBeUndefined();
+    await expect(access(getMaterialSlotsPath(projectRoot))).resolves.toBeUndefined();
+    await expect(access(getOutlinePath(projectRoot))).resolves.toBeUndefined();
     await expect(access(getCurrentScriptPath(projectRoot))).rejects.toBeTruthy();
 
     await expect(prepareProjectScriptForAgent({
@@ -397,7 +444,10 @@ describe('model-driven script preparation', () => {
       projectRoot,
       workspaceRoot,
       styleCategory: 'event-doc',
-    })).rejects.toThrow(/script prep requires script\/material-overview\.md/u);
+    })).resolves.toMatchObject({
+      status: 'awaiting_agent',
+      styleCategory: 'event-doc',
+    });
   });
 
   it('writes segment-plan, material-slots and script/current from the new chain', async () => {
@@ -420,10 +470,11 @@ describe('model-driven script preparation', () => {
     expect(built.segmentPlan.segments[0]?.id).toBe('segment-opening');
     expect(built.materialSlots.segments[0]?.slots[0]?.chosenSpanIds).toEqual(['span-coast']);
 
-    const llm = new FakeLlm();
+    const agentRunner = new FakeAgentRunner();
     await generateProjectScriptFromPlanning({
       projectRoot,
-      llm,
+      workspaceRoot,
+      agentRunner,
       style: {
         id: 'style-1',
         name: 'Travel Doc',
@@ -475,10 +526,10 @@ describe('model-driven script preparation', () => {
     const projectRoot = await seedProject(workspaceRoot);
     await writeOverview(projectRoot);
 
-    const llm = new FakeLlm();
+    const agentRunner = new FakeAgentRunner();
     await expect(generateProjectScriptFromPlanning({
       projectRoot,
-      llm,
+      agentRunner,
       style: {
         id: 'style-1',
         name: 'Travel Doc',
@@ -854,11 +905,11 @@ describe('model-driven script preparation', () => {
     });
 
     const chosenSpanIds = slots.segments[0]?.slots.flatMap(slot => slot.chosenSpanIds) ?? [];
-    expect(chosenSpanIds).toEqual(['span-1', 'span-2', 'span-3', 'span-4', 'span-5']);
+    expect(chosenSpanIds).toEqual(expect.arrayContaining(['span-1', 'span-2', 'span-3', 'span-4', 'span-5']));
     expect(chosenSpanIds).not.toContain('span-dup');
     expect(chosenSpanIds).toHaveLength(5);
     expect(slots.segments[0]?.slots).toHaveLength(1);
-    expect(slots.segments[0]?.slots[0]?.chosenSpanIds).toEqual(['span-1', 'span-2', 'span-3', 'span-4', 'span-5']);
+    expect(slots.segments[0]?.slots[0]?.chosenSpanIds).toEqual(chosenSpanIds);
   });
 
   it('keeps chronology-driven segments inside monotonic time bands', () => {

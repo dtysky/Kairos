@@ -11,7 +11,7 @@ description: >-
 
 加载剪辑规则 → `/script` 自动保存 `editRuleCategory` → Edit Flow Planner 生成并等待人工确认 `edits/<editId>/planning/flow-plan.json` → `[subagent: overview-cartographer]` / `[subagent: brief-editor]` 生成初版 `script-brief` 与材料概览 → 用户审查并手动保存 brief → `/script` 做 deterministic prep → `[subagent: beat-writer]` 只写表达层正式脚本。
 
-**核心特点**：粗剪结构由人工维护的剪辑规则 + Pharos / 素材证据驱动；风格分析产物只作为最终旁白、字幕和表达气质参考。
+**核心特点**：粗剪结构由人工维护的剪辑规则 + Pharos / 素材证据驱动；风格分析产物是 `layered-v1` 分层档案，只有剪辑规则自由正文经 Flow Planner 写入 confirmed `flow-plan.json.styleUsage` 后，脚本阶段才可读取被授权的层。
 
 当前正式 script prep 链路已经切成：
 - `Edit Rule Markdown + Capability Catalog + Project Context -> confirmed Flow Plan`
@@ -49,7 +49,9 @@ description: >-
 - 剪辑规则必须由用户人工指定；系统不能根据当前项目素材或参考成片自动生成、自动挑选或自动推断剪辑规则。
 - 剪辑规则正文只给 Flow Planner 和 stage agents 阅读；代码只能读取已确认 Flow Plan 里的 `capabilityId / inputRefs / outputRefs / gate`，不能关键词解析 markdown 正文生成 arrangement heuristics。
 - `editRule` / Flow Plan 只约束顺序、阶段完整、素材角色、功能位和禁区，不默认推出总时长或段落预算。
-- `styleCategory` 独立于 `editRuleCategory`；缺少文案 / 艺术风格参考不阻塞粗剪，只在最终旁白 / 字幕表达阶段提示。
+- `styleCategory` 独立于 `editRuleCategory`；它仍是单一分类选择，但 profile 内部固定分为 `literary / artistic / editingTechnical` 三层。
+- 如果剪辑规则要求使用风格层，Flow Planner 必须把本轮使用层、强弱和适用 stage 写入 `flow-plan.json.styleUsage`；代码只能读取该结构化结果，不得关键词解析 edit-rule markdown。
+- 如果 `styleUsage` 需要任何风格层但未选择 `styleCategory`，或选中 profile 是 legacy 非分层格式，Flow Plan 不能确认，Script prep 必须阻塞并提示重跑 `/style`。
 - 旅行类默认规则必须先用 Pharos 建构整体行程印象，再用素材分析补漏，尤其结合口播、GPS、record 与实际素材缺口。
 - `targetDurationMs` 只保留为可选审阅提示；除非用户明确给出成片时长、交付窗口或某段硬时长，否则不要在 brief、segment plan、material slots 或 beat 中自动补全。
 - script prep 与 rough-cut recall 默认高召回：优先保留过程证据、阶段证据、事件节点和可用原声，只移除空白、坏段和高重叠近重复。
@@ -89,9 +91,10 @@ description: >-
   - 手写规则样板：`test/edit-rule.md`
   - 如果还没有 workspace 剪辑规则，应先人工创建或选择默认规则；不要通过风格分析自动生成
 - 当前 edit unit 已有人工确认且未过期的 `edits/<editId>/planning/flow-plan.json`
-- 文案 / 艺术风格参考可选：
-  - 分类参考：`<workspaceRoot>/config/styles/{category}.md`（由 [kairos-style-analysis](../kairos-style-analysis/SKILL.md) 生成）
-  - 缺少它不阻塞粗剪
+- 分层风格档案可选，但一旦剪辑规则要求使用就成为前置：
+  - 分类档案：`<workspaceRoot>/config/styles/{category}.md`（由 [kairos-style-analysis](../kairos-style-analysis/SKILL.md) 生成）
+  - 新格式必须带 `styleProfileVersion: layered-v1`，并包含 `literary / artistic / editingTechnical`
+  - 未被 `flow-plan.json.styleUsage` 授权的层不得进入 stage packet
 
 **硬性规则**：
 - 如果用户没有明确指定某个剪辑规则，Script 阶段必须暂停并先向用户确认。
@@ -150,12 +153,12 @@ const editRule = await loadEditRuleFromMarkdown('test/edit-rule.md');
 `[main agent]` 可以列出可用规则供用户选择，但不能自行替用户决定，也不能根据当前素材自动生成一份“临时剪辑规则”。
 
 当前 Console 的正式口径是：
-- workspace 风格库维护在 `/style`
+- workspace 分层风格库维护在 `/style`
 - workspace 剪辑规则库维护在 `config/edit-rules/*.md`
-- Script 页先选择 `editRuleCategory`，并立即自动保存；`styleCategory` 只是可选表达参考
+- Script 页先选择 `editRuleCategory`，并立即自动保存；`styleCategory` 是单一风格档案选择，具体层使用由 confirmed Flow Plan 决定
 - 一旦 `editRuleCategory` 改变，当前 edit unit 应立即清空旧的 planning、`material-overview`、brief 草稿、outline、`segment-plan`、`material-slots` 与 `edits/<editId>/script/current.json`，再回到 `await_brief_draft`
 - Script prep 和 Timeline 必须先确认 `edits/<editId>/planning/flow-plan.json`
-- 单独改变 `styleCategory` 不清空粗剪结构产物
+- 单独改变 `styleCategory` 时按 confirmed `styleUsage` 失效：`artistic / editingTechnical` 参与 planning / recall 时清空 planning 与脚本结构产物；只有 `literary` 时只清空表达阶段脚本 / 字幕产物
 - 关键 handoff 会通过持续可见的 workflow prompt 与 hana modal 明确提示“下一步回到 Agent / 点击准备”，而不是只靠轻量行内提示
 - `edits/<editId>/script/script-brief.json` 内部继续保存 `editRuleCategory`
 - `edits/<editId>/script/script-brief.md` 可以显示友好名称，但不能替代内部 `categoryId`

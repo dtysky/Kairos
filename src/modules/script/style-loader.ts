@@ -1,8 +1,9 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import type {
   IStyleArrangementStructure,
+  IStyleLayers,
   IStyleNarrationConstraints,
   IStyleProfile,
   IStyleSection,
@@ -66,12 +67,19 @@ export function parseStyleMarkdown(
   const narrative = extractNarrative(parameters);
   const voice = extractVoice(parameters);
   const derived = deriveStyleProtocolV2Fields(sections, parameters, antiPatterns, voice);
+  const styleProfileVersion = frontMatter.styleProfileVersion === 'layered-v1'
+    ? 'layered-v1'
+    : 'legacy';
+  const layers = styleProfileVersion === 'layered-v1'
+    ? extractLayeredStyleProfile(sections)
+    : undefined;
   const now = new Date().toISOString();
 
   return {
     id: randomUUID(),
     name: options?.name ?? frontMatter.name ?? extractTitle(body) ?? '风格档案',
     category: options?.category ?? frontMatter.category,
+    styleProfileVersion,
     guidancePrompt: options?.guidancePrompt ?? frontMatter.guidancePrompt,
     sourceFiles,
     narrative,
@@ -80,11 +88,29 @@ export function parseStyleMarkdown(
     sections,
     antiPatterns,
     parameters,
+    layers,
     arrangementStructure: derived.arrangementStructure,
     narrationConstraints: derived.narrationConstraints,
     createdAt: now,
     updatedAt: now,
   };
+}
+
+export function isLayeredStyleProfile(style: IStyleProfile): boolean {
+  return style.styleProfileVersion === 'layered-v1' && Boolean(style.layers);
+}
+
+export function computeStyleProfileHash(style: IStyleProfile): string {
+  return createHash('sha256')
+    .update(style.rawReference ?? JSON.stringify({
+      name: style.name,
+      category: style.category,
+      styleProfileVersion: style.styleProfileVersion,
+      layers: style.layers,
+      sections: style.sections,
+      parameters: style.parameters,
+    }))
+    .digest('hex');
 }
 
 export function deriveStyleProtocolV2Fields(
@@ -257,6 +283,76 @@ function extractVoice(parameters: Record<string, string>): IStyleProfile['voice'
     density,
     sampleTexts,
   };
+}
+
+function extractLayeredStyleProfile(sections: IStyleSection[]): IStyleLayers {
+  const literary = findRequiredLayerSection(sections, 'literary');
+  const artistic = findRequiredLayerSection(sections, 'artistic');
+  const editingTechnical = findRequiredLayerSection(sections, 'editingTechnical');
+  return {
+    literary: buildStyleLayer(literary),
+    artistic: buildStyleLayer(artistic),
+    editingTechnical: buildStyleLayer(editingTechnical),
+  };
+}
+
+function findRequiredLayerSection(
+  sections: IStyleSection[],
+  layer: 'literary' | 'artistic' | 'editingTechnical',
+): IStyleSection {
+  const patterns = {
+    literary: /^(文学风格|文学|文案|旁白|语言)/u,
+    artistic: /^(艺术风格|艺术|影像|审美|画面)/u,
+    editingTechnical: /^(技术分析|剪辑技法|剪辑技术|技术)/u,
+  } satisfies Record<'literary' | 'artistic' | 'editingTechnical', RegExp>;
+  const matched = sections.find(section => patterns[layer].test(section.title.trim()));
+  if (!matched) {
+    throw new Error(`layered-v1 style profile is missing required section: ${layer}`);
+  }
+  return matched;
+}
+
+function buildStyleLayer(section: IStyleSection): IStyleLayers['literary'] {
+  const parameters = extractParameters(section.content);
+  const explicitConfidence = parseRatio(parameters.confidence)
+    ?? parseRatio(parameters['置信度'])
+    ?? parseRatio(parameters['confidenceScore']);
+  const evidenceNotes = dedupeStrings([
+    ...extractBulletLines(section.content).slice(0, 12),
+    ...splitInlineList(parameters['证据']),
+    ...splitInlineList(parameters.evidenceNotes),
+  ]);
+  const antiPatterns = dedupeStrings([
+    ...extractBulletLines(section.content)
+      .filter(line => /禁区|避免|不要|反例|avoid|forbid/u.test(line)),
+    ...splitInlineList(parameters['禁区']),
+    ...splitInlineList(parameters.antiPatterns),
+  ]);
+  const summary = firstNonEmpty(
+    parameters.summary,
+    parameters['总结'],
+    extractFirstParagraph(section.content),
+    '未明确',
+  ) ?? '未明确';
+
+  return {
+    summary,
+    confidence: clampRatio(explicitConfidence ?? (summary === '未明确' ? 0 : 0.6)),
+    evidenceNotes,
+    parameters,
+    antiPatterns,
+  };
+}
+
+function extractFirstParagraph(content: string): string | undefined {
+  return content
+    .split(/\n\s*\n/u)
+    .map(block => block
+      .split('\n')
+      .filter(line => !/^\s*[-*|#]/u.test(line.trim()))
+      .join(' ')
+      .trim())
+    .find(Boolean);
 }
 
 function buildArrangementStructure(

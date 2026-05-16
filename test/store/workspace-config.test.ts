@@ -3,6 +3,15 @@ import { access, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promise
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
+  getCurrentScriptPath,
+  getMaterialBundlesPath,
+  getMaterialOverviewFactsPath,
+  getMaterialOverviewPath,
+  getMaterialSlotsPath,
+  getOutlinePath,
+  getOutlinePromptPath,
+  getScriptBriefPath,
+  getSegmentPlanPath,
   initWorkspaceProject,
   loadColorCurrent,
   loadColorTransformPresetsConfig,
@@ -18,6 +27,7 @@ import {
   saveProjectBriefConfig,
   saveScriptBriefConfig,
   saveStyleSourcesConfig,
+  writeEditFlowPlan,
   writeJson,
 } from '../../src/store/index.js';
 
@@ -497,6 +507,7 @@ describe('workspace config sync', () => {
     await saveScriptBriefConfig(projectRoot, {
       projectName: 'Project C',
       createdAt: '2026-04-05T00:00:00.000Z',
+      editRuleCategory: 'travel-rule',
       styleCategory: 'travel-doc',
       workflowState: 'await_brief_draft',
       goalDraft: [],
@@ -508,6 +519,7 @@ describe('workspace config sync', () => {
     await saveScriptBriefConfig(projectRoot, {
       projectName: 'Project C',
       createdAt: '2026-04-05T00:00:00.000Z',
+      editRuleCategory: 'travel-rule',
       styleCategory: 'travel-doc',
       workflowState: 'review_brief',
       goalDraft: ['表达旅途的克制感'],
@@ -525,16 +537,16 @@ describe('workspace config sync', () => {
 
     const brief = await loadScriptBriefConfig(projectRoot);
     const styleSources = await loadStyleSourcesConfig(workspaceRoot);
-    const scriptMarkdown = await readFile(join(projectRoot, 'script', 'script-brief.md'), 'utf-8');
+    const scriptMarkdown = await readFile(getScriptBriefPath(projectRoot), 'utf-8');
     const styleMarkdown = await readFile(join(stylesRoot, 'travel-doc.md'), 'utf-8');
-    await rm(join(projectRoot, 'script', 'script-brief.json'), { force: true });
+    await rm(join(projectRoot, 'edits', 'main', 'script', 'script-brief.json'), { force: true });
     const parsedFromMarkdown = await loadScriptBriefConfig(projectRoot);
 
     expect(brief.styleCategory).toBe('travel-doc');
     expect(brief.workflowState).toBe('review_brief');
     expect(parsedFromMarkdown.styleCategory).toBe('travel-doc');
     expect(parsedFromMarkdown.workflowState).toBe('review_brief');
-    expect(scriptMarkdown).toContain('风格参考：严肃旅拍纪录片（travel-doc）');
+    expect(scriptMarkdown).toContain('风格档案：严肃旅拍纪录片（travel-doc）');
     expect(scriptMarkdown).toContain('workflowState=review_brief');
     expect(scriptMarkdown).toContain('### [intro] 开场');
     expect(styleSources.categories[0]?.sources).toHaveLength(1);
@@ -572,6 +584,7 @@ describe('workspace config sync', () => {
 
     await saveScriptBriefConfig(projectRoot, {
       projectName: 'Project Style Reset',
+      editRuleCategory: 'travel-rule',
       styleCategory: 'travel-doc',
       workflowState: 'script_generated',
       lastAgentDraftAt: '2026-04-05T00:00:00.000Z',
@@ -585,23 +598,52 @@ describe('workspace config sync', () => {
         notes: ['旧笔记'],
       }],
     });
-    await writeFile(join(projectRoot, 'script', 'material-overview.md'), '# old overview', 'utf-8');
-    await writeJson(join(projectRoot, 'script', 'material-overview.facts.json'), { sentinel: true });
-    await writeJson(join(projectRoot, 'analysis', 'material-bundles.json'), [{ id: 'bundle-1' }]);
-    await writeJson(join(projectRoot, 'script', 'segment-plan.json'), { segments: [] });
-    await writeJson(join(projectRoot, 'script', 'material-slots.json'), { segments: [] });
-    await writeJson(join(projectRoot, 'analysis', 'outline.json'), []);
-    await writeFile(join(projectRoot, 'analysis', 'outline-prompt.txt'), 'old prompt', 'utf-8');
-    await writeJson(join(projectRoot, 'script', 'current.json'), []);
+    await writeEditFlowPlan(projectRoot, {
+      schemaVersion: '1.0',
+      id: 'style-reset-plan',
+      editId: 'main',
+      editRuleCategory: 'travel-rule',
+      editRuleHash: 'hash-a',
+      generatedAt: '2026-04-05T00:00:00.000Z',
+      status: 'confirmed',
+      confirmedAt: '2026-04-05T00:01:00.000Z',
+      assumptions: [],
+      styleUsage: {
+        styleCategory: 'travel-doc',
+        styleProfileVersion: 'layered-v1',
+        layers: {
+          literary: { mode: 'off', appliesTo: [] },
+          artistic: { mode: 'soft', appliesTo: ['segment-plan'] },
+          editingTechnical: { mode: 'off', appliesTo: [] },
+        },
+      },
+      steps: [{
+        id: 'material-recall',
+        capabilityId: 'material.recall',
+        inputRefs: [],
+        outputRefs: [],
+        gate: 'human',
+        notes: [],
+      }],
+    });
+    await writeFile(getMaterialOverviewPath(projectRoot), '# old overview', 'utf-8');
+    await writeJson(getMaterialOverviewFactsPath(projectRoot), { sentinel: true });
+    await writeJson(getMaterialBundlesPath(projectRoot), [{ id: 'bundle-1' }]);
+    await writeJson(getSegmentPlanPath(projectRoot), { segments: [] });
+    await writeJson(getMaterialSlotsPath(projectRoot), { segments: [] });
+    await writeJson(getOutlinePath(projectRoot), []);
+    await writeFile(getOutlinePromptPath(projectRoot), 'old prompt', 'utf-8');
+    await writeJson(getCurrentScriptPath(projectRoot), []);
 
     const next = await saveScriptBriefConfig(projectRoot, {
       projectName: 'Project Style Reset',
       createdAt: '2026-04-05T00:00:00.000Z',
+      editRuleCategory: 'travel-rule',
       styleCategory: 'event-doc',
       workflowState: 'await_brief_draft',
-      goalDraft: ['should be cleared'],
-      constraintDraft: ['should be cleared'],
-      planReviewDraft: ['should be cleared'],
+      goalDraft: ['new goal survives'],
+      constraintDraft: ['new constraint survives'],
+      planReviewDraft: ['new review survives'],
       segments: [{
         segmentId: 'new-intro',
         title: '新开场',
@@ -610,17 +652,18 @@ describe('workspace config sync', () => {
 
     expect(next.styleCategory).toBe('event-doc');
     expect(next.workflowState).toBe('await_brief_draft');
-    expect(next.goalDraft).toEqual([]);
-    expect(next.constraintDraft).toEqual([]);
-    expect(next.planReviewDraft).toEqual([]);
-    expect(next.segments).toEqual([]);
-    await expect(access(join(projectRoot, 'script', 'material-overview.md'))).rejects.toBeTruthy();
-    await expect(access(join(projectRoot, 'script', 'material-overview.facts.json'))).rejects.toBeTruthy();
-    await expect(access(join(projectRoot, 'analysis', 'material-bundles.json'))).rejects.toBeTruthy();
-    await expect(access(join(projectRoot, 'script', 'segment-plan.json'))).rejects.toBeTruthy();
-    await expect(access(join(projectRoot, 'script', 'material-slots.json'))).rejects.toBeTruthy();
-    await expect(access(join(projectRoot, 'analysis', 'outline.json'))).rejects.toBeTruthy();
-    await expect(access(join(projectRoot, 'analysis', 'outline-prompt.txt'))).rejects.toBeTruthy();
-    await expect(access(join(projectRoot, 'script', 'current.json'))).rejects.toBeTruthy();
+    expect(next.goalDraft).toEqual(['new goal survives']);
+    expect(next.constraintDraft).toEqual(['new constraint survives']);
+    expect(next.planReviewDraft).toEqual(['new review survives']);
+    expect(next.segments.map(segment => segment.segmentId)).toEqual(['new-intro']);
+    await expect(access(join(projectRoot, 'edits', 'main', 'planning', 'flow-plan.json'))).rejects.toBeTruthy();
+    await expect(access(getMaterialOverviewPath(projectRoot))).rejects.toBeTruthy();
+    await expect(access(getMaterialOverviewFactsPath(projectRoot))).rejects.toBeTruthy();
+    await expect(access(getMaterialBundlesPath(projectRoot))).rejects.toBeTruthy();
+    await expect(access(getSegmentPlanPath(projectRoot))).rejects.toBeTruthy();
+    await expect(access(getMaterialSlotsPath(projectRoot))).rejects.toBeTruthy();
+    await expect(access(getOutlinePath(projectRoot))).rejects.toBeTruthy();
+    await expect(access(getOutlinePromptPath(projectRoot))).rejects.toBeTruthy();
+    await expect(access(getCurrentScriptPath(projectRoot))).rejects.toBeTruthy();
   });
 });

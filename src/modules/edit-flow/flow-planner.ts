@@ -7,8 +7,9 @@ import type {
   IEditFlowPlan,
   IEditFlowPlanStep,
   IEditRuleMarkdownSource,
+  IStyleUsage,
 } from '../../protocol/schema.js';
-import { IEditFlowPlan as ZEditFlowPlan } from '../../protocol/schema.js';
+import { IEditFlowPlan as ZEditFlowPlan, IStyleUsage as ZStyleUsage } from '../../protocol/schema.js';
 import {
   getEditFlowPlanPath,
   getEditPlanningAgentPacketPath,
@@ -32,6 +33,11 @@ import {
 } from '../agents/runtime.js';
 import { loadEditRuleByCategory } from '../script/edit-rule-loader.js';
 import {
+  computeStyleProfileHash,
+  isLayeredStyleProfile,
+  loadStyleByCategory,
+} from '../script/style-loader.js';
+import {
   CEDIT_FLOW_CAPABILITY_CATALOG,
   isEditFlowCapabilityId,
   type TEditFlowCapabilityId,
@@ -42,6 +48,7 @@ export interface IGenerateEditFlowPlanInput {
   projectRoot: string;
   editId?: string | null;
   editRuleCategory: string;
+  styleCategory?: string;
   agentRunner?: IJsonPacketAgentRunner;
 }
 
@@ -57,6 +64,10 @@ export async function generateEditFlowPlan(
   input: IGenerateEditFlowPlanInput,
 ): Promise<IEditFlowPlan> {
   const editId = normalizeEditId(input.editId);
+  const styleProfile = input.styleCategory
+    ? await loadStyleByCategory(`${input.workspaceRoot}/config/styles`, input.styleCategory)
+    : null;
+  const styleProfileHash = styleProfile ? computeStyleProfileHash(styleProfile) : undefined;
   const [editRule, project, projectBrief, assets, spans, chronology, assetReports, runtimeConfig] = await Promise.all([
     loadEditRuleByCategory(input.workspaceRoot, input.editRuleCategory),
     loadProject(input.projectRoot),
@@ -99,6 +110,9 @@ export async function generateEditFlowPlan(
       '每个 step 必须写 capabilityId、inputRefs、outputRefs 和 gate。',
       '需要人工审查的规划文档或阶段必须标记 gate=human。',
       '不要要求代码读取 markdown 正文来做剪辑判断；规则解释只能体现在你的 plan 和后续 LLM stage packet 中。',
+      '如果剪辑规则自由正文要求使用风格档案，请把本轮使用层结构化写入 styleUsage。',
+      'styleUsage.layers 只能使用 literary / artistic / editingTechnical，mode 只能是 off / soft / hard。',
+      'hard 只能来自剪辑规则正文的显式要求；不要把参考视频观察自动升级成硬规则。',
     ],
     allowedInputs: [
       'config/edit-rules/<category>.md raw markdown',
@@ -106,6 +120,7 @@ export async function generateEditFlowPlan(
       'config/project-brief.json',
       'analysis/pharos-context.json availability summary',
       'store/assets.json / store/spans.json / media/chronology.json availability summary',
+      'optional selected layered-v1 style profile summary',
     ],
     inputArtifacts: [
       buildEditRuleArtifact(editRule),
@@ -119,10 +134,31 @@ export async function generateEditFlowPlan(
         summary: `${assets.length} assets / ${spans.length} spans / ${pharosContext.trips.length} Pharos trips`,
         content: projectSummary,
       },
-    ],
+      styleProfile ? {
+        label: 'selected-style-profile',
+        summary: `${styleProfile.name} (${input.styleCategory}) / ${styleProfile.styleProfileVersion}`,
+        content: {
+          category: input.styleCategory,
+          styleProfileVersion: styleProfile.styleProfileVersion,
+          styleProfileHash,
+          layers: styleProfile.layers,
+        },
+      } : null,
+    ].filter((item): item is IAgentPacketInputArtifact => item != null),
     outputSchema: {
       summary: 'string',
       assumptions: 'string[]',
+      styleUsage: {
+        styleCategory: 'string | undefined',
+        styleProfileHash: 'string | undefined',
+        styleProfileVersion: '"layered-v1" | "legacy" | undefined',
+        layers: {
+          literary: '{ mode: "off" | "soft" | "hard", appliesTo: string[], rationale?: string }',
+          artistic: '{ mode: "off" | "soft" | "hard", appliesTo: string[], rationale?: string }',
+          editingTechnical: '{ mode: "off" | "soft" | "hard", appliesTo: string[], rationale?: string }',
+        },
+        rationale: 'string | undefined',
+      },
       steps: 'Array<{ id: string, capabilityId: one of capability catalog, title?: string, inputRefs: string[], outputRefs: string[], gate: "none" | "human", notes?: string[] }>',
     },
     reviewRubric: [
@@ -149,6 +185,9 @@ export async function generateEditFlowPlan(
     projectId: project.id,
     editId,
     editRule,
+    styleCategory: input.styleCategory,
+    styleProfileHash,
+    styleProfileVersion: styleProfile?.styleProfileVersion,
   });
   await writeEditFlowPlan(input.projectRoot, plan, editId);
   return plan;
@@ -175,6 +214,12 @@ export async function confirmEditFlowPlan(
     await writeEditFlowPlan(projectRoot, stale, normalizedEditId);
     throw new Error(`edit flow plan is stale for edits/${normalizedEditId}; regenerate before confirming`);
   }
+  await assertStyleUsageReadyForPlan({
+    workspaceRoot,
+    projectRoot,
+    editId: normalizedEditId,
+    plan: existing,
+  });
   const confirmed = ZEditFlowPlan.parse({
     ...existing,
     status: 'confirmed',
@@ -208,6 +253,12 @@ export async function assertConfirmedEditFlowPlan(
     await writeEditFlowPlan(input.projectRoot, stale, editId);
     throw new Error(`edit flow plan is stale for edits/${editId}; regenerate and confirm it`);
   }
+  await assertStyleUsageReadyForPlan({
+    workspaceRoot: input.workspaceRoot,
+    projectRoot: input.projectRoot,
+    editId,
+    plan,
+  });
   if (plan.status !== 'confirmed') {
     throw new Error(`edit flow plan must be confirmed before this stage: edits/${editId}/planning/flow-plan.json`);
   }
@@ -375,9 +426,17 @@ function materializeEditFlowPlan(input: {
   projectId: string;
   editId: string;
   editRule: IEditRuleMarkdownSource;
+  styleCategory?: string;
+  styleProfileHash?: string;
+  styleProfileVersion?: 'legacy' | 'layered-v1';
 }): IEditFlowPlan {
   const now = new Date().toISOString();
   const steps = normalizePlanSteps(input.draft.steps);
+  const styleUsage = normalizeStyleUsage(input.draft.styleUsage, {
+    styleCategory: input.styleCategory,
+    styleProfileHash: input.styleProfileHash,
+    styleProfileVersion: input.styleProfileVersion,
+  });
   return ZEditFlowPlan.parse({
     schemaVersion: '1.0',
     id: input.draft.id || randomUUID(),
@@ -390,8 +449,68 @@ function materializeEditFlowPlan(input: {
     status: 'draft',
     summary: input.draft.summary?.trim() || undefined,
     assumptions: (input.draft.assumptions ?? []).map(item => item.trim()).filter(Boolean),
+    styleUsage,
     steps,
   });
+}
+
+function normalizeStyleUsage(
+  raw: unknown,
+  metadata: {
+    styleCategory?: string;
+    styleProfileHash?: string;
+    styleProfileVersion?: 'legacy' | 'layered-v1';
+  },
+): IStyleUsage | undefined {
+  const parsed = ZStyleUsage.safeParse(raw);
+  const hasRequestedLayer = parsed.success && hasAnyStyleLayerUsage(parsed.data);
+  if (!parsed.success && !metadata.styleCategory) return undefined;
+  const base = parsed.success
+    ? parsed.data
+    : ZStyleUsage.parse({});
+  const next = ZStyleUsage.parse({
+    ...base,
+    styleCategory: base.styleCategory ?? metadata.styleCategory,
+    styleProfileHash: base.styleProfileHash ?? metadata.styleProfileHash,
+    styleProfileVersion: base.styleProfileVersion ?? metadata.styleProfileVersion,
+  });
+  return hasRequestedLayer || metadata.styleCategory ? next : undefined;
+}
+
+async function assertStyleUsageReadyForPlan(input: {
+  workspaceRoot: string;
+  projectRoot: string;
+  editId: string;
+  plan: IEditFlowPlan;
+}): Promise<void> {
+  const styleUsage = input.plan.styleUsage;
+  if (!styleUsage || !hasAnyStyleLayerUsage(styleUsage)) return;
+  const category = styleUsage.styleCategory?.trim();
+  if (!category) {
+    throw new Error('edit flow plan requires styleCategory because styleUsage enables one or more style layers');
+  }
+  const profile = await loadStyleByCategory(`${input.workspaceRoot}/config/styles`, category);
+  if (!isLayeredStyleProfile(profile)) {
+    throw new Error(`style profile "${category}" is legacy; rerun /style or rewrite it with styleProfileVersion=layered-v1 before confirming this Flow Plan`);
+  }
+  const currentHash = computeStyleProfileHash(profile);
+  if (styleUsage.styleProfileHash && styleUsage.styleProfileHash !== currentHash) {
+    const stale = {
+      ...input.plan,
+      status: 'stale' as const,
+      staleReason: 'style profile hash changed',
+      updatedAt: new Date().toISOString(),
+    };
+    await writeEditFlowPlan(input.projectRoot, stale, input.editId);
+    throw new Error(`edit flow plan is stale for edits/${input.editId}; selected style profile changed`);
+  }
+  if (styleUsage.styleProfileVersion && styleUsage.styleProfileVersion !== 'layered-v1') {
+    throw new Error(`style profile "${category}" is not layered-v1`);
+  }
+}
+
+function hasAnyStyleLayerUsage(styleUsage: IStyleUsage): boolean {
+  return Object.values(styleUsage.layers).some(layer => layer.mode !== 'off');
 }
 
 function normalizePlanSteps(value: unknown): IEditFlowPlanStep[] {
