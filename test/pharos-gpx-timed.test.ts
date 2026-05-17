@@ -40,6 +40,7 @@ function makeShot(overrides: Partial<IProjectPharosShot> = {}): IProjectPharosSh
     type: 'continuous',
     devices: [],
     rolls: [],
+    actualCaptures: [],
     isExtraShot: false,
     gps: [0, 0],
     gpsStart: [0, 0],

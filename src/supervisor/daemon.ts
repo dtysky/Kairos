@@ -982,7 +982,18 @@ async function loadJobsWithProgress(workspaceRoot: string): Promise<Array<ISuper
 async function readJobProgressForStatus(job: ISupervisorJobRecord): Promise<unknown> {
   if (!job.progressPath) return null;
   if (!['queued', 'running'].includes(job.status)) return null;
-  return readJsonFile(job.progressPath);
+  const progress = await readJsonFile(job.progressPath);
+  if (!progressBelongsToLiveJob(job, progress)) return null;
+  return progress;
+}
+
+function progressBelongsToLiveJob(job: ISupervisorJobRecord, progress: unknown): boolean {
+  if (!progress || typeof progress !== 'object') return false;
+  const phaseKey = Reflect.get(progress, 'phaseKey');
+  if (['span-rebuild', 'chronology-build'].includes(job.jobType)) {
+    return phaseKey === job.jobType;
+  }
+  return true;
 }
 
 async function reconcileInterruptedJobs(workspaceRoot: string): Promise<void> {

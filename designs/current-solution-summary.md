@@ -200,13 +200,15 @@ Kairos 当前需要区分两层：
 - 项目内正式持久化路径已切到 `store/spans.json`
 - `analysis/asset-reports/*.json` 是 Analyze 的完整事实真相；`store/spans.json` 与 `media/chronology.json` 是可丢弃、可重建的派生索引
 - Analyze 不再自动生成 `store/spans.json` 或 `media/chronology.json`；它只维护 `analysis/asset-reports/*.json`
-- `/chronology` 是 downstream truth materialize + review 页：先显式运行 `span-rebuild` 生成 stripped spans，并通过本地 qwen 文本 LM 按 10 个 span 一批生成中文 `materialPatterns[]`；LM 只返回按输入顺序排列的短语行，代码按 chunk 顺序写回并确定性修补 spans；再运行 `chronology-build` 生成 / 刷新 Chronology V2；页面必须显示 active job 进度，`span-rebuild` 进度写入 `.tmp/chronology/progress.json`，包含 chunk、失败列表补处理、retry/repair/warning/fallback 摘要；已完成部分和 failed span 列表写入 `.tmp/chronology/span-rebuild.partial.json`，正式 `store/spans.json` 只在全量收口后写入
+- `/chronology` 是 downstream truth materialize + review 页：先显式运行 `span-rebuild` 生成 stripped spans，并通过本地 qwen 文本 LM 按 10 个 span 一批生成中文 `materialPatterns[]`；LM 只返回按输入顺序排列的短语行，代码按 chunk 顺序写回并确定性修补 spans；再运行 `chronology-build` 生成 / 刷新 Chronology V2；页面必须显示 active job 进度，`span-rebuild` 进度写入 `.tmp/chronology/progress.json`，包含 chunk、失败列表补处理、retry/repair/warning/fallback 摘要；已完成部分和 failed span 列表写入 `.tmp/chronology/span-rebuild.partial.json`，正式 `store/spans.json` 只在全量收口后写入；`chronology-build` 还必须显示 GPS reverse-geocode 地名解析进度
 - `store/spans.meta.json` 记录 `schemaVersion/status/generatedAt/inputsHash/assetCount/reportCount/spanCount/warnings`；Script / Timeline 只接受 `status=fresh` 的 spans
 - `media/chronology.json` 当前正式升级为 Chronology V2 项目级编年史文档：`schemaVersion: "2.0"`，顶层包含 `status / inputsHash / assetIndex / events`
 - Chronology V2 的正式事件只暴露 `event / route / gap`、确认状态、时间地点、路线和 `spanIds`；不得持久化 `origin / source / pharosRefs / assetIds / confidence / materialChannels / speechAnchors`
 - Pharos 只作为生成输入进入编年史；生成后必须折叠成普通 `event / route / gap`，下游不得感知某事件来自 Pharos
-- `chronology-build` 当前采用 Pharos 单点优先：span 多数重叠 `expected / unexpected` 且非 `continuous` 的 `actualTimeStart/actualTimeEnd` 时直接归入该 Pharos 单点事件，不再受 `drive / aerial / talking-head` 等素材类型影响；`continuous` 只作为后续 GPS/类型聚合参考
-- 未直接命中 Pharos 单点的 span 按 chronology 顺序连续聚合：优先使用 Pharos trip GPX、项目 `gps/merged.json`、`gps/derived.json`、report 中的 `pharos|gpx|derived-track` 坐标，最后才用 embedded GPS 兜底；单 span 起止 `<=200m` 视作静态候选，相邻代表点 `<=400m` 可合并为同一地点事件，时间间隔本身不切分，transcript 只能辅助命名/摘要不能单独打断 route
+- `chronology-build` 当前采用 Pharos 单点优先：span 与 `expected / unexpected` 且非 `continuous` 的 `actualTimeStart/actualTimeEnd` 存在有意义重叠时可直接归入该 Pharos 单点事件；多个 Pharos point window 同时覆盖同一 span 时，先按 `actual_captures[]` 显式拍摄类型/设备排序，仍同分时优先更窄的 actual window；Pharos 单点事件是 route 硬边界，`continuous` 只作为 route 时间 / summary 上下文，不把多个事件间 route 强行合并，且其 route prose 不得写入 `event.location / route.from / route.to`
+- Pharos 单点事件来自人工行程事实，生成后默认 `reviewStatus=confirmed`；无素材命中的 Pharos `gap` 仍默认 `pending`
+- 项目级 `chronology-build` 写入 `media/chronology.json` 必须使用 GPS reverse-geocode service；显式无 service、cache/provider miss 或任一 route/event GPS anchor 反查失败时直接失败并保留既有 chronology，不允许回退到素材标签、`materialPatterns`、manual itinerary 或 Pharos continuous route prose
+- 未直接命中 Pharos 单点的 span 按 chronology 顺序连续聚合：优先使用 Pharos trip GPX、项目 `gps/merged.json`、`gps/derived.json`、report 中的 `pharos|gpx|derived-track` 坐标，最后才用 embedded GPS 兜底；单 span 起止 `<=200m` 视作静态候选，相邻代表点 `<=400m` 可合并为同一地点事件；`drive` / route-like 车内素材，以及有跟车、跟随车辆、车辆行驶等明确移动主体证据的 `aerial` 航拍跟车素材，优先进入事件间 `route`，即使短 span 起止 GPS 距离很小也不得拆成普通 event；时间间隔本身不切分，行车口播 / 字幕只辅助 route 摘要，不能单独打断 route/event
 - `assetIndex[]` 只保留 `assetId / sortCapturedAt`，用于 Script / Timeline 的素材排序；事件关联素材必须永远从 `spanIds -> spans -> assetId` 反查
 - `interestingWindows[]` 继续表示细扫前计划，只保存候选窗口、编辑边界和 reason；它不是细扫结果，speed 决策不再进入 span 生成流程
 - `fineScanWindows[]` 是细扫后窗口结果，只保存 recognized/dropped 状态、窗口时间、帧引用与一句 `visualObservation`
@@ -267,8 +269,8 @@ flowchart TD
 - `Pharos` 当前不再通过用户填写外部路径接入；每个项目固定扫描 `projects/<projectId>/pharos/`
 - 如果项目迁移后缺少这个目录，Console 当前应先自动补齐，再向用户展示固定目录和投放提示
 - `project-brief.md` 中的 `## Pharos` 当前只承担 trip 筛选语义；未填写时默认纳入全部可解析 trip，填写 `包含 Trip：...` 时只消费这些 trip
-- `Pharos` 解析当前属于 Ingest / GPS 刷新阶段：`analysis/pharos-context.json` 保存项目内 `pharos/` 输入 fingerprint，`plan.json / record.json / gpx/*.gpx` 或 trip 筛选变化时必须自动重建；Analyze 不隐式补跑 Pharos 解析
-- planned shot 的素材归属当前正式拆成独立时间层：`chronology-build` 只按 `record.json` 的 `actual_time` 处理 Pharos 直接归属，只有 `expected / unexpected` 且有完整 actual time 的非 `continuous` 记录可直接吃掉多数重叠的 span；`continuous` 记录只提供后续聚合参考，`pending / abandoned` 与 `plan` 的 planned time segment 不参与直接归属，shot GPS 字段不参与时间归属
+- `Pharos` 解析当前属于 Ingest / GPS 刷新阶段：`analysis/pharos-context.json` 保存项目内 `pharos/` 输入 fingerprint 与 parser version，`plan.json / record.json / gpx/*.gpx`、trip 筛选或 parser 语义变化时必须自动重建；Analyze 不隐式补跑 Pharos 解析
+- planned shot 的素材归属当前正式拆成独立时间层：`chronology-build` 只按 `record.json` 的 `actual_time` 处理 Pharos 直接归属，只有 `expected / unexpected` 且有完整 actual time 的非 `continuous` 记录可直接吃掉存在有意义时间重叠的 span；多个单点事件时间窗重叠时，只使用 `record.json.actual_captures[]` 等显式拍摄类型/设备字段作归属优先级，仍同分时优先更窄的 actual window，不从描述、地点或 note 文本猜测“航拍/上空”等语义；`continuous` 记录只提供 route 上下文，`pending / abandoned` 与 `plan` 的 planned time segment 不参与直接归属，shot GPS 字段不参与时间归属
 - planned shot 的空间真值当前正式拆成独立 GPX 层：无论 `drive` 还是单机位 shot，都只使用 trip `gpx/*.gpx` 按素材/span 时间反算位置；`plan.gps / gps_start / gps_end / actual_gps` 仅保留人读语义
 - Pharos 上游协议 hash 不匹配时，Kairos 必须先完成协议同步：重读当前 `../Pharos/designs`、同步设计文档 / rules / skills / 代码影响、刷新 `.ai/pharos-protocol-baseline.json` 并验证匹配后，才继续普通 Pharos 实现
 - `AdoptedMediaVersion` 表示项目当前采用的素材版本，它可以是原始素材，也可以是独立调色链路产出的版本
@@ -316,6 +318,7 @@ flowchart TD
   - 只重算已有 `analysis/asset-reports/*.json` 的 `gpsSummary / inferredGps / pharosMatches / locationText` 等空间字段
   - 标记 `store/spans.meta.json` 与 `media/chronology.json` stale，要求随后显式运行 `span-rebuild` 与 `chronology-build`
   - 不启动 ML，不抽帧，不转写，不生成缺失 report；没有 report 的素材仍需要正式 Analyze
+- 如果只修正 `analysis/pharos-context.json` 内的 Pharos shot 执行语义（例如 parser version 升级后新增 `actual_captures[]`），且不需要重算 asset reports 或 span 内容，可直接运行 `chronology-build`；该路径不得标记 spans stale，也不得要求重新生成 `materialPatterns[]`
 - `audio-analysis` 当前已经切到两级素材队列：
   - 本地 health / routing 队列负责 embedded 与 protection 的轻量健康检查
   - ASR 队列只对最终选中的一路音轨转写，并按 free memory 目标并发数动态扩缩
@@ -370,6 +373,8 @@ flowchart TD
   - 如果素材/span 命中了 planned `Pharos shot`，`locationText` 的 Pharos 空间候选只允许来自 trip GPX 的按时取点，而不是 shot 自带 GPS
   - `drive` 使用素材/span 的首尾时刻各取一个 GPX 点做反查；同地收口为一个地点，不同地点写成 `A -> B`
   - 非 `drive` 使用素材/span 的中间时刻 GPX 点做反查；没有命中有效 GPX 点时，再回落到当前空间优先级选中的单点 GPS
+  - Chronology V2 的 route 端点使用 route 自身 `startAt/endAt` 反查，普通非 Pharos event 使用 event midpoint 反查；`Pharos continuous.location` 和 manual-itinerary route prose 只允许进入上下文 / summary，不允许冒充地点字段
+  - `chronology-build` 读取 `gps/reverse-geocode-cache.json` 并对未缓存 provider 请求串行限速；用于 chronology 的地名解析结果参与 inputs hash
   - manual-itinerary / route-stage 文本继续留在 `summary`、decision reasons、`routeRole` 等字段，不再冒充 `locationText`
   - 若未配置 `amapWebServiceKey / geoapifyApiKey` 或反查失败，`locationText` 保持空
 

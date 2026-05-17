@@ -301,6 +301,30 @@ pre {
   background: var(--panel-strong);
 }
 
+.panel.hana-card {
+  margin-bottom: 0;
+  padding: 22px 24px;
+}
+
+.panel.hana-card > .hana-card-title {
+  display: none;
+}
+
+.panel.hana-card > .hana-card-container {
+  border: 0;
+  padding: 0;
+  transition: none;
+}
+
+.panel.hana-card > .hana-card-container:hover {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.panel.hana-card > .hana-card-container > .hana-card-container-wrap {
+  padding: 0;
+}
+
 .card-grid {
   display: grid;
   gap: 16px;
@@ -1074,17 +1098,51 @@ pre {
 .chronology-shot-list {
   display: grid;
   gap: 12px;
+  width: 100%;
 }
 
-.chronology-row {
+.chronology-row.hana-card {
+  display: block;
+  width: 100%;
+  margin-bottom: 0;
+  padding-top: 0;
+  background: transparent;
+}
+
+.chronology-row.hana-card > .hana-card-title {
+  display: none;
+}
+
+.chronology-row.hana-card > .hana-card-container {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  transition: none;
+}
+
+.chronology-row.hana-card > .hana-card-container:hover {
+  border-color: var(--border);
+  box-shadow: var(--shadow);
+}
+
+.chronology-row.hana-card > .hana-card-container > .hana-card-container-wrap {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) 170px;
-  gap: 14px;
+  grid-template-columns: 28px minmax(520px, 1fr) minmax(152px, 176px);
+  gap: 16px;
   align-items: start;
+  padding: 16px;
 }
 
 .chronology-row-select {
   padding-top: 8px;
+}
+
+.chronology-row-select input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
 }
 
 .chronology-row-main {
@@ -1104,14 +1162,45 @@ pre {
 
 .chronology-title-input,
 .chronology-row-main textarea,
-.chronology-row-fields input,
-.chronology-row-actions select {
+.chronology-row-fields input {
   width: 100%;
   border: 1px solid rgba(24, 24, 24, 0.12);
   background: #ffffff;
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 8px 10px;
   font: inherit;
+  min-width: 0;
+}
+
+.chronology-select.hana-select {
+  width: 100%;
+  min-width: 112px;
+  font-size: 14px;
+}
+
+.monitor-toolbar-group > .chronology-select.hana-select {
+  width: auto;
+  min-width: 122px;
+}
+
+.chronology-select .hana-select-selection {
+  min-height: 32px;
+  height: 32px;
+  line-height: 32px;
+  border-radius: 8px;
+  border-color: rgba(24, 24, 24, 0.12);
+  background: #ffffff;
+  padding-right: 28px;
+}
+
+.chronology-row-actions .chronology-select .hana-select-selection {
+  min-height: 40px;
+  height: 40px;
+  line-height: 40px;
+}
+
+.chronology-select .hana-select-optwrap {
+  z-index: 20;
 }
 
 .chronology-title-input {
@@ -1125,13 +1214,18 @@ pre {
 
 .chronology-row-fields {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   gap: 8px;
 }
 
 .chronology-row-actions {
   display: grid;
   gap: 8px;
+  min-width: 0;
+}
+
+.chronology-row-actions .hana-button {
+  width: 100%;
 }
 
 .color-dashboard {
@@ -1525,7 +1619,7 @@ pre {
     grid-template-columns: 1fr;
   }
 
-  .chronology-row {
+  .chronology-row.hana-card > .hana-card-container > .hana-card-container-wrap {
     grid-template-columns: 24px minmax(0, 1fr);
   }
 

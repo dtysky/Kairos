@@ -89,7 +89,14 @@ async function main(): Promise<void> {
       await ensureMlServiceRunning(workspaceRoot);
     }
 
-    const execution = await runJob(workspaceRoot, record.jobType, record.projectId, record.args, record.jobId);
+    const execution = await runJob(
+      workspaceRoot,
+      record.jobType,
+      record.projectId,
+      record.args,
+      record.jobId,
+      record.progressPath,
+    );
     const resultPath = record.resultPath ?? join(getSupervisorJobRoot(workspaceRoot, record.jobId), 'result.json');
     await writeJson(resultPath, execution.result ?? { ok: true });
     await writeJobRecord(workspaceRoot, {
@@ -143,6 +150,7 @@ async function runJob(
   projectId: string | undefined,
   args: Record<string, unknown>,
   jobId?: string,
+  progressPath?: string,
 ): Promise<IJobExecutionResult> {
   switch (jobType) {
     case 'project-init': {
@@ -275,10 +283,19 @@ async function runJob(
       if (!projectId) {
         throw new BlockedJobError(['chronology-build requires projectId']);
       }
+      const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
+      const runtimeConfig = await loadRuntimeConfig(projectRoot);
+      const reverseGeocodeService = await createProjectReverseGeocodeService({
+        projectRoot,
+        runtimeConfig,
+        uncachedRequestDelayMs: 350,
+      });
       return {
         result: await buildProjectChronology({
           workspaceRoot,
           projectId,
+          progressPath,
+          reverseGeocodeService,
         }),
       };
     }

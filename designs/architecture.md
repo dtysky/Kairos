@@ -14,7 +14,7 @@
 - Analyze 只维护 `analysis/asset-reports/*.json`，不再在阶段末自动生成 `store/spans.json` 或 `media/chronology.json`
 - `/chronology` 是 Analyze 和 Script 之间的正式 materialize + review 页，提供两步：
 - `span-rebuild`：只读取 `store/assets.json` 与 `analysis/asset-reports/*.json`，先确定性切片，再通过本地 qwen 文本 LM 从每个 span 的 `type / semanticKind / transcript / visualObservation` 按 10 个 span 一批生成中文 `materialPatterns[]`；LM prompt 请求按输入顺序排列的 7-tag 短语行，代码按 chunk 顺序写回 span，并只确定性修补前四个槽；第 5 项情景故事应由 LLM 输出，可写 `情景不明`，缺失时先进入 failed span 列表并在主 chunk 后单条补处理，仍缺失时只写固定 `情景不明`；第 6-7 项必须由 LLM 输出，缺失时不补写，也不因自由槽缺失阻塞前五槽可用的行；已完成 checkpoint 和 failed span 列表写到 `.tmp/chronology/span-rebuild.partial.json`，全量收口后写 `store/spans.json` 与 `store/spans.meta.json`
-  - `chronology-build`：要求 spans 存在且 `status=fresh`，再从 assets + fresh spans + root time + Pharos context + 项目 GPX/derived track 生成 Chronology V2 `media/chronology.json`；生成时先归属 Pharos 单点 actual window，再按素材类型、GPS 稳定性和相邻距离聚合剩余 spans
+  - `chronology-build`：要求 spans 存在且 `status=fresh`，再从 assets + fresh spans + root time + Pharos context + 项目 GPX/derived track 生成 Chronology V2 `media/chronology.json`；生成时先归属 Pharos 单点 actual window，再按素材类型、航拍跟车证据、GPS 稳定性和相邻距离聚合剩余 spans
 - 新生成的 span 是素材片段索引，不承载时空解释、Pharos 引用、GPS evidence、route role、chronology event 或速度策略
 - `store/spans.meta.json` 固定记录 `schemaVersion / status / generatedAt / inputsHash / assetCount / reportCount / spanCount / warnings`
 - `inputsHash` 只覆盖会影响 spans 切片和 span 级文本事实的 asset/report 字段，以及 material-pattern prompt version；不包含 `labels`、`speedCandidate`、Pharos、GPS cache 或 chronology
@@ -558,6 +558,10 @@
     - Geoapify 先 reverse geocode，为空时回退 places
     - 若素材/span 命中了 planned `Pharos shot`，则 `Pharos` 只提供时间归属；空间候选必须来自 trip GPX 的按时取点，而不是 shot 自带 GPS
     - `drive` 使用素材/span 的首尾时刻各取一个 GPX 点做反查；非 `drive` 使用素材/span 的中间时刻取一个 GPX 点；没有命中有效 GPX 点时，再回落到正式空间层选中的单点坐标
+    - Chronology V2 生成时，route 使用该 route 实际 `startAt/endAt` 取端点 GPS 并反查 `route.from/to`，普通非 Pharos event 使用 event midpoint 取代表 GPS 并反查 `location`
+    - `Pharos continuous.location`、manual-itinerary `from / via / to`、trip/day title 和包含 `→ / -> / 全程` 的 route prose 都不得写入 chronology `event.location / route.from / route.to`
+    - `chronology-build` 读取项目 `gps/reverse-geocode-cache.json`，未命中时串行限速调用 provider，并把使用到的 geocode result fingerprint 纳入 chronology inputs hash
+    - 项目级 `chronology-build` 写 `media/chronology.json` 时必须有可用 GPS reverse-geocode service；显式 `null` service、无 provider 且 cache miss、或任一 route/event GPS anchor 反查不到地名时必须失败并保留既有 chronology，不能回退到素材 `placeHints`、`materialPatterns`、manual itinerary、Pharos continuous route prose 或英文通用地点文本
     - manual-itinerary 的 `from / via / to`、trip/day title、route prose 继续留在 `summary / decision reasons / routeRole`，不再直接写进 `locationText`
 6. 正式流程与当前实现的关系已经更明确
    - 正式主链仍以 `Pharos` 为主输入
@@ -649,9 +653,11 @@
 - Chronology V2 只允许顶层 `schemaVersion/status/generatedAt/updatedAt/confirmedAt/inputsHash/assetIndex/events`；正式事件字段只允许 `id/kind/reviewStatus/title/summary/startAt/endAt/location/route/spanIds`
 - 正式 chronology 不暴露 Pharos、`origin`、`source`、`confidence`、`assetIds`、`materialChannels` 或 `speechAnchors`；Pharos 只能作为生成输入被折叠成普通 `event / route / gap`
 - `gap` 可以没有 `spanIds`，表示编年史确认存在但素材未覆盖或仍待补的缺口
-- `chronology-build` 先按 Pharos 单点真实时间窗归属：span 多数重叠 `expected / unexpected` 且非 `continuous` 的 actual window 时直接进入该事件，素材类型不参与改判；只匹配 Pharos `continuous` 或没有命中单点时，才进入普通 GPS/类型聚合
+- `chronology-build` 先按 Pharos 单点真实时间窗归属：span 与 `expected / unexpected` 且非 `continuous` 的 actual window 存在有意义重叠时可直接进入该事件；多个 point 同时覆盖同一 span 时，先按显式 `actual_captures[]` 优先级归属，仍同分时优先更窄的 actual window。Pharos 单点事件是 route 硬边界，Pharos `continuous` 只提供 route 时间 / summary 上下文，不把多个事件间 route 强行合并，且不能把 continuous route prose 当作 chronology 地点字段
+- Pharos 单点事件来自人工行程事实，生成后默认 `reviewStatus=confirmed`；无素材命中的 Pharos `gap` 仍默认 `pending`
+- `chronology-build` 写项目级 chronology 时对 GPS reverse-geocode 是硬依赖：无 service、cache/provider miss 或 route/event GPS anchor 无法反查时必须失败，不允许用素材语义标签、`materialPatterns`、manual itinerary 或 Pharos continuous prose 补地点
 - 普通聚合按 chronology 顺序只合并连续段：GPS 来源优先级为 Pharos trip GPX / 项目 `gps/merged.json` / `gps/derived.json` / report 中 `pharos|gpx|derived-track` / embedded GPS 兜底；单 span 起止 `<=200m` 是静态候选，相邻代表点 `<=400m` 可合并，同地点跨移动段或 Pharos 单点事件不全局合并
-- 行车过程中的车内自拍口播默认并入同一个 `route` event 的 `spanIds`，不得因为“有口播”切断行车聚类；改线、事故、到达、停车、住宿、餐食、景点进入等 transcript 线索只能辅助标题/摘要或配合 GPS/素材类型边界，不能单独拆出事件
+- `drive` / route-like 车内素材优先进入事件间 `route`，即使短 span 起止 GPS 距离很小也不得拆成普通 event；行车过程中的车内自拍口播、字幕和堵车描述默认并入 route 摘要，不能单独拆出事件
 - `interestingWindows[]` 是细扫前计划，只表达候选窗口、编辑边界与 reason；细扫结果不得继续混写到这个字段，speed 不进入 span 生成流程
 - `fineScanWindows[]` 是细扫后窗口结果，只保存 recognized/dropped 状态、窗口时间、帧引用与一句 `visualObservation`
 - `Span` 当前只承载素材片段事实索引：
@@ -732,8 +738,9 @@ flowchart TD
 - 单素材拍摄时间修正只能通过“素材时间校正”卡片 / `config/manual-itinerary.json.captureTimeOverrides` 维护；`导入 / GPS Review` 不再显示或反写 `capture-time-correction`，避免同一素材被两份表单覆盖
 - `/ingest-gps` 保存配置后必须让用户显式运行 `运行 Ingest` 或 `刷新 GPS 缓存`；Analyze 前如果用户刚改过素材 Root、FlightRecord、manual-itinerary、root 时钟偏移或 capture-time overrides，应先完成对应刷新
 - planned `Pharos shot` 当前正式拆成两层：
-  - `chronology-build` 的 Pharos 直接归属只按 `record.json.actual_time`：`expected / unexpected` 且有完整 actual time 的非 `continuous` 记录，才可直接绑定多数重叠的 span；`continuous` 只进入后续 GPS/类型聚合，`pending / abandoned` 和 planned time segment 不参与直接归属；shot GPS 字段不参与时间归属
+  - `chronology-build` 的 Pharos 直接归属只按 `record.json.actual_time`：`expected / unexpected` 且有完整 actual time 的非 `continuous` 记录，才可直接绑定存在有意义时间重叠的 span；多个单点事件时间窗重叠时，只按 `record.json.actual_captures[]` 等显式拍摄类型/设备字段调整归属优先级，仍同分时优先更窄的 actual window，不从描述、地点或 note 文本推断航拍等语义；`continuous` 只提供 route 上下文，`pending / abandoned` 和 planned time segment 不参与直接归属；shot GPS 字段不参与时间归属
   - 空间位置只按 trip `gpx/*.gpx` 对素材/span 的时间做反算；`plan.gps / gps_start / gps_end / actual_gps` 仅保留人读参考，不再是 Kairos 的正式空间真值
+- `analysis/pharos-context.json` 除项目内 `pharos/` 输入 fingerprint 外，还必须携带 parser version；当 parser 语义升级但源文件未变时，下一次读取必须自动重建 context。若变更只影响 Pharos shot 执行语义，用户可直接重跑 `chronology-build`，不需要 `span-rebuild`
 - 主链消费的是项目当前采用的素材版本，它可以是原始素材，也可以是独立调色链路产出的版本
 - `DaVinci color` 可以独立运行、多次更新，并在需要时产出供主链消费的素材版本
 - 若主链消费的是派生素材版本，则该版本必须保留媒体创建时间、`create_time`、GPS 等关键元信息，避免破坏 chronology、Pharos 对齐与空间推断

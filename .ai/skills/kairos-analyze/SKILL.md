@@ -72,7 +72,7 @@ Analyze 会从 `project-brief` 的主路径与备选路径中解析当前可读�
 不再读取 `device-media-maps.local.json`。
 Analyze 不会隐式补跑 `ingest`、`gps-refresh` 或 Pharos parse。如果用户刚在 `/ingest-gps` 修改过素材 Root、FlightRecord、manual-itinerary、root 时钟偏移、capture-time overrides 或项目内 `pharos/`，必须先回到 `/ingest-gps` 显式点击 `运行 Ingest`；如果只修改了 GPX、Pharos 或 manual-itinerary 空间线索，可先点击 `刷新 GPS 缓存`。
 
-`spatial-refresh` 是 no-ML deterministic repair job：先刷新项目 GPX merged cache、`gps/derived.json` 和 `analysis/pharos-context.json`，再只修补已有 `analysis/asset-reports/*.json` 中的 GPS / Pharos / reverse-geocode 空间字段，并标记 spans / chronology stale。它不抽帧、不转写、不跑 VLM、不生成缺失 report，也不自动重建 `store/spans.json` 或 `media/chronology.json`，也不替代 Ingest 发现新的 `.SRT`、FlightRecord、素材 root 或 capture-time 修正。
+`spatial-refresh` 是 no-ML deterministic repair job：先刷新项目 GPX merged cache、`gps/derived.json` 和 `analysis/pharos-context.json`，再只修补已有 `analysis/asset-reports/*.json` 中的 GPS / Pharos / reverse-geocode 空间字段，并标记 spans / chronology stale。它不抽帧、不转写、不跑 VLM、不生成缺失 report，也不自动重建 `store/spans.json` 或 `media/chronology.json`，也不替代 Ingest 发现新的 `.SRT`、FlightRecord、素材 root 或 capture-time 修正。若只是 Pharos context parser 升级补齐 shot 执行语义，可直接重跑 `chronology-build`，不要要求 `span-rebuild`。
 
 ## ML 前置条件
 
@@ -172,7 +172,7 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
 - 当前代码入口仍允许通过 `gpxPaths` 显式注入 1..N 个 GPX 文件路径，用于覆盖默认发现
 - 默认 GPX 命中策略是：从带 `time` 的 `trkpt / rtept / wpt` 中，按 `capturedAt` 选择容差内最近点
 - planned `Pharos shot` 的正式语义当前拆成两层：
-  - 素材归属只按 `record.json.actual_time` 精确匹配；只有 `expected / unexpected` 且有完整 actual time 的记录可绑定素材，`pending / abandoned` 和 planned time segment 不参与素材归属；`plan.gps` 或 `actual_gps` 不参与时间归属
+  - 素材归属只按 `record.json.actual_time` 精确匹配；只有 `expected / unexpected` 且有完整 actual time 的记录可绑定存在有意义时间重叠的素材，多个单点事件时间窗重叠时只按 `record.json.actual_captures[]` 等显式拍摄类型/设备字段调整优先级，仍同分时优先更窄的 actual window，不从描述、地点或 note 推断语义；`pending / abandoned` 和 planned time segment 不参与素材归属；`plan.gps` 或 `actual_gps` 不参与时间归属
   - 空间位置只按 trip GPX 对素材/span 的时间做反算，不再把 shot 自带计划/实际 GPS 当作正式空间真值
 - Pharos 协议 hash 与 `.ai/pharos-protocol-baseline.json` 不匹配时，必须先完成协议同步并刷新 baseline；Analyze 不应基于旧协议假设继续解释 Pharos context
 - `manual-itinerary` 正文不直接参与拍摄时间修正；真正的时间修正入口是它末尾的“素材时间校正”表格，并且只有 rerun ingest 后才会生效
@@ -182,6 +182,8 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
   - 中国境内优先 Amap，境外优先 Geoapify
   - 若素材/span 命中了 planned `Pharos shot`，则 `drive` 使用首尾时刻各取一个 trip GPX 点做反查；非 `drive` 使用中间时刻的 trip GPX 点做反查
   - planned shot 命中但对应时刻没有有效 GPX 点时，保留 `pharos ref`，但不产出 `Pharos` 坐标；此时才允许继续回落到正式空间层选中的单点坐标
+  - Chronology V2 route/event 地点同样必须来自 GPS reverse geocode：route 按自身 `startAt/endAt` 取端点 GPS，普通非 Pharos event 按 midpoint 取代表 GPS；`chronology-build` 读取 `gps/reverse-geocode-cache.json`，未命中 provider 请求必须串行限速
+  - `Pharos continuous.location`、manual-itinerary route prose、trip/day title 与包含 `→ / -> / 全程` 的 route-stage 文本不能写入 chronology `event.location / route.from / route.to`
   - manual-itinerary route prose、trip/day title 与 route-stage 文本只能留在 `summary / decision reasons / routeRole`，不再冒充 `locationText`
 
 ## 轻量空间刷新
@@ -399,9 +401,11 @@ const localPath = resolveAssetLocalPath(asset, roots);
 - `assetIndex[]` 只保留 `assetId / sortCapturedAt`，供下游排序；素材集合必须从 `spanIds -> spans -> assetId` 反查。
 - Pharos 只作为生成输入；生成后必须折叠成普通事件、路线或缺口。
 - `gap` 可以没有 `spanIds`，表示行程确认存在但素材未覆盖或待补。
-- `chronology-build` 先按 Pharos 单点真实时间窗归属：span 多数重叠 `expected / unexpected` 且非 `continuous` 的 actual window 时直接进入该普通 `event`，素材类型不参与改判；Pharos `continuous` 只作为后续 GPS/类型聚合参考。
+- `chronology-build` 先按 Pharos 单点真实时间窗归属：span 与 `expected / unexpected` 且非 `continuous` 的 actual window 存在有意义重叠时可直接进入该普通 `event`；多个重叠 point 先按显式 `actual_captures[]` 优先级归属，仍同分时优先更窄 actual window。Pharos 单点事件是 route 硬边界，Pharos `continuous` 只提供 route 的时间 / summary 上下文，不把多个事件间 route 强行合并，也不得把 continuous route prose 写入 chronology 地点字段。
+- Pharos 单点事件来自人工行程事实，生成后默认 `reviewStatus=confirmed`；无素材命中的 Pharos `gap` 仍默认 `pending`，等待人工判断缺口是否可接受。
+- 项目级 `chronology-build` 写 chronology 时必须使用 GPS reverse-geocode service；service 显式不可用、无 provider 且 cache miss、或任一 route/event GPS anchor 反查失败都必须报错并停止写入，不允许退回 `placeHints` / `materialPatterns` / Pharos continuous prose / 英文通用地点。
 - 剩余 span 只按 chronology 顺序合并连续段：GPS 来源优先级为 Pharos trip GPX / 项目 `gps/merged.json` / `gps/derived.json` / report 中 `pharos|gpx|derived-track` / embedded GPS 兜底；单 span 起止 `<=200m` 是静态候选，相邻代表点 `<=400m` 可合并为同地点事件。
-- 行车过程中的车内自拍口播默认并入同一个 `route` event；改线、事故、到达、停车、住宿、餐食、景点进入等 transcript 线索只能辅助标题/摘要或配合 GPS/素材类型边界，不能单独拆成独立 `event`。
+- `drive` / route-like 车内素材，以及有跟车、跟随车辆、车辆行驶等明确移动主体证据的 `aerial` 航拍跟车素材，优先进入事件间 `route`，即使短 span 起止 GPS 距离很小也不得拆成普通 `event`；行车过程中的车内自拍口播、字幕和堵车描述默认并入 route 摘要，不能单独拆成独立 `event`。
 - `chronology-build` 写出的 V2 默认是 `draft`，必须经 `/chronology` 人工确认后 Script / Timeline 才能消费。
 
 8. 自动决定是否细扫，并只把结果写入 `fineScanWindows`
@@ -416,7 +420,7 @@ const localPath = resolveAssetLocalPath(asset, roots);
 - 只要开始执行一个可能持续较久的 Analyze，就应同步启动或刷新本地监控面板，而不是只在后台静默运行
 - 启动 Analyze 后，agent 应主动把监控面板 URL 告诉用户；如果分析已经开始但面板还没打开，应立即补开
 - 正式 Analyze 监控路由是 `http://127.0.0.1:8940/analyze`
-- `/chronology` 页面会显示活跃 `spatial-refresh / span-rebuild / chronology-build` jobs；`spatial-refresh / chronology-build` 不启动 Kairos ML，`span-rebuild` 会启动本地 ML 服务按 10 个 span 一批调用 qwen 文本 LM 做纯文本 materialPatterns 归纳，LM 只返回 ordered rows，代码按 chunk 顺序写回 spans，但不重跑 VLM / ASR，并显示 `.tmp/chronology/progress.json` 中的 chunk、失败列表补处理、retry/repair/warning/fallback 进度；已完成 materialPatterns checkpoint 和 failed span 列表写入 `.tmp/chronology/span-rebuild.partial.json`，正式 `store/spans.json` 只在全量收口后写入
+- `/chronology` 页面会显示活跃 `spatial-refresh / span-rebuild / chronology-build` jobs；`spatial-refresh / chronology-build` 不启动 Kairos ML，`span-rebuild` 会启动本地 ML 服务按 10 个 span 一批调用 qwen 文本 LM 做纯文本 materialPatterns 归纳，LM 只返回 ordered rows，代码按 chunk 顺序写回 spans，但不重跑 VLM / ASR，并显示 `.tmp/chronology/progress.json` 中的 chunk、失败列表补处理、retry/repair/warning/fallback 进度；已完成 materialPatterns checkpoint 和 failed span 列表写入 `.tmp/chronology/span-rebuild.partial.json`，正式 `store/spans.json` 只在全量收口后写入。`chronology-build` 必须覆盖同一 progress 文件为自己的 live 阶段，不得显示旧 span-rebuild cache；长循环中至少按批次更新 span 时空归属解析、event/route 聚合计数和 GPS reverse-geocode 地名解析计数。
 - `React console` 的 Analyze 监控读取项目内 `.tmp/media-analyze/progress.json`，Chronology 监控读取 `.tmp/chronology/progress.json`；当前项目上下文必须正确，不能把面板混到别的项目进度目录
 - Console 刷新时，默认项目上下文应优先跟随最新的 active project-scoped job；只有当前没有活跃项目 job 时，才回退到本地记忆的上次选择
 - 如果多个项目 display name 相同，项目选择器必须直接显示 `projectId`，避免把 Analyze monitor 请求到同名旧项目

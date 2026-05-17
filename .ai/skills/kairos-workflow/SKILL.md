@@ -277,8 +277,8 @@ project/
 - dense sidecar `.SRT` / DJI FlightRecord 轨迹会规范化写到 `gps/same-source/tracks/*.gpx` + `gps/same-source/index.json`
 - 这套内部 GPX 只用于 same-source 索引 / 惰性查找，不改变 `embedded GPS > Pharos GPX > 普通 project GPX > project-derived-track` 的正式优先级；Pharos GPX 不能覆盖同名 `.SRT` / FlightRecord 绑定出的 embedded GPS
 - 照片拍摄时间默认优先吃 EXIF 原始时间和时区；如果照片自身带 GPS，也应直接作为 `embedded GPS` 真值
-- Ingest / GPS 刷新负责解析项目内固定 `pharos/` 并刷新 `analysis/pharos-context.json`；Analyze 只消费该 cache，不临时补跑 Pharos parse
-- Pharos planned shot 归属只使用 `record.json.actual_time` 精确匹配；`expected / unexpected` 且有完整 actual time 的记录才可绑定素材，`pending / abandoned` 和 planned time segment 不参与素材归属，空间仍只从 trip GPX 按时间反算
+- Ingest / GPS 刷新负责解析项目内固定 `pharos/` 并刷新 `analysis/pharos-context.json`；该 cache 必须按输入 fingerprint 和 parser version 自动失效；Analyze 只消费该 cache，不临时补跑 Pharos parse
+- Pharos planned shot 归属只使用 `record.json.actual_time` 精确匹配；`expected / unexpected` 且有完整 actual time 的记录才可绑定存在有意义时间重叠的素材，多个单点事件时间窗重叠时只按 `record.json.actual_captures[]` 等显式拍摄类型/设备字段调整优先级，仍同分时优先更窄的 actual window，不从描述、地点或 note 推断语义；`pending / abandoned` 和 planned time segment 不参与素材归属，空间仍只从 trip GPX 按时间反算
 - 对本次成功扫描到的 root，Ingest 会剪掉该 root 下磁盘已不存在的旧资产；missing root 的旧资产保持不动
 - root 可声明 `captureTimePolicy.mode=manual-required`；命中素材必须由用户显式补 `正确日期 / 正确时间 / 时区` 后 rerun ingest
 - 如果 ingest 发现素材时间和项目时间线明显冲突，必须把待校正项追加到 `config/manual-itinerary.md` 末尾的“素材时间校正”表格，并阻塞后续阶段
@@ -315,6 +315,7 @@ Chronology 审查：
 - `/chronology` 是 Analyze 和 Script 之间的正式审查页，提供 `生成素材片段与模式` 与 `生成/刷新编年史` 两步，并展示 active job 的 3-span text-LM chunk / retry / warning 进度
 - `span-rebuild` 只读取 `store/assets.json + analysis/asset-reports/*.json`，再用本地 qwen 文本 LM 从每个 span 的最小文本事实按 3 个 span 一批生成中文 `materialPatterns[]`；LM 只返回 ordered rows，代码按 chunk 顺序写回 spans；已完成 checkpoint 写 `.tmp/chronology/span-rebuild.partial.json`，全量成功后才写正式 `store/spans.json + store/spans.meta.json`
 - `chronology-build` 要求 spans fresh，再从 assets + fresh spans + root time + Pharos context 写 Chronology V2，默认 `draft`
+- `chronology-build` 写 `media/chronology.json` 时必须有可用 GPS reverse-geocode service；无 service、cache/provider 反查不到 route/event GPS anchor 时直接失败，不允许用素材标签、`materialPatterns`、manual itinerary 或 Pharos continuous route prose 生成地点
 - 用户必须在 `/chronology` 确认 Chronology V2 后，Script / Timeline 才能继续
 - 旧数组 v1、`draft` 或 `stale` chronology 都应阻塞 Script / Timeline，并提示重建或确认
 - Pharos 只作为生成 chronology 的输入；正式 chronology event 不暴露 Pharos/source/origin 等生成痕迹

@@ -18,6 +18,7 @@ const CDEFAULT_AMAP_NEARBY_SEARCH_URL = 'https://restapi.amap.com/v3/place/aroun
 const CDEFAULT_GEOAPIFY_REVERSE_GEOCODE_URL = 'https://api.geoapify.com/v1/geocode/reverse';
 const CDEFAULT_GEOAPIFY_PLACES_URL = 'https://api.geoapify.com/v2/places';
 const CREVERSE_GEOCODE_TIMEOUT_MS = 20_000;
+const CDEFAULT_UNCACHED_REVERSE_GEOCODE_DELAY_MS = 0;
 
 const fetchCompat: typeof fetch = typeof globalThis.fetch === 'function'
   ? globalThis.fetch.bind(globalThis)
@@ -131,12 +132,14 @@ export interface IResolvedAnalyzeLocationText {
 export async function createProjectReverseGeocodeService(input: {
   projectRoot: string;
   runtimeConfig: Pick<IRuntimeConfig, 'amapWebServiceKey' | 'geoapifyApiKey'>;
+  uncachedRequestDelayMs?: number;
 }): Promise<IReverseGeocodeService> {
   const cache = await loadReverseGeocodeCache(input.projectRoot);
   return new ProjectReverseGeocodeService(
     input.projectRoot,
     input.runtimeConfig,
     cache?.entries ?? [],
+    input.uncachedRequestDelayMs ?? CDEFAULT_UNCACHED_REVERSE_GEOCODE_DELAY_MS,
   );
 }
 
@@ -183,11 +186,14 @@ class ProjectReverseGeocodeService implements IReverseGeocodeService {
     private readonly projectRoot: string,
     private readonly runtimeConfig: Pick<IRuntimeConfig, 'amapWebServiceKey' | 'geoapifyApiKey'>,
     entries: IReverseGeocodeCacheEntry[],
+    private readonly uncachedRequestDelayMs: number,
   ) {
     for (const entry of entries) {
       this.cache.set(entry.locationKey, entry);
     }
   }
+
+  private lastUncachedRequestStartedAt = 0;
 
   async reverseGeocode(lat: number, lng: number): Promise<IReverseGeocodeCacheEntry | null> {
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
@@ -201,6 +207,7 @@ class ProjectReverseGeocodeService implements IReverseGeocodeService {
       return null;
     }
 
+    await this.waitForUncachedRequestSlot();
     const fetched = await fetchBestReverseGeocodeForCoordinate(lng, lat, {
       amapKey,
       geoapifyKey,
@@ -214,6 +221,21 @@ class ProjectReverseGeocodeService implements IReverseGeocodeService {
     for (const point of dedupeCoordinatePoints(points)) {
       await this.reverseGeocode(point.lat, point.lng);
     }
+  }
+
+  private async waitForUncachedRequestSlot(): Promise<void> {
+    const delayMs = Math.max(0, Math.round(this.uncachedRequestDelayMs));
+    if (delayMs <= 0) {
+      this.lastUncachedRequestStartedAt = Date.now();
+      return;
+    }
+    if (this.lastUncachedRequestStartedAt > 0) {
+      const elapsedMs = Date.now() - this.lastUncachedRequestStartedAt;
+      if (elapsedMs < delayMs) {
+        await sleep(delayMs - elapsedMs);
+      }
+    }
+    this.lastUncachedRequestStartedAt = Date.now();
   }
 }
 
@@ -768,4 +790,8 @@ function dedupeCoordinatePoints(points: Array<{ lat: number; lng: number }>): Ar
 
 function dedupeStrings(values: Array<string | undefined>): string[] {
   return [...new Set(values.map(value => value?.trim()).filter(Boolean) as string[])];
+}
+
+async function sleep(ms: number): Promise<void> {
+  await new Promise<void>(resolve => setTimeout(resolve, ms));
 }

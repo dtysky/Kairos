@@ -1771,6 +1771,13 @@ export const IProjectPharosTripSummary = z.object({
 });
 export type IProjectPharosTripSummary = z.infer<typeof IProjectPharosTripSummary>;
 
+export const IProjectPharosActualCapture = z.object({
+  type: z.string().optional(),
+  camera: z.string().optional(),
+  lens: z.string().nullable().optional(),
+});
+export type IProjectPharosActualCapture = z.infer<typeof IProjectPharosActualCapture>;
+
 export const IProjectPharosShot = z.object({
   ref: IPharosRef,
   tripTitle: z.string().optional(),
@@ -1787,6 +1794,7 @@ export const IProjectPharosShot = z.object({
   roll: z.string().optional(),
   devices: z.array(z.string()).default([]),
   rolls: z.array(z.string()).default([]),
+  actualCaptures: z.array(IProjectPharosActualCapture).default([]),
   gps: z.tuple([z.number(), z.number()]).optional(),
   gpsStart: z.tuple([z.number(), z.number()]).optional(),
   gpsEnd: z.tuple([z.number(), z.number()]).optional(),
@@ -1807,6 +1815,7 @@ export type IProjectPharosShot = z.infer<typeof IProjectPharosShot>;
 
 export const IProjectPharosContext = z.object({
   schemaVersion: z.literal('1.0'),
+  parserVersion: z.number().int().positive().optional(),
   generatedAt: z.string(),
   status: EPharosAssetState,
   rootPath: z.string(),

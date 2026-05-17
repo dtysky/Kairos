@@ -18,6 +18,7 @@ import {
 
 const CPLAN_SCHEMA_PREFIX = 'pharos/plan/';
 const CRECORD_SCHEMA_PREFIX = 'pharos/record/';
+export const CPROJECT_PHAROS_CONTEXT_PARSER_VERSION = 2;
 
 export interface ILoadOrBuildProjectPharosContextInput {
   projectRoot: string;
@@ -46,6 +47,7 @@ export async function loadOrBuildProjectPharosContext(
     if (
       existing
       && existing.schemaVersion === '1.0'
+      && existing.parserVersion === CPROJECT_PHAROS_CONTEXT_PARSER_VERSION
       && JSON.stringify(existingIncluded) === JSON.stringify(requestedIncluded)
       && existing.sourceFingerprint === sourceFingerprint
     ) {
@@ -80,6 +82,7 @@ export async function buildProjectPharosContext(
   if (discoveredTripIds.length === 0 || effectiveTripIds.length === 0) {
     return {
       schemaVersion: '1.0',
+      parserVersion: CPROJECT_PHAROS_CONTEXT_PARSER_VERSION,
       generatedAt: new Date().toISOString(),
       status: includedTripIds.length > 0 ? 'failure' : 'empty',
       rootPath,
@@ -124,6 +127,7 @@ export async function buildProjectPharosContext(
 
   return {
     schemaVersion: '1.0',
+    parserVersion: CPROJECT_PHAROS_CONTEXT_PARSER_VERSION,
     generatedAt: new Date().toISOString(),
     status,
     rootPath,
@@ -344,6 +348,7 @@ async function parseTripDirectory(
             .map(angle => angle && typeof angle === 'object' ? String((angle as Record<string, unknown>).roll ?? '').trim() : '')
             .filter(Boolean)
           : (typeof shot.roll === 'string' ? [shot.roll] : []),
+        actualCaptures: normalizeActualCaptures(recordEntry),
         gps: normalizeCoordinate(shot.gps),
         gpsStart: normalizeCoordinate(shot.gps_start),
         gpsEnd: normalizeCoordinate(shot.gps_end),
@@ -390,6 +395,7 @@ async function parseTripDirectory(
       roll: typeof shot.roll === 'string' ? shot.roll : undefined,
       devices: typeof shot.device === 'string' ? [shot.device] : [],
       rolls: typeof shot.roll === 'string' ? [shot.roll] : [],
+      actualCaptures: normalizeActualCaptures(shot),
       gps: normalizeCoordinate(shot.gps),
       plannedTimeStart: undefined,
       plannedTimeEnd: undefined,
@@ -513,11 +519,37 @@ function resolveExtraShotType(shot: Record<string, unknown>): string {
   return legacyType === 'continuous' ? 'continuous' : 'event';
 }
 
+function normalizeActualCaptures(
+  source: Record<string, unknown> | undefined,
+): IProjectPharosShot['actualCaptures'] {
+  const captures = source?.actual_captures;
+  if (!Array.isArray(captures)) return [];
+  return captures
+    .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object')
+    .map(capture => ({
+      type: readFlatString(capture, 'type'),
+      camera: readFlatString(capture, 'camera'),
+      lens: readNullableString(capture, 'lens'),
+    }))
+    .filter(capture => Boolean(capture.type || capture.camera || capture.lens != null));
+}
+
 function readFlatString(
   value: Record<string, unknown>,
   key: string,
 ): string | undefined {
   const resolved = value[key];
+  if (typeof resolved !== 'string') return undefined;
+  const trimmed = resolved.trim();
+  return trimmed || undefined;
+}
+
+function readNullableString(
+  value: Record<string, unknown>,
+  key: string,
+): string | null | undefined {
+  const resolved = value[key];
+  if (resolved === null) return null;
   if (typeof resolved !== 'string') return undefined;
   const trimmed = resolved.trim();
   return trimmed || undefined;

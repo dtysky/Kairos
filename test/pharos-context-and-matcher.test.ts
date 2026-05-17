@@ -7,7 +7,11 @@ import type {
   IProjectPharosShot,
   IProjectPharosTripSummary,
 } from '../src/protocol/schema.js';
-import { buildProjectPharosContext } from '../src/modules/pharos/context.js';
+import {
+  buildProjectPharosContext,
+  CPROJECT_PHAROS_CONTEXT_PARSER_VERSION,
+  loadOrBuildProjectPharosContext,
+} from '../src/modules/pharos/context.js';
 import { matchAssetToPharos } from '../src/modules/pharos/matcher.js';
 
 function makeTripSummary(overrides: Partial<IProjectPharosTripSummary> = {}): IProjectPharosTripSummary {
@@ -37,6 +41,7 @@ function makeShot(overrides: Partial<IProjectPharosShot> = {}): IProjectPharosSh
     type: 'shot',
     devices: [],
     rolls: [],
+    actualCaptures: [],
     isExtraShot: false,
     ...overrides,
   };
@@ -92,12 +97,24 @@ describe('Pharos context + matcher', () => {
             start: '2026-04-12T08:00:00+08:00',
             end: '2026-04-12T08:20:00+08:00',
           },
+          actual_captures: [{
+            type: 'aerial',
+            camera: 'Mavic 4 Pro',
+            lens: null,
+            note: 'parser should not need natural-language capture notes',
+          }],
         }],
       }, null, 2));
 
       const context = await buildProjectPharosContext({ projectRoot });
+      expect(context.parserVersion).toBe(CPROJECT_PHAROS_CONTEXT_PARSER_VERSION);
       expect(context.shots).toHaveLength(1);
       expect(context.shots[0]?.type).toBe('continuous');
+      expect(context.shots[0]?.actualCaptures).toEqual([{
+        type: 'aerial',
+        camera: 'Mavic 4 Pro',
+        lens: null,
+      }]);
       expect(context.shots[0]?.plannedTimeStart).toBeUndefined();
       expect(context.shots[0]?.actualTimeStart).toBe('2026-04-12T00:00:00.000Z');
       expect(context.shots[0]?.actualTimeEnd).toBe('2026-04-12T00:20:00.000Z');
@@ -136,6 +153,68 @@ describe('Pharos context + matcher', () => {
       expect(context.shots[0]?.plannedTimeStart).toBeUndefined();
       expect(context.shots[0]?.actualTimeStart).toBeUndefined();
       expect(context.warnings.some(item => item.includes('drive-1') && item.includes('planned/record time'))).toBe(true);
+    } finally {
+      await rm(projectRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('rebuilds an otherwise fresh context when the parser version is stale', async () => {
+    const projectRoot = await mkdtemp(join(tmpdir(), 'kairos-pharos-context-cache-'));
+    try {
+      const tripRoot = join(projectRoot, 'pharos', 'trip-1');
+      await mkdir(tripRoot, { recursive: true });
+      await writeFile(join(tripRoot, 'plan.json'), JSON.stringify({
+        $schema: 'pharos/plan/1.0',
+        trip_id: 'trip-1',
+        title: 'Trip 1',
+        timezone: 'Asia/Shanghai',
+        days: [{
+          day: 1,
+          date: '2026-04-12',
+          title: 'Day 1',
+          shots: [{
+            id: 'aerial-1',
+            location: '山顶',
+            description: '山顶航拍执行记录',
+            type: 'event',
+            priority: 'must',
+          }],
+        }],
+      }, null, 2));
+      await writeFile(join(tripRoot, 'record.json'), JSON.stringify({
+        $schema: 'pharos/record/1.0',
+        trip_id: 'trip-1',
+        records: [{
+          shot_id: 'aerial-1',
+          status: 'expected',
+          actual_time: {
+            start: '2026-04-12T08:00:00+08:00',
+            end: '2026-04-12T08:05:00+08:00',
+          },
+          actual_captures: [{
+            type: 'aerial',
+            camera: 'Mavic 4 Pro',
+            lens: null,
+          }],
+        }],
+      }, null, 2));
+
+      const fresh = await buildProjectPharosContext({ projectRoot });
+      await mkdir(join(projectRoot, 'analysis'), { recursive: true });
+      await writeFile(join(projectRoot, 'analysis', 'pharos-context.json'), JSON.stringify({
+        ...fresh,
+        parserVersion: CPROJECT_PHAROS_CONTEXT_PARSER_VERSION - 1,
+        shots: [],
+      }, null, 2));
+
+      const rebuilt = await loadOrBuildProjectPharosContext({ projectRoot });
+
+      expect(rebuilt.parserVersion).toBe(CPROJECT_PHAROS_CONTEXT_PARSER_VERSION);
+      expect(rebuilt.shots).toHaveLength(1);
+      expect(rebuilt.shots[0]?.actualCaptures[0]).toMatchObject({
+        type: 'aerial',
+        camera: 'Mavic 4 Pro',
+      });
     } finally {
       await rm(projectRoot, { recursive: true, force: true });
     }

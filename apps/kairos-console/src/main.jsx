@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { BrowserRouter as Router, Link, Redirect, Route, Switch } from 'react-router-dom';
-import { Button, Card, Menu, MenuItem, Modal, Tag } from 'hana-ui';
+import { Button, Card, Menu, MenuItem, Modal, Option, Select, Tag } from 'hana-ui';
 import 'hana-ui/hana-style.scss';
 import './app.scss';
 import {
@@ -1328,6 +1328,9 @@ function ChronologyProgressPanel({ jobs }) {
   const extra = progress?.extra || {};
   const blockers = latestJob.blockers || [];
   const etaLabel = formatEtaSeconds(progress?.etaSeconds);
+  const phaseKey = progress?.phaseKey || latestJob.jobType;
+  const isChronologyBuild = phaseKey === 'chronology-build';
+  const isSpanRebuild = phaseKey === 'span-rebuild';
   const captionLeft = progress
     ? `${progress.current || 0}/${progress.total || 0} ${progress.unit || 'step'}`
     : blockers.join('；') || latestJob.lastError || '等待任务写入进度';
@@ -1336,6 +1339,7 @@ function ChronologyProgressPanel({ jobs }) {
     || latestJob.updatedAt
     || '';
   const isBlockedWithoutProgress = latestJob.status === 'blocked' && !progress;
+  const isWaitingForProgress = ['queued', 'running'].includes(latestJob.status) && !progress;
 
   return (
     <div className="chronology-progress">
@@ -1361,13 +1365,38 @@ function ChronologyProgressPanel({ jobs }) {
         <div className="pipeline-footnote">
           当前没有写入新的 spans；请确认本地 qwen 文本 LM / ML 服务可用后重新运行。
         </div>
+      ) : isWaitingForProgress ? (
+        <div className="pipeline-footnote">
+          任务已启动，正在等待当前阶段写入新的进度。
+        </div>
       ) : (
         <div className="pipeline-metric-grid chronology-progress-metrics">
           <PipelineMetricCard label="阶段" value={progress?.stepLabel || progress?.step || latestJob.status} sub={progress?.phaseLabel || latestJob.executionMode} />
-          <PipelineMetricCard label="素材片段" value={String(extra.spanCount ?? 0)} sub={extra.inputsHash ? `input ${String(extra.inputsHash).slice(0, 12)}` : 'span rebuild 输出'} />
-          <PipelineMetricCard label="重试" value={String(extra.retryCount ?? 0)} sub={`warnings ${extra.warningCount ?? blockers.length ?? 0}`} />
-          <PipelineMetricCard label="失败列表" value={String(extra.failedCount ?? 0)} sub={`恢复 ${extra.recoveredFailedCount ?? 0} · 情景不明 ${extra.storyUnknownFallbackCount ?? 0}`} />
-          <PipelineMetricCard label="剩余时间" value={etaLabel || '估算中'} sub={progress?.status === 'succeeded' ? '已完成' : '按当前 span 处理速度估算'} />
+          {isChronologyBuild ? (
+            <>
+              <PipelineMetricCard label="Rows" value={String(extra.rowCount ?? progress?.current ?? 0)} sub={`spans ${extra.spanCount ?? 0} · spatial ${extra.spatialCount ?? 0}`} />
+              <PipelineMetricCard label="事件/路线" value={String(extra.eventCount ?? 0)} sub={`route ${extra.routeEventCount ?? 0} · event ${extra.ordinaryEventCount ?? 0} · Pharos ${extra.pharosEventCount ?? 0}`} />
+              <PipelineMetricCard label="时空命中" value={String(extra.directPharosCount ?? 0)} sub={`direct Pharos · continuous ${extra.continuousPharosCount ?? 0}`} />
+              <PipelineMetricCard label="输入源" value={String(extra.pharosShotCount ?? 0)} sub={`Pharos shots · GPS ${extra.pharosGpsPointCount ?? extra.projectGpsPointCount ?? 0}`} />
+              <PipelineMetricCard label="输入" value={extra.inputsHash ? String(extra.inputsHash).slice(0, 12) : '等待生成'} sub="chronology inputs hash" />
+            </>
+          ) : isSpanRebuild ? (
+            <>
+              <PipelineMetricCard label="素材片段" value={String(extra.spanCount ?? 0)} sub={extra.inputsHash ? `input ${String(extra.inputsHash).slice(0, 12)}` : 'span rebuild 输出'} />
+              <PipelineMetricCard label="重试" value={String(extra.retryCount ?? 0)} sub={`warnings ${extra.warningCount ?? blockers.length ?? 0}`} />
+              <PipelineMetricCard label="失败列表" value={String(extra.failedCount ?? 0)} sub={`恢复 ${extra.recoveredFailedCount ?? 0} · 情景不明 ${extra.storyUnknownFallbackCount ?? 0}`} />
+            </>
+          ) : (
+            <>
+              <PipelineMetricCard label="状态" value={latestJob.status} sub={latestJob.executionMode} />
+              <PipelineMetricCard label="warning" value={String(extra.warningCount ?? blockers.length ?? 0)} sub={blockers[0] || '当前 chronology job'} />
+            </>
+          )}
+          <PipelineMetricCard
+            label="剩余时间"
+            value={etaLabel || '估算中'}
+            sub={progress?.status === 'succeeded' ? '已完成' : isSpanRebuild ? '按当前 span 处理速度估算' : '按当前阶段估算'}
+          />
         </div>
       )}
     </div>
@@ -1527,22 +1556,31 @@ function ChronologyPage({
         </div>
         <div className="chronology-toolbar">
           <div className="monitor-toolbar-group">
-            <select value={dayFilter} onChange={event => setDayFilter(event.target.value)}>
-              <option value="all">全部日期</option>
-              {days.map(day => <option key={day} value={day}>{day}</option>)}
-            </select>
-            <select value={kindFilter} onChange={event => setKindFilter(event.target.value)}>
-              <option value="all">全部类型</option>
-              <option value="event">event</option>
-              <option value="route">route</option>
-              <option value="gap">gap</option>
-            </select>
-            <select value={statusFilter} onChange={event => setStatusFilter(event.target.value)}>
-              <option value="all">全部状态</option>
-              <option value="pending">pending</option>
-              <option value="confirmed">confirmed</option>
-              <option value="rejected">rejected</option>
-            </select>
+            <ChronologySelect
+              value={dayFilter}
+              onChange={setDayFilter}
+              options={[{ value: 'all', label: '全部日期' }, ...days.map(day => ({ value: day, label: day }))]}
+            />
+            <ChronologySelect
+              value={kindFilter}
+              onChange={setKindFilter}
+              options={[
+                { value: 'all', label: '全部类型' },
+                { value: 'event', label: 'event' },
+                { value: 'route', label: 'route' },
+                { value: 'gap', label: 'gap' },
+              ]}
+            />
+            <ChronologySelect
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={[
+                { value: 'all', label: '全部状态' },
+                { value: 'pending', label: 'pending' },
+                { value: 'confirmed', label: 'confirmed' },
+                { value: 'rejected', label: 'rejected' },
+              ]}
+            />
           </div>
           <div className="actions">
             <Button
@@ -1630,16 +1668,24 @@ function ChronologyPage({
                 </div>
               </div>
               <div className="chronology-row-actions">
-                <select value={draft.kind} onChange={changeEvent => updateDraft(event, { kind: changeEvent.target.value })}>
-                  <option value="event">event</option>
-                  <option value="route">route</option>
-                  <option value="gap">gap</option>
-                </select>
-                <select value={draft.reviewStatus} onChange={changeEvent => updateDraft(event, { reviewStatus: changeEvent.target.value })}>
-                  <option value="pending">pending</option>
-                  <option value="confirmed">confirmed</option>
-                  <option value="rejected">rejected</option>
-                </select>
+                <ChronologySelect
+                  value={draft.kind}
+                  onChange={value => updateDraft(event, { kind: value })}
+                  options={[
+                    { value: 'event', label: 'event' },
+                    { value: 'route', label: 'route' },
+                    { value: 'gap', label: 'gap' },
+                  ]}
+                />
+                <ChronologySelect
+                  value={draft.reviewStatus}
+                  onChange={value => updateDraft(event, { reviewStatus: value })}
+                  options={[
+                    { value: 'pending', label: 'pending' },
+                    { value: 'confirmed', label: 'confirmed' },
+                    { value: 'rejected', label: 'rejected' },
+                  ]}
+                />
                 <Button
                   type={busy[`chronology:event:${event.id}`] ? 'disabled' : 'default'}
                   disabled={busy[`chronology:event:${event.id}`]}
@@ -1648,19 +1694,21 @@ function ChronologyPage({
                   保存
                 </Button>
                 <Button
-                  type="default"
+                  type={busy[`chronology:event:${event.id}`] ? 'disabled' : 'primary'}
+                  disabled={busy[`chronology:event:${event.id}`]}
                   onClick={() => onSaveEvent(event.id, { reviewStatus: 'confirmed' })}
                 >
                   确认
                 </Button>
                 <Button
-                  type="default"
+                  type={busy[`chronology:event:${event.id}`] ? 'disabled' : 'error'}
+                  disabled={busy[`chronology:event:${event.id}`]}
                   onClick={() => onSaveEvent(event.id, { reviewStatus: 'rejected' })}
                 >
                   驳回
                 </Button>
                 <Button
-                  type={(event.spanIds?.length || 0) > 1 && !busy[`chronology:split:${event.id}`] ? 'default' : 'disabled'}
+                  type={(event.spanIds?.length || 0) > 1 && !busy[`chronology:split:${event.id}`] ? 'warning' : 'disabled'}
                   disabled={(event.spanIds?.length || 0) <= 1 || busy[`chronology:split:${event.id}`]}
                   onClick={() => onSplitEvent(event.id)}
                 >
@@ -1694,6 +1742,23 @@ function formatChronologyTime(value) {
 
 function dedupeUiStrings(values) {
   return Array.from(new Set(values.filter(value => typeof value === 'string' && value.trim().length > 0)));
+}
+
+function ChronologySelect({ value, onChange, options }) {
+  return (
+    <Select
+      className="chronology-select"
+      value={value}
+      onChange={onChange}
+      autoUpdown
+      maxHeight={260}
+      size="small"
+    >
+      {options.map(option => (
+        <Option key={option.value} value={option.value} label={option.label} />
+      ))}
+    </Select>
+  );
 }
 
 function StylePage({ config, capabilities, jobs, setStyleSources, onSave, busy, onRun, location, history }) {
