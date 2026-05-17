@@ -4,6 +4,8 @@ import {
   loadAssetReports,
   loadAssets,
   loadChronologyForRebuild,
+  loadProjectDerivedTrack,
+  loadProjectGpsMerged,
   loadIngestRoots,
   loadProjectBriefConfig,
   resolveWorkspaceProjectRoot,
@@ -11,7 +13,8 @@ import {
   writeChronology,
 } from '../../store/index.js';
 import { loadOrBuildProjectPharosContext } from '../pharos/context.js';
-import { buildMediaChronology } from './chronology.js';
+import { buildMediaChronology, type IChronologyTimedPoint } from './chronology.js';
+import { loadGpxPoints } from './gpx-spatial.js';
 
 export interface IProjectChronologyBuildResult {
   projectRoot: string;
@@ -27,13 +30,15 @@ export async function buildProjectChronology(input: {
   now?: string;
 }): Promise<IProjectChronologyBuildResult> {
   const projectRoot = resolveWorkspaceProjectRoot(input.workspaceRoot, input.projectId);
-  const [{ spans }, assets, reports, existing, { roots }, projectBrief] = await Promise.all([
+  const [{ spans }, assets, reports, existing, { roots }, projectBrief, projectGpsMerged, derivedTrack] = await Promise.all([
     assertFreshSpans(projectRoot),
     loadAssets(projectRoot),
     loadAssetReports(projectRoot),
     loadChronologyForRebuild(projectRoot),
     loadIngestRoots(projectRoot),
     loadProjectBriefConfig(projectRoot),
+    loadProjectGpsMerged(projectRoot),
+    loadProjectDerivedTrack(projectRoot),
   ]);
   const pharosContext = await loadOrBuildProjectPharosContext({
     projectRoot,
@@ -44,13 +49,26 @@ export async function buildProjectChronology(input: {
       ? pharosContext.errors.join('; ')
       : 'Pharos context parse failed');
   }
+  const pharosGpsPoints = await loadChronologyPharosGpsPoints(pharosContext.status === 'success' ? pharosContext : null);
 
   const chronology = buildMediaChronology(
     assets,
     reports,
     existing,
     roots,
-    { spans, pharosContext, now: input.now },
+    {
+      spans,
+      pharosContext,
+      pharosGpsPoints,
+      projectGpsPoints: (projectGpsMerged?.points ?? []).map(point => ({
+        lat: point.lat,
+        lng: point.lng,
+        time: point.time,
+        path: point.sourcePath,
+      })),
+      derivedTrack,
+      now: input.now,
+    },
   );
   await writeChronology(projectRoot, chronology);
   await touchProjectUpdatedAt(projectRoot);
@@ -62,4 +80,23 @@ export async function buildProjectChronology(input: {
     inputsHash: chronology.inputsHash,
     chronology,
   };
+}
+
+async function loadChronologyPharosGpsPoints(
+  pharosContext: Awaited<ReturnType<typeof loadOrBuildProjectPharosContext>> | null,
+): Promise<IChronologyTimedPoint[]> {
+  if (!pharosContext || pharosContext.status !== 'success' || pharosContext.gpxFiles.length === 0) {
+    return [];
+  }
+  const pointGroups = await Promise.all(pharosContext.gpxFiles.map(async file => {
+    const points = await loadGpxPoints(file.path).catch(() => []);
+    return points.map(point => ({
+      lat: point.lat,
+      lng: point.lng,
+      time: point.time,
+      path: point.path,
+      tripId: file.tripId,
+    }));
+  }));
+  return pointGroups.flat();
 }

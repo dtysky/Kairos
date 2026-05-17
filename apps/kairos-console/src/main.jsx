@@ -1327,12 +1327,14 @@ function ChronologyProgressPanel({ jobs }) {
   const percent = resolveProgressPercent(progress);
   const extra = progress?.extra || {};
   const blockers = latestJob.blockers || [];
+  const etaLabel = formatEtaSeconds(progress?.etaSeconds);
   const captionLeft = progress
     ? `${progress.current || 0}/${progress.total || 0} ${progress.unit || 'step'}`
     : blockers.join('；') || latestJob.lastError || '等待任务写入进度';
-  const captionRight = progress?.fileTotal
-    ? `chunk ${progress.fileIndex || 0}/${progress.fileTotal}`
-    : latestJob.updatedAt || '';
+  const chunkLabel = progress?.fileTotal ? `chunk ${progress.fileIndex || 0}/${progress.fileTotal}` : '';
+  const captionRight = [chunkLabel, etaLabel ? `剩余 ${etaLabel}` : null].filter(Boolean).join(' · ')
+    || latestJob.updatedAt
+    || '';
   const isBlockedWithoutProgress = latestJob.status === 'blocked' && !progress;
 
   return (
@@ -1364,6 +1366,8 @@ function ChronologyProgressPanel({ jobs }) {
           <PipelineMetricCard label="阶段" value={progress?.stepLabel || progress?.step || latestJob.status} sub={progress?.phaseLabel || latestJob.executionMode} />
           <PipelineMetricCard label="素材片段" value={String(extra.spanCount ?? 0)} sub={extra.inputsHash ? `input ${String(extra.inputsHash).slice(0, 12)}` : 'span rebuild 输出'} />
           <PipelineMetricCard label="重试" value={String(extra.retryCount ?? 0)} sub={`warnings ${extra.warningCount ?? blockers.length ?? 0}`} />
+          <PipelineMetricCard label="失败列表" value={String(extra.failedCount ?? 0)} sub={`恢复 ${extra.recoveredFailedCount ?? 0} · 情景不明 ${extra.storyUnknownFallbackCount ?? 0}`} />
+          <PipelineMetricCard label="剩余时间" value={etaLabel || '估算中'} sub={progress?.status === 'succeeded' ? '已完成' : '按当前 span 处理速度估算'} />
         </div>
       )}
     </div>
@@ -2143,6 +2147,21 @@ function formatBytes(bytes) {
     return `${(value / 1024).toFixed(1)} KB`;
   }
   return `${value} B`;
+}
+
+function formatEtaSeconds(value) {
+  const seconds = Number(value);
+  if (!Number.isFinite(seconds) || seconds < 0) return '';
+  if (seconds === 0) return '0s';
+  if (seconds < 60) return `${Math.ceil(seconds)}s`;
+  const minutes = Math.floor(seconds / 60);
+  const restSeconds = Math.round(seconds % 60);
+  if (minutes < 60) {
+    return restSeconds > 0 ? `${minutes}m ${restSeconds}s` : `${minutes}m`;
+  }
+  const hours = Math.floor(minutes / 60);
+  const restMinutes = minutes % 60;
+  return restMinutes > 0 ? `${hours}h ${restMinutes}m` : `${hours}h`;
 }
 
 function resolveProgressPercent(progress) {

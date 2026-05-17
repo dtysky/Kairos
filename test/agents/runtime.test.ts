@@ -14,8 +14,8 @@ describe('MlJsonPacketAgentRunner', () => {
         capturedOptions = options;
         return {
           text: JSON.stringify([
-            ['第一人称行车', '山路', '天气光线不明', '无口播语音'],
-            ['手持自拍口播', '环境不明', '天气光线不明', '有口播语音'],
+            ['第一人称行车', '山路', '天气光线不明', '无口播语音', '山路连续推进', '连续弯道', '道路推进'],
+            ['手持自拍口播', '环境不明', '天气光线不明', '有口播语音', '到达现场说明', '到达说明', '口播说明'],
           ]),
         };
       },
@@ -48,12 +48,14 @@ describe('MlJsonPacketAgentRunner', () => {
     });
 
     expect(result).toEqual([
-      ['第一人称行车', '山路', '天气光线不明', '无口播语音'],
-      ['手持自拍口播', '环境不明', '天气光线不明', '有口播语音'],
+      ['第一人称行车', '山路', '天气光线不明', '无口播语音', '山路连续推进', '连续弯道', '道路推进'],
+      ['手持自拍口播', '环境不明', '天气光线不明', '有口播语音', '到达现场说明', '到达说明', '口播说明'],
     ]);
     expect(capturedOptions).toMatchObject({ maxTokens: CSPAN_MATERIAL_PATTERN_MAX_TOKENS });
     expect(capturedPrompt).toContain('顶层 JSON 数组');
-    expect(capturedPrompt).toContain('每行是 4 到 6 个中文短标签');
+    expect(capturedPrompt).toContain('每行必须正好 7 个中文短标签');
+    expect(capturedPrompt).toContain('情景故事');
+    expect(capturedPrompt).toContain('情景不明');
     expect(capturedPrompt).not.toContain('"id"');
   });
 });

@@ -1,8 +1,10 @@
 import type { IAgentPacket } from '../../protocol/schema.js';
 
-export const CSPAN_MATERIAL_PATTERN_PROMPT_VERSION = 'media-span-material-patterns-v4';
+export const CSPAN_MATERIAL_PATTERN_PROMPT_VERSION = 'media-span-material-patterns-v5';
 export const CSPAN_MATERIAL_PATTERN_SLOT_COUNT = 4;
-export const CSPAN_MATERIAL_PATTERN_MAX_COUNT = 6;
+export const CSPAN_MATERIAL_PATTERN_REQUIRED_COUNT = 5;
+export const CSPAN_MATERIAL_PATTERN_MAX_COUNT = 7;
+export const CSPAN_MATERIAL_PATTERN_FREE_COUNT = 2;
 export const CSPAN_MATERIAL_PATTERN_BATCH_SIZE = 10;
 export const CSPAN_MATERIAL_PATTERN_MAX_TOKENS = 1200;
 
@@ -36,6 +38,7 @@ export const CSPAN_MATERIAL_PATTERN_WEATHER_UNKNOWN = '天气光线不明';
 export const CSPAN_MATERIAL_PATTERN_VIEWPOINT_UNKNOWN = '视角不明';
 export const CSPAN_MATERIAL_PATTERN_SPEECH_PRESENT = '有口播语音';
 export const CSPAN_MATERIAL_PATTERN_SPEECH_ABSENT = '无口播语音';
+export const CSPAN_MATERIAL_PATTERN_STORY_UNKNOWN = '情景不明';
 
 export const CSPAN_MATERIAL_PATTERN_TECHNICAL_WEATHER_TERMS = [
   '高反差',
@@ -69,9 +72,10 @@ export function buildSpanMaterialPatternsSystemPrompt(): string {
     '输出规则：',
     '- 严格返回顶层 JSON 数组，数组长度必须等于输入 items 数量。',
     '- 第 N 行只对应第 N 个输入 item。',
-    '- 每行是 4 到 6 个中文短标签 string[]。',
-    '- 前 4 个位置固定为：1 视角类型，2 当前环境，3 天气光线，4 口播语音。',
-    '- 第 5 到 6 个位置可选，用短 factual free tags 补充动作、事件、细节或状态。',
+    '- 每行必须正好 7 个中文短标签 string[]。',
+    '- 前 5 个位置固定为：1 视角类型，2 当前环境，3 天气光线，4 口播语音，5 情景故事。',
+    '- 第 6 到 7 个位置必须填写，用短 factual free tags 自由补充动作、事件、细节或状态。',
+    '- 如果你不填写第 5 到 7 项，代码不会为你启发式补写。',
     '',
     'slot 1 视角类型：必须从受控词表中选一个。',
     `受控词表：${CSPAN_MATERIAL_PATTERN_VIEWPOINT_TAGS.join('、')}`,
@@ -88,6 +92,10 @@ export function buildSpanMaterialPatternsSystemPrompt(): string {
     'slot 4 口播语音：只能写“有口播语音”或“无口播语音”。',
     '- 只依据 transcript / transcriptSegments / semanticKind 判断是否有口播语音。',
     '- 不要判断环境声质量、现场声可用性或音频强弱。',
+    '',
+    'slot 5 情景故事：必须写一个短情景短语，不是完整句子。',
+    `如果当前 span 没有可判断的情景关系，写“${CSPAN_MATERIAL_PATTERN_STORY_UNKNOWN}”。`,
+    '示例：雾中山路会车等待、车内讨论骑行难度、服务区停车观察、牦牛过路临时等待、花海现场拍摄准备。',
   ].join('\n');
 }
 
@@ -96,22 +104,25 @@ export function buildSpanMaterialPatternHardConstraints(): string[] {
     '只能使用每个 item 内的 type、semanticKind、transcript、visualObservation。',
     '不得使用或猜测素材级粗标签、素材级摘要、外部时空上下文、时间地点、GPS、Pharos、额外资产字段或跨 item 信息。',
     '输出必须是顶层 JSON 数组，数组长度等于输入 items 数量，按输入顺序一一对应。',
-    '每行必须是 4 到 6 个中文短标签 string[]。',
-    '第 1 项必须是受控视角类型；第 2 项是提取的当前环境；第 3 项是可观察天气光线；第 4 项只能是 有口播语音 / 无口播语音。',
+    '每行必须正好是 7 个中文短标签 string[]。',
+    '第 1 项必须是受控视角类型；第 2 项是提取的当前环境；第 3 项是可观察天气光线；第 4 项只能是 有口播语音 / 无口播语音；第 5 项是短情景故事或 情景不明。',
     '天气光线不要写高反差、低光、过曝、曝光异常等技术分类。',
-    '第 5 到 6 项只能写短 factual free tags，不要输出完整句子或长描述。',
+    '第 5 项情景故事必须根据当前 item 文本事实生成短情景短语，不要输出完整句子；无法判断时写 情景不明。',
+    '第 6 到 7 项必须填写短 factual free tags，不要输出完整句子或长描述。',
+    '第 5 到 7 项必须由 LM 根据当前 item 文本事实生成；代码不会启发式兜底。',
     '不要输出 id、items、objects、字段名或说明文字。',
   ];
 }
 
 export function buildSpanMaterialPatternOutputSchema(): Record<string, string> {
   return {
-    root: 'string[][]; same length and order as input items; each inner array has 4-6 Chinese tags',
+    root: 'string[][]; same length and order as input items; each inner array has exactly 7 Chinese tags',
     slot1: `controlled viewpoint tag: ${CSPAN_MATERIAL_PATTERN_VIEWPOINT_TAGS.join(' | ')}`,
     slot2: 'extractive current environment phrase, or 环境不明',
     slot3: 'observable natural weather/light phrase, or 天气光线不明',
     slot4: '有口播语音 | 无口播语音',
-    slots5to6: 'optional short factual free tags',
+    slot5: `short scene story phrase, or ${CSPAN_MATERIAL_PATTERN_STORY_UNKNOWN}`,
+    slots6to7: 'required short factual free tags',
   };
 }
 
@@ -123,6 +134,8 @@ export function buildSpanMaterialPatternReviewRubric(): string[] {
     '当前环境必须是提取短语或 环境不明，不要用固定环境词表硬套。',
     '天气光线必须是晴天、下雨、下雪、晚霞、丁达尔效应等可观察自然现象，不能是技术曝光分类。',
     '口播语音只能是 有口播语音 或 无口播语音。',
+    '第 5 项必须是当前 span 内可支持的短情景故事，或 情景不明。',
+    '第 6-7 项必须存在，并且是当前 span 内可支持的短事实标签。',
     '不得输出输入字段之外推断出的地点、时间或外部时空信息。',
   ];
 }
@@ -137,7 +150,7 @@ export function buildSpanMaterialPatternsMlPrompt(packet: IAgentPacket): string 
     buildSpanMaterialPatternsSystemPrompt(),
     '',
     '本地 text-LM 输出补充要求：',
-    '- 只输出一行顶层 JSON 数组，格式：[["视角类型","当前环境","天气光线","口播语音","可选补充"], ...]。',
+    '- 只输出一行顶层 JSON 数组，格式：[["视角类型","当前环境","天气光线","口播语音","情景故事","自由标签1","自由标签2"], ...]。',
     '- 不要输出 {items: ...}，不要输出 id，不能加 Markdown 代码块。',
     `attempt: ${String(content?.attempt ?? 1)}`,
     `items: ${JSON.stringify(items)}`,

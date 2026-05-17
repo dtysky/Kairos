@@ -7,6 +7,12 @@
       "rootId": "root-draft-1778318452475-huvyid",
       "path": "/Volumes/SSDMAX/zve1",
       "rawPath": "/Volumes/SSDMAX/raw/zve1",
+      "alternatePaths": [
+        {
+          "path": "F:\\vlog-proj\\219-318\\zve1",
+          "rawPath": "D:\\vlog-p3-conv\\raw\\zve1"
+        }
+      ],
       "description": "VLOG和行车等主要视频",
       "enabled": true,
       "label": "SSDMAX/zve1",
@@ -27,6 +33,12 @@
       "rootId": "root-draft-1778319636214-bb8ljb",
       "path": "/Volumes/SSDMAX/drone",
       "rawPath": "/Volumes/SSDMAX/raw/drone",
+      "alternatePaths": [
+        {
+          "path": "F:\\vlog-proj\\219-318\\drone",
+          "rawPath": "D:\\vlog-p3-conv\\raw\\drone"
+        }
+      ],
       "description": "航拍视频",
       "enabled": true,
       "label": "SSDMAX/drone",
@@ -47,6 +59,11 @@
     {
       "rootId": "root-draft-1778319664359-puaawa",
       "path": "/Volumes/SSDMAX/ts-final",
+      "alternatePaths": [
+        {
+          "path": "F:\\vlog-proj\\219-318\\ts-final"
+        }
+      ],
       "description": "延时摄影",
       "enabled": true,
       "label": "SSDMAX/ts-final",
@@ -65,6 +82,11 @@
     {
       "rootId": "root-draft-1778319790368-3hrfrl",
       "path": "/Volumes/SSDMAX/photos",
+      "alternatePaths": [
+        {
+          "path": "F:\\vlog-proj\\219-318\\photos"
+        }
+      ],
       "description": "途中拍摄的照片",
       "enabled": true,
       "label": "SSDMAX/photos",

@@ -10,7 +10,7 @@ describe('Analyze report and span schema', () => {
       sourceInMs: 0,
       sourceOutMs: 1000,
       visualObservation: '车窗外是连续山路和阴天。',
-      materialPatterns: ['第一人称行车', '山路', '阴天', '无口播语音', '连续弯道', '湿滑路面'],
+      materialPatterns: ['第一人称行车', '山路', '阴天', '无口播语音', '山路阴天连续行车', '连续弯道', '湿滑路面'],
       grounding: {
         speechMode: 'none',
         speechValue: 'none',
@@ -19,7 +19,7 @@ describe('Analyze report and span schema', () => {
       },
     });
 
-    expect(parsed.materialPatterns).toEqual(['第一人称行车', '山路', '阴天', '无口播语音', '连续弯道', '湿滑路面']);
+    expect(parsed.materialPatterns).toEqual(['第一人称行车', '山路', '阴天', '无口播语音', '山路阴天连续行车', '连续弯道', '湿滑路面']);
     expect(parsed.visualObservation).toBe('车窗外是连续山路和阴天。');
   });
 

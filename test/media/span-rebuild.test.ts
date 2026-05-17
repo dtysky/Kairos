@@ -359,7 +359,7 @@ describe('rebuildProjectSpans', () => {
     });
 
     const runner = new FakePacketRunner([
-      [['补充视觉素材', '整段氛围素材']],
+      [['固定机位观察', '环境不明', '天气光线不明', '无口播语音', '情景不明', '补充视觉素材', '整段氛围素材']],
     ]);
     const result = await rebuildProjectSpans({
       workspaceRoot,
@@ -386,7 +386,7 @@ describe('rebuildProjectSpans', () => {
     expect(rawSpans).toEqual([expect.objectContaining({
       id: 'asset-1-direct-full',
       assetId: 'asset-1',
-      materialPatterns: ['固定机位观察', '环境不明', '天气光线不明', '无口播语音', '补充视觉素材', '整段氛围素材'],
+      materialPatterns: ['固定机位观察', '环境不明', '天气光线不明', '无口播语音', '情景不明', '补充视觉素材', '整段氛围素材'],
     })]);
     expect(rawSpans[0]).not.toHaveProperty('speedCandidate');
     expect(rawSpans[0]).not.toHaveProperty('grounding');
@@ -431,7 +431,7 @@ describe('rebuildProjectSpans', () => {
       }],
     }));
     const runner = new FakePacketRunner([
-      [['车内自拍口播', '车内', '天气光线不明', '有口播语音', '到达说明']],
+      [['车内自拍口播', '车内', '天气光线不明', '有口播语音', '车内到达说明', '到达说明', '口播说明']],
     ]);
 
     await rebuildProjectSpans({ workspaceRoot, projectId, agentRunner: runner });
@@ -474,8 +474,8 @@ describe('rebuildProjectSpans', () => {
       }));
     }
     const runner = new FakePacketRunner([
-      Array.from({ length: 10 }, (_, index) => ['固定机位观察', '环境不明', '天气光线不明', '无口播语音', `素材${index + 1}`]),
-      Array.from({ length: 10 }, (_, index) => ['固定机位观察', '环境不明', '天气光线不明', '无口播语音', `素材${index + 11}`]),
+      Array.from({ length: 10 }, (_, index) => ['固定机位观察', '环境不明', '天气光线不明', '无口播语音', `素材${index + 1}整体观察`, `素材${index + 1}`, '画面记录']),
+      Array.from({ length: 10 }, (_, index) => ['固定机位观察', '环境不明', '天气光线不明', '无口播语音', `素材${index + 11}整体观察`, `素材${index + 11}`, '画面记录']),
     ]);
 
     await rebuildProjectSpans({ workspaceRoot, projectId, agentRunner: runner });
@@ -522,7 +522,7 @@ describe('rebuildProjectSpans', () => {
     })]);
   });
 
-  it('retries missing rows once, then repairs the v4 positional slots deterministically', async () => {
+  it('retries missing rows once, then repairs the v5 positional slots deterministically', async () => {
     const workspaceRoot = await mkdtemp(join(tmpdir(), 'kairos-span-no-fallback-'));
     workspaces.push(workspaceRoot);
     const projectId = 'project-span-no-fallback';
@@ -551,8 +551,273 @@ describe('rebuildProjectSpans', () => {
     expect(runner.calls).toHaveLength(2);
     expect(rawSpans).toEqual([expect.objectContaining({
       id: 'asset-drive-direct-full',
-      materialPatterns: ['第一人称行车', '山路', '天气光线不明', '无口播语音', '湿滑山路行车', '山路行车'],
+      materialPatterns: ['第一人称行车', '山路', '天气光线不明', '无口播语音', '连续弯道', '手动跟车', '多余标签'],
     })]);
+  });
+
+  it('accepts rows with missing free slots and does not heuristically fill them', async () => {
+    const workspaceRoot = await mkdtemp(join(tmpdir(), 'kairos-span-free-slots-'));
+    workspaces.push(workspaceRoot);
+    const projectId = 'project-span-free-slots';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Span Free Slots');
+    await writeJson(getAssetsPath(projectRoot), [createVideoAsset({ id: 'asset-drone', durationMs: 5_000 })]);
+    await writeJson(getAssetReportPath(projectRoot, 'asset-drone'), report({
+      assetId: 'asset-drone',
+      clipTypeGuess: 'aerial',
+      summary: 'A drone flies over snowy mountains under cloudy sky.',
+      interestingWindows: [],
+    }));
+    const runner = new FakePacketRunner([
+      [['航拍建场', '山地环境', '阴天', '无口播语音', '空中展示山地']],
+    ]);
+
+    await rebuildProjectSpans({ workspaceRoot, projectId, agentRunner: runner });
+    const rawSpans = JSON.parse(await readFile(getSpansPath(projectRoot), 'utf-8')) as Array<Record<string, unknown>>;
+
+    expect(runner.calls).toHaveLength(1);
+    expect(rawSpans).toEqual([expect.objectContaining({
+      id: 'asset-drone-direct-full',
+      materialPatterns: ['航拍建场', '山地环境', '阴天', '无口播语音', '空中展示山地'],
+    })]);
+  });
+
+  it('retries rows with missing story slot and writes the retried story', async () => {
+    const workspaceRoot = await mkdtemp(join(tmpdir(), 'kairos-span-story-retry-'));
+    workspaces.push(workspaceRoot);
+    const projectId = 'project-span-story-retry';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Span Story Retry');
+    await writeJson(getAssetsPath(projectRoot), [createVideoAsset({ id: 'asset-yak', durationMs: 5_000 })]);
+    await writeJson(getAssetReportPath(projectRoot, 'asset-yak'), report({
+      assetId: 'asset-yak',
+      clipTypeGuess: 'drive',
+      summary: 'A yellow vehicle waits while yaks cross a mountain road.',
+      transcript: '等牦牛过去。',
+      interestingWindows: [],
+    }));
+    const runner = new FakePacketRunner([
+      [['第一人称行车', '山路', '雾天', '有口播语音']],
+      [['第一人称行车', '山路', '雾天', '有口播语音', '牦牛过路临时等待', '牦牛群', '临时等待']],
+    ]);
+
+    await rebuildProjectSpans({ workspaceRoot, projectId, agentRunner: runner });
+    const rawSpans = JSON.parse(await readFile(getSpansPath(projectRoot), 'utf-8')) as Array<Record<string, unknown>>;
+
+    expect(runner.calls).toHaveLength(2);
+    expect(rawSpans).toEqual([expect.objectContaining({
+      id: 'asset-yak-direct-full',
+      materialPatterns: ['第一人称行车', '山路', '雾天', '无口播语音', '牦牛过路临时等待', '牦牛群', '临时等待'],
+    })]);
+  });
+
+  it('writes 情景不明 when the story slot is still missing after failed-list retry', async () => {
+    const workspaceRoot = await mkdtemp(join(tmpdir(), 'kairos-span-story-fail-'));
+    workspaces.push(workspaceRoot);
+    const projectId = 'project-span-story-fail';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Span Story Fail');
+    await writeJson(getAssetsPath(projectRoot), [createVideoAsset({ id: 'asset-story-fail', durationMs: 5_000 })]);
+    await writeJson(getAssetReportPath(projectRoot, 'asset-story-fail'), report({
+      assetId: 'asset-story-fail',
+      clipTypeGuess: 'drive',
+      summary: 'Mountain road driving.',
+      interestingWindows: [],
+    }));
+    await writeJson(getSpansPath(projectRoot), [{
+      id: 'existing-span',
+      assetId: 'existing-asset',
+      type: 'broll',
+      materialPatterns: ['旧索引'],
+    }]);
+    const runner = new FakePacketRunner([
+      [['第一人称行车', '山路', '阴天', '无口播语音']],
+      [['第一人称行车', '山路', '阴天', '无口播语音']],
+      [['第一人称行车', '山路', '阴天', '无口播语音']],
+    ]);
+
+    await rebuildProjectSpans({ workspaceRoot, projectId, agentRunner: runner });
+    const rawSpans = JSON.parse(await readFile(getSpansPath(projectRoot), 'utf-8')) as Array<Record<string, unknown>>;
+    const partial = JSON.parse(await readFile(
+      join(projectRoot, '.tmp', 'chronology', 'span-rebuild.partial.json'),
+      'utf-8',
+    )) as { failedCount: number; recoveredFailedCount: number; storyUnknownFallbackCount: number };
+
+    expect(runner.calls).toHaveLength(3);
+    expect(rawSpans).toEqual([expect.objectContaining({
+      id: 'asset-story-fail-direct-full',
+      materialPatterns: ['第一人称行车', '山路', '天气光线不明', '无口播语音', '情景不明'],
+    })]);
+    expect(partial).toMatchObject({
+      failedCount: 1,
+      recoveredFailedCount: 1,
+      storyUnknownFallbackCount: 1,
+    });
+  });
+
+  it('records a failed row in the checkpoint and recovers it in the failed-list pass', async () => {
+    const workspaceRoot = await mkdtemp(join(tmpdir(), 'kairos-span-failed-list-'));
+    workspaces.push(workspaceRoot);
+    const projectId = 'project-span-failed-list';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Span Failed List');
+    await writeJson(getAssetsPath(projectRoot), [
+      createVideoAsset({ id: 'asset-ok', durationMs: 5_000 }),
+      createVideoAsset({ id: 'asset-retry', durationMs: 5_000 }),
+    ]);
+    await writeJson(getAssetReportPath(projectRoot, 'asset-ok'), report({
+      assetId: 'asset-ok',
+      clipTypeGuess: 'broll',
+      summary: '服务区停车场观察。',
+      interestingWindows: [],
+    }));
+    await writeJson(getAssetReportPath(projectRoot, 'asset-retry'), report({
+      assetId: 'asset-retry',
+      clipTypeGuess: 'drive',
+      summary: '山路行车。',
+      interestingWindows: [],
+    }));
+    const runner = new FakePacketRunner([
+      [
+        ['固定机位观察', '服务区停车场', '晴天', '无口播语音', '服务区停车观察', '停车场', '车辆停放'],
+        ['第一人称行车', '山路', '阴天', '无口播语音'],
+      ],
+      [
+        ['固定机位观察', '服务区停车场', '晴天', '无口播语音', '服务区停车观察', '停车场', '车辆停放'],
+        ['第一人称行车', '山路', '阴天', '无口播语音'],
+      ],
+      [['第一人称行车', '山路', '阴天', '无口播语音', '山路行车观察', '连续弯道', '车窗视角']],
+    ]);
+
+    await rebuildProjectSpans({ workspaceRoot, projectId, agentRunner: runner });
+    const rawSpans = JSON.parse(await readFile(getSpansPath(projectRoot), 'utf-8')) as Array<Record<string, unknown>>;
+    const partial = JSON.parse(await readFile(
+      join(projectRoot, '.tmp', 'chronology', 'span-rebuild.partial.json'),
+      'utf-8',
+    )) as { failedSpans: Array<Record<string, unknown>>; failedCount: number; recoveredFailedCount: number };
+
+    expect(runner.calls).toHaveLength(3);
+    expect(rawSpans).toEqual([
+      expect.objectContaining({
+        id: 'asset-ok-direct-full',
+        materialPatterns: ['固定机位观察', '服务区停车场', '晴天', '无口播语音', '服务区停车观察', '停车场', '车辆停放'],
+      }),
+      expect.objectContaining({
+        id: 'asset-retry-direct-full',
+        materialPatterns: ['第一人称行车', '山路', '阴天', '无口播语音', '山路行车观察', '连续弯道', '车窗视角'],
+      }),
+    ]);
+    expect(partial.failedCount).toBe(1);
+    expect(partial.recoveredFailedCount).toBe(1);
+    expect(partial.failedSpans[0]).toMatchObject({
+      spanId: 'asset-retry-direct-full',
+      recovered: true,
+    });
+  });
+
+  it('resumes from a matching partial checkpoint and skips completed spans', async () => {
+    const workspaceRoot = await mkdtemp(join(tmpdir(), 'kairos-span-resume-'));
+    workspaces.push(workspaceRoot);
+    const projectId = 'project-span-resume';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Span Resume');
+    const assets = [
+      createVideoAsset({ id: 'asset-done', durationMs: 5_000 }),
+      createVideoAsset({ id: 'asset-pending', durationMs: 5_000 }),
+    ];
+    const reports = [
+      report({ assetId: 'asset-done', clipTypeGuess: 'broll', summary: '室内餐厅。', interestingWindows: [] }),
+      report({ assetId: 'asset-pending', clipTypeGuess: 'aerial', summary: '雪山航拍。', interestingWindows: [] }),
+    ];
+    await writeJson(getAssetsPath(projectRoot), assets);
+    for (const item of reports) {
+      await writeJson(getAssetReportPath(projectRoot, item.assetId), item);
+    }
+    const generated = buildMaterialSpansFromReports({ assets, reports });
+    await writeJson(join(projectRoot, '.tmp', 'chronology', 'span-rebuild.partial.json'), {
+      schemaVersion: '1.0',
+      status: 'running',
+      inputsHash: generated.inputsHash,
+      spanCount: generated.spans.length,
+      chunkSize: 10,
+      completedCount: 1,
+      spans: [{
+        ...generated.spans[0],
+        materialPatterns: ['固定机位观察', '室内餐厅', '室内灯光', '无口播语音', '餐厅环境观察'],
+      }],
+      warnings: [],
+      failedSpans: [],
+      updatedAt: '2026-04-12T00:00:00.000Z',
+    });
+    const runner = new FakePacketRunner([
+      [['航拍建场', '雪山', '晴天', '无口播语音', '空中展示雪山', '雪山航拍', '远景建立']],
+    ]);
+
+    await rebuildProjectSpans({ workspaceRoot, projectId, agentRunner: runner });
+    const rawSpans = JSON.parse(await readFile(getSpansPath(projectRoot), 'utf-8')) as Array<Record<string, unknown>>;
+    const packetContent = runner.calls[0]!.packet.inputArtifacts[0]!.content as { items: unknown[] };
+
+    expect(runner.calls).toHaveLength(1);
+    expect(packetContent.items).toHaveLength(1);
+    expect(rawSpans).toEqual([
+      expect.objectContaining({
+        id: 'asset-done-direct-full',
+        materialPatterns: ['固定机位观察', '室内餐厅', '室内灯光', '无口播语音', '餐厅环境观察'],
+      }),
+      expect.objectContaining({
+        id: 'asset-pending-direct-full',
+        materialPatterns: ['航拍建场', '山地环境', '晴天', '无口播语音', '空中展示雪山', '雪山航拍', '远景建立'],
+      }),
+    ]);
+  });
+
+  it('ignores a partial checkpoint when the inputsHash does not match', async () => {
+    const workspaceRoot = await mkdtemp(join(tmpdir(), 'kairos-span-resume-mismatch-'));
+    workspaces.push(workspaceRoot);
+    const projectId = 'project-span-resume-mismatch';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Span Resume Mismatch');
+    await writeJson(getAssetsPath(projectRoot), [
+      createVideoAsset({ id: 'asset-one', durationMs: 5_000 }),
+      createVideoAsset({ id: 'asset-two', durationMs: 5_000 }),
+    ]);
+    await writeJson(getAssetReportPath(projectRoot, 'asset-one'), report({
+      assetId: 'asset-one',
+      clipTypeGuess: 'broll',
+      summary: '城市街道。',
+      interestingWindows: [],
+    }));
+    await writeJson(getAssetReportPath(projectRoot, 'asset-two'), report({
+      assetId: 'asset-two',
+      clipTypeGuess: 'broll',
+      summary: '室内餐厅。',
+      interestingWindows: [],
+    }));
+    await writeJson(join(projectRoot, '.tmp', 'chronology', 'span-rebuild.partial.json'), {
+      schemaVersion: '1.0',
+      status: 'running',
+      inputsHash: 'stale-input-hash',
+      spanCount: 2,
+      chunkSize: 10,
+      completedCount: 1,
+      spans: [{
+        id: 'asset-one-direct-full',
+        assetId: 'asset-one',
+        type: 'broll',
+        materialPatterns: ['固定机位观察', '旧环境', '晴天', '无口播语音', '旧情景'],
+      }],
+      warnings: [],
+      updatedAt: '2026-04-12T00:00:00.000Z',
+    });
+    const runner = new FakePacketRunner([[
+      ['固定机位观察', '城市街道', '晴天', '无口播语音', '街道环境观察', '城市道路', '路边观察'],
+      ['固定机位观察', '室内餐厅', '室内灯光', '无口播语音', '餐厅环境观察', '餐桌区域', '室内空间'],
+    ]]);
+
+    await rebuildProjectSpans({ workspaceRoot, projectId, agentRunner: runner });
+    const rawSpans = JSON.parse(await readFile(getSpansPath(projectRoot), 'utf-8')) as Array<Record<string, unknown>>;
+    const packetContent = runner.calls[0]!.packet.inputArtifacts[0]!.content as { items: unknown[] };
+
+    expect(runner.calls).toHaveLength(1);
+    expect(packetContent.items).toHaveLength(2);
+    expect(rawSpans[0]).toEqual(expect.objectContaining({
+      id: 'asset-one-direct-full',
+      materialPatterns: ['固定机位观察', '城市街道', '晴天', '无口播语音', '街道环境观察', '城市道路', '路边观察'],
+    }));
   });
 
   it('accepts drift object responses with materialPatterns items mapped by order', async () => {
@@ -581,7 +846,7 @@ describe('rebuildProjectSpans', () => {
     const runner = new FakePacketRunner([{
       items: [{
         id: 'ignored-by-order',
-        materialPatterns: ['车内自拍口播', '车内', '室内灯光', '无口播语音', '到达说明', '安全提醒', '多余标签'],
+        materialPatterns: ['车内自拍口播', '车内', '室内灯光', '无口播语音', '车内抵达服务区', '到达说明', '安全提醒', '多余标签'],
       }],
     }]);
 
@@ -590,7 +855,7 @@ describe('rebuildProjectSpans', () => {
 
     expect(rawSpans).toEqual([expect.objectContaining({
       id: 'asset-talk-window-1',
-      materialPatterns: ['车内自拍口播', '车内', '室内灯光', '有口播语音', '到达说明', '安全提醒'],
+      materialPatterns: ['车内自拍口播', '车内', '室内灯光', '有口播语音', '车内抵达服务区', '到达说明', '安全提醒'],
     })]);
   });
 });

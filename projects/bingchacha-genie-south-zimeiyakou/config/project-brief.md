@@ -7,17 +7,23 @@
 
 路径：/Volumes/SSDMAX/zve1
 原始路径：/Volumes/SSDMAX/raw/zve1
+备选路径1：F:\vlog-proj\219-318\zve1
+原始路径1：D:\vlog-p3-conv\raw\zve1
 说明：VLOG和行车等主要视频
 
 路径：/Volumes/SSDMAX/drone
 原始路径：/Volumes/SSDMAX/raw/drone
+备选路径1：F:\vlog-proj\219-318\drone
+原始路径1：D:\vlog-p3-conv\raw\drone
 说明：航拍视频
 
 路径：/Volumes/SSDMAX/ts-final
+备选路径1：F:\vlog-proj\219-318\ts-final
 说明：延时摄影
 拍摄时间规则：manual-required(video)；延时视频导出时间不可信，必须人工确认拍摄日期和时间
 
 路径：/Volumes/SSDMAX/photos
+备选路径1：F:\vlog-proj\219-318\photos
 说明：途中拍摄的照片
 
 ## Pharos

@@ -338,7 +338,7 @@ Analyze 运行过程中和阶段末都不再写 `store/spans.json`；span 由 `/
 - 不写 `speedCandidate / pharosRefs / grounding / spatialEvidence / location / routeRole / chronology event`
 - `source-speech` 的持久化目标是素材事实窗口；只合并同 asset、同 semanticKind、重叠或间隔 `<=250ms` 的近重复窗口，不做 6000ms 口播合并
 - 细粒度 utterance / pause timing 继续保留在 `transcriptSegments`
-- `materialPatterns` 固定为中文 `string[]`，只保存脚本阶段可消费的素材事实短语；前四项固定为确定性 `视角类型 / 当前环境 / 天气光线 / 口播语音`，其中视角来自受控词表，环境是从当前 span 文本事实提取的短语，天气光线只写可观察自然现象，口播语音只写 `有口播语音 / 无口播语音`；第 5-6 项最多两个短 factual free tags
+- `materialPatterns` 固定为中文 `string[]`，只保存脚本阶段可消费的素材事实短语；prompt 要求每条 7 项。前四项固定为确定性 `视角类型 / 当前环境 / 天气光线 / 口播语音`，其中视角来自受控词表，环境是从当前 span 文本事实提取的短语，天气光线只写可观察自然现象，口播语音只写 `有口播语音 / 无口播语音`；第 5 项是 LLM 短情景故事或 `情景不明`，第 6-7 项是 LLM 短 factual free tags；代码不得启发式补写自由标签，第 5 项缺失时进入 failed span 列表并在主 chunk 后单条补处理，仍缺失时只写固定 `情景不明` 收口
 - `visualObservation?: string` 保存 span 级一句视觉事实描述
 - GPS / 时间 / Pharos 归属不进入 `materialPatterns`，应从 chronology / spatial / Pharos context 层 join
 - 旧五轴语义树 `narrativeFunctions / shotGrammar / viewpointRoles / subjectStates / span.evidence` 不再属于正式 span 输出
@@ -389,7 +389,7 @@ const localPath = resolveAssetLocalPath(asset, roots);
 - `shouldFineScan`
 - `fineScanMode`
 
-注意：当前 `interestingWindows` 不是“单一最终剪辑窗口”，而是细扫前计划；`fineScanWindows` 才是细扫后的窗口观察结果。只要 asset report 已有完整 coarse facts 和 `fineScanWindows`，`span-rebuild` 不应重新视觉分析或重跑 ASR；它只启动本地 ML 服务调用 qwen 文本 LM，对纯文本 span facts 生成 ordered `materialPatterns[]` 行，再由代码按 chunk 顺序写回 spans，修补前四个确定性槽，并最多保留两个自由标签。
+注意：当前 `interestingWindows` 不是“单一最终剪辑窗口”，而是细扫前计划；`fineScanWindows` 才是细扫后的窗口观察结果。只要 asset report 已有完整 coarse facts 和 `fineScanWindows`，`span-rebuild` 不应重新视觉分析或重跑 ASR；它只启动本地 ML 服务调用 qwen 文本 LM，对纯文本 span facts 生成 ordered 7-tag `materialPatterns[]` 行，再由代码按 chunk 顺序写回 spans，只修补前四个确定性槽；第 5 个情景故事应来自 LLM，缺失则进入 failed span 列表并在主 chunk 后单条补处理，仍缺失时只写固定 `情景不明`；两个自由标签必须来自 LLM，缺失时不补写，也不因自由槽缺失阻塞前五槽可用的行。
 
 ## Chronology V2
 
@@ -399,7 +399,9 @@ const localPath = resolveAssetLocalPath(asset, roots);
 - `assetIndex[]` 只保留 `assetId / sortCapturedAt`，供下游排序；素材集合必须从 `spanIds -> spans -> assetId` 反查。
 - Pharos 只作为生成输入；生成后必须折叠成普通事件、路线或缺口。
 - `gap` 可以没有 `spanIds`，表示行程确认存在但素材未覆盖或待补。
-- 行车过程中的车内自拍口播默认并入同一个 `route` event；只有口播表达改线、事故、到达、停车、住宿、餐食、景点进入等真实行程状态变化时，才拆成独立 `event`。
+- `chronology-build` 先按 Pharos 单点真实时间窗归属：span 多数重叠 `expected / unexpected` 且非 `continuous` 的 actual window 时直接进入该普通 `event`，素材类型不参与改判；Pharos `continuous` 只作为后续 GPS/类型聚合参考。
+- 剩余 span 只按 chronology 顺序合并连续段：GPS 来源优先级为 Pharos trip GPX / 项目 `gps/merged.json` / `gps/derived.json` / report 中 `pharos|gpx|derived-track` / embedded GPS 兜底；单 span 起止 `<=200m` 是静态候选，相邻代表点 `<=400m` 可合并为同地点事件。
+- 行车过程中的车内自拍口播默认并入同一个 `route` event；改线、事故、到达、停车、住宿、餐食、景点进入等 transcript 线索只能辅助标题/摘要或配合 GPS/素材类型边界，不能单独拆成独立 `event`。
 - `chronology-build` 写出的 V2 默认是 `draft`，必须经 `/chronology` 人工确认后 Script / Timeline 才能消费。
 
 8. 自动决定是否细扫，并只把结果写入 `fineScanWindows`
@@ -414,7 +416,7 @@ const localPath = resolveAssetLocalPath(asset, roots);
 - 只要开始执行一个可能持续较久的 Analyze，就应同步启动或刷新本地监控面板，而不是只在后台静默运行
 - 启动 Analyze 后，agent 应主动把监控面板 URL 告诉用户；如果分析已经开始但面板还没打开，应立即补开
 - 正式 Analyze 监控路由是 `http://127.0.0.1:8940/analyze`
-- `/chronology` 页面会显示活跃 `spatial-refresh / span-rebuild / chronology-build` jobs；`spatial-refresh / chronology-build` 不启动 Kairos ML，`span-rebuild` 会启动本地 ML 服务按 10 个 span 一批调用 qwen 文本 LM 做纯文本 materialPatterns 归纳，LM 只返回 ordered rows，代码按 chunk 顺序写回 spans，但不重跑 VLM / ASR，并显示 `.tmp/chronology/progress.json` 中的 chunk/retry/repair/warning 进度；已完成 materialPatterns checkpoint 写入 `.tmp/chronology/span-rebuild.partial.json`，正式 `store/spans.json` 只在全量成功后写入
+- `/chronology` 页面会显示活跃 `spatial-refresh / span-rebuild / chronology-build` jobs；`spatial-refresh / chronology-build` 不启动 Kairos ML，`span-rebuild` 会启动本地 ML 服务按 10 个 span 一批调用 qwen 文本 LM 做纯文本 materialPatterns 归纳，LM 只返回 ordered rows，代码按 chunk 顺序写回 spans，但不重跑 VLM / ASR，并显示 `.tmp/chronology/progress.json` 中的 chunk、失败列表补处理、retry/repair/warning/fallback 进度；已完成 materialPatterns checkpoint 和 failed span 列表写入 `.tmp/chronology/span-rebuild.partial.json`，正式 `store/spans.json` 只在全量收口后写入
 - `React console` 的 Analyze 监控读取项目内 `.tmp/media-analyze/progress.json`，Chronology 监控读取 `.tmp/chronology/progress.json`；当前项目上下文必须正确，不能把面板混到别的项目进度目录
 - Console 刷新时，默认项目上下文应优先跟随最新的 active project-scoped job；只有当前没有活跃项目 job 时，才回退到本地记忆的上次选择
 - 如果多个项目 display name 相同，项目选择器必须直接显示 `projectId`，避免把 Analyze monitor 请求到同名旧项目

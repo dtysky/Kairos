@@ -672,7 +672,7 @@ describe('model-driven script preparation', () => {
     expect(slots.segments[0]?.slots[0]?.chosenSpanIds).toEqual(['span-coast']);
   });
 
-  it('indexes every span into material bundles instead of shortlisting a subset', () => {
+  it('indexes every span into material bundles without adding story slots to bundle keys', () => {
     const spans = [
       {
         id: 'span-1',
@@ -681,7 +681,7 @@ describe('model-driven script preparation', () => {
         sourceInMs: 0,
         sourceOutMs: 2_000,
         transcript: '先出发。',
-        materialPatterns: ['第一人称行车', '山路', '晴天', '无口播语音', '连续弯道'],
+        materialPatterns: ['第一人称行车', '山路', '晴天', '无口播语音', '山路连续出发', '连续弯道', '道路推进'],
         grounding: { speechMode: 'available', speechValue: 'informative', spatialEvidence: [], pharosRefs: [] },
       },
       {
@@ -691,14 +691,14 @@ describe('model-driven script preparation', () => {
         sourceInMs: 2_000,
         sourceOutMs: 5_000,
         transcript: '到了入口。',
-        materialPatterns: ['第一人称行车', '山路', '晴天', '有口播语音', '安全提醒'],
+        materialPatterns: ['第一人称行车', '山路', '晴天', '有口播语音', '入口到达提醒', '安全提醒', '到达入口'],
         grounding: { speechMode: 'available', speechValue: 'informative', spatialEvidence: [], pharosRefs: [] },
       },
       {
         id: 'span-3',
         assetId: 'asset-3',
         type: 'photo',
-        materialPatterns: ['照片记录', '海岸湖边', '晚霞', '无口播语音'],
+        materialPatterns: ['照片记录', '海岸湖边', '晚霞', '无口播语音', '晚霞海边照片记录', '海边', '晚霞'],
         grounding: { speechMode: 'none', speechValue: 'none', spatialEvidence: [], pharosRefs: [] },
       },
     ];
@@ -728,6 +728,7 @@ describe('model-driven script preparation', () => {
     expect(bundledSpanIds).toEqual(new Set(['span-1', 'span-2', 'span-3']));
     expect(bundles.find(bundle => bundle.key === '第一人称行车 / 山路 / 晴天')?.memberSpanIds)
       .toEqual(['span-1', 'span-2']);
+    expect(bundles.some(bundle => bundle.key.includes('山路连续出发'))).toBe(false);
   });
 
   it('keeps high-recall slots and only folds near-duplicate overlaps', () => {
