@@ -1,9 +1,9 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
+	  AgentHandoffRequiredError,
 	  AgentRunnerUnavailableError,
 	  analyzeWorkspaceProjectMedia,
-	  buildProjectTimeline,
 	  createProjectReverseGeocodeService,
 	  importProjectGpxTracks,
 	  ingestWorkspaceProjectMedia,
@@ -12,17 +12,12 @@ import {
 	  loadRuntimeConfig,
   buildProjectChronology,
   rebuildProjectSpans,
-  loadProjectEditRuleByCategory,
-  assertConfirmedEditFlowPlan,
-  generateEditFlowPlan,
-  runEditPlanningDocumentCapability,
+  runEditFlowAction,
 	  prepareWorkspaceStyleAnalysisForAgent,
 	  ColorPrepBlockedError,
 	  ProjectColorBlockedError,
-	  prepareProjectColorRoot,
 	  refreshAnalyzeSpatialResults,
 	  runProjectColorAction,
-	  prepareProjectScriptForAgent,
 	  refreshProjectDerivedTrackCache,
   refreshProjectGpsCache,
   MlClient,
@@ -30,12 +25,6 @@ import {
   resolveWorkspaceProjectRoot,
 } from '../index.js';
 import {
-  loadCurrentScript,
-  assertFreshSpans,
-  getMaterialOverviewPath,
-  loadOptionalMarkdown,
-  loadScriptBriefConfig,
-  normalizeEditId,
   writeKairosProgress,
   writeJson,
 } from '../store/index.js';
@@ -299,109 +288,38 @@ async function runJob(
         }),
       };
     }
-    case 'script': {
+    case 'edit-flow': {
       if (!projectId) {
-        throw new BlockedJobError(['script requires projectId']);
+        throw new BlockedJobError(['edit-flow requires projectId']);
       }
+      const action = toEditFlowAction(args.action);
       const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
-      const editId = normalizeEditId(toStringValue(args.editId));
-      await assertFreshSpans(projectRoot).catch(error => {
-        throw new BlockedJobError([error instanceof Error ? error.message : String(error)]);
-      });
-      const scriptConfig = await loadScriptBriefConfig(projectRoot, editId);
-      const editRuleCategory = toStringValue(args.editRuleCategory) || scriptConfig.editRuleCategory;
-      const styleCategory = toStringValue(args.styleCategory) || scriptConfig.styleCategory;
-      if (!editRuleCategory) {
-        throw new BlockedJobError(['script prep requires editRuleCategory in args or script-brief']);
-      }
-      if (scriptConfig.workflowState !== 'ready_to_prepare') {
-        throw new BlockedJobError([
-          `script prep requires script-brief.workflowState=ready_to_prepare (current: ${scriptConfig.workflowState})`,
-        ]);
-      }
       try {
-        await loadProjectEditRuleByCategory(workspaceRoot, editRuleCategory);
-        await assertConfirmedEditFlowPlan({
+        const result = await runEditFlowAction({
           workspaceRoot,
           projectRoot,
-          editId,
-          editRuleCategory,
-          requiredCapabilityIds: ['material.recall', 'script.generate'],
+          editId: toStringValue(args.editId),
+          action,
+          editRuleCategory: toStringValue(args.editRuleCategory) || undefined,
+          styleCategory: toStringValue(args.styleCategory) || undefined,
+          stepId: toStringValue(args.stepId) || undefined,
+          runner: toEditFlowRunner(args.runner) || undefined,
         });
-      } catch (error) {
-        throw new BlockedJobError([error instanceof Error ? error.message : String(error)]);
-      }
-      if (!(await loadOptionalMarkdown(getMaterialOverviewPath(projectRoot, editId)))?.trim()) {
-        throw new BlockedJobError([`script prep requires existing edits/${editId}/script/material-overview.md`]);
-      }
-      return {
-        finalStatus: 'awaiting_agent',
-        result: await prepareProjectScriptForAgent({
-          projectRoot,
-          editId,
-          workspaceRoot,
-          editRuleCategory,
-          styleCategory,
-        }),
-      };
-    }
-    case 'edit-flow-plan': {
-      if (!projectId) {
-        throw new BlockedJobError(['edit-flow-plan requires projectId']);
-      }
-      const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
-      const editId = normalizeEditId(toStringValue(args.editId));
-      const scriptConfig = await loadScriptBriefConfig(projectRoot, editId);
-      const editRuleCategory = toStringValue(args.editRuleCategory) || scriptConfig.editRuleCategory;
-      const styleCategory = toStringValue(args.styleCategory) || scriptConfig.styleCategory;
-      if (!editRuleCategory) {
-        throw new BlockedJobError(['edit-flow-plan requires editRuleCategory in args or script-brief']);
-      }
-      try {
         return {
-          finalStatus: 'awaiting_agent',
-          result: await generateEditFlowPlan({
-            workspaceRoot,
-            projectRoot,
-            editId,
-            editRuleCategory,
-            styleCategory,
-          }),
+          finalStatus: 'completed',
+          result,
         };
       } catch (error) {
-        if (error instanceof AgentRunnerUnavailableError) {
-          throw new BlockedJobError([error.message]);
+        if (error instanceof AgentHandoffRequiredError) {
+          return {
+            finalStatus: 'awaiting_agent',
+            result: {
+              status: 'awaiting_agent',
+              message: 'Edit Flow packet is ready; continue in the current Agent conversation to generate the declared output.',
+              handoff: error.details,
+            },
+          };
         }
-        throw error;
-      }
-    }
-    case 'edit-flow-capability': {
-      if (!projectId) {
-        throw new BlockedJobError(['edit-flow-capability requires projectId']);
-      }
-      const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
-      const editId = normalizeEditId(toStringValue(args.editId));
-      const scriptConfig = await loadScriptBriefConfig(projectRoot, editId);
-      const editRuleCategory = toStringValue(args.editRuleCategory) || scriptConfig.editRuleCategory;
-      const capabilityId = toStringValue(args.capabilityId);
-      if (!editRuleCategory) {
-        throw new BlockedJobError(['edit-flow-capability requires editRuleCategory in args or script-brief']);
-      }
-      if (!['pharos.parse', 'trip.event_table', 'material.archive', 'edit.framework'].includes(capabilityId || '')) {
-        throw new BlockedJobError(['edit-flow-capability requires supported args.capabilityId']);
-      }
-      try {
-        return {
-          finalStatus: capabilityId === 'pharos.parse' ? 'completed' : 'awaiting_agent',
-          result: await runEditPlanningDocumentCapability({
-            workspaceRoot,
-            projectRoot,
-            editId,
-            editRuleCategory,
-            capabilityId: capabilityId as 'pharos.parse' | 'trip.event_table' | 'material.archive' | 'edit.framework',
-          }),
-        };
-      } catch (error) {
         if (error instanceof AgentRunnerUnavailableError) {
           throw new BlockedJobError([error.message]);
         }
@@ -463,57 +381,6 @@ async function runJob(
       } catch (error) {
         if (error instanceof ProjectColorBlockedError || error instanceof ColorPrepBlockedError) {
           throw new BlockedJobError(error.blockers);
-        }
-        throw error;
-      }
-    }
-    case 'timeline': {
-      if (!projectId) {
-        throw new BlockedJobError(['timeline requires projectId']);
-      }
-      const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
-      const editId = normalizeEditId(toStringValue(args.editId));
-      await assertFreshSpans(projectRoot).catch(error => {
-        throw new BlockedJobError([error instanceof Error ? error.message : String(error)]);
-      });
-      const script = await loadCurrentScript(projectRoot, editId);
-      if (!script?.length) {
-        throw new BlockedJobError([`timeline requires existing edits/${editId}/script/current.json`]);
-      }
-      try {
-        const scriptConfig = await loadScriptBriefConfig(projectRoot, editId);
-        const editRuleCategory = toStringValue(args.editRuleCategory) || scriptConfig.editRuleCategory;
-        if (!editRuleCategory) {
-          throw new BlockedJobError(['timeline requires editRuleCategory in args or script-brief']);
-        }
-        await assertConfirmedEditFlowPlan({
-          workspaceRoot,
-          projectRoot,
-          editId,
-          editRuleCategory,
-          requiredCapabilityIds: ['timeline.generate'],
-        });
-        return {
-          result: await buildProjectTimeline({
-            projectRoot,
-            editId,
-            workspaceRoot,
-            editRuleCategory,
-          }),
-        };
-      } catch (error) {
-        if (error instanceof BlockedJobError) {
-          throw error;
-        }
-        if (error instanceof AgentRunnerUnavailableError) {
-          throw new BlockedJobError([error.message]);
-        }
-        if (error instanceof Error && (
-          error.message.includes('awaiting user review')
-          || error.message.includes('edit flow plan')
-          || error.message.includes('Flow Plan')
-        )) {
-          throw new BlockedJobError([error.message]);
         }
         throw error;
       }
@@ -680,6 +547,22 @@ function parseArgs(argv: string[]): Record<string, string> {
 
 function toStringValue(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
+
+function toEditFlowAction(value: unknown): 'plan' | 'confirm-plan' | 'run-step' | 'confirm-step' | 'run-next' {
+  if (value === 'plan'
+    || value === 'confirm-plan'
+    || value === 'run-step'
+    || value === 'confirm-step'
+    || value === 'run-next') {
+    return value;
+  }
+  throw new BlockedJobError(['edit-flow requires args.action: plan / confirm-plan / run-step / confirm-step / run-next']);
+}
+
+function toEditFlowRunner(value: unknown): 'deterministic' | 'agent' | 'script' | 'manual' | undefined {
+  if (value === 'deterministic' || value === 'agent' || value === 'script' || value === 'manual') return value;
+  return undefined;
 }
 
 function toStringArray(value: unknown): string[] {

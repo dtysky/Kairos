@@ -10,10 +10,10 @@ description: >-
 
 ## Overview
 
-Kairos 将旅拍素材转化为可编辑时间线。流程分为 1 个准备阶段 + 5 个主阶段，每个阶段有独立的子 skill，本 skill 负责总控。
+Kairos 将旅拍素材转化为可编辑时间线。流程分为准备阶段、素材事实阶段、编年史审查、剪辑规则驱动的 Edit Flow，以及导出。本 skill 负责总控。
 
 ```
-[Edit Rules + optional Style Reference] → Ingest → Analyze → Chronology(Spans + Review) → Script → Timeline → Export
+[Edit Rules + optional Style Reference] → Ingest → Analyze → Chronology(Spans + Review) → Edit Flow(capability steps) → Export
 ```
 
 ## 变更工作流规则
@@ -99,9 +99,9 @@ Kairos 将旅拍素材转化为可编辑时间线。流程分为 1 个准备阶�
 
 **相关 skill**: [kairos-style-analysis](../kairos-style-analysis/SKILL.md)
 
-`剪辑规则` 是 Script / Timeline 的正式结构输入，存放在 `<workspaceRoot>/config/edit-rules/*.md`。规则正文只来自这些人工维护的 markdown；分类通过 frontmatter / 文件名扫描得到，不能由风格分析自动生成。
+`剪辑规则` 是 Edit Flow 的正式流程定义输入，存放在 `<workspaceRoot>/config/edit-rules/*.md`。规则正文只来自这些人工维护的 markdown；分类通过 frontmatter / 文件名扫描得到，不能由风格分析自动生成。
 
-每个 edit unit 还必须先生成并人工确认 `edits/<editId>/planning/flow-plan.json`。Flow Plan 由 LLM 读取 raw edit-rule markdown、项目上下文和固定能力目录后生成；代码只执行确认后的 `capabilityId / inputRefs / outputRefs / gate`，不关键词解析 markdown 正文。
+每个 edit unit 必须先生成并人工确认 `edits/<editId>/planning/flow-plan.json`。Flow Plan 由 LLM 读取 raw edit-rule markdown、项目上下文和 capability registry 后生成；代码只执行确认后的 `capabilityId / inputRefs / outputRefs / gate / runner`，不关键词解析 markdown 正文。
 
 Style Analysis 当前是 **可选 layered-v1 分层风格档案**。它从用户历史成片中按分类提取 `literary / artistic / editingTechnical` 三层：文学表达、影像审美、剪辑技法观察。它不生成正式剪辑规则；只有剪辑规则自由正文经 Flow Planner 写入 confirmed `flow-plan.json.styleUsage` 后，脚本阶段才可读取被授权的层。
 
@@ -120,16 +120,16 @@ Style Analysis 产出：deterministic prep 先写 `<workspaceRoot>/.tmp/style-an
 - `analysis/style-references/{category}/style-review.json`
 - reviewer blockers 通过前，不能落成正式 `config/styles/{category}.md`
 
-可以为不同类型的作品建立多个风格参考，在 Phase 3 作为可选表达参考使用。
+可以为不同类型的作品建立多个风格参考，在 Edit Flow 中由 `styleUsage` 授权后作为可选表达参考使用。
 如果用户已有手写风格参考（如 `test/style-profile.md`），可以跳过 Style Analysis 直接使用。
 
-剪辑规则是 Phase 3（Script）和 Phase 4（Timeline）的结构核心输入；风格参考只决定旁白语言、字幕文本和情绪表达气质。
+剪辑规则是 Edit Flow 的核心输入；风格参考只在 Flow Plan 授权的能力 step 中影响表达、审美或剪辑技法偏好。
 
 **重要规则**：
 - 剪辑规则必须由用户人工指定；系统不能根据当前项目素材自动生成、自动挑选或自动推断剪辑规则。
-- 如果用户没有明确指定 `editRuleCategory`，Workflow 必须停在 Script 之前，先向用户确认。
-- 如果当前 edit unit 没有确认且 hash 未过期的 Flow Plan，Workflow 必须停在 Script / Timeline 之前，先运行 Flow Planner 并等待用户确认。
-- 缺少 `styleCategory` 默认不阻塞粗剪；但如果剪辑规则要求使用风格层，Flow Plan 不能确认，Script prep 必须阻塞到用户选择 / 重跑可用的 `layered-v1` 档案。
+- 如果用户没有明确指定 `editRuleCategory`，Workflow 必须停在 Edit Flow 之前，先向用户确认。
+- 如果当前 edit unit 没有 confirmed 且 hash 未过期的 Flow Plan，Workflow 必须停在 Edit Flow 之前，先运行 Flow Planner 并等待用户确认。
+- 缺少 `styleCategory` 默认不阻塞粗剪；但如果剪辑规则要求使用风格层，Flow Plan 不能确认，Edit Flow 必须阻塞到用户选择 / 重跑可用的 `layered-v1` 档案。
 - `kairos-style-analysis` 只能在用户明确要求做风格分析时执行，不能被 Workflow 隐式触发。
 - `kairos-style-analysis` 当前正式是 `Supervisor deterministic prep -> awaiting_agent -> Agent final profile`，不能再被描述成“UI 上能点但 runner 还没接上”的占位状态
 
@@ -204,15 +204,10 @@ project/
 ├── .tmp/
 ├── edits/
 │   └── main/
-│       ├── script/
-│       │   ├── script-brief.md # ← initProject 创建（main edit brief 初始模板）
-│       │   └── versions/
+│       ├── planning/
+│       ├── runs/
 │       ├── timeline/
-│       │   └── versions/
 │       └── subtitles/
-├── script/                   # legacy alias for edits/main/script
-├── timeline/                 # legacy alias for edits/main/timeline
-├── subtitles/                # legacy alias for edits/main/subtitles
 ├── adapters/
 └── analysis/
     └── asset-reports/
@@ -237,11 +232,12 @@ project/
 │   ├── spans.json            # /chronology span-rebuild 产出
 │   └── spans.meta.json       # /chronology span-rebuild freshness/hash
 ├── edits/<editId>/
-│   ├── script/
-│   │   ├── script-brief.md   # Console / Agent 审查入口
-│   │   └── current.json      # Agent 在 Phase 3 (Script) 产出
+│   ├── planning/
+│   │   └── flow-plan.json    # Edit Flow 可执行计划
+│   ├── runs/
+│   │   └── <runId>/record.json # capability step run truth
 │   ├── timeline/
-│   │   ├── current.json      # Phase 4 (Timeline) 产出 — IKtepDoc
+│   │   ├── current.json      # timeline.generate capability 可选产出 — IKtepDoc
 │   │   └── locked-rough-cut.json
 │   └── subtitles/
 │       └── *.srt / *.vtt     # Phase 5 (Export) 产出
@@ -262,7 +258,7 @@ project/
     └── style-references/      # 单参考视频分析结果
 ```
 
-## 5 个阶段
+## 主链阶段
 
 ### Phase 1: Ingest (素材导入)
 
@@ -312,12 +308,12 @@ project/
 - 只有在用户明确确认继续后，才可以调用 Analyze
 
 Chronology 审查：
-- `/chronology` 是 Analyze 和 Script 之间的正式审查页，提供 `生成素材片段与模式` 与 `生成/刷新编年史` 两步，并展示 active job 的 3-span text-LM chunk / retry / warning 进度
+- `/chronology` 是 Analyze 和 Edit Flow 之间的正式审查页，提供 `生成素材片段与模式` 与 `生成/刷新编年史` 两步，并展示 active job 的 text-LM chunk / retry / warning 进度
 - `span-rebuild` 只读取 `store/assets.json + analysis/asset-reports/*.json`，再用本地 qwen 文本 LM 从每个 span 的最小文本事实按 3 个 span 一批生成中文 `materialPatterns[]`；LM 只返回 ordered rows，代码按 chunk 顺序写回 spans；已完成 checkpoint 写 `.tmp/chronology/span-rebuild.partial.json`，全量成功后才写正式 `store/spans.json + store/spans.meta.json`
 - `chronology-build` 要求 spans fresh，再从 assets + fresh spans + root time + Pharos context 写 Chronology V2，默认 `draft`
 - `chronology-build` 写 `media/chronology.json` 时必须有可用 GPS reverse-geocode service；无 service、cache/provider 反查不到 route/event GPS anchor 时直接失败，不允许用素材标签、`materialPatterns`、manual itinerary 或 Pharos continuous route prose 生成地点
-- 用户必须在 `/chronology` 确认 Chronology V2 后，Script / Timeline 才能继续
-- 旧数组 v1、`draft` 或 `stale` chronology 都应阻塞 Script / Timeline，并提示重建或确认
+- 用户必须在 `/chronology` 确认 Chronology V2 后，Edit Flow 才能继续
+- 旧数组 v1、`draft` 或 `stale` chronology 都应阻塞 Edit Flow，并提示重建或确认
 - Pharos 只作为生成 chronology 的输入；正式 chronology event 不暴露 Pharos/source/origin 等生成痕迹
 
 轻量空间刷新：
@@ -337,67 +333,39 @@ Chronology 审查：
 - 当前正式项目的音频分析主路径指的是“视频素材里的音轨”，不是独立纯音频资产
 - 如果后续项目真的引入独立音频素材，再补单独 analyze 分支；当前不要把这点和视频内语音 ASR 混为一谈
 
-### Phase 3: Script (脚本创作)
+### Phase 3: Edit Flow (剪辑规则驱动能力流)
 
-**子 skill**: [kairos-script](../kairos-script/SKILL.md)
+**子 skill**: [kairos-edit-flow](../kairos-edit-flow/SKILL.md)
 
-输入：素材分析结果（fresh `store/spans.json`、`analysis/asset-reports/`、已确认 Chronology V2 `media/chronology.json`）+ 剪辑规则（`<workspaceRoot>/config/edit-rules/{category}.md`）+ 已确认 Flow Plan（`edits/<editId>/planning/flow-plan.json`）+ 可选风格参考（`<workspaceRoot>/config/styles/{category}.md`）
-产出：`edits/<editId>/script/current.json` — `IKtepScript[]`
+输入：已确认 Chronology V2 `media/chronology.json`、剪辑规则、confirmed Flow Plan、可选风格档案；fresh `store/spans.json` 与 `analysis/asset-reports/` 只在具体 step 的 `inputRefs` 声明时才成为必需输入。
 
-前置条件：`store/spans.json` 存在且非空，`store/spans.meta.json` 为 fresh，且 Chronology V2 confirmed
+产出：由 confirmed Flow Plan 的 `outputRefs` 决定，可能包括 planning markdown、素材召回 JSON、`timeline/current.json`、`locked-rough-cut.json` 或字幕/旁白草稿。
 
-**Agent 决策点**：旁白由 agent 自身直接创作，不需要外部 LLM API。
+前置条件：Chronology V2 confirmed。每个 capability 再按自己的 `inputRefs` 精确阻塞，例如 `trip.event_table` 只依赖 `media/chronology.json`，素材归档 / 召回类 step 才进入 spans 与 asset reports。
 
 **重要规则**：
-- 剪辑规则必须由用户人工指定；不能根据当前项目素材自动生成、自动挑选或自动推断。
-- 如果用户还没有指定 `editRuleCategory`，就不能开始 Script 阶段。
-- 如果当前 edit unit 没有 confirmed 且 hash 未过期的 `flow-plan.json`，就不能开始 Script / Timeline 阶段。
-- 项目 / edit unit 保存 `editRuleCategory` 与可选 `styleCategory`；不持有自己的 `config/edit-rules/` 或 `config/styles/` 库。`styleCategory` 是单一风格档案选择，具体层使用权只来自 confirmed Flow Plan 的 `styleUsage`。
-- `Supervisor + React console` 里的 `script` job 现在只负责 deterministic prep：
-  - 校验 fresh `store/spans.json`
-  - 校验 `editRuleCategory`
-  - 校验 workspace edit rule markdown hash
-  - 校验 confirmed Flow Plan
-  - 刷新 `analysis/material-digest.json`
-  - 在缺失时写最小 `edits/<editId>/script/script-brief.md`
-- 正式脚本作者是 Agent；`edits/<editId>/script/current.json` 不应由 Console / Supervisor 自动写入
-- Agent 脚本阶段当前正式改成 clean-context staged pipeline：
-  - `edits/<editId>/script/spatial-story.json` + `spatial-story.md`
-  - `edits/<editId>/script/agent-contract.json`
-  - `edits/<editId>/script/agent-packets/{stage}.json`
-  - `edits/<editId>/script/reviews/{stage}.json`
-  - `edits/<editId>/script/agent-pipeline.json`
-- 用户应先审查 `edits/<editId>/script/script-brief.md`，再让 Agent 继续推进段落规划、outline 和正式脚本
-- ASR transcript 已经是正式证据源之一，可参与 candidate recall、outline 和 beat 写作
-- 但“素材里有声音”不等于“成片一定保留原声”；脚本应通过 `preserveNatSound / muteSource` 表达明确意图，未标注时交给 Timeline 自动推论
-- 如果一个 beat 内存在明确的头部 / 中间 / 尾部停顿，Script 阶段应优先写 `beat.utterances[]`，而不是假设字幕会自动在整拍里留白
+- 不存在固定 `Script -> Timeline` 用户流程。
+- 不引入必选 `script/current.json`、beat 或其它全局中间稿。
+- `script.generate` 只有当剪辑规则明确要求前置文本稿 / beat 稿时才出现。
+- `timeline.generate` 只读取 Flow Plan 声明的前序 outputs，不能要求 `script/current.json`。
+- `trip.event_table` 是事件级组织能力，只使用 confirmed chronology；不要因为 spans stale 或缺 asset reports 阻塞它。
+- `sharded-agent` step 的连续天打包、阈值与 SubAgent 口径只来自 confirmed `step.execution.shardPacking / codexSubagentProfile`；默认不得按 route 拆。
+- Edit Flow SubAgent handoff 必须写明 Codex 使用 `reasoning_effort=high`、`fork_context=false`、标准速度；packet 只传路径和任务，不 fork 当前长上下文。
+- handoff、agent packets 与 shard outputs 写到 ignored `projects/<projectId>/.tmp/edit-flow/<editId>/runs/<runId>/`，`edits/<editId>/runs/` 只保存轻量 record。
+- 每个 step 由 capability runner 选择 deterministic / agent / script / manual 执行，并写 run record。
+- human gate 未确认时，后续依赖 step 不可继续。
 
-### Phase 4: Timeline (时间线构建)
-
-**子 skill**: [kairos-timeline](../kairos-timeline/SKILL.md)
-
-输入：`store/assets.json` + fresh `store/spans.json` + confirmed `media/chronology.json` + `edits/<editId>/script/current.json`
-产出：`edits/<editId>/timeline/current.json` — `IKtepDoc`（完整 KTEP 文档）
-
-前置条件：前 3 阶段产出均存在
-
-当前 Timeline 阶段的字幕有两条正式路径：
-- 旁白路径：按 `beat.text` 切字幕
-- 原声路径：当选中的 slice 带 transcript 且判断应保留原声时，按 `transcriptSegments` 直接落字幕
-- 若 `beat.utterances[]` 存在，Timeline 会按 utterance + pause 生成多个有声岛
-- 默认输出规格走项目 `config/runtime.json` 中的 `timelineWidth / timelineHeight / timelineFps`；未配置时 fallback 为 `3840x2160 @ 30fps`
-
-### Phase 5: Export (NLE 导出)
+### Phase 4: Export (NLE 导出)
 
 **子 skill**:
 - [kairos-export](../kairos-export/SKILL.md) — 导出路由
 - [kairos-export-jianying](../kairos-export-jianying/SKILL.md) — 导出到剪映
 - [kairos-export-resolve](../kairos-export-resolve/SKILL.md) — 导出到达芬奇
 
-输入：`edits/<editId>/timeline/current.json`
+输入：Edit Flow 已确认产出的正式时间线 / 字幕 / NLE 目标。
 产出：按目标 NLE 生成草稿 / 时间线 + `subtitles/*.srt`
 
-前置条件：`edits/<editId>/timeline/current.json` 存在且通过 KTEP 校验
+前置条件：目标 NLE 和最终输出目录明确；如果导出消费 KTEP，则对应 `timeline/current.json` 必须存在且通过校验。
 
 执行方式：
 - 若用户已明确目标 NLE，直接选择对应导出 skill
@@ -435,13 +403,13 @@ if (!assets || assets.length === 0) {
 项目创建后可以随时追加新素材，不需要重头来过：
 
 ```
-已有项目 → 追加 Ingest → 增量 Analyze → 重写 Script → 重建 Timeline → 重新 Export
+已有项目 → 追加 Ingest → 增量 Analyze → 刷新 /chronology → 重跑受影响 Edit Flow steps → 重新 Export
 ```
 
 如果只是空间规则、GPX、Pharos context 或 reverse-geocode 逻辑变化，且已有 Analyze 产物完整，则可走更轻的：
 
 ```
-已有项目 → /chronology spatial-refresh → 生成素材片段与模式 → 生成/刷新编年史 → 确认 chronology → 视需要重写 Script / Timeline
+已有项目 → /chronology spatial-refresh → 生成素材片段与模式 → 生成/刷新编年史 → 确认 chronology → 视需要重跑 Edit Flow steps
 ```
 
 ### 追加流程
@@ -463,9 +431,9 @@ await analyzeWorkspaceProjectMedia({ workspaceRoot, projectId, assetIds: toAnaly
 // 然后从 /chronology 显式运行 span-rebuild（需要本地 qwen 文本 LM / ML 服务）与 chronology-build
 ```
 
-3. **重新创作**：Phase 3-5 需要在新素材的基础上重新执行
-   - 脚本需要重写（新素材可能改变叙事结构）
-   - 时间线需要重建
+3. **重新创作**：受影响的 Edit Flow steps 和 Export 需要在新素材基础上重新执行
+   - Flow Plan 可能需要重新生成或标记 stale
+   - 能力 step 需要根据 declared inputs 重新运行
    - 导出需要重做
 
 ### 注意事项
@@ -477,10 +445,10 @@ await analyzeWorkspaceProjectMedia({ workspaceRoot, projectId, assetIds: toAnaly
 
 ## 迭代修改
 
-Phase 3 和 Phase 4 支持迭代：
-- 修改脚本后重新构建时间线
-- 用 `script-editor` 微调旁白后重新导出
-- 调整时间线参数（转场、字幕）后重新导出
+Edit Flow 支持迭代：
+- 修改剪辑规则或 Flow Plan 后重跑受影响 steps
+- 人工确认 human gate 后继续后续 steps
+- 调整时间线、字幕或 post-lock 输出后重新导出
 
 ## 跨设备
 

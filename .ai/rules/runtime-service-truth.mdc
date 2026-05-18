@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Runtime Service Truth
 
-只要任务涉及 Kairos 的正式运行入口、Supervisor、Console 监控、ML service、Analyze、Style Analysis、Script prep 或 job 生命周期，就必须遵守这份规则。
+只要任务涉及 Kairos 的正式运行入口、Supervisor、Console 监控、ML service、Analyze、Style Analysis、Edit Flow 或 job 生命周期，就必须遵守这份规则。
 
 ## Official Runtime Contract
 
@@ -13,6 +13,7 @@ alwaysApply: true
 - 正式监控路由是：
   - `http://127.0.0.1:8940/analyze`
   - `http://127.0.0.1:8940/chronology`
+  - `http://127.0.0.1:8940/edit`
   - `http://127.0.0.1:8940/style`
 - 正式 Ingest / GPS 刷新入口是 `http://127.0.0.1:8940/ingest-gps`；它应通过 Supervisor `ingest` / `gps-refresh` job 显式运行，保存配置本身不代表刷新已经执行
 - `ingest` 的正式刷新范围包括 `store/assets.json`、`gps/derived.json` 与 `analysis/pharos-context.json`；对成功扫描到的 root，磁盘上已删除的旧资产应从资产索引中移除
@@ -25,7 +26,7 @@ alwaysApply: true
 - `chronology-build` 的正式归属顺序是：先用 Pharos 单点事件真实 actual window，span 与 `expected / unexpected` 且非 `continuous` 的 window 存在有意义重叠时可直接归入该普通 `event`；多个 Pharos 单点事件时间窗重叠时，只按 `record.json.actual_captures[]` 等显式拍摄类型/设备字段调整归属优先级，仍同分时优先更窄的 actual window，不从描述、地点或 note 文本推断航拍等语义；Pharos 单点事件是 route 硬边界，Pharos `continuous` 只提供 route 的时间 / summary 上下文，不把多个事件间 route 强行合并，也不得把 `深圳 → 南宁 全程` 这类 route prose 写入 `event.location / route.from / route.to`。Chronology 聚合的 GPS 优先级为 Pharos trip GPX / 项目 `gps/merged.json` / `gps/derived.json` / report 中 `pharos|gpx|derived-track` / embedded GPS 兜底；route 用自身 `startAt/endAt` 取端点 GPS 并通过 `gps/reverse-geocode-cache.json` cache-first 反查，普通非 Pharos event 用 midpoint GPS 反查；普通 event 只按 chronology 相邻顺序的时间连续性与 GPS 轨迹连续性聚合，静态近距离阈值为相邻代表点 `<=400m`，移动中非 route 观察可在相邻间隔 `<=5min` 且两点间速度连续合理时合并；`route` 只由结构化 `drive` 素材和 route cluster 的短间隔伴随片段产生；普通非 Pharos 照片不参与一阶 event/route 切分，不能作为 event 打断 route；照片先按时间范围优先挂到 route，剩余照片再按时间最近挂到普通 event 的 `spanIds`；`materialPatterns / visualObservation / transcript`、反查地名和标题不得参与 event/route 聚合判定
 - Pharos 单点事件是人工行程事实，`chronology-build` 生成后默认 `reviewStatus=confirmed`；无素材命中的 Pharos `gap` 仍是待审缺口，默认 `pending`
 - `spatial-refresh` 是 no-ML deterministic job：只刷新已有 `analysis/asset-reports/*.json` 的 GPS / Pharos / reverse-geocode 空间字段，不扫描素材、不抽帧、不转写、不生成缺失 report，也不写 `store/spans.json` 或 `media/chronology.json`
-- `/chronology` 是 Analyze 与 Script 之间的正式 Chronology V2 审查入口；Script / Timeline 只能消费 `schemaVersion=2.0` 且 `status=confirmed` 的 `media/chronology.json`
+- `/chronology` 是 Analyze 与 Edit Flow 之间的正式 Chronology V2 审查入口；Edit Flow capability 只能消费 `schemaVersion=2.0` 且 `status=confirmed` 的 `media/chronology.json`
 - `/chronology` 的列表时间与日期筛选必须按项目 Pharos trip `timezone` 显示；不得把 ISO `Z` 字符串直接截断当作本地时间。缺少有效 trip timezone 时才回退浏览器时区，磁盘 chronology 时间字段仍保持 ISO 真值。
 - Analyze 的事实真相在 `analysis/asset-reports/*.json`；keep 的非音频 report 必须携带可用视觉描述，fine-scan recognized window 必须携带 `visualObservation`；`store/spans.json` 是可由 assets + asset reports + local qwen text LM 重建的素材片段索引，`media/chronology.json` 是可由 assets + fresh spans + root time + Pharos context 重建的项目级编年史
 - `interestingWindows[]` 是细扫前计划，`fineScanWindows[]` 是细扫后的 recognized / dropped 窗口结果；已有完整 `fineScanWindows` 时，重建 spans 不应启动 ML 或重新视觉分析
@@ -34,7 +35,7 @@ alwaysApply: true
 - `scripts/kairos-supervisor.* start` 只启动 `Supervisor + React console`
 - `scripts/kairos-supervisor.* start` 不会自动启动 ML
 - `scripts/kairos-supervisor.* start` 不会自动恢复旧 job
-- 只要改动影响正式本地运行入口、Supervisor API、`/analyze`、`/chronology`、`/style`、`/color` 或 `apps/kairos-console/` 前端，验证就必须同时包含：
+- 只要改动影响正式本地运行入口、Supervisor API、`/analyze`、`/chronology`、`/edit`、`/style`、`/color` 或 `apps/kairos-console/` 前端，验证就必须同时包含：
   - 根仓 `pnpm build`
   - `npm --prefix apps/kairos-console run build`
 - 不要把根仓 `pnpm build` 误当成已经覆盖 React console 产物；前端 bundle 必须单独构建后，才能宣称 UI 变更已完成验证

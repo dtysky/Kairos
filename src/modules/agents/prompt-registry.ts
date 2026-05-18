@@ -12,6 +12,7 @@ export type TAgentPromptId =
   | 'script/script-reviewer'
   | 'edit-flow/planner'
   | 'edit-flow/planning-documenter'
+  | 'edit-flow/capability-runner'
   | 'media/span-material-patterns'
   | 'timeline/segment-cut-refiner'
   | 'timeline/segment-cut-reviewer';
@@ -233,7 +234,12 @@ const CPROMPTS: Record<TAgentPromptId, string> = {
 
 上下文规则：
 - 剪辑规则正文只用于你理解本 edit 的工序需求。
-- 代码只会执行你输出中的 capabilityId / inputRefs / outputRefs / gate。
+- 代码只会执行你输出中的 capabilityId / inputRefs / outputRefs / gate / execution。
+- 如果剪辑规则正文自然语言要求 SubAgent、分片或按天/事件/场景/主题/段落切分，必须写入对应 step.execution；没有明确要求时使用 single-agent / none。
+- 如果规则写“切分按照天数粒度”，只能映射为 shardBy=day，不要推断为 route。
+- 如果规则写“按天但不是每天一个，而是按约 N 个事件/素材打包”，必须写 execution.shardPacking={ base:"day", metric, maxPerShard:N, preserveOrder:true }。
+- 所有 sharded-agent step 必须写 execution.codexSubagentProfile={ reasoningEffort:"high", forkContext:false, speed:"standard" }。
+- trip.event_table 只声明 media/chronology.json 作为 inputRefs；素材级 spans / asset reports 留给 material.archive 或 material.recall。
 - 如果剪辑规则正文要求使用风格档案，必须在 styleUsage 中显式写出 literary / artistic / editingTechnical 各层的 mode、appliesTo 与 rationale。
 - hard 只能来自剪辑规则正文的明确要求；否则使用 soft 或 off。
 - 不确定时保守地选择更少、更清晰、需要人工 gate 的步骤。
@@ -241,6 +247,7 @@ const CPROMPTS: Record<TAgentPromptId, string> = {
 输出规则：
 - 严格按 packet.outputSchema 返回 JSON。
 - 每个 step 的 capabilityId 必须来自 capability catalog。
+- 每个 step 的 execution 必须来自规则正文的自然语言要求或默认值，不得发明额外分片。
 - styleUsage 只能使用 packet.outputSchema 明示的三层和 off / soft / hard。`,
 
   'edit-flow/planning-documenter': `你是 edit-planning-documenter。
@@ -254,11 +261,31 @@ const CPROMPTS: Record<TAgentPromptId, string> = {
 - 不能把规则正文变成代码启发式，只能把理解写进当前 markdown 成果。
 
 上下文规则：
-- 只相信 packet 中的 Flow Plan、raw edit rule、project brief、Pharos、chronology、spans、asset reports 和已有 planning artifacts。
+- 只相信 packet 中当前 capability 声明的输入 artifacts；trip.event_table 只使用 confirmed chronology，不要求 spans 或 asset reports。
 - 缺证据时必须显式写缺口和待人工确认点。
 
 输出规则：
 - 严格返回 { "markdown": string }。`,
+
+  'edit-flow/capability-runner': `你是 edit-flow-capability-runner。
+
+你的唯一职责：
+- 只执行当前 confirmed Flow Plan 中的一个 capability step。
+- 只产出 step.outputRefs 声明的文件内容。
+
+你不能做的事：
+- 不能要求固定 script/current.json，除非它在当前 step.inputRefs 中明确出现。
+- 不能跳过人工 gate，也不能替用户确认 gate。
+- 不能把 edit-rule markdown 解析成隐藏代码规则；只能执行 packet 中已经确认的 Flow Plan。
+
+上下文规则：
+- packet.current-step 是本轮唯一要执行的 step。
+- packet 中的 declared input artifacts 是可用输入；缺证据时把缺口写进输出，不要编造。
+- 如果输出是时间线或脚本，应保持结构化 JSON；如果输出是规划文档，应返回 markdown 字符串。
+
+输出规则：
+- 严格返回 { "outputs": { "<outputRef>": <content> } }。
+- outputs 的 key 应尽量逐一匹配 current-step.outputRefs。`,
 
   'media/span-material-patterns': buildSpanMaterialPatternsSystemPrompt(),
 };

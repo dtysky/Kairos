@@ -37,6 +37,30 @@ export class AgentRunnerUnavailableError extends Error {
   }
 }
 
+export interface IAgentHandoffDetails {
+  promptId: TAgentPromptId;
+  packetPath: string;
+  handoffPath?: string;
+  handoffMode?: 'single' | 'sharded';
+  shardBy?: string;
+  shardCount?: number;
+  stage: string;
+  action?: string;
+  editId?: string;
+  capabilityId?: string;
+  stepId?: string;
+}
+
+export class AgentHandoffRequiredError extends Error {
+  constructor(
+    public readonly details: IAgentHandoffDetails,
+    message = `agent handoff required: ${details.stage} packet is ready at ${details.packetPath}`,
+  ) {
+    super(message);
+    this.name = 'AgentHandoffRequiredError';
+  }
+}
+
 export class CommandJsonPacketAgentRunner implements IJsonPacketAgentRunner {
   constructor(private readonly config: ICommandJsonPacketAgentRunnerConfig) {}
 

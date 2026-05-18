@@ -10,8 +10,14 @@ export {
   buildEditRuleArtifact,
   confirmEditFlowPlan,
   generateEditFlowPlan,
+  loadEditFlowPlanWithFreshness,
   loadEditPlanningPacketArtifacts,
   runEditPlanningDocumentCapability,
   type IAssertConfirmedEditFlowPlanInput,
   type IGenerateEditFlowPlanInput,
 } from './flow-planner.js';
+export {
+  runEditFlowAction,
+  type IRunEditFlowActionInput,
+  type TEditFlowAction,
+} from './flow-runner.js';

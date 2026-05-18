@@ -62,7 +62,6 @@ export async function ensureProjectEditDirs(
     mkdir(getProjectEditScriptRoot(projectRoot, editId), { recursive: true }),
     mkdir(join(getProjectEditScriptRoot(projectRoot, editId), 'versions'), { recursive: true }),
     mkdir(getProjectEditPlanningRoot(projectRoot, editId), { recursive: true }),
-    mkdir(join(getProjectEditPlanningRoot(projectRoot, editId), 'agent-packets'), { recursive: true }),
     mkdir(join(getProjectEditPlanningRoot(projectRoot, editId), 'reviews'), { recursive: true }),
     mkdir(getProjectEditTimelineRoot(projectRoot, editId), { recursive: true }),
     mkdir(join(getProjectEditTimelineRoot(projectRoot, editId), 'versions'), { recursive: true }),

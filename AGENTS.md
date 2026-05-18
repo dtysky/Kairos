@@ -44,6 +44,7 @@ The current official local runtime and monitor path is:
 - `Supervisor + React console (apps/kairos-console/)`
 - Analyze monitor route: `http://127.0.0.1:8940/analyze`
 - Style monitor route: `http://127.0.0.1:8940/style` (workspace-level style library / style-analysis monitor)
+- Edit Flow route: `http://127.0.0.1:8940/edit` (剪辑规则驱动的原子能力流；Chronology 之后的正式剪辑入口)
 - Color route: `http://127.0.0.1:8940/color` (independent DaVinci color render-preset/action/runtime surface backed by the same-machine vendored Resolve backend)
 
 Operational lesson that must not be forgotten:
@@ -88,7 +89,7 @@ Read every file in [`.ai/rules/`](./.ai/rules/). Current repository rules are:
 - [`.ai/rules/master-workflow-user-guidance.mdc`](./.ai/rules/master-workflow-user-guidance.mdc) — explain Kairos as one workflow and route users through the correct phase
 - [`.ai/rules/pharos-protocol-sync.mdc`](./.ai/rules/pharos-protocol-sync.mdc) — any Pharos-related work must start with sibling protocol hash verification
 - [`.ai/rules/runtime-service-truth.mdc`](./.ai/rules/runtime-service-truth.mdc) — official runtime truth for Supervisor, ML, live jobs, and durable progress caches
-- [`.ai/rules/script-skill-enforcement.mdc`](./.ai/rules/script-skill-enforcement.mdc) — always read and use `kairos-script` before script-generation work
+- [`.ai/rules/script-skill-enforcement.mdc`](./.ai/rules/script-skill-enforcement.mdc) — read `kairos-script` only when a confirmed Flow Plan explicitly asks for `script.generate`
 - [`.ai/rules/windows-shell-environment.mdc`](./.ai/rules/windows-shell-environment.mdc) — on Windows, prefer native PowerShell unless the user explicitly wants WSL or a Linux-only step is required
 
 ## Skills Index
@@ -101,10 +102,11 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
 - [`.ai/skills/kairos-export-jianying/SKILL.md`](./.ai/skills/kairos-export-jianying/SKILL.md) — Jianying draft export and subtitle output
 - [`.ai/skills/kairos-export-resolve/SKILL.md`](./.ai/skills/kairos-export-resolve/SKILL.md) — DaVinci Resolve export
 - [`.ai/skills/kairos-ingest/SKILL.md`](./.ai/skills/kairos-ingest/SKILL.md) — media ingest and project asset inventory
+- [`.ai/skills/kairos-edit-flow/SKILL.md`](./.ai/skills/kairos-edit-flow/SKILL.md) — edit-rule-driven atomic edit capability flow after Chronology
 - [`.ai/skills/kairos-project-init/SKILL.md`](./.ai/skills/kairos-project-init/SKILL.md) — project initialization and environment rehydration
-- [`.ai/skills/kairos-script/SKILL.md`](./.ai/skills/kairos-script/SKILL.md) — script and narration generation
+- [`.ai/skills/kairos-script/SKILL.md`](./.ai/skills/kairos-script/SKILL.md) — legacy script/beat helpers only when a confirmed Flow Plan explicitly asks for `script.generate`
 - [`.ai/skills/kairos-style-analysis/SKILL.md`](./.ai/skills/kairos-style-analysis/SKILL.md) — style analysis from reference works
-- [`.ai/skills/kairos-timeline/SKILL.md`](./.ai/skills/kairos-timeline/SKILL.md) — KTEP timeline assembly
+- [`.ai/skills/kairos-timeline/SKILL.md`](./.ai/skills/kairos-timeline/SKILL.md) — KTEP timeline assembly helper only when a confirmed Flow Plan explicitly asks for `timeline.generate`
 - [`.ai/skills/kairos-workflow/SKILL.md`](./.ai/skills/kairos-workflow/SKILL.md) — full Kairos workflow orchestration
 
 ## Practical Defaults
@@ -211,80 +213,43 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - root-level manual-required time policy via `config/project-brief.json` mapping `captureTimePolicy`
   - asset-level exceptions via `captureTimeOverrides`
   - after edits, user must explicitly run `运行 Ingest` before those changes update `store/assets.json / gps/derived.json / analysis/pharos-context.json`; then explicitly refresh spans / chronology from `/chronology`
-- Treat workspace `剪辑规则` as the formal structure-control asset for Script / Timeline:
+- Treat workspace `剪辑规则` as the formal edit-flow definition after Chronology:
   - `config/edit-rules/*.md` is the human-maintained edit-rule library and the only rule-content source
   - rule categories are discovered by scanning markdown frontmatter / filenames; do not treat `config/edit-rules.json` as rule truth for new work
   - `editRuleCategory` is independent from `styleCategory`
-  - `edits/<editId>/planning/flow-plan.json` is the explicit LLM-authored execution plan derived from the selected rule markdown, project context, and the fixed capability catalog
-  - Script / Timeline must not execute `material.recall`, `script.generate`, or `timeline.generate` unless that Flow Plan is confirmed and matches the current edit-rule hash
-  - code must only parse Flow Plan fields such as `capabilityId`, `inputRefs`, `outputRefs`, and `gate`; it must not keyword-parse edit-rule markdown into arrangement heuristics
+  - `edits/<editId>/planning/flow-plan.json` is the explicit LLM-authored execution plan derived from the selected rule markdown, project context, and the capability registry
+  - `/edit` is the formal user-facing surface after `/chronology`; do not route new work through `/script`, a `script` job, or a fixed `Script -> Timeline` chain
+  - every edit-flow step must execute only when its confirmed Flow Plan step exists, matches the current edit-rule hash, and its declared `inputRefs` are present
+  - code must only parse Flow Plan fields such as `capabilityId`, `inputRefs`, `outputRefs`, `gate`, runner metadata, and `execution`; it must not keyword-parse edit-rule markdown into arrangement heuristics
+  - natural-language edit rules may request `SubAgent` work, shard granularity, and threshold packing; Flow Planner must translate that into `step.execution`, including `shardPacking`, and runtime code may only read the confirmed Flow Plan execution field
+  - every Edit Flow `sharded-agent` step must carry `codexSubagentProfile={reasoningEffort: "high", forkContext: false, speed: "standard"}`; when Codex agents are spawned from a handoff, pass only the packet path/task and do not fork the current long context
+  - `trip.event_table` is an event-level chronology planning step and must declare only `media/chronology.json`; spans and asset reports belong to material archive/recall steps
+  - `script.generate` is optional and appears only when the selected剪辑规则 explicitly asks for a pre-cut text/beat draft; it is not a mandatory narration step
+  - `timeline.generate` must consume Flow Plan declared predecessor outputs and must not require `edits/<editId>/script/current.json`
   - style analysis output in `config/styles/` is now a `layered-v1` profile with `literary / artistic / editingTechnical` layers; these layers are not formal edit rules by themselves
   - Flow Planner must structure any edit-rule-requested style use into confirmed `flow-plan.json.styleUsage`; code may only inject style layers authorized there and must not keyword-parse edit-rule markdown or legacy style prose
-  - if `styleUsage` needs any style layer but `styleCategory` is missing or the selected profile is legacy non-layered, Flow Plan confirmation / Script prep must block and ask the user to choose or regenerate a `layered-v1` profile
+  - if `styleUsage` needs any style layer but `styleCategory` is missing or the selected profile is legacy non-layered, Flow Plan confirmation / edit-flow execution must block and ask the user to choose or regenerate a `layered-v1` profile
 - Treat a Kairos project as a shared material workspace that may contain multiple independent Edit Units:
   - shared truth stays at project root: `pharos/`, `store/`, `analysis/`, `media/chronology.json`, `color/`
-  - edit-specific truth lives under `edits/<editId>/planning/`, `edits/<editId>/script/`, `edits/<editId>/timeline/`, and `edits/<editId>/subtitles/`
-  - legacy `script/`, `timeline/`, and `subtitles/` map to `edits/main`
-  - Script / Timeline / Subtitle APIs must accept optional `editId`, defaulting to `main`
+  - edit-specific truth lives under `edits/<editId>/planning/`, `edits/<editId>/runs/`, and capability-owned output directories such as `timeline/` or `subtitles/`
+  - new edit-flow work does not use legacy root-level `script/`, `timeline/`, or `subtitles/` aliases
+  - Edit Flow APIs must accept optional `editId`, defaulting to `main`
   - Resolve edit naming is deterministic: Project `${projectBrief.name} [Edit]`, Timeline `${editLabel} [${editId}]`
   - locked first rough cuts persist to `edits/<editId>/timeline/locked-rough-cut.json`
-- Treat `/script` as a preparation surface by default:
-  - `/script` first auto-saves the selected `editRuleCategory`; optional `styleCategory` selects one layered style profile, while actual layer consumption is controlled by confirmed `styleUsage`
-  - changing `editRuleCategory` invalidates the previous edit-unit planning/script/timeline run immediately and should clear stale edit-specific artifacts before asking Agent to start over
-  - after selecting an edit rule, run the Edit Flow Planner and require human confirmation of `edits/<editId>/planning/flow-plan.json` before script prep or timeline generation
-  - changing `styleCategory` invalidates according to confirmed `styleUsage`: if `artistic` or `editingTechnical` participated in planning / recall, clear planning and script structure artifacts; if only `literary` was used, clear only expression-stage script/subtitle artifacts
-  - Agent drafts `edits/<editId>/script/material-overview.md` and the initial edit-unit `script-brief`
-  - user reviews and manually saves the brief in `/script`
-  - Console / Supervisor then prepare deterministic script inputs
-    - `edits/<editId>/script/material-overview.facts.json`
-    - `edits/<editId>/script/material-overview.md`
-    - `edits/<editId>/script/segment-plan.json`
-  - `edits/<editId>/script/material-slots.json`
-  - `analysis/material-bundles.json`
-  - Script Agent work now runs as a clean-context staged pipeline:
-    - `edits/<editId>/script/spatial-story.json` + `edits/<editId>/script/spatial-story.md`
-    - `edits/<editId>/script/agent-contract.json`
-  - `edits/<editId>/script/agent-packets/<stage>.json`
-  - `edits/<editId>/script/reviews/<stage>.json`
-  - `edits/<editId>/script/agent-pipeline.json`
-  - each script stage packet is the only formal subagent context; do not append hidden history or duplicate `previousDraft` / `revisionBrief` outside the packet
-  - formal script stage execution must use a host packet runner / real clean-context subagent chain; external `ILlmClient` fallback is not allowed on the official path
-  - first-attempt stage packets should stay lean; prior drafts belong on retry paths, not the initial call
-  - the final `edits/<editId>/script/current.json` is still the only formal script artifact consumed downstream for that edit unit
-  - the on-disk `edits/<editId>/script/current.json` shape is always bare `IKtepScript[]`; transport wrappers such as `{ "segments": [...] }` must be unwrapped inside the stage runner before persist, never by ad-hoc main-agent repair
-  - each script subagent must have a distinct identity prompt and may only read its own packet, not the main thread history
-  - the main agent may orchestrate packets, user handoff, and reviewer gates, but must not silently replace missing script subagents or collapse the reviewer chain; if formal subagent execution is unavailable, stop and explain first
-  - `script-current` is one formal `beat-writer` pass per attempt; do not pre-run a second full-script writer pass just to make a base draft
-  - if a script writer or reviewer call fails, `edits/<editId>/script/agent-pipeline.json` must record the real failure state immediately instead of leaving stale `pending` / old-stage truth
-  - outline prep should filter obvious device-command / noisy-ASR source-speech anchors and merge adjacent non-speech evidence spans before handing off to `beat-writer`
-  - `buildMaterialSlotsDocument()` is now the only formal writer of `edits/<editId>/script/material-slots.json`; `route-slot-planner` is no longer allowed to rewrite `chosenSpanIds`
-  - `material-slots` remains high-recall by default: process evidence, key event progression, usable source speech, and chronology anchors should stay unless they are empty, clearly bad, or near-duplicate
-  - `beat-writer` may only author expression-layer fields such as `text`, `utterances`, `notes`, `muteSource`, and `preserveNatSound`; recall facts such as `audioSelections`, `visualSelections`, and `linkedSpanIds` remain locked from deterministic prep / outline
-- Treat rough-cut script/timeline defaults as evidence-first:
-  - videos with usable source speech should stay source-speech unless the script explicitly sets `muteSource=true`
-  - photo-only beats should default to `1s` silent holds with no subtitles unless the script explicitly sets `holdMs`
-  - `targetDurationMs` remains optional and advisory-only for rough cut; do not use it as the default driver for trimming or expanding effective source material
-  - confirmed Flow Plan / reviewed planning artifacts should constrain order, stage completeness, material roles, and forbidden zones; they should not imply default total duration or per-segment budgets
-  - rough-cut recall should stay high-recall by default: keep valid spans unless they are empty, clearly bad, or near-duplicate
-  - speed strategy no longer comes from spans; silent `drive / aerial` beats only consume explicit `actions.speed` until the separate speed flow is designed
-  - source-speech beats now use `audioSelections[]` for preserved audio truth and `visualSelections[]` for companion visuals; do not collapse them back into one `selections[]`
-  - source-speech audio units should merge adjacent spoken gaps `<= 3000ms` unless a strong sentence boundary blocks the merge
-  - merged source-speech units should keep `120ms` head breathing and `180ms` tail breathing inside valid source bounds
-  - source-speech placement stays on one serial video track plus one independent `dialogue` audio track; `nat` remains for protection/ambient fallback only
-  - source-speech subtitles should follow merged audio units, then split by short clauses instead of raw ASR fragment boundaries
-  - audible `dialogue` / `nat` clips should normalize toward `-16 LUFS` by clip gain during export/orchestration, not by rewriting source media
-  - Timeline now has one formal internal review stage before `edits/<editId>/timeline/current.json`:
-    - deterministic prep writes `edits/<editId>/timeline/rough-cut-base.json`
-    - `segment-cut-refiner` writes `edits/<editId>/timeline/segment-cuts/<segmentId>.json`
-    - `segment-cut-reviewer` writes `edits/<editId>/timeline/reviews/<segmentId>.json`
-    - pipeline state writes `edits/<editId>/timeline/agent-pipeline.json`
-  - `segment-cut-refiner` may only work within its own segment: split/merge/reorder beats, tune windows inside candidate bounds, refine source-speech handling, and override `drive / aerial` speed
-  - `segment-cut-reviewer` blockers are a hard gate before formal timeline assembly; official Timeline must not silently fall back to raw beat assembly when reviewed segment-cut artifacts are missing or failed
+- Treat `/edit` as the formal edit surface:
+  - `/edit` selects the edit rule and optional layered style profile, generates/confirms Flow Plan, then runs confirmed steps one by one
+  - changing `editRuleCategory` invalidates the existing Flow Plan and step runs; do not infer a migration from old script/timeline artifacts
+  - each step writes its own declared outputs and a lightweight run record under `edits/<editId>/runs/<runId>/`
+  - Agent-backed Flow Plan / step work may pause as `awaiting_agent` after writing an agent handoff; single-agent handoffs write one packet, while `sharded-agent` handoffs write shard packets and a reducer manifest under ignored `projects/<projectId>/.tmp/edit-flow/<editId>/runs/<runId>/`
+  - human-gated steps must pause at `awaiting_review` until `/edit` confirms the step
+  - do not introduce a required global beat/script intermediate; beat-like, recall, framework, KTEP, subtitle, and Resolve-lock artifacts are capability-owned outputs
+  - reusable deterministic heuristics, Agent packet stages, and external scripts should be registered as capability runner implementations rather than hidden inside fixed phase code
+  - `timeline/current.json` may remain the KTEP output of `timeline.generate`, but it is not proof that a fixed Timeline phase exists
 - Reusable style assets are workspace-scoped by default:
   - `config/styles/`
   - `config/style-sources.json`
   - `analysis/reference-transcripts/`
   - `analysis/style-references/`
   - `config/style-sources.json` is the only structured style index; `config/styles/*.md` only hold profile content
-- When in doubt about phase routing, start from [`.ai/skills/kairos-workflow/SKILL.md`](./.ai/skills/kairos-workflow/SKILL.md) and then move to the concrete phase skill.
+- When in doubt about edit routing after Chronology, start from [`.ai/skills/kairos-edit-flow/SKILL.md`](./.ai/skills/kairos-edit-flow/SKILL.md).
 - When the task touches `Pharos`, treat `../Pharos/designs` as the upstream protocol source of truth. A hash mismatch is not just a reminder to reread; it must be resolved by syncing Kairos-side protocol assumptions and refreshing the baseline before continuing ordinary Pharos implementation.

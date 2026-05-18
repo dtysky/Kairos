@@ -6,6 +6,7 @@ import type {
   IAgentPacketInputArtifact,
   IEditFlowPlan,
   IEditFlowPlanStep,
+  IEditFlowStepExecution,
   IEditRuleMarkdownSource,
   IStyleUsage,
 } from '../../protocol/schema.js';
@@ -27,6 +28,8 @@ import {
 } from '../../store/index.js';
 import { loadOrBuildProjectPharosContext } from '../pharos/context.js';
 import {
+  AgentHandoffRequiredError,
+  AgentRunnerUnavailableError,
   buildCommandJsonPacketAgentRunnerConfig,
   resolveJsonPacketAgentRunner,
   type IJsonPacketAgentRunner,
@@ -60,6 +63,19 @@ export interface IAssertConfirmedEditFlowPlanInput {
   requiredCapabilityIds?: TEditFlowCapabilityId[];
 }
 
+async function loadOptionalFreshSpans(projectRoot: string): Promise<{ count: number; status: 'fresh' | 'missing_or_stale'; message?: string }> {
+  try {
+    const result = await assertFreshSpans(projectRoot);
+    return { count: result.spans.length, status: 'fresh' };
+  } catch (error) {
+    return {
+      count: 0,
+      status: 'missing_or_stale',
+      message: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
 export async function generateEditFlowPlan(
   input: IGenerateEditFlowPlanInput,
 ): Promise<IEditFlowPlan> {
@@ -68,12 +84,12 @@ export async function generateEditFlowPlan(
     ? await loadStyleByCategory(`${input.workspaceRoot}/config/styles`, input.styleCategory)
     : null;
   const styleProfileHash = styleProfile ? computeStyleProfileHash(styleProfile) : undefined;
-  const [editRule, project, projectBrief, assets, spans, chronologyState, assetReports, runtimeConfig] = await Promise.all([
+  const [editRule, project, projectBrief, assets, spansInfo, chronologyState, assetReports, runtimeConfig] = await Promise.all([
     loadEditRuleByCategory(input.workspaceRoot, input.editRuleCategory),
     loadProject(input.projectRoot),
     loadProjectBriefConfig(input.projectRoot),
     loadAssets(input.projectRoot),
-    assertFreshSpans(input.projectRoot).then(result => result.spans),
+    loadOptionalFreshSpans(input.projectRoot),
     loadChronologyReviewState(input.projectRoot),
     loadAssetReports(input.projectRoot),
     loadRuntimeConfig(input.projectRoot),
@@ -95,7 +111,9 @@ export async function generateEditFlowPlan(
       pharosShots: pharosContext.shots.length,
       gpxFiles: pharosContext.gpxFiles.length,
       assets: assets.length,
-      spans: spans.length,
+      spans: spansInfo.count,
+      spansStatus: spansInfo.status,
+      spansMessage: spansInfo.message,
       chronologyItems: chronologyState.chronology?.events.length ?? 0,
       chronologyStatus: chronologyState.chronology?.status ?? (chronologyState.blocked ? 'blocked' : 'missing'),
       assetReports: assetReports.length,
@@ -114,6 +132,12 @@ export async function generateEditFlowPlan(
       '如果剪辑规则自由正文要求使用风格档案，请把本轮使用层结构化写入 styleUsage。',
       'styleUsage.layers 只能使用 literary / artistic / editingTechnical，mode 只能是 off / soft / hard。',
       'hard 只能来自剪辑规则正文的显式要求；不要把参考视频观察自动升级成硬规则。',
+      '如果剪辑规则正文用自然语言要求 SubAgent、分片、按天/事件/场景/主题/段落切分，请只把这个执行策略写入对应 Flow Plan step.execution；代码不得直接解析 markdown 正文。',
+      '没有明确 SubAgent/分片要求的 step 默认 execution.mode=single-agent、shardBy=none；人工 step 使用 execution.mode=manual、shardBy=none。',
+      '当前旅行纪录片规则若写“使用 SubAgent，切分按照天数粒度”，只能映射为 shardBy=day，不要自动升级为 route 分片。',
+      '如果规则写“按天但不是每天一个，而是按约 N 个事件/素材打包”，写 execution.shardPacking={ base:"day", metric, maxPerShard:N, preserveOrder:true }。',
+      'trip.event_table 只应声明 media/chronology.json 作为 inputRefs；素材级 spans/asset reports 留给 material.archive 或 material.recall。',
+      '所有 sharded-agent step 都必须写 execution.codexSubagentProfile={ reasoningEffort:"high", forkContext:false, speed:"standard" }。',
     ],
     allowedInputs: [
       'config/edit-rules/<category>.md raw markdown',
@@ -132,7 +156,7 @@ export async function generateEditFlowPlan(
       },
       {
         label: 'project-context-summary',
-        summary: `${assets.length} assets / ${spans.length} spans / ${pharosContext.trips.length} Pharos trips`,
+        summary: `${assets.length} assets / ${spansInfo.count} spans (${spansInfo.status}) / ${pharosContext.trips.length} Pharos trips`,
         content: projectSummary,
       },
       styleProfile ? {
@@ -160,7 +184,7 @@ export async function generateEditFlowPlan(
         },
         rationale: 'string | undefined',
       },
-      steps: 'Array<{ id: string, capabilityId: one of capability catalog, title?: string, inputRefs: string[], outputRefs: string[], gate: "none" | "human", notes?: string[] }>',
+      steps: 'Array<{ id: string, capabilityId: one of capability catalog, title?: string, inputRefs: string[], outputRefs: string[], outputTypes?: Record<string,string>, runner?: "deterministic" | "agent" | "script" | "manual", execution?: { mode: "single-agent" | "sharded-agent" | "manual", shardBy: "none" | "day" | "event" | "scene" | "topic" | "segment", shardPacking?: { base: "day", metric: "chronologyEventCount" | "materialRefCount", maxPerShard: number, preserveOrder: true }, codexSubagentProfile?: { reasoningEffort: "high", forkContext: false, speed: "standard" }, reason?: string }, gate: "none" | "human", notes?: string[] }>',
     },
     reviewRubric: [
       'unknown_capability',
@@ -170,11 +194,16 @@ export async function generateEditFlowPlan(
       'missing_required_io_refs',
     ],
   };
-  await writePlanningPacket(input.projectRoot, 'edit-flow-plan', packet, editId);
+  const packetPath = await writePlanningPacket(input.projectRoot, 'edit-flow-plan', packet, editId);
 
-  const runner = resolveJsonPacketAgentRunner({
+  const runner = resolveEditFlowPacketRunner({
     agentRunner: input.agentRunner,
-    commandRunner: buildCommandJsonPacketAgentRunnerConfig(runtimeConfig),
+    runtimeConfig,
+    promptId: 'edit-flow/planner',
+    packetPath,
+    stage: 'edit-flow-plan',
+    action: 'plan',
+    editId,
   });
   const draft = await runner.run<Partial<IEditFlowPlan>>({
     promptId: 'edit-flow/planner',
@@ -230,6 +259,26 @@ export async function confirmEditFlowPlan(
   });
   await writeEditFlowPlan(projectRoot, confirmed, normalizedEditId);
   return confirmed;
+}
+
+export async function loadEditFlowPlanWithFreshness(
+  workspaceRoot: string,
+  projectRoot: string,
+  editId?: string | null,
+): Promise<IEditFlowPlan | null> {
+  const normalizedEditId = normalizeEditId(editId);
+  const existing = await loadEditFlowPlan(projectRoot, normalizedEditId);
+  if (!existing) return null;
+  const editRule = await loadEditRuleByCategory(workspaceRoot, existing.editRuleCategory);
+  if (existing.editRuleHash === editRule.contentHash) return existing;
+  const stale = ZEditFlowPlan.parse({
+    ...existing,
+    status: 'stale',
+    staleReason: 'edit rule markdown hash changed',
+    updatedAt: new Date().toISOString(),
+  });
+  await writeEditFlowPlan(projectRoot, stale, normalizedEditId);
+  return stale;
 }
 
 export async function assertConfirmedEditFlowPlan(
@@ -344,13 +393,80 @@ export async function runEditPlanningDocumentCapability(input: {
     };
   }
 
-  await assertConfirmedEditFlowPlan({
+  const plan = await assertConfirmedEditFlowPlan({
     workspaceRoot: input.workspaceRoot,
     projectRoot: input.projectRoot,
     editId,
     editRuleCategory: input.editRuleCategory,
     requiredCapabilityIds: [input.capabilityId],
   });
+
+  if (input.capabilityId === 'trip.event_table') {
+    const [editRule, chronologyState, runtimeConfig] = await Promise.all([
+      loadEditRuleByCategory(input.workspaceRoot, input.editRuleCategory),
+      loadChronologyReviewState(input.projectRoot),
+      loadRuntimeConfig(input.projectRoot),
+    ]);
+    const outputPath = getPlanningDocumentOutputPath(input.projectRoot, input.capabilityId, editId);
+    const packet: IAgentPacket = {
+      stage: input.capabilityId,
+      identity: 'edit-planning-documenter',
+      mission: buildPlanningCapabilityMission(input.capabilityId),
+      hardConstraints: [
+        '只写 trip.event_table 的 planning markdown，不生成 script/current.json 或 timeline/current.json。',
+        '本 capability 的正式事实输入只有 confirmed media/chronology.json；不要要求 store/spans.json 或 analysis/asset-reports/*.json。',
+        '缺证据时必须标注缺口，不补写无来源事实。',
+        '必须引用 confirmed Flow Plan；不要让代码解析 edit-rule markdown。',
+      ],
+      allowedInputs: [
+        'edit-flow-plan',
+        'edit-rule-markdown',
+        'confirmed chronology',
+      ],
+      inputArtifacts: [
+        buildEditRuleArtifact(editRule),
+        {
+          label: 'edit-flow-plan',
+          path: getEditFlowPlanPath(input.projectRoot, editId),
+          summary: plan.summary ?? `${plan.steps.length} flow steps`,
+          content: plan,
+        },
+        {
+          label: 'chronology-summary',
+          path: 'media/chronology.json',
+          summary: chronologyState.chronology
+            ? `${chronologyState.chronology.events.length} chronology events`
+            : chronologyState.message,
+          content: {
+            status: chronologyState.chronology?.status,
+            message: chronologyState.message,
+            chronology: chronologyState.chronology,
+          },
+        },
+      ],
+      outputSchema: { markdown: 'string' },
+      reviewRubric: ['unsupported_claims', 'missing_chronology_event', 'scope_violation'],
+    };
+    const packetPath = await writePlanningPacket(input.projectRoot, input.capabilityId, packet, editId);
+    const runner = resolveEditFlowPacketRunner({
+      agentRunner: input.agentRunner,
+      runtimeConfig,
+      promptId: 'edit-flow/planning-documenter',
+      packetPath,
+      stage: input.capabilityId,
+      action: 'run-step',
+      editId,
+      capabilityId: input.capabilityId,
+    });
+    const result = await runner.run<{ markdown: string }>({
+      promptId: 'edit-flow/planning-documenter',
+      packet,
+      llm: { jsonMode: true, temperature: 0.2 },
+    });
+    await mkdir(dirname(outputPath), { recursive: true });
+    await writeFile(outputPath, `${(result.markdown ?? '').trim()}\n`, 'utf-8');
+    return { capabilityId: input.capabilityId, outputPath, status: 'completed' };
+  }
 
   const [editRule, assets, spans, chronologyState, assetReports, runtimeConfig, planningArtifacts] = await Promise.all([
     loadEditRuleByCategory(input.workspaceRoot, input.editRuleCategory),
@@ -408,10 +524,16 @@ export async function runEditPlanningDocumentCapability(input: {
     outputSchema: { markdown: 'string' },
     reviewRubric: ['unsupported_claims', 'missing_required_source', 'scope_violation'],
   };
-  await writePlanningPacket(input.projectRoot, input.capabilityId, packet, editId);
-  const runner = resolveJsonPacketAgentRunner({
+  const packetPath = await writePlanningPacket(input.projectRoot, input.capabilityId, packet, editId);
+  const runner = resolveEditFlowPacketRunner({
     agentRunner: input.agentRunner,
-    commandRunner: buildCommandJsonPacketAgentRunnerConfig(runtimeConfig),
+    runtimeConfig,
+    promptId: 'edit-flow/planning-documenter',
+    packetPath,
+    stage: input.capabilityId,
+    action: 'run-step',
+    editId,
+    capabilityId: input.capabilityId,
   });
   const result = await runner.run<{ markdown: string }>({
     promptId: 'edit-flow/planning-documenter',
@@ -523,12 +645,16 @@ function normalizePlanSteps(value: unknown): IEditFlowPlanStep[] {
     const raw = step as Partial<IEditFlowPlanStep>;
     const capabilityId = typeof raw.capabilityId === 'string' ? raw.capabilityId.trim() : '';
     if (!isEditFlowCapabilityId(capabilityId)) return;
+    const runner = normalizeRunner(raw.runner) ?? CEDIT_FLOW_CAPABILITY_CATALOG.find(item => item.capabilityId === capabilityId)?.defaultRunner;
     steps.push({
       id: typeof raw.id === 'string' && raw.id.trim() ? raw.id.trim() : `step-${index + 1}`,
       capabilityId,
       title: typeof raw.title === 'string' && raw.title.trim() ? raw.title.trim() : undefined,
-      inputRefs: Array.isArray(raw.inputRefs) ? raw.inputRefs.filter(isNonEmptyString) : [],
+      inputRefs: normalizeStepInputRefs(capabilityId, raw.inputRefs),
       outputRefs: Array.isArray(raw.outputRefs) ? raw.outputRefs.filter(isNonEmptyString) : [],
+      outputTypes: normalizeOutputTypes(raw.outputTypes),
+      runner,
+      execution: normalizeStepExecution(raw.execution, runner),
       gate: raw.gate === 'human' ? 'human' : 'none',
       notes: Array.isArray(raw.notes) ? raw.notes.filter(isNonEmptyString) : [],
     });
@@ -536,15 +662,102 @@ function normalizePlanSteps(value: unknown): IEditFlowPlanStep[] {
   return steps;
 }
 
+function normalizeStepInputRefs(capabilityId: TEditFlowCapabilityId, value: unknown): string[] {
+  if (capabilityId === 'trip.event_table') return ['media/chronology.json'];
+  return Array.isArray(value) ? value.filter(isNonEmptyString) : [];
+}
+
+function normalizeStepExecution(
+  value: unknown,
+  runner?: 'deterministic' | 'agent' | 'script' | 'manual',
+): IEditFlowStepExecution {
+  const raw = typeof value === 'object' && value != null
+    ? value as Partial<IEditFlowStepExecution>
+    : {};
+  const mode = raw.mode === 'sharded-agent'
+    ? 'sharded-agent'
+    : raw.mode === 'manual' || runner === 'manual'
+      ? 'manual'
+      : 'single-agent';
+  const allowedShardBy = new Set(['none', 'day', 'event', 'scene', 'topic', 'segment']);
+  const shardBy = mode === 'sharded-agent' && typeof raw.shardBy === 'string' && allowedShardBy.has(raw.shardBy)
+    ? raw.shardBy as IEditFlowStepExecution['shardBy']
+    : 'none';
+  const shardPacking = normalizeShardPacking(raw.shardPacking);
+  return {
+    mode,
+    shardBy: mode === 'sharded-agent' ? shardBy : 'none',
+    ...(mode === 'sharded-agent' && shardPacking ? { shardPacking } : {}),
+    ...(mode === 'sharded-agent'
+      ? {
+        codexSubagentProfile: {
+          reasoningEffort: 'high',
+          forkContext: false,
+          speed: 'standard',
+        },
+      }
+      : {}),
+    reason: typeof raw.reason === 'string' && raw.reason.trim() ? raw.reason.trim() : undefined,
+  };
+}
+
+function normalizeShardPacking(value: unknown): IEditFlowStepExecution['shardPacking'] {
+  const raw = typeof value === 'object' && value != null
+    ? value as Partial<NonNullable<IEditFlowStepExecution['shardPacking']>>
+    : {};
+  if (raw.base !== 'day') return undefined;
+  if (raw.metric !== 'chronologyEventCount' && raw.metric !== 'materialRefCount') return undefined;
+  if (typeof raw.maxPerShard !== 'number' || !Number.isFinite(raw.maxPerShard) || raw.maxPerShard <= 0) {
+    return undefined;
+  }
+  return {
+    base: 'day',
+    metric: raw.metric,
+    maxPerShard: Math.max(1, Math.floor(raw.maxPerShard)),
+    preserveOrder: true,
+  };
+}
+
+function resolveEditFlowPacketRunner(input: {
+  agentRunner?: IJsonPacketAgentRunner;
+  runtimeConfig: Parameters<typeof buildCommandJsonPacketAgentRunnerConfig>[0];
+  promptId: 'edit-flow/planner' | 'edit-flow/planning-documenter';
+  packetPath: string;
+  stage: string;
+  action: string;
+  editId: string;
+  capabilityId?: string;
+}): IJsonPacketAgentRunner {
+  try {
+    return resolveJsonPacketAgentRunner({
+      agentRunner: input.agentRunner,
+      commandRunner: buildCommandJsonPacketAgentRunnerConfig(input.runtimeConfig),
+    });
+  } catch (error) {
+    if (error instanceof AgentRunnerUnavailableError) {
+      throw new AgentHandoffRequiredError({
+        promptId: input.promptId,
+        packetPath: input.packetPath,
+        stage: input.stage,
+        action: input.action,
+        editId: input.editId,
+        capabilityId: input.capabilityId,
+      }, `Edit Flow packet is ready for Agent handoff: ${input.packetPath}`);
+    }
+    throw error;
+  }
+}
+
 async function writePlanningPacket(
   projectRoot: string,
   stage: string,
   packet: IAgentPacket,
   editId?: string | null,
-): Promise<void> {
+): Promise<string> {
   const target = getEditPlanningAgentPacketPath(projectRoot, stage.replace(/[^a-z0-9_.-]+/giu, '-'), editId);
   await mkdir(dirname(target), { recursive: true });
   await writeFile(target, `${JSON.stringify(packet, null, 2)}\n`, 'utf-8');
+  return target;
 }
 
 function getPlanningDocumentOutputPath(
@@ -576,4 +789,18 @@ function firstMarkdownLine(markdown: string): string {
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0;
+}
+
+function normalizeRunner(value: unknown): IEditFlowPlanStep['runner'] | undefined {
+  if (value === 'deterministic' || value === 'agent' || value === 'script' || value === 'manual') return value;
+  return undefined;
+}
+
+function normalizeOutputTypes(value: unknown): Record<string, string> | undefined {
+  if (typeof value !== 'object' || value == null || Array.isArray(value)) return undefined;
+  const entries = Object.entries(value as Record<string, unknown>)
+    .filter((entry): entry is [string, string] => Boolean(entry[0].trim()) && typeof entry[1] === 'string' && Boolean(entry[1].trim()))
+    .map(([key, outputType]) => [key.trim(), outputType.trim()] as const);
+  if (entries.length === 0) return undefined;
+  return Object.fromEntries(entries);
 }

@@ -1,0 +1,259 @@
+{
+  "schemaVersion": "1.0",
+  "id": "edit-flow-main-travel-documentary-20260518",
+  "projectId": "b28016fd-3e18-4a94-8070-ba83704bc0a9",
+  "editId": "main",
+  "editRuleCategory": "travel-documentary",
+  "editRuleHash": "e1422a8d2b279a344c7584c8bc61eff6b71498d7a5e76590740cb28a9dc61cec",
+  "generatedAt": "2026-05-18T11:25:13Z",
+  "updatedAt": "2026-05-18T11:29:03.721Z",
+  "status": "confirmed",
+  "confirmedAt": "2026-05-18T11:29:03.721Z",
+  "summary": "旅行纪录片 Edit Flow：先按 confirmed chronology 做连续天分片的关键事件组织，再沉淀素材事实与剪辑框架，随后按连续天分片做素材召回，生成 KTEP 时间线，经 Resolve 粗剪锁定后进入字幕与旁白收尾。",
+  "assumptions": [
+    "本计划来自 travel-documentary 自然语言规则；代码只执行本 Flow Plan，不解析规则正文。",
+    "初版关键事件组织使用 SubAgent，按连续天顺序打包，阈值为约 80 个 chronology events。",
+    "素材召回使用 SubAgent，按连续天顺序打包，阈值为约 2000 个 material refs。",
+    "route 只作为 day 内理解上下文，不作为一级 shard 粒度。",
+    "script.generate 不是本规则的必经步骤；前置文本稿由 edit.framework 的 planning markdown 承载并进入人工审查。",
+    "旁白收尾阶段需要参考已选择的 layered-v1 风格档案 literary 层。"
+  ],
+  "styleUsage": {
+    "styleCategory": "china-drive-travel-documentary-main",
+    "styleProfileHash": "2a170c1a65f4d3ae9b64d4d99e76a02f3498170e31c798b7ed668592dc4b52ad",
+    "styleProfileVersion": "layered-v1",
+    "layers": {
+      "literary": {
+        "mode": "hard",
+        "appliesTo": [
+          "postlock.subtitle_narration"
+        ],
+        "rationale": "剪辑规则在收尾阶段明确要求无语音段落旁白稿参考指定风格分析结果。"
+      },
+      "artistic": {
+        "mode": "off",
+        "appliesTo": []
+      },
+      "editingTechnical": {
+        "mode": "off",
+        "appliesTo": []
+      }
+    },
+    "rationale": "当前规则只把风格分析明确用于旁白/字幕收尾，不把风格档案自动提升为剪辑结构硬规则。"
+  },
+  "steps": [
+    {
+      "id": "event-table",
+      "capabilityId": "trip.event_table",
+      "title": "关键事件组织与初版框架分片",
+      "inputRefs": [
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/planning/event-table.md"
+      ],
+      "outputTypes": {
+        "edits/<editId>/planning/event-table.md": "markdown"
+      },
+      "runner": "agent",
+      "execution": {
+        "mode": "sharded-agent",
+        "shardBy": "day",
+        "shardPacking": {
+          "base": "day",
+          "metric": "chronologyEventCount",
+          "maxPerShard": 80,
+          "preserveOrder": true
+        },
+        "codexSubagentProfile": {
+          "reasoningEffort": "high",
+          "forkContext": false,
+          "speed": "standard"
+        },
+        "reason": "规则写明初版剪辑框架读取编年史，使用 SubAgent，切分按照天，但不是每天一个，而是约 80 个事件为阈值打包。"
+      },
+      "gate": "human",
+      "notes": [
+        "正式输入只有 confirmed media/chronology.json。",
+        "shard packet 不应嵌入完整 chronology 或 spans。"
+      ]
+    },
+    {
+      "id": "material-archive",
+      "capabilityId": "material.archive",
+      "title": "素材事实归档",
+      "inputRefs": [
+        "edits/<editId>/planning/event-table.md",
+        "store/spans.json",
+        "analysis/asset-reports/*.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/planning/material-archive.md"
+      ],
+      "outputTypes": {
+        "edits/<editId>/planning/material-archive.md": "markdown"
+      },
+      "runner": "agent",
+      "execution": {
+        "mode": "single-agent",
+        "shardBy": "none",
+        "reason": "素材事实归档需要汇总已确认事件组织与素材级事实，但规则没有要求这一阶段使用 SubAgent。"
+      },
+      "gate": "human",
+      "notes": [
+        "素材级事实从 spans 和 asset reports 进入，不前置到 event-table。"
+      ]
+    },
+    {
+      "id": "edit-framework",
+      "capabilityId": "edit.framework",
+      "title": "剪辑框架定稿",
+      "inputRefs": [
+        "edits/<editId>/planning/event-table.md",
+        "edits/<editId>/planning/material-archive.md"
+      ],
+      "outputRefs": [
+        "edits/<editId>/planning/edit-framework.md"
+      ],
+      "outputTypes": {
+        "edits/<editId>/planning/edit-framework.md": "markdown"
+      },
+      "runner": "agent",
+      "execution": {
+        "mode": "single-agent",
+        "shardBy": "none",
+        "reason": "规则要求生成文本稿件并人工审查；该步骤读取前序 day shard 的汇总产物后做整体框架收束。"
+      },
+      "gate": "human",
+      "notes": [
+        "这一步承载前置文本稿/框架稿，不要求生成 script/current.json。"
+      ]
+    },
+    {
+      "id": "material-recall",
+      "capabilityId": "material.recall",
+      "title": "规则驱动素材召回",
+      "inputRefs": [
+        "edits/<editId>/planning/event-table.md",
+        "edits/<editId>/planning/material-archive.md",
+        "edits/<editId>/planning/edit-framework.md",
+        "store/spans.json",
+        "analysis/asset-reports/*.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/script/segment-plan.json",
+        "edits/<editId>/script/material-slots.json"
+      ],
+      "outputTypes": {
+        "edits/<editId>/script/segment-plan.json": "json",
+        "edits/<editId>/script/material-slots.json": "json"
+      },
+      "runner": "script",
+      "execution": {
+        "mode": "sharded-agent",
+        "shardBy": "day",
+        "shardPacking": {
+          "base": "day",
+          "metric": "materialRefCount",
+          "maxPerShard": 2000,
+          "preserveOrder": true
+        },
+        "codexSubagentProfile": {
+          "reasoningEffort": "high",
+          "forkContext": false,
+          "speed": "standard"
+        },
+        "reason": "规则写明素材召回阶段使用 SubAgent，切分按照天数粒度，但不是每天一个，而是约 2000 个素材为阈值打包。"
+      },
+      "gate": "human",
+      "notes": [
+        "需要在召回结论里同时标记静音、加速等粗剪建议。",
+        "不按 route 做一级 shard。"
+      ]
+    },
+    {
+      "id": "timeline-generate",
+      "capabilityId": "timeline.generate",
+      "title": "生成 KTEP 粗剪时间线",
+      "inputRefs": [
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/segment-plan.json",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/timeline/current.json"
+      ],
+      "outputTypes": {
+        "edits/<editId>/timeline/current.json": "ktep"
+      },
+      "runner": "agent",
+      "execution": {
+        "mode": "single-agent",
+        "shardBy": "none",
+        "reason": "规则要求根据最终结论生成达芬奇剪辑工程时间线；不从旅行规则自动推导 route 分片。"
+      },
+      "gate": "human",
+      "notes": [
+        "timeline.generate 读取 Flow Plan 声明的前序产物，不要求 script/current.json。"
+      ]
+    },
+    {
+      "id": "lock-rough-cut",
+      "capabilityId": "resolve.lock_rough_cut",
+      "title": "Resolve 粗剪阶段性定稿",
+      "inputRefs": [
+        "edits/<editId>/timeline/current.json",
+        "DaVinci Resolve timeline"
+      ],
+      "outputRefs": [
+        "edits/<editId>/timeline/locked-rough-cut.json"
+      ],
+      "outputTypes": {
+        "edits/<editId>/timeline/locked-rough-cut.json": "resolve-state"
+      },
+      "runner": "manual",
+      "execution": {
+        "mode": "manual",
+        "shardBy": "none",
+        "reason": "规则要求人工和 LLM 交互式修改直到阶段性定稿，锁定动作保持人工 gate。"
+      },
+      "gate": "human",
+      "notes": [
+        "人工确认进入收尾前，后续字幕/旁白步骤不可继续。"
+      ]
+    },
+    {
+      "id": "postlock-subtitle-narration",
+      "capabilityId": "postlock.subtitle_narration",
+      "title": "字幕与旁白收尾",
+      "inputRefs": [
+        "edits/<editId>/timeline/locked-rough-cut.json",
+        "optional config/styles/china-drive-travel-documentary-main.md"
+      ],
+      "outputRefs": [
+        "edits/<editId>/subtitles/source-speech.srt",
+        "edits/<editId>/subtitles/narration-draft.md",
+        "edits/<editId>/subtitles/final.srt"
+      ],
+      "outputTypes": {
+        "edits/<editId>/subtitles/source-speech.srt": "subtitle",
+        "edits/<editId>/subtitles/narration-draft.md": "markdown",
+        "edits/<editId>/subtitles/final.srt": "subtitle"
+      },
+      "runner": "agent",
+      "execution": {
+        "mode": "single-agent",
+        "shardBy": "none",
+        "reason": "规则只在粗剪锁定后的字幕和旁白阶段要求参考风格分析；未要求该阶段 SubAgent 分片。"
+      },
+      "gate": "human",
+      "notes": [
+        "源语音字幕、无语音段落旁白稿和完整字幕均在粗剪锁定后执行。"
+      ]
+    }
+  ]
+}

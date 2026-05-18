@@ -1,12 +1,14 @@
 # 丙察察格聂南线子梅垭口穿越 — Script Brief
 
 <!-- kairos:script-brief-meta
-workflowState=choose_style
+workflowState=await_brief_draft
 -->
 
 - 创建日期：2026-05-09T09:10:59.629Z
-- 风格参考：（待指定）
-- 当前状态：请先在 /script 选择风格分类。
+- Edit ID：main
+- 剪辑规则：旅行纪录片剪辑规则（travel-documentary）
+- 风格档案：国内长途自驾纪录片正片（china-drive-travel-documentary-main）
+- 当前状态：剪辑规则已保存，请回到 Agent 同时起草 material-overview.md 和 script-brief。
 
 ## 全片目标
 

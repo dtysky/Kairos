@@ -1,12 +1,14 @@
 ---
-description: 生成脚本时必须先执行 kairos-script skill，并先复用项目中已记录的剪辑规则 / 风格参考信息
+description: 只有 confirmed Edit Flow 明确要求 script.generate 时才执行 kairos-script skill
 alwaysApply: true
 ---
 
 # Script Skill Enforcement
 
-当任务涉及生成、重写、续写、审查或更新 `edits/<editId>/script/current.json`、legacy `script/current.json`、旁白、beat 文案或 Script 阶段产物时：
+当任务涉及生成、重写、续写、审查或更新 `edits/<editId>/script/current.json`、旁白、beat 文案或 `script.generate` capability 产物时：
 
+- 必须先确认当前 edit unit 的 `edits/<editId>/planning/flow-plan.json` 已 confirmed，且其中明确包含 `script.generate` step；没有该 step 时，不得把脚本生成当成默认流程。
+- 新剪辑工作默认从 `/edit` 和 `kairos-edit-flow` 开始；不要把 `/script`、`script` job、`script/current.json` 解释成正式必经入口。
 - 必须先读取并遵循 `kairos-script` skill，不能跳过 skill 直接按临时理解执行。
 - 必须遵守 `kairos-script` 里显式标注的 `[main agent]` / `[subagent:*]` 边界；主代理负责 orchestration，subagent 负责各自阶段产物，不能互相偷换。
 - 如果 `kairos-script` 要求 clean-context subagent / reviewer 链，而当前宿主策略或用户授权不允许启动这条链，必须先停下说明原因；不能静默折叠成单代理本地起稿。
@@ -17,13 +19,13 @@ alwaysApply: true
 - 如果 `styleUsage` 需要任何风格层但 `styleCategory` 缺失，或 profile 不是 `styleProfileVersion=layered-v1`，必须阻塞并提示重跑 `/style` 或选择可用分层档案。
 - `buildMaterialSlotsDocument()` 是正式 `material-slots` truth；不要再让 `route-slot-planner` 改写 `chosenSpanIds`。
 - `beat-writer` 只能改写表达层字段（如 `text / utterances / notes / muteSource / preserveNatSound`）；不要让它增删或改写 `audioSelections / visualSelections / linkedSpanIds`。
-- 在判断“剪辑规则缺失”之前，必须先检查当前 edit unit 内是否已有 Script 上下文，例如 `edits/<editId>/script/script-brief.md`、legacy `script/script-brief.md`、`config/project-brief.md` 等是否已经记录了本轮要使用的 `editRuleCategory`。
-- 如果 `script-brief.md` 已明确记录本轮剪辑规则，应将其视为当前 edit unit 已确认输入并继续执行；除非用户明确改规则、切 edit、切项目，或该记录与现有文件无法对应。
+- 在判断“剪辑规则缺失”之前，必须先检查当前 edit unit 是否已有 confirmed Flow Plan；Flow Plan 是正式输入，`script-brief.md` 不是新流程的 gate truth。
 - 只有在 skill 要求的关键输入经核对后仍缺失、冲突或无法映射到实际文件时，才能按缺失输入规则停下并询问用户。
 
 ## 禁止行为
 
 - 不要在没读 `kairos-script` skill 的情况下直接生成脚本
+- 不要在 Flow Plan 没有 `script.generate` step 时生成脚本
 - 不要忽略当前项目 / edit unit 已经写明的剪辑规则，又重复向用户追问同一信息
 - 不要只因为当前项目目录下没有规则文件，就跳过对 workspace 级 `config/edit-rules/*.md`、已确认 Flow Plan 与已存在 brief 的核对
 - 不要在未获授权或宿主不支持时，把 subagent / reviewer 链静默折叠成单代理起稿

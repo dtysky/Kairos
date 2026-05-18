@@ -107,8 +107,7 @@ function AppShell() {
   const services = status?.services || [];
   const allJobs = status?.jobs || [];
   const activeJobs = useMemo(
-    () => allJobs.filter(job => ['queued', 'running', 'blocked'].includes(job.status))
-      .filter(job => !(job.jobType === 'script' && job.executionMode === 'agent')),
+    () => allJobs.filter(job => ['queued', 'running', 'blocked', 'awaiting_agent'].includes(job.status)),
     [allJobs],
   );
   const liveProjectJobs = useMemo(
@@ -388,13 +387,13 @@ function AppShell() {
       await refreshProject(projectId).catch(() => undefined);
       await refreshStatus();
       setMessage(
-        jobType === 'script'
-          ? ''
+        jobType === 'edit-flow'
+          ? `已启动 Edit Flow：${args.action || 'run-next'}`
           : jobType === 'color' && args.rootId
             ? `已启动 color ${colorAction}：${args.rootId}${Array.isArray(args.clipKeys) && args.clipKeys.length > 0 ? ` / subset ${args.clipKeys.length}` : ''}${args.batchId ? ` / ${args.batchId}` : ''}`
             : jobType === 'color'
               ? `已启动 color ${colorAction}`
-            : `已启动 ${jobType}`,
+              : `已启动 ${jobType}`,
       );
       setError('');
     } catch (caught) {
@@ -763,28 +762,22 @@ function AppShell() {
                 <Route
                   exact
                   path="/script"
+                  render={() => <Redirect to="/edit" />}
+                />
+                <Route
+                  exact
+                  path="/edit"
                   render={() => (
-                    <ScriptPage
-                      config={config?.scriptBrief}
+                    <EditFlowPage
+                      config={config}
                       editFlowPlan={config?.editFlowPlan}
+                      editFlowRuns={config?.editFlowRuns}
+                      capabilities={capabilities}
                       editRules={editRules}
                       styleSources={styleSources}
-                      setScriptBrief={setScriptBrief}
-                      saveScriptBriefReview={saveScriptBriefReview}
-                      saveScriptBriefEditRuleCategory={saveScriptBriefEditRuleCategory}
-                      saveScriptBriefStyleCategory={saveScriptBriefStyleCategory}
-                      authorizeScriptBriefRegeneration={authorizeScriptBriefRegeneration}
                       busy={busy}
                       jobs={allJobs}
-                      projectId={projectId}
-                      onRun={() => runProjectWorkflow('script')}
-                      onGenerateFlowPlan={() => runProjectWorkflow('edit-flow-plan', {
-                        editId: config?.scriptBrief?.editId || 'main',
-                        editRuleCategory: config?.scriptBrief?.editRuleCategory,
-                        styleCategory: config?.scriptBrief?.styleCategory,
-                      })}
-                      onConfirmFlowPlan={confirmFlowPlan}
-                      onWorkflowTransition={workflowState => openWorkflowDialog(buildScriptWorkflowDialog(workflowState))}
+                      onRunEditFlow={args => runProjectWorkflow('edit-flow', args)}
                     />
                   )}
                 />
@@ -827,7 +820,7 @@ function OverviewPage({ currentProject, activeJobs, services, projectProgress, o
     { path: '/analyze', label: '素材分析', summary: '直接查看分析监控、恢复进度并启动 Analyze。' },
     { path: '/chronology', label: '编年史', summary: '审查 Chronology V2 的事件、路线、缺口和确认状态。' },
     { path: '/style', label: '风格分析', summary: '维护 Workspace 风格库、style sources、风格档案和当前分类监控。' },
-    { path: '/script', label: '脚本', summary: '维护 script-brief，并准备确定性材料给 Agent 继续写稿。' },
+    { path: '/edit', label: '剪辑流', summary: '选择剪辑规则，确认 Flow Plan，并逐步执行 capability steps。' },
     { path: '/timeline-export', label: '时间线与导出', summary: '查看时间线和导出阶段的能力与 blocker。' },
     { path: '/project', label: '项目', summary: '查看全量 Review Queue 与服务诊断。' },
   ];
@@ -1894,6 +1887,396 @@ function StylePage({ config, capabilities, jobs, setStyleSources, onSave, busy, 
   );
 }
 
+function EditFlowPage({
+  config,
+  editFlowPlan,
+  editFlowRuns,
+  capabilities,
+  editRules,
+  styleSources,
+  busy,
+  jobs,
+  onRunEditFlow,
+}) {
+  const inferredEditRule = editFlowPlan?.editRuleCategory
+    || editRules?.defaultCategory
+    || editRules?.categories?.[0]?.categoryId
+    || '';
+  const inferredStyle = editFlowPlan?.styleUsage?.styleCategory
+    || styleSources?.defaultCategory
+    || '';
+  const [editId, setEditId] = useState(editFlowPlan?.editId || 'main');
+  const [editRuleCategory, setEditRuleCategory] = useState(inferredEditRule);
+  const [styleCategory, setStyleCategory] = useState(inferredStyle);
+
+  useEffect(() => {
+    if (!editRuleCategory && inferredEditRule) setEditRuleCategory(inferredEditRule);
+  }, [editRuleCategory, inferredEditRule]);
+
+  useEffect(() => {
+    if (editFlowPlan?.editId && editFlowPlan.editId !== editId) setEditId(editFlowPlan.editId);
+  }, [editFlowPlan?.editId, editId]);
+
+  const registry = useMemo(() => {
+    const map = new Map();
+    (capabilities?.editFlowCapabilities || []).forEach(capability => {
+      map.set(capability.capabilityId, capability);
+    });
+    return map;
+  }, [capabilities]);
+  const latestRunByStep = useMemo(() => {
+    const map = new Map();
+    (editFlowRuns || []).forEach(run => {
+      const previous = map.get(run.stepId);
+      if (!previous || String(run.startedAt || '').localeCompare(String(previous.startedAt || '')) > 0) {
+        map.set(run.stepId, run);
+      }
+    });
+    return map;
+  }, [editFlowRuns]);
+
+  const editFlowJobs = (jobs || [])
+    .filter(job => job.jobType === 'edit-flow')
+    .sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
+  const activeEditFlowJob = editFlowJobs.find(job => (
+    ['queued', 'running', 'blocked'].includes(job.status)
+    || (job.status === 'awaiting_agent' && !isResolvedEditFlowAwaitingJob(job, editFlowPlan, editFlowRuns))
+  ));
+  const planStatus = editFlowPlan?.status || 'missing';
+  const canRunSteps = planStatus === 'confirmed';
+  const isBusy = Boolean(busy['job:edit-flow']);
+  const spansReady = config?.spans?.fresh;
+  const chronologyReady = config?.chronology?.chronology?.status === 'confirmed';
+  const hasHostPacketRunner = Boolean(config?.runtime?.agentPacketRunnerConfigured);
+  const planButtonLabel = formatEditFlowPlanButtonLabel(isBusy, hasHostPacketRunner);
+
+  return (
+    <div className="route-page edit-flow-page">
+      <RouteIntro
+        title="剪辑流"
+        subtitle="选择剪辑规则，确认 Flow Plan，然后按 capability step 运行、审查和继续。"
+      />
+
+      <div className="edit-flow-dashboard">
+        <Card className="panel edit-flow-control-panel">
+          <div className="edit-flow-panel-head">
+            <div>
+              <h2>剪辑入口</h2>
+              <p>{hasHostPacketRunner
+                ? '从 confirmed chronology 进入规则驱动的能力流。'
+                : '未配置 host packet runner；这里会准备 Planner 交接包，随后由当前 Agent 对话生成 Flow Plan。'}</p>
+            </div>
+            <Button
+              type={isBusy || !editRuleCategory ? 'disabled' : 'primary'}
+              disabled={isBusy || !editRuleCategory}
+              onClick={() => onRunEditFlow({
+                action: 'plan',
+                editId,
+                editRuleCategory,
+                styleCategory,
+              })}
+            >
+              {planButtonLabel}
+            </Button>
+          </div>
+
+          <div className="edit-flow-form-grid">
+            <label className="edit-flow-field">
+              <span>Edit ID</span>
+              <input value={editId} onChange={event => setEditId(event.target.value)} />
+            </label>
+            <label className="edit-flow-field">
+              <span>剪辑规则</span>
+              <select value={editRuleCategory} onChange={event => setEditRuleCategory(event.target.value)}>
+                <option value="">请选择</option>
+                {(editRules?.categories || []).map(category => (
+                  <option key={category.categoryId} value={category.categoryId}>
+                    {category.displayName || category.categoryId}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="edit-flow-field">
+              <span>风格档案</span>
+              <select value={styleCategory} onChange={event => setStyleCategory(event.target.value)}>
+                <option value="">不使用</option>
+                {(styleSources?.categories || []).map(category => (
+                  <option key={category.categoryId} value={category.categoryId}>
+                    {category.displayName || category.categoryId}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="edit-flow-status-strip">
+            <EditFlowStatusItem label="Spans" value={spansReady ? 'fresh' : 'missing/stale'} tone={spansReady ? 'good' : 'warn'} />
+            <EditFlowStatusItem label="Chronology" value={chronologyReady ? 'confirmed' : 'not ready'} tone={chronologyReady ? 'good' : 'warn'} />
+            <EditFlowStatusItem label="Flow Plan" value={planStatus} tone={planStatus === 'confirmed' ? 'good' : planStatus === 'stale' ? 'bad' : 'warn'} />
+            <EditFlowStatusItem label="Runner" value={hasHostPacketRunner ? 'host runner' : 'agent handoff'} tone={hasHostPacketRunner ? 'good' : 'warn'} />
+          </div>
+
+          {activeEditFlowJob ? (
+            <div className="edit-flow-handoff">
+              <div>
+                <strong>{formatEditFlowJobStatus(activeEditFlowJob.status)}</strong>
+                <span>{activeEditFlowJob.jobId}</span>
+              </div>
+              <code>{describeEditFlowJob(activeEditFlowJob)}</code>
+            </div>
+          ) : null}
+        </Card>
+
+        <Card className="panel edit-flow-plan-panel">
+          <div className="edit-flow-panel-head">
+            <div>
+              <h2>Flow Plan</h2>
+              <p>{editFlowPlan ? `${editFlowPlan.steps?.length || 0} steps · ${editFlowPlan.editRuleCategory}` : '等待生成执行计划'}</p>
+            </div>
+            <div className="edit-flow-actions">
+              <Button
+                type={isBusy || planStatus !== 'draft' ? 'disabled' : 'primary'}
+                disabled={isBusy || planStatus !== 'draft'}
+                onClick={() => onRunEditFlow({ action: 'confirm-plan', editId })}
+              >
+                确认 Plan
+              </Button>
+              <Button
+                type={isBusy || !canRunSteps ? 'disabled' : 'default'}
+                disabled={isBusy || !canRunSteps}
+                onClick={() => onRunEditFlow({ action: 'run-next', editId })}
+              >
+                运行下一步
+              </Button>
+            </div>
+          </div>
+
+          {editFlowPlan ? (
+            <div className="edit-flow-plan-body">
+              <div className="edit-flow-plan-summary">
+                <strong>{editFlowPlan.summary || `${editFlowPlan.steps?.length || 0} steps`}</strong>
+                <span>{`${editFlowPlan.editRuleHash?.slice(0, 12) || 'no-hash'} · ${editFlowPlan.status}`}</span>
+              </div>
+              {(editFlowPlan.assumptions || []).length > 0 ? (
+                <div className="edit-flow-assumptions">
+                  {editFlowPlan.assumptions.map(item => <div key={item}>{item}</div>)}
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <EmptyPanel title="还没有 Flow Plan" detail="选择剪辑规则后生成第一版执行计划。" />
+          )}
+        </Card>
+      </div>
+
+      <div className="edit-flow-step-section">
+        <div className="edit-flow-section-head">
+          <div>
+            <h2>Step 列表</h2>
+            <p>每个 step 只执行 Flow Plan 声明的 capability、输入和输出。</p>
+          </div>
+        </div>
+
+        <div className="edit-flow-steps">
+        {(editFlowPlan?.steps || []).map((step, index) => {
+          const capability = registry.get(step.capabilityId);
+          const latestRun = latestRunByStep.get(step.id);
+          const runStatus = latestRun?.status || 'pending';
+          const awaitingAgent = runStatus === 'awaiting_agent';
+          const awaitingReview = runStatus === 'awaiting_review';
+          const canRun = canRunSteps && !isBusy && !awaitingReview && !awaitingAgent;
+          return (
+            <Card key={step.id} className={`panel edit-flow-step edit-flow-step-${runStatus.replace(/_/gu, '-')}`}>
+              <div className="edit-flow-step-grid">
+                <div className="edit-flow-step-index">{String(index + 1).padStart(2, '0')}</div>
+
+                <div className="edit-flow-step-body">
+                  <div className="edit-flow-step-title">
+                    <div>
+                      <h2>{step.title || step.capabilityId}</h2>
+                      <span>{`${step.id} / ${step.capabilityId}`}</span>
+                    </div>
+                    <EditFlowStatusItem label="状态" value={formatEditFlowRunStatus(runStatus)} tone={runStatusToTone(runStatus)} />
+                  </div>
+                  <p>{capability?.summary || step.notes?.join(' ') || 'No capability summary.'}</p>
+                  {(step.notes || []).length > 0 ? (
+                    <div className="edit-flow-notes">
+                      {step.notes.map(note => <span key={note}>{note}</span>)}
+                    </div>
+                  ) : null}
+
+                  <div className="edit-flow-ref-grid">
+                    <RefList title="输入" refs={step.inputRefs} />
+                    <RefList title="输出" refs={step.outputRefs} />
+                  </div>
+
+                  {latestRun?.error ? (
+                    <div className={awaitingAgent ? 'edit-flow-run-message' : 'edit-flow-run-message edit-flow-run-message-danger'}>
+                      {latestRun.error}
+                    </div>
+                  ) : null}
+                  {latestRun?.outputPaths?.length ? (
+                    <div className="edit-flow-output-paths">{`输出：${latestRun.outputPaths.join(', ')}`}</div>
+                  ) : null}
+                  {latestRun?.handoff ? (
+                    <div className="edit-flow-handoff-summary">
+                      <strong>{latestRun.handoff.mode === 'sharded' ? 'SubAgent handoff' : 'Agent handoff'}</strong>
+                      <span>{latestRun.handoff.mode === 'sharded'
+                        ? `${latestRun.handoff.shards?.length || 0} ${latestRun.handoff.shardBy} shards · ${latestRun.handoff.handoffPath}`
+                        : latestRun.handoff.packetPath || latestRun.handoff.handoffPath}</span>
+                      {latestRun.handoff.codexSubagentProfile ? (
+                        <span>{formatCodexSubagentProfile(latestRun.handoff.codexSubagentProfile)}</span>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className="edit-flow-step-side">
+                  <div className="edit-flow-step-meta">
+                    <span>{formatEditFlowExecution(step.execution)}</span>
+                    {step.execution?.mode === 'sharded-agent' ? <span>{`shard: ${step.execution.shardBy}`}</span> : null}
+                    {step.execution?.shardPacking ? <span>{formatShardPacking(step.execution.shardPacking)}</span> : null}
+                    {step.execution?.codexSubagentProfile ? <span>{formatCodexSubagentProfile(step.execution.codexSubagentProfile)}</span> : null}
+                    <span>{step.runner || capability?.defaultRunner || 'runner'}</span>
+                    <span>{step.gate === 'human' ? 'human gate' : 'no gate'}</span>
+                  </div>
+                  <div className="edit-flow-step-actions">
+                    <Button
+                      type={canRun ? 'primary' : 'disabled'}
+                      disabled={!canRun}
+                      onClick={() => onRunEditFlow({ action: 'run-step', editId, stepId: step.id })}
+                    >
+                      运行 step
+                    </Button>
+                    <Button
+                      type={!isBusy && awaitingReview ? 'primary' : 'disabled'}
+                      disabled={isBusy || !awaitingReview}
+                      onClick={() => onRunEditFlow({ action: 'confirm-step', editId, stepId: step.id })}
+                    >
+                      确认 gate
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          );
+        })}
+        {!(editFlowPlan?.steps || []).length ? (
+          <EmptyPanel title="暂无 step" detail="生成 Flow Plan 后会显示能力执行列表。" />
+        ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RefList({ title, refs }) {
+  const items = refs || [];
+  return (
+    <details className="edit-flow-ref-list" open={items.length <= 2}>
+      <summary>
+        <strong>{title}</strong>
+        <span>{`${items.length} refs`}</span>
+      </summary>
+      {items.length > 0 ? (
+        <ul>
+          {items.map(ref => <li key={ref}><code>{ref}</code></li>)}
+        </ul>
+      ) : (
+        <div className="muted">无</div>
+      )}
+    </details>
+  );
+}
+
+function EditFlowStatusItem({ label, value, tone }) {
+  return (
+    <span className={`edit-flow-status-item edit-flow-status-${tone || 'neutral'}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </span>
+  );
+}
+
+function runStatusToTone(status) {
+  if (status === 'completed') return 'good';
+  if (status === 'failed') return 'bad';
+  if (status === 'awaiting_agent' || status === 'awaiting_review' || status === 'running') return 'warn';
+  return 'neutral';
+}
+
+function formatEditFlowRunStatus(status) {
+  const mapping = {
+    pending: '待运行',
+    running: '运行中',
+    awaiting_agent: '等待 Agent',
+    awaiting_review: '待确认',
+    completed: '已完成',
+    failed: '失败',
+  };
+  return mapping[status] || status;
+}
+
+function formatEditFlowExecution(execution) {
+  if (!execution) return 'single Agent';
+  if (execution.mode === 'sharded-agent') return 'SubAgent';
+  if (execution.mode === 'manual') return 'manual';
+  return 'single Agent';
+}
+
+function formatShardPacking(packing) {
+  if (!packing) return '';
+  const metric = packing.metric === 'materialRefCount' ? 'material refs' : 'events';
+  return `${packing.base} pack <= ${packing.maxPerShard} ${metric}`;
+}
+
+function formatCodexSubagentProfile(profile) {
+  if (!profile) return '';
+  return `Codex ${profile.reasoningEffort || 'high'} / fork ${profile.forkContext ? 'on' : 'off'} / ${profile.speed || 'standard'}`;
+}
+
+function formatEditFlowPlanButtonLabel(isBusy, hasHostPacketRunner) {
+  if (isBusy) return hasHostPacketRunner ? '生成中…' : '准备中…';
+  return hasHostPacketRunner ? '生成 Flow Plan' : '准备 Plan 交接包';
+}
+
+function isResolvedEditFlowAwaitingJob(job, editFlowPlan, editFlowRuns = []) {
+  if (!job || job.status !== 'awaiting_agent') return false;
+  const action = job.args?.action;
+  if (action === 'plan') {
+    return Boolean(editFlowPlan);
+  }
+  const stepId = job.result?.handoff?.stepId || job.args?.stepId;
+  if (!stepId) return false;
+  return editFlowRuns.some(run => (
+    run.stepId === stepId
+    && ['awaiting_review', 'completed'].includes(run.status)
+    && String(run.updatedAt || '').localeCompare(String(job.updatedAt || '')) >= 0
+  ));
+}
+
+function describeEditFlowJob(job) {
+  if (!job) return '';
+  if (job.status === 'awaiting_agent') {
+    const packetPath = job.result?.handoff?.handoffPath || job.result?.handoff?.packetPath;
+    return packetPath
+      ? `等待当前 Agent 消费交接包：${packetPath}`
+      : job.result?.message || '交接包已准备好，等待当前 Agent 对话继续生成。';
+  }
+  if (job.status === 'blocked') {
+    return job.lastError || (job.blockers || []).join('；') || job.jobId;
+  }
+  return job.lastError || job.jobId;
+}
+
+function formatEditFlowJobStatus(status) {
+  if (status === 'awaiting_agent') return '等待 Agent 接手';
+  if (status === 'blocked') return '流程阻塞';
+  if (status === 'running') return '正在运行';
+  if (status === 'queued') return '排队中';
+  return status || 'Edit Flow job';
+}
+
 function ScriptPage({
   config,
   editFlowPlan,
@@ -1913,8 +2296,7 @@ function ScriptPage({
   onWorkflowTransition,
 }) {
   const scriptJobs = (jobs || [])
-    .filter(job => job.jobType === 'script'
-      && job.executionMode === 'deterministic'
+    .filter(job => job.jobType === 'edit-flow'
       && (!projectId || job.projectId === projectId));
   const latestJob = scriptJobs[0] || null;
   const activeScriptJobs = scriptJobs.filter(job => ['queued', 'running', 'blocked'].includes(job.status));
@@ -2004,11 +2386,11 @@ function ScriptPage({
         ) : null}
         <div className="actions">
             <Button
-              type={busy['job:edit-flow-plan'] || !hasValidEditRuleCategory ? 'disabled' : 'default'}
-              disabled={busy['job:edit-flow-plan'] || !hasValidEditRuleCategory}
+              type={busy['job:edit-flow'] || !hasValidEditRuleCategory ? 'disabled' : 'default'}
+              disabled={busy['job:edit-flow'] || !hasValidEditRuleCategory}
               onClick={onGenerateFlowPlan}
             >
-              {busy['job:edit-flow-plan'] ? '生成中…' : '生成 Flow Plan'}
+              {busy['job:edit-flow'] ? '生成中…' : '生成 Flow Plan'}
             </Button>
             <Button
               type={busy['edit-flow:confirm'] || !flowPlanMatchesRule || editFlowPlan?.status === 'confirmed' ? 'disabled' : 'default'}
@@ -2528,7 +2910,7 @@ function TopNav({ history, location }) {
     { path: '/analyze', label: '素材分析' },
     { path: '/chronology', label: '编年史' },
     { path: '/style', label: '风格分析' },
-    { path: '/script', label: '脚本' },
+    { path: '/edit', label: '剪辑流' },
     { path: '/timeline-export', label: '时间线与导出' },
     { path: '/project', label: '项目' },
   ];
@@ -2568,7 +2950,7 @@ function resolveTopLevelPath(pathname) {
   if (pathname.startsWith('/analyze')) return '/analyze';
   if (pathname.startsWith('/chronology')) return '/chronology';
   if (pathname.startsWith('/style')) return '/style';
-  if (pathname.startsWith('/script')) return '/script';
+  if (pathname.startsWith('/edit') || pathname.startsWith('/script')) return '/edit';
   if (pathname.startsWith('/timeline-export')) return '/timeline-export';
   if (pathname.startsWith('/project')) return '/project';
   return '/';

@@ -1943,12 +1943,57 @@ export type EEditFlowPlanStatus = z.infer<typeof EEditFlowPlanStatus>;
 export const EEditFlowGate = z.enum(['none', 'human']);
 export type EEditFlowGate = z.infer<typeof EEditFlowGate>;
 
+export const EEditFlowRunnerStrategy = z.enum(['deterministic', 'agent', 'script', 'manual']);
+export type EEditFlowRunnerStrategy = z.infer<typeof EEditFlowRunnerStrategy>;
+
+export const EEditFlowExecutionMode = z.enum(['single-agent', 'sharded-agent', 'manual']);
+export type EEditFlowExecutionMode = z.infer<typeof EEditFlowExecutionMode>;
+
+export const EEditFlowShardBy = z.enum(['none', 'day', 'event', 'scene', 'topic', 'segment']);
+export type EEditFlowShardBy = z.infer<typeof EEditFlowShardBy>;
+
+export const EEditFlowShardPackingBase = z.enum(['day']);
+export type EEditFlowShardPackingBase = z.infer<typeof EEditFlowShardPackingBase>;
+
+export const EEditFlowShardPackingMetric = z.enum(['chronologyEventCount', 'materialRefCount']);
+export type EEditFlowShardPackingMetric = z.infer<typeof EEditFlowShardPackingMetric>;
+
+export const IEditFlowShardPacking = z.object({
+  base: EEditFlowShardPackingBase,
+  metric: EEditFlowShardPackingMetric,
+  maxPerShard: z.number().int().positive(),
+  preserveOrder: z.boolean().default(true),
+});
+export type IEditFlowShardPacking = z.infer<typeof IEditFlowShardPacking>;
+
+export const IEditFlowCodexSubagentProfile = z.object({
+  reasoningEffort: z.enum(['low', 'medium', 'high', 'xhigh']).default('high'),
+  forkContext: z.boolean().default(false),
+  speed: z.enum(['standard']).default('standard'),
+});
+export type IEditFlowCodexSubagentProfile = z.infer<typeof IEditFlowCodexSubagentProfile>;
+
+export const IEditFlowStepExecution = z.object({
+  mode: EEditFlowExecutionMode,
+  shardBy: EEditFlowShardBy,
+  shardPacking: IEditFlowShardPacking.optional(),
+  codexSubagentProfile: IEditFlowCodexSubagentProfile.optional(),
+  reason: z.string().optional(),
+});
+export type IEditFlowStepExecution = z.infer<typeof IEditFlowStepExecution>;
+
+export const EEditFlowStepRunStatus = z.enum(['pending', 'running', 'awaiting_agent', 'awaiting_review', 'completed', 'failed']);
+export type EEditFlowStepRunStatus = z.infer<typeof EEditFlowStepRunStatus>;
+
 export const IEditFlowPlanStep = z.object({
   id: z.string(),
   capabilityId: z.string(),
   title: z.string().optional(),
   inputRefs: z.array(z.string()),
   outputRefs: z.array(z.string()),
+  outputTypes: z.record(z.string()).optional(),
+  runner: EEditFlowRunnerStrategy.optional(),
+  execution: IEditFlowStepExecution.optional(),
   gate: EEditFlowGate,
   notes: z.array(z.string()),
 });
@@ -1972,6 +2017,77 @@ export const IEditFlowPlan = z.object({
   steps: z.array(IEditFlowPlanStep),
 });
 export type IEditFlowPlan = z.infer<typeof IEditFlowPlan>;
+
+export const IEditFlowStepRunReview = z.object({
+  status: z.enum(['not_required', 'pending', 'confirmed']).default('not_required'),
+  confirmedAt: z.string().optional(),
+  confirmedBy: z.string().optional(),
+  note: z.string().optional(),
+});
+export type IEditFlowStepRunReview = z.infer<typeof IEditFlowStepRunReview>;
+
+export const EEditFlowAgentHandoffMode = z.enum(['single', 'sharded']);
+export type EEditFlowAgentHandoffMode = z.infer<typeof EEditFlowAgentHandoffMode>;
+
+export const IEditFlowAgentHandoffShard = z.object({
+  shardId: z.string(),
+  label: z.string(),
+  shardBy: EEditFlowShardBy,
+  packetPath: z.string(),
+  summary: z.string().optional(),
+  startAt: z.string().optional(),
+  endAt: z.string().optional(),
+  metricCount: z.number().int().nonnegative().optional(),
+  thresholdExceeded: z.boolean().optional(),
+  eventIds: z.array(z.string()).default([]),
+  spanIds: z.array(z.string()).default([]),
+  outputPaths: z.array(z.string()).default([]),
+});
+export type IEditFlowAgentHandoffShard = z.infer<typeof IEditFlowAgentHandoffShard>;
+
+export const IEditFlowAgentHandoff = z.object({
+  schemaVersion: z.literal('1.0'),
+  handoffId: z.string(),
+  mode: EEditFlowAgentHandoffMode,
+  shardBy: EEditFlowShardBy,
+  handoffPath: z.string(),
+  packetPath: z.string().optional(),
+  createdAt: z.string(),
+  promptId: z.string(),
+  editId: z.string(),
+  runId: z.string(),
+  stepId: z.string(),
+  capabilityId: z.string(),
+  outputRefs: z.array(z.string()).default([]),
+  reducerOutputRefs: z.array(z.string()).default([]),
+  shardPacking: IEditFlowShardPacking.optional(),
+  codexSubagentProfile: IEditFlowCodexSubagentProfile.optional(),
+  shards: z.array(IEditFlowAgentHandoffShard).default([]),
+});
+export type IEditFlowAgentHandoff = z.infer<typeof IEditFlowAgentHandoff>;
+
+export const IEditFlowStepRunRecord = z.object({
+  schemaVersion: z.literal('1.0'),
+  runId: z.string(),
+  editId: z.string(),
+  flowPlanId: z.string(),
+  flowPlanHash: z.string().optional(),
+  stepId: z.string(),
+  capabilityId: z.string(),
+  runner: EEditFlowRunnerStrategy,
+  status: EEditFlowStepRunStatus,
+  startedAt: z.string(),
+  updatedAt: z.string(),
+  completedAt: z.string().optional(),
+  inputRefs: z.array(z.string()).default([]),
+  outputRefs: z.array(z.string()).default([]),
+  inputSnapshot: z.record(z.unknown()).default({}),
+  outputPaths: z.array(z.string()).default([]),
+  handoff: IEditFlowAgentHandoff.optional(),
+  error: z.string().optional(),
+  review: IEditFlowStepRunReview.default({ status: 'not_required' }),
+});
+export type IEditFlowStepRunRecord = z.infer<typeof IEditFlowStepRunRecord>;
 
 export const EStyleSourceType = z.enum(['file', 'directory']);
 export type EStyleSourceType = z.infer<typeof EStyleSourceType>;

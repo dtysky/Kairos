@@ -19,7 +19,7 @@ import {
   loadIngestRoots,
   loadRuntimeConfig,
   loadEditRulesConfig,
-  loadEditFlowPlan,
+  loadEditFlowRunRecords,
   listWorkspaceProjects,
   loadManualItineraryConfig,
   normalizeEditId,
@@ -49,6 +49,7 @@ import {
 import {
   CEDIT_FLOW_CAPABILITY_CATALOG,
   confirmEditFlowPlan,
+  loadEditFlowPlanWithFreshness,
 } from '../modules/edit-flow/index.js';
 import {
   isLayeredStyleProfile,
@@ -205,10 +206,7 @@ async function routeRequest(
         { jobType: 'chronology-build', executionMode: 'deterministic', supported: true, note: 'requires fresh spans and rebuilds draft Chronology V2 for review' },
 	        { jobType: 'style-analysis', executionMode: 'deterministic', supported: true, note: 'runs deterministic prep and then hands off to Agent for final text/art-style reference; does not generate edit rules' },
         { jobType: 'color', executionMode: 'deterministic', supported: true, note: 'supports prepare_root / sync_groups / execute_root / sync_batch_metadata / sync_batch_sidecars / validate_batch / prepare_all_roots / export_all_roots through the same-machine vendored Resolve backend; clip repair now follows the canonical Gyro -> Dehaze -> User1 -> User2 -> NR layout, and execute/export-all require explicit overwrite confirmation before replacing existing root outputs' },
-        { jobType: 'edit-flow-plan', executionMode: 'agent', supported: true, note: 'LLM reads raw edit-rule markdown plus capability catalog and writes edits/<editId>/planning/flow-plan.json for human confirmation' },
-        { jobType: 'edit-flow-capability', executionMode: 'agent', supported: true, note: 'runs registered planning capabilities such as pharos.parse, trip.event_table, material.archive, and edit.framework' },
-        { jobType: 'script', executionMode: 'deterministic', supported: true, note: 'runs per editId only after reviewed brief, editRuleCategory, and confirmed Flow Plan are saved; advances ready_to_prepare -> ready_for_agent; final script remains agent-authored' },
-        { jobType: 'timeline', executionMode: 'deterministic', supported: true, note: 'builds per-edit rough-cut-base -> segment-cut review chain; requires confirmed Flow Plan and a configured host agent packet runner' },
+        { jobType: 'edit-flow', executionMode: 'agent', supported: true, note: 'single Edit Flow job/action surface: plan, confirm-plan, run-step, confirm-step, run-next; executes only confirmed Flow Plan capabilities' },
         { jobType: 'export-jianying', executionMode: 'deterministic', supported: false },
         { jobType: 'export-resolve', executionMode: 'agent', supported: false },
       ],
@@ -237,6 +235,7 @@ async function routeRequest(
       workspaceColorTransformPresets,
       colorResolveProjectMap,
       editFlowPlan,
+      editFlowRuns,
     ] = await Promise.all([
       loadProjectBriefConfig(projectRoot),
       loadManualItineraryConfig(projectRoot),
@@ -251,7 +250,8 @@ async function routeRequest(
       loadColorGroupsSnapshots(projectRoot),
       loadColorTransformPresetsConfig(options.workspaceRoot).catch(() => ({ profiles: {}, discoveredPresets: {} })),
       loadColorResolveProjectMap(projectRoot),
-      loadEditFlowPlan(projectRoot, editId),
+      loadEditFlowPlanWithFreshness(options.workspaceRoot, projectRoot, editId),
+      loadEditFlowRunRecords(projectRoot, editId),
     ]);
     const colorWorkspace = buildColorWorkspaceState({
       projectId,
@@ -278,6 +278,9 @@ async function routeRequest(
       ingestRootSummaries,
       pharosStatus: buildProjectPharosAssetStatus(pharosContext, projectRoot),
       pharosContext,
+      runtime: {
+        agentPacketRunnerConfigured: Boolean(runtimeConfig.agentPacketRunnerCommand?.trim()),
+      },
       spans: {
         count: spans.length,
         meta: spansMeta,
@@ -286,6 +289,7 @@ async function routeRequest(
       },
       chronology: chronologyState,
       editFlowPlan,
+      editFlowRuns,
     });
     return;
   }
@@ -296,7 +300,8 @@ async function routeRequest(
     const projectRoot = join(options.workspaceRoot, 'projects', projectId);
     const editId = normalizeEditId(url.searchParams.get('editId'));
     sendJson(response, 200, {
-      flowPlan: await loadEditFlowPlan(projectRoot, editId),
+      flowPlan: await loadEditFlowPlanWithFreshness(options.workspaceRoot, projectRoot, editId),
+      runs: await loadEditFlowRunRecords(projectRoot, editId),
       capabilities: CEDIT_FLOW_CAPABILITY_CATALOG,
     });
     return;
@@ -562,6 +567,7 @@ async function routeRequest(
     sendJson(response, 200, {
       ...job,
       progress: await readJobProgressForStatus(job),
+      result: job.status === 'awaiting_agent' ? await readJsonFile(job.resultPath) : undefined,
     });
     return;
   }
@@ -714,6 +720,8 @@ async function startJob(
       colorGroups: await loadColorGroupsSnapshots(projectRoot).catch(() => null),
       manualItinerary: await loadManualItineraryConfig(projectRoot).catch(() => null),
       scriptBrief: await loadScriptBriefConfig(projectRoot, editId).catch(() => null),
+      editFlowPlan: await loadEditFlowPlanWithFreshness(workspaceRoot, projectRoot, editId).catch(() => null),
+      editFlowRuns: await loadEditFlowRunRecords(projectRoot, editId).catch(() => null),
       pharosContext: await loadOrBuildProjectPharosContext({
         projectRoot,
         includedTripIds: (await loadProjectBriefConfig(projectRoot).catch(() => null))?.pharos?.includedTripIds ?? [],
@@ -792,7 +800,7 @@ async function resolveStyleAnalysisCategoryId(
 }
 
 function resolveJobExecutionMode(jobType: string): TSupervisorExecutionMode {
-  return ['edit-flow-plan', 'edit-flow-capability', 'export-resolve'].includes(jobType)
+  return ['edit-flow', 'export-resolve'].includes(jobType)
     ? 'agent'
     : 'deterministic';
 }
@@ -970,11 +978,12 @@ async function readJsonFile(path?: string): Promise<unknown> {
   }
 }
 
-async function loadJobsWithProgress(workspaceRoot: string): Promise<Array<ISupervisorJobRecord & { progress: unknown }>> {
+async function loadJobsWithProgress(workspaceRoot: string): Promise<Array<ISupervisorJobRecord & { progress: unknown; result?: unknown }>> {
   const jobs = await listJobRecords(workspaceRoot);
   const hydrated = await Promise.all(jobs.map(async job => ({
     ...job,
     progress: await readJobProgressForStatus(job),
+    result: job.status === 'awaiting_agent' ? await readJsonFile(job.resultPath) : undefined,
   })));
   return hydrated;
 }

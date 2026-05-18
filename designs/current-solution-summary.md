@@ -14,7 +14,7 @@ Kairos 当前需要区分两层：
 
 - 一个以 `KTEP` 为核心协议的后期编排系统
 - 一个以 `projects/<projectId>/` 为中心的项目化存储体系
-- 一条以 `Pharos -> ingest -> analyze -> script -> timeline -> export` 为骨架的正式主流程
+- 一条以 `Pharos -> ingest -> analyze -> chronology -> edit-flow -> export` 为骨架的正式主流程
 - `Pharos` 输入当前固定镜像到项目内 `pharos/<trip_id>/plan.json + record.json? + gpx/`
   - 项目初始化当前会直接创建 `projects/<projectId>/pharos/`
   - Console 读取项目配置时会补齐缺失的 `pharos/` 根目录，并在 `/ingest-gps` 明确提示这个固定投放位置
@@ -140,7 +140,7 @@ Kairos 当前需要区分两层：
 - 剪辑规则、风格来源配置与风格分析参考产物当前已收口为 **Workspace 级共享资产**，但职责已经拆开：
   - `config/edit-rules/*.md`：人工维护的正式 `剪辑规则` 库，也是唯一规则正文来源；规则列表由 markdown frontmatter / 文件名扫描得到
   - 项目 / edit unit 只保存 `editRuleCategory`；代码不再从 `config/edit-rules.json` 读取规则正文或派生结构
-  - `edits/<editId>/planning/flow-plan.json`：LLM 基于规则 markdown、项目上下文和固定能力目录生成的显式执行计划，人工确认后才允许进入 `material.recall / script.generate / timeline.generate`
+  - `edits/<editId>/planning/flow-plan.json`：LLM 基于规则 markdown、项目上下文和 capability registry 生成的显式执行计划，人工确认后才允许执行其中声明的 capability step
   - `config/styles/`
   - `config/style-sources.json`
   - `analysis/reference-transcripts/`
@@ -152,8 +152,8 @@ Kairos 当前需要区分两层：
   - 正文必须抽象为“风格生成法则”，不能复述参考视频内容；`literary` 分析旁白写法机制，`artistic` 分析审美母题 / 情绪光谱 / 空间时间观，`editingTechnical` 分析可迁移剪辑技法
   - 样本地名、事件、人物和单次遭遇只能作为 `evidenceNotes` 或短例证，不能成为 layer summary 或章节主体；reviewer 必须阻塞复述型草稿
   - 风格分析不生成正式剪辑规则；三层内容默认只是 evidence-backed observation / soft preference
-  - 只有剪辑规则自由正文经 Flow Planner 结构化写入 confirmed `flow-plan.json.styleUsage` 后，脚本阶段才允许读取对应层；`hard` 约束只能来自剪辑规则或 confirmed Flow Plan 的显式提升
-  - 如果剪辑规则要求使用风格层而 `/script` 未选择 `styleCategory`，或选择的是旧的 legacy 非分层 profile，Flow Plan 不能确认，Script prep 必须阻塞并提示重跑 `/style`
+  - 只有剪辑规则自由正文经 Flow Planner 结构化写入 confirmed `flow-plan.json.styleUsage` 后，Edit Flow capability 才允许读取对应层；`hard` 约束只能来自剪辑规则或 confirmed Flow Plan 的显式提升
+  - 如果剪辑规则要求使用风格层而 `/edit` 未选择 `styleCategory`，或选择的是旧的 legacy 非分层 profile，Flow Plan 不能确认，Edit Flow 必须阻塞并提示重跑 `/style`
 - `scripts/kairos-supervisor.* start` 只启动 `Supervisor + React console`，不会顺带拉起 ML，也不会自动恢复旧 job
 - `projects/<projectId>/.tmp/media-analyze/progress.json` 与 `<workspaceRoot>/.tmp/style-analysis/{category}/progress.json` 都只是 durable progress cache，不等于 live job
 - Kairos 官方管理的 ML-backed 顶层流程在结束态必须回收到 `ML stopped`；`spatial-refresh / chronology-build` 是 no-ML deterministic job，`span-rebuild` 会进入 ML lifecycle 调用本地 qwen 文本 LM，但不重跑 VLM / ASR
@@ -201,7 +201,7 @@ Kairos 当前需要区分两层：
 - `analysis/asset-reports/*.json` 是 Analyze 的完整事实真相；`store/spans.json` 与 `media/chronology.json` 是可丢弃、可重建的派生索引
 - Analyze 不再自动生成 `store/spans.json` 或 `media/chronology.json`；它只维护 `analysis/asset-reports/*.json`
 - `/chronology` 是 downstream truth materialize + review 页：先显式运行 `span-rebuild` 生成 stripped spans，并通过本地 qwen 文本 LM 按 10 个 span 一批生成中文 `materialPatterns[]`；LM 只返回按输入顺序排列的短语行，代码按 chunk 顺序写回并严格校验 spans；Analyze 必须为 keep 的非音频素材产出视觉描述，`span-rebuild` 遇到缺失 report 或缺失 `visualObservation` 必须失败而不是补猜；再运行 `chronology-build` 生成 / 刷新 Chronology V2；页面必须显示 active job 进度，`span-rebuild` 进度写入 `.tmp/chronology/progress.json`，包含 chunk、失败列表补处理、retry/warning 摘要；已完成部分和 failed span 列表写入 `.tmp/chronology/span-rebuild.partial.json`，正式 `store/spans.json` 只在全量收口后写入；`chronology-build` 还必须显示 GPS reverse-geocode 地名解析进度
-- `store/spans.meta.json` 记录 `schemaVersion/status/generatedAt/inputsHash/assetCount/reportCount/spanCount/warnings`；Script / Timeline 只接受 `status=fresh` 的 spans
+- `store/spans.meta.json` 记录 `schemaVersion/status/generatedAt/inputsHash/assetCount/reportCount/spanCount/warnings`；Edit Flow capability 只接受 `status=fresh` 的 spans
 - `media/chronology.json` 当前正式升级为 Chronology V2 项目级编年史文档：`schemaVersion: "2.0"`，顶层包含 `status / inputsHash / assetIndex / events`
 - Chronology V2 的正式事件只暴露 `event / route / gap`、确认状态、时间地点、路线和 `spanIds`；不得持久化 `origin / source / pharosRefs / assetIds / confidence / materialChannels / speechAnchors`
 - `/chronology` UI 展示与日期筛选必须按项目 Pharos trip 的 `timezone` 格式化 `startAt/endAt`；缺少有效 trip timezone 时才回退浏览器时区。磁盘上的 Chronology V2 仍保存 ISO 时间真值，不为显示改写数据
@@ -210,7 +210,7 @@ Kairos 当前需要区分两层：
 - Pharos 单点事件来自人工行程事实，生成后默认 `reviewStatus=confirmed`；无素材命中的 Pharos `gap` 仍默认 `pending`
 - 项目级 `chronology-build` 写入 `media/chronology.json` 必须使用 GPS reverse-geocode service；显式无 service、cache/provider miss 或任一 route/event GPS anchor 反查失败时直接失败并保留既有 chronology，不允许回退到素材标签、`materialPatterns`、manual itinerary 或 Pharos continuous route prose
 - 未直接命中 Pharos 单点的 span 按 chronology 顺序连续聚合：优先使用 Pharos trip GPX、项目 `gps/merged.json`、`gps/derived.json`、report 中的 `pharos|gpx|derived-track` 坐标，最后才用 embedded GPS 兜底；单 span 起止 `<=200m` 视作静态候选，相邻代表点 `<=400m` 可合并为同一地点事件；移动中的非 route 观察可在相邻时间间隔 `<=5min` 且两点间速度连续合理时合并为同一 event；跨长时间间隔、跨不连续轨迹或跨 Pharos 单点事件不全局合并；`route` 只由结构化 `drive` 素材和 route cluster 的短间隔伴随片段产生，不能由 `materialPatterns / visualObservation / transcript` 的关键词触发；反查地名、标题和素材语义只用于显示与摘要，不参与 event/route 聚合判定。普通非 Pharos 照片是附属素材：不参与一阶 event/route 切分，不单独生成 event；照片先按时间范围优先挂到 route，剩余照片再按时间最近挂到普通 event 的 `spanIds`
-- `assetIndex[]` 只保留 `assetId / sortCapturedAt`，用于 Script / Timeline 的素材排序；事件关联素材必须永远从 `spanIds -> spans -> assetId` 反查
+- `assetIndex[]` 只保留 `assetId / sortCapturedAt`，用于 Edit Flow capability 的素材排序；事件关联素材必须永远从 `spanIds -> spans -> assetId` 反查
 - `interestingWindows[]` 继续表示细扫前计划，只保存候选窗口、编辑边界和 reason；它不是细扫结果，speed 决策不再进入 span 生成流程
 - `fineScanWindows[]` 是细扫后窗口结果，只保存 recognized/dropped 状态、窗口时间、帧引用与一句 `visualObservation`；recognized 窗口缺视觉描述属于 Analyze/fine-scan 失败
 - `span` 当前正式承载脚本/时间线消费索引：
@@ -229,15 +229,14 @@ Kairos 当前需要区分两层：
   - 行车口播是否进入 route 由 chronology 生成处理，不由 span 决定
 - 项目级正式词集当前只保留一层，并挂到 `project-brief`：
   - `材料模式短语`
-- Script prep 当前正式链路为：
-- `Analyze -> Chronology Review -> Material Overview -> Script Brief -> Segment Plan -> Material Slots -> Bundle Lookup -> Chosen SpanIds -> Beat / Script`
-- Script / Timeline 只能消费 fresh spans 加 `status=confirmed` 的 Chronology V2；旧数组 v1、未确认 V2 或 stale spans 必须阻塞并要求回到 `/chronology` 重建/确认
-- `Chosen SpanIds -> Beat / Script` 不再等价于“一个 chosen span 直接落成一个 beat”
-- `material-slots` 负责高召回收集证据，outline 负责在不破坏证据链的前提下做 deterministic 去噪与相邻非口播 evidence 聚合，再交给 `beat-writer`
-- `material-slots` 的 deterministic base draft 是正式高召回下限；`route-slot-planner` 可以补充 / 重排，但不能把 base `chosenSpanIds` 静默裁掉
-- `Bundle` 当前是 `materialPatterns` 驱动的粗索引入口，不承担叙事骨架身份
-- `Segment` 当前是 LLM-first 的项目级动态段落结果，不是固定 archetype 闭集
-- Timeline / script selection 当前开始优先传递 `spanId`；`sliceId` 只作为兼容字段继续存在一段时间
+- Edit Flow 当前正式链路为：
+- `Analyze -> Chronology Review -> Edit Rule Selection -> Flow Plan -> Capability Steps -> Export`
+- Edit Flow 以 `status=confirmed` 的 Chronology V2 进入；旧数组 v1 或未确认 V2 必须阻塞并要求回到 `/chronology`，fresh spans / asset reports 只在具体 capability 的 `inputRefs` 声明时阻塞，`trip.event_table` 只消费 `media/chronology.json`
+- `config/edit-rules/*.md` 是流程定义入口；`edits/<editId>/planning/flow-plan.json` 是执行计划真相；capability registry 是可执行原子库
+- `script.generate` 只有在 confirmed Flow Plan 明确需要前置文本稿 / beat 稿时才出现；旅行纪录片规则默认不强制它
+- `timeline.generate` 读取 Flow Plan 声明的前序产物，不得要求 `edits/<editId>/script/current.json`
+- 每个 capability 的输出由 `outputRefs` 决定；`timeline/current.json` 可以保留为 KTEP 产物名，但不代表固定 Timeline 阶段
+- Edit Flow selection 当前开始优先传递 `spanId`；`sliceId` 只作为兼容字段继续存在一段时间
 
 ## 2. 正式主流程
 
@@ -249,8 +248,8 @@ flowchart TD
   adoptedMedia[AdoptedMediaVersion]
   ingest[Ingest]
   analyze[Analyze]
-  script[Script]
-  timeline[Timeline]
+  chronology[Chronology]
+  editFlow[EditFlow]
   exportFlow[Export]
 
   sourceMedia --> adoptedMedia
@@ -258,15 +257,15 @@ flowchart TD
   colorChain --> adoptedMedia
   adoptedMedia --> ingest
   ingest --> analyze
-  pharos --> script
-  analyze --> script
-  script --> timeline
-  timeline --> exportFlow
+  pharos --> chronology
+  analyze --> chronology
+  chronology --> editFlow
+  editFlow --> exportFlow
 ```
 
 这里的正式关系是：
 
-- `Pharos` 是正式流程的主输入之一，主要驱动编年史生成、脚本规划、拍摄语义和素材对齐
+- `Pharos` 是正式流程的主输入之一，主要驱动编年史生成、Edit Flow 规划、拍摄语义和素材对齐
 - `Pharos` 当前不再通过用户填写外部路径接入；每个项目固定扫描 `projects/<projectId>/pharos/`
 - 如果项目迁移后缺少这个目录，Console 当前应先自动补齐，再向用户展示固定目录和投放提示
 - `project-brief.md` 中的 `## Pharos` 当前只承担 trip 筛选语义；未填写时默认纳入全部可解析 trip，填写 `包含 Trip：...` 时只消费这些 trip
@@ -277,7 +276,7 @@ flowchart TD
 - `AdoptedMediaVersion` 表示项目当前采用的素材版本，它可以是原始素材，也可以是独立调色链路产出的版本
 - `DaVinciColorChain` 是独立链路，不属于主链中的固定顺序步骤
 - 如果项目没有 `Pharos`，主链允许退化为基于素材、brief、行程和分析结果的兼容路径，但这属于 fallback，而不是正式主定义
-- `/chronology` 是 Analyze 与 Script 之间的正式审查页：它承载时空真相刷新、事件确认/驳回、轻编辑、合并和拆分；空间刷新入口应逐步从 `/analyze` 收口到这里
+- `/chronology` 是 Analyze 与 Edit Flow 之间的正式审查页：它承载时空真相刷新、事件确认/驳回、轻编辑、合并和拆分；空间刷新入口应逐步从 `/analyze` 收口到这里
 
 ### Ingest
 
@@ -379,62 +378,18 @@ flowchart TD
   - manual-itinerary / route-stage 文本继续留在 `summary`、decision reasons、`routeRole` 等字段，不再冒充 `locationText`
   - 若未配置 `amapWebServiceKey / geoapifyApiKey` 或反查失败，`locationText` 保持空
 
-### Script
+### Edit Flow
 
-- 正式脚本编排已经不是“整段 narration + 粗引用素材”的模型
-- 当前正式模型是 `segment + beat + selection`
-- `script-brief` 是当前脚本阶段的正式人工审查入口
-- 当前 `/script` 页已经收口为：
-  - 先选择 workspace `editRuleCategory`，并立即自动保存；`styleCategory` 是单一风格档案选择，内部三层是否进入脚本由 confirmed Flow Plan 的 `styleUsage` 决定
-  - 一旦 `editRuleCategory` 改变，当前 edit unit 的旧 `material-overview / brief draft / segment-plan / material-slots / outline / edits/<editId>/script/current.json` 必须立即失效并清空，edit unit 回到“重新起稿”
-  - 单独改变 `styleCategory` 时，若已确认的 `styleUsage` 使用了 `artistic` 或 `editingTechnical` 参与 planning / recall，则 planning 和脚本结构产物失效；若只使用 `literary`，则只清空表达阶段脚本 / 字幕产物
-  - Agent 生成初版 `script-brief`
-  - 用户在 `/script` 审查并手动保存 brief
-  - 用户点击 `准备给 Agent`
-  - 关键 handoff 会通过持续可见的 workflow prompt 和显式 hana modal 提示用户“下一步去哪里”，而不再只靠淡色行内文案
-- 当前 Console 里的 `script` job 已收口为 **deterministic prep**，只负责校验前置条件并刷新确定性材料
-- `edits/<editId>/script/current.json` 的唯一正式作者是 **Agent**；旧 `script/current.json` 只作为 `edits/main` 兼容读取路径
-  - Agent 内部当前正式要求已经改成 clean-context staged pipeline，而不是单一共享 writer 上下文：
-  - `[main agent]` 只负责流程路由、前置条件核对、packet 准备、用户 handoff 与 reviewer 闸门执行
-  - `[main agent]` 不得把缺失的 subagent / reviewer 阶段静默折叠成一次本地起稿
-  - `overview-cartographer` 只写 `edits/<editId>/script/material-overview.md`
-  - `brief-editor` 只写初版 `script-brief`
-  - `segment-architect` 只写 `edits/<editId>/script/segment-plan.json`
-  - `buildMaterialSlotsDocument()` 当前是 `edits/<editId>/script/material-slots.json` 的唯一正式作者
-  - `route-slot-planner` 已退出正式写入链；若保留，只能做非权威审查 / 诊断，不能改写 `chosenSpanIds`
-  - `beat-writer` 只写 `edits/<editId>/script/current.json`
-  - `beat-writer` 当前只允许改写表达层字段：`text`、`utterances`、`notes`、`muteSource`、`preserveNatSound`
-  - `beat-writer` 不得增删或改写 `audioSelections`、`visualSelections`、`linkedSpanIds` 这类召回事实
-  - `script-reviewer` 审 `material-slots` 时必须把 silent span drops / recall regression 当 blocker
-  - `script-reviewer` 只做阶段审查，不直接生成正式稿
-  - `script-reviewer` 的 blocker 是推进下一阶段和落成该 edit unit `edits/<editId>/script/current.json` 的硬闸门
-  - 如果当前宿主策略或用户授权不允许 formal subagent / reviewer 链执行，主代理必须先停下说明原因，不能继续按“单代理兼任全部阶段”落稿
-  - Script 当前新增一层正式内部提示资产：
-  - `edits/<editId>/script/spatial-story.json` + `spatial-story.md` 用已确认 Chronology V2 events / spans / GPS 真值生成空间叙事提示；Pharos 只能通过已折叠的 chronology 和独立 guardrail 摘要进入，不得反向污染正式 chronology schema
-  - `edits/<editId>/script/agent-contract.json` 锁定用户 goals / constraints / review notes、edit rule must / forbidden、GPS narrative hints、Pharos must-cover hints、chronology guardrails
-  - 每个阶段都必须读取各自的 `edits/<editId>/script/agent-packets/{stage}.json`
-  - reviewer 结果写入 `edits/<editId>/script/reviews/{stage}.json`
-  - 流水线推进状态写入 `edits/<editId>/script/agent-pipeline.json`
-  - packet 是 stage subagent 的唯一正式上下文；runtime 不得在 packet 外重复附加主线程历史、`previousDraft` 或 `revisionBrief`
-  - 正式 script stage 执行后端必须使用宿主 packet runner / 真实 clean-context subagent 链；官方路径不允许外接 `ILlmClient` fallback
-  - workspace / project runtime 可通过 `config/runtime.json` 的 `agentPacketRunnerCommand` / `agentPacketRunnerArgs` / `agentPacketRunnerCwd` 声明这个 packet runner
-  - 首轮 stage 调用默认应保持 lean packet，只在 reviewer 要求返工时再把 previous draft 带回 writer
-  - `edits/<editId>/script/current.json` 的正式落盘形状固定为 bare `IKtepScript[]`；若 transport 返回 `{ "segments": [...] }`，必须由 stage runner 在持久化前解包，不能再变成主代理的临时补锅动作
-  - `script-current` 每个 attempt 只允许一次正式 `beat-writer` 调用；不能先额外跑一轮 full-script writer 再进入 reviewer 链
-  - writer / reviewer 调用失败时，`edits/<editId>/script/agent-pipeline.json` 必须立即写出真实失败态，不能继续停留在旧阶段的 `pending`
-- `edits/<editId>/script/script-brief.json` 当前承载脚本阶段的正式流程状态真值：
-  - `choose_style`
-  - `await_brief_draft`
-  - `review_brief`
-  - `ready_to_prepare`
-  - `ready_for_agent`
-  - `script_generated`
-- `edits/<editId>/script/script-brief.md` 会同步机器可恢复的 workflow 元信息；即使 `.json` 丢失，也能恢复脚本阶段状态；旧 `script/script-brief.*` 只作为 `main` 的兼容读取来源
-- 如果用户已经修改过当前 brief，而又想让 Agent 重新生成初版 brief，正式路径是在 `/script` 点击 `重新生成初版 brief` 并通过 UI 明确确认覆盖
-- 用户审查闸门存在于 Agent 写脚本之前，而不是召回和编排全部完成之后
-- Script 阶段当前从 **Workspace 剪辑规则库** 里选择用户指定的 `editRuleCategory`，项目 / edit unit 只保存“本轮使用哪一个剪辑规则”，不再让风格档案承担结构控制职责
-- Edit Flow Planner 是规则解释的唯一代码入口：它把 raw markdown、能力目录、project brief、Pharos / chronology / analysis 可用性摘要交给 LLM，生成 `flow-plan.json`；后续代码只执行已确认 plan 中的 `capabilityId / inputRefs / outputRefs / gate`
-- 当前能力目录 v1 是固定注册表，而不是从某个规则样例反推：
+- `/edit` 是 Chronology 之后的正式剪辑入口；新工作不再经过固定 `/script -> /timeline` 阶段链。
+- 用户从 Workspace 剪辑规则库选择 `editRuleCategory`，可选一个 layered `styleCategory`；项目 / edit unit 只保存本轮使用的规则和风格引用。
+- Flow Planner 是规则解释的唯一代码入口：它把 raw markdown、capability registry、project brief、Pharos / chronology / analysis 可用性摘要交给 LLM，生成 `flow-plan.json`。
+- `edits/<editId>/planning/flow-plan.json` 必须人工确认，且 edit-rule hash 匹配，才允许执行 step。
+- 每个 step 只按 `capabilityId / inputRefs / outputRefs / gate / execution` 执行；代码不得关键词解析规则 markdown 来推断 chronology、素材权重、默认章节或结构禁区。
+- `execution` 可表达 SubAgent 粒度和连续天阈值打包：例如 `shardBy=day` 搭配 `shardPacking={base:"day", metric:"chronologyEventCount"|"materialRefCount", maxPerShard, preserveOrder:true}`。
+- 所有 Edit Flow `sharded-agent` 都必须写入 `codexSubagentProfile={reasoningEffort:"high", forkContext:false, speed:"standard"}`，执行时不 fork 当前长上下文，只传 packet 路径和任务。
+- step 轻量执行记录写入 `edits/<editId>/runs/<runId>/record.json`，记录 runner、输入快照、输出路径、状态、失败原因和人工 gate 状态；handoff、agent packets、shard outputs 写入 ignored `.tmp/edit-flow/<editId>/runs/<runId>/`。
+- `trip.event_table` 只消费 confirmed `media/chronology.json`；素材级 spans 与 asset reports 从 `material.archive` / `material.recall` 开始进入。
+- 当前 capability registry v1 是固定注册表，而不是从某个规则样例反推：
   - `pharos.parse`
   - `trip.event_table`
   - `material.archive`
@@ -444,26 +399,15 @@ flowchart TD
   - `timeline.generate`
   - `resolve.lock_rough_cut`
   - `postlock.subtitle_narration`
-- 规则 markdown 只给 Flow Planner 和后续 stage agents 阅读；代码不得关键词解析 markdown 正文来推断 chronology、素材权重、默认章节或结构禁区
-- Script prep 当前不再为粗剪自动推导总预算：
-  - confirmed Flow Plan / reviewed planning artifacts 只约束顺序、阶段完整、素材角色、功能位和禁区，不默认推出总时长或段落预算
-  - `targetDurationMs` 继续保留为可选审阅提示；除非用户明确给出成片时长、交付窗口或某段硬时长，否则不要在 brief / segment plan / material-slots / beat 中自动补全
-  - 粗剪默认目标改为尽量列入有效素材：关键过程视频、可保留原声、阶段证据和事件节点默认都应进入 beat / timeline
-- Script prep 当前不再把粗剪理解成代表性抽样：
-  - `analysis/material-bundles.json` 必须覆盖 `store/spans.json` 的全量有效 spans
-- `material-slots` 可以展开成多 slot / 多 beat 的高召回清单，优先保留过程证据、阶段证据、事件节点和可用原声，不再默认一段只保留少数代表素材
-- 只应移除空白、坏段和高重叠近重复，不应因为“已经有代表镜头”就把其他有效过程素材吞掉
-- 如果 stage writer 试图把 deterministic base 里的独立有效 span 静默删掉，runner 应先恢复高召回保底，再交 reviewer 判定是否仍有问题
-- 关键过程视频现在有正式 guardrail：
-  - 只要某条视频承载不可替代的时间推进、事件推进、人物关系推进或有效原声，就应保留成独立 beat
-  - 不允许被泛化的 summary 段落或“更好看”的静态成果材料静默吞掉
-- 当前脚本 / outline 默认优先消费 Analyze 给出的 `editSourceInMs / editSourceOutMs`，而不是继续把 tight evidence window 当成最终可剪子区间
-- 模型仍可把 `selection.sourceInMs / sourceOutMs` 写得更细，但系统会先 clamp 到 outline fallback window，避免再次无意识裁得过短
+- `script.generate` 是可选 capability，只在剪辑规则明确要求前置文本稿 / beat 稿时出现；它不是旅行纪录片规则的强制步骤。
+- `timeline.generate` 从 Flow Plan 声明的前序 `outputRefs` 读取输入，不要求 `edits/<editId>/script/current.json`。
+- `timeline/current.json` 可以保留为 KTEP 时间线产物名，但它只是 `timeline.generate` 的输出，不代表固定 Timeline 阶段。
+- capability runner 可以复用旧 script/timeline 内部脚本、clean-context packet stage 或确定性工具，但这些实现必须挂到 registry，而不是藏在固定阶段代码里。
 - `KTEP 2.0` 当前正式把 source-speech beat 升级为双通道：
   - `audioSelections[]` 负责原声音频锚点与 timing truth
   - `visualSelections[]` 负责同拍内必须保留的陪衬视觉证据
-  - 旧的 beat 级 `selections[]` 不再是正式协议；项目需要重跑 Script 与 Timeline
-- 如果某拍最终保留原声，Script / Timeline 当前会先按 `audioSelections[]` 构建 merged audio units，而不是破坏性重写整拍画面选择
+  - 旧的 beat 级 `selections[]` 不再是正式协议；需要通过 Edit Flow 重新生成相关 capability outputs
+- 如果某拍最终保留原声，Edit Flow 的 KTEP/subtitle capability 会先按 `audioSelections[]` 构建 merged audio units，而不是破坏性重写整拍画面选择
 - `source-speech` 当前正式以“过滤后的口语 transcript cues + merged audio units”作为边界真值：
   - 相邻 spoken gaps `<= 3000ms` 且不存在强句末边界时，默认合并成同一个 audio unit
   - merged unit 默认保留前 `120ms`、后 `180ms` breathing，并严格 clamp 到可用 source range
@@ -475,12 +419,12 @@ flowchart TD
 ### Timeline / Export
 
 - 时间线与导出围绕 `KTEP` 展开
-- `Script -> Timeline` 之间当前新增一个正式内部子阶段：
-  - deterministic prep 先写 `timeline/rough-cut-base.json`
-  - `segment-cut-refiner` 再按段写 `timeline/segment-cuts/<segmentId>.json`
-  - `segment-cut-reviewer` 写 `timeline/reviews/<segmentId>.json`
-  - pipeline state 写 `timeline/agent-pipeline.json`
-  - 只有 reviewer 通过后的段级产物，才允许继续落成 `edits/<editId>/timeline/current.json`
+- `timeline.generate` capability 可以拥有自己的内部 reviewed artifacts：
+  - deterministic prep 可写 `timeline/rough-cut-base.json`
+  - `segment-cut-refiner` 可按段写 `timeline/segment-cuts/<segmentId>.json`
+  - `segment-cut-reviewer` 可写 `timeline/reviews/<segmentId>.json`
+  - pipeline state 可写 `timeline/agent-pipeline.json`
+  - 只有 Flow Plan 声明且 reviewer 通过后的前序产物，才允许继续落成 `edits/<editId>/timeline/current.json`
 - 字幕已有两条正式路径：
   - 旁白路径：默认来自 `beat.text`
   - 原声路径：当某拍保留原声时，来自 `beat.audioSelections[]` 对应的 merged audio units
@@ -517,7 +461,7 @@ flowchart TD
   - 非 `drive / aerial` 素材被加速
   - source-speech 误判、speech window 越界、字幕不可读或严重错时
   - chronology / style guardrail 漂移
-- `placeClips()` 与 `planSubtitles()` 当前正式优先消费 reviewed segment-cut 产物，而不是把原始 `edits/<editId>/script/current.json` 当作全部粗剪决策来源
+- `placeClips()` 与 `planSubtitles()` 当前正式优先消费 Flow Plan 声明且 reviewed 的前序产物，而不是把任一脚本产物当作全部粗剪决策来源
 - `placeClips()` 当前默认按 selection 的自然 source 时长 / edit-friendly bounds 摆放 clip，不再用 `beat.targetDurationMs` 或 `segment.targetDurationMs` 驱动粗剪裁剪与扩展
 - 如果同一 `asset` 同时被召回成 source-speech 与 silent `drive / aerial`，时间线当前正式应先保留 source-speech 窗口，再把 silent montage 裁成非重叠 remainder；重叠部分不得双重入线
 - 如果同一 `drive / aerial asset` 在粗剪里被多个 silent beat 重复引用，后出现的 beat 也必须扣掉前面已经消费过的 source window，只保留新的 remainder，避免同源重复双放
@@ -589,7 +533,7 @@ flowchart TD
 - `config/`：逻辑素材源、运行时配置、人工 itinerary，以及项目级结构化配置
 - `store/`：项目元数据与清单
 - `analysis/`：资产分析报告，以及 Analyze 的 durable resume cache（如 `prepared-assets/`、`audio-checkpoints/`）
-- `script/`、`timeline/`、`subtitles/`、`adapters/`：脚本、时间线与适配器状态
+- `edits/`、`timeline/`、`subtitles/`、`adapters/`：edit-unit 计划、能力运行记录、时间线与适配器状态
 - `gps/`：项目级外部轨迹资源与归一化缓存
 - `pharos/`：项目内固定 `Pharos` 镜像目录，按 `trip_id` 分子目录；解析后的共享快照写入 `analysis/pharos-context.json`
 - `.tmp/`：流水线临时产物、进度、代理音频、关键帧等可清理内容
@@ -608,7 +552,7 @@ flowchart TD
 - 项目内正式产物：可同步、可复用、可作为正式输入继续流转
 - 路径候选解析：`project-brief` 的主路径与备选路径直接解析当前设备可读目录，不再维护单独 device map 文件
 - 临时产物：`.tmp/`，默认不属于 `Canonical Project Store`
-- 可恢复中间态：`analysis/prepared-assets/` 与 `analysis/audio-checkpoints/` 用于跨进程恢复 Analyze；它们是 durable resume cache，不是 Script / Timeline 的正式输入，且在 stage 语义调整后允许安全失效并重建
+- 可恢复中间态：`analysis/prepared-assets/` 与 `analysis/audio-checkpoints/` 用于跨进程恢复 Analyze；它们是 durable resume cache，不是 Edit Flow 的正式输入，且在 stage 语义调整后允许安全失效并重建
 
 ### 当前稳定约定
 
@@ -619,9 +563,9 @@ flowchart TD
 - `/ingest-gps` 的 `刷新 GPS 缓存` 触发 Supervisor `gps-refresh` job，刷新项目级 GPX merged cache、`gps/derived.json` 与 `analysis/pharos-context.json`，不重新扫描素材
 - `/analyze` 不隐式补跑 ingest；它只消费既有 `store/assets.json`、项目 GPX / `gps/derived.json` 与 Pharos context，也不生成 spans / chronology
 - `/chronology` 的 `spatial-refresh` 触发 `spatial-refresh` job，用于在已有 Analyze 产物存在时轻量刷新 report 空间层并标记 spans / chronology stale；新增 `.SRT`、FlightRecord、素材 root 或 capture-time 修正仍必须先走 Ingest
-- `config/project-brief.json`、`config/manual-itinerary.json`、`edits/<editId>/script/script-brief.json` 与 `config/review-queue.json` 是当前项目级 Console 结构化事实源
+- `config/project-brief.json`、`config/manual-itinerary.json`、`edits/<editId>/planning/flow-plan.json`、`edits/<editId>/runs/` 与 `config/review-queue.json` 是当前项目级 Console 结构化事实源
 - 拍摄时间修正的 canonical 输入只在 `config/manual-itinerary.json.captureTimeOverrides` / `config/manual-itinerary.md` 末尾“素材时间校正”区；`review-queue.json` 不再镜像或反写 `capture-time-correction`
-- `edits/<editId>/script/`、`edits/<editId>/timeline/`、`edits/<editId>/subtitles/` 是正式剪辑层；`script/`、`timeline/`、`subtitles/` 只作为 legacy `edits/main` 兼容路径
+- `edits/<editId>/planning/`、`edits/<editId>/runs/` 与 capability-owned output directories 是正式剪辑层；新 Edit Flow 不再使用 root-level `script/`、`timeline/`、`subtitles/` 作为正式入口
 - `config/style-sources.json` 是当前 **Workspace 级** Console 结构化事实源
 - `config/edit-rules/*.md` 是当前 **Workspace 级** 剪辑规则事实源；`edits/<editId>/planning/flow-plan.json` 是每个 edit unit 的已确认执行计划
 - `project-brief` 的每个 root block 允许额外声明 `飞行记录路径`，作为该素材根目录对应的 DJI FlightRecord 日志入口；实际识别不依赖强文件名，而是以文件头/可解析性为准
@@ -642,7 +586,7 @@ flowchart TD
   - `/analyze`
   - `/chronology`
   - `/style`
-  - `/script`
+  - `/edit`
   - `/timeline-export`
   - `/project`
 - `Analyze`、`Chronology` 与 `Style` 当前都直接在主路由展示监控内容：
@@ -680,30 +624,29 @@ flowchart TD
 
 也就是说，派生素材版本可以替代原始素材进入主链，但不能因为转换而破坏时间语义、空间语义和后续匹配能力。
 
-## 5. 脚本编排与审查闸门
+## 5. Edit Flow 编排与审查闸门
 
-当前正式的脚本工作流应理解为：
+当前正式的剪辑工作流应理解为：
 
 1. `project brief` 提供全片约束
-2. `material overview` 提供全量素材边界、强弱与缺口
-3. 用户在 `/script` 选择 workspace `剪辑规则`，并自动保存 `editRuleCategory`
-4. Edit Flow Planner 读取规则 markdown、能力目录和项目上下文，生成 `edits/<editId>/planning/flow-plan.json`
-5. 用户确认 flow plan 后，Agent 生成 `edits/<editId>/script/material-overview.md` 与初版 `script-brief`
-6. 用户回到 `/script` 审查并手动保存 brief
-7. `/script` 会通过显眼的 prompt / modal 提示下一步；用户点击 `准备给 Agent` 后，Console 只刷新确定性 prep 材料
-8. Agent 再按已确认 Flow Plan 继续推进 `segment plan`、`material slots`、bundle lookup、`chosenSpanIds`、beat 试写与选择
-9. Agent 写入 `edits/<editId>/script/current.json`
-10. 再由 `selection` 与 `beat` 共同落成时间线和字幕
+2. confirmed `media/chronology.json` 提供时空顺序和事件真相
+3. 用户在 `/edit` 选择 workspace `剪辑规则`，可选 layered `styleCategory`
+4. Edit Flow Planner 读取规则 markdown、能力 registry 和项目上下文，生成 `edits/<editId>/planning/flow-plan.json`
+5. 用户确认 Flow Plan
+6. Console 按 step 展示 capability、runner、输入、输出、gate 和状态
+7. 用户逐步运行 capability step；每步 run record 写入 `edits/<editId>/runs/<runId>/`
+8. 带 `gate=human` 的 step 必须确认后，后续依赖 step 才能运行
+9. `timeline.generate` 可输出 `edits/<editId>/timeline/current.json`
+10. 导出阶段消费已存在且通过校验的 KTEP timeline 或其它 capability outputs
 
 因此，当前稳定结论包括：
 
-- `Pharos` 是正式脚本流程的主输入；没有 `Pharos` 时才回落到兼容路径
-- `segment plan` 是 Agent 阶段的正式闸门，但不再拆成 drafts / approved 两套持久化协议
-- Console 不再默认生成 `material digest`、`segment plan drafts`、`approved segment plan` 或 `segment candidates`
-- `script` prep 只有在 `script-brief.workflowState = ready_to_prepare` 后才允许运行；成功后推进到 `ready_for_agent`
-- 若用户修改过 brief，又想回到“Agent 重生初版 brief”，必须先在 `/script` 完成覆盖确认
-- `script-brief` 已经分层，而不是只有一份统管全文的脚本说明
-- `beat` 和 `selection` 比旧的“段落 narration + slice 粗引用”模型更接近当前真实编排方式
+- `Pharos` 是正式 Edit Flow 的主输入之一；没有 `Pharos` 时才回落到兼容路径
+- Flow Plan 是执行计划真相，不是 UI 提示文本
+- Console 不再把 `script` job 或固定 `timeline` job 作为正式用户入口
+- `script.generate` 可复用旧脚本/beat helper，但只有在 Flow Plan 声明时才运行
+- `timeline.generate` 不依赖 `script/current.json`，只依赖 Flow Plan 声明的输入
+- `beat`、`selection`、素材召回、KTEP 与字幕都是 capability-owned outputs，不是全局必经中间层
 
 ## 6. 时空语义的当前正式口径
 

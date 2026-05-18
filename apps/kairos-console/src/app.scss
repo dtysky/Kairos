@@ -786,6 +786,388 @@ pre {
   background: currentColor;
 }
 
+.edit-flow-page {
+  gap: 22px;
+}
+
+.edit-flow-dashboard {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.85fr) minmax(0, 1.35fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.edit-flow-control-panel,
+.edit-flow-plan-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.edit-flow-panel-head,
+.edit-flow-step-title,
+.edit-flow-section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.edit-flow-panel-head h2,
+.edit-flow-section-head h2,
+.edit-flow-step-title h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 19px;
+  line-height: 1.25;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.edit-flow-panel-head p,
+.edit-flow-section-head p,
+.edit-flow-step-title span {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.edit-flow-actions,
+.edit-flow-step-actions,
+.edit-flow-step-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.edit-flow-form-grid {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.55fr) minmax(220px, 1fr) minmax(220px, 1fr);
+  gap: 14px;
+}
+
+.edit-flow-control-panel .edit-flow-form-grid {
+  grid-template-columns: 1fr;
+}
+
+.edit-flow-field {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.edit-flow-field span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.edit-flow-field input,
+.edit-flow-field select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid rgba(24, 24, 24, 0.12);
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 11px 12px;
+  font: inherit;
+}
+
+.edit-flow-status-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  gap: 10px;
+}
+
+.edit-flow-status-item {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(24, 24, 24, 0.08);
+  border-radius: 14px;
+  background: rgba(24, 24, 24, 0.025);
+}
+
+.edit-flow-status-item span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.edit-flow-status-item strong {
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.edit-flow-status-good {
+  color: var(--ok);
+  background: var(--ok-soft);
+}
+
+.edit-flow-status-warn {
+  color: var(--warn);
+  background: var(--warn-soft);
+}
+
+.edit-flow-status-bad {
+  color: var(--err);
+  background: var(--err-soft);
+}
+
+.edit-flow-handoff {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(156, 107, 29, 0.22);
+  border-radius: 16px;
+  background: rgba(156, 107, 29, 0.08);
+}
+
+.edit-flow-handoff > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.edit-flow-handoff span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.edit-flow-handoff code {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #5f4215;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.edit-flow-plan-body {
+  display: grid;
+  gap: 16px;
+}
+
+.edit-flow-plan-summary {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(24, 24, 24, 0.025);
+  border: 1px solid rgba(24, 24, 24, 0.08);
+}
+
+.edit-flow-plan-summary strong {
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.edit-flow-plan-summary span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.edit-flow-assumptions {
+  display: grid;
+  gap: 8px;
+}
+
+.edit-flow-assumptions div {
+  padding: 10px 12px;
+  border-left: 3px solid rgba(184, 90, 45, 0.32);
+  background: rgba(184, 90, 45, 0.06);
+  color: #4f4f4f;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.edit-flow-step-section {
+  display: grid;
+  gap: 14px;
+}
+
+.edit-flow-steps {
+  display: grid;
+  gap: 14px;
+}
+
+.edit-flow-step.panel {
+  padding: 0;
+  overflow: hidden;
+}
+
+.edit-flow-step-grid {
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr) minmax(170px, 220px);
+  gap: 0;
+}
+
+.edit-flow-step-index {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 24px;
+  color: rgba(31, 31, 31, 0.45);
+  font-size: 18px;
+  font-weight: 800;
+  border-right: 1px solid rgba(24, 24, 24, 0.08);
+  background: rgba(24, 24, 24, 0.025);
+}
+
+.edit-flow-step-body {
+  display: grid;
+  gap: 15px;
+  min-width: 0;
+  padding: 22px 24px;
+}
+
+.edit-flow-step-body > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.edit-flow-step-side {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 22px;
+  border-left: 1px solid rgba(24, 24, 24, 0.08);
+  background: rgba(24, 24, 24, 0.018);
+}
+
+.edit-flow-step-meta span {
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(24, 24, 24, 0.06);
+  color: #4f4f4f;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.edit-flow-step-actions {
+  flex-direction: column;
+}
+
+.edit-flow-step-actions .hana-button {
+  width: 100%;
+}
+
+.edit-flow-notes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.edit-flow-notes span {
+  max-width: 100%;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(47, 107, 73, 0.08);
+  color: #31533f;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.edit-flow-ref-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.edit-flow-ref-list {
+  min-width: 0;
+  border: 1px solid rgba(24, 24, 24, 0.08);
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.edit-flow-ref-list summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 12px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.edit-flow-ref-list summary::-webkit-details-marker {
+  display: none;
+}
+
+.edit-flow-ref-list summary strong {
+  font-size: 13px;
+}
+
+.edit-flow-ref-list summary span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.edit-flow-ref-list ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0 12px 12px;
+  list-style: none;
+}
+
+.edit-flow-ref-list li {
+  min-width: 0;
+}
+
+.edit-flow-ref-list code {
+  display: block;
+  padding: 7px 8px;
+  border-radius: 10px;
+  background: rgba(24, 24, 24, 0.045);
+  color: #3d3d3d;
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.edit-flow-run-message,
+.edit-flow-output-paths,
+.edit-flow-handoff-summary {
+  padding: 12px 14px;
+  border-radius: 14px;
+  color: #5f4215;
+  background: rgba(156, 107, 29, 0.1);
+  font-size: 13px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.edit-flow-handoff-summary {
+  display: grid;
+  gap: 5px;
+}
+
+.edit-flow-handoff-summary strong {
+  font-size: 13px;
+}
+
+.edit-flow-handoff-summary span {
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.edit-flow-run-message-danger {
+  color: var(--err);
+  background: var(--err-soft);
+}
+
 .tone-default {
   color: var(--accent);
   background: var(--accent-soft);
@@ -1619,6 +2001,24 @@ pre {
     grid-template-columns: 1fr;
   }
 
+  .edit-flow-dashboard,
+  .edit-flow-form-grid,
+  .edit-flow-step-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .edit-flow-step-index {
+    justify-content: flex-start;
+    padding: 16px 22px 0;
+    border-right: 0;
+    background: transparent;
+  }
+
+  .edit-flow-step-side {
+    border-left: 0;
+    border-top: 1px solid rgba(24, 24, 24, 0.08);
+  }
+
   .chronology-row.hana-card > .hana-card-container > .hana-card-container-wrap {
     grid-template-columns: 24px minmax(0, 1fr);
   }
@@ -1644,6 +2044,9 @@ pre {
   .monitor-toolbar,
   .monitor-toolbar-group,
   .monitor-toolbar-meta,
+  .edit-flow-panel-head,
+  .edit-flow-step-title,
+  .edit-flow-handoff > div,
   .actions,
   .section-header,
   .list-toolbar,
@@ -1659,6 +2062,20 @@ pre {
 
   .service-pills {
     justify-content: flex-start;
+  }
+
+  .edit-flow-status-strip,
+  .edit-flow-ref-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .edit-flow-actions {
+    justify-content: stretch;
+  }
+
+  .edit-flow-actions .hana-button,
+  .edit-flow-panel-head > .hana-button {
+    width: 100%;
   }
 
   .color-root-switcher,
