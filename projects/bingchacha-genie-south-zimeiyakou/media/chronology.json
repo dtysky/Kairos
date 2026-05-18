@@ -1,9 +1,10 @@
 {
   "schemaVersion": "2.0",
-  "status": "draft",
-  "generatedAt": "2026-05-17T17:38:49.912Z",
-  "updatedAt": "2026-05-17T17:38:49.912Z",
-  "inputsHash": "4b2af63e225070b29e6c857fca03ed53d0dd8ad05b602be24da68681f188b32f",
+  "status": "confirmed",
+  "generatedAt": "2026-05-18T07:11:54.165Z",
+  "updatedAt": "2026-05-18T07:42:15.699Z",
+  "confirmedAt": "2026-05-18T07:42:15.699Z",
+  "inputsHash": "0a722c432f2c96bf57171e8ca399e8c8fe1f93a08aafcee3e5d9d4846398e18e",
   "assetIndex": [
     {
       "assetId": "d911dd91-41d7-479b-9111-49a82f5bdc39",
@@ -9035,7 +9036,7 @@
     {
       "id": "route-e838ee03a270",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：广东省，深圳市，南山区，南头街道 · 神彩·彩联物流中心 → 广东省，江门市，开平市，赤坎镇 · 中兴",
       "summary": "第一人称行车 / 拥堵路段 / 阴天 / 有口播语音 / 描述堵车 / 银色轿车 / 多车排队 / A silver sedan with license plate B DP7506 is driving on a wet road, surrounded by other vehicles in traffic. / 一出来就堵成这个样子不过现在五点多还行吧 一会应该更堵 / 湿滑路段 / 无口播语音 / 车流缓慢 / 树木环绕 ...",
       "startAt": "2026-04-24T09:18:28.400Z",
@@ -9121,14 +9122,14 @@
     {
       "id": "route-984684f8c8e1",
       "kind": "route",
-      "reviewStatus": "pending",
-      "title": "行车：广东省，江门市，开平市，百合镇 · 罗汉山西水库 → 广东省，茂名市，高州市，大坡镇 · 方田岭",
+      "reviewStatus": "confirmed",
+      "title": "行车：广东省，江门市，开平市，百合镇 · 罗汉山西水库 → 广西壮族自治区，钦州市，灵山县，三海街道 · 广西荔之情文化传媒有限公司",
       "summary": "第一人称行车 / 高速公路 / 夜晚 / 有口播语音 / 夜间高速行车 / 白色轿车 / 绿色路牌 / A car drives on a highway at night, with a white car ahead and green road signs visible in the distance. / 这个这个 这个这个 / 雾天 / 无口播语音 / 多车行驶 / 雾气弥漫 / Nighttime highway dri...",
       "startAt": "2026-04-24T12:04:50.000Z",
-      "endAt": "2026-04-24T13:27:26.592Z",
+      "endAt": "2026-04-24T15:58:36.960Z",
       "route": {
         "from": "广东省，江门市，开平市，百合镇 · 罗汉山西水库",
-        "to": "广东省，茂名市，高州市，大坡镇 · 方田岭"
+        "to": "广西壮族自治区，钦州市，灵山县，三海街道 · 广西荔之情文化传媒有限公司"
       },
       "spanIds": [
         "ed1f5ea3-e6aa-4b4d-9d3c-63c6af70dfea",
@@ -9174,35 +9175,8 @@
         "8783609d-2b96-4676-bc15-5f07f5b95806",
         "66c5a2f8-51a1-4fd6-9b3c-f78d0a7e103c",
         "719768db-2be5-4fbc-be1f-91286d7416d0",
-        "e6cf4565-7640-4f82-85b6-dca4e4639e8e"
-      ]
-    },
-    {
-      "id": "event-4b8aecad1d3f",
-      "kind": "event",
-      "reviewStatus": "pending",
-      "title": "服务区停车",
-      "summary": "固定机位观察 / 服务区停车场 / 夜晚 / 无口播语音 / 服务区停车 / A yellow SUV is parked in front of the illuminated Ya Shan Service Area at night, with visible signage for dining, supermarket, and restroom indicating a rest stop on the expresswa...",
-      "startAt": "2026-04-24T15:01:30.000Z",
-      "endAt": "2026-04-24T15:01:30.000Z",
-      "location": "广西壮族自治区，玉林市，博白县，亚山镇 · 新屋村",
-      "spanIds": [
-        "8176037e-66d1-4594-a99b-61cf8915aa84"
-      ]
-    },
-    {
-      "id": "route-d58db31371a0",
-      "kind": "route",
-      "reviewStatus": "pending",
-      "title": "行车：广西壮族自治区，玉林市，博白县，那林镇 · 石颈 → 广西壮族自治区，钦州市，灵山县，三海街道 · 广西荔之情文化传媒有限公司",
-      "summary": "第一人称行车 / 高速公路 / 夜晚 / 有口播语音 / 夜间高速行车 / 绿色路牌 / 道路标线 / Nighttime highway driving scene with illuminated road markings and green overhead signs. / 这个这个 这个这个 这个这个 / 无口播语音 / 绿色护栏 / 道路指示 / A night-time view of a highway with g...",
-      "startAt": "2026-04-24T15:23:19.240Z",
-      "endAt": "2026-04-24T15:58:36.960Z",
-      "route": {
-        "from": "广西壮族自治区，玉林市，博白县，那林镇 · 石颈",
-        "to": "广西壮族自治区，钦州市，灵山县，三海街道 · 广西荔之情文化传媒有限公司"
-      },
-      "spanIds": [
+        "e6cf4565-7640-4f82-85b6-dca4e4639e8e",
+        "8176037e-66d1-4594-a99b-61cf8915aa84",
         "6a88edbf-f2fa-425f-a813-c0f3cb664b6d",
         "c17f8aed-afae-4b6d-bcd0-610a1bdaa3bf",
         "ff461133-9ebb-4c2d-b674-0729e26a2187",
@@ -9237,7 +9211,7 @@
       "kind": "event",
       "reviewStatus": "confirmed",
       "title": "灵山县",
-      "summary": "灵山县住宿 / 第一人称行车 / 狭窄巷道 / 夜晚 / 有口播语音 / 倒车入库 / 停车场 / 摩托车 / A night-time driving sequence through a narrow alleyway and into a parking area with parked cars and scooters. / 请吝点赞订阅转镜与栏 / 无口播语音 / 白色面包车 / 黑色轿车 / The video show...",
+      "summary": "固定机位观察 / 服务区停车场 / 夜晚 / 无口播语音 / 服务区停车 / A yellow SUV is parked in front of the illuminated Ya Shan Service Area at night, with visible signage for dining, supermarket, and restroom indicating a rest stop on the expresswa...",
       "startAt": "2026-04-24T16:00:45.120Z",
       "endAt": "2026-04-24T16:15:38.940Z",
       "location": "灵山县",
@@ -9273,20 +9247,32 @@
       ]
     },
     {
-      "id": "route-7efaab46cb67",
-      "kind": "route",
-      "reviewStatus": "pending",
-      "title": "行车：广西壮族自治区，钦州市，灵山县，三海街道 · 广西荔之情文化传媒有限公司 → 广西壮族自治区，南宁市，邕宁区，那楼镇 · 北投能源那楼上线服务区加油站",
+      "id": "event-f17de2fd73e3",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "车内人员互动",
       "summary": "车内自拍口播 / 车内空间 / 天气光线不明 / 有口播语音 / 车内人员互动 / 卷发男子 / 粉色衬衫 / A man with curly hair and glasses in a pink shirt sits in the front passenger seat of a car, while two other men are visible in the back seat. / 多么说话 / 首日行程出发 / 感冒...",
       "startAt": "2026-04-25T00:56:06.000Z",
+      "endAt": "2026-04-25T00:56:26.420Z",
+      "location": "广西壮族自治区，钦州市，灵山县，三海街道 · 广西荔之情文化传媒有限公司",
+      "spanIds": [
+        "452e28ae-9c39-4924-9660-411ddcd9ff52",
+        "6c4cc655-aee5-420f-a2e0-e0a2df33e519"
+      ]
+    },
+    {
+      "id": "route-3abb1e1bf171",
+      "kind": "route",
+      "reviewStatus": "confirmed",
+      "title": "行车：广西壮族自治区，钦州市，灵山县，三海街道 · 十里铺村梁弘略祠 → 广西壮族自治区，南宁市，邕宁区，那楼镇 · 北投能源那楼上线服务区加油站",
+      "summary": "第一人称行车 / 林荫大道 / 天气光线不明 / 有口播语音 / 沿岛行驶 / 黄色车辆 / 远处建筑 / A yellow vehicle drives down a wide, tree-lined road with a tall building visible in the distance. / 沿岛前道路继续行驶2.8公里 / 城市道路 / 无口播语音 / 路口行驶 / 交通信号灯 / 建筑物 / A vehicle t...",
+      "startAt": "2026-04-25T01:05:18.240Z",
       "endAt": "2026-04-25T01:44:28.102Z",
       "route": {
-        "from": "广西壮族自治区，钦州市，灵山县，三海街道 · 广西荔之情文化传媒有限公司",
+        "from": "广西壮族自治区，钦州市，灵山县，三海街道 · 十里铺村梁弘略祠",
         "to": "广西壮族自治区，南宁市，邕宁区，那楼镇 · 北投能源那楼上线服务区加油站"
       },
       "spanIds": [
-        "452e28ae-9c39-4924-9660-411ddcd9ff52",
-        "6c4cc655-aee5-420f-a2e0-e0a2df33e519",
         "d566c39f-a410-4178-ab5c-bc03200662b2",
         "7d1020b2-f4d1-4537-92d9-37d44069789d",
         "3cf5150e-160b-4e17-8c8d-d848c812e177",
@@ -9335,74 +9321,18 @@
     {
       "id": "event-dee337482fea",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "航拍公路",
-      "summary": "航拍建场 / 山路 / 晴天 / 无口播语音 / 航拍公路 / 高速公路 / 森林 / Aerial view of a multi-lane highway cutting through lush green forested hills under a clear blue sky, with power lines visible in the distance. / 高速公路服务区 / 航拍公路与服务区 / 服务区 / An...",
+      "summary": "航拍俯瞰 / 山路 / 晴天 / 无口播语音 / 航拍公路 / 高速公路 / 森林 / Aerial view of a multi-lane highway cutting through lush green forested hills under a clear blue sky, with power lines visible in the distance. / 高速公路服务区 / 航拍公路与服务区 / 服务区 / An...",
       "startAt": "2026-04-25T01:50:21.000Z",
-      "endAt": "2026-04-25T01:51:04.416Z",
-      "location": "广西壮族自治区，南宁市，邕宁区，那楼镇 · 北投能源那楼上线服务区加油站",
-      "spanIds": [
-        "ccaad8a9-6c3e-4ae9-9df6-cdee798e9804-direct-full",
-        "8023a323-8fb3-4f56-9017-62afdc32e590-direct-full"
-      ]
-    },
-    {
-      "id": "route-a1a1c79281c7",
-      "kind": "route",
-      "reviewStatus": "pending",
-      "title": "行车：广西壮族自治区，南宁市，邕宁区，那楼镇 · 北投能源那楼上线服务区加油站",
-      "summary": "航拍建场 / 森林公路 / 天气光线不明 / 无口播语音 / 多车道公路航拍 / 绿色森林 / 起伏山丘 / An aerial view of a multi-lane highway cutting through lush green forests and rolling hills, with power lines and distant settlements visible in the background.",
-      "startAt": "2026-04-25T01:51:30.000Z",
-      "endAt": "2026-04-25T01:51:30.000Z",
-      "location": "广西壮族自治区，南宁市，邕宁区，那楼镇 · 北投能源那楼上线服务区加油站",
-      "route": {
-        "from": "广西壮族自治区，南宁市，邕宁区，那楼镇 · 北投能源那楼上线服务区加油站",
-        "to": "广西壮族自治区，南宁市，邕宁区，那楼镇 · 北投能源那楼上线服务区加油站"
-      },
-      "spanIds": [
-        "fcf03a6c-097e-4202-9959-b0e73d412362"
-      ]
-    },
-    {
-      "id": "event-b62e82b453c0",
-      "kind": "event",
-      "reviewStatus": "pending",
-      "title": "航拍乡村公路",
-      "summary": "航拍建场 / 乡村公路 / 晴天 / 无口播语音 / 航拍乡村公路 / 茂密森林 / 高压电线 / Aerial view of a highway winding through lush green forests with power lines scattered across the landscape, suggesting a journey through a rural area.",
-      "startAt": "2026-04-25T01:51:38.000Z",
-      "endAt": "2026-04-25T01:51:53.680Z",
-      "location": "广西壮族自治区，南宁市，邕宁区，那楼镇 · 北投能源那楼上线服务区加油站",
-      "spanIds": [
-        "4d003ff9-f40e-42c8-8d1e-8ded83af6310-direct-full"
-      ]
-    },
-    {
-      "id": "route-4ba1022005ee",
-      "kind": "route",
-      "reviewStatus": "pending",
-      "title": "行车：广西壮族自治区，南宁市，邕宁区，那楼镇 · 北投能源那楼上线服务区加油站",
-      "summary": "航拍建场 / 高速公路 / 雾天 / 无口播语音 / 林间公路 / An aerial view of a multi-lane highway winding through lush green forests and rolling hills, with sparse traffic and distant power lines visible against a hazy sky.",
-      "startAt": "2026-04-25T01:52:46.000Z",
-      "endAt": "2026-04-25T01:52:46.000Z",
-      "location": "广西壮族自治区，南宁市，邕宁区，那楼镇 · 北投能源那楼上线服务区加油站",
-      "route": {
-        "from": "广西壮族自治区，南宁市，邕宁区，那楼镇 · 北投能源那楼上线服务区加油站",
-        "to": "广西壮族自治区，南宁市，邕宁区，那楼镇 · 北投能源那楼上线服务区加油站"
-      },
-      "spanIds": [
-        "4844b264-4648-4567-9bed-17393ccb944c"
-      ]
-    },
-    {
-      "id": "event-bb755b78a4c6",
-      "kind": "event",
-      "reviewStatus": "pending",
-      "title": "雪景静态",
-      "summary": "照片记录 / 环境不明 / 天气光线不明 / 无口播语音 / 雪景静态 / 猴子 / 落雪 / 航拍建场 / 高速公路服务区 / 森林环绕 / 风力发电机 / 停车场 / Aerial view of a highway service area surrounded by dense green forests and wind turbines in the distance. The scene includes a large...",
-      "startAt": "2026-04-25T01:53:05.000Z",
       "endAt": "2026-04-25T01:54:38.480Z",
       "location": "广西壮族自治区，南宁市，邕宁区，那楼镇 · 北投能源那楼上线服务区加油站",
       "spanIds": [
+        "ccaad8a9-6c3e-4ae9-9df6-cdee798e9804-direct-full",
+        "8023a323-8fb3-4f56-9017-62afdc32e590-direct-full",
+        "fcf03a6c-097e-4202-9959-b0e73d412362",
+        "4d003ff9-f40e-42c8-8d1e-8ded83af6310-direct-full",
+        "4844b264-4648-4567-9bed-17393ccb944c",
         "edabc1a9-01a8-4f16-9634-1479a78580a9",
         "aede6132-00ea-4083-a108-c789627d10a3-direct-full"
       ]
@@ -9410,7 +9340,7 @@
     {
       "id": "route-92781eb9bf11",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：广西壮族自治区，南宁市，良庆区，玉洞街道 · 22队消纳场 → 广西壮族自治区，百色市，田东县，平马镇 · 田东大桥",
       "summary": "第一人称行车 / 高速公路 / 天气光线不明 / 有口播语音 / 区间测速提示 / A yellow vehicle travels on a highway with green guardrails and red flowers on the left side. / 请注意,两公里后靠左往G 7 20 1 S 88方向 400米后到达区间测速终点平均车速120, 限速120 / 无口播语音 / 接近隧道入口 / A yello...",
       "startAt": "2026-04-25T02:23:57.980Z",
@@ -9487,19 +9417,31 @@
       ]
     },
     {
-      "id": "route-7dea421009c8",
-      "kind": "route",
-      "reviewStatus": "pending",
-      "title": "行车：广西壮族自治区，百色市，右江区，四塘镇 → 广西壮族自治区，百色市，田林县，乐里镇",
-      "summary": "车内自拍口播 / 车内 / 天气光线不明 / 有口播语音 / 车内讨论行程 / 卷发戴眼镜 / 红色上衣 / A person with curly hair and glasses sits in the front passenger seat of a car, wearing a red shirt and a seatbelt. / 现在继续出发前往新一夜万风铃 / 第一人称行车 / 高速公路 / 阴天 / 无口播语音 / ...",
+      "id": "event-7f7ec603e35c",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "车内讨论行程",
+      "summary": "车内自拍口播 / 车内 / 天气光线不明 / 有口播语音 / 车内讨论行程 / 卷发戴眼镜 / 红色上衣 / A person with curly hair and glasses sits in the front passenger seat of a car, wearing a red shirt and a seatbelt. / 现在继续出发前往新一夜万风铃",
       "startAt": "2026-04-25T05:11:48.000Z",
+      "endAt": "2026-04-25T05:11:51.960Z",
+      "location": "广西壮族自治区，百色市，右江区，四塘镇",
+      "spanIds": [
+        "62469f20-acc5-4c85-a9c0-ad28e33093ac"
+      ]
+    },
+    {
+      "id": "route-8f34fc8c8230",
+      "kind": "route",
+      "reviewStatus": "confirmed",
+      "title": "行车：广西壮族自治区，百色市，右江区，汪甸瑶族乡 · 下塘出口(G69银百高速西北向) → 广西壮族自治区，百色市，田林县，乐里镇",
+      "summary": "第一人称行车 / 高速公路 / 阴天 / 无口播语音 / 高速出口指示 / 道路标志 / 绿树背景 / A view from a moving car on a highway, showing a clear road ahead with green trees and mountains in the background. A road sign indicates an exit for G212 and Xia Tang...",
+      "startAt": "2026-04-25T05:35:04.000Z",
       "endAt": "2026-04-25T06:15:59.099Z",
       "route": {
-        "from": "广西壮族自治区，百色市，右江区，四塘镇",
+        "from": "广西壮族自治区，百色市，右江区，汪甸瑶族乡 · 下塘出口(G69银百高速西北向)",
         "to": "广西壮族自治区，百色市，田林县，乐里镇"
       },
       "spanIds": [
-        "62469f20-acc5-4c85-a9c0-ad28e33093ac",
         "9726eeda-cd57-4fb7-9652-907512530ee7-direct-full",
         "c4ca4b58-add6-4c4e-a39d-0097b6900ff4-direct-full",
         "fecd2c0b-4faa-41a3-887a-31351fab946a-direct-full",
@@ -9511,59 +9453,23 @@
     {
       "id": "event-222630a458d1",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "蝴蝶停驻车漆",
       "summary": "细节特写 / 车旁静止 / 天气光线不明 / 无口播语音 / 蝴蝶停驻车漆 / 棕色蝴蝶 / 黄色车漆 / A close-up shot of a brown butterfly resting on the glossy yellow paint of a car, near a black graphic decal. The scene is static and peaceful, capturing a small mom...",
       "startAt": "2026-04-25T06:22:49.000Z",
-      "endAt": "2026-04-25T06:23:03.592Z",
-      "location": "广西壮族自治区，百色市，田林县，潞城瑶族乡 · 和兴小卖部",
-      "spanIds": [
-        "29105dbe-4ee8-4138-93c0-2f5706e4c561-direct-full"
-      ]
-    },
-    {
-      "id": "event-4ddce5d746c6",
-      "kind": "event",
-      "reviewStatus": "pending",
-      "title": "蝴蝶停驻特写",
-      "summary": "照片记录 / 特写镜头 / 天气光线不明 / 无口播语音 / 蝴蝶停驻特写 / 棕色蝴蝶 / 黄色光滑表面 / A close-up of a brown butterfly with white spots resting on a smooth yellow surface, casting a soft shadow.",
-      "startAt": "2026-04-25T06:24:04.000Z",
-      "endAt": "2026-04-25T06:24:04.000Z",
-      "location": "广西壮族自治区，百色市，田林县，潞城瑶族乡 · 田林县兴旺木业有限公司(俄外分公司)",
-      "spanIds": [
-        "5dd3c192-ee1f-46f0-875f-cc42e8db5cbe"
-      ]
-    },
-    {
-      "id": "event-5c8f3a07430f",
-      "kind": "event",
-      "reviewStatus": "pending",
-      "title": "车旁互动",
-      "summary": "手持自拍口播 / 户外特写 / 晴天 / 无口播语音 / 车旁互动 / 蝴蝶特写 / 手部触摸 / A close-up shot of a butterfly resting on the yellow body of a car, followed by a hand gently touching the butterfly. The scene is bright and sunny, with a focus on the ...",
-      "startAt": "2026-04-25T06:26:52.000Z",
-      "endAt": "2026-04-25T06:27:01.579Z",
-      "location": "广西壮族自治区，百色市，田林县，潞城瑶族乡 · 康齿口腔诊所",
-      "spanIds": [
-        "c7f1fa9a-c4f5-48ed-ad7f-a7a1ac868c77-direct-full"
-      ]
-    },
-    {
-      "id": "event-b6c3450fc22e",
-      "kind": "event",
-      "reviewStatus": "pending",
-      "title": "车旁观察",
-      "summary": "第一人称行车 / 车旁特写 / 天气光线不明 / 无口播语音 / 车旁观察 / 蝴蝶停驻 / 手表特写 / A close-up sequence showing a bright yellow car surface, first focusing on the paint and body lines, then revealing a butterfly resting on the hood, and finally show...",
-      "startAt": "2026-04-25T06:27:25.000Z",
       "endAt": "2026-04-25T06:27:46.099Z",
-      "location": "广西壮族自治区，百色市，田林县，潞城瑶族乡 · 潞城出口(G78汕昆高速西北向)",
+      "location": "广西壮族自治区，百色市，田林县，潞城瑶族乡 · 桥头很好日杂",
       "spanIds": [
+        "29105dbe-4ee8-4138-93c0-2f5706e4c561-direct-full",
+        "5dd3c192-ee1f-46f0-875f-cc42e8db5cbe",
+        "c7f1fa9a-c4f5-48ed-ad7f-a7a1ac868c77-direct-full",
         "15a6cc1d-3a79-4d27-8410-baf093e048b1-direct-full"
       ]
     },
     {
       "id": "route-6253b433fc89",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：广西壮族自治区，百色市，田林县，潞城瑶族乡 · 岩龙站 → 贵州省，黔西南布依族苗族自治州，兴义市，丰都街道 · 富康四季花城观澜府",
       "summary": "第一人称行车 / 高速公路 / 晴天 / 无口播语音 / 山路高速穿行 / 绿色植被 / 高架桥 / A point-of-view shot from inside a yellow car driving along a multi-lane highway through a lush, green mountainous landscape. The road curves gently to the right, flank...",
       "startAt": "2026-04-25T06:33:38.000Z",
@@ -9732,7 +9638,7 @@
       "kind": "event",
       "reviewStatus": "confirmed",
       "title": "上纳灰村",
-      "summary": "纳灰村空中航拍 / 航拍建场 / 山谷白村 / 天气光线不明 / 无口播语音 / 山谷白村航拍 / 白色房屋 / 农田环绕 / Aerial view of a rural village nestled in a valley surrounded by lush green mountains. The village consists of white buildings with grey roofs, and the sur...",
+      "summary": "航拍运动 / 山地环境 / 夜晚 / 无口播语音 / 雪山星空摄影 / 星空摄影 / 雪山前景 / Aerial footage of a lush green mountainous region with a village nestled along a river, featuring traditional and modern buildings, bridges, and dense vegetation. / 航拍俯瞰 / 山谷村落 / 晴天 / 无口播语音 / 山谷航拍视角 / 传统建筑 / 现代结构 / Aerial view of a rural village nestled in a valley surrounded by lush green mountains and fields. / 航拍俯瞰 / 喀斯特山谷 / 天气光线不明 / 无口播语音 / 航拍公路场景 / 蜿蜒公路 / 散落建筑 / Aerial view of a valley with karst mountains, a winding road, and scattered buildings. / 航拍俯瞰 / 喀斯特山谷 / 天气光线不明 / 无口播语音 / 航拍山谷 / 喀斯特地貌 / 村庄 / Aerial view of a valley with karst mountains, a village, and a winding road. / 航拍俯瞰 / 乡村 / 晴天 / 无口播语音 / 喀斯特村落 / 稻田环绕 / 绿色田野 / Aerial view of a rural village nestled between lush karst mountains, surrounded by green rice paddies and fields. / 航拍俯瞰 / 乡村山谷 / 天气光线不明 / 无口播语音 / 航拍山谷全景 / 蜿蜒公路 / 喀斯特地貌 / Aerial view of a rural valley with patchwork fields, a winding road, and a village nestled among karst mountains. / 航拍俯瞰 / 山谷白村 / 天气光线不明 / 无口播语音 / 山谷白村航拍 / 白色房屋 / 农田环绕 / Aerial view of a rural village nestled in a valley surrounded by lush green mountains. The village consists of white buildings with grey roofs, and the surrounding area is filled with agricultural fields in various stages of cultivation. The scene is peaceful and picturesque, showcasing the harmony between human settlement and nature.",
       "startAt": "2026-04-25T09:00:17.000Z",
       "endAt": "2026-04-25T09:06:52.560Z",
       "location": "上纳灰村",
@@ -9802,7 +9708,7 @@
       "kind": "event",
       "reviewStatus": "confirmed",
       "title": "八卦田",
-      "summary": "八卦田上空航拍 / 第一人称行车 / 梯田花海 / 日出或日落 / 无口播语音 / 田园风光拍摄 / 移动视角 / 喀斯特地貌 / A serene rural landscape at sunrise or sunset featuring terraced rice fields in the foreground and misty karst mountains under a dramatic cloudy sky. / 固...",
+      "summary": "环境远景 / 梯田花海 / 日出或日落 / 无口播语音 / 田园风光拍摄 / 移动视角 / 喀斯特地貌 / A serene rural landscape at sunrise or sunset featuring terraced rice fields in the foreground and misty karst mountains under a dramatic cloudy sky. / 固定机位观察 / 梯田现场 / 天气光线不明 / 无口播语音 / 摄影师等待 / 三脚架架设 / 远景山脉 / A man stands on a concrete ledge next to a camera on a tripod, with a backdrop of terraced fields and distant mountains. / 航拍俯瞰 / 乡村田野 / 天气光线不明 / 无口播语音 / 田野 / 喀斯特地貌 / Aerial view of a rural landscape with fields, scattered houses, and karst mountains in the background. / 航拍俯瞰 / 山谷 / 晴天 / 无口播语音 / 乡村田园风光 / 喀斯特地貌 / 农田 / Aerial view of a rural village nestled in a valley surrounded by karst mountains, with agricultural fields and scattered buildings. / 航拍俯瞰 / 梯田 / 晴天 / 无口播语音 / 梯田村落航拍 / 喀斯特 / 炊烟 / Aerial view of terraced agricultural fields with karst mountains in the background, featuring a small village and smoke rising from chimneys. / 航拍俯瞰 / 梯田村落 / 晴天 / 无口播语音 / 喀斯特地貌 / 同心梯田 / 山谷村庄 / Aerial view of a rural landscape featuring concentric terraced fields in the foreground and a backdrop of karst mountains with a small village nestled in the valley. / 航拍俯瞰 / 喀斯特山谷 / 阴天 / 无口播语音 / 展示农业田地 / 村庄分布 / 蜿蜒公路 / A sweeping aerial view of a rural valley surrounded by karst mountains, showcasing agricultural fields, small villages, and winding roads under a cloudy sky. / 航拍俯瞰 / 乡村山谷 / 晴天 / 无口播语音 / 航拍乡村全景 / 青山绿水 / 传统建筑 / An aerial view of a serene rural village nestled between lush green mountains and a winding river, showcasing traditional architecture and agricultural fields. / 航拍俯瞰 / 乡村村落 / 晴天 / 无口播语音 / 航拍乡村全景 / 河流 / 青山 / Aerial view of a rural village nestled between a winding river and lush green mountains, with traditional white houses, agricultural fields, and paved roads. / 航拍运动 / 喀斯特地貌 / 阴天 / 无口播语音 / 航拍全景 / 农田灌水 / 白色村落 / A sweeping aerial view of a lush valley surrounded by distinctive karst mountains. The foreground features a patchwork of agricultural fields, some flooded with water, and small clusters of white village houses. A road winds through the landscape, connecting the settlements. The overall scene is peaceful, showcasing the natural beauty and rural life of a mountainous region. / 航拍俯瞰 / 山谷梯田 / 晴天 / 无口播语音 / 田园风光展示 / Aerial view of a rural village nestled in a valley surrounded by lush green mountains. The landscape features terraced rice paddies, winding roads, and scattered houses, creating a picturesque and tranquil scene. / 航拍俯瞰 / 山谷乡村 / 天气光线不明 / 无口播语音 / 情景不明 / 农业田地 / 蜿蜒道路 / Aerial view of a rural village nestled in a valley surrounded by lush green mountains. The scene features a mix of agricultural fields, some with water, and a winding road leading through the village. The overall atmosphere is peaceful and picturesque, with the mountains providing a dramatic backdrop. / 航拍俯瞰 / 乡村山谷 / 天气光线不明 / 无口播语音 / 航拍乡村全景 / 蜿蜒公路 / 散居房屋 / An aerial view of a serene rural valley with winding roads, scattered houses, and lush green mountains in the background. / 航拍俯瞰 / 乡村田园 / 晴天 / 无口播语音 / 村庄田园航拍 / 矩形菜地 / 喀斯特山脚 / Aerial view of a rural village surrounded by rectangular vegetable fields and terraced farmland at the foot of green karst hills, with roads and clustered white houses. / 航拍运动 / 乡村梯田 / 天气光线不明 / 无口播语音 / 田园风光 / 白色民居 / 灰色瓦顶 / Aerial footage of a rural village with traditional white houses and grey tiled roofs, surrounded by lush green terraced vegetable fields. The scene captures the harmony between residential areas and agricultural land, with winding roads connecting the buildings. / 航拍俯瞰 / 梯田村落 / 晴天 / 无口播语音 / 俯瞰乡村全景 / 白色民居 / 绿色植被 / Aerial view of a rural village surrounded by terraced vegetable fields and lush greenery, with traditional white buildings clustered together and modern structures in the background. / 航拍俯瞰 / 农田拍摄现场 / 晴天 / 无口播语音 / 拍摄准备 / 螺旋田 / 三脚架 / An aerial view of a large spiral-patterned agricultural field with a person standing on a concrete channel in the foreground. A tripod is visible nearby, suggesting filming activity. The scene is calm and visually striking due to the unique spiral design of the farmland. / 第三人称跟拍 / 梯田乡村 / 晴天 / 无口播语音 / 乡村田野风光 / 红衣人物 / 梯田景观 / A wide rural landscape showing a person in red standing on a dirt path overlooking terraced fields with another farmer walking in the distance, set against a backdrop of green mountains and scattered village homes. / 第三人称跟拍 / 梯田农田 / 晴天 / 无口播语音 / 乡村漫步 / 同心梯田 / 远处建筑 / A wide-angle view of concentric terraced fields with a few people walking along a concrete channel, set against a backdrop of distant rural buildings and greenery. / 环境远景 / 稻田观景台 / 天气光线不明 / 无口播语音 / 稻田风光拍摄 / 喀斯特地貌 / 稻田花海 / A lone person stands on a concrete path overlooking vast rice fields with dramatic karst mountains in the background, setting a serene rural scene. / 航拍俯瞰 / 乡村水渠 / 晴天 / 无口播语音 / 徒步旅行 / A person in a red jacket walks along a concrete canal in a rural landscape with mountains and fields. / 环境远景 / 稻田喀斯特 / 日出或日落 / 无口播语音 / 稻田风光 / 喀斯特地貌 / 彩色天空 / A serene rural landscape at dawn or dusk featuring expansive rice paddies in the foreground and dramatic karst mountains under a colorful sky with scattered clouds. / 环境远景 / 稻田喀斯特地貌 / 日落晚霞 / 无口播语音 / 田园风光拍摄 / 金色光线 / 云层破云 / A serene rural landscape at sunset featuring expansive rice fields in the foreground and dramatic karst mountains under a cloudy sky with warm golden light breaking through. / 航拍俯瞰 / 喀斯特田园 / 晴天 / 无口播语音 / 宁静村落 / 远景人物 / 田园风光 / Aerial view of a rural landscape with karst mountains in the background, fields in the foreground, and a small village nestled between them. The scene is peaceful and serene, with a few people visible in the distance. / 航拍俯瞰 / 山谷 / 阴天 / 无口播语音 / 航拍山谷全景 / 喀斯特地貌 / 村庄 / An aerial view of a serene rural valley surrounded by lush karst mountains, with patchwork fields and a small village nestled in the valley floor under a soft cloudy sky. / 航拍俯瞰 / 八卦田 / 晴天 / 无口播语音 / 八卦田航拍 / 环形田埂 / 农田纹理 / Aerial view of patterned farmland with a circular terraced field formation, narrow paths, irrigation lines, and surrounding rectangular crop plots. / 航拍俯瞰 / 乡村田野 / 天气光线不明 / 无口播语音 / 乡村全景航拍 / 蜿蜒河流 / 农业田地 / Aerial view of a rural landscape featuring a winding river, agricultural fields, and a road with a bridge crossing over the water. / 航拍俯瞰 / 农田景观 / 晴天 / 无口播语音 / 乡村航拍 / 蜿蜒道路 / 农作物 / Aerial view of a rural landscape featuring a winding road, a river, and various agricultural fields with different crops and vegetation. / 航拍俯瞰 / 乡村 / 晴天 / 无口播语音 / 乡村田园风光 / 梯田 / An aerial view captures a serene rural landscape with winding roads, terraced vegetable fields, and a meandering river surrounded by lush greenery. / 航拍俯瞰 / 梯田农田路径 / 天气光线不明 / 无口播语音 / 情景不明 / 人物行走 / 航拍视角 / An aerial view of terraced agricultural fields with a central depression, featuring several small figures walking along the paths. / 航拍俯瞰 / 梯田 / 晴天 / 无口播语音 / 螺旋梯田航拍 / 同心 / 古迹 / An aerial view of concentric terraced fields forming a spiral pattern around a central structure, likely an ancient agricultural site in Sardinia. / 航拍运动 / 梯田 / 晴天 / 无口播语音 / 农田灌溉 / 圆形田块 / 绿色植被 / Aerial footage showing a circular pattern of terraced fields with a central dug pit and irrigation infrastructure, surrounded by green vegetation and brown soil. / 环境远景 / 乡村田野黄昏 / 晚霞 / 无口播语音 / 乡村风光摄影 / 喀斯特地貌 / 收割后的田地 / A serene rural landscape at dusk featuring rolling karst mountains, harvested fields, and scattered village homes under a softly lit sky. / 固定机位观察 / 干草地 / 晴天 / 无口播语音 / 拍摄现场准备 / 红色上衣 / 三脚架 / A person in a red shirt stands in a dry grassy field, facing away from the camera. A tripod with a camera is visible to the right. In the background, there are people standing on a raised path or embankment. The scene appears to be a rural outdoor setting with a mix of dry grass and some green vegetation. / 航拍运动 / 收割田野 / 晴天 / 无口播语音 / 田野漫步 / 红色外套 / 乡村风光 / A person in a red jacket stands and walks through a harvested field with dry grass, surrounded by rural scenery including distant houses and mountains. The footage appears to be captured from a drone, offering a wide view of the landscape. / 环境远景 / 稻田田野 / 阴天 / 无口播语音 / 田园风光拍摄 / 收割稻田 / 喀斯特 / A lone person stands in a vast field of harvested rice paddies with misty karst mountains and a small village in the background under a cloudy sky. / 第三人称跟拍 / 乡村梯田 / 天气光线不明 / 无口播语音 / 徒步旅行 / 红色外套 / 混凝土步道 / A person in a red jacket walks along a concrete path in a rural landscape with terraced fields and mountains in the background. / 第三人称跟拍 / 梯田花海 / 雾天 / 无口播语音 / 花海徒步途中 / 红色外套 / 喀斯特地貌 / A lone person in a red jacket walks along a concrete path through terraced rice fields with misty karst mountains and a distant village in the background. / 航拍俯瞰 / 乡村田野 / 天气光线不明 / 无口播语音 / 航拍人物 / 红色外套 / 梯田 / A person in a red jacket walks along a concrete canal in a rural landscape with terraced fields and karst mountains in the background.",
       "startAt": "2026-04-25T10:04:14.000Z",
       "endAt": "2026-04-25T10:59:42.592Z",
       "location": "八卦田",
@@ -9851,7 +9757,7 @@
     {
       "id": "event-b1fa99a57fc8",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "拍摄花絮",
       "summary": "手持自拍口播 / 户外田野 / 阴天 / 有口播语音 / 拍摄花絮 / 山区背景 / 自拍 / A man with curly hair and glasses takes a selfie in a field with mountains in the background. / 不是特别完美的完成了这次的拍摄 因为最后太阳也没有特别钻出来但是只能说八卦田在航拍的时候 那几张人像对比还是挺震撼的 不错毕竟这只是中途昌兴家的一个景...",
       "startAt": "2026-04-25T11:07:44.540Z",
@@ -9864,7 +9770,7 @@
     {
       "id": "route-0160017b64a3",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：贵州省，黔西南布依族苗族自治州，兴义市，万峰林街道 · 万峰林景区",
       "summary": "第一人称行车 / 城市街道 / 夜晚 / 无口播语音 / 夜间行车 / 桥梁 / 暖光建筑 / A series of driving shots at dusk/night, starting from a parking area near a modern building with warm lighting, moving onto a road with other vehicles, crossing a bridge ...",
       "startAt": "2026-04-25T11:34:06.000Z",
@@ -9884,7 +9790,7 @@
     {
       "id": "event-095e47c8e5ec",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "餐厅外景记录",
       "summary": "固定机位观察 / 餐厅停车场 / 夜晚 / 无口播语音 / 餐厅外景记录 / 白色轿车 / 招牌灯光 / A white car is parked in a dark area, and a restaurant with a lit sign reading 'Guizhou Sour Soup Duoduo Powder Hotpot' is visible.",
       "startAt": "2026-04-25T11:48:12.000Z",
@@ -10025,9 +9931,9 @@
     {
       "id": "event-95cfa006d184",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "猫咪活动",
-      "summary": "手持自拍口播 / 室内地面 / 晴天 / 有口播语音 / 猫咪活动 / 室内拍摄 / 阳光充足 / A grey tabby cat is seen lying down and then walking on a tiled floor in a sunlit area. / 小喵喵 / 第一人称行车 / 室内瓷砖地面 / 室内灯光 / 猫咪互动记录 / 灰色虎斑猫 / 抬头看镜头 / A grey tabby cat stands...",
+      "summary": "手持自拍口播 / 室内地面 / 晴天 / 有口播语音 / 猫咪活动 / 室内拍摄 / 阳光充足 / A grey tabby cat is seen lying down and then walking on a tiled floor in a sunlit area. / 小喵喵 / 第三人称跟拍 / 室内瓷砖地面 / 室内灯光 / 猫咪互动记录 / 灰色虎斑猫 / 抬头看镜头 / A grey tabby cat stands...",
       "startAt": "2026-04-26T01:18:27.220Z",
       "endAt": "2026-04-26T01:18:55.102Z",
       "location": "贵州省，黔西南布依族苗族自治州，兴义市，则戎镇 · 大山脚",
@@ -10055,7 +9961,7 @@
     {
       "id": "route-99d351287bf1",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：贵州省，黔西南布依族苗族自治州，兴义市，则戎镇 · 大山脚 → 贵州省，黔西南布依族苗族自治州，兴义市，则戎镇 · 枇杷树村",
       "summary": "第一人称行车 / 蜿蜒山路 / 晴天 / 有口播语音 / 车内讨论舒适度 / A yellow vehicle travels along a winding road, passing parked cars, a dog, and lush greenery. / 大花好舒服 / 竹林山路 / A yellow vehicle travels along a winding asphalt road surrounded by d...",
       "startAt": "2026-04-26T02:56:11.000Z",
@@ -10088,30 +9994,30 @@
     {
       "id": "event-468d02bd412f",
       "kind": "event",
-      "reviewStatus": "pending",
-      "title": "贵州省，黔西南布依族苗族自治州，兴义市，则戎镇 · 枇杷树村",
-      "summary": "航拍建场 / 山区丘陵 / 阴天 / 无口播语音 / 情景不明 / 雾气弥漫 / 稀疏植被 / The frames show a misty mountain landscape with green hills, valleys, and scattered vegetation under an overcast sky.",
+      "reviewStatus": "confirmed",
+      "title": "航拍山村全景",
+      "summary": "航拍俯瞰 / 山区丘陵 / 阴天 / 无口播语音 / 情景不明 / 雾气弥漫 / 稀疏植被 / The frames show a misty mountain landscape with green hills, valleys, and scattered vegetation under an overcast sky. / 山村河谷 / 下雨 / 航拍山村全景 / 河流村庄 / 航拍视角 / An aerial view o...",
       "startAt": "2026-04-26T03:00:20.000Z",
-      "endAt": "2026-04-26T03:00:32.715Z",
+      "endAt": "2026-04-26T03:01:24.040Z",
       "location": "贵州省，黔西南布依族苗族自治州，兴义市，则戎镇 · 枇杷树村",
       "spanIds": [
-        "56e114c8-f465-4162-8d79-94378f7564e1"
+        "56e114c8-f465-4162-8d79-94378f7564e1",
+        "40b7a3a5-8dfe-46cd-a766-4c573451fe44-direct-full"
       ]
     },
     {
-      "id": "route-e896fcb9b394",
+      "id": "route-9f320894ceee",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：贵州省，黔西南布依族苗族自治州，兴义市，则戎镇 · 枇杷树村 → 贵州省，黔西南布依族苗族自治州，兴义市，下五屯街道 · 九华苑",
-      "summary": "航拍建场 / 山村河谷 / 下雨 / 无口播语音 / 航拍山村全景 / 河流村庄 / 航拍视角 / An aerial view of a winding road cutting through a rugged, rocky landscape dotted with green trees and distant buildings. A yellow vehicle is visible on the road, sugges...",
-      "startAt": "2026-04-26T03:01:01.000Z",
+      "summary": "航拍俯瞰 / 喀斯特地貌山路 / 晴天 / 无口播语音 / 独自行车穿越 / 黄色车辆 / 梯田景观 / An aerial view captures a solitary yellow vehicle traveling along a winding road through a rugged, terraced karst landscape dotted with sparse vegetation and isolated...",
+      "startAt": "2026-04-26T03:01:42.000Z",
       "endAt": "2026-04-26T03:54:17.147Z",
       "route": {
         "from": "贵州省，黔西南布依族苗族自治州，兴义市，则戎镇 · 枇杷树村",
         "to": "贵州省，黔西南布依族苗族自治州，兴义市，下五屯街道 · 九华苑"
       },
       "spanIds": [
-        "40b7a3a5-8dfe-46cd-a766-4c573451fe44-direct-full",
         "126eb74e-24ca-458d-be07-2a139ed60d1e",
         "250ce614-7adc-4451-92fa-d15709b7485b",
         "efb04f86-d2ae-4f4e-832b-b19a42e6f2db-direct-full",
@@ -10228,7 +10134,7 @@
     {
       "id": "route-72ea87011245",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：贵州省，黔西南布依族苗族自治州，兴义市，下五屯街道 · 暖桐.沐曦观景度假民宿 → 贵州省，黔西南布依族苗族自治州，兴义市，乌沙镇 · 下分田",
       "summary": "第一人称行车 / 城市街道 / 晴天 / 有口播语音 / 资金配置讨论 / 白色轿车 / 多车道道路 / A white sedan is driving on the left side of the road, while the camera vehicle is driving on the right side of the road. / 资金量大之后可能操作会变形 / 资产配置建议 / 黄色车辆 / 桥梁背景 / A y...",
       "startAt": "2026-04-26T05:08:30.000Z",
@@ -10288,123 +10194,24 @@
     {
       "id": "event-8214c18ebb9e",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "蜿蜒山路航拍",
-      "summary": "航拍建场 / 山区公路 / 晴天 / 无口播语音 / 蜿蜒山路航拍 / 梯田村落 / 绿色山丘 / Aerial footage of a highway winding through a lush, mountainous landscape with scattered villages and terraced fields.",
+      "summary": "航拍运动 / 山区公路 / 晴天 / 无口播语音 / 蜿蜒山路航拍 / 梯田村落 / 绿色山丘 / Aerial footage of a highway winding through a lush, mountainous landscape with scattered villages and terraced fields. / 航拍俯瞰 / 山路 / 俯瞰公路全景 / 绿色山脉 / 村庄 / An aerial view ...",
       "startAt": "2026-04-26T05:40:51.000Z",
-      "endAt": "2026-04-26T05:41:37.912Z",
+      "endAt": "2026-04-26T05:55:12.000Z",
       "location": "贵州省，黔西南布依族苗族自治州，兴义市，乌沙镇 · 坪寨",
       "spanIds": [
-        "206583e9-f002-4364-a1de-1d1f39b4c927-direct-full"
-      ]
-    },
-    {
-      "id": "route-788f3a32507b",
-      "kind": "route",
-      "reviewStatus": "pending",
-      "title": "行车：贵州省，黔西南布依族苗族自治州，兴义市，乌沙镇 · 坪寨",
-      "summary": "航拍建场 / 山路 / 晴天 / 无口播语音 / 俯瞰公路全景 / 绿色山脉 / 村庄 / An aerial view of a winding highway cutting through lush green mountains and small villages, with a toll booth visible along the road.",
-      "startAt": "2026-04-26T05:42:01.000Z",
-      "endAt": "2026-04-26T05:42:01.000Z",
-      "location": "贵州省，黔西南布依族苗族自治州，兴义市，乌沙镇 · 坪寨",
-      "route": {
-        "from": "贵州省，黔西南布依族苗族自治州，兴义市，乌沙镇 · 坪寨",
-        "to": "贵州省，黔西南布依族苗族自治州，兴义市，乌沙镇 · 坪寨"
-      },
-      "spanIds": [
-        "7ba35192-546e-4edf-b57b-53021e075e1b"
-      ]
-    },
-    {
-      "id": "event-1dffdfd29255",
-      "kind": "event",
-      "reviewStatus": "pending",
-      "title": "航拍乡村公路",
-      "summary": "航拍建场 / 乡村公路 / 天气光线不明 / 无口播语音 / 航拍乡村公路 / 梯田地貌 / 山区村落 / Aerial view of a rural landscape featuring a highway cutting through terraced fields and small villages nestled in a mountainous region.",
-      "startAt": "2026-04-26T05:42:35.000Z",
-      "endAt": "2026-04-26T05:42:53.667Z",
-      "location": "贵州省，黔西南布依族苗族自治州，兴义市，乌沙镇 · 坪寨",
-      "spanIds": [
-        "4914618f-c73a-4747-b8ca-e89396b3ec2d-direct-full"
-      ]
-    },
-    {
-      "id": "route-183067fe48b9",
-      "kind": "route",
-      "reviewStatus": "pending",
-      "title": "行车：贵州省，黔西南布依族苗族自治州，兴义市，乌沙镇 · 坪寨",
-      "summary": "照片记录 / 高速公路 / 阴天 / 无口播语音 / 情景不明 / An aerial view of a modern highway cutting through a lush green valley surrounded by rolling hills and small villages under a cloudy sky.",
-      "startAt": "2026-04-26T05:43:18.000Z",
-      "endAt": "2026-04-26T05:43:18.000Z",
-      "location": "贵州省，黔西南布依族苗族自治州，兴义市，乌沙镇 · 坪寨",
-      "route": {
-        "from": "贵州省，黔西南布依族苗族自治州，兴义市，乌沙镇 · 坪寨",
-        "to": "贵州省，黔西南布依族苗族自治州，兴义市，乌沙镇 · 坪寨"
-      },
-      "spanIds": [
-        "212340f2-575e-4834-acb5-5a274214e203"
-      ]
-    },
-    {
-      "id": "event-08dda6b69593",
-      "kind": "event",
-      "reviewStatus": "pending",
-      "title": "蜿蜒公路航拍",
-      "summary": "航拍建场 / 高山峡谷 / 晴天 / 无口播语音 / 蜿蜒公路航拍 / 散落村落 / 农田 / Aerial footage of a highway winding through a lush mountainous valley with scattered villages and agricultural fields. / 环境空镜 / 停车场 / 车辆停放 / 白色 SUV / 碎石地面 / 乡村山谷梯田 / 天气光线不...",
-      "startAt": "2026-04-26T05:43:41.000Z",
-      "endAt": "2026-04-26T05:48:04.195Z",
-      "location": "贵州省，黔西南布依族苗族自治州，兴义市，乌沙镇 · 坪寨",
-      "spanIds": [
+        "206583e9-f002-4364-a1de-1d1f39b4c927-direct-full",
+        "7ba35192-546e-4edf-b57b-53021e075e1b",
+        "4914618f-c73a-4747-b8ca-e89396b3ec2d-direct-full",
+        "212340f2-575e-4834-acb5-5a274214e203",
         "bbbfb425-7bb5-4094-92b8-2694f0f16018-direct-full",
         "3a05962f-fd10-4967-b281-c837abf81d4f",
         "46bf3063-473b-4cfd-b2e5-5502d52ce498-direct-full",
         "afdcbe51-f749-49a2-bba5-b7d9452b88cc-direct-full",
-        "600fb387-9cff-425f-9313-c9be0cfaa326-direct-full"
-      ]
-    },
-    {
-      "id": "route-c25b5322c31d",
-      "kind": "route",
-      "reviewStatus": "pending",
-      "title": "行车：贵州省，黔西南布依族苗族自治州，兴义市，乌沙镇 · 坪寨",
-      "summary": "航拍建场 / 山路 / 晴天 / 无口播语音 / 桥梁景观 / A serene mountainous landscape featuring a winding highway, a long elevated bridge, lush green forests, and scattered rural settlements in the valley below.",
-      "startAt": "2026-04-26T05:48:26.000Z",
-      "endAt": "2026-04-26T05:48:26.000Z",
-      "location": "贵州省，黔西南布依族苗族自治州，兴义市，乌沙镇 · 坪寨",
-      "route": {
-        "from": "贵州省，黔西南布依族苗族自治州，兴义市，乌沙镇 · 坪寨",
-        "to": "贵州省，黔西南布依族苗族自治州，兴义市，乌沙镇 · 坪寨"
-      },
-      "spanIds": [
-        "fc402550-7ce0-453e-9993-7ed29350a2a4"
-      ]
-    },
-    {
-      "id": "event-d19fdad4d13a",
-      "kind": "event",
-      "reviewStatus": "pending",
-      "title": "航拍山谷",
-      "summary": "航拍建场 / 山谷公路 / 天气光线不明 / 无口播语音 / 航拍山谷 / 梯田农田 / 高架桥 / Aerial footage showcasing a lush mountainous valley with terraced farmland, scattered village homes, and a prominent highway bridge spanning across the landscape.",
-      "startAt": "2026-04-26T05:48:43.000Z",
-      "endAt": "2026-04-26T05:49:04.824Z",
-      "location": "贵州省，黔西南布依族苗族自治州，兴义市，乌沙镇 · 坪寨",
-      "spanIds": [
-        "7cf5b254-769d-4ac8-b707-d5f7efa774a9-direct-full"
-      ]
-    },
-    {
-      "id": "route-2f13e7275845",
-      "kind": "route",
-      "reviewStatus": "pending",
-      "title": "行车：贵州省，黔西南布依族苗族自治州，兴义市，乌沙镇 · 坪寨 → 云南省，曲靖市，陆良县，马街镇 · 薛官堡村路口(公交站)",
-      "summary": "航拍建场 / 山区公路 / 晴天 / 无口播语音 / 航拍公路 / 高架桥 / 乡村景观 / An aerial view of a long elevated highway cutting through lush green mountains and small villages, showcasing infrastructure development in a rural setting. / 山路 / 村庄 / 车辆 ...",
-      "startAt": "2026-04-26T05:49:10.000Z",
-      "endAt": "2026-04-26T07:18:16.622Z",
-      "route": {
-        "from": "贵州省，黔西南布依族苗族自治州，兴义市，乌沙镇 · 坪寨",
-        "to": "云南省，曲靖市，陆良县，马街镇 · 薛官堡村路口(公交站)"
-      },
-      "spanIds": [
+        "600fb387-9cff-425f-9313-c9be0cfaa326-direct-full",
+        "fc402550-7ce0-453e-9993-7ed29350a2a4",
+        "7cf5b254-769d-4ac8-b707-d5f7efa774a9-direct-full",
         "54e8f438-c2e3-4565-95fd-f26064d165d0",
         "2d73654b-10cf-4c63-86c2-a0fa21b933d2-direct-full",
         "26b2a45b-ee83-4c64-8358-89b600b817b2-direct-full",
@@ -10412,7 +10219,22 @@
         "f10fbcb7-2507-4d32-b65f-1d76ac66cb61",
         "5a4240df-0724-4eaa-9519-c201ffbd43f6",
         "f600e86e-cdf1-4819-86e7-159606c62eab",
-        "d615ccc8-de38-4dd1-95ba-2064ebf1268a",
+        "d615ccc8-de38-4dd1-95ba-2064ebf1268a"
+      ]
+    },
+    {
+      "id": "route-481e1aaaba39",
+      "kind": "route",
+      "reviewStatus": "confirmed",
+      "title": "行车：贵州省，黔西南布依族苗族自治州，兴义市，乌沙镇 · 乌沙镇岔江村卫生室 → 云南省，曲靖市，陆良县，马街镇 · 薛官堡村路口(公交站)",
+      "summary": "第一人称行车 / 高速公路 / 晴天 / 有口播语音 / 讨论音乐风格 / 山区路段 / 黄色车辆 / A yellow vehicle drives along a highway through a mountainous area with green trees and guardrails on both sides. / 有没有摇滚一点的 有点斗维他们的我没有斗维的 但是我有摇滚但是我不知道你的摇滚和我的摇滚一不一样 我看...",
+      "startAt": "2026-04-26T06:03:25.280Z",
+      "endAt": "2026-04-26T07:18:16.622Z",
+      "route": {
+        "from": "贵州省，黔西南布依族苗族自治州，兴义市，乌沙镇 · 乌沙镇岔江村卫生室",
+        "to": "云南省，曲靖市，陆良县，马街镇 · 薛官堡村路口(公交站)"
+      },
+      "spanIds": [
         "275b0a91-7815-44c6-a635-e74191b96d46",
         "89662177-a5c3-4358-9dcd-5e444f94a786",
         "fbbf394d-1759-43f5-a0cd-e18a468f80f2",
@@ -10469,11 +10291,11 @@
     {
       "id": "route-b209cd83d5e9",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：云南省，曲靖市，陆良县，大莫古镇 → 云南省，玉溪市，澄江市，右所镇 · 补益村",
-      "summary": "第一人称行车 / 高速公路 / 阴天 / 无口播语音 / 城市边缘 / 两侧建筑 / A yellow vehicle drives on a highway with green trees and buildings visible on both sides under a cloudy sky. / 照片记录 / 多车道高速公路 / 城市道路行车 / 中等车流 / 工业建筑 / A wide-angle view of a m...",
+      "summary": "第一人称行车 / 高速公路 / 阴天 / 无口播语音 / 城市边缘 / 两侧建筑 / A yellow vehicle drives on a highway with green trees and buildings visible on both sides under a cloudy sky. / 环境远景 / 多车道高速公路 / 城市道路行车 / 中等车流 / 工业建筑 / A wide-angle view of a m...",
       "startAt": "2026-04-26T07:49:02.040Z",
-      "endAt": "2026-04-26T08:38:23.380Z",
+      "endAt": "2026-04-26T08:41:56.000Z",
       "route": {
         "from": "云南省，曲靖市，陆良县，大莫古镇",
         "to": "云南省，玉溪市，澄江市，右所镇 · 补益村"
@@ -10528,89 +10350,33 @@
         "8065eae7-d89b-44f9-b75f-84ba1d60284a",
         "bbc1bccc-e1f1-4fdf-97ee-3d14180dc9b4",
         "45ff1bec-f824-4946-a6d4-ef961c14b3e3",
-        "9b50e403-4ab2-4281-a3cd-03aba720fe3b"
+        "9b50e403-4ab2-4281-a3cd-03aba720fe3b",
+        "0beb1142-1ece-4d9e-aab4-3680ff223a03"
       ]
     },
     {
       "id": "event-19f3cbc6b872",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "航拍全景",
-      "summary": "航拍建场 / 山谷小镇 / 天气光线不明 / 无口播语音 / 航拍全景 / 高速公路 / 温室大棚 / Aerial view of a small town nestled in a valley with mountains in the background, a highway running through the middle, and greenhouses on the hillsides. / 山区公路 / 晴天 /...",
+      "summary": "航拍俯瞰 / 山谷小镇 / 天气光线不明 / 无口播语音 / 航拍全景 / 高速公路 / 温室大棚 / Aerial view of a small town nestled in a valley with mountains in the background, a highway running through the middle, and greenhouses on the hillsides. / 山区公路 / 晴天 /...",
       "startAt": "2026-04-26T08:41:01.000Z",
-      "endAt": "2026-04-26T08:41:23.675Z",
-      "location": "云南省，玉溪市，澄江市，右所镇 · 补益村",
-      "spanIds": [
-        "a20e4084-6c40-4930-8dec-b3ed7becd415-direct-full",
-        "7daad94e-11f0-4ea7-917e-f0cb33416c87-direct-full"
-      ]
-    },
-    {
-      "id": "route-2bf03a5291bf",
-      "kind": "route",
-      "reviewStatus": "pending",
-      "title": "行车：云南省，玉溪市，澄江市，右所镇 · 补益村",
-      "summary": "航拍建场 / 山区高速 / 天气光线不明 / 无口播语音 / 隧道群航拍 / 多车道公路 / 温室大棚 / An aerial view of a multi-lane highway winding through a mountainous landscape with tunnels, greenhouses, and scattered buildings.",
-      "startAt": "2026-04-26T08:41:56.000Z",
-      "endAt": "2026-04-26T08:41:56.000Z",
-      "location": "云南省，玉溪市，澄江市，右所镇 · 补益村",
-      "route": {
-        "from": "云南省，玉溪市，澄江市，右所镇 · 补益村",
-        "to": "云南省，玉溪市，澄江市，右所镇 · 补益村"
-      },
-      "spanIds": [
-        "0beb1142-1ece-4d9e-aab4-3680ff223a03"
-      ]
-    },
-    {
-      "id": "event-51be03d459af",
-      "kind": "event",
-      "reviewStatus": "pending",
-      "title": "户外车辆展示",
-      "summary": "第三人称介绍 / 户外停车场 / 阴天 / 无口播语音 / 户外车辆展示 / Aerial footage showing a multi-lane highway winding through a hilly landscape, leading towards a tunnel entrance. The scene includes clusters of greenhouses, a small village, and f...",
-      "startAt": "2026-04-26T08:42:57.000Z",
-      "endAt": "2026-04-26T08:43:49.757Z",
-      "location": "云南省，玉溪市，澄江市，右所镇 · 补益村",
-      "spanIds": [
-        "53830a03-4983-4681-a353-c23b998cd6f5-direct-full"
-      ]
-    },
-    {
-      "id": "route-ee94c7e56ceb",
-      "kind": "route",
-      "reviewStatus": "pending",
-      "title": "行车：云南省，玉溪市，澄江市，右所镇 · 补益村",
-      "summary": "航拍建场 / 高速公路 / 多云 / 无口播语音 / 航拍公路 / 隧道 / 温室 / An aerial view of a multi-lane highway cutting through a mountainous landscape with tunnels and adjacent greenhouses under a partly cloudy sky. / 多车道高速公路 / 晴天 / 隧道温室 / 山地景观 / ...",
-      "startAt": "2026-04-26T08:44:03.000Z",
-      "endAt": "2026-04-26T08:44:33.000Z",
-      "location": "云南省，玉溪市，澄江市，右所镇 · 补益村",
-      "route": {
-        "from": "云南省，玉溪市，澄江市，右所镇 · 补益村",
-        "to": "云南省，玉溪市，澄江市，右所镇 · 补益村"
-      },
-      "spanIds": [
-        "34d153a1-cdb3-42bc-98a4-3d3287a335a3",
-        "fa19731a-b697-4bd1-ad11-00fcac12fc9f",
-        "922dc9a9-80e1-4a5c-affa-32ad04593bbb"
-      ]
-    },
-    {
-      "id": "event-2296426e8ac0",
-      "kind": "event",
-      "reviewStatus": "pending",
-      "title": "航拍乡村公路",
-      "summary": "航拍建场 / 乡村公路全景 / 阴天 / 无口播语音 / 航拍乡村公路 / 温室大棚 / 远处村庄 / Aerial view of a highway winding through a rural landscape with greenhouses on the left, a village in the middle distance, and mountains in the background under a clou...",
-      "startAt": "2026-04-26T08:44:44.000Z",
       "endAt": "2026-04-26T08:45:03.349Z",
       "location": "云南省，玉溪市，澄江市，右所镇 · 补益村",
       "spanIds": [
+        "a20e4084-6c40-4930-8dec-b3ed7becd415-direct-full",
+        "7daad94e-11f0-4ea7-917e-f0cb33416c87-direct-full",
+        "53830a03-4983-4681-a353-c23b998cd6f5-direct-full",
+        "34d153a1-cdb3-42bc-98a4-3d3287a335a3",
+        "fa19731a-b697-4bd1-ad11-00fcac12fc9f",
+        "922dc9a9-80e1-4a5c-affa-32ad04593bbb",
         "67c421b7-5887-4dc9-bcce-3d1c1fbe44a4-direct-full"
       ]
     },
     {
       "id": "route-101f744aab43",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：云南省，玉溪市，澄江市，右所镇 · 168乡道 → 云南省，玉溪市，澄江市，右所镇 · 抚仙湖公园",
       "summary": "第一人称行车 / 城市道路 / 阴天 / 有口播语音 / 路况讨论 / A yellow vehicle drives down a multi-lane road lined with trees, passing a grey SUV and a red sedan. / 我靠 这个路 / A yellow vehicle drives down a straight road lined with trees and stree...",
       "startAt": "2026-04-26T08:51:50.000Z",
@@ -10646,7 +10412,7 @@
     {
       "id": "event-7be72db9bffd",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "湖边停车",
       "summary": "车窗外观察 / 湖边 / 天气光线不明 / 无口播语音 / 湖边停车 / 摩托车 / 行人 / Two frames show a lakeside scene with scooters and a white car parked near the water, with people walking nearby.",
       "startAt": "2026-04-26T09:05:07.000Z",
@@ -10659,7 +10425,7 @@
     {
       "id": "route-1232c192ac72",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：云南省，玉溪市，澄江市，右所镇 · 抚仙湖国家级旅游度假区 → 云南省，玉溪市，澄江市，右所镇 · 抚仙湖公园",
       "summary": "第一人称行车 / 热带街道 / 晴天 / 无口播语音 / 沿海公路 / 黄色轿车 / 棕榈树 / A yellow car drives along a tree-lined road with white buildings and palm trees on both sides under a clear blue sky. / 有口播语音 / 日落日出 / A yellow car drives down a tree-lin...",
       "startAt": "2026-04-26T09:06:18.478Z",
@@ -10709,32 +10475,28 @@
     {
       "id": "event-e123b48ce147",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "蜿蜒湖岸公路",
-      "summary": "航拍建场 / 沿海公路 / 晴天 / 无口播语音 / 蜿蜒湖岸公路 / 红土丘陵 / 停车场车辆 / Aerial view of a winding coastal road along a lake, with red soil hills, green trees, and scattered vehicles in parking areas. / 湖岸花海 / 天气光线不明 / 湖岸花海航拍 / 紫色花朵 / 梯田背景 / ...",
+      "summary": "航拍俯瞰 / 沿海公路 / 晴天 / 无口播语音 / 蜿蜒湖岸公路 / 红土丘陵 / 停车场车辆 / Aerial view of a winding coastal road along a lake, with red soil hills, green trees, and scattered vehicles in parking areas. / 湖岸花海 / 天气光线不明 / 湖岸花海航拍 / 紫色花朵 / 梯田背景 / ...",
       "startAt": "2026-04-26T09:16:03.000Z",
-      "endAt": "2026-04-26T09:17:44.235Z",
+      "endAt": "2026-04-26T09:20:34.000Z",
       "location": "云南省，玉溪市，澄江市，右所镇 · 抚仙湖公园",
       "spanIds": [
         "38ffe712-6b2f-4efc-9e39-139eb73d1062-direct-full",
-        "2a2d97af-f7ac-4312-98df-ac703156cea3-direct-full"
+        "2a2d97af-f7ac-4312-98df-ac703156cea3-direct-full",
+        "965cf5ea-dad1-42ab-8889-e9095613c031"
       ]
     },
     {
-      "id": "route-9960fd91685b",
-      "kind": "route",
-      "reviewStatus": "pending",
-      "title": "行车：云南省，玉溪市，澄江市，右所镇 · 抚仙湖公园",
-      "summary": "航拍建场 / 沿海公路 / 晴天 / 无口播语音 / 沿海公路航拍全景 / An aerial view captures a winding coastal road along red-soiled hills meeting the deep blue sea, with a distant town nestled among greenery and mountains under a soft sky. / 固定机位观察 ...",
-      "startAt": "2026-04-26T09:20:34.000Z",
+      "id": "event-31b3c7fe5b1c",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "公园道路风景",
+      "summary": "固定机位观察 / 公园景观 / 阴天 / 无口播语音 / 公园道路风景 / 绿树成荫 / 水域背景 / A scenic view of a park with a winding road, lush green trees, and a body of water in the background.",
+      "startAt": "2026-04-26T09:29:07.000Z",
       "endAt": "2026-04-26T09:29:18.584Z",
       "location": "云南省，玉溪市，澄江市，右所镇 · 抚仙湖公园",
-      "route": {
-        "from": "云南省，玉溪市，澄江市，右所镇 · 抚仙湖公园",
-        "to": "云南省，玉溪市，澄江市，右所镇 · 抚仙湖公园"
-      },
       "spanIds": [
-        "965cf5ea-dad1-42ab-8889-e9095613c031",
         "d3bb1650-70a4-4947-91da-d5e9fc474efc"
       ]
     },
@@ -10759,7 +10521,7 @@
     {
       "id": "route-e5b91401a100",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：云南省，玉溪市，澄江市，右所镇 · 抚仙湖公园",
       "summary": "第一人称行车 / 山路 / 晴天 / 有口播语音 / 山路会车 / A yellow vehicle drives along a road with a mountain in the background, passing a grey car and a red sign. / 我靠你们帮我拿下吧 我擦 我服了 没事 / 餐厅路边 / 驶过餐厅建筑 / The video shows a drive along a road w...",
       "startAt": "2026-04-26T10:26:15.380Z",
@@ -10822,7 +10584,7 @@
       "kind": "event",
       "reviewStatus": "confirmed",
       "title": "抚仙湖上空",
-      "summary": "航拍抚仙湖全景日落 / 航拍建场 / 观景平台 / 日落 / 无口播语音 / 日落观景 / 水面 / 远山 / A serene sunset scene over a large body of water with mountains in the distance. The foreground features a brick surface and a bamboo fence, suggesting a viewpoint...",
+      "summary": "航拍俯瞰 / 观景平台 / 日落 / 无口播语音 / 日落观景 / 水面 / 远山 / A serene sunset scene over a large body of water with mountains in the distance. The foreground features a brick surface and a bamboo fence, suggesting a viewpoint or observation deck. The sun is setting, casting a warm glow over the water and sky. / 航拍俯瞰 / 湖泊山谷 / 晴天 / 无口播语音 / 湖泊山谷航拍 / 平静湖面 / 散居建筑 / Aerial view of a calm lake surrounded by rolling hills and scattered residential buildings, with a clear sky above. / 航拍俯瞰 / 湖畔村落 / 天气光线不明 / 无口播语音 / 湖畔村落航拍 / 丘陵地形 / 白色建筑群 / Aerial view of a lakeside village nestled among rolling hills, with white buildings clustered on the slopes and a calm body of water in the foreground. / 航拍俯瞰 / 湖岸村庄 / 雾天 / 无口播语音 / 湖岸风光航拍 / 白色建筑 / 绿色山丘 / Aerial view of a tranquil lake bordered by a rugged coastline and a hillside village with white buildings nestled among greenery and hills. / 航拍俯瞰 / 水面 / 晴天 / 无口播语音 / 湖面航拍 / 阳光反射 / 远山背景 / Aerial view of a calm body of water with the sun reflecting on the surface, mountains in the background, and clouds in the sky. / 航拍俯瞰 / 干草地 / 晴天 / 无口播语音 / 徒步行走 / 金属围栏 / 开阔景观 / A person in a red jacket walks along a metal fence on a dirt path in a dry, grassy field with scattered trees. The scene is captured from an elevated perspective, likely by a drone, showing a natural, open landscape with some tripods visible in the background.",
       "startAt": "2026-04-26T11:02:20.000Z",
       "endAt": "2026-04-26T11:11:32.096Z",
       "location": "抚仙湖上空",
@@ -10840,7 +10602,7 @@
       "kind": "event",
       "reviewStatus": "confirmed",
       "title": "抚仙湖东岸",
-      "summary": "湖面日落，长焦压缩远山层次+湖面光影变化。；广角湖面全景+天空晚霞，前景选礁石或栈桥。；第三视角拍摄：摄影师在湖边架延时设备、介绍抚仙湖日落。 / 航拍建场 / 观景平台 / 日落 / 无口播语音 / 日落观景 / 水面 / 远山 / A serene sunset scene over a large body of water with mountains in the distance. The foreground featu...",
+      "summary": "固定机位观察 / 湖面 / 日落 / 无口播语音 / 湖面日落剪影 / 远山轮廓 / 橙色余晖 / A serene sunset scene over a body of water with silhouetted mountains in the background. The sun is partially obscured by clouds, casting a warm orange glow across the sky and reflecting on the water's surface. / 延时记录 / 山地环境 / 日落 / 无口播语音 / 日落延时 / 金色倒影 / 云层发光 / A series of sunset shots over a large body of water with mountains in the distance. The sun is low on the horizon, casting a golden reflection on the water. The sky is filled with clouds that are illuminated by the setting sun. The water is calm with gentle ripples. There are some trees visible in the foreground. / 固定机位观察 / 草原 / 阴天 / 无口播语音 / 情景不明 / 金色草甸 / 远景山丘 / Tall golden grass fills the foreground, with trees and distant hills visible under a cloudy sky. / 环境远景 / 山地草原 / 阴天 / 无口播语音 / 远景拍摄 / 枯黄草地 / 远山背景 / Tall dry grass in the foreground with trees and mountains in the background under a cloudy sky. / 固定机位观察 / 草地山坡 / 多云 / 无口播语音 / 花海现场拍摄准备 / 金色草地 / 树木丘陵 / A field of tall golden grass with trees and hills under a cloudy sky with a bright patch of light.",
       "startAt": "2026-04-26T11:25:00.000Z",
       "endAt": "2026-04-26T11:27:50.091Z",
       "location": "抚仙湖东岸",
@@ -10857,7 +10619,7 @@
       "kind": "event",
       "reviewStatus": "confirmed",
       "title": "抚仙湖住宿/湖边",
-      "summary": "收工花絮与短暂湖边夜色，拍完即休息，不再熬夜等月落。 / 环境空镜 / 高山草甸 / 阴天 / 无口播语音 / 花海拍摄现场 / 金色草浪 / 远景树木 / Tall golden grasses sway in the foreground, with trees and a cloudy sky in the background. / 车窗外观察 / 山坡村落 / 日落 / 日落拍摄 / 村落 / 黄昏 / Two frames...",
+      "summary": "固定机位观察 / 高山草甸 / 阴天 / 无口播语音 / 花海拍摄现场 / 金色草浪 / 远景树木 / Tall golden grasses sway in the foreground, with trees and a cloudy sky in the background. / 车窗外观察 / 山坡村落 / 日落 / 无口播语音 / 日落拍摄 / 村落 / 黄昏 / Two frames show a landscape with a village on a hill, trees in the foreground, and a cloudy sky with a sunset glow. / 手持自拍口播 / 户外徒步道 / 天气光线不明 / 有口播语音 / 返程途中偶遇晚霞 / 徒步前行 / 火烧云惊喜 / A person with a backpack and trekking poles walks along a red dirt path through tall grass, following another hiker ahead.",
       "startAt": "2026-04-26T11:38:11.000Z",
       "endAt": "2026-04-26T11:42:54.587Z",
       "location": "抚仙湖住宿/湖边",
@@ -10870,7 +10632,7 @@
     {
       "id": "route-07503a59be55",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：云南省，玉溪市，澄江市，右所镇 · 抚仙湖国际度假小镇湖畔森林公园 → 云南省，玉溪市，江川区，江城镇 · 抚仙湖阳光半岛度假酒店",
       "summary": "第一人称行车 / 城市街道 / 夜晚 / 有口播语音 / 路口等待 / 白色轿车 / 摩托车 / A white sedan and a motorcycle are stopped at a crosswalk at night, with a 'vanke' sign visible in the background. / 我能停这儿 哪个同 / A white car and a motorcyclist wait at a ...",
       "startAt": "2026-04-26T11:54:12.580Z",
@@ -10967,9 +10729,9 @@
     {
       "id": "event-9e9aedb39218",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "棕榈树",
-      "summary": "第一人称行车 / 户外广场 / 晴天 / 无口播语音 / 棕榈树 / 米色建筑 / 消防栓箱 / The video shows a sunny outdoor plaza with palm trees, beige buildings, and a fire hydrant box on the right. / 车窗外观察 / 室内过渡场景 / 天气光线不明 / 场景切换过渡 / 盆栽植物 / 室内行走 / The first ...",
+      "summary": "环境远景 / 户外广场 / 晴天 / 无口播语音 / 棕榈树 / 米色建筑 / 消防栓箱 / The video shows a sunny outdoor plaza with palm trees, beige buildings, and a fire hydrant box on the right. / 车窗外观察 / 室内过渡场景 / 天气光线不明 / 场景切换过渡 / 盆栽植物 / 室内行走 / The first fr...",
       "startAt": "2026-04-27T00:16:32.000Z",
       "endAt": "2026-04-27T00:21:01.579Z",
       "location": "云南省，玉溪市，江川区，江城镇 · 抚仙湖阳光半岛度假酒店",
@@ -10982,7 +10744,7 @@
     {
       "id": "route-d500066647a3",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：云南省，玉溪市，江川区，江城镇 · 滇湖酒店 → 云南省，玉溪市，江川区，江城镇 · 抚仙湖云溪海岸酒店",
       "summary": "第一人称行车 / 车内 / 天气光线不明 / 有口播语音 / 旅途开始 / A person with curly hair and glasses wearing a red jacket sits in the front passenger seat of a car, while two other passengers are visible in the back seat. / 今天是行程的第三天也是正式旅途的第一天 /...",
       "startAt": "2026-04-27T00:53:46.260Z",
@@ -11428,7 +11190,7 @@
       "kind": "event",
       "reviewStatus": "confirmed",
       "title": "老虎跳上空",
-      "summary": "航拍老虎跳峡谷全景，俯瞰怒江最窄处 / 航拍建场 / 峡谷河流 / 晴天 / 无口播语音 / 蜿蜒山路 / 桥梁横跨 / 隧道入口 / Aerial view of a winding road along a river in a mountainous gorge, featuring a tunnel entrance and a bridge crossing the river. / 河谷山路 / 航拍河谷建场 / 河谷风光...",
+      "summary": "航拍俯瞰 / 峡谷河流 / 晴天 / 无口播语音 / 悬索桥 / 宽阔河流 / 右侧公路 / Aerial view of a wide river flowing through a lush green mountain gorge with a winding road along the right bank and a suspension bridge spanning the river in the foreground. / 航拍俯瞰 / 峡谷河流 / 雾天 / 无口播语音 / 情景不明 / 湍急水流 / 桥梁隧道 / A wide river flows through a deep, green mountain gorge with steep rocky cliffs on both sides. A paved road runs along the left bank, featuring a bridge and tunnel entrance. The water is turbulent with white rapids, and the scene is framed by lush vegetation and misty distant peaks. / 航拍俯瞰 / 峡谷河流 / 晴天 / 无口播语音 / 河谷航拍 / 蜿蜒道路 / 绿色植被 / Aerial view of a winding river flowing through a deep mountain gorge with steep rocky cliffs and lush green vegetation. A paved road runs along the riverbank on the left side, with vehicles visible. The water appears turbulent with white rapids in the foreground, transitioning to calmer waters further downstream. The scene is captured from a high vantage point, showcasing the dramatic topography and natural beauty of the landscape. / 航拍俯瞰 / 蜿蜒山路河谷 / 天气光线不明 / 无口播语音 / 河谷航拍视角 / 湍急河流 / 前景瀑布 / Aerial view of a winding road alongside a turbulent river in a lush mountain valley, with a small waterfall visible in the foreground. / 航拍俯瞰 / 峡谷河流 / 晴天 / 无口播语音 / 蜿蜒山路 / 桥梁横跨 / 隧道入口 / Aerial view of a winding road along a river in a mountainous gorge, featuring a tunnel entrance and a bridge crossing the river. / 航拍俯瞰 / 河谷山路 / 晴天 / 无口播语音 / 航拍河谷建场 / 河谷风光 / 植被茂密 / Aerial view of a winding road along a river in a mountainous valley, with lush green vegetation on the hillsides and rocky riverbanks. / 航拍俯瞰 / 山谷公路 / 晴天 / 无口播语音 / 雾中山路会车等待 / 航拍视角 / 河流桥梁 / Aerial view of a winding road alongside a river in a deep mountain valley, with a bridge and tunnel visible in the distance.",
       "startAt": "2026-04-27T10:22:13.000Z",
       "endAt": "2026-04-27T10:28:34.027Z",
       "location": "老虎跳上空",
@@ -11519,9 +11281,9 @@
     {
       "id": "event-186e3229ff30",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "夜间观景",
-      "summary": "第一人称行车 / 环境不明 / 夜晚 / 有口播语音 / 夜间观景 / 木质围栏 / 发光路牌 / A dark night scene with a wooden fence and a glowing sign reading 'G219 国之大' visible on the right. / 这全景不错呀 / 固定机位口播 / 红色建筑前 / 天气光线不明 / 无口播语音 / 人物站立 / 红衣男子 / 背包眼镜 / A ma...",
+      "summary": "固定机位观察 / 环境不明 / 夜晚 / 有口播语音 / 夜间观景 / 木质围栏 / 发光路牌 / A dark night scene with a wooden fence and a glowing sign reading 'G219 国之大' visible on the right. / 这全景不错呀 / 第三人称跟拍 / 红色建筑前 / 天气光线不明 / 无口播语音 / 人物站立 / 红衣男子 / 背包眼镜 / A ma...",
       "startAt": "2026-04-27T13:29:59.000Z",
       "endAt": "2026-04-27T13:32:00.220Z",
       "location": "云南省，怒江傈僳族自治州，福贡县，匹河怒族乡 · 老姆登村景区",
@@ -11553,30 +11315,14 @@
     {
       "id": "event-4e8d42e5d601",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "天气变化",
-      "summary": "延时记录 / 山村 / 雾天 / 无口播语音 / 天气变化 / 蓝天白云 / 雾气弥漫 / The scene transitions from a dramatic blue sky with clouds to a misty, foggy atmosphere over the mountain village.",
+      "summary": "延时记录 / 山村 / 雾天 / 无口播语音 / 天气变化 / 蓝天白云 / 雾气弥漫 / The scene transitions from a dramatic blue sky with clouds to a misty, foggy atmosphere over the mountain village. / 环境远景 / 国道 G219 旁 / 国道 G219 观景 / 木质平台 / 路牌前景 / A person s...",
       "startAt": "2026-04-28T00:20:00.000Z",
-      "endAt": "2026-04-28T00:20:48.833Z",
-      "location": "云南省，怒江傈僳族自治州，福贡县，匹河怒族乡 · 老姆登村景区",
-      "spanIds": [
-        "a34507a6-8d22-42c0-9735-ad47867c06c7"
-      ]
-    },
-    {
-      "id": "route-46bc0465853f",
-      "kind": "route",
-      "reviewStatus": "pending",
-      "title": "行车：云南省，怒江傈僳族自治州，福贡县，匹河怒族乡 · 老姆登村景区",
-      "summary": "车窗外观察 / 国道 G219 旁 / 雾天 / 无口播语音 / 国道 G219 观景 / 木质平台 / 路牌前景 / A person stands on a wooden deck overlooking misty mountains with a G219 national highway signpost in the foreground, setting the scene for a journey along Chi...",
-      "startAt": "2026-04-28T00:20:31.000Z",
       "endAt": "2026-04-28T00:25:04.094Z",
       "location": "云南省，怒江傈僳族自治州，福贡县，匹河怒族乡 · 老姆登村景区",
-      "route": {
-        "from": "云南省，怒江傈僳族自治州，福贡县，匹河怒族乡 · 老姆登村景区",
-        "to": "云南省，怒江傈僳族自治州，福贡县，匹河怒族乡 · 老姆登村景区"
-      },
       "spanIds": [
+        "a34507a6-8d22-42c0-9735-ad47867c06c7",
         "28d66f2e-ab41-4f05-a808-7fad3746e526",
         "ca3cdbe2-27d3-4ae6-bec2-b7f1aab8fc1f"
       ]
@@ -11586,7 +11332,7 @@
       "kind": "event",
       "reviewStatus": "confirmed",
       "title": "老姆登村上空",
-      "summary": "航拍云雾缭绕的老姆登村+怒江峡谷+皇冠峰 / 航拍建场 / 山村 / 阴天 / 无口播语音 / 云雾缭绕 / 航拍视角 / 静谧氛围 / An aerial view of a misty mountain village nestled among lush green hills, partially obscured by rolling clouds, evoking a serene and secluded atmosph...",
+      "summary": "航拍运动 / 山谷村落 / 阴天 / 无口播语音 / 云雾缭绕山村 / 彩色房屋 / 梯田景观 / A series of aerial drone shots capturing a lush mountain village nestled in a valley, partially obscured by thick clouds. The footage showcases colorful buildings, windi...",
       "startAt": "2026-04-28T00:27:01.000Z",
       "endAt": "2026-04-28T01:06:37.387Z",
       "location": "老姆登村上空",
@@ -11620,23 +11366,6 @@
         "96227f12-995f-4f59-a3f1-0938d30fbc5b-direct-full",
         "762f4348-186e-4284-b8c0-dc806378c311",
         "9c646c1c-8595-465a-b137-fddb381f0469-direct-full"
-      ]
-    },
-    {
-      "id": "route-cdb50a71e380",
-      "kind": "route",
-      "reviewStatus": "pending",
-      "title": "行车：云南省，怒江傈僳族自治州，福贡县，匹河怒族乡 · 老姆登村景区",
-      "summary": "照片记录 / 木制阳台观景 / 雾天 / 无口播语音 / 山村公路打卡 / 传统民居 / G219 路标 / A person stands on a wooden balcony overlooking a misty mountain village with traditional houses and a prominent G219 road sign, capturing a serene travel scene in ...",
-      "startAt": "2026-04-28T01:07:38.000Z",
-      "endAt": "2026-04-28T01:07:38.000Z",
-      "location": "云南省，怒江傈僳族自治州，福贡县，匹河怒族乡 · 老姆登村景区",
-      "route": {
-        "from": "云南省，怒江傈僳族自治州，福贡县，匹河怒族乡 · 老姆登村景区",
-        "to": "云南省，怒江傈僳族自治州，福贡县，匹河怒族乡 · 老姆登村景区"
-      },
-      "spanIds": [
-        "bc4a5493-8867-4eb0-a7d8-6d20c3af4938"
       ]
     },
     {
@@ -11686,7 +11415,7 @@
     {
       "id": "route-a3cf9e504ab1",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：云南省，怒江傈僳族自治州，福贡县，匹河怒族乡 · 老姆登村景区",
       "summary": "第一人称行车 / 车内 / 天气光线不明 / 有口播语音 / 车内讨论行程 / 卷发乘客 / A person with curly hair and glasses sits in the front passenger seat of a car, looking out the window while other passengers are visible in the back. / 进去平均匀 / 红衣司机 / Thre...",
       "startAt": "2026-04-28T02:29:28.000Z",
@@ -11742,7 +11471,7 @@
       "kind": "event",
       "reviewStatus": "confirmed",
       "title": "知子罗村民委员会",
-      "summary": "航拍前往知子罗的过程 / 航拍跟随 / 山路 / 雾天 / 无口播语音 / 航拍山路 / 蜿蜒公路 / 浓雾 / A winding road curves through a lush green mountainous landscape, partially obscured by thick fog. / 林间公路 / 晴天 / 车辆行驶途中 / 绿色森林 / 蜿蜒道路 / Aerial footage of a lush g...",
+      "summary": "第一人称行车 / 铺装山路 / 阴天 / 无口播语音 / 山路行驶中 / 红色横幅 / 绿色山坡 / A yellow SUV drives along a paved road bordered by a concrete retaining wall and lush green hillside. Red banners with Chinese characters hang along the wall. The scene is captured from an elevated perspective, showing the vehicle moving through a scenic, possibly rural, mountainous area. / 航拍俯瞰 / 山路 / 雾天 / 无口播语音 / 航拍山路 / 蜿蜒公路 / 浓雾 / A winding road curves through a lush green mountainous landscape, partially obscured by thick fog. / 航拍运动 / 林间公路 / 晴天 / 无口播语音 / 车辆行驶途中 / 绿色森林 / 蜿蜒道路 / Aerial footage of a lush green forested hillside with a winding road cutting through the landscape. A yellow vehicle is visible driving along the road, providing a sense of scale and movement within the natural setting. / 航拍运动 / 绿色山丘公路 / 天气光线不明 / 无口播语音 / 情景不明 / 黄色车辆 / 蜿蜒道路 / A series of aerial drone shots capturing a winding road through lush green hills. A yellow vehicle is seen driving along the road, passing by small structures and dense vegetation. The footage provides a scenic overview of the rural landscape.",
       "startAt": "2026-04-28T02:41:41.000Z",
       "endAt": "2026-04-28T02:45:41.728Z",
       "location": "知子罗村民委员会",
@@ -11758,7 +11487,7 @@
       "kind": "event",
       "reviewStatus": "confirmed",
       "title": "知子罗（海拔2023m）",
-      "summary": "废弃的怒江旧州府，80年代建筑完好保存。篮球场、八角楼、废弃图书馆，人文纪录片素材。 / 第一人称行车 / 山路 / 下雨 / 有口播语音 / 抵达芝子罗 / 湿滑路面 / 黄色车辆 / A yellow vehicle drives along a wet road past white buildings and trees on a rainy day. / 到达芝子罗 / 城镇街道 / 阴天 / 无口播语音 / 城镇穿行 / ...",
+      "summary": "第一人称行车 / 山路 / 下雨 / 有口播语音 / 抵达芝子罗 / 湿滑路面 / 黄色车辆 / A yellow vehicle drives along a wet road past white buildings and trees on a rainy day. / 到达芝子罗 / 城镇街道 / 阴天 / 无口播语音 / 城镇穿行 / 阴天光线 / A vehicle drives through a wet, paved ...",
       "startAt": "2026-04-28T02:49:14.460Z",
       "endAt": "2026-04-28T03:38:53.091Z",
       "location": "知子罗（海拔2023m）",
@@ -11828,23 +11557,6 @@
       ]
     },
     {
-      "id": "route-89b3b7be036b",
-      "kind": "route",
-      "reviewStatus": "pending",
-      "title": "行车：云南省，怒江傈僳族自治州，福贡县，匹河怒族乡 · 老姆登村景区",
-      "summary": "照片记录 / 历史村落街道 / 阴天 / 无口播语音 / 情景不明 / 黄色皮卡 / 湿滑路面 / A vibrant yellow pickup truck with custom decals drives through a wet, historic village street featuring a large faded mural of Mao Zedong on an old building wall.",
-      "startAt": "2026-04-28T03:41:42.000Z",
-      "endAt": "2026-04-28T03:41:42.000Z",
-      "location": "云南省，怒江傈僳族自治州，福贡县，匹河怒族乡 · 老姆登村景区",
-      "route": {
-        "from": "云南省，怒江傈僳族自治州，福贡县，匹河怒族乡 · 老姆登村景区",
-        "to": "云南省，怒江傈僳族自治州，福贡县，匹河怒族乡 · 老姆登村景区"
-      },
-      "spanIds": [
-        "f6978277-1957-4b13-938c-19fefc7f931e"
-      ]
-    },
-    {
       "id": "event-pharos-1591e77ec982",
       "kind": "event",
       "reviewStatus": "confirmed",
@@ -11861,7 +11573,7 @@
     {
       "id": "route-85759da76683",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：云南省，怒江傈僳族自治州，福贡县，匹河怒族乡 · 老姆登村景区 → 云南省，怒江傈僳族自治州，福贡县，上帕镇 · 怒江大峡谷",
       "summary": "第一人称行车 / 山路 / 下雨 / 有口播语音 / 山路行车 / 雨天下坡 / 黄色车辆 / A yellow vehicle drives along a wet, winding road with colorful center markings, flanked by trees and a concrete wall covered in greenery. / 一路山路下雨下坡 / A yellow vehicle dr...",
       "startAt": "2026-04-28T04:11:23.040Z",
@@ -11988,7 +11700,7 @@
     {
       "id": "route-06f9d1a2bf6a",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：云南省，怒江傈僳族自治州，福贡县，上帕镇 · 怒江大峡谷 → 云南省，怒江傈僳族自治州，福贡县，石月亮乡 · 怒江大峡谷",
       "summary": "第一人称行车 / 湿滑山路 / 下雨 / 有口播语音 / 川藏线行车 / 红色卡车 / 大型广告牌 / A wet road with a red truck on the left, large billboards on the right, and a yellow vehicle hood in the foreground. / 这不是川藏川藏线就三油吧 / 施工路段 / 工地场景 / 黄色挖掘机 / 橙色路障 / A we...",
       "startAt": "2026-04-28T06:20:15.000Z",
@@ -12040,7 +11752,7 @@
       "kind": "event",
       "reviewStatus": "confirmed",
       "title": "石月亮观景台",
-      "summary": "石月亮打卡：巨大岩壁天然穿洞，怒江标志性景观。长焦特写穿洞。 / 第一人称行车 / 山路 / 下雨 / 有口播语音 / 山路行车 / 绿色山丘 / 雾气弥漫 / A yellow vehicle drives on a wet mountain road surrounded by green hills and mist. / 这个这个 / 无口播语音 / 路边停车 / 路边店铺 / 覆盖车辆 / A yellow vehicle ...",
+      "summary": "第一人称行车 / 山路 / 下雨 / 有口播语音 / 山路行车 / 绿色山丘 / 雾气弥漫 / A yellow vehicle drives on a wet mountain road surrounded by green hills and mist. / 这个这个 / 无口播语音 / 路边停车 / 路边店铺 / 覆盖车辆 / A yellow vehicle drives on a wet mountain road, pa...",
       "startAt": "2026-04-28T06:58:02.000Z",
       "endAt": "2026-04-28T07:01:57.590Z",
       "location": "石月亮观景台",
@@ -12058,23 +11770,9 @@
       ]
     },
     {
-      "id": "event-58f0bd7e1feb",
-      "kind": "event",
-      "reviewStatus": "pending",
-      "title": "雾气弥漫",
-      "summary": "环境空镜 / 山谷村落 / 雾天 / 无口播语音 / 雾气弥漫 / 绿色山谷 / 小村庄 / A serene mountain landscape with mist rolling through lush green valleys and a small village nestled among the peaks. / 山地环境 / 情景不明 / 自然岩拱 / 云雾缭绕 / A serene misty mountain ...",
-      "startAt": "2026-04-28T07:08:56.000Z",
-      "endAt": "2026-04-28T07:09:49.000Z",
-      "location": "云南省，怒江傈僳族自治州，福贡县，石月亮乡 · 怒江大峡谷",
-      "spanIds": [
-        "fdc3b375-a88d-46f6-ad67-98da41f3ee28",
-        "555672d1-1254-4651-8ea2-2b666294ade9"
-      ]
-    },
-    {
       "id": "route-ce14f461e76b",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：云南省，怒江傈僳族自治州，福贡县，石月亮乡 · 怒江大峡谷 → 云南省，怒江傈僳族自治州，贡山独龙族怒族自治县，丙中洛镇 · 怒江大峡谷",
       "summary": "第一人称行车 / 泥泞山路 / 阴天 / 有口播语音 / 山泉冲水路面 / 黄色车辆 / 村庄房屋 / A yellow vehicle navigates a flooded, debris-filled road in a mountainous village area with houses and a waterfall visible. / 这怎么还有一个山泉往下冲啊 / 无口播语音 / 涉水通过路段 / 瀑布岩石 / A...",
       "startAt": "2026-04-28T07:15:25.720Z",
@@ -12213,11 +11911,11 @@
       ]
     },
     {
-      "id": "event-3bd1f4627505",
+      "id": "event-687ae5533b73",
       "kind": "event",
-      "reviewStatus": "pending",
-      "title": "深谷河流航拍",
-      "summary": "航拍建场 / 深谷河流 / 晴天 / 无口播语音 / 深谷河流航拍 / 蜿蜒河流 / 茂密植被 / A serene aerial view of a winding river cutting through lush green mountains in a deep valley, surrounded by dense vegetation and bathed in soft sunlight. / 固定机位观察 / 峡谷河...",
+      "reviewStatus": "confirmed",
+      "title": "自然景观展示",
+      "summary": "航拍俯瞰 / 深谷河流 / 晴天 / 无口播语音 / 深谷河流航拍 / 蜿蜒河流 / 茂密植被 / A serene aerial view of a winding river cutting through lush green mountains in a deep valley, surrounded by dense vegetation and bathed in soft sunlight. / 固定机位观察 / 峡谷河...",
       "startAt": "2026-04-28T09:28:17.000Z",
       "endAt": "2026-04-28T09:28:37.598Z",
       "location": "云南省，怒江傈僳族自治州，贡山独龙族怒族自治县，丙中洛镇 · 怒江第一湾",
@@ -12229,7 +11927,7 @@
     {
       "id": "route-972e15c6f712",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：云南省，怒江傈僳族自治州，贡山独龙族怒族自治县，丙中洛镇 · 怒江大峡谷",
       "summary": "第一人称行车 / 隧道内 / 天气光线不明 / 有口播语音 / 车辆进入隧道 / 山路行车 / 隧道灯光 / A vehicle travels along a winding mountain road, passing through a tunnel with illuminated lights and red-and-white striped walls. / 隧道 是不是就是冰中落 那个是不是就是冰中落管理台是呀是 你拐...",
       "startAt": "2026-04-28T09:34:44.000Z",
@@ -12284,7 +11982,7 @@
     {
       "id": "route-c058f2a97675",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：云南省，怒江傈僳族自治州，贡山独龙族怒族自治县，丙中洛镇 · 怒江大峡谷",
       "summary": "第一人称行车 / 山路 / 晴天 / 有口播语音 / 讨论骑行路线 / 黄色车辆 / 石墙植被 / A yellow vehicle drives along a paved road next to a stone retaining wall covered in dense green vegetation. / 可能是额外报备的 / 讨论边境骑行 / 蜿蜒山路 / 茂密树林 / A yellow vehicle drives ...",
       "startAt": "2026-04-28T10:26:11.000Z",
@@ -12312,9 +12010,9 @@
     {
       "id": "event-2ee6cff22534",
       "kind": "event",
-      "reviewStatus": "pending",
-      "title": "停车场环境空镜",
-      "summary": "固定机位观察 / 地下停车场 / 室内灯光 / 无口播语音 / 停车场环境空镜 / 电动巴士 / 行人穿行 / A person walks through a parking garage lined with small electric buses. / 停车场车库 / 有口播语音 / 停车场物资准备 / 指示牌 / 访客中心 / Two men stand in a parking garage next to a table...",
+      "reviewStatus": "confirmed",
+      "title": "停车场环境观察",
+      "summary": "固定机位观察 / 地下停车场 / 室内灯光 / 无口播语音 / 停车场环境观察 / 电动巴士 / 行人穿行 / A person walks through a parking garage lined with small electric buses. / 停车场车库 / 有口播语音 / 停车场物资准备 / 指示牌 / 访客中心 / Two men stand in a parking garage next to a table...",
       "startAt": "2026-04-28T10:31:21.000Z",
       "endAt": "2026-04-28T10:34:23.086Z",
       "location": "云南省，怒江傈僳族自治州，贡山独龙族怒族自治县，丙中洛镇 · 怒江大峡谷",
@@ -12327,7 +12025,7 @@
     {
       "id": "route-6e2f12d3cee9",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：云南省，怒江傈僳族自治州，贡山独龙族怒族自治县，丙中洛镇 · 怒江大峡谷",
       "summary": "第一人称行车 / 国道隧道 / 天气光线不明 / 有口播语音 / 大卡车倒车拥堵 / 黄色车辆跟随 / 红色卡车行驶 / A yellow vehicle follows a red truck along a winding road through a dense, green forest. / 他在倒车 大卡车在国道上倒车这俩怎么都倒车开锅了吧 不是前面堵了 不是 你开锅了也不能这么倒啊这种隧道 / 林间山路 / 无口播语音 ...",
       "startAt": "2026-04-28T10:40:09.540Z",
@@ -12349,7 +12047,7 @@
       "kind": "event",
       "reviewStatus": "confirmed",
       "title": "丙中洛观景台（村口上方高机位）",
-      "summary": "长焦压缩丙中洛村落层次、怒江峡谷晚霞与低云染色；天气一般则拍山谷光影变化。；广角带入丙中洛村、怒江峡谷与天空色温变化，与A7R5长焦形成对切。；第三视角拍摄：摄影师在丙中洛观景台架设傍晚延时，判断晚霞、低云和村落层次是否成立。 / 车窗外观察 / 石质露台 / 夜晚 / 有口播语音 / 讨论查鱼封路绕行 / 摩托车手 / 山景背景 / Two motorcyclists in gear stand on a stone patio, ...",
+      "summary": "车窗外观察 / 石质露台 / 夜晚 / 有口播语音 / 讨论查鱼封路绕行 / 摩托车手 / 山景背景 / Two motorcyclists in gear stand on a stone patio, with one pointing toward a scenic mountain view. / 快过来了 你是查鱼过来的吗 冰茶茶那边封路嘛 我们明天穿过去这种管制那是时间的它会放是吧对 那就行了要不然我们绕路要绕一千公里 因...",
       "startAt": "2026-04-28T10:54:04.000Z",
       "endAt": "2026-04-28T11:35:44.139Z",
       "location": "丙中洛观景台（村口上方高机位）",
@@ -12374,23 +12072,9 @@
       ]
     },
     {
-      "id": "event-8d34e8d84d5a",
-      "kind": "event",
-      "reviewStatus": "pending",
-      "title": "雪山日落",
-      "summary": "照片记录 / 森林 / 晴天 / 无口播语音 / 雪山日落 / 金色云层 / 深蓝天空 / A majestic mountain range with snow-covered peaks partially obscured by golden-lit clouds at dusk, set against a deep blue sky and dark forested slopes. / 日出或日落 / 雪山光影 / 金色阳...",
-      "startAt": "2026-04-28T11:40:23.000Z",
-      "endAt": "2026-04-28T11:46:45.000Z",
-      "location": "云南省，怒江傈僳族自治州，贡山独龙族怒族自治县，丙中洛镇 · 怒江大峡谷",
-      "spanIds": [
-        "62f419b8-1443-4584-bb5e-31718804e29c",
-        "2dca6699-e8af-41e9-b1d4-dd45c6dfe7c0"
-      ]
-    },
-    {
       "id": "route-b84eff441087",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：云南省，怒江傈僳族自治州，贡山独龙族怒族自治县，丙中洛镇 · 怒江大峡谷",
       "summary": "第一人称行车 / 盘山公路 / 天气光线不明 / 有口播语音 / 临时停车决策 / 限速标志 / 小型建筑 / A vehicle travels along a winding mountain road at dusk, passing a speed limit sign and a small building. / 看怎么着掉头 管他呢 这对吗 / 数字路牌 / A yellow vehicle travels along ...",
       "startAt": "2026-04-28T12:00:10.320Z",
@@ -12506,7 +12190,7 @@
     {
       "id": "event-82bf0cace85c",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "雨雾观景",
       "summary": "车窗外观察 / 石砌观景台 / 雨天 / 无口播语音 / 雨雾观景 / 木质栏杆 / 远处城镇灯光 / A misty, rainy scene at a stone-paved overlook with a wooden railing, a large rock with Chinese characters, and a distant town with lights. / 固定机位口播 / 观景台 / 小雨 / 有口播语音...",
       "startAt": "2026-04-28T22:33:58.000Z",
@@ -12523,7 +12207,7 @@
       "kind": "event",
       "reviewStatus": "confirmed",
       "title": "丙中洛上空",
-      "summary": "航拍晨雾中的丙中洛+怒江第一湾 / 车窗外观察 / 山间石碑处 / 雾天 / 无口播语音 / 远眺雾中山景 / 红色外套人物 / 石质纪念碑 / A person in a red coat stands near a stone monument with blue characters, overlooking a misty mountain landscape. / 山谷观景 / 山谷远眺 / 石台观景 / 村庄雾气 / A ...",
+      "summary": "环境远景 / 山地环境 / 雾天 / 无口播语音 / 云雾山村俯瞰 / 石砌护栏 / 层叠山峦 / A person stands on a stone ledge overlooking a misty mountain village nestled in a lush valley, with layered hills and fog creating a serene and expansive atmosphere. / ...",
       "startAt": "2026-04-28T22:45:23.000Z",
       "endAt": "2026-04-28T23:06:13.264Z",
       "location": "丙中洛上空",
@@ -12553,18 +12237,14 @@
       ]
     },
     {
-      "id": "route-40b92231eac6",
-      "kind": "route",
-      "reviewStatus": "pending",
-      "title": "行车：云南省，怒江傈僳族自治州，贡山独龙族怒族自治县，丙中洛镇 · 怒江大峡谷",
-      "summary": "车内自拍口播 / 车内 / 晴天 / 无口播语音 / 车内访谈 / 卷发男子 / 红色夹克 / A man with curly hair and glasses sits in a car, wearing a red jacket over a white turtleneck, while another person is visible in the background.",
+      "id": "event-64804f391129",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "车内访谈",
+      "summary": "第三人称跟拍 / 车内 / 晴天 / 无口播语音 / 车内访谈 / 卷发男子 / 红色夹克 / A man with curly hair and glasses sits in a car, wearing a red jacket over a white turtleneck, while another person is visible in the background.",
       "startAt": "2026-04-28T23:15:52.000Z",
       "endAt": "2026-04-28T23:16:00.576Z",
       "location": "云南省，怒江傈僳族自治州，贡山独龙族怒族自治县，丙中洛镇 · 怒江大峡谷",
-      "route": {
-        "from": "云南省，怒江傈僳族自治州，贡山独龙族怒族自治县，丙中洛镇 · 怒江大峡谷",
-        "to": "云南省，怒江傈僳族自治州，贡山独龙族怒族自治县，丙中洛镇 · 怒江大峡谷"
-      },
       "spanIds": [
         "bbc84b3b-4dd0-40b4-8b0f-02248949b640"
       ]
@@ -12572,7 +12252,7 @@
     {
       "id": "event-720492e17228",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "拍摄结束总结",
       "summary": "手持自拍口播 / 环境不明 / 雾天 / 有口播语音 / 拍摄结束总结 / 红色外套 / A man with curly hair and glasses wearing a red coat takes a selfie in a foggy outdoor setting with a yellow car and a tent visible in the background. / 虽然凌晨落汤机了 但是近乎完美的完成了这次...",
       "startAt": "2026-04-28T23:22:57.260Z",
@@ -12600,7 +12280,7 @@
     {
       "id": "route-4df80bcc3153",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：云南省，怒江傈僳族自治州，贡山独龙族怒族自治县，丙中洛镇 · 怒江大峡谷",
       "summary": "第一人称行车 / 山村道路 / 雾天 / 有口播语音 / 山村湿滑行车 / 湿滑路面 / 绿色树木 / A vehicle drives on a wet road through a misty mountain village with green trees and buildings on both sides. / 字 / 无口播语音 / 黄色车辆 / 雨刮器 / A yellow vehicle drives on a w...",
       "startAt": "2026-04-28T23:36:07.080Z",
@@ -12625,7 +12305,7 @@
     {
       "id": "event-28780ac33fb7",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "车辆接受检查",
       "summary": "车窗外观察 / 检查站 / 晴天 / 有口播语音 / 车辆接受检查 / SUV 后备箱 / 移民管理局 / A dark SUV with its trunk open is stopped at a checkpoint, where officers are inspecting the luggage inside. / 啊一直在云南 没有没有 还是可以查查还要查后面香 这个比较圆 那我可能再下去一下这个是有移民管理局的在查 好吧",
       "startAt": "2026-04-28T23:52:19.540Z",
@@ -12638,7 +12318,7 @@
     {
       "id": "route-0a8ff630f94b",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：云南省，怒江傈僳族自治州，贡山独龙族怒族自治县，丙中洛镇 · 怒江大峡谷 → 西藏自治区，林芝市，察隅县，察瓦龙乡 · 怒江大峡谷",
       "summary": "第一人称行车 / 车内 / 天气光线不明 / 有口播语音 / 边境检查点 / 边界严格 / 持枪守卫 / A person with curly hair and glasses wearing a maroon jacket takes a selfie inside a moving car, with another passenger visible in the back seat. / 它这个边界还挺严格的哎 连上了喂 它...",
       "startAt": "2026-04-28T23:55:29.440Z",
@@ -12806,7 +12486,7 @@
     {
       "id": "route-cd98fca37b29",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：西藏自治区，林芝市，察隅县，察瓦龙乡 · 怒江大峡谷",
       "summary": "第一人称行车 / 山路 / 阴天 / 有口播语音 / 山路行驶讨论烂路 / 烂路 / A vehicle travels along a winding mountain road with steep rocky slopes, concrete barriers, and distant cloud-covered peaks. / 有了 等会再烂路到真正的烂路再跟端扯完美 / 山路跟车行驶 / 弯道 / A yellow veh...",
       "startAt": "2026-04-29T01:27:06.620Z",
@@ -12864,11 +12544,11 @@
     {
       "id": "route-72ab25f4c20a",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：西藏自治区，林芝市，察隅县，察瓦龙乡 · 怒江大峡谷",
       "summary": "第一人称行车 / 城镇街道 / 晴天 / 有口播语音 / 正式出发准备 / 蓝色皮卡 / 城镇背景 / A blue pickup truck with license plate 川D·19A89 is parked on the right side of a street in a town with mountains in the background. / 正式出发 / 无口播语音 / 城镇行车观察 / 黄色车辆 / 沿街...",
       "startAt": "2026-04-29T02:26:30.000Z",
-      "endAt": "2026-04-29T02:33:39.780Z",
+      "endAt": "2026-04-29T02:32:38.240Z",
       "location": "西藏自治区，林芝市，察隅县，察瓦龙乡 · 怒江大峡谷",
       "route": {
         "from": "西藏自治区，林芝市，察隅县，察瓦龙乡 · 怒江大峡谷",
@@ -12904,28 +12584,28 @@
         "a22cf736-e53e-4629-b492-5f47e5b1d8a0",
         "af2e1a57-4449-4f17-b475-bdb8d554ec75",
         "a6fb9015-c5c9-47fa-b1e7-ad80f31d827a",
-        "a0f18a3c-7d26-47ea-b043-5f796bdd105c",
-        "7304c273-51e2-45f1-b077-57f945ccf8cd",
-        "56845d77-6eff-4892-898c-0d88cfe80fba"
+        "a0f18a3c-7d26-47ea-b043-5f796bdd105c"
       ]
     },
     {
-      "id": "event-832864cc8ed5",
+      "id": "event-57a7d9a0d84c",
       "kind": "event",
-      "reviewStatus": "pending",
-      "title": "施工区域通行",
-      "summary": "第三人称跟拍 / 工地现场 / 天气光线不明 / 无口播语音 / 施工区域通行 / 黄色挖掘机 / 白色 SUV / A man walks past a yellow XCMG excavator and a white SUV at a construction site with a blue sign reading 'Construction Ahead, No Entry'.",
-      "startAt": "2026-04-29T02:34:55.000Z",
+      "reviewStatus": "confirmed",
+      "title": "前方施工禁行",
+      "summary": "固定机位观察 / 土路施工路段 / 晴天明亮 / 有口播语音 / 前方施工禁行 / 白色 SUV 停车 / 蓝色指示牌 / A white SUV is stopped on a dirt road in front of a blue sign that reads 'Construction Ahead, No Entry'. / 蛤 / 土路施工区 / 天气光线不明 / 施工路段受阻 / 白色 SUV / 蓝色警示牌 / A w...",
+      "startAt": "2026-04-29T02:33:32.000Z",
       "endAt": "2026-04-29T02:35:06.094Z",
       "location": "西藏自治区，林芝市，察隅县，察瓦龙乡 · 怒江大峡谷",
       "spanIds": [
+        "7304c273-51e2-45f1-b077-57f945ccf8cd",
+        "56845d77-6eff-4892-898c-0d88cfe80fba",
         "8abbe32f-fefc-4cef-b502-32412b31fed3"
       ]
     },
     {
       "id": "route-918a3d2f990a",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：西藏自治区，林芝市，察隅县，察瓦龙乡 · 怒江大峡谷",
       "summary": "第一人称行车 / 山路 / 天气光线不明 / 有口播语音 / 山路行车 / 感谢铲车 / 铺平道路 / A man with curly hair and glasses wearing a red jacket drives a car with passengers in the back seat. / 这个铲车大哥给我们把路铺平了然后现在要即刻出发 / 车内 / 乘客互动 / 竖大拇指 / A man with curly h...",
       "startAt": "2026-04-29T02:36:22.580Z",
@@ -13129,7 +12809,7 @@
     {
       "id": "route-d5a859385a65",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：西藏自治区，林芝市，察隅县，察瓦龙乡 · 怒江大峡谷",
       "summary": "第一人称行车 / 山路 / 天气光线不明 / 有口播语音 / 山路行车 / 跟车 / A yellow vehicle follows a large cement truck on a dusty mountain road with steep rocky cliffs on the left. / 哎呦错是良机 那边有个摩托车 / 晴天 / 山路行车讨论路况 / 黄色车辆 / 大卡车 / A yellow vehicle dri...",
       "startAt": "2026-04-29T03:45:06.220Z",
@@ -13250,11 +12930,11 @@
     {
       "id": "route-1d254c8c94d6",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：西藏自治区，林芝市，察隅县，察瓦龙乡 · 怒江大峡谷 → 西藏自治区，林芝市，察隅县，察瓦龙乡",
       "summary": "第一人称行车 / 山谷公路 / 天气光线不明 / 有口播语音 / 路况好转 / 绿色山坡 / 远云 / A yellow vehicle drives along a paved mountain road through a valley with steep, green-covered slopes and distant clouds. / 过了那个发甲湾以后路就变好了 也是挺好的 / 无口播语音 / 车辆行驶 / 远山 / ...",
       "startAt": "2026-04-29T04:41:12.920Z",
-      "endAt": "2026-04-29T05:35:01.145Z",
+      "endAt": "2026-04-29T05:01:57.600Z",
       "route": {
         "from": "西藏自治区，林芝市，察隅县，察瓦龙乡 · 怒江大峡谷",
         "to": "西藏自治区，林芝市，察隅县，察瓦龙乡"
@@ -13273,8 +12953,36 @@
         "e6408b60-9854-4d58-8b1d-31f0766401c6",
         "512eea99-ddb5-4fe1-a031-33937957041f",
         "9696021c-1550-49c3-83c1-8e542d97dcb8",
-        "24f1cc18-ce8e-47ff-b0c3-f480331700b6",
-        "98e43ee4-4fc5-45cb-983d-75329cc282dd",
+        "24f1cc18-ce8e-47ff-b0c3-f480331700b6"
+      ]
+    },
+    {
+      "id": "event-4d9f44bc359b",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "国道风光",
+      "summary": "第三人称介绍 / 车内前排 / 天气光线不明 / 有口播语音 / 国道风光 / 乘客交谈 / 红色外套 / A man with curly hair and glasses wearing a red jacket sits in the front passenger seat of a car, with two other passengers visible in the back. / 哎,感觉到了 感觉刚才那个风路两边风...",
+      "startAt": "2026-04-29T05:11:59.140Z",
+      "endAt": "2026-04-29T05:12:14.780Z",
+      "location": "西藏自治区，林芝市，察隅县，察瓦龙乡",
+      "spanIds": [
+        "98e43ee4-4fc5-45cb-983d-75329cc282dd"
+      ]
+    },
+    {
+      "id": "route-d829c4eaa23d",
+      "kind": "route",
+      "reviewStatus": "confirmed",
+      "title": "行车：西藏自治区，林芝市，察隅县，察瓦龙乡",
+      "summary": "第一人称行车 / 盘山公路 / 晴天 / 有口播语音 / 山路行车中 / 黄色车辆 / 悬崖路段 / A yellow vehicle drives along a winding mountain road carved into steep rocky cliffs, with a red barrier visible on the right side. / 看下来 / 峡谷公路 / 峡谷路段 / A yellow vehic...",
+      "startAt": "2026-04-29T05:12:33.000Z",
+      "endAt": "2026-04-29T05:35:01.145Z",
+      "location": "西藏自治区，林芝市，察隅县，察瓦龙乡",
+      "route": {
+        "from": "西藏自治区，林芝市，察隅县，察瓦龙乡",
+        "to": "西藏自治区，林芝市，察隅县，察瓦龙乡"
+      },
+      "spanIds": [
         "868fddea-973b-41c7-9f1f-71e2f1e934d5",
         "45b85742-cf33-4b8c-9b71-fbf5ac919715",
         "4410ad1a-33fb-42ae-9bd0-6e1244bd8e36",
@@ -13306,7 +13014,7 @@
     {
       "id": "route-8cd8e11b38fb",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：西藏自治区，林芝市，察隅县，察瓦龙乡",
       "summary": "第一人称行车 / 山路 / 晴天 / 有口播语音 / 雪山会车等待 / 碎石路 / 绿色围挡 / A vehicle travels on a gravel road through a mountain valley, flanked by a white fence on the right and a green netted slope on the left. / 这个这个 这个这个 这个这个 这个",
       "startAt": "2026-04-29T05:34:53.560Z",
@@ -13387,7 +13095,7 @@
       "kind": "event",
       "reviewStatus": "confirmed",
       "title": "雄珠拉垭口上空",
-      "summary": "航拍盘山公路+雪山全景，海拔高注意电池衰减 / 航拍建场 / 森林 / 晴天 / 无口播语音 / 雪山航拍 / 雪山峰顶 / 针叶林 / A sweeping aerial view of a rugged mountain range featuring snow-covered peaks, steep rocky slopes, and dense evergreen forests. The scene captures th...",
+      "summary": "航拍运动 / 森林 / 晴天 / 无口播语音 / 雪山航拍 / 雪山峰顶 / 针叶林 / A sweeping aerial view of a rugged mountain range featuring snow-covered peaks, steep rocky slopes, and dense evergreen forests. The scene captures the grandeur of high-altitude terrain with visible avalanche chutes and natural erosion patterns. / 航拍俯瞰 / 山地峡谷 / 晴天 / 无口播语音 / 山路航拍 / 蜿蜒土路 / 瀑布 / Aerial view of a winding dirt road carved into a steep mountain cliff, surrounded by dense green forest and a waterfall cascading down the slope. / 航拍俯瞰 / 悬崖山路 / 晴天 / 无口播语音 / 航拍悬崖公路 / 瀑布 / 两辆车 / An aerial view of a winding mountain road carved into a steep cliffside, with a waterfall cascading down the forested slope in the background. Two vehicles are visible on the road, emphasizing the remoteness and ruggedness of the terrain. / 环境远景 / 山路 / 夜晚 / 无口播语音 / 山路行车 / 黄色 SUV / 狭窄山路 / A yellow SUV drives along a narrow mountain road carved into a steep, rocky hillside surrounded by dense forest and stone retaining walls.",
       "startAt": "2026-04-29T06:08:37.000Z",
       "endAt": "2026-04-29T06:12:16.000Z",
       "location": "雄珠拉垭口上空",
@@ -13401,7 +13109,7 @@
     {
       "id": "route-26a6c3f5c8c6",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：西藏自治区，林芝市，察隅县，察瓦龙乡 · 日巴曲 → 西藏自治区，林芝市，察隅县，察瓦龙乡 · 雄珠拉垭口",
       "summary": "第一人称行车 / 山路 / 下雪 / 有口播语音 / 冰雹天气 / 碎石路面 / 雪山远景 / A vehicle travels on a gravel road through a mountainous region with steep, rocky slopes and snow-capped peaks in the distance. / 这外面忽然下起了冰雹 感觉很有意思 / 晴天 / 无口播语音 / 山路行车 / 碎...",
       "startAt": "2026-04-29T06:30:47.500Z",
@@ -13455,7 +13163,7 @@
       "kind": "event",
       "reviewStatus": "confirmed",
       "title": "雄珠拉垭口（海拔4636m）",
-      "summary": "雄珠拉垭口打卡：三大垭口之一，弯道最多，4月底可能残雪。 / 航拍建场 / 山谷公路 / 晴天 / 无口播语音 / 航拍山谷公路 / 蜿蜒道路 / 森林河流 / An aerial view of a misty mountain valley with a winding road, lush green forests, a muddy river, and distant clouds creating a serene and...",
+      "summary": "航拍俯瞰 / 山地环境 / 下雪 / 无口播语音 / 雪山山路行车 / 黄色 SUV / 蜿蜒土路 / Aerial footage of a yellow SUV driving along a winding dirt road through a snowy mountain landscape. The road is partially cleared of snow, revealing the dirt beneath, while steep snow-covered slopes rise on either side. The vehicle navigates the challenging terrain, emphasizing the isolation and beauty of the high-altitude environment. / 航拍俯瞰 / 山谷公路 / 晴天 / 无口播语音 / 航拍山谷公路 / 蜿蜒道路 / 森林河流 / An aerial view of a misty mountain valley with a winding road, lush green forests, a muddy river, and distant clouds creating a serene and majestic natural landscape. / 第一人称行车 / 山地环境 / 晴天 / 有口播语音 / 熊猪拉崖口停车 / 越野车队 / 积雪山坡 / A group of off-road vehicles are parked on a dirt road at a high-altitude mountain pass, surrounded by snow-covered slopes and rocky terrain. / 第一人称行车 / 山地环境 / 晴天 / 无口播语音 / 雪山垭口停车 / 经幡 / 泥泞道路 / Two off-road vehicles are parked on a dirt road in a snowy mountainous area with prayer flags visible. / 第一人称行车 / 山地环境 / 晴天 / 有口播语音 / 雪山垭口停车 / 蓝色路牌 / 经幡 / A gray SUV is parked on a muddy road at a snowy mountain pass, with people standing near a blue sign and prayer flags. / 环境远景 / 山地环境 / 阴天 / 无口播语音 / 雪山公路 / 积雪 / 蜿蜒土路 / A sweeping view of a snow-laden mountain valley with a winding dirt road cutting through the rugged terrain under a cloudy sky. / 环境远景 / 山路 / 雾天 / 无口播语音 / 停车观察路况 / 皮卡 / 石屋 / A misty mountain roadside scene with a yellow pickup truck parked near a stone building and a person standing in front of a fence, surrounded by fog and rugged terrain. / 航拍俯瞰 / 山路 / 阴天 / 无口播语音 / 情景不明 / 悬崖施工 / 葱郁植被 / An aerial view captures a winding mountain road shrouded in mist, with lush greenery and a small construction area visible along the cliffside. / 车窗外观察 / 环境不明 / 阴天 / 无口播语音 / 路边积雪场景 / 石墙背景 / 方形物体 / A stone wall stands behind a large pile of snow, with a small square object visible in the snow. / 第三人称跟拍 / 车内 / 晴天 / 无口播语音 / 车内吃早餐 / 雪山背景 / 手持吐司 / A man in a red jacket holds up a slice of yellow toast while sitting in a car with snowy mountains visible outside. / 航拍俯瞰 / 山路 / 晴天 / 无口播语音 / 雪山航拍 / 蜿蜒公路 / 巍峨山峰 / A breathtaking aerial view of a snow-covered mountain valley with a winding road cutting through the landscape. The scene features towering peaks, a clear blue sky with scattered clouds, and a sense of vastness and tranquility. / 环境远景 / 森林 / 晴天 / 无口播语音 / 高原打卡 / 黄色越野车 / 经幡飘扬 / A yellow off-road vehicle is parked at a high-altitude mountain pass surrounded by snow-covered peaks and colorful prayer flags, with travelers posing for photos against the dramatic alpine backdrop. / 第一人称行车 / 山区道路 / 天气光线不明 / 有口播语音 / 高原赶路 / 绿卡车 / 同伴缺氧 / A first-person view shows a person wearing grey sweatpants and white sneakers standing on a grey metal grate surface. / 第一人称行车 / 金属格栅平台 / 天气光线不明 / 无口播语音 / 情景不明 / 站立动作 / 特写镜头 / A first-person view shows a person wearing dark pants and white shoes standing on a metal grate platform. / 航拍俯瞰 / 山路 / 晴天 / 无口播语音 / 雪山垭口停车观景 / 多人互动 / 彩色经幡 / Aerial view of a yellow SUV parked at a high-altitude mountain pass with snow-covered peaks, winding roads, and colorful prayer flags. Several people are standing around the vehicle and near a signpost. / 第一人称行车 / 金属格栅平台 / 天气光线不明 / 无口播语音 / 情景不明 / 腿部特写 / 静止状态 / A first-person view of a person's legs and feet standing on a metal grate surface. / 第一人称行车 / 金属格栅平台 / 天气光线不明 / 有口播语音 / 情景不明 / 站立动作 / 口播片段 / A first-person view shows a person wearing grey sweatpants and white shoes standing on a grey metal grate surface. / 第一人称行车 / 金属格栅平台 / 天气光线不明 / 有口播语音 / 情景不明 / 腿部特写 / 口播片段 / A first-person view shows a person's leg in grey sweatpants and a white shoe resting on a grey slatted surface. / 航拍俯瞰 / 山地环境 / 雪天 / 无口播语音 / 雪山行车 / 航拍视角 / 黄色 SUV / An aerial view captures a yellow SUV navigating a winding dirt road through a snow-covered mountain landscape, emphasizing the rugged and remote nature of the journey. / 航拍俯瞰 / 山路 / 阴天 / 无口播语音 / 单车穿越雪道 / 黄色车辆 / 岩石突起 / An aerial view captures a lone yellow car navigating a winding snow-covered mountain road surrounded by vast white hills and rocky outcrops. / 环境远景 / 山路 / 晴天 / 无口播语音 / 雪山观景 / 单人旅行者 / 岩石山脊 / A lone traveler stands on a rocky ridge overlooking a vast snow-covered mountain valley with a winding road below under a partly cloudy sky. / 固定机位观察 / 山地环境 / 天气光线不明 / 无口播语音 / 人物行走 / 红衣行人 / 土路行走 / A person in a red coat walks along a dirt path with snow-capped mountains in the background. / 第一人称行车 / 山路 / 阴天 / 有口播语音 / 雪山谷行车 / 光流现象 / 震撼视觉 / Snow-covered mountain valley with winding roads and rocky peaks under a partly cloudy sky. / 第一人称行车 / 山路 / 阴天 / 无口播语音 / 雪山谷行车 / 蜿蜒道路 / 岩石山峰 / Snow-covered mountain valley with winding roads and rocky peaks under a partly cloudy sky. / 第一人称行车 / 车内 / 天气光线不明 / 有口播语音 / 讨论路况 / 大水坑 / 雪山 / A man with curly hair and glasses sits in the front passenger seat of a car, wearing a red jacket and a seatbelt. / 第一人称行车 / 车内 / 天气光线不明 / 无口播语音 / 车内多人 / 红色外套 / 后座乘客 / Three men are seated inside a car, with the driver in a red jacket and two passengers in the back seat. / 第一人称行车 / 车内 / 天气光线不明 / 有口播语音 / 赶路出发 / 五分裤 / 继续前行 / Three men are seated inside a car, with the driver wearing a red jacket and glasses. / 第一人称行车 / 车内 / 天气光线不明 / 无口播语音 / 车内多人 / 穿孔扬声器 / 特写镜头 / The first frame shows three people inside a car, while the second frame displays a close-up of a perforated speaker grille. / 第一人称行车 / 山路 / 天气光线不明 / 有口播语音 / 山路行车 / 缺水 / 雪山背景 / The video shows a view from inside a car driving on a mountain road with rocky cliffs and snow-capped peaks visible outside.",
       "startAt": "2026-04-29T06:57:36.000Z",
       "endAt": "2026-04-29T07:53:58.640Z",
       "location": "雄珠拉垭口（海拔4636m）",
@@ -13494,11 +13202,11 @@
     {
       "id": "route-8ae85686683c",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：西藏自治区，林芝市，察隅县，竹瓦根镇 · 雄珠拉垭口 → 西藏自治区，林芝市，察隅县，竹瓦根镇",
       "summary": "第一人称行车 / 山路 / 下雪 / 有口播语音 / 雪山泥泞山路 / 积雪坡面 / 岩石峭壁 / A vehicle travels on a wet, muddy mountain road with snow-covered slopes and rocky cliffs on either side. / 走 / 雪山山路行车 / 左侧护栏 / 右侧岩壁 / A vehicle drives on a snowy mounta...",
       "startAt": "2026-04-29T07:55:46.200Z",
-      "endAt": "2026-04-29T08:02:09.576Z",
+      "endAt": "2026-04-29T07:59:36.000Z",
       "route": {
         "from": "西藏自治区，林芝市，察隅县，竹瓦根镇 · 雄珠拉垭口",
         "to": "西藏自治区，林芝市，察隅县，竹瓦根镇"
@@ -13521,38 +13229,39 @@
         "9bb259f5-499c-4144-9634-7568a0325861",
         "fe8ab325-1625-46d1-b9d0-0e1353a7bcee",
         "3ba77049-92a2-4608-9160-d18469191069",
-        "52490b74-059c-4fe0-b64a-d5143b7369da",
-        "f1392f4d-00fa-41f3-8abc-863ab8d3ba40",
-        "cf009e7c-16df-4421-bf7c-094cb5e9f136",
-        "b75400f9-c805-4306-82c0-d6f8c5b03211"
+        "52490b74-059c-4fe0-b64a-d5143b7369da"
       ]
     },
     {
-      "id": "event-ccb4ceaa777d",
+      "id": "event-fb25ed31e5d5",
       "kind": "event",
-      "reviewStatus": "pending",
-      "title": "西藏自治区，林芝市，察隅县，竹瓦根镇",
-      "summary": "航拍建场 / 山路 / 晴天 / 无口播语音 / 情景不明 / 蜿蜒公路 / 远山 / A breathtaking aerial view of snow-covered mountain peaks under a partly cloudy blue sky. A winding road snakes through the valley floor, leading towards distant mountain rang...",
-      "startAt": "2026-04-29T08:03:10.000Z",
+      "reviewStatus": "confirmed",
+      "title": "路边停留",
+      "summary": "车窗外观察 / 山地环境 / 晴天 / 无口播语音 / 路边停留 / 黑色外套 / 雪山背景 / A person in a black jacket stands on a dirt road next to a snowbank, with snow-covered mountains in the background. / 手持自拍口播 / 泥泞山路 / 阴天 / 有口播语音 / 泥泞山路下车 / 泥泞 / 灰色 SUV / ...",
+      "startAt": "2026-04-29T08:01:02.000Z",
       "endAt": "2026-04-29T08:03:16.869Z",
       "location": "西藏自治区，林芝市，察隅县，竹瓦根镇",
       "spanIds": [
+        "f1392f4d-00fa-41f3-8abc-863ab8d3ba40",
+        "b75400f9-c805-4306-82c0-d6f8c5b03211",
         "d4895804-ba85-43db-a10d-041e32c16a22-direct-full"
       ]
     },
     {
-      "id": "route-c2b971b9a404",
+      "id": "route-0c740a16b5e9",
       "kind": "route",
-      "reviewStatus": "pending",
-      "title": "行车：西藏自治区，林芝市，察隅县，竹瓦根镇 → 西藏自治区，林芝市，察隅县，竹瓦根镇 · 察隅途友饭店",
-      "summary": "照片记录 / 山地环境 / 天气光线不明 / 无口播语音 / 情景不明 / 越野驾驶 / 孤独探险 / An aerial view captures a yellow off-road vehicle navigating a rugged dirt road through a snow-dusted mountainous landscape, emphasizing isolation and adventure. / 航拍跟...",
-      "startAt": "2026-04-29T08:03:34.000Z",
-      "endAt": "2026-04-29T08:59:45.478Z",
+      "reviewStatus": "confirmed",
+      "title": "行车：西藏自治区，林芝市，察隅县，竹瓦根镇",
+      "summary": "航拍俯瞰 / 山地环境 / 晴天 / 无口播语音 / 航拍蜿蜒公路 / 雪山地形 / 部分多云 / A breathtaking aerial view of a snow-covered mountain valley with a serpentine road winding through the rugged terrain under a partly cloudy sky. / 天气光线不明 / 情景不明 / 越野驾驶 ...",
+      "startAt": "2026-04-29T08:02:01.000Z",
+      "endAt": "2026-04-29T08:13:16.000Z",
+      "location": "西藏自治区，林芝市，察隅县，竹瓦根镇",
       "route": {
         "from": "西藏自治区，林芝市，察隅县，竹瓦根镇",
-        "to": "西藏自治区，林芝市，察隅县，竹瓦根镇 · 察隅途友饭店"
+        "to": "西藏自治区，林芝市，察隅县，竹瓦根镇"
       },
       "spanIds": [
+        "cf009e7c-16df-4421-bf7c-094cb5e9f136",
         "a9b66f26-5cb0-4220-865c-fe60c197a6c0",
         "726b4161-fec6-44cc-91b0-cc9ac1fc7607-direct-full",
         "65b959b2-5a19-4eec-8117-6025e5983631",
@@ -13585,8 +13294,35 @@
         "0bf3dbfc-b28c-4a99-970e-213e02478934",
         "f423bda2-1c6b-4236-b0f4-3e7dc28ebbf1",
         "3dc3d4a7-c446-4d87-afdb-f8a9459e04d9",
-        "ae9a335f-6920-4eab-b8b0-589148e4b011-direct-full",
-        "9f755212-da1b-42de-ae33-aae7194ddbfb",
+        "9f755212-da1b-42de-ae33-aae7194ddbfb"
+      ]
+    },
+    {
+      "id": "event-9d1040c609d1",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "航拍山路全景",
+      "summary": "航拍运动 / 山路 / 雪天 / 无口播语音 / 航拍山路全景 / 黄色车辆 / 崎岖地形 / Aerial view of a winding mountain road cutting through snow-covered peaks, with a yellow car driving along the path. The scene captures the rugged beauty of a high-altitud...",
+      "startAt": "2026-04-29T08:12:07.000Z",
+      "endAt": "2026-04-29T08:12:15.427Z",
+      "location": "西藏自治区，林芝市，察隅县，竹瓦根镇",
+      "spanIds": [
+        "ae9a335f-6920-4eab-b8b0-589148e4b011-direct-full"
+      ]
+    },
+    {
+      "id": "route-55845035a69f",
+      "kind": "route",
+      "reviewStatus": "confirmed",
+      "title": "行车：西藏自治区，林芝市，察隅县，竹瓦根镇 → 西藏自治区，林芝市，察隅县，竹瓦根镇 · 察隅途友饭店",
+      "summary": "第一人称行车 / 碎石山路 / 雪天 / 有口播语音 / 山路行车中 / 碎石路面 / 雪山背景 / A vehicle travels on a gravel road through a snow-covered mountain valley with rocky slopes and distant peaks. / 可能拍照 可能可以因为它完全没有游它显示没有游里后其实还有10升 / A vehicle travels on...",
+      "startAt": "2026-04-29T08:24:03.000Z",
+      "endAt": "2026-04-29T08:59:45.478Z",
+      "route": {
+        "from": "西藏自治区，林芝市，察隅县，竹瓦根镇",
+        "to": "西藏自治区，林芝市，察隅县，竹瓦根镇 · 察隅途友饭店"
+      },
+      "spanIds": [
         "fb94eca0-1795-4292-82cd-9b78d916c33d",
         "7f51c3ca-fc63-496d-8d08-0e4238abb88e",
         "a419f199-064f-4c66-befd-b58e04b0d09d",
@@ -13662,11 +13398,11 @@
     {
       "id": "route-26d1f99615da",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：西藏自治区，林芝市，察隅县，竹瓦根镇",
       "summary": "第一人称行车 / 高山谷地 / 晴天 / 有口播语音 / 路边遇见牛羊 / 广角镜头 / 牦牛群 / A wide shot of a mountainous valley with grazing yaks, scattered houses, and snow-capped peaks in the distance. / 哇 好多牛羊啊好多牛羊 / 无口播语音 / 高山谷地行车 / 散落的房子 / Two frames show...",
       "startAt": "2026-04-29T09:35:09.320Z",
-      "endAt": "2026-04-29T10:57:02.350Z",
+      "endAt": "2026-04-29T10:13:14.126Z",
       "location": "西藏自治区，林芝市，察隅县，竹瓦根镇",
       "route": {
         "from": "西藏自治区，林芝市，察隅县，竹瓦根镇",
@@ -13694,8 +13430,36 @@
         "498443b2-edbd-4d3e-a62a-3a2cb8db97a4",
         "3f4c8b44-e70b-4879-b83e-bb22a2ae9d84",
         "97b1dbe4-1327-4934-91fd-5b89c0ebfc45",
-        "2b1d1427-d78a-4c36-9a62-0c984934cb09",
-        "b6b756c7-d39e-428f-9086-db58d0df3942",
+        "2b1d1427-d78a-4c36-9a62-0c984934cb09"
+      ]
+    },
+    {
+      "id": "event-8c590b684495",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "乘客微笑面对镜头",
+      "summary": "第三人称跟拍 / 车内 / 天气光线不明 / 无口播语音 / 乘客微笑面对镜头 / 卷发戴眼镜男子 / 红色夹克 / A man with curly hair and glasses wearing a red jacket sits in the front passenger seat of a car, smiling at the camera.",
+      "startAt": "2026-04-29T10:13:46.000Z",
+      "endAt": "2026-04-29T10:14:08.592Z",
+      "location": "西藏自治区，林芝市，察隅县，竹瓦根镇",
+      "spanIds": [
+        "b6b756c7-d39e-428f-9086-db58d0df3942"
+      ]
+    },
+    {
+      "id": "route-37cab981bc47",
+      "kind": "route",
+      "reviewStatus": "confirmed",
+      "title": "行车：西藏自治区，林芝市，察隅县，竹瓦根镇",
+      "summary": "第一人称行车 / 山路 / 阴天 / 有口播语音 / 介绍小村 / 土路停车 / 卡车聚集 / A view from a vehicle shows a dirt road with a red dump truck, a blue truck, and a white pickup truck parked near buildings and a large hillside. / 这个小村 / 无口播语音 / 工地经过 / 土...",
+      "startAt": "2026-04-29T10:41:16.840Z",
+      "endAt": "2026-04-29T10:57:02.350Z",
+      "location": "西藏自治区，林芝市，察隅县，竹瓦根镇",
+      "route": {
+        "from": "西藏自治区，林芝市，察隅县，竹瓦根镇",
+        "to": "西藏自治区，林芝市，察隅县，竹瓦根镇"
+      },
+      "spanIds": [
         "0746caf3-842c-4058-bc6f-9e7d574602bd",
         "6f82eb08-86ad-4a30-8501-26b310773ec7",
         "8313c62c-8cfd-4e69-b4b3-dd0181302599",
@@ -13784,7 +13548,7 @@
     {
       "id": "route-46ec5982306f",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：西藏自治区，林芝市，察隅县，竹瓦根镇",
       "summary": "第一人称行车 / 山地环境 / 阴天 / 有口播语音 / 雪山行车途中 / 碎石路 / 雪山 / A vehicle travels on a gravel road through a mountain valley with snow-capped peaks and a cloudy sky. / 雪山也开始起云了 / 日落将至 / A vehicle travels along a gravel road through a ...",
       "startAt": "2026-04-29T11:47:25.500Z",
@@ -13930,7 +13694,7 @@
     {
       "id": "route-43af9c3e2ece",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：西藏自治区，林芝市，察隅县，竹瓦根镇 · 桑曲 → 西藏自治区，林芝市，察隅县，古玉乡 · 察隅慈巴沟",
       "summary": "第一人称行车 / 山路 / 阴天 / 有口播语音 / 山路行车 / A yellow vehicle drives along a winding mountain road surrounded by green hills and foggy peaks. / 希望后面放琴吧不过接下来应没有昨天那种路 / 无口播语音 / A yellow vehicle drives along a winding mountain road s...",
       "startAt": "2026-04-30T01:24:39.920Z",
@@ -13972,25 +13736,12 @@
       ]
     },
     {
-      "id": "event-3c3efd0efc2a",
-      "kind": "event",
-      "reviewStatus": "pending",
-      "title": "风景空镜",
-      "summary": "照片记录 / 山谷河流 / 阴天 / 无口播语音 / 风景空镜 / 茂密森林 / 陡峭山坡 / A serene mountain river flows through a lush green forested valley, flanked by steep hills and scattered rocks under an overcast sky.",
-      "startAt": "2026-04-30T02:25:31.000Z",
-      "endAt": "2026-04-30T02:25:31.000Z",
-      "location": "西藏自治区，林芝市，察隅县，古玉乡 · 无名4号桥",
-      "spanIds": [
-        "f8b0c4b4-f487-4280-a79b-c04e257e4fa5"
-      ]
-    },
-    {
       "id": "route-b4cecb116e94",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：西藏自治区，林芝市，察隅县，古玉乡",
-      "summary": "第一人称行车 / 蜿蜒山路 / 雾天 / 有口播语音 / 讨论车辆重来 / 白色 SUV / 绿色树林 / A white SUV drives along a winding mountain road with a guardrail, surrounded by green trees and misty mountains. / 这个车重来是啥 / 无口播语音 / 前方车辆行驶 / A white SUV drives ahe...",
-      "startAt": "2026-04-30T02:28:42.000Z",
+      "summary": "环境远景 / 山谷河流 / 阴天 / 无口播语音 / 风景空镜 / 茂密森林 / 陡峭山坡 / A serene mountain river flows through a lush green forested valley, flanked by steep hills and scattered rocks under an overcast sky. / 第一人称行车 / 蜿蜒山路 / 雾天 / 有口播语音 / 讨论车辆重来...",
+      "startAt": "2026-04-30T02:25:31.000Z",
       "endAt": "2026-04-30T04:06:02.425Z",
       "location": "西藏自治区，林芝市，察隅县，古玉乡",
       "route": {
@@ -13998,6 +13749,7 @@
         "to": "西藏自治区，林芝市，察隅县，古玉乡"
       },
       "spanIds": [
+        "f8b0c4b4-f487-4280-a79b-c04e257e4fa5",
         "921fd25c-01c3-4a71-8ce2-240aeded3487",
         "ce772e16-ef9b-44c9-b427-b6f840f4351b",
         "5d56e76b-61b3-4527-a8f5-5d0f1ec9eb74",
@@ -14093,7 +13845,7 @@
     {
       "id": "route-59efb1dfba70",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：西藏自治区，林芝市，察隅县，古玉乡",
       "summary": "第一人称行车 / 山地环境 / 下雪 / 有口播语音 / 山路行车讨论 / 黄色车辆 / 蜿蜒山路 / A yellow vehicle travels along a winding asphalt road through a snow-covered mountain landscape. / 我靠,我下雪啊",
       "startAt": "2026-04-30T04:05:53.580Z",
@@ -14176,7 +13928,7 @@
     {
       "id": "route-16520bc4e2de",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：西藏自治区，林芝市，察隅县，古玉乡 → 西藏自治区，昌都市，八宿县，然乌镇",
       "summary": "第一人称行车 / 公路 / 阴天 / 有口播语音 / 横排方案讨论 / 雪雾山路 / 横排方案 / A yellow vehicle travels down a foggy, snow-lined road with a yellow center line. / 哎呀 其实适合横排算了 / 国道行驶描述 / 国道行驶 / A yellow vehicle drives down a foggy, snow-lined road w...",
       "startAt": "2026-04-30T04:42:46.680Z",
@@ -14274,7 +14026,7 @@
       "kind": "event",
       "reviewStatus": "confirmed",
       "title": "然乌湖上空",
-      "summary": "航拍然乌湖全貌，串珠状湖面+雪山倒影 / 航拍跟随 / 山路 / 晴天 / 无口播语音 / 山路停车 / 湖泊 / 雪山 / Aerial view of a winding road through a mountainous landscape with a turquoise lake and snow-capped peaks in the background. A yellow SUV is parked on the s...",
+      "summary": "细节特写 / 湖泊公路 / 晴天 / 无口播语音 / 航拍湖泊公路 / 碧蓝湖泊 / 蜿蜒道路 / A sweeping aerial view of a turquoise lake nestled between rugged mountains, with a winding road curving along the foreground. The scene transitions from a close-up of grassy terrain to a broader vista of the lake and distant snow-capped peaks shrouded in mist. / 航拍俯瞰 / 高山湖泊 / 阴天 / 无口播语音 / 航拍风景 / 碧蓝湖水 / 蜿蜒公路 / Aerial view of a turquoise lake nestled between rugged mountains partially shrouded in mist, with a winding road traversing the foreground valley. / 航拍俯瞰 / 湖泊山间 / 天气光线不明 / 无口播语音 / 情景不明 / 碧蓝湖水 / 崎岖山脉 / Aerial view of a turquoise lake nestled between rugged mountains and rolling hills, with a road winding through the foreground. / 航拍俯瞰 / 山谷湖泊 / 阴天 / 无口播语音 / 航拍湖泊 / 蜿蜒公路 / 山谷村庄 / Aerial view of a turquoise lake nestled between rugged mountains, with a winding road and small village in the valley below. / 航拍运动 / 高山峡谷 / 天气光线不明 / 无口播语音 / 山谷航拍 / 雪山背景 / 蜿蜒公路 / A sweeping aerial view of a vast mountain valley with a prominent snow-capped peak in the background. A winding road cuts through the grassy, rolling hills, leading the eye into the distance. The landscape is rugged and natural, with patches of green vegetation and rocky outcrops. / 航拍运动 / 山路 / 晴天 / 无口播语音 / 山路行车 / An aerial view of a winding mountain road with a yellow SUV and a motorcyclist traveling along it. The scene includes a large lake surrounded by mountains, with sparse vegetation and rocky terrain. / 航拍俯瞰 / 海岸湖边 / 晴天 / 无口播语音 / 雪山湖泊俯瞰 / 冰川湖泊 / 岩石山坡 / A person in a red coat stands on a rocky hill overlooking a turquoise glacial lake surrounded by snow-capped mountains. The scene captures the vastness and beauty of the high-altitude landscape with sparse vegetation and rugged terrain. / 航拍俯瞰 / 岩石稀疏地貌 / 阴天 / 无口播语音 / 情景不明 / 红衣行人 / 雪山背景 / A person in a red coat walks across a rocky, sparse landscape with scattered green bushes. In the background, rugged mountains rise up, some with snow-capped peaks. A paved road runs through the middle distance. The scene is captured from an elevated perspective, showing the vastness of the terrain. / 航拍俯瞰 / 荒漠山地 / 晴天 / 无口播语音 / 徒步穿越 / 红色外套 / 雪山湖泊 / A person in a red jacket walks across a vast, arid landscape dotted with small shrubs. The terrain is rugged and mountainous, with distant snow-capped peaks and a turquoise lake visible in the background. The scene captures the grandeur and isolation of a high-altitude environment. / 航拍运动 / 荒凉岩石地貌 / 天气光线不明 / 无口播语音 / 情景不明 / 徒步穿越 / 雪山背景 / Aerial footage of a person in a red jacket walking across a barren, rocky landscape with sparse vegetation. In the background, there are mountains, a road with cars, and distant snow-capped peaks. The scene conveys a sense of isolation and natural beauty. / 航拍俯瞰 / 山路路边草地 / 晴天 / 无口播语音 / 车顶站立拍摄 / 黄色 SUV / 车顶站立 / A yellow SUV is parked on a grassy roadside next to a winding mountain road, with a person standing on its roof rack. / 航拍俯瞰 / 山路 / 晴天 / 无口播语音 / 山路停车 / 湖泊 / 雪山 / Aerial view of a winding road through a mountainous landscape with a turquoise lake and snow-capped peaks in the background. A yellow SUV is parked on the side of the road with people standing nearby. / 航拍俯瞰 / 草坡路边 / 阴天 / 无口播语音 / 车辆停靠观景 / 黄色 SUV / 雪山湖泊 / Aerial view of a yellow SUV parked on a grassy hillside next to a winding road, with people standing nearby. In the background, a turquoise lake is nestled between rugged, snow-capped mountains under a cloudy sky. / 航拍俯瞰 / 山路 / 晴天 / 无口播语音 / 湖边停车 / 黄色 SUV / 雪山背景 / Aerial view of a yellow SUV parked on the side of a winding mountain road next to a turquoise lake, with snow-capped mountains in the background.",
       "startAt": "2026-04-30T05:09:10.000Z",
       "endAt": "2026-04-30T05:26:12.109Z",
       "location": "然乌湖上空",
@@ -14298,7 +14050,7 @@
     {
       "id": "route-62d721d47792",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：西藏自治区，昌都市，八宿县，然乌镇 · 仲巴村 → 西藏自治区，昌都市，八宿县，然乌镇 · 然乌湖景区",
       "summary": "第一人称行车 / 蜿蜒山路 / 晴天 / 有口播语音 / 雪山湖泊 / 背景山峰 / 道路弯曲 / A yellow vehicle travels along a winding mountain road with snow-capped peaks and a turquoise lake visible in the background. / 应该就录这种口水歌也行 千万不要放口径歌 哎我操这角度可以 / 山路 / 石砌护墙...",
       "startAt": "2026-04-30T05:33:44.000Z",
@@ -14386,14 +14138,14 @@
     {
       "id": "route-caf6ee3d91ec",
       "kind": "route",
-      "reviewStatus": "pending",
-      "title": "行车：西藏自治区，昌都市，八宿县，然乌镇 → 西藏自治区，昌都市，八宿县，吉达乡",
+      "reviewStatus": "confirmed",
+      "title": "行车：西藏自治区，昌都市，八宿县，然乌镇 → 西藏自治区，昌都市，八宿县，白玛镇 · 怒江72拐",
       "summary": "第一人称行车 / 山路 / 雾天 / 无口播语音 / 车队缓慢通行 / 积雪路面 / 弯道行驶 / A point-of-view shot from a vehicle driving along a winding mountain road. The road curves through a rugged landscape with steep rocky cliffs on the left and a turquoise...",
       "startAt": "2026-04-30T07:16:56.000Z",
-      "endAt": "2026-04-30T07:46:31.654Z",
+      "endAt": "2026-04-30T08:56:22.611Z",
       "route": {
         "from": "西藏自治区，昌都市，八宿县，然乌镇",
-        "to": "西藏自治区，昌都市，八宿县，吉达乡"
+        "to": "西藏自治区，昌都市，八宿县，白玛镇 · 怒江72拐"
       },
       "spanIds": [
         "1795c025-fa16-48c9-abf4-a6a39d4fdb91-direct-full",
@@ -14447,35 +14199,8 @@
         "20861640-a72a-4810-b7c2-53e315a76795",
         "415802ef-5086-4336-9a20-95f720a0f4fb",
         "ea57c4d8-43c7-4215-9d50-55efac8aa830",
-        "e0a5fce2-90fb-409e-b806-3935c56bc73c-direct-full"
-      ]
-    },
-    {
-      "id": "event-4b5a24601baf",
-      "kind": "event",
-      "reviewStatus": "pending",
-      "title": "高原地貌",
-      "summary": "照片记录 / 高原荒谷 / 阴天 / 无口播语音 / 高原地貌 / 稀疏灌木 / 远山 / A wide, barren valley with rocky ground and sparse shrubs framed by rolling hills under an overcast sky, suggesting a remote highland location.",
-      "startAt": "2026-04-30T07:47:06.000Z",
-      "endAt": "2026-04-30T07:47:06.000Z",
-      "location": "西藏自治区，昌都市，八宿县，吉达乡",
-      "spanIds": [
-        "f5259b59-dda1-45a0-b03c-268d8ecd3e0b"
-      ]
-    },
-    {
-      "id": "route-591109a47b9c",
-      "kind": "route",
-      "reviewStatus": "pending",
-      "title": "行车：西藏自治区，昌都市，八宿县，吉达乡 → 西藏自治区，昌都市，八宿县，白玛镇 · 怒江72拐",
-      "summary": "照片记录 / 山路 / 阴天 / 无口播语音 / 山路停车 / 越野车 / 雾气 / A yellow off-road pickup truck is parked on a rugged mountain road surrounded by barren hills and misty peaks under an overcast sky. / 第一人称行车 / 车内 / 夜晚 / 有口播语音 / 车内闲聊 / 卷发戴眼镜 /...",
-      "startAt": "2026-04-30T07:48:17.000Z",
-      "endAt": "2026-04-30T08:56:22.611Z",
-      "route": {
-        "from": "西藏自治区，昌都市，八宿县，吉达乡",
-        "to": "西藏自治区，昌都市，八宿县，白玛镇 · 怒江72拐"
-      },
-      "spanIds": [
+        "e0a5fce2-90fb-409e-b806-3935c56bc73c-direct-full",
+        "f5259b59-dda1-45a0-b03c-268d8ecd3e0b",
         "ccbf8058-7c0e-4c65-9818-0f2c82934554",
         "5c8bed4d-0439-4bd3-bfa3-7f18d7ba661a",
         "db1b4953-0076-447a-adb8-239110c0f12f",
@@ -14563,9 +14288,9 @@
     {
       "id": "event-8997f9196313",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "西藏自治区，昌都市，八宿县，白玛镇 · 怒江72拐",
-      "summary": "第一人称行车 / 加油站 / 天气光线不明 / 无口播语音 / 情景不明 / A man with curly hair and glasses stands at a gas station next to a yellow SUV, wearing a red jacket and a microphone.",
+      "summary": "第三人称跟拍 / 加油站 / 天气光线不明 / 无口播语音 / 情景不明 / A man with curly hair and glasses stands at a gas station next to a yellow SUV, wearing a red jacket and a microphone.",
       "startAt": "2026-04-30T08:57:06.000Z",
       "endAt": "2026-04-30T08:57:12.016Z",
       "location": "西藏自治区，昌都市，八宿县，白玛镇 · 怒江72拐",
@@ -14576,7 +14301,7 @@
     {
       "id": "route-f121cc0eb4c4",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：西藏自治区，昌都市，八宿县，拉根乡 · 怒江72拐 → 西藏自治区，昌都市，八宿县，帮达镇 · 怒江72拐",
       "summary": "第一人称行车 / 山路 / 天气光线不明 / 无口播语音 / 山路行车 / 黄色车辆 / 黑色 SUV / A yellow vehicle drives along a mountain road, passing a black SUV and a large truck, with colorful mountains and buildings in the background. / 有口播语音 / 卡车 / A yello...",
       "startAt": "2026-04-30T09:23:36.894Z",
@@ -14708,7 +14433,7 @@
     {
       "id": "route-929f0c164678",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：西藏自治区，昌都市，八宿县，帮达镇 · 怒江72拐",
       "summary": "第一人称行车 / 山路 / 天气光线不明 / 有口播语音 / 挪车避让危险车辆 / 白色轿车 / 黄色车头可见 / A white car with license plate F DN2239 is stopped on a mountain road, with a yellow vehicle hood visible in the foreground. / 唉 搞了十分钟好了 / A white Leapmotor car ...",
       "startAt": "2026-04-30T10:34:18.000Z",
@@ -14866,9 +14591,9 @@
     {
       "id": "event-ee14efd1df12",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "雪山远景拍摄",
-      "summary": "航拍跟随 / 山地环境 / 阴天 / 无口播语音 / 雪山远景拍摄 / 云层遮挡 / 月亮可见 / A mountain range with snow-capped peaks under a cloudy sky with a bright moon visible.",
+      "summary": "环境远景 / 山地环境 / 阴天 / 无口播语音 / 雪山远景拍摄 / 云层遮挡 / 月亮可见 / A mountain range with snow-capped peaks under a cloudy sky with a bright moon visible.",
       "startAt": "2026-04-30T12:13:13.000Z",
       "endAt": "2026-04-30T12:13:19.080Z",
       "location": "西藏自治区，昌都市，八宿县，帮达镇 · 怒江72拐",
@@ -14879,7 +14604,7 @@
     {
       "id": "route-c8f2ba06fed2",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：西藏自治区，昌都市，八宿县，帮达镇 · 怒江72拐 → 西藏自治区，昌都市，八宿县，帮达镇 · 八宿元哥商务酒店",
       "summary": "第一人称行车 / 山地环境 / 阴天 / 无口播语音 / 雪山驾驶 / 积雪山峰 / 弯月高悬 / A mountain range with snow-capped peaks under a cloudy sky with a bright moon visible. / 城市街道 / 夜晚 / 有口播语音 / 车内讨论 / 啊不许自信呀 / 街道夜景 / Nighttime street scene with illuminat...",
       "startAt": "2026-04-30T12:13:20.000Z",
@@ -14917,7 +14642,7 @@
     {
       "id": "route-64a50d42efec",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：西藏自治区，昌都市，八宿县，帮达镇 → 西藏自治区，昌都市，左贡县，田妥镇 · 德达村",
       "summary": "第一人称行车 / 公路 / 夜晚 / 有口播语音 / 情景不明 / 夜间行车 / 路牌护栏 / A night-time driving scene on a road with a bright moon in the sky, illuminated by headlights, passing road signs and a guardrail. / 这个这个 / 无口播语音 / 路灯照明 / The car drives o...",
       "startAt": "2026-04-30T13:23:31.980Z",
@@ -15383,7 +15108,7 @@
       "kind": "event",
       "reviewStatus": "confirmed",
       "title": "东达山垭口上空",
-      "summary": "航拍雪山垭口+盘山公路全景，海拔5130m注意电池衰减严重 / 航拍建场 / 山地环境 / 阴天 / 无口播语音 / 文化景观 / 经幡飘扬 / 检查站 / Aerial view of a mountainous region with snow-covered peaks, prayer flags strung along a road, and a checkpoint area with vehicles and build...",
+      "summary": "航拍运动 / 高速公路 / 晴天 / 无口播语音 / 雪山行车 / 蜿蜒高速 / 护栏 / Aerial view of a winding highway cutting through snow-covered mountains, with vehicles traveling along the road and retaining walls stabilizing the steep slopes. / 航拍俯瞰 / 停车场 / 晴天 / 无口播语音 / 游客打卡 / 雪地停车 / 巨型酒瓶 / Aerial view of a yellow pickup truck with a person standing on its roof next to a giant wine bottle sculpture in a snowy parking lot. The scene includes other tourists and snow-covered ground, suggesting a tourist destination in a mountainous region. / 航拍俯瞰 / 山地环境 / 阴天 / 无口播语音 / 车顶站立 / 酒瓶雕塑 / 游客打卡点 / Aerial view of a yellow SUV parked in a snowy lot with a person standing on its roof rack. Behind the vehicle is a large wine bottle sculpture and other decorative elements, suggesting a tourist spot or winery in a mountainous region. / 航拍俯瞰 / 山地环境 / 阴天 / 无口播语音 / 文化景观 / 经幡飘扬 / 检查站 / Aerial view of a mountainous region with snow-covered peaks, prayer flags strung along a road, and a checkpoint area with vehicles and buildings. The scene captures the grandeur of the landscape and the cultural elements of the region.",
       "startAt": "2026-05-01T02:30:03.000Z",
       "endAt": "2026-05-01T02:40:34.472Z",
       "location": "东达山垭口上空",
@@ -15551,7 +15276,7 @@
       "kind": "event",
       "reviewStatus": "confirmed",
       "title": "金沙江大桥上空",
-      "summary": "航拍金沙江大桥+两岸峡谷，注意军事管理区限飞 / 航拍建场 / 桥梁 / 晴天 / 无口播语音 / 航拍视角 / 黄色 SUV / 红色大门 / Aerial view of a yellow SUV driving across a long bridge over a turquoise river, with a red gate and buildings on the banks and mountains in the b...",
+      "summary": "航拍俯瞰 / 峡谷河流 / 阴天 / 无口播语音 / 峡谷航拍 / 河流 / 桥梁 / Aerial view of a turquoise river flowing through a mountain valley with a bridge spanning across it. The surrounding mountains are barren and brown, with some green vegetation visible in the distance. The sky is overcast with clouds. / 航拍俯瞰 / 深谷河流 / 天气光线不明 / 无口播语音 / 峡谷航拍全景 / 桥梁横跨 / 小镇依山 / Aerial view of a wide turquoise river flowing through a deep mountain valley, with a bridge spanning the river in the foreground and a small town nestled along the banks. The surrounding mountains are steep and barren, with some green vegetation visible near the river. The scene is peaceful and expansive, showcasing the natural beauty of the landscape. / 航拍俯瞰 / 山谷河流 / 天气光线不明 / 无口播语音 / 河流大桥航拍 / 混凝土桥梁 / 多根桥墩 / A wide river flows through a mountain valley, crossed by a large concrete bridge with multiple pillars. / 航拍运动 / 河谷公路 / 天气光线不明 / 无口播语音 / 河谷公路行车 / 航拍视角 / 黄色 SUV 过桥 / Aerial view of a scenic river valley with a bridge spanning turquoise water, a road running alongside, and a yellow SUV driving on the bridge. A monument and buildings are visible on the riverbank, surrounded by mountains. / 航拍俯瞰 / 山区河谷 / 阴天 / 无口播语音 / 桥梁建设场景 / Aerial view of a long bridge spanning a turquoise river in a mountainous valley, with construction activity visible on the banks. / 航拍俯瞰 / 山区河谷 / 天气光线不明 / 无口播语音 / 桥梁建设 / 航拍视角 / 河流景观 / Aerial view of a long bridge spanning a wide turquoise river in a mountainous valley, with concrete pillars visible in the foreground and construction activity on the banks. / 航拍俯瞰 / 山路 / 天气光线不明 / 无口播语音 / 山顶观景 / 黄色 SUV / 车顶站立 / Aerial view of a yellow SUV parked on a highway bridge with a person standing on the roof rack, overlooking a turquoise river and mountains. / 航拍运动 / 桥梁 / 晴天 / 无口播语音 / 航拍视角 / 黄色 SUV / 红色大门 / Aerial view of a yellow SUV driving across a long bridge over a turquoise river, with a red gate and buildings on the banks and mountains in the background. / 航拍俯瞰 / 城市街道 / 阴天 / 无口播语音 / 熊猫壁画航拍 / 熊猫壁画 / 彩色涂鸦 / Aerial view of a two-lane road leading towards a large colorful mural depicting a panda and clouds, with a building on the right and green fields on the sides.",
       "startAt": "2026-05-01T08:12:28.000Z",
       "endAt": "2026-05-01T08:37:09.976Z",
       "location": "金沙江大桥上空",
@@ -15627,14 +15352,14 @@
     {
       "id": "route-3cfdad8dc03a",
       "kind": "route",
-      "reviewStatus": "pending",
-      "title": "行车：四川省，甘孜藏族自治州，巴塘县，夏邛镇 · 巴塘圆梦酒店 → 四川省，甘孜藏族自治州，巴塘县，夏邛镇",
+      "reviewStatus": "confirmed",
+      "title": "行车：四川省，甘孜藏族自治州，巴塘县，夏邛镇 · 巴塘圆梦酒店 → 四川省，甘孜藏族自治州，巴塘县，夏邛镇 · 巴久曲1号大桥",
       "summary": "第一人称行车 / 城市街道 / 晴天 / 有口播语音 / 车辆观察 / 黑色 SUV / 贴标 / A black SUV drives down a tree-lined street with Chinese flags and buildings on the left, while a silver SUV is parked on the right. / 前面这个坦克300贴了一个理想汽车 / 无口播语音 / 情景不明 /...",
       "startAt": "2026-05-02T01:46:02.900Z",
-      "endAt": "2026-05-02T02:44:57.680Z",
+      "endAt": "2026-05-02T01:59:26.723Z",
       "route": {
         "from": "四川省，甘孜藏族自治州，巴塘县，夏邛镇 · 巴塘圆梦酒店",
-        "to": "四川省，甘孜藏族自治州，巴塘县，夏邛镇"
+        "to": "四川省，甘孜藏族自治州，巴塘县，夏邛镇 · 巴久曲1号大桥"
       },
       "spanIds": [
         "074ac2fe-9713-4131-b060-6766a8356478",
@@ -15698,8 +15423,35 @@
         "da72dc1d-b3d2-4f84-8d0b-8edc1d100462",
         "6ee4a86a-ef13-47f1-b07e-da9ce31b9f03",
         "378362ab-f9cf-488e-8f34-79465ba995e5",
-        "0a7e675c-44c5-456f-a22e-de0a6d3f9f10",
-        "bbe45eb4-c9cc-44e5-87de-d66be1750bfb",
+        "0a7e675c-44c5-456f-a22e-de0a6d3f9f10"
+      ]
+    },
+    {
+      "id": "event-ded4d72e30b5",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "四川省，甘孜藏族自治州，巴塘县，夏邛镇 · 巴久曲1号大桥",
+      "summary": "第三人称跟拍 / 车内 / 天气光线不明 / 无口播语音 / 情景不明 / A man with curly hair and glasses sits in the front passenger seat of a car, holding up a smartphone displaying a green webpage.",
+      "startAt": "2026-05-02T02:01:14.000Z",
+      "endAt": "2026-05-02T02:01:27.078Z",
+      "location": "四川省，甘孜藏族自治州，巴塘县，夏邛镇 · 巴久曲1号大桥",
+      "spanIds": [
+        "bbe45eb4-c9cc-44e5-87de-d66be1750bfb"
+      ]
+    },
+    {
+      "id": "route-eb0750fd6b9f",
+      "kind": "route",
+      "reviewStatus": "confirmed",
+      "title": "行车：四川省，甘孜藏族自治州，巴塘县，夏邛镇 · 红军渠 → 四川省，甘孜藏族自治州，巴塘县，夏邛镇",
+      "summary": "第一人称行车 / 山路 / 天气光线不明 / 有口播语音 / 山路行车 / 白色车辆 / 蜿蜒山路 / A white car drives ahead on a winding mountain road flanked by steep hills and a blue guardrail. / 哎呀 / 山区行车讨论信号 / 白色轿车 / A white car drives ahead on a winding mountai...",
+      "startAt": "2026-05-02T02:03:43.380Z",
+      "endAt": "2026-05-02T02:44:57.680Z",
+      "route": {
+        "from": "四川省，甘孜藏族自治州，巴塘县，夏邛镇 · 红军渠",
+        "to": "四川省，甘孜藏族自治州，巴塘县，夏邛镇"
+      },
+      "spanIds": [
         "da353dba-6056-46be-ae99-99802e61cf0b",
         "8e1a7755-a2f7-4157-b4a8-2a2c028ba6d7",
         "80940754-dd44-4430-8c36-27cfe3ff8c18",
@@ -15838,7 +15590,7 @@
     {
       "id": "route-d6dcc9c7bd06",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：四川省，甘孜藏族自治州，巴塘县，夏邛镇",
       "summary": "第一人称行车 / 蜿蜒山路 / 阴天 / 有口播语音 / 山路驾驶 / 雪山背景 / 摩托车行驶 / A motorcycle travels on a winding mountain road with a large, snow-dusted peak in the background. / 很孤独要不然跑着玩还是 / 原生态路线 / A motorcyclist rides along a winding mountain ...",
       "startAt": "2026-05-02T03:08:08.840Z",
@@ -15911,11 +15663,11 @@
       ]
     },
     {
-      "id": "route-f632c6abdebd",
+      "id": "route-8344d7c695f1",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：四川省，甘孜藏族自治州，巴塘县，波密乡",
-      "summary": "手持自拍口播 / 山地环境 / 晴天 / 无口播语音 / 登顶庆祝 / 越野车辆 / 岩石山坡 / A person celebrates triumphantly atop a yellow off-road vehicle parked on a rugged mountain pass surrounded by snow-dusted peaks and rocky slopes. / 固定机位观察 / 土路路边 / 阴天 /...",
+      "summary": "环境远景 / 山地环境 / 晴天 / 无口播语音 / 登顶庆祝 / 越野车辆 / 岩石山坡 / A person celebrates triumphantly atop a yellow off-road vehicle parked on a rugged mountain pass surrounded by snow-dusted peaks and rocky slopes. / 固定机位观察 / 土路路边 / 阴天 / 车...",
       "startAt": "2026-05-02T03:30:08.000Z",
       "endAt": "2026-05-02T03:33:20.250Z",
       "location": "四川省，甘孜藏族自治州，巴塘县，波密乡",
@@ -15980,15 +15732,14 @@
     {
       "id": "route-7061567f7b6d",
       "kind": "route",
-      "reviewStatus": "pending",
-      "title": "行车：四川省，甘孜藏族自治州，巴塘县，波密乡",
-      "summary": "第一人称行车 / 山路 / 阴天 / 有口播语音 / 山路行车中 / 黄色车辆 / 蜿蜒山路 / A yellow vehicle drives along a winding mountain road with snow-capped peaks and blue guardrails. / 这个这个嘿嘿 / 航拍跟随 / 航拍山路全景 / 雪山 / 蓝色护栏 / A drone flies over a winding moun...",
+      "reviewStatus": "confirmed",
+      "title": "行车：四川省，甘孜藏族自治州，巴塘县，波密乡 → 四川省，甘孜藏族自治州，巴塘县，波密乡 · 达休阔",
+      "summary": "第一人称行车 / 山路 / 阴天 / 有口播语音 / 山路行车中 / 黄色车辆 / 蜿蜒山路 / A yellow vehicle drives along a winding mountain road with snow-capped peaks and blue guardrails. / 这个这个嘿嘿 / 航拍山路全景 / 雪山 / 蓝色护栏 / A drone flies over a winding mountain ro...",
       "startAt": "2026-05-02T03:49:58.940Z",
-      "endAt": "2026-05-02T04:09:21.587Z",
-      "location": "四川省，甘孜藏族自治州，巴塘县，波密乡",
+      "endAt": "2026-05-02T04:24:39.203Z",
       "route": {
         "from": "四川省，甘孜藏族自治州，巴塘县，波密乡",
-        "to": "四川省，甘孜藏族自治州，巴塘县，波密乡"
+        "to": "四川省，甘孜藏族自治州，巴塘县，波密乡 · 达休阔"
       },
       "spanIds": [
         "1dd02098-fb66-405c-b90f-bb79d245d259",
@@ -16044,35 +15795,8 @@
         "1ccdf2c7-9dab-43ed-9434-d1a59311ebd7",
         "0e968259-10b9-4db9-852d-3038295f7b84",
         "29746881-3fed-4efa-8dba-3e3d659d0dd6",
-        "09c0aa96-97ea-47a2-85be-99cc9b840c47"
-      ]
-    },
-    {
-      "id": "event-4efbd0848cfa",
-      "kind": "event",
-      "reviewStatus": "pending",
-      "title": "四川省，甘孜藏族自治州，巴塘县，波密乡",
-      "summary": "照片记录 / 花海草地 / 阴天 / 无口播语音 / 情景不明 / 全景风光 / 自然地貌 / A wide panoramic view of a serene mountain valley with snow-capped peaks, dense forests, and open grasslands under a cloudy sky.",
-      "startAt": "2026-05-02T04:09:54.000Z",
-      "endAt": "2026-05-02T04:09:54.000Z",
-      "location": "四川省，甘孜藏族自治州，巴塘县，波密乡",
-      "spanIds": [
-        "a3d535e8-ed80-442c-aa2a-41b0e0f83603"
-      ]
-    },
-    {
-      "id": "route-ce3e8bd89246",
-      "kind": "route",
-      "reviewStatus": "pending",
-      "title": "行车：四川省，甘孜藏族自治州，巴塘县，波密乡 → 四川省，甘孜藏族自治州，巴塘县，波密乡 · 达休阔",
-      "summary": "第一人称行车 / 高山草甸 / 天气光线不明 / 有口播语音 / 情景不明 / 红色轿车 / 牦牛吃草 / A red car drives ahead on a mountain road, with yaks grazing on the grassy hillside to the right. / 起码也不一定有你走得快只是你走不了那么久 / 山路 / 黑色轿车 / 黄色车头 / A red car and a black c...",
-      "startAt": "2026-05-02T04:17:37.060Z",
-      "endAt": "2026-05-02T04:24:39.203Z",
-      "route": {
-        "from": "四川省，甘孜藏族自治州，巴塘县，波密乡",
-        "to": "四川省，甘孜藏族自治州，巴塘县，波密乡 · 达休阔"
-      },
-      "spanIds": [
+        "09c0aa96-97ea-47a2-85be-99cc9b840c47",
+        "a3d535e8-ed80-442c-aa2a-41b0e0f83603",
         "85145123-2dd9-4cca-8408-e40e08a57b0e",
         "ce9c7edf-9854-4728-91a1-7cf2c6be02ed",
         "2e19432d-4cab-4214-814b-223911aad728",
@@ -16172,7 +15896,7 @@
     {
       "id": "route-c3995766d8ff",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：四川省，甘孜藏族自治州，巴塘县，波密乡",
       "summary": "第一人称行车 / 山路 / 下雪/雨夹雪 / 有口播语音 / 山路行车遇雪 / 黄色车辆 / 蜿蜒山路 / A yellow vehicle drives along a winding mountain road through a valley with misty peaks and green slopes. / 那你等我看到这雪去说几句话 前面下起了雪 前面那个山谷里面云雾缭绕 感觉这下的是冰雹还是雨也不知道 / 湿润山谷公...",
       "startAt": "2026-05-02T05:31:34.000Z",
@@ -16190,7 +15914,7 @@
     {
       "id": "route-7200fc49babf",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：四川省，甘孜藏族自治州，巴塘县，波密乡",
       "summary": "第一人称行车 / 山地环境 / 阴天多云 / 无口播语音 / 山路行车穿行 / 黄色车辆 / 绿色山坡 / A yellow vehicle drives along a paved road through a mountainous valley with misty peaks, green slopes, and scattered trees.",
       "startAt": "2026-05-02T05:31:52.648Z",
@@ -16259,7 +15983,7 @@
     {
       "id": "route-193070596f8e",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：四川省，甘孜藏族自治州，巴塘县，波密乡",
       "summary": "第一人称行车 / 盘山公路 / 晴天 / 有口播语音 / 情景不明 / 黄色护栏 / 森林山坡 / A vehicle travels along a winding mountain road with yellow center lines, flanked by green guardrails and dense forested hillsides. / 水入了山谷之中 / 无口播语音 / 白色 SUV / 陡峭山坡 / A...",
       "startAt": "2026-05-02T06:09:07.800Z",
@@ -16384,11 +16108,11 @@
     {
       "id": "route-c8578e31d43a",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：四川省，甘孜藏族自治州，巴塘县，波密乡",
       "summary": "第一人称行车 / 山路 / 下雪 / 有口播语音 / 雪山行车 / 防滑模式 / 路边行人 / A car drives on a snowy mountain road with a person standing beside a stopped vehicle in the first frame. / 他是真牛逼啊这就停转啊再往前点也行啊 太容易转了这呀 是没错这已经滑了 你要不先停一下我开一个防滑模式再往前点对 / 无口播语...",
       "startAt": "2026-05-02T07:03:04.000Z",
-      "endAt": "2026-05-02T07:28:26.820Z",
+      "endAt": "2026-05-02T07:28:42.582Z",
       "location": "四川省，甘孜藏族自治州，巴塘县，波密乡",
       "route": {
         "from": "四川省，甘孜藏族自治州，巴塘县，波密乡",
@@ -16440,19 +16164,7 @@
         "8cd111fa-cdbe-425a-867d-d08f2d3cb110",
         "1285e13d-b72c-4e75-a248-127eea7bea90",
         "4ae89e44-4edd-49f4-9d8a-75e200015e18",
-        "c37a9ad6-c919-4f43-8bf4-9ed7cad2cad7"
-      ]
-    },
-    {
-      "id": "event-9d7b4ebe625e",
-      "kind": "event",
-      "reviewStatus": "pending",
-      "title": "牦牛过路临时等待",
-      "summary": "环境空镜 / 山地环境 / 阴天 / 无口播语音 / 牦牛过路临时等待 / 雪山 / 放牧 / A snowy mountain landscape with a herd of cattle grazing on the hillsides, viewed from behind a concrete barrier. / 手持自拍口播 / 环境不明 / 下雪 / 高原放牧 / 牦牛 / 冬季雪景 / A serene winter...",
-      "startAt": "2026-05-02T07:28:32.000Z",
-      "endAt": "2026-05-02T07:28:42.582Z",
-      "location": "四川省，甘孜藏族自治州，巴塘县，波密乡",
-      "spanIds": [
+        "c37a9ad6-c919-4f43-8bf4-9ed7cad2cad7",
         "6191501e-0b93-4f2c-8442-6c18659ff03e",
         "683297a4-7a50-4e2f-a693-3143e6923c21"
       ]
@@ -16501,12 +16213,25 @@
       ]
     },
     {
-      "id": "route-7a534062a5cd",
-      "kind": "route",
-      "reviewStatus": "pending",
-      "title": "行车：四川省，甘孜藏族自治州，理塘县，格聂镇",
+      "id": "event-9f521af56bc0",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "车内整理装备",
       "summary": "车内自拍口播 / 车内 / 晴天 / 有口播语音 / 车内整理装备 / 红色外套 / 毛巾脱困板 / A person in a red jacket sits in a car, first looking at the camera, then wiping their hair with a towel. / 哎 可没想到这次这个素肝毛巾 还能在这用上 真是都不白带都不白来 但是我还带了两个脱困板和一个脱车绳 希望不要用到吧没用...",
       "startAt": "2026-05-02T07:48:02.000Z",
+      "endAt": "2026-05-02T07:48:21.020Z",
+      "location": "四川省，甘孜藏族自治州，理塘县，格聂镇",
+      "spanIds": [
+        "afb60e93-7206-4ca8-a3cc-7a3bfb8f16e1"
+      ]
+    },
+    {
+      "id": "route-82c92537d3f0",
+      "kind": "route",
+      "reviewStatus": "confirmed",
+      "title": "行车：四川省，甘孜藏族自治州，理塘县，格聂镇",
+      "summary": "第一人称行车 / 山路 / 雾天 / 有口播语音 / 山路行车讨论路况 / 湿滑路面 / 积雪 / A vehicle travels along a wet, unpaved road through a rocky, mountainous landscape with snow-covered hills in the background. / 这边的温度就不够雪, 结尾冰。 / 下车前最后观察 / 泥泞路面 / A vehi...",
+      "startAt": "2026-05-02T07:51:26.840Z",
       "endAt": "2026-05-02T08:34:22.739Z",
       "location": "四川省，甘孜藏族自治州，理塘县，格聂镇",
       "route": {
@@ -16514,7 +16239,6 @@
         "to": "四川省，甘孜藏族自治州，理塘县，格聂镇"
       },
       "spanIds": [
-        "afb60e93-7206-4ca8-a3cc-7a3bfb8f16e1",
         "d06a1541-7698-4a74-abd1-6954317eddd4",
         "efe90f7c-bffc-47f6-98f4-74dbd8301b32",
         "72fb6d6d-909e-43d9-a325-6188a23c18ca",
@@ -16618,7 +16342,7 @@
     {
       "id": "route-6a180e98f455",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：四川省，甘孜藏族自治州，理塘县，格聂镇 · 格聂秘境民宿 → 四川省，甘孜藏族自治州，理塘县，格聂镇 · 呷朴马",
       "summary": "第一人称行车 / 石砌村落 / 雨天 / 有口播语音 / 泽巴村隔离城山观景 / 湿滑路面 / 雪山背景 / A vehicle drives through a rural village with stone buildings, wet roads, and snow-capped mountains in the background. / 怎么选 这个就是泽巴村 从这边看隔离城山是最好的位置之一 今天准备挡住了 / 无口播语...",
       "startAt": "2026-05-02T08:47:06.000Z",
@@ -16715,7 +16439,7 @@
     {
       "id": "route-e797107c3bad",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：四川省，甘孜藏族自治州，理塘县，格聂镇 → 四川省，甘孜藏族自治州，理塘县，格聂镇 · 下则通村",
       "summary": "第一人称行车 / 山路 / 雾天 / 有口播语音 / 山路行车 / 湿滑路面 / 雾气 / A wet road winds through a foggy mountain landscape with scattered rocks and evergreen trees. / 我晚上给你打包一点 / A vehicle travels along a wet, paved road through a foggy mountai...",
       "startAt": "2026-05-02T09:59:44.140Z",
@@ -16911,7 +16635,7 @@
       "kind": "event",
       "reviewStatus": "confirmed",
       "title": "格聂之眼上空",
-      "summary": "清晨低风窗口补拍格聂之眼俯拍全貌，兼顾湖面纹理、倒影与雪山关系 / 航拍建场 / 高原 / 雪天 / 无口播语音 / 高原地貌 / 圆形草甸 / 孤独人影 / Aerial view of a vast, snow-dusted mountain plateau featuring a distinctive circular grassy depression. The terrain is rugged with scattere...",
+      "summary": "航拍运动 / 山地环境 / 阴天 / 无口播语音 / 高原公路全景 / 积雪覆盖 / 木质护栏 / A wide-angle view of a paved road stretching through a vast, snow-dusted mountain range under a cloudy sky. Wooden fences line the roadside, and the terrain is rugged with rolling hills covered in patches of snow. The scene conveys a sense of isolation and natural beauty typical of high-altitude travel destinations. / 航拍俯瞰 / 山地环境 / 阴天 / 无口播语音 / 雪山航拍 / 雪地车辙 / 起伏山丘 / Aerial view of a vast, snow-covered landscape with rolling hills and distant mountains under a cloudy sky. Tracks are visible on the ground, suggesting human or animal activity. / 航拍运动 / 高山草甸 / 阴天 / 无口播语音 / 航拍展示地貌 / 圆形水塘 / 连绵丘陵 / A sweeping aerial view of a snow-dusted mountainous landscape featuring rolling hills, circular ponds, and distant peaks under an overcast sky. The scene conveys a sense of vastness and tranquility, typical of high-altitude regions. / 航拍俯瞰 / 花海草地 / 晴天 / 无口播语音 / 航拍冰湖 / 圆形冰面 / 同心纹理 / An aerial view of a large circular frozen pond surrounded by snow-covered grassland. The ice has a distinct concentric pattern with a lighter, textured center and darker outer ring. The surrounding landscape is flat and expansive, with gentle slopes in the distance. The scene conveys a sense of quiet isolation in a cold, high-altitude environment. / 航拍俯瞰 / 环境不明 / 晴天 / 无口播语音 / 地貌考察 / 圆形冰洞 / 稀疏植被 / Aerial view of a large circular depression in a snow-covered landscape, possibly a natural sinkhole or frozen pond, surrounded by rolling hills and sparse vegetation. / 航拍运动 / 山地环境 / 晴天 / 无口播语音 / 航拍辽阔雪景地貌 / 圆形土丘 / 蜿蜒土路 / A sweeping aerial view of a vast, snow-dusted landscape featuring rolling hills and distant snow-capped mountains. Winding dirt tracks cut through the terrain, leading to unique circular earth formations that stand out against the white and brown hues. The scene conveys a sense of isolation and natural beauty, typical of high-altitude regions like the Tibetan plateau. / 航拍运动 / 森林 / 雾天 / 无口播语音 / 雪山航拍全景 / 深谷/雾气/针叶林 / A sweeping aerial view of a snow-covered mountain range with deep valleys and mist clinging to the slopes. The scene is dominated by white snow and dark forested areas, creating a stark contrast. The atmosphere is quiet and cold, with clouds partially obscuring the distant peaks. / 航拍运动 / 森林 / 阴天 / 无口播语音 / 航拍全景 / 雪山覆盖 / 深谷云海 / A sweeping aerial view of a vast mountain range covered in snow, with a deep valley below partially obscured by low-hanging clouds. The foreground shows forested slopes and grassy hills dusted with snow, creating a dramatic contrast between the dark green trees and white snow. The scene conveys a sense of isolation and natural grandeur. / 航拍运动 / 山路 / 雪天 / 无口播语音 / 雪山全景 / 蜿蜒公路 / 起伏丘陵 / A sweeping aerial view of a vast, snow-dusted mountain landscape with rolling hills and a winding road cutting through the terrain. The scene is serene and expansive, with patches of snow covering the ground and sparse trees dotting the hillsides. The distant mountains are partially obscured by mist, adding to the sense of depth and isolation. / 航拍运动 / 山地环境 / 晴天 / 无口播语音 / 雪山峡谷全景 / 冬季景观 / 广阔视野 / A sweeping aerial view of a vast, snow-dusted mountain range with deep valleys and rolling hills in the foreground. The scene is quiet and expansive, capturing the grandeur of a high-altitude winter landscape under an overcast sky. / 航拍俯瞰 / 山地环境 / 晴天 / 无口播语音 / 人物站立 / 雪山背景 / 航拍视角 / A person stands in a snowy field with mountains in the background, viewed from an aerial perspective. / 航拍俯瞰 / 山地环境 / 阴天 / 无口播语音 / 雪山背景站立 / 米色外套 / 广阔雪景 / A person in a beige coat stands in a vast, snow-covered field with mountains in the background under an overcast sky. / 航拍俯瞰 / 山地环境 / 阴天 / 无口播语音 / 雪山旷野行走 / 旷野 / 雪山背景 / A person in a beige coat stands and walks across a vast, snow-covered field with majestic snow-capped mountains in the background under an overcast sky. / 航拍俯瞰 / 山地环境 / 天气光线不明 / 无口播语音 / 雪山航拍视角 / 雪地人物 / 远景雪山 / A person stands in a vast snowy field with snow-covered mountains in the background, captured from a drone perspective. / 航拍俯瞰 / 山地环境 / 天气光线不明 / 无口播语音 / 雪地航拍远景 / 雪山 / 人物 / A person stands in a vast snowy field with snow-capped mountains in the background, captured from an aerial perspective. / 航拍俯瞰 / 山地环境 / 天气光线不明 / 无口播语音 / 情景不明 / 徒步前行 / 圆形洼地 / A person walks across a snow-dusted field towards a circular depression, with snow-covered mountains in the background. The scene is captured from an aerial perspective, emphasizing the vastness and isolation of the landscape. / 航拍俯瞰 / 山地环境 / 阴天 / 无口播语音 / 雪地拍摄 / 圆形土坑 / 远山背景 / Aerial view of a person standing on a snow-dusted field with a large circular patch of brown earth, surrounded by mountains in the background. / 航拍俯瞰 / 山地环境 / 阴天 / 无口播语音 / 雪山徒步 / 广阔山谷 / 前景行人 / Aerial view of a vast, snow-dusted field with a person walking in the foreground, surrounded by mountains and a valley in the distance. / 航拍俯瞰 / 山地环境 / 晴天 / 无口播语音 / 雪原行走 / 圆形雪斑 / 远景山脉 / Aerial view of a person walking on a snow-dusted grassy plain with a large circular patch of snow in the center, surrounded by mountains in the distance. / 航拍俯瞰 / 山地环境 / 晴天 / 无口播语音 / 雪山观景 / A lone person stands on a snow-dusted hill overlooking a large circular patch of brown earth surrounded by snow, with mountains in the background. The scene is captured from an aerial perspective, emphasizing the vastness and isolation of the landscape. / 航拍俯瞰 / 高原 / 雪天 / 无口播语音 / 高原地貌 / 圆形草甸 / 孤独人影 / Aerial view of a vast, snow-dusted mountain plateau featuring a distinctive circular grassy depression. The terrain is rugged with scattered trees and distant mist-filled valleys. A lone figure stands in the center of the depression, emphasizing the scale of the landscape. / 航拍俯瞰 / 花海草地 / 阴天 / 无口播语音 / 孤独人物航拍 / 广阔草原 / 孤立感 / An aerial view of a vast, snow-dusted grassland with a lone person standing in the center, emphasizing scale and isolation. / 航拍俯瞰 / 环境不明 / 阴天 / 无口播语音 / 情景不明 / 孤独人物 / 广阔景观 / Aerial view of a vast snowy landscape with rolling hills and a lone person standing in a snow-dusted field, capturing the grandeur and isolation of the natural environment. / 航拍俯瞰 / 山地环境 / 阴天 / 无口播语音 / 雪地田野航拍 / 人物站立 / 起伏山丘 / Aerial view of a person standing in a snow-dusted field with rolling hills and mountains in the background. / 航拍俯瞰 / 环境不明 / 晴天 / 无口播语音 / 雪地徒步航拍 / 开阔雪原/起伏山丘 / A person walks across a snowy field with rolling hills and scattered trees in the background, captured from an aerial perspective.",
       "startAt": "2026-05-02T22:29:48.000Z",
       "endAt": "2026-05-02T23:09:26.165Z",
       "location": "格聂之眼上空",
@@ -16944,31 +16668,11 @@
       ]
     },
     {
-      "id": "route-1093b48d4d44",
-      "kind": "route",
-      "reviewStatus": "pending",
-      "title": "行车：四川省，甘孜藏族自治州，理塘县，格聂镇",
-      "summary": "第一人称行车 / 山路 / 阴天 / 无口播语音 / 山路行车场景 / 黄色皮卡 / 积雪山坡 / A yellow pickup truck drives along a serpentine mountain road flanked by barren, snow-dusted hills under a cloudy sky, setting the scene for a rugged journey. / 照片记录 / 山...",
-      "startAt": "2026-05-02T23:38:19.000Z",
-      "endAt": "2026-05-02T23:44:30.000Z",
-      "location": "四川省，甘孜藏族自治州，理塘县，格聂镇",
-      "route": {
-        "from": "四川省，甘孜藏族自治州，理塘县，格聂镇",
-        "to": "四川省，甘孜藏族自治州，理塘县，格聂镇"
-      },
-      "spanIds": [
-        "1cc248c6-b38f-4848-ac98-c204b970368f",
-        "3638bc24-334c-4b31-8aab-8a769a89ebc3",
-        "45c7e207-faee-41b1-864c-35a8fd2120e0",
-        "83094d0d-c015-45d7-8c24-df89fa973b33"
-      ]
-    },
-    {
       "id": "event-pharos-2ec5ed648f74",
       "kind": "event",
       "reviewStatus": "confirmed",
       "title": "格聂之眼到然日卡村网红公路",
-      "summary": "网红公路跟人跟车航拍。 / 第一人称行车 / 山路 / 阴天 / 无口播语音 / 孤独感观察 / 雪山 / 蜿蜒山路 / A person stands on a winding mountain road with snow-capped hills in the background, creating a sense of solitude and vastness. / 徒步登山 / A lone person walks a...",
+      "summary": "环境远景 / 山路 / 阴天 / 无口播语音 / 山路行车场景 / 黄色皮卡 / 积雪山坡 / A yellow pickup truck drives along a serpentine mountain road flanked by barren, snow-dusted hills under a cloudy sky, setting the scene for a rugged journey. / 山路场景 / 黄色越...",
       "startAt": "2026-05-02T23:46:59.000Z",
       "endAt": "2026-05-02T23:59:44.699Z",
       "location": "格聂之眼到然日卡村网红公路",
@@ -16982,19 +16686,32 @@
       ]
     },
     {
-      "id": "route-cd621126f83e",
-      "kind": "route",
-      "reviewStatus": "pending",
-      "title": "行车：四川省，甘孜藏族自治州，理塘县，格聂镇 · 理塘格聂云端凡奢民宿 → 四川省，甘孜藏族自治州，理塘县，格聂镇 · 下则通村",
-      "summary": "航拍建场 / 山路 / 晴天 / 无口播语音 / 山村行车 / 蜿蜒道路 / 雪山背景 / Aerial view of a winding road through a village with snow-capped mountains in the background. / 第一人称行车 / 村庄道路 / 阴天 / 有口播语音 / 路过马群 / 白色佛塔 / A yellow vehicle drives down a pav...",
+      "id": "event-2f25e0de384f",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "山村行车",
+      "summary": "航拍俯瞰 / 山路 / 晴天 / 无口播语音 / 山村行车 / 蜿蜒道路 / 雪山背景 / Aerial view of a winding road through a village with snow-capped mountains in the background.",
       "startAt": "2026-05-03T00:00:38.000Z",
+      "endAt": "2026-05-03T00:00:47.771Z",
+      "location": "四川省，甘孜藏族自治州，理塘县，格聂镇 · 理塘格聂云端凡奢民宿",
+      "spanIds": [
+        "779a8c1a-39b0-4a80-afab-8fdf5ef8043c"
+      ]
+    },
+    {
+      "id": "route-306c6ae856b1",
+      "kind": "route",
+      "reviewStatus": "confirmed",
+      "title": "行车：四川省，甘孜藏族自治州，理塘县，格聂镇 · 下则通村",
+      "summary": "第一人称行车 / 村庄道路 / 阴天 / 有口播语音 / 路过马群 / 白色佛塔 / 雪山背景 / A yellow vehicle drives down a paved road through a village, passing horses and a white stupa against a backdrop of snow-capped mountains. / 还神奇 路上全都是死的 马还穿衣服 高级马马王即将到达目...",
+      "startAt": "2026-05-03T00:03:48.000Z",
       "endAt": "2026-05-03T00:04:08.680Z",
+      "location": "四川省，甘孜藏族自治州，理塘县，格聂镇 · 下则通村",
       "route": {
-        "from": "四川省，甘孜藏族自治州，理塘县，格聂镇 · 理塘格聂云端凡奢民宿",
+        "from": "四川省，甘孜藏族自治州，理塘县，格聂镇 · 下则通村",
         "to": "四川省，甘孜藏族自治州，理塘县，格聂镇 · 下则通村"
       },
       "spanIds": [
-        "779a8c1a-39b0-4a80-afab-8fdf5ef8043c",
         "563445a0-3db1-4209-bd8d-ed801f3c8aa3",
         "88eb7649-cdcd-4921-b923-3821a82f3e4c"
       ]
@@ -17031,7 +16748,7 @@
     {
       "id": "route-7dc12e25fecd",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：四川省，甘孜藏族自治州，理塘县，格聂镇 · 格聂高原民宿(格聂镇店) → 四川省，甘孜藏族自治州，理塘县，格聂镇",
       "summary": "第一人称行车 / 山路 / 阴天 / 有口播语音 / 车内讨论路况 / 黄色车辆 / 雪山背景 / A yellow vehicle travels on a paved road through a mountainous landscape with snow-capped peaks and cloudy skies. / 风光不错 风光不错但是已经看腻了 / 车内询问状态 / 蜿蜒山路 / A yellow vehicle d...",
       "startAt": "2026-05-03T01:10:18.220Z",
@@ -17083,7 +16800,7 @@
     {
       "id": "event-41b9881b4ad1",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "猴群互动",
       "summary": "细节特写 / 石墙背景 / 阴天 / 无口播语音 / 猴群互动 / A mother monkey holding her baby sits on a stone wall with snow-covered rocks in the background.",
       "startAt": "2026-05-03T01:50:04.000Z",
@@ -17096,7 +16813,7 @@
     {
       "id": "route-e8a4ac167417",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：四川省，甘孜藏族自治州，理塘县，格聂镇",
       "summary": "第一人称行车 / 山地环境 / 阴天 / 无口播语音 / 雪山行车中 / 沥青路面 / 积雪覆盖 / A winding asphalt road curves through a snow-covered mountainous landscape under an overcast sky. The road is flanked by green guardrails and rocky terrain partially co...",
       "startAt": "2026-05-03T01:58:01.000Z",
@@ -17130,9 +16847,9 @@
     {
       "id": "event-8b63cbcf2ab1",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "雪山湖泊景观",
-      "summary": "环境空镜 / 湖泊 / 天气光线不明 / 无口播语音 / 雪山湖泊景观 / 积雪覆盖 / 岩石水面 / A snow-covered mountain slopes down to a calm lake with visible rocks in the water.",
+      "summary": "环境远景 / 湖泊 / 天气光线不明 / 无口播语音 / 雪山湖泊景观 / 积雪覆盖 / 岩石水面 / A snow-covered mountain slopes down to a calm lake with visible rocks in the water.",
       "startAt": "2026-05-03T02:14:05.000Z",
       "endAt": "2026-05-03T02:14:14.579Z",
       "location": "四川省，甘孜藏族自治州，理塘县，禾尼乡",
@@ -17143,7 +16860,7 @@
     {
       "id": "route-efd8e3e8fa3f",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：四川省，甘孜藏族自治州，理塘县，禾尼乡",
       "summary": "第一人称行车 / 公路 / 阴天 / 有口播语音 / 涉水行驶 / 积雪 / 岩石 / A yellow vehicle drives along a wet, two-lane road through a snowy, rocky landscape with hills in the background. / 这个这个 这个这个 / 山路 / A yellow vehicle drives along a wet, windi...",
       "startAt": "2026-05-03T02:19:44.000Z",
@@ -17228,7 +16945,7 @@
     {
       "id": "route-c7b1d88ae091",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：四川省，甘孜藏族自治州，理塘县，奔戈乡",
       "summary": "第一人称行车 / 车内 / 晴天 / 有口播语音 / 驾驶破晓首次 / 雪地模式 / 驾驶信心 / A person in a red jacket drives a car with two passengers in the back seat. / 这是驾驶破晓第一次 / 前往世界高城 / 吃午饭 / 冰面路面 / Three people are seated inside a car, with the front pass...",
       "startAt": "2026-05-03T03:08:38.040Z",
@@ -17338,7 +17055,7 @@
     {
       "id": "route-39b65d2ffd59",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：四川省，甘孜藏族自治州，理塘县，高城镇 → 四川省，甘孜藏族自治州，康定市，新都桥镇 · 贡嘎雪山观景台",
       "summary": "第一人称行车 / 隧道 / 天气光线不明 / 有口播语音 / 隧道行车 / 礼堂隧道 / 黄色车辆 / A yellow vehicle drives through a tunnel with curved concrete walls and overhead lights. / 着名的礼堂隧道 / 灯钉针 / A yellow vehicle drives through a tunnel with overhead light...",
       "startAt": "2026-05-03T04:34:55.560Z",
@@ -17497,7 +17214,7 @@
     {
       "id": "route-7751a3748bb7",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：四川省，甘孜藏族自治州，康定市，新都桥镇 · 贡嘎雪山观景台 → 四川省，甘孜藏族自治州，康定市，贡嘎山镇",
       "summary": "第一人称行车 / 乡村道路 / 阴天 / 无口播语音 / 乡村路段行驶 / 蓝色路牌 / 右侧停车 / The video shows a wet road with trees on both sides, a blue road sign indicating distances to Jiulong, Yaning, and G108, and a parked vehicle on the right. / 下雨 / 有口播语...",
       "startAt": "2026-05-03T08:36:00.640Z",
@@ -17897,7 +17614,7 @@
       "kind": "event",
       "reviewStatus": "confirmed",
       "title": "子梅垭口（海拔4500m）",
-      "summary": "口播：日出前抢位，天际线泛红，今天拍贡嘎日出金山。 / 第一人称行车 / 公路 / 下雪 / 无口播语音 / 夜间雪地行车 / 雪夜行车 / 车灯照亮 / A dark, snowy night scene captured from a moving vehicle, showing illuminated tracks on a snow-covered road with faint outlines of distant st...",
+      "summary": "第一人称行车 / 公路 / 下雪 / 无口播语音 / 夜间雪地行车 / 雪夜行车 / 车灯照亮 / A dark, snowy night scene captured from a moving vehicle, showing illuminated tracks on a snow-covered road with faint outlines of distant structures or poles in the bac...",
       "startAt": "2026-05-03T22:00:07.000Z",
       "endAt": "2026-05-03T22:33:41.587Z",
       "location": "子梅垭口（海拔4500m）",
@@ -17938,30 +17655,13 @@
       "kind": "event",
       "reviewStatus": "confirmed",
       "title": "子梅垭口上空",
-      "summary": "航拍日出金山+子梅垭口全景 / 航拍建场 / 环境不明 / 阴天 / 无口播语音 / 孤独人物远观 / 雪景 / 路标 / A person in a long coat stands alone in a vast, snow-covered landscape under an overcast sky. The camera appears to be at a distance, capturing the solitude ...",
+      "summary": "航拍俯瞰 / 环境不明 / 阴天 / 无口播语音 / 孤独人物远观 / 雪景 / 路标 / A person in a long coat stands alone in a vast, snow-covered landscape under an overcast sky. The camera appears to be at a distance, capturing the solitude of the figure against the white expanse. A small signpost and a car are visible in the background, suggesting a remote location. The scene conveys a sense of stillness and isolation. / 航拍俯瞰 / 建筑外观 / 晴天 / 无口播语音 / 雪地营地远景 / 雪地 / 蒙古包 / A person in a beige coat stands in a vast snowy landscape holding a lantern. The scene includes a yurt, utility poles, and a small building with a car nearby. The environment is serene and remote, with snow covering the ground and a clear sky above.",
       "startAt": "2026-05-03T22:24:25.000Z",
       "endAt": "2026-05-03T22:25:54.605Z",
       "location": "子梅垭口上空",
       "spanIds": [
         "ed32aa45-ec6c-434d-a584-f511baddf783-direct-full",
         "7a4a5d20-e7da-4441-bdc3-6e61d61bb167-direct-full"
-      ]
-    },
-    {
-      "id": "route-3e8a461bc182",
-      "kind": "route",
-      "reviewStatus": "pending",
-      "title": "行车：四川省，甘孜藏族自治州，康定市，贡嘎山镇 · 子梅山",
-      "summary": "照片记录 / 公路 / 阴天 / 无口播语音 / 雪地乡道行车 / 黄色 SUV / 电线杆 / A yellow SUV drives along a snow-covered rural road under an overcast sky, with power lines and distant structures visible in the wintry landscape.",
-      "startAt": "2026-05-03T22:35:02.000Z",
-      "endAt": "2026-05-03T22:35:02.000Z",
-      "location": "四川省，甘孜藏族自治州，康定市，贡嘎山镇 · 子梅山",
-      "route": {
-        "from": "四川省，甘孜藏族自治州，康定市，贡嘎山镇 · 子梅山",
-        "to": "四川省，甘孜藏族自治州，康定市，贡嘎山镇 · 子梅山"
-      },
-      "spanIds": [
-        "44c6373c-a359-4c47-9df6-d038f5ee384e"
       ]
     },
     {
@@ -18076,7 +17776,7 @@
     {
       "id": "event-3d6d180e3403",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "准备出发前往新都桥",
       "summary": "手持自拍口播 / 民宿前广场 / 晴天 / 有口播语音 / 准备出发前往新都桥 / 传统建筑 / 黄色 SUV / A person with curly hair and glasses stands in front of a yellow SUV and a traditional building with snow on the ground. / 活着到达了民宿 现在是八点半 准备出发前往新都桥然后去成都返城了 哇靠非常难...",
       "startAt": "2026-05-04T00:36:57.780Z",
@@ -18089,14 +17789,14 @@
     {
       "id": "route-e761ac2689c3",
       "kind": "route",
-      "reviewStatus": "pending",
-      "title": "行车：四川省，甘孜藏族自治州，康定市，贡嘎山镇 · 朔布村 → 四川省，甘孜藏族自治州，康定市，贡嘎山镇 · 拉擦",
+      "reviewStatus": "confirmed",
+      "title": "行车：四川省，甘孜藏族自治州，康定市，贡嘎山镇 · 朔布村 → 四川省，甘孜藏族自治州，康定市，贡嘎山镇 · 色乌绒村",
       "summary": "第一人称行车 / 车内驾驶舱 / 晴天 / 有口播语音 / 电量焦虑 / 数字仪表盘 / 导航屏幕 / The images show a car's digital dashboard and navigation screen displaying a map, speed, and various vehicle settings. / 现在续航只剩60公里加50%的电了现在续航只剩60公里加50%的 电了我们可得小心点 / 无...",
       "startAt": "2026-05-04T00:41:43.200Z",
-      "endAt": "2026-05-04T01:41:26.980Z",
+      "endAt": "2026-05-04T01:39:03.731Z",
       "route": {
         "from": "四川省，甘孜藏族自治州，康定市，贡嘎山镇 · 朔布村",
-        "to": "四川省，甘孜藏族自治州，康定市，贡嘎山镇 · 拉擦"
+        "to": "四川省，甘孜藏族自治州，康定市，贡嘎山镇 · 色乌绒村"
       },
       "spanIds": [
         "5d1eca01-afe0-403c-a8f9-a52f63169857",
@@ -18153,7 +17853,19 @@
         "ce63c6bb-f163-4841-aacf-6228c4a4d342",
         "f5c7c94b-6556-4d74-aa25-596f72c529f5",
         "274697fd-b3df-4e83-9e53-d64caa8032c4",
-        "1100b65d-d6c2-4150-9deb-48a0950424fd",
+        "1100b65d-d6c2-4150-9deb-48a0950424fd"
+      ]
+    },
+    {
+      "id": "event-672253207e01",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "翻车机位记录",
+      "summary": "手持自拍口播 / 车内 / 晴天 / 有口播语音 / 翻车机位记录 / 新多桥 / 放晴 / A person with curly hair and glasses sits in a car, wearing a maroon jacket and seatbelt, with a blurred outdoor view through the window. / 现在返回新多桥途径一半了天基本已经完全放晴了 我的翻车机位列表又...",
+      "startAt": "2026-05-04T01:41:10.700Z",
+      "endAt": "2026-05-04T01:41:26.980Z",
+      "location": "四川省，甘孜藏族自治州，康定市，贡嘎山镇 · 拉擦",
+      "spanIds": [
         "61650c0d-0dbf-4dfc-90b1-01b4a5d1b894"
       ]
     },
@@ -18183,7 +17895,7 @@
     {
       "id": "route-d31dfa1e207f",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：四川省，甘孜藏族自治州，康定市，新都桥镇 · 营关养护管理站 → 四川省，甘孜藏族自治州，康定市，贡嘎山镇 · 朔布村",
       "summary": "第一人称行车 / 山路 / 雨天 / 有口播语音 / 山路行车 / 雪山背景 / 绿色丘陵 / A yellow vehicle drives along a paved road through a mountainous region with green hills, trees, and distant snow-capped peaks under a partly cloudy sky. / 指令执行中 哎马路杀手啊 我操...",
       "startAt": "2026-05-04T04:59:30.000Z",
@@ -18269,7 +17981,7 @@
     {
       "id": "event-e939d92bade5",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "室内静物",
       "summary": "固定机位观察 / 室内场景 / 天气光线不明 / 无口播语音 / 室内静物 / 橘猫 / 动物头骨 / An orange cat sits on a red stone ledge next to a potted plant, with a white animal skull mounted on the wall nearby. / 手持自拍口播 / 室内大厅 / 晴天 / 有口播语音 / 办理入住准备 / 粉色穿搭 / 红色...",
       "startAt": "2026-05-04T07:46:32.000Z",
@@ -18281,19 +17993,31 @@
       ]
     },
     {
-      "id": "route-110d302286d2",
-      "kind": "route",
-      "reviewStatus": "pending",
-      "title": "行车：四川省，甘孜藏族自治州，康定市，贡嘎山镇 · 朔布村 → 四川省，甘孜藏族自治州，康定市，贡嘎山镇 · 子梅垭口",
-      "summary": "手持自拍口播 / 车内 / 晴天 / 有口播语音 / 民宿入住出发 / 卷发男子 / 保温杯 / A person with curly hair and glasses sits in a car, holding up a black thermos bottle. / 在民宿搬了个入住接了个热血 出发 / 第一人称行车 / 山村入口 / 天气光线不明 / 正式出发 / 石砌建筑 / 木门窗 / A yellow vehicle ...",
+      "id": "event-89dfcd01aa23",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "民宿入住出发",
+      "summary": "手持自拍口播 / 车内 / 晴天 / 有口播语音 / 民宿入住出发 / 卷发男子 / 保温杯 / A person with curly hair and glasses sits in a car, holding up a black thermos bottle. / 在民宿搬了个入住接了个热血 出发",
       "startAt": "2026-05-04T08:06:31.000Z",
+      "endAt": "2026-05-04T08:06:35.500Z",
+      "location": "四川省，甘孜藏族自治州，康定市，贡嘎山镇 · 朔布村",
+      "spanIds": [
+        "1371aa49-9358-47c7-a333-098b575e19ac"
+      ]
+    },
+    {
+      "id": "route-232d27f7e8d6",
+      "kind": "route",
+      "reviewStatus": "confirmed",
+      "title": "行车：四川省，甘孜藏族自治州，康定市，贡嘎山镇 · 仰佩林民宿 → 四川省，甘孜藏族自治州，康定市，贡嘎山镇 · 子梅垭口",
+      "summary": "第一人称行车 / 山村入口 / 天气光线不明 / 有口播语音 / 正式出发 / 石砌建筑 / 木门窗 / A yellow vehicle drives past a stone building with wooden doors and windows, set against a grassy hillside with utility poles and a pile of rocks. / 山村街道 / 上山重走 / 石屋村...",
+      "startAt": "2026-05-04T08:10:20.740Z",
       "endAt": "2026-05-04T08:49:43.773Z",
       "route": {
-        "from": "四川省，甘孜藏族自治州，康定市，贡嘎山镇 · 朔布村",
+        "from": "四川省，甘孜藏族自治州，康定市，贡嘎山镇 · 仰佩林民宿",
         "to": "四川省，甘孜藏族自治州，康定市，贡嘎山镇 · 子梅垭口"
       },
       "spanIds": [
-        "1371aa49-9358-47c7-a333-098b575e19ac",
         "66e4752a-cec5-4ffe-bc98-33202bdb4c27",
         "46dbe0f6-24ec-41cc-a915-b75cad4af195",
         "3776f698-2849-45a9-8320-89ecbddd3956",
@@ -18431,7 +18155,7 @@
       "kind": "event",
       "reviewStatus": "confirmed",
       "title": "子梅垭口",
-      "summary": "子梅垭口延时摄影，日落金山转星轨转月照银山 / 航拍建场 / 山地环境 / 雾天 / 无口播语音 / 航拍雾中公路 / 隧道入口 / 航拍视角 / A serene night view of snow-capped mountains under a star-filled sky, with soft clouds hovering over the peaks and a gently sloping snowy foregro...",
+      "summary": "环境远景 / 车内 / 雪景 / 无口播语音 / 雪山拍摄准备 / 豪华车内 / 双机位架设 / A view from inside a luxury car looking out at a serene snowy mountain landscape with two cameras on tripods set up outside, suggesting a travel or automotive video shoot. / 环境远景 / 山地环境 / 晴天 / 无口播语音 / 远眺雪山全景 / 云海蓝天 / 巍峨山峰 / A breathtaking panoramic view of snow-covered mountain peaks under a clear blue sky, setting a serene and majestic tone for the travel video. / 环境远景 / 山地环境 / 晴天 / 无口播语音 / 雪山山谷全景 / 雪山 / 滑雪度假村 / A breathtaking panoramic view of snow-capped mountains under a clear blue sky, with a ski resort nestled in the valley below. / 环境远景 / 山地环境 / 晴天 / 无口播语音 / 雪山日出拍摄 / 雪山云海 / 金色阳光 / A serene panoramic view of snow-covered mountain peaks bathed in golden sunlight under a clear blue sky with scattered clouds. / 环境远景 / 山路 / 晴天 / 无口播语音 / 雪山公路合影 / 车辆装饰 / 雪山背景 / A person sits atop a decorated SUV parked on a snowy mountain road with majestic snow-covered peaks and clear blue sky in the background. / 环境远景 / 山地环境 / 晴天 / 无口播语音 / 冬季雪山风光 / 金色阳光 / 蓝天背景 / A serene winter mountain landscape bathed in golden sunlight with snow-covered peaks and a clear blue sky. / 环境远景 / 山地环境 / 晴天 / 无口播语音 / 雪山观景 / 传统石堆 / 孤独旅人 / A lone traveler stands on a snowy ridge gazing at majestic snow-covered mountain peaks under a clear blue sky, flanked by traditional stone cairns. / 环境远景 / 山地环境 / 晴天/日照金山 / 无口播语音 / 雪山垭口驻足观景 / 雪山 / 石堆 / A lone traveler stands on a snowy mountain ridge gazing at majestic snow-covered peaks bathed in golden alpenglow, with stone cairns and prayer flags marking the sacred path. / 环境远景 / 山地环境 / 日出 / 无口播语音 / 雪山日出 / 金色光辉 / 云海雪原 / A serene panoramic view of snow-covered mountain peaks bathed in golden alpenglow at sunrise or sunset, with soft clouds hovering above the ridges and a vast snowy foreground leading into deep valleys. / 环境远景 / 山地环境 / 日出 / 无口播语音 / 雪山日出空镜 / 粉色蓝色天空 / 宁静氛围 / A serene sunrise over snow-capped mountains with soft pink and blue hues in the sky, setting a tranquil tone for a travel video. / 环境远景 / 山地环境 / 日出 / 无口播语音 / 日出云海 / 山峰全景 / 色彩柔和 / A panoramic view of snow-covered mountain peaks bathed in soft pink and blue hues during sunrise or sunset, with clouds hovering above the highest summit. / 环境远景 / 山路 / 晴天 / 无口播语音 / 拍摄准备 / 黄色 SUV / 三脚架 / A woman stands beside a yellow SUV on a snow-covered mountain road with tripods set up nearby, surrounded by vast snowy peaks under a bright sky. / 环境远景 / 山地环境 / 夜晚 / 无口播语音 / 雪山摄影准备 / 三脚架 / 相机 / Two cameras on tripods are set up to capture a serene, snow-covered mountain landscape under a deep blue twilight sky. / 环境远景 / 山地环境 / 晴天 / 无口播语音 / 雪山风景 / 雪山 / 风景 / A serene winter mountain landscape with snow-capped peaks under a clear blue sky, setting a tranquil and majestic tone for the travel video. / 环境远景 / 山地环境 / 晴天 / 无口播语音 / 雪山云海 / 雪山 / 全景 / A serene panoramic view of snow-covered mountain peaks under a clear blue sky with a single cloud hovering above the highest ridge. / 环境远景 / 山地环境 / 夜晚 / 无口播语音 / 雪山夜景 / 深蓝色天空 / 山谷灯光 / A serene wide shot of snow-covered mountain peaks under a deep blue twilight sky, with faint lights visible in the valley below. / 环境远景 / 山路 / 晴天 / 无口播语音 / 雪山公路伫立 / 手持暖光 / A lone figure stands on a snowy mountain road at twilight, holding a warm light against the backdrop of majestic snow-capped peaks under a deep blue sky. / 环境远景 / 山地环境 / 夜晚 / 无口播语音 / 雪山风光 / 星空 / 积雪 / A serene winter mountain landscape under a starry night sky, with snow-covered peaks and valleys creating a tranquil and majestic scene. / 环境远景 / 山路 / 夜晚 / 无口播语音 / 雪山夜景停车 / An orange SUV parked on a snowy mountain road under a starry night sky, surrounded by snow-capped peaks and a serene winter landscape. / 环境远景 / 山路 / 夜晚 / 无口播语音 / 雪山独行 / 孤独探险 / A lone person stands beside a parked SUV on a snow-lined mountain road under a star-filled night sky, evoking solitude and adventure in a remote alpine landscape. / 环境远景 / 山地环境 / 夜晚 / 无口播语音 / 雪山摄影 / 星空背景 / 积雪山峰 / A serene night view of snow-covered mountain peaks under a star-filled sky with soft clouds hovering above the ridges. / 环境远景 / 山路 / 夜晚 / 无口播语音 / 雪山停车 / 单人 / 星空 / A lone person stands beside a yellow SUV parked on a snowy mountain road under a vast starry night sky, evoking solitude and adventure in a remote natural setting. / 环境远景 / 森林 / 夜晚 / 无口播语音 / 雪山观星 / 孤独感 / 星空背景 / A lone figure stands on a snowy roadside gazing at snow-capped mountains under a vast star-filled night sky, evoking solitude and awe in a remote alpine setting. / 环境远景 / 森林 / 夜晚 / 无口播语音 / 雪地观景 / 孤独感 / 星空背景 / A lone figure stands on a snowy roadside gazing at snow-capped mountains under a vast star-filled night sky, evoking solitude and awe in a remote alpine setting. / 环境远景 / 山地环境 / 夜晚 / 无口播语音 / 星空下的雪山 / 繁星满天 / 积雪山峰 / A serene night scene of snow-covered mountain peaks under a vast star-filled sky with soft clouds drifting above the ridges. / 环境远景 / 山地环境 / 夜晚 / 无口播语音 / 情景不明 / A serene night scene of snow-capped mountains under a vast star-filled sky, evoking tranquility and the grandeur of nature. / 环境远景 / 山地环境 / 夜晚 / 无口播语音 / 雪山星空夜景 / 积雪山峰 / 繁星天空 / A serene night view of snow-covered mountain peaks under a star-filled sky with soft clouds drifting near the summit. / 环境远景 / 山地环境 / 雾天 / 无口播语音 / 航拍雾中公路 / 隧道入口 / 航拍视角 / A serene night view of snow-capped mountains under a star-filled sky, with soft clouds hovering over the peaks and a gently sloping snowy foreground.",
       "startAt": "2026-05-04T11:05:42.000Z",
       "endAt": "2026-05-04T15:25:50.000Z",
       "location": "子梅垭口",
@@ -18469,7 +18193,7 @@
     {
       "id": "event-b6f95bcf1b96",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "晴朗雪山云海",
       "summary": "延时记录 / 山地环境 / 晴天 / 无口播语音 / 晴朗雪山云海 / 蓝天白云 / 山峰积雪 / Snow-covered mountain peaks under a clear blue sky with scattered clouds. / 固定机位观察 / 雪山风光 / 自然风光 / Snow-covered mountain range under a clear blue sky with scattered clou...",
       "startAt": "2026-05-04T15:52:00.000Z",
@@ -18529,7 +18253,7 @@
     {
       "id": "route-ccb22fa0a3dc",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：四川省，甘孜藏族自治州，康定市，贡嘎山镇 · 贡噶星空民宿 → 四川省，甘孜藏族自治州，康定市，新都桥镇 · 印象木雅酒店(新都桥店)",
       "summary": "第一人称行车 / 山谷公路 / 晴天 / 有口播语音 / 车内讨论路况 / 雪山远景 / 铺装路面 / A vehicle travels along a paved road through a mountain valley with snow-capped peaks in the distance. / 这个这个 / 山路石墙 / 山路行车观察 / 放牧马群 / A vehicle travels along a paved ...",
       "startAt": "2026-05-05T01:02:47.000Z",
@@ -18581,7 +18305,7 @@
       "kind": "event",
       "reviewStatus": "confirmed",
       "title": "新都桥",
-      "summary": "新都桥吃饭休整 / 照片记录 / 建筑前 / 晴天 / 无口播语音 / 车辆停靠拍摄 / 黄色 SUV / 雪山壁画 / A yellow SUV is parked in front of a building with a large mural of a snow-capped mountain. / 车窗外观察 / 花海拍摄现场 / 天气光线不明 / 情景不明 / A yellow SUV is parked in front...",
+      "summary": "环境远景 / 建筑前 / 晴天 / 无口播语音 / 车辆停靠拍摄 / 黄色 SUV / 雪山壁画 / A yellow SUV is parked in front of a building with a large mural of a snow-capped mountain. / 车窗外观察 / 花海拍摄现场 / 天气光线不明 / 无口播语音 / 情景不明 / A yellow SUV is parked in front of a mural depicting a mountain range, with buildings and hills in the background. / 固定机位口播 / 红顶建筑前 / 天气光线不明 / 有口播语音 / 情景不明 / 人物站立 / 口播片段 / A person with curly hair and glasses wearing a maroon jacket stands outdoors in front of a building with a red roof. / 手持自拍口播 / 户外街道 / 晴天 / 有口播语音 / 户外自拍 / 人物特写 / 建筑背景 / A person with curly hair and glasses wearing a maroon jacket stands outdoors on a sunny day, with a building and trees in the background. / 手持自拍口播 / 车内 / 晴天 / 有口播语音 / 车内讨论行程转换 / 香道转果道 / 驾驶破晓 / A person with curly hair and glasses wearing a maroon jacket stands outdoors on a sunny day, with a building and trees in the background. / 手持自拍口播 / 城市街道 / 阴天 / 有口播语音 / 路边用餐 / 卷发男子 / 面馆 / A person with curly hair and glasses wearing a red jacket stands on a street in front of a building with Chinese signage. / 第三人称跟拍 / 车内 / 天气光线不明 / 无口播语音 / 车内讨论行程 / 手持饮料 / 559国道崖口 / A person wearing a maroon jacket and glasses sits in a car, holding a bottle of orange-colored drink.",
       "startAt": "2026-05-05T03:13:22.000Z",
       "endAt": "2026-05-05T03:54:03.080Z",
       "location": "新都桥",
@@ -18598,7 +18322,7 @@
     {
       "id": "route-ac9bb623fc5b",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：四川省，甘孜藏族自治州，康定市，新都桥镇 · 贡嘎雪山观景台 → 四川省，成都市，简阳市，芦葭镇 · 空港立交出口(西南向)",
       "summary": "第一人称行车 / 城镇街道 / 晴天 / 无口播语音 / 城镇穿行 / 传统建筑 / 蓝天 / A yellow vehicle drives along a paved road through a town with traditional buildings, mountains, and clear blue skies. / 山路 / 有口播语音 / 超速提醒 / 限速提示 / 减速 / A yellow vehicle d...",
       "startAt": "2026-05-05T03:57:53.048Z",
@@ -18797,7 +18521,7 @@
       "kind": "event",
       "reviewStatus": "confirmed",
       "title": "成都",
-      "summary": "飞前收尾口播：11天丙察察格聂贡嘎穿越完成，准备返深。 / 第一人称行车 / 车内驾驶位 / 下雪 / 有口播语音 / 旅程结束总结 / 国道行驶 / 雪地模式 / A person with curly hair and glasses is driving a car with a seatbelt on, looking forward while the scenery outside the window changes. ...",
+      "summary": "环境远景 / 服务区 / 晴天 / 无口播语音 / 驶入服务区 / 黄色皮卡 / 传统建筑 / A yellow pickup truck drives through the entrance of Mei Shan Service Area on a sunny day, with other vehicles and traditional-style buildings visible in the background. /...",
       "startAt": "2026-05-05T10:20:40.660Z",
       "endAt": "2026-05-05T10:33:42.091Z",
       "location": "成都",
@@ -18813,7 +18537,7 @@
     {
       "id": "event-0d3acdb15fbb",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "车辆停放观察",
       "summary": "车窗外观察 / 停车场 / 天气光线不明 / 无口播语音 / 车辆停放观察 / 黑色 SUV / 石球旁 / A black SUV with yellow decals is parked in a lot, with a man sitting on a stone sphere nearby.",
       "startAt": "2026-05-05T10:35:25.000Z",
@@ -18826,30 +18550,18 @@
     {
       "id": "route-e25433901190",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：四川省，成都市，简阳市，石板凳街道 · 成都天府国际机场1号航站楼",
-      "summary": "第一人称行车 / 山区公路 / 天气光线不明 / 无口播语音 / 车队行驶 / A black SUV with a spare tire on the back is driving on a road, surrounded by other cars.",
+      "summary": "第一人称行车 / 山区公路 / 天气光线不明 / 无口播语音 / 车队行驶 / A black SUV with a spare tire on the back is driving on a road, surrounded by other cars. / 固定机位观察 / 机场航站楼 / 有口播语音 / 机场到达现场 / 旅客等待 / 行李推车 / Travelers wait outside a modern airport...",
       "startAt": "2026-05-05T10:35:40.000Z",
-      "endAt": "2026-05-05T10:35:49.088Z",
+      "endAt": "2026-05-05T10:36:42.091Z",
       "location": "四川省，成都市，简阳市，石板凳街道 · 成都天府国际机场1号航站楼",
       "route": {
         "from": "四川省，成都市，简阳市，石板凳街道 · 成都天府国际机场1号航站楼",
         "to": "四川省，成都市，简阳市，石板凳街道 · 成都天府国际机场1号航站楼"
       },
       "spanIds": [
-        "1d7904cd-fbc0-446a-9cd3-2a21fa346f67"
-      ]
-    },
-    {
-      "id": "event-2e753eeb5bea",
-      "kind": "event",
-      "reviewStatus": "pending",
-      "title": "机场到达现场",
-      "summary": "固定机位观察 / 机场航站楼 / 天气光线不明 / 有口播语音 / 机场到达现场 / 旅客等待 / 行李推车 / Travelers wait outside a modern airport terminal entrance, with luggage carts lined up nearby. / 再一次来到了天府机场 / 手持自拍口播 / 现代建筑前 / 无口播语音 / 自拍展示背景 / 卷发男子 / 红色外套 / A ma...",
-      "startAt": "2026-05-05T10:36:00.000Z",
-      "endAt": "2026-05-05T10:36:42.091Z",
-      "location": "四川省，成都市，简阳市，石板凳街道 · 成都天府国际机场1号航站楼",
-      "spanIds": [
+        "1d7904cd-fbc0-446a-9cd3-2a21fa346f67",
         "682b44b0-0c14-4c56-be95-54be37bfaf5e",
         "85c2702a-06cc-48d4-95ee-7a162f9b35cb"
       ]
@@ -18857,17 +18569,49 @@
     {
       "id": "event-c69dfcde9d73",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "机场候机",
       "summary": "固定机位观察 / 机场大厅 / 晴天 / 有口播语音 / 机场候机 / 丁达尔效应 / 旅客剪影 / Sunlight streams through large windows into an airport terminal, casting long shadows across the floor and illuminating the silhouettes of travelers and security gates....",
       "startAt": "2026-05-05T10:56:55.000Z",
-      "endAt": "2026-05-05T11:00:13.075Z",
-      "location": "airport",
+      "endAt": "2026-05-05T10:56:57.582Z",
       "spanIds": [
-        "4110f00b-a32e-42b9-ab94-7f63a03ef51d",
+        "4110f00b-a32e-42b9-ab94-7f63a03ef51d"
+      ]
+    },
+    {
+      "id": "event-81635e23ac8f",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "机场取票",
+      "summary": "环境远景 / 机场航站楼 / 晴天 / 无口播语音 / 机场候机 / 阳光充足 / 旅客 / A wide-angle view of a sunlit airport terminal with travelers waiting near check-in counters and digital flight displays, establishing the setting for a travel journey. / 细...",
+      "startAt": "2026-05-05T10:58:28.000Z",
+      "endAt": "2026-05-05T10:59:33.078Z",
+      "spanIds": [
         "808ddda9-0de7-4f13-b54a-ab32be0a1176",
-        "846084cc-faf5-49bf-a969-81b26e51cd44-direct-full",
-        "2b281b37-0531-4cdf-8476-2dd3a5515f84",
+        "846084cc-faf5-49bf-a969-81b26e51cd44-direct-full"
+      ]
+    },
+    {
+      "id": "event-8752406730df",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "准备登机前观察",
+      "summary": "细节特写 / 机场候机厅 / 天气光线不明 / 无口播语音 / 准备登机前观察 / 腿部特写 / 登机牌 / The frames show a person's legs on a speckled floor and a close-up of an orange exit seat notification card from Sichuan Airlines.",
+      "startAt": "2026-05-05T10:59:38.000Z",
+      "endAt": "2026-05-05T10:59:46.086Z",
+      "spanIds": [
+        "2b281b37-0531-4cdf-8476-2dd3a5515f84"
+      ]
+    },
+    {
+      "id": "event-66669c3bc338",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "查看安全须知",
+      "summary": "车窗外观察 / 飞机客舱 / 室内灯光 / 无口播语音 / 查看安全须知 / 橙色卡片 / 四川航空 / A person holds an orange exit seat notification card from Sichuan Airlines, displaying safety instructions and passenger restrictions.",
+      "startAt": "2026-05-05T11:00:09.000Z",
+      "endAt": "2026-05-05T11:00:13.075Z",
+      "spanIds": [
         "9a07eca6-2dac-4a76-ac32-6f20a859c830"
       ]
     }

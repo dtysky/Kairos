@@ -72,7 +72,17 @@ export async function removeFineScanCheckpoint(
 
 function normalizeCheckpointSlice(slice: IKtepSlice): IKtepSlice {
   return {
-    ...slice,
+    id: slice.id,
+    assetId: slice.assetId,
+    type: slice.type,
+    semanticKind: slice.semanticKind,
+    sourceInMs: slice.sourceInMs,
+    sourceOutMs: slice.sourceOutMs,
+    editSourceInMs: slice.editSourceInMs,
+    editSourceOutMs: slice.editSourceOutMs,
+    transcript: slice.transcript,
+    transcriptSegments: slice.transcriptSegments,
+    visualObservation: slice.visualObservation,
     materialPatterns: slice.materialPatterns ?? [],
     grounding: {
       speechMode: slice.grounding?.speechMode ?? 'none',
@@ -80,5 +90,8 @@ function normalizeCheckpointSlice(slice: IKtepSlice): IKtepSlice {
       spatialEvidence: slice.grounding?.spatialEvidence ?? [],
       pharosRefs: slice.grounding?.pharosRefs ?? [],
     },
+    pharosRefs: slice.pharosRefs,
+    speechCoverage: slice.speechCoverage,
+    speedCandidate: slice.speedCandidate,
   };
 }

@@ -908,6 +908,100 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
     await expect(access(join(projectRoot, 'media', 'chronology.json'))).rejects.toThrow();
   });
 
+  it('fails the analyze run when unified finalize returns an empty visual description', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-analyze-finalize-empty-visual';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Finalize Empty Visual Project');
+    const mediaRoot = join(projectRoot, '.tmp', 'fixtures');
+
+    await mkdir(mediaRoot, { recursive: true });
+    await writeFile(join(mediaRoot, 'empty-visual.mp4'), 'fake-media');
+
+    await writeJson(join(projectRoot, 'config/runtime.json'), {
+      mlServerUrl: 'http://127.0.0.1:8910',
+    });
+    await writeJson(join(projectRoot, 'config/ingest-roots.json'), {
+      roots: [{
+        id: 'root-1',
+        enabled: true,
+        label: 'camera-a',
+        path: mediaRoot,
+      }],
+    });
+    await writeJson(join(projectRoot, 'store/assets.json'), [{
+      id: 'asset-empty-visual',
+      kind: 'video',
+      sourcePath: 'empty-visual.mp4',
+      displayName: 'empty-visual.mp4',
+      ingestRootId: 'root-1',
+      durationMs: 12_000,
+      capturedAt: '2026-03-31T08:15:30.000Z',
+      metadata: {
+        hasAudioStream: false,
+      },
+    }]);
+
+    extractKeyframesMock.mockImplementation(async (
+      _filePath: string,
+      outputDir: string,
+      timestampsMs: number[],
+    ) => {
+      await mkdir(outputDir, { recursive: true });
+      return Promise.all(timestampsMs.map(async timeMs => {
+        const framePath = join(outputDir, `frame-${timeMs}.jpg`);
+        await writeFile(framePath, `frame-${timeMs}`);
+        return { timeMs, path: framePath };
+      }));
+    });
+
+    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue({
+      status: 'ok',
+      device: 'apple',
+      backend: 'mlx',
+      models_loaded: [],
+    });
+    const vlmSpy = vi.spyOn(MlClient.prototype, 'vlmAnalyze').mockResolvedValue({
+      description: JSON.stringify({
+        visual_summary: {
+          scene_type: 'landscape',
+          subjects: ['road'],
+          mood: 'calm',
+          place_hints: [],
+          narrative_role: 'detail',
+          description: '',
+        },
+        decision: {
+          clip_type: 'broll',
+          keep_decision: 'keep',
+          materialization_path: 'direct',
+          decision_reasons: ['empty-description'],
+        },
+      }),
+      timing: {
+        backend: 'mlx',
+        modelRef: 'test-qwen',
+        totalMs: 40,
+      },
+    });
+
+    const { analyzeWorkspaceProjectMedia } = await import('../../src/modules/media/project-analyze.js');
+    await expect(analyzeWorkspaceProjectMedia({
+      workspaceRoot,
+      projectId,
+      performanceProfile: {
+        enabled: true,
+        runLabel: 'finalize-empty-visual',
+      },
+    })).rejects.toThrow(/统一完成素材分析失败/u);
+
+    const finalizeCalls = vlmSpy.mock.calls.filter(call => call[1]?.includes('semantic clip type and materialization policy'));
+    expect(finalizeCalls).toHaveLength(3);
+    const captureRoot = join(projectRoot, '.tmp', 'media-analyze', 'finalize-attempts', 'asset-empty-visual');
+    const attemptThree = JSON.parse(await readFile(join(captureRoot, 'attempt-03.json'), 'utf-8')) as { parseOk: boolean };
+    expect(attemptThree.parseOk).toBe(false);
+    await expect(access(getAssetReportPath(projectRoot, 'asset-empty-visual'))).rejects.toThrow();
+  });
+
   it('retries unified finalize with larger token budgets and succeeds on a later attempt', async () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-analyze-finalize-retry-success';

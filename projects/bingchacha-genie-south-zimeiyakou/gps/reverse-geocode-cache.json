@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "updatedAt": "2026-05-17T17:43:17.857Z",
+  "updatedAt": "2026-05-18T07:14:33.563Z",
   "entries": [
     {
       "locationKey": "100.002559,29.893134",
@@ -92,6 +92,71 @@
       "city": "甘孜藏族自治州",
       "district": "康定市",
       "fetchedAt": "2026-05-17T16:06:41.960Z"
+    },
+    {
+      "locationKey": "101.419196,29.512559",
+      "lat": 29.5125585,
+      "lng": 101.4191965,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，康定市，贡嘎山镇 · 拉擦",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "康定市",
+      "fetchedAt": "2026-05-18T06:21:02.266Z"
+    },
+    {
+      "locationKey": "101.434643,29.503294",
+      "lat": 29.5032935,
+      "lng": 101.4346431,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，康定市，贡嘎山镇 · 色乌绒村",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "康定市",
+      "fetchedAt": "2026-05-18T06:21:01.979Z"
+    },
+    {
+      "locationKey": "101.442467,29.488614",
+      "lat": 29.4886136,
+      "lng": 101.4424668,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，康定市，贡嘎山镇 · 卢乌村",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "康定市",
+      "fetchedAt": "2026-05-18T06:21:00.770Z"
+    },
+    {
+      "locationKey": "101.442514,29.488089",
+      "lat": 29.4880892,
+      "lng": 101.4425142,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，康定市，贡嘎山镇 · 卢乌村",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "康定市",
+      "fetchedAt": "2026-05-18T06:21:01.646Z"
+    },
+    {
+      "locationKey": "101.442719,29.487184",
+      "lat": 29.4871844,
+      "lng": 101.442719,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，康定市，贡嘎山镇 · 卢乌村",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "康定市",
+      "fetchedAt": "2026-05-18T06:21:01.164Z"
     },
     {
       "locationKey": "101.468271,29.464380",
@@ -248,6 +313,19 @@
       "city": "甘孜藏族自治州",
       "district": "康定市",
       "fetchedAt": "2026-05-17T16:06:41.621Z"
+    },
+    {
+      "locationKey": "101.651922,29.491242",
+      "lat": 29.4912417,
+      "lng": 101.6519225,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，康定市，贡嘎山镇 · 仰佩林民宿",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "康定市",
+      "fetchedAt": "2026-05-18T06:21:02.599Z"
     },
     {
       "locationKey": "101.720077,29.517362",
@@ -445,6 +523,19 @@
       "fetchedAt": "2026-05-17T16:05:51.505Z"
     },
     {
+      "locationKey": "102.948162,24.559984",
+      "lat": 24.5599841,
+      "lng": 102.9481623,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "云南省，玉溪市，澄江市，右所镇 · 抚仙湖公园",
+      "country": "中国",
+      "province": "云南省",
+      "city": "玉溪市",
+      "district": "澄江市",
+      "fetchedAt": "2026-05-18T06:20:29.582Z"
+    },
+    {
       "locationKey": "102.948202,24.559987",
       "lat": 24.5599866,
       "lng": 102.948202,
@@ -549,6 +640,45 @@
       "fetchedAt": "2026-05-17T16:05:52.556Z"
     },
     {
+      "locationKey": "103.458881,24.885832",
+      "lat": 24.8858324,
+      "lng": 103.458881,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "云南省，曲靖市，陆良县，大莫古镇",
+      "country": "中国",
+      "province": "云南省",
+      "city": "曲靖市",
+      "district": "陆良县",
+      "fetchedAt": "2026-05-18T06:20:28.480Z"
+    },
+    {
+      "locationKey": "103.461572,24.885623",
+      "lat": 24.8856225,
+      "lng": 103.4615719,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "云南省，曲靖市，陆良县，大莫古镇",
+      "country": "中国",
+      "province": "云南省",
+      "city": "曲靖市",
+      "district": "陆良县",
+      "fetchedAt": "2026-05-18T06:20:29.254Z"
+    },
+    {
+      "locationKey": "103.464219,24.885484",
+      "lat": 24.8854843,
+      "lng": 103.4642189,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "云南省，曲靖市，陆良县，大莫古镇",
+      "country": "中国",
+      "province": "云南省",
+      "city": "曲靖市",
+      "district": "陆良县",
+      "fetchedAt": "2026-05-18T06:20:28.867Z"
+    },
+    {
       "locationKey": "103.465555,24.885391",
       "lat": 24.8853909,
       "lng": 103.4655551,
@@ -575,6 +705,58 @@
       "fetchedAt": "2026-05-17T16:05:47.592Z"
     },
     {
+      "locationKey": "103.768945,29.980862",
+      "lat": 29.980862,
+      "lng": 103.7689451,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，眉山市，东坡区，松江镇 · 何店",
+      "country": "中国",
+      "province": "四川省",
+      "city": "眉山市",
+      "district": "东坡区",
+      "fetchedAt": "2026-05-18T06:21:02.920Z"
+    },
+    {
+      "locationKey": "103.920121,29.969592",
+      "lat": 29.969592,
+      "lng": 103.9201209,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，眉山市，东坡区，复兴镇 · 易捷便利店(眉山服务区店)",
+      "country": "中国",
+      "province": "四川省",
+      "city": "眉山市",
+      "district": "东坡区",
+      "fetchedAt": "2026-05-18T06:21:03.477Z"
+    },
+    {
+      "locationKey": "104.316215,24.939101",
+      "lat": 24.9391013,
+      "lng": 104.3162146,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "云南省，曲靖市，罗平县，九龙街道 · 旧州",
+      "country": "中国",
+      "province": "云南省",
+      "city": "曲靖市",
+      "district": "罗平县",
+      "fetchedAt": "2026-05-18T06:20:28.154Z"
+    },
+    {
+      "locationKey": "104.359317,30.003826",
+      "lat": 30.003826,
+      "lng": 104.3593168,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，眉山市，仁寿县，谢安镇 · 华镇村",
+      "country": "中国",
+      "province": "四川省",
+      "city": "眉山市",
+      "district": "仁寿县",
+      "fetchedAt": "2026-05-18T06:21:03.773Z"
+    },
+    {
       "locationKey": "104.407391,30.251840",
       "lat": 30.2518404,
       "lng": 104.4073914,
@@ -586,6 +768,45 @@
       "city": "成都市",
       "district": "简阳市",
       "fetchedAt": "2026-05-17T16:06:45.546Z"
+    },
+    {
+      "locationKey": "104.410845,24.956565",
+      "lat": 24.9565646,
+      "lng": 104.4108451,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "云南省，曲靖市，罗平县，板桥镇 · 罗平诗云公寓",
+      "country": "中国",
+      "province": "云南省",
+      "city": "曲靖市",
+      "district": "罗平县",
+      "fetchedAt": "2026-05-18T06:20:27.793Z"
+    },
+    {
+      "locationKey": "104.428105,24.961179",
+      "lat": 24.961179,
+      "lng": 104.428105,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "云南省，曲靖市，罗平县，板桥镇 · 曲靖市公安局交通管理支队高速公路三大队外勤三中队",
+      "country": "中国",
+      "province": "云南省",
+      "city": "曲靖市",
+      "district": "罗平县",
+      "fetchedAt": "2026-05-18T06:20:27.439Z"
+    },
+    {
+      "locationKey": "104.442673,30.312563",
+      "lat": 30.3125635,
+      "lng": 104.4426733,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，成都市，简阳市，石板凳街道 · 成都天府国际机场1号航站楼",
+      "country": "中国",
+      "province": "四川省",
+      "city": "成都市",
+      "district": "简阳市",
+      "fetchedAt": "2026-05-18T06:21:04.114Z"
     },
     {
       "locationKey": "104.442704,30.312561",
@@ -614,6 +835,19 @@
       "fetchedAt": "2026-05-17T16:06:45.884Z"
     },
     {
+      "locationKey": "104.673683,25.064436",
+      "lat": 25.0644364,
+      "lng": 104.6736835,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "贵州省，黔西南布依族苗族自治州，兴义市，乌沙镇 · 乌沙镇岔江村卫生室",
+      "country": "中国",
+      "province": "贵州省",
+      "city": "黔西南布依族苗族自治州",
+      "district": "兴义市",
+      "fetchedAt": "2026-05-18T06:20:27.102Z"
+    },
+    {
       "locationKey": "104.711232,25.074381",
       "lat": 25.0743812,
       "lng": 104.7112325,
@@ -625,6 +859,19 @@
       "city": "黔西南布依族苗族自治州",
       "district": "兴义市",
       "fetchedAt": "2026-05-17T16:05:42.968Z"
+    },
+    {
+      "locationKey": "104.711250,25.074340",
+      "lat": 25.07434,
+      "lng": 104.7112501,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "贵州省，黔西南布依族苗族自治州，兴义市，乌沙镇 · 坪寨",
+      "country": "中国",
+      "province": "贵州省",
+      "city": "黔西南布依族苗族自治州",
+      "district": "兴义市",
+      "fetchedAt": "2026-05-18T07:14:33.563Z"
     },
     {
       "locationKey": "104.711265,25.074382",
@@ -651,6 +898,19 @@
       "city": "黔西南布依族苗族自治州",
       "district": "兴义市",
       "fetchedAt": "2026-05-17T16:05:46.174Z"
+    },
+    {
+      "locationKey": "104.711283,25.074287",
+      "lat": 25.0742867,
+      "lng": 104.7112835,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "贵州省，黔西南布依族苗族自治州，兴义市，乌沙镇 · 坪寨",
+      "country": "中国",
+      "province": "贵州省",
+      "city": "黔西南布依族苗族自治州",
+      "district": "兴义市",
+      "fetchedAt": "2026-05-18T06:20:26.721Z"
     },
     {
       "locationKey": "104.711295,25.074242",
@@ -794,6 +1054,32 @@
       "city": "黔西南布依族苗族自治州",
       "district": "兴义市",
       "fetchedAt": "2026-05-17T16:05:42.644Z"
+    },
+    {
+      "locationKey": "104.844561,25.119869",
+      "lat": 25.1198689,
+      "lng": 104.8445607,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "贵州省，黔西南布依族苗族自治州，兴义市，木贾街道 · 奥铃轻卡",
+      "country": "中国",
+      "province": "贵州省",
+      "city": "黔西南布依族苗族自治州",
+      "district": "兴义市",
+      "fetchedAt": "2026-05-18T06:20:26.445Z"
+    },
+    {
+      "locationKey": "104.844834,25.119344",
+      "lat": 25.1193444,
+      "lng": 104.844834,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "贵州省，黔西南布依族苗族自治州，兴义市，木贾街道 · 贵州合聚盈汽车贸易有限公司",
+      "country": "中国",
+      "province": "贵州省",
+      "city": "黔西南布依族苗族自治州",
+      "district": "兴义市",
+      "fetchedAt": "2026-05-18T06:20:26.032Z"
     },
     {
       "locationKey": "104.886611,25.055802",
@@ -978,6 +1264,188 @@
       "fetchedAt": "2026-05-17T16:05:41.574Z"
     },
     {
+      "locationKey": "104.951941,24.861781",
+      "lat": 24.861781,
+      "lng": 104.9519407,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "贵州省，黔西南布依族苗族自治州，兴义市，则戎镇 · 枇杷树村",
+      "country": "中国",
+      "province": "贵州省",
+      "city": "黔西南布依族苗族自治州",
+      "district": "兴义市",
+      "fetchedAt": "2026-05-18T06:20:25.684Z"
+    },
+    {
+      "locationKey": "105.395032,25.045451",
+      "lat": 25.045451,
+      "lng": 105.3950315,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "贵州省，黔西南布依族苗族自治州，安龙县，栖凤街道 · 者秧",
+      "country": "中国",
+      "province": "贵州省",
+      "city": "黔西南布依族苗族自治州",
+      "district": "安龙县",
+      "fetchedAt": "2026-05-18T06:20:25.333Z"
+    },
+    {
+      "locationKey": "105.405907,25.022739",
+      "lat": 25.0227392,
+      "lng": 105.4059066,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "贵州省，黔西南布依族苗族自治州，安龙县，栖凤街道 · 枪家湾",
+      "country": "中国",
+      "province": "贵州省",
+      "city": "黔西南布依族苗族自治州",
+      "district": "安龙县",
+      "fetchedAt": "2026-05-18T06:20:24.992Z"
+    },
+    {
+      "locationKey": "105.430044,24.995479",
+      "lat": 24.9954789,
+      "lng": 105.4300442,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "贵州省，黔西南布依族苗族自治州，安龙县，栖凤街道 · 沙场坪二号隧道",
+      "country": "中国",
+      "province": "贵州省",
+      "city": "黔西南布依族苗族自治州",
+      "district": "安龙县",
+      "fetchedAt": "2026-05-18T06:20:24.642Z"
+    },
+    {
+      "locationKey": "105.528314,24.771361",
+      "lat": 24.7713612,
+      "lng": 105.5283141,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "广西壮族自治区，百色市，隆林各族自治县，平班镇 · 隆林停车区停车场",
+      "country": "中国",
+      "province": "广西壮族自治区",
+      "city": "百色市",
+      "district": "隆林各族自治县",
+      "fetchedAt": "2026-05-18T06:20:21.816Z"
+    },
+    {
+      "locationKey": "105.528521,24.770444",
+      "lat": 24.7704444,
+      "lng": 105.5285211,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "广西壮族自治区，百色市，隆林各族自治县，平班镇 · 隆林停车区停车场",
+      "country": "中国",
+      "province": "广西壮族自治区",
+      "city": "百色市",
+      "district": "隆林各族自治县",
+      "fetchedAt": "2026-05-18T06:20:22.525Z"
+    },
+    {
+      "locationKey": "105.528958,24.767962",
+      "lat": 24.7679623,
+      "lng": 105.5289579,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "广西壮族自治区，百色市，隆林各族自治县，平班镇 · 坝顶",
+      "country": "中国",
+      "province": "广西壮族自治区",
+      "city": "百色市",
+      "district": "隆林各族自治县",
+      "fetchedAt": "2026-05-18T06:20:22.167Z"
+    },
+    {
+      "locationKey": "105.529476,24.830564",
+      "lat": 24.8305644,
+      "lng": 105.5294755,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "贵州省，黔西南布依族苗族自治州，册亨县，巧马镇 · 平安村",
+      "country": "中国",
+      "province": "贵州省",
+      "city": "黔西南布依族苗族自治州",
+      "district": "册亨县",
+      "fetchedAt": "2026-05-18T06:20:23.971Z"
+    },
+    {
+      "locationKey": "105.529686,24.832705",
+      "lat": 24.8327049,
+      "lng": 105.5296861,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "贵州省，黔西南布依族苗族自治州，册亨县，巧马镇 · 平安村特大桥",
+      "country": "中国",
+      "province": "贵州省",
+      "city": "黔西南布依族苗族自治州",
+      "district": "册亨县",
+      "fetchedAt": "2026-05-18T06:20:23.577Z"
+    },
+    {
+      "locationKey": "105.529905,24.833767",
+      "lat": 24.8337673,
+      "lng": 105.5299045,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "贵州省，黔西南布依族苗族自治州，册亨县，巧马镇 · 平安村特大桥",
+      "country": "中国",
+      "province": "贵州省",
+      "city": "黔西南布依族苗族自治州",
+      "district": "册亨县",
+      "fetchedAt": "2026-05-18T06:20:24.282Z"
+    },
+    {
+      "locationKey": "105.530120,24.805810",
+      "lat": 24.8058105,
+      "lng": 105.5301197,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "贵州省，黔西南布依族苗族自治州，册亨县，巧马镇 · 高速交警",
+      "country": "中国",
+      "province": "贵州省",
+      "city": "黔西南布依族苗族自治州",
+      "district": "册亨县",
+      "fetchedAt": "2026-05-18T06:20:22.890Z"
+    },
+    {
+      "locationKey": "105.530236,24.804829",
+      "lat": 24.804829,
+      "lng": 105.5302363,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "贵州省，黔西南布依族苗族自治州，册亨县，巧马镇 · 黔西南州南盘江国有林场板坝工区",
+      "country": "中国",
+      "province": "贵州省",
+      "city": "黔西南布依族苗族自治州",
+      "district": "册亨县",
+      "fetchedAt": "2026-05-18T06:20:23.282Z"
+    },
+    {
+      "locationKey": "105.619118,24.716966",
+      "lat": 24.716966,
+      "lng": 105.619118,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "广西壮族自治区，百色市，隆林各族自治县，沙梨乡",
+      "country": "中国",
+      "province": "广西壮族自治区",
+      "city": "百色市",
+      "district": "隆林各族自治县",
+      "fetchedAt": "2026-05-18T06:20:21.471Z"
+    },
+    {
+      "locationKey": "105.664436,24.710806",
+      "lat": 24.7108059,
+      "lng": 105.6644362,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "广西壮族自治区，百色市，隆林各族自治县，沙梨乡 · 驿爱充汽车充电站(沙梨站)",
+      "country": "中国",
+      "province": "广西壮族自治区",
+      "city": "百色市",
+      "district": "隆林各族自治县",
+      "fetchedAt": "2026-05-18T06:20:21.129Z"
+    },
+    {
       "locationKey": "106.020243,24.474213",
       "lat": 24.474213,
       "lng": 106.020243,
@@ -1030,6 +1498,19 @@
       "fetchedAt": "2026-05-17T16:05:37.623Z"
     },
     {
+      "locationKey": "106.098559,24.410463",
+      "lat": 24.410463,
+      "lng": 106.098559,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "广西壮族自治区，百色市，田林县，潞城瑶族乡 · 桥头很好日杂",
+      "country": "中国",
+      "province": "广西壮族自治区",
+      "city": "百色市",
+      "district": "田林县",
+      "fetchedAt": "2026-05-18T06:20:20.772Z"
+    },
+    {
       "locationKey": "106.108524,24.400110",
       "lat": 24.40011,
       "lng": 106.108524,
@@ -1069,6 +1550,19 @@
       "fetchedAt": "2026-05-17T16:05:36.583Z"
     },
     {
+      "locationKey": "106.563377,24.025140",
+      "lat": 24.02514,
+      "lng": 106.563377,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "广西壮族自治区，百色市，右江区，汪甸瑶族乡 · 下塘出口(G69银百高速西北向)",
+      "country": "中国",
+      "province": "广西壮族自治区",
+      "city": "百色市",
+      "district": "右江区",
+      "fetchedAt": "2026-05-18T06:20:20.424Z"
+    },
+    {
       "locationKey": "106.698050,23.817940",
       "lat": 23.81794,
       "lng": 106.69805,
@@ -1082,6 +1576,19 @@
       "fetchedAt": "2026-05-17T16:05:36.212Z"
     },
     {
+      "locationKey": "106.698330,23.818492",
+      "lat": 23.818492,
+      "lng": 106.69833,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "广西壮族自治区，百色市，右江区，四塘镇",
+      "country": "中国",
+      "province": "广西壮族自治区",
+      "city": "百色市",
+      "district": "右江区",
+      "fetchedAt": "2026-05-18T06:20:20.081Z"
+    },
+    {
       "locationKey": "107.116281,23.576132",
       "lat": 23.576132,
       "lng": 107.116281,
@@ -1093,6 +1600,32 @@
       "city": "百色市",
       "district": "田东县",
       "fetchedAt": "2026-05-17T16:05:35.855Z"
+    },
+    {
+      "locationKey": "107.590726,23.251630",
+      "lat": 23.25163,
+      "lng": 107.590726,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "广西壮族自治区，南宁市，隆安县，雁江镇 · 古佳",
+      "country": "中国",
+      "province": "广西壮族自治区",
+      "city": "南宁市",
+      "district": "隆安县",
+      "fetchedAt": "2026-05-18T06:20:19.709Z"
+    },
+    {
+      "locationKey": "108.143565,22.846715",
+      "lat": 22.8467146,
+      "lng": 108.1435655,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "广西壮族自治区，南宁市，西乡塘区，金陵镇 · 山竹畔居山庄",
+      "country": "中国",
+      "province": "广西壮族自治区",
+      "city": "南宁市",
+      "district": "西乡塘区",
+      "fetchedAt": "2026-05-18T06:20:19.364Z"
     },
     {
       "locationKey": "108.346692,22.699639",
@@ -1134,6 +1667,71 @@
       "fetchedAt": "2026-05-17T16:05:34.751Z"
     },
     {
+      "locationKey": "108.868401,22.455312",
+      "lat": 22.4553118,
+      "lng": 108.8684005,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "广西壮族自治区，钦州市，灵山县，太平镇 · 太平出口(S81南湛高速西向)",
+      "country": "中国",
+      "province": "广西壮族自治区",
+      "city": "钦州市",
+      "district": "灵山县",
+      "fetchedAt": "2026-05-18T06:20:18.674Z"
+    },
+    {
+      "locationKey": "108.869621,22.454975",
+      "lat": 22.4549751,
+      "lng": 108.8696209,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "广西壮族自治区，钦州市，灵山县，太平镇 · 太平出口(S81南湛高速西向)",
+      "country": "中国",
+      "province": "广西壮族自治区",
+      "city": "钦州市",
+      "district": "灵山县",
+      "fetchedAt": "2026-05-18T06:20:19.023Z"
+    },
+    {
+      "locationKey": "108.932235,22.428765",
+      "lat": 22.4287653,
+      "lng": 108.9322349,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "广西壮族自治区，钦州市，灵山县，旧州镇 · 平陆运河旧州特大桥",
+      "country": "中国",
+      "province": "广西壮族自治区",
+      "city": "钦州市",
+      "district": "灵山县",
+      "fetchedAt": "2026-05-18T06:20:18.325Z"
+    },
+    {
+      "locationKey": "108.933113,22.427898",
+      "lat": 22.4278982,
+      "lng": 108.9331131,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "广西壮族自治区，钦州市，灵山县，旧州镇 · 石柱村",
+      "country": "中国",
+      "province": "广西壮族自治区",
+      "city": "钦州市",
+      "district": "灵山县",
+      "fetchedAt": "2026-05-18T06:20:17.614Z"
+    },
+    {
+      "locationKey": "108.934425,22.426589",
+      "lat": 22.4265888,
+      "lng": 108.9344251,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "广西壮族自治区，钦州市，灵山县，旧州镇 · 石柱村",
+      "country": "中国",
+      "province": "广西壮族自治区",
+      "city": "钦州市",
+      "district": "灵山县",
+      "fetchedAt": "2026-05-18T06:20:17.967Z"
+    },
+    {
       "locationKey": "109.245696,22.382514",
       "lat": 22.3825138,
       "lng": 109.2456957,
@@ -1158,6 +1756,32 @@
       "city": "钦州市",
       "district": "灵山县",
       "fetchedAt": "2026-05-17T16:05:34.412Z"
+    },
+    {
+      "locationKey": "109.246071,22.382123",
+      "lat": 22.382123,
+      "lng": 109.2460713,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "广西壮族自治区，钦州市，灵山县，三海街道 · 广西荔之情文化传媒有限公司",
+      "country": "中国",
+      "province": "广西壮族自治区",
+      "city": "钦州市",
+      "district": "灵山县",
+      "fetchedAt": "2026-05-18T06:20:16.976Z"
+    },
+    {
+      "locationKey": "109.263289,22.393612",
+      "lat": 22.3936121,
+      "lng": 109.2632895,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "广西壮族自治区，钦州市，灵山县，三海街道 · 十里铺村梁弘略祠",
+      "country": "中国",
+      "province": "广西壮族自治区",
+      "city": "钦州市",
+      "district": "灵山县",
+      "fetchedAt": "2026-05-18T06:20:17.261Z"
     },
     {
       "locationKey": "109.666439,22.226597",
@@ -1342,6 +1966,84 @@
       "fetchedAt": "2026-05-17T16:06:20.306Z"
     },
     {
+      "locationKey": "96.890865,29.376947",
+      "lat": 29.3769475,
+      "lng": 96.8908646,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，昌都市，八宿县，然乌镇",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "昌都市",
+      "district": "八宿县",
+      "fetchedAt": "2026-05-18T06:20:47.084Z"
+    },
+    {
+      "locationKey": "96.891980,29.376955",
+      "lat": 29.376955,
+      "lng": 96.8919796,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，昌都市，八宿县，然乌镇",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "昌都市",
+      "district": "八宿县",
+      "fetchedAt": "2026-05-18T06:20:46.733Z"
+    },
+    {
+      "locationKey": "96.892918,29.377324",
+      "lat": 29.3773236,
+      "lng": 96.8929177,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，昌都市，八宿县，然乌镇",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "昌都市",
+      "district": "八宿县",
+      "fetchedAt": "2026-05-18T06:20:46.383Z"
+    },
+    {
+      "locationKey": "96.924830,29.352044",
+      "lat": 29.3520439,
+      "lng": 96.9248302,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，昌都市，八宿县，然乌镇",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "昌都市",
+      "district": "八宿县",
+      "fetchedAt": "2026-05-18T06:20:46.183Z"
+    },
+    {
+      "locationKey": "96.925307,29.345454",
+      "lat": 29.3454537,
+      "lng": 96.9253066,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，昌都市，八宿县，然乌镇",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "昌都市",
+      "district": "八宿县",
+      "fetchedAt": "2026-05-18T06:20:45.680Z"
+    },
+    {
+      "locationKey": "96.925311,29.344850",
+      "lat": 29.3448502,
+      "lng": 96.9253113,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，昌都市，八宿县，然乌镇",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "昌都市",
+      "district": "八宿县",
+      "fetchedAt": "2026-05-18T06:20:45.327Z"
+    },
+    {
       "locationKey": "96.960051,30.064899",
       "lat": 30.0648991,
       "lng": 96.9600513,
@@ -1407,6 +2109,45 @@
       "fetchedAt": "2026-05-17T16:06:19.583Z"
     },
     {
+      "locationKey": "97.091332,29.333133",
+      "lat": 29.3331328,
+      "lng": 97.0913322,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，古玉乡 · 六道班",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:44.282Z"
+    },
+    {
+      "locationKey": "97.092602,29.333383",
+      "lat": 29.3333827,
+      "lng": 97.0926016,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，古玉乡 · 六道班",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:44.991Z"
+    },
+    {
+      "locationKey": "97.093592,29.333193",
+      "lat": 29.3331933,
+      "lng": 97.0935924,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，古玉乡 · 六道班",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:44.637Z"
+    },
+    {
       "locationKey": "97.110786,30.023734",
       "lat": 30.0237345,
       "lng": 97.1107858,
@@ -1418,6 +2159,84 @@
       "city": "昌都市",
       "district": "八宿县",
       "fetchedAt": "2026-05-17T16:17:36.042Z"
+    },
+    {
+      "locationKey": "97.164152,30.074527",
+      "lat": 30.0745275,
+      "lng": 97.1641515,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，昌都市，八宿县，林卡乡 · 怒江72拐",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "昌都市",
+      "district": "八宿县",
+      "fetchedAt": "2026-05-18T06:20:47.442Z"
+    },
+    {
+      "locationKey": "97.164161,30.084240",
+      "lat": 30.0842403,
+      "lng": 97.1641613,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，昌都市，八宿县，林卡乡 · 怒江72拐",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "昌都市",
+      "district": "八宿县",
+      "fetchedAt": "2026-05-18T06:20:48.142Z"
+    },
+    {
+      "locationKey": "97.164217,30.077029",
+      "lat": 30.077029,
+      "lng": 97.1642169,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，昌都市，八宿县，林卡乡 · 怒江72拐",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "昌都市",
+      "district": "八宿县",
+      "fetchedAt": "2026-05-18T06:20:47.810Z"
+    },
+    {
+      "locationKey": "97.180231,30.104304",
+      "lat": 30.1043036,
+      "lng": 97.1802307,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，昌都市，八宿县，拉根乡 · 怒江72拐",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "昌都市",
+      "district": "八宿县",
+      "fetchedAt": "2026-05-18T06:20:48.849Z"
+    },
+    {
+      "locationKey": "97.192403,30.107569",
+      "lat": 30.1075691,
+      "lng": 97.1924035,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，昌都市，八宿县，帮达镇 · 怒江72拐",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "昌都市",
+      "district": "八宿县",
+      "fetchedAt": "2026-05-18T06:20:48.487Z"
+    },
+    {
+      "locationKey": "97.193348,30.107529",
+      "lat": 30.1075294,
+      "lng": 97.1933476,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，昌都市，八宿县，帮达镇 · 怒江72拐",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "昌都市",
+      "district": "八宿县",
+      "fetchedAt": "2026-05-18T06:20:49.185Z"
     },
     {
       "locationKey": "97.245200,30.082441",
@@ -1444,6 +2263,32 @@
       "city": "昌都市",
       "district": "八宿县",
       "fetchedAt": "2026-05-17T16:06:23.139Z"
+    },
+    {
+      "locationKey": "97.282622,29.091545",
+      "lat": 29.091545,
+      "lng": 97.2826218,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，古玉乡 · 牧羊桥",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:43.580Z"
+    },
+    {
+      "locationKey": "97.283728,29.091961",
+      "lat": 29.0919607,
+      "lng": 97.2837285,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，古玉乡 · 牧羊桥",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:43.924Z"
     },
     {
       "locationKey": "97.291976,30.210142",
@@ -1496,6 +2341,19 @@
       "city": "昌都市",
       "district": "八宿县",
       "fetchedAt": "2026-05-17T16:06:23.488Z"
+    },
+    {
+      "locationKey": "97.358159,30.150637",
+      "lat": 30.1506365,
+      "lng": 97.3581594,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，昌都市，八宿县，帮达镇 · 玉曲",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "昌都市",
+      "district": "八宿县",
+      "fetchedAt": "2026-05-18T06:20:49.559Z"
     },
     {
       "locationKey": "97.370887,29.033601",
@@ -1576,6 +2434,32 @@
       "fetchedAt": "2026-05-17T16:06:17.805Z"
     },
     {
+      "locationKey": "97.501837,29.956257",
+      "lat": 29.9562572,
+      "lng": 97.5018366,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，昌都市，左贡县，田妥镇",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "昌都市",
+      "district": "左贡县",
+      "fetchedAt": "2026-05-18T06:20:49.910Z"
+    },
+    {
+      "locationKey": "97.511896,29.955644",
+      "lat": 29.9556442,
+      "lng": 97.511896,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，昌都市，左贡县，田妥镇 · 德达村",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "昌都市",
+      "district": "左贡县",
+      "fetchedAt": "2026-05-18T06:20:50.246Z"
+    },
+    {
       "locationKey": "97.512418,29.955655",
       "lat": 29.9556548,
       "lng": 97.5124176,
@@ -1628,6 +2512,45 @@
       "fetchedAt": "2026-05-17T16:06:16.736Z"
     },
     {
+      "locationKey": "97.774900,28.650426",
+      "lat": 28.6504258,
+      "lng": 97.7748997,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，竹瓦根镇",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:43.231Z"
+    },
+    {
+      "locationKey": "97.867911,28.643839",
+      "lat": 28.6438393,
+      "lng": 97.867911,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，竹瓦根镇",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:42.878Z"
+    },
+    {
+      "locationKey": "97.870336,28.641314",
+      "lat": 28.6413143,
+      "lng": 97.8703356,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，竹瓦根镇",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:42.535Z"
+    },
+    {
       "locationKey": "98.003079,28.584937",
       "lat": 28.5849374,
       "lng": 98.003079,
@@ -1652,6 +2575,84 @@
       "city": "林芝市",
       "district": "察隅县",
       "fetchedAt": "2026-05-17T16:06:16.006Z"
+    },
+    {
+      "locationKey": "98.031053,28.603068",
+      "lat": 28.6030679,
+      "lng": 98.0310526,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，竹瓦根镇",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:42.191Z"
+    },
+    {
+      "locationKey": "98.031215,28.603289",
+      "lat": 28.6032893,
+      "lng": 98.0312148,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，竹瓦根镇",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:41.835Z"
+    },
+    {
+      "locationKey": "98.036943,28.615136",
+      "lat": 28.6151361,
+      "lng": 98.036943,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，竹瓦根镇",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:41.475Z"
+    },
+    {
+      "locationKey": "98.038984,28.623806",
+      "lat": 28.6238061,
+      "lng": 98.0389841,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，竹瓦根镇",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:39.725Z"
+    },
+    {
+      "locationKey": "98.039050,28.623891",
+      "lat": 28.6238912,
+      "lng": 98.03905,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，竹瓦根镇",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:40.076Z"
+    },
+    {
+      "locationKey": "98.039414,28.625384",
+      "lat": 28.6253842,
+      "lng": 98.0394142,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，竹瓦根镇",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:40.424Z"
     },
     {
       "locationKey": "98.039861,28.622327",
@@ -1693,6 +2694,45 @@
       "fetchedAt": "2026-05-17T16:06:14.945Z"
     },
     {
+      "locationKey": "98.039905,28.622882",
+      "lat": 28.6228825,
+      "lng": 98.0399048,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，竹瓦根镇",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:40.779Z"
+    },
+    {
+      "locationKey": "98.041409,28.619928",
+      "lat": 28.6199277,
+      "lng": 98.0414086,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，竹瓦根镇",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:41.127Z"
+    },
+    {
+      "locationKey": "98.043013,28.626742",
+      "lat": 28.6267424,
+      "lng": 98.0430131,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，竹瓦根镇",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:39.392Z"
+    },
+    {
       "locationKey": "98.043056,28.626699",
       "lat": 28.6266989,
       "lng": 98.0430558,
@@ -1719,6 +2759,19 @@
       "fetchedAt": "2026-05-17T16:06:14.599Z"
     },
     {
+      "locationKey": "98.043093,28.626736",
+      "lat": 28.6267362,
+      "lng": 98.0430931,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，竹瓦根镇",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:39.018Z"
+    },
+    {
       "locationKey": "98.043098,28.626705",
       "lat": 28.6267051,
       "lng": 98.0430978,
@@ -1730,6 +2783,19 @@
       "city": "林芝市",
       "district": "察隅县",
       "fetchedAt": "2026-05-17T16:06:13.868Z"
+    },
+    {
+      "locationKey": "98.043203,28.626765",
+      "lat": 28.6267653,
+      "lng": 98.0432028,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，竹瓦根镇",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:38.657Z"
     },
     {
       "locationKey": "98.049852,28.620907",
@@ -1823,6 +2889,71 @@
       "fetchedAt": "2026-05-17T16:06:12.105Z"
     },
     {
+      "locationKey": "98.121129,28.585613",
+      "lat": 28.5856127,
+      "lng": 98.1211293,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，察瓦龙乡",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:38.315Z"
+    },
+    {
+      "locationKey": "98.121323,28.585497",
+      "lat": 28.5854966,
+      "lng": 98.1213231,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，察瓦龙乡",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:37.975Z"
+    },
+    {
+      "locationKey": "98.188577,28.552287",
+      "lat": 28.5522873,
+      "lng": 98.1885769,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，察瓦龙乡",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:37.621Z"
+    },
+    {
+      "locationKey": "98.191307,28.552375",
+      "lat": 28.5523752,
+      "lng": 98.1913067,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，察瓦龙乡",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:37.254Z"
+    },
+    {
+      "locationKey": "98.234848,28.543628",
+      "lat": 28.5436283,
+      "lng": 98.234848,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，察瓦龙乡",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:36.907Z"
+    },
+    {
       "locationKey": "98.338548,28.585272",
       "lat": 28.5852725,
       "lng": 98.3385481,
@@ -1875,6 +3006,110 @@
       "fetchedAt": "2026-05-17T16:06:10.338Z"
     },
     {
+      "locationKey": "98.369968,28.574737",
+      "lat": 28.5747369,
+      "lng": 98.3699675,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，察瓦龙乡 · 怒江大峡谷",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:35.173Z"
+    },
+    {
+      "locationKey": "98.370098,28.574777",
+      "lat": 28.5747769,
+      "lng": 98.3700977,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，察瓦龙乡 · 怒江大峡谷",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:34.787Z"
+    },
+    {
+      "locationKey": "98.370166,28.574935",
+      "lat": 28.5749348,
+      "lng": 98.3701657,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，察瓦龙乡 · 怒江大峡谷",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:35.526Z"
+    },
+    {
+      "locationKey": "98.375653,28.582401",
+      "lat": 28.5824014,
+      "lng": 98.3756526,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，察瓦龙乡 · 怒江大峡谷",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:35.845Z"
+    },
+    {
+      "locationKey": "98.376066,28.582804",
+      "lat": 28.5828039,
+      "lng": 98.3760661,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，察瓦龙乡 · 怒江大峡谷",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:36.211Z"
+    },
+    {
+      "locationKey": "98.376092,28.582824",
+      "lat": 28.5828243,
+      "lng": 98.3760917,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，察瓦龙乡 · 怒江大峡谷",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:36.564Z"
+    },
+    {
+      "locationKey": "98.388821,28.529607",
+      "lat": 28.5296068,
+      "lng": 98.3888209,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，察瓦龙乡 · 怒江大峡谷",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:34.441Z"
+    },
+    {
+      "locationKey": "98.388847,28.529574",
+      "lat": 28.5295735,
+      "lng": 98.3888468,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，察瓦龙乡 · 怒江大峡谷",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:34.105Z"
+    },
+    {
       "locationKey": "98.452083,28.485734",
       "lat": 28.485734,
       "lng": 98.4520831,
@@ -1912,6 +3147,19 @@
       "city": "林芝市",
       "district": "察隅县",
       "fetchedAt": "2026-05-17T16:06:09.270Z"
+    },
+    {
+      "locationKey": "98.454206,28.486907",
+      "lat": 28.4869066,
+      "lng": 98.4542064,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "西藏自治区，林芝市，察隅县，察瓦龙乡 · 怒江大峡谷",
+      "country": "中国",
+      "province": "西藏自治区",
+      "city": "林芝市",
+      "district": "察隅县",
+      "fetchedAt": "2026-05-18T06:20:33.757Z"
     },
     {
       "locationKey": "98.454273,28.435444",
@@ -2135,6 +3383,19 @@
       "fetchedAt": "2026-05-17T16:06:02.167Z"
     },
     {
+      "locationKey": "98.630640,28.014425",
+      "lat": 28.014425,
+      "lng": 98.6306404,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "云南省，怒江傈僳族自治州，贡山独龙族怒族自治县，丙中洛镇 · 怒江大峡谷",
+      "country": "中国",
+      "province": "云南省",
+      "city": "怒江傈僳族自治州",
+      "district": "贡山独龙族怒族自治县",
+      "fetchedAt": "2026-05-18T06:20:33.403Z"
+    },
+    {
       "locationKey": "98.630663,28.014370",
       "lat": 28.0143702,
       "lng": 98.6306632,
@@ -2174,6 +3435,19 @@
       "fetchedAt": "2026-05-17T16:06:03.927Z"
     },
     {
+      "locationKey": "98.630701,28.014434",
+      "lat": 28.0144338,
+      "lng": 98.6307012,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "云南省，怒江傈僳族自治州，贡山独龙族怒族自治县，丙中洛镇 · 怒江大峡谷",
+      "country": "中国",
+      "province": "云南省",
+      "city": "怒江傈僳族自治州",
+      "district": "贡山独龙族怒族自治县",
+      "fetchedAt": "2026-05-18T06:20:32.705Z"
+    },
+    {
       "locationKey": "98.630774,28.014350",
       "lat": 28.0143501,
       "lng": 98.6307741,
@@ -2198,6 +3472,32 @@
       "city": "怒江傈僳族自治州",
       "district": "贡山独龙族怒族自治县",
       "fetchedAt": "2026-05-17T16:06:04.998Z"
+    },
+    {
+      "locationKey": "98.630806,28.014400",
+      "lat": 28.0143997,
+      "lng": 98.6308056,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "云南省，怒江傈僳族自治州，贡山独龙族怒族自治县，丙中洛镇 · 怒江大峡谷",
+      "country": "中国",
+      "province": "云南省",
+      "city": "怒江傈僳族自治州",
+      "district": "贡山独龙族怒族自治县",
+      "fetchedAt": "2026-05-18T06:20:33.043Z"
+    },
+    {
+      "locationKey": "98.630980,28.014334",
+      "lat": 28.0143341,
+      "lng": 98.6309802,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "云南省，怒江傈僳族自治州，贡山独龙族怒族自治县，丙中洛镇 · 怒江大峡谷",
+      "country": "中国",
+      "province": "云南省",
+      "city": "怒江傈僳族自治州",
+      "district": "贡山独龙族怒族自治县",
+      "fetchedAt": "2026-05-18T06:20:32.351Z"
     },
     {
       "locationKey": "98.632193,28.001957",
@@ -2252,6 +3552,19 @@
       "fetchedAt": "2026-05-17T16:06:00.745Z"
     },
     {
+      "locationKey": "98.675913,27.922652",
+      "lat": 27.9226516,
+      "lng": 98.6759127,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "云南省，怒江傈僳族自治州，贡山独龙族怒族自治县，捧当乡 · 怒江大峡谷",
+      "country": "中国",
+      "province": "云南省",
+      "city": "怒江傈僳族自治州",
+      "district": "贡山独龙族怒族自治县",
+      "fetchedAt": "2026-05-18T06:20:32.014Z"
+    },
+    {
       "locationKey": "98.868428,26.890075",
       "lat": 26.8900746,
       "lng": 98.8684285,
@@ -2276,6 +3589,32 @@
       "city": "怒江傈僳族自治州",
       "district": "福贡县",
       "fetchedAt": "2026-05-17T16:05:59.311Z"
+    },
+    {
+      "locationKey": "98.868665,26.890136",
+      "lat": 26.8901358,
+      "lng": 98.8686651,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "云南省，怒江傈僳族自治州，福贡县，上帕镇 · 怒江大峡谷",
+      "country": "中国",
+      "province": "云南省",
+      "city": "怒江傈僳族自治州",
+      "district": "福贡县",
+      "fetchedAt": "2026-05-18T06:20:30.588Z"
+    },
+    {
+      "locationKey": "98.868923,26.890162",
+      "lat": 26.8901621,
+      "lng": 98.868923,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "云南省，怒江傈僳族自治州，福贡县，上帕镇 · 怒江大峡谷",
+      "country": "中国",
+      "province": "云南省",
+      "city": "怒江傈僳族自治州",
+      "district": "福贡县",
+      "fetchedAt": "2026-05-18T06:20:30.959Z"
     },
     {
       "locationKey": "98.887471,27.174268",
@@ -2315,6 +3654,45 @@
       "city": "怒江傈僳族自治州",
       "district": "福贡县",
       "fetchedAt": "2026-05-17T16:06:00.360Z"
+    },
+    {
+      "locationKey": "98.889584,27.177504",
+      "lat": 27.1775038,
+      "lng": 98.8895839,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "云南省，怒江傈僳族自治州，福贡县，石月亮乡 · 怒江大峡谷",
+      "country": "中国",
+      "province": "云南省",
+      "city": "怒江傈僳族自治州",
+      "district": "福贡县",
+      "fetchedAt": "2026-05-18T06:20:31.647Z"
+    },
+    {
+      "locationKey": "98.889595,27.177476",
+      "lat": 27.1774761,
+      "lng": 98.8895948,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "云南省，怒江傈僳族自治州，福贡县，石月亮乡 · 怒江大峡谷",
+      "country": "中国",
+      "province": "云南省",
+      "city": "怒江傈僳族自治州",
+      "district": "福贡县",
+      "fetchedAt": "2026-05-18T06:20:31.310Z"
+    },
+    {
+      "locationKey": "98.912380,26.542051",
+      "lat": 26.5420507,
+      "lng": 98.9123804,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "云南省，怒江傈僳族自治州，福贡县，匹河怒族乡 · 老姆登村景区",
+      "country": "中国",
+      "province": "云南省",
+      "city": "怒江傈僳族自治州",
+      "district": "福贡县",
+      "fetchedAt": "2026-05-18T06:20:30.252Z"
     },
     {
       "locationKey": "98.912478,26.542185",
@@ -2447,6 +3825,19 @@
       "fetchedAt": "2026-05-17T16:17:34.254Z"
     },
     {
+      "locationKey": "98.917104,26.558345",
+      "lat": 26.5583452,
+      "lng": 98.9171043,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "云南省，怒江傈僳族自治州，福贡县，匹河怒族乡 · 老姆登村景区",
+      "country": "中国",
+      "province": "云南省",
+      "city": "怒江傈僳族自治州",
+      "district": "福贡县",
+      "fetchedAt": "2026-05-18T06:20:29.923Z"
+    },
+    {
       "locationKey": "98.917135,26.558185",
       "lat": 26.5581846,
       "lng": 98.9171348,
@@ -2499,6 +3890,45 @@
       "fetchedAt": "2026-05-17T16:06:25.279Z"
     },
     {
+      "locationKey": "99.125526,29.987701",
+      "lat": 29.9877008,
+      "lng": 99.1255256,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，巴塘县，夏邛镇 · 巴久曲1号大桥",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "巴塘县",
+      "fetchedAt": "2026-05-18T06:20:50.612Z"
+    },
+    {
+      "locationKey": "99.125529,29.987697",
+      "lat": 29.9876967,
+      "lng": 99.1255295,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，巴塘县，夏邛镇 · 巴久曲1号大桥",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "巴塘县",
+      "fetchedAt": "2026-05-18T06:20:50.952Z"
+    },
+    {
+      "locationKey": "99.130198,29.984990",
+      "lat": 29.9849901,
+      "lng": 99.1301984,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，巴塘县，夏邛镇 · 红军渠",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "巴塘县",
+      "fetchedAt": "2026-05-18T06:20:51.306Z"
+    },
+    {
       "locationKey": "99.272640,29.929264",
       "lat": 29.9292638,
       "lng": 99.2726398,
@@ -2523,6 +3953,32 @@
       "city": "甘孜藏族自治州",
       "district": "巴塘县",
       "fetchedAt": "2026-05-17T16:06:25.965Z"
+    },
+    {
+      "locationKey": "99.299272,29.930914",
+      "lat": 29.9309136,
+      "lng": 99.2992718,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，巴塘县，夏邛镇",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "巴塘县",
+      "fetchedAt": "2026-05-18T06:20:51.999Z"
+    },
+    {
+      "locationKey": "99.299548,29.930859",
+      "lat": 29.930859,
+      "lng": 99.2995478,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，巴塘县，夏邛镇",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "巴塘县",
+      "fetchedAt": "2026-05-18T06:20:51.657Z"
     },
     {
       "locationKey": "99.316263,29.949317",
@@ -2577,6 +4033,45 @@
       "fetchedAt": "2026-05-17T16:06:27.416Z"
     },
     {
+      "locationKey": "99.352843,29.959306",
+      "lat": 29.9593061,
+      "lng": 99.3528433,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，巴塘县，波密乡",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "巴塘县",
+      "fetchedAt": "2026-05-18T06:20:52.368Z"
+    },
+    {
+      "locationKey": "99.402739,29.939344",
+      "lat": 29.9393439,
+      "lng": 99.4027386,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，巴塘县，波密乡",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "巴塘县",
+      "fetchedAt": "2026-05-18T06:20:53.070Z"
+    },
+    {
+      "locationKey": "99.402858,29.938848",
+      "lat": 29.9388484,
+      "lng": 99.4028579,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，巴塘县，波密乡",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "巴塘县",
+      "fetchedAt": "2026-05-18T06:20:52.711Z"
+    },
+    {
       "locationKey": "99.411352,29.873173",
       "lat": 29.8731733,
       "lng": 99.4113524,
@@ -2629,6 +4124,19 @@
       "fetchedAt": "2026-05-17T16:06:29.191Z"
     },
     {
+      "locationKey": "99.413005,29.933360",
+      "lat": 29.9333605,
+      "lng": 99.4130051,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，巴塘县，波密乡",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "巴塘县",
+      "fetchedAt": "2026-05-18T06:20:53.399Z"
+    },
+    {
       "locationKey": "99.415091,29.748793",
       "lat": 29.7487934,
       "lng": 99.4150906,
@@ -2653,6 +4161,32 @@
       "city": "甘孜藏族自治州",
       "district": "巴塘县",
       "fetchedAt": "2026-05-17T16:06:27.767Z"
+    },
+    {
+      "locationKey": "99.421054,29.904088",
+      "lat": 29.9040879,
+      "lng": 99.4210537,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，巴塘县，波密乡 · 达休阔",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "巴塘县",
+      "fetchedAt": "2026-05-18T06:20:53.754Z"
+    },
+    {
+      "locationKey": "99.421201,29.904172",
+      "lat": 29.9041717,
+      "lng": 99.4212013,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，巴塘县，波密乡 · 达休阔",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "巴塘县",
+      "fetchedAt": "2026-05-18T06:20:54.106Z"
     },
     {
       "locationKey": "99.422733,29.925962",
@@ -2681,6 +4215,45 @@
       "fetchedAt": "2026-05-17T16:06:28.487Z"
     },
     {
+      "locationKey": "99.436257,29.723977",
+      "lat": 29.7239772,
+      "lng": 99.4362567,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，巴塘县，波密乡",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "巴塘县",
+      "fetchedAt": "2026-05-18T06:20:54.458Z"
+    },
+    {
+      "locationKey": "99.445863,29.707573",
+      "lat": 29.7075733,
+      "lng": 99.4458626,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，巴塘县，波密乡",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "巴塘县",
+      "fetchedAt": "2026-05-18T06:20:54.806Z"
+    },
+    {
+      "locationKey": "99.446336,29.709983",
+      "lat": 29.7099835,
+      "lng": 99.4463359,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，巴塘县，波密乡",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "巴塘县",
+      "fetchedAt": "2026-05-18T06:20:55.157Z"
+    },
+    {
       "locationKey": "99.448193,29.712119",
       "lat": 29.7121193,
       "lng": 99.4481931,
@@ -2705,6 +4278,84 @@
       "city": "甘孜藏族自治州",
       "district": "巴塘县",
       "fetchedAt": "2026-05-17T16:06:30.956Z"
+    },
+    {
+      "locationKey": "99.457885,29.764396",
+      "lat": 29.7643959,
+      "lng": 99.4578853,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，巴塘县，波密乡",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "巴塘县",
+      "fetchedAt": "2026-05-18T06:20:55.486Z"
+    },
+    {
+      "locationKey": "99.460714,29.764669",
+      "lat": 29.7646688,
+      "lng": 99.4607136,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，巴塘县，波密乡",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "巴塘县",
+      "fetchedAt": "2026-05-18T06:20:55.850Z"
+    },
+    {
+      "locationKey": "99.461690,29.763670",
+      "lat": 29.7636704,
+      "lng": 99.4616896,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，巴塘县，波密乡",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "巴塘县",
+      "fetchedAt": "2026-05-18T06:20:56.234Z"
+    },
+    {
+      "locationKey": "99.486468,29.768946",
+      "lat": 29.7689461,
+      "lng": 99.4864676,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，巴塘县，波密乡",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "巴塘县",
+      "fetchedAt": "2026-05-18T06:20:56.571Z"
+    },
+    {
+      "locationKey": "99.488860,29.771701",
+      "lat": 29.7717014,
+      "lng": 99.4888597,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，巴塘县，波密乡",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "巴塘县",
+      "fetchedAt": "2026-05-18T06:20:56.917Z"
+    },
+    {
+      "locationKey": "99.532883,29.756744",
+      "lat": 29.7567436,
+      "lng": 99.5328834,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，巴塘县，波密乡 · 惹迪",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "巴塘县",
+      "fetchedAt": "2026-05-18T06:20:57.280Z"
     },
     {
       "locationKey": "99.535751,29.756181",
@@ -2733,6 +4384,19 @@
       "fetchedAt": "2026-05-17T16:06:31.666Z"
     },
     {
+      "locationKey": "99.560230,29.749368",
+      "lat": 29.7493679,
+      "lng": 99.5602296,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，理塘县，格聂镇",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "理塘县",
+      "fetchedAt": "2026-05-18T06:20:57.649Z"
+    },
+    {
       "locationKey": "99.560259,29.749386",
       "lat": 29.7493857,
       "lng": 99.5602586,
@@ -2744,6 +4408,19 @@
       "city": "甘孜藏族自治州",
       "district": "理塘县",
       "fetchedAt": "2026-05-17T16:06:32.026Z"
+    },
+    {
+      "locationKey": "99.568128,29.747381",
+      "lat": 29.7473811,
+      "lng": 99.5681282,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，理塘县，格聂镇",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "理塘县",
+      "fetchedAt": "2026-05-18T06:20:57.977Z"
     },
     {
       "locationKey": "99.638706,29.741027",
@@ -2785,6 +4462,84 @@
       "fetchedAt": "2026-05-17T16:06:33.086Z"
     },
     {
+      "locationKey": "99.676706,29.752108",
+      "lat": 29.7521078,
+      "lng": 99.6767063,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，理塘县，格聂镇 · 人社社保就业服务窗口(格聂镇达青村综合服务站)",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "理塘县",
+      "fetchedAt": "2026-05-18T06:20:58.335Z"
+    },
+    {
+      "locationKey": "99.676950,29.791107",
+      "lat": 29.7911074,
+      "lng": 99.6769502,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，理塘县，格聂镇",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "理塘县",
+      "fetchedAt": "2026-05-18T06:21:00.090Z"
+    },
+    {
+      "locationKey": "99.677900,29.790624",
+      "lat": 29.7906236,
+      "lng": 99.6778999,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，理塘县，格聂镇",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "理塘县",
+      "fetchedAt": "2026-05-18T06:20:59.373Z"
+    },
+    {
+      "locationKey": "99.678180,29.790270",
+      "lat": 29.7902695,
+      "lng": 99.6781798,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，理塘县，格聂镇",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "理塘县",
+      "fetchedAt": "2026-05-18T06:20:59.732Z"
+    },
+    {
+      "locationKey": "99.678337,29.753914",
+      "lat": 29.7539143,
+      "lng": 99.6783365,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，理塘县，格聂镇 · 则巴花海逸栈民宿(甘孜藏族自治州店)",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "理塘县",
+      "fetchedAt": "2026-05-18T06:20:58.681Z"
+    },
+    {
+      "locationKey": "99.681360,29.763420",
+      "lat": 29.7634199,
+      "lng": 99.6813605,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，理塘县，格聂镇",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "理塘县",
+      "fetchedAt": "2026-05-18T06:20:59.039Z"
+    },
+    {
       "locationKey": "99.685057,29.782800",
       "lat": 29.7828002,
       "lng": 99.6850573,
@@ -2809,6 +4564,19 @@
       "city": "甘孜藏族自治州",
       "district": "理塘县",
       "fetchedAt": "2026-05-17T16:06:34.135Z"
+    },
+    {
+      "locationKey": "99.757668,29.809282",
+      "lat": 29.8092818,
+      "lng": 99.757668,
+      "provider": "amap-webservice",
+      "status": "ok",
+      "locationText": "四川省，甘孜藏族自治州，理塘县，格聂镇",
+      "country": "中国",
+      "province": "四川省",
+      "city": "甘孜藏族自治州",
+      "district": "理塘县",
+      "fetchedAt": "2026-05-18T06:21:00.433Z"
     },
     {
       "locationKey": "99.757699,29.809336",

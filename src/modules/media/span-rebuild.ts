@@ -8,6 +8,7 @@ import type {
   IInterestingWindow,
   IKtepAsset,
   IKtepSlice,
+  IMediaRoot,
   ISpansMeta,
   ITranscriptSegment,
 } from '../../protocol/schema.js';
@@ -16,6 +17,7 @@ import {
   getSpansPath,
   loadAssetReports,
   loadAssets,
+  loadIngestRoots,
   resolveWorkspaceProjectRoot,
   touchProjectUpdatedAt,
   writeKairosProgress,
@@ -143,9 +145,11 @@ interface IChunkMaterialPatternRequestResult {
 export function buildMaterialSpansFromReports(input: {
   assets: IKtepAsset[];
   reports: IAssetCoarseReport[];
+  roots?: IMediaRoot[];
   pharosContext?: unknown;
 }): ISpanRebuildResult {
   const warnings: string[] = [];
+  assertMaterialAssetsHaveReports(input.assets, input.reports);
   const assetsById = new Map(input.assets.map(asset => [asset.id, asset] as const));
   const spans: IKtepSlice[] = [];
 
@@ -176,6 +180,7 @@ export function buildMaterialSpansFromReports(input: {
 
   const merged = mergeNearDuplicateWindows(spans);
   assertUniqueSpanIds(merged);
+  assertMaterialSpansHaveVisualObservation(merged, assetsById);
 
   return {
     spans: merged,
@@ -187,9 +192,57 @@ export function buildMaterialSpansFromReports(input: {
 export async function buildAnalyzeSpansFromReports(input: {
   assets: IKtepAsset[];
   reports: IAssetCoarseReport[];
+  roots?: IMediaRoot[];
   pharosContext?: unknown;
 }): Promise<IKtepSlice[]> {
   return buildMaterialSpansFromReports(input).spans;
+}
+
+function assertMaterialAssetsHaveReports(
+  assets: IKtepAsset[],
+  reports: IAssetCoarseReport[],
+): void {
+  const reportedAssetIds = new Set(reports.map(report => report.assetId));
+  const missing = assets
+    .filter(asset => asset.kind !== 'audio' && !reportedAssetIds.has(asset.id));
+  if (missing.length === 0) return;
+  throw new Error(
+    [
+      `span-rebuild blocked: ${missing.length} non-audio asset(s) are missing asset-report visual evidence.`,
+      'Copy the full analysis/asset-reports cache back or rerun Analyze before rebuilding spans.',
+      `Missing examples: ${formatSpanRebuildInputExamples(missing)}`,
+    ].join(' '),
+  );
+}
+
+function assertMaterialSpansHaveVisualObservation(
+  spans: IKtepSlice[],
+  assetsById?: Map<string, IKtepAsset>,
+): void {
+  const missing = spans.filter(span => !span.visualObservation?.trim());
+  if (missing.length === 0) return;
+  throw new Error(
+    [
+      `span-rebuild blocked: ${missing.length} material span(s) are missing visualObservation.`,
+      'visualObservation must be produced by Analyze; span-rebuild will not invent visual evidence or call materialPatterns LM.',
+      `Missing examples: ${formatSpanRebuildInputExamples(missing.map(span => assetsById?.get(span.assetId) ?? span))}`,
+    ].join(' '),
+  );
+}
+
+function formatSpanRebuildInputExamples(
+  items: Array<IKtepAsset | IKtepSlice>,
+  limit = 6,
+): string {
+  return items
+    .slice(0, limit)
+    .map(item => {
+      if ('sourcePath' in item) {
+        return `${item.id}${item.displayName ? ` (${item.displayName})` : ''}`;
+      }
+      return `${item.id} asset=${item.assetId}`;
+    })
+    .join(', ');
 }
 
 export async function rebuildProjectSpans(input: {
@@ -217,13 +270,15 @@ export async function rebuildProjectSpans(input: {
     unit: 'step',
     detail: '读取 assets 与 asset reports，生成 stripped spans',
   });
-  const [assets, reports] = await Promise.all([
+  const [assets, reports, { roots }] = await Promise.all([
     loadAssets(projectRoot),
     loadAssetReports(projectRoot),
+    loadIngestRoots(projectRoot),
   ]);
-  const generated = buildMaterialSpansFromReports({ assets, reports });
+  const generated = buildMaterialSpansFromReports({ assets, reports, roots });
+  const materialPatternSpans = sortSpansByMaterialTime(generated.spans, assets, roots);
   const partialPath = getSpanRebuildPartialPath(projectRoot);
-  const chunkCount = Math.ceil(generated.spans.length / CMATERIAL_PATTERN_SPAN_BATCH_SIZE);
+  const chunkCount = Math.ceil(materialPatternSpans.length / CMATERIAL_PATTERN_SPAN_BATCH_SIZE);
   await writeSpanRebuildProgress(progressPath, {
     status: 'running',
     step: 'patterns',
@@ -231,20 +286,20 @@ export async function rebuildProjectSpans(input: {
     stepIndex: 2,
     stepTotal: 4,
     current: 0,
-    total: Math.max(generated.spans.length, 1),
+    total: Math.max(materialPatternSpans.length, 1),
     unit: 'span',
-    detail: generated.spans.length > 0
+    detail: materialPatternSpans.length > 0
       ? '调用本地文本 LM 生成中文 materialPatterns'
       : '没有可生成 materialPatterns 的 spans',
     extra: {
-      spanCount: generated.spans.length,
+      spanCount: materialPatternSpans.length,
       chunkSize: CMATERIAL_PATTERN_SPAN_BATCH_SIZE,
       chunkCount,
     },
   });
   const patternWarnings: string[] = [];
   const generatedPatterns = await generateSpanMaterialPatterns({
-    spans: generated.spans,
+    spans: materialPatternSpans,
     agentRunner: input.agentRunner,
     progressPath,
     partialPath,
@@ -355,8 +410,18 @@ function buildFineScanSpans(input: {
   const spans: IKtepSlice[] = [];
   for (const window of input.report.fineScanWindows ?? []) {
     if (window.status !== 'recognized') {
+      if (!window.dropReason?.trim()) {
+        throw new Error(
+          `asset report ${input.report.assetId} fine-scan window ${window.windowId} is dropped without dropReason; rerun Analyze/fine-scan for this asset.`,
+        );
+      }
       input.warnings.push(`asset ${input.asset.id}: fine-scan window ${window.windowId} dropped (${window.dropReason ?? 'no reason'})`);
       continue;
+    }
+    if (!window.visualObservation?.trim()) {
+      throw new Error(
+        `asset report ${input.report.assetId} fine-scan window ${window.windowId} is recognized without visualObservation; rerun Analyze/fine-scan for this asset.`,
+      );
     }
     const normalized = normalizeWindow({
       asset: input.asset,
@@ -632,6 +697,7 @@ async function generateSpanMaterialPatterns(input: {
   baseWarnings: string[];
   warnings: string[];
 }): Promise<ISpanMaterialPatternGenerationResult> {
+  assertMaterialSpansHaveVisualObservation(input.spans);
   if (input.spans.length === 0) {
     return {
       spans: [],
@@ -866,19 +932,14 @@ async function generateSpanMaterialPatterns(input: {
         recovered: true,
       });
     } else {
-      const fallbackPatterns = buildStoryUnknownFallbackMaterialPatterns(span);
-      patternBySpanId.set(span.id, fallbackPatterns);
-      recoveredFailedCount += failure.recovered ? 0 : 1;
-      storyUnknownFallbackCount += failure.fallbackStoryUnknown ? 0 : 1;
       failedBySpanId.set(span.id, {
         ...failure,
         attempts: failure.attempts + 1,
-        reason: retryResult.failureReasonBySpanId.get(span.id) ?? 'story-missing-after-single-span-retry',
+        reason: retryResult.failureReasonBySpanId.get(span.id) ?? 'invalid-after-single-span-retry',
         lastError: retryResult.requestError ?? failure.lastError,
-        recovered: true,
-        fallbackStoryUnknown: true,
+        recovered: false,
       });
-      input.warnings.push(`materialPatterns span ${span.id}: failed-list retry still missed slot 5; wrote ${CSPAN_MATERIAL_PATTERN_STORY_UNKNOWN}`);
+      input.warnings.push(`materialPatterns span ${span.id}: failed-list retry still returned invalid materialPatterns`);
     }
 
     await writeSpanRebuildPatternCheckpoint({
@@ -899,21 +960,23 @@ async function generateSpanMaterialPatterns(input: {
     });
   }
 
-  for (const span of input.spans) {
-    if (patternBySpanId.has(span.id)) continue;
-    const fallbackPatterns = buildStoryUnknownFallbackMaterialPatterns(span);
-    patternBySpanId.set(span.id, fallbackPatterns);
-    recoveredFailedCount += 1;
-    storyUnknownFallbackCount += 1;
-    failedBySpanId.set(span.id, {
-      spanId: span.id,
-      assetId: span.assetId,
-      reason: 'missing-after-failed-list-pass',
-      attempts: 0,
-      recovered: true,
-      fallbackStoryUnknown: true,
-    });
-    input.warnings.push(`materialPatterns span ${span.id}: missing after failed-list pass; wrote ${CSPAN_MATERIAL_PATTERN_STORY_UNKNOWN}`);
+  const unresolvedSpans = input.spans.filter(span => !patternBySpanId.has(span.id));
+  if (unresolvedSpans.length > 0) {
+    for (const span of unresolvedSpans) {
+      if (!failedBySpanId.has(span.id)) {
+        failedBySpanId.set(span.id, {
+          spanId: span.id,
+          assetId: span.assetId,
+          reason: 'missing-after-failed-list-pass',
+          attempts: 0,
+          recovered: false,
+        });
+      }
+    }
+    const preview = unresolvedSpans.slice(0, 8).map(span => span.id).join(', ');
+    throw new Error(
+      `span-rebuild could not generate valid materialPatterns for ${unresolvedSpans.length} span(s): ${preview}`,
+    );
   }
 
   const spans = input.spans.map(span => stripUndefined({
@@ -1005,7 +1068,7 @@ async function requestMaterialPatternsForChunk(input: {
 
   if (repairCount > 0) {
     input.warnings.push(
-      `materialPatterns chunk ${input.chunkIndex + 1}/${input.chunkTotal}: repaired ${repairCount} materialPatterns rows for the v5 first-four deterministic slots`,
+      `materialPatterns chunk ${input.chunkIndex + 1}/${input.chunkTotal}: repaired ${repairCount} materialPatterns rows for the deterministic first-four slots`,
     );
   }
 
@@ -1127,51 +1190,87 @@ function repairMaterialPatterns(
   span: IKtepSlice,
   options: { allowStoryUnknownFallback?: boolean } = {},
 ): { patterns: string[]; repaired: boolean; complete: boolean } {
+  if (raw.length < CMATERIAL_PATTERN_REQUIRED_COUNT || raw.length > CMATERIAL_PATTERN_MAX_COUNT) {
+    return { patterns: [], repaired: false, complete: false };
+  }
   const cleaned = raw
     .map(normalizePatternCandidate)
     .filter((item): item is string => typeof item === 'string');
+  if (cleaned.length !== raw.length) {
+    return { patterns: [], repaired: false, complete: false };
+  }
 
-  const viewpoint = normalizeViewpointTag(cleaned[0], span, cleaned);
-  const environment = normalizeEnvironmentTag(cleaned[1], span);
-  const weatherLight = normalizeWeatherLightTag(cleaned[2], span);
-  const speech = resolveSpeechTag(span);
+  const viewpoint = normalizeViewpointTag(cleaned[0], span);
+  const environment = normalizeEnvironmentTag(cleaned[1]);
+  const weatherLight = normalizeWeatherLightTag(cleaned[2]);
+  const speech = normalizeSpeechTag(cleaned[3], resolveSpeechTag(span));
+  if (!viewpoint || !environment || !weatherLight || !speech) {
+    return { patterns: [], repaired: false, complete: false };
+  }
   const normalizedStory = normalizeStoryTag(cleaned[4], [viewpoint, environment, weatherLight, speech]);
   const story = normalizedStory ?? (options.allowStoryUnknownFallback ? CSPAN_MATERIAL_PATTERN_STORY_UNKNOWN : undefined);
   const required = [viewpoint, environment, weatherLight, speech];
-  const freeTags = cleaned
-    .slice(5)
-    .filter(item => !required.includes(item) && item !== story)
-    .filter(isValidFreeMaterialPattern)
+  const freeCandidates = cleaned.slice(5);
+  if (freeCandidates.some(item => required.includes(item) || item === story || !isValidFreeMaterialPattern(item))) {
+    return { patterns: [], repaired: false, complete: false };
+  }
+  const freeTags = freeCandidates
     .slice(0, Math.max(0, CMATERIAL_PATTERN_MAX_COUNT - CMATERIAL_PATTERN_REQUIRED_COUNT));
   const patterns = [...required, ...(story ? [story] : []), ...freeTags].slice(0, CMATERIAL_PATTERN_MAX_COUNT);
   const complete = Boolean(story);
-  const repaired = raw.length < CMATERIAL_PATTERN_REQUIRED_COUNT
-    || raw.length > CMATERIAL_PATTERN_MAX_COUNT
-    || patterns.some((item, index) => normalizeComparableText(raw[index]) !== normalizeComparableText(item));
 
   return {
     patterns,
-    repaired,
+    repaired: false,
     complete,
   };
-}
-
-function buildStoryUnknownFallbackMaterialPatterns(span: IKtepSlice): string[] {
-  return repairMaterialPatterns([], span, { allowStoryUnknownFallback: true }).patterns;
 }
 
 function normalizeViewpointTag(
   value: string | undefined,
   span: IKtepSlice,
-  candidates: string[],
-): string {
-  if (value && CMATERIAL_PATTERN_VIEWPOINT_TAG_SET.has(value)) return value;
-  const candidate = candidates.find(item => CMATERIAL_PATTERN_VIEWPOINT_TAG_SET.has(item));
-  if (candidate) return candidate;
-  return inferViewpointTag(span);
+): string | undefined {
+  if (
+    value
+    && CMATERIAL_PATTERN_VIEWPOINT_TAG_SET.has(value)
+    && isViewpointTagCompatibleWithSpan(value, span)
+  ) {
+    return value;
+  }
+  return undefined;
 }
 
-function normalizeEnvironmentTag(value: string | undefined, span: IKtepSlice): string {
+function isViewpointTagCompatibleWithSpan(tag: string, span: IKtepSlice): boolean {
+  const text = spanFactText(span);
+  const hasAerialEvidence = /航拍|无人机|俯瞰|鸟瞰|空中|aerial|drone|overhead|bird'?s[-\s]?eye/iu.test(text);
+  const hasAerialMotionEvidence = /跟随|追踪|环绕|推进|掠过|移动|follow|tracking|orbit|moving|passes?|flies?\s+over|sweeping/iu.test(text);
+  const hasDetailEvidence = /特写|细节|近景|close[-\s]?up|macro|detail|resting|停驻|触摸|手部|手表|腕表|车漆特写|车身线条|蝴蝶|butterfly|wrist|watch|hand gently|glossy yellow|yellow (?:car )?surface|paint and body|body lines|speaker grille|water droplets/iu.test(text);
+  const hasDrivingPovEvidence = /第一视角|驾驶视角|行车记录|车窗|挡风玻璃|车内向前|windshield|dashcam|driving\s+pov|view from (?:inside )?(?:a|the)?\s*(?:car|vehicle)/iu.test(text);
+  const hasWideEnvironmentEvidence = /远景|全景|广角|风景|环境|山谷|山地|森林|村庄|街道|公路|道路|河流|湖泊|建筑|wide shot|wide-angle|panoramic|landscape|scenery|valley|village|street|highway|river|lake|building/iu.test(text);
+
+  if (tag === '第一人称行车') {
+    if (hasAerialEvidence || hasDetailEvidence) return false;
+    return span.type === 'drive' || hasDrivingPovEvidence;
+  }
+  if (tag === '车窗外观察') {
+    return span.type === 'drive' || /车窗|窗外|挡风玻璃|windshield|vehicle window/iu.test(text);
+  }
+  if (tag === '航拍俯瞰') {
+    return span.type === 'aerial' || hasAerialEvidence;
+  }
+  if (tag === '航拍运动') {
+    return (span.type === 'aerial' || hasAerialEvidence) && hasAerialMotionEvidence;
+  }
+  if (tag === '细节特写') {
+    return hasDetailEvidence;
+  }
+  if (tag === '环境远景') {
+    return hasWideEnvironmentEvidence;
+  }
+  return true;
+}
+
+function normalizeEnvironmentTag(value: string | undefined): string | undefined {
   const candidate = normalizePatternCandidate(value);
   if (
     candidate
@@ -1184,10 +1283,10 @@ function normalizeEnvironmentTag(value: string | undefined, span: IKtepSlice): s
   ) {
     return candidate;
   }
-  return inferEnvironmentTag(span);
+  return undefined;
 }
 
-function normalizeWeatherLightTag(value: string | undefined, span: IKtepSlice): string {
+function normalizeWeatherLightTag(value: string | undefined): string | undefined {
   const candidate = normalizePatternCandidate(value);
   if (
     candidate
@@ -1195,12 +1294,19 @@ function normalizeWeatherLightTag(value: string | undefined, span: IKtepSlice): 
     && !CMATERIAL_PATTERN_VIEWPOINT_TAG_SET.has(candidate)
     && !CMATERIAL_PATTERN_SPEECH_TAG_SET.has(candidate)
     && !containsTechnicalWeatherTerm(candidate)
-    && looksLikeWeatherLightTag(candidate)
+    && (candidate === CSPAN_MATERIAL_PATTERN_WEATHER_UNKNOWN || looksLikeWeatherLightTag(candidate))
     && !looksLikeSourceSentence(candidate)
   ) {
     return candidate;
   }
-  return inferWeatherLightTag(span);
+  return undefined;
+}
+
+function normalizeSpeechTag(value: string | undefined, expected: string): string | undefined {
+  const candidate = normalizePatternCandidate(value);
+  if (!candidate) return undefined;
+  if (!CMATERIAL_PATTERN_SPEECH_TAG_SET.has(candidate)) return undefined;
+  return candidate === expected ? candidate : undefined;
 }
 
 function normalizeStoryTag(value: string | undefined, requiredTags: string[]): string | undefined {
@@ -1228,76 +1334,6 @@ function resolveSpeechTag(span: IKtepSlice): string {
   return CSPAN_MATERIAL_PATTERN_SPEECH_ABSENT;
 }
 
-function inferViewpointTag(span: IKtepSlice): string {
-  const text = spanFactText(span);
-  if (span.type === 'drive') {
-    if (/车窗|挡风玻璃|windshield|车外|窗外/iu.test(text)) return '车窗外观察';
-    return '第一人称行车';
-  }
-  if (span.type === 'aerial') {
-    return /跟随|追踪|环绕|推进|follow|tracking|orbit/iu.test(text) ? '航拍跟随' : '航拍建场';
-  }
-  if (span.type === 'timelapse') return '延时记录';
-  if (span.type === 'photo') {
-    return /成片|成果|人像|portrait|写真|模特|pose/iu.test(text) ? '照片成果' : '照片记录';
-  }
-  if (span.transcript?.trim() || span.semanticKind === 'speech' || span.semanticKind === 'mixed') {
-    if (/车内|车里|驾驶室|inside (?:the )?(?:car|vehicle)/iu.test(text)) return '车内自拍口播';
-    if (/固定|三脚架|机位|static|tripod/iu.test(text)) return '固定机位口播';
-    if (/多人|对话|互动|聊天|conversation|group/iu.test(text)) return '多人互动记录';
-    return '手持自拍口播';
-  }
-  if (/特写|细节|close[-\s]?up|detail/iu.test(text)) return '细节特写';
-  if (/跟拍|跟随|walks?|walking|follow/iu.test(text)) return '第三人称跟拍';
-  if (/介绍|讲解|present|introduc/iu.test(text)) return '第三人称介绍';
-  if (/空镜|环境|风景|landscape|scenery|wide shot|building|parking/iu.test(text)) return '环境空镜';
-  if (/固定|静态|static|stationary/iu.test(text)) return '固定机位观察';
-  return span.type === 'unknown' ? CSPAN_MATERIAL_PATTERN_VIEWPOINT_UNKNOWN : '固定机位观察';
-}
-
-function inferEnvironmentTag(span: IKtepSlice): string {
-  const text = spanFactText(span);
-  const candidates: Array<[RegExp, string]> = [
-    [/服务区.*停车场|停车场.*服务区|service area.*parking|parking.*service area/iu, '服务区停车场'],
-    [/车内|车里|驾驶室|inside (?:the )?(?:car|vehicle)|vehicle interior/iu, '车内'],
-    [/山路|盘山|弯道|mountain road|winding road/iu, '山路'],
-    [/高速|expressway|highway|motorway/iu, '高速公路'],
-    [/城市.*街|街道|city street|urban street/iu, '城市街道'],
-    [/花海|花田|草地|flower field|meadow|grassland/iu, '花海草地'],
-    [/拍摄现场|人像|模特|portrait|model|shoot/iu, '人像拍摄现场'],
-    [/海边|海岸|湖边|coast|shore|lake/iu, '海岸湖边'],
-    [/森林|树林|松林|forest|pine/iu, '森林'],
-    [/雪山|高山|山峰|mountain|peak/iu, '山地环境'],
-    [/停车场|parking/iu, '停车场'],
-    [/公路|道路|road/iu, '公路'],
-    [/室内|餐厅|酒店|民宿|indoor|restaurant|hotel/iu, '室内空间'],
-    [/建筑|楼|building/iu, '建筑外观'],
-  ];
-  for (const [pattern, tag] of candidates) {
-    if (pattern.test(text)) return tag;
-  }
-  return CSPAN_MATERIAL_PATTERN_ENVIRONMENT_UNKNOWN;
-}
-
-function inferWeatherLightTag(span: IKtepSlice): string {
-  const text = spanFactText(span);
-  const candidates: Array<[RegExp, string]> = [
-    [/丁达尔|tyndall/iu, '丁达尔效应'],
-    [/晚霞|夕阳|日落|sunset|golden hour/iu, '晚霞'],
-    [/日出|sunrise/iu, '日出'],
-    [/下雪|飘雪|雪花|snowing|snowfall/iu, '下雪'],
-    [/下雨|雨天|雨中|rain|raining|wet road|湿路/iu, '下雨'],
-    [/雾|fog|foggy|mist/iu, '雾天'],
-    [/晴天|阳光|蓝天|sunny|sunlight|blue sky/iu, '晴天'],
-    [/阴天|多云|overcast|cloudy/iu, '阴天'],
-    [/夜晚|夜间|黑夜|night/iu, '夜晚'],
-    [/室内灯|灯光|indoor light|lamp/iu, '室内灯光'],
-  ];
-  for (const [pattern, tag] of candidates) {
-    if (pattern.test(text)) return tag;
-  }
-  return CSPAN_MATERIAL_PATTERN_WEATHER_UNKNOWN;
-}
 
 function normalizePatternCandidate(value: string | undefined): string | undefined {
   const trimmed = value?.trim().replace(/^["'“”‘’]+|["'“”‘’]+$/gu, '');
@@ -1318,7 +1354,7 @@ function isValidFreeMaterialPattern(value: string): boolean {
 }
 
 function looksLikeWeatherLightTag(value: string): boolean {
-  return /晴|雨|雪|阴|云|雾|晚霞|夕阳|日落|日出|夜|丁达尔|阳光|蓝天|灯光|sun|rain|snow|cloud|fog|mist|night|light|tyndall/iu.test(value);
+  return /晴天|晴朗|雨天|下雨|小雨|大雨|暴雨|雪天|下雪|飘雪|降雪|阴天|多云|云层|雾天|大雾|薄雾|晚霞|夕阳|日落|日出|夜晚|夜间|丁达尔|阳光|蓝天|灯光|sunny|sunlight|rain(?:ing)?|snow(?:ing|fall)?|overcast|cloudy|fog(?:gy)?|mist(?:y)?|night|light|tyndall/iu.test(value);
 }
 
 function looksLikeCompositeEnvironmentTag(value: string): boolean {
@@ -1664,6 +1700,46 @@ function isFiniteNumber(value: unknown): value is number {
 function normalizeText(value: string | undefined): string | undefined {
   const trimmed = value?.trim();
   return trimmed || undefined;
+}
+
+function sortSpansByMaterialTime(
+  spans: IKtepSlice[],
+  assets: IKtepAsset[],
+  roots: IMediaRoot[],
+): IKtepSlice[] {
+  const assetsById = new Map(assets.map(asset => [asset.id, asset] as const));
+  const rootsById = new Map(roots.map(root => [root.id, root] as const));
+  return [...spans].sort((left, right) => {
+    const leftAsset = assetsById.get(left.assetId);
+    const rightAsset = assetsById.get(right.assetId);
+    const leftTime = getAssetMaterialSortMs(leftAsset, rootsById);
+    const rightTime = getAssetMaterialSortMs(rightAsset, rootsById);
+    return (leftTime ?? Number.POSITIVE_INFINITY) - (rightTime ?? Number.POSITIVE_INFINITY)
+      || (left.sourceInMs ?? 0) - (right.sourceInMs ?? 0)
+      || (left.sourceOutMs ?? 0) - (right.sourceOutMs ?? 0)
+      || (leftAsset?.sourcePath ?? leftAsset?.displayName ?? left.assetId)
+        .localeCompare(rightAsset?.sourcePath ?? rightAsset?.displayName ?? right.assetId)
+      || left.id.localeCompare(right.id);
+  });
+}
+
+function getAssetMaterialSortMs(
+  asset: IKtepAsset | undefined,
+  rootsById: Map<string, IMediaRoot>,
+): number | undefined {
+  if (!asset) return undefined;
+  const capturedAtMs = parseTimestampMs(asset.capturedAt);
+  if (capturedAtMs != null) {
+    const offsetMs = asset.ingestRootId ? rootsById.get(asset.ingestRootId)?.clockOffsetMs ?? 0 : 0;
+    return capturedAtMs + offsetMs;
+  }
+  return parseTimestampMs(asset.createdAt);
+}
+
+function parseTimestampMs(value: string | undefined): number | undefined {
+  if (!value) return undefined;
+  const ms = Date.parse(value);
+  return Number.isFinite(ms) ? ms : undefined;
 }
 
 function compareSpanRanges(left: IKtepSlice, right: IKtepSlice): number {

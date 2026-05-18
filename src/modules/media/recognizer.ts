@@ -3,6 +3,7 @@ import type { MlClient, IMlVlmTiming } from './ml-client.js';
 import type { IShotKeyframeGroup } from './keyframe.js';
 
 const CFINE_SCAN_MAX_TOKENS = 96;
+const CVLM_DESCRIPTION_MAX_ATTEMPTS = 2;
 
 const CVLM_PROMPT = `Analyze these travel-video frames. Return only a compact JSON object:
 {"description":"one short factual visual observation in Chinese or English"}
@@ -49,67 +50,75 @@ export async function recognizeFrames(
   client: MlClient,
   imagePaths: string[],
 ): Promise<IRecognition> {
-  const startedAt = Date.now();
-  const result = await client.vlmAnalyze(imagePaths, CVLM_PROMPT, {
-    maxTokens: CFINE_SCAN_MAX_TOKENS,
-  });
-  const roundTripMs = Date.now() - startedAt;
+  let lastTiming: IMlVlmTiming | undefined;
+  let lastRoundTripMs = 0;
+  for (let attempt = 1; attempt <= CVLM_DESCRIPTION_MAX_ATTEMPTS; attempt += 1) {
+    const startedAt = Date.now();
+    const result = await client.vlmAnalyze(imagePaths, CVLM_PROMPT, {
+      maxTokens: CFINE_SCAN_MAX_TOKENS,
+    });
+    const roundTripMs = Date.now() - startedAt;
+    lastTiming = result.timing;
+    lastRoundTripMs = roundTripMs;
 
-  let parsed: Record<string, unknown> = {};
-  try {
-    const jsonMatch = result.description.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const parsedJson = JSON.parse(jsonMatch[0]);
-      parsed = parsedJson && typeof parsedJson === 'object' && !Array.isArray(parsedJson)
-        ? parsedJson as Record<string, unknown>
-        : {};
+    const parsed = parseRecognitionResponse(result.description);
+    const description = normalizeRecognitionDescription(parsed.description);
+    if (!description && attempt < CVLM_DESCRIPTION_MAX_ATTEMPTS) {
+      continue;
     }
-  } catch (error) {
-    void error;
-    parsed = {};
-  }
+    if (!description) break;
 
-  const evidence: IKtepEvidence[] = [];
-  if (typeof parsed.description === 'string' && parsed.description) {
-    evidence.push({ source: 'vision', value: parsed.description, confidence: 0.7 });
-  }
-  if (Array.isArray(parsed.place_hints)) {
-    for (const hint of parsed.place_hints) {
-      if (typeof hint !== 'string') continue;
-      evidence.push({ source: 'vision', value: `place:${hint}`, confidence: 0.5 });
+    const evidence: IKtepEvidence[] = [
+      { source: 'vision', value: description, confidence: 0.7 },
+    ];
+    if (Array.isArray(parsed.place_hints)) {
+      for (const hint of parsed.place_hints) {
+        if (typeof hint !== 'string') continue;
+        evidence.push({ source: 'vision', value: `place:${hint}`, confidence: 0.5 });
+      }
     }
+
+    return {
+      sceneType: typeof parsed.scene_type === 'string' ? parsed.scene_type : 'unknown',
+      subjects: Array.isArray(parsed.subjects)
+        ? parsed.subjects.filter((item): item is string => typeof item === 'string')
+        : [],
+      mood: typeof parsed.mood === 'string' ? parsed.mood : 'unknown',
+      placeHints: Array.isArray(parsed.place_hints)
+        ? parsed.place_hints.filter((item): item is string => typeof item === 'string')
+        : [],
+      narrativeRole: typeof parsed.narrative_role === 'string' ? parsed.narrative_role : 'filler',
+      description,
+      evidence,
+      timing: result.timing,
+      roundTripMs,
+      imageCount: imagePaths.length,
+    };
   }
 
-  return {
-    sceneType: typeof parsed.scene_type === 'string' ? parsed.scene_type : 'unknown',
-    subjects: Array.isArray(parsed.subjects)
-      ? parsed.subjects.filter((item): item is string => typeof item === 'string')
-      : [],
-    mood: typeof parsed.mood === 'string' ? parsed.mood : 'unknown',
-    placeHints: Array.isArray(parsed.place_hints)
-      ? parsed.place_hints.filter((item): item is string => typeof item === 'string')
-      : [],
-    narrativeRole: typeof parsed.narrative_role === 'string' ? parsed.narrative_role : 'filler',
-    description: normalizeRecognitionDescription(parsed.description, result.description),
-    evidence,
-    timing: result.timing,
-    roundTripMs,
-    imageCount: imagePaths.length,
-  };
+  throw new Error(
+    `VLM recognition returned no visual description after ${CVLM_DESCRIPTION_MAX_ATTEMPTS} attempts`
+      + ` for ${imagePaths.length} frame(s)${lastTiming?.modelRef ? ` (${lastTiming.modelRef})` : ''}; last round trip ${lastRoundTripMs}ms`,
+  );
 }
 
-function normalizeRecognitionDescription(
-  parsedDescription: unknown,
-  responseText: string,
-): string {
-  const description = typeof parsedDescription === 'string'
+function parseRecognitionResponse(responseText: string): Record<string, unknown> {
+  try {
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return {};
+    const parsedJson = JSON.parse(jsonMatch[0]);
+    return parsedJson && typeof parsedJson === 'object' && !Array.isArray(parsedJson)
+      ? parsedJson as Record<string, unknown>
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+function normalizeRecognitionDescription(parsedDescription: unknown): string {
+  return typeof parsedDescription === 'string'
     ? parsedDescription.trim()
     : '';
-  if (description) return description;
-  return responseText
-    .replace(/```(?:json)?/giu, '')
-    .replace(/```/gu, '')
-    .trim();
 }
 
 export async function recognizeShotGroups(

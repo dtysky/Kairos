@@ -96,6 +96,7 @@ export async function decorateSliceWithSemanticTags(input: {
     sceneType?: string;
     subjects?: string[];
     placeHints?: string[];
+    materialPatterns?: string[];
   } | null;
   semanticWindow?: Pick<IInterestingWindow, 'semanticKind' | 'reason'> | null;
   vocabulary?: {
@@ -108,6 +109,7 @@ export async function decorateSliceWithSemanticTags(input: {
     materialPatterns: normalizeMaterialPatternsWithVocabulary(
       sanitizeMaterialPatterns([
         ...(input.slice.materialPatterns ?? []),
+        ...(input.recognition?.materialPatterns ?? []),
         input.slice.visualObservation,
         input.recognition?.description,
         input.report?.summary,

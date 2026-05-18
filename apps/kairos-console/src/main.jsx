@@ -723,6 +723,7 @@ function AppShell() {
                     <ChronologyPage
                       projectId={projectId}
                       config={config?.chronology}
+                      pharosContext={config?.pharosContext}
                       spans={config?.spans}
                       capabilities={capabilities}
                       jobs={activeJobs}
@@ -1406,6 +1407,7 @@ function ChronologyProgressPanel({ jobs }) {
 function ChronologyPage({
   projectId,
   config,
+  pharosContext,
   spans,
   capabilities,
   jobs,
@@ -1449,6 +1451,7 @@ function ChronologyPage({
   const [dayFilter, setDayFilter] = useState('all');
   const [selected, setSelected] = useState({});
   const [drafts, setDrafts] = useState({});
+  const chronologyTimeZone = useMemo(() => resolveChronologyTimeZone(pharosContext), [pharosContext]);
 
   useEffect(() => {
     setSelected({});
@@ -1456,12 +1459,12 @@ function ChronologyPage({
   }, [chronology?.inputsHash, chronology?.updatedAt]);
 
   const days = useMemo(() => dedupeUiStrings(events
-    .map(event => resolveChronologyDay(event))
-    .filter(Boolean)), [events]);
+    .map(event => resolveChronologyDay(event, chronologyTimeZone))
+    .filter(Boolean)), [events, chronologyTimeZone]);
   const filteredEvents = events.filter(event => {
     if (kindFilter !== 'all' && event.kind !== kindFilter) return false;
     if (statusFilter !== 'all' && event.reviewStatus !== statusFilter) return false;
-    if (dayFilter !== 'all' && resolveChronologyDay(event) !== dayFilter) return false;
+    if (dayFilter !== 'all' && resolveChronologyDay(event, chronologyTimeZone) !== dayFilter) return false;
     return true;
   });
   const selectedEventIds = Object.entries(selected)
@@ -1553,6 +1556,7 @@ function ChronologyPage({
         <div className="section-header">
           <h2>Chronology V2</h2>
           <Tag>{chronology ? `${chronology.status} · ${events.length} events` : 'missing'}</Tag>
+          <Tag>{chronologyTimeZone}</Tag>
         </div>
         <div className="chronology-toolbar">
           <div className="monitor-toolbar-group">
@@ -1626,7 +1630,7 @@ function ChronologyPage({
                 <div className="chronology-row-meta">
                   <Tag>{draft.kind}</Tag>
                   <Tag>{draft.reviewStatus}</Tag>
-                  <span>{formatChronologyTimeRange(draft)}</span>
+                  <span>{formatChronologyTimeRange(draft, chronologyTimeZone)}</span>
                   <span>{draft.spanIds?.length || 0} spans</span>
                 </div>
                 <input
@@ -1723,21 +1727,83 @@ function ChronologyPage({
   );
 }
 
-function resolveChronologyDay(event) {
+function resolveChronologyDay(event, timeZone) {
   const value = event.startAt || event.endAt || '';
-  return value.slice(0, 10);
+  return formatChronologyDate(value, timeZone);
 }
 
-function formatChronologyTimeRange(event) {
-  const start = formatChronologyTime(event.startAt);
-  const end = formatChronologyTime(event.endAt);
+function formatChronologyTimeRange(event, timeZone) {
+  const start = formatChronologyTime(event.startAt, timeZone);
+  const end = formatChronologyTime(event.endAt, timeZone);
   if (start && end && start !== end) return `${start} - ${end}`;
   return start || end || '未定时间';
 }
 
-function formatChronologyTime(value) {
+function formatChronologyTime(value, timeZone) {
   if (!value) return '';
-  return value.replace('T', ' ').replace('.000Z', 'Z').slice(0, 19);
+  const parts = getChronologyDateTimeParts(value, timeZone);
+  if (!parts) return value.replace('T', ' ').replace('.000Z', 'Z').slice(0, 19);
+  return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}:${parts.second}`;
+}
+
+function formatChronologyDate(value, timeZone) {
+  const parts = getChronologyDateTimeParts(value, timeZone);
+  if (!parts) return value.slice(0, 10);
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
+function getChronologyDateTimeParts(value, timeZone) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  try {
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: timeZone || getBrowserTimeZone(),
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+      hourCycle: 'h23',
+    });
+    const parts = new Map(formatter.formatToParts(date).map(part => [part.type, part.value]));
+    if (!parts.get('year') || !parts.get('month') || !parts.get('day') || !parts.get('hour') || !parts.get('minute') || !parts.get('second')) {
+      return null;
+    }
+    return {
+      year: parts.get('year'),
+      month: parts.get('month'),
+      day: parts.get('day'),
+      hour: parts.get('hour'),
+      minute: parts.get('minute'),
+      second: parts.get('second'),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function resolveChronologyTimeZone(pharosContext) {
+  const timezones = dedupeUiStrings((pharosContext?.trips || [])
+    .map(trip => trip?.timezone)
+    .filter(isValidUiTimeZone));
+  return timezones[0] || getBrowserTimeZone();
+}
+
+function getBrowserTimeZone() {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+}
+
+function isValidUiTimeZone(value) {
+  if (typeof value !== 'string' || !value.trim()) return false;
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: value }).format(new Date());
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function dedupeUiStrings(values) {

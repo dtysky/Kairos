@@ -21,20 +21,12 @@ const CCHRONOLOGY_GPS_MATCH_TOLERANCE_MS = 5 * 60_000;
 const CDERIVED_TRACK_MATCH_TOLERANCE_MS = 15 * 60_000;
 const CSTATIONARY_SPAN_DISTANCE_M = 200;
 const CSTATIONARY_NEIGHBOR_DISTANCE_M = 400;
-const CSTATIONARY_TEXT_MERGE_GAP_MS = 5 * 60_000;
+const CEVENT_CONTINUITY_GAP_MS = 5 * 60_000;
+const CMOVING_EVENT_CONTINUITY_MAX_SPEED_MPS = 55;
+const CROUTE_COMPANION_GAP_MS = 30_000;
+const CPHOTO_ATTACH_GAP_MS = 5 * 60_000;
 const CCHRONOLOGY_PROGRESS_BATCH_SIZE = 100;
 const CPHAROS_POINT_MIN_OVERLAP_MS = 3_000;
-const CLOCATION_COMPATIBILITY_KEYWORDS = [
-  '机场',
-  '航站楼',
-  '候机',
-  'airport',
-  'terminal',
-];
-const CAERIAL_FOLLOW_CAR_EVIDENCE_RE = /航拍跟车|无人机跟车|跟拍车辆|追车|follow(?:ing)? (?:a |the )?(?:car|vehicle|truck|suv)|tracking (?:a |the )?(?:car|vehicle|truck|suv)/iu;
-const CAERIAL_FOLLOW_CONTEXT_RE = /航拍跟随|航拍跟拍|跟随|跟拍|追踪|follow(?:ing)?|tracking/iu;
-const CAERIAL_VEHICLE_MOVEMENT_RE = /行车|车辆行驶|车(?:辆)?行驶|车辆通过|车(?:辆)?沿|车(?:辆)?在.+路|开车|自驾|driv(?:e|es|ing)|vehicle travels?|car travels?|vehicle drives?|car drives?|yellow vehicle|yellow car|suv|truck/iu;
-const CAERIAL_ROUTE_CONTEXT_RE = /道路|公路|山路|高速|路面|路线|村庄道路|蜿蜒道路|winding road|road|highway|route/iu;
 
 export interface IChronologyTimedPoint {
   lat: number;
@@ -161,6 +153,7 @@ interface IChronologyEventDraft {
   event: IChronologyEvent;
   kind: 'event' | 'route';
   rows: IChronologySpanRow[];
+  primaryRows: IChronologySpanRow[];
   directPharosShot?: IProjectPharosShot;
 }
 
@@ -386,6 +379,18 @@ function buildEventDraftsFromSortedRows(
 ): IChronologyEventDraft[] {
   const pharosDrafts = buildGroupedPharosEventDrafts(rows);
   const ordinaryRows = rows.filter(row => !row.directPharosShot);
+  const ordinaryPhotoRows = ordinaryRows.filter(isPhotoAccessoryRow);
+  const ordinaryPrimaryRows = ordinaryRows.filter(row => !isPhotoAccessoryRow(row));
+  const primaryDrafts = buildPrimaryEventDraftsFromSortedRows(ordinaryPrimaryRows, context);
+  attachPhotoRowsToEventDrafts(primaryDrafts, ordinaryPhotoRows, context);
+
+  return [...primaryDrafts, ...pharosDrafts];
+}
+
+function buildPrimaryEventDraftsFromSortedRows(
+  rows: IChronologySpanRow[],
+  context: IChronologyBuildContext,
+): IChronologyEventDraft[] {
   const events: IChronologyEventDraft[] = [];
   let current: IChronologyEventCluster | null = null;
 
@@ -395,7 +400,7 @@ function buildEventDraftsFromSortedRows(
     current = null;
   };
 
-  for (const row of ordinaryRows) {
+  for (const row of rows) {
     if (current?.kind === 'event' && canAppendToStationaryEvent(current, row, context)) {
       current.rows.push(row);
       continue;
@@ -414,7 +419,99 @@ function buildEventDraftsFromSortedRows(
   }
   flush();
 
-  return [...events, ...pharosDrafts];
+  return events;
+}
+
+function attachPhotoRowsToEventDrafts(
+  drafts: IChronologyEventDraft[],
+  photoRows: IChronologySpanRow[],
+  context: IChronologyBuildContext,
+): void {
+  for (const row of photoRows) {
+    const draft = pickPhotoAttachmentDraft(drafts, row, context);
+    if (!draft) continue;
+    attachPhotoRowToDraft(draft, row);
+  }
+}
+
+function pickPhotoAttachmentDraft(
+  drafts: IChronologyEventDraft[],
+  row: IChronologySpanRow,
+  context: IChronologyBuildContext,
+): IChronologyEventDraft | null {
+  const routeDraft = pickPhotoAttachmentDraftByKind(drafts, row, context, 'route');
+  if (routeDraft) return routeDraft;
+  return pickPhotoAttachmentDraftByKind(drafts, row, context, 'event');
+}
+
+function pickPhotoAttachmentDraftByKind(
+  drafts: IChronologyEventDraft[],
+  row: IChronologySpanRow,
+  context: IChronologyBuildContext,
+  kind: 'event' | 'route',
+): IChronologyEventDraft | null {
+  let best: { draft: IChronologyEventDraft; score: number } | null = null;
+  for (const draft of drafts.filter(item => item.kind === kind)) {
+    const score = scorePhotoAttachment(draft, row, context);
+    if (score == null) continue;
+    if (best && score >= best.score) continue;
+    best = { draft, score };
+  }
+  return best?.draft ?? null;
+}
+
+function scorePhotoAttachment(
+  draft: IChronologyEventDraft,
+  row: IChronologySpanRow,
+  context: IChronologyBuildContext,
+): number | null {
+  const primaryRows = getDraftPrimaryRows(draft);
+  if (primaryRows.length === 0) return null;
+  const gapMs = getPhotoAttachmentGapMs(primaryRows, row);
+  if (gapMs == null) return null;
+  if (draft.kind === 'route' && gapMs > CPHOTO_ATTACH_GAP_MS) return null;
+  const nearest = findNearestRowsByTime(primaryRows, row);
+  if (!nearest || hasPharosPointBoundaryBetween(nearest, row, context)) return null;
+  return gapMs * 10 + Math.abs((nearest.startMs ?? 0) - (row.startMs ?? 0));
+}
+
+function attachPhotoRowToDraft(
+  draft: IChronologyEventDraft,
+  row: IChronologySpanRow,
+): void {
+  draft.rows = [...draft.rows, row].sort(compareSpanRows);
+  draft.event = {
+    ...draft.event,
+    summary: summarizeRows(draft.rows),
+    startAt: minIso(draft.rows.map(item => item.startAt)),
+    endAt: maxIso(draft.rows.map(item => item.endAt ?? item.startAt)),
+    spanIds: draft.rows.map(item => item.span.id),
+  };
+}
+
+function getPhotoAttachmentGapMs(
+  rows: IChronologySpanRow[],
+  row: IChronologySpanRow,
+): number | undefined {
+  const rowStartMs = row.startMs;
+  const rowEndMs = row.endMs ?? row.startMs;
+  const draftStartMs = minNumber(rows.map(item => item.startMs));
+  const draftEndMs = maxNumber(rows.map(item => item.endMs ?? item.startMs));
+  if (rowStartMs == null || rowEndMs == null || draftStartMs == null || draftEndMs == null) return undefined;
+  if (rowEndMs < draftStartMs) return draftStartMs - rowEndMs;
+  if (rowStartMs > draftEndMs) return rowStartMs - draftEndMs;
+  return 0;
+}
+
+function findNearestRowsByTime(
+  rows: IChronologySpanRow[],
+  row: IChronologySpanRow,
+): IChronologySpanRow | undefined {
+  const rowMidpointMs = getRowMidpointMs(row);
+  return [...rows]
+    .sort((left, right) =>
+      Math.abs(getRowMidpointMs(left) - rowMidpointMs) - Math.abs(getRowMidpointMs(right) - rowMidpointMs)
+      || compareSpanRows(left, right))[0];
 }
 
 function buildGroupedPharosEventDrafts(rows: IChronologySpanRow[]): IChronologyEventDraft[] {
@@ -507,7 +604,7 @@ async function buildSpanEventDraftsWithProgress(
     current: 0,
     total: Math.max(1, rows.length),
     unit: 'row',
-    detail: `准备聚合 ${rows.length} 个 rows：先按 Pharos point shot 全局归并，再聚合普通 route/event`,
+    detail: `准备聚合 ${rows.length} 个 rows：先按 Pharos point shot 全局归并，再聚合普通非照片 route/event，最后按时间把照片优先挂到 route、再挂最近 event`,
     extra: {
       spanCount: spans.length,
       rowCount: rows.length,
@@ -679,9 +776,10 @@ function resolveDraftAnchorPoint(
   role: 'start' | 'end' | 'midpoint',
   context: IChronologyBuildContext,
 ): IChronologyPoint | undefined {
+  const rows = getDraftPrimaryRows(draft);
   const targetMs = resolveDraftAnchorTargetMs(draft, role);
   if (targetMs == null) {
-    return resolveRowFallbackAnchor(draft.rows, targetMs, role);
+    return resolveRowFallbackAnchor(rows, targetMs, role);
   }
 
   const tripIds = collectDraftPharosTripIds(draft);
@@ -714,20 +812,21 @@ function resolveDraftAnchorPoint(
     return toChronologyPoint(projectPoint, 'project-gpx');
   }
 
-  const derivedPoint = pickBestDerivedAnchor(context.derivedTrackEntries, targetMs, draft.rows);
+  const derivedPoint = pickBestDerivedAnchor(context.derivedTrackEntries, targetMs, rows);
   if (derivedPoint) {
     return derivedPoint;
   }
 
-  return resolveRowFallbackAnchor(draft.rows, targetMs, role);
+  return resolveRowFallbackAnchor(rows, targetMs, role);
 }
 
 function resolveDraftAnchorTargetMs(
   draft: IChronologyEventDraft,
   role: 'start' | 'end' | 'midpoint',
 ): number | undefined {
-  const startMs = parseTimestamp(draft.event.startAt) ?? minNumber(draft.rows.map(row => row.startMs));
-  const endMs = parseTimestamp(draft.event.endAt) ?? maxNumber(draft.rows.map(row => row.endMs ?? row.startMs));
+  const rows = getDraftPrimaryRows(draft);
+  const startMs = minNumber(rows.map(row => row.startMs)) ?? parseTimestamp(draft.event.startAt);
+  const endMs = maxNumber(rows.map(row => row.endMs ?? row.startMs)) ?? parseTimestamp(draft.event.endAt);
   if (role === 'start') return startMs;
   if (role === 'end') return endMs ?? startMs;
   if (startMs == null && endMs == null) return undefined;
@@ -856,7 +955,7 @@ function applyResolvedLocationToChronologyEvent(
       ? (isBadGeneratedChronologyTitle(event.title) || event.title === 'Pharos event'
         ? resolvedLocation ?? event.title
         : event.title)
-      : resolveClusterTitleWithLocation(draft.rows, resolvedLocation) ?? event.title,
+      : resolveClusterTitleWithLocation(getDraftPrimaryRows(draft), resolvedLocation) ?? event.title,
     location: resolvedLocation,
   };
 }
@@ -1275,16 +1374,11 @@ function canAppendToStationaryEvent(
   context: IChronologyBuildContext,
 ): boolean {
   if (cluster.directPharosShot) return false;
-  if (!isStationaryEventCandidate(row)) return false;
+  if (!isEventClusterCandidate(row)) return false;
   const previous = cluster.rows.at(-1);
-  if (!previous || !isStationaryEventCandidate(previous)) return false;
+  if (!previous || !isEventClusterCandidate(previous)) return false;
   if (hasPharosPointBoundaryBetween(previous, row, context)) return false;
-  const leftPoint = previous.spatial;
-  const rightPoint = row.spatial;
-  if (leftPoint && rightPoint) {
-    return distanceMeters(leftPoint, rightPoint) <= CSTATIONARY_NEIGHBOR_DISTANCE_M;
-  }
-  return canAppendStationaryEventByText(previous, row);
+  return areRowsChronologicallyContinuous(previous, row);
 }
 
 function canAppendToRoute(
@@ -1294,77 +1388,57 @@ function canAppendToRoute(
 ): boolean {
   const previous = cluster.rows.at(-1);
   if (!previous) return false;
-  if (!isMovingRouteCandidate(row)) return false;
-  return !hasPharosPointBoundaryBetween(previous, row, context);
+  if (hasPharosPointBoundaryBetween(previous, row, context)) return false;
+  return isMovingRouteCandidate(row) || canAppendRouteCompanion(previous, row);
 }
 
-function isStationaryEventCandidate(row: IChronologySpanRow): boolean {
+function isEventClusterCandidate(row: IChronologySpanRow): boolean {
   if (isMovingRouteCandidate(row)) return false;
-  if (row.motion === 'moving') return false;
-  if (row.motion === 'stationary') return true;
-  return isEventPreferredSpan(row.span)
-    && (Boolean(row.spatial) || buildStationaryLocationTextCandidates(row).length > 0);
+  return isEventPreferredSpan(row.span);
 }
 
-function canAppendStationaryEventByText(
+function areRowsChronologicallyContinuous(
   previous: IChronologySpanRow,
   row: IChronologySpanRow,
 ): boolean {
-  if (!isEventPreferredSpan(previous.span) || !isEventPreferredSpan(row.span)) return false;
   const previousEndMs = previous.endMs ?? previous.startMs;
   if (previousEndMs == null || row.startMs == null) return false;
   const gapMs = Math.max(0, row.startMs - previousEndMs);
-  if (gapMs > CSTATIONARY_TEXT_MERGE_GAP_MS) return false;
-  return areStationaryLocationTextsCompatible(previous, row);
+  if (gapMs > CEVENT_CONTINUITY_GAP_MS) return false;
+  const leftPoint = previous.spatial;
+  const rightPoint = row.spatial;
+  if (leftPoint && rightPoint) {
+    const distanceM = distanceMeters(leftPoint, rightPoint);
+    if (distanceM <= CSTATIONARY_NEIGHBOR_DISTANCE_M) return true;
+    const elapsedSeconds = Math.max(1, gapMs / 1000);
+    return distanceM / elapsedSeconds <= CMOVING_EVENT_CONTINUITY_MAX_SPEED_MPS;
+  }
+  return areSameAssetRowsTemporallyAdjacent(previous, row, gapMs);
 }
 
-function areStationaryLocationTextsCompatible(
-  left: IChronologySpanRow,
-  right: IChronologySpanRow,
+function areSameAssetRowsTemporallyAdjacent(
+  previous: IChronologySpanRow,
+  row: IChronologySpanRow,
+  gapMs: number,
 ): boolean {
-  const leftCandidates = buildStationaryLocationTextCandidates(left);
-  const rightCandidates = buildStationaryLocationTextCandidates(right);
-  for (const leftText of leftCandidates) {
-    for (const rightText of rightCandidates) {
-      if (areLocationTextValuesCompatible(leftText, rightText)) {
-        return true;
-      }
-    }
-  }
-  return false;
+  return previous.span.assetId === row.span.assetId
+    && gapMs <= CEVENT_CONTINUITY_GAP_MS;
 }
 
-function buildStationaryLocationTextCandidates(row: IChronologySpanRow): string[] {
-  return dedupeStrings([
-    sanitizeChronologyLocationText(row.location),
-    sanitizeChronologyLocationText(row.spatial?.locationText),
-    sanitizeChronologyLocationText(row.span.materialPatterns[1]),
-  ]);
-}
-
-function areLocationTextValuesCompatible(left: string, right: string): boolean {
-  const leftIdentity = normalizeChronologyLocationIdentity(left);
-  const rightIdentity = normalizeChronologyLocationIdentity(right);
-  if (!leftIdentity || !rightIdentity) return false;
-  if (leftIdentity === rightIdentity) return true;
-  if (leftIdentity.length >= 4 && rightIdentity.length >= 4) {
-    if (leftIdentity.includes(rightIdentity) || rightIdentity.includes(leftIdentity)) {
-      return true;
-    }
-  }
-  return CLOCATION_COMPATIBILITY_KEYWORDS.some(keyword => {
-    const normalizedKeyword = normalizeChronologyLocationIdentity(keyword);
-    return normalizedKeyword.length > 0
-      && leftIdentity.includes(normalizedKeyword)
-      && rightIdentity.includes(normalizedKeyword);
-  });
+function canAppendRouteCompanion(
+  previous: IChronologySpanRow,
+  row: IChronologySpanRow,
+): boolean {
+  if (isPointLikeSpan(row)) return false;
+  const previousEndMs = previous.endMs ?? previous.startMs;
+  if (previousEndMs == null || row.startMs == null) return false;
+  const gapMs = Math.max(0, row.startMs - previousEndMs);
+  return gapMs <= CROUTE_COMPANION_GAP_MS;
 }
 
 function isMovingRouteCandidate(row: IChronologySpanRow): boolean {
   if (row.directPharosShot) return false;
   if (row.span.type === 'drive') return true;
-  if (row.span.type === 'aerial') return isAerialRouteLikeSpan(row.span);
-  if (isRouteLikeSpan(row.span)) return true;
   if (row.motion === 'stationary') return false;
   return false;
 }
@@ -1383,6 +1457,7 @@ function buildClusterEventDraft(cluster: IChronologyEventCluster): IChronologyEv
     event: buildClusterEvent(cluster),
     kind: cluster.kind,
     rows: [...cluster.rows],
+    primaryRows: [...cluster.rows],
     directPharosShot: cluster.directPharosShot,
   };
 }
@@ -1509,7 +1584,6 @@ function applyExistingEventReview(
 
 function isEventPreferredSpan(span: IKtepSlice): boolean {
   return span.type === 'aerial'
-    || span.type === 'photo'
     || span.type === 'broll'
     || span.type === 'talking-head'
     || span.type === 'timelapse'
@@ -1517,29 +1591,12 @@ function isEventPreferredSpan(span: IKtepSlice): boolean {
     || span.type === 'unknown';
 }
 
-function isRouteLikeSpan(span: IKtepSlice): boolean {
-  if (span.type === 'drive') return true;
-  const text = normalizeSemanticText([
-    span.semanticKind,
-    span.visualObservation,
-    span.transcript,
-    ...span.materialPatterns.slice(1),
-  ].filter(Boolean).join(' '));
-  return /车内|行车|开车|自驾|路上|公路|高速|山路|drive|driving|road|route|highway|inside car|car cabin/u.test(text);
+function isPhotoAccessoryRow(row: IChronologySpanRow): boolean {
+  return row.span.type === 'photo' || row.asset?.kind === 'photo';
 }
 
-function isAerialRouteLikeSpan(span: IKtepSlice): boolean {
-  const text = normalizeSemanticText([
-    span.semanticKind,
-    span.visualObservation,
-    span.transcript,
-    ...span.materialPatterns,
-  ].filter(Boolean).join(' '));
-  if (CAERIAL_FOLLOW_CAR_EVIDENCE_RE.test(text)) return true;
-  const hasRouteContext = CAERIAL_ROUTE_CONTEXT_RE.test(text);
-  if (!hasRouteContext) return false;
-  if (CAERIAL_VEHICLE_MOVEMENT_RE.test(text)) return true;
-  return CAERIAL_FOLLOW_CONTEXT_RE.test(text);
+function getDraftPrimaryRows(draft: Pick<IChronologyEventDraft, 'rows' | 'primaryRows'>): IChronologySpanRow[] {
+  return draft.primaryRows.length > 0 ? draft.primaryRows : draft.rows;
 }
 
 function resolveClusterTitle(rows: IChronologySpanRow[]): string | undefined {

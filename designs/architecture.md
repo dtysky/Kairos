@@ -13,8 +13,8 @@
 
 - Analyze 只维护 `analysis/asset-reports/*.json`，不再在阶段末自动生成 `store/spans.json` 或 `media/chronology.json`
 - `/chronology` 是 Analyze 和 Script 之间的正式 materialize + review 页，提供两步：
-- `span-rebuild`：只读取 `store/assets.json` 与 `analysis/asset-reports/*.json`，先确定性切片，再通过本地 qwen 文本 LM 从每个 span 的 `type / semanticKind / transcript / visualObservation` 按 10 个 span 一批生成中文 `materialPatterns[]`；LM prompt 请求按输入顺序排列的 7-tag 短语行，代码按 chunk 顺序写回 span，并只确定性修补前四个槽；第 5 项情景故事应由 LLM 输出，可写 `情景不明`，缺失时先进入 failed span 列表并在主 chunk 后单条补处理，仍缺失时只写固定 `情景不明`；第 6-7 项必须由 LLM 输出，缺失时不补写，也不因自由槽缺失阻塞前五槽可用的行；已完成 checkpoint 和 failed span 列表写到 `.tmp/chronology/span-rebuild.partial.json`，全量收口后写 `store/spans.json` 与 `store/spans.meta.json`
-  - `chronology-build`：要求 spans 存在且 `status=fresh`，再从 assets + fresh spans + root time + Pharos context + 项目 GPX/derived track 生成 Chronology V2 `media/chronology.json`；生成时先归属 Pharos 单点 actual window，再按素材类型、航拍跟车证据、GPS 稳定性和相邻距离聚合剩余 spans
+- `span-rebuild`：只读取 `store/assets.json` 与 `analysis/asset-reports/*.json`，先确定性切片并校验所有 keep 的非音频素材都有 report、所有 material span 都有 Analyze 产出的 `visualObservation`；通过本地 qwen 文本 LM 从每个 span 的 `type / semanticKind / transcript / visualObservation` 按素材时间顺序 10 个 span 一批生成中文 `materialPatterns[]`；LM prompt 请求按输入顺序排列的 7-tag 短语行，代码按 chunk 顺序写回 span，并严格校验前四个槽；第 1 项是素材自身可观察的拍摄视角/构图形态，不得重复 `type` 的照片/视频载体语义，也不得写“建场/记录/成果”等后续剪辑用途；任一必需槽缺失或冲突都进入 failed span 列表并在主 chunk 后单条补处理，补处理仍不合格则阻塞本次 rebuild，不做启发式改写或兼容映射；已完成 checkpoint 和 failed span 列表写到 `.tmp/chronology/span-rebuild.partial.json`，全量收口后写 `store/spans.json` 与 `store/spans.meta.json`
+- `chronology-build`：要求 spans 存在且 `status=fresh`，再从 assets + fresh spans + root time + Pharos context + 项目 GPX/derived track 生成 Chronology V2 `media/chronology.json`；生成时先归属 Pharos 单点 actual window，再按结构化素材类型、时间连续性和 GPS 轨迹连续性聚合剩余 spans
 - 新生成的 span 是素材片段索引，不承载时空解释、Pharos 引用、GPS evidence、route role、chronology event 或速度策略
 - `store/spans.meta.json` 固定记录 `schemaVersion / status / generatedAt / inputsHash / assetCount / reportCount / spanCount / warnings`
 - `inputsHash` 只覆盖会影响 spans 切片和 span 级文本事实的 asset/report 字段，以及 material-pattern prompt version；不包含 `labels`、`speedCandidate`、Pharos、GPS cache 或 chronology
@@ -651,22 +651,23 @@
 - `analysis/asset-reports/*.json` 是 Analyze 的完整事实真相，`store/spans.json` 与 `media/chronology.json` 是从 `/chronology` 显式重建的派生索引
 - `media/chronology.json` 的正式协议是 Chronology V2 项目级编年史文档，而不是 v1 的一素材一行摘要数组
 - Chronology V2 只允许顶层 `schemaVersion/status/generatedAt/updatedAt/confirmedAt/inputsHash/assetIndex/events`；正式事件字段只允许 `id/kind/reviewStatus/title/summary/startAt/endAt/location/route/spanIds`
+- `/chronology` Console 只在展示和日期筛选时把 `startAt/endAt` 格式化到项目 Pharos trip 的 `timezone`；Chronology V2 文件继续保存 ISO 时间真值，缺少有效 trip timezone 时才使用浏览器时区显示
 - 正式 chronology 不暴露 Pharos、`origin`、`source`、`confidence`、`assetIds`、`materialChannels` 或 `speechAnchors`；Pharos 只能作为生成输入被折叠成普通 `event / route / gap`
 - `gap` 可以没有 `spanIds`，表示编年史确认存在但素材未覆盖或仍待补的缺口
 - `chronology-build` 先按 Pharos 单点真实时间窗归属：span 与 `expected / unexpected` 且非 `continuous` 的 actual window 存在有意义重叠时可直接进入该事件；多个 point 同时覆盖同一 span 时，先按显式 `actual_captures[]` 优先级归属，仍同分时优先更窄的 actual window。Pharos 单点事件是 route 硬边界，Pharos `continuous` 只提供 route 时间 / summary 上下文，不把多个事件间 route 强行合并，且不能把 continuous route prose 当作 chronology 地点字段
 - Pharos 单点事件来自人工行程事实，生成后默认 `reviewStatus=confirmed`；无素材命中的 Pharos `gap` 仍默认 `pending`
 - `chronology-build` 写项目级 chronology 时对 GPS reverse-geocode 是硬依赖：无 service、cache/provider miss 或 route/event GPS anchor 无法反查时必须失败，不允许用素材语义标签、`materialPatterns`、manual itinerary 或 Pharos continuous prose 补地点
-- 普通聚合按 chronology 顺序只合并连续段：GPS 来源优先级为 Pharos trip GPX / 项目 `gps/merged.json` / `gps/derived.json` / report 中 `pharos|gpx|derived-track` / embedded GPS 兜底；单 span 起止 `<=200m` 是静态候选，相邻代表点 `<=400m` 可合并，同地点跨移动段或 Pharos 单点事件不全局合并
-- `drive` / route-like 车内素材优先进入事件间 `route`，即使短 span 起止 GPS 距离很小也不得拆成普通 event；行车过程中的车内自拍口播、字幕和堵车描述默认并入 route 摘要，不能单独拆出事件
+- 普通聚合按 chronology 顺序只合并连续段：GPS 来源优先级为 Pharos trip GPX / 项目 `gps/merged.json` / `gps/derived.json` / report 中 `pharos|gpx|derived-track` / embedded GPS 兜底；单 span 起止 `<=200m` 是静态候选，相邻代表点 `<=400m` 可合并；移动中的非 route 观察可在相邻时间间隔 `<=5min` 且两点间速度连续合理时合并；跨长时间间隔、跨不连续轨迹或跨 Pharos 单点事件不全局合并；普通非 Pharos 照片不参与一阶切分，不单独生成 event；照片先按时间范围优先挂到 route，剩余照片再按时间最近挂到普通 event 的 `spanIds`
+- `route` 只由结构化 `drive` 素材和 route cluster 的短间隔伴随片段产生；`公路 / 道路 / highway / road`、车内、航拍跟随等文本关键词只可进入摘要，不得触发 event/route 聚合判定；反查地名、标题和 `materialPatterns` 不参与聚合
 - `interestingWindows[]` 是细扫前计划，只表达候选窗口、编辑边界与 reason；细扫结果不得继续混写到这个字段，speed 不进入 span 生成流程
-- `fineScanWindows[]` 是细扫后窗口结果，只保存 recognized/dropped 状态、窗口时间、帧引用与一句 `visualObservation`
+- `fineScanWindows[]` 是细扫后窗口结果，只保存 recognized/dropped 状态、窗口时间、帧引用与一句 `visualObservation`；recognized 窗口缺视觉描述必须在 Analyze/fine-scan 阶段失败
 - `Span` 当前只承载素材片段事实索引：
   - `materialPatterns: string[]`
   - `visualObservation?: string`
   - source/edit 时间窗、transcript / transcriptSegments、speechCoverage 等素材事实字段
 - 新生成的 span 只由 `store/assets.json + analysis/asset-reports/*.json` 生成，不读取 Pharos context、GPS cache 或 chronology
 - 新生成的 span 不持久化 `speedCandidate / pharosRefs / grounding / spatialEvidence / location / routeRole / chronology event` 字段；旧 spans 可临时读取兼容，但下一次 `span-rebuild` 必须写成 stripped spans
-- `materialPatterns` 是 span 重建阶段由 LM 从最小 span 文本事实生成的中文脚本可消费短语数组，不再是 `{ phrase, confidence, evidenceRefs }`；生成上下文只允许 `type / semanticKind / transcript / visualObservation`，不传 span id、`labels`、`report.summary`、GPS / 时间 / Pharos 归属；`span-rebuild` 当前按 10 个 span 一批调用本地 qwen 文本 LM，prompt 要求 `string[][]` ordered rows 且每行正好 7 项，代码按 chunk 顺序拼回最终 spans，并确定性修补前四个槽：受控 `视角类型`、提取 `当前环境`、可观察自然 `天气光线`、二元 `口播语音`；第 5 项是 LLM 情景故事或 `情景不明`，缺失时进入 failed span 列表，主 chunk 完成后单条补处理，仍缺失则只写固定 `情景不明`；第 6-7 项必须来自 LM，代码不得启发式补写，且自由槽缺失不应在前五槽可用时阻塞重建；必须在 `.tmp/chronology/progress.json` 写入切片、chunk LM、failed-list、ETA、重试、repair、warning/fallback 与最终写入进度，并在 `.tmp/chronology/span-rebuild.partial.json` 写入已完成 materialPatterns checkpoint 和 failed span 列表；正式 `store/spans.json` 只在全量收口后原子写入，供 `/chronology` 监控
+- `materialPatterns` 是 span 重建阶段由 LM 从最小 span 文本事实生成的中文脚本可消费短语数组，不再是 `{ phrase, confidence, evidenceRefs }`；生成上下文只允许 `type / semanticKind / transcript / visualObservation`，不传 span id、`labels`、`report.summary`、GPS / 时间 / Pharos 归属；`span-rebuild` 当前按素材时间顺序 10 个 span 一批调用本地 qwen 文本 LM，prompt 要求 `string[][]` ordered rows 且每行正好 7 项，代码按 chunk 顺序拼回最终 spans，并严格校验前四个槽：受控 `拍摄视角/构图形态`、提取 `当前环境`、可观察自然 `天气光线`、二元 `口播语音`；第 1 项不得重复 photo/video 等载体类型或写后续剪辑用途；第 5 项是 LM 情景故事或 `情景不明`，第 6-7 项必须来自 LM；代码不得启发式补写、替换旧词或兼容迁移，重试后仍不合格则本次 rebuild 失败；必须在 `.tmp/chronology/progress.json` 写入切片、chunk LM、failed-list、ETA、重试、warning 与最终写入进度，并在 `.tmp/chronology/span-rebuild.partial.json` 写入已完成 materialPatterns checkpoint 和 failed span 列表；正式 `store/spans.json` 只在全量收口后原子写入，供 `/chronology` 监控
 - 旧五轴语义树 `narrativeFunctions / shotGrammar / viewpointRoles / subjectStates / span.evidence` 已退出正式 span 协议；下游不得再消费这些字段
 - Analyze 过程中 coarse/direct、fine-scan 与 finalize 都不直接 append 或 rebuild `store/spans.json`；`span-rebuild` 只写 `store/spans.json` 与 `store/spans.meta.json`，`chronology-build` 要求 fresh spans 后再写 `media/chronology.json`
 - fine-scan report 缺少完整 `fineScanWindows[]` 时，重建必须失败并要求重新 Analyze/fine-scan；不得读取旧 spans 做兼容迁移或 fallback

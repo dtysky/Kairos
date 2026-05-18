@@ -324,13 +324,13 @@ analysis/asset-reports/<assetId>.json
 Analyze 运行过程中和阶段末都不再写 `store/spans.json`；span 由 `/chronology` 的 `span-rebuild` 显式生成：
 
 - `direct`
-  - 只写 asset report，span 后续从 report `summary / interestingWindows` 派生；`materialPatterns` 只在 span 重建阶段由本地 qwen 文本 LM 从 span 级文本事实生成
+  - 只写 asset report，span 后续从 report `summary / interestingWindows` 派生；`summary` 必须来自有效 VLM 视觉描述，缺失时 Analyze 失败而不是由 span 重建补猜；`materialPatterns` 只在 span 重建阶段由本地 qwen 文本 LM 从 span 级文本事实生成
 - `fine-scan`
   - 只写 report `fineScanWindows[]`；recognized/dropped 都保存，只有 recognized 窗口可派生 span；窗口内不保存 `recognitionRaw` 或 `materialPatterns`
 - `skip/drop`
   - 只保留 report，不派生 span
 
-如果 fine-scan report 缺少完整 `fineScanWindows[]`，新版 span 重建必须失败并提示重新 Analyze/fine-scan；不能用旧 spans 或空 recognized window 兜底。
+如果 fine-scan report 缺少完整 `fineScanWindows[]`，或 recognized window 缺少 `visualObservation`，新版 span 重建必须失败并提示重新 Analyze/fine-scan；不能用旧 spans、空 recognized window 或下游猜测兜底。
 
 `store/spans.json` 的当前正式语义：
 
@@ -340,8 +340,8 @@ Analyze 运行过程中和阶段末都不再写 `store/spans.json`；span 由 `/
 - 不写 `speedCandidate / pharosRefs / grounding / spatialEvidence / location / routeRole / chronology event`
 - `source-speech` 的持久化目标是素材事实窗口；只合并同 asset、同 semanticKind、重叠或间隔 `<=250ms` 的近重复窗口，不做 6000ms 口播合并
 - 细粒度 utterance / pause timing 继续保留在 `transcriptSegments`
-- `materialPatterns` 固定为中文 `string[]`，只保存脚本阶段可消费的素材事实短语；prompt 要求每条 7 项。前四项固定为确定性 `视角类型 / 当前环境 / 天气光线 / 口播语音`，其中视角来自受控词表，环境是从当前 span 文本事实提取的短语，天气光线只写可观察自然现象，口播语音只写 `有口播语音 / 无口播语音`；第 5 项是 LLM 短情景故事或 `情景不明`，第 6-7 项是 LLM 短 factual free tags；代码不得启发式补写自由标签，第 5 项缺失时进入 failed span 列表并在主 chunk 后单条补处理，仍缺失时只写固定 `情景不明` 收口
-- `visualObservation?: string` 保存 span 级一句视觉事实描述
+- `materialPatterns` 固定为中文 `string[]`，只保存脚本阶段可消费的素材事实短语；prompt 要求每条 7 项。前四项固定为 `拍摄视角/构图形态 / 当前环境 / 天气光线 / 口播语音`，其中视角来自受控词表，环境是从当前 span 文本事实提取的短语，天气光线只写可观察自然现象，口播语音只写 `有口播语音 / 无口播语音`；第 1 项只描述素材自身可观察的拍摄视角/构图形态，不得重复 `type` 的照片/视频载体语义，也不得写“建场/记录/成果”等后续剪辑用途；第 5 项是 LLM 短情景故事或 `情景不明`，第 6-7 项是 LLM 短 factual free tags；代码只校验，不做启发式补写、旧词替换或兼容映射，重试后仍不合格则 `span-rebuild` 失败
+- `visualObservation?: string` 保存 span 级一句视觉事实描述；所有 keep 的非音频 material span 都必须有该字段，缺失属于 Analyze 阶段失败
 - GPS / 时间 / Pharos 归属不进入 `materialPatterns`，应从 chronology / spatial / Pharos context 层 join
 - 旧五轴语义树 `narrativeFunctions / shotGrammar / viewpointRoles / subjectStates / span.evidence` 不再属于正式 span 输出
 - `store/spans.meta.json` 固定记录 freshness、input hash、counts 和 warnings；hash 不包含 labels、speed hints、Pharos、GPS cache 或 chronology，但包含 material-pattern prompt version
@@ -391,7 +391,7 @@ const localPath = resolveAssetLocalPath(asset, roots);
 - `shouldFineScan`
 - `fineScanMode`
 
-注意：当前 `interestingWindows` 不是“单一最终剪辑窗口”，而是细扫前计划；`fineScanWindows` 才是细扫后的窗口观察结果。只要 asset report 已有完整 coarse facts 和 `fineScanWindows`，`span-rebuild` 不应重新视觉分析或重跑 ASR；它只启动本地 ML 服务调用 qwen 文本 LM，对纯文本 span facts 生成 ordered 7-tag `materialPatterns[]` 行，再由代码按 chunk 顺序写回 spans，只修补前四个确定性槽；第 5 个情景故事应来自 LLM，缺失则进入 failed span 列表并在主 chunk 后单条补处理，仍缺失时只写固定 `情景不明`；两个自由标签必须来自 LLM，缺失时不补写，也不因自由槽缺失阻塞前五槽可用的行。
+注意：当前 `interestingWindows` 不是“单一最终剪辑窗口”，而是细扫前计划；`fineScanWindows` 才是细扫后的窗口观察结果。只要 asset report 已有完整 coarse facts 和 `fineScanWindows`，`span-rebuild` 不应重新视觉分析或重跑 ASR；它只启动本地 ML 服务调用 qwen 文本 LM，对纯文本 span facts 生成 ordered 7-tag `materialPatterns[]` 行，再由代码按素材时间 chunk 顺序写回 spans，并严格校验必需槽；第 1 槽是拍摄视角/构图形态，不是剪辑用途或载体类型；第 5-7 项必须来自 LM。缺失、旧词或冲突输出进入 failed span 列表并单条重试，重试后仍不合格则失败，不启发式替换。缺失 `visualObservation` 不是 `情景不明` 输入，而是 Analyze/fine-scan 失败。
 
 ## Chronology V2
 
@@ -404,8 +404,8 @@ const localPath = resolveAssetLocalPath(asset, roots);
 - `chronology-build` 先按 Pharos 单点真实时间窗归属：span 与 `expected / unexpected` 且非 `continuous` 的 actual window 存在有意义重叠时可直接进入该普通 `event`；多个重叠 point 先按显式 `actual_captures[]` 优先级归属，仍同分时优先更窄 actual window。Pharos 单点事件是 route 硬边界，Pharos `continuous` 只提供 route 的时间 / summary 上下文，不把多个事件间 route 强行合并，也不得把 continuous route prose 写入 chronology 地点字段。
 - Pharos 单点事件来自人工行程事实，生成后默认 `reviewStatus=confirmed`；无素材命中的 Pharos `gap` 仍默认 `pending`，等待人工判断缺口是否可接受。
 - 项目级 `chronology-build` 写 chronology 时必须使用 GPS reverse-geocode service；service 显式不可用、无 provider 且 cache miss、或任一 route/event GPS anchor 反查失败都必须报错并停止写入，不允许退回 `placeHints` / `materialPatterns` / Pharos continuous prose / 英文通用地点。
-- 剩余 span 只按 chronology 顺序合并连续段：GPS 来源优先级为 Pharos trip GPX / 项目 `gps/merged.json` / `gps/derived.json` / report 中 `pharos|gpx|derived-track` / embedded GPS 兜底；单 span 起止 `<=200m` 是静态候选，相邻代表点 `<=400m` 可合并为同地点事件。
-- `drive` / route-like 车内素材，以及有跟车、跟随车辆、车辆行驶等明确移动主体证据的 `aerial` 航拍跟车素材，优先进入事件间 `route`，即使短 span 起止 GPS 距离很小也不得拆成普通 `event`；行车过程中的车内自拍口播、字幕和堵车描述默认并入 route 摘要，不能单独拆成独立 `event`。
+- 剩余 span 只按 chronology 顺序合并连续段：GPS 来源优先级为 Pharos trip GPX / 项目 `gps/merged.json` / `gps/derived.json` / report 中 `pharos|gpx|derived-track` / embedded GPS 兜底；单 span 起止 `<=200m` 是静态候选，相邻代表点 `<=400m` 可合并为同地点事件；移动中的非 route 观察可在相邻时间间隔 `<=5min` 且两点间速度连续合理时合并为同一 event。
+- `route` 只由结构化 `drive` 素材和 route cluster 的短间隔伴随片段产生；普通非 Pharos 照片不参与一阶 event/route 切分，不能作为 event 打断 route；照片先按时间范围优先挂到 route，剩余照片再按时间最近挂到普通 event 的 `spanIds`；`materialPatterns / visualObservation / transcript` 中的 `公路 / 道路 / highway / road / 车内 / 航拍跟随` 等词只可进入摘要，不得触发 event/route 聚合判定；反查地名、标题和素材语义也不得参与聚合。
 - `chronology-build` 写出的 V2 默认是 `draft`，必须经 `/chronology` 人工确认后 Script / Timeline 才能消费。
 
 8. 自动决定是否细扫，并只把结果写入 `fineScanWindows`
@@ -420,7 +420,7 @@ const localPath = resolveAssetLocalPath(asset, roots);
 - 只要开始执行一个可能持续较久的 Analyze，就应同步启动或刷新本地监控面板，而不是只在后台静默运行
 - 启动 Analyze 后，agent 应主动把监控面板 URL 告诉用户；如果分析已经开始但面板还没打开，应立即补开
 - 正式 Analyze 监控路由是 `http://127.0.0.1:8940/analyze`
-- `/chronology` 页面会显示活跃 `spatial-refresh / span-rebuild / chronology-build` jobs；`spatial-refresh / chronology-build` 不启动 Kairos ML，`span-rebuild` 会启动本地 ML 服务按 10 个 span 一批调用 qwen 文本 LM 做纯文本 materialPatterns 归纳，LM 只返回 ordered rows，代码按 chunk 顺序写回 spans，但不重跑 VLM / ASR，并显示 `.tmp/chronology/progress.json` 中的 chunk、失败列表补处理、retry/repair/warning/fallback 进度；已完成 materialPatterns checkpoint 和 failed span 列表写入 `.tmp/chronology/span-rebuild.partial.json`，正式 `store/spans.json` 只在全量收口后写入。`chronology-build` 必须覆盖同一 progress 文件为自己的 live 阶段，不得显示旧 span-rebuild cache；长循环中至少按批次更新 span 时空归属解析、event/route 聚合计数和 GPS reverse-geocode 地名解析计数。
+- `/chronology` 页面会显示活跃 `spatial-refresh / span-rebuild / chronology-build` jobs；`spatial-refresh / chronology-build` 不启动 Kairos ML，`span-rebuild` 会启动本地 ML 服务按 10 个 span 一批调用 qwen 文本 LM 做纯文本 materialPatterns 归纳，LM 只返回 ordered rows，代码按 chunk 顺序写回 spans，但不重跑 VLM / ASR，并显示 `.tmp/chronology/progress.json` 中的 chunk、失败列表补处理、retry/warning 进度；已完成 materialPatterns checkpoint 和 failed span 列表写入 `.tmp/chronology/span-rebuild.partial.json`，正式 `store/spans.json` 只在全量收口后写入。`chronology-build` 必须覆盖同一 progress 文件为自己的 live 阶段，不得显示旧 span-rebuild cache；长循环中至少按批次更新 span 时空归属解析、event/route 聚合计数和 GPS reverse-geocode 地名解析计数。
 - `React console` 的 Analyze 监控读取项目内 `.tmp/media-analyze/progress.json`，Chronology 监控读取 `.tmp/chronology/progress.json`；当前项目上下文必须正确，不能把面板混到别的项目进度目录
 - Console 刷新时，默认项目上下文应优先跟随最新的 active project-scoped job；只有当前没有活跃项目 job 时，才回退到本地记忆的上次选择
 - 如果多个项目 display name 相同，项目选择器必须直接显示 `projectId`，避免把 Analyze monitor 请求到同名旧项目

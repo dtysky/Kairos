@@ -2956,6 +2956,8 @@ function parseUnifiedFinalizeAnalysis(raw: string): IUnifiedFinalizeAnalysis | n
     ? ((decisionNode as Record<string, unknown>)['decision_reasons'] as unknown[])
       .filter((value): value is string => typeof value === 'string')
     : [];
+  const visualDescription = normalizePromptString((visualNode as Record<string, unknown>)['description']);
+  if (!visualDescription) return null;
 
   return {
     visualSummary: {
@@ -2964,7 +2966,7 @@ function parseUnifiedFinalizeAnalysis(raw: string): IUnifiedFinalizeAnalysis | n
       mood: normalizePromptString((visualNode as Record<string, unknown>)['mood']) ?? 'unknown',
       placeHints: normalizePromptStringArray((visualNode as Record<string, unknown>)['place_hints']),
       narrativeRole: normalizePromptString((visualNode as Record<string, unknown>)['narrative_role']) ?? 'unknown',
-      description: normalizePromptString((visualNode as Record<string, unknown>)['description']) ?? '',
+      description: visualDescription,
       evidence: [],
     },
     decision: {
@@ -3238,6 +3240,11 @@ async function finalizePhotoPreparedAsset(
     performance: input.performance,
     phase: 'finalize',
   });
+  if (!visualSummary?.description?.trim()) {
+    throw new Error(
+      `素材 ${input.prepared.asset.displayName} 的 photo finalize 缺少有效视觉描述；请修复 VLM 输出或重跑 Analyze。`,
+    );
+  }
   const root = input.roots.find(item => item.id === input.prepared.asset.ingestRootId);
   const manualSpatial = await resolveManualSpatialContext({
     asset: input.prepared.asset,
@@ -4155,6 +4162,11 @@ async function recognizeFineScanTask(input: {
         const recognition = recognitionMap.get(slice.id);
         if (!recognition) {
           throw new Error(`asset report ${input.task.analysis.prepared.asset.id} fine-scan window ${slice.id} has no VLM recognition result; rerun Analyze/fine-scan for this asset.`);
+        }
+        if (!recognition.recognition.description?.trim()) {
+          throw new Error(
+            `asset report ${input.task.analysis.prepared.asset.id} fine-scan window ${slice.id} has empty visualObservation; rerun Analyze/fine-scan for this asset.`,
+          );
         }
         if (isLikelyInvalidVisualSegment(recognition.recognition.description)) {
           droppedInvalidSliceCount += 1;

@@ -178,7 +178,7 @@ describe('buildMediaChronology', () => {
             id: 'broll-1',
             assetId: 'asset-1',
             type: 'broll',
-            materialPatterns: ['照片记录', '服务区停车场', '阴天', '无口播语音', '停车观察建筑'],
+            materialPatterns: ['固定机位观察', '服务区停车场', '阴天', '无口播语音', '停车观察建筑'],
           }),
         ],
       },
@@ -191,7 +191,7 @@ describe('buildMediaChronology', () => {
     });
   });
 
-  it('does not split same-place airport material or promote the controlled view slot to route', () => {
+  it('does not text-merge same-place airport material without spatial continuity or promote the controlled view slot to route', () => {
     const assets = [
       asset('airport-video-a', { capturedAt: '2026-05-05T10:56:55.000Z' }),
       asset('airport-photo', { kind: 'photo', capturedAt: '2026-05-05T10:58:28.000Z' }),
@@ -243,15 +243,16 @@ describe('buildMediaChronology', () => {
       },
     );
 
-    expect(chronology.events).toHaveLength(1);
-    expect(chronology.events[0]).toMatchObject({
-      kind: 'event',
-      title: '机场候机',
-      spanIds: ['airport-window', 'airport-photo', 'airport-ticket', 'airport-card'],
-    });
+    expect(chronology.events).toHaveLength(3);
+    expect(chronology.events.map(event => event.kind)).toEqual(['event', 'event', 'event']);
+    expect(chronology.events.map(event => event.spanIds)).toEqual([
+      ['airport-window'],
+      ['airport-photo', 'airport-ticket'],
+      ['airport-card'],
+    ]);
   });
 
-  it('treats aerial follow-car material as route instead of ordinary event', () => {
+  it('keeps aerial road material as event unless it has structured drive type', () => {
     const chronology = buildMediaChronology(
       [asset('drone-car', { capturedAt: '2026-05-03T00:00:38.000Z' })],
       [],
@@ -266,7 +267,7 @@ describe('buildMediaChronology', () => {
             type: 'aerial',
             sourceOutMs: 9_771,
             visualObservation: 'Aerial view of a winding road through a village with snow-capped mountains in the background.',
-            materialPatterns: ['航拍建场', '山路', '晴天', '无口播语音', '山村行车', '蜿蜒道路', '雪山背景'],
+            materialPatterns: ['航拍俯瞰', '山路', '晴天', '无口播语音', '山村行车', '蜿蜒道路', '雪山背景'],
           }),
         ],
       },
@@ -274,7 +275,7 @@ describe('buildMediaChronology', () => {
 
     expect(chronology.events).toHaveLength(1);
     expect(chronology.events[0]).toMatchObject({
-      kind: 'route',
+      kind: 'event',
       spanIds: ['drone-car-span'],
     });
   });
@@ -294,7 +295,7 @@ describe('buildMediaChronology', () => {
             type: 'aerial',
             sourceOutMs: 9_771,
             visualObservation: 'Aerial view of a winding road through a village with snow-capped mountains in the background.',
-            materialPatterns: ['航拍建场', '山路', '晴天', '无口播语音', '航拍村庄道路', '蜿蜒道路', '雪山背景'],
+            materialPatterns: ['航拍俯瞰', '山路', '晴天', '无口播语音', '航拍村庄道路', '蜿蜒道路', '雪山背景'],
           }),
         ],
       },
@@ -860,7 +861,129 @@ describe('buildMediaChronology', () => {
     });
   });
 
-  it('merges only consecutive non-route stationary spans by 200m single-span and 400m neighbor distance rules', () => {
+  it('keeps static aerial road photos in same nearby event instead of route', () => {
+    const chronology = buildMediaChronology(
+      [
+        asset('asset-aerial-video', { capturedAt: '2026-04-12T08:00:00.000Z' }),
+        asset('asset-aerial-photo', { kind: 'photo', capturedAt: '2026-04-12T08:00:30.000Z' }),
+        asset('asset-aerial-video-2', { capturedAt: '2026-04-12T08:01:00.000Z' }),
+      ],
+      [],
+      null,
+      [],
+      {
+        now: '2026-04-12T09:00:00.000Z',
+        projectGpsPoints: [
+          point('2026-04-12T08:00:00.000Z', 30.0000, 100.0000),
+          point('2026-04-12T08:00:15.000Z', 30.0000, 100.0000),
+          point('2026-04-12T08:00:30.000Z', 30.0001, 100.0000),
+          point('2026-04-12T08:01:00.000Z', 30.0002, 100.0000),
+          point('2026-04-12T08:01:15.000Z', 30.0002, 100.0000),
+        ],
+        spans: [
+          span({
+            id: 'aerial-road-video',
+            assetId: 'asset-aerial-video',
+            type: 'aerial',
+            sourceInMs: 0,
+            sourceOutMs: 15_000,
+            visualObservation: 'Aerial view of a multi-lane highway and service area surrounded by forest.',
+            materialPatterns: ['航拍俯瞰', '高速公路服务区', '晴天', '无口播语音', '航拍公路与服务区'],
+          }),
+          span({
+            id: 'aerial-road-photo',
+            assetId: 'asset-aerial-photo',
+            type: 'photo',
+            sourceInMs: 0,
+            sourceOutMs: 0,
+            visualObservation: 'An aerial view of a highway winding through lush green forests.',
+            materialPatterns: ['航拍俯瞰', '森林公路', '晴天', '无口播语音', '多车道公路航拍'],
+          }),
+          span({
+            id: 'aerial-road-video-2',
+            assetId: 'asset-aerial-video-2',
+            type: 'aerial',
+            sourceInMs: 0,
+            sourceOutMs: 15_000,
+            visualObservation: 'Aerial view of the same highway service area with forested hills nearby.',
+            materialPatterns: ['航拍俯瞰', '高速公路服务区', '晴天', '无口播语音', '服务区航拍'],
+          }),
+        ],
+      },
+    );
+
+    expect(chronology.events).toHaveLength(1);
+    expect(chronology.events[0]).toMatchObject({
+      kind: 'event',
+      spanIds: ['aerial-road-video', 'aerial-road-photo', 'aerial-road-video-2'],
+    });
+    expect(chronology.events[0]?.title).not.toMatch(/^行车/u);
+  });
+
+  it('merges moving non-route observations by time and GPS trajectory continuity', () => {
+    const chronology = buildMediaChronology(
+      [
+        asset('butterfly-video-a', { capturedAt: '2026-04-25T06:22:49.000Z' }),
+        asset('butterfly-photo', { kind: 'photo', capturedAt: '2026-04-25T06:24:04.000Z' }),
+        asset('butterfly-video-b', { capturedAt: '2026-04-25T06:26:52.000Z' }),
+        asset('butterfly-video-c', { capturedAt: '2026-04-25T06:27:25.000Z' }),
+      ],
+      [],
+      null,
+      [],
+      {
+        now: '2026-04-25T07:00:00.000Z',
+        projectGpsPoints: [
+          point('2026-04-25T06:22:49.000Z', 24.393533, 106.122191),
+          point('2026-04-25T06:24:04.000Z', 24.400110, 106.108524),
+          point('2026-04-25T06:26:52.000Z', 24.422452, 106.084413),
+          point('2026-04-25T06:27:25.000Z', 24.427428, 106.079219),
+        ],
+        spans: [
+          span({
+            id: 'butterfly-video-a',
+            assetId: 'butterfly-video-a',
+            type: 'broll',
+            sourceInMs: 0,
+            sourceOutMs: 14_592,
+            materialPatterns: ['细节特写', '车旁静止', '天气光线不明', '无口播语音', '蝴蝶停驻车漆'],
+          }),
+          span({
+            id: 'butterfly-photo',
+            assetId: 'butterfly-photo',
+            type: 'photo',
+            sourceInMs: 0,
+            sourceOutMs: 0,
+            materialPatterns: ['细节特写', '特写镜头', '天气光线不明', '无口播语音', '蝴蝶停驻特写'],
+          }),
+          span({
+            id: 'butterfly-video-b',
+            assetId: 'butterfly-video-b',
+            type: 'broll',
+            sourceInMs: 0,
+            sourceOutMs: 9_579,
+            materialPatterns: ['细节特写', '户外特写', '晴天', '无口播语音', '车旁互动'],
+          }),
+          span({
+            id: 'butterfly-video-c',
+            assetId: 'butterfly-video-c',
+            type: 'broll',
+            sourceInMs: 0,
+            sourceOutMs: 21_099,
+            materialPatterns: ['细节特写', '车旁特写', '天气光线不明', '无口播语音', '车旁观察'],
+          }),
+        ],
+      },
+    );
+
+    expect(chronology.events).toHaveLength(1);
+    expect(chronology.events[0]).toMatchObject({
+      kind: 'event',
+      spanIds: ['butterfly-video-a', 'butterfly-photo', 'butterfly-video-b', 'butterfly-video-c'],
+    });
+  });
+
+  it('splits non-route event candidates when the time gap exceeds the continuity window', () => {
     const chronology = buildMediaChronology(
       [
         asset('asset-broll'),
@@ -896,14 +1019,12 @@ describe('buildMediaChronology', () => {
       },
     );
 
-    expect(chronology.events).toHaveLength(1);
-    expect(chronology.events[0]).toMatchObject({
-      kind: 'event',
-      spanIds: ['stationary-broll', 'nearby-aerial'],
-    });
+    expect(chronology.events).toHaveLength(2);
+    expect(chronology.events.map(event => event.kind)).toEqual(['event', 'event']);
+    expect(chronology.events.map(event => event.spanIds)).toEqual([['stationary-broll'], ['nearby-aerial']]);
   });
 
-  it('splits consecutive stationary event candidates when neighbor GPS distance exceeds 400m', () => {
+  it('does not create ordinary events from photo-only non-Pharos material', () => {
     const chronology = buildMediaChronology(
       [
         asset('asset-photo-a', { kind: 'photo' }),
@@ -925,11 +1046,36 @@ describe('buildMediaChronology', () => {
       },
     );
 
-    expect(chronology.events.map(event => event.kind)).toEqual(['event', 'event']);
-    expect(chronology.events.map(event => event.spanIds)).toEqual([['photo-a'], ['photo-b']]);
+    expect(chronology.events).toEqual([]);
   });
 
-  it('splits stationary clusters around a moving drive span', () => {
+  it('attaches remaining photos to the nearest ordinary event by time', () => {
+    const chronology = buildMediaChronology(
+      [
+        asset('event-before', { capturedAt: '2026-04-12T08:00:00.000Z' }),
+        asset('loose-photo', { kind: 'photo', capturedAt: '2026-04-12T08:20:00.000Z' }),
+        asset('event-after', { capturedAt: '2026-04-12T09:00:00.000Z' }),
+      ],
+      [],
+      null,
+      [],
+      {
+        now: '2026-04-12T10:00:00.000Z',
+        spans: [
+          span({ id: 'event-before-span', assetId: 'event-before', type: 'broll', sourceInMs: 0, sourceOutMs: 5_000 }),
+          span({ id: 'loose-photo-span', assetId: 'loose-photo', type: 'photo', sourceInMs: 0, sourceOutMs: 0 }),
+          span({ id: 'event-after-span', assetId: 'event-after', type: 'broll', sourceInMs: 0, sourceOutMs: 5_000 }),
+        ],
+      },
+    );
+
+    expect(chronology.events.map(event => event.spanIds)).toEqual([
+      ['event-before-span', 'loose-photo-span'],
+      ['event-after-span'],
+    ]);
+  });
+
+  it('lets routes attach nearby photos without letting photos become route boundaries', () => {
     const chronology = buildMediaChronology(
       [
         asset('asset-before'),
@@ -941,13 +1087,6 @@ describe('buildMediaChronology', () => {
       [],
       {
         now: '2026-04-12T09:00:00.000Z',
-        projectGpsPoints: [
-          point('2026-04-12T08:00:00.000Z', 30.0000, 100.0000),
-          point('2026-04-12T08:01:00.000Z', 30.0000, 100.0000),
-          point('2026-04-12T08:01:30.000Z', 30.0030, 100.0000),
-          point('2026-04-12T08:02:00.000Z', 30.0060, 100.0000),
-          point('2026-04-12T08:03:00.000Z', 30.0060, 100.0000),
-        ],
         spans: [
           span({ id: 'before-stop', assetId: 'asset-before', type: 'broll', sourceInMs: 0, sourceOutMs: 0 }),
           span({ id: 'moving-drive', assetId: 'asset-drive', type: 'drive', sourceInMs: 0, sourceOutMs: 60_000 }),
@@ -956,8 +1095,41 @@ describe('buildMediaChronology', () => {
       },
     );
 
-    expect(chronology.events.map(event => event.kind)).toEqual(['event', 'route', 'event']);
-    expect(chronology.events.map(event => event.spanIds)).toEqual([['before-stop'], ['moving-drive'], ['after-stop']]);
+    expect(chronology.events.map(event => event.kind)).toEqual(['event', 'route']);
+    expect(chronology.events.map(event => event.spanIds)).toEqual([['before-stop'], ['moving-drive', 'after-stop']]);
+  });
+
+  it('merges drive rows before attaching interleaved photos', () => {
+    const chronology = buildMediaChronology(
+      [
+        asset('asset-drive-a', { capturedAt: '2026-04-12T08:00:00.000Z' }),
+        asset('asset-photo', { kind: 'photo', capturedAt: '2026-04-12T08:00:05.000Z' }),
+        asset('asset-drive-b', { capturedAt: '2026-04-12T08:00:10.000Z' }),
+      ],
+      [],
+      null,
+      [],
+      {
+        now: '2026-04-12T09:00:00.000Z',
+        projectGpsPoints: [
+          point('2026-04-12T08:00:00.000Z', 30.0000, 100.0000),
+          point('2026-04-12T08:00:05.000Z', 30.0001, 100.0000),
+          point('2026-04-12T08:00:10.000Z', 30.0002, 100.0000),
+          point('2026-04-12T08:00:20.000Z', 30.0004, 100.0000),
+        ],
+        spans: [
+          span({ id: 'drive-before-photo', assetId: 'asset-drive-a', type: 'drive', sourceInMs: 0, sourceOutMs: 5_000 }),
+          span({ id: 'drive-photo', assetId: 'asset-photo', type: 'photo', sourceInMs: 0, sourceOutMs: 0 }),
+          span({ id: 'drive-after-photo', assetId: 'asset-drive-b', type: 'drive', sourceInMs: 0, sourceOutMs: 10_000 }),
+        ],
+      },
+    );
+
+    expect(chronology.events).toHaveLength(1);
+    expect(chronology.events[0]).toMatchObject({
+      kind: 'route',
+      spanIds: ['drive-before-photo', 'drive-photo', 'drive-after-photo'],
+    });
   });
 
   it('prefers project GPX over embedded GPS when grouping aerial/static material', () => {

@@ -698,7 +698,7 @@ describe('model-driven script preparation', () => {
         id: 'span-3',
         assetId: 'asset-3',
         type: 'photo',
-        materialPatterns: ['照片记录', '海岸湖边', '晚霞', '无口播语音', '晚霞海边照片记录', '海边', '晚霞'],
+        materialPatterns: ['环境远景', '海岸湖边', '晚霞', '无口播语音', '晚霞海边静态观察', '海边', '晚霞'],
         grounding: { speechMode: 'none', speechValue: 'none', spatialEvidence: [], pharosRefs: [] },
       },
     ];
