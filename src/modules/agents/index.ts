@@ -14,16 +14,11 @@ export {
   CSPAN_MATERIAL_PATTERN_VIEWPOINT_TAGS,
 } from './span-material-pattern-spec.js';
 export {
-  AgentHandoffRequiredError,
   AgentRunnerUnavailableError,
-  buildCommandJsonPacketAgentRunnerConfig,
-  CommandJsonPacketAgentRunner,
   isJsonPacketAgentRunner,
   MlJsonPacketAgentRunner,
   resolveJsonPacketAgentRunner,
-  type IAgentHandoffDetails,
   type IAgentModelOptions,
-  type ICommandJsonPacketAgentRunnerConfig,
   type IJsonPacketAgentInvocation,
   type IJsonPacketAgentRunner,
 } from './runtime.js';

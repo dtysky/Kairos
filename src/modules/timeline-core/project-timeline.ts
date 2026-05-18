@@ -32,7 +32,7 @@ import {
   normalizeEditId,
 } from '../../store/index.js';
 import type { IJsonPacketAgentRunner } from '../agents/runtime.js';
-import { buildCommandJsonPacketAgentRunnerConfig, resolveJsonPacketAgentRunner } from '../agents/runtime.js';
+import { resolveJsonPacketAgentRunner } from '../agents/runtime.js';
 import {
   assertConfirmedEditFlowPlan,
   loadEditPlanningPacketArtifacts,
@@ -128,7 +128,6 @@ export async function buildProjectTimeline(
   try {
     agentRunner = resolveJsonPacketAgentRunner({
       agentRunner: input.agentRunner,
-      commandRunner: buildCommandJsonPacketAgentRunnerConfig(runtimeConfig),
     });
   } catch (error) {
     await writeTimelineAgentPipeline(input.projectRoot, {

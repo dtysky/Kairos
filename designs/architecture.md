@@ -31,6 +31,7 @@
 - `gps-refresh` 不扫描素材，但应刷新项目 GPX merged cache、`gps/derived.json` 与 Pharos context；`ingest` 在扫描素材后也必须刷新同一套空间/Pharos 缓存
 - Analyze 不隐式补跑 Pharos 解析，只消费最近一次 Ingest / GPS 刷新的 `analysis/pharos-context.json`
 - Pharos 上游协议 hash 不匹配时，必须先同步当前 `../Pharos/designs` 到 Kairos 设计文档、rules、skills、实现/测试影响，并刷新 `.ai/pharos-protocol-baseline.json`；baseline 未重新匹配前不继续普通 Pharos 功能工作
+- 当前 Pharos 协议新增 Pyxis 普通事件完成时长过长写入前二次确认：实际时长达到计划时长 2 倍且至少多 30 分钟时由 Pyxis UI 要求再次确认；该保护不新增字段、不改变 `record.json.actual_time` schema，也不改变 Kairos chronology 的归属判据
 - 素材 root 可声明 `captureTimePolicy`：
   - `mode: "auto"` 是默认行为
   - `mode: "manual-required"` 表示该 root 的指定素材类型不可信任容器 / EXIF / 文件名 / filesystem 时间，必须由单素材手动时间修正落成 `manual` capture time
@@ -511,12 +512,11 @@
    - Workspace 风格档案必须落成 `layered-v1`：`literary` 写旁白 / 字幕语气，`artistic` 写影像气质 / 审美母题，`editingTechnical` 写剪辑节奏 / 镜头语法 / 素材角色
    - 这些信息不会自动成为 capability 输入；剪辑规则自由正文必须先说明要使用哪些层，再由 Flow Planner 写入 confirmed `flow-plan.json.styleUsage`
    - 这里记录的是“观测到的高频偏好”，只有剪辑规则或 confirmed Flow Plan 明确提升为 `hard` 时才是硬约束
-  - Edit Flow capability 不再从 style profile 长文里解析结构启发式；stage packet 只能注入 `styleUsage` 授权的层
+  - Edit Flow capability 不再从 style profile 长文里解析结构启发式；Agent stage context 只能注入 `styleUsage` 授权的层
   - `/edit` 改 `styleCategory` 时按 confirmed `styleUsage` 决定失效范围：`artistic / editingTechnical` 参与 planning / recall 时清空 planning 与对应结构产物；只有 `literary` 时只清空表达阶段 capability outputs
-  - Agent-backed capability packet 现在是 clean-context subagent 的唯一正式输入；runtime 不应再在 packet 之外偷偷附加主线程历史、`previousDraft` 或 `revisionBrief`
-  - 正式 stage 执行后端必须使用宿主 packet runner / 真实 clean-context subagent 链；官方路径不允许外接 `ILlmClient` fallback
-  - workspace / project runtime 可通过 `config/runtime.json` 的 `agentPacketRunnerCommand` / `agentPacketRunnerArgs` / `agentPacketRunnerCwd` 声明这个 packet runner
-  - 首轮 stage 调用默认应保持 lean packet，只在 reviewer 要求返工时再把 previous draft 带回 writer
+  - Agent-backed capability context 现在是 clean-context subagent 的唯一正式输入；runtime 不应偷偷附加主线程历史、`previousDraft` 或 `revisionBrief`
+  - 正式 stage 执行后端必须使用真实 clean-context Agent/SubAgent 链；官方路径不允许外接 `ILlmClient`
+  - 首轮 stage 调用默认应保持 lean context，只在 reviewer 要求返工时再把 previous draft 带回 writer
    - `script.generate` 若被 Flow Plan 选中，仍必须把 `script/current.json` 写成 bare `IKtepScript[]`
    - writer / reviewer 调用失败时，对应 capability run record 必须立即写出真实失败态，不能继续停留在旧阶段的 `pending`
    - `material.recall` 与 `script.generate` 可以复用旧 helper，但输出必须由 step 的 `outputRefs` 声明
@@ -526,8 +526,7 @@
      - `style-profile-synthesizer` 只读取自己的 packet / summary，并先写三层 `style-draft.json`
      - `style-profile-reviewer` 只读取 summary + draft，并写 `style-review.json`
      - reviewer blockers 是落成正式 `config/styles/{category}.md` 的硬闸门，缺层、过拟合、技术层越界成剪辑规则都必须阻塞
-     - 正式执行后端必须使用宿主 packet runner / 真实 subagent 链；官方路径不允许外接 `ILlmClient` fallback
-     - workspace / project runtime 可通过 `config/runtime.json` 的 `agentPacketRunnerCommand` / `agentPacketRunnerArgs` / `agentPacketRunnerCwd` 声明这个 packet runner
+     - 正式执行后端必须使用真实 clean-context Agent/SubAgent 链；官方路径不允许外接 `ILlmClient`
 4. 字幕已支持双路径
    - 旁白路径：来自 `beat.text`
    - 原声路径：来自 `beat.audioSelections[]` 构建出的 merged audio units
@@ -924,11 +923,10 @@ src/modules/edit-flow/
   → 按 step 运行 capability runner
      - 解析 `inputRefs`
      - 选择 deterministic / agent / script / manual runner
-     - 没有 host packet runner 时写入 agent packet 并进入 `awaiting_agent`，由当前 Agent 对话消费 packet 后写 declared output
      - sharded SubAgent 只按 confirmed `step.execution` 分片；连续天阈值打包写在 `shardPacking`，不得从规则 markdown 重新推断 route 或 day shard
-     - sharded handoff 固定声明 `codexSubagentProfile={reasoningEffort:"high", forkContext:false, speed:"standard"}`，执行者只传 packet path/task，不 fork 当前长上下文
+     - sharded step 固定声明 `codexSubagentProfile={reasoningEffort:"high", forkContext:false, speed:"standard"}`，执行者只接收有界 step/shard 上下文，不 fork 当前长上下文
      - 写入 capability-owned outputs
-     - 写入轻量 `edits/<editId>/runs/<runId>/record.json`；大 handoff / packets / shard outputs 写入 ignored `.tmp/edit-flow/<editId>/runs/<runId>/`
+     - 写入轻量 `edits/<editId>/runs/<runId>/record.json`
   → 带 `gate=human` 的 step 进入 `awaiting_review`
   → 用户确认 step 后，后续依赖 step 才可继续
 ```
@@ -937,7 +935,7 @@ src/modules/edit-flow/
 
 - 正式剪辑流程以 `Pharos + Chronology V2 + 剪辑规则` 为主输入
 - `trip.event_table` 是 chronology 事件组织能力，只读取 confirmed `media/chronology.json`；素材级 spans / asset reports 后移到 `material.archive` 和 `material.recall`
-- `script.generate` 是可选 capability；只有 Flow Plan 声明它时，才复用旧 script helper 或 clean-context script packet stages
+- `script.generate` 是可选 capability；只有 Flow Plan 声明它时，才复用旧 script helper 或 clean-context script stages
 - `timeline.generate` 只消费 Flow Plan 声明的前序 outputs；不得硬性读取 `script/current.json`
 - `timeline/current.json` 可以作为 KTEP 输出路径保留，但不代表固定 Timeline 阶段
 - code 只能执行 confirmed Flow Plan 中的 `capabilityId / inputRefs / outputRefs / gate / execution`，不得从 markdown 正文做隐藏启发式

@@ -275,6 +275,7 @@ project/
 - 照片拍摄时间默认优先吃 EXIF 原始时间和时区；如果照片自身带 GPS，也应直接作为 `embedded GPS` 真值
 - Ingest / GPS 刷新负责解析项目内固定 `pharos/` 并刷新 `analysis/pharos-context.json`；该 cache 必须按输入 fingerprint 和 parser version 自动失效；Analyze 只消费该 cache，不临时补跑 Pharos parse
 - Pharos planned shot 归属只使用 `record.json.actual_time` 精确匹配；`expected / unexpected` 且有完整 actual time 的记录才可绑定存在有意义时间重叠的素材，多个单点事件时间窗重叠时只按 `record.json.actual_captures[]` 等显式拍摄类型/设备字段调整优先级，仍同分时优先更窄的 actual window，不从描述、地点或 note 推断语义；`pending / abandoned` 和 planned time segment 不参与素材归属，空间仍只从 trip GPX 按时间反算
+- Pharos/Pyxis 的普通事件过长二次确认只防止上游误写超长 `actual_time`，不改变 Kairos workflow 的归属、刷新或重建步骤
 - 对本次成功扫描到的 root，Ingest 会剪掉该 root 下磁盘已不存在的旧资产；missing root 的旧资产保持不动
 - root 可声明 `captureTimePolicy.mode=manual-required`；命中素材必须由用户显式补 `正确日期 / 正确时间 / 时区` 后 rerun ingest
 - 如果 ingest 发现素材时间和项目时间线明显冲突，必须把待校正项追加到 `config/manual-itinerary.md` 末尾的“素材时间校正”表格，并阻塞后续阶段
@@ -350,8 +351,8 @@ Chronology 审查：
 - `timeline.generate` 只读取 Flow Plan 声明的前序 outputs，不能要求 `script/current.json`。
 - `trip.event_table` 是事件级组织能力，只使用 confirmed chronology；不要因为 spans stale 或缺 asset reports 阻塞它。
 - `sharded-agent` step 的连续天打包、阈值与 SubAgent 口径只来自 confirmed `step.execution.shardPacking / codexSubagentProfile`；默认不得按 route 拆。
-- Edit Flow SubAgent handoff 必须写明 Codex 使用 `reasoning_effort=high`、`fork_context=false`、标准速度；packet 只传路径和任务，不 fork 当前长上下文。
-- handoff、agent packets 与 shard outputs 写到 ignored `projects/<projectId>/.tmp/edit-flow/<editId>/runs/<runId>/`，`edits/<editId>/runs/` 只保存轻量 record。
+- Edit Flow SubAgent step 必须写明 Codex 使用 `reasoning_effort=high`、`fork_context=false`、标准速度；执行时只传有界 step/shard 上下文，不 fork 当前长上下文。
+- `edits/<editId>/runs/` 只保存轻量 record；capability 只写 `outputRefs` 声明的正式输出。
 - 每个 step 由 capability runner 选择 deterministic / agent / script / manual 执行，并写 run record。
 - human gate 未确认时，后续依赖 step 不可继续。
 

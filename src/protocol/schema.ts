@@ -1982,7 +1982,7 @@ export const IEditFlowStepExecution = z.object({
 });
 export type IEditFlowStepExecution = z.infer<typeof IEditFlowStepExecution>;
 
-export const EEditFlowStepRunStatus = z.enum(['pending', 'running', 'awaiting_agent', 'awaiting_review', 'completed', 'failed']);
+export const EEditFlowStepRunStatus = z.enum(['pending', 'running', 'awaiting_review', 'completed', 'failed']);
 export type EEditFlowStepRunStatus = z.infer<typeof EEditFlowStepRunStatus>;
 
 export const IEditFlowPlanStep = z.object({
@@ -2026,46 +2026,6 @@ export const IEditFlowStepRunReview = z.object({
 });
 export type IEditFlowStepRunReview = z.infer<typeof IEditFlowStepRunReview>;
 
-export const EEditFlowAgentHandoffMode = z.enum(['single', 'sharded']);
-export type EEditFlowAgentHandoffMode = z.infer<typeof EEditFlowAgentHandoffMode>;
-
-export const IEditFlowAgentHandoffShard = z.object({
-  shardId: z.string(),
-  label: z.string(),
-  shardBy: EEditFlowShardBy,
-  packetPath: z.string(),
-  summary: z.string().optional(),
-  startAt: z.string().optional(),
-  endAt: z.string().optional(),
-  metricCount: z.number().int().nonnegative().optional(),
-  thresholdExceeded: z.boolean().optional(),
-  eventIds: z.array(z.string()).default([]),
-  spanIds: z.array(z.string()).default([]),
-  outputPaths: z.array(z.string()).default([]),
-});
-export type IEditFlowAgentHandoffShard = z.infer<typeof IEditFlowAgentHandoffShard>;
-
-export const IEditFlowAgentHandoff = z.object({
-  schemaVersion: z.literal('1.0'),
-  handoffId: z.string(),
-  mode: EEditFlowAgentHandoffMode,
-  shardBy: EEditFlowShardBy,
-  handoffPath: z.string(),
-  packetPath: z.string().optional(),
-  createdAt: z.string(),
-  promptId: z.string(),
-  editId: z.string(),
-  runId: z.string(),
-  stepId: z.string(),
-  capabilityId: z.string(),
-  outputRefs: z.array(z.string()).default([]),
-  reducerOutputRefs: z.array(z.string()).default([]),
-  shardPacking: IEditFlowShardPacking.optional(),
-  codexSubagentProfile: IEditFlowCodexSubagentProfile.optional(),
-  shards: z.array(IEditFlowAgentHandoffShard).default([]),
-});
-export type IEditFlowAgentHandoff = z.infer<typeof IEditFlowAgentHandoff>;
-
 export const IEditFlowStepRunRecord = z.object({
   schemaVersion: z.literal('1.0'),
   runId: z.string(),
@@ -2083,7 +2043,6 @@ export const IEditFlowStepRunRecord = z.object({
   outputRefs: z.array(z.string()).default([]),
   inputSnapshot: z.record(z.unknown()).default({}),
   outputPaths: z.array(z.string()).default([]),
-  handoff: IEditFlowAgentHandoff.optional(),
   error: z.string().optional(),
   review: IEditFlowStepRunReview.default({ status: 'not_required' }),
 });

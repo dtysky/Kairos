@@ -13,7 +13,6 @@ import type {
 import { IEditFlowPlan as ZEditFlowPlan, IStyleUsage as ZStyleUsage } from '../../protocol/schema.js';
 import {
   getEditFlowPlanPath,
-  getEditPlanningAgentPacketPath,
   getEditPlanningArtifactPath,
   loadAssetReports,
   loadAssets,
@@ -21,17 +20,13 @@ import {
   loadEditFlowPlan,
   loadProject,
   loadProjectBriefConfig,
-  loadRuntimeConfig,
   assertFreshSpans,
   normalizeEditId,
   writeEditFlowPlan,
 } from '../../store/index.js';
 import { loadOrBuildProjectPharosContext } from '../pharos/context.js';
 import {
-  AgentHandoffRequiredError,
   AgentRunnerUnavailableError,
-  buildCommandJsonPacketAgentRunnerConfig,
-  resolveJsonPacketAgentRunner,
   type IJsonPacketAgentRunner,
 } from '../agents/runtime.js';
 import { loadEditRuleByCategory } from '../script/edit-rule-loader.js';
@@ -84,7 +79,7 @@ export async function generateEditFlowPlan(
     ? await loadStyleByCategory(`${input.workspaceRoot}/config/styles`, input.styleCategory)
     : null;
   const styleProfileHash = styleProfile ? computeStyleProfileHash(styleProfile) : undefined;
-  const [editRule, project, projectBrief, assets, spansInfo, chronologyState, assetReports, runtimeConfig] = await Promise.all([
+  const [editRule, project, projectBrief, assets, spansInfo, chronologyState, assetReports] = await Promise.all([
     loadEditRuleByCategory(input.workspaceRoot, input.editRuleCategory),
     loadProject(input.projectRoot),
     loadProjectBriefConfig(input.projectRoot),
@@ -92,7 +87,6 @@ export async function generateEditFlowPlan(
     loadOptionalFreshSpans(input.projectRoot),
     loadChronologyReviewState(input.projectRoot),
     loadAssetReports(input.projectRoot),
-    loadRuntimeConfig(input.projectRoot),
   ]);
   const pharosContext = await loadOrBuildProjectPharosContext({
     projectRoot: input.projectRoot,
@@ -124,11 +118,11 @@ export async function generateEditFlowPlan(
     identity: 'edit-flow-planner',
     mission: '读取剪辑规则 markdown、项目上下文和固定能力目录，生成一个显式、可人工确认、可由代码执行的 Edit Flow Plan。',
     hardConstraints: [
-      '只能选择 packet 中 capability catalog 明确列出的 capabilityId。',
+      '只能选择输入上下文中 capability catalog 明确列出的 capabilityId。',
       '不要把剪辑规则正文翻译成代码启发式；你的输出必须是显式 flow plan。',
       '每个 step 必须写 capabilityId、inputRefs、outputRefs 和 gate。',
       '需要人工审查的规划文档或阶段必须标记 gate=human。',
-      '不要要求代码读取 markdown 正文来做剪辑判断；规则解释只能体现在你的 plan 和后续 LLM stage packet 中。',
+      '不要要求代码读取 markdown 正文来做剪辑判断；规则解释只能体现在你的 plan 和后续 LLM stage context 中。',
       '如果剪辑规则自由正文要求使用风格档案，请把本轮使用层结构化写入 styleUsage。',
       'styleUsage.layers 只能使用 literary / artistic / editingTechnical，mode 只能是 off / soft / hard。',
       'hard 只能来自剪辑规则正文的显式要求；不要把参考视频观察自动升级成硬规则。',
@@ -194,17 +188,7 @@ export async function generateEditFlowPlan(
       'missing_required_io_refs',
     ],
   };
-  const packetPath = await writePlanningPacket(input.projectRoot, 'edit-flow-plan', packet, editId);
-
-  const runner = resolveEditFlowPacketRunner({
-    agentRunner: input.agentRunner,
-    runtimeConfig,
-    promptId: 'edit-flow/planner',
-    packetPath,
-    stage: 'edit-flow-plan',
-    action: 'plan',
-    editId,
-  });
+  const runner = requireDirectEditFlowAgentRunner(input.agentRunner, 'Edit Flow Plan generation');
   const draft = await runner.run<Partial<IEditFlowPlan>>({
     promptId: 'edit-flow/planner',
     packet,
@@ -402,10 +386,9 @@ export async function runEditPlanningDocumentCapability(input: {
   });
 
   if (input.capabilityId === 'trip.event_table') {
-    const [editRule, chronologyState, runtimeConfig] = await Promise.all([
+    const [editRule, chronologyState] = await Promise.all([
       loadEditRuleByCategory(input.workspaceRoot, input.editRuleCategory),
       loadChronologyReviewState(input.projectRoot),
-      loadRuntimeConfig(input.projectRoot),
     ]);
     const outputPath = getPlanningDocumentOutputPath(input.projectRoot, input.capabilityId, editId);
     const packet: IAgentPacket = {
@@ -447,17 +430,7 @@ export async function runEditPlanningDocumentCapability(input: {
       outputSchema: { markdown: 'string' },
       reviewRubric: ['unsupported_claims', 'missing_chronology_event', 'scope_violation'],
     };
-    const packetPath = await writePlanningPacket(input.projectRoot, input.capabilityId, packet, editId);
-    const runner = resolveEditFlowPacketRunner({
-      agentRunner: input.agentRunner,
-      runtimeConfig,
-      promptId: 'edit-flow/planning-documenter',
-      packetPath,
-      stage: input.capabilityId,
-      action: 'run-step',
-      editId,
-      capabilityId: input.capabilityId,
-    });
+    const runner = requireDirectEditFlowAgentRunner(input.agentRunner, input.capabilityId);
     const result = await runner.run<{ markdown: string }>({
       promptId: 'edit-flow/planning-documenter',
       packet,
@@ -468,13 +441,12 @@ export async function runEditPlanningDocumentCapability(input: {
     return { capabilityId: input.capabilityId, outputPath, status: 'completed' };
   }
 
-  const [editRule, assets, spans, chronologyState, assetReports, runtimeConfig, planningArtifacts] = await Promise.all([
+  const [editRule, assets, spans, chronologyState, assetReports, planningArtifacts] = await Promise.all([
     loadEditRuleByCategory(input.workspaceRoot, input.editRuleCategory),
     loadAssets(input.projectRoot),
     assertFreshSpans(input.projectRoot).then(result => result.spans),
     loadChronologyReviewState(input.projectRoot),
     loadAssetReports(input.projectRoot),
-    loadRuntimeConfig(input.projectRoot),
     loadEditPlanningPacketArtifacts(input.projectRoot, editId),
   ]);
   const pharosContext = await loadOrBuildProjectPharosContext({
@@ -524,17 +496,7 @@ export async function runEditPlanningDocumentCapability(input: {
     outputSchema: { markdown: 'string' },
     reviewRubric: ['unsupported_claims', 'missing_required_source', 'scope_violation'],
   };
-  const packetPath = await writePlanningPacket(input.projectRoot, input.capabilityId, packet, editId);
-  const runner = resolveEditFlowPacketRunner({
-    agentRunner: input.agentRunner,
-    runtimeConfig,
-    promptId: 'edit-flow/planning-documenter',
-    packetPath,
-    stage: input.capabilityId,
-    action: 'run-step',
-    editId,
-    capabilityId: input.capabilityId,
-  });
+  const runner = requireDirectEditFlowAgentRunner(input.agentRunner, input.capabilityId);
   const result = await runner.run<{ markdown: string }>({
     promptId: 'edit-flow/planning-documenter',
     packet,
@@ -718,46 +680,12 @@ function normalizeShardPacking(value: unknown): IEditFlowStepExecution['shardPac
   };
 }
 
-function resolveEditFlowPacketRunner(input: {
-  agentRunner?: IJsonPacketAgentRunner;
-  runtimeConfig: Parameters<typeof buildCommandJsonPacketAgentRunnerConfig>[0];
-  promptId: 'edit-flow/planner' | 'edit-flow/planning-documenter';
-  packetPath: string;
-  stage: string;
-  action: string;
-  editId: string;
-  capabilityId?: string;
-}): IJsonPacketAgentRunner {
-  try {
-    return resolveJsonPacketAgentRunner({
-      agentRunner: input.agentRunner,
-      commandRunner: buildCommandJsonPacketAgentRunnerConfig(input.runtimeConfig),
-    });
-  } catch (error) {
-    if (error instanceof AgentRunnerUnavailableError) {
-      throw new AgentHandoffRequiredError({
-        promptId: input.promptId,
-        packetPath: input.packetPath,
-        stage: input.stage,
-        action: input.action,
-        editId: input.editId,
-        capabilityId: input.capabilityId,
-      }, `Edit Flow packet is ready for Agent handoff: ${input.packetPath}`);
-    }
-    throw error;
-  }
-}
-
-async function writePlanningPacket(
-  projectRoot: string,
+function requireDirectEditFlowAgentRunner(
+  agentRunner: IJsonPacketAgentRunner | undefined,
   stage: string,
-  packet: IAgentPacket,
-  editId?: string | null,
-): Promise<string> {
-  const target = getEditPlanningAgentPacketPath(projectRoot, stage.replace(/[^a-z0-9_.-]+/giu, '-'), editId);
-  await mkdir(dirname(target), { recursive: true });
-  await writeFile(target, `${JSON.stringify(packet, null, 2)}\n`, 'utf-8');
-  return target;
+): IJsonPacketAgentRunner {
+  if (agentRunner) return agentRunner;
+  throw new AgentRunnerUnavailableError(`${stage} requires direct Agent/SubAgent execution`);
 }
 
 function getPlanningDocumentOutputPath(

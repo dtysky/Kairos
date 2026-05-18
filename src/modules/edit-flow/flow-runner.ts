@@ -2,35 +2,25 @@ import { createHash, randomUUID } from 'node:crypto';
 import { access, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { dirname, extname, join, relative } from 'node:path';
 import type {
-  EEditFlowShardBy,
   IAgentPacket,
   IAgentPacketInputArtifact,
-  IEditFlowAgentHandoff,
-  IEditFlowAgentHandoffShard,
   IEditFlowPlan,
   IEditFlowPlanStep,
-  IEditFlowShardPacking,
   IEditFlowStepRunRecord,
 } from '../../protocol/schema.js';
 import {
   getEditFlowPlanPath,
-  getEditFlowTempRunRoot,
-  getEditPlanningAgentPacketPath,
   getProjectEditRoot,
   loadAssetReports,
   loadChronologyReviewState,
   loadEditFlowPlan,
   loadEditFlowRunRecords,
-  loadRuntimeConfig,
   normalizeEditId,
   writeEditFlowRunRecord,
   findLatestEditFlowStepRunRecord,
 } from '../../store/index.js';
 import {
-  AgentHandoffRequiredError,
   AgentRunnerUnavailableError,
-  buildCommandJsonPacketAgentRunnerConfig,
-  resolveJsonPacketAgentRunner,
   type IJsonPacketAgentRunner,
 } from '../agents/runtime.js';
 import { loadEditRuleByCategory } from '../script/edit-rule-loader.js';
@@ -207,14 +197,12 @@ async function runEditFlowStep(input: {
     throw new Error(`edit-flow capability is not registered: ${input.step.capabilityId}`);
   }
   const runner = input.runnerOverride || input.step.runner || capability.defaultRunner;
-  const shouldHandoff = await shouldPrepareAgentHandoff({
-    projectRoot: input.projectRoot,
+  assertDirectRunnerAvailable({
     runner,
+    stepId: input.step.id,
     agentRunner: input.agentRunner,
   });
-  const inputSnapshot = await resolveInputRefs(input.projectRoot, input.editId, input.step.inputRefs, {
-    includeArtifacts: !shouldHandoff,
-  });
+  const inputSnapshot = await resolveInputRefs(input.projectRoot, input.editId, input.step.inputRefs);
   if (inputSnapshot.missing.length > 0) {
     throw new Error(`edit-flow step ${input.step.id} is missing declared inputRefs: ${inputSnapshot.missing.join(', ')}`);
   }
@@ -242,42 +230,6 @@ async function runEditFlowStep(input: {
   };
   await writeEditFlowRunRecord(input.projectRoot, recordBase, input.editId);
 
-  if (shouldHandoff) {
-    const handoff = await writeEditFlowAgentHandoff({
-      workspaceRoot: input.workspaceRoot,
-      projectRoot: input.projectRoot,
-      editId: input.editId,
-      plan: input.plan,
-      step: input.step,
-      runId: recordBase.runId,
-      capabilityId: input.step.capabilityId,
-      inputSnapshot: inputSnapshot.snapshot,
-      outputRefs: input.step.outputRefs,
-    });
-    const message = describeHandoffMessage(handoff);
-    const awaitingAgent: IEditFlowStepRunRecord = {
-      ...recordBase,
-      status: 'awaiting_agent',
-      updatedAt: new Date().toISOString(),
-      handoff,
-      error: message,
-    };
-    await writeEditFlowRunRecord(input.projectRoot, awaitingAgent, input.editId);
-    throw new AgentHandoffRequiredError({
-      promptId: 'edit-flow/capability-runner',
-      packetPath: handoff.handoffPath,
-      handoffPath: handoff.handoffPath,
-      handoffMode: handoff.mode,
-      shardBy: handoff.shardBy,
-      shardCount: handoff.shards.length,
-      stage: input.step.capabilityId,
-      action: 'run-step',
-      editId: input.editId,
-      capabilityId: input.step.capabilityId,
-      stepId: input.step.id,
-    }, message);
-  }
-
   try {
     const outputPaths = await executeStep({
       ...input,
@@ -296,16 +248,6 @@ async function runEditFlowStep(input: {
     await writeEditFlowRunRecord(input.projectRoot, next, input.editId);
     return next;
   } catch (error) {
-    if (error instanceof AgentHandoffRequiredError) {
-      const awaitingAgent: IEditFlowStepRunRecord = {
-        ...recordBase,
-        status: 'awaiting_agent',
-        updatedAt: new Date().toISOString(),
-        error: error.message,
-      };
-      await writeEditFlowRunRecord(input.projectRoot, awaitingAgent, input.editId);
-      throw error;
-    }
     const failed: IEditFlowStepRunRecord = {
       ...recordBase,
       status: 'failed',
@@ -318,446 +260,14 @@ async function runEditFlowStep(input: {
   }
 }
 
-async function shouldPrepareAgentHandoff(input: {
-  projectRoot: string;
+function assertDirectRunnerAvailable(input: {
   runner: 'deterministic' | 'agent' | 'script' | 'manual';
+  stepId: string;
   agentRunner?: IJsonPacketAgentRunner;
-}): Promise<boolean> {
-  if (input.runner === 'deterministic' || input.runner === 'manual') return false;
-  if (input.agentRunner) return false;
-  const runtimeConfig = await loadRuntimeConfig(input.projectRoot);
-  return !buildCommandJsonPacketAgentRunnerConfig(runtimeConfig)?.command;
-}
-
-async function writeEditFlowAgentHandoff(input: {
-  workspaceRoot: string;
-  projectRoot: string;
-  editId: string;
-  plan: IEditFlowPlan;
-  step: IEditFlowPlanStep;
-  runId: string;
-  capabilityId: TEditFlowCapabilityId;
-  inputSnapshot: Record<string, unknown>;
-  outputRefs: string[];
-}): Promise<IEditFlowAgentHandoff> {
-  const runRoot = getEditFlowTempRunRoot(input.projectRoot, input.runId, input.editId);
-  const handoffPath = join(runRoot, 'handoff.json');
-  const packetRoot = join(runRoot, 'agent-packets');
-  await mkdir(packetRoot, { recursive: true });
-  const execution = input.step.execution ?? {
-    mode: input.step.runner === 'manual' ? 'manual' as const : 'single-agent' as const,
-    shardBy: 'none' as const,
-  };
-  const handoffId = randomUUID();
-  const createdAt = new Date().toISOString();
-  const common = {
-    schemaVersion: '1.0' as const,
-    handoffId,
-    createdAt,
-    promptId: 'edit-flow/capability-runner',
-    editId: input.editId,
-    runId: input.runId,
-    stepId: input.step.id,
-    capabilityId: input.capabilityId,
-    outputRefs: input.outputRefs,
-    reducerOutputRefs: input.outputRefs,
-    handoffPath,
-    ...(execution.mode === 'sharded-agent' && execution.shardPacking ? { shardPacking: execution.shardPacking } : {}),
-    ...(execution.mode === 'sharded-agent'
-      ? {
-        codexSubagentProfile: execution.codexSubagentProfile ?? {
-          reasoningEffort: 'high' as const,
-          forkContext: false,
-          speed: 'standard' as const,
-        },
-      }
-      : {}),
-  };
-  const handoff: IEditFlowAgentHandoff = execution.mode === 'sharded-agent'
-    ? {
-      ...common,
-      mode: 'sharded',
-      shardBy: execution.shardBy,
-      shards: await writeShardedAgentPackets({
-        ...input,
-        handoffId,
-        packetRoot,
-        runRoot,
-        shardBy: execution.shardBy,
-      }),
-    }
-    : {
-      ...common,
-      mode: 'single',
-      shardBy: 'none',
-      packetPath: await writeSingleAgentPacket({
-        ...input,
-        packetRoot,
-        handoffId,
-      }),
-      shards: [],
-    };
-  await writeFile(handoffPath, `${JSON.stringify(handoff, null, 2)}\n`, 'utf-8');
-  return handoff;
-}
-
-async function writeSingleAgentPacket(input: {
-  workspaceRoot: string;
-  projectRoot: string;
-  editId: string;
-  plan: IEditFlowPlan;
-  step: IEditFlowPlanStep;
-  capabilityId: TEditFlowCapabilityId;
-  inputSnapshot: Record<string, unknown>;
-  outputRefs: string[];
-  packetRoot: string;
-  handoffId: string;
-}): Promise<string> {
-  const editRule = await loadEditRuleByCategory(input.workspaceRoot, input.plan.editRuleCategory);
-  const packetPath = join(input.packetRoot, `${safePathPart(input.step.id)}.json`);
-  const packet = buildHandoffPacket({
-    editRule,
-    plan: input.plan,
-    step: input.step,
-    capabilityId: input.capabilityId,
-    inputSnapshot: input.inputSnapshot,
-    outputRefs: input.outputRefs,
-    shard: null,
-    handoffId: input.handoffId,
-  });
-  await writeFile(packetPath, `${JSON.stringify(packet, null, 2)}\n`, 'utf-8');
-  return packetPath;
-}
-
-async function writeShardedAgentPackets(input: {
-  workspaceRoot: string;
-  projectRoot: string;
-  editId: string;
-  plan: IEditFlowPlan;
-  step: IEditFlowPlanStep;
-  capabilityId: TEditFlowCapabilityId;
-  inputSnapshot: Record<string, unknown>;
-  outputRefs: string[];
-  handoffId: string;
-  packetRoot: string;
-  runRoot: string;
-  shardBy: EEditFlowShardBy;
-}): Promise<IEditFlowAgentHandoffShard[]> {
-  if (input.shardBy === 'day') {
-    return writeChronologyShardPackets(input, 'day');
-  }
-  if (input.shardBy === 'event') {
-    return writeChronologyShardPackets(input, 'event');
-  }
-  return writeFallbackShardPacket(input);
-}
-
-async function writeChronologyShardPackets(
-  input: Parameters<typeof writeShardedAgentPackets>[0],
-  shardBy: Extract<EEditFlowShardBy, 'day' | 'event'>,
-): Promise<IEditFlowAgentHandoffShard[]> {
-  const [editRule, chronologyState] = await Promise.all([
-    loadEditRuleByCategory(input.workspaceRoot, input.plan.editRuleCategory),
-    loadChronologyReviewState(input.projectRoot),
-  ]);
-  const chronology = chronologyState.chronology;
-  const events = chronology?.events ?? [];
-  const groups = shardBy === 'day'
-    ? groupChronologyEventsByDay(events, input.step.execution?.shardPacking)
-    : events.map(event => ({
-      shardId: `event-${safePathPart(event.id)}`,
-      label: event.title || event.id,
-      events: [event],
-      metricCount: 1,
-      thresholdExceeded: false,
-    }));
-  const shards: IEditFlowAgentHandoffShard[] = [];
-  const shardOutputRoot = join(input.runRoot, 'shards');
-  await mkdir(shardOutputRoot, { recursive: true });
-  for (const group of groups) {
-    const spanIds = uniqueStrings(group.events.flatMap(event => Array.isArray(event.spanIds) ? event.spanIds : []));
-    const shard = {
-      shardId: group.shardId,
-      label: group.label,
-      shardBy,
-      summary: `${group.events.length} chronology events / ${spanIds.length} span refs`,
-      startAt: firstString(group.events.map(event => event.startAt)),
-      endAt: lastString(group.events.map(event => event.endAt)),
-      metricCount: group.metricCount,
-      thresholdExceeded: group.thresholdExceeded,
-      eventIds: group.events.map(event => event.id).filter(isNonEmptyString),
-      spanIds,
-      outputPaths: [join(shardOutputRoot, `${group.shardId}.json`)],
-    };
-    const packetPath = join(input.packetRoot, `${group.shardId}.json`);
-    const packet = buildHandoffPacket({
-      editRule,
-      plan: input.plan,
-      step: input.step,
-      capabilityId: input.capabilityId,
-      inputSnapshot: input.inputSnapshot,
-      outputRefs: input.outputRefs,
-      handoffId: input.handoffId,
-      shard: {
-        ...shard,
-        events: group.events.map(summarizeChronologyEvent),
-        metric: input.step.execution?.shardPacking?.metric,
-        shardPacking: input.step.execution?.shardPacking,
-        codexSubagentProfile: input.step.execution?.codexSubagentProfile,
-        sourcePaths: buildShardSourcePaths(input),
-      },
-    });
-    await writeFile(packetPath, `${JSON.stringify(packet, null, 2)}\n`, 'utf-8');
-    shards.push({ ...shard, packetPath });
-  }
-  return shards;
-}
-
-async function writeFallbackShardPacket(input: Parameters<typeof writeShardedAgentPackets>[0]): Promise<IEditFlowAgentHandoffShard[]> {
-  const packetPath = join(input.packetRoot, `${safePathPart(input.step.id)}-shard.json`);
-  const outputPath = join(input.runRoot, 'shards', `${safePathPart(input.step.id)}-shard.json`);
-  await mkdir(dirname(outputPath), { recursive: true });
-  const editRule = await loadEditRuleByCategory(input.workspaceRoot, input.plan.editRuleCategory);
-  const shard = {
-    shardId: `${input.shardBy}-default`,
-    label: `${input.step.title ?? input.step.id} shard`,
-    shardBy: input.shardBy,
-    packetPath,
-    summary: `No deterministic ${input.shardBy} splitter is implemented yet; Agent should use declared inputs by path.`,
-    eventIds: [],
-    spanIds: [],
-    outputPaths: [outputPath],
-  };
-  const packet = buildHandoffPacket({
-    editRule,
-    plan: input.plan,
-    step: input.step,
-    capabilityId: input.capabilityId,
-    inputSnapshot: input.inputSnapshot,
-    outputRefs: input.outputRefs,
-    handoffId: input.handoffId,
-    shard,
-  });
-  await writeFile(packetPath, `${JSON.stringify(packet, null, 2)}\n`, 'utf-8');
-  return [shard];
-}
-
-function buildHandoffPacket(input: {
-  editRule: Parameters<typeof buildEditRuleArtifact>[0];
-  plan: IEditFlowPlan;
-  step: IEditFlowPlanStep;
-  capabilityId: TEditFlowCapabilityId;
-  inputSnapshot: Record<string, unknown>;
-  outputRefs: string[];
-  handoffId: string;
-  shard: Record<string, unknown> | null;
-}): IAgentPacket {
-  const isShard = input.shard != null;
-  return {
-    stage: input.capabilityId,
-    identity: isShard ? 'edit-flow-shard-agent' : 'edit-flow-capability-runner',
-    mission: isShard
-      ? 'Execute one shard of a confirmed Edit Flow capability. Write only the shard output path declared in this packet; reducer will create the final outputRefs.'
-      : 'Execute exactly one confirmed Edit Flow capability step. Produce only the declared outputRefs and do not invent hidden workflow stages.',
-    hardConstraints: [
-      'Use only the confirmed Flow Plan step, its execution field, declared inputRefs, and provided shard/source paths.',
-      'Do not require script/current.json unless this step explicitly declares it as an inputRef.',
-      'Do not parse edit-rule markdown in code; the Flow Plan execution field is the executable interpretation of the natural-language rule.',
-      'Do not load or paste entire store/spans.json or media/chronology.json into the answer; use the shard subset and referenced paths.',
-      'When spawning Codex SubAgents for this handoff, use reasoning_effort=high, fork_context=false, and standard speed mode; pass only the packet path and task.',
-      isShard
-        ? 'Write a shard-level JSON or markdown artifact to the shard output path. Do not write final outputRefs.'
-        : 'Write the declared outputRefs exactly.',
-    ],
-    allowedInputs: [
-      'confirmed flow plan',
-      'current step',
-      'edit rule markdown',
-      'input snapshot paths',
-      isShard ? 'current shard context' : 'declared inputRefs',
-    ],
-    inputArtifacts: [
-      buildEditRuleArtifact(input.editRule),
-      {
-        label: 'confirmed-flow-plan',
-        summary: input.plan.summary ?? `${input.plan.steps.length} steps`,
-        content: input.plan,
-      },
-      {
-        label: 'current-step',
-        summary: `${input.step.id} / ${input.step.capabilityId}`,
-        content: input.step,
-      },
-      {
-        label: 'input-snapshot',
-        summary: `${Object.keys(input.inputSnapshot).length} declared refs`,
-        content: input.inputSnapshot,
-      },
-      input.step.execution?.codexSubagentProfile ? {
-        label: 'codex-subagent-profile',
-        summary: 'reasoning_effort=high / fork_context=false / speed=standard',
-        content: input.step.execution.codexSubagentProfile,
-      } : null,
-      input.shard ? {
-        label: 'shard-context',
-        summary: String((input.shard as { summary?: unknown }).summary ?? 'shard context'),
-        content: input.shard,
-      } : null,
-    ].filter((item): item is IAgentPacketInputArtifact => item != null),
-    outputSchema: isShard
-      ? { shardOutput: 'Write to the shard output path declared in shard-context.outputPaths[0].' }
-      : { outputs: 'Record<outputRef, JSON-or-markdown-content>. Keys should match outputRefs exactly.' },
-    reviewRubric: ['missing_declared_output', 'unsupported_claims', 'scope_violation', 'oversized_context_dump'],
-  };
-}
-
-function describeHandoffMessage(handoff: IEditFlowAgentHandoff): string {
-  if (handoff.mode === 'sharded') {
-    return `Edit Flow sharded Agent handoff is ready: ${handoff.shards.length} ${handoff.shardBy} shards at ${handoff.handoffPath}`;
-  }
-  return `Edit Flow Agent handoff is ready: ${handoff.packetPath ?? handoff.handoffPath}`;
-}
-
-interface IChronologyEventLike {
-  id: string;
-  kind?: string;
-  reviewStatus?: string;
-  title?: string;
-  summary?: string;
-  startAt?: string;
-  endAt?: string;
-  location?: string;
-  spanIds?: string[];
-}
-
-function groupChronologyEventsByDay(
-  events: IChronologyEventLike[],
-  packing?: IEditFlowShardPacking,
-): Array<{
-  shardId: string;
-  label: string;
-  events: IChronologyEventLike[];
-  metricCount?: number;
-  thresholdExceeded?: boolean;
-}> {
-  const groups = new Map<string, IChronologyEventLike[]>();
-  for (const event of events) {
-    const day = typeof event.startAt === 'string' && event.startAt.length >= 10
-      ? event.startAt.slice(0, 10)
-      : 'unknown-day';
-    const list = groups.get(day) ?? [];
-    list.push(event);
-    groups.set(day, list);
-  }
-  const dayGroups = [...groups.entries()]
-    .sort(([left], [right]) => left.localeCompare(right))
-    .map(([day, dayEvents]) => ({
-      shardId: `day-${safePathPart(day)}`,
-      label: day,
-      events: dayEvents.sort((a, b) => String(a.startAt ?? '').localeCompare(String(b.startAt ?? ''))),
-      metricCount: computeShardMetric(dayEvents, packing?.metric ?? 'chronologyEventCount'),
-      thresholdExceeded: false,
-    }));
-  if (!packing || packing.base !== 'day' || !packing.preserveOrder) return dayGroups;
-  const packed: typeof dayGroups = [];
-  let current: typeof dayGroups[number] | null = null;
-  for (const dayGroup of dayGroups) {
-    const dayMetric = dayGroup.metricCount ?? 0;
-    if (!current) {
-      current = {
-        ...dayGroup,
-        thresholdExceeded: dayMetric > packing.maxPerShard,
-      };
-      continue;
-    }
-    const nextMetric = computeShardMetric([...current.events, ...dayGroup.events], packing.metric);
-    if ((current.metricCount ?? 0) > 0 && nextMetric > packing.maxPerShard) {
-      packed.push(finalizePackedDayGroup(current));
-      current = {
-        ...dayGroup,
-        thresholdExceeded: dayMetric > packing.maxPerShard,
-      };
-    } else {
-      current = {
-        ...current,
-        label: `${current.label}..${dayGroup.label}`,
-        events: [...current.events, ...dayGroup.events],
-        metricCount: nextMetric,
-        thresholdExceeded: Boolean(current.thresholdExceeded || dayGroup.thresholdExceeded || nextMetric > packing.maxPerShard),
-      };
-    }
-  }
-  if (current) packed.push(finalizePackedDayGroup(current));
-  return packed;
-}
-
-function finalizePackedDayGroup<T extends { label: string; events: IChronologyEventLike[] }>(group: T): T & { shardId: string } {
-  return {
-    ...group,
-    shardId: `days-${safePathPart(group.label.replace('..', '--'))}`,
-  };
-}
-
-function computeShardMetric(
-  events: IChronologyEventLike[],
-  metric: 'chronologyEventCount' | 'materialRefCount',
-): number {
-  if (metric === 'materialRefCount') {
-    return uniqueStrings(events.flatMap(event => Array.isArray(event.spanIds) ? event.spanIds : [])).length;
-  }
-  return events.length;
-}
-
-function buildShardSourcePaths(input: {
-  projectRoot: string;
-  editId: string;
-  capabilityId: TEditFlowCapabilityId;
-}): Record<string, string> {
-  const chronology = relative(input.projectRoot, resolveProjectRef(input.projectRoot, input.editId, 'media/chronology.json') ?? '');
-  if (input.capabilityId === 'trip.event_table') return { chronology };
-  return {
-    chronology,
-    spans: relative(input.projectRoot, resolveProjectRef(input.projectRoot, input.editId, 'store/spans.json') ?? ''),
-    assetReports: relative(input.projectRoot, resolveProjectRef(input.projectRoot, input.editId, 'analysis/asset-reports/*.json') ?? ''),
-  };
-}
-
-function summarizeChronologyEvent(event: IChronologyEventLike): Record<string, unknown> {
-  return {
-    id: event.id,
-    kind: event.kind,
-    reviewStatus: event.reviewStatus,
-    title: event.title,
-    location: event.location,
-    startAt: event.startAt,
-    endAt: event.endAt,
-    summary: limitText(event.summary, 700),
-    spanCount: event.spanIds?.length ?? 0,
-    spanIds: (event.spanIds ?? []).slice(0, 200),
-  };
-}
-
-function uniqueStrings(values: unknown[]): string[] {
-  return [...new Set(values.filter(isNonEmptyString))];
-}
-
-function firstString(values: unknown[]): string | undefined {
-  return values.filter(isNonEmptyString).sort((a, b) => a.localeCompare(b))[0];
-}
-
-function lastString(values: unknown[]): string | undefined {
-  return values.filter(isNonEmptyString).sort((a, b) => b.localeCompare(a))[0];
-}
-
-function limitText(value: unknown, maxLength: number): string | undefined {
-  if (typeof value !== 'string') return undefined;
-  const trimmed = value.trim();
-  if (trimmed.length <= maxLength) return trimmed;
-  return `${trimmed.slice(0, Math.max(0, maxLength - 1))}…`;
-}
-
-function safePathPart(value: string): string {
-  return value.trim().replace(/[^a-z0-9_.-]+/giu, '-').replace(/^-+|-+$/gu, '') || 'shard';
+}): void {
+  if (input.runner === 'deterministic' || input.runner === 'manual') return;
+  if (input.agentRunner) return;
+  throw new AgentRunnerUnavailableError(`Edit Flow step "${input.stepId}" requires direct Agent/SubAgent execution`);
 }
 
 async function executeStep(input: {
@@ -798,8 +308,7 @@ async function runGenericAgentCapability(input: {
   inputArtifacts: IAgentPacketInputArtifact[];
   agentRunner?: IJsonPacketAgentRunner;
 }): Promise<string[]> {
-  const [runtimeConfig, editRule, chronologyState, assetReports] = await Promise.all([
-    loadRuntimeConfig(input.projectRoot),
+  const [editRule, chronologyState, assetReports] = await Promise.all([
     loadEditRuleByCategory(input.workspaceRoot, input.plan.editRuleCategory),
     loadChronologyReviewState(input.projectRoot),
     loadAssetReports(input.projectRoot),
@@ -851,18 +360,7 @@ async function runGenericAgentCapability(input: {
     },
     reviewRubric: ['missing_declared_output', 'unsupported_claims', 'scope_violation'],
   };
-  const packetPath = await writeEditFlowCapabilityPacket(input.projectRoot, input.editId, input.step, packet);
-  const runner = resolveEditFlowPacketRunner({
-    agentRunner: input.agentRunner,
-    runtimeConfig,
-    promptId: 'edit-flow/capability-runner',
-    packetPath,
-    stage: input.capabilityId,
-    action: 'run-step',
-    editId: input.editId,
-    capabilityId: input.capabilityId,
-    stepId: input.step.id,
-  });
+  const runner = requireDirectEditFlowAgentRunner(input.agentRunner, input.capabilityId);
   const result = await runner.run<{ outputs?: Record<string, unknown> }>({
     promptId: 'edit-flow/capability-runner',
     packet,
@@ -871,49 +369,12 @@ async function runGenericAgentCapability(input: {
   return writeDeclaredOutputs(input.projectRoot, input.editId, input.step.outputRefs, result);
 }
 
-function resolveEditFlowPacketRunner(input: {
-  agentRunner?: IJsonPacketAgentRunner;
-  runtimeConfig: Parameters<typeof buildCommandJsonPacketAgentRunnerConfig>[0];
-  promptId: 'edit-flow/capability-runner';
-  packetPath: string;
-  stage: string;
-  action: string;
-  editId: string;
-  capabilityId: string;
-  stepId: string;
-}): IJsonPacketAgentRunner {
-  try {
-    return resolveJsonPacketAgentRunner({
-      agentRunner: input.agentRunner,
-      commandRunner: buildCommandJsonPacketAgentRunnerConfig(input.runtimeConfig),
-    });
-  } catch (error) {
-    if (error instanceof AgentRunnerUnavailableError) {
-      throw new AgentHandoffRequiredError({
-        promptId: input.promptId,
-        packetPath: input.packetPath,
-        stage: input.stage,
-        action: input.action,
-        editId: input.editId,
-        capabilityId: input.capabilityId,
-        stepId: input.stepId,
-      }, `Edit Flow packet is ready for Agent handoff: ${input.packetPath}`);
-    }
-    throw error;
-  }
-}
-
-async function writeEditFlowCapabilityPacket(
-  projectRoot: string,
-  editId: string,
-  step: IEditFlowPlanStep,
-  packet: IAgentPacket,
-): Promise<string> {
-  const stage = `${step.capabilityId}-${step.id}`.replace(/[^a-z0-9_.-]+/giu, '-');
-  const packetPath = getEditPlanningAgentPacketPath(projectRoot, stage, editId);
-  await mkdir(dirname(packetPath), { recursive: true });
-  await writeFile(packetPath, `${JSON.stringify(packet, null, 2)}\n`, 'utf-8');
-  return packetPath;
+function requireDirectEditFlowAgentRunner(
+  agentRunner: IJsonPacketAgentRunner | undefined,
+  stage: string,
+): IJsonPacketAgentRunner {
+  if (agentRunner) return agentRunner;
+  throw new AgentRunnerUnavailableError(`${stage} requires direct Agent/SubAgent execution`);
 }
 
 async function confirmEditFlowStep(input: {

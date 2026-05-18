@@ -1,7 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
-	  AgentHandoffRequiredError,
 	  AgentRunnerUnavailableError,
 	  analyzeWorkspaceProjectMedia,
 	  createProjectReverseGeocodeService,
@@ -310,16 +309,6 @@ async function runJob(
           result,
         };
       } catch (error) {
-        if (error instanceof AgentHandoffRequiredError) {
-          return {
-            finalStatus: 'awaiting_agent',
-            result: {
-              status: 'awaiting_agent',
-              message: 'Edit Flow packet is ready; continue in the current Agent conversation to generate the declared output.',
-              handoff: error.details,
-            },
-          };
-        }
         if (error instanceof AgentRunnerUnavailableError) {
           throw new BlockedJobError([error.message]);
         }

@@ -1940,15 +1940,13 @@ function EditFlowPage({
     .sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')));
   const activeEditFlowJob = editFlowJobs.find(job => (
     ['queued', 'running', 'blocked'].includes(job.status)
-    || (job.status === 'awaiting_agent' && !isResolvedEditFlowAwaitingJob(job, editFlowPlan, editFlowRuns))
   ));
   const planStatus = editFlowPlan?.status || 'missing';
   const canRunSteps = planStatus === 'confirmed';
   const isBusy = Boolean(busy['job:edit-flow']);
   const spansReady = config?.spans?.fresh;
   const chronologyReady = config?.chronology?.chronology?.status === 'confirmed';
-  const hasHostPacketRunner = Boolean(config?.runtime?.agentPacketRunnerConfigured);
-  const planButtonLabel = formatEditFlowPlanButtonLabel(isBusy, hasHostPacketRunner);
+  const planButtonLabel = formatEditFlowPlanButtonLabel(isBusy);
 
   return (
     <div className="route-page edit-flow-page">
@@ -1962,9 +1960,7 @@ function EditFlowPage({
           <div className="edit-flow-panel-head">
             <div>
               <h2>剪辑入口</h2>
-              <p>{hasHostPacketRunner
-                ? '从 confirmed chronology 进入规则驱动的能力流。'
-                : '未配置 host packet runner；这里会准备 Planner 交接包，随后由当前 Agent 对话生成 Flow Plan。'}</p>
+              <p>从 confirmed chronology 进入规则驱动的能力流。</p>
             </div>
             <Button
               type={isBusy || !editRuleCategory ? 'disabled' : 'primary'}
@@ -2013,11 +2009,11 @@ function EditFlowPage({
             <EditFlowStatusItem label="Spans" value={spansReady ? 'fresh' : 'missing/stale'} tone={spansReady ? 'good' : 'warn'} />
             <EditFlowStatusItem label="Chronology" value={chronologyReady ? 'confirmed' : 'not ready'} tone={chronologyReady ? 'good' : 'warn'} />
             <EditFlowStatusItem label="Flow Plan" value={planStatus} tone={planStatus === 'confirmed' ? 'good' : planStatus === 'stale' ? 'bad' : 'warn'} />
-            <EditFlowStatusItem label="Runner" value={hasHostPacketRunner ? 'host runner' : 'agent handoff'} tone={hasHostPacketRunner ? 'good' : 'warn'} />
+            <EditFlowStatusItem label="Runner" value="direct Agent/SubAgent" tone="good" />
           </div>
 
           {activeEditFlowJob ? (
-            <div className="edit-flow-handoff">
+            <div className="edit-flow-job">
               <div>
                 <strong>{formatEditFlowJobStatus(activeEditFlowJob.status)}</strong>
                 <span>{activeEditFlowJob.jobId}</span>
@@ -2082,9 +2078,8 @@ function EditFlowPage({
           const capability = registry.get(step.capabilityId);
           const latestRun = latestRunByStep.get(step.id);
           const runStatus = latestRun?.status || 'pending';
-          const awaitingAgent = runStatus === 'awaiting_agent';
           const awaitingReview = runStatus === 'awaiting_review';
-          const canRun = canRunSteps && !isBusy && !awaitingReview && !awaitingAgent;
+          const canRun = canRunSteps && !isBusy && !awaitingReview;
           return (
             <Card key={step.id} className={`panel edit-flow-step edit-flow-step-${runStatus.replace(/_/gu, '-')}`}>
               <div className="edit-flow-step-grid">
@@ -2111,23 +2106,12 @@ function EditFlowPage({
                   </div>
 
                   {latestRun?.error ? (
-                    <div className={awaitingAgent ? 'edit-flow-run-message' : 'edit-flow-run-message edit-flow-run-message-danger'}>
+                    <div className="edit-flow-run-message edit-flow-run-message-danger">
                       {latestRun.error}
                     </div>
                   ) : null}
                   {latestRun?.outputPaths?.length ? (
                     <div className="edit-flow-output-paths">{`输出：${latestRun.outputPaths.join(', ')}`}</div>
-                  ) : null}
-                  {latestRun?.handoff ? (
-                    <div className="edit-flow-handoff-summary">
-                      <strong>{latestRun.handoff.mode === 'sharded' ? 'SubAgent handoff' : 'Agent handoff'}</strong>
-                      <span>{latestRun.handoff.mode === 'sharded'
-                        ? `${latestRun.handoff.shards?.length || 0} ${latestRun.handoff.shardBy} shards · ${latestRun.handoff.handoffPath}`
-                        : latestRun.handoff.packetPath || latestRun.handoff.handoffPath}</span>
-                      {latestRun.handoff.codexSubagentProfile ? (
-                        <span>{formatCodexSubagentProfile(latestRun.handoff.codexSubagentProfile)}</span>
-                      ) : null}
-                    </div>
                   ) : null}
                 </div>
 
@@ -2201,7 +2185,7 @@ function EditFlowStatusItem({ label, value, tone }) {
 function runStatusToTone(status) {
   if (status === 'completed') return 'good';
   if (status === 'failed') return 'bad';
-  if (status === 'awaiting_agent' || status === 'awaiting_review' || status === 'running') return 'warn';
+  if (status === 'awaiting_review' || status === 'running') return 'warn';
   return 'neutral';
 }
 
@@ -2209,7 +2193,6 @@ function formatEditFlowRunStatus(status) {
   const mapping = {
     pending: '待运行',
     running: '运行中',
-    awaiting_agent: '等待 Agent',
     awaiting_review: '待确认',
     completed: '已完成',
     failed: '失败',
@@ -2235,34 +2218,12 @@ function formatCodexSubagentProfile(profile) {
   return `Codex ${profile.reasoningEffort || 'high'} / fork ${profile.forkContext ? 'on' : 'off'} / ${profile.speed || 'standard'}`;
 }
 
-function formatEditFlowPlanButtonLabel(isBusy, hasHostPacketRunner) {
-  if (isBusy) return hasHostPacketRunner ? '生成中…' : '准备中…';
-  return hasHostPacketRunner ? '生成 Flow Plan' : '准备 Plan 交接包';
-}
-
-function isResolvedEditFlowAwaitingJob(job, editFlowPlan, editFlowRuns = []) {
-  if (!job || job.status !== 'awaiting_agent') return false;
-  const action = job.args?.action;
-  if (action === 'plan') {
-    return Boolean(editFlowPlan);
-  }
-  const stepId = job.result?.handoff?.stepId || job.args?.stepId;
-  if (!stepId) return false;
-  return editFlowRuns.some(run => (
-    run.stepId === stepId
-    && ['awaiting_review', 'completed'].includes(run.status)
-    && String(run.updatedAt || '').localeCompare(String(job.updatedAt || '')) >= 0
-  ));
+function formatEditFlowPlanButtonLabel(isBusy) {
+  return isBusy ? '生成中…' : '生成 Flow Plan';
 }
 
 function describeEditFlowJob(job) {
   if (!job) return '';
-  if (job.status === 'awaiting_agent') {
-    const packetPath = job.result?.handoff?.handoffPath || job.result?.handoff?.packetPath;
-    return packetPath
-      ? `等待当前 Agent 消费交接包：${packetPath}`
-      : job.result?.message || '交接包已准备好，等待当前 Agent 对话继续生成。';
-  }
   if (job.status === 'blocked') {
     return job.lastError || (job.blockers || []).join('；') || job.jobId;
   }
@@ -2270,7 +2231,6 @@ function describeEditFlowJob(job) {
 }
 
 function formatEditFlowJobStatus(status) {
-  if (status === 'awaiting_agent') return '等待 Agent 接手';
   if (status === 'blocked') return '流程阻塞';
   if (status === 'running') return '正在运行';
   if (status === 'queued') return '排队中';

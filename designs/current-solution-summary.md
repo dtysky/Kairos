@@ -18,6 +18,7 @@ Kairos 当前需要区分两层：
 - `Pharos` 输入当前固定镜像到项目内 `pharos/<trip_id>/plan.json + record.json? + gpx/`
   - 项目初始化当前会直接创建 `projects/<projectId>/pharos/`
   - Console 读取项目配置时会补齐缺失的 `pharos/` 根目录，并在 `/ingest-gps` 明确提示这个固定投放位置
+  - Pyxis 对普通事件完成时间的过长二次确认属于 Pharos 上游 UI 防误保护，不改变 `record.json.actual_time` schema；Kairos 仍只消费写入后的实际时间真相
 - 一条与主链解耦的 `DaVinci color` 独立增强链路
   - 当前已经有最小 `/color` 控制面与项目级 `color/` runtime/archive store
   - 当前 `/color` 会自动发现已配置 `rawPath` 的素材根，派生约定命名与阻塞状态
@@ -167,8 +168,7 @@ Kairos 当前需要区分两层：
     - `style-profile-synthesizer` 只读取 packetized summary，先产出包含三层的 `style-draft.json`
     - `style-profile-reviewer` 只读取 summary + draft，写 `style-review.json`
     - reviewer blockers 当前是最终 style profile 的硬闸门；缺层、证据不足却强断言、或把 `editingTechnical` 冒充新剪辑规则都必须阻塞
-    - 正式执行后端必须使用宿主提供的 packet runner / 真实 subagent 链；官方路径不允许外接 `ILlmClient` fallback
-    - workspace / project runtime 可通过 `config/runtime.json` 的 `agentPacketRunnerCommand` / `agentPacketRunnerArgs` / `agentPacketRunnerCwd` 声明这个 packet runner
+    - 正式执行后端必须使用宿主提供的真实 clean-context Agent/SubAgent 链；官方路径不允许外接 `ILlmClient`
 - 未来如果引入桌面 UI 或更多 provider / adapter，应建立在这套协议与项目模型上，而不是推翻它
 - 某些项目会直接消费调色后的素材版本而非原始素材；因此主链面向的是“当前采用的素材版本”，而不是固定绑定“永远使用原始素材”
 - `project-brief` 的路径映射块当前可选带 `原始路径` 与有序 `备选路径N / 原始路径N`
@@ -386,8 +386,8 @@ flowchart TD
 - `edits/<editId>/planning/flow-plan.json` 必须人工确认，且 edit-rule hash 匹配，才允许执行 step。
 - 每个 step 只按 `capabilityId / inputRefs / outputRefs / gate / execution` 执行；代码不得关键词解析规则 markdown 来推断 chronology、素材权重、默认章节或结构禁区。
 - `execution` 可表达 SubAgent 粒度和连续天阈值打包：例如 `shardBy=day` 搭配 `shardPacking={base:"day", metric:"chronologyEventCount"|"materialRefCount", maxPerShard, preserveOrder:true}`。
-- 所有 Edit Flow `sharded-agent` 都必须写入 `codexSubagentProfile={reasoningEffort:"high", forkContext:false, speed:"standard"}`，执行时不 fork 当前长上下文，只传 packet 路径和任务。
-- step 轻量执行记录写入 `edits/<editId>/runs/<runId>/record.json`，记录 runner、输入快照、输出路径、状态、失败原因和人工 gate 状态；handoff、agent packets、shard outputs 写入 ignored `.tmp/edit-flow/<editId>/runs/<runId>/`。
+- 所有 Edit Flow `sharded-agent` 都必须写入 `codexSubagentProfile={reasoningEffort:"high", forkContext:false, speed:"standard"}`，执行时由 confirmed Flow Plan step 直接启动 Codex SubAgent，不 fork 当前长上下文，只传有界 step/shard 上下文。
+- step 轻量执行记录写入 `edits/<editId>/runs/<runId>/record.json`，记录 runner、输入快照、输出路径、状态、失败原因和人工 gate 状态；capability 只写 `outputRefs` 声明的正式输出。
 - `trip.event_table` 只消费 confirmed `media/chronology.json`；素材级 spans 与 asset reports 从 `material.archive` / `material.recall` 开始进入。
 - 当前 capability registry v1 是固定注册表，而不是从某个规则样例反推：
   - `pharos.parse`
@@ -402,7 +402,7 @@ flowchart TD
 - `script.generate` 是可选 capability，只在剪辑规则明确要求前置文本稿 / beat 稿时出现；它不是旅行纪录片规则的强制步骤。
 - `timeline.generate` 从 Flow Plan 声明的前序 `outputRefs` 读取输入，不要求 `edits/<editId>/script/current.json`。
 - `timeline/current.json` 可以保留为 KTEP 时间线产物名，但它只是 `timeline.generate` 的输出，不代表固定 Timeline 阶段。
-- capability runner 可以复用旧 script/timeline 内部脚本、clean-context packet stage 或确定性工具，但这些实现必须挂到 registry，而不是藏在固定阶段代码里。
+- capability runner 可以复用旧 script/timeline 内部脚本、clean-context Agent stage 或确定性工具，但这些实现必须挂到 registry，而不是藏在固定阶段代码里。
 - `KTEP 2.0` 当前正式把 source-speech beat 升级为双通道：
   - `audioSelections[]` 负责原声音频锚点与 timing truth
   - `visualSelections[]` 负责同拍内必须保留的陪衬视觉证据
@@ -468,7 +468,7 @@ flowchart TD
 - `placeClips()` 不再把单张照片当作预算容器；照片默认是 `1s` 静默停留，只有脚本显式要求更长 `holdMs` 时才拉长
 - photo-only beat 当前默认不生成字幕；没有可用原声的视频 beat 允许尽可能用旁白完整组织
 - 时间线 / 草稿输出规格已收口为项目级运行时配置：`timelineWidth / timelineHeight / timelineFps`，默认值为 `3840x2160 @ 30fps`
-- 如果段级审查产物缺失、reviewer 未通过或 packet runner 失败，Timeline 当前必须明确阻塞；不能静默退回旧的 raw-beat assembly
+- 如果段级审查产物缺失、reviewer 未通过或正式 Agent 执行失败，Timeline 当前必须明确阻塞；不能静默退回旧的 raw-beat assembly
 - 当某拍不走 source speech 时，时间线会把命中的带音轨视频 clip 标记为静音意图；导出到 Jianying 时会落成静音视频片段
 - 剪映导出不再走外部 `jianying-mcp` / 独立 `Jianying Server` 路线，而是由 Node 侧调用 vendored `pyJianYingDraft` 本地 CLI
 - 当前剪映 backend 会直写 `draft_info.json` / `draft_meta_info.json`，并补齐本地素材注册元数据

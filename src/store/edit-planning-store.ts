@@ -5,7 +5,7 @@ import {
   IEditFlowPlan as ZEditFlowPlan,
   IEditFlowStepRunRecord as ZEditFlowStepRunRecord,
 } from '../protocol/schema.js';
-import { getProjectEditPlanningRoot, getProjectEditRoot, normalizeEditId, shouldReadLegacyEditPath } from './edit-store.js';
+import { getProjectEditPlanningRoot, getProjectEditRoot, shouldReadLegacyEditPath } from './edit-store.js';
 import { readJsonOrNull, writeJson } from './writer.js';
 
 export function getEditFlowPlanPath(projectRoot: string, editId?: string | null): string {
@@ -28,24 +28,8 @@ export function getEditFlowRunRoot(projectRoot: string, runId: string, editId?: 
   return join(getEditFlowRunsRoot(projectRoot, editId), runId);
 }
 
-export function getEditFlowTempRunRoot(projectRoot: string, runId: string, editId?: string | null): string {
-  return join(projectRoot, '.tmp', 'edit-flow', normalizeEditId(editId), 'runs', runId);
-}
-
 export function getEditFlowRunRecordPath(projectRoot: string, runId: string, editId?: string | null): string {
   return join(getEditFlowRunRoot(projectRoot, runId, editId), 'record.json');
-}
-
-export function getEditPlanningAgentPacketsRoot(projectRoot: string, editId?: string | null): string {
-  return join(projectRoot, '.tmp', 'edit-flow', normalizeEditId(editId), 'planning', 'agent-packets');
-}
-
-export function getEditPlanningAgentPacketPath(
-  projectRoot: string,
-  stage: string,
-  editId?: string | null,
-): string {
-  return join(getEditPlanningAgentPacketsRoot(projectRoot, editId), `${stage}.json`);
 }
 
 export async function loadEditFlowPlan(

@@ -37,6 +37,7 @@ alwaysApply: true
 - 只有 `status: "expected"` 或 `"unexpected"` 且拥有完整 `actual_time.start/end` 的记录可以参与素材 `pharosMatches`。
 - `status: "pending"` 表示尚未完成/可能缺失，不能绑定现有素材；`status: "abandoned"` 表示主动放弃，既不能绑定素材，也不能标记为缺失素材。
 - `plan.json` 的 `time_window` 只用于计划展示、提醒和执行记录默认值，不得作为素材归属 fallback；shot 自带计划/实际 GPS 也不作为素材归属时间真相。
+- Pyxis 普通事件完成时长过长的二次确认只发生在上游写入前，用于防止误选超长 `actual_time`；它不新增协议字段，也不授权 Kairos 侧增加归属 fallback 或保护性改判。
 
 ## 禁止行为
 

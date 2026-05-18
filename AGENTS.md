@@ -194,7 +194,7 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - `style-profile-synthesizer` writes `style-draft.json`
   - `style-profile-reviewer` writes `style-review.json`
   - reviewer blockers are a hard gate before `config/styles/{category}.md`
-  - formal stage execution must use a host packet runner / real subagent chain; external `ILlmClient` fallback is not allowed on the official path
+  - formal stage execution must use a real clean-context Agent/SubAgent chain; external `ILlmClient` is not an official executor
 - Treat the end state of every Kairos-managed top-level flow as `ML stopped`.
 - Treat video Analyze as a staged pipeline whose formal semantic decision happens in `finalize`:
   - with audio: `coarse-scan -> audio-analysis -> finalize -> deferred scene detect(if needed)`
@@ -222,7 +222,7 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - every edit-flow step must execute only when its confirmed Flow Plan step exists, matches the current edit-rule hash, and its declared `inputRefs` are present
   - code must only parse Flow Plan fields such as `capabilityId`, `inputRefs`, `outputRefs`, `gate`, runner metadata, and `execution`; it must not keyword-parse edit-rule markdown into arrangement heuristics
   - natural-language edit rules may request `SubAgent` work, shard granularity, and threshold packing; Flow Planner must translate that into `step.execution`, including `shardPacking`, and runtime code may only read the confirmed Flow Plan execution field
-  - every Edit Flow `sharded-agent` step must carry `codexSubagentProfile={reasoningEffort: "high", forkContext: false, speed: "standard"}`; when Codex agents are spawned from a handoff, pass only the packet path/task and do not fork the current long context
+  - every Edit Flow `sharded-agent` step must carry `codexSubagentProfile={reasoningEffort: "high", forkContext: false, speed: "standard"}`; Codex agents must be spawned directly from the confirmed Flow Plan step with bounded step/shard context and must not fork the current long context
   - `trip.event_table` is an event-level chronology planning step and must declare only `media/chronology.json`; spans and asset reports belong to material archive/recall steps
   - `script.generate` is optional and appears only when the selected剪辑规则 explicitly asks for a pre-cut text/beat draft; it is not a mandatory narration step
   - `timeline.generate` must consume Flow Plan declared predecessor outputs and must not require `edits/<editId>/script/current.json`
@@ -240,10 +240,10 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
   - `/edit` selects the edit rule and optional layered style profile, generates/confirms Flow Plan, then runs confirmed steps one by one
   - changing `editRuleCategory` invalidates the existing Flow Plan and step runs; do not infer a migration from old script/timeline artifacts
   - each step writes its own declared outputs and a lightweight run record under `edits/<editId>/runs/<runId>/`
-  - Agent-backed Flow Plan / step work may pause as `awaiting_agent` after writing an agent handoff; single-agent handoffs write one packet, while `sharded-agent` handoffs write shard packets and a reducer manifest under ignored `projects/<projectId>/.tmp/edit-flow/<editId>/runs/<runId>/`
+  - Agent-backed Flow Plan / step work must run through direct Agent/SubAgent execution; when that executor is unavailable, the action blocks before writing step outputs or temporary runner artifacts
   - human-gated steps must pause at `awaiting_review` until `/edit` confirms the step
   - do not introduce a required global beat/script intermediate; beat-like, recall, framework, KTEP, subtitle, and Resolve-lock artifacts are capability-owned outputs
-  - reusable deterministic heuristics, Agent packet stages, and external scripts should be registered as capability runner implementations rather than hidden inside fixed phase code
+  - reusable deterministic helpers, Agent-backed stages, and external scripts should be registered as capability runner implementations rather than hidden inside fixed phase code
   - `timeline/current.json` may remain the KTEP output of `timeline.generate`, but it is not proof that a fixed Timeline phase exists
 - Reusable style assets are workspace-scoped by default:
   - `config/styles/`

@@ -17,9 +17,9 @@ Chronology 之后的正式剪辑入口是 `/edit`，不是固定的 `Script -> T
 - `edits/<editId>/planning/flow-plan.json` 是每个 edit unit 的可执行计划。
 - capability registry 是可执行原子库；代码只执行 confirmed Flow Plan 中声明的 `capabilityId / inputRefs / outputRefs / gate / runner / execution`。
 - 剪辑规则可以用自然语言要求 `SubAgent`、切分粒度和阈值打包；Flow Planner 负责写入 `step.execution` / `shardPacking`，运行时代码不得直接解析规则 markdown。
-- 所有 Edit Flow `sharded-agent` 都必须声明 `codexSubagentProfile={reasoningEffort:"high", forkContext:false, speed:"standard"}`；执行 Codex SubAgent 时只传 packet path/task，不 fork 当前长上下文。
+- 所有 Edit Flow `sharded-agent` 都必须声明 `codexSubagentProfile={reasoningEffort:"high", forkContext:false, speed:"standard"}`；执行 Codex SubAgent 时直接依据 confirmed Flow Plan step 启动，只传有界 step/shard 上下文，不 fork 当前长上下文。
 - `trip.event_table` 只读取 confirmed `media/chronology.json`；不要把 `store/spans.json` 或 `analysis/asset-reports/*.json` 塞进事件组织阶段。
-- handoff、agent packets、shard outputs 属于临时运行文件，写入 ignored `projects/<projectId>/.tmp/edit-flow/<editId>/runs/<runId>/`；正式 `edits/<editId>/runs/` 只保留轻量 record。
+- 正式 `edits/<editId>/runs/` 只保留轻量 record；capability 只写 `outputRefs` 声明的正式输出。
 - 不要关键词解析剪辑规则 markdown，也不要把 style profile 的观察自动提升成硬规则。
 - 不要引入必选 `beat`、`script/current.json` 或其它全局中间稿；中间产物由每个 capability 的 `outputRefs` 声明。
 - `script.generate` 只是可选能力：只有剪辑规则明确要求前置文本稿、beat 稿或旁白草稿时才出现。
@@ -35,7 +35,7 @@ Chronology 之后的正式剪辑入口是 `/edit`，不是固定的 `Script -> T
 5. 按 Flow Plan step 运行能力：
    - 解析 `inputRefs`
    - 选择 runner：`deterministic / agent / script / manual`
-   - 如果没有 host packet runner，按 `step.execution` 写入 single 或 sharded handoff 并停在 `awaiting_agent`，由当前 Agent 对话消费 `.tmp/edit-flow/...` packet 后写 declared output
+   - `agent` / `script` runner 必须由直接 Agent/SubAgent 执行器承接；缺少执行器时阻塞，不写正式输出
    - 写 declared outputs
    - 写 `edits/<editId>/runs/<runId>/record.json`
    - 如果 `gate=human`，停在 `awaiting_review` 等待用户确认
@@ -54,7 +54,7 @@ Chronology 之后的正式剪辑入口是 `/edit`，不是固定的 `Script -> T
 - `resolve.lock_rough_cut`
 - `postlock.subtitle_narration`
 
-能力可以由确定性函数、Agent packet、独立脚本或人工导入执行。选择逻辑属于 capability runner，不属于固定 phase。
+能力可以由确定性函数、Agent-backed stage、独立脚本或人工导入执行。选择逻辑属于 capability runner，不属于固定 phase。
 
 ## 阻塞规则
 

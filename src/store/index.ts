@@ -128,11 +128,8 @@ export {
 export {
   getEditFlowPlanPath,
   getEditPlanningArtifactPath,
-  getEditPlanningAgentPacketsRoot,
-  getEditPlanningAgentPacketPath,
   getEditFlowRunsRoot,
   getEditFlowRunRoot,
-  getEditFlowTempRunRoot,
   getEditFlowRunRecordPath,
   loadEditFlowPlan,
   writeEditFlowPlan,

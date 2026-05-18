@@ -115,6 +115,7 @@ importProjectGpxTracks(input: {
 - ingest 会刷新 `gps/derived.json`，把 embedded-derived sparse points 与可解析的 `manual-itinerary` 条目统一编译进 `project-derived-track`
 - ingest 与 `gps-refresh` 都必须刷新 `analysis/pharos-context.json`；Pharos context 要按项目内 `pharos/` 的输入 fingerprint 自动失效并重建
 - Pharos planned shot 的素材归属只使用 `record.json.actual_time` 精确匹配；continuous 行车记录在 `plan` 中没有 planned time 属于正常情况，只要 `record.json` 有完整 actual time 就不应产生 planned-time warning；planned time 不作为素材归属 fallback
+- Pyxis 普通事件完成时长过长二次确认是上游 UI 写入前保护；Kairos ingest / gps-refresh 不因此改写 `record.json`，也不增加 planned-time 或 GPS fallback
 - 如果 Pharos 协议 hash 与 `.ai/pharos-protocol-baseline.json` 不匹配，先完成协议同步并刷新 baseline，再改 ingest / GPS 的 Pharos 接入代码
 - Analyze 的正式空间优先级是 `embedded GPS > Pharos GPX > 普通 project GPX > project-derived-track > none`
 - Pharos GPX 只来自 planned shot 归属后的 trip `gpx/*.gpx` 按时取点；普通项目 GPX 来自 `gps/merged.json` / `gps/tracks/*.gpx`

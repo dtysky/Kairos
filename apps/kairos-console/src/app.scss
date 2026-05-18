@@ -921,7 +921,7 @@ pre {
   background: var(--err-soft);
 }
 
-.edit-flow-handoff {
+.edit-flow-job {
   display: grid;
   gap: 10px;
   padding: 14px;
@@ -930,19 +930,19 @@ pre {
   background: rgba(156, 107, 29, 0.08);
 }
 
-.edit-flow-handoff > div {
+.edit-flow-job > div {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
 }
 
-.edit-flow-handoff span {
+.edit-flow-job span {
   color: var(--muted);
   font-size: 12px;
 }
 
-.edit-flow-handoff code {
+.edit-flow-job code {
   display: block;
   overflow-wrap: anywhere;
   color: #5f4215;
@@ -1138,8 +1138,7 @@ pre {
 }
 
 .edit-flow-run-message,
-.edit-flow-output-paths,
-.edit-flow-handoff-summary {
+.edit-flow-output-paths {
   padding: 12px 14px;
   border-radius: 14px;
   color: #5f4215;
@@ -1147,20 +1146,6 @@ pre {
   font-size: 13px;
   line-height: 1.55;
   overflow-wrap: anywhere;
-}
-
-.edit-flow-handoff-summary {
-  display: grid;
-  gap: 5px;
-}
-
-.edit-flow-handoff-summary strong {
-  font-size: 13px;
-}
-
-.edit-flow-handoff-summary span {
-  font-size: 12px;
-  line-height: 1.55;
 }
 
 .edit-flow-run-message-danger {
@@ -2046,7 +2031,7 @@ pre {
   .monitor-toolbar-meta,
   .edit-flow-panel-head,
   .edit-flow-step-title,
-  .edit-flow-handoff > div,
+  .edit-flow-job > div,
   .actions,
   .section-header,
   .list-toolbar,

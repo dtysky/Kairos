@@ -17,7 +17,6 @@ import {
   loadColorResolveProjectMap,
   loadColorTransformPresetsConfig,
   loadIngestRoots,
-  loadRuntimeConfig,
   loadEditRulesConfig,
   loadEditFlowRunRecords,
   listWorkspaceProjects,
@@ -230,7 +229,6 @@ async function routeRequest(
       spansMeta,
       chronologyState,
       colorCurrent,
-      runtimeConfig,
       colorGroupSnapshots,
       workspaceColorTransformPresets,
       colorResolveProjectMap,
@@ -246,7 +244,6 @@ async function routeRequest(
       loadSpansMeta(projectRoot),
       loadChronologyReviewState(projectRoot),
       loadColorCurrent(projectRoot),
-      loadRuntimeConfig(projectRoot),
       loadColorGroupsSnapshots(projectRoot),
       loadColorTransformPresetsConfig(options.workspaceRoot).catch(() => ({ profiles: {}, discoveredPresets: {} })),
       loadColorResolveProjectMap(projectRoot),
@@ -278,9 +275,6 @@ async function routeRequest(
       ingestRootSummaries,
       pharosStatus: buildProjectPharosAssetStatus(pharosContext, projectRoot),
       pharosContext,
-      runtime: {
-        agentPacketRunnerConfigured: Boolean(runtimeConfig.agentPacketRunnerCommand?.trim()),
-      },
       spans: {
         count: spans.length,
         meta: spansMeta,

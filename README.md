@@ -22,7 +22,8 @@ Current stable pipeline:
   - `/ingest-gps` 会明确提示这个固定目录，并提醒用户把 `trip_id/plan.json`、`record.json`、`gpx/` 镜像放进来
   - Console 会把 `Pharos` 状态显示为 `空 / 解析成功 / 解析失败`
   - `Pharos` context 的刷新归属于 Ingest / GPS 刷新；`analysis/pharos-context.json` 会按项目内 `pharos/` 输入 fingerprint 自动失效并重建，Analyze 只消费已刷新的 context
-  - planned shot 的素材归属优先按 `record.json` 的 `actual_time` 匹配；只有该 shot 没有可用 actual time 时，才回退到 `plan` 的 planned time segment
+  - planned shot 的素材归属只按 `record.json` 的 `actual_time` 匹配；没有可用 actual time 时不回退到 `plan` 的 planned time segment
+  - Pharos/Pyxis 对普通事件完成时间增加写入前过长二次确认；这是上游 UI 防误保护，不改变 `record.json` schema，也不改变 Kairos 的素材归属逻辑
   - planned shot 的空间真值当前统一来自 trip `gpx/*.gpx` 按素材/span 时间反算；无论 `drive` 还是单机位 shot，都不再把 `plan.gps / gps_start / gps_end / actual_gps` 当作正式坐标真值
   - 如果素材已有 `embedded GPS`，包括成功绑定的同名 `.SRT` 或 DJI FlightRecord，Pharos GPX 不允许覆盖这个素材同源真值
 - `导入与 GPS` 当前正式承载素材时间阻塞与修正：
@@ -200,24 +201,23 @@ Current stable pipeline:
     - `style-profile-synthesizer` reads only that packetized summary and writes `style-draft.json`
     - `style-profile-reviewer` reads only the draft + packet and writes `style-review.json`
     - reviewer blockers are a hard gate before `config/styles/{category}.md`, including missing layers, reference-video recaps masquerading as style profiles, missing literary writing mechanics, insufficient artistic abstraction, overfitted layer claims, and editing-technical claims that pretend to be new edit rules
-    - formal stage execution must use a host packet runner / real subagent chain; external `ILlmClient` fallback is not allowed on the official path
-    - workspace/project runtime may declare that packet runner via `config/runtime.json` `agentPacketRunnerCommand` / `agentPacketRunnerArgs` / `agentPacketRunnerCwd`
+    - formal stage execution must use a real clean-context Agent/SubAgent chain; external `ILlmClient` is not an official executor
 - the `/edit` console page is the formal Edit Flow surface after `/chronology`:
   - user selects a workspace `editRuleCategory` from `config/edit-rules/*.md` and may optionally select one layered `styleCategory`
   - the Flow Planner generates `edits/<editId>/planning/flow-plan.json` from the raw edit-rule markdown, capability registry, project context, confirmed chronology, and analysis availability
   - the user confirms the Flow Plan before any capability step runs; rule hash changes mark the plan stale and block old step execution
   - every step executes by `capabilityId / inputRefs / outputRefs / gate`, with runner choice recorded as `deterministic / agent / script / manual`
   - natural-language edit rules may request `SubAgent` execution, a split grain such as day, and threshold packing; Flow Planner translates that into `step.execution`, including `shardPacking` when the rule asks for consecutive-day bundles instead of one shard per day
-  - all Edit Flow sharded SubAgent handoffs must carry `codexSubagentProfile={ reasoningEffort: "high", forkContext: false, speed: "standard" }`; Codex execution should pass only the packet path/task, never fork the current long conversation context
+  - all Edit Flow sharded SubAgent steps must carry `codexSubagentProfile={ reasoningEffort: "high", forkContext: false, speed: "standard" }`; Codex execution must spawn directly from the confirmed Flow Plan step with bounded step/shard context, never fork the current long conversation context
   - `trip.event_table` is an event-level planning capability and formally reads only confirmed `media/chronology.json`; spans and asset reports are material-level inputs for later archive/recall capabilities
-  - step run records remain under `edits/<editId>/runs/<runId>/record.json`, while large handoff files, agent packets, and shard outputs live under ignored `projects/<projectId>/.tmp/edit-flow/<editId>/runs/<runId>/`
+  - step run records remain under `edits/<editId>/runs/<runId>/record.json`; each capability writes only the outputs declared by its `outputRefs`
   - `script.generate` appears only when the selected edit rule explicitly asks for a pre-cut text or beat draft
   - `timeline.generate` consumes only the Flow Plan declared predecessor outputs; it must not require `edits/<editId>/script/current.json`
-  - code must not parse edit-rule markdown into hidden arrangement heuristics; rule interpretation lives in the confirmed Flow Plan and capability packets
+  - code must not parse edit-rule markdown into hidden arrangement heuristics; rule interpretation lives in the confirmed Flow Plan and capability-owned Agent context
   - no global `beat`, `script/current.json`, or replacement required intermediate is introduced; every intermediate is capability-owned through `outputRefs`
 - a Kairos project may now contain multiple independent `Edit Unit`s over the same shared material workspace:
   - shared layer stays at project root: `pharos/`, `store/`, `analysis/`, `media/chronology.json`, and `color/`
-  - edit-specific truth lives under `edits/<editId>/planning/`, lightweight `edits/<editId>/runs/` records, and capability-owned output directories such as `timeline/` or `subtitles/`; heavy packet/run scratch lives in `.tmp/edit-flow/`
+  - edit-specific truth lives under `edits/<editId>/planning/`, lightweight `edits/<editId>/runs/` records, and capability-owned output directories such as `timeline/` or `subtitles/`
   - new edit-flow work does not use legacy root-level `script/`, `timeline/`, or `subtitles/` aliases
   - Resolve edit mapping is fixed by convention: Resolve Project `${projectBrief.name} [Edit]`, Resolve Timeline `${editLabel} [${editId}]`
   - first rough-cut lock writes `edits/<editId>/timeline/locked-rough-cut.json`; v1 post-lock formalizes source-speech subtitles and one reviewed narration text only

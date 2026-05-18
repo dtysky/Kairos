@@ -72,7 +72,7 @@ export const CEDIT_FLOW_CAPABILITY_CATALOG: IEditFlowCapability[] = [
   {
     capabilityId: 'material.recall',
     title: 'Material Recall',
-    summary: 'Reuses segment-plan, material-slots, chosenSpanIds, and material bundles. The rule and reviewed planning artifacts enter the packet; code does not parse markdown for weights.',
+    summary: 'Reuses segment-plan, material-slots, chosenSpanIds, and material bundles. The rule and reviewed planning artifacts enter the Agent stage context; code does not parse markdown for weights.',
     stableInputs: ['edits/<editId>/planning/flow-plan.json', 'planning/*.md', 'analysis/material-bundles.json', 'store/spans.json'],
     stableOutputs: ['edits/<editId>/script/segment-plan.json', 'edits/<editId>/script/material-slots.json'],
     outputKind: 'json',
@@ -83,7 +83,7 @@ export const CEDIT_FLOW_CAPABILITY_CATALOG: IEditFlowCapability[] = [
   {
     capabilityId: 'script.generate',
     title: 'Script Generate',
-    summary: 'Reuses the existing clean-context script pipeline and injects confirmed flow planning artifacts into stage packets.',
+    summary: 'Reuses the existing clean-context script pipeline and injects confirmed flow planning artifacts into Agent stage context.',
     stableInputs: ['edits/<editId>/script/material-slots.json', 'edits/<editId>/planning/flow-plan.json', 'planning/*.md'],
     stableOutputs: ['edits/<editId>/script/current.json'],
     outputKind: 'json',
@@ -94,7 +94,7 @@ export const CEDIT_FLOW_CAPABILITY_CATALOG: IEditFlowCapability[] = [
   {
     capabilityId: 'timeline.generate',
     title: 'Timeline Generate',
-    summary: 'Reuses the existing rough-cut-base and segment-cut review pipeline and injects confirmed flow planning artifacts into timeline packets.',
+    summary: 'Reuses the existing rough-cut-base and segment-cut review pipeline and injects confirmed flow planning artifacts into timeline Agent context.',
     stableInputs: ['edits/<editId>/planning/flow-plan.json', 'Flow Plan declared predecessor outputs', 'store/spans.json', 'media/chronology.json'],
     stableOutputs: ['edits/<editId>/timeline/current.json'],
     outputKind: 'ktep',
