@@ -235,9 +235,9 @@ project/
 │   ├── planning/
 │   │   └── flow-plan.json    # Edit Flow 可执行计划
 │   ├── runs/
-│   │   └── <runId>/record.json # capability step run truth
+│   │   └── current.json      # capability step run truth
 │   ├── timeline/
-│   │   ├── current.json      # timeline.generate capability 可选产出 — IKtepDoc
+│   │   ├── current.json      # timeline.generate KTEP/manifest 审计；Resolve timeline 才是成功标准
 │   │   └── locked-rough-cut.json
 │   └── subtitles/
 │       └── *.srt / *.vtt     # Phase 5 (Export) 产出
@@ -348,7 +348,10 @@ Chronology 审查：
 - 不存在固定 `Script -> Timeline` 用户流程。
 - 不引入必选 `script/current.json`、beat 或其它全局中间稿。
 - `script.generate` 只有当剪辑规则明确要求前置文本稿 / beat 稿时才出现。
-- `timeline.generate` 只读取 Flow Plan 声明的前序 outputs，不能要求 `script/current.json`。
+- `material.recall` 只输出 `material-slots.json`；`segment-plan.json` 不再是正式输出或下游输入。
+- `material-slots.json` 是素材召回和粗剪建议唯一结构化产物，每个 `chosenSpanId` 必须有 numeric `audio` dB / `speed` 倍速 treatment。
+- `timeline.generate` 是 deterministic Resolve rough-cut 创建步骤，只读取 `edit-framework.md + material-slots.json + spans + assets + chronology`，不能要求 `script/current.json` 或 `segment-plan.json`。
+- `timeline/current.json` 只是 KTEP/manifest 审计；Resolve 不可用时不能作为成功兜底。
 - `trip.event_table` 是事件级组织能力，只使用 confirmed chronology；不要因为 spans stale 或缺 asset reports 阻塞它。
 - `sharded-agent` step 的连续天打包、阈值与 SubAgent 口径只来自 confirmed `step.execution.shardPacking / codexSubagentProfile`；默认不得按 route 拆。
 - Edit Flow SubAgent step 必须写明 Codex 使用 `reasoning_effort=high`、`fork_context=false`、标准速度；执行时只传有界 step/shard 上下文，不 fork 当前长上下文。

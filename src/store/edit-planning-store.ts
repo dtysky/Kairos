@@ -1,8 +1,9 @@
-import { mkdir, readdir } from 'node:fs/promises';
+import { mkdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import type { IEditFlowPlan, IEditFlowStepRunRecord } from '../protocol/schema.js';
+import type { IEditFlowPlan, IEditFlowRunsState, IEditFlowStepRunRecord } from '../protocol/schema.js';
 import {
   IEditFlowPlan as ZEditFlowPlan,
+  IEditFlowRunsState as ZEditFlowRunsState,
   IEditFlowStepRunRecord as ZEditFlowStepRunRecord,
 } from '../protocol/schema.js';
 import { getProjectEditPlanningRoot, getProjectEditRoot, shouldReadLegacyEditPath } from './edit-store.js';
@@ -24,12 +25,8 @@ export function getEditFlowRunsRoot(projectRoot: string, editId?: string | null)
   return join(getProjectEditRoot(projectRoot, editId), 'runs');
 }
 
-export function getEditFlowRunRoot(projectRoot: string, runId: string, editId?: string | null): string {
-  return join(getEditFlowRunsRoot(projectRoot, editId), runId);
-}
-
-export function getEditFlowRunRecordPath(projectRoot: string, runId: string, editId?: string | null): string {
-  return join(getEditFlowRunRoot(projectRoot, runId, editId), 'record.json');
+export function getEditFlowRunsCurrentPath(projectRoot: string, editId?: string | null): string {
+  return join(getEditFlowRunsRoot(projectRoot, editId), 'current.json');
 }
 
 export async function loadEditFlowPlan(
@@ -56,10 +53,8 @@ export async function loadEditFlowRunRecord(
   runId: string,
   editId?: string | null,
 ): Promise<IEditFlowStepRunRecord | null> {
-  return readJsonOrNull(
-    getEditFlowRunRecordPath(projectRoot, runId, editId),
-    ZEditFlowStepRunRecord,
-  ) as Promise<IEditFlowStepRunRecord | null>;
+  const state = await loadEditFlowRunsState(projectRoot, editId);
+  return state.records.find(record => record.runId === runId) ?? null;
 }
 
 export async function writeEditFlowRunRecord(
@@ -67,22 +62,28 @@ export async function writeEditFlowRunRecord(
   record: IEditFlowStepRunRecord,
   editId?: string | null,
 ): Promise<void> {
-  const target = getEditFlowRunRecordPath(projectRoot, record.runId, editId);
+  const parsedRecord = ZEditFlowStepRunRecord.parse(record);
+  const target = getEditFlowRunsCurrentPath(projectRoot, editId);
+  const current = await loadEditFlowRunsState(projectRoot, editId);
+  const records = [
+    ...current.records.filter(item => item.runId !== parsedRecord.runId),
+    parsedRecord,
+  ].sort((a, b) => a.startedAt.localeCompare(b.startedAt));
   await mkdir(dirname(target), { recursive: true });
-  await writeJson(target, ZEditFlowStepRunRecord.parse(record));
+  await writeJson(target, ZEditFlowRunsState.parse({
+    schemaVersion: '1.0',
+    editId: parsedRecord.editId,
+    updatedAt: parsedRecord.updatedAt,
+    records,
+  }));
 }
 
 export async function loadEditFlowRunRecords(
   projectRoot: string,
   editId?: string | null,
 ): Promise<IEditFlowStepRunRecord[]> {
-  const root = getEditFlowRunsRoot(projectRoot, editId);
-  const entries = await readdir(root, { withFileTypes: true }).catch(() => []);
-  const records = await Promise.all(entries
-    .filter(entry => entry.isDirectory())
-    .map(entry => loadEditFlowRunRecord(projectRoot, entry.name, editId)));
-  return records
-    .filter((record): record is IEditFlowStepRunRecord => record != null)
+  const state = await loadEditFlowRunsState(projectRoot, editId);
+  return state.records
     .sort((a, b) => a.startedAt.localeCompare(b.startedAt));
 }
 
@@ -95,4 +96,21 @@ export async function findLatestEditFlowStepRunRecord(
   return records
     .filter(record => record.stepId === stepId)
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt))[0] ?? null;
+}
+
+async function loadEditFlowRunsState(
+  projectRoot: string,
+  editId?: string | null,
+): Promise<IEditFlowRunsState> {
+  const state = await readJsonOrNull(
+    getEditFlowRunsCurrentPath(projectRoot, editId),
+    ZEditFlowRunsState,
+  ) as IEditFlowRunsState | null;
+  if (state) return state;
+  return {
+    schemaVersion: '1.0',
+    editId: editId ?? 'main',
+    updatedAt: new Date(0).toISOString(),
+    records: [],
+  };
 }

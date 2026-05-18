@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { access, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { access, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, extname, join, relative } from 'node:path';
 import type {
   IAgentPacket,
@@ -7,10 +7,17 @@ import type {
   IEditFlowPlan,
   IEditFlowPlanStep,
   IEditFlowStepRunRecord,
+  IMaterialSlotsDocument,
 } from '../../protocol/schema.js';
+import { IMaterialSlotsDocument as ZMaterialSlotsDocument } from '../../protocol/schema.js';
 import {
   getEditFlowPlanPath,
+  getMaterialSlotsPath,
   getProjectEditRoot,
+  getSegmentPlanPath,
+  getTimelineCurrentPath,
+  assertFreshSpans,
+  loadAssets,
   loadAssetReports,
   loadChronologyReviewState,
   loadEditFlowPlan,
@@ -18,6 +25,7 @@ import {
   normalizeEditId,
   writeEditFlowRunRecord,
   findLatestEditFlowStepRunRecord,
+  readJsonOrNull,
 } from '../../store/index.js';
 import {
   AgentRunnerUnavailableError,
@@ -36,6 +44,8 @@ import {
   generateEditFlowPlan,
   runEditPlanningDocumentCapability,
 } from './flow-planner.js';
+import { assertMaterialSlotsContract } from './material-slots-contract.js';
+import { buildProjectTimeline } from '../timeline-core/project-timeline.js';
 
 export type TEditFlowAction = 'plan' | 'confirm-plan' | 'run-step' | 'confirm-step' | 'run-next';
 
@@ -295,7 +305,52 @@ async function executeStep(input: {
     });
     return [result.outputPath];
   }
-  return runGenericAgentCapability(input);
+  if (input.capabilityId === 'timeline.generate') {
+    await buildProjectTimeline({
+      projectRoot: input.projectRoot,
+      editId: input.editId,
+      workspaceRoot: input.workspaceRoot,
+      editRuleCategory: input.plan.editRuleCategory,
+    });
+    return [getTimelineCurrentPath(input.projectRoot, input.editId)];
+  }
+  const segmentPlanPath = getSegmentPlanPath(input.projectRoot, input.editId);
+  if (input.capabilityId === 'material.recall') {
+    await rm(segmentPlanPath, { force: true });
+  }
+  const outputPaths = await runGenericAgentCapability(input);
+  if (input.capabilityId === 'material.recall') {
+    const declaredSegmentPlan = outputPaths.some(outputPath => outputPath === segmentPlanPath
+      || outputPath.replaceAll('\\', '/').endsWith('/script/segment-plan.json'));
+    if (declaredSegmentPlan || await fileExists(segmentPlanPath)) {
+      await rm(segmentPlanPath, { force: true });
+      throw new Error('material.recall must not declare or write edits/<editId>/script/segment-plan.json');
+    }
+    const [materialSlots, assets, spansInfo, assetReports] = await Promise.all([
+      readJsonOrNull(
+        getMaterialSlotsPath(input.projectRoot, input.editId),
+        ZMaterialSlotsDocument,
+      ) as Promise<IMaterialSlotsDocument | null>,
+      loadAssets(input.projectRoot),
+      assertFreshSpans(input.projectRoot),
+      loadAssetReports(input.projectRoot),
+    ]);
+    if (!materialSlots) {
+      throw new Error(`material.recall did not write ${getMaterialSlotsPath(input.projectRoot, input.editId)}`);
+    }
+    try {
+      assertMaterialSlotsContract({
+        materialSlots,
+        assets,
+        spans: spansInfo.spans,
+        assetReports,
+      });
+    } catch (error) {
+      await rm(getMaterialSlotsPath(input.projectRoot, input.editId), { force: true });
+      throw error;
+    }
+  }
+  return outputPaths;
 }
 
 async function runGenericAgentCapability(input: {
@@ -321,6 +376,13 @@ async function runGenericAgentCapability(input: {
       'Use only the confirmed Flow Plan step, its declared inputRefs, and provided input artifacts.',
       'Do not require script/current.json unless this step explicitly declares it as an inputRef.',
       'Do not parse edit-rule markdown into code-like hidden heuristics; follow the confirmed Flow Plan.',
+      ...(input.capabilityId === 'material.recall'
+        ? [
+          'Write only edits/<editId>/script/material-slots.json; do not write segment-plan.json.',
+          'Every chosenSpanId must have treatments[spanId]={ audio:number, speed:number }; audio is dB, default 0, muted is -100, speed is multiplier, default 1.',
+          'Do not put mixed, audio:*, speed:*, audio=*, or speed=* text into formal material slot fields.',
+        ]
+        : []),
       'If evidence is missing, return a clear blocker in the output rather than inventing facts.',
     ],
     allowedInputs: ['confirmed flow plan', 'declared inputRefs', 'edit rule metadata', 'chronology summary', 'asset report summary'],
@@ -355,9 +417,7 @@ async function runGenericAgentCapability(input: {
       },
       ...input.inputArtifacts,
     ],
-    outputSchema: {
-      outputs: 'Record<outputRef, JSON-or-markdown-content>. Keys should match the step outputRefs exactly.',
-    },
+    outputSchema: buildCapabilityOutputSchema(input.capabilityId),
     reviewRubric: ['missing_declared_output', 'unsupported_claims', 'scope_violation'],
   };
   const runner = requireDirectEditFlowAgentRunner(input.agentRunner, input.capabilityId);
@@ -367,6 +427,24 @@ async function runGenericAgentCapability(input: {
     llm: { jsonMode: true, temperature: 0.2 },
   });
   return writeDeclaredOutputs(input.projectRoot, input.editId, input.step.outputRefs, result);
+}
+
+function buildCapabilityOutputSchema(capabilityId: TEditFlowCapabilityId): Record<string, unknown> {
+  if (capabilityId === 'material.recall') {
+    return {
+      outputs: {
+        'edits/<editId>/script/material-slots.json': {
+          id: 'string',
+          projectId: 'string',
+          generatedAt: 'ISO datetime',
+          segments: 'Array<{ segmentId, slots: Array<{ id, query, requirement, targetBundles, chosenSpanIds, treatments: Record<spanId,{ audio:number, speed:number }> }> }>',
+        },
+      },
+    };
+  }
+  return {
+    outputs: 'Record<outputRef, JSON-or-markdown-content>. Keys should match the step outputRefs exactly.',
+  };
 }
 
 function requireDirectEditFlowAgentRunner(
@@ -483,6 +561,15 @@ async function resolveRefMatches(pathOrPattern: string): Promise<string[]> {
   return entries
     .filter(entry => entry.isFile() && pattern.test(entry.name))
     .map(entry => join(dir, entry.name));
+}
+
+async function fileExists(path: string): Promise<boolean> {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 async function buildArtifactForPath(

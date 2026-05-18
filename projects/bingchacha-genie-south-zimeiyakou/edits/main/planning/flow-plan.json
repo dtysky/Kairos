@@ -6,10 +6,10 @@
   "editRuleCategory": "travel-documentary",
   "editRuleHash": "e1422a8d2b279a344c7584c8bc61eff6b71498d7a5e76590740cb28a9dc61cec",
   "generatedAt": "2026-05-18T11:25:13Z",
-  "updatedAt": "2026-05-18T11:29:03.721Z",
+  "updatedAt": "2026-05-18T16:59:29.868Z",
   "status": "confirmed",
   "confirmedAt": "2026-05-18T11:29:03.721Z",
-  "summary": "旅行纪录片 Edit Flow：先按 confirmed chronology 做连续天分片的关键事件组织，再沉淀素材事实与剪辑框架，随后按连续天分片做素材召回，生成 KTEP 时间线，经 Resolve 粗剪锁定后进入字幕与旁白收尾。",
+  "summary": "旅行纪录片 Edit Flow：先按 confirmed chronology 做连续天分片的关键事件组织，再沉淀素材事实与剪辑框架，随后按连续天分片做素材召回，直接生成 Resolve 粗剪 timeline，并保留 KTEP/manifest 审计后进入字幕与旁白收尾。",
   "assumptions": [
     "本计划来自 travel-documentary 自然语言规则；代码只执行本 Flow Plan，不解析规则正文。",
     "初版关键事件组织使用 SubAgent，按连续天顺序打包，阈值为约 80 个 chronology events。",
@@ -143,12 +143,10 @@
         "media/chronology.json"
       ],
       "outputRefs": [
-        "edits/<editId>/script/segment-plan.json",
         "edits/<editId>/script/material-slots.json"
       ],
       "outputTypes": {
-        "edits/<editId>/script/segment-plan.json": "json",
-        "edits/<editId>/script/material-slots.json": "json"
+        "edits/<editId>/script/material-slots.json": "material-slots"
       },
       "runner": "script",
       "execution": {
@@ -169,42 +167,46 @@
       },
       "gate": "human",
       "notes": [
-        "需要在召回结论里同时标记静音、加速等粗剪建议。",
+        "material-slots.json 是召回和粗剪建议的唯一正式结构化产物。",
+        "每个 chosenSpanId 必须有 numeric treatment：audio 为 dB，默认 0，静音 -100；speed 为倍速，默认 1。",
+        "不生成、不消费 segment-plan.json。",
         "不按 route 做一级 shard。"
       ]
     },
     {
       "id": "timeline-generate",
       "capabilityId": "timeline.generate",
-      "title": "生成 KTEP 粗剪时间线",
+      "title": "生成 Resolve 粗剪时间线",
       "inputRefs": [
         "edits/<editId>/planning/edit-framework.md",
-        "edits/<editId>/script/segment-plan.json",
         "edits/<editId>/script/material-slots.json",
         "store/spans.json",
+        "store/assets.json",
         "media/chronology.json"
       ],
       "outputRefs": [
         "edits/<editId>/timeline/current.json"
       ],
       "outputTypes": {
-        "edits/<editId>/timeline/current.json": "ktep"
+        "edits/<editId>/timeline/current.json": "resolve-rough-cut-manifest"
       },
-      "runner": "agent",
+      "runner": "deterministic",
       "execution": {
-        "mode": "single-agent",
+        "mode": "deterministic",
         "shardBy": "none",
-        "reason": "规则要求根据最终结论生成达芬奇剪辑工程时间线；不从旅行规则自动推导 route 分片。"
+        "reason": "timeline.generate 由确定性规则按 material-slots 顺序落位，并通过 Resolve host 创建/更新粗剪 timeline；不调用 LLM/Agent reviewer。"
       },
       "gate": "human",
       "notes": [
-        "timeline.generate 读取 Flow Plan 声明的前序产物，不要求 script/current.json。"
+        "输入只读取 edit-framework.md、material-slots.json、spans、assets 和 confirmed chronology。",
+        "timeline/current.json 仅为 KTEP/manifest 审计文件；Resolve 不可用时不得标记成功。",
+        "route 只使用召回到的 chosen spans，不整体铺开。"
       ]
     },
     {
       "id": "lock-rough-cut",
       "capabilityId": "resolve.lock_rough_cut",
-      "title": "Resolve 粗剪阶段性定稿",
+      "title": "人工审查并锁定 Resolve 粗剪 timeline",
       "inputRefs": [
         "edits/<editId>/timeline/current.json",
         "DaVinci Resolve timeline"
@@ -223,7 +225,7 @@
       },
       "gate": "human",
       "notes": [
-        "人工确认进入收尾前，后续字幕/旁白步骤不可继续。"
+        "本步骤只审查并锁定已生成的 Resolve timeline，不负责创建 timeline。"
       ]
     },
     {

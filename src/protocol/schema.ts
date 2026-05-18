@@ -913,12 +913,19 @@ export type ISegmentPlan = z.infer<typeof ISegmentPlan>;
 export const EMaterialSlotRequirement = z.enum(['required', 'optional']);
 export type EMaterialSlotRequirement = z.infer<typeof EMaterialSlotRequirement>;
 
+export const IMaterialSlotTreatment = z.object({
+  audio: z.number(),
+  speed: z.number().positive(),
+}).strict();
+export type IMaterialSlotTreatment = z.infer<typeof IMaterialSlotTreatment>;
+
 export const IMaterialSlot = z.object({
   id: z.string(),
   query: z.string(),
   requirement: EMaterialSlotRequirement.default('required'),
   targetBundles: z.array(z.string()).default([]),
   chosenSpanIds: z.array(z.string()).default([]),
+  treatments: z.record(IMaterialSlotTreatment),
 });
 export type IMaterialSlot = z.infer<typeof IMaterialSlot>;
 
@@ -1946,7 +1953,7 @@ export type EEditFlowGate = z.infer<typeof EEditFlowGate>;
 export const EEditFlowRunnerStrategy = z.enum(['deterministic', 'agent', 'script', 'manual']);
 export type EEditFlowRunnerStrategy = z.infer<typeof EEditFlowRunnerStrategy>;
 
-export const EEditFlowExecutionMode = z.enum(['single-agent', 'sharded-agent', 'manual']);
+export const EEditFlowExecutionMode = z.enum(['single-agent', 'sharded-agent', 'deterministic', 'manual']);
 export type EEditFlowExecutionMode = z.infer<typeof EEditFlowExecutionMode>;
 
 export const EEditFlowShardBy = z.enum(['none', 'day', 'event', 'scene', 'topic', 'segment']);
@@ -2047,6 +2054,14 @@ export const IEditFlowStepRunRecord = z.object({
   review: IEditFlowStepRunReview.default({ status: 'not_required' }),
 });
 export type IEditFlowStepRunRecord = z.infer<typeof IEditFlowStepRunRecord>;
+
+export const IEditFlowRunsState = z.object({
+  schemaVersion: z.literal('1.0'),
+  editId: z.string(),
+  updatedAt: z.string(),
+  records: z.array(IEditFlowStepRunRecord).default([]),
+});
+export type IEditFlowRunsState = z.infer<typeof IEditFlowRunsState>;
 
 export const EStyleSourceType = z.enum(['file', 'directory']);
 export type EStyleSourceType = z.infer<typeof EStyleSourceType>;

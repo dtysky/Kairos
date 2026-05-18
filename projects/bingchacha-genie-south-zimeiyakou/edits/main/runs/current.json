@@ -1,0 +1,211 @@
+{
+  "schemaVersion": "1.0",
+  "editId": "main",
+  "updatedAt": "2026-05-18T16:59:29.876Z",
+  "records": [
+    {
+      "schemaVersion": "1.0",
+      "runId": "20ba3703-17fa-44a7-844a-dac8d5315527",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-20260518",
+      "flowPlanHash": "d928cf565d456e28284720350841a09f7236786bfdb26416f126f05c16c3d78e",
+      "stepId": "material-archive",
+      "capabilityId": "material.archive",
+      "runner": "agent",
+      "status": "completed",
+      "startedAt": "2026-05-18T14:20:26.8387900Z",
+      "updatedAt": "2026-05-18T15:37:46.856Z",
+      "completedAt": "2026-05-18T15:37:46.856Z",
+      "inputRefs": [
+        "edits/<editId>/planning/event-table.md",
+        "store/spans.json",
+        "analysis/asset-reports/*.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/planning/material-archive.md"
+      ],
+      "inputSnapshot": {
+        "edits/<editId>/planning/event-table.md": {
+          "status": "present",
+          "paths": [
+            "edits/main/planning/event-table.md"
+          ]
+        },
+        "store/spans.json": {
+          "status": "present",
+          "paths": [
+            "store/spans.json"
+          ]
+        },
+        "analysis/asset-reports/*.json": {
+          "status": "present",
+          "paths": [
+            "analysis/asset-reports/*.json"
+          ],
+          "count": 2253
+        },
+        "media/chronology.json": {
+          "status": "present",
+          "paths": [
+            "media/chronology.json"
+          ]
+        }
+      },
+      "outputPaths": [
+        "H:\\SacredGrove\\Kairos\\projects\\bingchacha-genie-south-zimeiyakou\\edits\\main\\planning\\material-archive.md"
+      ],
+      "review": {
+        "status": "confirmed",
+        "confirmedAt": "2026-05-18T15:37:46.856Z"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "migrated-event-table-main",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-20260518",
+      "flowPlanHash": "d928cf565d456e28284720350841a09f7236786bfdb26416f126f05c16c3d78e",
+      "stepId": "event-table",
+      "capabilityId": "trip.event_table",
+      "runner": "agent",
+      "status": "completed",
+      "startedAt": "2026-05-18T14:58:27.051Z",
+      "updatedAt": "2026-05-18T14:58:27.051Z",
+      "completedAt": "2026-05-18T14:58:27.051Z",
+      "inputRefs": [
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/planning/event-table.md"
+      ],
+      "inputSnapshot": {
+        "media/chronology.json": {
+          "status": "present",
+          "paths": [
+            "media/chronology.json"
+          ]
+        }
+      },
+      "outputPaths": [
+        "H:\\SacredGrove\\Kairos\\projects\\bingchacha-genie-south-zimeiyakou\\edits\\main\\planning\\event-table.md"
+      ],
+      "review": {
+        "status": "confirmed",
+        "confirmedAt": "2026-05-18T14:58:27.051Z",
+        "note": "Migrated from existing reviewed planning artifact into runs/current.json."
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "189fd1b2-96ce-4903-b599-c6fc6fab6a42",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-20260518",
+      "flowPlanHash": "d928cf565d456e28284720350841a09f7236786bfdb26416f126f05c16c3d78e",
+      "stepId": "edit-framework",
+      "capabilityId": "edit.framework",
+      "runner": "agent",
+      "status": "completed",
+      "startedAt": "2026-05-18T15:45:29.5082591Z",
+      "updatedAt": "2026-05-18T16:09:59.885Z",
+      "completedAt": "2026-05-18T16:09:59.885Z",
+      "inputRefs": [
+        "edits/<editId>/planning/event-table.md",
+        "edits/<editId>/planning/material-archive.md"
+      ],
+      "outputRefs": [
+        "edits/<editId>/planning/edit-framework.md"
+      ],
+      "inputSnapshot": {
+        "edits/<editId>/planning/event-table.md": {
+          "status": "present",
+          "paths": [
+            "edits/main/planning/event-table.md"
+          ]
+        },
+        "edits/<editId>/planning/material-archive.md": {
+          "status": "present",
+          "paths": [
+            "edits/main/planning/material-archive.md"
+          ]
+        }
+      },
+      "outputPaths": [
+        "H:\\SacredGrove\\Kairos\\projects\\bingchacha-genie-south-zimeiyakou\\edits\\main\\planning\\edit-framework.md"
+      ],
+      "review": {
+        "status": "confirmed",
+        "confirmedAt": "2026-05-18T16:09:59.885Z"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "dcfe478f-6e5b-499f-8980-ecaa358a2ba4",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-20260518",
+      "flowPlanHash": "d928cf565d456e28284720350841a09f7236786bfdb26416f126f05c16c3d78e",
+      "stepId": "material-recall",
+      "capabilityId": "material.recall",
+      "runner": "script",
+      "status": "awaiting_review",
+      "startedAt": "2026-05-18T16:15:35.6918412Z",
+      "updatedAt": "2026-05-18T16:23:11.254Z",
+      "inputRefs": [
+        "edits/<editId>/planning/event-table.md",
+        "edits/<editId>/planning/material-archive.md",
+        "edits/<editId>/planning/edit-framework.md",
+        "store/spans.json",
+        "analysis/asset-reports/*.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/script/material-slots.json"
+      ],
+      "inputSnapshot": {
+        "edits/<editId>/planning/event-table.md": {
+          "status": "present",
+          "paths": [
+            "edits/main/planning/event-table.md"
+          ]
+        },
+        "edits/<editId>/planning/material-archive.md": {
+          "status": "present",
+          "paths": [
+            "edits/main/planning/material-archive.md"
+          ]
+        },
+        "edits/<editId>/planning/edit-framework.md": {
+          "status": "present",
+          "paths": [
+            "edits/main/planning/edit-framework.md"
+          ]
+        },
+        "store/spans.json": {
+          "status": "present",
+          "paths": [
+            "store/spans.json"
+          ]
+        },
+        "analysis/asset-reports/*.json": {
+          "status": "present",
+          "paths": [
+            "analysis/asset-reports/*.json"
+          ],
+          "count": 2253
+        },
+        "media/chronology.json": {
+          "status": "present",
+          "paths": [
+            "media/chronology.json"
+          ]
+        }
+      },
+      "outputPaths": [
+        "H:\\SacredGrove\\Kairos\\projects\\bingchacha-genie-south-zimeiyakou\\edits\\main\\script\\material-slots.json"
+      ],
+      "review": {
+        "status": "pending"
+      }
+    }
+  ]
+}

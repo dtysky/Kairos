@@ -1,0 +1,4111 @@
+{
+  "id": "material-slots-dcfe478f-6e5b-499f-8980-ecaa358a2ba4",
+  "projectId": "b28016fd-3e18-4a94-8070-ba83704bc0a9",
+  "generatedAt": "2026-05-18T16:22:50.125Z",
+  "segments": [
+    {
+      "segmentId": "FW-01",
+      "slots": [
+        {
+          "id": "fw-01-slot-01",
+          "query": "深圳出发、车内人物关系、出城堵车和赤坎服务区第一次停顿；有口播保留原声，无口播行车可短切或轻微加速。 / 堵车口播和服务区总结保留原声；无口播雨天出城行车只作路感连接。",
+          "requirement": "required",
+          "targetBundles": [
+            "event-pharos-223050a1a4a1：车内三人出发画面。",
+            "route-e838ee03a270：刚出深圳就堵车的口播和雨天湿滑路况。",
+            "event-pharos-2eade750e23b：赤坎服务区人物口播作为首个喘息点。"
+          ],
+          "chosenSpanIds": [
+            "d911dd91-41d7-479b-9111-49a82f5bdc39-direct-full",
+            "c7cccb9f-381e-4e14-9e25-06dec9658fe0",
+            "97070201-4cf7-4f42-b907-9f61ac5f3e0a-direct-full",
+            "5817690f-e607-4d9c-8732-c37c559b7249",
+            "43711d76-ec7c-460e-8eea-2bdd521036c2"
+          ],
+          "treatments": {
+            "d911dd91-41d7-479b-9111-49a82f5bdc39-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "c7cccb9f-381e-4e14-9e25-06dec9658fe0": {
+              "audio": 0,
+              "speed": 1
+            },
+            "97070201-4cf7-4f42-b907-9f61ac5f3e0a-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "5817690f-e607-4d9c-8732-c37c559b7249": {
+              "audio": -100,
+              "speed": 1
+            },
+            "43711d76-ec7c-460e-8eea-2bdd521036c2": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-01-slot-02",
+          "query": "首夜高速、雾天/隧道/区间测速、到达灵山酒店；导航类声音只作环境证据，重复夜行建议静音加速。 / 夜行高速以雾、隧道和到达感为证据；酒店到达口播正常速度保留。",
+          "requirement": "required",
+          "targetBundles": [
+            "route-984684f8c8e1：夜间高速、雾气、隧道入口和测速提醒。",
+            "event-pharos-8204f5ee42f6：停车/酒店大堂口播给出“600 多公里 7 小时到达”。"
+          ],
+          "chosenSpanIds": [
+            "5156c8da-95c3-4863-997b-4b2b5a051bff",
+            "2104c4fb-4013-4b8e-a23c-fd6d5296d8c5",
+            "b260b311-dd02-4ac6-bf92-cfefdd4a2ebe",
+            "3d218e13-3ec2-4bf1-9e5f-ec909437577e",
+            "fe9d20d8-1a79-48da-9d2f-ad2f31100132",
+            "2aaa5fd4-f7ba-4327-ba83-d65755d1abe3"
+          ],
+          "treatments": {
+            "5156c8da-95c3-4863-997b-4b2b5a051bff": {
+              "audio": 0,
+              "speed": 1
+            },
+            "2104c4fb-4013-4b8e-a23c-fd6d5296d8c5": {
+              "audio": 0,
+              "speed": 1
+            },
+            "b260b311-dd02-4ac6-bf92-cfefdd4a2ebe": {
+              "audio": -100,
+              "speed": 2
+            },
+            "3d218e13-3ec2-4bf1-9e5f-ec909437577e": {
+              "audio": 0,
+              "speed": 1
+            },
+            "fe9d20d8-1a79-48da-9d2f-ad2f31100132": {
+              "audio": 0,
+              "speed": 1
+            },
+            "2aaa5fd4-f7ba-4327-ba83-d65755d1abe3": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-01-slot-03",
+          "query": "4/25 早晨重新出发、车内人员状态、服务区午餐和广西公路航拍；口播保留，航拍/服务区 B-roll 静音配乐。 / 人物和行程口播正常速度；公路/服务区航拍无口播，可静音并按音乐节奏压缩。",
+          "requirement": "required",
+          "targetBundles": [
+            "event-f17de2fd73e3：首日正式开始、感冒和期待天气的人物状态。",
+            "event-dee337482fea：航拍公路和森林高速建立路程尺度。",
+            "event-pharos-86f4c13959b6：午餐服务区口播说明已开四小时。"
+          ],
+          "chosenSpanIds": [
+            "8009867b-72e9-4675-9adf-34c8a674838f",
+            "452e28ae-9c39-4924-9660-411ddcd9ff52",
+            "6c4cc655-aee5-420f-a2e0-e0a2df33e519",
+            "323c8bfc-34e9-4c86-981a-5cd3c5b68d55",
+            "ccaad8a9-6c3e-4ae9-9df6-cdee798e9804-direct-full",
+            "4844b264-4648-4567-9bed-17393ccb944c",
+            "df3a7759-3e97-4788-9dd1-75ea2ee96214",
+            "50e19185-1c8e-43a7-965f-af0fd067b773-direct-full"
+          ],
+          "treatments": {
+            "8009867b-72e9-4675-9adf-34c8a674838f": {
+              "audio": -100,
+              "speed": 1
+            },
+            "452e28ae-9c39-4924-9660-411ddcd9ff52": {
+              "audio": 0,
+              "speed": 1
+            },
+            "6c4cc655-aee5-420f-a2e0-e0a2df33e519": {
+              "audio": 0,
+              "speed": 1
+            },
+            "323c8bfc-34e9-4c86-981a-5cd3c5b68d55": {
+              "audio": -100,
+              "speed": 1
+            },
+            "ccaad8a9-6c3e-4ae9-9df6-cdee798e9804-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "4844b264-4648-4567-9bed-17393ccb944c": {
+              "audio": -100,
+              "speed": 1
+            },
+            "df3a7759-3e97-4788-9dd1-75ea2ee96214": {
+              "audio": 0,
+              "speed": 1
+            },
+            "50e19185-1c8e-43a7-965f-af0fd067b773-direct-full": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        },
+        {
+          "id": "fw-01-slot-04",
+          "query": "百色到黔西南前的路况代表、前往万峰林的车内口播和蝴蝶停在黄车上的细节；无口播重复行车可加速，细节特写静音。 / 车内继续前往万峰林的口播保留；高速和蝴蝶细节是氛围补充，可静音短用。",
+          "requirement": "optional",
+          "targetBundles": [
+            "route-92781eb9bf11：广西高速与雾霾讨论承接长距离移动。",
+            "event-7f7ec603e35c：车内说明继续前往万峰林。",
+            "event-222630a458d1：蝴蝶停在黄车漆上，是旅途细节。"
+          ],
+          "chosenSpanIds": [
+            "d0b9ccc3-1875-46df-a16c-0ad52a07fe6e",
+            "62469f20-acc5-4c85-a9c0-ad28e33093ac",
+            "29105dbe-4ee8-4138-93c0-2f5706e4c561-direct-full",
+            "5dd3c192-ee1f-46f0-875f-cc42e8db5cbe",
+            "c7f1fa9a-c4f5-48ed-ad7f-a7a1ac868c77-direct-full"
+          ],
+          "treatments": {
+            "d0b9ccc3-1875-46df-a16c-0ad52a07fe6e": {
+              "audio": 0,
+              "speed": 1
+            },
+            "62469f20-acc5-4c85-a9c0-ad28e33093ac": {
+              "audio": 0,
+              "speed": 1
+            },
+            "29105dbe-4ee8-4138-93c0-2f5706e4c561-direct-full": {
+              "audio": -100,
+              "speed": 1
+            },
+            "5dd3c192-ee1f-46f0-875f-cc42e8db5cbe": {
+              "audio": -100,
+              "speed": 1
+            },
+            "c7f1fa9a-c4f5-48ed-ad7f-a7a1ac868c77-direct-full": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-01-slot-05",
+          "query": "纳灰村/上纳灰村建立镜头：进村路、村落航拍、纳灰村文化口播和河谷细节；有口播正常，航拍静音成组。 / 纳灰村是前段审美与文化锚点，不建议整体加速；航拍静音配乐，口播解释村名和水田意义。",
+          "requirement": "required",
+          "targetBundles": [
+            "event-pharos-4967cf573f2c：进村路和航拍照片提供喀斯特乡村空间。",
+            "event-pharos-037da2538647：上纳灰村航拍组。",
+            "event-pharos-431b58ad6011：口播介绍纳灰村和布依族语义，河谷 B-roll 作补证。"
+          ],
+          "chosenSpanIds": [
+            "e75b5ab2-60d1-4d97-901e-794814419f0d",
+            "32c86329-d457-46ed-9616-fc471fc2a6c9",
+            "e48ff1f4-0dc4-4339-a8ed-f98a15e7f319-direct-full",
+            "a1a9a5fe-698d-4adc-aac2-2d030cc83aa9",
+            "6e1fd032-63d2-4511-9c49-f5c25cefa57e-direct-full",
+            "d3ca3081-7e95-445b-94fc-30e057e3f679",
+            "ee0e7b7a-9e3d-4a7d-9edd-ed1f04ce667a",
+            "b6070a94-0394-4f2c-ad6d-aed1b1685040"
+          ],
+          "treatments": {
+            "e75b5ab2-60d1-4d97-901e-794814419f0d": {
+              "audio": 0,
+              "speed": 1
+            },
+            "32c86329-d457-46ed-9616-fc471fc2a6c9": {
+              "audio": -100,
+              "speed": 1
+            },
+            "e48ff1f4-0dc4-4339-a8ed-f98a15e7f319-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "a1a9a5fe-698d-4adc-aac2-2d030cc83aa9": {
+              "audio": -100,
+              "speed": 2
+            },
+            "6e1fd032-63d2-4511-9c49-f5c25cefa57e-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "d3ca3081-7e95-445b-94fc-30e057e3f679": {
+              "audio": 0,
+              "speed": 1
+            },
+            "ee0e7b7a-9e3d-4a7d-9edd-ed1f04ce667a": {
+              "audio": -100,
+              "speed": 1
+            },
+            "b6070a94-0394-4f2c-ad6d-aed1b1685040": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-01-slot-06",
+          "query": "八卦田日落拍摄、摄影师等待、航拍/照片成果和拍摄花絮总结；成果镜头不加速，口播保留。 / 八卦田是 FW-01 审美高点；摄影等待和花絮口播保留，航拍照片/成果静音短停。",
+          "requirement": "required",
+          "targetBundles": [
+            "event-pharos-4ba9d1581db4：摄影师、三脚架、梯田和八卦田航拍照片可替代延时缺口。",
+            "event-b1fa99a57fc8：花絮口播说明太阳不完美但航拍成果震撼。"
+          ],
+          "chosenSpanIds": [
+            "c02833c5-1a68-4f2c-837a-2a981878a135",
+            "db0da407-dc4d-4d37-8921-bf0d335cf579",
+            "19294410-2f05-4201-9b64-6579d8318400",
+            "c4520934-9328-41b2-9ffc-143217d91408",
+            "f1abfd76-737e-436e-8d12-f300405e2b18",
+            "3741a67e-0338-410d-b169-04134c7675a4",
+            "5eb52ca6-99d8-4b93-b11b-f38868e183ed"
+          ],
+          "treatments": {
+            "c02833c5-1a68-4f2c-837a-2a981878a135": {
+              "audio": -100,
+              "speed": 1
+            },
+            "db0da407-dc4d-4d37-8921-bf0d335cf579": {
+              "audio": -100,
+              "speed": 1
+            },
+            "19294410-2f05-4201-9b64-6579d8318400": {
+              "audio": -100,
+              "speed": 1
+            },
+            "c4520934-9328-41b2-9ffc-143217d91408": {
+              "audio": -100,
+              "speed": 1
+            },
+            "f1abfd76-737e-436e-8d12-f300405e2b18": {
+              "audio": -100,
+              "speed": 1
+            },
+            "3741a67e-0338-410d-b169-04134c7675a4": {
+              "audio": 0,
+              "speed": 1
+            },
+            "5eb52ca6-99d8-4b93-b11b-f38868e183ed": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-01-slot-07",
+          "query": "玉皇顶夜路上山、住宿落脚、清晨机位判断和无云海现实；夜路可混合加速，清晨口播正常速度。 / 夜路上山保留紧张口播但压缩；清晨拍摄判断是情绪事实，正常速度呈现，空镜静音。",
+          "requirement": "required",
+          "targetBundles": [
+            "event-pharos-54cb7aba8cb4：夜间山路、倒车担忧和无名道路形成上山难度。",
+            "event-pharos-3b6c75b31f33：早上五点半、没银河、找机位和无云海的口播解释拍摄结果。"
+          ],
+          "chosenSpanIds": [
+            "2a540157-99aa-40b8-8aab-d332c307281b",
+            "dbf2b39a-76fd-4406-98ab-4b66ec8a262e",
+            "2e0db267-46cf-4722-9c1a-033b87ff4302",
+            "b63636c8-7f4d-414f-86f7-71fcb8ada283",
+            "e6fa4c8b-5826-4479-b1df-71afa3b8062e",
+            "74769718-daa1-4e0f-bba0-5371383e64d6",
+            "7d666ebd-f083-477b-b184-0358f0eba090",
+            "c6e3aed1-12b1-4b81-be60-fb9052325664"
+          ],
+          "treatments": {
+            "2a540157-99aa-40b8-8aab-d332c307281b": {
+              "audio": 0,
+              "speed": 1
+            },
+            "dbf2b39a-76fd-4406-98ab-4b66ec8a262e": {
+              "audio": 0,
+              "speed": 1
+            },
+            "2e0db267-46cf-4722-9c1a-033b87ff4302": {
+              "audio": 0,
+              "speed": 1
+            },
+            "b63636c8-7f4d-414f-86f7-71fcb8ada283": {
+              "audio": -100,
+              "speed": 1
+            },
+            "e6fa4c8b-5826-4479-b1df-71afa3b8062e": {
+              "audio": 0,
+              "speed": 1
+            },
+            "74769718-daa1-4e0f-bba0-5371383e64d6": {
+              "audio": 0,
+              "speed": 1
+            },
+            "7d666ebd-f083-477b-b184-0358f0eba090": {
+              "audio": -100,
+              "speed": 1
+            },
+            "c6e3aed1-12b1-4b81-be60-fb9052325664": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-01-slot-08",
+          "query": "从黔西南到抚仙湖的长距离压缩：山谷高速航拍、云南服务区、隧道群和高速路况代表；无口播航拍/行车静音加速。 / 连接性长途不承担主戏；保留服务区和道路设计讨论，航拍/高速窗口可静音加速。",
+          "requirement": "required",
+          "targetBundles": [
+            "event-8214c18ebb9e：山谷公路航拍给出地貌变化。",
+            "event-pharos-05380978456a：云南第一个服务区和道路设计讨论。",
+            "route-b209cd83d5e9 / event-19f3cbc6b872：隧道群、温室大棚和高速航拍。"
+          ],
+          "chosenSpanIds": [
+            "206583e9-f002-4364-a1de-1d1f39b4c927-direct-full",
+            "bbbfb425-7bb5-4094-92b8-2694f0f16018-direct-full",
+            "2c01256b-a825-48e2-bd4c-5a6c1692c9a8",
+            "a42071e3-5769-4f87-b4bd-213f0790bfd4",
+            "0beb1142-1ece-4d9e-aab4-3680ff223a03",
+            "a20e4084-6c40-4930-8dec-b3ed7becd415-direct-full",
+            "34d153a1-cdb3-42bc-98a4-3d3287a335a3"
+          ],
+          "treatments": {
+            "206583e9-f002-4364-a1de-1d1f39b4c927-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "bbbfb425-7bb5-4094-92b8-2694f0f16018-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "2c01256b-a825-48e2-bd4c-5a6c1692c9a8": {
+              "audio": -100,
+              "speed": 1
+            },
+            "a42071e3-5769-4f87-b4bd-213f0790bfd4": {
+              "audio": 0,
+              "speed": 1
+            },
+            "0beb1142-1ece-4d9e-aab4-3680ff223a03": {
+              "audio": -100,
+              "speed": 1
+            },
+            "a20e4084-6c40-4930-8dec-b3ed7becd415-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "34d153a1-cdb3-42bc-98a4-3d3287a335a3": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-01-slot-09",
+          "query": "抚仙湖抵达、湖岸小路、餐食、航拍日落、湖面延时和夜间转场；日落成果不加速，夜间回酒店可短加速。 / 抚仙湖湖岸/日落是 FW-01 收束成果，正常速度或短停；夜间环湖回酒店只取代表路况，可静音或加速。",
+          "requirement": "required",
+          "targetBundles": [
+            "route-1232c192ac72：沿湖道路和车内对景色/堵车的反应。",
+            "event-pharos-e57c590a42cb：餐食短缓冲。",
+            "event-pharos-45a99b0a57cf / event-pharos-81757e94164b / event-pharos-2eb82fed1da1：湖岸、航拍和日落延时。"
+          ],
+          "chosenSpanIds": [
+            "fc41679f-84e3-4210-b356-130635db7535",
+            "0600cdd3-3d7c-4c79-829a-d698207aa58c",
+            "dfdf3331-3a5c-45c5-84b8-76d8bf65f29b",
+            "355b1f5c-9d19-4c68-a903-0504b242da81",
+            "5744d0ea-4c74-4361-9baa-f3f995fd0c45-direct-full",
+            "ea06dcfd-2507-4891-9c69-961baeea2d92-direct-full",
+            "6bfbe2ab-d370-4e3d-abc7-fe4ef71884c6-direct-full",
+            "a078529d-76b6-49d4-b68a-3a2c4d749544-direct-full",
+            "02714be8-e70c-47e7-bd81-b31813c4f268",
+            "b1377a91-dc22-4cea-bd72-3535dd882888"
+          ],
+          "treatments": {
+            "fc41679f-84e3-4210-b356-130635db7535": {
+              "audio": 0,
+              "speed": 1
+            },
+            "0600cdd3-3d7c-4c79-829a-d698207aa58c": {
+              "audio": -100,
+              "speed": 1
+            },
+            "dfdf3331-3a5c-45c5-84b8-76d8bf65f29b": {
+              "audio": -100,
+              "speed": 1
+            },
+            "355b1f5c-9d19-4c68-a903-0504b242da81": {
+              "audio": -100,
+              "speed": 1
+            },
+            "5744d0ea-4c74-4361-9baa-f3f995fd0c45-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "ea06dcfd-2507-4891-9c69-961baeea2d92-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "6bfbe2ab-d370-4e3d-abc7-fe4ef71884c6-direct-full": {
+              "audio": -100,
+              "speed": 1
+            },
+            "a078529d-76b6-49d4-b68a-3a2c4d749544-direct-full": {
+              "audio": -100,
+              "speed": 1
+            },
+            "02714be8-e70c-47e7-bd81-b31813c4f268": {
+              "audio": -100,
+              "speed": 2
+            },
+            "b1377a91-dc22-4cea-bd72-3535dd882888": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02",
+      "slots": [
+        {
+          "id": "fw-02-slot-01",
+          "query": "抚仙湖退房/出发、今日进怒江的短锚点、午餐服务区说明已开半天；有口播保留，普通城市/高速行车压缩。 / 短出发和中途服务区口播正常速度；非信息性城市/高速窗口仅作压缩连接。",
+          "requirement": "required",
+          "targetBundles": [
+            "event-pharos-44fccdaeb0be：抚仙湖出发、加油和短转场。",
+            "route-f7fddeba6ee5：早段城市/高速代表窗口。",
+            "event-pharos-26f4bbb87eba：中途服务区口播说明“今天要开 700 公里”。"
+          ],
+          "chosenSpanIds": [
+            "9079c2db-e6f7-4c14-bf97-18950c56bb9a",
+            "023c7e7d-27fd-4d13-936d-d0730cdc9907",
+            "2c838270-a412-45b0-81e7-400d47ff1dc4",
+            "a345af18-05b1-4e29-bf8a-c2b7739e9bb1",
+            "d53c3e3a-3515-4725-9ef3-4535feb72424",
+            "fbb9ebee-e194-4571-ad8e-b2135b4f09db",
+            "77ebcf50-8739-475f-99c0-16d92d8487f0"
+          ],
+          "treatments": {
+            "9079c2db-e6f7-4c14-bf97-18950c56bb9a": {
+              "audio": 0,
+              "speed": 1
+            },
+            "023c7e7d-27fd-4d13-936d-d0730cdc9907": {
+              "audio": 0,
+              "speed": 1
+            },
+            "2c838270-a412-45b0-81e7-400d47ff1dc4": {
+              "audio": 0,
+              "speed": 1
+            },
+            "a345af18-05b1-4e29-bf8a-c2b7739e9bb1": {
+              "audio": -100,
+              "speed": 2
+            },
+            "d53c3e3a-3515-4725-9ef3-4535feb72424": {
+              "audio": 0,
+              "speed": 1
+            },
+            "fbb9ebee-e194-4571-ad8e-b2135b4f09db": {
+              "audio": -100,
+              "speed": 1
+            },
+            "77ebcf50-8739-475f-99c0-16d92d8487f0": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-02-slot-02",
+          "query": "下午西行路上关于无人机/老虎跳的车内讨论、服务区车辆检查和山谷公路航拍；航拍静音，口播正常。 / 车内讨论航拍和服务区检查是人物/拍摄策略证据；山谷航拍成组静音，可按音乐压缩。",
+          "requirement": "required",
+          "targetBundles": [
+            "route-7e17e52de9f7：讨论哪里能飞无人机、老虎跳是否能飞。",
+            "event-df97dfe4a530：车辆检查和空气变通透。",
+            "event-c0ccbbd9bc93：山谷高速、河流与公路航拍。"
+          ],
+          "chosenSpanIds": [
+            "4139111a-0513-4f76-8fc7-55a991c24e9f",
+            "ecd04975-6b97-426b-bbd1-c15a344ae0a6",
+            "756d04d9-043f-4feb-8936-5af272d462d1",
+            "f9b08bae-4909-489c-a6bc-140a6540cf69",
+            "a3639bdf-55a6-4fb2-b5e2-7dac9e0d8eab-direct-full",
+            "be2c1f52-5a80-4544-bde9-e051cac034bb-direct-full",
+            "ac4564c4-d07a-419c-a052-5be47dec238e-direct-full"
+          ],
+          "treatments": {
+            "4139111a-0513-4f76-8fc7-55a991c24e9f": {
+              "audio": 0,
+              "speed": 1
+            },
+            "ecd04975-6b97-426b-bbd1-c15a344ae0a6": {
+              "audio": 0,
+              "speed": 1
+            },
+            "756d04d9-043f-4feb-8936-5af272d462d1": {
+              "audio": -100,
+              "speed": 2
+            },
+            "f9b08bae-4909-489c-a6bc-140a6540cf69": {
+              "audio": -100,
+              "speed": 1
+            },
+            "a3639bdf-55a6-4fb2-b5e2-7dac9e0d8eab-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "be2c1f52-5a80-4544-bde9-e051cac034bb-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "ac4564c4-d07a-419c-a052-5be47dec238e-direct-full": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        },
+        {
+          "id": "fw-02-slot-03",
+          "query": "进入怒江前后的高密度长 route 代表窗口：雾天高速、湿滑山路、弯道、隧道和怒江峡谷进入感；无口播重复行车可静音加速。 / 高密度 route 只保留雾、湿滑、弯道、隧道和惊险反应；有反应音正常速度，无口播重复路段可加速。",
+          "requirement": "required",
+          "targetBundles": [
+            "route-80152945a92e：雾天高速、湿滑路面、大车和山路弯道。",
+            "route-5891ba12e8d3：湿滑悬崖路、河流和夜间对向灯光。"
+          ],
+          "chosenSpanIds": [
+            "48cfda33-2d81-4eb8-bfa5-f00f6ba5edc9",
+            "14c933c3-6c1a-462e-aecc-ec5c67eba94a",
+            "6a64da11-4b9a-40b2-9249-888de7c032fd",
+            "708b68f4-85d3-4dc3-be2d-f10d2ebbf82e",
+            "e944b93a-dc48-465b-b601-e496ab0540b9",
+            "d4d2d622-c938-4afb-9af9-21056c788850",
+            "f3f6decd-c5f9-4c8b-8b3e-58f24882e439",
+            "a7860eb3-e268-4580-9039-2b946de2ebf3"
+          ],
+          "treatments": {
+            "48cfda33-2d81-4eb8-bfa5-f00f6ba5edc9": {
+              "audio": 0,
+              "speed": 1
+            },
+            "14c933c3-6c1a-462e-aecc-ec5c67eba94a": {
+              "audio": -100,
+              "speed": 2
+            },
+            "6a64da11-4b9a-40b2-9249-888de7c032fd": {
+              "audio": -100,
+              "speed": 2
+            },
+            "708b68f4-85d3-4dc3-be2d-f10d2ebbf82e": {
+              "audio": 0,
+              "speed": 1
+            },
+            "e944b93a-dc48-465b-b601-e496ab0540b9": {
+              "audio": -100,
+              "speed": 2
+            },
+            "d4d2d622-c938-4afb-9af9-21056c788850": {
+              "audio": -100,
+              "speed": 2
+            },
+            "f3f6decd-c5f9-4c8b-8b3e-58f24882e439": {
+              "audio": -100,
+              "speed": 2
+            },
+            "a7860eb3-e268-4580-9039-2b946de2ebf3": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-02-slot-04",
+          "query": "老虎跳停顿：手持口播介绍、岩石边缘人物、怒江峡谷/悬索桥航拍和晚餐短缓冲；老虎跳说明保留原声，航拍静音。 / 老虎跳是 FW-02 的停顿和地貌锚点，说明口播与峡谷航拍不加速；晚餐只作短缓冲。",
+          "requirement": "required",
+          "targetBundles": [
+            "event-pharos-516e91fcb4ea：手持口播解释老虎跳和湍急怒江。",
+            "event-pharos-0f08832de711：峡谷、悬索桥、隧道入口和河道航拍。",
+            "event-pharos-e22b9056f627：晚餐只补休整气口。"
+          ],
+          "chosenSpanIds": [
+            "99a28d4d-b830-4115-b11d-525331ea7b20",
+            "99d5bc76-4a8a-42cf-bbb9-649b79faa6a2",
+            "13a43534-9d4b-44d0-9d63-8a9ff9d26620",
+            "bccd6a04-7a85-413c-8840-d7c12aa84b5a-direct-full",
+            "9bc2a22f-2ed1-4c4d-9fc2-11b72c719894-direct-full",
+            "42284132-de23-40f8-97b9-788eb5e3a790-direct-full",
+            "5233e8b3-fac1-4869-8baa-afea322abf28-direct-full",
+            "64fe5441-0b56-43bb-8b25-04834afe3295",
+            "ec1824bd-a047-463e-8688-46389e460e0d"
+          ],
+          "treatments": {
+            "99a28d4d-b830-4115-b11d-525331ea7b20": {
+              "audio": 0,
+              "speed": 1
+            },
+            "99d5bc76-4a8a-42cf-bbb9-649b79faa6a2": {
+              "audio": 0,
+              "speed": 1
+            },
+            "13a43534-9d4b-44d0-9d63-8a9ff9d26620": {
+              "audio": -100,
+              "speed": 1
+            },
+            "bccd6a04-7a85-413c-8840-d7c12aa84b5a-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "9bc2a22f-2ed1-4c4d-9fc2-11b72c719894-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "42284132-de23-40f8-97b9-788eb5e3a790-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "5233e8b3-fac1-4869-8baa-afea322abf28-direct-full": {
+              "audio": -100,
+              "speed": 1
+            },
+            "64fe5441-0b56-43bb-8b25-04834afe3295": {
+              "audio": -100,
+              "speed": 1
+            },
+            "ec1824bd-a047-463e-8688-46389e460e0d": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-02-slot-05",
+          "query": "晚间继续上老姆登：湿滑山路、远光/眩光、上山路况、到达民宿停车和夜间观景；有效口播保留，重复夜路可短加速。 / 夜路上山保留湿滑、眩光、窄路停车和到达民宿压力；有口播正常速度，重复无口播夜路短加速。",
+          "requirement": "required",
+          "targetBundles": [
+            "route-f5d49b59c3e1：夜间湿滑山路、远光眩光和老姆登路况说明。",
+            "event-pharos-293bc464d87a：民宿前狭窄湿滑道路、倒车/停车指挥。",
+            "event-f9cd8295a8bc / event-186e3229ff30：山路夜景、G219 发光路牌和无人机报备遗憾。"
+          ],
+          "chosenSpanIds": [
+            "2022f4c0-6623-49cd-a592-81623796ad9c",
+            "b2c5063e-a257-4f84-8ab5-02e0a813f29b",
+            "48a660f0-25cc-4127-9b36-cf6e6a8ef770",
+            "5ec9f61a-7689-4ee5-9113-aebb59c7c7c4",
+            "3f36f1a6-75ec-464a-bd65-b622182d8c47",
+            "1a5ffbf6-e48b-42ef-bdb2-4f87352fd0ab",
+            "26d0a886-a8a6-4d56-af1d-3543c75e03d4",
+            "e3ac74cf-4c68-4589-8f83-69c1c5cc3340",
+            "391a47fa-34e1-42bb-b856-a7542704bec9",
+            "f65434cc-351f-4305-98a3-040ee41b9e17"
+          ],
+          "treatments": {
+            "2022f4c0-6623-49cd-a592-81623796ad9c": {
+              "audio": 0,
+              "speed": 1
+            },
+            "b2c5063e-a257-4f84-8ab5-02e0a813f29b": {
+              "audio": -100,
+              "speed": 2
+            },
+            "48a660f0-25cc-4127-9b36-cf6e6a8ef770": {
+              "audio": 0,
+              "speed": 1
+            },
+            "5ec9f61a-7689-4ee5-9113-aebb59c7c7c4": {
+              "audio": 0,
+              "speed": 1
+            },
+            "3f36f1a6-75ec-464a-bd65-b622182d8c47": {
+              "audio": 0,
+              "speed": 1
+            },
+            "1a5ffbf6-e48b-42ef-bdb2-4f87352fd0ab": {
+              "audio": 0,
+              "speed": 1
+            },
+            "26d0a886-a8a6-4d56-af1d-3543c75e03d4": {
+              "audio": 0,
+              "speed": 1
+            },
+            "e3ac74cf-4c68-4589-8f83-69c1c5cc3340": {
+              "audio": 0,
+              "speed": 1
+            },
+            "391a47fa-34e1-42bb-b856-a7542704bec9": {
+              "audio": 0,
+              "speed": 1
+            },
+            "f65434cc-351f-4305-98a3-040ee41b9e17": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03",
+      "slots": [
+        {
+          "id": "fw-03-slot-01",
+          "query": "老姆登清晨雨雾、云海村落、观景台口播",
+          "requirement": "required",
+          "targetBundles": [
+            "event-pharos-b72da4d0572b 老姆登村观景平台",
+            "event-4e8d42e5d601 天气变化"
+          ],
+          "chosenSpanIds": [
+            "c22899ac-2995-4f90-aac0-45438793753b",
+            "b04ebf01-6a42-4f5a-821b-d9949c62e700",
+            "014e6e9e-3117-4624-8b22-c20545c44380",
+            "d5a5d867-3b90-4152-b2f4-7681fbc92524",
+            "5cd222d9-0dd8-489a-b70b-a6a87440f625",
+            "331d36ee-b31b-498d-872c-ca991f480291",
+            "a34507a6-8d22-42c0-9735-ad47867c06c7",
+            "28d66f2e-ab41-4f05-a808-7fad3746e526"
+          ],
+          "treatments": {
+            "c22899ac-2995-4f90-aac0-45438793753b": {
+              "audio": 0,
+              "speed": 1
+            },
+            "b04ebf01-6a42-4f5a-821b-d9949c62e700": {
+              "audio": -100,
+              "speed": 1
+            },
+            "014e6e9e-3117-4624-8b22-c20545c44380": {
+              "audio": -100,
+              "speed": 1
+            },
+            "d5a5d867-3b90-4152-b2f4-7681fbc92524": {
+              "audio": -100,
+              "speed": 1
+            },
+            "5cd222d9-0dd8-489a-b70b-a6a87440f625": {
+              "audio": -100,
+              "speed": 1
+            },
+            "331d36ee-b31b-498d-872c-ca991f480291": {
+              "audio": -100,
+              "speed": 1
+            },
+            "a34507a6-8d22-42c0-9735-ad47867c06c7": {
+              "audio": -100,
+              "speed": 1
+            },
+            "28d66f2e-ab41-4f05-a808-7fad3746e526": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-03-slot-02",
+          "query": "老姆登村上空、云雾缭绕山村、河谷航拍",
+          "requirement": "required",
+          "targetBundles": [
+            "event-pharos-b675e6ce9727 老姆登村上空"
+          ],
+          "chosenSpanIds": [
+            "1c725fda-7fa6-41da-b0ed-1c38c6f60f66-direct-full",
+            "b095d71a-841c-4951-a0f4-fa5af94e4f5e-direct-full",
+            "5dde4cc4-261c-4eb8-8fc4-7b1fba22a3f9-direct-full",
+            "d9afa2db-d205-4812-9194-0a2298e034ab-direct-full",
+            "57702040-375e-4a6a-ab6b-e8a5a0655a0d-direct-full",
+            "60113cc6-9305-4454-8322-febf2a8fc82c",
+            "96227f12-995f-4f59-a3f1-0938d30fbc5b-direct-full",
+            "762f4348-186e-4284-b8c0-dc806378c311"
+          ],
+          "treatments": {
+            "1c725fda-7fa6-41da-b0ed-1c38c6f60f66-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "b095d71a-841c-4951-a0f4-fa5af94e4f5e-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "5dde4cc4-261c-4eb8-8fc4-7b1fba22a3f9-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "d9afa2db-d205-4812-9194-0a2298e034ab-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "57702040-375e-4a6a-ab6b-e8a5a0655a0d-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "60113cc6-9305-4454-8322-febf2a8fc82c": {
+              "audio": -100,
+              "speed": 2
+            },
+            "96227f12-995f-4f59-a3f1-0938d30fbc5b-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "762f4348-186e-4284-b8c0-dc806378c311": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-03-slot-03",
+          "query": "老姆登村湿滑石板路、淡季村落、早餐和收尾感受",
+          "requirement": "required",
+          "targetBundles": [
+            "event-pharos-420e56ed9551 老姆登村景区"
+          ],
+          "chosenSpanIds": [
+            "03788d23-13e3-4a70-8940-11685b9e6f65",
+            "aa3cade5-edc7-4bfb-a45a-ae5f35ce6bfa",
+            "ffdc10e5-3cdb-470f-a6d1-81f840c9d263",
+            "c54a7c8a-2ff4-4b49-80a1-035ac23df82d",
+            "1122edf1-de04-486e-88c8-e7ecee200d82"
+          ],
+          "treatments": {
+            "03788d23-13e3-4a70-8940-11685b9e6f65": {
+              "audio": -100,
+              "speed": 1
+            },
+            "aa3cade5-edc7-4bfb-a45a-ae5f35ce6bfa": {
+              "audio": 0,
+              "speed": 1
+            },
+            "ffdc10e5-3cdb-470f-a6d1-81f840c9d263": {
+              "audio": 0,
+              "speed": 1
+            },
+            "c54a7c8a-2ff4-4b49-80a1-035ac23df82d": {
+              "audio": 0,
+              "speed": 1
+            },
+            "1122edf1-de04-486e-88c8-e7ecee200d82": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-03-slot-04",
+          "query": "知子罗到达、雨中旧城、废弃街区和历史介绍",
+          "requirement": "required",
+          "targetBundles": [
+            "event-pharos-fbccd3fa334a 知子罗（海拔2023m）"
+          ],
+          "chosenSpanIds": [
+            "59c86e14-4bdd-4409-8472-f12e50f9f43b",
+            "bfd09677-9d58-47c4-9640-a33063595f82",
+            "b90b7289-20f1-4368-9ac0-0a5c49ea49c9",
+            "c6473386-1525-486c-9144-b6cdc49dda83",
+            "1b14c4a3-3aaa-4739-a946-68c36687b105",
+            "98c72c81-cbbf-491a-89cd-4991c9344e66"
+          ],
+          "treatments": {
+            "59c86e14-4bdd-4409-8472-f12e50f9f43b": {
+              "audio": 0,
+              "speed": 1
+            },
+            "bfd09677-9d58-47c4-9640-a33063595f82": {
+              "audio": 0,
+              "speed": 1
+            },
+            "b90b7289-20f1-4368-9ac0-0a5c49ea49c9": {
+              "audio": 0,
+              "speed": 1
+            },
+            "c6473386-1525-486c-9144-b6cdc49dda83": {
+              "audio": 0,
+              "speed": 1
+            },
+            "1b14c4a3-3aaa-4739-a946-68c36687b105": {
+              "audio": -100,
+              "speed": 1
+            },
+            "98c72c81-cbbf-491a-89cd-4991c9344e66": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-03-slot-05",
+          "query": "4/28 雨中峡谷行车、湿滑下坡、山泉冲路、进丙中洛",
+          "requirement": "required",
+          "targetBundles": [
+            "route-85759da76683 老姆登村景区到怒江大峡谷",
+            "route-ce14f461e76b 石月亮乡到丙中洛镇"
+          ],
+          "chosenSpanIds": [
+            "081460b1-1f34-4545-acb8-3f4bf095233e",
+            "70229539-e703-4b90-85ad-125820b360b0",
+            "817ccbe0-65af-4353-a5ac-497775c89d28",
+            "995c22c2-f5ff-45ee-82fd-57c8fa692a10",
+            "61d4c282-e721-4d6c-a51d-e17269dae5b4",
+            "a8fca2d2-04ab-4fed-816e-d28684529b1e",
+            "80fb9160-bf9a-4136-86ed-552184316ffa",
+            "66991847-a9a9-4db0-92d0-067040ea8882",
+            "fc63e78c-50ea-408d-9d9f-e50cbfc214b8"
+          ],
+          "treatments": {
+            "081460b1-1f34-4545-acb8-3f4bf095233e": {
+              "audio": 0,
+              "speed": 1
+            },
+            "70229539-e703-4b90-85ad-125820b360b0": {
+              "audio": 0,
+              "speed": 1
+            },
+            "817ccbe0-65af-4353-a5ac-497775c89d28": {
+              "audio": 0,
+              "speed": 1
+            },
+            "995c22c2-f5ff-45ee-82fd-57c8fa692a10": {
+              "audio": 0,
+              "speed": 1
+            },
+            "61d4c282-e721-4d6c-a51d-e17269dae5b4": {
+              "audio": -100,
+              "speed": 2
+            },
+            "a8fca2d2-04ab-4fed-816e-d28684529b1e": {
+              "audio": 0,
+              "speed": 1
+            },
+            "80fb9160-bf9a-4136-86ed-552184316ffa": {
+              "audio": 0,
+              "speed": 1
+            },
+            "66991847-a9a9-4db0-92d0-067040ea8882": {
+              "audio": 0,
+              "speed": 1
+            },
+            "fc63e78c-50ea-408d-9d9f-e50cbfc214b8": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-03-slot-06",
+          "query": "石月亮观景台、雾中峡谷、地点说明",
+          "requirement": "required",
+          "targetBundles": [
+            "event-pharos-6ab79fb0cba5 石月亮观景台"
+          ],
+          "chosenSpanIds": [
+            "eb0d5c15-c3cc-4505-ad17-8f5d6e8b0c45",
+            "fd985932-0246-4e97-8acb-3813123d8791",
+            "9215d8bc-f63c-466d-acb6-6bbde8d7d08d",
+            "4328eec5-87f1-41c8-a173-e16c83f37e4f"
+          ],
+          "treatments": {
+            "eb0d5c15-c3cc-4505-ad17-8f5d6e8b0c45": {
+              "audio": 0,
+              "speed": 1
+            },
+            "fd985932-0246-4e97-8acb-3813123d8791": {
+              "audio": 0,
+              "speed": 1
+            },
+            "9215d8bc-f63c-466d-acb6-6bbde8d7d08d": {
+              "audio": 0,
+              "speed": 1
+            },
+            "4328eec5-87f1-41c8-a173-e16c83f37e4f": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-03-slot-07",
+          "query": "怒江第一湾石碑、U 型弯、峡谷河流",
+          "requirement": "required",
+          "targetBundles": [
+            "event-pharos-f8f31caea9bb 怒江第一湾观景台",
+            "event-687ae5533b73 自然景观展示"
+          ],
+          "chosenSpanIds": [
+            "53890eb0-f783-4cd3-a54a-b492dfeb71fa",
+            "a0f1663e-9aa0-4843-af44-57c86472d2aa",
+            "7cf36ffe-f541-4eb1-939b-397e10818872",
+            "90d57e31-bf53-4bc7-aa6d-2bf95e1056b2"
+          ],
+          "treatments": {
+            "53890eb0-f783-4cd3-a54a-b492dfeb71fa": {
+              "audio": -100,
+              "speed": 1
+            },
+            "a0f1663e-9aa0-4843-af44-57c86472d2aa": {
+              "audio": -100,
+              "speed": 1
+            },
+            "7cf36ffe-f541-4eb1-939b-397e10818872": {
+              "audio": -100,
+              "speed": 1
+            },
+            "90d57e31-bf53-4bc7-aa6d-2bf95e1056b2": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-03-slot-08",
+          "query": "雾里村观景台、茶马古道、人文村落航拍",
+          "requirement": "required",
+          "targetBundles": [
+            "event-pharos-fb0f23756a37 雾里村"
+          ],
+          "chosenSpanIds": [
+            "d34936bb-f4d8-461d-83fe-8c02feda1c39",
+            "955843d2-f5f8-4f98-853b-a651a0e3d0a3",
+            "4a20f3c1-4ae5-46e5-b616-fa35a9cb0436",
+            "7a191e32-746b-44cb-b62e-bb972899d0d4-direct-full",
+            "f8a13aaa-0537-412e-afd6-68e8db796b1a",
+            "97bfc479-7d90-47b5-8c4e-e30573929c50",
+            "9ecb3243-d066-4aae-9c85-d4911cb701c5",
+            "3f4a4344-ffa7-496a-a6de-120d59760036"
+          ],
+          "treatments": {
+            "d34936bb-f4d8-461d-83fe-8c02feda1c39": {
+              "audio": -100,
+              "speed": 1
+            },
+            "955843d2-f5f8-4f98-853b-a651a0e3d0a3": {
+              "audio": 0,
+              "speed": 1
+            },
+            "4a20f3c1-4ae5-46e5-b616-fa35a9cb0436": {
+              "audio": -100,
+              "speed": 2
+            },
+            "7a191e32-746b-44cb-b62e-bb972899d0d4-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "f8a13aaa-0537-412e-afd6-68e8db796b1a": {
+              "audio": -100,
+              "speed": 1
+            },
+            "97bfc479-7d90-47b5-8c4e-e30573929c50": {
+              "audio": -100,
+              "speed": 1
+            },
+            "9ecb3243-d066-4aae-9c85-d4911cb701c5": {
+              "audio": -100,
+              "speed": 1
+            },
+            "3f4a4344-ffa7-496a-a6de-120d59760036": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-03-slot-09",
+          "query": "丙中洛观景台、封路信息、人神共居、村口高机位航拍",
+          "requirement": "required",
+          "targetBundles": [
+            "event-pharos-516fa94347fb 丙中洛观景台（村口上方高机位）"
+          ],
+          "chosenSpanIds": [
+            "f2ea2dcd-48d9-4588-88a4-618e0e92fcdb",
+            "40e090b6-abeb-4bfa-a588-c5dc0734ee71",
+            "63f0a92c-7249-4966-8c0b-73a77e9aacb6-direct-full",
+            "27aea7e3-12c5-45f2-9176-41baaf055bca-direct-full",
+            "fb361fdb-68a1-40e4-980e-f1f144919e5d-direct-full",
+            "dad40ac2-d62f-40b0-b62b-d1301e7485cc-direct-full"
+          ],
+          "treatments": {
+            "f2ea2dcd-48d9-4588-88a4-618e0e92fcdb": {
+              "audio": 0,
+              "speed": 1
+            },
+            "40e090b6-abeb-4bfa-a588-c5dc0734ee71": {
+              "audio": 0,
+              "speed": 1
+            },
+            "63f0a92c-7249-4966-8c0b-73a77e9aacb6-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "27aea7e3-12c5-45f2-9176-41baaf055bca-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "fb361fdb-68a1-40e4-980e-f1f144919e5d-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "dad40ac2-d62f-40b0-b62b-d1301e7485cc-direct-full": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        },
+        {
+          "id": "fw-03-slot-10",
+          "query": "丙中洛夜间入住、窄路会车、第二天拍摄准备",
+          "requirement": "required",
+          "targetBundles": [
+            "event-pharos-ec9399e2153f 丙中洛"
+          ],
+          "chosenSpanIds": [
+            "7a4f471d-ead2-412e-a481-b92fc198144c",
+            "9a4c0db1-316c-4077-b7df-ba6ecd1f0529",
+            "65290a9b-eb59-41f7-bcab-b42b31170683"
+          ],
+          "treatments": {
+            "7a4f471d-ead2-412e-a481-b92fc198144c": {
+              "audio": 0,
+              "speed": 1
+            },
+            "9a4c0db1-316c-4077-b7df-ba6ecd1f0529": {
+              "audio": -100,
+              "speed": 1
+            },
+            "65290a9b-eb59-41f7-bcab-b42b31170683": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04",
+      "slots": [
+        {
+          "id": "fw-04-slot-01",
+          "query": "丙中洛清晨出发、雨雾观景、晨雾延时",
+          "requirement": "required",
+          "targetBundles": [
+            "event-pharos-20a91223f952 丙中洛·贡当神山观景台",
+            "event-82bf0cace85c 雨雾观景",
+            "event-720492e17228 拍摄结束总结"
+          ],
+          "chosenSpanIds": [
+            "fd1143ec-538c-460a-8e21-27c357bd1739",
+            "81eef693-2b84-42d5-be2b-b65907229cb9",
+            "aa8f7438-9c87-4d63-a02d-d84f7309db02",
+            "678a8039-6215-4862-a237-65c76598d3a1",
+            "62a09ba9-d6ab-4cdd-836e-c5acc6b889d8",
+            "90fb3638-9e4b-45ec-b2d5-456144ac6831-direct-full"
+          ],
+          "treatments": {
+            "fd1143ec-538c-460a-8e21-27c357bd1739": {
+              "audio": 0,
+              "speed": 1
+            },
+            "81eef693-2b84-42d5-be2b-b65907229cb9": {
+              "audio": 0,
+              "speed": 1
+            },
+            "aa8f7438-9c87-4d63-a02d-d84f7309db02": {
+              "audio": 0,
+              "speed": 1
+            },
+            "678a8039-6215-4862-a237-65c76598d3a1": {
+              "audio": -100,
+              "speed": 1
+            },
+            "62a09ba9-d6ab-4cdd-836e-c5acc6b889d8": {
+              "audio": 0,
+              "speed": 1
+            },
+            "90fb3638-9e4b-45ec-b2d5-456144ac6831-direct-full": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-04-slot-02",
+          "query": "丙中洛上空、晨雾山村、河谷吊桥航拍",
+          "requirement": "required",
+          "targetBundles": [
+            "event-pharos-ee251c54652d 丙中洛上空"
+          ],
+          "chosenSpanIds": [
+            "b299df10-defe-492e-9e6c-976c18a5f82c-direct-full",
+            "e8485242-bdd6-4d1c-b8e2-cf19fe2ba8e0-direct-full",
+            "57611297-d946-48db-9bfb-4f074e3baae2-direct-full",
+            "6fd8a7c0-b48b-44a6-a631-23a29f1120d2-direct-full",
+            "becb8a89-a3d4-45cf-8163-ef7b2b5f628e-direct-full",
+            "af727910-2d2c-439d-939b-c8065e717c44",
+            "02ab22af-fa1b-4f15-b00a-a99bb56eeba5"
+          ],
+          "treatments": {
+            "b299df10-defe-492e-9e6c-976c18a5f82c-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "e8485242-bdd6-4d1c-b8e2-cf19fe2ba8e0-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "57611297-d946-48db-9bfb-4f074e3baae2-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "6fd8a7c0-b48b-44a6-a631-23a29f1120d2-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "becb8a89-a3d4-45cf-8163-ef7b2b5f628e-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "af727910-2d2c-439d-939b-c8065e717c44": {
+              "audio": -100,
+              "speed": 1
+            },
+            "02ab22af-fa1b-4f15-b00a-a99bb56eeba5": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-04-slot-03",
+          "query": "穿越丙察察出发、边境检查、进入西藏边境感",
+          "requirement": "required",
+          "targetBundles": [
+            "event-pharos-a269d410f8d0 丙中洛",
+            "event-28780ac33fb7 车辆接受检查",
+            "route-0a8ff630f94b 丙中洛到察瓦龙方向"
+          ],
+          "chosenSpanIds": [
+            "f5abfffa-2936-49bc-9c62-6cb953525379",
+            "1cdf7b3a-e3dc-41e2-a583-a04c8f048613",
+            "b69a7553-3fa7-4776-8240-c5fc5b308152",
+            "9568a572-2b00-4064-a9e1-1dba3d36042d"
+          ],
+          "treatments": {
+            "f5abfffa-2936-49bc-9c62-6cb953525379": {
+              "audio": 0,
+              "speed": 1
+            },
+            "1cdf7b3a-e3dc-41e2-a583-a04c8f048613": {
+              "audio": 0,
+              "speed": 1
+            },
+            "b69a7553-3fa7-4776-8240-c5fc5b308152": {
+              "audio": 0,
+              "speed": 1
+            },
+            "9568a572-2b00-4064-a9e1-1dba3d36042d": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-04-slot-04",
+          "query": "大流沙、滑坡区、新桥、快速通过、航拍车辆过桥",
+          "requirement": "required",
+          "targetBundles": [
+            "event-pharos-08e2666e4b2b 大流沙（丙察察标志性路段）"
+          ],
+          "chosenSpanIds": [
+            "1bd6025f-2942-4685-b6b5-e98ff8c19ccb",
+            "557e0919-15d7-492b-b4a6-3bd8a923aa10",
+            "465ed415-e8de-486f-95e1-b46e85a00d29",
+            "d72a8a4c-85c5-400a-a473-e0c8aefdbb97",
+            "7b21ac08-b012-443c-bb5d-e59232105b5f-direct-full",
+            "3268e295-8a47-45e5-90ec-674c13a2be5c",
+            "ddbe0a86-4aa7-4b3e-ac80-c8439e3012cb-direct-full",
+            "2fe1238d-7ced-4ba8-a113-b6558ea9e798"
+          ],
+          "treatments": {
+            "1bd6025f-2942-4685-b6b5-e98ff8c19ccb": {
+              "audio": 0,
+              "speed": 1
+            },
+            "557e0919-15d7-492b-b4a6-3bd8a923aa10": {
+              "audio": 0,
+              "speed": 1
+            },
+            "465ed415-e8de-486f-95e1-b46e85a00d29": {
+              "audio": 0,
+              "speed": 1
+            },
+            "d72a8a4c-85c5-400a-a473-e0c8aefdbb97": {
+              "audio": -100,
+              "speed": 1
+            },
+            "7b21ac08-b012-443c-bb5d-e59232105b5f-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "3268e295-8a47-45e5-90ec-674c13a2be5c": {
+              "audio": -100,
+              "speed": 1
+            },
+            "ddbe0a86-4aa7-4b3e-ac80-c8439e3012cb-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "2fe1238d-7ced-4ba8-a113-b6558ea9e798": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-04-slot-05",
+          "query": "察瓦龙补给、午餐、正式从察瓦龙出发前往察隅",
+          "requirement": "required",
+          "targetBundles": [
+            "event-pharos-7c0e7b7700ef 察瓦龙乡"
+          ],
+          "chosenSpanIds": [
+            "32ff6960-fcad-4380-a6d7-792f46d29025",
+            "fe086986-d119-4c18-9be8-f1e6ff802f4d",
+            "0015f01a-1466-4e69-9dfc-971bc1600598",
+            "6b6be071-9c5b-4686-af10-6c1e000c77f8"
+          ],
+          "treatments": {
+            "32ff6960-fcad-4380-a6d7-792f46d29025": {
+              "audio": -100,
+              "speed": 1
+            },
+            "fe086986-d119-4c18-9be8-f1e6ff802f4d": {
+              "audio": -100,
+              "speed": 1
+            },
+            "0015f01a-1466-4e69-9dfc-971bc1600598": {
+              "audio": 0,
+              "speed": 1
+            },
+            "6b6be071-9c5b-4686-af10-6c1e000c77f8": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-04-slot-06",
+          "query": "前方施工禁行、铲车铺路、临时封路、尘土会车",
+          "requirement": "required",
+          "targetBundles": [
+            "event-57a7d9a0d84c 前方施工禁行",
+            "route-918a3d2f990a 施工路况"
+          ],
+          "chosenSpanIds": [
+            "7304c273-51e2-45f1-b077-57f945ccf8cd",
+            "8abbe32f-fefc-4cef-b502-32412b31fed3",
+            "af4f735d-5d08-4fd9-ba98-dc8db12e90e6",
+            "76bfe672-0c85-4963-8e0f-0e72550403cd",
+            "be5768ba-161a-4f13-9d59-11d9057ae061",
+            "4a6efd67-dba6-4862-a8ee-d25cbd5b3100",
+            "f240c17b-9580-40af-90cb-2924feedf515",
+            "b981dd1e-b677-42dd-acfb-1a2fa2a45c3e",
+            "dcac2be6-d2bd-478f-8742-2d38fba23c10"
+          ],
+          "treatments": {
+            "7304c273-51e2-45f1-b077-57f945ccf8cd": {
+              "audio": 0,
+              "speed": 1
+            },
+            "8abbe32f-fefc-4cef-b502-32412b31fed3": {
+              "audio": -100,
+              "speed": 1
+            },
+            "af4f735d-5d08-4fd9-ba98-dc8db12e90e6": {
+              "audio": 0,
+              "speed": 1
+            },
+            "76bfe672-0c85-4963-8e0f-0e72550403cd": {
+              "audio": 0,
+              "speed": 1
+            },
+            "be5768ba-161a-4f13-9d59-11d9057ae061": {
+              "audio": 0,
+              "speed": 1
+            },
+            "4a6efd67-dba6-4862-a8ee-d25cbd5b3100": {
+              "audio": 0,
+              "speed": 1
+            },
+            "f240c17b-9580-40af-90cb-2924feedf515": {
+              "audio": -100,
+              "speed": 2
+            },
+            "b981dd1e-b677-42dd-acfb-1a2fa2a45c3e": {
+              "audio": 0,
+              "speed": 1
+            },
+            "dcac2be6-d2bd-478f-8742-2d38fba23c10": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-04-slot-07",
+          "query": "怒江大桥、旧桥限重、桥头土路和悬崖",
+          "requirement": "required",
+          "targetBundles": [
+            "event-pharos-cd288724799c 怒江大桥（怒江与玉曲河交汇处）"
+          ],
+          "chosenSpanIds": [
+            "cfdfab85-0def-4b90-b9dc-b7aebb595a1b",
+            "b59ce216-3d29-44f9-ae30-093c11785422",
+            "5dc403af-c889-47c7-9bbb-b99deb6161cd",
+            "7b47b820-0ff0-4727-a666-ceb5d487a251"
+          ],
+          "treatments": {
+            "cfdfab85-0def-4b90-b9dc-b7aebb595a1b": {
+              "audio": 0,
+              "speed": 1
+            },
+            "b59ce216-3d29-44f9-ae30-093c11785422": {
+              "audio": 0,
+              "speed": 1
+            },
+            "5dc403af-c889-47c7-9bbb-b99deb6161cd": {
+              "audio": 0,
+              "speed": 1
+            },
+            "7b47b820-0ff0-4727-a666-ceb5d487a251": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-04-slot-08",
+          "query": "让舍曲2号中桥、炮弹坑、发卡弯、悬崖盘山公路航拍",
+          "requirement": "required",
+          "targetBundles": [
+            "event-pharos-5fe82aa62aa0 让舍曲2号中桥"
+          ],
+          "chosenSpanIds": [
+            "df0c8d71-b731-4ea8-a986-c024bbd2064c",
+            "668ea5aa-8e32-4e72-b1dc-b00986ceabb5",
+            "1fff0428-0856-4e23-a341-01bce395099b",
+            "a2b9422b-f5fb-473d-8938-37c9ffbf12d2",
+            "dab3cc5b-369b-4e3b-babf-7755e8f8ad77",
+            "7c6350ca-2ad7-4508-ae74-2c6bd003642b-direct-full",
+            "2415b9b8-1ffe-4eb2-8834-a303f7bba165-direct-full",
+            "fdba1a2a-3cec-4848-a67e-f4392d2becac-direct-full",
+            "a9c1865e-df59-4fe0-be22-deec98ece25b-direct-full"
+          ],
+          "treatments": {
+            "df0c8d71-b731-4ea8-a986-c024bbd2064c": {
+              "audio": 0,
+              "speed": 1
+            },
+            "668ea5aa-8e32-4e72-b1dc-b00986ceabb5": {
+              "audio": 0,
+              "speed": 1
+            },
+            "1fff0428-0856-4e23-a341-01bce395099b": {
+              "audio": 0,
+              "speed": 1
+            },
+            "a2b9422b-f5fb-473d-8938-37c9ffbf12d2": {
+              "audio": 0,
+              "speed": 1
+            },
+            "dab3cc5b-369b-4e3b-babf-7755e8f8ad77": {
+              "audio": -100,
+              "speed": 1
+            },
+            "7c6350ca-2ad7-4508-ae74-2c6bd003642b-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "2415b9b8-1ffe-4eb2-8834-a303f7bba165-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "fdba1a2a-3cec-4848-a67e-f4392d2becac-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "a9c1865e-df59-4fe0-be22-deec98ece25b-direct-full": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        },
+        {
+          "id": "fw-04-slot-09",
+          "query": "雄珠拉垭口、雪山山路、海拔4636、航拍跟车",
+          "requirement": "required",
+          "targetBundles": [
+            "event-pharos-f521bec01e92 雄珠拉垭口（海拔4636m）"
+          ],
+          "chosenSpanIds": [
+            "17ab20ef-8e41-47f9-b727-195dc26c9e76-direct-full",
+            "ba952fe2-f69c-4e4e-970a-2e4d0ae4c3a5",
+            "cc8b0700-3436-4f5b-9732-886ccf9a1485",
+            "695c3270-f307-43b7-a056-e283da1923f1",
+            "7b921def-e605-4d4d-9bcf-2c418b094fff",
+            "7c81debf-8cd1-4ea5-a800-19dc24eb7b8d-direct-full",
+            "02021b5b-ac33-4692-8114-f04e22a366d8",
+            "832d9ae1-404b-448a-aec5-ff8e90280f6e",
+            "33ae6c47-6d9e-4a35-a213-b77218a5ac11",
+            "8e6ea4be-9172-4b39-a69f-9162f5c5a7c1"
+          ],
+          "treatments": {
+            "17ab20ef-8e41-47f9-b727-195dc26c9e76-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "ba952fe2-f69c-4e4e-970a-2e4d0ae4c3a5": {
+              "audio": 0,
+              "speed": 1
+            },
+            "cc8b0700-3436-4f5b-9732-886ccf9a1485": {
+              "audio": 0,
+              "speed": 1
+            },
+            "695c3270-f307-43b7-a056-e283da1923f1": {
+              "audio": -100,
+              "speed": 1
+            },
+            "7b921def-e605-4d4d-9bcf-2c418b094fff": {
+              "audio": 0,
+              "speed": 1
+            },
+            "7c81debf-8cd1-4ea5-a800-19dc24eb7b8d-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "02021b5b-ac33-4692-8114-f04e22a366d8": {
+              "audio": -100,
+              "speed": 1
+            },
+            "832d9ae1-404b-448a-aec5-ff8e90280f6e": {
+              "audio": -100,
+              "speed": 1
+            },
+            "33ae6c47-6d9e-4a35-a213-b77218a5ac11": {
+              "audio": 0,
+              "speed": 1
+            },
+            "8e6ea4be-9172-4b39-a69f-9162f5c5a7c1": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-04-slot-10",
+          "query": "雄珠拉后雪山土路、航拍蜿蜒路、碎石雪路",
+          "requirement": "required",
+          "targetBundles": [
+            "route-0c740a16b5e9 雄珠拉后行车",
+            "event-9d1040c609d1 航拍山路全景"
+          ],
+          "chosenSpanIds": [
+            "cf009e7c-16df-4421-bf7c-094cb5e9f136",
+            "726b4161-fec6-44cc-91b0-cc9ac1fc7607-direct-full",
+            "49365726-3a63-44cb-a2de-d11a00fd48f1",
+            "b8afe806-cc48-4555-b869-e62b75f5f7a2",
+            "4e33d94f-6349-47c0-b7d3-58341cbe0a91",
+            "ae9a335f-6920-4eab-b8b0-589148e4b011-direct-full"
+          ],
+          "treatments": {
+            "cf009e7c-16df-4421-bf7c-094cb5e9f136": {
+              "audio": -100,
+              "speed": 1
+            },
+            "726b4161-fec6-44cc-91b0-cc9ac1fc7607-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "49365726-3a63-44cb-a2de-d11a00fd48f1": {
+              "audio": 0,
+              "speed": 1
+            },
+            "b8afe806-cc48-4555-b869-e62b75f5f7a2": {
+              "audio": -100,
+              "speed": 2
+            },
+            "4e33d94f-6349-47c0-b7d3-58341cbe0a91": {
+              "audio": -100,
+              "speed": 1
+            },
+            "ae9a335f-6920-4eab-b8b0-589148e4b011-direct-full": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        },
+        {
+          "id": "fw-04-slot-11",
+          "query": "目若村、天边牧场、加油焦虑、藏式村落和牦牛",
+          "requirement": "required",
+          "targetBundles": [
+            "event-pharos-e97ba3ccaff1 目若村·天边牧场（海拔3750m）",
+            "route-26d1f99615da 高山谷地行车"
+          ],
+          "chosenSpanIds": [
+            "bc1786eb-01a6-4495-b037-2c138e126962",
+            "d7a7e1c5-7df7-44ab-b334-9b533d0047b5",
+            "5e2c761b-52f8-4bb8-a260-3555af841207",
+            "98c3941b-a30e-4e54-a2e3-364ae698c68c",
+            "961ea46d-2a89-41b8-aa8e-e6a6fa16562d"
+          ],
+          "treatments": {
+            "bc1786eb-01a6-4495-b037-2c138e126962": {
+              "audio": 0,
+              "speed": 1
+            },
+            "d7a7e1c5-7df7-44ab-b334-9b533d0047b5": {
+              "audio": -100,
+              "speed": 1
+            },
+            "5e2c761b-52f8-4bb8-a260-3555af841207": {
+              "audio": -100,
+              "speed": 1
+            },
+            "98c3941b-a30e-4e54-a2e3-364ae698c68c": {
+              "audio": 0,
+              "speed": 1
+            },
+            "961ea46d-2a89-41b8-aa8e-e6a6fa16562d": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-04-slot-12",
+          "query": "后半程高山赶路、铺装路面、冷太阳、接近结束感",
+          "requirement": "required",
+          "targetBundles": [
+            "route-26d1f99615da",
+            "event-8c590b684495 乘客微笑面对镜头",
+            "route-37cab981bc47"
+          ],
+          "chosenSpanIds": [
+            "da2fc32d-7138-4101-b4e7-8b4a2a4cc351",
+            "de21bed1-9694-473d-98c0-bb91e6212475",
+            "b355f65e-7569-43d0-b9d6-395244f9a6e8",
+            "b6b756c7-d39e-428f-9086-db58d0df3942",
+            "2d1d9d22-4d31-4d0f-b6e1-1af970c0d6ee",
+            "4bd76e0d-f944-4cf9-ab24-3448c6c6f68d"
+          ],
+          "treatments": {
+            "da2fc32d-7138-4101-b4e7-8b4a2a4cc351": {
+              "audio": 0,
+              "speed": 1
+            },
+            "de21bed1-9694-473d-98c0-bb91e6212475": {
+              "audio": 0,
+              "speed": 1
+            },
+            "b355f65e-7569-43d0-b9d6-395244f9a6e8": {
+              "audio": 0,
+              "speed": 1
+            },
+            "b6b756c7-d39e-428f-9086-db58d0df3942": {
+              "audio": -100,
+              "speed": 1
+            },
+            "2d1d9d22-4d31-4d0f-b6e1-1af970c0d6ee": {
+              "audio": 0,
+              "speed": 1
+            },
+            "4bd76e0d-f944-4cf9-ab24-3448c6c6f68d": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-04-slot-13",
+          "query": "益秀拉垭口、隧道等待放行、担心天黑、未完工隧道跟车",
+          "requirement": "required",
+          "targetBundles": [
+            "event-pharos-643c7e95001d 益秀拉垭口（海拔4706m）"
+          ],
+          "chosenSpanIds": [
+            "d036ef8e-641d-47f3-996c-ed4896c54c60",
+            "2a76b0c7-fbc1-408c-b238-2b9307269feb",
+            "aa15ea3a-c431-4c56-9492-70b42be9dc6a",
+            "225ff005-1c2c-49dc-ab10-e6cb82ea9d0a",
+            "ac361e68-52f3-468e-8709-e96455429f81",
+            "e8730b49-d9e0-425d-a0b3-1308c442c4eb",
+            "3d0885e6-b132-4d01-ae1f-1d9fa74ce14e",
+            "d9e7b5e5-9f64-4895-aa87-2296e93ab89a",
+            "327d6ebf-06ac-459d-992a-fc90335408bf"
+          ],
+          "treatments": {
+            "d036ef8e-641d-47f3-996c-ed4896c54c60": {
+              "audio": 0,
+              "speed": 1
+            },
+            "2a76b0c7-fbc1-408c-b238-2b9307269feb": {
+              "audio": 0,
+              "speed": 1
+            },
+            "aa15ea3a-c431-4c56-9492-70b42be9dc6a": {
+              "audio": 0,
+              "speed": 1
+            },
+            "225ff005-1c2c-49dc-ab10-e6cb82ea9d0a": {
+              "audio": -100,
+              "speed": 1
+            },
+            "ac361e68-52f3-468e-8709-e96455429f81": {
+              "audio": 0,
+              "speed": 1
+            },
+            "e8730b49-d9e0-425d-a0b3-1308c442c4eb": {
+              "audio": -100,
+              "speed": 1
+            },
+            "3d0885e6-b132-4d01-ae1f-1d9fa74ce14e": {
+              "audio": 0,
+              "speed": 1
+            },
+            "d9e7b5e5-9f64-4895-aa87-2296e93ab89a": {
+              "audio": 0,
+              "speed": 1
+            },
+            "327d6ebf-06ac-459d-992a-fc90335408bf": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-04-slot-14",
+          "query": "察隅完成总结、夜间进县城、安全感、晚餐住宿收束",
+          "requirement": "required",
+          "targetBundles": [
+            "event-pharos-fab61834fcf8 察隅县城"
+          ],
+          "chosenSpanIds": [
+            "d0d00cab-0ea1-4f80-a46a-5b65d8d50112",
+            "02bf6a7e-33a1-4a7b-95bd-60eb4a9c3618",
+            "d0ccb00a-d47c-45a0-850e-038a937ddeb7",
+            "56448774-092e-44c1-8872-b47bf4a04a96",
+            "317c7579-21ab-4a1f-9876-51e800550987",
+            "ad5dfcae-a412-494e-95ce-64a6b7b6c8d7",
+            "8ce6fd30-72bc-4d4d-b6a9-6247be10f12f",
+            "c3c624b4-611b-4fdc-ac43-172cd3d73feb"
+          ],
+          "treatments": {
+            "d0d00cab-0ea1-4f80-a46a-5b65d8d50112": {
+              "audio": -100,
+              "speed": 1
+            },
+            "02bf6a7e-33a1-4a7b-95bd-60eb4a9c3618": {
+              "audio": 0,
+              "speed": 1
+            },
+            "d0ccb00a-d47c-45a0-850e-038a937ddeb7": {
+              "audio": 0,
+              "speed": 1
+            },
+            "56448774-092e-44c1-8872-b47bf4a04a96": {
+              "audio": 0,
+              "speed": 1
+            },
+            "317c7579-21ab-4a1f-9876-51e800550987": {
+              "audio": 0,
+              "speed": 1
+            },
+            "ad5dfcae-a412-494e-95ce-64a6b7b6c8d7": {
+              "audio": 0,
+              "speed": 1
+            },
+            "8ce6fd30-72bc-4d4d-b6a9-6247be10f12f": {
+              "audio": -100,
+              "speed": 1
+            },
+            "c3c624b4-611b-4fdc-ac43-172cd3d73feb": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05",
+      "slots": [
+        {
+          "id": "fw-05-slot-01",
+          "query": "察隅出发与今日赶路口播",
+          "requirement": "required",
+          "targetBundles": [
+            "雾中察隅县城自拍口播建立清晨出发氛围。",
+            "车内口播明确今日第六天、559 国道、然乌和纯赶路。",
+            "施工山路补充高原赶路的路况变化。"
+          ],
+          "chosenSpanIds": [
+            "76078cf0-e21e-466c-9a42-e22270d7e6aa",
+            "9c2da015-a5ed-4d3e-89d7-6da0641ab024",
+            "40fea5c8-ff4d-48cd-9c03-2cfea1f1fb98"
+          ],
+          "treatments": {
+            "76078cf0-e21e-466c-9a42-e22270d7e6aa": {
+              "audio": 0,
+              "speed": 1
+            },
+            "9c2da015-a5ed-4d3e-89d7-6da0641ab024": {
+              "audio": 0,
+              "speed": 1
+            },
+            "40fea5c8-ff4d-48cd-9c03-2cfea1f1fb98": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-05-slot-02",
+          "query": "德姆拉山口海拔、雪、经幡与航拍",
+          "requirement": "required",
+          "targetBundles": [
+            "雪路第一视角含山口接近与车内讨论。",
+            "航拍显示黄色 SUV 穿过雪覆高海拔公路。",
+            "自拍口播明确德姆拉、559 国道、海拔 4900、高反和很快到然乌。",
+            "经幡/神龛/雪山提供垭口仪式感。"
+          ],
+          "chosenSpanIds": [
+            "02eb0dd8-1e3a-4af8-b291-8adbd8f44053",
+            "8dfb09c7-5a31-4ec1-9d1d-df336d9caa57-direct-full",
+            "997d121e-1115-438c-9df1-664ac63be623",
+            "bc809bbf-1aac-424d-b4b2-8c8f666594f7-direct-full",
+            "4b3ab70f-890a-4c15-87ff-00d8c270f35a"
+          ],
+          "treatments": {
+            "02eb0dd8-1e3a-4af8-b291-8adbd8f44053": {
+              "audio": 0,
+              "speed": 1
+            },
+            "8dfb09c7-5a31-4ec1-9d1d-df336d9caa57-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "997d121e-1115-438c-9df1-664ac63be623": {
+              "audio": 0,
+              "speed": 1
+            },
+            "bc809bbf-1aac-424d-b4b2-8c8f666594f7-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "4b3ab70f-890a-4c15-87ff-00d8c270f35a": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-05-slot-03",
+          "query": "然乌湖湖边与上空",
+          "requirement": "required",
+          "targetBundles": [
+            "湖边红衣人物口播说明从德姆拉往然乌方向，湖水和雾中雪山震撼。",
+            "高山湖泊远景提供然乌湖成果画面。",
+            "航拍湖泊公路和黄色 SUV 跟车形成空间建立。"
+          ],
+          "chosenSpanIds": [
+            "21a36be8-ebe5-4e11-bd41-e944c53787ee",
+            "34e4db2f-c33f-4cec-97a2-970907715546",
+            "0dafd027-1757-4b4e-ace7-fcf5123b7102-direct-full",
+            "fc3ab434-70fe-4e99-bc7d-2f05620d7422-direct-full",
+            "6af57519-bb64-4b6a-a64a-70aa18c43014"
+          ],
+          "treatments": {
+            "21a36be8-ebe5-4e11-bd41-e944c53787ee": {
+              "audio": 0,
+              "speed": 1
+            },
+            "34e4db2f-c33f-4cec-97a2-970907715546": {
+              "audio": -100,
+              "speed": 1
+            },
+            "0dafd027-1757-4b4e-ace7-fcf5123b7102-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "fc3ab434-70fe-4e99-bc7d-2f05620d7422-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "6af57519-bb64-4b6a-a64a-70aa18c43014": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-05-slot-04",
+          "query": "怒江 72 拐代表窗口与路况压力",
+          "requirement": "required",
+          "targetBundles": [
+            "入口口播出现 72 拐大峡谷、停车和前方弯道来车。",
+            "停车场口播总结刚才路段和风光震撼。",
+            "航拍显示陡峭山坡上的连续 switchback。",
+            "危险避让、车队缓慢通行和大车场景提供路况压力。"
+          ],
+          "chosenSpanIds": [
+            "aa2ac38e-6351-4b8d-8901-af2664a8def7",
+            "8433bfeb-8b3d-4435-ad9a-2394aa91bb6f",
+            "6aa472cf-ff0f-4ca6-8766-e5b1fbddecaf-direct-full",
+            "928ff82b-080f-4681-8c8d-cc03fe1f1b0b-direct-full",
+            "33875386-9ed5-4a46-9d6e-6a48fba478a0",
+            "855204aa-9f08-455d-bcdd-f144b3870e96",
+            "7d480288-2160-4c06-87a9-caeaa79c25a7-direct-full"
+          ],
+          "treatments": {
+            "aa2ac38e-6351-4b8d-8901-af2664a8def7": {
+              "audio": 0,
+              "speed": 1
+            },
+            "8433bfeb-8b3d-4435-ad9a-2394aa91bb6f": {
+              "audio": 0,
+              "speed": 1
+            },
+            "6aa472cf-ff0f-4ca6-8766-e5b1fbddecaf-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "928ff82b-080f-4681-8c8d-cc03fe1f1b0b-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "33875386-9ed5-4a46-9d6e-6a48fba478a0": {
+              "audio": 0,
+              "speed": 1
+            },
+            "855204aa-9f08-455d-bcdd-f144b3870e96": {
+              "audio": 0,
+              "speed": 1
+            },
+            "7d480288-2160-4c06-87a9-caeaa79c25a7-direct-full": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        },
+        {
+          "id": "fw-05-slot-05",
+          "query": "业拉山到东达山高海拔连续赶路",
+          "requirement": "required",
+          "targetBundles": [
+            "业拉山路口播含区间测速和雪山远景，适合作路况连接。",
+            "东达山上空航拍提供雪山公路、经幡和检查站尺度。",
+            "东达山口播明确 318 最高垭口、海拔约 5150、呼吸不畅和向下转场。",
+            "曲登山路口播有风景震撼，补足赶路不松散的观感。"
+          ],
+          "chosenSpanIds": [
+            "466206a9-e857-4bb2-9379-879d288d4a2e",
+            "97c13769-a3b0-4296-80ca-e30ac4f13f72-direct-full",
+            "9f3f8316-1554-475a-9f6d-966c6bd211d3-direct-full",
+            "37d382e4-f7cd-4e48-b1cc-86d715f3098e",
+            "24de212c-347c-48f4-8a0f-26e3897aeb26",
+            "733f10fb-622f-4901-9adb-5c4dcb343e83"
+          ],
+          "treatments": {
+            "466206a9-e857-4bb2-9379-879d288d4a2e": {
+              "audio": 0,
+              "speed": 1
+            },
+            "97c13769-a3b0-4296-80ca-e30ac4f13f72-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "9f3f8316-1554-475a-9f6d-966c6bd211d3-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "37d382e4-f7cd-4e48-b1cc-86d715f3098e": {
+              "audio": 0,
+              "speed": 1
+            },
+            "24de212c-347c-48f4-8a0f-26e3897aeb26": {
+              "audio": -100,
+              "speed": 1
+            },
+            "733f10fb-622f-4901-9adb-5c4dcb343e83": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-05-slot-06",
+          "query": "金沙江大桥与入川仪式",
+          "requirement": "required",
+          "targetBundles": [
+            "固定机位口播明确川藏交界、四川/西藏两侧、金沙江大桥和进入四川。",
+            "第一视角通过“四川欢迎你”拱门和桥面，形成边界穿越。",
+            "航拍展示清澈江水、山谷大桥和黄色 SUV 过桥。"
+          ],
+          "chosenSpanIds": [
+            "1b91f798-90b2-4dfa-88e6-2f28d6f730e1",
+            "8615f63c-2721-4159-8993-b0e65cfe833a",
+            "267f38c4-a9b7-4471-baa0-2faf750e4ba9-direct-full",
+            "3c2f22fb-4d60-45b0-a6bc-f254099a1305-direct-full",
+            "9b9155f2-79de-4564-a728-7d31e353a850-direct-full"
+          ],
+          "treatments": {
+            "1b91f798-90b2-4dfa-88e6-2f28d6f730e1": {
+              "audio": 0,
+              "speed": 1
+            },
+            "8615f63c-2721-4159-8993-b0e65cfe833a": {
+              "audio": 0,
+              "speed": 1
+            },
+            "267f38c4-a9b7-4471-baa0-2faf750e4ba9-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "3c2f22fb-4d60-45b0-a6bc-f254099a1305-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "9b9155f2-79de-4564-a728-7d31e353a850-direct-full": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        },
+        {
+          "id": "fw-05-slot-07",
+          "query": "巴塘短到达与当天总结",
+          "requirement": "required",
+          "targetBundles": [
+            "进入巴塘口播说明过金沙江后抵达县城并观察小城。",
+            "县城街道和藏式建筑建立巴塘到达质感。",
+            "停车场自拍有到达酒店不容易的总结意味。",
+            "充电站素材给当天收工与次日准备落点。"
+          ],
+          "chosenSpanIds": [
+            "1e1c973d-4f9b-46af-8ab9-95424947119a",
+            "d52526d3-c3a7-4a22-9a20-fc7088e4aa4a",
+            "ff272c19-0148-4016-a6e3-5e3f3c3b1143",
+            "55fc7fee-c2ff-4016-b3f9-62a5d274e5cd",
+            "9ae1d85f-5aaa-4fc8-ac18-c5d1e919a440",
+            "ddba4b81-0e0e-4655-b401-e34630ba930f"
+          ],
+          "treatments": {
+            "1e1c973d-4f9b-46af-8ab9-95424947119a": {
+              "audio": 0,
+              "speed": 1
+            },
+            "d52526d3-c3a7-4a22-9a20-fc7088e4aa4a": {
+              "audio": 0,
+              "speed": 1
+            },
+            "ff272c19-0148-4016-a6e3-5e3f3c3b1143": {
+              "audio": -100,
+              "speed": 1
+            },
+            "55fc7fee-c2ff-4016-b3f9-62a5d274e5cd": {
+              "audio": -100,
+              "speed": 1
+            },
+            "9ae1d85f-5aaa-4fc8-ac18-c5d1e919a440": {
+              "audio": 0,
+              "speed": 1
+            },
+            "ddba4b81-0e0e-4655-b401-e34630ba930f": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06",
+      "slots": [
+        {
+          "id": "fw-06-slot-01",
+          "query": "巴塘次日出发与格聂南线路线宣言",
+          "requirement": "required",
+          "targetBundles": [
+            "C1360 明确说明第八天、重点之二、巴塘反穿格聂南线到冷古寺/格聂之眼。",
+            "加油和尾门维修补出出发前状态，不作为长生活段。"
+          ],
+          "chosenSpanIds": [
+            "d023046f-5e62-4822-beae-285392833e9a",
+            "22491715-651c-40e0-a2e2-6956f8ed3928",
+            "0017140f-ec59-4002-ba4d-ad7d36225f65",
+            "12c5f5f8-2ad6-499e-8711-5269b98b3211"
+          ],
+          "treatments": {
+            "d023046f-5e62-4822-beae-285392833e9a": {
+              "audio": 0,
+              "speed": 1
+            },
+            "22491715-651c-40e0-a2e2-6956f8ed3928": {
+              "audio": 0,
+              "speed": 1
+            },
+            "0017140f-ec59-4002-ba4d-ad7d36225f65": {
+              "audio": 0,
+              "speed": 1
+            },
+            "12c5f5f8-2ad6-499e-8711-5269b98b3211": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-06-slot-02",
+          "query": "进入山区、信号变弱与山路初始压力",
+          "requirement": "required",
+          "targetBundles": [
+            "候选含“正式进入山区、信号非常弱”、结冰警示与湿滑山路观察。",
+            "C1380 提到“本次最佳跟车之一”，适合做雪山森林前的路感过渡。"
+          ],
+          "chosenSpanIds": [
+            "da353dba-6056-46be-ae99-99802e61cf0b",
+            "8e1a7755-a2f7-4157-b4a8-2a2c028ba6d7",
+            "75b33447-77ca-40be-ac26-fc02b9846207",
+            "5acae923-9671-41dd-9a36-908ba44ba1f7",
+            "0e7cf9fc-09cb-4d66-ad6f-72bf891facd0"
+          ],
+          "treatments": {
+            "da353dba-6056-46be-ae99-99802e61cf0b": {
+              "audio": 0,
+              "speed": 1
+            },
+            "8e1a7755-a2f7-4157-b4a8-2a2c028ba6d7": {
+              "audio": 0,
+              "speed": 1
+            },
+            "75b33447-77ca-40be-ac26-fc02b9846207": {
+              "audio": 0,
+              "speed": 1
+            },
+            "5acae923-9671-41dd-9a36-908ba44ba1f7": {
+              "audio": 0,
+              "speed": 1
+            },
+            "0e7cf9fc-09cb-4d66-ad6f-72bf891facd0": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-06-slot-03",
+          "query": "扎瓦拉前后航拍跟车与山谷爬升",
+          "requirement": "required",
+          "targetBundles": [
+            "DJI 候选给出蜿蜒山谷、黄色车队、雪山背景，优先于普通无口播行车。",
+            "照片候选可作为扎瓦拉段尾部 1s 成果补证。"
+          ],
+          "chosenSpanIds": [
+            "2b8203a3-b145-4e01-b651-f1c3e4c31f82-direct-full",
+            "e763f705-e82d-46b6-8870-05a31c463f03-direct-full",
+            "00c1eb77-142b-4089-b48f-e8d03386171f-direct-full",
+            "ad47b852-91ac-4165-9bb8-bd83c1291aaf-direct-full",
+            "181912c8-371b-4447-95c3-f6bcbd2a5d1a"
+          ],
+          "treatments": {
+            "2b8203a3-b145-4e01-b651-f1c3e4c31f82-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "e763f705-e82d-46b6-8870-05a31c463f03-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "00c1eb77-142b-4089-b48f-e8d03386171f-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "ad47b852-91ac-4165-9bb8-bd83c1291aaf-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "181912c8-371b-4447-95c3-f6bcbd2a5d1a": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-06-slot-04",
+          "query": "扎瓦拉垭口海拔、打卡与风光评价",
+          "requirement": "required",
+          "targetBundles": [
+            "C1385/C1386 有“扎瓦拉垭口、海拔五千多、冷”的说明。",
+            "无人机候选记录车顶拍照与高山荒野，照片补全崎岖山路和积雪山峰。"
+          ],
+          "chosenSpanIds": [
+            "efae08a6-e714-45ec-b4a9-64808766869f",
+            "53165134-4032-4ac9-a64f-2a7a61535709",
+            "70aa964d-bbea-48fb-b537-fff9b932edb1",
+            "8739bf2b-ce44-45a2-9e31-4f54988188dc-direct-full",
+            "d4293513-72f2-4bff-bf00-f3041e41c1ba"
+          ],
+          "treatments": {
+            "efae08a6-e714-45ec-b4a9-64808766869f": {
+              "audio": 0,
+              "speed": 1
+            },
+            "53165134-4032-4ac9-a64f-2a7a61535709": {
+              "audio": 0,
+              "speed": 1
+            },
+            "70aa964d-bbea-48fb-b537-fff9b932edb1": {
+              "audio": -100,
+              "speed": 1
+            },
+            "8739bf2b-ce44-45a2-9e31-4f54988188dc-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "d4293513-72f2-4bff-bf00-f3041e41c1ba": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-06-slot-05",
+          "query": "格木村进村、补给尝试与村落人情",
+          "requirement": "required",
+          "targetBundles": [
+            "C1399/C1403 明确格木村海拔、原生态村落、寻找饭/补给与交涉。",
+            "C1405 儿童互动与停车雪山背景让格木村不只是路过地名。"
+          ],
+          "chosenSpanIds": [
+            "ff1fb6e9-70b6-4aab-b29e-ef6a00deafcf",
+            "501b6ce7-aa64-4742-9a1f-80cd6dc74dcc",
+            "f6fcc8ba-0d54-4da0-bef9-78dd584cc060",
+            "fef516bd-33f2-423a-9ee9-a2e7e7f346f9",
+            "ff9fadca-84a4-43b1-a2e4-2d821c36dcb2",
+            "10f3dfe9-3af6-4f4d-bce1-e3df27c16735"
+          ],
+          "treatments": {
+            "ff1fb6e9-70b6-4aab-b29e-ef6a00deafcf": {
+              "audio": 0,
+              "speed": 1
+            },
+            "501b6ce7-aa64-4742-9a1f-80cd6dc74dcc": {
+              "audio": 0,
+              "speed": 1
+            },
+            "f6fcc8ba-0d54-4da0-bef9-78dd584cc060": {
+              "audio": 0,
+              "speed": 1
+            },
+            "fef516bd-33f2-423a-9ee9-a2e7e7f346f9": {
+              "audio": 0,
+              "speed": 1
+            },
+            "ff9fadca-84a4-43b1-a2e4-2d821c36dcb2": {
+              "audio": 0,
+              "speed": 1
+            },
+            "10f3dfe9-3af6-4f4d-bce1-e3df27c16735": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-06-slot-06",
+          "query": "格木村上空后雨中山谷、湿滑与牦牛路况",
+          "requirement": "optional",
+          "targetBundles": [
+            "候选覆盖雨中丛林、雾中山谷、湿滑路面、牦牛过路和黄色车。",
+            "照片/短视频可压成一组，不打断主 route。"
+          ],
+          "chosenSpanIds": [
+            "ba4e23f7-0151-4430-bc16-8ec7c9987d1b",
+            "8ba3f2dd-c54f-4b53-a944-d416080decaf",
+            "6546a7fc-2712-44dd-b705-f28096c1c10d",
+            "6836aa6b-2109-48b8-a964-f52fbe3be735",
+            "a133a271-cbe6-43e5-a05d-5a4c9a988a17",
+            "fb5da30d-4015-4768-aba8-ac4c28b162ab"
+          ],
+          "treatments": {
+            "ba4e23f7-0151-4430-bc16-8ec7c9987d1b": {
+              "audio": -100,
+              "speed": 1
+            },
+            "8ba3f2dd-c54f-4b53-a944-d416080decaf": {
+              "audio": 0,
+              "speed": 1
+            },
+            "6546a7fc-2712-44dd-b705-f28096c1c10d": {
+              "audio": 0,
+              "speed": 1
+            },
+            "6836aa6b-2109-48b8-a964-f52fbe3be735": {
+              "audio": -100,
+              "speed": 2
+            },
+            "a133a271-cbe6-43e5-a05d-5a4c9a988a17": {
+              "audio": -100,
+              "speed": 1
+            },
+            "fb5da30d-4015-4768-aba8-ac4c28b162ab": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-06-slot-07",
+          "query": "格聂南线忽然遇到大雪的第一反应",
+          "requirement": "required",
+          "targetBundles": [
+            "C1428/C1429 直接记录大雪突至、湿滑过弯、寒冷体感和对面雪山惊叹。",
+            "这组是 FW-06 天气恶化的主转折。"
+          ],
+          "chosenSpanIds": [
+            "2ebfb468-6bb0-4b25-8adc-afdc8fef0afa",
+            "be798ce3-62c7-4cea-85e0-10f57010c830",
+            "00c933ce-dfad-49e4-80a8-81183716f213",
+            "d924477e-a951-42f7-b71f-2d73fe03b79a",
+            "f6ee9daa-b5db-47b4-b2b5-06a83a734838"
+          ],
+          "treatments": {
+            "2ebfb468-6bb0-4b25-8adc-afdc8fef0afa": {
+              "audio": 0,
+              "speed": 1
+            },
+            "be798ce3-62c7-4cea-85e0-10f57010c830": {
+              "audio": 0,
+              "speed": 1
+            },
+            "00c933ce-dfad-49e4-80a8-81183716f213": {
+              "audio": 0,
+              "speed": 1
+            },
+            "d924477e-a951-42f7-b71f-2d73fe03b79a": {
+              "audio": 0,
+              "speed": 1
+            },
+            "f6ee9daa-b5db-47b4-b2b5-06a83a734838": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-06-slot-08",
+          "query": "大雪路边猴群与意外停顿",
+          "requirement": "optional",
+          "targetBundles": [
+            "候选记录雪中猴群、猴子过路和“你还会乞讨”的即时反应。",
+            "可作为大雪压力中的短意外停顿。"
+          ],
+          "chosenSpanIds": [
+            "2d0eb76e-0c34-4f22-8b24-eafaabe99ba1",
+            "ede56303-0673-4729-a0f3-6abafd042072",
+            "3b5b1fde-d68a-4ce8-9146-381ff5b75f2c",
+            "f8fc666f-8fdf-44d7-9098-97eaa7985169",
+            "af7be4ff-7e98-4b2a-b056-ccdb41c0a5b4",
+            "e51f1765-3462-4c11-9a8a-ebd7c28da69e"
+          ],
+          "treatments": {
+            "2d0eb76e-0c34-4f22-8b24-eafaabe99ba1": {
+              "audio": -100,
+              "speed": 1
+            },
+            "ede56303-0673-4729-a0f3-6abafd042072": {
+              "audio": -100,
+              "speed": 1
+            },
+            "3b5b1fde-d68a-4ce8-9146-381ff5b75f2c": {
+              "audio": -100,
+              "speed": 1
+            },
+            "f8fc666f-8fdf-44d7-9098-97eaa7985169": {
+              "audio": -100,
+              "speed": 1
+            },
+            "af7be4ff-7e98-4b2a-b056-ccdb41c0a5b4": {
+              "audio": 0,
+              "speed": 1
+            },
+            "e51f1765-3462-4c11-9a8a-ebd7c28da69e": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-06-slot-09",
+          "query": "格聂南线大雪林中烂路、泥泞会车",
+          "requirement": "required",
+          "targetBundles": [
+            "C1452 有“5 月冬季景色”“这段路没修好”“慢点”等路况讨论。",
+            "画面连续呈现雪林、泥泞路、会车等待和未修土路。"
+          ],
+          "chosenSpanIds": [
+            "858a88ab-5195-48bf-855b-1cd707706b0e",
+            "7814253d-8b46-4943-9cbf-3aca52b330ac",
+            "3284c711-86e1-4616-aea7-17a4a6697757",
+            "a32a8579-94e9-4b2e-972a-7031bdb249b9",
+            "7e5e1f0d-604b-4132-b551-9d6129dffcb0",
+            "21fd63f8-3838-41a4-903d-b01f058cfa88"
+          ],
+          "treatments": {
+            "858a88ab-5195-48bf-855b-1cd707706b0e": {
+              "audio": 0,
+              "speed": 1
+            },
+            "7814253d-8b46-4943-9cbf-3aca52b330ac": {
+              "audio": 0,
+              "speed": 1
+            },
+            "3284c711-86e1-4616-aea7-17a4a6697757": {
+              "audio": 0,
+              "speed": 1
+            },
+            "a32a8579-94e9-4b2e-972a-7031bdb249b9": {
+              "audio": 0,
+              "speed": 1
+            },
+            "7e5e1f0d-604b-4132-b551-9d6129dffcb0": {
+              "audio": 0,
+              "speed": 1
+            },
+            "21fd63f8-3838-41a4-903d-b01f058cfa88": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-06-slot-10",
+          "query": "雪地车顶与大雪成果镜头",
+          "requirement": "optional",
+          "targetBundles": [
+            "雪地车顶、黄色 SUV、松林和航拍运动形成可用成果组。",
+            "无口播素材适合配乐承托。"
+          ],
+          "chosenSpanIds": [
+            "1f95d08d-2099-4464-adcb-dff0f997bb81-direct-full",
+            "6ad62c2a-1b17-4def-bfbc-25437c86c152",
+            "3c17bd2b-9813-4810-b255-57dd97b16bdd",
+            "1c21eb35-7a30-4650-a450-299061caa9ef",
+            "efdac4c9-f3fe-410f-b96f-5c79fac63447"
+          ],
+          "treatments": {
+            "1f95d08d-2099-4464-adcb-dff0f997bb81-direct-full": {
+              "audio": -100,
+              "speed": 1
+            },
+            "6ad62c2a-1b17-4def-bfbc-25437c86c152": {
+              "audio": -100,
+              "speed": 1
+            },
+            "3c17bd2b-9813-4810-b255-57dd97b16bdd": {
+              "audio": -100,
+              "speed": 1
+            },
+            "1c21eb35-7a30-4650-a450-299061caa9ef": {
+              "audio": -100,
+              "speed": 1
+            },
+            "efdac4c9-f3fe-410f-b96f-5c79fac63447": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        },
+        {
+          "id": "fw-06-slot-11",
+          "query": "冰雪泥路、换驾与经验介入",
+          "requirement": "required",
+          "targetBundles": [
+            "C1457 明确“有冰块砸下来、慢点、要不我来开、越野路段我比较熟悉”。",
+            "后续会车/湿滑/下雪画面继续支撑驾驶压力。"
+          ],
+          "chosenSpanIds": [
+            "e23c4d74-0d91-41ba-b69e-0f9fdc7e30a0",
+            "25527e63-1cc3-458c-988a-8555a26add48",
+            "02d07221-12f4-41ba-b779-e26062d70ab8",
+            "7e36fbb3-ffae-4449-91fa-50d760dc643f",
+            "de34a91d-5cbb-4f10-889d-dfdb1826e350",
+            "b663023d-c35f-4f7e-8b90-e2290ce67c6c"
+          ],
+          "treatments": {
+            "e23c4d74-0d91-41ba-b69e-0f9fdc7e30a0": {
+              "audio": 0,
+              "speed": 1
+            },
+            "25527e63-1cc3-458c-988a-8555a26add48": {
+              "audio": 0,
+              "speed": 1
+            },
+            "02d07221-12f4-41ba-b779-e26062d70ab8": {
+              "audio": 0,
+              "speed": 1
+            },
+            "7e36fbb3-ffae-4449-91fa-50d760dc643f": {
+              "audio": 0,
+              "speed": 1
+            },
+            "de34a91d-5cbb-4f10-889d-dfdb1826e350": {
+              "audio": 0,
+              "speed": 1
+            },
+            "b663023d-c35f-4f7e-8b90-e2290ce67c6c": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-06-slot-12",
+          "query": "冷古寺雪中建筑与上不去的老寺说明",
+          "requirement": "required",
+          "targetBundles": [
+            "C1478 说明新冷古寺、老冷古寺上不去、下雪后寺庙完全不一样。",
+            "无人机/照片给出雪中寺庙全景、金顶红墙和山谷环境。"
+          ],
+          "chosenSpanIds": [
+            "21aa2f85-d165-4811-b1a6-6faa0fdd95ac",
+            "b2c80482-d313-4cdd-b589-b510e98c1890-direct-full",
+            "1ac70481-fd33-4fbb-9e68-caa498df956a-direct-full",
+            "29b5ed01-d899-40b1-ae32-48fdad7dc295-direct-full",
+            "05b133f8-fcfa-49d5-8842-1dbb24d243c3",
+            "305bcef2-304e-4afc-89c8-e09e0a17f4a1"
+          ],
+          "treatments": {
+            "21aa2f85-d165-4811-b1a6-6faa0fdd95ac": {
+              "audio": 0,
+              "speed": 1
+            },
+            "b2c80482-d313-4cdd-b589-b510e98c1890-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "1ac70481-fd33-4fbb-9e68-caa498df956a-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "29b5ed01-d899-40b1-ae32-48fdad7dc295-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "05b133f8-fcfa-49d5-8842-1dbb24d243c3": {
+              "audio": -100,
+              "speed": 1
+            },
+            "305bcef2-304e-4afc-89c8-e09e0a17f4a1": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-06-slot-13",
+          "query": "然日卡村落脚、牦牛围住宿与雨停希望",
+          "requirement": "required",
+          "targetBundles": [
+            "民宿被牦牛包围、村子建设变化和“以后不敢这么做死”构成当天压力落地。",
+            "雨停、明早有戏的口播自然引向格聂之眼清晨。"
+          ],
+          "chosenSpanIds": [
+            "ddcc1187-a61b-4290-9375-7ed59cfa885c",
+            "98aaeaea-af43-4f1b-b37b-3682e4026e35",
+            "74aa7557-8e7a-445a-a642-0f763912de7e",
+            "eb6d0e2f-5106-499b-a755-2c2f73ff577b",
+            "24ae7e8a-d7e3-4684-91c5-dc6d174a2815",
+            "5e437c3e-6910-4849-875e-f7347b21c13e"
+          ],
+          "treatments": {
+            "ddcc1187-a61b-4290-9375-7ed59cfa885c": {
+              "audio": 0,
+              "speed": 1
+            },
+            "98aaeaea-af43-4f1b-b37b-3682e4026e35": {
+              "audio": 0,
+              "speed": 1
+            },
+            "74aa7557-8e7a-445a-a642-0f763912de7e": {
+              "audio": 0,
+              "speed": 1
+            },
+            "eb6d0e2f-5106-499b-a755-2c2f73ff577b": {
+              "audio": -100,
+              "speed": 1
+            },
+            "24ae7e8a-d7e3-4684-91c5-dc6d174a2815": {
+              "audio": 0,
+              "speed": 1
+            },
+            "5e437c3e-6910-4849-875e-f7347b21c13e": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-06-slot-14",
+          "query": "格聂之眼清晨前的夜路、结冰和到达准备",
+          "requirement": "required",
+          "targetBundles": [
+            "5 点多出发、夜间无灯弯道、路面结冰和到达格聂之眼前准备。",
+            "C1520 说明雪下了一夜、仍不死心要拍。"
+          ],
+          "chosenSpanIds": [
+            "b890844b-30fc-4c22-bc8b-e46b9d493698",
+            "858ec8bf-502b-43d0-bfc4-2ee82a0e82c4",
+            "9894b4c1-a3a6-4d37-8566-996f9087c0bb",
+            "d6f860ba-3307-4201-ae90-cee22b351ffa",
+            "1f624162-e8b0-4381-a9af-0517defe0646"
+          ],
+          "treatments": {
+            "b890844b-30fc-4c22-bc8b-e46b9d493698": {
+              "audio": 0,
+              "speed": 1
+            },
+            "858ec8bf-502b-43d0-bfc4-2ee82a0e82c4": {
+              "audio": 0,
+              "speed": 1
+            },
+            "9894b4c1-a3a6-4d37-8566-996f9087c0bb": {
+              "audio": 0,
+              "speed": 1
+            },
+            "d6f860ba-3307-4201-ae90-cee22b351ffa": {
+              "audio": 0,
+              "speed": 1
+            },
+            "1f624162-e8b0-4381-a9af-0517defe0646": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-06-slot-15",
+          "query": "格聂之眼无水/冰面事实与清晨判断",
+          "requirement": "required",
+          "targetBundles": [
+            "C1521/C1522 明确“一点水都没有、倒影个鸡毛”。",
+            "航拍/照片显示圆形冰湖/圆形洼地，是格聂之眼清晨事实证据。"
+          ],
+          "chosenSpanIds": [
+            "36df3be1-52d7-47f0-bf7d-eea52ece38cd",
+            "30d33076-716e-4211-bdba-0df8b8d0ce48",
+            "0ee5df3a-826d-46e8-b9cd-69a1bd128add",
+            "65cbc3aa-f210-4cfe-8d9e-00586ccad2d4-direct-full",
+            "c71483ea-8043-4998-aefe-f6b7e4553dac-direct-full"
+          ],
+          "treatments": {
+            "36df3be1-52d7-47f0-bf7d-eea52ece38cd": {
+              "audio": -100,
+              "speed": 1
+            },
+            "30d33076-716e-4211-bdba-0df8b8d0ce48": {
+              "audio": -100,
+              "speed": 1
+            },
+            "0ee5df3a-826d-46e8-b9cd-69a1bd128add": {
+              "audio": -100,
+              "speed": 1
+            },
+            "65cbc3aa-f210-4cfe-8d9e-00586ccad2d4-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "c71483ea-8043-4998-aefe-f6b7e4553dac-direct-full": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        },
+        {
+          "id": "fw-06-slot-16",
+          "query": "格聂之眼上空、圆形地貌与雪原尺度",
+          "requirement": "required",
+          "targetBundles": [
+            "无人机候选覆盖雪覆高原、公路、圆形草甸/洼地、深谷云海与孤独人物。",
+            "这组用于从大雪压力转入清晨成果。"
+          ],
+          "chosenSpanIds": [
+            "31f4d0fa-b968-4ebf-b5ce-f12977ed6581-direct-full",
+            "a35535db-c627-4e08-9322-3d47049f241e-direct-full",
+            "4bd1ab64-ec17-4f28-b537-acbce5d07a9f-direct-full",
+            "f0cfc0f0-1c71-4d43-baa3-fb453297d853-direct-full",
+            "5012e59f-e774-44a1-878c-39cd6e610904-direct-full",
+            "df512275-1da8-4767-91d4-4e17140d9dd7-direct-full"
+          ],
+          "treatments": {
+            "31f4d0fa-b968-4ebf-b5ce-f12977ed6581-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "a35535db-c627-4e08-9322-3d47049f241e-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "4bd1ab64-ec17-4f28-b537-acbce5d07a9f-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "f0cfc0f0-1c71-4d43-baa3-fb453297d853-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "5012e59f-e774-44a1-878c-39cd6e610904-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "df512275-1da8-4767-91d4-4e17140d9dd7-direct-full": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        },
+        {
+          "id": "fw-06-slot-17",
+          "query": "格聂之眼个人拍摄、孤独行走与不完美完成",
+          "requirement": "required",
+          "targetBundles": [
+            "照片与视频记录雪原、三脚架、单人行走和雪山背景。",
+            "C1525 “并不完美地完成了这次拍摄，下次再来吧”给成果段落一个诚实收束。"
+          ],
+          "chosenSpanIds": [
+            "52ce607f-53fd-4e21-83e4-1a948d4378a4",
+            "38b6729a-8ebd-41f4-86a5-d6c0b926ddb4",
+            "e7a17b24-c227-4f35-b605-a75c6611efa4",
+            "caa426dc-4f1e-42a7-9461-78afb381afa0",
+            "333d7f5c-37a6-4086-bf5c-32c2b70fee97",
+            "60d070bb-e273-4aa1-810c-e52a85570f88"
+          ],
+          "treatments": {
+            "52ce607f-53fd-4e21-83e4-1a948d4378a4": {
+              "audio": -100,
+              "speed": 1
+            },
+            "38b6729a-8ebd-41f4-86a5-d6c0b926ddb4": {
+              "audio": -100,
+              "speed": 1
+            },
+            "e7a17b24-c227-4f35-b605-a75c6611efa4": {
+              "audio": -100,
+              "speed": 1
+            },
+            "caa426dc-4f1e-42a7-9461-78afb381afa0": {
+              "audio": 0,
+              "speed": 1
+            },
+            "333d7f5c-37a6-4086-bf5c-32c2b70fee97": {
+              "audio": -100,
+              "speed": 1
+            },
+            "60d070bb-e273-4aa1-810c-e52a85570f88": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-06-slot-18",
+          "query": "下山前冰雪堵车、结冰路面与车辆受阻",
+          "requirement": "required",
+          "targetBundles": [
+            "候选有“前面堵起来、地上都是冰、路面好滑、趴窝”和大车/车队等待。",
+            "雪胎/结冰讨论补强格聂南线挑战性。"
+          ],
+          "chosenSpanIds": [
+            "534fa7a6-0c14-438d-b183-d80624e303b1",
+            "b8e3a077-2c2e-4f63-bbe7-5fa7bbc3f003",
+            "7c7e1dab-398b-4af3-bdf5-dda101527621",
+            "d0f2e40f-4b38-4b8c-9ebd-0205a13058c4",
+            "9c1096d3-c51e-403c-a1b3-c24a9c5a7038",
+            "b59761e3-f679-4374-91d7-5095515cb9e0"
+          ],
+          "treatments": {
+            "534fa7a6-0c14-438d-b183-d80624e303b1": {
+              "audio": 0,
+              "speed": 1
+            },
+            "b8e3a077-2c2e-4f63-bbe7-5fa7bbc3f003": {
+              "audio": 0,
+              "speed": 1
+            },
+            "7c7e1dab-398b-4af3-bdf5-dda101527621": {
+              "audio": 0,
+              "speed": 1
+            },
+            "d0f2e40f-4b38-4b8c-9ebd-0205a13058c4": {
+              "audio": 0,
+              "speed": 1
+            },
+            "9c1096d3-c51e-403c-a1b3-c24a9c5a7038": {
+              "audio": 0,
+              "speed": 1
+            },
+            "b59761e3-f679-4374-91d7-5095515cb9e0": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-06-slot-19",
+          "query": "理塘补给、离开格聂与返穿完成口播",
+          "requirement": "required",
+          "targetBundles": [
+            "C1565 明确“离开格聂、返穿正式完成、有惊无险”。",
+            "理塘/丁真故乡/寻找餐厅等候选承接 FW-07 之前的补给转场。"
+          ],
+          "chosenSpanIds": [
+            "540337a5-2e92-4423-a40c-20cdafca2ad8",
+            "90b4ac10-29d6-4a9e-8533-8f2d43ee8829",
+            "346ed86f-bd57-44e9-803d-3ef2901b3037",
+            "318f1a50-9e73-4700-9dad-b217a09e900a",
+            "f80e1bb7-ff81-4b9c-b377-10e01488af8f",
+            "5c0c8f44-632a-458a-ab98-61f0f42b4846"
+          ],
+          "treatments": {
+            "540337a5-2e92-4423-a40c-20cdafca2ad8": {
+              "audio": 0,
+              "speed": 1
+            },
+            "90b4ac10-29d6-4a9e-8533-8f2d43ee8829": {
+              "audio": 0,
+              "speed": 1
+            },
+            "346ed86f-bd57-44e9-803d-3ef2901b3037": {
+              "audio": 0,
+              "speed": 1
+            },
+            "318f1a50-9e73-4700-9dad-b217a09e900a": {
+              "audio": 0,
+              "speed": 1
+            },
+            "f80e1bb7-ff81-4b9c-b377-10e01488af8f": {
+              "audio": 0,
+              "speed": 1
+            },
+            "5c0c8f44-632a-458a-ab98-61f0f42b4846": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07",
+      "slots": [
+        {
+          "id": "fw-07-slot-01",
+          "query": "理塘到新都桥长 route 的代表窗口",
+          "requirement": "optional",
+          "targetBundles": [
+            "候选覆盖隧道、亚江入口、雪地公路和继续赶路。",
+            "用作从理塘补给到新都桥事件的时间压缩桥。"
+          ],
+          "chosenSpanIds": [
+            "fb31a58c-70f8-409c-a823-dda4f62fe39d",
+            "24e2cf4d-3bc5-425f-9ca8-fa2d3cee5fe7",
+            "9d41b332-234e-40af-8116-e06bcccecbd7",
+            "e3193ab8-54cf-476c-9fc5-5c0502b3405e",
+            "d98e458c-1337-4f2a-9dbc-35a95606dd94"
+          ],
+          "treatments": {
+            "fb31a58c-70f8-409c-a823-dda4f62fe39d": {
+              "audio": 0,
+              "speed": 1
+            },
+            "24e2cf4d-3bc5-425f-9ca8-fa2d3cee5fe7": {
+              "audio": -100,
+              "speed": 2
+            },
+            "9d41b332-234e-40af-8116-e06bcccecbd7": {
+              "audio": 0,
+              "speed": 1
+            },
+            "e3193ab8-54cf-476c-9fc5-5c0502b3405e": {
+              "audio": -100,
+              "speed": 2
+            },
+            "d98e458c-1337-4f2a-9dbc-35a95606dd94": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-07-slot-02",
+          "query": "新都桥同伴身体不适与团队分线伏笔",
+          "requirement": "required",
+          "targetBundles": [
+            "C1604 明确“朋友顶不住了先下车，我们继续”。",
+            "后续 route 中仍提到可惜/状态，能连到独自决策线。"
+          ],
+          "chosenSpanIds": [
+            "860af0d2-7a3b-434a-9b88-b3864d0c7916",
+            "c69fb3d2-ef93-4dcf-96e4-d0e055389ac3",
+            "1df2dd6f-b13e-4771-acbf-9dec3fda27b1",
+            "0b464440-7ec6-4fda-b477-56e1efd19f0c",
+            "2c352219-f606-400f-a621-7304e601004f"
+          ],
+          "treatments": {
+            "860af0d2-7a3b-434a-9b88-b3864d0c7916": {
+              "audio": 0,
+              "speed": 1
+            },
+            "c69fb3d2-ef93-4dcf-96e4-d0e055389ac3": {
+              "audio": 0,
+              "speed": 1
+            },
+            "1df2dd6f-b13e-4771-acbf-9dec3fda27b1": {
+              "audio": 0,
+              "speed": 1
+            },
+            "0b464440-7ec6-4fda-b477-56e1efd19f0c": {
+              "audio": 0,
+              "speed": 1
+            },
+            "2c352219-f606-400f-a621-7304e601004f": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-07-slot-03",
+          "query": "新都桥后雨雾山路与继续前往贡嘎山镇",
+          "requirement": "optional",
+          "targetBundles": [
+            "候选包含雨天乡村路、摄影天堂口播、湿滑河谷和车队观察。",
+            "不作为独立景点，只作下一段雪路压力的前奏。"
+          ],
+          "chosenSpanIds": [
+            "43f7a0e7-79dd-4b6f-b4c2-95fab5fa4abf",
+            "8ac7b54e-69b2-4aea-8681-b836761fd772",
+            "72ffa548-4417-40d7-939a-4a6c78f5cb1d",
+            "6ec4b841-fcb4-4303-a484-8b2c978bd475",
+            "ef6fd968-401d-4bf2-9991-aab3e57bb6af"
+          ],
+          "treatments": {
+            "43f7a0e7-79dd-4b6f-b4c2-95fab5fa4abf": {
+              "audio": 0,
+              "speed": 1
+            },
+            "8ac7b54e-69b2-4aea-8681-b836761fd772": {
+              "audio": 0,
+              "speed": 1
+            },
+            "72ffa548-4417-40d7-939a-4a6c78f5cb1d": {
+              "audio": 0,
+              "speed": 1
+            },
+            "6ec4b841-fcb4-4303-a484-8b2c978bd475": {
+              "audio": 0,
+              "speed": 1
+            },
+            "ef6fd968-401d-4bf2-9991-aab3e57bb6af": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-07-slot-04",
+          "query": "003 乡道开端、前往子梅垭口和同伴缺席说明",
+          "requirement": "required",
+          "targetBundles": [
+            "C1619 明确“003 乡道前往子梅垭口”“今天那位朋友下车”。",
+            "C1620 接上“一小时十五分”、湿滑弯道和井盖/坑洞感知。"
+          ],
+          "chosenSpanIds": [
+            "5b9d22b1-c0ef-45ac-b8ce-e924e499d6b3",
+            "0cca3408-8bda-4f3f-955c-5a6a9b68a115",
+            "03431d8c-0b6f-4347-bf16-40ef3dee620b",
+            "7eddb3c8-758d-428a-bda3-f298f94c6eb2",
+            "8c322a04-7b22-4f04-841b-2b3790778e82"
+          ],
+          "treatments": {
+            "5b9d22b1-c0ef-45ac-b8ce-e924e499d6b3": {
+              "audio": 0,
+              "speed": 1
+            },
+            "0cca3408-8bda-4f3f-955c-5a6a9b68a115": {
+              "audio": 0,
+              "speed": 1
+            },
+            "03431d8c-0b6f-4347-bf16-40ef3dee620b": {
+              "audio": 0,
+              "speed": 1
+            },
+            "7eddb3c8-758d-428a-bda3-f298f94c6eb2": {
+              "audio": 0,
+              "speed": 1
+            },
+            "8c322a04-7b22-4f04-841b-2b3790778e82": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-07-slot-05",
+          "query": "003 乡道坑洼、改道、施工和湿滑河谷",
+          "requirement": "required",
+          "targetBundles": [
+            "候选包含井盖/坑、导航改道、施工碎石、确认“这就是烂路”和接下来 20 公里耗时。",
+            "画面为雾中湿滑山路、河谷和未铺装路面。"
+          ],
+          "chosenSpanIds": [
+            "748a445b-729f-445d-9bde-dd36b7a2035c",
+            "b07604ee-44a0-4454-90f2-c214d619db93",
+            "8525ae6f-23e0-40e7-adad-b14a528dfa42",
+            "ebfb795d-ac02-4459-88ee-fa71e23c2060",
+            "66088245-419f-4fbb-9a3a-55baf951f27e",
+            "b1c03a13-5b13-4d21-95a4-0d7a49060715"
+          ],
+          "treatments": {
+            "748a445b-729f-445d-9bde-dd36b7a2035c": {
+              "audio": 0,
+              "speed": 1
+            },
+            "b07604ee-44a0-4454-90f2-c214d619db93": {
+              "audio": 0,
+              "speed": 1
+            },
+            "8525ae6f-23e0-40e7-adad-b14a528dfa42": {
+              "audio": 0,
+              "speed": 1
+            },
+            "ebfb795d-ac02-4459-88ee-fa71e23c2060": {
+              "audio": 0,
+              "speed": 1
+            },
+            "66088245-419f-4fbb-9a3a-55baf951f27e": {
+              "audio": 0,
+              "speed": 1
+            },
+            "b1c03a13-5b13-4d21-95a4-0d7a49060715": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-07-slot-06",
+          "query": "上木居落脚、上不去判断和雪夜氛围",
+          "requirement": "required",
+          "targetBundles": [
+            "C1637 明确“上不去了、有点发麻、刚才开得太激情、忽然下暴雪，先落脚”。",
+            "室内火锅/休息和夜雨雪车灯建立停顿后的寒冷氛围。"
+          ],
+          "chosenSpanIds": [
+            "ec14d28f-5c1b-4d0a-bc00-667e385ef067",
+            "5af53f95-4aed-4f2f-a839-f6cd6f578e61",
+            "01f52f7a-3b28-49ce-8fad-72156653b607",
+            "5c44ce1d-1c9e-4cca-976a-9393f183f9b0",
+            "694267ea-02e0-4f19-8c3f-cec93c1109be",
+            "c65108bb-7778-4539-9a3c-772b63f22fea",
+            "45ac1ccf-f386-4f05-8955-bcb47d850291"
+          ],
+          "treatments": {
+            "ec14d28f-5c1b-4d0a-bc00-667e385ef067": {
+              "audio": -100,
+              "speed": 1
+            },
+            "5af53f95-4aed-4f2f-a839-f6cd6f578e61": {
+              "audio": 0,
+              "speed": 1
+            },
+            "01f52f7a-3b28-49ce-8fad-72156653b607": {
+              "audio": 0,
+              "speed": 1
+            },
+            "5c44ce1d-1c9e-4cca-976a-9393f183f9b0": {
+              "audio": 0,
+              "speed": 1
+            },
+            "694267ea-02e0-4f19-8c3f-cec93c1109be": {
+              "audio": 0,
+              "speed": 1
+            },
+            "c65108bb-7778-4539-9a3c-772b63f22fea": {
+              "audio": 0,
+              "speed": 1
+            },
+            "45ac1ccf-f386-4f05-8955-bcb47d850291": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-07-slot-07",
+          "query": "凌晨五点上木居出发，积雪覆盖车辆与出发口播",
+          "requirement": "required",
+          "targetBundles": [
+            "车辆被厚雪覆盖、拉车门和夜间出发建立冷硬环境。",
+            "口播说明五点出发、海拔 3800 到 4500、最后一天仍决定去看一眼。"
+          ],
+          "chosenSpanIds": [
+            "d9349425-8a8c-4312-828e-c28a617d55c2",
+            "2503e3e4-ac66-4e66-a6fa-490b4eae8bf7",
+            "ff392f19-1965-410a-9b30-342db5490c1f",
+            "62f319fc-c891-4746-af17-7a8ffce35304",
+            "952975b5-6bec-4f2f-8548-cc5b33b59b0d"
+          ],
+          "treatments": {
+            "d9349425-8a8c-4312-828e-c28a617d55c2": {
+              "audio": -100,
+              "speed": 1
+            },
+            "2503e3e4-ac66-4e66-a6fa-490b4eae8bf7": {
+              "audio": -100,
+              "speed": 1
+            },
+            "ff392f19-1965-410a-9b30-342db5490c1f": {
+              "audio": -100,
+              "speed": 1
+            },
+            "62f319fc-c891-4746-af17-7a8ffce35304": {
+              "audio": -100,
+              "speed": 1
+            },
+            "952975b5-6bec-4f2f-8548-cc5b33b59b0d": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-07-slot-08",
+          "query": "雪夜爬升、结冰、无车辙、陡坡和心理压力",
+          "requirement": "required",
+          "targetBundles": [
+            "候选覆盖夜间会车、路面结冰、海拔继续爬升、最陡坡和越往上积雪越厚。",
+            "车辙与雪深细节证明不是普通景观路，而是硬上的风险过程。"
+          ],
+          "chosenSpanIds": [
+            "47c6b86f-c7ea-4024-b90b-8aeb208d3cd6",
+            "39b2874a-50d4-4767-8239-961f5bbbe9cc",
+            "08c4537b-c39c-4e77-ba60-6d5f3422832e",
+            "7a432cbd-a42e-452e-91c6-2b1b67743b9e",
+            "30f7bf1d-932d-4b71-84a0-71b6cc5602a5",
+            "690f719a-7bb3-4862-85c6-9edb980eb46f",
+            "b0631441-390e-4be2-85da-23508d245fa2",
+            "73a741fd-cd87-41d8-af8e-5d75316b3615",
+            "58bb3197-24e6-4537-b7d4-a5c8c00bb512",
+            "d336869d-6264-4967-95f5-55a8d71b46ad"
+          ],
+          "treatments": {
+            "47c6b86f-c7ea-4024-b90b-8aeb208d3cd6": {
+              "audio": 0,
+              "speed": 1
+            },
+            "39b2874a-50d4-4767-8239-961f5bbbe9cc": {
+              "audio": 0,
+              "speed": 1
+            },
+            "08c4537b-c39c-4e77-ba60-6d5f3422832e": {
+              "audio": 0,
+              "speed": 1
+            },
+            "7a432cbd-a42e-452e-91c6-2b1b67743b9e": {
+              "audio": 0,
+              "speed": 1
+            },
+            "30f7bf1d-932d-4b71-84a0-71b6cc5602a5": {
+              "audio": 0,
+              "speed": 1
+            },
+            "690f719a-7bb3-4862-85c6-9edb980eb46f": {
+              "audio": 0,
+              "speed": 1
+            },
+            "b0631441-390e-4be2-85da-23508d245fa2": {
+              "audio": 0,
+              "speed": 1
+            },
+            "73a741fd-cd87-41d8-af8e-5d75316b3615": {
+              "audio": 0,
+              "speed": 1
+            },
+            "58bb3197-24e6-4537-b7d4-a5c8c00bb512": {
+              "audio": -100,
+              "speed": 2
+            },
+            "d336869d-6264-4967-95f5-55a8d71b46ad": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        },
+        {
+          "id": "fw-07-slot-09",
+          "query": "子梅垭口雪夜到达，惊险上来但贡嘎/星轨计划失败",
+          "requirement": "required",
+          "targetBundles": [
+            "口播明确“有点危险和勉强地上来了”“星轨银河没有拍成”。",
+            "月光、车灯、灯笼和深雪孤身站立构成雪夜结果与失落感。"
+          ],
+          "chosenSpanIds": [
+            "76d282e3-7882-4b75-a628-e85986da81fd",
+            "23c5f799-c3b3-4495-98fc-c20d7b56afc9",
+            "3269a30e-8229-4353-bba9-140554083684",
+            "582c7abd-6d26-40e4-99b5-ba581b4b322d",
+            "d3c21461-14a5-4dae-87a1-b2a02fb3e443",
+            "e001241c-cc6a-4b74-b0d1-dc8ae2c6b8d2-direct-full",
+            "3909cd14-2d42-45fe-ab2f-04da304a5f43-direct-full",
+            "0a45f618-3988-4496-bd63-3ccb47670c91",
+            "2d96643f-012c-4dbe-a3b6-06b3af04192f-direct-full",
+            "508e6b28-c20c-4472-80c5-09f97a68c73c"
+          ],
+          "treatments": {
+            "76d282e3-7882-4b75-a628-e85986da81fd": {
+              "audio": 0,
+              "speed": 1
+            },
+            "23c5f799-c3b3-4495-98fc-c20d7b56afc9": {
+              "audio": -100,
+              "speed": 1
+            },
+            "3269a30e-8229-4353-bba9-140554083684": {
+              "audio": -100,
+              "speed": 1
+            },
+            "582c7abd-6d26-40e4-99b5-ba581b4b322d": {
+              "audio": 0,
+              "speed": 1
+            },
+            "d3c21461-14a5-4dae-87a1-b2a02fb3e443": {
+              "audio": 0,
+              "speed": 1
+            },
+            "e001241c-cc6a-4b74-b0d1-dc8ae2c6b8d2-direct-full": {
+              "audio": -100,
+              "speed": 1
+            },
+            "3909cd14-2d42-45fe-ab2f-04da304a5f43-direct-full": {
+              "audio": -100,
+              "speed": 1
+            },
+            "0a45f618-3988-4496-bd63-3ccb47670c91": {
+              "audio": -100,
+              "speed": 1
+            },
+            "2d96643f-012c-4dbe-a3b6-06b3af04192f-direct-full": {
+              "audio": -100,
+              "speed": 1
+            },
+            "508e6b28-c20c-4472-80c5-09f97a68c73c": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-07-slot-10",
+          "query": "子梅垭口上空短航拍，孤独人物与雪地营地建立",
+          "requirement": "optional",
+          "targetBundles": [
+            "两条短航拍提供雪原里单人/营地的空间尺度，不拉长。"
+          ],
+          "chosenSpanIds": [
+            "ed32aa45-ec6c-434d-a584-f511baddf783-direct-full",
+            "7a4a5d20-e7da-4441-bdc3-6e61d61bb167-direct-full"
+          ],
+          "treatments": {
+            "ed32aa45-ec6c-434d-a584-f511baddf783-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "7a4a5d20-e7da-4441-bdc3-6e61d61bb167-direct-full": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        },
+        {
+          "id": "fw-07-slot-11",
+          "query": "下山航拍跟车、堵车/会车、无人机炸机后找回",
+          "requirement": "required",
+          "targetBundles": [
+            "口播直接说明无人机虽然出事但拿回来了，并复盘早上的难忘体验。",
+            "航拍与照片覆盖雪地车队、会车等待、山路排队和蜿蜒雪路。"
+          ],
+          "chosenSpanIds": [
+            "d5b68dcc-92ee-43bd-a512-dfbc05a23ec9",
+            "3a3abf83-0696-43f8-a216-98a18d5b8c55",
+            "b1ba4016-b87f-4f04-988a-20d41f987b98",
+            "8c285c55-c909-4370-b206-e1d70b5918fa",
+            "b388a4c7-1df7-4baa-94b2-befa1dc2cd69",
+            "9e014881-c180-4a7f-906e-9982c99b6a7b-direct-full",
+            "60df48f5-f9d7-4acd-b5e8-88686fa8cd01-direct-full",
+            "149dddd9-2314-4f70-8610-eeeb281d34ab-direct-full",
+            "fda23e46-0781-4ca7-8275-ef7e8e59c1ba",
+            "95ec1b64-b21d-4d14-b110-3dd08cca9ae7"
+          ],
+          "treatments": {
+            "d5b68dcc-92ee-43bd-a512-dfbc05a23ec9": {
+              "audio": 0,
+              "speed": 1
+            },
+            "3a3abf83-0696-43f8-a216-98a18d5b8c55": {
+              "audio": 0,
+              "speed": 1
+            },
+            "b1ba4016-b87f-4f04-988a-20d41f987b98": {
+              "audio": 0,
+              "speed": 1
+            },
+            "8c285c55-c909-4370-b206-e1d70b5918fa": {
+              "audio": 0,
+              "speed": 1
+            },
+            "b388a4c7-1df7-4baa-94b2-befa1dc2cd69": {
+              "audio": 0,
+              "speed": 1
+            },
+            "9e014881-c180-4a7f-906e-9982c99b6a7b-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "60df48f5-f9d7-4acd-b5e8-88686fa8cd01-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "149dddd9-2314-4f70-8610-eeeb281d34ab-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "fda23e46-0781-4ca7-8275-ef7e8e59c1ba": {
+              "audio": -100,
+              "speed": 1
+            },
+            "95ec1b64-b21d-4d14-b110-3dd08cca9ae7": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-07-slot-12",
+          "query": "送别同伴，临时决定独自再待一天并折返子梅垭口",
+          "requirement": "required",
+          "targetBundles": [
+            "口播说天气放晴，作为风光摄影师无法拒绝，明天自己开 600 公里回去。",
+            "送别、充电、吃饭、满油满电把团队线切成个人线。"
+          ],
+          "chosenSpanIds": [
+            "d9b54550-d211-47f9-bd40-5e5c40db2fc2",
+            "e2861ff6-b190-4560-8c54-e552dce7f78f",
+            "2ec38f99-9340-46e0-87ae-8ac79f79cc9d",
+            "ddf9fcc5-3798-40d2-87a0-82e9a1dcdc41",
+            "8e5d7eb2-b605-4bb7-bca1-463d71803bc6",
+            "45a52c46-9e2e-496f-9299-807eaeefd252",
+            "cca5e53d-ad27-424f-adb5-2676a1528442"
+          ],
+          "treatments": {
+            "d9b54550-d211-47f9-bd40-5e5c40db2fc2": {
+              "audio": 0,
+              "speed": 1
+            },
+            "e2861ff6-b190-4560-8c54-e552dce7f78f": {
+              "audio": 0,
+              "speed": 1
+            },
+            "2ec38f99-9340-46e0-87ae-8ac79f79cc9d": {
+              "audio": -100,
+              "speed": 1
+            },
+            "ddf9fcc5-3798-40d2-87a0-82e9a1dcdc41": {
+              "audio": 0,
+              "speed": 1
+            },
+            "8e5d7eb2-b605-4bb7-bca1-463d71803bc6": {
+              "audio": 0,
+              "speed": 1
+            },
+            "45a52c46-9e2e-496f-9299-807eaeefd252": {
+              "audio": 0,
+              "speed": 1
+            },
+            "cca5e53d-ad27-424f-adb5-2676a1528442": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        },
+        {
+          "id": "fw-07-slot-13",
+          "query": "独自折返上山路，晴天雪山、会车、牦牛、再次回到上木居",
+          "requirement": "required",
+          "targetBundles": [
+            "候选串起从新都桥折返、再次走上山路、海拔 4200、半天融雪和暗冰预警。",
+            "晴天雪山与路况阻滞并置，支撑“独自折返不是轻松风景游”。"
+          ],
+          "chosenSpanIds": [
+            "4b243eed-247a-4ec9-ba9b-630b7e86fe89",
+            "359a5b57-e1d7-4c9f-b8ca-b9386095524e",
+            "19c5afcf-d755-4a6b-87fe-55aab1a1cc62",
+            "38a396a6-1a69-4301-b067-fb944db68093",
+            "447f27bd-4470-44a6-8ac1-b87530c73e2b",
+            "4d89bfac-51f7-4150-b936-dfef1c2de342",
+            "66e4752a-cec5-4ffe-bc98-33202bdb4c27",
+            "46dbe0f6-24ec-41cc-a915-b75cad4af195",
+            "76798f8e-4a05-4701-9791-1c23eb038866",
+            "ade278b8-3dd3-4fc6-b602-74f7bd314be9",
+            "f946c557-d92d-4f07-b22b-5672e6912db7"
+          ],
+          "treatments": {
+            "4b243eed-247a-4ec9-ba9b-630b7e86fe89": {
+              "audio": 0,
+              "speed": 1
+            },
+            "359a5b57-e1d7-4c9f-b8ca-b9386095524e": {
+              "audio": 0,
+              "speed": 1
+            },
+            "19c5afcf-d755-4a6b-87fe-55aab1a1cc62": {
+              "audio": -100,
+              "speed": 2
+            },
+            "38a396a6-1a69-4301-b067-fb944db68093": {
+              "audio": 0,
+              "speed": 1
+            },
+            "447f27bd-4470-44a6-8ac1-b87530c73e2b": {
+              "audio": 0,
+              "speed": 1
+            },
+            "4d89bfac-51f7-4150-b936-dfef1c2de342": {
+              "audio": 0,
+              "speed": 1
+            },
+            "66e4752a-cec5-4ffe-bc98-33202bdb4c27": {
+              "audio": 0,
+              "speed": 1
+            },
+            "46dbe0f6-24ec-41cc-a915-b75cad4af195": {
+              "audio": 0,
+              "speed": 1
+            },
+            "76798f8e-4a05-4701-9791-1c23eb038866": {
+              "audio": 0,
+              "speed": 1
+            },
+            "ade278b8-3dd3-4fc6-b602-74f7bd314be9": {
+              "audio": 0,
+              "speed": 1
+            },
+            "f946c557-d92d-4f07-b22b-5672e6912db7": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-07-slot-14",
+          "query": "接近垭口时清雪、停车、用无人机和雪山合影",
+          "requirement": "required",
+          "targetBundles": [
+            "清雪、工兵铲、停车落车和无人机合影把最终成果前的代价补足。",
+            "两张照片提供黄色车与雪山公路的成果性补证。"
+          ],
+          "chosenSpanIds": [
+            "6bf23a16-e51c-4e0d-b41f-6732f1100737",
+            "b1615a2d-9882-4d99-b0e3-67d049131f5d",
+            "0649752d-c247-4e3b-bf5c-97f2a08b3c99",
+            "6a23ce30-4b70-4aae-a107-dbb9c3c9677d",
+            "b9e26cab-aeaa-473e-8357-30f175f3e81f",
+            "12ec5e82-d074-4a9f-b46f-e02db5df0869",
+            "05410dad-0ac5-4d26-9d79-e71e662ddbc2",
+            "ac2cd744-ca6d-4ed8-94d7-47b6af03e059"
+          ],
+          "treatments": {
+            "6bf23a16-e51c-4e0d-b41f-6732f1100737": {
+              "audio": 0,
+              "speed": 1
+            },
+            "b1615a2d-9882-4d99-b0e3-67d049131f5d": {
+              "audio": 0,
+              "speed": 1
+            },
+            "0649752d-c247-4e3b-bf5c-97f2a08b3c99": {
+              "audio": 0,
+              "speed": 1
+            },
+            "6a23ce30-4b70-4aae-a107-dbb9c3c9677d": {
+              "audio": 0,
+              "speed": 1
+            },
+            "b9e26cab-aeaa-473e-8357-30f175f3e81f": {
+              "audio": 0,
+              "speed": 1
+            },
+            "12ec5e82-d074-4a9f-b46f-e02db5df0869": {
+              "audio": 0,
+              "speed": 1
+            },
+            "05410dad-0ac5-4d26-9d79-e71e662ddbc2": {
+              "audio": -100,
+              "speed": 1
+            },
+            "ac2cd744-ca6d-4ed8-94d7-47b6af03e059": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-07-slot-15",
+          "query": "架相机等待贡嘎，日照金山、车顶观景与航拍成果",
+          "requirement": "required",
+          "targetBundles": [
+            "车内架双机位、充电线、贡嘎介绍、红衣人物和车顶观景构成等待过程。",
+            "航拍给出雪峰、云海和孤独人物的最终空间尺度。"
+          ],
+          "chosenSpanIds": [
+            "6b2cf656-9cb4-4550-9112-c039a8a5d8fb",
+            "737168ca-64d4-4e89-93d3-8524da9d9ed9",
+            "e49b649d-cdef-429c-a916-f9f26cd5e164-direct-full",
+            "fb2b3b4c-0ecb-4ddf-8fc9-da1dd94a03f0-direct-full",
+            "7dc8d67d-45e2-446e-b907-c04636b2959e-direct-full",
+            "7434d57e-7c8a-4ebf-b3c9-d405f3e8177b-direct-full",
+            "0cf18ef7-eee3-4214-a112-2e54694a2f2f-direct-full",
+            "1c6f1969-1922-4166-81fd-cf67e83278c8",
+            "b3adc6f8-d5af-4a70-9f5b-16420d72b07f",
+            "c36895fa-a216-4da4-847a-c10f74f124ee-direct-full"
+          ],
+          "treatments": {
+            "6b2cf656-9cb4-4550-9112-c039a8a5d8fb": {
+              "audio": -100,
+              "speed": 1
+            },
+            "737168ca-64d4-4e89-93d3-8524da9d9ed9": {
+              "audio": -100,
+              "speed": 1
+            },
+            "e49b649d-cdef-429c-a916-f9f26cd5e164-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "fb2b3b4c-0ecb-4ddf-8fc9-da1dd94a03f0-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "7dc8d67d-45e2-446e-b907-c04636b2959e-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "7434d57e-7c8a-4ebf-b3c9-d405f3e8177b-direct-full": {
+              "audio": -100,
+              "speed": 2
+            },
+            "0cf18ef7-eee3-4214-a112-2e54694a2f2f-direct-full": {
+              "audio": -100,
+              "speed": 1
+            },
+            "1c6f1969-1922-4166-81fd-cf67e83278c8": {
+              "audio": -100,
+              "speed": 1
+            },
+            "b3adc6f8-d5af-4a70-9f5b-16420d72b07f": {
+              "audio": 0,
+              "speed": 1
+            },
+            "c36895fa-a216-4da4-847a-c10f74f124ee-direct-full": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        },
+        {
+          "id": "fw-07-slot-16",
+          "query": "子梅垭口雪山云海、日照金山、星空与延时成果组",
+          "requirement": "required",
+          "targetBundles": [
+            "照片组覆盖雪山全景、云海、日照金山、孤独旅人、星空与黄车夜景。",
+            "三条延时是 FW-07 最终成果，不混入前面 route。"
+          ],
+          "chosenSpanIds": [
+            "9ecd4437-2121-4e71-83e1-099b3b37b61a",
+            "b51870c2-8cd8-4303-8cee-595a364b4731",
+            "6a3e8409-a3b6-4395-8814-7f4e0ab8344f",
+            "8f259a70-4077-4f99-bf29-733399f86e00",
+            "f73e8bae-896f-4c78-92dc-808384438805",
+            "b4f61c1c-a0da-4bb0-8363-c2ce3048c726",
+            "5f5482df-aca5-49c9-bc4e-98416529125d",
+            "cfc471da-4eb0-4a46-a293-c6af94334362",
+            "113b2321-9026-4fc7-bb39-13ead483c7f9",
+            "ef946b74-3b7e-450c-bb1c-6a5c33c5a9a6",
+            "6f7f3eb1-cb74-481b-9527-8cf8f3f27c92",
+            "3cd43f6e-b7aa-45b1-9523-32240fb05ebf",
+            "7ff26dfa-600b-47c4-9407-ad2a28d4c5da",
+            "98887ca7-10ee-41cd-b50c-27987410f643-direct-full"
+          ],
+          "treatments": {
+            "9ecd4437-2121-4e71-83e1-099b3b37b61a": {
+              "audio": -100,
+              "speed": 1
+            },
+            "b51870c2-8cd8-4303-8cee-595a364b4731": {
+              "audio": -100,
+              "speed": 1
+            },
+            "6a3e8409-a3b6-4395-8814-7f4e0ab8344f": {
+              "audio": -100,
+              "speed": 1
+            },
+            "8f259a70-4077-4f99-bf29-733399f86e00": {
+              "audio": -100,
+              "speed": 1
+            },
+            "f73e8bae-896f-4c78-92dc-808384438805": {
+              "audio": -100,
+              "speed": 1
+            },
+            "b4f61c1c-a0da-4bb0-8363-c2ce3048c726": {
+              "audio": -100,
+              "speed": 1
+            },
+            "5f5482df-aca5-49c9-bc4e-98416529125d": {
+              "audio": -100,
+              "speed": 1
+            },
+            "cfc471da-4eb0-4a46-a293-c6af94334362": {
+              "audio": -100,
+              "speed": 1
+            },
+            "113b2321-9026-4fc7-bb39-13ead483c7f9": {
+              "audio": -100,
+              "speed": 1
+            },
+            "ef946b74-3b7e-450c-bb1c-6a5c33c5a9a6": {
+              "audio": -100,
+              "speed": 1
+            },
+            "6f7f3eb1-cb74-481b-9527-8cf8f3f27c92": {
+              "audio": -100,
+              "speed": 1
+            },
+            "3cd43f6e-b7aa-45b1-9523-32240fb05ebf": {
+              "audio": -100,
+              "speed": 1
+            },
+            "7ff26dfa-600b-47c4-9407-ad2a28d4c5da": {
+              "audio": -100,
+              "speed": 1
+            },
+            "98887ca7-10ee-41cd-b50c-27987410f643-direct-full": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-07-slot-17",
+          "query": "月亮升起后独自守在垭口，旅途终结独白",
+          "requirement": "required",
+          "targetBundles": [
+            "口播从等待月亮到“刚开始四个人到现在只有我一个”，完成个人线情绪闭合。",
+            "星空与黄车雪夜照片可作为独白后的静默尾韵。"
+          ],
+          "chosenSpanIds": [
+            "f2a8f14f-c1e0-408e-8a82-111d174ef8da",
+            "491eae75-0be5-4b89-827f-3a18ede40e09",
+            "51387205-1990-4a4a-8185-94716b8edceb",
+            "73cb210a-196c-4acf-873d-a3c9cd17b67f",
+            "79a3a5f5-a81b-4895-ab2a-963f8eda361a",
+            "0c3b47db-edb7-4f7d-ad43-1ea5b30a5c93",
+            "0e1a891c-df68-478f-be8a-1406e3011542"
+          ],
+          "treatments": {
+            "f2a8f14f-c1e0-408e-8a82-111d174ef8da": {
+              "audio": 0,
+              "speed": 1
+            },
+            "491eae75-0be5-4b89-827f-3a18ede40e09": {
+              "audio": 0,
+              "speed": 1
+            },
+            "51387205-1990-4a4a-8185-94716b8edceb": {
+              "audio": 0,
+              "speed": 1
+            },
+            "73cb210a-196c-4acf-873d-a3c9cd17b67f": {
+              "audio": 0,
+              "speed": 1
+            },
+            "79a3a5f5-a81b-4895-ab2a-963f8eda361a": {
+              "audio": 0,
+              "speed": 1
+            },
+            "0c3b47db-edb7-4f7d-ad43-1ea5b30a5c93": {
+              "audio": 0,
+              "speed": 1
+            },
+            "0e1a891c-df68-478f-be8a-1406e3011542": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-08",
+      "slots": [
+        {
+          "id": "fw-08-slot-01",
+          "query": "凌晨从子梅垭口下山回上木居，疲惫和月光夜路",
+          "requirement": "required",
+          "targetBundles": [
+            "凌晨十二点多下山、月光照路、凌晨一点到酒店，承担个人线后的疲惫落地。"
+          ],
+          "chosenSpanIds": [
+            "f1401077-41bd-48be-8d04-95c96527324d",
+            "33523f8c-bf31-4f27-b400-dcea2f557e95",
+            "bb963c76-bd7d-4e90-bff7-243aac7245ad",
+            "87649269-7731-47bc-bedc-de2c6c1e98f1",
+            "cc47855b-e3e3-4c5c-962e-711783188342",
+            "fdbfacda-f538-46ad-bd23-6fc2fa16b174"
+          ],
+          "treatments": {
+            "f1401077-41bd-48be-8d04-95c96527324d": {
+              "audio": -100,
+              "speed": 1
+            },
+            "33523f8c-bf31-4f27-b400-dcea2f557e95": {
+              "audio": 0,
+              "speed": 1
+            },
+            "bb963c76-bd7d-4e90-bff7-243aac7245ad": {
+              "audio": 0,
+              "speed": 1
+            },
+            "87649269-7731-47bc-bedc-de2c6c1e98f1": {
+              "audio": 0,
+              "speed": 1
+            },
+            "cc47855b-e3e3-4c5c-962e-711783188342": {
+              "audio": -100,
+              "speed": 1
+            },
+            "fdbfacda-f538-46ad-bd23-6fc2fa16b174": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-08-slot-02",
+          "query": "上木居正式返程，十小时开往成都",
+          "requirement": "required",
+          "targetBundles": [
+            "口播说明本来应已回深圳、现在一个人开约十小时去成都。",
+            "结束烂路、回到国道、山路村庄和牛群过路作为返程代表窗口。"
+          ],
+          "chosenSpanIds": [
+            "9a45e586-a81f-4651-9b69-5d90e59fd769",
+            "4714e44c-32d9-487e-a02a-80a7dd877ce4",
+            "f00dc6e3-3290-4e54-b180-dc77af0682a0",
+            "dfe07ea5-2b90-4c3d-990d-a94484a5d549",
+            "ca92d43a-2830-4add-933e-318c419e2631",
+            "d3358299-b570-4fe1-99ba-9ef1a14a07c3",
+            "e915f8fe-bd6e-4bb3-9b28-e7c84f13a9f7",
+            "70eeda79-7289-4504-ae32-4b1be26ba4bf",
+            "d9b4a373-a526-4a9e-bf78-6c06f9c6d4c4"
+          ],
+          "treatments": {
+            "9a45e586-a81f-4651-9b69-5d90e59fd769": {
+              "audio": 0,
+              "speed": 1
+            },
+            "4714e44c-32d9-487e-a02a-80a7dd877ce4": {
+              "audio": -100,
+              "speed": 2
+            },
+            "f00dc6e3-3290-4e54-b180-dc77af0682a0": {
+              "audio": 0,
+              "speed": 1
+            },
+            "dfe07ea5-2b90-4c3d-990d-a94484a5d549": {
+              "audio": 0,
+              "speed": 1
+            },
+            "ca92d43a-2830-4add-933e-318c419e2631": {
+              "audio": 0,
+              "speed": 1
+            },
+            "d3358299-b570-4fe1-99ba-9ef1a14a07c3": {
+              "audio": 0,
+              "speed": 1
+            },
+            "e915f8fe-bd6e-4bb3-9b28-e7c84f13a9f7": {
+              "audio": 0,
+              "speed": 1
+            },
+            "70eeda79-7289-4504-ae32-4b1be26ba4bf": {
+              "audio": 0,
+              "speed": 1
+            },
+            "d9b4a373-a526-4a9e-bf78-6c06f9c6d4c4": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-08-slot-03",
+          "query": "新都桥短停补给，吃饭后转 318",
+          "requirement": "optional",
+          "targetBundles": [
+            "新都桥只作为充电/吃饭/线路转换点，不展开。"
+          ],
+          "chosenSpanIds": [
+            "724e948f-cfde-46f6-bdf6-cb2b1d61c347",
+            "87e34532-fa8e-4abb-90bd-2efe8b730f78",
+            "fe248a57-93fb-4609-a2ac-6b3ce1569a81",
+            "4833b086-4cfa-4cf7-89f1-9c25a6d7da76"
+          ],
+          "treatments": {
+            "724e948f-cfde-46f6-bdf6-cb2b1d61c347": {
+              "audio": -100,
+              "speed": 1
+            },
+            "87e34532-fa8e-4abb-90bd-2efe8b730f78": {
+              "audio": 0,
+              "speed": 1
+            },
+            "fe248a57-93fb-4609-a2ac-6b3ce1569a81": {
+              "audio": 0,
+              "speed": 1
+            },
+            "4833b086-4cfa-4cf7-89f1-9c25a6d7da76": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-08-slot-04",
+          "query": "新都桥到成都长 route 的代表窗口：堵车、雪山、高速、事故、下海拔",
+          "requirement": "required",
+          "targetBundles": [
+            "代表窗口覆盖大车堵路、折多山不打卡、连环追尾、海拔从高原下降。",
+            "长 route 只做返程压缩，不当无差别素材池。"
+          ],
+          "chosenSpanIds": [
+            "d08e04e7-7426-4a11-a120-563db92adec6",
+            "11bd47d9-9d0f-4330-a691-fc90dfdcbe2c",
+            "7de15cb6-fdfa-48d4-abd9-eef9813e9fd4",
+            "66720fd8-ea19-485a-9b3f-ede2b09e9bda",
+            "0a98a972-f330-4593-a677-f6c4e7daed1c",
+            "a7d3d492-e0e6-4f37-a8ce-d5157e8afa41",
+            "c30499aa-b160-42aa-b8b9-54798a337ca2",
+            "83ee0767-6f1b-4693-b131-d38e0278af78",
+            "17700d6f-654c-4f03-a87e-da071ec14f38",
+            "057f484d-70c6-409b-81a2-cc0a8fb6d26b",
+            "6cc833ab-f2da-4410-9b35-213a9144276d"
+          ],
+          "treatments": {
+            "d08e04e7-7426-4a11-a120-563db92adec6": {
+              "audio": 0,
+              "speed": 1
+            },
+            "11bd47d9-9d0f-4330-a691-fc90dfdcbe2c": {
+              "audio": 0,
+              "speed": 1
+            },
+            "7de15cb6-fdfa-48d4-abd9-eef9813e9fd4": {
+              "audio": 0,
+              "speed": 1
+            },
+            "66720fd8-ea19-485a-9b3f-ede2b09e9bda": {
+              "audio": 0,
+              "speed": 1
+            },
+            "0a98a972-f330-4593-a677-f6c4e7daed1c": {
+              "audio": 0,
+              "speed": 1
+            },
+            "a7d3d492-e0e6-4f37-a8ce-d5157e8afa41": {
+              "audio": 0,
+              "speed": 1
+            },
+            "c30499aa-b160-42aa-b8b9-54798a337ca2": {
+              "audio": 0,
+              "speed": 1
+            },
+            "83ee0767-6f1b-4693-b131-d38e0278af78": {
+              "audio": 0,
+              "speed": 1
+            },
+            "17700d6f-654c-4f03-a87e-da071ec14f38": {
+              "audio": 0,
+              "speed": 1
+            },
+            "057f484d-70c6-409b-81a2-cc0a8fb6d26b": {
+              "audio": 0,
+              "speed": 1
+            },
+            "6cc833ab-f2da-4410-9b35-213a9144276d": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-08-slot-05",
+          "query": "隧道群、低海拔服务区、成都平原和接近机场",
+          "requirement": "required",
+          "targetBundles": [
+            "隧道群、服务区拥堵、海拔降到 500、成都平原和看见飞机，完成从高原到城市的空间收束。"
+          ],
+          "chosenSpanIds": [
+            "2527cdac-bc52-4151-ac9a-1287e246352c",
+            "29b86b35-1f0c-41bf-80eb-340a18f9b223",
+            "6fbac355-2282-4ab1-b2e4-d9451e22ff5a",
+            "04269c17-0dd5-4677-8776-09988fce3687",
+            "bcf7009c-5417-4010-a51e-156e3c791530",
+            "159ac558-d47f-4363-988b-795579fa5eb7",
+            "05a838e8-1d7b-45aa-8a54-3731d75fcb5d",
+            "c38b19af-f1ed-45fa-a4bd-0a405c8b1112",
+            "9a8ac0f0-5300-48f2-be91-713ae89fbf15",
+            "cd728be5-f5f7-4b72-ac1b-c06a98957253",
+            "8356515b-c2b1-4f56-8611-c6f6c2987ddb"
+          ],
+          "treatments": {
+            "2527cdac-bc52-4151-ac9a-1287e246352c": {
+              "audio": 0,
+              "speed": 1
+            },
+            "29b86b35-1f0c-41bf-80eb-340a18f9b223": {
+              "audio": 0,
+              "speed": 1
+            },
+            "6fbac355-2282-4ab1-b2e4-d9451e22ff5a": {
+              "audio": 0,
+              "speed": 1
+            },
+            "04269c17-0dd5-4677-8776-09988fce3687": {
+              "audio": 0,
+              "speed": 1
+            },
+            "bcf7009c-5417-4010-a51e-156e3c791530": {
+              "audio": 0,
+              "speed": 1
+            },
+            "159ac558-d47f-4363-988b-795579fa5eb7": {
+              "audio": 0,
+              "speed": 1
+            },
+            "05a838e8-1d7b-45aa-8a54-3731d75fcb5d": {
+              "audio": 0,
+              "speed": 1
+            },
+            "c38b19af-f1ed-45fa-a4bd-0a405c8b1112": {
+              "audio": 0,
+              "speed": 1
+            },
+            "9a8ac0f0-5300-48f2-be91-713ae89fbf15": {
+              "audio": 0,
+              "speed": 1
+            },
+            "cd728be5-f5f7-4b72-ac1b-c06a98957253": {
+              "audio": 0,
+              "speed": 1
+            },
+            "8356515b-c2b1-4f56-8611-c6f6c2987ddb": {
+              "audio": 0,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-08-slot-06",
+          "query": "到达成都后的全程总结与车辆托运",
+          "requirement": "required",
+          "targetBundles": [
+            "口播总结国道、丙察察、格聂南线、子梅垭口、雪地模式和旅程结束。",
+            "机场前车辆托运画面给车线收口。"
+          ],
+          "chosenSpanIds": [
+            "4921866e-e778-4ae3-ac2b-53159ce25e79",
+            "f4b60ed2-5ef2-4058-9945-2835d3def111",
+            "91963378-917c-4ddc-b246-163763c33270",
+            "4f9c26b3-d978-4233-860a-ea25bcad3960"
+          ],
+          "treatments": {
+            "4921866e-e778-4ae3-ac2b-53159ce25e79": {
+              "audio": 0,
+              "speed": 1
+            },
+            "f4b60ed2-5ef2-4058-9945-2835d3def111": {
+              "audio": 0,
+              "speed": 1
+            },
+            "91963378-917c-4ddc-b246-163763c33270": {
+              "audio": 0,
+              "speed": 1
+            },
+            "4f9c26b3-d978-4233-860a-ea25bcad3960": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        },
+        {
+          "id": "fw-08-slot-07",
+          "query": "成都天府机场候机、取票、登机前短收束",
+          "requirement": "required",
+          "targetBundles": [
+            "机场外到达、候机大厅黄金时刻、取票和安全须知构成短尾声。",
+            "不再延展返程 route，以机场落点结束。"
+          ],
+          "chosenSpanIds": [
+            "1d7904cd-fbc0-446a-9cd3-2a21fa346f67",
+            "682b44b0-0c14-4c56-be95-54be37bfaf5e",
+            "85c2702a-06cc-48d4-95ee-7a162f9b35cb",
+            "4110f00b-a32e-42b9-ab94-7f63a03ef51d",
+            "808ddda9-0de7-4f13-b54a-ab32be0a1176",
+            "846084cc-faf5-49bf-a969-81b26e51cd44-direct-full",
+            "2b281b37-0531-4cdf-8476-2dd3a5515f84",
+            "9a07eca6-2dac-4a76-ac32-6f20a859c830"
+          ],
+          "treatments": {
+            "1d7904cd-fbc0-446a-9cd3-2a21fa346f67": {
+              "audio": -100,
+              "speed": 2
+            },
+            "682b44b0-0c14-4c56-be95-54be37bfaf5e": {
+              "audio": 0,
+              "speed": 1
+            },
+            "85c2702a-06cc-48d4-95ee-7a162f9b35cb": {
+              "audio": -100,
+              "speed": 1
+            },
+            "4110f00b-a32e-42b9-ab94-7f63a03ef51d": {
+              "audio": 0,
+              "speed": 1
+            },
+            "808ddda9-0de7-4f13-b54a-ab32be0a1176": {
+              "audio": -100,
+              "speed": 1
+            },
+            "846084cc-faf5-49bf-a969-81b26e51cd44-direct-full": {
+              "audio": -100,
+              "speed": 1
+            },
+            "2b281b37-0531-4cdf-8476-2dd3a5515f84": {
+              "audio": -100,
+              "speed": 1
+            },
+            "9a07eca6-2dac-4a76-ac32-6f20a859c830": {
+              "audio": -100,
+              "speed": 1
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

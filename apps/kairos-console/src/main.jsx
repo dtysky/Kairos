@@ -2009,7 +2009,7 @@ function EditFlowPage({
             <EditFlowStatusItem label="Spans" value={spansReady ? 'fresh' : 'missing/stale'} tone={spansReady ? 'good' : 'warn'} />
             <EditFlowStatusItem label="Chronology" value={chronologyReady ? 'confirmed' : 'not ready'} tone={chronologyReady ? 'good' : 'warn'} />
             <EditFlowStatusItem label="Flow Plan" value={planStatus} tone={planStatus === 'confirmed' ? 'good' : planStatus === 'stale' ? 'bad' : 'warn'} />
-            <EditFlowStatusItem label="Runner" value="direct Agent/SubAgent" tone="good" />
+            <EditFlowStatusItem label="Runner" value="Flow Plan" tone="good" />
           </div>
 
           {activeEditFlowJob ? (
@@ -2203,6 +2203,7 @@ function formatEditFlowRunStatus(status) {
 function formatEditFlowExecution(execution) {
   if (!execution) return 'single Agent';
   if (execution.mode === 'sharded-agent') return 'SubAgent';
+  if (execution.mode === 'deterministic') return 'deterministic';
   if (execution.mode === 'manual') return 'manual';
   return 'single Agent';
 }
@@ -2714,7 +2715,7 @@ function formatScriptJobStatus(status) {
 function describeScriptJob(job) {
   if (!job) return '当前还没有 script preparation 记录。';
   if (job.status === 'awaiting_agent') {
-    return '确定性脚本准备已完成。请回到 Agent 对话继续生成当前 edit unit 的 segment-plan、material-slots 和 script/current。';
+    return '确定性准备已完成。正式剪辑请进入 /edit 执行 Flow Plan；material.recall 生成 material-slots，timeline.generate 创建 Resolve 粗剪。';
   }
   if (job.status === 'blocked') {
     return (job.blockers || []).join('；') || '当前脚本准备被阻塞。';
@@ -2797,8 +2798,8 @@ function buildScriptWorkflowPrompt({
   if (workflowState === 'ready_for_agent') {
     return {
       eyebrow: 'Ready',
-      title: '回到 Agent 继续生成正式脚本',
-      body: 'deterministic prep 已完成。现在请回到 Agent，对它说“继续”，再让它生成当前 edit unit 的正式 segment-plan、material-slots 和 script/current。',
+      title: '进入 Edit Flow',
+      body: 'deterministic prep 已完成。正式剪辑从 /edit 的 Flow Plan 继续推进，素材召回写 material-slots，时间线生成写 Resolve 粗剪。',
       detail: latestJob ? describeScriptJob(latestJob) : '',
       tone: 'ok',
     };
@@ -3025,7 +3026,7 @@ const SCRIPT_WORKFLOW_STATUS_TEXT = {
   await_brief_draft: '剪辑规则已保存，请回到 Agent 生成 material-overview.md 和初版 brief。',
   review_brief: '初版 overview / brief 已生成，请在 /script 审查并保存。',
   ready_to_prepare: 'brief 已保存，请点击 准备给 Agent。',
-  ready_for_agent: '事实刷新与 bundle 索引已完成，请回到 Agent 继续生成 segment-plan、material-slots 与 script/current.json。',
+  ready_for_agent: '事实刷新与 bundle 索引已完成；正式剪辑请回到 /edit 继续 Flow Plan。',
   script_generated: '脚本已生成，可继续审稿或进入 Timeline。',
 };
 

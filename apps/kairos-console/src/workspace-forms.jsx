@@ -3836,6 +3836,6 @@ const SCRIPT_WORKFLOW_STATUS_TEXT = {
   await_brief_draft: '剪辑规则已保存，请回到 Agent 生成 material-overview.md 和初版 brief。',
   review_brief: '初版 overview / brief 已生成，请在 /script 审查并保存。',
   ready_to_prepare: 'brief 已保存，请点击 准备给 Agent。',
-  ready_for_agent: '事实刷新与 bundle 索引已完成，请回到 Agent 继续生成当前 edit unit 的 segment-plan、material-slots 与 script/current。',
+  ready_for_agent: '事实刷新与 bundle 索引已完成；正式剪辑请回到 /edit 继续 Flow Plan。',
   script_generated: '脚本已生成，可继续审稿或进入 Timeline。',
 };

@@ -17,7 +17,8 @@ alwaysApply: true
 - 当 `kairos-script` 明确写明“剪辑规则 / 风格不驱动默认时长”时，不得从 edit rule、style 平均章节时长、模板习惯或材料容量自动补总时长、段落预算或 `targetDurationMs`。
 - 当剪辑规则要求使用风格层时，只能读取 confirmed `edits/<editId>/planning/flow-plan.json.styleUsage` 授权的 `literary / artistic / editingTechnical` 层；不得从 edit-rule markdown 或 legacy style profile 长文里关键词解析使用权。
 - 如果 `styleUsage` 需要任何风格层但 `styleCategory` 缺失，或 profile 不是 `styleProfileVersion=layered-v1`，必须阻塞并提示重跑 `/style` 或选择可用分层档案。
-- `buildMaterialSlotsDocument()` 是正式 `material-slots` truth；不要再让 `route-slot-planner` 改写 `chosenSpanIds`。
+- `material.recall` 的正式结构化产物只有 `edits/<editId>/script/material-slots.json`；不要生成、消费或要求 `segment-plan.json` 作为 Edit Flow 正式输出。
+- `material-slots.json` 是正式 `material-slots` truth；每个 `chosenSpanId` 必须有 numeric `treatments[spanId]={audio,speed}`，`audio` 是 dB（默认 `0`，静音 `-100`），`speed` 是倍速（默认 `1`）。不要再让 `route-slot-planner` 改写 `chosenSpanIds`，也不要让 `mixed / audio:* / speed:*` 这类文本建议进入正式字段。
 - `beat-writer` 只能改写表达层字段（如 `text / utterances / notes / muteSource / preserveNatSound`）；不要让它增删或改写 `audioSelections / visualSelections / linkedSpanIds`。
 - 在判断“剪辑规则缺失”之前，必须先检查当前 edit unit 是否已有 confirmed Flow Plan；Flow Plan 是正式输入，`script-brief.md` 不是新流程的 gate truth。
 - 只有在 skill 要求的关键输入经核对后仍缺失、冲突或无法映射到实际文件时，才能按缺失输入规则停下并询问用户。
@@ -35,4 +36,5 @@ alwaysApply: true
 - 不要在 writer / reviewer 已失败后，还让 `script/agent-pipeline.json` 继续停留在旧阶段的 `pending`
 - 不要把剪辑规则或风格参考当作默认时长模板，也不要用 style 平均时长、模板习惯或材料容量自动填写总时长、段落预算或 `targetDurationMs`
 - 不要让 `route-slot-planner` 静默删掉 deterministic base `chosenSpanIds`；对 `material-slots` 的 silent span drops / recall regression 必须显式拦下
+- 不要把静音/加速建议藏在 query、targetBundles 或自然语言里；正式读取只看 numeric `treatments`
 - 不要让 `beat-writer` 借改文案之名改写 locked recall facts（`audioSelections / visualSelections / linkedSpanIds`）

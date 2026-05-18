@@ -131,6 +131,9 @@ export async function generateEditFlowPlan(
       '当前旅行纪录片规则若写“使用 SubAgent，切分按照天数粒度”，只能映射为 shardBy=day，不要自动升级为 route 分片。',
       '如果规则写“按天但不是每天一个，而是按约 N 个事件/素材打包”，写 execution.shardPacking={ base:"day", metric, maxPerShard:N, preserveOrder:true }。',
       'trip.event_table 只应声明 media/chronology.json 作为 inputRefs；素材级 spans/asset reports 留给 material.archive 或 material.recall。',
+      'material.recall 的正式结构化输出只能是 edits/<editId>/script/material-slots.json；不要声明 segment-plan.json。',
+      'material-slots.json 必须为每个 chosenSpanId 写 treatments[spanId]={ audio:number, speed:number }，audio 单位 dB，默认 0，静音为 -100，speed 单位倍速，默认 1。',
+      'timeline.generate 必须使用 runner=deterministic，只读取 edit-framework.md、material-slots.json、store/spans.json、store/assets.json 和 media/chronology.json，并直接创建 Resolve 粗剪 timeline。',
       '所有 sharded-agent step 都必须写 execution.codexSubagentProfile={ reasoningEffort:"high", forkContext:false, speed:"standard" }。',
     ],
     allowedInputs: [
@@ -178,7 +181,7 @@ export async function generateEditFlowPlan(
         },
         rationale: 'string | undefined',
       },
-      steps: 'Array<{ id: string, capabilityId: one of capability catalog, title?: string, inputRefs: string[], outputRefs: string[], outputTypes?: Record<string,string>, runner?: "deterministic" | "agent" | "script" | "manual", execution?: { mode: "single-agent" | "sharded-agent" | "manual", shardBy: "none" | "day" | "event" | "scene" | "topic" | "segment", shardPacking?: { base: "day", metric: "chronologyEventCount" | "materialRefCount", maxPerShard: number, preserveOrder: true }, codexSubagentProfile?: { reasoningEffort: "high", forkContext: false, speed: "standard" }, reason?: string }, gate: "none" | "human", notes?: string[] }>',
+      steps: 'Array<{ id: string, capabilityId: one of capability catalog, title?: string, inputRefs: string[], outputRefs: string[], outputTypes?: Record<string,string>, runner?: "deterministic" | "agent" | "script" | "manual", execution?: { mode: "single-agent" | "sharded-agent" | "deterministic" | "manual", shardBy: "none" | "day" | "event" | "scene" | "topic" | "segment", shardPacking?: { base: "day", metric: "chronologyEventCount" | "materialRefCount", maxPerShard: number, preserveOrder: true }, codexSubagentProfile?: { reasoningEffort: "high", forkContext: false, speed: "standard" }, reason?: string }, gate: "none" | "human", notes?: string[] }>',
     },
     reviewRubric: [
       'unknown_capability',
@@ -607,14 +610,14 @@ function normalizePlanSteps(value: unknown): IEditFlowPlanStep[] {
     const raw = step as Partial<IEditFlowPlanStep>;
     const capabilityId = typeof raw.capabilityId === 'string' ? raw.capabilityId.trim() : '';
     if (!isEditFlowCapabilityId(capabilityId)) return;
-    const runner = normalizeRunner(raw.runner) ?? CEDIT_FLOW_CAPABILITY_CATALOG.find(item => item.capabilityId === capabilityId)?.defaultRunner;
+    const runner = normalizeCapabilityRunner(capabilityId, raw.runner);
     steps.push({
       id: typeof raw.id === 'string' && raw.id.trim() ? raw.id.trim() : `step-${index + 1}`,
       capabilityId,
       title: typeof raw.title === 'string' && raw.title.trim() ? raw.title.trim() : undefined,
       inputRefs: normalizeStepInputRefs(capabilityId, raw.inputRefs),
-      outputRefs: Array.isArray(raw.outputRefs) ? raw.outputRefs.filter(isNonEmptyString) : [],
-      outputTypes: normalizeOutputTypes(raw.outputTypes),
+      outputRefs: normalizeStepOutputRefs(capabilityId, raw.outputRefs),
+      outputTypes: normalizeStepOutputTypes(capabilityId, raw.outputTypes),
       runner,
       execution: normalizeStepExecution(raw.execution, runner),
       gate: raw.gate === 'human' ? 'human' : 'none',
@@ -626,7 +629,32 @@ function normalizePlanSteps(value: unknown): IEditFlowPlanStep[] {
 
 function normalizeStepInputRefs(capabilityId: TEditFlowCapabilityId, value: unknown): string[] {
   if (capabilityId === 'trip.event_table') return ['media/chronology.json'];
+  if (capabilityId === 'timeline.generate') {
+    return [
+      'edits/<editId>/planning/edit-framework.md',
+      'edits/<editId>/script/material-slots.json',
+      'store/spans.json',
+      'store/assets.json',
+      'media/chronology.json',
+    ];
+  }
   return Array.isArray(value) ? value.filter(isNonEmptyString) : [];
+}
+
+function normalizeStepOutputRefs(capabilityId: TEditFlowCapabilityId, value: unknown): string[] {
+  if (capabilityId === 'material.recall') return ['edits/<editId>/script/material-slots.json'];
+  if (capabilityId === 'timeline.generate') return ['edits/<editId>/timeline/current.json'];
+  return Array.isArray(value) ? value.filter(isNonEmptyString) : [];
+}
+
+function normalizeStepOutputTypes(capabilityId: TEditFlowCapabilityId, value: unknown): Record<string, string> | undefined {
+  if (capabilityId === 'material.recall') {
+    return { 'edits/<editId>/script/material-slots.json': 'material-slots' };
+  }
+  if (capabilityId === 'timeline.generate') {
+    return { 'edits/<editId>/timeline/current.json': 'resolve-rough-cut-manifest' };
+  }
+  return normalizeOutputTypes(value);
 }
 
 function normalizeStepExecution(
@@ -638,6 +666,8 @@ function normalizeStepExecution(
     : {};
   const mode = raw.mode === 'sharded-agent'
     ? 'sharded-agent'
+    : raw.mode === 'deterministic' || runner === 'deterministic'
+      ? 'deterministic'
     : raw.mode === 'manual' || runner === 'manual'
       ? 'manual'
       : 'single-agent';
@@ -722,6 +752,14 @@ function isNonEmptyString(value: unknown): value is string {
 function normalizeRunner(value: unknown): IEditFlowPlanStep['runner'] | undefined {
   if (value === 'deterministic' || value === 'agent' || value === 'script' || value === 'manual') return value;
   return undefined;
+}
+
+function normalizeCapabilityRunner(
+  capabilityId: TEditFlowCapabilityId,
+  value: unknown,
+): IEditFlowPlanStep['runner'] {
+  if (capabilityId === 'timeline.generate') return 'deterministic';
+  return normalizeRunner(value) ?? CEDIT_FLOW_CAPABILITY_CATALOG.find(item => item.capabilityId === capabilityId)?.defaultRunner;
 }
 
 function normalizeOutputTypes(value: unknown): Record<string, string> | undefined {

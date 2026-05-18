@@ -1205,6 +1205,7 @@ export function buildMaterialSlotsDocument(input: {
         requirement: 'required' as const,
         targetBundles,
         chosenSpanIds,
+        treatments: buildDefaultMaterialSlotTreatments(chosenSpanIds, spansById),
       }];
 
       return {
@@ -1321,6 +1322,53 @@ export function resolveChosenSpanIds(input: {
     );
 
   return chosen.map(item => item.spanId);
+}
+
+function buildDefaultMaterialSlotTreatments(
+  chosenSpanIds: string[],
+  spansById: Map<string, IKtepSlice>,
+): Record<string, { audio: number; speed: number }> {
+  return Object.fromEntries(chosenSpanIds.map(spanId => {
+    const span = spansById.get(spanId);
+    return [spanId, {
+      audio: span && spanHasUsableSpeech(span) ? 0 : -100,
+      speed: 1,
+    }] as const;
+  }));
+}
+
+function normalizeMaterialSlotTreatments(input: {
+  raw: unknown;
+  fallback: Record<string, { audio: number; speed: number }>;
+  chosenSpanIds: string[];
+  spansById: Map<string, IKtepSlice>;
+}): Record<string, { audio: number; speed: number }> {
+  const rawRecord = input.raw && typeof input.raw === 'object' && !Array.isArray(input.raw)
+    ? input.raw as Record<string, unknown>
+    : {};
+  return Object.fromEntries(input.chosenSpanIds.map(spanId => {
+    const defaultTreatment = buildDefaultMaterialSlotTreatments([spanId], input.spansById)[spanId];
+    const fallback = input.fallback[spanId] ?? defaultTreatment;
+    const rawTreatment = rawRecord[spanId];
+    if (!rawTreatment || typeof rawTreatment !== 'object' || Array.isArray(rawTreatment)) {
+      return [spanId, fallback] as const;
+    }
+    const source = rawTreatment as Record<string, unknown>;
+    const audio = typeof source.audio === 'number' && Number.isFinite(source.audio)
+      ? source.audio
+      : fallback.audio;
+    const speed = typeof source.speed === 'number' && Number.isFinite(source.speed) && source.speed > 0
+      ? source.speed
+      : fallback.speed;
+    return [spanId, { audio, speed }] as const;
+  }));
+}
+
+function spanHasUsableSpeech(span: IKtepSlice): boolean {
+  return Boolean(span.transcript?.trim())
+    || (span.transcriptSegments?.length ?? 0) > 0
+    || span.grounding.speechMode === 'preferred'
+    || span.materialPatterns.includes('有口播语音');
 }
 
 function buildOrderedSpanCandidates(input: {
@@ -2292,6 +2340,13 @@ function normalizeReviewedMaterialSlotsDraft(
         ? normalizeOptionalStringList(candidateSlot.chosenSpanIds)
         : fallbackSlot.chosenSpanIds;
 
+      const chosenSpanIds = preserveMaterialSlotRecall({
+        baseChosenSpanIds: baseSlot.chosenSpanIds,
+        candidateChosenSpanIds,
+        allCandidateSpanIds,
+        spansById,
+      });
+
       return {
         ...fallbackSlot,
         query: typeof candidateSlot?.query === 'string' && candidateSlot.query.trim().length > 0
@@ -2303,10 +2358,11 @@ function normalizeReviewedMaterialSlotsDraft(
         targetBundles: Array.isArray(candidateSlot?.targetBundles)
           ? normalizeOptionalStringList(candidateSlot.targetBundles)
           : fallbackSlot.targetBundles,
-        chosenSpanIds: preserveMaterialSlotRecall({
-          baseChosenSpanIds: baseSlot.chosenSpanIds,
-          candidateChosenSpanIds,
-          allCandidateSpanIds,
+        chosenSpanIds,
+        treatments: normalizeMaterialSlotTreatments({
+          raw: candidateSlot?.treatments,
+          fallback: fallbackSlot.treatments,
+          chosenSpanIds,
           spansById,
         }),
       };
@@ -2927,6 +2983,8 @@ function buildMaterialSlotsPacket(input: {
       '必须服从 chronology / GPS / Pharos guardrails。',
       '缺证据时宁可保守留空，也不要强凑 span。',
       'base-draft 的 chosenSpanIds 是高召回下限；除非 span 已被别的 slot 合法承接，或明显属于空白 / 坏段 / 高重叠近重复，否则不要静默删除。',
+      '每个 chosenSpanId 必须保留 treatments[spanId]={ audio:number, speed:number }；audio 是 dB，默认 0，静音 -100；speed 是倍速，默认 1。',
+      '不要在 query 或 targetBundles 里写 mixed、audio:*、speed:* 或 audio=/speed= 文本。',
       'revision-brief 只授权修改被点名的问题位，不要顺手裁掉其他 slot 的过程证据、阶段证据或可用原声。',
     ],
     allowedInputs: [
@@ -2994,7 +3052,7 @@ function buildMaterialSlotsPacket(input: {
       id: 'string',
       projectId: 'string',
       generatedAt: 'ISO datetime',
-      segments: 'Array<{ segmentId, slots: Array<{ id, query, requirement, targetBundles, chosenSpanIds }> }>',
+      segments: 'Array<{ segmentId, slots: Array<{ id, query, requirement, targetBundles, chosenSpanIds, treatments: Record<spanId,{ audio:number, speed:number }> }> }>',
     },
     reviewRubric: [...CSCRIPT_REVIEW_CODES],
   };

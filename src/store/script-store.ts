@@ -220,13 +220,7 @@ export async function loadSegmentPlan(
   projectRoot: string,
   editId?: string | null,
 ): Promise<ISegmentPlan | null> {
-  return readEditJsonOrLegacy(
-    projectRoot,
-    editId,
-    getSegmentPlanPath(projectRoot, editId),
-    getLegacyScriptPath(projectRoot, 'segment-plan.json'),
-    ZSegmentPlan,
-  );
+  return await readJsonOrNull(getSegmentPlanPath(projectRoot, editId), ZSegmentPlan) as ISegmentPlan | null;
 }
 
 export async function writeSegmentPlan(
@@ -241,13 +235,10 @@ export async function loadMaterialSlots(
   projectRoot: string,
   editId?: string | null,
 ): Promise<IMaterialSlotsDocument | null> {
-  return readEditJsonOrLegacy(
-    projectRoot,
-    editId,
+  return await readJsonOrNull(
     getMaterialSlotsPath(projectRoot, editId),
-    getLegacyScriptPath(projectRoot, 'material-slots.json'),
     ZMaterialSlotsDocument,
-  );
+  ) as IMaterialSlotsDocument | null;
 }
 
 export async function writeMaterialSlots(

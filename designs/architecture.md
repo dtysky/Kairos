@@ -71,7 +71,7 @@
 - Flow Planner 必须把剪辑规则自由正文中对风格层的使用意图结构化写入 `flow-plan.json.styleUsage`；代码只读取 `styleUsage`，不得关键词解析 edit-rule markdown
 - 剪辑规则自由正文也可以用自然语言要求 `SubAgent` 或分片粒度；Flow Planner 必须把它转译为 `step.execution`，runtime 只读取 confirmed Flow Plan，不直接解析 markdown
 - 当剪辑规则要求风格层而 `styleCategory` 缺失，或选中的 profile 仍是 legacy 非分层格式时，Flow Plan 不能确认，Edit Flow 必须阻塞并提示重跑 `/style`
-- `script.generate` 只有在剪辑规则明确需要前置文本稿 / beat 稿时才出现；`timeline.generate` 读取 Flow Plan 声明的前序产物，不再要求 `script/current.json`
+- `script.generate` 只有在剪辑规则明确需要前置文本稿 / beat 稿时才出现；`material.recall` 只输出 `material-slots.json`，不再生成或消费 `segment-plan.json`；`timeline.generate` 是 deterministic Resolve rough-cut 创建步骤，读取 `edit-framework.md + material-slots.json + spans + assets + chronology`，不再要求 `script/current.json`
 
 旅行类默认剪辑规则的正式顺序是：
 
@@ -502,10 +502,10 @@
    - `talking-head` 当前有 audio-led window strategy，会优先把连续 speech windows 收口成更适合原声消费的窗口
    - `drive` 的 `speech` 和 `visual` windows 已正式分语义，并通过 `semanticKind` 继续向后传递
    - `/chronology` 的 `span-rebuild` 只合并同 asset、同 semanticKind、重叠或间隔 `<=250ms` 的近重复窗口；细粒度停顿继续由 `transcriptSegments` 表达
-2. Edit Flow 的素材召回与 KTEP 生成已消费 transcript 证据
+2. Edit Flow 的素材召回与 Resolve rough-cut 生成已消费 transcript 证据
    - transcript 不再只是附属说明，而是候选召回和 beat 写作的正式输入
-   - `KTEP 2.0` 下 source-speech beat 已改成 `audioSelections[] + visualSelections[]`；前者定义原声 timing truth，后者保留 companion visuals
-   - 如果某拍最终保留原声，material.recall / timeline.generate 会先把 `audioSelections[]` 组织成 merged audio units；视频仍保持单轨串剪，不再让 speech normalization 破坏性删掉 companion visuals
+   - `material-slots.json.treatments` 是召回阶段向粗剪传递音频/速度建议的唯一正式字段；有口播 span 默认 `audio=0,speed=1`，无口播视觉 span 默认 `audio=-100,speed=1`，只有 `drive / aerial` 可显式 `speed>1`
+   - 如果某拍最终保留原声，material.recall 以 span-level treatment 保留 `audio=0`；timeline.generate 按 recalled chosen spans 顺序落位，不再依赖 script beat 的 merged audio units 作为粗剪前置
    - `source-speech` 当前以过滤后的口语 transcript 为真值：导航播报、录制口令和设备提示不应进入 merged audio units，也不应成为 source-speech 字幕
    - Analyze 当前产出的 `transcriptSegments` 已经是 refined transcript segmentation；Timeline 应先信任这些较细的语音段，而不是再次按粗 segment 重新切句
 3. 风格分析与 Edit Flow 的交接语义已经收口
@@ -519,8 +519,8 @@
   - 首轮 stage 调用默认应保持 lean context，只在 reviewer 要求返工时再把 previous draft 带回 writer
    - `script.generate` 若被 Flow Plan 选中，仍必须把 `script/current.json` 写成 bare `IKtepScript[]`
    - writer / reviewer 调用失败时，对应 capability run record 必须立即写出真实失败态，不能继续停留在旧阶段的 `pending`
-   - `material.recall` 与 `script.generate` 可以复用旧 helper，但输出必须由 step 的 `outputRefs` 声明
-   - `timeline.generate` 可以拥有段级粗剪子阶段：deterministic rough-cut base -> `segment-cut-refiner` -> `segment-cut-reviewer` -> `timeline/current.json`
+   - `material.recall` 的正式结构化输出只有 `material-slots.json`；`segment-plan.json` 不再是正式输出或下游输入
+   - `timeline.generate` 是 deterministic runner，直接从 `edit-framework.md + material-slots.json + spans + assets + chronology` 创建 Resolve rough-cut timeline；`timeline/current.json` 只是 KTEP/manifest 审计文件，不是 Resolve 不可用时的成功兜底
    - 风格档案最终落成当前正式改成 clean-context subagent 流水线，而不是一个通用 style prompt 直接吃完整批量报告：
    - deterministic prep 会额外写 `analysis/style-references/{category}/agent-summary.json`
      - `style-profile-synthesizer` 只读取自己的 packet / summary，并先写三层 `style-draft.json`
@@ -677,7 +677,7 @@
   1. `Edit Rule Markdown + Capability Registry + Project Context -> confirmed Flow Plan`
   2. `confirmed Flow Plan -> capability steps`
   3. `capability step -> declared inputRefs / outputRefs / gate`
-  4. `step run -> edits/<editId>/runs/<runId>/record.json`
+  4. `step run -> edits/<editId>/runs/current.json`
 - `material.recall / script.generate / timeline.generate` 都只是可选 capability，不再构成固定阶段链。
 - `Bundle` 仍是 `materialPatterns` 粗索引层，不是独立叙事身份。
 - `Segment` 如果出现，应由具体 capability output 定义；不再作为全局固定 archetype 闭集。
@@ -926,7 +926,7 @@ src/modules/edit-flow/
      - sharded SubAgent 只按 confirmed `step.execution` 分片；连续天阈值打包写在 `shardPacking`，不得从规则 markdown 重新推断 route 或 day shard
      - sharded step 固定声明 `codexSubagentProfile={reasoningEffort:"high", forkContext:false, speed:"standard"}`，执行者只接收有界 step/shard 上下文，不 fork 当前长上下文
      - 写入 capability-owned outputs
-     - 写入轻量 `edits/<editId>/runs/<runId>/record.json`
+     - 写入/更新轻量 `edits/<editId>/runs/current.json`
   → 带 `gate=human` 的 step 进入 `awaiting_review`
   → 用户确认 step 后，后续依赖 step 才可继续
 ```
@@ -936,54 +936,40 @@ src/modules/edit-flow/
 - 正式剪辑流程以 `Pharos + Chronology V2 + 剪辑规则` 为主输入
 - `trip.event_table` 是 chronology 事件组织能力，只读取 confirmed `media/chronology.json`；素材级 spans / asset reports 后移到 `material.archive` 和 `material.recall`
 - `script.generate` 是可选 capability；只有 Flow Plan 声明它时，才复用旧 script helper 或 clean-context script stages
-- `timeline.generate` 只消费 Flow Plan 声明的前序 outputs；不得硬性读取 `script/current.json`
-- `timeline/current.json` 可以作为 KTEP 输出路径保留，但不代表固定 Timeline 阶段
+- `material.recall` 只输出 `material-slots.json`；`segment-plan.json` 不再是正式输出或下游输入
+- `timeline.generate` 是 deterministic runner，只消费 `edit-framework.md + material-slots.json + store/spans.json + store/assets.json + confirmed media/chronology.json`；不得硬性读取 `script/current.json` 或 `segment-plan.json`
+- `timeline/current.json` 作为 KTEP/manifest 审计输出保留，但 Resolve rough-cut timeline 才是用户可见成功标准
 - code 只能执行 confirmed Flow Plan 中的 `capabilityId / inputRefs / outputRefs / gate / execution`，不得从 markdown 正文做隐藏启发式
 
-#### 2.4 Timeline / Export — KTEP 与导出辅助
+#### 2.4 Timeline / Export — Resolve 粗剪与 KTEP 审计
 
 ```
-src/modules/cut/
-├── timeline-builder.ts  # 从 Flow Plan declared outputs 构建 KTEP 时间线
-├── resolve-importer.ts  # official Python host：导入素材到达芬奇 Media Pool
-├── resolve-timeline.ts  # official Python host：创建时间线 + 按 KTEP 排列片段
-├── subtitle-generator.ts # 从 KTEP / postlock capability outputs 生成字幕轨
-├── photo-handler.ts     # 照片静帧处理（Ken Burns 参数）
-├── refine-advisor.ts    # 精剪建议引擎（节奏/转场/B-Roll）
-└── index.ts
+src/modules/timeline-core/
+├── project-timeline.ts     # deterministic material-slots -> KTEP manifest + Resolve rough cut
+├── resolve-rough-cut.ts    # Node side Resolve host bridge
+└── timeline-builder.ts     # KTEP helper / audit document builder
+vendor/resolve-color-host/
+└── resolve-color-host.py   # same-machine Resolve host, includes create_rough_cut_timeline
 ```
 
 **关键流程**：
 ```
 读取 Flow Plan 声明的前序产物
-  → deterministic prep 先验证 `media/chronology.json` 为 `schemaVersion=2.0` 且 `status=confirmed`
-  → deterministic prep 从 declared inputs + `store/spans.json + confirmed media/chronology.json + asset reports` 写 `timeline/rough-cut-base.json`
-  → `segment-cut-refiner` 按段细化 beat 顺序、合法 window、source-speech 保留与 subtitle cue 草稿，并写 `timeline/segment-cuts/<segmentId>.json`
-  → `segment-cut-reviewer` 逐段审查 recall / chronology / speed / subtitle / source-speech guardrails，并写 `timeline/reviews/<segmentId>.json`
-  → reviewer 全部通过后，timeline-builder 再构建时间线结构（轨道、片段、入出点、转场）
-  → 若当前 style 主轴偏时间 / 路程推进，则在 placement 阶段复核主 selection 的 chronology，不允许静默输出倒序 timeline
-  → official Python host 创建达芬奇项目/时间线
-  → official Python host 导入素材到 Media Pool
-  → official Python host 按时间线结构排列片段
-  → 字幕生成 → official Python host 添加字幕轨
-  → 照片素材 → 设置 Ken Burns 效果参数
-  → （可选）精剪建议：LLM 分析时间线，给出优化建议
+  → 验证 `media/chronology.json` 为 `schemaVersion=2.0` 且 `status=confirmed`
+  → 读取 `edit-framework.md + material-slots.json + store/spans.json + store/assets.json`
+  → 校验 material-slots：每个 chosen span 有 numeric treatment、dropped asset 不进入召回、非 drive/aerial 不允许 speed>1
+  → 按 FW/slot/chosenSpanIds 顺序构建 KTEP/manifest 内存稿
+  → official Python host 创建/更新 Resolve rough-cut timeline
+  → Resolve 成功后才写 `edits/<editId>/timeline/current.json`
 ```
 
 补充口径：
 
-- `timeline.generate` capability 当前可引入内部段级粗剪资产：
-  - `timeline/rough-cut-base.json`
-  - `timeline/segment-cuts/<segmentId>.json`
-  - `timeline/agent-packets/<segmentId>.json`
-  - `timeline/reviews/<segmentId>.json`
-  - `timeline/agent-pipeline.json`
-- `timeline/rough-cut-base.json` 负责锁定每段的时间带 guard、beat 与 span 归属、可调 window 边界、默认 merged audio units、默认速度建议和 subtitle cue 草稿
-- `segment-cut-refiner` 只允许在本段内拆并 / 重排 beat、在候选边界内调 window、覆盖 `drive / aerial` 速度、细化 source-speech 与 subtitle 切分
-- `segment-cut-reviewer` 必须把召回回退、跨段换料、跨时间带回捞、非 `drive / aerial` 加速、speech window 越界和 chronology / style 漂移视为 blocker
-- `placeClips()` 与 `planSubtitles()` 当前必须优先消费 Flow Plan 声明且 reviewed 的前序产物；如果段级审查产物缺失、失败或 reviewer 未通过，`timeline.generate` 应明确阻塞
-- Timeline placement 不再把单张照片当作默认的预算填充器；若 Flow Plan / KTEP 没有显式长停要求，照片应尽量保持短自然停留
-- 当 chronology guardrail 检测到倒序时，placement 会先尝试同段内安全重排；仍无法恢复合法顺序时应直接拒绝生成，而不是静默产出错序成片
+- `timeline.generate` 不再调用 LLM / Agent reviewer，不写 `rough-cut-base / segment-cuts / reviews / agent-pipeline` 作为正式门槛
+- `material-slots.json.treatments` 是音量/加速唯一正式来源：`audio` 单位 dB，默认 `0`，静音 `-100`；`speed` 单位倍速，默认 `1`
+- `audio <= -100` 的视频素材优先 video-only append 或等效无声方式；非 `0 dB` clip gain 必须由 host live probe `TimelineItem.GetProperty()` 并验证可写属性，不能猜 `Volume`
+- `resolve.lock_rough_cut` 是人工审查并锁定已生成 Resolve timeline，不负责创建 timeline
+- Timeline placement 不再把单张照片当作预算填充器；照片默认短自然停留
 - Edit Flow capability 共享已确认 Chronology V2 真值，并按各自 `inputRefs` 精确消费 spans / asset reports；root 级 `clockOffsetMs` 变化后必须先在 `/chronology` 重建受影响的 chronology 真值，再重跑受影响的 capability steps。Timeline placement 若声明消费 spans，仍必须等待 fresh spans
 
 ### Layer 3 — 交互层 (`src/skill/`)

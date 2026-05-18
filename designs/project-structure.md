@@ -131,10 +131,9 @@
   - `beat` 可选带 `utterances[]`，显式表达多段配音与停顿
   - 当某拍不走原声时，时间线会为命中的视频片段标记静音意图，交给导出适配器落地
 - 段落审查闸门
-  - 正式流程会先生成 `script/material-overview.md`
-  - 用户审查 `script-brief`
-  - 然后由 Agent 继续生成 `script/segment-plan.json`、`script/material-slots.json` 与 `chosenSpanIds`
-  - 之后才进入 beat 试写和粗剪提案
+  - 当前正式剪辑入口是 `/edit` 的 Flow Plan
+  - `material.recall` 的正式结构化产物只有 `script/material-slots.json`，其中 `chosenSpanIds` 与逐 span treatment 同步落地
+  - `timeline.generate` 是 deterministic Resolve 粗剪创建步骤；`timeline/current.json` 只作为 KTEP/manifest 审计文件
 - 分层 `script-brief`
   - `project brief` 与 `script brief`
   - 都使用自然语言输入，分别作用于项目约束和脚本阶段目标/硬约束

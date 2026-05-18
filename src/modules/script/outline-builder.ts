@@ -152,6 +152,10 @@ function coalesceOutlineSlots(
         ...previous.chosenSpanIds,
         ...slot.chosenSpanIds,
       ]);
+      previous.treatments = {
+        ...slot.treatments,
+        ...previous.treatments,
+      };
       continue;
     }
 
@@ -159,6 +163,7 @@ function coalesceOutlineSlots(
       ...slot,
       chosenSpanIds: dedupeStrings(slot.chosenSpanIds),
       targetBundles: [...slot.targetBundles],
+      treatments: { ...slot.treatments },
     });
   }
 

@@ -240,6 +240,8 @@ const CPROMPTS: Record<TAgentPromptId, string> = {
 - 如果规则写“按天但不是每天一个，而是按约 N 个事件/素材打包”，必须写 execution.shardPacking={ base:"day", metric, maxPerShard:N, preserveOrder:true }。
 - 所有 sharded-agent step 必须写 execution.codexSubagentProfile={ reasoningEffort:"high", forkContext:false, speed:"standard" }。
 - trip.event_table 只声明 media/chronology.json 作为 inputRefs；素材级 spans / asset reports 留给 material.archive 或 material.recall。
+- material.recall 只输出 edits/<editId>/script/material-slots.json，不输出 segment-plan.json；每个 chosenSpanId 都必须有 treatments[spanId]={ audio:number, speed:number }。
+- timeline.generate 必须是 deterministic runner，只读取 edit-framework.md、material-slots.json、store/spans.json、store/assets.json 和 media/chronology.json，并直接创建 Resolve 粗剪 timeline。
 - 如果剪辑规则正文要求使用风格档案，必须在 styleUsage 中显式写出 literary / artistic / editingTechnical 各层的 mode、appliesTo 与 rationale。
 - hard 只能来自剪辑规则正文的明确要求；否则使用 soft 或 off。
 - 不确定时保守地选择更少、更清晰、需要人工 gate 的步骤。
@@ -277,6 +279,8 @@ const CPROMPTS: Record<TAgentPromptId, string> = {
 - 不能要求固定 script/current.json，除非它在当前 step.inputRefs 中明确出现。
 - 不能跳过人工 gate，也不能替用户确认 gate。
 - 不能把 edit-rule markdown 解析成隐藏代码规则；只能执行 packet 中已经确认的 Flow Plan。
+- material.recall 只能写 material-slots.json；不要写 segment-plan.json。
+- material-slots.json 的每个 chosenSpanId 必须写 numeric treatments：audio 是 dB，默认 0，静音 -100；speed 是倍速，默认 1；不要把 mixed、audio:*、speed:* 或 audio=/speed= 文本写进正式字段。
 
 上下文规则：
 - packet.current-step 是本轮唯一要执行的 step。

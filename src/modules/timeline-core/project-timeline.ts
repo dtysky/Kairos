@@ -1,72 +1,60 @@
 import { randomUUID } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
 import type {
-  IAgentPacket,
-  IAgentPacketInputArtifact,
+  IKtepAsset,
+  IKtepClip,
+  IKtepDoc,
   IKtepProject,
-  IKtepScript,
-  IKtepScriptSelection,
-  IKtepSlice,
-  IStageReviewIssue,
-  IProjectChronology,
-  ISegmentCutReview,
-  ISegmentRoughCutBeatPlan,
-  ISegmentRoughCutPlan,
-  ITimelineRoughCutBase,
+  IKtepSpan,
+  IMaterialSlotsDocument,
 } from '../../protocol/schema.js';
+import { CPROTOCOL, CVERSION, IMaterialSlotsDocument as ZMaterialSlotsDocument } from '../../protocol/schema.js';
+import { validateKtepDoc } from '../../protocol/validator.js';
 import {
-  getTimelineCurrentPath,
-  loadAssets,
-  loadAssetReports,
   assertConfirmedProjectChronology,
-  loadCurrentScript,
+  assertFreshSpans,
+  getEditPlanningArtifactPath,
+  getMaterialSlotsPath,
+  getTimelineCurrentPath,
+  loadAssetReports,
+  loadAssets,
+  loadIngestRoots,
   loadProject,
   loadRuntimeConfig,
-  loadScriptBriefConfig,
-  assertFreshSpans,
-  writeJson,
-  writeTimelineAgentPacket,
-  writeTimelineAgentPipeline,
-  writeTimelineRoughCutBase,
-  writeTimelineSegmentCut,
-  writeTimelineStageReview,
   normalizeEditId,
+  readJsonOrNull,
+  writeJson,
 } from '../../store/index.js';
-import type { IJsonPacketAgentRunner } from '../agents/runtime.js';
-import { resolveJsonPacketAgentRunner } from '../agents/runtime.js';
+import { resolveAssetLocalPath } from '../media/root-resolver.js';
+import { assertConfirmedEditFlowPlan } from '../edit-flow/flow-planner.js';
+import { assertMaterialSlotsContract } from '../edit-flow/material-slots-contract.js';
+import { resolveTimelineBuildConfig, type IBuildConfig } from './timeline-builder.js';
 import {
-  assertConfirmedEditFlowPlan,
-  loadEditPlanningPacketArtifacts,
-} from '../edit-flow/index.js';
-import { buildDeterministicRoughCutBase, buildSegmentRoughCutBeatPlan } from './segment-cuts.js';
-import { buildTimeline, resolveTimelineBuildConfig, type IBuildConfig } from './timeline-builder.js';
-import { resolveSpeechPacingConfig, type ISpeechPacingConfig } from './pacing.js';
+  createResolveRoughCutTimeline,
+  type IResolveRoughCutTimelineResult,
+  type IResolveRoughCutClipInput,
+} from './resolve-rough-cut.js';
 
-const CTIMELINE_REVIEW_CODES = [
-  'recall_regression',
-  'segment_scope_violation',
-  'time_band_violation',
-  'speed_policy_violation',
-  'source_speech_violation',
-  'subtitle_alignment_drift',
-  'chronology_drift',
-  'pharos_guardrail_drift',
-  'style_guardrail_drift',
-] as const;
+const CPHOTO_DEFAULT_DURATION_MS = 1000;
 
 export interface IBuildProjectTimelineInput {
   projectRoot: string;
   editId?: string;
   workspaceRoot?: string;
   editRuleCategory?: string;
-  agentRunner?: IJsonPacketAgentRunner;
   config?: Partial<IBuildConfig>;
 }
 
 export interface IBuildProjectTimelineResult {
-  doc: ReturnType<typeof buildTimeline>;
-  roughCutBase: ITimelineRoughCutBase;
-  segmentCuts: ISegmentRoughCutPlan[];
-  reviews: ISegmentCutReview[];
+  doc: IKtepDoc;
+  resolveTimeline: IResolveRoughCutTimelineResult;
+}
+
+interface IDeterministicTimelineBuild {
+  doc: IKtepDoc;
+  resolveClips: IResolveRoughCutClipInput[];
+  timelineName: string;
+  resolveProjectName: string;
 }
 
 export async function buildProjectTimeline(
@@ -77,809 +65,261 @@ export async function buildProjectTimeline(
     project,
     assets,
     freshSpans,
-    script,
-    chronologyDocument,
+    materialSlots,
+    chronology,
     assetReports,
     runtimeConfig,
+    ingestRoots,
+    editFramework,
   ] = await Promise.all([
     loadProject(input.projectRoot),
     loadAssets(input.projectRoot),
     assertFreshSpans(input.projectRoot),
-    loadCurrentScript(input.projectRoot, editId),
+    readJsonOrNull(
+      getMaterialSlotsPath(input.projectRoot, editId),
+      ZMaterialSlotsDocument,
+    ) as Promise<IMaterialSlotsDocument | null>,
     assertConfirmedProjectChronology(input.projectRoot),
     loadAssetReports(input.projectRoot),
     loadRuntimeConfig(input.projectRoot),
+    loadIngestRoots(input.projectRoot).then(result => result.roots),
+    readFile(getEditPlanningArtifactPath(input.projectRoot, 'edit-framework.md', editId), 'utf-8'),
   ]);
-  if (!script || script.length === 0) {
-    throw new Error(`timeline build requires edits/${editId}/script/current.json`);
+  if (!materialSlots) {
+    throw new Error(`timeline.generate requires edits/${editId}/script/material-slots.json`);
+  }
+  if (!editFramework.trim()) {
+    throw new Error(`timeline.generate requires non-empty edits/${editId}/planning/edit-framework.md`);
   }
   if (input.workspaceRoot) {
-    const scriptBrief = await loadScriptBriefConfig(input.projectRoot, editId);
-    const editRuleCategory = input.editRuleCategory ?? scriptBrief.editRuleCategory;
-    if (!editRuleCategory) {
-      throw new Error('timeline build requires editRuleCategory to validate confirmed Flow Plan');
+    if (!input.editRuleCategory) {
+      throw new Error('timeline.generate requires editRuleCategory to validate confirmed Flow Plan');
     }
     await assertConfirmedEditFlowPlan({
       workspaceRoot: input.workspaceRoot,
       projectRoot: input.projectRoot,
       editId,
-      editRuleCategory,
+      editRuleCategory: input.editRuleCategory,
       requiredCapabilityIds: ['timeline.generate'],
     });
   }
-  const planningArtifacts = await loadEditPlanningPacketArtifacts(input.projectRoot, editId);
+
+  assertMaterialSlotsContract({
+    materialSlots,
+    spans: freshSpans.spans,
+    assets,
+    assetReports,
+  });
 
   const cfg = resolveTimelineBuildConfig(runtimeConfig, {
     ...input.config,
-    chronology: chronologyDocument.assetIndex,
-    assetReports,
+    name: `Kairos Rough Cut - ${editId}`,
+    chronology: chronology.assetIndex,
   });
-  const slices = freshSpans.spans;
-  const roughCutBase = buildDeterministicRoughCutBase({
+  const build = buildDeterministicTimeline({
+    project,
+    editId,
+    assets,
+    spans: freshSpans.spans,
+    materialSlots,
+    cfg,
+    ingestRoots,
+  });
+  const validation = validateKtepDoc(build.doc);
+  if (!validation.ok) {
+    const message = validation.errors.map(error => `[${error.rule}] ${error.message}`).join('\n');
+    throw new Error(`deterministic timeline validation failed:\n${message}`);
+  }
+
+  const resolveTimeline = await createResolveRoughCutTimeline({
     projectId: project.id,
-    script,
-    slices,
-    chronology: chronologyDocument.assetIndex,
-    subtitleConfig: cfg.subtitle,
+    resolveProjectName: build.resolveProjectName,
+    timelineName: build.timelineName,
+    namespace: `Kairos Edit ${editId}`,
+    timelineSpec: {
+      width: cfg.width,
+      height: cfg.height,
+      fps: cfg.fps,
+    },
+    clips: build.resolveClips,
   });
-  await writeTimelineRoughCutBase(input.projectRoot, roughCutBase, editId);
-
-  let agentRunner: IJsonPacketAgentRunner;
-  try {
-    agentRunner = resolveJsonPacketAgentRunner({
-      agentRunner: input.agentRunner,
-    });
-  } catch (error) {
-    await writeTimelineAgentPipeline(input.projectRoot, {
-      currentStage: 'segment-cut-init',
-      stageStatus: 'awaiting_user',
-      attemptCount: 0,
-      latestReviewResult: 'runner_unavailable',
-      blockerSummary: [formatTimelineStageError(error)],
-      updatedAt: new Date().toISOString(),
-    }, editId);
-    throw error;
-  }
-  const sliceMap = new Map(slices.map(slice => [slice.id, slice] as const));
-  const subtitleConfig = resolveSpeechPacingConfig(cfg.subtitle);
-  const segmentCuts: ISegmentRoughCutPlan[] = [];
-  const reviews: ISegmentCutReview[] = [];
-
-  for (const segmentPlan of roughCutBase.segments) {
-    const scriptSegment = script.find(segment => segment.id === segmentPlan.segmentId);
-    if (!scriptSegment) {
-      throw new Error(`timeline rough-cut segment "${segmentPlan.segmentId}" does not exist in edits/${editId}/script/current.json`);
-    }
-    const result = await runReviewedSegmentCutStage({
-      projectRoot: input.projectRoot,
-      editId,
-      agentRunner,
-      project,
-      scriptSegment,
-      segmentPlan,
-      sliceMap,
-      chronology: chronologyDocument,
-      subtitleConfig,
-      planningArtifacts,
-    });
-    segmentCuts.push(result.draft);
-    reviews.push(result.review);
-  }
-
-  const doc = buildTimeline(project, assets, slices, script, {
-    ...cfg,
-    reviewedSegmentCuts: segmentCuts,
-  });
-  await Promise.all([
-    writeJson(getTimelineCurrentPath(input.projectRoot, editId), doc),
-    writeTimelineAgentPipeline(input.projectRoot, {
-      currentStage: 'timeline-build',
-      stageStatus: 'completed',
-      attemptCount: reviews.length,
-      latestReviewResult: 'pass',
-      blockerSummary: [],
-      updatedAt: new Date().toISOString(),
-    }, editId),
-  ]);
+  const doc: IKtepDoc = {
+    ...build.doc,
+    adapterHints: {
+      ...build.doc.adapterHints,
+      resolveRoughCut: resolveTimeline,
+    },
+  };
+  await writeJson(getTimelineCurrentPath(input.projectRoot, editId), doc);
 
   return {
     doc,
-    roughCutBase,
-    segmentCuts,
-    reviews,
+    resolveTimeline,
   };
 }
 
-async function runReviewedSegmentCutStage(input: {
-  projectRoot: string;
-  editId?: string;
-  agentRunner: IJsonPacketAgentRunner;
+function buildDeterministicTimeline(input: {
   project: IKtepProject;
-  scriptSegment: IKtepScript;
-  segmentPlan: ISegmentRoughCutPlan;
-  sliceMap: Map<string, IKtepSlice>;
-  chronology: IProjectChronology;
-  subtitleConfig: ISpeechPacingConfig;
-  planningArtifacts?: IAgentPacketInputArtifact[];
-}): Promise<{ draft: ISegmentRoughCutPlan; review: ISegmentCutReview }> {
-  let previousDraft = input.segmentPlan;
-  let revisionBrief: string[] = [];
+  editId: string;
+  assets: IKtepAsset[];
+  spans: IKtepSpan[];
+  materialSlots: IMaterialSlotsDocument;
+  cfg: IBuildConfig;
+  ingestRoots: Awaited<ReturnType<typeof loadIngestRoots>>['roots'];
+}): IDeterministicTimelineBuild {
+  const assetById = new Map(input.assets.map(asset => [asset.id, asset] as const));
+  const spanById = new Map(input.spans.map(span => [span.id, span] as const));
+  const placedSpanById = new Map<string, IKtepSpan>();
+  const clips: IKtepClip[] = [];
+  const resolveClips: IResolveRoughCutClipInput[] = [];
+  let cursorMs = 0;
+  let clipIndex = 0;
 
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
-    const packet = buildSegmentCutRefinerPacket({
-      projectRoot: input.projectRoot,
-      editId: input.editId,
-      segmentPlan: input.segmentPlan,
-      scriptSegment: input.scriptSegment,
-      chronology: input.chronology,
-      planningArtifacts: input.planningArtifacts,
-      previousDraft,
-      revisionBrief,
-    });
-    await Promise.all([
-      writeTimelineAgentPacket(input.projectRoot, input.segmentPlan.segmentId, packet, input.editId),
-      writeTimelineAgentPipeline(input.projectRoot, {
-        currentStage: `segment-cut:${input.segmentPlan.segmentId}`,
-        stageStatus: 'running',
-        attemptCount: attempt,
-        latestReviewResult: undefined,
-        blockerSummary: [],
-        updatedAt: new Date().toISOString(),
-      }, input.editId),
-    ]);
-
-    let rawDraft: unknown;
-    try {
-      rawDraft = await input.agentRunner.run<unknown>({
-        promptId: 'timeline/segment-cut-refiner',
-        packet,
-      });
-    } catch (error) {
-      await writeTimelineAgentPipeline(input.projectRoot, {
-        currentStage: `segment-cut:${input.segmentPlan.segmentId}`,
-        stageStatus: 'writer_failed',
-        attemptCount: attempt,
-        latestReviewResult: 'writer_failed',
-        blockerSummary: [formatTimelineStageError(error)],
-        updatedAt: new Date().toISOString(),
-      }, input.editId);
-      throw new Error(`timeline segment-cut refiner failed for ${input.segmentPlan.segmentId}: ${formatTimelineStageError(error)}`);
-    }
-
-    const draft = normalizeReviewedSegmentCutDraft(
-      rawDraft,
-      input.segmentPlan,
-      input.scriptSegment,
-      input.sliceMap,
-      input.subtitleConfig,
-    );
-    if (!draft) {
-      await writeTimelineAgentPipeline(input.projectRoot, {
-        currentStage: `segment-cut:${input.segmentPlan.segmentId}`,
-        stageStatus: 'writer_failed',
-        attemptCount: attempt,
-        latestReviewResult: 'writer_invalid_output',
-        blockerSummary: ['segment-cut refiner returned invalid JSON'],
-        updatedAt: new Date().toISOString(),
-      }, input.editId);
-      throw new Error(`timeline segment-cut refiner returned invalid JSON for ${input.segmentPlan.segmentId}`);
-    }
-
-    await writeTimelineSegmentCut(input.projectRoot, draft, input.editId);
-
-    const reviewPacket = buildSegmentCutReviewPacket({
-      projectRoot: input.projectRoot,
-      editId: input.editId,
-      segmentPlan: input.segmentPlan,
-      scriptSegment: input.scriptSegment,
-      draft,
-      attempt,
-      chronology: input.chronology,
-      planningArtifacts: input.planningArtifacts,
-    });
-    let rawReview: Partial<ISegmentCutReview>;
-    try {
-      rawReview = await input.agentRunner.run<Partial<ISegmentCutReview>>({
-        promptId: 'timeline/segment-cut-reviewer',
-        packet: reviewPacket,
-        llm: { temperature: 0.1 },
-      });
-    } catch (error) {
-      const review = buildTimelineStageErrorReview(input.segmentPlan.segmentId, attempt, error);
-      await Promise.all([
-        writeTimelineStageReview(input.projectRoot, review, input.editId),
-        writeTimelineAgentPipeline(input.projectRoot, {
-          currentStage: `segment-cut:${input.segmentPlan.segmentId}`,
-          stageStatus: 'review_error',
-          attemptCount: attempt,
-          latestReviewResult: 'review_error',
-          blockerSummary: review.issues.map(issue => `${issue.code}: ${issue.message}`),
-          updatedAt: new Date().toISOString(),
-        }, input.editId),
-      ]);
-      throw new Error(`timeline segment-cut reviewer failed for ${input.segmentPlan.segmentId}: ${formatTimelineStageError(error)}`);
-    }
-
-    const review = normalizeSegmentCutReview(rawReview, input.segmentPlan.segmentId, attempt);
-    await Promise.all([
-      writeTimelineStageReview(input.projectRoot, review, input.editId),
-      writeTimelineAgentPipeline(input.projectRoot, {
-        currentStage: `segment-cut:${input.segmentPlan.segmentId}`,
-        stageStatus: review.verdict === 'pass' ? 'completed' : attempt >= 3 ? 'awaiting_user' : 'review_failed',
-        attemptCount: attempt,
-        latestReviewResult: review.verdict,
-        blockerSummary: review.issues
-          .filter(issue => issue.severity === 'blocker')
-          .map(issue => `${issue.code}: ${issue.message}`),
-        updatedAt: new Date().toISOString(),
-      }, input.editId),
-    ]);
-    if (review.verdict === 'pass') {
-      return { draft, review };
-    }
-    if (attempt >= 3) {
-      throw new Error(
-        `timeline segment-cut for ${input.segmentPlan.segmentId} is awaiting user review: ${review.issues
-          .filter(issue => issue.severity === 'blocker')
-          .map(issue => `${issue.code}: ${issue.message}`)
-          .join(' | ')}`,
-      );
-    }
-
-    previousDraft = draft;
-    revisionBrief = review.revisionBrief;
-  }
-
-  throw new Error(`timeline segment-cut stage failed to complete for ${input.segmentPlan.segmentId}`);
-}
-
-function buildSegmentCutRefinerPacket(input: {
-  projectRoot: string;
-  editId?: string;
-  segmentPlan: ISegmentRoughCutPlan;
-  scriptSegment: IKtepScript;
-  chronology: IProjectChronology;
-  planningArtifacts?: IAgentPacketInputArtifact[];
-  previousDraft: ISegmentRoughCutPlan;
-  revisionBrief: string[];
-}): IAgentPacket {
-  return {
-    stage: `segment-cut:${input.segmentPlan.segmentId}`,
-    identity: 'segment-cut-refiner',
-    mission: '只在当前 segment 内细化 rough cut：拆并/重排 beat、微调合法 window、覆盖 drive/aerial 速度、细化 source-speech 与字幕切分。',
-    hardConstraints: [
-      '只能处理当前 segment，不能跨段换料。',
-      '不能引入 lockedSpanIds 之外的 span。',
-      '只能在 candidate window bounds 内调整 source window。',
-      '只有 drive / aerial beat 允许覆盖 speedSuggestion。',
-      '不得默默删掉 base recall 里的 span；如确有必要，必须在草稿里明确体现并交 reviewer 判定。',
-    ],
-    allowedInputs: [
-      'timeline/rough-cut-base.json',
-      'edits/<editId>/script/current.json current segment',
-      'media/chronology.json',
-      'confirmed Flow Plan / planning artifacts',
-      'optional previous segment-cut draft',
-    ],
-    inputArtifacts: [
-      {
-        label: 'segment-rough-cut-base',
-        path: input.previousDraft.segmentId === input.segmentPlan.segmentId
-          ? undefined
-          : undefined,
-        summary: `${input.segmentPlan.beats.length} beats / ${input.segmentPlan.lockedSpanIds.length} locked spans`,
-        content: input.segmentPlan,
-      },
-      {
-        label: 'script-segment',
-        summary: input.scriptSegment.title ?? input.scriptSegment.id,
-        content: input.scriptSegment,
-      },
-      {
-        label: 'chronology-snapshot',
-        summary: `${input.chronology.events.length} chronology events / ${input.chronology.assetIndex.length} asset anchors`,
-        content: input.chronology,
-      },
-      ...(input.planningArtifacts ?? []),
-      input.revisionBrief.length > 0
-        ? {
-          label: 'revision-brief',
-          summary: input.revisionBrief.join(' / '),
-          content: input.revisionBrief,
+  for (const segment of input.materialSlots.segments) {
+    for (const slot of segment.slots) {
+      for (const spanId of slot.chosenSpanIds) {
+        const span = spanById.get(spanId);
+        if (!span) throw new Error(`material slot references missing span: ${spanId}`);
+        const asset = assetById.get(span.assetId);
+        if (!asset) throw new Error(`span ${span.id} references missing asset: ${span.assetId}`);
+        if (asset.kind === 'audio') {
+          throw new Error(`timeline.generate cannot place audio-only asset on the rough-cut video track: ${asset.id}`);
         }
-        : null,
-      input.revisionBrief.length > 0
-        ? {
-          label: 'previous-draft',
-          summary: '上一轮 segment-cut 草稿',
-          content: input.previousDraft,
+        const treatment = slot.treatments[spanId];
+        const window = resolveSpanSourceWindow(asset, span);
+        if (!placedSpanById.has(span.id)) {
+          placedSpanById.set(span.id, {
+            ...span,
+            sourceInMs: window.sourceInMs,
+            sourceOutMs: window.sourceOutMs,
+            editSourceInMs: window.sourceInMs,
+            editSourceOutMs: window.sourceOutMs,
+          });
         }
-        : null,
-    ].filter((item): item is NonNullable<typeof item> => item != null),
-    outputSchema: {
-      segmentId: 'string',
-      beats: 'ISegmentRoughCutBeatPlan[]',
-    },
-    reviewRubric: [...CTIMELINE_REVIEW_CODES],
-  };
-}
-
-function buildSegmentCutReviewPacket(input: {
-  projectRoot: string;
-  editId?: string;
-  segmentPlan: ISegmentRoughCutPlan;
-  scriptSegment: IKtepScript;
-  chronology: IProjectChronology;
-  planningArtifacts?: IAgentPacketInputArtifact[];
-  draft: ISegmentRoughCutPlan;
-  attempt: number;
-}): IAgentPacket {
-  return {
-    stage: `review-segment-cut:${input.segmentPlan.segmentId}`,
-    identity: 'segment-cut-reviewer',
-    mission: '审查当前 segment-cut 是否发生 recall、chronology、time-band、speed、source-speech 或 subtitle drift。',
-    hardConstraints: [
-      '只审查，不直接改写正式稿。',
-      'blocker 必须给 revisionBrief。',
-    ],
-    allowedInputs: [
-      'segment rough-cut base',
-      'current segment-cut draft',
-      'segment-cut audit',
-      'script segment',
-      'chronology snapshot',
-      'confirmed Flow Plan / planning artifacts',
-    ],
-    inputArtifacts: [
-      {
-        label: 'segment-rough-cut-base',
-        summary: `${input.segmentPlan.beats.length} beats / ${input.segmentPlan.lockedSpanIds.length} locked spans`,
-        content: input.segmentPlan,
-      },
-      {
-        label: 'segment-cut-audit',
-        summary: summarizeSegmentCutAudit(buildSegmentCutAudit(input.segmentPlan, input.draft)),
-        content: buildSegmentCutAudit(input.segmentPlan, input.draft),
-      },
-      {
-        label: 'script-segment',
-        summary: input.scriptSegment.title ?? input.scriptSegment.id,
-        content: input.scriptSegment,
-      },
-      {
-        label: 'chronology-snapshot',
-        summary: `${input.chronology.events.length} chronology events / ${input.chronology.assetIndex.length} asset anchors`,
-        content: input.chronology,
-      },
-      ...(input.planningArtifacts ?? []),
-      {
-        label: 'segment-cut-draft',
-        summary: `第 ${input.attempt} 轮 segment-cut 草稿`,
-        content: input.draft,
-      },
-    ],
-    outputSchema: {
-      verdict: 'pass | revise | awaiting_user',
-      issues: 'Array<{ code, severity, message, details? }>',
-      revisionBrief: 'string[]',
-    },
-    reviewRubric: [...CTIMELINE_REVIEW_CODES],
-  };
-}
-
-function normalizeReviewedSegmentCutDraft(
-  raw: unknown,
-  base: ISegmentRoughCutPlan,
-  scriptSegment: IKtepScript,
-  sliceMap: Map<string, IKtepSlice>,
-  subtitleConfig: ISpeechPacingConfig,
-): ISegmentRoughCutPlan | null {
-  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
-    return null;
-  }
-  const source = raw as Record<string, unknown>;
-  if (!Array.isArray(source.beats)) {
-    return null;
-  }
-
-  const allowedSpanIds = new Set(base.lockedSpanIds);
-  const windowMap = new Map(base.beats.flatMap(beat =>
-    beat.candidateWindows.map(window => [buildWindowKey(window.assetId, window.spanId, window.sliceId), window] as const),
-  ));
-  const baseBeatsById = new Map(base.beats.map(beat => [beat.beatId, beat] as const));
-  const candidateBeats = source.beats
-    .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object' && !Array.isArray(item))
-    .map(item => {
-      const beatId = typeof item.beatId === 'string' && item.beatId.trim().length > 0
-        ? item.beatId.trim()
-        : typeof item.id === 'string' && item.id.trim().length > 0
-          ? item.id.trim()
-          : randomUUID();
-      const baseBeat = baseBeatsById.get(beatId);
-      const audioSelections = normalizeSegmentCutSelections(
-        item.audioSelections,
-        baseBeat?.audioSelections ?? [],
-        allowedSpanIds,
-        windowMap,
-      );
-      const visualSelections = normalizeSegmentCutSelections(
-        item.visualSelections,
-        baseBeat?.visualSelections ?? [],
-        allowedSpanIds,
-        windowMap,
-      );
-      const linkedSpanIds = dedupeStrings([
-        ...normalizeOptionalStringList(item.linkedSpanIds),
-        ...audioSelections.map(selection => selection.spanId),
-        ...visualSelections.map(selection => selection.spanId),
-        ...(baseBeat?.linkedSpanIds ?? []),
-      ]);
-      if (linkedSpanIds.length === 0) {
-        return null;
+        const speed = treatment.speed;
+        const durationMs = asset.kind === 'photo'
+          ? CPHOTO_DEFAULT_DURATION_MS
+          : Math.max(1, Math.round((window.sourceOutMs - window.sourceInMs) / speed));
+        const clipId = `clip-${String(clipIndex + 1).padStart(5, '0')}`;
+        const sourceAbsolutePath = resolveAssetLocalPath(asset, input.ingestRoots);
+        if (!sourceAbsolutePath) {
+          throw new Error(`Unable to resolve asset ${asset.id} (${asset.sourcePath}) from project media roots`);
+        }
+        const muteAudio = treatment.audio <= -100 || asset.kind === 'photo';
+        const clip: IKtepClip = {
+          id: clipId,
+          trackId: 'v1',
+          assetId: asset.id,
+          spanId: span.id,
+          sliceId: span.id,
+          sourceInMs: window.sourceInMs,
+          sourceOutMs: window.sourceOutMs,
+          ...(speed > 1 ? { speed } : {}),
+          audioGainDb: treatment.audio,
+          timelineInMs: cursorMs,
+          timelineOutMs: cursorMs + durationMs,
+          ...(muteAudio ? { muteAudio: true } : {}),
+          linkedScriptSegmentId: segment.segmentId,
+          linkedScriptBeatId: slot.id,
+          pharosRefs: span.pharosRefs,
+        };
+        clips.push(clip);
+        resolveClips.push({
+          clipId,
+          assetId: asset.id,
+          spanId: span.id,
+          assetKind: asset.kind,
+          sourceAbsolutePath,
+          sourceStem: resolveSourceStem(asset),
+          fps: asset.fps ?? input.cfg.fps,
+          sourceInMs: window.sourceInMs,
+          sourceOutMs: window.sourceOutMs,
+          timelineInMs: clip.timelineInMs,
+          timelineOutMs: clip.timelineOutMs,
+          audioGainDb: treatment.audio,
+          muteAudio,
+          speed,
+        });
+        cursorMs += durationMs;
+        clipIndex += 1;
       }
+    }
+  }
 
-      const tempBeat = {
-        id: beatId,
-        text: typeof item.text === 'string' ? item.text.trim() : baseBeat?.text ?? '',
-        utterances: normalizeSegmentCutUtterances(item.utterances) ?? baseBeat?.utterances,
-        actions: {
-          ...(typeof resolveSegmentCutSpeed(item) === 'number' ? { speed: resolveSegmentCutSpeed(item) } : {}),
-          ...(resolveSegmentCutBool(item, 'preserveNatSound', baseBeat?.preserveNatSound) != null
-            ? { preserveNatSound: resolveSegmentCutBool(item, 'preserveNatSound', baseBeat?.preserveNatSound) }
-            : {}),
-          ...(resolveSegmentCutBool(item, 'muteSource', baseBeat?.muteSource) != null
-            ? { muteSource: resolveSegmentCutBool(item, 'muteSource', baseBeat?.muteSource) }
-            : {}),
+  const timelineName = input.cfg.name || `Kairos Rough Cut - ${input.editId}`;
+  const resolveProjectName = deriveResolveRoughCutProjectName(input.project.name, input.project.id);
+  const placedSpans = [...placedSpanById.values()];
+  return {
+    timelineName,
+    resolveProjectName,
+    resolveClips,
+    doc: {
+      protocol: CPROTOCOL,
+      version: CVERSION,
+      project: input.project,
+      assets: input.assets,
+      spans: placedSpans,
+      slices: placedSpans,
+      timeline: {
+        id: randomUUID(),
+        name: timelineName,
+        fps: input.cfg.fps,
+        resolution: {
+          width: input.cfg.width,
+          height: input.cfg.height,
         },
-        audioSelections,
-        visualSelections,
-        linkedSpanIds,
-        linkedSliceIds: dedupeStrings([
-          ...normalizeOptionalStringList(item.linkedSliceIds),
-          ...audioSelections.map(selection => selection.sliceId),
-          ...visualSelections.map(selection => selection.sliceId),
-          ...(baseBeat?.linkedSliceIds ?? []),
-        ]),
-        pharosRefs: undefined,
-        notes: typeof item.notes === 'string' ? item.notes.trim() : baseBeat?.notes,
-      } satisfies IKtepScript['beats'][number];
-
-      const normalizedBeat = buildSegmentRoughCutBeatPlan(
-        scriptSegment,
-        tempBeat,
-        sliceMap,
-        subtitleConfig,
-      );
-      return {
-        ...normalizedBeat,
-        subtitleCueDrafts: normalizeSegmentCutCueDrafts(
-          item.subtitleCueDrafts,
-          normalizedBeat.subtitleCueDrafts,
-          normalizedBeat.audioSelections,
-        ),
-      };
-    })
-    .filter((item): item is ISegmentRoughCutBeatPlan => item != null);
-
-  return {
-    segmentId: base.segmentId,
-    segmentTitle: base.segmentTitle,
-    timeBandGuard: base.timeBandGuard,
-    lockedSpanIds: base.lockedSpanIds,
-    beats: candidateBeats.length > 0 ? candidateBeats : base.beats,
+        tracks: [
+          {
+            id: 'v1',
+            kind: 'video',
+            role: 'primary',
+            index: 1,
+          },
+        ],
+        clips,
+      },
+      subtitles: [],
+      adapterHints: {
+        kind: 'resolve-rough-cut-manifest',
+        editId: input.editId,
+        materialSlotsId: input.materialSlots.id,
+        generatedBy: 'timeline.generate:deterministic',
+      },
+    },
   };
 }
 
-function normalizeSegmentCutSelections(
-  raw: unknown,
-  fallback: IKtepScriptSelection[],
-  allowedSpanIds: Set<string>,
-  windowMap: Map<string, ISegmentRoughCutPlan['beats'][number]['candidateWindows'][number]>,
-): IKtepScriptSelection[] {
-  if (!Array.isArray(raw) || raw.length === 0) {
-    return fallback;
+function resolveSpanSourceWindow(asset: IKtepAsset, span: IKtepSpan): { sourceInMs: number; sourceOutMs: number } {
+  const sourceInMs = firstFiniteNumber(span.editSourceInMs, span.sourceInMs, 0);
+  const explicitSourceOutMs = firstFiniteNumber(span.editSourceOutMs, span.sourceOutMs);
+  const sourceOutMs = asset.kind === 'photo' && (!Number.isFinite(explicitSourceOutMs) || explicitSourceOutMs <= sourceInMs)
+    ? sourceInMs + CPHOTO_DEFAULT_DURATION_MS
+    : explicitSourceOutMs;
+  if (!Number.isFinite(sourceOutMs) || sourceOutMs <= sourceInMs) {
+    throw new Error(`span ${span.id} does not have a valid source time range`);
   }
-
-  const result: IKtepScriptSelection[] = [];
-  for (const item of raw) {
-    if (!item || typeof item !== 'object' || Array.isArray(item)) continue;
-    const source = item as Record<string, unknown>;
-    const assetId = typeof source.assetId === 'string' ? source.assetId.trim() : '';
-    const spanId = typeof source.spanId === 'string'
-      ? source.spanId.trim()
-      : typeof source.sliceId === 'string'
-        ? source.sliceId.trim()
-        : '';
-    const sliceId = typeof source.sliceId === 'string'
-      ? source.sliceId.trim()
-      : spanId;
-    if (!assetId || !spanId || !allowedSpanIds.has(spanId)) continue;
-    const window = windowMap.get(buildWindowKey(assetId, spanId, sliceId))
-      ?? windowMap.get(buildWindowKey(assetId, spanId, undefined))
-      ?? windowMap.get(buildWindowKey(assetId, undefined, sliceId));
-    if (!window) continue;
-
-    const defaultIn = window.defaultSourceInMs ?? window.minSourceInMs;
-    const defaultOut = window.defaultSourceOutMs ?? window.maxSourceOutMs;
-    const minIn = window.minSourceInMs ?? defaultIn;
-    const maxOut = window.maxSourceOutMs ?? defaultOut;
-    const sourceInMs = clampSelectionBound(
-      typeof source.sourceInMs === 'number' ? source.sourceInMs : defaultIn,
-      minIn,
-      maxOut,
-    );
-    if (typeof sourceInMs !== 'number') {
-      continue;
-    }
-    const sourceOutMs = clampSelectionBound(
-      typeof source.sourceOutMs === 'number' ? source.sourceOutMs : defaultOut,
-      sourceInMs + 1,
-      maxOut,
-    );
-    if (typeof sourceInMs !== 'number' || typeof sourceOutMs !== 'number' || sourceOutMs <= sourceInMs) {
-      continue;
-    }
-
-    result.push({
-      assetId,
-      spanId,
-      sliceId,
-      sourceInMs,
-      sourceOutMs,
-      notes: typeof source.notes === 'string' ? source.notes.trim() : undefined,
-      pharosRefs: undefined,
-    });
-  }
-
-  return result.length > 0 ? dedupeSelections(result) : fallback;
-}
-
-function normalizeSegmentCutUtterances(raw: unknown): IKtepScript['beats'][number]['utterances'] {
-  if (!Array.isArray(raw)) return undefined;
-  const utterances = raw
-    .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object' && !Array.isArray(item))
-    .map(item => ({
-      text: typeof item.text === 'string' ? item.text.trim() : '',
-      pauseBeforeMs: typeof item.pauseBeforeMs === 'number' ? Math.max(0, item.pauseBeforeMs) : undefined,
-      pauseAfterMs: typeof item.pauseAfterMs === 'number' ? Math.max(0, item.pauseAfterMs) : undefined,
-    }))
-    .filter(item => item.text.length > 0);
-  return utterances.length > 0 ? utterances : undefined;
-}
-
-function normalizeSegmentCutCueDrafts(
-  raw: unknown,
-  fallback: ISegmentRoughCutBeatPlan['subtitleCueDrafts'],
-  audioSelections: IKtepScriptSelection[],
-): ISegmentRoughCutBeatPlan['subtitleCueDrafts'] {
-  if (!Array.isArray(raw) || raw.length === 0) {
-    return fallback;
-  }
-
-  const normalized = raw
-    .filter((item): item is Record<string, unknown> =>
-      !!item && typeof item === 'object' && !Array.isArray(item))
-    .map(item => {
-      const text = typeof item.text === 'string' ? item.text.trim() : '';
-      const sourceInMs = typeof item.sourceInMs === 'number' ? item.sourceInMs : undefined;
-      const sourceOutMs = typeof item.sourceOutMs === 'number' ? item.sourceOutMs : undefined;
-      if (!text) return null;
-      if (
-        typeof sourceInMs === 'number'
-        && typeof sourceOutMs === 'number'
-        && !isCueInsideSelections(sourceInMs, sourceOutMs, audioSelections)
-      ) {
-        return null;
-      }
-
-      return {
-        id: typeof item.id === 'string' && item.id.trim().length > 0 ? item.id.trim() : randomUUID(),
-        text,
-        sourceInMs,
-        sourceOutMs,
-      };
-    })
-    .filter((item): item is NonNullable<typeof item> => item != null);
-
-  return normalized.length > 0 ? normalized : fallback;
-}
-
-function resolveSegmentCutBool(
-  raw: Record<string, unknown>,
-  key: 'preserveNatSound' | 'muteSource',
-  fallback?: boolean,
-): boolean | undefined {
-  if (typeof raw[key] === 'boolean') {
-    return raw[key] as boolean;
-  }
-  if (raw.actions && typeof raw.actions === 'object' && !Array.isArray(raw.actions)) {
-    const candidate = (raw.actions as Record<string, unknown>)[key];
-    if (typeof candidate === 'boolean') {
-      return candidate;
-    }
-  }
-  return fallback;
-}
-
-function resolveSegmentCutSpeed(raw: Record<string, unknown>): number | undefined {
-  if (typeof raw.speedSuggestion === 'number' && Number.isFinite(raw.speedSuggestion) && raw.speedSuggestion > 0) {
-    return raw.speedSuggestion;
-  }
-  if (raw.actions && typeof raw.actions === 'object' && !Array.isArray(raw.actions)) {
-    const speed = (raw.actions as Record<string, unknown>).speed;
-    if (typeof speed === 'number' && Number.isFinite(speed) && speed > 0) {
-      return speed;
-    }
-  }
-  return undefined;
-}
-
-function isCueInsideSelections(
-  sourceInMs: number,
-  sourceOutMs: number,
-  audioSelections: IKtepScriptSelection[],
-): boolean {
-  if (sourceOutMs <= sourceInMs) {
-    return false;
-  }
-  return audioSelections.some(selection =>
-    typeof selection.sourceInMs === 'number'
-    && typeof selection.sourceOutMs === 'number'
-    && sourceInMs >= selection.sourceInMs
-    && sourceOutMs <= selection.sourceOutMs,
-  );
-}
-
-function buildSegmentCutAudit(
-  base: ISegmentRoughCutPlan,
-  draft: ISegmentRoughCutPlan,
-) {
-  const baseSpanIds = new Set(base.lockedSpanIds);
-  const draftSpanIds = new Set(dedupeStrings(
-    draft.beats.flatMap(beat => [
-      ...beat.linkedSpanIds,
-      ...beat.audioSelections.map(selection => selection.spanId),
-      ...beat.visualSelections.map(selection => selection.spanId),
-    ]),
-  ));
-  const foreignSpanIds = [...draftSpanIds].filter(spanId => spanId && !baseSpanIds.has(spanId));
-  const removedSpanIds = base.lockedSpanIds.filter(spanId => !draftSpanIds.has(spanId));
-  const nonDriveSpeedBeatIds = draft.beats
-    .filter(beat =>
-      typeof beat.speedSuggestion === 'number'
-      && beat.speedSuggestion > 0
-      && !beat.visualSelections.every(selection =>
-        selection.sliceId?.includes('drive')
-        || selection.sliceId?.includes('aerial')
-        || beat.linkedSpanIds.some(spanId => spanId.includes('drive') || spanId.includes('aerial')),
-      ))
-    .map(beat => beat.beatId);
-
   return {
-    removedSpanIds,
-    foreignSpanIds,
-    nonDriveSpeedBeatIds,
-    beatCountDelta: draft.beats.length - base.beats.length,
+    sourceInMs,
+    sourceOutMs,
   };
 }
 
-function summarizeSegmentCutAudit(audit: ReturnType<typeof buildSegmentCutAudit>): string {
-  const parts = [
-    `removed=${audit.removedSpanIds.length}`,
-    `foreign=${audit.foreignSpanIds.length}`,
-    `nonDriveSpeed=${audit.nonDriveSpeedBeatIds.length}`,
-    `beatDelta=${audit.beatCountDelta}`,
-  ];
-  return parts.join(' / ');
-}
-
-function normalizeSegmentCutReview(
-  raw: Partial<ISegmentCutReview>,
-  segmentId: string,
-  attempt: number,
-): ISegmentCutReview {
-  const verdict = raw.verdict === 'pass' || raw.verdict === 'revise' || raw.verdict === 'awaiting_user'
-    ? raw.verdict
-    : 'revise';
-  const rawIssues = Array.isArray(raw.issues) ? raw.issues as unknown[] : [];
-  const issues: IStageReviewIssue[] = rawIssues.length > 0
-    ? rawIssues
-      .filter((item): item is Record<string, unknown> =>
-        !!item && typeof item === 'object' && !Array.isArray(item))
-      .map(item => ({
-        code: typeof item.code === 'string' && item.code.trim().length > 0 ? item.code.trim() : 'unknown_issue',
-        severity: item.severity === 'warning' ? 'warning' as const : 'blocker' as const,
-        message: typeof item.message === 'string' && item.message.trim().length > 0
-          ? item.message.trim()
-          : 'reviewer flagged an unspecified issue',
-        details: item.details,
-      }))
-    : [];
-  const blockerIssues = issues.filter(issue => issue.severity === 'blocker');
-
-  return {
-    segmentId,
-    stage: `segment-cut:${segmentId}`,
-    identity: 'segment-cut-reviewer',
-    attempt,
-    verdict: blockerIssues.length > 0 && verdict === 'pass' ? 'revise' : verdict,
-    issues,
-    revisionBrief: Array.isArray(raw.revisionBrief)
-      ? raw.revisionBrief.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
-      : blockerIssues.map(issue => `${issue.code}: ${issue.message}`),
-    reviewedAt: typeof raw.reviewedAt === 'string' && raw.reviewedAt.trim().length > 0
-      ? raw.reviewedAt
-      : new Date().toISOString(),
-  };
-}
-
-function buildTimelineStageErrorReview(
-  segmentId: string,
-  attempt: number,
-  error: unknown,
-): ISegmentCutReview {
-  return {
-    segmentId,
-    stage: `segment-cut:${segmentId}`,
-    identity: 'segment-cut-reviewer',
-    attempt,
-    verdict: 'revise',
-    issues: [{
-      code: 'review_error',
-      severity: 'blocker',
-      message: formatTimelineStageError(error),
-    }],
-    revisionBrief: ['review_error'],
-    reviewedAt: new Date().toISOString(),
-  };
-}
-
-function formatTimelineStageError(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message;
+function firstFiniteNumber(...values: Array<number | undefined>): number {
+  for (const value of values) {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
   }
-  return String(error);
+  return Number.NaN;
 }
 
-function buildWindowKey(assetId: string, spanId?: string, sliceId?: string): string {
-  return [assetId, spanId ?? '', sliceId ?? ''].join('|');
+function resolveSourceStem(asset: IKtepAsset): string {
+  const normalized = asset.sourcePath.replace(/\\/gu, '/');
+  const filename = normalized.split('/').filter(Boolean).at(-1) ?? asset.displayName ?? asset.id;
+  return filename.replace(/\.[^.]+$/u, '') || asset.id;
 }
 
-function clampSelectionBound(
-  value: number | undefined,
-  minValue: number | undefined,
-  maxValue: number | undefined,
-): number | undefined {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined;
-  const lower = typeof minValue === 'number' && Number.isFinite(minValue) ? minValue : value;
-  const upper = typeof maxValue === 'number' && Number.isFinite(maxValue) ? maxValue : value;
-  if (upper < lower) return undefined;
-  return Math.max(lower, Math.min(value, upper));
-}
-
-function dedupeSelections(selections: IKtepScriptSelection[]): IKtepScriptSelection[] {
-  const seen = new Set<string>();
-  const result: IKtepScriptSelection[] = [];
-  for (const selection of selections) {
-    const key = [
-      selection.assetId,
-      selection.spanId ?? '',
-      selection.sliceId ?? '',
-      selection.sourceInMs ?? '',
-      selection.sourceOutMs ?? '',
-    ].join('|');
-    if (seen.has(key)) continue;
-    seen.add(key);
-    result.push(selection);
-  }
-  return result;
-}
-
-function dedupeStrings(values: Array<string | undefined>): string[] {
-  return [...new Set(values.filter((value): value is string => typeof value === 'string' && value.trim().length > 0))];
-}
-
-function normalizeOptionalStringList(raw: unknown): string[] {
-  if (!Array.isArray(raw)) return [];
-  return dedupeStrings(raw.filter((item): item is string => typeof item === 'string' && item.trim().length > 0));
+function deriveResolveRoughCutProjectName(projectName?: string, projectId?: string): string {
+  const base = (projectName?.trim() || projectId?.trim() || 'Kairos Project').slice(0, 100);
+  return `${base} [Edit]`;
 }

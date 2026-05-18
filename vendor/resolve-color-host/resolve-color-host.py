@@ -54,6 +54,8 @@ def main() -> int:
             result = sync_groups(resolve, request_input)
         elif operation == "execute_root":
             result = execute_root(resolve, request_input)
+        elif operation == "create_rough_cut_timeline":
+            result = create_rough_cut_timeline(resolve, request_input)
         elif operation == "save_drp_snapshot":
             result = save_drp_snapshot(resolve, request_input)
         else:
@@ -442,6 +444,119 @@ def execute_root(resolve, payload):
             "audioCodec": resolved_render_format["audioCodec"],
             "bitrateKbps": resolved_render_format["bitrateKbps"],
             "bitrateControl": "transient-render-preset" if transient_render_preset_name else None,
+        },
+    }
+
+
+def create_rough_cut_timeline(resolve, payload):
+    project = ensure_project(resolve, payload["resolveProjectName"])
+    media_pool = require_method(project, "GetMediaPool")()
+    media_storage = require_method(resolve, "GetMediaStorage")()
+    timeline_name = stringify_signal_value(payload.get("timelineName"))
+    if not timeline_name:
+        raise HostError("resolve_timeline_name_missing", "create_rough_cut_timeline requires timelineName.")
+    clips = normalize_rough_cut_clips(payload.get("clips"))
+    if not clips:
+        raise HostError("resolve_timeline_empty", "create_rough_cut_timeline requires at least one clip.")
+
+    namespace = stringify_signal_value(payload.get("namespace")) or "Kairos Rough Cuts"
+    namespace_folder = ensure_namespace_folder(media_pool, namespace)
+    timeline = ensure_timeline(project, media_pool, timeline_name)
+    apply_timeline_spec(project, payload.get("timelineSpec"), timeline)
+    safe_call(resolve, "OpenPage", "edit")
+    safe_call(project, "SetCurrentTimeline", timeline)
+    try:
+        clear_timeline_items(timeline)
+    except HostError as error:
+        if error.code != "resolve_timeline_clear_failed":
+            raise
+        timeline = recreate_timeline(media_pool, project, timeline, timeline_name)
+        apply_timeline_spec(project, payload.get("timelineSpec"), timeline)
+    namespace_state = collect_namespace_state(namespace_folder)
+    prepared_entries, sync_summary = sync_namespace_clips(
+        media_pool,
+        media_storage,
+        namespace_folder,
+        namespace_state,
+        rough_cut_clips_to_namespace_requests(clips),
+    )
+    media_pool_item_by_clip_id = {
+        entry["rawRelativePath"]: entry["mediaPoolItem"]
+        for entry in prepared_entries
+    }
+
+    appended = []
+    audio_gain_applied = 0
+    speed_applied = 0
+    fps = parse_float((payload.get("timelineSpec") or {}).get("fps")) or 30.0
+    for clip in clips:
+        media_pool_item = media_pool_item_by_clip_id.get(clip["rawRelativePath"])
+        if media_pool_item is None:
+            raise HostError(
+                "resolve_media_pool_clip_missing",
+                f"Unable to find imported rough-cut clip: {clip['clipId']}",
+                {"clipId": clip["clipId"], "sourceAbsolutePath": clip["sourceAbsolutePath"]},
+            )
+        clip_info = {
+            "mediaPoolItem": media_pool_item,
+            "recordFrame": ms_to_frame(clip["timelineInMs"], fps),
+            "trackIndex": 1,
+        }
+        if clip.get("sourceInMs") is not None and clip.get("sourceOutMs") is not None:
+            source_fps = parse_float(clip.get("fps")) or fps
+            clip_info["startFrame"] = ms_to_frame(clip["sourceInMs"], source_fps)
+            clip_info["endFrame"] = max(
+                clip_info["startFrame"] + 1,
+                ms_to_frame(clip["sourceOutMs"], source_fps),
+            )
+        if clip["muteAudio"] or clip["assetKind"] == "photo":
+            clip_info["mediaType"] = 1
+        appended_items = safe_call(media_pool, "AppendToTimeline", [clip_info])
+        if not appended_items:
+            raise HostError(
+                "resolve_timeline_append_failed",
+                f"Unable to append rough-cut clip: {clip['clipId']}",
+                {"clipId": clip["clipId"], "sourceAbsolutePath": clip["sourceAbsolutePath"]},
+            )
+        timeline_items = list(iter_values(appended_items))
+        if not timeline_items:
+            raise HostError(
+                "resolve_timeline_append_failed",
+                f"Resolve returned no timeline item for rough-cut clip: {clip['clipId']}",
+                {"clipId": clip["clipId"]},
+            )
+        if clip["speed"] != 1:
+            apply_timeline_item_speed(timeline_items, clip)
+            speed_applied += 1
+        if (not clip["muteAudio"]) and clip["audioGainDb"] != 0:
+            apply_timeline_item_audio_gain(timeline_items, clip)
+            audio_gain_applied += 1
+        appended.append({
+            "clipId": clip["clipId"],
+            "assetId": clip["assetId"],
+            "spanId": clip.get("spanId"),
+            "timelineInMs": clip["timelineInMs"],
+            "timelineOutMs": clip["timelineOutMs"],
+            "muteAudio": clip["muteAudio"],
+            "audioGainDb": clip["audioGainDb"],
+            "speed": clip["speed"],
+        })
+
+    save_project(project, resolve)
+    return {
+        "resolveProjectName": payload["resolveProjectName"],
+        "timelineName": timeline_name,
+        "createdAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "clipCount": len(appended),
+        "hostSummary": {
+            "namespace": namespace,
+            "timelineName": timeline_name,
+            "clipCount": len(appended),
+            "mutedClipCount": sum(1 for clip in clips if clip["muteAudio"]),
+            "audioGainAppliedCount": audio_gain_applied,
+            "speedAppliedCount": speed_applied,
+            "syncSummary": sync_summary,
+            "clips": appended,
         },
     }
 
@@ -2268,6 +2383,156 @@ def resolve_exposure_scene_addon_tag(clip_request):
                 if normalized_reason in CEXPOSURE_SCENE_REASON_GROUP_TAGS:
                     return normalized_reason
     return exposure_scene
+
+
+def normalize_rough_cut_clips(clips):
+    normalized = []
+    for clip in clips or []:
+        clip_id = stringify_signal_value(clip.get("clipId"))
+        asset_id = stringify_signal_value(clip.get("assetId"))
+        source_absolute_path = normalize_filesystem_path(clip.get("sourceAbsolutePath"))
+        asset_kind = stringify_signal_value(clip.get("assetKind")) or "video"
+        if not clip_id or not asset_id or not source_absolute_path:
+            raise HostError(
+                "resolve_rough_cut_clip_invalid",
+                "Rough-cut clip requires clipId, assetId, and sourceAbsolutePath.",
+                {"clip": clip},
+            )
+        timeline_in_ms = parse_float(clip.get("timelineInMs"))
+        timeline_out_ms = parse_float(clip.get("timelineOutMs"))
+        if timeline_in_ms is None or timeline_out_ms is None or timeline_out_ms <= timeline_in_ms:
+            raise HostError(
+                "resolve_rough_cut_clip_invalid",
+                f"Rough-cut clip has invalid timeline range: {clip_id}",
+                {"clipId": clip_id, "timelineInMs": clip.get("timelineInMs"), "timelineOutMs": clip.get("timelineOutMs")},
+            )
+        audio_gain_db = parse_float(clip.get("audioGainDb"))
+        speed = parse_float(clip.get("speed"))
+        if audio_gain_db is None or speed is None or speed <= 0:
+            raise HostError(
+                "resolve_rough_cut_clip_invalid",
+                f"Rough-cut clip requires numeric audioGainDb and positive speed: {clip_id}",
+                {"clipId": clip_id, "audioGainDb": clip.get("audioGainDb"), "speed": clip.get("speed")},
+            )
+        source_in_ms = parse_float(clip.get("sourceInMs"))
+        source_out_ms = parse_float(clip.get("sourceOutMs"))
+        if source_in_ms is not None and source_out_ms is not None and source_out_ms <= source_in_ms:
+            raise HostError(
+                "resolve_rough_cut_clip_invalid",
+                f"Rough-cut clip has invalid source range: {clip_id}",
+                {"clipId": clip_id, "sourceInMs": clip.get("sourceInMs"), "sourceOutMs": clip.get("sourceOutMs")},
+            )
+        raw_relative_path = normalize_portable_path(
+            f"{asset_id}/{clip_id}-{Path(source_absolute_path).name}",
+        )
+        normalized.append({
+            "clipId": clip_id,
+            "assetId": asset_id,
+            "spanId": stringify_signal_value(clip.get("spanId")),
+            "assetKind": asset_kind,
+            "rawRelativePath": raw_relative_path,
+            "sourceAbsolutePath": source_absolute_path,
+            "sourceStem": stringify_signal_value(clip.get("sourceStem")) or Path(source_absolute_path).stem,
+            "fps": parse_float(clip.get("fps")),
+            "sourceInMs": source_in_ms,
+            "sourceOutMs": source_out_ms,
+            "timelineInMs": timeline_in_ms,
+            "timelineOutMs": timeline_out_ms,
+            "audioGainDb": audio_gain_db,
+            "muteAudio": clip.get("muteAudio") is True or audio_gain_db <= -100,
+            "speed": speed,
+        })
+    return sorted(normalized, key=lambda clip: (clip["timelineInMs"], clip["clipId"]))
+
+
+def rough_cut_clips_to_namespace_requests(clips):
+    return [
+        {
+            "rawRelativePath": clip["rawRelativePath"],
+            "sourceAbsolutePath": clip["sourceAbsolutePath"],
+            "sourceStem": clip["sourceStem"],
+        }
+        for clip in clips
+    ]
+
+
+def ms_to_frame(ms, fps):
+    return int(round((float(ms) / 1000.0) * float(fps)))
+
+
+def apply_timeline_item_audio_gain(timeline_items, clip):
+    target = clip["audioGainDb"]
+    for item in timeline_items:
+        key = set_writable_timeline_property_from_probe(
+            item,
+            ("audio", "gain", "volume", "level"),
+            target,
+        )
+        if key:
+            return key
+    raise HostError(
+        "resolve_audio_gain_unavailable",
+        "Resolve did not expose a stable writable TimelineItem audio gain property. Clip gain was not guessed.",
+        {
+            "clipId": clip["clipId"],
+            "assetId": clip["assetId"],
+            "spanId": clip.get("spanId"),
+            "requestedAudioGainDb": target,
+        },
+    )
+
+
+def apply_timeline_item_speed(timeline_items, clip):
+    target = clip["speed"]
+    for item in timeline_items:
+        key = set_writable_timeline_property_from_probe(
+            item,
+            ("speed",),
+            target,
+        )
+        if key:
+            return key
+    raise HostError(
+        "resolve_speed_unavailable",
+        "Resolve did not expose a stable writable TimelineItem speed property. Speed was not guessed.",
+        {
+            "clipId": clip["clipId"],
+            "assetId": clip["assetId"],
+            "spanId": clip.get("spanId"),
+            "requestedSpeed": target,
+        },
+    )
+
+
+def set_writable_timeline_property_from_probe(item, key_needles, target):
+    property_map = safe_call(item, "GetProperty")
+    if not isinstance(property_map, dict):
+        return None
+    candidates = [
+        key
+        for key in property_map.keys()
+        if isinstance(key, str)
+        and any(needle in key.lower() for needle in key_needles)
+    ]
+    for key in candidates:
+        original = property_map.get(key)
+        result = safe_call(item, "SetProperty", key, target)
+        if result is False or result is None:
+            continue
+        current = safe_call(item, "GetProperty", key)
+        if value_matches_request(current, target):
+            return key
+        if original is not None:
+            safe_call(item, "SetProperty", key, original)
+    return None
+
+
+def value_matches_request(value, requested):
+    parsed = parse_float(value)
+    target = parse_float(requested)
+    if parsed is None or target is None:
+        return value == requested
+    return abs(parsed - target) <= 0.25
 
 
 def normalize_clip_requests(clips):
