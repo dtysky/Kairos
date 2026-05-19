@@ -20,6 +20,7 @@ export interface IBuildConfig {
   width: number;
   height: number;
   name: string;
+  stillDurationMs?: number;
   assetReports?: IAssetCoarseReport[];
   chronology?: IChronologyAssetIndex[];
   reviewedSegmentCuts?: ISegmentRoughCutPlan[];
@@ -30,7 +31,7 @@ export interface IBuildConfig {
 
 export type ITimelineRuntimeConfig = Pick<
   IRuntimeConfig,
-  'timelineFps' | 'timelineWidth' | 'timelineHeight'
+  'timelineFps' | 'timelineWidth' | 'timelineHeight' | 'timelineStillDurationMs'
 >;
 
 const CDEFAULTS: IBuildConfig = {
@@ -49,6 +50,7 @@ export function resolveTimelineBuildConfig(
     ...(runtimeConfig.timelineFps != null && { fps: runtimeConfig.timelineFps }),
     ...(runtimeConfig.timelineWidth != null && { width: runtimeConfig.timelineWidth }),
     ...(runtimeConfig.timelineHeight != null && { height: runtimeConfig.timelineHeight }),
+    ...(runtimeConfig.timelineStillDurationMs != null && { stillDurationMs: runtimeConfig.timelineStillDurationMs }),
     ...overrides,
   };
 }

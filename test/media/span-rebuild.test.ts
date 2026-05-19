@@ -198,6 +198,201 @@ describe('buildMaterialSpansFromReports', () => {
     })).toThrow(/requires fine-scan spans but has no fineScanWindows/u);
   });
 
+  it('recovers legacy fine-scan speech semanticKind from matching interestingWindows', () => {
+    const result = buildMaterialSpansFromReports({
+      assets: [createVideoAsset({ id: 'legacy-speech-match', durationMs: 10_000 })],
+      reports: [report({
+        assetId: 'legacy-speech-match',
+        clipTypeGuess: 'talking-head',
+        materializationPath: 'fine-scan',
+        transcript: '机场出发前说一段。',
+        transcriptSegments: [{ startMs: 1_000, endMs: 2_500, text: '机场出发前说一段。' }],
+        speechCoverage: 0.8,
+        interestingWindows: [{
+          startMs: 900,
+          endMs: 2_600,
+          reason: 'speech-window',
+          semanticKind: 'speech',
+        }],
+        fineScanWindows: [{
+          windowId: 'legacy-speech-window',
+          sourceInMs: 900,
+          sourceOutMs: 2_600,
+          reason: 'speech-window',
+          visualObservation: '机场外自拍口播',
+          status: 'recognized',
+          frameTimestampsMs: [],
+          framePaths: [],
+        }],
+      })],
+    });
+
+    expect(result.spans).toHaveLength(1);
+    expect(result.spans[0]).toMatchObject({
+      id: 'legacy-speech-window',
+      semanticKind: 'speech',
+      transcript: '机场出发前说一段。',
+    });
+    expect(result.spans[0]?.speechCoverage).toBeCloseTo(0.882, 2);
+    expect(result.warnings.join('\n')).toMatch(/recovered fine-scan window legacy-speech-window semanticKind=speech/u);
+  });
+
+  it('recovers legacy speech-window semanticKind from transcript overlap when interestingWindows lack semanticKind', () => {
+    const result = buildMaterialSpansFromReports({
+      assets: [createVideoAsset({ id: 'legacy-speech-overlap', durationMs: 10_000 })],
+      reports: [report({
+        assetId: 'legacy-speech-overlap',
+        clipTypeGuess: 'talking-head',
+        materializationPath: 'fine-scan',
+        transcript: '这段现场口播不能丢。',
+        transcriptSegments: [{ startMs: 1_200, endMs: 2_400, text: '这段现场口播不能丢。' }],
+        speechCoverage: 0.7,
+        interestingWindows: [{
+          startMs: 1_000,
+          endMs: 2_500,
+          reason: 'speech-window',
+        }],
+        fineScanWindows: [{
+          windowId: 'legacy-overlap-window',
+          sourceInMs: 1_000,
+          sourceOutMs: 2_500,
+          reason: 'speech-window',
+          visualObservation: '车内对镜头说话',
+          status: 'recognized',
+          frameTimestampsMs: [],
+          framePaths: [],
+        }],
+      })],
+    });
+
+    expect(result.spans[0]).toMatchObject({
+      id: 'legacy-overlap-window',
+      semanticKind: 'speech',
+      transcript: '这段现场口播不能丢。',
+      materialPatterns: [],
+    });
+    expect(result.warnings.join('\n')).toMatch(/speech-window transcript overlap/u);
+  });
+
+  it('preserves fine-scan window transcript truth before falling back to report transcript', () => {
+    const result = buildMaterialSpansFromReports({
+      assets: [createVideoAsset({ id: 'fine-window-transcript', durationMs: 10_000 })],
+      reports: [report({
+        assetId: 'fine-window-transcript',
+        clipTypeGuess: 'talking-head',
+        materializationPath: 'fine-scan',
+        transcript: '这是报告里的整段口播。',
+        transcriptSegments: [{ startMs: 1_000, endMs: 4_000, text: '这是报告里的整段口播。' }],
+        speechCoverage: 0.6,
+        interestingWindows: [{
+          windowId: 'iw-speech',
+          startMs: 1_000,
+          endMs: 4_000,
+          reason: 'speech-window',
+          semanticKind: 'speech',
+        }],
+        fineScanWindows: [{
+          windowId: 'fine-window-truth',
+          sourceInMs: 1_000,
+          sourceOutMs: 4_000,
+          semanticKind: 'speech',
+          reason: 'speech-window',
+          sourceInterestingWindowIds: ['iw-speech'],
+          sourceWindowReason: 'speech-window',
+          transcript: '这是窗口自己裁剪后的口播。',
+          transcriptSegments: [{ startMs: 1_200, endMs: 2_800, text: '这是窗口自己裁剪后的口播。' }],
+          speechCoverage: 0.533,
+          visualObservation: '车内自拍口播',
+          status: 'recognized',
+          frameTimestampsMs: [],
+          framePaths: [],
+        }],
+      })],
+    });
+
+    expect(result.spans[0]).toMatchObject({
+      id: 'fine-window-truth',
+      semanticKind: 'speech',
+      transcript: '这是窗口自己裁剪后的口播。',
+      transcriptSegments: [{ startMs: 1_200, endMs: 2_800, text: '这是窗口自己裁剪后的口播。' }],
+      speechCoverage: 0.533,
+    });
+  });
+
+  it('recovers legacy missing semanticKind from overlapping speech source without promoting explicit visual windows', () => {
+    const base = {
+      clipTypeGuess: 'drive' as const,
+      materializationPath: 'fine-scan' as const,
+      transcript: '车里有人说话。',
+      transcriptSegments: [{ startMs: 1_000, endMs: 2_000, text: '车里有人说话。' }],
+      speechCoverage: 0.5,
+      interestingWindows: [
+        {
+          windowId: 'iw-visual',
+          startMs: 0,
+          endMs: 3_000,
+          reason: 'coarse-sample-window',
+          semanticKind: 'visual' as const,
+        },
+        {
+          windowId: 'iw-speech',
+          startMs: 0,
+          endMs: 3_000,
+          reason: 'speech-window',
+          semanticKind: 'speech' as const,
+        },
+      ],
+    };
+
+    const recovered = buildMaterialSpansFromReports({
+      assets: [createVideoAsset({ id: 'legacy-overlap-source', durationMs: 10_000 })],
+      reports: [report({
+        ...base,
+        assetId: 'legacy-overlap-source',
+        fineScanWindows: [{
+          windowId: 'legacy-source-window',
+          sourceInMs: 0,
+          sourceOutMs: 3_000,
+          sourceInterestingWindowIds: ['iw-speech'],
+          visualObservation: '车内行驶画面',
+          status: 'recognized',
+          frameTimestampsMs: [],
+          framePaths: [],
+        }],
+      })],
+    });
+    expect(recovered.spans[0]).toMatchObject({
+      id: 'legacy-source-window',
+      semanticKind: 'speech',
+      transcript: '车里有人说话。',
+    });
+
+    const visual = buildMaterialSpansFromReports({
+      assets: [createVideoAsset({ id: 'explicit-visual-overlap', durationMs: 10_000 })],
+      reports: [report({
+        ...base,
+        assetId: 'explicit-visual-overlap',
+        fineScanWindows: [{
+          windowId: 'explicit-visual-window',
+          sourceInMs: 0,
+          sourceOutMs: 3_000,
+          semanticKind: 'visual',
+          sourceInterestingWindowIds: ['iw-visual'],
+          visualObservation: '车内行驶画面',
+          status: 'recognized',
+          frameTimestampsMs: [],
+          framePaths: [],
+        }],
+      })],
+    });
+    expect(visual.spans[0]).toMatchObject({
+      id: 'explicit-visual-window',
+      semanticKind: 'visual',
+    });
+    expect(visual.spans[0]?.transcript).toBeUndefined();
+    expect(visual.spans[0]?.transcriptSegments).toBeUndefined();
+  });
+
   it('blocks non-audio assets that are missing asset reports', () => {
     expect(() => buildMaterialSpansFromReports({
       assets: [

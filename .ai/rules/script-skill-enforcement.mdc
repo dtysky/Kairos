@@ -18,7 +18,7 @@ alwaysApply: true
 - 当剪辑规则要求使用风格层时，只能读取 confirmed `edits/<editId>/planning/flow-plan.json.styleUsage` 授权的 `literary / artistic / editingTechnical` 层；不得从 edit-rule markdown 或 legacy style profile 长文里关键词解析使用权。
 - 如果 `styleUsage` 需要任何风格层但 `styleCategory` 缺失，或 profile 不是 `styleProfileVersion=layered-v1`，必须阻塞并提示重跑 `/style` 或选择可用分层档案。
 - `material.recall` 的正式结构化产物只有 `edits/<editId>/script/material-slots.json`；不要生成、消费或要求 `segment-plan.json` 作为 Edit Flow 正式输出。
-- `material-slots.json` 是正式 `material-slots` truth；每个 `chosenSpanId` 必须有 numeric `treatments[spanId]={audio,speed}`，`audio` 是 dB（默认 `0`，静音 `-100`），`speed` 是倍速（默认 `1`）。不要再让 `route-slot-planner` 改写 `chosenSpanIds`，也不要让 `mixed / audio:* / speed:*` 这类文本建议进入正式字段。
+- `material-slots.json` 是正式 `material-slots` truth；每个 `chosenSpanId` 必须有 numeric `treatments[spanId]={audio,speed}`，`audio` 是 dB（默认 `0`，静音 `-100`），`speed` 是倍速（默认 `1`）。非照片 span 如果有 transcript、transcriptSegments 或 `semanticKind=speech/mixed`，不得写 `audio<=-100`。不要再让 `route-slot-planner` 改写 `chosenSpanIds`，也不要让 `mixed / audio:* / speed:*` 这类文本建议进入正式字段。
 - `beat-writer` 只能改写表达层字段（如 `text / utterances / notes / muteSource / preserveNatSound`）；不要让它增删或改写 `audioSelections / visualSelections / linkedSpanIds`。
 - 在判断“剪辑规则缺失”之前，必须先检查当前 edit unit 是否已有 confirmed Flow Plan；Flow Plan 是正式输入，`script-brief.md` 不是新流程的 gate truth。
 - 只有在 skill 要求的关键输入经核对后仍缺失、冲突或无法映射到实际文件时，才能按缺失输入规则停下并询问用户。

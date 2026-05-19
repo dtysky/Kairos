@@ -13,7 +13,7 @@
 
 - Analyze 只维护 `analysis/asset-reports/*.json`，不再在阶段末自动生成 `store/spans.json` 或 `media/chronology.json`
 - `/chronology` 是 Analyze 和 Edit Flow 之间的正式 materialize + review 页，提供两步：
-- `span-rebuild`：只读取 `store/assets.json` 与 `analysis/asset-reports/*.json`，先确定性切片并校验所有 keep 的非音频素材都有 report、所有 material span 都有 Analyze 产出的 `visualObservation`；通过本地 qwen 文本 LM 从每个 span 的 `type / semanticKind / transcript / visualObservation` 按素材时间顺序 10 个 span 一批生成中文 `materialPatterns[]`；LM prompt 请求按输入顺序排列的 7-tag 短语行，代码按 chunk 顺序写回 span，并严格校验前四个槽；第 1 项是素材自身可观察的拍摄视角/构图形态，不得重复 `type` 的照片/视频载体语义，也不得写“建场/记录/成果”等后续剪辑用途；任一必需槽缺失或冲突都进入 failed span 列表并在主 chunk 后单条补处理，补处理仍不合格则阻塞本次 rebuild，不做启发式改写或兼容映射；已完成 checkpoint 和 failed span 列表写到 `.tmp/chronology/span-rebuild.partial.json`，全量收口后写 `store/spans.json` 与 `store/spans.meta.json`
+- `span-rebuild`：只读取 `store/assets.json` 与 `analysis/asset-reports/*.json`，先确定性切片并校验所有 keep 的非音频素材都有 report、所有 material span 都有 Analyze 产出的 `visualObservation`；历史 recognized `speech-window` fine-scan window 若缺 `semanticKind`，必须从匹配 `interestingWindows` 或重叠 transcript 恢复 speech truth；通过本地 qwen 文本 LM 从每个 span 的 `type / semanticKind / transcript / visualObservation` 按素材时间顺序 10 个 span 一批生成中文 `materialPatterns[]`；LM prompt 请求按输入顺序排列的 7-tag 短语行，代码按 chunk 顺序写回 span，并严格校验前四个槽；第 1 项是素材自身可观察的拍摄视角/构图形态，不得重复 `type` 的照片/视频载体语义，也不得写“建场/记录/成果”等后续剪辑用途；任一必需槽缺失或冲突都进入 failed span 列表并在主 chunk 后单条补处理，补处理仍不合格则阻塞本次 rebuild，不做启发式改写或兼容映射；已完成 checkpoint 和 failed span 列表写到 `.tmp/chronology/span-rebuild.partial.json`，全量收口后写 `store/spans.json` 与 `store/spans.meta.json`
 - `chronology-build`：要求 spans 存在且 `status=fresh`，再从 assets + fresh spans + root time + Pharos context + 项目 GPX/derived track 生成 Chronology V2 `media/chronology.json`；生成时先归属 Pharos 单点 actual window，再按结构化素材类型、时间连续性和 GPS 轨迹连续性聚合剩余 spans
 - 新生成的 span 是素材片段索引，不承载时空解释、Pharos 引用、GPS evidence、route role、chronology event 或速度策略
 - `store/spans.meta.json` 固定记录 `schemaVersion / status / generatedAt / inputsHash / assetCount / reportCount / spanCount / warnings`
@@ -71,7 +71,7 @@
 - Flow Planner 必须把剪辑规则自由正文中对风格层的使用意图结构化写入 `flow-plan.json.styleUsage`；代码只读取 `styleUsage`，不得关键词解析 edit-rule markdown
 - 剪辑规则自由正文也可以用自然语言要求 `SubAgent` 或分片粒度；Flow Planner 必须把它转译为 `step.execution`，runtime 只读取 confirmed Flow Plan，不直接解析 markdown
 - 当剪辑规则要求风格层而 `styleCategory` 缺失，或选中的 profile 仍是 legacy 非分层格式时，Flow Plan 不能确认，Edit Flow 必须阻塞并提示重跑 `/style`
-- `script.generate` 只有在剪辑规则明确需要前置文本稿 / beat 稿时才出现；`material.recall` 只输出 `material-slots.json`，不再生成或消费 `segment-plan.json`；`timeline.generate` 是 deterministic Resolve rough-cut 创建步骤，读取 `edit-framework.md + material-slots.json + spans + assets + chronology`，不再要求 `script/current.json`
+- `script.generate` 只有在剪辑规则明确需要前置文本稿 / beat 稿时才出现；`material.recall` 只输出 `material-slots.json`，不再生成或消费 `segment-plan.json`；`resolve.media_sync` 先把事件素材同步到达芬奇 Media Pool；`timeline.generate` 是 deterministic Resolve rough-cut 创建步骤，读取 `edit-framework.md + material-slots.json + spans + assets + chronology`，只从已同步 Media Pool 选用素材，不再要求 `script/current.json`
 
 旅行类默认剪辑规则的正式顺序是：
 
@@ -87,9 +87,9 @@
 
 - 共享层仍在 project 根：`pharos/`、`store/`、`analysis/`、`media/chronology.json`、`color/`
 - 剪辑层按 edit 隔离：`edits/<editId>/planning/`、`edits/<editId>/runs/` 以及 capability-owned output directories，例如 `timeline/` 或 `subtitles/`
-- 新 Edit Flow 不做旧 `script/`、`timeline/`、`subtitles/` 根路径兼容迁移；`timeline/current.json` 可作为 KTEP 输出文件名保留，但不是固定流程阶段
+- 新 Edit Flow 不做旧 `script/`、`timeline/`、`subtitles/` 根路径兼容迁移；`timeline.generate` 的正式输出是 Resolve timeline，`.tmp/edit-flow/<editId>/timeline/current.json` 只作为本机临时 KTEP/manifest 审计
 - Edit Flow API 都应接受可选 `editId`，未传时默认为 `main`
-- Resolve edit mapping 固定为：Project `${projectBrief.name} [Edit]`，Timeline `${editLabel} [${editId}]`
+- Resolve edit mapping 固定为：Project `${projectBrief.name} [Edit]`，项目全局素材 bin `Kairos Project Media`，时间线 bin `Kairos Timelines`，Timeline `${editLabel} [${editId}]`
 - 第一次粗剪锁定后写入 `edits/<editId>/timeline/locked-rough-cut.json`
 - v1 post-lock 只正式化字幕与旁白文本；音量均一、BGM、ducking、TTS 暂不纳入正式范围
 
@@ -504,7 +504,7 @@
    - `/chronology` 的 `span-rebuild` 只合并同 asset、同 semanticKind、重叠或间隔 `<=250ms` 的近重复窗口；细粒度停顿继续由 `transcriptSegments` 表达
 2. Edit Flow 的素材召回与 Resolve rough-cut 生成已消费 transcript 证据
    - transcript 不再只是附属说明，而是候选召回和 beat 写作的正式输入
-   - `material-slots.json.treatments` 是召回阶段向粗剪传递音频/速度建议的唯一正式字段；有口播 span 默认 `audio=0,speed=1`，无口播视觉 span 默认 `audio=-100,speed=1`，只有 `drive / aerial` 可显式 `speed>1`
+   - `material-slots.json.treatments` 是召回阶段向粗剪传递音频/速度建议的唯一正式字段；有口播 span 默认 `audio=0,speed=1`，被选中的非照片 span 只要有 transcript、transcriptSegments、`semanticKind=speech/mixed` 或 `materialPatterns=有口播语音` 就不得静音，保护覆盖 `drive / broll / aerial / timelapse / talking-head`；未选入的 speech-backed 非照片 span 由 `coverageAudit` 暴露，代码不得盲目追加到主粗剪时间线；无口播视觉 span 默认 `audio=-100,speed=1`，只有 `drive / aerial` 可显式 `speed>1`
    - 如果某拍最终保留原声，material.recall 以 span-level treatment 保留 `audio=0`；timeline.generate 按 recalled chosen spans 顺序落位，不再依赖 script beat 的 merged audio units 作为粗剪前置
    - `source-speech` 当前以过滤后的口语 transcript 为真值：导航播报、录制口令和设备提示不应进入 merged audio units，也不应成为 source-speech 字幕
    - Analyze 当前产出的 `transcriptSegments` 已经是 refined transcript segmentation；Timeline 应先信任这些较细的语音段，而不是再次按粗 segment 重新切句
@@ -520,7 +520,8 @@
    - `script.generate` 若被 Flow Plan 选中，仍必须把 `script/current.json` 写成 bare `IKtepScript[]`
    - writer / reviewer 调用失败时，对应 capability run record 必须立即写出真实失败态，不能继续停留在旧阶段的 `pending`
    - `material.recall` 的正式结构化输出只有 `material-slots.json`；`segment-plan.json` 不再是正式输出或下游输入
-   - `timeline.generate` 是 deterministic runner，直接从 `edit-framework.md + material-slots.json + spans + assets + chronology` 创建 Resolve rough-cut timeline；`timeline/current.json` 只是 KTEP/manifest 审计文件，不是 Resolve 不可用时的成功兜底
+   - `resolve.media_sync` 是 deterministic runner，把 confirmed chronology 中的事件素材同步到达芬奇 Media Pool；Media Pool 是素材归档真相，不新增 JSON 归档层
+   - `timeline.generate` 是 deterministic runner，直接从 `edit-framework.md + material-slots.json + spans + assets + chronology` 选择已同步 Media Pool 素材创建 Resolve rough-cut timeline；`.tmp/edit-flow/<editId>/timeline/current.json` 只是本机临时 KTEP/manifest 审计文件，不是 Resolve 不可用、素材缺失或 source range 校验失败时的成功兜底
    - 风格档案最终落成当前正式改成 clean-context subagent 流水线，而不是一个通用 style prompt 直接吃完整批量报告：
    - deterministic prep 会额外写 `analysis/style-references/{category}/agent-summary.json`
      - `style-profile-synthesizer` 只读取自己的 packet / summary，并先写三层 `style-draft.json`
@@ -588,7 +589,7 @@
 - 最终可听的 `dialogue` / `nat` clip 会在导出编排层做 `-16 LUFS` 目标的非破坏性 clip gain 归一化
 - 如果同一 `asset` 同时产出 source-speech 与 silent `drive / aerial`，时间线应先锁定 source-speech 的 source ranges，再把 silent montage 剪成非重叠 remainder；同一 source window 不得同时出现在两条路径里
   - 如果同一 `drive / aerial asset` 被多个 silent montage beat 重复引用，placement 还应继续扣掉前面已消费的 source ranges；后续 beat 只能使用新的 remainder
-     - photo-only beat 默认落成 `1s` 静默镜头；只有显式 `holdMs` 才延长，且默认不生成字幕
+     - photo-only beat 当前随 Resolve 原生 still duration 落成静默镜头（本地粗剪路径为 `5s`），且默认不生成字幕
 - Timeline 的 chronology guard、beat 排序与 selection 排序当前都必须统一消费已确认 Chronology V2 的 `assetIndex[].sortCapturedAt`，不再允许私自回退到原始 `asset.capturedAt`
 9. Analyze 恢复与资源口径已经补到项目级正式设计
    - coarse prepared state 会写入 `analysis/prepared-assets/<assetId>.json`，只保存 finalize 之前的准备输入
@@ -659,8 +660,8 @@
 - `chronology-build` 写项目级 chronology 时对 GPS reverse-geocode 是硬依赖：无 service、cache/provider miss 或 route/event GPS anchor 无法反查时必须失败，不允许用素材语义标签、`materialPatterns`、manual itinerary 或 Pharos continuous prose 补地点
 - 普通聚合按 chronology 顺序只合并连续段：GPS 来源优先级为 Pharos trip GPX / 项目 `gps/merged.json` / `gps/derived.json` / report 中 `pharos|gpx|derived-track` / embedded GPS 兜底；单 span 起止 `<=200m` 是静态候选，相邻代表点 `<=400m` 可合并；移动中的非 route 观察可在相邻时间间隔 `<=5min` 且两点间速度连续合理时合并；跨长时间间隔、跨不连续轨迹或跨 Pharos 单点事件不全局合并；普通非 Pharos 照片不参与一阶切分，不单独生成 event；照片先按时间范围优先挂到 route，剩余照片再按时间最近挂到普通 event 的 `spanIds`
 - `route` 只由结构化 `drive` 素材和 route cluster 的短间隔伴随片段产生；`公路 / 道路 / highway / road`、车内、航拍跟随等文本关键词只可进入摘要，不得触发 event/route 聚合判定；反查地名、标题和 `materialPatterns` 不参与聚合
-- `interestingWindows[]` 是细扫前计划，只表达候选窗口、编辑边界与 reason；细扫结果不得继续混写到这个字段，speed 不进入 span 生成流程
-- `fineScanWindows[]` 是细扫后窗口结果，只保存 recognized/dropped 状态、窗口时间、帧引用与一句 `visualObservation`；recognized 窗口缺视觉描述必须在 Analyze/fine-scan 阶段失败
+- `interestingWindows[]` 是细扫前计划，只表达候选窗口、编辑边界、稳定 `windowId`、可选语义与 reason；细扫结果不得继续混写到这个字段，speed 不进入 span 生成流程
+- `fineScanWindows[]` 是细扫后窗口结果，保存 recognized/dropped 状态、窗口时间、`sourceInterestingWindowIds / sourceWindowReason`、帧引用与一句 `visualObservation`；speech/mixed 窗口还保存裁剪后的 `transcript / transcriptSegments / speechCoverage`，visual 窗口不得因 transcript overlap 自动继承 speech truth；recognized 窗口缺视觉描述必须在 Analyze/fine-scan 阶段失败
 - `Span` 当前只承载素材片段事实索引：
   - `materialPatterns: string[]`
   - `visualObservation?: string`
@@ -937,8 +938,9 @@ src/modules/edit-flow/
 - `trip.event_table` 是 chronology 事件组织能力，只读取 confirmed `media/chronology.json`；素材级 spans / asset reports 后移到 `material.archive` 和 `material.recall`
 - `script.generate` 是可选 capability；只有 Flow Plan 声明它时，才复用旧 script helper 或 clean-context script stages
 - `material.recall` 只输出 `material-slots.json`；`segment-plan.json` 不再是正式输出或下游输入
-- `timeline.generate` 是 deterministic runner，只消费 `edit-framework.md + material-slots.json + store/spans.json + store/assets.json + confirmed media/chronology.json`；不得硬性读取 `script/current.json` 或 `segment-plan.json`
-- `timeline/current.json` 作为 KTEP/manifest 审计输出保留，但 Resolve rough-cut timeline 才是用户可见成功标准
+- `resolve.media_sync` 是 deterministic runner，只负责把 confirmed chronology 对应素材同步进达芬奇 Media Pool；Media Pool 本身是素材归档真相，run record 只保留同步摘要
+- `timeline.generate` 是 deterministic runner，只消费 `edit-framework.md + material-slots.json + store/spans.json + store/assets.json + confirmed media/chronology.json` 并从已同步 Media Pool 取素材；不得硬性读取 `script/current.json` 或 `segment-plan.json`
+- `.tmp/edit-flow/<editId>/timeline/current.json` 作为本机临时 KTEP/manifest 审计输出保留，但 Resolve rough-cut timeline 才是用户可见成功标准
 - code 只能执行 confirmed Flow Plan 中的 `capabilityId / inputRefs / outputRefs / gate / execution`，不得从 markdown 正文做隐藏启发式
 
 #### 2.4 Timeline / Export — Resolve 粗剪与 KTEP 审计
@@ -957,17 +959,20 @@ vendor/resolve-color-host/
 读取 Flow Plan 声明的前序产物
   → 验证 `media/chronology.json` 为 `schemaVersion=2.0` 且 `status=confirmed`
   → 读取 `edit-framework.md + material-slots.json + store/spans.json + store/assets.json`
-  → 校验 material-slots：每个 chosen span 有 numeric treatment、dropped asset 不进入召回、非 drive/aerial 不允许 speed>1
+  → 校验 material-slots：每个 chosen span 有 numeric treatment、dropped asset 不进入召回、非 drive/aerial 不允许 speed>1、有 speech truth 的非照片 span 不允许 audio<=-100
   → 按 FW/slot/chosenSpanIds 顺序构建 KTEP/manifest 内存稿
-  → official Python host 创建/更新 Resolve rough-cut timeline
-  → Resolve 成功后才写 `edits/<editId>/timeline/current.json`
+  → official Python host 按 chronology event title 重建 Resolve media pool namespace
+  → official Python host 先通过 `resolve.media_sync` 复用/移动/导入达芬奇 Media Pool 的项目全局 `Kairos Project Media` 素材，再在 `Kairos Timelines` 中通过 Resolve 原生 `MediaPool.AppendToTimeline` 创建/替换 Resolve rough-cut timeline，并回读校验 source range / still duration
+  → Resolve 成功后才写临时 `.tmp/edit-flow/<editId>/timeline/current.json` 审计
 ```
 
 补充口径：
 
 - `timeline.generate` 不再调用 LLM / Agent reviewer，不写 `rough-cut-base / segment-cuts / reviews / agent-pipeline` 作为正式门槛
-- `material-slots.json.treatments` 是音量/加速唯一正式来源：`audio` 单位 dB，默认 `0`，静音 `-100`；`speed` 单位倍速，默认 `1`
-- `audio <= -100` 的视频素材优先 video-only append 或等效无声方式；非 `0 dB` clip gain 必须由 host live probe `TimelineItem.GetProperty()` 并验证可写属性，不能猜 `Volume`
+- `material-slots.json.treatments` 是音量/加速唯一正式来源：`audio` 单位 dB，默认 `0`，静音 `-100`；非照片 span 只要有 transcript、transcriptSegments 或 `semanticKind=speech/mixed` 就不得静音；`speed` 单位倍速，默认 `1`
+- Resolve media pool 的 edit namespace 必须按 chronology event title 组织，不得把 spanId/assetId 作为正式审查一级分组
+- `speed > 1` 当前不应用到 Resolve rough cut；host 只记录 ignored/pending，不生成 proxy media、不走 FCPXML，也不猜未公开的 `TimelineItem` speed key
+- `audio <= -100` 的视频素材保留 linked audio item 并禁用该 audio item；照片可无 audio item。非 `0 dB` clip gain 必须由 host live probe `TimelineItem.GetProperty()` 并验证可写属性，不能猜 `Volume`
 - `resolve.lock_rough_cut` 是人工审查并锁定已生成 Resolve timeline，不负责创建 timeline
 - Timeline placement 不再把单张照片当作预算填充器；照片默认短自然停留
 - Edit Flow capability 共享已确认 Chronology V2 真值，并按各自 `inputRefs` 精确消费 spans / asset reports；root 级 `clockOffsetMs` 变化后必须先在 `/chronology` 重建受影响的 chronology 真值，再重跑受影响的 capability steps。Timeline placement 若声明消费 spans，仍必须等待 fresh spans

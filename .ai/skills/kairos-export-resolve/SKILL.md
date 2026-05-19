@@ -8,7 +8,7 @@ description: >-
 
 # Kairos: Export To Resolve
 
-将 `timeline/current.json` 导出到 DaVinci Resolve。
+将临时 KTEP/manifest 审计或已确认的编辑交换稿导出到 DaVinci Resolve。
 
 ## 变更工作流规则
 
@@ -22,7 +22,7 @@ description: >-
 ## 前置条件
 
 - 如果本轮涉及任何 DaVinci Resolve scripting API、Resolve export、DRX/DRT、LUT、render job、Group、node graph 或 vendored Resolve host 行为，先读 `.ai/knowledge/davinci-resolve-scripting.md`，再按安装版 Resolve `README.txt` 校验版本敏感方法。
-- `timeline/current.json` 存在且通过 KTEP 校验
+- `.tmp/edit-flow/<editId>/timeline/current.json` 存在且通过 KTEP 校验，或已有正式 Resolve timeline / locked rough-cut 可继续操作
 - 宿主环境已具备同机 vendored Resolve backend 条件
   - `vendor/resolve-color-host/.venv` 可调用
   - Resolve Studio
@@ -33,7 +33,7 @@ description: >-
 
 ## 输入
 
-- `timeline/current.json`
+- `.tmp/edit-flow/<editId>/timeline/current.json`
 - 可选导出参数：
   - 项目名称
   - 时间线名称
@@ -59,7 +59,7 @@ description: >-
 
 ## 建议流程
 
-1. 读取并校验 `timeline/current.json`
+1. 读取并校验临时 `.tmp/edit-flow/<editId>/timeline/current.json`，或核对已有 Resolve timeline / locked rough-cut
 2. 检查 vendored Resolve backend 是否已就绪并可调用
 3. 若本轮会依赖默认技术 LUT，先确认 workspace LUT 资产与当前设备 Resolve 默认 LUT 目录同步状态
 4. 创建或选择 Resolve 项目与时间线

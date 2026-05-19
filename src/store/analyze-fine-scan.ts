@@ -83,6 +83,8 @@ function normalizeCheckpointSlice(slice: IKtepSlice): IKtepSlice {
     transcript: slice.transcript,
     transcriptSegments: slice.transcriptSegments,
     visualObservation: slice.visualObservation,
+    sourceInterestingWindowIds: slice.sourceInterestingWindowIds,
+    sourceWindowReason: slice.sourceWindowReason,
     materialPatterns: slice.materialPatterns ?? [],
     grounding: {
       speechMode: slice.grounding?.speechMode ?? 'none',

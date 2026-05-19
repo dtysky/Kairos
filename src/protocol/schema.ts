@@ -328,6 +328,8 @@ export const IKtepSpan = z.object({
   transcript: z.string().optional(),
   transcriptSegments: z.array(ITranscriptSegment).optional(),
   visualObservation: z.string().optional(),
+  sourceInterestingWindowIds: z.array(z.string()).optional(),
+  sourceWindowReason: z.string().optional(),
   materialPatterns: z.array(IMaterialPattern).default([]),
   grounding: ISpanGrounding.default({
     speechMode: 'none',
@@ -658,6 +660,7 @@ export const ISpeedCandidateHint = z.object({
 export type ISpeedCandidateHint = z.infer<typeof ISpeedCandidateHint>;
 
 export const IInterestingWindow = z.object({
+  windowId: z.string().optional(),
   startMs: z.number(),
   endMs: z.number(),
   editStartMs: z.number().optional(),
@@ -725,6 +728,11 @@ export const IFineScanWindow = z.object({
   editSourceOutMs: z.number().optional(),
   semanticKind: EWindowSemantic.optional(),
   reason: z.string().optional(),
+  sourceInterestingWindowIds: z.array(z.string()).optional(),
+  sourceWindowReason: z.string().optional(),
+  transcript: z.string().optional(),
+  transcriptSegments: z.array(ITranscriptSegment).optional(),
+  speechCoverage: z.number().min(0).max(1).optional(),
   speedCandidate: ISpeedCandidateHint.optional(),
   frameTimestampsMs: z.array(z.number()).default([]),
   framePaths: z.array(z.string()).default([]),
@@ -935,11 +943,37 @@ export const ISegmentMaterialSlotGroup = z.object({
 });
 export type ISegmentMaterialSlotGroup = z.infer<typeof ISegmentMaterialSlotGroup>;
 
+export const IMaterialRecallCoverageAuditRow = z.object({
+  key: z.string(),
+  label: z.string().optional(),
+  available: z.number().int().nonnegative(),
+  chosen: z.number().int().nonnegative(),
+  dropped: z.number().int().nonnegative(),
+  droppedSpanIds: z.array(z.string()).default([]),
+}).strict();
+export type IMaterialRecallCoverageAuditRow = z.infer<typeof IMaterialRecallCoverageAuditRow>;
+
+export const IMaterialRecallCoverageAudit = z.object({
+  generatedAt: z.string(),
+  byType: z.array(IMaterialRecallCoverageAuditRow).default([]),
+  byDay: z.array(IMaterialRecallCoverageAuditRow).default([]),
+  byEvent: z.array(IMaterialRecallCoverageAuditRow).default([]),
+  speechProtected: z.object({
+    available: z.number().int().nonnegative(),
+    chosen: z.number().int().nonnegative(),
+    dropped: z.number().int().nonnegative(),
+    droppedSpanIds: z.array(z.string()).default([]),
+  }).strict(),
+  notes: z.array(z.string()).default([]),
+}).strict();
+export type IMaterialRecallCoverageAudit = z.infer<typeof IMaterialRecallCoverageAudit>;
+
 export const IMaterialSlotsDocument = z.object({
   id: z.string(),
   projectId: z.string(),
   generatedAt: z.string(),
   segments: z.array(ISegmentMaterialSlotGroup).default([]),
+  coverageAudit: IMaterialRecallCoverageAudit.optional(),
 });
 export type IMaterialSlotsDocument = z.infer<typeof IMaterialSlotsDocument>;
 
@@ -2050,6 +2084,7 @@ export const IEditFlowStepRunRecord = z.object({
   outputRefs: z.array(z.string()).default([]),
   inputSnapshot: z.record(z.unknown()).default({}),
   outputPaths: z.array(z.string()).default([]),
+  summary: z.record(z.unknown()).default({}),
   error: z.string().optional(),
   review: IEditFlowStepRunReview.default({ status: 'not_required' }),
 });

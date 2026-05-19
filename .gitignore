@@ -20,4 +20,6 @@ projects/tmp-*
 projects/*/color/current.json
 projects/*/color/batches/
 projects/*/color/groups/
+projects/*/timeline/current.json
+projects/*/edits/*/timeline/current.json
 */adapters

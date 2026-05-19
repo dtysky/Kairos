@@ -54,7 +54,7 @@ description: >-
   - `store/spans.meta.json`
   - `analysis/asset-reports/*.json`
   - `script/current.json`
-  - `timeline/current.json`
+  - `timeline/locked-rough-cut.json`
   - `subtitles/*`
   - `gps/merged.json`
   - `gps/derived.json`
@@ -214,7 +214,7 @@ const projectRoot = await initWorkspaceProject(
 | `store/assets.json` | 可以跳过首轮 Ingest |
 | `analysis/asset-reports/*.json` | 可以跳过 Analyze；仍需在 `/chronology` 确认 fresh spans 与 chronology |
 | `script/current.json` | 可以跳过 Script 起稿 |
-| `timeline/current.json` | 可以直接做导出或继续改时间线 |
+| Resolve timeline / `timeline/locked-rough-cut.json` | 可以继续审查、锁定或导出；`timeline/current.json` 不再是正式持久化判断依据 |
 
 ## 迁移注意点
 

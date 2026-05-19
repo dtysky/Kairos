@@ -1779,8 +1779,14 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
         id: 'slice-resume',
         assetId: 'asset-resume',
         type: 'broll',
+        semanticKind: 'speech',
         sourceInMs: 0,
         sourceOutMs: 3_000,
+        sourceInterestingWindowIds: ['resume-iw-1'],
+        sourceWindowReason: 'speech-window',
+        transcript: '恢复检查点里的现场口播。',
+        transcriptSegments: [{ startMs: 400, endMs: 1_800, text: '恢复检查点里的现场口播。' }],
+        speechCoverage: 0.467,
         materialPatterns: [],
         grounding: {
           speechMode: 'none',
@@ -1838,6 +1844,28 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
 
     expect(extractKeyframesMock).not.toHaveBeenCalled();
     expect(result.sliceCount).toBe(0);
+    const report = JSON.parse(
+      await readFile(getAssetReportPath(projectRoot, 'asset-resume'), 'utf-8'),
+    ) as {
+      fineScanWindows: Array<{
+        semanticKind?: string;
+        reason?: string;
+        sourceInterestingWindowIds?: string[];
+        sourceWindowReason?: string;
+        transcript?: string;
+        transcriptSegments?: Array<{ startMs: number; endMs: number; text: string }>;
+        speechCoverage?: number;
+      }>;
+    };
+    expect(report.fineScanWindows[0]).toMatchObject({
+      semanticKind: 'speech',
+      reason: 'speech-window',
+      sourceInterestingWindowIds: ['resume-iw-1'],
+      sourceWindowReason: 'speech-window',
+      transcript: '恢复检查点里的现场口播。',
+      transcriptSegments: [{ startMs: 400, endMs: 1_800, text: '恢复检查点里的现场口播。' }],
+      speechCoverage: 0.467,
+    });
     await expect(access(getSlicesPath(projectRoot))).rejects.toThrow();
   });
 

@@ -86,6 +86,7 @@ const IRuntimeConfig = z.object({
   timelineWidth: z.number().int().positive().optional(),
   timelineHeight: z.number().int().positive().optional(),
   timelineFps: z.number().positive().optional(),
+  timelineStillDurationMs: z.number().int().positive().optional(),
   jianyingDraftRoot: z.string().optional(),
   jianyingPythonPath: z.string().optional(),
   jianyingPyProjectRoot: z.string().optional(),

@@ -340,7 +340,7 @@ Chronology 审查：
 
 输入：已确认 Chronology V2 `media/chronology.json`、剪辑规则、confirmed Flow Plan、可选风格档案；fresh `store/spans.json` 与 `analysis/asset-reports/` 只在具体 step 的 `inputRefs` 声明时才成为必需输入。
 
-产出：由 confirmed Flow Plan 的 `outputRefs` 决定，可能包括 planning markdown、素材召回 JSON、`timeline/current.json`、`locked-rough-cut.json` 或字幕/旁白草稿。
+产出：由 confirmed Flow Plan 的 `outputRefs` 决定，可能包括 planning markdown、素材召回 JSON、Resolve timeline、`locked-rough-cut.json` 或字幕/旁白草稿；`.tmp/edit-flow/<editId>/timeline/current.json` 只作为本机临时审计。
 
 前置条件：Chronology V2 confirmed。每个 capability 再按自己的 `inputRefs` 精确阻塞，例如 `trip.event_table` 只依赖 `media/chronology.json`，素材归档 / 召回类 step 才进入 spans 与 asset reports。
 
@@ -349,9 +349,10 @@ Chronology 审查：
 - 不引入必选 `script/current.json`、beat 或其它全局中间稿。
 - `script.generate` 只有当剪辑规则明确要求前置文本稿 / beat 稿时才出现。
 - `material.recall` 只输出 `material-slots.json`；`segment-plan.json` 不再是正式输出或下游输入。
-- `material-slots.json` 是素材召回和粗剪建议唯一结构化产物，每个 `chosenSpanId` 必须有 numeric `audio` dB / `speed` 倍速 treatment。
-- `timeline.generate` 是 deterministic Resolve rough-cut 创建步骤，只读取 `edit-framework.md + material-slots.json + spans + assets + chronology`，不能要求 `script/current.json` 或 `segment-plan.json`。
-- `timeline/current.json` 只是 KTEP/manifest 审计；Resolve 不可用时不能作为成功兜底。
+- `material-slots.json` 是素材召回和粗剪建议唯一结构化产物，每个 `chosenSpanId` 必须有 numeric `audio` dB / `speed` 倍速 treatment；非照片 span 如果有 transcript、transcriptSegments 或 `semanticKind=speech/mixed`，不得静音。
+- `resolve.media_sync` 是 deterministic Resolve Media Pool 同步步骤；Media Pool 是素材归档真相，不新增 `media-archive.json`，重复运行只能复用 / 移动 / 补导入。
+- `timeline.generate` 是 deterministic Resolve rough-cut 创建步骤，只读取 `edit-framework.md + material-slots.json + spans + assets + chronology` 并从已同步 Media Pool 选择素材；不能要求 `script/current.json` 或 `segment-plan.json`，也不能重新导入素材或清空 `Kairos Project Media` namespace。
+- `.tmp/edit-flow/<editId>/timeline/current.json` 只是本机临时 KTEP/manifest 审计；Resolve 不可用时不能作为成功兜底。
 - `trip.event_table` 是事件级组织能力，只使用 confirmed chronology；不要因为 spans stale 或缺 asset reports 阻塞它。
 - `sharded-agent` step 的连续天打包、阈值与 SubAgent 口径只来自 confirmed `step.execution.shardPacking / codexSubagentProfile`；默认不得按 route 拆。
 - Edit Flow SubAgent step 必须写明 Codex 使用 `reasoning_effort=high`、`fork_context=false`、标准速度；执行时只传有界 step/shard 上下文，不 fork 当前长上下文。
@@ -369,7 +370,7 @@ Chronology 审查：
 输入：Edit Flow 已确认产出的正式时间线 / 字幕 / NLE 目标。
 产出：按目标 NLE 生成草稿 / 时间线 + `subtitles/*.srt`
 
-前置条件：目标 NLE 和最终输出目录明确；如果导出消费 KTEP，则对应 `timeline/current.json` 必须存在且通过校验。
+前置条件：目标 NLE 和最终输出目录明确；如果导出消费 KTEP，则对应临时审计 `.tmp/edit-flow/<editId>/timeline/current.json` 必须存在且通过校验，或先重新生成。
 
 执行方式：
 - 若用户已明确目标 NLE，直接选择对应导出 skill

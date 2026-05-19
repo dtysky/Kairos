@@ -83,7 +83,10 @@ export function buildAssetCoarseReport(
       path: frame.path,
       summary: input.sampleFrameSummaries?.[index],
     })),
-    interestingWindows: input.plan.interestingWindows,
+    interestingWindows: input.plan.interestingWindows.map((window, index) => ({
+      ...window,
+      windowId: window.windowId ?? buildInterestingWindowId(input.asset.id, index),
+    })),
     fineScanWindows: input.fineScanWindows ?? [],
     fineScanReasons: dedupe(input.fineScanReasons ?? []),
     createdAt: now,
@@ -93,4 +96,8 @@ export function buildAssetCoarseReport(
 
 function dedupe(values: string[]): string[] {
   return [...new Set(values.map(value => value.trim()).filter(Boolean))];
+}
+
+function buildInterestingWindowId(assetId: string, index: number): string {
+  return `${assetId}-iw-${index + 1}`;
 }

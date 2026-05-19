@@ -49,7 +49,7 @@ Kairos 的标准顺序是：
   - 运行 Edit Flow Planner，生成并人工确认 `edits/<editId>/planning/flow-plan.json`
   - 按 confirmed Flow Plan 的 capability steps 逐步运行、审查、确认
   - 中间产物由每个 capability 的 `outputRefs` 决定；不要要求固定 `script/current.json`、固定 beat 或固定 `Script -> Timeline` 顺序
-  - `timeline.generate` 只在 Flow Plan 声明时运行，并读取 Flow Plan 声明的前序 outputs
+  - `resolve.media_sync` 只在 Flow Plan 声明时同步达芬奇 Media Pool；`timeline.generate` 只从已同步 Media Pool 选素材，不重新导入或清空 namespace
 - 第七步在目标 NLE 和导出目录明确后执行 Export
 
 ## 用户真正该编辑的入口
@@ -68,7 +68,7 @@ Kairos 的标准顺序是：
 - `store/assets.json`
 - `store/spans.json`
 - `store/spans.meta.json`
-- `edits/<editId>/timeline/current.json`
+- `.tmp/edit-flow/<editId>/timeline/current.json`（本机临时审计，不是正式同步产物）
 
 ## 当前阶段判断
 

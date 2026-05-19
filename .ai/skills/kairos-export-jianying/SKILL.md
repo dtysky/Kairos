@@ -8,7 +8,7 @@ description: >-
 
 # Kairos: Export To Jianying
 
-将 `timeline/current.json` 导出到剪映。
+将临时 KTEP/manifest 审计或已锁定粗剪导出到剪映。
 
 ## 变更工作流规则
 
@@ -21,7 +21,7 @@ description: >-
 
 ## 前置条件
 
-- `timeline/current.json` 存在且通过 KTEP 校验
+- `.tmp/edit-flow/<editId>/timeline/current.json` 存在且通过 KTEP 校验，或已有可转换的 locked rough-cut
 - 仓库内 `vendor/pyJianYingDraft` 存在
 - `vendor/pyJianYingDraft/.venv` 可用，或 `config/runtime.json` 已显式配置 `jianyingPythonPath`
 - 剪映已安装在目标机器上
@@ -30,7 +30,7 @@ description: >-
 
 ## 输入
 
-- `timeline/current.json`
+- `.tmp/edit-flow/<editId>/timeline/current.json`
 - 可选导出参数：
   - 草稿名称
   - 字幕位置
@@ -42,12 +42,12 @@ description: >-
 - 在 skill 层编排导出，但直接调用 `Kairos Core` 提供的本地 Jianying backend
 - 不再依赖外部 `jianying` MCP server
 - 允许复用仓库中的 `KTEP` 校验和字幕导出逻辑
-- 草稿分辨率 / 帧率应直接继承 `timeline/current.json` 的正式规格；若项目未显式配置，则当前默认规格是 `3840x2160 @ 30fps`
+- 草稿分辨率 / 帧率应直接继承临时 KTEP/manifest 的规格；若项目未显式配置，则当前默认规格是 `3840x2160 @ 30fps`
 - 如果时间线 clip 带有“静音原音”意图，导出到剪映时应把对应视频片段写成静音
 - 默认导出链路是：
   - 先在 `projects/<projectId>/adapters/jianying-staging/<draftName>` 生成 staging draft
   - staging 成功后，再复制到真实 `jianyingDraftRoot/<draftName>`
-- 若时间线含有显式变速片段，Jianying 导出适配层可以做 backend compatibility normalization，但这种修正不能回写正式 `timeline/current.json`
+- 若时间线含有显式变速片段，Jianying 导出适配层可以做 backend compatibility normalization，但这种修正不能回写正式 Resolve rough cut、locked rough-cut 或临时审计源
 
 ## 强规则：导出路径安全
 
@@ -70,7 +70,7 @@ description: >-
 
 ## 建议流程
 
-1. 读取并校验 `timeline/current.json`
+1. 读取并校验临时 `.tmp/edit-flow/<editId>/timeline/current.json`，或从 locked rough-cut 生成导出交换稿
 2. 判断这次是“新建导出”还是“修改已有草稿”
 3. 若是新建导出：解析项目内 staging 草稿目录和最终草稿目录，并确认最终目录不是草稿根目录本身
 4. 若是新建导出：检查 staging 草稿目录和最终草稿目录；只要任一已存在就阻塞并改用新的目录名

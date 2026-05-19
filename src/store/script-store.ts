@@ -31,6 +31,7 @@ import {
   getProjectEditTimelineRoot,
   getProjectEditPlanningRoot,
   getProjectEditSubtitlesRoot,
+  normalizeEditId,
   shouldReadLegacyEditPath,
 } from './edit-store.js';
 import { readJsonOrNull, writeJson } from './writer.js';
@@ -160,7 +161,7 @@ export async function clearScriptArtifactsForStyleChange(
     rm(join(timelineRoot, 'agent-packets'), { recursive: true, force: true }),
     rm(join(timelineRoot, 'reviews'), { recursive: true, force: true }),
     rm(join(timelineRoot, 'agent-pipeline.json'), { force: true }),
-    rm(join(timelineRoot, 'current.json'), { force: true }),
+    rm(join(projectRoot, '.tmp', 'edit-flow', normalizeEditId(editId), 'timeline', 'current.json'), { force: true }),
     rm(join(timelineRoot, 'locked-rough-cut.json'), { force: true }),
   ]);
 }

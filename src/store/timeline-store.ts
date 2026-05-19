@@ -17,12 +17,13 @@ import {
 import {
   getLegacyTimelineRoot,
   getProjectEditTimelineRoot,
+  normalizeEditId,
   shouldReadLegacyEditPath,
 } from './edit-store.js';
 import { readJsonOrNull, writeJson } from './writer.js';
 
 export function getTimelineCurrentPath(projectRoot: string, editId?: string | null): string {
-  return join(getProjectEditTimelineRoot(projectRoot, editId), 'current.json');
+  return join(projectRoot, '.tmp', 'edit-flow', normalizeEditId(editId), 'timeline', 'current.json');
 }
 
 export function getTimelineRoughCutBasePath(projectRoot: string, editId?: string | null): string {

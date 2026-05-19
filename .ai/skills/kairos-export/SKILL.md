@@ -21,10 +21,10 @@ description: >-
 
 核心原则：
 
-- `Kairos Core` 只产出 `KTEP`
+- `Kairos Core` 的 Edit Flow 当前以 Resolve timeline 作为粗剪正式输出；KTEP/manifest 可作为本机临时审计或特定导出交换稿
 - 导出到剪映 / 达芬奇由上层 skill 编排
 - 外部 MCP 的宿主配置属于 skill 运行环境，不属于 Core 模块
-- 同一个 `timeline/current.json` 可以面向不同 NLE 重复导出
+- 同一个临时 KTEP/manifest 审计可以面向不同 NLE 重复导出，但它不应被当作项目同步层的长期真相
 
 ## 强规则：导出路径安全
 
@@ -71,7 +71,7 @@ description: >-
 
 ## 统一前置条件
 
-- `timeline/current.json` 存在且通过 KTEP 校验
+- 如果导出消费 KTEP，则 `.tmp/edit-flow/<editId>/timeline/current.json` 存在且通过 KTEP 校验；否则消费正式 Resolve timeline / locked rough-cut
 - 宿主环境中已具备对应目标的实际导出能力
   - 剪映：vendored `pyJianYingDraft` 本地后端 + 可用 Python 环境
   - Resolve：对应的 Resolve MCP server
@@ -82,7 +82,7 @@ description: >-
 
 `kairos-workflow` 在 Phase 5 应这样调用：
 
-1. 读取 `timeline/current.json`
+1. 读取正式 Resolve timeline / locked rough-cut，或读取并校验临时 `.tmp/edit-flow/<editId>/timeline/current.json`
 2. 判断目标 NLE
 3. 如果是新建导出，先解析最终输出路径，并完成路径安全检查
 4. 如果是修改现有结果，先完成目标草稿 / 工程身份核对

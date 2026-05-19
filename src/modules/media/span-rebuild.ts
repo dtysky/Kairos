@@ -5,6 +5,7 @@ import type {
   EClipType,
   IAgentPacket,
   IAssetCoarseReport,
+  IFineScanWindow,
   IInterestingWindow,
   IKtepAsset,
   IKtepSlice,
@@ -83,6 +84,9 @@ interface INormalizedWindow {
   editSourceInMs: number;
   editSourceOutMs: number;
   visualObservation?: string;
+  transcript?: string;
+  transcriptSegments?: ITranscriptSegment[];
+  speechCoverage?: number;
 }
 
 interface ISpanMaterialPatternItem {
@@ -423,6 +427,11 @@ function buildFineScanSpans(input: {
         `asset report ${input.report.assetId} fine-scan window ${window.windowId} is recognized without visualObservation; rerun Analyze/fine-scan for this asset.`,
       );
     }
+    const semanticKind = resolveFineScanWindowSemanticKind({
+      report: input.report,
+      window,
+      warnings: input.warnings,
+    });
     const normalized = normalizeWindow({
       asset: input.asset,
       id: window.windowId,
@@ -430,19 +439,134 @@ function buildFineScanSpans(input: {
       sourceOutMs: window.sourceOutMs,
       editSourceInMs: window.editSourceInMs,
       editSourceOutMs: window.editSourceOutMs,
-      semanticKind: window.semanticKind,
+      semanticKind,
       visualObservation: window.visualObservation,
+      transcript: window.transcript,
+      transcriptSegments: window.transcriptSegments,
+      speechCoverage: window.speechCoverage,
       warnings: input.warnings,
     });
     if (!normalized) continue;
-    spans.push(buildSpanFromWindow({
+    const span = buildSpanFromWindow({
       asset: input.asset,
       report: input.report,
       type: mapClipTypeToSpanType(input.asset, input.report.clipTypeGuess),
       window: normalized,
-    }));
+    });
+    assertSpeechFineScanWindowPreserved({
+      report: input.report,
+      window,
+      semanticKind,
+      span,
+    });
+    spans.push(span);
   }
   return spans;
+}
+
+function resolveFineScanWindowSemanticKind(input: {
+  report: IAssetCoarseReport;
+  window: IFineScanWindow;
+  warnings: string[];
+}): IKtepSlice['semanticKind'] | undefined {
+  if (input.window.semanticKind) return input.window.semanticKind;
+
+  if (fineScanWindowHasSpeechTruth(input.window)) {
+    input.warnings.push(
+      `asset ${input.report.assetId}: recovered fine-scan window ${input.window.windowId} semanticKind=speech from fineScanWindow transcript truth`,
+    );
+    return 'speech';
+  }
+
+  if (!hasReportTranscriptSegmentOverlap(input.report, input.window.sourceInMs, input.window.sourceOutMs)) {
+    return undefined;
+  }
+
+  if (
+    isSpeechWindowReason(input.window.reason)
+    || isSpeechWindowReason(input.window.sourceWindowReason)
+  ) {
+    input.warnings.push(
+      `asset ${input.report.assetId}: recovered fine-scan window ${input.window.windowId} semanticKind=speech from speech-window transcript overlap`,
+    );
+    return 'speech';
+  }
+
+  const sourceWindow = findSpeechSourceInterestingWindow(input.report, input.window);
+  if (sourceWindow) {
+    input.warnings.push(
+      `asset ${input.report.assetId}: recovered fine-scan window ${input.window.windowId} semanticKind=speech from source interestingWindow ${sourceWindow.windowId ?? 'overlap'}`,
+    );
+    return 'speech';
+  }
+
+  return undefined;
+}
+
+function findSpeechSourceInterestingWindow(
+  report: IAssetCoarseReport,
+  window: IFineScanWindow,
+): IInterestingWindow | undefined {
+  const sourceIds = new Set(window.sourceInterestingWindowIds ?? []);
+  if (sourceIds.size > 0) {
+    const byId = report.interestingWindows.find(candidate =>
+      candidate.windowId != null
+      && sourceIds.has(candidate.windowId)
+      && isSpeechInterestingWindow(candidate),
+    );
+    if (byId) return byId;
+  }
+  if (!isFiniteNumber(window.sourceInMs) || !isFiniteNumber(window.sourceOutMs)) return undefined;
+  return report.interestingWindows.find(candidate =>
+    isSpeechInterestingWindow(candidate)
+    && candidate.endMs > (window.sourceInMs as number)
+    && candidate.startMs < (window.sourceOutMs as number),
+  );
+}
+
+function isSpeechInterestingWindow(window: IInterestingWindow): boolean {
+  return window.semanticKind === 'speech'
+    || window.semanticKind === 'mixed'
+    || isSpeechWindowReason(window.reason);
+}
+
+function isSpeechWindowReason(reason?: string): boolean {
+  return reason?.trim().toLowerCase() === 'speech-window';
+}
+
+function hasReportTranscriptSegmentOverlap(
+  report: IAssetCoarseReport,
+  sourceInMs?: number,
+  sourceOutMs?: number,
+): boolean {
+  if (!isFiniteNumber(sourceInMs) || !isFiniteNumber(sourceOutMs) || sourceOutMs <= sourceInMs) return false;
+  return (report.transcriptSegments ?? []).some(segment =>
+    segment.text.trim().length > 0
+    && segment.endMs > sourceInMs
+    && segment.startMs < sourceOutMs,
+  );
+}
+
+function assertSpeechFineScanWindowPreserved(input: {
+  report: IAssetCoarseReport;
+  window: IFineScanWindow;
+  semanticKind?: IKtepSlice['semanticKind'];
+  span: IKtepSlice;
+}): void {
+  if (
+    input.window.status !== 'recognized'
+    || (input.semanticKind !== 'speech' && input.semanticKind !== 'mixed')
+    || (
+      !fineScanWindowHasSpeechTruth(input.window)
+      && !hasReportTranscriptSegmentOverlap(input.report, input.window.sourceInMs, input.window.sourceOutMs)
+    )
+  ) {
+    return;
+  }
+  if (spanHasSpeechTruth(input.span)) return;
+  throw new Error(
+    `span-rebuild speech truth lost: asset ${input.report.assetId} fine-scan window ${input.window.windowId} has speech-window transcript evidence but output span lacks speech truth`,
+  );
 }
 
 function buildDirectSpans(input: {
@@ -528,6 +652,9 @@ function normalizeWindow(input: {
   editSourceOutMs?: number;
   semanticKind?: IKtepSlice['semanticKind'];
   visualObservation?: string;
+  transcript?: string;
+  transcriptSegments?: ITranscriptSegment[];
+  speechCoverage?: number;
   warnings: string[];
 }): INormalizedWindow | null {
   if (input.asset.kind !== 'video') {
@@ -539,6 +666,9 @@ function normalizeWindow(input: {
       editSourceOutMs: 0,
       semanticKind: input.semanticKind,
       visualObservation: normalizeText(input.visualObservation),
+      transcript: input.transcript,
+      transcriptSegments: input.transcriptSegments,
+      speechCoverage: input.speechCoverage,
     };
   }
 
@@ -567,6 +697,9 @@ function normalizeWindow(input: {
     editSourceOutMs,
     semanticKind: input.semanticKind,
     visualObservation: normalizeText(input.visualObservation),
+    transcript: input.transcript,
+    transcriptSegments: input.transcriptSegments,
+    speechCoverage: input.speechCoverage,
   };
 }
 
@@ -581,6 +714,7 @@ function buildSpanFromWindow(input: {
     input.window.sourceInMs,
     input.window.sourceOutMs,
     input.window.semanticKind,
+    input.window,
   );
   const visualObservation = normalizeText(input.window.visualObservation ?? input.report.summary);
   const span = {
@@ -606,33 +740,74 @@ function clipTranscript(
   sourceInMs: number,
   sourceOutMs: number,
   semanticKind?: IKtepSlice['semanticKind'],
+  window?: Pick<INormalizedWindow, 'transcript' | 'transcriptSegments' | 'speechCoverage'>,
 ): { text?: string; segments: ITranscriptSegment[]; coverage?: number } {
   if (semanticKind !== 'speech' && semanticKind !== 'mixed') {
     return { segments: [] };
   }
 
-  const segments = (report.transcriptSegments ?? [])
+  const windowSegments = clipTranscriptSegments(window?.transcriptSegments ?? [], sourceInMs, sourceOutMs);
+  if (windowSegments.length > 0) {
+    return {
+      text: windowSegments.map(segment => segment.text).join(' ').trim() || normalizeText(window?.transcript),
+      segments: windowSegments,
+      coverage: isFiniteNumber(window?.speechCoverage)
+        ? window?.speechCoverage
+        : computeSpeechCoverage(sourceInMs, sourceOutMs, windowSegments),
+    };
+  }
+
+  const windowTranscript = normalizeText(window?.transcript);
+  if (windowTranscript) {
+    return {
+      text: windowTranscript,
+      segments: [],
+      coverage: window?.speechCoverage,
+    };
+  }
+
+  const segments = clipTranscriptSegments(report.transcriptSegments ?? [], sourceInMs, sourceOutMs);
+  if (segments.length === 0) {
+    const fullTranscript = normalizeText(report.transcript);
+    return {
+      text: fullTranscript,
+      segments: [],
+      coverage: report.speechCoverage,
+    };
+  }
+
+  return {
+    text: segments.map(segment => segment.text).join(' ').trim() || undefined,
+    segments,
+    coverage: computeSpeechCoverage(sourceInMs, sourceOutMs, segments) ?? report.speechCoverage,
+  };
+}
+
+function clipTranscriptSegments(
+  segments: ITranscriptSegment[],
+  sourceInMs: number,
+  sourceOutMs: number,
+): ITranscriptSegment[] {
+  return segments
     .map(segment => ({
       startMs: Math.max(sourceInMs, segment.startMs),
       endMs: Math.min(sourceOutMs, segment.endMs),
       text: segment.text.trim(),
     }))
     .filter(segment => segment.text.length > 0 && segment.endMs > segment.startMs);
+}
 
-  if (segments.length === 0) {
-    return {
-      segments: [],
-      coverage: report.speechCoverage,
-    };
-  }
+function fineScanWindowHasSpeechTruth(window: IFineScanWindow): boolean {
+  return Boolean(window.transcript?.trim())
+    || (window.transcriptSegments ?? []).some(segment => segment.text.trim().length > 0)
+    || isFiniteNumber(window.speechCoverage);
+}
 
-  const coveredMs = segments.reduce((sum, segment) => sum + segment.endMs - segment.startMs, 0);
-  const denominatorMs = sourceOutMs > sourceInMs ? sourceOutMs - sourceInMs : undefined;
-  return {
-    text: segments.map(segment => segment.text).join(' ').trim() || undefined,
-    segments,
-    coverage: denominatorMs ? Math.min(coveredMs / denominatorMs, 1) : report.speechCoverage,
-  };
+function spanHasSpeechTruth(span: IKtepSlice): boolean {
+  return Boolean(span.transcript?.trim())
+    || (span.transcriptSegments?.length ?? 0) > 0
+    || span.semanticKind === 'speech'
+    || span.semanticKind === 'mixed';
 }
 
 function mergeNearDuplicateWindows(spans: IKtepSlice[]): IKtepSlice[] {

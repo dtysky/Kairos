@@ -61,7 +61,7 @@ export function sliceInterestingWindows(
 ): IKtepSlice[] {
   return windows
     .filter(window => window.endMs > window.startMs)
-    .map(window => ({
+    .map((window, index) => ({
       id: randomUUID(),
       assetId: asset.id,
       type,
@@ -70,6 +70,8 @@ export function sliceInterestingWindows(
       sourceOutMs: window.endMs,
       editSourceInMs: window.editStartMs ?? window.startMs,
       editSourceOutMs: window.editEndMs ?? window.endMs,
+      sourceInterestingWindowIds: [window.windowId ?? buildLegacyInterestingWindowId(asset.id, index)],
+      sourceWindowReason: window.reason,
       ...createEmptySliceSemantics(),
       ...(window.speedCandidate && {
         speedCandidate: {
@@ -78,4 +80,8 @@ export function sliceInterestingWindows(
         },
       }),
     }));
+}
+
+function buildLegacyInterestingWindowId(assetId: string, index: number): string {
+  return `${assetId}-iw-${index + 1}`;
 }

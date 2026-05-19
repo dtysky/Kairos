@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "editId": "main",
-  "updatedAt": "2026-05-18T16:59:29.876Z",
+  "updatedAt": "2026-05-19T11:07:47.089Z",
   "records": [
     {
       "schemaVersion": "1.0",
@@ -55,6 +55,7 @@
       "outputPaths": [
         "H:\\SacredGrove\\Kairos\\projects\\bingchacha-genie-south-zimeiyakou\\edits\\main\\planning\\material-archive.md"
       ],
+      "summary": {},
       "review": {
         "status": "confirmed",
         "confirmedAt": "2026-05-18T15:37:46.856Z"
@@ -90,6 +91,7 @@
       "outputPaths": [
         "H:\\SacredGrove\\Kairos\\projects\\bingchacha-genie-south-zimeiyakou\\edits\\main\\planning\\event-table.md"
       ],
+      "summary": {},
       "review": {
         "status": "confirmed",
         "confirmedAt": "2026-05-18T14:58:27.051Z",
@@ -133,6 +135,7 @@
       "outputPaths": [
         "H:\\SacredGrove\\Kairos\\projects\\bingchacha-genie-south-zimeiyakou\\edits\\main\\planning\\edit-framework.md"
       ],
+      "summary": {},
       "review": {
         "status": "confirmed",
         "confirmedAt": "2026-05-18T16:09:59.885Z"
@@ -147,9 +150,10 @@
       "stepId": "material-recall",
       "capabilityId": "material.recall",
       "runner": "script",
-      "status": "awaiting_review",
+      "status": "completed",
       "startedAt": "2026-05-18T16:15:35.6918412Z",
-      "updatedAt": "2026-05-18T16:23:11.254Z",
+      "updatedAt": "2026-05-19T02:21:07.563Z",
+      "completedAt": "2026-05-19T02:21:07.563Z",
       "inputRefs": [
         "edits/<editId>/planning/event-table.md",
         "edits/<editId>/planning/material-archive.md",
@@ -203,6 +207,1855 @@
       "outputPaths": [
         "H:\\SacredGrove\\Kairos\\projects\\bingchacha-genie-south-zimeiyakou\\edits\\main\\script\\material-slots.json"
       ],
+      "summary": {},
+      "review": {
+        "status": "confirmed",
+        "confirmedAt": "2026-05-19T02:21:07.563Z"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "6e5cdbcf-304b-4cea-a979-5e6cdc0fc1c1",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-20260518",
+      "flowPlanHash": "d928cf565d456e28284720350841a09f7236786bfdb26416f126f05c16c3d78e",
+      "stepId": "timeline-generate",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "failed",
+      "startedAt": "2026-05-19T02:24:16.110Z",
+      "updatedAt": "2026-05-19T02:25:13.754Z",
+      "completedAt": "2026-05-19T02:25:13.754Z",
+      "inputRefs": [
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/timeline/current.json"
+      ],
+      "inputSnapshot": {
+        "edits/<editId>/planning/edit-framework.md": {
+          "status": "present",
+          "paths": [
+            "edits/main/planning/edit-framework.md"
+          ]
+        },
+        "edits/<editId>/script/material-slots.json": {
+          "status": "present",
+          "paths": [
+            "edits/main/script/material-slots.json"
+          ]
+        },
+        "store/spans.json": {
+          "status": "present",
+          "paths": [
+            "store/spans.json"
+          ]
+        },
+        "store/assets.json": {
+          "status": "present",
+          "paths": [
+            "store/assets.json"
+          ]
+        },
+        "media/chronology.json": {
+          "status": "present",
+          "paths": [
+            "media/chronology.json"
+          ]
+        }
+      },
+      "outputPaths": [],
+      "summary": {},
+      "error": "Resolve did not expose a stable writable TimelineItem speed property. Speed was not guessed.",
+      "review": {
+        "status": "pending"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "1d447b20-9764-4ba1-baf6-72c18f4c909f",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-20260518",
+      "flowPlanHash": "d928cf565d456e28284720350841a09f7236786bfdb26416f126f05c16c3d78e",
+      "stepId": "timeline-generate",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "failed",
+      "startedAt": "2026-05-19T02:39:50.436Z",
+      "updatedAt": "2026-05-19T02:40:13.132Z",
+      "completedAt": "2026-05-19T02:40:13.132Z",
+      "inputRefs": [
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/timeline/current.json"
+      ],
+      "inputSnapshot": {
+        "edits/<editId>/planning/edit-framework.md": {
+          "status": "present",
+          "paths": [
+            "edits/main/planning/edit-framework.md"
+          ]
+        },
+        "edits/<editId>/script/material-slots.json": {
+          "status": "present",
+          "paths": [
+            "edits/main/script/material-slots.json"
+          ]
+        },
+        "store/spans.json": {
+          "status": "present",
+          "paths": [
+            "store/spans.json"
+          ]
+        },
+        "store/assets.json": {
+          "status": "present",
+          "paths": [
+            "store/assets.json"
+          ]
+        },
+        "media/chronology.json": {
+          "status": "present",
+          "paths": [
+            "media/chronology.json"
+          ]
+        }
+      },
+      "outputPaths": [],
+      "summary": {},
+      "error": "Resolve did not expose a stable writable TimelineItem speed property. Speed was not guessed.",
+      "review": {
+        "status": "pending"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "22b5f97e-5ccc-44c9-b19c-a7282470c2dc",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-20260518",
+      "flowPlanHash": "d928cf565d456e28284720350841a09f7236786bfdb26416f126f05c16c3d78e",
+      "stepId": "timeline-generate",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "awaiting_review",
+      "startedAt": "2026-05-19T02:47:02.295Z",
+      "updatedAt": "2026-05-19T02:47:08.306Z",
+      "inputRefs": [
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/timeline/current.json"
+      ],
+      "inputSnapshot": {
+        "edits/<editId>/planning/edit-framework.md": {
+          "status": "present",
+          "paths": [
+            "edits/main/planning/edit-framework.md"
+          ]
+        },
+        "edits/<editId>/script/material-slots.json": {
+          "status": "present",
+          "paths": [
+            "edits/main/script/material-slots.json"
+          ]
+        },
+        "store/spans.json": {
+          "status": "present",
+          "paths": [
+            "store/spans.json"
+          ]
+        },
+        "store/assets.json": {
+          "status": "present",
+          "paths": [
+            "store/assets.json"
+          ]
+        },
+        "media/chronology.json": {
+          "status": "present",
+          "paths": [
+            "media/chronology.json"
+          ]
+        }
+      },
+      "outputPaths": [
+        "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/edits/main/timeline/current.json"
+      ],
+      "summary": {},
+      "review": {
+        "status": "pending"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "82ad3633-cc8c-4697-99f7-5cc6ce6a3e92",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-20260518",
+      "flowPlanHash": "d928cf565d456e28284720350841a09f7236786bfdb26416f126f05c16c3d78e",
+      "stepId": "timeline-generate",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "awaiting_review",
+      "startedAt": "2026-05-19T02:49:01.550Z",
+      "updatedAt": "2026-05-19T02:50:05.266Z",
+      "inputRefs": [
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/timeline/current.json"
+      ],
+      "inputSnapshot": {
+        "edits/<editId>/planning/edit-framework.md": {
+          "status": "present",
+          "paths": [
+            "edits/main/planning/edit-framework.md"
+          ]
+        },
+        "edits/<editId>/script/material-slots.json": {
+          "status": "present",
+          "paths": [
+            "edits/main/script/material-slots.json"
+          ]
+        },
+        "store/spans.json": {
+          "status": "present",
+          "paths": [
+            "store/spans.json"
+          ]
+        },
+        "store/assets.json": {
+          "status": "present",
+          "paths": [
+            "store/assets.json"
+          ]
+        },
+        "media/chronology.json": {
+          "status": "present",
+          "paths": [
+            "media/chronology.json"
+          ]
+        }
+      },
+      "outputPaths": [
+        "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/edits/main/timeline/current.json"
+      ],
+      "summary": {},
+      "review": {
+        "status": "pending"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "cab62021-a129-4411-a55a-627c1c30c7c3",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-20260518",
+      "flowPlanHash": "d928cf565d456e28284720350841a09f7236786bfdb26416f126f05c16c3d78e",
+      "stepId": "timeline-generate",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "failed",
+      "startedAt": "2026-05-19T03:16:53.812Z",
+      "updatedAt": "2026-05-19T03:17:42.177Z",
+      "completedAt": "2026-05-19T03:17:42.177Z",
+      "inputRefs": [
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/timeline/current.json"
+      ],
+      "inputSnapshot": {
+        "edits/<editId>/planning/edit-framework.md": {
+          "status": "present",
+          "paths": [
+            "edits/main/planning/edit-framework.md"
+          ]
+        },
+        "edits/<editId>/script/material-slots.json": {
+          "status": "present",
+          "paths": [
+            "edits/main/script/material-slots.json"
+          ]
+        },
+        "store/spans.json": {
+          "status": "present",
+          "paths": [
+            "store/spans.json"
+          ]
+        },
+        "store/assets.json": {
+          "status": "present",
+          "paths": [
+            "store/assets.json"
+          ]
+        },
+        "media/chronology.json": {
+          "status": "present",
+          "paths": [
+            "media/chronology.json"
+          ]
+        }
+      },
+      "outputPaths": [],
+      "summary": {},
+      "error": "Resolve did not return a video TimelineItem for an appended rough-cut clip.",
+      "review": {
+        "status": "pending"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "d55c4fc4-5a98-4f0c-9b6d-4264f743e06d",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-20260518",
+      "flowPlanHash": "d928cf565d456e28284720350841a09f7236786bfdb26416f126f05c16c3d78e",
+      "stepId": "timeline-generate",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "failed",
+      "startedAt": "2026-05-19T03:19:59.624Z",
+      "updatedAt": "2026-05-19T03:20:48.007Z",
+      "completedAt": "2026-05-19T03:20:48.007Z",
+      "inputRefs": [
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/timeline/current.json"
+      ],
+      "inputSnapshot": {
+        "edits/<editId>/planning/edit-framework.md": {
+          "status": "present",
+          "paths": [
+            "edits/main/planning/edit-framework.md"
+          ]
+        },
+        "edits/<editId>/script/material-slots.json": {
+          "status": "present",
+          "paths": [
+            "edits/main/script/material-slots.json"
+          ]
+        },
+        "store/spans.json": {
+          "status": "present",
+          "paths": [
+            "store/spans.json"
+          ]
+        },
+        "store/assets.json": {
+          "status": "present",
+          "paths": [
+            "store/assets.json"
+          ]
+        },
+        "media/chronology.json": {
+          "status": "present",
+          "paths": [
+            "media/chronology.json"
+          ]
+        }
+      },
+      "outputPaths": [],
+      "summary": {},
+      "error": "Resolve did not return a video TimelineItem for an appended rough-cut clip.",
+      "review": {
+        "status": "pending"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "a0f3e081-3bb0-4a28-8794-0237e66dcf7c",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-20260518",
+      "flowPlanHash": "d928cf565d456e28284720350841a09f7236786bfdb26416f126f05c16c3d78e",
+      "stepId": "timeline-generate",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "failed",
+      "startedAt": "2026-05-19T03:21:35.207Z",
+      "updatedAt": "2026-05-19T03:22:22.609Z",
+      "completedAt": "2026-05-19T03:22:22.609Z",
+      "inputRefs": [
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/timeline/current.json"
+      ],
+      "inputSnapshot": {
+        "edits/<editId>/planning/edit-framework.md": {
+          "status": "present",
+          "paths": [
+            "edits/main/planning/edit-framework.md"
+          ]
+        },
+        "edits/<editId>/script/material-slots.json": {
+          "status": "present",
+          "paths": [
+            "edits/main/script/material-slots.json"
+          ]
+        },
+        "store/spans.json": {
+          "status": "present",
+          "paths": [
+            "store/spans.json"
+          ]
+        },
+        "store/assets.json": {
+          "status": "present",
+          "paths": [
+            "store/assets.json"
+          ]
+        },
+        "media/chronology.json": {
+          "status": "present",
+          "paths": [
+            "media/chronology.json"
+          ]
+        }
+      },
+      "outputPaths": [],
+      "summary": {},
+      "error": "Resolve did not return a video TimelineItem for appended rough-cut clip clip-00001.",
+      "review": {
+        "status": "pending"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "119ef8d4-7474-434c-8004-ca34c26bd90c",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-20260518",
+      "flowPlanHash": "d928cf565d456e28284720350841a09f7236786bfdb26416f126f05c16c3d78e",
+      "stepId": "timeline-generate",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "failed",
+      "startedAt": "2026-05-19T03:24:04.629Z",
+      "updatedAt": "2026-05-19T03:24:57.887Z",
+      "completedAt": "2026-05-19T03:24:57.887Z",
+      "inputRefs": [
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/timeline/current.json"
+      ],
+      "inputSnapshot": {
+        "edits/<editId>/planning/edit-framework.md": {
+          "status": "present",
+          "paths": [
+            "edits/main/planning/edit-framework.md"
+          ]
+        },
+        "edits/<editId>/script/material-slots.json": {
+          "status": "present",
+          "paths": [
+            "edits/main/script/material-slots.json"
+          ]
+        },
+        "store/spans.json": {
+          "status": "present",
+          "paths": [
+            "store/spans.json"
+          ]
+        },
+        "store/assets.json": {
+          "status": "present",
+          "paths": [
+            "store/assets.json"
+          ]
+        },
+        "media/chronology.json": {
+          "status": "present",
+          "paths": [
+            "media/chronology.json"
+          ]
+        }
+      },
+      "outputPaths": [],
+      "summary": {},
+      "error": "Rough-cut source range resolved to no frames: clip-00015",
+      "review": {
+        "status": "pending"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "bc9c9316-56ac-4fc6-9101-a1a9957c28b4",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-20260518",
+      "flowPlanHash": "d928cf565d456e28284720350841a09f7236786bfdb26416f126f05c16c3d78e",
+      "stepId": "timeline-generate",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "failed",
+      "startedAt": "2026-05-19T03:25:42.474Z",
+      "updatedAt": "2026-05-19T03:26:37.666Z",
+      "completedAt": "2026-05-19T03:26:37.666Z",
+      "inputRefs": [
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/timeline/current.json"
+      ],
+      "inputSnapshot": {
+        "edits/<editId>/planning/edit-framework.md": {
+          "status": "present",
+          "paths": [
+            "edits/main/planning/edit-framework.md"
+          ]
+        },
+        "edits/<editId>/script/material-slots.json": {
+          "status": "present",
+          "paths": [
+            "edits/main/script/material-slots.json"
+          ]
+        },
+        "store/spans.json": {
+          "status": "present",
+          "paths": [
+            "store/spans.json"
+          ]
+        },
+        "store/assets.json": {
+          "status": "present",
+          "paths": [
+            "store/assets.json"
+          ]
+        },
+        "media/chronology.json": {
+          "status": "present",
+          "paths": [
+            "media/chronology.json"
+          ]
+        }
+      },
+      "outputPaths": [],
+      "summary": {},
+      "error": "Resolve did not return a video TimelineItem for appended rough-cut clip clip-00036.",
+      "review": {
+        "status": "pending"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "878914e4-5880-44b4-a1ef-2757236d29b4",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-20260518",
+      "flowPlanHash": "d928cf565d456e28284720350841a09f7236786bfdb26416f126f05c16c3d78e",
+      "stepId": "timeline-generate",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "awaiting_review",
+      "startedAt": "2026-05-19T03:29:43.892Z",
+      "updatedAt": "2026-05-19T03:31:49.442Z",
+      "inputRefs": [
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/timeline/current.json"
+      ],
+      "inputSnapshot": {
+        "edits/<editId>/planning/edit-framework.md": {
+          "status": "present",
+          "paths": [
+            "edits/main/planning/edit-framework.md"
+          ]
+        },
+        "edits/<editId>/script/material-slots.json": {
+          "status": "present",
+          "paths": [
+            "edits/main/script/material-slots.json"
+          ]
+        },
+        "store/spans.json": {
+          "status": "present",
+          "paths": [
+            "store/spans.json"
+          ]
+        },
+        "store/assets.json": {
+          "status": "present",
+          "paths": [
+            "store/assets.json"
+          ]
+        },
+        "media/chronology.json": {
+          "status": "present",
+          "paths": [
+            "media/chronology.json"
+          ]
+        }
+      },
+      "outputPaths": [
+        "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/edits/main/timeline/current.json"
+      ],
+      "summary": {},
+      "review": {
+        "status": "pending"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "d93f5c42-7e2b-4d4a-817d-89b7693e96a8",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-20260519",
+      "flowPlanHash": "7a1344a600ed4f90d96654994325631197070130eec680a8b7f149905f2b6200",
+      "stepId": "resolve-media-sync",
+      "capabilityId": "resolve.media_sync",
+      "runner": "deterministic",
+      "status": "failed",
+      "startedAt": "2026-05-19T04:55:09.360Z",
+      "updatedAt": "2026-05-19T05:05:09.713Z",
+      "completedAt": "2026-05-19T05:05:09.713Z",
+      "inputRefs": [
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json",
+        "config/project-brief.json"
+      ],
+      "outputRefs": [
+        "DaVinci Resolve Media Pool"
+      ],
+      "inputSnapshot": {
+        "store/spans.json": {
+          "status": "present",
+          "paths": [
+            "store/spans.json"
+          ]
+        },
+        "store/assets.json": {
+          "status": "present",
+          "paths": [
+            "store/assets.json"
+          ]
+        },
+        "media/chronology.json": {
+          "status": "present",
+          "paths": [
+            "media/chronology.json"
+          ]
+        },
+        "config/project-brief.json": {
+          "status": "present",
+          "paths": [
+            "config/project-brief.json"
+          ]
+        }
+      },
+      "outputPaths": [],
+      "summary": {},
+      "error": "Command failed: /Users/dtysky/Projects/dtysky/Kairos/vendor/resolve-color-host/.venv/bin/python /Users/dtysky/Projects/dtysky/Kairos/vendor/resolve-color-host/resolve-color-host.py --request /var/folders/44/qhnhpp99715dpgmt0vfbmwkr0000gn/T/kairos-resolve-timeline-0qYqNF/request.json\n",
+      "review": {
+        "status": "not_required"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "c4df894c-9c6b-4f93-98d1-b26fd69b65c2",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-20260519",
+      "flowPlanHash": "7a1344a600ed4f90d96654994325631197070130eec680a8b7f149905f2b6200",
+      "stepId": "resolve-media-sync",
+      "capabilityId": "resolve.media_sync",
+      "runner": "deterministic",
+      "status": "completed",
+      "startedAt": "2026-05-19T05:06:18.165Z",
+      "updatedAt": "2026-05-19T05:08:43.450Z",
+      "completedAt": "2026-05-19T05:08:43.450Z",
+      "inputRefs": [
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json",
+        "config/project-brief.json"
+      ],
+      "outputRefs": [
+        "DaVinci Resolve Media Pool"
+      ],
+      "inputSnapshot": {
+        "store/spans.json": {
+          "status": "present",
+          "paths": [
+            "store/spans.json"
+          ]
+        },
+        "store/assets.json": {
+          "status": "present",
+          "paths": [
+            "store/assets.json"
+          ]
+        },
+        "media/chronology.json": {
+          "status": "present",
+          "paths": [
+            "media/chronology.json"
+          ]
+        },
+        "config/project-brief.json": {
+          "status": "present",
+          "paths": [
+            "config/project-brief.json"
+          ]
+        }
+      },
+      "outputPaths": [],
+      "summary": {
+        "resolveProjectName": "丙察察格聂南线子梅垭口穿越 [Edit]",
+        "namespace": "Kairos Edit main",
+        "imported": 953,
+        "reused": 1279,
+        "moved": 0,
+        "eventFolderCount": 244,
+        "mediaItemCount": 2232
+      },
+      "review": {
+        "status": "not_required"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "34209233-fd92-4f42-947c-b3bae583635d",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-20260519",
+      "flowPlanHash": "7a1344a600ed4f90d96654994325631197070130eec680a8b7f149905f2b6200",
+      "stepId": "timeline-generate",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "failed",
+      "startedAt": "2026-05-19T05:12:38.719Z",
+      "updatedAt": "2026-05-19T05:12:42.688Z",
+      "completedAt": "2026-05-19T05:12:42.688Z",
+      "inputRefs": [
+        "DaVinci Resolve Media Pool",
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/timeline/current.json"
+      ],
+      "inputSnapshot": {
+        "DaVinci Resolve Media Pool": {
+          "status": "virtual"
+        },
+        "edits/<editId>/planning/edit-framework.md": {
+          "status": "present",
+          "paths": [
+            "edits/main/planning/edit-framework.md"
+          ]
+        },
+        "edits/<editId>/script/material-slots.json": {
+          "status": "present",
+          "paths": [
+            "edits/main/script/material-slots.json"
+          ]
+        },
+        "store/spans.json": {
+          "status": "present",
+          "paths": [
+            "store/spans.json"
+          ]
+        },
+        "store/assets.json": {
+          "status": "present",
+          "paths": [
+            "store/assets.json"
+          ]
+        },
+        "media/chronology.json": {
+          "status": "present",
+          "paths": [
+            "media/chronology.json"
+          ]
+        }
+      },
+      "outputPaths": [],
+      "summary": {},
+      "error": "Resolve Media Pool is missing rough-cut media; run resolve.media_sync before timeline.generate.",
+      "review": {
+        "status": "pending"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "ced5104f-62a1-4403-a53a-8d475a895e19",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-20260519",
+      "flowPlanHash": "7a1344a600ed4f90d96654994325631197070130eec680a8b7f149905f2b6200",
+      "stepId": "resolve-media-sync",
+      "capabilityId": "resolve.media_sync",
+      "runner": "deterministic",
+      "status": "completed",
+      "startedAt": "2026-05-19T05:22:50.960Z",
+      "updatedAt": "2026-05-19T05:22:57.685Z",
+      "completedAt": "2026-05-19T05:22:57.685Z",
+      "inputRefs": [
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json",
+        "config/project-brief.json"
+      ],
+      "outputRefs": [
+        "DaVinci Resolve Media Pool"
+      ],
+      "inputSnapshot": {
+        "store/spans.json": {
+          "status": "present",
+          "paths": [
+            "store/spans.json"
+          ]
+        },
+        "store/assets.json": {
+          "status": "present",
+          "paths": [
+            "store/assets.json"
+          ]
+        },
+        "media/chronology.json": {
+          "status": "present",
+          "paths": [
+            "media/chronology.json"
+          ]
+        },
+        "config/project-brief.json": {
+          "status": "present",
+          "paths": [
+            "config/project-brief.json"
+          ]
+        }
+      },
+      "outputPaths": [],
+      "summary": {
+        "resolveProjectName": "丙察察格聂南线子梅垭口穿越 [Edit]",
+        "namespace": "Kairos Edit main",
+        "imported": 41,
+        "reused": 2191,
+        "moved": 0,
+        "eventFolderCount": 244,
+        "mediaItemCount": 2232
+      },
+      "review": {
+        "status": "not_required"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "373e9158-e6c1-48aa-9d01-7f9469d28c8b",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-20260519",
+      "flowPlanHash": "7a1344a600ed4f90d96654994325631197070130eec680a8b7f149905f2b6200",
+      "stepId": "timeline-generate",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "failed",
+      "startedAt": "2026-05-19T05:25:28.461Z",
+      "updatedAt": "2026-05-19T05:25:44.854Z",
+      "completedAt": "2026-05-19T05:25:44.854Z",
+      "inputRefs": [
+        "DaVinci Resolve Media Pool",
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/timeline/current.json"
+      ],
+      "inputSnapshot": {
+        "DaVinci Resolve Media Pool": {
+          "status": "virtual"
+        },
+        "edits/<editId>/planning/edit-framework.md": {
+          "status": "present",
+          "paths": [
+            "edits/main/planning/edit-framework.md"
+          ]
+        },
+        "edits/<editId>/script/material-slots.json": {
+          "status": "present",
+          "paths": [
+            "edits/main/script/material-slots.json"
+          ]
+        },
+        "store/spans.json": {
+          "status": "present",
+          "paths": [
+            "store/spans.json"
+          ]
+        },
+        "store/assets.json": {
+          "status": "present",
+          "paths": [
+            "store/assets.json"
+          ]
+        },
+        "media/chronology.json": {
+          "status": "present",
+          "paths": [
+            "media/chronology.json"
+          ]
+        }
+      },
+      "outputPaths": [],
+      "summary": {},
+      "error": "Resolve appended the wrong source range for rough-cut clip clip-00001.",
+      "review": {
+        "status": "pending"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "7f2ffa6d-c1f6-4657-94d4-754230d5455a",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-20260519",
+      "flowPlanHash": "7a1344a600ed4f90d96654994325631197070130eec680a8b7f149905f2b6200",
+      "stepId": "timeline-generate",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "awaiting_review",
+      "startedAt": "2026-05-19T05:31:18.956Z",
+      "updatedAt": "2026-05-19T05:33:00.142Z",
+      "inputRefs": [
+        "DaVinci Resolve Media Pool",
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/timeline/current.json"
+      ],
+      "inputSnapshot": {
+        "DaVinci Resolve Media Pool": {
+          "status": "virtual"
+        },
+        "edits/<editId>/planning/edit-framework.md": {
+          "status": "present",
+          "paths": [
+            "edits/main/planning/edit-framework.md"
+          ]
+        },
+        "edits/<editId>/script/material-slots.json": {
+          "status": "present",
+          "paths": [
+            "edits/main/script/material-slots.json"
+          ]
+        },
+        "store/spans.json": {
+          "status": "present",
+          "paths": [
+            "store/spans.json"
+          ]
+        },
+        "store/assets.json": {
+          "status": "present",
+          "paths": [
+            "store/assets.json"
+          ]
+        },
+        "media/chronology.json": {
+          "status": "present",
+          "paths": [
+            "media/chronology.json"
+          ]
+        }
+      },
+      "outputPaths": [
+        "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/edits/main/timeline/current.json"
+      ],
+      "summary": {
+        "resolveProjectName": "丙察察格聂南线子梅垭口穿越 [Edit]",
+        "timelineName": "Kairos Rough Cut - main",
+        "clipCount": 583,
+        "sourceRangeValidation": {
+          "checked": 506,
+          "passed": 506,
+          "failed": 0,
+          "strategy": "native-probe-offset"
+        },
+        "stillDurationValidation": {
+          "checked": 77,
+          "passed": 77,
+          "failed": 0,
+          "expectedMs": 1000
+        },
+        "syncSummary": {
+          "mode": "existing-media-pool",
+          "imported": 0,
+          "moved": 0,
+          "reused": 497
+        }
+      },
+      "review": {
+        "status": "pending"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "04a4a618-ee07-435c-b901-3c937b3056ed",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-20260519",
+      "flowPlanHash": "7a1344a600ed4f90d96654994325631197070130eec680a8b7f149905f2b6200",
+      "stepId": "timeline-generate",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "awaiting_review",
+      "startedAt": "2026-05-19T06:26:22.443Z",
+      "updatedAt": "2026-05-19T06:26:42.818Z",
+      "inputRefs": [
+        "DaVinci Resolve Media Pool",
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/timeline/current.json"
+      ],
+      "inputSnapshot": {
+        "DaVinci Resolve Media Pool": {
+          "status": "virtual"
+        },
+        "edits/<editId>/planning/edit-framework.md": {
+          "status": "present",
+          "paths": [
+            "edits/main/planning/edit-framework.md"
+          ]
+        },
+        "edits/<editId>/script/material-slots.json": {
+          "status": "present",
+          "paths": [
+            "edits/main/script/material-slots.json"
+          ]
+        },
+        "store/spans.json": {
+          "status": "present",
+          "paths": [
+            "store/spans.json"
+          ]
+        },
+        "store/assets.json": {
+          "status": "present",
+          "paths": [
+            "store/assets.json"
+          ]
+        },
+        "media/chronology.json": {
+          "status": "present",
+          "paths": [
+            "media/chronology.json"
+          ]
+        }
+      },
+      "outputPaths": [
+        "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/edits/main/timeline/current.json"
+      ],
+      "summary": {
+        "resolveProjectName": "丙察察格聂南线子梅垭口穿越 [Edit]",
+        "timelineName": "Main [main]",
+        "clipCount": 583,
+        "sourceRangeValidation": {
+          "checked": 506,
+          "passed": 506,
+          "failed": 0,
+          "strategy": "native-probe-offset"
+        },
+        "stillDurationValidation": {
+          "checked": 77,
+          "passed": 77,
+          "failed": 0,
+          "expectedMs": 1000
+        },
+        "syncSummary": {
+          "mode": "existing-media-pool",
+          "imported": 0,
+          "moved": 0,
+          "reused": 497
+        }
+      },
+      "review": {
+        "status": "pending"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "343a391c-f8e7-4ddd-9b95-a5b4c5f20e5b",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-20260519",
+      "flowPlanHash": "7a1344a600ed4f90d96654994325631197070130eec680a8b7f149905f2b6200",
+      "stepId": "resolve-media-sync",
+      "capabilityId": "resolve.media_sync",
+      "runner": "deterministic",
+      "status": "completed",
+      "startedAt": "2026-05-19T06:34:44.841Z",
+      "updatedAt": "2026-05-19T06:34:48.182Z",
+      "completedAt": "2026-05-19T06:34:48.182Z",
+      "inputRefs": [
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json",
+        "config/project-brief.json"
+      ],
+      "outputRefs": [
+        "DaVinci Resolve Media Pool"
+      ],
+      "inputSnapshot": {
+        "store/spans.json": {
+          "status": "present",
+          "paths": [
+            "store/spans.json"
+          ]
+        },
+        "store/assets.json": {
+          "status": "present",
+          "paths": [
+            "store/assets.json"
+          ]
+        },
+        "media/chronology.json": {
+          "status": "present",
+          "paths": [
+            "media/chronology.json"
+          ]
+        },
+        "config/project-brief.json": {
+          "status": "present",
+          "paths": [
+            "config/project-brief.json"
+          ]
+        }
+      },
+      "outputPaths": [],
+      "summary": {
+        "resolveProjectName": "丙察察格聂南线子梅垭口穿越 [Edit]",
+        "namespace": "Kairos Project Media",
+        "imported": 0,
+        "reused": 2232,
+        "moved": 0,
+        "eventFolderCount": 244,
+        "mediaItemCount": 2232
+      },
+      "review": {
+        "status": "not_required"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "87f1b689-bc6b-4ba7-844f-01771397de1f",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-20260519",
+      "flowPlanHash": "7a1344a600ed4f90d96654994325631197070130eec680a8b7f149905f2b6200",
+      "stepId": "resolve-media-sync",
+      "capabilityId": "resolve.media_sync",
+      "runner": "deterministic",
+      "status": "completed",
+      "startedAt": "2026-05-19T06:36:04.521Z",
+      "updatedAt": "2026-05-19T06:36:08.383Z",
+      "completedAt": "2026-05-19T06:36:08.383Z",
+      "inputRefs": [
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json",
+        "config/project-brief.json"
+      ],
+      "outputRefs": [
+        "DaVinci Resolve Media Pool"
+      ],
+      "inputSnapshot": {
+        "store/spans.json": {
+          "status": "present",
+          "paths": [
+            "store/spans.json"
+          ]
+        },
+        "store/assets.json": {
+          "status": "present",
+          "paths": [
+            "store/assets.json"
+          ]
+        },
+        "media/chronology.json": {
+          "status": "present",
+          "paths": [
+            "media/chronology.json"
+          ]
+        },
+        "config/project-brief.json": {
+          "status": "present",
+          "paths": [
+            "config/project-brief.json"
+          ]
+        }
+      },
+      "outputPaths": [],
+      "summary": {
+        "resolveProjectName": "丙察察格聂南线子梅垭口穿越 [Edit]",
+        "namespace": "Kairos Project Media",
+        "imported": 0,
+        "reused": 2232,
+        "moved": 0,
+        "eventFolderCount": 244,
+        "mediaItemCount": 2232
+      },
+      "review": {
+        "status": "not_required"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "860635cf-3f1b-442c-95c5-3cb7b6867633",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-20260519",
+      "flowPlanHash": "7a1344a600ed4f90d96654994325631197070130eec680a8b7f149905f2b6200",
+      "stepId": "timeline-generate",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "awaiting_review",
+      "startedAt": "2026-05-19T06:36:29.784Z",
+      "updatedAt": "2026-05-19T06:36:50.281Z",
+      "inputRefs": [
+        "DaVinci Resolve Media Pool",
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/timeline/current.json"
+      ],
+      "inputSnapshot": {
+        "DaVinci Resolve Media Pool": {
+          "status": "virtual"
+        },
+        "edits/<editId>/planning/edit-framework.md": {
+          "status": "present",
+          "paths": [
+            "edits/main/planning/edit-framework.md"
+          ]
+        },
+        "edits/<editId>/script/material-slots.json": {
+          "status": "present",
+          "paths": [
+            "edits/main/script/material-slots.json"
+          ]
+        },
+        "store/spans.json": {
+          "status": "present",
+          "paths": [
+            "store/spans.json"
+          ]
+        },
+        "store/assets.json": {
+          "status": "present",
+          "paths": [
+            "store/assets.json"
+          ]
+        },
+        "media/chronology.json": {
+          "status": "present",
+          "paths": [
+            "media/chronology.json"
+          ]
+        }
+      },
+      "outputPaths": [
+        "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/edits/main/timeline/current.json"
+      ],
+      "summary": {
+        "resolveProjectName": "丙察察格聂南线子梅垭口穿越 [Edit]",
+        "timelineName": "Main [main]",
+        "clipCount": 583,
+        "sourceRangeValidation": {
+          "checked": 506,
+          "passed": 506,
+          "failed": 0,
+          "strategy": "native-probe-offset"
+        },
+        "stillDurationValidation": {
+          "checked": 77,
+          "passed": 77,
+          "failed": 0,
+          "expectedMs": 1000
+        },
+        "syncSummary": {
+          "mode": "existing-media-pool",
+          "imported": 0,
+          "moved": 0,
+          "reused": 497
+        }
+      },
+      "review": {
+        "status": "pending"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "dd45984f-f2cc-4495-bf04-49b0ca77850b",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-20260519",
+      "flowPlanHash": "9244e5db2735e43817e602e861233d87b80c40ee2ddb19482e1d05cb14ce7f7a",
+      "stepId": "timeline-generate",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "awaiting_review",
+      "startedAt": "2026-05-19T06:56:24.850Z",
+      "updatedAt": "2026-05-19T06:58:11.487Z",
+      "inputRefs": [
+        "DaVinci Resolve Media Pool",
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "DaVinci Resolve Timeline"
+      ],
+      "inputSnapshot": {
+        "DaVinci Resolve Media Pool": {
+          "status": "virtual"
+        },
+        "edits/<editId>/planning/edit-framework.md": {
+          "status": "present",
+          "paths": [
+            "edits/main/planning/edit-framework.md"
+          ]
+        },
+        "edits/<editId>/script/material-slots.json": {
+          "status": "present",
+          "paths": [
+            "edits/main/script/material-slots.json"
+          ]
+        },
+        "store/spans.json": {
+          "status": "present",
+          "paths": [
+            "store/spans.json"
+          ]
+        },
+        "store/assets.json": {
+          "status": "present",
+          "paths": [
+            "store/assets.json"
+          ]
+        },
+        "media/chronology.json": {
+          "status": "present",
+          "paths": [
+            "media/chronology.json"
+          ]
+        }
+      },
+      "outputPaths": [
+        "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/timeline/current.json"
+      ],
+      "summary": {
+        "resolveProjectName": "丙察察格聂南线子梅垭口穿越 [Edit]",
+        "timelineName": "Main [main]",
+        "clipCount": 583,
+        "sourceRangeValidation": {
+          "checked": 506,
+          "passed": 506,
+          "failed": 0,
+          "strategy": "native-probe-offset"
+        },
+        "stillDurationValidation": {
+          "checked": 77,
+          "passed": 77,
+          "failed": 0,
+          "expectedMs": 1000
+        },
+        "syncSummary": {
+          "mode": "existing-media-pool",
+          "imported": 0,
+          "moved": 0,
+          "reused": 497
+        }
+      },
+      "review": {
+        "status": "pending"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "f8d60aa8-35c6-4d89-a2b3-f88b19d41a75",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-20260519",
+      "flowPlanHash": "a8076ea10476c853f072fd8eb058f83e6013e912f92c84951a63772b17098693",
+      "stepId": "timeline-generate",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "awaiting_review",
+      "startedAt": "2026-05-19T08:03:34.183Z",
+      "updatedAt": "2026-05-19T08:04:22.938Z",
+      "inputRefs": [
+        "DaVinci Resolve Media Pool",
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "DaVinci Resolve Timeline"
+      ],
+      "inputSnapshot": {
+        "DaVinci Resolve Media Pool": {
+          "status": "virtual"
+        },
+        "edits/<editId>/planning/edit-framework.md": {
+          "status": "present",
+          "paths": [
+            "edits/main/planning/edit-framework.md"
+          ]
+        },
+        "edits/<editId>/script/material-slots.json": {
+          "status": "present",
+          "paths": [
+            "edits/main/script/material-slots.json"
+          ]
+        },
+        "store/spans.json": {
+          "status": "present",
+          "paths": [
+            "store/spans.json"
+          ]
+        },
+        "store/assets.json": {
+          "status": "present",
+          "paths": [
+            "store/assets.json"
+          ]
+        },
+        "media/chronology.json": {
+          "status": "present",
+          "paths": [
+            "media/chronology.json"
+          ]
+        }
+      },
+      "outputPaths": [
+        "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/timeline/current.json"
+      ],
+      "summary": {
+        "resolveProjectName": "丙察察格聂南线子梅垭口穿越 [Edit]",
+        "timelineName": "Main [main]",
+        "clipCount": 583,
+        "sourceRangeValidation": {
+          "checked": 506,
+          "passed": 506,
+          "failed": 0,
+          "strategy": "native-probe-offset"
+        },
+        "stillDurationValidation": {
+          "checked": 77,
+          "passed": 77,
+          "failed": 0,
+          "expectedMs": 1000
+        },
+        "syncSummary": {
+          "mode": "existing-media-pool",
+          "imported": 0,
+          "moved": 0,
+          "reused": 497
+        }
+      },
+      "review": {
+        "status": "pending"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "53d06d5f-f957-40b3-94e1-6197dfcd427b",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-20260519",
+      "flowPlanHash": "a8076ea10476c853f072fd8eb058f83e6013e912f92c84951a63772b17098693",
+      "stepId": "timeline-generate",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "awaiting_review",
+      "startedAt": "2026-05-19T08:11:54.268Z",
+      "updatedAt": "2026-05-19T08:13:44.238Z",
+      "inputRefs": [
+        "DaVinci Resolve Media Pool",
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "DaVinci Resolve Timeline"
+      ],
+      "inputSnapshot": {
+        "DaVinci Resolve Media Pool": {
+          "status": "virtual"
+        },
+        "edits/<editId>/planning/edit-framework.md": {
+          "status": "present",
+          "paths": [
+            "edits/main/planning/edit-framework.md"
+          ]
+        },
+        "edits/<editId>/script/material-slots.json": {
+          "status": "present",
+          "paths": [
+            "edits/main/script/material-slots.json"
+          ]
+        },
+        "store/spans.json": {
+          "status": "present",
+          "paths": [
+            "store/spans.json"
+          ]
+        },
+        "store/assets.json": {
+          "status": "present",
+          "paths": [
+            "store/assets.json"
+          ]
+        },
+        "media/chronology.json": {
+          "status": "present",
+          "paths": [
+            "media/chronology.json"
+          ]
+        }
+      },
+      "outputPaths": [
+        "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/timeline/current.json"
+      ],
+      "summary": {
+        "resolveProjectName": "丙察察格聂南线子梅垭口穿越 [Edit]",
+        "timelineName": "Main [main]",
+        "clipCount": 583,
+        "sourceRangeValidation": {
+          "checked": 506,
+          "passed": 506,
+          "failed": 0,
+          "strategy": "native-probe-offset"
+        },
+        "stillDurationValidation": {
+          "checked": 77,
+          "passed": 77,
+          "failed": 0,
+          "expectedMs": 1000
+        },
+        "syncSummary": {
+          "mode": "existing-media-pool",
+          "imported": 0,
+          "moved": 0,
+          "reused": 497
+        }
+      },
+      "review": {
+        "status": "pending"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "8fa5777f-b216-409e-a439-23e5306fa591",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-20260519",
+      "flowPlanHash": "a8076ea10476c853f072fd8eb058f83e6013e912f92c84951a63772b17098693",
+      "stepId": "timeline-generate",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "awaiting_review",
+      "startedAt": "2026-05-19T08:21:56.173Z",
+      "updatedAt": "2026-05-19T08:27:51.252Z",
+      "inputRefs": [
+        "DaVinci Resolve Media Pool",
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "DaVinci Resolve Timeline"
+      ],
+      "inputSnapshot": {
+        "DaVinci Resolve Media Pool": {
+          "status": "virtual"
+        },
+        "edits/<editId>/planning/edit-framework.md": {
+          "status": "present",
+          "paths": [
+            "edits/main/planning/edit-framework.md"
+          ]
+        },
+        "edits/<editId>/script/material-slots.json": {
+          "status": "present",
+          "paths": [
+            "edits/main/script/material-slots.json"
+          ]
+        },
+        "store/spans.json": {
+          "status": "present",
+          "paths": [
+            "store/spans.json"
+          ]
+        },
+        "store/assets.json": {
+          "status": "present",
+          "paths": [
+            "store/assets.json"
+          ]
+        },
+        "media/chronology.json": {
+          "status": "present",
+          "paths": [
+            "media/chronology.json"
+          ]
+        }
+      },
+      "outputPaths": [
+        "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/timeline/current.json"
+      ],
+      "summary": {
+        "resolveProjectName": "丙察察格聂南线子梅垭口穿越 [Edit]",
+        "timelineName": "Main [main]",
+        "clipCount": 4030,
+        "sourceRangeValidation": {
+          "checked": 3953,
+          "passed": 3953,
+          "failed": 0,
+          "strategy": "native-probe-offset"
+        },
+        "stillDurationValidation": {
+          "checked": 77,
+          "passed": 77,
+          "failed": 0,
+          "expectedMs": 1000
+        },
+        "syncSummary": {
+          "mode": "existing-media-pool",
+          "imported": 0,
+          "moved": 0,
+          "reused": 1302
+        }
+      },
+      "review": {
+        "status": "pending"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "010b21a6-01b1-470a-9e38-41d3f8c41144",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-20260519",
+      "flowPlanHash": "a8076ea10476c853f072fd8eb058f83e6013e912f92c84951a63772b17098693",
+      "stepId": "timeline-generate",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "awaiting_review",
+      "startedAt": "2026-05-19T08:36:47.753Z",
+      "updatedAt": "2026-05-19T08:37:46.408Z",
+      "inputRefs": [
+        "DaVinci Resolve Media Pool",
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "DaVinci Resolve Timeline"
+      ],
+      "inputSnapshot": {
+        "DaVinci Resolve Media Pool": {
+          "status": "virtual"
+        },
+        "edits/<editId>/planning/edit-framework.md": {
+          "status": "present",
+          "paths": [
+            "edits/main/planning/edit-framework.md"
+          ]
+        },
+        "edits/<editId>/script/material-slots.json": {
+          "status": "present",
+          "paths": [
+            "edits/main/script/material-slots.json"
+          ]
+        },
+        "store/spans.json": {
+          "status": "present",
+          "paths": [
+            "store/spans.json"
+          ]
+        },
+        "store/assets.json": {
+          "status": "present",
+          "paths": [
+            "store/assets.json"
+          ]
+        },
+        "media/chronology.json": {
+          "status": "present",
+          "paths": [
+            "media/chronology.json"
+          ]
+        }
+      },
+      "outputPaths": [
+        "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/timeline/current.json"
+      ],
+      "summary": {
+        "resolveProjectName": "丙察察格聂南线子梅垭口穿越 [Edit]",
+        "timelineName": "Main [main]",
+        "clipCount": 583,
+        "sourceRangeValidation": {
+          "checked": 506,
+          "passed": 506,
+          "failed": 0,
+          "strategy": "native-probe-offset"
+        },
+        "stillDurationValidation": {
+          "checked": 77,
+          "passed": 77,
+          "failed": 0,
+          "expectedMs": 1000
+        },
+        "syncSummary": {
+          "mode": "existing-media-pool",
+          "imported": 0,
+          "moved": 0,
+          "reused": 497
+        }
+      },
+      "review": {
+        "status": "pending"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "85bb1384-4403-4642-9cdb-d7956572b33b",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-20260519",
+      "flowPlanHash": "36db8c950b3f1c90a21fc4aa8184de17bc78b013f6144bb109b54ba46081f14b",
+      "stepId": "timeline-generate",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "awaiting_review",
+      "startedAt": "2026-05-19T11:06:16.121Z",
+      "updatedAt": "2026-05-19T11:07:47.089Z",
+      "inputRefs": [
+        "DaVinci Resolve Media Pool",
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "DaVinci Resolve Timeline"
+      ],
+      "inputSnapshot": {
+        "DaVinci Resolve Media Pool": {
+          "status": "virtual"
+        },
+        "edits/<editId>/planning/edit-framework.md": {
+          "status": "present",
+          "paths": [
+            "edits/main/planning/edit-framework.md"
+          ]
+        },
+        "edits/<editId>/script/material-slots.json": {
+          "status": "present",
+          "paths": [
+            "edits/main/script/material-slots.json"
+          ]
+        },
+        "store/spans.json": {
+          "status": "present",
+          "paths": [
+            "store/spans.json"
+          ]
+        },
+        "store/assets.json": {
+          "status": "present",
+          "paths": [
+            "store/assets.json"
+          ]
+        },
+        "media/chronology.json": {
+          "status": "present",
+          "paths": [
+            "media/chronology.json"
+          ]
+        }
+      },
+      "outputPaths": [
+        "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/timeline/current.json"
+      ],
+      "summary": {
+        "resolveProjectName": "丙察察格聂南线子梅垭口穿越 [Edit]",
+        "timelineName": "Main [main]",
+        "clipCount": 583,
+        "sourceRangeValidation": {
+          "checked": 506,
+          "passed": 506,
+          "failed": 0,
+          "strategy": "native-probe-offset"
+        },
+        "stillDurationValidation": {
+          "checked": 77,
+          "passed": 77,
+          "failed": 0,
+          "expectedMs": 1000
+        },
+        "syncSummary": {
+          "mode": "existing-media-pool",
+          "imported": 0,
+          "moved": 0,
+          "reused": 497
+        }
+      },
       "review": {
         "status": "pending"
       }

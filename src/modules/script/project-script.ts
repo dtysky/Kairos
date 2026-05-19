@@ -1367,6 +1367,8 @@ function normalizeMaterialSlotTreatments(input: {
 function spanHasUsableSpeech(span: IKtepSlice): boolean {
   return Boolean(span.transcript?.trim())
     || (span.transcriptSegments?.length ?? 0) > 0
+    || span.semanticKind === 'speech'
+    || span.semanticKind === 'mixed'
     || span.grounding.speechMode === 'preferred'
     || span.materialPatterns.includes('有口播语音');
 }
@@ -2984,6 +2986,8 @@ function buildMaterialSlotsPacket(input: {
       '缺证据时宁可保守留空，也不要强凑 span。',
       'base-draft 的 chosenSpanIds 是高召回下限；除非 span 已被别的 slot 合法承接，或明显属于空白 / 坏段 / 高重叠近重复，否则不要静默删除。',
       '每个 chosenSpanId 必须保留 treatments[spanId]={ audio:number, speed:number }；audio 是 dB，默认 0，静音 -100；speed 是倍速，默认 1。',
+      '非照片 span 只要有 transcript、transcriptSegments、semanticKind=speech/mixed 或 materialPatterns=有口播语音，audio 必须保持 0，不得静音。',
+      'material-slots 是审查型粗剪候选池；要最大化 type/day/event 的可用覆盖，所有 speech-backed 非照片 span 不应被静默丢弃，未选入时必须由 coverageAudit 暴露。',
       '不要在 query 或 targetBundles 里写 mixed、audio:*、speed:* 或 audio=/speed= 文本。',
       'revision-brief 只授权修改被点名的问题位，不要顺手裁掉其他 slot 的过程证据、阶段证据或可用原声。',
     ],
@@ -3053,6 +3057,7 @@ function buildMaterialSlotsPacket(input: {
       projectId: 'string',
       generatedAt: 'ISO datetime',
       segments: 'Array<{ segmentId, slots: Array<{ id, query, requirement, targetBundles, chosenSpanIds, treatments: Record<spanId,{ audio:number, speed:number }> }> }>',
+      coverageAudit: 'optional Kairos coverage audit: byType/byDay/byEvent and speechProtected coverage counts',
     },
     reviewRubric: [...CSCRIPT_REVIEW_CODES],
   };

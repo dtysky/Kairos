@@ -391,7 +391,7 @@ const localPath = resolveAssetLocalPath(asset, roots);
 - `shouldFineScan`
 - `fineScanMode`
 
-注意：当前 `interestingWindows` 不是“单一最终剪辑窗口”，而是细扫前计划；`fineScanWindows` 才是细扫后的窗口观察结果。只要 asset report 已有完整 coarse facts 和 `fineScanWindows`，`span-rebuild` 不应重新视觉分析或重跑 ASR；它只启动本地 ML 服务调用 qwen 文本 LM，对纯文本 span facts 生成 ordered 7-tag `materialPatterns[]` 行，再由代码按素材时间 chunk 顺序写回 spans，并严格校验必需槽；第 1 槽是拍摄视角/构图形态，不是剪辑用途或载体类型；第 5-7 项必须来自 LM。缺失、旧词或冲突输出进入 failed span 列表并单条重试，重试后仍不合格则失败，不启发式替换。缺失 `visualObservation` 不是 `情景不明` 输入，而是 Analyze/fine-scan 失败。
+注意：当前 `interestingWindows` 不是“单一最终剪辑窗口”，而是细扫前计划；新生成的窗口必须有稳定 `windowId`。`fineScanWindows` 才是细扫后的窗口观察结果，必须保留 `sourceInterestingWindowIds / sourceWindowReason`，speech/mixed 窗口还要保存裁剪后的 `transcript / transcriptSegments / speechCoverage`；visual 窗口即使时间上覆盖 transcript，也不能自动继承 speech truth。只要 asset report 已有完整 coarse facts 和 `fineScanWindows`，`span-rebuild` 不应重新视觉分析或重跑 ASR；历史 recognized fine-scan window 只有在缺 `semanticKind`、自身或来源证据为 `speech-window` 且与 transcriptSegments 重叠时，才保守恢复 speech truth。它只启动本地 ML 服务调用 qwen 文本 LM，对纯文本 span facts 生成 ordered 7-tag `materialPatterns[]` 行，再由代码按素材时间 chunk 顺序写回 spans，并严格校验必需槽；第 1 槽是拍摄视角/构图形态，不是剪辑用途或载体类型；第 4 槽由 span speech truth 决定；第 5-7 项必须来自 LM。缺失、旧词或冲突输出进入 failed span 列表并单条重试，重试后仍不合格则失败，不启发式替换。缺失 `visualObservation` 不是 `情景不明` 输入，而是 Analyze/fine-scan 失败。
 
 ## Chronology V2
 

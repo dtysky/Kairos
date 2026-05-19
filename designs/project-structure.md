@@ -133,7 +133,7 @@
 - 段落审查闸门
   - 当前正式剪辑入口是 `/edit` 的 Flow Plan
   - `material.recall` 的正式结构化产物只有 `script/material-slots.json`，其中 `chosenSpanIds` 与逐 span treatment 同步落地
-  - `timeline.generate` 是 deterministic Resolve 粗剪创建步骤；`timeline/current.json` 只作为 KTEP/manifest 审计文件
+  - `timeline.generate` 是 deterministic Resolve 粗剪创建步骤；`.tmp/edit-flow/<editId>/timeline/current.json` 只作为本机临时 KTEP/manifest 审计文件
 - 分层 `script-brief`
   - `project brief` 与 `script brief`
   - 都使用自然语言输入，分别作用于项目约束和脚本阶段目标/硬约束

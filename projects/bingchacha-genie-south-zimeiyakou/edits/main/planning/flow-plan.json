@@ -1,21 +1,24 @@
 {
   "schemaVersion": "1.0",
-  "id": "edit-flow-main-travel-documentary-20260518",
+  "id": "edit-flow-main-travel-documentary-20260519",
   "projectId": "b28016fd-3e18-4a94-8070-ba83704bc0a9",
   "editId": "main",
   "editRuleCategory": "travel-documentary",
-  "editRuleHash": "e1422a8d2b279a344c7584c8bc61eff6b71498d7a5e76590740cb28a9dc61cec",
-  "generatedAt": "2026-05-18T11:25:13Z",
-  "updatedAt": "2026-05-18T16:59:29.868Z",
+  "editRuleHash": "f69ba653947759823f26574a342d26b4779002edc1a8dcfef2f0b8c716d2a0a9",
+  "generatedAt": "2026-05-19T04:53:04.320Z",
+  "updatedAt": "2026-05-19T11:06:01.166Z",
   "status": "confirmed",
-  "confirmedAt": "2026-05-18T11:29:03.721Z",
-  "summary": "旅行纪录片 Edit Flow：先按 confirmed chronology 做连续天分片的关键事件组织，再沉淀素材事实与剪辑框架，随后按连续天分片做素材召回，直接生成 Resolve 粗剪 timeline，并保留 KTEP/manifest 审计后进入字幕与旁白收尾。",
+  "confirmedAt": "2026-05-19T11:06:01.166Z",
+  "summary": "旅行纪录片 Edit Flow：以 confirmed chronology 作为入口，先按连续天打包组织关键事件与初版框架，再沉淀素材事实、定稿剪辑框架、按连续天打包召回素材；随后先同步达芬奇 Media Pool，再只从已同步素材生成 Resolve 原生粗剪时间线，最后人工锁定粗剪并进入字幕/旁白收尾。",
   "assumptions": [
-    "本计划来自 travel-documentary 自然语言规则；代码只执行本 Flow Plan，不解析规则正文。",
+    "本计划来自 travel-documentary 自然语言规则；代码只执行本 Flow Plan，不直接解析规则正文。",
     "初版关键事件组织使用 SubAgent，按连续天顺序打包，阈值为约 80 个 chronology events。",
     "素材召回使用 SubAgent，按连续天顺序打包，阈值为约 2000 个 material refs。",
     "route 只作为 day 内理解上下文，不作为一级 shard 粒度。",
     "script.generate 不是本规则的必经步骤；前置文本稿由 edit.framework 的 planning markdown 承载并进入人工审查。",
+    "达芬奇工程 Media Pool 是素材归档真相；Kairos 不生成 media-archive.json。",
+    "时间线生成只走 DaVinci Resolve 原生 API，不回退 FCPXML；本轮 speed treatment 只记录请求，不应用变速。",
+    "旅行规则写照片约每张 1s；运行 timeline.generate 前，runtime timelineStillDurationMs 需要与 Resolve still-image duration 偏好一致。",
     "旁白收尾阶段需要参考已选择的 layered-v1 风格档案 literary 层。"
   ],
   "styleUsage": {
@@ -123,7 +126,7 @@
       "execution": {
         "mode": "single-agent",
         "shardBy": "none",
-        "reason": "规则要求生成文本稿件并人工审查；该步骤读取前序 day shard 的汇总产物后做整体框架收束。"
+        "reason": "规则要求生成文本稿件并人工审查；该步骤读取前序 day shards 的汇总产物后做整体框架收束。"
       },
       "gate": "human",
       "notes": [
@@ -169,8 +172,41 @@
       "notes": [
         "material-slots.json 是召回和粗剪建议的唯一正式结构化产物。",
         "每个 chosenSpanId 必须有 numeric treatment：audio 为 dB，默认 0，静音 -100；speed 为倍速，默认 1。",
+        "material.recall 是审查型粗剪候选池，不是过度压缩成片选片；输出必须带 coverageAudit，按 type/day/event 显示 available/chosen/dropped。",
+        "talking-head/source-speech 默认纳入；如未纳入，coverageAudit 必须暴露 dropped span，后续审查不得静默通过。",
+        "非照片 span 只要有 transcript、transcriptSegments、semanticKind=speech/mixed 或 materialPatterns=有口播语音，不得写 audio<=-100。",
         "不生成、不消费 segment-plan.json。",
         "不按 route 做一级 shard。"
+      ]
+    },
+    {
+      "id": "resolve-media-sync",
+      "capabilityId": "resolve.media_sync",
+      "title": "同步达芬奇素材池",
+      "inputRefs": [
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json",
+        "config/project-brief.json"
+      ],
+      "outputRefs": [
+        "DaVinci Resolve Media Pool"
+      ],
+      "outputTypes": {
+        "DaVinci Resolve Media Pool": "resolve-state"
+      },
+      "runner": "deterministic",
+      "execution": {
+        "mode": "deterministic",
+        "shardBy": "none",
+        "reason": "timeline.generate 只能从已同步的 Resolve Media Pool 选择素材；同步步骤按 chronology event title 组织素材，不生成 JSON 归档。"
+      },
+      "gate": "none",
+      "notes": [
+        "同步到 Kairos Project Media/<序号-事件名称>/<素材文件名>；素材是项目全局资源，不按 editId 分仓。",
+        "同一 source path 只导入一次；重复运行默认复用或移动到正确事件 folder。",
+        "run record 只记录 imported / reused / moved / eventFolderCount / mediaItemCount / errors 摘要。",
+        "不清空 namespace，不写 media-archive.json。"
       ]
     },
     {
@@ -178,6 +214,7 @@
       "capabilityId": "timeline.generate",
       "title": "生成 Resolve 粗剪时间线",
       "inputRefs": [
+        "DaVinci Resolve Media Pool",
         "edits/<editId>/planning/edit-framework.md",
         "edits/<editId>/script/material-slots.json",
         "store/spans.json",
@@ -185,21 +222,24 @@
         "media/chronology.json"
       ],
       "outputRefs": [
-        "edits/<editId>/timeline/current.json"
+        "DaVinci Resolve Timeline"
       ],
       "outputTypes": {
-        "edits/<editId>/timeline/current.json": "resolve-rough-cut-manifest"
+        "DaVinci Resolve Timeline": "resolve-timeline"
       },
       "runner": "deterministic",
       "execution": {
         "mode": "deterministic",
         "shardBy": "none",
-        "reason": "timeline.generate 由确定性规则按 material-slots 顺序落位，并通过 Resolve host 创建/更新粗剪 timeline；不调用 LLM/Agent reviewer。"
+        "reason": "timeline.generate 由确定性规则按 material-slots 顺序落位，并通过 Resolve host 只从已同步 Media Pool 创建/更新粗剪 timeline；不调用 LLM/Agent reviewer。"
       },
       "gate": "human",
       "notes": [
-        "输入只读取 edit-framework.md、material-slots.json、spans、assets 和 confirmed chronology。",
-        "timeline/current.json 仅为 KTEP/manifest 审计文件；Resolve 不可用时不得标记成功。",
+        "输入读取已同步 DaVinci Resolve Media Pool、edit-framework.md、material-slots.json、spans、assets 和 confirmed chronology。",
+        ".tmp/edit-flow/<editId>/timeline/current.json 仅为本机临时 KTEP/manifest 审计文件；Resolve 不可用或 source range 校验失败时不得标记成功。",
+        "生成时间线时不重新导入素材、不清空 Kairos Project Media media pool namespace。",
+        "视频 append 后必须回读 source start/end 并与 sourceInMs/sourceOutMs 做 ±2 帧校验。",
+        "照片按规则约 1s；运行前 runtime timelineStillDurationMs 必须与 Resolve still-image duration 偏好一致。",
         "route 只使用召回到的 chosen spans，不整体铺开。"
       ]
     },
@@ -208,8 +248,7 @@
       "capabilityId": "resolve.lock_rough_cut",
       "title": "人工审查并锁定 Resolve 粗剪 timeline",
       "inputRefs": [
-        "edits/<editId>/timeline/current.json",
-        "DaVinci Resolve timeline"
+        "DaVinci Resolve Timeline"
       ],
       "outputRefs": [
         "edits/<editId>/timeline/locked-rough-cut.json"

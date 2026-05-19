@@ -15,8 +15,11 @@ export {
 } from './timeline-builder.js';
 export {
   buildProjectTimeline,
+  syncProjectResolveMedia,
   type IBuildProjectTimelineInput,
   type IBuildProjectTimelineResult,
+  type ISyncProjectResolveMediaInput,
+  type ISyncProjectResolveMediaResult,
 } from './project-timeline.js';
 export {
   buildDeterministicRoughCutBase,

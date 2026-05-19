@@ -37,7 +37,7 @@ Current stable pipeline:
   - `/ingest-gps` 还提供轻量 `刷新 GPS 缓存`，刷新项目 GPX merged cache、derived track 与 Pharos context，适合 GPX、Pharos 或 manual-itinerary 空间信息变化后使用
   - `/analyze` 不会隐式补跑 ingest；如果刚改过素材 Root、FlightRecord、manual-itinerary、root 时钟偏移或 capture-time overrides，应先回到 `/ingest-gps` 运行对应刷新
   - `/analyze` 不生成 `store/spans.json` 或 `media/chronology.json`；它只产出 / 刷新 `analysis/asset-reports/*.json`
-  - `/chronology` 是 Analyze 和 Edit Flow 之间的正式审查页；先显式点击 `生成素材片段与模式` 运行 `span-rebuild`，由本地 qwen 文本 LM 根据每个 span 的最小文本事实生成中文 `materialPatterns[]`，LM 只返回按输入顺序排列的短语行并由代码写回 spans；Analyze 必须为 keep 的非音频素材产出可用视觉描述，`span-rebuild` 发现缺失 report 或缺失 `visualObservation` 会失败并要求回到 Analyze 修复；全量收口后写入 stripped `store/spans.json` 与 `store/spans.meta.json`，再点击 `生成/刷新编年史` 运行 `chronology-build`
+  - `/chronology` 是 Analyze 和 Edit Flow 之间的正式审查页；先显式点击 `生成素材片段与模式` 运行 `span-rebuild`，由本地 qwen 文本 LM 根据每个 span 的最小文本事实生成中文 `materialPatterns[]`，LM 只返回按输入顺序排列的短语行并由代码写回 spans；Analyze 必须为 keep 的非音频素材产出可用视觉描述，`span-rebuild` 发现缺失 report 或缺失 `visualObservation` 会失败并要求回到 Analyze 修复；新 report 的 `fineScanWindows[]` 必须带稳定来源窗口血统，并由 speech/mixed 细扫窗口自己携带裁剪后的 transcript truth；旧 report 只在 fine-scan window 缺少 `semanticKind` 且自身或来源 `interestingWindow` 是 `speech-window` 并与 transcriptSegments 重叠时，才保守恢复 speech truth；明确的 `semanticKind=visual` 不因 transcript overlap 自动改成 speech；全量收口后写入 stripped `store/spans.json` 与 `store/spans.meta.json`，再点击 `生成/刷新编年史` 运行 `chronology-build`
   - `chronology-build` 的事件归属先看 Pharos 单点事件真实时间窗：span 与 `expected / unexpected` 的非 `continuous` actual window 存在有意义重叠时可直接归入该事件；多个 Pharos 单点事件时间窗重叠时，先用 `record.json.actual_captures[]` 等显式拍摄类型/设备字段调整优先级，仍同分时优先更窄的 actual window，不从描述、地点或 note 文本猜测语义；Pharos 单点事件是 route 硬边界，Pharos `continuous` 只提供 route 时间 / summary 上下文，不把多个事件间 route 强行合并，且 `深圳 → 南宁 全程` 这类 route prose 不得写入 `event.location / route.from / route.to`
   - Chronology V2 的 route/event 地名来自 GPS reverse geocode：route 按自身 `startAt/endAt` 各取实际 GPS 端点，普通非 Pharos event 按 midpoint 取单点，优先读取 `gps/reverse-geocode-cache.json`，未命中时串行限速调用 provider；Pharos point event 自带地点仍是人工事实，只有缺失时才用 actual-window GPS 反查兜底
   - 项目级 `chronology-build` 写入 `media/chronology.json` 时必须有可用的 GPS reverse-geocode service；显式传入 `null`、无 provider 且 cache miss、或任一 route/event GPS anchor 反查不到地名时必须直接失败并保留既有 chronology，不能回退到 `placeHints`、`materialPatterns`、Pharos continuous prose 或英文通用地点文本
@@ -213,13 +213,15 @@ Current stable pipeline:
   - step run records remain under `edits/<editId>/runs/<runId>/record.json`; each capability writes only the outputs declared by its `outputRefs`
   - `script.generate` appears only when the selected edit rule explicitly asks for a pre-cut text or beat draft
   - `timeline.generate` consumes only the Flow Plan declared predecessor outputs; it must not require `edits/<editId>/script/current.json`
+  - `resolve.media_sync` synchronizes the project-global Resolve Media Pool bin `Kairos Project Media` around chronology event titles; the Resolve project itself is the media archive truth, while Kairos run records only keep imported / reused / moved summaries
+  - `timeline.generate` creates the Resolve rough-cut through the host by selecting already-synced Media Pool items, using Resolve native `AppendToTimeline` placement, validating source ranges after append, and disabling linked audio items for muted video clips; requested speed changes are currently ignored/pending in Resolve rough cuts
   - code must not parse edit-rule markdown into hidden arrangement heuristics; rule interpretation lives in the confirmed Flow Plan and capability-owned Agent context
   - no global `beat`, `script/current.json`, or replacement required intermediate is introduced; every intermediate is capability-owned through `outputRefs`
 - a Kairos project may now contain multiple independent `Edit Unit`s over the same shared material workspace:
   - shared layer stays at project root: `pharos/`, `store/`, `analysis/`, `media/chronology.json`, and `color/`
   - edit-specific truth lives under `edits/<editId>/planning/`, lightweight `edits/<editId>/runs/` records, and capability-owned output directories such as `timeline/` or `subtitles/`
   - new edit-flow work does not use legacy root-level `script/`, `timeline/`, or `subtitles/` aliases
-  - Resolve edit mapping is fixed by convention: Resolve Project `${projectBrief.name} [Edit]`, Resolve Timeline `${editLabel} [${editId}]`
+  - Resolve edit mapping is fixed by convention: Resolve Project `${projectBrief.name} [Edit]`, project-global Media Pool bin `Kairos Project Media`, timeline bin `Kairos Timelines`, Resolve Timeline `${editLabel} [${editId}]`
   - first rough-cut lock writes `edits/<editId>/timeline/locked-rough-cut.json`; v1 post-lock formalizes source-speech subtitles and one reviewed narration text only
 - project brief now carries one project-level semantic vocab layer for analyze/edit-flow:
   - `材料模式短语`
@@ -266,18 +268,19 @@ Current stable pipeline:
   - generated spans may include `assetId / type / semanticKind / sourceInMs / sourceOutMs / editSourceInMs / editSourceOutMs / transcript / transcriptSegments / visualObservation / materialPatterns / speechCoverage`
   - generated spans must not persist `speedCandidate / pharosRefs / grounding / spatialEvidence / location / routeRole / chronology event` fields
   - `store/spans.meta.json` records freshness, input hash, counts, and warnings; hash excludes speed hints, Pharos, GPS cache, and chronology
-  - `materialPatterns` is a Chinese `string[]` derived only from span `type / semanticKind / transcript / visualObservation`, not labels, report summary, GPS, Pharos, time ownership, or span ids; the LM prompt requests exactly 7 tags. The first four entries are validated positional tags: controlled `拍摄视角/构图形态`, extractive `当前环境`, natural observable `天气光线`, and binary `口播语音`; entry 5 is an LM-authored short `情景故事` phrase or `情景不明`; entries 6-7 are short factual free tags from the LM. Slot 1 must describe observable capture/composition evidence, not carrier type or edit purpose: `照片记录 / 照片成果 / 航拍建场 / 环境空镜` are invalid. `span-rebuild` does not rewrite invalid rows or infer replacements; invalid/missing required slots enter the failed-span list, are retried once as a single span after the main chunks, and still block the rebuild if invalid after retry.
+  - `materialPatterns` is a Chinese `string[]` derived only from span `type / semanticKind / transcript / visualObservation`, not labels, report summary, GPS, Pharos, time ownership, or span ids; the LM prompt requests exactly 7 tags. The first four entries are validated positional tags: controlled `拍摄视角/构图形态`, extractive `当前环境`, natural observable `天气光线`, and binary `口播语音`; slot 4 is determined by span speech truth, so any span with transcript, transcriptSegments, or `semanticKind=speech/mixed` must be `有口播语音`; entry 5 is an LM-authored short `情景故事` phrase or `情景不明`; entries 6-7 are short factual free tags from the LM. Slot 1 must describe observable capture/composition evidence, not carrier type or edit purpose: `照片记录 / 照片成果 / 航拍建场 / 环境空镜` are invalid. `span-rebuild` does not rewrite invalid rows or infer replacements; invalid/missing required slots enter the failed-span list, are retried once as a single span after the main chunks, and still block the rebuild if invalid after retry.
+  - Edit Flow treats speech truth as type-agnostic protection: any non-photo chosen span with transcript, transcriptSegments, `semanticKind=speech/mixed`, or `materialPatterns=有口播语音` must not be muted in `material-slots` or `timeline.generate`, whether its type is `drive`, `broll`, `aerial`, `timelapse`, or `talking-head`. `coverageAudit` exposes unchosen speech-backed spans, but code must not blindly append them to the main rough-cut timeline; recall expansion belongs in `material.recall` selection logic and human review.
   - `visualObservation` is one span-level visual fact sentence, sourced from Analyze VLM output: direct/coarse report facts for direct materialization and fine-scan recognition for recognized fine-scan windows. Missing `visualObservation` is an Analyze failure, not a span-rebuild fallback path.
   - the old persisted span semantic tree (`narrativeFunctions / shotGrammar / viewpointRoles / subjectStates / span.evidence`) is no longer part of the formal span protocol
 - a `beat` can now optionally carry explicit `utterances[]` with head / middle / tail pauses, so subtitles only occupy voiced islands while video can continue underneath
 - outline / script now prefer Analyze-provided edit bounds instead of re-centering every span by default; legacy spans without edit bounds still fall back to conservative trimming
-- explicit acceleration now flows through `beat.actions.speed` -> timeline clip `speed` -> NLE export, but only `drive / aerial` clips may consume it; acceleration is for expression and de-duplication, not for meeting a duration target
+- explicit acceleration may still be requested by upstream planning, but Resolve rough-cut creation currently ignores speed until a verified native Resolve API path exists; acceleration is for expression and de-duplication, not for meeting a duration target
 - speed strategy no longer comes from spans; future speed planning is a separate downstream flow
 - when a beat preserves source speech, Kairos now keeps video on the single serial `primary` track and carries the audible source on an independent `dialogue` audio track
 - source-speech windows no longer delete companion visuals; `visualSelections[]` stay available for serial cutaway placement while `audioSelections[]` alone define the preserved source audio
 - audible `dialogue` / `nat` clips now receive non-destructive loudness normalization toward `-16 LUFS` with clip gain, with true peak protection capped at `-1 dBTP`
-- rough-cut timeline placement now keeps effective source windows by default instead of fitting clips against `beat.targetDurationMs`; photos default to `1s` silent holds unless the script explicitly asks for a longer `holdMs`
-- `timeline.generate` may own internal reviewed artifacts before `edits/<editId>/timeline/current.json`:
+- rough-cut timeline placement now keeps effective source windows by default instead of fitting clips against `beat.targetDurationMs`; photos currently use Resolve native still duration (`5s` in the local rough-cut path) unless a verified native duration override is added
+- `timeline.generate` may own local temporary audit artifacts before it creates/updates the Resolve rough cut:
   - deterministic prep may write `edits/<editId>/timeline/rough-cut-base.json`
   - `segment-cut-refiner` may write `edits/<editId>/timeline/segment-cuts/<segmentId>.json`
   - `segment-cut-reviewer` may write `edits/<editId>/timeline/reviews/<segmentId>.json`
@@ -300,7 +303,7 @@ Current stable pipeline:
   - both the staging directory and the final draft directory must be brand-new
   - existing draft directories must never be overwritten or deleted
   - modifying an existing draft requires explicit target verification first
-- Jianying export also normalizes retimed clip placement for `pyJianYingDraft` compatibility, so backend microsecond rounding does not mutate the formal `edits/<editId>/timeline/current.json`
+- Jianying export also normalizes retimed clip placement for `pyJianYingDraft` compatibility, so backend microsecond rounding does not mutate the formal Resolve rough cut or any locked rough-cut record
 
 ## Change Discipline
 

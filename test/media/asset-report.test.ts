@@ -72,6 +72,10 @@ describe('buildAssetCoarseReport', () => {
     expect(report.keepDecision).toBe('keep');
     expect(report.materializationPath).toBe('fine-scan');
     expect(report.fineScanMode).toBe('windowed');
+    expect(report.interestingWindows[0]).toMatchObject({
+      windowId: 'asset-video-iw-1',
+      reason: 'speech-window',
+    });
   });
 
   it('marks audio assets as dropped from visual materialization', () => {

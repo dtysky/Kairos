@@ -17,12 +17,14 @@ import {
   getSegmentPlanPath,
   getTimelineCurrentPath,
   assertFreshSpans,
+  assertConfirmedProjectChronology,
   loadAssets,
   loadAssetReports,
   loadChronologyReviewState,
   loadEditFlowPlan,
   loadEditFlowRunRecords,
   normalizeEditId,
+  writeMaterialSlots,
   writeEditFlowRunRecord,
   findLatestEditFlowStepRunRecord,
   readJsonOrNull,
@@ -44,8 +46,11 @@ import {
   generateEditFlowPlan,
   runEditPlanningDocumentCapability,
 } from './flow-planner.js';
-import { assertMaterialSlotsContract } from './material-slots-contract.js';
-import { buildProjectTimeline } from '../timeline-core/project-timeline.js';
+import {
+  assertMaterialSlotsContract,
+  buildMaterialRecallCoverageAudit,
+} from './material-slots-contract.js';
+import { buildProjectTimeline, syncProjectResolveMedia } from '../timeline-core/project-timeline.js';
 
 export type TEditFlowAction = 'plan' | 'confirm-plan' | 'run-step' | 'confirm-step' | 'run-next';
 
@@ -234,6 +239,7 @@ async function runEditFlowStep(input: {
     outputRefs: input.step.outputRefs,
     inputSnapshot: inputSnapshot.snapshot,
     outputPaths: [],
+    summary: {},
     review: {
       status: input.step.gate === 'human' ? 'pending' : 'not_required',
     },
@@ -241,7 +247,7 @@ async function runEditFlowStep(input: {
   await writeEditFlowRunRecord(input.projectRoot, recordBase, input.editId);
 
   try {
-    const outputPaths = await executeStep({
+    const executionResult = await executeStep({
       ...input,
       capabilityId: input.step.capabilityId,
       runner,
@@ -253,7 +259,8 @@ async function runEditFlowStep(input: {
       status: input.step.gate === 'human' ? 'awaiting_review' : 'completed',
       updatedAt: completedAt,
       completedAt: input.step.gate === 'human' ? undefined : completedAt,
-      outputPaths,
+      outputPaths: executionResult.outputPaths,
+      summary: executionResult.summary ?? {},
     };
     await writeEditFlowRunRecord(input.projectRoot, next, input.editId);
     return next;
@@ -290,9 +297,9 @@ async function executeStep(input: {
   runner: 'deterministic' | 'agent' | 'script' | 'manual';
   inputArtifacts: IAgentPacketInputArtifact[];
   agentRunner?: IJsonPacketAgentRunner;
-}): Promise<string[]> {
+}): Promise<{ outputPaths: string[]; summary?: Record<string, unknown> }> {
   if (input.runner === 'manual') {
-    return [];
+    return { outputPaths: [] };
   }
   if (['pharos.parse', 'trip.event_table', 'material.archive', 'edit.framework'].includes(input.capabilityId)) {
     const result = await runEditPlanningDocumentCapability({
@@ -303,16 +310,46 @@ async function executeStep(input: {
       capabilityId: input.capabilityId as Extract<TEditFlowCapabilityId, 'pharos.parse' | 'trip.event_table' | 'material.archive' | 'edit.framework'>,
       agentRunner: input.agentRunner,
     });
-    return [result.outputPath];
+    return { outputPaths: [result.outputPath] };
   }
-  if (input.capabilityId === 'timeline.generate') {
-    await buildProjectTimeline({
+  if (input.capabilityId === 'resolve.media_sync') {
+    const result = await syncProjectResolveMedia({
       projectRoot: input.projectRoot,
       editId: input.editId,
       workspaceRoot: input.workspaceRoot,
       editRuleCategory: input.plan.editRuleCategory,
     });
-    return [getTimelineCurrentPath(input.projectRoot, input.editId)];
+    return {
+      outputPaths: [],
+      summary: {
+        resolveProjectName: result.resolveProjectName,
+        namespace: result.hostSummary?.namespace,
+        imported: result.hostSummary?.imported,
+        reused: result.hostSummary?.reused,
+        moved: result.hostSummary?.moved,
+        eventFolderCount: result.hostSummary?.eventFolderCount,
+        mediaItemCount: result.hostSummary?.mediaItemCount,
+      },
+    };
+  }
+  if (input.capabilityId === 'timeline.generate') {
+    const result = await buildProjectTimeline({
+      projectRoot: input.projectRoot,
+      editId: input.editId,
+      workspaceRoot: input.workspaceRoot,
+      editRuleCategory: input.plan.editRuleCategory,
+    });
+    return {
+      outputPaths: [getTimelineCurrentPath(input.projectRoot, input.editId)],
+      summary: {
+        resolveProjectName: result.resolveTimeline.resolveProjectName,
+        timelineName: result.resolveTimeline.timelineName,
+        clipCount: result.resolveTimeline.clipCount,
+        sourceRangeValidation: result.resolveTimeline.hostSummary?.sourceRangeValidation,
+        stillDurationValidation: result.resolveTimeline.hostSummary?.stillDurationValidation,
+        syncSummary: result.resolveTimeline.hostSummary?.syncSummary,
+      },
+    };
   }
   const segmentPlanPath = getSegmentPlanPath(input.projectRoot, input.editId);
   if (input.capabilityId === 'material.recall') {
@@ -326,7 +363,7 @@ async function executeStep(input: {
       await rm(segmentPlanPath, { force: true });
       throw new Error('material.recall must not declare or write edits/<editId>/script/segment-plan.json');
     }
-    const [materialSlots, assets, spansInfo, assetReports] = await Promise.all([
+    const [materialSlots, assets, spansInfo, assetReports, chronology] = await Promise.all([
       readJsonOrNull(
         getMaterialSlotsPath(input.projectRoot, input.editId),
         ZMaterialSlotsDocument,
@@ -334,6 +371,7 @@ async function executeStep(input: {
       loadAssets(input.projectRoot),
       assertFreshSpans(input.projectRoot),
       loadAssetReports(input.projectRoot),
+      assertConfirmedProjectChronology(input.projectRoot),
     ]);
     if (!materialSlots) {
       throw new Error(`material.recall did not write ${getMaterialSlotsPath(input.projectRoot, input.editId)}`);
@@ -349,8 +387,17 @@ async function executeStep(input: {
       await rm(getMaterialSlotsPath(input.projectRoot, input.editId), { force: true });
       throw error;
     }
+    await writeMaterialSlots(input.projectRoot, {
+      ...materialSlots,
+      coverageAudit: buildMaterialRecallCoverageAudit({
+        materialSlots,
+        assets,
+        spans: spansInfo.spans,
+        chronologyEvents: chronology.events,
+      }),
+    }, input.editId);
   }
-  return outputPaths;
+  return { outputPaths };
 }
 
 async function runGenericAgentCapability(input: {
@@ -380,6 +427,8 @@ async function runGenericAgentCapability(input: {
         ? [
           'Write only edits/<editId>/script/material-slots.json; do not write segment-plan.json.',
           'Every chosenSpanId must have treatments[spanId]={ audio:number, speed:number }; audio is dB, default 0, muted is -100, speed is multiplier, default 1.',
+          'If a non-photo span has transcript, transcriptSegments, semanticKind=speech/mixed, or materialPatterns includes 有口播语音, its treatment audio must be 0 and must never be muted.',
+          'Treat material.recall as a review-candidate pool: maximize useful coverage by type/day/event, and never silently drop any non-photo speech-backed span; unchosen speech-backed spans must be exposed by coverageAudit.',
           'Do not put mixed, audio:*, speed:*, audio=*, or speed=* text into formal material slot fields.',
         ]
         : []),
@@ -438,6 +487,7 @@ function buildCapabilityOutputSchema(capabilityId: TEditFlowCapabilityId): Recor
           projectId: 'string',
           generatedAt: 'ISO datetime',
           segments: 'Array<{ segmentId, slots: Array<{ id, query, requirement, targetBundles, chosenSpanIds, treatments: Record<spanId,{ audio:number, speed:number }> }> }>',
+          coverageAudit: 'optional audit written by Kairos after validation: byType/byDay/byEvent plus speechProtected available/chosen/dropped counts',
         },
       },
     };
@@ -532,7 +582,8 @@ function isVirtualOrOptionalRef(ref: string): boolean {
   return ref.startsWith('project:')
     || ref.startsWith('optional ')
     || ref.includes('declared predecessor outputs')
-    || ref === 'DaVinci Resolve timeline';
+    || ref === 'DaVinci Resolve timeline'
+    || ref === 'DaVinci Resolve Media Pool';
 }
 
 function resolveProjectRef(projectRoot: string, editId: string, ref: string): string | null {

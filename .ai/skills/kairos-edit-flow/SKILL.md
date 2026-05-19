@@ -24,9 +24,11 @@ Chronology 之后的正式剪辑入口是 `/edit`，不是固定的 `Script -> T
 - 不要引入必选 `beat`、`script/current.json` 或其它全局中间稿；中间产物由每个 capability 的 `outputRefs` 声明。
 - `script.generate` 只是可选能力：只有剪辑规则明确要求前置文本稿、beat 稿或旁白草稿时才出现。
 - `material.recall` 只输出 `edits/<editId>/script/material-slots.json`；不生成、不消费 `segment-plan.json`。
-- `material-slots.json` 是召回和粗剪建议的唯一正式结构化产物。每个 `chosenSpanId` 必须写 `treatments[spanId]={audio:number,speed:number}`；`audio` 是 dB，默认 `0`，静音 `-100`；`speed` 是倍速，默认 `1`。不要把 `mixed`、`audio:*`、`speed:*` 或自然语言解析式建议写入正式字段。
-- `timeline.generate` 是 deterministic runner，读取 `edit-framework.md + material-slots.json + store/spans.json + store/assets.json + media/chronology.json`，并必须通过 Resolve host 创建/更新粗剪 timeline；不得要求 `edits/<editId>/script/current.json` 或 `segment-plan.json`。
-- `timeline/current.json` 只是 KTEP/manifest 审计文件；Resolve 不可用时 `timeline.generate` 必须阻塞，不能把 KTEP-only 写成成功。
+- `material-slots.json` 是召回和粗剪建议的唯一正式结构化产物。每个 `chosenSpanId` 必须写 `treatments[spanId]={audio:number,speed:number}`；`audio` 是 dB，默认 `0`，静音 `-100`；`speed` 是倍速，默认 `1`。被选中的非照片 span 只要有 transcript、transcriptSegments、`semanticKind=speech/mixed` 或 `materialPatterns=有口播语音`，就不得写 `audio<=-100`，且未选入的 speech-backed 非照片 span 必须由 `coverageAudit` 暴露；这覆盖 `drive / broll / aerial / timelapse / talking-head`。不要把未选入的 speech-backed span 盲目追加进主粗剪时间线；扩召回应回到 `material.recall` 的选择和人工审查。不要把 `mixed`、`audio:*`、`speed:*` 或自然语言解析式建议写入正式字段。
+- `resolve.media_sync` 是 deterministic runner，负责把 confirmed chronology 对应素材同步进达芬奇 Media Pool；Media Pool 本身是素材归档真相，不新增 `media-archive.json`。
+- `timeline.generate` 是 deterministic runner，读取 `edit-framework.md + material-slots.json + store/spans.json + store/assets.json + media/chronology.json`，并必须通过 Resolve host 从已同步 Media Pool 创建/更新粗剪 timeline；不得要求 `edits/<editId>/script/current.json` 或 `segment-plan.json`。
+- Resolve 粗剪素材同步必须按 chronology event title 组织项目全局 `Kairos Project Media` media pool bin；不要按 `editId` 建素材 namespace，也不要把正式审查素材按 spanId/assetId 作为一级分组。Resolve timeline 固定放在 `Kairos Timelines` bin。同步单张照片时必须使用并校验单文件 MediaPoolItem，不能让 Resolve 把连续编号 JPG 折叠成 image sequence。当前正式落片只走 Resolve 原生 `AppendToTimeline` API；`speed>1` 暂不应用到 Resolve 粗剪，必须在 host summary 里记为 ignored/pending。静音视频保留 linked audio item 并禁用 audio item，照片可无 audio item。
+- `.tmp/edit-flow/<editId>/timeline/current.json` 只是本机临时 KTEP/manifest 审计文件；Resolve 不可用时 `timeline.generate` 必须阻塞，不能把 KTEP-only 写成成功。正式可审查对象是 Resolve `Kairos Timelines` bin 里的 timeline，锁定后才写 `edits/<editId>/timeline/locked-rough-cut.json`。
 
 ## 正式顺序
 
@@ -52,6 +54,7 @@ Chronology 之后的正式剪辑入口是 `/edit`，不是固定的 `Script -> T
 - `edit.framework`
 - `material.recall`
 - `script.generate`
+- `resolve.media_sync`
 - `timeline.generate`
 - `resolve.lock_rough_cut`
 - `postlock.subtitle_narration`
@@ -67,7 +70,7 @@ Chronology 之后的正式剪辑入口是 `/edit`，不是固定的 `Script -> T
 - step 的 `inputRefs` 缺失：阻塞该 step 并显示缺失路径/引用。
 - human gate 未确认：后续依赖 step 不可继续。
 - styleUsage 需要风格层但没有可用 `layered-v1` profile：阻塞 Flow Plan 确认或 step 执行。
-- `timeline.generate` 时 Resolve host 不可用、video-only append/静音失败、非 0 dB clip gain 无法通过 live `TimelineItem.GetProperty()` 探测并稳定设置，或非 `drive/aerial` span 请求 `speed > 1`：阻塞，不写成功状态。
+- `timeline.generate` 时 Resolve host 不可用、Media Pool 缺素材、原生 append/静音失败、source range / still duration 回读校验失败，或非 0 dB clip gain 无法通过 live `TimelineItem.GetProperty()` 探测并稳定设置：阻塞，不写成功状态。当前 `speed > 1` 不阻塞，但也不应用。
 
 ## 旧阶段资料
 

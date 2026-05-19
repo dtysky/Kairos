@@ -205,7 +205,7 @@ async function routeRequest(
         { jobType: 'chronology-build', executionMode: 'deterministic', supported: true, note: 'requires fresh spans and rebuilds draft Chronology V2 for review' },
 	        { jobType: 'style-analysis', executionMode: 'deterministic', supported: true, note: 'runs deterministic prep and then hands off to Agent for final text/art-style reference; does not generate edit rules' },
         { jobType: 'color', executionMode: 'deterministic', supported: true, note: 'supports prepare_root / sync_groups / execute_root / sync_batch_metadata / sync_batch_sidecars / validate_batch / prepare_all_roots / export_all_roots through the same-machine vendored Resolve backend; clip repair now follows the canonical Gyro -> Dehaze -> User1 -> User2 -> NR layout, and execute/export-all require explicit overwrite confirmation before replacing existing root outputs' },
-        { jobType: 'edit-flow', executionMode: 'agent', supported: true, note: 'single Edit Flow job/action surface: plan, confirm-plan, run-step, confirm-step, run-next; executes only confirmed Flow Plan capabilities' },
+        { jobType: 'edit-flow', executionMode: 'agent', supported: true, note: 'single Edit Flow job/action surface: plan, confirm-plan, run-step, confirm-step, run-next; includes resolve.media_sync before Resolve timeline generation and executes only confirmed Flow Plan capabilities' },
         { jobType: 'export-jianying', executionMode: 'deterministic', supported: false },
         { jobType: 'export-resolve', executionMode: 'agent', supported: false },
       ],

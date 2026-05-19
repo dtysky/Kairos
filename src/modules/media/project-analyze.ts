@@ -3126,7 +3126,11 @@ function decorateSliceWithTranscript(
   slice: IKtepSlice,
   transcript?: ITranscriptContext | null,
 ): IKtepSlice {
-  if (!transcript || !transcript.transcript || (slice.type === 'drive' && slice.semanticKind === 'visual')) {
+  if (
+    !transcript
+    || !transcript.transcript
+    || !isSpeechSemanticKind(slice.semanticKind)
+  ) {
     return slice;
   }
 
@@ -4005,8 +4009,8 @@ function buildFineScanWindowFromSlice(input: {
   status: IFineScanWindow['status'];
   dropReason?: string;
 }): IFineScanWindow {
-  const matchedWindow = findMatchingInterestingWindow(input.report.interestingWindows, input.slice);
   const plan = input.keyframePlans.find(item => item.shotId === input.slice.id);
+  const shouldWriteSpeechTruth = isSpeechSemanticKind(input.slice.semanticKind);
   return {
     windowId: input.slice.id,
     sourceInMs: input.slice.sourceInMs,
@@ -4014,8 +4018,13 @@ function buildFineScanWindowFromSlice(input: {
     editSourceInMs: input.slice.editSourceInMs,
     editSourceOutMs: input.slice.editSourceOutMs,
     semanticKind: input.slice.semanticKind,
-    reason: matchedWindow?.reason,
-    speedCandidate: input.slice.speedCandidate ?? matchedWindow?.speedCandidate,
+    reason: input.slice.sourceWindowReason,
+    sourceInterestingWindowIds: input.slice.sourceInterestingWindowIds,
+    sourceWindowReason: input.slice.sourceWindowReason,
+    transcript: shouldWriteSpeechTruth ? input.slice.transcript : undefined,
+    transcriptSegments: shouldWriteSpeechTruth ? input.slice.transcriptSegments : undefined,
+    speechCoverage: shouldWriteSpeechTruth ? input.slice.speechCoverage : undefined,
+    speedCandidate: input.slice.speedCandidate,
     frameTimestampsMs: plan?.timestampsMs ?? [],
     framePaths: input.recognition.framePaths,
     visualObservation: input.recognition.recognition.description?.trim() || undefined,
@@ -4024,19 +4033,8 @@ function buildFineScanWindowFromSlice(input: {
   };
 }
 
-function findMatchingInterestingWindow(
-  windows: IInterestingWindow[],
-  slice: IKtepSlice,
-): IInterestingWindow | undefined {
-  return windows.find(window =>
-    sameOptionalNumber(window.startMs, slice.sourceInMs)
-    && sameOptionalNumber(window.endMs, slice.sourceOutMs),
-  );
-}
-
-function sameOptionalNumber(left: number | undefined, right: number | undefined): boolean {
-  if (left == null || right == null) return false;
-  return Math.abs(left - right) <= 1;
+function isSpeechSemanticKind(semanticKind: IKtepSlice['semanticKind']): boolean {
+  return semanticKind === 'speech' || semanticKind === 'mixed';
 }
 
 async function prefetchFineScanTask(input: {

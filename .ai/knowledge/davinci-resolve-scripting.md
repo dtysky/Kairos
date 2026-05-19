@@ -93,6 +93,7 @@ remain in the vendored backend:
 ### Media Pool And Timelines
 
 - `mediaPool.ImportMedia([paths])` and `mediaStorage.AddItemListToMediaPool([paths])` can import media.
+- For rough-cut still-photo sync, prefer `mediaPool.ImportMedia([path])` and verify the returned `MediaPoolItem` `File Path` equals the requested file. Live probing on 2026-05-19 showed `mediaStorage.AddItemListToMediaPool([path])` can interpret numbered JPEG photos as an image sequence, e.g. `DSC07686.jpg` became `DSC[07686-07688].jpg` with `Type=Video`, which breaks single-photo timeline lookup and review.
 - `mediaPool.CreateEmptyTimeline(name)` creates a blank timeline.
 - `mediaPool.CreateTimelineFromClips(name, [clips])` creates a timeline and appends clips.
 - `mediaPool.AppendToTimeline([mediaPoolItems])` appends clips to the current timeline.
@@ -125,6 +126,13 @@ remain in the vendored backend:
 
 - `timelineItem.GetName()`, `GetDuration()`, `GetStart()`, `GetEnd()`, `GetSourceStartFrame()`, and `GetSourceEndFrame()` are the timeline placement basics.
 - `timelineItem.GetMediaPoolItem()` links back to source media.
+
+### Rough-cut Append Source Ranges
+
+- Live probing on 2026-05-19 in Resolve project `丙察察格聂南线子梅垭口穿越 [Edit]`, clip `C0709.mp4`, showed that `AppendToTimeline([{mediaPoolItem,startFrame,endFrame,...}])` may add a hidden source-start offset for camera clips with embedded timecode: passing `startFrame=0` returned `TimelineItem.GetSourceStartFrame()=2093`. Passing `startFrame=-2093` returned actual source frame `0`, and passing `startFrame=-1481` returned actual source frame `611`.
+- Kairos rough-cut creation must therefore not assume millisecond-derived frames can be passed directly. The host must native-probe source-frame offset per MediaPoolItem in a temporary timeline, subtract that offset from requested source ranges, then validate appended TimelineItems by reading `GetSourceStartFrame()` / `GetSourceEndFrame()` against expected media-relative source frames.
+- Resolve locks project/timeline frame rate before timeline creation. Live probing on 2026-05-19 showed setting `timelineFrameRate=30` after a rough-cut timeline already existed left the timeline at the Resolve default `24`, while Kairos still computed `recordFrame` at `30`, causing incorrect placement and duration. The rough-cut host must set project frame-rate settings before creating the target timeline; if the only existing timeline is the generated target rough cut with the wrong FPS, recreate it before proceeding, otherwise block with a clear fps mismatch.
+- The official docs do not expose a still-image duration setter. For Resolve rough cuts, Kairos treats still duration as a user/manual Resolve preference mirrored by runtime config and validates the resulting TimelineItem duration after append.
 - `timelineItem.GetProperty(key)` and `timelineItem.SetProperty(key, value)` expose documented item properties.
 - `timelineItem.SetClipEnabled(bool)` and `timelineItem.GetClipEnabled()` are clip-level enable state, not color-node enable state.
 - `timelineItem.CopyGrades([targetTimelineItems])` copies the current node stack layer grade to targets.

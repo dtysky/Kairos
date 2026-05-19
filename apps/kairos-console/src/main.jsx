@@ -2113,6 +2113,9 @@ function EditFlowPage({
                   {latestRun?.outputPaths?.length ? (
                     <div className="edit-flow-output-paths">{`输出：${latestRun.outputPaths.join(', ')}`}</div>
                   ) : null}
+                  {hasRunSummary(latestRun?.summary) ? (
+                    <RunSummary summary={latestRun.summary} />
+                  ) : null}
                 </div>
 
                 <div className="edit-flow-step-side">
@@ -2173,6 +2176,21 @@ function RefList({ title, refs }) {
   );
 }
 
+function RunSummary({ summary }) {
+  const pairs = formatRunSummaryPairs(summary);
+  if (!pairs.length) return null;
+  return (
+    <div className="edit-flow-run-summary">
+      {pairs.map(pair => (
+        <span key={pair.label}>
+          <strong>{pair.label}</strong>
+          <em>{pair.value}</em>
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function EditFlowStatusItem({ label, value, tone }) {
   return (
     <span className={`edit-flow-status-item edit-flow-status-${tone || 'neutral'}`}>
@@ -2180,6 +2198,42 @@ function EditFlowStatusItem({ label, value, tone }) {
       <strong>{value}</strong>
     </span>
   );
+}
+
+function hasRunSummary(summary) {
+  return summary && typeof summary === 'object' && Object.keys(summary).length > 0;
+}
+
+function formatRunSummaryPairs(summary) {
+  if (!summary || typeof summary !== 'object') return [];
+  const pairs = [];
+  [
+    ['imported', '导入'],
+    ['reused', '复用'],
+    ['moved', '移动'],
+    ['eventFolderCount', '事件文件夹'],
+    ['mediaItemCount', '素材'],
+    ['clipCount', '片段'],
+  ].forEach(([key, label]) => {
+    if (summary[key] != null) pairs.push({ label, value: String(summary[key]) });
+  });
+  const sourceRange = summary.sourceRangeValidation;
+  if (sourceRange && typeof sourceRange === 'object') {
+    pairs.push({
+      label: 'source range',
+      value: `${sourceRange.passed || 0}/${sourceRange.checked || 0}`,
+    });
+  }
+  const stillDuration = summary.stillDurationValidation;
+  if (stillDuration && typeof stillDuration === 'object' && stillDuration.checked) {
+    pairs.push({
+      label: '图片时长',
+      value: `${stillDuration.passed || 0}/${stillDuration.checked || 0}`,
+    });
+  }
+  if (summary.timelineName) pairs.push({ label: 'Resolve Timeline', value: String(summary.timelineName) });
+  if (summary.namespace) pairs.push({ label: 'Media Pool', value: String(summary.namespace) });
+  return pairs;
 }
 
 function runStatusToTone(status) {

@@ -22,6 +22,10 @@ export interface IResolveRoughCutClipInput {
   clipId: string;
   assetId: string;
   spanId?: string;
+  rawRelativePath?: string;
+  eventId?: string;
+  eventTitle?: string;
+  eventKind?: string;
   assetKind: 'video' | 'photo' | 'audio';
   sourceAbsolutePath: string;
   sourceStem: string;
@@ -33,19 +37,48 @@ export interface IResolveRoughCutClipInput {
   audioGainDb: number;
   muteAudio: boolean;
   speed: number;
+  requestedSpeed?: number;
+}
+
+export interface IResolveRoughCutMediaSyncInput {
+  projectId: string;
+  resolveProjectName: string;
+  namespace?: string;
+  legacyNamespaces?: string[];
+  clips: Array<Pick<IResolveRoughCutClipInput,
+    'assetId'
+    | 'rawRelativePath'
+    | 'eventId'
+    | 'eventTitle'
+    | 'eventKind'
+    | 'assetKind'
+    | 'sourceAbsolutePath'
+    | 'sourceStem'
+  >>;
 }
 
 export interface IResolveRoughCutTimelineInput {
   projectId: string;
   resolveProjectName: string;
   timelineName: string;
+  legacyTimelineNames?: string[];
+  timelineFolderName?: string;
   namespace?: string;
+  legacyNamespaces?: string[];
   timelineSpec: {
     width: number;
     height: number;
     fps: number;
   };
+  stillDurationMs?: number;
   clips: IResolveRoughCutClipInput[];
+}
+
+export interface IResolveRoughCutMediaSyncResult {
+  resolveProjectName: string;
+  namespace: string;
+  createdAt: string;
+  hostSummary?: Record<string, unknown>;
 }
 
 export interface IResolveRoughCutTimelineResult {
@@ -54,6 +87,19 @@ export interface IResolveRoughCutTimelineResult {
   createdAt: string;
   clipCount: number;
   hostSummary?: Record<string, unknown>;
+}
+
+export async function syncResolveRoughCutMedia(
+  input: IResolveRoughCutMediaSyncInput,
+  config: IResolveColorExecutorConfig = {},
+  execFileImpl: IExecFile = exec,
+): Promise<IResolveRoughCutMediaSyncResult> {
+  return runResolveTimelineRequest<IResolveRoughCutMediaSyncResult>({
+    operation: 'sync_rough_cut_media',
+    input,
+    config,
+    execFileImpl,
+  });
 }
 
 export async function createResolveRoughCutTimeline(
@@ -70,7 +116,7 @@ export async function createResolveRoughCutTimeline(
 }
 
 async function runResolveTimelineRequest<T>(request: {
-  operation: 'create_rough_cut_timeline';
+  operation: 'create_rough_cut_timeline' | 'sync_rough_cut_media';
   input: unknown;
   config: IResolveColorExecutorConfig;
   execFileImpl: IExecFile;

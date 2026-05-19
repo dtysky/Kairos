@@ -133,7 +133,10 @@ export async function generateEditFlowPlan(
       'trip.event_table 只应声明 media/chronology.json 作为 inputRefs；素材级 spans/asset reports 留给 material.archive 或 material.recall。',
       'material.recall 的正式结构化输出只能是 edits/<editId>/script/material-slots.json；不要声明 segment-plan.json。',
       'material-slots.json 必须为每个 chosenSpanId 写 treatments[spanId]={ audio:number, speed:number }，audio 单位 dB，默认 0，静音为 -100，speed 单位倍速，默认 1。',
-      'timeline.generate 必须使用 runner=deterministic，只读取 edit-framework.md、material-slots.json、store/spans.json、store/assets.json 和 media/chronology.json，并直接创建 Resolve 粗剪 timeline。',
+      'material-slots.json 对有 transcript、transcriptSegments、semanticKind=speech/mixed 或 materialPatterns=有口播语音 的非照片 span 不得静音。',
+      'material.recall 应作为审查型粗剪候选池规划，要求 type/day/event 覆盖审计；所有非照片 speech-backed span 默认纳入，未纳入必须在审计中暴露 dropped span。',
+      '如果计划包含 timeline.generate，必须在它之前包含 resolve.media_sync；resolve.media_sync 是 deterministic runner，只同步达芬奇 Media Pool，不声明 media-archive.json。',
+      'timeline.generate 必须使用 runner=deterministic，只读取已同步达芬奇 Media Pool、edit-framework.md、material-slots.json、store/spans.json、store/assets.json 和 media/chronology.json，并直接创建 Resolve 粗剪 timeline。',
       '所有 sharded-agent step 都必须写 execution.codexSubagentProfile={ reasoningEffort:"high", forkContext:false, speed:"standard" }。',
     ],
     allowedInputs: [
@@ -624,13 +627,22 @@ function normalizePlanSteps(value: unknown): IEditFlowPlanStep[] {
       notes: Array.isArray(raw.notes) ? raw.notes.filter(isNonEmptyString) : [],
     });
   });
-  return steps;
+  return ensureResolveMediaSyncBeforeTimeline(steps);
 }
 
 function normalizeStepInputRefs(capabilityId: TEditFlowCapabilityId, value: unknown): string[] {
   if (capabilityId === 'trip.event_table') return ['media/chronology.json'];
+  if (capabilityId === 'resolve.media_sync') {
+    return [
+      'store/spans.json',
+      'store/assets.json',
+      'media/chronology.json',
+      'config/project-brief.json',
+    ];
+  }
   if (capabilityId === 'timeline.generate') {
     return [
+      'DaVinci Resolve Media Pool',
       'edits/<editId>/planning/edit-framework.md',
       'edits/<editId>/script/material-slots.json',
       'store/spans.json',
@@ -643,7 +655,8 @@ function normalizeStepInputRefs(capabilityId: TEditFlowCapabilityId, value: unkn
 
 function normalizeStepOutputRefs(capabilityId: TEditFlowCapabilityId, value: unknown): string[] {
   if (capabilityId === 'material.recall') return ['edits/<editId>/script/material-slots.json'];
-  if (capabilityId === 'timeline.generate') return ['edits/<editId>/timeline/current.json'];
+  if (capabilityId === 'resolve.media_sync') return ['DaVinci Resolve Media Pool'];
+  if (capabilityId === 'timeline.generate') return ['DaVinci Resolve Timeline'];
   return Array.isArray(value) ? value.filter(isNonEmptyString) : [];
 }
 
@@ -652,7 +665,10 @@ function normalizeStepOutputTypes(capabilityId: TEditFlowCapabilityId, value: un
     return { 'edits/<editId>/script/material-slots.json': 'material-slots' };
   }
   if (capabilityId === 'timeline.generate') {
-    return { 'edits/<editId>/timeline/current.json': 'resolve-rough-cut-manifest' };
+    return { 'DaVinci Resolve Timeline': 'resolve-timeline' };
+  }
+  if (capabilityId === 'resolve.media_sync') {
+    return { 'DaVinci Resolve Media Pool': 'resolve-state' };
   }
   return normalizeOutputTypes(value);
 }
@@ -758,8 +774,37 @@ function normalizeCapabilityRunner(
   capabilityId: TEditFlowCapabilityId,
   value: unknown,
 ): IEditFlowPlanStep['runner'] {
+  if (capabilityId === 'resolve.media_sync') return 'deterministic';
   if (capabilityId === 'timeline.generate') return 'deterministic';
   return normalizeRunner(value) ?? CEDIT_FLOW_CAPABILITY_CATALOG.find(item => item.capabilityId === capabilityId)?.defaultRunner;
+}
+
+function ensureResolveMediaSyncBeforeTimeline(steps: IEditFlowPlanStep[]): IEditFlowPlanStep[] {
+  const timelineIndex = steps.findIndex(step => step.capabilityId === 'timeline.generate');
+  if (timelineIndex < 0 || steps.some(step => step.capabilityId === 'resolve.media_sync')) {
+    return steps;
+  }
+  const mediaSyncStep: IEditFlowPlanStep = {
+    id: 'resolve-media-sync',
+    capabilityId: 'resolve.media_sync',
+    title: 'Sync Resolve Media Pool',
+    inputRefs: normalizeStepInputRefs('resolve.media_sync', []),
+    outputRefs: normalizeStepOutputRefs('resolve.media_sync', []),
+    outputTypes: normalizeStepOutputTypes('resolve.media_sync', []),
+    runner: 'deterministic',
+    execution: normalizeStepExecution({
+      mode: 'deterministic',
+      shardBy: 'none',
+      reason: 'timeline.generate requires already-synced Resolve Media Pool',
+    }, 'deterministic'),
+    gate: 'none',
+    notes: ['Auto-inserted because timeline.generate selects existing Resolve Media Pool items and must not reimport media.'],
+  };
+  return [
+    ...steps.slice(0, timelineIndex),
+    mediaSyncStep,
+    ...steps.slice(timelineIndex),
+  ];
 }
 
 function normalizeOutputTypes(value: unknown): Record<string, string> | undefined {
