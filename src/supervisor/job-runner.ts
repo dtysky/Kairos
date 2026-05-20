@@ -11,7 +11,6 @@ import {
 	  loadRuntimeConfig,
   buildProjectChronology,
   rebuildProjectSpans,
-  runEditFlowAction,
 	  prepareWorkspaceStyleAnalysisForAgent,
 	  ColorPrepBlockedError,
 	  ProjectColorBlockedError,
@@ -287,34 +286,6 @@ async function runJob(
         }),
       };
     }
-    case 'edit-flow': {
-      if (!projectId) {
-        throw new BlockedJobError(['edit-flow requires projectId']);
-      }
-      const action = toEditFlowAction(args.action);
-      const projectRoot = resolveWorkspaceProjectRoot(workspaceRoot, projectId);
-      try {
-        const result = await runEditFlowAction({
-          workspaceRoot,
-          projectRoot,
-          editId: toStringValue(args.editId),
-          action,
-          editRuleCategory: toStringValue(args.editRuleCategory) || undefined,
-          styleCategory: toStringValue(args.styleCategory) || undefined,
-          stepId: toStringValue(args.stepId) || undefined,
-          runner: toEditFlowRunner(args.runner) || undefined,
-        });
-        return {
-          finalStatus: 'completed',
-          result,
-        };
-      } catch (error) {
-        if (error instanceof AgentRunnerUnavailableError) {
-          throw new BlockedJobError([error.message]);
-        }
-        throw error;
-      }
-    }
     case 'style-analysis': {
       const result = await prepareWorkspaceStyleAnalysisForAgent({
         workspaceRoot,
@@ -536,22 +507,6 @@ function parseArgs(argv: string[]): Record<string, string> {
 
 function toStringValue(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
-}
-
-function toEditFlowAction(value: unknown): 'plan' | 'confirm-plan' | 'run-step' | 'confirm-step' | 'run-next' {
-  if (value === 'plan'
-    || value === 'confirm-plan'
-    || value === 'run-step'
-    || value === 'confirm-step'
-    || value === 'run-next') {
-    return value;
-  }
-  throw new BlockedJobError(['edit-flow requires args.action: plan / confirm-plan / run-step / confirm-step / run-next']);
-}
-
-function toEditFlowRunner(value: unknown): 'deterministic' | 'agent' | 'script' | 'manual' | undefined {
-  if (value === 'deterministic' || value === 'agent' || value === 'script' || value === 'manual') return value;
-  return undefined;
 }
 
 function toStringArray(value: unknown): string[] {

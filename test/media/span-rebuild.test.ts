@@ -136,19 +136,19 @@ describe('buildMaterialSpansFromReports', () => {
     const result = buildMaterialSpansFromReports({ assets, reports, pharosContext: { ignored: true } });
 
     expect(result.spans.map(span => span.id)).toEqual([
-      'direct-1-direct-1',
-      'direct-1-direct-2',
-      'fallback-1-direct-full',
-      'fine-window-1',
-      'photo-1',
+      'direct-1_drive_visual_s0-2',
+      'direct-1_drive_speech_s3-4',
+      'fallback-1_broll_s0-8',
+      'fine-1_talking-head_mixed_s0-3',
+      'photo-1_photo',
     ]);
-    expect(result.spans.find(span => span.id === 'photo-1')).toMatchObject({
+    expect(result.spans.find(span => span.id === 'photo-1_photo')).toMatchObject({
       assetId: 'photo-1',
       type: 'photo',
       sourceInMs: 0,
       sourceOutMs: 0,
     });
-    expect(result.spans.find(span => span.id === 'direct-1-direct-1')).toMatchObject({
+    expect(result.spans.find(span => span.id === 'direct-1_drive_visual_s0-2')).toMatchObject({
       type: 'drive',
       semanticKind: 'visual',
       sourceInMs: 500,
@@ -158,16 +158,16 @@ describe('buildMaterialSpansFromReports', () => {
       visualObservation: '车窗外道路。',
       materialPatterns: [],
     });
-    expect(result.spans.find(span => span.id === 'direct-1-direct-2')).toMatchObject({
+    expect(result.spans.find(span => span.id === 'direct-1_drive_speech_s3-4')).toMatchObject({
       semanticKind: 'speech',
       transcript: '路上第一句。 第二句。',
       speechCoverage: 0.8,
     });
-    expect(result.spans.find(span => span.id === 'fallback-1-direct-full')).toMatchObject({
+    expect(result.spans.find(span => span.id === 'fallback-1_broll_s0-8')).toMatchObject({
       sourceInMs: 0,
       sourceOutMs: 8_000,
     });
-    expect(result.spans.find(span => span.id === 'fine-window-1')).toMatchObject({
+    expect(result.spans.find(span => span.id === 'fine-1_talking-head_mixed_s0-3')).toMatchObject({
       semanticKind: 'mixed',
       transcript: '我们准备到达。',
       visualObservation: '车内自拍口播',
@@ -229,7 +229,7 @@ describe('buildMaterialSpansFromReports', () => {
 
     expect(result.spans).toHaveLength(1);
     expect(result.spans[0]).toMatchObject({
-      id: 'legacy-speech-window',
+      id: 'legacy-speech-match_talking-head_speech_s0-3',
       semanticKind: 'speech',
       transcript: '机场出发前说一段。',
     });
@@ -266,7 +266,7 @@ describe('buildMaterialSpansFromReports', () => {
     });
 
     expect(result.spans[0]).toMatchObject({
-      id: 'legacy-overlap-window',
+      id: 'legacy-speech-overlap_talking-head_speech_s1-3',
       semanticKind: 'speech',
       transcript: '这段现场口播不能丢。',
       materialPatterns: [],
@@ -311,7 +311,7 @@ describe('buildMaterialSpansFromReports', () => {
     });
 
     expect(result.spans[0]).toMatchObject({
-      id: 'fine-window-truth',
+      id: 'fine-window-transcript_talking-head_speech_s1-4',
       semanticKind: 'speech',
       transcript: '这是窗口自己裁剪后的口播。',
       transcriptSegments: [{ startMs: 1_200, endMs: 2_800, text: '这是窗口自己裁剪后的口播。' }],
@@ -362,7 +362,7 @@ describe('buildMaterialSpansFromReports', () => {
       })],
     });
     expect(recovered.spans[0]).toMatchObject({
-      id: 'legacy-source-window',
+      id: 'legacy-overlap-source_drive_speech_s0-3',
       semanticKind: 'speech',
       transcript: '车里有人说话。',
     });
@@ -386,7 +386,7 @@ describe('buildMaterialSpansFromReports', () => {
       })],
     });
     expect(visual.spans[0]).toMatchObject({
-      id: 'explicit-visual-window',
+      id: 'explicit-visual-overlap_drive_visual_s0-3',
       semanticKind: 'visual',
     });
     expect(visual.spans[0]?.transcript).toBeUndefined();
@@ -438,9 +438,9 @@ describe('buildMaterialSpansFromReports', () => {
     });
 
     expect(result.spans.map(span => [span.id, span.sourceInMs, span.sourceOutMs, span.semanticKind])).toEqual([
-      ['asset-1-direct-1', 0, 2_000, 'visual'],
-      ['asset-1-direct-3', 2_100, 2_500, 'speech'],
-      ['asset-1-direct-4', 9_000, 9_500, 'visual'],
+      ['asset-1_drive_visual_s0-2', 0, 2_000, 'visual'],
+      ['asset-1_drive_speech_s2-3', 2_100, 2_500, 'speech'],
+      ['asset-1_drive_visual_s9-10', 9_000, 9_500, 'visual'],
     ]);
   });
 
@@ -607,7 +607,7 @@ describe('rebuildProjectSpans', () => {
     expect(JSON.stringify(runner.calls[0])).not.toContain('labels');
     expect(JSON.stringify(runner.calls[0])).not.toContain('assetId');
     expect(rawSpans).toEqual([expect.objectContaining({
-      id: 'asset-1-direct-full',
+      id: 'asset-1_broll_s0-5',
       assetId: 'asset-1',
       materialPatterns: ['固定机位观察', '环境不明', '天气光线不明', '无口播语音', '情景不明', '补充视觉素材', '整段氛围素材'],
     })]);
@@ -813,9 +813,9 @@ describe('rebuildProjectSpans', () => {
       'z-late visualObservation',
     ]);
     expect(rawSpans.map(span => span.id)).toEqual([
-      'a-early-direct-full',
-      'm-middle-direct-full',
-      'z-late-direct-full',
+      'a-early_broll_s0-5',
+      'm-middle_broll_s0-5',
+      'z-late_broll_s0-5',
     ]);
   });
 
@@ -892,7 +892,7 @@ describe('rebuildProjectSpans', () => {
 
     expect(runner.calls).toHaveLength(1);
     expect(rawSpans).toEqual([expect.objectContaining({
-      id: 'asset-drone-direct-full',
+      id: 'asset-drone_aerial_s0-5',
       materialPatterns: ['航拍运动', '山地环境', '阴天', '无口播语音', '空中展示山地'],
     })]);
   });
@@ -920,7 +920,7 @@ describe('rebuildProjectSpans', () => {
 
     expect(runner.calls).toHaveLength(2);
     expect(rawSpans).toEqual([expect.objectContaining({
-      id: 'asset-yak-direct-full',
+      id: 'asset-yak_drive_s0-5',
       materialPatterns: ['第一人称行车', '山路', '雾天', '无口播语音', '牦牛过路临时等待', '牦牛群', '临时等待'],
     })]);
   });
@@ -1007,18 +1007,18 @@ describe('rebuildProjectSpans', () => {
     expect(runner.calls).toHaveLength(3);
     expect(rawSpans).toEqual([
       expect.objectContaining({
-        id: 'asset-ok-direct-full',
+        id: 'asset-ok_broll_s0-5',
         materialPatterns: ['固定机位观察', '服务区停车场', '晴天', '无口播语音', '服务区停车观察', '停车场', '车辆停放'],
       }),
       expect.objectContaining({
-        id: 'asset-retry-direct-full',
+        id: 'asset-retry_drive_s0-5',
         materialPatterns: ['第一人称行车', '山路', '阴天', '无口播语音', '山路行车观察', '连续弯道', '车窗视角'],
       }),
     ]);
     expect(partial.failedCount).toBe(1);
     expect(partial.recoveredFailedCount).toBe(1);
     expect(partial.failedSpans[0]).toMatchObject({
-      spanId: 'asset-retry-direct-full',
+      spanId: 'asset-retry_drive_s0-5',
       recovered: true,
     });
   });
@@ -1068,11 +1068,11 @@ describe('rebuildProjectSpans', () => {
     expect(packetContent.items).toHaveLength(1);
     expect(rawSpans).toEqual([
       expect.objectContaining({
-        id: 'asset-done-direct-full',
+        id: 'asset-done_broll_s0-5',
         materialPatterns: ['固定机位观察', '室内餐厅', '室内灯光', '无口播语音', '餐厅环境观察'],
       }),
       expect.objectContaining({
-        id: 'asset-pending-direct-full',
+        id: 'asset-pending_aerial_s0-5',
         materialPatterns: ['航拍俯瞰', '山地环境', '晴天', '无口播语音', '空中展示雪山', '雪山航拍', '远景建立'],
       }),
     ]);
@@ -1107,7 +1107,7 @@ describe('rebuildProjectSpans', () => {
       chunkSize: 10,
       completedCount: 1,
       spans: [{
-        id: 'asset-one-direct-full',
+        id: 'asset-one_broll_s0-5',
         assetId: 'asset-one',
         type: 'broll',
         materialPatterns: ['固定机位观察', '旧环境', '晴天', '无口播语音', '旧情景'],
@@ -1127,7 +1127,7 @@ describe('rebuildProjectSpans', () => {
     expect(runner.calls).toHaveLength(1);
     expect(packetContent.items).toHaveLength(2);
     expect(rawSpans[0]).toEqual(expect.objectContaining({
-      id: 'asset-one-direct-full',
+      id: 'asset-one_broll_s0-5',
       materialPatterns: ['固定机位观察', '城市街道', '晴天', '无口播语音', '街道环境观察', '城市道路', '路边观察'],
     }));
   });
@@ -1166,7 +1166,7 @@ describe('rebuildProjectSpans', () => {
     const rawSpans = JSON.parse(await readFile(getSpansPath(projectRoot), 'utf-8')) as Array<Record<string, unknown>>;
 
     expect(rawSpans).toEqual([expect.objectContaining({
-      id: 'asset-talk-window-1',
+      id: 'asset-talk_talking-head_mixed_s0-2',
       materialPatterns: ['车内自拍口播', '车内', '室内灯光', '有口播语音', '车内抵达服务区', '到达说明', '安全提醒'],
     })]);
   });

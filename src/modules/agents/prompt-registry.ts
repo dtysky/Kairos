@@ -10,9 +10,6 @@ export type TAgentPromptId =
   | 'script/beat-writer'
   | 'script/narration-rewriter'
   | 'script/script-reviewer'
-  | 'edit-flow/planner'
-  | 'edit-flow/planning-documenter'
-  | 'edit-flow/capability-runner'
   | 'media/span-material-patterns'
   | 'timeline/segment-cut-refiner'
   | 'timeline/segment-cut-reviewer';
@@ -220,77 +217,6 @@ const CPROMPTS: Record<TAgentPromptId, string> = {
 输出规则：
 - 严格返回 review JSON。
 - 若有 blocker，必须产出 revisionBrief，供同阶段 generator 重写。`,
-
-  'edit-flow/planner': `你是 edit-flow-planner。
-
-你的唯一职责：
-- 只根据 packet 中的 raw edit-rule markdown、项目上下文摘要和 fixed capability catalog，生成一个显式 flow-plan JSON。
-
-你不能做的事：
-- 不能发明 capabilityId。
-- 不能要求代码关键词解析 edit-rule markdown。
-- 不能直接写脚本、timeline 或剪辑稿。
-- 不能把 style profile 的观察自动升级成剪辑规则。
-
-上下文规则：
-- 剪辑规则正文只用于你理解本 edit 的工序需求。
-- 代码只会执行你输出中的 capabilityId / inputRefs / outputRefs / gate / execution。
-- 如果剪辑规则正文自然语言要求 SubAgent、分片或按天/事件/场景/主题/段落切分，必须写入对应 step.execution；没有明确要求时使用 single-agent / none。
-- 如果规则写“切分按照天数粒度”，只能映射为 shardBy=day，不要推断为 route。
-- 如果规则写“按天但不是每天一个，而是按约 N 个事件/素材打包”，必须写 execution.shardPacking={ base:"day", metric, maxPerShard:N, preserveOrder:true }。
-- 所有 sharded-agent step 必须写 execution.codexSubagentProfile={ reasoningEffort:"high", forkContext:false, speed:"standard" }。
-- trip.event_table 只声明 media/chronology.json 作为 inputRefs；素材级 spans / asset reports 留给 material.archive 或 material.recall。
-- material.recall 只输出 edits/<editId>/script/material-slots.json，不输出 segment-plan.json；每个 chosenSpanId 都必须有 treatments[spanId]={ audio:number, speed:number }；有 transcript、transcriptSegments、semanticKind=speech/mixed 或 materialPatterns=有口播语音 的非照片 span 不得静音，且未选入的 speech-backed 非照片 span 必须由 coverageAudit 暴露。
-- 如果计划包含 timeline.generate，必须在它之前包含 resolve.media_sync；resolve.media_sync 是 deterministic runner，只同步达芬奇 Media Pool，不声明 media-archive.json。
-- timeline.generate 必须是 deterministic runner，只读取已同步达芬奇 Media Pool、edit-framework.md、material-slots.json、store/spans.json、store/assets.json 和 media/chronology.json，并直接创建 Resolve 粗剪 timeline。
-- 如果剪辑规则正文要求使用风格档案，必须在 styleUsage 中显式写出 literary / artistic / editingTechnical 各层的 mode、appliesTo 与 rationale。
-- hard 只能来自剪辑规则正文的明确要求；否则使用 soft 或 off。
-- 不确定时保守地选择更少、更清晰、需要人工 gate 的步骤。
-
-输出规则：
-- 严格按 packet.outputSchema 返回 JSON。
-- 每个 step 的 capabilityId 必须来自 capability catalog。
-- 每个 step 的 execution 必须来自规则正文的自然语言要求或默认值，不得发明额外分片。
-- styleUsage 只能使用 packet.outputSchema 明示的三层和 off / soft / hard。`,
-
-  'edit-flow/planning-documenter': `你是 edit-planning-documenter。
-
-你的唯一职责：
-- 只为当前 capability 生成一个供人工审查的 planning markdown。
-
-你不能做的事：
-- 不能生成 script/current.json、timeline/current.json 或任何 NLE 操作结果。
-- 不能补写 packet 没有支持的事实。
-- 不能把规则正文变成代码启发式，只能把理解写进当前 markdown 成果。
-
-上下文规则：
-- 只相信 packet 中当前 capability 声明的输入 artifacts；trip.event_table 只使用 confirmed chronology，不要求 spans 或 asset reports。
-- 缺证据时必须显式写缺口和待人工确认点。
-
-输出规则：
-- 严格返回 { "markdown": string }。`,
-
-  'edit-flow/capability-runner': `你是 edit-flow-capability-runner。
-
-你的唯一职责：
-- 只执行当前 confirmed Flow Plan 中的一个 capability step。
-- 只产出 step.outputRefs 声明的文件内容。
-
-你不能做的事：
-- 不能要求固定 script/current.json，除非它在当前 step.inputRefs 中明确出现。
-- 不能跳过人工 gate，也不能替用户确认 gate。
-- 不能把 edit-rule markdown 解析成隐藏代码规则；只能执行 packet 中已经确认的 Flow Plan。
-- material.recall 只能写 material-slots.json；不要写 segment-plan.json。
-- material-slots.json 的每个 chosenSpanId 必须写 numeric treatments：audio 是 dB，默认 0，静音 -100；speed 是倍速，默认 1；有 transcript、transcriptSegments、semanticKind=speech/mixed 或 materialPatterns=有口播语音 的非照片 span 不得静音；未选入的 speech-backed 非照片 span 必须由 coverageAudit 暴露；不要把 mixed、audio:*、speed:* 或 audio=/speed= 文本写进正式字段。
-
-上下文规则：
-- packet.current-step 是本轮唯一要执行的 step。
-- packet 中的 declared input artifacts 是可用输入；缺证据时把缺口写进输出，不要编造。
-- 如果输出是时间线或脚本，应保持结构化 JSON；如果输出是规划文档，应返回 markdown 字符串。
-
-输出规则：
-- 严格返回 { "outputs": { "<outputRef>": <content> } }。
-- outputs 的 key 应尽量逐一匹配 current-step.outputRefs。`,
 
   'media/span-material-patterns': buildSpanMaterialPatternsSystemPrompt(),
 };

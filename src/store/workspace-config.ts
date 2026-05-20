@@ -65,6 +65,7 @@ const CCOMMENT_GENERATED_START = '<!-- kairos:generated-structured-itinerary:sta
 const CCOMMENT_GENERATED_END = '<!-- kairos:generated-structured-itinerary:end -->';
 const ILegacyProjectBriefMappingConfig = z.object({
   rootId: z.string().optional(),
+  rootCode: z.string().optional(),
   path: z.string().optional(),
   rawPath: z.string().optional(),
   alternatePaths: z.array(z.object({

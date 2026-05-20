@@ -1,54 +1,31 @@
-import { randomUUID } from 'node:crypto';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { dirname } from 'node:path';
+import { readFile } from 'node:fs/promises';
 import type {
-  IAgentPacket,
   IAgentPacketInputArtifact,
   IEditFlowPlan,
-  IEditFlowPlanStep,
-  IEditFlowStepExecution,
   IEditRuleMarkdownSource,
   IStyleUsage,
 } from '../../protocol/schema.js';
-import { IEditFlowPlan as ZEditFlowPlan, IStyleUsage as ZStyleUsage } from '../../protocol/schema.js';
+import {
+  IEditFlowPlan as ZEditFlowPlan,
+} from '../../protocol/schema.js';
 import {
   getEditFlowPlanPath,
   getEditPlanningArtifactPath,
-  loadAssetReports,
-  loadAssets,
-  loadChronologyReviewState,
   loadEditFlowPlan,
-  loadProject,
-  loadProjectBriefConfig,
-  assertFreshSpans,
+  markEditFlowPlanStale,
   normalizeEditId,
-  writeEditFlowPlan,
 } from '../../store/index.js';
-import { loadOrBuildProjectPharosContext } from '../pharos/context.js';
-import {
-  AgentRunnerUnavailableError,
-  type IJsonPacketAgentRunner,
-} from '../agents/runtime.js';
 import { loadEditRuleByCategory } from '../script/edit-rule-loader.js';
 import {
   computeStyleProfileHash,
   isLayeredStyleProfile,
   loadStyleByCategory,
 } from '../script/style-loader.js';
-import {
-  CEDIT_FLOW_CAPABILITY_CATALOG,
-  isEditFlowCapabilityId,
-  type TEditFlowCapabilityId,
-} from './capabilities.js';
+import { CMATERIAL_ID_POLICY_VERSION } from '../media/material-ids.js';
+import type { TEditFlowCapabilityId } from './capabilities.js';
 
-export interface IGenerateEditFlowPlanInput {
-  workspaceRoot: string;
-  projectRoot: string;
-  editId?: string | null;
-  editRuleCategory: string;
-  styleCategory?: string;
-  agentRunner?: IJsonPacketAgentRunner;
-}
+export const CEDIT_FLOW_PLANNER_POLICY_VERSION = 'codex-agent-v1' as const;
+export const CMATERIAL_TIME_POLICY_VERSION = 'normalized-captured-at-v1' as const;
 
 export interface IAssertConfirmedEditFlowPlanInput {
   workspaceRoot: string;
@@ -58,217 +35,75 @@ export interface IAssertConfirmedEditFlowPlanInput {
   requiredCapabilityIds?: TEditFlowCapabilityId[];
 }
 
-async function loadOptionalFreshSpans(projectRoot: string): Promise<{ count: number; status: 'fresh' | 'missing_or_stale'; message?: string }> {
-  try {
-    const result = await assertFreshSpans(projectRoot);
-    return { count: result.spans.length, status: 'fresh' };
-  } catch (error) {
-    return {
-      count: 0,
-      status: 'missing_or_stale',
-      message: error instanceof Error ? error.message : String(error),
-    };
-  }
+export interface IEditFlowPlanFreshness {
+  status: 'missing' | 'fresh' | 'stale';
+  staleReason?: string;
 }
 
-export async function generateEditFlowPlan(
-  input: IGenerateEditFlowPlanInput,
-): Promise<IEditFlowPlan> {
-  const editId = normalizeEditId(input.editId);
-  const styleProfile = input.styleCategory
-    ? await loadStyleByCategory(`${input.workspaceRoot}/config/styles`, input.styleCategory)
-    : null;
-  const styleProfileHash = styleProfile ? computeStyleProfileHash(styleProfile) : undefined;
-  const [editRule, project, projectBrief, assets, spansInfo, chronologyState, assetReports] = await Promise.all([
-    loadEditRuleByCategory(input.workspaceRoot, input.editRuleCategory),
-    loadProject(input.projectRoot),
-    loadProjectBriefConfig(input.projectRoot),
-    loadAssets(input.projectRoot),
-    loadOptionalFreshSpans(input.projectRoot),
-    loadChronologyReviewState(input.projectRoot),
-    loadAssetReports(input.projectRoot),
-  ]);
-  const pharosContext = await loadOrBuildProjectPharosContext({
-    projectRoot: input.projectRoot,
-    includedTripIds: projectBrief.pharos?.includedTripIds ?? [],
-  });
-  const projectSummary = {
-    project: {
-      id: project.id,
-      name: project.name,
-      description: projectBrief.description,
-    },
-    projectBrief,
-    availability: {
-      pharosStatus: pharosContext.status,
-      pharosTrips: pharosContext.trips.length,
-      pharosShots: pharosContext.shots.length,
-      gpxFiles: pharosContext.gpxFiles.length,
-      assets: assets.length,
-      spans: spansInfo.count,
-      spansStatus: spansInfo.status,
-      spansMessage: spansInfo.message,
-      chronologyItems: chronologyState.chronology?.events.length ?? 0,
-      chronologyStatus: chronologyState.chronology?.status ?? (chronologyState.blocked ? 'blocked' : 'missing'),
-      assetReports: assetReports.length,
-    },
-  };
-  const packet: IAgentPacket = {
-    stage: 'edit-flow-plan',
-    identity: 'edit-flow-planner',
-    mission: '读取剪辑规则 markdown、项目上下文和固定能力目录，生成一个显式、可人工确认、可由代码执行的 Edit Flow Plan。',
-    hardConstraints: [
-      '只能选择输入上下文中 capability catalog 明确列出的 capabilityId。',
-      '不要把剪辑规则正文翻译成代码启发式；你的输出必须是显式 flow plan。',
-      '每个 step 必须写 capabilityId、inputRefs、outputRefs 和 gate。',
-      '需要人工审查的规划文档或阶段必须标记 gate=human。',
-      '不要要求代码读取 markdown 正文来做剪辑判断；规则解释只能体现在你的 plan 和后续 LLM stage context 中。',
-      '如果剪辑规则自由正文要求使用风格档案，请把本轮使用层结构化写入 styleUsage。',
-      'styleUsage.layers 只能使用 literary / artistic / editingTechnical，mode 只能是 off / soft / hard。',
-      'hard 只能来自剪辑规则正文的显式要求；不要把参考视频观察自动升级成硬规则。',
-      '如果剪辑规则正文用自然语言要求 SubAgent、分片、按天/事件/场景/主题/段落切分，请只把这个执行策略写入对应 Flow Plan step.execution；代码不得直接解析 markdown 正文。',
-      '没有明确 SubAgent/分片要求的 step 默认 execution.mode=single-agent、shardBy=none；人工 step 使用 execution.mode=manual、shardBy=none。',
-      '当前旅行纪录片规则若写“使用 SubAgent，切分按照天数粒度”，只能映射为 shardBy=day，不要自动升级为 route 分片。',
-      '如果规则写“按天但不是每天一个，而是按约 N 个事件/素材打包”，写 execution.shardPacking={ base:"day", metric, maxPerShard:N, preserveOrder:true }。',
-      'trip.event_table 只应声明 media/chronology.json 作为 inputRefs；素材级 spans/asset reports 留给 material.archive 或 material.recall。',
-      'material.recall 的正式结构化输出只能是 edits/<editId>/script/material-slots.json；不要声明 segment-plan.json。',
-      'material-slots.json 必须为每个 chosenSpanId 写 treatments[spanId]={ audio:number, speed:number }，audio 单位 dB，默认 0，静音为 -100，speed 单位倍速，默认 1。',
-      'material-slots.json 对有 transcript、transcriptSegments、semanticKind=speech/mixed 或 materialPatterns=有口播语音 的非照片 span 不得静音。',
-      'material.recall 应作为审查型粗剪候选池规划，要求 type/day/event 覆盖审计；所有非照片 speech-backed span 默认纳入，未纳入必须在审计中暴露 dropped span。',
-      '如果计划包含 timeline.generate，必须在它之前包含 resolve.media_sync；resolve.media_sync 是 deterministic runner，只同步达芬奇 Media Pool，不声明 media-archive.json。',
-      'timeline.generate 必须使用 runner=deterministic，只读取已同步达芬奇 Media Pool、edit-framework.md、material-slots.json、store/spans.json、store/assets.json 和 media/chronology.json，并直接创建 Resolve 粗剪 timeline。',
-      '所有 sharded-agent step 都必须写 execution.codexSubagentProfile={ reasoningEffort:"high", forkContext:false, speed:"standard" }。',
-    ],
-    allowedInputs: [
-      'config/edit-rules/<category>.md raw markdown',
-      'fixed capability catalog',
-      'config/project-brief.json',
-      'analysis/pharos-context.json availability summary',
-      'store/assets.json / store/spans.json / media/chronology.json availability summary',
-      'optional selected layered-v1 style profile summary',
-    ],
-    inputArtifacts: [
-      buildEditRuleArtifact(editRule),
-      {
-        label: 'capability-catalog',
-        summary: `${CEDIT_FLOW_CAPABILITY_CATALOG.length} fixed edit capabilities`,
-        content: CEDIT_FLOW_CAPABILITY_CATALOG,
-      },
-      {
-        label: 'project-context-summary',
-        summary: `${assets.length} assets / ${spansInfo.count} spans (${spansInfo.status}) / ${pharosContext.trips.length} Pharos trips`,
-        content: projectSummary,
-      },
-      styleProfile ? {
-        label: 'selected-style-profile',
-        summary: `${styleProfile.name} (${input.styleCategory}) / ${styleProfile.styleProfileVersion}`,
-        content: {
-          category: input.styleCategory,
-          styleProfileVersion: styleProfile.styleProfileVersion,
-          styleProfileHash,
-          layers: styleProfile.layers,
-        },
-      } : null,
-    ].filter((item): item is IAgentPacketInputArtifact => item != null),
-    outputSchema: {
-      summary: 'string',
-      assumptions: 'string[]',
-      styleUsage: {
-        styleCategory: 'string | undefined',
-        styleProfileHash: 'string | undefined',
-        styleProfileVersion: '"layered-v1" | "legacy" | undefined',
-        layers: {
-          literary: '{ mode: "off" | "soft" | "hard", appliesTo: string[], rationale?: string }',
-          artistic: '{ mode: "off" | "soft" | "hard", appliesTo: string[], rationale?: string }',
-          editingTechnical: '{ mode: "off" | "soft" | "hard", appliesTo: string[], rationale?: string }',
-        },
-        rationale: 'string | undefined',
-      },
-      steps: 'Array<{ id: string, capabilityId: one of capability catalog, title?: string, inputRefs: string[], outputRefs: string[], outputTypes?: Record<string,string>, runner?: "deterministic" | "agent" | "script" | "manual", execution?: { mode: "single-agent" | "sharded-agent" | "deterministic" | "manual", shardBy: "none" | "day" | "event" | "scene" | "topic" | "segment", shardPacking?: { base: "day", metric: "chronologyEventCount" | "materialRefCount", maxPerShard: number, preserveOrder: true }, codexSubagentProfile?: { reasoningEffort: "high", forkContext: false, speed: "standard" }, reason?: string }, gate: "none" | "human", notes?: string[] }>',
-    },
-    reviewRubric: [
-      'unknown_capability',
-      'missing_gate',
-      'markdown_heuristic_leak',
-      'missing_project_context',
-      'missing_required_io_refs',
-    ],
-  };
-  const runner = requireDirectEditFlowAgentRunner(input.agentRunner, 'Edit Flow Plan generation');
-  const draft = await runner.run<Partial<IEditFlowPlan>>({
-    promptId: 'edit-flow/planner',
-    packet,
-    llm: { jsonMode: true, temperature: 0.2 },
-  });
-  const plan = materializeEditFlowPlan({
-    draft,
-    projectId: project.id,
-    editId,
-    editRule,
-    styleCategory: input.styleCategory,
-    styleProfileHash,
-    styleProfileVersion: styleProfile?.styleProfileVersion,
-  });
-  await writeEditFlowPlan(input.projectRoot, plan, editId);
-  return plan;
-}
-
-export async function confirmEditFlowPlan(
-  workspaceRoot: string,
-  projectRoot: string,
-  editId?: string | null,
-): Promise<IEditFlowPlan> {
-  const normalizedEditId = normalizeEditId(editId);
-  const existing = await loadEditFlowPlan(projectRoot, normalizedEditId);
-  if (!existing) {
-    throw new Error(`edit flow plan is required: edits/${normalizedEditId}/planning/flow-plan.json`);
-  }
-  const editRule = await loadEditRuleByCategory(workspaceRoot, existing.editRuleCategory);
-  if (existing.editRuleHash !== editRule.contentHash) {
-    const stale = {
-      ...existing,
-      status: 'stale' as const,
-      staleReason: 'edit rule markdown hash changed',
-      updatedAt: new Date().toISOString(),
-    };
-    await writeEditFlowPlan(projectRoot, stale, normalizedEditId);
-    throw new Error(`edit flow plan is stale for edits/${normalizedEditId}; regenerate before confirming`);
-  }
-  await assertStyleUsageReadyForPlan({
-    workspaceRoot,
-    projectRoot,
-    editId: normalizedEditId,
-    plan: existing,
-  });
-  const confirmed = ZEditFlowPlan.parse({
-    ...existing,
-    status: 'confirmed',
-    confirmedAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    staleReason: undefined,
-  });
-  await writeEditFlowPlan(projectRoot, confirmed, normalizedEditId);
-  return confirmed;
-}
-
-export async function loadEditFlowPlanWithFreshness(
+export async function loadEditFlowPlanReadOnly(
   workspaceRoot: string,
   projectRoot: string,
   editId?: string | null,
 ): Promise<IEditFlowPlan | null> {
   const normalizedEditId = normalizeEditId(editId);
-  const existing = await loadEditFlowPlan(projectRoot, normalizedEditId);
-  if (!existing) return null;
-  const editRule = await loadEditRuleByCategory(workspaceRoot, existing.editRuleCategory);
-  if (existing.editRuleHash === editRule.contentHash) return existing;
-  const stale = ZEditFlowPlan.parse({
-    ...existing,
-    status: 'stale',
-    staleReason: 'edit rule markdown hash changed',
-    updatedAt: new Date().toISOString(),
+  const plan = await loadEditFlowPlan(projectRoot, normalizedEditId);
+  if (!plan) return null;
+  const freshness = await evaluateEditFlowPlanFreshness({
+    workspaceRoot,
+    projectRoot,
+    editId: normalizedEditId,
+    plan,
   });
-  await writeEditFlowPlan(projectRoot, stale, normalizedEditId);
-  return stale;
+  if (freshness.status !== 'stale') return plan;
+  return ZEditFlowPlan.parse({
+    ...plan,
+    status: 'stale',
+    staleReason: freshness.staleReason,
+  });
+}
+
+export async function evaluateEditFlowPlanFreshness(input: {
+  workspaceRoot: string;
+  projectRoot: string;
+  editId?: string | null;
+  editRuleCategory?: string;
+  plan?: IEditFlowPlan | null;
+}): Promise<IEditFlowPlanFreshness> {
+  const editId = normalizeEditId(input.editId);
+  const plan = input.plan ?? await loadEditFlowPlan(input.projectRoot, editId);
+  if (!plan) return { status: 'missing' };
+  if (input.editRuleCategory && plan.editRuleCategory !== input.editRuleCategory) {
+    return {
+      status: 'stale',
+      staleReason: `edit unit rule changed: ${input.editRuleCategory}`,
+    };
+  }
+  let editRule: IEditRuleMarkdownSource;
+  try {
+    editRule = await loadEditRuleByCategory(input.workspaceRoot, input.editRuleCategory || plan.editRuleCategory);
+  } catch (error) {
+    return {
+      status: 'stale',
+      staleReason: `edit rule markdown unavailable: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+  if (plan.editRuleHash !== editRule.contentHash) {
+    return { status: 'stale', staleReason: 'edit rule markdown hash changed' };
+  }
+  if (!isCurrentPlannerPolicy(plan)) {
+    return { status: 'stale', staleReason: plannerPolicyStaleReason() };
+  }
+  if (!isCurrentMaterialIdPolicy(plan)) {
+    return { status: 'stale', staleReason: materialIdPolicyStaleReason() };
+  }
+  if (!isCurrentMaterialTimePolicy(plan)) {
+    return { status: 'stale', staleReason: materialTimePolicyStaleReason() };
+  }
+  const styleStaleReason = await evaluateStyleUsageFreshness(input.workspaceRoot, plan);
+  if (styleStaleReason) {
+    return { status: 'stale', staleReason: styleStaleReason };
+  }
+  return { status: 'fresh' };
 }
 
 export async function assertConfirmedEditFlowPlan(
@@ -279,19 +114,16 @@ export async function assertConfirmedEditFlowPlan(
   if (!plan) {
     throw new Error(`confirmed edit flow plan is required before this stage: edits/${editId}/planning/flow-plan.json`);
   }
-  const editRule = await loadEditRuleByCategory(input.workspaceRoot, input.editRuleCategory);
-  if (plan.editRuleCategory !== input.editRuleCategory) {
-    throw new Error(`edit flow plan category mismatch: plan=${plan.editRuleCategory}, current=${input.editRuleCategory}`);
-  }
-  if (plan.editRuleHash !== editRule.contentHash) {
-    const stale = {
-      ...plan,
-      status: 'stale' as const,
-      staleReason: 'edit rule markdown hash changed',
-      updatedAt: new Date().toISOString(),
-    };
-    await writeEditFlowPlan(input.projectRoot, stale, editId);
-    throw new Error(`edit flow plan is stale for edits/${editId}; regenerate and confirm it`);
+  const freshness = await evaluateEditFlowPlanFreshness({
+    workspaceRoot: input.workspaceRoot,
+    projectRoot: input.projectRoot,
+    editId,
+    editRuleCategory: input.editRuleCategory,
+    plan,
+  });
+  if (freshness.status === 'stale') {
+    await markEditFlowPlanStale(input.projectRoot, editId, freshness.staleReason ?? 'edit flow plan is stale');
+    throw new Error(`edit flow plan is stale for edits/${editId}; ${freshness.staleReason ?? 'regenerate it with Codex Agent'}`);
   }
   await assertStyleUsageReadyForPlan({
     workspaceRoot: input.workspaceRoot,
@@ -315,37 +147,23 @@ export async function loadEditPlanningPacketArtifacts(
   editId?: string | null,
 ): Promise<IAgentPacketInputArtifact[]> {
   const normalizedEditId = normalizeEditId(editId);
+  const artifactNames = ['event-table.md', 'material-archive.md', 'edit-framework.md'];
   const artifacts: IAgentPacketInputArtifact[] = [];
-  const flowPlan = await loadEditFlowPlan(projectRoot, normalizedEditId);
-  if (flowPlan) {
+  for (const artifactName of artifactNames) {
+    const path = getEditPlanningArtifactPath(projectRoot, artifactName, normalizedEditId);
+    const content = await readFile(path, 'utf-8').catch(() => null);
+    if (!content?.trim()) continue;
     artifacts.push({
-      label: 'edit-flow-plan',
-      path: getEditFlowPlanPath(projectRoot, normalizedEditId),
-      summary: flowPlan.summary ?? `${flowPlan.steps.length} flow steps`,
-      content: flowPlan,
-    });
-  }
-  for (const item of [
-    ['event-table', 'event-table.md'] as const,
-    ['material-archive', 'material-archive.md'] as const,
-    ['edit-framework', 'edit-framework.md'] as const,
-  ]) {
-    const path = getEditPlanningArtifactPath(projectRoot, item[1], normalizedEditId);
-    const markdown = await readFile(path, 'utf-8').catch(() => '');
-    if (!markdown.trim()) continue;
-    artifacts.push({
-      label: item[0],
+      label: artifactName.replace(/\.md$/u, ''),
       path,
-      summary: firstMarkdownLine(markdown),
-      content: { markdown },
+      summary: `edits/${normalizedEditId}/planning/${artifactName}`,
+      content: { text: content },
     });
   }
   return artifacts;
 }
 
-export function buildEditRuleArtifact(
-  editRule: IEditRuleMarkdownSource,
-): IAgentPacketInputArtifact {
+export function buildEditRuleArtifact(editRule: IEditRuleMarkdownSource): IAgentPacketInputArtifact {
   return {
     label: 'edit-rule-markdown',
     path: editRule.absolutePath,
@@ -353,220 +171,112 @@ export function buildEditRuleArtifact(
     content: {
       categoryId: editRule.categoryId,
       displayName: editRule.displayName,
+      description: editRule.description,
       contentHash: editRule.contentHash,
-      frontMatter: editRule.frontMatter,
       markdown: editRule.markdown,
     },
   };
 }
 
-export async function runEditPlanningDocumentCapability(input: {
-  workspaceRoot: string;
-  projectRoot: string;
-  editId?: string | null;
-  editRuleCategory: string;
-  capabilityId: Extract<TEditFlowCapabilityId, 'pharos.parse' | 'trip.event_table' | 'material.archive' | 'edit.framework'>;
-  agentRunner?: IJsonPacketAgentRunner;
-}): Promise<{ capabilityId: TEditFlowCapabilityId; outputPath: string; status: 'completed' }> {
-  const editId = normalizeEditId(input.editId);
-  const projectBrief = await loadProjectBriefConfig(input.projectRoot);
-  if (input.capabilityId === 'pharos.parse') {
-    await loadOrBuildProjectPharosContext({
-      projectRoot: input.projectRoot,
-      includedTripIds: projectBrief.pharos?.includedTripIds ?? [],
-      forceRefresh: true,
-    });
-    return {
-      capabilityId: input.capabilityId,
-      outputPath: 'analysis/pharos-context.json',
-      status: 'completed',
-    };
+export function assertEditFrameworkMarkdownContract(
+  markdown: string,
+  inputArtifacts: IAgentPacketInputArtifact[] = [],
+): void {
+  const errors: string[] = [];
+  if (!markdown.trim()) {
+    errors.push('markdown is empty');
+  }
+  if (/beat\s*边界索引|边界索引/iu.test(markdown)) {
+    errors.push('must not contain beat 边界索引');
+  }
+  if (/\bchronology\b/iu.test(markdown)) {
+    errors.push('must not mention chronology in the handoff markdown');
+  }
+  if (/\b(?:event|route|gap)-[a-z0-9][a-z0-9-]*\b/iu.test(markdown)) {
+    errors.push('must not contain chronology event/route/gap ids');
+  }
+  if (/\b(?:spanId|spanIds|assetId|assetIds)\b/iu.test(markdown) || /\b(?:span|asset)__[^\s|，。；、)）]+/iu.test(markdown)) {
+    errors.push('must not contain spanId/assetId fields or legacy span__/asset__ ids');
+  }
+  const concreteId = markdown.match(/\b[A-Za-z0-9-]{2,}_(?:zve1|drone|ts-final|photos)(?:_[A-Za-z0-9-]{1,}){0,4}(?:_(?:drive|broll|aerial|timelapse|talking-head|photo|speech|visual|mixed|s\d+-\d+))*\b/iu);
+  if (concreteId) {
+    errors.push(`must not contain concrete material id "${concreteId[0]}"`);
+  }
+  const knownIds = collectMaterialIdsFromArtifacts(inputArtifacts);
+  for (const id of knownIds) {
+    if (id.length >= 6 && markdown.includes(id)) {
+      errors.push(`must not contain concrete material id "${id}"`);
+      break;
+    }
   }
 
-  const plan = await assertConfirmedEditFlowPlan({
-    workspaceRoot: input.workspaceRoot,
-    projectRoot: input.projectRoot,
-    editId,
-    editRuleCategory: input.editRuleCategory,
-    requiredCapabilityIds: [input.capabilityId],
-  });
-
-  if (input.capabilityId === 'trip.event_table') {
-    const [editRule, chronologyState] = await Promise.all([
-      loadEditRuleByCategory(input.workspaceRoot, input.editRuleCategory),
-      loadChronologyReviewState(input.projectRoot),
-    ]);
-    const outputPath = getPlanningDocumentOutputPath(input.projectRoot, input.capabilityId, editId);
-    const packet: IAgentPacket = {
-      stage: input.capabilityId,
-      identity: 'edit-planning-documenter',
-      mission: buildPlanningCapabilityMission(input.capabilityId),
-      hardConstraints: [
-        '只写 trip.event_table 的 planning markdown，不生成 script/current.json 或 timeline/current.json。',
-        '本 capability 的正式事实输入只有 confirmed media/chronology.json；不要要求 store/spans.json 或 analysis/asset-reports/*.json。',
-        '缺证据时必须标注缺口，不补写无来源事实。',
-        '必须引用 confirmed Flow Plan；不要让代码解析 edit-rule markdown。',
-      ],
-      allowedInputs: [
-        'edit-flow-plan',
-        'edit-rule-markdown',
-        'confirmed chronology',
-      ],
-      inputArtifacts: [
-        buildEditRuleArtifact(editRule),
-        {
-          label: 'edit-flow-plan',
-          path: getEditFlowPlanPath(input.projectRoot, editId),
-          summary: plan.summary ?? `${plan.steps.length} flow steps`,
-          content: plan,
-        },
-        {
-          label: 'chronology-summary',
-          path: 'media/chronology.json',
-          summary: chronologyState.chronology
-            ? `${chronologyState.chronology.events.length} chronology events`
-            : chronologyState.message,
-          content: {
-            status: chronologyState.chronology?.status,
-            message: chronologyState.message,
-            chronology: chronologyState.chronology,
-          },
-        },
-      ],
-      outputSchema: { markdown: 'string' },
-      reviewRubric: ['unsupported_claims', 'missing_chronology_event', 'scope_violation'],
-    };
-    const runner = requireDirectEditFlowAgentRunner(input.agentRunner, input.capabilityId);
-    const result = await runner.run<{ markdown: string }>({
-      promptId: 'edit-flow/planning-documenter',
-      packet,
-      llm: { jsonMode: true, temperature: 0.2 },
-    });
-    await mkdir(dirname(outputPath), { recursive: true });
-    await writeFile(outputPath, `${(result.markdown ?? '').trim()}\n`, 'utf-8');
-    return { capabilityId: input.capabilityId, outputPath, status: 'completed' };
+  const rows = extractSegmentTableRows(markdown);
+  if (rows.length === 0) {
+    errors.push('分段操作稿 must contain at least one table row');
   }
-
-  const [editRule, assets, spans, chronologyState, assetReports, planningArtifacts] = await Promise.all([
-    loadEditRuleByCategory(input.workspaceRoot, input.editRuleCategory),
-    loadAssets(input.projectRoot),
-    assertFreshSpans(input.projectRoot).then(result => result.spans),
-    loadChronologyReviewState(input.projectRoot),
-    loadAssetReports(input.projectRoot),
-    loadEditPlanningPacketArtifacts(input.projectRoot, editId),
-  ]);
-  const pharosContext = await loadOrBuildProjectPharosContext({
-    projectRoot: input.projectRoot,
-    includedTripIds: projectBrief.pharos?.includedTripIds ?? [],
-  });
-  const outputPath = getPlanningDocumentOutputPath(input.projectRoot, input.capabilityId, editId);
-  const packet: IAgentPacket = {
-    stage: input.capabilityId,
-    identity: 'edit-planning-documenter',
-    mission: buildPlanningCapabilityMission(input.capabilityId),
-    hardConstraints: [
-      '只写当前 capability 的 planning markdown，不生成 script/current.json 或 timeline/current.json。',
-      '缺证据时必须标注缺口，不补写无来源事实。',
-      '必须引用 Flow Plan 和已审 planning artifacts；不要让代码解析 edit-rule markdown。',
-    ],
-    allowedInputs: [
-      'edit-flow-plan',
-      'edit-rule-markdown',
-      'project brief',
-      'Pharos context',
-      'chronology',
-      'spans',
-      'asset reports',
-      'prior planning artifacts',
-    ],
-    inputArtifacts: [
-      buildEditRuleArtifact(editRule),
-      ...planningArtifacts,
-      {
-        label: 'project-brief',
-        summary: projectBrief.description,
-        content: projectBrief,
-      },
-      {
-        label: 'source-context-summary',
-        summary: `${assets.length} assets / ${spans.length} spans / ${assetReports.length} reports`,
-        content: {
-          pharosContext,
-          chronology: chronologyState.chronology,
-          chronologyMessage: chronologyState.message,
-          spans,
-          assetReports,
-        },
-      },
-    ],
-    outputSchema: { markdown: 'string' },
-    reviewRubric: ['unsupported_claims', 'missing_required_source', 'scope_violation'],
-  };
-  const runner = requireDirectEditFlowAgentRunner(input.agentRunner, input.capabilityId);
-  const result = await runner.run<{ markdown: string }>({
-    promptId: 'edit-flow/planning-documenter',
-    packet,
-    llm: { jsonMode: true, temperature: 0.2 },
-  });
-  await mkdir(dirname(outputPath), { recursive: true });
-  await writeFile(outputPath, `${(result.markdown ?? '').trim()}\n`, 'utf-8');
-  return { capabilityId: input.capabilityId, outputPath, status: 'completed' };
+  for (const row of rows) {
+    const beatCell = row[0] ?? '';
+    const spansCell = row[2] ?? '';
+    if (!/\bFW-\d{2}-\d{2}\b/u.test(beatCell)) {
+      errors.push(`segment row must start with a stable FW beat id: ${beatCell.trim() || '(empty)'}`);
+    }
+    if (!/^共\s*\d+\s*段\s*[:：]/u.test(spansCell.trim())) {
+      errors.push(`spans column must use countable type totals: ${spansCell.trim() || '(empty)'}`);
+    }
+    if (!/[^\d\s:：、，()（）/]+\s*\d+/u.test(spansCell)) {
+      errors.push(`spans column must name material types with counts: ${spansCell.trim() || '(empty)'}`);
+    }
+    if (/高密度素材组|高密度|多段|少量|若干|含口播|有口播(?!语音\d)|口播素材|素材组/u.test(spansCell)) {
+      errors.push(`spans column contains vague material wording: ${spansCell.trim()}`);
+    }
+  }
+  const recallIndex = extractMarkdownSection(markdown, '给 material.recall 的执行索引');
+  if (recallIndex && /\bFW-\d{2}-\d{2}\b/u.test(recallIndex)) {
+    errors.push('material.recall execution index must contain global rules only, not per-beat FW ids');
+  }
+  if (errors.length > 0) {
+    throw new Error(`edit.framework contract failed:\n- ${[...new Set(errors)].join('\n- ')}`);
+  }
 }
 
-function materializeEditFlowPlan(input: {
-  draft: Partial<IEditFlowPlan>;
-  projectId: string;
-  editId: string;
-  editRule: IEditRuleMarkdownSource;
-  styleCategory?: string;
-  styleProfileHash?: string;
-  styleProfileVersion?: 'legacy' | 'layered-v1';
-}): IEditFlowPlan {
-  const now = new Date().toISOString();
-  const steps = normalizePlanSteps(input.draft.steps);
-  const styleUsage = normalizeStyleUsage(input.draft.styleUsage, {
-    styleCategory: input.styleCategory,
-    styleProfileHash: input.styleProfileHash,
-    styleProfileVersion: input.styleProfileVersion,
-  });
-  return ZEditFlowPlan.parse({
-    schemaVersion: '1.0',
-    id: input.draft.id || randomUUID(),
-    projectId: input.projectId,
-    editId: input.editId,
-    editRuleCategory: input.editRule.categoryId,
-    editRuleHash: input.editRule.contentHash,
-    generatedAt: now,
-    updatedAt: now,
-    status: 'draft',
-    summary: input.draft.summary?.trim() || undefined,
-    assumptions: (input.draft.assumptions ?? []).map(item => item.trim()).filter(Boolean),
-    styleUsage,
-    steps,
-  });
+function isCurrentPlannerPolicy(plan: IEditFlowPlan): boolean {
+  return plan.plannerPolicyVersion === CEDIT_FLOW_PLANNER_POLICY_VERSION;
 }
 
-function normalizeStyleUsage(
-  raw: unknown,
-  metadata: {
-    styleCategory?: string;
-    styleProfileHash?: string;
-    styleProfileVersion?: 'legacy' | 'layered-v1';
-  },
-): IStyleUsage | undefined {
-  const parsed = ZStyleUsage.safeParse(raw);
-  const hasRequestedLayer = parsed.success && hasAnyStyleLayerUsage(parsed.data);
-  if (!parsed.success && !metadata.styleCategory) return undefined;
-  const base = parsed.success
-    ? parsed.data
-    : ZStyleUsage.parse({});
-  const next = ZStyleUsage.parse({
-    ...base,
-    styleCategory: base.styleCategory ?? metadata.styleCategory,
-    styleProfileHash: base.styleProfileHash ?? metadata.styleProfileHash,
-    styleProfileVersion: base.styleProfileVersion ?? metadata.styleProfileVersion,
-  });
-  return hasRequestedLayer || metadata.styleCategory ? next : undefined;
+function isCurrentMaterialIdPolicy(plan: IEditFlowPlan): boolean {
+  return plan.materialIdPolicyVersion === CMATERIAL_ID_POLICY_VERSION;
+}
+
+function isCurrentMaterialTimePolicy(plan: IEditFlowPlan): boolean {
+  return plan.materialTimePolicyVersion === CMATERIAL_TIME_POLICY_VERSION;
+}
+
+function plannerPolicyStaleReason(): string {
+  return `planner policy changed: ${CEDIT_FLOW_PLANNER_POLICY_VERSION}`;
+}
+
+function materialIdPolicyStaleReason(): string {
+  return `material id policy changed: ${CMATERIAL_ID_POLICY_VERSION}`;
+}
+
+function materialTimePolicyStaleReason(): string {
+  return `material time policy changed: ${CMATERIAL_TIME_POLICY_VERSION}`;
+}
+
+async function evaluateStyleUsageFreshness(
+  workspaceRoot: string,
+  plan: IEditFlowPlan,
+): Promise<string | null> {
+  const styleUsage = plan.styleUsage;
+  if (!styleUsage || !hasAnyStyleLayerUsage(styleUsage)) return null;
+  const category = styleUsage.styleCategory?.trim();
+  if (!category) return null;
+  const profile = await loadStyleByCategory(`${workspaceRoot}/config/styles`, category).catch(() => null);
+  if (!profile) return `style profile unavailable: ${category}`;
+  if (styleUsage.styleProfileHash && computeStyleProfileHash(profile) !== styleUsage.styleProfileHash) {
+    return 'style profile hash changed';
+  }
+  return null;
 }
 
 async function assertStyleUsageReadyForPlan(input: {
@@ -583,17 +293,11 @@ async function assertStyleUsageReadyForPlan(input: {
   }
   const profile = await loadStyleByCategory(`${input.workspaceRoot}/config/styles`, category);
   if (!isLayeredStyleProfile(profile)) {
-    throw new Error(`style profile "${category}" is legacy; rerun /style or rewrite it with styleProfileVersion=layered-v1 before confirming this Flow Plan`);
+    throw new Error(`style profile "${category}" is legacy; rerun /style or rewrite it with styleProfileVersion=layered-v1 before using this Flow Plan`);
   }
   const currentHash = computeStyleProfileHash(profile);
   if (styleUsage.styleProfileHash && styleUsage.styleProfileHash !== currentHash) {
-    const stale = {
-      ...input.plan,
-      status: 'stale' as const,
-      staleReason: 'style profile hash changed',
-      updatedAt: new Date().toISOString(),
-    };
-    await writeEditFlowPlan(input.projectRoot, stale, input.editId);
+    await markEditFlowPlanStale(input.projectRoot, input.editId, 'style profile hash changed');
     throw new Error(`edit flow plan is stale for edits/${input.editId}; selected style profile changed`);
   }
   if (styleUsage.styleProfileVersion && styleUsage.styleProfileVersion !== 'layered-v1') {
@@ -605,213 +309,58 @@ function hasAnyStyleLayerUsage(styleUsage: IStyleUsage): boolean {
   return Object.values(styleUsage.layers).some(layer => layer.mode !== 'off');
 }
 
-function normalizePlanSteps(value: unknown): IEditFlowPlanStep[] {
-  if (!Array.isArray(value)) return [];
-  const steps: IEditFlowPlanStep[] = [];
-  value.forEach((step, index) => {
-    if (typeof step !== 'object' || step == null) return;
-    const raw = step as Partial<IEditFlowPlanStep>;
-    const capabilityId = typeof raw.capabilityId === 'string' ? raw.capabilityId.trim() : '';
-    if (!isEditFlowCapabilityId(capabilityId)) return;
-    const runner = normalizeCapabilityRunner(capabilityId, raw.runner);
-    steps.push({
-      id: typeof raw.id === 'string' && raw.id.trim() ? raw.id.trim() : `step-${index + 1}`,
-      capabilityId,
-      title: typeof raw.title === 'string' && raw.title.trim() ? raw.title.trim() : undefined,
-      inputRefs: normalizeStepInputRefs(capabilityId, raw.inputRefs),
-      outputRefs: normalizeStepOutputRefs(capabilityId, raw.outputRefs),
-      outputTypes: normalizeStepOutputTypes(capabilityId, raw.outputTypes),
-      runner,
-      execution: normalizeStepExecution(raw.execution, runner),
-      gate: raw.gate === 'human' ? 'human' : 'none',
-      notes: Array.isArray(raw.notes) ? raw.notes.filter(isNonEmptyString) : [],
-    });
-  });
-  return ensureResolveMediaSyncBeforeTimeline(steps);
-}
-
-function normalizeStepInputRefs(capabilityId: TEditFlowCapabilityId, value: unknown): string[] {
-  if (capabilityId === 'trip.event_table') return ['media/chronology.json'];
-  if (capabilityId === 'resolve.media_sync') {
-    return [
-      'store/spans.json',
-      'store/assets.json',
-      'media/chronology.json',
-      'config/project-brief.json',
-    ];
-  }
-  if (capabilityId === 'timeline.generate') {
-    return [
-      'DaVinci Resolve Media Pool',
-      'edits/<editId>/planning/edit-framework.md',
-      'edits/<editId>/script/material-slots.json',
-      'store/spans.json',
-      'store/assets.json',
-      'media/chronology.json',
-    ];
-  }
-  return Array.isArray(value) ? value.filter(isNonEmptyString) : [];
-}
-
-function normalizeStepOutputRefs(capabilityId: TEditFlowCapabilityId, value: unknown): string[] {
-  if (capabilityId === 'material.recall') return ['edits/<editId>/script/material-slots.json'];
-  if (capabilityId === 'resolve.media_sync') return ['DaVinci Resolve Media Pool'];
-  if (capabilityId === 'timeline.generate') return ['DaVinci Resolve Timeline'];
-  return Array.isArray(value) ? value.filter(isNonEmptyString) : [];
-}
-
-function normalizeStepOutputTypes(capabilityId: TEditFlowCapabilityId, value: unknown): Record<string, string> | undefined {
-  if (capabilityId === 'material.recall') {
-    return { 'edits/<editId>/script/material-slots.json': 'material-slots' };
-  }
-  if (capabilityId === 'timeline.generate') {
-    return { 'DaVinci Resolve Timeline': 'resolve-timeline' };
-  }
-  if (capabilityId === 'resolve.media_sync') {
-    return { 'DaVinci Resolve Media Pool': 'resolve-state' };
-  }
-  return normalizeOutputTypes(value);
-}
-
-function normalizeStepExecution(
-  value: unknown,
-  runner?: 'deterministic' | 'agent' | 'script' | 'manual',
-): IEditFlowStepExecution {
-  const raw = typeof value === 'object' && value != null
-    ? value as Partial<IEditFlowStepExecution>
-    : {};
-  const mode = raw.mode === 'sharded-agent'
-    ? 'sharded-agent'
-    : raw.mode === 'deterministic' || runner === 'deterministic'
-      ? 'deterministic'
-    : raw.mode === 'manual' || runner === 'manual'
-      ? 'manual'
-      : 'single-agent';
-  const allowedShardBy = new Set(['none', 'day', 'event', 'scene', 'topic', 'segment']);
-  const shardBy = mode === 'sharded-agent' && typeof raw.shardBy === 'string' && allowedShardBy.has(raw.shardBy)
-    ? raw.shardBy as IEditFlowStepExecution['shardBy']
-    : 'none';
-  const shardPacking = normalizeShardPacking(raw.shardPacking);
-  return {
-    mode,
-    shardBy: mode === 'sharded-agent' ? shardBy : 'none',
-    ...(mode === 'sharded-agent' && shardPacking ? { shardPacking } : {}),
-    ...(mode === 'sharded-agent'
-      ? {
-        codexSubagentProfile: {
-          reasoningEffort: 'high',
-          forkContext: false,
-          speed: 'standard',
-        },
+function collectMaterialIdsFromArtifacts(inputArtifacts: IAgentPacketInputArtifact[]): string[] {
+  const ids = new Set<string>();
+  const visit = (value: unknown, key?: string): void => {
+    if (typeof value === 'string') {
+      if (key === 'id' || key === 'assetId' || key === 'spanId' || key === 'chosenSpanId') {
+        ids.add(value);
       }
-      : {}),
-    reason: typeof raw.reason === 'string' && raw.reason.trim() ? raw.reason.trim() : undefined,
+      return;
+    }
+    if (Array.isArray(value)) {
+      value.forEach(item => visit(item, key));
+      return;
+    }
+    if (typeof value !== 'object' || value == null) return;
+    for (const [childKey, childValue] of Object.entries(value as Record<string, unknown>)) {
+      if (childKey === 'spanIds' || childKey === 'chosenSpanIds') {
+        if (Array.isArray(childValue)) {
+          childValue.filter((item): item is string => typeof item === 'string').forEach(item => ids.add(item));
+        }
+        continue;
+      }
+      visit(childValue, childKey);
+    }
   };
-}
-
-function normalizeShardPacking(value: unknown): IEditFlowStepExecution['shardPacking'] {
-  const raw = typeof value === 'object' && value != null
-    ? value as Partial<NonNullable<IEditFlowStepExecution['shardPacking']>>
-    : {};
-  if (raw.base !== 'day') return undefined;
-  if (raw.metric !== 'chronologyEventCount' && raw.metric !== 'materialRefCount') return undefined;
-  if (typeof raw.maxPerShard !== 'number' || !Number.isFinite(raw.maxPerShard) || raw.maxPerShard <= 0) {
-    return undefined;
+  for (const artifact of inputArtifacts) {
+    visit(artifact.content);
   }
-  return {
-    base: 'day',
-    metric: raw.metric,
-    maxPerShard: Math.max(1, Math.floor(raw.maxPerShard)),
-    preserveOrder: true,
-  };
+  return [...ids].sort((a, b) => b.length - a.length);
 }
 
-function requireDirectEditFlowAgentRunner(
-  agentRunner: IJsonPacketAgentRunner | undefined,
-  stage: string,
-): IJsonPacketAgentRunner {
-  if (agentRunner) return agentRunner;
-  throw new AgentRunnerUnavailableError(`${stage} requires direct Agent/SubAgent execution`);
+function extractSegmentTableRows(markdown: string): string[][] {
+  const section = extractMarkdownSection(markdown, '分段操作稿');
+  if (!section) return [];
+  return section
+    .split(/\r?\n/u)
+    .map(line => line.trim())
+    .filter(line => line.startsWith('|') && line.endsWith('|'))
+    .map(line => line.slice(1, -1).split('|').map(cell => cell.trim()))
+    .filter(cells => cells.length >= 4)
+    .filter(cells => !/^[-:\s]+$/u.test(cells.join('')))
+    .filter(cells => !/^(事件|段落|FW|beat)$/iu.test(cells[0] ?? ''));
 }
 
-function getPlanningDocumentOutputPath(
-  projectRoot: string,
-  capabilityId: TEditFlowCapabilityId,
-  editId?: string | null,
-): string {
-  if (capabilityId === 'trip.event_table') return getEditPlanningArtifactPath(projectRoot, 'event-table.md', editId);
-  if (capabilityId === 'material.archive') return getEditPlanningArtifactPath(projectRoot, 'material-archive.md', editId);
-  return getEditPlanningArtifactPath(projectRoot, 'edit-framework.md', editId);
+function extractMarkdownSection(markdown: string, title: string): string | null {
+  const lines = markdown.split(/\r?\n/u);
+  const start = lines.findIndex(line => line.trim() === `## ${title}`);
+  if (start < 0) return null;
+  const rest = lines.slice(start + 1);
+  const end = rest.findIndex(line => /^##\s+/u.test(line.trim()));
+  return (end < 0 ? rest : rest.slice(0, end)).join('\n');
 }
 
-function buildPlanningCapabilityMission(capabilityId: TEditFlowCapabilityId): string {
-  if (capabilityId === 'trip.event_table') {
-    return '生成供人工审查的行程和事件表，整合 Pharos、GPS、chronology、ASR 和素材分析缺口。';
-  }
-  if (capabilityId === 'material.archive') {
-    return '生成供下游召回使用的完整素材档案，覆盖素材强项、缺口、可用原声、关键过程与证据索引。';
-  }
-  return '生成初版剪辑框架文本，严格依据确认过的 Flow Plan、事件表、素材档案和剪辑规则 markdown。';
-}
-
-function firstMarkdownLine(markdown: string): string {
-  return markdown
-    .split('\n')
-    .map(line => line.replace(/^#+\s*/u, '').trim())
-    .find(Boolean) ?? 'planning artifact';
-}
-
-function isNonEmptyString(value: unknown): value is string {
-  return typeof value === 'string' && value.trim().length > 0;
-}
-
-function normalizeRunner(value: unknown): IEditFlowPlanStep['runner'] | undefined {
-  if (value === 'deterministic' || value === 'agent' || value === 'script' || value === 'manual') return value;
-  return undefined;
-}
-
-function normalizeCapabilityRunner(
-  capabilityId: TEditFlowCapabilityId,
-  value: unknown,
-): IEditFlowPlanStep['runner'] {
-  if (capabilityId === 'resolve.media_sync') return 'deterministic';
-  if (capabilityId === 'timeline.generate') return 'deterministic';
-  return normalizeRunner(value) ?? CEDIT_FLOW_CAPABILITY_CATALOG.find(item => item.capabilityId === capabilityId)?.defaultRunner;
-}
-
-function ensureResolveMediaSyncBeforeTimeline(steps: IEditFlowPlanStep[]): IEditFlowPlanStep[] {
-  const timelineIndex = steps.findIndex(step => step.capabilityId === 'timeline.generate');
-  if (timelineIndex < 0 || steps.some(step => step.capabilityId === 'resolve.media_sync')) {
-    return steps;
-  }
-  const mediaSyncStep: IEditFlowPlanStep = {
-    id: 'resolve-media-sync',
-    capabilityId: 'resolve.media_sync',
-    title: 'Sync Resolve Media Pool',
-    inputRefs: normalizeStepInputRefs('resolve.media_sync', []),
-    outputRefs: normalizeStepOutputRefs('resolve.media_sync', []),
-    outputTypes: normalizeStepOutputTypes('resolve.media_sync', []),
-    runner: 'deterministic',
-    execution: normalizeStepExecution({
-      mode: 'deterministic',
-      shardBy: 'none',
-      reason: 'timeline.generate requires already-synced Resolve Media Pool',
-    }, 'deterministic'),
-    gate: 'none',
-    notes: ['Auto-inserted because timeline.generate selects existing Resolve Media Pool items and must not reimport media.'],
-  };
-  return [
-    ...steps.slice(0, timelineIndex),
-    mediaSyncStep,
-    ...steps.slice(timelineIndex),
-  ];
-}
-
-function normalizeOutputTypes(value: unknown): Record<string, string> | undefined {
-  if (typeof value !== 'object' || value == null || Array.isArray(value)) return undefined;
-  const entries = Object.entries(value as Record<string, unknown>)
-    .filter((entry): entry is [string, string] => Boolean(entry[0].trim()) && typeof entry[1] === 'string' && Boolean(entry[1].trim()))
-    .map(([key, outputType]) => [key.trim(), outputType.trim()] as const);
-  if (entries.length === 0) return undefined;
-  return Object.fromEntries(entries);
+export function getCodexAgentFlowPlanPath(projectRoot: string, editId?: string | null): string {
+  return getEditFlowPlanPath(projectRoot, editId);
 }

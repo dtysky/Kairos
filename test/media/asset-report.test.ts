@@ -73,7 +73,7 @@ describe('buildAssetCoarseReport', () => {
     expect(report.materializationPath).toBe('fine-scan');
     expect(report.fineScanMode).toBe('windowed');
     expect(report.interestingWindows[0]).toMatchObject({
-      windowId: 'asset-video-iw-1',
+      windowId: 'asset-video_drive_s0-8',
       reason: 'speech-window',
     });
   });

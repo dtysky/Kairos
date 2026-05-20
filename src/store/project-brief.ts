@@ -7,6 +7,7 @@ export interface IProjectBriefTemplateInput {
 }
 
 export interface IProjectBriefPathMapping {
+  rootCode?: string;
   path: string;
   rawPath?: string;
   alternatePaths?: Array<{ path?: string; rawPath?: string }>;
@@ -76,6 +77,7 @@ export function buildProjectBriefWithMappings(input: {
   description?: string;
   createdAt?: string;
   mappings: Array<{
+    rootCode?: string;
     path: string;
     rawPath?: string;
     alternatePaths?: Array<{ path?: string; rawPath?: string }>;
@@ -104,6 +106,7 @@ export function buildProjectBriefWithMappings(input: {
       ]);
       return [
         `路径：${mapping.path}`,
+        ...(mapping.rootCode ? [`Root代号：${mapping.rootCode}`] : []),
         ...(mapping.rawPath ? [`原始路径：${mapping.rawPath}`] : []),
         ...alternateLines,
         `说明：${mapping.description}`,
@@ -162,6 +165,7 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
   let inPharos = false;
   let inMaterialPatterns = false;
   let pendingPath: string | null = null;
+  let pendingRootCode: string | null = null;
   let pendingRawPath: string | null = null;
   let pendingAlternatePaths = new Map<number, { path?: string; rawPath?: string }>();
   let pendingDescription: string | null = null;
@@ -207,6 +211,7 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
         mappings,
         warnings,
         pendingPath,
+        pendingRootCode,
         pendingRawPath,
         pendingAlternatePaths,
         pendingDescription,
@@ -214,6 +219,7 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
         pendingCaptureTimePolicy,
       );
       pendingPath = null;
+      pendingRootCode = null;
       pendingRawPath = null;
       pendingAlternatePaths = new Map();
       pendingDescription = null;
@@ -236,6 +242,7 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
         mappings,
         warnings,
         pendingPath,
+        pendingRootCode,
         pendingRawPath,
         pendingAlternatePaths,
         pendingDescription,
@@ -243,6 +250,7 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
         pendingCaptureTimePolicy,
       );
       pendingPath = null;
+      pendingRootCode = null;
       pendingRawPath = null;
       pendingAlternatePaths = new Map();
       pendingDescription = null;
@@ -266,6 +274,7 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
         mappings,
         warnings,
         pendingPath,
+        pendingRootCode,
         pendingRawPath,
         pendingAlternatePaths,
         pendingDescription,
@@ -273,6 +282,7 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
         pendingCaptureTimePolicy,
       );
       pendingPath = null;
+      pendingRootCode = null;
       pendingRawPath = null;
       pendingAlternatePaths = new Map();
       pendingDescription = null;
@@ -325,6 +335,7 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
         mappings,
         warnings,
         pendingPath,
+        pendingRootCode,
         pendingRawPath,
         pendingAlternatePaths,
         pendingDescription,
@@ -332,6 +343,7 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
         pendingCaptureTimePolicy,
       );
       pendingPath = null;
+      pendingRootCode = null;
       pendingRawPath = null;
       pendingAlternatePaths = new Map();
       pendingDescription = null;
@@ -386,6 +398,13 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
       expectAlternatePathIndex = null;
       expectDescriptionValue = false;
       expectFlightRecordPathValue = false;
+      continue;
+    }
+
+    if (line.startsWith('Root代号：') || line.startsWith('rootCode：') || line.startsWith('rootCode:')) {
+      const separatorIndex = line.includes('：') ? line.indexOf('：') : line.indexOf(':');
+      const value = line.slice(separatorIndex + 1).trim();
+      pendingRootCode = value || null;
       continue;
     }
 
@@ -469,6 +488,7 @@ export function parseProjectBrief(content: string): IParsedProjectBrief {
     mappings,
     warnings,
     pendingPath,
+    pendingRootCode,
     pendingRawPath,
     pendingAlternatePaths,
     pendingDescription,
@@ -560,6 +580,7 @@ function pushPendingMapping(
   out: IProjectBriefPathMapping[],
   warnings: string[],
   path: string | null,
+  rootCode: string | null,
   rawPath: string | null,
   alternatePaths: Map<number, { path?: string; rawPath?: string }>,
   description: string | null,
@@ -574,6 +595,7 @@ function pushPendingMapping(
   if (!description) {
     warnings.push(`路径映射缺少说明：${path}`);
     out.push({
+      rootCode: rootCode ?? undefined,
       path,
       rawPath: rawPath ?? undefined,
       alternatePaths: normalizeAlternatePaths(alternatePaths),
@@ -584,6 +606,7 @@ function pushPendingMapping(
     return;
   }
   out.push({
+    rootCode: rootCode ?? undefined,
     path,
     rawPath: rawPath ?? undefined,
     alternatePaths: normalizeAlternatePaths(alternatePaths),

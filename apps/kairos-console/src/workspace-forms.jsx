@@ -197,6 +197,11 @@ export function ProjectBriefEditor({ config, pharosStatus, summaries = [], setCo
             </div>
             <div className="field-grid field-grid-three">
               <Field
+                label="Root 代号"
+                value={mapping.rootCode || ''}
+                onChange={value => updateMapping({ ...mapping, rootCode: value })}
+              />
+              <Field
                 label="路径"
                 value={mapping.path}
                 onChange={value => updateMapping({ ...mapping, path: value })}
@@ -765,7 +770,7 @@ export function ScriptBriefEditor({
         <p className="field-help">正在自动保存分类选择…</p>
       ) : null}
       {!autoSaveBusy ? (
-        <p className="field-help">剪辑规则会自动保存，并先进入 Flow Plan 生成与确认；风格档案仍只选一个分类，具体使用文学 / 艺术 / 剪辑技法哪几层由 confirmed Flow Plan 决定。下面的 brief 内容仍需要手动点击“保存”。</p>
+        <p className="field-help">剪辑规则与风格档案的正式初始化入口在 /edit；这里保留旧 brief 审查字段，下面的 brief 内容仍需要手动点击“保存”。</p>
       ) : null}
       {config.editRuleCategory && !hasValidEditRuleCategory ? (
         <p className="field-help field-help-error">当前剪辑规则已失效，请从 workspace 剪辑规则库重新选择。</p>
@@ -2358,6 +2363,7 @@ function createProjectBriefMappingDraft(existingMappings) {
   } while (existingRootIds.has(rootId));
   return {
     rootId,
+    rootCode: '',
     path: '',
     rawPath: '',
     alternatePaths: [],
@@ -3836,6 +3842,6 @@ const SCRIPT_WORKFLOW_STATUS_TEXT = {
   await_brief_draft: '剪辑规则已保存，请回到 Agent 生成 material-overview.md 和初版 brief。',
   review_brief: '初版 overview / brief 已生成，请在 /script 审查并保存。',
   ready_to_prepare: 'brief 已保存，请点击 准备给 Agent。',
-  ready_for_agent: '事实刷新与 bundle 索引已完成；正式剪辑请回到 /edit 继续 Flow Plan。',
+  ready_for_agent: '事实刷新与 bundle 索引已完成；正式剪辑请回到 /edit 审查 Codex Agent 产物。',
   script_generated: '脚本已生成，可继续审稿或进入 Timeline。',
 };

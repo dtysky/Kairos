@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { confirmEditFlowPlan } from '../../src/modules/edit-flow/index.js';
+import { assertConfirmedEditFlowPlan, CEDIT_FLOW_PLANNER_POLICY_VERSION } from '../../src/modules/edit-flow/index.js';
 import { loadEditRuleByCategory } from '../../src/modules/script/edit-rule-loader.js';
 import { saveStyleSourcesConfig, writeEditFlowPlan } from '../../src/store/index.js';
 import type { IEditFlowPlan } from '../../src/protocol/schema.js';
@@ -36,12 +36,16 @@ async function createWorkspace(): Promise<{ workspaceRoot: string; projectRoot: 
 function buildPlan(editRuleHash: string, styleUsage: IEditFlowPlan['styleUsage']): IEditFlowPlan {
   return {
     schemaVersion: '1.0',
+    plannerPolicyVersion: CEDIT_FLOW_PLANNER_POLICY_VERSION,
+    materialIdPolicyVersion: 'human-source-v1',
+    materialTimePolicyVersion: 'normalized-captured-at-v1',
     id: 'plan-a',
     editId: 'main',
     editRuleCategory: 'travel-doc',
     editRuleHash,
     generatedAt: '2026-05-16T00:00:00.000Z',
-    status: 'draft',
+    status: 'confirmed',
+    confirmedAt: '2026-05-16T00:00:00.000Z',
     assumptions: [],
     styleUsage,
     steps: [{
@@ -80,7 +84,11 @@ describe('Flow Plan styleUsage gates', () => {
       },
     }));
 
-    await expect(confirmEditFlowPlan(workspaceRoot, projectRoot)).rejects.toThrow('requires styleCategory');
+    await expect(assertConfirmedEditFlowPlan({
+      workspaceRoot,
+      projectRoot,
+      editRuleCategory: 'travel-doc',
+    })).rejects.toThrow('requires styleCategory');
   });
 
   it('blocks confirmation when the selected style profile is legacy', async () => {
@@ -104,7 +112,11 @@ describe('Flow Plan styleUsage gates', () => {
       },
     }));
 
-    await expect(confirmEditFlowPlan(workspaceRoot, projectRoot)).rejects.toThrow('legacy');
+    await expect(assertConfirmedEditFlowPlan({
+      workspaceRoot,
+      projectRoot,
+      editRuleCategory: 'travel-doc',
+    })).rejects.toThrow('legacy');
   });
 
   it('confirms when requested layers point at a layered-v1 profile', async () => {
@@ -140,7 +152,11 @@ describe('Flow Plan styleUsage gates', () => {
       },
     }));
 
-    const confirmed = await confirmEditFlowPlan(workspaceRoot, projectRoot);
+    const confirmed = await assertConfirmedEditFlowPlan({
+      workspaceRoot,
+      projectRoot,
+      editRuleCategory: 'travel-doc',
+    });
 
     expect(confirmed.status).toBe('confirmed');
   });

@@ -122,6 +122,7 @@ export type IMediaRootAlternatePath = z.infer<typeof IMediaRootAlternatePath>;
 
 export const IMediaRoot = z.object({
   id: z.string(),
+  rootCode: z.string().optional(),
   path: z.string().optional(),
   rawPath: z.string().optional(),
   flightRecordPath: z.string().optional(),
@@ -303,6 +304,8 @@ export const IKtepAsset = z.object({
   width: z.number().optional(),
   height: z.number().optional(),
   capturedAt: z.string().optional(),
+  rawCapturedAt: z.string().optional(),
+  appliedClockOffsetMs: z.number().int().optional(),
   captureTimeSource: ECaptureTimeSource.optional(),
   captureTimeConfidence: z.number().min(0).max(1).optional(),
   createdAt: z.string().optional(),
@@ -972,6 +975,8 @@ export const IMaterialSlotsDocument = z.object({
   id: z.string(),
   projectId: z.string(),
   generatedAt: z.string(),
+  status: z.enum(['current', 'stale']).optional(),
+  staleReason: z.string().optional(),
   segments: z.array(ISegmentMaterialSlotGroup).default([]),
   coverageAudit: IMaterialRecallCoverageAudit.optional(),
 });
@@ -1227,6 +1232,7 @@ export type IStoreManifest = z.infer<typeof IStoreManifest>;
 
 export const IProjectBriefMappingConfig = z.object({
   rootId: z.string(),
+  rootCode: z.string().optional(),
   path: z.string(),
   rawPath: z.string().optional(),
   alternatePaths: z.array(IMediaRootAlternatePath).optional(),
@@ -1949,6 +1955,16 @@ export const IScriptBriefConfig = z.object({
 });
 export type IScriptBriefConfig = z.infer<typeof IScriptBriefConfig>;
 
+export const IEditUnitConfig = z.object({
+  schemaVersion: z.literal('1.0'),
+  editId: z.string(),
+  editRuleCategory: z.string().optional(),
+  styleCategory: z.string().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type IEditUnitConfig = z.infer<typeof IEditUnitConfig>;
+
 export const IEditRuleCategoryConfig = z.object({
   categoryId: z.string(),
   displayName: z.string(),
@@ -2023,7 +2039,7 @@ export const IEditFlowStepExecution = z.object({
 });
 export type IEditFlowStepExecution = z.infer<typeof IEditFlowStepExecution>;
 
-export const EEditFlowStepRunStatus = z.enum(['pending', 'running', 'awaiting_review', 'completed', 'failed']);
+export const EEditFlowStepRunStatus = z.enum(['pending', 'running', 'awaiting_review', 'completed', 'failed', 'stale']);
 export type EEditFlowStepRunStatus = z.infer<typeof EEditFlowStepRunStatus>;
 
 export const IEditFlowPlanStep = z.object({
@@ -2042,6 +2058,9 @@ export type IEditFlowPlanStep = z.infer<typeof IEditFlowPlanStep>;
 
 export const IEditFlowPlan = z.object({
   schemaVersion: z.literal('1.0'),
+  plannerPolicyVersion: z.enum(['rule-explicit-v1', 'rule-explicit-v2', 'codex-agent-v1']).optional(),
+  materialIdPolicyVersion: z.literal('human-source-v1').optional(),
+  materialTimePolicyVersion: z.literal('normalized-captured-at-v1').optional(),
   id: z.string(),
   projectId: z.string().optional(),
   editId: z.string(),

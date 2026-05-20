@@ -1916,13 +1916,13 @@ function buildFallbackBriefDraft(
     constraintDraft: brief.constraintDraft.length > 0
       ? brief.constraintDraft
       : dedupeStrings([
-        '粗剪结构以确认后的 Flow Plan 和已审 planning artifacts 为准。',
+        '粗剪结构以 Codex Agent 维护的 Flow Plan 和已审 planning artifacts 为准。',
         '缺证据时标注缺口，不补写不存在的地点、事件或情绪。',
       ]),
     planReviewDraft: brief.planReviewDraft.length > 0
       ? brief.planReviewDraft
       : dedupeStrings([
-        '先确认 Flow Plan 和 planning artifacts，再进入素材召回与脚本生成。',
+        '先审查 Flow Plan 和 planning artifacts，再进入素材召回与脚本生成。',
         `规则 hash: ${editRule.contentHash.slice(0, 12)}`,
       ]),
     segments: brief.segments.length > 0

@@ -12,6 +12,7 @@ import { normalizeColorRenderPreset } from '../modules/color/render-preset.js';
 
 export type TProjectBriefMappingInput = {
   rootId?: string;
+  rootCode?: string;
   path?: string;
   rawPath?: string;
   alternatePaths?: Array<{
@@ -228,6 +229,7 @@ function buildMappingFromInput(
     consumedLegacyRootIds.add(legacyRoot.id);
   }
 
+  const rootCode = normalizeConfigKey(mapping.rootCode ?? legacyRoot?.rootCode);
   const renderPreset = normalizeRenderPreset(mapping.color?.renderPreset ?? legacyRoot?.color?.renderPreset);
   const colorSpaceProfile = normalizeColorSpaceProfile(mapping.color?.colorSpaceProfile ?? legacyRoot?.color?.colorSpaceProfile);
   const transformPresetKey = normalizeTransformPresetKey(mapping.color?.transformPresetKey ?? legacyRoot?.color?.transformPresetKey);
@@ -241,6 +243,7 @@ function buildMappingFromInput(
 
   return {
     rootId: explicitRootId ?? legacyRoot?.id ?? derivedRootId,
+    rootCode,
     path,
     rawPath: rawPath ?? trimString(legacyRoot?.rawPath),
     alternatePaths,
@@ -295,6 +298,7 @@ export function materializeProjectBriefConfig(
 export function projectBriefToMediaRoots(config: Pick<IProjectBriefConfig, 'mappings'>): IMediaRoot[] {
   return (config.mappings ?? []).map((mapping, index) => ({
     id: mapping.rootId,
+    rootCode: normalizeConfigKey(mapping.rootCode),
     path: trimString(mapping.path),
     rawPath: trimString(mapping.rawPath),
     flightRecordPath: trimString(mapping.flightRecordPath),
@@ -345,6 +349,7 @@ export function mediaRootsToProjectBriefMappings(
     const alternatePaths = normalizeAlternatePaths(root.alternatePaths) ?? normalizeAlternatePaths(existing?.alternatePaths);
     result.push({
       rootId: trimString(root.id) ?? existing?.rootId ?? derivedRootId,
+      rootCode: normalizeConfigKey(root.rootCode) ?? normalizeConfigKey(existing?.rootCode),
       path,
       rawPath: trimString(root.rawPath) ?? trimString(existing?.rawPath),
       alternatePaths,

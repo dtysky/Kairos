@@ -31,6 +31,7 @@ function normalizeProjectRoot(root: IMediaRoot): IMediaRoot {
 
   return {
     ...root,
+    rootCode: root.rootCode?.trim() || undefined,
     path: root.path?.trim() || undefined,
     rawPath: root.rawPath?.trim() || undefined,
     flightRecordPath: root.flightRecordPath?.trim() || undefined,

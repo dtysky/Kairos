@@ -173,7 +173,7 @@ export function buildMediaChronology(
 ): IProjectChronology {
   const now = options.now ?? new Date().toISOString();
   const rootMap = new Map(roots.map(root => [root.id, root]));
-  const assetIndex = buildChronologyAssetIndex(assets, rootMap);
+  const assetIndex = buildChronologyAssetIndex(assets);
   const context: IChronologyBuildContext = {
     assetSortMap: new Map(assetIndex.map((item, index) => [item.assetId, { item, index }] as const)),
     assetMap: new Map(assets.map(asset => [asset.id, asset] as const)),
@@ -240,7 +240,7 @@ export async function buildMediaChronologyWithProgress(
   });
 
   const rootMap = new Map(roots.map(root => [root.id, root]));
-  const assetIndex = buildChronologyAssetIndex(assets, rootMap);
+  const assetIndex = buildChronologyAssetIndex(assets);
 
   await reportChronologyProgress(options.onProgress, {
     step: 'input-hash',
@@ -352,13 +352,11 @@ export async function buildMediaChronologyWithProgress(
 
 function buildChronologyAssetIndex(
   assets: IKtepAsset[],
-  rootMap: Map<string, IMediaRoot>,
 ): IChronologyAssetIndex[] {
   return assets
     .map(asset => ({
       assetId: asset.id,
-      sortCapturedAt: applyRootClockOffset(asset.capturedAt, rootMap.get(asset.ingestRootId ?? '')?.clockOffsetMs)
-        ?? asset.capturedAt,
+      sortCapturedAt: asset.capturedAt,
     }))
     .sort(compareChronologyAssetIndex);
 }
@@ -2078,19 +2076,6 @@ function getRowMidpointMs(row: IChronologySpanRow): number {
   if (row.startMs == null) return 0;
   if (row.endMs == null || row.endMs < row.startMs) return row.startMs;
   return Math.round((row.startMs + row.endMs) / 2);
-}
-
-function applyRootClockOffset(
-  capturedAt: string | undefined,
-  clockOffsetMs: number | undefined,
-): string | undefined {
-  if (!capturedAt) return undefined;
-  if (clockOffsetMs == null || !Number.isFinite(clockOffsetMs) || clockOffsetMs === 0) {
-    return capturedAt;
-  }
-  const capturedAtMs = Date.parse(capturedAt);
-  if (!Number.isFinite(capturedAtMs)) return capturedAt;
-  return new Date(capturedAtMs + clockOffsetMs).toISOString();
 }
 
 function addMs(iso: string | undefined, offsetMs: number | undefined): string | undefined {

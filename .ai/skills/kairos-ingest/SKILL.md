@@ -168,6 +168,7 @@ importProjectGpxTracks(input: {
 4. 如有必要，再补充逻辑 root 元数据
 - 每个 root 至少要有：
   - `id`
+  - `rootCode`（稳定、短、文件名安全，用于 `asset.id`）
   - `enabled`
   - `label`
   - `description`
@@ -184,6 +185,7 @@ importProjectGpxTracks(input: {
 - 如果项目希望让 `manual-itinerary` 参与后续空间推断，修改完 `config/manual-itinerary.md` 后也应重新跑一次 ingest，刷新 `gps/derived.json`
 - 如果 `config/manual-itinerary.md` 末尾已经有“素材时间校正”区，ingest 必须读取用户在 Console 或 Markdown 中维护的修正值，并把它作为 `manual` capture time 真值覆盖弱时间源
 - rerun ingest 只能从“素材时间校正”读取时间修正；review queue 中旧的 capture-time 镜像应被清除，而不是作为第二份输入
+- `store/assets.json` 写出的 `asset.capturedAt` 必须是项目内已修正时间：单素材 manual override 直接胜出；否则把 root `clockOffsetMs` 应用到解析得到的 raw capture time。原始解析值保留为 `rawCapturedAt` / metadata 审计字段；下游不再叠加 root offset。
 - 当前正式语义是：优先填写 `正确时间 / 时区`；`正确日期` 会先用 `suggestedDate` 自动补齐，再退到“当前时间在所填时区对应的本地日期”；只有仍无法推导时才需要用户手填日期
 - `captureTimePolicy.mode=manual-required` 生成的 blocker 是例外：必须显式填写 `正确日期 / 正确时间 / 时区`，不能依赖建议日期或当前文件时间自动补齐
 - 如果本轮 ingest 又发现新的明显时间冲突，必须更新这些卡片 / 行；未解决的项会阻塞 Analyze
@@ -216,7 +218,7 @@ const result = await ingestWorkspaceProjectMedia({
 
 | 文件 | 内容 |
 |------|------|
-| `store/assets.json` | 所有素材资产，`sourcePath` 为 root-relative 路径；成功绑定的 `.SRT` / `FlightRecord` 同源 GPS 会写成轻量 `embeddedGps` 引用；同 basename 的保护音轨会写成视频资产上的 `protectionAudio` 绑定，而不是单独 reopen 通用 audio ingest |
+| `store/assets.json` | 所有素材资产，`sourcePath` 为 root-relative 路径；`capturedAt` 是已修正项目时间，`rawCapturedAt` 保留原始解析时间；成功绑定的 `.SRT` / `FlightRecord` 同源 GPS 会写成轻量 `embeddedGps` 引用；同 basename 的保护音轨会写成视频资产上的 `protectionAudio` 绑定，而不是单独 reopen 通用 audio ingest |
 | `media/chronology.json` | 按拍摄时间排序的素材视图 |
 | `gps/same-source/index.json` + `gps/same-source/tracks/*.gpx` | dense same-source GPS 的项目内内部 cache，仅用于索引 / 惰性查找 |
 | `gps/derived.json` | 统一后的 `project-derived-track` 缓存 |
@@ -225,7 +227,7 @@ const result = await ingestWorkspaceProjectMedia({
 ## 注意点
 
 - `sourcePath` 现在应理解为 **相对 root 的可同步路径**，不是本机绝对路径
-- 去重键是 `ingestRootId + sourcePath`
+- 去重键是 `ingestRootId + sourcePath`；正式新资产主键是短 source locator，例如 `C0506_zve1_day1`，不要为新素材生成随机 UUID 或 `asset__` 前缀式 ID
 - 即使素材文件本身没有容器 GPS，只要 sidecar `.SRT` 或 root 级 `FlightRecord` 成功绑定，该素材仍然属于 `embedded GPS`
 - 根目录说明是弱语义证据，不是强分类
 - 如果某个逻辑 root 在当前设备没有映射，要向用户报告 `missingRoots`

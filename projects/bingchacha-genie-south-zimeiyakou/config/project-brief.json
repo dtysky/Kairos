@@ -27,7 +27,8 @@
           "audioCodec": "aac",
           "bitrateKbps": 30000
         }
-      }
+      },
+      "rootCode": "zve1"
     },
     {
       "rootId": "root-draft-1778319636214-bb8ljb",
@@ -54,7 +55,8 @@
           "bitrateKbps": 30000
         },
         "transformPresetKey": "DJI/DJI Mavic 4 Pro D-Log to Rec.709 V1.cube"
-      }
+      },
+      "rootCode": "drone"
     },
     {
       "rootId": "root-draft-1778319664359-puaawa",
@@ -77,7 +79,8 @@
           "video"
         ],
         "reason": "延时视频导出时间不可信，必须人工确认拍摄日期和时间"
-      }
+      },
+      "rootCode": "ts-final"
     },
     {
       "rootId": "root-draft-1778319790368-3hrfrl",
@@ -93,7 +96,8 @@
       "priority": 4,
       "notes": [
         "途中拍摄的照片"
-      ]
+      ],
+      "rootCode": "photos"
     }
   ],
   "materialPatternPhrases": []

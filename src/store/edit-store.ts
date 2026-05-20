@@ -22,6 +22,10 @@ export function getProjectEditRoot(projectRoot: string, editId?: string | null):
   return join(getProjectEditsRoot(projectRoot), normalizeEditId(editId));
 }
 
+export function getProjectEditConfigRoot(projectRoot: string, editId?: string | null): string {
+  return join(getProjectEditRoot(projectRoot, editId), 'config');
+}
+
 export function getProjectEditScriptRoot(projectRoot: string, editId?: string | null): string {
   return join(getProjectEditRoot(projectRoot, editId), 'script');
 }
@@ -59,6 +63,7 @@ export async function ensureProjectEditDirs(
   editId?: string | null,
 ): Promise<void> {
   await Promise.all([
+    mkdir(getProjectEditConfigRoot(projectRoot, editId), { recursive: true }),
     mkdir(getProjectEditScriptRoot(projectRoot, editId), { recursive: true }),
     mkdir(join(getProjectEditScriptRoot(projectRoot, editId), 'versions'), { recursive: true }),
     mkdir(getProjectEditPlanningRoot(projectRoot, editId), { recursive: true }),

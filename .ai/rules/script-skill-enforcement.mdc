@@ -8,7 +8,7 @@ alwaysApply: true
 当任务涉及生成、重写、续写、审查或更新 `edits/<editId>/script/current.json`、旁白、beat 文案或 `script.generate` capability 产物时：
 
 - 必须先确认当前 edit unit 的 `edits/<editId>/planning/flow-plan.json` 已 confirmed，且其中明确包含 `script.generate` step；没有该 step 时，不得把脚本生成当成默认流程。
-- 新剪辑工作默认从 `/edit` 和 `kairos-edit-flow` 开始；不要把 `/script`、`script` job、`script/current.json` 解释成正式必经入口。
+- 新剪辑工作默认从 `/edit` 的 Edit Unit 初始化和 `kairos-edit-flow` 开始；不要把 `/script`、`script` job、`script/current.json` 解释成正式必经入口。
 - 必须先读取并遵循 `kairos-script` skill，不能跳过 skill 直接按临时理解执行。
 - 必须遵守 `kairos-script` 里显式标注的 `[main agent]` / `[subagent:*]` 边界；主代理负责 orchestration，subagent 负责各自阶段产物，不能互相偷换。
 - 如果 `kairos-script` 要求 clean-context subagent / reviewer 链，而当前宿主策略或用户授权不允许启动这条链，必须先停下说明原因；不能静默折叠成单代理本地起稿。
@@ -20,7 +20,7 @@ alwaysApply: true
 - `material.recall` 的正式结构化产物只有 `edits/<editId>/script/material-slots.json`；不要生成、消费或要求 `segment-plan.json` 作为 Edit Flow 正式输出。
 - `material-slots.json` 是正式 `material-slots` truth；每个 `chosenSpanId` 必须有 numeric `treatments[spanId]={audio,speed}`，`audio` 是 dB（默认 `0`，静音 `-100`），`speed` 是倍速（默认 `1`）。非照片 span 如果有 transcript、transcriptSegments 或 `semanticKind=speech/mixed`，不得写 `audio<=-100`。不要再让 `route-slot-planner` 改写 `chosenSpanIds`，也不要让 `mixed / audio:* / speed:*` 这类文本建议进入正式字段。
 - `beat-writer` 只能改写表达层字段（如 `text / utterances / notes / muteSource / preserveNatSound`）；不要让它增删或改写 `audioSelections / visualSelections / linkedSpanIds`。
-- 在判断“剪辑规则缺失”之前，必须先检查当前 edit unit 是否已有 confirmed Flow Plan；Flow Plan 是正式输入，`script-brief.md` 不是新流程的 gate truth。
+- 在判断“剪辑规则缺失”之前，必须先检查当前 edit unit 的 `config/edit-unit.json` 和 confirmed Flow Plan；Edit Unit / Flow Plan 是正式输入，`script-brief.md` 不是新流程的 gate truth。
 - 只有在 skill 要求的关键输入经核对后仍缺失、冲突或无法映射到实际文件时，才能按缺失输入规则停下并询问用户。
 
 ## 禁止行为

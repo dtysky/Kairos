@@ -40,7 +40,7 @@ export const CEDIT_FLOW_CAPABILITY_CATALOG: IEditFlowCapability[] = [
   {
     capabilityId: 'trip.event_table',
     title: 'Chronology Event Table',
-    summary: 'Planning document that reviews confirmed Chronology V2 events, gaps, route continuity, and event-level evidence without loading material spans.',
+    summary: 'Optional planning document that reviews confirmed Chronology V2 events, gaps, route continuity, and event-level evidence without loading material spans. Use only when the edit rule explicitly asks for a separate event or itinerary table.',
     stableInputs: ['media/chronology.json'],
     stableOutputs: ['edits/<editId>/planning/event-table.md'],
     outputKind: 'markdown',
@@ -51,7 +51,7 @@ export const CEDIT_FLOW_CAPABILITY_CATALOG: IEditFlowCapability[] = [
   {
     capabilityId: 'material.archive',
     title: 'Material Archive',
-    summary: 'LLM planning document that summarizes material facts, gaps, high-recall evidence, and reusable bundles.',
+    summary: 'Optional planning document that summarizes material facts, gaps, high-recall evidence, and reusable bundles. Use only when the edit rule explicitly asks for a separate material archive or material-library document.',
     stableInputs: ['script/material-overview.facts.json', 'analysis/material-bundles.json', 'analysis/asset-reports/*.json'],
     stableOutputs: ['edits/<editId>/planning/material-archive.md'],
     outputKind: 'markdown',
@@ -62,8 +62,8 @@ export const CEDIT_FLOW_CAPABILITY_CATALOG: IEditFlowCapability[] = [
   {
     capabilityId: 'edit.framework',
     title: 'Edit Framework',
-    summary: 'LLM planning document that turns the confirmed rule, event table, and material archive into a reviewed edit framework.',
-    stableInputs: ['config/edit-rules/<category>.md', 'edits/<editId>/planning/event-table.md', 'edits/<editId>/planning/material-archive.md'],
+    summary: 'LLM planning handoff that turns the confirmed rule and declared evidence into chapter overview plus one executable FW beat table. It may consume chronology/spans/assets when declared, but must not expose evidence ids.',
+    stableInputs: ['config/edit-rules/<category>.md', 'Flow Plan declared inputRefs such as media/chronology.json, store/spans.json, store/assets.json'],
     stableOutputs: ['edits/<editId>/planning/edit-framework.md'],
     outputKind: 'markdown',
     defaultRunner: 'agent',
@@ -73,8 +73,8 @@ export const CEDIT_FLOW_CAPABILITY_CATALOG: IEditFlowCapability[] = [
   {
     capabilityId: 'material.recall',
     title: 'Material Recall',
-    summary: 'Produces the reviewed material-slots recall table with chosenSpanIds and per-span numeric audio dB / speed treatments. The rule and reviewed planning artifacts enter the Agent stage context; code does not parse markdown for weights.',
-    stableInputs: ['edits/<editId>/planning/flow-plan.json', 'planning/*.md', 'analysis/material-bundles.json', 'store/spans.json'],
+    summary: 'Produces the reviewed material-slots recall table with chosenSpanIds and per-span numeric audio dB / speed treatments. It only uses the reviewed framework plus fresh spans/assets; corrected asset.capturedAt provides material time.',
+    stableInputs: ['edits/<editId>/planning/edit-framework.md', 'store/spans.json', 'store/assets.json'],
     stableOutputs: ['edits/<editId>/script/material-slots.json'],
     outputKind: 'json',
     defaultRunner: 'script',
@@ -95,7 +95,7 @@ export const CEDIT_FLOW_CAPABILITY_CATALOG: IEditFlowCapability[] = [
   {
     capabilityId: 'resolve.media_sync',
     title: 'Resolve Media Sync',
-    summary: 'Synchronizes all chronology-event media into the edit Resolve Media Pool namespace. The Resolve project is the archive truth; Kairos only records run summaries.',
+    summary: 'Synchronizes chronology-event media into the edit Resolve Media Pool namespace for engineering archive/bin organization only. The Resolve project is the archive truth; Kairos only records run summaries.',
     stableInputs: ['store/spans.json', 'store/assets.json', 'media/chronology.json', 'config/project-brief.json'],
     stableOutputs: ['DaVinci Resolve Media Pool'],
     outputKind: 'resolve-state',
@@ -106,7 +106,7 @@ export const CEDIT_FLOW_CAPABILITY_CATALOG: IEditFlowCapability[] = [
   {
     capabilityId: 'timeline.generate',
     title: 'Timeline Generate',
-    summary: 'Deterministically places recalled material-slots from already-synced Resolve Media Pool items into a Resolve rough-cut timeline; the KTEP/manifest audit is temporary under project .tmp.',
+    summary: 'Deterministically places recalled material-slots in their declared order from already-synced Resolve Media Pool items into a Resolve rough-cut timeline; chronology is only Resolve path/bin/context mapping and the KTEP/manifest audit is temporary under project .tmp.',
     stableInputs: ['DaVinci Resolve Media Pool', 'edits/<editId>/planning/edit-framework.md', 'edits/<editId>/script/material-slots.json', 'store/spans.json', 'store/assets.json', 'media/chronology.json'],
     stableOutputs: ['DaVinci Resolve Timeline'],
     outputKind: 'resolve-state',

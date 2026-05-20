@@ -133,6 +133,7 @@ export {
   IManualItineraryConfig,
   IScriptBriefSegmentConfig,
   IScriptBriefConfig,
+  IEditUnitConfig,
   EStyleSourceType,
   IStyleSourceItem,
   IStyleSourceCategoryConfig,

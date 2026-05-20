@@ -21,7 +21,7 @@ import {
 import type { IAssetCoarseReport, IProjectPharosContext, IKtepAsset, IKtepSlice } from '../../src/protocol/index.js';
 
 describe('buildMediaChronology', () => {
-  it('writes Chronology V2 assetIndex with root clock offsets', () => {
+  it('writes Chronology V2 assetIndex from already-normalized asset capturedAt', () => {
     const chronology = buildMediaChronology(
       [{
         id: 'asset-1',
@@ -29,8 +29,10 @@ describe('buildMediaChronology', () => {
         sourcePath: 'photo.jpg',
         displayName: 'photo.jpg',
         ingestRootId: 'root-photo',
-        capturedAt: '2026-04-12T08:09:46.000Z',
-        createdAt: '2026-04-12T08:09:46.000Z',
+        capturedAt: '2026-04-12T07:59:35.000Z',
+        rawCapturedAt: '2026-04-12T08:09:46.000Z',
+        appliedClockOffsetMs: -611_000,
+        createdAt: '2026-04-12T07:59:35.000Z',
       }],
       [],
       null,

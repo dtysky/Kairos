@@ -48,6 +48,23 @@ export async function writeEditFlowPlan(
   await writeJson(target, ZEditFlowPlan.parse(plan));
 }
 
+export async function markEditFlowPlanStale(
+  projectRoot: string,
+  editId: string | null | undefined,
+  staleReason: string,
+): Promise<IEditFlowPlan | null> {
+  const existing = await loadEditFlowPlan(projectRoot, editId);
+  if (!existing) return null;
+  const stale = ZEditFlowPlan.parse({
+    ...existing,
+    status: 'stale',
+    staleReason,
+    updatedAt: new Date().toISOString(),
+  });
+  await writeEditFlowPlan(projectRoot, stale, editId);
+  return stale;
+}
+
 export async function loadEditFlowRunRecord(
   projectRoot: string,
   runId: string,
@@ -85,6 +102,35 @@ export async function loadEditFlowRunRecords(
   const state = await loadEditFlowRunsState(projectRoot, editId);
   return state.records
     .sort((a, b) => a.startedAt.localeCompare(b.startedAt));
+}
+
+export async function markEditFlowRunRecordsStale(
+  projectRoot: string,
+  editId: string | null | undefined,
+  staleReason: string,
+): Promise<IEditFlowStepRunRecord[]> {
+  const records = await loadEditFlowRunRecords(projectRoot, editId);
+  if (records.length === 0) return [];
+  const now = new Date().toISOString();
+  const nextRecords = records.map(record => ZEditFlowStepRunRecord.parse({
+    ...record,
+    status: 'stale',
+    updatedAt: now,
+    error: staleReason,
+    review: {
+      ...record.review,
+      note: staleReason,
+    },
+  }));
+  const target = getEditFlowRunsCurrentPath(projectRoot, editId);
+  await mkdir(dirname(target), { recursive: true });
+  await writeJson(target, ZEditFlowRunsState.parse({
+    schemaVersion: '1.0',
+    editId: editId ?? 'main',
+    updatedAt: now,
+    records: nextRecords,
+  }));
+  return nextRecords;
 }
 
 export async function findLatestEditFlowStepRunRecord(

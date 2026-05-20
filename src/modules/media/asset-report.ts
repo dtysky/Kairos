@@ -11,8 +11,10 @@ import type {
   IPharosMatch,
   IPharosRef,
   IFineScanWindow,
+  ESliceType,
 } from '../../protocol/schema.js';
 import type { IKeyframeResult } from './keyframe.js';
+import { assignUniqueMaterialSpanIds } from './material-ids.js';
 
 export interface IBuildAssetCoarseReportInput {
   asset: IKtepAsset;
@@ -53,6 +55,7 @@ export function buildAssetCoarseReport(
   const fineScanMode = materializationPath === 'fine-scan'
     ? input.fineScanMode ?? (input.plan.fineScanMode === 'full' ? 'full' : 'windowed')
     : undefined;
+  const interestingWindows = buildReportInterestingWindows(input);
 
   return {
     assetId: input.asset.id,
@@ -83,10 +86,7 @@ export function buildAssetCoarseReport(
       path: frame.path,
       summary: input.sampleFrameSummaries?.[index],
     })),
-    interestingWindows: input.plan.interestingWindows.map((window, index) => ({
-      ...window,
-      windowId: window.windowId ?? buildInterestingWindowId(input.asset.id, index),
-    })),
+    interestingWindows,
     fineScanWindows: input.fineScanWindows ?? [],
     fineScanReasons: dedupe(input.fineScanReasons ?? []),
     createdAt: now,
@@ -98,6 +98,35 @@ function dedupe(values: string[]): string[] {
   return [...new Set(values.map(value => value.trim()).filter(Boolean))];
 }
 
-function buildInterestingWindowId(assetId: string, index: number): string {
-  return `${assetId}-iw-${index + 1}`;
+function buildReportInterestingWindows(
+  input: IBuildAssetCoarseReportInput,
+): IAssetCoarseReport['interestingWindows'] {
+  const windowSpans = input.plan.interestingWindows.map(window => ({
+    id: window.windowId,
+    assetId: input.asset.id,
+    type: mapClipTypeToSliceType(input.plan.clipType),
+    semanticKind: window.semanticKind,
+    sourceInMs: window.startMs,
+    sourceOutMs: window.endMs,
+  }));
+  const assigned = assignUniqueMaterialSpanIds(windowSpans, new Map([[input.asset.id, { kind: input.asset.kind }]]));
+  return input.plan.interestingWindows.map((window, index) => {
+    const assignedWindow = assigned[index];
+    if (!assignedWindow) {
+      throw new Error(`failed to assign interesting window id for asset ${input.asset.id} window ${index + 1}`);
+    }
+    return {
+      ...window,
+      windowId: assignedWindow.id,
+    };
+  });
+}
+
+function mapClipTypeToSliceType(clipType: IAssetCoarseReport['clipTypeGuess']): ESliceType {
+  if (clipType === 'drive') return 'drive';
+  if (clipType === 'talking-head') return 'talking-head';
+  if (clipType === 'aerial') return 'aerial';
+  if (clipType === 'timelapse') return 'timelapse';
+  if (clipType === 'broll') return 'broll';
+  return 'unknown';
 }

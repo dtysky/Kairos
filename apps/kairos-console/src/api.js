@@ -1,9 +1,9 @@
 export async function apiGet(path) {
   const response = await fetch(path);
   if (!response.ok) {
-    throw new Error(await response.text());
+    throw await buildApiError(response, path);
   }
-  return response.json();
+  return parseApiJson(response, path);
 }
 
 export async function apiGetNullable(path) {
@@ -11,15 +11,7 @@ export async function apiGetNullable(path) {
   if (!response.ok) {
     return null;
   }
-  const text = await response.text();
-  if (!text.trim()) {
-    return null;
-  }
-  try {
-    return JSON.parse(text);
-  } catch {
-    return null;
-  }
+  return parseApiJson(response, path).catch(() => null);
 }
 
 export async function apiPut(path, body) {
@@ -68,10 +60,6 @@ export function fetchWorkspaceStyleConfig() {
 
 export function fetchWorkspaceEditRulesConfig() {
   return apiGet('/api/workspace/config/edit-rules');
-}
-
-export function confirmProjectEditFlowPlan(projectId, editId) {
-  return apiPost(withEditQuery(`/api/projects/${encodeURIComponent(projectId)}/edit-flow/confirm`, editId), { editId });
 }
 
 export function confirmProjectChronology(projectId) {
@@ -145,12 +133,36 @@ async function apiSend(method, path, body) {
     body: JSON.stringify(body || {}),
   });
   if (!response.ok) {
-    throw new Error(await response.text());
+    throw await buildApiError(response, path);
   }
-  return response.json();
+  return parseApiJson(response, path);
 }
 
 function withEditQuery(path, editId) {
   if (!editId) return path;
   return `${path}?editId=${encodeURIComponent(editId)}`;
+}
+
+async function parseApiJson(response, path) {
+  const text = await response.text();
+  if (!text.trim()) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    const preview = text.trim().slice(0, 120);
+    throw new Error(`API ${path} returned non-JSON response: ${preview}`);
+  }
+}
+
+async function buildApiError(response, path) {
+  const text = await response.text();
+  if (!text.trim()) {
+    return new Error(`API ${path} failed with ${response.status}`);
+  }
+  try {
+    const payload = JSON.parse(text);
+    return new Error(payload?.error || payload?.message || text);
+  } catch {
+    return new Error(`API ${path} failed with ${response.status}: ${text.trim().slice(0, 240)}`);
+  }
 }

@@ -48,6 +48,7 @@ import {
   CSPAN_MATERIAL_PATTERN_VIEWPOINT_UNKNOWN,
   CSPAN_MATERIAL_PATTERN_WEATHER_UNKNOWN,
 } from '../agents/span-material-pattern-spec.js';
+import { assignUniqueMaterialSpanIds, buildMaterialSpanId } from './material-ids.js';
 import { sanitizeMaterialPatterns } from './semantic-slice.js';
 
 export const CMATERIAL_PATTERN_PROMPT_VERSION = CSPAN_MATERIAL_PATTERN_PROMPT_VERSION;
@@ -182,7 +183,10 @@ export function buildMaterialSpansFromReports(input: {
 
   assertUniqueSpanIds(spans);
 
-  const merged = mergeNearDuplicateWindows(spans);
+  const merged = assignUniqueMaterialSpanIds(
+    mergeNearDuplicateWindows(spans),
+    new Map(input.assets.map(asset => [asset.id, { kind: asset.kind }] as const)),
+  );
   assertUniqueSpanIds(merged);
   assertMaterialSpansHaveVisualObservation(merged, assetsById);
 
@@ -590,7 +594,13 @@ function buildDirectWindows(
 ): INormalizedWindow[] {
   if (asset.kind === 'photo') {
     return [{
-      id: asset.id,
+      id: buildMaterialSpanId({
+        assetId: asset.id,
+        assetKind: asset.kind,
+        type: 'photo',
+        sourceInMs: 0,
+        sourceOutMs: 0,
+      }),
       sourceInMs: 0,
       sourceOutMs: 0,
       editSourceInMs: 0,
@@ -604,7 +614,14 @@ function buildDirectWindows(
       .map((window, index) => normalizeInterestingWindow({
         asset,
         window,
-        id: `${asset.id}-direct-${index + 1}`,
+        id: buildMaterialSpanId({
+          assetId: asset.id,
+          assetKind: asset.kind,
+          type: mapClipTypeToSpanType(asset, report.clipTypeGuess),
+          semanticKind: window.semanticKind,
+          sourceInMs: window.startMs,
+          sourceOutMs: window.endMs,
+        }),
         warnings,
       }))
       .filter((window): window is INormalizedWindow => window != null);
@@ -612,7 +629,13 @@ function buildDirectWindows(
 
   if (typeof asset.durationMs === 'number' && asset.durationMs > 0) {
     return [{
-      id: `${asset.id}-direct-full`,
+      id: buildMaterialSpanId({
+        assetId: asset.id,
+        assetKind: asset.kind,
+        type: mapClipTypeToSpanType(asset, report.clipTypeGuess),
+        sourceInMs: 0,
+        sourceOutMs: asset.durationMs,
+      }),
       sourceInMs: 0,
       sourceOutMs: asset.durationMs,
       editSourceInMs: 0,
@@ -1880,15 +1903,14 @@ function normalizeText(value: string | undefined): string | undefined {
 function sortSpansByMaterialTime(
   spans: IKtepSlice[],
   assets: IKtepAsset[],
-  roots: IMediaRoot[],
+  _roots: IMediaRoot[],
 ): IKtepSlice[] {
   const assetsById = new Map(assets.map(asset => [asset.id, asset] as const));
-  const rootsById = new Map(roots.map(root => [root.id, root] as const));
   return [...spans].sort((left, right) => {
     const leftAsset = assetsById.get(left.assetId);
     const rightAsset = assetsById.get(right.assetId);
-    const leftTime = getAssetMaterialSortMs(leftAsset, rootsById);
-    const rightTime = getAssetMaterialSortMs(rightAsset, rootsById);
+    const leftTime = getAssetMaterialSortMs(leftAsset);
+    const rightTime = getAssetMaterialSortMs(rightAsset);
     return (leftTime ?? Number.POSITIVE_INFINITY) - (rightTime ?? Number.POSITIVE_INFINITY)
       || (left.sourceInMs ?? 0) - (right.sourceInMs ?? 0)
       || (left.sourceOutMs ?? 0) - (right.sourceOutMs ?? 0)
@@ -1900,14 +1922,10 @@ function sortSpansByMaterialTime(
 
 function getAssetMaterialSortMs(
   asset: IKtepAsset | undefined,
-  rootsById: Map<string, IMediaRoot>,
 ): number | undefined {
   if (!asset) return undefined;
   const capturedAtMs = parseTimestampMs(asset.capturedAt);
-  if (capturedAtMs != null) {
-    const offsetMs = asset.ingestRootId ? rootsById.get(asset.ingestRootId)?.clockOffsetMs ?? 0 : 0;
-    return capturedAtMs + offsetMs;
-  }
+  if (capturedAtMs != null) return capturedAtMs;
   return parseTimestampMs(asset.createdAt);
 }
 

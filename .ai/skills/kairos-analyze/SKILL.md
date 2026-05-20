@@ -22,6 +22,7 @@ description: >-
 - `Asset Report Truth -> Explicit Span Rebuild -> Chronology Review`
 - `Span` 当前只承载素材片段事实索引，不承载 Pharos/GPS/route/speed 决策
 - `slice` 仅作为兼容命名继续存在于少量代码和导出字段中
+- 素材主键协议是 `materialIdPolicyVersion=human-source-v1`：`assetId` 必须是短 source locator，例如 `C0506_zve1_day1`，fine-scan `windowId` 和最终 `span.id` 必须追加 type / 可选 semanticKind / 整数秒 source range，例如 `C0506_zve1_day1_drive_speech_s0-7`，不得新写随机 UUID 或 `asset__` / `span__` 前缀式 ID
 
 ## 变更工作流规则
 
@@ -398,7 +399,7 @@ const localPath = resolveAssetLocalPath(asset, roots);
 - `media/chronology.json` 是项目级编年史文档，不是一素材一行的摘要表。
 - 正式 schema 只暴露 `schemaVersion/status/generatedAt/updatedAt/confirmedAt/inputsHash/assetIndex/events`。
 - `events[]` 只允许 `event / route / gap`、`reviewStatus`、标题摘要、时间地点、路线和 `spanIds`；不得写入 Pharos、`origin`、`source`、`confidence`、`assetIds`、`materialChannels` 或 `speechAnchors`。
-- `assetIndex[]` 只保留 `assetId / sortCapturedAt`，供下游排序；素材集合必须从 `spanIds -> spans -> assetId` 反查。
+- `assetIndex[]` 只保留 `assetId / sortCapturedAt` 作为兼容索引；`sortCapturedAt` 必须等于 corrected `asset.capturedAt`。素材集合必须从 `spanIds -> spans -> assetId` 反查。
 - Pharos 只作为生成输入；生成后必须折叠成普通事件、路线或缺口。
 - `gap` 可以没有 `spanIds`，表示行程确认存在但素材未覆盖或待补。
 - `chronology-build` 先按 Pharos 单点真实时间窗归属：span 与 `expected / unexpected` 且非 `continuous` 的 actual window 存在有意义重叠时可直接进入该普通 `event`；多个重叠 point 先按显式 `actual_captures[]` 优先级归属，仍同分时优先更窄 actual window。Pharos 单点事件是 route 硬边界，Pharos `continuous` 只提供 route 的时间 / summary 上下文，不把多个事件间 route 强行合并，也不得把 continuous route prose 写入 chronology 地点字段。

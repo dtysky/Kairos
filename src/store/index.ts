@@ -115,6 +115,7 @@ export {
   normalizeEditId,
   getProjectEditsRoot,
   getProjectEditRoot,
+  getProjectEditConfigRoot,
   getProjectEditScriptRoot,
   getProjectEditTimelineRoot,
   getProjectEditSubtitlesRoot,
@@ -132,11 +133,19 @@ export {
   getEditFlowRunsCurrentPath,
   loadEditFlowPlan,
   writeEditFlowPlan,
+  markEditFlowPlanStale,
   loadEditFlowRunRecord,
   writeEditFlowRunRecord,
   loadEditFlowRunRecords,
+  markEditFlowRunRecordsStale,
   findLatestEditFlowStepRunRecord,
 } from './edit-planning-store.js';
+export {
+  getEditUnitConfigPath,
+  loadEditUnitConfig,
+  saveEditUnitConfig,
+  markEditUnitDependentArtifactsStale,
+} from './edit-unit-store.js';
 export {
   getMaterialOverviewFactsPath,
   getMaterialOverviewPath,

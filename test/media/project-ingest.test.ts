@@ -40,6 +40,7 @@ describe('ingestWorkspaceProjectMedia', () => {
     await writeFile(join(mediaRoot, 'A001.wav'), '');
     await writeWorkspaceProjectBrief(workspaceRoot, projectId, [
       {
+        rootCode: 'camera',
         path: mediaRoot,
         description: '主机位素材',
       },
@@ -57,6 +58,7 @@ describe('ingestWorkspaceProjectMedia', () => {
 
     const assets = await loadAssets(projectRoot);
     expect(assets).toHaveLength(1);
+    expect(assets[0]?.id).toBe('A001_camera');
     expect(assets[0]?.sourcePath).toBe('A001.mp4');
     expect(assets[0]?.protectionAudio).toMatchObject({
       sourcePath: 'A001.wav',
@@ -85,6 +87,7 @@ describe('ingestWorkspaceProjectMedia', () => {
     ].join('\n'), 'utf-8');
     await writeWorkspaceProjectBrief(workspaceRoot, projectId, [
       {
+        rootCode: 'drone',
         path: mediaRoot,
         description: '无人机素材',
       },
@@ -168,6 +171,7 @@ describe('ingestWorkspaceProjectMedia', () => {
     await writeFile(join(mediaRoot, 'clip.mp4'), '');
     await writeWorkspaceProjectBrief(workspaceRoot, projectId, [
       {
+        rootCode: 'camera',
         path: mediaRoot,
         description: '主机位素材',
       },
@@ -206,6 +210,7 @@ describe('ingestWorkspaceProjectMedia', () => {
     await writeFile(join(alternateRoot, 'clip.mp4'), '');
     await writeWorkspaceProjectBrief(workspaceRoot, projectId, [
       {
+        rootCode: 'camera',
         path: primaryRoot,
         alternatePaths: [{ path: alternateRoot }],
         description: '主机位素材',
@@ -225,6 +230,7 @@ describe('ingestWorkspaceProjectMedia', () => {
 
     const assets = await loadAssets(projectRoot);
     expect(assets).toHaveLength(1);
+    expect(assets[0]?.id).toBe('clip_camera');
     expect(assets[0]?.sourcePath).toBe('clip.mp4');
   });
 
@@ -240,6 +246,7 @@ describe('ingestWorkspaceProjectMedia', () => {
     await writeFile(join(rawRoot, 'source.mov'), '');
     await writeWorkspaceProjectBrief(workspaceRoot, projectId, [
       {
+        rootCode: 'camera',
         path: mediaRoot,
         rawPath: rawRoot,
         description: '主机位素材',
@@ -275,6 +282,7 @@ describe('ingestWorkspaceProjectMedia', () => {
     await writeFile(join(rawRoot, 'source.mov'), '');
     await writeWorkspaceProjectBrief(workspaceRoot, projectId, [
       {
+        rootCode: 'camera',
         path: mediaRoot,
         rawPath: rawRoot,
         description: '主机位素材',
@@ -305,6 +313,7 @@ describe('ingestWorkspaceProjectMedia', () => {
     await writeFile(join(mediaRoot, 'keep.mp4'), '');
     await writeFile(join(mediaRoot, 'delete-me.mp4'), '');
     await writeWorkspaceProjectBrief(workspaceRoot, projectId, [{
+      rootCode: 'camera',
       path: mediaRoot,
       description: '主机位素材',
     }]);
@@ -331,6 +340,7 @@ describe('ingestWorkspaceProjectMedia', () => {
       name: 'Manual Required Project',
       mappings: [{
         rootId: 'root-ts',
+        rootCode: 'ts',
         path: mediaRoot,
         enabled: true,
         label: 'timelapse',
@@ -391,10 +401,12 @@ describe('ingestWorkspaceProjectMedia', () => {
       name: 'Test Project',
       mappings: [{
         rootId: 'root-1',
+        rootCode: 'camera',
         path: mediaRoot,
         enabled: true,
         label: 'camera-a',
         description: '主机位素材',
+        clockOffsetMs: -611_000,
       }],
       materialPatternPhrases: [],
     });
@@ -428,6 +440,7 @@ describe('ingestWorkspaceProjectMedia', () => {
       'utf-8',
     );
     await writeWorkspaceProjectBrief(workspaceRoot, projectId, [{
+      rootCode: 'camera',
       path: mediaRoot,
       description: '主机位素材',
     }]);
@@ -473,6 +486,7 @@ describe('ingestWorkspaceProjectMedia', () => {
       name: 'Test Project',
       mappings: [{
         rootId: 'root-1',
+        rootCode: 'camera',
         path: mediaRoot,
         enabled: true,
         label: 'camera-a',
@@ -490,7 +504,45 @@ describe('ingestWorkspaceProjectMedia', () => {
     const assets = await loadAssets(projectRoot);
     expect(assets[0]).toEqual(expect.objectContaining({
       captureTimeSource: 'manual',
+      rawCapturedAt: '2026-03-31T08:15:30.000Z',
       capturedAt: '2026-02-16T21:15:00.000Z',
+      appliedClockOffsetMs: 0,
+    }));
+  });
+
+  it('writes root clock offset into asset.capturedAt and keeps raw capture time for audit', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-normalized-captured-at';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Test Project');
+    const mediaRoot = join(workspaceRoot, 'media-root');
+
+    await mkdir(mediaRoot, { recursive: true });
+    await writeFile(join(mediaRoot, '20260331_081530.mp4'), '');
+    await saveProjectBriefConfig(projectRoot, {
+      name: 'Test Project',
+      mappings: [{
+        rootId: 'root-1',
+        rootCode: 'camera',
+        path: mediaRoot,
+        enabled: true,
+        label: 'camera-a',
+        description: '主机位素材',
+        clockOffsetMs: -611_000,
+      }],
+      materialPatternPhrases: [],
+    });
+
+    await ingestWorkspaceProjectMedia({
+      workspaceRoot,
+      projectId,
+    });
+
+    const assets = await loadAssets(projectRoot);
+    expect(assets[0]).toEqual(expect.objectContaining({
+      captureTimeSource: 'filename',
+      rawCapturedAt: '2026-03-31T08:15:30.000Z',
+      capturedAt: '2026-03-31T08:05:19.000Z',
+      appliedClockOffsetMs: -611_000,
     }));
   });
 
@@ -519,6 +571,7 @@ describe('ingestWorkspaceProjectMedia', () => {
       'utf-8',
     );
     await writeWorkspaceProjectBrief(workspaceRoot, projectId, [{
+      rootCode: 'camera',
       path: mediaRoot,
       description: '主机位素材',
     }]);

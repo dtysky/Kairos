@@ -179,14 +179,15 @@ function buildFilenameDriftReason(
   filenameHint: ReturnType<typeof extractFilenameCaptureTimeHint> | null,
   timezone?: string,
 ): string | null {
-  if (!asset.capturedAt || !filenameHint?.date || !filenameHint.time) {
+  const comparisonCapturedAt = asset.rawCapturedAt ?? asset.capturedAt;
+  if (!comparisonCapturedAt || !filenameHint?.date || !filenameHint.time) {
     return null;
   }
 
   const filenameIso = convertLocalDateTimeToIso(filenameHint.date, filenameHint.time, timezone);
   if (!filenameIso) return null;
 
-  const capturedMs = Date.parse(asset.capturedAt);
+  const capturedMs = Date.parse(comparisonCapturedAt);
   const filenameMs = Date.parse(filenameIso);
   if (!Number.isFinite(capturedMs) || !Number.isFinite(filenameMs)) {
     return null;
