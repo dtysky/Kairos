@@ -1,0 +1,38 @@
+{
+  "updatedAt": "2026-05-21T11:25:01.747Z",
+  "projects": {
+    "丙察察格聂南线子梅垭口穿越 [Edit]": {
+      "projectName": "丙察察格聂南线子梅垭口穿越 [Edit]",
+      "safeProjectName": "Edit",
+      "latestSnapshot": {
+        "projectName": "丙察察格聂南线子梅垭口穿越 [Edit]",
+        "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/edits/resolve-projects/Edit/snapshots/20260521T112459Z-manual.drp",
+        "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/edits/resolve-projects/Edit/丙察察格聂南线子梅垭口穿越 [Edit].drp",
+        "createdAt": "2026-05-21T11:24:59Z",
+        "mode": "manual",
+        "action": "manual",
+        "database": {
+          "DbType": "Disk",
+          "DbName": "Local Database"
+        },
+        "detail": "save_drp_snapshot exported withStillsAndLUTs=false"
+      },
+      "snapshots": [
+        {
+          "projectName": "丙察察格聂南线子梅垭口穿越 [Edit]",
+          "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/edits/resolve-projects/Edit/snapshots/20260521T112459Z-manual.drp",
+          "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/edits/resolve-projects/Edit/丙察察格聂南线子梅垭口穿越 [Edit].drp",
+          "createdAt": "2026-05-21T11:24:59Z",
+          "mode": "manual",
+          "action": "manual",
+          "database": {
+            "DbType": "Disk",
+            "DbName": "Local Database"
+          },
+          "detail": "save_drp_snapshot exported withStillsAndLUTs=false"
+        }
+      ],
+      "updatedAt": "2026-05-21T11:25:01.747Z"
+    }
+  }
+}

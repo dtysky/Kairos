@@ -30,6 +30,7 @@ const CDIRS = [
   'timeline',
   'timeline/versions',
   'edits',
+  'edits/resolve-projects',
   'edits/main',
   'edits/main/script',
   'edits/main/script/versions',

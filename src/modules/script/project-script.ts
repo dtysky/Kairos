@@ -8,6 +8,7 @@ import type {
   IKtepScript,
   IKtepSlice,
   IMaterialBundle,
+  IMaterialSlotTreatment,
   IMaterialSlotsDocument,
   IPharosRef,
   IProjectMaterialOverviewFacts,
@@ -70,10 +71,17 @@ import { loadStyleByCategory } from './style-loader.js';
 import { loadEditRuleByCategory } from './edit-rule-loader.js';
 import {
   assertConfirmedEditFlowPlan,
+  buildEditFlowStepContextArtifact,
   buildEditRuleArtifact,
   loadEditPlanningPacketArtifacts,
 } from '../edit-flow/index.js';
 import type { IResolvedArrangementSignals } from './arrangement-signals.js';
+import {
+  CDEFAULT_MATERIAL_SLOT_TREATMENT,
+  compactMaterialSlotTreatments,
+  resolveMaterialSlotTreatment,
+  type IResolvedMaterialSlotTreatment,
+} from '../edit-flow/material-slot-treatments.js';
 
 export interface IBuildProjectOutlineInput {
   projectRoot: string;
@@ -680,6 +688,16 @@ export async function generateProjectScriptFromPlanning(
       styleUsage: confirmedPlan.styleUsage,
     })
     : [];
+  const materialRecallStepContextArtifacts = confirmedPlan
+    ? [
+      buildEditFlowStepContextArtifact({
+        projectRoot: input.projectRoot,
+        editId,
+        plan: confirmedPlan,
+        capabilityId: 'material.recall',
+      }),
+    ].filter((artifact): artifact is IAgentPacketInputArtifact => artifact != null)
+    : [];
 
   const baseSegmentPlan = buildSegmentPlanDocument({
     projectId: prepared.context.project.id,
@@ -754,7 +772,10 @@ export async function generateProjectScriptFromPlanning(
     editId,
     contract,
     segmentPlan: segmentStage.draft,
-    planningArtifacts: filterStyleArtifactsForStage([...planningArtifacts, ...styleArtifacts], 'material-slots'),
+    planningArtifacts: [
+      ...materialRecallStepContextArtifacts,
+      ...filterStyleArtifactsForStage([...planningArtifacts, ...styleArtifacts], 'material-slots'),
+    ],
     spatialStory,
     draft: baseMaterialSlots,
     spans: prepared.context.spans,
@@ -1327,41 +1348,45 @@ export function resolveChosenSpanIds(input: {
 function buildDefaultMaterialSlotTreatments(
   chosenSpanIds: string[],
   spansById: Map<string, IKtepSlice>,
-): Record<string, { audio: number; speed: number }> {
-  return Object.fromEntries(chosenSpanIds.map(spanId => {
-    const span = spansById.get(spanId);
-    return [spanId, {
-      audio: span && spanHasUsableSpeech(span) ? 0 : -100,
-      speed: 1,
-    }] as const;
-  }));
+): Record<string, IMaterialSlotTreatment> {
+  return compactMaterialSlotTreatments(Object.fromEntries(chosenSpanIds.map(spanId => [
+    spanId,
+    buildDefaultMaterialSlotTreatment(spansById.get(spanId)),
+  ] as const)));
+}
+
+function buildDefaultMaterialSlotTreatment(span: IKtepSlice | undefined): IResolvedMaterialSlotTreatment {
+  return {
+    audio: span && spanHasUsableSpeech(span) ? 0 : -100,
+    speed: 1,
+  };
 }
 
 function normalizeMaterialSlotTreatments(input: {
   raw: unknown;
-  fallback: Record<string, { audio: number; speed: number }>;
+  fallback: Record<string, IMaterialSlotTreatment>;
   chosenSpanIds: string[];
   spansById: Map<string, IKtepSlice>;
-}): Record<string, { audio: number; speed: number }> {
-  const rawRecord = input.raw && typeof input.raw === 'object' && !Array.isArray(input.raw)
+}): Record<string, IMaterialSlotTreatment> {
+  const hasRawRecord = input.raw && typeof input.raw === 'object' && !Array.isArray(input.raw);
+  const rawRecord = hasRawRecord
     ? input.raw as Record<string, unknown>
-    : {};
-  return Object.fromEntries(input.chosenSpanIds.map(spanId => {
+    : null;
+  const resolved = Object.fromEntries(input.chosenSpanIds.map(spanId => {
     const defaultTreatment = buildDefaultMaterialSlotTreatments([spanId], input.spansById)[spanId];
     const fallback = input.fallback[spanId] ?? defaultTreatment;
+    if (!rawRecord) {
+      return [spanId, fallback
+        ? resolveMaterialSlotTreatment(fallback)
+        : buildDefaultMaterialSlotTreatment(input.spansById.get(spanId))] as const;
+    }
     const rawTreatment = rawRecord[spanId];
     if (!rawTreatment || typeof rawTreatment !== 'object' || Array.isArray(rawTreatment)) {
-      return [spanId, fallback] as const;
+      return [spanId, { ...CDEFAULT_MATERIAL_SLOT_TREATMENT }] as const;
     }
-    const source = rawTreatment as Record<string, unknown>;
-    const audio = typeof source.audio === 'number' && Number.isFinite(source.audio)
-      ? source.audio
-      : fallback.audio;
-    const speed = typeof source.speed === 'number' && Number.isFinite(source.speed) && source.speed > 0
-      ? source.speed
-      : fallback.speed;
-    return [spanId, { audio, speed }] as const;
+    return [spanId, resolveMaterialSlotTreatment(rawTreatment as IMaterialSlotTreatment)] as const;
   }));
+  return compactMaterialSlotTreatments(resolved);
 }
 
 function spanHasUsableSpeech(span: IKtepSlice): boolean {
@@ -2082,12 +2107,14 @@ async function recordDeterministicMaterialSlotsStage(input: {
     hardConstraints: [
       'edits/<editId>/script/material-slots.json 的正式作者是 deterministic prep。',
       'route-slot-planner 不得改写 chosenSpanIds。',
+      '必须遵守 flow-plan-material.recall-step-context 中的 confirmed step notes；缺失时不能从剪辑规则 markdown 临时猜测。',
       '过程证据、事件节点、关键过程视频和可用原声默认应保留。',
     ],
     allowedInputs: [
       'edits/<editId>/script/segment-plan.json',
       'edits/<editId>/script/spatial-story.json',
       'edits/<editId>/script/agent-contract.json',
+      'flow-plan material.recall step context',
       'confirmed Flow Plan / planning artifacts',
       'analysis/material-bundles.json',
       'store/spans.json',
@@ -2985,7 +3012,8 @@ function buildMaterialSlotsPacket(input: {
       '必须服从 chronology / GPS / Pharos guardrails。',
       '缺证据时宁可保守留空，也不要强凑 span。',
       'base-draft 的 chosenSpanIds 是高召回下限；除非 span 已被别的 slot 合法承接，或明显属于空白 / 坏段 / 高重叠近重复，否则不要静默删除。',
-      '每个 chosenSpanId 必须保留 treatments[spanId]={ audio:number, speed:number }；audio 是 dB，默认 0，静音 -100；speed 是倍速，默认 1。',
+      'chosenSpanIds 是选择真相；treatments 是稀疏覆盖表，缺少 treatments[spanId]、audio 或 speed 时按默认 {audio:0,speed:1} 读取；只有静音、非 0dB 增益或非 1 倍速才写 numeric 覆盖。',
+      '必须遵守 flow-plan-material.recall-step-context 中的 confirmed step notes；缺失时不能从剪辑规则 markdown 临时猜测。',
       '非照片 span 只要有 transcript、transcriptSegments、semanticKind=speech/mixed 或 materialPatterns=有口播语音，audio 必须保持 0，不得静音。',
       'material-slots 是审查型粗剪候选池；要最大化 type/day/event 的可用覆盖，所有 speech-backed 非照片 span 不应被静默丢弃，未选入时必须由 coverageAudit 暴露。',
       '不要在 query 或 targetBundles 里写 mixed、audio:*、speed:* 或 audio=/speed= 文本。',
@@ -2996,6 +3024,7 @@ function buildMaterialSlotsPacket(input: {
       'analysis/material-bundles.json',
       'edits/<editId>/script/spatial-story.json',
       'edits/<editId>/script/agent-contract.json',
+      'flow-plan material.recall step context',
       'confirmed Flow Plan / planning artifacts',
       'spans / chronology',
       'base material slots draft',
@@ -3056,7 +3085,7 @@ function buildMaterialSlotsPacket(input: {
       id: 'string',
       projectId: 'string',
       generatedAt: 'ISO datetime',
-      segments: 'Array<{ segmentId, slots: Array<{ id, query, requirement, targetBundles, chosenSpanIds, treatments: Record<spanId,{ audio:number, speed:number }> }> }>',
+      segments: 'Array<{ segmentId, slots: Array<{ id, query, requirement, targetBundles, chosenSpanIds, treatments: Record<spanId,{ audio?:number, speed?:number }> }> }>',
       coverageAudit: 'optional Kairos coverage audit: byType/byDay/byEvent and speechProtected coverage counts',
     },
     reviewRubric: [...CSCRIPT_REVIEW_CODES],

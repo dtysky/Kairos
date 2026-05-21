@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import {
   assertConfirmedEditFlowPlan,
   assertEditFrameworkMarkdownContract,
+  buildEditFlowStepContextArtifact,
   CEDIT_FLOW_PLANNER_POLICY_VERSION,
   CMATERIAL_ID_POLICY_VERSION,
   CMATERIAL_TIME_POLICY_VERSION,
@@ -113,6 +114,32 @@ describe('Codex-agent Edit Flow policy', () => {
     expect(() => assertEditFrameworkMarkdownContract('## beat 边界索引\n\n| beat | source |\n|---|---|\n')).toThrow(/beat 边界索引/su);
   });
 
+  it('builds a Flow Plan step context artifact for agent packets', async () => {
+    const plan = {
+      ...buildConfirmedPlan('hash-a'),
+      steps: [{
+        ...buildConfirmedPlan('hash-a').steps[0],
+        id: 'material-recall',
+        capabilityId: 'material.recall',
+        notes: ['按 confirmed framework 顺序召回。'],
+      }],
+    };
+
+    const artifact = buildEditFlowStepContextArtifact({
+      projectRoot: '/tmp/project-a',
+      editId: 'main',
+      plan,
+      capabilityId: 'material.recall',
+    });
+
+    expect(artifact?.label).toBe('flow-plan-material.recall-step-context');
+    expect(artifact?.content).toMatchObject({
+      flowPlanId: 'plan-a',
+      capabilityId: 'material.recall',
+      stepNotes: [{ text: '按 confirmed framework 顺序召回。' }],
+    });
+  });
+
   it('rejects edit.framework output that leaks chronology or material ids', async () => {
     expect(() => assertEditFrameworkMarkdownContract(`${validEditFrameworkMarkdown()}\n\n- evidence: event-pharos-123 / C0506_zve1_day1_drive_speech_s0-7\n`)).toThrow(/event\/route\/gap ids|concrete material id/su);
   });
@@ -130,9 +157,6 @@ describe('Codex-agent Edit Flow policy', () => {
       '| 事件 | 时间 | spans | 叙事 |',
       '|---|---|---|---|',
       '| FW-01-01 出发口播 | 2026.05.01 08:00-08:10 | 多段：高密度素材组，含口播 | 车内说明行程。 |',
-      '',
-      '## 给 material.recall 的执行索引',
-      '- 按分段操作稿顺序召回。',
     ].join('\n'))).toThrow(/spans column/su);
   });
 });
@@ -234,11 +258,6 @@ function validEditFrameworkMarkdown(): string {
     '## 人工审查点',
     '',
     '1. 确认开场节奏。',
-    '',
-    '## 给 material.recall 的执行索引',
-    '',
-    '- 按分段操作稿顺序召回。',
-    '- 静音候选：无语音行车、照片。',
   ].join('\n');
 }
 

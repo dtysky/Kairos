@@ -6,9 +6,18 @@ export {
   type TEditFlowCapabilityId,
 } from './capabilities.js';
 export {
+  CDEFAULT_MATERIAL_SLOT_TREATMENT,
+  compactMaterialSlotTreatment,
+  compactMaterialSlotTreatments,
+  resolveMaterialSlotTreatment,
+  type IResolvedMaterialSlotTreatment,
+} from './material-slot-treatments.js';
+export {
   assertConfirmedEditFlowPlan,
   assertEditFrameworkMarkdownContract,
+  buildEditFlowStepContextArtifact,
   buildEditRuleArtifact,
+  CEDIT_FLOW_STEP_CONTEXT_PRIORITY_ORDER,
   CEDIT_FLOW_PLANNER_POLICY_VERSION,
   CMATERIAL_TIME_POLICY_VERSION,
   evaluateEditFlowPlanFreshness,

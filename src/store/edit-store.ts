@@ -1,5 +1,10 @@
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
+import {
+  IColorResolveProjectMap,
+  type IColorResolveProjectMap as TColorResolveProjectMap,
+} from '../protocol/schema.js';
+import { readJsonOrNull, writeJson } from './writer.js';
 
 export const CDEFAULT_EDIT_ID = 'main' as const;
 
@@ -42,6 +47,28 @@ export function getProjectEditPlanningRoot(projectRoot: string, editId?: string 
   return join(getProjectEditRoot(projectRoot, editId), 'planning');
 }
 
+export function getProjectEditResolveProjectsRoot(projectRoot: string): string {
+  return join(getProjectEditsRoot(projectRoot), 'resolve-projects');
+}
+
+export function getProjectEditResolveProjectMapPath(projectRoot: string): string {
+  return join(getProjectEditsRoot(projectRoot), 'resolve-project-map.json');
+}
+
+export async function loadEditResolveProjectMap(projectRoot: string): Promise<TColorResolveProjectMap> {
+  const stored = await readJsonOrNull(getProjectEditResolveProjectMapPath(projectRoot), IColorResolveProjectMap);
+  return stored ? IColorResolveProjectMap.parse(stored) : IColorResolveProjectMap.parse({});
+}
+
+export async function saveEditResolveProjectMap(
+  projectRoot: string,
+  map: TColorResolveProjectMap,
+): Promise<TColorResolveProjectMap> {
+  const normalized = IColorResolveProjectMap.parse(map);
+  await writeJson(getProjectEditResolveProjectMapPath(projectRoot), normalized);
+  return normalized;
+}
+
 export function getLegacyScriptRoot(projectRoot: string): string {
   return join(projectRoot, 'script');
 }
@@ -71,5 +98,6 @@ export async function ensureProjectEditDirs(
     mkdir(getProjectEditTimelineRoot(projectRoot, editId), { recursive: true }),
     mkdir(join(getProjectEditTimelineRoot(projectRoot, editId), 'versions'), { recursive: true }),
     mkdir(getProjectEditSubtitlesRoot(projectRoot, editId), { recursive: true }),
+    mkdir(getProjectEditResolveProjectsRoot(projectRoot), { recursive: true }),
   ]);
 }

@@ -3,6 +3,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { promisify } from 'node:util';
+import type { IColorResolveProjectSnapshot } from '../../protocol/schema.js';
 import {
   ResolveColorHostError,
   resolveColorPythonInvocation,
@@ -86,6 +87,8 @@ export interface IResolveRoughCutTimelineResult {
   timelineName: string;
   createdAt: string;
   clipCount: number;
+  drpSnapshot?: IColorResolveProjectSnapshot;
+  drpSnapshotWarning?: string;
   hostSummary?: Record<string, unknown>;
 }
 

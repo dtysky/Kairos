@@ -49,8 +49,9 @@ Kairos 的标准顺序是：
   - 初始化 Edit Unit：选择/创建 `editId`，选择 workspace `editRuleCategory`，可选选择 `styleCategory`，写入 `edits/<editId>/config/edit-unit.json`
   - Flow Plan、剪辑框架、素材召回等产物由 Codex Agent 直接在仓库内生成和维护；`/edit` 只读展示，不提供生成 Flow、确认 Flow、运行 step、运行下一步或确认 gate 的按钮
   - Flow Plan 使用 `plannerPolicyVersion=codex-agent-v1`，只选择剪辑规则明确要求或后续执行必需的最小 capability 集合；不要把 capability registry 当成固定阶段链
+  - 剪辑规则中适用于某个 capability 的人工规则必须写入对应 Flow Plan step 的 `notes`，并进入 Agent/SubAgent packet；不要依赖固定章节名或让下游关键词解析原始 markdown
   - `trip.event_table` / `material.archive` 只在剪辑规则明确要求独立事件表、行程表、素材档案、素材库文档或单独人工审查产物时出现
-  - `edit.framework` 只做剪辑 handoff：`全片章节` 是宏观概览，`分段操作稿` 是唯一可执行 FW beat 边界，不输出 `beat 边界索引`；主表和 `给 material.recall 的执行索引` 都不得写 chronology/event/route/gap/span/asset id；`spans` 列必须写类型数量与视频语音拆分，`叙事` 只写客观素材总结；召回索引只写全局召回、排序、静音、加速规则
+  - `edit.framework` 只做剪辑 handoff：`全片章节` 是宏观概览，`分段操作稿` 是唯一可执行 FW beat 边界，不输出 `beat 边界索引`；全文不得写 chronology/event/route/gap/span/asset id；`spans` 列必须写类型数量与视频语音拆分，`叙事` 只写客观素材总结；系统规则不规定固定的素材召回提示章节名
   - Codex Agent 按 confirmed Flow Plan 的 capability steps 逐步运行和写产物；人工审查通过产物本身完成，不通过 Console runner
   - 中间产物由每个 capability 的 `outputRefs` 决定；不要要求固定 `script/current.json`、固定 beat 或固定 `Script -> Timeline` 顺序
   - `resolve.media_sync` 只在 Flow Plan 声明时同步达芬奇 Media Pool；`timeline.generate` 只从已同步 Media Pool 选素材，不重新导入或清空 namespace

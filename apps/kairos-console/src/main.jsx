@@ -19,10 +19,12 @@ import {
   fetchWorkspaceStyleConfig,
   fetchWorkspaceStatus,
   registerProjectColorDrpSnapshot,
+  registerProjectEditResolveSnapshot,
   resolveProjectReview,
   mergeProjectChronologyEvents,
   runProjectColorPreflight,
   saveProjectColorDrpSnapshot,
+  saveProjectEditResolveSnapshot,
   saveProjectSection,
   saveWorkspaceStyleConfig,
   startJob,
@@ -204,6 +206,40 @@ function AppShell() {
       await refreshProject(projectId);
       await refreshStatus();
       setMessage('已登记外部 DRP');
+      setError('');
+    } catch (caught) {
+      handleError(caught);
+    } finally {
+      setBusy(current => ({ ...current, [busyKey]: false }));
+    }
+  }
+
+  async function saveEditResolveSnapshot(payload = {}) {
+    if (!projectId) return;
+    const busyKey = 'edit:resolve-snapshot';
+    setBusy(current => ({ ...current, [busyKey]: true }));
+    try {
+      await saveProjectEditResolveSnapshot(projectId, payload);
+      await refreshProject(projectId);
+      await refreshStatus();
+      setMessage('已保存剪辑 DRP 快照');
+      setError('');
+    } catch (caught) {
+      handleError(caught);
+    } finally {
+      setBusy(current => ({ ...current, [busyKey]: false }));
+    }
+  }
+
+  async function registerEditResolveSnapshot(payload = {}) {
+    if (!projectId) return;
+    const busyKey = 'edit:resolve-register';
+    setBusy(current => ({ ...current, [busyKey]: true }));
+    try {
+      await registerProjectEditResolveSnapshot(projectId, payload);
+      await refreshProject(projectId);
+      await refreshStatus();
+      setMessage('已登记剪辑 DRP');
       setError('');
     } catch (caught) {
       handleError(caught);
@@ -781,6 +817,8 @@ function AppShell() {
                       busy={busy}
                       jobs={allJobs}
                       onSaveEditUnit={saveEditUnitPayload}
+                      onSaveResolveSnapshot={saveEditResolveSnapshot}
+                      onRegisterResolveSnapshot={registerEditResolveSnapshot}
                     />
                   )}
                 />
@@ -1900,6 +1938,8 @@ function EditFlowPage({
   styleSources,
   busy,
   onSaveEditUnit,
+  onSaveResolveSnapshot,
+  onRegisterResolveSnapshot,
 }) {
   const editUnit = config?.editUnit;
   const inferredSelections = resolveEditFlowSelections({
@@ -1912,6 +1952,7 @@ function EditFlowPage({
   const [editId, setEditId] = useState(inferredSelections.editId);
   const [editRuleCategory, setEditRuleCategory] = useState(inferredSelections.editRuleCategory);
   const [styleCategory, setStyleCategory] = useState(inferredSelections.styleCategory);
+  const [externalDrpPath, setExternalDrpPath] = useState('');
 
   useEffect(() => {
     setEditRuleCategory(inferredSelections.editRuleCategory);
@@ -1946,10 +1987,14 @@ function EditFlowPage({
 
   const planStatus = editFlowPlan?.status || 'missing';
   const isBusy = Boolean(busy['edit-unit']);
+  const saveResolveBusy = Boolean(busy['edit:resolve-snapshot']);
+  const registerResolveBusy = Boolean(busy['edit:resolve-register']);
   const spansReady = config?.spans?.fresh;
   const chronologyReady = config?.chronology?.chronology?.status === 'confirmed';
   const editUnitSaved = Boolean(editUnit?.editRuleCategory);
   const canSaveEditUnit = Boolean(editId?.trim() && editRuleCategory);
+  const editResolveProject = config?.editResolveProject || null;
+  const latestEditDrp = editResolveProject?.latestDrpSnapshot || null;
 
   return (
     <div className="route-page edit-flow-page">
@@ -2041,6 +2086,58 @@ function EditFlowPage({
           )}
         </Card>
       </div>
+
+      <Card className="panel edit-resolve-drp-panel">
+        <div className="edit-flow-panel-head">
+          <div>
+            <h2>Resolve 剪辑工程备份</h2>
+            <p>{editResolveProject?.resolveProjectName || '等待剪辑工程命名'}</p>
+          </div>
+          <Button
+            type={saveResolveBusy || typeof onSaveResolveSnapshot !== 'function' ? 'disabled' : 'default'}
+            disabled={saveResolveBusy || typeof onSaveResolveSnapshot !== 'function'}
+            onClick={() => onSaveResolveSnapshot?.({ editId })}
+          >
+            {saveResolveBusy ? '保存中…' : '保存 DRP 快照'}
+          </Button>
+        </div>
+        <div className="color-drp-panel">
+          <div className="color-drp-copy">
+            <strong>Resolve [Edit] DRP 快照</strong>
+            <div className="muted">
+              {latestEditDrp?.snapshotPath
+                ? `latest · ${latestEditDrp.latestPath || latestEditDrp.snapshotPath}`
+                : '还没有剪辑 DRP 快照。Resolve scripting 不可用时，用 File -> Export Project... 保存到 snapshots 目录后在这里登记。'}
+            </div>
+            {latestEditDrp?.createdAt ? (
+              <div className="muted">
+                {`${latestEditDrp.mode || 'auto'} · ${latestEditDrp.createdAt} · ${latestEditDrp.projectName || editResolveProject?.resolveProjectName || ''}`}
+              </div>
+            ) : null}
+          </div>
+          <div className="color-drp-register">
+            <label className="edit-flow-field">
+              <span>登记外部 DRP</span>
+              <input
+                value={externalDrpPath}
+                onChange={event => setExternalDrpPath(event.target.value)}
+                placeholder=".../edits/resolve-projects/.../snapshots/project.drp"
+                disabled={registerResolveBusy}
+              />
+            </label>
+            <Button
+              type={externalDrpPath.trim() && !registerResolveBusy ? 'default' : 'disabled'}
+              disabled={!externalDrpPath.trim() || registerResolveBusy || typeof onRegisterResolveSnapshot !== 'function'}
+              onClick={() => {
+                onRegisterResolveSnapshot?.({ editId, path: externalDrpPath.trim() });
+                setExternalDrpPath('');
+              }}
+            >
+              {registerResolveBusy ? '登记中…' : '登记'}
+            </Button>
+          </div>
+        </div>
+      </Card>
 
       <div className="edit-flow-step-section">
         <div className="edit-flow-section-head">

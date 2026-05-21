@@ -96,9 +96,17 @@ if (materialSlots) {
           const span = spanById.get(spanId);
           const asset = span ? assetById.get(span.assetId) : undefined;
           const treatment = treatments[spanId];
-          if (!span || !asset || !treatment || asset.kind === 'photo') continue;
-          if (!spanHasSpeechTruth(span) || treatment.audio > -100) continue;
-          treatments[spanId] = { ...treatment, audio: 0 };
+          const audio = typeof treatment?.audio === 'number' ? treatment.audio : 0;
+          if (!span || !asset || asset.kind === 'photo') continue;
+          if (!spanHasSpeechTruth(span) || audio > -100) continue;
+          const nextTreatment = { ...(treatment ?? {}), audio: 0 };
+          if (nextTreatment.speed === 1) delete nextTreatment.speed;
+          delete nextTreatment.audio;
+          if (Object.keys(nextTreatment).length > 0) {
+            treatments[spanId] = nextTreatment;
+          } else {
+            delete treatments[spanId];
+          }
           materialSlotTreatmentRepairs += 1;
         }
         return { ...slot, treatments };

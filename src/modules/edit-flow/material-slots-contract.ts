@@ -6,6 +6,7 @@ import type {
   IMaterialRecallCoverageAudit,
   IMaterialSlotsDocument,
 } from '../../protocol/schema.js';
+import { resolveMaterialSlotTreatment } from './material-slot-treatments.js';
 
 export function assertMaterialSlotsContract(input: {
   materialSlots: IMaterialSlotsDocument;
@@ -31,17 +32,14 @@ export function assertMaterialSlotsContract(input: {
 
       const chosenSpanIds = new Set(slot.chosenSpanIds);
       for (const spanId of slot.chosenSpanIds) {
-        const treatment = slot.treatments[spanId];
-        if (!treatment) {
-          errors.push(`${segment.segmentId}/${slot.id}: missing treatment for chosen span ${spanId}`);
-          continue;
-        }
-        if (!Number.isFinite(treatment.audio)) {
+        const rawTreatment = slot.treatments[spanId];
+        if (rawTreatment?.audio !== undefined && !Number.isFinite(rawTreatment.audio)) {
           errors.push(`${segment.segmentId}/${slot.id}/${spanId}: audio must be a finite dB number`);
         }
-        if (!Number.isFinite(treatment.speed) || treatment.speed <= 0) {
+        if (rawTreatment?.speed !== undefined && (!Number.isFinite(rawTreatment.speed) || rawTreatment.speed <= 0)) {
           errors.push(`${segment.segmentId}/${slot.id}/${spanId}: speed must be a positive multiplier`);
         }
+        const treatment = resolveMaterialSlotTreatment(rawTreatment);
 
         const span = spanById.get(spanId);
         if (!span) {

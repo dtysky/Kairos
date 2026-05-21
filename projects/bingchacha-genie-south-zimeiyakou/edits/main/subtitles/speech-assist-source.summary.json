@@ -1,0 +1,31 @@
+{
+  "generatedAt": "2026-05-21T09:50:20.784Z",
+  "projectId": "b28016fd-3e18-4a94-8070-ba83704bc0a9",
+  "editId": "main",
+  "timelineName": "Main [main]",
+  "timelineFps": 30,
+  "sourceTimelineAudit": "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/timeline/current.json",
+  "srtPath": "projects/bingchacha-genie-south-zimeiyakou/edits/main/subtitles/speech-assist-source.srt",
+  "clipCount": 5183,
+  "speechClipCount": 4079,
+  "cueCount": 9064,
+  "clippedSegmentCount": 168,
+  "firstCue": {
+    "startMs": 0,
+    "endMs": 7100,
+    "text": "直律直行中大家好我是顺光现在开始启动五一的十二天",
+    "clipId": "clip-00001",
+    "spanId": "C0353_zve1_day0_drive_speech_s0-54",
+    "sourceStartMs": 0,
+    "sourceEndMs": 7100
+  },
+  "lastCue": {
+    "startMs": 56628807,
+    "endMs": 56631607,
+    "text": "他给我安排了一个紧急出口好搞笑",
+    "clipId": "clip-05183",
+    "spanId": "C1884_zve1_day11_broll_speech_s0-5",
+    "sourceStartMs": 680,
+    "sourceEndMs": 3480
+  }
+}

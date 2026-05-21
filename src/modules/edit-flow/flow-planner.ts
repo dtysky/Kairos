@@ -178,6 +178,58 @@ export function buildEditRuleArtifact(editRule: IEditRuleMarkdownSource): IAgent
   };
 }
 
+export const CEDIT_FLOW_STEP_CONTEXT_PRIORITY_ORDER = [
+  'system/protocol contracts',
+  'confirmed Flow Plan step notes',
+  'skill generic capability contracts',
+  'agent heuristics',
+] as const;
+
+export function buildEditFlowStepContextArtifact(input: {
+  projectRoot?: string;
+  editId?: string | null;
+  plan: IEditFlowPlan;
+  capabilityId: string;
+  stepId?: string;
+}): IAgentPacketInputArtifact | null {
+  const steps = input.plan.steps.filter(step => {
+    if (input.stepId && step.id !== input.stepId) return false;
+    return step.capabilityId === input.capabilityId;
+  });
+  if (steps.length === 0) return null;
+  const notes = steps.flatMap(step => step.notes.map(note => ({
+    stepId: step.id,
+    capabilityId: step.capabilityId,
+    text: note,
+  })));
+  const path = input.projectRoot
+    ? getEditFlowPlanPath(input.projectRoot, input.editId)
+    : undefined;
+  return {
+    label: `flow-plan-${input.capabilityId}-step-context`,
+    path,
+    summary: `${input.capabilityId}: ${steps.length} step context, ${notes.length} notes`,
+    content: {
+      schemaVersion: '1.0',
+      flowPlanId: input.plan.id,
+      plannerPolicyVersion: input.plan.plannerPolicyVersion,
+      editRuleCategory: input.plan.editRuleCategory,
+      editRuleHash: input.plan.editRuleHash,
+      capabilityId: input.capabilityId,
+      priorityOrder: CEDIT_FLOW_STEP_CONTEXT_PRIORITY_ORDER,
+      stepNotes: notes,
+      steps: steps.map(step => ({
+        id: step.id,
+        capabilityId: step.capabilityId,
+        title: step.title,
+        execution: step.execution,
+        gate: step.gate,
+        notes: step.notes,
+      })),
+    },
+  };
+}
+
 export function assertEditFrameworkMarkdownContract(
   markdown: string,
   inputArtifacts: IAgentPacketInputArtifact[] = [],
@@ -229,10 +281,6 @@ export function assertEditFrameworkMarkdownContract(
     if (/高密度素材组|高密度|多段|少量|若干|含口播|有口播(?!语音\d)|口播素材|素材组/u.test(spansCell)) {
       errors.push(`spans column contains vague material wording: ${spansCell.trim()}`);
     }
-  }
-  const recallIndex = extractMarkdownSection(markdown, '给 material.recall 的执行索引');
-  if (recallIndex && /\bFW-\d{2}-\d{2}\b/u.test(recallIndex)) {
-    errors.push('material.recall execution index must contain global rules only, not per-beat FW ids');
   }
   if (errors.length > 0) {
     throw new Error(`edit.framework contract failed:\n- ${[...new Set(errors)].join('\n- ')}`);

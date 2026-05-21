@@ -925,8 +925,8 @@ export const EMaterialSlotRequirement = z.enum(['required', 'optional']);
 export type EMaterialSlotRequirement = z.infer<typeof EMaterialSlotRequirement>;
 
 export const IMaterialSlotTreatment = z.object({
-  audio: z.number(),
-  speed: z.number().positive(),
+  audio: z.number().optional(),
+  speed: z.number().positive().optional(),
 }).strict();
 export type IMaterialSlotTreatment = z.infer<typeof IMaterialSlotTreatment>;
 

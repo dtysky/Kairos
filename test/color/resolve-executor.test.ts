@@ -151,6 +151,50 @@ describe('PythonResolveColorExecutor', () => {
     expect(result.timelineStatus).toBe('ready');
   });
 
+  it('passes optional latestFilename through save_drp_snapshot requests', async () => {
+    const backend = await createVendoredBackendRoot('kairos-resolve-executor-dpr-latest-');
+    const executor = new PythonResolveColorExecutor(
+      {
+        backendRoot: backend.backendRoot,
+      },
+      async (_file, args) => {
+        const requestPath = String(args[2]);
+        const request = JSON.parse(await readFile(requestPath, 'utf-8')) as {
+          operation: string;
+          input: {
+            resolveProjectName: string;
+            latestFilename?: string;
+            snapshotRoot: string;
+          };
+        };
+        expect(request.operation).toBe('save_drp_snapshot');
+        expect(request.input.latestFilename).toBe('Project [Edit].drp');
+        return {
+          stdout: JSON.stringify({
+            snapshot: {
+              projectName: request.input.resolveProjectName,
+              snapshotPath: `${request.input.snapshotRoot}/snapshots/manual.drp`,
+              latestPath: `${request.input.snapshotRoot}/${request.input.latestFilename}`,
+              createdAt: '2026-05-21T10:00:00.000Z',
+              mode: 'manual',
+            },
+          }),
+          stderr: '',
+        };
+      },
+    );
+
+    const result = await executor.saveDrpSnapshot({
+      projectId: 'project-edit',
+      resolveProjectName: 'Project [Edit]',
+      snapshotRoot: '/tmp/project-edit',
+      snapshotLabel: 'manual',
+      latestFilename: 'Project [Edit].drp',
+    });
+
+    expect(result.snapshot.latestPath).toBe('/tmp/project-edit/Project [Edit].drp');
+  });
+
   it('maps structured stderr into a typed host error', async () => {
     const executor = new PythonResolveColorExecutor(
       {

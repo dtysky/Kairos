@@ -54,6 +54,14 @@ export function registerProjectColorDrpSnapshot(projectId, payload = {}) {
   return apiPost(`/api/projects/${encodeURIComponent(projectId)}/color/drp-snapshot/register`, payload);
 }
 
+export function saveProjectEditResolveSnapshot(projectId, payload = {}) {
+  return apiPost(`/api/projects/${encodeURIComponent(projectId)}/edit/resolve-project-snapshot`, payload);
+}
+
+export function registerProjectEditResolveSnapshot(projectId, payload = {}) {
+  return apiPost(`/api/projects/${encodeURIComponent(projectId)}/edit/resolve-project-snapshot/register`, payload);
+}
+
 export function fetchWorkspaceStyleConfig() {
   return apiGet('/api/workspace/config/style-sources');
 }

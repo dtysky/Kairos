@@ -59,7 +59,7 @@ describe('material-slots contract', () => {
   it('rejects muted speech-backed non-photo spans', () => {
     expect(() => assertMaterialSlotsContract({
       materialSlots: slotsDocument({
-        'span-talk': { audio: -100, speed: 1 },
+        'span-talk': { audio: -100 },
       }, ['span-talk']),
       spans: SPANS,
       assets: ASSETS,
@@ -67,7 +67,7 @@ describe('material-slots contract', () => {
 
     expect(() => assertMaterialSlotsContract({
       materialSlots: slotsDocument({
-        'span-broll': { audio: -100, speed: 1 },
+        'span-broll': { audio: -100 },
       }, ['span-broll']),
       spans: SPANS,
       assets: ASSETS,
@@ -75,17 +75,48 @@ describe('material-slots contract', () => {
 
     expect(() => assertMaterialSlotsContract({
       materialSlots: slotsDocument({
-        'span-drive': { audio: -100, speed: 1 },
+        'span-drive': { audio: -100 },
       }, ['span-drive']),
       spans: SPANS,
       assets: ASSETS,
     })).toThrow(/speech-backed non-photo spans cannot be muted/u);
   });
 
+  it('resolves missing treatment entries and fields as default audio=0 speed=1', () => {
+    expect(() => assertMaterialSlotsContract({
+      materialSlots: slotsDocument({}, ['span-talk']),
+      spans: SPANS,
+      assets: ASSETS,
+    })).not.toThrow();
+
+    expect(() => assertMaterialSlotsContract({
+      materialSlots: slotsDocument({
+        'span-drive': { speed: 2 },
+      }, ['span-drive']),
+      spans: SPANS,
+      assets: ASSETS,
+    })).not.toThrow();
+
+    expect(() => assertMaterialSlotsContract({
+      materialSlots: slotsDocument({
+        'span-broll': { speed: 2 },
+      }, ['span-broll']),
+      spans: SPANS,
+      assets: ASSETS,
+    })).toThrow(/speed > 1 is only allowed/u);
+  });
+
+  it('still requires explicit mute overrides for selected photos', () => {
+    expect(() => assertMaterialSlotsContract({
+      materialSlots: slotsDocument({}, ['span-photo']),
+      spans: SPANS,
+      assets: ASSETS,
+    })).toThrow(/photo spans must use audio=-100/u);
+  });
+
   it('allows muted photos and builds coverage audit rows', () => {
     const materialSlots = slotsDocument({
-      'span-talk': { audio: 0, speed: 1 },
-      'span-photo': { audio: -100, speed: 1 },
+      'span-photo': { audio: -100 },
     }, ['span-talk', 'span-photo']);
 
     expect(() => assertMaterialSlotsContract({
@@ -122,10 +153,20 @@ describe('material-slots contract', () => {
     });
   });
 
+  it('rejects treatment overrides for non-chosen spans', () => {
+    expect(() => assertMaterialSlotsContract({
+      materialSlots: slotsDocument({
+        'span-broll': { audio: -100 },
+      }, ['span-talk']),
+      spans: SPANS,
+      assets: ASSETS,
+    })).toThrow(/treatment references non-chosen span/u);
+  });
+
 });
 
 function slotsDocument(
-  treatments: Record<string, { audio: number; speed: number }>,
+  treatments: IMaterialSlotsDocument['segments'][number]['slots'][number]['treatments'],
   chosenSpanIds: string[],
 ): IMaterialSlotsDocument {
   return {

@@ -276,6 +276,7 @@ project/
 - Ingest / GPS 刷新负责解析项目内固定 `pharos/` 并刷新 `analysis/pharos-context.json`；该 cache 必须按输入 fingerprint 和 parser version 自动失效；Analyze 只消费该 cache，不临时补跑 Pharos parse
 - Pharos planned shot 归属只使用 `record.json.actual_time` 精确匹配；`expected / unexpected` 且有完整 actual time 的记录才可绑定存在有意义时间重叠的素材，多个单点事件时间窗重叠时只按 `record.json.actual_captures[]` 等显式拍摄类型/设备字段调整优先级，仍同分时优先更窄的 actual window，不从描述、地点或 note 推断语义；`pending / abandoned` 和 planned time segment 不参与素材归属，空间仍只从 trip GPX 按时间反算
 - Pharos/Pyxis 的普通事件过长二次确认只防止上游误写超长 `actual_time`，不改变 Kairos workflow 的归属、刷新或重建步骤
+- Pharos/Pyxis 的非旅行期省电门控只影响移动端自动服务启动，不改变 Kairos workflow 的 Pharos 输入目录、解析、素材归属、GPS 刷新或 chronology 重建步骤
 - 对本次成功扫描到的 root，Ingest 会剪掉该 root 下磁盘已不存在的旧资产；missing root 的旧资产保持不动
 - root 可声明 `captureTimePolicy.mode=manual-required`；命中素材必须由用户显式补 `正确日期 / 正确时间 / 时区` 后 rerun ingest
 - 如果 ingest 发现素材时间和项目时间线明显冲突，必须把待校正项追加到 `config/manual-itinerary.md` 末尾的“素材时间校正”表格，并阻塞后续阶段
@@ -348,8 +349,9 @@ Chronology 审查：
 - 不存在固定 `Script -> Timeline` 用户流程。
 - 不引入必选 `script/current.json`、beat 或其它全局中间稿。
 - `script.generate` 只有当剪辑规则明确要求前置文本稿 / beat 稿时才出现。
+- 剪辑规则中适用于某个 capability 的人工规则必须通过 confirmed Flow Plan 当前 step 的 `notes` 传递给下游 packet；skill 不硬编码项目特定规则，runner 也不临时关键词解析原始 markdown。
 - `material.recall` 只输出 `material-slots.json`；`segment-plan.json` 不再是正式输出或下游输入。
-- `material-slots.json` 是素材召回和粗剪建议唯一结构化产物，每个 `chosenSpanId` 必须有 numeric `audio` dB / `speed` 倍速 treatment；非照片 span 如果有 transcript、transcriptSegments 或 `semanticKind=speech/mixed`，不得静音。
+- `material-slots.json` 是素材召回和粗剪建议唯一结构化产物；`chosenSpanIds` 是选择真相，`treatments` 是稀疏覆盖表，缺省按 `{audio:0,speed:1}` 读取，默认值不写；非照片 span 如果有 transcript、transcriptSegments 或 `semanticKind=speech/mixed`，不得静音。
 - `resolve.media_sync` 是 deterministic Resolve Media Pool 同步步骤；Media Pool 是素材归档真相，不新增 `media-archive.json`，重复运行只能复用 / 移动 / 补导入。
 - `timeline.generate` 是 deterministic Resolve rough-cut 创建步骤，只读取 `edit-framework.md + material-slots.json + spans + assets + chronology` 并从已同步 Media Pool 选择素材；不能要求 `script/current.json` 或 `segment-plan.json`，也不能重新导入素材或清空 `Kairos Project Media` namespace。
 - `.tmp/edit-flow/<editId>/timeline/current.json` 只是本机临时 KTEP/manifest 审计；Resolve 不可用时不能作为成功兜底。

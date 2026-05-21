@@ -20,6 +20,8 @@ import {
   loadEditRulesConfig,
   loadEditUnitConfig,
   loadEditFlowRunRecords,
+  loadEditResolveProjectMap,
+  loadProject,
   listWorkspaceProjects,
   loadManualItineraryConfig,
   normalizeEditId,
@@ -63,6 +65,12 @@ import {
   registerExternalColorDrpSnapshot,
   snapshotProjectColorDrp,
 } from '../modules/color/index.js';
+import {
+  deriveResolveRoughCutProjectName,
+  registerExternalEditDrpSnapshot,
+  resolveLatestEditDrpSnapshot,
+  snapshotProjectEditDrp,
+} from '../modules/timeline-core/index.js';
 import {
   resolveMediaRoot,
   type IMediaRootPathResolution,
@@ -233,6 +241,8 @@ async function routeRequest(
       colorGroupSnapshots,
       workspaceColorTransformPresets,
       colorResolveProjectMap,
+      editResolveProjectMap,
+      project,
       editFlowPlan,
       editFlowRuns,
     ] = await Promise.all([
@@ -249,9 +259,12 @@ async function routeRequest(
       loadColorGroupsSnapshots(projectRoot),
       loadColorTransformPresetsConfig(options.workspaceRoot).catch(() => ({ profiles: {}, discoveredPresets: {} })),
       loadColorResolveProjectMap(projectRoot),
+      loadEditResolveProjectMap(projectRoot),
+      loadProject(projectRoot),
       loadEditFlowPlanReadOnly(options.workspaceRoot, projectRoot, editId),
       loadEditFlowRunRecords(projectRoot, editId),
     ]);
+    const editResolveProjectName = deriveResolveRoughCutProjectName(project.name, project.id);
     const colorWorkspace = buildColorWorkspaceState({
       projectId,
       projectName: projectBrief.name,
@@ -285,6 +298,11 @@ async function routeRequest(
         fresh: spans.length > 0 && spansMeta?.status === 'fresh' && spansMeta.spanCount === spans.length,
       },
       chronology: chronologyState,
+      editResolveProject: {
+        resolveProjectName: editResolveProjectName,
+        latestDrpSnapshot: resolveLatestEditDrpSnapshot(editResolveProjectMap, editResolveProjectName),
+        resolveProjectMap: editResolveProjectMap,
+      },
       editFlowPlan,
       editFlowRuns,
     });
@@ -399,6 +417,43 @@ async function routeRequest(
       workspaceRoot: options.workspaceRoot,
       projectId,
       rootId,
+      drpPath,
+    }));
+    return;
+  }
+
+  const editDrpSnapshotMatch = pathname.match(/^\/api\/projects\/([^/]+)\/edit\/resolve-project-snapshot$/u);
+  if (editDrpSnapshotMatch && method === 'POST') {
+    const projectId = decodeURIComponent(editDrpSnapshotMatch[1]!);
+    const payload = await readJsonBody(request).catch(() => ({}));
+    const editId = typeof payload?.editId === 'string' && payload.editId.trim()
+      ? payload.editId.trim()
+      : undefined;
+    sendJson(response, 200, await snapshotProjectEditDrp({
+      workspaceRoot: options.workspaceRoot,
+      projectId,
+      editId,
+      mode: 'manual',
+    }));
+    return;
+  }
+
+  const editDrpRegisterMatch = pathname.match(/^\/api\/projects\/([^/]+)\/edit\/resolve-project-snapshot\/register$/u);
+  if (editDrpRegisterMatch && method === 'POST') {
+    const projectId = decodeURIComponent(editDrpRegisterMatch[1]!);
+    const payload = await readJsonBody(request).catch(() => ({}));
+    const editId = typeof payload?.editId === 'string' && payload.editId.trim()
+      ? payload.editId.trim()
+      : undefined;
+    const drpPath = typeof payload?.path === 'string' && payload.path.trim()
+      ? payload.path.trim()
+      : typeof payload?.drpPath === 'string' && payload.drpPath.trim()
+        ? payload.drpPath.trim()
+        : '';
+    sendJson(response, 200, await registerExternalEditDrpSnapshot({
+      workspaceRoot: options.workspaceRoot,
+      projectId,
+      editId,
       drpPath,
     }));
     return;

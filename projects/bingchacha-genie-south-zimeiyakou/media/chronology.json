@@ -2,7 +2,7 @@
   "schemaVersion": "2.0",
   "status": "confirmed",
   "generatedAt": "2026-05-18T14:46:36.162Z",
-  "updatedAt": "2026-05-18T14:51:54.033Z",
+  "updatedAt": "2026-05-21T07:01:24.032Z",
   "confirmedAt": "2026-05-18T14:51:54.033Z",
   "inputsHash": "9d7dae6cc7c3f7e94a4e999487d4b00b9b54280a53598fb8d42e251c678068be",
   "assetIndex": [
@@ -9060,7 +9060,7 @@
         "C0363_zve1_day0_drive_speech_s0-34",
         "C0364_zve1_day0_drive_speech_s0-102",
         "C0365_zve1_day0_drive_visual_s24-50",
-        "C0365_zve1_day0_drive_visual_s69-95",
+        "C0365_zve1_day0_drive_speech_s69-95",
         "C0366_zve1_day0_drive_s0-7",
         "C0367_zve1_day0_drive_visual_s22-33",
         "C0367_zve1_day0_drive_speech_s28-31",
@@ -9115,8 +9115,8 @@
       "endAt": "2026-04-24T11:33:03.094Z",
       "location": "赤坎服务区(中阳高速阳春方向)",
       "spanIds": [
-        "C0374_zve1_day0_broll_s0-10",
-        "C0375_zve1_day0_talking-head_s0-12"
+        "C0374_zve1_day0_broll_speech_s0-10",
+        "C0375_zve1_day0_talking-head_speech_s0-12"
       ]
     },
     {
@@ -9223,9 +9223,9 @@
         "C0387_zve1_day1_drive_speech_s42-46",
         "C0387_zve1_day1_drive_visual_s52-63",
         "C0387_zve1_day1_drive_speech_s76-81",
-        "C0390_zve1_day1_broll_s0-8",
+        "C0390_zve1_day1_broll_speech_s0-8",
         "C0391_zve1_day1_broll_speech_s3-10",
-        "C0392_zve1_day1_talking-head_s0-11",
+        "C0392_zve1_day1_talking-head_speech_s0-11",
         "C0393_zve1_day1_broll_speech_s1-6",
         "C0393_zve1_day1_broll_speech_s7-17",
         "C0393_zve1_day1_broll_speech_s18-22",
@@ -9243,7 +9243,7 @@
       "endAt": "2026-04-25T00:55:01.083Z",
       "location": "灵山县",
       "spanIds": [
-        "C0394_zve1_day1_broll_s0-8"
+        "C0394_zve1_day1_broll_speech_s0-8"
       ]
     },
     {
@@ -9366,7 +9366,7 @@
         "C0408_zve1_day1_drive_speech_s0-13",
         "C0408_zve1_day1_drive_visual_s5-20",
         "C0408_zve1_day1_drive_speech_s16-21",
-        "C0409_zve1_day1_drive_s0-15",
+        "C0409_zve1_day1_drive_speech_s0-15",
         "DSC07688_photos_photo",
         "C0410_zve1_day1_drive_visual_s4-11",
         "C0410_zve1_day1_drive_speech_s5-15",
@@ -9399,11 +9399,11 @@
       "endAt": "2026-04-25T05:04:13.000Z",
       "location": "途中午餐",
       "spanIds": [
-        "C0416_zve1_day1_broll_s0-7",
-        "C0417_zve1_day1_broll_s0-7",
+        "C0416_zve1_day1_broll_speech_s0-7",
+        "C0417_zve1_day1_broll_speech_s0-7",
         "C0418_zve1_day1_talking-head_speech_s1-12",
         "C0419_zve1_day1_broll_speech_s0-4",
-        "C0420_zve1_day1_broll_s0-7",
+        "C0420_zve1_day1_broll_speech_s0-7",
         "DSC07692_photos_photo",
         "C0421_zve1_day1_broll_s0-9",
         "DJI_20260425125815_0078_D_drone_day1_aerial_s0-22",
@@ -9663,33 +9663,33 @@
       "location": "纳灰村/八卦田",
       "spanIds": [
         "DJI_20260425170618_0031_D-HDR_photos_photo",
-        "C0460_zve1_day1_broll_s0-6",
-        "C0462_zve1_day1_broll_s0-5",
-        "C0463_zve1_day1_broll_s0-9",
+        "C0460_zve1_day1_broll_speech_s0-6",
+        "C0462_zve1_day1_broll_speech_s0-5",
+        "C0463_zve1_day1_broll_speech_s0-9",
         "C0469_zve1_day1_talking-head_speech_s0-38",
-        "C0471_zve1_day1_broll_s0-9",
+        "C0471_zve1_day1_broll_speech_s0-9",
         "DSC07718_photos_photo",
-        "C0472_zve1_day1_broll_s0-7",
+        "C0472_zve1_day1_broll_speech_s0-7",
         "C0473_zve1_day1_drive_speech_s2-18",
         "C0473_zve1_day1_drive_visual_s9-16",
         "C0473_zve1_day1_drive_speech_s17-21",
         "C0473_zve1_day1_drive_speech_s20-32",
         "C0473_zve1_day1_drive_visual_s22-29",
         "DSC07723_photos_photo",
-        "C0474_zve1_day1_broll_s0-17",
+        "C0474_zve1_day1_broll_speech_s0-17",
         "C0476_zve1_day1_broll_speech_s1-6",
-        "C0477_zve1_day1_broll_s0-14",
+        "C0477_zve1_day1_broll_speech_s0-14",
         "C0478_zve1_day1_broll_speech_s2-5",
         "C0479_zve1_day1_broll_speech_s0-9",
         "C0479_zve1_day1_broll_speech_s9-17",
         "DSC07727_photos_photo",
-        "C0480_zve1_day1_broll_s0-7",
-        "C0481_zve1_day1_broll_s0-7",
+        "C0480_zve1_day1_broll_speech_s0-7",
+        "C0481_zve1_day1_broll_speech_s0-7",
         "DSC07731_photos_photo",
-        "C0482_zve1_day1_broll_s0-8",
-        "C0483_zve1_day1_broll_s0-6",
-        "C0484_zve1_day1_talking-head_s0-5",
-        "C0485_zve1_day1_broll_s0-8"
+        "C0482_zve1_day1_broll_speech_s0-8",
+        "C0483_zve1_day1_broll_speech_s0-6",
+        "C0484_zve1_day1_talking-head_speech_s0-5",
+        "C0485_zve1_day1_broll_speech_s0-8"
       ]
     },
     {
@@ -9714,7 +9714,7 @@
       "location": "八卦田",
       "spanIds": [
         "DSC01140_photos_photo",
-        "C0486_zve1_day1_broll_s0-74",
+        "C0486_zve1_day1_broll_speech_s0-74",
         "DJI_20260425181024_0035_D_drone_day1_aerial_s0-9",
         "DJI_20260425181034_0036_D_drone_day1_aerial_s0-17",
         "DJI_20260425181107_0037_D_drone_day1_aerial_s0-12",
@@ -9797,7 +9797,7 @@
       "endAt": "2026-04-25T11:48:23.584Z",
       "location": "贵州省，黔西南布依族苗族自治州，兴义市，万峰林街道 · 万峰林景区",
       "spanIds": [
-        "C0492_zve1_day1_broll_s0-12"
+        "C0492_zve1_day1_broll_speech_s0-12"
       ]
     },
     {
@@ -9810,12 +9810,12 @@
       "endAt": "2026-04-25T12:58:37.094Z",
       "location": "玉皇顶景区附近",
       "spanIds": [
-        "C0493_zve1_day1_broll_s0-16",
-        "C0494_zve1_day1_broll_s0-7",
-        "C0495_zve1_day1_broll_s0-11",
+        "C0493_zve1_day1_broll_speech_s0-16",
+        "C0494_zve1_day1_broll_speech_s0-7",
+        "C0495_zve1_day1_broll_speech_s0-11",
         "C0496_zve1_day1_broll_speech_s0-14",
-        "C0497_zve1_day1_broll_s0-15",
-        "C0498_zve1_day1_broll_s0-6",
+        "C0497_zve1_day1_broll_speech_s0-15",
+        "C0498_zve1_day1_broll_speech_s0-6",
         "C0499_zve1_day1_talking-head_speech_s3-12"
       ]
     },
@@ -9864,7 +9864,7 @@
         "C0505_zve1_day1_drive_visual_s16-23",
         "C0505_zve1_day1_drive_speech_s30-37",
         "C0505_zve1_day1_drive_visual_s35-42",
-        "C0506_zve1_day1_drive_s0-7",
+        "C0506_zve1_day1_drive_speech_s0-7",
         "C0507_zve1_day1_drive_speech_s9-14",
         "C0507_zve1_day1_drive_visual_s15-36",
         "C0507_zve1_day1_drive_speech_s33-36",
@@ -9903,15 +9903,15 @@
       "endAt": "2026-04-25T22:41:04.840Z",
       "location": "玉皇顶高处观景平台",
       "spanIds": [
-        "C0512_zve1_day2_broll_s0-9",
-        "C0515_zve1_day2_talking-head_s0-13",
+        "C0512_zve1_day2_broll_speech_s0-9",
+        "C0515_zve1_day2_talking-head_speech_s0-13",
         "C0516_zve1_day2_broll_speech_s0-16",
         "C0517_zve1_day2_broll_speech_s0-10",
         "C0517_zve1_day2_broll_speech_s13-17",
-        "C0518_zve1_day2_broll_s0-13",
+        "C0518_zve1_day2_broll_speech_s0-13",
         "C0519_zve1_day2_broll_speech_s0-14",
-        "C0521_zve1_day2_broll_s0-10",
-        "C0522_zve1_day2_talking-head_s0-12",
+        "C0521_zve1_day2_broll_speech_s0-10",
+        "C0522_zve1_day2_talking-head_speech_s0-12",
         "C0523_zve1_day2_broll_speech_s0-3",
         "C0524_zve1_day2_broll_speech_s0-6",
         "C0524_zve1_day2_broll_speech_s8-11",
@@ -9954,8 +9954,8 @@
       "endAt": "2026-04-26T02:52:10.086Z",
       "location": "玉皇顶住宿",
       "spanIds": [
-        "C0528_zve1_day2_broll_s0-16",
-        "C0529_zve1_day2_talking-head_s0-17"
+        "C0528_zve1_day2_broll_speech_s0-16",
+        "C0529_zve1_day2_talking-head_speech_s0-17"
       ]
     },
     {
@@ -10047,7 +10047,7 @@
         "C0534_zve1_day2_drive_visual_s23-34",
         "C0534_zve1_day2_drive_speech_s27-33",
         "C0534_zve1_day2_drive_visual_s37-48",
-        "C0534_zve1_day2_drive_speech_s51-65",
+        "C0534_zve1_day2_drive_speech_s51-88",
         "C0534_zve1_day2_drive_visual_s65-76",
         "C0534_zve1_day2_drive_visual_s80-91",
         "C0534_zve1_day2_drive_speech_s87-100",
@@ -10114,21 +10114,21 @@
       "endAt": "2026-04-26T05:03:43.590Z",
       "location": "途中午餐",
       "spanIds": [
-        "C0541_zve1_day2_broll_s0-8",
-        "C0543_zve1_day2_talking-head_s0-10",
+        "C0541_zve1_day2_broll_speech_s0-8",
+        "C0543_zve1_day2_talking-head_speech_s0-10",
         "C0544_zve1_day2_talking-head_speech_s0-16",
-        "C0545_zve1_day2_broll_s0-13",
+        "C0545_zve1_day2_broll_speech_s0-13",
         "C0546_zve1_day2_broll_speech_s1-18",
-        "C0547_zve1_day2_broll_s0-17",
+        "C0547_zve1_day2_broll_speech_s0-17",
         "C0548_zve1_day2_broll_speech_s1-39",
-        "C0549_zve1_day2_broll_s0-28",
+        "C0549_zve1_day2_broll_speech_s0-28",
         "C0550_zve1_day2_broll_speech_s0-6",
         "C0551_zve1_day2_broll_speech_s0-5",
         "C0551_zve1_day2_broll_speech_s11-14",
         "C0552_zve1_day2_broll_speech_s0-12",
-        "C0553_zve1_day2_talking-head_s0-23",
+        "C0553_zve1_day2_talking-head_speech_s0-23",
         "C0554_zve1_day2_talking-head_speech_s0-10",
-        "C0556_zve1_day2_broll_s0-6"
+        "C0556_zve1_day2_broll_speech_s0-6"
       ]
     },
     {
@@ -10281,10 +10281,10 @@
         "C0572_zve1_day2_drive_visual_s18-25",
         "C0572_zve1_day2_drive_speech_s31-36",
         "C0572_zve1_day2_drive_visual_s39-46",
-        "C0573_zve1_day2_broll_s0-7",
-        "C0574_zve1_day2_talking-head_s0-10",
+        "C0573_zve1_day2_broll_speech_s0-7",
+        "C0574_zve1_day2_talking-head_speech_s0-10",
         "C0575_zve1_day2_broll_speech_s0-6",
-        "C0576_zve1_day2_broll_s0-12",
+        "C0576_zve1_day2_broll_speech_s0-12",
         "DSC07756_photos_photo"
       ]
     },
@@ -10336,7 +10336,7 @@
         "C0583_zve1_day2_drive_speech_s27-35",
         "C0583_zve1_day2_drive_visual_s45-66",
         "C0583_zve1_day2_drive_speech_s66-71",
-        "C0584_zve1_day2_drive_s0-10",
+        "C0584_zve1_day2_drive_speech_s0-10",
         "C0585_zve1_day2_drive_s0-14",
         "C0586_zve1_day2_drive_speech_s3-10",
         "C0586_zve1_day2_drive_visual_s4-11",
@@ -10393,7 +10393,7 @@
         "C0590_zve1_day2_drive_speech_s0-6",
         "C0590_zve1_day2_drive_speech_s6-10",
         "C0590_zve1_day2_drive_visual_s6-13",
-        "C0591_zve1_day2_drive_speech_s1-13",
+        "C0591_zve1_day2_drive_speech_s1-24",
         "C0591_zve1_day2_drive_visual_s15-22",
         "C0591_zve1_day2_drive_visual_s24-31",
         "C0591_zve1_day2_drive_speech_s26-32",
@@ -10419,7 +10419,7 @@
       "endAt": "2026-04-26T09:05:17.582Z",
       "location": "云南省，玉溪市，澄江市，右所镇 · 抚仙湖国家级旅游度假区",
       "spanIds": [
-        "C0594_zve1_day2_broll_s0-11"
+        "C0594_zve1_day2_broll_speech_s0-11"
       ]
     },
     {
@@ -10436,7 +10436,7 @@
       },
       "spanIds": [
         "C0595_zve1_day2_drive_visual_s20-31",
-        "C0595_zve1_day2_drive_speech_s28-31",
+        "C0595_zve1_day2_drive_speech_s28-44",
         "C0595_zve1_day2_drive_visual_s33-44",
         "C0595_zve1_day2_drive_visual_s45-56",
         "C0595_zve1_day2_drive_speech_s47-54",
@@ -10497,7 +10497,7 @@
       "endAt": "2026-04-26T09:29:18.584Z",
       "location": "云南省，玉溪市，澄江市，右所镇 · 抚仙湖公园",
       "spanIds": [
-        "C0600_zve1_day2_broll_s0-12"
+        "C0600_zve1_day2_broll_speech_s0-12"
       ]
     },
     {
@@ -10510,12 +10510,12 @@
       "endAt": "2026-04-26T10:01:24.579Z",
       "location": "抚仙湖边",
       "spanIds": [
-        "C0601_zve1_day2_broll_s0-7",
-        "C0602_zve1_day2_broll_s0-8",
+        "C0601_zve1_day2_broll_speech_s0-7",
+        "C0602_zve1_day2_broll_speech_s0-8",
         "C0603_zve1_day2_broll_speech_s8-13",
         "C0604_zve1_day2_broll_speech_s0-7",
-        "C0605_zve1_day2_broll_s0-12",
-        "C0606_zve1_day2_talking-head_s0-10"
+        "C0605_zve1_day2_broll_speech_s0-12",
+        "C0606_zve1_day2_talking-head_speech_s0-10"
       ]
     },
     {
@@ -10558,7 +10558,7 @@
         "C0608_zve1_day2_drive_speech_s96-130",
         "C0608_zve1_day2_drive_visual_s104-115",
         "C0608_zve1_day2_drive_speech_s129-152",
-        "C0610_zve1_day2_drive_s0-11"
+        "C0610_zve1_day2_drive_speech_s0-11"
       ]
     },
     {
@@ -10571,12 +10571,12 @@
       "endAt": "2026-04-26T10:56:38.584Z",
       "location": "抚仙湖湖边",
       "spanIds": [
-        "C0611_zve1_day2_broll_s0-9",
+        "C0611_zve1_day2_broll_speech_s0-9",
         "C0612_zve1_day2_broll_speech_s0-6",
         "C0612_zve1_day2_broll_speech_s7-10",
         "C0613_zve1_day2_broll_speech_s0-48",
-        "C0615_zve1_day2_broll_s0-41",
-        "C0618_zve1_day2_broll_s0-12"
+        "C0615_zve1_day2_broll_speech_s0-41",
+        "C0618_zve1_day2_broll_speech_s0-12"
       ]
     },
     {
@@ -10609,9 +10609,9 @@
       "spanIds": [
         "20260426_抚仙湖日落2_ts-final_broll_s0-15",
         "20260426_抚仙湖日落1_ts-final_timelapse_s0-25",
-        "C0619_zve1_day2_broll_s0-5",
-        "C0620_zve1_day2_broll_s0-11",
-        "C0621_zve1_day2_broll_s0-11"
+        "C0619_zve1_day2_broll_speech_s0-5",
+        "C0620_zve1_day2_broll_speech_s0-11",
+        "C0621_zve1_day2_broll_speech_s0-11"
       ]
     },
     {
@@ -10624,8 +10624,8 @@
       "endAt": "2026-04-26T11:42:54.587Z",
       "location": "抚仙湖住宿/湖边",
       "spanIds": [
-        "C0622_zve1_day2_broll_s0-13",
-        "C0623_zve1_day2_broll_s0-10",
+        "C0622_zve1_day2_broll_speech_s0-13",
+        "C0623_zve1_day2_broll_speech_s0-10",
         "C0624_zve1_day2_broll_speech_s2-21"
       ]
     },
@@ -10722,7 +10722,7 @@
       "endAt": "2026-04-26T12:59:00.091Z",
       "location": "抚仙湖住宿",
       "spanIds": [
-        "C0633_zve1_day2_broll_s0-11",
+        "C0633_zve1_day2_broll_speech_s0-11",
         "C0634_zve1_day2_broll_speech_s0-11"
       ]
     },
@@ -10736,9 +10736,9 @@
       "endAt": "2026-04-27T00:21:01.579Z",
       "location": "云南省，玉溪市，江川区，江城镇 · 抚仙湖阳光半岛度假酒店",
       "spanIds": [
-        "C0635_zve1_day3_broll_s0-10",
-        "C0636_zve1_day3_broll_s0-13",
-        "C0637_zve1_day3_broll_s0-10"
+        "C0635_zve1_day3_broll_speech_s0-10",
+        "C0636_zve1_day3_broll_speech_s0-13",
+        "C0637_zve1_day3_broll_speech_s0-10"
       ]
     },
     {
@@ -10824,7 +10824,7 @@
         "C0650_zve1_day3_drive_visual_s10-31",
         "C0650_zve1_day3_drive_speech_s28-35",
         "C0651_zve1_day3_drive_visual_s14-21",
-        "C0651_zve1_day3_drive_speech_s17-21",
+        "C0651_zve1_day3_drive_speech_s17-26",
         "C0651_zve1_day3_drive_visual_s23-30",
         "C0651_zve1_day3_drive_speech_s27-44",
         "C0652_zve1_day3_drive_visual_s7-19",
@@ -10850,11 +10850,11 @@
       "endAt": "2026-04-27T04:59:56.094Z",
       "location": "途中午餐",
       "spanIds": [
-        "C0656_zve1_day3_broll_s0-7",
+        "C0656_zve1_day3_broll_speech_s0-7",
         "C0657_zve1_day3_talking-head_speech_s3-16",
-        "C0658_zve1_day3_broll_s0-9",
+        "C0658_zve1_day3_broll_speech_s0-9",
         "C0659_zve1_day3_broll_speech_s7-13",
-        "C0660_zve1_day3_talking-head_s0-12"
+        "C0660_zve1_day3_talking-head_speech_s0-12"
       ]
     },
     {
@@ -10934,7 +10934,7 @@
       "endAt": "2026-04-27T06:23:27.747Z",
       "location": "云南省，大理白族自治州，漾濞彝族自治县，顺濞镇 · 大钢钢铁",
       "spanIds": [
-        "C0671_zve1_day3_talking-head_s0-11",
+        "C0671_zve1_day3_talking-head_speech_s0-11",
         "DJI_20260427141923_0479_D_drone_day3_aerial_s0-36",
         "DJI_20260427142049_0486_D_drone_day3_aerial_s0-48",
         "DJI_20260427142254_0508_D_drone_day3_aerial_s0-33"
@@ -11017,7 +11017,7 @@
       "endAt": "2026-04-27T07:37:27.456Z",
       "location": "云南省，大理白族自治州，永平县，博南镇 · 服务区(杭瑞高速瑞丽方向)",
       "spanIds": [
-        "C0682_zve1_day3_broll_s0-13",
+        "C0682_zve1_day3_broll_speech_s0-13",
         "DJI_20260427152409_0533_D_drone_day3_aerial_s0-33",
         "DJI_20260427152526_0546_D_drone_day3_aerial_s0-30",
         "DJI_20260427152704_0556_D_drone_day3_aerial_s0-28",
@@ -11181,7 +11181,7 @@
         "C0702_zve1_day3_drive_speech_s20-28",
         "C0702_zve1_day3_drive_speech_s30-47",
         "C0702_zve1_day3_drive_visual_s34-41",
-        "C0703_zve1_day3_drive_s0-16",
+        "C0703_zve1_day3_drive_speech_s0-16",
         "C0704_zve1_day3_drive_speech_s0-19",
         "C0704_zve1_day3_drive_visual_s18-25",
         "C0704_zve1_day3_drive_speech_s20-31",
@@ -11268,12 +11268,12 @@
         "C0710_zve1_day3_broll_speech_s1-5",
         "C0711_zve1_day3_broll_speech_s1-8",
         "C0711_zve1_day3_broll_speech_s8-22",
-        "C0712_zve1_day3_broll_s0-6",
-        "C0713_zve1_day3_broll_s0-13",
-        "C0714_zve1_day3_broll_s0-6",
+        "C0712_zve1_day3_broll_speech_s0-6",
+        "C0713_zve1_day3_broll_speech_s0-13",
+        "C0714_zve1_day3_broll_speech_s0-6",
         "C0715_zve1_day3_talking-head_speech_s0-13",
-        "C0716_zve1_day3_broll_s0-10",
-        "C0717_zve1_day3_broll_s0-11"
+        "C0716_zve1_day3_broll_speech_s0-10",
+        "C0717_zve1_day3_broll_speech_s0-11"
       ]
     },
     {
@@ -11293,11 +11293,11 @@
         "C0718_zve1_day3_drive_speech_s9-12",
         "C0719_zve1_day3_drive_speech_s1-5",
         "C0719_zve1_day3_drive_visual_s3-17",
-        "C0720_zve1_day3_drive_speech_s0-5",
+        "C0720_zve1_day3_drive_speech_s0-10",
         "C0720_zve1_day3_drive_visual_s7-19",
         "C0720_zve1_day3_drive_speech_s11-16",
         "C0721_zve1_day3_drive_speech_s0-5",
-        "C0721_zve1_day3_drive_speech_s5-14",
+        "C0721_zve1_day3_drive_speech_s5-17",
         "C0721_zve1_day3_drive_visual_s16-23",
         "C0721_zve1_day3_drive_visual_s26-33",
         "C0721_zve1_day3_drive_speech_s35-39",
@@ -11408,7 +11408,7 @@
         "C0732_zve1_day3_drive_s0-38",
         "C0733_zve1_day3_drive_speech_s0-13",
         "C0733_zve1_day3_drive_visual_s3-13",
-        "C0734_zve1_day3_broll_s0-7",
+        "C0734_zve1_day3_broll_speech_s0-7",
         "C0735_zve1_day3_broll_speech_s0-8"
       ]
     },
@@ -11423,7 +11423,7 @@
       "location": "云南省，怒江傈僳族自治州，福贡县，匹河怒族乡 · 老姆登村景区",
       "spanIds": [
         "C0735_zve1_day3_broll_speech_s11-14",
-        "C0736_zve1_day3_talking-head_s0-13",
+        "C0736_zve1_day3_talking-head_speech_s0-13",
         "C0737_zve1_day3_broll_speech_s0-11"
       ]
     },
@@ -11438,12 +11438,12 @@
       "location": "老姆登村观景平台",
       "spanIds": [
         "C0738_zve1_day4_broll_speech_s0-8",
-        "C0739_zve1_day4_broll_s0-13",
+        "C0739_zve1_day4_broll_speech_s0-13",
         "DSC02490_photos_photo",
         "DSC03043_photos_photo",
         "DSC03509_photos_photo",
-        "C0740_zve1_day4_broll_s0-38",
-        "C0741_zve1_day4_broll_s0-10"
+        "C0740_zve1_day4_broll_speech_s0-38",
+        "C0741_zve1_day4_broll_speech_s0-10"
       ]
     },
     {
@@ -11458,7 +11458,7 @@
       "spanIds": [
         "20260428_老姆登村晨雾1_ts-final_timelapse_s0-49",
         "DSC09198_photos_photo",
-        "C0742_zve1_day4_broll_s0-12"
+        "C0742_zve1_day4_broll_speech_s0-12"
       ]
     },
     {
@@ -11498,7 +11498,7 @@
         "DJI_20260428084730_0200_D_drone_day4_aerial_s0-22",
         "DJI_20260428084823_0201_D_drone_day4_aerial_s0-30",
         "20260428_老姆登村晨雾2_ts-final_aerial_s0-15",
-        "C0743_zve1_day4_broll_s0-16",
+        "C0743_zve1_day4_broll_speech_s0-16",
         "DJI_20260428090604_0205_D_drone_day4_aerial_s0-34"
       ]
     },
@@ -11512,30 +11512,30 @@
       "endAt": "2026-04-28T01:38:55.571Z",
       "location": "老姆登村景区",
       "spanIds": [
-        "C0744_zve1_day4_broll_s0-9",
-        "C0745_zve1_day4_broll_s0-16",
+        "C0744_zve1_day4_broll_speech_s0-9",
+        "C0745_zve1_day4_broll_speech_s0-16",
         "C0746_zve1_day4_broll_speech_s1-6",
         "DSC09200_photos_photo",
         "C0747_zve1_day4_broll_speech_s0-5",
-        "C0748_zve1_day4_drive_speech_s1-4",
+        "C0748_zve1_day4_drive_speech_s1-11",
         "C0748_zve1_day4_drive_visual_s7-19",
         "C0748_zve1_day4_drive_speech_s11-22",
-        "C0749_zve1_day4_drive_s0-13",
+        "C0749_zve1_day4_drive_speech_s0-13",
         "DSC09203_photos_photo",
-        "C0750_zve1_day4_drive_s0-11",
-        "C0751_zve1_day4_broll_s0-6",
+        "C0750_zve1_day4_drive_speech_s0-11",
+        "C0751_zve1_day4_broll_speech_s0-6",
         "C0752_zve1_day4_broll_speech_s1-10",
-        "C0753_zve1_day4_broll_s0-9",
+        "C0753_zve1_day4_broll_speech_s0-9",
         "DSC09206_photos_photo",
-        "C0754_zve1_day4_broll_s0-15",
-        "C0755_zve1_day4_broll_s0-13",
+        "C0754_zve1_day4_broll_speech_s0-15",
+        "C0755_zve1_day4_broll_speech_s0-13",
         "C0756_zve1_day4_broll_speech_s0-10",
         "C0756_zve1_day4_broll_speech_s11-14",
         "DSC09211_photos_photo",
-        "C0757_zve1_day4_broll_s0-14",
+        "C0757_zve1_day4_broll_speech_s0-14",
         "DSC09215_photos_photo",
-        "C0758_zve1_day4_drive_s0-11",
-        "C0759_zve1_day4_broll_s0-1",
+        "C0758_zve1_day4_drive_speech_s0-11",
+        "C0759_zve1_day4_broll_speech_s0-1",
         "C0760_zve1_day4_broll_speech_s0-11",
         "C0760_zve1_day4_broll_speech_s13-19",
         "DSC09217_photos_photo",
@@ -11543,7 +11543,7 @@
         "C0761_zve1_day4_broll_speech_s7-11",
         "DSC09219_photos_photo",
         "C0762_zve1_day4_talking-head_speech_s0-27",
-        "C0763_zve1_day4_broll_s0-7"
+        "C0763_zve1_day4_broll_speech_s0-7"
       ]
     },
     {
@@ -11628,7 +11628,7 @@
       "spanIds": [
         "C0767_zve1_day4_drive_speech_s0-4",
         "C0767_zve1_day4_drive_visual_s13-20",
-        "C0767_zve1_day4_drive_speech_s22-30",
+        "C0767_zve1_day4_drive_speech_s22-40",
         "C0767_zve1_day4_drive_visual_s30-37",
         "C0768_zve1_day4_drive_speech_s0-4",
         "C0768_zve1_day4_drive_speech_s6-9",
@@ -11648,15 +11648,15 @@
         "C0771_zve1_day4_broll_speech_s0-4",
         "C0772_zve1_day4_broll_speech_s2-6",
         "C0772_zve1_day4_broll_speech_s7-12",
-        "C0773_zve1_day4_broll_s0-18",
+        "C0773_zve1_day4_broll_speech_s0-18",
         "C0774_zve1_day4_broll_speech_s0-3",
-        "C0775_zve1_day4_broll_s0-7",
+        "C0775_zve1_day4_broll_speech_s0-7",
         "C0776_zve1_day4_broll_s0-4",
-        "C0777_zve1_day4_broll_s0-3",
+        "C0777_zve1_day4_broll_speech_s0-3",
         "C0778_zve1_day4_broll_speech_s2-8",
-        "C0779_zve1_day4_broll_s0-6",
-        "C0780_zve1_day4_broll_s0-8",
-        "C0781_zve1_day4_broll_s0-11",
+        "C0779_zve1_day4_broll_speech_s0-6",
+        "C0780_zve1_day4_broll_speech_s0-8",
+        "C0781_zve1_day4_broll_speech_s0-11",
         "C0782_zve1_day4_broll_speech_s2-28",
         "C0782_zve1_day4_broll_speech_s29-32",
         "DSC09237_photos_photo",
@@ -11664,11 +11664,11 @@
         "C0783_zve1_day4_broll_speech_s18-23",
         "C0783_zve1_day4_broll_speech_s24-36",
         "DSC09241_photos_photo",
-        "C0784_zve1_day4_broll_s0-12",
+        "C0784_zve1_day4_broll_speech_s0-12",
         "DSC09243_photos_photo",
         "DSC09244_photos_photo",
-        "C0785_zve1_day4_broll_s0-7",
-        "C0786_zve1_day4_broll_s0-7",
+        "C0785_zve1_day4_broll_speech_s0-7",
+        "C0786_zve1_day4_broll_speech_s0-7",
         "C0787_zve1_day4_broll_speech_s2-6",
         "C0787_zve1_day4_broll_speech_s9-13",
         "C0787_zve1_day4_broll_speech_s22-30",
@@ -11677,7 +11677,7 @@
         "zhiziluo-car_1.8.1_photos_photo",
         "zhiziluo-car_1.7.1_photos_photo",
         "DSC09252_photos_photo",
-        "C0788_zve1_day4_drive_s0-6",
+        "C0788_zve1_day4_drive_speech_s0-6",
         "C0789_zve1_day4_drive_speech_s1-13",
         "C0789_zve1_day4_drive_speech_s30-46",
         "C0789_zve1_day4_drive_visual_s32-43",
@@ -11687,7 +11687,7 @@
         "C0789_zve1_day4_drive_visual_s107-118",
         "C0789_zve1_day4_drive_speech_s125-131",
         "DSC09257_photos_photo",
-        "C0790_zve1_day4_broll_s0-11"
+        "C0790_zve1_day4_broll_speech_s0-11"
       ]
     },
     {
@@ -11700,8 +11700,8 @@
       "endAt": "2026-04-28T03:47:51.067Z",
       "location": "老姆登村",
       "spanIds": [
-        "C0791_zve1_day4_talking-head_s0-29",
-        "C0792_zve1_day4_drive_s0-2"
+        "C0791_zve1_day4_talking-head_speech_s0-29",
+        "C0792_zve1_day4_drive_speech_s0-2"
       ]
     },
     {
@@ -11763,7 +11763,7 @@
         "C0799_zve1_day4_drive_speech_s50-54",
         "C0799_zve1_day4_drive_speech_s54-58",
         "C0799_zve1_day4_drive_visual_s55-66",
-        "C0799_zve1_day4_drive_speech_s63-71",
+        "C0799_zve1_day4_drive_speech_s63-78",
         "C0799_zve1_day4_drive_visual_s70-81",
         "C0799_zve1_day4_drive_speech_s79-81",
         "C0799_zve1_day4_drive_speech_s91-105",
@@ -11825,10 +11825,10 @@
         "C0805_zve1_day4_drive_speech_s3-15",
         "C0805_zve1_day4_drive_visual_s7-25",
         "C0805_zve1_day4_drive_speech_s24-28",
-        "C0806_zve1_day4_broll_s0-7",
+        "C0806_zve1_day4_broll_speech_s0-7",
         "C0807_zve1_day4_broll_speech_s0-9",
-        "C0808_zve1_day4_broll_s0-12",
-        "C0811_zve1_day4_broll_s0-18"
+        "C0808_zve1_day4_broll_speech_s0-12",
+        "C0811_zve1_day4_broll_speech_s0-18"
       ]
     },
     {
@@ -11864,7 +11864,7 @@
         "C0814_zve1_day4_drive_speech_s0-15",
         "C0814_zve1_day4_drive_speech_s15-24",
         "C0814_zve1_day4_drive_visual_s18-25",
-        "C0814_zve1_day4_drive_speech_s29-41",
+        "C0814_zve1_day4_drive_speech_s29-52",
         "C0814_zve1_day4_drive_visual_s40-47",
         "C0815_zve1_day4_drive_visual_s15-31",
         "C0815_zve1_day4_drive_speech_s21-35",
@@ -11900,7 +11900,7 @@
         "C0818_zve1_day4_broll_speech_s1-20",
         "C0820_zve1_day4_talking-head_speech_s0-37",
         "C0820_zve1_day4_talking-head_speech_s38-44",
-        "C0821_zve1_day4_broll_s0-6"
+        "C0821_zve1_day4_broll_speech_s0-6"
       ]
     },
     {
@@ -11938,7 +11938,7 @@
         "C0825_zve1_day4_drive_visual_s5-16",
         "C0826_zve1_day4_drive_speech_s2-6",
         "C0826_zve1_day4_drive_visual_s16-27",
-        "C0826_zve1_day4_drive_speech_s19-25",
+        "C0826_zve1_day4_drive_speech_s19-36",
         "C0826_zve1_day4_drive_visual_s26-37",
         "C0826_zve1_day4_drive_speech_s38-42",
         "C0826_zve1_day4_drive_speech_s44-56",
@@ -11991,7 +11991,7 @@
         "C0835_zve1_day4_drive_speech_s21-30",
         "C0836_zve1_day4_drive_speech_s0-4",
         "C0836_zve1_day4_drive_visual_s3-10",
-        "C0836_zve1_day4_drive_speech_s3-7",
+        "C0836_zve1_day4_drive_speech_s3-11",
         "C0836_zve1_day4_drive_visual_s9-16",
         "C0836_zve1_day4_drive_speech_s13-16",
         "C0837_zve1_day4_drive_speech_s0-5",
@@ -12040,8 +12040,8 @@
       "location": "怒江第一湾观景台",
       "spanIds": [
         "C0846_zve1_day4_broll_speech_s0-4",
-        "C0847_zve1_day4_broll_s0-5",
-        "C0848_zve1_day4_broll_s0-10"
+        "C0847_zve1_day4_broll_speech_s0-5",
+        "C0848_zve1_day4_broll_speech_s0-10"
       ]
     },
     {
@@ -12055,7 +12055,7 @@
       "location": "云南省，怒江傈僳族自治州，贡山独龙族怒族自治县，丙中洛镇 · 怒江第一湾",
       "spanIds": [
         "DSC09288_photos_photo",
-        "C0849_zve1_day4_broll_s0-17"
+        "C0849_zve1_day4_broll_speech_s0-17"
       ]
     },
     {
@@ -12094,8 +12094,8 @@
       "endAt": "2026-04-28T10:07:13.453Z",
       "location": "雾里村",
       "spanIds": [
-        "C0852_zve1_day4_broll_s0-10",
-        "C0853_zve1_day4_broll_s0-10",
+        "C0852_zve1_day4_broll_speech_s0-10",
+        "C0853_zve1_day4_broll_speech_s0-10",
         "C0854_zve1_day4_broll_speech_s0-40",
         "DJI_20260428175133_0752_D_drone_day4_aerial_s0-12",
         "DJI_20260428175243_0760_D_drone_day4_aerial_s0-10",
@@ -12137,8 +12137,8 @@
         "C0856_zve1_day4_drive_speech_s3-31",
         "C0856_zve1_day4_drive_visual_s17-34",
         "C0856_zve1_day4_drive_speech_s30-51",
-        "C0857_zve1_day4_drive_s0-2",
-        "C0858_zve1_day4_talking-head_s0-15"
+        "C0857_zve1_day4_drive_speech_s0-2",
+        "C0858_zve1_day4_talking-head_speech_s0-15"
       ]
     },
     {
@@ -12151,7 +12151,7 @@
       "endAt": "2026-04-28T10:34:23.086Z",
       "location": "云南省，怒江傈僳族自治州，贡山独龙族怒族自治县，丙中洛镇 · 怒江大峡谷",
       "spanIds": [
-        "C0859_zve1_day4_broll_s0-4",
+        "C0859_zve1_day4_broll_speech_s0-4",
         "C0860_zve1_day4_broll_speech_s0-3",
         "C0861_zve1_day4_talking-head_speech_s0-17"
       ]
@@ -12197,9 +12197,9 @@
         "DJI_20260428191251_0923_D_drone_day4_aerial_s0-15",
         "DJI_20260428191324_0924_D_drone_day4_aerial_s0-30",
         "DJI_20260428191420_0928_D_drone_day4_aerial_s0-17",
-        "C0866_zve1_day4_broll_s0-17",
+        "C0866_zve1_day4_broll_speech_s0-17",
         "C0867_zve1_day4_broll_speech_s0-11",
-        "C0868_zve1_day4_broll_s0-12",
+        "C0868_zve1_day4_broll_speech_s0-12",
         "DJI_20260428193027_0946_D_drone_day4_aerial_s0-10",
         "DJI_20260428193246_0953_D_drone_day4_aerial_s0-16",
         "DJI_20260428193524_0972_D_drone_day4_aerial_s0-21"
@@ -12265,20 +12265,20 @@
         "C0870_zve1_day4_drive_visual_s164-175",
         "C0870_zve1_day4_drive_speech_s170-177",
         "C0870_zve1_day4_drive_speech_s178-199",
-        "C0871_zve1_day4_broll_s0-5",
-        "C0872_zve1_day4_broll_s0-9",
-        "C0873_zve1_day4_broll_s0-15",
-        "C0874_zve1_day4_broll_s0-11",
-        "C0875_zve1_day4_broll_s0-6",
-        "C0876_zve1_day4_broll_s0-6",
-        "C0877_zve1_day4_broll_s0-10",
-        "C0878_zve1_day4_broll_s0-28",
-        "C0879_zve1_day4_broll_s0-10",
-        "C0880_zve1_day4_broll_s0-6",
-        "C0881_zve1_day4_broll_s0-16",
-        "C0882_zve1_day4_talking-head_s0-27",
-        "C0884_zve1_day4_broll_s0-6",
-        "C0885_zve1_day4_talking-head_s0-12"
+        "C0871_zve1_day4_broll_speech_s0-5",
+        "C0872_zve1_day4_broll_speech_s0-9",
+        "C0873_zve1_day4_broll_speech_s0-15",
+        "C0874_zve1_day4_broll_speech_s0-11",
+        "C0875_zve1_day4_broll_speech_s0-6",
+        "C0876_zve1_day4_broll_speech_s0-6",
+        "C0877_zve1_day4_broll_speech_s0-10",
+        "C0878_zve1_day4_broll_speech_s0-28",
+        "C0879_zve1_day4_broll_speech_s0-10",
+        "C0880_zve1_day4_broll_speech_s0-6",
+        "C0881_zve1_day4_broll_speech_s0-16",
+        "C0882_zve1_day4_talking-head_speech_s0-27",
+        "C0884_zve1_day4_broll_speech_s0-6",
+        "C0885_zve1_day4_talking-head_speech_s0-12"
       ]
     },
     {
@@ -12331,7 +12331,7 @@
       "endAt": "2026-04-28T22:41:39.000Z",
       "location": "云南省，怒江傈僳族自治州，贡山独龙族怒族自治县，丙中洛镇 · 怒江大峡谷",
       "spanIds": [
-        "C0889_zve1_day5_broll_s0-11",
+        "C0889_zve1_day5_broll_speech_s0-11",
         "C0892_zve1_day5_broll_speech_s0-28",
         "DSC09325_photos_photo"
       ]
@@ -12346,7 +12346,7 @@
       "endAt": "2026-04-28T23:06:13.264Z",
       "location": "丙中洛上空",
       "spanIds": [
-        "C0894_zve1_day5_broll_s0-30",
+        "C0894_zve1_day5_broll_speech_s0-30",
         "DSC09331_photos_photo",
         "DJI_20260429064904_0984_D_drone_day5_aerial_s0-50",
         "DJI_20260429065005_0988_D_drone_day5_aerial_s0-29",
@@ -12380,7 +12380,7 @@
       "endAt": "2026-04-28T23:16:00.576Z",
       "location": "云南省，怒江傈僳族自治州，贡山独龙族怒族自治县，丙中洛镇 · 怒江大峡谷",
       "spanIds": [
-        "C0895_zve1_day5_talking-head_s0-9"
+        "C0895_zve1_day5_talking-head_speech_s0-9"
       ]
     },
     {
@@ -12394,7 +12394,7 @@
       "location": "云南省，怒江傈僳族自治州，贡山独龙族怒族自治县，丙中洛镇 · 怒江大峡谷",
       "spanIds": [
         "C0896_zve1_day5_talking-head_speech_s0-9",
-        "C0897_zve1_day5_broll_s0-9",
+        "C0897_zve1_day5_broll_speech_s0-9",
         "20260429_丙中洛晨雾_ts-final_timelapse_s0-25"
       ]
     },
@@ -12663,12 +12663,12 @@
         "C0922_zve1_day5_drive_s0-73",
         "C0923_zve1_day5_drive_s0-33",
         "C0924_zve1_day5_drive_s0-20",
-        "C0926_zve1_day5_broll_s0-9",
-        "C0927_zve1_day5_broll_s0-8",
-        "C0929_zve1_day5_broll_s0-12",
-        "C0930_zve1_day5_broll_s0-9",
-        "C0931_zve1_day5_broll_s0-7",
-        "C0932_zve1_day5_talking-head_s0-6",
+        "C0926_zve1_day5_broll_speech_s0-9",
+        "C0927_zve1_day5_broll_speech_s0-8",
+        "C0929_zve1_day5_broll_speech_s0-12",
+        "C0930_zve1_day5_broll_speech_s0-9",
+        "C0931_zve1_day5_broll_speech_s0-7",
+        "C0932_zve1_day5_talking-head_speech_s0-6",
         "C0933_zve1_day5_drive_speech_s2-40",
         "C0933_zve1_day5_drive_visual_s16-23",
         "C0933_zve1_day5_drive_visual_s35-42",
@@ -12733,7 +12733,7 @@
       "spanIds": [
         "C0937_zve1_day5_broll_speech_s0-3",
         "C0937_zve1_day5_broll_speech_s5-8",
-        "C0938_zve1_day5_broll_s0-12"
+        "C0938_zve1_day5_broll_speech_s0-12"
       ]
     },
     {
@@ -12804,7 +12804,7 @@
         "C0943_zve1_day5_drive_visual_s30-37",
         "C0943_zve1_day5_drive_speech_s38-42",
         "C0943_zve1_day5_drive_speech_s42-52",
-        "C0944_zve1_day5_drive_speech_s0-8",
+        "C0944_zve1_day5_drive_speech_s0-15",
         "C0944_zve1_day5_drive_visual_s7-19",
         "C0945_zve1_day5_drive_speech_s3-8",
         "C0945_zve1_day5_drive_speech_s8-16",
@@ -12827,7 +12827,7 @@
         "C0947_zve1_day5_drive_visual_s62-86",
         "C0947_zve1_day5_drive_speech_s84-87",
         "C0947_zve1_day5_drive_speech_s88-93",
-        "C0948_zve1_day5_broll_s0-19",
+        "C0948_zve1_day5_broll_speech_s0-19",
         "C0949_zve1_day5_talking-head_speech_s0-14",
         "DSC09352_photos_photo",
         "C0950_zve1_day5_drive_speech_s2-34",
@@ -13003,12 +13003,12 @@
         "C0964_zve1_day5_drive_speech_s84-88",
         "C0964_zve1_day5_drive_speech_s87-110",
         "C0964_zve1_day5_drive_visual_s88-99",
-        "C0965_zve1_day5_drive_s0-24",
+        "C0965_zve1_day5_drive_speech_s0-24",
         "DSC09364_photos_photo",
-        "C0966_zve1_day5_drive_s0-16",
-        "C0967_zve1_day5_talking-head_s0-13",
+        "C0966_zve1_day5_drive_speech_s0-16",
+        "C0967_zve1_day5_talking-head_speech_s0-13",
         "DSC09366_photos_photo",
-        "C0968_zve1_day5_drive_s0-29",
+        "C0968_zve1_day5_drive_speech_s0-29",
         "DJI_20260429121155_0166_D_drone_day5_broll_s0-29",
         "DJI_20260429121316_0173_D_drone_day5_aerial_s0-27",
         "DJI_20260429121510_0183_D_drone_day5_aerial_s0-284",
@@ -13207,7 +13207,7 @@
         "C0982_zve1_day5_drive_visual_s75-86",
         "C0982_zve1_day5_drive_speech_s82-86",
         "C0982_zve1_day5_drive_speech_s86-91",
-        "C0982_zve1_day5_drive_speech_s91-102",
+        "C0982_zve1_day5_drive_speech_s91-118",
         "C0982_zve1_day5_drive_visual_s102-113",
         "C0982_zve1_day5_drive_speech_s119-124",
         "C0982_zve1_day5_drive_speech_s126-132",
@@ -13310,8 +13310,8 @@
         "DSC09378_photos_photo",
         "DJI_20260429070529_0085_D-HDR_photos_photo",
         "DJI_20260429070617_0089_D-HDR_photos_photo",
-        "C0992_zve1_day5_broll_s0-12",
-        "C0993_zve1_day5_talking-head_s0-7",
+        "C0992_zve1_day5_broll_speech_s0-12",
+        "C0993_zve1_day5_talking-head_speech_s0-7",
         "DJI_20260429152009_0315_D_drone_day5_aerial_s0-7",
         "DJI_20260429152319_0323_D-HDR_photos_photo",
         "C0994_zve1_day5_drive_speech_s6-56",
@@ -13323,7 +13323,7 @@
         "xiongzhula-car_1.9.5_photos_photo",
         "xiongzhula-car_1.9.3_photos_photo",
         "DSC09383_photos_photo",
-        "C0995_zve1_day5_broll_s0-23",
+        "C0995_zve1_day5_broll_speech_s0-23",
         "C0996_zve1_day5_drive_speech_s1-8",
         "C0996_zve1_day5_drive_visual_s1-8",
         "C0997_zve1_day5_drive_speech_s1-11",
@@ -13350,7 +13350,7 @@
         "C0998_zve1_day5_drive_speech_s10-15",
         "C0998_zve1_day5_drive_speech_s17-34",
         "C0998_zve1_day5_drive_visual_s32-43",
-        "C0998_zve1_day5_drive_speech_s46-49",
+        "C0998_zve1_day5_drive_speech_s46-52",
         "C0998_zve1_day5_drive_visual_s51-62",
         "C0998_zve1_day5_drive_speech_s61-70",
         "C0998_zve1_day5_drive_visual_s70-81",
@@ -13376,7 +13376,7 @@
       "endAt": "2026-04-29T08:03:16.869Z",
       "location": "西藏自治区，林芝市，察隅县，竹瓦根镇",
       "spanIds": [
-        "C1000_zve1_day5_broll_s0-2",
+        "C1000_zve1_day5_broll_speech_s0-2",
         "C1001_zve1_day5_broll_speech_s0-1",
         "DJI_20260429160310_0229_D_drone_day5_aerial_s0-7"
       ]
@@ -13486,7 +13486,7 @@
         "C1006_zve1_day5_drive_visual_s8-15",
         "C1006_zve1_day5_drive_visual_s20-27",
         "C1006_zve1_day5_drive_speech_s21-28",
-        "C1007_zve1_day5_drive_speech_s0-7",
+        "C1007_zve1_day5_drive_speech_s0-11",
         "C1007_zve1_day5_drive_visual_s9-16",
         "C1007_zve1_day5_drive_speech_s14-18",
         "C1007_zve1_day5_drive_speech_s20-25",
@@ -13511,22 +13511,22 @@
         "C1008_zve1_day5_drive_speech_s46-50",
         "C1009_zve1_day5_drive_speech_s0-14",
         "C1009_zve1_day5_drive_visual_s6-13",
-        "C1010_zve1_day5_broll_s0-13",
+        "C1010_zve1_day5_broll_speech_s0-13",
         "C1011_zve1_day5_drive_speech_s0-3",
         "C1011_zve1_day5_drive_visual_s3-13",
         "C1011_zve1_day5_drive_speech_s6-11",
-        "C1012_zve1_day5_broll_s0-11",
-        "C1013_zve1_day5_broll_s0-10",
+        "C1012_zve1_day5_broll_speech_s0-11",
+        "C1013_zve1_day5_broll_speech_s0-10",
         "C1014_zve1_day5_broll_speech_s0-1",
         "C1014_zve1_day5_broll_speech_s2-6",
-        "C1015_zve1_day5_broll_s0-54",
+        "C1015_zve1_day5_broll_speech_s0-54",
         "C1016_zve1_day5_talking-head_speech_s1-15",
-        "C1017_zve1_day5_broll_s0-9",
-        "C1018_zve1_day5_drive_s0-124",
+        "C1017_zve1_day5_broll_speech_s0-9",
+        "C1018_zve1_day5_drive_speech_s0-124",
         "C1019_zve1_day5_broll_speech_s2-6",
         "C1020_zve1_day5_broll_speech_s0-8",
-        "C1021_zve1_day5_broll_s0-7",
-        "C1022_zve1_day5_drive_s0-25"
+        "C1021_zve1_day5_broll_speech_s0-7",
+        "C1022_zve1_day5_drive_speech_s0-25"
       ]
     },
     {
@@ -13543,7 +13543,7 @@
         "to": "西藏自治区，林芝市，察隅县，竹瓦根镇"
       },
       "spanIds": [
-        "C1023_zve1_day5_drive_speech_s0-3",
+        "C1023_zve1_day5_drive_speech_s0-7",
         "C1023_zve1_day5_drive_visual_s4-10",
         "C1024_zve1_day5_drive_speech_s2-8",
         "C1024_zve1_day5_drive_visual_s3-10",
@@ -13577,7 +13577,7 @@
       "endAt": "2026-04-29T10:14:08.592Z",
       "location": "西藏自治区，林芝市，察隅县，竹瓦根镇",
       "spanIds": [
-        "C1030_zve1_day5_talking-head_s0-23"
+        "C1030_zve1_day5_talking-head_speech_s0-23"
       ]
     },
     {
@@ -13642,8 +13642,8 @@
         "C1036_zve1_day5_drive_speech_s70-74",
         "C1037_zve1_day5_broll_speech_s2-25",
         "C1038_zve1_day5_talking-head_speech_s1-13",
-        "C1039_zve1_day5_drive_s0-13",
-        "C1040_zve1_day5_talking-head_s0-17",
+        "C1039_zve1_day5_drive_speech_s0-13",
+        "C1040_zve1_day5_talking-head_speech_s0-17",
         "C1041_zve1_day5_drive_speech_s0-11",
         "C1041_zve1_day5_drive_visual_s4-11",
         "C1042_zve1_day5_drive_speech_s0-6",
@@ -13652,7 +13652,7 @@
         "C1043_zve1_day5_drive_speech_s1-10",
         "C1043_zve1_day5_drive_speech_s11-15",
         "C1043_zve1_day5_drive_visual_s16-27",
-        "C1043_zve1_day5_drive_speech_s21-26",
+        "C1043_zve1_day5_drive_speech_s21-29",
         "C1043_zve1_day5_drive_visual_s27-38",
         "C1043_zve1_day5_drive_speech_s31-36",
         "C1043_zve1_day5_drive_speech_s37-41",
@@ -13663,7 +13663,7 @@
         "C1043_zve1_day5_drive_speech_s65-72",
         "C1043_zve1_day5_drive_speech_s73-76",
         "C1044_zve1_day5_talking-head_speech_s0-3",
-        "C1045_zve1_day5_talking-head_s0-26",
+        "C1045_zve1_day5_talking-head_speech_s0-26",
         "C1046_zve1_day5_drive_speech_s0-7",
         "C1046_zve1_day5_drive_speech_s7-10",
         "C1046_zve1_day5_drive_speech_s10-26",
@@ -13744,7 +13744,7 @@
       "endAt": "2026-04-29T14:18:25.576Z",
       "location": "察隅县城",
       "spanIds": [
-        "C1060_zve1_day5_talking-head_s0-87",
+        "C1060_zve1_day5_talking-head_speech_s0-87",
         "C1061_zve1_day5_drive_speech_s1-15",
         "C1061_zve1_day5_drive_visual_s14-34",
         "C1061_zve1_day5_drive_speech_s19-24",
@@ -13775,7 +13775,7 @@
         "C1063_zve1_day5_drive_speech_s104-127",
         "C1063_zve1_day5_drive_visual_s110-121",
         "C1063_zve1_day5_drive_speech_s127-136",
-        "C1064_zve1_day5_drive_s0-7",
+        "C1064_zve1_day5_drive_speech_s0-7",
         "DSC09415_photos_photo",
         "C1065_zve1_day5_drive_speech_s0-10",
         "C1065_zve1_day5_drive_visual_s5-12",
@@ -13785,17 +13785,17 @@
         "C1068_zve1_day5_broll_speech_s0-5",
         "C1068_zve1_day5_broll_speech_s6-9",
         "C1069_zve1_day5_broll_speech_s0-3",
-        "C1070_zve1_day5_broll_s0-8",
+        "C1070_zve1_day5_broll_speech_s0-8",
         "DSC09418_photos_photo",
-        "C1071_zve1_day5_broll_s0-9",
+        "C1071_zve1_day5_broll_speech_s0-9",
         "DSC09419_photos_photo",
-        "C1072_zve1_day5_broll_s0-6",
+        "C1072_zve1_day5_broll_speech_s0-6",
         "C1073_zve1_day5_talking-head_speech_s0-6",
         "C1074_zve1_day5_broll_speech_s0-5",
         "C1074_zve1_day5_broll_speech_s7-38",
         "C1074_zve1_day5_broll_speech_s38-51",
-        "C1075_zve1_day5_broll_s0-8",
-        "C1076_zve1_day5_talking-head_s0-9"
+        "C1075_zve1_day5_broll_speech_s0-8",
+        "C1076_zve1_day5_talking-head_speech_s0-9"
       ]
     },
     {
@@ -13808,11 +13808,11 @@
       "endAt": "2026-04-30T01:20:10.180Z",
       "location": "察隅县城",
       "spanIds": [
-        "C1077_zve1_day6_broll_s0-10",
-        "C1078_zve1_day6_broll_s0-11",
-        "C1079_zve1_day6_broll_s0-13",
+        "C1077_zve1_day6_broll_speech_s0-10",
+        "C1078_zve1_day6_broll_speech_s0-11",
+        "C1079_zve1_day6_broll_speech_s0-13",
         "C1080_zve1_day6_talking-head_speech_s0-15",
-        "C1081_zve1_day6_broll_s0-6",
+        "C1081_zve1_day6_broll_speech_s0-6",
         "C1083_zve1_day6_drive_speech_s0-2",
         "C1083_zve1_day6_drive_speech_s6-32",
         "C1083_zve1_day6_drive_visual_s11-25",
@@ -13866,7 +13866,7 @@
       "endAt": "2026-04-30T02:23:47.616Z",
       "location": "559国道",
       "spanIds": [
-        "C1093_zve1_day6_broll_s0-48"
+        "C1093_zve1_day6_broll_speech_s0-48"
       ]
     },
     {
@@ -14036,8 +14036,8 @@
         "DJI_20260430122519_0389_D-HDR_photos_photo",
         "DJI_20260430122542_0393_D-HDR_photos_photo",
         "DJI_20260430122607_0402_D-HDR_photos_photo",
-        "C1110_zve1_day6_broll_s0-10",
-        "C1111_zve1_day6_broll_s0-18",
+        "C1110_zve1_day6_broll_speech_s0-10",
+        "C1111_zve1_day6_broll_speech_s0-18",
         "C1112_zve1_day6_broll_speech_s0-9",
         "C1113_zve1_day6_broll_speech_s0-27",
         "DSC00075_photos_photo"
@@ -14139,7 +14139,7 @@
       "endAt": "2026-04-30T05:29:48.000Z",
       "location": "然乌湖湖边",
       "spanIds": [
-        "C1124_zve1_day6_broll_s0-9",
+        "C1124_zve1_day6_broll_speech_s0-9",
         "C1125_zve1_day6_broll_speech_s0-28",
         "DSC09455_photos_photo",
         "DJI_20260430131121_0422_D-HDR_photos_photo",
@@ -14149,7 +14149,7 @@
         "DJI_20260430131802_0475_D_drone_day6_broll_s0-14",
         "DJI_20260430131820_0476_D_drone_day6_broll_s0-9",
         "DJI_20260430132110_0481_D-HDR_photos_photo",
-        "C1126_zve1_day6_broll_s0-53",
+        "C1126_zve1_day6_broll_speech_s0-53",
         "DJI_20260430132635_0497_D_drone_day6_drive_visual_s0-3",
         "DJI_20260430132907_0500_D-HDR_photos_photo",
         "DJI_20260430132948_0509_D-HDR_photos_photo"
@@ -14243,8 +14243,8 @@
         "C1132_zve1_day6_broll_speech_s1-6",
         "C1132_zve1_day6_broll_speech_s11-16",
         "C1133_zve1_day6_talking-head_speech_s0-13",
-        "C1134_zve1_day6_drive_s0-10",
-        "C1135_zve1_day6_broll_s0-5",
+        "C1134_zve1_day6_drive_speech_s0-10",
+        "C1135_zve1_day6_broll_speech_s0-5",
         "C1137_zve1_day6_drive_speech_s3-7",
         "C1137_zve1_day6_drive_speech_s11-42",
         "C1137_zve1_day6_drive_visual_s14-21",
@@ -14263,8 +14263,8 @@
         "C1138_zve1_day6_drive_speech_s77-81",
         "C1138_zve1_day6_drive_speech_s82-95",
         "C1139_zve1_day6_broll_speech_s0-3",
-        "C1140_zve1_day6_broll_s0-5",
-        "C1141_zve1_day6_broll_s0-12",
+        "C1140_zve1_day6_broll_speech_s0-5",
+        "C1141_zve1_day6_broll_speech_s0-12",
         "DSC09462_photos_photo",
         "C1142_zve1_day6_broll_speech_s1-33"
       ]
@@ -14366,7 +14366,7 @@
         "C1161_zve1_day6_drive_speech_s2-12",
         "C1161_zve1_day6_drive_visual_s5-16",
         "C1161_zve1_day6_drive_speech_s13-22",
-        "C1162_zve1_day6_drive_speech_s3-17",
+        "C1162_zve1_day6_drive_speech_s3-19",
         "C1162_zve1_day6_drive_visual_s18-25",
         "C1162_zve1_day6_drive_speech_s21-25",
         "C1162_zve1_day6_drive_visual_s28-35",
@@ -14429,7 +14429,7 @@
       "endAt": "2026-04-30T08:57:12.016Z",
       "location": "西藏自治区，昌都市，八宿县，白玛镇 · 怒江72拐",
       "spanIds": [
-        "C1172_zve1_day6_talking-head_s0-7"
+        "C1172_zve1_day6_talking-head_speech_s0-7"
       ]
     },
     {
@@ -14540,9 +14540,9 @@
       "spanIds": [
         "C1186_zve1_day6_broll_speech_s1-14",
         "C1186_zve1_day6_broll_speech_s15-33",
-        "C1187_zve1_day6_broll_s0-10",
+        "C1187_zve1_day6_broll_speech_s0-10",
         "C1188_zve1_day6_talking-head_speech_s0-20",
-        "C1189_zve1_day6_broll_s0-5",
+        "C1189_zve1_day6_broll_speech_s0-5",
         "DJI_20260430180352_0513_D_drone_day6_aerial_s0-20",
         "DJI_20260430180455_0520_D-HDR_photos_photo",
         "DJI_20260430180523_0526_D_drone_day6_aerial_s0-36",
@@ -14579,7 +14579,7 @@
       },
       "spanIds": [
         "C1190_zve1_day6_drive_speech_s0-4",
-        "C1190_zve1_day6_drive_speech_s6-10",
+        "C1190_zve1_day6_drive_speech_s6-12",
         "C1190_zve1_day6_drive_visual_s11-18",
         "C1190_zve1_day6_drive_visual_s19-26",
         "C1190_zve1_day6_drive_speech_s22-27",
@@ -14635,7 +14635,7 @@
         "C1201_zve1_day6_drive_speech_s54-57",
         "C1201_zve1_day6_drive_visual_s55-66",
         "C1201_zve1_day6_drive_speech_s58-71",
-        "C1202_zve1_day6_drive_s0-16",
+        "C1202_zve1_day6_drive_speech_s0-16",
         "C1203_zve1_day6_drive_speech_s1-8",
         "C1203_zve1_day6_drive_speech_s8-11",
         "C1203_zve1_day6_drive_speech_s11-18",
@@ -14704,7 +14704,7 @@
         "C1210_zve1_day6_drive_visual_s83-94",
         "C1210_zve1_day6_drive_speech_s88-92",
         "C1210_zve1_day6_drive_speech_s96-104",
-        "C1211_zve1_day6_broll_s0-10",
+        "C1211_zve1_day6_broll_speech_s0-10",
         "C1212_zve1_day6_talking-head_speech_s0-8",
         "DJI_20260430195615_0610_D_drone_day6_aerial_s0-23",
         "DSC09498_photos_photo",
@@ -14732,7 +14732,7 @@
       "endAt": "2026-04-30T12:13:19.080Z",
       "location": "西藏自治区，昌都市，八宿县，帮达镇 · 怒江72拐",
       "spanIds": [
-        "C1213_zve1_day6_broll_s0-7"
+        "C1213_zve1_day6_broll_speech_s0-7"
       ]
     },
     {
@@ -14748,7 +14748,7 @@
         "to": "西藏自治区，昌都市，八宿县，帮达镇 · 八宿元哥商务酒店"
       },
       "spanIds": [
-        "C1214_zve1_day6_drive_s0-6",
+        "C1214_zve1_day6_drive_speech_s0-6",
         "C1215_zve1_day6_drive_speech_s1-6"
       ]
     },
@@ -14767,10 +14767,10 @@
         "C1215_zve1_day6_drive_speech_s13-29",
         "C1215_zve1_day6_drive_visual_s21-28",
         "C1215_zve1_day6_drive_speech_s29-31",
-        "C1216_zve1_day6_broll_s0-10",
-        "C1217_zve1_day6_broll_s0-7",
-        "C1218_zve1_day6_broll_s0-6",
-        "C1219_zve1_day6_broll_s0-13"
+        "C1216_zve1_day6_broll_speech_s0-10",
+        "C1217_zve1_day6_broll_speech_s0-7",
+        "C1218_zve1_day6_broll_speech_s0-6",
+        "C1219_zve1_day6_broll_speech_s0-13"
       ]
     },
     {
@@ -14835,11 +14835,11 @@
         "C1227_zve1_day6_drive_visual_s42-63",
         "C1227_zve1_day6_drive_speech_s49-53",
         "C1227_zve1_day6_drive_speech_s59-62",
-        "C1228_zve1_day6_broll_s0-6",
-        "C1229_zve1_day6_broll_s0-10",
+        "C1228_zve1_day6_broll_speech_s0-6",
+        "C1229_zve1_day6_broll_speech_s0-10",
         "C1230_zve1_day6_broll_speech_s0-4",
         "C1231_zve1_day6_talking-head_speech_s0-13",
-        "C1232_zve1_day6_broll_s0-11"
+        "C1232_zve1_day6_broll_speech_s0-11"
       ]
     },
     {
@@ -14858,11 +14858,11 @@
         "C1234_zve1_day7_drive_speech_s0-6",
         "C1234_zve1_day7_drive_visual_s1-6",
         "C1235_zve1_day7_talking-head_speech_s0-18",
-        "C1236_zve1_day7_broll_s0-7",
-        "C1237_zve1_day7_broll_s0-8",
-        "C1238_zve1_day7_broll_s0-9",
+        "C1236_zve1_day7_broll_speech_s0-7",
+        "C1237_zve1_day7_broll_speech_s0-8",
+        "C1238_zve1_day7_broll_speech_s0-9",
         "DSC09505_photos_photo",
-        "C1239_zve1_day7_drive_s0-5",
+        "C1239_zve1_day7_drive_speech_s0-5",
         "C1241_zve1_day7_drive_speech_s0-17",
         "C1241_zve1_day7_drive_visual_s10-23",
         "C1241_zve1_day7_drive_speech_s16-32",
@@ -14917,7 +14917,6 @@
         "C1248_zve1_day7_drive_visual_s15-26",
         "C1248_zve1_day7_drive_speech_s21-25",
         "C1248_zve1_day7_drive_speech_s25-36",
-        "C1248_zve1_day7_drive_visual_s25-36",
         "C1248_zve1_day7_drive_speech_s38-46",
         "C1248_zve1_day7_drive_speech_s46-50",
         "C1248_zve1_day7_drive_visual_s46-57",
@@ -14977,8 +14976,8 @@
       "endAt": "2026-05-01T02:41:28.187Z",
       "location": "东达山垭口（海拔5130m）",
       "spanIds": [
-        "C1250_zve1_day7_broll_s0-9",
-        "C1251_zve1_day7_broll_s0-7",
+        "C1250_zve1_day7_broll_speech_s0-9",
+        "C1251_zve1_day7_broll_speech_s0-7",
         "DJI_20260501103715_0699_D-HDR_photos_photo",
         "C1253_zve1_day7_broll_speech_s1-27",
         "DJI_20260501104016_0710_D-HDR_photos_photo",
@@ -15035,7 +15034,7 @@
         "C1260_zve1_day7_drive_visual_s20-31",
         "C1260_zve1_day7_drive_speech_s23-40",
         "C1260_zve1_day7_drive_visual_s32-43",
-        "C1260_zve1_day7_drive_speech_s40-43",
+        "C1260_zve1_day7_drive_speech_s40-46",
         "C1260_zve1_day7_drive_visual_s45-56",
         "C1260_zve1_day7_drive_speech_s51-59",
         "C1260_zve1_day7_drive_visual_s58-69",
@@ -15049,7 +15048,7 @@
         "C1261_zve1_day7_drive_speech_s60-66",
         "C1261_zve1_day7_drive_speech_s73-76",
         "C1261_zve1_day7_drive_speech_s77-80",
-        "C1262_zve1_day7_drive_s0-11",
+        "C1262_zve1_day7_drive_speech_s0-11",
         "C1263_zve1_day7_drive_speech_s2-11",
         "C1263_zve1_day7_drive_visual_s5-12",
         "C1263_zve1_day7_drive_visual_s13-20",
@@ -15096,7 +15095,7 @@
         "C1268_zve1_day7_drive_speech_s15-20",
         "C1268_zve1_day7_drive_visual_s25-32",
         "C1268_zve1_day7_drive_speech_s30-34",
-        "C1269_zve1_day7_drive_s0-8"
+        "C1269_zve1_day7_drive_speech_s0-8"
       ]
     },
     {
@@ -15133,8 +15132,8 @@
         "C1272_zve1_day7_drive_visual_s61-72",
         "C1272_zve1_day7_drive_speech_s62-66",
         "C1272_zve1_day7_drive_speech_s69-76",
-        "C1273_zve1_day7_drive_s0-11",
-        "C1274_zve1_day7_broll_s0-6"
+        "C1273_zve1_day7_drive_speech_s0-11",
+        "C1274_zve1_day7_broll_speech_s0-6"
       ]
     },
     {
@@ -15147,7 +15146,7 @@
       "endAt": "2026-05-01T04:39:35.088Z",
       "location": "restaurant",
       "spanIds": [
-        "C1275_zve1_day7_broll_s0-10"
+        "C1275_zve1_day7_broll_speech_s0-10"
       ]
     },
     {
@@ -15160,8 +15159,8 @@
       "endAt": "2026-05-01T04:59:20.574Z",
       "location": "西藏自治区，昌都市，芒康县，如美镇 · 季枫酒店",
       "spanIds": [
-        "C1276_zve1_day7_broll_s0-10",
-        "C1277_zve1_day7_broll_s0-8"
+        "C1276_zve1_day7_broll_speech_s0-10",
+        "C1277_zve1_day7_broll_speech_s0-8"
       ]
     },
     {
@@ -15178,7 +15177,7 @@
         "to": "西藏自治区，昌都市，芒康县，如美镇 · 芒康县家常便饭饭店"
       },
       "spanIds": [
-        "C1278_zve1_day7_drive_s0-3",
+        "C1278_zve1_day7_drive_speech_s0-3",
         "C1279_zve1_day7_drive_speech_s0-7",
         "C1279_zve1_day7_drive_visual_s3-9",
         "DSC09538_photos_photo",
@@ -15291,7 +15290,7 @@
         "to": "西藏自治区，昌都市，芒康县，宗西乡"
       },
       "spanIds": [
-        "C1293_zve1_day7_drive_s0-39",
+        "C1293_zve1_day7_drive_speech_s0-39",
         "C1294_zve1_day7_drive_speech_s0-16",
         "C1294_zve1_day7_drive_visual_s15-22",
         "C1294_zve1_day7_drive_speech_s16-30",
@@ -15329,7 +15328,7 @@
         "C1610_zve1_day7_broll_speech_s3-7",
         "C1610_zve1_day7_broll_speech_s7-18",
         "C1610_zve1_day7_broll_speech_s24-34",
-        "C1301_zve1_day7_broll_s0-7",
+        "C1301_zve1_day7_broll_speech_s0-7",
         "C1611_zve1_day7_broll_speech_s0-3",
         "C1611_zve1_day7_broll_speech_s10-15",
         "C1611_zve1_day7_broll_speech_s17-21",
@@ -15338,7 +15337,7 @@
         "C1613_zve1_day7_broll_speech_s0-3",
         "C1613_zve1_day7_broll_speech_s8-11",
         "DSC09564_photos_photo",
-        "C1615_zve1_day7_broll_s0-4",
+        "C1615_zve1_day7_broll_speech_s0-4",
         "C1616_zve1_day7_broll_s0-38",
         "C1617_zve1_day7_broll_speech_s0-7",
         "C1618_zve1_day7_broll_speech_s10-13"
@@ -15380,7 +15379,7 @@
         "C1304_zve1_day7_drive_speech_s74-79",
         "DSC09580_photos_photo",
         "C1304_zve1_day7_drive_speech_s81-88",
-        "C1304_zve1_day7_drive_speech_s97-106",
+        "C1304_zve1_day7_drive_speech_s97-108",
         "C1304_zve1_day7_drive_visual_s108-125",
         "C1304_zve1_day7_drive_speech_s113-128",
         "C1304_zve1_day7_drive_speech_s128-136",
@@ -15406,7 +15405,7 @@
         "C1307_zve1_day7_drive_speech_s1-4",
         "C1307_zve1_day7_drive_speech_s5-12",
         "C1307_zve1_day7_drive_speech_s12-17",
-        "C1307_zve1_day7_drive_visual_s15-26",
+        "C1307_zve1_day7_drive_visual_s15-36",
         "C1307_zve1_day7_drive_speech_s35-44",
         "C1307_zve1_day7_drive_speech_s45-54",
         "C1307_zve1_day7_drive_visual_s45-56",
@@ -15532,7 +15531,7 @@
         "C1316_zve1_day7_drive_visual_s306-323",
         "C1316_zve1_day7_drive_speech_s307-340",
         "C1316_zve1_day7_drive_speech_s350-354",
-        "C1317_zve1_day7_drive_s0-12",
+        "C1317_zve1_day7_drive_speech_s0-12",
         "C1318_zve1_day7_drive_speech_s2-11",
         "C1318_zve1_day7_drive_speech_s14-24",
         "C1318_zve1_day7_drive_visual_s17-24",
@@ -15564,7 +15563,7 @@
         "DSC09588_photos_photo",
         "C1322_zve1_day7_drive_speech_s0-3",
         "C1322_zve1_day7_drive_visual_s5-12",
-        "C1322_zve1_day7_drive_speech_s8-13",
+        "C1322_zve1_day7_drive_speech_s8-19",
         "C1322_zve1_day7_drive_visual_s13-20",
         "C1323_zve1_day7_drive_speech_s1-10",
         "C1323_zve1_day7_drive_speech_s14-27",
@@ -15587,12 +15586,12 @@
         "C1324_zve1_day7_drive_visual_s17-24",
         "C1324_zve1_day7_drive_visual_s37-44",
         "C1324_zve1_day7_drive_speech_s38-50",
-        "C1325_zve1_day7_broll_s0-7",
-        "C1326_zve1_day7_talking-head_s0-8",
-        "C1327_zve1_day7_talking-head_s0-8",
+        "C1325_zve1_day7_broll_speech_s0-7",
+        "C1326_zve1_day7_talking-head_speech_s0-8",
+        "C1327_zve1_day7_talking-head_speech_s0-8",
         "C1328_zve1_day7_broll_speech_s0-8",
-        "C1329_zve1_day7_broll_s0-8",
-        "C1330_zve1_day7_broll_s0-6",
+        "C1329_zve1_day7_broll_speech_s0-8",
+        "C1330_zve1_day7_broll_speech_s0-6",
         "DSC09589_photos_photo"
       ]
     },
@@ -15606,31 +15605,31 @@
       "endAt": "2026-05-01T12:15:49.078Z",
       "location": "巴塘县城",
       "spanIds": [
-        "C1331_zve1_day7_drive_s0-9",
-        "C1332_zve1_day7_talking-head_s0-13",
-        "C1333_zve1_day7_broll_s0-9",
-        "C1334_zve1_day7_broll_s0-11",
-        "C1335_zve1_day7_broll_s0-3",
+        "C1331_zve1_day7_drive_speech_s0-9",
+        "C1332_zve1_day7_talking-head_speech_s0-13",
+        "C1333_zve1_day7_broll_speech_s0-9",
+        "C1334_zve1_day7_broll_speech_s0-11",
+        "C1335_zve1_day7_broll_speech_s0-3",
         "C1336_zve1_day7_broll_speech_s0-5",
-        "C1337_zve1_day7_broll_s0-4",
-        "C1338_zve1_day7_talking-head_s0-8",
-        "C1339_zve1_day7_broll_s0-14",
-        "C1340_zve1_day7_broll_s0-15",
-        "C1341_zve1_day7_broll_s0-10",
-        "C1342_zve1_day7_broll_s0-10",
-        "C1343_zve1_day7_talking-head_s0-14",
+        "C1337_zve1_day7_broll_speech_s0-4",
+        "C1338_zve1_day7_talking-head_speech_s0-8",
+        "C1339_zve1_day7_broll_speech_s0-14",
+        "C1340_zve1_day7_broll_speech_s0-15",
+        "C1341_zve1_day7_broll_speech_s0-10",
+        "C1342_zve1_day7_broll_speech_s0-10",
+        "C1343_zve1_day7_talking-head_speech_s0-14",
         "C1344_zve1_day7_broll_speech_s2-7",
         "C1344_zve1_day7_broll_speech_s17-19",
         "C1345_zve1_day7_broll_speech_s2-7",
-        "C1346_zve1_day7_talking-head_s0-22",
-        "C1347_zve1_day7_talking-head_s0-3",
-        "C1348_zve1_day7_talking-head_s0-10",
-        "C1349_zve1_day7_broll_s0-19",
+        "C1346_zve1_day7_talking-head_speech_s0-22",
+        "C1347_zve1_day7_talking-head_speech_s0-3",
+        "C1348_zve1_day7_talking-head_speech_s0-10",
+        "C1349_zve1_day7_broll_speech_s0-19",
         "C1350_zve1_day7_drive_speech_s0-4",
         "C1350_zve1_day7_drive_visual_s1-6",
         "C1351_zve1_day7_broll_speech_s0-5",
-        "C1352_zve1_day7_broll_s0-11",
-        "C1353_zve1_day7_talking-head_s0-6"
+        "C1352_zve1_day7_broll_speech_s0-11",
+        "C1353_zve1_day7_talking-head_speech_s0-6"
       ]
     },
     {
@@ -15644,12 +15643,12 @@
       "location": "巴塘县城",
       "spanIds": [
         "C1354_zve1_day8_broll_speech_s1-8",
-        "C1355_zve1_day8_broll_s0-6",
-        "C1357_zve1_day8_broll_s0-10",
+        "C1355_zve1_day8_broll_speech_s0-6",
+        "C1357_zve1_day8_broll_speech_s0-10",
         "C1360_zve1_day8_drive_speech_s0-24",
         "C1360_zve1_day8_drive_visual_s8-21",
         "C1360_zve1_day8_drive_speech_s24-28",
-        "C1361_zve1_day8_talking-head_s0-9",
+        "C1361_zve1_day8_talking-head_speech_s0-9",
         "C1362_zve1_day8_talking-head_speech_s1-7"
       ]
     },
@@ -15740,7 +15739,7 @@
       "endAt": "2026-05-02T02:01:27.078Z",
       "location": "四川省，甘孜藏族自治州，巴塘县，夏邛镇 · 巴久曲1号大桥",
       "spanIds": [
-        "C1366_zve1_day8_talking-head_s0-14"
+        "C1366_zve1_day8_talking-head_speech_s0-14"
       ]
     },
     {
@@ -15829,7 +15828,7 @@
         "C1372_zve1_day8_drive_visual_s119-136",
         "C1372_zve1_day8_drive_speech_s120-126",
         "C1372_zve1_day8_drive_speech_s138-147",
-        "C1372_zve1_day8_drive_speech_s154-160",
+        "C1372_zve1_day8_drive_speech_s154-168",
         "C1372_zve1_day8_drive_visual_s161-178",
         "C1372_zve1_day8_drive_speech_s185-201",
         "C1372_zve1_day8_drive_speech_s202-206",
@@ -15859,9 +15858,9 @@
         "C1372_zve1_day8_drive_speech_s357-362",
         "C1372_zve1_day8_drive_speech_s363-370",
         "C1372_zve1_day8_drive_speech_s371-383",
-        "C1373_zve1_day8_broll_s0-12",
-        "C1375_zve1_day8_talking-head_s0-5",
-        "C1376_zve1_day8_talking-head_s0-11",
+        "C1373_zve1_day8_broll_speech_s0-12",
+        "C1375_zve1_day8_talking-head_speech_s0-5",
+        "C1376_zve1_day8_talking-head_speech_s0-11",
         "DJI_20260502105033_0822_D_drone_day8_drive_s0-13",
         "DJI_20260502105055_0823_D-HDR_photos_photo",
         "DJI_20260502105104_0826_D_drone_day8_drive_s0-8",
@@ -15963,7 +15962,7 @@
         "C1385_zve1_day8_drive_speech_s18-22",
         "DJI_20260502112531_0860_D_drone_day8_broll_s0-11",
         "DJI_20260502112548_0861_D-HDR_photos_photo",
-        "C1386_zve1_day8_broll_s0-44"
+        "C1386_zve1_day8_broll_speech_s0-44"
       ]
     },
     {
@@ -16029,7 +16028,7 @@
         "C1387_zve1_day8_drive_speech_s312-329",
         "C1387_zve1_day8_drive_speech_s329-337",
         "C1387_zve1_day8_drive_speech_s346-348",
-        "C1387_zve1_day8_drive_speech_s365-369",
+        "C1387_zve1_day8_drive_speech_s365-376",
         "C1387_zve1_day8_drive_visual_s370-387"
       ]
     },
@@ -16115,7 +16114,7 @@
         "C1395_zve1_day8_drive_speech_s18-28",
         "C1395_zve1_day8_drive_visual_s20-27",
         "DSC09626_photos_photo",
-        "C1396_zve1_day8_drive_s0-7",
+        "C1396_zve1_day8_drive_speech_s0-7",
         "C1397_zve1_day8_drive_speech_s0-5",
         "C1397_zve1_day8_drive_speech_s9-14",
         "C1397_zve1_day8_drive_visual_s30-41",
@@ -16148,7 +16147,7 @@
         "C1399_zve1_day8_talking-head_visual_s0-23",
         "C1399_zve1_day8_talking-head_speech_s0-3",
         "C1399_zve1_day8_talking-head_speech_s2-23",
-        "C1400_zve1_day8_broll_s0-4",
+        "C1400_zve1_day8_broll_speech_s0-4",
         "DSC09631_photos_photo",
         "C1401_zve1_day8_broll_speech_s5-9",
         "C1401_zve1_day8_broll_speech_s10-24",
@@ -16160,7 +16159,7 @@
         "C1403_zve1_day8_broll_speech_s24-68",
         "C1404_zve1_day8_talking-head_speech_s0-18",
         "C1405_zve1_day8_broll_speech_s0-8",
-        "C1406_zve1_day8_broll_s0-5",
+        "C1406_zve1_day8_broll_speech_s0-5",
         "DSC09634_photos_photo",
         "DSC09637_photos_photo",
         "C1407_zve1_day8_drive_speech_s0-4",
@@ -16179,15 +16178,15 @@
         "C1408_zve1_day8_drive_speech_s60-84",
         "C1408_zve1_day8_drive_visual_s72-83",
         "C1408_zve1_day8_drive_speech_s83-90",
-        "C1409_zve1_day8_broll_s0-9",
-        "C1410_zve1_day8_broll_s0-26",
-        "C1411_zve1_day8_broll_s0-8",
+        "C1409_zve1_day8_broll_speech_s0-9",
+        "C1410_zve1_day8_broll_speech_s0-26",
+        "C1411_zve1_day8_broll_speech_s0-8",
         "genie-south-car_1.2.1-3_photos_photo",
         "genie-south-car_1.4.4_photos_photo",
         "genie-south-car_1.4.3_photos_photo",
         "genie-south-car_1.6.3_photos_photo",
         "genie-south-car_1.7.3_photos_photo",
-        "C1412_zve1_day8_broll_s0-15",
+        "C1412_zve1_day8_broll_speech_s0-15",
         "DSC00085_photos_photo",
         "C1413_zve1_day8_talking-head_speech_s0-10",
         "C1415_zve1_day8_broll_speech_s0-7",
@@ -16343,8 +16342,8 @@
         "C1429_zve1_day8_drive_visual_s57-68",
         "C1429_zve1_day8_drive_speech_s63-74",
         "C1430_zve1_day8_broll_speech_s1-4",
-        "C1431_zve1_day8_broll_s0-11",
-        "C1432_zve1_day8_broll_s0-23",
+        "C1431_zve1_day8_broll_speech_s0-11",
+        "C1432_zve1_day8_broll_speech_s0-23",
         "C1619_zve1_day8_broll_speech_s0-4",
         "C1619_zve1_day8_broll_speech_s6-29",
         "DSC09652_photos_photo",
@@ -16356,13 +16355,13 @@
         "C1621_zve1_day8_broll_speech_s0-5",
         "DSC09662_photos_photo",
         "DSC09667_photos_photo",
-        "C1433_zve1_day8_broll_s0-26",
+        "C1433_zve1_day8_broll_speech_s0-26",
         "C1434_zve1_day8_drive_visual_s0-5",
         "C1434_zve1_day8_drive_speech_s0-5",
-        "C1435_zve1_day8_broll_s0-43",
+        "C1435_zve1_day8_broll_speech_s0-43",
         "DSC09670_photos_photo",
         "DSC09671_photos_photo",
-        "C1436_zve1_day8_broll_s0-16",
+        "C1436_zve1_day8_broll_speech_s0-16",
         "C1437_zve1_day8_drive_speech_s0-5",
         "C1437_zve1_day8_drive_speech_s7-14",
         "C1437_zve1_day8_drive_visual_s10-17",
@@ -16372,7 +16371,7 @@
         "DSC09674_photos_photo",
         "C1437_zve1_day8_drive_speech_s23-34",
         "DSC09675_photos_photo",
-        "C1438_zve1_day8_talking-head_s0-20",
+        "C1438_zve1_day8_talking-head_speech_s0-20",
         "C1439_zve1_day8_drive_speech_s0-12",
         "C1439_zve1_day8_drive_speech_s37-43",
         "C1439_zve1_day8_drive_speech_s52-73",
@@ -16399,7 +16398,7 @@
         "C1439_zve1_day8_drive_visual_s281-298",
         "C1439_zve1_day8_drive_speech_s293-296",
         "C1439_zve1_day8_drive_speech_s321-326",
-        "C1440_zve1_day8_drive_s0-6",
+        "C1440_zve1_day8_drive_speech_s0-6",
         "C1441_zve1_day8_drive_s0-9",
         "DJI_20260502145545_0021_D-HDR_photos_photo",
         "DJI_20260502145610_0024_D_drone_day8_drive_s0-21",
@@ -16423,7 +16422,7 @@
         "to": "四川省，甘孜藏族自治州，巴塘县，波密乡"
       },
       "spanIds": [
-        "C1442_zve1_day8_drive_speech_s0-12",
+        "C1442_zve1_day8_drive_speech_s0-18",
         "C1442_zve1_day8_drive_visual_s12-19",
         "C1442_zve1_day8_drive_speech_s24-35",
         "C1442_zve1_day8_drive_visual_s28-35",
@@ -16465,11 +16464,11 @@
         "genie-south-car_1.2.2_photos_photo",
         "genie-south-car_1.2.1-2_photos_photo",
         "C1449_zve1_day8_drive_speech_s0-4",
-        "C1449_zve1_day8_drive_speech_s4-13",
+        "C1449_zve1_day8_drive_speech_s4-20",
         "C1449_zve1_day8_drive_visual_s12-19",
         "C1449_zve1_day8_drive_speech_s23-37",
         "C1449_zve1_day8_drive_visual_s27-34",
-        "C1451_zve1_day8_broll_s0-11",
+        "C1451_zve1_day8_broll_speech_s0-11",
         "DSC09684_photos_photo"
       ]
     },
@@ -16600,7 +16599,7 @@
         "C1461_zve1_day8_drive_speech_s33-40",
         "C1461_zve1_day8_drive_speech_s60-64",
         "C1461_zve1_day8_drive_visual_s60-71",
-        "C1461_zve1_day8_drive_speech_s64-71",
+        "C1461_zve1_day8_drive_speech_s64-73",
         "C1461_zve1_day8_drive_speech_s73-83",
         "C1461_zve1_day8_drive_visual_s73-84",
         "C1461_zve1_day8_drive_speech_s85-88",
@@ -16666,7 +16665,7 @@
         "C1465_zve1_day8_drive_speech_s88-91",
         "C1465_zve1_day8_drive_visual_s95-106",
         "C1465_zve1_day8_drive_speech_s100-118",
-        "C1466_zve1_day8_drive_s0-2",
+        "C1466_zve1_day8_drive_speech_s0-2",
         "C1467_zve1_day8_drive_visual_s1-6",
         "C1467_zve1_day8_drive_speech_s1-5",
         "genie-south-car_1.2.1_photos_photo",
@@ -16701,7 +16700,7 @@
         "C1475_zve1_day8_drive_speech_s31-37",
         "C1476_zve1_day8_drive_speech_s17-22",
         "C1476_zve1_day8_drive_visual_s18-25",
-        "C1476_zve1_day8_drive_speech_s23-27",
+        "C1476_zve1_day8_drive_speech_s23-31",
         "C1476_zve1_day8_drive_visual_s28-35",
         "DSC09704_photos_photo",
         "C1476_zve1_day8_drive_speech_s49-53",
@@ -16778,7 +16777,7 @@
         "C1483_zve1_day8_drive_speech_s0-9",
         "C1483_zve1_day8_drive_visual_s17-24",
         "C1483_zve1_day8_drive_speech_s18-30",
-        "C1483_zve1_day8_drive_speech_s31-35",
+        "C1483_zve1_day8_drive_speech_s31-51",
         "C1483_zve1_day8_drive_visual_s37-44",
         "C1484_zve1_day8_drive_speech_s0-3",
         "C1484_zve1_day8_drive_speech_s17-37",
@@ -16816,22 +16815,22 @@
         "C1485_zve1_day8_drive_speech_s47-54",
         "C1486_zve1_day8_broll_speech_s0-8",
         "C1487_zve1_day8_broll_speech_s0-16",
-        "C1488_zve1_day8_broll_s0-9",
+        "C1488_zve1_day8_broll_speech_s0-9",
         "DSC00092_photos_photo",
         "C1489_zve1_day8_broll_speech_s1-6",
         "C1490_zve1_day8_broll_speech_s0-5",
         "C1490_zve1_day8_broll_speech_s6-10",
         "C1490_zve1_day8_broll_speech_s11-15",
-        "C1491_zve1_day8_broll_s0-8",
+        "C1491_zve1_day8_broll_speech_s0-8",
         "C1493_zve1_day8_talking-head_speech_s0-14",
-        "C1494_zve1_day8_broll_s0-11",
-        "C1495_zve1_day8_broll_s0-15",
+        "C1494_zve1_day8_broll_speech_s0-11",
+        "C1495_zve1_day8_broll_speech_s0-15",
         "DSC00093_photos_photo",
-        "C1496_zve1_day8_talking-head_s0-7",
+        "C1496_zve1_day8_talking-head_speech_s0-7",
         "C1497_zve1_day8_broll_speech_s0-7",
         "C1497_zve1_day8_broll_speech_s9-26",
         "C1498_zve1_day8_broll_speech_s0-121",
-        "C1499_zve1_day8_broll_s0-17",
+        "C1499_zve1_day8_broll_speech_s0-17",
         "C1500_zve1_day8_drive_visual_s0-3",
         "C1500_zve1_day8_drive_speech_s0-2",
         "C1501_zve1_day8_drive_speech_s0-5",
@@ -16839,14 +16838,14 @@
         "C1501_zve1_day8_drive_speech_s5-12",
         "DSC00094_photos_photo",
         "C1502_zve1_day8_talking-head_speech_s0-19",
-        "C1503_zve1_day8_broll_s0-11",
+        "C1503_zve1_day8_broll_speech_s0-11",
         "C1504_zve1_day8_broll_speech_s4-54",
-        "C1505_zve1_day8_broll_s0-4",
-        "C1506_zve1_day8_broll_s0-4",
-        "C1507_zve1_day8_broll_s0-26",
-        "C1509_zve1_day8_broll_s0-13",
-        "C1510_zve1_day8_broll_s0-18",
-        "C1511_zve1_day8_broll_s0-17"
+        "C1505_zve1_day8_broll_speech_s0-4",
+        "C1506_zve1_day8_broll_speech_s0-4",
+        "C1507_zve1_day8_broll_speech_s0-26",
+        "C1509_zve1_day8_broll_speech_s0-13",
+        "C1510_zve1_day8_broll_speech_s0-18",
+        "C1511_zve1_day8_broll_speech_s0-17"
       ]
     },
     {
@@ -16869,7 +16868,7 @@
         "C1514_zve1_day9_drive_visual_s57-80",
         "C1514_zve1_day9_drive_speech_s85-88",
         "C1515_zve1_day9_drive_speech_s1-27",
-        "C1515_zve1_day9_drive_speech_s52-55",
+        "C1515_zve1_day9_drive_speech_s52-63",
         "C1515_zve1_day9_drive_visual_s58-69",
         "C1515_zve1_day9_drive_speech_s66-74",
         "C1515_zve1_day9_drive_speech_s75-85",
@@ -16894,11 +16893,11 @@
         "C1516_zve1_day9_drive_visual_s50-72",
         "C1516_zve1_day9_drive_speech_s62-66",
         "C1516_zve1_day9_drive_speech_s67-79",
-        "C1517_zve1_day9_broll_s0-6",
+        "C1517_zve1_day9_broll_speech_s0-6",
         "C1519_zve1_day9_talking-head_speech_s1-11",
         "C1520_zve1_day9_broll_speech_s3-36",
-        "C1521_zve1_day9_broll_s0-17",
-        "C1522_zve1_day9_talking-head_s0-16",
+        "C1521_zve1_day9_broll_speech_s0-17",
+        "C1522_zve1_day9_talking-head_speech_s0-16",
         "DSC05276_photos_photo",
         "DSC09725_photos_photo",
         "DSC09729_photos_photo",
@@ -16917,7 +16916,7 @@
         "DJI_20260503065336_0238_D_drone_day9_broll_s0-23",
         "DJI_20260503065419_0239_D_drone_day9_broll_s0-39",
         "DJI_20260503070432_0248_D-HDR_photos_photo",
-        "C1523_zve1_day9_broll_s0-34",
+        "C1523_zve1_day9_broll_speech_s0-34",
         "DSC00581_photos_photo",
         "C1524_zve1_day9_broll_speech_s0-11",
         "C1524_zve1_day9_broll_speech_s11-14",
@@ -16931,7 +16930,7 @@
         "DSC00587_photos_photo",
         "C1524_zve1_day9_broll_speech_s75-79",
         "C1524_zve1_day9_broll_speech_s84-99",
-        "C1525_zve1_day9_talking-head_s0-7"
+        "C1525_zve1_day9_talking-head_speech_s0-7"
       ]
     },
     {
@@ -17037,9 +17036,9 @@
         "C1529_zve1_day9_broll_speech_s15-23",
         "C1529_zve1_day9_broll_speech_s23-29",
         "C1530_zve1_day9_talking-head_speech_s0-86",
-        "C1531_zve1_day9_broll_s0-21",
+        "C1531_zve1_day9_broll_speech_s0-21",
         "DSC00612_photos_photo",
-        "C1532_zve1_day9_talking-head_s0-13",
+        "C1532_zve1_day9_talking-head_speech_s0-13",
         "DSC00619_photos_photo",
         "C1533_zve1_day9_broll_speech_s0-9",
         "C1534_zve1_day9_talking-head_speech_s0-12",
@@ -17069,7 +17068,7 @@
         "C1536_zve1_day9_drive_visual_s26-33",
         "C1536_zve1_day9_drive_speech_s33-37",
         "C1536_zve1_day9_drive_speech_s37-50",
-        "C1537_zve1_day9_drive_s0-11",
+        "C1537_zve1_day9_drive_speech_s0-11",
         "C1538_zve1_day9_drive_speech_s13-30",
         "C1538_zve1_day9_drive_visual_s13-20",
         "C1538_zve1_day9_drive_speech_s30-32",
@@ -17111,7 +17110,7 @@
       "endAt": "2026-05-03T01:50:15.094Z",
       "location": "四川省，甘孜藏族自治州，理塘县，格聂镇",
       "spanIds": [
-        "C1543_zve1_day9_broll_s0-12"
+        "C1543_zve1_day9_broll_speech_s0-12"
       ]
     },
     {
@@ -17158,7 +17157,7 @@
       "endAt": "2026-05-03T02:14:14.579Z",
       "location": "四川省，甘孜藏族自治州，理塘县，禾尼乡",
       "spanIds": [
-        "C1547_zve1_day9_broll_s0-10"
+        "C1547_zve1_day9_broll_speech_s0-10"
       ]
     },
     {
@@ -17176,7 +17175,7 @@
       },
       "spanIds": [
         "C1548_zve1_day9_drive_speech_s0-3",
-        "C1548_zve1_day9_drive_speech_s8-11",
+        "C1548_zve1_day9_drive_speech_s8-16",
         "C1548_zve1_day9_drive_visual_s13-20",
         "C1548_zve1_day9_drive_speech_s23-27",
         "C1548_zve1_day9_drive_speech_s27-34",
@@ -17197,7 +17196,7 @@
         "C1549_zve1_day9_drive_speech_s0-8",
         "C1549_zve1_day9_drive_visual_s4-11",
         "C1549_zve1_day9_drive_speech_s7-11",
-        "C1550_zve1_day9_broll_s0-12",
+        "C1550_zve1_day9_broll_speech_s0-12",
         "C1551_zve1_day9_drive_speech_s0-10",
         "C1551_zve1_day9_drive_visual_s1-8",
         "C1552_zve1_day9_drive_speech_s0-9",
@@ -17216,7 +17215,7 @@
         "C1554_zve1_day9_drive_visual_s3-10",
         "C1554_zve1_day9_drive_speech_s6-9",
         "C1554_zve1_day9_drive_speech_s9-13",
-        "C1555_zve1_day9_talking-head_s0-11",
+        "C1555_zve1_day9_talking-head_speech_s0-11",
         "C1556_zve1_day9_broll_speech_s1-4",
         "C1557_zve1_day9_drive_speech_s0-6",
         "C1557_zve1_day9_drive_visual_s11-18",
@@ -17298,7 +17297,7 @@
       "endAt": "2026-05-03T04:31:00.635Z",
       "location": "理塘县城",
       "spanIds": [
-        "C1565_zve1_day9_drive_speech_s11-15",
+        "C1565_zve1_day9_drive_speech_s11-23",
         "C1565_zve1_day9_drive_visual_s16-23",
         "C1565_zve1_day9_drive_visual_s26-33",
         "C1565_zve1_day9_drive_speech_s26-32",
@@ -17345,9 +17344,9 @@
         "C1569_zve1_day9_drive_speech_s26-31",
         "C1569_zve1_day9_drive_visual_s30-37",
         "C1569_zve1_day9_drive_speech_s35-40",
-        "C1570_zve1_day9_broll_s0-8",
-        "C1572_zve1_day9_broll_s0-7",
-        "C1573_zve1_day9_broll_s0-6",
+        "C1570_zve1_day9_broll_speech_s0-8",
+        "C1572_zve1_day9_broll_speech_s0-7",
+        "C1573_zve1_day9_broll_speech_s0-6",
         "C1575_zve1_day9_talking-head_speech_s0-12",
         "C1577_zve1_day9_drive_s0-46",
         "C1578_zve1_day9_drive_speech_s0-3",
@@ -17434,7 +17433,7 @@
         "C1592_zve1_day9_drive_visual_s7-14",
         "C1592_zve1_day9_drive_speech_s10-17",
         "C1592_zve1_day9_drive_visual_s18-25",
-        "C1593_zve1_day9_drive_s0-13",
+        "C1593_zve1_day9_drive_speech_s0-13",
         "C1594_zve1_day9_drive_speech_s0-4",
         "C1594_zve1_day9_drive_speech_s6-11",
         "C1594_zve1_day9_drive_speech_s12-18",
@@ -17545,7 +17544,7 @@
         "C1608_zve1_day9_drive_speech_s0-5",
         "C1608_zve1_day9_drive_speech_s8-16",
         "C1608_zve1_day9_drive_visual_s16-23",
-        "C1608_zve1_day9_drive_speech_s19-24",
+        "C1608_zve1_day9_drive_speech_s19-26",
         "C1608_zve1_day9_drive_visual_s26-33",
         "C1608_zve1_day9_drive_speech_s26-30",
         "C1608_zve1_day9_drive_speech_s32-50",
@@ -17602,7 +17601,7 @@
         "C1615_zve1_day9_drive_visual_s37-44",
         "C1615_zve1_day9_drive_speech_s39-48",
         "C1616_zve1_day9_drive_speech_s0-3",
-        "C1616_zve1_day9_drive_speech_s6-15",
+        "C1616_zve1_day9_drive_speech_s6-32",
         "C1616_zve1_day9_drive_visual_s14-35",
         "C1616_zve1_day9_drive_speech_s32-65",
         "C1616_zve1_day9_drive_visual_s44-65",
@@ -17643,7 +17642,7 @@
         "C1619_zve1_day9_drive_speech_s23-52",
         "C1619_zve1_day9_drive_visual_s25-36",
         "C1619_zve1_day9_drive_visual_s45-56",
-        "C1619_zve1_day9_drive_speech_s51-54",
+        "C1619_zve1_day9_drive_speech_s51-71",
         "C1619_zve1_day9_drive_visual_s55-66",
         "C1620_zve1_day9_drive_speech_s2-10",
         "C1620_zve1_day9_drive_speech_s21-29",
@@ -17705,9 +17704,9 @@
         "C1630_zve1_day9_drive_speech_s0-4",
         "C1630_zve1_day9_drive_visual_s4-19",
         "C1630_zve1_day9_drive_speech_s10-19",
-        "C1631_zve1_day9_drive_s0-21",
+        "C1631_zve1_day9_drive_speech_s0-21",
         "C1632_zve1_day9_drive_speech_s0-2",
-        "C1632_zve1_day9_drive_speech_s3-9",
+        "C1632_zve1_day9_drive_speech_s3-15",
         "C1632_zve1_day9_drive_visual_s12-19",
         "C1632_zve1_day9_drive_speech_s19-38",
         "C1632_zve1_day9_drive_visual_s19-26",
@@ -17738,20 +17737,20 @@
       "endAt": "2026-05-03T12:33:50.574Z",
       "location": "贡噶山居(上木居村店)",
       "spanIds": [
-        "C1637_zve1_day9_talking-head_s0-17",
-        "C1638_zve1_day9_broll_s0-5",
+        "C1637_zve1_day9_talking-head_speech_s0-17",
+        "C1638_zve1_day9_broll_speech_s0-5",
         "C1639_zve1_day9_broll_speech_s0-19",
         "C1640_zve1_day9_broll_speech_s1-5",
-        "C1641_zve1_day9_broll_s0-28",
-        "C1642_zve1_day9_broll_s0-11",
-        "C1643_zve1_day9_broll_s0-8",
-        "C1644_zve1_day9_broll_s0-8",
+        "C1641_zve1_day9_broll_speech_s0-28",
+        "C1642_zve1_day9_broll_speech_s0-11",
+        "C1643_zve1_day9_broll_speech_s0-8",
+        "C1644_zve1_day9_broll_speech_s0-8",
         "C1645_zve1_day9_broll_speech_s9-15",
         "C1645_zve1_day9_broll_speech_s17-21",
-        "C1647_zve1_day9_broll_s0-10",
-        "C1648_zve1_day9_broll_s0-12",
+        "C1647_zve1_day9_broll_speech_s0-10",
+        "C1648_zve1_day9_broll_speech_s0-12",
         "C1650_zve1_day9_talking-head_speech_s0-8",
-        "C1651_zve1_day9_broll_s0-11",
+        "C1651_zve1_day9_broll_speech_s0-11",
         "DSC00666_photos_photo",
         "C1652_zve1_day9_drive_speech_s0-3",
         "C1652_zve1_day9_drive_speech_s3-14",
@@ -17770,11 +17769,11 @@
       "endAt": "2026-05-03T21:55:27.144Z",
       "location": "上木居村民宿到子梅垭口",
       "spanIds": [
-        "C1655_zve1_day10_broll_s0-8",
-        "C1656_zve1_day10_broll_s0-21",
-        "C1658_zve1_day10_broll_s0-6",
+        "C1655_zve1_day10_broll_speech_s0-8",
+        "C1656_zve1_day10_broll_speech_s0-21",
+        "C1658_zve1_day10_broll_speech_s0-6",
         "DSC00674_photos_photo",
-        "C1659_zve1_day10_talking-head_s0-18",
+        "C1659_zve1_day10_talking-head_speech_s0-18",
         "C1660_zve1_day10_drive_speech_s27-31",
         "C1660_zve1_day10_drive_speech_s39-51",
         "C1660_zve1_day10_drive_visual_s45-56",
@@ -17806,7 +17805,7 @@
         "C1665_zve1_day10_drive_visual_s40-51",
         "C1665_zve1_day10_drive_speech_s41-45",
         "C1665_zve1_day10_drive_speech_s49-53",
-        "C1665_zve1_day10_drive_speech_s59-63",
+        "C1665_zve1_day10_drive_speech_s59-71",
         "C1665_zve1_day10_drive_visual_s63-74",
         "C1665_zve1_day10_drive_speech_s73-77",
         "C1665_zve1_day10_drive_speech_s84-86",
@@ -17837,7 +17836,7 @@
         "C1668_zve1_day10_drive_visual_s45-56",
         "C1668_zve1_day10_drive_speech_s67-75",
         "C1668_zve1_day10_drive_visual_s78-89",
-        "C1668_zve1_day10_drive_speech_s80-92",
+        "C1668_zve1_day10_drive_speech_s80-98",
         "C1668_zve1_day10_drive_visual_s95-106",
         "C1668_zve1_day10_drive_speech_s99-116",
         "C1669_zve1_day10_drive_speech_s0-9",
@@ -17949,9 +17948,9 @@
         "DJI_20260504062928_0386_D-HDR_photos_photo",
         "DJI_20260504063100_0389_D_drone_day10_broll_s0-16",
         "DJI_20260504063129_0390_D_drone_day10_broll_s0-27",
-        "C1679_zve1_day10_drive_s0-3",
-        "C1680_zve1_day10_drive_s0-9",
-        "C1681_zve1_day10_drive_s0-13"
+        "C1679_zve1_day10_drive_speech_s0-3",
+        "C1680_zve1_day10_drive_speech_s0-9",
+        "C1681_zve1_day10_drive_speech_s0-13"
       ]
     },
     {
@@ -18014,7 +18013,7 @@
         "C1685_zve1_day10_drive_speech_s20-23",
         "C1686_zve1_day10_drive_speech_s0-7",
         "C1686_zve1_day10_drive_visual_s2-8",
-        "C1687_zve1_day10_drive_s0-6",
+        "C1687_zve1_day10_drive_speech_s0-6",
         "C1688_zve1_day10_broll_speech_s0-22",
         "C1688_zve1_day10_broll_speech_s22-30",
         "C1688_zve1_day10_broll_speech_s31-41",
@@ -18046,7 +18045,7 @@
         "C1692_zve1_day10_drive_visual_s48-59",
         "C1692_zve1_day10_drive_speech_s52-62",
         "C1692_zve1_day10_drive_speech_s62-69",
-        "C1692_zve1_day10_drive_speech_s69-83",
+        "C1692_zve1_day10_drive_speech_s69-86",
         "C1692_zve1_day10_drive_visual_s84-95",
         "C1692_zve1_day10_drive_speech_s86-102",
         "C1692_zve1_day10_drive_visual_s102-113",
@@ -18062,7 +18061,7 @@
         "C1694_zve1_day10_drive_speech_s28-33",
         "C1694_zve1_day10_drive_speech_s34-44",
         "C1694_zve1_day10_drive_visual_s40-51",
-        "C1694_zve1_day10_drive_speech_s44-53",
+        "C1694_zve1_day10_drive_speech_s44-57",
         "DJI_20260504074622_0473_D-HDR_photos_photo",
         "C1694_zve1_day10_drive_visual_s55-66",
         "C1694_zve1_day10_drive_speech_s58-80",
@@ -18074,7 +18073,7 @@
         "DJI_20260504075304_0479_D_drone_day10_aerial_s0-33",
         "DJI_20260504075356_0482_D-HDR_photos_photo",
         "DJI_20260504075432_0488_D-HDR_photos_photo",
-        "C1695_zve1_day10_drive_s0-133"
+        "C1695_zve1_day10_drive_speech_s0-133"
       ]
     },
     {
@@ -18185,15 +18184,15 @@
       "spanIds": [
         "C1705_zve1_day10_talking-head_speech_s3-6",
         "C1706_zve1_day10_talking-head_speech_s0-18",
-        "C1707_zve1_day10_broll_s0-9",
-        "C1708_zve1_day10_broll_s0-2",
+        "C1707_zve1_day10_broll_speech_s0-9",
+        "C1708_zve1_day10_broll_speech_s0-2",
         "C1709_zve1_day10_broll_speech_s0-4",
-        "C1710_zve1_day10_talking-head_s0-9",
+        "C1710_zve1_day10_talking-head_speech_s0-9",
         "C1712_zve1_day10_drive_speech_s1-6",
         "C1712_zve1_day10_drive_visual_s11-25",
         "C1712_zve1_day10_drive_speech_s18-34",
         "C1713_zve1_day10_talking-head_speech_s2-8",
-        "C1714_zve1_day10_drive_s0-6"
+        "C1714_zve1_day10_drive_speech_s0-6"
       ]
     },
     {
@@ -18237,7 +18236,7 @@
         "C1719_zve1_day10_drive_visual_s4-11",
         "C1720_zve1_day10_drive_visual_s4-19",
         "C1720_zve1_day10_drive_speech_s10-20",
-        "C1721_zve1_day10_drive_speech_s1-4",
+        "C1721_zve1_day10_drive_speech_s1-11",
         "C1721_zve1_day10_drive_visual_s4-11",
         "C1722_zve1_day10_drive_speech_s0-3",
         "C1722_zve1_day10_drive_visual_s1-8",
@@ -18277,9 +18276,9 @@
         "C1730_zve1_day10_drive_speech_s31-35",
         "C1730_zve1_day10_drive_visual_s47-68",
         "C1730_zve1_day10_drive_speech_s72-74",
-        "C1731_zve1_day10_broll_s0-9",
+        "C1731_zve1_day10_broll_speech_s0-9",
         "C1732_zve1_day10_drive_speech_s2-14",
-        "C1732_zve1_day10_drive_visual_s3-10"
+        "C1732_zve1_day10_drive_visual_s3-16"
       ]
     },
     {
@@ -18292,7 +18291,7 @@
       "endAt": "2026-05-04T07:47:21.571Z",
       "location": "四川省，甘孜藏族自治州，康定市，贡嘎山镇 · 朔布村",
       "spanIds": [
-        "C1733_zve1_day10_broll_s0-5",
+        "C1733_zve1_day10_broll_speech_s0-5",
         "C1734_zve1_day10_broll_speech_s0-7"
       ]
     },
@@ -18330,7 +18329,7 @@
         "C1737_zve1_day10_drive_speech_s2-7",
         "C1737_zve1_day10_drive_visual_s5-16",
         "C1737_zve1_day10_drive_speech_s8-20",
-        "C1738_zve1_day10_drive_speech_s1-9",
+        "C1738_zve1_day10_drive_speech_s1-15",
         "C1738_zve1_day10_drive_visual_s9-16",
         "C1738_zve1_day10_drive_speech_s18-22",
         "C1738_zve1_day10_drive_visual_s21-28",
@@ -18370,9 +18369,9 @@
         "C1744_zve1_day10_drive_visual_s6-13",
         "C1744_zve1_day10_drive_visual_s15-22",
         "C1744_zve1_day10_drive_speech_s20-23",
-        "C1746_zve1_day10_drive_s0-12",
-        "C1747_zve1_day10_broll_s0-11",
-        "C1748_zve1_day10_talking-head_s0-5",
+        "C1746_zve1_day10_drive_speech_s0-12",
+        "C1747_zve1_day10_broll_speech_s0-11",
+        "C1748_zve1_day10_talking-head_speech_s0-5",
         "DJI_20260504173448_0492_D_drone_day10_aerial_s0-29",
         "DJI_20260504173723_0526_D-HDR_photos_photo",
         "DJI_20260504173843_0529_D_drone_day10_broll_s0-21",
@@ -18386,7 +18385,7 @@
         "DJI_20260504174515_0573_D_drone_day10_broll_s0-12",
         "DJI_20260504174705_0574_D_drone_day10_aerial_s0-14",
         "DJI_20260504174732_0575_D_drone_day10_aerial_s0-2",
-        "C1749_zve1_day10_aerial_s0-15",
+        "C1749_zve1_day10_aerial_speech_s0-15",
         "C1750_zve1_day10_drive_speech_s0-8",
         "C1750_zve1_day10_drive_visual_s14-54",
         "C1750_zve1_day10_drive_speech_s28-32",
@@ -18411,8 +18410,8 @@
         "C1753_zve1_day10_drive_visual_s0-6",
         "DSC00710_photos_photo",
         "DSC00712_photos_photo",
-        "C1754_zve1_day10_broll_s0-9",
-        "C1756_zve1_day10_broll_s0-7",
+        "C1754_zve1_day10_broll_speech_s0-9",
+        "C1756_zve1_day10_broll_speech_s0-7",
         "DJI_20260504191737_0597_D_drone_day10_aerial_s0-1",
         "DJI_20260504191740_0598_D_drone_day10_aerial_s0-15",
         "DJI_20260504191830_0603_D_drone_day10_aerial_s0-22",
@@ -18421,26 +18420,26 @@
         "DJI_20260504192310_0633_D_drone_day10_aerial_s0-9",
         "DJI_20260504193027_0649_D_drone_day10_broll_s0-20",
         "DJI_20260504193050_0650_D_drone_day10_broll_s0-1",
-        "C1757_zve1_day10_broll_s0-113",
+        "C1757_zve1_day10_broll_speech_s0-113",
         "DJI_20260504193201_0651_D_drone_day10_broll_s0-109",
-        "C1758_zve1_day10_broll_s0-10",
+        "C1758_zve1_day10_broll_speech_s0-10",
         "C1759_zve1_day10_drive_speech_s0-3",
         "C1759_zve1_day10_drive_visual_s1-7",
         "C1759_zve1_day10_drive_speech_s3-6",
-        "C1760_zve1_day10_broll_s0-49",
+        "C1760_zve1_day10_broll_speech_s0-49",
         "DJI_20260504194243_0673_D_drone_day10_broll_s0-46",
         "C1761_zve1_day10_broll_speech_s1-98",
         "DJI_20260504194332_0674_D_drone_day10_broll_s0-96",
         "DJI_20260504194522_0675_D_drone_day10_aerial_s0-12",
-        "C1762_zve1_day10_drive_s0-7",
-        "C1763_zve1_day10_broll_s0-6",
+        "C1762_zve1_day10_drive_speech_s0-7",
+        "C1763_zve1_day10_broll_speech_s0-6",
         "DJI_20260504202241_0796_D_drone_day10_aerial_s0-27",
         "DJI_20260504202439_0800_D_drone_day10_broll_s0-10",
         "DJI_20260504202501_0801_D_drone_day10_broll_s0-13",
         "DJI_20260504202554_0802_D_drone_day10_broll_s0-17",
         "DJI_20260504202929_0818_D_drone_day10_broll_s0-17",
         "C1770_zve1_day10_broll_speech_s1-20",
-        "C1788_zve1_day10_talking-head_s0-129",
+        "C1788_zve1_day10_talking-head_speech_s0-129",
         "C1795_zve1_day10_broll_speech_s2-20",
         "C1796_zve1_day10_broll_speech_s2-21",
         "C1796_zve1_day10_broll_speech_s29-34",
@@ -18519,8 +18518,8 @@
       "endAt": "2026-05-04T16:50:37.571Z",
       "location": "子梅垭口到上木居村",
       "spanIds": [
-        "C1798_zve1_day11_talking-head_s0-11",
-        "C1799_zve1_day11_talking-head_s0-8",
+        "C1798_zve1_day11_talking-head_speech_s0-11",
+        "C1799_zve1_day11_talking-head_speech_s0-8",
         "C1800_zve1_day11_drive_speech_s9-15",
         "C1800_zve1_day11_drive_visual_s16-32",
         "C1800_zve1_day11_drive_speech_s29-36",
@@ -18535,8 +18534,8 @@
         "C1803_zve1_day11_drive_speech_s13-28",
         "C1803_zve1_day11_drive_visual_s17-24",
         "C1803_zve1_day11_drive_speech_s29-32",
-        "C1804_zve1_day11_talking-head_s0-7",
-        "C1805_zve1_day11_talking-head_s0-7"
+        "C1804_zve1_day11_talking-head_speech_s0-7",
+        "C1805_zve1_day11_talking-head_speech_s0-7"
       ]
     },
     {
@@ -18549,9 +18548,9 @@
       "endAt": "2026-05-05T00:42:48.574Z",
       "location": "上木居村",
       "spanIds": [
-        "C1806_zve1_day11_broll_s0-7",
+        "C1806_zve1_day11_broll_speech_s0-7",
         "C1807_zve1_day11_talking-head_speech_s0-15",
-        "C1808_zve1_day11_drive_s0-8"
+        "C1808_zve1_day11_drive_speech_s0-8"
       ]
     },
     {
@@ -18583,7 +18582,7 @@
         "C1812_zve1_day11_drive_speech_s19-24",
         "C1812_zve1_day11_drive_speech_s23-37",
         "C1812_zve1_day11_drive_visual_s25-32",
-        "C1813_zve1_day11_drive_s0-2",
+        "C1813_zve1_day11_drive_speech_s0-2",
         "C1814_zve1_day11_drive_speech_s0-6",
         "C1814_zve1_day11_drive_visual_s8-20",
         "C1814_zve1_day11_drive_speech_s10-14",
@@ -18614,13 +18613,13 @@
       "endAt": "2026-05-05T03:54:03.080Z",
       "location": "新都桥",
       "spanIds": [
-        "C1819_zve1_day11_broll_s0-5",
-        "C1820_zve1_day11_broll_s0-8",
+        "C1819_zve1_day11_broll_speech_s0-5",
+        "C1820_zve1_day11_broll_speech_s0-8",
         "C1821_zve1_day11_talking-head_speech_s0-4",
         "C1822_zve1_day11_talking-head_speech_s0-1",
         "C1823_zve1_day11_talking-head_speech_s0-9",
         "C1824_zve1_day11_talking-head_speech_s1-9",
-        "C1825_zve1_day11_talking-head_s0-7"
+        "C1825_zve1_day11_talking-head_speech_s0-7"
       ]
     },
     {
@@ -18756,7 +18755,7 @@
         "C1853_zve1_day11_drive_speech_s25-32",
         "C1853_zve1_day11_drive_visual_s30-41",
         "C1853_zve1_day11_drive_speech_s35-40",
-        "C1853_zve1_day11_drive_speech_s41-45",
+        "C1853_zve1_day11_drive_speech_s41-50",
         "C1853_zve1_day11_drive_visual_s48-59",
         "C1853_zve1_day11_drive_speech_s68-72",
         "C1853_zve1_day11_drive_speech_s72-75",
@@ -18835,7 +18834,7 @@
         "C1873_zve1_day11_drive_speech_s46-71",
         "C1873_zve1_day11_drive_visual_s52-63",
         "C1873_zve1_day11_drive_speech_s72-81",
-        "C1874_zve1_day11_broll_s0-11"
+        "C1874_zve1_day11_broll_speech_s0-11"
       ]
     },
     {
@@ -18848,7 +18847,7 @@
       "endAt": "2026-05-05T10:35:29.075Z",
       "location": "四川省，成都市，简阳市，石板凳街道 · 成都天府国际机场1号航站楼",
       "spanIds": [
-        "C1875_zve1_day11_broll_s0-5"
+        "C1875_zve1_day11_broll_speech_s0-5"
       ]
     },
     {
@@ -18865,9 +18864,9 @@
         "to": "四川省，成都市，简阳市，石板凳街道 · 成都天府国际机场1号航站楼"
       },
       "spanIds": [
-        "C1876_zve1_day11_drive_s0-10",
+        "C1876_zve1_day11_drive_speech_s0-10",
         "C1877_zve1_day11_broll_speech_s0-3",
-        "C1879_zve1_day11_talking-head_s0-11"
+        "C1879_zve1_day11_talking-head_speech_s0-11"
       ]
     },
     {
@@ -18907,7 +18906,7 @@
       "endAt": "2026-05-05T10:59:46.086Z",
       "location": "airport",
       "spanIds": [
-        "C1882_zve1_day11_broll_s0-9"
+        "C1882_zve1_day11_broll_speech_s0-9"
       ]
     },
     {
@@ -18920,7 +18919,7 @@
       "endAt": "2026-05-05T11:00:13.075Z",
       "location": "airport",
       "spanIds": [
-        "C1884_zve1_day11_broll_s0-5"
+        "C1884_zve1_day11_broll_speech_s0-5"
       ]
     }
   ]

@@ -1,196 +1,146 @@
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import type { ISegmentRoughCutPlan, IKtepScript } from '../src/protocol/index.js';
-import type { IJsonPacketAgentRunner, IJsonPacketAgentInvocation } from '../src/modules/agents/runtime.js';
-import { buildProjectTimeline } from '../src/modules/timeline-core/project-timeline.js';
+import type {
+  IChronologyEvent,
+  IMaterialSlotsDocument,
+} from '../src/protocol/index.js';
+import {
+  buildDeterministicTimeline,
+  buildProjectTimeline,
+} from '../src/modules/timeline-core/project-timeline.js';
+import type { IBuildConfig } from '../src/modules/timeline-core/timeline-builder.js';
 import {
   getAssetsPath,
+  getEditPlanningArtifactPath,
+  getMaterialSlotsPath,
   getSpansMetaPath,
   getSpansPath,
   initProject,
-  loadTimelineAgentPipeline,
-  loadTimelineRoughCutBase,
-  loadTimelineSegmentCut,
-  loadTimelineStageReview,
+  loadProject,
   writeChronology,
-  writeCurrentScript,
   writeJson,
 } from '../src/store/index.js';
 import {
   createChronology,
   createProjectChronology,
-  createSelection,
   createSlice,
   createVideoAsset,
 } from './helpers/fixtures.js';
 
 const cTempRoots: string[] = [];
+const CNOW = '2026-04-18T00:00:00.000Z';
 
 afterEach(async () => {
   await Promise.all(cTempRoots.splice(0).map(root =>
     rm(root, { recursive: true, force: true })));
 });
 
-describe('buildProjectTimeline', () => {
+describe('project timeline generation', () => {
   it('blocks legacy chronology before building timeline', async () => {
     const { projectRoot } = await createTimelineProjectFixture({ legacyChronology: true });
 
     await expect(buildProjectTimeline({ projectRoot })).rejects.toThrow(/legacy v1.*Chronology V2/u);
   });
 
-  it('writes the reviewed segment-cut pipeline artifacts and assembles timeline/current from them', async () => {
-    const { projectRoot } = await createTimelineProjectFixture();
-    const agentRunner: IJsonPacketAgentRunner = {
-      async run<T>(input: IJsonPacketAgentInvocation): Promise<T> {
-        if (input.promptId === 'timeline/segment-cut-refiner') {
-          const base = input.packet.inputArtifacts
-            .find(artifact => artifact.label === 'segment-rough-cut-base')
-            ?.content as ISegmentRoughCutPlan | undefined;
-          if (!base) {
-            throw new Error('missing segment rough-cut base');
-          }
+  it('assembles a Resolve rough-cut manifest from material-slots sparse treatments', async () => {
+    const fixture = await createTimelineProjectFixture();
+    const project = await loadProject(fixture.projectRoot);
 
-          return {
-            segmentId: base.segmentId,
-            beats: base.beats.map(beat => beat.beatId === 'drive-beat'
-              ? {
-                beatId: beat.beatId,
-                text: beat.text,
-                notes: 'reviewed drive beat',
-                speedSuggestion: 2,
-                visualSelections: beat.visualSelections.map(selection => ({
-                  ...selection,
-                  sourceInMs: 1_000,
-                  sourceOutMs: 3_000,
-                })),
-              }
-              : {
-                beatId: beat.beatId,
-                text: beat.text,
-                notes: 'reviewed speech beat',
-                audioSelections: beat.audioSelections.map(selection => ({
-                  ...selection,
-                  sourceInMs: 2_400,
-                  sourceOutMs: 4_200,
-                })),
-                visualSelections: beat.visualSelections.map(selection => ({
-                  ...selection,
-                  sourceInMs: 2_400,
-                  sourceOutMs: 4_200,
-                })),
-                subtitleCueDrafts: [{
-                  id: 'cue-reviewed',
-                  text: 'Reviewed cue',
-                  sourceInMs: 2_600,
-                  sourceOutMs: 3_800,
-                }],
-              }),
-          } as T;
-        }
-        if (input.promptId === 'timeline/segment-cut-reviewer') {
-          return {
-            verdict: 'pass',
-            issues: [],
-            revisionBrief: [],
-          } as T;
-        }
-        throw new Error(`Unexpected promptId: ${input.promptId}`);
-      },
-    };
-
-    const result = await buildProjectTimeline({
-      projectRoot,
-      agentRunner,
+    const result = buildDeterministicTimeline({
+      project,
+      editId: 'main',
+      assets: fixture.assets,
+      spans: fixture.spans,
+      materialSlots: fixture.materialSlots,
+      chronologyEvents: fixture.events,
+      ingestRoots: [],
+      cfg: createTimelineConfig(),
     });
 
-    const roughCutBase = await loadTimelineRoughCutBase(projectRoot);
-    const segmentCut = await loadTimelineSegmentCut(projectRoot, 'segment-1');
-    const review = await loadTimelineStageReview(projectRoot, 'segment-1');
-    const pipeline = await loadTimelineAgentPipeline(projectRoot);
+    const driveClip = result.resolveClips.find(clip => clip.spanId === 'slice-drive');
+    const speechClip = result.resolveClips.find(clip => clip.spanId === 'slice-talk');
 
-    expect(roughCutBase?.segments).toHaveLength(1);
-    expect(segmentCut?.beats).toHaveLength(2);
-    expect(segmentCut?.beats[1]?.subtitleCueDrafts[0]?.text).toBe('Reviewed cue');
-    expect(review?.verdict).toBe('pass');
-    expect(pipeline?.stageStatus).toBe('completed');
-
-    const driveClip = result.doc.timeline.clips.find(clip =>
-      clip.linkedScriptBeatId === 'drive-beat' && clip.audioSource == null);
-    const speechDialogueClip = result.doc.timeline.clips.find(clip =>
-      clip.linkedScriptBeatId === 'speech-beat' && clip.audioSource === 'embedded');
-
-    expect(driveClip?.speed).toBe(2);
-    expect(driveClip?.sourceInMs).toBe(1_000);
-    expect(driveClip?.sourceOutMs).toBe(3_000);
-    expect(speechDialogueClip?.sourceInMs).toBe(2_400);
-    expect(speechDialogueClip?.sourceOutMs).toBe(4_200);
-    expect(result.doc.subtitles.map(subtitle => subtitle.text)).toContain('Reviewed cue');
+    expect(result.timelineName).toBe('Main [main]');
+    expect(result.resolveProjectName).toBe('Timeline Fixture [Edit]');
+    expect(driveClip).toMatchObject({
+      spanId: 'slice-drive',
+      audioGainDb: 0,
+      muteAudio: false,
+      requestedSpeed: 1,
+      speed: 1,
+    });
+    expect(speechClip).toMatchObject({
+      spanId: 'slice-talk',
+      audioGainDb: 0,
+      muteAudio: false,
+      requestedSpeed: 1,
+    });
+    expect(result.doc.timeline.clips.map(clip => clip.spanId)).toEqual(['slice-drive', 'slice-talk']);
   });
 
-  it('records a blocking pipeline state when no formal packet runner is available', async () => {
-    const { projectRoot } = await createTimelineProjectFixture();
-
-    await expect(buildProjectTimeline({ projectRoot })).rejects.toThrow(
-      /formal stage execution requires a host packet runner/i,
-    );
-
-    const roughCutBase = await loadTimelineRoughCutBase(projectRoot);
-    const pipeline = await loadTimelineAgentPipeline(projectRoot);
-
-    expect(roughCutBase?.segments).toHaveLength(1);
-    expect(pipeline).toMatchObject({
-      currentStage: 'segment-cut-init',
-      stageStatus: 'awaiting_user',
-      latestReviewResult: 'runner_unavailable',
+  it('keeps speech-backed non-photo spans from being silently muted', async () => {
+    const fixture = await createTimelineProjectFixture({
+      materialSlotsOverride: createMaterialSlots({
+        'slice-talk': { audio: -100 },
+      }),
     });
-    expect(pipeline?.blockerSummary[0]).toMatch(/formal stage execution requires a host packet runner/i);
+    const project = await loadProject(fixture.projectRoot);
+
+    expect(() => buildDeterministicTimeline({
+      project,
+      editId: 'main',
+      assets: fixture.assets,
+      spans: fixture.spans,
+      materialSlots: fixture.materialSlots,
+      chronologyEvents: fixture.events,
+      ingestRoots: [],
+      cfg: createTimelineConfig(),
+    })).toThrow(/muted speech span/u);
   });
 });
 
 async function createTimelineProjectFixture(
-  options: { legacyChronology?: boolean } = {},
-): Promise<{ projectRoot: string; script: IKtepScript[] }> {
+  options: {
+    legacyChronology?: boolean;
+    materialSlotsOverride?: IMaterialSlotsDocument;
+  } = {},
+) {
   const projectRoot = await mkdtemp(join(tmpdir(), 'kairos-project-timeline-'));
   cTempRoots.push(projectRoot);
   await initProject(projectRoot, 'Timeline Fixture');
 
-  const driveSelection = createSelection({
-    assetId: 'asset-drive',
-    spanId: 'slice-drive',
-    sourceInMs: 1_500,
-    sourceOutMs: 3_500,
-  });
-  const speechSelection = createSelection({
-    assetId: 'asset-talk',
-    spanId: 'slice-talk',
-    sourceInMs: 2_200,
-    sourceOutMs: 4_400,
-  });
-
   const assets = [
-    createVideoAsset({ id: 'asset-drive', displayName: 'Drive Asset', durationMs: 8_000 }),
-    createVideoAsset({ id: 'asset-talk', displayName: 'Talk Asset', durationMs: 8_000 }),
+    createVideoAsset({
+      id: 'asset-drive',
+      displayName: 'Drive Asset',
+      durationMs: 8_000,
+      sourcePath: '/tmp/kairos-test-media/drive.mp4',
+    }),
+    createVideoAsset({
+      id: 'asset-talk',
+      displayName: 'Talk Asset',
+      durationMs: 8_000,
+      sourcePath: '/tmp/kairos-test-media/talk.mp4',
+    }),
   ];
-  const slices = [
+  const spans = [
     createSlice({
       id: 'slice-drive',
       assetId: 'asset-drive',
       type: 'drive',
+      semanticKind: 'visual',
       sourceInMs: 0,
       sourceOutMs: 5_000,
       editSourceInMs: 500,
       editSourceOutMs: 4_500,
-      speedCandidate: {
-        suggestedSpeeds: [2, 5],
-        rationale: 'continuous-drive-window',
-      },
     }),
     createSlice({
       id: 'slice-talk',
       assetId: 'asset-talk',
       type: 'talking-head',
+      semanticKind: 'speech',
       sourceInMs: 2_000,
       sourceOutMs: 4_800,
       editSourceInMs: 2_000,
@@ -201,16 +151,11 @@ async function createTimelineProjectFixture(
         endMs: 4_400,
         text: 'Original cue text',
       }],
-      grounding: {
-        speechMode: 'available',
-        speechValue: 'informative',
-        spatialEvidence: [],
-        pharosRefs: [],
-      },
       speechCoverage: 0.85,
+      materialPatterns: ['拍摄视角：固定机位', '当前环境：车内', '天气光线：自然光', '有口播语音'],
     }),
   ];
-  const chronology = [
+  const chronologyAssetIndex = [
     createChronology({
       id: 'chrono-drive',
       assetId: 'asset-drive',
@@ -222,47 +167,74 @@ async function createTimelineProjectFixture(
       sortCapturedAt: '2026-04-18T00:01:00.000Z',
     }),
   ];
-  const script: IKtepScript[] = [{
-    id: 'segment-1',
-    role: 'scene',
+  const events: IChronologyEvent[] = [{
+    id: 'event-1',
+    kind: 'event',
+    reviewStatus: 'confirmed',
     title: 'Segment 1',
-    linkedSpanIds: ['slice-drive', 'slice-talk'],
-    linkedSliceIds: ['slice-drive', 'slice-talk'],
-    beats: [{
-      id: 'drive-beat',
-      text: 'Drive montage',
-      audioSelections: [],
-      visualSelections: [driveSelection],
-      linkedSpanIds: ['slice-drive'],
-      linkedSliceIds: ['slice-drive'],
-    }, {
-      id: 'speech-beat',
-      text: 'Speech beat',
-      audioSelections: [speechSelection],
-      visualSelections: [speechSelection],
-      linkedSpanIds: ['slice-talk'],
-      linkedSliceIds: ['slice-talk'],
-    }],
+    startAt: '2026-04-18T00:00:00.000Z',
+    endAt: '2026-04-18T00:02:00.000Z',
+    spanIds: ['slice-drive', 'slice-talk'],
   }];
+  const materialSlots = options.materialSlotsOverride ?? createMaterialSlots();
 
   await Promise.all([
     writeJson(getAssetsPath(projectRoot), assets),
-    writeJson(getSpansPath(projectRoot), slices),
+    writeJson(getSpansPath(projectRoot), spans),
     writeJson(getSpansMetaPath(projectRoot), {
       schemaVersion: '1.0',
       status: 'fresh',
-      generatedAt: '2026-04-18T00:00:00.000Z',
+      generatedAt: CNOW,
       inputsHash: 'test-spans',
       assetCount: assets.length,
       reportCount: 0,
-      spanCount: slices.length,
+      spanCount: spans.length,
       warnings: [],
     }),
     options.legacyChronology
-      ? writeJson(join(projectRoot, 'media', 'chronology.json'), chronology)
-      : writeChronology(projectRoot, createProjectChronology(chronology)),
-    writeCurrentScript(projectRoot, script),
+      ? writeJson(join(projectRoot, 'media', 'chronology.json'), chronologyAssetIndex)
+      : writeChronology(projectRoot, createProjectChronology(chronologyAssetIndex, { events })),
+    writeJson(getMaterialSlotsPath(projectRoot), materialSlots),
+    writeFile(getEditPlanningArtifactPath(projectRoot, 'edit-framework.md'), '## 分段操作稿\n\n- FW-001 Segment 1\n', 'utf-8'),
   ]);
 
-  return { projectRoot, script };
+  return {
+    projectRoot,
+    assets,
+    spans,
+    events,
+    materialSlots,
+  };
+}
+
+function createMaterialSlots(
+  treatments: IMaterialSlotsDocument['segments'][number]['slots'][number]['treatments'] = {},
+): IMaterialSlotsDocument {
+  return {
+    id: 'slots-main',
+    projectId: 'project-test',
+    generatedAt: CNOW,
+    status: 'current',
+    segments: [{
+      segmentId: 'segment-1',
+      slots: [{
+        id: 'FW-001',
+        query: 'Segment 1',
+        requirement: 'required',
+        targetBundles: [],
+        chosenSpanIds: ['slice-drive', 'slice-talk'],
+        treatments,
+      }],
+    }],
+  };
+}
+
+function createTimelineConfig(): IBuildConfig {
+  return {
+    fps: 30,
+    width: 3840,
+    height: 2160,
+    name: 'Main [main]',
+    stillDurationMs: 5000,
+  };
 }

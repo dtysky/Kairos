@@ -30,6 +30,7 @@ import {
 import { resolveAssetLocalPath } from '../media/root-resolver.js';
 import { assertConfirmedEditFlowPlan } from '../edit-flow/flow-planner.js';
 import { assertMaterialSlotsContract, spanHasSpeechTruth } from '../edit-flow/material-slots-contract.js';
+import { resolveMaterialSlotTreatment } from '../edit-flow/material-slot-treatments.js';
 import { resolveTimelineBuildConfig, type IBuildConfig } from './timeline-builder.js';
 import {
   createResolveRoughCutTimeline,
@@ -38,6 +39,11 @@ import {
   type IResolveRoughCutTimelineResult,
   type IResolveRoughCutClipInput,
 } from './resolve-rough-cut.js';
+import {
+  deriveResolveRoughCutProjectName,
+  deriveResolveRoughCutTimelineName,
+} from './resolve-edit-naming.js';
+import { snapshotProjectEditDrp } from './edit-resolve-snapshot.js';
 
 const CPHOTO_DEFAULT_DURATION_MS = 5000;
 const CRESOLVE_MEDIA_SYNC_TIMEOUT_MS = 60 * 60 * 1000;
@@ -70,7 +76,7 @@ export interface ISyncProjectResolveMediaResult {
   hostSummary?: Record<string, unknown>;
 }
 
-interface IDeterministicTimelineBuild {
+export interface IDeterministicTimelineBuild {
   doc: IKtepDoc;
   resolveClips: IResolveRoughCutClipInput[];
   timelineName: string;
@@ -211,7 +217,7 @@ export async function buildProjectTimeline(
     throw new Error(`deterministic timeline validation failed:\n${message}`);
   }
 
-  const resolveTimeline = await createResolveRoughCutTimeline({
+  let resolveTimeline = await createResolveRoughCutTimeline({
     projectId: project.id,
     resolveProjectName: build.resolveProjectName,
     timelineName: build.timelineName,
@@ -226,6 +232,13 @@ export async function buildProjectTimeline(
     },
     stillDurationMs: cfg.stillDurationMs,
     clips: build.resolveClips,
+  });
+  resolveTimeline = await attachEditDrpSnapshotToResolveTimeline({
+    resolveTimeline,
+    workspaceRoot: input.workspaceRoot,
+    projectRoot: input.projectRoot,
+    projectId: project.id,
+    editId,
   });
   const doc: IKtepDoc = {
     ...build.doc,
@@ -242,7 +255,37 @@ export async function buildProjectTimeline(
   };
 }
 
-function buildDeterministicTimeline(input: {
+export async function attachEditDrpSnapshotToResolveTimeline(input: {
+  resolveTimeline: IResolveRoughCutTimelineResult;
+  workspaceRoot?: string;
+  projectRoot: string;
+  projectId: string;
+  editId: string;
+  snapshotter?: typeof snapshotProjectEditDrp;
+}): Promise<IResolveRoughCutTimelineResult> {
+  try {
+    const drp = await (input.snapshotter ?? snapshotProjectEditDrp)({
+      workspaceRoot: input.workspaceRoot,
+      projectRoot: input.projectRoot,
+      projectId: input.projectId,
+      editId: input.editId,
+      snapshotLabel: `timeline-generate-${input.editId}-complete`,
+      mode: 'auto',
+      action: 'timeline.generate',
+    });
+    return {
+      ...input.resolveTimeline,
+      drpSnapshot: drp.snapshot,
+    };
+  } catch (error) {
+    return {
+      ...input.resolveTimeline,
+      drpSnapshotWarning: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+export function buildDeterministicTimeline(input: {
   project: IKtepProject;
   editId: string;
   assets: IKtepAsset[];
@@ -271,7 +314,7 @@ function buildDeterministicTimeline(input: {
         if (asset.kind === 'audio') {
           throw new Error(`timeline.generate cannot place audio-only asset on the rough-cut video track: ${asset.id}`);
         }
-        const treatment = slot.treatments[spanId];
+        const treatment = resolveMaterialSlotTreatment(slot.treatments[spanId]);
         const photoStillDurationMs = asset.kind === 'photo' ? resolvePhotoStillDurationMs(input.cfg) : CPHOTO_DEFAULT_DURATION_MS;
         const window = resolveSpanSourceWindow(asset, span, photoStillDurationMs);
         if (!placedSpanById.has(span.id)) {
@@ -568,15 +611,4 @@ function resolveSourceStem(asset: IKtepAsset): string {
   const normalized = asset.sourcePath.replace(/\\/gu, '/');
   const filename = normalized.split('/').filter(Boolean).at(-1) ?? asset.displayName ?? asset.id;
   return filename.replace(/\.[^.]+$/u, '') || asset.id;
-}
-
-function deriveResolveRoughCutProjectName(projectName?: string, projectId?: string): string {
-  const base = (projectName?.trim() || projectId?.trim() || 'Kairos Project').slice(0, 100);
-  return `${base} [Edit]`;
-}
-
-function deriveResolveRoughCutTimelineName(editId: string, editLabel?: string): string {
-  const normalizedEditId = normalizeEditId(editId);
-  const label = (editLabel?.trim() || (normalizedEditId === 'main' ? 'Main' : normalizedEditId)).slice(0, 100);
-  return `${label} [${normalizedEditId}]`;
 }

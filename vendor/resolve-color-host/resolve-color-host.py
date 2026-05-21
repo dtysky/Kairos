@@ -4616,7 +4616,10 @@ def export_project_snapshot(resolve, project, payload, mode, stage):
                 "snapshotPath": str(snapshot_path),
             },
         )
-    latest_path = snapshot_root / "latest.drp"
+    latest_filename = sanitize_latest_drp_filename(
+        stringify_signal_value(payload.get("latestFilename")) or "latest.drp"
+    )
+    latest_path = snapshot_root / latest_filename
     shutil.copy2(snapshot_path, latest_path)
     return {
         "projectName": project_name,
@@ -4651,6 +4654,17 @@ def sanitize_filename(value):
     text = stringify_signal_value(value) or "snapshot"
     sanitized = re.sub(r"[^A-Za-z0-9._-]+", "-", text).strip("-")
     return sanitized or "snapshot"
+
+
+def sanitize_latest_drp_filename(value):
+    text = stringify_signal_value(value) or "latest.drp"
+    text = re.sub(r'[<>:"/\\|?*\x00-\x1f]+', "-", text).strip()
+    text = text.strip(".")
+    if not text:
+        text = "latest.drp"
+    if not text.lower().endswith(".drp"):
+        text = f"{text}.drp"
+    return text
 
 
 def to_portable_relative(root_path, file_path):

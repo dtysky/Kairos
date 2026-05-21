@@ -15,6 +15,11 @@ import {
 import { resolveArrangementSignals } from '../../src/modules/script/arrangement-signals.js';
 import { loadStyleFromMarkdown } from '../../src/modules/script/style-loader.js';
 import {
+  CEDIT_FLOW_PLANNER_POLICY_VERSION,
+  CMATERIAL_ID_POLICY_VERSION,
+  CMATERIAL_TIME_POLICY_VERSION,
+} from '../../src/modules/edit-flow/index.js';
+import {
   getCurrentScriptPath,
   getMaterialBundlesPath,
   getMaterialOverviewFactsPath,
@@ -262,6 +267,9 @@ async function seedProject(workspaceRoot: string): Promise<string> {
   await mkdir(join(projectRoot, 'edits', 'main', 'planning'), { recursive: true });
   await writeJson(join(projectRoot, 'edits', 'main', 'planning', 'flow-plan.json'), {
     schemaVersion: '1.0',
+    plannerPolicyVersion: CEDIT_FLOW_PLANNER_POLICY_VERSION,
+    materialIdPolicyVersion: CMATERIAL_ID_POLICY_VERSION,
+    materialTimePolicyVersion: CMATERIAL_TIME_POLICY_VERSION,
     id: 'flow-plan-1',
     projectId: 'script-prep-project',
     editId: 'main',
@@ -471,6 +479,7 @@ describe('model-driven script preparation', () => {
 
     expect(built.segmentPlan.segments[0]?.id).toBe('segment-opening');
     expect(built.materialSlots.segments[0]?.slots[0]?.chosenSpanIds).toEqual(['span-coast']);
+    expect(built.materialSlots.segments[0]?.slots[0]?.treatments).toEqual({});
 
     const agentRunner = new FakeAgentRunner();
     await generateProjectScriptFromPlanning({
@@ -518,7 +527,9 @@ describe('model-driven script preparation', () => {
     });
 
     expect(JSON.parse(await readFile(getSegmentPlanPath(projectRoot), 'utf-8')).segments).toHaveLength(1);
-    expect(JSON.parse(await readFile(getMaterialSlotsPath(projectRoot), 'utf-8')).segments[0].slots[0].chosenSpanIds).toEqual(['span-coast']);
+    const savedMaterialSlots = JSON.parse(await readFile(getMaterialSlotsPath(projectRoot), 'utf-8'));
+    expect(savedMaterialSlots.segments[0].slots[0].chosenSpanIds).toEqual(['span-coast']);
+    expect(savedMaterialSlots.segments[0].slots[0].treatments).toEqual({});
     expect(JSON.parse(await readFile(getOutlinePath(projectRoot), 'utf-8'))[0].beats[0].linkedSpanIds).toEqual(['span-coast']);
     expect((await loadCurrentScript(projectRoot))?.[0]?.linkedSpanIds).toContain('span-coast');
   });
@@ -670,6 +681,58 @@ describe('model-driven script preparation', () => {
 
     expect(slots.segments[0]?.slots[0]?.targetBundles).toEqual(['bundle-coast']);
     expect(slots.segments[0]?.slots[0]?.chosenSpanIds).toEqual(['span-coast']);
+    expect(slots.segments[0]?.slots[0]?.treatments).toEqual({});
+  });
+
+  it('keeps explicit mute treatment overrides for no-speech photo selections', () => {
+    const slots = buildMaterialSlotsDocument({
+      projectId: 'project-1',
+      segmentPlan: {
+        id: 'plan-1',
+        projectId: 'project-1',
+        generatedAt: '2026-04-09T00:00:00.000Z',
+        summary: 'test',
+        notes: [],
+        segments: [{
+          id: 'segment-1',
+          title: '照片点缀',
+          intent: '用静态照片补充现场。',
+          notes: ['照片'],
+        }],
+      },
+      bundles: [{
+        id: 'bundle-photo',
+        key: '照片点缀',
+        label: '照片点缀',
+        memberSpanIds: ['span-photo'],
+        representativeSpanIds: ['span-photo'],
+        placeHints: [],
+        pharosTripIds: [],
+        notes: ['照片'],
+      }],
+      spans: [{
+        id: 'span-photo',
+        assetId: 'asset-photo',
+        type: 'photo',
+        materialPatterns: ['静态照片', '山地', '晴天', '无口播语音'],
+        grounding: { speechMode: 'none', speechValue: 'none', spatialEvidence: [], pharosRefs: [] },
+      }],
+      chronology: [{
+        id: 'chronology-1',
+        assetId: 'asset-photo',
+        capturedAt: '2026-04-09T08:00:00.000Z',
+        sortCapturedAt: '2026-04-09T08:00:00.000Z',
+        labels: ['photo'],
+        placeHints: [],
+        evidence: [],
+      }],
+      pharosContext: null,
+    });
+
+    expect(slots.segments[0]?.slots[0]?.chosenSpanIds).toEqual(['span-photo']);
+    expect(slots.segments[0]?.slots[0]?.treatments).toEqual({
+      'span-photo': { audio: -100 },
+    });
   });
 
   it('indexes every span into material bundles without adding story slots to bundle keys', () => {

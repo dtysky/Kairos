@@ -3,21 +3,23 @@
   "plannerPolicyVersion": "codex-agent-v1",
   "materialIdPolicyVersion": "human-source-v1",
   "materialTimePolicyVersion": "normalized-captured-at-v1",
-  "id": "edit-flow-main-travel-documentary-codex-20260520T161735",
+  "id": "edit-flow-main-travel-documentary-codex-20260521T064123Z",
   "projectId": "bingchacha-genie-south-zimeiyakou",
   "editId": "main",
   "editRuleCategory": "travel-documentary",
-  "editRuleHash": "82289acacac8a27ec5349d86728016a748ffdfbf67df669b30cf8fef465165cf",
-  "generatedAt": "2026-05-20T16:17:35.717Z",
-  "updatedAt": "2026-05-20T16:17:35.717Z",
+  "editRuleHash": "03335e01b42b6a4810b2ddb7f0479962570c438751851993b030c05f8ddbaa45",
+  "generatedAt": "2026-05-21T06:41:23.110Z",
+  "updatedAt": "2026-05-21T08:41:31.667Z",
   "status": "confirmed",
-  "confirmedAt": "2026-05-20T16:17:35.717Z",
-  "summary": "codex-agent-v1 旅行纪录片剪辑流：由 Codex Agent 直接维护，先生成 edit-framework handoff，再按 framework/spans/assets 做素材召回，随后同步 Resolve Media Pool、生成粗剪时间线、人工锁定粗剪，最后生成源语音字幕与无语音段落旁白草稿。",
+  "confirmedAt": "2026-05-21T06:41:23.110Z",
+  "summary": "codex-agent-v1 旅行纪录片剪辑流：按当前用户维护剪辑规则生成 edit.framework handoff，再按 framework/spans/assets 做素材召回，随后同步 Resolve Media Pool、生成粗剪时间线、人工锁定粗剪，最后生成源语音字幕与无语音段落旁白草稿。",
   "assumptions": [
     "当前 travel-documentary 规则没有明确要求独立事件表、行程表、素材档案或素材库文档，因此不生成 trip.event_table 或 material.archive。",
     "“LLM生成文本稿件”在初版剪辑框架阶段解释为 edit.framework 的可审查 handoff，而不是额外 script.generate step。",
-    "edit.framework 可以读取 confirmed chronology 作为上游事实理解输入，但输出不能写 chronology/event/route/gap/span/asset id，也不能另写 beat 边界索引。",
+    "edit.framework 可以读取 confirmed chronology 作为上游事实理解输入，但输出不能写 chronology/event/route/gap/span/asset id，也不能新增规则源没有的边界清单。",
+    "当前用户维护剪辑规则的附录只包含全片章节、分段操作稿、不可用/缺口、人工审查点；本 Flow Plan 不额外添加任何规则源没有的固定章节。",
     "material.recall 固定只消费 edit-framework.md、store/spans.json、store/assets.json；span 的真实时间由 corrected asset.capturedAt 与 source range 计算，不消费 chronology 或 asset reports。",
+    "material-slots.json 的 chosenSpanIds 是选择真相；treatments 是稀疏覆盖表，缺少 treatments[spanId]、audio 或 speed 时按默认 {audio:0,speed:1} 读取。",
     "resolve.media_sync 和 timeline.generate 仍可读取 media/chronology.json，但只用于 Resolve Media Pool bin、路径和上下文映射，不能改变 material-slots 的选择或顺序。",
     "所选风格档案只授权给 postlock.subtitle_narration 的文学层；粗剪结构、素材召回、静音和加速规则只来自剪辑规则与 reviewed planning artifacts。"
   ],
@@ -70,7 +72,7 @@
         "shardPacking": {
           "base": "day",
           "metric": "chronologyEventCount",
-          "maxPerShard": 80,
+          "maxPerShard": 150,
           "preserveOrder": true
         },
         "codexSubagentProfile": {
@@ -78,12 +80,13 @@
           "forkContext": false,
           "speed": "standard"
         },
-        "reason": "规则明确要求使用 SubAgent，按天但约 80 个事件阈值连续打包，生成全片章节与唯一分段操作稿。"
+        "reason": "规则明确要求使用 SubAgent，按天但约 150 个事件阈值连续打包，生成全片章节与分段操作稿。"
       },
       "gate": "human",
       "notes": [
-        "必须原样遵守剪辑规则附录中的 edit-framework 模板结构。",
-        "分段操作稿是 material.recall 的唯一 beat handoff；不得另写 beat 边界索引。",
+        "必须遵守当前用户维护剪辑规则附录中的 edit-framework 模板：全片章节、分段操作稿、不可用/缺口、人工审查点。",
+        "分段操作稿是后续素材召回的唯一 beat handoff；不得另写规则源没有的 beat 清单。",
+        "本 step 不额外添加任何规则源没有的固定章节；如果规则源没有该章节，输出也不得新增。",
         "spans 列必须写类型数量和视频语音拆分，例如“共28段：行车13（有语音5/无语音8）、航拍7、普通视频4（有语音2/无语音2）、照片4”。",
         "主表不得写 event/route/gap/span/asset id 或具体素材主键；叙事列只写客观画面/声音总结，不写剪辑指导。"
       ]
@@ -93,6 +96,7 @@
       "capabilityId": "material.recall",
       "title": "按剪辑框架召回素材槽位",
       "inputRefs": [
+        "edits/<editId>/planning/flow-plan.json",
         "edits/<editId>/planning/edit-framework.md",
         "store/spans.json",
         "store/assets.json"
@@ -126,7 +130,8 @@
         "口播与纯视觉窗口重叠时优先选择口播窗口。",
         "同一原始素材的无口播行车 span 先按画面语义去重，最多保留三段。",
         "无口播行车 span 直接静音；超过 5 秒的静音行车片段通过加速压到 5 秒内。",
-        "material-slots.json 必须保留 chosenSpanIds/treatments 中的人类可读素材主键以供审查溯源。"
+        "material-slots.json 必须保留 chosenSpanIds 中的人类可读素材主键以供审查溯源。",
+        "treatments 是稀疏覆盖表：默认 {audio:0,speed:1} 不写；静音写 {audio:-100}；加速写 {speed:n}；不要写 audio=0 或 speed=1 默认字段。"
       ]
     },
     {
@@ -136,15 +141,11 @@
       "inputRefs": [
         "store/spans.json",
         "store/assets.json",
-        "media/chronology.json",
-        "config/project-brief.json"
+        "media/chronology.json"
       ],
       "outputRefs": [
-        "DaVinci Resolve Media Pool"
+        "Resolve Media Pool: Kairos Project Media"
       ],
-      "outputTypes": {
-        "DaVinci Resolve Media Pool": "resolve-state"
-      },
       "runner": "deterministic",
       "execution": {
         "mode": "deterministic",
@@ -153,8 +154,8 @@
       },
       "gate": "none",
       "notes": [
-        "chronology 只用于 Resolve bin/path/context 映射，不得改变 material-slots 的选择和顺序。",
-        "该 step 不生成剪辑语义文档，也不替代 material.recall。"
+        "按 chronology event title 组织项目全局 Kairos Project Media。",
+        "不要按 editId、spanId 或 assetId 建正式审查一级分组。"
       ]
     },
     {
@@ -162,7 +163,6 @@
       "capabilityId": "timeline.generate",
       "title": "生成 Resolve 粗剪时间线",
       "inputRefs": [
-        "DaVinci Resolve Media Pool",
         "edits/<editId>/planning/edit-framework.md",
         "edits/<editId>/script/material-slots.json",
         "store/spans.json",
@@ -170,40 +170,33 @@
         "media/chronology.json"
       ],
       "outputRefs": [
-        "DaVinci Resolve Timeline",
+        "Resolve timeline: Kairos Timelines/<editId> rough cut",
         ".tmp/edit-flow/<editId>/timeline/current.json"
       ],
-      "outputTypes": {
-        "DaVinci Resolve Timeline": "resolve-state",
-        ".tmp/edit-flow/<editId>/timeline/current.json": "timeline-audit-json"
-      },
       "runner": "deterministic",
       "execution": {
         "mode": "deterministic",
         "shardBy": "none",
         "reason": "按 reviewed material-slots 顺序落片；chronology 只提供 Resolve path/bin/context 映射。"
       },
-      "gate": "human",
+      "gate": "none",
       "notes": [
         "必须以 material-slots.segments 顺序和 chosenSpanIds 顺序为落片真相。",
         "不得因为 chronology 重新排序或替换 chosen spans。",
-        "speech-backed 非照片 span 如果被选择，timeline.generate 必须拒绝 audio <= -100 的静音处理。"
+        "缺少 treatments[spanId]、audio 或 speed 时按默认 {audio:0,speed:1} 读取。",
+        "speech-backed 非照片 span 如果被选择，timeline.generate 必须拒绝解析后 audio <= -100 的静音处理。"
       ]
     },
     {
-      "id": "resolve-lock-rough-cut-codex-v1",
+      "id": "resolve-lock-rough-cut-manual-v1",
       "capabilityId": "resolve.lock_rough_cut",
-      "title": "人工锁定粗剪",
+      "title": "人工锁定 Resolve 粗剪",
       "inputRefs": [
-        "DaVinci Resolve Timeline",
-        "edits/<editId>/script/material-slots.json"
+        "Resolve timeline: Kairos Timelines/<editId> rough cut"
       ],
       "outputRefs": [
         "edits/<editId>/timeline/locked-rough-cut.json"
       ],
-      "outputTypes": {
-        "edits/<editId>/timeline/locked-rough-cut.json": "rough-cut-lock-json"
-      },
       "runner": "manual",
       "execution": {
         "mode": "manual",
@@ -212,8 +205,7 @@
       },
       "gate": "human",
       "notes": [
-        "该 step 只记录人工确认后的粗剪锁定状态，不自动创建时间线。",
-        "锁定前的交互修改发生在 Resolve 时间线和人工审查中。"
+        "只有人工确认阶段性定稿后才能进入后锁定字幕/旁白。"
       ]
     },
     {
@@ -222,21 +214,11 @@
       "title": "锁定后字幕与旁白草稿",
       "inputRefs": [
         "edits/<editId>/timeline/locked-rough-cut.json",
-        "edits/<editId>/script/material-slots.json",
-        "store/spans.json",
-        "store/assets.json",
         "config/styles/china-drive-travel-documentary-main.md"
       ],
       "outputRefs": [
-        "edits/<editId>/subtitles/source-speech.*",
-        "edits/<editId>/subtitles/narration-draft.md",
-        "edits/<editId>/subtitles/final-subtitles.*"
+        "edits/<editId>/postlock/subtitle-narration.md"
       ],
-      "outputTypes": {
-        "edits/<editId>/subtitles/source-speech.*": "subtitle",
-        "edits/<editId>/subtitles/narration-draft.md": "planning-markdown",
-        "edits/<editId>/subtitles/final-subtitles.*": "subtitle"
-      },
       "runner": "agent",
       "execution": {
         "mode": "single-agent",
@@ -250,9 +232,8 @@
       },
       "gate": "human",
       "notes": [
-        "仅此 step 可消费 styleUsage.literary hard 层。",
-        "源语音字幕来自被选口播/语音素材；无语音段落的旁白稿必须最终人工审查。",
-        "不要把风格档案反向用于改变已锁定的粗剪结构或素材选择。"
+        "只在粗剪锁定后执行。",
+        "只使用 styleUsage 授权的 literary 层，不用艺术层或剪辑技法层反向改动粗剪。"
       ]
     }
   ]
