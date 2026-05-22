@@ -13,6 +13,7 @@ import type {
   ISpansMeta,
   ITranscriptSegment,
 } from '../../protocol/schema.js';
+import { IKtepSlice as IKtepSliceSchema } from '../../protocol/schema.js';
 import {
   getProjectProgressPath,
   getSpansPath,
@@ -30,14 +31,8 @@ import {
   type IJsonPacketAgentRunner,
 } from '../agents/runtime.js';
 import {
-  buildSpanMaterialPatternHardConstraints,
-  buildSpanMaterialPatternOutputSchema,
-  buildSpanMaterialPatternReviewRubric,
-  CSPAN_MATERIAL_PATTERN_BATCH_SIZE,
   CSPAN_MATERIAL_PATTERN_ENVIRONMENT_UNKNOWN,
   CSPAN_MATERIAL_PATTERN_MAX_COUNT,
-  CSPAN_MATERIAL_PATTERN_MAX_TOKENS,
-  CSPAN_MATERIAL_PATTERN_PROMPT_VERSION,
   CSPAN_MATERIAL_PATTERN_REQUIRED_COUNT,
   CSPAN_MATERIAL_PATTERN_SPEECH_ABSENT,
   CSPAN_MATERIAL_PATTERN_SPEECH_PRESENT,
@@ -48,14 +43,21 @@ import {
   CSPAN_MATERIAL_PATTERN_VIEWPOINT_UNKNOWN,
   CSPAN_MATERIAL_PATTERN_WEATHER_UNKNOWN,
 } from '../agents/span-material-pattern-spec.js';
+import {
+  buildSpanMaterializationReviewHardConstraints,
+  buildSpanMaterializationReviewOutputSchema,
+  CSPAN_MATERIALIZATION_REVIEW_BATCH_SIZE,
+  CSPAN_MATERIALIZATION_REVIEW_MAX_TOKENS,
+  CSPAN_MATERIALIZATION_REVIEW_PROMPT_VERSION,
+} from '../agents/span-materialization-review-spec.js';
 import { assignUniqueMaterialSpanIds, buildMaterialSpanId } from './material-ids.js';
 import { sanitizeMaterialPatterns } from './semantic-slice.js';
 
-export const CMATERIAL_PATTERN_PROMPT_VERSION = CSPAN_MATERIAL_PATTERN_PROMPT_VERSION;
-const CMATERIAL_PATTERN_SPAN_BATCH_SIZE = CSPAN_MATERIAL_PATTERN_BATCH_SIZE;
+export const CMATERIAL_PATTERN_PROMPT_VERSION = CSPAN_MATERIALIZATION_REVIEW_PROMPT_VERSION;
+const CMATERIAL_PATTERN_SPAN_BATCH_SIZE = CSPAN_MATERIALIZATION_REVIEW_BATCH_SIZE;
 const CMATERIAL_PATTERN_TRANSCRIPT_LIMIT = 220;
 const CMATERIAL_PATTERN_TEXT_LIMIT = 220;
-const CMATERIAL_PATTERN_MAX_TOKENS = CSPAN_MATERIAL_PATTERN_MAX_TOKENS;
+const CMATERIAL_PATTERN_MAX_TOKENS = CSPAN_MATERIALIZATION_REVIEW_MAX_TOKENS;
 const CMATERIAL_PATTERN_MAX_COUNT = CSPAN_MATERIAL_PATTERN_MAX_COUNT;
 const CMATERIAL_PATTERN_REQUIRED_COUNT = CSPAN_MATERIAL_PATTERN_REQUIRED_COUNT;
 const CMATERIAL_PATTERN_VIEWPOINT_TAG_SET = new Set<string>(CSPAN_MATERIAL_PATTERN_VIEWPOINT_TAGS);
@@ -94,7 +96,15 @@ interface ISpanMaterialPatternItem {
   type: string;
   semanticKind?: IKtepSlice['semanticKind'];
   transcript?: string;
+  transcriptSegments?: ISpanMaterializationReviewTranscriptSegment[];
   visualObservation?: string;
+}
+
+interface ISpanMaterializationReviewTranscriptSegment {
+  index: number;
+  startMs: number;
+  endMs: number;
+  text: string;
 }
 
 interface ISpanRebuildPartialCheckpoint {
@@ -130,21 +140,33 @@ interface ISpanRebuildFailedSpan {
   fallbackStoryUnknown?: boolean;
 }
 
-interface ISpanMaterialPatternGenerationResult {
+interface ISpanMaterializationReviewGenerationResult {
   spans: IKtepSlice[];
+  checkpointSpans: Array<IKtepSlice & { sourceSpanId?: string; dropped?: boolean }>;
   failedSpans: ISpanRebuildFailedSpan[];
   retryCount: number;
   repairCount: number;
   recoveredFailedCount: number;
   storyUnknownFallbackCount: number;
+  droppedCount: number;
+  visualOnlyCount: number;
+  trimmedSpeechCount: number;
 }
 
 interface IChunkMaterialPatternRequestResult {
-  patterns: Map<string, string[]>;
+  decisions: Map<string, ISpanMaterializationReviewDecision>;
   needsRetry: boolean;
   repairCount: number;
   failureReasonBySpanId: Map<string, string>;
   requestError?: string;
+}
+
+interface ISpanMaterializationReviewDecision {
+  sourceSpanId: string;
+  finalSpan?: IKtepSlice;
+  dropped: boolean;
+  visualOnly: boolean;
+  trimmedSpeech: boolean;
 }
 
 export function buildMaterialSpansFromReports(input: {
@@ -232,7 +254,7 @@ function assertMaterialSpansHaveVisualObservation(
   throw new Error(
     [
       `span-rebuild blocked: ${missing.length} material span(s) are missing visualObservation.`,
-      'visualObservation must be produced by Analyze; span-rebuild will not invent visual evidence or call materialPatterns LM.',
+      'visualObservation must be produced by Analyze; span-rebuild will not invent visual evidence or call the materialization review LM.',
       `Missing examples: ${formatSpanRebuildInputExamples(missing.map(span => assetsById?.get(span.assetId) ?? span))}`,
     ].join(' '),
   );
@@ -262,7 +284,7 @@ export async function rebuildProjectSpans(input: {
 }): Promise<IProjectSpanRebuildResult> {
   if (!input.agentRunner) {
     throw new AgentRunnerUnavailableError(
-      'span-rebuild requires a local text LM runner to generate materialPatterns; no spans were rewritten.',
+      'span-rebuild requires a local text LM runner to review speech usability and generate materialPatterns; no spans were rewritten.',
     );
   }
   const projectRoot = resolveWorkspaceProjectRoot(input.workspaceRoot, input.projectId);
@@ -284,40 +306,43 @@ export async function rebuildProjectSpans(input: {
     loadIngestRoots(projectRoot),
   ]);
   const generated = buildMaterialSpansFromReports({ assets, reports, roots });
-  const materialPatternSpans = sortSpansByMaterialTime(generated.spans, assets, roots);
+  const reviewCandidateSpans = sortSpansByMaterialTime(generated.spans, assets, roots);
   const partialPath = getSpanRebuildPartialPath(projectRoot);
-  const chunkCount = Math.ceil(materialPatternSpans.length / CMATERIAL_PATTERN_SPAN_BATCH_SIZE);
+  const chunkCount = Math.ceil(reviewCandidateSpans.length / CMATERIAL_PATTERN_SPAN_BATCH_SIZE);
   await writeSpanRebuildProgress(progressPath, {
     status: 'running',
     step: 'patterns',
-    stepLabel: '生成素材模式',
+    stepLabel: '审查口播并生成素材模式',
     stepIndex: 2,
     stepTotal: 4,
     current: 0,
-    total: Math.max(materialPatternSpans.length, 1),
+    total: Math.max(reviewCandidateSpans.length, 1),
     unit: 'span',
-    detail: materialPatternSpans.length > 0
-      ? '调用本地文本 LM 生成中文 materialPatterns'
-      : '没有可生成 materialPatterns 的 spans',
+    detail: reviewCandidateSpans.length > 0
+      ? '调用本地文本 LM 审查口播可用性并生成中文 materialPatterns'
+      : '没有可审查的 spans',
     extra: {
-      spanCount: materialPatternSpans.length,
+      spanCount: reviewCandidateSpans.length,
       chunkSize: CMATERIAL_PATTERN_SPAN_BATCH_SIZE,
       chunkCount,
     },
   });
-  const patternWarnings: string[] = [];
-  const generatedPatterns = await generateSpanMaterialPatterns({
-    spans: materialPatternSpans,
+  const reviewWarnings: string[] = [];
+  const reviewResult = await generateSpanMaterializationReview({
+    spans: reviewCandidateSpans,
     agentRunner: input.agentRunner,
     progressPath,
     partialPath,
     inputsHash: generated.inputsHash,
     baseWarnings: generated.warnings,
-    warnings: patternWarnings,
+    warnings: reviewWarnings,
   });
-  const spans = generatedPatterns.spans;
+  const spans = assignUniqueMaterialSpanIds(
+    reviewResult.spans,
+    new Map(assets.map(asset => [asset.id, { kind: asset.kind }] as const)),
+  );
   const now = input.now ?? new Date().toISOString();
-  const warnings = dedupeStrings([...generated.warnings, ...patternWarnings]);
+  const warnings = dedupeStrings([...generated.warnings, ...reviewWarnings]);
   const meta: ISpansMeta = {
     schemaVersion: '1.0',
     status: 'fresh',
@@ -342,11 +367,14 @@ export async function rebuildProjectSpans(input: {
     extra: {
       spanCount: spans.length,
       warningCount: warnings.length,
-      failedCount: generatedPatterns.failedSpans.length,
-      recoveredFailedCount: generatedPatterns.recoveredFailedCount,
-      storyUnknownFallbackCount: generatedPatterns.storyUnknownFallbackCount,
-      retryCount: generatedPatterns.retryCount,
-      repairCount: generatedPatterns.repairCount,
+      failedCount: reviewResult.failedSpans.length,
+      recoveredFailedCount: reviewResult.recoveredFailedCount,
+      storyUnknownFallbackCount: reviewResult.storyUnknownFallbackCount,
+      retryCount: reviewResult.retryCount,
+      repairCount: reviewResult.repairCount,
+      droppedCount: reviewResult.droppedCount,
+      visualOnlyCount: reviewResult.visualOnlyCount,
+      trimmedSpeechCount: reviewResult.trimmedSpeechCount,
     },
   });
   await writeJson(getSpansPath(projectRoot), spans);
@@ -355,17 +383,17 @@ export async function rebuildProjectSpans(input: {
     status: 'succeeded',
     promptVersion: CMATERIAL_PATTERN_PROMPT_VERSION,
     inputsHash: generated.inputsHash,
-    spanCount: spans.length,
+    spanCount: reviewCandidateSpans.length,
     chunkSize: CMATERIAL_PATTERN_SPAN_BATCH_SIZE,
-    completedCount: spans.length,
-    spans,
+    completedCount: reviewCandidateSpans.length,
+    spans: reviewResult.checkpointSpans,
     warnings,
-    failedSpans: generatedPatterns.failedSpans,
-    failedCount: generatedPatterns.failedSpans.length,
-    recoveredFailedCount: generatedPatterns.recoveredFailedCount,
-    storyUnknownFallbackCount: generatedPatterns.storyUnknownFallbackCount,
-    retryCount: generatedPatterns.retryCount,
-    repairCount: generatedPatterns.repairCount,
+    failedSpans: reviewResult.failedSpans,
+    failedCount: reviewResult.failedSpans.length,
+    recoveredFailedCount: reviewResult.recoveredFailedCount,
+    storyUnknownFallbackCount: reviewResult.storyUnknownFallbackCount,
+    retryCount: reviewResult.retryCount,
+    repairCount: reviewResult.repairCount,
   });
   await touchProjectUpdatedAt(projectRoot);
   await writeSpanRebuildProgress(progressPath, {
@@ -385,11 +413,14 @@ export async function rebuildProjectSpans(input: {
       spanCount: spans.length,
       warningCount: warnings.length,
       inputsHash: generated.inputsHash,
-      failedCount: generatedPatterns.failedSpans.length,
-      recoveredFailedCount: generatedPatterns.recoveredFailedCount,
-      storyUnknownFallbackCount: generatedPatterns.storyUnknownFallbackCount,
-      retryCount: generatedPatterns.retryCount,
-      repairCount: generatedPatterns.repairCount,
+      failedCount: reviewResult.failedSpans.length,
+      recoveredFailedCount: reviewResult.recoveredFailedCount,
+      storyUnknownFallbackCount: reviewResult.storyUnknownFallbackCount,
+      retryCount: reviewResult.retryCount,
+      repairCount: reviewResult.repairCount,
+      droppedCount: reviewResult.droppedCount,
+      visualOnlyCount: reviewResult.visualOnlyCount,
+      trimmedSpeechCount: reviewResult.trimmedSpeechCount,
     },
   });
 
@@ -886,7 +917,7 @@ function mergeMaterialSpans(left: IKtepSlice, right: IKtepSlice): IKtepSlice {
   return stripUndefined(span) as unknown as IKtepSlice;
 }
 
-async function generateSpanMaterialPatterns(input: {
+async function generateSpanMaterializationReview(input: {
   spans: IKtepSlice[];
   agentRunner: IJsonPacketAgentRunner;
   progressPath?: string;
@@ -894,20 +925,24 @@ async function generateSpanMaterialPatterns(input: {
   inputsHash: string;
   baseWarnings: string[];
   warnings: string[];
-}): Promise<ISpanMaterialPatternGenerationResult> {
+}): Promise<ISpanMaterializationReviewGenerationResult> {
   assertMaterialSpansHaveVisualObservation(input.spans);
   if (input.spans.length === 0) {
     return {
       spans: [],
+      checkpointSpans: [],
       failedSpans: [],
       retryCount: 0,
       repairCount: 0,
       recoveredFailedCount: 0,
       storyUnknownFallbackCount: 0,
+      droppedCount: 0,
+      visualOnlyCount: 0,
+      trimmedSpeechCount: 0,
     };
   }
   const chunks = chunkArray(input.spans, CMATERIAL_PATTERN_SPAN_BATCH_SIZE);
-  const patternBySpanId = new Map<string, string[]>();
+  const decisionBySpanId = new Map<string, ISpanMaterializationReviewDecision>();
   const failedBySpanId = new Map<string, ISpanRebuildFailedSpan>();
   const patternStartedAtMs = Date.now();
   let retryCount = 0;
@@ -921,8 +956,8 @@ async function generateSpanMaterialPatterns(input: {
   });
 
   if (reusableCheckpoint) {
-    for (const [spanId, patterns] of reusableCheckpoint.patterns) {
-      patternBySpanId.set(spanId, patterns);
+    for (const [spanId, decision] of reusableCheckpoint.decisions) {
+      decisionBySpanId.set(spanId, decision);
     }
     for (const failure of reusableCheckpoint.failedSpans) {
       failedBySpanId.set(failure.spanId, failure);
@@ -931,7 +966,7 @@ async function generateSpanMaterialPatterns(input: {
     repairCount = reusableCheckpoint.repairCount;
     recoveredFailedCount = reusableCheckpoint.recoveredFailedCount;
     storyUnknownFallbackCount = reusableCheckpoint.storyUnknownFallbackCount;
-    input.warnings.push(`span-rebuild resumed ${patternBySpanId.size}/${input.spans.length} materialPatterns rows from checkpoint`);
+    input.warnings.push(`span-rebuild resumed ${decisionBySpanId.size}/${input.spans.length} materialization review rows from checkpoint`);
     for (const warning of reusableCheckpoint.warnings) {
       if (!input.baseWarnings.includes(warning)) {
         input.warnings.push(warning);
@@ -944,7 +979,7 @@ async function generateSpanMaterialPatterns(input: {
       inputsHash: input.inputsHash,
       spanCount: input.spans.length,
       spans: input.spans,
-      patternBySpanId,
+      decisionBySpanId,
       failedBySpanId,
       baseWarnings: input.baseWarnings,
       warnings: input.warnings,
@@ -958,7 +993,7 @@ async function generateSpanMaterialPatterns(input: {
   for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex += 1) {
     const chunk = chunks[chunkIndex]!;
     const activeChunk = chunk.filter(span =>
-      !patternBySpanId.has(span.id) && !isActiveFailedSpan(failedBySpanId.get(span.id)),
+      !decisionBySpanId.has(span.id) && !isActiveFailedSpan(failedBySpanId.get(span.id)),
     );
     if (activeChunk.length === 0) {
       continue;
@@ -966,16 +1001,16 @@ async function generateSpanMaterialPatterns(input: {
     await writeSpanRebuildProgress(input.progressPath, {
       status: 'running',
       step: 'patterns',
-      stepLabel: '生成素材模式',
+      stepLabel: '审查口播并生成素材模式',
       stepIndex: 2,
       stepTotal: 4,
-      current: patternBySpanId.size,
+      current: decisionBySpanId.size,
       total: input.spans.length,
       unit: 'span',
-      etaSeconds: estimateSpanRebuildEtaSeconds(patternStartedAtMs, patternBySpanId.size, input.spans.length),
+      etaSeconds: estimateSpanRebuildEtaSeconds(patternStartedAtMs, decisionBySpanId.size, input.spans.length),
       fileIndex: chunkIndex + 1,
       fileTotal: chunks.length,
-      detail: `正在生成第 ${chunkIndex + 1}/${chunks.length} 批 span 的 materialPatterns（本批 ${activeChunk.length} 个待处理）`,
+      detail: `正在审查第 ${chunkIndex + 1}/${chunks.length} 批 span 的口播与 materialPatterns（本批 ${activeChunk.length} 个待处理）`,
       extra: {
         batchSize: activeChunk.length,
         retryCount,
@@ -987,43 +1022,43 @@ async function generateSpanMaterialPatterns(input: {
       },
     });
 
-    const firstAttempt = await requestMaterialPatternsForChunk({
+    const firstAttempt = await requestMaterializationReviewForChunk({
       agentRunner: input.agentRunner,
       chunk: activeChunk,
-      items: activeChunk.map(span => buildMaterialPatternItem(span)),
+      items: activeChunk.map(span => buildMaterializationReviewItem(span)),
       chunkIndex,
       chunkTotal: chunks.length,
       attempt: 1,
       warnings: input.warnings,
     });
     repairCount += firstAttempt.repairCount;
-    let chunkPatterns = firstAttempt.patterns;
+    let chunkDecisions = firstAttempt.decisions;
     let failureReasonBySpanId = firstAttempt.failureReasonBySpanId;
     let chunkLastError = firstAttempt.requestError;
     let attempts = 1;
     if (firstAttempt.needsRetry) {
       retryCount += 1;
-      input.warnings.push(`materialPatterns chunk ${chunkIndex + 1}/${chunks.length}: retrying because LM returned missing, empty, or story-missing materialPatterns rows`);
-      const secondAttempt = await requestMaterialPatternsForChunk({
+      input.warnings.push(`materialization review chunk ${chunkIndex + 1}/${chunks.length}: retrying because LM returned missing, invalid, or story-missing rows`);
+      const secondAttempt = await requestMaterializationReviewForChunk({
         agentRunner: input.agentRunner,
         chunk: activeChunk,
-        items: activeChunk.map(span => buildMaterialPatternItem(span)),
+        items: activeChunk.map(span => buildMaterializationReviewItem(span)),
         chunkIndex,
         chunkTotal: chunks.length,
         attempt: 2,
         warnings: input.warnings,
       });
       repairCount += secondAttempt.repairCount;
-      chunkPatterns = mergePatternMaps(firstAttempt.patterns, secondAttempt.patterns);
+      chunkDecisions = mergeDecisionMaps(firstAttempt.decisions, secondAttempt.decisions);
       failureReasonBySpanId = mergeFailureReasonMaps(firstAttempt.failureReasonBySpanId, secondAttempt.failureReasonBySpanId);
       chunkLastError = secondAttempt.requestError ?? firstAttempt.requestError;
       attempts = 2;
     }
 
     for (const span of activeChunk) {
-      const patterns = chunkPatterns.get(span.id);
-      if (patterns && patterns.length > 0) {
-        patternBySpanId.set(span.id, patterns);
+      const decision = chunkDecisions.get(span.id);
+      if (decision) {
+        decisionBySpanId.set(span.id, decision);
         continue;
       }
       failedBySpanId.set(span.id, {
@@ -1043,7 +1078,7 @@ async function generateSpanMaterialPatterns(input: {
       inputsHash: input.inputsHash,
       spanCount: input.spans.length,
       spans: input.spans,
-      patternBySpanId,
+      decisionBySpanId,
       failedBySpanId,
       baseWarnings: input.baseWarnings,
       warnings: input.warnings,
@@ -1056,16 +1091,16 @@ async function generateSpanMaterialPatterns(input: {
     await writeSpanRebuildProgress(input.progressPath, {
       status: 'running',
       step: 'patterns',
-      stepLabel: '生成素材模式',
+      stepLabel: '审查口播并生成素材模式',
       stepIndex: 2,
       stepTotal: 4,
-      current: patternBySpanId.size,
+      current: decisionBySpanId.size,
       total: input.spans.length,
       unit: 'span',
-      etaSeconds: estimateSpanRebuildEtaSeconds(patternStartedAtMs, patternBySpanId.size, input.spans.length),
+      etaSeconds: estimateSpanRebuildEtaSeconds(patternStartedAtMs, decisionBySpanId.size, input.spans.length),
       fileIndex: chunkIndex + 1,
       fileTotal: chunks.length,
-      detail: `已生成 ${patternBySpanId.size}/${input.spans.length} 个 span 的 materialPatterns，失败列表 ${activeFailedSpanCount(failedBySpanId)} 个`,
+      detail: `已审查 ${decisionBySpanId.size}/${input.spans.length} 个 span，失败列表 ${activeFailedSpanCount(failedBySpanId)} 个`,
       extra: {
         retryCount,
         repairCount,
@@ -1090,10 +1125,10 @@ async function generateSpanMaterialPatterns(input: {
       stepLabel: '补处理失败列表',
       stepIndex: 3,
       stepTotal: 4,
-      current: patternBySpanId.size,
+      current: decisionBySpanId.size,
       total: input.spans.length,
       unit: 'span',
-      etaSeconds: estimateSpanRebuildEtaSeconds(patternStartedAtMs, patternBySpanId.size, input.spans.length),
+      etaSeconds: estimateSpanRebuildEtaSeconds(patternStartedAtMs, decisionBySpanId.size, input.spans.length),
       fileIndex: index + 1,
       fileTotal: activeFailures.length,
       detail: `正在补处理失败列表 ${index + 1}/${activeFailures.length}：${span.id}`,
@@ -1108,19 +1143,19 @@ async function generateSpanMaterialPatterns(input: {
     });
 
     retryCount += 1;
-    const retryResult = await requestMaterialPatternsForChunk({
+    const retryResult = await requestMaterializationReviewForChunk({
       agentRunner: input.agentRunner,
       chunk: [span],
-      items: [buildMaterialPatternItem(span)],
+      items: [buildMaterializationReviewItem(span)],
       chunkIndex: Math.max(0, (failure.chunkIndex ?? 1) - 1),
       chunkTotal: chunks.length,
       attempt: failure.attempts + 1,
       warnings: input.warnings,
     });
     repairCount += retryResult.repairCount;
-    const retriedPatterns = retryResult.patterns.get(span.id);
-    if (retriedPatterns && retriedPatterns.length > 0) {
-      patternBySpanId.set(span.id, retriedPatterns);
+    const retriedDecision = retryResult.decisions.get(span.id);
+    if (retriedDecision) {
+      decisionBySpanId.set(span.id, retriedDecision);
       recoveredFailedCount += failure.recovered ? 0 : 1;
       failedBySpanId.set(span.id, {
         ...failure,
@@ -1137,7 +1172,7 @@ async function generateSpanMaterialPatterns(input: {
         lastError: retryResult.requestError ?? failure.lastError,
         recovered: false,
       });
-      input.warnings.push(`materialPatterns span ${span.id}: failed-list retry still returned invalid materialPatterns`);
+      input.warnings.push(`materialization review span ${span.id}: failed-list retry still returned invalid row`);
     }
 
     await writeSpanRebuildPatternCheckpoint({
@@ -1146,7 +1181,7 @@ async function generateSpanMaterialPatterns(input: {
       inputsHash: input.inputsHash,
       spanCount: input.spans.length,
       spans: input.spans,
-      patternBySpanId,
+      decisionBySpanId,
       failedBySpanId,
       baseWarnings: input.baseWarnings,
       warnings: input.warnings,
@@ -1158,7 +1193,7 @@ async function generateSpanMaterialPatterns(input: {
     });
   }
 
-  const unresolvedSpans = input.spans.filter(span => !patternBySpanId.has(span.id));
+  const unresolvedSpans = input.spans.filter(span => !decisionBySpanId.has(span.id));
   if (unresolvedSpans.length > 0) {
     for (const span of unresolvedSpans) {
       if (!failedBySpanId.has(span.id)) {
@@ -1173,25 +1208,31 @@ async function generateSpanMaterialPatterns(input: {
     }
     const preview = unresolvedSpans.slice(0, 8).map(span => span.id).join(', ');
     throw new Error(
-      `span-rebuild could not generate valid materialPatterns for ${unresolvedSpans.length} span(s): ${preview}`,
+      `span-rebuild could not generate valid materialization review for ${unresolvedSpans.length} span(s): ${preview}`,
     );
   }
 
-  const spans = input.spans.map(span => stripUndefined({
-    ...span,
-    materialPatterns: patternBySpanId.get(span.id),
-  }) as unknown as IKtepSlice);
+  const decisions = input.spans
+    .map(span => decisionBySpanId.get(span.id))
+    .filter((decision): decision is ISpanMaterializationReviewDecision => decision != null);
+  const spans = decisions
+    .map(decision => decision.finalSpan)
+    .filter((span): span is IKtepSlice => span != null);
   return {
     spans,
+    checkpointSpans: buildPartialSpans(input.spans, decisionBySpanId),
     failedSpans: Array.from(failedBySpanId.values()),
     retryCount,
     repairCount,
     recoveredFailedCount,
     storyUnknownFallbackCount,
+    droppedCount: decisions.filter(decision => decision.dropped).length,
+    visualOnlyCount: decisions.filter(decision => decision.visualOnly).length,
+    trimmedSpeechCount: decisions.filter(decision => decision.trimmedSpeech).length,
   };
 }
 
-async function requestMaterialPatternsForChunk(input: {
+async function requestMaterializationReviewForChunk(input: {
   agentRunner: IJsonPacketAgentRunner;
   chunk: IKtepSlice[];
   items: ISpanMaterialPatternItem[];
@@ -1200,7 +1241,7 @@ async function requestMaterialPatternsForChunk(input: {
   attempt: number;
   warnings: string[];
 }): Promise<IChunkMaterialPatternRequestResult> {
-  const packet = buildMaterialPatternPacket({
+  const packet = buildMaterializationReviewPacket({
     items: input.items,
     chunkIndex: input.chunkIndex,
     chunkTotal: input.chunkTotal,
@@ -1209,7 +1250,7 @@ async function requestMaterialPatternsForChunk(input: {
   let raw: unknown;
   try {
     raw = await input.agentRunner.run<unknown>({
-      promptId: 'media/span-material-patterns',
+      promptId: 'media/span-materialization-review',
       packet,
       llm: {
         jsonMode: true,
@@ -1220,10 +1261,10 @@ async function requestMaterialPatternsForChunk(input: {
   } catch (error) {
     const requestError = error instanceof Error ? error.message : String(error);
     input.warnings.push(
-      `materialPatterns chunk ${input.chunkIndex + 1}/${input.chunkTotal}: LM request failed on attempt ${input.attempt}: ${requestError}`,
+      `materialization review chunk ${input.chunkIndex + 1}/${input.chunkTotal}: LM request failed on attempt ${input.attempt}: ${requestError}`,
     );
     return {
-      patterns: new Map(),
+      decisions: new Map(),
       needsRetry: true,
       repairCount: 0,
       failureReasonBySpanId: new Map(input.chunk.map(span => [span.id, 'request-failed'] as const)),
@@ -1231,14 +1272,14 @@ async function requestMaterialPatternsForChunk(input: {
     };
   }
 
-  const rows = normalizeReturnedMaterialPatternRows({
+  const rows = normalizeReturnedMaterializationReviewRows({
     raw,
     expectedCount: input.chunk.length,
     chunkIndex: input.chunkIndex,
     chunkTotal: input.chunkTotal,
     warnings: input.warnings,
   });
-  const patterns = new Map<string, string[]>();
+  const decisions = new Map<string, ISpanMaterializationReviewDecision>();
   const failureReasonBySpanId = new Map<string, string>();
   let repairCount = 0;
   let invalidRowCount = 0;
@@ -1249,44 +1290,42 @@ async function requestMaterialPatternsForChunk(input: {
         failureReasonBySpanId.set(span.id, 'missing-row');
         return;
       }
-      const repaired = sanitizeReturnedMaterialPatterns(rows[index], span);
-      if (!repaired.complete) {
+      const decision = applyMaterializationReviewRow(rows[index], span);
+      if (!decision.complete) {
         invalidRowCount += 1;
-        failureReasonBySpanId.set(span.id, 'missing-or-invalid-first-four/story');
+        failureReasonBySpanId.set(span.id, decision.reason);
         return;
       }
-      if (repaired.repaired) {
+      if (decision.repaired) {
         repairCount += 1;
       }
-      if (repaired.patterns.length > 0) {
-        patterns.set(span.id, repaired.patterns);
-      }
+      decisions.set(span.id, decision.decision);
     });
   }
 
   if (repairCount > 0) {
     input.warnings.push(
-      `materialPatterns chunk ${input.chunkIndex + 1}/${input.chunkTotal}: repaired ${repairCount} materialPatterns rows for the deterministic first-four slots`,
+      `materialization review chunk ${input.chunkIndex + 1}/${input.chunkTotal}: repaired ${repairCount} materialPatterns rows for the deterministic first-four slots`,
     );
   }
 
   if (rows.length === 0) {
-    input.warnings.push(`materialPatterns chunk ${input.chunkIndex + 1}/${input.chunkTotal}: LM response did not contain ordered pattern rows`);
+    input.warnings.push(`materialization review chunk ${input.chunkIndex + 1}/${input.chunkTotal}: LM response did not contain ordered rows`);
     for (const span of input.chunk) {
       failureReasonBySpanId.set(span.id, 'missing-response-rows');
     }
   }
   if (invalidRowCount > 0) {
     input.warnings.push(
-      `materialPatterns chunk ${input.chunkIndex + 1}/${input.chunkTotal}: LM returned ${invalidRowCount} rows without usable first-four/story slots`,
+      `materialization review chunk ${input.chunkIndex + 1}/${input.chunkTotal}: LM returned ${invalidRowCount} invalid rows`,
     );
   }
 
   const needsRetry = rows.length === 0 || rows.length < input.chunk.length || invalidRowCount > 0;
-  return { patterns, needsRetry, repairCount, failureReasonBySpanId };
+  return { decisions, needsRetry, repairCount, failureReasonBySpanId };
 }
 
-function normalizeReturnedMaterialPatternRows(input: {
+function normalizeReturnedMaterializationReviewRows(input: {
   raw: unknown;
   expectedCount: number;
   chunkIndex: number;
@@ -1295,7 +1334,7 @@ function normalizeReturnedMaterialPatternRows(input: {
 }): unknown[] {
   const rowValue = resolveReturnedRows(input.raw);
   if (!Array.isArray(rowValue)) {
-    input.warnings.push(`materialPatterns chunk ${input.chunkIndex + 1}/${input.chunkTotal}: LM response is not a JSON array`);
+    input.warnings.push(`materialization review chunk ${input.chunkIndex + 1}/${input.chunkTotal}: LM response is not a JSON array`);
     return [];
   }
 
@@ -1303,10 +1342,10 @@ function normalizeReturnedMaterialPatternRows(input: {
     ? [rowValue]
     : rowValue;
   if (rows.length < input.expectedCount) {
-    input.warnings.push(`materialPatterns chunk ${input.chunkIndex + 1}/${input.chunkTotal}: LM returned ${rows.length}/${input.expectedCount} pattern rows`);
+    input.warnings.push(`materialization review chunk ${input.chunkIndex + 1}/${input.chunkTotal}: LM returned ${rows.length}/${input.expectedCount} rows`);
   }
   if (rows.length > input.expectedCount) {
-    input.warnings.push(`materialPatterns chunk ${input.chunkIndex + 1}/${input.chunkTotal}: ignored ${rows.length - input.expectedCount} extra pattern rows`);
+    input.warnings.push(`materialization review chunk ${input.chunkIndex + 1}/${input.chunkTotal}: ignored ${rows.length - input.expectedCount} extra rows`);
   }
   return rows.slice(0, input.expectedCount);
 }
@@ -1317,6 +1356,7 @@ function resolveReturnedRows(raw: unknown): unknown {
   if (Array.isArray(raw.items)) {
     return raw.items.map(item => {
       if (Array.isArray(item)) return item;
+      if (isRecord(item) && ('keepSegmentIndexes' in item || 'keepVisualOnly' in item)) return item;
       if (isRecord(item) && Array.isArray(item.materialPatterns)) return item.materialPatterns;
       if (isRecord(item) && Array.isArray(item.patterns)) return item.patterns;
       return item;
@@ -1332,20 +1372,20 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value != null && !Array.isArray(value);
 }
 
-function buildMaterialPatternPacket(input: {
+function buildMaterializationReviewPacket(input: {
   items: ISpanMaterialPatternItem[];
   chunkIndex: number;
   chunkTotal: number;
   attempt: number;
 }): IAgentPacket {
   return {
-    stage: 'media/span-material-patterns',
-    identity: 'span-material-patterns',
-    mission: '为每个素材 span 独立生成中文 materialPatterns，用作后续脚本和素材检索的短语索引。',
-    hardConstraints: buildSpanMaterialPatternHardConstraints(),
-    allowedInputs: ['type', 'semanticKind', 'transcript', 'visualObservation'],
+    stage: 'media/span-materialization-review',
+    identity: 'span-materialization-review',
+    mission: '审查每个候选 span 的可用口播，决定保留/转视觉/drop，并为最终 span 生成中文 materialPatterns。',
+    hardConstraints: buildSpanMaterializationReviewHardConstraints(),
+    allowedInputs: ['type', 'semanticKind', 'transcript', 'transcriptSegments', 'visualObservation'],
     inputArtifacts: [{
-      label: 'span-material-pattern-items',
+      label: 'span-materialization-review-items',
       content: {
         promptVersion: CMATERIAL_PATTERN_PROMPT_VERSION,
         chunkIndex: input.chunkIndex + 1,
@@ -1354,18 +1394,222 @@ function buildMaterialPatternPacket(input: {
         items: input.items,
       },
     }],
-    outputSchema: buildSpanMaterialPatternOutputSchema(),
-    reviewRubric: buildSpanMaterialPatternReviewRubric(),
+    outputSchema: buildSpanMaterializationReviewOutputSchema(),
+    reviewRubric: buildSpanMaterializationReviewHardConstraints(),
   };
 }
 
-function buildMaterialPatternItem(span: IKtepSlice): ISpanMaterialPatternItem {
+function buildMaterializationReviewItem(span: IKtepSlice): ISpanMaterialPatternItem {
   return stripUndefined({
     type: span.type,
     semanticKind: span.semanticKind,
     transcript: truncateTranscript(span.transcript),
+    transcriptSegments: buildMaterializationReviewTranscriptSegments(span),
     visualObservation: truncateText(normalizeText(span.visualObservation), CMATERIAL_PATTERN_TEXT_LIMIT),
   });
+}
+
+function buildMaterializationReviewTranscriptSegments(span: IKtepSlice): ISpanMaterializationReviewTranscriptSegment[] | undefined {
+  const segments = buildReviewSourceSegments(span)
+    .map(segment => ({
+      index: segment.index,
+      startMs: segment.startMs,
+      endMs: segment.endMs,
+      text: truncateText(segment.text, CMATERIAL_PATTERN_TRANSCRIPT_LIMIT) ?? segment.text,
+    }));
+  return segments.length > 0 ? segments : undefined;
+}
+
+function applyMaterializationReviewRow(
+  row: unknown,
+  span: IKtepSlice,
+): {
+  complete: true;
+  decision: ISpanMaterializationReviewDecision;
+  repaired: boolean;
+} | {
+  complete: false;
+  reason: string;
+  repaired: false;
+} {
+  if (!isRecord(row)) {
+    return { complete: false, reason: 'review-row-not-object', repaired: false };
+  }
+  const keepSegmentIndexes = normalizeKeepSegmentIndexes(row.keepSegmentIndexes);
+  if (!keepSegmentIndexes) {
+    return { complete: false, reason: 'invalid-keepSegmentIndexes', repaired: false };
+  }
+  const keepVisualOnly = row.keepVisualOnly === true;
+
+  if (keepSegmentIndexes.length === 0 && !keepVisualOnly) {
+    return {
+      complete: true,
+      decision: {
+        sourceSpanId: span.id,
+        dropped: true,
+        visualOnly: false,
+        trimmedSpeech: false,
+      },
+      repaired: false,
+    };
+  }
+
+  const finalSpan = keepSegmentIndexes.length > 0
+    ? buildSpeechReviewedSpan(span, keepSegmentIndexes)
+    : buildVisualOnlyReviewedSpan(span);
+
+  if (!finalSpan) {
+    if (keepVisualOnly && keepSegmentIndexes.length === 0) {
+      return {
+        complete: true,
+        decision: {
+          sourceSpanId: span.id,
+          dropped: true,
+          visualOnly: false,
+          trimmedSpeech: false,
+        },
+        repaired: false,
+      };
+    }
+    return { complete: false, reason: 'invalid-or-unsupported-review-decision', repaired: false };
+  }
+
+  const repaired = sanitizeReturnedMaterialPatterns(row.materialPatterns, finalSpan);
+  if (!repaired.complete || repaired.patterns.length === 0) {
+    return { complete: false, reason: 'missing-or-invalid-first-four/story', repaired: false };
+  }
+
+  return {
+    complete: true,
+    decision: {
+      sourceSpanId: span.id,
+      finalSpan: stripUndefined({
+        ...finalSpan,
+        materialPatterns: repaired.patterns,
+      }) as unknown as IKtepSlice,
+      dropped: false,
+      visualOnly: finalSpan.semanticKind === 'visual' && !spanHasSpeechTruth(finalSpan),
+      trimmedSpeech: hasSpeechRangeChanged(span, finalSpan),
+    },
+    repaired: repaired.repaired,
+  };
+}
+
+function normalizeKeepSegmentIndexes(value: unknown): number[] | null {
+  if (!Array.isArray(value)) return null;
+  const indexes: number[] = [];
+  const seen = new Set<number>();
+  for (const item of value) {
+    if (typeof item !== 'number' || !Number.isInteger(item) || item <= 0) {
+      return null;
+    }
+    if (!seen.has(item)) {
+      seen.add(item);
+      indexes.push(item);
+    }
+  }
+  return indexes.sort((left, right) => left - right);
+}
+
+interface IReviewSourceSegment extends ITranscriptSegment {
+  index: number;
+  synthetic: boolean;
+}
+
+function buildReviewSourceSegments(span: IKtepSlice): IReviewSourceSegment[] {
+  const sourceSegments = (span.transcriptSegments ?? [])
+    .filter(segment => segment.text.trim().length > 0 && segment.endMs > segment.startMs)
+    .map((segment, index) => ({
+      index: index + 1,
+      startMs: segment.startMs,
+      endMs: segment.endMs,
+      text: segment.text.trim(),
+      synthetic: false,
+    }));
+  if (sourceSegments.length > 0) return sourceSegments;
+
+  const transcript = normalizeText(span.transcript);
+  if (
+    transcript
+    && isFiniteNumber(span.sourceInMs)
+    && isFiniteNumber(span.sourceOutMs)
+    && (span.sourceOutMs as number) > (span.sourceInMs as number)
+  ) {
+    return [{
+      index: 1,
+      startMs: span.sourceInMs as number,
+      endMs: span.sourceOutMs as number,
+      text: transcript,
+      synthetic: true,
+    }];
+  }
+  return [];
+}
+
+function buildSpeechReviewedSpan(span: IKtepSlice, keepSegmentIndexes: number[]): IKtepSlice | null {
+  const sourceSegments = buildReviewSourceSegments(span);
+  const segmentByIndex = new Map(sourceSegments.map(segment => [segment.index, segment] as const));
+  const selected = keepSegmentIndexes.map(index => segmentByIndex.get(index));
+  if (selected.some(segment => segment == null)) return null;
+  const kept = selected.filter((segment): segment is IReviewSourceSegment => segment != null);
+  if (kept.length === 0) return null;
+
+  const sourceInMs = Math.min(...kept.map(segment => segment.startMs));
+  const sourceOutMs = Math.max(...kept.map(segment => segment.endMs));
+  if (!isFiniteNumber(sourceInMs) || !isFiniteNumber(sourceOutMs) || sourceOutMs <= sourceInMs) return null;
+
+  const actualSegments = kept.filter(segment => !segment.synthetic);
+  const transcriptSegments = actualSegments.map(segment => ({
+    startMs: segment.startMs,
+    endMs: segment.endMs,
+    text: segment.text,
+  }));
+  const transcript = kept.map(segment => segment.text).join(' ').trim();
+  const speechCoverage = transcriptSegments.length > 0
+    ? computeSpeechCoverage(sourceInMs, sourceOutMs, transcriptSegments)
+    : span.speechCoverage;
+
+  return stripUndefined({
+    ...span,
+    semanticKind: span.semanticKind === 'mixed' ? 'mixed' : 'speech',
+    sourceInMs,
+    sourceOutMs,
+    editSourceInMs: sourceInMs,
+    editSourceOutMs: sourceOutMs,
+    transcript: transcript || undefined,
+    transcriptSegments: transcriptSegments.length > 0 ? transcriptSegments : undefined,
+    speechCoverage,
+  }) as unknown as IKtepSlice;
+}
+
+function buildVisualOnlyReviewedSpan(span: IKtepSlice): IKtepSlice | null {
+  if (!hasIndependentVisualObservation(span.visualObservation)) return null;
+  const reviewed = {
+    ...span,
+    semanticKind: 'visual' as const,
+    transcript: undefined,
+    transcriptSegments: undefined,
+    speechCoverage: undefined,
+  };
+  return stripUndefined(reviewed) as unknown as IKtepSlice;
+}
+
+function hasIndependentVisualObservation(value: string | undefined): boolean {
+  const normalized = normalizeText(value);
+  if (!normalized) return false;
+  const withoutSpeechOnlyPhrases = normalized
+    .replace(/人物对镜头说话|有人说话|口播画面|口播镜头|说话画面|车内自拍口播|手持自拍口播|固定机位口播/giu, '')
+    .replace(/talking[-\s]?head|speaking to camera|person speaking|someone speaking/giu, '')
+    .trim();
+  return normalizeComparableText(withoutSpeechOnlyPhrases).length >= 4;
+}
+
+function hasSpeechRangeChanged(before: IKtepSlice, after: IKtepSlice): boolean {
+  if (!spanHasSpeechTruth(after)) return false;
+  return before.sourceInMs !== after.sourceInMs
+    || before.sourceOutMs !== after.sourceOutMs
+    || (before.transcriptSegments?.length ?? 0) !== (after.transcriptSegments?.length ?? 0)
+    || normalizeText(before.transcript) !== normalizeText(after.transcript);
 }
 
 function sanitizeReturnedMaterialPatterns(
@@ -1572,15 +1816,13 @@ function spanFactText(span: IKtepSlice): string {
   ].filter(Boolean).join(' ');
 }
 
-function mergePatternMaps(
-  first: Map<string, string[]>,
-  second: Map<string, string[]>,
-): Map<string, string[]> {
+function mergeDecisionMaps(
+  first: Map<string, ISpanMaterializationReviewDecision>,
+  second: Map<string, ISpanMaterializationReviewDecision>,
+): Map<string, ISpanMaterializationReviewDecision> {
   const merged = new Map(first);
-  for (const [id, patterns] of second) {
-    if (patterns.length > 0) {
-      merged.set(id, patterns);
-    }
+  for (const [id, decision] of second) {
+    merged.set(id, decision);
   }
   return merged;
 }
@@ -1610,7 +1852,7 @@ async function writeSpanRebuildPatternCheckpoint(input: {
   inputsHash: string;
   spanCount: number;
   spans: IKtepSlice[];
-  patternBySpanId: Map<string, string[]>;
+  decisionBySpanId: Map<string, ISpanMaterializationReviewDecision>;
   failedBySpanId: Map<string, ISpanRebuildFailedSpan>;
   baseWarnings: string[];
   warnings: string[];
@@ -1628,8 +1870,8 @@ async function writeSpanRebuildPatternCheckpoint(input: {
     inputsHash: input.inputsHash,
     spanCount: input.spanCount,
     chunkSize: CMATERIAL_PATTERN_SPAN_BATCH_SIZE,
-    completedCount: input.patternBySpanId.size,
-    spans: buildPartialSpans(input.spans, input.patternBySpanId),
+    completedCount: input.decisionBySpanId.size,
+    spans: buildPartialSpans(input.spans, input.decisionBySpanId),
     warnings: dedupeStrings([...input.baseWarnings, ...input.warnings]),
     activeSpanIds: input.activeSpanIds,
     failedSpans,
@@ -1642,13 +1884,18 @@ async function writeSpanRebuildPatternCheckpoint(input: {
   });
 }
 
-function buildPartialSpans(spans: IKtepSlice[], patternBySpanId: Map<string, string[]>): IKtepSlice[] {
+function buildPartialSpans(
+  spans: IKtepSlice[],
+  decisionBySpanId: Map<string, ISpanMaterializationReviewDecision>,
+): Array<IKtepSlice & { sourceSpanId?: string; dropped?: boolean }> {
   return spans
-    .filter(span => patternBySpanId.has(span.id))
-    .map(span => stripUndefined({
-      ...span,
-      materialPatterns: patternBySpanId.get(span.id),
-    }) as unknown as IKtepSlice);
+    .map(span => decisionBySpanId.get(span.id))
+    .filter((decision): decision is ISpanMaterializationReviewDecision => decision != null)
+    .map(decision => stripUndefined({
+      ...(decision.finalSpan ?? {}),
+      sourceSpanId: decision.sourceSpanId,
+      dropped: decision.dropped || undefined,
+    }) as IKtepSlice & { sourceSpanId?: string; dropped?: boolean });
 }
 
 async function loadReusableSpanRebuildPartial(input: {
@@ -1656,7 +1903,7 @@ async function loadReusableSpanRebuildPartial(input: {
   spans: IKtepSlice[];
   inputsHash: string;
 }): Promise<{
-  patterns: Map<string, string[]>;
+  decisions: Map<string, ISpanMaterializationReviewDecision>;
   failedSpans: ISpanRebuildFailedSpan[];
   warnings: string[];
   retryCount: number;
@@ -1673,29 +1920,64 @@ async function loadReusableSpanRebuildPartial(input: {
   }
   if (!isRecord(raw)) return null;
   if (raw.inputsHash !== input.inputsHash) return null;
+  if (raw.promptVersion !== CMATERIAL_PATTERN_PROMPT_VERSION) return null;
   if (typeof raw.spanCount === 'number' && raw.spanCount !== input.spans.length) return null;
 
   const spanById = new Map(input.spans.map(span => [span.id, span] as const));
-  const patterns = new Map<string, string[]>();
+  const decisions = new Map<string, ISpanMaterializationReviewDecision>();
   const checkpointSpans = Array.isArray(raw.spans) ? raw.spans : [];
   for (const item of checkpointSpans) {
-    if (!isRecord(item) || typeof item.id !== 'string') continue;
-    const span = spanById.get(item.id);
-    if (!span) continue;
-    const repaired = sanitizeReturnedMaterialPatterns(item.materialPatterns, span);
+    if (!isRecord(item)) continue;
+    const sourceSpanId = typeof item.sourceSpanId === 'string'
+      ? item.sourceSpanId
+      : typeof item.id === 'string'
+        ? item.id
+        : undefined;
+    if (!sourceSpanId || !spanById.has(sourceSpanId)) continue;
+    if (item.dropped === true) {
+      decisions.set(sourceSpanId, {
+        sourceSpanId,
+        dropped: true,
+        visualOnly: false,
+        trimmedSpeech: false,
+      });
+      continue;
+    }
+    if (typeof item.id !== 'string') continue;
+    const candidateSpan = { ...item };
+    delete candidateSpan.sourceSpanId;
+    delete candidateSpan.dropped;
+    const parsed = IKtepSliceSchema.safeParse(candidateSpan);
+    if (!parsed.success) continue;
+    const checkpointSpan = stripUndefined({
+      ...parsed.data,
+      grounding: undefined,
+      pharosRefs: undefined,
+      speedCandidate: undefined,
+    }) as unknown as IKtepSlice;
+    const repaired = sanitizeReturnedMaterialPatterns(checkpointSpan.materialPatterns, checkpointSpan);
     if (repaired.complete && repaired.patterns.length > 0) {
-      patterns.set(item.id, repaired.patterns);
+      decisions.set(sourceSpanId, {
+        sourceSpanId,
+        finalSpan: stripUndefined({
+          ...checkpointSpan,
+          materialPatterns: repaired.patterns,
+        }) as unknown as IKtepSlice,
+        dropped: false,
+        visualOnly: checkpointSpan.semanticKind === 'visual' && !spanHasSpeechTruth(checkpointSpan),
+        trimmedSpeech: hasSpeechRangeChanged(spanById.get(sourceSpanId)!, checkpointSpan),
+      });
     }
   }
 
   const failedSpans = (Array.isArray(raw.failedSpans) ? raw.failedSpans : [])
-    .map(item => normalizeCheckpointFailedSpan(item, patterns))
+    .map(item => normalizeCheckpointFailedSpan(item, decisions))
     .filter((item): item is ISpanRebuildFailedSpan => item != null && spanById.has(item.spanId));
   const warnings = (Array.isArray(raw.warnings) ? raw.warnings : [])
     .filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
 
   return {
-    patterns,
+    decisions,
     failedSpans,
     warnings,
     retryCount: getNonNegativeInteger(raw.retryCount),
@@ -1707,10 +1989,10 @@ async function loadReusableSpanRebuildPartial(input: {
 
 function normalizeCheckpointFailedSpan(
   value: unknown,
-  patterns: Map<string, string[]>,
+  decisions: Map<string, ISpanMaterializationReviewDecision>,
 ): ISpanRebuildFailedSpan | null {
   if (!isRecord(value) || typeof value.spanId !== 'string') return null;
-  const recovered = value.recovered === true && patterns.has(value.spanId);
+  const recovered = value.recovered === true && decisions.has(value.spanId);
   return stripUndefined({
     spanId: value.spanId,
     assetId: typeof value.assetId === 'string' ? value.assetId : undefined,
@@ -1795,7 +2077,7 @@ async function writeSpanRebuildProgress(
     phaseLabel: '生成素材片段与模式',
     stepDefinitions: [
       { key: 'slice', label: '生成素材片段' },
-      { key: 'patterns', label: '生成素材模式' },
+      { key: 'patterns', label: '审查口播并生成素材模式' },
       { key: 'pattern-failures', label: '补处理失败列表' },
       { key: 'write', label: '写入结果' },
     ],

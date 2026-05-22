@@ -7,7 +7,7 @@ import {
   type IJsonPacketAgentInvocation,
   type IJsonPacketAgentRunner,
 } from '../../src/modules/agents/runtime.js';
-import { CSPAN_MATERIAL_PATTERN_MAX_TOKENS } from '../../src/modules/agents/span-material-pattern-spec.js';
+import { CSPAN_MATERIALIZATION_REVIEW_MAX_TOKENS } from '../../src/modules/agents/span-materialization-review-spec.js';
 import {
   buildMaterialSpansFromReports,
   CMATERIAL_PATTERN_PROMPT_VERSION,
@@ -47,6 +47,25 @@ class FakePacketRunner implements IJsonPacketAgentRunner {
     if (response instanceof Error) throw response;
     return response as T;
   }
+}
+
+function reviewRow(
+  materialPatterns: string[],
+  options: { keepSegmentIndexes?: number[]; keepVisualOnly?: boolean } = {},
+): { keepSegmentIndexes: number[]; keepVisualOnly: boolean; materialPatterns: string[] } {
+  return {
+    keepSegmentIndexes: options.keepSegmentIndexes ?? [],
+    keepVisualOnly: options.keepVisualOnly ?? false,
+    materialPatterns,
+  };
+}
+
+function visualReviewRow(materialPatterns: string[]): ReturnType<typeof reviewRow> {
+  return reviewRow(materialPatterns, { keepVisualOnly: true });
+}
+
+function speechReviewRow(materialPatterns: string[], keepSegmentIndexes = [1]): ReturnType<typeof reviewRow> {
+  return reviewRow(materialPatterns, { keepSegmentIndexes });
 }
 
 describe('buildMaterialSpansFromReports', () => {
@@ -582,7 +601,7 @@ describe('rebuildProjectSpans', () => {
     });
 
     const runner = new FakePacketRunner([
-      [['固定机位观察', '环境不明', '天气光线不明', '无口播语音', '情景不明', '补充视觉素材', '整段氛围素材']],
+      [visualReviewRow(['固定机位观察', '环境不明', '天气光线不明', '无口播语音', '情景不明', '补充视觉素材', '整段氛围素材'])],
     ]);
     const result = await rebuildProjectSpans({
       workspaceRoot,
@@ -597,17 +616,17 @@ describe('rebuildProjectSpans', () => {
 
     expect(result.spanCount).toBe(1);
     expect(runner.calls).toHaveLength(1);
-    expect(runner.calls[0]!.llm).toMatchObject({ maxTokens: CSPAN_MATERIAL_PATTERN_MAX_TOKENS });
+    expect(runner.calls[0]!.llm).toMatchObject({ maxTokens: CSPAN_MATERIALIZATION_REVIEW_MAX_TOKENS });
     const item = ((runner.calls[0]!.packet.inputArtifacts[0]!.content as { items: Array<Record<string, unknown>> }).items[0]);
     expect(Object.keys(item).sort()).toEqual(['type', 'visualObservation']);
     expect(item).toMatchObject({
       type: 'broll',
       visualObservation: '整段素材。',
     });
-    expect(JSON.stringify(runner.calls[0])).not.toContain('labels');
-    expect(JSON.stringify(runner.calls[0])).not.toContain('assetId');
+    expect(JSON.stringify(item)).not.toContain('labels');
+    expect(JSON.stringify(item)).not.toContain('assetId');
     expect(rawSpans).toEqual([expect.objectContaining({
-      id: 'asset-1_broll_s0-5',
+      id: 'asset-1_broll_visual_s0-5',
       assetId: 'asset-1',
       materialPatterns: ['固定机位观察', '环境不明', '天气光线不明', '无口播语音', '情景不明', '补充视觉素材', '整段氛围素材'],
     })]);
@@ -654,7 +673,7 @@ describe('rebuildProjectSpans', () => {
       }],
     }));
     const runner = new FakePacketRunner([
-      [['车内自拍口播', '车内', '天气光线不明', '有口播语音', '车内到达说明', '到达说明', '口播说明']],
+      [speechReviewRow(['车内自拍口播', '车内', '天气光线不明', '有口播语音', '车内到达说明', '到达说明', '口播说明'])],
     ]);
 
     await rebuildProjectSpans({ workspaceRoot, projectId, agentRunner: runner });
@@ -669,6 +688,7 @@ describe('rebuildProjectSpans', () => {
       type: 'talking-head',
       semanticKind: 'mixed',
       transcript: '我们到了。',
+      transcriptSegments: [{ index: 1, startMs: 0, endMs: 1000, text: '我们到了。' }],
       visualObservation: '车内自拍口播',
     }]);
     expect(serializedInputContent).not.toContain('packet-window');
@@ -679,12 +699,124 @@ describe('rebuildProjectSpans', () => {
     expect(serializedInputContent).not.toContain('asset-packet');
   });
 
-  it('requests materialPatterns in chunks of ten and writes a partial checkpoint', async () => {
+  it('applies speech usable-text review by trimming, visualizing, or dropping candidate spans', async () => {
+    const workspaceRoot = await mkdtemp(join(tmpdir(), 'kairos-span-speech-review-'));
+    workspaces.push(workspaceRoot);
+    const projectId = 'project-span-speech-review';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Span Speech Review');
+    await writeJson(getAssetsPath(projectRoot), [
+      createVideoAsset({ id: 'asset-speech', durationMs: 60_000, capturedAt: '2026-04-12T01:00:00.000Z' }),
+      createVideoAsset({ id: 'asset-visual', durationMs: 5_000, capturedAt: '2026-04-12T02:00:00.000Z' }),
+      createVideoAsset({ id: 'asset-drop', durationMs: 5_000, capturedAt: '2026-04-12T03:00:00.000Z' }),
+    ]);
+    await writeJson(getAssetReportPath(projectRoot, 'asset-speech'), report({
+      assetId: 'asset-speech',
+      clipTypeGuess: 'drive',
+      materializationPath: 'fine-scan',
+      transcriptSegments: [
+        { startMs: 0, endMs: 6_000, text: '直律直行中大家好我是顺光现在开始启动五一的十二天' },
+        { startMs: 6_200, endMs: 6_800, text: '我操' },
+        { startMs: 7_000, endMs: 7_600, text: '等会儿吧' },
+        { startMs: 7_800, endMs: 8_400, text: '直行中' },
+        { startMs: 9_000, endMs: 16_500, text: '大家好我是顺光现在是在深圳然后开始启动维系十二天的秉' },
+        { startMs: 16_500, endMs: 24_000, text: '叉叉格涅贡卡穿越之旅从2 19走到3 18' },
+        { startMs: 24_500, endMs: 31_000, text: '这个一出门就是大暴雨' },
+        { startMs: 31_500, endMs: 39_000, text: '行程开始不是特别的激励希望后面的天气会变好不错' },
+        { startMs: 41_000, endMs: 43_000, text: '录制开始' },
+        { startMs: 44_000, endMs: 46_000, text: '快门' },
+        { startMs: 47_000, endMs: 49_000, text: '拍照' },
+        { startMs: 50_000, endMs: 54_000, text: '停止录制' },
+      ],
+      fineScanWindows: [{
+        windowId: 'speech-window',
+        sourceInMs: 0,
+        sourceOutMs: 54_000,
+        semanticKind: 'speech',
+        visualObservation: '车内/车窗行车视角，暴雨中从深圳出发的自驾开场。',
+        status: 'recognized',
+        frameTimestampsMs: [],
+        framePaths: [],
+      }],
+    }));
+    await writeJson(getAssetReportPath(projectRoot, 'asset-visual'), report({
+      assetId: 'asset-visual',
+      clipTypeGuess: 'broll',
+      materializationPath: 'fine-scan',
+      transcriptSegments: [
+        { startMs: 0, endMs: 1_000, text: '录制开始' },
+        { startMs: 1_200, endMs: 2_000, text: '拍照' },
+      ],
+      fineScanWindows: [{
+        windowId: 'visual-window',
+        sourceInMs: 0,
+        sourceOutMs: 3_000,
+        semanticKind: 'speech',
+        visualObservation: '路边停车等待，远处山谷和云雾可见。',
+        status: 'recognized',
+        frameTimestampsMs: [],
+        framePaths: [],
+      }],
+    }));
+    await writeJson(getAssetReportPath(projectRoot, 'asset-drop'), report({
+      assetId: 'asset-drop',
+      clipTypeGuess: 'talking-head',
+      materializationPath: 'fine-scan',
+      transcriptSegments: [
+        { startMs: 0, endMs: 1_000, text: '录制开始' },
+        { startMs: 1_200, endMs: 2_200, text: '停止录制' },
+      ],
+      fineScanWindows: [{
+        windowId: 'drop-window',
+        sourceInMs: 0,
+        sourceOutMs: 3_000,
+        semanticKind: 'speech',
+        visualObservation: '人物对镜头说话，口播画面。',
+        status: 'recognized',
+        frameTimestampsMs: [],
+        framePaths: [],
+      }],
+    }));
+    const runner = new FakePacketRunner([[
+      speechReviewRow(
+        ['第一人称行车', '车内', '暴雨', '有口播语音', '五一自驾出发开场', '深圳出发', '暴雨出发'],
+        [5, 6, 7, 8],
+      ),
+      visualReviewRow(['环境远景', '路边停车', '雾天', '无口播语音', '路边停车观察山谷', '山谷云雾', '停车等待']),
+      reviewRow(['视角不明', '环境不明', '天气光线不明', '无口播语音', '情景不明', '不应写入', '丢弃标签']),
+    ]]);
+
+    await rebuildProjectSpans({ workspaceRoot, projectId, agentRunner: runner });
+    const rawSpans = JSON.parse(await readFile(getSpansPath(projectRoot), 'utf-8')) as Array<Record<string, unknown>>;
+
+    expect(rawSpans.map(span => span.id)).toEqual([
+      'asset-speech_drive_speech_s9-39',
+      'asset-visual_broll_visual_s0-3',
+    ]);
+    expect(rawSpans[0]).toMatchObject({
+      sourceInMs: 9_000,
+      sourceOutMs: 39_000,
+      transcript: '大家好我是顺光现在是在深圳然后开始启动维系十二天的秉 叉叉格涅贡卡穿越之旅从2 19走到3 18 这个一出门就是大暴雨 行程开始不是特别的激励希望后面的天气会变好不错',
+      materialPatterns: ['第一人称行车', '车内', '暴雨', '有口播语音', '五一自驾出发开场', '深圳出发', '暴雨出发'],
+    });
+    expect((rawSpans[0]!.transcriptSegments as Array<{ text: string }>).map(segment => segment.text)).toEqual([
+      '大家好我是顺光现在是在深圳然后开始启动维系十二天的秉',
+      '叉叉格涅贡卡穿越之旅从2 19走到3 18',
+      '这个一出门就是大暴雨',
+      '行程开始不是特别的激励希望后面的天气会变好不错',
+    ]);
+    expect(rawSpans[1]).toMatchObject({
+      semanticKind: 'visual',
+      materialPatterns: ['环境远景', '路边停车', '雾天', '无口播语音', '路边停车观察山谷', '山谷云雾', '停车等待'],
+    });
+    expect(rawSpans[1]).not.toHaveProperty('transcript');
+  });
+
+  it('requests materialization review in chunks of eight and writes a partial checkpoint', async () => {
     const workspaceRoot = await mkdtemp(join(tmpdir(), 'kairos-span-chunk-'));
     workspaces.push(workspaceRoot);
     const projectId = 'project-span-chunk';
     const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Span Chunk');
-    const assets = Array.from({ length: 20 }, (_, index) => createVideoAsset({
+    const assets = Array.from({ length: 16 }, (_, index) => createVideoAsset({
       id: `asset-${index + 1}`,
       durationMs: 5_000,
     }));
@@ -697,25 +829,25 @@ describe('rebuildProjectSpans', () => {
       }));
     }
     const runner = new FakePacketRunner([
-      Array.from({ length: 10 }, (_, index) => ['固定机位观察', '环境不明', '天气光线不明', '无口播语音', `素材${index + 1}整体观察`, `素材${index + 1}`, '画面记录']),
-      Array.from({ length: 10 }, (_, index) => ['固定机位观察', '环境不明', '天气光线不明', '无口播语音', `素材${index + 11}整体观察`, `素材${index + 11}`, '画面记录']),
+      Array.from({ length: 8 }, (_, index) => visualReviewRow(['固定机位观察', '环境不明', '天气光线不明', '无口播语音', `素材${index + 1}整体观察`, `素材${index + 1}`, '画面记录'])),
+      Array.from({ length: 8 }, (_, index) => visualReviewRow(['固定机位观察', '环境不明', '天气光线不明', '无口播语音', `素材${index + 9}整体观察`, `素材${index + 9}`, '画面记录'])),
     ]);
 
     await rebuildProjectSpans({ workspaceRoot, projectId, agentRunner: runner });
 
     expect(runner.calls).toHaveLength(2);
-    expect((runner.calls[0]!.packet.inputArtifacts[0]!.content as { items: unknown[] }).items).toHaveLength(10);
-    expect((runner.calls[1]!.packet.inputArtifacts[0]!.content as { items: unknown[] }).items).toHaveLength(10);
+    expect((runner.calls[0]!.packet.inputArtifacts[0]!.content as { items: unknown[] }).items).toHaveLength(8);
+    expect((runner.calls[1]!.packet.inputArtifacts[0]!.content as { items: unknown[] }).items).toHaveLength(8);
     const partial = JSON.parse(await readFile(
       join(projectRoot, '.tmp', 'chronology', 'span-rebuild.partial.json'),
       'utf-8',
     )) as { status: string; completedCount: number; chunkSize: number; spans: unknown[] };
     expect(partial).toMatchObject({
       status: 'succeeded',
-      completedCount: 20,
-      chunkSize: 10,
+      completedCount: 16,
+      chunkSize: 8,
     });
-    expect(partial.spans).toHaveLength(20);
+    expect(partial.spans).toHaveLength(16);
   });
 
   it('blocks without rewriting spans when no local text LM runner is available', async () => {
@@ -745,7 +877,7 @@ describe('rebuildProjectSpans', () => {
     })]);
   });
 
-  it('blocks spans with missing visualObservation before calling the materialPatterns LM', async () => {
+  it('blocks spans with missing visualObservation before calling the materialization review LM', async () => {
     const workspaceRoot = await mkdtemp(join(tmpdir(), 'kairos-span-no-visual-'));
     workspaces.push(workspaceRoot);
     const projectId = 'project-span-no-visual';
@@ -763,7 +895,7 @@ describe('rebuildProjectSpans', () => {
       materialPatterns: ['旧索引'],
     }]);
     const runner = new FakePacketRunner([
-      [['固定机位观察', '环境不明', '天气光线不明', '无口播语音', '情景不明', '兜底', '兜底']],
+      [visualReviewRow(['固定机位观察', '环境不明', '天气光线不明', '无口播语音', '情景不明', '兜底', '兜底'])],
     ]);
 
     await expect(rebuildProjectSpans({ workspaceRoot, projectId, agentRunner: runner }))
@@ -777,7 +909,7 @@ describe('rebuildProjectSpans', () => {
     })]);
   });
 
-  it('orders materialPatterns packets by material capture time instead of report filename order', async () => {
+  it('orders materialization review packets by material capture time instead of report filename order', async () => {
     const workspaceRoot = await mkdtemp(join(tmpdir(), 'kairos-span-time-order-'));
     workspaces.push(workspaceRoot);
     const projectId = 'project-span-time-order';
@@ -796,9 +928,9 @@ describe('rebuildProjectSpans', () => {
       }));
     }
     const runner = new FakePacketRunner([[
-      ['固定机位观察', '环境不明', '天气光线不明', '无口播语音', '早素材观察', '早素材', '画面记录'],
-      ['固定机位观察', '环境不明', '天气光线不明', '无口播语音', '中素材观察', '中素材', '画面记录'],
-      ['固定机位观察', '环境不明', '天气光线不明', '无口播语音', '晚素材观察', '晚素材', '画面记录'],
+      visualReviewRow(['固定机位观察', '环境不明', '天气光线不明', '无口播语音', '早素材观察', '早素材', '画面记录']),
+      visualReviewRow(['固定机位观察', '环境不明', '天气光线不明', '无口播语音', '中素材观察', '中素材', '画面记录']),
+      visualReviewRow(['固定机位观察', '环境不明', '天气光线不明', '无口播语音', '晚素材观察', '晚素材', '画面记录']),
     ]]);
 
     await rebuildProjectSpans({ workspaceRoot, projectId, agentRunner: runner });
@@ -813,9 +945,9 @@ describe('rebuildProjectSpans', () => {
       'z-late visualObservation',
     ]);
     expect(rawSpans.map(span => span.id)).toEqual([
-      'a-early_broll_s0-5',
-      'm-middle_broll_s0-5',
-      'z-late_broll_s0-5',
+      'a-early_broll_visual_s0-5',
+      'm-middle_broll_visual_s0-5',
+      'z-late_broll_visual_s0-5',
     ]);
   });
 
@@ -832,13 +964,13 @@ describe('rebuildProjectSpans', () => {
       interestingWindows: [],
     }));
     const runner = new FakePacketRunner([
-      [['第一人称行车', '车旁', '晴天', '无口播语音', '蝴蝶停驻特写', '蝴蝶', '车身表面']],
-      [['第一人称行车', '车旁', '晴天', '无口播语音', '蝴蝶停驻特写', '蝴蝶', '车身表面']],
-      [['第一人称行车', '车旁', '晴天', '无口播语音', '蝴蝶停驻特写', '蝴蝶', '车身表面']],
+      [visualReviewRow(['第一人称行车', '车旁', '晴天', '无口播语音', '蝴蝶停驻特写', '蝴蝶', '车身表面'])],
+      [visualReviewRow(['第一人称行车', '车旁', '晴天', '无口播语音', '蝴蝶停驻特写', '蝴蝶', '车身表面'])],
+      [visualReviewRow(['第一人称行车', '车旁', '晴天', '无口播语音', '蝴蝶停驻特写', '蝴蝶', '车身表面'])],
     ]);
 
     await expect(rebuildProjectSpans({ workspaceRoot, projectId, agentRunner: runner }))
-      .rejects.toThrow(/could not generate valid materialPatterns/);
+      .rejects.toThrow(/could not generate valid materialization review/);
     expect(runner.calls).toHaveLength(3);
   });
 
@@ -862,12 +994,12 @@ describe('rebuildProjectSpans', () => {
     }]);
     const runner = new FakePacketRunner([
       [],
-      [['湿滑山路行车', '山路行车', '高反差', '语音口播素材', '连续弯道', '手动跟车', '多余标签']],
-      [['湿滑山路行车', '山路行车', '高反差', '语音口播素材', '连续弯道', '手动跟车', '多余标签']],
+      [visualReviewRow(['湿滑山路行车', '山路行车', '高反差', '语音口播素材', '连续弯道', '手动跟车', '多余标签'])],
+      [visualReviewRow(['湿滑山路行车', '山路行车', '高反差', '语音口播素材', '连续弯道', '手动跟车', '多余标签'])],
     ]);
 
     await expect(rebuildProjectSpans({ workspaceRoot, projectId, agentRunner: runner }))
-      .rejects.toThrow(/could not generate valid materialPatterns/);
+      .rejects.toThrow(/could not generate valid materialization review/);
     expect(runner.calls).toHaveLength(3);
   });
 
@@ -884,7 +1016,7 @@ describe('rebuildProjectSpans', () => {
       interestingWindows: [],
     }));
     const runner = new FakePacketRunner([
-      [['航拍运动', '山地环境', '阴天', '无口播语音', '空中展示山地']],
+      [visualReviewRow(['航拍运动', '山地环境', '阴天', '无口播语音', '空中展示山地'])],
     ]);
 
     await rebuildProjectSpans({ workspaceRoot, projectId, agentRunner: runner });
@@ -892,7 +1024,7 @@ describe('rebuildProjectSpans', () => {
 
     expect(runner.calls).toHaveLength(1);
     expect(rawSpans).toEqual([expect.objectContaining({
-      id: 'asset-drone_aerial_s0-5',
+      id: 'asset-drone_aerial_visual_s0-5',
       materialPatterns: ['航拍运动', '山地环境', '阴天', '无口播语音', '空中展示山地'],
     })]);
   });
@@ -911,8 +1043,8 @@ describe('rebuildProjectSpans', () => {
       interestingWindows: [],
     }));
     const runner = new FakePacketRunner([
-      [['第一人称行车', '山路', '雾天', '无口播语音']],
-      [['第一人称行车', '山路', '雾天', '无口播语音', '牦牛过路临时等待', '牦牛群', '临时等待']],
+      [visualReviewRow(['第一人称行车', '山路', '雾天', '无口播语音'])],
+      [visualReviewRow(['第一人称行车', '山路', '雾天', '无口播语音', '牦牛过路临时等待', '牦牛群', '临时等待'])],
     ]);
 
     await rebuildProjectSpans({ workspaceRoot, projectId, agentRunner: runner });
@@ -920,7 +1052,7 @@ describe('rebuildProjectSpans', () => {
 
     expect(runner.calls).toHaveLength(2);
     expect(rawSpans).toEqual([expect.objectContaining({
-      id: 'asset-yak_drive_s0-5',
+      id: 'asset-yak_drive_visual_s0-5',
       materialPatterns: ['第一人称行车', '山路', '雾天', '无口播语音', '牦牛过路临时等待', '牦牛群', '临时等待'],
     })]);
   });
@@ -944,13 +1076,13 @@ describe('rebuildProjectSpans', () => {
       materialPatterns: ['旧索引'],
     }]);
     const runner = new FakePacketRunner([
-      [['第一人称行车', '山路', '阴天', '无口播语音']],
-      [['第一人称行车', '山路', '阴天', '无口播语音']],
-      [['第一人称行车', '山路', '阴天', '无口播语音']],
+      [visualReviewRow(['第一人称行车', '山路', '阴天', '无口播语音'])],
+      [visualReviewRow(['第一人称行车', '山路', '阴天', '无口播语音'])],
+      [visualReviewRow(['第一人称行车', '山路', '阴天', '无口播语音'])],
     ]);
 
     await expect(rebuildProjectSpans({ workspaceRoot, projectId, agentRunner: runner }))
-      .rejects.toThrow(/could not generate valid materialPatterns/);
+      .rejects.toThrow(/could not generate valid materialization review/);
     const partial = JSON.parse(await readFile(
       join(projectRoot, '.tmp', 'chronology', 'span-rebuild.partial.json'),
       'utf-8',
@@ -987,14 +1119,14 @@ describe('rebuildProjectSpans', () => {
     }));
     const runner = new FakePacketRunner([
       [
-        ['固定机位观察', '服务区停车场', '晴天', '无口播语音', '服务区停车观察', '停车场', '车辆停放'],
-        ['第一人称行车', '山路', '阴天', '无口播语音'],
+        visualReviewRow(['固定机位观察', '服务区停车场', '晴天', '无口播语音', '服务区停车观察', '停车场', '车辆停放']),
+        visualReviewRow(['第一人称行车', '山路', '阴天', '无口播语音']),
       ],
       [
-        ['固定机位观察', '服务区停车场', '晴天', '无口播语音', '服务区停车观察', '停车场', '车辆停放'],
-        ['第一人称行车', '山路', '阴天', '无口播语音'],
+        visualReviewRow(['固定机位观察', '服务区停车场', '晴天', '无口播语音', '服务区停车观察', '停车场', '车辆停放']),
+        visualReviewRow(['第一人称行车', '山路', '阴天', '无口播语音']),
       ],
-      [['第一人称行车', '山路', '阴天', '无口播语音', '山路行车观察', '连续弯道', '车窗视角']],
+      [visualReviewRow(['第一人称行车', '山路', '阴天', '无口播语音', '山路行车观察', '连续弯道', '车窗视角'])],
     ]);
 
     await rebuildProjectSpans({ workspaceRoot, projectId, agentRunner: runner });
@@ -1007,11 +1139,11 @@ describe('rebuildProjectSpans', () => {
     expect(runner.calls).toHaveLength(3);
     expect(rawSpans).toEqual([
       expect.objectContaining({
-        id: 'asset-ok_broll_s0-5',
+        id: 'asset-ok_broll_visual_s0-5',
         materialPatterns: ['固定机位观察', '服务区停车场', '晴天', '无口播语音', '服务区停车观察', '停车场', '车辆停放'],
       }),
       expect.objectContaining({
-        id: 'asset-retry_drive_s0-5',
+        id: 'asset-retry_drive_visual_s0-5',
         materialPatterns: ['第一人称行车', '山路', '阴天', '无口播语音', '山路行车观察', '连续弯道', '车窗视角'],
       }),
     ]);
@@ -1044,12 +1176,16 @@ describe('rebuildProjectSpans', () => {
     await writeJson(join(projectRoot, '.tmp', 'chronology', 'span-rebuild.partial.json'), {
       schemaVersion: '1.0',
       status: 'running',
+      promptVersion: CMATERIAL_PATTERN_PROMPT_VERSION,
       inputsHash: generated.inputsHash,
       spanCount: generated.spans.length,
-      chunkSize: 10,
+      chunkSize: 8,
       completedCount: 1,
       spans: [{
         ...generated.spans[0],
+        sourceSpanId: generated.spans[0]!.id,
+        semanticKind: 'visual',
+        id: 'asset-done_broll_visual_s0-5',
         materialPatterns: ['固定机位观察', '室内餐厅', '室内灯光', '无口播语音', '餐厅环境观察'],
       }],
       warnings: [],
@@ -1057,7 +1193,7 @@ describe('rebuildProjectSpans', () => {
       updatedAt: '2026-04-12T00:00:00.000Z',
     });
     const runner = new FakePacketRunner([
-      [['航拍俯瞰', '山地环境', '晴天', '无口播语音', '空中展示雪山', '雪山航拍', '远景建立']],
+      [visualReviewRow(['航拍俯瞰', '山地环境', '晴天', '无口播语音', '空中展示雪山', '雪山航拍', '远景建立'])],
     ]);
 
     await rebuildProjectSpans({ workspaceRoot, projectId, agentRunner: runner });
@@ -1068,11 +1204,11 @@ describe('rebuildProjectSpans', () => {
     expect(packetContent.items).toHaveLength(1);
     expect(rawSpans).toEqual([
       expect.objectContaining({
-        id: 'asset-done_broll_s0-5',
+        id: 'asset-done_broll_visual_s0-5',
         materialPatterns: ['固定机位观察', '室内餐厅', '室内灯光', '无口播语音', '餐厅环境观察'],
       }),
       expect.objectContaining({
-        id: 'asset-pending_aerial_s0-5',
+        id: 'asset-pending_aerial_visual_s0-5',
         materialPatterns: ['航拍俯瞰', '山地环境', '晴天', '无口播语音', '空中展示雪山', '雪山航拍', '远景建立'],
       }),
     ]);
@@ -1102,22 +1238,25 @@ describe('rebuildProjectSpans', () => {
     await writeJson(join(projectRoot, '.tmp', 'chronology', 'span-rebuild.partial.json'), {
       schemaVersion: '1.0',
       status: 'running',
+      promptVersion: CMATERIAL_PATTERN_PROMPT_VERSION,
       inputsHash: 'stale-input-hash',
       spanCount: 2,
-      chunkSize: 10,
+      chunkSize: 8,
       completedCount: 1,
       spans: [{
-        id: 'asset-one_broll_s0-5',
+        id: 'asset-one_broll_visual_s0-5',
         assetId: 'asset-one',
         type: 'broll',
+        semanticKind: 'visual',
+        sourceSpanId: 'asset-one_broll_s0-5',
         materialPatterns: ['固定机位观察', '旧环境', '晴天', '无口播语音', '旧情景'],
       }],
       warnings: [],
       updatedAt: '2026-04-12T00:00:00.000Z',
     });
     const runner = new FakePacketRunner([[
-      ['固定机位观察', '城市街道', '晴天', '无口播语音', '街道环境观察', '城市道路', '路边观察'],
-      ['固定机位观察', '室内餐厅', '室内灯光', '无口播语音', '餐厅环境观察', '餐桌区域', '室内空间'],
+      visualReviewRow(['固定机位观察', '城市街道', '晴天', '无口播语音', '街道环境观察', '城市道路', '路边观察']),
+      visualReviewRow(['固定机位观察', '室内餐厅', '室内灯光', '无口播语音', '餐厅环境观察', '餐桌区域', '室内空间']),
     ]]);
 
     await rebuildProjectSpans({ workspaceRoot, projectId, agentRunner: runner });
@@ -1127,7 +1266,7 @@ describe('rebuildProjectSpans', () => {
     expect(runner.calls).toHaveLength(1);
     expect(packetContent.items).toHaveLength(2);
     expect(rawSpans[0]).toEqual(expect.objectContaining({
-      id: 'asset-one_broll_s0-5',
+      id: 'asset-one_broll_visual_s0-5',
       materialPatterns: ['固定机位观察', '城市街道', '晴天', '无口播语音', '街道环境观察', '城市道路', '路边观察'],
     }));
   });
@@ -1158,6 +1297,8 @@ describe('rebuildProjectSpans', () => {
     const runner = new FakePacketRunner([{
       items: [{
         id: 'ignored-by-order',
+        keepSegmentIndexes: [1],
+        keepVisualOnly: false,
         materialPatterns: ['车内自拍口播', '车内', '室内灯光', '有口播语音', '车内抵达服务区', '到达说明', '安全提醒'],
       }],
     }]);
@@ -1166,7 +1307,7 @@ describe('rebuildProjectSpans', () => {
     const rawSpans = JSON.parse(await readFile(getSpansPath(projectRoot), 'utf-8')) as Array<Record<string, unknown>>;
 
     expect(rawSpans).toEqual([expect.objectContaining({
-      id: 'asset-talk_talking-head_mixed_s0-2',
+      id: 'asset-talk_talking-head_mixed_s0-1',
       materialPatterns: ['车内自拍口播', '车内', '室内灯光', '有口播语音', '车内抵达服务区', '到达说明', '安全提醒'],
     })]);
   });

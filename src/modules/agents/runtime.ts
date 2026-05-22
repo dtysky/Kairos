@@ -6,6 +6,10 @@ import {
   buildSpanMaterialPatternsMlPrompt,
   CSPAN_MATERIAL_PATTERN_MAX_TOKENS,
 } from './span-material-pattern-spec.js';
+import {
+  buildSpanMaterializationReviewMlPrompt,
+  CSPAN_MATERIALIZATION_REVIEW_MAX_TOKENS,
+} from './span-materialization-review-spec.js';
 
 export interface IAgentModelOptions {
   jsonMode?: boolean;
@@ -40,6 +44,8 @@ export class MlJsonPacketAgentRunner implements IJsonPacketAgentRunner {
       maxTokens: input.llm?.maxTokens ?? (
         input.promptId === 'media/span-material-patterns'
           ? CSPAN_MATERIAL_PATTERN_MAX_TOKENS
+          : input.promptId === 'media/span-materialization-review'
+            ? CSPAN_MATERIALIZATION_REVIEW_MAX_TOKENS
           : 2048
       ),
     });
@@ -69,6 +75,9 @@ export function resolveJsonPacketAgentRunner(input: {
 function buildMlPacketPrompt(input: IJsonPacketAgentInvocation): string {
   if (input.promptId === 'media/span-material-patterns') {
     return buildSpanMaterialPatternsMlPrompt(input.packet);
+  }
+  if (input.promptId === 'media/span-materialization-review') {
+    return buildSpanMaterializationReviewMlPrompt(input.packet);
   }
   return [
     getAgentPrompt(input.promptId),

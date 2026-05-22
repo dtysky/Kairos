@@ -339,9 +339,9 @@ Analyze 运行过程中和阶段末都不再写 `store/spans.json`；span 由 `/
 - `sourceInMs / sourceOutMs` 继续保留兼容性的 focus/evidence window
 - `editSourceInMs / editSourceOutMs` 承载 edit-friendly bounds，供 Script/Timeline 默认优先使用
 - 不写 `speedCandidate / pharosRefs / grounding / spatialEvidence / location / routeRole / chronology event`
-- `source-speech` 的持久化目标是素材事实窗口；只合并同 asset、同 semanticKind、重叠或间隔 `<=250ms` 的近重复窗口，不做 6000ms 口播合并
+- `source-speech` 的持久化目标是素材事实窗口；候选窗口只合并同 asset、同 semanticKind、重叠或间隔 `<=250ms` 的近重复窗口，不做 6000ms 口播合并；随后 `span-rebuild` 可按可用口播 segment 收缩单 span、转 visual-only 或 drop
 - 细粒度 utterance / pause timing 继续保留在 `transcriptSegments`
-- `materialPatterns` 固定为中文 `string[]`，只保存脚本阶段可消费的素材事实短语；prompt 要求每条 7 项。前四项固定为 `拍摄视角/构图形态 / 当前环境 / 天气光线 / 口播语音`，其中视角来自受控词表，环境是从当前 span 文本事实提取的短语，天气光线只写可观察自然现象，口播语音只写 `有口播语音 / 无口播语音`；第 1 项只描述素材自身可观察的拍摄视角/构图形态，不得重复 `type` 的照片/视频载体语义，也不得写“建场/记录/成果”等后续剪辑用途；第 5 项是 LLM 短情景故事或 `情景不明`，第 6-7 项是 LLM 短 factual free tags；代码只校验，不做启发式补写、旧词替换或兼容映射，重试后仍不合格则 `span-rebuild` 失败
+- `materialPatterns` 固定为中文 `string[]`，只保存脚本阶段可消费的素材事实短语；`span-rebuild` 的 LM prompt 同时请求口播可用性审查和 7 项 tags。非空 `keepSegmentIndexes` 会按 segment 边界收缩 span 并强制 `有口播语音`；空口播但 `keepVisualOnly=true` 只有在有独立 `visualObservation` 时转 visual 并强制 `无口播语音`；空口播且无独立视觉证据直接 drop，模型返回的 patterns 必须丢弃。前四项固定为 `拍摄视角/构图形态 / 当前环境 / 天气光线 / 口播语音`，其中视角来自受控词表，环境是从当前 span 文本事实提取的短语，天气光线只写可观察自然现象；第 1 项只描述素材自身可观察的拍摄视角/构图形态，不得重复 `type` 的照片/视频载体语义，也不得写“建场/记录/成果”等后续剪辑用途；第 5 项是 LLM 短情景故事或 `情景不明`，第 6-7 项是 LLM 短 factual free tags；代码只校验，不做启发式补写、旧词替换或兼容映射，重试后仍不合格则 `span-rebuild` 失败
 - `visualObservation?: string` 保存 span 级一句视觉事实描述；所有 keep 的非音频 material span 都必须有该字段，缺失属于 Analyze 阶段失败
 - GPS / 时间 / Pharos 归属不进入 `materialPatterns`，应从 chronology / spatial / Pharos context 层 join
 - 旧五轴语义树 `narrativeFunctions / shotGrammar / viewpointRoles / subjectStates / span.evidence` 不再属于正式 span 输出
@@ -392,7 +392,7 @@ const localPath = resolveAssetLocalPath(asset, roots);
 - `shouldFineScan`
 - `fineScanMode`
 
-注意：当前 `interestingWindows` 不是“单一最终剪辑窗口”，而是细扫前计划；新生成的窗口必须有稳定 `windowId`。`fineScanWindows` 才是细扫后的窗口观察结果，必须保留 `sourceInterestingWindowIds / sourceWindowReason`，speech/mixed 窗口还要保存裁剪后的 `transcript / transcriptSegments / speechCoverage`；visual 窗口即使时间上覆盖 transcript，也不能自动继承 speech truth。只要 asset report 已有完整 coarse facts 和 `fineScanWindows`，`span-rebuild` 不应重新视觉分析或重跑 ASR；历史 recognized fine-scan window 只有在缺 `semanticKind`、自身或来源证据为 `speech-window` 且与 transcriptSegments 重叠时，才保守恢复 speech truth。它只启动本地 ML 服务调用 qwen 文本 LM，对纯文本 span facts 生成 ordered 7-tag `materialPatterns[]` 行，再由代码按素材时间 chunk 顺序写回 spans，并严格校验必需槽；第 1 槽是拍摄视角/构图形态，不是剪辑用途或载体类型；第 4 槽由 span speech truth 决定；第 5-7 项必须来自 LM。缺失、旧词或冲突输出进入 failed span 列表并单条重试，重试后仍不合格则失败，不启发式替换。缺失 `visualObservation` 不是 `情景不明` 输入，而是 Analyze/fine-scan 失败。
+注意：当前 `interestingWindows` 不是“单一最终剪辑窗口”，而是细扫前计划；新生成的窗口必须有稳定 `windowId`。`fineScanWindows` 才是细扫后的窗口观察结果，必须保留 `sourceInterestingWindowIds / sourceWindowReason`，speech/mixed 窗口还要保存裁剪后的 `transcript / transcriptSegments / speechCoverage`；visual 窗口即使时间上覆盖 transcript，也不能自动继承 speech truth。只要 asset report 已有完整 coarse facts 和 `fineScanWindows`，`span-rebuild` 不应重新视觉分析或重跑 ASR；历史 recognized fine-scan window 只有在缺 `semanticKind`、自身或来源证据为 `speech-window` 且与 transcriptSegments 重叠时，才保守恢复 speech truth。它只启动本地 ML 服务调用 qwen 文本 LM，对纯文本 span facts 返回 `keepSegmentIndexes / keepVisualOnly / materialPatterns` ordered rows，再由代码按素材时间 chunk 顺序应用口播裁剪、visual-only 或 drop，并严格校验最终 span 的必需槽；第 1 槽是拍摄视角/构图形态，不是剪辑用途或载体类型；第 4 槽由最终 span speech truth 决定；第 5-7 项必须来自 LM。缺失、旧词或冲突输出进入 failed span 列表并单条重试，重试后仍不合格则失败，不启发式替换。缺失 `visualObservation` 不是 `情景不明` 输入，而是 Analyze/fine-scan 失败。
 
 ## Chronology V2
 
@@ -421,7 +421,7 @@ const localPath = resolveAssetLocalPath(asset, roots);
 - 只要开始执行一个可能持续较久的 Analyze，就应同步启动或刷新本地监控面板，而不是只在后台静默运行
 - 启动 Analyze 后，agent 应主动把监控面板 URL 告诉用户；如果分析已经开始但面板还没打开，应立即补开
 - 正式 Analyze 监控路由是 `http://127.0.0.1:8940/analyze`
-- `/chronology` 页面会显示活跃 `spatial-refresh / span-rebuild / chronology-build` jobs；`spatial-refresh / chronology-build` 不启动 Kairos ML，`span-rebuild` 会启动本地 ML 服务按 10 个 span 一批调用 qwen 文本 LM 做纯文本 materialPatterns 归纳，LM 只返回 ordered rows，代码按 chunk 顺序写回 spans，但不重跑 VLM / ASR，并显示 `.tmp/chronology/progress.json` 中的 chunk、失败列表补处理、retry/warning 进度；已完成 materialPatterns checkpoint 和 failed span 列表写入 `.tmp/chronology/span-rebuild.partial.json`，正式 `store/spans.json` 只在全量收口后写入。`chronology-build` 必须覆盖同一 progress 文件为自己的 live 阶段，不得显示旧 span-rebuild cache；长循环中至少按批次更新 span 时空归属解析、event/route 聚合计数和 GPS reverse-geocode 地名解析计数。
+- `/chronology` 页面会显示活跃 `spatial-refresh / span-rebuild / chronology-build` jobs；`spatial-refresh / chronology-build` 不启动 Kairos ML，`span-rebuild` 会启动本地 ML 服务按 8 个 candidate span 一批调用 qwen 文本 LM 做口播可用性审查和 materialPatterns 归纳，LM 只返回 ordered review rows，代码按 chunk 顺序写回最终 spans，但不重跑 VLM / ASR，并显示 `.tmp/chronology/progress.json` 中的 chunk、失败列表补处理、retry/warning 进度；已完成 checkpoint 和 failed span 列表写入 `.tmp/chronology/span-rebuild.partial.json`，正式 `store/spans.json` 只在全量收口后写入。`chronology-build` 必须覆盖同一 progress 文件为自己的 live 阶段，不得显示旧 span-rebuild cache；长循环中至少按批次更新 span 时空归属解析、event/route 聚合计数和 GPS reverse-geocode 地名解析计数。
 - `React console` 的 Analyze 监控读取项目内 `.tmp/media-analyze/progress.json`，Chronology 监控读取 `.tmp/chronology/progress.json`；当前项目上下文必须正确，不能把面板混到别的项目进度目录
 - Console 刷新时，默认项目上下文应优先跟随最新的 active project-scoped job；只有当前没有活跃项目 job 时，才回退到本地记忆的上次选择
 - 如果多个项目 display name 相同，项目选择器必须直接显示 `projectId`，避免把 Analyze monitor 请求到同名旧项目

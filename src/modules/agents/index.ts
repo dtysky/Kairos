@@ -14,6 +14,14 @@ export {
   CSPAN_MATERIAL_PATTERN_VIEWPOINT_TAGS,
 } from './span-material-pattern-spec.js';
 export {
+  buildSpanMaterializationReviewHardConstraints,
+  buildSpanMaterializationReviewOutputSchema,
+  buildSpanMaterializationReviewSystemPrompt,
+  CSPAN_MATERIALIZATION_REVIEW_BATCH_SIZE,
+  CSPAN_MATERIALIZATION_REVIEW_MAX_TOKENS,
+  CSPAN_MATERIALIZATION_REVIEW_PROMPT_VERSION,
+} from './span-materialization-review-spec.js';
+export {
   AgentRunnerUnavailableError,
   isJsonPacketAgentRunner,
   MlJsonPacketAgentRunner,

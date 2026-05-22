@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { MlJsonPacketAgentRunner } from '../../src/modules/agents/runtime.js';
 import { CSPAN_MATERIAL_PATTERN_MAX_TOKENS } from '../../src/modules/agents/span-material-pattern-spec.js';
+import { CSPAN_MATERIALIZATION_REVIEW_MAX_TOKENS } from '../../src/modules/agents/span-materialization-review-spec.js';
 import type { MlClient } from '../../src/modules/media/ml-client.js';
 import type { IAgentPacket } from '../../src/protocol/schema.js';
 
@@ -57,5 +58,65 @@ describe('MlJsonPacketAgentRunner', () => {
     expect(capturedPrompt).toContain('情景故事');
     expect(capturedPrompt).toContain('情景不明');
     expect(capturedPrompt).not.toContain('"id"');
+  });
+
+  it('builds the materialization review prompt with row decisions', async () => {
+    let capturedPrompt = '';
+    let capturedOptions: Record<string, unknown> | undefined;
+    const mlClient = {
+      async textGenerate(prompt: string, options?: Record<string, unknown>) {
+        capturedPrompt = prompt;
+        capturedOptions = options;
+        return {
+          text: JSON.stringify([{
+            keepSegmentIndexes: [2],
+            keepVisualOnly: false,
+            materialPatterns: ['车内自拍口播', '车内', '下雨', '有口播语音', '雨天出发说明', '出发说明', '雨天行程'],
+          }]),
+        };
+      },
+    } as unknown as MlClient;
+    const runner = new MlJsonPacketAgentRunner(mlClient);
+    const packet: IAgentPacket = {
+      stage: 'media/span-materialization-review',
+      identity: 'span-materialization-review',
+      mission: 'test',
+      hardConstraints: [],
+      allowedInputs: [],
+      inputArtifacts: [{
+        label: 'span-materialization-review-items',
+        content: {
+          attempt: 1,
+          items: [{
+            type: 'drive',
+            semanticKind: 'speech',
+            transcriptSegments: [
+              { index: 1, startMs: 0, endMs: 1000, text: '录制开始' },
+              { index: 2, startMs: 1200, endMs: 4000, text: '雨天出发' },
+            ],
+            visualObservation: '车内雨天行车画面',
+          }],
+        },
+      }],
+      outputSchema: {},
+      reviewRubric: [],
+    };
+
+    const result = await runner.run<Array<Record<string, unknown>>>({
+      promptId: 'media/span-materialization-review',
+      packet,
+      llm: { jsonMode: true },
+    });
+
+    expect(result).toEqual([{
+      keepSegmentIndexes: [2],
+      keepVisualOnly: false,
+      materialPatterns: ['车内自拍口播', '车内', '下雨', '有口播语音', '雨天出发说明', '出发说明', '雨天行程'],
+    }]);
+    expect(capturedOptions).toMatchObject({ maxTokens: CSPAN_MATERIALIZATION_REVIEW_MAX_TOKENS });
+    expect(capturedPrompt).toContain('keepSegmentIndexes');
+    expect(capturedPrompt).toContain('keepVisualOnly');
+    expect(capturedPrompt).toContain('只输出一行顶层 JSON 数组');
+    expect(capturedPrompt).not.toContain('每行必须正好 7 个中文短标签 string[]');
   });
 });

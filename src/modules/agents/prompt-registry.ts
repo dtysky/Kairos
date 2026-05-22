@@ -1,4 +1,5 @@
 import { buildSpanMaterialPatternsSystemPrompt } from './span-material-pattern-spec.js';
+import { buildSpanMaterializationReviewSystemPrompt } from './span-materialization-review-spec.js';
 
 export type TAgentPromptId =
   | 'style/style-profile-synthesizer'
@@ -11,6 +12,7 @@ export type TAgentPromptId =
   | 'script/narration-rewriter'
   | 'script/script-reviewer'
   | 'media/span-material-patterns'
+  | 'media/span-materialization-review'
   | 'timeline/segment-cut-refiner'
   | 'timeline/segment-cut-reviewer';
 
@@ -219,6 +221,7 @@ const CPROMPTS: Record<TAgentPromptId, string> = {
 - 若有 blocker，必须产出 revisionBrief，供同阶段 generator 重写。`,
 
   'media/span-material-patterns': buildSpanMaterialPatternsSystemPrompt(),
+  'media/span-materialization-review': buildSpanMaterializationReviewSystemPrompt(),
 };
 
 export function getAgentPrompt(id: TAgentPromptId): string {
