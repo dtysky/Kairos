@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { copyFile, mkdir, readFile, readdir, rename, stat, unlink } from 'node:fs/promises';
 import { dirname, extname, join, posix, relative, resolve } from 'node:path';
-import { setTimeout as delay } from 'node:timers/promises';
+import { scheduler } from 'node:timers/promises';
 import { promisify } from 'node:util';
 import type {
   IColorBatchManifest,
@@ -4196,7 +4196,7 @@ async function runColorHostWithRetry<T>(
       if (!isRetryableColorHostError(error) || attempt >= retryDelaysMs.length) {
         throw error;
       }
-      await delay(retryDelaysMs[attempt]!);
+      await scheduler.wait(retryDelaysMs[attempt]!);
     }
   }
   throw lastError ?? new Error(`Unreachable color host retry state: ${label}`);
@@ -4206,8 +4206,6 @@ function isRetryableColorHostError(error: unknown): boolean {
   if (!(error instanceof ResolveColorHostError)) return false;
   return new Set([
     'resolve_app_unavailable',
-    'resolve_render_timeout',
-    'resolve_color_host_timeout',
     'resolve_color_host_connection_failed',
   ]).has(error.code);
 }

@@ -15,6 +15,7 @@ export {
 } from './timeline-builder.js';
 export {
   buildProjectTimeline,
+  buildTimelineSourceSpeechSubtitles,
   syncProjectResolveMedia,
   type IBuildProjectTimelineInput,
   type IBuildProjectTimelineResult,

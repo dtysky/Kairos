@@ -435,7 +435,7 @@ function inferProgressIdentity(jobType: string): {
       pipelineKey: 'chronology',
       pipelineLabel: 'Chronology 生成链路',
       phaseKey: 'span-rebuild',
-      phaseLabel: '生成素材片段与模式',
+      phaseLabel: '生成候选素材片段与模式',
     };
   }
   if (jobType === 'chronology-build') {

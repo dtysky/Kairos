@@ -8,10 +8,16 @@ import {
   ResolveColorHostError,
   resolveColorPythonInvocation,
   resolveColorScriptPath,
-  type IResolveColorExecutorConfig,
 } from '../color/resolve-executor.js';
 
 const exec = promisify(execFile);
+
+interface IResolveTimelineHostConfig {
+  backendRoot?: string;
+  pythonPath?: string;
+  scriptPath?: string;
+  workingDirectory?: string;
+}
 
 type IExecFile = (
   file: string,
@@ -94,7 +100,7 @@ export interface IResolveRoughCutTimelineResult {
 
 export async function syncResolveRoughCutMedia(
   input: IResolveRoughCutMediaSyncInput,
-  config: IResolveColorExecutorConfig = {},
+  config: IResolveTimelineHostConfig = {},
   execFileImpl: IExecFile = exec,
 ): Promise<IResolveRoughCutMediaSyncResult> {
   return runResolveTimelineRequest<IResolveRoughCutMediaSyncResult>({
@@ -107,7 +113,7 @@ export async function syncResolveRoughCutMedia(
 
 export async function createResolveRoughCutTimeline(
   input: IResolveRoughCutTimelineInput,
-  config: IResolveColorExecutorConfig = {},
+  config: IResolveTimelineHostConfig = {},
   execFileImpl: IExecFile = exec,
 ): Promise<IResolveRoughCutTimelineResult> {
   return runResolveTimelineRequest<IResolveRoughCutTimelineResult>({
@@ -121,7 +127,7 @@ export async function createResolveRoughCutTimeline(
 async function runResolveTimelineRequest<T>(request: {
   operation: 'create_rough_cut_timeline' | 'sync_rough_cut_media';
   input: unknown;
-  config: IResolveColorExecutorConfig;
+  config: IResolveTimelineHostConfig;
   execFileImpl: IExecFile;
 }): Promise<T> {
   const pythonPath = resolveColorPythonInvocation(request.config);
@@ -143,7 +149,6 @@ async function runResolveTimelineRequest<T>(request: {
           : dirname(scriptPath),
         encoding: 'utf8',
         maxBuffer: 10 * 1024 * 1024,
-        timeout: request.config.timeoutMs ?? 10 * 60 * 1000,
         windowsHide: true,
       },
     );
@@ -218,16 +223,8 @@ function tryParseJsonPayload(raw: string): unknown | null {
 
 function inferResolveTimelineHostErrorCode(cause: {
   code?: string | number | null;
-  killed?: boolean;
-  signal?: string | null;
   message?: string;
 }): string {
-  if (typeof cause.message === 'string' && cause.message.toLowerCase().includes('timed out')) {
-    return 'resolve_timeline_host_timeout';
-  }
-  if (cause.killed && cause.signal) {
-    return 'resolve_timeline_host_timeout';
-  }
   if (typeof cause.code === 'string' && ['ENOENT', 'EACCES', 'ECONNREFUSED', 'ECONNRESET'].includes(cause.code)) {
     return 'resolve_timeline_host_connection_failed';
   }

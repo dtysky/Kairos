@@ -354,12 +354,18 @@ export type IKtepSlice = IKtepSpan;
 
 export const ISpansMeta = z.object({
   schemaVersion: z.literal('1.0'),
-  status: z.enum(['fresh', 'stale']),
+  status: z.enum(['fresh', 'stale', 'pending-speech-review']),
   generatedAt: z.string(),
   inputsHash: z.string(),
   assetCount: z.number().int().nonnegative(),
   reportCount: z.number().int().nonnegative(),
   spanCount: z.number().int().nonnegative(),
+  speechReview: z.object({
+    status: z.enum(['not-required', 'pending', 'completed']).optional(),
+    candidateCount: z.number().int().nonnegative().optional(),
+    handoffPath: z.string().optional(),
+    updatedAt: z.string().optional(),
+  }).optional(),
   warnings: z.array(z.string()).default([]),
 }).strict();
 export type ISpansMeta = z.infer<typeof ISpansMeta>;

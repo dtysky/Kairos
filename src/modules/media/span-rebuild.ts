@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 import type {
   EClipType,
   IAgentPacket,
@@ -254,7 +254,7 @@ function assertMaterialSpansHaveVisualObservation(
   throw new Error(
     [
       `span-rebuild blocked: ${missing.length} material span(s) are missing visualObservation.`,
-      'visualObservation must be produced by Analyze; span-rebuild will not invent visual evidence or call the materialization review LM.',
+      'visualObservation must be produced by Analyze; span-rebuild will not invent visual evidence or call the materialPatterns LM without it.',
       `Missing examples: ${formatSpanRebuildInputExamples(missing.map(span => assetsById?.get(span.assetId) ?? span))}`,
     ].join(' '),
   );
@@ -284,7 +284,7 @@ export async function rebuildProjectSpans(input: {
 }): Promise<IProjectSpanRebuildResult> {
   if (!input.agentRunner) {
     throw new AgentRunnerUnavailableError(
-      'span-rebuild requires a local text LM runner to review speech usability and generate materialPatterns; no spans were rewritten.',
+      'span-rebuild requires a local text LM runner to generate provisional materialPatterns; no spans were rewritten.',
     );
   }
   const projectRoot = resolveWorkspaceProjectRoot(input.workspaceRoot, input.projectId);
@@ -292,13 +292,13 @@ export async function rebuildProjectSpans(input: {
   await writeSpanRebuildProgress(progressPath, {
     status: 'running',
     step: 'slice',
-    stepLabel: '生成素材片段',
+    stepLabel: '生成候选素材片段',
     stepIndex: 1,
     stepTotal: 4,
     current: 0,
     total: 4,
     unit: 'step',
-    detail: '读取 assets 与 asset reports，生成 stripped spans',
+    detail: '读取 assets 与 asset reports，生成候选 spans',
   });
   const [assets, reports, { roots }] = await Promise.all([
     loadAssets(projectRoot),
@@ -312,14 +312,14 @@ export async function rebuildProjectSpans(input: {
   await writeSpanRebuildProgress(progressPath, {
     status: 'running',
     step: 'patterns',
-    stepLabel: '审查口播并生成素材模式',
+    stepLabel: '生成候选素材模式',
     stepIndex: 2,
     stepTotal: 4,
     current: 0,
     total: Math.max(reviewCandidateSpans.length, 1),
     unit: 'span',
     detail: reviewCandidateSpans.length > 0
-      ? '调用本地文本 LM 审查口播可用性并生成中文 materialPatterns'
+      ? '调用本地文本 LM 生成 provisional 中文 materialPatterns'
       : '没有可审查的 spans',
     extra: {
       spanCount: reviewCandidateSpans.length,
@@ -342,15 +342,43 @@ export async function rebuildProjectSpans(input: {
     new Map(assets.map(asset => [asset.id, { kind: asset.kind }] as const)),
   );
   const now = input.now ?? new Date().toISOString();
+  const speechReviewCandidates = spans.filter(isSpeechReviewCandidateSpan);
+  const speechReviewCandidateCount = speechReviewCandidates.length;
+  const speechReviewPending = speechReviewCandidateCount > 0;
+  const handoffPath = speechReviewPending ? getSpeechWindowAgentHandoffPath(projectRoot) : undefined;
+  if (speechReviewPending && handoffPath) {
+    await writeSpeechWindowAgentHandoff({
+      path: handoffPath,
+      workspaceRoot: input.workspaceRoot,
+      projectId: input.projectId,
+      projectRoot,
+      spans,
+      speechCandidates: speechReviewCandidates,
+      inputsHash: generated.inputsHash,
+      generatedAt: now,
+    });
+  }
   const warnings = dedupeStrings([...generated.warnings, ...reviewWarnings]);
   const meta: ISpansMeta = {
     schemaVersion: '1.0',
-    status: 'fresh',
+    status: speechReviewPending ? 'pending-speech-review' : 'fresh',
     generatedAt: now,
     inputsHash: generated.inputsHash,
     assetCount: assets.length,
     reportCount: reports.length,
     spanCount: spans.length,
+    speechReview: speechReviewPending
+      ? {
+          status: 'pending',
+          candidateCount: speechReviewCandidateCount,
+          handoffPath,
+          updatedAt: now,
+        }
+      : {
+          status: 'not-required',
+          candidateCount: 0,
+          updatedAt: now,
+        },
     warnings,
   };
 
@@ -375,6 +403,9 @@ export async function rebuildProjectSpans(input: {
       droppedCount: reviewResult.droppedCount,
       visualOnlyCount: reviewResult.visualOnlyCount,
       trimmedSpeechCount: reviewResult.trimmedSpeechCount,
+      speechReviewCandidateCount,
+      spansMetaStatus: meta.status,
+      speechWindowAgentHandoffPath: handoffPath,
     },
   });
   await writeJson(getSpansPath(projectRoot), spans);
@@ -399,14 +430,16 @@ export async function rebuildProjectSpans(input: {
   await writeSpanRebuildProgress(progressPath, {
     status: 'succeeded',
     step: 'done',
-    stepLabel: '素材片段已生成',
+    stepLabel: speechReviewPending ? '候选素材片段待 speech review' : '素材片段已生成',
     stepIndex: 4,
     stepTotal: 4,
     current: 4,
     total: 4,
     unit: 'step',
     etaSeconds: 0,
-    detail: `写入 ${spans.length} 个 spans，${warnings.length} 条 warning`,
+    detail: speechReviewPending
+      ? `写入 ${spans.length} 个候选 spans，${speechReviewCandidateCount} 个 speech/mixed candidates 等待 Agent review`
+      : `写入 ${spans.length} 个 spans，${warnings.length} 条 warning`,
     extra: {
       assetCount: assets.length,
       reportCount: reports.length,
@@ -421,6 +454,9 @@ export async function rebuildProjectSpans(input: {
       droppedCount: reviewResult.droppedCount,
       visualOnlyCount: reviewResult.visualOnlyCount,
       trimmedSpeechCount: reviewResult.trimmedSpeechCount,
+      speechReviewCandidateCount,
+      spansMetaStatus: meta.status,
+      speechWindowAgentHandoffPath: handoffPath,
     },
   });
 
@@ -966,7 +1002,7 @@ async function generateSpanMaterializationReview(input: {
     repairCount = reusableCheckpoint.repairCount;
     recoveredFailedCount = reusableCheckpoint.recoveredFailedCount;
     storyUnknownFallbackCount = reusableCheckpoint.storyUnknownFallbackCount;
-    input.warnings.push(`span-rebuild resumed ${decisionBySpanId.size}/${input.spans.length} materialization review rows from checkpoint`);
+    input.warnings.push(`span-rebuild resumed ${decisionBySpanId.size}/${input.spans.length} material pattern rows from checkpoint`);
     for (const warning of reusableCheckpoint.warnings) {
       if (!input.baseWarnings.includes(warning)) {
         input.warnings.push(warning);
@@ -1001,7 +1037,7 @@ async function generateSpanMaterializationReview(input: {
     await writeSpanRebuildProgress(input.progressPath, {
       status: 'running',
       step: 'patterns',
-      stepLabel: '审查口播并生成素材模式',
+      stepLabel: '生成候选素材模式',
       stepIndex: 2,
       stepTotal: 4,
       current: decisionBySpanId.size,
@@ -1010,7 +1046,7 @@ async function generateSpanMaterializationReview(input: {
       etaSeconds: estimateSpanRebuildEtaSeconds(patternStartedAtMs, decisionBySpanId.size, input.spans.length),
       fileIndex: chunkIndex + 1,
       fileTotal: chunks.length,
-      detail: `正在审查第 ${chunkIndex + 1}/${chunks.length} 批 span 的口播与 materialPatterns（本批 ${activeChunk.length} 个待处理）`,
+      detail: `正在生成第 ${chunkIndex + 1}/${chunks.length} 批 span 的 provisional materialPatterns（本批 ${activeChunk.length} 个待处理）`,
       extra: {
         batchSize: activeChunk.length,
         retryCount,
@@ -1038,7 +1074,7 @@ async function generateSpanMaterializationReview(input: {
     let attempts = 1;
     if (firstAttempt.needsRetry) {
       retryCount += 1;
-      input.warnings.push(`materialization review chunk ${chunkIndex + 1}/${chunks.length}: retrying because LM returned missing, invalid, or story-missing rows`);
+      input.warnings.push(`material pattern chunk ${chunkIndex + 1}/${chunks.length}: retrying because LM returned missing, invalid, or story-missing rows`);
       const secondAttempt = await requestMaterializationReviewForChunk({
         agentRunner: input.agentRunner,
         chunk: activeChunk,
@@ -1091,7 +1127,7 @@ async function generateSpanMaterializationReview(input: {
     await writeSpanRebuildProgress(input.progressPath, {
       status: 'running',
       step: 'patterns',
-      stepLabel: '审查口播并生成素材模式',
+      stepLabel: '生成候选素材模式',
       stepIndex: 2,
       stepTotal: 4,
       current: decisionBySpanId.size,
@@ -1100,7 +1136,7 @@ async function generateSpanMaterializationReview(input: {
       etaSeconds: estimateSpanRebuildEtaSeconds(patternStartedAtMs, decisionBySpanId.size, input.spans.length),
       fileIndex: chunkIndex + 1,
       fileTotal: chunks.length,
-      detail: `已审查 ${decisionBySpanId.size}/${input.spans.length} 个 span，失败列表 ${activeFailedSpanCount(failedBySpanId)} 个`,
+      detail: `已生成 ${decisionBySpanId.size}/${input.spans.length} 个 span 的 materialPatterns，失败列表 ${activeFailedSpanCount(failedBySpanId)} 个`,
       extra: {
         retryCount,
         repairCount,
@@ -1172,7 +1208,7 @@ async function generateSpanMaterializationReview(input: {
         lastError: retryResult.requestError ?? failure.lastError,
         recovered: false,
       });
-      input.warnings.push(`materialization review span ${span.id}: failed-list retry still returned invalid row`);
+      input.warnings.push(`material pattern span ${span.id}: failed-list retry still returned invalid row`);
     }
 
     await writeSpanRebuildPatternCheckpoint({
@@ -1208,7 +1244,7 @@ async function generateSpanMaterializationReview(input: {
     }
     const preview = unresolvedSpans.slice(0, 8).map(span => span.id).join(', ');
     throw new Error(
-      `span-rebuild could not generate valid materialization review for ${unresolvedSpans.length} span(s): ${preview}`,
+      `span-rebuild could not generate valid materialPatterns for ${unresolvedSpans.length} span(s): ${preview}`,
     );
   }
 
@@ -1261,7 +1297,7 @@ async function requestMaterializationReviewForChunk(input: {
   } catch (error) {
     const requestError = error instanceof Error ? error.message : String(error);
     input.warnings.push(
-      `materialization review chunk ${input.chunkIndex + 1}/${input.chunkTotal}: LM request failed on attempt ${input.attempt}: ${requestError}`,
+      `material pattern chunk ${input.chunkIndex + 1}/${input.chunkTotal}: LM request failed on attempt ${input.attempt}: ${requestError}`,
     );
     return {
       decisions: new Map(),
@@ -1305,19 +1341,19 @@ async function requestMaterializationReviewForChunk(input: {
 
   if (repairCount > 0) {
     input.warnings.push(
-      `materialization review chunk ${input.chunkIndex + 1}/${input.chunkTotal}: repaired ${repairCount} materialPatterns rows for the deterministic first-four slots`,
+      `material pattern chunk ${input.chunkIndex + 1}/${input.chunkTotal}: repaired ${repairCount} materialPatterns rows for the deterministic first-four slots`,
     );
   }
 
   if (rows.length === 0) {
-    input.warnings.push(`materialization review chunk ${input.chunkIndex + 1}/${input.chunkTotal}: LM response did not contain ordered rows`);
+    input.warnings.push(`material pattern chunk ${input.chunkIndex + 1}/${input.chunkTotal}: LM response did not contain ordered rows`);
     for (const span of input.chunk) {
       failureReasonBySpanId.set(span.id, 'missing-response-rows');
     }
   }
   if (invalidRowCount > 0) {
     input.warnings.push(
-      `materialization review chunk ${input.chunkIndex + 1}/${input.chunkTotal}: LM returned ${invalidRowCount} invalid rows`,
+      `material pattern chunk ${input.chunkIndex + 1}/${input.chunkTotal}: LM returned ${invalidRowCount} invalid rows`,
     );
   }
 
@@ -1334,7 +1370,7 @@ function normalizeReturnedMaterializationReviewRows(input: {
 }): unknown[] {
   const rowValue = resolveReturnedRows(input.raw);
   if (!Array.isArray(rowValue)) {
-    input.warnings.push(`materialization review chunk ${input.chunkIndex + 1}/${input.chunkTotal}: LM response is not a JSON array`);
+    input.warnings.push(`material pattern chunk ${input.chunkIndex + 1}/${input.chunkTotal}: LM response is not a JSON array`);
     return [];
   }
 
@@ -1342,10 +1378,10 @@ function normalizeReturnedMaterializationReviewRows(input: {
     ? [rowValue]
     : rowValue;
   if (rows.length < input.expectedCount) {
-    input.warnings.push(`materialization review chunk ${input.chunkIndex + 1}/${input.chunkTotal}: LM returned ${rows.length}/${input.expectedCount} rows`);
+    input.warnings.push(`material pattern chunk ${input.chunkIndex + 1}/${input.chunkTotal}: LM returned ${rows.length}/${input.expectedCount} rows`);
   }
   if (rows.length > input.expectedCount) {
-    input.warnings.push(`materialization review chunk ${input.chunkIndex + 1}/${input.chunkTotal}: ignored ${rows.length - input.expectedCount} extra rows`);
+    input.warnings.push(`material pattern chunk ${input.chunkIndex + 1}/${input.chunkTotal}: ignored ${rows.length - input.expectedCount} extra rows`);
   }
   return rows.slice(0, input.expectedCount);
 }
@@ -1356,7 +1392,6 @@ function resolveReturnedRows(raw: unknown): unknown {
   if (Array.isArray(raw.items)) {
     return raw.items.map(item => {
       if (Array.isArray(item)) return item;
-      if (isRecord(item) && ('keepSegmentIndexes' in item || 'keepVisualOnly' in item)) return item;
       if (isRecord(item) && Array.isArray(item.materialPatterns)) return item.materialPatterns;
       if (isRecord(item) && Array.isArray(item.patterns)) return item.patterns;
       return item;
@@ -1380,8 +1415,8 @@ function buildMaterializationReviewPacket(input: {
 }): IAgentPacket {
   return {
     stage: 'media/span-materialization-review',
-    identity: 'span-materialization-review',
-    mission: '审查每个候选 span 的可用口播，决定保留/转视觉/drop，并为最终 span 生成中文 materialPatterns。',
+    identity: 'span-materialization-patterns',
+    mission: '只为每个候选 span 生成 provisional 中文 materialPatterns；不裁切、不 drop、不决定 speech truth。',
     hardConstraints: buildSpanMaterializationReviewHardConstraints(),
     allowedInputs: ['type', 'semanticKind', 'transcript', 'transcriptSegments', 'visualObservation'],
     inputArtifacts: [{
@@ -1432,83 +1467,39 @@ function applyMaterializationReviewRow(
   reason: string;
   repaired: false;
 } {
-  if (!isRecord(row)) {
-    return { complete: false, reason: 'review-row-not-object', repaired: false };
+  const materialPatterns = resolveMaterialPatternRow(row);
+  if (!materialPatterns) {
+    return { complete: false, reason: 'review-row-missing-materialPatterns', repaired: false };
   }
-  const keepSegmentIndexes = normalizeKeepSegmentIndexes(row.keepSegmentIndexes);
-  if (!keepSegmentIndexes) {
-    return { complete: false, reason: 'invalid-keepSegmentIndexes', repaired: false };
-  }
-  const keepVisualOnly = row.keepVisualOnly === true;
-
-  if (keepSegmentIndexes.length === 0 && !keepVisualOnly) {
-    return {
-      complete: true,
-      decision: {
-        sourceSpanId: span.id,
-        dropped: true,
-        visualOnly: false,
-        trimmedSpeech: false,
-      },
-      repaired: false,
-    };
-  }
-
-  const finalSpan = keepSegmentIndexes.length > 0
-    ? buildSpeechReviewedSpan(span, keepSegmentIndexes)
-    : buildVisualOnlyReviewedSpan(span);
-
-  if (!finalSpan) {
-    if (keepVisualOnly && keepSegmentIndexes.length === 0) {
-      return {
-        complete: true,
-        decision: {
-          sourceSpanId: span.id,
-          dropped: true,
-          visualOnly: false,
-          trimmedSpeech: false,
-        },
-        repaired: false,
-      };
-    }
-    return { complete: false, reason: 'invalid-or-unsupported-review-decision', repaired: false };
-  }
-
-  const repaired = sanitizeReturnedMaterialPatterns(row.materialPatterns, finalSpan);
+  const repaired = sanitizeReturnedMaterialPatterns(materialPatterns, span);
   if (!repaired.complete || repaired.patterns.length === 0) {
     return { complete: false, reason: 'missing-or-invalid-first-four/story', repaired: false };
   }
+
+  const finalSpan = stripUndefined({
+    ...span,
+    materialPatterns: repaired.patterns,
+  }) as unknown as IKtepSlice;
 
   return {
     complete: true,
     decision: {
       sourceSpanId: span.id,
-      finalSpan: stripUndefined({
-        ...finalSpan,
-        materialPatterns: repaired.patterns,
-      }) as unknown as IKtepSlice,
+      finalSpan,
       dropped: false,
-      visualOnly: finalSpan.semanticKind === 'visual' && !spanHasSpeechTruth(finalSpan),
-      trimmedSpeech: hasSpeechRangeChanged(span, finalSpan),
+      visualOnly: false,
+      trimmedSpeech: false,
     },
     repaired: repaired.repaired,
   };
 }
 
-function normalizeKeepSegmentIndexes(value: unknown): number[] | null {
-  if (!Array.isArray(value)) return null;
-  const indexes: number[] = [];
-  const seen = new Set<number>();
-  for (const item of value) {
-    if (typeof item !== 'number' || !Number.isInteger(item) || item <= 0) {
-      return null;
-    }
-    if (!seen.has(item)) {
-      seen.add(item);
-      indexes.push(item);
-    }
-  }
-  return indexes.sort((left, right) => left - right);
+function resolveMaterialPatternRow(row: unknown): unknown[] | null {
+  if (Array.isArray(row)) return row;
+  if (!isRecord(row)) return null;
+  if (Array.isArray(row.materialPatterns)) return row.materialPatterns;
+  if (Array.isArray(row.patterns)) return row.patterns;
+  return null;
 }
 
 interface IReviewSourceSegment extends ITranscriptSegment {
@@ -1544,72 +1535,6 @@ function buildReviewSourceSegments(span: IKtepSlice): IReviewSourceSegment[] {
     }];
   }
   return [];
-}
-
-function buildSpeechReviewedSpan(span: IKtepSlice, keepSegmentIndexes: number[]): IKtepSlice | null {
-  const sourceSegments = buildReviewSourceSegments(span);
-  const segmentByIndex = new Map(sourceSegments.map(segment => [segment.index, segment] as const));
-  const selected = keepSegmentIndexes.map(index => segmentByIndex.get(index));
-  if (selected.some(segment => segment == null)) return null;
-  const kept = selected.filter((segment): segment is IReviewSourceSegment => segment != null);
-  if (kept.length === 0) return null;
-
-  const sourceInMs = Math.min(...kept.map(segment => segment.startMs));
-  const sourceOutMs = Math.max(...kept.map(segment => segment.endMs));
-  if (!isFiniteNumber(sourceInMs) || !isFiniteNumber(sourceOutMs) || sourceOutMs <= sourceInMs) return null;
-
-  const actualSegments = kept.filter(segment => !segment.synthetic);
-  const transcriptSegments = actualSegments.map(segment => ({
-    startMs: segment.startMs,
-    endMs: segment.endMs,
-    text: segment.text,
-  }));
-  const transcript = kept.map(segment => segment.text).join(' ').trim();
-  const speechCoverage = transcriptSegments.length > 0
-    ? computeSpeechCoverage(sourceInMs, sourceOutMs, transcriptSegments)
-    : span.speechCoverage;
-
-  return stripUndefined({
-    ...span,
-    semanticKind: span.semanticKind === 'mixed' ? 'mixed' : 'speech',
-    sourceInMs,
-    sourceOutMs,
-    editSourceInMs: sourceInMs,
-    editSourceOutMs: sourceOutMs,
-    transcript: transcript || undefined,
-    transcriptSegments: transcriptSegments.length > 0 ? transcriptSegments : undefined,
-    speechCoverage,
-  }) as unknown as IKtepSlice;
-}
-
-function buildVisualOnlyReviewedSpan(span: IKtepSlice): IKtepSlice | null {
-  if (!hasIndependentVisualObservation(span.visualObservation)) return null;
-  const reviewed = {
-    ...span,
-    semanticKind: 'visual' as const,
-    transcript: undefined,
-    transcriptSegments: undefined,
-    speechCoverage: undefined,
-  };
-  return stripUndefined(reviewed) as unknown as IKtepSlice;
-}
-
-function hasIndependentVisualObservation(value: string | undefined): boolean {
-  const normalized = normalizeText(value);
-  if (!normalized) return false;
-  const withoutSpeechOnlyPhrases = normalized
-    .replace(/人物对镜头说话|有人说话|口播画面|口播镜头|说话画面|车内自拍口播|手持自拍口播|固定机位口播/giu, '')
-    .replace(/talking[-\s]?head|speaking to camera|person speaking|someone speaking/giu, '')
-    .trim();
-  return normalizeComparableText(withoutSpeechOnlyPhrases).length >= 4;
-}
-
-function hasSpeechRangeChanged(before: IKtepSlice, after: IKtepSlice): boolean {
-  if (!spanHasSpeechTruth(after)) return false;
-  return before.sourceInMs !== after.sourceInMs
-    || before.sourceOutMs !== after.sourceOutMs
-    || (before.transcriptSegments?.length ?? 0) !== (after.transcriptSegments?.length ?? 0)
-    || normalizeText(before.transcript) !== normalizeText(after.transcript);
 }
 
 function sanitizeReturnedMaterialPatterns(
@@ -1965,7 +1890,7 @@ async function loadReusableSpanRebuildPartial(input: {
         }) as unknown as IKtepSlice,
         dropped: false,
         visualOnly: checkpointSpan.semanticKind === 'visual' && !spanHasSpeechTruth(checkpointSpan),
-        trimmedSpeech: hasSpeechRangeChanged(spanById.get(sourceSpanId)!, checkpointSpan),
+        trimmedSpeech: false,
       });
     }
   }
@@ -2017,6 +1942,104 @@ function getOptionalPositiveInteger(value: unknown): number | undefined {
 
 function getSpanRebuildPartialPath(projectRoot: string): string {
   return join(projectRoot, '.tmp', 'chronology', 'span-rebuild.partial.json');
+}
+
+function getSpeechWindowAgentHandoffPath(projectRoot: string): string {
+  return join(projectRoot, '.tmp', 'chronology', 'speech-window-agent-handoff.md');
+}
+
+function isSpeechReviewCandidateSpan(span: IKtepSlice): boolean {
+  return span.semanticKind === 'speech'
+    || span.semanticKind === 'mixed'
+    || spanHasSpeechTruth(span)
+    || (span.speechCoverage ?? 0) > 0;
+}
+
+async function writeSpeechWindowAgentHandoff(input: {
+  path: string;
+  workspaceRoot: string;
+  projectId: string;
+  projectRoot: string;
+  spans: IKtepSlice[];
+  speechCandidates: IKtepSlice[];
+  inputsHash: string;
+  generatedAt: string;
+}): Promise<void> {
+  await mkdir(dirname(input.path), { recursive: true });
+  const rows = input.speechCandidates.map(span => [
+    `- ${span.id}`,
+    `  - assetId: ${span.assetId}`,
+    `  - range: ${formatMsForHandoff(span.sourceInMs)}-${formatMsForHandoff(span.sourceOutMs)} ms`,
+    `  - semanticKind: ${span.semanticKind ?? 'unknown'}`,
+    span.transcript ? `  - transcript: ${truncateText(span.transcript, 160)}` : undefined,
+    (span.transcriptSegments ?? []).length > 0
+      ? `  - transcriptSegments: ${(span.transcriptSegments ?? []).length}`
+      : undefined,
+    span.visualObservation ? `  - visualObservation: ${truncateText(span.visualObservation, 180)}` : undefined,
+  ].filter((line): line is string => typeof line === 'string').join('\n')).join('\n');
+
+  const content = [
+    '# Speech Window Agent Handoff',
+    '',
+    `Generated at: ${input.generatedAt}`,
+    `Workspace root: ${input.workspaceRoot}`,
+    `Project id: ${input.projectId}`,
+    `Project root: ${input.projectRoot}`,
+    `Inputs hash: ${input.inputsHash}`,
+    '',
+    '## Files',
+    '',
+    `- Input candidates: ${join(input.projectRoot, 'store', 'spans.json')}`,
+    `- Meta to update: ${join(input.projectRoot, 'store', 'spans.meta.json')}`,
+    '- Final output contract: rewrite both files directly from the main Agent after shard review.',
+    '',
+    '## Status',
+    '',
+    `- Total candidate spans: ${input.spans.length}`,
+    `- Speech/mixed candidates needing review: ${input.speechCandidates.length}`,
+    '- Current spans.meta status: pending-speech-review',
+    '',
+    '## What To Say In Codex/Agent',
+    '',
+    'Copy this into a Codex/Agent thread:',
+    '',
+    '```text',
+    `请按 handoff 处理这个 Kairos 项目的 speech-window review：读取 ${input.path}。作为主 Agent，按 asset/day 或稳定 span-id range 启用 subagents 审查 store/spans.json 的 speech/mixed candidates；每个 subagent shard 最多约 1500 条 candidates，尽量保持同一 asset 不跨 shard。合并 shard 后直接写最终 store/spans.json 与 store/spans.meta.json，清理无意义 ASR、裁切可用口播、同步 materialPatterns[3]，最后标记 status=fresh、speechReview.status=completed。不要重跑 span-builder，不要生成 chronology。`,
+    '```',
+    '',
+    '## Required Agent Workflow',
+    '',
+    '1. Main Agent reads `store/spans.json` and this handoff.',
+    '2. Main Agent shards speech/mixed candidates by asset/day or stable span-id ranges. Each subagent shard must contain at most about 1500 speech candidates, keeping one asset in one shard when practical.',
+    '3. Subagents review only their shard and return reviewed span edits; subagents must not write final project files.',
+    '4. Main Agent merges all shard outputs, drops meaningless ASR noise or converts it to visual-only when the visual evidence is independently useful.',
+    '5. Main Agent writes final `store/spans.json` and `store/spans.meta.json` with `status="fresh"` and `speechReview.status="completed"`.',
+    '',
+    '## Review Contract',
+    '',
+    '- Meaningless ASR noise must not remain as final speech truth.',
+    '- Final retained speech spans must be clipped to usable transcript segment bounds.',
+    '- Final visual-only spans must clear `transcript`, `transcriptSegments`, and `speechCoverage`, and use `semanticKind="visual"` when appropriate.',
+    '- `materialPatterns[3]` must match final speech truth: `有口播语音` only when the final span retains usable transcript truth, otherwise `无口播语音`.',
+    '- Do not add speed, Pharos, grounding, spatial, location, route, chronology, or random id fields.',
+    '',
+    '## ASR Noise That Must Be Removed Or Demoted',
+    '',
+    '- Single-character or low-information fragments such as `中`.',
+    '- Subtitle/platform/OCR-like hallucinations such as `中文本幕李宗盛`, `字幕志愿者`, `作曲宗盛`, generic credits, or channel boilerplate.',
+    '- Camera/phone commands, test mic, waiting/filler, isolated expletives, and context-free reactions.',
+    '- Repeated fragments that do not form a usable statement.',
+    '',
+    '## Speech Candidate Index',
+    '',
+    rows || '- none',
+    '',
+  ].join('\n');
+  await writeFile(input.path, content, 'utf-8');
+}
+
+function formatMsForHandoff(value: number | undefined): string {
+  return isFiniteNumber(value) ? String(Math.round(value)) : '?';
 }
 
 async function writeSpanRebuildPartial(
@@ -2074,10 +2097,10 @@ async function writeSpanRebuildProgress(
     pipelineKey: 'chronology',
     pipelineLabel: 'Chronology 生成链路',
     phaseKey: 'span-rebuild',
-    phaseLabel: '生成素材片段与模式',
+    phaseLabel: '生成候选素材片段与模式',
     stepDefinitions: [
-      { key: 'slice', label: '生成素材片段' },
-      { key: 'patterns', label: '审查口播并生成素材模式' },
+      { key: 'slice', label: '生成候选素材片段' },
+      { key: 'patterns', label: '生成候选素材模式' },
       { key: 'pattern-failures', label: '补处理失败列表' },
       { key: 'write', label: '写入结果' },
     ],

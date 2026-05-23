@@ -1,4 +1,5 @@
-import { writeFile } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { dirname } from 'node:path';
 import type { IKtepSubtitle } from '../../protocol/schema.js';
 
 /**
@@ -9,6 +10,7 @@ export async function exportSrt(
   outputPath: string,
 ): Promise<void> {
   const content = formatSrt(cues);
+  await mkdir(dirname(outputPath), { recursive: true });
   await writeFile(outputPath, content, 'utf-8');
 }
 
@@ -29,6 +31,7 @@ export async function exportVtt(
   outputPath: string,
 ): Promise<void> {
   const content = formatVtt(cues);
+  await mkdir(dirname(outputPath), { recursive: true });
   await writeFile(outputPath, content, 'utf-8');
 }
 

@@ -69,7 +69,7 @@ export async function snapshotProjectEditDrp(
   input: ISnapshotProjectEditDrpInput,
 ): Promise<ISnapshotProjectEditDrpResult> {
   const context = await resolveEditSnapshotContext(input);
-  const executor = input.executor ?? new PythonResolveColorExecutor({ timeoutMs: 0 });
+  const executor = input.executor ?? new PythonResolveColorExecutor();
   const preflight = await executor.preflight({
     projectId: context.projectId ?? context.project.id,
     resolveProjectName: context.resolveProjectName,

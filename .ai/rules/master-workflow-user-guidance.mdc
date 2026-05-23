@@ -54,7 +54,8 @@ Kairos 的标准顺序是：
   - `edit.framework` 只做剪辑 handoff：`全片章节` 是宏观概览，`分段操作稿` 是唯一可执行 FW beat 边界，不输出 `beat 边界索引`；全文不得写 chronology/event/route/gap/span/asset id；`spans` 列必须写类型数量与视频语音拆分，`叙事` 只写客观素材总结；系统规则不规定固定的素材召回提示章节名
   - Codex Agent 按 confirmed Flow Plan 的 capability steps 逐步运行和写产物；人工审查通过产物本身完成，不通过 Console runner
   - 中间产物由每个 capability 的 `outputRefs` 决定；不要要求固定 `script/current.json`、固定 beat 或固定 `Script -> Timeline` 顺序
-  - `resolve.media_sync` 只在 Flow Plan 声明时同步达芬奇 Media Pool；`timeline.generate` 只从已同步 Media Pool 选素材，不重新导入或清空 namespace
+  - `resolve.media_sync` 只在 Flow Plan 声明时同步达芬奇 Media Pool；重复运行时复用已有 MediaPoolItem，事件目录一致则跳过，不一致则移动到新目录并清理空事件目录；`timeline.generate` 只从已同步 Media Pool 选素材，不重新导入或清空 namespace
+  - `timeline.generate` 的照片静帧默认是 `1000ms`；只有剪辑规则 / confirmed Flow Plan 或运行时 `timelineStillDurationMs` 明确提及时才可覆盖，不能从旧默认或 Resolve 偏好猜成 `5s`
 - 第七步在目标 NLE 和导出目录明确后执行 Export
 
 ## 用户真正该编辑的入口
@@ -82,9 +83,9 @@ Kairos 的标准顺序是：
 - 没有 `store/project.json` / `store/manifest.json`：先做 `Project Init`
 - 有项目骨架但没有 `store/assets.json`：先做 `Ingest`
 - 有 `store/assets.json` 但缺少对应 `analysis/asset-reports/*.json`：先做 `Analyze`
-- 如果已有完整 `analysis/asset-reports/*.json`，用户只改了 span 派生口径，优先去 `/chronology` 运行 `生成素材片段与模式`，不能默认重跑完整 Analyze
+- 如果已有完整 `analysis/asset-reports/*.json`，用户只改了 span 派生口径，优先去 `/chronology` 运行 `生成候选素材片段与模式`，不能默认重跑完整 Analyze
 - 如果用户只改了 GPS / Pharos context / 空间优先级 / reverse-geocode 逻辑，先运行 `spatial-refresh` 修补 reports，再回 `/chronology` 重新生成 spans 和 chronology
-- 有 `store/spans.json` 但缺 fresh `store/spans.meta.json`，或 `media/chronology.json` 缺失、仍是旧数组 v1、或不是 `status=confirmed` 的 Chronology V2：先去 `/chronology` 生成素材片段与模式、生成/审查/确认 chronology
+- 有 `store/spans.json` 但缺 fresh `store/spans.meta.json`，或 meta 为 `pending-speech-review`，或 `media/chronology.json` 缺失、仍是旧数组 v1、或不是 `status=confirmed` 的 Chronology V2：先去 `/chronology` 生成候选素材片段与模式；如 pending 则交给 Codex/Agent SubAgents 完成 speech-window review，且每个 speech-review subagent shard 上限约 1500 candidates；再生成/审查/确认 chronology
 - 有 confirmed chronology，但缺少 `edits/<editId>/config/edit-unit.json` 或其中没有 `editRuleCategory`：先进入 `/edit` 初始化 Edit Unit
 - 有 Edit Unit 但缺少 confirmed `edits/<editId>/planning/flow-plan.json`：由 Codex Agent 生成/更新 Flow Plan；如果后续 capability 声明需要 fresh spans，再由该 step 精确阻塞
 - 有 confirmed Flow Plan 但缺少当前 `plannerPolicyVersion=codex-agent-v1` 或 `materialIdPolicyVersion=human-source-v1`：视为旧计划，由 Codex Agent 重新生成

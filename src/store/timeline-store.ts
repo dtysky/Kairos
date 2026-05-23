@@ -26,6 +26,10 @@ export function getTimelineCurrentPath(projectRoot: string, editId?: string | nu
   return join(projectRoot, '.tmp', 'edit-flow', normalizeEditId(editId), 'timeline', 'current.json');
 }
 
+export function getTimelineSubtitleSrtPath(projectRoot: string, editId?: string | null): string {
+  return join(projectRoot, '.tmp', 'edit-flow', normalizeEditId(editId), 'timeline', 'current.srt');
+}
+
 export function getTimelineRoughCutBasePath(projectRoot: string, editId?: string | null): string {
   return join(getProjectEditTimelineRoot(projectRoot, editId), 'rough-cut-base.json');
 }

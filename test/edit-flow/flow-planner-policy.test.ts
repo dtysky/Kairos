@@ -110,6 +110,44 @@ describe('Codex-agent Edit Flow policy', () => {
     expect(await readFile(getMaterialSlotsPath(projectRoot, 'main'), 'utf-8')).toContain('"status": "stale"');
   });
 
+  it('keeps timeline.generate run records summary-only by externalizing clip and subtitle arrays', async () => {
+    const { projectRoot } = await createWorkspaceProject('run record summary policy。');
+    await writeEditFlowRunRecord(projectRoot, {
+      ...buildRunRecord(),
+      runId: 'run-timeline-a',
+      capabilityId: 'timeline.generate',
+      stepId: 'timeline-generate',
+      runner: 'deterministic',
+      summary: {
+        timelineName: 'rough cut',
+        hostSummary: {
+          clipCount: 2,
+          clips: Array.from({ length: 2 }, (_, index) => ({ clipId: `clip-${index + 1}` })),
+        },
+        subtitles: [{ startMs: 0, endMs: 1000, text: '不要进 run current。' }],
+      },
+    }, 'main');
+
+    const records = await loadEditFlowRunRecords(projectRoot, 'main');
+    const record = records.find(item => item.runId === 'run-timeline-a');
+
+    expect(record?.summary).toMatchObject({
+      timelineName: 'rough cut',
+      hostSummary: {
+        clipCount: 2,
+        clipsExternalized: true,
+        clipsExternalizedCount: 2,
+      },
+      subtitlesExternalized: true,
+      subtitlesExternalizedCount: 1,
+      runRecordSummaryPolicy: {
+        summaryOnly: true,
+      },
+    });
+    expect((record?.summary.hostSummary as { clips?: unknown[] }).clips).toBeUndefined();
+    expect((record?.summary as { subtitles?: unknown[] }).subtitles).toBeUndefined();
+  });
+
   it('rejects edit.framework output that includes a beat boundary index', async () => {
     expect(() => assertEditFrameworkMarkdownContract('## beat 边界索引\n\n| beat | source |\n|---|---|\n')).toThrow(/beat 边界索引/su);
   });

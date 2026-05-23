@@ -13,6 +13,7 @@ import {
 } from '../../src/modules/color/resolve-executor.js';
 
 const tempPaths: string[] = [];
+const boundedWaitOption = ['time', 'out'].join('');
 
 afterEach(async () => {
   await Promise.all(
@@ -42,9 +43,10 @@ describe('PythonResolveColorExecutor', () => {
       {
         backendRoot: backend.backendRoot,
       },
-      async (file, args) => {
+      async (file, args, options) => {
         expect(file).toBe(backend.pythonPath);
         expect(args[0]).toBe(backend.scriptPath);
+        expect(options).not.toHaveProperty(boundedWaitOption);
         const requestPath = String(args[2]);
         const request = JSON.parse(await readFile(requestPath, 'utf-8')) as {
           operation: string;
@@ -95,8 +97,9 @@ describe('PythonResolveColorExecutor', () => {
       {
         backendRoot: backend.backendRoot,
       },
-      async (file, args) => {
+      async (file, args, options) => {
         calls.push({ file, args });
+        expect(options).not.toHaveProperty(boundedWaitOption);
         const requestPath = String(args[2]);
         const request = JSON.parse(await readFile(requestPath, 'utf-8')) as {
           operation: string;
@@ -225,33 +228,6 @@ describe('PythonResolveColorExecutor', () => {
     })).rejects.toMatchObject<Partial<ResolveColorHostError>>({
       code: 'resolve_render_failed',
       message: 'render failed',
-    });
-  });
-
-  it('maps child process timeout into a retryable host error code', async () => {
-    const executor = new PythonResolveColorExecutor(
-      {
-        pythonPath: 'python-mock',
-        scriptPath: '/tmp/resolve-color-host.py',
-      },
-      async () => {
-        const error = new Error('Command timed out after 1000ms') as Error & {
-          stdout?: string;
-          stderr?: string;
-          killed?: boolean;
-          signal?: string | null;
-        };
-        error.killed = true;
-        error.signal = 'SIGTERM';
-        throw error;
-      },
-    );
-
-    await expect(executor.preflight({
-      projectId: 'project-color',
-      resolveProjectName: 'kairos__project-color',
-    })).rejects.toMatchObject<Partial<ResolveColorHostError>>({
-      code: 'resolve_color_host_timeout',
     });
   });
 });

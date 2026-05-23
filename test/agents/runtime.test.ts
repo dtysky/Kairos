@@ -60,7 +60,7 @@ describe('MlJsonPacketAgentRunner', () => {
     expect(capturedPrompt).not.toContain('"id"');
   });
 
-  it('builds the materialization review prompt with row decisions', async () => {
+  it('builds the span-builder materialization prompt with pattern rows only', async () => {
     let capturedPrompt = '';
     let capturedOptions: Record<string, unknown> | undefined;
     const mlClient = {
@@ -68,18 +68,16 @@ describe('MlJsonPacketAgentRunner', () => {
         capturedPrompt = prompt;
         capturedOptions = options;
         return {
-          text: JSON.stringify([{
-            keepSegmentIndexes: [2],
-            keepVisualOnly: false,
-            materialPatterns: ['车内自拍口播', '车内', '下雨', '有口播语音', '雨天出发说明', '出发说明', '雨天行程'],
-          }]),
+          text: JSON.stringify([
+            ['车内自拍口播', '车内', '下雨', '有口播语音', '雨天出发说明', '出发说明', '雨天行程'],
+          ]),
         };
       },
     } as unknown as MlClient;
     const runner = new MlJsonPacketAgentRunner(mlClient);
     const packet: IAgentPacket = {
       stage: 'media/span-materialization-review',
-      identity: 'span-materialization-review',
+      identity: 'span-materialization-patterns',
       mission: 'test',
       hardConstraints: [],
       allowedInputs: [],
@@ -102,21 +100,20 @@ describe('MlJsonPacketAgentRunner', () => {
       reviewRubric: [],
     };
 
-    const result = await runner.run<Array<Record<string, unknown>>>({
+    const result = await runner.run<string[][]>({
       promptId: 'media/span-materialization-review',
       packet,
       llm: { jsonMode: true },
     });
 
-    expect(result).toEqual([{
-      keepSegmentIndexes: [2],
-      keepVisualOnly: false,
-      materialPatterns: ['车内自拍口播', '车内', '下雨', '有口播语音', '雨天出发说明', '出发说明', '雨天行程'],
-    }]);
+    expect(result).toEqual([
+      ['车内自拍口播', '车内', '下雨', '有口播语音', '雨天出发说明', '出发说明', '雨天行程'],
+    ]);
     expect(capturedOptions).toMatchObject({ maxTokens: CSPAN_MATERIALIZATION_REVIEW_MAX_TOKENS });
-    expect(capturedPrompt).toContain('keepSegmentIndexes');
-    expect(capturedPrompt).toContain('keepVisualOnly');
+    expect(capturedPrompt).not.toContain('keepSegmentIndexes');
+    expect(capturedPrompt).not.toContain('keepVisualOnly');
     expect(capturedPrompt).toContain('只输出一行顶层 JSON 数组');
-    expect(capturedPrompt).not.toContain('每行必须正好 7 个中文短标签 string[]');
+    expect(capturedPrompt).toContain('每行必须正好 7 个中文短标签');
+    expect(capturedPrompt).toContain('不能决定 speech keep/drop');
   });
 });

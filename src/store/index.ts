@@ -192,6 +192,7 @@ export {
 } from './script-store.js';
 export {
   getTimelineCurrentPath,
+  getTimelineSubtitleSrtPath,
   getTimelineRoughCutBasePath,
   getTimelineSegmentCutsRoot,
   getTimelineSegmentCutPath,

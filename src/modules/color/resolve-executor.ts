@@ -188,7 +188,6 @@ export interface IResolveColorExecutorConfig {
   pythonPath?: string;
   scriptPath?: string;
   workingDirectory?: string;
-  timeoutMs?: number;
 }
 
 export interface IResolveColorBackendStatus {
@@ -294,7 +293,6 @@ export class PythonResolveColorExecutor implements IColorExecutor {
           cwd: resolveColorWorkingDirectory(this.config),
           encoding: 'utf8',
           maxBuffer: 10 * 1024 * 1024,
-          timeout: this.config.timeoutMs ?? 10 * 60 * 1000,
           windowsHide: true,
         },
       );
@@ -444,16 +442,8 @@ function tryParseJsonPayload(raw: string): unknown | null {
 
 function inferResolveHostErrorCode(cause: {
   code?: string | number | null;
-  killed?: boolean;
-  signal?: string | null;
   message?: string;
 }): string {
-  if (typeof cause.message === 'string' && cause.message.toLowerCase().includes('timed out')) {
-    return 'resolve_color_host_timeout';
-  }
-  if (cause.killed && cause.signal) {
-    return 'resolve_color_host_timeout';
-  }
   if (typeof cause.code === 'string' && ['ENOENT', 'EACCES', 'ECONNREFUSED', 'ECONNRESET'].includes(cause.code)) {
     return 'resolve_color_host_connection_failed';
   }

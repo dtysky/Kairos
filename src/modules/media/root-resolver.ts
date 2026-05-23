@@ -126,10 +126,16 @@ export function resolveAssetLocalPath(
   const root = roots.find(item => item.id === asset.ingestRootId && item.enabled);
   if (!root) return null;
 
+  const segments = asset.sourcePath.split(/[\\/]+/).filter(Boolean);
+  for (const candidate of buildRootPathCandidates(root, 'path')) {
+    const assetPath = join(candidate.path, ...segments);
+    if (isReadableFile(assetPath)) {
+      return assetPath;
+    }
+  }
+
   const resolvedRoot = resolveMediaRoot(root);
   if (!resolvedRoot.localPath) return null;
-
-  const segments = asset.sourcePath.split(/[\\/]+/).filter(Boolean);
   return join(resolvedRoot.localPath, ...segments);
 }
 
@@ -154,6 +160,17 @@ function inspectPathCandidate(candidate: IMediaRootPathCandidate): IMediaRootPat
       readable: false,
       reason: error instanceof Error ? error.message : '不可读',
     };
+  }
+}
+
+function isReadableFile(path: string): boolean {
+  try {
+    const stat = statSync(path);
+    if (!stat.isFile()) return false;
+    accessSync(path, constants.R_OK);
+    return true;
+  } catch {
+    return false;
   }
 }
 

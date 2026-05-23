@@ -106,10 +106,10 @@ export const CEDIT_FLOW_CAPABILITY_CATALOG: IEditFlowCapability[] = [
   {
     capabilityId: 'timeline.generate',
     title: 'Timeline Generate',
-    summary: 'Deterministically places recalled material-slots in their declared order from already-synced Resolve Media Pool items into a Resolve rough-cut timeline; chronology is only Resolve path/bin/context mapping, the KTEP/manifest audit is temporary under project .tmp, and successful timeline writes attempt a project-level [Edit] DRP snapshot.',
+    summary: 'Deterministically places recalled material-slots in their declared order from already-synced Resolve Media Pool items into a Resolve rough-cut timeline, writes a source-speech SRT companion for manual Resolve import, keeps the KTEP/manifest audit temporary under project .tmp, and attempts a project-level [Edit] DRP snapshot after successful timeline writes.',
     stableInputs: ['DaVinci Resolve Media Pool', 'edits/<editId>/planning/edit-framework.md', 'edits/<editId>/script/material-slots.json', 'store/spans.json', 'store/assets.json', 'media/chronology.json'],
-    stableOutputs: ['DaVinci Resolve Timeline', 'edits/resolve-project-map.json', 'edits/resolve-projects/<safe-project-key>/<Resolve项目名>.drp'],
-    outputKind: 'resolve-state',
+    stableOutputs: ['DaVinci Resolve Timeline', '.tmp/edit-flow/<editId>/timeline/current.json', '.tmp/edit-flow/<editId>/timeline/current.srt', 'edits/resolve-project-map.json', 'edits/resolve-projects/<safe-project-key>/<Resolve项目名>.drp'],
+    outputKind: 'mixed',
     defaultRunner: 'deterministic',
     gate: 'human',
     status: 'implemented',

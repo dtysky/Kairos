@@ -96,6 +96,14 @@ export async function assertFreshSpans(projectRoot: string): Promise<{ spans: IK
     throw new Error('Script/Timeline requires fresh spans: store/spans.meta.json is missing. Run /chronology span-rebuild first.');
   }
   if (meta.status !== 'fresh') {
+    if (meta.status === 'pending-speech-review') {
+      const handoff = meta.speechReview?.handoffPath
+        ? ` Handoff: ${meta.speechReview.handoffPath}.`
+        : '';
+      throw new Error(
+        `Script/Timeline requires fresh spans: store/spans.meta.json status is pending-speech-review. Complete Codex Agent speech-window review and write status=fresh before continuing.${handoff}`,
+      );
+    }
     throw new Error(`Script/Timeline requires fresh spans: store/spans.meta.json status is ${meta.status}. Run /chronology span-rebuild first.`);
   }
   if (meta.spanCount !== spans.length) {

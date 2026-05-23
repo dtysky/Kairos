@@ -1438,6 +1438,31 @@ function ChronologyProgressPanel({ jobs }) {
   );
 }
 
+function resolveSpansOutputUpdatedAt(spans) {
+  const timestamps = [
+    spans?.meta?.speechReview?.updatedAt,
+    spans?.meta?.generatedAt,
+    spans?.generatedAt,
+    spans?.updatedAt,
+  ]
+    .map(value => Date.parse(value || ''))
+    .filter(value => Number.isFinite(value));
+  return timestamps.length ? Math.max(...timestamps) : 0;
+}
+
+function isCurrentChronologyBlockedJob(job, spans) {
+  if (job?.status !== 'blocked') return false;
+  if (job.jobType !== 'span-rebuild') return true;
+
+  const spansStatus = spans?.status || spans?.meta?.status || 'missing';
+  if (!['fresh', 'pending-speech-review'].includes(spansStatus)) return true;
+
+  const spansUpdatedAt = resolveSpansOutputUpdatedAt(spans);
+  const jobUpdatedAt = Date.parse(job.updatedAt || job.startedAt || '');
+  if (!spansUpdatedAt) return false;
+  return Number.isFinite(jobUpdatedAt) && jobUpdatedAt > spansUpdatedAt;
+}
+
 function ChronologyPage({
   projectId,
   config,
@@ -1456,10 +1481,13 @@ function ChronologyPage({
 }) {
   const chronology = config?.chronology || null;
   const events = chronology?.events || [];
+  const spansStatus = spans?.status || spans?.meta?.status || 'missing';
+  const isPendingSpeechReview = spansStatus === 'pending-speech-review';
   const chronologyJobs = (jobs || []).filter(job =>
     job.projectId === projectId && ['spatial-refresh', 'span-rebuild', 'chronology-build'].includes(job.jobType));
   const activeChronologyJobs = chronologyJobs.filter(isLiveSupervisorJob);
-  const blockedChronologyJobs = chronologyJobs.filter(job => job.status === 'blocked');
+  const blockedChronologyJobs = chronologyJobs.filter(job => isCurrentChronologyBlockedJob(job, spans));
+  const currentChronologyJobs = [...activeChronologyJobs, ...blockedChronologyJobs];
   const spatialRefreshJobs = activeChronologyJobs.filter(job => job.jobType === 'spatial-refresh');
   const spanRebuildJobs = activeChronologyJobs.filter(job => job.jobType === 'span-rebuild');
   const chronologyBuildJobs = activeChronologyJobs.filter(job => job.jobType === 'chronology-build');
@@ -1474,6 +1502,11 @@ function ChronologyPage({
     && !busy['job:span-rebuild']
     && activeChronologyJobs.length === 0
     && spanRebuildCapability?.supported !== false;
+  const speechReview = spans?.meta?.speechReview || {};
+  const speechWindowAgentHandoffPath = speechReview.handoffPath || null;
+  const speechReviewHandoffRef = speechWindowAgentHandoffPath
+    || `projects/${projectId || '<projectId>'}/.tmp/chronology/speech-window-agent-handoff.md`;
+  const speechReviewAgentPrompt = `请按 handoff 处理这个 Kairos 项目的 speech-window review：读取 ${speechReviewHandoffRef}。作为主 Agent，按 asset/day 或稳定 span-id range 启用 subagents 审查 store/spans.json 的 speech/mixed candidates；每个 subagent shard 最多约 1500 条 candidates，尽量保持同一 asset 不跨 shard。合并 shard 后直接写最终 store/spans.json 与 store/spans.meta.json，清理无意义 ASR、裁切可用口播、同步 materialPatterns[3]，最后标记 status=fresh、speechReview.status=completed。不要重跑 span-builder，不要生成 chronology。`;
   const hasFreshSpans = Boolean(spans?.fresh);
   const canStartChronologyBuild = Boolean(projectId)
     && hasFreshSpans
@@ -1548,7 +1581,7 @@ function ChronologyPage({
               disabled={!canStartSpanRebuild}
               onClick={onRunSpanRebuild}
             >
-              {busy['job:span-rebuild'] || spanRebuildJobs.length > 0 ? '生成中…' : '生成素材片段与模式'}
+              {busy['job:span-rebuild'] || spanRebuildJobs.length > 0 ? '生成中…' : '生成候选素材片段与模式'}
             </Button>
             <Button
               type={canStartChronologyBuild ? 'primary' : 'disabled'}
@@ -1571,7 +1604,30 @@ function ChronologyPage({
             {spans?.meta?.inputsHash ? <span>{`spans input ${spans.meta.inputsHash.slice(0, 12)}`}</span> : null}
           </div>
         </div>
-        <ChronologyProgressPanel jobs={chronologyJobs} />
+        <ChronologyProgressPanel jobs={currentChronologyJobs} />
+        {isPendingSpeechReview ? (
+          <WorkflowPrompt
+            eyebrow="Speech Review Pending"
+            title="等待 Agent 裁切 Speech Windows"
+            body={`当前 spans 只是候选结果，包含 ${speechReview.candidateCount ?? 0} 个 speech/mixed candidates。请去 Codex/Agent 环境启用 subagents 执行 handoff；完成后回到这里运行“生成/刷新编年史”。`}
+            detail={(
+              <div className="workflow-prompt-command-block">
+                <div className="workflow-prompt-command-label">回到 Codex/Agent 后复制这句：</div>
+                <pre className="workflow-prompt-command">{speechReviewAgentPrompt}</pre>
+                {speechWindowAgentHandoffPath ? <div>{`Handoff: ${speechWindowAgentHandoffPath}`}</div> : null}
+              </div>
+            )}
+            actions={(
+              <Button
+                type="default"
+                onClick={() => window.navigator?.clipboard?.writeText?.(speechReviewAgentPrompt)?.catch?.(() => undefined)}
+              >
+                复制 Agent 指令
+              </Button>
+            )}
+            tone="warn"
+          />
+        ) : null}
         {spans?.meta?.warnings?.length ? (
           <div className="pipeline-footnote">
             {`${activeChronologyJobs.length > 0 || blockedChronologyJobs.length > 0 ? '上次 spans warning：' : ''}${spans.meta.warnings.slice(0, 3).join('；')}`}
@@ -2714,7 +2770,7 @@ function resolveProgressPercent(progress) {
 
 function describeChronologyJobTitle(job) {
   if (!job) return 'Chronology 任务';
-  if (job.jobType === 'span-rebuild') return '生成素材片段与素材模式';
+  if (job.jobType === 'span-rebuild') return '生成候选素材片段与模式';
   if (job.jobType === 'chronology-build') return '生成/刷新编年史';
   if (job.jobType === 'spatial-refresh') return '刷新时空真相';
   return job.jobType;

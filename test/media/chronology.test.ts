@@ -1466,6 +1466,25 @@ describe('buildMediaChronology', () => {
 
       await expect(buildProjectChronology({ workspaceRoot, projectId }))
         .rejects.toThrow(/status is stale.*span-rebuild/u);
+
+      await writeJson(getSpansMetaPath(projectRoot), {
+        schemaVersion: '1.0',
+        status: 'pending-speech-review',
+        generatedAt: '2026-04-12T09:10:00.000Z',
+        inputsHash: 'pending-inputs',
+        assetCount: 1,
+        reportCount: 0,
+        spanCount: 1,
+        speechReview: {
+          status: 'pending',
+          candidateCount: 1,
+          handoffPath: 'projects/project-chronology-build/.tmp/chronology/speech-window-agent-handoff.md',
+        },
+        warnings: [],
+      });
+
+      await expect(buildProjectChronology({ workspaceRoot, projectId }))
+        .rejects.toThrow(/pending-speech-review.*Codex Agent speech-window review/u);
     } finally {
       await rm(workspaceRoot, { recursive: true, force: true });
     }

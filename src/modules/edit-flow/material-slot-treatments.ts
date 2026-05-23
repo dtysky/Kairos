@@ -10,6 +10,27 @@ export const CDEFAULT_MATERIAL_SLOT_TREATMENT: IResolvedMaterialSlotTreatment = 
   speed: 1,
 };
 
+export const CMATERIAL_SLOT_SPEED_MIN = 1;
+export const CMATERIAL_SLOT_SPEED_MAX = 5;
+
+export function isValidMaterialSlotSpeedMultiplier(speed: unknown): speed is number {
+  return typeof speed === 'number'
+    && Number.isFinite(speed)
+    && Number.isInteger(speed)
+    && speed >= CMATERIAL_SLOT_SPEED_MIN
+    && speed <= CMATERIAL_SLOT_SPEED_MAX;
+}
+
+export function normalizeMaterialSlotSpeedMultiplier(speed: unknown): number {
+  if (typeof speed !== 'number' || !Number.isFinite(speed) || speed <= 0) {
+    return CDEFAULT_MATERIAL_SLOT_TREATMENT.speed;
+  }
+  return Math.min(
+    CMATERIAL_SLOT_SPEED_MAX,
+    Math.max(CMATERIAL_SLOT_SPEED_MIN, Math.ceil(speed)),
+  );
+}
+
 export function resolveMaterialSlotTreatment(
   treatment?: IMaterialSlotTreatment | null,
 ): IResolvedMaterialSlotTreatment {
@@ -17,9 +38,7 @@ export function resolveMaterialSlotTreatment(
     audio: typeof treatment?.audio === 'number' && Number.isFinite(treatment.audio)
       ? treatment.audio
       : CDEFAULT_MATERIAL_SLOT_TREATMENT.audio,
-    speed: typeof treatment?.speed === 'number' && Number.isFinite(treatment.speed) && treatment.speed > 0
-      ? treatment.speed
-      : CDEFAULT_MATERIAL_SLOT_TREATMENT.speed,
+    speed: normalizeMaterialSlotSpeedMultiplier(treatment?.speed),
   };
 }
 
@@ -30,8 +49,9 @@ export function compactMaterialSlotTreatment(
   if (treatment.audio !== CDEFAULT_MATERIAL_SLOT_TREATMENT.audio) {
     compact.audio = treatment.audio;
   }
-  if (treatment.speed !== CDEFAULT_MATERIAL_SLOT_TREATMENT.speed) {
-    compact.speed = treatment.speed;
+  const speed = normalizeMaterialSlotSpeedMultiplier(treatment.speed);
+  if (speed !== CDEFAULT_MATERIAL_SLOT_TREATMENT.speed) {
+    compact.speed = speed;
   }
   return compact;
 }

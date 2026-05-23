@@ -9,7 +9,7 @@
   "editRuleCategory": "travel-documentary",
   "editRuleHash": "03335e01b42b6a4810b2ddb7f0479962570c438751851993b030c05f8ddbaa45",
   "generatedAt": "2026-05-21T06:41:23.110Z",
-  "updatedAt": "2026-05-21T08:41:31.667Z",
+  "updatedAt": "2026-05-22T16:24:00.000Z",
   "status": "confirmed",
   "confirmedAt": "2026-05-21T06:41:23.110Z",
   "summary": "codex-agent-v1 旅行纪录片剪辑流：按当前用户维护剪辑规则生成 edit.framework handoff，再按 framework/spans/assets 做素材召回，随后同步 Resolve Media Pool、生成粗剪时间线、人工锁定粗剪，最后生成源语音字幕与无语音段落旁白草稿。",
@@ -131,7 +131,8 @@
         "同一原始素材的无口播行车 span 先按画面语义去重，最多保留三段。",
         "无口播行车 span 直接静音；超过 5 秒的静音行车片段通过加速压到 5 秒内。",
         "material-slots.json 必须保留 chosenSpanIds 中的人类可读素材主键以供审查溯源。",
-        "treatments 是稀疏覆盖表：默认 {audio:0,speed:1} 不写；静音写 {audio:-100}；加速写 {speed:n}；不要写 audio=0 或 speed=1 默认字段。"
+        "treatments 是稀疏覆盖表：默认 {audio:0,speed:1} 不写；静音写 {audio:-100}；加速写 {speed:n}；不要写 audio=0 或 speed=1 默认字段。",
+        "speed 只能写 1..5 的整数倍；无口播行车超过 5 秒时使用 ceil(durationMs/5000) 后再 cap 到 5x，不能写小数倍速。"
       ]
     },
     {
@@ -171,7 +172,8 @@
       ],
       "outputRefs": [
         "Resolve timeline: Kairos Timelines/<editId> rough cut",
-        ".tmp/edit-flow/<editId>/timeline/current.json"
+        ".tmp/edit-flow/<editId>/timeline/current.json",
+        ".tmp/edit-flow/<editId>/timeline/current.srt"
       ],
       "runner": "deterministic",
       "execution": {
@@ -184,7 +186,8 @@
         "必须以 material-slots.segments 顺序和 chosenSpanIds 顺序为落片真相。",
         "不得因为 chronology 重新排序或替换 chosen spans。",
         "缺少 treatments[spanId]、audio 或 speed 时按默认 {audio:0,speed:1} 读取。",
-        "speech-backed 非照片 span 如果被选择，timeline.generate 必须拒绝解析后 audio <= -100 的静音处理。"
+        "speech-backed 非照片 span 如果被选择，timeline.generate 必须拒绝解析后 audio <= -100 的静音处理。",
+        "成功生成 Resolve timeline 后，必须从已选中且实际有声的 source-speech spans 映射 transcriptSegments 并写 current.srt；没有分段时才用整段 transcript 兜底，供用户手动导入达芬奇。"
       ]
     },
     {

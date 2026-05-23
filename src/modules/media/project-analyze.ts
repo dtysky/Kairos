@@ -575,7 +575,7 @@ export async function analyzeWorkspaceProjectMedia(
       total: progressTotal,
       unit: 'files',
       etaSeconds: 0,
-      detail: `已完成 ${analyzedAssetIds.length} 条素材分析，自动细扫 ${fineScannedAssetIds.length} 条；请到 /chronology 生成素材片段与模式，再生成编年史`,
+      detail: `已完成 ${analyzedAssetIds.length} 条素材分析，自动细扫 ${fineScannedAssetIds.length} 条；请到 /chronology 生成候选素材片段与模式，按提示完成 speech review 后再生成编年史`,
       extra: {
         projectId: input.projectId,
         projectName: project.name,

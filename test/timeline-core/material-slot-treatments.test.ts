@@ -1,4 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import {
+  compactMaterialSlotTreatment,
+  resolveMaterialSlotTreatment,
+} from '../../src/modules/edit-flow/material-slot-treatments.js';
 import { buildDeterministicTimeline } from '../../src/modules/timeline-core/project-timeline.js';
 import type {
   IChronologyEvent,
@@ -39,6 +43,12 @@ describe('timeline material slot treatments', () => {
       muteAudio: false,
       requestedSpeed: 1,
     });
+  });
+
+  it('normalizes raw speed treatments to integer multipliers capped at 5x', () => {
+    expect(resolveMaterialSlotTreatment({ speed: 2.2 })).toMatchObject({ speed: 3 });
+    expect(resolveMaterialSlotTreatment({ speed: 12 })).toMatchObject({ speed: 5 });
+    expect(compactMaterialSlotTreatment({ audio: 0, speed: 3.1 })).toEqual({ speed: 4 });
   });
 });
 

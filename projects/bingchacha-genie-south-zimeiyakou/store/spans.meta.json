@@ -7,8 +7,6 @@
   "reportCount": 2253,
   "spanCount": 6626,
   "warnings": [
-    "materialPatterns chunk 625/663: repaired 1 materialPatterns rows for the v5 first-four deterministic slots",
-    "materialPatterns chunk 627/663: repaired 9 materialPatterns rows for the v5 first-four deterministic slots",
     "materialPatterns chunk 629/663: repaired 2 materialPatterns rows for the v5 first-four deterministic slots",
     "materialPatterns chunk 630/663: repaired 10 materialPatterns rows for the v5 first-four deterministic slots",
     "materialPatterns chunk 631/663: repaired 2 materialPatterns rows for the v5 first-four deterministic slots",
@@ -57,6 +55,15 @@
     "materialPatterns span DJI_20260430195615_0610_D_drone_day6_aerial_s0-23: failed-list retry still missed slot 5; wrote 情景不明",
     "local speech truth repair 2026-05-19T07:58:27.360Z: repaired 49 span(s) from asset-report speech-window evidence",
     "local speech truth repair 2026-05-19T09:40:58.025Z: repaired 302 span(s) from asset-report speech-window evidence",
-    "local speech truth repair: reran ASR for day0 C0353/C0355/C0356/C0357/C0358/C0359/C0360/C0361/C0363/C0364/C0365; restored transcriptSegments/speechCoverage/speech windows in asset reports and existing spans without modifying material-slots or Resolve timeline."
-  ]
+    "local speech truth repair: reran ASR for day0 C0353/C0355/C0356/C0357/C0358/C0359/C0360/C0361/C0363/C0364/C0365; restored transcriptSegments/speechCoverage/speech windows in asset reports and existing spans without modifying material-slots or Resolve timeline.",
+    "manual speech review gate 2026-05-22T14:29:05.880Z: existing fresh spans marked pending-speech-review without rewriting store/spans.json; candidateCount=4079",
+    "speech-window review 2026-05-22T14:46:02.227Z: candidates=4079; keptSpeech=2532; visualOnly=1547; dropped=0; clippedSpeech=2532; workerDecisions=4079; mainFallback=0",
+    "speech-window review cleanup 2026-05-22T14:48:36.765Z: cleanedMaterialPatternNoise=18; demotedShortSpeech=1"
+  ],
+  "speechReview": {
+    "status": "completed",
+    "candidateCount": 4079,
+    "handoffPath": "H:\\SacredGrove\\Kairos\\projects\\bingchacha-genie-south-zimeiyakou\\.tmp\\chronology\\speech-window-agent-handoff.md",
+    "updatedAt": "2026-05-22T14:48:36.765Z"
+  }
 }

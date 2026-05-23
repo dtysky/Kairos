@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { mkdir, mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { resolveMediaRoot, resolveMediaRoots } from '../../src/modules/media/root-resolver.js';
+import { resolveAssetLocalPath, resolveMediaRoot, resolveMediaRoots } from '../../src/modules/media/root-resolver.js';
 import type { IMediaRoot } from '../../src/protocol/schema.js';
 
 const workspaces: string[] = [];
@@ -90,5 +90,28 @@ describe('media root resolver', () => {
 
     expect(resolution.resolved).toEqual([]);
     expect(resolution.missing).toEqual([root]);
+  });
+
+  it('resolves an asset from an alternate path when the primary root exists but misses that file', async () => {
+    const workspaceRoot = await createWorkspace();
+    const primary = join(workspaceRoot, 'primary');
+    const alternate = join(workspaceRoot, 'alternate');
+    await mkdir(join(primary, 'day0'), { recursive: true });
+    await mkdir(join(alternate, 'day0'), { recursive: true });
+    await writeFile(join(alternate, 'day0', 'C0353.mp4'), 'video', 'utf-8');
+
+    const root: IMediaRoot = {
+      id: 'root-camera',
+      path: primary,
+      alternatePaths: [{ path: alternate }],
+      enabled: true,
+    };
+
+    const resolved = resolveAssetLocalPath({
+      ingestRootId: 'root-camera',
+      sourcePath: 'day0/C0353.mp4',
+    }, [root]);
+
+    expect(resolved).toBe(join(alternate, 'day0', 'C0353.mp4'));
   });
 });

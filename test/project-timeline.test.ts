@@ -99,6 +99,62 @@ describe('project timeline generation', () => {
       cfg: createTimelineConfig(),
     })).toThrow(/muted speech span/u);
   });
+
+  it('defaults photo stills to one second when the edit rule does not override duration', async () => {
+    const fixture = await createTimelineProjectFixture();
+    const project = await loadProject(fixture.projectRoot);
+    const photoAsset = createVideoAsset({
+      id: 'asset-photo',
+      kind: 'photo',
+      displayName: 'Photo Asset',
+      sourcePath: '/tmp/kairos-test-media/photo.jpg',
+      durationMs: 0,
+    });
+    const photoSpan = createSlice({
+      id: 'slice-photo',
+      assetId: 'asset-photo',
+      type: 'photo',
+      sourceInMs: 0,
+      sourceOutMs: 0,
+      materialPatterns: ['拍摄视角：固定机位', '当前环境：山路', '天气光线：自然光', '无口播语音'],
+    });
+
+    const result = buildDeterministicTimeline({
+      project,
+      editId: 'main',
+      assets: [...fixture.assets, photoAsset],
+      spans: [...fixture.spans, photoSpan],
+      materialSlots: createMaterialSlots({ 'slice-photo': { audio: -100 } }, ['slice-photo']),
+      chronologyEvents: [{
+        ...fixture.events[0],
+        spanIds: ['slice-photo'],
+      }],
+      ingestRoots: [],
+      cfg: {
+        fps: 30,
+        width: 3840,
+        height: 2160,
+        name: 'Main [main]',
+      },
+    });
+
+    expect(result.doc.timeline.clips[0]).toMatchObject({
+      spanId: 'slice-photo',
+      sourceInMs: 0,
+      sourceOutMs: 1000,
+      timelineInMs: 0,
+      timelineOutMs: 1000,
+      muteAudio: true,
+    });
+    expect(result.resolveClips[0]).toMatchObject({
+      spanId: 'slice-photo',
+      sourceInMs: 0,
+      sourceOutMs: 1000,
+      timelineInMs: 0,
+      timelineOutMs: 1000,
+      muteAudio: true,
+    });
+  });
 });
 
 async function createTimelineProjectFixture(
@@ -209,6 +265,7 @@ async function createTimelineProjectFixture(
 
 function createMaterialSlots(
   treatments: IMaterialSlotsDocument['segments'][number]['slots'][number]['treatments'] = {},
+  chosenSpanIds = ['slice-drive', 'slice-talk'],
 ): IMaterialSlotsDocument {
   return {
     id: 'slots-main',
@@ -222,7 +279,7 @@ function createMaterialSlots(
         query: 'Segment 1',
         requirement: 'required',
         targetBundles: [],
-        chosenSpanIds: ['slice-drive', 'slice-talk'],
+        chosenSpanIds,
         treatments,
       }],
     }],

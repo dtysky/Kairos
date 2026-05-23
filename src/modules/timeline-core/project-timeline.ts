@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { access, readFile } from 'node:fs/promises';
 import type {
   IChronologyEvent,
   IKtepAsset,
@@ -7,6 +8,7 @@ import type {
   IKtepDoc,
   IKtepProject,
   IKtepSpan,
+  IKtepSubtitle,
   IMaterialSlotsDocument,
 } from '../../protocol/schema.js';
 import { CPROTOCOL, CVERSION, IMaterialSlotsDocument as ZMaterialSlotsDocument } from '../../protocol/schema.js';
@@ -17,6 +19,7 @@ import {
   getEditPlanningArtifactPath,
   getMaterialSlotsPath,
   getTimelineCurrentPath,
+  getTimelineSubtitleSrtPath,
   loadAssetReports,
   loadAssets,
   loadIngestRoots,
@@ -31,6 +34,7 @@ import { resolveAssetLocalPath } from '../media/root-resolver.js';
 import { assertConfirmedEditFlowPlan } from '../edit-flow/flow-planner.js';
 import { assertMaterialSlotsContract, spanHasSpeechTruth } from '../edit-flow/material-slots-contract.js';
 import { resolveMaterialSlotTreatment } from '../edit-flow/material-slot-treatments.js';
+import { exportSrt } from '../nle/export-srt.js';
 import { resolveTimelineBuildConfig, type IBuildConfig } from './timeline-builder.js';
 import {
   createResolveRoughCutTimeline,
@@ -45,8 +49,7 @@ import {
 } from './resolve-edit-naming.js';
 import { snapshotProjectEditDrp } from './edit-resolve-snapshot.js';
 
-const CPHOTO_DEFAULT_DURATION_MS = 5000;
-const CRESOLVE_MEDIA_SYNC_TIMEOUT_MS = 60 * 60 * 1000;
+const CPHOTO_DEFAULT_DURATION_MS = 1000;
 const CRESOLVE_PROJECT_MEDIA_NAMESPACE = 'Kairos Project Media';
 const CRESOLVE_TIMELINE_FOLDER_NAME = 'Kairos Timelines';
 
@@ -61,6 +64,8 @@ export interface IBuildProjectTimelineInput {
 export interface IBuildProjectTimelineResult {
   doc: IKtepDoc;
   resolveTimeline: IResolveRoughCutTimelineResult;
+  subtitleSrtPath: string;
+  subtitleCueCount: number;
 }
 
 export interface ISyncProjectResolveMediaInput {
@@ -124,20 +129,38 @@ export async function syncProjectResolveMedia(
     chronologyEvents: chronology.events,
     ingestRoots,
   });
+  await assertResolveMediaSyncSourceFilesExist(clips);
   const resolveMedia = await syncResolveRoughCutMedia({
     projectId: project.id,
     resolveProjectName,
     namespace: CRESOLVE_PROJECT_MEDIA_NAMESPACE,
     legacyNamespaces: [`Kairos Edit ${editId}`],
     clips,
-  }, {
-    timeoutMs: CRESOLVE_MEDIA_SYNC_TIMEOUT_MS,
   });
   return {
     resolveProjectName,
     resolveMedia,
     hostSummary: resolveMedia.hostSummary,
   };
+}
+
+async function assertResolveMediaSyncSourceFilesExist(clips: IResolvedResolveMediaClip[]): Promise<void> {
+  const missing: IResolvedResolveMediaClip[] = [];
+  await Promise.all(clips.map(async clip => {
+    try {
+      await access(clip.sourceAbsolutePath, constants.R_OK);
+    } catch {
+      missing.push(clip);
+    }
+  }));
+  if (missing.length === 0) return;
+  const examples = missing
+    .slice(0, 8)
+    .map(clip => `${clip.assetId} (${clip.sourceAbsolutePath})`)
+    .join(', ');
+  throw new Error(
+    `resolve.media_sync blocked: ${missing.length} source file(s) are missing or unreadable before Resolve import. Missing examples: ${examples}`,
+  );
 }
 
 export async function buildProjectTimeline(
@@ -216,6 +239,12 @@ export async function buildProjectTimeline(
     const message = validation.errors.map(error => `[${error.rule}] ${error.message}`).join('\n');
     throw new Error(`deterministic timeline validation failed:\n${message}`);
   }
+  const subtitleCues = buildTimelineSourceSpeechSubtitles({
+    clips: build.doc.timeline.clips,
+    spans: build.doc.spans,
+    language: 'zh',
+  });
+  const subtitleSrtPath = getTimelineSubtitleSrtPath(input.projectRoot, editId);
 
   let resolveTimeline = await createResolveRoughCutTimeline({
     projectId: project.id,
@@ -233,6 +262,7 @@ export async function buildProjectTimeline(
     stillDurationMs: cfg.stillDurationMs,
     clips: build.resolveClips,
   });
+  await exportSrt(subtitleCues, subtitleSrtPath);
   resolveTimeline = await attachEditDrpSnapshotToResolveTimeline({
     resolveTimeline,
     workspaceRoot: input.workspaceRoot,
@@ -245,6 +275,11 @@ export async function buildProjectTimeline(
     adapterHints: {
       ...build.doc.adapterHints,
       resolveRoughCut: resolveTimeline,
+      sourceSpeechSrt: {
+        path: subtitleSrtPath,
+        cueCount: subtitleCues.length,
+        generatedBy: 'timeline.generate:source-speech-srt',
+      },
     },
   };
   await writeJson(getTimelineCurrentPath(input.projectRoot, editId), doc);
@@ -252,6 +287,8 @@ export async function buildProjectTimeline(
   return {
     doc,
     resolveTimeline,
+    subtitleSrtPath,
+    subtitleCueCount: subtitleCues.length,
   };
 }
 
@@ -434,6 +471,119 @@ export function buildDeterministicTimeline(input: {
   };
 }
 
+export function buildTimelineSourceSpeechSubtitles(input: {
+  clips: IKtepClip[];
+  spans: IKtepSpan[];
+  language?: string;
+}): IKtepSubtitle[] {
+  const spanById = new Map(input.spans.map(span => [span.id, span] as const));
+  const cues: Array<Omit<IKtepSubtitle, 'id'>> = [];
+  const clips = [...input.clips].sort((left, right) => (
+    left.timelineInMs - right.timelineInMs || left.id.localeCompare(right.id)
+  ));
+
+  for (const clip of clips) {
+    if (isClipAudioMuted(clip)) continue;
+    const spanId = clip.spanId ?? clip.sliceId;
+    if (!spanId) continue;
+    const span = spanById.get(spanId);
+    if (!span || !spanHasSpeechTruth(span)) continue;
+
+    const sourceInMs = firstFiniteNumber(clip.sourceInMs, span.editSourceInMs, span.sourceInMs);
+    const sourceOutMs = firstFiniteNumber(clip.sourceOutMs, span.editSourceOutMs, span.sourceOutMs);
+    if (!Number.isFinite(sourceInMs) || !Number.isFinite(sourceOutMs) || sourceOutMs <= sourceInMs) {
+      continue;
+    }
+    if (!Number.isFinite(clip.timelineInMs) || !Number.isFinite(clip.timelineOutMs) || clip.timelineOutMs <= clip.timelineInMs) {
+      continue;
+    }
+
+    const speed = resolveSubtitleClipSpeed(clip);
+    const segments = [...(span.transcriptSegments ?? [])]
+      .filter(segment => normalizeSubtitleText(segment.text))
+      .sort((left, right) => left.startMs - right.startMs || left.endMs - right.endMs);
+
+    if (segments.length > 0) {
+      for (const segment of segments) {
+        const segmentStartMs = Math.max(segment.startMs, sourceInMs);
+        const segmentEndMs = Math.min(segment.endMs, sourceOutMs);
+        const text = normalizeSubtitleText(segment.text);
+        if (!text || segmentEndMs <= segmentStartMs) continue;
+        const startMs = mapSourceMsToTimelineMs(segmentStartMs, {
+          sourceInMs,
+          timelineInMs: clip.timelineInMs,
+          timelineOutMs: clip.timelineOutMs,
+          speed,
+        });
+        const endMs = mapSourceMsToTimelineMs(segmentEndMs, {
+          sourceInMs,
+          timelineInMs: clip.timelineInMs,
+          timelineOutMs: clip.timelineOutMs,
+          speed,
+        });
+        if (endMs <= startMs) continue;
+        cues.push({
+          startMs,
+          endMs,
+          text,
+          language: input.language,
+          linkedScriptSegmentId: clip.linkedScriptSegmentId,
+          linkedScriptBeatId: clip.linkedScriptBeatId,
+        });
+      }
+      continue;
+    }
+
+    const transcript = normalizeSubtitleText(span.transcript);
+    if (!transcript) continue;
+    cues.push({
+      startMs: Math.round(clip.timelineInMs),
+      endMs: Math.round(clip.timelineOutMs),
+      text: transcript,
+      language: input.language,
+      linkedScriptSegmentId: clip.linkedScriptSegmentId,
+      linkedScriptBeatId: clip.linkedScriptBeatId,
+    });
+  }
+
+  return cues.map((cue, index) => ({
+    id: `subtitle-source-speech-${String(index + 1).padStart(5, '0')}`,
+    ...cue,
+  }));
+}
+
+function isClipAudioMuted(clip: IKtepClip): boolean {
+  if (clip.muteAudio) return true;
+  return typeof clip.audioGainDb === 'number'
+    && Number.isFinite(clip.audioGainDb)
+    && clip.audioGainDb <= -100;
+}
+
+function resolveSubtitleClipSpeed(clip: IKtepClip): number {
+  if (typeof clip.speed === 'number' && Number.isFinite(clip.speed) && clip.speed > 0) {
+    return clip.speed;
+  }
+  return 1;
+}
+
+function mapSourceMsToTimelineMs(sourceMs: number, input: {
+  sourceInMs: number;
+  timelineInMs: number;
+  timelineOutMs: number;
+  speed: number;
+}): number {
+  const timelineMs = input.timelineInMs + ((sourceMs - input.sourceInMs) / input.speed);
+  return clampNumber(Math.round(timelineMs), Math.round(input.timelineInMs), Math.round(input.timelineOutMs));
+}
+
+function normalizeSubtitleText(value: string | undefined): string {
+  return (value ?? '').replace(/\s+/gu, ' ').trim();
+}
+
+function clampNumber(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
 function buildResolveMediaSyncClips(input: {
   assets: IKtepAsset[];
   spans: IKtepSpan[];
@@ -507,7 +657,7 @@ function resolvePhotoStillDurationMs(cfg: IBuildConfig): number {
   if (typeof cfg.stillDurationMs === 'number' && Number.isFinite(cfg.stillDurationMs) && cfg.stillDurationMs > 0) {
     return Math.round(cfg.stillDurationMs);
   }
-  throw new Error('timeline.generate requires runtime config timelineStillDurationMs when placing photos; set it to match the Resolve still-image duration preference');
+  return CPHOTO_DEFAULT_DURATION_MS;
 }
 
 function buildChronologyEventBySpanId(events: IChronologyEvent[]): Map<string, {

@@ -85,7 +85,7 @@ Capability registry 是原子能力库，不是必经阶段链。当前常见 ca
 - 新生成文件应省略默认 `audio:0` 和 `speed:1`；对象为空时省略该 span entry。
 - 照片必须显式静音 `{audio:-100}`。
 - 被选中的非照片 span 只要有 `transcript`、`transcriptSegments`、`semanticKind=speech/mixed` 或 `materialPatterns=有口播语音`，就不得写或解析出 `audio<=-100`。
-- `speed>1` 只允许用于 `drive / aerial`。
+- `speed` 只能是整数倍 `1..5`；新生成文件不得写小数倍速或超过 `5x`，`speed>1` 只允许用于 `drive / aerial`。
 - `query` 和 `targetBundles` 只写人类可读语义，不写 `audio:*`、`speed:*`、`audio=`、`speed=` 或把处理建议藏进自然语言。
 - 未选入的 speech-backed 非照片 span 必须由 `coverageAudit` 暴露；代码不得自动追加到主粗剪时间线。扩召回应回到 `material.recall` 和人工审查。
 
@@ -101,6 +101,7 @@ Capability registry 是原子能力库，不是必经阶段链。当前常见 ca
 - 用 confirmed chronology 组织 Resolve Media Pool 工程归档。
 - chronology 只用于 Resolve bin/path/context，不参与 `material.recall` 语义选择。
 - 不新增 `media-archive.json`；达芬奇 Media Pool 是素材归档真相。
+- 重复运行必须复用已有 MediaPoolItem：素材已在正确事件分类子目录时跳过；素材已存在但事件分类子目录变化时只移动到新目录，不重导入；同步结束后清理 `Kairos Project Media` 下的空事件目录。
 
 ### `timeline.generate`
 
@@ -111,6 +112,9 @@ Capability registry 是原子能力库，不是必经阶段链。当前常见 ca
 - 不要求 `script/current.json` 或 `segment-plan.json`。
 - Resolve 不可用、素材缺失、source range 校验失败、静音失败或必要 clip gain 无法稳定设置时阻塞，不写成功状态。
 - 当前 `speed>1` 不阻塞，但 Resolve 粗剪可记为 pending/ignored，不得假装已应用。
+- 照片静帧默认时长是 `1000ms`；只有剪辑规则 / confirmed Flow Plan 当前 step notes 或运行时 `timelineStillDurationMs` 明确声明时才覆盖。Resolve host 必须回读校验实际照片时长，不能默认使用旧 `5s`。
+- 每次 `timeline.generate` 成功时，必须同时从已选中、实际有声的 source-speech spans 生成 `.tmp/edit-flow/<editId>/timeline/current.srt`，供用户手动导入达芬奇；字幕时间按生成后的 timeline clip 时间映射，优先用 `transcriptSegments`，没有分段时才用整段 `transcript` 兜底。
+- `runs/current.json` 只能保存 step 级轻量摘要和输出路径；`timeline.generate` 不得把完整 KTEP、Resolve clip 明细、source subtitle text 或 `hostSummary.clips` 内联写入 run record，完整审计只写 `.tmp/edit-flow/<editId>/timeline/current.json`，字幕正文只写 `.tmp/edit-flow/<editId>/timeline/current.srt` 等 declared/temporary artifacts。
 - Resolve timeline 成功后应尝试保存项目级 `${projectBrief.name} [Edit]` DRP 快照；所有 editId 共用同一 Resolve `[Edit]` 工程与 `edits/resolve-project-map.json`。latest 文件名是 `${Resolve项目名}.drp`，不是 `latest.drp`。自动快照失败只写 warning，不回滚 timeline。
 
 ### `resolve.lock_rough_cut` / `postlock.subtitle_narration`

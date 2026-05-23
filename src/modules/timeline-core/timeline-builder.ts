@@ -39,6 +39,7 @@ const CDEFAULTS: IBuildConfig = {
   width: 3840,
   height: 2160,
   name: 'Untitled',
+  stillDurationMs: 1000,
 };
 
 export function resolveTimelineBuildConfig(

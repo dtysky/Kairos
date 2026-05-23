@@ -461,6 +461,7 @@ def sync_rough_cut_media(resolve, payload):
 
     namespace_folder = ensure_namespace_folder_with_legacy(media_pool, namespace, payload.get("legacyNamespaces"))
     namespace_state = collect_namespace_state(namespace_folder)
+    media_pool_state = collect_namespace_state(require_method(media_pool, "GetRootFolder")())
     prepared_entries, sync_summary = sync_namespace_clips(
         media_pool,
         media_storage,
@@ -468,6 +469,8 @@ def sync_rough_cut_media(resolve, payload):
         namespace_state,
         clip_requests,
         dedupe_by_source_path=True,
+        fallback_state=media_pool_state,
+        cleanup_empty_folders=True,
     )
     event_folders = {
         portable_parent_dir(entry["rawRelativePath"])
@@ -484,6 +487,7 @@ def sync_rough_cut_media(resolve, payload):
             "imported": sync_summary["imported"],
             "moved": sync_summary["moved"],
             "reused": sync_summary["reused"],
+            "emptyFoldersDeleted": sync_summary.get("emptyFoldersDeleted", 0),
             "eventFolderCount": len(event_folders),
             "mediaItemCount": len(prepared_entries),
         },
@@ -541,19 +545,18 @@ def create_rough_cut_timeline(resolve, payload):
             "Resolve Media Pool is missing rough-cut media; run resolve.media_sync before timeline.generate.",
             {"missing": missing[:50], "missingCount": len(missing), "namespace": namespace},
         )
-    source_frame_offsets = probe_rough_cut_source_frame_offsets(
-        project,
-        media_pool,
-        clips,
-        media_pool_item_by_source_path,
-        payload.get("timelineSpec"),
-    )
-
     appended = []
     audio_gain_applied = 0
     audio_mute_applied = 0
+    audible_clip_coloring = {
+        "color": "Orange",
+        "itemScope": "video-and-linked-audio",
+        "checked": 0,
+        "colored": 0,
+        "failed": 0,
+    }
     speed_ignored = 0
-    source_range_validation = {"checked": 0, "passed": 0, "failed": 0, "strategy": "native-probe-offset"}
+    source_range_validation = {"checked": 0, "passed": 0, "failed": 0, "strategy": "direct-native-append"}
     still_duration_validation = {"checked": 0, "passed": 0, "failed": 0, "expectedMs": parse_float(payload.get("stillDurationMs"))}
     fps = parse_float((payload.get("timelineSpec") or {}).get("fps")) or 30.0
     for clip in clips:
@@ -564,12 +567,7 @@ def create_rough_cut_timeline(resolve, payload):
                 f"Unable to find synced rough-cut clip in Resolve Media Pool: {clip['clipId']}",
                 {"clipId": clip["clipId"], "sourceAbsolutePath": clip["sourceAbsolutePath"]},
             )
-        clip_info = build_rough_cut_append_clip_info(
-            media_pool_item,
-            clip,
-            fps,
-            source_frame_offsets.get(clip["sourceAbsolutePath"], 0),
-        )
+        clip_info = build_rough_cut_append_clip_info(media_pool_item, clip, fps)
         appended_items = safe_call(media_pool, "AppendToTimeline", [clip_info])
         if not appended_items:
             raise HostError(
@@ -606,6 +604,7 @@ def create_rough_cut_timeline(resolve, payload):
                 validate_rough_cut_source_range(item, media_pool_item, clip, source_range_validation)
         linked_items = collect_linked_timeline_items(video_items)
         audio_items = filter_timeline_items_by_track_type(linked_items, "audio")
+        apply_rough_cut_audible_clip_color([*video_items, *audio_items], clip, audible_clip_coloring)
         if clip["muteAudio"] and clip["assetKind"] != "photo" and audio_items:
             apply_timeline_item_audio_mute(audio_items, clip)
             audio_mute_applied += 1
@@ -642,6 +641,7 @@ def create_rough_cut_timeline(resolve, payload):
             "mutedClipCount": sum(1 for clip in clips if clip["muteAudio"]),
             "audioMuteAppliedCount": audio_mute_applied,
             "audioGainAppliedCount": audio_gain_applied,
+            "audibleClipColoring": audible_clip_coloring,
             "speedAppliedCount": 0,
             "speedIgnoredCount": speed_ignored,
             "timelineCreate": "native-api",
@@ -659,7 +659,7 @@ def create_rough_cut_timeline(resolve, payload):
     }
 
 
-def build_rough_cut_append_clip_info(media_pool_item, clip, timeline_fps, source_frame_offset=0):
+def build_rough_cut_append_clip_info(media_pool_item, clip, timeline_fps):
     clip_info = {
         "mediaPoolItem": media_pool_item,
         "recordFrame": ms_to_frame(clip["timelineInMs"], timeline_fps),
@@ -668,7 +668,7 @@ def build_rough_cut_append_clip_info(media_pool_item, clip, timeline_fps, source
     if clip["assetKind"] == "photo":
         clip_info["mediaType"] = 1
     elif clip.get("sourceInMs") is not None and clip.get("sourceOutMs") is not None:
-        start_frame, end_frame = resolve_source_frame_range(media_pool_item, clip, timeline_fps, source_frame_offset)
+        start_frame, end_frame = resolve_source_frame_range(media_pool_item, clip, timeline_fps)
         clip_info["startFrame"] = start_frame
         clip_info["endFrame"] = end_frame
     return clip_info
@@ -707,11 +707,10 @@ def resolve_appended_video_items(timeline, appended_items, clip_info, clip):
     return candidates
 
 
-def resolve_source_frame_range(media_pool_item, clip, timeline_fps, source_frame_offset=0):
+def resolve_source_frame_range(media_pool_item, clip, timeline_fps):
     expected_start, expected_end, source_fps = resolve_expected_source_frame_range(media_pool_item, clip, timeline_fps)
-    offset = parse_int(source_frame_offset) or 0
-    start_frame = expected_start - offset
-    end_frame = expected_end - offset
+    start_frame = expected_start
+    end_frame = expected_end
     if end_frame <= start_frame:
         raise HostError(
             "resolve_rough_cut_source_range_invalid",
@@ -721,7 +720,6 @@ def resolve_source_frame_range(media_pool_item, clip, timeline_fps, source_frame
                 "sourceInMs": clip.get("sourceInMs"),
                 "sourceOutMs": clip.get("sourceOutMs"),
                 "sourceFps": source_fps,
-                "sourceFrameOffset": offset,
                 "startFrame": start_frame,
                 "endFrame": end_frame,
             },
@@ -755,60 +753,6 @@ def resolve_expected_source_frame_range(media_pool_item, clip, timeline_fps):
             },
         )
     return start_frame, end_frame, source_fps
-
-
-def probe_rough_cut_source_frame_offsets(project, media_pool, clips, media_pool_item_by_source_path, timeline_spec):
-    unique_sources = []
-    seen = set()
-    for clip in clips:
-        if clip["assetKind"] == "photo":
-            continue
-        source_path = clip["sourceAbsolutePath"]
-        if source_path in seen:
-            continue
-        media_pool_item = media_pool_item_by_source_path.get(source_path)
-        if media_pool_item is None:
-            continue
-        seen.add(source_path)
-        unique_sources.append((source_path, media_pool_item))
-    if not unique_sources:
-        return {}
-
-    current_timeline = safe_call(project, "GetCurrentTimeline")
-    probe_name = build_temp_render_timeline_name("Kairos Rough Cut Source Probe")
-    probe_timeline = safe_call(media_pool, "CreateEmptyTimeline", probe_name)
-    if not probe_timeline:
-        raise HostError("resolve_source_probe_failed", "Unable to create temporary source-range probe timeline.")
-    offsets = {}
-    try:
-        apply_timeline_spec(project, timeline_spec, probe_timeline)
-        safe_call(project, "SetCurrentTimeline", probe_timeline)
-        safe_call(probe_timeline, "SetStartTimecode", "00:00:00:00")
-        for index, (source_path, media_pool_item) in enumerate(unique_sources):
-            clip_info = {
-                "mediaPoolItem": media_pool_item,
-                "startFrame": 0,
-                "endFrame": 1,
-                "recordFrame": index * 5,
-                "trackIndex": 1,
-            }
-            appended_items = safe_call(media_pool, "AppendToTimeline", [clip_info])
-            timeline_items = list(iter_values(appended_items or []))
-            video_items = filter_timeline_items_by_track_type(collect_linked_timeline_items(timeline_items), "video")
-            if not video_items:
-                video_items = [
-                    item for item in iter_timeline_video_items(probe_timeline)
-                    if normalize_filesystem_path(extract_timeline_item_file_path(item)) == source_path
-                ]
-            item = video_items[-1] if video_items else None
-            offset = parse_int(safe_call(item, "GetSourceStartFrame")) if item else None
-            offsets[source_path] = offset if offset is not None else 0
-    finally:
-        if current_timeline:
-            safe_call(project, "SetCurrentTimeline", current_timeline)
-        delete_timeline(media_pool, probe_timeline)
-    return offsets
-
 
 def validate_rough_cut_source_range(item, media_pool_item, clip, summary):
     expected_start, expected_end, source_fps = resolve_expected_source_frame_range(
@@ -851,7 +795,7 @@ def validate_rough_cut_still_duration(item, clip, timeline_fps, still_duration_m
     if expected_ms is None or expected_ms <= 0:
         raise HostError(
             "resolve_still_duration_config_missing",
-            "timeline.generate requires timelineStillDurationMs when photos are present; set it to match Resolve still-image duration.",
+            "timeline.generate requires an effective photo still duration; default is 1000ms unless timelineStillDurationMs overrides it.",
             {"clipId": clip["clipId"], "assetId": clip["assetId"]},
         )
     expected_frames = ms_to_frame(expected_ms, timeline_fps)
@@ -864,7 +808,7 @@ def validate_rough_cut_still_duration(item, clip, timeline_fps, still_duration_m
     summary["failed"] = int(summary.get("failed") or 0) + 1
     raise HostError(
         "resolve_still_duration_mismatch",
-        f"Resolve still duration does not match timelineStillDurationMs for rough-cut clip {clip['clipId']}.",
+        f"Resolve still duration does not match the effective Kairos photo duration for rough-cut clip {clip['clipId']}.",
         {
             "clipId": clip["clipId"],
             "assetId": clip["assetId"],
@@ -1221,19 +1165,27 @@ def assert_timeline_matches_spec(project, timeline, spec):
         return
     timeline_settings = safe_call(timeline, "GetSetting") if timeline is not None else None
     timeline_fps = None
+    timeline_playback_fps = None
     if isinstance(timeline_settings, dict):
         timeline_fps = parse_float(timeline_settings.get("timelineFrameRate"))
+        timeline_playback_fps = parse_float(timeline_settings.get("timelinePlaybackFrameRate"))
     if timeline_fps is None:
         timeline_fps = parse_float(safe_call(project, "GetSetting", "timelineFrameRate"))
-    if timeline_fps is not None and abs(timeline_fps - fps) <= 0.001:
+    if timeline_playback_fps is None:
+        timeline_playback_fps = parse_float(safe_call(project, "GetSetting", "timelinePlaybackFrameRate"))
+    frame_rate_matches = timeline_fps is not None and abs(timeline_fps - fps) <= 0.001
+    playback_matches = timeline_playback_fps is not None and abs(timeline_playback_fps - fps) <= 0.001
+    if frame_rate_matches and playback_matches:
         return
     raise HostError(
         "resolve_timeline_fps_mismatch",
-        "Resolve rough-cut timeline frame rate does not match Kairos runtime config.",
+        "Resolve rough-cut timeline frame rate or playback frame rate does not match Kairos runtime config.",
         {
             "expectedFps": fps,
             "actualFps": timeline_fps,
+            "actualPlaybackFps": timeline_playback_fps,
             "projectFps": safe_call(project, "GetSetting", "timelineFrameRate"),
+            "projectPlaybackFps": safe_call(project, "GetSetting", "timelinePlaybackFrameRate"),
             "timelineName": safe_call(timeline, "GetName") if timeline is not None else None,
         },
     )
@@ -1279,6 +1231,7 @@ def collect_namespace_state(namespace_folder):
     folder_by_relative_dir = {"": namespace_folder}
     clip_by_source_path = {}
     clip_folder_by_source_path = {}
+    clip_relative_dir_by_source_path = {}
 
     def walk(folder, relative_dir):
         for clip in iter_values(safe_call(folder, "GetClipList") or []):
@@ -1287,6 +1240,7 @@ def collect_namespace_state(namespace_folder):
                 continue
             clip_by_source_path[file_path] = clip
             clip_folder_by_source_path[file_path] = folder
+            clip_relative_dir_by_source_path[file_path] = normalize_portable_path(relative_dir)
         subfolders = safe_call(folder, "GetSubFolders") or safe_call(folder, "GetSubFolderList") or []
         for child in iter_values(subfolders):
             child_name = safe_call(child, "GetName")
@@ -1301,6 +1255,7 @@ def collect_namespace_state(namespace_folder):
         "folderByRelativeDir": folder_by_relative_dir,
         "clipBySourcePath": clip_by_source_path,
         "clipFolderBySourcePath": clip_folder_by_source_path,
+        "clipRelativeDirBySourcePath": clip_relative_dir_by_source_path,
     }
 
 
@@ -1323,7 +1278,16 @@ def clear_namespace_contents(media_pool, namespace_folder):
             )
 
 
-def sync_namespace_clips(media_pool, media_storage, namespace_folder, namespace_state, clip_requests, dedupe_by_source_path=True):
+def sync_namespace_clips(
+    media_pool,
+    media_storage,
+    namespace_folder,
+    namespace_state,
+    clip_requests,
+    dedupe_by_source_path=True,
+    fallback_state=None,
+    cleanup_empty_folders=False,
+):
     imported = 0
     moved = 0
     reused = 0
@@ -1331,18 +1295,35 @@ def sync_namespace_clips(media_pool, media_storage, namespace_folder, namespace_
     folder_by_relative_dir = namespace_state["folderByRelativeDir"]
     clip_by_source_path = namespace_state["clipBySourcePath"]
     clip_folder_by_source_path = namespace_state["clipFolderBySourcePath"]
+    clip_relative_dir_by_source_path = namespace_state.get("clipRelativeDirBySourcePath", {})
+    fallback_clip_by_source_path = (fallback_state or {}).get("clipBySourcePath", {}) if fallback_state else {}
+    fallback_clip_folder_by_source_path = (fallback_state or {}).get("clipFolderBySourcePath", {}) if fallback_state else {}
+    fallback_clip_relative_dir_by_source_path = (fallback_state or {}).get("clipRelativeDirBySourcePath", {}) if fallback_state else {}
 
     for clip_request in clip_requests:
         relative_dir = portable_parent_dir(clip_request["rawRelativePath"])
         target_folder = ensure_folder_chain(media_pool, namespace_folder, folder_by_relative_dir, relative_dir)
         source_path = clip_request["sourceAbsolutePath"]
         media_pool_item = clip_by_source_path.get(source_path) if dedupe_by_source_path else None
+        current_folder = clip_folder_by_source_path.get(source_path)
+        current_relative_dir = clip_relative_dir_by_source_path.get(source_path)
+        if media_pool_item is None and dedupe_by_source_path:
+            media_pool_item = fallback_clip_by_source_path.get(source_path)
+            current_folder = fallback_clip_folder_by_source_path.get(source_path)
+            current_relative_dir = fallback_clip_relative_dir_by_source_path.get(source_path)
         if media_pool_item is None:
             media_pool_item = import_media_pool_item(media_storage, media_pool, target_folder, source_path)
             imported += 1
         else:
-            current_folder = clip_folder_by_source_path.get(source_path)
-            if current_folder is not target_folder:
+            if normalize_portable_path(current_relative_dir) != normalize_portable_path(relative_dir):
+                result = safe_call(media_pool, "MoveClips", [media_pool_item], target_folder)
+                if result is False:
+                    raise HostError(
+                        "resolve_media_pool_move_failed",
+                        f"Unable to move clip into root namespace mirror: {clip_request['rawRelativePath']}",
+                    )
+                moved += 1
+            elif current_folder is not None and current_folder is not target_folder:
                 result = safe_call(media_pool, "MoveClips", [media_pool_item], target_folder)
                 if result is False:
                     raise HostError(
@@ -1354,6 +1335,7 @@ def sync_namespace_clips(media_pool, media_storage, namespace_folder, namespace_
                 reused += 1
         clip_by_source_path[source_path] = media_pool_item
         clip_folder_by_source_path[source_path] = target_folder
+        clip_relative_dir_by_source_path[source_path] = normalize_portable_path(relative_dir)
         creative = build_clip_creative_summary(clip_request)
         prepared_entries.append({
             **clip_request,
@@ -1362,11 +1344,44 @@ def sync_namespace_clips(media_pool, media_storage, namespace_folder, namespace_
             "groupNameSeed": creative["displayName"],
         })
 
+    empty_folders_deleted = prune_empty_namespace_folders(media_pool, namespace_folder) if cleanup_empty_folders else 0
     return prepared_entries, {
         "imported": imported,
         "moved": moved,
         "reused": reused,
+        "emptyFoldersDeleted": empty_folders_deleted,
     }
+
+
+def prune_empty_namespace_folders(media_pool, namespace_folder):
+    deleted = 0
+
+    def prune_children(parent_folder, parent_relative_dir):
+        total = 0
+        subfolders = list(iter_values(safe_call(parent_folder, "GetSubFolders") or safe_call(parent_folder, "GetSubFolderList") or []))
+        for child in subfolders:
+            child_name = safe_call(child, "GetName")
+            child_relative_dir = normalize_portable_path(join_portable(parent_relative_dir, child_name or "unnamed"))
+            total += prune_folder(child, child_relative_dir)
+        return total
+
+    def prune_folder(folder, relative_dir):
+        total = prune_children(folder, relative_dir)
+        clips = list(iter_values(safe_call(folder, "GetClipList") or []))
+        subfolders = list(iter_values(safe_call(folder, "GetSubFolders") or safe_call(folder, "GetSubFolderList") or []))
+        if clips or subfolders:
+            return total
+        deleted_folders = safe_call(media_pool, "DeleteFolders", [folder])
+        if deleted_folders is False:
+            raise HostError(
+                "resolve_media_pool_empty_folder_prune_failed",
+                f"Unable to delete empty media pool event folder: {relative_dir}",
+                {"relativeDir": relative_dir},
+            )
+        return total + 1
+
+    deleted += prune_children(namespace_folder, "")
+    return deleted
 
 
 def ensure_folder_chain(media_pool, namespace_folder, folder_by_relative_dir, relative_dir):
@@ -3115,6 +3130,35 @@ def apply_timeline_item_audio_mute(timeline_items, clip):
     )
 
 
+def apply_rough_cut_audible_clip_color(timeline_items, clip, summary):
+    if clip["muteAudio"]:
+        return None
+    color = summary.get("color") or "Orange"
+    failed = []
+    for item in timeline_items:
+        summary["checked"] = int(summary.get("checked") or 0) + 1
+        result = safe_call(item, "SetClipColor", color)
+        current = stringify_signal_value(safe_call(item, "GetClipColor")) or ""
+        if result is not False and current.lower() == str(color).lower():
+            summary["colored"] = int(summary.get("colored") or 0) + 1
+            continue
+        summary["failed"] = int(summary.get("failed") or 0) + 1
+        failed.append(current)
+    if not failed:
+        return color
+    raise HostError(
+        "resolve_audible_clip_color_failed",
+        f"Resolve did not apply the audible rough-cut clip color for {clip['clipId']}.",
+        {
+            "clipId": clip["clipId"],
+            "assetId": clip["assetId"],
+            "spanId": clip.get("spanId"),
+            "requestedColor": color,
+            "currentColors": failed,
+        },
+    )
+
+
 def filter_timeline_items_by_track_type(timeline_items, track_type):
     matched = []
     for item in timeline_items:
@@ -4417,14 +4461,11 @@ def start_rendering(project, job_ids):
         raise HostError("resolve_start_render_failed", "Unable to start Resolve rendering")
 
 
-def wait_for_render(project, job_ids=None, timeout_seconds=3600):
-    started = time.time()
+def wait_for_render(project, job_ids=None):
     while True:
         in_progress = safe_call(project, "IsRenderingInProgress")
         if not in_progress:
             break
-        if time.time() - started > timeout_seconds:
-            raise HostError("resolve_render_timeout", "Timed out waiting for Resolve rendering")
         time.sleep(1)
     for job_id in job_ids or []:
         status = safe_call(project, "GetRenderJobStatus", job_id)

@@ -79,7 +79,7 @@ export async function writeEditFlowRunRecord(
   record: IEditFlowStepRunRecord,
   editId?: string | null,
 ): Promise<void> {
-  const parsedRecord = ZEditFlowStepRunRecord.parse(record);
+  const parsedRecord = sanitizeEditFlowRunRecordForCurrent(ZEditFlowStepRunRecord.parse(record));
   const target = getEditFlowRunsCurrentPath(projectRoot, editId);
   const current = await loadEditFlowRunsState(projectRoot, editId);
   const records = [
@@ -112,7 +112,7 @@ export async function markEditFlowRunRecordsStale(
   const records = await loadEditFlowRunRecords(projectRoot, editId);
   if (records.length === 0) return [];
   const now = new Date().toISOString();
-  const nextRecords = records.map(record => ZEditFlowStepRunRecord.parse({
+  const nextRecords = records.map(record => sanitizeEditFlowRunRecordForCurrent(ZEditFlowStepRunRecord.parse({
     ...record,
     status: 'stale',
     updatedAt: now,
@@ -121,7 +121,7 @@ export async function markEditFlowRunRecordsStale(
       ...record.review,
       note: staleReason,
     },
-  }));
+  })));
   const target = getEditFlowRunsCurrentPath(projectRoot, editId);
   await mkdir(dirname(target), { recursive: true });
   await writeJson(target, ZEditFlowRunsState.parse({
@@ -159,4 +159,71 @@ async function loadEditFlowRunsState(
     updatedAt: new Date(0).toISOString(),
     records: [],
   };
+}
+
+function sanitizeEditFlowRunRecordForCurrent(record: IEditFlowStepRunRecord): IEditFlowStepRunRecord {
+  if (record.capabilityId !== 'timeline.generate') return record;
+  const externalizedArrays: string[] = [];
+  const summary = sanitizeTimelineGenerateSummary(record.summary, externalizedArrays);
+  return ZEditFlowStepRunRecord.parse({
+    ...record,
+    summary: externalizedArrays.length > 0
+      ? {
+        ...summary,
+        runRecordSummaryPolicy: {
+          summaryOnly: true,
+          externalizedArrays,
+        },
+      }
+      : summary,
+  });
+}
+
+function sanitizeTimelineGenerateSummary(
+  value: Record<string, unknown>,
+  externalizedArrays: string[],
+): Record<string, unknown> {
+  const sanitized = sanitizeTimelineSummaryValue(value, [], externalizedArrays);
+  return isPlainObject(sanitized) ? sanitized : {};
+}
+
+function sanitizeTimelineSummaryValue(
+  value: unknown,
+  path: string[],
+  externalizedArrays: string[],
+): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item, index) => sanitizeTimelineSummaryValue(item, [...path, String(index)], externalizedArrays));
+  }
+  if (!isPlainObject(value)) return value;
+
+  const output: Record<string, unknown> = {};
+  for (const [key, entry] of Object.entries(value)) {
+    if (Array.isArray(entry) && shouldExternalizeTimelineRunArray(key, entry)) {
+      const fieldPath = [...path, key].join('.');
+      output[`${key}Externalized`] = true;
+      output[`${key}ExternalizedCount`] = entry.length;
+      output[`${key}ExternalizedReason`] = 'runs/current.json stores summary-only timeline.generate records; full clip-level audit and subtitle text belong in timeline artifacts.';
+      externalizedArrays.push(`${fieldPath || key}:${entry.length}`);
+      continue;
+    }
+    output[key] = sanitizeTimelineSummaryValue(entry, [...path, key], externalizedArrays);
+  }
+  return output;
+}
+
+function shouldExternalizeTimelineRunArray(key: string, value: unknown[]): boolean {
+  const normalized = key.toLowerCase();
+  return normalized === 'clips'
+    || normalized.endsWith('clips')
+    || (normalized.includes('clip') && value.length > 20)
+    || normalized === 'subtitles'
+    || normalized.endsWith('subtitles')
+    || normalized.includes('subtitlecue')
+    || normalized === 'cues'
+    || value.length > 100;
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }

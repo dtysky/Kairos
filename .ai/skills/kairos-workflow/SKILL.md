@@ -237,10 +237,12 @@ project/
 │   ├── runs/
 │   │   └── current.json      # capability step run truth
 │   ├── timeline/
-│   │   ├── current.json      # timeline.generate KTEP/manifest 审计；Resolve timeline 才是成功标准
 │   │   └── locked-rough-cut.json
 │   └── subtitles/
 │       └── *.srt / *.vtt     # Phase 5 (Export) 产出
+├── .tmp/edit-flow/<editId>/timeline/
+│   ├── current.json          # timeline.generate KTEP/manifest 审计；Resolve timeline 才是成功标准
+│   └── current.srt           # timeline.generate source-speech SRT；供手动导入 Resolve
 └── analysis/
     └── asset-reports/*.json   # Phase 2 (Analyze) 产出
 ```
@@ -310,9 +312,10 @@ project/
 - 只有在用户明确确认继续后，才可以调用 Analyze
 
 Chronology 审查：
-- `/chronology` 是 Analyze 和 Edit Flow 之间的正式审查页，提供 `生成素材片段与模式` 与 `生成/刷新编年史` 两步，并展示 active job 的 text-LM chunk / retry / warning 进度
-- `span-rebuild` 只读取 `store/assets.json + analysis/asset-reports/*.json`，再用本地 qwen 文本 LM 从每个 span 的最小文本事实按 3 个 span 一批生成中文 `materialPatterns[]`；LM 只返回 ordered rows，代码按 chunk 顺序写回 spans；已完成 checkpoint 写 `.tmp/chronology/span-rebuild.partial.json`，全量成功后才写正式 `store/spans.json + store/spans.meta.json`
-- `chronology-build` 要求 spans fresh，再从 assets + fresh spans + root time + Pharos context 写 Chronology V2，默认 `draft`
+- `/chronology` 是 Analyze 和 Edit Flow 之间的正式审查页，提供 `生成候选素材片段与模式` 与 `生成/刷新编年史` 两步，并展示 active job 的 text-LM chunk / retry / warning 进度
+- `span-rebuild` 只读取 `store/assets.json + analysis/asset-reports/*.json`，再用本地 qwen 文本 LM 从每个 span 的最小文本事实按 8 个 span 一批生成 provisional 中文 `materialPatterns[]`；LM 只返回 ordered pattern rows，代码按 chunk 顺序写回候选 spans；已完成 checkpoint 写 `.tmp/chronology/span-rebuild.partial.json`，全量成功后才写正式 `store/spans.json + store/spans.meta.json`
+- 若存在 speech/mixed candidate spans，`span-rebuild` 必须把 meta 标为 `pending-speech-review`，写 `.tmp/chronology/speech-window-agent-handoff.md`，并阻塞 `chronology-build`；用户需要在 Codex/Agent 环境启用 SubAgents 完成 speech-window 裁切、drop/visual-only 和 materialPatterns slot 4 对齐，再由主 Agent 写回 `status=fresh`。speech-window review 的 SubAgent 分片必须按 asset/day 或稳定 span range 打包，每个 shard 最多约 1500 个 candidates，避免换聊天窗口后退回小碎片默认。
+- `chronology-build` 要求 spans `status=fresh`，再从 assets + fresh spans + root time + Pharos context 写 Chronology V2，默认 `draft`
 - `chronology-build` 写 `media/chronology.json` 时必须有可用 GPS reverse-geocode service；无 service、cache/provider 反查不到 route/event GPS anchor 时直接失败，不允许用素材标签、`materialPatterns`、manual itinerary 或 Pharos continuous route prose 生成地点
 - 用户必须在 `/chronology` 确认 Chronology V2 后，Edit Flow 才能继续
 - 旧数组 v1、`draft` 或 `stale` chronology 都应阻塞 Edit Flow，并提示重建或确认
@@ -341,7 +344,7 @@ Chronology 审查：
 
 输入：已确认 Chronology V2 `media/chronology.json`、剪辑规则、confirmed Flow Plan、可选风格档案；fresh `store/spans.json` 与 `analysis/asset-reports/` 只在具体 step 的 `inputRefs` 声明时才成为必需输入。
 
-产出：由 confirmed Flow Plan 的 `outputRefs` 决定，可能包括 planning markdown、素材召回 JSON、Resolve timeline、`locked-rough-cut.json` 或字幕/旁白草稿；`.tmp/edit-flow/<editId>/timeline/current.json` 只作为本机临时审计。
+产出：由 confirmed Flow Plan 的 `outputRefs` 决定，可能包括 planning markdown、素材召回 JSON、Resolve timeline、`.tmp/edit-flow/<editId>/timeline/current.srt`、`locked-rough-cut.json` 或字幕/旁白草稿；`.tmp/edit-flow/<editId>/timeline/current.json` 只作为本机临时审计。
 
 前置条件：Chronology V2 confirmed。每个 capability 再按自己的 `inputRefs` 精确阻塞，例如 `trip.event_table` 只依赖 `media/chronology.json`，素材归档 / 召回类 step 才进入 spans 与 asset reports。
 
@@ -351,10 +354,11 @@ Chronology 审查：
 - `script.generate` 只有当剪辑规则明确要求前置文本稿 / beat 稿时才出现。
 - 剪辑规则中适用于某个 capability 的人工规则必须通过 confirmed Flow Plan 当前 step 的 `notes` 传递给下游 packet；skill 不硬编码项目特定规则，runner 也不临时关键词解析原始 markdown。
 - `material.recall` 只输出 `material-slots.json`；`segment-plan.json` 不再是正式输出或下游输入。
-- `material-slots.json` 是素材召回和粗剪建议唯一结构化产物；`chosenSpanIds` 是选择真相，`treatments` 是稀疏覆盖表，缺省按 `{audio:0,speed:1}` 读取，默认值不写；非照片 span 如果有 transcript、transcriptSegments 或 `semanticKind=speech/mixed`，不得静音。
+- `material-slots.json` 是素材召回和粗剪建议唯一结构化产物；`chosenSpanIds` 是选择真相，`treatments` 是稀疏覆盖表，缺省按 `{audio:0,speed:1}` 读取，默认值不写；非照片 span 如果有 transcript、transcriptSegments 或 `semanticKind=speech/mixed`，不得静音；`speed` 只能写 `1..5` 的整数倍。
 - `resolve.media_sync` 是 deterministic Resolve Media Pool 同步步骤；Media Pool 是素材归档真相，不新增 `media-archive.json`，重复运行只能复用 / 移动 / 补导入。
 - `timeline.generate` 是 deterministic Resolve rough-cut 创建步骤，只读取 `edit-framework.md + material-slots.json + spans + assets + chronology` 并从已同步 Media Pool 选择素材；不能要求 `script/current.json` 或 `segment-plan.json`，也不能重新导入素材或清空 `Kairos Project Media` namespace。
-- `.tmp/edit-flow/<editId>/timeline/current.json` 只是本机临时 KTEP/manifest 审计；Resolve 不可用时不能作为成功兜底。
+- `.tmp/edit-flow/<editId>/timeline/current.json` 只是本机临时 KTEP/manifest 审计；`.tmp/edit-flow/<editId>/timeline/current.srt` 是同步生成的 source-speech SRT，供用户手动导入 Resolve；Resolve 不可用时不能作为成功兜底。
+- `edits/<editId>/runs/current.json` 只保存轻量 run truth；`timeline.generate` 不得把完整 timeline/KTEP/clip 明细、source subtitle text 或 `hostSummary.clips` 内联进 run record。
 - `trip.event_table` 是事件级组织能力，只使用 confirmed chronology；不要因为 spans stale 或缺 asset reports 阻塞它。
 - `sharded-agent` step 的连续天打包、阈值与 SubAgent 口径只来自 confirmed `step.execution.shardPacking / codexSubagentProfile`；默认不得按 route 拆。
 - Edit Flow SubAgent step 必须写明 Codex 使用 `reasoning_effort=high`、`fork_context=false`、标准速度；执行时只传有界 step/shard 上下文，不 fork 当前长上下文。
@@ -416,7 +420,7 @@ if (!assets || assets.length === 0) {
 如果只是空间规则、GPX、Pharos context 或 reverse-geocode 逻辑变化，且已有 Analyze 产物完整，则可走更轻的：
 
 ```
-已有项目 → /chronology spatial-refresh → 生成素材片段与模式 → 生成/刷新编年史 → 确认 chronology → 视需要重跑 Edit Flow steps
+已有项目 → /chronology spatial-refresh → 生成候选素材片段与模式 → 如有 pending speech review 则交给 Agent/SubAgents → 生成/刷新编年史 → 确认 chronology → 视需要重跑 Edit Flow steps
 ```
 
 ### 追加流程
@@ -435,7 +439,7 @@ const result = await appendAssets(projectRoot, newAssets);
 const toAnalyze = findUnanalyzedAssets(allAssets, existingReports);
 // 仅对 toAnalyze 中的资产做镜头检测、ML 分析
 await analyzeWorkspaceProjectMedia({ workspaceRoot, projectId, assetIds: toAnalyze.map((asset) => asset.id) });
-// 然后从 /chronology 显式运行 span-rebuild（需要本地 qwen 文本 LM / ML 服务）与 chronology-build
+// 然后从 /chronology 显式运行 span-rebuild（需要本地 qwen 文本 LM / ML 服务）；若 pending speech review，先交给 Agent/SubAgents，再运行 chronology-build
 ```
 
 3. **重新创作**：受影响的 Edit Flow steps 和 Export 需要在新素材基础上重新执行
