@@ -1,14 +1,14 @@
 {
-  "updatedAt": "2026-05-23T06:33:23.107Z",
+  "updatedAt": "2026-05-25T16:11:38.113Z",
   "projects": {
     "丙察察格聂南线子梅垭口穿越 [Edit]": {
       "projectName": "丙察察格聂南线子梅垭口穿越 [Edit]",
       "safeProjectName": "Edit",
       "latestSnapshot": {
         "projectName": "��������������÷��ڴ�Խ [Edit]",
-        "snapshotPath": "H:\\SacredGrove\\Kairos\\projects\\bingchacha-genie-south-zimeiyakou\\edits\\resolve-projects\\Edit\\snapshots\\20260523T063318Z-manual.drp",
+        "snapshotPath": "H:\\SacredGrove\\Kairos\\projects\\bingchacha-genie-south-zimeiyakou\\edits\\resolve-projects\\Edit\\snapshots\\20260525T161132Z-manual.drp",
         "latestPath": "H:\\SacredGrove\\Kairos\\projects\\bingchacha-genie-south-zimeiyakou\\edits\\resolve-projects\\Edit\\��������������÷��ڴ�Խ [Edit].drp",
-        "createdAt": "2026-05-23T06:33:18Z",
+        "createdAt": "2026-05-25T16:11:32Z",
         "mode": "manual",
         "action": "manual",
         "database": {
@@ -56,9 +56,22 @@
             "DbName": "Local Database"
           },
           "detail": "save_drp_snapshot exported withStillsAndLUTs=false"
+        },
+        {
+          "projectName": "��������������÷��ڴ�Խ [Edit]",
+          "snapshotPath": "H:\\SacredGrove\\Kairos\\projects\\bingchacha-genie-south-zimeiyakou\\edits\\resolve-projects\\Edit\\snapshots\\20260525T161132Z-manual.drp",
+          "latestPath": "H:\\SacredGrove\\Kairos\\projects\\bingchacha-genie-south-zimeiyakou\\edits\\resolve-projects\\Edit\\��������������÷��ڴ�Խ [Edit].drp",
+          "createdAt": "2026-05-25T16:11:32Z",
+          "mode": "manual",
+          "action": "manual",
+          "database": {
+            "DbType": "Disk",
+            "DbName": "Local Database"
+          },
+          "detail": "save_drp_snapshot exported withStillsAndLUTs=false"
         }
       ],
-      "updatedAt": "2026-05-23T06:33:23.107Z"
+      "updatedAt": "2026-05-25T16:11:38.113Z"
     }
   }
 }
