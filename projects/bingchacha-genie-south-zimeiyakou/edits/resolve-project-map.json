@@ -1,14 +1,14 @@
 {
-  "updatedAt": "2026-05-25T16:11:38.113Z",
+  "updatedAt": "2026-05-26T10:41:19.199Z",
   "projects": {
     "丙察察格聂南线子梅垭口穿越 [Edit]": {
       "projectName": "丙察察格聂南线子梅垭口穿越 [Edit]",
       "safeProjectName": "Edit",
       "latestSnapshot": {
-        "projectName": "��������������÷��ڴ�Խ [Edit]",
-        "snapshotPath": "H:\\SacredGrove\\Kairos\\projects\\bingchacha-genie-south-zimeiyakou\\edits\\resolve-projects\\Edit\\snapshots\\20260525T161132Z-manual.drp",
-        "latestPath": "H:\\SacredGrove\\Kairos\\projects\\bingchacha-genie-south-zimeiyakou\\edits\\resolve-projects\\Edit\\��������������÷��ڴ�Խ [Edit].drp",
-        "createdAt": "2026-05-25T16:11:32Z",
+        "projectName": "丙察察格聂南线子梅垭口穿越 [Edit]",
+        "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/edits/resolve-projects/Edit/snapshots/20260526T104116Z-manual.drp",
+        "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/edits/resolve-projects/Edit/丙察察格聂南线子梅垭口穿越 [Edit].drp",
+        "createdAt": "2026-05-26T10:41:16Z",
         "mode": "manual",
         "action": "manual",
         "database": {
@@ -69,9 +69,22 @@
             "DbName": "Local Database"
           },
           "detail": "save_drp_snapshot exported withStillsAndLUTs=false"
+        },
+        {
+          "projectName": "丙察察格聂南线子梅垭口穿越 [Edit]",
+          "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/edits/resolve-projects/Edit/snapshots/20260526T104116Z-manual.drp",
+          "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/edits/resolve-projects/Edit/丙察察格聂南线子梅垭口穿越 [Edit].drp",
+          "createdAt": "2026-05-26T10:41:16Z",
+          "mode": "manual",
+          "action": "manual",
+          "database": {
+            "DbType": "Disk",
+            "DbName": "Local Database"
+          },
+          "detail": "save_drp_snapshot exported withStillsAndLUTs=false"
         }
       ],
-      "updatedAt": "2026-05-25T16:11:38.113Z"
+      "updatedAt": "2026-05-26T10:41:19.199Z"
     }
   }
 }
