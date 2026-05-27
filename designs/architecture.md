@@ -949,7 +949,7 @@ src/modules/edit-flow/
 - `script.generate` 是可选 capability；只有 Flow Plan 声明它时，才复用旧 script helper 或 clean-context script stages
 - `material.recall` 只输出 `material-slots.json`；`segment-plan.json` 不再是正式输出或下游输入；素材事实默认只消费 `edit-framework.md + store/spans.json + store/assets.json`，人工规则只消费 Flow Plan 当前 step context / notes
 - `resolve.media_sync` 是 deterministic runner，只负责把 confirmed chronology 对应素材同步进达芬奇 Media Pool；chronology 在这里仅用于 Resolve bin 组织与工程归档，Media Pool 本身是素材归档真相。同步必须复用已有 MediaPoolItem：目标事件目录一致则跳过，目录变化则只移动到新事件目录而不重导入，同步结束后清理空事件目录；run record 只保留 imported / reused / moved / pruned 摘要
-- `timeline.generate` 是 deterministic runner，只消费 `edit-framework.md + material-slots.json + store/spans.json + store/assets.json + confirmed media/chronology.json` 并按 `material-slots` 的选择和顺序从已同步 Media Pool 取素材；chronology 只用于 Resolve path/bin/context 映射，不得硬性读取 `script/current.json` 或 `segment-plan.json`
+- `timeline.generate` 是 deterministic runner，只消费 `edit-framework.md + material-slots.json + store/spans.json + store/assets.json + confirmed media/chronology.json` 并按 `material-slots` 的选择和顺序从已同步 Media Pool 取素材；有声 speech/mixed 非照片 clip 在 Resolve append 前默认扩展 source handle（头 `240ms`、尾 `720ms`，clamp 到素材边界），chronology 只用于 Resolve path/bin/context 映射，不得硬性读取 `script/current.json` 或 `segment-plan.json`
 - `.tmp/edit-flow/<editId>/timeline/current.json` 作为本机临时 KTEP/manifest 审计输出保留，`.tmp/edit-flow/<editId>/timeline/current.srt` 作为手动导入达芬奇的源语音字幕保留，但 Resolve rough-cut timeline 才是用户可见成功标准
 - `timeline.generate` 创建 Resolve timeline 成功后自动调用 Resolve project DRP 快照；该快照属于项目级 `${projectBrief.name} [Edit]` 工程，多个 editId 共享 `edits/resolve-project-map.json` 和同一个 latest DRP，导出失败只写 warning
 - code 只能执行 confirmed Flow Plan 中的 `capabilityId / inputRefs / outputRefs / gate / execution / notes`，不得从 markdown 正文做隐藏启发式，也不得自动向 Agent packet 注入未声明的 planning markdown；当前 step context / notes 是 packet 的正式高优先级输入
@@ -973,7 +973,7 @@ vendor/resolve-color-host/
   → 校验 material-slots：按稀疏 treatments 解析默认 `{audio:0,speed:1}`、dropped asset 不进入召回、非 drive/aerial 不允许 speed>1、有 speech truth 的非照片 span 不允许 audio<=-100、照片必须显式静音
   → 按 FW/slot/chosenSpanIds 顺序构建 KTEP/manifest 内存稿
   → official Python host 按 chronology event title 重建 Resolve media pool namespace（工程归档组织，不参与召回语义）
-  → official Python host 先通过 `resolve.media_sync` 复用/移动/导入达芬奇 Media Pool 的项目全局 `Kairos Project Media` 素材：目标事件目录一致则复用跳过，目录变化则移动，缺失才导入，并在同步结束后清理空事件目录；随后在 `Kairos Timelines` 中通过 Resolve 原生 `MediaPool.AppendToTimeline` 创建/替换 Resolve rough-cut timeline，并回读校验 source range / still duration；照片默认校验 `1000ms`，只有剪辑规则 / confirmed Flow Plan 或 `timelineStillDurationMs` 可覆盖
+  → official Python host 先通过 `resolve.media_sync` 复用/移动/导入达芬奇 Media Pool 的项目全局 `Kairos Project Media` 素材：目标事件目录一致则复用跳过，目录变化则移动，缺失才导入，并在同步结束后清理空事件目录；随后在 `Kairos Timelines` 中通过 Resolve 原生 `MediaPool.AppendToTimeline` 创建/替换 Resolve rough-cut timeline，并回读校验 source range / still duration；有声 speech/mixed 非照片 clip 的回读 source range 包含默认 `240ms` head / `720ms` tail handle，照片默认校验 `1000ms`，只有剪辑规则 / confirmed Flow Plan 或 `timelineStillDurationMs` 可覆盖
   → Resolve timeline 成功后保存项目级 `[Edit]` DRP 快照；失败只写入 `drpSnapshotWarning`
   → Resolve 成功后才写临时 `.tmp/edit-flow/<editId>/timeline/current.json` 审计，并按生成后的 clip 时间映射写 `.tmp/edit-flow/<editId>/timeline/current.srt`
 ```
@@ -985,6 +985,7 @@ vendor/resolve-color-host/
 - Resolve media pool 的 edit namespace 必须按 chronology event title 组织，不得把 spanId/assetId 作为正式审查一级分组
 - `speed > 1` 当前不应用到 Resolve rough cut；host 只记录 ignored/pending，不生成 proxy media、不走 FCPXML，也不猜未公开的 `TimelineItem` speed key
 - `timeline.generate` 的 `runs/current.json` record 只记录 timeline 名称、clipCount、subtitleCueCount、验证摘要和输出路径；完整 KTEP/manifest/clip 明细只保存在 `.tmp/edit-flow/<editId>/timeline/current.json`，源语音字幕正文只保存在 `.tmp/edit-flow/<editId>/timeline/current.srt`。
+- source-speech SRT 的 cue 时间仍来自 transcriptSegments；speech/mixed clip source handle 只扩展实际 Resolve clip 边界，不把字幕铺满前后静音余量。
 - `audio <= -100` 的视频素材保留 linked audio item 并禁用该 audio item；照片可无 audio item。非 `0 dB` clip gain 必须由 host live probe `TimelineItem.GetProperty()` 并验证可写属性，不能猜 `Volume`
 - `resolve.lock_rough_cut` 是人工审查并锁定已生成 Resolve timeline，不负责创建 timeline
 - Timeline placement 不再把单张照片当作预算填充器；照片默认短自然停留

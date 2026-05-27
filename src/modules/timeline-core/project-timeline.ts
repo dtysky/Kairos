@@ -50,6 +50,8 @@ import {
 import { snapshotProjectEditDrp } from './edit-resolve-snapshot.js';
 
 const CPHOTO_DEFAULT_DURATION_MS = 1000;
+const CSPEECH_SOURCE_HEAD_HANDLE_MS = 240;
+const CSPEECH_SOURCE_TAIL_HANDLE_MS = 720;
 const CRESOLVE_PROJECT_MEDIA_NAMESPACE = 'Kairos Project Media';
 const CRESOLVE_TIMELINE_FOLDER_NAME = 'Kairos Timelines';
 
@@ -351,9 +353,12 @@ export function buildDeterministicTimeline(input: {
         if (asset.kind === 'audio') {
           throw new Error(`timeline.generate cannot place audio-only asset on the rough-cut video track: ${asset.id}`);
         }
-        const treatment = resolveMaterialSlotTreatment(slot.treatments[spanId]);
         const photoStillDurationMs = asset.kind === 'photo' ? resolvePhotoStillDurationMs(input.cfg) : CPHOTO_DEFAULT_DURATION_MS;
-        const window = resolveSpanSourceWindow(asset, span, photoStillDurationMs);
+        const treatment = resolveMaterialSlotTreatment(slot.treatments[spanId]);
+        const shouldApplySpeechHandles = asset.kind !== 'photo' && treatment.audio > -100 && spanHasSpeechTruth(span);
+        const window = resolveSpanSourceWindow(asset, span, photoStillDurationMs, {
+          applySpeechHandles: shouldApplySpeechHandles,
+        });
         if (!placedSpanById.has(span.id)) {
           placedSpanById.set(span.id, {
             ...span,
@@ -733,6 +738,7 @@ function resolveSpanSourceWindow(
   asset: IKtepAsset,
   span: IKtepSpan,
   photoStillDurationMs = CPHOTO_DEFAULT_DURATION_MS,
+  options: { applySpeechHandles?: boolean } = {},
 ): { sourceInMs: number; sourceOutMs: number } {
   const sourceInMs = firstFiniteNumber(span.editSourceInMs, span.sourceInMs, 0);
   const explicitSourceOutMs = firstFiniteNumber(span.editSourceOutMs, span.sourceOutMs);
@@ -742,9 +748,36 @@ function resolveSpanSourceWindow(
   if (!Number.isFinite(sourceOutMs) || sourceOutMs <= sourceInMs) {
     throw new Error(`span ${span.id} does not have a valid source time range`);
   }
+  if (options.applySpeechHandles) {
+    return expandSourceWindowWithHandles({
+      sourceInMs,
+      sourceOutMs,
+      assetDurationMs: asset.durationMs,
+      headHandleMs: CSPEECH_SOURCE_HEAD_HANDLE_MS,
+      tailHandleMs: CSPEECH_SOURCE_TAIL_HANDLE_MS,
+    });
+  }
   return {
     sourceInMs,
     sourceOutMs,
+  };
+}
+
+function expandSourceWindowWithHandles(input: {
+  sourceInMs: number;
+  sourceOutMs: number;
+  assetDurationMs?: number;
+  headHandleMs: number;
+  tailHandleMs: number;
+}): { sourceInMs: number; sourceOutMs: number } {
+  const sourceInMs = Math.max(0, input.sourceInMs - input.headHandleMs);
+  const sourceOutLimit = typeof input.assetDurationMs === 'number' && Number.isFinite(input.assetDurationMs)
+    ? Math.max(input.assetDurationMs, input.sourceOutMs)
+    : Number.POSITIVE_INFINITY;
+  const sourceOutMs = Math.min(sourceOutLimit, input.sourceOutMs + input.tailHandleMs);
+  return {
+    sourceInMs,
+    sourceOutMs: Math.max(sourceOutMs, input.sourceOutMs),
   };
 }
 
