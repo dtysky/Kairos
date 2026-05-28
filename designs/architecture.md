@@ -79,7 +79,7 @@
 - `edit.framework` 是剪辑 handoff：`全片章节` 只做宏观概览，`分段操作稿` 是唯一可执行 FW beat 边界且每行有稳定 FW beat id；不得输出 `beat 边界索引`；全文不得写 chronology/event/route/gap/span/asset id；`spans` 列必须写类型数量与视频语音拆分，`叙事` 只写客观画面/声音总结；系统合同不规定固定的素材召回提示章节名，是否输出额外 handoff 区块只由用户维护的剪辑规则决定
 - 当剪辑规则要求风格层而 `styleCategory` 缺失，或选中的 profile 仍是 legacy 非分层格式时，Flow Plan 不能确认，Edit Flow 必须阻塞并提示重跑 `/style`
 - `script.generate` 只有在剪辑规则明确需要前置文本稿 / beat 稿时才出现；`material.recall` 只输出 `material-slots.json`，不再生成或消费 `segment-plan.json`；`resolve.media_sync` 先把事件素材同步到达芬奇 Media Pool；`timeline.generate` 是 deterministic Resolve rough-cut 创建步骤，读取 `edit-framework.md + material-slots.json + spans + assets + chronology`，只从已同步 Media Pool 选用素材，不再要求 `script/current.json`，并同步写 `.tmp/edit-flow/<editId>/timeline/current.srt` 供手动导入达芬奇
-- `timeline.generate` 成功后自动尝试保存项目级 Resolve `[Edit]` DRP 快照；失败只进入 result/run warning，不回滚已生成 timeline
+- `timeline.generate` 成功后自动尝试保存项目级 Resolve `[Edit]` DRP，默认使用 `latest-only` 只覆盖当前 latest DRP；失败只进入 result/run warning，不回滚已生成 timeline
 
 旅行类默认剪辑规则的正式顺序是：
 
@@ -98,7 +98,7 @@
 - 新 Edit Flow 不做旧 `script/`、`timeline/`、`subtitles/` 根路径兼容迁移；`timeline.generate` 的正式输出是 Resolve timeline，`.tmp/edit-flow/<editId>/timeline/current.json` 只作为本机临时 KTEP/manifest 审计，`.tmp/edit-flow/<editId>/timeline/current.srt` 是源语音字幕伴生产物
 - Edit Flow API 都应接受可选 `editId`，未传时默认为 `main`
 - Resolve edit mapping 固定为：Project `${projectBrief.name} [Edit]`，项目全局素材 bin `Kairos Project Media`，时间线 bin `Kairos Timelines`，Timeline `${editLabel} [${editId}]`
-- Resolve `[Edit]` DRP 快照是项目级工程备份，不按 editId 拆工程；索引写 `edits/resolve-project-map.json`，快照写 `edits/resolve-projects/<safe-project-key>/snapshots/`，latest 副本写 `edits/resolve-projects/<safe-project-key>/<Resolve项目名>.drp`，只替换文件系统非法字符
+- Resolve `[Edit]` DRP 备份是项目级工程备份，不按 editId 拆工程；索引写 `edits/resolve-project-map.json`，latest 副本写 `edits/resolve-projects/<safe-project-key>/<Resolve项目名>.drp`，只替换文件系统非法字符；DRP 保存策略分为 `latest-only` 与 `archive`，前者只覆盖 latest，后者额外写 `edits/resolve-projects/<safe-project-key>/snapshots/<timestamp>...drp` 并刷新 latest
 - 第一次粗剪锁定后写入 `edits/<editId>/timeline/locked-rough-cut.json`
 - v1 post-lock 只正式化字幕与旁白文本；音量均一、BGM、ducking、TTS 暂不纳入正式范围
 
@@ -897,13 +897,13 @@ src/modules/color/
 - `color/current.json` 保存 root/group 级 current truth
 - `color/groups/<rootId>.json` 保存宿主同步下来的正式 Group 快照
 - `color/batches/<batchId>/plan.json|manifest.json|validation.json` 保存每次执行归档
-- `color/resolve-projects/<safe-project-name>/latest.drp` 与 `color/resolve-project-map.json` 保存 Resolve 工程同步快照 truth
+- `color/resolve-projects/<safe-project-name>/latest.drp` 与 `color/resolve-project-map.json` 保存 Resolve 工程同步快照 truth；`latest-only` 只覆盖 latest，`archive` 才额外写 `snapshots/<timestamp>...drp`
 
 **关键流程**：
 ```
 读取 `project-brief` 单真值 root 配置 + 路径候选解析结果 + runtime config
   → `/color` 自动发现已配置 `rawPath` 的 roots，并派生约定命名与 blockers
-  → `prepare_root` 按稳定 50-clip chunks 调用 official Python host，真实同步 `rawLocalPath` 到 root namespace bin 树，把所有 chunks 追加到同一条 root grading timeline，并按 explainable technical signals 创建/复用 Resolve Groups；全部 chunks 完成后才自动导出一次轻量 DRP
+  → `prepare_root` 按稳定 50-clip chunks 调用 official Python host，真实同步 `rawLocalPath` 到 root namespace bin 树，把所有 chunks 追加到同一条 root grading timeline，并按 explainable technical signals 创建/复用 Resolve Groups；全部 chunks 完成后才自动导出一次轻量 DRP，且默认仅覆盖 latest
   → `sync_groups` 同步该 root grading timeline 上实际出现的正式 Groups，并写 `color/groups/<rootId>.json`
   → `execute_root` 按需扫描 `rawLocalPath`，生成 root clip inventory，并可按 `clipKeys[]` 裁成 batch，写 `plan.json`
   → official Python host 按 raw 父目录复制临时时间线并直接渲染到当前 root `localPath/<relativeDir>/`
@@ -951,7 +951,7 @@ src/modules/edit-flow/
 - `resolve.media_sync` 是 deterministic runner，只负责把 confirmed chronology 对应素材同步进达芬奇 Media Pool；chronology 在这里仅用于 Resolve bin 组织与工程归档，Media Pool 本身是素材归档真相。同步必须复用已有 MediaPoolItem：目标事件目录一致则跳过，目录变化则只移动到新事件目录而不重导入，同步结束后清理空事件目录；run record 只保留 imported / reused / moved / pruned 摘要
 - `timeline.generate` 是 deterministic runner，只消费 `edit-framework.md + material-slots.json + store/spans.json + store/assets.json + confirmed media/chronology.json` 并按 `material-slots` 的选择和顺序从已同步 Media Pool 取素材；有声 speech/mixed 非照片 clip 在 Resolve append 前默认扩展 source handle（头 `240ms`、尾 `720ms`，clamp 到素材边界），chronology 只用于 Resolve path/bin/context 映射，不得硬性读取 `script/current.json` 或 `segment-plan.json`
 - `.tmp/edit-flow/<editId>/timeline/current.json` 作为本机临时 KTEP/manifest 审计输出保留，`.tmp/edit-flow/<editId>/timeline/current.srt` 作为手动导入达芬奇的源语音字幕保留，但 Resolve rough-cut timeline 才是用户可见成功标准
-- `timeline.generate` 创建 Resolve timeline 成功后自动调用 Resolve project DRP 快照；该快照属于项目级 `${projectBrief.name} [Edit]` 工程，多个 editId 共享 `edits/resolve-project-map.json` 和同一个 latest DRP，导出失败只写 warning
+- `timeline.generate` 创建 Resolve timeline 成功后自动调用 Resolve project DRP 保存；该保存属于项目级 `${projectBrief.name} [Edit]` 工程，多个 editId 共享 `edits/resolve-project-map.json` 和同一个 latest DRP，自动保存默认仅覆盖 latest，导出失败只写 warning
 - code 只能执行 confirmed Flow Plan 中的 `capabilityId / inputRefs / outputRefs / gate / execution / notes`，不得从 markdown 正文做隐藏启发式，也不得自动向 Agent packet 注入未声明的 planning markdown；当前 step context / notes 是 packet 的正式高优先级输入
 
 #### 2.4 Timeline / Export — Resolve 粗剪与 KTEP 审计
@@ -974,7 +974,7 @@ vendor/resolve-color-host/
   → 按 FW/slot/chosenSpanIds 顺序构建 KTEP/manifest 内存稿
   → official Python host 按 chronology event title 重建 Resolve media pool namespace（工程归档组织，不参与召回语义）
   → official Python host 先通过 `resolve.media_sync` 复用/移动/导入达芬奇 Media Pool 的项目全局 `Kairos Project Media` 素材：目标事件目录一致则复用跳过，目录变化则移动，缺失才导入，并在同步结束后清理空事件目录；随后在 `Kairos Timelines` 中通过 Resolve 原生 `MediaPool.AppendToTimeline` 创建/替换 Resolve rough-cut timeline，并回读校验 source range / still duration；有声 speech/mixed 非照片 clip 的回读 source range 包含默认 `240ms` head / `720ms` tail handle，照片默认校验 `1000ms`，只有剪辑规则 / confirmed Flow Plan 或 `timelineStillDurationMs` 可覆盖
-  → Resolve timeline 成功后保存项目级 `[Edit]` DRP 快照；失败只写入 `drpSnapshotWarning`
+  → Resolve timeline 成功后以 `latest-only` 保存项目级 `[Edit]` DRP；失败只写入 `drpSnapshotWarning`
   → Resolve 成功后才写临时 `.tmp/edit-flow/<editId>/timeline/current.json` 审计，并按生成后的 clip 时间映射写 `.tmp/edit-flow/<editId>/timeline/current.srt`
 ```
 

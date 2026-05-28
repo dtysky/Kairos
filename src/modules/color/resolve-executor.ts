@@ -165,6 +165,7 @@ export interface IColorExecutorSaveDrpSnapshotInput {
   snapshotRoot: string;
   snapshotLabel?: string;
   latestFilename?: string;
+  retention?: 'latest-only' | 'archive';
   action?: string;
   rootId?: string;
   chunkId?: string;

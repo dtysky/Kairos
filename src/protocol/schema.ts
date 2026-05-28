@@ -1466,6 +1466,7 @@ export const IColorResolveProjectSnapshot = z.object({
   latestPath: z.string().optional(),
   createdAt: z.string(),
   mode: z.enum(['auto', 'manual', 'external']).default('auto'),
+  retention: z.enum(['latest-only', 'archive']).default('archive'),
   action: z.string().optional(),
   rootId: z.string().optional(),
   chunkId: z.string().optional(),

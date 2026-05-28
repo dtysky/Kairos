@@ -227,16 +227,25 @@ function createFakeExecutor(options: {
       if (options.onSaveDrpSnapshot) {
         return options.onSaveDrpSnapshot(input);
       }
-      const snapshotPath = join(input.snapshotRoot, 'snapshots', `${input.snapshotLabel || 'manual'}.drp`);
-      await mkdir(join(input.snapshotRoot, 'snapshots'), { recursive: true });
-      await writeFile(snapshotPath, 'drp', 'utf-8');
+      const latestPath = join(input.snapshotRoot, 'latest.drp');
+      const retention = input.retention === 'archive' ? 'archive' : 'latest-only';
+      const snapshotPath = retention === 'archive'
+        ? join(input.snapshotRoot, 'snapshots', `${input.snapshotLabel || 'manual'}.drp`)
+        : latestPath;
+      if (retention === 'archive') {
+        await mkdir(join(input.snapshotRoot, 'snapshots'), { recursive: true });
+        await writeFile(snapshotPath, 'drp', 'utf-8');
+      }
+      await mkdir(input.snapshotRoot, { recursive: true });
+      await writeFile(latestPath, 'drp', 'utf-8');
       return {
         snapshot: {
           projectName: input.resolveProjectName,
           snapshotPath,
-          latestPath: join(input.snapshotRoot, 'latest.drp'),
+          latestPath,
           createdAt: '2026-04-19T10:06:00.000Z',
           mode: input.action === 'manual' ? 'manual' as const : 'auto' as const,
+          retention,
           action: input.action,
           rootId: input.rootId,
           chunkId: (input.chunkId ?? null) as unknown as string | undefined,
@@ -999,6 +1008,7 @@ describe('project color actions', () => {
     mockClipSignals();
     const preparedChunks: IColorExecutorPrepareRootInput[] = [];
     const savedDrpSnapshots: string[] = [];
+    const savedDrpRetentions: Array<'latest-only' | 'archive' | undefined> = [];
     const executor = createFakeExecutor({
       onPrepareRoot: async input => {
         preparedChunks.push(input);
@@ -1013,6 +1023,7 @@ describe('project color actions', () => {
       },
       onSaveDrpSnapshot: async input => {
         savedDrpSnapshots.push(input.snapshotLabel ?? '');
+        savedDrpRetentions.push(input.retention);
         return createFakeExecutor().saveDrpSnapshot(input);
       },
     });
@@ -1035,6 +1046,7 @@ describe('project color actions', () => {
     ]);
     expect(preparedChunks.map(input => input.resetTimeline)).toEqual([true, false, false]);
     expect(savedDrpSnapshots).toEqual([`prepare-root-${rootId}-complete`]);
+    expect(savedDrpRetentions).toEqual(['latest-only']);
     const currentRoot = (await loadColorCurrent(projectRoot)).roots.find(root => root.rootId === rootId);
     expect(currentRoot?.prepareChunks.map(chunk => chunk.status)).toEqual(['ready', 'ready', 'ready']);
     expect(currentRoot?.prepareChunks.map(chunk => chunk.timelineName)).toEqual([
@@ -1877,8 +1889,11 @@ describe('project color actions', () => {
       executor,
     });
     expect(saved.snapshot?.mode).toBe('manual');
-    expect((await loadColorResolveProjectMap(projectRoot)).projects[saved.snapshot!.projectName]?.latestSnapshot?.snapshotPath)
-      .toBe(saved.snapshot?.snapshotPath);
+    expect(saved.snapshot?.retention).toBe('latest-only');
+    expect(saved.snapshot?.snapshotPath).toBe(saved.snapshot?.latestPath);
+    const savedMapEntry = (await loadColorResolveProjectMap(projectRoot)).projects[saved.snapshot!.projectName];
+    expect(savedMapEntry?.latestSnapshot?.snapshotPath).toBe(saved.snapshot?.snapshotPath);
+    expect(savedMapEntry?.snapshots).toHaveLength(0);
 
     const externalPath = join(projectRoot, '.fixtures', 'manual-export.drp');
     await mkdir(join(projectRoot, '.fixtures'), { recursive: true });
@@ -1894,6 +1909,7 @@ describe('project color actions', () => {
       loadColorCurrent(projectRoot),
     ]);
     expect(registered.snapshot.mode).toBe('external');
+    expect(registered.snapshot.retention).toBe('archive');
     expect(resolveMap.projects[registered.snapshot.projectName]?.latestSnapshot?.snapshotPath)
       .toBe(registered.snapshot.snapshotPath);
     expect(current.roots.find(root => root.rootId === rootId)?.latestDrpSnapshot?.snapshotPath)

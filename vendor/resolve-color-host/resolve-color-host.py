@@ -4634,8 +4634,7 @@ def export_project_snapshot(resolve, project, payload, mode, stage):
     project_manager = require_method(resolve, "GetProjectManager")()
     project_name = stringify_signal_value(safe_call(project, "GetName")) or payload["resolveProjectName"]
     snapshot_root = Path(snapshot_root_value).expanduser().resolve()
-    snapshots_root = snapshot_root / "snapshots"
-    snapshots_root.mkdir(parents=True, exist_ok=True)
+    snapshot_root.mkdir(parents=True, exist_ok=True)
     created_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     timestamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
     label = (
@@ -4644,36 +4643,64 @@ def export_project_snapshot(resolve, project, payload, mode, stage):
         or stage
     )
     chunk_id = stringify_signal_value(payload.get("chunkId"))
-    label_parts = [label, chunk_id]
-    filename = f"{timestamp}-{sanitize_filename('-'.join([part for part in label_parts if part]))}.drp"
-    snapshot_path = snapshots_root / filename
-    exported = safe_call(project_manager, "ExportProject", project_name, str(snapshot_path), False)
-    if exported is False or not snapshot_path.is_file():
-        raise HostError(
-            "resolve_project_export_failed",
-            f"Unable to export Resolve project snapshot: {snapshot_path}",
-            {
-                "projectName": project_name,
-                "snapshotPath": str(snapshot_path),
-            },
-        )
+    retention = normalize_drp_snapshot_retention(payload.get("retention") or payload.get("snapshotRetention"))
     latest_filename = sanitize_latest_drp_filename(
         stringify_signal_value(payload.get("latestFilename")) or "latest.drp"
     )
     latest_path = snapshot_root / latest_filename
-    shutil.copy2(snapshot_path, latest_path)
+    if retention == "archive":
+        snapshots_root = snapshot_root / "snapshots"
+        snapshots_root.mkdir(parents=True, exist_ok=True)
+        label_parts = [label, chunk_id]
+        filename = f"{timestamp}-{sanitize_filename('-'.join([part for part in label_parts if part]))}.drp"
+        snapshot_path = snapshots_root / filename
+        exported = safe_call(project_manager, "ExportProject", project_name, str(snapshot_path), False)
+        if exported is False or not snapshot_path.is_file():
+            raise HostError(
+                "resolve_project_export_failed",
+                f"Unable to export Resolve project snapshot: {snapshot_path}",
+                {
+                    "projectName": project_name,
+                    "snapshotPath": str(snapshot_path),
+                },
+            )
+        shutil.copy2(snapshot_path, latest_path)
+    else:
+        temp_path = snapshot_root / f".{latest_path.stem}-{timestamp}-{uuid.uuid4().hex[:8]}.tmp.drp"
+        try:
+            exported = safe_call(project_manager, "ExportProject", project_name, str(temp_path), False)
+            if exported is False or not temp_path.is_file():
+                raise HostError(
+                    "resolve_project_export_failed",
+                    f"Unable to export Resolve project snapshot: {temp_path}",
+                    {
+                        "projectName": project_name,
+                        "snapshotPath": str(temp_path),
+                    },
+                )
+            os.replace(temp_path, latest_path)
+        finally:
+            if temp_path.exists():
+                temp_path.unlink()
+        snapshot_path = latest_path
     return {
         "projectName": project_name,
         "snapshotPath": str(snapshot_path),
         "latestPath": str(latest_path),
         "createdAt": created_at,
         "mode": mode,
+        "retention": retention,
         "action": stringify_signal_value(payload.get("action")) or stage,
         "rootId": stringify_signal_value(payload.get("rootId")),
         "chunkId": chunk_id,
         "database": normalize_database_info(safe_call(project_manager, "GetCurrentDatabase")),
-        "detail": f"{stage} exported withStillsAndLUTs=false",
+        "detail": f"{stage} exported withStillsAndLUTs=false retention={retention}",
     }
+
+
+def normalize_drp_snapshot_retention(value):
+    text = stringify_signal_value(value)
+    return "archive" if text == "archive" else "latest-only"
 
 
 def normalize_database_info(value):

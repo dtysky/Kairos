@@ -328,6 +328,7 @@ async function runJob(
           batchId: toStringValue(args.batchId) || undefined,
           overwriteConfirmed: args.overwriteConfirmed === true,
           overwritePlanHash: toStringValue(args.overwritePlanHash) || undefined,
+          retention: args.retention === 'archive' ? 'archive' : undefined,
           jobId,
         });
         return {

@@ -188,7 +188,7 @@ function AppShell() {
       await saveProjectColorDrpSnapshot(projectId, payload);
       await refreshProject(projectId);
       await refreshStatus();
-      setMessage('已保存 DRP 快照');
+      setMessage(payload?.retention === 'archive' ? '已归档 DRP 快照' : '已覆盖最新 DRP');
       setError('');
     } catch (caught) {
       handleError(caught);
@@ -222,7 +222,7 @@ function AppShell() {
       await saveProjectEditResolveSnapshot(projectId, payload);
       await refreshProject(projectId);
       await refreshStatus();
-      setMessage('已保存剪辑 DRP 快照');
+      setMessage(payload?.retention === 'archive' ? '已归档剪辑 DRP 快照' : '已覆盖最新剪辑 DRP');
       setError('');
     } catch (caught) {
       handleError(caught);
@@ -2149,13 +2149,22 @@ function EditFlowPage({
             <h2>Resolve 剪辑工程备份</h2>
             <p>{editResolveProject?.resolveProjectName || '等待剪辑工程命名'}</p>
           </div>
-          <Button
-            type={saveResolveBusy || typeof onSaveResolveSnapshot !== 'function' ? 'disabled' : 'default'}
-            disabled={saveResolveBusy || typeof onSaveResolveSnapshot !== 'function'}
-            onClick={() => onSaveResolveSnapshot?.({ editId })}
-          >
-            {saveResolveBusy ? '保存中…' : '保存 DRP 快照'}
-          </Button>
+          <div className="inline-actions">
+            <Button
+              type={saveResolveBusy || typeof onSaveResolveSnapshot !== 'function' ? 'disabled' : 'default'}
+              disabled={saveResolveBusy || typeof onSaveResolveSnapshot !== 'function'}
+              onClick={() => onSaveResolveSnapshot?.({ editId, retention: 'latest-only' })}
+            >
+              {saveResolveBusy ? '保存中…' : '覆盖最新'}
+            </Button>
+            <Button
+              type={saveResolveBusy || typeof onSaveResolveSnapshot !== 'function' ? 'disabled' : 'default'}
+              disabled={saveResolveBusy || typeof onSaveResolveSnapshot !== 'function'}
+              onClick={() => onSaveResolveSnapshot?.({ editId, retention: 'archive' })}
+            >
+              归档快照
+            </Button>
+          </div>
         </div>
         <div className="color-drp-panel">
           <div className="color-drp-copy">
@@ -2163,11 +2172,11 @@ function EditFlowPage({
             <div className="muted">
               {latestEditDrp?.snapshotPath
                 ? `latest · ${latestEditDrp.latestPath || latestEditDrp.snapshotPath}`
-                : '还没有剪辑 DRP 快照。Resolve scripting 不可用时，用 File -> Export Project... 保存到 snapshots 目录后在这里登记。'}
+                : '还没有剪辑 DRP。Resolve scripting 不可用时，用 File -> Export Project... 保存后在这里登记。'}
             </div>
             {latestEditDrp?.createdAt ? (
               <div className="muted">
-                {`${latestEditDrp.mode || 'auto'} · ${latestEditDrp.createdAt} · ${latestEditDrp.projectName || editResolveProject?.resolveProjectName || ''}`}
+                {`${latestEditDrp.mode || 'auto'} · ${latestEditDrp.retention || 'archive'} · ${latestEditDrp.createdAt} · ${latestEditDrp.projectName || editResolveProject?.resolveProjectName || ''}`}
               </div>
             ) : null}
           </div>

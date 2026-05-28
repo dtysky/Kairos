@@ -167,11 +167,13 @@ describe('PythonResolveColorExecutor', () => {
           input: {
             resolveProjectName: string;
             latestFilename?: string;
+            retention?: string;
             snapshotRoot: string;
           };
         };
         expect(request.operation).toBe('save_drp_snapshot');
         expect(request.input.latestFilename).toBe('Project [Edit].drp');
+        expect(request.input.retention).toBe('archive');
         return {
           stdout: JSON.stringify({
             snapshot: {
@@ -180,6 +182,7 @@ describe('PythonResolveColorExecutor', () => {
               latestPath: `${request.input.snapshotRoot}/${request.input.latestFilename}`,
               createdAt: '2026-05-21T10:00:00.000Z',
               mode: 'manual',
+              retention: 'archive',
             },
           }),
           stderr: '',
@@ -193,9 +196,11 @@ describe('PythonResolveColorExecutor', () => {
       snapshotRoot: '/tmp/project-edit',
       snapshotLabel: 'manual',
       latestFilename: 'Project [Edit].drp',
+      retention: 'archive',
     });
 
     expect(result.snapshot.latestPath).toBe('/tmp/project-edit/Project [Edit].drp');
+    expect(result.snapshot.retention).toBe('archive');
   });
 
   it('maps structured stderr into a typed host error', async () => {

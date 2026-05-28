@@ -54,6 +54,7 @@ Operational lesson that must not be forgotten:
   - 根仓 `pnpm build`
   - `npm --prefix apps/kairos-console run build`
 - 不要把根仓 `pnpm build` 误当成已经覆盖 React console 产物；前端 bundle 需要单独 build
+- Resolve DRP 保存策略分为 `latest-only` 与 `archive`：默认自动备份只覆盖当前 latest；只有用户显式选择归档时才写 `snapshots/<timestamp>...drp`。剪辑 `[Edit]` 和调色 `[Color]` 工程都遵守同一口径，外部 DRP 登记仍作为 archive entry 刷新 latest。
 - `projects/<projectId>/.tmp/media-analyze/progress.json` is durable progress cache, not proof that a live analyze job is running
 - Analyze resume derives the first live stage from actual artifacts, not from `progress.json.step`: if coarse reports are complete and only fine-scan work remains, the monitor should enter `fine-scan-prefetch` instead of briefly resetting to `prepare`.
 - Pharos/Pyxis 非旅行期省电门控只影响移动端 GPS、GPX、语音和 BLE 自动启动；它不新增 WebDAV/JSON 协议字段，也不改变 Kairos 的 Pharos 镜像、解析或素材匹配逻辑。
@@ -133,6 +134,7 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
 - Treat `.ai/knowledge/davinci-resolve-scripting.md` as the local working DaVinci Resolve scripting documentation; any DaVinci Resolve scripting, `/color`, Resolve export, DRX/DRT, LUT automation, render job, group, node graph, or vendored host task must read it and then verify version-sensitive methods against the installed Resolve `README.txt`.
 - Treat `/color` main root cards as a two-path UI: user-facing fields are `当前素材路径` and `原始素材路径`; derived Resolve naming belongs in advanced/debug display, not the primary form.
 - Treat `/color` as a dashboard-style surface: `Root 摘要 -> 当前 Root Hero -> 所有 Root 常驻可编辑配置 -> Groups -> 次级诊断/归档`.
+- Treat `/color` DRP saving as a two-mode workflow: `latest-only` overwrites `latest.drp` without adding a timestamped archive, while `archive` writes `snapshots/<timestamp>...drp` and refreshes latest. Automatic prepare snapshots default to `latest-only`; manual UI must expose both choices.
 - Treat `/color` user-editable parameters as always-visible controls in the main flow for every root on the same page; collapsed sections must remain read-only diagnostics/archive only.
 - Treat current `color` job support as the formal action dispatcher:
   - `prepare_root`

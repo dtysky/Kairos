@@ -397,6 +397,7 @@ async function routeRequest(
       projectId,
       rootId,
       mode: 'manual',
+      retention: payload?.retention === 'archive' ? 'archive' : 'latest-only',
     }));
     return;
   }
@@ -434,6 +435,7 @@ async function routeRequest(
       projectId,
       editId,
       mode: 'manual',
+      retention: payload?.retention === 'archive' ? 'archive' : 'latest-only',
     }));
     return;
   }

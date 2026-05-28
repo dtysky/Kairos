@@ -38,16 +38,20 @@ describe('edit Resolve DRP snapshots', () => {
       projectId,
       editId: 'alt-cut',
       snapshotLabel: 'manual-alt',
+      retention: 'archive',
       executor,
     });
 
     expect(basename(saved.snapshot.latestPath || '')).toBe('Edit DRP Fixture [Edit].drp');
+    expect(saved.snapshot.retention).toBe('latest-only');
+    expect(saved.snapshot.snapshotPath).toBe(saved.snapshot.latestPath);
+    expect(savedSecondEdit.snapshot.retention).toBe('archive');
     expect(saved.snapshot.latestPath).not.toMatch(/latest\.drp$/u);
     expect(savedSecondEdit.snapshot.latestPath).toBe(saved.snapshot.latestPath);
     const map = await loadEditResolveProjectMap(projectRoot);
     const entry = map.projects[saved.resolveProjectName];
     expect(entry?.latestSnapshot?.snapshotPath).toBe(savedSecondEdit.snapshot.snapshotPath);
-    expect(entry?.snapshots).toHaveLength(2);
+    expect(entry?.snapshots).toHaveLength(1);
   });
 
   it('registers external DRP files and refreshes the project-name latest copy', async () => {
@@ -64,6 +68,7 @@ describe('edit Resolve DRP snapshots', () => {
     });
 
     expect(registered.snapshot.mode).toBe('external');
+    expect(registered.snapshot.retention).toBe('archive');
     expect(basename(registered.snapshot.latestPath || '')).toBe('Edit DRP Fixture [Edit].drp');
     await expect(readFile(registered.snapshot.latestPath || '', 'utf-8')).resolves.toBe('external drp');
     const map = await loadEditResolveProjectMap(projectRoot);
@@ -86,6 +91,7 @@ describe('edit Resolve DRP snapshots', () => {
     });
 
     expect(saved.snapshot.mode).toBe('auto');
+    expect(saved.snapshot.retention).toBe('latest-only');
     expect(saved.snapshot.action).toBe('timeline.generate');
   });
 
@@ -138,10 +144,16 @@ function createFakeSnapshotExecutor(): Pick<IColorExecutor, 'preflight' | 'saveD
       };
     },
     async saveDrpSnapshot(input) {
-      const snapshotPath = join(input.snapshotRoot, 'snapshots', `${input.snapshotLabel || 'manual'}.drp`);
       const latestPath = join(input.snapshotRoot, input.latestFilename || 'latest.drp');
-      await mkdir(join(input.snapshotRoot, 'snapshots'), { recursive: true });
-      await writeFile(snapshotPath, 'drp', 'utf-8');
+      const retention = input.retention === 'archive' ? 'archive' : 'latest-only';
+      const snapshotPath = retention === 'archive'
+        ? join(input.snapshotRoot, 'snapshots', `${input.snapshotLabel || 'manual'}.drp`)
+        : latestPath;
+      if (retention === 'archive') {
+        await mkdir(join(input.snapshotRoot, 'snapshots'), { recursive: true });
+        await writeFile(snapshotPath, 'drp', 'utf-8');
+      }
+      await mkdir(input.snapshotRoot, { recursive: true });
       await writeFile(latestPath, 'drp', 'utf-8');
       return {
         snapshot: {
@@ -152,6 +164,7 @@ function createFakeSnapshotExecutor(): Pick<IColorExecutor, 'preflight' | 'saveD
             ? '2026-05-21T10:01:00.000Z'
             : '2026-05-21T10:00:00.000Z',
           mode: 'manual',
+          retention,
           action: input.action,
         },
       };

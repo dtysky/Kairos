@@ -38,7 +38,7 @@ Kairos 当前需要区分两层：
   - 当前 DaVinci Resolve scripting 相关知识已落成本地文档 `.ai/knowledge/davinci-resolve-scripting.md`；任何 `/color`、Resolve export、DRX/DRT、LUT、render job、Group、node graph 或 vendored host 变更都必须先读该文档，再按安装版 Resolve `README.txt` 校验版本敏感 API
   - 当前 `prepare_root` 已正式承担 `rawLocalPath -> Resolve root bin / root grading timeline / Resolve Groups` 的真实同步，不再只是轻量容器占位
   - 当前大素材 root 的 `prepare_root` 默认按稳定顺序拆成 50-clip chunks，并限制本机 probe / source-truth / lowlight 并发，避免一次性把整 root 塞进 Node 和 Resolve host 内存；chunk 只作为导入批次，全部追加到同一条 root grading timeline，chunk 进度与可恢复状态写入 `color/current.json`
-  - 当前自动 DRP 快照只在 root 全部 chunks 导入完成后生成一次；每个 chunk 后只即时 `SaveProject()`，其它 Resolve 工程备份交由用户通过 `/color` 的手动保存或外部 `.drp` 登记入口完成
+  - 当前自动 DRP 快照只在 root 全部 chunks 导入完成后生成一次；每个 chunk 后只即时 `SaveProject()`；自动快照默认使用 `latest-only`，只覆盖当前 latest DRP，不新增时间戳归档；其它 Resolve 工程备份交由用户通过 `/color` 的 `覆盖最新 / 归档快照` 手动保存或外部 `.drp` 登记入口完成
     - grading timeline 必须按该 root 的 dominant `(width, height, fps)` 规格创建
     - 自动 Group 只使用创意 / review 标签语义；`log` 是前置分组轴，后续 addon 只在同一 log bucket 内叠加，不跨 log 合并
     - `log` 先读显式 sidecar 真值，再回退 root `color.colorSpaceProfile`
@@ -88,7 +88,7 @@ Kairos 当前需要区分两层：
     - group 侧至少镜像 `logProfile / orientationStatus / lowlight / colorCastClass / exposureSceneClass / postClipCreativeStatus`
     - clip 侧至少镜像 `gyroEligible / gyroflowStatus / dehazeStatus / nrStatus / clipRepairStatus / layoutStatus / orientationStatus / repairTemplateKey / timelineTransform`
   - 当前 `/color` 进入页面或切换项目时会自动执行 Resolve host preflight，并把结果正式缓存到 `color/current.json.hostPreflight`
-  - 当前 `/color` 会把 Resolve 工程同步快照落到项目内 `color/resolve-projects/<safe-project-name>/`；自动快照只在 root prepare 全部 chunks 完成后生成一次，手动 `保存 DRP 快照` 可随时 `SaveProject()` 并导出轻量 `.drp`，两者都会维护 `latest.drp` 与 `color/resolve-project-map.json`；外部 GUI 导出的 `.drp` 可登记为 latest
+  - 当前 `/color` 会把 Resolve 工程同步快照落到项目内 `color/resolve-projects/<safe-project-name>/`；自动快照只在 root prepare 全部 chunks 完成后生成一次且默认只覆盖 `latest.drp`；手动 DRP 保存拆成 `覆盖最新` 与 `归档快照` 两种保存策略，前者只替换 latest，后者写入 `snapshots/<timestamp>...drp` 并刷新 latest；两者都会维护 `color/resolve-project-map.json`；外部 GUI 导出的 `.drp` 可登记为 latest archive entry
   - 当前 `prepare_root / sync_groups / execute_root / prepare_all_roots / export_all_roots` 都先经过 preflight 守卫；宿主 blocked 或 render preset 不受支持时，动作会在 Resolve 变更前直接失败。`sync_batch_metadata / sync_batch_sidecars / validate_batch` 是 Node 侧 batch 后处理/校验动作，不需要 Resolve host preflight
   - 当前成功重跑 `prepare_root` 会清理上一轮 Resolve host 短时崩溃留下的动作级 blocker；`color/current.json.blockingReasons` 不得在 root 已 `synced/ready` 时继续显示旧的 DRT import 等 transient 错误
   - 当前 color host 的正式兼容下限为 `DaVinci Resolve Studio >= 18.5`；低版本 / 非 Studio 是硬阻塞，部分兼容降级则显示为 `degraded`
@@ -418,7 +418,7 @@ flowchart TD
 - `resolve.media_sync` 是 deterministic runner，从 confirmed chronology / fresh spans / assets / root path 映射把事件素材同步进达芬奇 Media Pool；chronology 在这里仅用于 Resolve Media Pool bin 组织和工程归档，不是 `material.recall` 的语义接口；不新增 `media-archive.json`，达芬奇 Media Pool 本身是素材归档真相。重复运行必须复用已有 MediaPoolItem：事件目录一致则跳过，事件目录变化则只移动到新目录不重导入，并在同步结束后清理空事件目录；run record 只记录 imported / reused / moved / pruned 摘要。
 - `timeline.generate` 是 deterministic runner，从 `edit-framework.md + material-slots.json + store/spans.json + store/assets.json + confirmed media/chronology.json` 读取输入，不要求 `script/current.json` 或 `segment-plan.json`，并只按 `material-slots` 的选择和顺序从已同步的 Resolve Media Pool 落位；chronology 只用于 Resolve path/bin/context 映射，不得改变 chosen spans。
 - `timeline.generate` 必须通过 Resolve host 创建/更新粗剪 timeline；Resolve 成功后写 `.tmp/edit-flow/<editId>/timeline/current.json` 本机临时 KTEP/manifest 审计，并从已选中、实际有声的 source-speech spans 生成 `.tmp/edit-flow/<editId>/timeline/current.srt`，供用户手动导入达芬奇。被选中且实际有声的 speech/mixed 非照片 clip 在落 Resolve 前默认扩展 source handle：头部 `240ms`、尾部 `720ms`，并 clamp 到素材时长；SRT 仍按 transcriptSegments 的真实时间映射到扩展后的 clip 内部。照片默认是 `1000ms` 静帧，只有剪辑规则 / confirmed Flow Plan 或运行时 `timelineStillDurationMs` 显式声明时才改变；非静音视频 clip 及其 linked audio clip 会被设置为 Resolve clip color `Orange`，作为用户在 Edit/Fairlight Timeline Index 中筛选后手动执行音频归一化的正式标记。Resolve 不可用、Media Pool 缺素材、source range 回读校验失败、非静音 clip color 无法写入或图片 still duration 不匹配时不能作为 KTEP-only 成功兜底。
-- `timeline.generate` 成功后自动尝试导出项目级 Resolve `[Edit]` 工程 DRP；所有 editId 共享同一 Resolve 工程和 `edits/resolve-project-map.json`，快照写 `edits/resolve-projects/<safe-project-key>/snapshots/`，latest 副本命名为 `${Resolve项目名}.drp` 而不是 `latest.drp`。自动快照失败只写 `drpSnapshotWarning` / run warning，不回滚已生成 timeline。
+- `timeline.generate` 成功后自动尝试导出项目级 Resolve `[Edit]` 工程 DRP，默认保存策略为 `latest-only`，只覆盖 `edits/resolve-projects/<safe-project-key>/<Resolve项目名>.drp`；所有 editId 共享同一 Resolve 工程和 `edits/resolve-project-map.json`。用户手动保存剪辑 DRP 时可选择 `覆盖最新` 或 `归档快照`，只有归档模式会额外写 `edits/resolve-projects/<safe-project-key>/snapshots/<timestamp>...drp`。自动快照失败只写 `drpSnapshotWarning` / run warning，不回滚已生成 timeline。
 - Resolve Media Pool 的项目全局 `Kairos Project Media` bin 由 `resolve.media_sync` 按 chronology event title 同步，避免 spanId/assetId 一级分组污染人工审查，也避免按 editId 重复归档素材；粗剪 timeline 固定放在 `Kairos Timelines` bin。粗剪创建只走 Resolve 原生 API（当前为 `MediaPool.AppendToTimeline`），不走 FCPXML。当前 `speed > 1` 仅作为待办请求保留，不应用到 Resolve 粗剪；`audio <= -100` 的视频素材保留 linked audio item 并禁用该 audio item，照片可无 audio item。`audio > -100` 的视频 clip 及其 linked audio clip 设置为 `Orange` clip color，便于用户在 Edit/Fairlight Timeline Index 批量选择并执行 Resolve 内建音频归一化。非 `0 dB` clip gain 必须由 host live probe `TimelineItem.GetProperty()` 并验证可写属性，不能猜 `Volume` key。
 - `resolve.lock_rough_cut` 只表示人工审查并锁定已经生成的 Resolve rough-cut timeline，不负责创建 timeline。
 - capability runner 可以复用旧 script/timeline 内部脚本、clean-context Agent stage 或确定性工具，但这些实现必须挂到 registry，而不是藏在固定阶段代码里。
@@ -569,7 +569,7 @@ flowchart TD
 - `config/project-brief.json`、`config/manual-itinerary.json`、`edits/<editId>/planning/flow-plan.json`、`edits/<editId>/runs/` 与 `config/review-queue.json` 是当前项目级 Console 结构化事实源
 - 拍摄时间修正的 canonical 输入只在 `config/manual-itinerary.json.captureTimeOverrides` / `config/manual-itinerary.md` 末尾“素材时间校正”区；`review-queue.json` 不再镜像或反写 `capture-time-correction`
 - `edits/<editId>/planning/`、`edits/<editId>/runs/` 与 capability-owned output directories 是正式剪辑层；新 Edit Flow 不再使用 root-level `script/`、`timeline/`、`subtitles/` 作为正式入口
-- `edits/resolve-project-map.json` 与 `edits/resolve-projects/<safe-project-key>/` 是剪辑侧项目级 Resolve `[Edit]` 工程 DRP 备份 truth；它不随 editId 拆分，latest 文件名保留 Resolve 项目名并只替换文件系统非法字符
+- `edits/resolve-project-map.json` 与 `edits/resolve-projects/<safe-project-key>/` 是剪辑侧项目级 Resolve `[Edit]` 工程 DRP 备份 truth；它不随 editId 拆分，latest 文件名保留 Resolve 项目名并只替换文件系统非法字符；DRP 保存策略分为 `latest-only` 与 `archive`，前者只覆盖 latest，后者额外进入 `snapshots/`
 - `config/style-sources.json` 是当前 **Workspace 级** Console 结构化事实源
 - `config/edit-rules/*.md` 是当前 **Workspace 级** 剪辑规则事实源；`edits/<editId>/planning/flow-plan.json` 是每个 edit unit 的已确认执行计划
 - `project-brief` 的每个 root block 允许额外声明 `飞行记录路径`，作为该素材根目录对应的 DJI FlightRecord 日志入口；实际识别不依赖强文件名，而是以文件头/可解析性为准
@@ -640,7 +640,7 @@ flowchart TD
 6. Console 只读展示 step capability、runner、输入、输出、gate 和状态
 7. Codex Agent 逐步运行 capability step；每步 run record 写入 `edits/<editId>/runs/current.json`
 8. 带 `gate=human` 的 step 必须通过产物审查后，后续依赖 step 才能继续；这不是 Console runner 动作
-9. `timeline.generate` 输出 Resolve rough cut timeline，并写本机临时 `.tmp/edit-flow/<editId>/timeline/current.json` 审计与 `.tmp/edit-flow/<editId>/timeline/current.srt` 原声字幕；成功后尝试保存项目级 `[Edit]` DRP 快照，失败只进入 warning
+9. `timeline.generate` 输出 Resolve rough cut timeline，并写本机临时 `.tmp/edit-flow/<editId>/timeline/current.json` 审计与 `.tmp/edit-flow/<editId>/timeline/current.srt` 原声字幕；成功后尝试以 `latest-only` 保存项目级 `[Edit]` DRP，失败只进入 warning
 10. 导出阶段消费已存在且通过校验的正式 timeline / locked rough cut 或其它 capability outputs
 
 因此，当前稳定结论包括：

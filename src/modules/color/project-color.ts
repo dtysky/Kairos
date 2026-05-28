@@ -153,6 +153,7 @@ export interface IProjectColorActionInput {
   batchId?: string;
   overwriteConfirmed?: boolean;
   overwritePlanHash?: string;
+  retention?: 'latest-only' | 'archive';
   jobId?: string;
   progressPath?: string;
   executor?: IColorExecutor;
@@ -313,6 +314,7 @@ export async function runProjectColorAction(
         projectId: input.projectId,
         rootId: input.rootId,
         mode: 'manual',
+        retention: input.retention,
         executor: input.executor,
         jobId: input.jobId,
         progressPath: input.progressPath,
@@ -386,6 +388,7 @@ export async function previewProjectColorOverwrite(
 
 export interface ISnapshotProjectColorDrpInput extends Omit<IProjectColorActionInput, 'action'> {
   mode?: 'manual' | 'auto';
+  retention?: 'latest-only' | 'archive';
   snapshotLabel?: string;
 }
 
@@ -397,6 +400,7 @@ export async function snapshotProjectColorDrp(
   input: ISnapshotProjectColorDrpInput,
 ): Promise<ISnapshotProjectColorDrpResult> {
   const action: TProjectColorAction = 'save_drp_snapshot';
+  const retention = normalizeColorDrpSnapshotRetention(input.retention);
   const projectRoot = resolveWorkspaceProjectRoot(input.workspaceRoot, input.projectId);
   const progressPath = resolveColorProgressPath(projectRoot, input.progressPath);
   const writeProgress: TWriteColorProgress = input.suppressProgress
@@ -416,7 +420,9 @@ export async function snapshotProjectColorDrp(
     status: 'running',
     stepIndex: 1,
     current: 0,
-    detail: '正在保存 Resolve 项目并导出 DRP 快照。',
+    detail: retention === 'archive'
+      ? '正在保存 Resolve 项目并归档 DRP 快照。'
+      : '正在保存 Resolve 项目并覆盖最新 DRP。',
     extra: {
       projectId: input.projectId,
       rootId: input.rootId,
@@ -469,18 +475,22 @@ export async function snapshotProjectColorDrp(
       resolveProjectName,
       snapshotRoot,
       snapshotLabel: input.snapshotLabel ?? 'manual',
+      retention,
       action: input.mode ?? 'manual',
       rootId: input.rootId,
     }),
     `save_drp_snapshot:${input.projectId}:${input.rootId ?? 'project'}`,
   );
-  const savedSnapshot = normalizeRequiredColorDrpSnapshot(saved.snapshot, resolveProjectName);
+  const savedSnapshot = {
+    ...normalizeRequiredColorDrpSnapshot(saved.snapshot, resolveProjectName),
+    retention,
+  };
   await recordColorDrpSnapshots(projectRoot, resolveProjectName, [savedSnapshot]);
   if (input.rootId) {
     await writeRootCurrent(projectRoot, input.rootId, current => ({
       ...current,
       latestDrpSnapshot: savedSnapshot,
-      detail: `已保存 DRP 快照：${savedSnapshot.snapshotPath}`,
+      detail: formatColorDrpSnapshotDetail(savedSnapshot),
       currentJobId: undefined,
       activeStage: undefined,
       blockingReasons: filterPersistentColorBlockers(current.blockingReasons ?? []),
@@ -491,7 +501,7 @@ export async function snapshotProjectColorDrp(
     status: 'succeeded',
     stepIndex: 1,
     current: 1,
-    detail: `已保存 DRP 快照：${savedSnapshot.snapshotPath}`,
+    detail: formatColorDrpSnapshotDetail(savedSnapshot),
     extra: {
       projectId: input.projectId,
       rootId: input.rootId,
@@ -505,7 +515,7 @@ export async function snapshotProjectColorDrp(
     action,
     projectId: input.projectId,
     rootId: input.rootId,
-    detail: `已保存 DRP 快照：${savedSnapshot.snapshotPath}`,
+    detail: formatColorDrpSnapshotDetail(savedSnapshot),
     blockingReasons: [],
     snapshot: savedSnapshot,
   };
@@ -562,6 +572,7 @@ export async function registerExternalColorDrpSnapshot(
     latestPath,
     createdAt,
     mode: 'external',
+    retention: 'archive',
     action: 'register_external_drp',
     rootId: input.rootId,
     detail: input.detail ?? `登记外部 DRP：${sourcePath}`,
@@ -1107,12 +1118,16 @@ export async function prepareProjectColorRoot(
         resolveProjectName: context.rootSummary.resolveProjectName,
         snapshotRoot: resolveColorDrpSnapshotRoot(context.projectRoot, context.rootSummary.resolveProjectName),
         snapshotLabel: `prepare-root-${context.rootId}-complete`,
+        retention: 'latest-only',
         action: 'prepare_root',
         rootId: context.rootId,
       }),
       `save_drp_snapshot:${context.rootId}:prepare-complete`,
     );
-    const savedSnapshot = normalizeRequiredColorDrpSnapshot(savedDrp.snapshot, context.rootSummary.resolveProjectName);
+    const savedSnapshot = {
+      ...normalizeRequiredColorDrpSnapshot(savedDrp.snapshot, context.rootSummary.resolveProjectName),
+      retention: 'latest-only' as const,
+    };
     await recordColorDrpSnapshots(context.projectRoot, context.rootSummary.resolveProjectName, [savedSnapshot]);
     drpSnapshots.push(savedSnapshot);
   } catch (error) {
@@ -2525,9 +2540,11 @@ async function recordColorDrpSnapshots(
   const previous = existing.projects[resolveProjectName];
   const snapshotsByPath = new Map<string, IColorResolveProjectSnapshot>();
   for (const snapshot of previous?.snapshots ?? []) {
+    if (snapshot.retention === 'latest-only') continue;
     snapshotsByPath.set(snapshot.snapshotPath, snapshot);
   }
   for (const snapshot of normalizedSnapshots) {
+    if (snapshot.retention === 'latest-only') continue;
     snapshotsByPath.set(snapshot.snapshotPath, snapshot);
   }
   const orderedSnapshots = [...snapshotsByPath.values()]
@@ -2570,12 +2587,23 @@ function normalizeColorDrpSnapshot(value: Record<string, unknown>): IColorResolv
     latestPath: typeof value.latestPath === 'string' && value.latestPath.trim() ? value.latestPath.trim() : undefined,
     createdAt,
     mode,
+    retention: value.retention === 'latest-only' ? 'latest-only' : 'archive',
     action: typeof value.action === 'string' && value.action.trim() ? value.action.trim() : undefined,
     rootId: typeof value.rootId === 'string' && value.rootId.trim() ? value.rootId.trim() : undefined,
     chunkId: typeof value.chunkId === 'string' && value.chunkId.trim() ? value.chunkId.trim() : undefined,
     database: isPlainObject(value.database) ? value.database : undefined,
     detail: typeof value.detail === 'string' && value.detail.trim() ? value.detail.trim() : undefined,
   };
+}
+
+function normalizeColorDrpSnapshotRetention(value: unknown): 'latest-only' | 'archive' {
+  return value === 'archive' ? 'archive' : 'latest-only';
+}
+
+function formatColorDrpSnapshotDetail(snapshot: IColorResolveProjectSnapshot): string {
+  return snapshot.retention === 'archive'
+    ? `已归档 DRP 快照：${snapshot.snapshotPath}`
+    : `已覆盖最新 DRP：${snapshot.latestPath || snapshot.snapshotPath}`;
 }
 
 function normalizeRequiredColorDrpSnapshot(

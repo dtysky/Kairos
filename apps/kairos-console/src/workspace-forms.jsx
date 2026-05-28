@@ -1392,9 +1392,16 @@ export function ColorCurrentSummary({
                 <Button
                   type={!activeRootDrpBusy && typeof onSaveDrpSnapshot === 'function' ? 'default' : 'disabled'}
                   disabled={activeRootDrpBusy || typeof onSaveDrpSnapshot !== 'function'}
-                  onClick={() => onSaveDrpSnapshot?.({ rootId: activeRoot.rootId })}
+                  onClick={() => onSaveDrpSnapshot?.({ rootId: activeRoot.rootId, retention: 'latest-only' })}
                 >
-                  {activeRootDrpBusy ? '保存中…' : '保存 DRP 快照'}
+                  {activeRootDrpBusy ? '保存中…' : '覆盖最新'}
+                </Button>
+                <Button
+                  type={!activeRootDrpBusy && typeof onSaveDrpSnapshot === 'function' ? 'default' : 'disabled'}
+                  disabled={activeRootDrpBusy || typeof onSaveDrpSnapshot !== 'function'}
+                  onClick={() => onSaveDrpSnapshot?.({ rootId: activeRoot.rootId, retention: 'archive' })}
+                >
+                  归档快照
                 </Button>
                 <Button
                   type={canRunColorRootAction('prepare_root', activeRoot, capability, liveColorJobs, busy, onRunColorAction) ? 'primary' : 'disabled'}
@@ -1460,12 +1467,12 @@ export function ColorCurrentSummary({
                 <strong>Resolve DRP 快照</strong>
                 <div className="muted">
                   {activeRootLatestDrp?.snapshotPath
-                    ? `latest · ${activeRootLatestDrp.snapshotPath}`
-                    : '还没有 DRP 快照。Resolve scripting 不可用时，用 File -> Export Project... 保存到 snapshots 目录后在这里登记。'}
+                    ? `latest · ${activeRootLatestDrp.latestPath || activeRootLatestDrp.snapshotPath}`
+                    : '还没有 DRP。Resolve scripting 不可用时，用 File -> Export Project... 保存后在这里登记。'}
                 </div>
                 {activeRootLatestDrp?.createdAt ? (
                   <div className="muted">
-                    {`${activeRootLatestDrp.mode || 'auto'} · ${activeRootLatestDrp.createdAt} · ${activeRootLatestDrp.projectName || activeRoot.resolveProjectName || ''}`}
+                    {`${activeRootLatestDrp.mode || 'auto'} · ${activeRootLatestDrp.retention || 'archive'} · ${activeRootLatestDrp.createdAt} · ${activeRootLatestDrp.projectName || activeRoot.resolveProjectName || ''}`}
                   </div>
                 ) : null}
               </div>

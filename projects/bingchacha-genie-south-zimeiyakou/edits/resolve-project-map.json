@@ -1,21 +1,22 @@
 {
-  "updatedAt": "2026-05-27T16:43:41.727Z",
+  "updatedAt": "2026-05-28T11:39:56.605Z",
   "projects": {
     "丙察察格聂南线子梅垭口穿越 [Edit]": {
       "projectName": "丙察察格聂南线子梅垭口穿越 [Edit]",
       "safeProjectName": "Edit",
       "latestSnapshot": {
-        "projectName": "��������������÷��ڴ�Խ [Edit]",
-        "snapshotPath": "H:\\SacredGrove\\Kairos\\projects\\bingchacha-genie-south-zimeiyakou\\edits\\resolve-projects\\Edit\\snapshots\\20260527T164336Z-manual.drp",
-        "latestPath": "H:\\SacredGrove\\Kairos\\projects\\bingchacha-genie-south-zimeiyakou\\edits\\resolve-projects\\Edit\\��������������÷��ڴ�Խ [Edit].drp",
-        "createdAt": "2026-05-27T16:43:36Z",
+        "projectName": "丙察察格聂南线子梅垭口穿越 [Edit]",
+        "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/edits/resolve-projects/Edit/丙察察格聂南线子梅垭口穿越 [Edit].drp",
+        "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/edits/resolve-projects/Edit/丙察察格聂南线子梅垭口穿越 [Edit].drp",
+        "createdAt": "2026-05-28T11:39:54Z",
         "mode": "manual",
+        "retention": "latest-only",
         "action": "manual",
         "database": {
           "DbType": "Disk",
           "DbName": "Local Database"
         },
-        "detail": "save_drp_snapshot exported withStillsAndLUTs=false"
+        "detail": "save_drp_snapshot exported withStillsAndLUTs=false retention=latest-only"
       },
       "snapshots": [
         {
@@ -24,6 +25,7 @@
           "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/edits/resolve-projects/Edit/丙察察格聂南线子梅垭口穿越 [Edit].drp",
           "createdAt": "2026-05-21T11:24:59Z",
           "mode": "manual",
+          "retention": "archive",
           "action": "manual",
           "database": {
             "DbType": "Disk",
@@ -37,6 +39,7 @@
           "latestPath": "H:\\SacredGrove\\Kairos\\projects\\bingchacha-genie-south-zimeiyakou\\edits\\resolve-projects\\Edit\\��������������÷��ڴ�Խ [Edit].drp",
           "createdAt": "2026-05-22T17:37:25Z",
           "mode": "auto",
+          "retention": "archive",
           "action": "timeline.generate",
           "database": {
             "DbType": "Disk",
@@ -50,6 +53,7 @@
           "latestPath": "H:\\SacredGrove\\Kairos\\projects\\bingchacha-genie-south-zimeiyakou\\edits\\resolve-projects\\Edit\\��������������÷��ڴ�Խ [Edit].drp",
           "createdAt": "2026-05-23T06:33:18Z",
           "mode": "manual",
+          "retention": "archive",
           "action": "manual",
           "database": {
             "DbType": "Disk",
@@ -63,6 +67,7 @@
           "latestPath": "H:\\SacredGrove\\Kairos\\projects\\bingchacha-genie-south-zimeiyakou\\edits\\resolve-projects\\Edit\\��������������÷��ڴ�Խ [Edit].drp",
           "createdAt": "2026-05-25T16:11:32Z",
           "mode": "manual",
+          "retention": "archive",
           "action": "manual",
           "database": {
             "DbType": "Disk",
@@ -76,6 +81,7 @@
           "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/edits/resolve-projects/Edit/丙察察格聂南线子梅垭口穿越 [Edit].drp",
           "createdAt": "2026-05-26T10:41:16Z",
           "mode": "manual",
+          "retention": "archive",
           "action": "manual",
           "database": {
             "DbType": "Disk",
@@ -89,6 +95,7 @@
           "latestPath": "H:\\SacredGrove\\Kairos\\projects\\bingchacha-genie-south-zimeiyakou\\edits\\resolve-projects\\Edit\\��������������÷��ڴ�Խ [Edit].drp",
           "createdAt": "2026-05-26T16:24:55Z",
           "mode": "manual",
+          "retention": "archive",
           "action": "manual",
           "database": {
             "DbType": "Disk",
@@ -102,6 +109,7 @@
           "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/edits/resolve-projects/Edit/丙察察格聂南线子梅垭口穿越 [Edit].drp",
           "createdAt": "2026-05-27T10:19:11Z",
           "mode": "manual",
+          "retention": "archive",
           "action": "manual",
           "database": {
             "DbType": "Disk",
@@ -115,6 +123,7 @@
           "latestPath": "H:\\SacredGrove\\Kairos\\projects\\bingchacha-genie-south-zimeiyakou\\edits\\resolve-projects\\Edit\\��������������÷��ڴ�Խ [Edit].drp",
           "createdAt": "2026-05-27T15:24:43Z",
           "mode": "manual",
+          "retention": "archive",
           "action": "manual",
           "database": {
             "DbType": "Disk",
@@ -128,6 +137,7 @@
           "latestPath": "H:\\SacredGrove\\Kairos\\projects\\bingchacha-genie-south-zimeiyakou\\edits\\resolve-projects\\Edit\\��������������÷��ڴ�Խ [Edit].drp",
           "createdAt": "2026-05-27T16:41:22Z",
           "mode": "manual",
+          "retention": "archive",
           "action": "manual",
           "database": {
             "DbType": "Disk",
@@ -141,6 +151,7 @@
           "latestPath": "H:\\SacredGrove\\Kairos\\projects\\bingchacha-genie-south-zimeiyakou\\edits\\resolve-projects\\Edit\\��������������÷��ڴ�Խ [Edit].drp",
           "createdAt": "2026-05-27T16:43:36Z",
           "mode": "manual",
+          "retention": "archive",
           "action": "manual",
           "database": {
             "DbType": "Disk",
@@ -149,7 +160,7 @@
           "detail": "save_drp_snapshot exported withStillsAndLUTs=false"
         }
       ],
-      "updatedAt": "2026-05-27T16:43:41.727Z"
+      "updatedAt": "2026-05-28T11:39:56.605Z"
     }
   }
 }

@@ -27,6 +27,7 @@ export interface ISnapshotProjectEditDrpInput {
   projectId?: string;
   editId?: string;
   snapshotLabel?: string;
+  retention?: 'latest-only' | 'archive';
   mode?: 'manual' | 'auto';
   action?: string;
   executor?: Pick<IColorExecutor, 'preflight' | 'saveDrpSnapshot'>;
@@ -69,6 +70,7 @@ export async function snapshotProjectEditDrp(
   input: ISnapshotProjectEditDrpInput,
 ): Promise<ISnapshotProjectEditDrpResult> {
   const context = await resolveEditSnapshotContext(input);
+  const retention = normalizeEditDrpSnapshotRetention(input.retention);
   const executor = input.executor ?? new PythonResolveColorExecutor();
   const preflight = await executor.preflight({
     projectId: context.projectId ?? context.project.id,
@@ -88,10 +90,12 @@ export async function snapshotProjectEditDrp(
     snapshotRoot: context.snapshotRoot,
     snapshotLabel: input.snapshotLabel ?? 'manual',
     latestFilename: resolveEditDrpLatestFilename(context.resolveProjectName),
+    retention,
     action: input.action ?? input.mode ?? 'manual',
   });
   const snapshot = {
     ...normalizeRequiredEditDrpSnapshot(saved.snapshot, context.resolveProjectName),
+    retention,
     ...(input.mode ? { mode: input.mode } : {}),
     ...(input.action ? { action: input.action } : {}),
   };
@@ -101,7 +105,7 @@ export async function snapshotProjectEditDrp(
     editId: input.editId,
     resolveProjectName: context.resolveProjectName,
     snapshot,
-    detail: `已保存剪辑 DRP 快照：${snapshot.snapshotPath}`,
+    detail: formatEditDrpSnapshotDetail(snapshot),
     blockingReasons: [],
   };
 }
@@ -144,6 +148,7 @@ export async function registerExternalEditDrpSnapshot(
     latestPath,
     createdAt,
     mode: 'external',
+    retention: 'archive',
     action: 'register_external_drp',
     detail: `登记外部剪辑 DRP：${sourcePath}`,
   };
@@ -208,9 +213,11 @@ async function recordEditDrpSnapshots(
   const previous = existing.projects[resolveProjectName];
   const snapshotsByPath = new Map<string, IColorResolveProjectSnapshot>();
   for (const snapshot of previous?.snapshots ?? []) {
+    if (snapshot.retention === 'latest-only') continue;
     snapshotsByPath.set(snapshot.snapshotPath, snapshot);
   }
   for (const snapshot of normalizedSnapshots) {
+    if (snapshot.retention === 'latest-only') continue;
     snapshotsByPath.set(snapshot.snapshotPath, snapshot);
   }
   const orderedSnapshots = [...snapshotsByPath.values()]
@@ -253,12 +260,23 @@ function normalizeEditDrpSnapshot(value: Record<string, unknown>): IColorResolve
     latestPath: typeof value.latestPath === 'string' && value.latestPath.trim() ? value.latestPath.trim() : undefined,
     createdAt,
     mode,
+    retention: value.retention === 'latest-only' ? 'latest-only' : 'archive',
     action: typeof value.action === 'string' && value.action.trim() ? value.action.trim() : undefined,
     rootId: typeof value.rootId === 'string' && value.rootId.trim() ? value.rootId.trim() : undefined,
     chunkId: typeof value.chunkId === 'string' && value.chunkId.trim() ? value.chunkId.trim() : undefined,
     database: typeof value.database === 'object' && value.database !== null ? value.database as Record<string, unknown> : undefined,
     detail: typeof value.detail === 'string' && value.detail.trim() ? value.detail.trim() : undefined,
   };
+}
+
+function normalizeEditDrpSnapshotRetention(value: unknown): 'latest-only' | 'archive' {
+  return value === 'archive' ? 'archive' : 'latest-only';
+}
+
+function formatEditDrpSnapshotDetail(snapshot: IColorResolveProjectSnapshot): string {
+  return snapshot.retention === 'archive'
+    ? `已归档剪辑 DRP 快照：${snapshot.snapshotPath}`
+    : `已覆盖最新剪辑 DRP：${snapshot.latestPath || snapshot.snapshotPath}`;
 }
 
 function normalizeRequiredEditDrpSnapshot(

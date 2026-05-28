@@ -66,7 +66,7 @@ description: >-
   - Color 路径默认使用 `${projectBrief.name} [Color]`
   - root grading timeline 默认使用 root `label` 派生的人类可读命名
   - `/color` 的 root prepare 默认按 50-clip chunks 分批追加到同一条 root grading timeline；不能为每个 chunk 或子目录创建正式 grading timeline
-  - 自动 DRP 只在 root prepare 全部 chunks 完成后导出一次；人工 `保存 DRP 快照` 应先 `SaveProject()`，再导出轻量 `.drp` 到项目内 `color/resolve-projects/<safe-project-name>/` 并更新 `latest.drp`
+  - 自动 DRP 只在 root prepare 全部 chunks 完成后导出一次，且默认使用 `latest-only` 只覆盖当前 latest DRP；人工 DRP 保存应先 `SaveProject()`，再按用户选择的 `latest-only / archive` 保存策略导出轻量 `.drp` 到项目内 `color/resolve-projects/<safe-project-name>/`，两种策略都更新 latest，只有 `archive` 写入 `snapshots/`
 5. 导入素材并按 `KTEP` 片段摆放
 6. 视目标环境决定是否创建字幕轨或导出 `SRT`
 7. 返回 Resolve 项目 / 时间线信息和日志
@@ -91,7 +91,7 @@ description: >-
 
 - Resolve 项目名
 - 时间线名
-- 最新 `.drp` 快照路径（如本轮触发 Resolve 工程保存）
+- 最新 `.drp` 路径与保存策略（如本轮触发 Resolve 工程保存；`latest-only` 不产生新的归档快照）
 - 如有需要，`subtitles/output.srt`
 - 导出日志与失败诊断
 
