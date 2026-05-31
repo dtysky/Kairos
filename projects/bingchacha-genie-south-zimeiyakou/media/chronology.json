@@ -1,10 +1,9 @@
 {
   "schemaVersion": "2.0",
-  "status": "confirmed",
-  "generatedAt": "2026-05-22T15:04:35.548Z",
-  "updatedAt": "2026-05-22T15:17:22.558Z",
-  "confirmedAt": "2026-05-22T15:17:22.558Z",
-  "inputsHash": "26a3d694dd2b30e9aad36e7c7c7302736f3a1d94a210801e3a7467d4260af35c",
+  "status": "draft",
+  "generatedAt": "2026-05-31T16:26:31.084Z",
+  "updatedAt": "2026-05-31T16:26:31.084Z",
+  "inputsHash": "89896c09ca60ef01e0eecb94b713570af2a047b9376f29e25bd5c11fe25458cc",
   "assetIndex": [
     {
       "assetId": "C0353_zve1_day0",
@@ -3235,12 +3234,24 @@
       "sortCapturedAt": "2026-04-28T23:01:33.000Z"
     },
     {
+      "assetId": "DJI_20260429070237_0060_D-HDR_photos",
+      "sortCapturedAt": "2026-04-28T23:02:37.000Z"
+    },
+    {
       "assetId": "DJI_20260429070332_0063_D_drone_day5",
       "sortCapturedAt": "2026-04-28T23:03:32.000Z"
     },
     {
+      "assetId": "DJI_20260429070529_0085_D-HDR_photos",
+      "sortCapturedAt": "2026-04-28T23:05:29.000Z"
+    },
+    {
       "assetId": "DJI_20260429070601_0088_D_drone_day5",
       "sortCapturedAt": "2026-04-28T23:06:02.000Z"
+    },
+    {
+      "assetId": "DJI_20260429070617_0089_D-HDR_photos",
+      "sortCapturedAt": "2026-04-28T23:06:17.000Z"
     },
     {
       "assetId": "C0895_zve1_day5",
@@ -3875,24 +3886,12 @@
       "sortCapturedAt": "2026-04-29T06:57:36.000Z"
     },
     {
-      "assetId": "DJI_20260429070237_0060_D-HDR_photos",
-      "sortCapturedAt": "2026-04-29T07:02:37.000Z"
-    },
-    {
       "assetId": "C0991_zve1_day5",
       "sortCapturedAt": "2026-04-29T07:04:03.000Z"
     },
     {
       "assetId": "DSC09378_photos",
       "sortCapturedAt": "2026-04-29T07:05:05.000Z"
-    },
-    {
-      "assetId": "DJI_20260429070529_0085_D-HDR_photos",
-      "sortCapturedAt": "2026-04-29T07:05:29.000Z"
-    },
-    {
-      "assetId": "DJI_20260429070617_0089_D-HDR_photos",
-      "sortCapturedAt": "2026-04-29T07:06:17.000Z"
     },
     {
       "assetId": "C0992_zve1_day5",
@@ -12342,7 +12341,7 @@
       "title": "丙中洛上空",
       "summary": "环境远景 / 山地环境 / 雾天 / 无口播语音 / 云雾山村俯瞰 / 石砌护栏 / 层叠山峦 / A person stands on a stone ledge overlooking a misty mountain village nestled in a lush valley, with layered hills and fog creating a serene and expansive atmosphere. / ...",
       "startAt": "2026-04-28T22:45:23.420Z",
-      "endAt": "2026-04-28T23:06:13.264Z",
+      "endAt": "2026-04-28T23:06:17.000Z",
       "location": "丙中洛上空",
       "spanIds": [
         "C0894_zve1_day5_broll_speech_s0-29",
@@ -12365,8 +12364,11 @@
         "DJI_20260429065945_0039_D_drone_day5_aerial_s0-8",
         "DJI_20260429070032_0043_D_drone_day5_aerial_s0-10",
         "DJI_20260429070132_0050_D_drone_day5_aerial_s0-15",
+        "DJI_20260429070237_0060_D-HDR_photos_photo",
         "DJI_20260429070332_0063_D_drone_day5_aerial_s0-9",
-        "DJI_20260429070601_0088_D_drone_day5_aerial_s0-12"
+        "DJI_20260429070529_0085_D-HDR_photos_photo",
+        "DJI_20260429070601_0088_D_drone_day5_aerial_s0-12",
+        "DJI_20260429070617_0089_D-HDR_photos_photo"
       ]
     },
     {
@@ -13302,13 +13304,10 @@
       "location": "雄珠拉垭口（海拔4636m）",
       "spanIds": [
         "DJI_20260429145736_0228_D_drone_day5_drive_s0-196",
-        "DJI_20260429070237_0060_D-HDR_photos_photo",
         "C0991_zve1_day5_drive_speech_s0-4",
         "C0991_zve1_day5_drive_visual_s2-8",
         "C0991_zve1_day5_drive_visual_s4-8",
         "DSC09378_photos_photo",
-        "DJI_20260429070529_0085_D-HDR_photos_photo",
-        "DJI_20260429070617_0089_D-HDR_photos_photo",
         "C0992_zve1_day5_broll_speech_s4-9",
         "C0993_zve1_day5_talking-head_speech_s0-6",
         "DJI_20260429152009_0315_D_drone_day5_aerial_s0-7",

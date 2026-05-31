@@ -90526,20 +90526,20 @@
     "ingestRootId": "root-draft-1778319790368-3hrfrl",
     "width": 4096,
     "height": 2731,
-    "capturedAt": "2026-04-29T07:02:37.000Z",
+    "capturedAt": "2026-04-28T23:02:37.000Z",
     "captureTimeSource": "exif",
-    "captureTimeConfidence": 0.8,
-    "createdAt": "2026-04-29T07:02:37.000Z",
+    "captureTimeConfidence": 0.98,
+    "createdAt": "2026-04-28T23:02:37.000Z",
     "ingestedAt": "2026-05-15T06:46:25.511Z",
     "embeddedGps": {
       "originType": "metadata",
       "confidence": 0.98,
-      "representativeTime": "2026-04-29T07:02:37.000Z",
+      "representativeTime": "2026-04-28T23:02:37.000Z",
       "representativeLat": 28.016536,
       "representativeLng": 98.62637,
       "pointCount": 1,
-      "startTime": "2026-04-29T07:02:37.000Z",
-      "endTime": "2026-04-29T07:02:37.000Z"
+      "startTime": "2026-04-28T23:02:37.000Z",
+      "endTime": "2026-04-28T23:02:37.000Z"
     },
     "metadata": {
       "sizeBytes": 1716360,
@@ -90577,7 +90577,7 @@
       },
       "rootCode": "photos"
     },
-    "rawCapturedAt": "2026-04-29T07:02:37.000Z"
+    "rawCapturedAt": "2026-04-28T23:02:37.000Z"
   },
   {
     "id": "DJI_20260429070529_0085_D-HDR_photos",
@@ -90587,20 +90587,20 @@
     "ingestRootId": "root-draft-1778319790368-3hrfrl",
     "width": 4096,
     "height": 2731,
-    "capturedAt": "2026-04-29T07:05:29.000Z",
+    "capturedAt": "2026-04-28T23:05:29.000Z",
     "captureTimeSource": "exif",
-    "captureTimeConfidence": 0.8,
-    "createdAt": "2026-04-29T07:05:29.000Z",
+    "captureTimeConfidence": 0.98,
+    "createdAt": "2026-04-28T23:05:29.000Z",
     "ingestedAt": "2026-05-15T06:46:25.511Z",
     "embeddedGps": {
       "originType": "metadata",
       "confidence": 0.98,
-      "representativeTime": "2026-04-29T07:05:29.000Z",
+      "representativeTime": "2026-04-28T23:05:29.000Z",
       "representativeLat": 28.014516,
       "representativeLng": 98.630539,
       "pointCount": 1,
-      "startTime": "2026-04-29T07:05:29.000Z",
-      "endTime": "2026-04-29T07:05:29.000Z"
+      "startTime": "2026-04-28T23:05:29.000Z",
+      "endTime": "2026-04-28T23:05:29.000Z"
     },
     "metadata": {
       "sizeBytes": 2446450,
@@ -90638,7 +90638,7 @@
       },
       "rootCode": "photos"
     },
-    "rawCapturedAt": "2026-04-29T07:05:29.000Z"
+    "rawCapturedAt": "2026-04-28T23:05:29.000Z"
   },
   {
     "id": "DJI_20260429070617_0089_D-HDR_photos",
@@ -90648,20 +90648,20 @@
     "ingestRootId": "root-draft-1778319790368-3hrfrl",
     "width": 4096,
     "height": 2731,
-    "capturedAt": "2026-04-29T07:06:17.000Z",
+    "capturedAt": "2026-04-28T23:06:17.000Z",
     "captureTimeSource": "exif",
-    "captureTimeConfidence": 0.8,
-    "createdAt": "2026-04-29T07:06:17.000Z",
+    "captureTimeConfidence": 0.98,
+    "createdAt": "2026-04-28T23:06:17.000Z",
     "ingestedAt": "2026-05-15T06:46:25.511Z",
     "embeddedGps": {
       "originType": "metadata",
       "confidence": 0.98,
-      "representativeTime": "2026-04-29T07:06:17.000Z",
+      "representativeTime": "2026-04-28T23:06:17.000Z",
       "representativeLat": 28.014921,
       "representativeLng": 98.629906,
       "pointCount": 1,
-      "startTime": "2026-04-29T07:06:17.000Z",
-      "endTime": "2026-04-29T07:06:17.000Z"
+      "startTime": "2026-04-28T23:06:17.000Z",
+      "endTime": "2026-04-28T23:06:17.000Z"
     },
     "metadata": {
       "sizeBytes": 2187439,
@@ -90699,7 +90699,7 @@
       },
       "rootCode": "photos"
     },
-    "rawCapturedAt": "2026-04-29T07:06:17.000Z"
+    "rawCapturedAt": "2026-04-28T23:06:17.000Z"
   },
   {
     "id": "DJI_20260429091602_0118_D-HDR_photos",

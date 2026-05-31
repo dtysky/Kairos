@@ -658,6 +658,7 @@ flowchart TD
 
 - 视频等容器素材的拍摄时间以 `create_time(UTC)` 为主来源
 - 照片拍摄时间优先级为：`EXIF DateTimeOriginal(+OffsetTimeOriginal) > EXIF CreateDate(+OffsetTimeDigitized/OffsetTime) > EXIF GPSDateTime > container > filename > filesystem`
+- 当 `DateTimeOriginal/SubSecDateTimeOriginal` 本身没有时区、但同秒 `CreateDate/SubSecCreateDate` 带显式时区或可用 `OffsetTimeDigitized/OffsetTime` 解释时，Ingest 可以把这个同秒 CreateDate 时区借给原始拍摄时间；不得用 GPS、地名、文件名或不同秒的 CreateDate 猜时区
 - 不再依赖 `path-timezones`
 - 高置信 `exif` / `manual` 当前不会再因为文件名日期不一致而被硬阻塞
 - `manual-itinerary` 正文不直接修正拍摄时间，但末尾“素材时间校正”结构化配置会在 rerun ingest 后作为 `manual` capture time 真值覆盖弱时间源

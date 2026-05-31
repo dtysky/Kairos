@@ -77,9 +77,10 @@ const CFILENAME_PATTERNS: RegExp[] = [
 export function resolveExifCaptureTime(rawTags?: Record<string, string>): ICaptureTime | null {
   if (!rawTags || Object.keys(rawTags).length === 0) return null;
 
+  const originalValue = rawTags['subsecdatetimeoriginal'] ?? rawTags['datetimeoriginal'];
   const original = parseExifDateTime(
-    rawTags['subsecdatetimeoriginal'] ?? rawTags['datetimeoriginal'],
-    rawTags['offsettimeoriginal'],
+    originalValue,
+    rawTags['offsettimeoriginal'] ?? resolveSameSecondCreateDateTimezone(rawTags, originalValue),
   );
   if (original) {
     return {
@@ -189,6 +190,32 @@ function parseExifDateTime(
     originalTimezone: effectiveTimezone,
     explicitTimezone: Boolean(effectiveTimezone),
   };
+}
+
+function resolveSameSecondCreateDateTimezone(
+  rawTags: Record<string, string>,
+  originalValue?: string,
+): string | undefined {
+  const originalWall = parseExifWallSecond(originalValue);
+  const createdValue = rawTags['subseccreatedate'] ?? rawTags['createdate'];
+  const createdWall = parseExifWallSecond(createdValue);
+  if (!originalWall || !createdWall || originalWall !== createdWall) {
+    return undefined;
+  }
+
+  const createdMatch = createdValue?.trim().match(CEXIF_DATETIME);
+  const embeddedTimezone = normalizeExifTimezone(createdMatch?.[8]);
+  return embeddedTimezone
+    ?? normalizeExifTimezone(rawTags['offsettimedigitized'])
+    ?? normalizeExifTimezone(rawTags['offsettime']);
+}
+
+function parseExifWallSecond(value?: string): string | null {
+  const match = value?.trim().match(CEXIF_DATETIME);
+  if (!match?.[1] || !match[2] || !match[3] || !match[4] || !match[5] || !match[6]) {
+    return null;
+  }
+  return `${match[1]}-${match[2]}-${match[3]}T${match[4]}:${match[5]}:${match[6]}`;
 }
 
 function normalizeExifTimezone(value?: string): string | undefined {

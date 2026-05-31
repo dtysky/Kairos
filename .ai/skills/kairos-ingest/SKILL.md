@@ -123,6 +123,7 @@ importProjectGpxTracks(input: {
 - `project-derived-track` 是第四优先级空间层，不能覆盖素材自身的 embedded GPS 真值，也不能覆盖 Pharos GPX 或项目级外部 GPX；Pharos GPX 也不能覆盖同名 `.SRT` / FlightRecord 绑定出的 embedded GPS
 - Ingest / `gps-refresh` 只刷新空间输入缓存；如果已有 `analysis/asset-reports/*.json` 需要采用新 GPS / Pharos 结果，应去 `/chronology` 触发 `spatial-refresh` 修补 report 空间层，然后重新运行 `span-rebuild` 与 `chronology-build`
 - 照片的拍摄时间优先级现在是：`EXIF DateTimeOriginal(+OffsetTimeOriginal) > EXIF CreateDate(+OffsetTimeDigitized/OffsetTime) > filename > filesystem`
+- 如果 `DateTimeOriginal/SubSecDateTimeOriginal` 没有自身时区，但同秒 `CreateDate/SubSecCreateDate` 带显式时区或可用 `OffsetTimeDigitized/OffsetTime` 解释，可以借用这个同秒时区；不要从 GPS、地名、文件名或不同秒 CreateDate 猜时区
 - 照片如果自身 EXIF 已带 GPS，应直接写成资产的 `embeddedGps(metadata)` 真值；只有没有自身 GPS 时，才继续走 sidecar / FlightRecord / `manual-itinerary` 的时间匹配链路
 - 对声明 `captureTimePolicy.mode=manual-required` 的 root，命中的素材时间必须人工确认；这类 blocker 要求显式 `正确日期 / 正确时间 / 时区`，不能从当前 capturedAt 自动补日期后视为 resolved
 - 如果 ingest 发现弱时间源素材的拍摄时间和项目时间线、文件名完整时间戳或已纳入 `Pharos` trip 的整体时间边界明显冲突，必须把阻塞项同步到 `/ingest-gps` 的“素材时间校正”卡片与 `config/manual-itinerary.md`，并立刻阻塞后续流程

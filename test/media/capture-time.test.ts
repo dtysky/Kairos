@@ -29,6 +29,37 @@ describe('capture time resolution', () => {
     }));
   });
 
+  it('borrows explicit CreateDate timezone when original photo time has the same wall second', () => {
+    const result = resolveExifCaptureTime({
+      datetimeoriginal: '2026:04:29 07:05:29',
+      subsecdatetimeoriginal: '2026:04:29 07:05:29.1',
+      createdate: '2026:04:29 07:05:29',
+      subseccreatedate: '2026:04:29 07:05:29.1+08:00',
+      offsettime: '+08:00',
+      offsettimedigitized: '+08:00',
+    });
+
+    expect(result).toEqual(expect.objectContaining({
+      capturedAt: '2026-04-28T23:05:29.000Z',
+      originalTimezone: '+08:00',
+      source: 'exif',
+    }));
+  });
+
+  it('does not borrow CreateDate timezone when original photo time differs by second', () => {
+    const result = resolveExifCaptureTime({
+      datetimeoriginal: '2026:04:29 07:05:28',
+      createdate: '2026:04:29 07:05:29',
+      offsettimedigitized: '+08:00',
+    });
+
+    expect(result).toEqual(expect.objectContaining({
+      capturedAt: '2026-04-29T07:05:28.000Z',
+      originalTimezone: undefined,
+      source: 'exif',
+    }));
+  });
+
   it('extracts date and time hints from camera filenames', () => {
     expect(extractFilenameCaptureTimeHint('DJI_20260219023043_0782_D.jpg')).toEqual({
       date: '2026-02-19',

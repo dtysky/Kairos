@@ -551,6 +551,7 @@
    - `/chronology` 的 `spatial-refresh` deterministic job 可在不启动 ML、不抽帧、不转写的情况下刷新已有 `asset-reports` 空间层并标记 spans / chronology stale；它只消费已经写入 `store/assets.json` 的 embedded GPS 绑定，不能替代 Ingest 发现新 `.SRT`、FlightRecord、root 或 capture-time 修正
    - DJI / QuickTime / EXIF 的 embedded GPS 解析已覆盖更宽字段变体，而不再只看最小 key 集
    - 照片的拍摄时间已切到 EXIF 原始时间链：`DateTimeOriginal(+OffsetTimeOriginal) > CreateDate(+OffsetTimeDigitized/OffsetTime) > GPSDateTime > container > filename > filesystem`
+   - 当 `DateTimeOriginal/SubSecDateTimeOriginal` 缺少自身时区、同秒 `CreateDate/SubSecCreateDate` 携带显式时区或可由 `OffsetTimeDigitized/OffsetTime` 解释时，Ingest 可以借用这个同秒时区；不同秒或无显式时区时不得借用，也不得从 GPS/地名/文件名推断
    - 照片若自身 EXIF 带 GPS，会直接写成 `embeddedGps(metadata)` 真值；只有没有自身 GPS 时，才继续走 project GPX / `project-derived-track` 的时间匹配
   - `config/manual-itinerary.md` 现在有两层正式语义：正文用于弱空间线索，末尾“素材时间校正”配置用于人工 capture time override；未解决的条目会阻塞 Analyze
   - 时间阻塞当前只针对弱时间源；高置信 `exif` / `manual` 不会再被文件名日期直接反驳
@@ -851,7 +852,7 @@ src/modules/ingest/
 扫描目录
   → ffprobe 提取元数据（并行，p-limit 控制并发）
   → EXIF 读取照片信息
-  → 照片优先解析 `DateTimeOriginal(+OffsetTimeOriginal)`，再回落 `CreateDate(+OffsetTimeDigitized/OffsetTime)`、`GPSDateTime`、容器时间、文件名和文件系统时间
+  → 照片优先解析 `DateTimeOriginal(+OffsetTimeOriginal)`，再回落 `CreateDate(+OffsetTimeDigitized/OffsetTime)`、`GPSDateTime`、容器时间、文件名和文件系统时间；若原始时间无时区但同秒 CreateDate 有显式时区，可借用该同秒时区
   → 提取素材自身同源 GPS（DJI 视频 metadata / 照片 EXIF / sidecar SRT / root 级 FlightRecord 切片）
   → 照片若自身 EXIF 带 GPS，直接写资产 `embeddedGps(metadata)`；否则才继续做时间匹配
   → 把 dense same-source 轨迹规范化到 `gps/same-source/tracks/*.gpx` + `gps/same-source/index.json`

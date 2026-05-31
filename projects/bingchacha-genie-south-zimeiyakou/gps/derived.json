@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "updatedAt": "2026-05-18T14:45:20.558Z",
+  "updatedAt": "2026-05-31T16:26:02.662Z",
   "entryCount": 579,
   "entries": [
     {
@@ -28,14 +28,14 @@
       "summary": "derived-track embedded-derived 2026-04-25T01:50:58.205Z 22.524373,108.730554 day1/DJI_20260425095051_0036_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260425095130_0045_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260425095130_0045_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 22.523563,
       "lng": 108.731834,
       "confidence": 0.78,
       "time": "2026-04-25T01:51:30.000Z",
-      "sourceAssetId": "DJI_20260425095130_0045_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260425095130_0045_D-HDR_photos",
       "sourcePath": "DJI_20260425095130_0045_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-25T01:51:30.000Z 22.523563,108.731834 DJI_20260425095130_0045_D-HDR.jpg"
     },
@@ -52,26 +52,26 @@
       "summary": "derived-track embedded-derived 2026-04-25T01:51:45.838Z 22.524081,108.730983 day1/DJI_20260425095137_0046_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260425095246_0070_D-HDR_全景图_photos_photo",
+      "id": "embedded-derived:DJI_20260425095246_0070_D-HDR_全景图_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 22.525126,
       "lng": 108.729218,
       "confidence": 0.78,
       "time": "2026-04-25T01:52:46.000Z",
-      "sourceAssetId": "DJI_20260425095246_0070_D-HDR_全景图_photos_photo",
+      "sourceAssetId": "DJI_20260425095246_0070_D-HDR_全景图_photos",
       "sourcePath": "DJI_20260425095246_0070_D-HDR 全景图.jpg",
       "summary": "derived-track embedded-derived 2026-04-25T01:52:46.000Z 22.525126,108.729218 DJI_20260425095246_0070_D-HDR 全景图.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260425095305_0073_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260425095305_0073_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 22.525126,
       "lng": 108.729218,
       "confidence": 0.78,
       "time": "2026-04-25T01:53:05.000Z",
-      "sourceAssetId": "DJI_20260425095305_0073_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260425095305_0073_D-HDR_photos",
       "sourcePath": "DJI_20260425095305_0073_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-25T01:53:05.000Z 22.525126,108.729218 DJI_20260425095305_0073_D-HDR.jpg"
     },
@@ -112,14 +112,14 @@
       "summary": "derived-track embedded-derived 2026-04-25T04:59:25.048Z 23.770225,106.736304 day1/DJI_20260425125909_0079_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260425130025_0090_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260425130025_0090_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 23.772532,
       "lng": 106.734299,
       "confidence": 0.78,
       "time": "2026-04-25T05:00:25.000Z",
-      "sourceAssetId": "DJI_20260425130025_0090_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260425130025_0090_D-HDR_photos",
       "sourcePath": "DJI_20260425130025_0090_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-25T05:00:25.000Z 23.772532,106.734299 DJI_20260425130025_0090_D-HDR.jpg"
     },
@@ -136,14 +136,14 @@
       "summary": "derived-track embedded-derived 2026-04-25T05:01:15.932Z 23.770525,106.735871 day1/DJI_20260425130059_0094_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260425130140_0097_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260425130140_0097_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 23.767754,
       "lng": 106.73806,
       "confidence": 0.78,
       "time": "2026-04-25T05:01:40.000Z",
-      "sourceAssetId": "DJI_20260425130140_0097_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260425130140_0097_D-HDR_photos",
       "sourcePath": "DJI_20260425130140_0097_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-25T05:01:40.000Z 23.767754,106.738060 DJI_20260425130140_0097_D-HDR.jpg"
     },
@@ -160,26 +160,26 @@
       "summary": "derived-track embedded-derived 2026-04-25T05:01:52.587Z 23.768001,106.737730 day1/DJI_20260425130147_0098_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260425130236_0107_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260425130236_0107_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 23.769009,
       "lng": 106.736366,
       "confidence": 0.78,
       "time": "2026-04-25T05:02:36.000Z",
-      "sourceAssetId": "DJI_20260425130236_0107_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260425130236_0107_D-HDR_photos",
       "sourcePath": "DJI_20260425130236_0107_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-25T05:02:36.000Z 23.769009,106.736366 DJI_20260425130236_0107_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260425130413_0116_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260425130413_0116_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 23.769514,
       "lng": 106.736298,
       "confidence": 0.78,
       "time": "2026-04-25T05:04:13.000Z",
-      "sourceAssetId": "DJI_20260425130413_0116_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260425130413_0116_D-HDR_photos",
       "sourcePath": "DJI_20260425130413_0116_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-25T05:04:13.000Z 23.769514,106.736298 DJI_20260425130413_0116_D-HDR.jpg"
     },
@@ -208,14 +208,14 @@
       "summary": "derived-track embedded-derived 2026-04-25T09:01:04.241Z 24.988142,104.920915 day1/DJI_20260425170055_0002_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260425170139_0005_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260425170139_0005_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 24.990345,
       "lng": 104.920494,
       "confidence": 0.78,
       "time": "2026-04-25T09:01:39.000Z",
-      "sourceAssetId": "DJI_20260425170139_0005_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260425170139_0005_D-HDR_photos",
       "sourcePath": "DJI_20260425170139_0005_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-25T09:01:39.000Z 24.990345,104.920494 DJI_20260425170139_0005_D-HDR.jpg"
     },
@@ -232,26 +232,26 @@
       "summary": "derived-track embedded-derived 2026-04-25T09:01:50.550Z 24.990608,104.920462 day1/DJI_20260425170148_0006_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260425170157_0007_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260425170157_0007_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 24.990948,
       "lng": 104.92041,
       "confidence": 0.78,
       "time": "2026-04-25T09:01:57.000Z",
-      "sourceAssetId": "DJI_20260425170157_0007_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260425170157_0007_D-HDR_photos",
       "sourcePath": "DJI_20260425170157_0007_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-25T09:01:57.000Z 24.990948,104.920410 DJI_20260425170157_0007_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260425170209_0010_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260425170209_0010_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 24.99095,
       "lng": 104.92041,
       "confidence": 0.78,
       "time": "2026-04-25T09:02:09.000Z",
-      "sourceAssetId": "DJI_20260425170209_0010_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260425170209_0010_D-HDR_photos",
       "sourcePath": "DJI_20260425170209_0010_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-25T09:02:09.000Z 24.990950,104.920410 DJI_20260425170209_0010_D-HDR.jpg"
     },
@@ -268,14 +268,14 @@
       "summary": "derived-track embedded-derived 2026-04-25T09:02:31.531Z 24.990664,104.918281 day1/DJI_20260425170217_0013_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260425170314_0017_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260425170314_0017_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 24.989956,
       "lng": 104.914558,
       "confidence": 0.78,
       "time": "2026-04-25T09:03:14.000Z",
-      "sourceAssetId": "DJI_20260425170314_0017_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260425170314_0017_D-HDR_photos",
       "sourcePath": "DJI_20260425170314_0017_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-25T09:03:14.000Z 24.989956,104.914558 DJI_20260425170314_0017_D-HDR.jpg"
     },
@@ -292,14 +292,14 @@
       "summary": "derived-track embedded-derived 2026-04-25T09:03:30.692Z 24.989503,104.915542 day1/DJI_20260425170321_0020_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260425170352_0021_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260425170352_0021_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 24.988607,
       "lng": 104.916748,
       "confidence": 0.78,
       "time": "2026-04-25T09:03:52.000Z",
-      "sourceAssetId": "DJI_20260425170352_0021_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260425170352_0021_D-HDR_photos",
       "sourcePath": "DJI_20260425170352_0021_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-25T09:03:52.000Z 24.988607,104.916748 DJI_20260425170352_0021_D-HDR.jpg"
     },
@@ -316,14 +316,14 @@
       "summary": "derived-track embedded-derived 2026-04-25T09:05:07.548Z 24.986846,104.917217 day1/DJI_20260425170452_0024_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260425170618_0031_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260425170618_0031_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 24.98263,
       "lng": 104.917557,
       "confidence": 0.78,
       "time": "2026-04-25T09:06:18.000Z",
-      "sourceAssetId": "DJI_20260425170618_0031_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260425170618_0031_D-HDR_photos",
       "sourcePath": "DJI_20260425170618_0031_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-25T09:06:18.000Z 24.982630,104.917557 DJI_20260425170618_0031_D-HDR.jpg"
     },
@@ -388,26 +388,26 @@
       "summary": "derived-track embedded-derived 2026-04-25T10:11:37.390Z 24.984180,104.922333 day1/DJI_20260425181129_0038_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260425181344_0067_D-HDR_全景图_photos_photo",
+      "id": "embedded-derived:DJI_20260425181344_0067_D-HDR_全景图_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 24.984482,
       "lng": 104.923553,
       "confidence": 0.78,
       "time": "2026-04-25T10:14:18.000Z",
-      "sourceAssetId": "DJI_20260425181344_0067_D-HDR_全景图_photos_photo",
+      "sourceAssetId": "DJI_20260425181344_0067_D-HDR_全景图_photos",
       "sourcePath": "DJI_20260425181344_0067_D-HDR 全景图.jpg",
       "summary": "derived-track embedded-derived 2026-04-25T10:14:18.000Z 24.984482,104.923553 DJI_20260425181344_0067_D-HDR 全景图.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260425181521_0102_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260425181521_0102_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 24.984289,
       "lng": 104.923859,
       "confidence": 0.78,
       "time": "2026-04-25T10:15:21.000Z",
-      "sourceAssetId": "DJI_20260425181521_0102_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260425181521_0102_D-HDR_photos",
       "sourcePath": "DJI_20260425181521_0102_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-25T10:15:21.000Z 24.984289,104.923859 DJI_20260425181521_0102_D-HDR.jpg"
     },
@@ -460,26 +460,26 @@
       "summary": "derived-track embedded-derived 2026-04-25T10:17:11.557Z 24.984831,104.917885 day1/DJI_20260425181703_0109_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260425181733_0113_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260425181733_0113_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 24.986353,
       "lng": 104.917938,
       "confidence": 0.78,
       "time": "2026-04-25T10:17:33.000Z",
-      "sourceAssetId": "DJI_20260425181733_0113_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260425181733_0113_D-HDR_photos",
       "sourcePath": "DJI_20260425181733_0113_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-25T10:17:33.000Z 24.986353,104.917938 DJI_20260425181733_0113_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260425181819_0116_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260425181819_0116_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 24.985727,
       "lng": 104.917625,
       "confidence": 0.78,
       "time": "2026-04-25T10:18:19.000Z",
-      "sourceAssetId": "DJI_20260425181819_0116_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260425181819_0116_D-HDR_photos",
       "sourcePath": "DJI_20260425181819_0116_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-25T10:18:19.000Z 24.985727,104.917625 DJI_20260425181819_0116_D-HDR.jpg"
     },
@@ -520,38 +520,38 @@
       "summary": "derived-track embedded-derived 2026-04-25T10:22:09.238Z 24.984262,104.922249 day1/DJI_20260425182204_0124_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260425182324_0125_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260425182324_0125_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 24.984173,
       "lng": 104.92202,
       "confidence": 0.78,
       "time": "2026-04-25T10:23:24.000Z",
-      "sourceAssetId": "DJI_20260425182324_0125_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260425182324_0125_D-HDR_photos",
       "sourcePath": "DJI_20260425182324_0125_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-25T10:23:24.000Z 24.984173,104.922020 DJI_20260425182324_0125_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260425182515_0128_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260425182515_0128_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 24.984156,
       "lng": 104.922165,
       "confidence": 0.78,
       "time": "2026-04-25T10:25:15.000Z",
-      "sourceAssetId": "DJI_20260425182515_0128_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260425182515_0128_D-HDR_photos",
       "sourcePath": "DJI_20260425182515_0128_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-25T10:25:15.000Z 24.984156,104.922165 DJI_20260425182515_0128_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260425182700_0143_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260425182700_0143_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 24.983843,
       "lng": 104.922012,
       "confidence": 0.78,
       "time": "2026-04-25T10:27:00.000Z",
-      "sourceAssetId": "DJI_20260425182700_0143_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260425182700_0143_D-HDR_photos",
       "sourcePath": "DJI_20260425182700_0143_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-25T10:27:00.000Z 24.983843,104.922012 DJI_20260425182700_0143_D-HDR.jpg"
     },
@@ -580,26 +580,26 @@
       "summary": "derived-track embedded-derived 2026-04-25T10:44:35.009Z 24.984274,104.922155 day1/DJI_20260425184425_0155_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260425184453_0156_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260425184453_0156_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 24.984272,
       "lng": 104.922157,
       "confidence": 0.78,
       "time": "2026-04-25T10:44:53.000Z",
-      "sourceAssetId": "DJI_20260425184453_0156_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260425184453_0156_D-HDR_photos",
       "sourcePath": "DJI_20260425184453_0156_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-25T10:44:53.000Z 24.984272,104.922157 DJI_20260425184453_0156_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260425184543_0159_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260425184543_0159_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 24.984795,
       "lng": 104.923103,
       "confidence": 0.78,
       "time": "2026-04-25T10:45:43.000Z",
-      "sourceAssetId": "DJI_20260425184543_0159_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260425184543_0159_D-HDR_photos",
       "sourcePath": "DJI_20260425184543_0159_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-25T10:45:43.000Z 24.984795,104.923103 DJI_20260425184543_0159_D-HDR.jpg"
     },
@@ -628,14 +628,14 @@
       "summary": "derived-track embedded-derived 2026-04-25T10:46:31.775Z 24.983267,104.923122 day1/DJI_20260425184623_0163_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260425184658_0166_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260425184658_0166_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 24.982954,
       "lng": 104.923134,
       "confidence": 0.78,
       "time": "2026-04-25T10:46:58.000Z",
-      "sourceAssetId": "DJI_20260425184658_0166_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260425184658_0166_D-HDR_photos",
       "sourcePath": "DJI_20260425184658_0166_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-25T10:46:58.000Z 24.982954,104.923134 DJI_20260425184658_0166_D-HDR.jpg"
     },
@@ -652,14 +652,14 @@
       "summary": "derived-track embedded-derived 2026-04-25T10:48:45.671Z 24.983602,104.922357 day1/DJI_20260425184839_0183_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260425184937_0184_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260425184937_0184_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 24.984106,
       "lng": 104.921471,
       "confidence": 0.78,
       "time": "2026-04-25T10:49:37.000Z",
-      "sourceAssetId": "DJI_20260425184937_0184_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260425184937_0184_D-HDR_photos",
       "sourcePath": "DJI_20260425184937_0184_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-25T10:49:37.000Z 24.984106,104.921471 DJI_20260425184937_0184_D-HDR.jpg"
     },
@@ -700,14 +700,14 @@
       "summary": "derived-track embedded-derived 2026-04-25T10:53:28.214Z 24.984198,104.922183 day1/DJI_20260425185314_0195_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260425185517_0201_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260425185517_0201_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 24.9841,
       "lng": 104.922234,
       "confidence": 0.78,
       "time": "2026-04-25T10:55:17.000Z",
-      "sourceAssetId": "DJI_20260425185517_0201_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260425185517_0201_D-HDR_photos",
       "sourcePath": "DJI_20260425185517_0201_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-25T10:55:17.000Z 24.984100,104.922234 DJI_20260425185517_0201_D-HDR.jpg"
     },
@@ -724,14 +724,14 @@
       "summary": "derived-track embedded-derived 2026-04-25T10:57:17.679Z 24.983985,104.922039 day1/DJI_20260425185705_0206_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260425185759_0212_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260425185759_0212_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 24.983852,
       "lng": 104.922012,
       "confidence": 0.78,
       "time": "2026-04-25T10:57:59.000Z",
-      "sourceAssetId": "DJI_20260425185759_0212_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260425185759_0212_D-HDR_photos",
       "sourcePath": "DJI_20260425185759_0212_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-25T10:57:59.000Z 24.983852,104.922012 DJI_20260425185759_0212_D-HDR.jpg"
     },
@@ -772,14 +772,14 @@
       "summary": "derived-track embedded-derived 2026-04-26T03:01:12.528Z 24.862310,104.951205 day2/DJI_20260426110100_0047_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260426110142_0051_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260426110142_0051_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 24.862249,
       "lng": 104.951324,
       "confidence": 0.78,
       "time": "2026-04-26T03:01:42.000Z",
-      "sourceAssetId": "DJI_20260426110142_0051_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260426110142_0051_D-HDR_photos",
       "sourcePath": "DJI_20260426110142_0051_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-26T03:01:42.000Z 24.862249,104.951324 DJI_20260426110142_0051_D-HDR.jpg"
     },
@@ -832,14 +832,14 @@
       "summary": "derived-track embedded-derived 2026-04-26T05:41:14.457Z 25.072744,104.708696 day2/DJI_20260426134051_0232_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260426134201_0239_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260426134201_0239_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 25.072725,
       "lng": 104.704391,
       "confidence": 0.78,
       "time": "2026-04-26T05:42:01.000Z",
-      "sourceAssetId": "DJI_20260426134201_0239_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260426134201_0239_D-HDR_photos",
       "sourcePath": "DJI_20260426134201_0239_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-26T05:42:01.000Z 25.072725,104.704391 DJI_20260426134201_0239_D-HDR.jpg"
     },
@@ -856,14 +856,14 @@
       "summary": "derived-track embedded-derived 2026-04-26T05:42:44.342Z 25.072054,104.704391 day2/DJI_20260426134235_0245_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260426134317_0249_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260426134317_0249_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 25.070786,
       "lng": 104.705124,
       "confidence": 0.78,
       "time": "2026-04-26T05:43:18.000Z",
-      "sourceAssetId": "DJI_20260426134317_0249_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260426134317_0249_D-HDR_photos",
       "sourcePath": "DJI_20260426134317_0249_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-26T05:43:18.000Z 25.070786,104.705124 DJI_20260426134317_0249_D-HDR.jpg"
     },
@@ -880,14 +880,14 @@
       "summary": "derived-track embedded-derived 2026-04-26T05:44:18.571Z 25.074571,104.712293 day2/DJI_20260426134340_0255_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260426134501_0258_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260426134501_0258_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 25.0802,
       "lng": 104.71994,
       "confidence": 0.78,
       "time": "2026-04-26T05:45:01.000Z",
-      "sourceAssetId": "DJI_20260426134501_0258_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260426134501_0258_D-HDR_photos",
       "sourcePath": "DJI_20260426134501_0258_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-26T05:45:01.000Z 25.080200,104.719940 DJI_20260426134501_0258_D-HDR.jpg"
     },
@@ -928,14 +928,14 @@
       "summary": "derived-track embedded-derived 2026-04-26T05:47:59.604Z 25.084966,104.725492 day2/DJI_20260426134755_0282_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260426134826_0286_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260426134826_0286_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 25.085596,
       "lng": 104.724884,
       "confidence": 0.78,
       "time": "2026-04-26T05:48:26.000Z",
-      "sourceAssetId": "DJI_20260426134826_0286_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260426134826_0286_D-HDR_photos",
       "sourcePath": "DJI_20260426134826_0286_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-26T05:48:26.000Z 25.085596,104.724884 DJI_20260426134826_0286_D-HDR.jpg"
     },
@@ -952,14 +952,14 @@
       "summary": "derived-track embedded-derived 2026-04-26T05:48:53.910Z 25.084826,104.724176 day2/DJI_20260426134842_0289_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260426134910_0290_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260426134910_0290_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 25.085289,
       "lng": 104.726044,
       "confidence": 0.78,
       "time": "2026-04-26T05:49:10.000Z",
-      "sourceAssetId": "DJI_20260426134910_0290_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260426134910_0290_D-HDR_photos",
       "sourcePath": "DJI_20260426134910_0290_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-26T05:49:10.000Z 25.085289,104.726044 DJI_20260426134910_0290_D-HDR.jpg"
     },
@@ -988,38 +988,38 @@
       "summary": "derived-track embedded-derived 2026-04-26T05:51:52.969Z 25.084339,104.727275 day2/DJI_20260426135134_0301_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260426135234_0307_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260426135234_0307_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 25.082054,
       "lng": 104.725372,
       "confidence": 0.78,
       "time": "2026-04-26T05:52:34.000Z",
-      "sourceAssetId": "DJI_20260426135234_0307_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260426135234_0307_D-HDR_photos",
       "sourcePath": "DJI_20260426135234_0307_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-26T05:52:34.000Z 25.082054,104.725372 DJI_20260426135234_0307_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260426135303_0314_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260426135303_0314_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 25.081926,
       "lng": 104.725601,
       "confidence": 0.78,
       "time": "2026-04-26T05:53:03.000Z",
-      "sourceAssetId": "DJI_20260426135303_0314_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260426135303_0314_D-HDR_photos",
       "sourcePath": "DJI_20260426135303_0314_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-26T05:53:03.000Z 25.081926,104.725601 DJI_20260426135303_0314_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260426135329_0331_D-HDR_全景图_photos_photo",
+      "id": "embedded-derived:DJI_20260426135329_0331_D-HDR_全景图_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 25.081926,
       "lng": 104.725601,
       "confidence": 0.78,
       "time": "2026-04-26T05:53:29.000Z",
-      "sourceAssetId": "DJI_20260426135329_0331_D-HDR_全景图_photos_photo",
+      "sourceAssetId": "DJI_20260426135329_0331_D-HDR_全景图_photos",
       "sourcePath": "DJI_20260426135329_0331_D-HDR 全景图.jpg",
       "summary": "derived-track embedded-derived 2026-04-26T05:53:29.000Z 25.081926,104.725601 DJI_20260426135329_0331_D-HDR 全景图.jpg"
     },
@@ -1036,14 +1036,14 @@
       "summary": "derived-track embedded-derived 2026-04-26T05:54:25.170Z 25.079495,104.720937 day2/DJI_20260426135348_0335_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260426135512_0338_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260426135512_0338_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 25.076426,
       "lng": 104.715546,
       "confidence": 0.78,
       "time": "2026-04-26T05:55:12.000Z",
-      "sourceAssetId": "DJI_20260426135512_0338_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260426135512_0338_D-HDR_photos",
       "sourcePath": "DJI_20260426135512_0338_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-26T05:55:12.000Z 25.076426,104.715546 DJI_20260426135512_0338_D-HDR.jpg"
     },
@@ -1072,14 +1072,14 @@
       "summary": "derived-track embedded-derived 2026-04-26T08:41:20.835Z 24.685140,102.942215 day2/DJI_20260426164118_0351_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260426164156_0358_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260426164156_0358_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 24.685709,
       "lng": 102.941956,
       "confidence": 0.78,
       "time": "2026-04-26T08:41:56.000Z",
-      "sourceAssetId": "DJI_20260426164156_0358_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260426164156_0358_D-HDR_photos",
       "sourcePath": "DJI_20260426164156_0358_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-26T08:41:56.000Z 24.685709,102.941956 DJI_20260426164156_0358_D-HDR.jpg"
     },
@@ -1096,38 +1096,38 @@
       "summary": "derived-track embedded-derived 2026-04-26T08:43:23.376Z 24.686611,102.944675 day2/DJI_20260426164257_0369_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260426164403_0373_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260426164403_0373_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 24.688879,
       "lng": 102.951057,
       "confidence": 0.78,
       "time": "2026-04-26T08:44:03.000Z",
-      "sourceAssetId": "DJI_20260426164403_0373_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260426164403_0373_D-HDR_photos",
       "sourcePath": "DJI_20260426164403_0373_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-26T08:44:03.000Z 24.688879,102.951057 DJI_20260426164403_0373_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260426164411_0376_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260426164411_0376_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 24.688877,
       "lng": 102.951057,
       "confidence": 0.78,
       "time": "2026-04-26T08:44:11.000Z",
-      "sourceAssetId": "DJI_20260426164411_0376_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260426164411_0376_D-HDR_photos",
       "sourcePath": "DJI_20260426164411_0376_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-26T08:44:11.000Z 24.688877,102.951057 DJI_20260426164411_0376_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260426164433_0379_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260426164433_0379_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 24.688635,
       "lng": 102.950493,
       "confidence": 0.78,
       "time": "2026-04-26T08:44:33.000Z",
-      "sourceAssetId": "DJI_20260426164433_0379_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260426164433_0379_D-HDR_photos",
       "sourcePath": "DJI_20260426164433_0379_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-26T08:44:33.000Z 24.688635,102.950493 DJI_20260426164433_0379_D-HDR.jpg"
     },
@@ -1144,14 +1144,14 @@
       "summary": "derived-track embedded-derived 2026-04-26T08:44:53.676Z 24.687783,102.948301 day2/DJI_20260426164444_0382_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260426171552_0387_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260426171552_0387_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 24.559593,
       "lng": 102.947929,
       "confidence": 0.78,
       "time": "2026-04-26T09:15:53.000Z",
-      "sourceAssetId": "DJI_20260426171552_0387_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260426171552_0387_D-HDR_photos",
       "sourcePath": "DJI_20260426171552_0387_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-26T09:15:53.000Z 24.559593,102.947929 DJI_20260426171552_0387_D-HDR.jpg"
     },
@@ -1180,14 +1180,14 @@
       "summary": "derived-track embedded-derived 2026-04-26T09:17:36.124Z 24.559857,102.947067 day2/DJI_20260426171727_0400_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260426172034_0414_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260426172034_0414_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 24.560097,
       "lng": 102.947807,
       "confidence": 0.78,
       "time": "2026-04-26T09:20:34.000Z",
-      "sourceAssetId": "DJI_20260426172034_0414_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260426172034_0414_D-HDR_photos",
       "sourcePath": "DJI_20260426172034_0414_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-26T09:20:34.000Z 24.560097,102.947807 DJI_20260426172034_0414_D-HDR.jpg"
     },
@@ -1348,14 +1348,14 @@
       "summary": "derived-track embedded-derived 2026-04-27T07:24:26.049Z 25.446338,99.413741 day3/DJI_20260427152409_0533_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260427152517_0545_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260427152517_0545_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 25.446144,
       "lng": 99.413704,
       "confidence": 0.78,
       "time": "2026-04-27T07:25:17.000Z",
-      "sourceAssetId": "DJI_20260427152517_0545_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260427152517_0545_D-HDR_photos",
       "sourcePath": "DJI_20260427152517_0545_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-27T07:25:17.000Z 25.446144,99.413704 DJI_20260427152517_0545_D-HDR.jpg"
     },
@@ -1396,14 +1396,14 @@
       "summary": "derived-track embedded-derived 2026-04-27T07:28:03.183Z 25.447748,99.407754 day3/DJI_20260427152802_0557_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260427152823_0561_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260427152823_0561_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 25.449341,
       "lng": 99.407982,
       "confidence": 0.78,
       "time": "2026-04-27T07:28:23.000Z",
-      "sourceAssetId": "DJI_20260427152823_0561_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260427152823_0561_D-HDR_photos",
       "sourcePath": "DJI_20260427152823_0561_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-27T07:28:23.000Z 25.449341,99.407982 DJI_20260427152823_0561_D-HDR.jpg"
     },
@@ -1432,14 +1432,14 @@
       "summary": "derived-track embedded-derived 2026-04-27T07:29:40.697Z 25.447273,99.408322 day3/DJI_20260427152926_0566_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260427153004_0569_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260427153004_0569_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 25.448252,
       "lng": 99.404419,
       "confidence": 0.78,
       "time": "2026-04-27T07:30:04.000Z",
-      "sourceAssetId": "DJI_20260427153004_0569_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260427153004_0569_D-HDR_photos",
       "sourcePath": "DJI_20260427153004_0569_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-27T07:30:04.000Z 25.448252,99.404419 DJI_20260427153004_0569_D-HDR.jpg"
     },
@@ -1468,26 +1468,26 @@
       "summary": "derived-track embedded-derived 2026-04-27T07:30:43.406Z 25.450014,99.404758 day3/DJI_20260427153037_0571_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260427153100_0574_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260427153100_0574_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 25.448883,
       "lng": 99.404434,
       "confidence": 0.78,
       "time": "2026-04-27T07:31:00.000Z",
-      "sourceAssetId": "DJI_20260427153100_0574_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260427153100_0574_D-HDR_photos",
       "sourcePath": "DJI_20260427153100_0574_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-27T07:31:00.000Z 25.448883,99.404434 DJI_20260427153100_0574_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260427153136_0580_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260427153136_0580_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 25.448086,
       "lng": 99.404327,
       "confidence": 0.78,
       "time": "2026-04-27T07:31:36.000Z",
-      "sourceAssetId": "DJI_20260427153136_0580_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260427153136_0580_D-HDR_photos",
       "sourcePath": "DJI_20260427153136_0580_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-27T07:31:36.000Z 25.448086,99.404327 DJI_20260427153136_0580_D-HDR.jpg"
     },
@@ -1516,14 +1516,14 @@
       "summary": "derived-track embedded-derived 2026-04-27T07:32:47.679Z 25.448114,99.405126 day3/DJI_20260427153235_0588_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260427153325_0594_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260427153325_0594_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 25.448849,
       "lng": 99.402779,
       "confidence": 0.78,
       "time": "2026-04-27T07:33:25.000Z",
-      "sourceAssetId": "DJI_20260427153325_0594_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260427153325_0594_D-HDR_photos",
       "sourcePath": "DJI_20260427153325_0594_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-27T07:33:25.000Z 25.448849,99.402779 DJI_20260427153325_0594_D-HDR.jpg"
     },
@@ -1552,50 +1552,50 @@
       "summary": "derived-track embedded-derived 2026-04-27T07:35:20.583Z 25.447633,99.407103 day3/DJI_20260427153504_0611_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260427153554_0614_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260427153554_0614_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 25.448586,
       "lng": 99.403557,
       "confidence": 0.78,
       "time": "2026-04-27T07:35:54.000Z",
-      "sourceAssetId": "DJI_20260427153554_0614_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260427153554_0614_D-HDR_photos",
       "sourcePath": "DJI_20260427153554_0614_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-27T07:35:54.000Z 25.448586,99.403557 DJI_20260427153554_0614_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260427153610_0617_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260427153610_0617_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 25.448549,
       "lng": 99.403542,
       "confidence": 0.78,
       "time": "2026-04-27T07:36:10.000Z",
-      "sourceAssetId": "DJI_20260427153610_0617_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260427153610_0617_D-HDR_photos",
       "sourcePath": "DJI_20260427153610_0617_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-27T07:36:10.000Z 25.448549,99.403542 DJI_20260427153610_0617_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260427153623_0618_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260427153623_0618_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 25.448549,
       "lng": 99.403542,
       "confidence": 0.78,
       "time": "2026-04-27T07:36:23.000Z",
-      "sourceAssetId": "DJI_20260427153623_0618_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260427153623_0618_D-HDR_photos",
       "sourcePath": "DJI_20260427153623_0618_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-27T07:36:23.000Z 25.448549,99.403542 DJI_20260427153623_0618_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260427153653_0623_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260427153653_0623_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 25.448542,
       "lng": 99.403542,
       "confidence": 0.78,
       "time": "2026-04-27T07:36:53.000Z",
-      "sourceAssetId": "DJI_20260427153653_0623_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260427153653_0623_D-HDR_photos",
       "sourcePath": "DJI_20260427153653_0623_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-27T07:36:53.000Z 25.448542,99.403542 DJI_20260427153653_0623_D-HDR.jpg"
     },
@@ -1636,14 +1636,14 @@
       "summary": "derived-track embedded-derived 2026-04-27T10:22:52.222Z 26.288772,98.871282 day3/DJI_20260427182246_0638_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260427182313_0643_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260427182313_0643_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 26.288637,
       "lng": 98.870995,
       "confidence": 0.78,
       "time": "2026-04-27T10:23:14.000Z",
-      "sourceAssetId": "DJI_20260427182313_0643_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260427182313_0643_D-HDR_photos",
       "sourcePath": "DJI_20260427182313_0643_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-27T10:23:14.000Z 26.288637,98.870995 DJI_20260427182313_0643_D-HDR.jpg"
     },
@@ -1660,14 +1660,14 @@
       "summary": "derived-track embedded-derived 2026-04-27T10:23:54.884Z 26.290194,98.869497 day3/DJI_20260427182336_0649_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260427182454_0653_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260427182454_0653_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 26.2929,
       "lng": 98.866615,
       "confidence": 0.78,
       "time": "2026-04-27T10:24:54.000Z",
-      "sourceAssetId": "DJI_20260427182454_0653_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260427182454_0653_D-HDR_photos",
       "sourcePath": "DJI_20260427182454_0653_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-27T10:24:54.000Z 26.292900,98.866615 DJI_20260427182454_0653_D-HDR.jpg"
     },
@@ -1684,14 +1684,14 @@
       "summary": "derived-track embedded-derived 2026-04-27T10:25:14.337Z 26.292784,98.866680 day3/DJI_20260427182510_0656_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260427182541_0665_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260427182541_0665_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 26.292276,
       "lng": 98.866966,
       "confidence": 0.78,
       "time": "2026-04-27T10:25:41.000Z",
-      "sourceAssetId": "DJI_20260427182541_0665_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260427182541_0665_D-HDR_photos",
       "sourcePath": "DJI_20260427182541_0665_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-27T10:25:41.000Z 26.292276,98.866966 DJI_20260427182541_0665_D-HDR.jpg"
     },
@@ -1768,50 +1768,50 @@
       "summary": "derived-track embedded-derived 2026-04-27T10:33:34.839Z 26.287951,98.872058 day3/DJI_20260427183327_0703_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260427183628_0724_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260427183628_0724_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 26.287947,
       "lng": 98.872063,
       "confidence": 0.78,
       "time": "2026-04-27T10:36:28.000Z",
-      "sourceAssetId": "DJI_20260427183628_0724_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260427183628_0724_D-HDR_photos",
       "sourcePath": "DJI_20260427183628_0724_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-27T10:36:28.000Z 26.287947,98.872063 DJI_20260427183628_0724_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260427183641_0727_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260427183641_0727_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 26.287989,
       "lng": 98.872025,
       "confidence": 0.78,
       "time": "2026-04-27T10:36:41.000Z",
-      "sourceAssetId": "DJI_20260427183641_0727_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260427183641_0727_D-HDR_photos",
       "sourcePath": "DJI_20260427183641_0727_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-27T10:36:41.000Z 26.287989,98.872025 DJI_20260427183641_0727_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260427183717_0730_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260427183717_0730_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 26.288113,
       "lng": 98.872208,
       "confidence": 0.78,
       "time": "2026-04-27T10:37:17.000Z",
-      "sourceAssetId": "DJI_20260427183717_0730_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260427183717_0730_D-HDR_photos",
       "sourcePath": "DJI_20260427183717_0730_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-27T10:37:17.000Z 26.288113,98.872208 DJI_20260427183717_0730_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260427184117_0743_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260427184117_0743_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 26.287889,
       "lng": 98.871475,
       "confidence": 0.78,
       "time": "2026-04-27T10:41:17.000Z",
-      "sourceAssetId": "DJI_20260427184117_0743_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260427184117_0743_D-HDR_photos",
       "sourcePath": "DJI_20260427184117_0743_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-27T10:41:17.000Z 26.287889,98.871475 DJI_20260427184117_0743_D-HDR.jpg"
     },
@@ -1828,26 +1828,26 @@
       "summary": "derived-track embedded-derived 2026-04-28T00:27:49.299Z 26.558688,98.915375 day4/DJI_20260428082700_0060_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260428083016_0088_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260428083016_0088_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 26.561323,
       "lng": 98.913109,
       "confidence": 0.78,
       "time": "2026-04-28T00:30:16.000Z",
-      "sourceAssetId": "DJI_20260428083016_0088_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260428083016_0088_D-HDR_photos",
       "sourcePath": "DJI_20260428083016_0088_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-28T00:30:16.000Z 26.561323,98.913109 DJI_20260428083016_0088_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260428083158_0116_D-HDR_全景图_photos_photo",
+      "id": "embedded-derived:DJI_20260428083158_0116_D-HDR_全景图_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 26.560228,
       "lng": 98.913773,
       "confidence": 0.78,
       "time": "2026-04-28T00:31:58.000Z",
-      "sourceAssetId": "DJI_20260428083158_0116_D-HDR_全景图_photos_photo",
+      "sourceAssetId": "DJI_20260428083158_0116_D-HDR_全景图_photos",
       "sourcePath": "DJI_20260428083158_0116_D-HDR 全景图.jpg",
       "summary": "derived-track embedded-derived 2026-04-28T00:31:58.000Z 26.560228,98.913773 DJI_20260428083158_0116_D-HDR 全景图.jpg"
     },
@@ -1888,14 +1888,14 @@
       "summary": "derived-track embedded-derived 2026-04-28T00:33:23.301Z 26.561266,98.912767 day4/DJI_20260428083305_0122_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260428083347_0125_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260428083347_0125_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 26.561316,
       "lng": 98.912727,
       "confidence": 0.78,
       "time": "2026-04-28T00:33:47.000Z",
-      "sourceAssetId": "DJI_20260428083347_0125_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260428083347_0125_D-HDR_photos",
       "sourcePath": "DJI_20260428083347_0125_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-28T00:33:47.000Z 26.561316,98.912727 DJI_20260428083347_0125_D-HDR.jpg"
     },
@@ -1912,14 +1912,14 @@
       "summary": "derived-track embedded-derived 2026-04-28T00:35:19.345Z 26.560874,98.910702 day4/DJI_20260428083451_0134_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260428083622_0140_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260428083622_0140_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 26.556889,
       "lng": 98.909546,
       "confidence": 0.78,
       "time": "2026-04-28T00:36:22.000Z",
-      "sourceAssetId": "DJI_20260428083622_0140_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260428083622_0140_D-HDR_photos",
       "sourcePath": "DJI_20260428083622_0140_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-28T00:36:22.000Z 26.556889,98.909546 DJI_20260428083622_0140_D-HDR.jpg"
     },
@@ -1936,14 +1936,14 @@
       "summary": "derived-track embedded-derived 2026-04-28T00:37:19.107Z 26.557685,98.905938 day4/DJI_20260428083655_0141_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260428083747_0144_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260428083747_0144_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 26.55862,
       "lng": 98.90123,
       "confidence": 0.78,
       "time": "2026-04-28T00:37:47.000Z",
-      "sourceAssetId": "DJI_20260428083747_0144_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260428083747_0144_D-HDR_photos",
       "sourcePath": "DJI_20260428083747_0144_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-28T00:37:47.000Z 26.558620,98.901230 DJI_20260428083747_0144_D-HDR.jpg"
     },
@@ -1960,26 +1960,26 @@
       "summary": "derived-track embedded-derived 2026-04-28T00:38:07.786Z 26.558680,98.900739 day4/DJI_20260428083804_0145_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260428083835_0151_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260428083835_0151_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 26.558792,
       "lng": 98.899963,
       "confidence": 0.78,
       "time": "2026-04-28T00:38:35.000Z",
-      "sourceAssetId": "DJI_20260428083835_0151_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260428083835_0151_D-HDR_photos",
       "sourcePath": "DJI_20260428083835_0151_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-28T00:38:35.000Z 26.558792,98.899963 DJI_20260428083835_0151_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260428083933_0163_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260428083933_0163_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 26.558792,
       "lng": 98.900368,
       "confidence": 0.78,
       "time": "2026-04-28T00:39:33.000Z",
-      "sourceAssetId": "DJI_20260428083933_0163_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260428083933_0163_D-HDR_photos",
       "sourcePath": "DJI_20260428083933_0163_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-28T00:39:33.000Z 26.558792,98.900368 DJI_20260428083933_0163_D-HDR.jpg"
     },
@@ -1996,14 +1996,14 @@
       "summary": "derived-track embedded-derived 2026-04-28T00:40:09.227Z 26.557328,98.900173 day4/DJI_20260428083958_0167_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260428084025_0170_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260428084025_0170_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 26.554482,
       "lng": 98.89975,
       "confidence": 0.78,
       "time": "2026-04-28T00:40:25.000Z",
-      "sourceAssetId": "DJI_20260428084025_0170_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260428084025_0170_D-HDR_photos",
       "sourcePath": "DJI_20260428084025_0170_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-28T00:40:25.000Z 26.554482,98.899750 DJI_20260428084025_0170_D-HDR.jpg"
     },
@@ -2032,26 +2032,26 @@
       "summary": "derived-track embedded-derived 2026-04-28T00:41:46.523Z 26.560132,98.901267 day4/DJI_20260428084139_0178_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260428084159_0181_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260428084159_0181_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 26.560268,
       "lng": 98.902588,
       "confidence": 0.78,
       "time": "2026-04-28T00:41:59.000Z",
-      "sourceAssetId": "DJI_20260428084159_0181_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260428084159_0181_D-HDR_photos",
       "sourcePath": "DJI_20260428084159_0181_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-28T00:41:59.000Z 26.560268,98.902588 DJI_20260428084159_0181_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260428084210_0184_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260428084210_0184_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 26.560276,
       "lng": 98.902542,
       "confidence": 0.78,
       "time": "2026-04-28T00:42:10.000Z",
-      "sourceAssetId": "DJI_20260428084210_0184_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260428084210_0184_D-HDR_photos",
       "sourcePath": "DJI_20260428084210_0184_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-28T00:42:10.000Z 26.560276,98.902542 DJI_20260428084210_0184_D-HDR.jpg"
     },
@@ -2080,14 +2080,14 @@
       "summary": "derived-track embedded-derived 2026-04-28T00:43:31.261Z 26.559160,98.909908 day4/DJI_20260428084248_0189_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260428084608_0195_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260428084608_0195_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 26.558479,
       "lng": 98.916489,
       "confidence": 0.78,
       "time": "2026-04-28T00:46:08.000Z",
-      "sourceAssetId": "DJI_20260428084608_0195_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260428084608_0195_D-HDR_photos",
       "sourcePath": "DJI_20260428084608_0195_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-28T00:46:08.000Z 26.558479,98.916489 DJI_20260428084608_0195_D-HDR.jpg"
     },
@@ -2140,26 +2140,26 @@
       "summary": "derived-track embedded-derived 2026-04-28T01:06:20.700Z 26.560180,98.914832 day4/DJI_20260428090604_0205_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260428090738_0211_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260428090738_0211_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 26.558241,
       "lng": 98.917053,
       "confidence": 0.78,
       "time": "2026-04-28T01:07:38.000Z",
-      "sourceAssetId": "DJI_20260428090738_0211_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260428090738_0211_D-HDR_photos",
       "sourcePath": "DJI_20260428090738_0211_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-28T01:07:38.000Z 26.558241,98.917053 DJI_20260428090738_0211_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260428104051_0214_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260428104051_0214_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 26.542494,
       "lng": 98.911995,
       "confidence": 0.78,
       "time": "2026-04-28T02:40:51.000Z",
-      "sourceAssetId": "DJI_20260428104051_0214_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260428104051_0214_D-HDR_photos",
       "sourcePath": "DJI_20260428104051_0214_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-28T02:40:51.000Z 26.542494,98.911995 DJI_20260428104051_0214_D-HDR.jpg"
     },
@@ -2224,14 +2224,14 @@
       "summary": "derived-track embedded-derived 2026-04-28T09:52:48.787Z 28.059688,98.596858 day4/DJI_20260428175243_0760_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260428175257_0761_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260428175257_0761_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.059687,
       "lng": 98.596863,
       "confidence": 0.78,
       "time": "2026-04-28T09:52:57.000Z",
-      "sourceAssetId": "DJI_20260428175257_0761_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260428175257_0761_D-HDR_photos",
       "sourcePath": "DJI_20260428175257_0761_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-28T09:52:57.000Z 28.059687,98.596863 DJI_20260428175257_0761_D-HDR.jpg"
     },
@@ -2272,74 +2272,74 @@
       "summary": "derived-track embedded-derived 2026-04-28T09:55:06.153Z 28.059339,98.600863 day4/DJI_20260428175501_0778_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260428175540_0779_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260428175540_0779_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.059246,
       "lng": 98.601677,
       "confidence": 0.78,
       "time": "2026-04-28T09:55:40.000Z",
-      "sourceAssetId": "DJI_20260428175540_0779_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260428175540_0779_D-HDR_photos",
       "sourcePath": "DJI_20260428175540_0779_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-28T09:55:40.000Z 28.059246,98.601677 DJI_20260428175540_0779_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260428175832_0815_D-HDR_全景图_photos_photo",
+      "id": "embedded-derived:DJI_20260428175832_0815_D-HDR_全景图_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.061857,
       "lng": 98.601669,
       "confidence": 0.78,
       "time": "2026-04-28T09:59:08.000Z",
-      "sourceAssetId": "DJI_20260428175832_0815_D-HDR_全景图_photos_photo",
+      "sourceAssetId": "DJI_20260428175832_0815_D-HDR_全景图_photos",
       "sourcePath": "DJI_20260428175832_0815_D-HDR 全景图.jpg",
       "summary": "derived-track embedded-derived 2026-04-28T09:59:08.000Z 28.061857,98.601669 DJI_20260428175832_0815_D-HDR 全景图.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260428175914_0839_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260428175914_0839_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.061857,
       "lng": 98.601669,
       "confidence": 0.78,
       "time": "2026-04-28T09:59:14.000Z",
-      "sourceAssetId": "DJI_20260428175914_0839_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260428175914_0839_D-HDR_photos",
       "sourcePath": "DJI_20260428175914_0839_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-28T09:59:14.000Z 28.061857,98.601669 DJI_20260428175914_0839_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260428180118_0868_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260428180118_0868_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.060888,
       "lng": 98.602814,
       "confidence": 0.78,
       "time": "2026-04-28T10:01:18.000Z",
-      "sourceAssetId": "DJI_20260428180118_0868_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260428180118_0868_D-HDR_photos",
       "sourcePath": "DJI_20260428180118_0868_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-28T10:01:18.000Z 28.060888,98.602814 DJI_20260428180118_0868_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260428180222_0875_D-HDR_全景图_photos_photo",
+      "id": "embedded-derived:DJI_20260428180222_0875_D-HDR_全景图_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.061419,
       "lng": 98.603363,
       "confidence": 0.78,
       "time": "2026-04-28T10:02:38.000Z",
-      "sourceAssetId": "DJI_20260428180222_0875_D-HDR_全景图_photos_photo",
+      "sourceAssetId": "DJI_20260428180222_0875_D-HDR_全景图_photos",
       "sourcePath": "DJI_20260428180222_0875_D-HDR 全景图.jpg",
       "summary": "derived-track embedded-derived 2026-04-28T10:02:38.000Z 28.061419,98.603363 DJI_20260428180222_0875_D-HDR 全景图.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260428180252_0889_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260428180252_0889_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.061417,
       "lng": 98.603355,
       "confidence": 0.78,
       "time": "2026-04-28T10:02:52.000Z",
-      "sourceAssetId": "DJI_20260428180252_0889_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260428180252_0889_D-HDR_photos",
       "sourcePath": "DJI_20260428180252_0889_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-28T10:02:52.000Z 28.061417,98.603355 DJI_20260428180252_0889_D-HDR.jpg"
     },
@@ -2500,14 +2500,14 @@
       "summary": "derived-track embedded-derived 2026-04-28T22:50:20.397Z 28.015634,98.627443 day5/DJI_20260429065005_0988_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260429065039_0989_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260429065039_0989_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.014679,
       "lng": 98.630051,
       "confidence": 0.78,
       "time": "2026-04-28T22:50:39.000Z",
-      "sourceAssetId": "DJI_20260429065039_0989_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260429065039_0989_D-HDR_photos",
       "sourcePath": "DJI_20260429065039_0989_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-28T22:50:39.000Z 28.014679,98.630051 DJI_20260429065039_0989_D-HDR.jpg"
     },
@@ -2524,14 +2524,14 @@
       "summary": "derived-track embedded-derived 2026-04-28T22:51:09.205Z 28.014643,98.629310 day5/DJI_20260429065102_0995_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260429065119_0998_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260429065119_0998_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.014553,
       "lng": 98.628723,
       "confidence": 0.78,
       "time": "2026-04-28T22:51:19.000Z",
-      "sourceAssetId": "DJI_20260429065119_0998_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260429065119_0998_D-HDR_photos",
       "sourcePath": "DJI_20260429065119_0998_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-28T22:51:19.000Z 28.014553,98.628723 DJI_20260429065119_0998_D-HDR.jpg"
     },
@@ -2584,14 +2584,14 @@
       "summary": "derived-track embedded-derived 2026-04-28T22:52:59.657Z 28.017388,98.625220 day5/DJI_20260429065251_0003_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260429065316_0004_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260429065316_0004_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.017036,
       "lng": 98.626877,
       "confidence": 0.78,
       "time": "2026-04-28T22:53:16.000Z",
-      "sourceAssetId": "DJI_20260429065316_0004_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260429065316_0004_D-HDR_photos",
       "sourcePath": "DJI_20260429065316_0004_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-28T22:53:16.000Z 28.017036,98.626877 DJI_20260429065316_0004_D-HDR.jpg"
     },
@@ -2692,6 +2692,18 @@
       "summary": "derived-track embedded-derived 2026-04-28T23:01:40.440Z 28.016291,98.626660 day5/DJI_20260429070132_0050_D.mp4"
     },
     {
+      "id": "embedded-derived:DJI_20260429070237_0060_D-HDR_photos",
+      "originType": "embedded-derived",
+      "matchKind": "point",
+      "lat": 28.016536,
+      "lng": 98.62637,
+      "confidence": 0.78,
+      "time": "2026-04-28T23:02:37.000Z",
+      "sourceAssetId": "DJI_20260429070237_0060_D-HDR_photos",
+      "sourcePath": "DJI_20260429070237_0060_D-HDR.jpg",
+      "summary": "derived-track embedded-derived 2026-04-28T23:02:37.000Z 28.016536,98.626370 DJI_20260429070237_0060_D-HDR.jpg"
+    },
+    {
       "id": "embedded-derived:DJI_20260429070332_0063_D_drone_day5",
       "originType": "embedded-derived",
       "matchKind": "point",
@@ -2704,6 +2716,18 @@
       "summary": "derived-track embedded-derived 2026-04-28T23:03:36.136Z 28.014613,98.630305 day5/DJI_20260429070332_0063_D.mp4"
     },
     {
+      "id": "embedded-derived:DJI_20260429070529_0085_D-HDR_photos",
+      "originType": "embedded-derived",
+      "matchKind": "point",
+      "lat": 28.014516,
+      "lng": 98.630539,
+      "confidence": 0.78,
+      "time": "2026-04-28T23:05:29.000Z",
+      "sourceAssetId": "DJI_20260429070529_0085_D-HDR_photos",
+      "sourcePath": "DJI_20260429070529_0085_D-HDR.jpg",
+      "summary": "derived-track embedded-derived 2026-04-28T23:05:29.000Z 28.014516,98.630539 DJI_20260429070529_0085_D-HDR.jpg"
+    },
+    {
       "id": "embedded-derived:DJI_20260429070601_0088_D_drone_day5",
       "originType": "embedded-derived",
       "matchKind": "point",
@@ -2714,6 +2738,18 @@
       "sourceAssetId": "DJI_20260429070601_0088_D_drone_day5",
       "sourcePath": "day5/DJI_20260429070601_0088_D.mp4",
       "summary": "derived-track embedded-derived 2026-04-28T23:06:07.638Z 28.014593,98.630415 day5/DJI_20260429070601_0088_D.mp4"
+    },
+    {
+      "id": "embedded-derived:DJI_20260429070617_0089_D-HDR_photos",
+      "originType": "embedded-derived",
+      "matchKind": "point",
+      "lat": 28.014921,
+      "lng": 98.629906,
+      "confidence": 0.78,
+      "time": "2026-04-28T23:06:17.000Z",
+      "sourceAssetId": "DJI_20260429070617_0089_D-HDR_photos",
+      "sourcePath": "DJI_20260429070617_0089_D-HDR.jpg",
+      "summary": "derived-track embedded-derived 2026-04-28T23:06:17.000Z 28.014921,98.629906 DJI_20260429070617_0089_D-HDR.jpg"
     },
     {
       "id": "embedded-derived:DJI_20260429091340_0095_D_drone_day5",
@@ -2740,14 +2776,14 @@
       "summary": "derived-track embedded-derived 2026-04-29T01:14:27.420Z 28.426439,98.461313 day5/DJI_20260429091423_0100_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260429091602_0118_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260429091602_0118_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.426382,
       "lng": 98.461044,
       "confidence": 0.78,
       "time": "2026-04-29T01:16:02.000Z",
-      "sourceAssetId": "DJI_20260429091602_0118_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260429091602_0118_D-HDR_photos",
       "sourcePath": "DJI_20260429091602_0118_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-29T01:16:02.000Z 28.426382,98.461044 DJI_20260429091602_0118_D-HDR.jpg"
     },
@@ -2764,14 +2800,14 @@
       "summary": "derived-track embedded-derived 2026-04-29T01:16:44.890Z 28.426452,98.461179 day5/DJI_20260429091621_0119_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260429091716_0122_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260429091716_0122_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.428467,
       "lng": 98.461174,
       "confidence": 0.78,
       "time": "2026-04-29T01:17:16.000Z",
-      "sourceAssetId": "DJI_20260429091716_0122_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260429091716_0122_D-HDR_photos",
       "sourcePath": "DJI_20260429091716_0122_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-29T01:17:16.000Z 28.428467,98.461174 DJI_20260429091716_0122_D-HDR.jpg"
     },
@@ -2836,26 +2872,26 @@
       "summary": "derived-track embedded-derived 2026-04-29T01:21:59.172Z 28.432284,98.453973 day5/DJI_20260429092136_0142_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260429092228_0145_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260429092228_0145_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.433794,
       "lng": 98.453087,
       "confidence": 0.78,
       "time": "2026-04-29T01:22:28.000Z",
-      "sourceAssetId": "DJI_20260429092228_0145_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260429092228_0145_D-HDR_photos",
       "sourcePath": "DJI_20260429092228_0145_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-29T01:22:28.000Z 28.433794,98.453087 DJI_20260429092228_0145_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260429092239_0146_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260429092239_0146_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.434107,
       "lng": 98.453072,
       "confidence": 0.78,
       "time": "2026-04-29T01:22:39.000Z",
-      "sourceAssetId": "DJI_20260429092239_0146_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260429092239_0146_D-HDR_photos",
       "sourcePath": "DJI_20260429092239_0146_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-29T01:22:39.000Z 28.434107,98.453072 DJI_20260429092239_0146_D-HDR.jpg"
     },
@@ -2884,14 +2920,14 @@
       "summary": "derived-track embedded-derived 2026-04-29T01:23:37.634Z 28.435470,98.454114 day5/DJI_20260429092336_0153_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260429092426_0165_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260429092426_0165_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.435362,
       "lng": 98.454285,
       "confidence": 0.78,
       "time": "2026-04-29T01:24:26.000Z",
-      "sourceAssetId": "DJI_20260429092426_0165_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260429092426_0165_D-HDR_photos",
       "sourcePath": "DJI_20260429092426_0165_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-29T01:24:26.000Z 28.435362,98.454285 DJI_20260429092426_0165_D-HDR.jpg"
     },
@@ -2932,14 +2968,14 @@
       "summary": "derived-track embedded-derived 2026-04-29T04:17:31.797Z 28.597243,98.344653 day5/DJI_20260429121510_0183_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260429121958_0186_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260429121958_0186_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.597242,
       "lng": 98.34465,
       "confidence": 0.78,
       "time": "2026-04-29T04:19:58.000Z",
-      "sourceAssetId": "DJI_20260429121958_0186_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260429121958_0186_D-HDR_photos",
       "sourcePath": "DJI_20260429121958_0186_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-29T04:19:58.000Z 28.597242,98.344650 DJI_20260429121958_0186_D-HDR.jpg"
     },
@@ -2968,14 +3004,14 @@
       "summary": "derived-track embedded-derived 2026-04-29T04:25:06.677Z 28.595040,98.345054 day5/DJI_20260429122439_0191_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260429122555_0194_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260429122555_0194_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.594833,
       "lng": 98.345154,
       "confidence": 0.78,
       "time": "2026-04-29T04:25:55.000Z",
-      "sourceAssetId": "DJI_20260429122555_0194_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260429122555_0194_D-HDR_photos",
       "sourcePath": "DJI_20260429122555_0194_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-29T04:25:55.000Z 28.594833,98.345154 DJI_20260429122555_0194_D-HDR.jpg"
     },
@@ -2992,14 +3028,14 @@
       "summary": "derived-track embedded-derived 2026-04-29T04:26:29.576Z 28.594792,98.345138 day5/DJI_20260429122604_0195_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260429122714_0198_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260429122714_0198_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.59479,
       "lng": 98.345139,
       "confidence": 0.78,
       "time": "2026-04-29T04:27:14.000Z",
-      "sourceAssetId": "DJI_20260429122714_0198_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260429122714_0198_D-HDR_photos",
       "sourcePath": "DJI_20260429122714_0198_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-29T04:27:14.000Z 28.594790,98.345139 DJI_20260429122714_0198_D-HDR.jpg"
     },
@@ -3040,14 +3076,14 @@
       "summary": "derived-track embedded-derived 2026-04-29T04:30:23.061Z 28.594107,98.344819 day5/DJI_20260429122954_0201_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260429123322_0204_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260429123322_0204_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.591137,
       "lng": 98.343575,
       "confidence": 0.78,
       "time": "2026-04-29T04:33:22.000Z",
-      "sourceAssetId": "DJI_20260429123322_0204_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260429123322_0204_D-HDR_photos",
       "sourcePath": "DJI_20260429123322_0204_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-29T04:33:22.000Z 28.591137,98.343575 DJI_20260429123322_0204_D-HDR.jpg"
     },
@@ -3076,14 +3112,14 @@
       "summary": "derived-track embedded-derived 2026-04-29T04:35:19.842Z 28.589103,98.342667 day5/DJI_20260429123509_0209_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260429123547_0212_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260429123547_0212_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.588728,
       "lng": 98.341499,
       "confidence": 0.78,
       "time": "2026-04-29T04:35:47.000Z",
-      "sourceAssetId": "DJI_20260429123547_0212_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260429123547_0212_D-HDR_photos",
       "sourcePath": "DJI_20260429123547_0212_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-29T04:35:47.000Z 28.588728,98.341499 DJI_20260429123547_0212_D-HDR.jpg"
     },
@@ -3100,14 +3136,14 @@
       "summary": "derived-track embedded-derived 2026-04-29T04:36:56.248Z 28.588488,98.340987 day5/DJI_20260429123624_0216_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260429123734_0217_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260429123734_0217_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.587656,
       "lng": 98.340401,
       "confidence": 0.78,
       "time": "2026-04-29T04:37:34.000Z",
-      "sourceAssetId": "DJI_20260429123734_0217_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260429123734_0217_D-HDR_photos",
       "sourcePath": "DJI_20260429123734_0217_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-29T04:37:34.000Z 28.587656,98.340401 DJI_20260429123734_0217_D-HDR.jpg"
     },
@@ -3208,14 +3244,14 @@
       "summary": "derived-track embedded-derived 2026-04-29T05:44:12.591Z 28.589752,98.107030 day5/DJI_20260429134404_0245_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260429134425_0248_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260429134425_0248_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.58975,
       "lng": 98.107033,
       "confidence": 0.78,
       "time": "2026-04-29T05:44:25.000Z",
-      "sourceAssetId": "DJI_20260429134425_0248_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260429134425_0248_D-HDR_photos",
       "sourcePath": "DJI_20260429134425_0248_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-29T05:44:25.000Z 28.589750,98.107033 DJI_20260429134425_0248_D-HDR.jpg"
     },
@@ -3232,14 +3268,14 @@
       "summary": "derived-track embedded-derived 2026-04-29T05:45:01.319Z 28.589799,98.106951 day5/DJI_20260429134441_0249_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260429134719_0264_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260429134719_0264_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.590267,
       "lng": 98.105972,
       "confidence": 0.78,
       "time": "2026-04-29T05:47:19.000Z",
-      "sourceAssetId": "DJI_20260429134719_0264_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260429134719_0264_D-HDR_photos",
       "sourcePath": "DJI_20260429134719_0264_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-29T05:47:19.000Z 28.590267,98.105972 DJI_20260429134719_0264_D-HDR.jpg"
     },
@@ -3292,14 +3328,14 @@
       "summary": "derived-track embedded-derived 2026-04-29T06:10:58.414Z 28.620583,98.092259 day5/DJI_20260429141012_0271_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260429141216_0272_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260429141216_0272_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.62005,
       "lng": 98.093422,
       "confidence": 0.78,
       "time": "2026-04-29T06:12:16.000Z",
-      "sourceAssetId": "DJI_20260429141216_0272_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260429141216_0272_D-HDR_photos",
       "sourcePath": "DJI_20260429141216_0272_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-29T06:12:16.000Z 28.620050,98.093422 DJI_20260429141216_0272_D-HDR.jpg"
     },
@@ -3328,14 +3364,14 @@
       "summary": "derived-track embedded-derived 2026-04-29T06:14:03.781Z 28.617705,98.093089 day5/DJI_20260429141333_0279_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260429141521_0280_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260429141521_0280_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.61763,
       "lng": 98.092934,
       "confidence": 0.78,
       "time": "2026-04-29T06:15:21.000Z",
-      "sourceAssetId": "DJI_20260429141521_0280_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260429141521_0280_D-HDR_photos",
       "sourcePath": "DJI_20260429141521_0280_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-29T06:15:21.000Z 28.617630,98.092934 DJI_20260429141521_0280_D-HDR.jpg"
     },
@@ -3352,14 +3388,14 @@
       "summary": "derived-track embedded-derived 2026-04-29T06:17:04.488Z 28.617073,98.092431 day5/DJI_20260429141659_0286_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260429141801_0290_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260429141801_0290_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.617044,
       "lng": 98.092407,
       "confidence": 0.78,
       "time": "2026-04-29T06:18:01.000Z",
-      "sourceAssetId": "DJI_20260429141801_0290_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260429141801_0290_D-HDR_photos",
       "sourcePath": "DJI_20260429141801_0290_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-29T06:18:01.000Z 28.617044,98.092407 DJI_20260429141801_0290_D-HDR.jpg"
     },
@@ -3376,14 +3412,14 @@
       "summary": "derived-track embedded-derived 2026-04-29T06:20:49.587Z 28.617045,98.092405 day5/DJI_20260429142028_0311_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260429142114_0312_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260429142114_0312_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.617044,
       "lng": 98.092407,
       "confidence": 0.78,
       "time": "2026-04-29T06:21:15.000Z",
-      "sourceAssetId": "DJI_20260429142114_0312_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260429142114_0312_D-HDR_photos",
       "sourcePath": "DJI_20260429142114_0312_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-29T06:21:15.000Z 28.617044,98.092407 DJI_20260429142114_0312_D-HDR.jpg"
     },
@@ -3400,42 +3436,6 @@
       "summary": "derived-track embedded-derived 2026-04-29T06:59:13.918Z 28.619388,98.052559 day5/DJI_20260429145736_0228_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260429070237_0060_D-HDR_photos_photo",
-      "originType": "embedded-derived",
-      "matchKind": "point",
-      "lat": 28.016536,
-      "lng": 98.62637,
-      "confidence": 0.78,
-      "time": "2026-04-29T07:02:37.000Z",
-      "sourceAssetId": "DJI_20260429070237_0060_D-HDR_photos_photo",
-      "sourcePath": "DJI_20260429070237_0060_D-HDR.jpg",
-      "summary": "derived-track embedded-derived 2026-04-29T07:02:37.000Z 28.016536,98.626370 DJI_20260429070237_0060_D-HDR.jpg"
-    },
-    {
-      "id": "embedded-derived:DJI_20260429070529_0085_D-HDR_photos_photo",
-      "originType": "embedded-derived",
-      "matchKind": "point",
-      "lat": 28.014516,
-      "lng": 98.630539,
-      "confidence": 0.78,
-      "time": "2026-04-29T07:05:29.000Z",
-      "sourceAssetId": "DJI_20260429070529_0085_D-HDR_photos_photo",
-      "sourcePath": "DJI_20260429070529_0085_D-HDR.jpg",
-      "summary": "derived-track embedded-derived 2026-04-29T07:05:29.000Z 28.014516,98.630539 DJI_20260429070529_0085_D-HDR.jpg"
-    },
-    {
-      "id": "embedded-derived:DJI_20260429070617_0089_D-HDR_photos_photo",
-      "originType": "embedded-derived",
-      "matchKind": "point",
-      "lat": 28.014921,
-      "lng": 98.629906,
-      "confidence": 0.78,
-      "time": "2026-04-29T07:06:17.000Z",
-      "sourceAssetId": "DJI_20260429070617_0089_D-HDR_photos_photo",
-      "sourcePath": "DJI_20260429070617_0089_D-HDR.jpg",
-      "summary": "derived-track embedded-derived 2026-04-29T07:06:17.000Z 28.014921,98.629906 DJI_20260429070617_0089_D-HDR.jpg"
-    },
-    {
       "id": "embedded-derived:DJI_20260429152009_0315_D_drone_day5",
       "originType": "embedded-derived",
       "matchKind": "point",
@@ -3448,14 +3448,14 @@
       "summary": "derived-track embedded-derived 2026-04-29T07:20:13.419Z 28.620197,98.050727 day5/DJI_20260429152009_0315_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260429152319_0323_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260429152319_0323_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.620207,
       "lng": 98.050575,
       "confidence": 0.78,
       "time": "2026-04-29T07:23:19.000Z",
-      "sourceAssetId": "DJI_20260429152319_0323_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260429152319_0323_D-HDR_photos",
       "sourcePath": "DJI_20260429152319_0323_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-29T07:23:19.000Z 28.620207,98.050575 DJI_20260429152319_0323_D-HDR.jpg"
     },
@@ -3472,62 +3472,62 @@
       "summary": "derived-track embedded-derived 2026-04-29T07:23:56.742Z 28.620214,98.050552 day5/DJI_20260429152330_0326_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260429160334_0232_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260429160334_0232_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.62645,
       "lng": 98.043068,
       "confidence": 0.78,
       "time": "2026-04-29T08:03:34.000Z",
-      "sourceAssetId": "DJI_20260429160334_0232_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260429160334_0232_D-HDR_photos",
       "sourcePath": "DJI_20260429160334_0232_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-29T08:03:34.000Z 28.626450,98.043068 DJI_20260429160334_0232_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260429160829_0239_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260429160829_0239_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.624012,
       "lng": 98.039307,
       "confidence": 0.78,
       "time": "2026-04-29T08:08:29.000Z",
-      "sourceAssetId": "DJI_20260429160829_0239_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260429160829_0239_D-HDR_photos",
       "sourcePath": "DJI_20260429160829_0239_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-29T08:08:29.000Z 28.624012,98.039307 DJI_20260429160829_0239_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260429160853_0245_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260429160853_0245_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.624126,
       "lng": 98.039474,
       "confidence": 0.78,
       "time": "2026-04-29T08:08:53.000Z",
-      "sourceAssetId": "DJI_20260429160853_0245_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260429160853_0245_D-HDR_photos",
       "sourcePath": "DJI_20260429160853_0245_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-29T08:08:53.000Z 28.624126,98.039474 DJI_20260429160853_0245_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260429160957_0249_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260429160957_0249_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.625919,
       "lng": 98.039627,
       "confidence": 0.78,
       "time": "2026-04-29T08:09:57.000Z",
-      "sourceAssetId": "DJI_20260429160957_0249_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260429160957_0249_D-HDR_photos",
       "sourcePath": "DJI_20260429160957_0249_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-29T08:09:57.000Z 28.625919,98.039627 DJI_20260429160957_0249_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260429161316_0266_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260429161316_0266_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 28.622143,
       "lng": 98.039925,
       "confidence": 0.78,
       "time": "2026-04-29T08:13:16.000Z",
-      "sourceAssetId": "DJI_20260429161316_0266_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260429161316_0266_D-HDR_photos",
       "sourcePath": "DJI_20260429161316_0266_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-29T08:13:16.000Z 28.622143,98.039925 DJI_20260429161316_0266_D-HDR.jpg"
     },
@@ -3568,14 +3568,14 @@
       "summary": "derived-track embedded-derived 2026-04-30T04:07:25.783Z 29.328417,97.039179 day6/DJI_20260430120725_0272_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260430120752_0276_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260430120752_0276_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.328173,
       "lng": 97.03894,
       "confidence": 0.78,
       "time": "2026-04-30T04:07:52.000Z",
-      "sourceAssetId": "DJI_20260430120752_0276_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260430120752_0276_D-HDR_photos",
       "sourcePath": "DJI_20260430120752_0276_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-30T04:07:52.000Z 29.328173,97.038940 DJI_20260430120752_0276_D-HDR.jpg"
     },
@@ -3628,14 +3628,14 @@
       "summary": "derived-track embedded-derived 2026-04-30T04:15:00.255Z 29.321942,97.034834 day6/DJI_20260430121454_0350_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260430121544_0354_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260430121544_0354_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.323212,
       "lng": 97.033989,
       "confidence": 0.78,
       "time": "2026-04-30T04:15:44.000Z",
-      "sourceAssetId": "DJI_20260430121544_0354_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260430121544_0354_D-HDR_photos",
       "sourcePath": "DJI_20260430121544_0354_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-30T04:15:44.000Z 29.323212,97.033989 DJI_20260430121544_0354_D-HDR.jpg"
     },
@@ -3652,14 +3652,14 @@
       "summary": "derived-track embedded-derived 2026-04-30T04:20:50.315Z 29.323118,97.033817 day6/DJI_20260430122034_0369_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260430122110_0370_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260430122110_0370_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.323116,
       "lng": 97.033813,
       "confidence": 0.78,
       "time": "2026-04-30T04:21:10.000Z",
-      "sourceAssetId": "DJI_20260430122110_0370_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260430122110_0370_D-HDR_photos",
       "sourcePath": "DJI_20260430122110_0370_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-30T04:21:10.000Z 29.323116,97.033813 DJI_20260430122110_0370_D-HDR.jpg"
     },
@@ -3676,14 +3676,14 @@
       "summary": "derived-track embedded-derived 2026-04-30T04:22:11.314Z 29.323058,97.033741 day6/DJI_20260430122152_0379_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260430122238_0380_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260430122238_0380_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.323061,
       "lng": 97.033745,
       "confidence": 0.78,
       "time": "2026-04-30T04:22:38.000Z",
-      "sourceAssetId": "DJI_20260430122238_0380_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260430122238_0380_D-HDR_photos",
       "sourcePath": "DJI_20260430122238_0380_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-30T04:22:38.000Z 29.323061,97.033745 DJI_20260430122238_0380_D-HDR.jpg"
     },
@@ -3700,38 +3700,38 @@
       "summary": "derived-track embedded-derived 2026-04-30T04:24:55.378Z 29.322743,97.034323 day6/DJI_20260430122443_0386_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260430122519_0389_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260430122519_0389_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.322626,
       "lng": 97.034302,
       "confidence": 0.78,
       "time": "2026-04-30T04:25:25.000Z",
-      "sourceAssetId": "DJI_20260430122519_0389_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260430122519_0389_D-HDR_photos",
       "sourcePath": "DJI_20260430122519_0389_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-30T04:25:25.000Z 29.322626,97.034302 DJI_20260430122519_0389_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260430122542_0393_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260430122542_0393_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.322733,
       "lng": 97.034317,
       "confidence": 0.78,
       "time": "2026-04-30T04:25:42.000Z",
-      "sourceAssetId": "DJI_20260430122542_0393_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260430122542_0393_D-HDR_photos",
       "sourcePath": "DJI_20260430122542_0393_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-30T04:25:42.000Z 29.322733,97.034317 DJI_20260430122542_0393_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260430122607_0402_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260430122607_0402_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.322639,
       "lng": 97.034744,
       "confidence": 0.78,
       "time": "2026-04-30T04:26:07.000Z",
-      "sourceAssetId": "DJI_20260430122607_0402_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260430122607_0402_D-HDR_photos",
       "sourcePath": "DJI_20260430122607_0402_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-30T04:26:07.000Z 29.322639,97.034744 DJI_20260430122607_0402_D-HDR.jpg"
     },
@@ -3796,26 +3796,26 @@
       "summary": "derived-track embedded-derived 2026-04-30T05:10:56.611Z 29.396120,96.851644 day6/DJI_20260430131045_0418_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260430131121_0422_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260430131121_0422_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.398228,
       "lng": 96.849091,
       "confidence": 0.78,
       "time": "2026-04-30T05:11:21.000Z",
-      "sourceAssetId": "DJI_20260430131121_0422_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260430131121_0422_D-HDR_photos",
       "sourcePath": "DJI_20260430131121_0422_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-30T05:11:21.000Z 29.398228,96.849091 DJI_20260430131121_0422_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260430131217_0451_D-HDR_全景图_photos_photo",
+      "id": "embedded-derived:DJI_20260430131217_0451_D-HDR_全景图_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.398537,
       "lng": 96.849091,
       "confidence": 0.78,
       "time": "2026-04-30T05:12:17.000Z",
-      "sourceAssetId": "DJI_20260430131217_0451_D-HDR_全景图_photos_photo",
+      "sourceAssetId": "DJI_20260430131217_0451_D-HDR_全景图_photos",
       "sourcePath": "DJI_20260430131217_0451_D-HDR 全景图.jpg",
       "summary": "derived-track embedded-derived 2026-04-30T05:12:17.000Z 29.398537,96.849091 DJI_20260430131217_0451_D-HDR 全景图.jpg"
     },
@@ -3880,26 +3880,26 @@
       "summary": "derived-track embedded-derived 2026-04-30T05:16:47.678Z 29.392420,96.851388 day6/DJI_20260430131635_0465_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260430131717_0468_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260430131717_0468_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.392391,
       "lng": 96.851273,
       "confidence": 0.78,
       "time": "2026-04-30T05:17:17.000Z",
-      "sourceAssetId": "DJI_20260430131717_0468_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260430131717_0468_D-HDR_photos",
       "sourcePath": "DJI_20260430131717_0468_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-30T05:17:17.000Z 29.392391,96.851273 DJI_20260430131717_0468_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260430131753_0474_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260430131753_0474_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.392351,
       "lng": 96.851341,
       "confidence": 0.78,
       "time": "2026-04-30T05:17:53.000Z",
-      "sourceAssetId": "DJI_20260430131753_0474_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260430131753_0474_D-HDR_photos",
       "sourcePath": "DJI_20260430131753_0474_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-30T05:17:53.000Z 29.392351,96.851341 DJI_20260430131753_0474_D-HDR.jpg"
     },
@@ -3952,14 +3952,14 @@
       "summary": "derived-track embedded-derived 2026-04-30T05:20:58.850Z 29.392278,96.852030 day6/DJI_20260430132058_0478_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260430132110_0481_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260430132110_0481_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.392256,
       "lng": 96.85202,
       "confidence": 0.78,
       "time": "2026-04-30T05:21:10.000Z",
-      "sourceAssetId": "DJI_20260430132110_0481_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260430132110_0481_D-HDR_photos",
       "sourcePath": "DJI_20260430132110_0481_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-30T05:21:10.000Z 29.392256,96.852020 DJI_20260430132110_0481_D-HDR.jpg"
     },
@@ -4012,26 +4012,26 @@
       "summary": "derived-track embedded-derived 2026-04-30T05:27:34.494Z 29.393590,96.850179 day6/DJI_20260430132635_0497_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260430132907_0500_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260430132907_0500_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.399654,
       "lng": 96.847488,
       "confidence": 0.78,
       "time": "2026-04-30T05:29:07.000Z",
-      "sourceAssetId": "DJI_20260430132907_0500_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260430132907_0500_D-HDR_photos",
       "sourcePath": "DJI_20260430132907_0500_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-30T05:29:07.000Z 29.399654,96.847488 DJI_20260430132907_0500_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260430132948_0509_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260430132948_0509_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.399817,
       "lng": 96.847221,
       "confidence": 0.78,
       "time": "2026-04-30T05:29:48.000Z",
-      "sourceAssetId": "DJI_20260430132948_0509_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260430132948_0509_D-HDR_photos",
       "sourcePath": "DJI_20260430132948_0509_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-30T05:29:48.000Z 29.399817,96.847221 DJI_20260430132948_0509_D-HDR.jpg"
     },
@@ -4048,14 +4048,14 @@
       "summary": "derived-track embedded-derived 2026-04-30T10:04:01.609Z 30.084098,97.250437 day6/DJI_20260430180352_0513_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260430180455_0520_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260430180455_0520_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 30.084269,
       "lng": 97.24968,
       "confidence": 0.78,
       "time": "2026-04-30T10:04:55.000Z",
-      "sourceAssetId": "DJI_20260430180455_0520_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260430180455_0520_D-HDR_photos",
       "sourcePath": "DJI_20260430180455_0520_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-30T10:04:55.000Z 30.084269,97.249680 DJI_20260430180455_0520_D-HDR.jpg"
     },
@@ -4096,14 +4096,14 @@
       "summary": "derived-track embedded-derived 2026-04-30T10:07:17.657Z 30.084771,97.241868 day6/DJI_20260430180710_0531_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260430180751_0538_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260430180751_0538_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 30.084299,
       "lng": 97.241447,
       "confidence": 0.78,
       "time": "2026-04-30T10:07:51.000Z",
-      "sourceAssetId": "DJI_20260430180751_0538_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260430180751_0538_D-HDR_photos",
       "sourcePath": "DJI_20260430180751_0538_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-30T10:07:51.000Z 30.084299,97.241447 DJI_20260430180751_0538_D-HDR.jpg"
     },
@@ -4132,14 +4132,14 @@
       "summary": "derived-track embedded-derived 2026-04-30T10:09:40.472Z 30.085223,97.242209 day6/DJI_20260430180934_0548_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260430181042_0572_D-HDR_全景图_photos_photo",
+      "id": "embedded-derived:DJI_20260430181042_0572_D-HDR_全景图_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 30.084936,
       "lng": 97.242607,
       "confidence": 0.78,
       "time": "2026-04-30T10:10:42.000Z",
-      "sourceAssetId": "DJI_20260430181042_0572_D-HDR_全景图_photos_photo",
+      "sourceAssetId": "DJI_20260430181042_0572_D-HDR_全景图_photos",
       "sourcePath": "DJI_20260430181042_0572_D-HDR 全景图.jpg",
       "summary": "derived-track embedded-derived 2026-04-30T10:10:42.000Z 30.084936,97.242607 DJI_20260430181042_0572_D-HDR 全景图.jpg"
     },
@@ -4156,14 +4156,14 @@
       "summary": "derived-track embedded-derived 2026-04-30T10:11:03.472Z 30.085494,97.242411 day6/DJI_20260430181057_0573_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260430181117_0574_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260430181117_0574_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 30.086004,
       "lng": 97.242821,
       "confidence": 0.78,
       "time": "2026-04-30T10:11:17.000Z",
-      "sourceAssetId": "DJI_20260430181117_0574_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260430181117_0574_D-HDR_photos",
       "sourcePath": "DJI_20260430181117_0574_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-30T10:11:17.000Z 30.086004,97.242821 DJI_20260430181117_0574_D-HDR.jpg"
     },
@@ -4192,14 +4192,14 @@
       "summary": "derived-track embedded-derived 2026-04-30T10:13:16.489Z 30.083147,97.252752 day6/DJI_20260430181253_0584_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260430181352_0588_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260430181352_0588_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 30.081247,
       "lng": 97.255844,
       "confidence": 0.78,
       "time": "2026-04-30T10:13:52.000Z",
-      "sourceAssetId": "DJI_20260430181352_0588_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260430181352_0588_D-HDR_photos",
       "sourcePath": "DJI_20260430181352_0588_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-30T10:13:52.000Z 30.081247,97.255844 DJI_20260430181352_0588_D-HDR.jpg"
     },
@@ -4240,14 +4240,14 @@
       "summary": "derived-track embedded-derived 2026-04-30T10:16:28.938Z 30.087678,97.236310 day6/DJI_20260430181623_0596_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260430181934_0606_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260430181934_0606_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 30.085077,
       "lng": 97.245995,
       "confidence": 0.78,
       "time": "2026-04-30T10:19:34.000Z",
-      "sourceAssetId": "DJI_20260430181934_0606_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260430181934_0606_D-HDR_photos",
       "sourcePath": "DJI_20260430181934_0606_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-30T10:19:34.000Z 30.085077,97.245995 DJI_20260430181934_0606_D-HDR.jpg"
     },
@@ -4276,14 +4276,14 @@
       "summary": "derived-track embedded-derived 2026-04-30T11:56:27.077Z 30.150212,97.308893 day6/DJI_20260430195615_0610_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260430195712_0615_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260430195712_0615_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 30.149275,
       "lng": 97.308853,
       "confidence": 0.78,
       "time": "2026-04-30T11:57:12.000Z",
-      "sourceAssetId": "DJI_20260430195712_0615_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260430195712_0615_D-HDR_photos",
       "sourcePath": "DJI_20260430195712_0615_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-30T11:57:12.000Z 30.149275,97.308853 DJI_20260430195712_0615_D-HDR.jpg"
     },
@@ -4300,14 +4300,14 @@
       "summary": "derived-track embedded-derived 2026-04-30T11:57:59.171Z 30.148958,97.309081 day6/DJI_20260430195754_0624_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260430195848_0637_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260430195848_0637_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 30.148544,
       "lng": 97.309418,
       "confidence": 0.78,
       "time": "2026-04-30T11:58:48.000Z",
-      "sourceAssetId": "DJI_20260430195848_0637_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260430195848_0637_D-HDR_photos",
       "sourcePath": "DJI_20260430195848_0637_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-30T11:58:48.000Z 30.148544,97.309418 DJI_20260430195848_0637_D-HDR.jpg"
     },
@@ -4324,14 +4324,14 @@
       "summary": "derived-track embedded-derived 2026-04-30T11:59:16.657Z 30.147925,97.309185 day6/DJI_20260430195909_0640_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260430200056_0647_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260430200056_0647_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 30.150347,
       "lng": 97.308907,
       "confidence": 0.78,
       "time": "2026-04-30T12:00:57.000Z",
-      "sourceAssetId": "DJI_20260430200056_0647_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260430200056_0647_D-HDR_photos",
       "sourcePath": "DJI_20260430200056_0647_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-30T12:00:57.000Z 30.150347,97.308907 DJI_20260430200056_0647_D-HDR.jpg"
     },
@@ -4372,14 +4372,14 @@
       "summary": "derived-track embedded-derived 2026-04-30T12:04:40.341Z 30.148925,97.308810 day6/DJI_20260430200432_0655_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260430200544_0659_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260430200544_0659_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 30.149128,
       "lng": 97.308685,
       "confidence": 0.78,
       "time": "2026-04-30T12:05:44.000Z",
-      "sourceAssetId": "DJI_20260430200544_0659_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260430200544_0659_D-HDR_photos",
       "sourcePath": "DJI_20260430200544_0659_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-30T12:05:44.000Z 30.149128,97.308685 DJI_20260430200544_0659_D-HDR.jpg"
     },
@@ -4408,14 +4408,14 @@
       "summary": "derived-track embedded-derived 2026-04-30T12:08:15.816Z 30.149902,97.308809 day6/DJI_20260430200815_0669_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260430200912_0673_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260430200912_0673_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 30.150087,
       "lng": 97.308907,
       "confidence": 0.78,
       "time": "2026-04-30T12:09:12.000Z",
-      "sourceAssetId": "DJI_20260430200912_0673_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260430200912_0673_D-HDR_photos",
       "sourcePath": "DJI_20260430200912_0673_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-04-30T12:09:12.000Z 30.150087,97.308907 DJI_20260430200912_0673_D-HDR.jpg"
     },
@@ -4444,14 +4444,14 @@
       "summary": "derived-track embedded-derived 2026-05-01T02:31:42.966Z 29.712226,97.999517 day7/DJI_20260501103110_0695_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260501103715_0699_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260501103715_0699_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.710291,
       "lng": 98.002342,
       "confidence": 0.78,
       "time": "2026-05-01T02:37:15.000Z",
-      "sourceAssetId": "DJI_20260501103715_0699_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260501103715_0699_D-HDR_photos",
       "sourcePath": "DJI_20260501103715_0699_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-01T02:37:15.000Z 29.710291,98.002342 DJI_20260501103715_0699_D-HDR.jpg"
     },
@@ -4480,14 +4480,14 @@
       "summary": "derived-track embedded-derived 2026-05-01T02:39:53.428Z 29.710287,98.002319 day7/DJI_20260501103941_0706_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260501104016_0710_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260501104016_0710_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.710287,
       "lng": 98.002319,
       "confidence": 0.78,
       "time": "2026-05-01T02:40:16.000Z",
-      "sourceAssetId": "DJI_20260501104016_0710_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260501104016_0710_D-HDR_photos",
       "sourcePath": "DJI_20260501104016_0710_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-01T02:40:16.000Z 29.710287,98.002319 DJI_20260501104016_0710_D-HDR.jpg"
     },
@@ -4504,14 +4504,14 @@
       "summary": "derived-track embedded-derived 2026-05-01T02:40:29.737Z 29.710330,98.002405 day7/DJI_20260501104024_0713_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260501104100_0717_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260501104100_0717_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.710703,
       "lng": 98.001648,
       "confidence": 0.78,
       "time": "2026-05-01T02:41:00.000Z",
-      "sourceAssetId": "DJI_20260501104100_0717_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260501104100_0717_D-HDR_photos",
       "sourcePath": "DJI_20260501104100_0717_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-01T02:41:00.000Z 29.710703,98.001648 DJI_20260501104100_0717_D-HDR.jpg"
     },
@@ -4540,14 +4540,14 @@
       "summary": "derived-track embedded-derived 2026-05-01T08:12:36.574Z 29.765048,99.008915 day7/DJI_20260501161228_0721_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260501161252_0722_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260501161252_0722_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.765804,
       "lng": 99.009087,
       "confidence": 0.78,
       "time": "2026-05-01T08:12:52.000Z",
-      "sourceAssetId": "DJI_20260501161252_0722_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260501161252_0722_D-HDR_photos",
       "sourcePath": "DJI_20260501161252_0722_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-01T08:12:52.000Z 29.765804,99.009087 DJI_20260501161252_0722_D-HDR.jpg"
     },
@@ -4576,14 +4576,14 @@
       "summary": "derived-track embedded-derived 2026-05-01T08:15:27.267Z 29.763775,99.008021 day7/DJI_20260501161526_0735_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260501161542_0736_D-HDR_全景图_photos_photo",
+      "id": "embedded-derived:DJI_20260501161542_0736_D-HDR_全景图_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.763735,
       "lng": 99.008003,
       "confidence": 0.78,
       "time": "2026-05-01T08:16:01.000Z",
-      "sourceAssetId": "DJI_20260501161542_0736_D-HDR_全景图_photos_photo",
+      "sourceAssetId": "DJI_20260501161542_0736_D-HDR_全景图_photos",
       "sourcePath": "DJI_20260501161542_0736_D-HDR 全景图.jpg",
       "summary": "derived-track embedded-derived 2026-05-01T08:16:01.000Z 29.763735,99.008003 DJI_20260501161542_0736_D-HDR 全景图.jpg"
     },
@@ -4624,14 +4624,14 @@
       "summary": "derived-track embedded-derived 2026-05-01T08:22:37.287Z 29.770200,99.010431 day7/DJI_20260501162233_0759_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260501162256_0760_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260501162256_0760_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.770664,
       "lng": 99.010544,
       "confidence": 0.78,
       "time": "2026-05-01T08:22:56.000Z",
-      "sourceAssetId": "DJI_20260501162256_0760_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260501162256_0760_D-HDR_photos",
       "sourcePath": "DJI_20260501162256_0760_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-01T08:22:56.000Z 29.770664,99.010544 DJI_20260501162256_0760_D-HDR.jpg"
     },
@@ -4648,50 +4648,50 @@
       "summary": "derived-track embedded-derived 2026-05-01T08:24:38.881Z 29.770266,99.010453 day7/DJI_20260501162424_0763_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260501162526_0770_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260501162526_0770_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.770216,
       "lng": 99.010437,
       "confidence": 0.78,
       "time": "2026-05-01T08:25:26.000Z",
-      "sourceAssetId": "DJI_20260501162526_0770_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260501162526_0770_D-HDR_photos",
       "sourcePath": "DJI_20260501162526_0770_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-01T08:25:26.000Z 29.770216,99.010437 DJI_20260501162526_0770_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260501162559_0776_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260501162559_0776_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.770241,
       "lng": 99.010445,
       "confidence": 0.78,
       "time": "2026-05-01T08:25:59.000Z",
-      "sourceAssetId": "DJI_20260501162559_0776_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260501162559_0776_D-HDR_photos",
       "sourcePath": "DJI_20260501162559_0776_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-01T08:25:59.000Z 29.770241,99.010445 DJI_20260501162559_0776_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260501162701_0788_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260501162701_0788_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.770042,
       "lng": 99.010719,
       "confidence": 0.78,
       "time": "2026-05-01T08:27:01.000Z",
-      "sourceAssetId": "DJI_20260501162701_0788_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260501162701_0788_D-HDR_photos",
       "sourcePath": "DJI_20260501162701_0788_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-01T08:27:01.000Z 29.770042,99.010719 DJI_20260501162701_0788_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260501162817_0797_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260501162817_0797_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.770199,
       "lng": 99.0103,
       "confidence": 0.78,
       "time": "2026-05-01T08:28:17.000Z",
-      "sourceAssetId": "DJI_20260501162817_0797_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260501162817_0797_D-HDR_photos",
       "sourcePath": "DJI_20260501162817_0797_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-01T08:28:17.000Z 29.770199,99.010300 DJI_20260501162817_0797_D-HDR.jpg"
     },
@@ -4720,14 +4720,14 @@
       "summary": "derived-track embedded-derived 2026-05-01T08:30:18.829Z 29.770188,99.010782 day7/DJI_20260501163005_0804_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260501163144_0814_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260501163144_0814_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.770145,
       "lng": 99.010521,
       "confidence": 0.78,
       "time": "2026-05-01T08:31:44.000Z",
-      "sourceAssetId": "DJI_20260501163144_0814_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260501163144_0814_D-HDR_photos",
       "sourcePath": "DJI_20260501163144_0814_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-01T08:31:44.000Z 29.770145,99.010521 DJI_20260501163144_0814_D-HDR.jpg"
     },
@@ -4768,14 +4768,14 @@
       "summary": "derived-track embedded-derived 2026-05-02T02:50:40.139Z 0.000000,0.000001 day8/DJI_20260502105033_0822_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260502105055_0823_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260502105055_0823_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 0.000001,
       "lng": 0.000001,
       "confidence": 0.78,
       "time": "2026-05-02T02:50:55.000Z",
-      "sourceAssetId": "DJI_20260502105055_0823_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260502105055_0823_D-HDR_photos",
       "sourcePath": "DJI_20260502105055_0823_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T02:50:55.000Z 0.000001,0.000001 DJI_20260502105055_0823_D-HDR.jpg"
     },
@@ -4804,14 +4804,14 @@
       "summary": "derived-track embedded-derived 2026-05-02T02:53:43.333Z 29.931246,99.273694 day8/DJI_20260502105222_0830_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260502105642_0840_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260502105642_0840_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.93153,
       "lng": 99.272774,
       "confidence": 0.78,
       "time": "2026-05-02T02:56:42.000Z",
-      "sourceAssetId": "DJI_20260502105642_0840_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260502105642_0840_D-HDR_photos",
       "sourcePath": "DJI_20260502105642_0840_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T02:56:42.000Z 29.931530,99.272774 DJI_20260502105642_0840_D-HDR.jpg"
     },
@@ -4876,14 +4876,14 @@
       "summary": "derived-track embedded-derived 2026-05-02T03:25:37.288Z 29.945975,99.331280 day8/DJI_20260502112531_0860_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260502112548_0861_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260502112548_0861_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.945997,
       "lng": 99.331367,
       "confidence": 0.78,
       "time": "2026-05-02T03:25:48.000Z",
-      "sourceAssetId": "DJI_20260502112548_0861_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260502112548_0861_D-HDR_photos",
       "sourcePath": "DJI_20260502112548_0861_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T03:25:48.000Z 29.945997,99.331367 DJI_20260502112548_0861_D-HDR.jpg"
     },
@@ -4900,14 +4900,14 @@
       "summary": "derived-track embedded-derived 2026-05-02T03:29:31.487Z 29.946043,99.331157 day8/DJI_20260502112910_0885_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260502113008_0891_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260502113008_0891_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.946043,
       "lng": 99.331154,
       "confidence": 0.78,
       "time": "2026-05-02T03:30:08.000Z",
-      "sourceAssetId": "DJI_20260502113008_0891_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260502113008_0891_D-HDR_photos",
       "sourcePath": "DJI_20260502113008_0891_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T03:30:08.000Z 29.946043,99.331154 DJI_20260502113008_0891_D-HDR.jpg"
     },
@@ -4936,14 +4936,14 @@
       "summary": "derived-track embedded-derived 2026-05-02T03:35:31.400Z 29.949377,99.335855 day8/DJI_20260502113442_0902_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260502113655_0908_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260502113655_0908_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.951429,
       "lng": 99.337837,
       "confidence": 0.78,
       "time": "2026-05-02T03:36:55.000Z",
-      "sourceAssetId": "DJI_20260502113655_0908_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260502113655_0908_D-HDR_photos",
       "sourcePath": "DJI_20260502113655_0908_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T03:36:55.000Z 29.951429,99.337837 DJI_20260502113655_0908_D-HDR.jpg"
     },
@@ -4972,14 +4972,14 @@
       "summary": "derived-track embedded-derived 2026-05-02T03:40:03.482Z 29.946115,99.335621 day8/DJI_20260502113932_0910_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260502114051_0913_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260502114051_0913_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.947481,
       "lng": 99.336586,
       "confidence": 0.78,
       "time": "2026-05-02T03:40:51.000Z",
-      "sourceAssetId": "DJI_20260502114051_0913_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260502114051_0913_D-HDR_photos",
       "sourcePath": "DJI_20260502114051_0913_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T03:40:51.000Z 29.947481,99.336586 DJI_20260502114051_0913_D-HDR.jpg"
     },
@@ -5032,26 +5032,26 @@
       "summary": "derived-track embedded-derived 2026-05-02T03:46:34.319Z 29.957877,99.352860 day8/DJI_20260502114527_0920_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260502114747_0923_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260502114747_0923_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.959728,
       "lng": 99.352364,
       "confidence": 0.78,
       "time": "2026-05-02T03:47:47.000Z",
-      "sourceAssetId": "DJI_20260502114747_0923_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260502114747_0923_D-HDR_photos",
       "sourcePath": "DJI_20260502114747_0923_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T03:47:47.000Z 29.959728,99.352364 DJI_20260502114747_0923_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260502115116_0947_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260502115116_0947_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.959377,
       "lng": 99.353134,
       "confidence": 0.78,
       "time": "2026-05-02T03:51:16.000Z",
-      "sourceAssetId": "DJI_20260502115116_0947_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260502115116_0947_D-HDR_photos",
       "sourcePath": "DJI_20260502115116_0947_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T03:51:16.000Z 29.959377,99.353134 DJI_20260502115116_0947_D-HDR.jpg"
     },
@@ -5068,14 +5068,14 @@
       "summary": "derived-track embedded-derived 2026-05-02T05:34:40.670Z 29.867270,99.413013 day8/DJI_20260502133436_0948_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260502133449_0949_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260502133449_0949_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.867254,
       "lng": 99.413109,
       "confidence": 0.78,
       "time": "2026-05-02T05:34:49.000Z",
-      "sourceAssetId": "DJI_20260502133449_0949_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260502133449_0949_D-HDR_photos",
       "sourcePath": "DJI_20260502133449_0949_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T05:34:49.000Z 29.867254,99.413109 DJI_20260502133449_0949_D-HDR.jpg"
     },
@@ -5140,14 +5140,14 @@
       "summary": "derived-track embedded-derived 2026-05-02T05:42:02.438Z 29.859591,99.414496 day8/DJI_20260502134141_0974_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260502134255_0978_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260502134255_0978_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.862049,
       "lng": 99.414162,
       "confidence": 0.78,
       "time": "2026-05-02T05:42:55.000Z",
-      "sourceAssetId": "DJI_20260502134255_0978_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260502134255_0978_D-HDR_photos",
       "sourcePath": "DJI_20260502134255_0978_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T05:42:55.000Z 29.862049,99.414162 DJI_20260502134255_0978_D-HDR.jpg"
     },
@@ -5176,26 +5176,26 @@
       "summary": "derived-track embedded-derived 2026-05-02T05:43:54.171Z 29.860715,99.414510 day8/DJI_20260502134332_0982_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260502134457_0989_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260502134457_0989_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.858332,
       "lng": 99.414764,
       "confidence": 0.78,
       "time": "2026-05-02T05:44:58.000Z",
-      "sourceAssetId": "DJI_20260502134457_0989_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260502134457_0989_D-HDR_photos",
       "sourcePath": "DJI_20260502134457_0989_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T05:44:58.000Z 29.858332,99.414764 DJI_20260502134457_0989_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260502135607_0002_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260502135607_0002_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.8167,
       "lng": 99.4151,
       "confidence": 0.78,
       "time": "2026-05-02T05:56:07.000Z",
-      "sourceAssetId": "DJI_20260502135607_0002_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260502135607_0002_D-HDR_photos",
       "sourcePath": "DJI_20260502135607_0002_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T05:56:07.000Z 29.816700,99.415100 DJI_20260502135607_0002_D-HDR.jpg"
     },
@@ -5212,26 +5212,26 @@
       "summary": "derived-track embedded-derived 2026-05-02T05:57:19.338Z 29.815189,99.413990 day8/DJI_20260502135626_0005_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260502135930_0015_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260502135930_0015_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.811745,
       "lng": 99.410835,
       "confidence": 0.78,
       "time": "2026-05-02T05:59:30.000Z",
-      "sourceAssetId": "DJI_20260502135930_0015_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260502135930_0015_D-HDR_photos",
       "sourcePath": "DJI_20260502135930_0015_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T05:59:30.000Z 29.811745,99.410835 DJI_20260502135930_0015_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260502145545_0021_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260502145545_0021_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.777975,
       "lng": 99.442719,
       "confidence": 0.78,
       "time": "2026-05-02T06:55:45.000Z",
-      "sourceAssetId": "DJI_20260502145545_0021_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260502145545_0021_D-HDR_photos",
       "sourcePath": "DJI_20260502145545_0021_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T06:55:45.000Z 29.777975,99.442719 DJI_20260502145545_0021_D-HDR.jpg"
     },
@@ -5248,14 +5248,14 @@
       "summary": "derived-track embedded-derived 2026-05-02T06:56:21.159Z 29.777707,99.443003 day8/DJI_20260502145610_0024_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260502145701_0025_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260502145701_0025_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.777519,
       "lng": 99.443169,
       "confidence": 0.78,
       "time": "2026-05-02T06:57:01.000Z",
-      "sourceAssetId": "DJI_20260502145701_0025_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260502145701_0025_D-HDR_photos",
       "sourcePath": "DJI_20260502145701_0025_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T06:57:01.000Z 29.777519,99.443169 DJI_20260502145701_0025_D-HDR.jpg"
     },
@@ -5284,14 +5284,14 @@
       "summary": "derived-track embedded-derived 2026-05-02T06:58:33.564Z 29.774613,99.445360 day8/DJI_20260502145819_0032_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260502145940_0036_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260502145940_0036_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.772982,
       "lng": 99.446854,
       "confidence": 0.78,
       "time": "2026-05-02T06:59:40.000Z",
-      "sourceAssetId": "DJI_20260502145940_0036_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260502145940_0036_D-HDR_photos",
       "sourcePath": "DJI_20260502145940_0036_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T06:59:40.000Z 29.772982,99.446854 DJI_20260502145940_0036_D-HDR.jpg"
     },
@@ -5320,50 +5320,50 @@
       "summary": "derived-track embedded-derived 2026-05-02T07:39:33.601Z 29.749518,99.560297 day8/DJI_20260502153915_0040_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260502154004_0044_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260502154004_0044_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.749521,
       "lng": 99.560295,
       "confidence": 0.78,
       "time": "2026-05-02T07:40:04.000Z",
-      "sourceAssetId": "DJI_20260502154004_0044_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260502154004_0044_D-HDR_photos",
       "sourcePath": "DJI_20260502154004_0044_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T07:40:04.000Z 29.749521,99.560295 DJI_20260502154004_0044_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260502154027_0047_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260502154027_0047_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.749456,
       "lng": 99.560295,
       "confidence": 0.78,
       "time": "2026-05-02T07:40:27.000Z",
-      "sourceAssetId": "DJI_20260502154027_0047_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260502154027_0047_D-HDR_photos",
       "sourcePath": "DJI_20260502154027_0047_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T07:40:27.000Z 29.749456,99.560295 DJI_20260502154027_0047_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260502154057_0056_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260502154057_0056_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.749418,
       "lng": 99.56044,
       "confidence": 0.78,
       "time": "2026-05-02T07:40:57.000Z",
-      "sourceAssetId": "DJI_20260502154057_0056_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260502154057_0056_D-HDR_photos",
       "sourcePath": "DJI_20260502154057_0056_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T07:40:57.000Z 29.749418,99.560440 DJI_20260502154057_0056_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260502154156_0062_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260502154156_0062_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.74943,
       "lng": 99.560509,
       "confidence": 0.78,
       "time": "2026-05-02T07:41:56.000Z",
-      "sourceAssetId": "DJI_20260502154156_0062_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260502154156_0062_D-HDR_photos",
       "sourcePath": "DJI_20260502154156_0062_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T07:41:56.000Z 29.749430,99.560509 DJI_20260502154156_0062_D-HDR.jpg"
     },
@@ -5392,26 +5392,26 @@
       "summary": "derived-track embedded-derived 2026-05-02T07:42:40.439Z 29.749056,99.560421 day8/DJI_20260502154234_0072_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260502154300_0076_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260502154300_0076_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.748972,
       "lng": 99.560509,
       "confidence": 0.78,
       "time": "2026-05-02T07:43:00.000Z",
-      "sourceAssetId": "DJI_20260502154300_0076_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260502154300_0076_D-HDR_photos",
       "sourcePath": "DJI_20260502154300_0076_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T07:43:00.000Z 29.748972,99.560509 DJI_20260502154300_0076_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260502154307_0079_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260502154307_0079_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.748972,
       "lng": 99.560509,
       "confidence": 0.78,
       "time": "2026-05-02T07:43:07.000Z",
-      "sourceAssetId": "DJI_20260502154307_0079_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260502154307_0079_D-HDR_photos",
       "sourcePath": "DJI_20260502154307_0079_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T07:43:07.000Z 29.748972,99.560509 DJI_20260502154307_0079_D-HDR.jpg"
     },
@@ -5428,14 +5428,14 @@
       "summary": "derived-track embedded-derived 2026-05-02T07:43:26.753Z 29.748993,99.560662 day8/DJI_20260502154322_0085_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260502154338_0086_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260502154338_0086_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.749088,
       "lng": 99.561302,
       "confidence": 0.78,
       "time": "2026-05-02T07:43:38.000Z",
-      "sourceAssetId": "DJI_20260502154338_0086_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260502154338_0086_D-HDR_photos",
       "sourcePath": "DJI_20260502154338_0086_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T07:43:38.000Z 29.749088,99.561302 DJI_20260502154338_0086_D-HDR.jpg"
     },
@@ -5452,14 +5452,14 @@
       "summary": "derived-track embedded-derived 2026-05-02T07:43:48.320Z 29.749044,99.560862 day8/DJI_20260502154344_0089_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260502154402_0090_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260502154402_0090_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.749062,
       "lng": 99.560341,
       "confidence": 0.78,
       "time": "2026-05-02T07:44:02.000Z",
-      "sourceAssetId": "DJI_20260502154402_0090_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260502154402_0090_D-HDR_photos",
       "sourcePath": "DJI_20260502154402_0090_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T07:44:02.000Z 29.749062,99.560341 DJI_20260502154402_0090_D-HDR.jpg"
     },
@@ -5488,50 +5488,50 @@
       "summary": "derived-track embedded-derived 2026-05-02T08:44:12.255Z 29.742731,99.648436 day8/DJI_20260502164406_0103_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260502172913_0130_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260502172913_0130_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.794617,
       "lng": 99.664024,
       "confidence": 0.78,
       "time": "2026-05-02T09:29:13.000Z",
-      "sourceAssetId": "DJI_20260502172913_0130_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260502172913_0130_D-HDR_photos",
       "sourcePath": "DJI_20260502172913_0130_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T09:29:13.000Z 29.794617,99.664024 DJI_20260502172913_0130_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260502172959_0136_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260502172959_0136_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.794273,
       "lng": 99.66539,
       "confidence": 0.78,
       "time": "2026-05-02T09:29:59.000Z",
-      "sourceAssetId": "DJI_20260502172959_0136_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260502172959_0136_D-HDR_photos",
       "sourcePath": "DJI_20260502172959_0136_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T09:29:59.000Z 29.794273,99.665390 DJI_20260502172959_0136_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260502173041_0143_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260502173041_0143_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.793186,
       "lng": 99.667519,
       "confidence": 0.78,
       "time": "2026-05-02T09:30:41.000Z",
-      "sourceAssetId": "DJI_20260502173041_0143_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260502173041_0143_D-HDR_photos",
       "sourcePath": "DJI_20260502173041_0143_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T09:30:41.000Z 29.793186,99.667519 DJI_20260502173041_0143_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260502173156_0153_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260502173156_0153_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.794262,
       "lng": 99.66494,
       "confidence": 0.78,
       "time": "2026-05-02T09:31:56.000Z",
-      "sourceAssetId": "DJI_20260502173156_0153_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260502173156_0153_D-HDR_photos",
       "sourcePath": "DJI_20260502173156_0153_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T09:31:56.000Z 29.794262,99.664940 DJI_20260502173156_0153_D-HDR.jpg"
     },
@@ -5572,14 +5572,14 @@
       "summary": "derived-track embedded-derived 2026-05-02T22:30:42.920Z 29.798922,99.761606 day9/DJI_20260503063039_0160_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260503063119_0164_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260503063119_0164_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.797714,
       "lng": 99.76152,
       "confidence": 0.78,
       "time": "2026-05-02T22:31:19.000Z",
-      "sourceAssetId": "DJI_20260503063119_0164_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260503063119_0164_D-HDR_photos",
       "sourcePath": "DJI_20260503063119_0164_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T22:31:19.000Z 29.797714,99.761520 DJI_20260503063119_0164_D-HDR.jpg"
     },
@@ -5608,14 +5608,14 @@
       "summary": "derived-track embedded-derived 2026-05-02T22:32:53.618Z 29.798083,99.760042 day9/DJI_20260503063235_0169_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260503063350_0173_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260503063350_0173_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.797901,
       "lng": 99.760719,
       "confidence": 0.78,
       "time": "2026-05-02T22:33:50.000Z",
-      "sourceAssetId": "DJI_20260503063350_0173_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260503063350_0173_D-HDR_photos",
       "sourcePath": "DJI_20260503063350_0173_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T22:33:50.000Z 29.797901,99.760719 DJI_20260503063350_0173_D-HDR.jpg"
     },
@@ -5644,14 +5644,14 @@
       "summary": "derived-track embedded-derived 2026-05-02T22:35:57.923Z 29.801676,99.747864 day9/DJI_20260503063551_0186_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260503063708_0187_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260503063708_0187_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.801325,
       "lng": 99.747231,
       "confidence": 0.78,
       "time": "2026-05-02T22:37:08.000Z",
-      "sourceAssetId": "DJI_20260503063708_0187_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260503063708_0187_D-HDR_photos",
       "sourcePath": "DJI_20260503063708_0187_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T22:37:08.000Z 29.801325,99.747231 DJI_20260503063708_0187_D-HDR.jpg"
     },
@@ -5668,26 +5668,26 @@
       "summary": "derived-track embedded-derived 2026-05-02T22:37:55.078Z 29.805622,99.743830 day9/DJI_20260503063727_0193_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260503063835_0197_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260503063835_0197_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.811729,
       "lng": 99.740547,
       "confidence": 0.78,
       "time": "2026-05-02T22:38:35.000Z",
-      "sourceAssetId": "DJI_20260503063835_0197_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260503063835_0197_D-HDR_photos",
       "sourcePath": "DJI_20260503063835_0197_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T22:38:35.000Z 29.811729,99.740547 DJI_20260503063835_0197_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260503063850_0203_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260503063850_0203_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.811729,
       "lng": 99.740547,
       "confidence": 0.78,
       "time": "2026-05-02T22:38:50.000Z",
-      "sourceAssetId": "DJI_20260503063850_0203_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260503063850_0203_D-HDR_photos",
       "sourcePath": "DJI_20260503063850_0203_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T22:38:50.000Z 29.811729,99.740547 DJI_20260503063850_0203_D-HDR.jpg"
     },
@@ -5716,14 +5716,14 @@
       "summary": "derived-track embedded-derived 2026-05-02T22:40:02.762Z 29.802825,99.751817 day9/DJI_20260503063950_0207_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260503064206_0211_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260503064206_0211_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.799244,
       "lng": 99.757462,
       "confidence": 0.78,
       "time": "2026-05-02T22:42:06.000Z",
-      "sourceAssetId": "DJI_20260503064206_0211_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260503064206_0211_D-HDR_photos",
       "sourcePath": "DJI_20260503064206_0211_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T22:42:06.000Z 29.799244,99.757462 DJI_20260503064206_0211_D-HDR.jpg"
     },
@@ -5740,14 +5740,14 @@
       "summary": "derived-track embedded-derived 2026-05-02T22:42:59.041Z 29.799356,99.757213 day9/DJI_20260503064250_0214_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260503064402_0218_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260503064402_0218_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.799541,
       "lng": 99.757057,
       "confidence": 0.78,
       "time": "2026-05-02T22:44:02.000Z",
-      "sourceAssetId": "DJI_20260503064402_0218_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260503064402_0218_D-HDR_photos",
       "sourcePath": "DJI_20260503064402_0218_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T22:44:02.000Z 29.799541,99.757057 DJI_20260503064402_0218_D-HDR.jpg"
     },
@@ -5812,14 +5812,14 @@
       "summary": "derived-track embedded-derived 2026-05-02T22:52:16.822Z 29.799292,99.756855 day9/DJI_20260503065210_0234_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260503065302_0235_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260503065302_0235_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.799234,
       "lng": 99.7565,
       "confidence": 0.78,
       "time": "2026-05-02T22:53:02.000Z",
-      "sourceAssetId": "DJI_20260503065302_0235_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260503065302_0235_D-HDR_photos",
       "sourcePath": "DJI_20260503065302_0235_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T22:53:02.000Z 29.799234,99.756500 DJI_20260503065302_0235_D-HDR.jpg"
     },
@@ -5908,14 +5908,14 @@
       "summary": "derived-track embedded-derived 2026-05-02T23:04:17.602Z 29.798634,99.758824 day9/DJI_20260503070415_0247_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260503070432_0248_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260503070432_0248_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.798676,
       "lng": 99.758812,
       "confidence": 0.78,
       "time": "2026-05-02T23:04:32.000Z",
-      "sourceAssetId": "DJI_20260503070432_0248_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260503070432_0248_D-HDR_photos",
       "sourcePath": "DJI_20260503070432_0248_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T23:04:32.000Z 29.798676,99.758812 DJI_20260503070432_0248_D-HDR.jpg"
     },
@@ -5992,14 +5992,14 @@
       "summary": "derived-track embedded-derived 2026-05-02T23:47:05.556Z 29.809345,99.757732 day9/DJI_20260503074659_0268_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260503074745_0275_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260503074745_0275_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.809383,
       "lng": 99.757767,
       "confidence": 0.78,
       "time": "2026-05-02T23:47:45.000Z",
-      "sourceAssetId": "DJI_20260503074745_0275_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260503074745_0275_D-HDR_photos",
       "sourcePath": "DJI_20260503074745_0275_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T23:47:45.000Z 29.809383,99.757767 DJI_20260503074745_0275_D-HDR.jpg"
     },
@@ -6016,14 +6016,14 @@
       "summary": "derived-track embedded-derived 2026-05-02T23:49:01.166Z 29.809795,99.757992 day9/DJI_20260503074844_0278_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260503074947_0279_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260503074947_0279_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.811174,
       "lng": 99.758797,
       "confidence": 0.78,
       "time": "2026-05-02T23:49:47.000Z",
-      "sourceAssetId": "DJI_20260503074947_0279_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260503074947_0279_D-HDR_photos",
       "sourcePath": "DJI_20260503074947_0279_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-02T23:49:47.000Z 29.811174,99.758797 DJI_20260503074947_0279_D-HDR.jpg"
     },
@@ -6100,14 +6100,14 @@
       "summary": "derived-track embedded-derived 2026-05-03T22:05:14.419Z 29.518112,101.721052 day10/DJI_20260504060511_0323_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260504060529_0324_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260504060529_0324_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.51819,
       "lng": 101.720894,
       "confidence": 0.78,
       "time": "2026-05-03T22:05:29.000Z",
-      "sourceAssetId": "DJI_20260504060529_0324_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260504060529_0324_D-HDR_photos",
       "sourcePath": "DJI_20260504060529_0324_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-03T22:05:29.000Z 29.518190,101.720894 DJI_20260504060529_0324_D-HDR.jpg"
     },
@@ -6148,50 +6148,50 @@
       "summary": "derived-track embedded-derived 2026-05-03T22:09:47.925Z 29.518056,101.721231 day10/DJI_20260504060851_0329_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260504061056_0330_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260504061056_0330_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.518057,
       "lng": 101.72123,
       "confidence": 0.78,
       "time": "2026-05-03T22:10:56.000Z",
-      "sourceAssetId": "DJI_20260504061056_0330_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260504061056_0330_D-HDR_photos",
       "sourcePath": "DJI_20260504061056_0330_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-03T22:10:56.000Z 29.518057,101.721230 DJI_20260504061056_0330_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260504061103_0333_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260504061103_0333_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.518057,
       "lng": 101.72123,
       "confidence": 0.78,
       "time": "2026-05-03T22:11:03.000Z",
-      "sourceAssetId": "DJI_20260504061103_0333_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260504061103_0333_D-HDR_photos",
       "sourcePath": "DJI_20260504061103_0333_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-03T22:11:03.000Z 29.518057,101.721230 DJI_20260504061103_0333_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260504061233_0354_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260504061233_0354_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.518023,
       "lng": 101.72113,
       "confidence": 0.78,
       "time": "2026-05-03T22:12:33.000Z",
-      "sourceAssetId": "DJI_20260504061233_0354_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260504061233_0354_D-HDR_photos",
       "sourcePath": "DJI_20260504061233_0354_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-03T22:12:33.000Z 29.518023,101.721130 DJI_20260504061233_0354_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260504061318_0363_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260504061318_0363_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.518143,
       "lng": 101.721146,
       "confidence": 0.78,
       "time": "2026-05-03T22:13:18.000Z",
-      "sourceAssetId": "DJI_20260504061318_0363_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260504061318_0363_D-HDR_photos",
       "sourcePath": "DJI_20260504061318_0363_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-03T22:13:18.000Z 29.518143,101.721146 DJI_20260504061318_0363_D-HDR.jpg"
     },
@@ -6244,14 +6244,14 @@
       "summary": "derived-track embedded-derived 2026-05-03T22:26:10.390Z 29.518273,101.721053 day10/DJI_20260504062603_0369_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260504062637_0373_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260504062637_0373_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.518181,
       "lng": 101.721123,
       "confidence": 0.78,
       "time": "2026-05-03T22:26:37.000Z",
-      "sourceAssetId": "DJI_20260504062637_0373_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260504062637_0373_D-HDR_photos",
       "sourcePath": "DJI_20260504062637_0373_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-03T22:26:37.000Z 29.518181,101.721123 DJI_20260504062637_0373_D-HDR.jpg"
     },
@@ -6268,26 +6268,26 @@
       "summary": "derived-track embedded-derived 2026-05-03T22:28:52.180Z 29.518322,101.721031 day10/DJI_20260504062837_0382_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260504062913_0383_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260504062913_0383_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.518158,
       "lng": 101.721191,
       "confidence": 0.78,
       "time": "2026-05-03T22:29:13.000Z",
-      "sourceAssetId": "DJI_20260504062913_0383_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260504062913_0383_D-HDR_photos",
       "sourcePath": "DJI_20260504062913_0383_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-03T22:29:13.000Z 29.518158,101.721191 DJI_20260504062913_0383_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260504062928_0386_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260504062928_0386_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.51803,
       "lng": 101.721252,
       "confidence": 0.78,
       "time": "2026-05-03T22:29:28.000Z",
-      "sourceAssetId": "DJI_20260504062928_0386_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260504062928_0386_D-HDR_photos",
       "sourcePath": "DJI_20260504062928_0386_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-03T22:29:28.000Z 29.518030,101.721252 DJI_20260504062928_0386_D-HDR.jpg"
     },
@@ -6376,14 +6376,14 @@
       "summary": "derived-track embedded-derived 2026-05-03T23:27:18.105Z 29.513731,101.719320 day10/DJI_20260504072712_0399_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260504072900_0406_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260504072900_0406_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.513727,
       "lng": 101.71949,
       "confidence": 0.78,
       "time": "2026-05-03T23:29:00.000Z",
-      "sourceAssetId": "DJI_20260504072900_0406_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260504072900_0406_D-HDR_photos",
       "sourcePath": "DJI_20260504072900_0406_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-03T23:29:00.000Z 29.513727,101.719490 DJI_20260504072900_0406_D-HDR.jpg"
     },
@@ -6412,26 +6412,26 @@
       "summary": "derived-track embedded-derived 2026-05-03T23:30:42.775Z 29.514402,101.719010 day10/DJI_20260504073033_0437_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260504073111_0441_D-HDR_全景图_photos_photo",
+      "id": "embedded-derived:DJI_20260504073111_0441_D-HDR_全景图_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.515194,
       "lng": 101.718628,
       "confidence": 0.78,
       "time": "2026-05-03T23:31:50.000Z",
-      "sourceAssetId": "DJI_20260504073111_0441_D-HDR_全景图_photos_photo",
+      "sourceAssetId": "DJI_20260504073111_0441_D-HDR_全景图_photos",
       "sourcePath": "DJI_20260504073111_0441_D-HDR 全景图.jpg",
       "summary": "derived-track embedded-derived 2026-05-03T23:31:50.000Z 29.515194,101.718628 DJI_20260504073111_0441_D-HDR 全景图.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260504074622_0473_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260504074622_0473_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.525085,
       "lng": 101.711548,
       "confidence": 0.78,
       "time": "2026-05-03T23:46:22.000Z",
-      "sourceAssetId": "DJI_20260504074622_0473_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260504074622_0473_D-HDR_photos",
       "sourcePath": "DJI_20260504074622_0473_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-03T23:46:22.000Z 29.525085,101.711548 DJI_20260504074622_0473_D-HDR.jpg"
     },
@@ -6472,26 +6472,26 @@
       "summary": "derived-track embedded-derived 2026-05-03T23:53:20.299Z 29.526679,101.708852 day10/DJI_20260504075304_0479_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260504075356_0482_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260504075356_0482_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.527107,
       "lng": 101.706894,
       "confidence": 0.78,
       "time": "2026-05-03T23:53:56.000Z",
-      "sourceAssetId": "DJI_20260504075356_0482_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260504075356_0482_D-HDR_photos",
       "sourcePath": "DJI_20260504075356_0482_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-03T23:53:56.000Z 29.527107,101.706894 DJI_20260504075356_0482_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260504075432_0488_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260504075432_0488_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.527313,
       "lng": 101.706184,
       "confidence": 0.78,
       "time": "2026-05-03T23:54:32.000Z",
-      "sourceAssetId": "DJI_20260504075432_0488_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260504075432_0488_D-HDR_photos",
       "sourcePath": "DJI_20260504075432_0488_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-03T23:54:32.000Z 29.527313,101.706184 DJI_20260504075432_0488_D-HDR.jpg"
     },
@@ -6508,14 +6508,14 @@
       "summary": "derived-track embedded-derived 2026-05-04T09:35:03.130Z 29.517143,101.720646 day10/DJI_20260504173448_0492_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260504173723_0526_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260504173723_0526_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.517105,
       "lng": 101.720932,
       "confidence": 0.78,
       "time": "2026-05-04T09:37:23.000Z",
-      "sourceAssetId": "DJI_20260504173723_0526_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260504173723_0526_D-HDR_photos",
       "sourcePath": "DJI_20260504173723_0526_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-04T09:37:23.000Z 29.517105,101.720932 DJI_20260504173723_0526_D-HDR.jpg"
     },
@@ -6688,14 +6688,14 @@
       "summary": "derived-track embedded-derived 2026-05-04T11:18:41.743Z 29.517195,101.721986 day10/DJI_20260504191830_0603_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260504191910_0607_D-HDR_全景图_photos_photo",
+      "id": "embedded-derived:DJI_20260504191910_0607_D-HDR_全景图_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.516239,
       "lng": 101.719673,
       "confidence": 0.78,
       "time": "2026-05-04T11:19:54.000Z",
-      "sourceAssetId": "DJI_20260504191910_0607_D-HDR_全景图_photos_photo",
+      "sourceAssetId": "DJI_20260504191910_0607_D-HDR_全景图_photos",
       "sourcePath": "DJI_20260504191910_0607_D-HDR 全景图.jpg",
       "summary": "derived-track embedded-derived 2026-05-04T11:19:54.000Z 29.516239,101.719673 DJI_20260504191910_0607_D-HDR 全景图.jpg"
     },
@@ -6772,26 +6772,26 @@
       "summary": "derived-track embedded-derived 2026-05-04T11:32:55.372Z 29.515981,101.721089 day10/DJI_20260504193201_0651_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260504193516_0667_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260504193516_0667_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.515997,
       "lng": 101.721123,
       "confidence": 0.78,
       "time": "2026-05-04T11:35:16.000Z",
-      "sourceAssetId": "DJI_20260504193516_0667_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260504193516_0667_D-HDR_photos",
       "sourcePath": "DJI_20260504193516_0667_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-04T11:35:16.000Z 29.515997,101.721123 DJI_20260504193516_0667_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260504194220_0670_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260504194220_0670_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.517241,
       "lng": 101.720825,
       "confidence": 0.78,
       "time": "2026-05-04T11:42:20.000Z",
-      "sourceAssetId": "DJI_20260504194220_0670_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260504194220_0670_D-HDR_photos",
       "sourcePath": "DJI_20260504194220_0670_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-04T11:42:20.000Z 29.517241,101.720825 DJI_20260504194220_0670_D-HDR.jpg"
     },
@@ -6832,38 +6832,38 @@
       "summary": "derived-track embedded-derived 2026-05-04T11:45:28.671Z 29.517237,101.720820 day10/DJI_20260504194522_0675_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260504194551_0679_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260504194551_0679_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.517233,
       "lng": 101.720818,
       "confidence": 0.78,
       "time": "2026-05-04T11:45:51.000Z",
-      "sourceAssetId": "DJI_20260504194551_0679_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260504194551_0679_D-HDR_photos",
       "sourcePath": "DJI_20260504194551_0679_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-04T11:45:51.000Z 29.517233,101.720818 DJI_20260504194551_0679_D-HDR.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260504194809_0709_D-HDR_全景图_photos_photo",
+      "id": "embedded-derived:DJI_20260504194809_0709_D-HDR_全景图_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.517729,
       "lng": 101.721382,
       "confidence": 0.78,
       "time": "2026-05-04T11:48:40.000Z",
-      "sourceAssetId": "DJI_20260504194809_0709_D-HDR_全景图_photos_photo",
+      "sourceAssetId": "DJI_20260504194809_0709_D-HDR_全景图_photos",
       "sourcePath": "DJI_20260504194809_0709_D-HDR 全景图.jpg",
       "summary": "derived-track embedded-derived 2026-05-04T11:48:40.000Z 29.517729,101.721382 DJI_20260504194809_0709_D-HDR 全景图.jpg"
     },
     {
-      "id": "embedded-derived:DJI_20260504195037_0765_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260504195037_0765_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.5161,
       "lng": 101.721184,
       "confidence": 0.78,
       "time": "2026-05-04T11:50:37.000Z",
-      "sourceAssetId": "DJI_20260504195037_0765_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260504195037_0765_D-HDR_photos",
       "sourcePath": "DJI_20260504195037_0765_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-04T11:50:37.000Z 29.516100,101.721184 DJI_20260504195037_0765_D-HDR.jpg"
     },
@@ -6880,14 +6880,14 @@
       "summary": "derived-track embedded-derived 2026-05-04T12:22:55.430Z 29.517052,101.722240 day10/DJI_20260504202241_0796_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260504202312_0799_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260504202312_0799_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.515862,
       "lng": 101.719246,
       "confidence": 0.78,
       "time": "2026-05-04T12:23:12.000Z",
-      "sourceAssetId": "DJI_20260504202312_0799_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260504202312_0799_D-HDR_photos",
       "sourcePath": "DJI_20260504202312_0799_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-04T12:23:12.000Z 29.515862,101.719246 DJI_20260504202312_0799_D-HDR.jpg"
     },
@@ -6940,14 +6940,14 @@
       "summary": "derived-track embedded-derived 2026-05-04T12:29:38.041Z 29.517253,101.720781 day10/DJI_20260504202929_0818_D.mp4"
     },
     {
-      "id": "embedded-derived:DJI_20260504203021_0821_D-HDR_photos_photo",
+      "id": "embedded-derived:DJI_20260504203021_0821_D-HDR_photos",
       "originType": "embedded-derived",
       "matchKind": "point",
       "lat": 29.517311,
       "lng": 101.720848,
       "confidence": 0.78,
       "time": "2026-05-04T12:30:21.000Z",
-      "sourceAssetId": "DJI_20260504203021_0821_D-HDR_photos_photo",
+      "sourceAssetId": "DJI_20260504203021_0821_D-HDR_photos",
       "sourcePath": "DJI_20260504203021_0821_D-HDR.jpg",
       "summary": "derived-track embedded-derived 2026-05-04T12:30:21.000Z 29.517311,101.720848 DJI_20260504203021_0821_D-HDR.jpg"
     }
