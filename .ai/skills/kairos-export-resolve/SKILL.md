@@ -67,6 +67,7 @@ description: >-
   - root grading timeline 默认使用 root `label` 派生的人类可读命名
   - `/color` 的 root prepare 默认按 50-clip chunks 分批追加到同一条 root grading timeline；不能为每个 chunk 或子目录创建正式 grading timeline
   - 自动 DRP 只在 root prepare 全部 chunks 完成后导出一次，且默认使用 `latest-only` 只覆盖当前 latest DRP；人工 DRP 保存应先 `SaveProject()`，再按用户选择的 `latest-only / archive` 保存策略导出轻量 `.drp` 到项目内 `color/resolve-projects/<safe-project-name>/`，两种策略都更新 latest，只有 `archive` 写入 `snapshots/`
+  - 剪辑 `[Edit]` 素材路径重链只维护现有 `${projectBrief.name} [Edit]` 的 `Kairos Project Media` 路径引用：必须核对现有项目/素材池/目标 timeline，用 `project-brief` root 候选路径映射到当前可读 root，`RelinkClips` 后 `SaveProject()`；它不自动导出 DRP，也不属于 Flow Plan step。
 5. 导入素材并按 `KTEP` 片段摆放
 6. 视目标环境决定是否创建字幕轨或导出 `SRT`
 7. 返回 Resolve 项目 / 时间线信息和日志

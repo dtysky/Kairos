@@ -20,6 +20,7 @@ import {
   fetchWorkspaceStatus,
   registerProjectColorDrpSnapshot,
   registerProjectEditResolveSnapshot,
+  relinkProjectEditResolveMedia,
   resolveProjectReview,
   mergeProjectChronologyEvents,
   runProjectColorPreflight,
@@ -65,6 +66,8 @@ function AppShell() {
   const [error, setError] = useState('');
   const [workflowDialog, setWorkflowDialog] = useState(null);
   const [colorOverwriteDialog, setColorOverwriteDialog] = useState(null);
+  const [editRelinkResult, setEditRelinkResult] = useState(null);
+  const [editRelinkError, setEditRelinkError] = useState('');
 
   useEffect(() => {
     refreshStatus();
@@ -242,6 +245,27 @@ function AppShell() {
       setMessage('已登记剪辑 DRP');
       setError('');
     } catch (caught) {
+      handleError(caught);
+    } finally {
+      setBusy(current => ({ ...current, [busyKey]: false }));
+    }
+  }
+
+  async function relinkEditResolveMedia(payload = {}) {
+    if (!projectId) return;
+    const busyKey = 'edit:resolve-relink';
+    setBusy(current => ({ ...current, [busyKey]: true }));
+    setEditRelinkResult(null);
+    setEditRelinkError('');
+    try {
+      const result = await relinkProjectEditResolveMedia(projectId, payload);
+      setEditRelinkResult(result);
+      await refreshProject(projectId);
+      await refreshStatus();
+      setMessage(formatEditRelinkMessage(result));
+      setError('');
+    } catch (caught) {
+      setEditRelinkError(caught instanceof Error ? caught.message : String(caught));
       handleError(caught);
     } finally {
       setBusy(current => ({ ...current, [busyKey]: false }));
@@ -819,6 +843,9 @@ function AppShell() {
                       onSaveEditUnit={saveEditUnitPayload}
                       onSaveResolveSnapshot={saveEditResolveSnapshot}
                       onRegisterResolveSnapshot={registerEditResolveSnapshot}
+                      onRelinkResolveMedia={relinkEditResolveMedia}
+                      editRelinkResult={editRelinkResult}
+                      editRelinkError={editRelinkError}
                     />
                   )}
                 />
@@ -1996,6 +2023,9 @@ function EditFlowPage({
   onSaveEditUnit,
   onSaveResolveSnapshot,
   onRegisterResolveSnapshot,
+  onRelinkResolveMedia,
+  editRelinkResult,
+  editRelinkError,
 }) {
   const editUnit = config?.editUnit;
   const inferredSelections = resolveEditFlowSelections({
@@ -2045,6 +2075,7 @@ function EditFlowPage({
   const isBusy = Boolean(busy['edit-unit']);
   const saveResolveBusy = Boolean(busy['edit:resolve-snapshot']);
   const registerResolveBusy = Boolean(busy['edit:resolve-register']);
+  const relinkResolveBusy = Boolean(busy['edit:resolve-relink']);
   const spansReady = config?.spans?.fresh;
   const chronologyReady = config?.chronology?.chronology?.status === 'confirmed';
   const editUnitSaved = Boolean(editUnit?.editRuleCategory);
@@ -2146,10 +2177,17 @@ function EditFlowPage({
       <Card className="panel edit-resolve-drp-panel">
         <div className="edit-flow-panel-head">
           <div>
-            <h2>Resolve 剪辑工程备份</h2>
+            <h2>Resolve 剪辑工程维护</h2>
             <p>{editResolveProject?.resolveProjectName || '等待剪辑工程命名'}</p>
           </div>
           <div className="inline-actions">
+            <Button
+              type={relinkResolveBusy || typeof onRelinkResolveMedia !== 'function' ? 'disabled' : 'default'}
+              disabled={relinkResolveBusy || typeof onRelinkResolveMedia !== 'function'}
+              onClick={() => onRelinkResolveMedia?.({ editId })}
+            >
+              {relinkResolveBusy ? '重链中…' : '重链素材路径'}
+            </Button>
             <Button
               type={saveResolveBusy || typeof onSaveResolveSnapshot !== 'function' ? 'disabled' : 'default'}
               disabled={saveResolveBusy || typeof onSaveResolveSnapshot !== 'function'}
@@ -2166,6 +2204,25 @@ function EditFlowPage({
             </Button>
           </div>
         </div>
+        {relinkResolveBusy ? (
+          <div className="edit-resolve-relink-summary">
+            <span>正在重链 Resolve Media Pool 素材路径…</span>
+          </div>
+        ) : null}
+        {editRelinkError ? (
+          <div className="edit-resolve-relink-summary edit-resolve-relink-summary-error">
+            <span>{editRelinkError}</span>
+          </div>
+        ) : null}
+        {editRelinkResult?.hostSummary ? (
+          <div className="edit-resolve-relink-summary">
+            <span>{`素材池 ${editRelinkResult.hostSummary.totalMediaItems ?? 0}`}</span>
+            <span>{`重链 ${editRelinkResult.hostSummary.relinked ?? 0}`}</span>
+            <span>{`旧路径 ${editRelinkResult.hostSummary.oldPathRemaining ?? 0}`}</span>
+            <span>{`不可读 ${editRelinkResult.hostSummary.localUnreadable ?? 0}`}</span>
+            <span>{`时间线旧路径 ${editRelinkResult.hostSummary.timelineOldPathRemaining ?? 0}`}</span>
+          </div>
+        ) : null}
         <div className="color-drp-panel">
           <div className="color-drp-copy">
             <strong>Resolve [Edit] DRP 快照</strong>
@@ -2687,6 +2744,14 @@ function pickConsoleProjectId(projects, jobs, storedProjectId) {
     return storedProjectId;
   }
   return projects[0]?.projectId || '';
+}
+
+function formatEditRelinkMessage(result) {
+  const summary = result?.hostSummary || {};
+  const relinked = summary.relinked ?? 0;
+  const oldRemaining = summary.oldPathRemaining ?? 0;
+  const unreadable = summary.localUnreadable ?? 0;
+  return `剪辑工程素材重链完成：${relinked} 个，旧路径 ${oldRemaining}，不可读 ${unreadable}`;
 }
 
 function pickLatestActiveProjectId(projects, jobs) {

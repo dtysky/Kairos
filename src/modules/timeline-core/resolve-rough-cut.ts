@@ -12,7 +12,7 @@ import {
 
 const exec = promisify(execFile);
 
-interface IResolveTimelineHostConfig {
+export interface IResolveTimelineHostConfig {
   backendRoot?: string;
   pythonPath?: string;
   scriptPath?: string;
@@ -98,6 +98,29 @@ export interface IResolveRoughCutTimelineResult {
   hostSummary?: Record<string, unknown>;
 }
 
+export interface IResolveEditMediaRelinkRoot {
+  rootId: string;
+  label?: string;
+  localPath: string;
+  candidates: string[];
+}
+
+export interface IResolveEditMediaRelinkInput {
+  projectId: string;
+  resolveProjectName: string;
+  namespace?: string;
+  timelineName?: string;
+  roots: IResolveEditMediaRelinkRoot[];
+}
+
+export interface IResolveEditMediaRelinkResult {
+  resolveProjectName: string;
+  namespace: string;
+  timelineName?: string;
+  createdAt: string;
+  hostSummary?: Record<string, unknown>;
+}
+
 export async function syncResolveRoughCutMedia(
   input: IResolveRoughCutMediaSyncInput,
   config: IResolveTimelineHostConfig = {},
@@ -124,8 +147,21 @@ export async function createResolveRoughCutTimeline(
   });
 }
 
+export async function relinkResolveEditMedia(
+  input: IResolveEditMediaRelinkInput,
+  config: IResolveTimelineHostConfig = {},
+  execFileImpl: IExecFile = exec,
+): Promise<IResolveEditMediaRelinkResult> {
+  return runResolveTimelineRequest<IResolveEditMediaRelinkResult>({
+    operation: 'relink_edit_media',
+    input,
+    config,
+    execFileImpl,
+  });
+}
+
 async function runResolveTimelineRequest<T>(request: {
-  operation: 'create_rough_cut_timeline' | 'sync_rough_cut_media';
+  operation: 'create_rough_cut_timeline' | 'sync_rough_cut_media' | 'relink_edit_media';
   input: unknown;
   config: IResolveTimelineHostConfig;
   execFileImpl: IExecFile;

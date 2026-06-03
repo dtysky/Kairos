@@ -103,6 +103,14 @@ Capability registry 是原子能力库，不是必经阶段链。当前常见 ca
 - 不新增 `media-archive.json`；达芬奇 Media Pool 是素材归档真相。
 - 重复运行必须复用已有 MediaPoolItem：素材已在正确事件分类子目录时跳过；素材已存在但事件分类子目录变化时只移动到新目录，不重导入；同步结束后清理 `Kairos Project Media` 下的空事件目录。
 
+### `/edit` Resolve 工程维护
+
+- `/edit` 可以提供 Resolve `[Edit]` 工程维护按钮，例如素材路径重链与 DRP 保存/登记。
+- 素材路径重链不是 Flow Plan capability，不写 run record，不生成/确认/推进任何 step。
+- 重链必须先核对现有 `${projectBrief.name} [Edit]`、`Kairos Project Media` 和目标 edit timeline；不得创建新的 Resolve 项目来假装成功。
+- 重链只从 `project-brief` root primary/alternate 候选映射到当前可读 root，调用 Resolve `RelinkClips` 后保存工程，并返回旧路径剩余、不可读、未映射和 timeline 校验摘要。
+- 重链不自动导出 DRP；用户需要 DRP 时必须单独触发 `覆盖最新` 或 `归档快照`。
+
 ### `timeline.generate`
 
 - deterministic runner。

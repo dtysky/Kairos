@@ -38,6 +38,12 @@ export {
   type IRegisterExternalEditDrpSnapshotResult,
 } from './edit-resolve-snapshot.js';
 export {
+  relinkProjectEditMedia,
+  ProjectEditMediaRelinkBlockedError,
+  type IRelinkProjectEditMediaInput,
+  type IRelinkProjectEditMediaResult,
+} from './edit-resolve-relink.js';
+export {
   buildDeterministicRoughCutBase,
   buildTimelineScriptFromSegmentCuts,
   findSegmentCutBeat,

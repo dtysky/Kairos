@@ -868,6 +868,27 @@ pre {
   justify-content: flex-end;
 }
 
+.edit-resolve-relink-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.edit-resolve-relink-summary span {
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.edit-resolve-relink-summary-error span {
+  border-color: rgba(214, 69, 65, 0.28);
+  background: rgba(214, 69, 65, 0.1);
+  color: #9f2f2f;
+}
+
 .edit-flow-form-grid {
   display: grid;
   grid-template-columns: minmax(120px, 0.55fr) minmax(220px, 1fr) minmax(220px, 1fr);

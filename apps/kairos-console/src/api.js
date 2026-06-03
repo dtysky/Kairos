@@ -62,6 +62,10 @@ export function registerProjectEditResolveSnapshot(projectId, payload = {}) {
   return apiPost(`/api/projects/${encodeURIComponent(projectId)}/edit/resolve-project-snapshot/register`, payload);
 }
 
+export function relinkProjectEditResolveMedia(projectId, payload = {}) {
+  return apiPost(`/api/projects/${encodeURIComponent(projectId)}/edit/resolve-media-relink`, payload);
+}
+
 export function fetchWorkspaceStyleConfig() {
   return apiGet('/api/workspace/config/style-sources');
 }

@@ -58,6 +58,8 @@ def main() -> int:
             result = sync_rough_cut_media(resolve, request_input)
         elif operation == "create_rough_cut_timeline":
             result = create_rough_cut_timeline(resolve, request_input)
+        elif operation == "relink_edit_media":
+            result = relink_edit_media(resolve, request_input)
         elif operation == "save_drp_snapshot":
             result = save_drp_snapshot(resolve, request_input)
         else:
@@ -659,6 +661,116 @@ def create_rough_cut_timeline(resolve, payload):
     }
 
 
+def relink_edit_media(resolve, payload):
+    project_name = stringify_signal_value(payload.get("resolveProjectName"))
+    if not project_name:
+        raise HostError("resolve_edit_project_name_missing", "relink_edit_media requires resolveProjectName.")
+    project, current_project_before = load_existing_project(resolve, project_name)
+    media_pool = require_method(project, "GetMediaPool")()
+    namespace = stringify_signal_value(payload.get("namespace")) or "Kairos Project Media"
+    root_folder = require_method(media_pool, "GetRootFolder")()
+    namespace_folder = find_root_media_pool_folder(root_folder, namespace)
+    if namespace_folder is None:
+        raise HostError(
+            "resolve_edit_media_namespace_missing",
+            f"Resolve edit media namespace not found: {namespace}",
+            {"resolveProjectName": project_name, "namespace": namespace},
+        )
+
+    timeline_name = stringify_signal_value(payload.get("timelineName"))
+    timeline = find_named_timeline(project, timeline_name) if timeline_name else safe_call(project, "GetCurrentTimeline")
+    if timeline_name and timeline is None:
+        raise HostError(
+            "resolve_edit_timeline_missing",
+            f"Resolve edit timeline not found: {timeline_name}",
+            {
+                "resolveProjectName": project_name,
+                "timelineName": timeline_name,
+                "timelines": list_timeline_names(project),
+            },
+        )
+    if timeline is not None:
+        safe_call(project, "SetCurrentTimeline", timeline)
+
+    mappings = normalize_edit_relink_roots(payload.get("roots"))
+    if not mappings:
+        raise HostError("resolve_edit_relink_roots_missing", "relink_edit_media requires at least one readable root mapping.")
+
+    items = collect_media_pool_items(namespace_folder)
+    preflight = build_edit_relink_plan(items, mappings)
+    if preflight["missingTargets"] or preflight["unmapped"]:
+        raise HostError(
+            "resolve_edit_relink_preflight_failed",
+            "Resolve edit media relink preflight failed because some clips are missing targets or cannot be mapped.",
+            {
+                "missingTargetCount": len(preflight["missingTargets"]),
+                "unmappedCount": len(preflight["unmapped"]),
+                "missingTargetSamples": preflight["missingTargets"][:20],
+                "unmappedSamples": preflight["unmapped"][:20],
+                "rootReadable": {mapping["rootId"]: Path(mapping["localPath"]).is_dir() for mapping in mappings},
+            },
+        )
+
+    relink_results = []
+    relinked = 0
+    for folder_path in sorted(preflight["byFolder"].keys()):
+        clips = preflight["byFolder"][folder_path]
+        ok = safe_call(media_pool, "RelinkClips", clips, folder_path)
+        relink_results.append({"folder": folder_path, "count": len(clips), "ok": ok is not False and ok is not None})
+        relinked += len(clips)
+
+    if relinked > 0:
+        time.sleep(1.0)
+    verify = summarize_edit_relink_state(namespace_folder, timeline, mappings)
+    relink_failures = [entry for entry in relink_results if not entry["ok"]]
+    if (
+        relink_failures
+        or verify["oldPathRemaining"] > 0
+        or verify["localUnreadable"] > 0
+        or verify["unmappedCount"] > 0
+        or verify["timelineOldPathRemaining"] > 0
+        or verify["timelineUnreadable"] > 0
+        or verify["timelineUnmappedCount"] > 0
+    ):
+        raise HostError(
+            "resolve_edit_relink_verify_failed",
+            "Resolve edit media relink did not pass verification.",
+            {
+                "relinkFailures": relink_failures,
+                **verify,
+            },
+        )
+
+    save_result = save_project_with_result(project, resolve) if relinked > 0 else None
+    if relinked > 0 and not save_result:
+        raise HostError(
+            "resolve_edit_relink_save_failed",
+            "Resolve edit media relink succeeded but SaveProject failed.",
+            verify,
+        )
+
+    return {
+        "resolveProjectName": project_name,
+        "namespace": namespace,
+        "timelineName": timeline_name or (safe_call(timeline, "GetName") if timeline is not None else None),
+        "createdAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "hostSummary": {
+            "currentProjectBefore": current_project_before,
+            "loadedProject": safe_call(project, "GetName"),
+            "namespace": namespace,
+            "timeline": safe_call(timeline, "GetName") if timeline is not None else None,
+            "rootReadable": {mapping["rootId"]: Path(mapping["localPath"]).is_dir() for mapping in mappings},
+            "rootCount": len(mappings),
+            "alreadyLocalBefore": preflight["alreadyLocal"],
+            "relinked": relinked,
+            "relinkFolderCount": len(preflight["byFolder"]),
+            "relinkFailures": relink_failures,
+            "saveProjectResult": save_result,
+            **verify,
+        },
+    }
+
+
 def build_rough_cut_append_clip_info(media_pool_item, clip, timeline_fps):
     clip_info = {
         "mediaPoolItem": media_pool_item,
@@ -865,6 +977,28 @@ def ensure_project(resolve, project_name):
     if current and safe_call(current, "GetName") == project_name:
         return current
     raise HostError("resolve_project_unavailable", f"Unable to load or create Resolve project: {project_name}")
+
+
+def load_existing_project(resolve, project_name):
+    project_manager = require_method(resolve, "GetProjectManager")()
+    current = safe_call(project_manager, "GetCurrentProject")
+    current_name = safe_call(current, "GetName") if current else None
+    if current and current_name == project_name:
+        return current, current_name
+    loaded = safe_call(project_manager, "LoadProject", project_name)
+    if loaded and safe_call(loaded, "GetName") == project_name:
+        return loaded, current_name
+    current_after = safe_call(project_manager, "GetCurrentProject")
+    if current_after and safe_call(current_after, "GetName") == project_name:
+        return current_after, current_name
+    raise HostError(
+        "resolve_edit_project_unavailable",
+        f"Unable to load existing Resolve edit project: {project_name}",
+        {
+            "currentProject": current_name,
+            "targetProject": project_name,
+        },
+    )
 
 
 def ensure_preflight_project(resolve, project_name):
@@ -1257,6 +1391,240 @@ def collect_namespace_state(namespace_folder):
         "clipFolderBySourcePath": clip_folder_by_source_path,
         "clipRelativeDirBySourcePath": clip_relative_dir_by_source_path,
     }
+
+
+def collect_media_pool_items(folder):
+    items = []
+    for clip in iter_values(safe_call(folder, "GetClipList") or []):
+        items.append(clip)
+    subfolders = safe_call(folder, "GetSubFolders") or safe_call(folder, "GetSubFolderList") or []
+    for child in iter_values(subfolders):
+        items.extend(collect_media_pool_items(child))
+    return items
+
+
+def normalize_edit_relink_roots(value):
+    roots = []
+    for raw in iter_values(value or []):
+        if not isinstance(raw, dict):
+            continue
+        root_id = stringify_signal_value(raw.get("rootId"))
+        local_path = normalize_relink_path(raw.get("localPath"))
+        if not root_id or not local_path:
+            continue
+        candidates = []
+        for candidate in iter_values(raw.get("candidates") or []):
+            normalized = normalize_relink_path(candidate)
+            if normalized:
+                candidates.append(normalized)
+        candidates.insert(0, local_path)
+        roots.append({
+            "rootId": root_id,
+            "label": stringify_signal_value(raw.get("label")),
+            "localPath": local_path,
+            "candidates": dedupe_strings(candidates),
+        })
+    return roots
+
+
+def build_edit_relink_plan(items, mappings):
+    by_folder = {}
+    roots = {mapping["rootId"]: 0 for mapping in mappings}
+    already_local = 0
+    missing_targets = []
+    unmapped = []
+    for item in items:
+        source_path = extract_relink_clip_file_path(item)
+        root_id, target_path, state = map_edit_relink_target(source_path, mappings)
+        if root_id:
+            roots[root_id] = roots.get(root_id, 0) + 1
+        if state == "local":
+            already_local += 1
+            if not edit_relink_target_exists(target_path):
+                missing_targets.append({
+                    "name": safe_call(item, "GetName"),
+                    "path": target_path,
+                })
+        elif state == "old":
+            if edit_relink_target_exists(target_path):
+                folder_path = str(Path(target_path).parent)
+                by_folder.setdefault(folder_path, []).append(item)
+            else:
+                missing_targets.append({
+                    "name": safe_call(item, "GetName"),
+                    "oldPath": source_path,
+                    "target": target_path,
+                })
+        else:
+            unmapped.append({
+                "name": safe_call(item, "GetName"),
+                "path": source_path,
+            })
+    return {
+        "byFolder": by_folder,
+        "roots": roots,
+        "alreadyLocal": already_local,
+        "missingTargets": missing_targets,
+        "unmapped": unmapped,
+    }
+
+
+def summarize_edit_relink_state(namespace_folder, timeline, mappings):
+    items = collect_media_pool_items(namespace_folder)
+    roots = {mapping["rootId"]: 0 for mapping in mappings}
+    old_remaining = 0
+    local_readable = 0
+    local_unreadable = 0
+    unmapped = []
+    for item in items:
+        source_path = extract_relink_clip_file_path(item)
+        root_id, target_path, state = map_edit_relink_target(source_path, mappings)
+        if root_id:
+            roots[root_id] = roots.get(root_id, 0) + 1
+        if state == "old":
+            old_remaining += 1
+            if not edit_relink_target_exists(target_path):
+                local_unreadable += 1
+        elif state == "local":
+            if edit_relink_target_exists(target_path):
+                local_readable += 1
+            else:
+                local_unreadable += 1
+        else:
+            unmapped.append({
+                "name": safe_call(item, "GetName"),
+                "path": source_path,
+            })
+
+    timeline_items = list(iter_timeline_video_items(timeline)) if timeline is not None else []
+    timeline_old = 0
+    timeline_unreadable = 0
+    timeline_unmapped = 0
+    for item in timeline_items:
+        source_path = extract_relink_clip_file_path(item)
+        _root_id, target_path, state = map_edit_relink_target(source_path, mappings)
+        if state == "old":
+            timeline_old += 1
+            if not edit_relink_target_exists(target_path):
+                timeline_unreadable += 1
+        elif state == "local":
+            if not edit_relink_target_exists(target_path):
+                timeline_unreadable += 1
+        else:
+            timeline_unmapped += 1
+
+    return {
+        "totalMediaItems": len(items),
+        "roots": roots,
+        "oldPathRemaining": old_remaining,
+        "localReadable": local_readable,
+        "localUnreadable": local_unreadable,
+        "unmappedCount": len(unmapped),
+        "unmappedSamples": unmapped[:20],
+        "timelineVideoItemCount": len(timeline_items),
+        "timelineOldPathRemaining": timeline_old,
+        "timelineUnreadable": timeline_unreadable,
+        "timelineUnmappedCount": timeline_unmapped,
+    }
+
+
+def map_edit_relink_target(source_path, mappings):
+    normalized_path = normalize_relink_path(source_path)
+    if not normalized_path:
+        return None, None, "unmapped"
+    for mapping in mappings:
+        local_path = mapping["localPath"]
+        if relink_path_has_root(normalized_path, local_path):
+            return mapping["rootId"], normalized_path, "local"
+        for candidate in mapping["candidates"]:
+            if not candidate or candidate == local_path:
+                continue
+            if relink_path_has_root(normalized_path, candidate):
+                relative = normalized_path[len(candidate):].lstrip("/")
+                return mapping["rootId"], join_relink_target(local_path, relative), "old"
+    return None, None, "unmapped"
+
+
+def extract_relink_clip_file_path(item):
+    candidates = []
+    append_relink_clip_property_candidates(candidates, item)
+    media_pool_item = safe_call(item, "GetMediaPoolItem")
+    if media_pool_item:
+        append_relink_clip_property_candidates(candidates, media_pool_item)
+    for candidate in candidates:
+        normalized = normalize_relink_path(candidate)
+        if normalized:
+            return normalized
+    return None
+
+
+def append_relink_clip_property_candidates(candidates, item):
+    clip_property = safe_call(item, "GetClipProperty")
+    if isinstance(clip_property, dict):
+        candidates.extend([
+            clip_property.get("File Path"),
+            clip_property.get("FilePath"),
+            clip_property.get("Path"),
+            clip_property.get("Clip Path"),
+        ])
+    for key in ("File Path", "FilePath", "Path", "Clip Path"):
+        value = safe_call(item, "GetClipProperty", key)
+        if value:
+            candidates.append(value)
+    property_map = safe_call(item, "GetProperty")
+    if isinstance(property_map, dict):
+        candidates.extend([
+            property_map.get("File Path"),
+            property_map.get("Source File"),
+            property_map.get("Path"),
+        ])
+
+
+def normalize_relink_path(value):
+    if not isinstance(value, str) or not value.strip():
+        return None
+    text = value.strip().replace("\\", "/")
+    if re.match(r"^[A-Za-z]:/", text):
+        return re.sub(r"/+", "/", text).rstrip("/")
+    if text.startswith("/"):
+        normalized = re.sub(r"/+", "/", text).rstrip("/")
+        return normalized or "/"
+    return text.rstrip("/")
+
+
+def relink_path_has_root(path, root):
+    path_key = relink_compare_key(path)
+    root_key = relink_compare_key(root)
+    return path_key == root_key or path_key.startswith(root_key.rstrip("/") + "/")
+
+
+def relink_compare_key(value):
+    text = normalize_relink_path(value) or ""
+    return text.lower() if re.match(r"^[A-Za-z]:/", text) else text
+
+
+def join_relink_target(local_path, relative_path):
+    relative = normalize_portable_path(relative_path)
+    if not relative:
+        return local_path
+    return str(Path(local_path).joinpath(*[segment for segment in relative.split("/") if segment]))
+
+
+def edit_relink_target_exists(path):
+    if not path:
+        return False
+    target = Path(path)
+    if target.exists():
+        return True
+    match = re.match(r"^(.*)\[(\d+)-(\d+)\](\.[^./\\]+)$", path)
+    if not match:
+        return False
+    prefix, start, end, suffix = match.groups()
+    width = len(start)
+    for frame in range(int(start), int(end) + 1):
+        if not Path(f"{prefix}{frame:0{width}d}{suffix}").exists():
+            return False
+    return True
 
 
 def clear_namespace_contents(media_pool, namespace_folder):
@@ -4622,6 +4990,15 @@ def save_project(project, resolve=None):
     saved = safe_call(project_manager, "SaveProject") if project_manager is not None else None
     if saved is False or saved is None:
         safe_call(project, "SaveProject")
+
+
+def save_project_with_result(project, resolve=None):
+    project_manager = safe_call(resolve, "GetProjectManager") if resolve is not None else None
+    saved = safe_call(project_manager, "SaveProject") if project_manager is not None else None
+    if saved is not False and saved is not None:
+        return bool(saved)
+    fallback = safe_call(project, "SaveProject")
+    return fallback is not False and fallback is not None
 
 
 def export_project_snapshot(resolve, project, payload, mode, stage):

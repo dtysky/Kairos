@@ -68,6 +68,7 @@ import {
 import {
   deriveResolveRoughCutProjectName,
   registerExternalEditDrpSnapshot,
+  relinkProjectEditMedia,
   resolveLatestEditDrpSnapshot,
   snapshotProjectEditDrp,
 } from '../modules/timeline-core/index.js';
@@ -457,6 +458,21 @@ async function routeRequest(
       projectId,
       editId,
       drpPath,
+    }));
+    return;
+  }
+
+  const editMediaRelinkMatch = pathname.match(/^\/api\/projects\/([^/]+)\/edit\/resolve-media-relink$/u);
+  if (editMediaRelinkMatch && method === 'POST') {
+    const projectId = decodeURIComponent(editMediaRelinkMatch[1]!);
+    const payload = await readJsonBody(request).catch(() => ({}));
+    const editId = typeof payload?.editId === 'string' && payload.editId.trim()
+      ? payload.editId.trim()
+      : undefined;
+    sendJson(response, 200, await relinkProjectEditMedia({
+      workspaceRoot: options.workspaceRoot,
+      projectId,
+      editId,
     }));
     return;
   }
