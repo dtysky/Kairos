@@ -2,7 +2,11 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { resolveAssetLocalPath, resolveMediaRoot, resolveMediaRoots } from '../../src/modules/media/root-resolver.js';
+import {
+  resolveAssetLocalPath,
+  resolveMediaRoot,
+  resolveMediaRoots,
+} from '../../src/modules/media/root-resolver.js';
 import type { IMediaRoot } from '../../src/protocol/schema.js';
 
 const workspaces: string[] = [];
@@ -75,6 +79,38 @@ describe('media root resolver', () => {
 
     expect(resolved.localPath).toBe(currentAlternate);
     expect(resolved.rawLocalPath).toBe(rawPrimary);
+  });
+
+  it('keeps following the declared candidate chain instead of using an implicit Windows drive path', async () => {
+    const workspaceRoot = await createWorkspace();
+    const unavailableAlternate = join(workspaceRoot, 'missing-alternate');
+    const readableAlternate = join(workspaceRoot, 'readable-alternate');
+    await mkdir(readableAlternate, { recursive: true });
+
+    const root: IMediaRoot = {
+      id: 'root-camera',
+      path: '/Volumes/SSDMAX/zve1',
+      alternatePaths: [
+        { path: unavailableAlternate },
+        { path: readableAlternate },
+      ],
+      enabled: true,
+    };
+
+    const resolved = resolveMediaRoot(root);
+
+    if (process.platform === 'win32') {
+      expect(resolved.localPath).toBe(readableAlternate);
+      expect(resolved.localPathResolution.candidates[0]).toMatchObject({
+        path: root.path,
+        readable: false,
+        reason: 'Windows 原生运行时不隐式映射未声明的当前盘路径',
+      });
+      expect(resolved.localPathResolution.candidates[1]).toMatchObject({
+        path: unavailableAlternate,
+        readable: false,
+      });
+    }
   });
 
   it('marks enabled roots missing when no current path candidate is readable', async () => {

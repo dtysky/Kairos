@@ -140,6 +140,14 @@ export function resolveAssetLocalPath(
 }
 
 function inspectPathCandidate(candidate: IMediaRootPathCandidate): IMediaRootPathCandidateCheck {
+  if (isImplicitWindowsDrivePath(candidate.path)) {
+    return {
+      ...candidate,
+      readable: false,
+      reason: 'Windows 原生运行时不隐式映射未声明的当前盘路径',
+    };
+  }
+
   try {
     const stat = statSync(candidate.path);
     if (!stat.isDirectory()) {
@@ -164,6 +172,8 @@ function inspectPathCandidate(candidate: IMediaRootPathCandidate): IMediaRootPat
 }
 
 function isReadableFile(path: string): boolean {
+  if (isImplicitWindowsDrivePath(path)) return false;
+
   try {
     const stat = statSync(path);
     if (!stat.isFile()) return false;
@@ -195,4 +205,9 @@ function resolveFlightRecordPath(path: string | undefined, localPath: string | u
 function trimPath(path: string | undefined): string | undefined {
   const trimmed = path?.trim();
   return trimmed || undefined;
+}
+
+function isImplicitWindowsDrivePath(path: string): boolean {
+  const trimmed = path.trim();
+  return process.platform === 'win32' && /^\/(?!\/)/u.test(trimmed);
 }
