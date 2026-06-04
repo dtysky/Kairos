@@ -1,14 +1,14 @@
 {
-  "updatedAt": "2026-06-03T16:14:12.829Z",
+  "updatedAt": "2026-06-04T10:46:28.527Z",
   "projects": {
     "丙察察格聂南线子梅垭口穿越 [Edit]": {
       "projectName": "丙察察格聂南线子梅垭口穿越 [Edit]",
       "safeProjectName": "Edit",
       "latestSnapshot": {
         "projectName": "丙察察格聂南线子梅垭口穿越 [Edit]",
-        "snapshotPath": "H:\\SacredGrove\\Kairos\\projects\\bingchacha-genie-south-zimeiyakou\\edits\\resolve-projects\\Edit\\丙察察格聂南线子梅垭口穿越 [Edit].drp",
-        "latestPath": "H:\\SacredGrove\\Kairos\\projects\\bingchacha-genie-south-zimeiyakou\\edits\\resolve-projects\\Edit\\丙察察格聂南线子梅垭口穿越 [Edit].drp",
-        "createdAt": "2026-06-03T16:14:08Z",
+        "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/edits/resolve-projects/Edit/丙察察格聂南线子梅垭口穿越 [Edit].drp",
+        "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/bingchacha-genie-south-zimeiyakou/edits/resolve-projects/Edit/丙察察格聂南线子梅垭口穿越 [Edit].drp",
+        "createdAt": "2026-06-04T10:46:26Z",
         "mode": "manual",
         "retention": "latest-only",
         "action": "manual",
@@ -160,7 +160,7 @@
           "detail": "save_drp_snapshot exported withStillsAndLUTs=false"
         }
       ],
-      "updatedAt": "2026-06-03T16:14:12.829Z"
+      "updatedAt": "2026-06-04T10:46:28.527Z"
     }
   }
 }
