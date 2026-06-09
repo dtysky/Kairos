@@ -173,7 +173,12 @@ async function buildApiError(response, path) {
   }
   try {
     const payload = JSON.parse(text);
-    return new Error(payload?.error || payload?.message || text);
+    const error = new Error(payload?.error || payload?.message || text);
+    if (payload && typeof payload === 'object') {
+      error.code = payload.code;
+      error.details = payload.details;
+    }
+    return error;
   } catch {
     return new Error(`API ${path} failed with ${response.status}: ${text.trim().slice(0, 240)}`);
   }

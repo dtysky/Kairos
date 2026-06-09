@@ -107,9 +107,7 @@ async function main(): Promise<void> {
     try {
       await routeRequest(options, request, response);
     } catch (error) {
-      sendJson(response, 500, {
-        error: error instanceof Error ? error.message : String(error),
-      });
+      sendJson(response, 500, serializeApiError(error));
     }
   });
 
@@ -1195,6 +1193,22 @@ function sendJson(response: ServerResponse, statusCode: number, data: unknown): 
     'Cache-Control': 'no-store',
   });
   response.end(JSON.stringify(data, null, 2));
+}
+
+function serializeApiError(error: unknown): Record<string, unknown> {
+  if (!(error instanceof Error)) {
+    return { error: String(error) };
+  }
+  const richError = error as Error & {
+    code?: unknown;
+    details?: unknown;
+    stdout?: unknown;
+    stderr?: unknown;
+  };
+  const payload: Record<string, unknown> = { error: error.message };
+  if (typeof richError.code === 'string') payload.code = richError.code;
+  if (richError.details !== undefined) payload.details = richError.details;
+  return payload;
 }
 
 async function writeFileSafe(path: string, content: string): Promise<void> {

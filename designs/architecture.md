@@ -80,7 +80,7 @@
 - 当剪辑规则要求风格层而 `styleCategory` 缺失，或选中的 profile 仍是 legacy 非分层格式时，Flow Plan 不能确认，Edit Flow 必须阻塞并提示重跑 `/style`
 - `script.generate` 只有在剪辑规则明确需要前置文本稿 / beat 稿时才出现；`material.recall` 只输出 `material-slots.json`，不再生成或消费 `segment-plan.json`；`resolve.media_sync` 先把事件素材同步到达芬奇 Media Pool；`timeline.generate` 是 deterministic Resolve rough-cut 创建步骤，读取 `edit-framework.md + material-slots.json + spans + assets + chronology`，只从已同步 Media Pool 选用素材，不再要求 `script/current.json`，并同步写 `.tmp/edit-flow/<editId>/timeline/current.srt` 供手动导入达芬奇
 - `timeline.generate` 成功后自动尝试保存项目级 Resolve `[Edit]` DRP，默认使用 `latest-only` 只覆盖当前 latest DRP；失败只进入 result/run warning，不回滚已生成 timeline
-- `/edit` 可提供 Resolve `[Edit]` 工程维护按钮，其中素材路径重链是 deterministic same-machine host action：后端从 `project-brief` root primary/alternate 候选与当前可读路径生成 root mapping，host 只加载已有 `${projectBrief.name} [Edit]`，核对 `Kairos Project Media` 与目标 edit timeline，批量 `RelinkClips` 后 `SaveProject()`，并报告 media pool / timeline 的旧路径、不可读与未映射数量；该动作不生成 Flow Plan、不运行 step、不确认 gate，也不自动导出 DRP
+- `/edit` 可提供 Resolve `[Edit]` 工程维护按钮，其中素材路径重链是 deterministic same-machine host action：后端从 `project-brief` root primary/alternate 候选与当前可读路径生成 root mapping，host 只加载已有 `${projectBrief.name} [Edit]`，核对 `Kairos Project Media` 与目标 edit timeline，批量 `RelinkClips` 后 `SaveProject()`，并报告 media pool / timeline 的旧路径、不可读、缺失目标、未映射与跳过非文件数量；Resolve compound/timeline 等非文件 item 不参与路径重链，缺失本机目标作为 warning 返回，不阻塞其它可重链素材；该动作不生成 Flow Plan、不运行 step、不确认 gate，也不自动导出 DRP
 
 旅行类默认剪辑规则的正式顺序是：
 
@@ -952,7 +952,7 @@ src/modules/edit-flow/
 - `material.recall` 只输出 `material-slots.json`；`segment-plan.json` 不再是正式输出或下游输入；素材事实默认只消费 `edit-framework.md + store/spans.json + store/assets.json`，人工规则只消费 Flow Plan 当前 step context / notes
 - `resolve.media_sync` 是 deterministic runner，只负责把 confirmed chronology 对应素材同步进达芬奇 Media Pool；chronology 在这里仅用于 Resolve bin 组织与工程归档，Media Pool 本身是素材归档真相。同步必须复用已有 MediaPoolItem：目标事件目录一致则跳过，目录变化则只移动到新事件目录而不重导入，同步结束后清理空事件目录；run record 只保留 imported / reused / moved / pruned 摘要
 - `timeline.generate` 是 deterministic runner，只消费 `edit-framework.md + material-slots.json + store/spans.json + store/assets.json + confirmed media/chronology.json` 并按 `material-slots` 的选择和顺序从已同步 Media Pool 取素材；有声 speech/mixed 非照片 clip 在 Resolve append 前默认扩展 source handle（头 `240ms`、尾 `720ms`，clamp 到素材边界），chronology 只用于 Resolve path/bin/context 映射，不得硬性读取 `script/current.json` 或 `segment-plan.json`
-- `resolve-edit-media-relink` 是 `/edit` 的项目级维护 API，而不是 Edit Flow capability：它只维护现有 Resolve `[Edit]` 工程中 `Kairos Project Media` 的文件路径，使用 `project-brief` root path candidates 做跨设备路径映射，保存 Resolve project 后返回摘要，不写 run record 或 DRP archive
+- `resolve-edit-media-relink` 是 `/edit` 的项目级维护 API，而不是 Edit Flow capability：它只维护现有 Resolve `[Edit]` 工程中 `Kairos Project Media` 的文件路径，使用 `project-brief` root path candidates 做跨设备路径映射，保存 Resolve project 后返回摘要，不写 run record 或 DRP archive；compound/timeline 等 Resolve 非文件 item 跳过，缺失目标与未映射文件以 warning 摘要暴露
 - `.tmp/edit-flow/<editId>/timeline/current.json` 作为本机临时 KTEP/manifest 审计输出保留，`.tmp/edit-flow/<editId>/timeline/current.srt` 作为手动导入达芬奇的源语音字幕保留，但 Resolve rough-cut timeline 才是用户可见成功标准
 - `timeline.generate` 创建 Resolve timeline 成功后自动调用 Resolve project DRP 保存；该保存属于项目级 `${projectBrief.name} [Edit]` 工程，多个 editId 共享 `edits/resolve-project-map.json` 和同一个 latest DRP，自动保存默认仅覆盖 latest，导出失败只写 warning
 - code 只能执行 confirmed Flow Plan 中的 `capabilityId / inputRefs / outputRefs / gate / execution / notes`，不得从 markdown 正文做隐藏启发式，也不得自动向 Agent packet 注入未声明的 planning markdown；当前 step context / notes 是 packet 的正式高优先级输入

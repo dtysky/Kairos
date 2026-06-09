@@ -265,7 +265,7 @@ function AppShell() {
       setMessage(formatEditRelinkMessage(result));
       setError('');
     } catch (caught) {
-      setEditRelinkError(caught instanceof Error ? caught.message : String(caught));
+      setEditRelinkError(formatEditRelinkError(caught));
       handleError(caught);
     } finally {
       setBusy(current => ({ ...current, [busyKey]: false }));
@@ -2076,6 +2076,8 @@ function EditFlowPage({
   const saveResolveBusy = Boolean(busy['edit:resolve-snapshot']);
   const registerResolveBusy = Boolean(busy['edit:resolve-register']);
   const relinkResolveBusy = Boolean(busy['edit:resolve-relink']);
+  const editRelinkSummary = editRelinkResult?.hostSummary || null;
+  const editRelinkWarningText = formatEditRelinkWarnings(editRelinkSummary);
   const spansReady = config?.spans?.fresh;
   const chronologyReady = config?.chronology?.chronology?.status === 'confirmed';
   const editUnitSaved = Boolean(editUnit?.editRuleCategory);
@@ -2214,13 +2216,21 @@ function EditFlowPage({
             <span>{editRelinkError}</span>
           </div>
         ) : null}
-        {editRelinkResult?.hostSummary ? (
+        {editRelinkSummary ? (
           <div className="edit-resolve-relink-summary">
-            <span>{`素材池 ${editRelinkResult.hostSummary.totalMediaItems ?? 0}`}</span>
-            <span>{`重链 ${editRelinkResult.hostSummary.relinked ?? 0}`}</span>
-            <span>{`旧路径 ${editRelinkResult.hostSummary.oldPathRemaining ?? 0}`}</span>
-            <span>{`不可读 ${editRelinkResult.hostSummary.localUnreadable ?? 0}`}</span>
-            <span>{`时间线旧路径 ${editRelinkResult.hostSummary.timelineOldPathRemaining ?? 0}`}</span>
+            <span>{`素材池 ${editRelinkSummary.totalMediaItems ?? 0}`}</span>
+            <span>{`重链 ${editRelinkSummary.relinked ?? 0}`}</span>
+            <span>{`旧路径 ${editRelinkSummary.oldPathRemaining ?? 0}`}</span>
+            <span>{`不可读 ${editRelinkSummary.localUnreadable ?? 0}`}</span>
+            <span>{`缺失目标 ${editRelinkSummary.missingTargetCount ?? 0}`}</span>
+            <span>{`未映射 ${editRelinkSummary.unmappedCount ?? 0}`}</span>
+            <span>{`跳过复合 ${editRelinkSummary.skippedNonFileCount ?? 0}`}</span>
+            <span>{`时间线旧路径 ${editRelinkSummary.timelineOldPathRemaining ?? 0}`}</span>
+          </div>
+        ) : null}
+        {editRelinkWarningText ? (
+          <div className="edit-resolve-relink-summary edit-resolve-relink-summary-warning">
+            <span>{editRelinkWarningText}</span>
           </div>
         ) : null}
         <div className="color-drp-panel">
@@ -2751,7 +2761,38 @@ function formatEditRelinkMessage(result) {
   const relinked = summary.relinked ?? 0;
   const oldRemaining = summary.oldPathRemaining ?? 0;
   const unreadable = summary.localUnreadable ?? 0;
-  return `剪辑工程素材重链完成：${relinked} 个，旧路径 ${oldRemaining}，不可读 ${unreadable}`;
+  const missing = summary.missingTargetCount ?? 0;
+  const unmapped = summary.unmappedCount ?? 0;
+  return `剪辑工程素材重链完成：${relinked} 个，旧路径 ${oldRemaining}，不可读 ${unreadable}，缺失目标 ${missing}，未映射 ${unmapped}`;
+}
+
+function formatEditRelinkError(caught) {
+  const baseMessage = caught instanceof Error ? caught.message : String(caught);
+  const hostDetails = caught?.details?.details || caught?.details || {};
+  const missing = hostDetails.missingTargetCount;
+  const unmapped = hostDetails.unmappedCount;
+  if (missing === undefined && unmapped === undefined) return baseMessage;
+  const samples = [
+    ...(hostDetails.missingTargetSamples || []).slice(0, 2).map(item => item.target || item.path || item.name),
+    ...(hostDetails.unmappedSamples || []).slice(0, 2).map(item => item.path || item.name),
+  ].filter(Boolean);
+  const suffix = samples.length > 0 ? `；样本：${samples.join('；')}` : '';
+  return `${baseMessage}；缺失目标 ${missing ?? 0}，未映射 ${unmapped ?? 0}${suffix}`;
+}
+
+function formatEditRelinkWarnings(summary) {
+  if (!summary) return '';
+  const missing = summary.missingTargetCount ?? 0;
+  const unmapped = summary.unmappedCount ?? 0;
+  const timelineMissing = summary.timelineMissingTargetCount ?? 0;
+  const timelineUnmapped = summary.timelineUnmappedCount ?? 0;
+  if (missing + unmapped + timelineMissing + timelineUnmapped <= 0) return '';
+  const samples = [
+    ...(summary.missingTargetSamples || []).slice(0, 3).map(item => item.target || item.path || item.name),
+    ...(summary.unmappedSamples || []).slice(0, 3).map(item => item.path || item.name),
+  ].filter(Boolean);
+  const sampleText = samples.length > 0 ? `；样本：${samples.join('；')}` : '';
+  return `重链完成，但仍有警告：缺失目标 ${missing}，未映射 ${unmapped}，时间线缺失目标 ${timelineMissing}，时间线未映射 ${timelineUnmapped}${sampleText}`;
 }
 
 function pickLatestActiveProjectId(projects, jobs) {

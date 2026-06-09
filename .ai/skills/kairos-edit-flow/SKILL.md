@@ -108,7 +108,8 @@ Capability registry 是原子能力库，不是必经阶段链。当前常见 ca
 - `/edit` 可以提供 Resolve `[Edit]` 工程维护按钮，例如素材路径重链与 DRP 保存/登记。
 - 素材路径重链不是 Flow Plan capability，不写 run record，不生成/确认/推进任何 step。
 - 重链必须先核对现有 `${projectBrief.name} [Edit]`、`Kairos Project Media` 和目标 edit timeline；不得创建新的 Resolve 项目来假装成功。
-- 重链只从 `project-brief` root primary/alternate 候选映射到当前可读 root，调用 Resolve `RelinkClips` 后保存工程，并返回旧路径剩余、不可读、未映射和 timeline 校验摘要。
+- 重链只从 `project-brief` root primary/alternate 候选映射到当前可读 root，调用 Resolve `RelinkClips` 后保存工程，并返回旧路径剩余、不可读、缺失目标、未映射、跳过非文件和 timeline 校验摘要。
+- Resolve compound/timeline 等非文件 item 没有稳定 `File Path`，必须跳过；缺失本机目标和未映射文件要作为 warning 暴露，不能阻塞其它可重链素材。
 - 重链不自动导出 DRP；用户需要 DRP 时必须单独触发 `覆盖最新` 或 `归档快照`。
 
 ### `timeline.generate`

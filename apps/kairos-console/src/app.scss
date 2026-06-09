@@ -889,6 +889,12 @@ pre {
   color: #9f2f2f;
 }
 
+.edit-resolve-relink-summary-warning span {
+  border-color: rgba(196, 139, 32, 0.3);
+  background: rgba(196, 139, 32, 0.12);
+  color: #7c5312;
+}
+
 .edit-flow-form-grid {
   display: grid;
   grid-template-columns: minmax(120px, 0.55fr) minmax(220px, 1fr) minmax(220px, 1fr);

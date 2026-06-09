@@ -698,19 +698,6 @@ def relink_edit_media(resolve, payload):
 
     items = collect_media_pool_items(namespace_folder)
     preflight = build_edit_relink_plan(items, mappings)
-    if preflight["missingTargets"] or preflight["unmapped"]:
-        raise HostError(
-            "resolve_edit_relink_preflight_failed",
-            "Resolve edit media relink preflight failed because some clips are missing targets or cannot be mapped.",
-            {
-                "missingTargetCount": len(preflight["missingTargets"]),
-                "unmappedCount": len(preflight["unmapped"]),
-                "missingTargetSamples": preflight["missingTargets"][:20],
-                "unmappedSamples": preflight["unmapped"][:20],
-                "rootReadable": {mapping["rootId"]: Path(mapping["localPath"]).is_dir() for mapping in mappings},
-            },
-        )
-
     relink_results = []
     relinked = 0
     for folder_path in sorted(preflight["byFolder"].keys()):
@@ -727,10 +714,8 @@ def relink_edit_media(resolve, payload):
         relink_failures
         or verify["oldPathRemaining"] > 0
         or verify["localUnreadable"] > 0
-        or verify["unmappedCount"] > 0
         or verify["timelineOldPathRemaining"] > 0
         or verify["timelineUnreadable"] > 0
-        or verify["timelineUnmappedCount"] > 0
     ):
         raise HostError(
             "resolve_edit_relink_verify_failed",
@@ -762,6 +747,12 @@ def relink_edit_media(resolve, payload):
             "rootReadable": {mapping["rootId"]: Path(mapping["localPath"]).is_dir() for mapping in mappings},
             "rootCount": len(mappings),
             "alreadyLocalBefore": preflight["alreadyLocal"],
+            "preflightMissingTargetCount": len(preflight["missingTargets"]),
+            "preflightMissingTargetSamples": preflight["missingTargets"][:20],
+            "preflightUnmappedCount": len(preflight["unmapped"]),
+            "preflightUnmappedSamples": preflight["unmapped"][:20],
+            "preflightSkippedNonFileCount": len(preflight["skippedNonFile"]),
+            "preflightSkippedNonFileSamples": preflight["skippedNonFile"][:20],
             "relinked": relinked,
             "relinkFolderCount": len(preflight["byFolder"]),
             "relinkFailures": relink_failures,
@@ -1433,39 +1424,42 @@ def build_edit_relink_plan(items, mappings):
     already_local = 0
     missing_targets = []
     unmapped = []
+    skipped_non_file = []
     for item in items:
         source_path = extract_relink_clip_file_path(item)
+        item_type = get_relink_item_type(item)
+        if not source_path and is_edit_relink_non_file_type(item_type):
+            skipped_non_file.append(build_edit_relink_item_sample(item, source_path, {"type": item_type}))
+            continue
         root_id, target_path, state = map_edit_relink_target(source_path, mappings)
         if root_id:
             roots[root_id] = roots.get(root_id, 0) + 1
         if state == "local":
             already_local += 1
             if not edit_relink_target_exists(target_path):
-                missing_targets.append({
-                    "name": safe_call(item, "GetName"),
+                missing_targets.append(build_edit_relink_item_sample(item, source_path, {
+                    "type": item_type,
                     "path": target_path,
-                })
+                }))
         elif state == "old":
             if edit_relink_target_exists(target_path):
                 folder_path = str(Path(target_path).parent)
                 by_folder.setdefault(folder_path, []).append(item)
             else:
-                missing_targets.append({
-                    "name": safe_call(item, "GetName"),
+                missing_targets.append(build_edit_relink_item_sample(item, source_path, {
+                    "type": item_type,
                     "oldPath": source_path,
                     "target": target_path,
-                })
+                }))
         else:
-            unmapped.append({
-                "name": safe_call(item, "GetName"),
-                "path": source_path,
-            })
+            unmapped.append(build_edit_relink_item_sample(item, source_path, {"type": item_type}))
     return {
         "byFolder": by_folder,
         "roots": roots,
         "alreadyLocal": already_local,
         "missingTargets": missing_targets,
         "unmapped": unmapped,
+        "skippedNonFile": skipped_non_file,
     }
 
 
@@ -1475,38 +1469,57 @@ def summarize_edit_relink_state(namespace_folder, timeline, mappings):
     old_remaining = 0
     local_readable = 0
     local_unreadable = 0
+    missing_targets = []
     unmapped = []
+    skipped_non_file = []
     for item in items:
         source_path = extract_relink_clip_file_path(item)
+        item_type = get_relink_item_type(item)
+        if not source_path and is_edit_relink_non_file_type(item_type):
+            skipped_non_file.append(build_edit_relink_item_sample(item, source_path, {"type": item_type}))
+            continue
         root_id, target_path, state = map_edit_relink_target(source_path, mappings)
         if root_id:
             roots[root_id] = roots.get(root_id, 0) + 1
         if state == "old":
-            old_remaining += 1
-            if not edit_relink_target_exists(target_path):
-                local_unreadable += 1
+            if edit_relink_target_exists(target_path):
+                old_remaining += 1
+            else:
+                missing_targets.append(build_edit_relink_item_sample(item, source_path, {
+                    "type": item_type,
+                    "oldPath": source_path,
+                    "target": target_path,
+                }))
         elif state == "local":
             if edit_relink_target_exists(target_path):
                 local_readable += 1
             else:
                 local_unreadable += 1
         else:
-            unmapped.append({
-                "name": safe_call(item, "GetName"),
-                "path": source_path,
-            })
+            unmapped.append(build_edit_relink_item_sample(item, source_path, {"type": item_type}))
 
     timeline_items = list(iter_timeline_video_items(timeline)) if timeline is not None else []
     timeline_old = 0
     timeline_unreadable = 0
+    timeline_missing_targets = []
     timeline_unmapped = 0
+    timeline_skipped_non_file = 0
     for item in timeline_items:
         source_path = extract_relink_clip_file_path(item)
+        item_type = get_relink_item_type(item)
+        if not source_path and is_edit_relink_non_file_type(item_type):
+            timeline_skipped_non_file += 1
+            continue
         _root_id, target_path, state = map_edit_relink_target(source_path, mappings)
         if state == "old":
-            timeline_old += 1
-            if not edit_relink_target_exists(target_path):
-                timeline_unreadable += 1
+            if edit_relink_target_exists(target_path):
+                timeline_old += 1
+            else:
+                timeline_missing_targets.append(build_edit_relink_item_sample(item, source_path, {
+                    "type": item_type,
+                    "oldPath": source_path,
+                    "target": target_path,
+                }))
         elif state == "local":
             if not edit_relink_target_exists(target_path):
                 timeline_unreadable += 1
@@ -1519,12 +1532,19 @@ def summarize_edit_relink_state(namespace_folder, timeline, mappings):
         "oldPathRemaining": old_remaining,
         "localReadable": local_readable,
         "localUnreadable": local_unreadable,
+        "missingTargetCount": len(missing_targets),
+        "missingTargetSamples": missing_targets[:20],
         "unmappedCount": len(unmapped),
         "unmappedSamples": unmapped[:20],
+        "skippedNonFileCount": len(skipped_non_file),
+        "skippedNonFileSamples": skipped_non_file[:20],
         "timelineVideoItemCount": len(timeline_items),
         "timelineOldPathRemaining": timeline_old,
         "timelineUnreadable": timeline_unreadable,
+        "timelineMissingTargetCount": len(timeline_missing_targets),
+        "timelineMissingTargetSamples": timeline_missing_targets[:20],
         "timelineUnmappedCount": timeline_unmapped,
+        "timelineSkippedNonFileCount": timeline_skipped_non_file,
     }
 
 
@@ -1543,6 +1563,35 @@ def map_edit_relink_target(source_path, mappings):
                 relative = normalized_path[len(candidate):].lstrip("/")
                 return mapping["rootId"], join_relink_target(local_path, relative), "old"
     return None, None, "unmapped"
+
+
+def get_relink_item_type(item):
+    clip_property = safe_call(item, "GetClipProperty")
+    if isinstance(clip_property, dict):
+        return stringify_signal_value(clip_property.get("Type"))
+    return stringify_signal_value(safe_call(item, "GetClipProperty", "Type"))
+
+
+def is_edit_relink_non_file_type(item_type):
+    normalized = stringify_signal_value(item_type).strip().lower()
+    return normalized in {
+        "compound",
+        "timeline",
+        "multicam",
+        "fusion composition",
+    }
+
+
+def build_edit_relink_item_sample(item, source_path, extra=None):
+    sample = {
+        "name": safe_call(item, "GetName"),
+        "path": source_path,
+    }
+    if isinstance(extra, dict):
+        for key, value in extra.items():
+            if value is not None:
+                sample[key] = value
+    return sample
 
 
 def extract_relink_clip_file_path(item):
