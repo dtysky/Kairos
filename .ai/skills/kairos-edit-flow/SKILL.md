@@ -131,6 +131,8 @@ Capability registry 是原子能力库，不是必经阶段链。当前常见 ca
 - 粗剪锁定必须由人工确认。
 - 锁定后才进入字幕与旁白草稿。
 - 风格层只使用 Flow Plan `styleUsage` 明确授权的层。
+- 旁白框架阶段的无字幕视觉事实只来自 `visualObservation`。生成器不得把 `materialPatterns` 当作画面事实、分类来源或兜底描述；`semanticKind=speech/mixed` 但当前 Resolve clip 无字幕时，先按同素材实际 source range 匹配最近 visual span 的 `visualObservation`，无合格 visual span 时才使用当前 speech/mixed span 自带 `visualObservation`。正文必须写成剪辑规则附录式的 Markdown pack-list：顶层是口播 / 行车 / 航拍 / 照片 / 延时叙事单元，`整体` 或 `摘要` 写 pack 级理解，`clips` 保留 leaf clip 描述；clip-map 只写轻量 v2 指针表，`entries[]` 只存 `marker + clips`，`packs[]` 只存 `title + entries`，不得复制 packet 中可反查的 asset/span/summary 事实；不得输出 `雨后湿滑、高速路面、道路延伸、车流穿行` 这类标签串。
+- `postlock.subtitle_narration` 的具体格式、合并、跳过字幕、风格引用和审查表要求，必须来自当前剪辑规则与 confirmed Flow Plan step notes；skill 不硬编码项目级创作约束。
 
 ## Blocking
 

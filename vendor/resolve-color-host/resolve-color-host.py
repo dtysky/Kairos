@@ -60,6 +60,8 @@ def main() -> int:
             result = create_rough_cut_timeline(resolve, request_input)
         elif operation == "relink_edit_media":
             result = relink_edit_media(resolve, request_input)
+        elif operation == "export_edit_timeline_clip_packet":
+            result = export_edit_timeline_clip_packet(resolve, request_input)
         elif operation == "save_drp_snapshot":
             result = save_drp_snapshot(resolve, request_input)
         else:
@@ -758,6 +760,63 @@ def relink_edit_media(resolve, payload):
             "relinkFailures": relink_failures,
             "saveProjectResult": save_result,
             **verify,
+        },
+    }
+
+
+def export_edit_timeline_clip_packet(resolve, payload):
+    project_name = stringify_signal_value(payload.get("resolveProjectName"))
+    if not project_name:
+        raise HostError(
+            "resolve_edit_project_name_missing",
+            "export_edit_timeline_clip_packet requires resolveProjectName.",
+        )
+    project, current_project_before = load_existing_project(resolve, project_name)
+    timeline_name = stringify_signal_value(payload.get("timelineName"))
+    timeline = find_named_timeline(project, timeline_name) if timeline_name else safe_call(project, "GetCurrentTimeline")
+    if timeline_name and timeline is None:
+        raise HostError(
+            "resolve_edit_timeline_missing",
+            f"Resolve edit timeline not found: {timeline_name}",
+            {
+                "resolveProjectName": project_name,
+                "timelineName": timeline_name,
+                "timelines": list_timeline_names(project),
+            },
+        )
+    if timeline is None:
+        raise HostError(
+            "resolve_edit_timeline_missing",
+            "Resolve edit timeline is not available.",
+            {"resolveProjectName": project_name, "timelines": list_timeline_names(project)},
+        )
+    safe_call(project, "SetCurrentTimeline", timeline)
+    safe_call(resolve, "OpenPage", "edit")
+
+    fps = resolve_timeline_fps(project, timeline)
+    video_items = collect_timeline_track_item_summaries(timeline, "video", fps)
+    subtitle_items = collect_timeline_track_item_summaries(timeline, "subtitle", fps)
+    audio_items = collect_timeline_track_item_summaries(timeline, "audio", fps, include_details=False)
+
+    return {
+        "schemaVersion": "kairos-resolve-edit-timeline-export-v1",
+        "resolveProjectName": project_name,
+        "currentProjectBefore": current_project_before,
+        "timelineName": safe_call(timeline, "GetName"),
+        "exportedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "fps": fps,
+        "trackCounts": {
+            "video": int(safe_call(timeline, "GetTrackCount", "video") or 0),
+            "audio": int(safe_call(timeline, "GetTrackCount", "audio") or 0),
+            "subtitle": int(safe_call(timeline, "GetTrackCount", "subtitle") or 0),
+        },
+        "videoItems": video_items,
+        "subtitleItems": subtitle_items,
+        "audioItemCount": len(audio_items),
+        "hostSummary": {
+            "videoItemCount": len(video_items),
+            "subtitleItemCount": len(subtitle_items),
+            "audioItemCount": len(audio_items),
         },
     }
 
@@ -3689,6 +3748,145 @@ def sort_clip_entries(entries):
             entry["rawRelativePath"],
         ),
     )
+
+
+def resolve_timeline_fps(project, timeline):
+    timeline_settings = safe_call(timeline, "GetSetting") if timeline is not None else None
+    if isinstance(timeline_settings, dict):
+        fps = parse_float(timeline_settings.get("timelineFrameRate"))
+        if fps and fps > 0:
+            return fps
+        playback = parse_float(timeline_settings.get("timelinePlaybackFrameRate"))
+        if playback and playback > 0:
+            return playback
+    for key in ("timelineFrameRate", "timelinePlaybackFrameRate"):
+        fps = parse_float(safe_call(timeline, "GetSetting", key)) if timeline is not None else None
+        if fps and fps > 0:
+            return fps
+    for key in ("timelineFrameRate", "timelinePlaybackFrameRate"):
+        fps = parse_float(safe_call(project, "GetSetting", key))
+        if fps and fps > 0:
+            return fps
+    return 30.0
+
+
+def collect_timeline_track_item_summaries(timeline, track_type, fps, include_details=True):
+    result = []
+    track_count = safe_call(timeline, "GetTrackCount", track_type) or safe_call(timeline, "GetTrackCount", track_type.title()) or 0
+    for track_index in range(1, int(track_count) + 1):
+        items = safe_call(timeline, "GetItemListInTrack", track_type, track_index)
+        if items is None:
+            items = safe_call(timeline, "GetItemsInTrack", track_type, track_index)
+        for item in iter_values(items or []):
+            summary = summarize_timeline_item(item, track_type, track_index, fps, include_details=include_details)
+            if summary:
+                result.append(summary)
+    return sorted(
+        result,
+        key=lambda entry: (
+            parse_float(entry.get("startFrame")) if entry.get("startFrame") is not None else 0,
+            int(entry.get("trackIndex") or 0),
+            parse_float(entry.get("endFrame")) if entry.get("endFrame") is not None else 0,
+            stringify_signal_value(entry.get("name")),
+        ),
+    )
+
+
+def summarize_timeline_item(item, track_type, track_index, fps, include_details=True):
+    start_frame = parse_float(safe_call(item, "GetStart"))
+    end_frame = parse_float(safe_call(item, "GetEnd"))
+    duration_frames = parse_float(safe_call(item, "GetDuration"))
+    if start_frame is None and end_frame is not None and duration_frames is not None:
+        start_frame = end_frame - duration_frames
+    if end_frame is None and start_frame is not None and duration_frames is not None:
+        end_frame = start_frame + duration_frames
+    source_start_frame = parse_float(safe_call(item, "GetSourceStartFrame"))
+    source_end_frame = parse_float(safe_call(item, "GetSourceEndFrame"))
+    media_pool_item = safe_call(item, "GetMediaPoolItem")
+    file_path = normalize_filesystem_path(extract_timeline_item_file_path(item)) if include_details else ""
+    clip_property = safe_call(item, "GetClipProperty") if include_details else None
+    property_map = safe_call(item, "GetProperty") if include_details else None
+    media_property = safe_call(media_pool_item, "GetClipProperty") if media_pool_item and include_details else None
+
+    summary = {
+        "trackType": track_type,
+        "trackIndex": track_index,
+        "name": stringify_signal_value(safe_call(item, "GetName")),
+        "startFrame": start_frame,
+        "endFrame": end_frame,
+        "durationFrames": duration_frames,
+        "timelineInMs": frames_to_ms(start_frame, fps),
+        "timelineOutMs": frames_to_ms(end_frame, fps),
+        "durationMs": frames_to_ms(duration_frames, fps),
+        "sourceStartFrame": source_start_frame,
+        "sourceEndFrame": source_end_frame,
+        "clipEnabled": safe_call(item, "GetClipEnabled"),
+    }
+    if include_details:
+        summary.update({
+            "filePath": file_path,
+            "sourceStem": Path(file_path).stem if file_path else "",
+            "mediaPoolName": stringify_signal_value(safe_call(media_pool_item, "GetName")) if media_pool_item else "",
+            "clipProperty": compact_timeline_property_map(clip_property),
+            "property": compact_timeline_property_map(property_map),
+            "mediaProperty": compact_timeline_property_map(media_property),
+        })
+        if track_type == "subtitle":
+            summary["text"] = extract_timeline_subtitle_text(summary)
+    return summary
+
+
+def frames_to_ms(frames, fps):
+    value = parse_float(frames)
+    rate = parse_float(fps)
+    if value is None or rate is None or rate <= 0:
+        return None
+    return value * 1000.0 / rate
+
+
+def compact_timeline_property_map(value):
+    if not isinstance(value, dict):
+        return {}
+    keys = (
+        "Name",
+        "Type",
+        "File Path",
+        "FilePath",
+        "Path",
+        "Clip Path",
+        "Text",
+        "Subtitle",
+        "Caption",
+        "Duration",
+        "Start",
+        "End",
+        "FPS",
+        "Frames",
+    )
+    result = {}
+    for key in keys:
+        current = value.get(key)
+        text = stringify_signal_value(current)
+        if text:
+            result[key] = text
+    return result
+
+
+def extract_timeline_subtitle_text(summary):
+    candidates = [
+        summary.get("name"),
+        (summary.get("property") or {}).get("Text"),
+        (summary.get("property") or {}).get("Subtitle"),
+        (summary.get("property") or {}).get("Caption"),
+        (summary.get("clipProperty") or {}).get("Text"),
+        (summary.get("clipProperty") or {}).get("Subtitle"),
+        (summary.get("clipProperty") or {}).get("Caption"),
+    ]
+    for candidate in candidates:
+        text = stringify_signal_value(candidate)
+        if text:
+            return text
+    return ""
 
 
 def iter_timeline_video_items(timeline):

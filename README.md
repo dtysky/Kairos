@@ -233,7 +233,7 @@ Current stable pipeline:
   - Resolve edit mapping is fixed by convention: Resolve Project `${projectBrief.name} [Edit]`, project-global Media Pool bin `Kairos Project Media`, timeline bin `Kairos Timelines`, Resolve Timeline `${editLabel} [${editId}]`
   - Resolve `[Edit]` media relink is a same-machine maintenance operation: it loads the existing `${projectBrief.name} [Edit]` project, verifies the `Kairos Project Media` bin and target edit timeline, maps every configured root candidate path to the currently readable `project-brief` root, calls Resolve `RelinkClips`, saves the project, and reports media-pool/timeline unreadable, missing-target, unmapped, and skipped non-file counts. Resolve non-file items such as compound clips are skipped, and missing local targets are warnings rather than blockers for other relinkable clips. It does not export a DRP unless the user separately chooses a DRP action.
   - Resolve `[Edit]` DRP backups are project-level, not editId-level: all edit units share `edits/resolve-project-map.json` and `edits/resolve-projects/<safe-project-key>/`; the latest copy is named `${Resolve项目名}.drp` such as `丙察察格涅南线子梅垭口穿越 [Edit].drp`, while color keeps `latest.drp`
-  - first rough-cut lock writes `edits/<editId>/timeline/locked-rough-cut.json`; v1 post-lock formalizes source-speech subtitles and one reviewed narration text only
+  - first rough-cut lock writes `edits/<editId>/timeline/locked-rough-cut.json`; v1 post-lock formalizes source-speech subtitles, a clip-boundary narration framework, and reviewed narration subtitle text only
 - project brief now carries one project-level semantic vocab layer for analyze/edit-flow:
   - `材料模式短语`
 - `KTEP 2.0` 当前正式把 source-speech beat 升级成双通道模型：
@@ -242,7 +242,8 @@ Current stable pipeline:
   - 旧的 `beat.selections[]` 不再是正式协议；需要通过 Edit Flow 重新生成相关 capability outputs
 - subtitles now have a rough-cut companion path plus post-lock text paths:
   - `timeline.generate` writes `.tmp/edit-flow/<editId>/timeline/current.srt` from selected audible source-speech spans for manual Resolve import
-  - post-lock narration path from `beat.text`
+  - post-lock narration-framework path uses the current Resolve subtitle track as speech truth and must preserve clip boundaries: `.tmp/edit-flow/<editId>/postlock/current-timeline-clip-packet.json` is the only valid framework packet, `narration-framework.md` uses the edit-rule Markdown pack-list format (`口播 pack / 行车 pack / 航拍 pack / 照片序列 / 延时 / 延时序列`), `narration-framework.clip-map.json` is lightweight v2 only (`entries[].marker + entries[].clips`, `packs[].title + packs[].entries`) and must not duplicate packet facts, no-subtitle visual facts come from `visualObservation` only and never from `materialPatterns`, speech/mixed no-subtitle clips first resolve to a same-asset visual span when possible, speech pack summaries must summarize the current subtitle content instead of writing only place + `口播`, adjacent speech clips may merge only when timing and subtitle expression are continuous or on the same topic, and `edits/<editId>/postlock/narration-framework.clip-map.json` plus `node scripts/validate-postlock-narration-framework.mjs projects/<projectId> <editId>` must pass before a run can be recorded as successful or awaiting review
+  - post-lock narration path from reviewed framework/subtitle review text
   - post-lock source-speech path from `beat.audioSelections[]` anchored `transcriptSegments`
   - source-speech subtitles now derive from merged audio units, split by short clauses, and keep noisy unreadable cues silent instead of falling back to explanatory narration
 - source-speech rough cut now groups nearby spoken units inside the same beat instead of forcing one island per selection:

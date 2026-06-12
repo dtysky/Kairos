@@ -1,0 +1,66 @@
+---
+description: Post-lock narration framework must preserve Resolve clip boundaries
+alwaysApply: true
+---
+
+# Post-lock Narration Framework Boundaries
+
+当任务涉及 `postlock.subtitle_narration` 的“旁白框架”产物，尤其是生成、重写、审查或更新：
+
+- `edits/<editId>/postlock/narration-framework.md`
+- `edits/<editId>/postlock/narration-framework.clip-map.json`
+- `.tmp/edit-flow/<editId>/postlock/*clip*packet*.json`
+
+必须遵守本规则。
+
+## Hard Contract
+
+- 旁白框架阶段必须以当前 Resolve timeline 的 **clip-level packet** 为唯一时间线输入。
+- clip-level packet 的素材事实必须优先来自当前 Resolve item 的 `File Path` / `sourceStem` / MediaPool source；Resolve item 名称里残留的 `clip-xxxxx` 只能在与当前源文件解析出的 asset/span 一致时复用。若二者不一致，必须把旧 id 作为 stale 诊断字段处理，不能用旧 id 的 span / materialPatterns / slotQuery 改写当前 clip。
+- 禁止在旁白框架阶段使用 day-level packet、event-level packet 或任何丢失 Resolve clip 边界的上下文。允许基于 clip-level packet 派生 pack-list 写作上下文，但 pack 必须保留 leaf clip / leaf entry 映射。
+- 有字幕的 timeline clip 是口播 clip；没字幕的 timeline clip 是需要写旁白框架的 clip。
+- 正式正文使用 Markdown pack-list v2：顶层有序列表是叙事单元 / pack，标题用 `口播 pack`、`行车 pack`、`航拍 pack`、`照片序列`、`延时`、`延时序列` 等类型前缀，不再使用旧版 `（）` / `【】` / `《》` / `{}` 包裹标题。
+- 每个顶层 pack 必须写 `摘要` 或 `整体`，并写 `clips`。相邻连续的行车 / 开车无口播 clip 可以形成 `行车 pack`，相邻航拍 clip 可以形成 `航拍 pack`，pack 写整体视觉总结，`clips` 子列表再逐条保留子 clip 描述。
+- 每个无字幕非照片 clip 必须在 `clips` 子列表中对应一个且仅一个 leaf 描述；连续照片序列可以只写一个整体描述并在 `clips` 行映射全部照片 clip；相邻、相关且同属同一编年史事件的延时摄影可以合并成 `延时序列`，正文必须参考编年史事件 / 地点 / 时间变化。
+- clip-map 必须使用轻量 v2 schema，只写 `schemaVersion / format / sourcePacket / entries / packs`。`entries[]` 只允许保存 `marker + clips` 并覆盖所有 Resolve video clip；`packs[]` 只允许保存 `title + entries`。不得在 clip-map 里复制 packet 可反查的 `assetIds / spanIds / previousClipIds / summary` 等字段。pack 合并不得导致普通无字幕 clip 在 leaf 层丢失、重复或跨字幕边界。
+- 无字幕视觉 / 航拍 / 延时条目只能描述可观察画面事实；旁白框架事实源只允许使用当前 span 或同素材 visual span 的 `visualObservation`，不得使用 `materialPatterns` 生成、分类或兜底视觉描述。
+- 无字幕视觉 / 航拍 / 延时条目必须写成剪辑规则附录式的场景 / 动作短句，例如交代“从哪里出发、前往哪里、穿过什么、路上发生什么、航拍如何展开空间关系”。不得把 `visualObservation` 压缩成 `雨后湿滑、高速路面、道路延伸、车流穿行` 这类逗号分隔标签串。
+- 对 `semanticKind=speech/mixed` 但当前 Resolve clip 没有字幕的片段，生成器必须按当前 Resolve item 的实际 `sourceStartFrame/sourceEndFrame` 换算素材时间，在同一 asset 中优先匹配时间重叠的 visual span；无重叠时只允许使用距离 `<=15s` 的最近 visual span；仍无匹配时才可使用当前 speech/mixed span 自带的 `visualObservation`。任何情况下都不得把 transcript 或 `materialPatterns` 的口播语义写进 `【...】` / `{...}` / `《...》`。
+- 口播 pack / 口播 leaf 必须包含当前字幕内容的短摘要，说明这段口播在讲什么；不得只写地点 / 事件名 + `口播`，也不得把字幕全文或长串字幕碎片粘贴进正文。
+- 口播 clip 默认不合并。只有当多个口播 clip 同时满足相邻、时间连续、字幕表达连续或同一话题时，才允许合并成一个 `（...）` 条目；不得仅凭相邻、同地点、同事件、同素材类型或同 slot/query 合并，也不得设置固定的“最多合并 N 个 clip”硬上限来切断同一段连续表达。
+- 同一事件内连续行车 / 抵达 / 现场反应等口播，如果字幕内容构成同一条叙述链，必须优先合并为少量 `（...）` 条目；短促语气词只能依附在前后实质口播上，不能单独变成空壳条目。
+- 允许合并的连续口播必须在 clip-level packet 中留下显式 merge group 证据，且该 merge group 应来自当前字幕内容的连续性判断，而不是预先按 day/event/route/type 聚合。跨事件边界不能只因为字幕重叠片段相同就合并。
+- 正式旁白框架正文不得出现内部 fallback / 占位词，例如 `口播信息待人工复核`、`待人工复核`、`信息待复核` 或英文误识别原句；生成器无法写出内容摘要时必须失败或回退到可解释的字幕事实摘要。
+- 旁白框架正文必须贴近剪辑规则附录示例：按时间线顺序列出 Markdown pack-list，不写分析报告式结构，不按 DAY / event 另起小节，不写 `叙事功能是`、`不补旁白`、`保留台词` 这类过程说明。
+
+## Required Validation
+
+写入或更新正式 `edits/<editId>/postlock/narration-framework.md` 前，必须同时生成：
+
+- `.tmp/edit-flow/<editId>/postlock/current-timeline-clip-packet.json`
+- `edits/<editId>/postlock/narration-framework.clip-map.json`
+
+然后运行：
+
+```bash
+node scripts/validate-postlock-narration-framework.mjs projects/<projectId> <editId>
+```
+
+校验失败时必须停止，不得写入成功 run record，不得要求用户人工找合并错误。
+
+## Final Subtitle Review Follow-up
+
+当任务从已确认的 `narration-framework.md` 继续生成 `edits/<editId>/postlock/subtitle-review.md`：
+
+- 必须先确认当前 `narration-framework.md` 已由用户人工确认；未确认时不得生成最终字幕审查稿或最终 SRT。
+- 输出必须是 markdown 表格，且只有三列：`对应旁白框架条目（若合并写多个）`、`事件和GPS位置信息`、`生成旁白字幕`。
+- 必须参考 Flow Plan 授权的 `styleUsage.literary` 风格档案，并参考当前 Resolve timeline 中每个 clip 或 clip 序列组的真实时长；短 clip 或短序列组不得写超出可读时长的长句。
+- 连续相邻的行车或航拍视频可以先聚类判断整体动机，再按 CLIP 分开编写；第一 / 最后一个 CLIP 可以承担承上启下。承上启下可以参考前后有口播段落，但不得覆盖或改写已有口播字幕。
+- 照片和照片序列均不生成字幕；若表格保留对应行，`生成旁白字幕` 必须明确写 `不生成字幕`。
+- 被聚类且标记为 `开车` 的片段必须结合位置、路线 / 道路名推断，以及前置视觉分析中的景观事实来写；不能写成泛泛风景句，也不能编造无法定位的道路名。
+
+## SubAgent Packet Rules
+
+- SubAgent 只能接收 clip-level packet 和当前 Flow Plan step context。
+- SubAgent prompt 不得包含“压缩”“合并重复”“按天概括”“按事件聚合”“为了可读性合并”等会破坏 clip 边界的指令。
+- SubAgent 不得直接写正式产物；主 Agent 必须在写入正式文件前运行校验脚本。

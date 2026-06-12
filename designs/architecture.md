@@ -90,7 +90,7 @@
 4. 人工 review 调整结构，通过后才进入第一次粗剪
 5. 人工与 LLM 围绕 Resolve timeline 交互式修改
 6. 第一次粗剪定稿后锁定 Resolve timeline
-7. 读取锁定草稿，生成源语音字幕与单篇旁白稿，人工审查后导入字幕
+7. 读取锁定草稿，以 Resolve 字幕轨为口播边界生成 clip-boundary 旁白框架，人工审查后再生成旁白字幕并导入字幕
 
 项目存储也从“一个 project 一个剪辑”扩展为“一个 project 多个 Edit Unit”：
 
@@ -101,7 +101,7 @@
 - Resolve edit mapping 固定为：Project `${projectBrief.name} [Edit]`，项目全局素材 bin `Kairos Project Media`，时间线 bin `Kairos Timelines`，Timeline `${editLabel} [${editId}]`
 - Resolve `[Edit]` DRP 备份是项目级工程备份，不按 editId 拆工程；索引写 `edits/resolve-project-map.json`，latest 副本写 `edits/resolve-projects/<safe-project-key>/<Resolve项目名>.drp`，只替换文件系统非法字符；DRP 保存策略分为 `latest-only` 与 `archive`，前者只覆盖 latest，后者额外写 `edits/resolve-projects/<safe-project-key>/snapshots/<timestamp>...drp` 并刷新 latest
 - 第一次粗剪锁定后写入 `edits/<editId>/timeline/locked-rough-cut.json`
-- v1 post-lock 只正式化字幕与旁白文本；音量均一、BGM、ducking、TTS 暂不纳入正式范围
+- v1 post-lock 只正式化字幕与旁白文本；旁白框架阶段必须保留 Resolve clip 边界，音量均一、BGM、ducking、TTS 暂不纳入正式范围
 
 ## 0.12 2026-04-24 DaVinci Resolve scripting 本地知识文档补记
 
@@ -991,6 +991,8 @@ vendor/resolve-color-host/
 - source-speech SRT 的 cue 时间仍来自 transcriptSegments；speech/mixed clip source handle 只扩展实际 Resolve clip 边界，不把字幕铺满前后静音余量。
 - `audio <= -100` 的视频素材保留 linked audio item 并禁用该 audio item；照片可无 audio item。非 `0 dB` clip gain 必须由 host live probe `TimelineItem.GetProperty()` 并验证可写属性，不能猜 `Volume`
 - `resolve.lock_rough_cut` 是人工审查并锁定已生成 Resolve timeline，不负责创建 timeline
+- `postlock.subtitle_narration` 的旁白框架阶段必须先从当前 Resolve timeline 导出 clip-level packet：`.tmp/edit-flow/<editId>/postlock/current-timeline-clip-packet.json`。该阶段以字幕轨覆盖判定口播 clip，并使用剪辑规则附录的 Markdown pack-list v2 作为正式正文格式：顶层是 `口播 pack / 行车 pack / 航拍 pack / 照片序列 / 延时 / 延时序列 / 普通视觉` 等叙事单元，`整体` 或 `摘要` 写 pack 级理解，`clips` 保留 leaf clip 描述。行车 / 开车无口播 clip 可以在正文中按相邻连续关系形成 pack，航拍 clip 可以按相邻相关关系形成 pack，照片序列和同编年史事件的延时序列可以合并为一个顶层条目；但 clip-map 只作为轻量 v2 边界索引，`entries[]` 只存 `marker + clips` 并覆盖所有 Resolve video clip，`packs[]` 只存 `title + entries`，不得复制 packet 中可反查的 `assetIds / spanIds / previousClipIds / summary` 等事实。普通无字幕非照片 clip 在 leaf 层只能归属一次，pack 只作为写作组织和后续字幕审查上下文。无字幕视觉事实只来自 `visualObservation`，不能读取 `materialPatterns` 生成、分类或兜底视觉描述；当当前 span 是 `semanticKind=speech/mixed` 但 Resolve clip 没字幕时，生成器按当前 item 的 `sourceStartFrame/sourceEndFrame` 和素材 fps 换算 source range，优先使用同 asset 重叠 visual span 的 `visualObservation`，无重叠时只允许使用 `<=15s` 最近 visual span，仍无匹配才回退当前 speech/mixed span 自带 `visualObservation`。无字幕视觉 / 航拍 / 延时正文必须贴近剪辑规则附录，用场景 / 动作短句交代路线、事件和画面推进关系，不得把 `visualObservation` 压缩成 `雨后湿滑、高速路面、道路延伸、车流穿行` 这类逗号标签串。口播 pack 必须基于当前字幕内容写短摘要，不能退化成地点 / 事件 + `口播`，不能粘贴字幕全文，也不能泄漏 `口播信息待人工复核` / `待人工复核` 这类内部占位。口播 clip 只有相邻、时间连续且字幕表达连续或同一话题时才可合并；允许合并时须在 packet 中记录显式 merge group，跨事件边界不能只因字幕片段重叠就合并。正式产物必须同时写 `edits/<editId>/postlock/narration-framework.md` 与 `edits/<editId>/postlock/narration-framework.clip-map.json`，并通过 `node scripts/validate-postlock-narration-framework.mjs projects/<projectId> <editId>` 后才允许 run record 进入成功或 awaiting-review 状态。
+- `postlock.subtitle_narration` 的最终字幕审查稿 `edits/<editId>/postlock/subtitle-review.md` 必须在 `narration-framework.md` 人工确认后生成；输出固定为三列 markdown 表格：`对应旁白框架条目（若合并写多个） / 事件和GPS位置信息 / 生成旁白字幕`。审查稿必须参考 Flow Plan 授权的 `styleUsage.literary` 风格档案，并参考当前 Resolve timeline 每个 clip 或 clip 序列组的真实时长；连续相邻的行车或航拍视频可以先聚类判断整体动机，再按 CLIP 分开编写，首尾 CLIP 可承上启下并参考前后口播但不得覆盖已有口播字幕。照片和照片序列均不生成字幕；若保留对应行，`生成旁白字幕` 必须写 `不生成字幕`。被聚类且标记为 `开车` 的片段必须结合位置、路线 / 道路名推断与前置视觉分析景观事实来写，无法确定时写 `位置待确认`，不得编造。
 - Timeline placement 不再把单张照片当作预算填充器；照片默认短自然停留
 - Edit Flow capability 共享已确认 Chronology V2 gate，并按各自 `inputRefs` 精确消费 spans / assets / asset reports；root 级 `clockOffsetMs` 变化后必须先运行 Ingest 把修正落入 `asset.capturedAt`，再在 `/chronology` 重建受影响的 spans/chronology，并重跑受影响的 capability steps。Timeline placement 若声明消费 spans，仍必须等待 fresh spans
 
