@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1.0",
+  "editId": "main",
+  "status": "locked",
+  "lockedAt": "2026-06-12T06:16:01.036Z",
+  "lockedBy": "codex-agent-manual-state-advance",
+  "source": "user-requested-state-advance",
+  "resolveProjectName": "丙察察格聂南线子梅垭口穿越 [Edit]",
+  "timelineName": "Main [main]",
+  "timelineBin": "Kairos Timelines",
+  "timelineAuditPath": "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/timeline/current.json",
+  "note": "User requested advancing Edit Flow to the no-speech narration-framework step and marking prior steps complete. This marker records the current rough-cut timeline as locked for post-lock text work without mutating the Resolve project."
+}
