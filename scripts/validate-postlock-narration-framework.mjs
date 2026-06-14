@@ -29,6 +29,16 @@ const FORBIDDEN_SPEECH_PHRASES = [
   '信息待复核',
   '现场口播片段',
 ];
+const FORBIDDEN_VISUAL_TEMPLATE_PHRASES = [
+  '先停在确认',
+  '继续停在确认',
+  '最后停在确认',
+  '之间的关系',
+  '让这段路的绕行和高差变得可见',
+  '不再只是窗外景物',
+  '决定路线如何绕行的现场条件',
+  '高原长途转场的地形关系',
+];
 const STOCK_VISUAL_TAGS = new Set([
   '云雾天光',
   '晴空',
@@ -128,6 +138,7 @@ console.log(JSON.stringify({
 function validate({ packet, frameworkText, clipMap, failures }) {
   validatePacket(packet, failures);
   validateClipMap(clipMap, failures);
+  validateNoMojibakeText('narration framework', frameworkText, failures);
   const entries = parseFrameworkEntries(frameworkText, failures);
   validatePackMapAlignment(frameworkText, clipMap, failures);
   if (!Array.isArray(packet.clips) || !Array.isArray(clipMap.entries) || entries.length === 0) return;
@@ -287,6 +298,7 @@ function validatePacket(packet, failures) {
     if (!VALID_MARKERS.has(clip.frameworkClass)) {
       failures.push(`${prefix}.frameworkClass must be one of ${[...VALID_MARKERS].join(', ')}`);
     }
+    validatePacketConsumableTextFields({ clip, prefix, failures });
     if (clip.hasSubtitle === true && clip.frameworkClass !== 'speech') {
       failures.push(`${prefix} has subtitle but frameworkClass=${clip.frameworkClass}; expected speech`);
     }
@@ -299,6 +311,38 @@ function validatePacket(packet, failures) {
     if (clip.hasSubtitle === false) {
       validateNarrationVisualEvidence({ clip, prefix, failures });
     }
+  }
+}
+
+function validatePacketConsumableTextFields({ clip, prefix, failures }) {
+  const fields = [
+    ['eventTitle', clip.eventTitle],
+    ['description', clip.description],
+    ['visualObservation', clip.visualObservation],
+    ['subtitleText', clip.subtitleText],
+    ['subtitleSummary', clip.subtitleSummary],
+    ['chronologyContext.title', clip.chronologyContext?.title],
+    ['chronologyContext.location', clip.chronologyContext?.location],
+    ['chronologyContext.route', clip.chronologyContext?.route],
+    ['geoContext.label', clip.geoContext?.label],
+    ['geoContext.rawLocationText', clip.geoContext?.rawLocationText],
+    ['geoContext.terrain', clip.geoContext?.terrain],
+  ];
+  for (const [field, value] of fields) {
+    if (containsMojibakeText(value)) {
+      failures.push(`${prefix}.${field} contains mojibake or replacement characters; Resolve display labels must not be consumed as narration facts`);
+    }
+  }
+  for (let index = 0; index < (clip.subtitleOverlaps ?? []).length; index += 1) {
+    if (containsMojibakeText(clip.subtitleOverlaps[index]?.text)) {
+      failures.push(`${prefix}.subtitleOverlaps[${index}].text contains mojibake or replacement characters`);
+    }
+  }
+}
+
+function validateNoMojibakeText(label, text, failures) {
+  if (containsMojibakeText(text)) {
+    failures.push(`${label} contains mojibake or replacement characters`);
   }
 }
 
@@ -428,6 +472,9 @@ function validateExplicitSpeechMerge({ entryIndex, clipIndices, clips, clipByInd
       return;
     }
   }
+  const reasons = new Set(mappedClips.map(clip => clip.frameworkSpeechMergeReason).filter(Boolean));
+  const approvedSummaryOnly = reasons.has('approved-framework-mouth-pack-summary-only');
+  if (approvedSummaryOnly) return;
   for (let i = 1; i < mappedClips.length; i += 1) {
     const left = mappedClips[i - 1];
     const right = mappedClips[i];
@@ -435,7 +482,6 @@ function validateExplicitSpeechMerge({ entryIndex, clipIndices, clips, clipByInd
       failures.push(`speech entry ${entryIndex} merges clipIndex=${left.index} and clipIndex=${right.index} without subtitle-expression continuity`);
     }
   }
-  const reasons = new Set(mappedClips.map(clip => clip.frameworkSpeechMergeReason).filter(Boolean));
   if (reasons.size === 0) {
     failures.push(`speech entry ${entryIndex} merge group is missing frameworkSpeechMergeReason`);
   }
@@ -561,6 +607,10 @@ function validateNonSpeechEntryText({ entryIndex, markdownEntry, marker, clipInd
   if (leaked.length > 0) {
     failures.push(`non-speech entry ${entryIndex} leaks speech-like wording (${leaked.join(', ')}); visual/timelapse/aerial brackets must describe observable picture facts only`);
   }
+  const templateHits = FORBIDDEN_VISUAL_TEMPLATE_PHRASES.filter(phrase => text.includes(phrase));
+  if (templateHits.length > 0) {
+    failures.push(`non-speech entry ${entryIndex} repeats pack-level template wording (${templateHits.join(', ')}); leaf clip descriptions must use clip-specific GPS/visual facts`);
+  }
   if (isEnglishHeavyVisualText(text)) {
     failures.push(`non-speech entry ${entryIndex} appears to contain untranslated English visualObservation text; framework visual entries must be written in Chinese`);
   }
@@ -620,7 +670,7 @@ function isStockVisualTagPart(part) {
 }
 
 function hasAppendixStyleActionCue(part) {
-  return /从|前往|出发|离开|到达|抵达|穿过|穿越|驶入|驶出|行驶|经过|路过|绕过|转入|沿着|继续|一路|终于|遇到|下起|出现|看见|看到|显出|变成|铺开|压过|贴近|罩住|串起|连在|带出|回到|准备|展开|拉开|掠过|越过|展示|上升|拉升|平移|记录|走在|走上|站在|下坡|上坡|转弯|停车|返程|返回/u.test(String(part || ''));
+  return /从|前往|出发|离开|到达|抵达|穿过|穿越|驶入|驶出|行驶|经过|路过|绕过|转入|沿着|继续|一路|终于|遇到|下起|出现|看见|看到|显出|变成|铺开|压过|贴近|贴着|贴住|罩住|串起|连在|带出|回到|准备|展开|拉开|拉长|接入|掠过|越过|展示|上升|拉升|平移|记录|走在|走上|站在|下坡|上坡|转弯|停车|返程|返回/u.test(String(part || ''));
 }
 
 function hasValidSpeechMergeContinuity(left, right) {
@@ -652,7 +702,7 @@ function hasSpeechEventConflict(left, right) {
 }
 
 function normalizedSpeechEventTitle(clip) {
-  return normalizeComparisonText(String(clip?.eventTitle || '').replace(/口播$/u, ''));
+  return normalizeComparisonText(String(clip?.eventTitle || clip?.chronologyContext?.title || '').replace(/口播$/u, ''));
 }
 
 function sameEventSpeechContinuityReason(left, right) {
@@ -850,6 +900,15 @@ function normalizeComparisonText(value) {
   return String(value || '')
     .replace(/[^\p{Letter}\p{Number}\u3400-\u9fff]+/gu, '')
     .trim();
+}
+
+function containsMojibakeText(value) {
+  const text = String(value ?? '');
+  if (!text) return false;
+  if (text.includes('\uFFFD')) return true;
+  if (/[ÃÂ][\u0080-\u00ff]|â[\u0080-\u00ff]/u.test(text)) return true;
+  const latinRuns = text.match(/[A-Za-zÀ-ÿ]{8,}/g) ?? [];
+  return latinRuns.some(run => /[À-ÿ]/u.test(run));
 }
 
 function parseFrameworkEntries(text, failures) {

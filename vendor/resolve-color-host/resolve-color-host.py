@@ -35,7 +35,16 @@ CEXPOSURE_SCENE_GROUP_CLASSES = ("high-contrast", "overexposed", "underexposed")
 CEXPOSURE_SCENE_REASON_GROUP_TAGS = ("white-reference-underexposed",)
 
 
+def configure_stdio() -> None:
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+
+
 def main() -> int:
+    configure_stdio()
     parser = argparse.ArgumentParser(description="Kairos Resolve color host")
     parser.add_argument("--request", required=True, help="Path to JSON request")
     args = parser.parse_args()
@@ -623,7 +632,7 @@ def create_rough_cut_timeline(resolve, payload):
             "assetId": clip["assetId"],
             "spanId": clip.get("spanId"),
             "eventId": clip.get("eventId"),
-            "eventTitle": clip.get("eventTitle"),
+            "resolveItemName": display_name,
             "timelineInMs": clip["timelineInMs"],
             "timelineOutMs": clip["timelineOutMs"],
             "muteAudio": clip["muteAudio"],

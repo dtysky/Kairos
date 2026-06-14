@@ -179,13 +179,17 @@ async function runResolveTimelineRequest<T>(request: {
     const { stdout } = await request.execFileImpl(
       pythonPath,
       [scriptPath, '--request', requestPath],
-      {
-        cwd: request.config.workingDirectory?.trim()
-          ? request.config.workingDirectory.trim()
-          : dirname(scriptPath),
-        encoding: 'utf8',
-        maxBuffer: 10 * 1024 * 1024,
-        windowsHide: true,
+        {
+          cwd: request.config.workingDirectory?.trim()
+            ? request.config.workingDirectory.trim()
+            : dirname(scriptPath),
+          env: {
+            ...process.env,
+            PYTHONIOENCODING: 'utf-8',
+          },
+          encoding: 'utf8',
+          maxBuffer: 10 * 1024 * 1024,
+          windowsHide: true,
       },
     );
     return parseResolveTimelinePayload<T>(stdout);

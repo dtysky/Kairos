@@ -17,16 +17,22 @@ alwaysApply: true
 
 - 旁白框架阶段必须以当前 Resolve timeline 的 **clip-level packet** 为唯一时间线输入。
 - clip-level packet 的素材事实必须优先来自当前 Resolve item 的 `File Path` / `sourceStem` / MediaPool source；Resolve item 名称里残留的 `clip-xxxxx` 只能在与当前源文件解析出的 asset/span 一致时复用。若二者不一致，必须把旧 id 作为 stale 诊断字段处理，不能用旧 id 的 span / materialPatterns / slotQuery 改写当前 clip。
+- Resolve 只提供锁定时间线的结构事实：clip 顺序、轨道、timeline in/out、source in/out、MediaPool source、`clipId / assetId / spanId / eventId` 映射和可选调试用 `resolveItemName`。Resolve item name、MediaPool folder name、rough-cut `hostSummary` 里的历史显示标签或 `eventTitle` 回声都只能是 debug/display-only；不得作为地点、路线、事件标题、地貌、水文、植被或字幕写作事实来源。
 - 禁止在旁白框架阶段使用 day-level packet、event-level packet 或任何丢失 Resolve clip 边界的上下文。允许基于 clip-level packet 派生 pack-list 写作上下文，但 pack 必须保留 leaf clip / leaf entry 映射。
 - 有字幕的 timeline clip 是口播 clip；没字幕的 timeline clip 是需要写旁白框架的 clip。
 - 正式正文使用 Markdown pack-list v2：顶层有序列表是叙事单元 / pack，标题用 `口播 pack`、`行车 pack`、`航拍 pack`、`照片序列`、`延时`、`延时序列` 等类型前缀，不再使用旧版 `（）` / `【】` / `《》` / `{}` 包裹标题。
 - 每个顶层 pack 必须写 `摘要` 或 `整体`，并写 `clips`。相邻连续的行车 / 开车无口播 clip 可以形成 `行车 pack`，相邻航拍 clip 可以形成 `航拍 pack`，pack 写整体视觉总结，`clips` 子列表再逐条保留子 clip 描述。
 - 每个无字幕非照片 clip 必须在 `clips` 子列表中对应一个且仅一个 leaf 描述；连续照片序列可以只写一个整体描述并在 `clips` 行映射全部照片 clip；相邻、相关且同属同一编年史事件的延时摄影可以合并成 `延时序列`，正文必须参考编年史事件 / 地点 / 时间变化。
+- 每个需要后续写旁白字幕的无字幕非照片 leaf clip 都必须带当前 clip 自己的地理上下文：优先使用当前素材嵌入 GPS，其次按当前 clip 源时间中点匹配 GPX 点，再用 reverse-geocode cache 清洗成行政区 / 乡镇 / 有效地貌点。经纬度、GPS 来源、匹配误差、source path、confidence 只保留在 packet / 审计数据中；正文定位括号不得输出裸 `坐标：lng,lat`、`GPX±Ns`、`机内GPS`、`GPS匹配` 等审计噪音。pack 标题和整体句可以概括路线，但行车 leaf 描述不得复用 pack 级 route / event / summary；没有更细反查地名时，宁可写当前 clip 可确认的道路/村镇/山水地貌锚点或留给人工审查，也不得把整段 `A → B` 路线写成 leaf 定位。道路、桥梁、隧道、互通、收费站、跨江 / 跨海通道等线性交通设施属于有效可读锚点；若反查只命中“项目部 / 管理中心 / 停车场 / 观赏点”等 POI，正文只能抽取真实交通设施名，不能写 POI 全名。
+- 旁白框架的地点 / 路线 / 地貌只能来自 `media/chronology.json`、GPS/GPX、reverse-geocode cache、precise geo audit 和当前 clip 对应的 span/asset 事实；不得从 Resolve 回传显示名、历史 rough-cut `hostSummary.clips[].eventTitle` 或 `eventTitleFromResolveName()` 派生。生成器若遇到 `�`、GBK/UTF-8 mojibake 或其他不可读显示标签，必须丢弃该候选并回退到 chronology/GPS；正式正文和 packet 的可消费字段不得保留乱码。
+- 定位括号里的地貌 / 水文 / 植被必须按语义类别去重：前面已经写出 `怒江 / 澜沧江 / 金沙江 / 然乌湖 / 纳灰河 / 伶仃洋` 等命名水体时，不得再追加 `江河湖泊`；已经写出 `怒江大峡谷 / 峡谷 / 崖壁 / 峰丛 / 山口` 等地貌时，不得再追加 `峡谷崖壁`；已经写出 `常绿阔叶林坡 / 云南松林带 / 针叶林坡 / 草甸 / 灌丛` 等植被时，不得再追加泛化植被词。禁止在正式正文中输出 `林带植被` 这类空泛标签；能从 GPS 地点、海拔带、季节和画面线索合理判断时，写成可辩护的具体表达，例如 `干热河谷灌丛、云南松和针阔混交林`、`常绿阔叶林坡`、`高山针叶林、杜鹃灌丛和冷杉林线`、`湖岸草甸` 或 `高山草甸`；无法确认时宁可省略植被。
 - clip-map 必须使用轻量 v2 schema，只写 `schemaVersion / format / sourcePacket / entries / packs`。`entries[]` 只允许保存 `marker + clips` 并覆盖所有 Resolve video clip；`packs[]` 只允许保存 `title + entries`。不得在 clip-map 里复制 packet 可反查的 `assetIds / spanIds / previousClipIds / summary` 等字段。pack 合并不得导致普通无字幕 clip 在 leaf 层丢失、重复或跨字幕边界。
 - 无字幕视觉 / 航拍 / 延时条目只能描述可观察画面事实；旁白框架事实源只允许使用当前 span 或同素材 visual span 的 `visualObservation`，不得使用 `materialPatterns` 生成、分类或兜底视觉描述。
 - 无字幕视觉 / 航拍 / 延时条目必须写成剪辑规则附录式的场景 / 动作短句，例如交代“从哪里出发、前往哪里、穿过什么、路上发生什么、航拍如何展开空间关系”。不得把 `visualObservation` 压缩成 `雨后湿滑、高速路面、道路延伸、车流穿行` 这类逗号分隔标签串。
+- 行车 pack / 航拍 pack 的多个 leaf 子条目必须体现 clip 之间的独立差异：位置、道路 / 江河 / 村镇 / 桥隧 / 山体 / 云雾 / 机位变化至少有一项随 clip 改变。不得把同一组 pack 总结改写成“先 / 继续 / 最后确认 A、B、C 之间的关系”并复制到每个子条目。pack 的 `整体` 必须归纳 pack 内子 clip 的主要地貌、水文、道路、植被、村镇和天气路况变化，不能只拼接首尾或前三条描述；行车和航拍 pack 不得跨 confirmed chronology event 强行合并。
 - 对 `semanticKind=speech/mixed` 但当前 Resolve clip 没有字幕的片段，生成器必须按当前 Resolve item 的实际 `sourceStartFrame/sourceEndFrame` 换算素材时间，在同一 asset 中优先匹配时间重叠的 visual span；无重叠时只允许使用距离 `<=15s` 的最近 visual span；仍无匹配时才可使用当前 speech/mixed span 自带的 `visualObservation`。任何情况下都不得把 transcript 或 `materialPatterns` 的口播语义写进 `【...】` / `{...}` / `《...》`。
 - 口播 pack / 口播 leaf 必须包含当前字幕内容的短摘要，说明这段口播在讲什么；不得只写地点 / 事件名 + `口播`，也不得把字幕全文或长串字幕碎片粘贴进正文。
+- 多 clip 口播 pack 正文只写 pack 级摘要和 clip 范围；不要在 `clips` 下逐 clip 展开详细口播子条目。口播的精细文本审查留到字幕审查稿，不在旁白框架阶段制造逐字字幕。
 - 口播 clip 默认不合并。只有当多个口播 clip 同时满足相邻、时间连续、字幕表达连续或同一话题时，才允许合并成一个 `（...）` 条目；不得仅凭相邻、同地点、同事件、同素材类型或同 slot/query 合并，也不得设置固定的“最多合并 N 个 clip”硬上限来切断同一段连续表达。
 - 同一事件内连续行车 / 抵达 / 现场反应等口播，如果字幕内容构成同一条叙述链，必须优先合并为少量 `（...）` 条目；短促语气词只能依附在前后实质口播上，不能单独变成空壳条目。
 - 允许合并的连续口播必须在 clip-level packet 中留下显式 merge group 证据，且该 merge group 应来自当前字幕内容的连续性判断，而不是预先按 day/event/route/type 聚合。跨事件边界不能只因为字幕重叠片段相同就合并。
@@ -53,7 +59,7 @@ node scripts/validate-postlock-narration-framework.mjs projects/<projectId> <edi
 当任务从已确认的 `narration-framework.md` 继续生成 `edits/<editId>/postlock/subtitle-review.md`：
 
 - 必须先确认当前 `narration-framework.md` 已由用户人工确认；未确认时不得生成最终字幕审查稿或最终 SRT。
-- 输出必须是 markdown 表格，且只有三列：`对应旁白框架条目（若合并写多个）`、`事件和GPS位置信息`、`生成旁白字幕`。
+- 输出必须是 markdown 表格，且只有三列：`对应旁白框架条目（若合并写多个）`、`事件和可读位置信息`、`生成旁白字幕`。
 - 必须参考 Flow Plan 授权的 `styleUsage.literary` 风格档案，并参考当前 Resolve timeline 中每个 clip 或 clip 序列组的真实时长；短 clip 或短序列组不得写超出可读时长的长句。
 - 连续相邻的行车或航拍视频可以先聚类判断整体动机，再按 CLIP 分开编写；第一 / 最后一个 CLIP 可以承担承上启下。承上启下可以参考前后有口播段落，但不得覆盖或改写已有口播字幕。
 - 照片和照片序列均不生成字幕；若表格保留对应行，`生成旁白字幕` 必须明确写 `不生成字幕`。

@@ -292,6 +292,10 @@ export class PythonResolveColorExecutor implements IColorExecutor {
         [scriptPath, '--request', requestPath],
         {
           cwd: resolveColorWorkingDirectory(this.config),
+          env: {
+            ...process.env,
+            PYTHONIOENCODING: 'utf-8',
+          },
           encoding: 'utf8',
           maxBuffer: 10 * 1024 * 1024,
           windowsHide: true,

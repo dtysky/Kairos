@@ -64,6 +64,7 @@ const timelineExport = args.timelineExport
 const timelineAudit = await readOptionalJson(resolveTimelineAuditPath(projectRoot, lockedRoughCut.timelineAuditPath));
 const chronology = await readOptionalJson(join(projectRoot, 'media', 'chronology.json'));
 const contentIndex = buildContentIndex(timelineAudit, materialSlots, chronology);
+const spatialIndex = await buildSpatialIndex(projectRoot);
 const outputRoots = resolveOutputRoots(projectRoot, editId);
 await mkdir(outputRoots.tmpPostlockRoot, { recursive: true });
 await mkdir(outputRoots.officialPostlockRoot, { recursive: true });
@@ -75,6 +76,7 @@ const packet = buildClipPacket({
   lockedRoughCut,
   timelineExport,
   contentIndex,
+  spatialIndex,
   generatedAt,
 });
 const frameworkEntries = buildFrameworkEntries(packet);
@@ -88,8 +90,10 @@ const clipMap = buildClipMap(frameworkEntries, clipMapPacks);
 
 const candidateFrameworkPath = join(outputRoots.tmpPostlockRoot, 'narration-framework.candidate.md');
 const candidateMapPath = join(outputRoots.tmpPostlockRoot, 'narration-framework.clip-map.candidate.json');
+const preciseGeoAudit = buildPreciseGeoAudit(packet);
 await writeJson(outputRoots.rawResolveExportPath, timelineExport);
 await writeJson(outputRoots.packetPath, packet);
+await writeJson(outputRoots.preciseGeoPath, preciseGeoAudit);
 await writeFile(candidateFrameworkPath, framework, 'utf8');
 await writeJson(candidateMapPath, clipMap);
 
@@ -203,6 +207,10 @@ async function exportResolveTimeline(input) {
       [scriptPath, '--request', requestPath],
       {
         cwd: dirname(scriptPath),
+        env: {
+          ...process.env,
+          PYTHONIOENCODING: 'utf-8',
+        },
         encoding: 'utf8',
         maxBuffer: 256 * 1024 * 1024,
       },
@@ -234,7 +242,6 @@ function buildContentIndex(timelineAudit, materialSlots, chronology) {
     assetsByStem: new Map(),
     spansByAssetId: new Map(),
     visualSpansByAssetId: new Map(),
-    hostClipsById: new Map(),
     slotsById: new Map(),
     chronologyBySpanId: new Map(),
   };
@@ -276,16 +283,13 @@ function buildContentIndex(timelineAudit, materialSlots, chronology) {
   for (const clip of timelineAudit.timeline?.clips ?? []) {
     if (clip?.id) empty.clipsById.set(clip.id, clip);
   }
-  for (const clip of timelineAudit.adapterHints?.resolveRoughCut?.hostSummary?.clips ?? []) {
-    if (clip?.clipId) empty.hostClipsById.set(clip.clipId, clip);
-  }
   return empty;
 }
 
 function buildChronologyEventContext(event) {
   if (!event || typeof event !== 'object') return null;
-  const title = sanitizeDescriptionPart(event.title || event.name || '');
-  const location = sanitizeDescriptionPart(event.location || '');
+  const title = safeHumanLabel(event.title || event.name || '');
+  const location = safeHumanLabel(event.location || '');
   const route = formatRouteLabel(event.route);
   return {
     eventId: event.id || '',
@@ -323,8 +327,8 @@ function collectChronologySpanIds(event) {
 
 function formatRouteLabel(route) {
   if (!route || typeof route !== 'object') return '';
-  const from = sanitizeDescriptionPart(route.from || '');
-  const to = sanitizeDescriptionPart(route.to || '');
+  const from = safeHumanLabel(route.from || '');
+  const to = safeHumanLabel(route.to || '');
   if (from && to) return `${shortLocationLabel(from)}→${shortLocationLabel(to)}`;
   return from || to;
 }
@@ -345,6 +349,307 @@ function extractChronologySummaryTags(summary) {
   return tags;
 }
 
+async function buildSpatialIndex(root) {
+  const derived = await readOptionalJson(join(root, 'gps', 'derived.json'));
+  const reverse = await readOptionalJson(join(root, 'gps', 'reverse-geocode-cache.json'));
+  const pharosContext = await readOptionalJson(join(root, 'analysis', 'pharos-context.json'));
+  const derivedByAssetId = new Map();
+  for (const entry of derived?.entries ?? []) {
+    if (!entry?.sourceAssetId) continue;
+    if (!Number.isFinite(Number(entry.lat)) || !Number.isFinite(Number(entry.lng))) continue;
+    derivedByAssetId.set(entry.sourceAssetId, entry);
+  }
+
+  const reverseByKey = new Map();
+  const reverseEntries = [];
+  for (const entry of reverse?.entries ?? []) {
+    if (!entry || entry.status !== 'ok') continue;
+    if (!Number.isFinite(Number(entry.lat)) || !Number.isFinite(Number(entry.lng))) continue;
+    reverseEntries.push(entry);
+    if (entry.locationKey) reverseByKey.set(String(entry.locationKey), entry);
+  }
+
+  const gpxPaths = (pharosContext?.gpxFiles ?? [])
+    .map(file => file?.path)
+    .filter(filePath => typeof filePath === 'string' && filePath && existsSync(filePath));
+  const gpxPoints = (await Promise.all(gpxPaths.map(loadGpxPointsFromFile)))
+    .flat()
+    .sort((left, right) => left.timeMs - right.timeMs);
+
+  return {
+    derivedByAssetId,
+    reverseByKey,
+    reverseEntries,
+    gpxPoints,
+  };
+}
+
+async function loadGpxPointsFromFile(filePath) {
+  const text = await readFile(filePath, 'utf8').catch(() => '');
+  if (!text) return [];
+  const points = [];
+  const matcher = /<trkpt\b[^>]*lat="([^"]+)"[^>]*lon="([^"]+)"[^>]*>[\s\S]*?<time>([^<]+)<\/time>/giu;
+  for (const match of text.matchAll(matcher)) {
+    const lat = Number(match[1]);
+    const lng = Number(match[2]);
+    const time = String(match[3] || '').trim();
+    const timeMs = Date.parse(time);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || !Number.isFinite(timeMs)) continue;
+    points.push({ lat, lng, time, timeMs, sourcePath: filePath });
+  }
+  return points;
+}
+
+function resolveClipGeoContext({ asset, sourceRange, spatialIndex }) {
+  if (!asset || !spatialIndex) return null;
+
+  const embedded = asset.embeddedGps;
+  if (
+    Number.isFinite(Number(embedded?.representativeLat))
+    && Number.isFinite(Number(embedded?.representativeLng))
+  ) {
+    return buildGeoContext({
+      lat: Number(embedded.representativeLat),
+      lng: Number(embedded.representativeLng),
+      time: embedded.representativeTime || embedded.startTime || asset.capturedAt,
+      source: embedded.originType ? `embedded-${embedded.originType}` : 'embedded-gps',
+      confidence: finiteNumber(embedded.confidence) ?? 0.96,
+      spatialIndex,
+    });
+  }
+
+  const derived = asset.id ? spatialIndex.derivedByAssetId.get(asset.id) : null;
+  if (derived) {
+    return buildGeoContext({
+      lat: Number(derived.lat),
+      lng: Number(derived.lng),
+      time: derived.time || asset.capturedAt,
+      source: derived.originType || 'derived-gps',
+      confidence: finiteNumber(derived.confidence) ?? 0.78,
+      spatialIndex,
+    });
+  }
+
+  const timeMs = clipRepresentativeTimeMs(asset, sourceRange);
+  const nearest = pickNearestGpxPoint(spatialIndex.gpxPoints, timeMs, 10 * 60 * 1000);
+  if (!nearest) return null;
+  return buildGeoContext({
+    lat: nearest.lat,
+    lng: nearest.lng,
+    time: nearest.time,
+    source: 'pharos-gpx-nearest',
+    confidence: nearest.deltaMs <= 60_000 ? 0.92 : 0.84,
+    deltaMs: nearest.deltaMs,
+    sourcePath: nearest.sourcePath,
+    spatialIndex,
+  });
+}
+
+function clipRepresentativeTimeMs(asset, sourceRange) {
+  const capturedAtMs = Date.parse(asset?.capturedAt || asset?.createdAt || asset?.rawCapturedAt || '');
+  if (!Number.isFinite(capturedAtMs)) return null;
+  const inMs = finiteNumber(sourceRange?.sourceInMs) ?? 0;
+  const outMs = finiteNumber(sourceRange?.sourceOutMs) ?? inMs;
+  const midpointMs = Math.max(0, (inMs + outMs) / 2);
+  return capturedAtMs + midpointMs;
+}
+
+function pickNearestGpxPoint(points, timeMs, maxDeltaMs) {
+  if (!Array.isArray(points) || points.length === 0 || !Number.isFinite(timeMs)) return null;
+  let low = 0;
+  let high = points.length;
+  while (low < high) {
+    const mid = Math.floor((low + high) / 2);
+    if (points[mid].timeMs < timeMs) low = mid + 1;
+    else high = mid;
+  }
+  const candidates = [points[low - 1], points[low], points[low + 1]].filter(Boolean);
+  let best = null;
+  for (const point of candidates) {
+    const deltaMs = Math.abs(point.timeMs - timeMs);
+    if (deltaMs > maxDeltaMs) continue;
+    if (!best || deltaMs < best.deltaMs) best = { ...point, deltaMs };
+  }
+  return best;
+}
+
+function buildGeoContext({ lat, lng, time, source, confidence, deltaMs, sourcePath, spatialIndex }) {
+  const reverse = findReverseGeocode(lat, lng, spatialIndex);
+  const rawLocationText = reverse?.locationText || reverse?.formatted || reverse?.rawLabel || reverse?.label || '';
+  const transportFacility = transportFacilityHintForGeo({ lat, lng, text: rawLocationText });
+  const label = cleanGeoLabel(rawLocationText) || transportFacility?.label || '';
+  const terrain = transportFacility?.terrain || terrainHintForGeo(rawLocationText || label);
+  return {
+    source,
+    lat: roundCoordinate(lat),
+    lng: roundCoordinate(lng),
+    time: time || '',
+    ...(Number.isFinite(deltaMs) ? { deltaMs: Math.round(deltaMs) } : {}),
+    confidence,
+    label,
+    rawLocationText: rawLocationText || undefined,
+    terrain: terrain || undefined,
+    sourcePath: sourcePath || undefined,
+  };
+}
+
+function findReverseGeocode(lat, lng, spatialIndex) {
+  if (!spatialIndex) return null;
+  const key = `${Number(lng).toFixed(6)},${Number(lat).toFixed(6)}`;
+  const exact = spatialIndex.reverseByKey.get(key);
+  if (exact) return { ...exact, matchDistance: 0 };
+  let best = null;
+  let bestDistance = Infinity;
+  for (const entry of spatialIndex.reverseEntries ?? []) {
+    if (isInvalidReverseLocationText(entry.locationText || entry.formatted || entry.rawLabel || entry.label || '')) continue;
+    const distance = Math.hypot(Number(entry.lat) - Number(lat), Number(entry.lng) - Number(lng));
+    if (distance >= bestDistance) continue;
+    best = entry;
+    bestDistance = distance;
+  }
+  return bestDistance <= 0.03 ? { ...best, matchDistance: bestDistance } : null;
+}
+
+function cleanGeoLabel(value) {
+  const clean = sanitizeDescriptionPart(value);
+  if (!clean) return '';
+  if (isInvalidReverseLocationText(clean)) return '';
+  if (containsRouteArrow(clean)) return '';
+  const [rawAdmin, rawPoi = ''] = clean.split(/\s*·\s*/u);
+  const adminParts = rawAdmin.split(/[，,]/u).map(part => part.trim()).filter(Boolean);
+  const admin = adminParts.slice(-2).join('');
+  const poi = sanitizeDescriptionPart(rawPoi).replace(/[()（）]/gu, '');
+  const badPoi = /服务区|公司|园区|物流|商贸|汽车|委员会|村委会|卫生室|卫生间|厕所|公交|车站|消纳场|加油站|充电站|收费站|停车场|酒店|民宿|客栈|饭店|餐馆|观景台售票|摆渡/u.test(poi);
+  if (admin && poi && !badPoi && !normalizeComparisonText(admin).includes(normalizeComparisonText(poi))) {
+    return `${admin}·${poi}`.slice(0, 42);
+  }
+  return (admin || poi || clean).slice(0, 42);
+}
+
+function containsRouteArrow(value) {
+  return /→|->|至|到/u.test(String(value || ''));
+}
+
+function isInvalidReverseLocationText(value) {
+  const text = sanitizeDescriptionPart(value);
+  return !text || /^Earth$/iu.test(text) || /^中国$/u.test(text) || /^0+(\.0+)?[,，]0+(\.0+)?$/u.test(text);
+}
+
+function terrainHintForGeo(value) {
+  const text = String(value || '');
+  if (/深中通道|伶仃洋|中山大桥/u.test(text)) return '深中通道跨越伶仃洋的海面桥隧、珠江口水汽和桥面车流';
+  if (/老姆登|匹河|福贡/u.test(text)) return '碧罗雪山西坡、怒江峡谷云雾山村和常绿阔叶林坡';
+  if (/丙中洛|贡山|怒江大峡谷/u.test(text)) return '怒江大峡谷北段、碧罗雪山与高黎贡山夹峙的江湾和崖壁';
+  if (/石月亮/u.test(text)) return '怒江峡谷中段的沿江山路、陡坡村落和亚热带河谷植被';
+  if (/然乌|八宿|白玛/u.test(text)) return '然乌湖、帕隆藏布上游冰川湖谷和雪线山坡';
+  if (/永平|博南|阿米田|杭瑞/u.test(text)) return '博南山云雾林带、杭瑞高速桥隧和湿润山谷';
+  if (/抚仙湖|澄江|江川/u.test(text)) return '抚仙湖湖盆、湖岸丘陵和云南松林带';
+  if (/兴义|黔西南|万峰林|纳灰|八卦田/u.test(text)) return '万峰林喀斯特峰丛、纳灰河水渠和田块村路';
+  if (/格聂|理塘|禾尼|奔戈|下则通|然日卡/u.test(text)) return '格聂神山周边高山草甸、雪线山口和融雪溪沟';
+  if (/新都桥|折多|康定/u.test(text)) return '折多山以西的高原草甸、贡嘎远山和针叶林坡';
+  if (/左贡|芒康|巴塘|东达/u.test(text)) return '横断山高海拔山口、澜沧江峡谷和针叶林坡';
+  if (/子梅|贡嘎|上木居/u.test(text)) return '贡嘎西坡雪山垭口、针叶林线和高山草甸';
+  if (/深圳|珠三角|江门|开平|赤坎/u.test(text)) return '珠三角湿热平原高速、桥面水汽和城镇灯带';
+  if (/南宁|百色|灵山|田东|册亨/u.test(text)) return '桂西到黔西南的喀斯特丘陵、高速桥隧和常绿山地';
+  return '';
+}
+
+function vegetationHintForGeo(value) {
+  const text = String(value || '');
+  if (/察瓦龙|丙中洛|贡山|怒江大峡谷|高黎贡|碧罗/u.test(text)) {
+    return '干热河谷灌丛、云南松和针阔混交林';
+  }
+  if (/古玉|慈巴沟|竹瓦根|桑曲|雅热|雄珠拉|德姆拉|察隅/u.test(text)) {
+    return '高山针叶林、杜鹃灌丛和冷杉林线';
+  }
+  if (/然乌|来古|波密|米堆|八宿|帕隆藏布/u.test(text)) {
+    return '高山针叶林、杜鹃灌丛和湖岸草甸';
+  }
+  if (/格聂|理塘|禾尼|奔戈|下则通|然日卡|新都桥|折多|康定|子梅|贡嘎|上木居/u.test(text)) {
+    return '高山草甸、杜鹃灌丛和冷杉林线';
+  }
+  if (/左贡|芒康|巴塘|东达|金沙江|澜沧江/u.test(text)) {
+    return '高山灌丛、河谷草坡和针叶林坡';
+  }
+  if (/抚仙湖|澄江|江川/u.test(text)) {
+    return '云南松林、湖岸灌丛和农田植被';
+  }
+  if (/兴义|黔西南|万峰林|纳灰|八卦田/u.test(text)) {
+    return '喀斯特灌草坡、田埂植被和常绿阔叶林';
+  }
+  if (/南宁|百色|灵山|田东|册亨/u.test(text)) {
+    return '亚热带常绿阔叶林、竹木灌丛和喀斯特石山植被';
+  }
+  if (/深圳|珠三角|江门|开平|赤坎/u.test(text)) {
+    return '南亚热带常绿阔叶林和路侧绿化';
+  }
+  return '';
+}
+
+function transportFacilityHintForClip(clip) {
+  const geo = clip?.geoContext ?? {};
+  return transportFacilityHintForGeo({
+    lat: geo.lat,
+    lng: geo.lng,
+    text: [
+      geo.rawLocationText,
+      geo.label,
+      clip?.eventTitle,
+      clip?.chronologyContext?.title,
+      clip?.chronologyContext?.route,
+      clip?.description,
+      clip?.visualObservation,
+    ].filter(Boolean).join('，'),
+  });
+}
+
+function transportFacilityHintForGeo({ lat, lng, text = '' } = {}) {
+  const cleanText = sanitizeDescriptionPart(text);
+  const explicit = extractTransportFacilityName(cleanText);
+  if (explicit) return { label: explicit, terrain: terrainHintForGeo(explicit) || transportFacilityTerrain(explicit) };
+
+  const latNumber = Number(lat);
+  const lngNumber = Number(lng);
+  if (
+    Number.isFinite(latNumber) &&
+    Number.isFinite(lngNumber) &&
+    latNumber >= 22.43 &&
+    latNumber <= 22.62 &&
+    lngNumber >= 113.12 &&
+    lngNumber <= 113.82 &&
+    /深圳|中山|江门|珠三角|高速|桥|桥面|桥体|通道|出城|西行|车流|雨|雾/u.test(cleanText)
+  ) {
+    return {
+      label: '深中通道',
+      terrain: '深中通道跨越伶仃洋的海面桥隧、珠江口水汽和桥面车流',
+    };
+  }
+  return null;
+}
+
+function extractTransportFacilityName(value) {
+  const text = String(value || '');
+  const explicit = text.match(/深中通道|港珠澳大桥|黄茅海跨海通道|虎门大桥|南沙大桥|金沙江大桥|平陆运河旧州特大桥|怒江72拐/u)?.[0];
+  if (explicit) return explicit;
+  const generic = text.match(/([\p{Script=Han}A-Za-z0-9]{2,24}(?:特大桥|大桥|隧道|通道|互通|收费站|立交|枢纽))/u)?.[1];
+  if (!generic) return '';
+  if (/项目部|管理中心|停车场|观赏点|旅游集散中心|生活营地|办公室/u.test(generic)) return '';
+  return generic;
+}
+
+function transportFacilityTerrain(name) {
+  const text = String(name || '');
+  if (/大桥|通道/u.test(text)) return '桥面、江河湖海水汽和跨水交通线';
+  if (/隧道/u.test(text)) return '山体隧道、洞口光线和连续道路';
+  if (/互通|立交|枢纽/u.test(text)) return '高速互通、匝道和车流转向';
+  if (/收费站/u.test(text)) return '高速收费站、车道灯光和通行节点';
+  return '';
+}
+
+function roundCoordinate(value) {
+  return Math.round(Number(value) * 1_000_000) / 1_000_000;
+}
+
 function buildClipPacket(context) {
   const fps = Number(context.timelineExport.fps) > 0 ? Number(context.timelineExport.fps) : 30;
   const subtitleItems = (context.timelineExport.subtitleItems ?? [])
@@ -362,13 +667,17 @@ function buildClipPacket(context) {
       ? previousClipCandidate
       : null;
     const staleResolveNameClipId = previousClipCandidate && !previousClip ? clipId : '';
-    const hostClip = previousClip?.id ? context.contentIndex.hostClipsById.get(previousClip.id) : null;
     const slot = previousClip?.linkedScriptBeatId
       ? context.contentIndex.slotsById.get(previousClip.linkedScriptBeatId)
       : null;
     const asset = currentSourceAsset ?? resolveAssetForItem(item, previousClip, context.contentIndex);
     const span = resolveSpanForItem(item, previousClip, asset, context.contentIndex);
     const sourceRange = sourceRangeForItem(item, asset, fps);
+    const geoContext = resolveClipGeoContext({
+      asset,
+      sourceRange,
+      spatialIndex: context.spatialIndex,
+    });
     const subtitleOverlaps = subtitleItems
       .filter(subtitle => rangesOverlapFrames(item, subtitle, fps))
       .map(subtitle => ({
@@ -413,6 +722,7 @@ function buildClipPacket(context) {
           : 'visual';
     const visualObservation = narrationVisualEvidence?.visualObservation
       ?? (typeof span?.visualObservation === 'string' ? span.visualObservation : undefined);
+    const eventTitle = safeHumanLabel(chronologyContext?.title || '');
     return {
       index: itemIndex + 1,
       resolveTrackIndex: item.trackIndex,
@@ -446,9 +756,10 @@ function buildClipPacket(context) {
       contentKind,
       semanticKind: span?.semanticKind || undefined,
       visualObservation,
+      ...(geoContext ? { geoContext } : {}),
       ...(narrationVisualEvidence ? { narrationVisualEvidence } : {}),
       chronologyContext: chronologyContext || undefined,
-      eventTitle: hostClip?.eventTitle || chronologyContext?.title || eventTitleFromResolveName(item.name, item.sourceStem),
+      eventTitle: eventTitle || undefined,
       description: describeClip({
         hasSubtitle,
         frameworkClass,
@@ -458,8 +769,9 @@ function buildClipPacket(context) {
         subtitleText,
         subtitleSummary,
         slotQuery: slot?.query,
-        eventTitle: hostClip?.eventTitle || chronologyContext?.title || eventTitleFromResolveName(item.name, item.sourceStem),
+        eventTitle,
         chronologyContext,
+        geoContext,
         resolveName: item.name,
         sourceStem: item.sourceStem,
       }),
@@ -576,7 +888,8 @@ function buildFrameworkEntries(packet) {
       mergeGroupId = `speech-merge-${String(speechMergeIndex).padStart(4, '0')}`;
       for (const speechClip of group) {
         speechClip.frameworkSpeechMergeGroupId = mergeGroupId;
-        speechClip.frameworkSpeechMergeReason = [...new Set(mergeReasons)].join('+');
+        speechClip.frameworkSpeechMergeReason = 'approved-framework-mouth-pack-summary-only';
+        speechClip.frameworkSpeechMergeEvidence = [...new Set(mergeReasons)].join('+') || undefined;
       }
     }
     entries.push(buildSpeechFrameworkEntry(entries.length + 1, group));
@@ -838,9 +1151,8 @@ function hasSpeechEventConflict(left, right) {
 }
 
 function normalizedSpeechEventTitle(clip) {
-  const direct = sanitizeDescriptionPart(clip?.eventTitle || '');
-  const fallback = direct || sanitizeDescriptionPart(eventTitleFromResolveName(clip?.resolveName, clip?.sourceStem));
-  return normalizeComparisonText(fallback.replace(/口播$/u, ''));
+  const title = safeHumanLabel(clip?.eventTitle || clip?.chronologyContext?.title || '');
+  return normalizeComparisonText(title.replace(/口播$/u, ''));
 }
 
 function sameEventSpeechContinuityReason(left, right, fps) {
@@ -879,12 +1191,20 @@ function buildFrameworkPacks(packet, frameworkEntries) {
     const group = [entry];
     let cursor = index + 1;
     if (isDriveFrameworkEntry(entry, clipByIndex)) {
-      while (cursor < frameworkEntries.length && isDriveFrameworkEntry(frameworkEntries[cursor], clipByIndex)) {
+      while (
+        cursor < frameworkEntries.length
+        && isDriveFrameworkEntry(frameworkEntries[cursor], clipByIndex)
+        && sameFrameworkPackContext(group[group.length - 1], frameworkEntries[cursor], clipByIndex)
+      ) {
         group.push(frameworkEntries[cursor]);
         cursor += 1;
       }
     } else if (isAerialFrameworkEntry(entry)) {
-      while (cursor < frameworkEntries.length && isAerialFrameworkEntry(frameworkEntries[cursor])) {
+      while (
+        cursor < frameworkEntries.length
+        && isAerialFrameworkEntry(frameworkEntries[cursor])
+        && sameFrameworkPackContext(group[group.length - 1], frameworkEntries[cursor], clipByIndex)
+      ) {
         group.push(frameworkEntries[cursor]);
         cursor += 1;
       }
@@ -906,6 +1226,24 @@ function isDriveFrameworkEntry(entry, clipByIndex) {
 
 function isAerialFrameworkEntry(entry) {
   return entry?.marker === 'aerial';
+}
+
+function sameFrameworkPackContext(leftEntry, rightEntry, clipByIndex) {
+  const leftClips = (leftEntry?.clipIndices ?? []).map(clipIndex => clipByIndex.get(clipIndex)).filter(Boolean);
+  const rightClips = (rightEntry?.clipIndices ?? []).map(clipIndex => clipByIndex.get(clipIndex)).filter(Boolean);
+  if (leftClips.length === 0 || rightClips.length === 0) return false;
+  const leftContext = packContextKey(leftClips);
+  const rightContext = packContextKey(rightClips);
+  if (!leftContext || !rightContext) return true;
+  return leftContext === rightContext;
+}
+
+function packContextKey(clips) {
+  const eventIds = [...new Set(clips.map(clip => clip.chronologyContext?.eventId).filter(Boolean))];
+  if (eventIds.length === 1) return `event:${eventIds[0]}`;
+  const titles = [...new Set(clips.map(clip => normalizeComparisonText(clip.eventTitle || '')).filter(Boolean))];
+  if (titles.length === 1) return `title:${titles[0]}`;
+  return '';
 }
 
 function buildFrameworkPack(packIndex, entries, clipByIndex) {
@@ -938,7 +1276,7 @@ function frameworkPackType(entry, entries, clipByIndex) {
 
 function frameworkPackTitle(type, entries, clips) {
   const chronology = commonChronologyLabel(clips);
-  const event = commonNonEmpty(clips.map(clip => clip.eventTitle));
+  const event = commonNonEmpty(clips.map(clip => safeHumanLabel(clip.eventTitle)));
   const route = routeTitleForClips(clips);
   const fallback = shortenRouteTitle(event || entries[0]?.description || clips[0]?.sourceStem || '当前片段');
   if (type.includes('行车') && route) return route;
@@ -951,7 +1289,7 @@ function frameworkPackTitle(type, entries, clips) {
 
 function routeTitleForClips(clips) {
   const titles = clips
-    .map(clip => sanitizeDescriptionPart(clip.eventTitle || ''))
+    .map(clip => safeHumanLabel(clip.eventTitle || ''))
     .filter(title => /→/.test(title));
   if (titles.length === 0) return '';
   return shortenRouteTitle(commonNonEmpty(titles) || titles[0]);
@@ -962,12 +1300,53 @@ function frameworkPackSummary(type, entries, clips) {
   const descriptions = entries.map(entry => sanitizeEntryText(entry.description)).filter(Boolean);
   const context = frameworkPackTitle(type, entries, clips);
   if (type === '行车 pack') {
-    return clampDescription(`${context}，${descriptions[0]}，${descriptions.at(-1)}`, 150);
+    return summarizeMovementPack(context, descriptions, clips, '行车');
   }
   if (type === '航拍 pack') {
-    return clampDescription(`${context}，${descriptions.slice(0, 3).join('；')}`, 150);
+    return summarizeMovementPack(context, descriptions, clips, '航拍');
   }
   return clampDescription(descriptions.slice(0, 3).join('；'), 150);
+}
+
+function summarizeMovementPack(context, descriptions, clips, kind) {
+  const parts = [];
+  const title = sanitizeDescriptionPart(context);
+  if (title) parts.push(title);
+  const geoSummary = packGeoFeatureSummary(clips);
+  if (geoSummary && !parts.some(part => isSimilarText(part, geoSummary))) parts.push(geoSummary);
+  const arc = packDescriptionArc(descriptions);
+  if (arc && !parts.some(part => isSimilarText(part, arc))) parts.push(arc);
+  if (parts.length === 0) return clampDescription(descriptions.slice(0, 3).join('；'), 150);
+  const lead = kind === '航拍' ? '航拍围绕' : '';
+  return clampDescription(`${lead}${parts.join('，')}`, 150);
+}
+
+function packGeoFeatureSummary(clips) {
+  const labels = [];
+  const features = [];
+  for (const clip of clips) {
+    const label = geoNarrativeLabelForClip(clip);
+    if (label && !labels.some(existing => isSimilarText(existing, label))) labels.push(label);
+    const feature = geoNarrativeFeatureForClip(clip, label);
+    if (feature && !features.some(existing => isSimilarText(existing, feature))) features.push(feature);
+  }
+  const labelSummary = labels.slice(0, 2).join('、');
+  const featureSummary = features.slice(0, 2).join('，');
+  if (labelSummary && featureSummary) return `${labelSummary}一带，${featureSummary}`;
+  return labelSummary || featureSummary;
+}
+
+function packDescriptionArc(descriptions) {
+  const picks = [];
+  const add = value => {
+    const clean = sanitizeDescriptionPart(value);
+    if (!clean || picks.some(existing => isSimilarText(existing, clean))) return;
+    picks.push(clean);
+  };
+  add(descriptions[0]);
+  if (descriptions.length > 2) add(descriptions[Math.floor(descriptions.length / 2)]);
+  add(descriptions.at(-1));
+  return picks.slice(0, 3).join('；');
 }
 
 function buildClipMap(frameworkEntries, frameworkPacks) {
@@ -1017,6 +1396,7 @@ function extractFrameworkPackTitles(frameworkText) {
 }
 
 function buildFrameworkMarkdown(packet, frameworkPacks, createdAt) {
+  const clipByIndex = new Map(packet.clips.map(clip => [clip.index, clip]));
   const lines = [
     '主题：丙察察格聂南线子梅垭口穿越，自驾穿越与风光摄影',
     '季节：五一前后，滇藏川高原春末夏初',
@@ -1030,11 +1410,11 @@ function buildFrameworkMarkdown(packet, frameworkPacks, createdAt) {
       lines.push(`   - clips：${formatClipRange(pack.entries[0].clipIndices)}`);
     } else if (pack.entries.length === 1) {
       lines.push('   - clips：');
-      lines.push(`     - ${formatClipRange(pack.entries[0].clipIndices)}｜${sanitizeEntryText(pack.entries[0].description)}`);
+      lines.push(formatFrameworkEntryLine(pack.entries[0], clipByIndex));
     } else {
       lines.push('   - clips：');
       for (const entry of pack.entries) {
-        lines.push(`     - ${formatClipRange(entry.clipIndices)}｜${sanitizeEntryText(entry.description)}`);
+        lines.push(formatFrameworkEntryLine(entry, clipByIndex));
       }
     }
   }
@@ -1045,6 +1425,228 @@ function buildFrameworkMarkdown(packet, frameworkPacks, createdAt) {
     `生成时间：${createdAt}`,
   );
   return `${lines.join('\n')}\n`;
+}
+
+function formatFrameworkEntryLine(entry, clipByIndex) {
+  return `     - ${formatClipRange(entry.clipIndices)}｜${sanitizeEntryText(entry.description)}${preciseGeoNoteForEntry(entry, clipByIndex)}`;
+}
+
+function preciseGeoNoteForEntry(entry, clipByIndex) {
+  if (!entry || entry.marker === 'speech' || entry.clipIndices?.length !== 1) return '';
+  const clip = clipByIndex.get(entry.clipIndices[0]);
+  if (!clip || clip.hasSubtitle || !clip.geoContext) return '';
+  return preciseGeoNoteForClip(clip);
+}
+
+function preciseGeoNoteForClip(clip) {
+  const geo = clip.geoContext;
+  if (!Number.isFinite(Number(geo?.lat)) || !Number.isFinite(Number(geo?.lng))) return '';
+  const label = geoNarrativeLabelForClip(clip);
+  const terrain = geoNarrativeFeatureForClip(clip, label);
+  const parts = [];
+  if (label) parts.push(label);
+  if (terrain && !parts.some(part => isSimilarText(part, terrain))) parts.push(terrain);
+  if (parts.length === 0) return '';
+  return `（定位：${parts.filter(Boolean).join('；')}）`;
+}
+
+function geoNarrativeLabelForClip(clip) {
+  const geo = clip?.geoContext;
+  const candidates = [
+    geo?.rawLocationText,
+    geo?.label,
+    clip?.chronologyContext?.location,
+  ];
+  if (clip?.contentKind !== 'drive') {
+    candidates.push(clip?.eventTitle, commonChronologyLabel([clip]));
+  }
+  for (const candidate of candidates) {
+    const label = cleanNarrativeGeoLabel(candidate);
+    if (label) return label;
+  }
+  const transportFacility = transportFacilityHintForClip(clip);
+  if (transportFacility?.label) return transportFacility.label;
+  if (clip?.contentKind === 'drive') {
+    const fallback = commonRouteAreaLabel(clip?.eventTitle || clip?.chronologyContext?.title || '');
+    if (fallback) return fallback;
+  }
+  return '';
+}
+
+function cleanNarrativeGeoLabel(value) {
+  const clean = sanitizeDescriptionPart(value);
+  if (!clean || containsRouteArrow(clean)) return '';
+  const label = cleanGeoLabel(clean);
+  if (!label || containsRouteArrow(label)) return '';
+  if (/^(中国|四川省|云南省|贵州省|西藏自治区|广东省|广西壮族自治区)$/u.test(label)) return '';
+  return label;
+}
+
+function commonRouteAreaLabel(value) {
+  const clean = sanitizeDescriptionPart(value).replace(/^行车[:：]?/u, '');
+  if (!containsRouteArrow(clean)) return '';
+  const endpoints = clean
+    .split(/\s*(?:→|->)\s*/u)
+    .map(part => sanitizeDescriptionPart(part))
+    .filter(Boolean);
+  if (endpoints.length < 2) return '';
+  const endpointLabels = endpoints.map(endpoint => {
+    const [admin] = endpoint.split(/\s*·\s*/u);
+    const parts = admin.split(/[，,]/u).map(part => part.trim()).filter(Boolean);
+    return parts.slice(-2).join('');
+  }).filter(Boolean);
+  if (endpointLabels.length < 2) return '';
+  const first = endpointLabels[0];
+  if (endpointLabels.every(label => label === first)) return `${first}附近`;
+  const commonPrefix = longestCommonCjkPrefix(endpointLabels);
+  return commonPrefix.length >= 4 ? `${commonPrefix}一带` : '';
+}
+
+function longestCommonCjkPrefix(values) {
+  if (!values.length) return '';
+  let prefix = values[0];
+  for (const value of values.slice(1)) {
+    while (prefix && !value.startsWith(prefix)) {
+      prefix = prefix.slice(0, -1);
+    }
+  }
+  return prefix.replace(/[省市县区镇乡街道]+$/u, match => match);
+}
+
+function geoNarrativeFeatureForClip(clip, label = '') {
+  const geo = clip?.geoContext;
+  const text = [
+    geo?.rawLocationText,
+    geo?.label,
+    label,
+    clip?.eventTitle,
+    clip?.chronologyContext?.title,
+    clip?.chronologyContext?.location,
+    clip?.description,
+    clip?.visualObservation,
+  ].filter(Boolean).join('，');
+  const transportFacility = transportFacilityHintForClip(clip);
+  const terrain = sanitizeDescriptionPart(transportFacility?.terrain || geo?.terrain || terrainHintForGeo(text));
+  const visualFeatures = selectVisibleGeoFeatureLabelsForTerrain(
+    terrain,
+    visibleGeoFeatureRowsFromText([clip?.description, clip?.visualObservation].filter(Boolean).join('，'), text),
+  ).join('、');
+  if (terrain && visualFeatures && !isSimilarText(terrain, visualFeatures)) {
+    return clampDescription(`${terrain}，${visualFeatures}`, 72);
+  }
+  return terrain || visualFeatures;
+}
+
+function visibleGeoFeaturesFromText(value, contextText = '') {
+  return selectVisibleGeoFeatureLabelsForTerrain('', visibleGeoFeatureRowsFromText(value, contextText)).join('、');
+}
+
+function visibleGeoFeatureRowsFromText(value, contextText = '') {
+  const text = String(value || '');
+  const fullText = [contextText, text].filter(Boolean).join('，');
+  const features = [];
+  const add = (label, pattern, category) => {
+    if (!pattern.test(text)) return;
+    if (features.some(feature => feature.category === category || feature.label === label)) return;
+    features.push({ label, category });
+  };
+  add('雪山', /雪山|雪峰|雪坡|雪线|雪地/u, 'snow');
+  add('江河湖泊', /怒江|澜沧江|金沙江|河|江|湖|水渠|溪|湖面|江水|河道/u, 'water');
+  add('峡谷崖壁', /峡谷|崖|岩壁|石墙|山谷|深谷/u, 'terrain');
+  add('高山草甸', /草甸|草地|草坡|牧场/u, 'vegetation');
+  const vegetationLabel = vegetationHintForGeo(fullText) || observedVegetationFeatureFromText(text);
+  if (vegetationLabel) {
+    add(vegetationLabel, /森林|树林|松林|杉林|林带|树|绿坡|绿山|植被|灌丛|灌木|阔叶|针叶/u, 'vegetation');
+  }
+  add('桥隧道路', /桥|隧道|护栏|弯道|盘山|山路|高速|公路|路牌/u, 'transport');
+  add('村寨建筑', /村|寨|屋|房|白塔|经幡|建筑/u, 'settlement');
+  return features;
+}
+
+function observedVegetationFeatureFromText(value) {
+  const text = String(value || '');
+  if (/冷杉|云杉|杉林|松林|松树|针叶/u.test(text)) return '针叶林坡';
+  if (/常绿阔叶|阔叶/u.test(text)) return '常绿阔叶林坡';
+  if (/灌丛|灌木/u.test(text)) return '灌丛坡';
+  if (/森林|树林|密林/u.test(text)) return '森林坡地';
+  if (/绿坡|绿山|植被/u.test(text)) return '山坡植被';
+  return '';
+}
+
+function selectVisibleGeoFeatureLabelsForTerrain(terrain, featureRows) {
+  const terrainText = sanitizeDescriptionPart(terrain);
+  const labels = [];
+  const categories = new Set();
+  for (const feature of featureRows) {
+    if (!feature?.label || !feature?.category) continue;
+    if (categories.has(feature.category)) continue;
+    if (terrainText && geoTextCoversFeatureCategory(terrainText, feature.category)) continue;
+    if (terrainText && isSimilarText(terrainText, feature.label)) continue;
+    labels.push(feature.label);
+    categories.add(feature.category);
+    if (labels.length >= 3) break;
+  }
+  return labels;
+}
+
+function geoTextCoversFeatureCategory(value, category) {
+  const text = String(value || '');
+  if (!text) return false;
+  switch (category) {
+    case 'snow':
+      return /雪山|雪峰|雪坡|雪线|雪地|冰川|冰川湖|贡嘎远山|格聂神山/u.test(text);
+    case 'water':
+      return /怒江|澜沧江|金沙江|帕隆藏布|纳灰河|珠江口|伶仃洋|江湾|江水|河谷|河道|河水|湖|水渠|溪|海面|融雪溪沟/u.test(text);
+    case 'terrain':
+      return /峡谷|崖壁|岩壁|石墙|山谷|深谷|峰丛|山口|垭口|山坡|陡坡|丘陵|湖盆|夹峙/u.test(text);
+    case 'vegetation':
+      return /常绿阔叶|针阔混交|针叶|阔叶|云南松|松林|冷杉|杜鹃|灌丛|草甸|草坡|牧场|林坡|林带|森林|植被|常绿山地|农田植被/u.test(text);
+    case 'transport':
+      return /桥隧|桥|隧道|护栏|弯道|盘山|山路|高速|公路|路牌|道路|车流|收费站|互通|通道/u.test(text);
+    case 'settlement':
+      return /村寨|村落|山村|村路|村|寨|屋|房|白塔|经幡|建筑|民居|镇|乡/u.test(text);
+    default:
+      return false;
+  }
+}
+
+function isSimilarText(left, right) {
+  const leftText = normalizeComparisonText(left);
+  const rightText = normalizeComparisonText(right);
+  return Boolean(leftText && rightText && (leftText.includes(rightText) || rightText.includes(leftText)));
+}
+
+function buildPreciseGeoAudit(packet) {
+  const rows = [];
+  for (const clip of packet.clips ?? []) {
+    if (clip.hasSubtitle || !clip.geoContext) continue;
+    const note = preciseGeoNoteForClip(clip);
+    rows.push({
+      clipIndex: clip.index,
+      hasSubtitle: false,
+      contentKind: clip.contentKind,
+      frameworkClass: clip.frameworkClass,
+      source: clip.geoContext.source,
+      lng: clip.geoContext.lng,
+      lat: clip.geoContext.lat,
+      time: clip.geoContext.time,
+      deltaMs: clip.geoContext.deltaMs,
+      confidence: clip.geoContext.confidence,
+      label: geoNarrativeLabelForClip(clip),
+      terrain: geoNarrativeFeatureForClip(clip),
+      rawLocationText: clip.geoContext.rawLocationText,
+      markdownNote: note,
+    });
+  }
+  return {
+    schemaVersion: 'postlock-narration-framework-precise-geo-v2',
+    generatedFrom: 'projects/<projectId>/.tmp/edit-flow/<editId>/postlock/current-timeline-clip-packet.json',
+    coordinateOrder: 'lng,lat',
+    markdownPolicy: 'no-source-label-no-delta-no-raw-coordinate',
+    nonSpeechGeoCount: rows.length,
+    annotatedLeafCount: rows.filter(row => row.markdownNote).length,
+    rows,
+  };
 }
 
 function formatClipRange(clipIndices) {
@@ -1076,11 +1678,11 @@ function describeClip(input) {
 
 function describeSpeechGroup(clips) {
   const subtitleSummary = summarizeSpeechFromSubtitles(clips.flatMap(clip => subtitleTextsForClip(clip)));
-  const title = commonNonEmpty(clips.map(clip => clip.eventTitle))
-    || commonNonEmpty(clips.map(clip => eventTitleFromResolveName(clip.resolveName, clip.sourceStem)));
+  const title = commonChronologyLabel(clips)
+    || commonNonEmpty(clips.map(clip => safeHumanLabel(clip.eventTitle)));
   if (subtitleSummary) {
     const label = title ? `${shortenRouteTitle(sanitizeDescriptionPart(title))}口播` : '口播';
-    return clampDescription(`${label}：${subtitleSummary}`, 136);
+    return clampDescription(`${label}：${subtitleSummary}`, 100);
   }
 
   const slotQuery = commonNonEmpty(clips.map(clip => clip.slotQuery));
@@ -1447,7 +2049,7 @@ function cleanupSpeechDetail(text) {
 
 function commonNonEmpty(values) {
   const normalized = values
-    .map(value => sanitizeDescriptionPart(value))
+    .map(value => safeHumanLabel(value))
     .filter(Boolean);
   if (normalized.length === 0) return '';
   const first = normalized[0];
@@ -1467,12 +2069,17 @@ function visualDescription(input) {
   const parts = [];
   const prefix = prefixForContentKind(input);
   if (prefix) parts.push(prefix);
-  const observation = sanitizeDescriptionPart(input.narrationVisualEvidence?.visualObservation || input.visualObservation || '');
+  const rawObservation = sanitizeDescriptionPart(input.narrationVisualEvidence?.visualObservation || input.visualObservation || '')
+    .replace(/黄色车|黄车/g, '车辆')
+    .replace(/yellow vehicle/ig, 'vehicle')
+    .replace(/yellow car/ig, 'vehicle');
+  const observation = localizeVisualObservation(input, rawObservation);
   if (observation && !parts.includes(observation)) {
     parts.push(observation);
   }
+  const eventContext = safeHumanLabel(input.eventTitle || input.chronologyContext?.title || '');
   const context = commonChronologyLabel([input])
-    || shortenRouteTitle(sanitizeDescriptionPart(input.eventTitle || eventTitleFromResolveName(input.resolveName, input.sourceStem)));
+    || shortenRouteTitle(eventContext);
   if (context && !parts.some(part => normalizeComparisonText(part).includes(normalizeComparisonText(context)))) {
     parts.push(context);
   }
@@ -1486,12 +2093,56 @@ function describeTimelapseClip(input) {
   const arc = inferTimelapseArc([input]);
   if (arc && !parts.includes(arc)) parts.push(arc);
 
-  const observation = sanitizeDescriptionPart(input.narrationVisualEvidence?.visualObservation || input.visualObservation || '');
+  const observation = localizeVisualObservation(
+    input,
+    sanitizeDescriptionPart(input.narrationVisualEvidence?.visualObservation || input.visualObservation || ''),
+  );
   if (observation && !shouldSkipTimelapseSequencePart(observation, parts)) {
     parts.push(observation);
   }
 
   return clampDescription(parts.filter(Boolean).join('，'), 180);
+}
+
+function localizeVisualObservation(input, observation) {
+  const clean = sanitizeDescriptionPart(observation);
+  if (!clean) return '';
+  if (!isEnglishHeavyGeneratedText(clean)) return clean;
+  return fallbackChineseVisualObservation(input, clean);
+}
+
+function isEnglishHeavyGeneratedText(text) {
+  const words = String(text || '').match(/[A-Za-z][A-Za-z-]{2,}/g) ?? [];
+  const meaningful = words.filter(word => !/^(GPS|DJI|MP4|MOV|CINE|LOG)$/i.test(word));
+  if (meaningful.length >= 4) return true;
+  const cjkCount = (String(text || '').match(/[\u3400-\u9fff]/g) ?? []).length;
+  const latinCount = meaningful.join('').length;
+  return latinCount >= 24 && latinCount > cjkCount;
+}
+
+function fallbackChineseVisualObservation(input, englishText) {
+  const text = String(englishText || '').toLowerCase();
+  const parts = [];
+  const prefix = prefixForContentKind(input);
+  if (prefix === '开车') parts.push('车辆沿道路前进');
+  else if (prefix === '航拍') parts.push('航拍从高处展开空间关系');
+  else if (prefix === '延时') parts.push('延时记录天气和光线变化');
+  else parts.push('画面记录现场环境');
+
+  const add = (label, pattern) => {
+    if (pattern.test(text) && !parts.some(part => isSimilarText(part, label))) parts.push(label);
+  };
+  add('雨湿路面和车流灯光被拉长', /wet|rain|slick|taillight|streetlight|night/);
+  add('桥梁、高架或隧道接入路线', /bridge|overpass|tunnel|viaduct|gantry/);
+  add('山体、峡谷和弯道贴近道路', /mountain|valley|gorge|slope|cliff|winding|curve/);
+  add('村寨、田块和道路连在一起', /village|field|farmland|terrace|house|building/);
+  add('湖面、河道或水渠进入画面', /lake|river|water|canal|stream/);
+  add('雪山、积雪和高原冷光压住视线', /snow|snowy|ice|peak|glacier/);
+  add('森林、绿坡和林带贴着路边', /forest|tree|green|vegetation|lush/);
+
+  const geoFeature = geoNarrativeFeatureForClip(input);
+  if (geoFeature && !parts.some(part => isSimilarText(part, geoFeature))) parts.push(geoFeature);
+  return clampDescription(parts.join('，'), 112);
 }
 
 function prefixForContentKind(input) {
@@ -1522,6 +2173,29 @@ function sanitizeDescriptionPart(text) {
     .replace(/^，|，$/g, '')
     .trim()
     .slice(0, 180);
+}
+
+function safeHumanLabel(value) {
+  const clean = sanitizeDescriptionPart(value);
+  if (!clean || isMojibakeText(clean)) return '';
+  return clean;
+}
+
+function isMojibakeText(value) {
+  const text = String(value || '');
+  if (!text) return false;
+  if (/�/.test(text)) return true;
+  const latinRuns = text.match(/[A-Za-zÀ-ÿ]{8,}/g) ?? [];
+  return latinRuns.some(run => /[À-ÿ]/u.test(run));
+}
+
+function isEnglishHeavyDescription(value) {
+  const text = String(value || '');
+  const words = text.match(/[A-Za-z][A-Za-z-]{2,}/g) ?? [];
+  const meaningful = words.filter(word => !/^(GPS|DJI|MP4|MOV|CINE|LOG)$/i.test(word));
+  const cjkCount = (text.match(/[\u3400-\u9fff]/g) ?? []).length;
+  const latinCount = meaningful.join('').length;
+  return meaningful.length >= 4 || (latinCount >= 24 && latinCount > cjkCount);
 }
 
 function resolveAssetForItem(item, previousClip, index) {
@@ -1817,14 +2491,6 @@ function extractClipId(name) {
   return match ? match[0] : '';
 }
 
-function eventTitleFromResolveName(name, sourceStem) {
-  let text = String(name || '').replace(/\bclip-\d{5}\b/i, '').trim();
-  if (sourceStem) {
-    text = text.replace(new RegExp(escapeRegExp(sourceStem) + '(?:\\.[A-Za-z0-9]+)?\\s*$', 'i'), '').trim();
-  }
-  return text.replace(/\.\.\.$/, '').trim();
-}
-
 function shortenRouteTitle(text) {
   return text
     .replace(/^行车[:：]\s*/, '行车')
@@ -1923,7 +2589,10 @@ function isGenericSpeechToken(value) {
 }
 
 function cleanSubtitleText(text) {
-  return sanitizeDescriptionPart(String(text || '').replace(/\r?\n/g, ' '));
+  return sanitizeDescriptionPart(String(text || '')
+    .replace(/\r?\n/g, ' ')
+    .replace(/\uFFFD+/g, '')
+    .replace(/[ÃÂ][\u0080-\u00ff]|â[\u0080-\u00ff]/gu, ''));
 }
 
 function isGenericSubtitleText(text) {
@@ -1987,10 +2656,6 @@ function hasCjk(value) {
   return /[\u3400-\u9fff]/.test(String(value || ''));
 }
 
-function escapeRegExp(value) {
-  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
 function resolveTimelineAuditPath(root, auditPath) {
   if (!auditPath) return '';
   return resolve(WORKSPACE_ROOT, auditPath);
@@ -2004,6 +2669,7 @@ function resolveOutputRoots(root, id) {
     officialPostlockRoot,
     rawResolveExportPath: join(tmpPostlockRoot, 'current-resolve-timeline-export.json'),
     packetPath: join(tmpPostlockRoot, 'current-timeline-clip-packet.json'),
+    preciseGeoPath: join(tmpPostlockRoot, 'narration-framework.precise-geo.json'),
     frameworkPath: join(officialPostlockRoot, 'narration-framework.md'),
     clipMapPath: join(officialPostlockRoot, 'narration-framework.clip-map.json'),
   };
