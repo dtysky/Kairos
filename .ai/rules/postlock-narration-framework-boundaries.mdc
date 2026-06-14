@@ -59,10 +59,10 @@ node scripts/validate-postlock-narration-framework.mjs projects/<projectId> <edi
 当任务从已确认的 `narration-framework.md` 继续生成 `edits/<editId>/postlock/subtitle-review.md`：
 
 - 必须先确认当前 `narration-framework.md` 已由用户人工确认；未确认时不得生成最终字幕审查稿或最终 SRT。
-- 输出必须是 markdown 表格，且只有三列：`对应旁白框架条目（若合并写多个）`、`事件和可读位置信息`、`生成旁白字幕`。
+- 输出结构、列名、行粒度、跳过规则和单元格内 clip 范围标注方式必须来自当前剪辑规则与 confirmed Flow Plan step notes；全局规则不得固定项目级表头或文案格式。
 - 必须参考 Flow Plan 授权的 `styleUsage.literary` 风格档案，并参考当前 Resolve timeline 中每个 clip 或 clip 序列组的真实时长；短 clip 或短序列组不得写超出可读时长的长句。
-- 连续相邻的行车或航拍视频可以先聚类判断整体动机，再按 CLIP 分开编写；第一 / 最后一个 CLIP 可以承担承上启下。承上启下可以参考前后有口播段落，但不得覆盖或改写已有口播字幕。
-- 照片和照片序列均不生成字幕；若表格保留对应行，`生成旁白字幕` 必须明确写 `不生成字幕`。
+- 连续相邻的行车或航拍视频可以先聚类判断整体动机，再按剪辑规则要求的行粒度 / clip 范围编写；第一 / 最后一个 CLIP 可以承担承上启下。承上启下可以参考前后有口播段落，但不得覆盖或改写已有口播字幕。
+- 照片和照片序列默认不生成旁白字幕；若当前剪辑规则要求保留对应行，单元格内容按剪辑规则指定的占位文本填写。
 - 被聚类且标记为 `开车` 的片段必须结合位置、路线 / 道路名推断，以及前置视觉分析中的景观事实来写；不能写成泛泛风景句，也不能编造无法定位的道路名。
 
 ## SubAgent Packet Rules

@@ -3,30 +3,29 @@
   "plannerPolicyVersion": "codex-agent-v1",
   "materialIdPolicyVersion": "human-source-v1",
   "materialTimePolicyVersion": "normalized-captured-at-v1",
-  "id": "edit-flow-main-travel-documentary-codex-20260521T064123Z",
+  "id": "edit-flow-main-travel-documentary-codex-20260614T055708Z",
   "projectId": "bingchacha-genie-south-zimeiyakou",
   "editId": "main",
   "editRuleCategory": "travel-documentary",
-  "editRuleHash": "3adfee06d81d5126118d01b29c020db478cc9b30f3ef87102c4115d45e574341",
-  "generatedAt": "2026-05-21T06:41:23.110Z",
-  "updatedAt": "2026-06-12T09:19:00.000Z",
+  "editRuleHash": "9c337dbf3056c925dc35c64205c312ae4579fb8bb5cdfd79cc1e1c71e1ee04a6",
+  "generatedAt": "2026-06-13T14:29:02.005Z",
+  "updatedAt": "2026-06-14T05:57:08.053Z",
   "status": "confirmed",
-  "confirmedAt": "2026-05-21T06:41:23.110Z",
-  "summary": "codex-agent-v1 旅行纪录片剪辑流：按当前用户维护剪辑规则生成 edit.framework handoff，再按 framework/spans/assets 做素材召回，随后同步 Resolve Media Pool、生成粗剪时间线、人工锁定粗剪；锁定后进入“字幕和旁白”：先由用户在达芬奇中识别口播字幕，再由 SubAgent 为无语音段落生成旁白框架，人工确认后生成最终字幕审查稿，最后生成 SRT 并提示用户手动导入达芬奇。",
+  "confirmedAt": "2026-06-13T14:29:02.005Z",
+  "summary": "codex-agent-v1 旅行纪录片剪辑流：按当前用户维护剪辑规则生成 edit.framework handoff 与素材召回、Resolve 同步、粗剪时间线和人工锁定；锁定后进入字幕和旁白：达芬奇识别口播字幕、以当前 post-lock Resolve timeline/clip packet 和已确认旁白框架为真相生成最终字幕审查稿，审查稿的表格列名、合并粒度、照片占位和 clip 范围写法均继承当前剪辑规则附录，不在全局规则或 skill 中写死。",
   "assumptions": [
     "当前 travel-documentary 规则没有明确要求独立事件表、行程表、素材档案或素材库文档，因此不生成 trip.event_table 或 material.archive。",
     "“LLM生成文本稿件”在初版剪辑框架阶段解释为 edit.framework 的可审查 handoff，而不是额外 script.generate step。",
     "edit.framework 可以读取 confirmed chronology 作为上游事实理解输入，但输出不能写 chronology/event/route/gap/span/asset id，也不能新增规则源没有的边界清单。",
-    "当前用户维护剪辑规则的剪辑框架附录包含全片章节、分段操作稿、不可用/缺口、人工审查点；本 Flow Plan 不额外添加任何规则源没有的固定章节。",
-    "material.recall 固定只消费 edit-framework.md、store/spans.json、store/assets.json；span 的真实时间由 corrected asset.capturedAt 与 source range 计算，不消费 chronology 或 asset reports。",
-    "material-slots.json 的 chosenSpanIds 是选择真相；treatments 是稀疏覆盖表，缺少 treatments[spanId]、audio 或 speed 时按默认 {audio:0,speed:1} 读取。",
-    "resolve.media_sync 和 timeline.generate 仍可读取 media/chronology.json，但只用于 Resolve Media Pool bin、路径和上下文映射，不能改变 material-slots 的选择或顺序。",
+    "material.recall 固定只消费 edit-framework.md、store/spans.json、store/assets.json；span 的真实时间由 corrected asset.capturedAt 与 source range 计算。",
+    "resolve.media_sync 和 timeline.generate 可读取 media/chronology.json，但只用于 Resolve Media Pool bin、路径和上下文映射，不能改变 material-slots 的选择或顺序。",
     "“字幕和旁白”阶段按规则拆成四步：达芬奇识别口播字幕、生成无语音段落旁白框架、生成最终字幕审查稿、生成最终 SRT 并提示手动导入达芬奇。",
+    "最终字幕审查稿的表格结构、列名、照片/口播处理和 clip 范围写法来自当前用户维护剪辑规则；Flow Plan 只把这些规则转写进当前 step notes，不把它们提升为全局硬编码。",
     "所选风格档案只授权给 postlock.subtitle_narration 的最终字幕/旁白文字写作；粗剪结构、素材召回、静音和加速规则只来自剪辑规则与 reviewed planning artifacts。"
   ],
   "styleUsage": {
     "styleCategory": "china-drive-travel-documentary-main",
-    "styleProfileHash": "2a170c1a65f4d3ae9b64d4d99e76a02f3498170e31c798b7ed668592dc4b52ad",
+    "styleProfileHash": "ea7bfb297b11c1d64565a03126856e771ef70406c0290734862bda024d62afd3",
     "styleProfileVersion": "layered-v1",
     "layers": {
       "literary": {
@@ -47,7 +46,7 @@
         "rationale": "当前粗剪节奏、素材排序、静音和加速规则已由 travel-documentary 剪辑规则显式定义。"
       }
     },
-    "rationale": "风格档案是 Edit Unit 绑定的后锁定字幕/旁白文字风格输入，不替代剪辑规则或粗剪结构。"
+    "rationale": "风格档案是 Edit Unit 绑定的后锁定字幕/旁白文字风格输入；最终审查稿格式与列名来自当前剪辑规则和 confirmed Flow Plan notes，不由全局规则写死。"
   },
   "steps": [
     {
@@ -243,14 +242,21 @@
       "inputRefs": [
         "edits/<editId>/timeline/locked-rough-cut.json",
         "Resolve timeline: speech subtitle track",
+        ".tmp/edit-flow/<editId>/postlock/current-timeline-clip-packet.json",
         "media/chronology.json",
-        "config/edit-rules/travel-documentary.md"
+        "gps/reverse-geocode-cache.json",
+        "config/edit-rules/travel-documentary.md",
+        "config/styles/china-drive-travel-documentary-main.md"
       ],
       "outputRefs": [
-        "edits/<editId>/postlock/narration-framework.md"
+        "edits/<editId>/postlock/narration-framework.md",
+        "edits/<editId>/postlock/narration-framework.clip-map.json",
+        ".tmp/edit-flow/<editId>/postlock/narration-framework.precise-geo.json"
       ],
       "outputTypes": {
-        "edits/<editId>/postlock/narration-framework.md": "planning-markdown"
+        "edits/<editId>/postlock/narration-framework.md": "planning-markdown",
+        "edits/<editId>/postlock/narration-framework.clip-map.json": "clip-map-json",
+        ".tmp/edit-flow/<editId>/postlock/narration-framework.precise-geo.json": "audit-json"
       },
       "runner": "agent",
       "execution": {
@@ -266,9 +272,17 @@
       "gate": "human",
       "notes": [
         "只覆盖没有语音、需要脚本描述的时间线段落；有台词/口播的部分以达芬奇识别字幕为主，不生成旁白替代。",
-        "格式必须严格参考规则文档末尾“附录 - 旁白生成框架格式参考”。",
-        "框架要表达粗剪时间线中各段的素材类型标记和叙事功能，例如口播、空境、延时、航拍、开车等，但不要写最终成稿式旁白。",
-        "相邻、相关的延时摄影可以在同一编年史事件下合并为一个延时序列条目；合并摘要必须参考 media/chronology.json 的事件、地点/GPS和时间语境。",
+        "格式参考当前剪辑规则文档末尾“附录 - 旁白生成框架格式参考”，但具体 pack/leaf 写法以当前规则正文为主。",
+        "Resolve timeline 只提供 clip 边界、顺序、source range、MediaPool source 和 clip/asset/span/event 映射；Resolve 显示名、MediaPool folder、hostSummary eventTitle 或从 Resolve 名称拆出的标签只可作为 debug，不得作为地点、路线、地貌、水文、植被或字幕事实来源。",
+        "CLIP 描述匹配到最接近的 span 时，使用 visualObservation，不使用 materialPatterns；semanticKind=speech/mixed 但当前 Resolve clip 无字幕时，先按同素材实际 source range 匹配最近 visual span。",
+        "相邻口播 CLIP 可按相关性合并；多 clip 口播 pack 只写 pack 摘要和 clips 范围，不逐 clip 展开口播细节。",
+        "相邻连续且属于同一 chronology 的行车/开车无口播 CLIP，先合并为 pack，整体句归纳子 clip 的行程、道路、山体、水文、植被、村镇和天气路况；每个子 CLIP 必须保留自己的具体差异。",
+        "航拍 CLIP 按相邻关系和 chronology 合并为 pack，整体句归纳编年史事件、机位变化、山体、水文、植被、村镇和天气路况；子 CLIP 仍要写出实际飞行位置/视域内的山、水、植被或道路特征。",
+        "每个需要后续生成旁白字幕的无字幕非照片 leaf CLIP 都必须使用当前 CLIP 自己的 GPS/GPX/reverse-geocode 地理上下文；行车子 CLIP 按当前 clip 源时间中点取定位，不得复用 pack 的整段路线。",
+        "正文只写可读定位锚点和可辩护的山体、江河湖泊、植被、桥隧、道路和地貌特征；禁止输出裸坐标、GPX±Ns、机内GPS、GPS匹配、source path、confidence 或标签串。",
+        "反向地理编码命中的公司、店铺、卫生室、村委会、加油站、充电站、停车场等 POI 不能进入标题、整体句或旁白素材；道路、桥梁、隧道、互通、收费站、跨江/跨海通道等线性交通设施可以作为可读锚点。",
+        "定位文案必须语义去重：已有命名水体、峡谷崖壁、山口峰丛、桥隧道路或具体植被时，不再追加“江河湖泊 / 峡谷崖壁 / 林带植被”等泛类标签；禁止写“林带植被”。",
+        "遇到 GBK/UTF-8 mojibake 或 � 候选时必须丢弃并回退到 chronology/GPS，不得写入正式正文或下游可消费字段。",
         "完成后进入人工审查；未确认前不得生成最终字幕审查稿。"
       ]
     },
@@ -279,14 +293,19 @@
       "inputRefs": [
         "edits/<editId>/timeline/locked-rough-cut.json",
         "Resolve timeline: speech subtitle track",
+        ".tmp/edit-flow/<editId>/postlock/current-timeline-clip-packet.json",
         "edits/<editId>/postlock/narration-framework.md",
+        "edits/<editId>/postlock/narration-framework.clip-map.json",
+        "config/edit-rules/travel-documentary.md",
         "config/styles/china-drive-travel-documentary-main.md"
       ],
       "outputRefs": [
-        "edits/<editId>/postlock/subtitle-review.md"
+        "edits/<editId>/postlock/subtitle-review.md",
+        ".tmp/edit-flow/<editId>/postlock/subtitle-review.audit.json"
       ],
       "outputTypes": {
-        "edits/<editId>/postlock/subtitle-review.md": "review-markdown"
+        "edits/<editId>/postlock/subtitle-review.md": "review-markdown",
+        ".tmp/edit-flow/<editId>/postlock/subtitle-review.audit.json": "audit-json"
       },
       "runner": "agent",
       "execution": {
@@ -297,21 +316,25 @@
           "forkContext": false,
           "speed": "standard"
         },
-        "reason": "规则要求用户确认旁白框架后，启用一个 SubAgent 按指定风格档案生成最终 markdown 表格审查稿。"
+        "reason": "规则要求用户确认旁白框架后，启用一个 SubAgent 按当前剪辑规则附录和风格档案生成最终 markdown 表格审查稿。"
       },
       "gate": "human",
       "notes": [
-        "只有 narration-framework.md 经人工确认后才执行。",
-        "最终输出必须是 markdown 表格，三列固定为：对应旁白框架条目（若合并写多个）、事件和GPS位置信息、生成旁白字幕。",
-        "必须参考 styleUsage 授权的 literary 层；不得用 artistic 或 editingTechnical 层反向改动粗剪。",
-        "生成字幕必须参考当前 Resolve timeline 中每个 clip 或 clip 序列组的真实时长；短 clip 或短序列组不写超出可读时长的长句。",
-        "连续相邻的行车或航拍视频先聚类到一起，综合判断整体动机，然后再按 CLIP 分开编写；第一个 CLIP / 最后一个 CLIP 可承担承上启下。",
-        "表格第一列可以引用一个或多个旁白框架条目；如果同一聚类内包含多个 CLIP 或多个框架条目，应在第一列明确写多个对应条目。",
-        "第二列必须写事件和 GPS 位置信息：能定位时写地点、路线、道路名或起止方向；不能确定时写明“位置待确认”，不得编造。",
-        "承上启下内容可以参考前后有口播的段落内容，但不能覆盖达芬奇已经识别出的口播字幕。",
-        "被聚类且标记“开车”的片段需要结合位置、路线/道路名推断，以及前置视觉分析中的景观事实来写，不写成泛泛风景句。",
-        "照片和照片序列均不生成字幕；若旁白框架条目是照片或照片序列，最终字幕审查稿必须跳过或在表格中标记“不生成字幕”。",
-        "本稿重点补无语音段落的旁白字幕审查文本；有语音口播只作为上下文参考，不生成替代字幕。"
+        "只有 narration-framework.md 经人工确认后才执行；本次状态推进视为用户确认当前旁白框架，下一步进入最终字幕审查稿生成。",
+        "最终输出是 markdown 表格；表格结构、列名、合并粒度、照片占位和 clip 范围写法以当前剪辑规则“附录 - 最终字幕审查稿格式参考”和本 step notes 为准，不从全局 rules 或 skill 写死。",
+        "当前剪辑规则声明的三列为：对应旁白框架条目（若合并写多个）、事件和描述概要、旁白字幕。",
+        "必须参考 styleUsage 授权的 literary 层和当前剪辑流风格档案；不得用 artistic 或 editingTechnical 层反向改动粗剪。",
+        "真相来源以当前 post-lock Resolve timeline / clip packet、已确认 narration-framework.md、narration-framework.clip-map.json、当前剪辑规则和当前风格档案为准。",
+        "生成字幕必须参考当前 Resolve timeline 中每个 CLIP 或序列组的真实时长；短 CLIP 不写超出可读时长的长句。",
+        "对于行车/开车/航拍/延时序列，先综合判断 PACK 的整体叙事动机，再按每个 CLIP 分开编写；每个 CLIP 原则上分配一句字幕，实在写不下再让一条字幕跨越多 CLIP。",
+        "旁白字幕列可以分为多行，每行必须标注 clip 范围，例如“clips 5-7：...<br>clips 8-11：...”；CLIP 之间必须保持前后逻辑连续推进。",
+        "有字幕的口播 CLIP 不重复生成旁白，只能作为前后承接参考；不得覆盖达芬奇已经识别出的口播字幕。",
+        "照片和照片序列均不生成字幕；若保留表格行，旁白字幕列写“不生成字幕”。",
+        "事件和描述概要列只写叙事可用地名、路线方向、真实旅行节点，以及可从定位推算出的山体、江河湖泊、植被、桥隧和地貌特征。",
+        "反向地理编码命中的公司、店铺、卫生室、村委会、路边设施、小型水库等附近 POI 只能留在审计数据里，不能当作事件名、目的地、路线终点或字幕素材；道路、桥梁、隧道、互通、收费站、跨江/跨海通道等交通设施专名应保留为可读锚点。",
+        "路线表达优先写成自然方向，例如“江门开平之后，往广西灵山方向”“南宁往百色方向”“进入贵州后的山地高速”；不要直接复制完整反查地址或 POI 名。",
+        "字幕正文只写观众能听懂的自然中文旁白，不写数据库痕迹、GPS 细节、裸坐标、GPX±Ns、机内GPS、GPS匹配、标签串或硬造词；禁止标签堆叠和不自然表达。",
+        "生成必须启用一个 SubAgent；SubAgent 上下文必须包含本 step notes、当前剪辑规则、当前风格档案、旁白框架与 clip-map，而不是依赖全局规则里的项目列名。"
       ]
     },
     {

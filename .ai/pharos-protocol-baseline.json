@@ -1,15 +1,15 @@
 {
   "sourceRoot": "../Pharos/designs",
-  "generatedAt": "2026-05-21T03:38:16.650Z",
-  "combinedSha256": "1571b1968e0ed234bdc820ae64ad677392c94ec8a670c97b46f6c3f728252d67",
+  "generatedAt": "2026-06-13T16:31:48.254Z",
+  "combinedSha256": "5f70bbfc2f57e278c6afe28b7eebfd2ac32fdbd2cecb59d2a51bd83858f007e5",
   "files": [
     {
       "path": "overview.md",
-      "sha256": "7168923869662c75f7288670fabcea60233bdcf73cec78a991514b46cc996828"
+      "sha256": "f102e3a3cef93a7795196edc708f675ad418a42d6e8ac118a1e71f9570e33236"
     },
     {
       "path": "protocol.md",
-      "sha256": "25fd5ad276a15e4539befb51361a8cd88a26c9e651cb71038cc00d065bce2d22"
+      "sha256": "8eee80e4964beca1b90d51648224ea2782fb10fddd4ffc57463c327c3940e629"
     },
     {
       "path": "pyxis-architecture.md",
@@ -21,7 +21,7 @@
     },
     {
       "path": "requirements.md",
-      "sha256": "ba29a2dda4f688cd2b379e4cecde3d4c44e8397590a93b8adc2dbab260a237bc"
+      "sha256": "8b30179e21b4d38dbd403418bf0d6b6bae60ad3b7962e5f1e7aded2e4db63489"
     }
   ]
 }

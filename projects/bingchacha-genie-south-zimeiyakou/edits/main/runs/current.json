@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "editId": "main",
-  "updatedAt": "2026-06-12T14:58:15.441Z",
+  "updatedAt": "2026-06-14T08:42:11.686Z",
   "records": [
     {
       "schemaVersion": "1.0",
@@ -12,9 +12,9 @@
       "stepId": "resolve-media-sync-codex-v1",
       "capabilityId": "resolve.media_sync",
       "runner": "deterministic",
-      "status": "failed",
+      "status": "stale",
       "startedAt": "2026-05-22T16:07:10.053Z",
-      "updatedAt": "2026-05-22T16:07:17.959Z",
+      "updatedAt": "2026-06-13T01:22:57.110Z",
       "completedAt": "2026-05-22T16:07:17.959Z",
       "inputRefs": [
         "store/spans.json",
@@ -30,11 +30,14 @@
         "flowPlanStatus": "confirmed"
       },
       "outputPaths": [],
-      "summary": {},
-      "error": "Unable to import clip into Resolve: H:\\Volumes\\SSDMAX\\zve1\\day0\\C0353.mp4",
+      "summary": {
+        "invalidatedAt": "2026-06-13T01:22:57.110Z",
+        "invalidatedReason": "superseded by regenerated Flow Plan state chain 20260613T012257Z"
+      },
+      "error": "Superseded by regenerated Flow Plan state chain 20260613T012257Z.",
       "review": {
         "status": "pending",
-        "note": "resolve.media_sync failed; inspect Resolve host availability and media pool state."
+        "note": "resolve.media_sync failed; inspect Resolve host availability and media pool state. Stale: superseded by regenerated Flow Plan state chain 20260613T012257Z."
       }
     },
     {
@@ -46,9 +49,9 @@
       "stepId": "resolve-media-sync-codex-v1",
       "capabilityId": "resolve.media_sync",
       "runner": "deterministic",
-      "status": "failed",
+      "status": "stale",
       "startedAt": "2026-05-22T16:09:25.963Z",
-      "updatedAt": "2026-05-22T16:09:34.781Z",
+      "updatedAt": "2026-06-13T01:22:57.110Z",
       "completedAt": "2026-05-22T16:09:34.781Z",
       "inputRefs": [
         "store/spans.json",
@@ -64,11 +67,14 @@
         "flowPlanStatus": "confirmed"
       },
       "outputPaths": [],
-      "summary": {},
-      "error": "Unable to import clip into Resolve: F:\\vlog-proj\\219-318\\ts-final\\20260504_��÷��ڹ���ѩɽ����ת�ǿ�ת����3.mp4",
+      "summary": {
+        "invalidatedAt": "2026-06-13T01:22:57.110Z",
+        "invalidatedReason": "superseded by regenerated Flow Plan state chain 20260613T012257Z"
+      },
+      "error": "Superseded by regenerated Flow Plan state chain 20260613T012257Z.",
       "review": {
         "status": "pending",
-        "note": "resolve.media_sync failed; inspect Resolve host availability and media pool state."
+        "note": "resolve.media_sync failed; inspect Resolve host availability and media pool state. Stale: superseded by regenerated Flow Plan state chain 20260613T012257Z."
       }
     },
     {
@@ -80,9 +86,9 @@
       "stepId": "resolve-media-sync-codex-v1",
       "capabilityId": "resolve.media_sync",
       "runner": "deterministic",
-      "status": "failed",
+      "status": "stale",
       "startedAt": "2026-05-22T16:11:03.003Z",
-      "updatedAt": "2026-05-22T16:11:03.003Z",
+      "updatedAt": "2026-06-13T01:22:57.110Z",
       "completedAt": "2026-05-22T16:11:03.003Z",
       "inputRefs": [
         "store/spans.json",
@@ -108,12 +114,14 @@
             "sourcePath": "20260504_子梅垭口贡嘎雪山日落转星空转月升3.mp4",
             "resolved": "F:\\vlog-proj\\219-318\\ts-final\\20260504_子梅垭口贡嘎雪山日落转星空转月升3.mp4"
           }
-        ]
+        ],
+        "invalidatedAt": "2026-06-13T01:22:57.110Z",
+        "invalidatedReason": "superseded by regenerated Flow Plan state chain 20260613T012257Z"
       },
-      "error": "resolve.media_sync blocked: missing source file F:\\vlog-proj\\219-318\\ts-final\\20260504_子梅垭口贡嘎雪山日落转星空转月升3.mp4",
+      "error": "Superseded by regenerated Flow Plan state chain 20260613T012257Z.",
       "review": {
         "status": "pending",
-        "note": "补回缺失 ts-final 第三段，或重新运行 ingest/chronology 移除该资产后再同步 Resolve Media Pool。"
+        "note": "补回缺失 ts-final 第三段，或重新运行 ingest/chronology 移除该资产后再同步 Resolve Media Pool。 Stale: superseded by regenerated Flow Plan state chain 20260613T012257Z."
       }
     },
     {
@@ -125,9 +133,9 @@
       "stepId": "resolve-media-sync-codex-v1",
       "capabilityId": "resolve.media_sync",
       "runner": "deterministic",
-      "status": "completed",
+      "status": "stale",
       "startedAt": "2026-05-22T16:13:34.051Z",
-      "updatedAt": "2026-05-22T16:13:42.026Z",
+      "updatedAt": "2026-06-13T01:22:57.110Z",
       "completedAt": "2026-05-22T16:13:42.026Z",
       "inputRefs": [
         "store/spans.json",
@@ -154,11 +162,15 @@
         "reused": 2225,
         "emptyFoldersDeleted": 6,
         "eventFolderCount": 244,
-        "mediaItemCount": 2232
+        "mediaItemCount": 2232,
+        "invalidatedAt": "2026-06-13T01:22:57.110Z",
+        "invalidatedReason": "superseded by regenerated Flow Plan state chain 20260613T012257Z"
       },
       "review": {
-        "status": "not_required"
-      }
+        "status": "pending",
+        "note": "Stale: superseded by regenerated Flow Plan state chain 20260613T012257Z."
+      },
+      "error": "Superseded by regenerated Flow Plan state chain 20260613T012257Z."
     },
     {
       "schemaVersion": "1.0",
@@ -169,9 +181,9 @@
       "stepId": "timeline-generate-codex-v1",
       "capabilityId": "timeline.generate",
       "runner": "deterministic",
-      "status": "failed",
+      "status": "stale",
       "startedAt": "2026-05-22T16:35:25.424Z",
-      "updatedAt": "2026-05-22T16:35:26.199Z",
+      "updatedAt": "2026-06-13T01:22:57.110Z",
       "completedAt": "2026-05-22T16:35:26.199Z",
       "inputRefs": [
         "edits/<editId>/planning/edit-framework.md",
@@ -192,11 +204,14 @@
         "timelineStillDurationMs": 5000
       },
       "outputPaths": [],
-      "summary": {},
-      "error": "timeline.generate requires edits/main/script/material-slots.json",
+      "summary": {
+        "invalidatedAt": "2026-06-13T01:22:57.110Z",
+        "invalidatedReason": "superseded by regenerated Flow Plan state chain 20260613T012257Z"
+      },
+      "error": "Superseded by regenerated Flow Plan state chain 20260613T012257Z.",
       "review": {
         "status": "pending",
-        "note": "timeline.generate failed; inspect Resolve host, media pool sync, source range validation, or still duration setting."
+        "note": "timeline.generate failed; inspect Resolve host, media pool sync, source range validation, or still duration setting. Stale: superseded by regenerated Flow Plan state chain 20260613T012257Z."
       }
     },
     {
@@ -208,9 +223,9 @@
       "stepId": "edit-framework-handoff-codex-v1",
       "capabilityId": "edit.framework",
       "runner": "agent",
-      "status": "completed",
+      "status": "stale",
       "startedAt": "2026-06-12T06:16:01.036Z",
-      "updatedAt": "2026-06-12T06:16:01.036Z",
+      "updatedAt": "2026-06-13T01:22:57.110Z",
       "completedAt": "2026-06-12T06:16:01.036Z",
       "inputRefs": [
         "config/edit-rules/travel-documentary.md",
@@ -233,13 +248,17 @@
       ],
       "summary": {
         "markedCompleteBy": "user-requested-state-advance",
-        "artifact": "edits/main/planning/edit-framework.md"
+        "artifact": "edits/main/planning/edit-framework.md",
+        "invalidatedAt": "2026-06-13T01:22:57.110Z",
+        "invalidatedReason": "superseded by regenerated Flow Plan state chain 20260613T012257Z"
       },
       "review": {
         "status": "confirmed",
         "confirmedAt": "2026-06-12T06:16:01.036Z",
-        "confirmedBy": "user-requested-state-advance"
-      }
+        "confirmedBy": "user-requested-state-advance",
+        "note": "Stale: superseded by regenerated Flow Plan state chain 20260613T012257Z."
+      },
+      "error": "Superseded by regenerated Flow Plan state chain 20260613T012257Z."
     },
     {
       "schemaVersion": "1.0",
@@ -250,9 +269,9 @@
       "stepId": "material-recall-codex-v1",
       "capabilityId": "material.recall",
       "runner": "agent",
-      "status": "completed",
+      "status": "stale",
       "startedAt": "2026-06-12T06:16:01.036Z",
-      "updatedAt": "2026-06-12T06:16:01.036Z",
+      "updatedAt": "2026-06-13T01:22:57.110Z",
       "completedAt": "2026-06-12T06:16:01.036Z",
       "inputRefs": [
         "edits/<editId>/planning/flow-plan.json",
@@ -275,176 +294,17 @@
       ],
       "summary": {
         "markedCompleteBy": "user-requested-state-advance",
-        "artifact": "edits/main/script/material-slots.json"
+        "artifact": "edits/main/script/material-slots.json",
+        "invalidatedAt": "2026-06-13T01:22:57.110Z",
+        "invalidatedReason": "superseded by regenerated Flow Plan state chain 20260613T012257Z"
       },
       "review": {
         "status": "confirmed",
         "confirmedAt": "2026-06-12T06:16:01.036Z",
-        "confirmedBy": "user-requested-state-advance"
-      }
-    },
-    {
-      "schemaVersion": "1.0",
-      "runId": "run-resolve-media-sync-complete-20260612T061601Z",
-      "editId": "main",
-      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260521T064123Z",
-      "flowPlanHash": "3980b6e016a9d1e45146c73f2a2dffd48ee6e7053aa7c9d420d7935d386f9ec3",
-      "stepId": "resolve-media-sync-codex-v1",
-      "capabilityId": "resolve.media_sync",
-      "runner": "deterministic",
-      "status": "completed",
-      "startedAt": "2026-06-12T06:16:01.036Z",
-      "updatedAt": "2026-06-12T06:16:01.036Z",
-      "completedAt": "2026-06-12T06:16:01.036Z",
-      "inputRefs": [
-        "store/spans.json",
-        "store/assets.json",
-        "media/chronology.json"
-      ],
-      "outputRefs": [
-        "Resolve Media Pool: Kairos Project Media"
-      ],
-      "inputSnapshot": {
-        "source": "codex-agent-state-advance",
-        "projectId": "bingchacha-genie-south-zimeiyakou",
-        "flowPlanStatus": "confirmed",
-        "editRuleHash": "a22e6738abae3602e5d40867bbcca2a3b4181317f0394791048a3f12faccd002",
-        "manualStateAdvance": true
+        "confirmedBy": "user-requested-state-advance",
+        "note": "Stale: superseded by regenerated Flow Plan state chain 20260613T012257Z."
       },
-      "outputPaths": [
-        "Resolve Media Pool: Kairos Project Media"
-      ],
-      "summary": {
-        "markedCompleteBy": "user-requested-state-advance",
-        "namespace": "Kairos Project Media"
-      },
-      "review": {
-        "status": "not_required"
-      }
-    },
-    {
-      "schemaVersion": "1.0",
-      "runId": "run-timeline-generate-complete-20260612T061601Z",
-      "editId": "main",
-      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260521T064123Z",
-      "flowPlanHash": "3980b6e016a9d1e45146c73f2a2dffd48ee6e7053aa7c9d420d7935d386f9ec3",
-      "stepId": "timeline-generate-codex-v1",
-      "capabilityId": "timeline.generate",
-      "runner": "deterministic",
-      "status": "completed",
-      "startedAt": "2026-06-12T06:16:01.036Z",
-      "updatedAt": "2026-06-12T06:16:01.036Z",
-      "completedAt": "2026-06-12T06:16:01.036Z",
-      "inputRefs": [
-        "edits/<editId>/planning/edit-framework.md",
-        "edits/<editId>/script/material-slots.json",
-        "store/spans.json",
-        "store/assets.json",
-        "media/chronology.json"
-      ],
-      "outputRefs": [
-        "Resolve timeline: Kairos Timelines/<editId> rough cut",
-        ".tmp/edit-flow/<editId>/timeline/current.json",
-        ".tmp/edit-flow/<editId>/timeline/current.srt"
-      ],
-      "inputSnapshot": {
-        "source": "codex-agent-state-advance",
-        "projectId": "bingchacha-genie-south-zimeiyakou",
-        "flowPlanStatus": "confirmed",
-        "editRuleHash": "a22e6738abae3602e5d40867bbcca2a3b4181317f0394791048a3f12faccd002",
-        "manualStateAdvance": true
-      },
-      "outputPaths": [
-        "Resolve timeline: Kairos Timelines/main rough cut",
-        ".tmp/edit-flow/main/timeline/current.json"
-      ],
-      "summary": {
-        "markedCompleteBy": "user-requested-state-advance",
-        "timelineName": "Main [main]",
-        "timelineAuditPath": "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/timeline/current.json"
-      },
-      "review": {
-        "status": "not_required"
-      }
-    },
-    {
-      "schemaVersion": "1.0",
-      "runId": "run-rough-cut-lock-complete-20260612T061601Z",
-      "editId": "main",
-      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260521T064123Z",
-      "flowPlanHash": "3980b6e016a9d1e45146c73f2a2dffd48ee6e7053aa7c9d420d7935d386f9ec3",
-      "stepId": "resolve-lock-rough-cut-manual-v1",
-      "capabilityId": "resolve.lock_rough_cut",
-      "runner": "manual",
-      "status": "completed",
-      "startedAt": "2026-06-12T06:16:01.036Z",
-      "updatedAt": "2026-06-12T06:16:01.036Z",
-      "completedAt": "2026-06-12T06:16:01.036Z",
-      "inputRefs": [
-        "Resolve timeline: Kairos Timelines/<editId> rough cut"
-      ],
-      "outputRefs": [
-        "edits/<editId>/timeline/locked-rough-cut.json"
-      ],
-      "inputSnapshot": {
-        "source": "codex-agent-state-advance",
-        "projectId": "bingchacha-genie-south-zimeiyakou",
-        "flowPlanStatus": "confirmed",
-        "editRuleHash": "a22e6738abae3602e5d40867bbcca2a3b4181317f0394791048a3f12faccd002",
-        "manualStateAdvance": true
-      },
-      "outputPaths": [
-        "edits/main/timeline/locked-rough-cut.json"
-      ],
-      "summary": {
-        "markedCompleteBy": "user-requested-state-advance",
-        "lockPath": "edits/main/timeline/locked-rough-cut.json"
-      },
-      "review": {
-        "status": "confirmed",
-        "confirmedAt": "2026-06-12T06:16:01.036Z",
-        "confirmedBy": "user-requested-state-advance"
-      }
-    },
-    {
-      "schemaVersion": "1.0",
-      "runId": "run-speech-subtitles-complete-20260612T061601Z",
-      "editId": "main",
-      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260521T064123Z",
-      "flowPlanHash": "3980b6e016a9d1e45146c73f2a2dffd48ee6e7053aa7c9d420d7935d386f9ec3",
-      "stepId": "postlock-speech-subtitles-manual-v1",
-      "capabilityId": "postlock.subtitle_narration",
-      "runner": "manual",
-      "status": "completed",
-      "startedAt": "2026-06-12T06:16:01.036Z",
-      "updatedAt": "2026-06-12T06:16:01.036Z",
-      "completedAt": "2026-06-12T06:16:01.036Z",
-      "inputRefs": [
-        "edits/<editId>/timeline/locked-rough-cut.json",
-        "Resolve timeline: locked rough cut"
-      ],
-      "outputRefs": [
-        "Resolve timeline: speech subtitle track"
-      ],
-      "inputSnapshot": {
-        "source": "codex-agent-state-advance",
-        "projectId": "bingchacha-genie-south-zimeiyakou",
-        "flowPlanStatus": "confirmed",
-        "editRuleHash": "a22e6738abae3602e5d40867bbcca2a3b4181317f0394791048a3f12faccd002",
-        "manualStateAdvance": true
-      },
-      "outputPaths": [
-        "Resolve timeline: speech subtitle track"
-      ],
-      "summary": {
-        "markedCompleteBy": "user-requested-state-advance",
-        "output": "Resolve timeline: speech subtitle track"
-      },
-      "review": {
-        "status": "confirmed",
-        "confirmedAt": "2026-06-12T06:16:01.036Z",
-        "confirmedBy": "user-requested-state-advance"
-      }
+      "error": "Superseded by regenerated Flow Plan state chain 20260613T012257Z."
     },
     {
       "schemaVersion": "1.0",
@@ -484,6 +344,185 @@
         "note": "Stale: superseded by run-narration-framework-awaiting-review-20260612T074034Z."
       },
       "error": "Superseded by regenerated clip-level narration framework run run-narration-framework-awaiting-review-20260612T074034Z."
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-resolve-media-sync-complete-20260612T061601Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260521T064123Z",
+      "flowPlanHash": "3980b6e016a9d1e45146c73f2a2dffd48ee6e7053aa7c9d420d7935d386f9ec3",
+      "stepId": "resolve-media-sync-codex-v1",
+      "capabilityId": "resolve.media_sync",
+      "runner": "deterministic",
+      "status": "stale",
+      "startedAt": "2026-06-12T06:16:01.036Z",
+      "updatedAt": "2026-06-13T01:22:57.110Z",
+      "completedAt": "2026-06-12T06:16:01.036Z",
+      "inputRefs": [
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "Resolve Media Pool: Kairos Project Media"
+      ],
+      "inputSnapshot": {
+        "source": "codex-agent-state-advance",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "flowPlanStatus": "confirmed",
+        "editRuleHash": "a22e6738abae3602e5d40867bbcca2a3b4181317f0394791048a3f12faccd002",
+        "manualStateAdvance": true
+      },
+      "outputPaths": [
+        "Resolve Media Pool: Kairos Project Media"
+      ],
+      "summary": {
+        "markedCompleteBy": "user-requested-state-advance",
+        "namespace": "Kairos Project Media",
+        "invalidatedAt": "2026-06-13T01:22:57.110Z",
+        "invalidatedReason": "superseded by regenerated Flow Plan state chain 20260613T012257Z"
+      },
+      "review": {
+        "status": "pending",
+        "note": "Stale: superseded by regenerated Flow Plan state chain 20260613T012257Z."
+      },
+      "error": "Superseded by regenerated Flow Plan state chain 20260613T012257Z."
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-rough-cut-lock-complete-20260612T061601Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260521T064123Z",
+      "flowPlanHash": "3980b6e016a9d1e45146c73f2a2dffd48ee6e7053aa7c9d420d7935d386f9ec3",
+      "stepId": "resolve-lock-rough-cut-manual-v1",
+      "capabilityId": "resolve.lock_rough_cut",
+      "runner": "manual",
+      "status": "stale",
+      "startedAt": "2026-06-12T06:16:01.036Z",
+      "updatedAt": "2026-06-13T01:22:57.110Z",
+      "completedAt": "2026-06-12T06:16:01.036Z",
+      "inputRefs": [
+        "Resolve timeline: Kairos Timelines/<editId> rough cut"
+      ],
+      "outputRefs": [
+        "edits/<editId>/timeline/locked-rough-cut.json"
+      ],
+      "inputSnapshot": {
+        "source": "codex-agent-state-advance",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "flowPlanStatus": "confirmed",
+        "editRuleHash": "a22e6738abae3602e5d40867bbcca2a3b4181317f0394791048a3f12faccd002",
+        "manualStateAdvance": true
+      },
+      "outputPaths": [
+        "edits/main/timeline/locked-rough-cut.json"
+      ],
+      "summary": {
+        "markedCompleteBy": "user-requested-state-advance",
+        "lockPath": "edits/main/timeline/locked-rough-cut.json",
+        "invalidatedAt": "2026-06-13T01:22:57.110Z",
+        "invalidatedReason": "superseded by regenerated Flow Plan state chain 20260613T012257Z"
+      },
+      "review": {
+        "status": "confirmed",
+        "confirmedAt": "2026-06-12T06:16:01.036Z",
+        "confirmedBy": "user-requested-state-advance",
+        "note": "Stale: superseded by regenerated Flow Plan state chain 20260613T012257Z."
+      },
+      "error": "Superseded by regenerated Flow Plan state chain 20260613T012257Z."
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-speech-subtitles-complete-20260612T061601Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260521T064123Z",
+      "flowPlanHash": "3980b6e016a9d1e45146c73f2a2dffd48ee6e7053aa7c9d420d7935d386f9ec3",
+      "stepId": "postlock-speech-subtitles-manual-v1",
+      "capabilityId": "postlock.subtitle_narration",
+      "runner": "manual",
+      "status": "stale",
+      "startedAt": "2026-06-12T06:16:01.036Z",
+      "updatedAt": "2026-06-13T01:22:57.110Z",
+      "completedAt": "2026-06-12T06:16:01.036Z",
+      "inputRefs": [
+        "edits/<editId>/timeline/locked-rough-cut.json",
+        "Resolve timeline: locked rough cut"
+      ],
+      "outputRefs": [
+        "Resolve timeline: speech subtitle track"
+      ],
+      "inputSnapshot": {
+        "source": "codex-agent-state-advance",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "flowPlanStatus": "confirmed",
+        "editRuleHash": "a22e6738abae3602e5d40867bbcca2a3b4181317f0394791048a3f12faccd002",
+        "manualStateAdvance": true
+      },
+      "outputPaths": [
+        "Resolve timeline: speech subtitle track"
+      ],
+      "summary": {
+        "markedCompleteBy": "user-requested-state-advance",
+        "output": "Resolve timeline: speech subtitle track",
+        "invalidatedAt": "2026-06-13T01:22:57.110Z",
+        "invalidatedReason": "superseded by regenerated Flow Plan state chain 20260613T012257Z"
+      },
+      "review": {
+        "status": "confirmed",
+        "confirmedAt": "2026-06-12T06:16:01.036Z",
+        "confirmedBy": "user-requested-state-advance",
+        "note": "Stale: superseded by regenerated Flow Plan state chain 20260613T012257Z."
+      },
+      "error": "Superseded by regenerated Flow Plan state chain 20260613T012257Z."
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-timeline-generate-complete-20260612T061601Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260521T064123Z",
+      "flowPlanHash": "3980b6e016a9d1e45146c73f2a2dffd48ee6e7053aa7c9d420d7935d386f9ec3",
+      "stepId": "timeline-generate-codex-v1",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "stale",
+      "startedAt": "2026-06-12T06:16:01.036Z",
+      "updatedAt": "2026-06-13T01:22:57.110Z",
+      "completedAt": "2026-06-12T06:16:01.036Z",
+      "inputRefs": [
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "Resolve timeline: Kairos Timelines/<editId> rough cut",
+        ".tmp/edit-flow/<editId>/timeline/current.json",
+        ".tmp/edit-flow/<editId>/timeline/current.srt"
+      ],
+      "inputSnapshot": {
+        "source": "codex-agent-state-advance",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "flowPlanStatus": "confirmed",
+        "editRuleHash": "a22e6738abae3602e5d40867bbcca2a3b4181317f0394791048a3f12faccd002",
+        "manualStateAdvance": true
+      },
+      "outputPaths": [
+        "Resolve timeline: Kairos Timelines/main rough cut",
+        ".tmp/edit-flow/main/timeline/current.json"
+      ],
+      "summary": {
+        "markedCompleteBy": "user-requested-state-advance",
+        "timelineName": "Main [main]",
+        "timelineAuditPath": "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/timeline/current.json",
+        "invalidatedAt": "2026-06-13T01:22:57.110Z",
+        "invalidatedReason": "superseded by regenerated Flow Plan state chain 20260613T012257Z"
+      },
+      "review": {
+        "status": "pending",
+        "note": "Stale: superseded by regenerated Flow Plan state chain 20260613T012257Z."
+      },
+      "error": "Superseded by regenerated Flow Plan state chain 20260613T012257Z."
     },
     {
       "schemaVersion": "1.0",
@@ -1676,10 +1715,10 @@
         "confirmedForSubtitleReviewAt": "2026-06-12T09:27:09.453Z"
       },
       "review": {
-        "status": "stale",
+        "status": "pending",
         "confirmedAt": "2026-06-12T09:27:09.453Z",
         "confirmedBy": "user-requested-framework-confirmation",
-        "note": "Stale: superseded by post-lock visualObservation-only v2 contract; regeneration is blocked until C1082_zve1_day6 has span visualObservation evidence."
+        "note": "Stale: superseded by post-lock visualObservation-only v2 contract; regeneration is blocked until C1082_zve1_day6 has span visualObservation evidence. Sanitized invalid review.status=\"stale\"; run status carries stale/completion truth."
       },
       "error": "Invalidated by post-lock packet v2 visualObservation-only evidence contract; current regeneration failed at clip 584 C1082 because no span/visualObservation evidence exists."
     },
@@ -1770,8 +1809,8 @@
         "reviewRequiredBeforeNextStep": true
       },
       "review": {
-        "status": "stale",
-        "note": "Stale: depends on invalidated narration-framework.md; regenerate only after a v2 visualObservation-based framework is confirmed."
+        "status": "pending",
+        "note": "Stale: depends on invalidated narration-framework.md; regenerate only after a v2 visualObservation-based framework is confirmed. Sanitized invalid review.status=\"stale\"; run status carries stale/completion truth."
       },
       "error": "Invalidated because the source narration framework was invalidated by the post-lock packet v2 visualObservation-only evidence contract."
     },
@@ -2451,9 +2490,9 @@
       "stepId": "postlock-narration-framework-codex-v1",
       "capabilityId": "postlock.subtitle_narration",
       "runner": "agent",
-      "status": "awaiting_review",
+      "status": "stale",
       "startedAt": "2026-06-12T14:58:15.441Z",
-      "updatedAt": "2026-06-12T14:58:15.441Z",
+      "updatedAt": "2026-06-12T16:35:54.428Z",
       "completedAt": "2026-06-12T14:58:15.441Z",
       "inputRefs": [
         "edits/<editId>/timeline/locked-rough-cut.json",
@@ -2535,11 +2574,1733 @@
         "visualEvidencePolicy": "visualObservation-only",
         "subagentUsed": true,
         "subagentId": "019ebc47-ef4e-7cd2-962c-1699cd83f7ab",
-        "reviewRequiredBeforeNextStep": true
+        "reviewRequiredBeforeNextStep": true,
+        "invalidatedAt": "2026-06-12T16:35:54.428Z",
+        "invalidatedReason": "superseded by confirmed run run-narration-framework-confirmed-20260612T163554Z"
       },
       "review": {
         "status": "pending",
-        "note": "Clip-level narration framework regenerated from current Resolve timeline and awaits human review."
+        "note": "Stale: superseded by run-narration-framework-confirmed-20260612T163554Z."
+      },
+      "error": "Superseded by confirmed current-packet narration framework run run-narration-framework-confirmed-20260612T163554Z."
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-narration-framework-confirmed-20260612T163554Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260612T155148Z",
+      "flowPlanHash": "1226c4ed9756ee9412abfce6665292ef44fb3b4c5727f751b1c436e618ebec82",
+      "stepId": "postlock-narration-framework-codex-v1",
+      "capabilityId": "postlock.subtitle_narration",
+      "runner": "agent",
+      "status": "stale",
+      "startedAt": "2026-06-12T16:35:54.428Z",
+      "updatedAt": "2026-06-13T01:22:57.110Z",
+      "completedAt": "2026-06-12T16:35:54.428Z",
+      "inputRefs": [
+        "edits/<editId>/timeline/locked-rough-cut.json",
+        "Resolve timeline: speech subtitle track",
+        "media/chronology.json",
+        "config/edit-rules/travel-documentary.md"
+      ],
+      "outputRefs": [
+        "edits/<editId>/postlock/narration-framework.md",
+        "edits/<editId>/postlock/narration-framework.clip-map.json",
+        "projects/<projectId>/.tmp/edit-flow/<editId>/postlock/current-timeline-clip-packet.json"
+      ],
+      "inputSnapshot": {
+        "source": "codex-agent-current-resolve-clip-packet-boundary-repair",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "resolveProject": "丙察察格聂南线子梅垭口穿越 [Edit]",
+        "timeline": "Main [main]",
+        "timelineFps": 30,
+        "videoClipCount": 1318,
+        "subtitleItemCount": 2051,
+        "frameworkFormat": "markdown-pack-list-v2",
+        "clipMapSchema": "kairos-postlock-narration-framework-clip-map-v2",
+        "speechClipCount": 691,
+        "narrationClipCount": 627,
+        "speechEntryCount": 275,
+        "narrationEntryCount": 477,
+        "frameworkEntryCount": 752,
+        "frameworkPackCount": 398,
+        "drivePackCount": 61,
+        "aerialPackCount": 18,
+        "speechMergeGroupCount": 126,
+        "photoSequenceGroupCount": 30,
+        "timelapseSequenceGroupCount": 1,
+        "chronologyContextClipCount": 1303,
+        "narrationVisualEvidenceCount": 627,
+        "narrationVisualEvidenceSameAssetVisualSpanCount": 553,
+        "narrationVisualEvidenceFallbackCount": 68,
+        "narrationVisualEvidenceWarningCount": 6,
+        "narrationVisualEvidencePolicy": "visualObservation-only",
+        "subtitleBoundaryPolicy": "Current Resolve subtitle overlaps define speech clips; repaired stale speech pack merges by splitting invalid merged speech entries to clip-level map entries.",
+        "flowPlanStatus": "confirmed",
+        "editRuleHash": "e35a56b7638f13ff42ca6194d561d88fedf0583c3a404952d895082a9a33243f",
+        "confirmationSource": "user-requested-state-advance-after-regenerated-flow"
+      },
+      "outputPaths": [
+        "edits/main/postlock/narration-framework.md",
+        "edits/main/postlock/narration-framework.clip-map.json",
+        "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/postlock/current-timeline-clip-packet.json"
+      ],
+      "summary": {
+        "artifact": "edits/main/postlock/narration-framework.md",
+        "clipMap": "edits/main/postlock/narration-framework.clip-map.json",
+        "timelinePacket": "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/postlock/current-timeline-clip-packet.json",
+        "resolveProject": "丙察察格聂南线子梅垭口穿越 [Edit]",
+        "timeline": "Main [main]",
+        "videoClipCount": 1318,
+        "speechClipCount": 691,
+        "narrationClipCount": 627,
+        "speechEntryCount": 275,
+        "narrationEntryCount": 477,
+        "frameworkFormat": "markdown-pack-list-v2",
+        "clipMapSchema": "kairos-postlock-narration-framework-clip-map-v2",
+        "frameworkPackCount": 398,
+        "frameworkLineCount": 752,
+        "frameworkCharCount": 59869,
+        "validation": "passed",
+        "boundaryPolicy": "clip-level-pack-list-v2-current-packet",
+        "visualEvidencePolicy": "visualObservation-only",
+        "boundaryRepair": {
+          "repairedSpeechPackCount": 15,
+          "method": "split invalid stale speech merge entries into current packet clip-level entries"
+        },
+        "reviewRequiredBeforeNextStep": false,
+        "invalidatedAt": "2026-06-13T01:22:57.110Z",
+        "invalidatedReason": "superseded by regenerated Flow Plan state chain 20260613T012257Z"
+      },
+      "review": {
+        "status": "confirmed",
+        "confirmedAt": "2026-06-12T16:35:54.428Z",
+        "confirmedBy": "user-requested-state-advance",
+        "note": "Narration framework validated against current Resolve timeline packet and marked confirmed by user request. Stale: superseded by regenerated Flow Plan state chain 20260613T012257Z."
+      },
+      "error": "Superseded by regenerated Flow Plan state chain 20260613T012257Z."
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-edit-framework-handoff-state-confirmed-20260613T012257Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260612T155148Z",
+      "flowPlanHash": "1226c4ed9756ee9412abfce6665292ef44fb3b4c5727f751b1c436e618ebec82",
+      "stepId": "edit-framework-handoff-codex-v1",
+      "capabilityId": "edit.framework",
+      "runner": "agent",
+      "status": "stale",
+      "startedAt": "2026-06-13T01:22:57.110Z",
+      "updatedAt": "2026-06-13T14:29:02.005Z",
+      "completedAt": "2026-06-13T01:22:57.110Z",
+      "inputRefs": [
+        "config/edit-rules/travel-documentary.md",
+        "media/chronology.json",
+        "store/spans.json",
+        "store/assets.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/planning/edit-framework.md"
+      ],
+      "inputSnapshot": {
+        "source": "codex-agent-regenerated-flow-state-chain",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "flowPlanStatus": "confirmed",
+        "editRuleHash": "e35a56b7638f13ff42ca6194d561d88fedf0583c3a404952d895082a9a33243f",
+        "manualStateAdvance": true,
+        "carriedForwardFromRunId": "run-edit-framework-complete-20260612T061601Z"
+      },
+      "outputPaths": [
+        "edits/main/planning/edit-framework.md"
+      ],
+      "summary": {
+        "markedCompleteBy": "user-requested-regenerated-flow-state-chain",
+        "artifact": "edits/main/planning/edit-framework.md",
+        "carriedForwardFromRunId": "run-edit-framework-complete-20260612T061601Z",
+        "invalidatedAt": "2026-06-13T14:29:02.005Z",
+        "invalidatedReason": "superseded by refreshed Flow Plan state chain 20260613T142902Z"
+      },
+      "review": {
+        "status": "confirmed",
+        "confirmedAt": "2026-06-13T01:22:57.110Z",
+        "confirmedBy": "user-requested-state-advance",
+        "note": "Step confirmed as completed under regenerated Flow Plan state chain. Stale: superseded by refreshed Flow Plan state chain 20260613T142902Z."
+      },
+      "error": "Superseded by refreshed Flow Plan state chain 20260613T142902Z."
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-material-recall-state-confirmed-20260613T012257Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260612T155148Z",
+      "flowPlanHash": "1226c4ed9756ee9412abfce6665292ef44fb3b4c5727f751b1c436e618ebec82",
+      "stepId": "material-recall-codex-v1",
+      "capabilityId": "material.recall",
+      "runner": "agent",
+      "status": "stale",
+      "startedAt": "2026-06-13T01:22:57.110Z",
+      "updatedAt": "2026-06-13T14:29:02.005Z",
+      "completedAt": "2026-06-13T01:22:57.110Z",
+      "inputRefs": [
+        "edits/<editId>/planning/flow-plan.json",
+        "edits/<editId>/planning/edit-framework.md",
+        "store/spans.json",
+        "store/assets.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/script/material-slots.json"
+      ],
+      "inputSnapshot": {
+        "source": "codex-agent-regenerated-flow-state-chain",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "flowPlanStatus": "confirmed",
+        "editRuleHash": "e35a56b7638f13ff42ca6194d561d88fedf0583c3a404952d895082a9a33243f",
+        "manualStateAdvance": true,
+        "carriedForwardFromRunId": "run-material-recall-complete-20260612T061601Z"
+      },
+      "outputPaths": [
+        "edits/main/script/material-slots.json"
+      ],
+      "summary": {
+        "markedCompleteBy": "user-requested-regenerated-flow-state-chain",
+        "artifact": "edits/main/script/material-slots.json",
+        "carriedForwardFromRunId": "run-material-recall-complete-20260612T061601Z",
+        "invalidatedAt": "2026-06-13T14:29:02.005Z",
+        "invalidatedReason": "superseded by refreshed Flow Plan state chain 20260613T142902Z"
+      },
+      "review": {
+        "status": "confirmed",
+        "confirmedAt": "2026-06-13T01:22:57.110Z",
+        "confirmedBy": "user-requested-state-advance",
+        "note": "Step confirmed as completed under regenerated Flow Plan state chain. Stale: superseded by refreshed Flow Plan state chain 20260613T142902Z."
+      },
+      "error": "Superseded by refreshed Flow Plan state chain 20260613T142902Z."
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-postlock-narration-framework-state-confirmed-20260613T012257Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260612T155148Z",
+      "flowPlanHash": "1226c4ed9756ee9412abfce6665292ef44fb3b4c5727f751b1c436e618ebec82",
+      "stepId": "postlock-narration-framework-codex-v1",
+      "capabilityId": "postlock.subtitle_narration",
+      "runner": "agent",
+      "status": "stale",
+      "startedAt": "2026-06-13T01:22:57.110Z",
+      "updatedAt": "2026-06-13T14:29:02.005Z",
+      "completedAt": "2026-06-13T01:22:57.110Z",
+      "inputRefs": [
+        "edits/<editId>/timeline/locked-rough-cut.json",
+        "Resolve timeline: speech subtitle track",
+        "media/chronology.json",
+        "config/edit-rules/travel-documentary.md"
+      ],
+      "outputRefs": [
+        "edits/<editId>/postlock/narration-framework.md"
+      ],
+      "inputSnapshot": {
+        "source": "codex-agent-regenerated-flow-state-chain",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "resolveProject": "丙察察格聂南线子梅垭口穿越 [Edit]",
+        "timeline": "Main [main]",
+        "timelineFps": 30,
+        "videoClipCount": 1318,
+        "subtitleItemCount": 2051,
+        "frameworkFormat": "markdown-pack-list-v2",
+        "clipMapSchema": "kairos-postlock-narration-framework-clip-map-v2",
+        "speechClipCount": 691,
+        "narrationClipCount": 627,
+        "speechEntryCount": 275,
+        "narrationEntryCount": 477,
+        "frameworkEntryCount": 752,
+        "frameworkPackCount": 398,
+        "drivePackCount": 61,
+        "aerialPackCount": 18,
+        "speechMergeGroupCount": 126,
+        "photoSequenceGroupCount": 30,
+        "timelapseSequenceGroupCount": 1,
+        "chronologyContextClipCount": 1303,
+        "narrationVisualEvidenceCount": 627,
+        "narrationVisualEvidenceSameAssetVisualSpanCount": 553,
+        "narrationVisualEvidenceFallbackCount": 68,
+        "narrationVisualEvidenceWarningCount": 6,
+        "narrationVisualEvidencePolicy": "visualObservation-only",
+        "subtitleBoundaryPolicy": "Current Resolve subtitle overlaps define speech clips; repaired stale speech pack merges by splitting invalid merged speech entries to clip-level map entries.",
+        "flowPlanStatus": "confirmed",
+        "editRuleHash": "e35a56b7638f13ff42ca6194d561d88fedf0583c3a404952d895082a9a33243f",
+        "confirmationSource": "user-requested-state-advance-after-regenerated-flow",
+        "carriedForwardFromRunId": "run-narration-framework-confirmed-20260612T163554Z",
+        "manualStateAdvance": true
+      },
+      "outputPaths": [
+        "edits/main/postlock/narration-framework.md",
+        "edits/main/postlock/narration-framework.clip-map.json",
+        "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/postlock/current-timeline-clip-packet.json"
+      ],
+      "summary": {
+        "artifact": "edits/main/postlock/narration-framework.md",
+        "clipMap": "edits/main/postlock/narration-framework.clip-map.json",
+        "timelinePacket": "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/postlock/current-timeline-clip-packet.json",
+        "resolveProject": "丙察察格聂南线子梅垭口穿越 [Edit]",
+        "timeline": "Main [main]",
+        "videoClipCount": 1318,
+        "speechClipCount": 691,
+        "narrationClipCount": 627,
+        "speechEntryCount": 275,
+        "narrationEntryCount": 477,
+        "frameworkFormat": "markdown-pack-list-v2",
+        "clipMapSchema": "kairos-postlock-narration-framework-clip-map-v2",
+        "frameworkPackCount": 398,
+        "frameworkLineCount": 752,
+        "frameworkCharCount": 59869,
+        "validation": "passed",
+        "boundaryPolicy": "clip-level-pack-list-v2-current-packet",
+        "visualEvidencePolicy": "visualObservation-only",
+        "boundaryRepair": {
+          "repairedSpeechPackCount": 15,
+          "method": "split invalid stale speech merge entries into current packet clip-level entries"
+        },
+        "reviewRequiredBeforeNextStep": false,
+        "markedCompleteBy": "user-requested-regenerated-flow-state-chain",
+        "carriedForwardFromRunId": "run-narration-framework-confirmed-20260612T163554Z",
+        "invalidatedAt": "2026-06-13T14:29:02.005Z",
+        "invalidatedReason": "superseded by refreshed Flow Plan state chain 20260613T142902Z"
+      },
+      "review": {
+        "status": "confirmed",
+        "confirmedAt": "2026-06-13T01:22:57.110Z",
+        "confirmedBy": "user-requested-state-advance",
+        "note": "Step confirmed as completed under regenerated Flow Plan state chain. Stale: superseded by refreshed Flow Plan state chain 20260613T142902Z."
+      },
+      "error": "Superseded by refreshed Flow Plan state chain 20260613T142902Z."
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-postlock-speech-subtitles-state-confirmed-20260613T012257Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260612T155148Z",
+      "flowPlanHash": "1226c4ed9756ee9412abfce6665292ef44fb3b4c5727f751b1c436e618ebec82",
+      "stepId": "postlock-speech-subtitles-manual-v1",
+      "capabilityId": "postlock.subtitle_narration",
+      "runner": "manual",
+      "status": "stale",
+      "startedAt": "2026-06-13T01:22:57.110Z",
+      "updatedAt": "2026-06-13T14:29:02.005Z",
+      "completedAt": "2026-06-13T01:22:57.110Z",
+      "inputRefs": [
+        "edits/<editId>/timeline/locked-rough-cut.json",
+        "Resolve timeline: locked rough cut"
+      ],
+      "outputRefs": [
+        "Resolve timeline: speech subtitle track"
+      ],
+      "inputSnapshot": {
+        "source": "codex-agent-regenerated-flow-state-chain",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "flowPlanStatus": "confirmed",
+        "editRuleHash": "e35a56b7638f13ff42ca6194d561d88fedf0583c3a404952d895082a9a33243f",
+        "manualStateAdvance": true,
+        "carriedForwardFromRunId": "run-speech-subtitles-complete-20260612T061601Z"
+      },
+      "outputPaths": [
+        "Resolve timeline: speech subtitle track"
+      ],
+      "summary": {
+        "markedCompleteBy": "user-requested-regenerated-flow-state-chain",
+        "output": "Resolve timeline: speech subtitle track",
+        "carriedForwardFromRunId": "run-speech-subtitles-complete-20260612T061601Z",
+        "invalidatedAt": "2026-06-13T14:29:02.005Z",
+        "invalidatedReason": "superseded by refreshed Flow Plan state chain 20260613T142902Z"
+      },
+      "review": {
+        "status": "confirmed",
+        "confirmedAt": "2026-06-13T01:22:57.110Z",
+        "confirmedBy": "user-requested-state-advance",
+        "note": "Step confirmed as completed under regenerated Flow Plan state chain. Stale: superseded by refreshed Flow Plan state chain 20260613T142902Z."
+      },
+      "error": "Superseded by refreshed Flow Plan state chain 20260613T142902Z."
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-resolve-lock-rough-cut-state-confirmed-20260613T012257Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260612T155148Z",
+      "flowPlanHash": "1226c4ed9756ee9412abfce6665292ef44fb3b4c5727f751b1c436e618ebec82",
+      "stepId": "resolve-lock-rough-cut-manual-v1",
+      "capabilityId": "resolve.lock_rough_cut",
+      "runner": "manual",
+      "status": "stale",
+      "startedAt": "2026-06-13T01:22:57.110Z",
+      "updatedAt": "2026-06-13T14:29:02.005Z",
+      "completedAt": "2026-06-13T01:22:57.110Z",
+      "inputRefs": [
+        "Resolve timeline: Kairos Timelines/<editId> rough cut"
+      ],
+      "outputRefs": [
+        "edits/<editId>/timeline/locked-rough-cut.json"
+      ],
+      "inputSnapshot": {
+        "source": "codex-agent-regenerated-flow-state-chain",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "flowPlanStatus": "confirmed",
+        "editRuleHash": "e35a56b7638f13ff42ca6194d561d88fedf0583c3a404952d895082a9a33243f",
+        "manualStateAdvance": true,
+        "carriedForwardFromRunId": "run-rough-cut-lock-complete-20260612T061601Z"
+      },
+      "outputPaths": [
+        "edits/main/timeline/locked-rough-cut.json"
+      ],
+      "summary": {
+        "markedCompleteBy": "user-requested-regenerated-flow-state-chain",
+        "lockPath": "edits/main/timeline/locked-rough-cut.json",
+        "carriedForwardFromRunId": "run-rough-cut-lock-complete-20260612T061601Z",
+        "invalidatedAt": "2026-06-13T14:29:02.005Z",
+        "invalidatedReason": "superseded by refreshed Flow Plan state chain 20260613T142902Z"
+      },
+      "review": {
+        "status": "confirmed",
+        "confirmedAt": "2026-06-13T01:22:57.110Z",
+        "confirmedBy": "user-requested-state-advance",
+        "note": "Step confirmed as completed under regenerated Flow Plan state chain. Stale: superseded by refreshed Flow Plan state chain 20260613T142902Z."
+      },
+      "error": "Superseded by refreshed Flow Plan state chain 20260613T142902Z."
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-resolve-media-sync-state-confirmed-20260613T012257Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260612T155148Z",
+      "flowPlanHash": "1226c4ed9756ee9412abfce6665292ef44fb3b4c5727f751b1c436e618ebec82",
+      "stepId": "resolve-media-sync-codex-v1",
+      "capabilityId": "resolve.media_sync",
+      "runner": "deterministic",
+      "status": "stale",
+      "startedAt": "2026-06-13T01:22:57.110Z",
+      "updatedAt": "2026-06-13T14:29:02.005Z",
+      "completedAt": "2026-06-13T01:22:57.110Z",
+      "inputRefs": [
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "Resolve Media Pool: Kairos Project Media"
+      ],
+      "inputSnapshot": {
+        "source": "codex-agent-regenerated-flow-state-chain",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "flowPlanStatus": "confirmed",
+        "editRuleHash": "e35a56b7638f13ff42ca6194d561d88fedf0583c3a404952d895082a9a33243f",
+        "manualStateAdvance": true,
+        "carriedForwardFromRunId": "run-resolve-media-sync-complete-20260612T061601Z"
+      },
+      "outputPaths": [
+        "Resolve Media Pool: Kairos Project Media"
+      ],
+      "summary": {
+        "markedCompleteBy": "user-requested-regenerated-flow-state-chain",
+        "namespace": "Kairos Project Media",
+        "carriedForwardFromRunId": "run-resolve-media-sync-complete-20260612T061601Z",
+        "invalidatedAt": "2026-06-13T14:29:02.005Z",
+        "invalidatedReason": "superseded by refreshed Flow Plan state chain 20260613T142902Z"
+      },
+      "review": {
+        "status": "not_required",
+        "note": "Step completed under regenerated Flow Plan state chain. Stale: superseded by refreshed Flow Plan state chain 20260613T142902Z."
+      },
+      "error": "Superseded by refreshed Flow Plan state chain 20260613T142902Z."
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-subtitle-review-pending-20260613T012257Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260612T155148Z",
+      "flowPlanHash": "1226c4ed9756ee9412abfce6665292ef44fb3b4c5727f751b1c436e618ebec82",
+      "stepId": "postlock-subtitle-review-codex-v1",
+      "capabilityId": "postlock.subtitle_narration",
+      "runner": "agent",
+      "status": "stale",
+      "startedAt": "2026-06-13T01:22:57.110Z",
+      "updatedAt": "2026-06-13T01:38:36.113Z",
+      "inputRefs": [
+        "edits/<editId>/timeline/locked-rough-cut.json",
+        "Resolve timeline: speech subtitle track",
+        "edits/<editId>/postlock/narration-framework.md",
+        "config/styles/china-drive-travel-documentary-main.md"
+      ],
+      "outputRefs": [
+        "edits/<editId>/postlock/subtitle-review.md"
+      ],
+      "inputSnapshot": {
+        "source": "codex-agent-regenerated-flow-state-chain",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "flowPlanStatus": "confirmed",
+        "editRuleHash": "e35a56b7638f13ff42ca6194d561d88fedf0583c3a404952d895082a9a33243f",
+        "readyAfterStepId": "postlock-narration-framework-codex-v1"
+      },
+      "outputPaths": [],
+      "summary": {
+        "currentGate": "ready_for_agent",
+        "readyReason": "Narration framework is validated and confirmed; next step is final subtitle review draft generation.",
+        "requiredInput": "edits/main/postlock/narration-framework.md",
+        "invalidatedAt": "2026-06-13T01:38:36.113Z",
+        "invalidatedReason": "superseded by run-subtitle-review-awaiting-review-20260613T013836Z"
+      },
+      "review": {
+        "status": "pending",
+        "note": "Next step after confirmed narration framework; not generated yet. Stale: superseded by run-subtitle-review-awaiting-review-20260613T013836Z."
+      },
+      "error": "Superseded by generated subtitle review run run-subtitle-review-awaiting-review-20260613T013836Z."
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-timeline-generate-state-confirmed-20260613T012257Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260612T155148Z",
+      "flowPlanHash": "1226c4ed9756ee9412abfce6665292ef44fb3b4c5727f751b1c436e618ebec82",
+      "stepId": "timeline-generate-codex-v1",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "stale",
+      "startedAt": "2026-06-13T01:22:57.110Z",
+      "updatedAt": "2026-06-13T14:29:02.005Z",
+      "completedAt": "2026-06-13T01:22:57.110Z",
+      "inputRefs": [
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "Resolve timeline: Kairos Timelines/<editId> rough cut",
+        ".tmp/edit-flow/<editId>/timeline/current.json",
+        ".tmp/edit-flow/<editId>/timeline/current.srt"
+      ],
+      "inputSnapshot": {
+        "source": "codex-agent-regenerated-flow-state-chain",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "flowPlanStatus": "confirmed",
+        "editRuleHash": "e35a56b7638f13ff42ca6194d561d88fedf0583c3a404952d895082a9a33243f",
+        "manualStateAdvance": true,
+        "carriedForwardFromRunId": "run-timeline-generate-complete-20260612T061601Z"
+      },
+      "outputPaths": [
+        "Resolve timeline: Kairos Timelines/main rough cut",
+        ".tmp/edit-flow/main/timeline/current.json"
+      ],
+      "summary": {
+        "markedCompleteBy": "user-requested-regenerated-flow-state-chain",
+        "timelineName": "Main [main]",
+        "timelineAuditPath": "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/timeline/current.json",
+        "carriedForwardFromRunId": "run-timeline-generate-complete-20260612T061601Z",
+        "invalidatedAt": "2026-06-13T14:29:02.005Z",
+        "invalidatedReason": "superseded by refreshed Flow Plan state chain 20260613T142902Z"
+      },
+      "review": {
+        "status": "not_required",
+        "note": "Step completed under regenerated Flow Plan state chain. Stale: superseded by refreshed Flow Plan state chain 20260613T142902Z."
+      },
+      "error": "Superseded by refreshed Flow Plan state chain 20260613T142902Z."
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-subtitle-review-awaiting-review-20260613T013836Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260612T155148Z",
+      "flowPlanHash": "1226c4ed9756ee9412abfce6665292ef44fb3b4c5727f751b1c436e618ebec82",
+      "stepId": "postlock-subtitle-review-codex-v1",
+      "capabilityId": "postlock.subtitle_narration",
+      "runner": "agent",
+      "status": "stale",
+      "startedAt": "2026-06-13T01:38:36.113Z",
+      "updatedAt": "2026-06-14T05:57:56.262Z",
+      "completedAt": "2026-06-13T01:38:36.113Z",
+      "inputRefs": [
+        "edits/<editId>/timeline/locked-rough-cut.json",
+        "Resolve timeline: speech subtitle track",
+        "edits/<editId>/postlock/narration-framework.md",
+        "config/styles/china-drive-travel-documentary-main.md"
+      ],
+      "outputRefs": [
+        "edits/<editId>/postlock/subtitle-review.md"
+      ],
+      "inputSnapshot": {
+        "source": "codex-agent-generated-subtitle-review",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "flowPlanStatus": "confirmed",
+        "editRuleHash": "e35a56b7638f13ff42ca6194d561d88fedf0583c3a404952d895082a9a33243f",
+        "sourceFramework": "edits/main/postlock/narration-framework.md",
+        "sourceClipMap": "edits/main/postlock/narration-framework.clip-map.json",
+        "sourcePacket": ".tmp/edit-flow/main/postlock/current-timeline-clip-packet.json",
+        "styleCategory": "china-drive-travel-documentary-main",
+        "styleLayer": "literary",
+        "rowCount": 477,
+        "generatedNarrationRows": 441,
+        "notGeneratedPhotoRows": 36
+      },
+      "outputPaths": [
+        "edits/main/postlock/subtitle-review.md",
+        "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/postlock/subtitle-review.audit.json"
+      ],
+      "summary": {
+        "artifact": "edits/main/postlock/subtitle-review.md",
+        "audit": "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/postlock/subtitle-review.audit.json",
+        "rowCount": 477,
+        "generatedNarrationRows": 441,
+        "notGeneratedPhotoRows": 36,
+        "frameworkEntryCount": 477,
+        "reviewCharCount": 85787,
+        "validation": "passed-basic-table-coverage",
+        "reviewRequiredBeforeNextStep": true,
+        "invalidatedAt": "2026-06-13T14:29:02.005Z",
+        "invalidatedReason": "superseded by refreshed Flow Plan state chain 20260613T142902Z",
+        "legacyTableColumnsDeprecated": true,
+        "legacyTableColumnsRemovedAt": "2026-06-14T05:57:56.262Z",
+        "legacyTableColumnsRemovalReason": "stale subtitle-review table headers are historical only and must not be reused by regenerated Flow Plan or downstream Agent context"
+      },
+      "review": {
+        "status": "pending",
+        "note": "Final subtitle review draft generated and awaits human review before final SRT generation. Stale: superseded by refreshed Flow Plan state chain 20260613T142902Z. Legacy stale table headers removed from run summary to avoid downstream reuse."
+      },
+      "error": "Superseded by refreshed Flow Plan state chain 20260613T142902Z."
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-edit-framework-handoff-state-completed-20260613T142902Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260613T142902Z",
+      "flowPlanHash": "ef67380fe3bbcac9f4a0cd12686f8f273575e8ff0066f68323dc672c68b8f7b3",
+      "stepId": "edit-framework-handoff-codex-v1",
+      "capabilityId": "edit.framework",
+      "runner": "agent",
+      "status": "completed",
+      "startedAt": "2026-06-13T14:29:02.005Z",
+      "updatedAt": "2026-06-13T14:29:02.005Z",
+      "completedAt": "2026-06-13T14:29:02.005Z",
+      "inputRefs": [
+        "config/edit-rules/travel-documentary.md",
+        "media/chronology.json",
+        "store/spans.json",
+        "store/assets.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/planning/edit-framework.md"
+      ],
+      "inputSnapshot": {
+        "source": "codex-agent-refreshed-flow-state-chain",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "flowPlanStatus": "confirmed",
+        "editRuleHash": "a0494fa0d11d2ea40c5fb0374f820d882c048e930223d97b5bb92eca83e9fc12",
+        "styleProfileHash": "2a170c1a65f4d3ae9b64d4d99e76a02f3498170e31c798b7ed668592dc4b52ad",
+        "previousFlowPlanId": "edit-flow-main-travel-documentary-codex-20260612T155148Z",
+        "previousFlowPlanHash": "1226c4ed9756ee9412abfce6665292ef44fb3b4c5727f751b1c436e618ebec82",
+        "carriedForwardFromRunId": "run-edit-framework-handoff-state-confirmed-20260613T012257Z"
+      },
+      "outputPaths": [
+        "edits/main/planning/edit-framework.md"
+      ],
+      "summary": {
+        "markedCompleteBy": "user-requested-refreshed-flow-state-chain",
+        "artifact": "edits/main/planning/edit-framework.md",
+        "carriedForwardFromRunId": "run-edit-framework-handoff-state-confirmed-20260613T012257Z",
+        "refreshedFlowPlan": true,
+        "previousFlowPlanId": "edit-flow-main-travel-documentary-codex-20260612T155148Z",
+        "previousFlowPlanHash": "1226c4ed9756ee9412abfce6665292ef44fb3b4c5727f751b1c436e618ebec82"
+      },
+      "review": {
+        "status": "confirmed",
+        "confirmedAt": "2026-06-13T14:29:02.005Z",
+        "confirmedBy": "user-requested-flow-plan-refresh",
+        "note": "Step confirmed as completed under refreshed Flow Plan state chain."
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-material-recall-state-completed-20260613T142902Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260613T142902Z",
+      "flowPlanHash": "ef67380fe3bbcac9f4a0cd12686f8f273575e8ff0066f68323dc672c68b8f7b3",
+      "stepId": "material-recall-codex-v1",
+      "capabilityId": "material.recall",
+      "runner": "agent",
+      "status": "completed",
+      "startedAt": "2026-06-13T14:29:02.005Z",
+      "updatedAt": "2026-06-13T14:29:02.005Z",
+      "completedAt": "2026-06-13T14:29:02.005Z",
+      "inputRefs": [
+        "edits/<editId>/planning/flow-plan.json",
+        "edits/<editId>/planning/edit-framework.md",
+        "store/spans.json",
+        "store/assets.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/script/material-slots.json"
+      ],
+      "inputSnapshot": {
+        "source": "codex-agent-refreshed-flow-state-chain",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "flowPlanStatus": "confirmed",
+        "editRuleHash": "a0494fa0d11d2ea40c5fb0374f820d882c048e930223d97b5bb92eca83e9fc12",
+        "styleProfileHash": "2a170c1a65f4d3ae9b64d4d99e76a02f3498170e31c798b7ed668592dc4b52ad",
+        "previousFlowPlanId": "edit-flow-main-travel-documentary-codex-20260612T155148Z",
+        "previousFlowPlanHash": "1226c4ed9756ee9412abfce6665292ef44fb3b4c5727f751b1c436e618ebec82",
+        "carriedForwardFromRunId": "run-material-recall-state-confirmed-20260613T012257Z"
+      },
+      "outputPaths": [
+        "edits/main/script/material-slots.json"
+      ],
+      "summary": {
+        "markedCompleteBy": "user-requested-refreshed-flow-state-chain",
+        "artifact": "edits/main/script/material-slots.json",
+        "carriedForwardFromRunId": "run-material-recall-state-confirmed-20260613T012257Z",
+        "refreshedFlowPlan": true,
+        "previousFlowPlanId": "edit-flow-main-travel-documentary-codex-20260612T155148Z",
+        "previousFlowPlanHash": "1226c4ed9756ee9412abfce6665292ef44fb3b4c5727f751b1c436e618ebec82"
+      },
+      "review": {
+        "status": "confirmed",
+        "confirmedAt": "2026-06-13T14:29:02.005Z",
+        "confirmedBy": "user-requested-flow-plan-refresh",
+        "note": "Step confirmed as completed under refreshed Flow Plan state chain."
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-resolve-media-sync-state-completed-20260613T142902Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260613T142902Z",
+      "flowPlanHash": "ef67380fe3bbcac9f4a0cd12686f8f273575e8ff0066f68323dc672c68b8f7b3",
+      "stepId": "resolve-media-sync-codex-v1",
+      "capabilityId": "resolve.media_sync",
+      "runner": "deterministic",
+      "status": "completed",
+      "startedAt": "2026-06-13T14:29:02.005Z",
+      "updatedAt": "2026-06-13T14:29:02.005Z",
+      "completedAt": "2026-06-13T14:29:02.005Z",
+      "inputRefs": [
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "Resolve Media Pool: Kairos Project Media"
+      ],
+      "inputSnapshot": {
+        "source": "codex-agent-refreshed-flow-state-chain",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "flowPlanStatus": "confirmed",
+        "editRuleHash": "a0494fa0d11d2ea40c5fb0374f820d882c048e930223d97b5bb92eca83e9fc12",
+        "styleProfileHash": "2a170c1a65f4d3ae9b64d4d99e76a02f3498170e31c798b7ed668592dc4b52ad",
+        "previousFlowPlanId": "edit-flow-main-travel-documentary-codex-20260612T155148Z",
+        "previousFlowPlanHash": "1226c4ed9756ee9412abfce6665292ef44fb3b4c5727f751b1c436e618ebec82",
+        "carriedForwardFromRunId": "run-resolve-media-sync-state-confirmed-20260613T012257Z"
+      },
+      "outputPaths": [
+        "Resolve Media Pool: Kairos Project Media"
+      ],
+      "summary": {
+        "markedCompleteBy": "user-requested-refreshed-flow-state-chain",
+        "namespace": "Kairos Project Media",
+        "carriedForwardFromRunId": "run-resolve-media-sync-state-confirmed-20260613T012257Z",
+        "refreshedFlowPlan": true,
+        "previousFlowPlanId": "edit-flow-main-travel-documentary-codex-20260612T155148Z",
+        "previousFlowPlanHash": "1226c4ed9756ee9412abfce6665292ef44fb3b4c5727f751b1c436e618ebec82"
+      },
+      "review": {
+        "status": "not_required",
+        "note": "Step completed under refreshed Flow Plan state chain."
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-timeline-generate-state-completed-20260613T142902Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260613T142902Z",
+      "flowPlanHash": "ef67380fe3bbcac9f4a0cd12686f8f273575e8ff0066f68323dc672c68b8f7b3",
+      "stepId": "timeline-generate-codex-v1",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "completed",
+      "startedAt": "2026-06-13T14:29:02.005Z",
+      "updatedAt": "2026-06-13T14:29:02.005Z",
+      "completedAt": "2026-06-13T14:29:02.005Z",
+      "inputRefs": [
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "Resolve timeline: Kairos Timelines/<editId> rough cut",
+        ".tmp/edit-flow/<editId>/timeline/current.json",
+        ".tmp/edit-flow/<editId>/timeline/current.srt"
+      ],
+      "inputSnapshot": {
+        "source": "codex-agent-refreshed-flow-state-chain",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "flowPlanStatus": "confirmed",
+        "editRuleHash": "a0494fa0d11d2ea40c5fb0374f820d882c048e930223d97b5bb92eca83e9fc12",
+        "styleProfileHash": "2a170c1a65f4d3ae9b64d4d99e76a02f3498170e31c798b7ed668592dc4b52ad",
+        "previousFlowPlanId": "edit-flow-main-travel-documentary-codex-20260612T155148Z",
+        "previousFlowPlanHash": "1226c4ed9756ee9412abfce6665292ef44fb3b4c5727f751b1c436e618ebec82",
+        "carriedForwardFromRunId": "run-timeline-generate-state-confirmed-20260613T012257Z"
+      },
+      "outputPaths": [
+        "Resolve timeline: Kairos Timelines/main rough cut",
+        ".tmp/edit-flow/main/timeline/current.json"
+      ],
+      "summary": {
+        "markedCompleteBy": "user-requested-refreshed-flow-state-chain",
+        "timelineName": "Main [main]",
+        "timelineAuditPath": "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/timeline/current.json",
+        "carriedForwardFromRunId": "run-timeline-generate-state-confirmed-20260613T012257Z",
+        "refreshedFlowPlan": true,
+        "previousFlowPlanId": "edit-flow-main-travel-documentary-codex-20260612T155148Z",
+        "previousFlowPlanHash": "1226c4ed9756ee9412abfce6665292ef44fb3b4c5727f751b1c436e618ebec82"
+      },
+      "review": {
+        "status": "not_required",
+        "note": "Step completed under refreshed Flow Plan state chain."
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-resolve-lock-rough-cut-state-completed-20260613T142902Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260613T142902Z",
+      "flowPlanHash": "ef67380fe3bbcac9f4a0cd12686f8f273575e8ff0066f68323dc672c68b8f7b3",
+      "stepId": "resolve-lock-rough-cut-manual-v1",
+      "capabilityId": "resolve.lock_rough_cut",
+      "runner": "manual",
+      "status": "completed",
+      "startedAt": "2026-06-13T14:29:02.005Z",
+      "updatedAt": "2026-06-13T14:29:02.005Z",
+      "completedAt": "2026-06-13T14:29:02.005Z",
+      "inputRefs": [
+        "Resolve timeline: Kairos Timelines/<editId> rough cut"
+      ],
+      "outputRefs": [
+        "edits/<editId>/timeline/locked-rough-cut.json"
+      ],
+      "inputSnapshot": {
+        "source": "codex-agent-refreshed-flow-state-chain",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "flowPlanStatus": "confirmed",
+        "editRuleHash": "a0494fa0d11d2ea40c5fb0374f820d882c048e930223d97b5bb92eca83e9fc12",
+        "styleProfileHash": "2a170c1a65f4d3ae9b64d4d99e76a02f3498170e31c798b7ed668592dc4b52ad",
+        "previousFlowPlanId": "edit-flow-main-travel-documentary-codex-20260612T155148Z",
+        "previousFlowPlanHash": "1226c4ed9756ee9412abfce6665292ef44fb3b4c5727f751b1c436e618ebec82",
+        "carriedForwardFromRunId": "run-resolve-lock-rough-cut-state-confirmed-20260613T012257Z"
+      },
+      "outputPaths": [
+        "edits/main/timeline/locked-rough-cut.json"
+      ],
+      "summary": {
+        "markedCompleteBy": "user-requested-refreshed-flow-state-chain",
+        "lockPath": "edits/main/timeline/locked-rough-cut.json",
+        "carriedForwardFromRunId": "run-resolve-lock-rough-cut-state-confirmed-20260613T012257Z",
+        "refreshedFlowPlan": true,
+        "previousFlowPlanId": "edit-flow-main-travel-documentary-codex-20260612T155148Z",
+        "previousFlowPlanHash": "1226c4ed9756ee9412abfce6665292ef44fb3b4c5727f751b1c436e618ebec82"
+      },
+      "review": {
+        "status": "confirmed",
+        "confirmedAt": "2026-06-13T14:29:02.005Z",
+        "confirmedBy": "user-requested-flow-plan-refresh",
+        "note": "Step confirmed as completed under refreshed Flow Plan state chain."
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-postlock-speech-subtitles-state-completed-20260613T142902Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260613T142902Z",
+      "flowPlanHash": "ef67380fe3bbcac9f4a0cd12686f8f273575e8ff0066f68323dc672c68b8f7b3",
+      "stepId": "postlock-speech-subtitles-manual-v1",
+      "capabilityId": "postlock.subtitle_narration",
+      "runner": "manual",
+      "status": "completed",
+      "startedAt": "2026-06-13T14:29:02.005Z",
+      "updatedAt": "2026-06-13T14:29:02.005Z",
+      "completedAt": "2026-06-13T14:29:02.005Z",
+      "inputRefs": [
+        "edits/<editId>/timeline/locked-rough-cut.json",
+        "Resolve timeline: locked rough cut"
+      ],
+      "outputRefs": [
+        "Resolve timeline: speech subtitle track"
+      ],
+      "inputSnapshot": {
+        "source": "codex-agent-refreshed-flow-state-chain",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "flowPlanStatus": "confirmed",
+        "editRuleHash": "a0494fa0d11d2ea40c5fb0374f820d882c048e930223d97b5bb92eca83e9fc12",
+        "styleProfileHash": "2a170c1a65f4d3ae9b64d4d99e76a02f3498170e31c798b7ed668592dc4b52ad",
+        "previousFlowPlanId": "edit-flow-main-travel-documentary-codex-20260612T155148Z",
+        "previousFlowPlanHash": "1226c4ed9756ee9412abfce6665292ef44fb3b4c5727f751b1c436e618ebec82",
+        "carriedForwardFromRunId": "run-postlock-speech-subtitles-state-confirmed-20260613T012257Z"
+      },
+      "outputPaths": [
+        "Resolve timeline: speech subtitle track"
+      ],
+      "summary": {
+        "markedCompleteBy": "user-requested-refreshed-flow-state-chain",
+        "output": "Resolve timeline: speech subtitle track",
+        "carriedForwardFromRunId": "run-postlock-speech-subtitles-state-confirmed-20260613T012257Z",
+        "refreshedFlowPlan": true,
+        "previousFlowPlanId": "edit-flow-main-travel-documentary-codex-20260612T155148Z",
+        "previousFlowPlanHash": "1226c4ed9756ee9412abfce6665292ef44fb3b4c5727f751b1c436e618ebec82"
+      },
+      "review": {
+        "status": "confirmed",
+        "confirmedAt": "2026-06-13T14:29:02.005Z",
+        "confirmedBy": "user-requested-flow-plan-refresh",
+        "note": "Step confirmed as completed under refreshed Flow Plan state chain."
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-postlock-narration-framework-state-completed-20260613T142902Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260613T142902Z",
+      "flowPlanHash": "ef67380fe3bbcac9f4a0cd12686f8f273575e8ff0066f68323dc672c68b8f7b3",
+      "stepId": "postlock-narration-framework-codex-v1",
+      "capabilityId": "postlock.subtitle_narration",
+      "runner": "agent",
+      "status": "stale",
+      "startedAt": "2026-06-13T14:29:02.005Z",
+      "updatedAt": "2026-06-14T05:59:10.586Z",
+      "completedAt": "2026-06-13T14:29:02.005Z",
+      "inputRefs": [
+        "edits/<editId>/timeline/locked-rough-cut.json",
+        "Resolve timeline: speech subtitle track",
+        "media/chronology.json",
+        "config/edit-rules/travel-documentary.md"
+      ],
+      "outputRefs": [
+        "edits/<editId>/postlock/narration-framework.md"
+      ],
+      "inputSnapshot": {
+        "source": "codex-agent-refreshed-flow-state-chain",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "flowPlanStatus": "confirmed",
+        "editRuleHash": "a0494fa0d11d2ea40c5fb0374f820d882c048e930223d97b5bb92eca83e9fc12",
+        "styleProfileHash": "2a170c1a65f4d3ae9b64d4d99e76a02f3498170e31c798b7ed668592dc4b52ad",
+        "previousFlowPlanId": "edit-flow-main-travel-documentary-codex-20260612T155148Z",
+        "previousFlowPlanHash": "1226c4ed9756ee9412abfce6665292ef44fb3b4c5727f751b1c436e618ebec82",
+        "carriedForwardFromRunId": "run-postlock-narration-framework-state-confirmed-20260613T012257Z",
+        "confirmationSource": "user-requested-flow-plan-refresh",
+        "frameworkConfirmedForSubtitleReview": true
+      },
+      "outputPaths": [
+        "edits/main/postlock/narration-framework.md",
+        "edits/main/postlock/narration-framework.clip-map.json",
+        "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/postlock/current-timeline-clip-packet.json"
+      ],
+      "summary": {
+        "artifact": "edits/main/postlock/narration-framework.md",
+        "clipMap": "edits/main/postlock/narration-framework.clip-map.json",
+        "timelinePacket": "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/postlock/current-timeline-clip-packet.json",
+        "resolveProject": "丙察察格聂南线子梅垭口穿越 [Edit]",
+        "timeline": "Main [main]",
+        "videoClipCount": 1318,
+        "speechClipCount": 691,
+        "narrationClipCount": 627,
+        "speechEntryCount": 275,
+        "narrationEntryCount": 477,
+        "frameworkFormat": "markdown-pack-list-v2",
+        "clipMapSchema": "kairos-postlock-narration-framework-clip-map-v2",
+        "frameworkPackCount": 398,
+        "frameworkLineCount": 752,
+        "frameworkCharCount": 59869,
+        "validation": "passed",
+        "boundaryPolicy": "clip-level-pack-list-v2-current-packet",
+        "visualEvidencePolicy": "visualObservation-only",
+        "boundaryRepair": {
+          "repairedSpeechPackCount": 15,
+          "method": "split invalid stale speech merge entries into current packet clip-level entries"
+        },
+        "reviewRequiredBeforeNextStep": false,
+        "markedCompleteBy": "user-requested-refreshed-flow-state-chain",
+        "carriedForwardFromRunId": "run-postlock-narration-framework-state-confirmed-20260613T012257Z",
+        "refreshedFlowPlan": true,
+        "previousFlowPlanId": "edit-flow-main-travel-documentary-codex-20260612T155148Z",
+        "previousFlowPlanHash": "1226c4ed9756ee9412abfce6665292ef44fb3b4c5727f751b1c436e618ebec82",
+        "invalidatedAt": "2026-06-13T16:48:10.824Z",
+        "invalidatedReason": "superseded by geo-enhanced narration framework run run-postlock-narration-framework-awaiting-review-geo-enhanced-20260613T164810Z"
+      },
+      "review": {
+        "status": "pending",
+        "confirmedAt": "2026-06-13T14:29:02.005Z",
+        "confirmedBy": "user-requested-flow-plan-refresh",
+        "note": "Stale: superseded by geo-enhanced narration framework run run-postlock-narration-framework-awaiting-review-geo-enhanced-20260613T164810Z. Sanitized invalid review.status=\"stale\"; run.status carries stale/completion truth."
+      },
+      "supersededBy": "run-postlock-narration-framework-awaiting-review-geo-enhanced-20260613T164810Z",
+      "error": "superseded by geo-enhanced narration framework run run-postlock-narration-framework-awaiting-review-geo-enhanced-20260613T164810Z"
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-postlock-subtitle-review-state-awaiting-review-20260613T142902Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260613T142902Z",
+      "flowPlanHash": "ef67380fe3bbcac9f4a0cd12686f8f273575e8ff0066f68323dc672c68b8f7b3",
+      "stepId": "postlock-subtitle-review-codex-v1",
+      "capabilityId": "postlock.subtitle_narration",
+      "runner": "agent",
+      "status": "stale",
+      "startedAt": "2026-06-13T14:29:02.005Z",
+      "updatedAt": "2026-06-14T05:57:56.262Z",
+      "completedAt": "2026-06-13T14:29:02.005Z",
+      "inputRefs": [
+        "edits/<editId>/timeline/locked-rough-cut.json",
+        "Resolve timeline: speech subtitle track",
+        "edits/<editId>/postlock/narration-framework.md",
+        "config/styles/china-drive-travel-documentary-main.md"
+      ],
+      "outputRefs": [
+        "edits/<editId>/postlock/subtitle-review.md"
+      ],
+      "inputSnapshot": {
+        "source": "codex-agent-refreshed-flow-state-chain",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "flowPlanStatus": "confirmed",
+        "editRuleHash": "a0494fa0d11d2ea40c5fb0374f820d882c048e930223d97b5bb92eca83e9fc12",
+        "styleProfileHash": "2a170c1a65f4d3ae9b64d4d99e76a02f3498170e31c798b7ed668592dc4b52ad",
+        "previousFlowPlanId": "edit-flow-main-travel-documentary-codex-20260612T155148Z",
+        "previousFlowPlanHash": "1226c4ed9756ee9412abfce6665292ef44fb3b4c5727f751b1c436e618ebec82",
+        "carriedForwardFromRunId": "run-subtitle-review-awaiting-review-20260613T013836Z",
+        "sourceFramework": "edits/main/postlock/narration-framework.md",
+        "sourceClipMap": "edits/main/postlock/narration-framework.clip-map.json",
+        "sourcePacket": ".tmp/edit-flow/main/postlock/current-timeline-clip-packet.json",
+        "styleCategory": "china-drive-travel-documentary-main",
+        "styleLayer": "literary",
+        "rowCount": 477,
+        "generatedNarrationRows": 441,
+        "notGeneratedPhotoRows": 36
+      },
+      "outputPaths": [
+        "edits/main/postlock/subtitle-review.md",
+        "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/postlock/subtitle-review.audit.json"
+      ],
+      "summary": {
+        "artifact": "edits/main/postlock/subtitle-review.md",
+        "audit": "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/postlock/subtitle-review.audit.json",
+        "rowCount": 477,
+        "generatedNarrationRows": 441,
+        "notGeneratedPhotoRows": 36,
+        "frameworkEntryCount": 477,
+        "reviewCharCount": 85787,
+        "validation": "passed-basic-table-coverage",
+        "reviewRequiredBeforeNextStep": true,
+        "markedAwaitingReviewBy": "user-requested-refreshed-flow-state-chain",
+        "refreshedFlowPlan": true,
+        "carriedForwardFromRunId": "run-subtitle-review-awaiting-review-20260613T013836Z",
+        "previousFlowPlanId": "edit-flow-main-travel-documentary-codex-20260612T155148Z",
+        "previousFlowPlanHash": "1226c4ed9756ee9412abfce6665292ef44fb3b4c5727f751b1c436e618ebec82",
+        "invalidatedAt": "2026-06-13T14:30:24.695Z",
+        "invalidatedReason": "superseded by refreshed Flow Plan ready-for-agent subtitle review state 20260613T143024Z",
+        "legacyTableColumnsDeprecated": true,
+        "legacyTableColumnsRemovedAt": "2026-06-14T05:57:56.262Z",
+        "legacyTableColumnsRemovalReason": "stale subtitle-review table headers are historical only and must not be reused by regenerated Flow Plan or downstream Agent context"
+      },
+      "review": {
+        "status": "pending",
+        "note": "Final subtitle review draft is available and awaits human review before final SRT generation. Stale: existing subtitle review requires regeneration under refreshed edit-rule notes. Legacy stale table headers removed from run summary to avoid downstream reuse."
+      },
+      "error": "Existing subtitle-review.md was generated before the latest edit-rule constraints; regenerated Flow Plan now stops at ready_for_agent for postlock-subtitle-review-codex-v1 (20260613T143024Z)."
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-postlock-subtitle-review-ready-for-agent-20260613T143024Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260613T142902Z",
+      "flowPlanHash": "ef67380fe3bbcac9f4a0cd12686f8f273575e8ff0066f68323dc672c68b8f7b3",
+      "stepId": "postlock-subtitle-review-codex-v1",
+      "capabilityId": "postlock.subtitle_narration",
+      "runner": "agent",
+      "status": "stale",
+      "startedAt": "2026-06-13T14:30:24.695Z",
+      "updatedAt": "2026-06-13T14:34:29.736Z",
+      "inputRefs": [
+        "edits/<editId>/timeline/locked-rough-cut.json",
+        "Resolve timeline: speech subtitle track",
+        "edits/<editId>/postlock/narration-framework.md",
+        "config/styles/china-drive-travel-documentary-main.md"
+      ],
+      "outputRefs": [
+        "edits/<editId>/postlock/subtitle-review.md"
+      ],
+      "inputSnapshot": {
+        "source": "codex-agent-refreshed-flow-state-chain",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "flowPlanStatus": "confirmed",
+        "editRuleHash": "a0494fa0d11d2ea40c5fb0374f820d882c048e930223d97b5bb92eca83e9fc12",
+        "styleProfileHash": "2a170c1a65f4d3ae9b64d4d99e76a02f3498170e31c798b7ed668592dc4b52ad",
+        "sourceFramework": "edits/main/postlock/narration-framework.md",
+        "sourceClipMap": "edits/main/postlock/narration-framework.clip-map.json",
+        "sourcePacket": ".tmp/edit-flow/main/postlock/current-timeline-clip-packet.json",
+        "styleCategory": "china-drive-travel-documentary-main",
+        "styleLayer": "literary",
+        "previousGeneratedArtifact": "edits/main/postlock/subtitle-review.md",
+        "previousGeneratedArtifactStatus": "stale-after-edit-rule-refresh"
+      },
+      "outputPaths": [],
+      "summary": {
+        "currentGate": "ready_for_agent",
+        "readyReason": "Flow Plan refreshed to the current travel-documentary edit rule; narration framework is validated and confirmed, so the next action is final subtitle review draft generation under the refreshed notes.",
+        "requiredInput": "edits/main/postlock/narration-framework.md",
+        "previousGeneratedArtifact": "edits/main/postlock/subtitle-review.md",
+        "previousGeneratedArtifactStatus": "stale-after-edit-rule-refresh",
+        "reviewRequiredAfterGeneration": true,
+        "invalidatedAt": "2026-06-13T14:34:29.736Z",
+        "invalidatedReason": "superseded by generated subtitle review run 20260613T143429Z"
+      },
+      "review": {
+        "status": "pending",
+        "note": "Ready for Agent generation of final subtitle review draft under refreshed edit-rule Flow Plan. Stale: generated formal subtitle review draft."
+      },
+      "error": "Superseded by generated subtitle review run 20260613T143429Z."
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-subtitle-review-awaiting-review-20260613T143429Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260613T142902Z",
+      "flowPlanHash": "ef67380fe3bbcac9f4a0cd12686f8f273575e8ff0066f68323dc672c68b8f7b3",
+      "stepId": "postlock-subtitle-review-codex-v1",
+      "capabilityId": "postlock.subtitle_narration",
+      "runner": "agent",
+      "status": "stale",
+      "startedAt": "2026-06-13T14:34:29.736Z",
+      "updatedAt": "2026-06-14T05:59:10.586Z",
+      "completedAt": "2026-06-13T14:34:29.736Z",
+      "inputRefs": [
+        "edits/<editId>/timeline/locked-rough-cut.json",
+        "Resolve timeline: speech subtitle track",
+        "edits/<editId>/postlock/narration-framework.md",
+        "config/styles/china-drive-travel-documentary-main.md"
+      ],
+      "outputRefs": [
+        "edits/<editId>/postlock/subtitle-review.md"
+      ],
+      "inputSnapshot": {
+        "source": "codex-agent-generated-subtitle-review",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "flowPlanStatus": "confirmed",
+        "editRuleHash": "a0494fa0d11d2ea40c5fb0374f820d882c048e930223d97b5bb92eca83e9fc12",
+        "styleProfileHash": "2a170c1a65f4d3ae9b64d4d99e76a02f3498170e31c798b7ed668592dc4b52ad",
+        "sourceFramework": "edits/main/postlock/narration-framework.md",
+        "sourceClipMap": "edits/main/postlock/narration-framework.clip-map.json",
+        "sourcePacket": ".tmp/edit-flow/main/postlock/current-timeline-clip-packet.json",
+        "styleCategory": "china-drive-travel-documentary-main",
+        "styleLayer": "literary",
+        "rowCount": 477,
+        "generatedNarrationRows": 441,
+        "notGeneratedPhotoRows": 36
+      },
+      "outputPaths": [
+        "edits/main/postlock/subtitle-review.md",
+        "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/postlock/subtitle-review.audit.json"
+      ],
+      "summary": {
+        "artifact": "edits/main/postlock/subtitle-review.md",
+        "audit": "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/postlock/subtitle-review.audit.json",
+        "rowCount": 477,
+        "generatedNarrationRows": 441,
+        "notGeneratedPhotoRows": 36,
+        "frameworkEntryCount": 477,
+        "reviewCharCount": 67292,
+        "artifactHash": "3f8c1e5933eff4319a013757b96799911c5b8c6fcbb6175cf70791cf6b033909",
+        "validation": "passed-basic-table-coverage-policy-scan-polish-and-title-cleanup",
+        "reviewRequiredBeforeNextStep": true,
+        "invalidatedAt": "2026-06-13T16:22:34.695Z",
+        "invalidatedReason": "replaced by subagent-regenerated subtitle review run run-subtitle-review-awaiting-review-subagent-20260613T162234Z after user rejected mechanical draft",
+        "legacyTableColumnsDeprecated": true,
+        "legacyTableColumnsRemovedAt": "2026-06-14T05:57:56.262Z",
+        "legacyTableColumnsRemovalReason": "stale subtitle-review table headers are historical only and must not be reused by regenerated Flow Plan or downstream Agent context"
+      },
+      "review": {
+        "status": "pending",
+        "note": "Stale: user rejected this mechanical draft; superseded by subagent-regenerated subtitle review draft. Legacy stale table headers removed from run summary to avoid downstream reuse. Sanitized invalid review.status=\"stale\"; run.status carries stale/completion truth."
+      },
+      "error": "Superseded by subagent-regenerated subtitle review run run-subtitle-review-awaiting-review-subagent-20260613T162234Z."
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-subtitle-review-awaiting-review-subagent-20260613T162234Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260613T142902Z",
+      "flowPlanHash": "ef67380fe3bbcac9f4a0cd12686f8f273575e8ff0066f68323dc672c68b8f7b3",
+      "stepId": "postlock-subtitle-review-codex-v1",
+      "capabilityId": "postlock.subtitle_narration",
+      "runner": "agent",
+      "status": "stale",
+      "startedAt": "2026-06-13T16:22:34.695Z",
+      "updatedAt": "2026-06-14T05:59:10.586Z",
+      "completedAt": "2026-06-13T16:22:34.695Z",
+      "inputRefs": [
+        "edits/<editId>/timeline/locked-rough-cut.json",
+        "Resolve timeline: speech subtitle track",
+        "edits/<editId>/postlock/narration-framework.md",
+        "config/styles/china-drive-travel-documentary-main.md"
+      ],
+      "outputRefs": [
+        "edits/<editId>/postlock/subtitle-review.md"
+      ],
+      "inputSnapshot": {
+        "source": "codex-subagent-generated-subtitle-review",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "flowPlanStatus": "confirmed",
+        "editRuleHash": "a0494fa0d11d2ea40c5fb0374f820d882c048e930223d97b5bb92eca83e9fc12",
+        "styleProfileHash": "2a170c1a65f4d3ae9b64d4d99e76a02f3498170e31c798b7ed668592dc4b52ad",
+        "sourceFramework": "edits/main/postlock/narration-framework.md",
+        "sourceClipMap": "edits/main/postlock/narration-framework.clip-map.json",
+        "sourcePacket": ".tmp/edit-flow/main/postlock/current-timeline-clip-packet.json",
+        "styleCategory": "china-drive-travel-documentary-main",
+        "styleLayer": "literary",
+        "referenceInputs": [
+          "config/edit-rules/travel-documentary.md",
+          "config/styles/china-drive-travel-documentary-main.md",
+          "test/scripts/new-zealand-north.md",
+          "edits/main/postlock/subtitle-review.first10-packs.per-clip.test.md"
+        ],
+        "subagentId": "019ec1bf-7da5-74c0-8e2b-05f78af43797",
+        "rowCount": 483,
+        "generatedNarrationRows": 447,
+        "notGeneratedPhotoRows": 36
+      },
+      "outputPaths": [
+        "edits/main/postlock/subtitle-review.md",
+        "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/postlock/subtitle-review.audit.json"
+      ],
+      "summary": {
+        "artifact": "edits/main/postlock/subtitle-review.md",
+        "audit": "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/postlock/subtitle-review.audit.json",
+        "subagentDraft": "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/postlock/subtitle-review.subagent-draft.md",
+        "subagentId": "019ec1bf-7da5-74c0-8e2b-05f78af43797",
+        "rowCount": 483,
+        "generatedNarrationRows": 447,
+        "notGeneratedPhotoRows": 36,
+        "reviewCharCount": 31626,
+        "artifactHash": "5d04815d011c73d140d27288ec4fd663ddd2b14da833b1c0e56945539208d9a6",
+        "validation": "passed-subagent-table-policy-scan-natural-gps-review",
+        "bannedTermsFound": [],
+        "rawFirstColumnHits": 0,
+        "rawSecondColumnHits": 0,
+        "reviewRequiredBeforeNextStep": true,
+        "supersedesRunId": "run-subtitle-review-awaiting-review-20260613T143429Z",
+        "invalidatedAt": "2026-06-13T16:48:10.824Z",
+        "invalidatedReason": "upstream narration-framework was replaced by geo-enhanced draft and subtitle review must be regenerated",
+        "legacyTableColumnsDeprecated": true,
+        "legacyTableColumnsRemovedAt": "2026-06-14T05:57:56.262Z",
+        "legacyTableColumnsRemovalReason": "stale subtitle-review table headers are historical only and must not be reused by regenerated Flow Plan or downstream Agent context"
+      },
+      "review": {
+        "status": "pending",
+        "note": "Stale: upstream narration-framework was replaced by geo-enhanced draft; regenerate final subtitle review after framework confirmation. Legacy stale table headers removed from run summary to avoid downstream reuse. Sanitized invalid review.status=\"stale\"; run.status carries stale/completion truth."
+      },
+      "supersededBy": "run-postlock-narration-framework-awaiting-review-geo-enhanced-20260613T164810Z",
+      "error": "Subtitle review invalidated by upstream geo-enhanced narration framework replacement."
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-postlock-narration-framework-awaiting-review-geo-enhanced-20260613T164810Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260613T142902Z",
+      "flowPlanHash": "ef67380fe3bbcac9f4a0cd12686f8f273575e8ff0066f68323dc672c68b8f7b3",
+      "stepId": "postlock-narration-framework-codex-v1",
+      "capabilityId": "postlock.subtitle_narration",
+      "runner": "agent",
+      "status": "stale",
+      "startedAt": "2026-06-13T16:48:10.824Z",
+      "updatedAt": "2026-06-14T05:59:10.586Z",
+      "completedAt": "2026-06-13T16:48:10.824Z",
+      "inputRefs": [
+        "edits/<editId>/timeline/locked-rough-cut.json",
+        "Resolve timeline: speech subtitle track",
+        "media/chronology.json",
+        "analysis/pharos-context.json",
+        "projects/<projectId>/pharos/**/*.gpx",
+        "gps/derived.json",
+        "gps/reverse-geocode-cache.json",
+        "config/styles/china-drive-travel-documentary-main.md",
+        ".tmp/edit-flow/<editId>/postlock/narration-framework.geo-context.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/postlock/narration-framework.md",
+        "edits/<editId>/postlock/narration-framework.clip-map.json"
+      ],
+      "inputSnapshot": {
+        "source": "codex-subagent-geo-enhanced-narration-framework",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "flowPlanStatus": "confirmed",
+        "editRuleCategory": "travel-documentary",
+        "editRuleHash": "a0494fa0d11d2ea40c5fb0374f820d882c048e930223d97b5bb92eca83e9fc12",
+        "styleCategory": "china-drive-travel-documentary-main",
+        "styleLayer": "literary",
+        "subagentId": "019ec1da-dfda-7ba3-a011-eaf1b7805679",
+        "geoContext": ".tmp/edit-flow/main/postlock/narration-framework.geo-context.json",
+        "geoStats": {
+          "gpx-high": 990,
+          "direct-asset-gps": 290,
+          "gpx-low": 6,
+          "gpx-medium": 32
+        },
+        "pharosProtocolBaseline": ".ai/pharos-protocol-baseline.json",
+        "geoContextHash": "6fae15bfabb62d6c4c8b9e15b8d6b3fa8b87e744b76807e5057a7fd09fddf382"
+      },
+      "outputPaths": [
+        "edits/main/postlock/narration-framework.md",
+        "edits/main/postlock/narration-framework.clip-map.json",
+        "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/postlock/narration-framework.geo-context.json",
+        "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/postlock/narration-framework.geo-enhanced.subagent-draft.md"
+      ],
+      "summary": {
+        "artifact": "edits/main/postlock/narration-framework.md",
+        "clipMap": "edits/main/postlock/narration-framework.clip-map.json",
+        "timelinePacket": "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/postlock/current-timeline-clip-packet.json",
+        "geoContext": "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/postlock/narration-framework.geo-context.json",
+        "subagentDraft": "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/postlock/narration-framework.geo-enhanced.subagent-draft.md",
+        "subagentId": "019ec1da-dfda-7ba3-a011-eaf1b7805679",
+        "backupDir": "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/backups/20260613T164730Z-narration-framework-geo-enhance",
+        "videoClipCount": 1318,
+        "speechClipCount": 691,
+        "narrationClipCount": 627,
+        "frameworkEntryCount": 752,
+        "speechEntryCount": 275,
+        "narrationEntryCount": 477,
+        "frameworkPackCount": 431,
+        "previousFrameworkPackCount": 398,
+        "frameworkFormat": "markdown-pack-list-v2",
+        "clipMapSchema": "kairos-postlock-narration-framework-clip-map-v2",
+        "gpsContext": {
+          "clipCount": 1318,
+          "packCount": 398,
+          "mapEntryCount": 752,
+          "gpxPointCount": 91989,
+          "derivedGpsAssetCount": 579,
+          "reverseGeocodeEntryCount": 973,
+          "gpsStats": {
+            "gpx-high": 990,
+            "direct-asset-gps": 290,
+            "gpx-low": 6,
+            "gpx-medium": 32
+          },
+          "caution": "reverse geocode / POI / company names are audit anchors only; final narration should use cleaned administrative and terrain-hydrology context."
+        },
+        "artifactHash": "eb9f80159388f71869f3c9779801e38b59cc2d20c79cdd3edae7adb58695e795",
+        "clipMapHash": "755afb4a1bcceb1555c2dd5fd4caa8cf03e022659d9c4aa7da77badd21501f37",
+        "validation": "passed-geo-enhanced-user-review-correction-policy-scan",
+        "bannedTermsFound": [],
+        "reviewRequiredBeforeNextStep": true,
+        "downstreamInvalidated": [
+          "edits/main/postlock/subtitle-review.md"
+        ],
+        "manualGeoCorrections": [
+          {
+            "clips": [
+              5,
+              6,
+              7,
+              8,
+              9
+            ],
+            "reason": "Filled coarse route fallback with clip-level GPX + Amap lookup for Zhongshan/Jiangmen highway section."
+          },
+          {
+            "clips": [
+              158,
+              159,
+              160,
+              161,
+              162,
+              163,
+              164,
+              165,
+              166,
+              167,
+              168,
+              169,
+              170,
+              171,
+              172,
+              173
+            ],
+            "packs": [
+              56,
+              57,
+              58
+            ],
+            "reason": "Replaced leaked chronology placeholder bad chronology placeholder with Yongping Bonan / Amitian Hangrui Expressway cloud-valley GPS context."
+          }
+        ],
+        "geoContextHash": "6fae15bfabb62d6c4c8b9e15b8d6b3fa8b87e744b76807e5057a7fd09fddf382",
+        "subagentDraftHash": "7afbed346abfd84617d977bc317ce9a9f5a9c15688ba86ad1fa8885e9fb4ae13",
+        "invalidatedAt": "2026-06-14T04:05:58.693Z",
+        "invalidatedReason": "superseded by precise per-clip geo cleanup run run-postlock-narration-framework-awaiting-review-precise-geo-20260614T040558Z"
+      },
+      "review": {
+        "status": "pending",
+        "note": "Stale: superseded by precise per-clip geo cleanup run run-postlock-narration-framework-awaiting-review-precise-geo-20260614T040558Z. Sanitized invalid review.status=\"stale\"; run.status carries stale/completion truth."
+      },
+      "supersededBy": "run-postlock-narration-framework-awaiting-review-precise-geo-20260614T040558Z",
+      "error": "Superseded by precise per-clip geo cleanup run run-postlock-narration-framework-awaiting-review-precise-geo-20260614T040558Z."
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-postlock-narration-framework-awaiting-review-precise-geo-20260614T040558Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260613T142902Z",
+      "flowPlanHash": "ce3ce5ef525392607176bdc5f73821c66d7c34e5183553541fbb71455bde8b2f",
+      "stepId": "postlock-narration-framework-codex-v1",
+      "capabilityId": "postlock.subtitle_narration",
+      "runner": "agent",
+      "status": "stale",
+      "startedAt": "2026-06-14T04:05:58.693Z",
+      "updatedAt": "2026-06-14T05:59:10.586Z",
+      "completedAt": "2026-06-14T04:05:58.693Z",
+      "inputRefs": [
+        "Resolve timeline: speech subtitle track",
+        ".tmp/edit-flow/<editId>/postlock/current-timeline-clip-packet.json",
+        "media/chronology.json",
+        "gps/reverse-geocode-cache.json",
+        "config/edit-rules/travel-documentary.md",
+        "config/styles/china-drive-travel-documentary-main.md"
+      ],
+      "outputRefs": [
+        "edits/<editId>/postlock/narration-framework.md",
+        "edits/<editId>/postlock/narration-framework.clip-map.json",
+        ".tmp/edit-flow/<editId>/postlock/narration-framework.precise-geo.json"
+      ],
+      "inputSnapshot": {
+        "source": "codex-agent-precise-per-clip-geo-cleanup",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "flowPlanStatus": "confirmed",
+        "editRuleHash": "d34dbc7d0258e99489bd6ea4bd811133dcbe2c085a1bf64208442a68a4cd0b8b",
+        "styleCategory": "china-drive-travel-documentary-main",
+        "styleProfileVersion": "layered-v1"
+      },
+      "outputPaths": [
+        "edits/main/postlock/narration-framework.md",
+        "edits/main/postlock/narration-framework.clip-map.json",
+        "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/postlock/narration-framework.precise-geo.json"
+      ],
+      "summary": {
+        "artifact": "edits/main/postlock/narration-framework.md",
+        "clipMap": "edits/main/postlock/narration-framework.clip-map.json",
+        "preciseGeoAudit": "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/postlock/narration-framework.precise-geo.json",
+        "validator": "node scripts/validate-postlock-narration-framework.mjs projects/bingchacha-genie-south-zimeiyakou main",
+        "validatorStatus": "passed",
+        "clipCount": 1318,
+        "speechClipCount": 691,
+        "narrationClipCount": 627,
+        "frameworkEntryCount": 701,
+        "narrationEntryCount": 477,
+        "locationPolicy": "markdown contains readable place/terrain/hydrology context only; GPS source, match delta, raw coordinates, source path and confidence remain in audit JSON",
+        "pollutionScan": "passed: no GPX±, 机内GPS, GPS匹配, raw coordinate note, route-arrow location note, or rejected vehicle-color terms in official framework",
+        "invalidatedAt": "2026-06-14T04:16:38.579Z",
+        "invalidatedReason": "superseded by traffic-facility anchor cleanup run run-postlock-narration-framework-awaiting-review-transport-anchors-20260614T041638Z"
+      },
+      "review": {
+        "status": "pending",
+        "note": "Stale: superseded by traffic-facility anchor cleanup run run-postlock-narration-framework-awaiting-review-transport-anchors-20260614T041638Z. Sanitized invalid review.status=\"stale\"; run.status carries stale/completion truth."
+      },
+      "supersedesRunId": "run-postlock-narration-framework-awaiting-review-geo-enhanced-20260613T164810Z",
+      "supersededBy": "run-postlock-narration-framework-awaiting-review-transport-anchors-20260614T041638Z",
+      "error": "Superseded by traffic-facility anchor cleanup run run-postlock-narration-framework-awaiting-review-transport-anchors-20260614T041638Z."
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-postlock-narration-framework-awaiting-review-transport-anchors-20260614T041638Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260614T055708Z",
+      "flowPlanHash": "b80e6616dae9955258b5e58a131a5b3685092ed47c3a6674813e442e9fb2fad3",
+      "stepId": "postlock-narration-framework-codex-v1",
+      "capabilityId": "postlock.subtitle_narration",
+      "runner": "agent",
+      "status": "completed",
+      "startedAt": "2026-06-14T04:16:38.579Z",
+      "updatedAt": "2026-06-14T05:57:08.053Z",
+      "completedAt": "2026-06-14T04:16:38.579Z",
+      "inputRefs": [
+        "Resolve timeline: speech subtitle track",
+        ".tmp/edit-flow/<editId>/postlock/current-timeline-clip-packet.json",
+        ".tmp/edit-flow/<editId>/postlock/narration-framework.precise-geo.json",
+        "gps/reverse-geocode-cache.json",
+        "config/edit-rules/travel-documentary.md",
+        "config/styles/china-drive-travel-documentary-main.md"
+      ],
+      "outputRefs": [
+        "edits/<editId>/postlock/narration-framework.md",
+        "edits/<editId>/postlock/narration-framework.clip-map.json",
+        ".tmp/edit-flow/<editId>/postlock/narration-framework.precise-geo.json"
+      ],
+      "inputSnapshot": {
+        "source": "codex-agent-traffic-facility-anchor-cleanup",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "flowPlanStatus": "confirmed",
+        "editRuleHash": "9c337dbf3056c925dc35c64205c312ae4579fb8bb5cdfd79cc1e1c71e1ee04a6",
+        "styleCategory": "china-drive-travel-documentary-main",
+        "styleProfileVersion": "layered-v1",
+        "styleProfileHash": "ea7bfb297b11c1d64565a03126856e771ef70406c0290734862bda024d62afd3",
+        "frameworkConfirmedBy": "user-requested-flow-plan-regeneration"
+      },
+      "outputPaths": [
+        "edits/main/postlock/narration-framework.md",
+        "edits/main/postlock/narration-framework.clip-map.json",
+        "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/postlock/narration-framework.precise-geo.json"
+      ],
+      "summary": {
+        "artifact": "edits/main/postlock/narration-framework.md",
+        "clipMap": "edits/main/postlock/narration-framework.clip-map.json",
+        "preciseGeoAudit": "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/postlock/narration-framework.precise-geo.json",
+        "validator": "node scripts/validate-postlock-narration-framework.mjs projects/bingchacha-genie-south-zimeiyakou main",
+        "validatorStatus": "passed",
+        "trafficFacilityPolicy": "Named roads, bridges, tunnels, interchanges, toll stations, and cross-river/cross-sea passages may be prose anchors; project-office/management-center/parking/viewpoint POI names remain audit-only.",
+        "correctedExamples": [
+          "clip 5-8: 深中通道 / 深中通道中山段"
+        ],
+        "clipCount": 1318,
+        "speechClipCount": 691,
+        "narrationClipCount": 627,
+        "frameworkEntryCount": 701,
+        "narrationEntryCount": 477,
+        "pollutionScan": "passed: no GPS audit noise was introduced in the checked transport-anchor lines",
+        "frameworkConfirmedAt": "2026-06-14T05:57:08.053Z",
+        "frameworkConfirmedBy": "user-requested-flow-plan-regeneration",
+        "downstreamNextStep": "postlock-subtitle-review-codex-v1"
+      },
+      "review": {
+        "status": "confirmed",
+        "confirmedAt": "2026-06-14T05:57:08.053Z",
+        "confirmedBy": "user-requested-flow-plan-regeneration",
+        "note": "User requested Flow Plan regeneration and state advance; current narration framework is accepted as the upstream artifact for final subtitle review generation."
+      },
+      "supersedesRunId": "run-postlock-narration-framework-awaiting-review-precise-geo-20260614T040558Z"
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-postlock-subtitle-review-ready-for-subagent-20260614T055708Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260614T055708Z",
+      "flowPlanHash": "b80e6616dae9955258b5e58a131a5b3685092ed47c3a6674813e442e9fb2fad3",
+      "stepId": "postlock-subtitle-review-codex-v1",
+      "capabilityId": "postlock.subtitle_narration",
+      "runner": "agent",
+      "status": "stale",
+      "startedAt": "2026-06-14T05:57:08.053Z",
+      "updatedAt": "2026-06-14T06:12:16.161Z",
+      "inputRefs": [
+        "edits/<editId>/timeline/locked-rough-cut.json",
+        "Resolve timeline: speech subtitle track",
+        ".tmp/edit-flow/<editId>/postlock/current-timeline-clip-packet.json",
+        "edits/<editId>/postlock/narration-framework.md",
+        "edits/<editId>/postlock/narration-framework.clip-map.json",
+        "config/edit-rules/travel-documentary.md",
+        "config/styles/china-drive-travel-documentary-main.md"
+      ],
+      "outputRefs": [
+        "edits/<editId>/postlock/subtitle-review.md",
+        ".tmp/edit-flow/<editId>/postlock/subtitle-review.audit.json"
+      ],
+      "inputSnapshot": {
+        "source": "codex-agent-regenerated-flow-plan-state-advance",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "flowPlanStatus": "confirmed",
+        "editRuleHash": "9c337dbf3056c925dc35c64205c312ae4579fb8bb5cdfd79cc1e1c71e1ee04a6",
+        "styleProfileHash": "ea7bfb297b11c1d64565a03126856e771ef70406c0290734862bda024d62afd3",
+        "styleCategory": "china-drive-travel-documentary-main",
+        "styleLayer": "literary",
+        "upstreamFrameworkRunId": "run-postlock-narration-framework-awaiting-review-transport-anchors-20260614T041638Z",
+        "sourceFramework": "edits/main/postlock/narration-framework.md",
+        "sourceClipMap": "edits/main/postlock/narration-framework.clip-map.json",
+        "sourcePacket": ".tmp/edit-flow/main/postlock/current-timeline-clip-packet.json",
+        "previousSubtitleReviewExists": true,
+        "previousSubtitleReviewHash": "5d04815d011c73d140d27288ec4fd663ddd2b14da833b1c0e56945539208d9a6",
+        "finalReviewColumns": [
+          "对应旁白框架条目（若合并写多个）",
+          "事件和描述概要",
+          "旁白字幕"
+        ]
+      },
+      "outputPaths": [
+        "edits/main/postlock/subtitle-review.md (stale; regenerate before review)"
+      ],
+      "summary": {
+        "stage": "ready-for-subagent-generation",
+        "artifact": "edits/main/postlock/subtitle-review.md",
+        "audit": "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/postlock/subtitle-review.audit.json",
+        "contract": "current edit rule final subtitle review appendix + Flow Plan step notes",
+        "tableColumns": [
+          "对应旁白框架条目（若合并写多个）",
+          "事件和描述概要",
+          "旁白字幕"
+        ],
+        "upstreamFrameworkHash": "383f5306227946bfff4181fae0d7a6852da70fa2b2d2117a7e6ca338327d7a29",
+        "upstreamClipMapHash": "0ae534987b99dddde7fbeeca5ba3a5b844b29bed0b0d7133ea5be51358e32b93",
+        "previousSubtitleReviewStale": true,
+        "nextAction": "use one SubAgent to generate final subtitle review draft from current framework, clip-map, timeline packet, edit rule, and literary style profile",
+        "invalidatedAt": "2026-06-14T06:12:16.161Z",
+        "invalidatedReason": "subtitle review artifact generated by SubAgent and entered awaiting_review"
+      },
+      "review": {
+        "status": "pending",
+        "note": "Stale: replaced by generated final subtitle review awaiting human review."
+      },
+      "error": "Superseded by generated subtitle review run run-postlock-subtitle-review-awaiting-review-subagent-20260614T061216Z."
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-postlock-subtitle-review-awaiting-review-subagent-20260614T061216Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260614T055708Z",
+      "flowPlanHash": "b80e6616dae9955258b5e58a131a5b3685092ed47c3a6674813e442e9fb2fad3",
+      "stepId": "postlock-subtitle-review-codex-v1",
+      "capabilityId": "postlock.subtitle_narration",
+      "runner": "agent",
+      "status": "awaiting_review",
+      "startedAt": "2026-06-14T06:12:16.161Z",
+      "updatedAt": "2026-06-14T08:42:11.686Z",
+      "completedAt": "2026-06-14T06:12:16.161Z",
+      "inputRefs": [
+        "edits/<editId>/timeline/locked-rough-cut.json",
+        "Resolve timeline: speech subtitle track",
+        ".tmp/edit-flow/<editId>/postlock/current-timeline-clip-packet.json",
+        "edits/<editId>/postlock/narration-framework.md",
+        "edits/<editId>/postlock/narration-framework.clip-map.json",
+        "config/edit-rules/travel-documentary.md",
+        "config/styles/china-drive-travel-documentary-main.md"
+      ],
+      "outputRefs": [
+        "edits/<editId>/postlock/subtitle-review.md",
+        ".tmp/edit-flow/<editId>/postlock/subtitle-review.audit.json"
+      ],
+      "inputSnapshot": {
+        "source": "codex-subagent-generated-final-subtitle-review",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "flowPlanStatus": "confirmed",
+        "editRuleHash": "9c337dbf3056c925dc35c64205c312ae4579fb8bb5cdfd79cc1e1c71e1ee04a6",
+        "styleProfileHash": "ea7bfb297b11c1d64565a03126856e771ef70406c0290734862bda024d62afd3",
+        "styleCategory": "china-drive-travel-documentary-main",
+        "styleLayer": "literary",
+        "subagentId": "019ec43f-2e04-7d21-8298-1318cb3a6351",
+        "sourceFramework": "edits/main/postlock/narration-framework.md",
+        "sourceClipMap": "edits/main/postlock/narration-framework.clip-map.json",
+        "sourcePacket": ".tmp/edit-flow/main/postlock/current-timeline-clip-packet.json",
+        "finalReviewColumns": [
+          "对应旁白框架条目（若合并写多个）",
+          "事件和描述概要",
+          "旁白字幕"
+        ],
+        "notesHash": "6cb2c3f1dfdd173a10ec79464b4e3b3e48862691f4ead6deca49259b71dc65d4"
+      },
+      "outputPaths": [
+        "edits/main/postlock/subtitle-review.md",
+        "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/postlock/subtitle-review.audit.json"
+      ],
+      "summary": {
+        "artifact": "edits/main/postlock/subtitle-review.md",
+        "audit": "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/postlock/subtitle-review.audit.json",
+        "subagentId": "019ec43f-2e04-7d21-8298-1318cb3a6351",
+        "rowCount": 174,
+        "generatedNarrationRows": 138,
+        "notGeneratedPhotoRows": 36,
+        "generatedNarrationLines": 441,
+        "notGeneratedPhotoLines": 180,
+        "tableColumns": [
+          "对应旁白框架条目（若合并写多个）",
+          "事件和描述概要",
+          "旁白字幕"
+        ],
+        "artifactHash": "59d0e01d68074488e83f1e7e6a41ffa7ca55d1295410e9e29106270f90e071b6",
+        "auditHash": "087e0fb6df0cab5e18c01fd2561d8c5f38dd72d2ecec58b6478f999d66f20ee6",
+        "upstreamFrameworkHash": "383f5306227946bfff4181fae0d7a6852da70fa2b2d2117a7e6ca338327d7a29",
+        "upstreamClipMapHash": "0ae534987b99dddde7fbeeca5ba3a5b844b29bed0b0d7133ea5be51358e32b93",
+        "sourcePacketHash": "357172e1b4857bfd6c1edf99d63683e77596808a68e03cb102a7842e89afefa3",
+        "validation": "passed-table-structure-audit-consistency-policy-scan-first-person-and-aerial-progression-revision",
+        "bannedTermsFound": [],
+        "mechanicalOpeningCounts": {
+          "thisRoad": 0,
+          "aerialFromAir": 0,
+          "highAngle": 0,
+          "firstPersonWe": 0
+        },
+        "unsupportedYellowVehicleCounts": {
+          "yellowOffroad": 0,
+          "yellowSuv": 0,
+          "yellowCar": 0,
+          "yellowConstructionVehicle": 0,
+          "yellowCarShort": 0
+        },
+        "warnings": [
+          "6 packet clips have missing visualObservation warnings; non-photo clips should be manually checked if present in generated rows.",
+          "clip 584 C1082 missing visualObservation: subtitle row kept, narration set to manual-review no-generation placeholder.",
+          "clip 585 C1082 missing visualObservation: subtitle row kept, narration set to manual-review no-generation placeholder."
+        ],
+        "uncertainClips": [
+          {
+            "clip": 329,
+            "sourceStem": "DSC09271",
+            "contentKind": "photo",
+            "warning": "clip 329 DSC09271 has no usable visualObservation for no-subtitle narration framework entry"
+          },
+          {
+            "clip": 330,
+            "sourceStem": "DSC09276",
+            "contentKind": "photo",
+            "warning": "clip 330 DSC09276 has no usable visualObservation for no-subtitle narration framework entry"
+          },
+          {
+            "clip": 584,
+            "sourceStem": "C1082",
+            "contentKind": "visual",
+            "warning": "clip 584 C1082 has no usable visualObservation for no-subtitle narration framework entry"
+          },
+          {
+            "clip": 585,
+            "sourceStem": "C1082",
+            "contentKind": "visual",
+            "warning": "clip 585 C1082 has no usable visualObservation for no-subtitle narration framework entry"
+          },
+          {
+            "clip": 968,
+            "sourceStem": "DSC00599",
+            "contentKind": "photo",
+            "warning": "clip 968 DSC00599 has no usable visualObservation for no-subtitle narration framework entry"
+          },
+          {
+            "clip": 969,
+            "sourceStem": "DSC00604",
+            "contentKind": "photo",
+            "warning": "clip 969 DSC00604 has no usable visualObservation for no-subtitle narration framework entry"
+          }
+        ],
+        "reviewRequiredBeforeNextStep": true,
+        "supersedesRunId": "run-postlock-subtitle-review-ready-for-subagent-20260614T055708Z",
+        "latestRevisionAt": "2026-06-14T08:41:45.129Z",
+        "latestRevisionReason": "Second pass: restore restrained first-person road perspective in drive packs, rewrite aerial packs into shorter spatial progression, and reduce repeated explanatory terms in subtitles/summaries. Final cleanup: replaced unnatural 云天下 phrasing with concrete low-cloud road wording.",
+        "requestedTermCounts": {
+          "我们": 88,
+          "从空中看": 0,
+          "一起": 0,
+          "贴在一起": 0,
+          "铺开": 0,
+          "展开": 0,
+          "显得": 0
+        },
+        "aerialRowsRewritten": 23,
+        "finalCloudPhraseCleanup": {
+          "云天下": 0,
+          "replacements": 2
+        },
+        "dataRows": 174,
+        "badColumnRows": []
+      },
+      "review": {
+        "status": "pending",
+        "note": "Final subtitle review draft revised for first-person drive perspective and aerial spatial progression; awaits human review before final SRT generation."
       }
     }
   ]
