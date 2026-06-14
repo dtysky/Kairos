@@ -1,8 +1,110 @@
 {
   "schemaVersion": "1.0",
   "editId": "main",
-  "updatedAt": "2026-06-14T08:42:11.686Z",
+  "updatedAt": "2026-06-14T16:55:00.000Z",
   "records": [
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-postlock-subtitle-review-awaiting-review-rewrite-20260614T165500Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260614T055708Z",
+      "flowPlanHash": "b80e6616dae9955258b5e58a131a5b3685092ed47c3a6674813e442e9fb2fad3",
+      "stepId": "postlock-subtitle-review-codex-v1",
+      "capabilityId": "postlock.subtitle_narration",
+      "runner": "agent",
+      "status": "awaiting_review",
+      "startedAt": "2026-06-14T16:30:00.000Z",
+      "updatedAt": "2026-06-14T16:55:00.000Z",
+      "completedAt": "2026-06-14T16:55:00.000Z",
+      "inputRefs": [
+        "edits/<editId>/timeline/locked-rough-cut.json",
+        "Resolve timeline: speech subtitle track",
+        ".tmp/edit-flow/<editId>/postlock/current-timeline-clip-packet.json",
+        "edits/<editId>/postlock/narration-framework.md",
+        "edits/<editId>/postlock/narration-framework.clip-map.json",
+        "config/edit-rules/travel-documentary.md",
+        "config/styles/china-drive-travel-documentary-main.md"
+      ],
+      "outputRefs": [
+        "edits/<editId>/postlock/subtitle-review.md",
+        ".tmp/edit-flow/<editId>/postlock/subtitle-review.audit.json"
+      ],
+      "inputSnapshot": {
+        "source": "interactive-rewrite-final-subtitle-review",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "flowPlanStatus": "confirmed",
+        "editRuleHash": "9c337dbf3056c925dc35c64205c312ae4579fb8bb5cdfd79cc1e1c71e1ee04a6",
+        "styleProfileHash": "ea7bfb297b11c1d64565a03126856e771ef70406c0290734862bda024d62afd3",
+        "styleCategory": "china-drive-travel-documentary-main",
+        "styleLayer": "literary",
+        "sourceFramework": "edits/main/postlock/narration-framework.md",
+        "sourceClipMap": "edits/main/postlock/narration-framework.clip-map.json",
+        "sourcePacket": ".tmp/edit-flow/main/postlock/current-timeline-clip-packet.json",
+        "finalReviewColumns": [
+          "对应旁白框架条目（若合并写多个）",
+          "事件和描述概要",
+          "旁白字幕"
+        ]
+      },
+      "outputPaths": [
+        "edits/main/postlock/subtitle-review.md",
+        "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/postlock/subtitle-review.audit.json"
+      ],
+      "summary": {
+        "artifact": "edits/main/postlock/subtitle-review.md",
+        "audit": "projects/bingchacha-genie-south-zimeiyakou/.tmp/edit-flow/main/postlock/subtitle-review.audit.json",
+        "rowCount": 174,
+        "generatedNarrationRows": 138,
+        "notGeneratedPhotoRows": 36,
+        "tableColumns": [
+          "对应旁白框架条目（若合并写多个）",
+          "事件和描述概要",
+          "旁白字幕"
+        ],
+        "artifactHash": "cbca74e54286187e2394389b0024027272cc96505f607327787b7fba5294f2ec",
+        "auditHash": "dd88cf5d67c2cedf4531fd26fe87575ca020f7ce6406ed181de0cbf2be5a7f27",
+        "validation": "passed-table-structure-policy-scan-first-person-collapsed-aerial-progression-rewritten",
+        "bannedTermCounts": {
+          "我们": 0,
+          "从空中看": 0,
+          "一起": 0,
+          "贴在一起": 0,
+          "铺开": 0,
+          "展开": 0,
+          "显得": 0,
+          "云天下": 0
+        },
+        "unsupportedYellowVehicleCounts": {
+          "黄色越野": 0,
+          "黄色SUV": 0,
+          "黄色车": 0,
+          "黄色工程车": 0,
+          "黄色小车": 0,
+          "黄色皮卡": 0
+        },
+        "uncertainClips": [
+          {
+            "clip": 584,
+            "sourceStem": "C1082",
+            "contentKind": "visual",
+            "warning": "C1082 当前没有可用视觉观察；当前行作为占位保留，待人工补素材或确认后改写。"
+          },
+          {
+            "clip": 585,
+            "sourceStem": "C1082",
+            "contentKind": "visual",
+            "warning": "C1082 后续片段仍缺可用视觉观察；当前行作为占位保留，待人工补素材或确认后改写。"
+          }
+        ],
+        "reviewRequiredBeforeNextStep": true,
+        "supersedesRunId": "run-postlock-subtitle-review-awaiting-review-subagent-20260614T061216Z",
+        "rewriteReason": "全量重写：第一人称『我们』降到 0；规则禁词（从空中看 / 一起 / 贴在一起 / 铺开 / 展开 / 显得 / 云天下）清零；不带支持依据的『黄色越野/SUV/车/工程车/小车/皮卡』清零；网红词清零；航拍 pack 改写为空间渐进序列。"
+      },
+      "review": {
+        "status": "pending",
+        "note": "已重写最终字幕审查稿；通过策略扫描，等待人工审查后生成 SRT。"
+      }
+    },
     {
       "schemaVersion": "1.0",
       "runId": "run-resolve-media-sync-20260522T160710Z",
@@ -4160,9 +4262,9 @@
       "stepId": "postlock-subtitle-review-codex-v1",
       "capabilityId": "postlock.subtitle_narration",
       "runner": "agent",
-      "status": "awaiting_review",
+      "status": "stale",
       "startedAt": "2026-06-14T06:12:16.161Z",
-      "updatedAt": "2026-06-14T08:42:11.686Z",
+      "updatedAt": "2026-06-14T16:55:00.000Z",
       "completedAt": "2026-06-14T06:12:16.161Z",
       "inputRefs": [
         "edits/<editId>/timeline/locked-rough-cut.json",
