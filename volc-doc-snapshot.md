@@ -1,0 +1,125 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - generic [ref=e12]:
+      - generic [ref=e13]:
+        - link [ref=e14] [cursor=pointer]:
+          - /url: //www.volcengine.com
+        - generic [ref=e16] [cursor=pointer]: 文档中心
+      - generic [ref=e20]:
+        - img [ref=e21] [cursor=pointer]
+        - generic [ref=e24]:
+          - generic [ref=e25]: 2026 Force 原动力大会 · 春
+          - generic [ref=e26]: 方舟 Agent Plan
+          - generic [ref=e27]: 方舟 Coding Plan
+          - generic [ref=e28]: 一键部署OpenClaw
+          - generic [ref=e29]: 火山方舟
+          - generic [ref=e30]: 2026 Force 原动力大会 · 春
+          - generic [ref=e31]: 方舟 Agent Plan
+          - generic [ref=e32]: 方舟 Coding Plan
+          - generic [ref=e33]: 一键部署OpenClaw
+          - generic [ref=e34]: 火山方舟
+      - generic [ref=e35]:
+        - combobox [ref=e37] [cursor=pointer]:
+          - generic "简体" [ref=e38]
+        - link "文档" [ref=e43] [cursor=pointer]:
+          - /url: https://www.volcengine.com/docs
+        - link "备案" [ref=e44] [cursor=pointer]:
+          - /url: https://www.volcengine.com/beian
+        - link "控制台" [ref=e45] [cursor=pointer]:
+          - /url: https://console.volcengine.com
+        - generic [ref=e47]:
+          - link "登录" [ref=e48] [cursor=pointer]:
+            - /url: //console.volcengine.com/auth/login?redirectURI=%2F%2Fwww.volcengine.com%2Fdocs%2F6561%2F1257584%3Flang%3Dzh
+          - link "立即注册" [ref=e49] [cursor=pointer]:
+            - /url: //console.volcengine.com/auth/signup?redirectURI=%2F%2Fwww.volcengine.com%2Fdocs%2F6561%2F1257584%3Flang%3Dzh
+    - generic [ref=e52]:
+      - generic [ref=e55]:
+        - generic [ref=e56]:
+          - generic [ref=e57]
+          - generic [ref=e62]
+        - tooltip "二级导航功能 导航栏会按照模块拆分文档内容，方便你快速切换到所需信息哦 我知道了 不再提醒" [ref=e67]:
+          - generic [ref=e70]
+      - generic [ref=e78]:
+        - generic [ref=e81]:
+          - generic [ref=e83] [cursor=pointer]
+          - menu [ref=e89]
+        - generic [ref=e243]:
+          - generic [ref=e244]
+          - generic [ref=e284]: 大模型HTTP非流式接口-V1
+          - generic [ref=e289]
+          - generic [ref=e1268]
+          - generic [ref=e1286]
+    - generic [ref=e1304]:
+      - generic [ref=e1309]:
+        - img [ref=e1317] [cursor=pointer]
+        - generic: 在线咨询
+      - generic:
+        - generic:
+          - generic
+      - generic [ref=e1319]:
+        - generic [ref=e1320]:
+          - img [ref=e1321]
+          - generic [ref=e1339]
+        - generic [ref=e1345] [cursor=pointer]:
+          - img [ref=e1346]
+          - generic [ref=e1349]: 文档反馈
+    - generic [ref=e1351]:
+      - generic [ref=e1352]:
+        - generic [ref=e1354]:
+          - generic [ref=e1355]: 全天候售后服务
+          - generic [ref=e1356]: 7x24小时专业工程师品质服务
+        - generic [ref=e1358]:
+          - generic [ref=e1359]: 极速服务应答
+          - generic [ref=e1360]: 秒级应答为业务保驾护航
+        - generic [ref=e1362]:
+          - generic [ref=e1363]: 客户价值为先
+          - generic [ref=e1364]: 从服务价值到创造客户价值
+        - generic [ref=e1366]:
+          - generic [ref=e1367]: 全方位安全保障
+          - generic [ref=e1368]: 打造一朵“透明可信”的云
+      - generic [ref=e1370]:
+        - link "logo" [ref=e1372] [cursor=pointer]:
+          - /url: https://www.volcengine.com
+          - img "logo" [ref=e1373]
+        - generic [ref=e1375]:
+          - generic [ref=e1376]: 关于我们
+          - generic [ref=e1377]
+        - generic [ref=e1391]:
+          - generic [ref=e1392]: 产品
+          - generic [ref=e1393]
+        - generic [ref=e1409]:
+          - generic [ref=e1410]: 解决方案
+          - generic [ref=e1411]
+        - generic [ref=e1427]:
+          - generic [ref=e1428]: 服务与支持
+          - generic [ref=e1429]
+        - generic [ref=e1440]:
+          - generic [ref=e1441]
+          - generic [ref=e1451]
+      - generic [ref=e1462]:
+        - generic [ref=e1463]:
+          - generic [ref=e1464]: © 北京火山引擎科技有限公司 2026 版权所有
+          - generic [ref=e1465]: 代理域名注册服务机构：新网数码 商中在线
+          - link "服务条款" [ref=e1466] [cursor=pointer]:
+            - /url: https://www.volcengine.com/docs/6256/64903
+          - link "隐私政策" [ref=e1467] [cursor=pointer]:
+            - /url: https://www.volcengine.com/docs/6256/64902
+          - link "更多协议" [ref=e1468] [cursor=pointer]:
+            - /url: https://www.volcengine.com/docs/6256/68938
+        - generic [ref=e1469]:
+          - link "京公网安备11010802032137号" [ref=e1471] [cursor=pointer]:
+            - /url: https://beian.mps.gov.cn/#/query/webSearch?code=11010802032137
+          - link "京ICP备20018813号-3" [ref=e1473] [cursor=pointer]:
+            - /url: https://beian.miit.gov.cn
+          - link "营业执照" [ref=e1475] [cursor=pointer]:
+            - /url: https://www.volcengine.com/business_license
+          - link "增值电信业务经营许可证京B2-20202418，A2.B1.B2-20202637" [ref=e1477] [cursor=pointer]:
+            - /url: https://dxzhgl.miit.gov.cn/#/home
+          - generic [ref=e1479]: 网络文化经营许可证：京网文（2023）4872-140号
+  - generic:
+    - generic:
+      - generic:
+        - document:
+          - generic
+  - iframe [ref=e1481]:
+    
