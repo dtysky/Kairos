@@ -65,6 +65,16 @@ node scripts/validate-postlock-narration-framework.mjs projects/<projectId> <edi
 - 照片和照片序列默认不生成旁白字幕；若当前剪辑规则要求保留对应行，单元格内容按剪辑规则指定的占位文本填写。
 - 被聚类且标记为 `开车` 的片段必须结合位置、路线 / 道路名推断，以及前置视觉分析中的景观事实来写；不能写成泛泛风景句，也不能编造无法定位的道路名。
 
+## Resolve Voiceover Plugin Boundary
+
+当任务涉及 `apps/resolve-volc-voiceover-plugin/`：
+
+- 该插件是 Resolve 内的直接字幕配音工具，不是 `postlock.subtitle_narration` 的旁白框架或字幕审查稿生成器。
+- 插件只能消费当前 Resolve timeline 中可枚举的 subtitle items，或者用户在插件中粘贴 / 导入的字幕文本；不得从 `narration-framework.md`、clip-map、Resolve item name、MediaPool folder name 或历史 hostSummary 猜字幕正文。
+- 插件选择态必须由插件面板、当前播放头或 Mark In/Out 范围确定；不得声称读取 Resolve 原生 timeline item 多选态，除非当前安装版官方 API 已经被重新验证并记录。
+- 插件生成并插入的是 audio clip，不得修改字幕轨文本，不得重排或删除 video/subtitle timeline items。
+- 默认不得删除已有音频。只有用户显式选择 replacement，且旧 audio item 带有插件写入的同一 `kairosVoiceoverUnitId` marker/customData，才允许删除旧插件音频。
+
 ## SubAgent Packet Rules
 
 - SubAgent 只能接收 clip-level packet 和当前 Flow Plan step context。

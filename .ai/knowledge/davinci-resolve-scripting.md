@@ -60,6 +60,16 @@ remain in the vendored backend:
 /Users/<UserName>/Library/Application Support/Blackmagic Design/DaVinci Resolve/Fusion/Scripts
 ```
 
+For the standalone Volcengine subtitle voiceover helper, Kairos intentionally ships a manual
+Resolve menu plugin under `apps/resolve-volc-voiceover-plugin/` and installs it to the Edit
+script menu:
+
+```text
+/Library/Application Support/Blackmagic Design/DaVinci Resolve/Fusion/Scripts/Edit
+```
+
+That plugin is a direct Resolve UI helper, not the official `/color` or `/edit` backend path.
+
 ## Object Model Map
 
 - `Resolve`: app-level object, page switching, version/product info, render/burn-in preset import/export, layout presets, `Fusion()`, `GetProjectManager()`, `GetMediaStorage()`.
@@ -101,6 +111,7 @@ remain in the vendored backend:
 - `timeline.GetTrackCount(trackType)` uses `audio`, `video`, or `subtitle`.
 - `timeline.GetItemListInTrack(trackType, index)` returns timeline items on newer docs.
 - `timeline.GetItemsInTrack(trackType, index)` is still present in the docs as a compatibility shape; Kairos may fall back to it.
+- `timeline.GetMarkInOut()` and `timeline.GetCurrentTimecode()` support helper selection ranges, but the installed docs do not expose a stable `GetSelectedTimelineItems()` for Edit-page timeline selections. Resolve subtitle voiceover plugins must maintain their own selected subtitle rows or derive selection from playhead / Mark In-Out.
 - `timeline.DeleteClips([timelineItems], ripple=False)` clears timeline items.
 - `timeline.DuplicateTimeline(name)` returns a copied timeline.
 - `timeline.GetCurrentTimecode()` and `timeline.SetCurrentTimecode(timecode)` drive the playhead.
@@ -126,6 +137,8 @@ remain in the vendored backend:
 
 - `timelineItem.GetName()`, `GetDuration()`, `GetStart()`, `GetEnd()`, `GetSourceStartFrame()`, and `GetSourceEndFrame()` are the timeline placement basics.
 - `timelineItem.GetMediaPoolItem()` links back to source media.
+- Subtitle item text is version-sensitive. The Volc voiceover plugin may try `GetName()`, `GetProperty().Text / Subtitle / Caption`, and `GetClipProperty().Text / Subtitle / Caption`; if all are empty, it must block instead of guessing subtitle text.
+- For generated voiceover audio, import the audio file with `MediaPool.ImportMedia` and append it with `MediaPool.AppendToTimeline([{"mediaPoolItem": item, "mediaType": 2, "trackIndex": audioTrackIndex, "recordFrame": frame}])`. The documented `Project.InsertAudioToCurrentTrackAtPlayhead(...)` depends on Fairlight selected track/playhead state and is less deterministic for batch subtitle insertion.
 
 ### Rough-cut Append Source Ranges
 

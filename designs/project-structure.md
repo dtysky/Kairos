@@ -27,6 +27,7 @@
 - `project-brief.md` 可选带 `## Pharos` 段，只支持 `包含 Trip：...` 形式的 trip 筛选；未填写时默认纳入全部可解析 trip
 - 可复用风格资产当前不属于单项目目录，而是收口为 Workspace 级共享资产
 - 本地运行与项目配置当前由 `Supervisor + React console (apps/kairos-console/)` 承载；`Analyze` 与 `Style` 监控直接挂在 `/analyze` 与 `/style` 主路由上
+- Resolve 内直选字幕配音由独立插件目录 `apps/resolve-volc-voiceover-plugin/` 承载，安装到 DaVinci Resolve `Fusion/Scripts/Edit` 菜单；它的本机生成音频、缓存和 manifest 默认写到 `~/Movies/KairosVoiceover/`，不写入项目正式 store，除非用户另行镜像审计产物
 - `scripts/kairos-supervisor.* start` 只启动 `Supervisor + React console`；不会自动启动 ML，也不会恢复旧 job
 - `media-analyze` 与 `style-analysis` 的 `progress.json` 只表示 durable cache，不表示 live job
 - 顶层 Kairos job 在结束态必须回收到 `ML stopped`

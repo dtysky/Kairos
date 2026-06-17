@@ -101,7 +101,22 @@
 - Resolve edit mapping 固定为：Project `${projectBrief.name} [Edit]`，项目全局素材 bin `Kairos Project Media`，时间线 bin `Kairos Timelines`，Timeline `${editLabel} [${editId}]`
 - Resolve `[Edit]` DRP 备份是项目级工程备份，不按 editId 拆工程；索引写 `edits/resolve-project-map.json`，latest 副本写 `edits/resolve-projects/<safe-project-key>/<Resolve项目名>.drp`，只替换文件系统非法字符；DRP 保存策略分为 `latest-only` 与 `archive`，前者只覆盖 latest，后者额外写 `edits/resolve-projects/<safe-project-key>/snapshots/<timestamp>...drp` 并刷新 latest
 - 第一次粗剪锁定后写入 `edits/<editId>/timeline/locked-rough-cut.json`
-- v1 post-lock 只正式化字幕与旁白文本；旁白框架阶段必须保留 Resolve clip 边界，定位文案只能使用 GPS/chronology/span 事实并按地貌 / 水文 / 植被类别去重，禁止把已命名山河后再堆 `江河湖泊 / 峡谷崖壁 / 林带植被` 这类泛化标签；音量均一、BGM、ducking、TTS 暂不纳入正式范围
+- v1 Edit Flow post-lock 只正式化字幕与旁白文本；旁白框架阶段必须保留 Resolve clip 边界，定位文案只能使用 GPS/chronology/span 事实并按地貌 / 水文 / 植被类别去重，禁止把已命名山河后再堆 `江河湖泊 / 峡谷崖壁 / 林带植被` 这类泛化标签；音量均一、BGM、ducking 仍不纳入 Edit Flow 正式范围。直接 TTS/声音复刻走独立 Resolve 插件路径，见 0.13。
+
+## 0.13 2026-06-17 Resolve 内直选字幕配音插件
+
+当前 post-lock 配音新增一条直接在 DaVinci Resolve 内操作的插件路径，解决“选中特定字幕或多条字幕，调用外部 TTS / 声音复刻并插入时间线”的工作流。
+
+本轮冻结后的正式口径如下：
+
+- 插件目录固定为 `apps/resolve-volc-voiceover-plugin/`，安装到 Resolve `Fusion/Scripts/Edit` 菜单；它是独立 Resolve Python/Fusion UI 脚本，不依赖 Kairos Console 或 Supervisor 运行。
+- 插件负责扫描当前 timeline 的 subtitle tracks，生成自己的字幕列表并在插件面板中维护多选状态；官方 Resolve scripting API 当前没有稳定 `GetSelectedTimelineItems()`，所以第一版不承诺读取 Edit 页原生多选字幕。
+- 插件提供三个正式选择入口：面板多选、当前播放头覆盖字幕、当前 Mark In/Out 范围重叠字幕。
+- 字幕文本读取只能来自 Resolve subtitle `TimelineItem` 可暴露字段：`GetName()`、`GetProperty().Text / Subtitle / Caption`、`GetClipProperty()`。如果当前 Resolve 版本不暴露字幕正文，插件必须阻塞合成并提示用户导入 SRT 或粘贴文本，不能猜内容。
+- 火山引擎默认使用 V3 HTTP 单向流式语音合成；声音复刻使用 V3 voice clone。API key、授权状态、speaker profile 只写本机 local config，不写 Kairos repo、项目产物或 Resolve 工程。
+- 默认每条字幕生成一个音频文件和一个 timeline audio item，保持字幕级边界；生成文件保存在 `~/Movies/KairosVoiceover/<resolveProject>/<timelineId>/<runId>/`，并写 `manifest.json` 记录请求、缓存、音频和插入结果。
+- 插入时间线时创建或复用 `Kairos VO` 音频轨，通过 `MediaPool.ImportMedia` 导入音频，再用 audio-only `AppendToTimeline` 按字幕起始帧插入；默认不删除已有用户音频或旧配音。只有显式选择插件-owned replacement 时，才允许删除带同一插件 marker/customData 的旧音频。
+- 该插件是直接 Resolve 工具，不是 Flow Plan capability；若需要进入 Kairos edit 审计，可把 manifest 镜像到 `edits/<editId>/postlock/voiceover-plugin/`，但镜像不是插入时间线的前置条件。
 
 ## 0.12 2026-04-24 DaVinci Resolve scripting 本地知识文档补记
 

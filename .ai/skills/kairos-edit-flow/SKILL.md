@@ -51,6 +51,15 @@ Capability registry 是原子能力库，不是必经阶段链。当前常见 ca
 
 只选择剪辑规则明确要求或后续执行必需的最小 capability 集合。
 
+## Resolve Volc Voiceover Plugin
+
+- `apps/resolve-volc-voiceover-plugin/` 是独立 DaVinci Resolve 菜单插件，用于当前 timeline 中“选字幕 -> 火山合成/复刻 -> 插入配音”。
+- 它不是 Edit Flow capability，不写 `runs/current.json`，不推进 Flow Plan gate，也不依赖 Supervisor 或 `/edit` Console 运行。
+- 第一版选择状态由插件面板维护：可在插件字幕列表中多选，也可按当前播放头或 Mark In/Out 范围选中字幕。Resolve 官方 scripting API 没有稳定的 timeline item 原生多选读取接口，agent 不得假设存在。
+- 字幕正文只来自当前 Resolve subtitle item 暴露字段。若当前 Resolve 版本不暴露正文，插件必须阻塞并要求导入 SRT 或粘贴文本，不能从画面、文件名或历史产物猜字幕。
+- 默认一条字幕生成一条音频并插入 `Kairos VO` 音频轨；默认不删除已有用户音频或旧配音。只有用户显式选择 replacement，并且旧 audio item 有插件写入的同一 `kairosVoiceoverUnitId` marker/customData 时，才可删除旧插件音频。
+- 火山 API key、speaker profile 和声音授权状态只写本机 local config，不写 repo、项目正式产物或 Resolve 工程。
+
 ## Capability Contracts
 
 ### `edit.framework`
