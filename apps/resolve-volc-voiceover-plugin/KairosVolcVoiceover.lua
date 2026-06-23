@@ -712,43 +712,107 @@ if existing then
     return
 end
 
+local smallFont = ui:Font({PixelSize = 12})
+local titleFont = ui:Font({PixelSize = 13})
+
+local function button(id, text, width)
+    return ui:Button({
+        ID = id,
+        Text = text,
+        Weight = 0,
+        Font = smallFont,
+        MinimumSize = {width, 24},
+        MaximumSize = {width, 24},
+    })
+end
+
+local function label(text, width)
+    return ui:Label({
+        Text = text,
+        Weight = 0,
+        Font = smallFont,
+        MinimumSize = {width, 22},
+        MaximumSize = {width, 22},
+    })
+end
+
+local function lineEdit(id, text, placeholder, width)
+    return ui:LineEdit({
+        ID = id,
+        Text = text or "",
+        PlaceholderText = placeholder or "",
+        Weight = 0,
+        Font = smallFont,
+        MinimumSize = {width, 24},
+        MaximumSize = {width, 24},
+    })
+end
+
 voiceConfig = loadVoiceoverConfigSummary()
 local labels = profileLabels(voiceConfig)
 local win = dispatcher:AddWindow({
     ID = WINDOW_ID,
-    Geometry = {160, 160, 860, 560},
+    Geometry = {160, 160, 760, 420},
     WindowTitle = "Kairos Volc Voiceover",
 },
 ui:VGroup({
-    ui:Label({Text = "Kairos Volc Voiceover", Weight = 0}),
-    ui:HGroup({
-        ui:Button({ID = "refresh", Text = "Refresh Subtitles"}),
-        ui:Button({ID = "playhead", Text = "Use Playhead Subtitle"}),
-        ui:Button({ID = "mark", Text = "Select Resolve I/O"}),
-        ui:Button({ID = "probe", Text = "Probe"}),
-        ui:Button({ID = "openLogs", Text = "Logs"}),
+    ui:Label({Text = "Kairos Volc Voiceover", Weight = 0, Font = titleFont, MaximumSize = {760, 22}}),
+    ui:HGroup({Weight = 0, MaximumSize = {760, 28}}, {
+        button("refresh", "Refresh", 86),
+        button("playhead", "Playhead", 86),
+        button("mark", "Resolve I/O", 92),
+        button("probe", "Probe", 58),
+        button("openLogs", "Logs", 54),
     }),
-    ui:TextEdit({ID = "subtitleList", Weight = 0.72, ReadOnly = true, AcceptRichText = false}),
-    ui:HGroup({
-        ui:Label({Text = "Selected IDs", Weight = 0}),
-        ui:LineEdit({ID = "selectedIds", Text = "", PlaceholderText = "1,2,3"}),
+    ui:TextEdit({
+        ID = "subtitleList",
+        Weight = 0.68,
+        ReadOnly = true,
+        AcceptRichText = false,
+        Font = smallFont,
     }),
-    ui:HGroup({
-        ui:Label({Text = "Voice Profile", Weight = 0}),
-        ui:ComboBox({ID = "profile", Items = labels, CurrentIndex = defaultProfileIndex(voiceConfig)}),
-        ui:Label({Text = "Speed", Weight = 0}),
-        ui:LineEdit({ID = "speed", Text = "", PlaceholderText = "profile default"}),
-        ui:Label({Text = "Loudness", Weight = 0}),
-        ui:LineEdit({ID = "loudness", Text = "", PlaceholderText = "profile default"}),
-        ui:Button({ID = "openConfig", Text = "Config"}),
+    ui:HGroup({Weight = 0, MaximumSize = {760, 28}}, {
+        label("Selected IDs", 78),
+        lineEdit("selectedIds", "", "1,2,3", 180),
     }),
-    ui:HGroup({
-        ui:CheckBox({ID = "skipOverflow", Text = "Skip overflow clips", Checked = false}),
-        ui:Button({ID = "preview", Text = "Preview"}),
-        ui:Button({ID = "synthesizeInsert", Text = "Synthesize + Insert"}),
-        ui:Button({ID = "close", Text = "Close"}),
+    ui:HGroup({Weight = 0, MaximumSize = {760, 28}}, {
+        label("Voice", 44),
+        ui:ComboBox({
+            ID = "profile",
+            Items = labels,
+            CurrentIndex = defaultProfileIndex(voiceConfig),
+            Weight = 0,
+            Font = smallFont,
+            MinimumSize = {190, 24},
+            MaximumSize = {190, 24},
+        }),
+        label("Speed", 42),
+        lineEdit("speed", "", "default", 76),
+        label("Gain", 34),
+        lineEdit("loudness", "", "default", 76),
+        button("openConfig", "Config", 62),
     }),
-    ui:TextEdit({ID = "log", Weight = 0.26, ReadOnly = true, AcceptRichText = false}),
+    ui:HGroup({Weight = 0, MaximumSize = {760, 28}}, {
+        ui:CheckBox({
+            ID = "skipOverflow",
+            Text = "Skip overflow",
+            Checked = false,
+            Weight = 0,
+            Font = smallFont,
+            MinimumSize = {120, 24},
+            MaximumSize = {120, 24},
+        }),
+        button("preview", "Preview", 76),
+        button("synthesizeInsert", "Insert", 74),
+        button("close", "Close", 64),
+    }),
+    ui:TextEdit({
+        ID = "log",
+        Weight = 0.24,
+        ReadOnly = true,
+        AcceptRichText = false,
+        Font = smallFont,
+    }),
 }))
 
 if not win then
