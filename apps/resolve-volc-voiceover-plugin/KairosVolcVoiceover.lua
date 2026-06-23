@@ -68,10 +68,16 @@ local function uiLog(message)
 end
 
 local function safeCall(obj, method, ...)
-    if obj == nil then
+    local objType = type(obj)
+    if obj == nil or (objType ~= "table" and objType ~= "userdata") then
         return nil
     end
-    local fn = obj[method]
+    local okLookup, fn = pcall(function()
+        return obj[method]
+    end)
+    if not okLookup then
+        return nil
+    end
     if fn == nil then
         return nil
     end
@@ -366,7 +372,10 @@ local function collectSubtitles()
         end
         if type(trackItems) == "table" then
             for _, item in pairs(trackItems) do
-                table.insert(result, summarizeItem(item, trackIndex, #result + 1, frameRate))
+                local itemType = type(item)
+                if itemType == "table" or itemType == "userdata" then
+                    table.insert(result, summarizeItem(item, trackIndex, #result + 1, frameRate))
+                end
             end
         end
     end
