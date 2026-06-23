@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from __future__ import annotations
 
 import json
@@ -8,34 +9,76 @@ import time
 import traceback
 from pathlib import Path
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-if str(SCRIPT_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPT_DIR))
+def bootstrap_log(message):
+    try:
+        log_dir = Path.home() / "Movies" / "KairosVoiceover" / "logs"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        with (log_dir / "resolve-plugin-bootstrap.log").open("a", encoding="utf-8") as handle:
+            handle.write(time.strftime("[%Y-%m-%d %H:%M:%S] "))
+            handle.write(str(message))
+            handle.write("\n")
+    except Exception:
+        pass
 
-from kairos_volc_voiceover_core import (  # noqa: E402
-    DEFAULT_RESOURCE_ID,
-    PLUGIN_VERSION,
-    TtsSettings,
-    VoiceCloneClient,
-    VoiceoverError,
-    build_run_dir,
-    clean_subtitle_text,
-    default_config_path,
-    extract_subtitle_text,
-    frame_to_timecode,
-    frames_to_ms,
-    load_config,
-    save_config,
-    stable_hash,
-    synthesize_unit,
-    timecode_to_frame,
-    unit_id_for_subtitle,
-    write_manifest,
-)
+
+try:
+    SCRIPT_DIR = Path(__file__).resolve().parent
+except NameError:
+    SCRIPT_DIR = Path.cwd()
+bootstrap_log(f"bootstrap start file={globals().get('__file__', '<missing>')} cwd={Path.cwd()} argv={sys.argv}")
+
+for module_dir in (
+    SCRIPT_DIR / "KairosVolcVoiceoverLib",
+    SCRIPT_DIR / "Kairos Volc Voiceover",
+    SCRIPT_DIR,
+):
+    if str(module_dir) not in sys.path:
+        sys.path.insert(0, str(module_dir))
+
+bootstrap_log("before core import")
+try:
+    from kairos_volc_voiceover_core import (  # noqa: E402
+        DEFAULT_RESOURCE_ID,
+        DEFAULT_TTS_ENDPOINT,
+        PLUGIN_VERSION,
+        TtsSettings,
+        VoiceCloneClient,
+        VoiceoverError,
+        build_run_dir,
+        clean_subtitle_text,
+        default_config_path,
+        extract_subtitle_text,
+        frame_to_timecode,
+        frames_to_ms,
+        load_config,
+        save_config,
+        stable_hash,
+        synthesize_unit,
+        timecode_to_frame,
+        unit_id_for_subtitle,
+        write_manifest,
+    )
+except Exception:
+    bootstrap_log("core import failed\n" + traceback.format_exc())
+    raise
+bootstrap_log("core import ok")
 
 
 WINDOW_ID = "com.dtysky.kairos.volcvoiceover"
 VOICE_TRACK_NAME = "Kairos VO"
+_ACTIVE_WINDOW = None
+
+
+def startup_log(message):
+    try:
+        log_dir = Path.home() / "Movies" / "KairosVoiceover" / "logs"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        with (log_dir / "resolve-plugin.log").open("a", encoding="utf-8") as handle:
+            handle.write(time.strftime("[%Y-%m-%d %H:%M:%S] "))
+            handle.write(str(message))
+            handle.write("\n")
+    except Exception:
+        pass
 
 
 def _safe_call(obj, method_name, *args):
@@ -75,6 +118,20 @@ def _get_resolve():
             sys.path.append(modules)
         import DaVinciResolveScript as dvr_script
     return dvr_script.scriptapp("Resolve")
+
+
+def _get_bmd_module():
+    existing = globals().get("bmd")
+    if existing:
+        return existing
+    try:
+        import DaVinciResolveScript as dvr_script
+    except ImportError:
+        modules = "/Library/Application Support/Blackmagic Design/DaVinci Resolve/Developer/Scripting/Modules"
+        if modules not in sys.path:
+            sys.path.append(modules)
+        import DaVinciResolveScript as dvr_script
+    return dvr_script
 
 
 class ResolveVoiceoverBridge:
@@ -314,9 +371,11 @@ class VoiceoverWindow:
     def run(self):
         existing = self.ui.FindWindow(WINDOW_ID)
         if existing:
+            startup_log("Existing window found; raising")
             existing.Show()
             existing.Raise()
             return
+        startup_log("Adding window")
         self.window = self.dispatcher.AddWindow(
             {
                 "ID": WINDOW_ID,
@@ -325,11 +384,19 @@ class VoiceoverWindow:
             },
             self.layout(),
         )
+        if not self.window:
+            raise RuntimeError("Fusion UIManager failed to create the plugin window.")
+        startup_log("Binding window events")
         self.bind_events()
+        startup_log("Applying config")
         self.apply_config_to_ui()
+        startup_log("Showing window")
         self.window.Show()
+        startup_log("Refreshing subtitles")
         self.refresh_subtitles(None)
+        startup_log("Entering RunLoop")
         self.dispatcher.RunLoop()
+        startup_log("RunLoop exited")
 
     def layout(self):
         ui = self.ui
@@ -362,64 +429,62 @@ class VoiceoverWindow:
                         ui.LineEdit({"ID": "selectedIds", "Text": "", "PlaceholderText": "1,2,3"}),
                     ],
                 ),
-                ui.GroupBox(
-                    {"Title": "Voice"},
-                    ui.VGroup(
-                        [
-                            ui.HGroup(
-                                {"Weight": 0},
-                                [
-                                    ui.Label({"Text": "API Key", "Weight": 0}),
-                                    ui.LineEdit({"ID": "apiKey", "EchoMode": "Password", "PlaceholderText": "X-Api-Key"}),
-                                    ui.CheckBox({"ID": "saveApiKey", "Text": "Save local", "Checked": False}),
-                                ],
-                            ),
-                            ui.HGroup(
-                                {"Weight": 0},
-                                [
-                                    ui.Label({"Text": "Speaker", "Weight": 0}),
-                                    ui.LineEdit({"ID": "speaker", "PlaceholderText": "speaker_id"}),
-                                    ui.Label({"Text": "Resource", "Weight": 0}),
-                                    ui.LineEdit({"ID": "resourceId", "Text": DEFAULT_RESOURCE_ID}),
-                                ],
-                            ),
-                            ui.HGroup(
-                                {"Weight": 0},
-                                [
-                                    ui.Label({"Text": "Model", "Weight": 0}),
-                                    ui.LineEdit({"ID": "model", "PlaceholderText": "optional"}),
-                                    ui.Label({"Text": "Language", "Weight": 0}),
-                                    ui.LineEdit({"ID": "language", "Text": "zh-cn"}),
-                                    ui.Label({"Text": "Speed", "Weight": 0}),
-                                    ui.LineEdit({"ID": "speed", "PlaceholderText": "optional"}),
-                                ],
-                            ),
-                            ui.Label({"Text": "Context / style prompt", "Weight": 0}),
-                            ui.TextEdit({"ID": "contextText", "Weight": 0.35, "AcceptRichText": False}),
-                        ]
-                    ),
+                ui.Label({"Text": "Voice", "Weight": 0, "Font": ui.Font({"PixelSize": 14})}),
+                ui.VGroup(
+                    {"Weight": 0},
+                    [
+                        ui.HGroup(
+                            {"Weight": 0},
+                            [
+                                ui.Label({"Text": "API Key", "Weight": 0}),
+                                ui.LineEdit({"ID": "apiKey", "EchoMode": "Password", "PlaceholderText": "X-Api-Key"}),
+                                ui.CheckBox({"ID": "saveApiKey", "Text": "Save local", "Checked": False}),
+                            ],
+                        ),
+                        ui.HGroup(
+                            {"Weight": 0},
+                            [
+                                ui.Label({"Text": "Speaker", "Weight": 0}),
+                                ui.LineEdit({"ID": "speaker", "PlaceholderText": "speaker_id"}),
+                                ui.Label({"Text": "Resource", "Weight": 0}),
+                                ui.LineEdit({"ID": "resourceId", "Text": DEFAULT_RESOURCE_ID}),
+                            ],
+                        ),
+                        ui.HGroup(
+                            {"Weight": 0},
+                            [
+                                ui.Label({"Text": "Model", "Weight": 0}),
+                                ui.LineEdit({"ID": "model", "PlaceholderText": "optional"}),
+                                ui.Label({"Text": "Language", "Weight": 0}),
+                                ui.LineEdit({"ID": "language", "Text": "zh-cn"}),
+                                ui.Label({"Text": "Speed", "Weight": 0}),
+                                ui.LineEdit({"ID": "speed", "PlaceholderText": "optional"}),
+                            ],
+                        ),
+                        ui.Label({"Text": "Context / style prompt", "Weight": 0}),
+                        ui.TextEdit({"ID": "contextText", "Weight": 0.35, "AcceptRichText": False}),
+                    ],
                 ),
-                ui.GroupBox(
-                    {"Title": "Clone"},
-                    ui.VGroup(
-                        [
-                            ui.HGroup(
-                                {"Weight": 0},
-                                [
-                                    ui.LineEdit({"ID": "cloneAudio", "PlaceholderText": "Prompt audio path, 14-30s recommended"}),
-                                    ui.LineEdit({"ID": "cloneSpeaker", "PlaceholderText": "speaker_id or custom speaker id"}),
-                                ],
-                            ),
-                            ui.HGroup(
-                                {"Weight": 0},
-                                [
-                                    ui.LineEdit({"ID": "cloneDemo", "PlaceholderText": "Demo text"}),
-                                    ui.CheckBox({"ID": "cloneConsent", "Text": "I confirm voice-owner consent", "Checked": False}),
-                                    ui.Button({"ID": "cloneCreate", "Text": "Create Clone"}),
-                                ],
-                            ),
-                        ]
-                    ),
+                ui.Label({"Text": "Clone", "Weight": 0, "Font": ui.Font({"PixelSize": 14})}),
+                ui.VGroup(
+                    {"Weight": 0},
+                    [
+                        ui.HGroup(
+                            {"Weight": 0},
+                            [
+                                ui.LineEdit({"ID": "cloneAudio", "PlaceholderText": "Prompt audio path, 14-30s recommended"}),
+                                ui.LineEdit({"ID": "cloneSpeaker", "PlaceholderText": "speaker_id or custom speaker id"}),
+                            ],
+                        ),
+                        ui.HGroup(
+                            {"Weight": 0},
+                            [
+                                ui.LineEdit({"ID": "cloneDemo", "PlaceholderText": "Demo text"}),
+                                ui.CheckBox({"ID": "cloneConsent", "Text": "I confirm voice-owner consent", "Checked": False}),
+                                ui.Button({"ID": "cloneCreate", "Text": "Create Clone"}),
+                            ],
+                        ),
+                    ],
                 ),
                 ui.HGroup(
                     {"Weight": 0},
@@ -754,15 +819,100 @@ def open_file(path):
         pass
 
 
-def main():
+def _optional_float(value):
+    text = str(value or "").strip()
+    if not text:
+        return None
+    return float(text)
+
+
+def cli_synthesize_job(job_path: Path):
+    job = json.loads(job_path.read_text(encoding="utf-8"))
     resolve = _get_resolve()
     if not resolve:
         raise RuntimeError("Unable to connect to DaVinci Resolve.")
+    bridge = ResolveVoiceoverBridge(resolve)
+    settings_data = job.get("settings") or {}
+    settings = TtsSettings(
+        api_key=str(settings_data.get("apiKey") or ""),
+        speaker=str(settings_data.get("speaker") or ""),
+        resource_id=str(settings_data.get("resourceId") or DEFAULT_RESOURCE_ID),
+        endpoint=str(settings_data.get("endpoint") or DEFAULT_TTS_ENDPOINT),
+        audio_format=str(settings_data.get("audioFormat") or "mp3"),
+        sample_rate=int(settings_data.get("sampleRate") or 24000),
+        model=str(settings_data.get("model") or ""),
+        language=str(settings_data.get("language") or "zh-cn"),
+        speed_ratio=_optional_float(settings_data.get("speedRatio")),
+        loudness_ratio=_optional_float(settings_data.get("loudnessRatio")),
+        context_text=str(settings_data.get("contextText") or ""),
+    )
+    timeline_id = str(job.get("timelineId") or bridge.timeline_id())
+    project_name = str(job.get("projectName") or bridge.project_name())
+    run_dir = build_run_dir(project_name, timeline_id, str(job.get("runId") or ""))
+    subtitles = job.get("subtitles") or []
+    units = [
+        synthesize_unit(subtitle, timeline_id, run_dir, settings, force=bool(job.get("force")))
+        for subtitle in subtitles
+    ]
+    inserted = []
+    if job.get("mode") == "preview":
+        if units:
+            open_file(units[0]["resolveAudioPath"])
+    else:
+        track_index = bridge.ensure_voice_track()
+        for unit in units:
+            if job.get("skipOverflow") and unit.get("durationStatus") == "overflow":
+                continue
+            inserted.append(bridge.import_and_insert(unit, track_index))
+        _safe_call(_safe_call(resolve, "GetProjectManager"), "SaveProject")
+    manifest = {
+        "schemaVersion": "kairos-resolve-volc-voiceover-cli-v1",
+        "pluginVersion": PLUGIN_VERSION,
+        "createdAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "mode": job.get("mode") or "insert",
+        "projectName": project_name,
+        "timelineName": bridge.timeline_name(),
+        "timelineId": timeline_id,
+        "units": units,
+        "inserted": inserted,
+    }
+    manifest_path = write_manifest(run_dir, manifest)
+    return {"ok": True, "manifest": str(manifest_path), "unitCount": len(units), "insertedCount": len(inserted)}
+
+
+def main():
+    startup_log("Launching Kairos Volc Voiceover")
+    bootstrap_log("main start")
+    resolve = _get_resolve()
+    bootstrap_log(f"resolve connected={bool(resolve)}")
+    if not resolve:
+        raise RuntimeError("Unable to connect to DaVinci Resolve.")
     fusion = globals().get("fusion") or _safe_call(resolve, "Fusion")
-    bmd_module = globals().get("bmd")
+    bmd_module = _get_bmd_module()
+    bootstrap_log(f"fusion={bool(fusion)} bmd_module={bool(bmd_module)}")
     if not fusion or not bmd_module:
         raise RuntimeError("Fusion UIManager is unavailable; run this script from inside DaVinci Resolve.")
-    VoiceoverWindow(resolve, fusion, bmd_module).run()
+    bootstrap_log("creating window")
+    global _ACTIVE_WINDOW
+    _ACTIVE_WINDOW = VoiceoverWindow(resolve, fusion, bmd_module)
+    _ACTIVE_WINDOW.run()
 
 
-main()
+def entrypoint():
+    try:
+        if len(sys.argv) >= 3 and sys.argv[1] == "--synthesize-job":
+            result = cli_synthesize_job(Path(sys.argv[2]).expanduser())
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+        else:
+            main()
+    except Exception:
+        startup_log(traceback.format_exc())
+        if len(sys.argv) >= 2 and sys.argv[1] == "--synthesize-job":
+            payload = {"ok": False, "error": traceback.format_exc()}
+            print(json.dumps(payload, ensure_ascii=False, indent=2), file=sys.stderr)
+            raise SystemExit(1)
+        raise
+
+
+if __name__ == "__main__":
+    entrypoint()

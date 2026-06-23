@@ -15,23 +15,36 @@ apps/resolve-volc-voiceover-plugin/install_macos.sh
 The installer copies the script files to:
 
 ```text
-/Library/Application Support/Blackmagic Design/DaVinci Resolve/Fusion/Scripts/Edit/Kairos Volc Voiceover
+/Library/Application Support/Blackmagic Design/DaVinci Resolve/Fusion/Scripts/Edit/KairosVolcVoiceover.lua
+/Library/Application Support/Blackmagic Design/DaVinci Resolve/Fusion/Scripts/Edit/KairosVolcVoiceoverLib/
 ```
+
+If the system-level Resolve scripts directory is not writable, the installer
+falls back to the same path under `~/Library/Application Support/...`.
 
 Restart Resolve, then open:
 
 ```text
-Workspace -> Scripts -> Edit -> Kairos Volc Voiceover
+Workspace -> Scripts -> Edit -> KairosVolcVoiceover
+```
+
+The Resolve menu entry is Lua on purpose. Resolve's Lua script menu path is more
+reliable on Resolve 21, so the visible panel runs as a Lua/Fusion UI script.
+Python remains as a headless backend for Volcengine synthesis and Resolve
+timeline insertion.
+
+For menu/UI diagnostics, install the probe scripts explicitly:
+
+```bash
+KAIROS_INSTALL_PROBES=1 apps/resolve-volc-voiceover-plugin/install_macos.sh
 ```
 
 ## Behavior
 
 - Scans all current timeline subtitle tracks.
-- Lets the editor choose subtitles in the plugin list, or select by playhead /
-  Mark In-Out.
-- Shows a read-only subtitle ID list as a compatibility fallback; if the Resolve
-  Tree widget selection misbehaves, type IDs such as `1,2,3` into the fallback
-  field.
+- Lets the editor type subtitle IDs from the list, or select by playhead /
+  Mark In-Out. The Lua UI intentionally uses this stable ID field first while
+  Resolve 21 script-menu UI behavior is being hardened.
 - Synthesizes one audio file per selected subtitle.
 - Inserts generated audio into an audio track named `Kairos VO`.
 - Stores generated files and manifests under:
@@ -65,3 +78,21 @@ Mark In-Out buttons are shortcuts that select matching subtitle rows.
 Resolve subtitle text access is version-sensitive. If the current Resolve build
 does not expose subtitle text through `GetName()`, `GetProperty()`, or
 `GetClipProperty()`, the plugin blocks synthesis rather than guessing text.
+
+Startup errors are written to:
+
+```text
+~/Movies/KairosVoiceover/logs/lua-plugin.log
+~/Movies/KairosVoiceover/logs/resolve-plugin.log
+~/Movies/KairosVoiceover/logs/resolve-plugin-bootstrap.log
+```
+
+## Debug Smoke Test
+
+With Resolve running, this creates or reuses a throwaway project named
+`Kairos Volc Voiceover Debug`, creates a debug timeline, creates a local WAV
+tone, and inserts it through the same bridge used by the plugin:
+
+```bash
+python3 apps/resolve-volc-voiceover-plugin/debug_resolve_plugin.py
+```
