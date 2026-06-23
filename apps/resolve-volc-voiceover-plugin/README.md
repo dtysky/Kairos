@@ -43,8 +43,8 @@ KAIROS_INSTALL_PROBES=1 apps/resolve-volc-voiceover-plugin/install_macos.sh
 
 - Scans all current timeline subtitle tracks.
 - Lets the editor type subtitle IDs from the list, or select by playhead /
-  Mark In-Out. The Lua UI intentionally uses this stable ID field first while
-  Resolve 21 script-menu UI behavior is being hardened.
+  Resolve timeline In/Out. The Lua UI intentionally uses this stable ID field
+  first while Resolve 21 script-menu UI behavior is being hardened.
 - Synthesizes one audio file per selected subtitle.
 - Inserts generated audio into an audio track named `Kairos VO`.
 - Stores generated files and manifests under:
@@ -73,7 +73,9 @@ headers for synthesis requests.
 
 Resolve scripting does not expose stable Edit-page selected subtitle timeline
 items. Selection is therefore maintained inside the plugin UI. The playhead and
-Mark In-Out buttons are shortcuts that select matching subtitle rows.
+Resolve In/Out buttons are shortcuts that select matching subtitle rows. Set the
+In/Out range in Resolve itself with `I` and `O`; the plugin reads that existing
+range with `GetMarkInOut()`.
 
 Resolve subtitle text access is version-sensitive. If the current Resolve build
 does not expose subtitle text through `GetName()`, `GetProperty()`, or

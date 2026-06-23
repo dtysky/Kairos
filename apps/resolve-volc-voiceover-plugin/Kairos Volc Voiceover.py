@@ -408,7 +408,7 @@ class VoiceoverWindow:
                     [
                         ui.Button({"ID": "refresh", "Text": "Refresh Subtitles"}),
                         ui.Button({"ID": "playhead", "Text": "Use Playhead Subtitle"}),
-                        ui.Button({"ID": "mark", "Text": "Use Mark In/Out"}),
+                        ui.Button({"ID": "mark", "Text": "Select Resolve I/O"}),
                         ui.Button({"ID": "probe", "Text": "Probe"}),
                     ],
                 ),
@@ -674,7 +674,7 @@ class VoiceoverWindow:
     def select_mark(self, ev):
         mark = self.bridge.mark_range()
         if not mark:
-            self.log("No Mark In/Out range found.")
+            self.log("No Resolve In/Out range found. Set it on the timeline with I and O, then click Select Resolve I/O.")
             return
         start, end = mark
         ids = [
@@ -683,7 +683,7 @@ class VoiceoverWindow:
             if ranges_overlap(start, end, row.get("startFrame"), row.get("endFrame"))
         ]
         self.set_selected_ids(ids)
-        self.log(f"Selected {len(ids)} subtitle(s) in Mark In/Out.")
+        self.log(f"Selected {len(ids)} subtitle(s) in Resolve In/Out.")
 
     def probe(self, ev):
         try:

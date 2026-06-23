@@ -498,7 +498,7 @@ end
 local function useMark(ev)
     local markIn, markOut = markRange()
     if not markIn or not markOut then
-        uiLog("No Mark In/Out range found.")
+        uiLog("No Resolve In/Out range found. Set it on the timeline with I and O, then click Select Resolve I/O.")
         return
     end
     local ids = {}
@@ -508,7 +508,7 @@ local function useMark(ev)
         end
     end
     setSelectedIds(ids)
-    uiLog("Selected " .. tostring(#ids) .. " subtitle(s) in Mark In/Out.")
+    uiLog("Selected " .. tostring(#ids) .. " subtitle(s) in Resolve In/Out.")
 end
 
 local function selectedSubtitles()
@@ -641,7 +641,7 @@ ui:VGroup({
     ui:HGroup({
         ui:Button({ID = "refresh", Text = "Refresh Subtitles"}),
         ui:Button({ID = "playhead", Text = "Use Playhead Subtitle"}),
-        ui:Button({ID = "mark", Text = "Use Mark In/Out"}),
+        ui:Button({ID = "mark", Text = "Select Resolve I/O"}),
         ui:Button({ID = "probe", Text = "Probe"}),
         ui:Button({ID = "openLogs", Text = "Logs"}),
     }),
