@@ -5,6 +5,7 @@ local DEFAULT_RESOURCE_ID = "seed-icl-2.0"
 local subtitles = {}
 local items = nil
 local root = "."
+local voiceConfig = nil
 
 local function quote(value)
     return "'" .. tostring(value):gsub("'", "'\\''") .. "'"
@@ -107,33 +108,6 @@ local function cleanSubtitleText(value)
     return trim(text)
 end
 
-local function extractJsonString(text, key)
-    local pattern = '"' .. key .. '"%s*:%s*"(.-)"'
-    local value = text:match(pattern)
-    if not value then
-        return ""
-    end
-    value = value:gsub('\\"', '"')
-    value = value:gsub("\\n", "\n")
-    value = value:gsub("\\\\", "\\")
-    return value
-end
-
-local function loadConfig()
-    local path = (os.getenv("HOME") or ".") .. "/Movies/KairosVoiceover/config.local.json"
-    local text = readText(path)
-    return {
-        apiKey = extractJsonString(text, "apiKey"),
-        speaker = extractJsonString(text, "speaker"),
-        resourceId = extractJsonString(text, "resourceId"),
-        model = extractJsonString(text, "model"),
-        language = extractJsonString(text, "language"),
-        speedRatio = extractJsonString(text, "speedRatio"),
-        loudnessRatio = extractJsonString(text, "loudnessRatio"),
-        contextText = extractJsonString(text, "contextText"),
-    }
-end
-
 local function jsonString(value)
     local replacements = {
         ['"'] = '\\"',
@@ -149,6 +123,95 @@ local function jsonString(value)
         return replacements[char] or string.format("\\u%04x", char:byte())
     end)
     return '"' .. text .. '"'
+end
+
+local function tsvUnescape(value)
+    local text = tostring(value or "")
+    text = text:gsub("\\n", "\n")
+    text = text:gsub("\\t", "\t")
+    text = text:gsub("\\\\", "\\")
+    return text
+end
+
+local function splitTabs(line)
+    local fields = {}
+    local text = tostring(line or "")
+    local start = 1
+    while true do
+        local tab = text:find("\t", start, true)
+        if not tab then
+            table.insert(fields, tsvUnescape(text:sub(start)))
+            break
+        end
+        table.insert(fields, tsvUnescape(text:sub(start, tab - 1)))
+        start = tab + 1
+    end
+    return fields
+end
+
+local function loadVoiceoverConfigSummary()
+    local tmpDir = (os.getenv("HOME") or ".") .. "/Movies/KairosVoiceover/.tmp"
+    os.execute("/bin/mkdir -p " .. quote(tmpDir))
+    local outPath = tmpDir .. "/voiceover-config-summary.tsv"
+    local python = root .. "/KairosVolcVoiceoverLib/KairosVolcVoiceover.py"
+    local cmd = "/usr/bin/python3 " .. quote(python) .. " --voiceover-config-summary > " .. quote(outPath) .. " 2>&1"
+    os.execute(cmd)
+    local result = {
+        runtimeConfigPath = "",
+        hasApiKey = false,
+        defaultProfile = "",
+        profiles = {},
+        error = "",
+    }
+    for line in readText(outPath):gmatch("[^\r\n]+") do
+        local fields = splitTabs(line)
+        local kind = fields[1]
+        if kind == "CONFIG" then
+            result.runtimeConfigPath = fields[2] or ""
+        elseif kind == "HAS_API_KEY" then
+            result.hasApiKey = fields[2] == "1"
+        elseif kind == "DEFAULT" then
+            result.defaultProfile = fields[2] or ""
+        elseif kind == "PROFILE" then
+            table.insert(result.profiles, {
+                name = fields[2] or "",
+                displayName = fields[3] or fields[2] or "",
+            })
+        elseif kind == "ERROR" then
+            result.error = fields[2] or line
+        end
+    end
+    return result
+end
+
+local function profileLabel(profile)
+    local display = tostring(profile.displayName or profile.name or "")
+    local name = tostring(profile.name or "")
+    if display ~= "" and display ~= name then
+        return display .. " (" .. name .. ")"
+    end
+    return name
+end
+
+local function profileLabels(config)
+    local labels = {}
+    for _, profile in ipairs(config.profiles or {}) do
+        table.insert(labels, profileLabel(profile))
+    end
+    if #labels == 0 then
+        table.insert(labels, "No profiles in config/runtime.json")
+    end
+    return labels
+end
+
+local function defaultProfileIndex(config)
+    local defaultName = tostring(config.defaultProfile or "")
+    for index, profile in ipairs(config.profiles or {}) do
+        if defaultName ~= "" and profile.name == defaultName then
+            return index - 1
+        end
+    end
+    return 0
 end
 
 local function isArray(value)
@@ -519,31 +582,42 @@ local function selectedSubtitles()
     return selected
 end
 
+local function selectedProfile()
+    if not voiceConfig or #(voiceConfig.profiles or {}) == 0 then
+        return nil
+    end
+    local index = tonumber(items.profile.CurrentIndex)
+    if index ~= nil then
+        if voiceConfig.profiles[index + 1] then
+            return voiceConfig.profiles[index + 1]
+        end
+        if voiceConfig.profiles[index] then
+            return voiceConfig.profiles[index]
+        end
+    end
+    local currentText = tostring(items.profile.CurrentText or items.profile.Text or "")
+    for _, profile in ipairs(voiceConfig.profiles) do
+        if profileLabel(profile) == currentText or profile.name == currentText then
+            return profile
+        end
+    end
+    return voiceConfig.profiles[1]
+end
+
 local function currentSettings()
+    local profile = selectedProfile()
     return {
-        apiKey = items.apiKey.Text or "",
-        speaker = items.speaker.Text or "",
-        resourceId = items.resourceId.Text ~= "" and items.resourceId.Text or DEFAULT_RESOURCE_ID,
-        model = items.model.Text or "",
-        language = items.language.Text ~= "" and items.language.Text or "zh-cn",
+        profileName = profile and profile.name or "",
         speedRatio = items.speed.Text or "",
         loudnessRatio = items.loudness.Text or "",
-        contextText = items.contextText.PlainText or "",
     }
 end
 
-local function saveConfig(ev)
-    local config = currentSettings()
-    if not items.saveApiKey.Checked then
-        config.apiKey = ""
-    end
-    local path = (os.getenv("HOME") or ".") .. "/Movies/KairosVoiceover/config.local.json"
-    os.execute("/bin/mkdir -p " .. quote(dirname(path)))
-    if writeText(path, jsonEncode(config) .. "\n") then
-        os.execute("/bin/chmod 600 " .. quote(path))
-        uiLog("Saved local config: " .. path)
+local function openRuntimeConfig(ev)
+    if voiceConfig and voiceConfig.runtimeConfigPath ~= "" then
+        os.execute("/usr/bin/open " .. quote(voiceConfig.runtimeConfigPath))
     else
-        uiLog("Failed to save config: " .. path)
+        uiLog("No Kairos runtime config path found.")
     end
 end
 
@@ -551,6 +625,14 @@ local function runBackend(mode)
     local selected = selectedSubtitles()
     if #selected == 0 then
         uiLog("No subtitle IDs selected.")
+        return
+    end
+    if not selectedProfile() then
+        uiLog("No voice profile configured. Add voiceover.profiles[] in config/runtime.json.")
+        return
+    end
+    if not (voiceConfig and voiceConfig.hasApiKey) then
+        uiLog("Volcengine API key missing. Set voiceover.volcApiKey in config/runtime.json.")
         return
     end
     local job = {
@@ -630,10 +712,11 @@ if existing then
     return
 end
 
-local config = loadConfig()
+voiceConfig = loadVoiceoverConfigSummary()
+local labels = profileLabels(voiceConfig)
 local win = dispatcher:AddWindow({
     ID = WINDOW_ID,
-    Geometry = {120, 120, 1040, 780},
+    Geometry = {160, 160, 860, 560},
     WindowTitle = "Kairos Volc Voiceover",
 },
 ui:VGroup({
@@ -645,41 +728,27 @@ ui:VGroup({
         ui:Button({ID = "probe", Text = "Probe"}),
         ui:Button({ID = "openLogs", Text = "Logs"}),
     }),
-    ui:TextEdit({ID = "subtitleList", Weight = 1.0, ReadOnly = true, AcceptRichText = false}),
+    ui:TextEdit({ID = "subtitleList", Weight = 0.72, ReadOnly = true, AcceptRichText = false}),
     ui:HGroup({
         ui:Label({Text = "Selected IDs", Weight = 0}),
         ui:LineEdit({ID = "selectedIds", Text = "", PlaceholderText = "1,2,3"}),
     }),
     ui:HGroup({
-        ui:Label({Text = "API Key", Weight = 0}),
-        ui:LineEdit({ID = "apiKey", Text = config.apiKey or "", EchoMode = "Password"}),
-        ui:CheckBox({ID = "saveApiKey", Text = "Save local", Checked = false}),
-    }),
-    ui:HGroup({
-        ui:Label({Text = "Speaker", Weight = 0}),
-        ui:LineEdit({ID = "speaker", Text = config.speaker or "", PlaceholderText = "speaker_id"}),
-        ui:Label({Text = "Resource", Weight = 0}),
-        ui:LineEdit({ID = "resourceId", Text = config.resourceId ~= "" and config.resourceId or DEFAULT_RESOURCE_ID}),
-    }),
-    ui:HGroup({
-        ui:Label({Text = "Model", Weight = 0}),
-        ui:LineEdit({ID = "model", Text = config.model or ""}),
-        ui:Label({Text = "Language", Weight = 0}),
-        ui:LineEdit({ID = "language", Text = config.language ~= "" and config.language or "zh-cn"}),
+        ui:Label({Text = "Voice Profile", Weight = 0}),
+        ui:ComboBox({ID = "profile", Items = labels, CurrentIndex = defaultProfileIndex(voiceConfig)}),
         ui:Label({Text = "Speed", Weight = 0}),
-        ui:LineEdit({ID = "speed", Text = config.speedRatio or ""}),
+        ui:LineEdit({ID = "speed", Text = "", PlaceholderText = "profile default"}),
         ui:Label({Text = "Loudness", Weight = 0}),
-        ui:LineEdit({ID = "loudness", Text = config.loudnessRatio or ""}),
+        ui:LineEdit({ID = "loudness", Text = "", PlaceholderText = "profile default"}),
+        ui:Button({ID = "openConfig", Text = "Config"}),
     }),
-    ui:TextEdit({ID = "contextText", Weight = 0.25, AcceptRichText = false, PlainText = config.contextText or ""}),
     ui:HGroup({
         ui:CheckBox({ID = "skipOverflow", Text = "Skip overflow clips", Checked = false}),
-        ui:Button({ID = "saveConfig", Text = "Save Config"}),
         ui:Button({ID = "preview", Text = "Preview"}),
         ui:Button({ID = "synthesizeInsert", Text = "Synthesize + Insert"}),
         ui:Button({ID = "close", Text = "Close"}),
     }),
-    ui:TextEdit({ID = "log", Weight = 0.45, ReadOnly = true, AcceptRichText = false}),
+    ui:TextEdit({ID = "log", Weight = 0.26, ReadOnly = true, AcceptRichText = false}),
 }))
 
 if not win then
@@ -701,11 +770,19 @@ win.On["playhead"].Clicked = usePlayhead
 win.On["mark"].Clicked = useMark
 win.On["probe"].Clicked = probe
 win.On["openLogs"].Clicked = openLogs
-win.On["saveConfig"].Clicked = saveConfig
+win.On["openConfig"].Clicked = openRuntimeConfig
 win.On["preview"].Clicked = preview
 win.On["synthesizeInsert"].Clicked = synthesizeInsert
 
 win:Show()
 appendLog("lua plugin window shown")
 refreshSubtitles(nil)
+if voiceConfig.error ~= "" then
+    uiLog("Voice config error: " .. voiceConfig.error)
+else
+    uiLog(
+        "Voice config: " .. tostring(#(voiceConfig.profiles or {})) .. " profile(s), "
+        .. "apiKey=" .. (voiceConfig.hasApiKey and "configured" or "missing")
+    )
+end
 dispatcher:RunLoop()

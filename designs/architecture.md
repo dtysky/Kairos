@@ -109,11 +109,11 @@
 
 本轮冻结后的正式口径如下：
 
-- 插件目录固定为 `apps/resolve-volc-voiceover-plugin/`，安装到 Resolve `Fusion/Scripts/Edit` 菜单；它是独立 Resolve Python/Fusion UI 脚本，不依赖 Kairos Console 或 Supervisor 运行。
+- 插件目录固定为 `apps/resolve-volc-voiceover-plugin/`，安装到 Resolve `Fusion/Scripts/Edit` 菜单；它是独立 Resolve Lua/Fusion UI + Python headless backend 脚本，不依赖 Kairos Console 或 Supervisor 运行。
 - 插件负责扫描当前 timeline 的 subtitle tracks，生成自己的字幕列表并在插件面板中维护多选状态；官方 Resolve scripting API 当前没有稳定 `GetSelectedTimelineItems()`，所以第一版不承诺读取 Edit 页原生多选字幕。
 - 插件提供三个正式选择入口：面板多选、当前播放头覆盖字幕、当前 Mark In/Out 范围重叠字幕。
 - 字幕文本读取只能来自 Resolve subtitle `TimelineItem` 可暴露字段：`GetName()`、`GetProperty().Text / Subtitle / Caption`、`GetClipProperty()`。如果当前 Resolve 版本不暴露字幕正文，插件必须阻塞合成并提示用户导入 SRT 或粘贴文本，不能猜内容。
-- 火山引擎默认使用 V3 HTTP 单向流式语音合成；声音复刻使用 V3 voice clone。API key、授权状态、speaker profile 只写本机 local config，不写 Kairos repo、项目产物或 Resolve 工程。
+- 火山引擎默认使用 V3 HTTP 单向流式语音合成；声音复刻使用 V3 voice clone。`volcApiKey`、默认 voice profile 和 profiles 注册表统一写在 workspace 全局 `config/runtime.json` 的 `voiceover` 块中。插件面板只展示 profile 下拉选择，不允许在 Resolve 面板里临时输入 API key / speaker / resource / model / language，避免配置散落到 Resolve 工程或插件私有文件。
 - 默认每条字幕生成一个音频文件和一个 timeline audio item，保持字幕级边界；生成文件保存在 `~/Movies/KairosVoiceover/<resolveProject>/<timelineId>/<runId>/`，并写 `manifest.json` 记录请求、缓存、音频和插入结果。
 - 插入时间线时创建或复用 `Kairos VO` 音频轨，通过 `MediaPool.ImportMedia` 导入音频，再用 audio-only `AppendToTimeline` 按字幕起始帧插入；默认不删除已有用户音频或旧配音。只有显式选择插件-owned replacement 时，才允许删除带同一插件 marker/customData 的旧音频。
 - 该插件是直接 Resolve 工具，不是 Flow Plan capability；若需要进入 Kairos edit 审计，可把 manifest 镜像到 `edits/<editId>/postlock/voiceover-plugin/`，但镜像不是插入时间线的前置条件。

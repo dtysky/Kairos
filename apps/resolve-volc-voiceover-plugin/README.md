@@ -19,6 +19,10 @@ The installer copies the script files to:
 /Library/Application Support/Blackmagic Design/DaVinci Resolve/Fusion/Scripts/Edit/KairosVolcVoiceoverLib/
 ```
 
+It also writes `KairosVolcVoiceoverLib/kairos_workspace.json`, pointing the
+installed plugin back to this Kairos workspace so it can read global
+`config/runtime.json`.
+
 If the system-level Resolve scripts directory is not writable, the installer
 falls back to the same path under `~/Library/Application Support/...`.
 
@@ -45,6 +49,8 @@ KAIROS_INSTALL_PROBES=1 apps/resolve-volc-voiceover-plugin/install_macos.sh
 - Lets the editor type subtitle IDs from the list, or select by playhead /
   Resolve timeline In/Out. The Lua UI intentionally uses this stable ID field
   first while Resolve 21 script-menu UI behavior is being hardened.
+- Uses a compact voice profile selector backed by workspace global
+  `config/runtime.json`.
 - Synthesizes one audio file per selected subtitle.
 - Inserts generated audio into an audio track named `Kairos VO`.
 - Stores generated files and manifests under:
@@ -53,10 +59,34 @@ KAIROS_INSTALL_PROBES=1 apps/resolve-volc-voiceover-plugin/install_macos.sh
 ~/Movies/KairosVoiceover/<project>/<timeline>/<runId>/
 ```
 
-API keys and speaker settings are stored only in the local plugin config:
+Volcengine API key and registered voice profiles are configured globally in:
 
 ```text
-~/Movies/KairosVoiceover/config.local.json
+config/runtime.json
+```
+
+Example:
+
+```json
+{
+  "voiceover": {
+    "volcApiKey": "YOUR_VOLCENGINE_API_KEY",
+    "defaultProfile": "genie_cn_clone",
+    "profiles": [
+      {
+        "name": "genie_cn_clone",
+        "displayName": "格聂女声复刻",
+        "resourceId": "seed-icl-2.0",
+        "speakerId": "YOUR_SPEAKER_ID",
+        "language": "zh-cn",
+        "model": "",
+        "defaultSpeed": 1,
+        "defaultLoudness": 1,
+        "contextText": "自然、纪录片旁白、克制"
+      }
+    ]
+  }
+}
 ```
 
 ## Volcengine Defaults

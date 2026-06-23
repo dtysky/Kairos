@@ -91,6 +91,21 @@ const IRuntimeConfig = z.object({
   jianyingDraftRoot: z.string().optional(),
   jianyingPythonPath: z.string().optional(),
   jianyingPyProjectRoot: z.string().optional(),
+  voiceover: z.object({
+    volcApiKey: z.string().optional(),
+    defaultProfile: z.string().optional(),
+    profiles: z.array(z.object({
+      name: z.string(),
+      displayName: z.string().optional(),
+      resourceId: z.string().optional(),
+      speakerId: z.string().optional(),
+      language: z.string().optional(),
+      model: z.string().optional(),
+      defaultSpeed: z.number().optional(),
+      defaultLoudness: z.number().optional(),
+      contextText: z.string().optional(),
+    })).optional(),
+  }).optional(),
 });
 export type IRuntimeConfig = z.infer<typeof IRuntimeConfig>;
 

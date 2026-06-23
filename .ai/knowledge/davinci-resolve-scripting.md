@@ -111,7 +111,7 @@ That plugin is a direct Resolve UI helper, not the official `/color` or `/edit` 
 - `timeline.GetTrackCount(trackType)` uses `audio`, `video`, or `subtitle`.
 - `timeline.GetItemListInTrack(trackType, index)` returns timeline items on newer docs.
 - `timeline.GetItemsInTrack(trackType, index)` is still present in the docs as a compatibility shape; Kairos may fall back to it.
-- `timeline.GetMarkInOut()` and `timeline.GetCurrentTimecode()` support helper selection ranges, but the installed docs do not expose a stable `GetSelectedTimelineItems()` for Edit-page timeline selections. Resolve subtitle voiceover plugins must maintain their own selected subtitle rows or derive selection from playhead / Mark In-Out.
+- `timeline.GetMarkInOut()` and `timeline.GetCurrentTimecode()` support helper selection ranges, but the installed docs do not expose a stable `GetSelectedTimelineItems()` for Edit-page timeline selections. Resolve subtitle voiceover plugins must maintain their own selected subtitle rows or derive selection from playhead / Resolve In-Out.
 - `timeline.DeleteClips([timelineItems], ripple=False)` clears timeline items.
 - `timeline.DuplicateTimeline(name)` returns a copied timeline.
 - `timeline.GetCurrentTimecode()` and `timeline.SetCurrentTimecode(timecode)` drive the playhead.
@@ -139,6 +139,7 @@ That plugin is a direct Resolve UI helper, not the official `/color` or `/edit` 
 - `timelineItem.GetMediaPoolItem()` links back to source media.
 - Subtitle item text is version-sensitive. The Volc voiceover plugin may try `GetName()`, `GetProperty().Text / Subtitle / Caption`, and `GetClipProperty().Text / Subtitle / Caption`; if all are empty, it must block instead of guessing subtitle text.
 - For generated voiceover audio, import the audio file with `MediaPool.ImportMedia` and append it with `MediaPool.AppendToTimeline([{"mediaPoolItem": item, "mediaType": 2, "trackIndex": audioTrackIndex, "recordFrame": frame}])`. The documented `Project.InsertAudioToCurrentTrackAtPlayhead(...)` depends on Fairlight selected track/playhead state and is less deterministic for batch subtitle insertion.
+- The Volc voiceover plugin reads `volcApiKey` and registered voice profiles from workspace global `config/runtime.json.voiceover`. The Resolve panel should expose a compact profile selector rather than raw API key / speaker / resource / model / language fields.
 
 ### Rough-cut Append Source Ranges
 

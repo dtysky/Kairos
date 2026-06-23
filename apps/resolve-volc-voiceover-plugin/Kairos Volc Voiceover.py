@@ -826,14 +826,85 @@ def _optional_float(value):
     return float(text)
 
 
-def cli_synthesize_job(job_path: Path):
-    job = json.loads(job_path.read_text(encoding="utf-8"))
-    resolve = _get_resolve()
-    if not resolve:
-        raise RuntimeError("Unable to connect to DaVinci Resolve.")
-    bridge = ResolveVoiceoverBridge(resolve)
+def load_workspace_link() -> dict:
+    link_path = SCRIPT_DIR / "kairos_workspace.json"
+    if link_path.exists():
+        return json.loads(link_path.read_text(encoding="utf-8"))
+    for candidate in (SCRIPT_DIR, *SCRIPT_DIR.parents):
+        runtime_path = candidate / "config" / "runtime.json"
+        if runtime_path.exists():
+            return {"workspaceRoot": str(candidate), "runtimeConfigPath": str(runtime_path)}
+    return {}
+
+
+def load_runtime_voiceover_config() -> dict:
+    link = load_workspace_link()
+    runtime_path = Path(str(link.get("runtimeConfigPath") or "")).expanduser()
+    if not runtime_path.exists():
+        raise VoiceoverError(
+            "voiceover_runtime_missing",
+            f"Kairos runtime config is missing: {runtime_path or 'config/runtime.json'}",
+        )
+    runtime = json.loads(runtime_path.read_text(encoding="utf-8"))
+    voiceover = runtime.get("voiceover") if isinstance(runtime, dict) else None
+    if not isinstance(voiceover, dict):
+        voiceover = {}
+    profiles = voiceover.get("profiles")
+    if not isinstance(profiles, list):
+        profiles = []
+    normalized_profiles = [
+        profile for profile in profiles
+        if isinstance(profile, dict) and str(profile.get("name") or "").strip()
+    ]
+    return {
+        "runtimeConfigPath": str(runtime_path),
+        "volcApiKey": str(voiceover.get("volcApiKey") or ""),
+        "defaultProfile": str(voiceover.get("defaultProfile") or ""),
+        "profiles": normalized_profiles,
+    }
+
+
+def find_voiceover_profile(config: dict, name: str) -> dict:
+    profile_name = str(name or "").strip()
+    profiles = config.get("profiles") or []
+    if profile_name:
+        for profile in profiles:
+            if str(profile.get("name") or "") == profile_name:
+                return profile
+        raise VoiceoverError("voiceover_profile_missing", f"Voice profile is not configured: {profile_name}")
+    if profiles:
+        default_name = str(config.get("defaultProfile") or "").strip()
+        for profile in profiles:
+            if default_name and str(profile.get("name") or "") == default_name:
+                return profile
+        return profiles[0]
+    raise VoiceoverError("voiceover_profile_missing", "No voice profiles configured in config/runtime.json voiceover.profiles.")
+
+
+def tts_settings_from_job(job: dict) -> TtsSettings:
     settings_data = job.get("settings") or {}
-    settings = TtsSettings(
+    profile_name = str(settings_data.get("profileName") or "").strip()
+    if profile_name:
+        config = load_runtime_voiceover_config()
+        profile = find_voiceover_profile(config, profile_name)
+        speed_override = _optional_float(settings_data.get("speedRatio"))
+        loudness_override = _optional_float(settings_data.get("loudnessRatio"))
+        return TtsSettings(
+            api_key=str(config.get("volcApiKey") or ""),
+            speaker=str(profile.get("speakerId") or profile.get("speaker") or ""),
+            resource_id=str(profile.get("resourceId") or DEFAULT_RESOURCE_ID),
+            endpoint=str(profile.get("endpoint") or DEFAULT_TTS_ENDPOINT),
+            audio_format=str(profile.get("audioFormat") or "mp3"),
+            sample_rate=int(profile.get("sampleRate") or 24000),
+            model=str(profile.get("model") or ""),
+            language=str(profile.get("language") or "zh-cn"),
+            speed_ratio=speed_override if speed_override is not None else _optional_float(profile.get("defaultSpeed")),
+            loudness_ratio=(
+                loudness_override if loudness_override is not None else _optional_float(profile.get("defaultLoudness"))
+            ),
+            context_text=str(profile.get("contextText") or ""),
+        )
+    return TtsSettings(
         api_key=str(settings_data.get("apiKey") or ""),
         speaker=str(settings_data.get("speaker") or ""),
         resource_id=str(settings_data.get("resourceId") or DEFAULT_RESOURCE_ID),
@@ -846,6 +917,36 @@ def cli_synthesize_job(job_path: Path):
         loudness_ratio=_optional_float(settings_data.get("loudnessRatio")),
         context_text=str(settings_data.get("contextText") or ""),
     )
+
+
+def _tsv_escape(value) -> str:
+    return str(value or "").replace("\\", "\\\\").replace("\t", "\\t").replace("\n", "\\n")
+
+
+def voiceover_config_summary_tsv() -> str:
+    try:
+        config = load_runtime_voiceover_config()
+        lines = [
+            "CONFIG\t" + _tsv_escape(config.get("runtimeConfigPath")),
+            "HAS_API_KEY\t" + ("1" if str(config.get("volcApiKey") or "").strip() else "0"),
+            "DEFAULT\t" + _tsv_escape(config.get("defaultProfile")),
+        ]
+        for profile in config.get("profiles") or []:
+            name = str(profile.get("name") or "")
+            display = str(profile.get("displayName") or name)
+            lines.append("PROFILE\t" + _tsv_escape(name) + "\t" + _tsv_escape(display))
+        return "\n".join(lines) + "\n"
+    except Exception as exc:
+        return "ERROR\t" + _tsv_escape(exc) + "\n"
+
+
+def cli_synthesize_job(job_path: Path):
+    job = json.loads(job_path.read_text(encoding="utf-8"))
+    resolve = _get_resolve()
+    if not resolve:
+        raise RuntimeError("Unable to connect to DaVinci Resolve.")
+    bridge = ResolveVoiceoverBridge(resolve)
+    settings = tts_settings_from_job(job) if (job.get("subtitles") or []) else TtsSettings(api_key="", speaker="")
     timeline_id = str(job.get("timelineId") or bridge.timeline_id())
     project_name = str(job.get("projectName") or bridge.project_name())
     run_dir = build_run_dir(project_name, timeline_id, str(job.get("runId") or ""))
@@ -900,7 +1001,9 @@ def main():
 
 def entrypoint():
     try:
-        if len(sys.argv) >= 3 and sys.argv[1] == "--synthesize-job":
+        if len(sys.argv) >= 2 and sys.argv[1] == "--voiceover-config-summary":
+            print(voiceover_config_summary_tsv(), end="")
+        elif len(sys.argv) >= 3 and sys.argv[1] == "--synthesize-job":
             result = cli_synthesize_job(Path(sys.argv[2]).expanduser())
             print(json.dumps(result, ensure_ascii=False, indent=2))
         else:
