@@ -110,6 +110,7 @@ export interface IResolveEditMediaRelinkInput {
   resolveProjectName: string;
   namespace?: string;
   timelineName?: string;
+  timelineTrackTypes?: Array<'video' | 'audio'>;
   roots: IResolveEditMediaRelinkRoot[];
 }
 

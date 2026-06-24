@@ -1,10 +1,12 @@
 import {
   loadEditUnitConfig,
   loadIngestRoots,
+  loadProjectBriefConfig,
   loadProject,
   normalizeEditId,
   resolveWorkspaceProjectRoot,
 } from '../../store/index.js';
+import { ResolveColorHostError } from '../color/resolve-executor.js';
 import {
   buildRootPathCandidates,
   resolveMediaRoot,
@@ -31,6 +33,7 @@ export interface IRelinkProjectEditMediaResult extends IResolveEditMediaRelinkRe
   projectId?: string;
   editId: string;
   rootMappingCount: number;
+  voiceoverRootMappingCount?: number;
   blockingReasons: string[];
 }
 
@@ -42,6 +45,7 @@ export class ProjectEditMediaRelinkBlockedError extends Error {
 }
 
 const CEDIT_MEDIA_NAMESPACE = 'Kairos Project Media';
+const CVOICEOVER_MEDIA_NAMESPACE = 'Kairos Voiceover';
 
 export async function relinkProjectEditMedia(
   input: IRelinkProjectEditMediaInput,
@@ -49,10 +53,11 @@ export async function relinkProjectEditMedia(
 ): Promise<IRelinkProjectEditMediaResult> {
   const projectRoot = resolveRelinkProjectRoot(input);
   const editId = normalizeEditId(input.editId);
-  const [project, ingestRoots, editUnit] = await Promise.all([
+  const [project, ingestRoots, editUnit, projectBrief] = await Promise.all([
     loadProject(projectRoot),
     loadIngestRoots(projectRoot),
     loadEditUnitConfig(projectRoot, editId),
+    loadProjectBriefConfig(projectRoot),
   ]);
   const resolveProjectName = deriveResolveRoughCutProjectName(project.name, project.id);
   const timelineName = deriveResolveRoughCutTimelineName(editId);
@@ -98,12 +103,128 @@ export async function relinkProjectEditMedia(
     timelineName,
     roots: mappings,
   }, config);
+  const voiceoverSummary = await relinkVoiceoverMedia({
+    projectId: input.projectId ?? project.id,
+    resolveProjectName,
+    timelineName,
+    voiceoverMedia: projectBrief.voiceoverMedia,
+  }, config);
+  const hostSummary = {
+    ...(result.hostSummary ?? {}),
+    voiceover: voiceoverSummary,
+  };
   return {
     ...result,
+    hostSummary,
     projectId: input.projectId,
     editId: editUnit.editId || editId,
     rootMappingCount: mappings.length,
+    voiceoverRootMappingCount: voiceoverSummary.mappingCount,
     blockingReasons: [],
+  };
+}
+
+async function relinkVoiceoverMedia(
+  input: {
+    projectId: string;
+    resolveProjectName: string;
+    timelineName: string;
+    voiceoverMedia?: {
+      rootId?: string;
+      path?: string;
+      alternatePaths?: Array<{ path?: string; rawPath?: string }>;
+      description?: string;
+    };
+  },
+  config: IResolveTimelineHostConfig,
+): Promise<Record<string, unknown> & { mappingCount: number }> {
+  const rootMapping = buildVoiceoverRelinkMapping(input.voiceoverMedia);
+  if (!rootMapping.configured) {
+    return {
+      configured: false,
+      namespace: CVOICEOVER_MEDIA_NAMESPACE,
+      mappingCount: 0,
+      skipped: true,
+      reason: 'voiceover_media_not_configured',
+    };
+  }
+  if (rootMapping.blocker || !rootMapping.mapping) {
+    return {
+      configured: true,
+      namespace: CVOICEOVER_MEDIA_NAMESPACE,
+      mappingCount: 0,
+      skipped: true,
+      reason: 'voiceover_media_unreadable',
+      blocker: rootMapping.blocker,
+    };
+  }
+  try {
+    const result = await relinkResolveEditMedia({
+      projectId: input.projectId,
+      resolveProjectName: input.resolveProjectName,
+      namespace: CVOICEOVER_MEDIA_NAMESPACE,
+      timelineName: input.timelineName,
+      timelineTrackTypes: ['audio'],
+      roots: [rootMapping.mapping],
+    }, config);
+    return {
+      configured: true,
+      namespace: CVOICEOVER_MEDIA_NAMESPACE,
+      mappingCount: 1,
+      skipped: false,
+      ...(result.hostSummary ?? {}),
+    };
+  } catch (error) {
+    if (error instanceof ResolveColorHostError && error.code === 'resolve_edit_media_namespace_missing') {
+      return {
+        configured: true,
+        namespace: CVOICEOVER_MEDIA_NAMESPACE,
+        mappingCount: 1,
+        skipped: true,
+        reason: 'voiceover_media_pool_bin_missing',
+      };
+    }
+    throw error;
+  }
+}
+
+function buildVoiceoverRelinkMapping(voiceoverMedia?: {
+  rootId?: string;
+  path?: string;
+  alternatePaths?: Array<{ path?: string; rawPath?: string }>;
+  description?: string;
+}): {
+  configured: boolean;
+  mapping?: IResolveEditMediaRelinkRoot;
+  blocker?: string;
+} {
+  const path = voiceoverMedia?.path?.trim();
+  if (!path) return { configured: false };
+  const root = {
+    id: voiceoverMedia?.rootId?.trim() || 'voiceover',
+    path,
+    alternatePaths: voiceoverMedia?.alternatePaths,
+    enabled: true,
+  };
+  const resolved = resolveMediaRoot(root);
+  const localPath = resolved.localPath?.trim();
+  if (!localPath) {
+    return {
+      configured: true,
+      blocker: resolved.localPathResolution.blocker ?? '配音媒体 Root 路径不可读',
+    };
+  }
+  return {
+    configured: true,
+    mapping: {
+      rootId: root.id,
+      label: voiceoverMedia?.description?.trim() || CVOICEOVER_MEDIA_NAMESPACE,
+      localPath,
+      candidates: dedupeStrings([
+        localPath,
+        ...buildRootPathCandidates(root, 'path').map(candidate => candidate.path),
+      ]),
+    },
   };
 }
 

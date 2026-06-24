@@ -73,6 +73,9 @@ node scripts/validate-postlock-narration-framework.mjs projects/<projectId> <edi
 - 插件只能消费当前 Resolve timeline 中可枚举的 subtitle items，或者用户在插件中粘贴 / 导入的字幕文本；不得从 `narration-framework.md`、clip-map、Resolve item name、MediaPool folder name 或历史 hostSummary 猜字幕正文。
 - 插件选择态必须由插件面板、当前播放头或 Mark In/Out 范围确定；不得声称读取 Resolve 原生 timeline item 多选态，除非当前安装版官方 API 已经被重新验证并记录。
 - 插件生成并插入的是 audio clip，不得修改字幕轨文本，不得重排或删除 video/subtitle timeline items。
+- 插件多选字幕时应把用户选择视为明确合并意图：按 timeline 时间排序后合成一个 TTS 文本和一个 merged audio item，不得再用字符数 / 时长启发式自动拆分或合并。
+- 插件导入生成音频时应创建或复用 Media Pool bin `Kairos Voiceover / <timelineName>`，避免把配音素材散落到当前用户正在浏览的 Media Pool 目录。
+- 插件的火山 API key / voice profiles 属于 workspace 全局配置；生成音频属于当前 Kairos 项目的 `config/project-brief.json.voiceoverMedia` 配音媒体根，该配置应在 `/ingest-gps` 项目配置 UI 中可见，并由 `/edit` 的 Resolve 重链动作处理 `Kairos Voiceover` bin。正式输出目录使用 `<voiceoverMediaRoot>/<safe Resolve project>/<safe timeline>/`，目录内只保存 Resolve 直接导入的 `vo_<unit>_<request>.mp3`。请求缓存、插件 job、backend 输出、debug manifest 和日志属于匹配项目 `.tmp/resolve-volc-voiceover-plugin/`。
 - 默认不得删除已有音频。只有用户显式选择 replacement，且旧 audio item 带有插件写入的同一 `kairosVoiceoverUnitId` marker/customData，才允许删除旧插件音频。
 
 ## SubAgent Packet Rules

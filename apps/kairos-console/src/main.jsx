@@ -2220,6 +2220,7 @@ function EditFlowPage({
           <div className="edit-resolve-relink-summary">
             <span>{`素材池 ${editRelinkSummary.totalMediaItems ?? 0}`}</span>
             <span>{`重链 ${editRelinkSummary.relinked ?? 0}`}</span>
+            <span>{`配音 ${formatVoiceoverRelinkSummary(editRelinkSummary.voiceover)}`}</span>
             <span>{`旧路径 ${editRelinkSummary.oldPathRemaining ?? 0}`}</span>
             <span>{`不可读 ${editRelinkSummary.localUnreadable ?? 0}`}</span>
             <span>{`缺失目标 ${editRelinkSummary.missingTargetCount ?? 0}`}</span>
@@ -2763,7 +2764,7 @@ function formatEditRelinkMessage(result) {
   const unreadable = summary.localUnreadable ?? 0;
   const missing = summary.missingTargetCount ?? 0;
   const unmapped = summary.unmappedCount ?? 0;
-  return `剪辑工程素材重链完成：${relinked} 个，旧路径 ${oldRemaining}，不可读 ${unreadable}，缺失目标 ${missing}，未映射 ${unmapped}`;
+  return `剪辑工程素材重链完成：${relinked} 个，旧路径 ${oldRemaining}，不可读 ${unreadable}，缺失目标 ${missing}，未映射 ${unmapped}；配音 ${formatVoiceoverRelinkSummary(summary.voiceover)}`;
 }
 
 function formatEditRelinkError(caught) {
@@ -2786,13 +2787,43 @@ function formatEditRelinkWarnings(summary) {
   const unmapped = summary.unmappedCount ?? 0;
   const timelineMissing = summary.timelineMissingTargetCount ?? 0;
   const timelineUnmapped = summary.timelineUnmappedCount ?? 0;
-  if (missing + unmapped + timelineMissing + timelineUnmapped <= 0) return '';
+  const voiceoverWarning = formatVoiceoverRelinkWarning(summary.voiceover);
+  if (missing + unmapped + timelineMissing + timelineUnmapped <= 0 && !voiceoverWarning) return '';
   const samples = [
     ...(summary.missingTargetSamples || []).slice(0, 3).map(item => item.target || item.path || item.name),
     ...(summary.unmappedSamples || []).slice(0, 3).map(item => item.path || item.name),
   ].filter(Boolean);
   const sampleText = samples.length > 0 ? `；样本：${samples.join('；')}` : '';
-  return `重链完成，但仍有警告：缺失目标 ${missing}，未映射 ${unmapped}，时间线缺失目标 ${timelineMissing}，时间线未映射 ${timelineUnmapped}${sampleText}`;
+  const voiceoverText = voiceoverWarning ? `；${voiceoverWarning}` : '';
+  return `重链完成，但仍有警告：缺失目标 ${missing}，未映射 ${unmapped}，时间线缺失目标 ${timelineMissing}，时间线未映射 ${timelineUnmapped}${voiceoverText}${sampleText}`;
+}
+
+function formatVoiceoverRelinkSummary(summary) {
+  if (!summary || summary.configured === false) return '未配置';
+  if (summary.skipped) return `跳过：${formatVoiceoverRelinkReason(summary.reason)}`;
+  const relinked = summary.relinked ?? 0;
+  const oldRemaining = summary.oldPathRemaining ?? 0;
+  const unmapped = summary.unmappedCount ?? 0;
+  return `重链 ${relinked}，旧路径 ${oldRemaining}，未映射 ${unmapped}`;
+}
+
+function formatVoiceoverRelinkWarning(summary) {
+  if (!summary || summary.configured === false) return '';
+  if (summary.skipped) return `配音重链跳过：${formatVoiceoverRelinkReason(summary.reason)}`;
+  const missing = summary.missingTargetCount ?? 0;
+  const unmapped = summary.unmappedCount ?? 0;
+  const oldRemaining = summary.oldPathRemaining ?? 0;
+  const timelineOld = summary.timelineOldPathRemaining ?? 0;
+  if (missing + unmapped + oldRemaining + timelineOld <= 0) return '';
+  return `配音警告：缺失目标 ${missing}，未映射 ${unmapped}，旧路径 ${oldRemaining}，时间线旧路径 ${timelineOld}`;
+}
+
+function formatVoiceoverRelinkReason(reason) {
+  const normalized = String(reason || '').trim();
+  if (normalized === 'voiceover_media_not_configured') return '未配置';
+  if (normalized === 'voiceover_media_unreadable') return '路径不可读';
+  if (normalized === 'voiceover_media_pool_bin_missing') return 'Media Pool 无 Kairos Voiceover';
+  return normalized || '未知原因';
 }
 
 function pickLatestActiveProjectId(projects, jobs) {

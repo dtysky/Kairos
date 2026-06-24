@@ -707,6 +707,7 @@ def relink_edit_media(resolve, payload):
     if not mappings:
         raise HostError("resolve_edit_relink_roots_missing", "relink_edit_media requires at least one readable root mapping.")
 
+    timeline_track_types = normalize_relink_timeline_track_types(payload.get("timelineTrackTypes"))
     items = collect_media_pool_items(namespace_folder)
     preflight = build_edit_relink_plan(items, mappings)
     relink_results = []
@@ -719,7 +720,7 @@ def relink_edit_media(resolve, payload):
 
     if relinked > 0:
         time.sleep(1.0)
-    verify = summarize_edit_relink_state(namespace_folder, timeline, mappings)
+    verify = summarize_edit_relink_state(namespace_folder, timeline, mappings, timeline_track_types)
     relink_failures = [entry for entry in relink_results if not entry["ok"]]
     if (
         relink_failures
@@ -755,6 +756,7 @@ def relink_edit_media(resolve, payload):
             "loadedProject": safe_call(project, "GetName"),
             "namespace": namespace,
             "timeline": safe_call(timeline, "GetName") if timeline is not None else None,
+            "timelineTrackTypes": timeline_track_types,
             "rootReadable": {mapping["rootId"]: Path(mapping["localPath"]).is_dir() for mapping in mappings},
             "rootCount": len(mappings),
             "alreadyLocalBefore": preflight["alreadyLocal"],
@@ -1486,6 +1488,16 @@ def normalize_edit_relink_roots(value):
     return roots
 
 
+def normalize_relink_timeline_track_types(value):
+    allowed = {"video", "audio"}
+    result = []
+    for raw in iter_values(value or []):
+        text = stringify_signal_value(raw).strip().lower()
+        if text in allowed and text not in result:
+            result.append(text)
+    return result or ["video"]
+
+
 def build_edit_relink_plan(items, mappings):
     by_folder = {}
     roots = {mapping["rootId"]: 0 for mapping in mappings}
@@ -1531,7 +1543,7 @@ def build_edit_relink_plan(items, mappings):
     }
 
 
-def summarize_edit_relink_state(namespace_folder, timeline, mappings):
+def summarize_edit_relink_state(namespace_folder, timeline, mappings, timeline_track_types=None):
     items = collect_media_pool_items(namespace_folder)
     roots = {mapping["rootId"]: 0 for mapping in mappings}
     old_remaining = 0
@@ -1566,13 +1578,14 @@ def summarize_edit_relink_state(namespace_folder, timeline, mappings):
         else:
             unmapped.append(build_edit_relink_item_sample(item, source_path, {"type": item_type}))
 
-    timeline_items = list(iter_timeline_video_items(timeline)) if timeline is not None else []
+    timeline_track_types = timeline_track_types or ["video"]
+    timeline_items = list(iter_timeline_relink_items(timeline, timeline_track_types)) if timeline is not None else []
     timeline_old = 0
     timeline_unreadable = 0
     timeline_missing_targets = []
     timeline_unmapped = 0
     timeline_skipped_non_file = 0
-    for item in timeline_items:
+    for _track_type, item in timeline_items:
         source_path = extract_relink_clip_file_path(item)
         item_type = get_relink_item_type(item)
         if not source_path and is_edit_relink_non_file_type(item_type):
@@ -1606,7 +1619,10 @@ def summarize_edit_relink_state(namespace_folder, timeline, mappings):
         "unmappedSamples": unmapped[:20],
         "skippedNonFileCount": len(skipped_non_file),
         "skippedNonFileSamples": skipped_non_file[:20],
-        "timelineVideoItemCount": len(timeline_items),
+        "timelineTrackTypes": timeline_track_types,
+        "timelineItemCount": len(timeline_items),
+        "timelineVideoItemCount": sum(1 for track_type, _item in timeline_items if track_type == "video"),
+        "timelineAudioItemCount": sum(1 for track_type, _item in timeline_items if track_type == "audio"),
         "timelineOldPathRemaining": timeline_old,
         "timelineUnreadable": timeline_unreadable,
         "timelineMissingTargetCount": len(timeline_missing_targets),
@@ -3899,11 +3915,26 @@ def extract_timeline_subtitle_text(summary):
 
 
 def iter_timeline_video_items(timeline):
-    track_count = safe_call(timeline, "GetTrackCount", "video") or safe_call(timeline, "GetTrackCount", "Video") or 0
+    for item in iter_timeline_track_items(timeline, "video"):
+        yield item
+
+
+def iter_timeline_relink_items(timeline, track_types):
+    for track_type in track_types or ["video"]:
+        for item in iter_timeline_track_items(timeline, track_type):
+            yield track_type, item
+
+
+def iter_timeline_track_items(timeline, track_type):
+    track_count = (
+        safe_call(timeline, "GetTrackCount", track_type)
+        or safe_call(timeline, "GetTrackCount", track_type.title())
+        or 0
+    )
     for track_index in range(1, int(track_count) + 1):
-        items = safe_call(timeline, "GetItemListInTrack", "video", track_index)
+        items = safe_call(timeline, "GetItemListInTrack", track_type, track_index)
         if items is None:
-            items = safe_call(timeline, "GetItemsInTrack", "video", track_index)
+            items = safe_call(timeline, "GetItemsInTrack", track_type, track_index)
         for item in iter_values(items or []):
             yield item
 

@@ -100,5 +100,18 @@
       "rootCode": "photos"
     }
   ],
+  "voiceoverMedia": {
+    "rootId": "voiceover",
+    "path": "/Volumes/SSDMAX/kairos-voiceover",
+    "alternatePaths": [
+      {
+        "path": "F:\\vlog-proj\\219-318\\kairos-voiceover"
+      }
+    ],
+    "resolveProjectAliases": [
+      "Kairos Volc Voiceover Debug"
+    ],
+    "description": "Resolve字幕配音生成音频"
+  },
   "materialPatternPhrases": []
 }

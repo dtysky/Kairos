@@ -18,7 +18,7 @@ from urllib import error as urlerror
 from urllib import request as urlrequest
 
 
-PLUGIN_VERSION = "0.1.0"
+PLUGIN_VERSION = "0.1.6"
 DEFAULT_TTS_ENDPOINT = "https://openspeech.bytedance.com/api/v3/tts/unidirectional"
 DEFAULT_CLONE_ENDPOINT = "https://openspeech.bytedance.com/api/v3/tts/voice_clone"
 DEFAULT_RESOURCE_ID = "seed-icl-2.0"
@@ -124,6 +124,89 @@ def clean_subtitle_text(value: Any) -> str:
     return text
 
 
+def _subtitle_sort_key(row: Dict[str, Any]) -> Tuple[float, float, float]:
+    def number(value: Any, fallback: float = 0.0) -> float:
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return fallback
+
+    return (
+        number(row.get("startFrame")),
+        number(row.get("trackIndex")),
+        number(row.get("subtitleIndex")),
+    )
+
+
+def _join_subtitle_texts_for_tts(rows: List[Dict[str, Any]]) -> str:
+    parts: List[str] = []
+    terminal = set("。！？!?；;，,、：:")
+    for row in rows:
+        text = clean_subtitle_text(row.get("text"))
+        if not text:
+            continue
+        if parts and parts[-1][-1:] not in terminal:
+            parts[-1] = parts[-1] + "。"
+        parts.append(text)
+    return "\n".join(parts)
+
+
+def merge_selected_subtitles_for_synthesis(subtitles: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    rows = [row for row in subtitles if isinstance(row, dict)]
+    if len(rows) <= 1:
+        return rows
+    sorted_rows = sorted(rows, key=_subtitle_sort_key)
+    text = _join_subtitle_texts_for_tts(sorted_rows)
+    first = sorted_rows[0]
+    last = sorted_rows[-1]
+
+    def number(value: Any) -> Optional[float]:
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+
+    start_frame = number(first.get("startFrame"))
+    end_frames = [number(row.get("endFrame")) for row in sorted_rows]
+    end_frame = max((value for value in end_frames if value is not None), default=number(last.get("endFrame")))
+    duration_frames = (
+        end_frame - start_frame
+        if start_frame is not None and end_frame is not None
+        else None
+    )
+    timeline_in_ms = number(first.get("timelineInMs"))
+    timeline_out_values = [number(row.get("timelineOutMs")) for row in sorted_rows]
+    timeline_out_ms = max((value for value in timeline_out_values if value is not None), default=number(last.get("timelineOutMs")))
+    duration_ms = (
+        timeline_out_ms - timeline_in_ms
+        if timeline_in_ms is not None and timeline_out_ms is not None
+        else None
+    )
+    source_ids = [
+        row.get("subtitleIndex")
+        for row in sorted_rows
+        if row.get("subtitleIndex") is not None
+    ]
+    merged = {
+        **first,
+        "name": text,
+        "text": text,
+        "startFrame": start_frame if start_frame is not None else first.get("startFrame"),
+        "endFrame": end_frame if end_frame is not None else last.get("endFrame"),
+        "durationFrames": duration_frames if duration_frames is not None else first.get("durationFrames"),
+        "timelineInMs": timeline_in_ms if timeline_in_ms is not None else first.get("timelineInMs"),
+        "timelineOutMs": timeline_out_ms if timeline_out_ms is not None else last.get("timelineOutMs"),
+        "durationMs": duration_ms if duration_ms is not None else first.get("durationMs"),
+        "endTimecode": last.get("endTimecode") or first.get("endTimecode"),
+        "subtitleIndex": "-".join(str(value) for value in source_ids) or first.get("subtitleIndex"),
+        "sourceSubtitleIds": source_ids,
+        "sourceSubtitles": sorted_rows,
+        "isMergedGroup": True,
+        "groupSize": len(sorted_rows),
+    }
+    return [merged]
+
+
 def stringify(value: Any) -> str:
     if value is None:
         return ""
@@ -171,12 +254,275 @@ def build_run_dir(project_name: str, timeline_id: str, run_id: Optional[str] = N
     )
 
 
-def ensure_run_dirs(run_dir: Path) -> Dict[str, Path]:
+def load_json_file(path: Path) -> Dict[str, Any]:
+    with path.open("r", encoding="utf-8") as handle:
+        payload = json.load(handle)
+    return payload if isinstance(payload, dict) else {}
+
+
+def strip_resolve_project_suffix(name: str) -> str:
+    return re.sub(r"\s+\[(?:Edit|Color)\]\s*$", "", str(name or "").strip(), flags=re.IGNORECASE)
+
+
+def _voiceover_match_keys(project_id: str, brief: Dict[str, Any]) -> List[str]:
+    keys = [project_id, strip_resolve_project_suffix(project_id)]
+    brief_name = stringify(brief.get("name"))
+    if brief_name:
+        keys.extend([brief_name, strip_resolve_project_suffix(brief_name)])
+    voiceover_media = brief.get("voiceoverMedia")
+    aliases = voiceover_media.get("resolveProjectAliases") if isinstance(voiceover_media, dict) else None
+    if isinstance(aliases, list):
+        for alias in aliases:
+            alias_text = stringify(alias)
+            if alias_text:
+                keys.extend([alias_text, strip_resolve_project_suffix(alias_text)])
+    return [key for key in dict.fromkeys(keys) if key]
+
+
+def find_kairos_project_for_resolve(workspace_root: Path, resolve_project_name: str) -> Dict[str, Any]:
+    projects_root = workspace_root / "projects"
+    if not projects_root.exists():
+        raise VoiceoverError(
+            "voiceover_projects_root_missing",
+            f"Kairos projects directory is missing: {projects_root}",
+        )
+
+    wanted = {
+        stringify(resolve_project_name),
+        strip_resolve_project_suffix(resolve_project_name),
+    }
+    wanted = {value for value in wanted if value}
+    matches: List[Dict[str, Any]] = []
+    for project_dir in sorted(projects_root.iterdir()):
+        if not project_dir.is_dir():
+            continue
+        brief_path = project_dir / "config" / "project-brief.json"
+        if not brief_path.exists():
+            continue
+        try:
+            brief = load_json_file(brief_path)
+        except Exception:
+            continue
+        keys = set(_voiceover_match_keys(project_dir.name, brief))
+        if keys.intersection(wanted):
+            matches.append({
+                "projectId": project_dir.name,
+                "projectRoot": str(project_dir),
+                "projectBriefPath": str(brief_path),
+                "projectName": stringify(brief.get("name")) or project_dir.name,
+                "brief": brief,
+                "matchedKeys": sorted(keys.intersection(wanted)),
+            })
+
+    if not matches:
+        raise VoiceoverError(
+            "voiceover_project_not_found",
+            "Current Resolve project does not match any Kairos project brief name.",
+            {
+                "resolveProjectName": resolve_project_name,
+                "workspaceRoot": str(workspace_root),
+                "expected": "Set project-brief.json name to the Resolve project name, use the [Edit]/[Color] naming convention, or add voiceoverMedia.resolveProjectAliases[].",
+            },
+        )
+    if len(matches) > 1:
+        raise VoiceoverError(
+            "voiceover_project_ambiguous",
+            "Current Resolve project matches multiple Kairos projects.",
+            {
+                "resolveProjectName": resolve_project_name,
+                "matches": [
+                    {
+                        "projectId": match["projectId"],
+                        "projectName": match["projectName"],
+                        "projectRoot": match["projectRoot"],
+                    }
+                    for match in matches
+                ],
+            },
+        )
+    return matches[0]
+
+
+def _is_non_native_drive_path(path_text: str) -> bool:
+    return os.name != "nt" and bool(re.match(r"^[A-Za-z]:[\\/]", path_text.strip()))
+
+
+def _nearest_existing_parent(path: Path) -> Optional[Path]:
+    current = path.parent
+    while current and current != current.parent:
+        if current.exists():
+            return current
+        current = current.parent
+    return current if current and current.exists() else None
+
+
+def _probe_voiceover_root(path_text: str) -> Dict[str, Any]:
+    if not stringify(path_text):
+        return {"usable": False, "reason": "empty_path"}
+    if _is_non_native_drive_path(path_text):
+        return {"usable": False, "reason": "non_native_drive_path"}
+    path = Path(path_text).expanduser()
+    if not path.is_absolute():
+        return {"usable": False, "expandedPath": str(path), "reason": "path_not_absolute"}
+    created = False
+    try:
+        if path.exists():
+            if not path.is_dir():
+                return {"usable": False, "expandedPath": str(path), "reason": "not_directory"}
+        else:
+            parent = _nearest_existing_parent(path)
+            if not parent or not os.access(str(parent), os.W_OK):
+                return {
+                    "usable": False,
+                    "expandedPath": str(path),
+                    "reason": "parent_not_writable",
+                }
+            path.mkdir(parents=True, exist_ok=True)
+            created = True
+        if not os.access(str(path), os.W_OK):
+            return {"usable": False, "expandedPath": str(path), "reason": "not_writable"}
+    except OSError as exc:
+        return {
+            "usable": False,
+            "expandedPath": str(path),
+            "reason": "mkdir_failed",
+            "error": str(exc),
+        }
+    return {"usable": True, "expandedPath": str(path), "created": created}
+
+
+def _voiceover_media_candidates(media: Dict[str, Any]) -> List[Dict[str, Any]]:
+    candidates: List[Dict[str, Any]] = []
+    primary = stringify(media.get("path"))
+    if primary:
+        candidates.append({"source": "primary", "index": 0, "configuredPath": primary})
+    alternates = media.get("alternatePaths")
+    if isinstance(alternates, list):
+        for index, entry in enumerate(alternates, start=1):
+            if not isinstance(entry, dict):
+                continue
+            path = stringify(entry.get("path"))
+            if path:
+                candidates.append({"source": "alternate", "index": index, "configuredPath": path})
+    return candidates
+
+
+def resolve_project_voiceover_media(project_match: Dict[str, Any]) -> Dict[str, Any]:
+    brief = project_match.get("brief")
+    media = brief.get("voiceoverMedia") if isinstance(brief, dict) else None
+    if not isinstance(media, dict) or not stringify(media.get("path")):
+        raise VoiceoverError(
+            "voiceover_media_missing",
+            "Project voiceoverMedia.path is not configured in config/project-brief.json.",
+            {
+                "projectId": project_match.get("projectId"),
+                "projectBriefPath": project_match.get("projectBriefPath"),
+                "example": {
+                    "voiceoverMedia": {
+                        "rootId": "voiceover",
+                        "path": "/Volumes/YourMedia/KairosVoiceover/project",
+                        "alternatePaths": [{"path": "F:\\\\KairosVoiceover\\\\project"}],
+                    },
+                },
+            },
+        )
+
+    probed = []
+    selected: Optional[Dict[str, Any]] = None
+    for candidate in _voiceover_media_candidates(media):
+        result = _probe_voiceover_root(candidate["configuredPath"])
+        record = {**candidate, **result}
+        probed.append(record)
+        if record.get("usable") and selected is None:
+            selected = record
+    if selected is None:
+        raise VoiceoverError(
+            "voiceover_media_unwritable",
+            "No project voiceoverMedia path is writable on this device.",
+            {
+                "projectId": project_match.get("projectId"),
+                "projectBriefPath": project_match.get("projectBriefPath"),
+                "candidates": probed,
+            },
+        )
+
+    return {
+        "rootId": stringify(media.get("rootId")) or "voiceover",
+        "description": stringify(media.get("description")),
+        "selected": selected,
+        "candidates": probed,
+    }
+
+
+def build_project_voiceover_run_dir(
+    workspace_root: Path,
+    resolve_project_name: str,
+    timeline_id: str,
+    run_id: Optional[str] = None,
+    timeline_name: Optional[str] = None,
+) -> Tuple[Path, Dict[str, Any]]:
+    project = find_kairos_project_for_resolve(workspace_root, resolve_project_name)
+    media = resolve_project_voiceover_media(project)
+    current_run_id = str(run_id or "").strip()
+    current_timeline_name = stringify(timeline_name) or stringify(timeline_id) or "timeline"
+    relative_run_dir = Path(
+        safe_segment(resolve_project_name, "resolve-project"),
+        safe_segment(current_timeline_name, "timeline"),
+    )
+    selected_root = Path(str(media["selected"]["expandedPath"]))
+    run_dir = selected_root / relative_run_dir
+    metadata = {
+        "outputLayoutVersion": "project-timeline-mp3-v1",
+        "projectId": project["projectId"],
+        "projectRoot": project["projectRoot"],
+        "projectBriefPath": project["projectBriefPath"],
+        "projectName": project["projectName"],
+        "resolveProjectName": resolve_project_name,
+        "timelineId": timeline_id,
+        "timelineName": current_timeline_name,
+        "runId": current_run_id,
+        "rootId": media["rootId"],
+        "description": media.get("description") or "",
+        "selectedRootPath": str(selected_root),
+        "selectedSource": media["selected"].get("source"),
+        "selectedAlternateIndex": media["selected"].get("index") if media["selected"].get("source") == "alternate" else None,
+        "relativeRunDir": relative_run_dir.as_posix(),
+        "candidates": media["candidates"],
+    }
+    return run_dir, metadata
+
+
+def build_project_plugin_tmp_dir(workspace_root: Path, resolve_project_name: str) -> Tuple[Path, Dict[str, Any]]:
+    project = find_kairos_project_for_resolve(workspace_root, resolve_project_name)
+    tmp_dir = Path(project["projectRoot"]) / ".tmp" / "resolve-volc-voiceover-plugin"
+    metadata = {
+        "projectId": project["projectId"],
+        "projectRoot": project["projectRoot"],
+        "projectBriefPath": project["projectBriefPath"],
+        "projectName": project["projectName"],
+        "resolveProjectName": resolve_project_name,
+        "tmpDir": str(tmp_dir),
+    }
+    return tmp_dir, metadata
+
+
+def _relative_to_root(path: Path, root: Optional[Path]) -> Optional[str]:
+    if root is None:
+        return None
+    try:
+        return path.resolve().relative_to(root.resolve()).as_posix()
+    except Exception:
+        try:
+            return path.relative_to(root).as_posix()
+        except Exception:
+            return None
+
+
+def ensure_run_dirs(run_dir: Path, cache_root: Optional[Path] = None) -> Dict[str, Path]:
     paths = {
         "run": run_dir,
-        "raw": run_dir / "raw",
-        "resolve": run_dir / "resolve",
-        "cache": Path.home() / "Movies" / "KairosVoiceover" / ".cache",
+        "media": run_dir,
+        "cache": cache_root or Path.home() / "Movies" / "KairosVoiceover" / ".cache",
     }
     for path in paths.values():
         path.mkdir(parents=True, exist_ok=True)
@@ -379,7 +725,7 @@ def parse_tts_response(body: bytes) -> Dict[str, Any]:
         if chunk:
             audio_chunks.append(chunk)
         code = obj.get("code") or obj.get("Code")
-        if code not in (None, 0, 3000, "0", "3000"):
+        if code not in (None, 0, 3000, 20000000, "0", "3000", "20000000"):
             message = stringify(obj.get("message") or obj.get("Message") or obj.get("msg"))
             raise VoiceoverError(
                 "volc_tts_provider_error",
@@ -428,6 +774,31 @@ def parse_json_objects(text: str) -> List[Any]:
             result.append(json.loads(line))
         except json.JSONDecodeError:
             continue
+    if result:
+        return result
+    decoder = json.JSONDecoder()
+    index = 0
+    while index < len(text):
+        while index < len(text) and text[index].isspace():
+            index += 1
+        if index >= len(text):
+            break
+        try:
+            value, next_index = decoder.raw_decode(text, index)
+        except json.JSONDecodeError:
+            next_start = min(
+                candidate for candidate in (
+                    text.find("{", index + 1),
+                    text.find("[", index + 1),
+                )
+                if candidate >= 0
+            ) if ("{" in text[index + 1:] or "[" in text[index + 1:]) else -1
+            if next_start < 0:
+                break
+            index = next_start
+            continue
+        result.append(value)
+        index = next_index
     return result
 
 
@@ -550,19 +921,20 @@ def synthesize_unit(
     settings: TtsSettings,
     client: Optional[VolcTtsClient] = None,
     force: bool = False,
+    cache_root: Optional[Path] = None,
+    artifact_root: Optional[Path] = None,
 ) -> Dict[str, Any]:
     text = clean_subtitle_text(subtitle.get("text"))
     if not text:
         raise VoiceoverError("subtitle_text_missing", "Selected subtitle has no readable text.", {"subtitle": subtitle})
 
-    paths = ensure_run_dirs(run_dir)
+    paths = ensure_run_dirs(run_dir, cache_root=cache_root)
     unit_id = unit_id_for_subtitle(timeline_id, subtitle)
     settings_public = settings.public_dict()
     cache_key = request_hash(text, settings_public)
     raw_ext = settings.audio_format.lower().lstrip(".") or "mp3"
-    raw_path = paths["raw"] / f"{unit_id}.{raw_ext}"
+    raw_path = paths["media"] / f"{unit_id}_{cache_key[:8]}.{raw_ext}"
     cache_path = paths["cache"] / f"{cache_key}.{raw_ext}"
-    resolve_path = paths["resolve"] / f"{unit_id}.wav"
 
     request_id = ""
     provider: Dict[str, Any] = {}
@@ -583,7 +955,8 @@ def synthesize_unit(
         raw_path.write_bytes(result["audio"])
         cache_path.write_bytes(result["audio"])
 
-    import_path, transcode = transcode_for_resolve(raw_path, resolve_path)
+    import_path = raw_path
+    transcode = {"transcoded": False, "reason": "direct_media_file"}
     duration_ms = probe_duration_ms(import_path)
     target_ms = subtitle.get("durationMs")
     overflow_ms = None
@@ -600,8 +973,12 @@ def synthesize_unit(
         "text": text,
         "subtitle": subtitle,
         "settings": settings_public,
+        "audioPath": str(import_path),
+        "audioRelativePath": _relative_to_root(import_path, artifact_root),
         "rawAudioPath": str(raw_path),
         "resolveAudioPath": str(import_path),
+        "rawAudioRelativePath": _relative_to_root(raw_path, artifact_root),
+        "resolveAudioRelativePath": _relative_to_root(import_path, artifact_root),
         "provider": provider,
         "transcode": transcode,
         "durationMs": duration_ms,

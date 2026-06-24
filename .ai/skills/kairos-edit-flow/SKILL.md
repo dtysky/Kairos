@@ -57,8 +57,9 @@ Capability registry 是原子能力库，不是必经阶段链。当前常见 ca
 - 它不是 Edit Flow capability，不写 `runs/current.json`，不推进 Flow Plan gate，也不依赖 Supervisor 或 `/edit` Console 运行。
 - 第一版选择状态由插件面板维护：可在插件字幕列表中多选，也可按当前播放头或 Mark In/Out 范围选中字幕。Resolve 官方 scripting API 没有稳定的 timeline item 原生多选读取接口，agent 不得假设存在。
 - 字幕正文只来自当前 Resolve subtitle item 暴露字段。若当前 Resolve 版本不暴露正文，插件必须阻塞并要求导入 SRT 或粘贴文本，不能从画面、文件名或历史产物猜字幕。
-- 默认一条字幕生成一条音频并插入 `Kairos VO` 音频轨；默认不删除已有用户音频或旧配音。只有用户显式选择 replacement，并且旧 audio item 有插件写入的同一 `kairosVoiceoverUnitId` marker/customData 时，才可删除旧插件音频。
+- 单选字幕时生成一条音频并导入 Media Pool bin `Kairos Voiceover / <timelineName>`，再插入 `Kairos VO` 音频轨；多选字幕时直接把所有选中字幕按 timeline 时间排序合并成一个 TTS 文本，生成一个 merged audio item，插入到第一条所选字幕起点，并在项目 `.tmp` debug manifest 记录 source subtitle ids/details。Resolve 面板只暴露 `Insert`，不提供只打开系统播放器的 Preview。默认不删除已有用户音频或旧配音。只有用户显式选择 replacement，并且旧 audio item 有插件写入的同一 `kairosVoiceoverUnitId` marker/customData 时，才可删除旧插件音频。
 - 火山 `volcApiKey`、默认 voice profile 和 profiles 注册表写在 workspace 全局 `config/runtime.json.voiceover`。Resolve 插件面板只做 profile 下拉选择，不直接编辑 API key / speaker / resource / model / language。
+- 生成音频必须写到当前 Kairos 项目 `config/project-brief.json.voiceoverMedia` 解析出的可写候选路径下；该配置应在 `/ingest-gps` 项目配置 UI 中维护，并由 `/edit` 的 Resolve “重链素材路径”动作处理 `Kairos Voiceover` Media Pool bin。正式输出目录使用 `<voiceoverMediaRoot>/<safe Resolve project>/<safe timeline>/`，目录内只保存 Resolve 直接导入的 `vo_<unit>_<request>.mp3`。`voiceoverMedia.resolveProjectAliases[]` 可显式绑定临时 / debug Resolve 工程名。请求缓存、Lua/Python bridge job、backend 输出、debug manifest 和插件日志写到匹配项目的 `.tmp/resolve-volc-voiceover-plugin/`。未配置或无法唯一匹配当前 Resolve 工程到 Kairos 项目时，插件应阻塞合成。
 
 ## Capability Contracts
 

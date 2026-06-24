@@ -7,6 +7,7 @@ import {
   type IMediaRoot,
   type IProjectBriefConfig,
   type IProjectBriefMappingConfig,
+  type IProjectBriefVoiceoverMediaConfig,
 } from '../protocol/schema.js';
 import { normalizeColorRenderPreset } from '../modules/color/render-preset.js';
 
@@ -41,6 +42,16 @@ type TProjectBriefConfigInput = {
   description?: string;
   createdAt?: string;
   mappings?: TProjectBriefMappingInput[];
+  voiceoverMedia?: {
+    rootId?: string;
+    path?: string;
+    alternatePaths?: Array<{
+      path?: string;
+      rawPath?: string;
+    }>;
+    resolveProjectAliases?: string[];
+    description?: string;
+  };
   pharos?: {
     includedTripIds?: string[];
   };
@@ -74,6 +85,19 @@ function normalizeAlternatePaths(
     }))
     .filter(value => Boolean(value.path || value.rawPath));
   return normalized.length > 0 ? normalized : undefined;
+}
+
+function normalizeVoiceoverMedia(value: TProjectBriefConfigInput['voiceoverMedia']): IProjectBriefVoiceoverMediaConfig | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const path = trimString(value.path);
+  if (!path) return undefined;
+  return {
+    rootId: normalizeConfigKey(value.rootId) ?? 'voiceover',
+    path,
+    alternatePaths: normalizeAlternatePaths(value.alternatePaths),
+    resolveProjectAliases: trimStringList(value.resolveProjectAliases),
+    description: trimString(value.description),
+  };
 }
 
 function normalizeCategory(value: unknown): IMediaRoot['category'] {
@@ -291,6 +315,7 @@ export function materializeProjectBriefConfig(
     createdAt: trimString(input.createdAt),
     mappings,
     pharos: includedTripIds?.length ? { includedTripIds } : undefined,
+    voiceoverMedia: normalizeVoiceoverMedia(input.voiceoverMedia),
     materialPatternPhrases: trimStringList(input.materialPatternPhrases) ?? [],
   };
 }

@@ -3,15 +3,99 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 import time
 import traceback
 from pathlib import Path
 
+def _bootstrap_read_json(path):
+    try:
+        return json.loads(Path(path).read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def _bootstrap_workspace_root():
+    try:
+        script_dir = Path(__file__).resolve().parent
+    except NameError:
+        script_dir = Path.cwd()
+    link = _bootstrap_read_json(script_dir / "kairos_workspace.json")
+    root = Path(str(link.get("workspaceRoot") or "")).expanduser()
+    if root.exists():
+        return root
+    for candidate in (script_dir, *script_dir.parents):
+        if (candidate / "config" / "runtime.json").exists():
+            return candidate
+    return None
+
+
+def _bootstrap_strip_resolve_suffix(name):
+    return re.sub(r"\s+\[(?:Edit|Color)\]\s*$", "", str(name or "").strip(), flags=re.IGNORECASE)
+
+
+def _bootstrap_project_name_from_args():
+    args = list(sys.argv or [])
+    for index, value in enumerate(args):
+        if value == "--project-name" and index + 1 < len(args):
+            return args[index + 1]
+    if len(args) >= 3 and args[1] == "--synthesize-job":
+        job = _bootstrap_read_json(Path(args[2]).expanduser())
+        if isinstance(job, dict):
+            return str(job.get("projectName") or "")
+    return ""
+
+
+def _bootstrap_project_name_from_resolve():
+    try:
+        current = globals().get("resolve")
+        if not current:
+            return ""
+        manager = current.GetProjectManager()
+        project = manager.GetCurrentProject() if manager else None
+        return str(project.GetName() or "") if project else ""
+    except Exception:
+        return ""
+
+
+def _bootstrap_project_tmp_root():
+    workspace_root = _bootstrap_workspace_root()
+    if not workspace_root:
+        return Path.home() / "Movies" / "KairosVoiceover"
+    project_name = _bootstrap_project_name_from_args() or _bootstrap_project_name_from_resolve()
+    wanted = {project_name, _bootstrap_strip_resolve_suffix(project_name)}
+    wanted = {value for value in wanted if value}
+    projects_root = workspace_root / "projects"
+    if wanted and projects_root.exists():
+        for project_dir in sorted(projects_root.iterdir()):
+            brief = _bootstrap_read_json(project_dir / "config" / "project-brief.json")
+            if not isinstance(brief, dict):
+                continue
+            brief_name = str(brief.get("name") or "")
+            voiceover_media = brief.get("voiceoverMedia")
+            aliases = voiceover_media.get("resolveProjectAliases") if isinstance(voiceover_media, dict) else []
+            keys = {
+                project_dir.name,
+                _bootstrap_strip_resolve_suffix(project_dir.name),
+                brief_name,
+                _bootstrap_strip_resolve_suffix(brief_name),
+            }
+            if isinstance(aliases, list):
+                for alias in aliases:
+                    alias_text = str(alias or "")
+                    if alias_text:
+                        keys.add(alias_text)
+                        keys.add(_bootstrap_strip_resolve_suffix(alias_text))
+            if keys.intersection(wanted):
+                return project_dir / ".tmp" / "resolve-volc-voiceover-plugin"
+    return workspace_root / ".tmp" / "resolve-volc-voiceover-plugin"
+
+
 def bootstrap_log(message):
     try:
-        log_dir = Path.home() / "Movies" / "KairosVoiceover" / "logs"
+        log_dir = _bootstrap_project_tmp_root() / "logs"
         log_dir.mkdir(parents=True, exist_ok=True)
         with (log_dir / "resolve-plugin-bootstrap.log").open("a", encoding="utf-8") as handle:
             handle.write(time.strftime("[%Y-%m-%d %H:%M:%S] "))
@@ -44,6 +128,8 @@ try:
         TtsSettings,
         VoiceCloneClient,
         VoiceoverError,
+        build_project_plugin_tmp_dir,
+        build_project_voiceover_run_dir,
         build_run_dir,
         clean_subtitle_text,
         default_config_path,
@@ -51,6 +137,8 @@ try:
         frame_to_timecode,
         frames_to_ms,
         load_config,
+        merge_selected_subtitles_for_synthesis,
+        safe_segment,
         save_config,
         stable_hash,
         synthesize_unit,
@@ -66,12 +154,13 @@ bootstrap_log("core import ok")
 
 WINDOW_ID = "com.dtysky.kairos.volcvoiceover"
 VOICE_TRACK_NAME = "Kairos VO"
+VOICE_MEDIA_BIN_NAME = "Kairos Voiceover"
 _ACTIVE_WINDOW = None
 
 
 def startup_log(message):
     try:
-        log_dir = Path.home() / "Movies" / "KairosVoiceover" / "logs"
+        log_dir = _bootstrap_project_tmp_root() / "logs"
         log_dir.mkdir(parents=True, exist_ok=True)
         with (log_dir / "resolve-plugin.log").open("a", encoding="utf-8") as handle:
             handle.write(time.strftime("[%Y-%m-%d %H:%M:%S] "))
@@ -104,6 +193,16 @@ def _iter_values(value):
     if isinstance(value, (list, tuple)):
         return value
     return []
+
+
+def resolve_bin_name(value, fallback="Timeline"):
+    text = str(value or "").strip()
+    if not text:
+        text = fallback
+    text = re.sub(r"[\x00-\x1f\x7f]+", " ", text)
+    text = text.replace("/", "／").replace("\\", "＼")
+    text = re.sub(r"\s+", " ", text).strip()
+    return text[:80] or fallback
 
 
 def _get_resolve():
@@ -273,13 +372,137 @@ class ResolveVoiceoverBridge:
         for index in range(1, count + 1):
             if _safe_call(timeline, "GetTrackName", "audio", index) == VOICE_TRACK_NAME:
                 return index
-        added = _safe_call(timeline, "AddTrack", "audio", "mono")
+        return self.create_voice_track()
+
+    def create_voice_track(self):
+        timeline = self.timeline()
+        if not timeline:
+            raise VoiceoverError("resolve_timeline_missing", "No current Resolve timeline.")
+        count = int(_safe_call(timeline, "GetTrackCount", "audio") or 0)
+        name = self.next_voice_track_name()
+        added = _safe_call(timeline, "AddTrack", "audio", "stereo")
         if added is False:
             added = _safe_call(timeline, "AddTrack", "audio")
+        if added is False:
+            raise VoiceoverError("resolve_audio_track_create_failed", "Unable to create Kairos VO audio track.")
         new_count = int(_safe_call(timeline, "GetTrackCount", "audio") or count)
         track_index = new_count if new_count > count else count + 1
-        _safe_call(timeline, "SetTrackName", "audio", track_index, VOICE_TRACK_NAME)
+        _safe_call(timeline, "SetTrackName", "audio", track_index, name)
         return track_index
+
+    def next_voice_track_name(self):
+        timeline = self.timeline()
+        count = int(_safe_call(timeline, "GetTrackCount", "audio") or 0) if timeline else 0
+        existing = set()
+        for index in range(1, count + 1):
+            existing.add(str(_safe_call(timeline, "GetTrackName", "audio", index) or ""))
+        if VOICE_TRACK_NAME not in existing:
+            return VOICE_TRACK_NAME
+        suffix = 2
+        while True:
+            candidate = f"{VOICE_TRACK_NAME} {suffix}"
+            if candidate not in existing:
+                return candidate
+            suffix += 1
+
+    def voice_track_indexes(self):
+        timeline = self.timeline()
+        count = int(_safe_call(timeline, "GetTrackCount", "audio") or 0) if timeline else 0
+        indexes = []
+        for index in range(1, count + 1):
+            name = str(_safe_call(timeline, "GetTrackName", "audio", index) or "")
+            if name == VOICE_TRACK_NAME or name.startswith(f"{VOICE_TRACK_NAME} "):
+                indexes.append(index)
+        return indexes
+
+    def ensure_voice_track_for_unit(self, unit_result):
+        target_start, target_end = self.unit_timeline_range(unit_result)
+        for index in self.voice_track_indexes():
+            if not self.audio_track_has_overlap(index, target_start, target_end):
+                return index
+        return self.create_voice_track()
+
+    def unit_timeline_range(self, unit_result):
+        subtitle = unit_result.get("subtitle") or {}
+        start = self._number(subtitle.get("startFrame"), 0.0)
+        end = self._number(subtitle.get("endFrame"), None)
+        if end is None:
+            duration_frames = self._number(subtitle.get("durationFrames"), None)
+            if duration_frames is None:
+                duration_ms = self._number(unit_result.get("durationMs"), self._number(subtitle.get("durationMs"), 1000.0))
+                duration_frames = max(1.0, duration_ms * self.fps() / 1000.0)
+            end = start + duration_frames
+        if end <= start:
+            end = start + 1
+        return start, end
+
+    def audio_track_has_overlap(self, track_index, target_start, target_end):
+        timeline = self.timeline()
+        items = _safe_call(timeline, "GetItemListInTrack", "audio", track_index)
+        if items is None:
+            items = _safe_call(timeline, "GetItemsInTrack", "audio", track_index)
+        for item in _iter_values(items):
+            item_start = self._timeline_item_number(item, "GetStart")
+            item_end = self._timeline_item_number(item, "GetEnd")
+            if item_start is None or item_end is None:
+                continue
+            if item_start < target_end and target_start < item_end:
+                return True
+        return False
+
+    def _timeline_item_number(self, item, method_name):
+        for args in ((False,), (True,), ()):
+            value = _safe_call(item, method_name, *args)
+            number = self._number(value, None)
+            if number is not None:
+                return number
+        return None
+
+    def _number(self, value, fallback=None):
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return fallback
+
+    def voiceover_media_folder(self, timeline_name=None):
+        media_pool = self.media_pool()
+        if not media_pool:
+            raise VoiceoverError("resolve_media_pool_missing", "Resolve Media Pool is unavailable.")
+        root_folder = _safe_call(media_pool, "GetRootFolder")
+        if not root_folder:
+            raise VoiceoverError("resolve_media_pool_root_missing", "Resolve Media Pool root folder is unavailable.")
+        root_bin = self.ensure_child_folder(media_pool, root_folder, VOICE_MEDIA_BIN_NAME)
+        timeline_bin = self.ensure_child_folder(
+            media_pool,
+            root_bin,
+            resolve_bin_name(timeline_name or self.timeline_name(), "Timeline"),
+        )
+        return timeline_bin
+
+    def ensure_child_folder(self, media_pool, parent_folder, folder_name):
+        wanted = resolve_bin_name(folder_name, "Folder")
+        existing = self.find_child_folder(parent_folder, wanted)
+        if existing:
+            return existing
+        created = _safe_call(media_pool, "AddSubFolder", parent_folder, wanted)
+        if created and created is not True:
+            return created
+        existing = self.find_child_folder(parent_folder, wanted)
+        if existing:
+            return existing
+        raise VoiceoverError(
+            "resolve_media_pool_bin_failed",
+            f"Unable to create or find Media Pool bin: {wanted}",
+        )
+
+    def find_child_folder(self, parent_folder, folder_name):
+        children = _safe_call(parent_folder, "GetSubFolderList")
+        if children is None:
+            children = _safe_call(parent_folder, "GetSubFolders")
+        for child in _iter_values(children):
+            if str(_safe_call(child, "GetName") or "") == folder_name:
+                return child
+        return None
 
     def delete_previous_plugin_audio(self, unit_ids):
         timeline = self.timeline()
@@ -305,12 +528,21 @@ class ResolveVoiceoverBridge:
             raise VoiceoverError("resolve_delete_previous_failed", "Failed to delete previous plugin audio.")
         return len(to_delete)
 
-    def import_and_insert(self, unit_result, audio_track_index):
+    def import_and_insert(self, unit_result, audio_track_index, media_folder=None):
         media_pool = self.media_pool()
         if not media_pool:
             raise VoiceoverError("resolve_media_pool_missing", "Resolve Media Pool is unavailable.")
         path = unit_result["resolveAudioPath"]
-        imported = _safe_call(media_pool, "ImportMedia", [path])
+        target_folder = media_folder or self.voiceover_media_folder()
+        previous_folder = _safe_call(media_pool, "GetCurrentFolder")
+        switched = _safe_call(media_pool, "SetCurrentFolder", target_folder)
+        if switched is False:
+            raise VoiceoverError("resolve_media_pool_bin_select_failed", "Unable to select Kairos Voiceover Media Pool bin.")
+        try:
+            imported = _safe_call(media_pool, "ImportMedia", [path])
+        finally:
+            if previous_folder:
+                _safe_call(media_pool, "SetCurrentFolder", previous_folder)
         item = None
         for candidate in _iter_values(imported):
             item = candidate
@@ -339,6 +571,7 @@ class ResolveVoiceoverBridge:
             "trackIndex": audio_track_index,
             "recordFrame": clip_info["recordFrame"],
             "itemName": _safe_call(appended_item, "GetName") or "",
+            "mediaPoolBin": f"{VOICE_MEDIA_BIN_NAME}/{resolve_bin_name(self.timeline_name(), 'Timeline')}",
         }
 
 
@@ -496,7 +729,6 @@ class VoiceoverWindow:
                 ui.HGroup(
                     {"Weight": 0},
                     [
-                        ui.Button({"ID": "preview", "Text": "Preview"}),
                         ui.Button({"ID": "synthesizeInsert", "Text": "Synthesize + Insert"}),
                         ui.Button({"ID": "saveConfig", "Text": "Save Config"}),
                         ui.Button({"ID": "close", "Text": "Close"}),
@@ -514,7 +746,6 @@ class VoiceoverWindow:
         win.On["playhead"].Clicked = self.select_playhead
         win.On["mark"].Clicked = self.select_mark
         win.On["probe"].Clicked = self.probe
-        win.On["preview"].Clicked = self.preview
         win.On["synthesizeInsert"].Clicked = self.synthesize_insert
         win.On["saveConfig"].Clicked = self.save_config
         win.On["cloneCreate"].Clicked = self.create_clone
@@ -719,7 +950,6 @@ class VoiceoverWindow:
     def synthesize_insert(self, ev):
         try:
             units, run_dir = self.synthesize_selected(insert=False)
-            track_index = self.bridge.ensure_voice_track()
             if self.find("replacePrevious").Checked:
                 deleted = self.bridge.delete_previous_plugin_audio([unit["unitId"] for unit in units])
                 self.log(f"Deleted {deleted} previous Kairos VO clip(s).")
@@ -728,8 +958,9 @@ class VoiceoverWindow:
                 if self.find("skipOverflow").Checked and unit.get("durationStatus") == "overflow":
                     self.log(f"Skipped overflow unit {unit['unitId']}.")
                     continue
+                track_index = self.bridge.ensure_voice_track_for_unit(unit)
                 inserted.append(self.bridge.import_and_insert(unit, track_index))
-                self.log(f"Inserted {unit['unitId']} at frame {inserted[-1]['recordFrame']}.")
+                self.log(f"Inserted {unit['unitId']} at frame {inserted[-1]['recordFrame']} on A{track_index}.")
             manifest_path = self.write_run_manifest(run_dir, units, inserted)
             _safe_call(_safe_call(self.resolve, "GetProjectManager"), "SaveProject")
             self.log(f"Done. Manifest: {manifest_path}")
@@ -738,7 +969,7 @@ class VoiceoverWindow:
 
     def synthesize_selected(self, insert):
         settings = self.ui_settings()
-        rows = self.selected_subtitles()
+        rows = merge_selected_subtitles_for_synthesis(self.selected_subtitles())
         run_dir = build_run_dir(self.bridge.project_name(), self.bridge.timeline_id())
         units = []
         for row in rows:
@@ -837,6 +1068,25 @@ def load_workspace_link() -> dict:
     return {}
 
 
+def load_workspace_root() -> Path:
+    workspace_root = Path(str(load_workspace_link().get("workspaceRoot") or "")).expanduser()
+    if not workspace_root.exists():
+        raise VoiceoverError(
+            "voiceover_workspace_missing",
+            "Installed plugin cannot find the Kairos workspace root.",
+            {"workspaceRoot": str(workspace_root)},
+        )
+    return workspace_root
+
+
+def project_plugin_tmp_summary(resolve_project_name: str) -> dict:
+    tmp_dir, metadata = build_project_plugin_tmp_dir(load_workspace_root(), resolve_project_name)
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    (tmp_dir / "logs").mkdir(parents=True, exist_ok=True)
+    (tmp_dir / "jobs").mkdir(parents=True, exist_ok=True)
+    return metadata
+
+
 def load_runtime_voiceover_config() -> dict:
     link = load_workspace_link()
     runtime_path = Path(str(link.get("runtimeConfigPath") or "")).expanduser()
@@ -894,7 +1144,7 @@ def tts_settings_from_job(job: dict) -> TtsSettings:
             speaker=str(profile.get("speakerId") or profile.get("speaker") or ""),
             resource_id=str(profile.get("resourceId") or DEFAULT_RESOURCE_ID),
             endpoint=str(profile.get("endpoint") or DEFAULT_TTS_ENDPOINT),
-            audio_format=str(profile.get("audioFormat") or "mp3"),
+            audio_format="mp3",
             sample_rate=int(profile.get("sampleRate") or 24000),
             model=str(profile.get("model") or ""),
             language=str(profile.get("language") or "zh-cn"),
@@ -909,7 +1159,7 @@ def tts_settings_from_job(job: dict) -> TtsSettings:
         speaker=str(settings_data.get("speaker") or ""),
         resource_id=str(settings_data.get("resourceId") or DEFAULT_RESOURCE_ID),
         endpoint=str(settings_data.get("endpoint") or DEFAULT_TTS_ENDPOINT),
-        audio_format=str(settings_data.get("audioFormat") or "mp3"),
+        audio_format="mp3",
         sample_rate=int(settings_data.get("sampleRate") or 24000),
         model=str(settings_data.get("model") or ""),
         language=str(settings_data.get("language") or "zh-cn"),
@@ -927,6 +1177,7 @@ def voiceover_config_summary_tsv() -> str:
     try:
         config = load_runtime_voiceover_config()
         lines = [
+            "VERSION\t" + _tsv_escape(PLUGIN_VERSION),
             "CONFIG\t" + _tsv_escape(config.get("runtimeConfigPath")),
             "HAS_API_KEY\t" + ("1" if str(config.get("volcApiKey") or "").strip() else "0"),
             "DEFAULT\t" + _tsv_escape(config.get("defaultProfile")),
@@ -940,6 +1191,16 @@ def voiceover_config_summary_tsv() -> str:
         return "ERROR\t" + _tsv_escape(exc) + "\n"
 
 
+def project_temp_root_tsv(resolve_project_name: str) -> str:
+    try:
+        summary = project_plugin_tmp_summary(resolve_project_name)
+        return "TMP\t" + _tsv_escape(summary.get("tmpDir")) + "\n"
+    except Exception as exc:
+        if isinstance(exc, VoiceoverError):
+            return "ERROR\t" + _tsv_escape(exc.code) + "\t" + _tsv_escape(str(exc)) + "\n"
+        return "ERROR\tunknown\t" + _tsv_escape(exc) + "\n"
+
+
 def cli_synthesize_job(job_path: Path):
     job = json.loads(job_path.read_text(encoding="utf-8"))
     resolve = _get_resolve()
@@ -948,11 +1209,30 @@ def cli_synthesize_job(job_path: Path):
     bridge = ResolveVoiceoverBridge(resolve)
     settings = tts_settings_from_job(job) if (job.get("subtitles") or []) else TtsSettings(api_key="", speaker="")
     timeline_id = str(job.get("timelineId") or bridge.timeline_id())
+    timeline_name = str(job.get("timelineName") or bridge.timeline_name())
     project_name = str(job.get("projectName") or bridge.project_name())
-    run_dir = build_run_dir(project_name, timeline_id, str(job.get("runId") or ""))
-    subtitles = job.get("subtitles") or []
+    workspace_root = load_workspace_root()
+    run_dir, voiceover_media = build_project_voiceover_run_dir(
+        workspace_root,
+        project_name,
+        timeline_id,
+        str(job.get("runId") or ""),
+        timeline_name=timeline_name,
+    )
+    tmp_dir, _ = build_project_plugin_tmp_dir(workspace_root, project_name)
+    artifact_root = Path(voiceover_media["selectedRootPath"])
+    cache_root = tmp_dir / "cache"
+    subtitles = merge_selected_subtitles_for_synthesis(job.get("subtitles") or [])
     units = [
-        synthesize_unit(subtitle, timeline_id, run_dir, settings, force=bool(job.get("force")))
+        synthesize_unit(
+            subtitle,
+            timeline_id,
+            run_dir,
+            settings,
+            force=bool(job.get("force")),
+            cache_root=cache_root,
+            artifact_root=artifact_root,
+        )
         for subtitle in subtitles
     ]
     inserted = []
@@ -960,11 +1240,12 @@ def cli_synthesize_job(job_path: Path):
         if units:
             open_file(units[0]["resolveAudioPath"])
     else:
-        track_index = bridge.ensure_voice_track()
+        media_folder = bridge.voiceover_media_folder(timeline_name)
         for unit in units:
             if job.get("skipOverflow") and unit.get("durationStatus") == "overflow":
                 continue
-            inserted.append(bridge.import_and_insert(unit, track_index))
+            track_index = bridge.ensure_voice_track_for_unit(unit)
+            inserted.append(bridge.import_and_insert(unit, track_index, media_folder=media_folder))
         _safe_call(_safe_call(resolve, "GetProjectManager"), "SaveProject")
     manifest = {
         "schemaVersion": "kairos-resolve-volc-voiceover-cli-v1",
@@ -972,13 +1253,21 @@ def cli_synthesize_job(job_path: Path):
         "createdAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "mode": job.get("mode") or "insert",
         "projectName": project_name,
-        "timelineName": bridge.timeline_name(),
+        "timelineName": timeline_name,
         "timelineId": timeline_id,
+        "voiceoverMedia": voiceover_media,
         "units": units,
         "inserted": inserted,
     }
-    manifest_path = write_manifest(run_dir, manifest)
-    return {"ok": True, "manifest": str(manifest_path), "unitCount": len(units), "insertedCount": len(inserted)}
+    debug_manifest_dir = tmp_dir / "manifests" / safe_segment(str(job.get("runId") or time.strftime("%Y%m%d-%H%M%S")), "run")
+    debug_manifest_path = write_manifest(debug_manifest_dir, manifest)
+    return {
+        "ok": True,
+        "mediaDir": str(run_dir),
+        "debugManifest": str(debug_manifest_path),
+        "unitCount": len(units),
+        "insertedCount": len(inserted),
+    }
 
 
 def main():
@@ -1003,6 +1292,11 @@ def entrypoint():
     try:
         if len(sys.argv) >= 2 and sys.argv[1] == "--voiceover-config-summary":
             print(voiceover_config_summary_tsv(), end="")
+        elif len(sys.argv) >= 2 and sys.argv[1] == "--project-temp-root":
+            project_name = ""
+            if len(sys.argv) >= 4 and sys.argv[2] == "--project-name":
+                project_name = sys.argv[3]
+            print(project_temp_root_tsv(project_name), end="")
         elif len(sys.argv) >= 3 and sys.argv[1] == "--synthesize-job":
             result = cli_synthesize_job(Path(sys.argv[2]).expanduser())
             print(json.dumps(result, ensure_ascii=False, indent=2))
@@ -1011,8 +1305,17 @@ def entrypoint():
     except Exception:
         startup_log(traceback.format_exc())
         if len(sys.argv) >= 2 and sys.argv[1] == "--synthesize-job":
-            payload = {"ok": False, "error": traceback.format_exc()}
-            print(json.dumps(payload, ensure_ascii=False, indent=2), file=sys.stderr)
+            exc = sys.exc_info()[1]
+            if isinstance(exc, VoiceoverError):
+                payload = {
+                    "ok": False,
+                    "code": exc.code,
+                    "message": str(exc),
+                    "details": exc.details,
+                }
+            else:
+                payload = {"ok": False, "error": traceback.format_exc()}
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
             raise SystemExit(1)
         raise
 

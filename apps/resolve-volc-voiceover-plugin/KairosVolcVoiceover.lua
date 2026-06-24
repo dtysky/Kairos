@@ -1,11 +1,17 @@
 local WINDOW_ID = "kairosVolcVoiceover"
+local PLUGIN_VERSION = "0.1.6"
 local VOICE_TRACK_NAME = "Kairos VO"
 local DEFAULT_RESOURCE_ID = "seed-icl-2.0"
 
 local subtitles = {}
+local subtitleTreeItems = {}
 local items = nil
 local root = "."
 local voiceConfig = nil
+local ui = nil
+local getProjectName = nil
+local cachedPluginTmpDir = nil
+local cachedPluginTmpProject = nil
 
 local function quote(value)
     return "'" .. tostring(value):gsub("'", "'\\''") .. "'"
@@ -20,20 +26,6 @@ if source:sub(1, 1) == "@" then
     source = source:sub(2)
 end
 root = dirname(source)
-
-local function logDir()
-    return (os.getenv("HOME") or ".") .. "/Movies/KairosVoiceover/logs"
-end
-
-local function appendLog(message)
-    local dir = logDir()
-    os.execute("/bin/mkdir -p " .. quote(dir))
-    local file = io.open(dir .. "/lua-plugin.log", "a")
-    if file then
-        file:write(os.date("[%Y-%m-%d %H:%M:%S] ") .. tostring(message) .. "\n")
-        file:close()
-    end
-end
 
 local function readText(path)
     local file = io.open(path, "r")
@@ -53,6 +45,59 @@ local function writeText(path, text)
     file:write(text)
     file:close()
     return true
+end
+
+local function workspaceTmpDir()
+    local linkText = readText(root .. "/KairosVolcVoiceoverLib/kairos_workspace.json")
+    local workspaceRoot = linkText:match('"workspaceRoot"%s*:%s*"([^"]+)"') or ""
+    workspaceRoot = workspaceRoot:gsub("\\/", "/")
+    if workspaceRoot ~= "" then
+        return workspaceRoot .. "/.tmp/resolve-volc-voiceover-plugin"
+    end
+    return (os.getenv("HOME") or ".") .. "/Movies/KairosVoiceover"
+end
+
+local function pluginTmpDir()
+    local projectName = ""
+    if type(getProjectName) == "function" then
+        local ok, value = pcall(getProjectName)
+        if ok then
+            projectName = tostring(value or "")
+        end
+    end
+    if cachedPluginTmpDir ~= nil and cachedPluginTmpProject == projectName then
+        return cachedPluginTmpDir
+    end
+    local python = root .. "/KairosVolcVoiceoverLib/KairosVolcVoiceover.py"
+    local cmd = "/usr/bin/python3 " .. quote(python) .. " --project-temp-root --project-name " .. quote(projectName) .. " 2>&1"
+    local output = ""
+    local pipe = io.popen(cmd)
+    if pipe then
+        output = pipe:read("*a") or ""
+        pipe:close()
+    end
+    local tmp = output:match("TMP\t([^\r\n]+)")
+    if tmp == nil or tmp == "" then
+        tmp = workspaceTmpDir()
+    end
+    cachedPluginTmpDir = tmp
+    cachedPluginTmpProject = projectName
+    os.execute("/bin/mkdir -p " .. quote(tmp))
+    return tmp
+end
+
+local function logDir()
+    return pluginTmpDir() .. "/logs"
+end
+
+local function appendLog(message)
+    local dir = logDir()
+    os.execute("/bin/mkdir -p " .. quote(dir))
+    local file = io.open(dir .. "/lua-plugin.log", "a")
+    if file then
+        file:write(os.date("[%Y-%m-%d %H:%M:%S] ") .. tostring(message) .. "\n")
+        file:close()
+    end
 end
 
 local function uiLog(message)
@@ -150,23 +195,28 @@ local function splitTabs(line)
 end
 
 local function loadVoiceoverConfigSummary()
-    local tmpDir = (os.getenv("HOME") or ".") .. "/Movies/KairosVoiceover/.tmp"
-    os.execute("/bin/mkdir -p " .. quote(tmpDir))
-    local outPath = tmpDir .. "/voiceover-config-summary.tsv"
     local python = root .. "/KairosVolcVoiceoverLib/KairosVolcVoiceover.py"
-    local cmd = "/usr/bin/python3 " .. quote(python) .. " --voiceover-config-summary > " .. quote(outPath) .. " 2>&1"
-    os.execute(cmd)
+    local cmd = "/usr/bin/python3 " .. quote(python) .. " --voiceover-config-summary --project-name " .. quote(type(getProjectName) == "function" and getProjectName() or "") .. " 2>&1"
+    local output = ""
+    local pipe = io.popen(cmd)
+    if pipe then
+        output = pipe:read("*a") or ""
+        pipe:close()
+    end
     local result = {
         runtimeConfigPath = "",
         hasApiKey = false,
         defaultProfile = "",
+        backendVersion = "",
         profiles = {},
         error = "",
     }
-    for line in readText(outPath):gmatch("[^\r\n]+") do
+    for line in output:gmatch("[^\r\n]+") do
         local fields = splitTabs(line)
         local kind = fields[1]
-        if kind == "CONFIG" then
+        if kind == "VERSION" then
+            result.backendVersion = fields[2] or ""
+        elseif kind == "CONFIG" then
             result.runtimeConfigPath = fields[2] or ""
         elseif kind == "HAS_API_KEY" then
             result.hasApiKey = fields[2] == "1"
@@ -212,6 +262,23 @@ local function defaultProfileIndex(config)
         end
     end
     return 0
+end
+
+local function profileIndexByName(config, name)
+    local profileName = tostring(name or "")
+    if profileName == "" then
+        return nil
+    end
+    for index, profile in ipairs(config.profiles or {}) do
+        if profile.name == profileName then
+            return index - 1
+        end
+    end
+    return nil
+end
+
+local function preferredProfileIndex(config, preferredName)
+    return profileIndexByName(config, preferredName) or defaultProfileIndex(config)
 end
 
 local function isArray(value)
@@ -283,7 +350,7 @@ local function getTimeline()
     return safeCall(project, "GetCurrentTimeline")
 end
 
-local function getProjectName()
+function getProjectName()
     local project = getProject()
     return tostring(safeCall(project, "GetName") or "Resolve Project")
 end
@@ -454,30 +521,134 @@ local function collectSubtitles()
     return result
 end
 
+local function setTreeItemText(item, column, value)
+    local text = tostring(value or "")
+    local ok = pcall(function()
+        item.Text[column] = text
+    end)
+    if not ok then
+        pcall(function()
+            item.Text[column + 1] = text
+        end)
+    end
+end
+
+local function treeItemText(item, column)
+    local ok, value = pcall(function()
+        return item.Text[column]
+    end)
+    if ok and value ~= nil then
+        return tostring(value)
+    end
+    ok, value = pcall(function()
+        return item.Text[column + 1]
+    end)
+    if ok and value ~= nil then
+        return tostring(value)
+    end
+    return ""
+end
+
+local function updateSelectionStatus()
+    if not (items and items.selectionStatus and items.subtitleTree) then
+        return
+    end
+    local count = 0
+    local selected = safeCall(items.subtitleTree, "SelectedItems")
+    if type(selected) == "table" then
+        for _, item in pairs(selected) do
+            local id = tonumber(treeItemText(item, 0))
+            if id ~= nil then
+                count = count + 1
+            end
+        end
+    end
+    items.selectionStatus.Text = "Selected: " .. tostring(count)
+end
+
+local function newTreeItem(tree)
+    local item = safeCall(tree, "NewItem")
+    if item ~= nil then
+        return item
+    end
+    if ui and ui.TreeItem then
+        local ok, created = pcall(function()
+            return ui:TreeItem({})
+        end)
+        if ok then
+            return created
+        end
+        ok, created = pcall(function()
+            return ui:TreeItem()
+        end)
+        if ok then
+            return created
+        end
+    end
+    return nil
+end
+
+local function applySubtitleTreeColumns()
+    if not (items and items.subtitleTree) then
+        return
+    end
+    local tree = items.subtitleTree
+    pcall(function()
+        tree.ColumnCount = 6
+    end)
+    pcall(function()
+        tree:SetHeaderLabels({"ID", "Track", "In", "Out", "Ms", "Text"})
+    end)
+    pcall(function()
+        tree.ColumnWidth[0] = 42
+        tree.ColumnWidth[1] = 48
+        tree.ColumnWidth[2] = 88
+        tree.ColumnWidth[3] = 88
+        tree.ColumnWidth[4] = 58
+        tree.ColumnWidth[5] = 390
+    end)
+end
+
 local function renderSubtitleList()
-    local lines = {}
+    if not (items and items.subtitleTree) then
+        return
+    end
+    local tree = items.subtitleTree
+    safeCall(tree, "Clear")
+    subtitleTreeItems = {}
+    applySubtitleTreeColumns()
     for _, row in ipairs(subtitles) do
         local text = row.text
         if text == "" then
             text = "(no readable text)"
         end
-        if #text > 72 then
-            text = text:sub(1, 72) .. "..."
+        if #text > 120 then
+            text = text:sub(1, 120) .. "..."
         end
-        table.insert(lines, string.format(
-            "%03d | T%d | %s - %s | %.0fms | %s",
-            row.subtitleIndex,
-            row.trackIndex,
-            row.startTimecode,
-            row.endTimecode,
-            tonumber(row.durationMs or 0),
-            text
-        ))
+        local item = newTreeItem(tree)
+        if item ~= nil then
+            setTreeItemText(item, 0, string.format("%03d", row.subtitleIndex))
+            setTreeItemText(item, 1, "T" .. tostring(row.trackIndex))
+            setTreeItemText(item, 2, row.startTimecode)
+            setTreeItemText(item, 3, row.endTimecode)
+            setTreeItemText(item, 4, string.format("%.0f", tonumber(row.durationMs or 0)))
+            setTreeItemText(item, 5, text)
+            safeCall(tree, "AddTopLevelItem", item)
+            subtitleTreeItems[row.subtitleIndex] = item
+        end
     end
-    if #lines == 0 then
-        table.insert(lines, "No subtitle items found on the current timeline.")
+    if #subtitles == 0 then
+        local item = newTreeItem(tree)
+        if item ~= nil then
+            setTreeItemText(item, 0, "")
+            setTreeItemText(item, 5, "No subtitle items found on the current timeline.")
+            pcall(function()
+                item.Disabled = true
+            end)
+            safeCall(tree, "AddTopLevelItem", item)
+        end
     end
-    items.subtitleList.PlainText = table.concat(lines, "\n")
+    updateSelectionStatus()
 end
 
 local function refreshSubtitles(ev)
@@ -494,24 +665,62 @@ end
 local function selectedIds()
     local ids = {}
     local seen = {}
-    local text = items.selectedIds.Text or ""
-    for token in tostring(text):gmatch("[^,%s]+") do
-        local value = tonumber(token)
-        if value and value >= 1 and value <= #subtitles and not seen[value] then
-            table.insert(ids, value)
-            seen[value] = true
+    local selected = safeCall(items.subtitleTree, "SelectedItems")
+    if type(selected) == "table" then
+        for _, item in pairs(selected) do
+            local value = tonumber(treeItemText(item, 0))
+            if value and value >= 1 and value <= #subtitles and not seen[value] then
+                table.insert(ids, value)
+                seen[value] = true
+            end
         end
     end
     table.sort(ids)
     return ids
 end
 
-local function setSelectedIds(ids)
-    local parts = {}
+local function setSelectedIds(ids, scrollToFirst)
+    local wanted = {}
+    local firstItem = nil
     for _, id in ipairs(ids) do
-        table.insert(parts, tostring(id))
+        local value = tonumber(id)
+        if value and subtitleTreeItems[value] then
+            wanted[value] = true
+            if firstItem == nil then
+                firstItem = subtitleTreeItems[value]
+            end
+        end
     end
-    items.selectedIds.Text = table.concat(parts, ",")
+    for id, item in pairs(subtitleTreeItems) do
+        pcall(function()
+            item.Selected = wanted[id] == true
+        end)
+    end
+    if scrollToFirst and firstItem ~= nil then
+        safeCall(items.subtitleTree, "ScrollToItem", firstItem)
+    end
+    updateSelectionStatus()
+end
+
+local function clearSelection(ev)
+    for _, item in pairs(subtitleTreeItems) do
+        pcall(function()
+            item.Selected = false
+        end)
+    end
+    updateSelectionStatus()
+    uiLog("Cleared subtitle selection.")
+end
+
+local function selectIdsMatching(predicate, scrollToFirst)
+    local ids = {}
+    for _, row in ipairs(subtitles) do
+        if predicate(row) then
+            table.insert(ids, row.subtitleIndex)
+        end
+    end
+    setSelectedIds(ids, scrollToFirst)
+    return ids
 end
 
 local function currentFrame()
@@ -526,14 +735,13 @@ local function usePlayhead(ev)
         uiLog("Unable to read playhead frame.")
         return
     end
-    local ids = {}
-    for _, row in ipairs(subtitles) do
+    local ids = selectIdsMatching(function(row)
         if row.startFrame <= frame and frame < row.endFrame then
-            table.insert(ids, row.subtitleIndex)
+            return true
         end
-    end
-    setSelectedIds(ids)
-    uiLog("Selected " .. tostring(#ids) .. " subtitle(s) at frame " .. tostring(frame) .. ".")
+        return false
+    end, true)
+    uiLog("Located " .. tostring(#ids) .. " subtitle(s) at frame " .. tostring(frame) .. ".")
 end
 
 local function rangesOverlap(leftStart, leftEnd, rightStart, rightEnd)
@@ -564,13 +772,12 @@ local function useMark(ev)
         uiLog("No Resolve In/Out range found. Set it on the timeline with I and O, then click Select Resolve I/O.")
         return
     end
-    local ids = {}
-    for _, row in ipairs(subtitles) do
+    local ids = selectIdsMatching(function(row)
         if rangesOverlap(markIn, markOut, row.startFrame, row.endFrame) then
-            table.insert(ids, row.subtitleIndex)
+            return true
         end
-    end
-    setSelectedIds(ids)
+        return false
+    end, true)
     uiLog("Selected " .. tostring(#ids) .. " subtitle(s) in Resolve In/Out.")
 end
 
@@ -616,15 +823,81 @@ end
 local function openRuntimeConfig(ev)
     if voiceConfig and voiceConfig.runtimeConfigPath ~= "" then
         os.execute("/usr/bin/open " .. quote(voiceConfig.runtimeConfigPath))
+        uiLog("Opened voice config. Save it, then click Reload.")
     else
         uiLog("No Kairos runtime config path found.")
     end
 end
 
+local function voiceConfigStatusLine()
+    if not voiceConfig then
+        return "Voice config: not loaded"
+    end
+    if voiceConfig.error ~= "" then
+        return "Voice config error: " .. voiceConfig.error
+    end
+    local defaultName = tostring(voiceConfig.defaultProfile or "")
+    local suffix = ""
+    if defaultName ~= "" then
+        suffix = ", default=" .. defaultName
+    end
+    if tostring(voiceConfig.runtimeConfigPath or "") ~= "" then
+        suffix = suffix .. ", path=" .. tostring(voiceConfig.runtimeConfigPath)
+    end
+    if tostring(voiceConfig.backendVersion or "") ~= "" then
+        suffix = suffix .. ", backend=" .. tostring(voiceConfig.backendVersion)
+    end
+    return "Voice config: " .. tostring(#(voiceConfig.profiles or {})) .. " profile(s), "
+        .. "apiKey=" .. (voiceConfig.hasApiKey and "configured" or "missing")
+        .. suffix
+end
+
+local function replaceProfileItems(labels, currentIndex)
+    if not (items and items.profile) then
+        return false
+    end
+    local combo = items.profile
+    local ok = pcall(function()
+        combo:Clear()
+        combo:AddItems(labels)
+        combo.CurrentIndex = currentIndex or 0
+    end)
+    if ok then
+        return true
+    end
+    ok = pcall(function()
+        combo:Clear()
+        for _, labelText in ipairs(labels) do
+            combo:AddItem(labelText)
+        end
+        combo.CurrentIndex = currentIndex or 0
+    end)
+    return ok
+end
+
+local function reloadVoiceoverConfig(silent)
+    local previousName = ""
+    if voiceConfig and items and items.profile then
+        local previous = selectedProfile()
+        previousName = previous and previous.name or ""
+    end
+    voiceConfig = loadVoiceoverConfigSummary()
+    local labels = profileLabels(voiceConfig)
+    local updated = replaceProfileItems(labels, preferredProfileIndex(voiceConfig, previousName))
+    if silent ~= true then
+        uiLog(voiceConfigStatusLine())
+        if not updated then
+            uiLog("Profile dropdown did not update live. Close and reopen the panel.")
+        end
+    end
+    return updated
+end
+
 local function runBackend(mode)
+    reloadVoiceoverConfig(true)
     local selected = selectedSubtitles()
     if #selected == 0 then
-        uiLog("No subtitle IDs selected.")
+        uiLog("No subtitle rows selected.")
         return
     end
     if not selectedProfile() then
@@ -645,7 +918,7 @@ local function runBackend(mode)
         settings = currentSettings(),
         skipOverflow = items.skipOverflow.Checked == true,
     }
-    local tmpDir = (os.getenv("HOME") or ".") .. "/Movies/KairosVoiceover/.tmp"
+    local tmpDir = pluginTmpDir() .. "/jobs"
     os.execute("/bin/mkdir -p " .. quote(tmpDir))
     local stamp = os.date("%Y%m%d-%H%M%S")
     local jobPath = tmpDir .. "/lua-job-" .. stamp .. ".json"
@@ -657,7 +930,11 @@ local function runBackend(mode)
     local python = root .. "/KairosVolcVoiceoverLib/KairosVolcVoiceover.py"
     local cmd = "/usr/bin/python3 " .. quote(python) .. " --synthesize-job " .. quote(jobPath) .. " > " .. quote(outPath) .. " 2>&1"
     appendLog("backend " .. cmd)
-    uiLog("Running backend for " .. tostring(#selected) .. " subtitle(s)...")
+    if #selected > 1 then
+        uiLog("Running backend for " .. tostring(#selected) .. " subtitle(s) as one merged voiceover...")
+    else
+        uiLog("Running backend for 1 subtitle...")
+    end
     local result = os.execute(cmd)
     local output = readText(outPath)
     if output ~= "" then
@@ -665,10 +942,6 @@ local function runBackend(mode)
     else
         uiLog("Backend finished: " .. tostring(result))
     end
-end
-
-local function preview(ev)
-    runBackend("preview")
 end
 
 local function synthesizeInsert(ev)
@@ -696,7 +969,7 @@ local function openLogs(ev)
 end
 
 appendLog("lua plugin start root=" .. tostring(root))
-local ui = fusion and fusion.UIManager
+ui = fusion and fusion.UIManager
 local dispatcher = bmd and ui and bmd.UIDispatcher(ui)
 appendLog("globals fusion=" .. tostring(fusion ~= nil) .. " bmd=" .. tostring(bmd ~= nil) .. " resolve=" .. tostring(resolve ~= nil))
 
@@ -748,39 +1021,56 @@ local function lineEdit(id, text, placeholder, width)
     })
 end
 
-voiceConfig = loadVoiceoverConfigSummary()
-local labels = profileLabels(voiceConfig)
+voiceConfig = {
+    runtimeConfigPath = "",
+    hasApiKey = false,
+    defaultProfile = "",
+    profiles = {},
+    error = "",
+}
+local initialProfileLabels = {"Loading profiles..."}
 local win = dispatcher:AddWindow({
     ID = WINDOW_ID,
     Geometry = {160, 160, 760, 420},
-    WindowTitle = "Kairos Volc Voiceover",
+    WindowTitle = "Kairos Volc Voiceover " .. PLUGIN_VERSION,
 },
 ui:VGroup({
-    ui:Label({Text = "Kairos Volc Voiceover", Weight = 0, Font = titleFont, MaximumSize = {760, 22}}),
+    ui:Label({Text = "Kairos Volc Voiceover " .. PLUGIN_VERSION, Weight = 0, Font = titleFont, MaximumSize = {760, 22}}),
     ui:HGroup({Weight = 0, MaximumSize = {760, 28}}, {
         button("refresh", "Refresh", 86),
-        button("playhead", "Playhead", 86),
+        button("playhead", "Locate", 68),
         button("mark", "Resolve I/O", 92),
+        button("clearSelection", "Clear", 58),
         button("probe", "Probe", 58),
         button("openLogs", "Logs", 54),
+        ui:Label({
+            ID = "selectionStatus",
+            Text = "Selected: 0",
+            Weight = 1,
+            Font = smallFont,
+            MinimumSize = {92, 22},
+            MaximumSize = {760, 22},
+        }),
     }),
-    ui:TextEdit({
-        ID = "subtitleList",
-        Weight = 0.68,
-        ReadOnly = true,
-        AcceptRichText = false,
+    ui:Tree({
+        ID = "subtitleTree",
+        Weight = 0.74,
+        ColumnCount = 6,
+        HeaderHidden = false,
+        RootIsDecorated = false,
+        AlternatingRowColors = true,
+        AllColumnsShowFocus = true,
+        SelectionBehavior = "SelectRows",
+        SelectionMode = "ExtendedSelection",
+        UniformRowHeights = true,
         Font = smallFont,
-    }),
-    ui:HGroup({Weight = 0, MaximumSize = {760, 28}}, {
-        label("Selected IDs", 78),
-        lineEdit("selectedIds", "", "1,2,3", 180),
     }),
     ui:HGroup({Weight = 0, MaximumSize = {760, 28}}, {
         label("Voice", 44),
         ui:ComboBox({
             ID = "profile",
-            Items = labels,
-            CurrentIndex = defaultProfileIndex(voiceConfig),
+            Items = initialProfileLabels,
+            CurrentIndex = 0,
             Weight = 0,
             Font = smallFont,
             MinimumSize = {190, 24},
@@ -791,6 +1081,7 @@ ui:VGroup({
         label("Gain", 34),
         lineEdit("loudness", "", "default", 76),
         button("openConfig", "Config", 62),
+        button("reloadConfig", "Reload", 62),
     }),
     ui:HGroup({Weight = 0, MaximumSize = {760, 28}}, {
         ui:CheckBox({
@@ -802,8 +1093,7 @@ ui:VGroup({
             MinimumSize = {120, 24},
             MaximumSize = {120, 24},
         }),
-        button("preview", "Preview", 76),
-        button("synthesizeInsert", "Insert", 74),
+        button("synthesizeInsert", "Insert", 86),
         button("close", "Close", 64),
     }),
     ui:TextEdit({
@@ -821,6 +1111,7 @@ if not win then
 end
 
 items = win:GetItems()
+local initialProfileReloaded = reloadVoiceoverConfig(true)
 
 local function onClose(ev)
     appendLog("lua plugin close")
@@ -832,21 +1123,19 @@ win.On["close"].Clicked = onClose
 win.On["refresh"].Clicked = refreshSubtitles
 win.On["playhead"].Clicked = usePlayhead
 win.On["mark"].Clicked = useMark
+win.On["clearSelection"].Clicked = clearSelection
+win.On["subtitleTree"].ItemSelectionChanged = updateSelectionStatus
 win.On["probe"].Clicked = probe
 win.On["openLogs"].Clicked = openLogs
 win.On["openConfig"].Clicked = openRuntimeConfig
-win.On["preview"].Clicked = preview
+win.On["reloadConfig"].Clicked = reloadVoiceoverConfig
 win.On["synthesizeInsert"].Clicked = synthesizeInsert
 
 win:Show()
 appendLog("lua plugin window shown")
 refreshSubtitles(nil)
-if voiceConfig.error ~= "" then
-    uiLog("Voice config error: " .. voiceConfig.error)
-else
-    uiLog(
-        "Voice config: " .. tostring(#(voiceConfig.profiles or {})) .. " profile(s), "
-        .. "apiKey=" .. (voiceConfig.hasApiKey and "configured" or "missing")
-    )
+uiLog(voiceConfigStatusLine())
+if not initialProfileReloaded then
+    uiLog("Profile dropdown did not update during startup. Click Reload.")
 end
 dispatcher:RunLoop()

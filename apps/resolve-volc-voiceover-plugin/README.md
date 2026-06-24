@@ -46,18 +46,33 @@ KAIROS_INSTALL_PROBES=1 apps/resolve-volc-voiceover-plugin/install_macos.sh
 ## Behavior
 
 - Scans all current timeline subtitle tracks.
-- Lets the editor type subtitle IDs from the list, or select by playhead /
-  Resolve timeline In/Out. The Lua UI intentionally uses this stable ID field
-  first while Resolve 21 script-menu UI behavior is being hardened.
+- Lets the editor select subtitle rows directly in a multi-select list
+  (`Shift` range select / `Cmd` additive select), locate the playhead subtitle,
+  select the Resolve timeline In/Out range, or clear the current selection.
 - Uses a compact voice profile selector backed by workspace global
   `config/runtime.json`.
-- Synthesizes one audio file per selected subtitle.
-- Inserts generated audio into an audio track named `Kairos VO`.
-- Stores generated files and manifests under:
+- Synthesizes one audio file for a single selected subtitle, or one merged
+  audio file for all selected subtitles when multiple rows are selected.
+- Imports generated audio into Media Pool bin `Kairos Voiceover / <timeline>`
+  and inserts it into an audio track named `Kairos VO`.
+- The Resolve panel exposes insertion as the normal paid-generation path; the
+  backend preview mode is kept only for command-line debugging.
+- Stores generated media under the matched Kairos project's
+  `config/project-brief.json` `voiceoverMedia` root:
 
 ```text
-~/Movies/KairosVoiceover/<project>/<timeline>/<runId>/
+<voiceoverMedia.path-or-alternate>/<safe Resolve project>/<safe timeline>/
 ```
+
+The media directory intentionally contains only Resolve-importable audio:
+
+```text
+vo_<unit>_<request>.mp3
+```
+
+Request / insertion debug JSON is project-local under
+`projects/<projectId>/.tmp/resolve-volc-voiceover-plugin/manifests/`; it is not
+part of the media relink surface.
 
 Volcengine API key and registered voice profiles are configured globally in:
 
@@ -89,6 +104,41 @@ Example:
 }
 ```
 
+Generated audio output is configured per project, so different workstations can
+use different mounted drives and relink by the same root-relative paths:
+
+```json
+{
+  "name": "丙察察格涅南线子梅垭口穿越",
+  "voiceoverMedia": {
+    "rootId": "voiceover",
+    "path": "/Volumes/SSDMAX/kairos-voiceover",
+    "alternatePaths": [
+      { "path": "F:\\kairos-voiceover" }
+    ],
+    "resolveProjectAliases": [
+      "Kairos Volc Voiceover Debug"
+    ],
+    "description": "Resolve 字幕配音生成音频"
+  }
+}
+```
+
+The plugin matches the current Resolve project name to a Kairos project brief
+name, also accepting Resolve suffixes such as ` [Edit]` or ` [Color]`. If no
+unique project matches, or no configured `voiceoverMedia` candidate is writable,
+synthesis is blocked instead of writing formal audio files to a fallback folder.
+Use `voiceoverMedia.resolveProjectAliases[]` for throwaway Resolve projects
+that should intentionally write to this Kairos project's voiceover root.
+Lua/Python bridge job files and plugin logs are project-local:
+
+```text
+projects/<projectId>/.tmp/resolve-volc-voiceover-plugin/cache/
+projects/<projectId>/.tmp/resolve-volc-voiceover-plugin/jobs/
+projects/<projectId>/.tmp/resolve-volc-voiceover-plugin/logs/
+projects/<projectId>/.tmp/resolve-volc-voiceover-plugin/manifests/
+```
+
 ## Volcengine Defaults
 
 - TTS endpoint: `https://openspeech.bytedance.com/api/v3/tts/unidirectional`
@@ -102,8 +152,9 @@ headers for synthesis requests.
 ## Limitations
 
 Resolve scripting does not expose stable Edit-page selected subtitle timeline
-items. Selection is therefore maintained inside the plugin UI. The playhead and
-Resolve In/Out buttons are shortcuts that select matching subtitle rows. Set the
+items. Selection is therefore maintained in the plugin's subtitle list. The
+playhead button scrolls to and selects the subtitle covering the current
+playhead frame; Resolve In/Out selects matching subtitle rows in bulk. Set the
 In/Out range in Resolve itself with `I` and `O`; the plugin reads that existing
 range with `GetMarkInOut()`.
 
@@ -114,10 +165,13 @@ does not expose subtitle text through `GetName()`, `GetProperty()`, or
 Startup errors are written to:
 
 ```text
-~/Movies/KairosVoiceover/logs/lua-plugin.log
-~/Movies/KairosVoiceover/logs/resolve-plugin.log
-~/Movies/KairosVoiceover/logs/resolve-plugin-bootstrap.log
+projects/<projectId>/.tmp/resolve-volc-voiceover-plugin/logs/lua-plugin.log
+projects/<projectId>/.tmp/resolve-volc-voiceover-plugin/logs/resolve-plugin.log
+projects/<projectId>/.tmp/resolve-volc-voiceover-plugin/logs/resolve-plugin-bootstrap.log
 ```
+
+If Resolve is launched without a project that can be matched to a Kairos project
+brief, early bootstrap logs fall back to workspace `.tmp/resolve-volc-voiceover-plugin/`.
 
 ## Debug Smoke Test
 

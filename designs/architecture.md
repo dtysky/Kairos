@@ -110,13 +110,14 @@
 本轮冻结后的正式口径如下：
 
 - 插件目录固定为 `apps/resolve-volc-voiceover-plugin/`，安装到 Resolve `Fusion/Scripts/Edit` 菜单；它是独立 Resolve Lua/Fusion UI + Python headless backend 脚本，不依赖 Kairos Console 或 Supervisor 运行。
-- 插件负责扫描当前 timeline 的 subtitle tracks，生成自己的字幕列表并在插件面板中维护多选状态；官方 Resolve scripting API 当前没有稳定 `GetSelectedTimelineItems()`，所以第一版不承诺读取 Edit 页原生多选字幕。
-- 插件提供三个正式选择入口：面板多选、当前播放头覆盖字幕、当前 Mark In/Out 范围重叠字幕。
+- 插件负责扫描当前 timeline 的 subtitle tracks，生成自己的多列字幕列表并在插件面板中维护多选状态；列表支持鼠标多选 / 范围选择 / 追加选择。官方 Resolve scripting API 当前没有稳定 `GetSelectedTimelineItems()`，所以第一版不承诺读取 Edit 页原生多选字幕。
+- 插件提供四个正式选择入口：面板多选、当前播放头定位并选中覆盖字幕、当前 Mark In/Out 范围重叠字幕、清空当前选择。
 - 字幕文本读取只能来自 Resolve subtitle `TimelineItem` 可暴露字段：`GetName()`、`GetProperty().Text / Subtitle / Caption`、`GetClipProperty()`。如果当前 Resolve 版本不暴露字幕正文，插件必须阻塞合成并提示用户导入 SRT 或粘贴文本，不能猜内容。
 - 火山引擎默认使用 V3 HTTP 单向流式语音合成；声音复刻使用 V3 voice clone。`volcApiKey`、默认 voice profile 和 profiles 注册表统一写在 workspace 全局 `config/runtime.json` 的 `voiceover` 块中。插件面板只展示 profile 下拉选择，不允许在 Resolve 面板里临时输入 API key / speaker / resource / model / language，避免配置散落到 Resolve 工程或插件私有文件。
-- 默认每条字幕生成一个音频文件和一个 timeline audio item，保持字幕级边界；生成文件保存在 `~/Movies/KairosVoiceover/<resolveProject>/<timelineId>/<runId>/`，并写 `manifest.json` 记录请求、缓存、音频和插入结果。
-- 插入时间线时创建或复用 `Kairos VO` 音频轨，通过 `MediaPool.ImportMedia` 导入音频，再用 audio-only `AppendToTimeline` 按字幕起始帧插入；默认不删除已有用户音频或旧配音。只有显式选择插件-owned replacement 时，才允许删除带同一插件 marker/customData 的旧音频。
-- 该插件是直接 Resolve 工具，不是 Flow Plan capability；若需要进入 Kairos edit 审计，可把 manifest 镜像到 `edits/<editId>/postlock/voiceover-plugin/`，但镜像不是插入时间线的前置条件。
+- 单选字幕时生成一个音频文件和一个 timeline audio item；多选字幕时不做启发式拆分，直接把用户选中的所有字幕按 timeline 时间排序、拼成一个 TTS 文本、生成一个 merged audio item，并插入到第一条所选字幕的起始帧。merged unit 的 debug record 必须记录 `isMergedGroup / groupSize / sourceSubtitleIds / sourceSubtitles`，便于排查和后续 replacement。生成文件必须落在当前 Kairos 项目 `config/project-brief.json.voiceoverMedia` 声明的配音媒体根下。`voiceoverMedia.path` 是主路径，`voiceoverMedia.alternatePaths[].path` 是多设备候选路径，`voiceoverMedia.resolveProjectAliases[]` 可显式把临时 / debug Resolve 工程名归属到该 Kairos 项目；插件按当前设备上第一个可写候选路径创建 `<safe Resolve project>/<safe timeline>/` 正式媒体目录，目录中只保存 Resolve 直接导入的 `vo_<unit>_<request>.mp3`。请求缓存、Lua/Python bridge job 文件、backend stdout、debug manifest 和插件日志必须写到匹配项目的 `projects/<projectId>/.tmp/resolve-volc-voiceover-plugin/` 下；只有无法匹配项目的早期 bootstrap 日志可退到 workspace `.tmp/resolve-volc-voiceover-plugin/`。若当前 Resolve 工程名无法唯一匹配 Kairos 项目，或项目未配置可写 `voiceoverMedia`，合成必须阻塞并提示配置，不再把正式音频产物写到 `~/Movies/KairosVoiceover/`。
+- 插入时间线时创建或复用 `Kairos VO` 音频轨，导入前创建或复用 Media Pool bin `Kairos Voiceover / <timelineName>` 并切到该 bin，通过 `MediaPool.ImportMedia` 导入音频，再用 audio-only `AppendToTimeline` 按字幕起始帧插入；Resolve 面板只暴露 paid generation 的正式路径 `Insert`，不再提供只打开系统播放器的 Preview 按钮。后端 preview mode 仅保留为命令行调试入口。默认不删除已有用户音频或旧配音。只有显式选择插件-owned replacement 时，才允许删除带同一插件 marker/customData 的旧音频。
+- `voiceoverMedia` 必须在 `/ingest-gps` 项目配置 UI 中可见且可编辑；`/edit` 的 Resolve `[Edit]` “重链素材路径”动作在普通 `Kairos Project Media` 之外，还应在配置存在时处理 `Kairos Voiceover` bin，并使用 `voiceoverMedia.path / alternatePaths` 做配音音频 relink。`Kairos Voiceover` bin 不存在时只作为跳过状态写入摘要，不阻断普通素材重链。
+- 该插件是直接 Resolve 工具，不是 Flow Plan capability；若需要进入 Kairos edit 审计，可把项目 `.tmp` 中的 debug manifest 镜像到 `edits/<editId>/postlock/voiceover-plugin/`，但镜像不是插入时间线的前置条件。
 
 ## 0.12 2026-04-24 DaVinci Resolve scripting 本地知识文档补记
 
