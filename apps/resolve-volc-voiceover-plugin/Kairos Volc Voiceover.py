@@ -420,7 +420,37 @@ class ResolveVoiceoverBridge:
         for index in self.voice_track_indexes():
             if not self.audio_track_has_overlap(index, target_start, target_end):
                 return index
+        adopted = self.adopt_available_audio_track(target_start, target_end)
+        if adopted is not None:
+            return adopted
         return self.create_voice_track()
+
+    def adopt_available_audio_track(self, target_start, target_end):
+        timeline = self.timeline()
+        if not timeline:
+            return None
+        count = int(_safe_call(timeline, "GetTrackCount", "audio") or 0)
+        voice_indexes = set(self.voice_track_indexes())
+        for index in range(2, count + 1):
+            if index in voice_indexes:
+                continue
+            if self.audio_track_locked_or_disabled(index):
+                continue
+            if self.audio_track_has_overlap(index, target_start, target_end):
+                continue
+            _safe_call(timeline, "SetTrackName", "audio", index, self.next_voice_track_name())
+            return index
+        return None
+
+    def audio_track_locked_or_disabled(self, track_index):
+        timeline = self.timeline()
+        locked = _safe_call(timeline, "GetIsTrackLocked", "audio", track_index)
+        if locked is True:
+            return True
+        enabled = _safe_call(timeline, "GetIsTrackEnabled", "audio", track_index)
+        if enabled is False:
+            return True
+        return False
 
     def unit_timeline_range(self, unit_result):
         subtitle = unit_result.get("subtitle") or {}
