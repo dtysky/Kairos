@@ -1,5 +1,5 @@
 local WINDOW_ID = "kairosVolcVoiceover"
-local PLUGIN_VERSION = "0.1.6"
+local PLUGIN_VERSION = "0.1.11"
 local VOICE_TRACK_NAME = "Kairos VO"
 local DEFAULT_RESOURCE_ID = "seed-icl-2.0"
 
@@ -12,13 +12,22 @@ local ui = nil
 local getProjectName = nil
 local cachedPluginTmpDir = nil
 local cachedPluginTmpProject = nil
+local IS_WINDOWS = (
+    (package.config and package.config:sub(1, 1) == "\\")
+    or tostring(os.getenv("OS") or ""):lower():find("windows", 1, true) ~= nil
+)
+local commandCounter = 0
 
 local function quote(value)
-    return "'" .. tostring(value):gsub("'", "'\\''") .. "'"
+    local text = tostring(value or "")
+    if IS_WINDOWS then
+        return '"' .. text:gsub('"', '\\"') .. '"'
+    end
+    return "'" .. text:gsub("'", "'\\''") .. "'"
 end
 
 local function dirname(path)
-    return tostring(path):match("^(.*)/[^/]*$") or "."
+    return tostring(path):match("^(.*)[/\\][^/\\]*$") or "."
 end
 
 local source = debug.getinfo(1, "S").source or ""
@@ -26,6 +35,9 @@ if source:sub(1, 1) == "@" then
     source = source:sub(2)
 end
 root = dirname(source)
+if tostring(root):match("^%a:[/\\]") then
+    IS_WINDOWS = true
+end
 
 local function readText(path)
     local file = io.open(path, "r")
@@ -47,14 +59,84 @@ local function writeText(path, text)
     return true
 end
 
-local function workspaceTmpDir()
+local function jsonUnescape(value)
+    local text = tostring(value or "")
+    text = text:gsub("\\/", "/")
+    text = text:gsub('\\"', '"')
+    text = text:gsub("\\\\", "\\")
+    return text
+end
+
+local function workspaceLinkField(name)
     local linkText = readText(root .. "/KairosVolcVoiceoverLib/kairos_workspace.json")
-    local workspaceRoot = linkText:match('"workspaceRoot"%s*:%s*"([^"]+)"') or ""
-    workspaceRoot = workspaceRoot:gsub("\\/", "/")
+    local value = linkText:match('"' .. name .. '"%s*:%s*"([^"]*)"') or ""
+    return jsonUnescape(value)
+end
+
+local function pythonCommand()
+    local configured = workspaceLinkField("pythonExecutable")
+    if configured ~= "" then
+        return quote(configured)
+    end
+    local envPython = os.getenv("KAIROS_PYTHON") or ""
+    if envPython ~= "" then
+        return quote(envPython)
+    end
+    if IS_WINDOWS then
+        return "python"
+    end
+    return "/usr/bin/python3"
+end
+
+local function backendScriptPath()
+    return root .. "/KairosVolcVoiceoverLib/KairosVolcVoiceover.py"
+end
+
+local function makeDir(path)
+    if IS_WINDOWS then
+        os.execute("mkdir " .. quote(path) .. " >NUL 2>NUL")
+    else
+        os.execute("/bin/mkdir -p " .. quote(path))
+    end
+end
+
+local function openPath(path)
+    if IS_WINDOWS then
+        os.execute("start \"\" " .. quote(path))
+    else
+        os.execute("/usr/bin/open " .. quote(path))
+    end
+end
+
+local function workspaceTmpDir()
+    local workspaceRoot = workspaceLinkField("workspaceRoot")
     if workspaceRoot ~= "" then
         return workspaceRoot .. "/.tmp/resolve-volc-voiceover-plugin"
     end
     return (os.getenv("HOME") or ".") .. "/Movies/KairosVoiceover"
+end
+
+local function executeCommandToFile(cmd, outPath)
+    if IS_WINDOWS then
+        local scriptPath = outPath .. ".cmd"
+        writeText(scriptPath, "@echo off\r\nchcp 65001 >NUL\r\nset \"PYTHONUTF8=1\"\r\nset \"PYTHONIOENCODING=utf-8\"\r\n" .. cmd .. "\r\n")
+        return os.execute("cmd.exe /d /c call " .. quote(scriptPath) .. " > " .. quote(outPath) .. " 2>&1")
+    end
+    return os.execute(cmd .. " > " .. quote(outPath) .. " 2>&1")
+end
+
+local function runCommandCapture(cmd, label)
+    commandCounter = commandCounter + 1
+    local safeLabel = tostring(label or "cmd"):gsub("[^%w%-_]", "_")
+    local outputDir = workspaceTmpDir() .. "/command-output"
+    makeDir(outputDir)
+    local outPath = outputDir .. "/" .. os.date("%Y%m%d-%H%M%S") .. "-" .. tostring(commandCounter) .. "-" .. safeLabel .. ".out"
+    local result = executeCommandToFile(cmd, outPath)
+    local output = readText(outPath)
+    if output == "" then
+        output = "ERROR\tNo output from backend command: " .. cmd .. " (result=" .. tostring(result) .. ", out=" .. outPath .. ")"
+    end
+    return output, outPath
 end
 
 local function pluginTmpDir()
@@ -68,21 +150,15 @@ local function pluginTmpDir()
     if cachedPluginTmpDir ~= nil and cachedPluginTmpProject == projectName then
         return cachedPluginTmpDir
     end
-    local python = root .. "/KairosVolcVoiceoverLib/KairosVolcVoiceover.py"
-    local cmd = "/usr/bin/python3 " .. quote(python) .. " --project-temp-root --project-name " .. quote(projectName) .. " 2>&1"
-    local output = ""
-    local pipe = io.popen(cmd)
-    if pipe then
-        output = pipe:read("*a") or ""
-        pipe:close()
-    end
+    local cmd = pythonCommand() .. " " .. quote(backendScriptPath()) .. " --project-temp-root --project-name " .. quote(projectName)
+    local output = runCommandCapture(cmd, "project-temp-root")
     local tmp = output:match("TMP\t([^\r\n]+)")
     if tmp == nil or tmp == "" then
         tmp = workspaceTmpDir()
     end
     cachedPluginTmpDir = tmp
     cachedPluginTmpProject = projectName
-    os.execute("/bin/mkdir -p " .. quote(tmp))
+    makeDir(tmp)
     return tmp
 end
 
@@ -92,7 +168,7 @@ end
 
 local function appendLog(message)
     local dir = logDir()
-    os.execute("/bin/mkdir -p " .. quote(dir))
+    makeDir(dir)
     local file = io.open(dir .. "/lua-plugin.log", "a")
     if file then
         file:write(os.date("[%Y-%m-%d %H:%M:%S] ") .. tostring(message) .. "\n")
@@ -195,14 +271,10 @@ local function splitTabs(line)
 end
 
 local function loadVoiceoverConfigSummary()
-    local python = root .. "/KairosVolcVoiceoverLib/KairosVolcVoiceover.py"
-    local cmd = "/usr/bin/python3 " .. quote(python) .. " --voiceover-config-summary --project-name " .. quote(type(getProjectName) == "function" and getProjectName() or "") .. " 2>&1"
-    local output = ""
-    local pipe = io.popen(cmd)
-    if pipe then
-        output = pipe:read("*a") or ""
-        pipe:close()
-    end
+    local cmd = pythonCommand() .. " " .. quote(backendScriptPath()) .. " --voiceover-config-summary --project-name " .. quote(type(getProjectName) == "function" and getProjectName() or "")
+    appendLog("config backend " .. cmd)
+    local output, outputPath = runCommandCapture(cmd, "voiceover-config-summary")
+    appendLog("config backend output " .. tostring(outputPath))
     local result = {
         runtimeConfigPath = "",
         hasApiKey = false,
@@ -229,6 +301,13 @@ local function loadVoiceoverConfigSummary()
             })
         elseif kind == "ERROR" then
             result.error = fields[2] or line
+        end
+    end
+    if result.error == "" and #(result.profiles or {}) == 0 then
+        if output ~= "" then
+            result.error = output:gsub("[\r\n]+", " "):sub(1, 240)
+        else
+            result.error = "No output from backend command: " .. cmd
         end
     end
     return result
@@ -723,25 +802,109 @@ local function selectIdsMatching(predicate, scrollToFirst)
     return ids
 end
 
-local function currentFrame()
+local function currentFrameCandidates()
     local timeline = getTimeline()
+    local frameRate = fps()
     local timecode = safeCall(timeline, "GetCurrentTimecode")
-    return timecodeToFrame(timecode, fps())
+    local rawFrame = timecodeToFrame(timecode, frameRate)
+    if rawFrame == nil then
+        return {}, tostring(timecode or "")
+    end
+    local candidates = {}
+    local seen = {}
+    local function addCandidate(value, label)
+        local number = tonumber(value)
+        if number == nil then
+            return
+        end
+        local frame = math.floor(number + 0.5)
+        if seen[frame] then
+            return
+        end
+        seen[frame] = true
+        table.insert(candidates, {frame = frame, label = label})
+    end
+    addCandidate(rawFrame, "timecode")
+    local startTimecodeFrame = timecodeToFrame(safeCall(timeline, "GetStartTimecode"), frameRate)
+    local startFrame = tonumber(safeCall(timeline, "GetStartFrame"))
+    if startTimecodeFrame ~= nil then
+        addCandidate(rawFrame - startTimecodeFrame, "timecode-startTimecode")
+        if startFrame ~= nil then
+            addCandidate(rawFrame - startTimecodeFrame + startFrame, "timecode-startTimecode+startFrame")
+        end
+    end
+    if startFrame ~= nil then
+        addCandidate(rawFrame - startFrame, "timecode-startFrame")
+    end
+    return candidates, tostring(timecode or "")
+end
+
+local function subtitleIdsAtFrame(frame)
+    local ids = {}
+    for _, row in ipairs(subtitles) do
+        local startFrame = tonumber(row.startFrame)
+        local endFrame = tonumber(row.endFrame)
+        if startFrame ~= nil and endFrame ~= nil and startFrame <= frame and frame < endFrame then
+            table.insert(ids, row.subtitleIndex)
+        end
+    end
+    return ids
+end
+
+local function nearestSubtitleGap(frame)
+    local previousRow = nil
+    local nextRow = nil
+    for _, row in ipairs(subtitles) do
+        local startFrame = tonumber(row.startFrame)
+        local endFrame = tonumber(row.endFrame)
+        if startFrame ~= nil and endFrame ~= nil then
+            if endFrame <= frame and (previousRow == nil or endFrame > tonumber(previousRow.endFrame or -1)) then
+                previousRow = row
+            end
+            if frame < startFrame and (nextRow == nil or startFrame < tonumber(nextRow.startFrame or 999999999)) then
+                nextRow = row
+            end
+        end
+    end
+    local parts = {}
+    if previousRow ~= nil then
+        table.insert(parts, "prev #" .. tostring(previousRow.subtitleIndex) .. " ends " .. tostring(previousRow.endTimecode or previousRow.endFrame))
+    end
+    if nextRow ~= nil then
+        table.insert(parts, "next #" .. tostring(nextRow.subtitleIndex) .. " starts " .. tostring(nextRow.startTimecode or nextRow.startFrame))
+    end
+    if #parts == 0 then
+        return ""
+    end
+    return " (" .. table.concat(parts, ", ") .. ")"
 end
 
 local function usePlayhead(ev)
-    local frame = currentFrame()
-    if frame == nil then
+    local candidates, timecode = currentFrameCandidates()
+    if #candidates == 0 then
         uiLog("Unable to read playhead frame.")
         return
     end
-    local ids = selectIdsMatching(function(row)
-        if row.startFrame <= frame and frame < row.endFrame then
-            return true
+    for _, candidate in ipairs(candidates) do
+        local ids = subtitleIdsAtFrame(candidate.frame)
+        if #ids > 0 then
+            setSelectedIds(ids, true)
+            uiLog(
+                "Located " .. tostring(#ids)
+                    .. " subtitle(s) at frame " .. tostring(candidate.frame)
+                    .. " (tc=" .. tostring(timecode)
+                    .. ", mode=" .. tostring(candidate.label) .. ")."
+            )
+            return
         end
-        return false
-    end, true)
-    uiLog("Located " .. tostring(#ids) .. " subtitle(s) at frame " .. tostring(frame) .. ".")
+    end
+    local frame = candidates[1].frame
+    setSelectedIds({}, false)
+    uiLog(
+        "Located 0 subtitle(s) at frame " .. tostring(frame)
+            .. " (tc=" .. tostring(timecode) .. ")"
+            .. nearestSubtitleGap(frame) .. "."
+    )
 end
 
 local function rangesOverlap(leftStart, leftEnd, rightStart, rightEnd)
@@ -822,7 +985,7 @@ end
 
 local function openRuntimeConfig(ev)
     if voiceConfig and voiceConfig.runtimeConfigPath ~= "" then
-        os.execute("/usr/bin/open " .. quote(voiceConfig.runtimeConfigPath))
+        openPath(voiceConfig.runtimeConfigPath)
         uiLog("Opened voice config. Save it, then click Reload.")
     else
         uiLog("No Kairos runtime config path found.")
@@ -919,7 +1082,7 @@ local function runBackend(mode)
         skipOverflow = items.skipOverflow.Checked == true,
     }
     local tmpDir = pluginTmpDir() .. "/jobs"
-    os.execute("/bin/mkdir -p " .. quote(tmpDir))
+    makeDir(tmpDir)
     local stamp = os.date("%Y%m%d-%H%M%S")
     local jobPath = tmpDir .. "/lua-job-" .. stamp .. ".json"
     local outPath = tmpDir .. "/lua-job-" .. stamp .. ".out"
@@ -927,15 +1090,14 @@ local function runBackend(mode)
         uiLog("Unable to write job file: " .. jobPath)
         return
     end
-    local python = root .. "/KairosVolcVoiceoverLib/KairosVolcVoiceover.py"
-    local cmd = "/usr/bin/python3 " .. quote(python) .. " --synthesize-job " .. quote(jobPath) .. " > " .. quote(outPath) .. " 2>&1"
+    local cmd = pythonCommand() .. " " .. quote(backendScriptPath()) .. " --synthesize-job " .. quote(jobPath)
     appendLog("backend " .. cmd)
     if #selected > 1 then
         uiLog("Running backend for " .. tostring(#selected) .. " subtitle(s) as one merged voiceover...")
     else
         uiLog("Running backend for 1 subtitle...")
     end
-    local result = os.execute(cmd)
+    local result = executeCommandToFile(cmd, outPath)
     local output = readText(outPath)
     if output ~= "" then
         uiLog(output)
@@ -965,7 +1127,7 @@ local function probe(ev)
 end
 
 local function openLogs(ev)
-    os.execute("/usr/bin/open " .. quote(logDir()))
+    openPath(logDir())
 end
 
 appendLog("lua plugin start root=" .. tostring(root))
@@ -1038,7 +1200,6 @@ ui:VGroup({
     ui:Label({Text = "Kairos Volc Voiceover " .. PLUGIN_VERSION, Weight = 0, Font = titleFont, MaximumSize = {760, 22}}),
     ui:HGroup({Weight = 0, MaximumSize = {760, 28}}, {
         button("refresh", "Refresh", 86),
-        button("playhead", "Locate", 68),
         button("mark", "Resolve I/O", 92),
         button("clearSelection", "Clear", 58),
         button("probe", "Probe", 58),
@@ -1093,6 +1254,7 @@ ui:VGroup({
             MinimumSize = {120, 24},
             MaximumSize = {120, 24},
         }),
+        button("playhead", "Locate", 68),
         button("synthesizeInsert", "Insert", 86),
         button("close", "Close", 64),
     }),

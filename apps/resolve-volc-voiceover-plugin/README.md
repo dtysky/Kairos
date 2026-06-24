@@ -6,6 +6,27 @@ back into the current timeline.
 
 ## Install
 
+On Windows:
+
+```powershell
+.\apps\resolve-volc-voiceover-plugin\install_windows.ps1
+```
+
+The installer copies the script files to:
+
+```text
+%APPDATA%\Blackmagic Design\DaVinci Resolve\Support\Fusion\Scripts\Edit\KairosVolcVoiceover.lua
+%APPDATA%\Blackmagic Design\DaVinci Resolve\Support\Fusion\Scripts\Edit\KairosVolcVoiceoverLib\
+```
+
+It also writes `KairosVolcVoiceoverLib\kairos_workspace.json` with the current
+workspace, runtime config path, and Python executable. The Lua menu script uses
+that Python executable on Windows instead of macOS `/usr/bin/python3`. Set
+`KAIROS_PYTHON` before running the installer if Resolve should use a specific
+Python executable. The Windows Lua-to-Python bridge forces UTF-8 stdout so
+Chinese profile names from `config/runtime.json` render correctly in the
+Resolve panel.
+
 On macOS:
 
 ```bash
@@ -49,12 +70,17 @@ KAIROS_INSTALL_PROBES=1 apps/resolve-volc-voiceover-plugin/install_macos.sh
 - Lets the editor select subtitle rows directly in a multi-select list
   (`Shift` range select / `Cmd` additive select), locate the playhead subtitle,
   select the Resolve timeline In/Out range, or clear the current selection.
+  Playhead locate checks Resolve timecode with timeline start offsets before
+  matching subtitle item frame ranges, and reports the nearest subtitle gap
+  when no row covers the playhead.
 - Uses a compact voice profile selector backed by workspace global
   `config/runtime.json`.
 - Synthesizes one audio file for a single selected subtitle, or one merged
   audio file for all selected subtitles when multiple rows are selected.
-- Imports generated audio into Media Pool bin `Kairos Voiceover / <timeline>`
-  and inserts it into an audio track named `Kairos VO`.
+- Imports generated audio into Media Pool bin `Kairos Voiceover / <timeline>`.
+  Timeline insertion prefers the lowest empty enabled audio track from A2
+  upward, then reuses a non-overlapping `Kairos VO` track, then creates a new
+  `Kairos VO` track only when no existing track is safe to use.
 - The Resolve panel exposes insertion as the normal paid-generation path; the
   backend preview mode is kept only for command-line debugging.
 - Stores generated media under the matched Kairos project's

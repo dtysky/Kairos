@@ -18,7 +18,7 @@ from urllib import error as urlerror
 from urllib import request as urlrequest
 
 
-PLUGIN_VERSION = "0.1.6"
+PLUGIN_VERSION = "0.1.11"
 DEFAULT_TTS_ENDPOINT = "https://openspeech.bytedance.com/api/v3/tts/unidirectional"
 DEFAULT_CLONE_ENDPOINT = "https://openspeech.bytedance.com/api/v3/tts/voice_clone"
 DEFAULT_RESOURCE_ID = "seed-icl-2.0"
