@@ -112,6 +112,15 @@ const ILegacyProjectBriefConfig = z.object({
     resolveProjectAliases: z.array(z.string()).optional(),
     description: z.string().optional(),
   }).optional(),
+  audioMedia: z.object({
+    rootId: z.string().optional(),
+    path: z.string().optional(),
+    alternatePaths: z.array(z.object({
+      path: z.string().optional(),
+      rawPath: z.string().optional(),
+    })).optional(),
+    description: z.string().optional(),
+  }).optional(),
   pharos: z.object({
     includedTripIds: z.array(z.string()).optional(),
   }).optional(),
@@ -179,6 +188,7 @@ export async function loadProjectBriefConfig(projectRoot: string): Promise<TProj
     mappings: parsed.mappings,
     pharos: parsed.pharos,
     voiceoverMedia: undefined,
+    audioMedia: undefined,
     materialPatternPhrases: parsed.vocabulary.materialPatternPhrases,
   }, legacyRoots.roots, basename(projectRoot)));
 }

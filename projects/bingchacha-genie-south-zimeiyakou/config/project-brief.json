@@ -5,6 +5,7 @@
   "mappings": [
     {
       "rootId": "root-draft-1778318452475-huvyid",
+      "rootCode": "zve1",
       "path": "/Volumes/SSDMAX/zve1",
       "rawPath": "/Volumes/SSDMAX/raw/zve1",
       "alternatePaths": [
@@ -27,11 +28,11 @@
           "audioCodec": "aac",
           "bitrateKbps": 30000
         }
-      },
-      "rootCode": "zve1"
+      }
     },
     {
       "rootId": "root-draft-1778319636214-bb8ljb",
+      "rootCode": "drone",
       "path": "/Volumes/SSDMAX/drone",
       "rawPath": "/Volumes/SSDMAX/raw/drone",
       "alternatePaths": [
@@ -55,11 +56,11 @@
           "bitrateKbps": 30000
         },
         "transformPresetKey": "DJI/DJI Mavic 4 Pro D-Log to Rec.709 V1.cube"
-      },
-      "rootCode": "drone"
+      }
     },
     {
       "rootId": "root-draft-1778319664359-puaawa",
+      "rootCode": "ts-final",
       "path": "/Volumes/SSDMAX/ts-final",
       "alternatePaths": [
         {
@@ -79,11 +80,11 @@
           "video"
         ],
         "reason": "延时视频导出时间不可信，必须人工确认拍摄日期和时间"
-      },
-      "rootCode": "ts-final"
+      }
     },
     {
       "rootId": "root-draft-1778319790368-3hrfrl",
+      "rootCode": "photos",
       "path": "/Volumes/SSDMAX/photos",
       "alternatePaths": [
         {
@@ -96,8 +97,7 @@
       "priority": 4,
       "notes": [
         "途中拍摄的照片"
-      ],
-      "rootCode": "photos"
+      ]
     }
   ],
   "voiceoverMedia": {
@@ -112,6 +112,16 @@
       "Kairos Volc Voiceover Debug"
     ],
     "description": "Resolve字幕配音生成音频"
+  },
+  "audioMedia": {
+    "rootId": "audio",
+    "path": "/Volumes/SSDMAX/audios",
+    "alternatePaths": [
+      {
+        "path": "F:\\QQM"
+      }
+    ],
+    "description": "BGM/SFX手工音频"
   },
   "materialPatternPhrases": []
 }

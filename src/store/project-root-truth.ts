@@ -3,6 +3,7 @@ import {
   ICaptureTimePolicyConfig,
   EMediaRootCategory,
   type IColorRenderPreset,
+  type IProjectBriefAudioMediaConfig,
   type ICaptureTimePolicyConfig as TCaptureTimePolicyConfig,
   type IMediaRoot,
   type IProjectBriefConfig,
@@ -52,6 +53,15 @@ type TProjectBriefConfigInput = {
     resolveProjectAliases?: string[];
     description?: string;
   };
+  audioMedia?: {
+    rootId?: string;
+    path?: string;
+    alternatePaths?: Array<{
+      path?: string;
+      rawPath?: string;
+    }>;
+    description?: string;
+  };
   pharos?: {
     includedTripIds?: string[];
   };
@@ -96,6 +106,18 @@ function normalizeVoiceoverMedia(value: TProjectBriefConfigInput['voiceoverMedia
     path,
     alternatePaths: normalizeAlternatePaths(value.alternatePaths),
     resolveProjectAliases: trimStringList(value.resolveProjectAliases),
+    description: trimString(value.description),
+  };
+}
+
+function normalizeAudioMedia(value: TProjectBriefConfigInput['audioMedia']): IProjectBriefAudioMediaConfig | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const path = trimString(value.path);
+  if (!path) return undefined;
+  return {
+    rootId: normalizeConfigKey(value.rootId) ?? 'audio',
+    path,
+    alternatePaths: normalizeAlternatePaths(value.alternatePaths),
     description: trimString(value.description),
   };
 }
@@ -316,6 +338,7 @@ export function materializeProjectBriefConfig(
     mappings,
     pharos: includedTripIds?.length ? { includedTripIds } : undefined,
     voiceoverMedia: normalizeVoiceoverMedia(input.voiceoverMedia),
+    audioMedia: normalizeAudioMedia(input.audioMedia),
     materialPatternPhrases: trimStringList(input.materialPatternPhrases) ?? [],
   };
 }

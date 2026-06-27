@@ -81,10 +81,19 @@ describe('workspace config sync', () => {
         description: '主机位',
         flightRecordPath: 'F:\\media\\camera\\FlightRecord',
       }],
+      audioMedia: {
+        rootId: 'manual-audio',
+        path: 'F:\\media\\audio',
+        alternatePaths: [{
+          path: '/Volumes/Media/audio',
+        }],
+        description: 'BGM/SFX手工音频',
+      },
     });
 
     const loaded = await loadProjectBriefConfig(projectRoot);
     const markdown = await readFile(join(projectRoot, 'config', 'project-brief.md'), 'utf-8');
+    const json = await readFile(join(projectRoot, 'config', 'project-brief.json'), 'utf-8');
     expect(loaded.mappings).toHaveLength(1);
     expect(loaded.mappings[0]?.alternatePaths).toEqual([
       {
@@ -96,6 +105,15 @@ describe('workspace config sync', () => {
         rawPath: '/mnt/media/camera/raw',
       },
     ]);
+    expect(loaded.audioMedia).toEqual({
+      rootId: 'manual-audio',
+      path: 'F:\\media\\audio',
+      alternatePaths: [{
+        path: '/Volumes/Media/audio',
+      }],
+      description: 'BGM/SFX手工音频',
+    });
+    expect(json).toContain('"audioMedia"');
     expect(markdown).toContain('路径：F:\\media\\camera');
     expect(markdown).toContain('原始路径：F:\\media\\camera\\raw');
     expect(markdown).toContain('备选路径1：/Volumes/Media/camera');
@@ -112,6 +130,48 @@ describe('workspace config sync', () => {
     const loaded = await loadProjectBriefConfig(projectRoot);
 
     expect(loaded.mappings).toEqual([]);
+  });
+
+  it('preserves project audio media config when saving ingest roots', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectRoot = await initWorkspaceProject(workspaceRoot, 'project-audio-root', 'Project Audio Root');
+
+    await saveProjectBriefConfig(projectRoot, {
+      name: 'Project Audio Root',
+      mappings: [{
+        rootId: 'root-camera',
+        path: 'F:\\media\\camera',
+        description: '主机位',
+      }],
+      audioMedia: {
+        rootId: 'manual-audio',
+        path: 'F:\\media\\audio',
+        alternatePaths: [{
+          path: '/Volumes/Media/audio',
+        }],
+        description: 'BGM/SFX手工音频',
+      },
+      materialPatternPhrases: [],
+    });
+
+    await saveIngestRoots(projectRoot, {
+      roots: [{
+        id: 'root-camera',
+        path: 'G:\\media\\camera',
+        description: '主机位更新',
+        enabled: true,
+      }],
+    });
+
+    const loaded = await loadProjectBriefConfig(projectRoot);
+    expect(loaded.audioMedia).toEqual({
+      rootId: 'manual-audio',
+      path: 'F:\\media\\audio',
+      alternatePaths: [{
+        path: '/Volumes/Media/audio',
+      }],
+      description: 'BGM/SFX手工音频',
+    });
   });
 
   it('migrates legacy project roots metadata into project brief json and removes legacy roots file on save', async () => {

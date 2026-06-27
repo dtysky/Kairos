@@ -486,6 +486,144 @@ export function ProjectBriefEditor({ config, pharosStatus, summaries = [], setCo
         </div>
       )}
       <Divider />
+      <ListToolbar
+        title="项目音频媒体 Root"
+        disabled={Boolean(config.audioMedia)}
+        onAdd={!config.audioMedia ? () => setConfig(current => ({
+          ...current,
+          audioMedia: createAudioMediaDraft(),
+        })) : undefined}
+      />
+      <div className="capture-time-hint">
+        BGM、音效和其它手工加进 Resolve 的音频共用这个目录；跨设备时，“重链素材路径”会用这里的主路径和备选路径处理 `Kairos Audio` 素材池。
+      </div>
+      {!config.audioMedia ? (
+        <p className="muted">当前未配置项目音频媒体 Root。需要 BGM / 音效跨设备 relink 时，在这里启用并填写路径。</p>
+      ) : (
+        <div className="row-card">
+          <div className="row-top">
+            <div>
+              <strong>Audio</strong>
+              <div className="muted capture-time-reason">{config.audioMedia.path || '待填写项目音频路径'}</div>
+            </div>
+            <div className="capture-time-tags">
+              {normalizeAlternatePathDrafts(config.audioMedia.alternatePaths).length > 0 ? (
+                <Tag>{`${normalizeAlternatePathDrafts(config.audioMedia.alternatePaths).length} 组备选`}</Tag>
+              ) : null}
+            </div>
+          </div>
+          <div className="field-grid field-grid-three">
+            <Field
+              label="Root ID"
+              value={config.audioMedia.rootId || 'audio'}
+              onChange={value => setConfig(current => ({
+                ...current,
+                audioMedia: {
+                  ...(current.audioMedia || createAudioMediaDraft()),
+                  rootId: value,
+                },
+              }))}
+            />
+            <Field
+              label="路径"
+              value={config.audioMedia.path || ''}
+              onChange={value => setConfig(current => ({
+                ...current,
+                audioMedia: {
+                  ...(current.audioMedia || createAudioMediaDraft()),
+                  path: value,
+                },
+              }))}
+            />
+            <Field
+              label="说明"
+              value={config.audioMedia.description || ''}
+              onChange={value => setConfig(current => ({
+                ...current,
+                audioMedia: {
+                  ...(current.audioMedia || createAudioMediaDraft()),
+                  description: value,
+                },
+              }))}
+            />
+          </div>
+          <ListToolbar
+            title="音频备选路径"
+            onAdd={() => setConfig(current => {
+              const audioMedia = current.audioMedia || createAudioMediaDraft();
+              return {
+                ...current,
+                audioMedia: {
+                  ...audioMedia,
+                  alternatePaths: [
+                    ...normalizeAlternatePathDrafts(audioMedia.alternatePaths),
+                    createAlternatePathDraft(),
+                  ],
+                },
+              };
+            })}
+          />
+          {normalizeAlternatePathDrafts(config.audioMedia.alternatePaths).map((alternate, alternateIndex) => {
+            const alternates = normalizeAlternatePathDrafts(config.audioMedia.alternatePaths);
+            const updateAlternates = nextAlternates => setConfig(current => ({
+              ...current,
+              audioMedia: {
+                ...(current.audioMedia || createAudioMediaDraft()),
+                alternatePaths: nextAlternates,
+              },
+            }));
+            return (
+              <div key={`audio-alternate-${alternateIndex}`} className="nested-card alternate-path-card">
+                <div className="row-top">
+                  <strong>{`备选路径 ${alternateIndex + 1}`}</strong>
+                  <div className="capture-time-actions">
+                    <Button
+                      size="small"
+                      disabled={alternateIndex === 0}
+                      onClick={() => updateAlternates(moveArrayItem(alternates, alternateIndex, alternateIndex - 1))}
+                    >
+                      上移
+                    </Button>
+                    <Button
+                      size="small"
+                      disabled={alternateIndex === alternates.length - 1}
+                      onClick={() => updateAlternates(moveArrayItem(alternates, alternateIndex, alternateIndex + 1))}
+                    >
+                      下移
+                    </Button>
+                    <Button
+                      type="error"
+                      size="small"
+                      onClick={() => updateAlternates(alternates.filter((_, itemIndex) => itemIndex !== alternateIndex))}
+                    >
+                      删除
+                    </Button>
+                  </div>
+                </div>
+                <Field
+                  label="备选路径"
+                  value={alternate.path || ''}
+                  onChange={value => updateAlternates(replaceArrayItem(alternates, alternateIndex, {
+                    ...alternate,
+                    path: value,
+                  }))}
+                />
+              </div>
+            );
+          })}
+          <Button
+            type="error"
+            size="small"
+            onClick={() => setConfig(current => ({
+              ...current,
+              audioMedia: undefined,
+            }))}
+          >
+            移除音频 Root
+          </Button>
+        </div>
+      )}
+      <Divider />
       <TextAreaField
         label="材料模式短语（每行一条）"
         value={(config.materialPatternPhrases || []).join('\n')}
@@ -2545,6 +2683,15 @@ function createVoiceoverMediaDraft() {
     alternatePaths: [],
     resolveProjectAliases: [],
     description: 'Resolve字幕配音生成音频',
+  };
+}
+
+function createAudioMediaDraft() {
+  return {
+    rootId: 'audio',
+    path: '',
+    alternatePaths: [],
+    description: 'BGM/SFX手工音频',
   };
 }
 

@@ -1269,6 +1269,14 @@ export const IProjectBriefVoiceoverMediaConfig = z.object({
 });
 export type IProjectBriefVoiceoverMediaConfig = z.infer<typeof IProjectBriefVoiceoverMediaConfig>;
 
+export const IProjectBriefAudioMediaConfig = z.object({
+  rootId: z.string().optional(),
+  path: z.string(),
+  alternatePaths: z.array(IMediaRootAlternatePath).optional(),
+  description: z.string().optional(),
+});
+export type IProjectBriefAudioMediaConfig = z.infer<typeof IProjectBriefAudioMediaConfig>;
+
 export const IColorRenderPreset = z.object({
   container: z.string().optional(),
   videoCodec: z.string().optional(),
@@ -1803,6 +1811,7 @@ export const IProjectBriefConfig = z.object({
   mappings: z.array(IProjectBriefMappingConfig),
   pharos: IProjectBriefPharosConfig.optional(),
   voiceoverMedia: IProjectBriefVoiceoverMediaConfig.optional(),
+  audioMedia: IProjectBriefAudioMediaConfig.optional(),
   materialPatternPhrases: z.array(z.string()).default([]),
 });
 export type IProjectBriefConfig = z.infer<typeof IProjectBriefConfig>;

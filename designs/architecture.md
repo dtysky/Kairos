@@ -80,7 +80,7 @@
 - 当剪辑规则要求风格层而 `styleCategory` 缺失，或选中的 profile 仍是 legacy 非分层格式时，Flow Plan 不能确认，Edit Flow 必须阻塞并提示重跑 `/style`
 - `script.generate` 只有在剪辑规则明确需要前置文本稿 / beat 稿时才出现；`material.recall` 只输出 `material-slots.json`，不再生成或消费 `segment-plan.json`；`resolve.media_sync` 先把事件素材同步到达芬奇 Media Pool；`timeline.generate` 是 deterministic Resolve rough-cut 创建步骤，读取 `edit-framework.md + material-slots.json + spans + assets + chronology`，只从已同步 Media Pool 选用素材，不再要求 `script/current.json`，并同步写 `.tmp/edit-flow/<editId>/timeline/current.srt` 供手动导入达芬奇
 - `timeline.generate` 成功后自动尝试保存项目级 Resolve `[Edit]` DRP，默认使用 `latest-only` 只覆盖当前 latest DRP；失败只进入 result/run warning，不回滚已生成 timeline
-- `/edit` 可提供 Resolve `[Edit]` 工程维护按钮，其中素材路径重链是 deterministic same-machine host action：后端从 `project-brief` root primary/alternate 候选与当前可读路径生成 root mapping，host 只加载已有 `${projectBrief.name} [Edit]`，核对 `Kairos Project Media` 与目标 edit timeline，批量 `RelinkClips` 后 `SaveProject()`，并报告 media pool / timeline 的旧路径、不可读、缺失目标、未映射与跳过非文件数量；Resolve compound/timeline 等非文件 item 不参与路径重链，缺失本机目标作为 warning 返回，不阻塞其它可重链素材；该动作不生成 Flow Plan、不运行 step、不确认 gate，也不自动导出 DRP
+- `/edit` 可提供 Resolve `[Edit]` 工程维护按钮，其中素材路径重链是 deterministic same-machine host action：后端从 `project-brief` root primary/alternate 候选与当前可读路径生成 root mapping，host 只加载已有 `${projectBrief.name} [Edit]`，核对 `Kairos Project Media` 与目标 edit timeline，批量 `RelinkClips` 后 `SaveProject()`，并报告 media pool / timeline 的旧路径、不可读、缺失目标、未映射与跳过非文件数量；若 `project-brief.json.voiceoverMedia` 或 `project-brief.json.audioMedia` 已配置，同一动作分别按 `Kairos Voiceover` 与 audio-only `Kairos Audio` bin 执行独立 relink 摘要，`audioMedia` 是 BGM、SFX 和其它手工加音频的共享外部音频目录，不在重链阶段区分角色；Resolve compound/timeline 等非文件 item 不参与路径重链，缺失本机目标作为 warning 返回，不阻塞其它可重链素材；该动作不生成 Flow Plan、不运行 step、不确认 gate，也不自动导出 DRP
 
 旅行类默认剪辑规则的正式顺序是：
 
@@ -101,7 +101,7 @@
 - Resolve edit mapping 固定为：Project `${projectBrief.name} [Edit]`，项目全局素材 bin `Kairos Project Media`，时间线 bin `Kairos Timelines`，Timeline `${editLabel} [${editId}]`
 - Resolve `[Edit]` DRP 备份是项目级工程备份，不按 editId 拆工程；索引写 `edits/resolve-project-map.json`，latest 副本写 `edits/resolve-projects/<safe-project-key>/<Resolve项目名>.drp`，只替换文件系统非法字符；DRP 保存策略分为 `latest-only` 与 `archive`，前者只覆盖 latest，后者额外写 `edits/resolve-projects/<safe-project-key>/snapshots/<timestamp>...drp` 并刷新 latest
 - 第一次粗剪锁定后写入 `edits/<editId>/timeline/locked-rough-cut.json`
-- v1 Edit Flow post-lock 只正式化字幕与旁白文本；旁白框架阶段必须保留 Resolve clip 边界，定位文案只能使用 GPS/chronology/span 事实并按地貌 / 水文 / 植被类别去重，禁止把已命名山河后再堆 `江河湖泊 / 峡谷崖壁 / 林带植被` 这类泛化标签；音量均一、BGM、ducking 仍不纳入 Edit Flow 正式范围。直接 TTS/声音复刻走独立 Resolve 插件路径，见 0.13。
+- v1 Edit Flow post-lock 只正式化字幕与旁白文本；旁白框架阶段必须保留 Resolve clip 边界，定位文案只能使用 GPS/chronology/span 事实并按地貌 / 水文 / 植被类别去重，禁止把已命名山河后再堆 `江河湖泊 / 峡谷崖壁 / 林带植被` 这类泛化标签；音量均一、BGM 编排、ducking 仍不纳入 Edit Flow 正式范围。项目级 `audioMedia` 只负责让已手工加入 Resolve 的 BGM/SFX/其它音频参与 `/edit` 路径重链。直接 TTS/声音复刻走独立 Resolve 插件路径，见 0.13。
 
 ## 0.13 2026-06-17 Resolve 内直选字幕配音插件
 
@@ -116,7 +116,7 @@
 - 火山引擎默认使用 V3 HTTP 单向流式语音合成；声音复刻使用 V3 voice clone。`volcApiKey`、默认 voice profile 和 profiles 注册表统一写在 workspace 全局 `config/runtime.json` 的 `voiceover` 块中。插件面板只展示 profile 下拉选择，不允许在 Resolve 面板里临时输入 API key / speaker / resource / model / language，避免配置散落到 Resolve 工程或插件私有文件。
 - 单选字幕时生成一个音频文件和一个 timeline audio item；多选字幕时不做启发式拆分，直接把用户选中的所有字幕按 timeline 时间排序、拼成一个 TTS 文本、生成一个 merged audio item，并插入到第一条所选字幕的起始帧。merged unit 的 debug record 必须记录 `isMergedGroup / groupSize / sourceSubtitleIds / sourceSubtitles`，便于排查和后续 replacement。生成文件必须落在当前 Kairos 项目 `config/project-brief.json.voiceoverMedia` 声明的配音媒体根下。`voiceoverMedia.path` 是主路径，`voiceoverMedia.alternatePaths[].path` 是多设备候选路径，`voiceoverMedia.resolveProjectAliases[]` 可显式把临时 / debug Resolve 工程名归属到该 Kairos 项目；插件按当前设备上第一个可写候选路径创建 `<safe Resolve project>/<safe timeline>/` 正式媒体目录，目录中只保存 Resolve 直接导入的 `vo_<unit>_<request>.mp3`。请求缓存、Lua/Python bridge job 文件、backend stdout、debug manifest 和插件日志必须写到匹配项目的 `projects/<projectId>/.tmp/resolve-volc-voiceover-plugin/` 下；只有无法匹配项目的早期 bootstrap 日志可退到 workspace `.tmp/resolve-volc-voiceover-plugin/`。若当前 Resolve 工程名无法唯一匹配 Kairos 项目，或项目未配置可写 `voiceoverMedia`，合成必须阻塞并提示配置，不再把正式音频产物写到 `~/Movies/KairosVoiceover/`。
 - 插入时间线时创建或复用 `Kairos VO` 音频轨，导入前创建或复用 Media Pool bin `Kairos Voiceover / <timelineName>` 并切到该 bin，通过 `MediaPool.ImportMedia` 导入音频，再用 audio-only `AppendToTimeline` 按字幕起始帧插入；Resolve 面板只暴露 paid generation 的正式路径 `Insert`，不再提供只打开系统播放器的 Preview 按钮。后端 preview mode 仅保留为命令行调试入口。默认不删除已有用户音频或旧配音。只有显式选择插件-owned replacement 时，才允许删除带同一插件 marker/customData 的旧音频。
-- `voiceoverMedia` 必须在 `/ingest-gps` 项目配置 UI 中可见且可编辑；`/edit` 的 Resolve `[Edit]` “重链素材路径”动作在普通 `Kairos Project Media` 之外，还应在配置存在时处理 `Kairos Voiceover` bin，并使用 `voiceoverMedia.path / alternatePaths` 做配音音频 relink。`Kairos Voiceover` bin 不存在时只作为跳过状态写入摘要，不阻断普通素材重链。
+- `voiceoverMedia` 必须在 `/ingest-gps` 项目配置 UI 中可见且可编辑；项目级 `audioMedia` 使用同样的主路径 / 备选路径候选模型，表示 BGM、SFX 和其它手工加音频共享的外部音频目录，不拆成多个角色字段。`/edit` 的 Resolve `[Edit]` “重链素材路径”动作在普通 `Kairos Project Media` 之外，还应在配置存在时处理 `Kairos Voiceover` 和 audio-only `Kairos Audio` bin，并分别使用 `voiceoverMedia.path / alternatePaths` 与 `audioMedia.path / alternatePaths` relink。相关 bin 不存在时只作为跳过状态写入摘要，不阻断普通素材重链。
 - 该插件是直接 Resolve 工具，不是 Flow Plan capability；若需要进入 Kairos edit 审计，可把项目 `.tmp` 中的 debug manifest 镜像到 `edits/<editId>/postlock/voiceover-plugin/`，但镜像不是插入时间线的前置条件。
 
 ## 0.12 2026-04-24 DaVinci Resolve scripting 本地知识文档补记

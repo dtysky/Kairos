@@ -74,6 +74,7 @@ export {
   IEditFlowPlan,
   IEditFlowRunsState,
   IProjectBriefMappingConfig,
+  IProjectBriefAudioMediaConfig,
   IProjectBriefPharosConfig,
   IProjectBriefConfig,
   IColorRenderPreset,

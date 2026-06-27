@@ -199,6 +199,7 @@ export async function saveProjectRoots(root: string, projectRoots: IProjectRoots
     mappings: mediaRootsToProjectBriefMappings(projectRoots.roots, currentBrief?.mappings),
     pharos: currentBrief?.pharos,
     voiceoverMedia: currentBrief?.voiceoverMedia,
+    audioMedia: currentBrief?.audioMedia,
     materialPatternPhrases: currentBrief?.materialPatternPhrases ?? [],
   });
   return IProjectRoots.parse({
