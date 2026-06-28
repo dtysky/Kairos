@@ -1,22 +1,22 @@
 {
-  "updatedAt": "2026-06-27T09:05:59.466Z",
+  "updatedAt": "2026-06-28T16:34:10.283Z",
   "projects": {
     "丙察察格聂南线子梅垭口穿越 [Edit]": {
       "projectName": "丙察察格聂南线子梅垭口穿越 [Edit]",
       "safeProjectName": "Edit",
       "latestSnapshot": {
         "projectName": "丙察察格聂南线子梅垭口穿越 [Edit]",
-        "snapshotPath": "H:\\SacredGrove\\Kairos\\projects\\bingchacha-genie-south-zimeiyakou\\edits\\resolve-projects\\Edit\\snapshots\\20260627T090555Z-manual.drp",
+        "snapshotPath": "H:\\SacredGrove\\Kairos\\projects\\bingchacha-genie-south-zimeiyakou\\edits\\resolve-projects\\Edit\\丙察察格聂南线子梅垭口穿越 [Edit].drp",
         "latestPath": "H:\\SacredGrove\\Kairos\\projects\\bingchacha-genie-south-zimeiyakou\\edits\\resolve-projects\\Edit\\丙察察格聂南线子梅垭口穿越 [Edit].drp",
-        "createdAt": "2026-06-27T09:05:55Z",
+        "createdAt": "2026-06-28T16:34:04Z",
         "mode": "manual",
-        "retention": "archive",
+        "retention": "latest-only",
         "action": "manual",
         "database": {
           "DbType": "Disk",
           "DbName": "Local Database"
         },
-        "detail": "save_drp_snapshot exported withStillsAndLUTs=false retention=archive"
+        "detail": "save_drp_snapshot exported withStillsAndLUTs=false retention=latest-only"
       },
       "snapshots": [
         {
@@ -188,7 +188,7 @@
           "detail": "save_drp_snapshot exported withStillsAndLUTs=false retention=archive"
         }
       ],
-      "updatedAt": "2026-06-27T09:05:59.466Z"
+      "updatedAt": "2026-06-28T16:34:10.283Z"
     }
   }
 }

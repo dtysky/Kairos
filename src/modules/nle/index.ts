@@ -35,3 +35,4 @@ export {
   type IJianyingPythonInvocation,
 } from './jianying-local.js';
 export { exportSrt, exportVtt, formatSrt, formatVtt } from './export-srt.js';
+export { stripGeneratedSubtitlePeriods } from './subtitle-text.js';

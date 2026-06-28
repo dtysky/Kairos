@@ -35,6 +35,7 @@ import { assertConfirmedEditFlowPlan } from '../edit-flow/flow-planner.js';
 import { assertMaterialSlotsContract, spanHasSpeechTruth } from '../edit-flow/material-slots-contract.js';
 import { resolveMaterialSlotTreatment } from '../edit-flow/material-slot-treatments.js';
 import { exportSrt } from '../nle/export-srt.js';
+import { stripGeneratedSubtitlePeriods } from '../nle/subtitle-text.js';
 import { resolveTimelineBuildConfig, type IBuildConfig } from './timeline-builder.js';
 import {
   createResolveRoughCutTimeline,
@@ -406,6 +407,7 @@ export function buildDeterministicTimeline(input: {
           clipId,
           assetId: asset.id,
           spanId: span.id,
+          spanType: span.type,
           rawRelativePath: buildResolveRoughCutRelativePath({
             eventFolder: eventContext.folder,
             clipId,
@@ -582,7 +584,7 @@ function mapSourceMsToTimelineMs(sourceMs: number, input: {
 }
 
 function normalizeSubtitleText(value: string | undefined): string {
-  return (value ?? '').replace(/\s+/gu, ' ').trim();
+  return stripGeneratedSubtitlePeriods((value ?? '').replace(/\s+/gu, ' ').trim()).trim();
 }
 
 function clampNumber(value: number, min: number, max: number): number {

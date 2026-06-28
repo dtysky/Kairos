@@ -293,7 +293,7 @@ print(json.dumps({
   };
 }
 
-async function inspectAudibleClipColoring() {
+async function inspectRoughCutClipColoring() {
   const code = `
 import importlib.util
 import json
@@ -320,30 +320,72 @@ class FakeTimelineItem:
         return self.color
 
 
-audible_video_item = FakeTimelineItem()
-audible_audio_item = FakeTimelineItem()
+ordinary_video_item = FakeTimelineItem()
+ordinary_audio_item = FakeTimelineItem()
 muted_item = FakeTimelineItem()
-summary = {"color": "Orange", "itemScope": "video-and-linked-audio", "checked": 0, "colored": 0, "failed": 0}
+photo_video_item = FakeTimelineItem()
+timelapse_video_item = FakeTimelineItem()
+timelapse_audio_item = FakeTimelineItem()
+audible_summary = {
+    "color": "Orange",
+    "itemScope": "ordinary-video-and-linked-audio; linked-audio-only-when-video-has-visual-category-color",
+    "checked": 0,
+    "colored": 0,
+    "failed": 0,
+}
+visual_summary = {
+    "photo": {"color": "Blue", "itemScope": "video", "checked": 0, "colored": 0, "failed": 0},
+    "timelapse": {"color": "Purple", "itemScope": "video", "checked": 0, "colored": 0, "failed": 0},
+}
 
-module.apply_rough_cut_audible_clip_color([audible_video_item, audible_audio_item], {
+module.apply_rough_cut_audible_clip_color([ordinary_video_item, ordinary_audio_item], {
     "clipId": "clip-00001",
     "assetId": "asset-1",
+    "assetKind": "video",
     "muteAudio": False,
-}, summary)
+}, audible_summary)
 module.apply_rough_cut_audible_clip_color([muted_item], {
     "clipId": "clip-00002",
     "assetId": "asset-2",
+    "assetKind": "video",
     "muteAudio": True,
-}, summary)
+}, audible_summary)
+module.apply_rough_cut_visual_clip_color([photo_video_item], {
+    "clipId": "clip-00003",
+    "assetId": "asset-3",
+    "assetKind": "photo",
+    "muteAudio": True,
+}, visual_summary)
+module.apply_rough_cut_visual_clip_color([timelapse_video_item], {
+    "clipId": "clip-00004",
+    "assetId": "asset-4",
+    "assetKind": "video",
+    "spanType": "timelapse",
+    "muteAudio": False,
+}, visual_summary)
+module.apply_rough_cut_audible_clip_color([timelapse_audio_item], {
+    "clipId": "clip-00004",
+    "assetId": "asset-4",
+    "assetKind": "video",
+    "spanType": "timelapse",
+    "muteAudio": False,
+}, audible_summary)
 
 print(json.dumps({
-    "summary": summary,
-    "audibleVideoColor": audible_video_item.GetClipColor(),
-    "audibleAudioColor": audible_audio_item.GetClipColor(),
+    "audibleSummary": audible_summary,
+    "visualSummary": visual_summary,
+    "ordinaryVideoColor": ordinary_video_item.GetClipColor(),
+    "ordinaryAudioColor": ordinary_audio_item.GetClipColor(),
     "mutedColor": muted_item.GetClipColor(),
-    "audibleVideoCalls": audible_video_item.calls,
-    "audibleAudioCalls": audible_audio_item.calls,
+    "photoVideoColor": photo_video_item.GetClipColor(),
+    "timelapseVideoColor": timelapse_video_item.GetClipColor(),
+    "timelapseAudioColor": timelapse_audio_item.GetClipColor(),
+    "ordinaryVideoCalls": ordinary_video_item.calls,
+    "ordinaryAudioCalls": ordinary_audio_item.calls,
     "mutedCalls": muted_item.calls,
+    "photoVideoCalls": photo_video_item.calls,
+    "timelapseVideoCalls": timelapse_video_item.calls,
+    "timelapseAudioCalls": timelapse_audio_item.calls,
 }, ensure_ascii=False))
 `;
 
@@ -356,18 +398,360 @@ print(json.dumps({
     },
   );
   return JSON.parse(stdout) as {
-    summary: {
+    audibleSummary: {
       color: string;
+      itemScope: string;
       checked: number;
       colored: number;
       failed: number;
     };
-    audibleVideoColor: string;
-    audibleAudioColor: string;
+    visualSummary: Record<string, {
+      color: string;
+      itemScope: string;
+      checked: number;
+      colored: number;
+      failed: number;
+    }>;
+    ordinaryVideoColor: string;
+    ordinaryAudioColor: string;
     mutedColor: string;
-    audibleVideoCalls: unknown[];
-    audibleAudioCalls: unknown[];
+    photoVideoColor: string;
+    timelapseVideoColor: string;
+    timelapseAudioColor: string;
+    ordinaryVideoCalls: unknown[];
+    ordinaryAudioCalls: unknown[];
     mutedCalls: unknown[];
+    photoVideoCalls: unknown[];
+    timelapseVideoCalls: unknown[];
+    timelapseAudioCalls: unknown[];
+  };
+}
+
+async function inspectRoughCutVisualClipGrouping() {
+  const code = `
+import importlib.util
+import json
+import sys
+
+host_path = sys.argv[1]
+
+spec = importlib.util.spec_from_file_location("resolve_color_host", host_path)
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+
+class FakeColorGroup:
+    def __init__(self, name):
+        self.name = name
+
+    def GetName(self):
+        return self.name
+
+
+class FakeProject:
+    def __init__(self):
+        self.groups = [FakeColorGroup("Kairos Timelapse")]
+        self.add_calls = []
+
+    def GetColorGroupsList(self):
+        return self.groups
+
+    def AddColorGroup(self, name):
+        self.add_calls.append(name)
+        group = FakeColorGroup(name)
+        self.groups.append(group)
+        return group
+
+
+class FakeTimelineItem:
+    def __init__(self, group=None):
+        self.group = group
+        self.calls = []
+
+    def GetColorGroup(self):
+        return self.group
+
+    def RemoveFromColorGroup(self):
+        group_name = self.group.GetName() if self.group else None
+        self.calls.append(["RemoveFromColorGroup", group_name])
+        self.group = None
+        return True
+
+    def AssignToColorGroup(self, group):
+        self.calls.append(["AssignToColorGroup", group.GetName()])
+        self.group = group
+        return True
+
+
+project = FakeProject()
+summary = {
+    "photo": {
+        "groupName": "Kairos Photos",
+        "itemScope": "video",
+        "checked": 0,
+        "assigned": 0,
+        "alreadyAssigned": 0,
+        "failed": 0,
+        "created": False,
+    },
+    "timelapse": {
+        "groupName": "Kairos Timelapse",
+        "itemScope": "video",
+        "checked": 0,
+        "assigned": 0,
+        "alreadyAssigned": 0,
+        "failed": 0,
+        "created": False,
+    },
+}
+existing_groups_by_name = module.collect_color_groups_by_name(project)
+groups_by_category = {}
+ordinary_item = FakeTimelineItem()
+photo_item = FakeTimelineItem()
+timelapse_item = FakeTimelineItem()
+already_grouped_item = FakeTimelineItem(project.groups[0])
+
+ordinary_group = module.apply_rough_cut_visual_clip_group(
+    [ordinary_item],
+    {
+        "clipId": "clip-00001",
+        "assetId": "asset-ordinary",
+        "assetKind": "video",
+        "spanType": "drive",
+    },
+    project,
+    existing_groups_by_name,
+    groups_by_category,
+    summary,
+)
+photo_group = module.apply_rough_cut_visual_clip_group(
+    [photo_item],
+    {
+        "clipId": "clip-00002",
+        "assetId": "asset-photo",
+        "assetKind": "photo",
+    },
+    project,
+    existing_groups_by_name,
+    groups_by_category,
+    summary,
+)
+timelapse_group = module.apply_rough_cut_visual_clip_group(
+    [timelapse_item],
+    {
+        "clipId": "clip-00003",
+        "assetId": "asset-timelapse",
+        "assetKind": "video",
+        "spanType": "timelapse",
+    },
+    project,
+    existing_groups_by_name,
+    groups_by_category,
+    summary,
+)
+already_grouped = module.apply_rough_cut_visual_clip_group(
+    [already_grouped_item],
+    {
+        "clipId": "clip-00004",
+        "assetId": "asset-timelapse-2",
+        "assetKind": "video",
+        "spanType": "timelapse",
+    },
+    project,
+    existing_groups_by_name,
+    groups_by_category,
+    summary,
+)
+
+print(json.dumps({
+    "summary": summary,
+    "ordinaryGroup": ordinary_group,
+    "photoGroup": photo_group,
+    "timelapseGroup": timelapse_group,
+    "alreadyGrouped": already_grouped,
+    "projectAddCalls": project.add_calls,
+    "projectGroupNames": [group.GetName() for group in project.groups],
+    "ordinaryCalls": ordinary_item.calls,
+    "photoCalls": photo_item.calls,
+    "timelapseCalls": timelapse_item.calls,
+    "alreadyGroupedCalls": already_grouped_item.calls,
+    "photoAssignedGroup": photo_item.GetColorGroup().GetName(),
+    "timelapseAssignedGroup": timelapse_item.GetColorGroup().GetName(),
+    "alreadyAssignedGroup": already_grouped_item.GetColorGroup().GetName(),
+}, ensure_ascii=False))
+`;
+
+  const { stdout } = await exec(
+    pythonPath,
+    ['-c', code, hostPath],
+    {
+      encoding: 'utf8',
+      windowsHide: true,
+    },
+  );
+  return JSON.parse(stdout) as {
+    summary: Record<string, {
+      groupName: string;
+      itemScope: string;
+      checked: number;
+      assigned: number;
+      alreadyAssigned: number;
+      failed: number;
+      created: boolean;
+    }>;
+    ordinaryGroup: string | null;
+    photoGroup: string;
+    timelapseGroup: string;
+    alreadyGrouped: string;
+    projectAddCalls: string[];
+    projectGroupNames: string[];
+    ordinaryCalls: unknown[];
+    photoCalls: unknown[];
+    timelapseCalls: unknown[];
+    alreadyGroupedCalls: unknown[];
+    photoAssignedGroup: string;
+    timelapseAssignedGroup: string;
+    alreadyAssignedGroup: string;
+  };
+}
+
+async function inspectExistingRoughCutClipColorMatching() {
+  const code = `
+import importlib.util
+import json
+import sys
+from pathlib import Path
+
+host_path = sys.argv[1]
+
+spec = importlib.util.spec_from_file_location("resolve_color_host", host_path)
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+
+class FakeTimelineItem:
+    def __init__(self, name, source_path, start):
+        self.name = name
+        self.source_path = str(Path(source_path).expanduser().resolve())
+        self.start = start
+        self.color = ""
+        self.calls = []
+
+    def GetName(self):
+        return self.name
+
+    def GetStart(self):
+        return self.start
+
+    def GetEnd(self):
+        return self.start + 30
+
+    def GetClipProperty(self, key=None):
+        props = {"File Path": self.source_path}
+        if key:
+            return props.get(key)
+        return props
+
+    def GetMediaPoolItem(self):
+        return self
+
+    def SetClipColor(self, color):
+        self.calls.append(["SetClipColor", color])
+        self.color = color
+        return True
+
+    def GetClipColor(self):
+        return self.color
+
+
+class FakeTimeline:
+    def __init__(self, items):
+        self.items = items
+
+    def GetTrackCount(self, track_type):
+        return 1 if str(track_type).lower() == "video" else 0
+
+    def GetItemListInTrack(self, track_type, track_index):
+        return self.items if str(track_type).lower() == "video" and track_index == 1 else []
+
+
+photo_item = FakeTimelineItem("clip-00164 photo DSC0001", "media/DSC0001.jpg", 10)
+timelapse_item = FakeTimelineItem("TL0001.mp4", "media/TL0001.mp4", 40)
+ordinary_item = FakeTimelineItem("clip-00166 ordinary C0001", "media/C0001.mp4", 70)
+clips = module.normalize_rough_cut_clip_color_marker_clips([
+    {
+        "index": 1,
+        "resolveNameClipId": "clip-00164",
+        "contentKind": "photo",
+        "sourceFilePath": "media/DSC0001.jpg",
+        "sourceStem": "DSC0001",
+        "timelineInMs": 1000,
+    },
+    {
+        "index": 2,
+        "contentKind": "timelapse",
+        "frameworkClass": "timelapse",
+        "sourceFilePath": "media/TL0001.mp4",
+        "sourceStem": "TL0001",
+        "timelineInMs": 2000,
+    },
+    {
+        "index": 3,
+        "contentKind": "drive",
+        "sourceFilePath": "media/C0001.mp4",
+        "sourceStem": "C0001",
+        "timelineInMs": 3000,
+    },
+])
+entries = module.collect_timeline_video_color_marker_entries(FakeTimeline([photo_item, timelapse_item, ordinary_item]))
+state = module.build_timeline_color_marker_match_state(clips, entries)
+summary = {
+    "photo": {"color": "Blue", "itemScope": "video", "checked": 0, "colored": 0, "failed": 0},
+    "timelapse": {"color": "Purple", "itemScope": "video", "checked": 0, "colored": 0, "failed": 0},
+}
+marked = []
+for clip in clips:
+    match = module.match_existing_rough_cut_video_item(clip, state)
+    color = module.apply_rough_cut_visual_clip_color([match["item"]], clip, summary)
+    marked.append({"clipIndex": clip["clipIndex"], "method": match["method"], "color": color})
+
+print(json.dumps({
+    "normalizedCount": len(clips),
+    "marked": marked,
+    "summary": summary,
+    "photoColor": photo_item.GetClipColor(),
+    "timelapseColor": timelapse_item.GetClipColor(),
+    "ordinaryColor": ordinary_item.GetClipColor(),
+    "photoCalls": photo_item.calls,
+    "timelapseCalls": timelapse_item.calls,
+    "ordinaryCalls": ordinary_item.calls,
+}, ensure_ascii=False))
+`;
+
+  const { stdout } = await exec(
+    pythonPath,
+    ['-c', code, hostPath],
+    {
+      encoding: 'utf8',
+      windowsHide: true,
+    },
+  );
+  return JSON.parse(stdout) as {
+    normalizedCount: number;
+    marked: Array<{ clipIndex: number; method: string; color: string }>;
+    summary: Record<string, {
+      color: string;
+      itemScope: string;
+      checked: number;
+      colored: number;
+      failed: number;
+    }>;
+    photoColor: string;
+    timelapseColor: string;
+    ordinaryColor: string;
+    photoCalls: unknown[];
+    timelapseCalls: unknown[];
+    ordinaryCalls: unknown[];
   };
 }
 
@@ -539,22 +923,98 @@ except module.HostError as error:
   });
 });
 
-describe('Resolve rough-cut audible clip marking', () => {
-  it('colors non-muted video items orange and leaves muted items uncolored', async () => {
-    const result = await inspectAudibleClipColoring();
+describe('Resolve rough-cut clip color marking', () => {
+  it('colors audible, photo, and timelapse items with separate batch colors', async () => {
+    const result = await inspectRoughCutClipColoring();
 
-    expect(result.summary).toEqual({
+    expect(result.audibleSummary).toEqual({
       color: 'Orange',
-      itemScope: 'video-and-linked-audio',
-      checked: 2,
-      colored: 2,
+      itemScope: 'ordinary-video-and-linked-audio; linked-audio-only-when-video-has-visual-category-color',
+      checked: 3,
+      colored: 3,
       failed: 0,
     });
-    expect(result.audibleVideoColor).toBe('Orange');
-    expect(result.audibleAudioColor).toBe('Orange');
+    expect(result.visualSummary).toMatchObject({
+      photo: {
+        color: 'Blue',
+        itemScope: 'video',
+        checked: 1,
+        colored: 1,
+        failed: 0,
+      },
+      timelapse: {
+        color: 'Purple',
+        itemScope: 'video',
+        checked: 1,
+        colored: 1,
+        failed: 0,
+      },
+    });
+    expect(result.ordinaryVideoColor).toBe('Orange');
+    expect(result.ordinaryAudioColor).toBe('Orange');
     expect(result.mutedColor).toBe('');
-    expect(result.audibleVideoCalls).toEqual([['SetClipColor', 'Orange']]);
-    expect(result.audibleAudioCalls).toEqual([['SetClipColor', 'Orange']]);
+    expect(result.photoVideoColor).toBe('Blue');
+    expect(result.timelapseVideoColor).toBe('Purple');
+    expect(result.timelapseAudioColor).toBe('Orange');
+    expect(result.ordinaryVideoCalls).toEqual([['SetClipColor', 'Orange']]);
+    expect(result.ordinaryAudioCalls).toEqual([['SetClipColor', 'Orange']]);
     expect(result.mutedCalls).toEqual([]);
+    expect(result.photoVideoCalls).toEqual([['SetClipColor', 'Blue']]);
+    expect(result.timelapseVideoCalls).toEqual([['SetClipColor', 'Purple']]);
+    expect(result.timelapseAudioCalls).toEqual([['SetClipColor', 'Orange']]);
+  });
+
+  it('creates and assigns photo and timelapse Color Groups for rough-cut batch effects', async () => {
+    const result = await inspectRoughCutVisualClipGrouping();
+
+    expect(result.summary.photo).toEqual({
+      groupName: 'Kairos Photos',
+      itemScope: 'video',
+      checked: 1,
+      assigned: 1,
+      alreadyAssigned: 0,
+      failed: 0,
+      created: true,
+    });
+    expect(result.summary.timelapse).toEqual({
+      groupName: 'Kairos Timelapse',
+      itemScope: 'video',
+      checked: 2,
+      assigned: 1,
+      alreadyAssigned: 1,
+      failed: 0,
+      created: false,
+    });
+    expect(result.ordinaryGroup).toBeNull();
+    expect(result.photoGroup).toBe('Kairos Photos');
+    expect(result.timelapseGroup).toBe('Kairos Timelapse');
+    expect(result.alreadyGrouped).toBe('Kairos Timelapse');
+    expect(result.projectAddCalls).toEqual(['Kairos Photos']);
+    expect(result.projectGroupNames).toEqual(['Kairos Timelapse', 'Kairos Photos']);
+    expect(result.ordinaryCalls).toEqual([]);
+    expect(result.photoCalls).toEqual([['AssignToColorGroup', 'Kairos Photos']]);
+    expect(result.timelapseCalls).toEqual([['AssignToColorGroup', 'Kairos Timelapse']]);
+    expect(result.alreadyGroupedCalls).toEqual([]);
+    expect(result.photoAssignedGroup).toBe('Kairos Photos');
+    expect(result.timelapseAssignedGroup).toBe('Kairos Timelapse');
+    expect(result.alreadyAssignedGroup).toBe('Kairos Timelapse');
+  });
+
+  it('matches existing timeline photo and timelapse items without recoloring ordinary video', async () => {
+    const result = await inspectExistingRoughCutClipColorMatching();
+
+    expect(result.normalizedCount).toBe(2);
+    expect(result.marked).toEqual([
+      { clipIndex: 1, method: 'resolveNameClipId', color: 'Blue' },
+      { clipIndex: 2, method: 'sourceAbsolutePath', color: 'Purple' },
+    ]);
+    expect(result.summary.photo).toMatchObject({ checked: 1, colored: 1, failed: 0 });
+    expect(result.summary.timelapse).toMatchObject({ checked: 1, colored: 1, failed: 0 });
+    expect(result.photoColor).toBe('Blue');
+    expect(result.timelapseColor).toBe('Purple');
+    expect(result.ordinaryColor).toBe('');
+    expect(result.photoCalls).toEqual([['SetClipColor', 'Blue']]);
+    expect(result.timelapseCalls).toEqual([['SetClipColor', 'Purple']]);
+    expect(result.ordinaryCalls).toEqual([]);
   });
 });

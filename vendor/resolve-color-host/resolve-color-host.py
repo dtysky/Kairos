@@ -33,6 +33,11 @@ CCREATIVE_SIGNAL_KEYS = (
 CCOLOR_CAST_GROUP_CLASSES = ("cool-cyan", "green-cyan", "green", "warm", "mixed")
 CEXPOSURE_SCENE_GROUP_CLASSES = ("high-contrast", "overexposed", "underexposed")
 CEXPOSURE_SCENE_REASON_GROUP_TAGS = ("white-reference-underexposed",)
+CROUGH_CUT_AUDIBLE_CLIP_COLOR = "Orange"
+CROUGH_CUT_PHOTO_CLIP_COLOR = "Blue"
+CROUGH_CUT_TIMELAPSE_CLIP_COLOR = "Purple"
+CROUGH_CUT_PHOTO_COLOR_GROUP = "Kairos Photos"
+CROUGH_CUT_TIMELAPSE_COLOR_GROUP = "Kairos Timelapse"
 
 
 def configure_stdio() -> None:
@@ -67,6 +72,8 @@ def main() -> int:
             result = sync_rough_cut_media(resolve, request_input)
         elif operation == "create_rough_cut_timeline":
             result = create_rough_cut_timeline(resolve, request_input)
+        elif operation == "mark_existing_rough_cut_clip_colors":
+            result = mark_existing_rough_cut_clip_colors(resolve, request_input)
         elif operation == "relink_edit_media":
             result = relink_edit_media(resolve, request_input)
         elif operation == "export_edit_timeline_clip_packet":
@@ -562,12 +569,50 @@ def create_rough_cut_timeline(resolve, payload):
     audio_gain_applied = 0
     audio_mute_applied = 0
     audible_clip_coloring = {
-        "color": "Orange",
-        "itemScope": "video-and-linked-audio",
+        "color": CROUGH_CUT_AUDIBLE_CLIP_COLOR,
+        "itemScope": "ordinary-video-and-linked-audio; linked-audio-only-when-video-has-visual-category-color",
         "checked": 0,
         "colored": 0,
         "failed": 0,
     }
+    visual_clip_coloring = {
+        "photo": {
+            "color": CROUGH_CUT_PHOTO_CLIP_COLOR,
+            "itemScope": "video",
+            "checked": 0,
+            "colored": 0,
+            "failed": 0,
+        },
+        "timelapse": {
+            "color": CROUGH_CUT_TIMELAPSE_CLIP_COLOR,
+            "itemScope": "video",
+            "checked": 0,
+            "colored": 0,
+            "failed": 0,
+        },
+    }
+    visual_clip_grouping = {
+        "photo": {
+            "groupName": CROUGH_CUT_PHOTO_COLOR_GROUP,
+            "itemScope": "video",
+            "checked": 0,
+            "assigned": 0,
+            "alreadyAssigned": 0,
+            "failed": 0,
+            "created": False,
+        },
+        "timelapse": {
+            "groupName": CROUGH_CUT_TIMELAPSE_COLOR_GROUP,
+            "itemScope": "video",
+            "checked": 0,
+            "assigned": 0,
+            "alreadyAssigned": 0,
+            "failed": 0,
+            "created": False,
+        },
+    }
+    existing_rough_cut_groups_by_name = collect_color_groups_by_name(project)
+    rough_cut_visual_groups_by_category = {}
     speed_ignored = 0
     source_range_validation = {"checked": 0, "passed": 0, "failed": 0, "strategy": "direct-native-append"}
     still_duration_validation = {"checked": 0, "passed": 0, "failed": 0, "expectedMs": parse_float(payload.get("stillDurationMs"))}
@@ -617,7 +662,19 @@ def create_rough_cut_timeline(resolve, payload):
                 validate_rough_cut_source_range(item, media_pool_item, clip, source_range_validation)
         linked_items = collect_linked_timeline_items(video_items)
         audio_items = filter_timeline_items_by_track_type(linked_items, "audio")
-        apply_rough_cut_audible_clip_color([*video_items, *audio_items], clip, audible_clip_coloring)
+        visual_clip_color = apply_rough_cut_visual_clip_color(video_items, clip, visual_clip_coloring)
+        visual_clip_group = apply_rough_cut_visual_clip_group(
+            video_items,
+            clip,
+            project,
+            existing_rough_cut_groups_by_name,
+            rough_cut_visual_groups_by_category,
+            visual_clip_grouping,
+        )
+        audible_color_items = [*audio_items]
+        if visual_clip_color is None:
+            audible_color_items = [*video_items, *audible_color_items]
+        audible_clip_color = apply_rough_cut_audible_clip_color(audible_color_items, clip, audible_clip_coloring)
         if clip["muteAudio"] and clip["assetKind"] != "photo" and audio_items:
             apply_timeline_item_audio_mute(audio_items, clip)
             audio_mute_applied += 1
@@ -638,6 +695,10 @@ def create_rough_cut_timeline(resolve, payload):
             "muteAudio": clip["muteAudio"],
             "audioGainDb": clip["audioGainDb"],
             "speed": clip["speed"],
+            "spanType": clip.get("spanType"),
+            **({"videoClipColor": visual_clip_color} if visual_clip_color else {}),
+            **({"videoClipGroup": visual_clip_group} if visual_clip_group else {}),
+            **({"audibleClipColor": audible_clip_color} if audible_clip_color else {}),
             **({"requestedSpeed": requested_speed, "speedIgnored": True} if abs(requested_speed - 1.0) > 0.001 else {}),
         })
 
@@ -655,6 +716,8 @@ def create_rough_cut_timeline(resolve, payload):
             "audioMuteAppliedCount": audio_mute_applied,
             "audioGainAppliedCount": audio_gain_applied,
             "audibleClipColoring": audible_clip_coloring,
+            "visualClipColoring": visual_clip_coloring,
+            "visualClipGrouping": visual_clip_grouping,
             "speedAppliedCount": 0,
             "speedIgnoredCount": speed_ignored,
             "timelineCreate": "native-api",
@@ -668,6 +731,126 @@ def create_rough_cut_timeline(resolve, payload):
             "sourceRangeValidation": source_range_validation,
             "stillDurationValidation": still_duration_validation,
             "clips": appended,
+        },
+    }
+
+
+def mark_existing_rough_cut_clip_colors(resolve, payload):
+    project_name = stringify_signal_value(payload.get("resolveProjectName"))
+    if not project_name:
+        raise HostError(
+            "resolve_edit_project_name_missing",
+            "mark_existing_rough_cut_clip_colors requires resolveProjectName.",
+        )
+    timeline_name = stringify_signal_value(payload.get("timelineName"))
+    if not timeline_name:
+        raise HostError(
+            "resolve_edit_timeline_name_missing",
+            "mark_existing_rough_cut_clip_colors requires timelineName.",
+        )
+    clips = normalize_rough_cut_clip_color_marker_clips(payload.get("clips"))
+    if not clips:
+        raise HostError(
+            "resolve_rough_cut_clip_color_empty",
+            "mark_existing_rough_cut_clip_colors requires at least one photo or timelapse clip.",
+        )
+
+    project, current_project_before = load_existing_project(resolve, project_name)
+    timeline = find_named_timeline(project, timeline_name)
+    if timeline is None:
+        raise HostError(
+            "resolve_edit_timeline_missing",
+            f"Resolve edit timeline not found: {timeline_name}",
+            {
+                "resolveProjectName": project_name,
+                "timelineName": timeline_name,
+                "timelines": list_timeline_names(project),
+            },
+        )
+    safe_call(project, "SetCurrentTimeline", timeline)
+    safe_call(resolve, "OpenPage", "edit")
+
+    timeline_entries = collect_timeline_video_color_marker_entries(timeline)
+    match_state = build_timeline_color_marker_match_state(clips, timeline_entries)
+    visual_clip_coloring = {
+        "photo": {
+            "color": CROUGH_CUT_PHOTO_CLIP_COLOR,
+            "itemScope": "video",
+            "checked": 0,
+            "colored": 0,
+            "failed": 0,
+        },
+        "timelapse": {
+            "color": CROUGH_CUT_TIMELAPSE_CLIP_COLOR,
+            "itemScope": "video",
+            "checked": 0,
+            "colored": 0,
+            "failed": 0,
+        },
+    }
+    marked = []
+    missing = []
+    category_counts = {"photo": 0, "timelapse": 0}
+    for clip in clips:
+        category = resolve_rough_cut_visual_clip_color_category(clip)
+        if not category:
+            continue
+        category_counts[category] = int(category_counts.get(category) or 0) + 1
+        match = match_existing_rough_cut_video_item(clip, match_state)
+        if match is None:
+            missing.append({
+                "clipId": clip["clipId"],
+                "clipIndex": clip.get("clipIndex"),
+                "resolveNameClipId": clip.get("resolveNameClipId"),
+                "sourceStem": clip.get("sourceStem"),
+                "sourceAbsolutePath": clip.get("sourceAbsolutePath"),
+                "category": category,
+            })
+            continue
+        before_color = stringify_signal_value(safe_call(match["item"], "GetClipColor")) or ""
+        color = apply_rough_cut_visual_clip_color([match["item"]], clip, visual_clip_coloring)
+        after_color = stringify_signal_value(safe_call(match["item"], "GetClipColor")) or ""
+        marked.append({
+            "clipId": clip["clipId"],
+            "clipIndex": clip.get("clipIndex"),
+            "resolveNameClipId": clip.get("resolveNameClipId"),
+            "sourceStem": clip.get("sourceStem"),
+            "category": category,
+            "requestedColor": color,
+            "beforeColor": before_color,
+            "afterColor": after_color,
+            "matchMethod": match["method"],
+            "timelineItemName": match["name"],
+            "timelineStartFrame": match.get("startFrame"),
+        })
+
+    if missing:
+        raise HostError(
+            "resolve_rough_cut_clip_color_match_missing",
+            "Unable to find all requested photo/timelapse clips in the existing Resolve timeline.",
+            {
+                "resolveProjectName": project_name,
+                "timelineName": timeline_name,
+                "missing": missing[:50],
+                "missingCount": len(missing),
+                "markedCount": len(marked),
+            },
+        )
+    save_result = save_project_with_result(project, resolve)
+    return {
+        "resolveProjectName": project_name,
+        "currentProjectBefore": current_project_before,
+        "timelineName": safe_call(timeline, "GetName"),
+        "markedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "clipCount": len(clips),
+        "markedCount": len(marked),
+        "saveProjectResult": save_result,
+        "hostSummary": {
+            "timelineVideoItemCount": len(timeline_entries),
+            "categoryCounts": category_counts,
+            "visualClipColoring": visual_clip_coloring,
+            "matchMethods": count_match_methods(marked),
+            "clips": marked,
         },
     }
 
@@ -2900,12 +3083,17 @@ def inspect_group_post_clip_creative_status(color_group):
     return "ready"
 
 
-def assign_generated_groups(project, clip_entries, timeline_item_by_clip_key, previous_group_names_by_clip):
-    existing_groups_by_name = {}
+def collect_color_groups_by_name(project):
+    groups_by_name = {}
     for group in iter_values(safe_call(project, "GetColorGroupsList") or []):
         group_name = safe_call(group, "GetName")
         if isinstance(group_name, str) and group_name.strip():
-            existing_groups_by_name[group_name.strip()] = group
+            groups_by_name[group_name.strip()] = group
+    return groups_by_name
+
+
+def assign_generated_groups(project, clip_entries, timeline_item_by_clip_key, previous_group_names_by_clip):
+    existing_groups_by_name = collect_color_groups_by_name(project)
 
     entries_by_group_name = {}
     for entry in clip_entries:
@@ -3510,6 +3698,7 @@ def normalize_rough_cut_clips(clips):
             "clipId": clip_id,
             "assetId": asset_id,
             "spanId": stringify_signal_value(clip.get("spanId")),
+            "spanType": stringify_signal_value(clip.get("spanType")),
             "eventId": stringify_signal_value(clip.get("eventId")),
             "eventTitle": stringify_signal_value(clip.get("eventTitle")),
             "eventKind": stringify_signal_value(clip.get("eventKind")),
@@ -3631,9 +3820,308 @@ def apply_timeline_item_audio_mute(timeline_items, clip):
     )
 
 
+def normalize_rough_cut_clip_color_marker_clips(clips):
+    normalized = []
+    for clip in clips or []:
+        clip_index = parse_int(clip.get("clipIndex")) or parse_int(clip.get("index"))
+        resolve_name_clip_id = stringify_signal_value(clip.get("resolveNameClipId"))
+        source_absolute_path = normalize_filesystem_path(
+            stringify_signal_value(clip.get("sourceAbsolutePath"))
+            or stringify_signal_value(clip.get("sourceFilePath"))
+        )
+        source_stem = (
+            stringify_signal_value(clip.get("sourceStem"))
+            or (Path(source_absolute_path).stem if source_absolute_path else None)
+        )
+        asset_kind = (stringify_signal_value(clip.get("assetKind")) or "").lower()
+        content_kind = (stringify_signal_value(clip.get("contentKind")) or "").lower()
+        span_type = (stringify_signal_value(clip.get("spanType")) or "").lower()
+        framework_class = (stringify_signal_value(clip.get("frameworkClass")) or "").lower()
+        semantic_kind = (stringify_signal_value(clip.get("semanticKind")) or "").lower()
+        if not asset_kind:
+            asset_kind = "photo" if content_kind == "photo" else "video"
+        if not span_type and "timelapse" in (content_kind, framework_class, semantic_kind):
+            span_type = "timelapse"
+        marker_clip = {
+            "clipId": stringify_signal_value(clip.get("clipId")) or (f"clip-{clip_index:05d}" if clip_index is not None else None),
+            "clipIndex": clip_index,
+            "assetId": stringify_signal_value(clip.get("assetId")),
+            "assetKind": asset_kind,
+            "spanId": stringify_signal_value(clip.get("spanId")),
+            "spanType": span_type,
+            "resolveNameClipId": resolve_name_clip_id,
+            "sourceAbsolutePath": source_absolute_path,
+            "sourceStem": source_stem,
+            "timelineInMs": parse_float(clip.get("timelineInMs")),
+            "timelineOutMs": parse_float(clip.get("timelineOutMs")),
+            "muteAudio": clip.get("muteAudio") is True,
+        }
+        if resolve_rough_cut_visual_clip_color_category(marker_clip):
+            normalized.append(marker_clip)
+    return sorted(
+        normalized,
+        key=lambda clip: (
+            parse_float(clip.get("timelineInMs")) if clip.get("timelineInMs") is not None else 0,
+            parse_int(clip.get("clipIndex")) or 0,
+            stringify_signal_value(clip.get("sourceStem")) or "",
+        ),
+    )
+
+
+def collect_timeline_video_color_marker_entries(timeline):
+    entries = []
+    track_count = safe_call(timeline, "GetTrackCount", "video") or safe_call(timeline, "GetTrackCount", "Video") or 0
+    for track_index in range(1, int(track_count) + 1):
+        items = safe_call(timeline, "GetItemListInTrack", "video", track_index)
+        if items is None:
+            items = safe_call(timeline, "GetItemsInTrack", "video", track_index)
+        for item in iter_values(items or []):
+            name = stringify_signal_value(safe_call(item, "GetName")) or ""
+            source_path = normalize_filesystem_path(extract_timeline_item_file_path(item))
+            source_stem = Path(source_path).stem if source_path else None
+            if not source_stem and name:
+                source_stem = Path(name).stem
+            entry = {
+                "item": item,
+                "trackIndex": track_index,
+                "name": name,
+                "resolveNameClipId": extract_resolve_name_clip_id(name),
+                "sourceAbsolutePath": source_path,
+                "sourceStem": source_stem,
+                "startFrame": parse_float(safe_call(item, "GetStart")),
+                "endFrame": parse_float(safe_call(item, "GetEnd")),
+            }
+            entries.append(entry)
+    return sorted(
+        entries,
+        key=lambda entry: (
+            parse_float(entry.get("startFrame")) if entry.get("startFrame") is not None else 0,
+            int(entry.get("trackIndex") or 0),
+            stringify_signal_value(entry.get("name")) or "",
+        ),
+    )
+
+
+def extract_resolve_name_clip_id(name):
+    text = stringify_signal_value(name) or ""
+    match = re.match(r"^(clip-\d+)\b", text)
+    return match.group(1) if match else None
+
+
+def build_timeline_color_marker_match_state(clips, timeline_entries):
+    return {
+        "clipGroupsByResolveNameClipId": group_marker_entries(clips, "resolveNameClipId", sort_clip_marker_entries),
+        "clipGroupsBySourceAbsolutePath": group_marker_entries(clips, "sourceAbsolutePath", sort_clip_marker_entries),
+        "clipGroupsBySourceStem": group_marker_entries(clips, "sourceStem", sort_clip_marker_entries),
+        "timelineGroupsByResolveNameClipId": group_marker_entries(timeline_entries, "resolveNameClipId", sort_timeline_marker_entries),
+        "timelineGroupsBySourceAbsolutePath": group_marker_entries(timeline_entries, "sourceAbsolutePath", sort_timeline_marker_entries),
+        "timelineGroupsBySourceStem": group_marker_entries(timeline_entries, "sourceStem", sort_timeline_marker_entries),
+    }
+
+
+def group_marker_entries(entries, key, sorter):
+    groups = {}
+    for entry in entries:
+        value = stringify_signal_value(entry.get(key))
+        if not value:
+            continue
+        groups.setdefault(value, []).append(entry)
+    for value, group in list(groups.items()):
+        groups[value] = sorter(group)
+    return groups
+
+
+def sort_clip_marker_entries(entries):
+    return sorted(
+        entries,
+        key=lambda entry: (
+            parse_float(entry.get("timelineInMs")) if entry.get("timelineInMs") is not None else 0,
+            parse_int(entry.get("clipIndex")) or 0,
+            stringify_signal_value(entry.get("sourceStem")) or "",
+        ),
+    )
+
+
+def sort_timeline_marker_entries(entries):
+    return sorted(
+        entries,
+        key=lambda entry: (
+            parse_float(entry.get("startFrame")) if entry.get("startFrame") is not None else 0,
+            int(entry.get("trackIndex") or 0),
+            stringify_signal_value(entry.get("name")) or "",
+        ),
+    )
+
+
+def match_existing_rough_cut_video_item(clip, match_state):
+    match = match_existing_rough_cut_video_item_by_group(
+        clip,
+        match_state["clipGroupsByResolveNameClipId"],
+        match_state["timelineGroupsByResolveNameClipId"],
+        "resolveNameClipId",
+    )
+    if match:
+        return match
+    match = match_existing_rough_cut_video_item_by_group(
+        clip,
+        match_state["clipGroupsBySourceAbsolutePath"],
+        match_state["timelineGroupsBySourceAbsolutePath"],
+        "sourceAbsolutePath",
+    )
+    if match:
+        return match
+    return match_existing_rough_cut_video_item_by_group(
+        clip,
+        match_state["clipGroupsBySourceStem"],
+        match_state["timelineGroupsBySourceStem"],
+        "sourceStem",
+    )
+
+
+def match_existing_rough_cut_video_item_by_group(clip, clip_groups, timeline_groups, key):
+    value = stringify_signal_value(clip.get(key))
+    if not value:
+        return None
+    clip_group = clip_groups.get(value) or []
+    timeline_group = timeline_groups.get(value) or []
+    if not timeline_group:
+        return None
+    occurrence = 0
+    for index, candidate in enumerate(clip_group):
+        if candidate is clip:
+            occurrence = index
+            break
+        if candidate.get("clipIndex") == clip.get("clipIndex") and candidate.get("timelineInMs") == clip.get("timelineInMs"):
+            occurrence = index
+            break
+    if occurrence < len(timeline_group):
+        entry = dict(timeline_group[occurrence])
+        entry["method"] = key
+        return entry
+    if len(timeline_group) == 1:
+        entry = dict(timeline_group[0])
+        entry["method"] = f"{key}:single"
+        return entry
+    return None
+
+
+def count_match_methods(marked):
+    result = {}
+    for entry in marked:
+        method = stringify_signal_value(entry.get("matchMethod")) or "unknown"
+        result[method] = int(result.get(method) or 0) + 1
+    return result
+
+
+def apply_rough_cut_visual_clip_group(
+    timeline_items,
+    clip,
+    project,
+    existing_groups_by_name,
+    groups_by_category,
+    summary,
+):
+    category = resolve_rough_cut_visual_clip_color_category(clip)
+    if not category:
+        return None
+    category_summary = summary.get(category)
+    if not category_summary:
+        return None
+    group_name = stringify_signal_value(category_summary.get("groupName"))
+    if not group_name:
+        return None
+    color_group = groups_by_category.get(category)
+    if color_group is None:
+        color_group, created = ensure_color_group(project, existing_groups_by_name, group_name)
+        groups_by_category[category] = color_group
+        category_summary["created"] = bool(category_summary.get("created") or created)
+    return apply_rough_cut_clip_group(
+        timeline_items,
+        clip,
+        color_group,
+        group_name,
+        category_summary,
+        "resolve_visual_clip_group_assign_failed",
+        f"Resolve did not assign the {category} rough-cut video item to Color Group {group_name}.",
+    )
+
+
+def apply_rough_cut_clip_group(timeline_items, clip, color_group, group_name, summary, error_code, error_message):
+    failed = []
+    for item in timeline_items:
+        summary["checked"] = int(summary.get("checked") or 0) + 1
+        current_group = safe_call(item, "GetColorGroup")
+        current_group_name = safe_call(current_group, "GetName") if current_group else None
+        if current_group_name == group_name:
+            summary["alreadyAssigned"] = int(summary.get("alreadyAssigned") or 0) + 1
+            continue
+        if current_group:
+            safe_call(item, "RemoveFromColorGroup")
+        result = safe_call(item, "AssignToColorGroup", color_group)
+        assigned_group = safe_call(item, "GetColorGroup")
+        assigned_group_name = safe_call(assigned_group, "GetName") if assigned_group else None
+        if result is not False and assigned_group_name == group_name:
+            summary["assigned"] = int(summary.get("assigned") or 0) + 1
+            continue
+        summary["failed"] = int(summary.get("failed") or 0) + 1
+        failed.append(assigned_group_name or stringify_signal_value(result) or "")
+    if not failed:
+        return group_name
+    raise HostError(
+        error_code,
+        error_message,
+        {
+            "clipId": clip["clipId"],
+            "assetId": clip["assetId"],
+            "spanId": clip.get("spanId"),
+            "spanType": clip.get("spanType"),
+            "requestedGroup": group_name,
+            "currentGroups": failed,
+        },
+    )
+
+
+def apply_rough_cut_visual_clip_color(timeline_items, clip, summary):
+    category = resolve_rough_cut_visual_clip_color_category(clip)
+    if not category:
+        return None
+    category_summary = summary.get(category)
+    if not category_summary:
+        return None
+    return apply_rough_cut_clip_color(
+        timeline_items,
+        clip,
+        category_summary,
+        "resolve_visual_clip_color_failed",
+        f"Resolve did not apply the {category} rough-cut clip color for {clip['clipId']}.",
+    )
+
+
+def resolve_rough_cut_visual_clip_color_category(clip):
+    asset_kind = (stringify_signal_value(clip.get("assetKind")) or "").lower()
+    span_type = (stringify_signal_value(clip.get("spanType")) or "").lower()
+    if asset_kind == "photo":
+        return "photo"
+    if span_type == "timelapse":
+        return "timelapse"
+    return None
+
+
 def apply_rough_cut_audible_clip_color(timeline_items, clip, summary):
     if clip["muteAudio"]:
         return None
+    if not timeline_items:
+        return None
+    return apply_rough_cut_clip_color(
+        timeline_items,
+        clip,
+        summary,
+        "resolve_audible_clip_color_failed",
+        f"Resolve did not apply the audible rough-cut clip color for {clip['clipId']}.",
+    )
+
+
+def apply_rough_cut_clip_color(timeline_items, clip, summary, error_code, error_message):
     color = summary.get("color") or "Orange"
     failed = []
     for item in timeline_items:
@@ -3648,12 +4136,13 @@ def apply_rough_cut_audible_clip_color(timeline_items, clip, summary):
     if not failed:
         return color
     raise HostError(
-        "resolve_audible_clip_color_failed",
-        f"Resolve did not apply the audible rough-cut clip color for {clip['clipId']}.",
+        error_code,
+        error_message,
         {
             "clipId": clip["clipId"],
             "assetId": clip["assetId"],
             "spanId": clip.get("spanId"),
+            "spanType": clip.get("spanType"),
             "requestedColor": color,
             "currentColors": failed,
         },

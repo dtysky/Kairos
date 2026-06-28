@@ -52,6 +52,22 @@ describe('timeline source-speech SRT generation', () => {
     expect(formatSrt(subtitles.slice(0, 1))).toContain('00:00:10,000 --> 00:00:10,500');
   });
 
+  it('formats SRT without terminal periods while preserving question and exclamation marks', () => {
+    const srt = formatSrt([
+      { id: 'a', startMs: 0, endMs: 1000, text: '这里停一下。', language: 'zh' },
+      { id: 'b', startMs: 1000, endMs: 2000, text: '真的要走吗？', language: 'zh' },
+      { id: 'c', startMs: 2000, endMs: 3000, text: '继续出发！', language: 'zh' },
+      { id: 'd', startMs: 3000, endMs: 4000, text: '他说“过了这个弯。”', language: 'zh' },
+      { id: 'e', startMs: 4000, endMs: 5000, text: 'Version 2.0 is ready.', language: 'en' },
+    ]);
+
+    expect(srt).toContain('这里停一下\n');
+    expect(srt).toContain('真的要走吗？\n');
+    expect(srt).toContain('继续出发！\n');
+    expect(srt).toContain('他说“过了这个弯”\n');
+    expect(srt).toContain('Version 2.0 is ready\n');
+  });
+
   it('skips muted speech clips and falls back to transcript only without timed segments', () => {
     const clips: IKtepClip[] = [
       {
@@ -90,7 +106,7 @@ describe('timeline source-speech SRT generation', () => {
       id: 'subtitle-source-speech-00001',
       startMs: 2000,
       endMs: 4000,
-      text: '没有分段时使用整段口播。',
+      text: '没有分段时使用整段口播',
       language: undefined,
       linkedScriptSegmentId: undefined,
       linkedScriptBeatId: undefined,

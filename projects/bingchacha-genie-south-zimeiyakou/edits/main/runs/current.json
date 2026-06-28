@@ -1,8 +1,81 @@
 {
   "schemaVersion": "1.0",
   "editId": "main",
-  "updatedAt": "2026-06-26T05:27:17.795+00:00",
+  "updatedAt": "2026-06-27T10:28:39.340Z",
   "records": [
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-postlock-final-srt-complete-20260627T102839Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260614T055708Z",
+      "flowPlanHash": "b0503d7eb4621970e4846246e51366711121affd1d366d064ec1dce6926d3de7",
+      "stepId": "postlock-final-srt-codex-v1",
+      "capabilityId": "postlock.subtitle_narration",
+      "runner": "agent",
+      "status": "completed",
+      "startedAt": "2026-06-27T10:28:39.340Z",
+      "updatedAt": "2026-06-27T10:28:39.340Z",
+      "completedAt": "2026-06-27T10:28:39.340Z",
+      "inputRefs": [
+        "edits/<editId>/timeline/locked-rough-cut.json",
+        "edits/<editId>/postlock/subtitle-review.md",
+        ".tmp/edit-flow/<editId>/postlock/current-timeline-clip-packet.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/postlock/final-narration.srt"
+      ],
+      "inputSnapshot": {
+        "source": "codex-generated-final-narration-srt",
+        "projectId": "bingchacha-genie-south-zimeiyakou",
+        "flowPlanStatus": "confirmed",
+        "subtitleReviewAcceptedBy": "user",
+        "sourceReview": "edits/main/postlock/subtitle-review.md",
+        "sourcePacket": ".tmp/edit-flow/main/postlock/current-timeline-clip-packet.json",
+        "subtitleReviewHash": "8a98afc7e067939a70309a3a30f36beeeb771a9a4bd896dbf0d3b1b8c63a8313",
+        "sourcePacketHash": "357172e1b4857bfd6c1edf99d63683e77596808a68e03cb102a7842e89afefa3",
+        "timingPolicy": "Use each accepted caption's referenced Resolve clip timelineInMs/timelineOutMs from current-timeline-clip-packet; strip review-only clip labels from final SRT text.",
+        "speechSubtitlePolicy": "SRT only carries accepted narration captions and must not cover clips that already have Resolve speech subtitles."
+      },
+      "outputPaths": [
+        "edits/main/postlock/final-narration.srt"
+      ],
+      "summary": {
+        "artifact": "edits/main/postlock/final-narration.srt",
+        "srtHash": "a3cdfac2f26be8f67c8439b488126bcf480768fdcf7604a46bb274a7a157a9d8",
+        "rowCount": 174,
+        "generatedNarrationRows": 136,
+        "notGeneratedRows": 38,
+        "cueCount": 445,
+        "timelineFps": 30,
+        "firstCue": {
+          "index": 1,
+          "clip": 3,
+          "start": "00:00:20,500",
+          "end": "00:00:25,533",
+          "text": "暴雨未停，深圳高架先把这趟长路推了起来。"
+        },
+        "lastCue": {
+          "index": 445,
+          "clip": 1314,
+          "start": "01:56:38,767",
+          "end": "01:56:43,833",
+          "text": "高速两侧变成绿色隔音屏，晴空下车越来越靠近成都。"
+        },
+        "minDurationMs": 1700,
+        "maxDurationMs": 19800,
+        "validation": "passed-srt-structure-clip-timing-no-overlap-no-speech-subtitle-coverage",
+        "overlapCount": 0,
+        "speechSubtitleCoveredClipCount": 0,
+        "warningCount": 0,
+        "importInstruction": "Manually import edits/main/postlock/final-narration.srt into DaVinci Resolve as the final narration subtitle track."
+      },
+      "review": {
+        "status": "confirmed",
+        "confirmedAt": "2026-06-27T10:28:39.340Z",
+        "confirmedBy": "user-requested-final-srt-generation",
+        "note": "User accepted subtitle-review.md and requested final SRT generation."
+      }
+    },
     {
       "schemaVersion": "1.0",
       "runId": "run-postlock-subtitle-review-awaiting-review-rewrite-20260614T165500Z",
@@ -12,10 +85,10 @@
       "stepId": "postlock-subtitle-review-codex-v1",
       "capabilityId": "postlock.subtitle_narration",
       "runner": "agent",
-      "status": "awaiting_review",
+      "status": "completed",
       "startedAt": "2026-06-14T16:30:00.000Z",
-      "updatedAt": "2026-06-26T05:27:17.795+00:00",
-      "completedAt": "2026-06-26T05:27:17.795+00:00",
+      "updatedAt": "2026-06-27T10:28:39.340Z",
+      "completedAt": "2026-06-27T10:28:39.340Z",
       "inputRefs": [
         "edits/<editId>/timeline/locked-rough-cut.json",
         "Resolve timeline: speech subtitle track",
@@ -187,8 +260,12 @@
         }
       },
       "review": {
-        "status": "pending",
-        "note": "Codex 已按逐 clip 粒度精修最终字幕审查稿，并重写用户截图指出的怒江峡谷施工路段；等待人工审查后生成 SRT。"
+        "status": "confirmed",
+        "confirmedAt": "2026-06-27T10:28:39.340Z",
+        "confirmedBy": "user-message-subtitle-review-accepted",
+        "acceptedArtifactHash": "8a98afc7e067939a70309a3a30f36beeeb771a9a4bd896dbf0d3b1b8c63a8313",
+        "acceptedAuditHash": "c1e8b626049791e5256fbbbbd786b982f2e1e120ae380b7dbd58ecea1e381bdb",
+        "note": "User accepted the current subtitle-review.md; downstream final SRT generation is allowed."
       }
     },
     {

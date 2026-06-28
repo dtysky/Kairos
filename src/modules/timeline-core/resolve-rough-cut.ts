@@ -29,6 +29,7 @@ export interface IResolveRoughCutClipInput {
   clipId: string;
   assetId: string;
   spanId?: string;
+  spanType?: string;
   rawRelativePath?: string;
   eventId?: string;
   eventTitle?: string;

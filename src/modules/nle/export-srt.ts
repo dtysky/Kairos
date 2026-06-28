@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import type { IKtepSubtitle } from '../../protocol/schema.js';
+import { stripGeneratedSubtitlePeriods } from './subtitle-text.js';
 
 /**
  * 导出 SRT 字幕文件。
@@ -19,7 +20,7 @@ export function formatSrt(cues: IKtepSubtitle[]): string {
   return sorted.map((cue, i) => {
     const start = msToSrtTime(cue.startMs);
     const end = msToSrtTime(cue.endMs);
-    return `${i + 1}\n${start} --> ${end}\n${cue.text}\n`;
+    return `${i + 1}\n${start} --> ${end}\n${stripGeneratedSubtitlePeriods(cue.text)}\n`;
   }).join('\n');
 }
 
@@ -41,7 +42,7 @@ export function formatVtt(cues: IKtepSubtitle[]): string {
   for (const cue of sorted) {
     const start = msToVttTime(cue.startMs);
     const end = msToVttTime(cue.endMs);
-    lines.push(`${start} --> ${end}\n${cue.text}\n`);
+    lines.push(`${start} --> ${end}\n${stripGeneratedSubtitlePeriods(cue.text)}\n`);
   }
   return lines.join('\n');
 }

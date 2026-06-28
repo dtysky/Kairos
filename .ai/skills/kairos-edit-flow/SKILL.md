@@ -54,12 +54,12 @@ Capability registry 是原子能力库，不是必经阶段链。当前常见 ca
 ## Resolve Volc Voiceover Plugin
 
 - `apps/resolve-volc-voiceover-plugin/` 是独立 DaVinci Resolve 菜单插件，用于当前 timeline 中“选字幕 -> 火山合成/复刻 -> 插入配音”。
-- 它不是 Edit Flow capability，不写 `runs/current.json`，不推进 Flow Plan gate，也不依赖 Supervisor 或 `/edit` Console 运行。
-- 第一版选择状态由插件面板维护：可在插件字幕列表中多选，也可按当前播放头或 Mark In/Out 范围选中字幕。Resolve 官方 scripting API 没有稳定的 timeline item 原生多选读取接口，agent 不得假设存在。
+- 它不是 Edit Flow capability，不写 `runs/current.json`，不推进 Flow Plan gate，也不依赖 `/edit` Console 运行；合成音频时只调用本机 `127.0.0.1:8940` Supervisor TSV API，Supervisor 只合成/落盘音频并写 cache/manifest，不连接 Resolve。
+- 第一版选择状态由插件面板维护：插件必须先指定一个旁白字幕轨道，只列出该轨字幕；可在插件字幕列表中多选，也可按当前播放头或 Mark In/Out 范围选中该轨字幕。Locate 只选中并滚动到插件列表行，不设置 Resolve In/Out，也不追求原生时间线选中。多字幕轨时间线不得默认全轨混扫，避免把 source-speech / 原声字幕误当旁白送去合成。Resolve 官方 scripting API 没有稳定的 timeline item 原生多选读取接口，agent 不得假设存在。
 - 字幕正文只来自当前 Resolve subtitle item 暴露字段。若当前 Resolve 版本不暴露正文，插件必须阻塞并要求导入 SRT 或粘贴文本，不能从画面、文件名或历史产物猜字幕。
-- 单选字幕时生成一条音频并导入 Media Pool bin `Kairos Voiceover / <timelineName>`，再插入 `Kairos VO` 音频轨；多选字幕时直接把所有选中字幕按 timeline 时间排序合并成一个 TTS 文本，生成一个 merged audio item，插入到第一条所选字幕起点，并在项目 `.tmp` debug manifest 记录 source subtitle ids/details。Resolve 面板只暴露 `Insert`，不提供只打开系统播放器的 Preview。默认不删除已有用户音频或旧配音。只有用户显式选择 replacement，并且旧 audio item 有插件写入的同一 `kairosVoiceoverUnitId` marker/customData 时，才可删除旧插件音频。
-- 火山 `volcApiKey`、默认 voice profile 和 profiles 注册表写在 workspace 全局 `config/runtime.json.voiceover`。Resolve 插件面板只做 profile 下拉选择，不直接编辑 API key / speaker / resource / model / language。
-- 生成音频必须写到当前 Kairos 项目 `config/project-brief.json.voiceoverMedia` 解析出的可写候选路径下；该配置应在 `/ingest-gps` 项目配置 UI 中维护，并由 `/edit` 的 Resolve “重链素材路径”动作处理 `Kairos Voiceover` Media Pool bin。正式输出目录使用 `<voiceoverMediaRoot>/<safe Resolve project>/<safe timeline>/`，目录内只保存 Resolve 直接导入的 `vo_<unit>_<request>.mp3`。`voiceoverMedia.resolveProjectAliases[]` 可显式绑定临时 / debug Resolve 工程名。请求缓存、Lua/Python bridge job、backend 输出、debug manifest 和插件日志写到匹配项目的 `.tmp/resolve-volc-voiceover-plugin/`。未配置或无法唯一匹配当前 Resolve 工程到 Kairos 项目时，插件应阻塞合成。
+- 单选字幕时生成一条音频并导入 Media Pool bin `Kairos Voiceover / <timelineName>`，再插入 `Kairos VO` 音频轨；多选字幕时直接把所有选中字幕按 timeline 时间排序合并成一个 TTS 文本，生成一个 merged audio item，插入到第一条所选字幕起点，并在项目 `.tmp` debug manifest 记录 source subtitle ids/details。合并文本不得自动补 `。` 或 `.`，并需移除每行末尾已有 `。` / `.`；问号、叹号和句内标点保留。Resolve 面板只暴露 `Insert`，不提供只打开系统播放器的 Preview。默认不删除已有用户音频或旧配音。只有用户显式选择 replacement，并且旧 audio item 有插件写入的同一 `kairosVoiceoverUnitId` marker/customData 时，才可删除旧插件音频。
+- 火山 `volcApiKey`、默认 voice profile 和 profiles 注册表写在 workspace 全局 `config/runtime.json.voiceover`。Resolve 插件面板只做 profile 下拉选择，不直接编辑 API key / speaker / resource / model / language。插件运行期不得走 `.cmd -> Python`、curl 或代理链；优先用 Lua TCP/HTTP 调本地 Supervisor，若 Resolve Lua 缺少 socket/TCP 能力，则改走 Supervisor 管理的 workspace 文件 IPC（`.tmp/resolve-volc-voiceover-plugin/ipc/requests|responses`），仍不得回退外部命令。
+- 生成音频必须写到当前 Kairos 项目 `config/project-brief.json.voiceoverMedia` 解析出的可写候选路径下；该配置应在 `/ingest-gps` 项目配置 UI 中维护，并由 `/edit` 的 Resolve “重链素材路径”动作处理 `Kairos Voiceover` Media Pool bin。正式输出目录使用 `<voiceoverMediaRoot>/<safe Resolve project>/<safe timeline>/`，目录内只保存 Resolve 直接导入的 `vo_<unit>_<request>.mp3`。`voiceoverMedia.resolveProjectAliases[]` 可显式绑定临时 / debug Resolve 工程名。请求缓存、debug manifest 和插件日志写到匹配项目的 `.tmp/resolve-volc-voiceover-plugin/`。未配置或无法唯一匹配当前 Resolve 工程到 Kairos 项目时，插件应阻塞合成。
 
 ## Capability Contracts
 
@@ -133,7 +133,9 @@ Capability registry 是原子能力库，不是必经阶段链。当前常见 ca
 - Resolve 不可用、素材缺失、source range 校验失败、静音失败或必要 clip gain 无法稳定设置时阻塞，不写成功状态。
 - 当前 `speed>1` 不阻塞，但 Resolve 粗剪可记为 pending/ignored，不得假装已应用。
 - 照片静帧默认时长是 `1000ms`；只有剪辑规则 / confirmed Flow Plan 当前 step notes 或运行时 `timelineStillDurationMs` 明确声明时才覆盖。Resolve host 必须回读校验实际照片时长，不能默认使用旧 `5s`。
+- Resolve rough cut 必须自动写入并回读校验 clip color 批处理标记：普通有声视频及其 linked audio item 为 `Orange`，照片 video item 为 `Blue`，延时 video item 为 `Purple`；有声延时的 video item 保持 `Purple`，linked audio item 使用 `Orange`，便于后续分别批量做音频归一、照片填充和延时处理。生成粗剪时还必须创建/复用 Resolve Color Groups `Kairos Photos` 与 `Kairos Timelapse`，并把照片/延时 video item 分别分配进去，供 Color 页 `Group Post-Clip` 批量效果使用。
 - 每次 `timeline.generate` 成功时，必须同时从已选中、实际有声的 source-speech spans 生成 `.tmp/edit-flow/<editId>/timeline/current.srt`，供用户手动导入达芬奇；字幕时间按生成后的 timeline clip 时间映射，优先用 `transcriptSegments`，没有分段时才用整段 `transcript` 兜底。
+- 任何自动生成的字幕、字幕审查稿、最终 SRT/VTT 和配音插件合并文本都不得自动补 `。` 或 `.`，并应移除行末已有 `。` / `.`；不要全局移除 `？`、`！` 或句内标点。
 - `runs/current.json` 只能保存 step 级轻量摘要和输出路径；`timeline.generate` 不得把完整 KTEP、Resolve clip 明细、source subtitle text 或 `hostSummary.clips` 内联写入 run record，完整审计只写 `.tmp/edit-flow/<editId>/timeline/current.json`，字幕正文只写 `.tmp/edit-flow/<editId>/timeline/current.srt` 等 declared/temporary artifacts。
 - Resolve timeline 成功后应尝试保存项目级 `${projectBrief.name} [Edit]` DRP 快照；所有 editId 共用同一 Resolve `[Edit]` 工程与 `edits/resolve-project-map.json`。latest 文件名是 `${Resolve项目名}.drp`，不是 `latest.drp`。自动快照失败只写 warning，不回滚 timeline。
 
@@ -145,6 +147,10 @@ Capability registry 是原子能力库，不是必经阶段链。当前常见 ca
 - 旁白框架阶段的当前 Resolve timeline 只提供 clip 边界、顺序、source range、MediaPool source 和 `clipId / assetId / spanId / eventId` 映射；Resolve item name、MediaPool folder name、rough-cut `hostSummary.clips[].eventTitle` 或从 Resolve 名称拆出的显示标签都只是 debug/display-only，不得作为地点、路线、事件标题、地貌、水文、植被或字幕写作事实来源。无字幕视觉事实只来自 `visualObservation`。生成器不得把 `materialPatterns` 当作画面事实、分类来源或兜底描述；`semanticKind=speech/mixed` 但当前 Resolve clip 无字幕时，先按同素材实际 source range 匹配最近 visual span 的 `visualObservation`，无合格 visual span 时才使用当前 speech/mixed span 自带 `visualObservation`。正文必须写成剪辑规则附录式的 Markdown pack-list：顶层是口播 / 行车 / 航拍 / 照片 / 延时叙事单元，`整体` 或 `摘要` 写 pack 级理解，`clips` 保留 leaf clip 描述；每个将进入旁白字幕生成的无字幕非照片 leaf 必须使用当前 clip 自己的 GPS / GPX / reverse-geocode 地理上下文，行车 leaf 按当前 clip 源时间中点取定位，航拍 leaf 可使用 confirmed chronology event 作为语境但仍要回到实际飞行位置/视域；正文只写可读地点、道路/村寨锚点和山体/江河湖泊/植被/地貌特征，不输出裸经纬度、GPS 来源、匹配误差、`GPX±Ns`、`机内GPS` 或 `GPS匹配`；道路、桥梁、隧道、互通、收费站、跨江/跨海通道等交通设施专名可以作为可读锚点，但项目部、管理中心、停车场、观赏点等 POI 全名不得进入正文；行车和航拍 pack 的子条目不得复制同一 pack 总结模板，也不得复用整段 route 作为 leaf 定位；pack 的整体句必须归纳子 clip 的地貌、水文、道路、植被、村镇和天气路况变化，不能只拼接首尾或前三条；多 clip 口播 pack 只写摘要和 clip 范围，不逐 clip 展开口播细节；clip-map 只写轻量 v2 指针表，`entries[]` 只存 `marker + clips`，`packs[]` 只存 `title + entries`，不得复制 packet 中可反查的 asset/span/summary 事实；不得输出 `雨后湿滑、高速路面、道路延伸、车流穿行` 这类标签串。遇到 `�` 或 GBK/UTF-8 mojibake 候选时必须丢弃并回退到 chronology/GPS，不能写入正式 packet 可消费字段或正文。
 - 旁白框架定位文案必须去除同类重复：命名水体、峡谷崖壁、山口峰丛、桥隧道路或具体植被已经出现时，不再追加 `江河湖泊 / 峡谷崖壁 / 林带植被` 等泛类标签。`林带植被` 不得进入正式正文；应结合 GPS 地点、海拔带、季节与画面线索写成可辩护的具体植被，如 `干热河谷灌丛、云南松和针阔混交林`、`常绿阔叶林坡`、`高山针叶林、杜鹃灌丛和冷杉林线`、`湖岸草甸`，不能确认时省略。
 - `postlock.subtitle_narration` 的具体格式、合并、跳过字幕、风格引用和审查表要求，必须来自当前剪辑规则与 confirmed Flow Plan step notes；skill 不硬编码项目级创作约束。
+- 如果用户在当前字幕修稿任务中明确要求参考已改字幕、intro、已成片字幕或其它旁白样本，应先读取该样本，把它当作本轮修稿参考，而不是继续只按抽象风格词改写。普通素材的样本参考是当前任务的风格修正手段，不自动沉淀为后续项目的永久写作规则。
+- 重写最终 `subtitle-review.md` 时，把任务理解为“给已经剪好的时间线写逐 clip 可落地字幕”，不是“解释素材”：字幕列优先写路线推进、天气 / 道路 / 动作 / 画面变化，少写意义、感悟、素材事实堆叠或地理审计。
+- 普通非照片 clip 默认保留一条短 caption；只有延时摄影和延时序列允许突破一 clip 一句。延时字幕数量不设固定 2-3 条上限，应优先保证画面叙述完整，按天光、云雾、色温、车流 / 人流、山体显露、夜色或晨雾回升等可观察变化拆成足够清楚的多条短字幕。只有剪辑规则、confirmed Flow Plan notes 或用户明确允许时才合并相邻普通 clip，且不得超过允许的合并宽度；普通行车、航拍和视觉 clip 不因“较长”自动获得拆分例外。修订时尽量稳定表格身份列和事实概要列，只改写旁白字幕列；同一延时 clip 拆成多条字幕时必须保留 clip 标签 / 范围或子范围，最终 SRT 按真实 timeline 时间分配。
+- 完成后必须用脚本或等价检查确认表格行数、三列格式、生成 / 不生成数量、每条生成字幕的 `clip N` 标签、合并跨度，以及字幕列没有 GPS / 坐标 / source path / confidence / mojibake / `江河湖泊` / `峡谷崖壁` / `林带植被` 等不应进入成片字幕的噪音，并把检查摘要写入对应 audit。
 
 ## Blocking
 

@@ -1,30 +1,25 @@
 local WINDOW_ID = "kairosVolcVoiceover"
-local PLUGIN_VERSION = "0.1.11"
+local PLUGIN_VERSION = "0.2.4"
 local VOICE_TRACK_NAME = "Kairos VO"
-local DEFAULT_RESOURCE_ID = "seed-icl-2.0"
 
 local subtitles = {}
+local subtitleTrackOptions = {}
+local selectedSubtitleTrackIndex = nil
 local subtitleTreeItems = {}
 local items = nil
 local root = "."
 local voiceConfig = nil
 local ui = nil
 local getProjectName = nil
-local cachedPluginTmpDir = nil
-local cachedPluginTmpProject = nil
 local IS_WINDOWS = (
     (package.config and package.config:sub(1, 1) == "\\")
     or tostring(os.getenv("OS") or ""):lower():find("windows", 1, true) ~= nil
 )
-local commandCounter = 0
-
-local function quote(value)
-    local text = tostring(value or "")
-    if IS_WINDOWS then
-        return '"' .. text:gsub('"', '\\"') .. '"'
-    end
-    return "'" .. text:gsub("'", "'\\''") .. "'"
-end
+local updatingSubtitleTrackCombo = false
+local supervisorRequest = nil
+local ipcCounter = 0
+local subtitleSelectionAnchorId = nil
+local repairingSubtitleSelection = false
 
 local function dirname(path)
     return tostring(path):match("^(.*)[/\\][^/\\]*$") or "."
@@ -54,7 +49,7 @@ local function writeText(path, text)
     if not file then
         return false
     end
-    file:write(text)
+    file:write(tostring(text or ""))
     file:close()
     return true
 end
@@ -73,39 +68,24 @@ local function workspaceLinkField(name)
     return jsonUnescape(value)
 end
 
-local function pythonCommand()
-    local configured = workspaceLinkField("pythonExecutable")
+local function supervisorUrl()
+    local configured = workspaceLinkField("supervisorUrl")
     if configured ~= "" then
-        return quote(configured)
+        return configured
     end
-    local envPython = os.getenv("KAIROS_PYTHON") or ""
-    if envPython ~= "" then
-        return quote(envPython)
-    end
-    if IS_WINDOWS then
-        return "python"
-    end
-    return "/usr/bin/python3"
+    return "http://127.0.0.1:8940"
 end
 
-local function backendScriptPath()
-    return root .. "/KairosVolcVoiceoverLib/KairosVolcVoiceover.py"
-end
-
-local function makeDir(path)
-    if IS_WINDOWS then
-        os.execute("mkdir " .. quote(path) .. " >NUL 2>NUL")
-    else
-        os.execute("/bin/mkdir -p " .. quote(path))
+local function supervisorIpcRoot()
+    local configured = workspaceLinkField("ipcRoot")
+    if configured ~= "" then
+        return configured
     end
-end
-
-local function openPath(path)
-    if IS_WINDOWS then
-        os.execute("start \"\" " .. quote(path))
-    else
-        os.execute("/usr/bin/open " .. quote(path))
+    local workspaceRoot = workspaceLinkField("workspaceRoot")
+    if workspaceRoot ~= "" then
+        return workspaceRoot .. "/.tmp/resolve-volc-voiceover-plugin/ipc"
     end
+    return ""
 end
 
 local function workspaceTmpDir()
@@ -116,49 +96,12 @@ local function workspaceTmpDir()
     return (os.getenv("HOME") or ".") .. "/Movies/KairosVoiceover"
 end
 
-local function executeCommandToFile(cmd, outPath)
-    if IS_WINDOWS then
-        local scriptPath = outPath .. ".cmd"
-        writeText(scriptPath, "@echo off\r\nchcp 65001 >NUL\r\nset \"PYTHONUTF8=1\"\r\nset \"PYTHONIOENCODING=utf-8\"\r\n" .. cmd .. "\r\n")
-        return os.execute("cmd.exe /d /c call " .. quote(scriptPath) .. " > " .. quote(outPath) .. " 2>&1")
-    end
-    return os.execute(cmd .. " > " .. quote(outPath) .. " 2>&1")
-end
-
-local function runCommandCapture(cmd, label)
-    commandCounter = commandCounter + 1
-    local safeLabel = tostring(label or "cmd"):gsub("[^%w%-_]", "_")
-    local outputDir = workspaceTmpDir() .. "/command-output"
-    makeDir(outputDir)
-    local outPath = outputDir .. "/" .. os.date("%Y%m%d-%H%M%S") .. "-" .. tostring(commandCounter) .. "-" .. safeLabel .. ".out"
-    local result = executeCommandToFile(cmd, outPath)
-    local output = readText(outPath)
-    if output == "" then
-        output = "ERROR\tNo output from backend command: " .. cmd .. " (result=" .. tostring(result) .. ", out=" .. outPath .. ")"
-    end
-    return output, outPath
-end
-
 local function pluginTmpDir()
-    local projectName = ""
-    if type(getProjectName) == "function" then
-        local ok, value = pcall(getProjectName)
-        if ok then
-            projectName = tostring(value or "")
-        end
+    if voiceConfig and tostring(voiceConfig.projectRoot or "") ~= "" then
+        local tmp = tostring(voiceConfig.projectRoot) .. "/.tmp/resolve-volc-voiceover-plugin"
+        return tmp
     end
-    if cachedPluginTmpDir ~= nil and cachedPluginTmpProject == projectName then
-        return cachedPluginTmpDir
-    end
-    local cmd = pythonCommand() .. " " .. quote(backendScriptPath()) .. " --project-temp-root --project-name " .. quote(projectName)
-    local output = runCommandCapture(cmd, "project-temp-root")
-    local tmp = output:match("TMP\t([^\r\n]+)")
-    if tmp == nil or tmp == "" then
-        tmp = workspaceTmpDir()
-    end
-    cachedPluginTmpDir = tmp
-    cachedPluginTmpProject = projectName
-    makeDir(tmp)
+    local tmp = workspaceTmpDir()
     return tmp
 end
 
@@ -168,7 +111,6 @@ end
 
 local function appendLog(message)
     local dir = logDir()
-    makeDir(dir)
     local file = io.open(dir .. "/lua-plugin.log", "a")
     if file then
         file:write(os.date("[%Y-%m-%d %H:%M:%S] ") .. tostring(message) .. "\n")
@@ -248,10 +190,34 @@ end
 
 local function tsvUnescape(value)
     local text = tostring(value or "")
-    text = text:gsub("\\n", "\n")
-    text = text:gsub("\\t", "\t")
-    text = text:gsub("\\\\", "\\")
-    return text
+    local out = {}
+    local index = 1
+    while index <= #text do
+        local char = text:sub(index, index)
+        if char == "\\" and index < #text then
+            local nextChar = text:sub(index + 1, index + 1)
+            if nextChar == "n" then
+                table.insert(out, "\n")
+                index = index + 2
+            elseif nextChar == "r" then
+                table.insert(out, "\r")
+                index = index + 2
+            elseif nextChar == "t" then
+                table.insert(out, "\t")
+                index = index + 2
+            elseif nextChar == "\\" then
+                table.insert(out, "\\")
+                index = index + 2
+            else
+                table.insert(out, char)
+                index = index + 1
+            end
+        else
+            table.insert(out, char)
+            index = index + 1
+        end
+    end
+    return table.concat(out)
 end
 
 local function splitTabs(line)
@@ -270,11 +236,143 @@ local function splitTabs(line)
     return fields
 end
 
+local function urlEncode(value)
+    local text = tostring(value or "")
+    return (text:gsub("([^A-Za-z0-9_%.%-%~])", function(char)
+        return string.format("%%%02X", string.byte(char))
+    end))
+end
+
+local function parseHttpUrl(url)
+    local scheme, host, port, path = tostring(url or ""):match("^(http)://([^/:]+):?(%d*)(/?.*)$")
+    if scheme ~= "http" or host == nil or host == "" then
+        return nil, "Only http://host:port Supervisor URLs are supported by Resolve Lua."
+    end
+    if path == "" then
+        path = "/"
+    end
+    return {
+        host = host,
+        port = tonumber(port) or 80,
+        basePath = path:gsub("/$", ""),
+    }
+end
+
+local function decodeChunkedBody(body)
+    local chunks = {}
+    local position = 1
+    while position <= #body do
+        local lineEnd = body:find("\r\n", position, true)
+        local newlineSize = 2
+        if not lineEnd then
+            lineEnd = body:find("\n", position, true)
+            newlineSize = 1
+        end
+        if not lineEnd then
+            return body
+        end
+        local sizeText = body:sub(position, lineEnd - 1):match("^%s*([^;]+)")
+        local chunkSize = tonumber(sizeText, 16)
+        if chunkSize == nil then
+            return body
+        end
+        position = lineEnd + newlineSize
+        if chunkSize == 0 then
+            break
+        end
+        table.insert(chunks, body:sub(position, position + chunkSize - 1))
+        position = position + chunkSize
+        if body:sub(position, position + 1) == "\r\n" then
+            position = position + 2
+        elseif body:sub(position, position) == "\n" then
+            position = position + 1
+        end
+    end
+    return table.concat(chunks)
+end
+
+local function httpRequest(method, path, body)
+    local okSocket, socket = pcall(require, "socket")
+    if not okSocket or type(socket) ~= "table" or type(socket.tcp) ~= "function" then
+        return nil, "Resolve Lua socket/TCP module is unavailable. Start Supervisor and install LuaSocket support; this plugin will not use external command fallbacks."
+    end
+    local parsed, parseError = parseHttpUrl(supervisorUrl())
+    if not parsed then
+        return nil, parseError
+    end
+    local tcp = socket.tcp()
+    if not tcp then
+        return nil, "Unable to create Lua TCP socket."
+    end
+    pcall(function()
+        tcp:settimeout(120)
+    end)
+    local okConnect, connectError = tcp:connect(parsed.host, parsed.port)
+    if not okConnect then
+        pcall(function()
+            tcp:close()
+        end)
+        return nil, "Unable to connect to Supervisor at " .. supervisorUrl() .. ": " .. tostring(connectError)
+    end
+
+    local requestPath = (parsed.basePath or "") .. path
+    if requestPath == "" then
+        requestPath = "/"
+    end
+    local payload = body or ""
+    local requestLines = {
+        tostring(method or "GET") .. " " .. requestPath .. " HTTP/1.1",
+        "Host: " .. parsed.host .. ":" .. tostring(parsed.port),
+        "Connection: close",
+        "Accept: text/tab-separated-values",
+    }
+    if payload ~= "" then
+        table.insert(requestLines, "Content-Type: application/json; charset=utf-8")
+        table.insert(requestLines, "Content-Length: " .. tostring(#payload))
+    end
+    table.insert(requestLines, "")
+    table.insert(requestLines, payload)
+    local sent, sendError = tcp:send(table.concat(requestLines, "\r\n"))
+    if not sent then
+        pcall(function()
+            tcp:close()
+        end)
+        return nil, "Unable to send Supervisor request: " .. tostring(sendError)
+    end
+    local response, receiveError, partial = tcp:receive("*a")
+    pcall(function()
+        tcp:close()
+    end)
+    response = response or partial or ""
+    if response == "" then
+        return nil, "No response from Supervisor: " .. tostring(receiveError)
+    end
+    local header, responseBody = response:match("^(.-\r\n\r\n)(.*)$")
+    if header == nil then
+        header, responseBody = response:match("^(.-\n\n)(.*)$")
+    end
+    if header == nil then
+        return nil, "Malformed Supervisor HTTP response: " .. response:sub(1, 240)
+    end
+    local status = tonumber(header:match("HTTP/%d%.%d%s+(%d+)") or "")
+    if status == nil or status < 200 or status >= 300 then
+        return nil, "Supervisor HTTP " .. tostring(status or "?") .. ": " .. tostring(responseBody or ""):sub(1, 500)
+    end
+    if header:lower():find("transfer%-encoding:%s*chunked") then
+        responseBody = decodeChunkedBody(responseBody or "")
+    end
+    return responseBody or "", nil
+end
+
 local function loadVoiceoverConfigSummary()
-    local cmd = pythonCommand() .. " " .. quote(backendScriptPath()) .. " --voiceover-config-summary --project-name " .. quote(type(getProjectName) == "function" and getProjectName() or "")
-    appendLog("config backend " .. cmd)
-    local output, outputPath = runCommandCapture(cmd, "voiceover-config-summary")
-    appendLog("config backend output " .. tostring(outputPath))
+    local projectName = type(getProjectName) == "function" and getProjectName() or ""
+    local output, requestError = supervisorRequest({
+        method = "GET",
+        path = "/api/resolve-volc-voiceover/config-summary.tsv?resolveProjectName=" .. urlEncode(projectName),
+        type = "config-summary",
+        resolveProjectName = projectName,
+        timeoutSeconds = 8,
+    })
     local result = {
         runtimeConfigPath = "",
         hasApiKey = false,
@@ -282,7 +380,15 @@ local function loadVoiceoverConfigSummary()
         backendVersion = "",
         profiles = {},
         error = "",
+        projectId = "",
+        projectRoot = "",
+        voiceoverMediaStatus = "",
+        voiceoverMediaPath = "",
     }
+    if output == nil then
+        result.error = requestError or "Unable to reach Supervisor."
+        return result
+    end
     for line in output:gmatch("[^\r\n]+") do
         local fields = splitTabs(line)
         local kind = fields[1]
@@ -299,15 +405,23 @@ local function loadVoiceoverConfigSummary()
                 name = fields[2] or "",
                 displayName = fields[3] or fields[2] or "",
             })
+        elseif kind == "PROJECT" then
+            result.projectId = fields[2] or ""
+            result.projectRoot = fields[4] or ""
+        elseif kind == "VOICEOVER_MEDIA" then
+            result.voiceoverMediaStatus = fields[2] or ""
+            result.voiceoverMediaPath = fields[3] or ""
         elseif kind == "ERROR" then
-            result.error = fields[2] or line
+            local code = fields[2] or "error"
+            local message = fields[3] or line
+            result.error = code .. ": " .. message
         end
     end
     if result.error == "" and #(result.profiles or {}) == 0 then
         if output ~= "" then
             result.error = output:gsub("[\r\n]+", " "):sub(1, 240)
         else
-            result.error = "No output from backend command: " .. cmd
+            result.error = "No output from Supervisor config summary."
         end
     end
     return result
@@ -406,6 +520,87 @@ local function jsonEncode(value)
         table.insert(parts, jsonString(key) .. ":" .. jsonEncode(child))
     end
     return "{" .. table.concat(parts, ",") .. "}"
+end
+
+local function waitBriefly(seconds)
+    local delay = tonumber(seconds) or 0.1
+    if bmd ~= nil and type(bmd.wait) == "function" then
+        local ok = pcall(function()
+            bmd.wait(delay)
+        end)
+        if ok then
+            return
+        end
+    end
+    if fusion ~= nil and type(fusion.Sleep) == "function" then
+        local ok = pcall(function()
+            fusion:Sleep(math.max(1, math.floor(delay * 1000)))
+        end)
+        if ok then
+            return
+        end
+    end
+    local untilTime = os.clock() + delay
+    while os.clock() < untilTime do
+    end
+end
+
+local function ipcRequestId()
+    ipcCounter = ipcCounter + 1
+    local entropy = tostring({}):gsub("[^A-Za-z0-9]", "")
+    return os.date("%Y%m%d%H%M%S") .. "-" .. tostring(ipcCounter) .. "-"
+        .. tostring(math.floor(os.clock() * 1000000)) .. "-" .. entropy
+end
+
+local function fileIpcRequest(request, timeoutSeconds)
+    local rootPath = supervisorIpcRoot()
+    if rootPath == "" then
+        return nil, "Supervisor IPC root is not configured in KairosVolcVoiceoverLib/kairos_workspace.json."
+    end
+    local requestId = ipcRequestId()
+    request.requestId = requestId
+    request.createdAt = os.date("!%Y-%m-%dT%H:%M:%SZ")
+
+    local requestsDir = rootPath .. "/requests"
+    local responsesDir = rootPath .. "/responses"
+    local requestPath = requestsDir .. "/" .. requestId .. ".json"
+    local requestTmpPath = requestPath .. ".tmp"
+    local responsePath = responsesDir .. "/" .. requestId .. ".tsv"
+    os.remove(responsePath)
+    os.remove(requestPath)
+    if not writeText(requestTmpPath, jsonEncode(request) .. "\n") then
+        return nil, "Unable to write Supervisor IPC request: " .. requestTmpPath
+            .. ". Start/restart Supervisor and reinstall the plugin to recreate IPC directories."
+    end
+    local renamed, renameError = os.rename(requestTmpPath, requestPath)
+    if not renamed then
+        os.remove(requestTmpPath)
+        return nil, "Unable to publish Supervisor IPC request: " .. tostring(renameError)
+    end
+
+    local deadline = os.clock() + (tonumber(timeoutSeconds) or 60)
+    while os.clock() < deadline do
+        local output = readText(responsePath)
+        if output ~= "" then
+            os.remove(responsePath)
+            return output, nil
+        end
+        waitBriefly(0.1)
+    end
+    return nil, "Timed out waiting for Supervisor IPC response. Make sure Kairos Supervisor is running and has loaded the latest build."
+end
+
+supervisorRequest = function(request)
+    local output, requestError = httpRequest(request.method or "GET", request.path or "/", request.body or "")
+    if output ~= nil then
+        return output, nil
+    end
+    appendLog("Supervisor HTTP unavailable; using file IPC fallback: " .. tostring(requestError))
+    return fileIpcRequest({
+        type = request.type,
+        resolveProjectName = request.resolveProjectName,
+        job = request.job,
+    }, request.timeoutSeconds)
 end
 
 local function getResolve()
@@ -566,31 +761,143 @@ local function summarizeItem(item, trackIndex, index, frameRate)
     return summary
 end
 
-local function collectSubtitles()
+local function countTableValues(value)
+    local count = 0
+    if type(value) == "table" then
+        for _, _ in pairs(value) do
+            count = count + 1
+        end
+    end
+    return count
+end
+
+local function getTrackItems(timeline, trackType, trackIndex)
+    local trackItems = safeCall(timeline, "GetItemListInTrack", trackType, trackIndex)
+    if trackItems == nil then
+        trackItems = safeCall(timeline, "GetItemsInTrack", trackType, trackIndex)
+    end
+    if type(trackItems) ~= "table" then
+        return {}
+    end
+    return trackItems
+end
+
+local function subtitleTrackLabel(track)
+    if track == nil or track.trackIndex == nil then
+        return "Select narration track"
+    end
+    local labelText = "S" .. tostring(track.trackIndex) .. " - " .. tostring(track.itemCount or 0) .. " items"
+    local name = trim(track.name)
+    if name ~= "" then
+        labelText = labelText .. " - " .. name
+    end
+    return labelText
+end
+
+local function collectSubtitleTracks()
     local timeline = getTimeline()
     if not timeline then
         error("No current Resolve timeline.")
     end
-    local frameRate = fps()
-    local result = {}
+    local tracks = {}
     local trackCount = tonumber(safeCall(timeline, "GetTrackCount", "subtitle") or 0) or 0
     for trackIndex = 1, trackCount do
-        local trackItems = safeCall(timeline, "GetItemListInTrack", "subtitle", trackIndex)
-        if trackItems == nil then
-            trackItems = safeCall(timeline, "GetItemsInTrack", "subtitle", trackIndex)
-        end
-        if type(trackItems) == "table" then
-            for _, item in pairs(trackItems) do
-                local itemType = type(item)
-                if itemType == "table" or itemType == "userdata" then
-                    table.insert(result, summarizeItem(item, trackIndex, #result + 1, frameRate))
-                end
+        local trackItems = getTrackItems(timeline, "subtitle", trackIndex)
+        table.insert(tracks, {
+            trackIndex = trackIndex,
+            name = trim(safeCall(timeline, "GetTrackName", "subtitle", trackIndex)),
+            itemCount = countTableValues(trackItems),
+        })
+    end
+    return tracks
+end
+
+local function replaceSubtitleTrackItems(labels, currentIndex)
+    if not (items and items.subtitleTrack) then
+        return false
+    end
+    local combo = items.subtitleTrack
+    updatingSubtitleTrackCombo = true
+    local ok = pcall(function()
+        combo:Clear()
+        combo:AddItems(labels)
+        combo.CurrentIndex = currentIndex or 0
+    end)
+    if not ok then
+        ok = pcall(function()
+            combo:Clear()
+            for _, labelText in ipairs(labels) do
+                combo:AddItem(labelText)
             end
+            combo.CurrentIndex = currentIndex or 0
+        end)
+    end
+    updatingSubtitleTrackCombo = false
+    return ok
+end
+
+local function selectedSubtitleTrackOption()
+    if not (items and items.subtitleTrack) then
+        return nil
+    end
+    local index = tonumber(items.subtitleTrack.CurrentIndex) or 0
+    return subtitleTrackOptions[index + 1] or subtitleTrackOptions[index]
+end
+
+local function refreshSubtitleTrackOptions()
+    local previousTrackIndex = selectedSubtitleTrackIndex
+    local currentOption = selectedSubtitleTrackOption()
+    if currentOption and currentOption.trackIndex then
+        previousTrackIndex = currentOption.trackIndex
+    end
+    local tracks = collectSubtitleTracks()
+    local labels = {}
+    subtitleTrackOptions = {}
+    local currentIndex = 0
+    if #tracks == 0 then
+        table.insert(subtitleTrackOptions, {trackIndex = nil, label = "No subtitle tracks"})
+    elseif #tracks == 1 then
+        table.insert(subtitleTrackOptions, tracks[1])
+        currentIndex = 0
+    else
+        table.insert(subtitleTrackOptions, {trackIndex = nil, label = "Select narration track"})
+        for _, track in ipairs(tracks) do
+            table.insert(subtitleTrackOptions, track)
+            if previousTrackIndex ~= nil and track.trackIndex == previousTrackIndex then
+                currentIndex = #subtitleTrackOptions - 1
+            end
+        end
+    end
+    for _, option in ipairs(subtitleTrackOptions) do
+        table.insert(labels, option.label or subtitleTrackLabel(option))
+    end
+    replaceSubtitleTrackItems(labels, currentIndex)
+    local selected = subtitleTrackOptions[currentIndex + 1]
+    selectedSubtitleTrackIndex = selected and selected.trackIndex or nil
+    return tracks
+end
+
+local function collectSubtitles(trackIndex)
+    local timeline = getTimeline()
+    if not timeline then
+        error("No current Resolve timeline.")
+    end
+    local selectedTrack = tonumber(trackIndex)
+    if selectedTrack == nil then
+        error("Select a narration subtitle track.")
+    end
+    local frameRate = fps()
+    local result = {}
+    local trackItems = getTrackItems(timeline, "subtitle", selectedTrack)
+    for _, item in pairs(trackItems) do
+        local itemType = type(item)
+        if itemType == "table" or itemType == "userdata" then
+            table.insert(result, summarizeItem(item, selectedTrack, #result + 1, frameRate))
         end
     end
     table.sort(result, function(left, right)
         if left.startFrame == right.startFrame then
-            return left.trackIndex < right.trackIndex
+            return left.subtitleIndex < right.subtitleIndex
         end
         return left.startFrame < right.startFrame
     end)
@@ -720,7 +1027,11 @@ local function renderSubtitleList()
         local item = newTreeItem(tree)
         if item ~= nil then
             setTreeItemText(item, 0, "")
-            setTreeItemText(item, 5, "No subtitle items found on the current timeline.")
+            if selectedSubtitleTrackIndex == nil then
+                setTreeItemText(item, 5, "Select a narration subtitle track before loading subtitles.")
+            else
+                setTreeItemText(item, 5, "No subtitle items found on the selected subtitle track.")
+            end
             pcall(function()
                 item.Disabled = true
             end)
@@ -730,15 +1041,63 @@ local function renderSubtitleList()
     updateSelectionStatus()
 end
 
-local function refreshSubtitles(ev)
-    local ok, result = pcall(collectSubtitles)
+local function loadSelectedSubtitleTrack(reason)
+    local option = selectedSubtitleTrackOption()
+    selectedSubtitleTrackIndex = option and option.trackIndex or nil
+    if selectedSubtitleTrackIndex == nil then
+        subtitles = {}
+        renderSubtitleList()
+        if option and option.label == "No subtitle tracks" then
+            uiLog("No subtitle tracks found on the current timeline.")
+        else
+            uiLog("Select a narration subtitle track.")
+        end
+        return
+    end
+    local ok, result = pcall(function()
+        return collectSubtitles(selectedSubtitleTrackIndex)
+    end)
     if not ok then
         uiLog("Refresh failed: " .. tostring(result))
         return
     end
     subtitles = result
     renderSubtitleList()
-    uiLog("Loaded " .. tostring(#subtitles) .. " subtitle item(s).")
+    uiLog(
+        tostring(reason or "Loaded")
+            .. " " .. tostring(#subtitles)
+            .. " subtitle item(s) from S" .. tostring(selectedSubtitleTrackIndex) .. "."
+    )
+end
+
+local function refreshSubtitles(ev)
+    local ok, result = pcall(refreshSubtitleTrackOptions)
+    if not ok then
+        uiLog("Refresh failed: " .. tostring(result))
+        return
+    end
+    loadSelectedSubtitleTrack("Loaded")
+end
+
+local function subtitleTrackChanged(ev)
+    if updatingSubtitleTrackCombo then
+        return
+    end
+    local option = selectedSubtitleTrackOption()
+    local comboTrackIndex = option and option.trackIndex or nil
+    if comboTrackIndex == selectedSubtitleTrackIndex then
+        return
+    end
+    loadSelectedSubtitleTrack("Loaded")
+end
+
+local function ensureSelectedSubtitleTrackLoaded()
+    local option = selectedSubtitleTrackOption()
+    local comboTrackIndex = option and option.trackIndex or nil
+    if comboTrackIndex ~= selectedSubtitleTrackIndex then
+        loadSelectedSubtitleTrack("Loaded")
+    end
+    return selectedSubtitleTrackIndex ~= nil
 end
 
 local function selectedIds()
@@ -758,7 +1117,134 @@ local function selectedIds()
     return ids
 end
 
-local function setSelectedIds(ids, scrollToFirst)
+local function selectedIdsSet(ids)
+    local result = {}
+    for _, id in ipairs(ids or {}) do
+        result[id] = true
+    end
+    return result
+end
+
+local function sameIdSet(left, right)
+    local leftSet = selectedIdsSet(left)
+    local rightSet = selectedIdsSet(right)
+    for key, _ in pairs(leftSet) do
+        if not rightSet[key] then
+            return false
+        end
+    end
+    for key, _ in pairs(rightSet) do
+        if not leftSet[key] then
+            return false
+        end
+    end
+    return true
+end
+
+local function treeCurrentId(tree)
+    if tree == nil then
+        return nil
+    end
+    local candidates = {}
+    pcall(function()
+        table.insert(candidates, tree.CurrentItem)
+    end)
+    pcall(function()
+        table.insert(candidates, tree.CurrentIndex)
+    end)
+    for _, candidate in ipairs(candidates) do
+        if type(candidate) == "number" then
+            if subtitleTreeItems[candidate] then
+                return candidate
+            end
+            if subtitleTreeItems[candidate + 1] then
+                return candidate + 1
+            end
+        elseif candidate ~= nil then
+            local id = tonumber(treeItemText(candidate, 0))
+            if id ~= nil and subtitleTreeItems[id] then
+                return id
+            end
+        end
+    end
+    return nil
+end
+
+local function inferRangeEndpoint(ids, anchorId)
+    local minId = nil
+    local maxId = nil
+    for _, id in ipairs(ids or {}) do
+        minId = minId == nil and id or math.min(minId, id)
+        maxId = maxId == nil and id or math.max(maxId, id)
+    end
+    if minId == nil or maxId == nil then
+        return nil
+    end
+    if anchorId <= minId then
+        return maxId
+    end
+    if anchorId >= maxId then
+        return minId
+    end
+    local downCount = anchorId - minId
+    local upCount = maxId - anchorId
+    if upCount >= downCount then
+        return maxId
+    end
+    return minId
+end
+
+local function rangeIds(anchorId, currentId)
+    local ids = {}
+    local first = math.min(anchorId, currentId)
+    local last = math.max(anchorId, currentId)
+    for id = first, last do
+        if subtitleTreeItems[id] then
+            table.insert(ids, id)
+        end
+    end
+    return ids
+end
+
+local function treeSetItemSelected(tree, item, selected)
+    safeCall(tree, "SetItemSelected", item, selected == true)
+    safeCall(tree, "SetItemSelected", item, selected == true, 0)
+    pcall(function()
+        item.Selected = selected == true
+    end)
+end
+
+local function treeClearSelection(tree)
+    safeCall(tree, "ClearSelection")
+    safeCall(tree, "clearSelection")
+    for _, item in pairs(subtitleTreeItems) do
+        treeSetItemSelected(tree, item, false)
+    end
+end
+
+local function treeSetCurrentItem(tree, item)
+    if item == nil then
+        return
+    end
+    safeCall(tree, "SetCurrentItem", item)
+    safeCall(tree, "setCurrentItem", item)
+    safeCall(tree, "SetCurrentItem", item, 0)
+    safeCall(tree, "setCurrentItem", item, 0)
+    pcall(function()
+        tree.CurrentItem = item
+    end)
+    pcall(function()
+        tree.CurrentIndex = item
+    end)
+    safeCall(tree, "SetFocus")
+    safeCall(tree, "setFocus")
+end
+
+local function setSelectedIds(ids, scrollToFirst, anchorId, currentId)
+    local tree = items and items.subtitleTree or nil
+    if tree == nil then
+        return
+    end
     local wanted = {}
     local firstItem = nil
     for _, id in ipairs(ids) do
@@ -770,23 +1256,71 @@ local function setSelectedIds(ids, scrollToFirst)
             end
         end
     end
+    repairingSubtitleSelection = true
+    treeClearSelection(tree)
     for id, item in pairs(subtitleTreeItems) do
-        pcall(function()
-            item.Selected = wanted[id] == true
-        end)
+        treeSetItemSelected(tree, item, wanted[id] == true)
+    end
+    local currentItem = nil
+    if currentId ~= nil and subtitleTreeItems[currentId] then
+        currentItem = subtitleTreeItems[currentId]
     end
     if scrollToFirst and firstItem ~= nil then
-        safeCall(items.subtitleTree, "ScrollToItem", firstItem)
+        treeSetCurrentItem(tree, currentItem or firstItem)
+        safeCall(tree, "ScrollToItem", firstItem)
+        safeCall(tree, "scrollToItem", firstItem)
+    elseif currentItem ~= nil then
+        treeSetCurrentItem(tree, currentItem)
+    end
+    repairingSubtitleSelection = false
+    if #ids == 0 then
+        subtitleSelectionAnchorId = nil
+    else
+        subtitleSelectionAnchorId = tonumber(anchorId) or tonumber(ids[1])
+    end
+    updateSelectionStatus()
+end
+
+local function onSubtitleSelectionChanged(ev)
+    if repairingSubtitleSelection then
+        updateSelectionStatus()
+        return
+    end
+    local ids = selectedIds()
+    if #ids == 0 then
+        subtitleSelectionAnchorId = nil
+        updateSelectionStatus()
+        return
+    end
+    if #ids == 1 then
+        subtitleSelectionAnchorId = ids[1]
+        updateSelectionStatus()
+        return
+    end
+
+    local anchorId = tonumber(subtitleSelectionAnchorId)
+    if anchorId ~= nil and subtitleTreeItems[anchorId] then
+        local currentId = treeCurrentId(items and items.subtitleTree or nil)
+        if currentId == nil or currentId == anchorId or not subtitleTreeItems[currentId] then
+            currentId = inferRangeEndpoint(ids, anchorId)
+        end
+        if currentId ~= nil and currentId ~= anchorId and subtitleTreeItems[currentId] then
+            local corrected = rangeIds(anchorId, currentId)
+            if #corrected > 0 and not sameIdSet(ids, corrected) then
+                setSelectedIds(corrected, false, anchorId, currentId)
+                updateSelectionStatus()
+                return
+            end
+        end
     end
     updateSelectionStatus()
 end
 
 local function clearSelection(ev)
-    for _, item in pairs(subtitleTreeItems) do
-        pcall(function()
-            item.Selected = false
-        end)
+    if items and items.subtitleTree then
+        treeClearSelection(items.subtitleTree)
     end
+    subtitleSelectionAnchorId = nil
     updateSelectionStatus()
     uiLog("Cleared subtitle selection.")
 end
@@ -880,6 +1414,9 @@ local function nearestSubtitleGap(frame)
 end
 
 local function usePlayhead(ev)
+    if not ensureSelectedSubtitleTrackLoaded() then
+        return
+    end
     local candidates, timecode = currentFrameCandidates()
     if #candidates == 0 then
         uiLog("Unable to read playhead frame.")
@@ -930,6 +1467,9 @@ local function markRange()
 end
 
 local function useMark(ev)
+    if not ensureSelectedSubtitleTrackLoaded() then
+        return
+    end
     local markIn, markOut = markRange()
     if not markIn or not markOut then
         uiLog("No Resolve In/Out range found. Set it on the timeline with I and O, then click Select Resolve I/O.")
@@ -950,6 +1490,249 @@ local function selectedSubtitles()
         table.insert(selected, subtitles[id])
     end
     return selected
+end
+
+local function firstTableValue(value)
+    if type(value) ~= "table" then
+        return nil
+    end
+    if value[1] ~= nil then
+        return value[1]
+    end
+    for _, item in pairs(value) do
+        return item
+    end
+    return nil
+end
+
+local function getMediaPool()
+    local project = getProject()
+    return safeCall(project, "GetMediaPool")
+end
+
+local function folderName(folder)
+    return trim(safeCall(folder, "GetName"))
+end
+
+local function findChildFolder(parent, name)
+    local children = safeCall(parent, "GetSubFolderList")
+    if type(children) ~= "table" then
+        return nil
+    end
+    for _, child in pairs(children) do
+        if folderName(child) == name then
+            return child
+        end
+    end
+    return nil
+end
+
+local function ensureChildFolder(mediaPool, parent, name)
+    local existing = findChildFolder(parent, name)
+    if existing ~= nil then
+        return existing
+    end
+    local created = safeCall(mediaPool, "AddSubFolder", parent, name)
+    if created ~= nil then
+        return created
+    end
+    return findChildFolder(parent, name)
+end
+
+local function ensureVoiceoverMediaFolder(timelineName)
+    local mediaPool = getMediaPool()
+    if not mediaPool then
+        return nil, "Resolve Media Pool is unavailable."
+    end
+    local rootFolder = safeCall(mediaPool, "GetRootFolder")
+    if not rootFolder then
+        return nil, "Resolve Media Pool root folder is unavailable."
+    end
+    local voiceRoot = ensureChildFolder(mediaPool, rootFolder, "Kairos Voiceover")
+    if not voiceRoot then
+        return nil, "Unable to create or find Media Pool bin Kairos Voiceover."
+    end
+    local timelineFolder = ensureChildFolder(mediaPool, voiceRoot, trim(timelineName) ~= "" and trim(timelineName) or "Timeline")
+    if not timelineFolder then
+        return nil, "Unable to create or find timeline voiceover Media Pool bin."
+    end
+    return timelineFolder, nil
+end
+
+local function timelineItemBounds(item)
+    local startFrame = timelineNumber(item, "GetStart")
+    local endFrame = timelineNumber(item, "GetEnd")
+    local durationFrames = timelineNumber(item, "GetDuration")
+    if startFrame == nil and endFrame ~= nil and durationFrames ~= nil then
+        startFrame = endFrame - durationFrames
+    end
+    if endFrame == nil and startFrame ~= nil and durationFrames ~= nil then
+        endFrame = startFrame + durationFrames
+    end
+    return tonumber(startFrame), tonumber(endFrame)
+end
+
+local function trackIsUsable(timeline, index)
+    local enabled = safeCall(timeline, "GetIsTrackEnabled", "audio", index)
+    local locked = safeCall(timeline, "GetIsTrackLocked", "audio", index)
+    return enabled ~= false and locked ~= true
+end
+
+local function trackItems(timeline, index)
+    return getTrackItems(timeline, "audio", index)
+end
+
+local function trackIsEmpty(timeline, index)
+    return countTableValues(trackItems(timeline, index)) == 0
+end
+
+local function trackHasOverlap(timeline, index, startFrame, endFrame)
+    for _, item in pairs(trackItems(timeline, index)) do
+        local itemStart, itemEnd = timelineItemBounds(item)
+        if itemStart ~= nil and itemEnd ~= nil and rangesOverlap(startFrame, endFrame, itemStart, itemEnd) then
+            return true
+        end
+    end
+    return false
+end
+
+local function trackName(timeline, index)
+    return trim(safeCall(timeline, "GetTrackName", "audio", index))
+end
+
+local function chooseVoiceTrack(unit)
+    local timeline = getTimeline()
+    if not timeline then
+        return nil, "No current timeline."
+    end
+    local trackCount = tonumber(safeCall(timeline, "GetTrackCount", "audio") or 0) or 0
+    local recordFrame = tonumber(unit.recordFrame) or 0
+    local durationFrames = tonumber(unit.durationFrames) or nil
+    local targetDurationMs = tonumber(unit.targetDurationMs) or nil
+    if durationFrames == nil and targetDurationMs ~= nil then
+        durationFrames = math.max(1, math.floor(targetDurationMs * fps() / 1000.0 + 0.5))
+    end
+    durationFrames = durationFrames or math.max(1, math.floor(fps() + 0.5))
+    local endFrame = recordFrame + durationFrames
+
+    for index = 2, trackCount do
+        if trackIsUsable(timeline, index) and trackIsEmpty(timeline, index) then
+            return index, nil
+        end
+    end
+    for index = 2, trackCount do
+        if trackIsUsable(timeline, index)
+            and trackName(timeline, index) == VOICE_TRACK_NAME
+            and not trackHasOverlap(timeline, index, recordFrame, endFrame) then
+            return index, nil
+        end
+    end
+    for index = 2, trackCount do
+        if trackIsUsable(timeline, index) and not trackHasOverlap(timeline, index, recordFrame, endFrame) then
+            return index, nil
+        end
+    end
+
+    local added = safeCall(timeline, "AddTrack", "audio", "stereo")
+    if added == nil or added == false then
+        return nil, "Unable to add audio track for " .. VOICE_TRACK_NAME .. "."
+    end
+    local newIndex = (tonumber(safeCall(timeline, "GetTrackCount", "audio") or 0) or trackCount + 1)
+    safeCall(timeline, "SetTrackName", "audio", newIndex, VOICE_TRACK_NAME)
+    return newIndex, nil
+end
+
+local function importAudioToMediaPool(mediaFolder, audioPath)
+    local mediaPool = getMediaPool()
+    if not mediaPool then
+        return nil, "Resolve Media Pool is unavailable."
+    end
+    local previousFolder = safeCall(mediaPool, "GetCurrentFolder")
+    safeCall(mediaPool, "SetCurrentFolder", mediaFolder)
+    local imported = safeCall(mediaPool, "ImportMedia", {audioPath})
+    if previousFolder ~= nil then
+        safeCall(mediaPool, "SetCurrentFolder", previousFolder)
+    end
+    local item = firstTableValue(imported)
+    if item == nil then
+        return nil, "ImportMedia returned no MediaPoolItem for " .. tostring(audioPath)
+    end
+    return item, nil
+end
+
+local function appendVoiceoverUnit(mediaFolder, unit)
+    local mediaPool = getMediaPool()
+    if not mediaPool then
+        return false, "Resolve Media Pool is unavailable."
+    end
+    local audioPath = trim(unit.resolveAudioPath)
+    if audioPath == "" then
+        return false, "Supervisor returned an empty audio path for unit " .. tostring(unit.unitId)
+    end
+    local mediaItem, importError = importAudioToMediaPool(mediaFolder, audioPath)
+    if not mediaItem then
+        return false, importError
+    end
+    local trackIndex, trackError = chooseVoiceTrack(unit)
+    if not trackIndex then
+        return false, trackError
+    end
+    local recordFrame = tonumber(unit.recordFrame) or 0
+    local appended = safeCall(mediaPool, "AppendToTimeline", {{
+        mediaPoolItem = mediaItem,
+        mediaType = 2,
+        trackIndex = trackIndex,
+        recordFrame = recordFrame,
+    }})
+    local timelineItem = firstTableValue(appended)
+    if timelineItem == nil then
+        return false, "AppendToTimeline returned no item for " .. tostring(unit.unitId)
+    end
+    safeCall(timelineItem, "SetName", "Kairos VO " .. tostring(unit.unitId or ""))
+    safeCall(timelineItem, "AddMarker", 0, "Blue", "Kairos VO", "", 1, "kairosVoiceoverUnitId=" .. tostring(unit.unitId or ""))
+    return true, "Inserted " .. tostring(unit.unitId) .. " on A" .. tostring(trackIndex)
+end
+
+local function saveProject()
+    local currentResolve = getResolve()
+    local manager = safeCall(currentResolve, "GetProjectManager")
+    return safeCall(manager, "SaveProject")
+end
+
+local function parseSynthesizeTsv(output)
+    local result = {
+        ok = false,
+        manifestPath = "",
+        units = {},
+        error = "",
+    }
+    for line in tostring(output or ""):gmatch("[^\r\n]+") do
+        local fields = splitTabs(line)
+        local kind = fields[1]
+        if kind == "OK" then
+            result.ok = true
+            result.manifestPath = fields[2] or ""
+            result.unitCount = tonumber(fields[3]) or 0
+        elseif kind == "UNIT" then
+            table.insert(result.units, {
+                unitId = fields[2] or "",
+                resolveAudioPath = fields[3] or "",
+                recordFrame = tonumber(fields[4]) or 0,
+                durationStatus = fields[5] or "unknown",
+                durationMs = tonumber(fields[6] or ""),
+                targetDurationMs = tonumber(fields[7] or ""),
+                overflowMs = tonumber(fields[8] or ""),
+            })
+        elseif kind == "ERROR" then
+            local code = fields[2] or "error"
+            local message = fields[3] or line
+            result.error = code .. ": " .. message
+        end
+    end
+    if result.error == "" and not result.ok then
+        result.error = tostring(output or "Supervisor returned no OK row."):sub(1, 500)
+    end
+    return result
 end
 
 local function selectedProfile()
@@ -976,17 +1759,23 @@ end
 
 local function currentSettings()
     local profile = selectedProfile()
-    return {
+    local settings = {
         profileName = profile and profile.name or "",
-        speedRatio = items.speed.Text or "",
-        loudnessRatio = items.loudness.Text or "",
     }
+    local speed = tonumber(trim(items.speed.Text or ""))
+    local loudness = tonumber(trim(items.loudness.Text or ""))
+    if speed ~= nil then
+        settings.speedRatio = speed
+    end
+    if loudness ~= nil then
+        settings.loudnessRatio = loudness
+    end
+    return settings
 end
 
 local function openRuntimeConfig(ev)
     if voiceConfig and voiceConfig.runtimeConfigPath ~= "" then
-        openPath(voiceConfig.runtimeConfigPath)
-        uiLog("Opened voice config. Save it, then click Reload.")
+        uiLog("Runtime config path: " .. tostring(voiceConfig.runtimeConfigPath))
     else
         uiLog("No Kairos runtime config path found.")
     end
@@ -1008,7 +1797,13 @@ local function voiceConfigStatusLine()
         suffix = suffix .. ", path=" .. tostring(voiceConfig.runtimeConfigPath)
     end
     if tostring(voiceConfig.backendVersion or "") ~= "" then
-        suffix = suffix .. ", backend=" .. tostring(voiceConfig.backendVersion)
+        suffix = suffix .. ", supervisor=" .. tostring(voiceConfig.backendVersion)
+    end
+    if tostring(voiceConfig.projectId or "") ~= "" then
+        suffix = suffix .. ", project=" .. tostring(voiceConfig.projectId)
+    end
+    if tostring(voiceConfig.voiceoverMediaStatus or "") ~= "" then
+        suffix = suffix .. ", media=" .. tostring(voiceConfig.voiceoverMediaStatus)
     end
     return "Voice config: " .. tostring(#(voiceConfig.profiles or {})) .. " profile(s), "
         .. "apiKey=" .. (voiceConfig.hasApiKey and "configured" or "missing")
@@ -1056,8 +1851,12 @@ local function reloadVoiceoverConfig(silent)
     return updated
 end
 
-local function runBackend(mode)
+local function synthesizeAndInsert()
     reloadVoiceoverConfig(true)
+    if not ensureSelectedSubtitleTrackLoaded() then
+        uiLog("Select a narration subtitle track before inserting voiceover.")
+        return
+    end
     local selected = selectedSubtitles()
     if #selected == 0 then
         uiLog("No subtitle rows selected.")
@@ -1072,42 +1871,74 @@ local function runBackend(mode)
         return
     end
     local job = {
-        mode = mode,
-        projectName = getProjectName(),
+        resolveProjectName = getProjectName(),
         timelineName = getTimelineName(),
         timelineId = stableTimelineId(),
         runId = os.date("%Y%m%d-%H%M%S"),
+        subtitleTrackIndex = selectedSubtitleTrackIndex,
         subtitles = selected,
         settings = currentSettings(),
-        skipOverflow = items.skipOverflow.Checked == true,
     }
-    local tmpDir = pluginTmpDir() .. "/jobs"
-    makeDir(tmpDir)
-    local stamp = os.date("%Y%m%d-%H%M%S")
-    local jobPath = tmpDir .. "/lua-job-" .. stamp .. ".json"
-    local outPath = tmpDir .. "/lua-job-" .. stamp .. ".out"
-    if not writeText(jobPath, jsonEncode(job) .. "\n") then
-        uiLog("Unable to write job file: " .. jobPath)
+    if #selected > 1 then
+        uiLog("Requesting Supervisor synthesis for " .. tostring(#selected) .. " subtitle(s) as one merged voiceover...")
+    else
+        uiLog("Requesting Supervisor synthesis for 1 subtitle...")
+    end
+    local body = jsonEncode(job)
+    local output, requestError = supervisorRequest({
+        method = "POST",
+        path = "/api/resolve-volc-voiceover/synthesize.tsv",
+        body = body,
+        type = "synthesize",
+        job = job,
+        timeoutSeconds = 180,
+    })
+    if output == nil then
+        uiLog(requestError or "Supervisor synthesis request failed.")
         return
     end
-    local cmd = pythonCommand() .. " " .. quote(backendScriptPath()) .. " --synthesize-job " .. quote(jobPath)
-    appendLog("backend " .. cmd)
-    if #selected > 1 then
-        uiLog("Running backend for " .. tostring(#selected) .. " subtitle(s) as one merged voiceover...")
-    else
-        uiLog("Running backend for 1 subtitle...")
+    local result = parseSynthesizeTsv(output)
+    if result.error ~= "" then
+        uiLog("Supervisor synthesis failed: " .. result.error)
+        return
     end
-    local result = executeCommandToFile(cmd, outPath)
-    local output = readText(outPath)
-    if output ~= "" then
-        uiLog(output)
-    else
-        uiLog("Backend finished: " .. tostring(result))
+    if #result.units == 0 then
+        uiLog("Supervisor returned no audio units.")
+        return
     end
+
+    local mediaFolder, folderError = ensureVoiceoverMediaFolder(getTimelineName())
+    if not mediaFolder then
+        uiLog(folderError)
+        return
+    end
+
+    local inserted = 0
+    local skipped = 0
+    for _, unit in ipairs(result.units) do
+        if items.skipOverflow.Checked == true and unit.durationStatus == "overflow" then
+            skipped = skipped + 1
+            uiLog("Skipped overflow unit " .. tostring(unit.unitId) .. " (" .. tostring(unit.overflowMs or "?") .. "ms over).")
+        else
+            local ok, message = appendVoiceoverUnit(mediaFolder, unit)
+            if ok then
+                inserted = inserted + 1
+                uiLog(message)
+            else
+                uiLog("Insert failed for " .. tostring(unit.unitId) .. ": " .. tostring(message))
+            end
+        end
+    end
+    saveProject()
+    local suffix = ""
+    if result.manifestPath ~= "" then
+        suffix = ", manifest=" .. result.manifestPath
+    end
+    uiLog("Voiceover insert complete: inserted=" .. tostring(inserted) .. ", skipped=" .. tostring(skipped) .. suffix)
 end
 
 local function synthesizeInsert(ev)
-    runBackend("insert")
+    synthesizeAndInsert()
 end
 
 local function probe(ev)
@@ -1121,13 +1952,14 @@ local function probe(ev)
         "Probe OK: project=" .. getProjectName()
         .. ", timeline=" .. getTimelineName()
         .. ", fps=" .. tostring(fps())
+        .. ", subtitleTrack=" .. tostring(selectedSubtitleTrackIndex or "none")
         .. ", subtitles=" .. tostring(#subtitles)
         .. ", voiceTrack=" .. VOICE_TRACK_NAME
     )
 end
 
 local function openLogs(ev)
-    openPath(logDir())
+    uiLog("Log directory path: " .. logDir())
 end
 
 appendLog("lua plugin start root=" .. tostring(root))
@@ -1191,6 +2023,7 @@ voiceConfig = {
     error = "",
 }
 local initialProfileLabels = {"Loading profiles..."}
+local initialSubtitleTrackLabels = {"Loading tracks..."}
 local win = dispatcher:AddWindow({
     ID = WINDOW_ID,
     Geometry = {160, 160, 760, 420},
@@ -1200,6 +2033,16 @@ ui:VGroup({
     ui:Label({Text = "Kairos Volc Voiceover " .. PLUGIN_VERSION, Weight = 0, Font = titleFont, MaximumSize = {760, 22}}),
     ui:HGroup({Weight = 0, MaximumSize = {760, 28}}, {
         button("refresh", "Refresh", 86),
+        label("Track", 38),
+        ui:ComboBox({
+            ID = "subtitleTrack",
+            Items = initialSubtitleTrackLabels,
+            CurrentIndex = 0,
+            Weight = 0,
+            Font = smallFont,
+            MinimumSize = {174, 24},
+            MaximumSize = {174, 24},
+        }),
         button("mark", "Resolve I/O", 92),
         button("clearSelection", "Clear", 58),
         button("probe", "Probe", 58),
@@ -1283,10 +2126,11 @@ end
 win.On[WINDOW_ID].Close = onClose
 win.On["close"].Clicked = onClose
 win.On["refresh"].Clicked = refreshSubtitles
+win.On["subtitleTrack"].CurrentIndexChanged = subtitleTrackChanged
 win.On["playhead"].Clicked = usePlayhead
 win.On["mark"].Clicked = useMark
 win.On["clearSelection"].Clicked = clearSelection
-win.On["subtitleTree"].ItemSelectionChanged = updateSelectionStatus
+win.On["subtitleTree"].ItemSelectionChanged = onSubtitleSelectionChanged
 win.On["probe"].Clicked = probe
 win.On["openLogs"].Clicked = openLogs
 win.On["openConfig"].Clicked = openRuntimeConfig

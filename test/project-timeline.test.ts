@@ -66,6 +66,7 @@ describe('project timeline generation', () => {
     expect(result.resolveProjectName).toBe('Timeline Fixture [Edit]');
     expect(driveClip).toMatchObject({
       spanId: 'slice-drive',
+      spanType: 'drive',
       audioGainDb: 0,
       muteAudio: false,
       requestedSpeed: 1,
@@ -73,6 +74,7 @@ describe('project timeline generation', () => {
     });
     expect(speechClip).toMatchObject({
       spanId: 'slice-talk',
+      spanType: 'talking-head',
       audioGainDb: 0,
       muteAudio: false,
       requestedSpeed: 1,
@@ -148,6 +150,7 @@ describe('project timeline generation', () => {
     });
     expect(result.resolveClips[0]).toMatchObject({
       spanId: 'slice-photo',
+      spanType: 'photo',
       sourceInMs: 0,
       sourceOutMs: 1000,
       timelineInMs: 0,

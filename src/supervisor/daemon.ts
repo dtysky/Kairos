@@ -80,6 +80,13 @@ import {
   buildProjectPharosAssetStatus,
   loadOrBuildProjectPharosContext,
 } from '../modules/pharos/context.js';
+import {
+  buildResolveVolcVoiceoverConfigSummaryTsv,
+  errorToTsv,
+  startResolveVolcVoiceoverIpcServer,
+  synthesizeResolveVolcVoiceoverTsv,
+  type IResolveVoiceoverJobInput,
+} from '../modules/voiceover/index.js';
 import { getMlServiceStatus, startMlService, stopMlService } from './runtime.js';
 import type { IKtepAsset, IProjectChronology, IMediaRoot } from '../protocol/schema.js';
 import {
@@ -102,6 +109,7 @@ interface IDaemonOptions {
 async function main(): Promise<void> {
   const options = parseDaemonOptions(process.argv.slice(2));
   await ensureDashboardServiceRecord(options.workspaceRoot, options.port);
+  await startResolveVolcVoiceoverIpcServer({ workspaceRoot: options.workspaceRoot });
 
   const server = createServer(async (request, response) => {
     try {
@@ -180,6 +188,31 @@ async function routeRequest(
       projects,
       jobs,
     });
+    return;
+  }
+
+  if (pathname === '/api/resolve-volc-voiceover/config-summary.tsv' && method === 'GET') {
+    try {
+      sendText(response, 200, await buildResolveVolcVoiceoverConfigSummaryTsv({
+        workspaceRoot: options.workspaceRoot,
+        resolveProjectName: url.searchParams.get('resolveProjectName') ?? undefined,
+      }));
+    } catch (error) {
+      sendText(response, 200, errorToTsv(error));
+    }
+    return;
+  }
+
+  if (pathname === '/api/resolve-volc-voiceover/synthesize.tsv' && method === 'POST') {
+    try {
+      const job = await readJsonBody(request) as IResolveVoiceoverJobInput;
+      sendText(response, 200, await synthesizeResolveVolcVoiceoverTsv({
+        workspaceRoot: options.workspaceRoot,
+        job,
+      }));
+    } catch (error) {
+      sendText(response, 200, errorToTsv(error));
+    }
     return;
   }
 
@@ -1193,6 +1226,19 @@ function sendJson(response: ServerResponse, statusCode: number, data: unknown): 
     'Cache-Control': 'no-store',
   });
   response.end(JSON.stringify(data, null, 2));
+}
+
+function sendText(
+  response: ServerResponse,
+  statusCode: number,
+  content: string,
+  contentType = 'text/tab-separated-values; charset=utf-8',
+): void {
+  response.writeHead(statusCode, {
+    'Content-Type': contentType,
+    'Cache-Control': 'no-store',
+  });
+  response.end(content);
 }
 
 function serializeApiError(error: unknown): Record<string, unknown> {
