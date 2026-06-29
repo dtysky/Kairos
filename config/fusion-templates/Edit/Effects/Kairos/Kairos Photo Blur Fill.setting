@@ -1,0 +1,187 @@
+{
+	Tools = ordered() {
+		KairosPhotoBlurFill = MacroOperator {
+			CtrlWZoom = false,
+			NameSet = true,
+			Inputs = ordered() {
+				MainInput1 = InstanceInput {
+					SourceOp = "InputPass",
+					Source = "Input",
+					Name = "Image",
+				},
+				BackgroundZoom = InstanceInput {
+					SourceOp = "BackgroundTransform",
+					Source = "Size",
+					Name = "Background Zoom",
+					Default = 2.2,
+				},
+				BackgroundBlurX = InstanceInput {
+					SourceOp = "BackgroundBlur",
+					Source = "XBlur",
+					Name = "Background Blur X",
+					Default = 28,
+				},
+				BackgroundBlurY = InstanceInput {
+					SourceOp = "BackgroundBlur",
+					Source = "YBlur",
+					Name = "Background Blur Y",
+					Default = 28,
+				},
+				BackgroundGain = InstanceInput {
+					SourceOp = "BackgroundGrade",
+					Source = "Gain",
+					Name = "Background Gain",
+					Default = 0.72,
+				},
+				BackgroundSaturation = InstanceInput {
+					SourceOp = "BackgroundGrade",
+					Source = "Saturation",
+					Name = "Background Saturation",
+					Default = 0.85,
+				},
+				ForegroundZoom = InstanceInput {
+					SourceOp = "ForegroundTransform",
+					Source = "Size",
+					Name = "Foreground Zoom",
+					Default = 1,
+				},
+				ForegroundMaskCenter = InstanceInput {
+					SourceOp = "ForegroundMask",
+					Source = "Center",
+					Name = "Foreground Mask Center",
+				},
+				ForegroundMaskWidth = InstanceInput {
+					SourceOp = "ForegroundMask",
+					Source = "Width",
+					Name = "Foreground Mask Width",
+					Default = 0.62,
+				},
+				ForegroundMaskHeight = InstanceInput {
+					SourceOp = "ForegroundMask",
+					Source = "Height",
+					Name = "Foreground Mask Height",
+					Default = 1,
+				},
+				ForegroundMaskSoftEdge = InstanceInput {
+					SourceOp = "ForegroundMask",
+					Source = "SoftEdge",
+					Name = "Foreground Mask Soft Edge",
+					Default = 0.001,
+				},
+				ForegroundBlend = InstanceInput {
+					SourceOp = "MergeForeground",
+					Source = "Blend",
+					Name = "Foreground Blend",
+					Default = 1,
+				}
+			},
+			Outputs = {
+				MainOutput1 = InstanceOutput {
+					SourceOp = "MergeForeground",
+					Source = "Output",
+				}
+			},
+			ViewInfo = GroupInfo {
+				Pos = { 0, 0 },
+				Flags = {
+					AllowPan = false,
+					AutoSnap = true,
+					RemoveRouters = true
+				},
+				Size = { 676, 141, 338, 24.2424 },
+				Direction = "Horizontal",
+				PipeStyle = "Direct",
+			},
+			Tools = ordered() {
+				InputPass = BrightnessContrast {
+					CtrlWShown = false,
+					ViewInfo = OperatorInfo { Pos = { 0, 0 } },
+				},
+				BackgroundTransform = Transform {
+					CtrlWShown = false,
+					Inputs = {
+						Input = Input {
+							SourceOp = "InputPass",
+							Source = "Output",
+						},
+						Size = Input { Value = 2.2, },
+					},
+					ViewInfo = OperatorInfo { Pos = { 220, -82.5 } },
+				},
+				BackgroundBlur = Blur {
+					CtrlWShown = false,
+					Inputs = {
+						Input = Input {
+							SourceOp = "BackgroundTransform",
+							Source = "Output",
+						},
+						Filter = Input { Value = FuID { "Fast Gaussian" }, },
+						XBlur = Input { Value = 28, },
+						YBlur = Input { Value = 28, },
+					},
+					ViewInfo = OperatorInfo { Pos = { 440, -82.5 } },
+				},
+				BackgroundGrade = BrightnessContrast {
+					CtrlWShown = false,
+					Inputs = {
+						Input = Input {
+							SourceOp = "BackgroundBlur",
+							Source = "Output",
+						},
+						Gain = Input { Value = 0.72, },
+						Saturation = Input { Value = 0.85, },
+					},
+					ViewInfo = OperatorInfo { Pos = { 660, -82.5 } },
+				},
+				ForegroundMask = RectangleMask {
+					CtrlWShown = false,
+					Inputs = {
+						Filter = Input { Value = FuID { "Fast Gaussian" }, },
+						OutputSize = Input { Value = FuID { "Custom" }, },
+						MaskWidth = Input { Value = 1920, },
+						MaskHeight = Input { Value = 1080, },
+						PixelAspect = Input { Value = { 1, 1 }, },
+						UseFrameFormatSettings = Input { Value = 1, },
+						ClippingMode = Input { Value = FuID { "None" }, },
+						Width = Input { Value = 0.62, },
+						Height = Input { Value = 1, },
+						SoftEdge = Input { Value = 0.001, },
+					},
+					ViewInfo = OperatorInfo { Pos = { 220, 82.5 } },
+				},
+				ForegroundTransform = Transform {
+					CtrlWShown = false,
+					Inputs = {
+						Input = Input {
+							SourceOp = "InputPass",
+							Source = "Output",
+						},
+						EffectMask = Input {
+							SourceOp = "ForegroundMask",
+							Source = "Mask",
+						},
+						Size = Input { Value = 1, },
+					},
+					ViewInfo = OperatorInfo { Pos = { 440, 82.5 } },
+				},
+				MergeForeground = Merge {
+					CtrlWShown = false,
+					Inputs = {
+						Background = Input {
+							SourceOp = "BackgroundGrade",
+							Source = "Output",
+						},
+						Foreground = Input {
+							SourceOp = "ForegroundTransform",
+							Source = "Output",
+						},
+						PerformDepthMerge = Input { Value = 0, },
+						Blend = Input { Value = 1, },
+					},
+					ViewInfo = OperatorInfo { Pos = { 880, 0 } },
+				}
+			},
+		}
+	},
+	ActiveTool = "KairosPhotoBlurFill"
+}

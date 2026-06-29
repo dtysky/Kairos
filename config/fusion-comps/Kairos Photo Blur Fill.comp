@@ -1,0 +1,205 @@
+Composition {
+	CurrentTime = 0,
+	RenderRange = { 0, 29 },
+	GlobalRange = { 0, 29 },
+	CurrentID = 9,
+	PlaybackUpdateMode = 0,
+	StereoMode = false,
+	Version = "DaVinci Resolve Studio 21.0.0b.0040",
+	SavedOutputs = 0,
+	HeldTools = 0,
+	DisabledTools = 0,
+	LockedTools = 0,
+	AudioOffset = 0,
+	Resumable = true,
+	OutputClips = {
+	},
+	Tools = {
+		MediaIn1 = Loader {
+			ExtentSet = true,
+			CtrlWShown = false,
+			CustomData = {
+				MediaProps = {
+					MEDIA_AUDIO_TRACKS_DESC = {
+						{
+							MEDIA_AUDIO_BIT_DEPTH = 32,
+							MEDIA_AUDIO_FRAME_RATE = 24,
+							MEDIA_AUDIO_NUM_CHANNELS = 2,
+							MEDIA_AUDIO_SAMPLE_RATE = 48000,
+							MEDIA_AUDIO_START_TIME = 0,
+							MEDIA_AUDIO_TRACK_ID = "Timeline Audio",
+							MEDIA_AUDIO_TRACK_NAME = "Timeline Audio [Main [main]]"
+						}
+					},
+					MEDIA_AUDIO_TRACKS_NUM = 1,
+					MEDIA_FORMAT_TYPE = "JPEG",
+					MEDIA_HAS_AUDIO = true,
+					MEDIA_HEIGHT = 2731,
+					MEDIA_ID = "f688fd4b-7a4b-43a1-8c68-7016d4cb4d36",
+					MEDIA_IS_SOURCE_RES = true,
+					MEDIA_LAYER_DESC = {
+					},
+					MEDIA_MARK_IN = 0,
+					MEDIA_MARK_OUT = 29,
+					MEDIA_NAME = "clip-00166 途中午餐 DJI_20260425130140_0097_D-HDR",
+					MEDIA_NUM_FRAMES = 30,
+					MEDIA_NUM_LAYERS = 0,
+					MEDIA_PAR = 1,
+					MEDIA_PATH = "F:\\vlog-proj\\219-318\\photos\\DJI_20260425130140_0097_D-HDR.jpg",
+					MEDIA_SRC_FRAME_RATE = 24,
+					MEDIA_START_FRAME = 0,
+					MEDIA_WIDTH = 4096
+				},
+			},
+			Inputs = {
+				GlobalOut = Input { Value = 29, },
+				AudioTrack = Input { Value = FuID { "Timeline Audio" }, },
+				Layer = Input { Value = "", },
+				ClipTimeEnd = Input { Value = 29, },
+				DeepOutputMode = Input {
+					Value = 0,
+					Disabled = true,
+				},
+			},
+			ViewInfo = OperatorInfo { Pos = { 0, 0 } },
+			Version = 1,
+			Clips = {
+				Clip {
+					ID = "Clip1",
+					Multiframe = true,
+					Filename = "F:\\vlog-proj\\219-318\\photos\\DJI_20260425130140_0097_D-HDR.jpg",
+					Length = 30,
+					LengthSetManually = true,
+					GlobalEnd = 29,
+					TrimOut = 29,
+				}
+			}
+		},
+		BackgroundTransform = Transform {
+			CtrlWShown = false,
+			Inputs = {
+				Size = Input { Value = 2.2, },
+				Input = Input {
+					SourceOp = "MediaIn1",
+					Source = "Output",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 220, -82.5 } },
+		},
+		BackgroundBlur = Blur {
+			CtrlWShown = false,
+			Inputs = {
+				YBlur = Input {
+					Value = Number {
+						Value = 28
+					},
+				},
+				XBlur = Input {
+					Value = Number {
+						Value = 28
+					},
+				},
+				Filter = Input { Value = FuID { "Fast Gaussian" }, },
+				Input = Input {
+					SourceOp = "BackgroundTransform",
+					Source = "Output",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 440, -82.5 } },
+		},
+		BackgroundGrade = BrightnessContrast {
+			CtrlWShown = false,
+			Inputs = {
+				Gain = Input { Value = 0.72, },
+				Saturation = Input { Value = 0.85, },
+				Input = Input {
+					SourceOp = "BackgroundBlur",
+					Source = "Output",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 660, -82.5 } },
+		},
+		ForegroundMask = RectangleMask {
+			CtrlWShown = false,
+			Inputs = {
+				Filter = Input { Value = FuID { "Fast Gaussian" }, },
+				SoftEdge = Input { Value = 0.001, },
+				OutputSize = Input { Value = FuID { "Custom" }, },
+				MaskWidth = Input { Value = 3840, },
+				MaskHeight = Input { Value = 2160, },
+				PixelAspect = Input { Value = { 1, 1 }, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				ClippingMode = Input { Value = FuID { "None" }, },
+				Width = Input { Value = 0.62, },
+				Height = Input { Value = 1, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 220, 82.5 } },
+		},
+		ForegroundTransform = Transform {
+			CtrlWShown = false,
+			Inputs = {
+				EffectMask = Input {
+					SourceOp = "ForegroundMask",
+					Source = "Mask",
+				},
+				Input = Input {
+					SourceOp = "MediaIn1",
+					Source = "Output",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 440, 82.5 } },
+		},
+		MergeForeground = Merge {
+			CtrlWShown = false,
+			Inputs = {
+				Background = Input {
+					SourceOp = "BackgroundGrade",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "ForegroundTransform",
+					Source = "Output",
+				},
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 880, 0 } },
+		},
+		MediaOut1 = Saver {
+			CtrlWShown = false,
+			Inputs = {
+				Index = Input { Value = "0", },
+				Input = Input {
+					SourceOp = "MergeForeground",
+					Source = "Output",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 1100, 0 } },
+		}
+	},
+	Frames = {
+	},
+	Prefs = {
+		Comp = {
+			Interactive = {
+				Proxy = {
+					Scale = 1,
+				},
+			},
+			Paths = {
+				Map = {
+					["ResolveCaches:"] = "H:\\Davinci\\CacheClip\\9bd808a4-a11f-49ef-a47e-6685c1be97f1\\c6d65063-34f9-48de-bfb3-bffacd91383f\\af072acc-4bf7-4368-b6a8-98c1ee53bd15\\Fusion",
+				},
+			},
+			FrameFormat = {
+				Width = 3840,
+				Height = 2160,
+				DepthFull = 3,
+				DepthPreview = 3,
+				DepthInteractive = 3,
+			},
+			Unsorted = {
+				GlobalEnd = 29
+			},
+		}
+	},
+}
