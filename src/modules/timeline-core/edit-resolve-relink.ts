@@ -236,6 +236,7 @@ async function relinkExternalAudioMedia(
       namespace: input.namespace,
       timelineName: input.timelineName,
       timelineTrackTypes: ['audio'],
+      timelineCountUnmapped: false,
       roots: [rootMapping.mapping],
     }, config);
     return {

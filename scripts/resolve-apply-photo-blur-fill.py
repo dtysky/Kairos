@@ -34,11 +34,13 @@ CIMAGE_EXTENSIONS = {
 
 CDEFAULT_COMP_NAME = "Kairos Photo Blur Fill"
 CDEFAULT_FOREGROUND_TRACK_NAME = "Kairos Photo Foreground"
-CDEFAULT_BACKGROUND_BLUR = 900.0
-CDEFAULT_BACKGROUND_BLUR_PASSES = 5
 CDEFAULT_BACKGROUND_BLUR_FILTER = "Fast Gaussian"
-CDEFAULT_BACKGROUND_GAIN = 0.78
-CDEFAULT_BACKGROUND_SATURATION = 0.82
+CDEFAULT_BACKGROUND_MIP_WIDTH = 96
+CDEFAULT_BACKGROUND_MIP_HEIGHT = 54
+CDEFAULT_BACKGROUND_MIP_BLUR = 6.0
+CDEFAULT_BACKGROUND_FINAL_BLUR = 64.0
+CDEFAULT_BACKGROUND_GAIN = 1.0
+CDEFAULT_BACKGROUND_SATURATION = 1.0
 CDEFAULT_BACKGROUND_OVERSCAN = 1.12
 CDEFAULT_PANORAMA_ASPECT = 2.2
 CDEFAULT_PANORAMA_FOREGROUND_INSET = 1.0
@@ -258,6 +260,15 @@ def run_single_comp(
                         "foregroundInset": entry.get("foregroundInset"),
                         "foregroundScale": entry.get("foregroundScale"),
                         "backgroundScale": entry.get("backgroundScale"),
+                        "backgroundWidth": entry.get("backgroundWidth"),
+                        "backgroundHeight": entry.get("backgroundHeight"),
+                        "backgroundBlurMode": "mip-fill",
+                        "backgroundMipResolution": {
+                            "width": CDEFAULT_BACKGROUND_MIP_WIDTH,
+                            "height": CDEFAULT_BACKGROUND_MIP_HEIGHT,
+                        },
+                        "backgroundMipBlur": CDEFAULT_BACKGROUND_MIP_BLUR,
+                        "backgroundFinalBlur": CDEFAULT_BACKGROUND_FINAL_BLUR,
                         "canvasMappingResult": canvas_mapping_result,
                     },
                 )
@@ -289,9 +300,14 @@ def run_single_comp(
         "foregroundTrack": args.foreground_track,
         "foregroundTrackIndex": foreground_track_index,
         "clearedForegroundCount": cleared_foreground_count,
-        "backgroundBlur": CDEFAULT_BACKGROUND_BLUR,
-        "backgroundBlurPasses": CDEFAULT_BACKGROUND_BLUR_PASSES,
+        "backgroundBlurMode": "mip-fill",
         "backgroundBlurFilter": CDEFAULT_BACKGROUND_BLUR_FILTER,
+        "backgroundMipResolution": {
+            "width": CDEFAULT_BACKGROUND_MIP_WIDTH,
+            "height": CDEFAULT_BACKGROUND_MIP_HEIGHT,
+        },
+        "backgroundMipBlur": CDEFAULT_BACKGROUND_MIP_BLUR,
+        "backgroundFinalBlur": CDEFAULT_BACKGROUND_FINAL_BLUR,
         "backgroundGain": CDEFAULT_BACKGROUND_GAIN,
         "backgroundSaturation": CDEFAULT_BACKGROUND_SATURATION,
         "backgroundOverscan": CDEFAULT_BACKGROUND_OVERSCAN,
@@ -640,11 +656,15 @@ def write_photo_blur_fill_comp(output_dir, entry, timeline_width, timeline_heigh
 
     foreground_scale = min(timeline_width / source_width, timeline_height / source_height) * foreground_inset
     background_scale = max(timeline_width / source_width, timeline_height / source_height) * CDEFAULT_BACKGROUND_OVERSCAN
+    background_width = max(timeline_width, int(round(source_width * background_scale)))
+    background_height = max(timeline_height, int(round(source_height * background_scale)))
     entry["layoutKind"] = layout_kind
     entry["sourceAspect"] = source_aspect
     entry["foregroundInset"] = foreground_inset
     entry["foregroundScale"] = foreground_scale
     entry["backgroundScale"] = background_scale
+    entry["backgroundWidth"] = background_width
+    entry["backgroundHeight"] = background_height
 
     digest = hashlib.sha1(f"{source_path}|{entry.get('startFrame')}|{entry.get('endFrame')}".encode("utf-8")).hexdigest()[:16]
     safe_stem = re.sub(r"[^A-Za-z0-9_.-]+", "_", entry.get("sourceStem") or "photo").strip("._") or "photo"
@@ -661,6 +681,8 @@ def write_photo_blur_fill_comp(output_dir, entry, timeline_width, timeline_heigh
             fps=fps,
             foreground_scale=foreground_scale,
             background_scale=background_scale,
+            background_width=background_width,
+            background_height=background_height,
         ),
         encoding="utf-8",
     )
@@ -679,6 +701,8 @@ def build_photo_blur_fill_comp(
     fps,
     foreground_scale,
     background_scale,
+    background_width,
+    background_height,
 ):
     last_frame = max(0, duration_frames - 1)
     return f"""Composition {{
@@ -754,10 +778,11 @@ def build_photo_blur_fill_comp(
 \t\t\t}},
 \t\t\tViewInfo = OperatorInfo {{ Pos = {{ 220, -180 }} }},
 \t\t}},
-\t\tBackgroundTransform = Transform {{
+\t\tBackgroundResize = BetterResize {{
 \t\t\tCtrlWShown = false,
 \t\t\tInputs = {{
-\t\t\t\tSize = Input {{ Value = {fusion_number(background_scale)}, }},
+\t\t\t\tWidth = Input {{ Value = {background_width}, }},
+\t\t\t\tHeight = Input {{ Value = {background_height}, }},
 \t\t\t\tInput = Input {{
 \t\t\t\t\tSourceOp = "MediaIn1",
 \t\t\t\t\tSource = "Output",
@@ -765,70 +790,96 @@ def build_photo_blur_fill_comp(
 \t\t\t}},
 \t\t\tViewInfo = OperatorInfo {{ Pos = {{ 220, -70 }} }},
 \t\t}},
-\t\tBackgroundBlur1 = Blur {{
+\t\tBackgroundTransform = Transform {{
 \t\t\tCtrlWShown = false,
 \t\t\tInputs = {{
-\t\t\t\tXBlur = Input {{ Value = {fusion_number(CDEFAULT_BACKGROUND_BLUR)}, }},
-\t\t\t\tYBlur = Input {{ Value = {fusion_number(CDEFAULT_BACKGROUND_BLUR)}, }},
-\t\t\t\tFilter = Input {{ Value = FuID {{ "{fusion_string(CDEFAULT_BACKGROUND_BLUR_FILTER)}" }}, }},
+\t\t\t\tSize = Input {{ Value = 1, }},
 \t\t\t\tInput = Input {{
-\t\t\t\t\tSourceOp = "BackgroundTransform",
+\t\t\t\t\tSourceOp = "BackgroundResize",
 \t\t\t\t\tSource = "Output",
 \t\t\t\t}}
 \t\t\t}},
 \t\t\tViewInfo = OperatorInfo {{ Pos = {{ 440, -70 }} }},
 \t\t}},
-\t\tBackgroundBlur2 = Blur {{
+\t\tBackgroundCanvasMerge = Merge {{
 \t\t\tCtrlWShown = false,
 \t\t\tInputs = {{
-\t\t\t\tXBlur = Input {{ Value = {fusion_number(CDEFAULT_BACKGROUND_BLUR)}, }},
-\t\t\t\tYBlur = Input {{ Value = {fusion_number(CDEFAULT_BACKGROUND_BLUR)}, }},
-\t\t\t\tFilter = Input {{ Value = FuID {{ "{fusion_string(CDEFAULT_BACKGROUND_BLUR_FILTER)}" }}, }},
-\t\t\t\tInput = Input {{
-\t\t\t\t\tSourceOp = "BackgroundBlur1",
+\t\t\t\tBackground = Input {{
+\t\t\t\t\tSourceOp = "CanvasBackground",
 \t\t\t\t\tSource = "Output",
-\t\t\t\t}}
+\t\t\t\t}},
+\t\t\t\tForeground = Input {{
+\t\t\t\t\tSourceOp = "BackgroundTransform",
+\t\t\t\t\tSource = "Output",
+\t\t\t\t}},
+\t\t\t\tPerformDepthMerge = Input {{ Value = 0, }}
 \t\t\t}},
 \t\t\tViewInfo = OperatorInfo {{ Pos = {{ 660, -70 }} }},
 \t\t}},
-\t\tBackgroundBlur3 = Blur {{
+\t\tBackgroundCanvasCrop = Crop {{
 \t\t\tCtrlWShown = false,
 \t\t\tInputs = {{
-\t\t\t\tXBlur = Input {{ Value = {fusion_number(CDEFAULT_BACKGROUND_BLUR)}, }},
-\t\t\t\tYBlur = Input {{ Value = {fusion_number(CDEFAULT_BACKGROUND_BLUR)}, }},
-\t\t\t\tFilter = Input {{ Value = FuID {{ "{fusion_string(CDEFAULT_BACKGROUND_BLUR_FILTER)}" }}, }},
+\t\t\t\tXOffset = Input {{ Value = 0, }},
+\t\t\t\tYOffset = Input {{ Value = 0, }},
+\t\t\t\tXSize = Input {{ Value = {timeline_width}, }},
+\t\t\t\tYSize = Input {{ Value = {timeline_height}, }},
+\t\t\t\tKeepCentered = Input {{ Value = 1, }},
 \t\t\t\tInput = Input {{
-\t\t\t\t\tSourceOp = "BackgroundBlur2",
+\t\t\t\t\tSourceOp = "BackgroundCanvasMerge",
 \t\t\t\t\tSource = "Output",
 \t\t\t\t}}
 \t\t\t}},
 \t\t\tViewInfo = OperatorInfo {{ Pos = {{ 880, -70 }} }},
 \t\t}},
-\t\tBackgroundBlur4 = Blur {{
+\t\tBackgroundMipDown = BetterResize {{
 \t\t\tCtrlWShown = false,
 \t\t\tInputs = {{
-\t\t\t\tXBlur = Input {{ Value = {fusion_number(CDEFAULT_BACKGROUND_BLUR)}, }},
-\t\t\t\tYBlur = Input {{ Value = {fusion_number(CDEFAULT_BACKGROUND_BLUR)}, }},
-\t\t\t\tFilter = Input {{ Value = FuID {{ "{fusion_string(CDEFAULT_BACKGROUND_BLUR_FILTER)}" }}, }},
+\t\t\t\tWidth = Input {{ Value = {CDEFAULT_BACKGROUND_MIP_WIDTH}, }},
+\t\t\t\tHeight = Input {{ Value = {CDEFAULT_BACKGROUND_MIP_HEIGHT}, }},
 \t\t\t\tInput = Input {{
-\t\t\t\t\tSourceOp = "BackgroundBlur3",
+\t\t\t\t\tSourceOp = "BackgroundCanvasCrop",
 \t\t\t\t\tSource = "Output",
 \t\t\t\t}}
 \t\t\t}},
 \t\t\tViewInfo = OperatorInfo {{ Pos = {{ 1100, -70 }} }},
 \t\t}},
-\t\tBackgroundBlur5 = Blur {{
+\t\tBackgroundMipBlur = Blur {{
 \t\t\tCtrlWShown = false,
 \t\t\tInputs = {{
-\t\t\t\tXBlur = Input {{ Value = {fusion_number(CDEFAULT_BACKGROUND_BLUR)}, }},
-\t\t\t\tYBlur = Input {{ Value = {fusion_number(CDEFAULT_BACKGROUND_BLUR)}, }},
+\t\t\t\tXBlur = Input {{ Value = {fusion_number(CDEFAULT_BACKGROUND_MIP_BLUR)}, }},
+\t\t\t\tYBlur = Input {{ Value = {fusion_number(CDEFAULT_BACKGROUND_MIP_BLUR)}, }},
 \t\t\t\tFilter = Input {{ Value = FuID {{ "{fusion_string(CDEFAULT_BACKGROUND_BLUR_FILTER)}" }}, }},
 \t\t\t\tInput = Input {{
-\t\t\t\t\tSourceOp = "BackgroundBlur4",
+\t\t\t\t\tSourceOp = "BackgroundMipDown",
 \t\t\t\t\tSource = "Output",
 \t\t\t\t}}
 \t\t\t}},
 \t\t\tViewInfo = OperatorInfo {{ Pos = {{ 1320, -70 }} }},
+\t\t}},
+\t\tBackgroundMipUp = BetterResize {{
+\t\t\tCtrlWShown = false,
+\t\t\tInputs = {{
+\t\t\t\tWidth = Input {{ Value = {timeline_width}, }},
+\t\t\t\tHeight = Input {{ Value = {timeline_height}, }},
+\t\t\t\tInput = Input {{
+\t\t\t\t\tSourceOp = "BackgroundMipBlur",
+\t\t\t\t\tSource = "Output",
+\t\t\t\t}}
+\t\t\t}},
+\t\t\tViewInfo = OperatorInfo {{ Pos = {{ 1540, -70 }} }},
+\t\t}},
+\t\tBackgroundFinalBlur = Blur {{
+\t\t\tCtrlWShown = false,
+\t\t\tInputs = {{
+\t\t\t\tXBlur = Input {{ Value = {fusion_number(CDEFAULT_BACKGROUND_FINAL_BLUR)}, }},
+\t\t\t\tYBlur = Input {{ Value = {fusion_number(CDEFAULT_BACKGROUND_FINAL_BLUR)}, }},
+\t\t\t\tFilter = Input {{ Value = FuID {{ "{fusion_string(CDEFAULT_BACKGROUND_BLUR_FILTER)}" }}, }},
+\t\t\t\tInput = Input {{
+\t\t\t\t\tSourceOp = "BackgroundMipUp",
+\t\t\t\t\tSource = "Output",
+\t\t\t\t}}
+\t\t\t}},
+\t\t\tViewInfo = OperatorInfo {{ Pos = {{ 1760, -70 }} }},
 \t\t}},
 \t\tBackgroundGrade = BrightnessContrast {{
 \t\t\tCtrlWShown = false,
@@ -836,11 +887,11 @@ def build_photo_blur_fill_comp(
 \t\t\t\tGain = Input {{ Value = {fusion_number(CDEFAULT_BACKGROUND_GAIN)}, }},
 \t\t\t\tSaturation = Input {{ Value = {fusion_number(CDEFAULT_BACKGROUND_SATURATION)}, }},
 \t\t\t\tInput = Input {{
-\t\t\t\t\tSourceOp = "BackgroundBlur5",
+\t\t\t\t\tSourceOp = "BackgroundFinalBlur",
 \t\t\t\t\tSource = "Output",
 \t\t\t\t}}
 \t\t\t}},
-\t\t\tViewInfo = OperatorInfo {{ Pos = {{ 1540, -70 }} }},
+\t\t\tViewInfo = OperatorInfo {{ Pos = {{ 1980, -70 }} }},
 \t\t}},
 \t\tMergeBackground = Merge {{
 \t\t\tCtrlWShown = false,
@@ -855,7 +906,7 @@ def build_photo_blur_fill_comp(
 \t\t\t\t}},
 \t\t\t\tPerformDepthMerge = Input {{ Value = 0, }}
 \t\t\t}},
-\t\t\tViewInfo = OperatorInfo {{ Pos = {{ 1760, -70 }} }},
+\t\t\tViewInfo = OperatorInfo {{ Pos = {{ 2200, -70 }} }},
 \t\t}},
 \t\tForegroundTransform = Transform {{
 \t\t\tCtrlWShown = false,

@@ -73,6 +73,10 @@ import {
   snapshotProjectEditDrp,
 } from '../modules/timeline-core/index.js';
 import {
+  getResolveAssetsStatus,
+  installResolveAssets,
+} from '../modules/resolve-assets/index.js';
+import {
   resolveMediaRoot,
   type IMediaRootPathResolution,
 } from '../modules/media/root-resolver.js';
@@ -335,6 +339,7 @@ async function routeRequest(
         latestDrpSnapshot: resolveLatestEditDrpSnapshot(editResolveProjectMap, editResolveProjectName),
         resolveProjectMap: editResolveProjectMap,
       },
+      resolveAssets: await getResolveAssetsStatus({ workspaceRoot: options.workspaceRoot }),
       editFlowPlan,
       editFlowRuns,
     });
@@ -493,6 +498,22 @@ async function routeRequest(
     return;
   }
 
+  const editResolveAssetsMatch = pathname.match(/^\/api\/projects\/([^/]+)\/edit\/resolve-assets$/u);
+  if (editResolveAssetsMatch && (method === 'GET' || method === 'POST')) {
+    const projectId = decodeURIComponent(editResolveAssetsMatch[1]!);
+    await loadProject(join(options.workspaceRoot, 'projects', projectId));
+    if (method === 'POST') {
+      sendJson(response, 200, await installResolveAssets({
+        workspaceRoot: options.workspaceRoot,
+      }));
+      return;
+    }
+    sendJson(response, 200, await getResolveAssetsStatus({
+      workspaceRoot: options.workspaceRoot,
+    }));
+    return;
+  }
+
   const editMediaRelinkMatch = pathname.match(/^\/api\/projects\/([^/]+)\/edit\/resolve-media-relink$/u);
   if (editMediaRelinkMatch && method === 'POST') {
     const projectId = decodeURIComponent(editMediaRelinkMatch[1]!);
@@ -500,11 +521,22 @@ async function routeRequest(
     const editId = typeof payload?.editId === 'string' && payload.editId.trim()
       ? payload.editId.trim()
       : undefined;
-    sendJson(response, 200, await relinkProjectEditMedia({
+    const resolveAssetsInstall = await installResolveAssets({
+      workspaceRoot: options.workspaceRoot,
+    });
+    const relinkResult = await relinkProjectEditMedia({
       workspaceRoot: options.workspaceRoot,
       projectId,
       editId,
-    }));
+    });
+    sendJson(response, 200, {
+      ...relinkResult,
+      resolveAssetsInstall,
+      hostSummary: {
+        ...(relinkResult.hostSummary ?? {}),
+        resolveAssetsInstall,
+      },
+    });
     return;
   }
 

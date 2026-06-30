@@ -62,6 +62,14 @@ export function registerProjectEditResolveSnapshot(projectId, payload = {}) {
   return apiPost(`/api/projects/${encodeURIComponent(projectId)}/edit/resolve-project-snapshot/register`, payload);
 }
 
+export function fetchProjectEditResolveAssets(projectId) {
+  return apiGet(`/api/projects/${encodeURIComponent(projectId)}/edit/resolve-assets`);
+}
+
+export function installProjectEditResolveAssets(projectId, payload = {}) {
+  return apiPost(`/api/projects/${encodeURIComponent(projectId)}/edit/resolve-assets`, payload);
+}
+
 export function relinkProjectEditResolveMedia(projectId, payload = {}) {
   return apiPost(`/api/projects/${encodeURIComponent(projectId)}/edit/resolve-media-relink`, payload);
 }

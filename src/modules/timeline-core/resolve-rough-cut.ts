@@ -112,6 +112,7 @@ export interface IResolveEditMediaRelinkInput {
   namespace?: string;
   timelineName?: string;
   timelineTrackTypes?: Array<'video' | 'audio'>;
+  timelineCountUnmapped?: boolean;
   roots: IResolveEditMediaRelinkRoot[];
 }
 

@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "kairos-resolve-assets-manifest-v1",
+  "assets": [
+    {
+      "id": "kairos-volc-voiceover-plugin",
+      "label": "Kairos Volc Voiceover",
+      "kind": "file",
+      "source": "apps/resolve-volc-voiceover-plugin/KairosVolcVoiceover.lua",
+      "targetRoot": "resolve-user-data",
+      "target": "Fusion/Scripts/Edit/KairosVolcVoiceover.lua",
+      "mode": "executable"
+    },
+    {
+      "id": "kairos-volc-voiceover-workspace-link",
+      "label": "Kairos Volc Voiceover workspace link",
+      "kind": "generated-json",
+      "generator": "kairos-volc-voiceover-workspace-link",
+      "targetRoot": "resolve-user-data",
+      "target": "Fusion/Scripts/Edit/KairosVolcVoiceoverLib/kairos_workspace.json"
+    },
+    {
+      "id": "kairos-cinematic-matte-effect",
+      "label": "Kairos Cinematic Matte",
+      "kind": "file",
+      "source": "config/fusion-templates/Edit/Effects/Kairos/Kairos Cinematic Matte.setting",
+      "targetRoot": "resolve-user-data",
+      "target": "Fusion/Templates/Edit/Effects/Kairos/Kairos Cinematic Matte.setting"
+    }
+  ],
+  "cleanup": [
+    {
+      "targetRoot": "resolve-user-data",
+      "target": "Fusion/Scripts/Edit/Kairos Volc Voiceover"
+    },
+    {
+      "targetRoot": "resolve-user-data",
+      "target": "Fusion/Scripts/Edit/Kairos Volc Voiceover.py"
+    },
+    {
+      "targetRoot": "resolve-user-data",
+      "target": "Fusion/Scripts/Edit/Kairos Script Probe.py"
+    },
+    {
+      "targetRoot": "resolve-user-data",
+      "target": "Fusion/Scripts/Edit/KairosVolcVoiceover.py"
+    },
+    {
+      "targetRoot": "resolve-user-data",
+      "target": "Fusion/Scripts/Edit/KairosLuaProbe.lua"
+    }
+  ]
+}

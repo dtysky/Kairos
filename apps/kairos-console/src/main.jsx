@@ -18,6 +18,7 @@ import {
   fetchWorkspaceEditRulesConfig,
   fetchWorkspaceStyleConfig,
   fetchWorkspaceStatus,
+  installProjectEditResolveAssets,
   registerProjectColorDrpSnapshot,
   registerProjectEditResolveSnapshot,
   relinkProjectEditResolveMedia,
@@ -66,6 +67,8 @@ function AppShell() {
   const [error, setError] = useState('');
   const [workflowDialog, setWorkflowDialog] = useState(null);
   const [colorOverwriteDialog, setColorOverwriteDialog] = useState(null);
+  const [editResolveAssetsResult, setEditResolveAssetsResult] = useState(null);
+  const [editResolveAssetsError, setEditResolveAssetsError] = useState('');
   const [editRelinkResult, setEditRelinkResult] = useState(null);
   const [editRelinkError, setEditRelinkError] = useState('');
 
@@ -106,6 +109,13 @@ function AppShell() {
     const timer = window.setInterval(() => refreshProjectProgress(projectId), 4000);
     return () => window.clearInterval(timer);
   }, [projectId]);
+
+  useEffect(() => {
+    setEditResolveAssetsResult(null);
+    setEditResolveAssetsError('');
+    setEditRelinkResult(null);
+    setEditRelinkError('');
+  }, [projectId, activeEditId]);
 
   const projects = status?.projects || [];
   const duplicateProjectNames = useMemo(() => buildDuplicateProjectNameSet(projects), [projects]);
@@ -251,6 +261,25 @@ function AppShell() {
     }
   }
 
+  async function installEditResolveAssets(payload = {}) {
+    if (!projectId) return;
+    const busyKey = 'edit:resolve-assets';
+    setBusy(current => ({ ...current, [busyKey]: true }));
+    setEditResolveAssetsError('');
+    try {
+      const result = await installProjectEditResolveAssets(projectId, payload);
+      setEditResolveAssetsResult(result);
+      await refreshProject(projectId);
+      setMessage(formatResolveAssetsMessage(result));
+      setError('');
+    } catch (caught) {
+      setEditResolveAssetsError(formatResolveAssetsError(caught));
+      handleError(caught);
+    } finally {
+      setBusy(current => ({ ...current, [busyKey]: false }));
+    }
+  }
+
   async function relinkEditResolveMedia(payload = {}) {
     if (!projectId) return;
     const busyKey = 'edit:resolve-relink';
@@ -260,6 +289,7 @@ function AppShell() {
     try {
       const result = await relinkProjectEditResolveMedia(projectId, payload);
       setEditRelinkResult(result);
+      setEditResolveAssetsResult(result?.resolveAssetsInstall || result?.hostSummary?.resolveAssetsInstall || null);
       await refreshProject(projectId);
       await refreshStatus();
       setMessage(formatEditRelinkMessage(result));
@@ -843,7 +873,10 @@ function AppShell() {
                       onSaveEditUnit={saveEditUnitPayload}
                       onSaveResolveSnapshot={saveEditResolveSnapshot}
                       onRegisterResolveSnapshot={registerEditResolveSnapshot}
+                      onInstallResolveAssets={installEditResolveAssets}
                       onRelinkResolveMedia={relinkEditResolveMedia}
+                      editResolveAssetsResult={editResolveAssetsResult}
+                      editResolveAssetsError={editResolveAssetsError}
                       editRelinkResult={editRelinkResult}
                       editRelinkError={editRelinkError}
                     />
@@ -2023,7 +2056,10 @@ function EditFlowPage({
   onSaveEditUnit,
   onSaveResolveSnapshot,
   onRegisterResolveSnapshot,
+  onInstallResolveAssets,
   onRelinkResolveMedia,
+  editResolveAssetsResult,
+  editResolveAssetsError,
   editRelinkResult,
   editRelinkError,
 }) {
@@ -2075,8 +2111,11 @@ function EditFlowPage({
   const isBusy = Boolean(busy['edit-unit']);
   const saveResolveBusy = Boolean(busy['edit:resolve-snapshot']);
   const registerResolveBusy = Boolean(busy['edit:resolve-register']);
+  const installResolveAssetsBusy = Boolean(busy['edit:resolve-assets']);
   const relinkResolveBusy = Boolean(busy['edit:resolve-relink']);
   const editRelinkSummary = editRelinkResult?.hostSummary || null;
+  const resolveAssetsSummary = editResolveAssetsResult || editRelinkSummary?.resolveAssetsInstall || config?.resolveAssets || null;
+  const resolveAssetsWarningText = formatResolveAssetsWarning(resolveAssetsSummary);
   const editRelinkWarningText = formatEditRelinkWarnings(editRelinkSummary);
   const spansReady = config?.spans?.fresh;
   const chronologyReady = config?.chronology?.chronology?.status === 'confirmed';
@@ -2184,11 +2223,18 @@ function EditFlowPage({
           </div>
           <div className="inline-actions">
             <Button
-              type={relinkResolveBusy || typeof onRelinkResolveMedia !== 'function' ? 'disabled' : 'default'}
-              disabled={relinkResolveBusy || typeof onRelinkResolveMedia !== 'function'}
+              type={installResolveAssetsBusy || typeof onInstallResolveAssets !== 'function' ? 'disabled' : 'default'}
+              disabled={installResolveAssetsBusy || typeof onInstallResolveAssets !== 'function'}
+              onClick={() => onInstallResolveAssets?.({ editId })}
+            >
+              {installResolveAssetsBusy ? '安装中…' : '安装/更新插件与效果'}
+            </Button>
+            <Button
+              type={relinkResolveBusy || installResolveAssetsBusy || typeof onRelinkResolveMedia !== 'function' ? 'disabled' : 'default'}
+              disabled={relinkResolveBusy || installResolveAssetsBusy || typeof onRelinkResolveMedia !== 'function'}
               onClick={() => onRelinkResolveMedia?.({ editId })}
             >
-              {relinkResolveBusy ? '重链中…' : '重链素材路径'}
+              {relinkResolveBusy ? '安装校验并重链中…' : '重链素材路径'}
             </Button>
             <Button
               type={saveResolveBusy || typeof onSaveResolveSnapshot !== 'function' ? 'disabled' : 'default'}
@@ -2206,9 +2252,26 @@ function EditFlowPage({
             </Button>
           </div>
         </div>
+        {resolveAssetsSummary ? (
+          <div className={`edit-resolve-relink-summary ${resolveAssetsSummary.status === 'blocked' ? 'edit-resolve-relink-summary-error' : resolveAssetsSummary.status === 'needs-install' ? 'edit-resolve-relink-summary-warning' : ''}`}>
+            <span>{`插件/效果 ${formatResolveAssetsStatus(resolveAssetsSummary)}`}</span>
+            <span>{`已安装 ${resolveAssetsSummary.summary?.installed ?? 0}/${resolveAssetsSummary.summary?.total ?? 0}`}</span>
+            <span>{`更新 ${resolveAssetsSummary.summary?.updated ?? 0}`}</span>
+          </div>
+        ) : null}
+        {editResolveAssetsError ? (
+          <div className="edit-resolve-relink-summary edit-resolve-relink-summary-error">
+            <span>{editResolveAssetsError}</span>
+          </div>
+        ) : null}
+        {resolveAssetsWarningText ? (
+          <div className="edit-resolve-relink-summary edit-resolve-relink-summary-warning">
+            <span>{resolveAssetsWarningText}</span>
+          </div>
+        ) : null}
         {relinkResolveBusy ? (
           <div className="edit-resolve-relink-summary">
-            <span>正在重链 Resolve Media Pool 素材路径…</span>
+            <span>正在安装/更新 Resolve 插件与效果，并重链 Media Pool 素材路径…</span>
           </div>
         ) : null}
         {editRelinkError ? (
@@ -2218,9 +2281,11 @@ function EditFlowPage({
         ) : null}
         {editRelinkSummary ? (
           <div className="edit-resolve-relink-summary">
+            <span>{`插件 ${formatResolveAssetsStatus(editRelinkSummary.resolveAssetsInstall)}`}</span>
             <span>{`素材池 ${editRelinkSummary.totalMediaItems ?? 0}`}</span>
             <span>{`重链 ${editRelinkSummary.relinked ?? 0}`}</span>
             <span>{`配音 ${formatVoiceoverRelinkSummary(editRelinkSummary.voiceover)}`}</span>
+            <span>{`音频 ${formatExternalAudioRelinkSummary(editRelinkSummary.audio)}`}</span>
             <span>{`旧路径 ${editRelinkSummary.oldPathRemaining ?? 0}`}</span>
             <span>{`不可读 ${editRelinkSummary.localUnreadable ?? 0}`}</span>
             <span>{`缺失目标 ${editRelinkSummary.missingTargetCount ?? 0}`}</span>
@@ -2764,7 +2829,44 @@ function formatEditRelinkMessage(result) {
   const unreadable = summary.localUnreadable ?? 0;
   const missing = summary.missingTargetCount ?? 0;
   const unmapped = summary.unmappedCount ?? 0;
-  return `剪辑工程素材重链完成：${relinked} 个，旧路径 ${oldRemaining}，不可读 ${unreadable}，缺失目标 ${missing}，未映射 ${unmapped}；配音 ${formatVoiceoverRelinkSummary(summary.voiceover)}`;
+  const resolveAssets = summary.resolveAssetsInstall || result?.resolveAssetsInstall;
+  return `剪辑工程素材重链完成：${relinked} 个，旧路径 ${oldRemaining}，不可读 ${unreadable}，缺失目标 ${missing}，未映射 ${unmapped}；插件/效果 ${formatResolveAssetsStatus(resolveAssets)}；配音 ${formatVoiceoverRelinkSummary(summary.voiceover)}；音频 ${formatExternalAudioRelinkSummary(summary.audio)}`;
+}
+
+function formatResolveAssetsMessage(result) {
+  return `Resolve 插件/效果安装完成：${formatResolveAssetsStatus(result)}`;
+}
+
+function formatResolveAssetsError(caught) {
+  const baseMessage = caught instanceof Error ? caught.message : String(caught);
+  const details = caught?.details?.summary ? caught.details : caught?.details?.details;
+  if (!details?.summary) return baseMessage;
+  return `${baseMessage}；${formatResolveAssetsStatus(details)}`;
+}
+
+function formatResolveAssetsStatus(result) {
+  if (!result) return '未知';
+  const summary = result.summary || {};
+  const total = summary.total ?? 0;
+  const installed = summary.installed ?? 0;
+  if (result.status === 'ready') return `就绪 ${installed}/${total}`;
+  if (result.status === 'needs-install') {
+    return `需安装 ${installed}/${total}，缺失 ${summary.missing ?? 0}，过期 ${summary.outdated ?? 0}`;
+  }
+  if (result.status === 'blocked') {
+    return `阻塞 ${installed}/${total}，失败 ${summary.failed ?? 0}，缺源 ${summary.sourceMissing ?? 0}`;
+  }
+  return `${result.status || 'unknown'} ${installed}/${total}`;
+}
+
+function formatResolveAssetsWarning(result) {
+  if (!result) return '';
+  if (result.status === 'ready') return '';
+  const errors = (result.errors || []).slice(0, 2).filter(Boolean);
+  if (result.status === 'blocked') {
+    return `Resolve 插件/效果安装阻塞：${formatResolveAssetsStatus(result)}${errors.length ? `；${errors.join('；')}` : ''}`;
+  }
+  return `Resolve 插件/效果需要安装或更新：${formatResolveAssetsStatus(result)}`;
 }
 
 function formatEditRelinkError(caught) {
@@ -2785,20 +2887,42 @@ function formatEditRelinkWarnings(summary) {
   if (!summary) return '';
   const missing = summary.missingTargetCount ?? 0;
   const unmapped = summary.unmappedCount ?? 0;
+  const oldRemaining = summary.oldPathRemaining ?? 0;
+  const unreadable = summary.localUnreadable ?? 0;
   const timelineMissing = summary.timelineMissingTargetCount ?? 0;
   const timelineUnmapped = summary.timelineUnmappedCount ?? 0;
+  const timelineOld = summary.timelineOldPathRemaining ?? 0;
+  const timelineUnreadable = summary.timelineUnreadable ?? 0;
+  const resolveAssetsWarning = formatResolveAssetsWarning(summary.resolveAssetsInstall);
   const voiceoverWarning = formatVoiceoverRelinkWarning(summary.voiceover);
-  if (missing + unmapped + timelineMissing + timelineUnmapped <= 0 && !voiceoverWarning) return '';
+  const audioWarning = formatExternalAudioRelinkWarning(summary.audio, '音频');
+  if (
+    missing
+    + unmapped
+    + oldRemaining
+    + unreadable
+    + timelineMissing
+    + timelineUnmapped
+    + timelineOld
+    + timelineUnreadable <= 0
+    && !resolveAssetsWarning
+    && !voiceoverWarning
+    && !audioWarning
+  ) return '';
   const samples = [
     ...(summary.missingTargetSamples || []).slice(0, 3).map(item => item.target || item.path || item.name),
     ...(summary.unmappedSamples || []).slice(0, 3).map(item => item.path || item.name),
   ].filter(Boolean);
   const sampleText = samples.length > 0 ? `；样本：${samples.join('；')}` : '';
-  const voiceoverText = voiceoverWarning ? `；${voiceoverWarning}` : '';
-  return `重链完成，但仍有警告：缺失目标 ${missing}，未映射 ${unmapped}，时间线缺失目标 ${timelineMissing}，时间线未映射 ${timelineUnmapped}${voiceoverText}${sampleText}`;
+  const externalWarnings = [resolveAssetsWarning, voiceoverWarning, audioWarning].filter(Boolean).map(text => `；${text}`).join('');
+  return `重链完成，但仍有警告：旧路径 ${oldRemaining}，不可读 ${unreadable}，缺失目标 ${missing}，未映射 ${unmapped}，时间线旧路径 ${timelineOld}，时间线不可读 ${timelineUnreadable}，时间线缺失目标 ${timelineMissing}，时间线未映射 ${timelineUnmapped}${externalWarnings}${sampleText}`;
 }
 
 function formatVoiceoverRelinkSummary(summary) {
+  return formatExternalAudioRelinkSummary(summary);
+}
+
+function formatExternalAudioRelinkSummary(summary) {
   if (!summary || summary.configured === false) return '未配置';
   if (summary.skipped) return `跳过：${formatVoiceoverRelinkReason(summary.reason)}`;
   const relinked = summary.relinked ?? 0;
@@ -2808,14 +2932,18 @@ function formatVoiceoverRelinkSummary(summary) {
 }
 
 function formatVoiceoverRelinkWarning(summary) {
+  return formatExternalAudioRelinkWarning(summary, '配音');
+}
+
+function formatExternalAudioRelinkWarning(summary, label) {
   if (!summary || summary.configured === false) return '';
-  if (summary.skipped) return `配音重链跳过：${formatVoiceoverRelinkReason(summary.reason)}`;
+  if (summary.skipped) return `${label}重链跳过：${formatVoiceoverRelinkReason(summary.reason)}`;
   const missing = summary.missingTargetCount ?? 0;
   const unmapped = summary.unmappedCount ?? 0;
   const oldRemaining = summary.oldPathRemaining ?? 0;
   const timelineOld = summary.timelineOldPathRemaining ?? 0;
   if (missing + unmapped + oldRemaining + timelineOld <= 0) return '';
-  return `配音警告：缺失目标 ${missing}，未映射 ${unmapped}，旧路径 ${oldRemaining}，时间线旧路径 ${timelineOld}`;
+  return `${label}警告：缺失目标 ${missing}，未映射 ${unmapped}，旧路径 ${oldRemaining}，时间线旧路径 ${timelineOld}`;
 }
 
 function formatVoiceoverRelinkReason(reason) {
@@ -2823,6 +2951,9 @@ function formatVoiceoverRelinkReason(reason) {
   if (normalized === 'voiceover_media_not_configured') return '未配置';
   if (normalized === 'voiceover_media_unreadable') return '路径不可读';
   if (normalized === 'voiceover_media_pool_bin_missing') return 'Media Pool 无 Kairos Voiceover';
+  if (normalized === 'audio_media_not_configured') return '未配置';
+  if (normalized === 'audio_media_unreadable') return '路径不可读';
+  if (normalized === 'audio_media_pool_bin_missing') return 'Media Pool 无 Kairos Audio';
   return normalized || '未知原因';
 }
 

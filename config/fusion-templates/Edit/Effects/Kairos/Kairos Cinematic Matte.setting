@@ -1,0 +1,163 @@
+{
+	Tools = ordered() {
+		KairosCinematicMatte = MacroOperator {
+			CtrlWZoom = false,
+			Inputs = ordered() {
+				MainInput1 = InstanceInput {
+					SourceOp = "MergeTop",
+					Source = "Background",
+				},
+				MatteRatio = InstanceInput {
+					SourceOp = "MatteControls",
+					Source = "NumberIn1",
+					Name = "Matte Ratio",
+					Page = "Matte",
+					Default = 0.12,
+				},
+				SoftEdge = InstanceInput {
+					SourceOp = "MatteControls",
+					Source = "NumberIn2",
+					Name = "Soft Edge",
+					Page = "Matte",
+					Default = 0,
+				},
+				Opacity = InstanceInput {
+					SourceOp = "MatteControls",
+					Source = "NumberIn3",
+					Name = "Opacity",
+					Page = "Matte",
+					Default = 1,
+				}
+			},
+			Outputs = {
+				MainOutput1 = InstanceOutput {
+					SourceOp = "MergeBottom",
+					Source = "Output",
+				}
+			},
+			ViewInfo = GroupInfo { Pos = { 0, 0 } },
+			Tools = ordered() {
+				MatteControls = Custom {
+					CtrlWShown = false,
+					Inputs = {
+						NumberIn1 = Input { Value = 0.12, },
+						NumberIn2 = Input { Value = 0, },
+						NumberIn3 = Input { Value = 1, },
+					},
+					ViewInfo = OperatorInfo { Pos = { 0, -165 } },
+				},
+				TopMask = RectangleMask {
+					CtrlWShown = false,
+					Inputs = {
+						OutputSize = Input { Value = FuID { "Custom" }, },
+						MaskWidth = Input { Value = 1920, },
+						MaskHeight = Input { Value = 1080, },
+						PixelAspect = Input { Value = { 1, 1 }, },
+						UseFrameFormatSettings = Input { Value = 1, },
+						ClippingMode = Input { Value = FuID { "None" }, },
+						Center = Input { Value = { 0.5, 1 }, },
+						Width = Input { Value = 1, },
+						Height = Input {
+							Value = 0.24,
+							Expression = "MatteControls.NumberIn1 * 2",
+						},
+						SoftEdge = Input {
+							Value = 0,
+							Expression = "MatteControls.NumberIn2",
+						},
+					},
+					ViewInfo = OperatorInfo { Pos = { 220, -110 } },
+				},
+				BottomMask = RectangleMask {
+					CtrlWShown = false,
+					Inputs = {
+						OutputSize = Input { Value = FuID { "Custom" }, },
+						MaskWidth = Input { Value = 1920, },
+						MaskHeight = Input { Value = 1080, },
+						PixelAspect = Input { Value = { 1, 1 }, },
+						UseFrameFormatSettings = Input { Value = 1, },
+						ClippingMode = Input { Value = FuID { "None" }, },
+						Center = Input { Value = { 0.5, 0 }, },
+						Width = Input { Value = 1, },
+						Height = Input {
+							Value = 0.24,
+							Expression = "MatteControls.NumberIn1 * 2",
+						},
+						SoftEdge = Input {
+							Value = 0,
+							Expression = "MatteControls.NumberIn2",
+						},
+					},
+					ViewInfo = OperatorInfo { Pos = { 220, 110 } },
+				},
+				TopBlack = Background {
+					CtrlWShown = false,
+					Inputs = {
+						EffectMask = Input {
+							SourceOp = "TopMask",
+							Source = "Mask",
+						},
+						Width = Input { Value = 1920, },
+						Height = Input { Value = 1080, },
+						UseFrameFormatSettings = Input { Value = 1, },
+						TopLeftRed = Input { Value = 0, },
+						TopLeftGreen = Input { Value = 0, },
+						TopLeftBlue = Input { Value = 0, },
+						TopLeftAlpha = Input {
+							Value = 1,
+							Expression = "MatteControls.NumberIn3",
+						},
+					},
+					ViewInfo = OperatorInfo { Pos = { 440, -110 } },
+				},
+				BottomBlack = Background {
+					CtrlWShown = false,
+					Inputs = {
+						EffectMask = Input {
+							SourceOp = "BottomMask",
+							Source = "Mask",
+						},
+						Width = Input { Value = 1920, },
+						Height = Input { Value = 1080, },
+						UseFrameFormatSettings = Input { Value = 1, },
+						TopLeftRed = Input { Value = 0, },
+						TopLeftGreen = Input { Value = 0, },
+						TopLeftBlue = Input { Value = 0, },
+						TopLeftAlpha = Input {
+							Value = 1,
+							Expression = "MatteControls.NumberIn3",
+						},
+					},
+					ViewInfo = OperatorInfo { Pos = { 440, 110 } },
+				},
+				MergeTop = Merge {
+					CtrlWShown = false,
+					Inputs = {
+						Foreground = Input {
+							SourceOp = "TopBlack",
+							Source = "Output",
+						},
+						PerformDepthMerge = Input { Value = 0, },
+					},
+					ViewInfo = OperatorInfo { Pos = { 660, -55 } },
+				},
+				MergeBottom = Merge {
+					CtrlWShown = false,
+					Inputs = {
+						Background = Input {
+							SourceOp = "MergeTop",
+							Source = "Output",
+						},
+						Foreground = Input {
+							SourceOp = "BottomBlack",
+							Source = "Output",
+						},
+						PerformDepthMerge = Input { Value = 0, },
+					},
+					ViewInfo = OperatorInfo { Pos = { 880, 0 } },
+				}
+			},
+		}
+	},
+	ActiveTool = "KairosCinematicMatte"
+}

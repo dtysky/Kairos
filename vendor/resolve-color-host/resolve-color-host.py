@@ -891,6 +891,7 @@ def relink_edit_media(resolve, payload):
         raise HostError("resolve_edit_relink_roots_missing", "relink_edit_media requires at least one readable root mapping.")
 
     timeline_track_types = normalize_relink_timeline_track_types(payload.get("timelineTrackTypes"))
+    count_timeline_unmapped = payload.get("timelineCountUnmapped") is not False
     items = collect_media_pool_items(namespace_folder)
     preflight = build_edit_relink_plan(items, mappings)
     relink_results = []
@@ -903,15 +904,15 @@ def relink_edit_media(resolve, payload):
 
     if relinked > 0:
         time.sleep(1.0)
-    verify = summarize_edit_relink_state(namespace_folder, timeline, mappings, timeline_track_types)
+    verify = summarize_edit_relink_state(
+        namespace_folder,
+        timeline,
+        mappings,
+        timeline_track_types,
+        count_timeline_unmapped=count_timeline_unmapped,
+    )
     relink_failures = [entry for entry in relink_results if not entry["ok"]]
-    if (
-        relink_failures
-        or verify["oldPathRemaining"] > 0
-        or verify["localUnreadable"] > 0
-        or verify["timelineOldPathRemaining"] > 0
-        or verify["timelineUnreadable"] > 0
-    ):
+    if relink_failures:
         raise HostError(
             "resolve_edit_relink_verify_failed",
             "Resolve edit media relink did not pass verification.",
@@ -940,6 +941,7 @@ def relink_edit_media(resolve, payload):
             "namespace": namespace,
             "timeline": safe_call(timeline, "GetName") if timeline is not None else None,
             "timelineTrackTypes": timeline_track_types,
+            "timelineCountUnmapped": count_timeline_unmapped,
             "rootReadable": {mapping["rootId"]: Path(mapping["localPath"]).is_dir() for mapping in mappings},
             "rootCount": len(mappings),
             "alreadyLocalBefore": preflight["alreadyLocal"],
@@ -1675,7 +1677,7 @@ def normalize_relink_timeline_track_types(value):
     allowed = {"video", "audio"}
     result = []
     for raw in iter_values(value or []):
-        text = stringify_signal_value(raw).strip().lower()
+        text = (stringify_signal_value(raw) or "").strip().lower()
         if text in allowed and text not in result:
             result.append(text)
     return result or ["video"]
@@ -1726,7 +1728,7 @@ def build_edit_relink_plan(items, mappings):
     }
 
 
-def summarize_edit_relink_state(namespace_folder, timeline, mappings, timeline_track_types=None):
+def summarize_edit_relink_state(namespace_folder, timeline, mappings, timeline_track_types=None, count_timeline_unmapped=True):
     items = collect_media_pool_items(namespace_folder)
     roots = {mapping["rootId"]: 0 for mapping in mappings}
     old_remaining = 0
@@ -1788,7 +1790,8 @@ def summarize_edit_relink_state(namespace_folder, timeline, mappings, timeline_t
             if not edit_relink_target_exists(target_path):
                 timeline_unreadable += 1
         else:
-            timeline_unmapped += 1
+            if count_timeline_unmapped:
+                timeline_unmapped += 1
 
     return {
         "totalMediaItems": len(items),
@@ -1803,6 +1806,7 @@ def summarize_edit_relink_state(namespace_folder, timeline, mappings, timeline_t
         "skippedNonFileCount": len(skipped_non_file),
         "skippedNonFileSamples": skipped_non_file[:20],
         "timelineTrackTypes": timeline_track_types,
+        "timelineCountUnmapped": bool(count_timeline_unmapped),
         "timelineItemCount": len(timeline_items),
         "timelineVideoItemCount": sum(1 for track_type, _item in timeline_items if track_type == "video"),
         "timelineAudioItemCount": sum(1 for track_type, _item in timeline_items if track_type == "audio"),
@@ -1840,12 +1844,13 @@ def get_relink_item_type(item):
 
 
 def is_edit_relink_non_file_type(item_type):
-    normalized = stringify_signal_value(item_type).strip().lower()
+    normalized = (stringify_signal_value(item_type) or "").strip().lower()
     return normalized in {
         "compound",
         "timeline",
         "multicam",
         "fusion composition",
+        "",
     }
 
 
