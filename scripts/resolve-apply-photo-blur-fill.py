@@ -42,6 +42,7 @@ CDEFAULT_BACKGROUND_SATURATION = 0.82
 CDEFAULT_BACKGROUND_OVERSCAN = 1.12
 CDEFAULT_PANORAMA_ASPECT = 2.2
 CDEFAULT_PANORAMA_FOREGROUND_INSET = 1.0
+CSCALE_STRETCH = 4
 
 
 def load_host_module():
@@ -90,6 +91,7 @@ def main() -> int:
     )
     parser.add_argument("--replace-existing", action="store_true", help="Delete existing comp with --comp-name before import.")
     parser.add_argument("--limit", type=int, default=0, help="Apply to at most this many matching photo clips; 0 means all.")
+    parser.add_argument("--name-contains", default="", help="Only apply to photo clips whose timeline item name contains this text.")
     parser.add_argument("--dry-run", action="store_true", help="Inspect only; do not import Fusion comps.")
     parser.add_argument("--no-save", action="store_true", help="Do not SaveProject after importing comps.")
     args = parser.parse_args()
@@ -140,6 +142,13 @@ def run(args):
         args.photo_color,
         exclude_video_track_names={args.foreground_track},
     )
+    if args.name_contains:
+        photo_items = [
+            entry for entry in photo_items
+            if args.name_contains in (entry.get("name") or "")
+            or args.name_contains in (entry.get("sourceStem") or "")
+            or args.name_contains in (entry.get("sourcePath") or "")
+        ]
     return run_single_comp(
         args,
         repo_root,
@@ -236,7 +245,7 @@ def run_single_comp(
                     )
                 )
                 continue
-            transform_reset_result = reset_timeline_item_transform(item)
+            canvas_mapping_result = apply_timeline_item_canvas_mapping(item, entry, timeline_width, timeline_height)
             applied.append(
                 result_entry(
                     entry,
@@ -249,7 +258,7 @@ def run_single_comp(
                         "foregroundInset": entry.get("foregroundInset"),
                         "foregroundScale": entry.get("foregroundScale"),
                         "backgroundScale": entry.get("backgroundScale"),
-                        "transformResetResult": transform_reset_result,
+                        "canvasMappingResult": canvas_mapping_result,
                     },
                 )
             )
@@ -398,8 +407,13 @@ def clear_track_items(timeline, track_type, track_index, dry_run):
     return len(item_list)
 
 
-def reset_timeline_item_transform(item):
+def apply_timeline_item_canvas_mapping(item, entry, timeline_width, timeline_height):
+    source_width = host.parse_float(entry.get("sourceWidth")) or 0
+    source_height = host.parse_float(entry.get("sourceHeight")) or 0
+    source_aspect = source_width / source_height if source_width and source_height else None
+    timeline_aspect = timeline_width / timeline_height if timeline_width and timeline_height else None
     values = {
+        "Scaling": CSCALE_STRETCH,
         "ZoomGang": True,
         "ZoomX": 1,
         "ZoomY": 1,
@@ -409,6 +423,36 @@ def reset_timeline_item_transform(item):
     result = {}
     for key, value in values.items():
         result[key] = host.safe_call(item, "SetProperty", key, value)
+
+    readback = host.safe_call(item, "GetProperty") or {}
+    scaling_readback = host.parse_int(readback.get("Scaling"))
+    fallback_values = None
+    if scaling_readback != CSCALE_STRETCH and source_aspect and timeline_aspect:
+        zoom_x = 1
+        zoom_y = 1
+        if source_aspect > timeline_aspect:
+            zoom_y = source_aspect / timeline_aspect
+        elif source_aspect < timeline_aspect:
+            zoom_x = timeline_aspect / source_aspect
+        fallback_values = {
+            "ZoomGang": False,
+            "ZoomX": zoom_x,
+            "ZoomY": zoom_y,
+            "Pan": 0,
+            "Tilt": 0,
+        }
+        for key, value in fallback_values.items():
+            result[f"fallback:{key}"] = host.safe_call(item, "SetProperty", key, value)
+        readback = host.safe_call(item, "GetProperty") or readback
+
+    result["readback"] = {
+        key: readback.get(key)
+        for key in ("Scaling", "ZoomGang", "ZoomX", "ZoomY", "Pan", "Tilt")
+        if key in readback
+    }
+    result["sourceAspect"] = source_aspect
+    result["timelineAspect"] = timeline_aspect
+    result["fallbackValues"] = fallback_values
     return result
 
 
