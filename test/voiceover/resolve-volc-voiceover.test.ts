@@ -50,6 +50,74 @@ describe('Resolve Volc voiceover Supervisor service', () => {
     expect(media.selected.expandedPath).toBe(alternate);
   });
 
+  it('rejects implicit Windows drive paths before choosing a writable voiceover alternate', async () => {
+    const workspaceRoot = await createWorkspaceFixture({
+      brief: {
+        name: '格聂南线',
+        voiceoverMedia: {
+          path: '/Volumes/SSDMAX/kairos-voiceover',
+          alternatePaths: [{ path: 'PLACEHOLDER_ALTERNATE' }],
+        },
+      },
+    });
+    const alternate = join(workspaceRoot, 'voiceover-alt');
+    await mkdir(alternate, { recursive: true });
+    await rewriteProjectBrief(workspaceRoot, brief => ({
+      ...brief,
+      voiceoverMedia: {
+        ...brief.voiceoverMedia,
+        alternatePaths: [{ path: alternate }],
+      },
+    }));
+
+    const match = await findKairosProjectForResolve(workspaceRoot, '格聂南线 [Edit]');
+    const media = await resolveProjectVoiceoverMedia(match);
+
+    if (process.platform === 'win32') {
+      expect(media.selected.source).toBe('alternate');
+      expect(media.selected.expandedPath).toBe(alternate);
+      expect(media.candidates[0]).toMatchObject({
+        source: 'primary',
+        configuredPath: '/Volumes/SSDMAX/kairos-voiceover',
+        usable: false,
+        reason: 'implicit_windows_drive_path',
+      });
+    }
+  });
+
+  it('rejects relative voiceover media paths from project configuration', async () => {
+    const workspaceRoot = await createWorkspaceFixture({
+      brief: {
+        name: '格聂南线',
+        voiceoverMedia: {
+          path: 'relative-voiceover',
+          alternatePaths: [{ path: 'PLACEHOLDER_ALTERNATE' }],
+        },
+      },
+    });
+    const alternate = join(workspaceRoot, 'voiceover-alt');
+    await mkdir(alternate, { recursive: true });
+    await rewriteProjectBrief(workspaceRoot, brief => ({
+      ...brief,
+      voiceoverMedia: {
+        ...brief.voiceoverMedia,
+        alternatePaths: [{ path: alternate }],
+      },
+    }));
+
+    const match = await findKairosProjectForResolve(workspaceRoot, '格聂南线 [Edit]');
+    const media = await resolveProjectVoiceoverMedia(match);
+
+    expect(media.selected.source).toBe('alternate');
+    expect(media.selected.expandedPath).toBe(alternate);
+    expect(media.candidates[0]).toMatchObject({
+      source: 'primary',
+      configuredPath: 'relative-voiceover',
+      usable: false,
+      reason: 'path_not_absolute',
+    });
+  });
+
   it('parses Volcengine JSON response audio payloads', () => {
     const audio = Buffer.from('ID3fake-audio');
     const parsed = parseTtsResponse(Buffer.from(JSON.stringify({

@@ -885,10 +885,12 @@ function voiceoverMediaCandidates(media: NonNullable<IProjectBriefConfig['voiceo
 }
 
 async function probeVoiceoverRoot(pathText: string): Promise<IVoiceoverMediaProbeResult> {
-  if (!pathText.trim()) return { usable: false, reason: 'empty_path' };
-  if (isNonNativeDrivePath(pathText)) return { usable: false, reason: 'non_native_drive_path' };
-  const expandedPath = resolve(pathText);
-  if (!isAbsolutePathLike(pathText)) return { usable: false, expandedPath, reason: 'path_not_absolute' };
+  const trimmed = pathText.trim();
+  if (!trimmed) return { usable: false, reason: 'empty_path' };
+  if (isNonNativeDrivePath(trimmed)) return { usable: false, reason: 'non_native_drive_path' };
+  if (isImplicitWindowsDrivePath(trimmed)) return { usable: false, reason: 'implicit_windows_drive_path' };
+  if (!isAbsolutePathLike(trimmed)) return { usable: false, reason: 'path_not_absolute' };
+  const expandedPath = resolve(trimmed);
   try {
     if (await pathExists(expandedPath)) {
       if (!(await stat(expandedPath)).isDirectory()) {
@@ -1154,9 +1156,13 @@ function isNonNativeDrivePath(pathText: string): boolean {
   return process.platform !== 'win32' && /^[A-Za-z]:[\\/]/u.test(pathText.trim());
 }
 
+function isImplicitWindowsDrivePath(pathText: string): boolean {
+  return process.platform === 'win32' && /^\/(?!\/)/u.test(pathText.trim());
+}
+
 function isAbsolutePathLike(pathText: string): boolean {
   return process.platform === 'win32'
-    ? /^[A-Za-z]:[\\/]/u.test(pathText) || pathText.startsWith('\\\\') || pathText.startsWith('/')
+    ? /^[A-Za-z]:[\\/]/u.test(pathText) || pathText.startsWith('\\\\') || pathText.startsWith('//')
     : pathText.startsWith('/');
 }
 
