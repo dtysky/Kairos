@@ -7,7 +7,7 @@ import { homedir, platform } from 'node:os';
 type TResolveAssetStatus = 'installed' | 'missing' | 'outdated' | 'source-missing' | 'failed';
 type TResolveAssetsOverallStatus = 'ready' | 'needs-install' | 'blocked';
 type TResolveAssetKind = 'file' | 'generated-json';
-type TResolveAssetTargetRoot = 'resolve-user-data';
+type TResolveAssetTargetRoot = 'resolve-user-data' | 'resolve-system-data';
 type TGeneratedAssetKind = 'kairos-volc-voiceover-workspace-link';
 
 interface IResolveAssetsManifest {
@@ -112,6 +112,7 @@ async function inspectResolveAssets(
   const workspaceRoot = resolve(options.workspaceRoot);
   const manifestPath = join(workspaceRoot, CRESOLVE_ASSETS_MANIFEST_RELATIVE_PATH);
   const resolveUserDataRoot = resolveResolveUserDataRoot();
+  const resolveSystemDataRoot = resolveResolveSystemDataRoot();
   const checkedAt = new Date().toISOString();
   let manifest: IResolveAssetsManifest;
   try {
@@ -139,7 +140,7 @@ async function inspectResolveAssets(
   }
 
   if (install) {
-    await applyCleanupEntries(manifest.cleanup ?? [], { workspaceRoot, resolveUserDataRoot });
+    await applyCleanupEntries(manifest.cleanup ?? [], { resolveUserDataRoot, resolveSystemDataRoot });
     await ensureGeneratedAssetRuntimeDirs(workspaceRoot, manifest.assets ?? []);
   }
 
@@ -290,13 +291,16 @@ async function buildExpectedAssetContent(
 
 async function applyCleanupEntries(
   entries: IResolveAssetCleanupEntry[],
-  context: { workspaceRoot: string; resolveUserDataRoot: string },
+  context: { resolveUserDataRoot: string; resolveSystemDataRoot?: string },
 ): Promise<void> {
   for (const entry of entries) {
-    if (entry.targetRoot !== 'resolve-user-data') continue;
+    const targetRoot = entry.targetRoot;
+    if (targetRoot !== 'resolve-user-data' && targetRoot !== 'resolve-system-data') continue;
+    const root = resolveCleanupTargetRoot(targetRoot, context);
+    if (!root) continue;
     const target = entry.target?.trim();
     if (!target) continue;
-    const targetPath = joinSafe(context.resolveUserDataRoot, target);
+    const targetPath = joinSafe(root, target);
     await rm(targetPath, { recursive: true, force: true }).catch(() => undefined);
   }
 }
@@ -367,6 +371,21 @@ function resolveResolveUserDataRoot(): string {
     return join(appData, 'Blackmagic Design/DaVinci Resolve/Support');
   }
   return join(homedir(), '.local/share/DaVinciResolve');
+}
+
+function resolveResolveSystemDataRoot(): string | undefined {
+  if (platform() === 'darwin') {
+    return '/Library/Application Support/Blackmagic Design/DaVinci Resolve';
+  }
+  return undefined;
+}
+
+function resolveCleanupTargetRoot(
+  targetRoot: TResolveAssetTargetRoot,
+  context: { resolveUserDataRoot: string; resolveSystemDataRoot?: string },
+): string | undefined {
+  if (targetRoot === 'resolve-user-data') return context.resolveUserDataRoot;
+  return context.resolveSystemDataRoot;
 }
 
 function normalizeRequiredString(value: unknown, label: string): string {

@@ -103,7 +103,7 @@
 - 第一次粗剪锁定后写入 `edits/<editId>/timeline/locked-rough-cut.json`
 - v1 Edit Flow post-lock 只正式化字幕与旁白文本；旁白框架阶段必须保留 Resolve clip 边界，定位文案只能使用 GPS/chronology/span 事实并按地貌 / 水文 / 植被类别去重，禁止把已命名山河后再堆 `江河湖泊 / 峡谷崖壁 / 林带植被` 这类泛化标签；音量均一、BGM 编排、ducking 仍不纳入 Edit Flow 正式范围。项目级 `audioMedia` 只负责让已手工加入 Resolve 的 BGM/SFX/其它音频参与 `/edit` 路径重链。直接 TTS/声音复刻走独立 Resolve 插件路径，见 0.13。
 - Resolve 上的全时间线电影感画幅正式口径是 `Adjustment Clip + Kairos Fusion Edit Effect`：用户在 Edit 页自行放置并拉长 Adjustment Clip，Kairos 只提供可安装的 `Templates/Edit/Effects/Kairos/Kairos Cinematic Matte.setting` 模板；效果内部以 `MainInput1` 作为原时间线画面，Merge 上下等高黑边，并在 Edit Inspector 暴露可关键帧的 `Matte Ratio / Soft Edge / Opacity`。正式实现不得使用会 ripple 既有 clips 的 `InsertFusionCompositionIntoTimeline()`，不得依赖外部 PNG/MOV/ProRes carrier。任何自动写入 Intro 的脚本必须先在沙盒时间线通过真实 Deliver render 像素验证。
-- `/edit` Resolve 工程维护必须先通过 workspace 级 Resolve assets installer 统一安装/更新 Resolve 侧插件与效果库，再执行依赖 Resolve 环境的维护动作。installer 使用 `config/resolve-assets/manifest.json` 作为唯一清单，当前覆盖旁白配音插件与 Fusion Edit Effect 模板；它只复制/校验本机 Resolve 用户目录资源，不写 Flow Plan run record，不修改时间线。`重链素材路径` 按钮必须强制先运行 installer，installer 失败时阻塞 relink；成功时 relink 摘要必须带上安装/校验结果，UI 也必须提供独立的安装/刷新入口和状态展示。
+- `/edit` Resolve 工程维护必须先通过 workspace 级 Resolve assets installer 统一安装/更新 Resolve 侧插件与效果库，再执行依赖 Resolve 环境的维护动作。installer 使用 `config/resolve-assets/manifest.json` 作为唯一清单，当前覆盖旁白配音插件与 Fusion Edit Effect 模板；它只把正式资产复制/校验到本机 Resolve 用户目录，不写 Flow Plan run record，不修改时间线。旁白插件的 `Scripts/Edit` 目录只允许安装 `KairosVolcVoiceover.lua` 这一项，工作区链接写入 `Fusion/Config/KairosVolcVoiceover/kairos_workspace.json`，并清理 user/system 两边历史残留的同名脚本和 `KairosVolcVoiceoverLib` 菜单目录。`重链素材路径` 按钮必须强制先运行 installer，installer 失败时阻塞 relink；成功时 relink 摘要必须带上安装/校验结果，UI 也必须提供独立的安装/刷新入口和状态展示。
 
 ## 0.13 2026-06-17 Resolve 内直选字幕配音插件
 

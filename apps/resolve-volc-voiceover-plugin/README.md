@@ -16,11 +16,13 @@ The installer copies the script files to:
 
 ```text
 %APPDATA%\Blackmagic Design\DaVinci Resolve\Support\Fusion\Scripts\Edit\KairosVolcVoiceover.lua
-%APPDATA%\Blackmagic Design\DaVinci Resolve\Support\Fusion\Scripts\Edit\KairosVolcVoiceoverLib\
+%APPDATA%\Blackmagic Design\DaVinci Resolve\Support\Fusion\Config\KairosVolcVoiceover\kairos_workspace.json
 ```
 
-It also writes `KairosVolcVoiceoverLib\kairos_workspace.json` with the current
-workspace, runtime config path, and local Supervisor URL. The plugin expects the
+Only the Lua script is installed under `Scripts\Edit`; the workspace link lives
+under `Fusion\Config\KairosVolcVoiceover` so Resolve does not show it as a
+Scripts menu folder. The workspace link stores the current workspace, runtime
+config path, and local Supervisor URL. The plugin expects the
 Kairos Supervisor to be running at `http://127.0.0.1:8940`; it no longer installs
 or requires a Python backend.
 
@@ -33,15 +35,15 @@ apps/resolve-volc-voiceover-plugin/install_macos.sh
 The installer copies the script files to:
 
 ```text
-/Library/Application Support/Blackmagic Design/DaVinci Resolve/Fusion/Scripts/Edit/KairosVolcVoiceover.lua
-/Library/Application Support/Blackmagic Design/DaVinci Resolve/Fusion/Scripts/Edit/KairosVolcVoiceoverLib/
+~/Library/Application Support/Blackmagic Design/DaVinci Resolve/Fusion/Scripts/Edit/KairosVolcVoiceover.lua
+~/Library/Application Support/Blackmagic Design/DaVinci Resolve/Fusion/Config/KairosVolcVoiceover/kairos_workspace.json
 ```
 
-It also writes `KairosVolcVoiceoverLib/kairos_workspace.json`, pointing the
-installed plugin back to this Kairos workspace and to the local Supervisor API.
-
-If the system-level Resolve scripts directory is not writable, the installer
-falls back to the same path under `~/Library/Application Support/...`.
+Only the Lua script is installed under `Scripts/Edit`; the workspace link lives
+under `Fusion/Config/KairosVolcVoiceover` so Resolve does not show it as a
+Scripts menu folder. The installer also removes legacy Kairos Voiceover script
+copies from both user-level and system-level Resolve script directories before
+installing the current user-level copy.
 
 Restart Resolve, then open:
 

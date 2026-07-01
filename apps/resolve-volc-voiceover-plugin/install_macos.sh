@@ -3,24 +3,29 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORKSPACE_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-USER_TARGET_ROOT="${HOME}/Library/Application Support/Blackmagic Design/DaVinci Resolve/Fusion/Scripts/Edit"
-SYSTEM_TARGET_ROOT="/Library/Application Support/Blackmagic Design/DaVinci Resolve/Fusion/Scripts/Edit"
-if [[ -d "${SYSTEM_TARGET_ROOT}" && -w "${SYSTEM_TARGET_ROOT}" ]]; then
-  TARGET_ROOT="${SYSTEM_TARGET_ROOT}"
-else
-  TARGET_ROOT="${USER_TARGET_ROOT}"
-fi
-LEGACY_SYSTEM_DIR="${SYSTEM_TARGET_ROOT}/Kairos Volc Voiceover"
-LEGACY_USER_DIR="${USER_TARGET_ROOT}/Kairos Volc Voiceover"
-TARGET_LIB_DIR="${TARGET_ROOT}/KairosVolcVoiceoverLib"
+USER_DATA_ROOT="${HOME}/Library/Application Support/Blackmagic Design/DaVinci Resolve"
+SYSTEM_DATA_ROOT="/Library/Application Support/Blackmagic Design/DaVinci Resolve"
+TARGET_ROOT="${USER_DATA_ROOT}/Fusion/Scripts/Edit"
+TARGET_CONFIG_DIR="${USER_DATA_ROOT}/Fusion/Config/KairosVolcVoiceover"
 IPC_ROOT="${WORKSPACE_ROOT}/.tmp/resolve-volc-voiceover-plugin/ipc"
 
-rm -rf "${LEGACY_SYSTEM_DIR}" "${LEGACY_USER_DIR}"
-rm -f "${SYSTEM_TARGET_ROOT}/Kairos Volc Voiceover.py" "${SYSTEM_TARGET_ROOT}/Kairos Script Probe.py" "${SYSTEM_TARGET_ROOT}/KairosVolcVoiceover.py" "${SYSTEM_TARGET_ROOT}/KairosVolcVoiceover.lua" "${SYSTEM_TARGET_ROOT}/KairosLuaProbe.lua"
-rm -rf "${SYSTEM_TARGET_ROOT}/KairosVolcVoiceoverLib"
-rm -f "${USER_TARGET_ROOT}/Kairos Volc Voiceover.py" "${USER_TARGET_ROOT}/Kairos Script Probe.py" "${USER_TARGET_ROOT}/KairosVolcVoiceover.py" "${USER_TARGET_ROOT}/KairosVolcVoiceover.lua" "${USER_TARGET_ROOT}/KairosLuaProbe.lua"
-rm -rf "${USER_TARGET_ROOT}/KairosVolcVoiceoverLib"
-mkdir -p "${TARGET_ROOT}" "${TARGET_LIB_DIR}" "${IPC_ROOT}/requests" "${IPC_ROOT}/processing" "${IPC_ROOT}/responses"
+cleanup_scripts_root() {
+  local data_root="$1"
+  local scripts_root="${data_root}/Fusion/Scripts/Edit"
+  rm -rf "${scripts_root}/Kairos Volc Voiceover" 2>/dev/null || true
+  rm -f \
+    "${scripts_root}/Kairos Volc Voiceover.py" \
+    "${scripts_root}/Kairos Script Probe.py" \
+    "${scripts_root}/KairosVolcVoiceover.py" \
+    "${scripts_root}/KairosVolcVoiceover.lua" \
+    "${scripts_root}/KairosLuaProbe.lua" 2>/dev/null || true
+  rm -rf "${scripts_root}/KairosVolcVoiceoverLib" 2>/dev/null || true
+}
+
+cleanup_scripts_root "${USER_DATA_ROOT}"
+cleanup_scripts_root "${SYSTEM_DATA_ROOT}"
+
+mkdir -p "${TARGET_ROOT}" "${TARGET_CONFIG_DIR}" "${IPC_ROOT}/requests" "${IPC_ROOT}/processing" "${IPC_ROOT}/responses"
 cp "${SCRIPT_DIR}/KairosVolcVoiceover.lua" "${TARGET_ROOT}/KairosVolcVoiceover.lua"
 runtime_config="${WORKSPACE_ROOT}/config/runtime.json"
 {
@@ -30,13 +35,13 @@ runtime_config="${WORKSPACE_ROOT}/config/runtime.json"
   printf '  "supervisorUrl": "http://127.0.0.1:8940",\n'
   printf '  "ipcRoot": "%s"\n' "${IPC_ROOT//\"/\\\"}"
   printf '}\n'
-} > "${TARGET_LIB_DIR}/kairos_workspace.json"
+} > "${TARGET_CONFIG_DIR}/kairos_workspace.json"
 chmod 755 "${TARGET_ROOT}/KairosVolcVoiceover.lua"
-chmod 644 "${TARGET_LIB_DIR}/kairos_workspace.json"
+chmod 644 "${TARGET_CONFIG_DIR}/kairos_workspace.json"
 
 installed_files=(
   "${TARGET_ROOT}/KairosVolcVoiceover.lua"
-  "${TARGET_LIB_DIR}/kairos_workspace.json"
+  "${TARGET_CONFIG_DIR}/kairos_workspace.json"
 )
 
 if [[ "${KAIROS_INSTALL_PROBES:-0}" == "1" ]]; then
@@ -52,7 +57,7 @@ xattr -d com.apple.quarantine "${installed_files[@]}" 2>/dev/null || true
 
 echo "Installed Kairos Volc Voiceover to:"
 echo "${TARGET_ROOT}/KairosVolcVoiceover.lua"
-echo "${TARGET_LIB_DIR}/kairos_workspace.json"
+echo "${TARGET_CONFIG_DIR}/kairos_workspace.json"
 if [[ "${KAIROS_INSTALL_PROBES:-0}" == "1" ]]; then
   echo "${TARGET_ROOT}/KairosLuaProbe.lua"
 fi

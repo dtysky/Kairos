@@ -16,7 +16,7 @@
       "kind": "generated-json",
       "generator": "kairos-volc-voiceover-workspace-link",
       "targetRoot": "resolve-user-data",
-      "target": "Fusion/Scripts/Edit/KairosVolcVoiceoverLib/kairos_workspace.json"
+      "target": "Fusion/Config/KairosVolcVoiceover/kairos_workspace.json"
     },
     {
       "id": "kairos-cinematic-matte-effect",
@@ -28,6 +28,14 @@
     }
   ],
   "cleanup": [
+    {
+      "targetRoot": "resolve-user-data",
+      "target": "Fusion/Scripts/Edit/KairosVolcVoiceover.lua"
+    },
+    {
+      "targetRoot": "resolve-user-data",
+      "target": "Fusion/Scripts/Edit/KairosVolcVoiceoverLib"
+    },
     {
       "targetRoot": "resolve-user-data",
       "target": "Fusion/Scripts/Edit/Kairos Volc Voiceover"
@@ -46,6 +54,34 @@
     },
     {
       "targetRoot": "resolve-user-data",
+      "target": "Fusion/Scripts/Edit/KairosLuaProbe.lua"
+    },
+    {
+      "targetRoot": "resolve-system-data",
+      "target": "Fusion/Scripts/Edit/KairosVolcVoiceover.lua"
+    },
+    {
+      "targetRoot": "resolve-system-data",
+      "target": "Fusion/Scripts/Edit/KairosVolcVoiceoverLib"
+    },
+    {
+      "targetRoot": "resolve-system-data",
+      "target": "Fusion/Scripts/Edit/Kairos Volc Voiceover"
+    },
+    {
+      "targetRoot": "resolve-system-data",
+      "target": "Fusion/Scripts/Edit/Kairos Volc Voiceover.py"
+    },
+    {
+      "targetRoot": "resolve-system-data",
+      "target": "Fusion/Scripts/Edit/Kairos Script Probe.py"
+    },
+    {
+      "targetRoot": "resolve-system-data",
+      "target": "Fusion/Scripts/Edit/KairosVolcVoiceover.py"
+    },
+    {
+      "targetRoot": "resolve-system-data",
       "target": "Fusion/Scripts/Edit/KairosLuaProbe.lua"
     }
   ]

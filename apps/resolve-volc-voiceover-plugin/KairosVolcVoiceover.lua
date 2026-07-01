@@ -1,5 +1,5 @@
 local WINDOW_ID = "kairosVolcVoiceover"
-local PLUGIN_VERSION = "0.2.4"
+local PLUGIN_VERSION = "0.2.5"
 local VOICE_TRACK_NAME = "Kairos VO"
 
 local subtitles = {}
@@ -63,7 +63,10 @@ local function jsonUnescape(value)
 end
 
 local function workspaceLinkField(name)
-    local linkText = readText(root .. "/KairosVolcVoiceoverLib/kairos_workspace.json")
+    local linkText = readText(root .. "/../../Config/KairosVolcVoiceover/kairos_workspace.json")
+    if linkText == "" then
+        linkText = readText(root .. "/KairosVolcVoiceoverLib/kairos_workspace.json")
+    end
     local value = linkText:match('"' .. name .. '"%s*:%s*"([^"]*)"') or ""
     return jsonUnescape(value)
 end
@@ -555,7 +558,7 @@ end
 local function fileIpcRequest(request, timeoutSeconds)
     local rootPath = supervisorIpcRoot()
     if rootPath == "" then
-        return nil, "Supervisor IPC root is not configured in KairosVolcVoiceoverLib/kairos_workspace.json."
+        return nil, "Supervisor IPC root is not configured in Fusion/Config/KairosVolcVoiceover/kairos_workspace.json."
     end
     local requestId = ipcRequestId()
     request.requestId = requestId
