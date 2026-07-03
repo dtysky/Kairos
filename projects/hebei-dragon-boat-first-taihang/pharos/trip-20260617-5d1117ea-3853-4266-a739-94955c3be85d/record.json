@@ -1,0 +1,1555 @@
+{
+  "$schema": "pharos/record/v2.0",
+  "trip_id": "trip-20260617-5d1117ea-3853-4266-a739-94955c3be85d",
+  "device_id": "samsung_SM-S9360",
+  "records": [
+    {
+      "shot_id": "bcf845ac-90f5-42df-b8e9-f06fbdd20a83",
+      "plan_revision": 13,
+      "status": "abandoned",
+      "abandon_reason": "没拍",
+      "actual_time": {
+        "start": "2026-06-17T18:40:00+08:00",
+        "end": "2026-06-17T19:00:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.8591235,
+          22.5450121
+        ],
+        "end": [
+          113.8591235,
+          22.5450121
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "手持自拍或小脚架固定，记录登机前状态。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "11b15e56-a786-4912-9766-77bdbf2fddb3",
+      "plan_revision": 13,
+      "status": "abandoned",
+      "abandon_reason": "没拍",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "02b80c93-b783-46fb-8633-e179ed43a048",
+      "plan_revision": 13,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-06-17T23:20:00+08:00",
+        "end": "2026-06-17T23:45:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.8591235,
+          22.5450121
+        ],
+        "end": [
+          113.8591235,
+          22.5450121
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "落地第一反应、航站楼和打车/接驳动线。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "62b513e8-1bcd-421e-afc2-40dc182728bc",
+      "plan_revision": 13,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-06-17T23:50:00+08:00",
+        "end": "2026-06-17T23:59:00+08:00"
+      },
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "654a096a-76a5-4d0a-966a-1f080f94ce32",
+      "plan_revision": 13,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-06-18T00:20:00+08:00",
+        "end": "2026-06-18T00:50:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.8591235,
+          22.5450121
+        ],
+        "end": [
+          113.8591235,
+          22.5450121
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "入住、充电、备份卡包和第二天器材准备。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "2d8ab9e6-b33b-46cd-9082-039d9677554f",
+      "plan_revision": 13,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-06-18T08:30:00+08:00",
+        "end": "2026-06-18T09:30:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.8591235,
+          22.5450121
+        ],
+        "end": [
+          113.8591235,
+          22.5450121
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "取车点或车边自拍，拍验车、装车和正式出发动作。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "30b4c81e-1d03-4511-9c1b-8e2740e33c97",
+      "plan_revision": 13,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-06-18T10:10:00+08:00",
+        "end": "2026-06-18T23:59:00+08:00"
+      },
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "71df1d9f-9acb-4d4a-9b15-76ac294b7de6",
+      "plan_revision": 13,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-06-18T10:45:00+08:00",
+        "end": "2026-06-18T10:55:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.8591235,
+          22.5450121
+        ],
+        "end": [
+          113.8591235,
+          22.5450121
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "公共道路走拍，遇到安保询问立刻停止。",
+          "extensions": null
+        },
+        {
+          "type": "photo",
+          "camera": "A7R6",
+          "lens": "50-400mm F4.5-6.3",
+          "note": "长焦拍厂区外观、管线、牌匾和城市压缩关系。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "0644670c-59a0-4ae6-bc5d-077897a45c4d",
+      "plan_revision": 13,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-06-18T10:56:00+08:00",
+        "end": "2026-06-18T11:56:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.8591235,
+          22.5450121
+        ],
+        "end": [
+          113.8591235,
+          22.5450121
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "走拍生活区入口、路边店铺和日常人流。",
+          "extensions": null
+        },
+        {
+          "type": "photo",
+          "camera": "A7R6",
+          "lens": "20-70mm F4 G",
+          "note": "建筑立面、门牌和街道细节。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "ec403e1a-2b00-4403-8957-04495d5be8cf",
+      "plan_revision": 13,
+      "status": "abandoned",
+      "abandon_reason": null,
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "wanqing-mural-d1-quick-stop",
+      "plan_revision": 13,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-06-18T15:55:00+08:00",
+        "end": "2026-06-18T16:15:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.8591235,
+          22.5450121
+        ],
+        "end": [
+          113.8591235,
+          22.5450121
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "墙绘前口播、车启动、出城转场。",
+          "extensions": null
+        },
+        {
+          "type": "photo",
+          "camera": "A7R6",
+          "lens": "20-70mm F4 G",
+          "note": "墙绘、街口、车与墙绘关系。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "53c131b4-8b4f-4fb0-bba0-8ec444eec6f8",
+      "plan_revision": 13,
+      "status": "abandoned",
+      "abandon_reason": "没必要单独停车点拿出来",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "689cc62a-e95d-474f-b1e6-823bf17a480a",
+      "plan_revision": 13,
+      "status": "unexpected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-06-18T18:40:00+08:00",
+        "end": "2026-06-18T19:55:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.8591235,
+          22.5450121
+        ],
+        "end": [
+          113.8591235,
+          22.5450121
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "公共区域走拍，记录矿路和空间质感。",
+          "extensions": null
+        },
+        {
+          "type": "photo",
+          "camera": "A7R5",
+          "lens": "20mm F1.8 G",
+          "note": "广角补环境关系。",
+          "extensions": null
+        },
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "0145bdcd-7c83-430f-bbeb-c65b51e743f3",
+      "plan_revision": 13,
+      "status": "abandoned",
+      "abandon_reason": "天气恶劣",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "f5c1ad28-3a78-4afb-8540-ac2730eb18e4",
+      "plan_revision": 13,
+      "status": "abandoned",
+      "abandon_reason": "天气恶劣",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "f98d06d9-e160-496f-a89d-7e32f79ba922",
+      "plan_revision": 13,
+      "status": "abandoned",
+      "abandon_reason": "天气恶劣",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "c662ff23-3706-4958-98f7-557eec6036d6",
+      "plan_revision": 13,
+      "status": "abandoned",
+      "abandon_reason": "天气恶劣",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "61f4c92a-2a69-4c9e-a68c-cc8a0fb95be7",
+      "plan_revision": 13,
+      "status": "abandoned",
+      "abandon_reason": "天气恶劣",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "dddd725f-9386-4ca4-a57f-7fa234d31f82",
+      "plan_revision": 13,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-06-19T00:20:00+08:00",
+        "end": "2026-06-19T00:30:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.8591235,
+          22.5450121
+        ],
+        "end": [
+          113.8591235,
+          22.5450121
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "住宿房间、充电、备份和收包。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "66f7062b-cccd-4c3d-8aba-f2eda7bb85d0",
+      "plan_revision": 13,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-06-19T08:40:00+08:00",
+        "end": "2026-06-19T08:50:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.8591235,
+          22.5450121
+        ],
+        "end": [
+          113.8591235,
+          22.5450121
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "住宿门口或车边，拍起床后收拾、退房、设备检查和白石山短线口播。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "65d1ba6d-1514-4564-8f29-7405842c79a3",
+      "plan_revision": 13,
+      "status": "unexpected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-06-19T13:20:00+08:00",
+        "end": "2026-06-19T13:20:00+08:00"
+      },
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": {
+        "pharos:continuous_deviation": {
+          "planned_location": "白石山镇 → 白石山景区短线 → 中六村/白洋淀长廊 → 雄安新区",
+          "actual_origin": "白石山镇",
+          "actual_origin_gps": [
+            114.68015650764292,
+            39.309216069870054
+          ],
+          "actual_destination": "莲池区",
+          "actual_destination_gps": [
+            115.490955,
+            38.882714
+          ],
+          "reason": "天气等综合原因，目的地改到保定",
+          "recorded_at": "2026-07-03T05:21:03.869214Z"
+        }
+      }
+    },
+    {
+      "shot_id": "6009683a-16bf-4b03-a924-b686764b0923",
+      "plan_revision": 13,
+      "status": "abandoned",
+      "abandon_reason": "天气恶劣",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "95cc7281-5fcb-4242-8d37-aee4514efa7e",
+      "plan_revision": 13,
+      "status": "abandoned",
+      "abandon_reason": "天气恶劣",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "97e1111c-8b7f-4cfe-94d8-5f87e95e19b7",
+      "plan_revision": 13,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-06-19T11:10:00+08:00",
+        "end": "2026-06-19T12:00:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.8591235,
+          22.5450121
+        ],
+        "end": [
+          113.8591235,
+          22.5450121
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "农家饭、补水、路线、时间节点和设备检查。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "f957d195-8823-4cda-99d7-343109b12cb2",
+      "plan_revision": 13,
+      "status": "abandoned",
+      "abandon_reason": "路线变更",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "2c609819-2da6-4c85-83ca-e5f7dacd6bab",
+      "plan_revision": 13,
+      "status": "abandoned",
+      "abandon_reason": "路线变更",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "dcf89c21-02c0-40f0-b819-aadf16d65b89",
+      "plan_revision": 13,
+      "status": "abandoned",
+      "abandon_reason": "路线变更",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "20d44af3-9fc2-4016-ba55-0b91485773be",
+      "plan_revision": 13,
+      "status": "abandoned",
+      "abandon_reason": "路线变更",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "1824a61a-107c-4b4f-8f55-43b146935e04",
+      "plan_revision": 13,
+      "status": "abandoned",
+      "abandon_reason": "出发地变更",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "f01727f8-6ed1-4e48-9825-073c6d9782ff",
+      "plan_revision": 13,
+      "status": "unexpected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-06-20T13:27:00+08:00",
+        "end": "2026-06-20T13:27:00+08:00"
+      },
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": {
+        "pharos:continuous_deviation": {
+          "planned_location": "雄安新区 → 开滦 → 秦皇岛西港 → 福来岛附近",
+          "actual_origin": "莲池区",
+          "actual_origin_gps": [
+            115.490955,
+            38.882714
+          ],
+          "actual_destination": "海龟岛",
+          "actual_destination_gps": [
+            119.28529,
+            39.57941
+          ],
+          "reason": "出发地变更",
+          "recorded_at": "2026-07-03T05:27:43.250633Z"
+        }
+      }
+    },
+    {
+      "shot_id": "4be43c68-44da-405d-92a8-c1affc630108",
+      "plan_revision": 13,
+      "status": "abandoned",
+      "abandon_reason": "没吃午饭",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "f1121d09-6cbc-4b23-9931-91ffd23e8600",
+      "plan_revision": 13,
+      "status": "unexpected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-06-20T14:30:00+08:00",
+        "end": "2026-06-20T16:00:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.8591235,
+          22.5450121
+        ],
+        "end": [
+          113.8591235,
+          22.5450121
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "开放区域走拍，避免拍禁入/敏感位置。",
+          "extensions": null
+        },
+        {
+          "type": "photo",
+          "camera": "A7R6",
+          "lens": "50-400mm F4.5-6.3",
+          "note": "长焦拍工业构件、轨道、墙面和城市压缩。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "b7b23df3-674a-471a-ac21-7b56932bb076",
+      "plan_revision": 13,
+      "status": "abandoned",
+      "abandon_reason": "没口播",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "b62d8381-a28f-4a05-b88f-7fbb92c1495c",
+      "plan_revision": 13,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-06-20T19:20:00+08:00",
+        "end": "2026-06-20T20:30:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.8591235,
+          22.5450121
+        ],
+        "end": [
+          113.8591235,
+          22.5450121
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "手持扫街、港口边界、铁轨、仓库和游客。",
+          "extensions": null
+        },
+        {
+          "type": "photo",
+          "camera": "A7R6",
+          "lens": "20-70mm F4 G",
+          "note": "开埠地建筑、轨道和港口细节。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "d219f59d-34b2-4e36-91e1-bde098ec7cb6",
+      "plan_revision": 13,
+      "status": "abandoned",
+      "abandon_reason": "迟到了，没拍成，错过了晚霞，卧槽",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "a137f27a-4056-4eda-b934-afbdc3581fc8",
+      "plan_revision": 13,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-06-20T22:30:00+08:00",
+        "end": "2026-06-20T22:40:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.8591235,
+          22.5450121
+        ],
+        "end": [
+          113.8591235,
+          22.5450121
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "入住、备份、充电、日出设备摆放。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "505b87e0-1d7b-4514-95c8-d6d6d7418cf0",
+      "plan_revision": 13,
+      "status": "unexpected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-06-21T03:10:00+08:00",
+        "end": "2026-06-21T04:22:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.8591235,
+          22.5450121
+        ],
+        "end": [
+          113.8591235,
+          22.5450121
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "第三视角自拍：到达、架机、海龟岛灯标和天光。",
+          "extensions": null
+        },
+        {
+          "type": "photo",
+          "camera": "A7R6",
+          "lens": "20-70mm F4 G",
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "6d18deb4-a10c-47f1-9420-482381e0e487",
+      "plan_revision": 13,
+      "status": "unexpected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-06-21T04:23:00+08:00",
+        "end": "2026-06-21T05:16:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.8591235,
+          22.5450121
+        ],
+        "end": [
+          113.8591235,
+          22.5450121
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "timelapse",
+          "camera": "A7R6",
+          "lens": "50-400mm F4.5-6.3",
+          "note": "长焦拍细高灯标、渔船、港池水面反光和日出。",
+          "extensions": null
+        },
+        {
+          "type": "timelapse",
+          "camera": "A7R5",
+          "lens": "20mm F1.8 G",
+          "note": "广角纳入滩涂乱石、低矮海岸、天空和灯标环境。",
+          "extensions": null
+        },
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "第三视角自拍：看日出、看回放、渔港风声和现场环境声。",
+          "extensions": null
+        },
+        {
+          "type": "photo",
+          "camera": "A7R6",
+          "lens": "20-70mm F4 G",
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "e8cb37f4-6f33-462d-909c-6bb11adb1237",
+      "plan_revision": 13,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-06-21T05:19:00+08:00",
+        "end": "2026-06-21T06:00:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.8591235,
+          22.5450121
+        ],
+        "end": [
+          113.8591235,
+          22.5450121
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "渔港、船、人、海边小路、滩涂乱石和清晨环境声。",
+          "extensions": null
+        },
+        {
+          "type": "photo",
+          "camera": "A7R6",
+          "lens": "20-70mm F4 G",
+          "note": "船、人和海岸细节。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "5e1506c2-72e2-4354-b9fd-35aa79273edb",
+      "plan_revision": 13,
+      "status": "unexpected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-06-21T09:10:00+08:00",
+        "end": "2026-06-21T10:15:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.8591235,
+          22.5450121
+        ],
+        "end": [
+          113.8591235,
+          22.5450121
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "退房、收拾、装车和路线口播。",
+          "extensions": null
+        },
+        {
+          "type": "photo",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "dc7d8408-230c-4775-9ffd-adeca69b0a67",
+      "plan_revision": 13,
+      "status": "unexpected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-06-21T10:30:00+08:00",
+        "end": "2026-06-21T12:10:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.8591235,
+          22.5450121
+        ],
+        "end": [
+          113.8591235,
+          22.5450121
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "早午饭、补给、路况和离开前状态。",
+          "extensions": null
+        }
+      ],
+      "extensions": {
+        "pharos:event_deviation": {
+          "planned_location": "福来岛附近早午饭点",
+          "actual_location": "汐岸蒸汽海鲜自助",
+          "actual_location_gps": [
+            119.331137,
+            39.701947
+          ],
+          "reason": "吃好点",
+          "recorded_at": "2026-07-03T05:37:19.854486Z"
+        }
+      }
+    },
+    {
+      "shot_id": "641ec4a6-1f34-45a8-a965-85414a8b0a6c",
+      "plan_revision": 13,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-06-21T10:20:00+08:00",
+        "end": "2026-06-21T21:00:00+08:00"
+      },
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "6b164876-ca04-4109-af60-b26fe1553db6",
+      "plan_revision": 13,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-06-21T17:45:00+08:00",
+        "end": "2026-06-21T18:15:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.8590391,
+          22.5449763
+        ],
+        "end": [
+          113.8590391,
+          22.5449763
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "海河边、解放北路、停车/入住和城市环境。",
+          "extensions": null
+        },
+        {
+          "type": "photo",
+          "camera": "A7R6",
+          "lens": "20-70mm F4 G",
+          "note": "天津建筑和海河街景。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "8a901f66-4c7d-4f95-b1a6-7c48463ca29d",
+      "plan_revision": 13,
+      "status": "abandoned",
+      "abandon_reason": "没吃饭",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "52c1662f-c423-4803-b17a-dd50d4823801",
+      "plan_revision": 13,
+      "status": "unexpected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-06-21T17:30:00+08:00",
+        "end": "2026-06-21T20:00:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.8590391,
+          22.5449763
+        ],
+        "end": [
+          113.8590391,
+          22.5449763
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "第三视角自拍：观景台内架机、遮反光、看城市亮灯。",
+          "extensions": null
+        },
+        {
+          "type": "photo",
+          "camera": "A7R6",
+          "lens": "20-70mm F4 G",
+          "note": null,
+          "extensions": null
+        },
+        {
+          "type": "photo",
+          "camera": "A7R5",
+          "lens": "50-400mm F4.5-6.3",
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "3a4d23da-8c44-4a72-ab81-48f8e7ec2bce",
+      "plan_revision": 13,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-06-21T20:45:00+08:00",
+        "end": "2026-06-21T21:00:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.8590391,
+          22.5449763
+        ],
+        "end": [
+          113.8590391,
+          22.5449763
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "夜景、回房、充电、备份和明日计划。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "8387d739-8a16-4323-a7f8-50f3c3e59708",
+      "plan_revision": 13,
+      "status": "abandoned",
+      "abandon_reason": "身体不适",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "37b9579a-9231-4218-b4c2-2e7943e1d8fa",
+      "plan_revision": 13,
+      "status": "abandoned",
+      "abandon_reason": "身体不适",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "9e5f4f0c-8150-4696-8a6a-843d67b481f7",
+      "plan_revision": 13,
+      "status": "abandoned",
+      "abandon_reason": "身体不适",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "e2a8f16a-1a5a-4b8d-8d28-7ee0d7955948",
+      "plan_revision": 13,
+      "status": "abandoned",
+      "abandon_reason": "没拍",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "0f1fc350-6fad-4a7e-82a4-f91f75c618a4",
+      "plan_revision": 13,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-06-22T11:00:00+08:00",
+        "end": "2026-06-22T22:30:00+08:00"
+      },
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "562e8a87-dfd0-4f5f-b83c-66a29c0a8770",
+      "plan_revision": 13,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-06-22T14:20:00+08:00",
+        "end": "2026-06-22T15:00:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.859065,
+          22.5449834
+        ],
+        "end": [
+          113.859065,
+          22.5449834
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "午饭、补给、导航和还车时间确认。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "15538bc0-512a-417c-8123-5d748fb8b30e",
+      "plan_revision": 13,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-06-22T11:10:00+08:00",
+        "end": "2026-06-22T12:20:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.859065,
+          22.5449834
+        ],
+        "end": [
+          113.859065,
+          22.5449834
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "建筑、树影、路口和人车流。",
+          "extensions": null
+        },
+        {
+          "type": "photo",
+          "camera": "A7R6",
+          "lens": "20-70mm F4 G",
+          "note": "建筑立面和街道关系。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "10f285d0-cd18-4b07-b73e-a6b89715b536",
+      "plan_revision": 13,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-06-22T12:40:00+08:00",
+        "end": "2026-06-22T14:00:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.859065,
+          22.5449834
+        ],
+        "end": [
+          113.859065,
+          22.5449834
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "街角、树荫、骑行和建筑。",
+          "extensions": null
+        },
+        {
+          "type": "photo",
+          "camera": "A7R6",
+          "lens": "20-70mm F4 G",
+          "note": "民园广场和五大道建筑关系。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    },
+    {
+      "shot_id": "6ea4ab76-9e1a-43e9-9d98-0fa158436bf3",
+      "plan_revision": 13,
+      "status": "abandoned",
+      "abandon_reason": "来不及",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "fec2dcaf-0220-47bf-a0d3-6ac41d42b574",
+      "plan_revision": 13,
+      "status": "abandoned",
+      "abandon_reason": "来不及",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "2ec3414c-7b3b-4991-9f78-1a29f7ed7178",
+      "plan_revision": 13,
+      "status": "abandoned",
+      "abandon_reason": "来不及",
+      "actual_time": null,
+      "actual_gps": null,
+      "actual_captures": null,
+      "extensions": null
+    },
+    {
+      "shot_id": "aa247e33-6d8b-427f-90e6-857c2689208b",
+      "plan_revision": 13,
+      "status": "expected",
+      "abandon_reason": null,
+      "actual_time": {
+        "start": "2026-06-22T17:20:00+08:00",
+        "end": "2026-06-22T19:30:00+08:00"
+      },
+      "actual_gps": {
+        "start": [
+          113.859065,
+          22.5449834
+        ],
+        "end": [
+          113.859065,
+          22.5449834
+        ]
+      },
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "还车、值机、候机、登机和舷窗。",
+          "extensions": null
+        },
+        {
+          "type": "photo",
+          "camera": "A7R6",
+          "lens": "20-70mm F4 G",
+          "note": "候机口和舷窗静帧。",
+          "extensions": null
+        }
+      ],
+      "extensions": null
+    }
+  ],
+  "extra_shots": [
+    {
+      "id": "extra-001",
+      "day": 1,
+      "kind": "event",
+      "location": "井陉县晚餐",
+      "origin": null,
+      "destination": null,
+      "gps": [
+        114.139247,
+        38.031563
+      ],
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-06-18T17:35:00+08:00",
+        "end": "2026-06-18T18:22:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": null,
+          "extensions": null
+        },
+        {
+          "type": "photo",
+          "camera": "A7R5",
+          "lens": "20-70mm F4 G",
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "在井陉县决定晚餐",
+      "extensions": null
+    },
+    {
+      "id": "extra-002",
+      "day": 2,
+      "kind": "event",
+      "location": "胎压报警修车",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-06-19T10:20:00+08:00",
+        "end": "2026-06-19T10:40:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "突然胎压报警，去修车",
+      "extensions": null
+    },
+    {
+      "id": "extra-003",
+      "day": 2,
+      "kind": "event",
+      "location": "石窝村",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-06-19T12:57:00+08:00",
+        "end": "2026-06-19T13:20:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": null,
+          "extensions": null
+        },
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "去石窝村看了下，了却遗憾",
+      "extensions": null
+    },
+    {
+      "id": "extra-004",
+      "day": 2,
+      "kind": "event",
+      "location": "易水湖游览",
+      "origin": null,
+      "destination": null,
+      "gps": [
+        115.209911,
+        39.285276
+      ],
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-06-19T15:30:00+08:00",
+        "end": "2026-06-19T18:30:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": null,
+          "extensions": null
+        },
+        {
+          "type": "photo",
+          "camera": "A7R6",
+          "lens": "20-70mm F4 G",
+          "note": null,
+          "extensions": null
+        },
+        {
+          "type": "photo",
+          "camera": "A7R5",
+          "lens": "14mm F1.8 GM",
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "天气原因，行程改到易水湖",
+      "extensions": null
+    },
+    {
+      "id": "extra-005",
+      "day": 2,
+      "kind": "event",
+      "location": "保定附近华北平原",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-06-19T20:10:00+08:00",
+        "end": "2026-06-19T20:20:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": null,
+          "extensions": null
+        },
+        {
+          "type": "photo",
+          "camera": "A7R6",
+          "lens": "20-70mm F4 G",
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "夜幕降临华北平原",
+      "extensions": null
+    },
+    {
+      "id": "extra-006",
+      "day": 2,
+      "kind": "event",
+      "location": "保定晚餐",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-06-19T21:00:00+08:00",
+        "end": "2026-06-19T21:40:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "在保定吃了晚餐",
+      "extensions": null
+    },
+    {
+      "id": "extra-007",
+      "day": 3,
+      "kind": "event",
+      "location": "保定早餐",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-06-20T09:20:00+08:00",
+        "end": "2026-06-20T09:40:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": null,
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "保定早餐吃了驴肉火烧",
+      "extensions": null
+    }
+  ],
+  "extensions": null
+}

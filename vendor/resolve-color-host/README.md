@@ -14,7 +14,7 @@ Expected local layout:
 - `vendor/resolve-color-host/resolve-color-host.py`
 - `vendor/resolve-color-host/.venv/...`
 - `<workspaceRoot>/config/default.drt` (preferred when present)
-- `<workspaceRoot>/config/default.drx` (manual diagnostics only)
+- optional explicit external DRX path (manual diagnostics only; no default repo fallback)
 
 The official Kairos `/color` path now assumes this backend directly and no longer reads
 project-level Resolve Python/runtime overrides from `config/runtime.json`.
@@ -29,16 +29,18 @@ When the orchestrator detects a missing or stale portrait DRT hash in an existin
 root, it reruns only the affected chunk and resets each stale portrait clip graph before
 reapplying the orientation DRT. The completion sync carries the current DRT hash back into
 the clip snapshot.
-If the required DRT does not exist, bulk prepare skips automatic Gyro seeding for those
-clips and marks them as pending template/orientation initialization. Each DRT template must
-apply as:
+The Kairos orchestrator blocks bulk prepare before Resolve mutation when the default
+`config/default.drt` is missing for default / horizontal / unknown-direction clips. Missing
+portrait orientation DRTs remain a clip-level degradation path: those clips continue with
+timeline transform and a disabled Gyro node, and the host marks them as pending orientation
+initialization. Each DRT template must apply as:
 
 `Gyro -> Dehaze -> User1 -> User2 -> NR`
 
 The host validates the applied grade before accepting it. If the selected DRT template
 does not match the five-node contract, `prepare_root` fails instead of silently accepting
-the wrong repair layout. `config/default.drx` is retained for manual diagnostics only and
-is not used as a large-batch fallback.
+the wrong repair layout. The repo no longer carries `config/default.drx`; any DRX use must
+be an explicit external/manual diagnostic path and is not used as a large-batch fallback.
 
 On canonical reruns, the host preserves the existing clip grade, user zone, and
 user-toggled Dehaze/NR state, but it still reasserts node 1 from `gyroEligible` because

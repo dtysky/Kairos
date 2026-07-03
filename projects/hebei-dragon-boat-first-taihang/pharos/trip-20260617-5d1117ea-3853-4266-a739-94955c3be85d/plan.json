@@ -1,0 +1,3011 @@
+{
+  "$schema": "pharos/plan/v3.0",
+  "trip_id": "trip-20260617-5d1117ea-3853-4266-a739-94955c3be85d",
+  "trip_kind": "planned",
+  "title": "河北石家庄秦皇岛-此生初次入太行",
+  "revision": 13,
+  "updated_at": "2026-06-14T17:36:18+08:00",
+  "timezone": "Asia/Shanghai",
+  "dates": {
+    "start": "2026-06-17",
+    "end": "2026-06-22"
+  },
+  "companion": false,
+  "pre_trip_tasks": [
+    {
+      "id": "id-card",
+      "label": "身份证",
+      "completed_in_plan": false
+    },
+    {
+      "id": "flight-tickets",
+      "label": "机票（已出票：深圳 → 石家庄、天津 → 深圳）",
+      "completed_in_plan": false
+    },
+    {
+      "id": "rental-car",
+      "label": "租车（恒大御景半岛一期附近取车，天津还车，提前确认8:00取车与异地还车费）",
+      "completed_in_plan": false
+    },
+    {
+      "id": "hotels",
+      "label": "酒店（恒大御景半岛一期附近、涞源/白石山镇、雄安新区、秦皇岛、天津）",
+      "completed_in_plan": false
+    },
+    {
+      "id": "insurance",
+      "label": "保险（旅行意外险 + 租车补充险）",
+      "completed_in_plan": false
+    },
+    {
+      "id": "driver-license",
+      "label": "驾照",
+      "completed_in_plan": false
+    },
+    {
+      "id": "drone-registration-and-no-fly-check",
+      "label": "无人机实名、电子围栏与禁飞区核查",
+      "completed_in_plan": false
+    },
+    {
+      "id": "camera-drone-tripod-filters-audio",
+      "label": "相机、无人机、三脚架、ND/CPL、收音设备",
+      "completed_in_plan": false
+    },
+    {
+      "id": "storage-reader-laptop-backup",
+      "label": "移动硬盘/读卡器/笔记本电脑（每日备份素材）",
+      "completed_in_plan": false
+    },
+    {
+      "id": "sun-protection-and-weather-gear",
+      "label": "防晒霜、墨镜、遮阳帽、薄外套、雨具",
+      "completed_in_plan": false
+    },
+    {
+      "id": "medicine-and-repellent",
+      "label": "驱蚊、防暑药、肠胃药、感冒药",
+      "completed_in_plan": false
+    },
+    {
+      "id": "offline-maps",
+      "label": "离线地图（正定、石家庄、井陉、涞源、白洋淀/雄安、唐山、秦皇岛、天津）",
+      "completed_in_plan": false
+    },
+    {
+      "id": "wqnml-song-map-and-script-outline",
+      "label": "万能青年旅店歌单、地点映射笔记、口播提纲",
+      "completed_in_plan": false
+    }
+  ],
+  "days": [
+    {
+      "day": 0,
+      "date": "2026-06-17",
+      "title": "深圳 → 石家庄正定机场",
+      "shots": [
+        {
+          "id": "bcf845ac-90f5-42df-b8e9-f06fbdd20a83",
+          "kind": "event",
+          "location": "深圳宝安国际机场T3航站楼",
+          "description": "出发前口播，交代这次是从深圳飞进河北，片子主线是万青、工业、人文和太行。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap"
+          },
+          "gps": [
+            113.80677834132285,
+            22.630476239797915
+          ],
+          "time_window": [
+            "18:40",
+            "19:00"
+          ],
+          "needs_companion": false,
+          "self_shoot": true,
+          "script": "现在从深圳出发，今晚先飞到正定。明天正式进河北，这次不是景点打卡，是沿着万青那些歌，把石家庄、矿区、太行和秦皇岛串起来。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "手持自拍或小脚架固定，记录登机前状态。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "11b15e56-a786-4912-9766-77bdbf2fddb3",
+          "kind": "event",
+          "location": "深圳宝安国际机场T3航站楼",
+          "description": "登机前晚饭和补给，拍食物、候机人流、登机口电子屏。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap"
+          },
+          "gps": [
+            113.80677834132285,
+            22.630476239797915
+          ],
+          "time_window": [
+            "19:00",
+            "19:35"
+          ],
+          "needs_companion": false,
+          "self_shoot": false,
+          "script": "今晚落地会很晚，这顿先把体力补上。真正开始拍是在明天，今天先把人顺利送到河北。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "饭、登机牌、行李和候机人流。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "02b80c93-b783-46fb-8633-e179ed43a048",
+          "kind": "event",
+          "location": "石家庄正定国际机场T2航站楼",
+          "description": "深夜落地记录，拍航站楼、行李、打车/接驳去恒大御景半岛一期附近前的第一反应。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap"
+          },
+          "gps": [
+            114.68628736614002,
+            38.28330622246734
+          ],
+          "time_window": [
+            "23:20",
+            "23:45"
+          ],
+          "needs_companion": false,
+          "self_shoot": true,
+          "script": "到正定了，时间已经很晚。今天不取车，先去恒大御景半岛一期附近睡觉，明早八点在附近取车再正式开始。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "落地第一反应、航站楼和打车/接驳动线。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "62b513e8-1bcd-421e-afc2-40dc182728bc",
+          "kind": "continuous",
+          "location": "石家庄正定机场 → 恒大御景半岛一期附近酒店",
+          "description": "深夜接驳记录，少量拍路牌、车窗和到达恒大御景半岛一期附近酒店前的状态，不强行夜游。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap"
+          },
+          "gps": null,
+          "time_window": null,
+          "needs_companion": null,
+          "self_shoot": null,
+          "script": null,
+          "captures": null,
+          "gps_start": [
+            114.68628736614002,
+            38.28330622246734
+          ],
+          "gps_end": [
+            114.55777458957566,
+            38.08587726242636
+          ],
+          "trigger_radius_km": 2,
+          "angles": [
+            {
+              "device": "ZV-E1",
+              "roll": "a-roll",
+              "description": "副驾位或停车后自拍，交代深夜打车/接驳与明天8:00取车计划。"
+            }
+          ],
+          "script_points": [
+            {
+              "label": "离开机场",
+              "gps": [
+                114.68628736614002,
+                38.28330622246734
+              ],
+              "script": "现在离开机场，今晚只做一件事：安全到酒店。",
+              "radius_m": 200
+            },
+            {
+              "label": "接近恒大御景半岛一期",
+              "gps": [
+                114.55777458957566,
+                38.08587726242636
+              ],
+              "script": "快到恒大御景半岛一期附近了，明早八点在附近取车，再进石家庄主线。",
+              "radius_m": 300
+            }
+          ]
+        }
+      ],
+      "extensions": {
+        "pharos:display_day": "D0"
+      }
+    },
+    {
+      "day": 1,
+      "date": "2026-06-18",
+      "title": "恒大御景半岛一期附近 → 华北制药 → 北国商城 → 万青墙绘 → 解放第一矿 → 石窝长城",
+      "shots": [
+        {
+          "id": "654a096a-76a5-4d0a-966a-1f080f94ce32",
+          "kind": "event",
+          "location": "恒大御景半岛一期附近酒店",
+          "description": "D0深夜抵达后的入住记录，只拍房间、放包、充电和明日8:00取车前的设备整理。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap"
+          },
+          "gps": [
+            114.55777458957566,
+            38.08587726242636
+          ],
+          "time_window": [
+            "00:20",
+            "00:50"
+          ],
+          "needs_companion": false,
+          "self_shoot": true,
+          "script": "今天到这里就结束了。明早八点在附近取车，第一站先去华北制药，把石家庄那条线拉出来。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "入住、充电、备份卡包和第二天器材准备。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "2d8ab9e6-b33b-46cd-9082-039d9677554f",
+          "kind": "event",
+          "location": "恒大御景半岛一期附近取车点",
+          "description": "D1取车和正式出发口播，明确D1不拍隆兴寺，主线改成石家庄工业、北国午饭、万青墙绘、井陉矿区和石窝长城。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap"
+          },
+          "gps": [
+            114.55777458957566,
+            38.08587726242636
+          ],
+          "time_window": [
+            "08:00",
+            "08:25"
+          ],
+          "needs_companion": false,
+          "self_shoot": true,
+          "script": "今天正式开始。早上八点先在恒大御景半岛一期附近取车，正定古寺这次不拍了，先去华药，再到北国见女朋友吃饭，饭后去万青墙绘，最后出城进井陉和石窝长城。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "取车点或车边自拍，拍验车、装车和正式出发动作。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "30b4c81e-1d03-4511-9c1b-8e2740e33c97",
+          "kind": "continuous",
+          "location": "恒大御景半岛一期附近取车点 → 华北制药 → 北国商城 → 万青墙绘 → 解放第一矿 → 石窝长城",
+          "description": "D1全日自驾总记录，从恒大御景半岛一期附近取车点出发，依次进入华北制药、北国商城、万青墙绘、井陉解放第一矿，最终抵达石窝长城停车/补给点；途经提醒全部放入 script_points，不再拆短转场。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap"
+          },
+          "gps": null,
+          "time_window": null,
+          "needs_companion": null,
+          "self_shoot": null,
+          "script": null,
+          "captures": null,
+          "gps_start": [
+            114.55777458957566,
+            38.08587726242636
+          ],
+          "gps_end": [
+            114.64282922586953,
+            39.25835645289367
+          ],
+          "trigger_radius_km": 3,
+          "angles": [
+            {
+              "device": "ZV-E1",
+              "roll": "a-roll",
+              "description": "车内自拍和路上记录，覆盖从取车点、石家庄城市章节、北国午饭、万青墙绘到井陉矿区、石窝长城的全天转场。"
+            }
+          ],
+          "script_points": [
+            {
+              "label": "恒大御景半岛一期附近取车",
+              "gps": [
+                114.55777458957566,
+                38.08587726242636
+              ],
+              "script": "从恒大御景半岛一期附近取车出发，先去华北制药。这个开头不是为了拍漂亮，是为了进到《杀死那个石家庄人》的生活现场。",
+              "radius_m": 300
+            },
+            {
+              "label": "接近华药公司门口",
+              "gps": [
+                114.5288544464706,
+                38.052968647854215
+              ],
+              "script": "快到华药了，先拍公司门口正面，建立一下这条国企城市线索，但只拍公共道路，不打扰门岗。",
+              "radius_m": 250
+            },
+            {
+              "label": "转入华药生活区",
+              "gps": [
+                114.52346461801686,
+                38.04924900742061
+              ],
+              "script": "厂门只是开头，真正要看的还是旁边生活区。这里会比任何地标都更接近那首歌的日常。",
+              "radius_m": 300
+            },
+            {
+              "label": "华药后去北国商城",
+              "gps": [
+                114.5288544464706,
+                38.052968647854215
+              ],
+              "script": "华药这一段先收住，接下来去北国商城见女朋友吃饭，补水、查电池，然后再往南去万青墙绘。",
+              "radius_m": 250
+            },
+            {
+              "label": "北国商城午饭",
+              "gps": [
+                114.50417127856548,
+                38.041766150295864
+              ],
+              "script": "北国这顿饭是今天的中场休息。城市中心、女朋友、午饭，拍一点普通白日，别拖太久。",
+              "radius_m": 250
+            },
+            {
+              "label": "万青墙绘",
+              "gps": [
+                114.50641182891847,
+                38.01161428737663
+              ],
+              "script": "到了万青墙绘。这个点不是为了拍粉丝打卡照，而是给这趟路一个题眼：我想看看这些歌里的河北到底长什么样。",
+              "radius_m": 200
+            },
+            {
+              "label": "墙绘后出城去井陉",
+              "gps": [
+                114.50641182891847,
+                38.01161428737663
+              ],
+              "script": "墙绘拍完，从南二环方向出城。接下来这段会从城市生活切到山石和矿。",
+              "radius_m": 200
+            },
+            {
+              "label": "接近解放第一矿",
+              "gps": [
+                114.03111088421657,
+                38.04184635749453
+              ],
+              "script": "快到解放第一矿了，现场只拍开放区域和公共道路，不硬闯。",
+              "radius_m": 500
+            },
+            {
+              "label": "离开井陉去石窝",
+              "gps": [
+                114.03111088421657,
+                38.04184635749453
+              ],
+              "script": "井陉先到这里，接下来是今天最关键的长转场，去石窝长城等日落和银河。",
+              "radius_m": 500
+            },
+            {
+              "label": "接近石窝长城",
+              "gps": [
+                114.64282922586953,
+                39.25835645289367
+              ],
+              "script": "快到石窝了，先补水、减重，然后六点开始爬，七点到机位就可以。",
+              "radius_m": 800
+            }
+          ]
+        },
+        {
+          "id": "71df1d9f-9acb-4d4a-9b15-76ac294b7de6",
+          "kind": "event",
+          "location": "华北制药和平东路388号",
+          "description": "华北制药厂区外观建立镜头，长焦压缩厂门、围墙、管线、老树与城市背景；不长时间架机，不拍门岗特写。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap",
+            "pharos:music_refs": [
+              "杀死那个石家庄人"
+            ]
+          },
+          "gps": [
+            114.5288544464706,
+            38.052968647854215
+          ],
+          "time_window": [
+            "08:45",
+            "09:05"
+          ],
+          "needs_companion": false,
+          "self_shoot": false,
+          "script": "先拍华药公司门口正面。这个镜头不用多，它只是把国企和药厂这条线立起来。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "公共道路走拍，遇到安保询问立刻停止。",
+              "extensions": null
+            },
+            {
+              "type": "photo",
+              "camera": "A7R6",
+              "lens": "50-400mm F4.5-6.3",
+              "note": "长焦拍厂区外观、管线、牌匾和城市压缩关系。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "0644670c-59a0-4ae6-bc5d-077897a45c4d",
+          "kind": "event",
+          "location": "华北制药集团生活区一区",
+          "description": "《杀死那个石家庄人》核心生活区段落，拍居民楼、树影、单元门、早点铺、路边小店和生活痕迹。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap",
+            "pharos:music_refs": [
+              "杀死那个石家庄人"
+            ]
+          },
+          "gps": [
+            114.52346461801686,
+            38.04924900742061
+          ],
+          "time_window": [
+            "09:05",
+            "09:45"
+          ],
+          "needs_companion": false,
+          "self_shoot": false,
+          "script": "厂门只是建立镜头，真正让我想停下来的还是生活区。这里不是景点，它更像一首歌背后的日常。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "走拍生活区入口、路边店铺和日常人流。",
+              "extensions": null
+            },
+            {
+              "type": "photo",
+              "camera": "A7R6",
+              "lens": "20-70mm F4 G",
+              "note": "建筑立面、门牌和街道细节。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "ec403e1a-2b00-4403-8957-04495d5be8cf",
+          "kind": "event",
+          "location": "北国商城",
+          "description": "女朋友安排的北国商城午饭和补给，拍商场人流、餐食、补水、检查电池卡和下午矿区路线。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap"
+          },
+          "gps": [
+            114.50417127856548,
+            38.041766150295864
+          ],
+          "time_window": [
+            "10:10",
+            "11:10"
+          ],
+          "needs_companion": false,
+          "self_shoot": false,
+          "script": "这顿饭在北国商城。它正好把华药这一段收住，饭后顺建设南大街去万青墙绘，再从南二环出城进井陉。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "餐食、商场人流、补给和路线确认。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "wanqing-mural-d1-quick-stop",
+          "kind": "event",
+          "location": "万能青年旅店乐队墙绘打卡点",
+          "description": "万青墙绘快闪片头/题眼，只拍公共空间、墙绘、车启动和出城前口播，不展开成粉丝打卡。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": null,
+          "gps": [
+            114.50641182891847,
+            38.01161428737663
+          ],
+          "time_window": [
+            "11:30",
+            "11:50"
+          ],
+          "needs_companion": false,
+          "self_shoot": true,
+          "script": "我从石家庄的一面万青墙绘出发，想看看这些歌里反复出现的河北，到底长什么样。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "墙绘前口播、车启动、出城转场。",
+              "extensions": null
+            },
+            {
+              "type": "photo",
+              "camera": "A7R6",
+              "lens": "20-70mm F4 G",
+              "note": "墙绘、街口、车与墙绘关系。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "53c131b4-8b4f-4fb0-bba0-8ec444eec6f8",
+          "kind": "event",
+          "location": "解放第一矿停车点",
+          "description": "到达反应和安全判断，确认开放区域、停车点、撤离路线和可拍边界。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap",
+            "pharos:music_refs": [
+              "采石",
+              "大石碎胸口"
+            ]
+          },
+          "gps": [
+            114.03111088421657,
+            38.04184635749453
+          ],
+          "time_window": [
+            "12:55",
+            "13:10"
+          ],
+          "needs_companion": false,
+          "self_shoot": true,
+          "script": "这里先别急着拍，先看清楚哪里能进、哪里不能进。矿区素材再重要，也不能用闯进去换。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "车边自拍、路牌、矿区边界和安全判断。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "689cc62a-e95d-474f-b1e6-823bf17a480a",
+          "kind": "event",
+          "location": "解放第一矿",
+          "description": "解放第一矿核心素材，拍矿路、山体切面、老建筑、荒草和工业残留。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap",
+            "pharos:music_refs": [
+              "采石",
+              "大石碎胸口"
+            ]
+          },
+          "gps": [
+            114.03176646279735,
+            38.04131762618358
+          ],
+          "time_window": [
+            "13:10",
+            "14:10"
+          ],
+          "needs_companion": false,
+          "self_shoot": false,
+          "script": "段家楼这次先不作为主点了，这里更贴近我想要的矿感。我要找的不是景区化的怀旧，是石头、矿路和被时间压过的东西。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "公共区域走拍，记录矿路和空间质感。",
+              "extensions": null
+            },
+            {
+              "type": "photo",
+              "camera": "A7R6",
+              "lens": "50-400mm F4.5-6.3",
+              "note": "长焦拍山体切面、墙面纹理和工业构件。",
+              "extensions": null
+            },
+            {
+              "type": "photo",
+              "camera": "A7R5",
+              "lens": "20mm F1.8 G",
+              "note": "广角补环境关系。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "0145bdcd-7c83-430f-bbeb-c65b51e743f3",
+          "kind": "event",
+          "location": "石窝长城停车/补给点",
+          "description": "到达后补水、换轻装、确认头灯和银河设备，只带必要器材上山。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap",
+            "gps_note": "以涞源长城驿站作为停车/上山代理点。"
+          },
+          "gps": [
+            114.64282922586953,
+            39.25835645289367
+          ],
+          "time_window": [
+            "17:40",
+            "18:00"
+          ],
+          "needs_companion": false,
+          "self_shoot": true,
+          "script": "现在到石窝了，不多带东西。水、头灯、两台机身、星空镜头和三脚架，六点开始爬。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "车边整理装备、补水、轻装上山。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "f5c1ad28-3a78-4afb-8540-ac2730eb18e4",
+          "kind": "event",
+          "location": "石窝长城上山路",
+          "description": "从停车点爬到机位，拍脚步、长城轮廓初现、风声和体力状态。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap",
+            "gps_note": "以石窝村坐标作为上山路径代理点。"
+          },
+          "gps": [
+            114.67119632868788,
+            39.268357121358044
+          ],
+          "time_window": [
+            "18:00",
+            "19:00"
+          ],
+          "needs_companion": false,
+          "self_shoot": true,
+          "script": "已知爬上去大概一个小时，六点开始正好。今天不追赶到崩，七点到机位还能稳稳架好设备。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "自拍脚步、背包、山路和长城轮廓。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "f98d06d9-e160-496f-a89d-7e32f79ba922",
+          "kind": "event",
+          "location": "石窝长城日落机位",
+          "description": "长城日落后段与蓝调双机位延时。A7R6推荐50-400mm压山脊层次，A7R5推荐14mm纳入长城前景和天空。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap",
+            "gps_note": "以石窝村/长城附近代理点记录，实际机位上山后由 Pyxis 校正。",
+            "preset": "dual-camera-timelapse",
+            "pharos:music_refs": [
+              "山雀",
+              "河北墨麒麟"
+            ]
+          },
+          "gps": [
+            114.67119632868788,
+            39.268357121358044
+          ],
+          "time_window": [
+            "19:00",
+            "20:30"
+          ],
+          "needs_companion": false,
+          "self_shoot": false,
+          "script": "现在站在石窝长城。就算今晚没有银河，长城本身也值得这一趟。先守日落和蓝调，把太行山脊的层次拍出来。",
+          "captures": [
+            {
+              "type": "timelapse",
+              "camera": "A7R6",
+              "lens": "50-400mm F4.5-6.3",
+              "note": "主机位长焦压缩长城、山脊和夕光层次。",
+              "extensions": null
+            },
+            {
+              "type": "timelapse",
+              "camera": "A7R5",
+              "lens": "14mm F1.8 GM",
+              "note": "副机位广角纳入长城前景、天空和人物尺度。",
+              "extensions": null
+            },
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "第三视角自拍：架双机、看天色、现场口播。",
+              "extensions": null
+            },
+            {
+              "type": "aerial",
+              "camera": "Mavic 4 Pro",
+              "lens": null,
+              "note": "可选，现场确认禁飞、风力和人群后再飞，不飞不影响主线。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "c662ff23-3706-4958-98f7-557eec6036d6",
+          "kind": "event",
+          "location": "石窝长城银河机位",
+          "description": "石窝长城银河主机位，21:20-22:10完成前景、银河方位、对焦、曝光和下撤路线确认，22:10-23:59正式主拍。A7R6推荐14mm拍长城前景与银河，A7R5推荐20mm补天空局部和前景变化，ZV-E1记录现场环境和设备运行状态。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap",
+            "preset": "starry-sky-hybrid",
+            "pharos:music_refs": [
+              "河北墨麒麟"
+            ]
+          },
+          "gps": [
+            114.67119632868788,
+            39.268357121358044
+          ],
+          "time_window": [
+            "21:20",
+            "23:59"
+          ],
+          "needs_companion": false,
+          "self_shoot": true,
+          "script": "银河是今晚的重点。这个机位先把前景、对焦和安全路线确认好，然后就在这里一直拍到23:59。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "第三视角自拍：头灯、调参、试拍回看和安全检查。",
+              "extensions": null
+            },
+            {
+              "type": "photo",
+              "camera": "A7R6",
+              "lens": "14mm F1.8 GM",
+              "note": "银河测试片和前景确认。",
+              "extensions": null
+            },
+            {
+              "type": "timelapse",
+              "camera": "A7R6",
+              "lens": "14mm F1.8 GM",
+              "note": "银河主机位，长城作为前景。",
+              "extensions": null
+            },
+            {
+              "type": "timelapse",
+              "camera": "A7R5",
+              "lens": "20mm F1.8 G",
+              "note": "银河副机位，补天空局部和前景变化。",
+              "extensions": null
+            },
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "星空环境直录、设备运行状态和收尾前记录。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        }
+      ],
+      "extensions": {
+        "pharos:display_day": "D1"
+      }
+    },
+    {
+      "day": 2,
+      "date": "2026-06-19",
+      "title": "石窝长城下撤 → 白石山景区短线 → 中六村/白洋淀长廊 → 雄安新区",
+      "shots": [
+        {
+          "id": "61f4c92a-2a69-4c9e-a68c-cc8a0fb95be7",
+          "kind": "event",
+          "location": "石窝长城下撤路",
+          "description": "银河结束后的安全下撤，只拍必要B-roll：关机、收三脚架、头灯、山路和疲惫状态。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap",
+            "gps_note": "以石窝村代理点记录，实际下撤点由 Pyxis 校正。"
+          },
+          "gps": [
+            114.67119632868788,
+            39.268357121358044
+          ],
+          "time_window": [
+            "00:00",
+            "01:00"
+          ],
+          "needs_companion": false,
+          "self_shoot": true,
+          "script": "银河拍完了，现在最重要的是安全下撤。今天的胜负已经不在镜头里了，在能不能稳稳回去睡觉。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "头灯自拍、收设备和下山脚步。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "dddd725f-9386-4ca4-a57f-7fa234d31f82",
+          "kind": "event",
+          "location": "白石山镇住宿",
+          "description": "回到住宿点，记录放下设备、充电、备份卡和今天不再安排夜间拍摄；D2上午只做白石山景区短线，不硬撑深游。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap"
+          },
+          "gps": [
+            114.68015650764292,
+            39.309216069870054
+          ],
+          "time_window": [
+            "01:10",
+            "01:30"
+          ],
+          "needs_companion": false,
+          "self_shoot": true,
+          "script": "回来了。今晚先把卡和电池处理好，明早八点半起床，白石山只做四小时短线，不把自己耗空。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "住宿房间、充电、备份和收包。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "66f7062b-cccd-4c3d-8aba-f2eda7bb85d0",
+          "kind": "event",
+          "location": "白石山镇住宿",
+          "description": "D2起床、早餐、退房和出发口播，说明9:30进白石山，13:30前必须下山出景区，下午直达中六村/白洋淀长廊。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap"
+          },
+          "gps": [
+            114.68015650764292,
+            39.309216069870054
+          ],
+          "time_window": [
+            "08:30",
+            "09:15"
+          ],
+          "needs_companion": false,
+          "self_shoot": true,
+          "script": "昨晚从长城下来比较晚，所以今天八点半起。上午白石山只走短线，九点半进去，四小时内出来，下午直接赶中六村和白洋淀长廊。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "住宿门口或车边，拍起床后收拾、退房、设备检查和白石山短线口播。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "65d1ba6d-1514-4564-8f29-7405842c79a3",
+          "kind": "continuous",
+          "location": "白石山镇 → 白石山景区短线 → 中六村/白洋淀长廊 → 雄安新区",
+          "description": "D2全日自驾总记录，从白石山镇住宿出发，9:30进入白石山景区短线，13:30前下山出景区，午饭后用约2.5小时到中六村，再预留约30分钟步行或挪车到白洋淀长廊，收机后住雄安新区。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap"
+          },
+          "gps": null,
+          "time_window": null,
+          "needs_companion": null,
+          "self_shoot": null,
+          "script": null,
+          "captures": null,
+          "gps_start": [
+            114.68015650764292,
+            39.309216069870054
+          ],
+          "gps_end": [
+            115.90569436318638,
+            39.06391548960488
+          ],
+          "trigger_radius_km": 3,
+          "angles": [
+            {
+              "device": "ZV-E1",
+              "roll": "a-roll",
+              "description": "车内口播和路上记录，覆盖从白石山短线、华北平原到白洋淀长廊、雄安新区的全天空间变化。"
+            }
+          ],
+          "script_points": [
+            {
+              "label": "白石山镇出发",
+              "gps": [
+                114.68015650764292,
+                39.309216069870054
+              ],
+              "script": "从镇上出发，上午只进白石山做短线。今天的关键不是爬满，而是四小时内出来，保住傍晚白洋淀长廊。",
+              "radius_m": 400
+            },
+            {
+              "label": "白石山东门入园",
+              "gps": [
+                114.70966147042634,
+                39.23492679102242
+              ],
+              "script": "到白石山东门了。九点半进，目标很明确：双雄石、绝壁长廊一带短线，不走大环线。",
+              "radius_m": 500
+            },
+            {
+              "label": "双雄石/绝壁长廊短线",
+              "gps": [
+                114.69129285997785,
+                39.21168079763184
+              ],
+              "script": "这段是今天的太行峰林短章。拍山体、栈道和人走在悬崖边的尺度，不把它拍成普通景区打卡。",
+              "radius_m": 600
+            },
+            {
+              "label": "13:30前出景区",
+              "gps": [
+                114.70966147042634,
+                39.23492679102242
+              ],
+              "script": "如果现在已经接近一点半，就必须出景区。晚一点，白洋淀长廊的双机长窗口就会被压掉。",
+              "radius_m": 600
+            },
+            {
+              "label": "白石山午饭后离开",
+              "gps": [
+                114.68015650764292,
+                39.309216069870054
+              ],
+              "script": "午饭后直接去中六村，路上大概两个半小时。田野能安全停就拍，不能停就留给行车素材。",
+              "radius_m": 500
+            },
+            {
+              "label": "抵达中六村",
+              "gps": [
+                115.93969340085992,
+                38.96375025527363
+              ],
+              "script": "到中六村了。这里先别散，接下来还有半小时步行或者挪车到白洋淀长廊，要给架机留时间。",
+              "radius_m": 500
+            },
+            {
+              "label": "17:30到白洋淀长廊",
+              "gps": [
+                115.94843476978497,
+                38.954500726072894
+              ],
+              "script": "到白洋淀长廊了，时间还可以。先看停车、前景和风向，六点十分前把双机架起来。",
+              "radius_m": 600
+            },
+            {
+              "label": "长廊收机后去雄安",
+              "gps": [
+                115.94843476978497,
+                38.954500726072894
+              ],
+              "script": "白洋淀长廊日落拍完后，今晚不住景区边上，直接去雄安新区住宿。",
+              "radius_m": 600
+            },
+            {
+              "label": "接近雄安住宿",
+              "gps": [
+                115.90569436318638,
+                39.06391548960488
+              ],
+              "script": "快到雄安住宿点了，今晚收工备份，明早从雄安出发去开滦。",
+              "radius_m": 700
+            }
+          ]
+        },
+        {
+          "id": "6009683a-16bf-4b03-a924-b686764b0923",
+          "kind": "event",
+          "location": "白石山东门/上山交通",
+          "description": "白石山东门入园前记录，拍停车、购票/检票、索道或景区交通动线，明确13:30前必须回到停车场。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap",
+            "gps_note": "geo_lookup.py: 白石山世界地质公园东门售票处。",
+            "pharos:music_refs": [
+              "山雀",
+              "河北墨麒麟"
+            ]
+          },
+          "gps": [
+            114.70966147042634,
+            39.23492679102242
+          ],
+          "time_window": [
+            "09:15",
+            "09:30"
+          ],
+          "needs_companion": false,
+          "self_shoot": false,
+          "script": "现在到白石山东门。今天只给它四小时，从进景区到下山出来都算在里面，不能把傍晚白洋淀长廊拖掉。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "东门停车、购票/检票、索道或景区交通动线和时间口播。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "95cc7281-5fcb-4242-8d37-aee4514efa7e",
+          "kind": "event",
+          "location": "双雄石/绝壁长廊短线",
+          "description": "白石山景区四小时短线，从上山到下山出景区都算在内。核心拍双雄石、绝壁长廊或相邻精华路段，拍灰白大理岩峰林、栈道、人影、低云和山体压迫感；不走大环线，不去佛光顶深游。若低云、人影或栈道流动成立，现场开一段短双机位延时，不做长时间蹲守。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap",
+            "gps_note": "geo_lookup.py: 双雄石观景台；绝壁长廊参考坐标 114.697799,39.204028。",
+            "pharos:music_refs": [
+              "山雀",
+              "河北墨麒麟"
+            ],
+            "preset": "dual-camera-timelapse"
+          },
+          "gps": [
+            114.69129285997785,
+            39.21168079763184
+          ],
+          "time_window": [
+            "09:30",
+            "13:30"
+          ],
+          "needs_companion": false,
+          "self_shoot": false,
+          "script": "这里终于从外围进到白石山里面了。今天不贪大环线，就拍峰林、栈道和人在山体边上的尺度；如果云和人流合适，就开一段短延时，四小时内必须出来。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "走拍双雄石、绝壁长廊、栈道、人影、现场风声和第三视角架机。",
+              "extensions": null
+            },
+            {
+              "type": "timelapse",
+              "camera": "A7R6",
+              "lens": "20-70mm F4 G",
+              "note": "短延时主机位：拍大理岩峰林、栈道人影和低云流动，控制在短窗口内，不做长蹲守。",
+              "extensions": null
+            },
+            {
+              "type": "timelapse",
+              "camera": "A7R5",
+              "lens": "20mm F1.8 G",
+              "note": "短延时副机位：拍栈道、天空、低云和环境尺度，服务《河北墨麒麟》的太行峰林短章。",
+              "extensions": null
+            },
+            {
+              "type": "photo",
+              "camera": "A7R6",
+              "lens": "50-400mm F4.5-6.3",
+              "note": "长焦压缩峰林层次、低云和灰白山体。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "97e1111c-8b7f-4cfe-94d8-5f87e95e19b7",
+          "kind": "event",
+          "location": "白石山镇农家院/午饭点",
+          "description": "白石山短线下山后的快速午饭和补给，拍农家饭、饮水、查路况；14:15前必须离开白石山，之后约2.5小时到中六村。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap"
+          },
+          "gps": [
+            114.68015650764292,
+            39.309216069870054
+          ],
+          "time_window": [
+            "13:30",
+            "14:10"
+          ],
+          "needs_companion": false,
+          "self_shoot": false,
+          "script": "白石山到这里就收住。吃完这顿，十四点一刻前必须走，后面还要两个半小时到中六村，再赶白洋淀长廊。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "农家饭、补水、路线、时间节点和设备检查。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "f957d195-8823-4cda-99d7-343109b12cb2",
+          "kind": "event",
+          "location": "中六村/白洋淀沿途田野机动点",
+          "description": "白石山午饭后约2.5小时抵达中六村，拍抵达村口、停车/步行准备、田野、村路、树影、麦茬/农田和进入水乡前的平原过渡；若路上没有安全停车点，就把田野素材收进行车记录。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap",
+            "gps_note": "geo_lookup.py: 中六村收费停车场作为抵达/停车代理锚点，实际临停点由 Pyxis 校正。",
+            "pharos:music_refs": [
+              "十万嬉皮"
+            ]
+          },
+          "gps": [
+            115.93969340085992,
+            38.96375025527363
+          ],
+          "time_window": [
+            "16:45",
+            "17:30"
+          ],
+          "needs_companion": false,
+          "self_shoot": false,
+          "script": "到中六村了。这里是进入白洋淀长廊前的缓冲点，田野能补就补，接下来还要留半小时走到机位。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "中六村抵达、停车/步行准备、田野、村路、树影和进入白洋淀前的平原过渡。",
+              "extensions": null
+            },
+            {
+              "type": "photo",
+              "camera": "A7R6",
+              "lens": "50-400mm F4.5-6.3",
+              "note": "长焦压缩田野、路、树和村庄边缘。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "2c609819-2da6-4c85-83ca-e5f7dacd6bab",
+          "kind": "event",
+          "location": "白洋淀长廊到达/架机点",
+          "description": "17:30左右抵达白洋淀长廊机位，拍步行/挪车到达、停车确认、长廊方向、前景、风向、双机位选择和架机准备。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap",
+            "pharos:music_refs": [
+              "十万嬉皮"
+            ]
+          },
+          "gps": [
+            115.94843476978497,
+            38.954500726072894
+          ],
+          "time_window": [
+            "17:30",
+            "18:10"
+          ],
+          "needs_companion": false,
+          "self_shoot": false,
+          "script": "到白洋淀长廊了，时间还够。现在先把停车、前景和风向看清楚，六点十分前双机开拍。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "到达反应、停车/步行、长廊环境、机位判断和双机架机准备。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "dcf89c21-02c0-40f0-b819-aadf16d65b89",
+          "kind": "event",
+          "location": "白洋淀长廊日落延时机位",
+          "description": "白洋淀长廊日落到蓝调长窗口双机位延时。17:30左右到机位后完成踩点，18:10前完成构图并开机，持续拍到20:15。A7R6推荐50-400mm压缩长廊、水乡边缘、田野和人车，A7R5推荐20mm拍长廊、天空、水面/湿地边缘和环境前景。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap",
+            "preset": "dual-camera-timelapse",
+            "pharos:music_refs": [
+              "十万嬉皮"
+            ]
+          },
+          "gps": [
+            115.94843476978497,
+            38.954500726072894
+          ],
+          "time_window": [
+            "18:10",
+            "20:15"
+          ],
+          "needs_companion": false,
+          "self_shoot": false,
+          "script": "白石山没有把这里挤掉，算是今天最重要的胜利。从现在一直拍到蓝调结束，把白洋淀长廊这个傍晚完整留住。",
+          "captures": [
+            {
+              "type": "timelapse",
+              "camera": "A7R6",
+              "lens": "50-400mm F4.5-6.3",
+              "note": "长焦压缩长廊、水乡边缘、田野、人车和落日。",
+              "extensions": null
+            },
+            {
+              "type": "timelapse",
+              "camera": "A7R5",
+              "lens": "20mm F1.8 G",
+              "note": "广角拍长廊、天空、水面/湿地边缘和环境前景。",
+              "extensions": null
+            },
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "第三视角自拍：架机、看云、长廊环境声和现场口播。",
+              "extensions": null
+            },
+            {
+              "type": "aerial",
+              "camera": "Mavic 4 Pro",
+              "lens": null,
+              "note": "可选，白洋淀景区/雄安周边务必先查禁飞、限飞和现场管控；不飞不影响主线。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "20d44af3-9fc2-4016-ba55-0b91485773be",
+          "kind": "event",
+          "location": "雄安国际酒店/雄安新区住宿",
+          "description": "白洋淀长廊日落延时结束后转入雄安新区住宿，拍新区夜色、酒店/房间、充电、备份和明天去唐山秦皇岛的路线确认。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap",
+            "gps_note": "以雄安国际酒店作为雄安新区住宿锚点，实际酒店由 Pyxis 校正。"
+          },
+          "gps": [
+            115.90569436318638,
+            39.06391548960488
+          ],
+          "time_window": [
+            "20:50",
+            "21:20"
+          ],
+          "needs_companion": false,
+          "self_shoot": true,
+          "script": "今晚住雄安新区。今天从长城下到白洋淀，再收束到雄安，明天从这里去开滦，再赶秦皇岛。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "入住、备份、充电和路线确认。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        }
+      ],
+      "extensions": {
+        "pharos:display_day": "D2"
+      }
+    },
+    {
+      "day": 3,
+      "date": "2026-06-20",
+      "title": "雄安新区 → 开滦 → 秦皇岛西港 → 福来岛附近",
+      "shots": [
+        {
+          "id": "1824a61a-107c-4b4f-8f55-43b146935e04",
+          "kind": "event",
+          "location": "雄安国际酒店/雄安新区住宿",
+          "description": "D3出发口播，说明今天从雄安新区出发，继续A线：开滦、秦皇岛西港蓝调、夜住福来岛附近。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap"
+          },
+          "gps": [
+            115.90569436318638,
+            39.06391548960488
+          ],
+          "time_window": [
+            "08:45",
+            "09:00"
+          ],
+          "needs_companion": false,
+          "self_shoot": true,
+          "script": "今天从雄安新区出发，继续走A线。先到开滦附近吃午饭，然后拍煤矿和工业线索，傍晚赶秦皇岛西港。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "退房、装车、交代长转场。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "f01727f8-6ed1-4e48-9825-073c6d9782ff",
+          "kind": "continuous",
+          "location": "雄安新区 → 开滦 → 秦皇岛西港 → 福来岛附近",
+          "description": "D3全日自驾总记录，从雄安新区住宿点出发，经唐山开滦、秦皇岛西港/开埠地，最终到达新开口码头/福来岛附近住宿。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap"
+          },
+          "gps": null,
+          "time_window": null,
+          "needs_companion": null,
+          "self_shoot": null,
+          "script": null,
+          "captures": null,
+          "gps_start": [
+            115.90569436318638,
+            39.06391548960488
+          ],
+          "gps_end": [
+            119.28011268702316,
+            39.584228151924286
+          ],
+          "trigger_radius_km": 3,
+          "angles": [
+            {
+              "device": "ZV-E1",
+              "roll": "a-roll",
+              "description": "车内口播和路上记录，覆盖从平原、煤矿到秦皇岛海港的全天转场。"
+            }
+          ],
+          "script_points": [
+            {
+              "label": "离开雄安新区",
+              "gps": [
+                115.90569436318638,
+                39.06391548960488
+              ],
+              "script": "今天从雄安新区出发。平原、水乡和新区这一章收住，镜头会慢慢转到唐山和煤矿。",
+              "radius_m": 700
+            },
+            {
+              "label": "接近开滦",
+              "gps": [
+                118.19425015839612,
+                39.620292108654155
+              ],
+              "script": "快到开滦了，今天在这里补《大石碎胸口》的另一面：煤矿和工业史。",
+              "radius_m": 800
+            },
+            {
+              "label": "离开开滦",
+              "gps": [
+                118.19425015839612,
+                39.620292108654155
+              ],
+              "script": "现在从煤矿往海港走。这一趟从石头、煤到海，地理和歌会慢慢接上。",
+              "radius_m": 600
+            },
+            {
+              "label": "接近秦皇岛西港",
+              "gps": [
+                119.6030262928394,
+                39.91146326762318
+              ],
+              "script": "快到秦皇岛西港了，先不急着架机，先扫一圈，看港口蓝调适合站在哪里。",
+              "radius_m": 800
+            },
+            {
+              "label": "西港后去福来岛住宿",
+              "gps": [
+                119.6030262928394,
+                39.91146326762318
+              ],
+              "script": "西港收工后直接住到福来岛附近，明天清晨拍灯塔日出。",
+              "radius_m": 600
+            },
+            {
+              "label": "接近福来岛附近住宿",
+              "gps": [
+                119.28011268702316,
+                39.584228151924286
+              ],
+              "script": "今天A线到这里收住，今晚只做备份和充电，明天清晨直接去灯塔。",
+              "radius_m": 800
+            }
+          ]
+        },
+        {
+          "id": "4be43c68-44da-405d-92a8-c1affc630108",
+          "kind": "event",
+          "location": "开滦国家矿山公园附近",
+          "description": "矿山公园附近午饭，拍补给、街道和进入工业遗址前的状态。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap"
+          },
+          "gps": [
+            118.19425015839612,
+            39.620292108654155
+          ],
+          "time_window": [
+            "12:00",
+            "12:50"
+          ],
+          "needs_companion": false,
+          "self_shoot": false,
+          "script": "先吃饭，下午就不慢逛了。开滦这一站要抓工业史和煤矿的感觉，拍完还要赶秦皇岛。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "午饭、街道、补水和路线确认。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "f1121d09-6cbc-4b23-9931-91ffd23e8600",
+          "kind": "event",
+          "location": "开滦国家矿山公园",
+          "description": "开滦快拍，拍矿史、工业外观、轨道、设备、煤矿叙事和唐山城市质感。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap",
+            "pharos:music_refs": [
+              "大石碎胸口"
+            ]
+          },
+          "gps": [
+            118.19425015839612,
+            39.620292108654155
+          ],
+          "time_window": [
+            "12:50",
+            "14:40"
+          ],
+          "needs_companion": false,
+          "self_shoot": false,
+          "script": "井陉那边是山石，开滦这里是煤和工业史。两个地方加起来，才是《大石碎胸口》这条线真正的重量。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "开放区域走拍，避免拍禁入/敏感位置。",
+              "extensions": null
+            },
+            {
+              "type": "photo",
+              "camera": "A7R6",
+              "lens": "50-400mm F4.5-6.3",
+              "note": "长焦拍工业构件、轨道、墙面和城市压缩。",
+              "extensions": null
+            },
+            {
+              "type": "timelapse",
+              "camera": "A7R5",
+              "lens": "20mm F1.8 G",
+              "note": "可选短延时，拍云影掠过工业遗存；不影响赶路优先级。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "b7b23df3-674a-471a-ac21-7b56932bb076",
+          "kind": "event",
+          "location": "开滦外围道路",
+          "description": "开滦外围补镜和转场前口播，拍城市道路、厂区远景和上车动作。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap"
+          },
+          "gps": [
+            118.19425015839612,
+            39.620292108654155
+          ],
+          "time_window": [
+            "14:40",
+            "15:10"
+          ],
+          "needs_companion": false,
+          "self_shoot": true,
+          "script": "开滦这一站不贪多，先把工业重量收进来。接下来去秦皇岛，海港会是全片另一个方向。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "第三视角自拍：收设备、车边口播、离开开滦。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "b62d8381-a28f-4a05-b88f-7fbb92c1495c",
+          "kind": "event",
+          "location": "秦皇岛西港花园/开埠地",
+          "description": "港口初步扫街和延时找构图，拍铁轨、仓库、游客、港口边界和蓝调前的海风。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap",
+            "pharos:music_refs": [
+              "秦皇岛"
+            ]
+          },
+          "gps": [
+            119.6030262928394,
+            39.91146326762318
+          ],
+          "time_window": [
+            "18:00",
+            "18:40"
+          ],
+          "needs_companion": false,
+          "self_shoot": true,
+          "script": "到了秦皇岛，先不要把它拍成度假海边。我要找的是港口、铁轨、仓库和那种灰蓝色的终点感。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "手持扫街、港口边界、铁轨、仓库和游客。",
+              "extensions": null
+            },
+            {
+              "type": "photo",
+              "camera": "A7R6",
+              "lens": "20-70mm F4 G",
+              "note": "开埠地建筑、轨道和港口细节。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "d219f59d-34b2-4e36-91e1-bde098ec7cb6",
+          "kind": "event",
+          "location": "秦皇岛西港/开埠地蓝调机位",
+          "description": "西港/开埠地蓝调延时。A7R6推荐50-400mm压缩港口灯光和结构，A7R5推荐20mm拍铁轨/建筑/天空。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap",
+            "preset": "dual-camera-timelapse",
+            "pharos:music_refs": [
+              "秦皇岛"
+            ]
+          },
+          "gps": [
+            119.61145814463042,
+            39.909217885206836
+          ],
+          "time_window": [
+            "18:40",
+            "20:05"
+          ],
+          "needs_companion": false,
+          "self_shoot": false,
+          "script": "秦皇岛这一段先用蓝调打开。港口、灯、铁轨和海风在一起，比单纯拍海更接近这首歌。",
+          "captures": [
+            {
+              "type": "timelapse",
+              "camera": "A7R6",
+              "lens": "50-400mm F4.5-6.3",
+              "note": "长焦压港口灯光、船只轮廓和工业结构。",
+              "extensions": null
+            },
+            {
+              "type": "timelapse",
+              "camera": "A7R5",
+              "lens": "20mm F1.8 G",
+              "note": "广角拍铁轨、开埠地建筑和蓝调天空。",
+              "extensions": null
+            },
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "第三视角自拍：找角度、架机、看灯光亮起。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "a137f27a-4056-4eda-b934-afbdc3581fc8",
+          "kind": "event",
+          "location": "新开口码头/福来岛附近住宿",
+          "description": "入住福来岛附近，备份素材、充电、准备D4日出设备。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap"
+          },
+          "gps": [
+            119.28011268702316,
+            39.584228151924286
+          ],
+          "time_window": [
+            "21:20",
+            "21:50"
+          ],
+          "needs_companion": false,
+          "self_shoot": true,
+          "script": "今天路很长，但A线走下来了。今晚住这里，明天清晨直接去福来岛灯塔拍日出。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "入住、备份、充电、日出设备摆放。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        }
+      ],
+      "extensions": {
+        "pharos:display_day": "D3"
+      }
+    },
+    {
+      "day": 4,
+      "date": "2026-06-21",
+      "title": "福来岛灯塔日出 → 天津津湾云顶",
+      "shots": [
+        {
+          "id": "505b87e0-1d7b-4514-95c8-d6d6d7418cf0",
+          "kind": "event",
+          "location": "福来岛南侧停车场/海龟岛",
+          "description": "日出前到达反应和架机，拍海龟岛入口、滩涂乱石、细高灯标、头灯、脚架和第一道天光。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap",
+            "pharos:music_refs": [
+              "秦皇岛"
+            ]
+          },
+          "gps": [
+            119.28579218407097,
+            39.579333647647395
+          ],
+          "time_window": [
+            "04:15",
+            "04:35"
+          ],
+          "needs_companion": false,
+          "self_shoot": true,
+          "script": "现在到福来岛/海龟岛这边。眼前是乱石滩、渔船和一个很细的灯标，天还没亮，整个秦皇岛突然安静下来。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "第三视角自拍：到达、架机、海龟岛灯标和天光。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "6d18deb4-a10c-47f1-9420-482381e0e487",
+          "kind": "event",
+          "location": "福来岛灯塔/海龟岛日出机位",
+          "description": "福来岛灯塔/海龟岛日出双机位延时。A7R6推荐50-400mm压细高灯标、渔船、港池水面和日出方向，A7R5推荐20mm纳入滩涂乱石、低矮海岸、天空和灯标环境。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap",
+            "preset": "dual-camera-timelapse",
+            "pharos:music_refs": [
+              "秦皇岛"
+            ]
+          },
+          "gps": [
+            119.28579218407097,
+            39.579333647647395
+          ],
+          "time_window": [
+            "04:35",
+            "05:40"
+          ],
+          "needs_companion": false,
+          "self_shoot": false,
+          "script": "这个点有意思的地方在于它不干净、不景区：乱石、渔港、船、细高灯标都在一起。今天等第一道光从海面和港池上起来。",
+          "captures": [
+            {
+              "type": "timelapse",
+              "camera": "A7R6",
+              "lens": "50-400mm F4.5-6.3",
+              "note": "长焦拍细高灯标、渔船、港池水面反光和日出。",
+              "extensions": null
+            },
+            {
+              "type": "timelapse",
+              "camera": "A7R5",
+              "lens": "20mm F1.8 G",
+              "note": "广角纳入滩涂乱石、低矮海岸、天空和灯标环境。",
+              "extensions": null
+            },
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "第三视角自拍：看日出、看回放、渔港风声和现场环境声。",
+              "extensions": null
+            },
+            {
+              "type": "aerial",
+              "camera": "Mavic 4 Pro",
+              "lens": null,
+              "note": "可选，确认海岸禁飞、风速和人群后短飞；不靠近港口/敏感区域。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "e8cb37f4-6f33-462d-909c-6bb11adb1237",
+          "kind": "event",
+          "location": "新开口南岸一级渔港",
+          "description": "日出后周边转转，拍渔港、船、人、海边小路、滩涂乱石和清晨劳作，不去阿那亚。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap",
+            "pharos:music_refs": [
+              "秦皇岛"
+            ]
+          },
+          "gps": [
+            119.28455050742406,
+            39.57749287899262
+          ],
+          "time_window": [
+            "05:40",
+            "06:40"
+          ],
+          "needs_companion": false,
+          "self_shoot": false,
+          "script": "日出拍完不急着走，在附近绕一圈。这里的船、滩涂和渔港，比景区更像真实的秦皇岛早晨。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "渔港、船、人、海边小路、滩涂乱石和清晨环境声。",
+              "extensions": null
+            },
+            {
+              "type": "photo",
+              "camera": "A7R6",
+              "lens": "20-70mm F4 G",
+              "note": "船、人和海岸细节。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "5e1506c2-72e2-4354-b9fd-35aa79273edb",
+          "kind": "event",
+          "location": "新开口码头/福来岛附近住宿",
+          "description": "补觉后出发前记录，拍整理、退房和今日放弃山海关后直奔天津的决定。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap"
+          },
+          "gps": [
+            119.28011268702316,
+            39.584228151924286
+          ],
+          "time_window": [
+            "10:00",
+            "10:30"
+          ],
+          "needs_companion": false,
+          "self_shoot": true,
+          "script": "补觉结束。山海关这次放弃，直接去天津，把今天的后半段留给津湾云顶和海河蓝调。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "退房、收拾、装车和路线口播。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "dc7d8408-230c-4775-9ffd-adeca69b0a67",
+          "kind": "event",
+          "location": "福来岛附近早午饭点",
+          "description": "出发前早午饭和补给，拍餐食、饮水、查路况，11:30准时去天津。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap"
+          },
+          "gps": [
+            119.28011268702316,
+            39.584228151924286
+          ],
+          "time_window": [
+            "10:30",
+            "11:20"
+          ],
+          "needs_companion": false,
+          "self_shoot": false,
+          "script": "吃完这顿就离开秦皇岛。这座城市的主场到这里收住，后面是天津的片尾过渡。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "早午饭、补给、路况和离开前状态。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "641ec4a6-1f34-45a8-a965-85414a8b0a6c",
+          "kind": "continuous",
+          "location": "福来岛附近 → 天津津湾",
+          "description": "秦皇岛到天津长转场，记录海边离开、高速、服务区和进入海河城市核心。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap"
+          },
+          "gps": null,
+          "time_window": null,
+          "needs_companion": null,
+          "self_shoot": null,
+          "script": null,
+          "captures": null,
+          "gps_start": [
+            119.28011268702316,
+            39.584228151924286
+          ],
+          "gps_end": [
+            117.20299800186906,
+            39.12922920723549
+          ],
+          "trigger_radius_km": 3,
+          "angles": [
+            {
+              "device": "ZV-E1",
+              "roll": "a-roll",
+              "description": "车内口播，解释从《秦皇岛》转到天津片尾。"
+            }
+          ],
+          "script_points": [
+            {
+              "label": "离开福来岛",
+              "gps": [
+                119.28011268702316,
+                39.584228151924286
+              ],
+              "script": "现在离开秦皇岛，下一站天津。全片的地理高潮已经过了，后面是梦醒之前的城市段落。",
+              "radius_m": 600
+            },
+            {
+              "label": "接近津湾",
+              "gps": [
+                117.20299800186906,
+                39.12922920723549
+              ],
+              "script": "快到津湾了，今天傍晚上云顶观景台，拍天津的日落和海河蓝调。",
+              "radius_m": 800
+            }
+          ]
+        },
+        {
+          "id": "6b164876-ca04-4109-af60-b26fe1553db6",
+          "kind": "event",
+          "location": "天津津湾/解放北路附近",
+          "description": "抵达天津后的休整和轻扫街，拍海河、解放北路建筑、入住/停车和晚饭前恢复。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap",
+            "pharos:music_refs": [
+              "揪心的玩笑与漫长的白日梦"
+            ]
+          },
+          "gps": [
+            117.20299800186906,
+            39.12922920723549
+          ],
+          "time_window": [
+            "14:10",
+            "16:30"
+          ],
+          "needs_companion": false,
+          "self_shoot": false,
+          "script": "到天津了，今天下午先不硬冲。休整一下，傍晚再上津湾云顶等日落。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "海河边、解放北路、停车/入住和城市环境。",
+              "extensions": null
+            },
+            {
+              "type": "photo",
+              "camera": "A7R6",
+              "lens": "20-70mm F4 G",
+              "note": "天津建筑和海河街景。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "8a901f66-4c7d-4f95-b1a6-7c48463ca29d",
+          "kind": "event",
+          "location": "津湾云顶附近晚饭/上楼准备",
+          "description": "晚饭、玻璃遮光准备、擦镜、确认观景台开放状态和机位。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap"
+          },
+          "gps": [
+            117.20299800186906,
+            39.12922920723549
+          ],
+          "time_window": [
+            "16:30",
+            "17:30"
+          ],
+          "needs_companion": false,
+          "self_shoot": true,
+          "script": "先吃点东西，再上楼。高空隔玻璃拍延时，遮光、反光和脚架位置要提前处理好。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "晚饭、擦镜、玻璃遮光罩、上楼动线和准备动作。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "52c1662f-c423-4803-b17a-dd50d4823801",
+          "kind": "event",
+          "location": "津湾云顶高空观景台",
+          "description": "津湾云顶日落和海河蓝调双机位延时。A7R6推荐50-400mm拍海河、桥和城市压缩，A7R5推荐20mm拍城市广角和天空。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap",
+            "preset": "dual-camera-timelapse",
+            "pharos:music_refs": [
+              "揪心的玩笑与漫长的白日梦"
+            ]
+          },
+          "gps": [
+            117.20299800186906,
+            39.12922920723549
+          ],
+          "time_window": [
+            "17:30",
+            "19:55"
+          ],
+          "needs_companion": false,
+          "self_shoot": false,
+          "script": "这里是这趟从海港回到城市的收束。天津不是新的高潮，是从秦皇岛大景落回白日梦的城市片尾。",
+          "captures": [
+            {
+              "type": "timelapse",
+              "camera": "A7R6",
+              "lens": "50-400mm F4.5-6.3",
+              "note": "长焦压海河、桥、楼群和日落后灯光。",
+              "extensions": null
+            },
+            {
+              "type": "timelapse",
+              "camera": "A7R5",
+              "lens": "20mm F1.8 G",
+              "note": "广角拍海河弯道、天空和城市全景。",
+              "extensions": null
+            },
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "第三视角自拍：观景台内架机、遮反光、看城市亮灯。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "3a4d23da-8c44-4a72-ab81-48f8e7ec2bce",
+          "kind": "event",
+          "location": "天津津湾/海河附近住宿",
+          "description": "入住/回房收工，拍海河夜景、房间、充电和D5天津日出扫街计划。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap"
+          },
+          "gps": [
+            117.20299800186906,
+            39.12922920723549
+          ],
+          "time_window": [
+            "20:20",
+            "20:50"
+          ],
+          "needs_companion": false,
+          "self_shoot": true,
+          "script": "今天收工。明天还有最后一个清晨，世纪钟日出延时，然后在天津扫到去机场。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "夜景、回房、充电、备份和明日计划。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        }
+      ],
+      "extensions": {
+        "pharos:display_day": "D4"
+      }
+    },
+    {
+      "day": 5,
+      "date": "2026-06-22",
+      "title": "天津世纪钟日出 → 天津之眼/海河扫街 → 机场返程",
+      "shots": [
+        {
+          "id": "8387d739-8a16-4323-a7f8-50f3c3e59708",
+          "kind": "event",
+          "location": "世纪钟广场",
+          "description": "D5日出前到达和架机，拍世纪钟、解放桥、海河晨光和空城感。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap",
+            "pharos:music_refs": [
+              "揪心的玩笑与漫长的白日梦"
+            ]
+          },
+          "gps": [
+            117.19917552678668,
+            39.13261278653034
+          ],
+          "time_window": [
+            "04:15",
+            "04:45"
+          ],
+          "needs_companion": false,
+          "self_shoot": true,
+          "script": "最后一天，从世纪钟开始。今天不急着去机场，先把天津清晨拍完，再慢慢扫街到返程。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "第三视角自拍：到达、架机、世纪钟和海河晨光。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "37b9579a-9231-4218-b4c2-2e7943e1d8fa",
+          "kind": "event",
+          "location": "世纪钟/解放桥日出机位",
+          "description": "世纪钟、解放桥和海河日出延时。A7R6推荐50-400mm压桥与城市，A7R5推荐20mm拍海河、世纪钟和天空。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap",
+            "preset": "dual-camera-timelapse",
+            "pharos:music_refs": [
+              "揪心的玩笑与漫长的白日梦"
+            ]
+          },
+          "gps": [
+            117.20032625440625,
+            39.13134121114092
+          ],
+          "time_window": [
+            "04:45",
+            "05:25"
+          ],
+          "needs_companion": false,
+          "self_shoot": false,
+          "script": "世纪钟这个点很适合片尾。时间、桥、河和清晨的人，会把这趟旅行从大景拉回普通的一天。",
+          "captures": [
+            {
+              "type": "timelapse",
+              "camera": "A7R6",
+              "lens": "50-400mm F4.5-6.3",
+              "note": "长焦压解放桥、海河与晨光层次。",
+              "extensions": null
+            },
+            {
+              "type": "timelapse",
+              "camera": "A7R5",
+              "lens": "20mm F1.8 G",
+              "note": "广角拍世纪钟、桥、海河和天空。",
+              "extensions": null
+            },
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "第三视角自拍：架机、回看和清晨环境声。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "9e5f4f0c-8150-4696-8a6a-843d67b481f7",
+          "kind": "event",
+          "location": "天津站/海河清晨",
+          "description": "日出后清晨B-roll，拍天津站、海河边、早点铺、人群和第一班通勤。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap",
+            "pharos:music_refs": [
+              "揪心的玩笑与漫长的白日梦"
+            ]
+          },
+          "gps": [
+            117.19917552678668,
+            39.13261278653034
+          ],
+          "time_window": [
+            "05:25",
+            "06:30"
+          ],
+          "needs_companion": false,
+          "self_shoot": false,
+          "script": "天亮以后就不要只拍景了，拍人。早点铺、通勤、路口，这些才是白日梦醒过来的感觉。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "早点铺、人群、海河边和天津站外部。",
+              "extensions": null
+            },
+            {
+              "type": "photo",
+              "camera": "A7R6",
+              "lens": "20-70mm F4 G",
+              "note": "清晨人文和街口。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "e2a8f16a-1a5a-4b8d-8d28-7ee0d7955948",
+          "kind": "event",
+          "location": "天津津湾/海河附近住宿",
+          "description": "补觉后返程日出发记录，拍收拾行李、退房、装车和今天扫街路线。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap"
+          },
+          "gps": [
+            117.20299800186906,
+            39.12922920723549
+          ],
+          "time_window": [
+            "10:15",
+            "10:30"
+          ],
+          "needs_companion": false,
+          "self_shoot": true,
+          "script": "补觉结束，今天不用太早去机场。十点半出门吃饭，然后一路扫到天津之眼，再去还车。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "退房、装车、返程日路线口播。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "0f1fc350-6fad-4a7e-82a4-f91f75c618a4",
+          "kind": "continuous",
+          "location": "天津津湾/海河附近住宿 → 天津滨海机场T2",
+          "description": "D5全日自驾总记录，从天津市区住宿出发，经午饭、解放北路、五大道/民园、北安桥/古文化街、天津之眼，最终到天津滨海机场还车返程。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap"
+          },
+          "gps": null,
+          "time_window": null,
+          "needs_companion": null,
+          "self_shoot": null,
+          "script": null,
+          "captures": null,
+          "gps_start": [
+            117.20299800186906,
+            39.12922920723549
+          ],
+          "gps_end": [
+            117.35518691650692,
+            39.13019103165563
+          ],
+          "trigger_radius_km": 2,
+          "angles": [
+            {
+              "device": "ZV-E1",
+              "roll": "a-roll",
+              "description": "车内短口播和城市转场记录，覆盖天津扫街到机场返程。"
+            }
+          ],
+          "script_points": [
+            {
+              "label": "天津市区出发",
+              "gps": [
+                117.20299800186906,
+                39.12922920723549
+              ],
+              "script": "补觉结束，今天不用太早去机场。十点半出门吃饭，然后一路扫到天津之眼，再去还车。",
+              "radius_m": 400
+            },
+            {
+              "label": "解放北路",
+              "gps": [
+                117.20767838024611,
+                39.1225213332335
+              ],
+              "script": "天津这段不拍瓷房子那种游客点，先拍解放北路。建筑和街道更适合这个片尾。",
+              "radius_m": 400
+            },
+            {
+              "label": "五大道/民园可选",
+              "gps": [
+                117.1986615148507,
+                39.11120603072282
+              ],
+              "script": "如果时间够，五大道只做轻扫，不把它拍成观光片。",
+              "radius_m": 500
+            },
+            {
+              "label": "北安桥/古文化街",
+              "gps": [
+                117.18862550357092,
+                39.13244434976122
+              ],
+              "script": "这里可以让片尾稍微热闹一点，拍桥、河和人流，够了就往天津之眼走。",
+              "radius_m": 500
+            },
+            {
+              "label": "天津之眼",
+              "gps": [
+                117.17988577038606,
+                39.15321270094257
+              ],
+              "script": "天津之眼还是要来一下。它很直白，但作为最后一个城市地标，放在返程前是成立的。",
+              "radius_m": 500
+            },
+            {
+              "label": "接近机场",
+              "gps": [
+                117.35518691650692,
+                39.13019103165563
+              ],
+              "script": "快到机场了，接下来还车、托运、回深圳。最后补一点机场和舷窗素材。",
+              "radius_m": 700
+            }
+          ]
+        },
+        {
+          "id": "562e8a87-dfd0-4f5f-b83c-66a29c0a8770",
+          "kind": "event",
+          "location": "天津中心城区午饭点",
+          "description": "午饭和返程前补给，拍食物、街边人流、还车时间和机场余量确认。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap"
+          },
+          "gps": [
+            117.20767838024611,
+            39.1225213332335
+          ],
+          "time_window": [
+            "10:30",
+            "11:30"
+          ],
+          "needs_companion": false,
+          "self_shoot": false,
+          "script": "最后一天这顿不赶，吃完就开始城市扫街。下午留足还车和机场时间就行。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "午饭、补给、导航和还车时间确认。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "15538bc0-512a-417c-8123-5d748fb8b30e",
+          "kind": "event",
+          "location": "解放北路风情区",
+          "description": "解放北路扫街，拍银行建筑、树影、路口、人车和近代城市质感。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap",
+            "pharos:music_refs": [
+              "揪心的玩笑与漫长的白日梦"
+            ]
+          },
+          "gps": [
+            117.20767838024611,
+            39.1225213332335
+          ],
+          "time_window": [
+            "11:30",
+            "12:20"
+          ],
+          "needs_companion": false,
+          "self_shoot": false,
+          "script": "天津这段不拍瓷房子那种游客点，先拍解放北路。这里的建筑和街道更适合这个片尾。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "建筑、树影、路口和人车流。",
+              "extensions": null
+            },
+            {
+              "type": "photo",
+              "camera": "A7R6",
+              "lens": "20-70mm F4 G",
+              "note": "建筑立面和街道关系。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "10f285d0-cd18-4b07-b73e-a6b89715b536",
+          "kind": "event",
+          "location": "五大道/民园广场",
+          "description": "五大道和民园广场可选扫街，拍街角、树荫、自行车、建筑和游客之外的生活面。",
+          "priority": "optional",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap"
+          },
+          "gps": [
+            117.1986615148507,
+            39.11120603072282
+          ],
+          "time_window": [
+            "12:20",
+            "13:10"
+          ],
+          "needs_companion": false,
+          "self_shoot": false,
+          "script": "五大道只做轻扫，不把它拍成观光片。要的是午后的街角、树荫和城市节奏。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "街角、树荫、骑行和建筑。",
+              "extensions": null
+            },
+            {
+              "type": "photo",
+              "camera": "A7R6",
+              "lens": "20-70mm F4 G",
+              "note": "民园广场和五大道建筑关系。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "6ea4ab76-9e1a-43e9-9d98-0fa158436bf3",
+          "kind": "event",
+          "location": "北安桥/古文化街一带",
+          "description": "北安桥与古文化街附近扫街，拍桥、河道、人流、商铺和返程前的城市热闹。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap"
+          },
+          "gps": [
+            117.18862550357092,
+            39.13244434976122
+          ],
+          "time_window": [
+            "13:10",
+            "14:00"
+          ],
+          "needs_companion": false,
+          "self_shoot": false,
+          "script": "这里可以让片尾稍微热闹一点，但不要太满。拍桥、河和人流，够了就往天津之眼走。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "北安桥、河道、人流和古文化街外围。",
+              "extensions": null
+            },
+            {
+              "type": "photo",
+              "camera": "A7R6",
+              "lens": "50-400mm F4.5-6.3",
+              "note": "长焦压桥、人群和海河空间。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "fec2dcaf-0220-47bf-a0d3-6ac41d42b574",
+          "kind": "event",
+          "location": "天津之眼/永乐桥",
+          "description": "天津之眼和三岔河口扫街，拍摩天轮、桥、河、人流和返程前最后的大地标。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap",
+            "pharos:music_refs": [
+              "揪心的玩笑与漫长的白日梦"
+            ]
+          },
+          "gps": [
+            117.17988577038606,
+            39.15321270094257
+          ],
+          "time_window": [
+            "14:00",
+            "15:20"
+          ],
+          "needs_companion": false,
+          "self_shoot": true,
+          "script": "天津之眼还是要来一下。它很直白，但作为最后一个城市地标，放在返程前是成立的。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "手持扫街、摩天轮、桥、人流和自拍收束。",
+              "extensions": null
+            },
+            {
+              "type": "photo",
+              "camera": "A7R6",
+              "lens": "50-400mm F4.5-6.3",
+              "note": "压缩摩天轮、桥和河道。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "2ec3414c-7b3b-4991-9f78-1a29f7ed7178",
+          "kind": "event",
+          "location": "天津之眼/永乐桥",
+          "description": "最后口播和返程前整理，拍收机、确认还车路线、总结这趟从太行到海港的主线。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap"
+          },
+          "gps": [
+            117.17988577038606,
+            39.15321270094257
+          ],
+          "time_window": [
+            "15:20",
+            "15:40"
+          ],
+          "needs_companion": false,
+          "self_shoot": true,
+          "script": "这趟从石家庄、矿区、太行、秦皇岛一路到天津，基本到这里收尾。接下来就是还车、机场，回深圳。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "返程前收束口播、收包和导航确认。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        },
+        {
+          "id": "aa247e33-6d8b-427f-90e6-857c2689208b",
+          "kind": "event",
+          "location": "天津滨海机场T2国内出发",
+          "description": "还车、值机、候机和返程收尾，拍机场、行李、登机牌、素材备份状态和舷窗。",
+          "priority": "must",
+          "source": "pharos",
+          "added_at": null,
+          "extensions": {
+            "gps_source": "amap",
+            "pharos:music_refs": [
+              "揪心的玩笑与漫长的白日梦"
+            ]
+          },
+          "gps": [
+            117.35518691650692,
+            39.13019103165563
+          ],
+          "time_window": [
+            "16:10",
+            "19:00"
+          ],
+          "needs_companion": false,
+          "self_shoot": true,
+          "script": "机场到了。这个片子最后就收在候机、登机和舷窗上，从河北和天津回到普通生活里。",
+          "captures": [
+            {
+              "type": "video",
+              "camera": "ZV-E1",
+              "lens": "17-28mm F2.8",
+              "note": "还车、值机、候机、登机和舷窗。",
+              "extensions": null
+            },
+            {
+              "type": "photo",
+              "camera": "A7R6",
+              "lens": "20-70mm F4 G",
+              "note": "候机口和舷窗静帧。",
+              "extensions": null
+            }
+          ],
+          "gps_start": null,
+          "gps_end": null,
+          "trigger_radius_km": null,
+          "angles": null,
+          "script_points": null
+        }
+      ],
+      "extensions": {
+        "pharos:display_day": "D5"
+      }
+    }
+  ],
+  "extensions": {
+    "plan_md": "plans/20260617-河北石家庄秦皇岛-此生初次入太行.md",
+    "shot_slug": "20260617-河北石家庄秦皇岛-此生初次入太行",
+    "pharos:extra_pre_trip_equipment": [
+      {
+        "id": "FP100 x3",
+        "kind": "accessory"
+      },
+      {
+        "id": "额外 SD 卡 x2",
+        "kind": "accessory"
+      },
+      {
+        "id": "额外 TF 卡 x2",
+        "kind": "accessory"
+      },
+      {
+        "id": "磐图 TT5PRO 三脚架",
+        "kind": "accessory"
+      },
+      {
+        "id": "空气一号三脚架",
+        "kind": "accessory"
+      },
+      {
+        "id": "滤镜系统",
+        "kind": "accessory"
+      },
+      {
+        "id": "DJI Mic 2 麦克风",
+        "kind": "accessory"
+      },
+      {
+        "id": "Shimada V30 摄影包",
+        "kind": "accessory"
+      },
+      {
+        "id": "玻璃遮光罩",
+        "kind": "accessory"
+      },
+      {
+        "id": "防雨罩",
+        "kind": "accessory"
+      }
+    ]
+  }
+}

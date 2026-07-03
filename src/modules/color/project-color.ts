@@ -57,6 +57,7 @@ import {
   deriveColorGradingTimelineName,
   deriveColorResolveProjectName,
   deriveColorRootNamespace,
+  resolveColorDrpLatestFilename,
 } from './workspace-state.js';
 import { readColorRenderPresetBitrateKbps } from './render-preset.js';
 import { classifyMidpointLowlight } from './lowlight-classifier.js';
@@ -475,6 +476,7 @@ export async function snapshotProjectColorDrp(
       resolveProjectName,
       snapshotRoot,
       snapshotLabel: input.snapshotLabel ?? 'manual',
+      latestFilename: resolveColorDrpLatestFilename(resolveProjectName),
       retention,
       action: input.mode ?? 'manual',
       rootId: input.rootId,
@@ -561,7 +563,7 @@ export async function registerExternalColorDrpSnapshot(
   if (resolve(sourcePath) !== resolve(targetPath)) {
     await copyFile(sourcePath, targetPath);
   }
-  const latestPath = join(snapshotRoot, 'latest.drp');
+  const latestPath = join(snapshotRoot, resolveColorDrpLatestFilename(resolveProjectName));
   await mkdir(dirname(latestPath), { recursive: true });
   if (resolve(targetPath) !== resolve(latestPath)) {
     await copyFile(targetPath, latestPath);
@@ -923,6 +925,43 @@ export async function prepareProjectColorRoot(
     });
     throw new ColorPrepBlockedError(emptyBlockers);
   }
+  const missingDefaultTemplateBlockers = buildMissingDefaultRepairTemplateBlockers({
+    workspaceRoot: context.workspaceRoot,
+    rawInventory,
+    previousClipSnapshots,
+    repairTemplateHashes,
+  });
+  if (missingDefaultTemplateBlockers.length > 0) {
+    const detail = missingDefaultTemplateBlockers.join('；');
+    await writeRootCurrent(context.projectRoot, context.rootId, current => ({
+      ...current,
+      mirrorStatus: 'blocked',
+      timelineStatus: 'blocked',
+      groupSyncStatus: current.groupSyncStatus,
+      activeStage: undefined,
+      currentJobId: undefined,
+      detail,
+      prepareChunks: chunks.map(chunk => ({
+        ...materializePrepareChunkForCurrent(chunk, current.prepareChunks ?? []),
+        status: 'failed' as const,
+        completedAt: undefined,
+        detail,
+      })),
+      blockingReasons: dedupeStrings([...(current.blockingReasons ?? []), ...missingDefaultTemplateBlockers]),
+    }));
+    await writeProgress(progressPath, action, {
+      status: 'failed',
+      stepIndex: 1,
+      current: 0,
+      detail,
+      extra: {
+        projectId: input.projectId,
+        rootId: input.rootId,
+        clipCount: rawInventory.length,
+      },
+    });
+    throw new ColorPrepBlockedError(missingDefaultTemplateBlockers);
+  }
 
   await writeRootCurrent(context.projectRoot, context.rootId, current => ({
     ...current,
@@ -1118,6 +1157,7 @@ export async function prepareProjectColorRoot(
         resolveProjectName: context.rootSummary.resolveProjectName,
         snapshotRoot: resolveColorDrpSnapshotRoot(context.projectRoot, context.rootSummary.resolveProjectName),
         snapshotLabel: `prepare-root-${context.rootId}-complete`,
+        latestFilename: resolveColorDrpLatestFilename(context.rootSummary.resolveProjectName),
         retention: 'latest-only',
         action: 'prepare_root',
         rootId: context.rootId,
@@ -2514,7 +2554,7 @@ function describeRepairSeedNotice(hostSummary: Record<string, unknown> | undefin
     return `竖屏 Gyro DRT 缺失，已跳过 ${missingOrientationCount} 个竖屏 clip 的自动 Gyro seed；素材、Group 与横屏 transform 已继续准备。`;
   }
   if (status !== 'skipped-missing-drt') return undefined;
-  return 'Repair 模板缺失，已跳过自动 repair seed；素材与 Group 已可继续准备。';
+  return 'Repair 模板缺失；默认 DRT 缺失应在 Resolve 变更前阻塞，请检查 config/default.drt。';
 }
 
 function resolveColorDrpSnapshotRoot(projectRoot: string, resolveProjectName: string): string {
@@ -2729,6 +2769,8 @@ function filterPersistentColorBlockers(blockers: string[]): string[] {
     && !blocker.includes('sidecar sync')
     && !blocker.includes('capturedAt mismatch')
     && !blocker.includes('gps mismatch')
+    && !blocker.includes('默认 Clip Repair DRT')
+    && !blocker.includes('config/default.drt')
     && !blocker.includes('resolveColorPythonPath')
     && !blocker.includes('resolveColorScriptApiRoot')
     && !blocker.includes('config/runtime.json')
@@ -3677,6 +3719,26 @@ async function buildColorRepairTemplateHashes(workspaceRoot: string): Promise<Re
     return [key, buffer ? createHash('sha256').update(buffer).digest('hex') : undefined] as const;
   }));
   return Object.fromEntries(entries);
+}
+
+function buildMissingDefaultRepairTemplateBlockers(input: {
+  workspaceRoot: string;
+  rawInventory: IColorRawInventoryItem[];
+  previousClipSnapshots: Map<string, IColorClipRepairSnapshot>;
+  repairTemplateHashes: Record<string, string | undefined>;
+}): string[] {
+  if (input.repairTemplateHashes[CCOLOR_REPAIR_TEMPLATE_DEFAULT_KEY]) return [];
+  const defaultOrUnknownClipCount = input.rawInventory.filter(item => {
+    const previousTemplateKey = resolveColorRepairTemplateKeyFromSnapshot(
+      input.previousClipSnapshots.get(item.rawRelativePath),
+    );
+    return !previousTemplateKey || previousTemplateKey === CCOLOR_REPAIR_TEMPLATE_DEFAULT_KEY;
+  }).length;
+  if (defaultOrUnknownClipCount === 0) return [];
+  const defaultTemplatePath = buildColorRepairTemplates(input.workspaceRoot)[CCOLOR_REPAIR_TEMPLATE_DEFAULT_KEY];
+  return [
+    `缺少默认 Clip Repair DRT：${defaultTemplatePath}。当前 root 有 ${defaultOrUnknownClipCount} 个默认或未知方向 clips 需要用它建立 Gyro -> Dehaze -> User1 -> User2 -> NR 五节点；prepare_root 已阻塞，避免写出缺 repair 节点的 ready 状态。请先导出正式五节点 DRT 到该路径后重跑 Prepare Root。`,
+  ];
 }
 
 function refreshPrepareChunkForRepairTemplateDrift(

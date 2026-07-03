@@ -227,7 +227,8 @@ function createFakeExecutor(options: {
       if (options.onSaveDrpSnapshot) {
         return options.onSaveDrpSnapshot(input);
       }
-      const latestPath = join(input.snapshotRoot, 'latest.drp');
+      const latestFilename = input.latestFilename ?? 'latest.drp';
+      const latestPath = join(input.snapshotRoot, latestFilename);
       const retention = input.retention === 'archive' ? 'archive' : 'latest-only';
       const snapshotPath = retention === 'archive'
         ? join(input.snapshotRoot, 'snapshots', `${input.snapshotLabel || 'manual'}.drp`)
@@ -345,9 +346,14 @@ async function seedSingleRootProject(input: {
   colorSpaceProfile?: string;
   rawFiles?: string[];
   includeRawLocalPath?: boolean;
+  includeDefaultRepairDrt?: boolean;
 }) {
   const projectRoot = await initWorkspaceProject(input.workspaceRoot, input.projectId, input.projectName);
   const rootId = input.rootId ?? 'root-camera';
+  if (input.includeDefaultRepairDrt !== false) {
+    await mkdir(join(input.workspaceRoot, 'config'), { recursive: true });
+    await writeFile(join(input.workspaceRoot, 'config', 'default.drt'), 'default repair template', 'utf-8');
+  }
   const rawLocalPath = join(projectRoot, '.fixtures', `${rootId}-raw`);
   const currentLocalPath = join(projectRoot, '.fixtures', `${rootId}-current`);
   await mkdir(currentLocalPath, { recursive: true });
@@ -419,6 +425,44 @@ describe('project color actions', () => {
     });
     expect(current.roots[0]?.groupSyncStatus).toBe('ready');
     expect(current.roots[0]?.groups[0]?.status).toBe('ready');
+    expect(current.roots[0]?.latestDrpSnapshot?.latestPath).toMatch(/Project Color Prepare Snapshot \[Color\]\.drp$/u);
+  });
+
+  it('blocks prepare_root before Resolve mutation when the default repair DRT is missing', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-color-missing-default-drt';
+    const { projectRoot, rootId } = await seedSingleRootProject({
+      workspaceRoot,
+      projectId,
+      projectName: 'Project Color Missing Default DRT',
+      includeDefaultRepairDrt: false,
+    });
+
+    mockColorMetadata();
+    mockClipSignals({ gyroEligible: true, lowlight: true });
+    const prepareRootSpy = vi.fn(async (input: IColorExecutorPrepareRootInput) => (
+      createFakeExecutor().prepareRoot(input)
+    ));
+    await expect(prepareProjectColorRoot({
+      workspaceRoot,
+      projectId,
+      rootId,
+      jobId: 'job-color-missing-default-drt',
+      executor: createFakeExecutor({
+        onPrepareRoot: prepareRootSpy,
+      }),
+    })).rejects.toBeInstanceOf(ColorPrepBlockedError);
+
+    expect(prepareRootSpy).not.toHaveBeenCalled();
+    const current = await loadColorCurrent(projectRoot);
+    const root = current.roots.find(candidate => candidate.rootId === rootId);
+    expect(root).toMatchObject({
+      mirrorStatus: 'blocked',
+      timelineStatus: 'blocked',
+    });
+    expect(root?.detail).toContain('config/default.drt');
+    expect(root?.detail).toContain('五节点');
+    expect(root?.prepareChunks.map(chunk => chunk.status)).toEqual(['failed']);
   });
 
   it('syncs Resolve groups without re-running midpoint lowlight detection', async () => {
@@ -1891,6 +1935,8 @@ describe('project color actions', () => {
     expect(saved.snapshot?.mode).toBe('manual');
     expect(saved.snapshot?.retention).toBe('latest-only');
     expect(saved.snapshot?.snapshotPath).toBe(saved.snapshot?.latestPath);
+    expect(saved.snapshot?.latestPath).toMatch(/Project Color DRP Snapshot \[Color\]\.drp$/u);
+    expect(saved.snapshot?.latestPath).not.toMatch(/latest\.drp$/u);
     const savedMapEntry = (await loadColorResolveProjectMap(projectRoot)).projects[saved.snapshot!.projectName];
     expect(savedMapEntry?.latestSnapshot?.snapshotPath).toBe(saved.snapshot?.snapshotPath);
     expect(savedMapEntry?.snapshots).toHaveLength(0);
@@ -1910,6 +1956,8 @@ describe('project color actions', () => {
     ]);
     expect(registered.snapshot.mode).toBe('external');
     expect(registered.snapshot.retention).toBe('archive');
+    expect(registered.snapshot.latestPath).toMatch(/Project Color DRP Snapshot \[Color\]\.drp$/u);
+    expect(registered.snapshot.latestPath).not.toMatch(/latest\.drp$/u);
     expect(resolveMap.projects[registered.snapshot.projectName]?.latestSnapshot?.snapshotPath)
       .toBe(registered.snapshot.snapshotPath);
     expect(current.roots.find(root => root.rootId === rootId)?.latestDrpSnapshot?.snapshotPath)
@@ -2066,6 +2114,8 @@ describe('project color actions', () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-color-prepare-all';
     const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Project Color Prepare All');
+    await mkdir(join(workspaceRoot, 'config'), { recursive: true });
+    await writeFile(join(workspaceRoot, 'config', 'default.drt'), 'default repair template', 'utf-8');
     const rawFail = join(projectRoot, '.fixtures', 'root-z-raw');
     const rawReady = join(projectRoot, '.fixtures', 'root-a-raw');
     const currentFail = join(projectRoot, '.fixtures', 'root-z-current');

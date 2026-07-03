@@ -46,7 +46,7 @@ Kairos 将旅拍素材转化为可编辑时间线。流程分为准备阶段、�
 - 当前 `prepare_root` 必须真实完成 `rawLocalPath -> Resolve root bins / single root grading timeline / explainable creative Groups + canonical clip repair layout` 的同步，而不是只持久化 Kairos 侧占位状态；大素材 root 默认按稳定 50-clip chunks 分批导入并追加到同一条 root grading timeline，避免一次性把整 root 塞进内存
 - 当前 Group 真相以 Resolve 为准；用户可直接在 Resolve 中调整 Group，再通过 `/color` 的 `sync_groups` 回写最新现状；不存在额外 `Confirm Groups` 步骤
 - `/color` 当前进入页面或切换项目时会自动执行 host preflight，并允许用户手动 `Recheck Host`
-- `/color` 当前还提供 `保存 DRP 快照` 与外部 `.drp` 登记入口；自动 DRP 只在 root prepare 全部 chunks 完成后导出一次，人工入口也把 Resolve 工程快照落到 `color/resolve-projects/<safe-project-name>/`，并维护 `latest.drp` / `color/resolve-project-map.json`
+- `/color` 当前还提供 `保存 DRP 快照` 与外部 `.drp` 登记入口；自动 DRP 只在 root prepare 全部 chunks 完成后导出一次，人工入口也把 Resolve 工程快照落到 `color/resolve-projects/<safe-project-name>/`，并维护 `${Resolve项目名}.drp` 具名 latest / `color/resolve-project-map.json`
 - 当前 `prepare_root / sync_groups / execute_root / prepare_all_roots / export_all_roots` 都必须先通过 host preflight；若宿主 blocked 或当前 render preset 不受支持，应在 Resolve 变更前直接失败
 - 当前 color 导出真相是 root grading timeline：render preset 是 root 级长期配置，batch 只是执行/重试粒度，可选携带 `clipKeys[]` 做 subset rerun；Resolve Groups 只承担组织与诊断语义，不再决定导出分批
 - 当前 color `execute_root` 成功后会随调色视频同步同 basename sidecar：`.srt/.xml/.gyroflow/.wav/.flac/.m4a/.aac/.mp3`，sidecar 必须进入 manifest 与 validation 管理
@@ -75,8 +75,8 @@ Kairos 将旅拍素材转化为可编辑时间线。流程分为准备阶段、�
 - ZV-E1 / Sony 竖屏素材可以进入 Gyro 路径，但必须方向感知：Kairos 从 ffprobe `rotate/display matrix` 解析方向，横屏用 `config/default.drt`；ffprobe 源 `rotation=90` 会写 `RotationAngle=-90`，但按 Gyroflow `270` 使用 `config/gyroflow-portrait--90.drt`；ffprobe 源 `rotation=-90/270` 会写 `RotationAngle=90`，但按 Gyroflow `90` 使用 `config/gyroflow-portrait-90.drt`；缺少方向 DRT 时只禁用该 clip 的自动 Gyro seed 并标记 `pending-orientation-template`
 - `/color` 默认把竖屏素材导出成横屏单 clip：`prepare_root` 对竖屏 timeline item 写入 `RotationAngle / ZoomX / ZoomY / ZoomGang / Pan / Tilt`，旋转并放大填满横屏 root timeline；横向编码但 display-matrix 竖屏的素材需要额外 fill zoom，避免 Gyroflow/DRT 输出层留下居中小画面；Gyroflow OFX 内部 orientation 仍由方向专用 DRT 提供，不通过 Resolve scripting 猜参数
 - portrait DRT hash 缺失或过期时，`prepare_root` 只重跑命中的 chunk，并对 stale portrait clip 先执行 `ResetAllGrades()` 清掉旧 repair/OFX state，再重新应用方向 DRT；最终 `sync_groups` 要把当前 DRT hash 写回 clip snapshot，后续 hash 未变时才走 canonical preserve
-- 旧非规范 clip graph 记为 `legacy-layout`；本轮允许在 workspace `config/default.drt` 存在时破坏性重建到 canonical layout，不存在时 bulk prepare 跳过自动 repair seed 并标记 `pending-template`；规范图重跑保留用户区状态与用户手动切换的 Dehaze/NR 状态，但仍按最终 `gyroEligible` 重申 Gyro node1 开关；`NR` 后新增节点也视为 legacy
-- 只使用 clean DRT donor 做正式自动 clip repair seeding：旧 `gyro-only.drt + CopyGrades + render` 已实测可触发 Gyroflow source-specific load；DRX 仅保留为人工诊断材料，不再作为 bulk prepare fallback
+- 旧非规范 clip graph 记为 `legacy-layout`；本轮允许在 workspace `config/default.drt` 存在时破坏性重建到 canonical layout，不存在时 bulk prepare 在 Resolve 变更前阻塞默认 / 横屏 / 未知方向 clips，避免回落到 DRX 或写出 ready 的单节点图；规范图重跑保留用户区状态与用户手动切换的 Dehaze/NR 状态，但仍按最终 `gyroEligible` 重申 Gyro node1 开关；`NR` 后新增节点也视为 legacy
+- 只使用 clean DRT donor 做正式自动 clip repair seeding：旧 `gyro-only.drt + CopyGrades + render` 已实测可触发 Gyroflow source-specific load；仓库不再携带默认 `config/default.drx`，DRX 仅允许作为显式外部人工诊断材料，不再作为 bulk prepare fallback
 - `/color` 当前继续保持单页，但页面信息架构正式收口为 `Root 摘要 -> 当前 Root Hero -> 所有 Root 常驻可编辑配置 -> Groups -> 次级诊断/归档`
 - `/color` 上所有 root 的用户可编辑项都必须保持在主信息流中直接可见且同页可维护；折叠区只保留只读的 `Host Diagnostics / Recent Batches / Validation Failures` 与技术调试信息
 - 当前 color 的长期配置只保留项目级 root 上的 `color.renderPreset`；不要再把 `resolveProjectName / rootNamespace / gradingTimelineName / bootstrap Group` 当成用户配置项
@@ -279,6 +279,7 @@ project/
 - Pharos planned shot 归属只使用 `record.json.actual_time` 精确匹配；`expected / unexpected` 且有完整 actual time 的记录才可绑定存在有意义时间重叠的素材，多个单点事件时间窗重叠时只按 `record.json.actual_captures[]` 等显式拍摄类型/设备字段调整优先级，仍同分时优先更窄的 actual window，不从描述、地点或 note 推断语义；`pending / abandoned` 和 planned time segment 不参与素材归属，空间仍只从 trip GPX 按时间反算
 - Pharos/Pyxis 的普通事件过长二次确认只防止上游误写超长 `actual_time`，不改变 Kairos workflow 的归属、刷新或重建步骤
 - Pharos/Pyxis 的非旅行期省电门控只影响移动端自动服务启动，不改变 Kairos workflow 的 Pharos 输入目录、解析、素材归属、GPS 刷新或 chronology 重建步骤
+- Pharos/Carta 的实际路线图 / 交互报告航段与异常高速 GPX 过滤只影响 Carta 本地派生报告；原始 GPX、WebDAV/JSON 协议和 Kairos 项目内 Pharos 镜像都不变，Workflow 不因此新增 Ingest、GPS 刷新或 chronology 逻辑
 - 对本次成功扫描到的 root，Ingest 会剪掉该 root 下磁盘已不存在的旧资产；missing root 的旧资产保持不动
 - root 可声明 `captureTimePolicy.mode=manual-required`；命中素材必须由用户显式补 `正确日期 / 正确时间 / 时区` 后 rerun ingest
 - 如果 ingest 发现素材时间和项目时间线明显冲突，必须把待校正项追加到 `config/manual-itinerary.md` 末尾的“素材时间校正”表格，并阻塞后续阶段

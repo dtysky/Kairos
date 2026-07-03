@@ -1,0 +1,109 @@
+{
+  "name": "端午河北之旅：此生初次入太行",
+  "description": "来自 Pharos trip-20260617-5d1117ea-3853-4266-a739-94955c3be85d 的河北石家庄秦皇岛端午行程。",
+  "createdAt": "2026-07-03T06:44:26.072Z",
+  "mappings": [
+    {
+      "rootId": "root-draft-1783061298065-caen03",
+      "rootCode": "zve1",
+      "path": "F:\\vlog-proj\\hebei-wanqing\\zve1",
+      "rawPath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\zve1",
+      "alternatePaths": [
+        {
+          "path": "/Volumes/Peely SSD/zve1",
+          "rawPath": "/Volumes/Peely SSD/raw/zve1"
+        }
+      ],
+      "description": "VLOG和行车等主要视频",
+      "enabled": true,
+      "label": "hebei-wanqing/zve1",
+      "priority": 1,
+      "notes": [
+        "VLOG和行车等主要视频"
+      ],
+      "color": {
+        "renderPreset": {
+          "container": "mp4",
+          "videoCodec": "h265",
+          "audioCodec": "aac",
+          "bitrateKbps": 30000
+        },
+        "transformPresetKey": "Sony/SLog3SGamut3.CineToLC-709.cube"
+      }
+    },
+    {
+      "rootId": "root-draft-1783061376899-n2h35d",
+      "rootCode": "drone",
+      "path": "F:\\vlog-proj\\hebei-wanqing\\drone",
+      "rawPath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\drone",
+      "alternatePaths": [
+        {
+          "path": "/Volumes/Peely SSD/drone",
+          "rawPath": "/Volumes/Peely SSD/raw/drone"
+        }
+      ],
+      "description": "航拍视频",
+      "enabled": true,
+      "label": "hebei-wanqing/drone",
+      "priority": 2,
+      "notes": [
+        "航拍视频"
+      ],
+      "color": {
+        "renderPreset": {
+          "container": "mp4",
+          "videoCodec": "h265",
+          "audioCodec": "aac",
+          "bitrateKbps": 30000
+        },
+        "transformPresetKey": "DJI/DJI Mavic 4 Pro D-Log to Rec.709 V1.cube"
+      }
+    },
+    {
+      "rootId": "root-draft-1783061472983-kd0ipy",
+      "rootCode": "ts-final",
+      "path": "F:\\vlog-proj\\hebei-wanqing\\ts-final",
+      "alternatePaths": [
+        {
+          "path": "/Volumes/Peely SSD/ts-final"
+        }
+      ],
+      "description": "延时摄影",
+      "enabled": true,
+      "label": "hebei-wanqing/ts-final",
+      "priority": 3,
+      "notes": [
+        "延时摄影"
+      ],
+      "captureTimePolicy": {
+        "mode": "manual-required",
+        "requiredKinds": [
+          "video"
+        ]
+      }
+    },
+    {
+      "rootId": "root-draft-1783061526295-c8nl24",
+      "rootCode": "photos",
+      "path": "F:\\vlog-proj\\hebei-wanqing\\photos",
+      "alternatePaths": [
+        {
+          "path": "/Volumes/Peely SSD/photos"
+        }
+      ],
+      "description": "途中拍摄的照片",
+      "enabled": true,
+      "label": "hebei-wanqing/photos",
+      "priority": 4,
+      "notes": [
+        "途中拍摄的照片"
+      ]
+    }
+  ],
+  "pharos": {
+    "includedTripIds": [
+      "trip-20260617-5d1117ea-3853-4266-a739-94955c3be85d"
+    ]
+  },
+  "materialPatternPhrases": []
+}

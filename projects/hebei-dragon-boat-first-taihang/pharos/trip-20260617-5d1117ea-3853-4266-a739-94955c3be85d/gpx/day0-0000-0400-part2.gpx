@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Pyxis" xmlns="http://www.topografix.com/GPX/1/1">
+  <trk>
+    <name>trip-20260617-5d1117ea-3853-4266-a739-94955c3be85d_2026-06-17_0000-0400_part-2</name>
+    <trkseg>
+      <trkpt lat="22.5699013" lon="113.8521597">
+        <ele>73.4790650186765</ele>
+        <time>2026-06-16T19:59:01.913Z</time>
+        <speed>0.2061593</speed>
+      </trkpt>
+      <trkpt lat="22.5698734" lon="113.8521676">
+        <ele>73.64046174275825</ele>
+        <time>2026-06-16T19:59:21.913Z</time>
+        <speed>0.20456015</speed>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>

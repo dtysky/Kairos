@@ -428,6 +428,15 @@ export function deriveColorResolveProjectName(projectName?: string, projectId?: 
   );
 }
 
+export function resolveColorDrpLatestFilename(resolveProjectName: string): string {
+  const sanitized = resolveProjectName
+    .trim()
+    .replace(/[<>:"/\\|?*\u0000-\u001F]+/gu, '-')
+    .replace(/^\.+|\.+$/gu, '')
+    .trim();
+  return `${sanitized || 'Kairos Color Project'}.drp`;
+}
+
 export function deriveColorRootNamespace(rootLabel?: string, rootId?: string): string {
   const base = trimmed(rootLabel) ?? trimmed(rootId);
   return normalizeResolveDisplayName(

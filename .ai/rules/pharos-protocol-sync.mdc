@@ -39,6 +39,7 @@ alwaysApply: true
 - `plan.json` 的 `time_window` 只用于计划展示、提醒和执行记录默认值，不得作为素材归属 fallback；shot 自带计划/实际 GPS 也不作为素材归属时间真相。
 - Pyxis 普通事件完成时长过长的二次确认只发生在上游写入前，用于防止误选超长 `actual_time`；它不新增协议字段，也不授权 Kairos 侧增加归属 fallback 或保护性改判。
 - Pyxis 非旅行期省电门控只控制移动端 GPS / GPX / 语音 / BLE 自动启动；它不新增或修改 WebDAV / JSON 协议字段，也不授权 Kairos 改变 `plan.json / record.json / gpx/` 的只读消费、素材匹配或 chronology 归属规则。
+- Pharos `requirements.md` 2026-07 同步只新增 Carta 实际路线图 / 交互报告在渲染前过滤航段或异常高速 GPX 段（默认 `>300 km/h`）的派生视图规则；原始 GPX 副本、WebDAV 目录、`plan.json / record.json` schema 均不变，Kairos 不消费 Carta 派生报告，因此本轮不需要 Kairos 代码变更。
 
 ## 禁止行为
 

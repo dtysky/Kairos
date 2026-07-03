@@ -1,7 +1,7 @@
 {
   "sourceRoot": "../Pharos/designs",
-  "generatedAt": "2026-06-13T16:31:48.254Z",
-  "combinedSha256": "5f70bbfc2f57e278c6afe28b7eebfd2ac32fdbd2cecb59d2a51bd83858f007e5",
+  "generatedAt": "2026-07-03T06:43:26.964Z",
+  "combinedSha256": "aaa776569223b8710c6c3d7a64b5c92dccf4ecd3147430b72023d86d90733ea6",
   "files": [
     {
       "path": "overview.md",
@@ -21,7 +21,7 @@
     },
     {
       "path": "requirements.md",
-      "sha256": "8b30179e21b4d38dbd403418bf0d6b6bae60ad3b7962e5f1e7aded2e4db63489"
+      "sha256": "850d32a1b2eeab4fe16129da66196a64f5373778c6cd27a22efbcdfc5cb9999f"
     }
   ]
 }

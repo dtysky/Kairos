@@ -1770,7 +1770,7 @@ export function ColorCurrentSummary({
                   label="登记外部 DRP"
                   value={externalDrpPath}
                   onChange={setExternalDrpPath}
-                  placeholder=".../color/resolve-projects/.../snapshots/project.drp"
+                  placeholder="~/Desktop/项目名 [Color].drp"
                   disabled={activeRootDrpRegisterBusy}
                 />
                 <Button

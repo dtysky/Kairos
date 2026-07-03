@@ -34,6 +34,7 @@
 - Pharos 上游协议 hash 不匹配时，必须先同步当前 `../Pharos/designs` 到 Kairos 设计文档、rules、skills、实现/测试影响，并刷新 `.ai/pharos-protocol-baseline.json`；baseline 未重新匹配前不继续普通 Pharos 功能工作
 - 当前 Pharos 协议新增 Pyxis 普通事件完成时长过长写入前二次确认：实际时长达到计划时长 2 倍且至少多 30 分钟时由 Pyxis UI 要求再次确认；该保护不新增字段、不改变 `record.json.actual_time` schema，也不改变 Kairos chronology 的归属判据
 - 当前 Pharos / Pyxis 还新增非旅行期省电门控：移动端仅在当天存在 planned 行程或仍 active 的 Freeform 行程时自动启动 GPS、GPX、语音和 BLE 服务。该门控不新增协议字段，不改变 WebDAV 目录结构，也不改变 Kairos 对 `plan.json / record.json / gpx/` 的只读消费和素材匹配逻辑。
+- 当前 Pharos `requirements.md` 新增的 Carta 实际路线图 / 交互报告航段与异常高速 GPX 过滤，只作用于 Carta 本地派生渲染：过滤后的段不参与路线绘制、里程、自动缩放或事件回贴，原始 GPX 不被改写。该变化不新增 WebDAV/JSON 字段，不改变 Kairos 的项目内 Pharos 镜像、GPX 读取、素材匹配或 chronology 归属逻辑，本轮无 Kairos 代码影响。
 - 素材 root 可声明 `captureTimePolicy`：
   - `mode: "auto"` 是默认行为
   - `mode: "manual-required"` 表示该 root 的指定素材类型不可信任容器 / EXIF / 文件名 / filesystem 时间，必须由单素材手动时间修正落成 `manual` capture time
@@ -179,7 +180,7 @@
   - 竖屏 clip 会在 timeline item 上自动设置 `RotationAngle / ZoomX / ZoomY / ZoomGang / Pan / Tilt`，默认旋转并放大填满横屏导出；对横向编码但 display-matrix 竖屏的素材，缩放按 Gyroflow/DRT 实际输出的横屏内接画面补偿，避免 3840x2160 画布中只剩约 2160x1216 有效画面
   - portrait DRT hash 缺失或过期时，`prepare_root` 只重跑命中的 chunk，并对 stale portrait clip 先执行 `ResetAllGrades()` 清掉旧 repair/OFX state，再重新应用方向 DRT；最终 `sync_groups` 必须把当前 DRT hash 持久化回 clip snapshot
 - 缺少固定槽位的旧图正式记为 `legacy-layout`
-  - 本轮允许在 workspace `config/default.drt` 存在时破坏性重建到 canonical layout；不存在时 bulk prepare 跳过自动 repair seed 并标记 `pending-template`
+  - 本轮允许在 workspace `config/default.drt` 存在时破坏性重建到 canonical layout；默认 DRT 不存在时，bulk prepare 会在 Resolve 变更前阻塞默认 / 横屏 / 未知方向 clips，避免回落到 DRX 或写出 ready 的单节点图
   - 如果用户把新节点加在 `NR` 后面，下次 `prepare_root` 也会按 legacy layout 处理并重建
   - 这是 clip repair 迁移代价，不影响 Resolve Group creative 真相
 - `color/groups/<rootId>.json` 的 clip snapshot 正式扩展为：
@@ -228,7 +229,7 @@
   - `gyroEligible` 只决定 Gyro 默认/重申启停，不决定是否存在 Gyro 节点
   - `Dehaze / NR` 默认状态都是 `seeded-disabled`
   - 当前 Resolve 运行态下 `ExportStills(..., drx)` 不稳定且返回失败，不能作为正式主线
-  - clean `DRT` 是唯一正式自动宿主模板：旧 `gyro-only.drt + CopyGrades + render` 路径已实测能触发 Gyroflow 当前文件加载；`DRX` 仅保留为人工诊断材料，不能作为 bulk prepare fallback 或 load 证据
+  - clean `DRT` 是唯一正式自动宿主模板：旧 `gyro-only.drt + CopyGrades + render` 路径已实测能触发 Gyroflow 当前文件加载；仓库不再携带默认 `config/default.drx`，`DRX` 只允许作为显式外部人工诊断材料，不能作为 bulk prepare fallback 或 load 证据
 - `gyroflowStatus` 当前正式至少包含：
   - `not-applicable`
   - `not-seeded`
@@ -917,7 +918,7 @@ src/modules/color/
 - `color/current.json` 保存 root/group 级 current truth
 - `color/groups/<rootId>.json` 保存宿主同步下来的正式 Group 快照
 - `color/batches/<batchId>/plan.json|manifest.json|validation.json` 保存每次执行归档
-- `color/resolve-projects/<safe-project-name>/latest.drp` 与 `color/resolve-project-map.json` 保存 Resolve 工程同步快照 truth；`latest-only` 只覆盖 latest，`archive` 才额外写 `snapshots/<timestamp>...drp`
+- `color/resolve-projects/<safe-project-name>/<Resolve项目名>.drp` 与 `color/resolve-project-map.json` 保存 Resolve 工程同步快照 truth；`latest-only` 只覆盖具名 latest 副本，`archive` 才额外写 `snapshots/<timestamp>...drp` 并刷新具名 latest
 
 **关键流程**：
 ```
