@@ -73,16 +73,19 @@ KAIROS_INSTALL_PROBES=1 apps/resolve-volc-voiceover-plugin/install_macos.sh
   subtitle track, the plugin selects it automatically; when there are multiple
   tracks, it starts on `Select narration track` so source-speech subtitles are
   not synthesized by accident.
-- Lets the editor select subtitle rows directly in a multi-select list
-  (`Shift` range select / `Cmd` additive select), locate the playhead subtitle,
-  select the Resolve timeline In/Out range, or clear the current selection.
+- Lets the editor select subtitle rows directly in the plugin list, locate the
+  playhead subtitle, select a plugin-managed range from the located row to a
+  clicked end row, select the Resolve timeline In/Out range, or clear the
+  current selection.
   The subtitle list, playhead locate, Resolve In/Out selection, and Insert all
   operate only on the selected subtitle track. Playhead locate checks Resolve
   timecode with timeline start offsets before matching subtitle item frame
   ranges, reports the nearest subtitle gap when no row covers the playhead, and
-  only selects/scrolls the plugin-list row; it also becomes the plugin's range
-  selection anchor for the next Shift-selection inside the list. It does not try
-  to select Resolve Edit-page subtitle timeline items.
+  only selects/scrolls the plugin-list row. It also becomes the plugin's range
+  anchor: click the end row, press `Range`, then press `Insert`. The plugin
+  keeps this range internally so synthesis does not depend on Fusion's native
+  Shift-selection anchor. It does not try to select Resolve Edit-page subtitle
+  timeline items.
 - Uses a compact voice profile selector backed by the Supervisor summary of
   workspace global `config/runtime.json`.
 - Synthesizes one audio file for a single selected subtitle, or one merged
@@ -190,10 +193,12 @@ headers for synthesis requests.
 Resolve scripting does not expose stable Edit-page selected subtitle timeline
 items. Selection is therefore maintained in the plugin's subtitle list. The
 playhead button scrolls to and selects the subtitle covering the current
-playhead frame; Resolve In/Out selects matching subtitle rows in bulk. Set the
-In/Out range in Resolve itself with `I` and `O`; the plugin reads that existing
-range with `GetMarkInOut()`. Locate does not set Resolve In/Out and does not
-pretend to select native timeline items.
+playhead frame and stores that row as the range anchor; the `Range` button then
+selects every row from that anchor to the currently clicked row using the
+plugin's own internal selection state. Resolve In/Out selects matching subtitle
+rows in bulk. Set the In/Out range in Resolve itself with `I` and `O`; the
+plugin reads that existing range with `GetMarkInOut()`. Locate does not set
+Resolve In/Out and does not pretend to select native timeline items.
 
 The plugin talks only to the local Kairos Supervisor. It prefers
 `http://127.0.0.1:8940` via Lua TCP/HTTP, and falls back to workspace file IPC
@@ -225,5 +230,6 @@ Workspace -> Scripts -> Edit -> KairosVolcVoiceover
 ```
 
 Then refresh profiles, use Locate to select a subtitle row in the plugin list,
-and run Insert. Generated audio should appear in Media Pool bin
+optionally click another row and press Range, and run Insert. Generated audio
+should appear in Media Pool bin
 `Kairos Voiceover / <timeline>` and on a `Kairos VO` audio track.

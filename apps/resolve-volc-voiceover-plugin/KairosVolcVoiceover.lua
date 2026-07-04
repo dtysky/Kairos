@@ -1,5 +1,5 @@
 local WINDOW_ID = "kairosVolcVoiceover"
-local PLUGIN_VERSION = "0.2.5"
+local PLUGIN_VERSION = "0.2.8"
 local VOICE_TRACK_NAME = "Kairos VO"
 
 local subtitles = {}
@@ -19,6 +19,8 @@ local updatingSubtitleTrackCombo = false
 local supervisorRequest = nil
 local ipcCounter = 0
 local subtitleSelectionAnchorId = nil
+local subtitleLocateAnchorId = nil
+local subtitleSelectedIds = {}
 local repairingSubtitleSelection = false
 
 local function dirname(path)
@@ -942,15 +944,19 @@ local function updateSelectionStatus()
     if not (items and items.selectionStatus and items.subtitleTree) then
         return
     end
-    local count = 0
+    local count = #subtitleSelectedIds
+    local uiCount = 0
     local selected = safeCall(items.subtitleTree, "SelectedItems")
     if type(selected) == "table" then
         for _, item in pairs(selected) do
             local id = tonumber(treeItemText(item, 0))
             if id ~= nil then
-                count = count + 1
+                uiCount = uiCount + 1
             end
         end
+    end
+    if uiCount > count then
+        count = uiCount
     end
     items.selectionStatus.Text = "Selected: " .. tostring(count)
 end
@@ -1005,6 +1011,9 @@ local function renderSubtitleList()
     local tree = items.subtitleTree
     safeCall(tree, "Clear")
     subtitleTreeItems = {}
+    subtitleSelectedIds = {}
+    subtitleSelectionAnchorId = nil
+    subtitleLocateAnchorId = nil
     applySubtitleTreeColumns()
     for _, row in ipairs(subtitles) do
         local text = row.text
@@ -1103,7 +1112,21 @@ local function ensureSelectedSubtitleTrackLoaded()
     return selectedSubtitleTrackIndex ~= nil
 end
 
-local function selectedIds()
+local function normalizeSubtitleIds(rawIds)
+    local normalized = {}
+    local seen = {}
+    for _, raw in ipairs(rawIds or {}) do
+        local value = tonumber(raw)
+        if value and value >= 1 and value <= #subtitles and subtitleTreeItems[value] and not seen[value] then
+            table.insert(normalized, value)
+            seen[value] = true
+        end
+    end
+    table.sort(normalized)
+    return normalized
+end
+
+local function treeSelectedIds()
     local ids = {}
     local seen = {}
     local selected = safeCall(items.subtitleTree, "SelectedItems")
@@ -1118,6 +1141,10 @@ local function selectedIds()
     end
     table.sort(ids)
     return ids
+end
+
+local function selectedIds()
+    return normalizeSubtitleIds(subtitleSelectedIds)
 end
 
 local function selectedIdsSet(ids)
@@ -1138,6 +1165,18 @@ local function sameIdSet(left, right)
     end
     for key, _ in pairs(rightSet) do
         if not leftSet[key] then
+            return false
+        end
+    end
+    return true
+end
+
+local function idsAreContiguous(ids)
+    if #ids <= 1 then
+        return true
+    end
+    for index = 2, #ids do
+        if tonumber(ids[index]) ~= tonumber(ids[index - 1]) + 1 then
             return false
         end
     end
@@ -1191,7 +1230,10 @@ local function inferRangeEndpoint(ids, anchorId)
     end
     local downCount = anchorId - minId
     local upCount = maxId - anchorId
-    if upCount >= downCount then
+    -- Fusion/Qt may keep an old Shift anchor after Locate. When the plugin
+    -- anchor sits inside a huge UI-selected range, keep the boundary nearest
+    -- to the plugin anchor instead of preserving the stale far-side range.
+    if upCount <= downCount then
         return maxId
     end
     return minId
@@ -1248,6 +1290,8 @@ local function setSelectedIds(ids, scrollToFirst, anchorId, currentId)
     if tree == nil then
         return
     end
+    ids = normalizeSubtitleIds(ids)
+    subtitleSelectedIds = ids
     local wanted = {}
     local firstItem = nil
     for _, id in ipairs(ids) do
@@ -1289,20 +1333,22 @@ local function onSubtitleSelectionChanged(ev)
         updateSelectionStatus()
         return
     end
-    local ids = selectedIds()
+    local ids = treeSelectedIds()
     if #ids == 0 then
+        subtitleSelectedIds = {}
         subtitleSelectionAnchorId = nil
         updateSelectionStatus()
         return
     end
     if #ids == 1 then
+        subtitleSelectedIds = normalizeSubtitleIds(ids)
         subtitleSelectionAnchorId = ids[1]
         updateSelectionStatus()
         return
     end
 
     local anchorId = tonumber(subtitleSelectionAnchorId)
-    if anchorId ~= nil and subtitleTreeItems[anchorId] then
+    if anchorId ~= nil and subtitleTreeItems[anchorId] and idsAreContiguous(ids) then
         local currentId = treeCurrentId(items and items.subtitleTree or nil)
         if currentId == nil or currentId == anchorId or not subtitleTreeItems[currentId] then
             currentId = inferRangeEndpoint(ids, anchorId)
@@ -1316,15 +1362,37 @@ local function onSubtitleSelectionChanged(ev)
             end
         end
     end
+    subtitleSelectedIds = normalizeSubtitleIds(ids)
     updateSelectionStatus()
 end
 
-local function clearSelection(ev)
-    if items and items.subtitleTree then
-        treeClearSelection(items.subtitleTree)
+local function reconcileTreeSelectionForAction()
+    local ids = treeSelectedIds()
+    if #ids == 0 then
+        return selectedIds()
     end
-    subtitleSelectionAnchorId = nil
+    local internalIds = selectedIds()
+    if #ids == 1 and #internalIds > 1 then
+        return internalIds
+    end
+    local anchorId = tonumber(subtitleSelectionAnchorId)
+    if #ids > 1 and anchorId ~= nil and subtitleTreeItems[anchorId] and idsAreContiguous(ids) then
+        local currentId = treeCurrentId(items and items.subtitleTree or nil)
+        if currentId == nil or currentId == anchorId or not subtitleTreeItems[currentId] then
+            currentId = inferRangeEndpoint(ids, anchorId)
+        end
+        if currentId ~= nil and currentId ~= anchorId and subtitleTreeItems[currentId] then
+            ids = rangeIds(anchorId, currentId)
+        end
+    end
+    subtitleSelectedIds = normalizeSubtitleIds(ids)
     updateSelectionStatus()
+    return selectedIds()
+end
+
+local function clearSelection(ev)
+    subtitleLocateAnchorId = nil
+    setSelectedIds({}, false)
     uiLog("Cleared subtitle selection.")
 end
 
@@ -1337,6 +1405,46 @@ local function selectIdsMatching(predicate, scrollToFirst)
     end
     setSelectedIds(ids, scrollToFirst)
     return ids
+end
+
+local function selectRangeFromLocateAnchor(ev)
+    if not ensureSelectedSubtitleTrackLoaded() then
+        return
+    end
+    local anchorId = tonumber(subtitleLocateAnchorId) or tonumber(subtitleSelectionAnchorId)
+    if anchorId == nil or not subtitleTreeItems[anchorId] then
+        uiLog("Locate an anchor subtitle first, then click the range end row and press Range.")
+        return
+    end
+
+    local targetId = treeCurrentId(items and items.subtitleTree or nil)
+    local uiIds = treeSelectedIds()
+    if targetId == nil or not subtitleTreeItems[targetId] then
+        if #uiIds == 1 then
+            targetId = uiIds[1]
+        elseif #uiIds > 1 and idsAreContiguous(uiIds) then
+            targetId = inferRangeEndpoint(uiIds, anchorId)
+        elseif #uiIds > 1 then
+            targetId = uiIds[#uiIds]
+        end
+    end
+    if targetId == nil or not subtitleTreeItems[targetId] then
+        uiLog("Click the subtitle row that should end the range, then press Range.")
+        return
+    end
+
+    local ids = rangeIds(anchorId, targetId)
+    setSelectedIds(ids, false, anchorId, targetId)
+    subtitleLocateAnchorId = anchorId
+    uiLog(
+        "Selected range #"
+            .. tostring(anchorId)
+            .. "-#"
+            .. tostring(targetId)
+            .. " ("
+            .. tostring(#ids)
+            .. " subtitle(s))."
+    )
 end
 
 local function currentFrameCandidates()
@@ -1428,7 +1536,8 @@ local function usePlayhead(ev)
     for _, candidate in ipairs(candidates) do
         local ids = subtitleIdsAtFrame(candidate.frame)
         if #ids > 0 then
-            setSelectedIds(ids, true)
+            subtitleLocateAnchorId = ids[1]
+            setSelectedIds(ids, true, ids[1], ids[1])
             uiLog(
                 "Located " .. tostring(#ids)
                     .. " subtitle(s) at frame " .. tostring(candidate.frame)
@@ -1439,6 +1548,7 @@ local function usePlayhead(ev)
         end
     end
     local frame = candidates[1].frame
+    subtitleLocateAnchorId = nil
     setSelectedIds({}, false)
     uiLog(
         "Located 0 subtitle(s) at frame " .. tostring(frame)
@@ -1489,7 +1599,7 @@ end
 
 local function selectedSubtitles()
     local selected = {}
-    for _, id in ipairs(selectedIds()) do
+    for _, id in ipairs(reconcileTreeSelectionForAction()) do
         table.insert(selected, subtitles[id])
     end
     return selected
@@ -2101,6 +2211,7 @@ ui:VGroup({
             MaximumSize = {120, 24},
         }),
         button("playhead", "Locate", 68),
+        button("rangeSelect", "Range", 68),
         button("synthesizeInsert", "Insert", 86),
         button("close", "Close", 64),
     }),
@@ -2131,6 +2242,7 @@ win.On["close"].Clicked = onClose
 win.On["refresh"].Clicked = refreshSubtitles
 win.On["subtitleTrack"].CurrentIndexChanged = subtitleTrackChanged
 win.On["playhead"].Clicked = usePlayhead
+win.On["rangeSelect"].Clicked = selectRangeFromLocateAnchor
 win.On["mark"].Clicked = useMark
 win.On["clearSelection"].Clicked = clearSelection
 win.On["subtitleTree"].ItemSelectionChanged = onSubtitleSelectionChanged
