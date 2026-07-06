@@ -249,7 +249,7 @@ describe('buildMediaChronology', () => {
     expect(chronology.events.map(event => event.kind)).toEqual(['event', 'event', 'event']);
     expect(chronology.events.map(event => event.spanIds)).toEqual([
       ['airport-window'],
-      ['airport-photo', 'airport-ticket'],
+      ['airport-ticket', 'airport-photo'],
       ['airport-card'],
     ]);
   });
@@ -917,7 +917,7 @@ describe('buildMediaChronology', () => {
     expect(chronology.events).toHaveLength(1);
     expect(chronology.events[0]).toMatchObject({
       kind: 'event',
-      spanIds: ['aerial-road-video', 'aerial-road-photo', 'aerial-road-video-2'],
+      spanIds: ['aerial-road-video', 'aerial-road-video-2', 'aerial-road-photo'],
     });
     expect(chronology.events[0]?.title).not.toMatch(/^行车/u);
   });
@@ -981,7 +981,7 @@ describe('buildMediaChronology', () => {
     expect(chronology.events).toHaveLength(1);
     expect(chronology.events[0]).toMatchObject({
       kind: 'event',
-      spanIds: ['butterfly-video-a', 'butterfly-photo', 'butterfly-video-b', 'butterfly-video-c'],
+      spanIds: ['butterfly-video-a', 'butterfly-video-b', 'butterfly-video-c', 'butterfly-photo'],
     });
   });
 
@@ -1130,7 +1130,7 @@ describe('buildMediaChronology', () => {
     expect(chronology.events).toHaveLength(1);
     expect(chronology.events[0]).toMatchObject({
       kind: 'route',
-      spanIds: ['drive-before-photo', 'drive-photo', 'drive-after-photo'],
+      spanIds: ['drive-before-photo', 'drive-after-photo', 'drive-photo'],
     });
   });
 

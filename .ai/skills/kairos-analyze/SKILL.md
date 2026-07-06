@@ -339,7 +339,9 @@ Analyze 运行过程中和阶段末都不再写 `store/spans.json`；span 由 `/
 - `sourceInMs / sourceOutMs` 继续保留兼容性的 focus/evidence window
 - `editSourceInMs / editSourceOutMs` 承载 edit-friendly bounds，供 Script/Timeline 默认优先使用
 - 不写 `speedCandidate / pharosRefs / grounding / spatialEvidence / location / routeRole / chronology event`
-- `source-speech` 的持久化目标是素材事实窗口；候选窗口只合并同 asset、同 semanticKind、重叠或间隔 `<=250ms` 的近重复窗口，不做 6000ms 口播合并；`span-rebuild` 只生成候选 speech/mixed spans 和 provisional materialPatterns，最终按可用口播 segment 收缩、转 visual-only 或 drop 是后置 Codex/Agent SubAgent review 的职责
+- `source-speech` 的持久化目标是素材事实窗口；Analyze 生成 speech windows 和 `span-rebuild` 重建候选 spans 时都必须做 speech 专用合并：同 asset、speech/mixed 通道、相邻间隔 `<=3000ms`、合并后 `<=45s` 且可见中文 transcript `<=160` 字才合并，跨素材、跨语义通道、大停顿或过长口播不合并；合并后保留 transcriptSegments 顺序，任一来源为 `mixed` 时结果为 `mixed`，否则为 `speech`
+- speech/mixed 与 visual 是同一素材内可重叠共存的双通道 truth：speech span 只承载口播 truth，visual span 保留完整视觉窗口与 `visualObservation`，不得因为 speech 重叠被切断、缩短或继承 transcript；后置 Codex/Agent speech-window review 只能修 speech 候选，不得破坏重叠 visual span
+- 行车 visual fallback/fine-scan 窗口应按 passage 降碎片，默认同 asset、visual 通道、相邻 source gap `<=60s`、单段 `<=90s`；speech/mixed 行车 span 仍独立存在并可与 visual passage 重叠
 - 细粒度 utterance / pause timing 继续保留在 `transcriptSegments`
 - `materialPatterns` 固定为中文 `string[]`，只保存脚本阶段可消费的素材事实短语；`span-rebuild` 的 LM prompt 只请求 7 项 provisional tags，不再请求或解析口播可用性裁决。前四项固定为 `拍摄视角/构图形态 / 当前环境 / 天气光线 / 口播语音`，其中视角来自受控词表，环境是从当前 span 文本事实提取的短语，天气光线只写可观察自然现象；第 4 项在 speech review pending 时只是候选口径，最终必须由 Agent review 根据裁切/drop/visual-only 结果重写到与 speech truth 一致；第 1 项只描述素材自身可观察的拍摄视角/构图形态，不得重复 `type` 的照片/视频载体语义，也不得写“建场/记录/成果”等后续剪辑用途；第 5 项是 LLM 短情景故事或 `情景不明`，第 6-7 项是 LLM 短 factual free tags；代码只校验，不做启发式补写、旧词替换或兼容映射，重试后仍不合格则 `span-rebuild` 失败
 - `visualObservation?: string` 保存 span 级一句视觉事实描述；所有 keep 的非音频 material span 都必须有该字段，缺失属于 Analyze 阶段失败

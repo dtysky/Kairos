@@ -1367,7 +1367,11 @@ interface IAudioAnalysisTaskState {
 
 const CTALKING_HEAD_AUDIO_LED_MIN_SPEECH_COVERAGE = 0.12;
 const CTALKING_HEAD_AUDIO_LED_GAP_MS = 12_000;
-const CPERSISTED_SPEECH_SPAN_MERGE_GAP_MS = 6_000;
+const CSPEECH_WINDOW_MERGE_GAP_MS = 3_000;
+const CSPEECH_WINDOW_MAX_DURATION_MS = 45_000;
+const CSPEECH_WINDOW_MAX_VISIBLE_CHARS = 160;
+const CDRIVE_VISUAL_PASSAGE_GAP_MS = 60_000;
+const CDRIVE_VISUAL_PASSAGE_MAX_DURATION_MS = 90_000;
 const CDEFERRED_SCENE_DETECT_WINDOW_GAP_MS = 12_000;
 const CSCENIC_DRIVE_KEYWORDS = [
   'landscape',
@@ -1891,14 +1895,17 @@ async function resolvePreparedAssetPlanning(input: {
     input.budget,
     input.prepared.coarseSampleTimestamps,
   );
+  const expandedWindows = applyTypeAwareWindowExpansion({
+    clipType: unifiedAnalysis.decision.clipType,
+    durationMs: input.prepared.asset.durationMs ?? 0,
+    windows: decidedPlan.interestingWindows,
+    shotBoundaries: input.prepared.shotBoundaries,
+  });
   const expandedPlan: IMediaAnalysisPlan = {
     ...decidedPlan,
-    interestingWindows: applyTypeAwareWindowExpansion({
-      clipType: unifiedAnalysis.decision.clipType,
-      durationMs: input.prepared.asset.durationMs ?? 0,
-      windows: decidedPlan.interestingWindows,
-      shotBoundaries: input.prepared.shotBoundaries,
-    }),
+    interestingWindows: unifiedAnalysis.decision.clipType === 'drive'
+      ? coalesceDriveVisualWindows(expandedWindows)
+      : expandedWindows,
   };
   const audioLedPlan = applyTalkingHeadAudioLedWindowStrategy({
     plan: expandedPlan,
@@ -2373,9 +2380,9 @@ function applyDriveFallbackWindows(
   if ((budget ?? 'standard') === 'coarse' || !plan.shouldFineScan || plan.fineScanMode === 'skip') {
     return {
       ...plan,
-      interestingWindows: mergeInterestingWindowsByPreferredBounds([
-        ...speechWindows,
-        ...visualWindows,
+      interestingWindows: orderInterestingWindows([
+        ...mergeInterestingWindowsByPreferredBounds(speechWindows),
+        ...coalesceDriveVisualWindows(visualWindows),
       ]),
     };
   }
@@ -2383,9 +2390,9 @@ function applyDriveFallbackWindows(
   if (plan.fineScanMode === 'full') {
     return {
       ...plan,
-      interestingWindows: mergeInterestingWindowsByPreferredBounds([
-        ...speechWindows,
-        ...visualWindows,
+      interestingWindows: orderInterestingWindows([
+        ...mergeInterestingWindowsByPreferredBounds(speechWindows),
+        ...coalesceDriveVisualWindows(visualWindows),
       ]),
     };
   }
@@ -2396,9 +2403,9 @@ function applyDriveFallbackWindows(
 
   return {
     ...plan,
-    interestingWindows: mergeInterestingWindowsByPreferredBounds([
-      ...speechWindows,
-      ...fallbackVisualWindows,
+    interestingWindows: orderInterestingWindows([
+      ...mergeInterestingWindowsByPreferredBounds(speechWindows),
+      ...coalesceDriveVisualWindows(fallbackVisualWindows),
     ]),
   };
 }
@@ -2417,6 +2424,16 @@ function withWindowSemanticKind(
       },
     }),
   };
+}
+
+function orderInterestingWindows(
+  windows: IMediaAnalysisPlan['interestingWindows'],
+): IMediaAnalysisPlan['interestingWindows'] {
+  return [...windows].sort((left, right) => {
+    const leftRange = resolveWindowPreferredRange(left) ?? { startMs: left.startMs, endMs: left.endMs };
+    const rightRange = resolveWindowPreferredRange(right) ?? { startMs: right.startMs, endMs: right.endMs };
+    return leftRange.startMs - rightRange.startMs || left.startMs - right.startMs || left.endMs - right.endMs;
+  });
 }
 
 function applyTalkingHeadAudioLedWindowStrategy(input: {
@@ -2837,14 +2854,64 @@ function buildSpeechWindows(
 ): IInterestingWindow[] {
   if (durationMs <= 0 || segments.length === 0) return [];
 
-  return mergeInterestingWindows(
-    segments.map(segment => ({
-      startMs: Math.max(0, segment.startMs - 500),
-      endMs: Math.min(durationMs, segment.endMs + 900),
-      semanticKind: 'speech',
+  return buildMergedSpeechSegmentGroups(durationMs, segments)
+    .map(group => ({
+      startMs: Math.max(0, group.startMs - 500),
+      endMs: Math.min(durationMs, group.endMs + 900),
+      semanticKind: 'speech' as const,
       reason: 'speech-window',
-    })),
-  );
+    }))
+    .filter(window => window.endMs > window.startMs);
+}
+
+interface ISpeechSegmentGroup {
+  startMs: number;
+  endMs: number;
+  text: string;
+}
+
+function buildMergedSpeechSegmentGroups(
+  durationMs: number,
+  segments: ITranscriptSegment[],
+): ISpeechSegmentGroup[] {
+  const normalized = segments
+    .map(segment => ({
+      startMs: Math.max(0, Math.min(durationMs, segment.startMs)),
+      endMs: Math.max(0, Math.min(durationMs, segment.endMs)),
+      text: segment.text.trim(),
+    }))
+    .filter(segment => segment.endMs > segment.startMs && segment.text.length > 0)
+    .sort((left, right) => left.startMs - right.startMs || left.endMs - right.endMs);
+
+  const groups: ISpeechSegmentGroup[] = [];
+  for (const segment of normalized) {
+    const previous = groups[groups.length - 1];
+    if (previous && canMergeSpeechSegmentIntoGroup(previous, segment, durationMs)) {
+      previous.endMs = Math.max(previous.endMs, segment.endMs);
+      previous.text = [previous.text, segment.text].filter(Boolean).join(' ').trim();
+      continue;
+    }
+    groups.push({ ...segment });
+  }
+
+  return groups;
+}
+
+function canMergeSpeechSegmentIntoGroup(
+  group: ISpeechSegmentGroup,
+  segment: ISpeechSegmentGroup,
+  durationMs: number,
+): boolean {
+  if (segment.startMs - group.endMs > CSPEECH_WINDOW_MERGE_GAP_MS) return false;
+  const mergedStartMs = Math.max(0, group.startMs - 500);
+  const mergedEndMs = Math.min(durationMs, segment.endMs + 900);
+  if (mergedEndMs - mergedStartMs > CSPEECH_WINDOW_MAX_DURATION_MS) return false;
+  const mergedText = [group.text, segment.text].filter(Boolean).join('');
+  return countVisibleTranscriptChars(mergedText) <= CSPEECH_WINDOW_MAX_VISIBLE_CHARS;
+}
+
+function countVisibleTranscriptChars(text: string): number {
+  return text.replace(/[\s\p{P}\p{S}]/gu, '').length;
 }
 
 function buildUnifiedFinalizePrompt(input: {
@@ -3844,7 +3911,97 @@ function buildDriveFallbackWindows(
     reason: 'coarse-sample-window',
   })).filter(window => window.endMs > window.startMs);
 
-  return mergeInterestingWindows(windows);
+  return coalesceDriveVisualWindows(mergeInterestingWindows(windows));
+}
+
+function coalesceDriveVisualWindows(
+  windows: IMediaAnalysisPlan['interestingWindows'],
+): IMediaAnalysisPlan['interestingWindows'] {
+  if (windows.length < 2) return windows;
+
+  const speechWindows = windows.filter(window => isSpeechSemanticWindow(window));
+  const visualWindows = windows
+    .filter(window => !isSpeechSemanticWindow(window))
+    .flatMap(splitDriveVisualWindow)
+    .map(window => ({
+      ...window,
+      semanticKind: window.semanticKind ?? ('visual' as const),
+    }))
+    .sort((left, right) => left.startMs - right.startMs || left.endMs - right.endMs);
+  const mergedVisualWindows: IInterestingWindow[] = [];
+
+  for (const window of visualWindows) {
+    const previous = mergedVisualWindows[mergedVisualWindows.length - 1];
+    if (previous && canMergeDriveVisualWindows(previous, window)) {
+      mergedVisualWindows[mergedVisualWindows.length - 1] = mergeDriveVisualWindows(previous, window);
+      continue;
+    }
+    mergedVisualWindows.push({ ...window });
+  }
+
+  return [...speechWindows.map(window => ({ ...window })), ...mergedVisualWindows]
+    .sort((left, right) => left.startMs - right.startMs || left.endMs - right.endMs);
+}
+
+function splitDriveVisualWindow(window: IInterestingWindow): IInterestingWindow[] {
+  const durationMs = window.endMs - window.startMs;
+  if (durationMs <= CDRIVE_VISUAL_PASSAGE_MAX_DURATION_MS) {
+    return [{ ...window }];
+  }
+
+  const chunks: IInterestingWindow[] = [];
+  for (
+    let startMs = window.startMs, index = 0;
+    startMs < window.endMs;
+    startMs += CDRIVE_VISUAL_PASSAGE_MAX_DURATION_MS, index += 1
+  ) {
+    const endMs = Math.min(window.endMs, startMs + CDRIVE_VISUAL_PASSAGE_MAX_DURATION_MS);
+    const editStartMs = typeof window.editStartMs === 'number'
+      ? Math.max(window.editStartMs, startMs)
+      : undefined;
+    const editEndMs = typeof window.editEndMs === 'number'
+      ? Math.min(window.editEndMs, endMs)
+      : undefined;
+    chunks.push({
+      ...window,
+      windowId: index === 0 ? window.windowId : undefined,
+      startMs,
+      endMs,
+      editStartMs,
+      editEndMs,
+      reason: mergeReasonTokens(window.reason, 'drive-passage-split'),
+    });
+  }
+  return chunks;
+}
+
+function canMergeDriveVisualWindows(
+  left: IInterestingWindow,
+  right: IInterestingWindow,
+): boolean {
+  if (right.startMs - left.endMs > CDRIVE_VISUAL_PASSAGE_GAP_MS) return false;
+  const sourceInMs = Math.min(left.startMs, right.startMs);
+  const sourceOutMs = Math.max(left.endMs, right.endMs);
+  return sourceOutMs - sourceInMs <= CDRIVE_VISUAL_PASSAGE_MAX_DURATION_MS;
+}
+
+function mergeDriveVisualWindows(
+  left: IInterestingWindow,
+  right: IInterestingWindow,
+): IInterestingWindow {
+  const leftRange = resolveWindowPreferredRange(left) ?? { startMs: left.startMs, endMs: left.endMs };
+  const rightRange = resolveWindowPreferredRange(right) ?? { startMs: right.startMs, endMs: right.endMs };
+  return {
+    ...left,
+    windowId: undefined,
+    startMs: Math.min(left.startMs, right.startMs),
+    endMs: Math.max(left.endMs, right.endMs),
+    editStartMs: Math.min(leftRange.startMs, rightRange.startMs),
+    editEndMs: Math.max(leftRange.endMs, rightRange.endMs),
+    semanticKind: 'visual',
+    reason: mergeReasonTokens(left.reason, right.reason),
+    speedCandidate: left.speedCandidate ?? right.speedCandidate,
+  };
 }
 
 function pickDriveFallbackWindowDuration(durationMs: number): number {
@@ -3948,15 +4105,20 @@ function mergeInterestingWindows(
     if (current.startMs <= previous.endMs && canMergeInterestingWindowSemantics(previous, current)) {
       previous.endMs = Math.max(previous.endMs, current.endMs);
       previous.semanticKind = previous.semanticKind ?? current.semanticKind;
-      previous.reason = previous.reason === current.reason
-        ? previous.reason
-        : `${previous.reason}+${current.reason}`;
+      previous.reason = mergeReasonTokens(previous.reason, current.reason);
       continue;
     }
     merged.push({ ...current });
   }
 
   return merged;
+}
+
+function mergeReasonTokens(left: string, right: string): string {
+  return [...new Set([
+    ...left.split('+'),
+    ...right.split('+'),
+  ].map(token => token.trim()).filter(Boolean))].join('+');
 }
 
 function canMergeInterestingWindowSemantics(
@@ -4889,7 +5051,22 @@ function canMergePersistedSpeechSlices(
   right: IKtepSlice,
 ): boolean {
   if (left.assetId !== right.assetId) return false;
-  return resolvePersistedSpeechGapMs(left, right) <= CPERSISTED_SPEECH_SPAN_MERGE_GAP_MS;
+  if (resolvePersistedSpeechGapMs(left, right) > CSPEECH_WINDOW_MERGE_GAP_MS) return false;
+  const sourceInMs = pickDefinedMin([left.sourceInMs, right.sourceInMs]);
+  const sourceOutMs = pickDefinedMax([left.sourceOutMs, right.sourceOutMs]);
+  if (
+    typeof sourceInMs === 'number'
+    && typeof sourceOutMs === 'number'
+    && sourceOutMs - sourceInMs > CSPEECH_WINDOW_MAX_DURATION_MS
+  ) {
+    return false;
+  }
+  const transcriptSegments = mergeTranscriptSegments([
+    ...(left.transcriptSegments ?? []),
+    ...(right.transcriptSegments ?? []),
+  ]);
+  const transcript = buildMergedSliceTranscript(transcriptSegments, [left.transcript, right.transcript]);
+  return countVisibleTranscriptChars(transcript) <= CSPEECH_WINDOW_MAX_VISIBLE_CHARS;
 }
 
 function resolvePersistedSpeechGapMs(
@@ -4961,7 +5138,9 @@ function mergePersistedSpeechSlices(
 
   return {
     ...left,
-    semanticKind: left.semanticKind ?? right.semanticKind,
+    semanticKind: left.semanticKind === 'mixed' || right.semanticKind === 'mixed'
+      ? 'mixed'
+      : left.semanticKind ?? right.semanticKind ?? 'speech',
     sourceInMs,
     sourceOutMs,
     editSourceInMs,

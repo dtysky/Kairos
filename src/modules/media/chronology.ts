@@ -483,7 +483,7 @@ function attachPhotoRowToDraft(
     summary: summarizeRows(draft.rows),
     startAt: minIso(draft.rows.map(item => item.startAt)),
     endAt: maxIso(draft.rows.map(item => item.endAt ?? item.startAt)),
-    spanIds: draft.rows.map(item => item.span.id),
+    spanIds: buildChronologyEventSpanIds(draft.rows),
   };
 }
 
@@ -1476,12 +1476,12 @@ function buildPharosPointEvent(
     startAt: minIso(rows.map(row => row.startAt)) ?? shot.actualTimeStart,
     endAt: maxIso(rows.map(row => row.endAt ?? row.startAt)) ?? shot.actualTimeEnd,
     location: shot.location,
-    spanIds: rows.map(row => row.span.id),
+    spanIds: buildChronologyEventSpanIds(rows),
   };
 }
 
 function buildRouteEvent(rows: IChronologySpanRow[]): IChronologyEvent {
-  const spanIds = rows.map(row => row.span.id);
+  const spanIds = buildChronologyEventSpanIds(rows);
   const from = resolveRouteEndpointLocation(rows, 'start');
   const to = resolveRouteEndpointLocation(rows, 'end');
   const title = from && to && from !== to
@@ -1504,7 +1504,7 @@ function buildRouteEvent(rows: IChronologySpanRow[]): IChronologyEvent {
 }
 
 function buildEventFromRows(rows: IChronologySpanRow[]): IChronologyEvent {
-  const spanIds = rows.map(row => row.span.id);
+  const spanIds = buildChronologyEventSpanIds(rows);
   const location = resolveClusterLocation(rows);
   return {
     id: `event-${hashText(`event:${spanIds[0] ?? ''}`).slice(0, 12)}`,
@@ -1517,6 +1517,17 @@ function buildEventFromRows(rows: IChronologySpanRow[]): IChronologyEvent {
     location,
     spanIds,
   };
+}
+
+function buildChronologyEventSpanIds(rows: IChronologySpanRow[]): string[] {
+  return orderRowsForChronologyEventSpanIds(rows).map(row => row.span.id);
+}
+
+function orderRowsForChronologyEventSpanIds(rows: IChronologySpanRow[]): IChronologySpanRow[] {
+  const orderedRows = [...rows].sort(compareSpanRows);
+  const nonPhotoRows = orderedRows.filter(row => !isPhotoAccessoryRow(row));
+  const photoRows = orderedRows.filter(isPhotoAccessoryRow);
+  return [...nonPhotoRows, ...photoRows];
 }
 
 function buildPharosGapEvents(

@@ -525,6 +525,7 @@ export async function buildProjectOutlineFromPlanning(
     bundles: prepared.bundles,
     spans: prepared.context.spans,
     chronology: prepared.context.chronology,
+    chronologyEvents: prepared.context.chronologyDocument.events,
     pharosContext: prepared.context.pharosContext,
     orderedSpanCandidates,
   });
@@ -763,6 +764,7 @@ export async function generateProjectScriptFromPlanning(
     bundles: prepared.bundles,
     spans: prepared.context.spans,
     chronology: prepared.context.chronology,
+    chronologyEvents: prepared.context.chronologyDocument.events,
     pharosContext: prepared.context.pharosContext,
     orderedSpanCandidates,
   });
@@ -1180,6 +1182,7 @@ export function buildMaterialSlotsDocument(input: {
   bundles: IMaterialBundle[];
   spans: IKtepSlice[];
   chronology: IScriptPlanningContext['chronology'];
+  chronologyEvents?: IProjectChronology['events'];
   pharosContext: IProjectPharosContext | null;
   arrangementSignals?: IResolvedArrangementSignals;
   orderedSpanCandidates?: IOrderedSpanCandidate[];
@@ -1214,6 +1217,7 @@ export function buildMaterialSlotsDocument(input: {
         bundles: input.bundles,
         spansById,
         chronologyByAssetId,
+        chronologyEvents: input.chronologyEvents,
         pharosContext: input.pharosContext,
         segmentIndex: index,
         segmentCount: allSegments.length,
@@ -1243,6 +1247,7 @@ export function resolveChosenSpanIds(input: {
   bundles: IMaterialBundle[];
   spansById: Map<string, IKtepSlice>;
   chronologyByAssetId: Map<string, IScriptPlanningContext['chronology'][number]>;
+  chronologyEvents?: IProjectChronology['events'];
   pharosContext: IProjectPharosContext | null;
   segmentIndex: number;
   segmentCount: number;
@@ -1342,7 +1347,46 @@ export function resolveChosenSpanIds(input: {
       : right.score - left.score || left.orderIndex - right.orderIndex,
     );
 
-  return chosen.map(item => item.spanId);
+  return orderChosenSpanIdsForEventPhotoTail(
+    chosen.map(item => item.spanId),
+    input.spansById,
+    input.chronologyEvents,
+  );
+}
+
+function orderChosenSpanIdsForEventPhotoTail(
+  spanIds: string[],
+  spansById: Map<string, IKtepSlice>,
+  chronologyEvents: IProjectChronology['events'] = [],
+): string[] {
+  if (spanIds.length < 2 || chronologyEvents.length === 0) return spanIds;
+  const eventIdBySpanId = new Map<string, string>();
+  for (const event of chronologyEvents) {
+    for (const spanId of event.spanIds) {
+      if (!eventIdBySpanId.has(spanId)) {
+        eventIdBySpanId.set(spanId, event.id);
+      }
+    }
+  }
+
+  const groups: Array<{ eventId: string; items: Array<{ spanId: string; index: number }> }> = [];
+  const groupByEventId = new Map<string, { eventId: string; items: Array<{ spanId: string; index: number }> }>();
+  spanIds.forEach((spanId, index) => {
+    const eventId = eventIdBySpanId.get(spanId) ?? `__ungrouped:${index}`;
+    let group = groupByEventId.get(eventId);
+    if (!group) {
+      group = { eventId, items: [] };
+      groupByEventId.set(eventId, group);
+      groups.push(group);
+    }
+    group.items.push({ spanId, index });
+  });
+
+  return groups.flatMap(group => {
+    const nonPhotoItems = group.items.filter(item => spansById.get(item.spanId)?.type !== 'photo');
+    const photoItems = group.items.filter(item => spansById.get(item.spanId)?.type === 'photo');
+    return [...nonPhotoItems, ...photoItems].map(item => item.spanId);
+  });
 }
 
 function buildDefaultMaterialSlotTreatments(
@@ -3018,6 +3062,7 @@ function buildMaterialSlotsPacket(input: {
       '必须遵守 flow-plan-material.recall-step-context 中的 confirmed step notes；缺失时不能从剪辑规则 markdown 临时猜测。',
       '非照片 span 只要有 transcript、transcriptSegments、semanticKind=speech/mixed 或 materialPatterns=有口播语音，audio 必须保持 0，不得静音。',
       'material-slots 是审查型粗剪候选池；要最大化 type/day/event 的可用覆盖，所有 speech-backed 非照片 span 不应被静默丢弃，未选入时必须由 coverageAudit 暴露。',
+      '同一 chronology event 内非照片 span 必须保持在照片前，照片作为事件尾部照片包；不得把照片插入同事件的行车/口播/视觉视频之间。',
       '不要在 query 或 targetBundles 里写 mixed、audio:*、speed:* 或 audio=/speed= 文本。',
       'revision-brief 只授权修改被点名的问题位，不要顺手裁掉其他 slot 的过程证据、阶段证据或可用原声。',
     ],

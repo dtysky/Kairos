@@ -67,6 +67,99 @@ describe('timeline speech source handles', () => {
       linkedScriptBeatId: 'slot-1',
     }]);
   });
+
+  it('packs selected photos at the tail of their chronology event', () => {
+    const assets: IKtepAsset[] = [
+      ...ASSETS,
+      {
+        id: 'asset-photo',
+        kind: 'photo',
+        sourcePath: '/tmp/kairos-event-photo.jpg',
+        displayName: 'event-photo.jpg',
+      },
+    ];
+    const spans: IKtepSpan[] = [
+      ...SPANS,
+      {
+        id: 'span-photo',
+        assetId: 'asset-photo',
+        type: 'photo',
+        sourceInMs: 0,
+        sourceOutMs: 0,
+        visualObservation: 'A still photo from the same event.',
+        materialPatterns: ['固定机位观察', '现场环境', '阴天', '无口播语音'],
+      },
+    ];
+    const materialSlots: IMaterialSlotsDocument = {
+      id: 'slots-photo-tail',
+      projectId: 'project-1',
+      generatedAt: '2026-05-27T00:00:00.000Z',
+      segments: [{
+        segmentId: 'fw-photo-tail',
+        slots: [{
+          id: 'slot-photo-tail',
+          query: '同事件照片后置',
+          requirement: 'required',
+          targetBundles: [],
+          chosenSpanIds: ['span-photo', 'span-speech', 'span-visual'],
+          treatments: {
+            'span-photo': { audio: -100 },
+          },
+        }],
+      }],
+    };
+    const events: IChronologyEvent[] = [{
+      id: 'event-photo-tail',
+      kind: 'event',
+      reviewStatus: 'confirmed',
+      title: '照片后置事件',
+      startAt: '2026-05-27T00:00:00.000Z',
+      spanIds: ['span-speech', 'span-visual', 'span-photo'],
+    }];
+
+    const build = buildDeterministicTimeline({
+      project: PROJECT,
+      editId: 'main',
+      assets,
+      spans,
+      materialSlots,
+      chronologyEvents: events,
+      cfg: {
+        fps: 30,
+        width: 1920,
+        height: 1080,
+        name: 'Photo Tail Timeline',
+        stillDurationMs: 1000,
+      },
+      ingestRoots: [],
+    });
+
+    expect(build.doc.timeline.clips.map(clip => clip.spanId)).toEqual([
+      'span-speech',
+      'span-visual',
+      'span-photo',
+    ]);
+    const photoClip = build.doc.timeline.clips[2];
+    expect(photoClip).toMatchObject({
+      spanId: 'span-photo',
+      timelineInMs: 3740,
+      timelineOutMs: 4740,
+      sourceInMs: 0,
+      sourceOutMs: 1000,
+      muteAudio: true,
+    });
+    expect(build.resolveClips.map(clip => clip.spanId)).toEqual([
+      'span-speech',
+      'span-visual',
+      'span-photo',
+    ]);
+    expect(build.resolveClips[2]).toMatchObject({
+      assetKind: 'photo',
+      muteAudio: true,
+      sourceInMs: 0,
+      sourceOutMs: 1000,
+    });
+  });
 });
 
 const PROJECT: IKtepProject = {

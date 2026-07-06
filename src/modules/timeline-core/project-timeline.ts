@@ -346,7 +346,7 @@ export function buildDeterministicTimeline(input: {
 
   for (const segment of input.materialSlots.segments) {
     for (const slot of segment.slots) {
-      for (const spanId of orderSlotSpanIds(slot.chosenSpanIds, spanById, assetById)) {
+      for (const spanId of orderSlotSpanIds(slot.chosenSpanIds, spanById, assetById, eventBySpanId)) {
         const span = spanById.get(spanId);
         if (!span) throw new Error(`material slot references missing span: ${spanId}`);
         const asset = assetById.get(span.assetId);
@@ -639,25 +639,69 @@ function orderSlotSpanIds(
   spanIds: string[],
   spanById: Map<string, IKtepSpan>,
   assetById: Map<string, IKtepAsset>,
+  eventBySpanId: Map<string, {
+    id: string;
+    kind: string;
+    title: string;
+    folder: string;
+  }> = new Map(),
 ): string[] {
-  return spanIds
-    .map((spanId, index) => ({ spanId, index }))
-    .sort((left, right) => {
-      const leftSpan = spanById.get(left.spanId);
-      const rightSpan = spanById.get(right.spanId);
-      if (!leftSpan || !rightSpan || leftSpan.assetId !== rightSpan.assetId) {
-        return left.index - right.index;
-      }
-      const asset = assetById.get(leftSpan.assetId);
-      if (!asset) return left.index - right.index;
-      const leftWindow = resolveSpanSourceWindow(asset, leftSpan);
-      const rightWindow = resolveSpanSourceWindow(asset, rightSpan);
-      if (leftWindow.sourceInMs !== rightWindow.sourceInMs) {
-        return leftWindow.sourceInMs - rightWindow.sourceInMs;
-      }
+  const groups: Array<{ eventId: string; items: Array<{ spanId: string; index: number }> }> = [];
+  const groupByEventId = new Map<string, { eventId: string; items: Array<{ spanId: string; index: number }> }>();
+
+  spanIds.forEach((spanId, index) => {
+    const event = eventBySpanId.get(spanId);
+    const eventId = event?.id ?? `__ungrouped:${index}`;
+    let group = groupByEventId.get(eventId);
+    if (!group) {
+      group = { eventId, items: [] };
+      groupByEventId.set(eventId, group);
+      groups.push(group);
+    }
+    group.items.push({ spanId, index });
+  });
+
+  return groups.flatMap(group => {
+    const nonPhotoItems = group.items.filter(item => !isPhotoSlotItem(item.spanId, spanById, assetById));
+    const photoItems = group.items.filter(item => isPhotoSlotItem(item.spanId, spanById, assetById));
+    return [
+      ...orderSlotItemsBySource(nonPhotoItems, spanById, assetById),
+      ...orderSlotItemsBySource(photoItems, spanById, assetById),
+    ].map(item => item.spanId);
+  });
+}
+
+function orderSlotItemsBySource(
+  items: Array<{ spanId: string; index: number }>,
+  spanById: Map<string, IKtepSpan>,
+  assetById: Map<string, IKtepAsset>,
+): Array<{ spanId: string; index: number }> {
+  return [...items].sort((left, right) => {
+    const leftSpan = spanById.get(left.spanId);
+    const rightSpan = spanById.get(right.spanId);
+    if (!leftSpan || !rightSpan || leftSpan.assetId !== rightSpan.assetId) {
       return left.index - right.index;
-    })
-    .map(item => item.spanId);
+    }
+    const asset = assetById.get(leftSpan.assetId);
+    if (!asset) return left.index - right.index;
+    const leftWindow = resolveSpanSourceWindow(asset, leftSpan);
+    const rightWindow = resolveSpanSourceWindow(asset, rightSpan);
+    if (leftWindow.sourceInMs !== rightWindow.sourceInMs) {
+      return leftWindow.sourceInMs - rightWindow.sourceInMs;
+    }
+    return left.index - right.index;
+  });
+}
+
+function isPhotoSlotItem(
+  spanId: string,
+  spanById: Map<string, IKtepSpan>,
+  assetById: Map<string, IKtepAsset>,
+): boolean {
+  const span = spanById.get(spanId);
+  if (!span) return false;
+  const asset = assetById.get(span.assetId);
+  return span.type === 'photo' || asset?.kind === 'photo';
 }
 
 function resolvePhotoStillDurationMs(cfg: IBuildConfig): number {

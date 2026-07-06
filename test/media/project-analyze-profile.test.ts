@@ -426,7 +426,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
     vi.spyOn(MlClient.prototype, 'asrDetailed').mockResolvedValue({
       segments: [
         { start: 10, end: 12, text: '第一句来了。' },
-        { start: 15.8, end: 17.4, text: '第二句接着说。' },
+        { start: 14.8, end: 16.4, text: '第二句接着说。' },
         { start: 21.5, end: 23.1, text: '第三句收尾。' },
       ],
       timing: {
@@ -496,10 +496,17 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
 
     const report = JSON.parse(
       await readFile(getAssetReportPath(projectRoot, 'asset-direct-speech'), 'utf-8'),
-    ) as { materializationPath?: string; interestingWindows: Array<{ semanticKind?: string }> };
+    ) as {
+      materializationPath?: string;
+      interestingWindows: Array<{ startMs: number; endMs: number; semanticKind?: string }>;
+    };
+    const speechWindows = report.interestingWindows.filter(window => window.semanticKind === 'speech');
 
     expect(result.sliceCount).toBe(0);
-    expect(report.interestingWindows.some(window => window.semanticKind === 'speech')).toBe(true);
+    expect(speechWindows.map(window => [window.startMs, window.endMs])).toEqual([
+      [9_500, 17_300],
+      [21_000, 24_000],
+    ]);
     await expect(access(getSlicesPath(projectRoot))).rejects.toThrow();
     expect(detectShotsMock).not.toHaveBeenCalled();
   });

@@ -439,12 +439,12 @@ describe('buildMaterialSpansFromReports', () => {
     })).toThrow(/recognized without visualObservation/u);
   });
 
-  it('merges only near-duplicate windows from the same asset and semantic kind', () => {
+  it('merges only near-duplicate windows from the same non-drive asset and semantic kind', () => {
     const result = buildMaterialSpansFromReports({
       assets: [createVideoAsset({ id: 'asset-1', durationMs: 10_000 })],
       reports: [report({
         assetId: 'asset-1',
-        clipTypeGuess: 'drive',
+        clipTypeGuess: 'broll',
         interestingWindows: [
           { startMs: 0, endMs: 1_000, reason: 'a', semanticKind: 'visual' },
           { startMs: 1_200, endMs: 2_000, reason: 'b', semanticKind: 'visual' },
@@ -456,9 +456,135 @@ describe('buildMaterialSpansFromReports', () => {
     });
 
     expect(result.spans.map(span => [span.id, span.sourceInMs, span.sourceOutMs, span.semanticKind])).toEqual([
-      ['asset-1_drive_visual_s0-2', 0, 2_000, 'visual'],
-      ['asset-1_drive_speech_s2-3', 2_100, 2_500, 'speech'],
-      ['asset-1_drive_visual_s9-10', 9_000, 9_500, 'visual'],
+      ['asset-1_broll_visual_s0-2', 0, 2_000, 'visual'],
+      ['asset-1_broll_speech_s2-3', 2_100, 2_500, 'speech'],
+      ['asset-1_broll_visual_s9-10', 9_000, 9_500, 'visual'],
+    ]);
+  });
+
+  it('keeps overlapping speech and visual spans complete in the same asset', () => {
+    const result = buildMaterialSpansFromReports({
+      assets: [createVideoAsset({ id: 'asset-overlap', durationMs: 20_000 })],
+      reports: [report({
+        assetId: 'asset-overlap',
+        clipTypeGuess: 'drive',
+        materializationPath: 'fine-scan',
+        transcript: '这里是口播。',
+        transcriptSegments: [{ startMs: 2_000, endMs: 4_000, text: '这里是口播。' }],
+        fineScanWindows: [
+          {
+            windowId: 'asset-overlap_drive_visual_s0-10',
+            sourceInMs: 0,
+            sourceOutMs: 10_000,
+            semanticKind: 'visual',
+            visualObservation: '完整的行车视觉段落。',
+            status: 'recognized',
+            frameTimestampsMs: [],
+            framePaths: [],
+          },
+          {
+            windowId: 'asset-overlap_drive_speech_s2-4',
+            sourceInMs: 2_000,
+            sourceOutMs: 4_000,
+            semanticKind: 'speech',
+            transcript: '这里是口播。',
+            transcriptSegments: [{ startMs: 2_000, endMs: 4_000, text: '这里是口播。' }],
+            speechCoverage: 1,
+            visualObservation: '车内有人说话。',
+            status: 'recognized',
+            frameTimestampsMs: [],
+            framePaths: [],
+          },
+        ],
+      })],
+    });
+
+    expect(result.spans.map(span => [span.id, span.sourceInMs, span.sourceOutMs, span.semanticKind])).toEqual([
+      ['asset-overlap_drive_visual_s0-10', 0, 10_000, 'visual'],
+      ['asset-overlap_drive_speech_s2-4', 2_000, 4_000, 'speech'],
+    ]);
+    expect(result.spans[0]?.transcript).toBeUndefined();
+    expect(result.spans[0]?.visualObservation).toBe('完整的行车视觉段落。');
+    expect(result.spans[1]?.transcript).toBe('这里是口播。');
+  });
+
+  it('merges adjacent speech spans under the speech limits without crossing larger pauses', () => {
+    const result = buildMaterialSpansFromReports({
+      assets: [createVideoAsset({ id: 'asset-speech-merge', durationMs: 30_000 })],
+      reports: [report({
+        assetId: 'asset-speech-merge',
+        clipTypeGuess: 'talking-head',
+        materializationPath: 'fine-scan',
+        transcript: '第一句。第二句。第三句。',
+        transcriptSegments: [
+          { startMs: 0, endMs: 2_000, text: '第一句。' },
+          { startMs: 4_500, endMs: 6_000, text: '第二句。' },
+          { startMs: 10_000, endMs: 12_000, text: '第三句。' },
+        ],
+        fineScanWindows: [
+          {
+            windowId: 'asset-speech-merge_talking-head_speech_s0-2',
+            sourceInMs: 0,
+            sourceOutMs: 2_000,
+            semanticKind: 'speech',
+            transcriptSegments: [{ startMs: 0, endMs: 2_000, text: '第一句。' }],
+            visualObservation: '第一段口播。',
+            status: 'recognized',
+            frameTimestampsMs: [],
+            framePaths: [],
+          },
+          {
+            windowId: 'asset-speech-merge_talking-head_speech_s5-6',
+            sourceInMs: 4_500,
+            sourceOutMs: 6_000,
+            semanticKind: 'speech',
+            transcriptSegments: [{ startMs: 4_500, endMs: 6_000, text: '第二句。' }],
+            visualObservation: '第二段口播。',
+            status: 'recognized',
+            frameTimestampsMs: [],
+            framePaths: [],
+          },
+          {
+            windowId: 'asset-speech-merge_talking-head_speech_s10-12',
+            sourceInMs: 10_000,
+            sourceOutMs: 12_000,
+            semanticKind: 'speech',
+            transcriptSegments: [{ startMs: 10_000, endMs: 12_000, text: '第三句。' }],
+            visualObservation: '第三段口播。',
+            status: 'recognized',
+            frameTimestampsMs: [],
+            framePaths: [],
+          },
+        ],
+      })],
+    });
+
+    expect(result.spans.map(span => [span.id, span.sourceInMs, span.sourceOutMs, span.transcript])).toEqual([
+      ['asset-speech-merge_talking-head_speech_s0-6', 0, 6_000, '第一句。 第二句。'],
+      ['asset-speech-merge_talking-head_speech_s10-12', 10_000, 12_000, '第三句。'],
+    ]);
+  });
+
+  it('coalesces drive visual windows into passages across overlapping speech', () => {
+    const result = buildMaterialSpansFromReports({
+      assets: [createVideoAsset({ id: 'asset-drive-passage', durationMs: 180_000 })],
+      reports: [report({
+        assetId: 'asset-drive-passage',
+        clipTypeGuess: 'drive',
+        interestingWindows: [
+          { startMs: 0, endMs: 10_000, reason: 'coarse-sample-window', semanticKind: 'visual' },
+          { startMs: 20_000, endMs: 22_000, reason: 'speech-window', semanticKind: 'speech' },
+          { startMs: 50_000, endMs: 60_000, reason: 'coarse-sample-window', semanticKind: 'visual' },
+          { startMs: 120_000, endMs: 130_000, reason: 'coarse-sample-window', semanticKind: 'visual' },
+        ],
+        transcriptSegments: [{ startMs: 20_000, endMs: 22_000, text: '行车口播。' }],
+      })],
+    });
+
+    expect(result.spans.map(span => [span.id, span.sourceInMs, span.sourceOutMs, span.semanticKind])).toEqual([
+      ['asset-drive-passage_drive_visual_s0-60', 0, 60_000, 'visual'],
+      ['asset-drive-passage_drive_speech_s20-22', 20_000, 22_000, 'speech'],
+      ['asset-drive-passage_drive_visual_s120-130', 120_000, 130_000, 'visual'],
     ]);
   });
 

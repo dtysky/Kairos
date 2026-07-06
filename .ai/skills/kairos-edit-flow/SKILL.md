@@ -86,7 +86,7 @@ Capability registry 是原子能力库，不是必经阶段链。当前常见 ca
 - `chosenSpanIds` 是选择真相；不得让后续 script 或 timeline 阶段改写召回选择。
 - 选择边界必须来自剪辑规则、Flow Plan 或合同校验；不得自行发明每段数量上限、代表抽样、全局压缩比例或“看起来好审”的删除规则。
 - 如果剪辑规则要求“尽可能添加有效片段”，则应保留所有符合规则与合同的有效候选；只剔除明确无效、重复、被规则排除、合同拒绝或人工确认删除的片段。
-- 口播和纯视觉窗口重叠时，按剪辑规则决定；若规则要求优先口播，不得再同时保留同源同窗的重复视觉片段，除非规则或人工审查另有说明。
+- 口播和纯视觉窗口重叠时，默认按 speech/visual 双通道 truth 共存：speech-backed span 保留口播，visual span 保留完整画面观察；`material.recall` 不得因为 speech 命中而静默删除、切碎或缩短同源重叠 visual span。只有剪辑规则或人工审查明确要求去掉某个视觉候选时，才可在 `coverageAudit` 中记录后删除。
 - 同一原始素材的无口播行车去重、静音、加速，只按剪辑规则和合同执行；不要把这条扩展成对所有素材类型的抽样上限。
 
 ### `material-slots.json`
@@ -98,6 +98,7 @@ Capability registry 是原子能力库，不是必经阶段链。当前常见 ca
 - `speed` 只能是整数倍 `1..5`；新生成文件不得写小数倍速或超过 `5x`，`speed>1` 只允许用于 `drive / aerial`。
 - `query` 和 `targetBundles` 只写人类可读语义，不写 `audio:*`、`speed:*`、`audio=`、`speed=` 或把处理建议藏进自然语言。
 - 未选入的 speech-backed 非照片 span 必须由 `coverageAudit` 暴露；代码不得自动追加到主粗剪时间线。扩召回应回到 `material.recall` 和人工审查。
+- 同一 chronology event 内同时选择非照片和照片时，`chosenSpanIds` 应保持非照片素材在前、照片作为事件尾部照片包；照片仍必须显式静音，且不改变事件真实 `startAt/endAt`。
 
 ### `script.generate`
 
@@ -129,8 +130,8 @@ Capability registry 是原子能力库，不是必经阶段链。当前常见 ca
 
 - deterministic runner。
 - 读取 `edit-framework.md + material-slots.json + store/spans.json + store/assets.json + media/chronology.json`。
-- 必须按 `material-slots` 的 segment/slot/chosenSpanIds 顺序落片。
-- chronology 只用于 Resolve path/bin/context 映射，不得重排或替换 chosen spans。
+- 必须按 `material-slots` 的 segment/slot/chosenSpanIds 顺序落片，但同一 chronology event 内的照片是正式尾部照片包：非照片 span 保持原顺序，照片统一排到该事件最后。
+- chronology 用于 Resolve path/bin/context 映射和同事件照片尾部包顺序约束；不得替换 chosen spans 或把未选 speech span 自动追加进主粗剪时间线。
 - 不要求 `script/current.json` 或 `segment-plan.json`。
 - Resolve 不可用、素材缺失、source range 校验失败、静音失败或必要 clip gain 无法稳定设置时阻塞，不写成功状态。
 - 当前 `speed>1` 不阻塞，但 Resolve 粗剪可记为 pending/ignored，不得假装已应用。

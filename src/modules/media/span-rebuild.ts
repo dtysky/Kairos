@@ -62,6 +62,11 @@ const CMATERIAL_PATTERN_MAX_COUNT = CSPAN_MATERIAL_PATTERN_MAX_COUNT;
 const CMATERIAL_PATTERN_REQUIRED_COUNT = CSPAN_MATERIAL_PATTERN_REQUIRED_COUNT;
 const CMATERIAL_PATTERN_VIEWPOINT_TAG_SET = new Set<string>(CSPAN_MATERIAL_PATTERN_VIEWPOINT_TAGS);
 const CMATERIAL_PATTERN_SPEECH_TAG_SET = new Set<string>(CSPAN_MATERIAL_PATTERN_SPEECH_TAGS);
+const CSPEECH_SPAN_MERGE_GAP_MS = 3_000;
+const CSPEECH_SPAN_MAX_DURATION_MS = 45_000;
+const CSPEECH_SPAN_MAX_VISIBLE_CHARS = 160;
+const CDRIVE_VISUAL_PASSAGE_GAP_MS = 60_000;
+const CDRIVE_VISUAL_PASSAGE_MAX_DURATION_MS = 90_000;
 
 export interface ISpanRebuildResult {
   spans: IKtepSlice[];
@@ -902,11 +907,34 @@ function spanHasSpeechTruth(span: IKtepSlice): boolean {
 
 function mergeNearDuplicateWindows(spans: IKtepSlice[]): IKtepSlice[] {
   if (spans.length < 2) return spans;
+  const lanes = new Map<string, IKtepSlice[]>();
+  for (const span of spans) {
+    const laneKey = buildMaterialSpanMergeLaneKey(span);
+    const lane = lanes.get(laneKey);
+    if (lane) {
+      lane.push(span);
+      continue;
+    }
+    lanes.set(laneKey, [span]);
+  }
+
+  return [...lanes.values()]
+    .flatMap(lane => mergeMaterialSpanLane(lane))
+    .sort(compareSpanRanges);
+}
+
+function buildMaterialSpanMergeLaneKey(span: IKtepSlice): string {
+  if (isSpeechLikeSpan(span)) return `${span.assetId}:speech`;
+  if (isDriveVisualSpan(span)) return `${span.assetId}:drive-visual`;
+  return `${span.assetId}:${span.semanticKind ?? 'unknown'}:${span.type}`;
+}
+
+function mergeMaterialSpanLane(spans: IKtepSlice[]): IKtepSlice[] {
   const sorted = [...spans].sort(compareSpanRanges);
   const merged: IKtepSlice[] = [];
   for (const span of sorted) {
     const previous = merged[merged.length - 1];
-    if (previous && canMergeNearDuplicate(previous, span)) {
+    if (previous && canMergeMaterialSpanWindow(previous, span)) {
       merged[merged.length - 1] = mergeMaterialSpans(previous, span);
       continue;
     }
@@ -915,12 +943,93 @@ function mergeNearDuplicateWindows(spans: IKtepSlice[]): IKtepSlice[] {
   return merged;
 }
 
-function canMergeNearDuplicate(left: IKtepSlice, right: IKtepSlice): boolean {
+function canMergeMaterialSpanWindow(left: IKtepSlice, right: IKtepSlice): boolean {
   if (left.assetId !== right.assetId) return false;
+  if (isSpeechLikeSpan(left) && isSpeechLikeSpan(right)) {
+    return canMergeSpeechSpans(left, right);
+  }
+  if (isDriveVisualSpan(left) && isDriveVisualSpan(right)) {
+    return canMergeDriveVisualSpans(left, right);
+  }
+  return canMergeNearDuplicate(left, right);
+}
+
+function canMergeNearDuplicate(left: IKtepSlice, right: IKtepSlice): boolean {
   if (left.semanticKind !== right.semanticKind) return false;
   const leftEndMs = left.sourceOutMs ?? Number.NEGATIVE_INFINITY;
   const rightStartMs = right.sourceInMs ?? Number.POSITIVE_INFINITY;
   return rightStartMs - leftEndMs <= 250;
+}
+
+function canMergeSpeechSpans(left: IKtepSlice, right: IKtepSlice): boolean {
+  if (resolveSpeechSpanGapMs(left, right) > CSPEECH_SPAN_MERGE_GAP_MS) return false;
+  const sourceInMs = pickDefinedMin([left.sourceInMs, right.sourceInMs]);
+  const sourceOutMs = pickDefinedMax([left.sourceOutMs, right.sourceOutMs]);
+  if (
+    typeof sourceInMs === 'number'
+    && typeof sourceOutMs === 'number'
+    && sourceOutMs - sourceInMs > CSPEECH_SPAN_MAX_DURATION_MS
+  ) {
+    return false;
+  }
+  const transcriptSegments = mergeTranscriptSegments([
+    ...(left.transcriptSegments ?? []),
+    ...(right.transcriptSegments ?? []),
+  ]);
+  const transcript = transcriptSegments.length > 0
+    ? transcriptSegments.map(segment => segment.text).join(' ').trim()
+    : dedupeStrings([left.transcript, right.transcript]).join(' ').trim();
+  return countVisibleTranscriptChars(transcript) <= CSPEECH_SPAN_MAX_VISIBLE_CHARS;
+}
+
+function canMergeDriveVisualSpans(left: IKtepSlice, right: IKtepSlice): boolean {
+  const leftEndMs = left.sourceOutMs ?? Number.NEGATIVE_INFINITY;
+  const rightStartMs = right.sourceInMs ?? Number.POSITIVE_INFINITY;
+  if (rightStartMs - leftEndMs > CDRIVE_VISUAL_PASSAGE_GAP_MS) return false;
+  const sourceInMs = pickDefinedMin([left.sourceInMs, right.sourceInMs]);
+  const sourceOutMs = pickDefinedMax([left.sourceOutMs, right.sourceOutMs]);
+  return typeof sourceInMs !== 'number'
+    || typeof sourceOutMs !== 'number'
+    || sourceOutMs - sourceInMs <= CDRIVE_VISUAL_PASSAGE_MAX_DURATION_MS;
+}
+
+function resolveSpeechSpanGapMs(left: IKtepSlice, right: IKtepSlice): number {
+  const leftEndMs = resolveSpanSpeechEndMs(left)
+    ?? left.sourceOutMs
+    ?? left.editSourceOutMs
+    ?? Number.NEGATIVE_INFINITY;
+  const rightStartMs = resolveSpanSpeechStartMs(right)
+    ?? right.sourceInMs
+    ?? right.editSourceInMs
+    ?? Number.POSITIVE_INFINITY;
+  return rightStartMs - leftEndMs;
+}
+
+function resolveSpanSpeechStartMs(span: IKtepSlice): number | undefined {
+  const starts = span.transcriptSegments
+    ?.filter(segment => segment.endMs > segment.startMs && segment.text.trim().length > 0)
+    .map(segment => segment.startMs);
+  return starts && starts.length > 0 ? Math.min(...starts) : undefined;
+}
+
+function resolveSpanSpeechEndMs(span: IKtepSlice): number | undefined {
+  const ends = span.transcriptSegments
+    ?.filter(segment => segment.endMs > segment.startMs && segment.text.trim().length > 0)
+    .map(segment => segment.endMs);
+  return ends && ends.length > 0 ? Math.max(...ends) : undefined;
+}
+
+function isSpeechLikeSpan(span: IKtepSlice): boolean {
+  return span.semanticKind === 'speech'
+    || span.semanticKind === 'mixed'
+    || Boolean(span.transcript?.trim())
+    || (span.transcriptSegments?.some(segment => segment.text.trim().length > 0) ?? false);
+}
+
+function isDriveVisualSpan(span: IKtepSlice): boolean {
+  return span.type === 'drive'
+    && !isSpeechLikeSpan(span)
+    && (span.semanticKind == null || span.semanticKind === 'visual');
 }
 
 function mergeMaterialSpans(left: IKtepSlice, right: IKtepSlice): IKtepSlice {
@@ -937,13 +1046,14 @@ function mergeMaterialSpans(left: IKtepSlice, right: IKtepSlice): IKtepSlice {
     : dedupeStrings([left.transcript, right.transcript]).join(' ').trim();
   const span = {
     ...left,
+    semanticKind: resolveMergedSpanSemanticKind(left, right),
     sourceInMs,
     sourceOutMs,
     editSourceInMs,
     editSourceOutMs,
     transcript: transcript || undefined,
     transcriptSegments: transcriptSegments.length > 0 ? transcriptSegments : undefined,
-    visualObservation: left.visualObservation ?? right.visualObservation,
+    visualObservation: mergeSpanVisualObservation(left, right),
     materialPatterns: sanitizeMaterialPatterns([
       ...(left.materialPatterns ?? []),
       ...(right.materialPatterns ?? []),
@@ -951,6 +1061,26 @@ function mergeMaterialSpans(left: IKtepSlice, right: IKtepSlice): IKtepSlice {
     speechCoverage: resolveMergedSpeechCoverage(sourceInMs, sourceOutMs, transcriptSegments, left, right),
   };
   return stripUndefined(span) as unknown as IKtepSlice;
+}
+
+function resolveMergedSpanSemanticKind(
+  left: IKtepSlice,
+  right: IKtepSlice,
+): IKtepSlice['semanticKind'] {
+  if (left.semanticKind === 'mixed' || right.semanticKind === 'mixed') return 'mixed';
+  if (isSpeechLikeSpan(left) && isSpeechLikeSpan(right)) return 'speech';
+  return left.semanticKind ?? right.semanticKind;
+}
+
+function mergeSpanVisualObservation(left: IKtepSlice, right: IKtepSlice): string | undefined {
+  const merged = dedupeStrings([left.visualObservation, right.visualObservation])
+    .join(' / ')
+    .trim();
+  return merged || undefined;
+}
+
+function countVisibleTranscriptChars(text: string): number {
+  return text.replace(/[\s\p{P}\p{S}]/gu, '').length;
 }
 
 async function generateSpanMaterializationReview(input: {
@@ -2004,7 +2134,7 @@ async function writeSpeechWindowAgentHandoff(input: {
     'Copy this into a Codex/Agent thread:',
     '',
     '```text',
-    `请按 handoff 处理这个 Kairos 项目的 speech-window review：读取 ${input.path}。作为主 Agent，按 asset/day 或稳定 span-id range 启用 subagents 审查 store/spans.json 的 speech/mixed candidates；每个 subagent shard 最多约 1500 条 candidates，尽量保持同一 asset 不跨 shard。合并 shard 后直接写最终 store/spans.json 与 store/spans.meta.json，清理无意义 ASR、裁切可用口播、同步 materialPatterns[3]，最后标记 status=fresh、speechReview.status=completed。不要重跑 span-builder，不要生成 chronology。`,
+    `请按 handoff 处理这个 Kairos 项目的 speech-window review：读取 ${input.path}。作为主 Agent，按 asset/day 或稳定 span-id range 启用 subagents 审查 store/spans.json 的 speech/mixed candidates；每个 subagent shard 最多约 1500 条 candidates，尽量保持同一 asset 不跨 shard。合并 shard 后直接写最终 store/spans.json 与 store/spans.meta.json，清理无意义 ASR、裁切可用口播、同步 materialPatterns[3]，最后标记 status=fresh、speechReview.status=completed。speech/mixed 与 visual 可以同素材重叠共存；review 不得缩短、删除或切碎重叠 visual span。不要重跑 span-builder，不要生成 chronology。`,
     '```',
     '',
     '## Required Agent Workflow',
@@ -2020,6 +2150,7 @@ async function writeSpeechWindowAgentHandoff(input: {
     '- Meaningless ASR noise must not remain as final speech truth.',
     '- Final retained speech spans must be clipped to usable transcript segment bounds.',
     '- Final visual-only spans must clear `transcript`, `transcriptSegments`, and `speechCoverage`, and use `semanticKind="visual"` when appropriate.',
+    '- Speech/mixed and visual spans may overlap in the same asset; do not shorten, delete, split, or transcript-promote overlapping visual spans while reviewing speech candidates.',
     '- `materialPatterns[3]` must match final speech truth: `有口播语音` only when the final span retains usable transcript truth, otherwise `无口播语音`.',
     '- Do not add speed, Pharos, grounding, spatial, location, route, chronology, or random id fields.',
     '',
