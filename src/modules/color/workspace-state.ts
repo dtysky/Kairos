@@ -67,6 +67,7 @@ export interface IColorGroupWorkspaceSummary {
   logProfile?: string;
   orientationStatus?: string;
   lowlight?: string;
+  windshieldHaze?: string;
   colorCastClass?: string;
   exposureSceneClass?: string;
   postClipCreativeStatus?: string;
@@ -235,6 +236,7 @@ function normalizeGroupCurrent(
     logProfile: trimmed(current.logProfile),
     orientationStatus: current.orientationStatus,
     lowlight: current.lowlight,
+    windshieldHaze: current.windshieldHaze,
     colorCastClass: current.colorCastClass,
     exposureSceneClass: current.exposureSceneClass,
     postClipCreativeStatus: current.postClipCreativeStatus,
@@ -274,6 +276,7 @@ function materializeGroupWorkspaceSummaries(
       logProfile: trimmed(group.logProfile) ?? trimmed(current.logProfile),
       orientationStatus: group.orientationStatus ?? current.orientationStatus,
       lowlight: group.lowlight ?? current.lowlight,
+      windshieldHaze: group.windshieldHaze ?? current.windshieldHaze,
       colorCastClass: group.colorCastClass ?? current.colorCastClass,
       exposureSceneClass: group.exposureSceneClass ?? current.exposureSceneClass,
       postClipCreativeStatus: group.postClipCreativeStatus ?? current.postClipCreativeStatus,
@@ -282,6 +285,9 @@ function materializeGroupWorkspaceSummaries(
         displayName: trimmed(clip.displayName),
         logProfile: trimmed(clip.logProfile),
         lowlight: clip.lowlight,
+        windshieldHaze: clip.windshieldHaze,
+        windshieldHazeConfidence: clip.windshieldHazeConfidence,
+        windshieldHazeMetrics: clip.windshieldHazeMetrics,
         colorCastClass: clip.colorCastClass,
         colorCastConfidence: clip.colorCastConfidence,
         colorCastMetrics: clip.colorCastMetrics,
@@ -315,6 +321,7 @@ function materializeGroupWorkspaceSummaries(
         logProfile: trimmed(group.logProfile) ?? trimmed(current.logProfile),
         orientationStatus: group.orientationStatus ?? current.orientationStatus,
         lowlight: group.lowlight ?? current.lowlight,
+        windshieldHaze: group.windshieldHaze ?? current.windshieldHaze,
         colorCastClass: group.colorCastClass ?? current.colorCastClass,
         exposureSceneClass: group.exposureSceneClass ?? current.exposureSceneClass,
         postClipCreativeStatus: group.postClipCreativeStatus ?? current.postClipCreativeStatus,
@@ -332,6 +339,7 @@ function materializeGroupWorkspaceSummaries(
       logProfile: trimmed(current.logProfile),
       orientationStatus: current.orientationStatus,
       lowlight: current.lowlight,
+      windshieldHaze: current.windshieldHaze,
       colorCastClass: current.colorCastClass,
       exposureSceneClass: current.exposureSceneClass,
       postClipCreativeStatus: current.postClipCreativeStatus,
@@ -344,6 +352,7 @@ function materializeGroupWorkspaceSummaries(
         logProfile: trimmed(current.logProfile),
         orientationStatus: current.orientationStatus,
         lowlight: current.lowlight,
+        windshieldHaze: current.windshieldHaze,
         colorCastClass: current.colorCastClass,
         exposureSceneClass: current.exposureSceneClass,
         postClipCreativeStatus: current.postClipCreativeStatus,

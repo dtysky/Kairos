@@ -8,6 +8,7 @@ import * as captureTime from '../../src/modules/media/capture-time.js';
 import * as colorCastClassifier from '../../src/modules/color/color-cast-classifier.js';
 import * as exposureSceneClassifier from '../../src/modules/color/exposure-scene-classifier.js';
 import * as lowlightClassifier from '../../src/modules/color/lowlight-classifier.js';
+import * as windshieldHazeClassifier from '../../src/modules/color/windshield-haze-classifier.js';
 import * as resolveExecutor from '../../src/modules/color/resolve-executor.js';
 import * as sourceTruth from '../../src/modules/color/source-truth.js';
 import type { IColorGroupsSnapshotFile } from '../../src/protocol/schema.js';
@@ -21,6 +22,8 @@ import {
   prepareProjectColorRoot,
   promoteProjectColorBatch,
   registerExternalColorDrpSnapshot,
+  relinkAllProjectColorRoots,
+  relinkProjectColorRootMedia,
   runProjectColorAction,
   snapshotProjectColorDrp,
   syncProjectColorBatchMetadata,
@@ -33,6 +36,7 @@ import {
   type IColorExecutor,
   type IColorExecutorClipInput,
   type IColorExecutorPrepareRootInput,
+  type IColorExecutorRelinkMediaInput,
   type IColorExecutorSyncGroupsInput,
 } from '../../src/modules/color/resolve-executor.js';
 import {
@@ -105,6 +109,9 @@ function buildClipRepairSnapshot(
     displayName: String(clip.sourceStem ?? ''),
     logProfile: typeof clip.logProfile === 'string' ? clip.logProfile : undefined,
     lowlight: clip.lowlight === true,
+    windshieldHaze: clip.windshieldHaze === true,
+    windshieldHazeConfidence: clip.windshieldHazeConfidence,
+    windshieldHazeMetrics: clip.windshieldHazeMetrics ?? {},
     colorCastClass: clip.colorCastClass,
     colorCastConfidence: clip.colorCastConfidence,
     colorCastMetrics: clip.colorCastMetrics ?? {},
@@ -161,6 +168,7 @@ function buildGroupsSnapshot(
 
 function createFakeExecutor(options: {
   preflightResult?: ReturnType<typeof createReadyPreflight>;
+  onRelinkMedia?: NonNullable<IColorExecutor['relinkMedia']>;
   onPrepareRoot?: NonNullable<IColorExecutor['prepareRoot']>;
   onSyncGroups?: NonNullable<IColorExecutor['syncGroups']>;
   onExecuteRoot?: NonNullable<IColorExecutor['executeRoot']>;
@@ -169,6 +177,25 @@ function createFakeExecutor(options: {
   return {
     async preflight() {
       return options.preflightResult ?? createReadyPreflight();
+    },
+    async relinkMedia(input) {
+      if (options.onRelinkMedia) {
+        return options.onRelinkMedia(input);
+      }
+      return {
+        resolveProjectName: input.resolveProjectName,
+        rootNamespace: input.rootNamespace,
+        gradingTimelineName: input.gradingTimelineName,
+        createdAt: '2026-07-05T10:00:00.000Z',
+        hostSummary: {
+          rootNamespace: input.rootNamespace,
+          gradingTimelineName: input.gradingTimelineName,
+          relinked: 0,
+          relinkFolderCount: 0,
+          oldPathRemaining: 0,
+          timelineOldPathRemaining: 0,
+        },
+      };
     },
     async prepareRoot(input) {
       if (options.onPrepareRoot) {
@@ -303,6 +330,8 @@ function mockColorMetadata(options: {
 function mockClipSignals(options: {
   gyroEligible?: boolean;
   lowlight?: boolean;
+  windshieldHaze?: boolean;
+  windshieldHazeConfidence?: number;
   colorCastClass?: 'neutral' | 'cool-cyan' | 'green-cyan' | 'green' | 'warm' | 'mixed' | 'unknown';
   colorCastConfidence?: number;
   exposureSceneClass?: 'normal' | 'high-contrast' | 'overexposed' | 'underexposed' | 'unknown';
@@ -319,6 +348,18 @@ function mockClipSignals(options: {
   vi.spyOn(lowlightClassifier, 'classifyMidpointLowlight').mockResolvedValue({
     lowlight: options.lowlight ?? false,
     metrics: undefined,
+  });
+  vi.spyOn(windshieldHazeClassifier, 'classifyWindshieldHaze').mockResolvedValue({
+    windshieldHaze: options.windshieldHaze ?? false,
+    windshieldHazeConfidence: options.windshieldHazeConfidence ?? 0,
+    windshieldHazeMetrics: {
+      frameCount: 1,
+      classifiedFrameCount: 1,
+      positiveFrameCount: options.windshieldHaze ? 1 : 0,
+      positiveFrameRatio: options.windshieldHaze ? 1 : 0,
+      meanConfidence: options.windshieldHazeConfidence ?? 0,
+      frames: [],
+    },
   });
   vi.spyOn(colorCastClassifier, 'classifyColorCast').mockResolvedValue({
     colorCastClass: options.colorCastClass ?? 'neutral',
@@ -486,9 +527,11 @@ describe('project color actions', () => {
     });
 
     const lowlightSpy = vi.mocked(lowlightClassifier.classifyMidpointLowlight);
+    const windshieldSpy = vi.mocked(windshieldHazeClassifier.classifyWindshieldHaze);
     const colorCastSpy = vi.mocked(colorCastClassifier.classifyColorCast);
     const exposureSpy = vi.mocked(exposureSceneClassifier.classifyExposureScene);
     lowlightSpy.mockClear();
+    windshieldSpy.mockClear();
     colorCastSpy.mockClear();
     exposureSpy.mockClear();
     const syncedInputs: IColorExecutorSyncGroupsInput[] = [];
@@ -507,9 +550,11 @@ describe('project color actions', () => {
     });
 
     expect(lowlightSpy).not.toHaveBeenCalled();
+    expect(windshieldSpy).not.toHaveBeenCalled();
     expect(colorCastSpy).not.toHaveBeenCalled();
     expect(exposureSpy).not.toHaveBeenCalled();
     expect(syncedInputs[0]?.clips.map(clip => clip.lowlight)).toEqual([true, true]);
+    expect(syncedInputs[0]?.clips.map(clip => clip.windshieldHaze)).toEqual([false, false]);
     expect(syncedInputs[0]?.clips.map(clip => clip.colorCastClass)).toEqual(['neutral', 'neutral']);
     expect(syncedInputs[0]?.clips.map(clip => clip.exposureSceneClass)).toEqual(['unknown', 'unknown']);
   });
@@ -1531,6 +1576,17 @@ describe('project color actions', () => {
           technicalLutRelativePath: undefined,
           exposureSceneSkippedReason: 'requires-technical-transform',
         },
+        windshieldHaze: false,
+        windshieldHazeConfidence: 0,
+        windshieldHazeMetrics: {
+          frameCount: 0,
+          classifiedFrameCount: 0,
+          positiveFrameCount: 0,
+          positiveFrameRatio: 0,
+          technicalTransformStatus: 'source-rgb',
+          technicalLutRelativePath: undefined,
+          windshieldHazeSkippedReason: 'requires-technical-transform',
+        },
         deviceFamilyKeys: ['dji-osmo-pocket-3'],
         resolvedTransformPresetKey: undefined,
         resolvedLutRelativePath: undefined,
@@ -1626,6 +1682,52 @@ describe('project color actions', () => {
         pan: 0,
         tilt: 0,
       },
+    });
+  });
+
+  it('passes windshield-haze review signals into prepare_root requests', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-color-windshield-haze';
+    const { rootId } = await seedSingleRootProject({
+      workspaceRoot,
+      projectId,
+      projectName: 'Project Color Windshield Haze',
+      colorSpaceProfile: 'rec709',
+    });
+
+    mockColorMetadata();
+    mockClipSignals({
+      gyroEligible: true,
+      windshieldHaze: true,
+      windshieldHazeConfidence: 0.84,
+      colorCastClass: 'cool-cyan',
+      colorCastConfidence: 0.88,
+      logProfile: 'rec709',
+    });
+
+    const prepared: IColorExecutorClipInput[][] = [];
+    await prepareProjectColorRoot({
+      workspaceRoot,
+      projectId,
+      rootId,
+      jobId: 'job-color-windshield-haze',
+      executor: createFakeExecutor({
+        onPrepareRoot: async input => {
+          prepared.push(input.clips);
+          return createFakeExecutor().prepareRoot(input);
+        },
+      }),
+    });
+
+    expect(prepared).toHaveLength(1);
+    expect(prepared[0]?.[0]).toMatchObject({
+      rawRelativePath: 'day1/A001.mov',
+      logProfile: 'rec709',
+      lowlight: false,
+      windshieldHaze: true,
+      windshieldHazeConfidence: 0.84,
+      colorCastClass: 'cool-cyan',
+      colorCastConfidence: 0.88,
     });
   });
 
@@ -2108,6 +2210,172 @@ describe('project color actions', () => {
       executor,
     })).rejects.toBeInstanceOf(ProjectColorBlockedError);
     expect(executeCalls).toBe(0);
+  });
+
+  it('relink_media uses raw path candidates when current path is missing', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-color-relink-root';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Project Color Relink Root');
+    const rawLocalPath = join(projectRoot, '.fixtures', 'raw-zve1');
+    const missingCurrentPath = join(projectRoot, '.fixtures', 'missing-current-zve1');
+    await mkdir(rawLocalPath, { recursive: true });
+    await saveIngestRoots(projectRoot, {
+      roots: [{
+        id: 'zve1',
+        label: 'ZV-E1',
+        path: missingCurrentPath,
+        rawPath: '/archive/raw/zve1',
+        alternatePaths: [{
+          rawPath: rawLocalPath,
+        }, {
+          rawPath: '/old/raw/zve1',
+        }],
+        enabled: true,
+      }],
+    });
+
+    const relinkInputs: IColorExecutorRelinkMediaInput[] = [];
+    const executor = createFakeExecutor({
+      onRelinkMedia: async input => {
+        relinkInputs.push(input);
+        return {
+          resolveProjectName: input.resolveProjectName,
+          rootNamespace: input.rootNamespace,
+          gradingTimelineName: input.gradingTimelineName,
+          createdAt: '2026-07-05T12:00:00.000Z',
+          hostSummary: {
+            relinked: 3,
+            relinkFolderCount: 2,
+            oldPathRemaining: 0,
+            timelineOldPathRemaining: 0,
+            missingTargetCount: 0,
+            timelineMissingTargetCount: 0,
+            unmappedCount: 1,
+            timelineUnmappedCount: 0,
+            skippedNonFileCount: 0,
+            timelineSkippedNonFileCount: 0,
+          },
+        };
+      },
+    });
+
+    const result = await relinkProjectColorRootMedia({
+      workspaceRoot,
+      projectId,
+      rootId: 'zve1',
+      action: 'relink_media',
+      executor,
+    });
+
+    expect(result.detail).toContain('3 个 item');
+    expect(relinkInputs).toHaveLength(1);
+    expect(relinkInputs[0]).toMatchObject({
+      rootId: 'zve1',
+      resolveProjectName: 'Project Color Relink Root [Color]',
+      rootNamespace: 'ZV-E1 [Color Root]',
+      gradingTimelineName: 'ZV-E1 [Color]',
+    });
+    expect(relinkInputs[0]?.roots[0]).toMatchObject({
+      rootId: 'zve1',
+      label: 'ZV-E1',
+      localPath: rawLocalPath,
+    });
+    expect(relinkInputs[0]?.roots[0]?.candidates).toEqual([
+      rawLocalPath,
+      '/archive/raw/zve1',
+      '/old/raw/zve1',
+    ]);
+    const colorCurrent = await loadColorCurrent(projectRoot);
+    const rootCurrent = colorCurrent.roots.find(root => root.rootId === 'zve1');
+    expect(rootCurrent).toMatchObject({
+      mirrorStatus: 'synced',
+      timelineStatus: 'ready',
+      detail: 'Resolve Color 素材重链完成：3 个 item，2 个目标目录。 未映射 1 个。',
+      hostSummary: {
+        latestRelinkAt: '2026-07-05T12:00:00.000Z',
+        latestRelink: {
+          relinked: 3,
+          relinkFolderCount: 2,
+        },
+      },
+    });
+  });
+
+  it('relink_all_roots respects priority order and continues after failures', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-color-relink-all';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Project Color Relink All');
+    const rawFail = join(projectRoot, '.fixtures', 'root-z-raw');
+    const rawReady = join(projectRoot, '.fixtures', 'root-a-raw');
+    await mkdir(rawFail, { recursive: true });
+    await mkdir(rawReady, { recursive: true });
+    await saveIngestRoots(projectRoot, {
+      roots: [{
+        id: 'root-z',
+        label: 'Z Root',
+        priority: 1,
+        path: join(projectRoot, '.fixtures', 'missing-current-z'),
+        rawPath: '/media/raw/root-z',
+        alternatePaths: [{
+          rawPath: rawFail,
+        }],
+        enabled: true,
+      }, {
+        id: 'root-a',
+        label: 'A Root',
+        priority: 2,
+        path: join(projectRoot, '.fixtures', 'missing-current-a'),
+        rawPath: '/media/raw/root-a',
+        alternatePaths: [{
+          rawPath: rawReady,
+        }],
+        enabled: true,
+      }],
+    });
+
+    const relinkOrder: string[] = [];
+    const executor = createFakeExecutor({
+      onRelinkMedia: async input => {
+        relinkOrder.push(input.rootId);
+        if (input.rootId === 'root-z') {
+          throw new ResolveColorHostError({
+            code: 'resolve_color_relink_failed',
+            message: 'relink failed for root-z',
+            requestPath: '/tmp/request.json',
+          });
+        }
+        return {
+          resolveProjectName: input.resolveProjectName,
+          rootNamespace: input.rootNamespace,
+          gradingTimelineName: input.gradingTimelineName,
+          createdAt: '2026-07-05T12:00:00.000Z',
+          hostSummary: {
+            relinked: 1,
+            relinkFolderCount: 1,
+          },
+        };
+      },
+    });
+
+    const result = await relinkAllProjectColorRoots({
+      workspaceRoot,
+      projectId,
+      action: 'relink_all_roots',
+      executor,
+    });
+
+    expect(relinkOrder).toEqual(['root-z', 'root-a']);
+    expect(result.detail).toBe('Relink All Roots 完成：1 个成功，1 个失败。');
+    expect(result.roots).toEqual([{
+      rootId: 'root-z',
+      status: 'failed',
+      actionSummary: 'relink failed for root-z',
+      error: 'relink failed for root-z',
+    }, {
+      rootId: 'root-a',
+      status: 'succeeded',
+      actionSummary: 'Resolve Color 素材重链完成：1 个 item，1 个目标目录。',
+    }]);
   });
 
   it('prepare_all_roots respects priority order and continues after failures', async () => {

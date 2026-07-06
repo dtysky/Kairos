@@ -1604,6 +1604,13 @@ export function ColorCurrentSummary({
         {rootCards.length > 0 ? (
           <div className="inline-actions">
             <Button
+              type={canRunProjectColorAction('relink_all_roots', rootCards, capability, liveColorJobs, busy, onRunColorAction) ? 'default' : 'disabled'}
+              disabled={!canRunProjectColorAction('relink_all_roots', rootCards, capability, liveColorJobs, busy, onRunColorAction)}
+              onClick={() => onRunColorAction?.({ action: 'relink_all_roots' })}
+            >
+              {describeProjectColorAction('relink_all_roots', rootCards, liveColorJobs, busy)}
+            </Button>
+            <Button
               type={canRunProjectColorAction('prepare_all_roots', rootCards, capability, liveColorJobs, busy, onRunColorAction) ? 'primary' : 'disabled'}
               disabled={!canRunProjectColorAction('prepare_all_roots', rootCards, capability, liveColorJobs, busy, onRunColorAction)}
               onClick={() => onRunColorAction?.({ action: 'prepare_all_roots' })}
@@ -1691,6 +1698,13 @@ export function ColorCurrentSummary({
                   onClick={() => onSaveDrpSnapshot?.({ rootId: activeRoot.rootId, retention: 'archive' })}
                 >
                   归档快照
+                </Button>
+                <Button
+                  type={canRunColorRootAction('relink_media', activeRoot, capability, liveColorJobs, busy, onRunColorAction) ? 'default' : 'disabled'}
+                  disabled={!canRunColorRootAction('relink_media', activeRoot, capability, liveColorJobs, busy, onRunColorAction)}
+                  onClick={() => onRunColorAction?.({ rootId: activeRoot.rootId, action: 'relink_media' })}
+                >
+                  {describeColorRootAction('relink_media', activeRoot, liveColorJobs, busy)}
                 </Button>
                 <Button
                   type={canRunColorRootAction('prepare_root', activeRoot, capability, liveColorJobs, busy, onRunColorAction) ? 'primary' : 'disabled'}
@@ -1928,7 +1942,7 @@ export function ColorCurrentSummary({
                   })}
                 </div>
                 <p className="field-help">
-                  {'`Prepare Root` 会真正同步 Media Pool / grading timeline，并以 `logProfile` 为前置轴，再按 `portrait-review -> lowlight -> 高置信 colorCastClass -> 明显 exposureSceneClass` 生成或复用 Resolve Groups；横屏使用 `config/default.drt`，竖屏 Sony/ZV-E1 可用方向专用 DRT 自动 Gyro，并会写入 timeline transform 旋转放大为横屏单 clip 导出。`Group Post-Clip` 是主 creative 真相，`Clip` 只承担 repair / local exception。'}
+                  {'`Prepare Root` 会真正同步 Media Pool / grading timeline，并以 `logProfile` 为前置轴，再按 `portrait-review -> lowlight -> windshield-haze -> 高置信 colorCastClass -> 明显 exposureSceneClass` 生成或复用 Resolve Groups；横屏使用 `config/default.drt`，竖屏 Sony/ZV-E1 可用方向专用 DRT 自动 Gyro，并会写入 timeline transform 旋转放大为横屏单 clip 导出。`Group Post-Clip` 是主 creative 真相，`Clip` 只承担 repair / local exception。'}
                 </p>
               </Card>
 
@@ -3224,6 +3238,7 @@ function materializeColorWorkspaceGroup(group) {
     logProfile: getColorStringField(group, ['logProfile']) || getColorStringField(current, ['logProfile']) || '',
     orientationStatus: getColorStringField(group, ['orientationStatus']) || getColorStringField(current, ['orientationStatus']) || '',
     lowlight: getColorStringField(group, ['lowlight']) || getColorStringField(current, ['lowlight']) || '',
+    windshieldHaze: getColorStringField(group, ['windshieldHaze']) || getColorStringField(current, ['windshieldHaze']) || '',
     colorCastClass: getColorStringField(group, ['colorCastClass']) || getColorStringField(current, ['colorCastClass']) || '',
     exposureSceneClass: getColorStringField(group, ['exposureSceneClass']) || getColorStringField(current, ['exposureSceneClass']) || '',
     postClipCreativeStatus: getColorStringField(group, ['postClipCreativeStatus']) || getColorStringField(current, ['postClipCreativeStatus']) || '',
@@ -3242,6 +3257,9 @@ function materializeColorWorkspaceClipRepair(clip) {
     displayName: getColorStringField(clip, ['displayName']) || '',
     logProfile: getColorStringField(clip, ['logProfile']) || '',
     lowlight: typeof clip?.lowlight === 'boolean' ? clip.lowlight : undefined,
+    windshieldHaze: typeof clip?.windshieldHaze === 'boolean' ? clip.windshieldHaze : undefined,
+    windshieldHazeConfidence: Number.isFinite(Number(clip?.windshieldHazeConfidence)) ? Number(clip.windshieldHazeConfidence) : undefined,
+    windshieldHazeMetrics: isPlainObject(clip?.windshieldHazeMetrics) ? clip.windshieldHazeMetrics : {},
     colorCastClass: getColorStringField(clip, ['colorCastClass']) || '',
     colorCastConfidence: Number.isFinite(Number(clip?.colorCastConfidence)) ? Number(clip.colorCastConfidence) : undefined,
     colorCastMetrics: isPlainObject(clip?.colorCastMetrics) ? clip.colorCastMetrics : {},
@@ -3604,7 +3622,7 @@ function normalizeColorBitrateValue(value) {
 function getColorJobRootId(job) {
   return getColorStringField(job?.args, ['rootId'])
     || getColorStringField(job, ['rootId'])
-    || (['prepare_all_roots', 'export_all_roots'].includes(getColorJobAction(job)) ? 'all-roots' : '');
+    || (['relink_all_roots', 'prepare_all_roots', 'export_all_roots'].includes(getColorJobAction(job)) ? 'all-roots' : '');
 }
 
 function getColorJobAction(job) {
@@ -3665,6 +3683,9 @@ function canRunProjectColorAction(action, roots, capability, liveJobs, busy, onR
   if ((liveJobs || []).length > 0) return false;
   if (!Array.isArray(roots) || roots.length === 0) return false;
   if (roots.some(root => getColorStringField(root.hostPreflight, ['status']) === 'blocked')) return false;
+  if (action === 'relink_all_roots') {
+    return roots.some(root => Boolean(getColorStringField(root, ['rawLocalPath']) || getColorStringField(root.current, ['rawLocalPath'])));
+  }
   if (action === 'export_all_roots') {
     return roots.every(root => getColorStringField(root.current, ['timelineStatus']) === 'ready');
   }
@@ -3681,6 +3702,9 @@ function canRunColorRootAction(action, root, capability, liveJobs, busy, onRunCo
     return Boolean(getColorStringField(root.current, ['latestBatchId']));
   }
   if (getColorStringField(root.hostPreflight, ['status']) === 'blocked') return false;
+  if (action === 'relink_media') {
+    return Boolean(getColorStringField(root, ['rawLocalPath']) || getColorStringField(root.current, ['rawLocalPath']));
+  }
   if (action === 'sync_groups' && !colorRootHasSyncableResolveGroups(root)) return false;
   if (action === 'execute_root' && getColorStringField(root.current, ['timelineStatus']) !== 'ready') return false;
   if (action === 'promote_batch') {
@@ -3707,6 +3731,7 @@ function describeColorRootAction(action, root, liveJobs, busy) {
     return '启动中…';
   }
   if (hasLiveColorJobForRoot(liveJobs, root.rootId, action)) {
+    if (action === 'relink_media') return '重链中…';
     if (action === 'sync_groups') return '同步中…';
     if (action === 'execute_root') return '执行中…';
     if (action === 'sync_batch_metadata') return '同步中…';
@@ -3717,6 +3742,11 @@ function describeColorRootAction(action, root, liveJobs, busy) {
   }
   if ((liveJobs || []).length > 0) {
     return '等待当前 color job…';
+  }
+  if (action === 'relink_media') {
+    return getColorStringField(root, ['rawLocalPath']) || getColorStringField(root.current, ['rawLocalPath'])
+      ? '重链素材'
+      : '等待原始路径';
   }
   if (action === 'sync_groups') {
     return getColorStringField(root.current, ['groupSyncStatus']) === 'ready' ? '重同步 Groups' : 'Sync Groups';
@@ -3745,10 +3775,19 @@ function describeProjectColorAction(action, roots, liveJobs, busy) {
   if (busy?.['project-brief']) return '保存中…';
   if (busy?.['job:color']) return '启动中…';
   if ((liveJobs || []).some(job => getColorJobAction(job) === action)) {
+    if (action === 'relink_all_roots') return '统一重链中…';
     return action === 'export_all_roots' ? '统一导出中…' : '统一准备中…';
   }
   if ((liveJobs || []).length > 0) return '等待当前 color job…';
-  if (!Array.isArray(roots) || roots.length === 0) return action === 'export_all_roots' ? '无可导出 roots' : '无可准备 roots';
+  if (!Array.isArray(roots) || roots.length === 0) {
+    if (action === 'relink_all_roots') return '无可重链 roots';
+    return action === 'export_all_roots' ? '无可导出 roots' : '无可准备 roots';
+  }
+  if (action === 'relink_all_roots') {
+    return roots.some(root => getColorStringField(root, ['rawLocalPath']) || getColorStringField(root.current, ['rawLocalPath']))
+      ? '重链全部素材'
+      : '等待原始路径';
+  }
   if (action === 'export_all_roots') {
     return roots.every(root => getColorStringField(root.current, ['timelineStatus']) === 'ready')
       ? 'Export All Roots'
@@ -3793,6 +3832,7 @@ function describeColorGroupCreativeState(group) {
   if (group?.logProfile) details.push(`log: ${group.logProfile}`);
   if (group?.orientationStatus) details.push(`orientation: ${group.orientationStatus}`);
   if (group?.lowlight) details.push(`lowlight: ${group.lowlight}`);
+  if (group?.windshieldHaze) details.push(`windshield: ${group.windshieldHaze}`);
   if (group?.colorCastClass) details.push(`cast: ${group.colorCastClass}`);
   if (group?.exposureSceneClass) details.push(`exposure: ${group.exposureSceneClass}`);
   if (group?.postClipCreativeStatus) details.push(`post-clip: ${group.postClipCreativeStatus}`);
@@ -3807,10 +3847,16 @@ function describeColorClipRepairSummary(clips) {
   const repairCounts = countBy(clips.map(clip => clip?.clipRepairStatus || ''));
   const layoutCounts = countBy(clips.map(clip => clip?.layoutStatus || ''));
   const orientationCounts = countBy(clips.map(clip => clip?.orientationStatus || ''));
+  const windshieldCounts = countBy(clips.map(clip => (
+    typeof clip?.windshieldHaze === 'boolean'
+      ? (clip.windshieldHaze ? 'windshield-haze' : 'base')
+      : ''
+  )));
   const exposureCounts = countBy(clips.map(clip => clip?.exposureSceneClass || ''));
   const templateCounts = countBy(clips.map(clip => clip?.repairTemplateKey || ''));
   const details = [];
   const orientationSummary = summarizeCountMap('orientation', orientationCounts);
+  const windshieldSummary = summarizeCountMap('windshield', windshieldCounts);
   const exposureSummary = summarizeCountMap('exposure', exposureCounts);
   const templateSummary = summarizeCountMap('template', templateCounts);
   const gyroSummary = summarizeCountMap('gyro', gyroCounts);
@@ -3819,6 +3865,7 @@ function describeColorClipRepairSummary(clips) {
   const repairSummary = summarizeCountMap('repair', repairCounts);
   const layoutSummary = summarizeCountMap('layout', layoutCounts);
   if (orientationSummary) details.push(orientationSummary);
+  if (windshieldSummary) details.push(windshieldSummary);
   if (exposureSummary) details.push(exposureSummary);
   if (templateSummary) details.push(templateSummary);
   if (gyroSummary) details.push(gyroSummary);
@@ -3833,6 +3880,12 @@ function describeColorClipRepairState(clip) {
   const details = [];
   if (clip?.logProfile) details.push(`log: ${clip.logProfile}`);
   if (typeof clip?.lowlight === 'boolean') details.push(clip.lowlight ? 'lowlight' : 'base');
+  if (typeof clip?.windshieldHaze === 'boolean') {
+    const confidence = Number.isFinite(Number(clip.windshieldHazeConfidence))
+      ? ` ${Math.round(Number(clip.windshieldHazeConfidence) * 100)}%`
+      : '';
+    details.push(`${clip.windshieldHaze ? 'windshield-haze' : 'clear-windshield'}${confidence}`);
+  }
   if (clip?.colorCastClass) {
     const confidence = Number.isFinite(Number(clip.colorCastConfidence))
       ? ` ${Math.round(Number(clip.colorCastConfidence) * 100)}%`

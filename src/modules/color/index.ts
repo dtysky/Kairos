@@ -1,5 +1,7 @@
 export {
   runProjectColorAction,
+  relinkProjectColorRootMedia,
+  relinkAllProjectColorRoots,
   prepareProjectColorRoot,
   prepareAllProjectColorRoots,
   syncProjectColorGroups,
@@ -20,6 +22,7 @@ export {
   type IProjectColorActionRootResult,
   type IProjectColorActionResult,
   type IProjectColorPreflightInput,
+  type IRelinkProjectColorRootInput,
   type IPrepareProjectColorRootInput,
   type IPrepareProjectColorRootResult,
   type ISnapshotProjectColorDrpInput,
@@ -50,6 +53,13 @@ export {
   type IColorLowlightClassification,
 } from './lowlight-classifier.js';
 export {
+  classifyWindshieldHaze,
+  classifyRgbFrameWindshieldHaze,
+  type IColorWindshieldHazeClassification,
+  type IColorWindshieldHazeFrameMetrics,
+  type IColorWindshieldHazeMetrics,
+} from './windshield-haze-classifier.js';
+export {
   PythonResolveColorExecutor,
   ResolveColorExecutorUnavailableError,
   ResolveColorHostError,
@@ -61,6 +71,9 @@ export {
   type IColorExecutor,
   type IColorExecutorPrepareRootInput,
   type IColorExecutorPrepareRootResult,
+  type IColorExecutorRelinkMediaRoot,
+  type IColorExecutorRelinkMediaInput,
+  type IColorExecutorRelinkMediaResult,
   type IColorExecutorSyncGroupsInput,
   type IColorExecutorSyncGroupsResult,
   type IColorExecutorExecuteRootInput,

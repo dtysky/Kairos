@@ -22,6 +22,7 @@ import type {
   IColorOverwritePreview,
   EColorValidationCheckResult,
   IColorCurrent,
+  IMediaRoot,
 } from '../../protocol/schema.js';
 import {
   getProjectProgressPath,
@@ -50,7 +51,7 @@ import {
 import { resolveCaptureTime } from '../media/capture-time.js';
 import { probe } from '../media/probe.js';
 import { classifyExt, scanDirectory } from '../media/scanner.js';
-import { toPortableRelativePath } from '../media/root-resolver.js';
+import { buildRootPathCandidates, toPortableRelativePath } from '../media/root-resolver.js';
 import { toExecutableInputPath } from '../media/tool-path.js';
 import {
   buildColorWorkspaceState,
@@ -63,6 +64,7 @@ import { readColorRenderPresetBitrateKbps } from './render-preset.js';
 import { classifyMidpointLowlight } from './lowlight-classifier.js';
 import { classifyColorCast } from './color-cast-classifier.js';
 import { classifyExposureScene } from './exposure-scene-classifier.js';
+import { classifyWindshieldHaze } from './windshield-haze-classifier.js';
 import { extractColorSourceTruth } from './source-truth.js';
 import {
   detectResolveDefaultLutRoot,
@@ -78,10 +80,12 @@ import {
   inspectResolveColorBackend,
   type IColorExecutorClipInput,
   type IColorExecutor,
+  type IColorExecutorRelinkMediaRoot,
   type IColorExecutorPrepareRootResult,
 } from './resolve-executor.js';
 
 export type TProjectColorAction =
+  | 'relink_media'
   | 'prepare_root'
   | 'sync_groups'
   | 'execute_root'
@@ -89,6 +93,7 @@ export type TProjectColorAction =
   | 'sync_batch_sidecars'
   | 'validate_batch'
   | 'promote_batch'
+  | 'relink_all_roots'
   | 'prepare_all_roots'
   | 'export_all_roots'
   | 'save_drp_snapshot';
@@ -109,6 +114,9 @@ const CCOLOR_CAST_CONTINUITY_MAX_FORWARD_EXTENSION = 3;
 type TColorCastContinuityTarget = 'cool-cyan' | 'green-cyan' | 'green';
 
 const CCOLOR_STEP_DEFINITIONS: Record<TProjectColorAction, Array<{ key: string; label: string }>> = {
+  relink_media: [
+    { key: 'relink_media', label: '重链 Resolve 素材路径' },
+  ],
   prepare_root: [
     { key: 'sync_root_bins', label: '同步 root 镜像预备态' },
     { key: 'prepare_root_timeline', label: '准备 root timeline' },
@@ -131,6 +139,10 @@ const CCOLOR_STEP_DEFINITIONS: Record<TProjectColorAction, Array<{ key: string; 
   ],
   promote_batch: [
     { key: 'promote_batch', label: '已移除的旧 Promote' },
+  ],
+  relink_all_roots: [
+    { key: 'select_roots', label: '确定目标 roots' },
+    { key: 'relink_all_roots', label: '顺序重链所有 roots' },
   ],
   prepare_all_roots: [
     { key: 'select_roots', label: '确定目标 roots' },
@@ -198,6 +210,11 @@ export interface IPrepareProjectColorRootInput extends IProjectColorActionInput 
   rootId: string;
 }
 
+export interface IRelinkProjectColorRootInput extends IProjectColorActionInput {
+  action?: 'relink_media';
+  rootId: string;
+}
+
 export interface IPrepareProjectColorRootResult extends IProjectColorActionResult {
   resolveProjectName?: string;
   rootNamespace?: string;
@@ -234,6 +251,7 @@ interface IColorRootContext {
   projectRoot: string;
   projectId: string;
   rootId: string;
+  rootConfig: IMediaRoot;
   rootSummary: ReturnType<typeof buildColorWorkspaceState>['colorRoots'][number];
   colorCurrent: IColorCurrent;
   runtimeConfig: Awaited<ReturnType<typeof loadRuntimeConfig>>;
@@ -246,6 +264,17 @@ export async function runProjectColorAction(
 ): Promise<IProjectColorActionResult> {
   const action = normalizeColorAction(input.action);
   switch (action) {
+    case 'relink_media': {
+      const rootId = input.rootId?.trim();
+      if (!rootId) {
+        throw new ProjectColorBlockedError(['relink_media requires rootId。']);
+      }
+      return relinkProjectColorRootMedia({
+        ...input,
+        rootId,
+        action: 'relink_media',
+      });
+    }
     case 'prepare_root': {
       const rootId = input.rootId?.trim();
       if (!rootId) {
@@ -299,6 +328,11 @@ export async function runProjectColorAction(
       }
       return promoteProjectColorBatch({ ...input, rootId });
     }
+    case 'relink_all_roots':
+      if (input.rootId?.trim()) {
+        throw new ProjectColorBlockedError(['relink_all_roots is project-scoped and does not accept rootId。']);
+      }
+      return relinkAllProjectColorRoots(input);
     case 'prepare_all_roots':
       if (input.rootId?.trim()) {
         throw new ProjectColorBlockedError(['prepare_all_roots is project-scoped and does not accept rootId。']);
@@ -595,6 +629,253 @@ export async function registerExternalColorDrpSnapshot(
     detail: `已登记外部 DRP：${snapshot.snapshotPath}`,
     blockingReasons: [],
     snapshot,
+  };
+}
+
+export async function relinkProjectColorRootMedia(
+  input: IRelinkProjectColorRootInput,
+): Promise<IProjectColorActionResult> {
+  const action: TProjectColorAction = 'relink_media';
+  const context = await loadColorRootContext(input.workspaceRoot, input.projectId, input.rootId);
+  const progressPath = resolveColorProgressPath(context.projectRoot, input.progressPath);
+  const writeProgress: TWriteColorProgress = input.suppressProgress
+    ? async (..._args) => undefined
+    : writeColorProgress;
+  const blockers = dedupeStrings([
+    !context.rootSummary.rawPath ? '当前 root 未配置 rawPath，无法执行 Resolve Color 素材重链。' : '',
+    !context.rootSummary.rawLocalPath ? '当前设备未配置 rawLocalPath，无法执行 Resolve Color 素材重链。' : '',
+  ]);
+  if (blockers.length > 0) {
+    await failColorAction(context.projectRoot, context.rootId, progressPath, action, blockers, {
+      projectId: input.projectId,
+      rootId: context.rootId,
+    }, {
+      suppressProgress: input.suppressProgress,
+    });
+    throw new ProjectColorBlockedError(blockers);
+  }
+
+  const mapping = buildColorRelinkRootMapping(context);
+  if (!mapping) {
+    const mappingBlockers = ['没有可用于 Resolve Color 素材重链的 rawPath 路径候选。'];
+    await failColorAction(context.projectRoot, context.rootId, progressPath, action, mappingBlockers, {
+      projectId: input.projectId,
+      rootId: context.rootId,
+    }, {
+      suppressProgress: input.suppressProgress,
+    });
+    throw new ProjectColorBlockedError(mappingBlockers);
+  }
+
+  const executor = resolveColorExecutor(context, input.executor);
+  const hostPreflight = await ensureActionHostPreflight({
+    context,
+    action,
+    executor,
+    progressPath,
+    suppressProgress: input.suppressProgress,
+    extra: {
+      projectId: input.projectId,
+      rootId: context.rootId,
+    },
+  });
+
+  await writeRootCurrent(context.projectRoot, context.rootId, current => ({
+    ...current,
+    activeStage: 'relink_media',
+    currentJobId: input.jobId,
+    detail: `正在重链 Resolve Color 素材：${context.rootSummary.gradingTimelineName}`,
+    blockingReasons: filterPersistentColorBlockers(current.blockingReasons ?? []),
+  }));
+  await writeProgress(progressPath, action, {
+    status: 'running',
+    stepIndex: 1,
+    current: 0,
+    detail: `正在将 Resolve Color 素材重链到 ${mapping.localPath}。`,
+    extra: {
+      projectId: input.projectId,
+      rootId: context.rootId,
+      resolveProjectName: context.rootSummary.resolveProjectName,
+      rootNamespace: context.rootSummary.rootNamespace,
+      gradingTimelineName: context.rootSummary.gradingTimelineName,
+      candidateCount: mapping.candidates.length,
+    },
+  });
+
+  let relinked: Awaited<ReturnType<IColorExecutor['relinkMedia']>>;
+  try {
+    relinked = await runColorHostWithRetry(
+      () => executor.relinkMedia({
+        projectId: input.projectId,
+        rootId: context.rootId,
+        resolveProjectName: context.rootSummary.resolveProjectName,
+        rootNamespace: context.rootSummary.rootNamespace,
+        gradingTimelineName: context.rootSummary.gradingTimelineName,
+        roots: [mapping],
+      }),
+      `relink_media:${context.rootId}`,
+    );
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    await failColorAction(context.projectRoot, context.rootId, progressPath, action, [reason], {
+      projectId: input.projectId,
+      rootId: context.rootId,
+      resolveProjectName: context.rootSummary.resolveProjectName,
+      rootNamespace: context.rootSummary.rootNamespace,
+      gradingTimelineName: context.rootSummary.gradingTimelineName,
+    }, {
+      suppressProgress: input.suppressProgress,
+    });
+    throw error;
+  }
+
+  const detail = formatColorRelinkDetail(relinked.hostSummary);
+  const savedCurrent = await writeRootCurrent(context.projectRoot, context.rootId, current => ({
+    ...current,
+    mirrorStatus: current.mirrorStatus === 'blocked' || !current.mirrorStatus ? 'synced' : current.mirrorStatus,
+    timelineStatus: 'ready',
+    activeStage: undefined,
+    currentJobId: undefined,
+    detail,
+    hostSummary: {
+      ...(isPlainObject(current.hostSummary) ? current.hostSummary : {}),
+      latestRelink: relinked.hostSummary ?? {},
+      latestRelinkAt: relinked.createdAt,
+    },
+    blockingReasons: filterPersistentColorBlockers(current.blockingReasons ?? []),
+  }));
+  await writeProgress(progressPath, action, {
+    status: 'succeeded',
+    stepIndex: 1,
+    current: 1,
+    detail,
+    extra: {
+      projectId: input.projectId,
+      rootId: context.rootId,
+      hostPreflight,
+      hostSummary: relinked.hostSummary,
+    },
+  });
+
+  const savedRoot = savedCurrent.roots.find(root => root.rootId === context.rootId);
+  return {
+    action,
+    projectId: input.projectId,
+    rootId: context.rootId,
+    detail: savedRoot?.detail ?? detail,
+    blockingReasons: savedRoot?.blockingReasons ?? [],
+  };
+}
+
+export async function relinkAllProjectColorRoots(
+  input: IProjectColorActionInput,
+): Promise<IProjectColorActionResult> {
+  const action: TProjectColorAction = 'relink_all_roots';
+  const projectRoot = resolveWorkspaceProjectRoot(input.workspaceRoot, input.projectId);
+  const progressPath = resolveColorProgressPath(projectRoot, input.progressPath);
+  const rootSummaries = await loadEnabledProjectColorRootSummaries(input.workspaceRoot, input.projectId);
+  if (rootSummaries.length === 0) {
+    const blockers = ['当前项目没有可重链的 enabled color roots。'];
+    await writeColorProgress(progressPath, action, {
+      status: 'failed',
+      stepIndex: 1,
+      current: 0,
+      detail: blockers[0]!,
+      extra: {
+        projectId: input.projectId,
+        currentRootId: undefined,
+        currentRootIndex: 0,
+        totalRoots: 0,
+        succeededRoots: 0,
+        failedRoots: 0,
+      },
+    });
+    throw new ProjectColorBlockedError(blockers);
+  }
+
+  await writeColorProgress(progressPath, action, {
+    status: 'running',
+    stepIndex: 1,
+    current: 0,
+    detail: `已锁定 ${rootSummaries.length} 个 color roots，准备顺序执行 relink_media。`,
+    extra: {
+      projectId: input.projectId,
+      currentRootId: rootSummaries[0]?.rootId,
+      currentRootIndex: 0,
+      totalRoots: rootSummaries.length,
+      succeededRoots: 0,
+      failedRoots: 0,
+    },
+  });
+
+  const roots: IProjectColorActionRootResult[] = [];
+  let succeededRoots = 0;
+  let failedRoots = 0;
+  for (const [index, rootSummary] of rootSummaries.entries()) {
+    await writeColorProgress(progressPath, action, {
+      status: 'running',
+      stepIndex: 2,
+      current: index,
+      detail: `正在重链 root ${index + 1}/${rootSummaries.length}：${rootSummary.rootId}`,
+      extra: {
+        projectId: input.projectId,
+        currentRootId: rootSummary.rootId,
+        currentRootIndex: index + 1,
+        totalRoots: rootSummaries.length,
+        succeededRoots,
+        failedRoots,
+      },
+    });
+    try {
+      const result = await relinkProjectColorRootMedia({
+        ...input,
+        rootId: rootSummary.rootId,
+        action: 'relink_media',
+        suppressProgress: true,
+      });
+      succeededRoots += 1;
+      roots.push({
+        rootId: rootSummary.rootId,
+        status: 'succeeded',
+        actionSummary: result.detail,
+      });
+    } catch (error) {
+      failedRoots += 1;
+      roots.push({
+        rootId: rootSummary.rootId,
+        status: 'failed',
+        actionSummary: error instanceof Error ? error.message : String(error),
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  const detail = failedRoots > 0
+    ? `Relink All Roots 完成：${succeededRoots} 个成功，${failedRoots} 个失败。`
+    : `Relink All Roots 完成：${succeededRoots} 个 roots 全部完成重链。`;
+  await writeColorProgress(progressPath, action, {
+    status: failedRoots > 0 ? 'failed' : 'succeeded',
+    stepIndex: 2,
+    current: rootSummaries.length,
+    detail,
+    extra: {
+      projectId: input.projectId,
+      currentRootId: rootSummaries[rootSummaries.length - 1]?.rootId,
+      currentRootIndex: rootSummaries.length,
+      totalRoots: rootSummaries.length,
+      succeededRoots,
+      failedRoots,
+    },
+  });
+
+  return {
+    action,
+    projectId: input.projectId,
+    detail,
+    blockingReasons: roots
+      .filter(root => root.status === 'failed')
+      .map(root => `${root.rootId}: ${root.error || root.actionSummary}`),
+    roots,
   };
 }
 
@@ -2291,11 +2572,16 @@ async function loadColorRootContext(
   if (!rootSummary) {
     throw new ProjectColorBlockedError([`color root 不存在或未配置 rawPath: ${rootId}`]);
   }
+  const rootConfig = projectRoots.roots.find(root => root.id === rootId);
+  if (!rootConfig) {
+    throw new ProjectColorBlockedError([`color root 配置不存在: ${rootId}`]);
+  }
   return {
     workspaceRoot,
     projectRoot,
     projectId,
     rootId,
+    rootConfig,
     rootSummary,
     colorCurrent,
     runtimeConfig,
@@ -2443,6 +2729,7 @@ function resolveColorProgressPath(projectRoot: string, progressPath?: string): s
 function normalizeColorAction(action?: string): TProjectColorAction {
   const normalized = action?.trim() || 'prepare_root';
   switch (normalized) {
+    case 'relink_media':
     case 'prepare_root':
     case 'sync_groups':
     case 'execute_root':
@@ -2450,6 +2737,7 @@ function normalizeColorAction(action?: string): TProjectColorAction {
     case 'sync_batch_sidecars':
     case 'validate_batch':
     case 'promote_batch':
+    case 'relink_all_roots':
     case 'prepare_all_roots':
     case 'export_all_roots':
     case 'save_drp_snapshot':
@@ -2457,6 +2745,48 @@ function normalizeColorAction(action?: string): TProjectColorAction {
     default:
       throw new Error(`Unsupported color action: ${normalized}`);
   }
+}
+
+function buildColorRelinkRootMapping(context: IColorRootContext): IColorExecutorRelinkMediaRoot | null {
+  const localPath = context.rootSummary.rawLocalPath?.trim();
+  if (!localPath) return null;
+  const candidates = dedupeStrings([
+    localPath,
+    context.rootSummary.rawPath,
+    ...buildRootPathCandidates(context.rootConfig, 'rawPath').map(candidate => candidate.path),
+  ]);
+  return {
+    rootId: context.rootId,
+    ...(context.rootSummary.label ? { label: context.rootSummary.label } : {}),
+    localPath,
+    candidates,
+  };
+}
+
+function formatColorRelinkDetail(hostSummary: Record<string, unknown> | undefined): string {
+  const summary: Record<string, unknown> = isPlainObject(hostSummary) ? hostSummary : {};
+  const relinked = readSummaryNumber(summary, 'relinked');
+  const folderCount = readSummaryNumber(summary, 'relinkFolderCount');
+  const oldRemaining = readSummaryNumber(summary, 'oldPathRemaining')
+    + readSummaryNumber(summary, 'timelineOldPathRemaining');
+  const missingTargets = readSummaryNumber(summary, 'missingTargetCount')
+    + readSummaryNumber(summary, 'timelineMissingTargetCount');
+  const unmapped = readSummaryNumber(summary, 'unmappedCount')
+    + readSummaryNumber(summary, 'timelineUnmappedCount');
+  const skippedNonFile = readSummaryNumber(summary, 'skippedNonFileCount')
+    + readSummaryNumber(summary, 'timelineSkippedNonFileCount');
+  return [
+    `Resolve Color 素材重链完成：${relinked} 个 item，${folderCount} 个目标目录。`,
+    oldRemaining > 0 ? `仍有旧路径 ${oldRemaining} 个。` : '',
+    missingTargets > 0 ? `缺失目标 ${missingTargets} 个。` : '',
+    unmapped > 0 ? `未映射 ${unmapped} 个。` : '',
+    skippedNonFile > 0 ? `跳过非文件对象 ${skippedNonFile} 个。` : '',
+  ].filter(Boolean).join(' ');
+}
+
+function readSummaryNumber(summary: Record<string, unknown>, key: string): number {
+  const value = summary[key];
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
 }
 
 async function writeRootCurrent(
@@ -3119,6 +3449,19 @@ async function buildColorExecutorClipsForInventory(
           technicalLutRelativePath: colorCastPreview.relativeLutPath,
           exposureSceneSkippedReason: resolveExposureSceneSkippedReason(colorCastPreview, profileResolution),
         });
+      const windshieldHazeClassification = shouldClassifyExposureScene(colorCastPreview, profileResolution)
+        ? await classifyWindshieldHaze(item.sourceAbsolutePath, runtimeConfig, {
+          durationMs: probed?.durationMs,
+          lutPath: colorCastPreview.lutPath,
+        }).catch(() => buildUnknownWindshieldHazeClassification({
+          technicalTransformStatus: colorCastPreview.status,
+          technicalLutRelativePath: colorCastPreview.relativeLutPath,
+        }))
+        : buildUnknownWindshieldHazeClassification({
+          technicalTransformStatus: colorCastPreview.status,
+          technicalLutRelativePath: colorCastPreview.relativeLutPath,
+          windshieldHazeSkippedReason: resolveExposureSceneSkippedReason(colorCastPreview, profileResolution),
+        });
       const orientation = resolveColorClipOrientation(probed);
       return {
         rawRelativePath: item.rawRelativePath,
@@ -3155,6 +3498,13 @@ async function buildColorExecutorClipsForInventory(
         exposureSceneConfidence: exposureSceneClassification.exposureSceneConfidence,
         exposureSceneMetrics: {
           ...exposureSceneClassification.exposureSceneMetrics,
+          technicalTransformStatus: colorCastPreview.status,
+          technicalLutRelativePath: colorCastPreview.relativeLutPath,
+        },
+        windshieldHaze: windshieldHazeClassification.windshieldHaze,
+        windshieldHazeConfidence: windshieldHazeClassification.windshieldHazeConfidence,
+        windshieldHazeMetrics: {
+          ...windshieldHazeClassification.windshieldHazeMetrics,
           technicalTransformStatus: colorCastPreview.status,
           technicalLutRelativePath: colorCastPreview.relativeLutPath,
         },
@@ -3304,6 +3654,7 @@ function getColorCastContinuityAnchorClass(
   if (
     !clip
     || clip.lowlight === true
+    || clip.windshieldHaze === true
     || hasWhiteReferenceUnderexposedExposureScene(clip)
     || (clip.colorCastConfidence ?? 0) < 0.65
   ) return null;
@@ -3329,7 +3680,7 @@ function canPromoteByColorCastContinuity(
   clip: IColorExecutorClipInput | undefined,
   target: TColorCastContinuityTarget,
 ): clip is IColorExecutorClipInput {
-  if (!clip || clip.lowlight === true || hasWhiteReferenceUnderexposedExposureScene(clip)) return false;
+  if (!clip || clip.lowlight === true || clip.windshieldHaze === true || hasWhiteReferenceUnderexposedExposureScene(clip)) return false;
   if (clip.colorCastClass === 'warm' && (clip.colorCastConfidence ?? 0) >= 0.55) return false;
   const medianA = readColorCastMetricNumber(clip, 'medianA');
   const medianB = readColorCastMetricNumber(clip, 'medianB');
@@ -3494,6 +3845,24 @@ function buildUnknownExposureSceneClassification(extraMetrics: Record<string, un
   };
 }
 
+function buildUnknownWindshieldHazeClassification(extraMetrics: Record<string, unknown> = {}): {
+  windshieldHaze: false;
+  windshieldHazeConfidence: number;
+  windshieldHazeMetrics: Record<string, unknown>;
+} {
+  return {
+    windshieldHaze: false,
+    windshieldHazeConfidence: 0,
+    windshieldHazeMetrics: {
+      frameCount: 0,
+      classifiedFrameCount: 0,
+      positiveFrameCount: 0,
+      positiveFrameRatio: 0,
+      ...extraMetrics,
+    },
+  };
+}
+
 async function isReadableFile(filePath: string): Promise<boolean> {
   return stat(filePath)
     .then(fileStat => fileStat.isFile())
@@ -3526,6 +3895,9 @@ function buildColorSyncExecutorClipsForInventory(
       gyroDataAvailable: previous?.gyroDataAvailable,
       gyroEligible: previous?.gyroEligible,
       lowlight: previous?.lowlight,
+      windshieldHaze: previous?.windshieldHaze,
+      windshieldHazeConfidence: previous?.windshieldHazeConfidence,
+      windshieldHazeMetrics: previous?.windshieldHazeMetrics,
       colorCastClass: previous?.colorCastClass,
       colorCastConfidence: previous?.colorCastConfidence,
       colorCastMetrics: previous?.colorCastMetrics,
@@ -3736,8 +4108,9 @@ function buildMissingDefaultRepairTemplateBlockers(input: {
   }).length;
   if (defaultOrUnknownClipCount === 0) return [];
   const defaultTemplatePath = buildColorRepairTemplates(input.workspaceRoot)[CCOLOR_REPAIR_TEMPLATE_DEFAULT_KEY];
+  const displayDefaultTemplatePath = defaultTemplatePath.replace(/\\/g, '/');
   return [
-    `缺少默认 Clip Repair DRT：${defaultTemplatePath}。当前 root 有 ${defaultOrUnknownClipCount} 个默认或未知方向 clips 需要用它建立 Gyro -> Dehaze -> User1 -> User2 -> NR 五节点；prepare_root 已阻塞，避免写出缺 repair 节点的 ready 状态。请先导出正式五节点 DRT 到该路径后重跑 Prepare Root。`,
+    `缺少默认 Clip Repair DRT：${displayDefaultTemplatePath}。当前 root 有 ${defaultOrUnknownClipCount} 个默认或未知方向 clips 需要用它建立 Gyro -> Dehaze -> User1 -> User2 -> NR 五节点；prepare_root 已阻塞，避免写出缺 repair 节点的 ready 状态。请先导出正式五节点 DRT 到该路径后重跑 Prepare Root。`,
   ];
 }
 

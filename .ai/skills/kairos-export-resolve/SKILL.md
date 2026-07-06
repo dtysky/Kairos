@@ -66,6 +66,8 @@ description: >-
   - Color 路径默认使用 `${projectBrief.name} [Color]`
   - root grading timeline 默认使用 root `label` 派生的人类可读命名
   - `/color` 的 root prepare 默认按 50-clip chunks 分批追加到同一条 root grading timeline；不能为每个 chunk 或子目录创建正式 grading timeline
+  - `/color` 自动 Group 先按 `logProfile`，再按 `portrait-review -> lowlight -> windshield-haze -> 高置信 colorCastClass -> 明显 exposureSceneClass` 选择一个 addon；`windshield-haze` 用于白天行车透过劣质车膜/前挡导致的灰雾、低对比、发暗素材，优先于普通色偏，但不自动开启 `Dehaze / NR`
+  - `/color` 的素材路径重链必须作为 `relink_media` 独立维护动作处理：它只加载现有 `${projectBrief.name} [Color]`，核对 root namespace 与 root grading timeline，用 root `rawPath` 主/备选候选映射到当前可读 `rawLocalPath` 后调用 `RelinkClips` 并 `SaveProject()`；不得把重链塞进 `prepare_root`，不得导入 clips、重建 timeline、重建 repair node graph、修改 Group 创作层或导出 DRP，也不得因当前输出 `localPath` 缺失而阻塞
   - 自动 DRP 只在 root prepare 全部 chunks 完成后导出一次，且默认使用 `latest-only` 只覆盖当前 `${Resolve项目名}.drp` latest DRP；人工 DRP 保存应先 `SaveProject()`，再按用户选择的 `latest-only / archive` 保存策略导出轻量 `.drp` 到项目内 `color/resolve-projects/<safe-project-name>/`，两种策略都更新具名 latest，只有 `archive` 写入 `snapshots/`
   - 剪辑 `[Edit]` 素材路径重链只维护现有 `${projectBrief.name} [Edit]` 的 `Kairos Project Media` 路径引用：必须核对现有项目/素材池/目标 timeline，用 `project-brief` root 候选路径映射到当前可读 root，跳过 Resolve compound/timeline 等非文件 item，`RelinkClips` 后 `SaveProject()`；缺失本机目标和未映射文件作为 warning 返回，不阻塞其它可重链素材；它不自动导出 DRP，也不属于 Flow Plan step。
 5. 导入素材并按 `KTEP` 片段摆放

@@ -42,23 +42,26 @@ Kairos 将旅拍素材转化为可编辑时间线。流程分为准备阶段、�
 - `DaVinci color` 当前已有独立 `/color` 主路由，正式承担 root 级最小 `renderPreset`、Resolve group 镜像、执行与 validation 控制
 - 任何 DaVinci Resolve scripting、`/color`、Resolve export、DRX/DRT、LUT、render job、Group、node graph 或 vendored Resolve host 任务，必须先读 `.ai/knowledge/davinci-resolve-scripting.md`，再按安装版 Resolve `README.txt` 校验版本敏感 API
 - `/color` 当前应自动发现已配置 `rawPath` 的素材根，并派生约定命名与阻塞信息；不要把“还没接通全部宿主健壮性”误渲染成“没有可显示 root”
-- 当前 `Supervisor color` 的正式动作链是 `prepare_root -> sync_groups -> execute_root -> validate_batch -> prepare_all_roots -> export_all_roots`
+- 当前 `Supervisor color` 的正式动作链是 `relink_media -> prepare_root -> sync_groups -> execute_root -> validate_batch -> relink_all_roots -> prepare_all_roots -> export_all_roots`
+- 当前 `/color` 的素材重链是独立维护动作：`relink_media` 只维护现有 `${projectBrief.name} [Color]` 中 root namespace 的素材引用，从 `rawPath` 主/备选候选映射到当前可读 `rawLocalPath` 后调用 Resolve `RelinkClips`、验证 root grading timeline 并保存工程；它不导入素材、不重建 timeline、不改 repair node graph、不改 Group 创作层、不导出 DRP，也不要求当前输出 `localPath` 在线
 - 当前 `prepare_root` 必须真实完成 `rawLocalPath -> Resolve root bins / single root grading timeline / explainable creative Groups + canonical clip repair layout` 的同步，而不是只持久化 Kairos 侧占位状态；大素材 root 默认按稳定 50-clip chunks 分批导入并追加到同一条 root grading timeline，避免一次性把整 root 塞进内存
 - 当前 Group 真相以 Resolve 为准；用户可直接在 Resolve 中调整 Group，再通过 `/color` 的 `sync_groups` 回写最新现状；不存在额外 `Confirm Groups` 步骤
 - `/color` 当前进入页面或切换项目时会自动执行 host preflight，并允许用户手动 `Recheck Host`
 - `/color` 当前还提供 `保存 DRP 快照` 与外部 `.drp` 登记入口；自动 DRP 只在 root prepare 全部 chunks 完成后导出一次，人工入口也把 Resolve 工程快照落到 `color/resolve-projects/<safe-project-name>/`，并维护 `${Resolve项目名}.drp` 具名 latest / `color/resolve-project-map.json`
-- 当前 `prepare_root / sync_groups / execute_root / prepare_all_roots / export_all_roots` 都必须先通过 host preflight；若宿主 blocked 或当前 render preset 不受支持，应在 Resolve 变更前直接失败
+- 当前 `relink_media / prepare_root / sync_groups / execute_root / relink_all_roots / prepare_all_roots / export_all_roots` 都必须先通过 host preflight；若宿主 blocked 或当前 render preset 不受支持，应在 Resolve 变更前直接失败；`relink_media` 只要求 `rawLocalPath` 可读，不要求当前输出 `localPath` 在线
 - 当前 color 导出真相是 root grading timeline：render preset 是 root 级长期配置，batch 只是执行/重试粒度，可选携带 `clipKeys[]` 做 subset rerun；Resolve Groups 只承担组织与诊断语义，不再决定导出分批
 - 当前 color `execute_root` 成功后会随调色视频同步同 basename sidecar：`.srt/.xml/.gyroflow/.wav/.flac/.m4a/.aac/.mp3`，sidecar 必须进入 manifest 与 validation 管理
 - 当前 `/color` 还正式提供项目级 deterministic 批处理：
+  - `Relink All Roots`：按当前 read model 的 enabled root priority 顺序依次执行 `relink_media`
   - `Prepare All Roots`：按当前 read model 的 enabled root priority 顺序依次执行 `prepare_root`
   - `Export All Roots`：按同一顺序依次执行 `execute_root`；每个 root 内部完成 render all、最终 replace、metadata 修复与 validation
   - 两个项目级动作都继续其他 roots，但任一 root 失败都会让整个 color job 记为 failed
 - 当前 color creative / repair 真相已经分层：
   - `Group Post-Clip` 是唯一正式 creative 真相
   - `Clip` 是固定 repair/local-exception 层，不承担主 creative
-  - 自动 Group 当前以 `logProfile` 为前置分组轴，再在同一 log bucket 内按 first-match addon 分桶：`portrait-review -> lowlight -> 高置信 colorCastClass -> 明显 exposureSceneClass`；`gyro` 是 clip 级 repair 信号，不再参与分桶
+  - 自动 Group 当前以 `logProfile` 为前置分组轴，再在同一 log bucket 内按 first-match addon 分桶：`portrait-review -> lowlight -> windshield-haze -> 高置信 colorCastClass -> 明显 exposureSceneClass`；`gyro` 是 clip 级 repair 信号，不再参与分桶
 - 当前 `lowlight` 是中点单帧视觉 creative 标签，不是 metadata fallback，也不等价于“必须降噪”
+- 当前 `windshield-haze` 是白天租车/前挡车膜 review addon：要求行车视角 / 前挡或仪表台前景证据，且画面呈现高光未爆、白参考被压灰、整体低对比发灰发暗；它区别于低光和普通色偏，优先于高置信 `colorCastClass` 分桶，且不自动开启 `Dehaze / NR`
 - 当前 `colorCastClass` 是便宜数值色偏标签：默认取 clip 中点单帧 proxy；若能解析到当前 root/profile 的技术 LUT，则先用同路径 `.cube` 转换 proxy，再做中性区域色偏判断。强冷蓝偏移归入 `cool-cyan`，绿青混合偏移归入 `green-cyan`，且 `prepare_root` 会对同一 root / 同一 log profile 内连续素材做轻量平滑，避免一个中点帧偏中性就切碎连续冷色路段；已诊断为 `white-reference-underexposed` 的 clip 不参与这种弱连续性提升。它只用于把 `cool-cyan / green-cyan / green / warm / mixed` 素材拆到独立 Group；不判断原因是否一定是前挡膜，`neutral / unknown` 不参与分桶
 - 当前 `portrait-review` 是 `orientationStatus=portrait` 的 review addon，用于把竖屏素材在当前 log 下拆成单独 Group 给人工 review；它不改变竖屏 Gyro/DRT、repair template 或横屏 timeline transform 合同
 - 当前 `exposureSceneClass` 是解 log / 技术 LUT 后 proxy 画面的便宜数值曝光标签；只有明显 `high-contrast / overexposed / underexposed` 在未命中更高优先级 addon 时才拆 Group，`normal / unknown` 仅作为诊断显示；`high-contrast` 也覆盖逆光/剪影或车内窗外这类高光面积可能较窄但亮暗尾部跨度很大的场景；`overexposed` 保持保守，只覆盖明确剪白或高亮面积/亮度明显偏高的画面，不再把泛洗白路面或高键灰雾画面批量纳入；`underexposed` 也覆盖单帧雪景等低饱和高键白参考区域被压灰且无真实高光尾部的 `white-reference-underexposed` 诊断，metrics 保留白参考覆盖率、目标 EV 提亮量、提亮后高光余量；该子类保持 `exposureSceneClass=underexposed` 但 Resolve Group addon 使用 `white-reference-underexposed`

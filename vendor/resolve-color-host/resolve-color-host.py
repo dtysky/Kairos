@@ -19,6 +19,7 @@ CCREATIVE_SIGNAL_KEYS = (
     "rec709",
     "portrait-review",
     "lowlight",
+    "windshield-haze",
     "cool-cyan",
     "green-cyan",
     "green",
@@ -76,6 +77,8 @@ def main() -> int:
             result = mark_existing_rough_cut_clip_colors(resolve, request_input)
         elif operation == "relink_edit_media":
             result = relink_edit_media(resolve, request_input)
+        elif operation == "relink_color_media":
+            result = relink_color_media(resolve, request_input)
         elif operation == "export_edit_timeline_clip_packet":
             result = export_edit_timeline_clip_packet(resolve, request_input)
         elif operation == "save_drp_snapshot":
@@ -960,6 +963,114 @@ def relink_edit_media(resolve, payload):
     }
 
 
+def relink_color_media(resolve, payload):
+    project_name = stringify_signal_value(payload.get("resolveProjectName"))
+    if not project_name:
+        raise HostError("resolve_color_project_name_missing", "relink_color_media requires resolveProjectName.")
+    root_namespace = stringify_signal_value(payload.get("rootNamespace"))
+    if not root_namespace:
+        raise HostError("resolve_color_root_namespace_missing", "relink_color_media requires rootNamespace.")
+    grading_timeline_name = stringify_signal_value(payload.get("gradingTimelineName"))
+    if not grading_timeline_name:
+        raise HostError("resolve_color_grading_timeline_missing", "relink_color_media requires gradingTimelineName.")
+
+    project, current_project_before = load_existing_color_project(resolve, project_name)
+    media_pool = require_method(project, "GetMediaPool")()
+    root_folder = require_method(media_pool, "GetRootFolder")()
+    namespace_folder = find_root_media_pool_folder(root_folder, root_namespace)
+    if namespace_folder is None:
+        raise HostError(
+            "resolve_color_media_namespace_missing",
+            f"Resolve color root namespace not found: {root_namespace}",
+            {
+                "resolveProjectName": project_name,
+                "rootNamespace": root_namespace,
+            },
+        )
+
+    timeline = find_named_timeline(project, grading_timeline_name)
+    if timeline is None:
+        raise HostError(
+            "resolve_color_grading_timeline_missing",
+            f"Resolve color grading timeline not found: {grading_timeline_name}",
+            {
+                "resolveProjectName": project_name,
+                "gradingTimelineName": grading_timeline_name,
+                "timelines": list_timeline_names(project),
+            },
+        )
+    safe_call(project, "SetCurrentTimeline", timeline)
+
+    mappings = normalize_edit_relink_roots(payload.get("roots"))
+    if not mappings:
+        raise HostError("resolve_color_relink_roots_missing", "relink_color_media requires at least one readable root mapping.")
+
+    items = collect_media_pool_items(namespace_folder)
+    preflight = build_edit_relink_plan(items, mappings)
+    relink_results = []
+    relinked = 0
+    for folder_path in sorted(preflight["byFolder"].keys()):
+        clips = preflight["byFolder"][folder_path]
+        ok = safe_call(media_pool, "RelinkClips", clips, folder_path)
+        relink_results.append({"folder": folder_path, "count": len(clips), "ok": ok is not False and ok is not None})
+        relinked += len(clips)
+
+    if relinked > 0:
+        time.sleep(1.0)
+    verify = summarize_edit_relink_state(
+        namespace_folder,
+        timeline,
+        mappings,
+        ["video"],
+        count_timeline_unmapped=True,
+    )
+    relink_failures = [entry for entry in relink_results if not entry["ok"]]
+    if relink_failures:
+        raise HostError(
+            "resolve_color_relink_verify_failed",
+            "Resolve color media relink did not pass verification.",
+            {
+                "relinkFailures": relink_failures,
+                **verify,
+            },
+        )
+
+    save_result = save_project_with_result(project, resolve) if relinked > 0 else None
+    if relinked > 0 and not save_result:
+        raise HostError(
+            "resolve_color_relink_save_failed",
+            "Resolve color media relink succeeded but SaveProject failed.",
+            verify,
+        )
+
+    return {
+        "resolveProjectName": project_name,
+        "rootNamespace": root_namespace,
+        "gradingTimelineName": grading_timeline_name,
+        "createdAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "hostSummary": {
+            "currentProjectBefore": current_project_before,
+            "loadedProject": safe_call(project, "GetName"),
+            "rootNamespace": root_namespace,
+            "gradingTimelineName": safe_call(timeline, "GetName"),
+            "rootReadable": {mapping["rootId"]: Path(mapping["localPath"]).is_dir() for mapping in mappings},
+            "rootCount": len(mappings),
+            "alreadyLocalBefore": preflight["alreadyLocal"],
+            "preflightMissingTargetCount": len(preflight["missingTargets"]),
+            "preflightMissingTargetSamples": preflight["missingTargets"][:20],
+            "preflightUnmappedCount": len(preflight["unmapped"]),
+            "preflightUnmappedSamples": preflight["unmapped"][:20],
+            "preflightSkippedNonFileCount": len(preflight["skippedNonFile"]),
+            "preflightSkippedNonFileSamples": preflight["skippedNonFile"][:20],
+            "relinked": relinked,
+            "relinkFolderCount": len(preflight["byFolder"]),
+            "relinkFailures": relink_failures,
+            "saveProjectResult": save_result,
+            **verify,
+        },
+    }
+
+
 def export_edit_timeline_clip_packet(resolve, payload):
     project_name = stringify_signal_value(payload.get("resolveProjectName"))
     if not project_name:
@@ -1240,6 +1351,28 @@ def load_existing_project(resolve, project_name):
     raise HostError(
         "resolve_edit_project_unavailable",
         f"Unable to load existing Resolve edit project: {project_name}",
+        {
+            "currentProject": current_name,
+            "targetProject": project_name,
+        },
+    )
+
+
+def load_existing_color_project(resolve, project_name):
+    project_manager = require_method(resolve, "GetProjectManager")()
+    current = safe_call(project_manager, "GetCurrentProject")
+    current_name = safe_call(current, "GetName") if current else None
+    if current and current_name == project_name:
+        return current, current_name
+    loaded = safe_call(project_manager, "LoadProject", project_name)
+    if loaded and safe_call(loaded, "GetName") == project_name:
+        return loaded, current_name
+    current_after = safe_call(project_manager, "GetCurrentProject")
+    if current_after and safe_call(current_after, "GetName") == project_name:
+        return current_after, current_name
+    raise HostError(
+        "resolve_color_project_unavailable",
+        f"Unable to load existing Resolve color project: {project_name}",
         {
             "currentProject": current_name,
             "targetProject": project_name,
@@ -2629,6 +2762,7 @@ def build_clip_repair_snapshot(item, clip_request, repair_seed_state=None):
         else clip_request.get("gyroDataAvailable") is True or clip_request.get("gyroEligible") is True
     )
     lowlight_requested = clip_request.get("lowlight") is True
+    windshield_haze_requested = clip_request.get("windshieldHaze") is True
     orientation_status = stringify_signal_value(clip_request.get("orientationStatus"))
     repair_template_key = stringify_signal_value(clip_request.get("repairTemplateKey"))
     repair_template_hash = stringify_signal_value((repair_seed_state or {}).get("repairTemplateHash")) if isinstance(repair_seed_state, dict) else stringify_signal_value(clip_request.get("previousRepairTemplateHash"))
@@ -2673,6 +2807,9 @@ def build_clip_repair_snapshot(item, clip_request, repair_seed_state=None):
         "displayName": clip_request.get("sourceStem") or Path(clip_request["rawRelativePath"]).stem,
         "logProfile": normalize_log_profile(clip_request.get("logProfile")) or "unknown",
         "lowlight": lowlight_requested,
+        "windshieldHaze": windshield_haze_requested,
+        "windshieldHazeConfidence": parse_float(clip_request.get("windshieldHazeConfidence")),
+        "windshieldHazeMetrics": clip_request.get("windshieldHazeMetrics") if isinstance(clip_request.get("windshieldHazeMetrics"), dict) else {},
         "colorCastClass": normalize_color_cast_class(clip_request.get("colorCastClass")) or "unknown",
         "colorCastConfidence": parse_float(clip_request.get("colorCastConfidence")),
         "colorCastMetrics": clip_request.get("colorCastMetrics") if isinstance(clip_request.get("colorCastMetrics"), dict) else {},
@@ -2731,6 +2868,7 @@ def build_clip_repair_snapshot(item, clip_request, repair_seed_state=None):
         "repairTemplateKey",
         "repairTemplateHash",
         "timelineTransform",
+        "windshieldHazeConfidence",
         "colorCastConfidence",
         "exposureSceneConfidence",
     ):
@@ -3004,6 +3142,19 @@ def summarize_group_lowlight(clip_snapshots):
     return None
 
 
+def summarize_group_windshield_haze(clip_snapshots):
+    values = {
+        "windshield-haze" if clip.get("windshieldHaze") is True else "base"
+        for clip in clip_snapshots or []
+        if clip.get("windshieldHaze") is not None
+    }
+    if len(values) == 1:
+        return next(iter(values))
+    if len(values) > 1:
+        return "mixed"
+    return None
+
+
 def summarize_group_color_cast(clip_snapshots):
     values = set()
     for clip in clip_snapshots or []:
@@ -3234,6 +3385,7 @@ def build_groups_snapshot(
         log_profile = summarize_group_log_profile(entry["clipRequests"])
         orientation_status = summarize_group_orientation(entry["clipSnapshots"])
         lowlight = summarize_group_lowlight(entry["clipSnapshots"])
+        windshield_haze = summarize_group_windshield_haze(entry["clipSnapshots"])
         color_cast = summarize_group_color_cast(entry["clipSnapshots"])
         exposure_scene = summarize_group_exposure_scene(entry["clipSnapshots"])
         exposure_scene_addon_tag = summarize_group_exposure_scene_addon_tag(entry["clipSnapshots"])
@@ -3242,6 +3394,7 @@ def build_groups_snapshot(
             log_profile,
             orientation_status,
             lowlight,
+            windshield_haze,
             color_cast,
             exposure_scene,
             exposure_scene_addon_tag,
@@ -3257,6 +3410,7 @@ def build_groups_snapshot(
             "logProfile": log_profile,
             "orientationStatus": orientation_status,
             "lowlight": lowlight,
+            "windshieldHaze": windshield_haze,
             "colorCastClass": color_cast,
             "exposureSceneClass": exposure_scene,
             "postClipCreativeStatus": post_clip_creative_status,
@@ -3269,6 +3423,7 @@ def build_groups_snapshot(
                 "logProfile": log_profile,
                 "orientationStatus": orientation_status,
                 "lowlight": lowlight,
+                "windshieldHaze": windshield_haze,
                 "colorCastClass": color_cast,
                 "exposureSceneClass": exposure_scene,
                 "exposureSceneAddonTag": exposure_scene_addon_tag,
@@ -3301,6 +3456,8 @@ def build_clip_creative_summary(clip_request):
         addon_tag = "portrait-review"
     elif clip_request.get("lowlight") is True:
         addon_tag = "lowlight"
+    elif clip_request.get("windshieldHaze") is True:
+        addon_tag = "windshield-haze"
     elif should_group_color_cast(color_cast, clip_request.get("colorCastConfidence")):
         addon_tag = color_cast
     elif exposure_scene_addon_tag:
@@ -3318,6 +3475,7 @@ def build_group_creative_summary(
     log_profile,
     orientation_status,
     lowlight,
+    windshield_haze,
     color_cast=None,
     exposure_scene=None,
     exposure_scene_addon_tag=None,
@@ -3328,6 +3486,8 @@ def build_group_creative_summary(
         addon_tag = "portrait-review"
     elif lowlight == "lowlight":
         addon_tag = "lowlight"
+    elif windshield_haze == "windshield-haze":
+        addon_tag = "windshield-haze"
     elif color_cast in CCOLOR_CAST_GROUP_CLASSES:
         addon_tag = color_cast
     elif exposure_scene_addon_tag in CEXPOSURE_SCENE_REASON_GROUP_TAGS:

@@ -7,6 +7,17 @@
 
 ## 0. 2026-03-31 增补
 
+## 0.17 2026-07-05 DaVinci color 素材重链维护动作补记
+
+`/color` 素材重链正式从 `prepare_root` 中拆出为独立 same-machine maintenance action：
+
+- root 级动作为 `relink_media`，项目级动作为 `relink_all_roots`
+- `relink_media` 只加载现有 `${projectBrief.name} [Color]` Resolve 工程，核对 root namespace 与 root grading timeline，用当前项目配置的 `rawPath` 主/备选候选映射到当前可读 `rawLocalPath`，对该 namespace 内的文件型 MediaPoolItem 批量调用 Resolve `RelinkClips` 并 `SaveProject()`
+- 该动作只修复 Resolve 里已有素材引用，不导入新素材、不清空或重建 root bin、不重建 grading timeline、不改 clip repair graph、不改 Group Pre/Post-Clip 创作层、不导出 DRP，也不生成 Flow Plan/run record
+- `relink_media` 必须先通过 Resolve host preflight，但只要求 `rawLocalPath` 可读；当前输出 `localPath` 不在线时仍允许重链，因为 `localPath` 是 `execute_root` 的最终输出目标而不是 Resolve 源素材重链目标
+- `relink_all_roots` 按 enabled root priority 顺序串行执行 root relink，缺失 `rawLocalPath` 的 root 作为 per-root failure/skip 进入摘要，不阻塞其它可重链 root；任一 root 失败时整体 color job 仍应标记 failed
+- 返回摘要必须区分 media pool / timeline 的 relinked、missing target、unmapped、unreadable、old-path remaining 与 skipped non-file item，方便用户判断是盘符未挂载、路径候选不完整，还是 Resolve 工程中存在 compound/timeline 等非文件对象
+
 ## 0.16 2026-05-16 Span / Chronology 生成职责拆分补记
 
 当前 Analyze、Span 与 Chronology 的正式职责继续收窄：
@@ -140,15 +151,22 @@
 本轮冻结后的正式口径如下：
 
 - `Supervisor color` 的正式动作链扩展为：
+  - `relink_media`
   - `prepare_root`
   - `sync_groups`
   - `execute_root`
   - `sync_batch_metadata`
   - `sync_batch_sidecars`
   - `validate_batch`
+  - `relink_all_roots`
   - `prepare_all_roots`
   - `export_all_roots`
 - `/color` 官方路径继续不引入 agent；项目级批处理也是同一个 deterministic Supervisor color job
+- `relink_all_roots` 的正式合同是：
+  - 使用当前 `/color` read model 中 enabled roots 的正式 priority 顺序
+  - 顺序对每个 root 执行 `relink_media`
+  - 任一 root 失败时继续后续 roots
+  - 只要存在失败 root，整个 job 最终记为 failed
 - `prepare_all_roots` 的正式合同是：
   - 使用当前 `/color` read model 中 enabled roots 的正式 priority 顺序
   - 顺序对每个 root 执行 `prepare_root`
@@ -213,12 +231,16 @@
   - clip 级至少包含 `gyroEligible`、`gyroflowStatus`、`dehazeStatus`、`nrStatus`、`clipRepairStatus`、`layoutStatus`
 - 自动 Group 的正式分桶轴当前收口为：
   - `logProfile`
-  - first-match addon：`portrait-review -> lowlight -> 高置信 colorCastClass -> 明显 exposureSceneClass`
+  - first-match addon：`portrait-review -> lowlight -> windshield-haze -> 高置信 colorCastClass -> 明显 exposureSceneClass`
 - `gyro` 不再参与 Group 分桶；它正式回到 clip repair 层，只负责说明该 clip 是否需要 `Gyroflow shell`
 - `lowlight` 的正式合同当前收口为：
   - 来源：每条 clip 的中点单帧视觉分类
   - 语义：creative-first 标签，用于 Group creative 分桶，并次级提示 repair 默认态
   - 约束：不等价于“必须降噪”
+- `windshield-haze` 的正式合同当前收口为：
+  - 来源：显示态 proxy 的车内/前挡暗前景 + 压灰低对比亮度分布
+  - 语义：白天租车前挡/车膜灰雾 review addon，用于统一做车膜补偿
+  - 约束：不等价于普通色偏，也不自动开启 `Dehaze / NR`
 - `colorCastClass` 的正式合同当前收口为：
   - 来源：每条 clip 的廉价单帧 proxy 数值分类，默认取 clip 中点帧；若该 clip 能按 workspace profile/device 或 root `transformPresetKey` 解析到技术 LUT，则先用同路径 `.cube` 做 proxy 技术转换，再排除天空、高饱和、底部黄橙遮挡和曝光异常区域后估计中性像素偏移。强冷蓝偏移归入 `cool-cyan`，绿青混合偏移归入 `green-cyan`；`prepare_root` 还会对同一 root / 同一 log profile 内连续素材做轻量平滑，避免单个中点帧偏中性时把连续冷色路段切碎；已诊断为 `white-reference-underexposed` 的 clip 不参与这种弱连续性提升
   - 语义：用于把 `cool-cyan / green-cyan / green / warm / mixed` 色偏素材拆到独立 Group，方便 `Group Post-Clip` 做白平衡修正
@@ -368,7 +390,8 @@
   - 后处理动作可在 `manifest.json` 缺失但 `plan.json` 中所有最终输出都已存在时恢复 manifest；这是中断/旧失败 batch 的恢复路径，不允许对缺输出的 batch 伪造成功
 - 自动 Group 已退出 `colorspace / gamma / codec / resolution / fps` technical fingerprint 语义，改为纯创意 / review 标签：
   - `log`
-  - first-match addon：`portrait-review -> lowlight -> 高置信 colorCastClass -> 明显 exposureSceneClass`
+  - first-match addon：`portrait-review -> lowlight -> windshield-haze -> 高置信 colorCastClass -> 明显 exposureSceneClass`
+- `windshield-haze` 是行车前挡 / 劣质租车车膜灰雾 review addon：只有同时存在 driving POV 或前挡/仪表台前景证据，以及高光未爆、白参考被压灰、整体低对比发灰发暗的曝光特征时才分桶；它优先于普通 `colorCastClass`，避免车膜素材被 `cool-cyan / green-cyan` 切散，但仍只承担分组诊断，不自动开启 `Dehaze / NR`
 - `gyro` 已回到 clip repair 维度，不再参与 Group key 生成
 - `log` 的正式判定优先级为：
   1. 显式 sidecar 真值
@@ -415,7 +438,7 @@
   - 每个 container 可用的视频 codec
   - 是否支持 `AudioCodec`
   - 是否支持固定码率路径；当前 vendored host 只有在 Windows MP4/H.265 上把 Intel Quick Sync generated render preset XML 作为正式路径，非 Windows 仍优先使用公开 `VideoQuality`
-- `prepare_root / sync_groups / execute_root` 在真正触发 Resolve 变更前都必须先执行 preflight：
+- `relink_media / prepare_root / sync_groups / execute_root` 在真正触发 Resolve 变更前都必须先执行 preflight：
   - `blocked` 直接拒绝动作
   - `degraded` 允许进入已知兼容矩阵内的动作
   - `execute_root` 还必须在 Node 侧先校验当前 root `renderPreset` 是否受宿主支持

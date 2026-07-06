@@ -24,7 +24,9 @@ Kairos 当前需要区分两层：
 - 一条与主链解耦的 `DaVinci color` 独立增强链路
   - 当前已经有最小 `/color` 控制面与项目级 `color/` runtime/archive store
   - 当前 `/color` 会自动发现已配置 `rawPath` 的素材根，派生约定命名与阻塞状态
-  - 当前 `/color` 已支持同机 vendored Resolve backend 驱动的 color action 链：`prepare_root -> sync_groups -> execute_root -> sync_batch_metadata -> sync_batch_sidecars -> validate_batch -> prepare_all_roots -> export_all_roots`
+  - 当前 `/color` 已支持同机 vendored Resolve backend 驱动的 color action 链：`relink_media -> prepare_root -> sync_groups -> execute_root -> sync_batch_metadata -> sync_batch_sidecars -> validate_batch -> relink_all_roots -> prepare_all_roots -> export_all_roots`
+  - `relink_media` 是独立维护动作，只维护现有 `${projectBrief.name} [Color]` 中 root namespace 的素材路径引用：它把 root 的 `rawPath` 主/备选候选映射到当前可读 `rawLocalPath`，调用 Resolve `RelinkClips`，验证 root grading timeline 并 `SaveProject()`；它不导入 clips、不重建 grading timeline、不修改 repair node graph、不触碰 Group 创作层、不导出 DRP，也不要求当前输出 `localPath` 在线
+  - 自动 Group 以 `logProfile` 为前置轴，再按 `portrait-review -> lowlight -> windshield-haze -> 高置信 colorCastClass -> 明显 exposureSceneClass` 只选择一个 addon；`windshield-haze` 专门承载白天行车透过劣质租车前挡 / 车膜导致的低对比、发灰发暗素材，优先于普通冷青/绿青色偏拆组，且不自动开启 `Dehaze / NR`
   - 当前 `/color` 的长期用户配置已收口到 `config/project-brief.json` root mapping 上的最小 `color.renderPreset + color.colorSpaceProfile + color.transformPresetKey`
     - `color.renderPreset` 当前正式使用 `bitrateKbps`（单位 `kb/s`）；不再接受旧的 bitrate 别名字段
     - `color.colorSpaceProfile` 当前正式表示“技术输入类型”，不是 creative look，也不再承载 gamut/primaries 细节
@@ -43,9 +45,10 @@ Kairos 当前需要区分两层：
     - grading timeline 必须按该 root 的 dominant `(width, height, fps)` 规格创建
     - 自动 Group 只使用创意 / review 标签语义；`log` 是前置分组轴，后续 addon 只在同一 log bucket 内叠加，不跨 log 合并
     - `log` 先读显式 sidecar 真值，再回退 root `color.colorSpaceProfile`
-    - 当前每条 clip 在其 `logProfile` 下只选择一个最高优先级 addon：`portrait-review -> lowlight -> colorCastClass -> exposureSceneClass`
+    - 当前每条 clip 在其 `logProfile` 下只选择一个最高优先级 addon：`portrait-review -> lowlight -> windshield-haze -> colorCastClass -> exposureSceneClass`
     - `portrait-review` 当前由 `orientationStatus=portrait` 产生，用于把竖屏素材在当前 log 下拆出单独 Group 供人工 review；它不改变竖屏 repair/template 或横屏 timeline transform 规则
     - `lowlight` 当前正式由每条 clip 的中点单帧视觉分类产生，是 creative-first 标签，不是 noise-only 诊断
+    - `windshield-haze` 当前由显示态 proxy 的前挡/仪表台暗前景证据与压灰低对比亮度分布共同产生，用于把白天租车车膜灰雾素材单独拆组，优先于普通冷青/绿青色偏；它只是 review addon，不自动开启 `Dehaze / NR`
     - `colorCastClass` 当前由便宜的单帧 proxy 数值分类产生：默认取 clip 中点帧；若该 clip 能按 workspace profile/device 或 root `transformPresetKey` 解析到技术 LUT，则先用同路径 `.cube` 做 proxy 技术转换，再排除天空/高饱和/黄橙车头/曝光异常区域并估计中性像素偏移。强冷蓝中性偏移归入 `cool-cyan`，绿青混合中性偏移归入 `green-cyan`，且 `prepare_root` 会对同一 root / 同一 log profile 的连续素材做轻量平滑：夹在多个冷色锚点之间、且指标不冲突的短 clip 会跟随进入同一偏色分桶；已诊断为 `white-reference-underexposed` 的 clip 不参与这种弱连续性提升。它只表示需要单独白平衡/色偏处理的 `cool-cyan / green-cyan / green / warm / mixed` 分桶，不声称色偏原因一定是前挡膜；`neutral / unknown` 不参与分桶以避免 Group 爆炸
     - `exposureSceneClass` 当前由便宜的中点单帧 proxy 数值分类产生，并且必须基于解 log / 技术 LUT 后的 proxy 画面；只有明显 `high-contrast / overexposed / underexposed` 在未命中更高优先级 addon 时才参与分桶，`normal / unknown` 不参与分桶；`high-contrast` 也覆盖逆光/剪影或车内窗外这类高光面积可能较窄但亮暗尾部跨度很大的场景；`overexposed` 保持保守，只覆盖明确剪白或高亮面积/亮度明显偏高的画面，不再把泛洗白路面或高键灰雾画面批量纳入；`underexposed` 也覆盖雪景等低饱和高键白参考区域被压灰且无真实高光尾部的场景，metrics 需保留 `white-reference-underexposed` 诊断原因以及白参考覆盖率、目标 EV 提亮量、提亮后高光余量；该子类保持 `exposureSceneClass=underexposed`，但 Resolve Group addon 使用 `white-reference-underexposed`
     - `gyro` 正式回到 clip repair 维度；它只决定该 clip 的第 1 个 Gyro 节点是否默认/重申开启，不再参与 Group 分桶
@@ -90,7 +93,7 @@ Kairos 当前需要区分两层：
     - clip 侧至少镜像 `gyroEligible / gyroflowStatus / dehazeStatus / nrStatus / clipRepairStatus / layoutStatus / orientationStatus / repairTemplateKey / timelineTransform`
   - 当前 `/color` 进入页面或切换项目时会自动执行 Resolve host preflight，并把结果正式缓存到 `color/current.json.hostPreflight`
   - 当前 `/color` 会把 Resolve 工程同步快照落到项目内 `color/resolve-projects/<safe-project-name>/`；自动快照只在 root prepare 全部 chunks 完成后生成一次且默认只覆盖 `${Resolve项目名}.drp` 这个具名 latest 副本；手动 DRP 保存拆成 `覆盖最新` 与 `归档快照` 两种保存策略，前者只替换具名 latest，后者写入 `snapshots/<timestamp>...drp` 并刷新具名 latest；两者都会维护 `color/resolve-project-map.json`；外部 GUI 导出的 `.drp` 可登记为 latest archive entry
-  - 当前 `prepare_root / sync_groups / execute_root / prepare_all_roots / export_all_roots` 都先经过 preflight 守卫；宿主 blocked 或 render preset 不受支持时，动作会在 Resolve 变更前直接失败。`sync_batch_metadata / sync_batch_sidecars / validate_batch` 是 Node 侧 batch 后处理/校验动作，不需要 Resolve host preflight
+  - 当前 `relink_media / prepare_root / sync_groups / execute_root / relink_all_roots / prepare_all_roots / export_all_roots` 都先经过 preflight 守卫；宿主 blocked 或 render preset 不受支持时，动作会在 Resolve 变更前直接失败。`relink_media` 只要求当前 root 的 `rawLocalPath` 可读，不要求最终输出 `localPath` 在线；`sync_batch_metadata / sync_batch_sidecars / validate_batch` 是 Node 侧 batch 后处理/校验动作，不需要 Resolve host preflight
   - 当前成功重跑 `prepare_root` 会清理上一轮 Resolve host 短时崩溃留下的动作级 blocker；`color/current.json.blockingReasons` 不得在 root 已 `synced/ready` 时继续显示旧的 DRT import 等 transient 错误
   - 当前 color host 的正式兼容下限为 `DaVinci Resolve Studio >= 18.5`；低版本 / 非 Studio 是硬阻塞，部分兼容降级则显示为 `degraded`
   - 当前 host retry 只覆盖短时 host/app 故障，不覆盖缺配置、缺素材、render preset 不支持、validation fail 等语义错误
@@ -122,6 +125,7 @@ Kairos 当前需要区分两层：
     - `.xml/.gyroflow` 不参与 sidecar validation
   - 当前 `promote_batch` 已退出正式导出链；视频在 `execute_root` 渲染成功后成为 rendered batch，metadata / sidecar / validation 由用户在 `/color` 手动触发
   - 当前 `/color` 还正式提供项目级批处理入口：
+    - `Relink All Roots`：按当前 read model 的 enabled root priority 顺序依次执行 `relink_media`
     - `Prepare All Roots`：按当前 read model 的 enabled root priority 顺序依次执行 `prepare_root`
     - `Export All Roots`：按同一顺序依次执行 `execute_root`，每个 root 只完成 render all、最终 replace 和 manifest 记录；metadata / sidecar / validation 后处理由用户逐 root 手动触发
     - 项目级动作遇到单个 root 失败时继续后续 roots，但只要存在失败 root，整个 job 最终仍记为 failed
@@ -138,7 +142,7 @@ Kairos 当前需要区分两层：
 - 只要改动影响正式本地运行入口、Supervisor API、`/analyze`、`/style`、`/color` 或 `apps/kairos-console/`，验证就必须同时包含根仓 `pnpm build` 与 `npm --prefix apps/kairos-console run build`
 - 根仓 `pnpm build` 不能被视为已经覆盖 React console 产物；前端 bundle 必须显式重建
 - `素材分析` 与 `风格分析` 在当前控制台里直接以主路由展示监控，而不是再跳一次独立监控入口
-- `DaVinci color` 当前也已有独立主路由 `/color`，并已收口为最小 `renderPreset` 配置（含 `bitrateKbps` / `kb/s`）+ root/project 级 deterministic 控制面 + runtime/archive 状态面；正式顺序为 `Prepare Root -> Sync Groups -> Execute Root -> Validate`，并补充 `Prepare All Roots / Export All Roots`
+- `DaVinci color` 当前也已有独立主路由 `/color`，并已收口为最小 `renderPreset` 配置（含 `bitrateKbps` / `kb/s`）+ root/project 级 deterministic 控制面 + runtime/archive 状态面；正式顺序为 `Relink Media -> Prepare Root -> Sync Groups -> Execute Root -> Validate`，并补充 `Relink All Roots / Prepare All Roots / Export All Roots`
 - `/color` 当前还会主动暴露宿主诊断与 batch 归档，而不是把宿主问题和 validation 历史藏在动作失败或磁盘 JSON 里
 - 剪辑规则、风格来源配置与风格分析参考产物当前已收口为 **Workspace 级共享资产**，但职责已经拆开：
   - `config/edit-rules/*.md`：人工维护的正式 `剪辑规则` 库，也是唯一规则正文来源；规则列表由 markdown frontmatter / 文件名扫描得到

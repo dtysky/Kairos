@@ -301,6 +301,7 @@ async function runJob(
         throw new BlockedJobError(['color requires projectId']);
       }
       const action = toStringValue(args.action) as
+        | 'relink_media'
         | 'prepare_root'
         | 'sync_groups'
         | 'execute_root'
@@ -308,12 +309,13 @@ async function runJob(
         | 'sync_batch_sidecars'
         | 'validate_batch'
         | 'promote_batch'
+        | 'relink_all_roots'
         | 'prepare_all_roots'
         | 'export_all_roots'
         | 'save_drp_snapshot'
         | undefined;
       const rootId = toStringValue(args.rootId);
-      if (!rootId && !['prepare_all_roots', 'export_all_roots', 'save_drp_snapshot'].includes(action || '')) {
+      if (!rootId && !['relink_all_roots', 'prepare_all_roots', 'export_all_roots', 'save_drp_snapshot'].includes(action || '')) {
         throw new BlockedJobError(['color requires args.rootId for root-scoped actions']);
       }
       try {
@@ -333,7 +335,7 @@ async function runJob(
         });
         return {
           result,
-          finalStatus: ['prepare_all_roots', 'export_all_roots'].includes(action || '')
+          finalStatus: ['relink_all_roots', 'prepare_all_roots', 'export_all_roots'].includes(action || '')
             && Array.isArray(result.roots)
             && result.roots.some(root => root.status === 'failed')
             ? 'failed'

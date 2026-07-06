@@ -68,6 +68,30 @@ export interface IColorExecutorSyncGroupsInput {
 
 export interface IColorExecutorSyncGroupsResult extends IColorGroupsSnapshotFile {}
 
+export interface IColorExecutorRelinkMediaRoot {
+  rootId: string;
+  label?: string;
+  localPath: string;
+  candidates: string[];
+}
+
+export interface IColorExecutorRelinkMediaInput {
+  projectId: string;
+  rootId: string;
+  resolveProjectName: string;
+  rootNamespace: string;
+  gradingTimelineName: string;
+  roots: IColorExecutorRelinkMediaRoot[];
+}
+
+export interface IColorExecutorRelinkMediaResult {
+  resolveProjectName: string;
+  rootNamespace: string;
+  gradingTimelineName: string;
+  createdAt: string;
+  hostSummary?: Record<string, unknown>;
+}
+
 export interface IColorExecutorClipInput {
   rawRelativePath: string;
   sourceAbsolutePath: string;
@@ -101,6 +125,9 @@ export interface IColorExecutorClipInput {
   logProfile?: EColorSourceProfile;
   gyroEligible?: boolean;
   lowlight?: boolean;
+  windshieldHaze?: boolean;
+  windshieldHazeConfidence?: number;
+  windshieldHazeMetrics?: Record<string, unknown>;
   colorCastClass?: EColorCastClass;
   colorCastConfidence?: number;
   colorCastMetrics?: Record<string, unknown>;
@@ -178,6 +205,7 @@ export interface IColorExecutorSaveDrpSnapshotResult {
 
 export interface IColorExecutor {
   preflight(input?: IColorExecutorPreflightInput): Promise<IColorExecutorPreflightResult>;
+  relinkMedia(input: IColorExecutorRelinkMediaInput): Promise<IColorExecutorRelinkMediaResult>;
   prepareRoot(input: IColorExecutorPrepareRootInput): Promise<IColorExecutorPrepareRootResult>;
   syncGroups(input: IColorExecutorSyncGroupsInput): Promise<IColorExecutorSyncGroupsResult>;
   executeRoot(input: IColorExecutorExecuteRootInput): Promise<IColorExecutorExecuteRootResult>;
@@ -252,6 +280,13 @@ export class PythonResolveColorExecutor implements IColorExecutor {
     });
   }
 
+  async relinkMedia(input: IColorExecutorRelinkMediaInput): Promise<IColorExecutorRelinkMediaResult> {
+    return this.runRequest<IColorExecutorRelinkMediaResult>({
+      operation: 'relink_color_media',
+      input,
+    });
+  }
+
   async syncGroups(input: IColorExecutorSyncGroupsInput): Promise<IColorExecutorSyncGroupsResult> {
     return this.runRequest<IColorExecutorSyncGroupsResult>({
       operation: 'sync_groups',
@@ -274,7 +309,7 @@ export class PythonResolveColorExecutor implements IColorExecutor {
   }
 
   private async runRequest<T>(payload: {
-    operation: 'preflight' | 'prepare_root' | 'sync_groups' | 'execute_root' | 'save_drp_snapshot';
+    operation: 'preflight' | 'relink_color_media' | 'prepare_root' | 'sync_groups' | 'execute_root' | 'save_drp_snapshot';
     input: unknown;
   }): Promise<T> {
     const pythonPath = resolveColorPythonInvocation(this.config);

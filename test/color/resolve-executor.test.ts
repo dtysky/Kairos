@@ -154,6 +154,65 @@ describe('PythonResolveColorExecutor', () => {
     expect(result.timelineStatus).toBe('ready');
   });
 
+  it('writes a structured relink_color_media request and parses JSON stdout', async () => {
+    const backend = await createVendoredBackendRoot('kairos-resolve-executor-relink-color-');
+    const executor = new PythonResolveColorExecutor(
+      {
+        backendRoot: backend.backendRoot,
+      },
+      async (_file, args, options) => {
+        expect(options).not.toHaveProperty(boundedWaitOption);
+        const requestPath = String(args[2]);
+        const request = JSON.parse(await readFile(requestPath, 'utf-8')) as {
+          operation: string;
+          input: {
+            resolveProjectName: string;
+            rootNamespace: string;
+            gradingTimelineName: string;
+            roots: Array<{ rootId: string; localPath: string; candidates: string[] }>;
+          };
+        };
+        expect(request.operation).toBe('relink_color_media');
+        expect(request.input.resolveProjectName).toBe('kairos__project-color');
+        expect(request.input.rootNamespace).toBe('root__root-camera');
+        expect(request.input.gradingTimelineName).toBe('root__root-camera__grading');
+        expect(request.input.roots[0]).toEqual({
+          rootId: 'root-camera',
+          localPath: '/tmp/raw-camera',
+          candidates: ['/tmp/raw-camera', '/old/raw-camera'],
+        });
+        return {
+          stdout: JSON.stringify({
+            resolveProjectName: request.input.resolveProjectName,
+            rootNamespace: request.input.rootNamespace,
+            gradingTimelineName: request.input.gradingTimelineName,
+            createdAt: '2026-07-05T10:00:00.000Z',
+            hostSummary: {
+              relinked: 2,
+            },
+          }),
+          stderr: '',
+        };
+      },
+    );
+
+    const result = await executor.relinkMedia({
+      projectId: 'project-color',
+      rootId: 'root-camera',
+      resolveProjectName: 'kairos__project-color',
+      rootNamespace: 'root__root-camera',
+      gradingTimelineName: 'root__root-camera__grading',
+      roots: [{
+        rootId: 'root-camera',
+        localPath: '/tmp/raw-camera',
+        candidates: ['/tmp/raw-camera', '/old/raw-camera'],
+      }],
+    });
+
+    expect(result.rootNamespace).toBe('root__root-camera');
+    expect(result.hostSummary?.relinked).toBe(2);
+  });
+
   it('passes optional latestFilename through save_drp_snapshot requests', async () => {
     const backend = await createVendoredBackendRoot('kairos-resolve-executor-dpr-latest-');
     const executor = new PythonResolveColorExecutor(

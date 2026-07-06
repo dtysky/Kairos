@@ -1337,6 +1337,9 @@ export type EColorBatchSelectionMode = z.infer<typeof EColorBatchSelectionMode>;
 export const EColorGroupLowlightStatus = z.enum(['base', 'lowlight', 'mixed']);
 export type EColorGroupLowlightStatus = z.infer<typeof EColorGroupLowlightStatus>;
 
+export const EColorGroupWindshieldHazeStatus = z.enum(['base', 'windshield-haze', 'mixed']);
+export type EColorGroupWindshieldHazeStatus = z.infer<typeof EColorGroupWindshieldHazeStatus>;
+
 export const EColorCastClass = z.enum(['neutral', 'cool-cyan', 'green-cyan', 'green', 'warm', 'mixed', 'unknown']);
 export type EColorCastClass = z.infer<typeof EColorCastClass>;
 
@@ -1385,6 +1388,9 @@ export const IColorClipRepairSnapshot = z.object({
   displayName: z.string().optional(),
   logProfile: z.string().optional(),
   lowlight: z.boolean().optional(),
+  windshieldHaze: z.boolean().optional(),
+  windshieldHazeConfidence: z.number().min(0).max(1).optional(),
+  windshieldHazeMetrics: z.record(z.unknown()).default({}),
   colorCastClass: EColorCastClass.optional(),
   colorCastConfidence: z.number().min(0).max(1).optional(),
   colorCastMetrics: z.record(z.unknown()).default({}),
@@ -1515,6 +1521,7 @@ export const IColorGroupCurrent = z.object({
   logProfile: z.string().optional(),
   orientationStatus: EColorClipOrientationStatus.optional(),
   lowlight: EColorGroupLowlightStatus.optional(),
+  windshieldHaze: EColorGroupWindshieldHazeStatus.optional(),
   colorCastClass: EColorCastClass.optional(),
   exposureSceneClass: EColorExposureSceneClass.optional(),
   postClipCreativeStatus: EColorGroupPostClipCreativeStatus.optional(),
@@ -1564,6 +1571,7 @@ export const IColorGroupSnapshot = z.object({
   logProfile: z.string().optional(),
   orientationStatus: EColorClipOrientationStatus.optional(),
   lowlight: EColorGroupLowlightStatus.optional(),
+  windshieldHaze: EColorGroupWindshieldHazeStatus.optional(),
   colorCastClass: EColorCastClass.optional(),
   exposureSceneClass: EColorExposureSceneClass.optional(),
   postClipCreativeStatus: EColorGroupPostClipCreativeStatus.optional(),

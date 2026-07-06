@@ -837,8 +837,9 @@ describe('resolve color host clip layout helpers', () => {
     });
 
     expect(result.ok).toBe(true);
+    const expectedWindowsQsv = process.platform === 'win32';
     expect(result.result).toMatchObject({
-      subtype: 'hvc1_enc',
+      subtype: expectedWindowsQsv ? 'hvc1_qsv' : 'hvc1_enc',
       prefix: '',
       suffix: '',
       usePrefixAndSuffixFromSrc: '1',
@@ -853,7 +854,7 @@ describe('resolve color host clip layout helpers', () => {
       datarate: '30000',
       encoderMap: {
         rc: 'CBR',
-        preset: 'balanced',
+        preset: expectedWindowsQsv ? 'balance' : 'balanced',
         bitrate: '30000',
       },
     });
@@ -1127,6 +1128,7 @@ describe('resolve color host clip layout helpers', () => {
     await expect(buildCreativeSummary({
       logProfile: 'rec709',
       lowlight: true,
+      windshieldHaze: true,
       colorCastClass: 'cool-cyan',
       colorCastConfidence: 0.8,
       exposureSceneClass: 'overexposed',
@@ -1134,6 +1136,19 @@ describe('resolve color host clip layout helpers', () => {
     })).resolves.toEqual({
       creativeTags: ['rec709', 'lowlight'],
       displayName: 'rec709 + lowlight',
+    });
+
+    await expect(buildCreativeSummary({
+      logProfile: 'slog3',
+      lowlight: false,
+      windshieldHaze: true,
+      colorCastClass: 'cool-cyan',
+      colorCastConfidence: 0.8,
+      exposureSceneClass: 'underexposed',
+      exposureSceneConfidence: 0.8,
+    })).resolves.toEqual({
+      creativeTags: ['slog3', 'windshield-haze'],
+      displayName: 'slog3 + windshield-haze',
     });
 
     await expect(buildCreativeSummary({

@@ -1198,7 +1198,7 @@ function ColorPage({
         <WorkflowPrompt
           eyebrow="Current Scope"
           title="当前 color 已支持 vendored Resolve backend 闭环入口"
-          body="现在可以在 `/color` 同页维护所有 Root 的 render preset，并按 `Prepare Root -> Sync Groups -> Execute -> Validate` 触发单 root 闭环，或按 `Prepare All Roots / Export All Roots` 触发项目级顺序批处理。"
+          body="现在可以在 `/color` 同页维护所有 Root 的 render preset，并按 `Relink Media -> Prepare Root -> Sync Groups -> Execute -> Validate` 触发单 root 闭环，或按 `Relink All Roots / Prepare All Roots / Export All Roots` 触发项目级顺序批处理。"
           tone="accent"
           detail={colorCapabilityDetail}
         />
