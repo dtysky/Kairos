@@ -2812,12 +2812,12 @@ function pickConsoleProjectId(projects, jobs, storedProjectId) {
   if (!projects.length) {
     return '';
   }
+  if (storedProjectId && projects.some(project => project.projectId === storedProjectId)) {
+    return storedProjectId;
+  }
   const activeProjectId = pickLatestActiveProjectId(projects, jobs);
   if (activeProjectId) {
     return activeProjectId;
-  }
-  if (storedProjectId && projects.some(project => project.projectId === storedProjectId)) {
-    return storedProjectId;
   }
   return projects[0]?.projectId || '';
 }

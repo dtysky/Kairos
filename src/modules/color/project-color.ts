@@ -1864,12 +1864,13 @@ export async function executeProjectColorRoot(
       };
     });
   } catch (error) {
-    const reason = error instanceof Error ? error.message : String(error);
-    await failColorAction(context.projectRoot, context.rootId, progressPath, action, [reason], {
+    const failure = describeColorHostFailure(error);
+    await failColorAction(context.projectRoot, context.rootId, progressPath, action, failure.blockers, {
       projectId: input.projectId,
       rootId,
       batchId,
       outputRoot,
+      hostFailure: failure.hostSummary,
     }, {
       suppressProgress: input.suppressProgress,
     });
@@ -1879,8 +1880,12 @@ export async function executeProjectColorRoot(
       latestBatchStatus: 'failed',
       latestValidationStatus: 'pending',
       pendingPromoteBatchId: undefined,
+      hostSummary: {
+        ...(isPlainObject(current.hostSummary) ? current.hostSummary : {}),
+        latestExecuteFailure: failure.hostSummary,
+      },
     }));
-    throw error;
+    throw new ProjectColorBlockedError(failure.blockers);
   }
 
   const manifestEntries = await Promise.all(
@@ -3091,6 +3096,7 @@ function filterPersistentColorBlockers(blockers: string[]): string[] {
     && !blocker.includes('render preset')
     && !blocker.includes('Unable to set render settings')
     && !blocker.includes('Unable to queue render job')
+    && !blocker.includes('Resolve queued a render job that is not using Source Name filenames')
     && !blocker.includes('Unable to locate rendered output')
     && !blocker.includes('Temporary render timeline')
     && !blocker.includes('Resolve Render Queue is not empty')
@@ -4688,6 +4694,71 @@ function mapHostErrorToPreflight(error: ResolveColorHostError): IColorHostPrefli
       supportsVideoQuality: false,
     },
   };
+}
+
+function describeColorHostFailure(error: unknown): {
+  blockers: string[];
+  hostSummary: Record<string, unknown>;
+} {
+  const message = error instanceof Error ? error.message : String(error);
+  if (!(error instanceof ResolveColorHostError)) {
+    return {
+      blockers: [message],
+      hostSummary: {
+        at: new Date().toISOString(),
+        message,
+      },
+    };
+  }
+
+  const payload = isPlainObject(error.details) ? error.details : {};
+  const hostDetails = isPlainObject(payload.details) ? payload.details : {};
+  const outputFilename = readStringField(hostDetails, 'outputFilename');
+  const firstOutputFilename = readStringField(hostDetails, 'firstOutputFilename');
+  const expectedFilenames = readStringArrayField(hostDetails, 'expectedSourceNameFilenames');
+  const expectedStems = readStringArrayField(hostDetails, 'expectedSourceNameStems');
+  const expectedFilenameSamples = expectedFilenames.slice(0, 8);
+  const expectedStemSamples = expectedStems.slice(0, 8);
+  const diagnosticParts = [
+    outputFilename ? `queue OutputFilename=${outputFilename}` : '',
+    firstOutputFilename && firstOutputFilename !== outputFilename ? `first=${firstOutputFilename}` : '',
+    expectedFilenameSamples.length > 0
+      ? `expected=${expectedFilenameSamples.join(', ')}${expectedFilenames.length > expectedFilenameSamples.length ? ` (+${expectedFilenames.length - expectedFilenameSamples.length})` : ''}`
+      : '',
+    expectedFilenameSamples.length === 0 && expectedStemSamples.length > 0
+      ? `expected stems=${expectedStemSamples.join(', ')}${expectedStems.length > expectedStemSamples.length ? ` (+${expectedStems.length - expectedStemSamples.length})` : ''}`
+      : '',
+  ].filter(Boolean);
+  const blocker = diagnosticParts.length > 0
+    ? `${error.message} (${diagnosticParts.join('; ')})`
+    : error.message;
+
+  return {
+    blockers: [blocker],
+    hostSummary: {
+      at: new Date().toISOString(),
+      code: error.code,
+      message: error.message,
+      outputFilename,
+      firstOutputFilename,
+      expectedSourceNameFilenameCount: expectedFilenames.length,
+      expectedSourceNameFilenameSamples: expectedFilenameSamples,
+      expectedSourceNameStemCount: expectedStems.length,
+      expectedSourceNameStemSamples: expectedStemSamples,
+    },
+  };
+}
+
+function readStringField(object: Record<string, unknown>, key: string): string | undefined {
+  const value = object[key];
+  return typeof value === 'string' && value.trim() ? value : undefined;
+}
+
+function readStringArrayField(object: Record<string, unknown>, key: string): string[] {
+  const value = object[key];
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is string => typeof item === 'string' && Boolean(item.trim()));
 }
 
 function extractHostErrorStrings(details: unknown, key: string): string[] {

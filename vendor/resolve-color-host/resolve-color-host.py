@@ -5669,13 +5669,10 @@ def assert_render_job_uses_source_names(project, job_id, clips):
     output_filename = stringify_signal_value(target_job.get("OutputFilename"))
     if not output_filename:
         return
-    first_output = output_filename.split(" and more", 1)[0].strip()
-    expected_filenames = {
-        stringify_signal_value(clip.get("normalizedOutputFilename")).lower()
-        for clip in clips
-        if stringify_signal_value(clip.get("normalizedOutputFilename"))
-    }
-    if first_output.lower() in expected_filenames:
+    first_output = extract_render_job_first_output_filename(output_filename)
+    expected_filenames = collect_render_job_expected_filenames(clips)
+    expected_stems = collect_render_job_expected_stems(clips)
+    if render_job_output_matches_source_name(first_output, expected_filenames, expected_stems):
         return
     raise HostError(
         "resolve_render_job_filename_mode_failed",
@@ -5683,9 +5680,54 @@ def assert_render_job_uses_source_names(project, job_id, clips):
         {
             "jobId": job_id,
             "outputFilename": output_filename,
+            "firstOutputFilename": first_output,
             "expectedSourceNameFilenames": sorted(expected_filenames),
+            "expectedSourceNameStems": sorted(expected_stems),
         },
     )
+
+
+def extract_render_job_first_output_filename(output_filename):
+    text = stringify_signal_value(output_filename).strip()
+    if not text:
+        return ""
+    # Resolve returns a UI display string here. Recent Windows builds may include
+    # English counts ("C0001.mp4 and 24 more") or Chinese localization
+    # ("C0001.mp4 及更多") for multi-clip Source Name jobs.
+    text = re.sub(r"\s+and(?:\s+\d+)?\s+more\s*$", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"\s+及更多\s*$", "", text)
+    return text.strip()
+
+
+def collect_render_job_expected_filenames(clips):
+    return {
+        stringify_signal_value(clip.get("normalizedOutputFilename")).lower()
+        for clip in clips
+        if stringify_signal_value(clip.get("normalizedOutputFilename"))
+    }
+
+
+def collect_render_job_expected_stems(clips):
+    return {
+        stringify_signal_value(clip.get("sourceStem")).lower()
+        or Path(stringify_signal_value(clip.get("normalizedOutputFilename"))).stem.lower()
+        for clip in clips
+        if stringify_signal_value(clip.get("sourceStem"))
+        or stringify_signal_value(clip.get("normalizedOutputFilename"))
+    }
+
+
+def render_job_output_matches_source_name(first_output, expected_filenames, expected_stems):
+    candidate = stringify_signal_value(first_output).replace("\\", "/").strip()
+    if not candidate:
+        return True
+    candidate_name = candidate.rsplit("/", 1)[-1].strip()
+    candidate_lower = candidate_name.lower()
+    if candidate_lower in expected_filenames:
+        return True
+    candidate_stem = Path(candidate_name).stem.lower()
+    has_candidate_extension = bool(Path(candidate_name).suffix)
+    return not has_candidate_extension and candidate_stem in expected_stems
 
 
 def set_root_render_settings(project, settings):

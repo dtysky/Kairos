@@ -2051,14 +2051,17 @@ export function ColorCurrentSummary({
         show={exportAllDialog}
         title="确认 Export All Roots"
         width={560}
+        showClose
+        closeOnClickBg
         cancel={() => setExportAllDialog(false)}
-        footer={(
-          <>
+        actions={(
+          <div className="actions modal-actions">
             <Button type="default" onClick={() => setExportAllDialog(false)}>
               取消
             </Button>
             <Button
-              type="primary"
+              type={canRunProjectColorAction('export_all_roots', rootCards, capability, liveColorJobs, busy, onRunColorAction) ? 'primary' : 'disabled'}
+              disabled={!canRunProjectColorAction('export_all_roots', rootCards, capability, liveColorJobs, busy, onRunColorAction)}
               onClick={() => {
                 setExportAllDialog(false);
                 onRunColorAction?.({ action: 'export_all_roots' });
@@ -2066,7 +2069,7 @@ export function ColorCurrentSummary({
             >
               确认统一导出
             </Button>
-          </>
+          </div>
         )}
       >
         <div className="stack-list">
@@ -3127,6 +3130,8 @@ function normalizeColorBlockers(value) {
     item.includes('resolveColorPythonPath')
     || item.includes('resolveColorScriptApiRoot')
     || item.includes('config/runtime.json')
+    || item.includes('Resolve queued a render job that is not using Source Name filenames')
+    || item.includes('Unable to locate rendered output')
   ));
 }
 

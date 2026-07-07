@@ -826,6 +826,88 @@ describe('resolve color host clip layout helpers', () => {
     });
   });
 
+  it('accepts Resolve queue Source Name display variants for multi-clip jobs', async () => {
+    const countedMoreResult = await inspectRenderExportHelper({
+      mode: 'queue_settings',
+      targetDir: join(getTestOutputRoot(), 'day7'),
+      queueOutputFilename: 'C1610.mp4 and 2 more',
+      renderFormat: {
+        format: 'MP4',
+        videoCodec: 'H265',
+        extension: 'mp4',
+        audioCodec: 'aac',
+        bitrateKbps: 30000,
+      },
+      clips: [
+        {
+          rawRelativePath: 'day7/C1610.MP4',
+          sourceStem: 'C1610',
+          normalizedOutputFilename: 'C1610.mp4',
+          width: 3840,
+          height: 2160,
+          fps: 30,
+        },
+        {
+          rawRelativePath: 'day7/C1611.MP4',
+          sourceStem: 'C1611',
+          normalizedOutputFilename: 'C1611.mp4',
+          width: 3840,
+          height: 2160,
+          fps: 30,
+        },
+      ],
+    });
+    expect(countedMoreResult.ok).toBe(true);
+
+    const stemOnlyResult = await inspectRenderExportHelper({
+      mode: 'queue_settings',
+      targetDir: join(getTestOutputRoot(), 'day7'),
+      queueOutputFilename: 'C1610 and 2 more',
+      renderFormat: {
+        format: 'MP4',
+        videoCodec: 'H265',
+        extension: 'mp4',
+        audioCodec: 'aac',
+        bitrateKbps: 30000,
+      },
+      clips: [
+        {
+          rawRelativePath: 'day7/C1610.MP4',
+          sourceStem: 'C1610',
+          normalizedOutputFilename: 'C1610.mp4',
+          width: 3840,
+          height: 2160,
+          fps: 30,
+        },
+      ],
+    });
+    expect(stemOnlyResult.ok).toBe(true);
+
+    const localizedMoreResult = await inspectRenderExportHelper({
+      mode: 'queue_settings',
+      targetDir: join(getTestOutputRoot(), 'day7'),
+      queueOutputFilename: 'C1610.mp4 及更多',
+      renderFormat: {
+        format: 'MP4',
+        videoCodec: 'H265',
+        extension: 'mp4',
+        audioCodec: 'aac',
+        bitrateKbps: 30000,
+      },
+      clips: [
+        {
+          rawRelativePath: 'day7/C1610.MP4',
+          sourceStem: 'C1610',
+          normalizedOutputFilename: 'C1610.mp4',
+          width: 3840,
+          height: 2160,
+          fps: 30,
+        },
+      ],
+    });
+    expect(localizedMoreResult.ok).toBe(true);
+  });
+
   it('generates clean Resolve render preset XML from Kairos config', async () => {
     const result = await inspectRenderExportHelper({
       mode: 'generate_preset_xml',

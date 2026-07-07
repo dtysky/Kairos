@@ -479,6 +479,7 @@ function filterLegacyResolveRuntimeBlockers(values: string[]): string[] {
       || normalized.includes('resolveColorScriptApiRoot')
       || normalized.includes('config/runtime.json')
       || normalized.includes('Unable to set render settings')
+      || normalized.includes('Resolve queued a render job that is not using Source Name filenames')
       || normalized.includes('Unable to locate rendered output')
     );
   });

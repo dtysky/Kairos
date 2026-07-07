@@ -1439,6 +1439,113 @@ describe('project color actions', () => {
     expect(savedRoot?.currentJobId).toBeUndefined();
   });
 
+  it('keeps Resolve render queue filename diagnostics when execute_root fails', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-color-execute-host-filename-diagnostics';
+    const { projectRoot, rootId } = await seedSingleRootProject({
+      workspaceRoot,
+      projectId,
+      projectName: 'Project Color Execute Host Filename Diagnostics',
+      rawFiles: ['day1/A001.mov'],
+    });
+
+    mockColorMetadata();
+    await prepareProjectColorRoot({
+      workspaceRoot,
+      projectId,
+      rootId,
+      executor: createFakeExecutor(),
+    });
+
+    await expect(executeProjectColorRoot({
+      workspaceRoot,
+      projectId,
+      rootId,
+      action: 'execute_root',
+      jobId: 'job-color-execute-host-filename-diagnostics',
+      executor: createFakeExecutor({
+        onExecuteRoot: async () => {
+          throw new ResolveColorHostError({
+            code: 'resolve_render_job_filename_mode_failed',
+            message: 'Resolve queued a render job that is not using Source Name filenames.',
+            requestPath: '/tmp/request.json',
+            details: {
+              code: 'resolve_render_job_filename_mode_failed',
+              message: 'Resolve queued a render job that is not using Source Name filenames.',
+              details: {
+                outputFilename: '00000000.mp4 and 2 more',
+                firstOutputFilename: '00000000.mp4',
+                expectedSourceNameFilenames: ['A001.mp4', 'A002.mp4'],
+                expectedSourceNameStems: ['A001', 'A002'],
+              },
+            },
+          });
+        },
+      }),
+    })).rejects.toThrow('queue OutputFilename=00000000.mp4 and 2 more');
+
+    const savedRoot = (await loadColorCurrent(projectRoot)).roots.find(root => root.rootId === rootId);
+    expect(savedRoot?.blockingReasons[0]).toContain('queue OutputFilename=00000000.mp4 and 2 more');
+    expect(savedRoot?.blockingReasons[0]).toContain('expected=A001.mp4, A002.mp4');
+    expect(savedRoot?.hostSummary.latestExecuteFailure).toMatchObject({
+      code: 'resolve_render_job_filename_mode_failed',
+      outputFilename: '00000000.mp4 and 2 more',
+      firstOutputFilename: '00000000.mp4',
+      expectedSourceNameFilenameCount: 2,
+      expectedSourceNameFilenameSamples: ['A001.mp4', 'A002.mp4'],
+    });
+
+    const progress = JSON.parse(await readFile(join(projectRoot, '.tmp', 'color', 'progress.json'), 'utf-8'));
+    expect(progress.detail).toContain('queue OutputFilename=00000000.mp4 and 2 more');
+    expect(progress.extra.hostFailure).toMatchObject({
+      code: 'resolve_render_job_filename_mode_failed',
+      outputFilename: '00000000.mp4 and 2 more',
+    });
+  });
+
+  it('clears stale Source Name render blockers after a successful execute_root rerun', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-color-clears-source-name-render-blocker';
+    const { projectRoot, rootId } = await seedSingleRootProject({
+      workspaceRoot,
+      projectId,
+      projectName: 'Project Color Clears Source Name Render Blocker',
+      rawFiles: ['day1/A001.mov'],
+    });
+
+    mockColorMetadata();
+    await prepareProjectColorRoot({
+      workspaceRoot,
+      projectId,
+      rootId,
+      executor: createFakeExecutor(),
+    });
+
+    const currentBefore = await loadColorCurrent(projectRoot);
+    await saveColorCurrent(projectRoot, {
+      ...currentBefore,
+      roots: currentBefore.roots.map(root => root.rootId === rootId
+        ? {
+            ...root,
+            blockingReasons: ['Resolve queued a render job that is not using Source Name filenames.'],
+          }
+        : root),
+    });
+
+    await executeProjectColorRoot({
+      workspaceRoot,
+      projectId,
+      rootId,
+      action: 'execute_root',
+      jobId: 'job-color-clears-source-name-render-blocker',
+      executor: createFakeExecutor(),
+    });
+
+    const savedRoot = (await loadColorCurrent(projectRoot)).roots.find(root => root.rootId === rootId);
+    expect(savedRoot?.latestBatchStatus).toBe('rendered');
+    expect(savedRoot?.blockingReasons).toEqual([]);
+  });
+
   it('blocks prepare_root when rawLocalPath is missing', async () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-color-blocked';

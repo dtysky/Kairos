@@ -133,6 +133,7 @@ describe('color workspace state', () => {
           mirrorStatus: 'synced',
           timelineStatus: 'ready',
           groupSyncStatus: 'ready',
+          blockingReasons: ['Resolve queued a render job that is not using Source Name filenames.'],
           groups: [{
             groupKey: 'group-day',
             status: 'running',
