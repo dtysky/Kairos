@@ -1,18 +1,18 @@
 {
-  "updatedAt": "2026-07-03T07:55:46.163Z",
+  "updatedAt": "2026-07-06T17:01:46.278Z",
   "projects": {
     "端午河北之旅：此生初次入太行 [Color]": {
       "projectName": "端午河北之旅：此生初次入太行 [Color]",
       "safeProjectName": "Color",
       "latestSnapshot": {
         "projectName": "端午河北之旅：此生初次入太行 [Color]",
-        "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/hebei-dragon-boat-first-taihang/color/resolve-projects/Color/端午河北之旅：此生初次入太行 [Color].drp",
-        "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/hebei-dragon-boat-first-taihang/color/resolve-projects/Color/端午河北之旅：此生初次入太行 [Color].drp",
-        "createdAt": "2026-07-03T07:55:45Z",
+        "snapshotPath": "H:\\SacredGrove\\Kairos\\projects\\hebei-dragon-boat-first-taihang\\color\\resolve-projects\\Color\\端午河北之旅：此生初次入太行 [Color].drp",
+        "latestPath": "H:\\SacredGrove\\Kairos\\projects\\hebei-dragon-boat-first-taihang\\color\\resolve-projects\\Color\\端午河北之旅：此生初次入太行 [Color].drp",
+        "createdAt": "2026-07-06T17:01:45Z",
         "mode": "manual",
         "retention": "latest-only",
-        "action": "prepare_root",
-        "rootId": "root-draft-1783061376899-n2h35d",
+        "action": "manual",
+        "rootId": "root-draft-1783061298065-caen03",
         "database": {
           "DbType": "Disk",
           "DbName": "Local Database"
@@ -20,7 +20,7 @@
         "detail": "save_drp_snapshot exported withStillsAndLUTs=false retention=latest-only"
       },
       "snapshots": [],
-      "updatedAt": "2026-07-03T07:55:46.163Z"
+      "updatedAt": "2026-07-06T17:01:46.278Z"
     }
   }
 }

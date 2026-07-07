@@ -1,0 +1,4743 @@
+{
+  "schemaVersion": "2.0",
+  "status": "draft",
+  "generatedAt": "2026-07-07T16:34:31.884Z",
+  "updatedAt": "2026-07-07T16:34:31.884Z",
+  "inputsHash": "df1f43fa1214390991af4cfd8741b7c5c7eb4670c8fe110a46e15e0cd4bceb3a",
+  "assetIndex": [
+    {
+      "assetId": "C1976_zve1_day1",
+      "sortCapturedAt": "2026-06-17T15:29:20.000Z"
+    },
+    {
+      "assetId": "C1977_zve1_day1",
+      "sortCapturedAt": "2026-06-17T15:29:30.000Z"
+    },
+    {
+      "assetId": "C1978_zve1_day1",
+      "sortCapturedAt": "2026-06-17T15:33:56.000Z"
+    },
+    {
+      "assetId": "C1979_zve1_day1",
+      "sortCapturedAt": "2026-06-17T15:34:18.000Z"
+    },
+    {
+      "assetId": "C1980_zve1_day1",
+      "sortCapturedAt": "2026-06-17T15:52:01.000Z"
+    },
+    {
+      "assetId": "C1981_zve1_day1",
+      "sortCapturedAt": "2026-06-17T16:19:52.000Z"
+    },
+    {
+      "assetId": "C1982_zve1_day1",
+      "sortCapturedAt": "2026-06-17T16:20:01.000Z"
+    },
+    {
+      "assetId": "C1983_zve1_day1",
+      "sortCapturedAt": "2026-06-17T16:22:40.000Z"
+    },
+    {
+      "assetId": "C1984_zve1_day1",
+      "sortCapturedAt": "2026-06-18T00:30:25.000Z"
+    },
+    {
+      "assetId": "C1985_zve1_day1",
+      "sortCapturedAt": "2026-06-18T00:51:17.000Z"
+    },
+    {
+      "assetId": "C1986_zve1_day1",
+      "sortCapturedAt": "2026-06-18T01:00:15.000Z"
+    },
+    {
+      "assetId": "C1987_zve1_day1",
+      "sortCapturedAt": "2026-06-18T01:04:04.000Z"
+    },
+    {
+      "assetId": "C1988_zve1_day1",
+      "sortCapturedAt": "2026-06-18T01:04:37.000Z"
+    },
+    {
+      "assetId": "C1989_zve1_day1",
+      "sortCapturedAt": "2026-06-18T01:04:48.000Z"
+    },
+    {
+      "assetId": "C1990_zve1_day1",
+      "sortCapturedAt": "2026-06-18T01:26:47.000Z"
+    },
+    {
+      "assetId": "C1993_zve1_day1",
+      "sortCapturedAt": "2026-06-18T02:17:03.000Z"
+    },
+    {
+      "assetId": "C1994_zve1_day1",
+      "sortCapturedAt": "2026-06-18T02:20:57.000Z"
+    },
+    {
+      "assetId": "C1995_zve1_day1",
+      "sortCapturedAt": "2026-06-18T02:22:52.000Z"
+    },
+    {
+      "assetId": "C1996_zve1_day1",
+      "sortCapturedAt": "2026-06-18T02:26:06.000Z"
+    },
+    {
+      "assetId": "C1997_zve1_day1",
+      "sortCapturedAt": "2026-06-18T02:42:31.000Z"
+    },
+    {
+      "assetId": "C1999_zve1_day1",
+      "sortCapturedAt": "2026-06-18T02:47:26.000Z"
+    },
+    {
+      "assetId": "C2000_zve1_day1",
+      "sortCapturedAt": "2026-06-18T02:48:13.000Z"
+    },
+    {
+      "assetId": "C2001_zve1_day1",
+      "sortCapturedAt": "2026-06-18T02:48:19.000Z"
+    },
+    {
+      "assetId": "C2002_zve1_day1",
+      "sortCapturedAt": "2026-06-18T02:50:42.000Z"
+    },
+    {
+      "assetId": "C2003_zve1_day1",
+      "sortCapturedAt": "2026-06-18T02:54:22.000Z"
+    },
+    {
+      "assetId": "DSC09256_photos",
+      "sortCapturedAt": "2026-06-18T02:55:25.000Z"
+    },
+    {
+      "assetId": "DSC09258_photos",
+      "sortCapturedAt": "2026-06-18T02:56:05.000Z"
+    },
+    {
+      "assetId": "DSC09259_photos",
+      "sortCapturedAt": "2026-06-18T02:56:21.000Z"
+    },
+    {
+      "assetId": "C2004_zve1_day1",
+      "sortCapturedAt": "2026-06-18T02:56:38.000Z"
+    },
+    {
+      "assetId": "C2005_zve1_day1",
+      "sortCapturedAt": "2026-06-18T02:59:14.000Z"
+    },
+    {
+      "assetId": "DSC09262_photos",
+      "sortCapturedAt": "2026-06-18T02:59:35.000Z"
+    },
+    {
+      "assetId": "C2006_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:00:58.000Z"
+    },
+    {
+      "assetId": "C2007_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:02:38.000Z"
+    },
+    {
+      "assetId": "C2008_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:03:48.000Z"
+    },
+    {
+      "assetId": "C2009_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:04:13.000Z"
+    },
+    {
+      "assetId": "C2010_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:05:04.000Z"
+    },
+    {
+      "assetId": "DSC09265_photos",
+      "sortCapturedAt": "2026-06-18T03:05:45.000Z"
+    },
+    {
+      "assetId": "DSC09266_photos",
+      "sortCapturedAt": "2026-06-18T03:05:59.000Z"
+    },
+    {
+      "assetId": "C2011_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:06:10.000Z"
+    },
+    {
+      "assetId": "C2012_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:07:30.000Z"
+    },
+    {
+      "assetId": "C2013_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:07:44.000Z"
+    },
+    {
+      "assetId": "C2014_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:08:28.000Z"
+    },
+    {
+      "assetId": "DSC09269_photos",
+      "sortCapturedAt": "2026-06-18T03:08:45.000Z"
+    },
+    {
+      "assetId": "DSC09270_photos",
+      "sortCapturedAt": "2026-06-18T03:08:51.000Z"
+    },
+    {
+      "assetId": "C2015_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:09:34.000Z"
+    },
+    {
+      "assetId": "C2016_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:09:46.000Z"
+    },
+    {
+      "assetId": "C2017_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:09:59.000Z"
+    },
+    {
+      "assetId": "C2018_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:19:22.000Z"
+    },
+    {
+      "assetId": "C2019_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:20:15.000Z"
+    },
+    {
+      "assetId": "DSC09271_photos",
+      "sortCapturedAt": "2026-06-18T03:20:57.000Z"
+    },
+    {
+      "assetId": "C2020_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:21:15.000Z"
+    },
+    {
+      "assetId": "C2021_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:22:45.000Z"
+    },
+    {
+      "assetId": "C2022_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:26:27.000Z"
+    },
+    {
+      "assetId": "C2023_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:26:55.000Z"
+    },
+    {
+      "assetId": "C2024_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:28:03.000Z"
+    },
+    {
+      "assetId": "C2025_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:28:15.000Z"
+    },
+    {
+      "assetId": "C2026_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:28:38.000Z"
+    },
+    {
+      "assetId": "C2027_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:30:31.000Z"
+    },
+    {
+      "assetId": "DSC09275_photos",
+      "sortCapturedAt": "2026-06-18T03:31:03.000Z"
+    },
+    {
+      "assetId": "C2028_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:31:41.000Z"
+    },
+    {
+      "assetId": "C2029_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:31:51.000Z"
+    },
+    {
+      "assetId": "DSC09276_photos",
+      "sortCapturedAt": "2026-06-18T03:33:00.000Z"
+    },
+    {
+      "assetId": "C2030_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:33:16.000Z"
+    },
+    {
+      "assetId": "C2031_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:33:47.000Z"
+    },
+    {
+      "assetId": "DSC09279_photos",
+      "sortCapturedAt": "2026-06-18T03:35:37.000Z"
+    },
+    {
+      "assetId": "C2033_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:36:38.000Z"
+    },
+    {
+      "assetId": "C2034_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:37:00.000Z"
+    },
+    {
+      "assetId": "DSC09281_photos",
+      "sortCapturedAt": "2026-06-18T03:39:09.000Z"
+    },
+    {
+      "assetId": "DSC09282_photos",
+      "sortCapturedAt": "2026-06-18T03:39:50.000Z"
+    },
+    {
+      "assetId": "DSC09284_photos",
+      "sortCapturedAt": "2026-06-18T03:41:14.000Z"
+    },
+    {
+      "assetId": "C2035_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:41:25.000Z"
+    },
+    {
+      "assetId": "C2036_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:41:45.000Z"
+    },
+    {
+      "assetId": "DSC09287_photos",
+      "sortCapturedAt": "2026-06-18T03:42:42.000Z"
+    },
+    {
+      "assetId": "DSC09290_photos",
+      "sortCapturedAt": "2026-06-18T03:46:00.000Z"
+    },
+    {
+      "assetId": "C2037_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:46:36.000Z"
+    },
+    {
+      "assetId": "C2038_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:47:41.000Z"
+    },
+    {
+      "assetId": "C2039_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:48:17.000Z"
+    },
+    {
+      "assetId": "C2040_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:48:45.000Z"
+    },
+    {
+      "assetId": "DSC09292_photos",
+      "sortCapturedAt": "2026-06-18T03:49:11.000Z"
+    },
+    {
+      "assetId": "DSC09293_photos",
+      "sortCapturedAt": "2026-06-18T03:49:31.000Z"
+    },
+    {
+      "assetId": "DSC09294_photos",
+      "sortCapturedAt": "2026-06-18T03:49:55.000Z"
+    },
+    {
+      "assetId": "C2041_zve1_day1",
+      "sortCapturedAt": "2026-06-18T03:50:55.000Z"
+    },
+    {
+      "assetId": "DSC09296_photos",
+      "sortCapturedAt": "2026-06-18T03:58:20.000Z"
+    },
+    {
+      "assetId": "DSC09297_photos",
+      "sortCapturedAt": "2026-06-18T03:58:56.000Z"
+    },
+    {
+      "assetId": "C2042_zve1_day1",
+      "sortCapturedAt": "2026-06-18T04:31:53.000Z"
+    },
+    {
+      "assetId": "C2045_zve1_day1",
+      "sortCapturedAt": "2026-06-18T07:58:21.000Z"
+    },
+    {
+      "assetId": "C2046_zve1_day1",
+      "sortCapturedAt": "2026-06-18T08:00:43.000Z"
+    },
+    {
+      "assetId": "C2047_zve1_day1",
+      "sortCapturedAt": "2026-06-18T08:03:34.000Z"
+    },
+    {
+      "assetId": "C2048_zve1_day1",
+      "sortCapturedAt": "2026-06-18T08:04:29.000Z"
+    },
+    {
+      "assetId": "C2049_zve1_day1",
+      "sortCapturedAt": "2026-06-18T08:05:15.000Z"
+    },
+    {
+      "assetId": "C2050_zve1_day1",
+      "sortCapturedAt": "2026-06-18T08:05:51.000Z"
+    },
+    {
+      "assetId": "DSC00236_photos",
+      "sortCapturedAt": "2026-06-18T08:07:36.000Z"
+    },
+    {
+      "assetId": "C2051_zve1_day1",
+      "sortCapturedAt": "2026-06-18T08:08:27.000Z"
+    },
+    {
+      "assetId": "C2052_zve1_day1",
+      "sortCapturedAt": "2026-06-18T08:10:00.000Z"
+    },
+    {
+      "assetId": "C2053_zve1_day1",
+      "sortCapturedAt": "2026-06-18T08:10:34.000Z"
+    },
+    {
+      "assetId": "C2054_zve1_day1",
+      "sortCapturedAt": "2026-06-18T08:37:46.000Z"
+    },
+    {
+      "assetId": "C2055_zve1_day1",
+      "sortCapturedAt": "2026-06-18T08:39:47.000Z"
+    },
+    {
+      "assetId": "C2056_zve1_day1",
+      "sortCapturedAt": "2026-06-18T08:42:37.000Z"
+    },
+    {
+      "assetId": "C2057_zve1_day1",
+      "sortCapturedAt": "2026-06-18T08:45:11.000Z"
+    },
+    {
+      "assetId": "C2058_zve1_day1",
+      "sortCapturedAt": "2026-06-18T08:48:27.000Z"
+    },
+    {
+      "assetId": "C2059_zve1_day1",
+      "sortCapturedAt": "2026-06-18T08:58:15.000Z"
+    },
+    {
+      "assetId": "C2060_zve1_day1",
+      "sortCapturedAt": "2026-06-18T09:05:00.000Z"
+    },
+    {
+      "assetId": "C2061_zve1_day1",
+      "sortCapturedAt": "2026-06-18T09:05:45.000Z"
+    },
+    {
+      "assetId": "C2062_zve1_day1",
+      "sortCapturedAt": "2026-06-18T09:12:13.000Z"
+    },
+    {
+      "assetId": "DSC09302_photos",
+      "sortCapturedAt": "2026-06-18T09:12:23.000Z"
+    },
+    {
+      "assetId": "C2063_zve1_day1",
+      "sortCapturedAt": "2026-06-18T09:28:43.000Z"
+    },
+    {
+      "assetId": "C2064_zve1_day1",
+      "sortCapturedAt": "2026-06-18T09:37:47.000Z"
+    },
+    {
+      "assetId": "C2065_zve1_day1",
+      "sortCapturedAt": "2026-06-18T09:38:12.000Z"
+    },
+    {
+      "assetId": "DSC00288_photos",
+      "sortCapturedAt": "2026-06-18T09:39:15.000Z"
+    },
+    {
+      "assetId": "C2066_zve1_day1",
+      "sortCapturedAt": "2026-06-18T09:39:25.000Z"
+    },
+    {
+      "assetId": "C2067_zve1_day1",
+      "sortCapturedAt": "2026-06-18T09:40:07.000Z"
+    },
+    {
+      "assetId": "C2068_zve1_day1",
+      "sortCapturedAt": "2026-06-18T09:41:06.000Z"
+    },
+    {
+      "assetId": "C2069_zve1_day1",
+      "sortCapturedAt": "2026-06-18T10:19:36.000Z"
+    },
+    {
+      "assetId": "C2070_zve1_day1",
+      "sortCapturedAt": "2026-06-18T10:19:49.000Z"
+    },
+    {
+      "assetId": "C2071_zve1_day1",
+      "sortCapturedAt": "2026-06-18T10:20:34.000Z"
+    },
+    {
+      "assetId": "DSC09306_photos",
+      "sortCapturedAt": "2026-06-18T10:21:09.000Z"
+    },
+    {
+      "assetId": "C2072_zve1_day1",
+      "sortCapturedAt": "2026-06-18T10:25:22.000Z"
+    },
+    {
+      "assetId": "C2073_zve1_day1",
+      "sortCapturedAt": "2026-06-18T10:31:33.000Z"
+    },
+    {
+      "assetId": "C2074_zve1_day1",
+      "sortCapturedAt": "2026-06-18T10:41:38.000Z"
+    },
+    {
+      "assetId": "C2075_zve1_day1",
+      "sortCapturedAt": "2026-06-18T10:41:57.000Z"
+    },
+    {
+      "assetId": "C2076_zve1_day1",
+      "sortCapturedAt": "2026-06-18T10:42:40.000Z"
+    },
+    {
+      "assetId": "DSC09307_photos",
+      "sortCapturedAt": "2026-06-18T10:43:27.000Z"
+    },
+    {
+      "assetId": "DSC09308_photos",
+      "sortCapturedAt": "2026-06-18T10:43:29.000Z"
+    },
+    {
+      "assetId": "C2077_zve1_day1",
+      "sortCapturedAt": "2026-06-18T10:44:14.000Z"
+    },
+    {
+      "assetId": "DSC09309_photos",
+      "sortCapturedAt": "2026-06-18T10:44:32.000Z"
+    },
+    {
+      "assetId": "C2078_zve1_day1",
+      "sortCapturedAt": "2026-06-18T10:45:37.000Z"
+    },
+    {
+      "assetId": "C2079_zve1_day1",
+      "sortCapturedAt": "2026-06-18T10:45:43.000Z"
+    },
+    {
+      "assetId": "C2080_zve1_day1",
+      "sortCapturedAt": "2026-06-18T10:46:43.000Z"
+    },
+    {
+      "assetId": "C2081_zve1_day1",
+      "sortCapturedAt": "2026-06-18T10:46:48.000Z"
+    },
+    {
+      "assetId": "DSC09320_photos",
+      "sortCapturedAt": "2026-06-18T10:49:22.000Z"
+    },
+    {
+      "assetId": "C2082_zve1_day1",
+      "sortCapturedAt": "2026-06-18T10:50:26.000Z"
+    },
+    {
+      "assetId": "C2083_zve1_day1",
+      "sortCapturedAt": "2026-06-18T10:50:29.000Z"
+    },
+    {
+      "assetId": "DSC09325_photos",
+      "sortCapturedAt": "2026-06-18T10:50:52.000Z"
+    },
+    {
+      "assetId": "C2084_zve1_day1",
+      "sortCapturedAt": "2026-06-18T10:51:19.000Z"
+    },
+    {
+      "assetId": "DSC09328_photos",
+      "sortCapturedAt": "2026-06-18T10:52:11.000Z"
+    },
+    {
+      "assetId": "DSC09329_photos",
+      "sortCapturedAt": "2026-06-18T10:52:27.000Z"
+    },
+    {
+      "assetId": "C2085_zve1_day1",
+      "sortCapturedAt": "2026-06-18T10:52:44.000Z"
+    },
+    {
+      "assetId": "C2086_zve1_day1",
+      "sortCapturedAt": "2026-06-18T10:53:12.000Z"
+    },
+    {
+      "assetId": "DSC09331_photos",
+      "sortCapturedAt": "2026-06-18T10:53:44.000Z"
+    },
+    {
+      "assetId": "C2087_zve1_day1",
+      "sortCapturedAt": "2026-06-18T10:54:23.000Z"
+    },
+    {
+      "assetId": "C2088_zve1_day1",
+      "sortCapturedAt": "2026-06-18T10:55:42.000Z"
+    },
+    {
+      "assetId": "C2089_zve1_day1",
+      "sortCapturedAt": "2026-06-18T10:55:49.000Z"
+    },
+    {
+      "assetId": "DSC09336_photos",
+      "sortCapturedAt": "2026-06-18T10:56:51.000Z"
+    },
+    {
+      "assetId": "DSC09337_photos",
+      "sortCapturedAt": "2026-06-18T10:58:21.000Z"
+    },
+    {
+      "assetId": "DSC09339_photos",
+      "sortCapturedAt": "2026-06-18T10:59:08.000Z"
+    },
+    {
+      "assetId": "DJI_20260618190728_0825_D_drone",
+      "sortCapturedAt": "2026-06-18T11:07:29.000Z"
+    },
+    {
+      "assetId": "DJI_20260618190823_0826_D_drone",
+      "sortCapturedAt": "2026-06-18T11:08:23.000Z"
+    },
+    {
+      "assetId": "DJI_20260618190847_0830_D_drone",
+      "sortCapturedAt": "2026-06-18T11:08:47.000Z"
+    },
+    {
+      "assetId": "DJI_20260618190928_0836_D-HDR_photos",
+      "sortCapturedAt": "2026-06-18T11:09:28.000Z"
+    },
+    {
+      "assetId": "DJI_20260618190940_0837_D_drone",
+      "sortCapturedAt": "2026-06-18T11:09:41.000Z"
+    },
+    {
+      "assetId": "DJI_20260618191038_0841_D_drone",
+      "sortCapturedAt": "2026-06-18T11:10:38.000Z"
+    },
+    {
+      "assetId": "DJI_20260618191103_0845_D_drone",
+      "sortCapturedAt": "2026-06-18T11:11:04.000Z"
+    },
+    {
+      "assetId": "DJI_20260618191210_0849_D_drone",
+      "sortCapturedAt": "2026-06-18T11:12:11.000Z"
+    },
+    {
+      "assetId": "DJI_20260618191232_0850_D_drone",
+      "sortCapturedAt": "2026-06-18T11:12:32.000Z"
+    },
+    {
+      "assetId": "DJI_20260618191538_0860_D_drone",
+      "sortCapturedAt": "2026-06-18T11:15:38.000Z"
+    },
+    {
+      "assetId": "DJI_20260618191620_0861_D_drone",
+      "sortCapturedAt": "2026-06-18T11:16:21.000Z"
+    },
+    {
+      "assetId": "DJI_20260618191639_0862_D_drone",
+      "sortCapturedAt": "2026-06-18T11:16:39.000Z"
+    },
+    {
+      "assetId": "DJI_20260618191730_0863_D_drone",
+      "sortCapturedAt": "2026-06-18T11:17:30.000Z"
+    },
+    {
+      "assetId": "DJI_20260618191816_0864_D-HDR_photos",
+      "sortCapturedAt": "2026-06-18T11:18:16.000Z"
+    },
+    {
+      "assetId": "DJI_20260618191932_0881_D-HDR_photos",
+      "sortCapturedAt": "2026-06-18T11:19:32.000Z"
+    },
+    {
+      "assetId": "DJI_20260618192200_0885_D_drone",
+      "sortCapturedAt": "2026-06-18T11:22:00.000Z"
+    },
+    {
+      "assetId": "C2090_zve1_day1",
+      "sortCapturedAt": "2026-06-18T11:23:09.000Z"
+    },
+    {
+      "assetId": "C2091_zve1_day1",
+      "sortCapturedAt": "2026-06-18T11:23:26.000Z"
+    },
+    {
+      "assetId": "DJI_20260618192337_0892_D_drone",
+      "sortCapturedAt": "2026-06-18T11:23:38.000Z"
+    },
+    {
+      "assetId": "DSC09340_photos",
+      "sortCapturedAt": "2026-06-18T11:24:13.000Z"
+    },
+    {
+      "assetId": "C2092_zve1_day1",
+      "sortCapturedAt": "2026-06-18T11:25:32.000Z"
+    },
+    {
+      "assetId": "C2093_zve1_day1",
+      "sortCapturedAt": "2026-06-18T11:25:35.000Z"
+    },
+    {
+      "assetId": "DSC09343_photos",
+      "sortCapturedAt": "2026-06-18T11:26:43.000Z"
+    },
+    {
+      "assetId": "DSC09346_photos",
+      "sortCapturedAt": "2026-06-18T11:27:32.000Z"
+    },
+    {
+      "assetId": "C2094_zve1_day1",
+      "sortCapturedAt": "2026-06-18T11:28:00.000Z"
+    },
+    {
+      "assetId": "DSC09348_photos",
+      "sortCapturedAt": "2026-06-18T11:28:36.000Z"
+    },
+    {
+      "assetId": "C2095_zve1_day1",
+      "sortCapturedAt": "2026-06-18T11:29:27.000Z"
+    },
+    {
+      "assetId": "C2096_zve1_day1",
+      "sortCapturedAt": "2026-06-18T11:30:06.000Z"
+    },
+    {
+      "assetId": "C2097_zve1_day1",
+      "sortCapturedAt": "2026-06-18T11:30:15.000Z"
+    },
+    {
+      "assetId": "DSC09357_photos",
+      "sortCapturedAt": "2026-06-18T11:48:01.000Z"
+    },
+    {
+      "assetId": "C2098_zve1_day1",
+      "sortCapturedAt": "2026-06-18T11:51:45.000Z"
+    },
+    {
+      "assetId": "C2099_zve1_day1",
+      "sortCapturedAt": "2026-06-18T11:52:06.000Z"
+    },
+    {
+      "assetId": "C2100_zve1_day1",
+      "sortCapturedAt": "2026-06-18T12:09:51.000Z"
+    },
+    {
+      "assetId": "C2101_zve1_day1",
+      "sortCapturedAt": "2026-06-18T12:31:42.000Z"
+    },
+    {
+      "assetId": "C2103_zve1_day1",
+      "sortCapturedAt": "2026-06-18T13:37:37.000Z"
+    },
+    {
+      "assetId": "C2104_zve1_day1",
+      "sortCapturedAt": "2026-06-18T13:38:21.000Z"
+    },
+    {
+      "assetId": "C2105_zve1_day1",
+      "sortCapturedAt": "2026-06-18T15:16:09.000Z"
+    },
+    {
+      "assetId": "C2106_zve1_day1",
+      "sortCapturedAt": "2026-06-18T15:51:32.000Z"
+    },
+    {
+      "assetId": "C2107_zve1_day1",
+      "sortCapturedAt": "2026-06-18T15:57:24.000Z"
+    },
+    {
+      "assetId": "C2108_zve1_day2",
+      "sortCapturedAt": "2026-06-18T16:25:55.000Z"
+    },
+    {
+      "assetId": "C2109_zve1_day2",
+      "sortCapturedAt": "2026-06-19T00:45:13.000Z"
+    },
+    {
+      "assetId": "C2110_zve1_day2",
+      "sortCapturedAt": "2026-06-19T00:46:55.000Z"
+    },
+    {
+      "assetId": "C2111_zve1_day2",
+      "sortCapturedAt": "2026-06-19T00:47:09.000Z"
+    },
+    {
+      "assetId": "C2112_zve1_day2",
+      "sortCapturedAt": "2026-06-19T00:47:21.000Z"
+    },
+    {
+      "assetId": "C2113_zve1_day2",
+      "sortCapturedAt": "2026-06-19T00:47:36.000Z"
+    },
+    {
+      "assetId": "C2114_zve1_day2",
+      "sortCapturedAt": "2026-06-19T00:53:23.000Z"
+    },
+    {
+      "assetId": "C2115_zve1_day2",
+      "sortCapturedAt": "2026-06-19T02:20:47.000Z"
+    },
+    {
+      "assetId": "C2116_zve1_day2",
+      "sortCapturedAt": "2026-06-19T02:37:22.000Z"
+    },
+    {
+      "assetId": "C2117_zve1_day2",
+      "sortCapturedAt": "2026-06-19T03:14:50.000Z"
+    },
+    {
+      "assetId": "C2118_zve1_day2",
+      "sortCapturedAt": "2026-06-19T03:16:56.000Z"
+    },
+    {
+      "assetId": "C2119_zve1_day2",
+      "sortCapturedAt": "2026-06-19T03:24:46.000Z"
+    },
+    {
+      "assetId": "C2120_zve1_day2",
+      "sortCapturedAt": "2026-06-19T03:32:33.000Z"
+    },
+    {
+      "assetId": "C2121_zve1_day2",
+      "sortCapturedAt": "2026-06-19T03:33:30.000Z"
+    },
+    {
+      "assetId": "C2122_zve1_day2",
+      "sortCapturedAt": "2026-06-19T03:47:26.000Z"
+    },
+    {
+      "assetId": "C2123_zve1_day2",
+      "sortCapturedAt": "2026-06-19T04:43:19.000Z"
+    },
+    {
+      "assetId": "C2124_zve1_day2",
+      "sortCapturedAt": "2026-06-19T04:44:59.000Z"
+    },
+    {
+      "assetId": "C2125_zve1_day2",
+      "sortCapturedAt": "2026-06-19T04:50:13.000Z"
+    },
+    {
+      "assetId": "C2126_zve1_day2",
+      "sortCapturedAt": "2026-06-19T04:53:29.000Z"
+    },
+    {
+      "assetId": "C2127_zve1_day2",
+      "sortCapturedAt": "2026-06-19T04:55:41.000Z"
+    },
+    {
+      "assetId": "C2128_zve1_day2",
+      "sortCapturedAt": "2026-06-19T05:00:03.000Z"
+    },
+    {
+      "assetId": "DJI_20260619130752_0893_D_drone",
+      "sortCapturedAt": "2026-06-19T05:07:53.000Z"
+    },
+    {
+      "assetId": "DJI_20260619130930_0898_D-HDR_photos",
+      "sortCapturedAt": "2026-06-19T05:09:30.000Z"
+    },
+    {
+      "assetId": "DJI_20260619131644_0910_D_drone",
+      "sortCapturedAt": "2026-06-19T05:16:45.000Z"
+    },
+    {
+      "assetId": "DJI_20260619131725_0911_D-HDR_photos",
+      "sortCapturedAt": "2026-06-19T05:17:25.000Z"
+    },
+    {
+      "assetId": "C2129_zve1_day2",
+      "sortCapturedAt": "2026-06-19T05:17:45.000Z"
+    },
+    {
+      "assetId": "DJI_20260619131842_0917_D-HDR_photos",
+      "sortCapturedAt": "2026-06-19T05:18:42.000Z"
+    },
+    {
+      "assetId": "DJI_20260619132400_0920_D-HDR_photos",
+      "sortCapturedAt": "2026-06-19T05:24:00.000Z"
+    },
+    {
+      "assetId": "C2134_zve1_day2",
+      "sortCapturedAt": "2026-06-19T06:34:15.000Z"
+    },
+    {
+      "assetId": "C2136_zve1_day2",
+      "sortCapturedAt": "2026-06-19T06:55:51.000Z"
+    },
+    {
+      "assetId": "C2138_zve1_day2",
+      "sortCapturedAt": "2026-06-19T07:34:24.000Z"
+    },
+    {
+      "assetId": "C2139_zve1_day2",
+      "sortCapturedAt": "2026-06-19T07:40:02.000Z"
+    },
+    {
+      "assetId": "C2140_zve1_day2",
+      "sortCapturedAt": "2026-06-19T07:40:14.000Z"
+    },
+    {
+      "assetId": "C2141_zve1_day2",
+      "sortCapturedAt": "2026-06-19T07:41:46.000Z"
+    },
+    {
+      "assetId": "C2142_zve1_day2",
+      "sortCapturedAt": "2026-06-19T07:42:24.000Z"
+    },
+    {
+      "assetId": "C2143_zve1_day2",
+      "sortCapturedAt": "2026-06-19T07:44:31.000Z"
+    },
+    {
+      "assetId": "C2145_zve1_day2",
+      "sortCapturedAt": "2026-06-19T07:45:04.000Z"
+    },
+    {
+      "assetId": "C2146_zve1_day2",
+      "sortCapturedAt": "2026-06-19T07:48:17.000Z"
+    },
+    {
+      "assetId": "C2147_zve1_day2",
+      "sortCapturedAt": "2026-06-19T07:49:27.000Z"
+    },
+    {
+      "assetId": "C2148_zve1_day2",
+      "sortCapturedAt": "2026-06-19T07:49:53.000Z"
+    },
+    {
+      "assetId": "C2149_zve1_day2",
+      "sortCapturedAt": "2026-06-19T07:50:10.000Z"
+    },
+    {
+      "assetId": "C2150_zve1_day2",
+      "sortCapturedAt": "2026-06-19T07:52:26.000Z"
+    },
+    {
+      "assetId": "C2151_zve1_day2",
+      "sortCapturedAt": "2026-06-19T08:15:28.000Z"
+    },
+    {
+      "assetId": "C2152_zve1_day2",
+      "sortCapturedAt": "2026-06-19T08:15:40.000Z"
+    },
+    {
+      "assetId": "DSC09413_photos",
+      "sortCapturedAt": "2026-06-19T08:16:07.000Z"
+    },
+    {
+      "assetId": "DSC09414_photos",
+      "sortCapturedAt": "2026-06-19T08:16:30.000Z"
+    },
+    {
+      "assetId": "C2153_zve1_day2",
+      "sortCapturedAt": "2026-06-19T08:19:17.000Z"
+    },
+    {
+      "assetId": "C2154_zve1_day2",
+      "sortCapturedAt": "2026-06-19T08:20:11.000Z"
+    },
+    {
+      "assetId": "C2155_zve1_day2",
+      "sortCapturedAt": "2026-06-19T08:20:17.000Z"
+    },
+    {
+      "assetId": "C2156_zve1_day2",
+      "sortCapturedAt": "2026-06-19T08:22:41.000Z"
+    },
+    {
+      "assetId": "C2157_zve1_day2",
+      "sortCapturedAt": "2026-06-19T08:22:48.000Z"
+    },
+    {
+      "assetId": "C2158_zve1_day2",
+      "sortCapturedAt": "2026-06-19T08:26:34.000Z"
+    },
+    {
+      "assetId": "C2159_zve1_day2",
+      "sortCapturedAt": "2026-06-19T08:34:34.000Z"
+    },
+    {
+      "assetId": "DSC09422_photos",
+      "sortCapturedAt": "2026-06-19T08:35:08.000Z"
+    },
+    {
+      "assetId": "DSC03952_photos",
+      "sortCapturedAt": "2026-06-19T08:36:52.000Z"
+    },
+    {
+      "assetId": "C2160_zve1_day2",
+      "sortCapturedAt": "2026-06-19T08:38:04.000Z"
+    },
+    {
+      "assetId": "DSC09426_photos",
+      "sortCapturedAt": "2026-06-19T08:38:48.000Z"
+    },
+    {
+      "assetId": "DSC09427_photos",
+      "sortCapturedAt": "2026-06-19T08:39:06.000Z"
+    },
+    {
+      "assetId": "DSC09428_photos",
+      "sortCapturedAt": "2026-06-19T08:39:13.000Z"
+    },
+    {
+      "assetId": "DSC09429_photos",
+      "sortCapturedAt": "2026-06-19T08:39:54.000Z"
+    },
+    {
+      "assetId": "DSC03954_photos",
+      "sortCapturedAt": "2026-06-19T08:40:53.000Z"
+    },
+    {
+      "assetId": "C2161_zve1_day2",
+      "sortCapturedAt": "2026-06-19T08:42:12.000Z"
+    },
+    {
+      "assetId": "C2162_zve1_day2",
+      "sortCapturedAt": "2026-06-19T08:43:53.000Z"
+    },
+    {
+      "assetId": "DSC09430_photos",
+      "sortCapturedAt": "2026-06-19T08:44:29.000Z"
+    },
+    {
+      "assetId": "DSC09431_photos",
+      "sortCapturedAt": "2026-06-19T08:45:10.000Z"
+    },
+    {
+      "assetId": "DSC09433_photos",
+      "sortCapturedAt": "2026-06-19T08:45:25.000Z"
+    },
+    {
+      "assetId": "DSC09434_photos",
+      "sortCapturedAt": "2026-06-19T08:45:48.000Z"
+    },
+    {
+      "assetId": "DSC09435_photos",
+      "sortCapturedAt": "2026-06-19T08:45:58.000Z"
+    },
+    {
+      "assetId": "C2163_zve1_day2",
+      "sortCapturedAt": "2026-06-19T08:46:12.000Z"
+    },
+    {
+      "assetId": "C2164_zve1_day2",
+      "sortCapturedAt": "2026-06-19T08:46:24.000Z"
+    },
+    {
+      "assetId": "DSC09436_photos",
+      "sortCapturedAt": "2026-06-19T08:48:11.000Z"
+    },
+    {
+      "assetId": "DSC09437_photos",
+      "sortCapturedAt": "2026-06-19T08:48:17.000Z"
+    },
+    {
+      "assetId": "DSC09439_photos",
+      "sortCapturedAt": "2026-06-19T08:49:33.000Z"
+    },
+    {
+      "assetId": "C2165_zve1_day2",
+      "sortCapturedAt": "2026-06-19T08:51:21.000Z"
+    },
+    {
+      "assetId": "DSC09441_photos",
+      "sortCapturedAt": "2026-06-19T08:51:37.000Z"
+    },
+    {
+      "assetId": "C2166_zve1_day2",
+      "sortCapturedAt": "2026-06-19T08:55:34.000Z"
+    },
+    {
+      "assetId": "DSC09443_photos",
+      "sortCapturedAt": "2026-06-19T08:56:16.000Z"
+    },
+    {
+      "assetId": "C2167_zve1_day2",
+      "sortCapturedAt": "2026-06-19T08:58:25.000Z"
+    },
+    {
+      "assetId": "DSC09446_photos",
+      "sortCapturedAt": "2026-06-19T08:59:16.000Z"
+    },
+    {
+      "assetId": "C2168_zve1_day2",
+      "sortCapturedAt": "2026-06-19T08:59:24.000Z"
+    },
+    {
+      "assetId": "C2169_zve1_day2",
+      "sortCapturedAt": "2026-06-19T09:00:24.000Z"
+    },
+    {
+      "assetId": "DSC09448_photos",
+      "sortCapturedAt": "2026-06-19T09:02:10.000Z"
+    },
+    {
+      "assetId": "C2170_zve1_day2",
+      "sortCapturedAt": "2026-06-19T09:03:31.000Z"
+    },
+    {
+      "assetId": "DSC09449_photos",
+      "sortCapturedAt": "2026-06-19T09:03:56.000Z"
+    },
+    {
+      "assetId": "DSC09451_photos",
+      "sortCapturedAt": "2026-06-19T09:05:14.000Z"
+    },
+    {
+      "assetId": "C2171_zve1_day2",
+      "sortCapturedAt": "2026-06-19T09:05:37.000Z"
+    },
+    {
+      "assetId": "DSC09452_photos",
+      "sortCapturedAt": "2026-06-19T09:08:56.000Z"
+    },
+    {
+      "assetId": "C2172_zve1_day2",
+      "sortCapturedAt": "2026-06-19T09:09:00.000Z"
+    },
+    {
+      "assetId": "DSC09453_photos",
+      "sortCapturedAt": "2026-06-19T09:11:36.000Z"
+    },
+    {
+      "assetId": "C2173_zve1_day2",
+      "sortCapturedAt": "2026-06-19T09:11:48.000Z"
+    },
+    {
+      "assetId": "DSC09455_photos",
+      "sortCapturedAt": "2026-06-19T09:12:49.000Z"
+    },
+    {
+      "assetId": "C2174_zve1_day2",
+      "sortCapturedAt": "2026-06-19T09:20:56.000Z"
+    },
+    {
+      "assetId": "C2175_zve1_day2",
+      "sortCapturedAt": "2026-06-19T09:21:04.000Z"
+    },
+    {
+      "assetId": "DSC09459_photos",
+      "sortCapturedAt": "2026-06-19T09:21:25.000Z"
+    },
+    {
+      "assetId": "DSC09460_photos",
+      "sortCapturedAt": "2026-06-19T09:21:29.000Z"
+    },
+    {
+      "assetId": "C2176_zve1_day2",
+      "sortCapturedAt": "2026-06-19T09:27:15.000Z"
+    },
+    {
+      "assetId": "DSC09461_photos",
+      "sortCapturedAt": "2026-06-19T09:34:45.000Z"
+    },
+    {
+      "assetId": "C2177_zve1_day2",
+      "sortCapturedAt": "2026-06-19T09:35:50.000Z"
+    },
+    {
+      "assetId": "DSC09466_photos",
+      "sortCapturedAt": "2026-06-19T09:37:07.000Z"
+    },
+    {
+      "assetId": "C2178_zve1_day2",
+      "sortCapturedAt": "2026-06-19T09:39:59.000Z"
+    },
+    {
+      "assetId": "DSC09468_photos",
+      "sortCapturedAt": "2026-06-19T09:40:16.000Z"
+    },
+    {
+      "assetId": "C2179_zve1_day2",
+      "sortCapturedAt": "2026-06-19T09:48:31.000Z"
+    },
+    {
+      "assetId": "C2180_zve1_day2",
+      "sortCapturedAt": "2026-06-19T09:57:52.000Z"
+    },
+    {
+      "assetId": "C2181_zve1_day2",
+      "sortCapturedAt": "2026-06-19T10:23:30.000Z"
+    },
+    {
+      "assetId": "C2182_zve1_day2",
+      "sortCapturedAt": "2026-06-19T11:15:13.000Z"
+    },
+    {
+      "assetId": "C2183_zve1_day2",
+      "sortCapturedAt": "2026-06-19T11:16:18.000Z"
+    },
+    {
+      "assetId": "C2184_zve1_day2",
+      "sortCapturedAt": "2026-06-19T11:21:39.000Z"
+    },
+    {
+      "assetId": "C2185_zve1_day2",
+      "sortCapturedAt": "2026-06-19T11:25:36.000Z"
+    },
+    {
+      "assetId": "C2186_zve1_day2",
+      "sortCapturedAt": "2026-06-19T11:27:22.000Z"
+    },
+    {
+      "assetId": "C2187_zve1_day2",
+      "sortCapturedAt": "2026-06-19T11:31:34.000Z"
+    },
+    {
+      "assetId": "C2188_zve1_day2",
+      "sortCapturedAt": "2026-06-19T11:47:54.000Z"
+    },
+    {
+      "assetId": "C2189_zve1_day2",
+      "sortCapturedAt": "2026-06-19T11:52:12.000Z"
+    },
+    {
+      "assetId": "C2190_zve1_day2",
+      "sortCapturedAt": "2026-06-19T11:53:22.000Z"
+    },
+    {
+      "assetId": "C2191_zve1_day2",
+      "sortCapturedAt": "2026-06-19T11:58:13.000Z"
+    },
+    {
+      "assetId": "C2192_zve1_day2",
+      "sortCapturedAt": "2026-06-19T12:09:06.000Z"
+    },
+    {
+      "assetId": "C2193_zve1_day2",
+      "sortCapturedAt": "2026-06-19T12:12:49.000Z"
+    },
+    {
+      "assetId": "C2194_zve1_day2",
+      "sortCapturedAt": "2026-06-19T12:14:12.000Z"
+    },
+    {
+      "assetId": "DSC09474_photos",
+      "sortCapturedAt": "2026-06-19T12:18:25.000Z"
+    },
+    {
+      "assetId": "DSC09483_photos",
+      "sortCapturedAt": "2026-06-19T12:22:38.000Z"
+    },
+    {
+      "assetId": "DSC09484_photos",
+      "sortCapturedAt": "2026-06-19T12:22:54.000Z"
+    },
+    {
+      "assetId": "DSC09485_photos",
+      "sortCapturedAt": "2026-06-19T12:23:09.000Z"
+    },
+    {
+      "assetId": "DSC09487_photos",
+      "sortCapturedAt": "2026-06-19T12:25:32.000Z"
+    },
+    {
+      "assetId": "C2195_zve1_day2",
+      "sortCapturedAt": "2026-06-19T12:52:20.000Z"
+    },
+    {
+      "assetId": "C2196_zve1_day2",
+      "sortCapturedAt": "2026-06-19T12:52:55.000Z"
+    },
+    {
+      "assetId": "C2197_zve1_day2",
+      "sortCapturedAt": "2026-06-19T12:55:21.000Z"
+    },
+    {
+      "assetId": "C2198_zve1_day2",
+      "sortCapturedAt": "2026-06-19T13:14:02.000Z"
+    },
+    {
+      "assetId": "C2199_zve1_day2",
+      "sortCapturedAt": "2026-06-19T13:16:02.000Z"
+    },
+    {
+      "assetId": "C2200_zve1_day2",
+      "sortCapturedAt": "2026-06-19T13:17:16.000Z"
+    },
+    {
+      "assetId": "C2201_zve1_day2",
+      "sortCapturedAt": "2026-06-19T13:34:28.000Z"
+    },
+    {
+      "assetId": "C2202_zve1_day2",
+      "sortCapturedAt": "2026-06-19T13:34:35.000Z"
+    },
+    {
+      "assetId": "C2203_zve1_day2",
+      "sortCapturedAt": "2026-06-19T13:34:48.000Z"
+    },
+    {
+      "assetId": "C2204_zve1_day3",
+      "sortCapturedAt": "2026-06-20T00:27:02.000Z"
+    },
+    {
+      "assetId": "C2205_zve1_day3",
+      "sortCapturedAt": "2026-06-20T00:40:52.000Z"
+    },
+    {
+      "assetId": "C2206_zve1_day3",
+      "sortCapturedAt": "2026-06-20T00:41:05.000Z"
+    },
+    {
+      "assetId": "C2207_zve1_day3",
+      "sortCapturedAt": "2026-06-20T00:41:50.000Z"
+    },
+    {
+      "assetId": "C2208_zve1_day3",
+      "sortCapturedAt": "2026-06-20T01:24:55.000Z"
+    },
+    {
+      "assetId": "C2209_zve1_day3",
+      "sortCapturedAt": "2026-06-20T01:28:14.000Z"
+    },
+    {
+      "assetId": "C2210_zve1_day3",
+      "sortCapturedAt": "2026-06-20T01:37:07.000Z"
+    },
+    {
+      "assetId": "C2211_zve1_day3",
+      "sortCapturedAt": "2026-06-20T02:05:47.000Z"
+    },
+    {
+      "assetId": "C2212_zve1_day3",
+      "sortCapturedAt": "2026-06-20T02:12:12.000Z"
+    },
+    {
+      "assetId": "C2213_zve1_day3",
+      "sortCapturedAt": "2026-06-20T02:18:57.000Z"
+    },
+    {
+      "assetId": "C2214_zve1_day3",
+      "sortCapturedAt": "2026-06-20T02:27:03.000Z"
+    },
+    {
+      "assetId": "C2215_zve1_day3",
+      "sortCapturedAt": "2026-06-20T02:31:18.000Z"
+    },
+    {
+      "assetId": "C2216_zve1_day3",
+      "sortCapturedAt": "2026-06-20T02:38:11.000Z"
+    },
+    {
+      "assetId": "C2217_zve1_day3",
+      "sortCapturedAt": "2026-06-20T02:52:52.000Z"
+    },
+    {
+      "assetId": "C2218_zve1_day3",
+      "sortCapturedAt": "2026-06-20T03:01:48.000Z"
+    },
+    {
+      "assetId": "C2219_zve1_day3",
+      "sortCapturedAt": "2026-06-20T03:16:37.000Z"
+    },
+    {
+      "assetId": "C2220_zve1_day3",
+      "sortCapturedAt": "2026-06-20T03:19:08.000Z"
+    },
+    {
+      "assetId": "C2221_zve1_day3",
+      "sortCapturedAt": "2026-06-20T03:19:25.000Z"
+    },
+    {
+      "assetId": "C2222_zve1_day3",
+      "sortCapturedAt": "2026-06-20T03:59:38.000Z"
+    },
+    {
+      "assetId": "C2223_zve1_day3",
+      "sortCapturedAt": "2026-06-20T04:03:51.000Z"
+    },
+    {
+      "assetId": "C2224_zve1_day3",
+      "sortCapturedAt": "2026-06-20T04:06:49.000Z"
+    },
+    {
+      "assetId": "C2225_zve1_day3",
+      "sortCapturedAt": "2026-06-20T04:10:36.000Z"
+    },
+    {
+      "assetId": "C2226_zve1_day3",
+      "sortCapturedAt": "2026-06-20T04:11:08.000Z"
+    },
+    {
+      "assetId": "C2227_zve1_day3",
+      "sortCapturedAt": "2026-06-20T04:15:55.000Z"
+    },
+    {
+      "assetId": "C2228_zve1_day3",
+      "sortCapturedAt": "2026-06-20T05:03:50.000Z"
+    },
+    {
+      "assetId": "C2229_zve1_day3",
+      "sortCapturedAt": "2026-06-20T05:09:23.000Z"
+    },
+    {
+      "assetId": "C2230_zve1_day3",
+      "sortCapturedAt": "2026-06-20T05:13:50.000Z"
+    },
+    {
+      "assetId": "C2231_zve1_day3",
+      "sortCapturedAt": "2026-06-20T05:14:22.000Z"
+    },
+    {
+      "assetId": "DSC09489_photos",
+      "sortCapturedAt": "2026-06-20T05:25:25.000Z"
+    },
+    {
+      "assetId": "DJI_20260620132745_0926_D_drone",
+      "sortCapturedAt": "2026-06-20T05:27:45.000Z"
+    },
+    {
+      "assetId": "DJI_20260620132837_0930_D_drone",
+      "sortCapturedAt": "2026-06-20T05:28:37.000Z"
+    },
+    {
+      "assetId": "DJI_20260620132908_0931_D-HDR_photos",
+      "sortCapturedAt": "2026-06-20T05:29:08.000Z"
+    },
+    {
+      "assetId": "DJI_20260620132944_0937_D_drone",
+      "sortCapturedAt": "2026-06-20T05:29:44.000Z"
+    },
+    {
+      "assetId": "DJI_20260620133121_0944_D-HDR_photos",
+      "sortCapturedAt": "2026-06-20T05:31:21.000Z"
+    },
+    {
+      "assetId": "DJI_20260620133225_0950_D_drone",
+      "sortCapturedAt": "2026-06-20T05:32:25.000Z"
+    },
+    {
+      "assetId": "DJI_20260620133337_0954_D-HDR_photos",
+      "sortCapturedAt": "2026-06-20T05:33:38.000Z"
+    },
+    {
+      "assetId": "DJI_20260620133357_0957_D-HDR_photos",
+      "sortCapturedAt": "2026-06-20T05:33:57.000Z"
+    },
+    {
+      "assetId": "DJI_20260620133414_0960_D_drone",
+      "sortCapturedAt": "2026-06-20T05:34:14.000Z"
+    },
+    {
+      "assetId": "DJI_20260620133529_0963_D-HDR_photos",
+      "sortCapturedAt": "2026-06-20T05:35:29.000Z"
+    },
+    {
+      "assetId": "DJI_20260620133551_0967_D-HDR_photos",
+      "sortCapturedAt": "2026-06-20T05:35:51.000Z"
+    },
+    {
+      "assetId": "DJI_20260620133650_0973_D_drone",
+      "sortCapturedAt": "2026-06-20T05:36:50.000Z"
+    },
+    {
+      "assetId": "DJI_20260620133738_0974_D_drone",
+      "sortCapturedAt": "2026-06-20T05:37:38.000Z"
+    },
+    {
+      "assetId": "DJI_20260620133831_0975_D-HDR_photos",
+      "sortCapturedAt": "2026-06-20T05:38:31.000Z"
+    },
+    {
+      "assetId": "DJI_20260620133921_0987_D-HDR_photos",
+      "sortCapturedAt": "2026-06-20T05:39:21.000Z"
+    },
+    {
+      "assetId": "DJI_20260620133958_0993_D-HDR_photos",
+      "sortCapturedAt": "2026-06-20T05:39:58.000Z"
+    },
+    {
+      "assetId": "DJI_20260620134008_0996_D_drone",
+      "sortCapturedAt": "2026-06-20T05:40:09.000Z"
+    },
+    {
+      "assetId": "DJI_20260620134147_0007_D_drone",
+      "sortCapturedAt": "2026-06-20T05:41:48.000Z"
+    },
+    {
+      "assetId": "DJI_20260620134246_0008_D-HDR_photos",
+      "sortCapturedAt": "2026-06-20T05:42:46.000Z"
+    },
+    {
+      "assetId": "DJI_20260620134315_0011_D-HDR_photos",
+      "sortCapturedAt": "2026-06-20T05:43:15.000Z"
+    },
+    {
+      "assetId": "DJI_20260620134330_0014_D-HDR_photos",
+      "sortCapturedAt": "2026-06-20T05:43:30.000Z"
+    },
+    {
+      "assetId": "DJI_20260620134344_0019_D-HDR_photos",
+      "sortCapturedAt": "2026-06-20T05:43:44.000Z"
+    },
+    {
+      "assetId": "DJI_20260620134500_0029_D-HDR_photos",
+      "sortCapturedAt": "2026-06-20T05:45:00.000Z"
+    },
+    {
+      "assetId": "DJI_20260620134514_0032_D_drone",
+      "sortCapturedAt": "2026-06-20T05:45:14.000Z"
+    },
+    {
+      "assetId": "C2232_zve1_day3",
+      "sortCapturedAt": "2026-06-20T05:51:06.000Z"
+    },
+    {
+      "assetId": "C2233_zve1_day3",
+      "sortCapturedAt": "2026-06-20T06:06:02.000Z"
+    },
+    {
+      "assetId": "C2234_zve1_day3",
+      "sortCapturedAt": "2026-06-20T06:09:44.000Z"
+    },
+    {
+      "assetId": "C2235_zve1_day3",
+      "sortCapturedAt": "2026-06-20T06:21:23.000Z"
+    },
+    {
+      "assetId": "C2236_zve1_day3",
+      "sortCapturedAt": "2026-06-20T06:27:57.000Z"
+    },
+    {
+      "assetId": "C2237_zve1_day3",
+      "sortCapturedAt": "2026-06-20T06:32:49.000Z"
+    },
+    {
+      "assetId": "C2238_zve1_day3",
+      "sortCapturedAt": "2026-06-20T06:35:42.000Z"
+    },
+    {
+      "assetId": "C2239_zve1_day3",
+      "sortCapturedAt": "2026-06-20T06:36:03.000Z"
+    },
+    {
+      "assetId": "C2240_zve1_day3",
+      "sortCapturedAt": "2026-06-20T06:40:58.000Z"
+    },
+    {
+      "assetId": "C2241_zve1_day3",
+      "sortCapturedAt": "2026-06-20T06:42:15.000Z"
+    },
+    {
+      "assetId": "C2242_zve1_day3",
+      "sortCapturedAt": "2026-06-20T06:42:45.000Z"
+    },
+    {
+      "assetId": "C2243_zve1_day3",
+      "sortCapturedAt": "2026-06-20T06:43:28.000Z"
+    },
+    {
+      "assetId": "C2244_zve1_day3",
+      "sortCapturedAt": "2026-06-20T06:44:31.000Z"
+    },
+    {
+      "assetId": "C2245_zve1_day3",
+      "sortCapturedAt": "2026-06-20T06:45:05.000Z"
+    },
+    {
+      "assetId": "C2246_zve1_day3",
+      "sortCapturedAt": "2026-06-20T06:45:42.000Z"
+    },
+    {
+      "assetId": "C2247_zve1_day3",
+      "sortCapturedAt": "2026-06-20T06:46:17.000Z"
+    },
+    {
+      "assetId": "C2248_zve1_day3",
+      "sortCapturedAt": "2026-06-20T06:47:26.000Z"
+    },
+    {
+      "assetId": "C2249_zve1_day3",
+      "sortCapturedAt": "2026-06-20T06:48:15.000Z"
+    },
+    {
+      "assetId": "C2250_zve1_day3",
+      "sortCapturedAt": "2026-06-20T06:49:03.000Z"
+    },
+    {
+      "assetId": "C2251_zve1_day3",
+      "sortCapturedAt": "2026-06-20T06:50:17.000Z"
+    },
+    {
+      "assetId": "C2252_zve1_day3",
+      "sortCapturedAt": "2026-06-20T06:51:37.000Z"
+    },
+    {
+      "assetId": "C2253_zve1_day3",
+      "sortCapturedAt": "2026-06-20T06:51:56.000Z"
+    },
+    {
+      "assetId": "C2254_zve1_day3",
+      "sortCapturedAt": "2026-06-20T06:52:26.000Z"
+    },
+    {
+      "assetId": "C2255_zve1_day3",
+      "sortCapturedAt": "2026-06-20T06:53:13.000Z"
+    },
+    {
+      "assetId": "C2256_zve1_day3",
+      "sortCapturedAt": "2026-06-20T06:53:54.000Z"
+    },
+    {
+      "assetId": "C2257_zve1_day3",
+      "sortCapturedAt": "2026-06-20T06:55:23.000Z"
+    },
+    {
+      "assetId": "C2258_zve1_day3",
+      "sortCapturedAt": "2026-06-20T06:56:01.000Z"
+    },
+    {
+      "assetId": "C2259_zve1_day3",
+      "sortCapturedAt": "2026-06-20T06:56:20.000Z"
+    },
+    {
+      "assetId": "C2260_zve1_day3",
+      "sortCapturedAt": "2026-06-20T06:57:06.000Z"
+    },
+    {
+      "assetId": "C2261_zve1_day3",
+      "sortCapturedAt": "2026-06-20T06:58:31.000Z"
+    },
+    {
+      "assetId": "C2262_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:02:07.000Z"
+    },
+    {
+      "assetId": "C2263_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:03:06.000Z"
+    },
+    {
+      "assetId": "C2264_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:03:10.000Z"
+    },
+    {
+      "assetId": "C2265_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:03:26.000Z"
+    },
+    {
+      "assetId": "C2266_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:04:13.000Z"
+    },
+    {
+      "assetId": "C2267_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:04:49.000Z"
+    },
+    {
+      "assetId": "C2268_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:05:55.000Z"
+    },
+    {
+      "assetId": "C2269_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:09:47.000Z"
+    },
+    {
+      "assetId": "C2270_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:10:06.000Z"
+    },
+    {
+      "assetId": "C2271_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:10:33.000Z"
+    },
+    {
+      "assetId": "C2272_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:10:56.000Z"
+    },
+    {
+      "assetId": "C2273_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:16:15.000Z"
+    },
+    {
+      "assetId": "C2274_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:16:39.000Z"
+    },
+    {
+      "assetId": "C2275_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:19:44.000Z"
+    },
+    {
+      "assetId": "C2276_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:20:33.000Z"
+    },
+    {
+      "assetId": "C2277_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:20:53.000Z"
+    },
+    {
+      "assetId": "C2278_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:21:31.000Z"
+    },
+    {
+      "assetId": "C2279_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:22:27.000Z"
+    },
+    {
+      "assetId": "C2280_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:22:33.000Z"
+    },
+    {
+      "assetId": "C2281_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:22:37.000Z"
+    },
+    {
+      "assetId": "DSC09503_photos",
+      "sortCapturedAt": "2026-06-20T07:24:15.000Z"
+    },
+    {
+      "assetId": "DSC09510_photos",
+      "sortCapturedAt": "2026-06-20T07:24:24.000Z"
+    },
+    {
+      "assetId": "C2282_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:25:24.000Z"
+    },
+    {
+      "assetId": "C2283_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:27:06.000Z"
+    },
+    {
+      "assetId": "C2284_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:27:15.000Z"
+    },
+    {
+      "assetId": "C2285_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:28:16.000Z"
+    },
+    {
+      "assetId": "C2286_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:28:41.000Z"
+    },
+    {
+      "assetId": "C2287_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:30:28.000Z"
+    },
+    {
+      "assetId": "C2288_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:31:00.000Z"
+    },
+    {
+      "assetId": "C2289_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:31:03.000Z"
+    },
+    {
+      "assetId": "C2290_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:31:43.000Z"
+    },
+    {
+      "assetId": "C2291_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:31:45.000Z"
+    },
+    {
+      "assetId": "C2292_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:32:36.000Z"
+    },
+    {
+      "assetId": "C2293_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:32:39.000Z"
+    },
+    {
+      "assetId": "C2294_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:33:04.000Z"
+    },
+    {
+      "assetId": "C2295_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:34:10.000Z"
+    },
+    {
+      "assetId": "C2296_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:34:24.000Z"
+    },
+    {
+      "assetId": "C2297_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:35:46.000Z"
+    },
+    {
+      "assetId": "C2298_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:36:01.000Z"
+    },
+    {
+      "assetId": "C2299_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:38:27.000Z"
+    },
+    {
+      "assetId": "DSC09528_photos",
+      "sortCapturedAt": "2026-06-20T07:40:05.000Z"
+    },
+    {
+      "assetId": "C2300_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:41:30.000Z"
+    },
+    {
+      "assetId": "C2301_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:42:00.000Z"
+    },
+    {
+      "assetId": "C2302_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:43:12.000Z"
+    },
+    {
+      "assetId": "C2303_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:49:44.000Z"
+    },
+    {
+      "assetId": "C2304_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:55:15.000Z"
+    },
+    {
+      "assetId": "C2305_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:55:16.000Z"
+    },
+    {
+      "assetId": "C2306_zve1_day3",
+      "sortCapturedAt": "2026-06-20T07:57:00.000Z"
+    },
+    {
+      "assetId": "C2307_zve1_day3",
+      "sortCapturedAt": "2026-06-20T08:24:43.000Z"
+    },
+    {
+      "assetId": "C2308_zve1_day3",
+      "sortCapturedAt": "2026-06-20T08:38:06.000Z"
+    },
+    {
+      "assetId": "C2309_zve1_day3",
+      "sortCapturedAt": "2026-06-20T08:55:06.000Z"
+    },
+    {
+      "assetId": "C2310_zve1_day3",
+      "sortCapturedAt": "2026-06-20T08:56:20.000Z"
+    },
+    {
+      "assetId": "C2311_zve1_day3",
+      "sortCapturedAt": "2026-06-20T10:11:33.000Z"
+    },
+    {
+      "assetId": "C2312_zve1_day3",
+      "sortCapturedAt": "2026-06-20T10:17:00.000Z"
+    },
+    {
+      "assetId": "C2313_zve1_day3",
+      "sortCapturedAt": "2026-06-20T10:21:03.000Z"
+    },
+    {
+      "assetId": "C2314_zve1_day3",
+      "sortCapturedAt": "2026-06-20T10:33:23.000Z"
+    },
+    {
+      "assetId": "C2315_zve1_day3",
+      "sortCapturedAt": "2026-06-20T10:47:40.000Z"
+    },
+    {
+      "assetId": "C2316_zve1_day3",
+      "sortCapturedAt": "2026-06-20T10:53:05.000Z"
+    },
+    {
+      "assetId": "C2317_zve1_day3",
+      "sortCapturedAt": "2026-06-20T10:58:11.000Z"
+    },
+    {
+      "assetId": "C2318_zve1_day3",
+      "sortCapturedAt": "2026-06-20T11:08:50.000Z"
+    },
+    {
+      "assetId": "C2319_zve1_day3",
+      "sortCapturedAt": "2026-06-20T11:22:11.000Z"
+    },
+    {
+      "assetId": "C2320_zve1_day3",
+      "sortCapturedAt": "2026-06-20T11:32:12.000Z"
+    },
+    {
+      "assetId": "C2321_zve1_day3",
+      "sortCapturedAt": "2026-06-20T11:38:59.000Z"
+    },
+    {
+      "assetId": "C2322_zve1_day3",
+      "sortCapturedAt": "2026-06-20T11:39:41.000Z"
+    },
+    {
+      "assetId": "C2323_zve1_day3",
+      "sortCapturedAt": "2026-06-20T11:41:11.000Z"
+    },
+    {
+      "assetId": "C2324_zve1_day3",
+      "sortCapturedAt": "2026-06-20T11:41:21.000Z"
+    },
+    {
+      "assetId": "C2325_zve1_day3",
+      "sortCapturedAt": "2026-06-20T11:43:54.000Z"
+    },
+    {
+      "assetId": "C2326_zve1_day3",
+      "sortCapturedAt": "2026-06-20T11:43:58.000Z"
+    },
+    {
+      "assetId": "C2327_zve1_day3",
+      "sortCapturedAt": "2026-06-20T11:46:31.000Z"
+    },
+    {
+      "assetId": "DSC09542_photos",
+      "sortCapturedAt": "2026-06-20T11:46:49.000Z"
+    },
+    {
+      "assetId": "DSC09547_photos",
+      "sortCapturedAt": "2026-06-20T11:47:22.000Z"
+    },
+    {
+      "assetId": "C2328_zve1_day3",
+      "sortCapturedAt": "2026-06-20T11:51:01.000Z"
+    },
+    {
+      "assetId": "C2329_zve1_day3",
+      "sortCapturedAt": "2026-06-20T11:54:05.000Z"
+    },
+    {
+      "assetId": "C2330_zve1_day3",
+      "sortCapturedAt": "2026-06-20T11:56:02.000Z"
+    },
+    {
+      "assetId": "C2331_zve1_day3",
+      "sortCapturedAt": "2026-06-20T11:56:48.000Z"
+    },
+    {
+      "assetId": "C2332_zve1_day3",
+      "sortCapturedAt": "2026-06-20T12:01:23.000Z"
+    },
+    {
+      "assetId": "C2333_zve1_day3",
+      "sortCapturedAt": "2026-06-20T12:02:44.000Z"
+    },
+    {
+      "assetId": "DSC09565_photos",
+      "sortCapturedAt": "2026-06-20T12:06:41.000Z"
+    },
+    {
+      "assetId": "C2334_zve1_day3",
+      "sortCapturedAt": "2026-06-20T12:08:28.000Z"
+    },
+    {
+      "assetId": "DSC09566_photos",
+      "sortCapturedAt": "2026-06-20T12:08:30.000Z"
+    },
+    {
+      "assetId": "C2335_zve1_day3",
+      "sortCapturedAt": "2026-06-20T12:08:39.000Z"
+    },
+    {
+      "assetId": "C2336_zve1_day3",
+      "sortCapturedAt": "2026-06-20T12:09:02.000Z"
+    },
+    {
+      "assetId": "C2337_zve1_day3",
+      "sortCapturedAt": "2026-06-20T12:09:52.000Z"
+    },
+    {
+      "assetId": "C2338_zve1_day3",
+      "sortCapturedAt": "2026-06-20T12:12:25.000Z"
+    },
+    {
+      "assetId": "DSC09571_photos",
+      "sortCapturedAt": "2026-06-20T12:18:44.000Z"
+    },
+    {
+      "assetId": "C2339_zve1_day3",
+      "sortCapturedAt": "2026-06-20T12:20:42.000Z"
+    },
+    {
+      "assetId": "C2340_zve1_day3",
+      "sortCapturedAt": "2026-06-20T12:26:30.000Z"
+    },
+    {
+      "assetId": "DSC09584_photos",
+      "sortCapturedAt": "2026-06-20T12:29:14.000Z"
+    },
+    {
+      "assetId": "DSC09585_photos",
+      "sortCapturedAt": "2026-06-20T12:29:15.000Z"
+    },
+    {
+      "assetId": "C2341_zve1_day3",
+      "sortCapturedAt": "2026-06-20T13:15:58.000Z"
+    },
+    {
+      "assetId": "C2342_zve1_day3",
+      "sortCapturedAt": "2026-06-20T13:27:41.000Z"
+    },
+    {
+      "assetId": "C2343_zve1_day3",
+      "sortCapturedAt": "2026-06-20T13:29:41.000Z"
+    },
+    {
+      "assetId": "C2344_zve1_day3",
+      "sortCapturedAt": "2026-06-20T14:25:45.000Z"
+    },
+    {
+      "assetId": "C2345_zve1_day3",
+      "sortCapturedAt": "2026-06-20T14:29:42.000Z"
+    },
+    {
+      "assetId": "C2346_zve1_day3",
+      "sortCapturedAt": "2026-06-20T14:33:08.000Z"
+    },
+    {
+      "assetId": "C2347_zve1_day3",
+      "sortCapturedAt": "2026-06-20T14:34:04.000Z"
+    },
+    {
+      "assetId": "C2348_zve1_day3",
+      "sortCapturedAt": "2026-06-20T14:35:34.000Z"
+    },
+    {
+      "assetId": "C2349_zve1_day4",
+      "sortCapturedAt": "2026-06-20T19:43:01.000Z"
+    },
+    {
+      "assetId": "C2350_zve1_day4",
+      "sortCapturedAt": "2026-06-20T19:51:47.000Z"
+    },
+    {
+      "assetId": "C2351_zve1_day4",
+      "sortCapturedAt": "2026-06-20T19:54:43.000Z"
+    },
+    {
+      "assetId": "C2352_zve1_day4",
+      "sortCapturedAt": "2026-06-20T19:58:01.000Z"
+    },
+    {
+      "assetId": "DSC09591_photos",
+      "sortCapturedAt": "2026-06-20T19:58:54.000Z"
+    },
+    {
+      "assetId": "C2353_zve1_day4",
+      "sortCapturedAt": "2026-06-20T20:01:01.000Z"
+    },
+    {
+      "assetId": "C2354_zve1_day4",
+      "sortCapturedAt": "2026-06-20T20:01:14.000Z"
+    },
+    {
+      "assetId": "C2355_zve1_day4",
+      "sortCapturedAt": "2026-06-20T20:01:24.000Z"
+    },
+    {
+      "assetId": "C2356_zve1_day4",
+      "sortCapturedAt": "2026-06-20T20:15:51.000Z"
+    },
+    {
+      "assetId": "DSC09594_photos",
+      "sortCapturedAt": "2026-06-20T20:16:28.000Z"
+    },
+    {
+      "assetId": "DSC04044_photos",
+      "sortCapturedAt": "2026-06-20T20:21:12.000Z"
+    },
+    {
+      "assetId": "C2357_zve1_day4",
+      "sortCapturedAt": "2026-06-20T20:21:27.000Z"
+    },
+    {
+      "assetId": "DSC09598_photos",
+      "sortCapturedAt": "2026-06-20T20:22:05.000Z"
+    },
+    {
+      "assetId": "DSC09600_photos",
+      "sortCapturedAt": "2026-06-20T20:22:50.000Z"
+    },
+    {
+      "assetId": "DSC09602_photos",
+      "sortCapturedAt": "2026-06-20T20:23:26.000Z"
+    },
+    {
+      "assetId": "DSC04080_photos",
+      "sortCapturedAt": "2026-06-20T20:23:36.000Z"
+    },
+    {
+      "assetId": "C2358_zve1_day4",
+      "sortCapturedAt": "2026-06-20T20:25:49.000Z"
+    },
+    {
+      "assetId": "DSC04137_photos",
+      "sortCapturedAt": "2026-06-20T20:27:25.000Z"
+    },
+    {
+      "assetId": "DSC09606_photos",
+      "sortCapturedAt": "2026-06-20T20:28:14.000Z"
+    },
+    {
+      "assetId": "DSC09608_photos",
+      "sortCapturedAt": "2026-06-20T20:28:40.000Z"
+    },
+    {
+      "assetId": "DSC09611_photos",
+      "sortCapturedAt": "2026-06-20T20:29:22.000Z"
+    },
+    {
+      "assetId": "DSC04248_photos",
+      "sortCapturedAt": "2026-06-20T20:34:50.000Z"
+    },
+    {
+      "assetId": "DSC09653_photos",
+      "sortCapturedAt": "2026-06-20T20:37:39.000Z"
+    },
+    {
+      "assetId": "DSC09668_photos",
+      "sortCapturedAt": "2026-06-20T20:38:24.000Z"
+    },
+    {
+      "assetId": "C2359_zve1_day4",
+      "sortCapturedAt": "2026-06-20T20:38:55.000Z"
+    },
+    {
+      "assetId": "DSC09680_photos",
+      "sortCapturedAt": "2026-06-20T20:39:00.000Z"
+    },
+    {
+      "assetId": "DSC09705_photos",
+      "sortCapturedAt": "2026-06-20T20:40:15.000Z"
+    },
+    {
+      "assetId": "C2360_zve1_day4",
+      "sortCapturedAt": "2026-06-20T20:42:19.000Z"
+    },
+    {
+      "assetId": "C2361_zve1_day4",
+      "sortCapturedAt": "2026-06-20T20:43:09.000Z"
+    },
+    {
+      "assetId": "DSC00327_photos",
+      "sortCapturedAt": "2026-06-20T20:43:48.000Z"
+    },
+    {
+      "assetId": "DSC04389_photos",
+      "sortCapturedAt": "2026-06-20T20:44:15.000Z"
+    },
+    {
+      "assetId": "DSC09834_photos",
+      "sortCapturedAt": "2026-06-20T20:46:43.000Z"
+    },
+    {
+      "assetId": "20260621_秦皇岛福来岛日出2_ts-final",
+      "sortCapturedAt": "2026-06-20T20:48:00.000Z"
+    },
+    {
+      "assetId": "DSC04521_photos",
+      "sortCapturedAt": "2026-06-20T20:53:04.000Z"
+    },
+    {
+      "assetId": "20260621_秦皇岛福来岛日出1_ts-final",
+      "sortCapturedAt": "2026-06-20T20:54:00.000Z"
+    },
+    {
+      "assetId": "DSC09920_photos",
+      "sortCapturedAt": "2026-06-20T20:58:51.000Z"
+    },
+    {
+      "assetId": "DSC09921_photos",
+      "sortCapturedAt": "2026-06-20T20:59:16.000Z"
+    },
+    {
+      "assetId": "DSC09926_photos",
+      "sortCapturedAt": "2026-06-20T21:00:36.000Z"
+    },
+    {
+      "assetId": "DSC09933_photos",
+      "sortCapturedAt": "2026-06-20T21:00:47.000Z"
+    },
+    {
+      "assetId": "DSC09938_photos",
+      "sortCapturedAt": "2026-06-20T21:01:35.000Z"
+    },
+    {
+      "assetId": "DSC09940_photos",
+      "sortCapturedAt": "2026-06-20T21:02:15.000Z"
+    },
+    {
+      "assetId": "C2362_zve1_day4",
+      "sortCapturedAt": "2026-06-20T21:02:30.000Z"
+    },
+    {
+      "assetId": "DSC09948_photos",
+      "sortCapturedAt": "2026-06-20T21:05:06.000Z"
+    },
+    {
+      "assetId": "DSC09950_photos",
+      "sortCapturedAt": "2026-06-20T21:05:53.000Z"
+    },
+    {
+      "assetId": "DSC09953_photos",
+      "sortCapturedAt": "2026-06-20T21:12:05.000Z"
+    },
+    {
+      "assetId": "C2363_zve1_day4",
+      "sortCapturedAt": "2026-06-20T21:12:54.000Z"
+    },
+    {
+      "assetId": "C2364_zve1_day4",
+      "sortCapturedAt": "2026-06-20T21:13:07.000Z"
+    },
+    {
+      "assetId": "C2365_zve1_day4",
+      "sortCapturedAt": "2026-06-20T21:13:35.000Z"
+    },
+    {
+      "assetId": "C2367_zve1_day4",
+      "sortCapturedAt": "2026-06-20T21:14:41.000Z"
+    },
+    {
+      "assetId": "C2368_zve1_day4",
+      "sortCapturedAt": "2026-06-20T21:14:52.000Z"
+    },
+    {
+      "assetId": "C2369_zve1_day4",
+      "sortCapturedAt": "2026-06-20T21:15:08.000Z"
+    },
+    {
+      "assetId": "DSC09954_photos",
+      "sortCapturedAt": "2026-06-20T21:15:55.000Z"
+    },
+    {
+      "assetId": "DSC09957_photos",
+      "sortCapturedAt": "2026-06-20T21:16:23.000Z"
+    },
+    {
+      "assetId": "DSC09961_photos",
+      "sortCapturedAt": "2026-06-20T21:18:50.000Z"
+    },
+    {
+      "assetId": "DSC09962_photos",
+      "sortCapturedAt": "2026-06-20T21:19:05.000Z"
+    },
+    {
+      "assetId": "C2370_zve1_day4",
+      "sortCapturedAt": "2026-06-20T21:20:27.000Z"
+    },
+    {
+      "assetId": "DSC09963_photos",
+      "sortCapturedAt": "2026-06-20T21:20:55.000Z"
+    },
+    {
+      "assetId": "DSC09964_photos",
+      "sortCapturedAt": "2026-06-20T21:23:01.000Z"
+    },
+    {
+      "assetId": "C2371_zve1_day4",
+      "sortCapturedAt": "2026-06-20T21:23:15.000Z"
+    },
+    {
+      "assetId": "C2372_zve1_day4",
+      "sortCapturedAt": "2026-06-20T21:25:32.000Z"
+    },
+    {
+      "assetId": "C2373_zve1_day4",
+      "sortCapturedAt": "2026-06-20T21:27:33.000Z"
+    },
+    {
+      "assetId": "DSC09967_photos",
+      "sortCapturedAt": "2026-06-20T21:29:06.000Z"
+    },
+    {
+      "assetId": "C2374_zve1_day4",
+      "sortCapturedAt": "2026-06-20T21:29:28.000Z"
+    },
+    {
+      "assetId": "C2375_zve1_day4",
+      "sortCapturedAt": "2026-06-20T21:29:42.000Z"
+    },
+    {
+      "assetId": "DSC09970_photos",
+      "sortCapturedAt": "2026-06-20T21:30:48.000Z"
+    },
+    {
+      "assetId": "DSC09973_photos",
+      "sortCapturedAt": "2026-06-20T21:31:32.000Z"
+    },
+    {
+      "assetId": "DSC00330_photos",
+      "sortCapturedAt": "2026-06-20T21:33:07.000Z"
+    },
+    {
+      "assetId": "C2376_zve1_day4",
+      "sortCapturedAt": "2026-06-20T21:33:11.000Z"
+    },
+    {
+      "assetId": "DSC09977_photos",
+      "sortCapturedAt": "2026-06-20T21:33:58.000Z"
+    },
+    {
+      "assetId": "C2377_zve1_day4",
+      "sortCapturedAt": "2026-06-20T21:34:05.000Z"
+    },
+    {
+      "assetId": "C2378_zve1_day4",
+      "sortCapturedAt": "2026-06-20T21:34:21.000Z"
+    },
+    {
+      "assetId": "DSC09982_photos",
+      "sortCapturedAt": "2026-06-20T21:35:46.000Z"
+    },
+    {
+      "assetId": "DSC09983_photos",
+      "sortCapturedAt": "2026-06-20T21:42:08.000Z"
+    },
+    {
+      "assetId": "C2379_zve1_day4",
+      "sortCapturedAt": "2026-06-20T21:42:17.000Z"
+    },
+    {
+      "assetId": "C2380_zve1_day4",
+      "sortCapturedAt": "2026-06-20T21:55:27.000Z"
+    },
+    {
+      "assetId": "C2381_zve1_day4",
+      "sortCapturedAt": "2026-06-21T01:14:42.000Z"
+    },
+    {
+      "assetId": "C2382_zve1_day4",
+      "sortCapturedAt": "2026-06-21T01:14:50.000Z"
+    },
+    {
+      "assetId": "C2383_zve1_day4",
+      "sortCapturedAt": "2026-06-21T01:15:55.000Z"
+    },
+    {
+      "assetId": "C2384_zve1_day4",
+      "sortCapturedAt": "2026-06-21T02:08:46.000Z"
+    },
+    {
+      "assetId": "C2385_zve1_day4",
+      "sortCapturedAt": "2026-06-21T02:11:12.000Z"
+    },
+    {
+      "assetId": "C2386_zve1_day4",
+      "sortCapturedAt": "2026-06-21T02:12:23.000Z"
+    },
+    {
+      "assetId": "C2387_zve1_day4",
+      "sortCapturedAt": "2026-06-21T02:12:33.000Z"
+    },
+    {
+      "assetId": "C2388_zve1_day4",
+      "sortCapturedAt": "2026-06-21T02:20:45.000Z"
+    },
+    {
+      "assetId": "C2389_zve1_day4",
+      "sortCapturedAt": "2026-06-21T02:21:53.000Z"
+    },
+    {
+      "assetId": "C2390_zve1_day4",
+      "sortCapturedAt": "2026-06-21T02:35:30.000Z"
+    },
+    {
+      "assetId": "C2391_zve1_day4",
+      "sortCapturedAt": "2026-06-21T02:35:44.000Z"
+    },
+    {
+      "assetId": "C2392_zve1_day4",
+      "sortCapturedAt": "2026-06-21T02:38:16.000Z"
+    },
+    {
+      "assetId": "C2393_zve1_day4",
+      "sortCapturedAt": "2026-06-21T02:40:17.000Z"
+    },
+    {
+      "assetId": "C2394_zve1_day4",
+      "sortCapturedAt": "2026-06-21T02:40:32.000Z"
+    },
+    {
+      "assetId": "C2395_zve1_day4",
+      "sortCapturedAt": "2026-06-21T02:44:18.000Z"
+    },
+    {
+      "assetId": "C2396_zve1_day4",
+      "sortCapturedAt": "2026-06-21T02:45:32.000Z"
+    },
+    {
+      "assetId": "C2397_zve1_day4",
+      "sortCapturedAt": "2026-06-21T02:45:39.000Z"
+    },
+    {
+      "assetId": "C2398_zve1_day4",
+      "sortCapturedAt": "2026-06-21T02:46:37.000Z"
+    },
+    {
+      "assetId": "C2399_zve1_day4",
+      "sortCapturedAt": "2026-06-21T02:46:42.000Z"
+    },
+    {
+      "assetId": "C2400_zve1_day4",
+      "sortCapturedAt": "2026-06-21T02:49:58.000Z"
+    },
+    {
+      "assetId": "C2401_zve1_day4",
+      "sortCapturedAt": "2026-06-21T02:52:48.000Z"
+    },
+    {
+      "assetId": "C2402_zve1_day4",
+      "sortCapturedAt": "2026-06-21T03:01:26.000Z"
+    },
+    {
+      "assetId": "C2403_zve1_day4",
+      "sortCapturedAt": "2026-06-21T03:01:34.000Z"
+    },
+    {
+      "assetId": "C2404_zve1_day4",
+      "sortCapturedAt": "2026-06-21T03:05:48.000Z"
+    },
+    {
+      "assetId": "C2405_zve1_day4",
+      "sortCapturedAt": "2026-06-21T03:05:56.000Z"
+    },
+    {
+      "assetId": "C2406_zve1_day4",
+      "sortCapturedAt": "2026-06-21T05:17:40.000Z"
+    },
+    {
+      "assetId": "C2407_zve1_day4",
+      "sortCapturedAt": "2026-06-21T05:24:58.000Z"
+    },
+    {
+      "assetId": "C2408_zve1_day4",
+      "sortCapturedAt": "2026-06-21T05:28:37.000Z"
+    },
+    {
+      "assetId": "C2409_zve1_day4",
+      "sortCapturedAt": "2026-06-21T05:39:29.000Z"
+    },
+    {
+      "assetId": "C2410_zve1_day4",
+      "sortCapturedAt": "2026-06-21T05:40:44.000Z"
+    },
+    {
+      "assetId": "C2411_zve1_day4",
+      "sortCapturedAt": "2026-06-21T07:40:36.000Z"
+    },
+    {
+      "assetId": "C2412_zve1_day4",
+      "sortCapturedAt": "2026-06-21T07:54:06.000Z"
+    },
+    {
+      "assetId": "C2413_zve1_day4",
+      "sortCapturedAt": "2026-06-21T07:59:06.000Z"
+    },
+    {
+      "assetId": "C2414_zve1_day4",
+      "sortCapturedAt": "2026-06-21T08:09:19.000Z"
+    },
+    {
+      "assetId": "C2415_zve1_day4",
+      "sortCapturedAt": "2026-06-21T08:18:05.000Z"
+    },
+    {
+      "assetId": "C2418_zve1_day4",
+      "sortCapturedAt": "2026-06-21T08:38:54.000Z"
+    },
+    {
+      "assetId": "C2419_zve1_day4",
+      "sortCapturedAt": "2026-06-21T08:44:38.000Z"
+    },
+    {
+      "assetId": "C2420_zve1_day4",
+      "sortCapturedAt": "2026-06-21T08:47:44.000Z"
+    },
+    {
+      "assetId": "C2421_zve1_day4",
+      "sortCapturedAt": "2026-06-21T08:50:32.000Z"
+    },
+    {
+      "assetId": "C2422_zve1_day4",
+      "sortCapturedAt": "2026-06-21T08:53:47.000Z"
+    },
+    {
+      "assetId": "C2423_zve1_day4",
+      "sortCapturedAt": "2026-06-21T08:56:23.000Z"
+    },
+    {
+      "assetId": "C2424_zve1_day4",
+      "sortCapturedAt": "2026-06-21T08:59:46.000Z"
+    },
+    {
+      "assetId": "C2425_zve1_day4",
+      "sortCapturedAt": "2026-06-21T09:07:31.000Z"
+    },
+    {
+      "assetId": "C2426_zve1_day4",
+      "sortCapturedAt": "2026-06-21T09:20:30.000Z"
+    },
+    {
+      "assetId": "C2427_zve1_day4",
+      "sortCapturedAt": "2026-06-21T09:34:35.000Z"
+    },
+    {
+      "assetId": "C2428_zve1_day4",
+      "sortCapturedAt": "2026-06-21T09:36:32.000Z"
+    },
+    {
+      "assetId": "C2429_zve1_day4",
+      "sortCapturedAt": "2026-06-21T09:50:22.000Z"
+    },
+    {
+      "assetId": "DSC09985_photos",
+      "sortCapturedAt": "2026-06-21T09:51:06.000Z"
+    },
+    {
+      "assetId": "C2430_zve1_day4",
+      "sortCapturedAt": "2026-06-21T09:57:19.000Z"
+    },
+    {
+      "assetId": "C2431_zve1_day4",
+      "sortCapturedAt": "2026-06-21T10:10:49.000Z"
+    },
+    {
+      "assetId": "C2432_zve1_day4",
+      "sortCapturedAt": "2026-06-21T10:11:25.000Z"
+    },
+    {
+      "assetId": "C2433_zve1_day4",
+      "sortCapturedAt": "2026-06-21T10:11:44.000Z"
+    },
+    {
+      "assetId": "C2434_zve1_day4",
+      "sortCapturedAt": "2026-06-21T10:12:08.000Z"
+    },
+    {
+      "assetId": "C2435_zve1_day4",
+      "sortCapturedAt": "2026-06-21T10:20:10.000Z"
+    },
+    {
+      "assetId": "C2436_zve1_day4",
+      "sortCapturedAt": "2026-06-21T10:20:18.000Z"
+    },
+    {
+      "assetId": "C2437_zve1_day4",
+      "sortCapturedAt": "2026-06-21T10:23:19.000Z"
+    },
+    {
+      "assetId": "C2438_zve1_day4",
+      "sortCapturedAt": "2026-06-21T10:23:37.000Z"
+    },
+    {
+      "assetId": "C2439_zve1_day4",
+      "sortCapturedAt": "2026-06-21T10:24:46.000Z"
+    },
+    {
+      "assetId": "C2440_zve1_day4",
+      "sortCapturedAt": "2026-06-21T10:24:49.000Z"
+    },
+    {
+      "assetId": "C2441_zve1_day4",
+      "sortCapturedAt": "2026-06-21T10:24:59.000Z"
+    },
+    {
+      "assetId": "C2442_zve1_day4",
+      "sortCapturedAt": "2026-06-21T10:25:47.000Z"
+    },
+    {
+      "assetId": "C2443_zve1_day4",
+      "sortCapturedAt": "2026-06-21T10:25:49.000Z"
+    },
+    {
+      "assetId": "C2444_zve1_day4",
+      "sortCapturedAt": "2026-06-21T10:26:38.000Z"
+    },
+    {
+      "assetId": "C2445_zve1_day4",
+      "sortCapturedAt": "2026-06-21T10:26:42.000Z"
+    },
+    {
+      "assetId": "C2446_zve1_day4",
+      "sortCapturedAt": "2026-06-21T10:29:15.000Z"
+    },
+    {
+      "assetId": "C2447_zve1_day4",
+      "sortCapturedAt": "2026-06-21T10:31:02.000Z"
+    },
+    {
+      "assetId": "C2448_zve1_day4",
+      "sortCapturedAt": "2026-06-21T10:31:36.000Z"
+    },
+    {
+      "assetId": "C2449_zve1_day4",
+      "sortCapturedAt": "2026-06-21T10:31:53.000Z"
+    },
+    {
+      "assetId": "C2450_zve1_day4",
+      "sortCapturedAt": "2026-06-21T10:32:23.000Z"
+    },
+    {
+      "assetId": "C2451_zve1_day4",
+      "sortCapturedAt": "2026-06-21T10:32:48.000Z"
+    },
+    {
+      "assetId": "C2452_zve1_day4",
+      "sortCapturedAt": "2026-06-21T10:32:55.000Z"
+    },
+    {
+      "assetId": "C2453_zve1_day4",
+      "sortCapturedAt": "2026-06-21T10:33:08.000Z"
+    },
+    {
+      "assetId": "C2454_zve1_day4",
+      "sortCapturedAt": "2026-06-21T10:33:23.000Z"
+    },
+    {
+      "assetId": "DSC09997_photos",
+      "sortCapturedAt": "2026-06-21T11:05:20.000Z"
+    },
+    {
+      "assetId": "DSC04745_photos",
+      "sortCapturedAt": "2026-06-21T11:08:57.000Z"
+    },
+    {
+      "assetId": "DSC04746_photos",
+      "sortCapturedAt": "2026-06-21T11:09:42.000Z"
+    },
+    {
+      "assetId": "DSC00003_photos",
+      "sortCapturedAt": "2026-06-21T11:26:09.000Z"
+    },
+    {
+      "assetId": "DSC00005_photos",
+      "sortCapturedAt": "2026-06-21T11:26:24.000Z"
+    },
+    {
+      "assetId": "DSC04748_photos",
+      "sortCapturedAt": "2026-06-21T11:27:46.000Z"
+    },
+    {
+      "assetId": "DSC04750_photos",
+      "sortCapturedAt": "2026-06-21T11:28:13.000Z"
+    },
+    {
+      "assetId": "DSC04753_photos",
+      "sortCapturedAt": "2026-06-21T11:29:57.000Z"
+    },
+    {
+      "assetId": "DSC00011_photos",
+      "sortCapturedAt": "2026-06-21T11:30:49.000Z"
+    },
+    {
+      "assetId": "DSC00014_photos",
+      "sortCapturedAt": "2026-06-21T11:31:59.000Z"
+    },
+    {
+      "assetId": "DSC00015_photos",
+      "sortCapturedAt": "2026-06-21T11:32:27.000Z"
+    },
+    {
+      "assetId": "DSC00016_photos",
+      "sortCapturedAt": "2026-06-21T11:33:07.000Z"
+    },
+    {
+      "assetId": "DSC00018_photos",
+      "sortCapturedAt": "2026-06-21T11:34:44.000Z"
+    },
+    {
+      "assetId": "DSC04759_photos",
+      "sortCapturedAt": "2026-06-21T11:38:19.000Z"
+    },
+    {
+      "assetId": "DSC00020_photos",
+      "sortCapturedAt": "2026-06-21T11:43:02.000Z"
+    },
+    {
+      "assetId": "DSC00021_photos",
+      "sortCapturedAt": "2026-06-21T11:43:12.000Z"
+    },
+    {
+      "assetId": "DSC00024_photos",
+      "sortCapturedAt": "2026-06-21T11:43:55.000Z"
+    },
+    {
+      "assetId": "DSC00025_photos",
+      "sortCapturedAt": "2026-06-21T11:44:26.000Z"
+    },
+    {
+      "assetId": "DSC00026_photos",
+      "sortCapturedAt": "2026-06-21T11:45:08.000Z"
+    },
+    {
+      "assetId": "DSC00027_photos",
+      "sortCapturedAt": "2026-06-21T11:45:38.000Z"
+    },
+    {
+      "assetId": "DSC00030_photos",
+      "sortCapturedAt": "2026-06-21T11:46:24.000Z"
+    },
+    {
+      "assetId": "C2455_zve1_day4",
+      "sortCapturedAt": "2026-06-21T11:46:31.000Z"
+    },
+    {
+      "assetId": "C2456_zve1_day4",
+      "sortCapturedAt": "2026-06-21T11:46:38.000Z"
+    },
+    {
+      "assetId": "C2457_zve1_day4",
+      "sortCapturedAt": "2026-06-21T11:47:02.000Z"
+    },
+    {
+      "assetId": "DSC00032_photos",
+      "sortCapturedAt": "2026-06-21T11:55:45.000Z"
+    },
+    {
+      "assetId": "DSC00033_photos",
+      "sortCapturedAt": "2026-06-21T11:56:00.000Z"
+    },
+    {
+      "assetId": "DSC00035_photos",
+      "sortCapturedAt": "2026-06-21T11:56:46.000Z"
+    },
+    {
+      "assetId": "DSC00037_photos",
+      "sortCapturedAt": "2026-06-21T11:58:28.000Z"
+    },
+    {
+      "assetId": "DSC00038_photos",
+      "sortCapturedAt": "2026-06-21T12:13:46.000Z"
+    },
+    {
+      "assetId": "DSC00039_photos",
+      "sortCapturedAt": "2026-06-21T12:14:01.000Z"
+    },
+    {
+      "assetId": "DSC00040_photos",
+      "sortCapturedAt": "2026-06-21T12:14:05.000Z"
+    },
+    {
+      "assetId": "DSC04762_photos",
+      "sortCapturedAt": "2026-06-21T12:15:13.000Z"
+    },
+    {
+      "assetId": "DSC00042_photos",
+      "sortCapturedAt": "2026-06-21T12:16:20.000Z"
+    },
+    {
+      "assetId": "DSC04765_photos",
+      "sortCapturedAt": "2026-06-21T12:17:09.000Z"
+    },
+    {
+      "assetId": "DSC00043_photos",
+      "sortCapturedAt": "2026-06-21T12:19:29.000Z"
+    },
+    {
+      "assetId": "DSC00045_photos",
+      "sortCapturedAt": "2026-06-21T12:20:37.000Z"
+    },
+    {
+      "assetId": "DSC00046_photos",
+      "sortCapturedAt": "2026-06-21T12:20:46.000Z"
+    },
+    {
+      "assetId": "C2458_zve1_day4",
+      "sortCapturedAt": "2026-06-21T12:47:33.000Z"
+    },
+    {
+      "assetId": "C2459_zve1_day4",
+      "sortCapturedAt": "2026-06-21T12:47:38.000Z"
+    },
+    {
+      "assetId": "C2460_zve1_day4",
+      "sortCapturedAt": "2026-06-21T12:47:44.000Z"
+    },
+    {
+      "assetId": "C2461_zve1_day4",
+      "sortCapturedAt": "2026-06-21T12:56:36.000Z"
+    },
+    {
+      "assetId": "DSC00049_photos",
+      "sortCapturedAt": "2026-06-21T12:58:57.000Z"
+    },
+    {
+      "assetId": "C2462_zve1_day5",
+      "sortCapturedAt": "2026-06-22T03:11:59.000Z"
+    },
+    {
+      "assetId": "C2463_zve1_day5",
+      "sortCapturedAt": "2026-06-22T03:12:19.000Z"
+    },
+    {
+      "assetId": "C2464_zve1_day5",
+      "sortCapturedAt": "2026-06-22T03:23:10.000Z"
+    },
+    {
+      "assetId": "C2465_zve1_day5",
+      "sortCapturedAt": "2026-06-22T03:23:38.000Z"
+    },
+    {
+      "assetId": "C2466_zve1_day5",
+      "sortCapturedAt": "2026-06-22T03:26:21.000Z"
+    },
+    {
+      "assetId": "C2467_zve1_day5",
+      "sortCapturedAt": "2026-06-22T03:31:21.000Z"
+    },
+    {
+      "assetId": "C2468_zve1_day5",
+      "sortCapturedAt": "2026-06-22T03:36:20.000Z"
+    },
+    {
+      "assetId": "C2469_zve1_day5",
+      "sortCapturedAt": "2026-06-22T03:39:18.000Z"
+    },
+    {
+      "assetId": "C2470_zve1_day5",
+      "sortCapturedAt": "2026-06-22T03:40:43.000Z"
+    },
+    {
+      "assetId": "C2471_zve1_day5",
+      "sortCapturedAt": "2026-06-22T03:41:26.000Z"
+    },
+    {
+      "assetId": "C2472_zve1_day5",
+      "sortCapturedAt": "2026-06-22T04:11:44.000Z"
+    },
+    {
+      "assetId": "C2473_zve1_day5",
+      "sortCapturedAt": "2026-06-22T04:12:01.000Z"
+    },
+    {
+      "assetId": "C2474_zve1_day5",
+      "sortCapturedAt": "2026-06-22T04:15:04.000Z"
+    },
+    {
+      "assetId": "C2475_zve1_day5",
+      "sortCapturedAt": "2026-06-22T04:15:25.000Z"
+    },
+    {
+      "assetId": "C2476_zve1_day5",
+      "sortCapturedAt": "2026-06-22T04:43:11.000Z"
+    },
+    {
+      "assetId": "C2477_zve1_day5",
+      "sortCapturedAt": "2026-06-22T04:43:14.000Z"
+    },
+    {
+      "assetId": "C2478_zve1_day5",
+      "sortCapturedAt": "2026-06-22T04:45:57.000Z"
+    },
+    {
+      "assetId": "C2479_zve1_day5",
+      "sortCapturedAt": "2026-06-22T04:46:36.000Z"
+    },
+    {
+      "assetId": "C2480_zve1_day5",
+      "sortCapturedAt": "2026-06-22T04:48:21.000Z"
+    },
+    {
+      "assetId": "C2481_zve1_day5",
+      "sortCapturedAt": "2026-06-22T04:48:36.000Z"
+    },
+    {
+      "assetId": "C2482_zve1_day5",
+      "sortCapturedAt": "2026-06-22T04:48:42.000Z"
+    },
+    {
+      "assetId": "C2483_zve1_day5",
+      "sortCapturedAt": "2026-06-22T04:49:00.000Z"
+    },
+    {
+      "assetId": "C2484_zve1_day5",
+      "sortCapturedAt": "2026-06-22T04:51:19.000Z"
+    },
+    {
+      "assetId": "C2485_zve1_day5",
+      "sortCapturedAt": "2026-06-22T04:51:43.000Z"
+    },
+    {
+      "assetId": "C2486_zve1_day5",
+      "sortCapturedAt": "2026-06-22T04:52:02.000Z"
+    },
+    {
+      "assetId": "C2487_zve1_day5",
+      "sortCapturedAt": "2026-06-22T04:52:54.000Z"
+    },
+    {
+      "assetId": "C2488_zve1_day5",
+      "sortCapturedAt": "2026-06-22T04:53:45.000Z"
+    },
+    {
+      "assetId": "C2489_zve1_day5",
+      "sortCapturedAt": "2026-06-22T04:54:01.000Z"
+    },
+    {
+      "assetId": "C2490_zve1_day5",
+      "sortCapturedAt": "2026-06-22T04:54:05.000Z"
+    },
+    {
+      "assetId": "C2491_zve1_day5",
+      "sortCapturedAt": "2026-06-22T04:54:19.000Z"
+    },
+    {
+      "assetId": "C2492_zve1_day5",
+      "sortCapturedAt": "2026-06-22T04:54:31.000Z"
+    },
+    {
+      "assetId": "C2493_zve1_day5",
+      "sortCapturedAt": "2026-06-22T04:55:33.000Z"
+    },
+    {
+      "assetId": "C2494_zve1_day5",
+      "sortCapturedAt": "2026-06-22T04:56:17.000Z"
+    },
+    {
+      "assetId": "C2495_zve1_day5",
+      "sortCapturedAt": "2026-06-22T04:56:34.000Z"
+    },
+    {
+      "assetId": "C2496_zve1_day5",
+      "sortCapturedAt": "2026-06-22T04:57:16.000Z"
+    },
+    {
+      "assetId": "C2497_zve1_day5",
+      "sortCapturedAt": "2026-06-22T04:57:19.000Z"
+    },
+    {
+      "assetId": "C2498_zve1_day5",
+      "sortCapturedAt": "2026-06-22T04:58:18.000Z"
+    },
+    {
+      "assetId": "C2499_zve1_day5",
+      "sortCapturedAt": "2026-06-22T05:01:02.000Z"
+    },
+    {
+      "assetId": "C2500_zve1_day5",
+      "sortCapturedAt": "2026-06-22T05:03:03.000Z"
+    },
+    {
+      "assetId": "C2501_zve1_day5",
+      "sortCapturedAt": "2026-06-22T05:06:01.000Z"
+    },
+    {
+      "assetId": "C2502_zve1_day5",
+      "sortCapturedAt": "2026-06-22T05:37:26.000Z"
+    },
+    {
+      "assetId": "C2503_zve1_day5",
+      "sortCapturedAt": "2026-06-22T05:53:29.000Z"
+    },
+    {
+      "assetId": "C2504_zve1_day5",
+      "sortCapturedAt": "2026-06-22T05:53:53.000Z"
+    },
+    {
+      "assetId": "C2505_zve1_day5",
+      "sortCapturedAt": "2026-06-22T05:55:54.000Z"
+    },
+    {
+      "assetId": "C2506_zve1_day5",
+      "sortCapturedAt": "2026-06-22T06:28:50.000Z"
+    },
+    {
+      "assetId": "C2507_zve1_day5",
+      "sortCapturedAt": "2026-06-22T06:29:42.000Z"
+    },
+    {
+      "assetId": "C2508_zve1_day5",
+      "sortCapturedAt": "2026-06-22T06:54:06.000Z"
+    },
+    {
+      "assetId": "C2509_zve1_day5",
+      "sortCapturedAt": "2026-06-22T06:56:33.000Z"
+    },
+    {
+      "assetId": "C2510_zve1_day5",
+      "sortCapturedAt": "2026-06-22T06:57:02.000Z"
+    },
+    {
+      "assetId": "C2511_zve1_day5",
+      "sortCapturedAt": "2026-06-22T09:23:24.000Z"
+    },
+    {
+      "assetId": "C2512_zve1_day5",
+      "sortCapturedAt": "2026-06-22T11:00:56.000Z"
+    },
+    {
+      "assetId": "C2513_zve1_day5",
+      "sortCapturedAt": "2026-06-22T11:01:20.000Z"
+    },
+    {
+      "assetId": "C2517_zve1_day5",
+      "sortCapturedAt": "2026-06-22T11:47:24.000Z"
+    },
+    {
+      "assetId": "C2518_zve1_day5",
+      "sortCapturedAt": "2026-06-22T13:28:13.000Z"
+    },
+    {
+      "assetId": "C2519_zve1_day5",
+      "sortCapturedAt": "2026-06-22T13:29:48.000Z"
+    },
+    {
+      "assetId": "C2520_zve1_day5",
+      "sortCapturedAt": "2026-06-22T13:33:47.000Z"
+    },
+    {
+      "assetId": "C2521_zve1_day5",
+      "sortCapturedAt": "2026-06-22T13:37:36.000Z"
+    },
+    {
+      "assetId": "C2522_zve1_day5",
+      "sortCapturedAt": "2026-06-22T13:38:45.000Z"
+    },
+    {
+      "assetId": "C2523_zve1_day5",
+      "sortCapturedAt": "2026-06-22T13:39:15.000Z"
+    },
+    {
+      "assetId": "C2524_zve1_day5",
+      "sortCapturedAt": "2026-06-22T13:46:33.000Z"
+    },
+    {
+      "assetId": "C2525_zve1_day5",
+      "sortCapturedAt": "2026-06-22T13:47:56.000Z"
+    },
+    {
+      "assetId": "C2526_zve1_day5",
+      "sortCapturedAt": "2026-06-22T14:21:48.000Z"
+    },
+    {
+      "assetId": "C2527_zve1_day5",
+      "sortCapturedAt": "2026-06-22T14:22:00.000Z"
+    }
+  ],
+  "events": [
+    {
+      "id": "event-pharos-551f64fa8382",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "石家庄正定国际机场T2航站楼",
+      "summary": "深夜落地记录，拍航站楼、行李、打车/接驳去恒大御景半岛一期附近前的第一反应。 / 固定机位观察 / 室内大厅 / 室内灯光 / 无口播语音 / 酒店迎宾场景 / 红色酒瓶展示 / 迎宾仪式 / A man walks past a large illuminated red bottle display inside a modern building with a polished floor. / A large red liqu...",
+      "startAt": "2026-06-17T15:29:20.000Z",
+      "endAt": "2026-06-17T15:34:33.700Z",
+      "location": "石家庄正定国际机场T2航站楼",
+      "spanIds": [
+        "C1976_zve1_day1_broll_visual_s0-3",
+        "C1977_zve1_day1_broll_visual_s0-7",
+        "C1978_zve1_day1_talking-head_speech_s3-19",
+        "C1979_zve1_day1_talking-head_speech_s0-16"
+      ]
+    },
+    {
+      "id": "route-b956bbb7a898",
+      "kind": "route",
+      "reviewStatus": "pending",
+      "title": "行车：河北省，石家庄市，正定县，新城铺镇 · 机场北路",
+      "summary": "第一人称行车 / 车内驾驶舱 / 夜晚行车 / 有口播语音 / 夜间赶路途中 / G107 国道 / 导航地图 / A person is driving a car at night, with the dashboard and a phone displaying a map illuminated. / 坡往G 10 7方向过去大概20多分钟 / 无口播语音 / 车内仪表盘 / 行车记录 / A driver is seen ...",
+      "startAt": "2026-06-17T15:52:01.000Z",
+      "endAt": "2026-06-17T15:52:08.256Z",
+      "location": "河北省，石家庄市，正定县，新城铺镇 · 机场北路",
+      "route": {
+        "from": "河北省，石家庄市，正定县，新城铺镇 · 机场北路",
+        "to": "河北省，石家庄市，正定县，新城铺镇 · 机场北路"
+      },
+      "spanIds": [
+        "C1980_zve1_day1_drive_speech_s0-5",
+        "C1980_zve1_day1_drive_visual_s1-8"
+      ]
+    },
+    {
+      "id": "event-60173b3b32fc",
+      "kind": "event",
+      "reviewStatus": "pending",
+      "title": "酒店入住体验",
+      "summary": "固定机位观察 / 酒店走廊 / 室内灯光 / 有口播语音 / 酒店入住体验 / 空旷走廊 / 蓝色箭头 / A long, empty indoor corridor with white tiled floors featuring blue directional arrows. Glass storefronts line both sides, and a wooden table is visible on the righ...",
+      "startAt": "2026-06-17T16:19:53.220Z",
+      "endAt": "2026-06-17T16:19:56.580Z",
+      "location": "河北省，石家庄市，长安区，高营镇 · 恒大御景半岛2期",
+      "spanIds": [
+        "C1981_zve1_day1_broll_speech_s1-5"
+      ]
+    },
+    {
+      "id": "event-pharos-dff40bf02188",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "恒大御景半岛一期附近酒店",
+      "summary": "D0深夜抵达后的入住记录，只拍房间、放包、充电和明日8:00取车前的设备整理。 / 固定机位观察 / 酒店走廊 / 室内灯光 / 有口播语音 / 酒店入住体验 / 空旷走廊 / 金属路障 / A long, polished hallway with directional floor stickers, glass elevator doors on the left, and stacked metal barriers on t...",
+      "startAt": "2026-06-17T16:20:01.580Z",
+      "endAt": "2026-06-17T16:22:46.460Z",
+      "location": "恒大御景半岛一期附近酒店",
+      "spanIds": [
+        "C1982_zve1_day1_broll_speech_s0-4",
+        "C1983_zve1_day1_broll_speech_s1-7"
+      ]
+    },
+    {
+      "id": "event-pharos-b6842e8402ae",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "恒大御景半岛一期附近取车点",
+      "summary": "D1取车和正式出发口播，明确D1不拍隆兴寺，主线改成石家庄工业、北国午饭、万青墙绘、井陉矿区和石窝长城。 / 航拍俯瞰 / 城市街道 / 灰蒙蒙阴天 / 有口播语音 / 石家庄城市晨景 / 高楼林立 / 居民区 / A hazy urban landscape featuring numerous tall residential buildings with beige facades and dark roofs, intersp...",
+      "startAt": "2026-06-18T00:30:26.240Z",
+      "endAt": "2026-06-18T01:26:51.580Z",
+      "location": "恒大御景半岛一期附近取车点",
+      "spanIds": [
+        "C1984_zve1_day1_aerial_speech_s1-7",
+        "C1985_zve1_day1_broll_s0-33",
+        "C1986_zve1_day1_broll_speech_s1-12",
+        "C1987_zve1_day1_broll_speech_s0-12",
+        "C1988_zve1_day1_drive_speech_s1-6",
+        "C1988_zve1_day1_drive_visual_s1-7",
+        "C1989_zve1_day1_talking-head_speech_s0-8",
+        "C1990_zve1_day1_broll_speech_s0-5"
+      ]
+    },
+    {
+      "id": "route-5993984c90ae",
+      "kind": "route",
+      "reviewStatus": "pending",
+      "title": "行车：河北省，石家庄市，长安区，高营镇 · 恒大御景半岛2期 → 河北省，石家庄市，长安区，育才街道 · 华北制药集团有限责任公司",
+      "summary": "第一人称行车 / 城市施工路段 / 阴天 / 无口播语音 / 现代城区穿行 / 宽阔道路 / 建筑起重机 / A series of driving shots through a modern urban area with ongoing construction. The footage captures wide roads, tall residential and commercial buildings, and act...",
+      "startAt": "2026-06-18T02:17:03.000Z",
+      "endAt": "2026-06-18T02:42:51.840Z",
+      "route": {
+        "from": "河北省，石家庄市，长安区，高营镇 · 恒大御景半岛2期",
+        "to": "河北省，石家庄市，长安区，育才街道 · 华北制药集团有限责任公司"
+      },
+      "spanIds": [
+        "C1993_zve1_day1_drive_s0-54",
+        "C1994_zve1_day1_drive_visual_s0-4",
+        "C1994_zve1_day1_drive_visual_s0-4_ms0-3520",
+        "C1995_zve1_day1_drive_speech_s3-9",
+        "C1995_zve1_day1_drive_visual_s7-24",
+        "C1995_zve1_day1_drive_speech_s12-16",
+        "C1995_zve1_day1_drive_visual_s20-27",
+        "C1996_zve1_day1_drive_s0-53",
+        "C1997_zve1_day1_drive_speech_s3-21",
+        "C1997_zve1_day1_drive_visual_s6-18"
+      ]
+    },
+    {
+      "id": "event-pharos-52f4eda2ae28",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "华北制药和平东路388号",
+      "summary": "华北制药厂区外观建立镜头，长焦压缩厂门、围墙、管线、老树与城市背景；不长时间架机，不拍门岗特写。 / 固定机位观察 / 路边停车位 / 天气光线不明 / 有口播语音 / 路边停车位设计展示 / 砖铺路面 / 黑色 SUV 停放 / A black SUV is parked in a designated spot on a brick-paved road, with a grassy area and buildings in t...",
+      "startAt": "2026-06-18T02:47:26.700Z",
+      "endAt": "2026-06-18T02:54:43.500Z",
+      "location": "华北制药和平东路388号",
+      "spanIds": [
+        "C1999_zve1_day1_broll_speech_s0-8",
+        "C2000_zve1_day1_broll_visual_s0-2",
+        "C2001_zve1_day1_talking-head_speech_s0-16",
+        "C2002_zve1_day1_broll_speech_s0-13",
+        "C2002_zve1_day1_broll_speech_s16-18",
+        "C2003_zve1_day1_drive_speech_s0-22",
+        "C2003_zve1_day1_drive_visual_s5-16"
+      ]
+    },
+    {
+      "id": "event-pharos-001ca9f7f302",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "华北制药集团生活区一区",
+      "summary": "《杀死那个石家庄人》核心生活区段落，拍居民楼、树影、单元门、早点铺、路边小店和生活痕迹。 / 固定机位观察 / 建筑外观 / 天气光线不明 / 无口播语音 / 建筑外观记录 / 白色建筑 / 钟楼 / A white building with a clock and the Chinese characters '华北制药' above two arched gateways. / 建筑标识特写 / 白色外墙 / 鸽子雕塑 / A ...",
+      "startAt": "2026-06-18T02:56:05.000Z",
+      "endAt": "2026-06-18T03:51:21.000Z",
+      "location": "华北制药集团生活区一区",
+      "spanIds": [
+        "C2004_zve1_day1_talking-head_speech_s2-22",
+        "C2005_zve1_day1_drive_speech_s0-7",
+        "C2006_zve1_day1_drive_speech_s0-4",
+        "C2006_zve1_day1_drive_visual_s1-6",
+        "C2007_zve1_day1_broll_speech_s0-15",
+        "C2008_zve1_day1_broll_speech_s0-2",
+        "C2009_zve1_day1_broll_speech_s0-12",
+        "C2010_zve1_day1_broll_speech_s0-7",
+        "C2011_zve1_day1_broll_speech_s0-10",
+        "C2012_zve1_day1_broll_speech_s1-3",
+        "C2013_zve1_day1_broll_speech_s1-15",
+        "C2014_zve1_day1_broll_speech_s0-8",
+        "C2015_zve1_day1_broll_speech_s0-4",
+        "C2016_zve1_day1_broll_speech_s0-2",
+        "C2017_zve1_day1_broll_speech_s0-3",
+        "C2018_zve1_day1_broll_speech_s0-7",
+        "C2019_zve1_day1_broll_speech_s0-13",
+        "C2020_zve1_day1_broll_speech_s2-6",
+        "C2021_zve1_day1_broll_speech_s5-8",
+        "C2022_zve1_day1_broll_speech_s1-11",
+        "C2023_zve1_day1_broll_speech_s0-4",
+        "C2024_zve1_day1_broll_speech_s0-6",
+        "C2025_zve1_day1_talking-head_speech_s0-19",
+        "C2026_zve1_day1_broll_speech_s0-5",
+        "C2027_zve1_day1_broll_speech_s0-7",
+        "C2028_zve1_day1_broll_speech_s0-6",
+        "C2029_zve1_day1_broll_speech_s1-23",
+        "C2030_zve1_day1_broll_speech_s0-25",
+        "C2031_zve1_day1_talking-head_speech_s1-18",
+        "C2031_zve1_day1_talking-head_speech_s21-26",
+        "C2033_zve1_day1_broll_speech_s0-17",
+        "C2034_zve1_day1_broll_s0-38",
+        "C2035_zve1_day1_broll_s0-1",
+        "C2035_zve1_day1_broll_speech_s2-10",
+        "C2036_zve1_day1_broll_speech_s0-13",
+        "C2037_zve1_day1_broll_speech_s0-7",
+        "C2038_zve1_day1_broll_speech_s1-16",
+        "C2039_zve1_day1_broll_speech_s3-9",
+        "C2039_zve1_day1_broll_speech_s14-16",
+        "C2040_zve1_day1_broll_speech_s1-9",
+        "C2041_zve1_day1_talking-head_speech_s0-10",
+        "C2041_zve1_day1_talking-head_speech_s13-26",
+        "DSC09258_photos_photo",
+        "DSC09259_photos_photo",
+        "DSC09262_photos_photo",
+        "DSC09265_photos_photo",
+        "DSC09266_photos_photo",
+        "DSC09269_photos_photo",
+        "DSC09270_photos_photo",
+        "DSC09271_photos_photo",
+        "DSC09275_photos_photo",
+        "DSC09276_photos_photo",
+        "DSC09279_photos_photo",
+        "DSC09281_photos_photo",
+        "DSC09282_photos_photo",
+        "DSC09284_photos_photo",
+        "DSC09287_photos_photo",
+        "DSC09290_photos_photo",
+        "DSC09292_photos_photo",
+        "DSC09293_photos_photo",
+        "DSC09294_photos_photo"
+      ]
+    },
+    {
+      "id": "route-fe977ffa64ae",
+      "kind": "route",
+      "reviewStatus": "pending",
+      "title": "行车：河北省，石家庄市，长安区，广安街道 · 荣盛华府B区 → 河北省，石家庄市，长安区，建北街道 · 石家庄清平苑养老服务有限公司",
+      "summary": "第一人称行车 / 城市街道 / 阴天 / 无口播语音 / 城市穿行 / 多车道交通 / 高楼林立 / A series of driving shots through an urban environment, featuring multiple lanes of traffic, tall buildings, and road infrastructure such as overpasses and street signs...",
+      "startAt": "2026-06-18T04:31:53.000Z",
+      "endAt": "2026-06-18T04:34:13.651Z",
+      "route": {
+        "from": "河北省，石家庄市，长安区，广安街道 · 荣盛华府B区",
+        "to": "河北省，石家庄市，长安区，建北街道 · 石家庄清平苑养老服务有限公司"
+      },
+      "spanIds": [
+        "C2042_zve1_day1_drive_s0-141"
+      ]
+    },
+    {
+      "id": "event-pharos-fb258d09d685",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "万能青年旅店乐队墙绘打卡点",
+      "summary": "万青墙绘快闪片头/题眼，只拍公共空间、墙绘、车启动和出城前口播，不展开成粉丝打卡。 / 固定机位观察 / 城市街道 / 晴天 / 无口播语音 / 街头涂鸦 / 彩色壁画 / 树荫下 / A colorful mural featuring a sunburst and flowers is painted on a wall alongside a tree-lined sidewalk with parked cars. / 有口播...",
+      "startAt": "2026-06-18T07:58:21.000Z",
+      "endAt": "2026-06-18T08:11:13.040Z",
+      "location": "万能青年旅店乐队墙绘打卡点",
+      "spanIds": [
+        "C2045_zve1_day1_broll_s0-1",
+        "C2045_zve1_day1_broll_speech_s1-8",
+        "C2046_zve1_day1_broll_speech_s0-3",
+        "C2047_zve1_day1_broll_speech_s1-4",
+        "C2048_zve1_day1_broll_speech_s0-3",
+        "C2048_zve1_day1_broll_speech_s10-12",
+        "C2049_zve1_day1_talking-head_speech_s1-3",
+        "C2049_zve1_day1_talking-head_speech_s9-11",
+        "C2050_zve1_day1_broll_speech_s1-4",
+        "C2050_zve1_day1_broll_speech_s9-12",
+        "C2051_zve1_day1_broll_visual_s0-3",
+        "C2052_zve1_day1_broll_s0-1",
+        "C2052_zve1_day1_broll_speech_s0-19",
+        "C2053_zve1_day1_talking-head_s0-40",
+        "DSC00236_photos_photo"
+      ]
+    },
+    {
+      "id": "route-b76decd19ba5",
+      "kind": "route",
+      "reviewStatus": "pending",
+      "title": "行车：河北省，石家庄市，裕华区，建通街道 · 建通街出口(南二环西路东向) → 河北省，石家庄市，井陉矿区，横涧乡 · 河北产教园项目",
+      "summary": "第一人称行车 / 城市多车道道路 / 阴天 / 无口播语音 / 城市道路行驶 / 隔音屏障 / 交通拥堵 / A series of frames showing a vehicle driving on a multi-lane urban road under overcast skies. The left side features a sound barrier wall, while the right side has ...",
+      "startAt": "2026-06-18T08:37:46.000Z",
+      "endAt": "2026-06-18T09:29:23.043Z",
+      "route": {
+        "from": "河北省，石家庄市，裕华区，建通街道 · 建通街出口(南二环西路东向)",
+        "to": "河北省，石家庄市，井陉矿区，横涧乡 · 河北产教园项目"
+      },
+      "spanIds": [
+        "C2054_zve1_day1_drive_s0-45",
+        "C2055_zve1_day1_drive_s0-104",
+        "C2056_zve1_day1_drive_s0-46",
+        "C2057_zve1_day1_drive_speech_s3-15",
+        "C2057_zve1_day1_drive_visual_s7-19",
+        "C2057_zve1_day1_drive_visual_s20-26",
+        "C2058_zve1_day1_drive_s0-59",
+        "C2059_zve1_day1_drive_speech_s0-8",
+        "C2059_zve1_day1_drive_visual_s5-12",
+        "C2060_zve1_day1_drive_speech_s0-19",
+        "C2060_zve1_day1_drive_visual_s5-16",
+        "C2061_zve1_day1_drive_visual_s0-20",
+        "C2061_zve1_day1_drive_visual_s6-17",
+        "C2062_zve1_day1_drive_s0-320",
+        "C2063_zve1_day1_drive_s0-41",
+        "DSC09302_photos_photo"
+      ]
+    },
+    {
+      "id": "event-pharos-8bcade1fa3aa",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "井陉县晚餐",
+      "summary": "在井陉县决定晚餐 / 固定机位观察 / 城市街道 / 阴天 / 有口播语音 / 城市街景 / 医院入口 / 供销大厦 / The frames show a hospital entrance, a street with pedestrians and cars, and a bank building. / A white car is parked on the street next to a sidewalk with tr...",
+      "startAt": "2026-06-18T09:37:47.820Z",
+      "endAt": "2026-06-18T10:21:09.000Z",
+      "location": "井陉县晚餐",
+      "spanIds": [
+        "C2064_zve1_day1_broll_speech_s0-11",
+        "C2065_zve1_day1_broll_speech_s1-5",
+        "C2066_zve1_day1_drive_speech_s0-10",
+        "C2066_zve1_day1_drive_visual_s4-11",
+        "C2067_zve1_day1_broll_speech_s0-7",
+        "C2067_zve1_day1_broll_speech_s10-11",
+        "C2067_zve1_day1_broll_speech_s14-19",
+        "C2068_zve1_day1_broll_speech_s0-10",
+        "C2069_zve1_day1_broll_speech_s1-6",
+        "C2070_zve1_day1_talking-head_speech_s0-8",
+        "C2071_zve1_day1_drive_visual_s0-4",
+        "C2071_zve1_day1_drive_speech_s0-3",
+        "DSC00288_photos_photo",
+        "DSC09306_photos_photo"
+      ]
+    },
+    {
+      "id": "route-464f8659ffff",
+      "kind": "route",
+      "reviewStatus": "pending",
+      "title": "行车：河北省，石家庄市，井陉矿区，横涧乡 · 石家庄市矿区文化休闲广场 → 河北省，石家庄市，井陉矿区，凤山镇 · 段家楼景区-宪兵楼",
+      "summary": "第一人称行车 / 城市街道 / 天气光线不明 / 无口播语音 / 城市道路行驶 / 树荫街道 / 行人车辆 / A series of driving shots along a tree-lined urban road with light traffic, pedestrians, and buildings visible on both sides. / 工业区停车场 / 雨天 / 驶入废弃矿区 / 湿滑路面 / 工业建筑 ...",
+      "startAt": "2026-06-18T10:25:22.000Z",
+      "endAt": "2026-06-18T10:34:38.195Z",
+      "route": {
+        "from": "河北省，石家庄市，井陉矿区，横涧乡 · 石家庄市矿区文化休闲广场",
+        "to": "河北省，石家庄市，井陉矿区，凤山镇 · 段家楼景区-宪兵楼"
+      },
+      "spanIds": [
+        "C2072_zve1_day1_drive_s0-156",
+        "C2073_zve1_day1_drive_s0-186"
+      ]
+    },
+    {
+      "id": "event-pharos-0c1002370fc6",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "解放第一矿",
+      "summary": "解放第一矿核心素材，拍矿路、山体切面、老建筑、荒草和工业残留。 / 固定机位观察 / 工业区停车场 / 天气光线不明 / 有口播语音 / 探访废弃矿区 / 解放第一矿 / 厂房列车 / A large empty parking lot with white lines, a black car on the right, and a brick building with red Chinese characters in the ...",
+      "startAt": "2026-06-18T10:41:38.700Z",
+      "endAt": "2026-06-18T11:52:44.550Z",
+      "location": "解放第一矿",
+      "spanIds": [
+        "C2074_zve1_day1_broll_speech_s0-12",
+        "C2075_zve1_day1_talking-head_speech_s0-24",
+        "C2076_zve1_day1_broll_speech_s0-7",
+        "C2077_zve1_day1_broll_speech_s3-9",
+        "C2078_zve1_day1_broll_speech_s1-4",
+        "C2079_zve1_day1_broll_speech_s0-15",
+        "C2080_zve1_day1_broll_speech_s0-3",
+        "C2081_zve1_day1_broll_s0-1",
+        "C2081_zve1_day1_broll_speech_s0-10",
+        "C2082_zve1_day1_broll_visual_s0-2",
+        "C2083_zve1_day1_broll_s0-1",
+        "C2083_zve1_day1_broll_speech_s1-11",
+        "C2084_zve1_day1_broll_speech_s2-4",
+        "C2084_zve1_day1_broll_speech_s10-15",
+        "C2085_zve1_day1_broll_speech_s0-9",
+        "C2086_zve1_day1_broll_speech_s0-12",
+        "C2087_zve1_day1_broll_speech_s1-7",
+        "C2088_zve1_day1_broll_visual_s0-5",
+        "C2089_zve1_day1_broll_speech_s5-12",
+        "DJI_20260618190728_0825_D_drone_aerial_s0-12",
+        "DJI_20260618190823_0826_D_drone_aerial_s0-10",
+        "DJI_20260618190847_0830_D_drone_aerial_s0-14",
+        "DJI_20260618190940_0837_D_drone_aerial_s0-35",
+        "DJI_20260618191038_0841_D_drone_aerial_s0-12",
+        "DJI_20260618191103_0845_D_drone_aerial_s0-16",
+        "DJI_20260618191210_0849_D_drone_aerial_s0-18",
+        "DJI_20260618191232_0850_D_drone_aerial_s0-42",
+        "DJI_20260618191538_0860_D_drone_broll_s0-18",
+        "DJI_20260618191620_0861_D_drone_broll_s0-16",
+        "DJI_20260618191639_0862_D_drone_broll_s0-9",
+        "DJI_20260618191730_0863_D_drone_broll_s0-40",
+        "DJI_20260618192200_0885_D_drone_broll_s0-25",
+        "C2090_zve1_day1_broll_speech_s0-6",
+        "C2091_zve1_day1_broll_speech_s8-10",
+        "DJI_20260618192337_0892_D_drone_broll_s0-18",
+        "C2091_zve1_day1_broll_speech_s16-26",
+        "C2092_zve1_day1_broll_visual_s0-3",
+        "C2093_zve1_day1_broll_speech_s3-6",
+        "C2093_zve1_day1_broll_speech_s8-21",
+        "C2094_zve1_day1_broll_speech_s0-18",
+        "C2095_zve1_day1_broll_speech_s0-8",
+        "C2096_zve1_day1_broll_visual_s0-4",
+        "C2097_zve1_day1_broll_speech_s2-11",
+        "C2098_zve1_day1_drive_speech_s4-12",
+        "C2098_zve1_day1_drive_visual_s6-13",
+        "C2099_zve1_day1_drive_s0-39",
+        "DSC09307_photos_photo",
+        "DSC09308_photos_photo",
+        "DSC09309_photos_photo",
+        "DSC09320_photos_photo",
+        "DSC09325_photos_photo",
+        "DSC09328_photos_photo",
+        "DSC09329_photos_photo",
+        "DSC09331_photos_photo",
+        "DSC09336_photos_photo",
+        "DSC09337_photos_photo",
+        "DSC09339_photos_photo",
+        "DJI_20260618190928_0836_D-HDR_photos_photo",
+        "DJI_20260618191816_0864_D-HDR_photos_photo",
+        "DJI_20260618191932_0881_D-HDR_photos_photo",
+        "DSC09340_photos_photo",
+        "DSC09343_photos_photo",
+        "DSC09346_photos_photo",
+        "DSC09348_photos_photo",
+        "DSC09357_photos_photo"
+      ]
+    },
+    {
+      "id": "route-3622a3e98a21",
+      "kind": "route",
+      "reviewStatus": "pending",
+      "title": "行车：河北省，石家庄市，井陉矿区，凤山镇 · 特来电汽车充电站(井陉矿区火车头广场充电站) → 河北省，保定市，涞源县，白石山镇 · 白石山花海",
+      "summary": "第一人称行车 / 树荫道路 / 黄昏 / 无口播语音 / 会车等待 / 道路转弯 / 路灯照明 / A point-of-view shot from a moving vehicle traveling down a tree-lined road at dusk. The scene transitions from a straight road with oncoming headlights to a curved road...",
+      "startAt": "2026-06-18T12:09:51.000Z",
+      "endAt": "2026-06-18T15:57:42.060Z",
+      "route": {
+        "from": "河北省，石家庄市，井陉矿区，凤山镇 · 特来电汽车充电站(井陉矿区火车头广场充电站)",
+        "to": "河北省，保定市，涞源县，白石山镇 · 白石山花海"
+      },
+      "spanIds": [
+        "C2100_zve1_day1_drive_s0-53",
+        "C2101_zve1_day1_drive_s0-227",
+        "C2103_zve1_day1_drive_speech_s1-3",
+        "C2103_zve1_day1_drive_visual_s3-16",
+        "C2103_zve1_day1_drive_speech_s7-10",
+        "C2104_zve1_day1_drive_s0-31",
+        "C2105_zve1_day1_drive_speech_s3-9",
+        "C2105_zve1_day1_drive_visual_s7-25",
+        "C2105_zve1_day1_drive_speech_s11-26",
+        "C2106_zve1_day1_drive_s0-111",
+        "C2107_zve1_day1_drive_speech_s0-19"
+      ]
+    },
+    {
+      "id": "event-pharos-355b4c300b57",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "白石山镇住宿",
+      "summary": "回到住宿点，记录放下设备、充电、备份卡和今天不再安排夜间拍摄；D2上午只做白石山景区短线，不硬撑深游。 / 固定机位观察 / 酒店外景 / 夜晚 / 有口播语音 / 换酒店入住 / 居客楼 / 灯光装饰 / Nighttime view of a building with illuminated signs and colorful string lights along a fence. / 12点半终于到了酒店然后这边是那个居客...",
+      "startAt": "2026-06-18T16:25:57.020Z",
+      "endAt": "2026-06-18T16:26:08.220Z",
+      "location": "白石山镇住宿",
+      "spanIds": [
+        "C2108_zve1_day2_broll_speech_s2-14"
+      ]
+    },
+    {
+      "id": "event-pharos-42db749c1115",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "白石山镇住宿",
+      "summary": "D2起床、早餐、退房和出发口播，说明9:30进白石山，13:30前必须下山出景区，下午直达中六村/白洋淀长廊。 / 固定机位观察 / 服务区停车场 / 阴天 / 无口播语音 / 停车观察环境 / 湿滑地面 / 红灯笼装饰 / A wet parking lot with white lines, red lanterns on poles, and a building in the background under an overc...",
+      "startAt": "2026-06-19T00:45:13.000Z",
+      "endAt": "2026-06-19T00:47:46.020Z",
+      "location": "白石山镇住宿",
+      "spanIds": [
+        "C2109_zve1_day2_drive_visual_s0-4",
+        "C2109_zve1_day2_drive_speech_s0-4",
+        "C2110_zve1_day2_broll_speech_s0-9",
+        "C2111_zve1_day2_talking-head_speech_s0-2",
+        "C2112_zve1_day2_talking-head_speech_s0-9",
+        "C2112_zve1_day2_talking-head_s8-9",
+        "C2113_zve1_day2_broll_speech_s0-11"
+      ]
+    },
+    {
+      "id": "route-d18c48453f68",
+      "kind": "route",
+      "reviewStatus": "pending",
+      "title": "行车：河北省，保定市，涞源县，白石山镇 · 涞源罗花农家院 → 河北省，保定市，涞源县，白石山镇 · 白石山花海",
+      "summary": "第一人称行车 / 山路 / 雾天 / 无口播语音 / 远眺山景 / 湿滑道路 / 红灯笼 / A wet road with red lanterns on streetlights, trees on both sides, and a mountain in the distance under foggy weather.",
+      "startAt": "2026-06-19T00:53:43.312Z",
+      "endAt": "2026-06-19T00:54:43.936Z",
+      "route": {
+        "from": "河北省，保定市，涞源县，白石山镇 · 涞源罗花农家院",
+        "to": "河北省，保定市，涞源县，白石山镇 · 白石山花海"
+      },
+      "spanIds": [
+        "C2114_zve1_day2_drive_visual_s20-81"
+      ]
+    },
+    {
+      "id": "event-pharos-c42c36ea1721",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "胎压报警修车",
+      "summary": "突然胎压报警，去修车 / 手持自拍口播 / 停车场 / 雨天 / 有口播语音 / 抱怨轮胎扎钉 / 红色轿车 / 特写尾灯 / A close-up view of a red car's rear taillight and tire, parked on a red patterned pavement. / 我看一下 我这 这咋扎上的呀我靠 那补一下呗行 第一天就被扎钉子了我真是服了 / 固定机位观察 / 维修车间 / 天气光线...",
+      "startAt": "2026-06-19T02:20:47.000Z",
+      "endAt": "2026-06-19T02:37:27.200Z",
+      "location": "胎压报警修车",
+      "spanIds": [
+        "C2115_zve1_day2_broll_speech_s0-13",
+        "C2116_zve1_day2_broll_speech_s2-6"
+      ]
+    },
+    {
+      "id": "event-pharos-079c35682612",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "白石山镇农家院/午饭点",
+      "summary": "白石山短线下山后的快速午饭和补给，拍农家饭、饮水、查路况；14:15前必须离开白石山，之后约2.5小时到中六村。 / 固定机位观察 / 城市街道 / 阴天 / 有口播语音 / 路边用餐休息 / 老砂锅 / 垂柳街道 / A wet street scene with parked cars, including a white SUV and sedan, under overcast skies with weeping willo...",
+      "startAt": "2026-06-19T03:14:50.760Z",
+      "endAt": "2026-06-19T03:47:35.100Z",
+      "location": "白石山镇农家院/午饭点",
+      "spanIds": [
+        "C2117_zve1_day2_broll_speech_s0-9",
+        "C2118_zve1_day2_drive_speech_s0-10",
+        "C2118_zve1_day2_drive_visual_s4-11",
+        "C2119_zve1_day2_broll_speech_s0-1",
+        "C2120_zve1_day2_broll_speech_s0-8",
+        "C2121_zve1_day2_broll_speech_s0-4",
+        "C2121_zve1_day2_broll_s4-5",
+        "C2122_zve1_day2_broll_speech_s1-10"
+      ]
+    },
+    {
+      "id": "route-4355c0095018",
+      "kind": "route",
+      "reviewStatus": "pending",
+      "title": "行车：河北省，保定市，涞源县，白石山镇 · 悦伟农家院 → 河北省，保定市，涞源县，白石山镇 · 大草滩村",
+      "summary": "第一人称行车 / 乡村街道 / 雨天 / 无口播语音 / 雨中行车 / 传统建筑 / 红灯笼 / A point-of-view driving sequence along a wet, two-lane road in a rural Chinese town. The footage captures the journey from a vehicle, showing other cars on the road, trad...",
+      "startAt": "2026-06-19T04:43:19.000Z",
+      "endAt": "2026-06-19T04:56:25.054Z",
+      "route": {
+        "from": "河北省，保定市，涞源县，白石山镇 · 悦伟农家院",
+        "to": "河北省，保定市，涞源县，白石山镇 · 大草滩村"
+      },
+      "spanIds": [
+        "C2123_zve1_day2_drive_s0-34",
+        "C2124_zve1_day2_drive_speech_s2-6",
+        "C2125_zve1_day2_drive_s0-170",
+        "C2126_zve1_day2_drive_s0-88",
+        "C2127_zve1_day2_drive_s0-45"
+      ]
+    },
+    {
+      "id": "event-pharos-78542b4ce26d",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "石窝村",
+      "summary": "去石窝村看了下，了却遗憾 / 第一人称行车 / 石窝村路边 / 晴天 / 有口播语音 / 到达石窝村观察古长城 / 古长城 / 山脉 / A rural road scene with a blue car parked beside a white house, surrounded by greenery and hills in the background. / 到达了石窝村 然后这旁边有古长城 感觉是那个山脉上面好像 刚刚看...",
+      "startAt": "2026-06-19T05:00:03.700Z",
+      "endAt": "2026-06-19T05:18:42.000Z",
+      "location": "石窝村",
+      "spanIds": [
+        "C2128_zve1_day2_drive_speech_s0-14",
+        "C2128_zve1_day2_drive_visual_s4-11",
+        "DJI_20260619130752_0893_D_drone_aerial_s0-43",
+        "DJI_20260619131644_0910_D_drone_aerial_s0-35",
+        "C2129_zve1_day2_broll_speech_s0-5",
+        "DJI_20260619130930_0898_D-HDR_photos_photo",
+        "DJI_20260619131725_0911_D-HDR_photos_photo",
+        "DJI_20260619131842_0917_D-HDR_photos_photo"
+      ]
+    },
+    {
+      "id": "route-31bcc1ef1fe1",
+      "kind": "route",
+      "reviewStatus": "pending",
+      "title": "行车：河北省，保定市，易县，紫荆关镇 · 紫荆关出口(G9511涞涞高速东向) → 河北省，保定市，易县，紫荆关镇 · 孙家庄",
+      "summary": "第一人称行车 / 高速公路 / 天气光线不明 / 无口播语音 / 车辆排队缴费 / 高速/收费站/群山 / A point-of-view shot from inside a car driving on a highway towards a toll gate. The road is flanked by mountains and greenery. Several cars are visible ahead, appro...",
+      "startAt": "2026-06-19T06:34:15.000Z",
+      "endAt": "2026-06-19T06:57:15.587Z",
+      "route": {
+        "from": "河北省，保定市，易县，紫荆关镇 · 紫荆关出口(G9511涞涞高速东向)",
+        "to": "河北省，保定市，易县，紫荆关镇 · 孙家庄"
+      },
+      "spanIds": [
+        "C2134_zve1_day2_drive_s0-33",
+        "C2136_zve1_day2_drive_s0-85"
+      ]
+    },
+    {
+      "id": "event-pharos-5a840368308f",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "易水湖游览",
+      "summary": "天气原因，行程改到易水湖 / 手持自拍口播 / 停车场 / 天气光线不明 / 有口播语音 / 介绍一水湖背景 / 人物自拍 / 背包水瓶 / A man with curly hair and glasses takes a selfie in a parking lot, wearing a backpack and holding a water bottle. / 早上白石山没去城 然后来到了这个一水湖 白石山是那个太行北陆什幺...",
+      "startAt": "2026-06-19T07:34:24.980Z",
+      "endAt": "2026-06-19T10:23:40.920Z",
+      "location": "易水湖游览",
+      "spanIds": [
+        "C2138_zve1_day2_talking-head_speech_s0-25",
+        "C2139_zve1_day2_broll_speech_s0-3",
+        "C2140_zve1_day2_broll_speech_s1-16",
+        "C2141_zve1_day2_broll_speech_s0-2",
+        "C2142_zve1_day2_broll_speech_s0-8",
+        "C2143_zve1_day2_broll_speech_s0-3",
+        "C2145_zve1_day2_broll_speech_s2-9",
+        "C2146_zve1_day2_broll_speech_s0-7",
+        "C2147_zve1_day2_broll_speech_s0-11",
+        "C2148_zve1_day2_broll_speech_s1-4",
+        "C2149_zve1_day2_talking-head_speech_s0-15",
+        "C2150_zve1_day2_broll_speech_s1-6",
+        "C2151_zve1_day2_broll_speech_s3-6",
+        "C2152_zve1_day2_broll_speech_s1-8",
+        "C2153_zve1_day2_talking-head_speech_s1-7",
+        "C2154_zve1_day2_broll_speech_s0-2",
+        "C2155_zve1_day2_broll_speech_s1-10",
+        "C2156_zve1_day2_broll_speech_s1-5",
+        "C2157_zve1_day2_broll_speech_s0-7",
+        "C2158_zve1_day2_broll_speech_s0-17",
+        "C2159_zve1_day2_broll_speech_s0-20",
+        "C2160_zve1_day2_broll_speech_s3-12",
+        "C2161_zve1_day2_broll_speech_s0-4",
+        "C2162_zve1_day2_broll_speech_s0-10",
+        "C2163_zve1_day2_broll_s0-1",
+        "C2163_zve1_day2_broll_speech_s0-8",
+        "C2164_zve1_day2_broll_speech_s0-8",
+        "C2165_zve1_day2_broll_speech_s0-7",
+        "C2166_zve1_day2_broll_speech_s1-10",
+        "C2167_zve1_day2_aerial_speech_s0-13",
+        "C2168_zve1_day2_broll_speech_s0-9",
+        "C2169_zve1_day2_broll_speech_s3-7",
+        "C2170_zve1_day2_broll_speech_s0-7",
+        "C2171_zve1_day2_broll_speech_s0-9",
+        "C2172_zve1_day2_broll_speech_s0-9",
+        "C2173_zve1_day2_broll_speech_s0-6",
+        "C2173_zve1_day2_broll_speech_s9-22",
+        "C2174_zve1_day2_broll_speech_s0-4",
+        "C2175_zve1_day2_broll_speech_s0-10",
+        "C2176_zve1_day2_broll_s0-1",
+        "C2176_zve1_day2_broll_speech_s1-12",
+        "C2177_zve1_day2_broll_speech_s0-9",
+        "C2178_zve1_day2_broll_speech_s0-7",
+        "C2179_zve1_day2_broll_speech_s0-9",
+        "C2180_zve1_day2_broll_speech_s1-6",
+        "C2181_zve1_day2_talking-head_speech_s0-11",
+        "DSC09413_photos_photo",
+        "DSC09414_photos_photo",
+        "DSC09422_photos_photo",
+        "DSC03952_photos_photo",
+        "DSC09426_photos_photo",
+        "DSC09427_photos_photo",
+        "DSC09428_photos_photo",
+        "DSC09429_photos_photo",
+        "DSC03954_photos_photo",
+        "DSC09430_photos_photo",
+        "DSC09431_photos_photo",
+        "DSC09433_photos_photo",
+        "DSC09434_photos_photo",
+        "DSC09435_photos_photo",
+        "DSC09436_photos_photo",
+        "DSC09437_photos_photo",
+        "DSC09439_photos_photo",
+        "DSC09441_photos_photo",
+        "DSC09443_photos_photo",
+        "DSC09446_photos_photo",
+        "DSC09448_photos_photo",
+        "DSC09449_photos_photo",
+        "DSC09451_photos_photo",
+        "DSC09452_photos_photo",
+        "DSC09453_photos_photo",
+        "DSC09455_photos_photo",
+        "DSC09459_photos_photo",
+        "DSC09460_photos_photo",
+        "DSC09461_photos_photo",
+        "DSC09466_photos_photo",
+        "DSC09468_photos_photo"
+      ]
+    },
+    {
+      "id": "route-f126e069a22d",
+      "kind": "route",
+      "reviewStatus": "pending",
+      "title": "行车：河北省，保定市，易县，安格庄乡 · 恋乡·太行水镇 → 河北省，保定市，徐水区，大王店镇 · 保定市建华商品混凝土有限公司",
+      "summary": "第一人称行车 / 乡村道路 / 阴天 / 无口播语音 / 乡村道路行车 / 车辆行驶 / 行人路边行走 / A series of driving shots on a rural road with mountains in the background. The footage shows cars driving, parked cars, and pedestrians walking on the side of the r...",
+      "startAt": "2026-06-19T11:15:13.000Z",
+      "endAt": "2026-06-19T12:09:19.140Z",
+      "route": {
+        "from": "河北省，保定市，易县，安格庄乡 · 恋乡·太行水镇",
+        "to": "河北省，保定市，徐水区，大王店镇 · 保定市建华商品混凝土有限公司"
+      },
+      "spanIds": [
+        "C2182_zve1_day2_drive_s0-42",
+        "C2183_zve1_day2_drive_speech_s0-14",
+        "C2183_zve1_day2_drive_visual_s4-15",
+        "C2184_zve1_day2_drive_s0-34",
+        "C2185_zve1_day2_drive_s0-52",
+        "C2186_zve1_day2_drive_speech_s1-5",
+        "C2186_zve1_day2_drive_visual_s2-8",
+        "C2187_zve1_day2_drive_s0-41",
+        "C2188_zve1_day2_drive_speech_s3-5",
+        "C2188_zve1_day2_drive_visual_s6-23",
+        "C2188_zve1_day2_drive_speech_s9-12",
+        "C2188_zve1_day2_drive_speech_s17-20",
+        "C2189_zve1_day2_drive_s0-58",
+        "C2190_zve1_day2_drive_s0-93",
+        "C2191_zve1_day2_drive_speech_s0-16",
+        "C2191_zve1_day2_drive_visual_s4-15",
+        "C2192_zve1_day2_drive_speech_s2-14",
+        "C2192_zve1_day2_drive_visual_s3-13"
+      ]
+    },
+    {
+      "id": "event-pharos-1ebb1bdb3183",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "保定附近华北平原",
+      "summary": "夜幕降临华北平原 / 手持自拍口播 / 花海拍摄现场 / 晚霞 / 有口播语音 / 花海现场拍摄准备 / 人物行走 / 红外套 / A person in a red jacket walks through a field at dusk, with power lines and poles visible in the background. / OK这端平 就是你要让它雪平OK / 华北平原田野 / 平原夜景拍摄 / 人物站立...",
+      "startAt": "2026-06-19T12:12:49.000Z",
+      "endAt": "2026-06-19T12:18:25.000Z",
+      "location": "保定附近华北平原",
+      "spanIds": [
+        "C2193_zve1_day2_broll_speech_s0-5",
+        "C2193_zve1_day2_broll_speech_s8-29",
+        "C2194_zve1_day2_broll_s0-31",
+        "DSC09474_photos_photo"
+      ]
+    },
+    {
+      "id": "route-6d39cff7463e",
+      "kind": "route",
+      "reviewStatus": "pending",
+      "title": "行车：河北省，保定市，满城区，贤台乡 · 朝阳首府澜园 → 河北省，保定市，竞秀区，保定国家高新区 · 保定飞凌嵌入式技术有限公司",
+      "summary": "第一人称行车 / 多车道公路 / 夜晚 / 无口播语音 / 夜间行车途中 / 夜间行车 / 多车同行 / Nighttime driving footage on a multi-lane road with streetlights illuminating the scene. Several cars are visible ahead, including a white truck and sedans. The road ...",
+      "startAt": "2026-06-19T12:52:20.000Z",
+      "endAt": "2026-06-19T12:55:55.539Z",
+      "route": {
+        "from": "河北省，保定市，满城区，贤台乡 · 朝阳首府澜园",
+        "to": "河北省，保定市，竞秀区，保定国家高新区 · 保定飞凌嵌入式技术有限公司"
+      },
+      "spanIds": [
+        "C2195_zve1_day2_drive_s0-31",
+        "C2196_zve1_day2_drive_speech_s0-14",
+        "C2196_zve1_day2_drive_visual_s3-17",
+        "C2197_zve1_day2_drive_s0-35"
+      ]
+    },
+    {
+      "id": "event-pharos-dc3783a189c0",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "保定晚餐",
+      "summary": "在保定吃了晚餐 / 手持自拍口播 / 停车场 / 夜晚 / 有口播语音 / 赶夜路吃特色菜 / 卷发男子 / 戴眼镜 / A man with curly hair and glasses is taking a selfie at night in a parking lot with cars and lit buildings in the background. / 现在已经现在已经啥了 已经九点多了赶到了宝定 去吃驴肉伙食不...",
+      "startAt": "2026-06-19T13:14:02.880Z",
+      "endAt": "2026-06-19T13:34:57.280Z",
+      "location": "保定晚餐",
+      "spanIds": [
+        "C2198_zve1_day2_talking-head_speech_s0-15",
+        "C2199_zve1_day2_broll_speech_s1-5",
+        "C2200_zve1_day2_broll_speech_s1-9",
+        "C2201_zve1_day2_broll_visual_s0-2",
+        "C2202_zve1_day2_broll_speech_s0-2",
+        "C2203_zve1_day2_broll_speech_s0-10"
+      ]
+    },
+    {
+      "id": "event-869129bdaab6",
+      "kind": "event",
+      "reviewStatus": "pending",
+      "title": "北方城市晨景",
+      "summary": "固定机位观察 / 城市街道 / 天气光线不明 / 有口播语音 / 北方城市晨景 / 空气通透 / 停车场 / A street scene with a white car parked on the left, a black car on the right, and several scooters in the middle. / 这个早上八点的保定就是一个平平无奇的北方城市 但是空气很通透比石家庄那边要通透多了",
+      "startAt": "2026-06-20T00:27:04.020Z",
+      "endAt": "2026-06-20T00:27:12.520Z",
+      "location": "河北省，保定市，竞秀区，保定国家高新区 · 国税小区",
+      "spanIds": [
+        "C2204_zve1_day3_broll_speech_s2-11"
+      ]
+    },
+    {
+      "id": "event-451c4461334c",
+      "kind": "event",
+      "reviewStatus": "pending",
+      "title": "探访长城老家",
+      "summary": "固定机位观察 / 4S 店外景 / 天气光线不明 / 有口播语音 / 探访长城老家 / 坦克 4S 店 / 蓝色横幅 / A car dealership exterior with blue banners, parked cars, and a glass showroom entrance. / 大早上来了长城老家的4 S店看一下 / 鸿蒙之行探访 / 交通锥 / A black sedan is parked in front...",
+      "startAt": "2026-06-20T00:40:52.640Z",
+      "endAt": "2026-06-20T00:41:58.880Z",
+      "location": "河北省，保定市，竞秀区，保定国家高新区 · 保定市炜达电力设备有限责任公司",
+      "spanIds": [
+        "C2205_zve1_day3_broll_speech_s0-5",
+        "C2206_zve1_day3_broll_speech_s0-4",
+        "C2207_zve1_day3_broll_speech_s2-9"
+      ]
+    },
+    {
+      "id": "event-pharos-39af4c76f9e3",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "保定早餐",
+      "summary": "保定早餐吃了驴肉火烧 / 固定机位观察 / 餐厅菜单区 / 天气光线不明 / 有口播语音 / 品尝保定特色 / 驴肉火烧 / 绿色菜单 / The video frames show a restaurant menu board with green backgrounds, displaying various food items and prices in Chinese characters. / 来吃鲍定特色驴肉火烧 / ...",
+      "startAt": "2026-06-20T01:24:55.520Z",
+      "endAt": "2026-06-20T01:37:18.740Z",
+      "location": "保定早餐",
+      "spanIds": [
+        "C2208_zve1_day3_broll_speech_s0-3",
+        "C2209_zve1_day3_broll_speech_s4-8",
+        "C2210_zve1_day3_talking-head_speech_s1-12"
+      ]
+    },
+    {
+      "id": "route-a053159e2e33",
+      "kind": "route",
+      "reviewStatus": "pending",
+      "title": "行车：河北省，保定市，莲池区，五四路街道 · 邢台银行(保定恒祥支行) → 河北省，保定市，雄县，朱各庄镇 · 北涞河北(公交站)",
+      "summary": "第一人称行车 / 湿滑山路 / 天气光线不明 / 有口播语音 / 感叹雪车造型 / 保定 / 洒雪车 / A green and white road maintenance truck is driving on a wet road, with a white car to its right and another white car in the left lane. / 我靠 前面保定的这个洒雪车它的prof ile居然是月...",
+      "startAt": "2026-06-20T02:05:48.020Z",
+      "endAt": "2026-06-20T03:02:05.460Z",
+      "route": {
+        "from": "河北省，保定市，莲池区，五四路街道 · 邢台银行(保定恒祥支行)",
+        "to": "河北省，保定市，雄县，朱各庄镇 · 北涞河北(公交站)"
+      },
+      "spanIds": [
+        "C2211_zve1_day3_drive_speech_s1-8",
+        "C2211_zve1_day3_drive_visual_s4-10",
+        "C2212_zve1_day3_drive_s0-53",
+        "C2213_zve1_day3_drive_s0-65",
+        "C2214_zve1_day3_drive_s0-44",
+        "C2215_zve1_day3_drive_speech_s0-3",
+        "C2216_zve1_day3_drive_s0-36",
+        "C2217_zve1_day3_drive_s0-45",
+        "C2218_zve1_day3_drive_speech_s0-18",
+        "C2218_zve1_day3_drive_visual_s4-18"
+      ]
+    },
+    {
+      "id": "event-95e19654955b",
+      "kind": "event",
+      "reviewStatus": "pending",
+      "title": "油价讨论现场",
+      "summary": "手持自拍口播 / 加油站内部 / 晴天 / 有口播语音 / 油价讨论现场 / E95 汽油 / 价格显示 / A view from inside a car at a gas station, showing the side mirror and a fuel pump displaying E95 gasoline prices. / 一春起游这幺明目张胆的写在这里 行吧 看看多少钱 / 户外路边 / 油价对比分析 / 卷发男子...",
+      "startAt": "2026-06-20T03:16:38.040Z",
+      "endAt": "2026-06-20T03:19:30.580Z",
+      "location": "河北省，保定市，雄县，大营镇 · 大营收费站入口(北京方向)",
+      "spanIds": [
+        "C2219_zve1_day3_broll_speech_s1-9",
+        "C2220_zve1_day3_talking-head_speech_s0-9",
+        "C2221_zve1_day3_broll_speech_s0-6"
+      ]
+    },
+    {
+      "id": "route-75e06fb10a74",
+      "kind": "route",
+      "reviewStatus": "pending",
+      "title": "行车：河北省，廊坊市，安次区，东沽港镇 · G18荣乌高速 → 河北省，唐山市，丰南区，振兴街道 · 汉沽北互通立交",
+      "summary": "第一人称行车 / 高速公路 / 阴天 / 无口播语音 / 天津欢迎路牌 / 绿色指示牌 / 阴天天空 / A car drives on a highway under an overcast sky, passing a green sign that reads 'Welcome to Tianjin'. / 有口播语音 / 抵达天津卫 / 黑色轿车 / 红色卡车 / A car drives on a highway with ...",
+      "startAt": "2026-06-20T03:59:40.760Z",
+      "endAt": "2026-06-20T05:14:23.515Z",
+      "route": {
+        "from": "河北省，廊坊市，安次区，东沽港镇 · G18荣乌高速",
+        "to": "河北省，唐山市，丰南区，振兴街道 · 汉沽北互通立交"
+      },
+      "spanIds": [
+        "C2222_zve1_day3_drive_visual_s2-9",
+        "C2222_zve1_day3_drive_speech_s2-10",
+        "C2223_zve1_day3_drive_s0-60",
+        "C2224_zve1_day3_drive_s0-41",
+        "C2225_zve1_day3_drive_speech_s0-6",
+        "C2225_zve1_day3_drive_visual_s8-26",
+        "C2225_zve1_day3_drive_speech_s11-15",
+        "C2225_zve1_day3_drive_speech_s21-28",
+        "C2226_zve1_day3_drive_speech_s0-16",
+        "C2226_zve1_day3_drive_visual_s7-19",
+        "C2226_zve1_day3_drive_visual_s18-21",
+        "C2227_zve1_day3_drive_s0-48",
+        "C2228_zve1_day3_drive_s0-18",
+        "C2229_zve1_day3_drive_s0-53",
+        "C2230_zve1_day3_drive_s0-29",
+        "C2231_zve1_day3_drive_s0-2"
+      ]
+    },
+    {
+      "id": "event-eeaed4c0bcd9",
+      "kind": "event",
+      "reviewStatus": "pending",
+      "title": "航拍视角",
+      "summary": "环境远景 / 田野远景 / 阴天 / 无口播语音 / 农田树列观察 / 绿色作物 / 远处树林 / A row of tall, dark green trees stands in the distance behind a field of green crops under a grey sky. / 航拍俯瞰 / 乡村公路 / 航拍视角 / 田野 / 车辆 / Aerial view of a highway running ...",
+      "startAt": "2026-06-20T05:25:25.000Z",
+      "endAt": "2026-06-20T05:45:48.134Z",
+      "location": "中华人民共和国，河北，唐山市 · 唐山鑫惠丰重工冶锻有限公司",
+      "spanIds": [
+        "DJI_20260620132745_0926_D_drone_aerial_s0-21",
+        "DJI_20260620132837_0930_D_drone_aerial_s0-15",
+        "DJI_20260620132944_0937_D_drone_aerial_s0-39",
+        "DJI_20260620133225_0950_D_drone_aerial_s0-25",
+        "DJI_20260620133414_0960_D_drone_aerial_s0-59",
+        "DJI_20260620133650_0973_D_drone_aerial_s0-27",
+        "DJI_20260620133738_0974_D_drone_aerial_s0-48",
+        "DJI_20260620134008_0996_D_drone_aerial_s0-17",
+        "DJI_20260620134147_0007_D_drone_aerial_s0-14",
+        "DJI_20260620134514_0032_D_drone_aerial_s0-35",
+        "DSC09489_photos_photo",
+        "DJI_20260620132908_0931_D-HDR_photos_photo",
+        "DJI_20260620133121_0944_D-HDR_photos_photo",
+        "DJI_20260620133337_0954_D-HDR_photos_photo",
+        "DJI_20260620133357_0957_D-HDR_photos_photo",
+        "DJI_20260620133529_0963_D-HDR_photos_photo",
+        "DJI_20260620133551_0967_D-HDR_photos_photo",
+        "DJI_20260620133831_0975_D-HDR_photos_photo",
+        "DJI_20260620133921_0987_D-HDR_photos_photo",
+        "DJI_20260620133958_0993_D-HDR_photos_photo",
+        "DJI_20260620134246_0008_D-HDR_photos_photo",
+        "DJI_20260620134315_0011_D-HDR_photos_photo",
+        "DJI_20260620134330_0014_D-HDR_photos_photo",
+        "DJI_20260620134344_0019_D-HDR_photos_photo",
+        "DJI_20260620134500_0029_D-HDR_photos_photo"
+      ]
+    },
+    {
+      "id": "event-61be7ec50f06",
+      "kind": "event",
+      "reviewStatus": "pending",
+      "title": "女子行走展示",
+      "summary": "固定机位观察 / 停车场 / 天气光线不明 / 无口播语音 / 女子行走展示 / 绿色连帽衫 / 粉色手提包 / A woman in a green hoodie and blue skirt walks across a parking lot holding a hat and a pink bag.",
+      "startAt": "2026-06-20T05:51:06.000Z",
+      "endAt": "2026-06-20T05:51:09.008Z",
+      "location": "河北省，唐山市，丰南区，王兰庄镇 · 鑫惠丰重工冶锻(公交站)",
+      "spanIds": [
+        "C2232_zve1_day3_broll_visual_s0-4"
+      ]
+    },
+    {
+      "id": "route-9897b2ed32c6",
+      "kind": "route",
+      "reviewStatus": "pending",
+      "title": "行车：河北省，唐山市，丰南区，黄各庄镇 · 小军汽车修理 → 河北省，唐山市，路南区，永红桥街道 · 逸境佳苑",
+      "summary": "第一人称行车 / 高速公路 / 天气光线不明 / 有口播语音 / 大车密集行车 / 刀片超车 / 唐山高速 / A large truck with a covered cargo is driving on the right lane of a highway, with trees and a green fence on the left side. / 我靠感觉唐山这里面的高速 这个大车好多而且他们不守规矩老是瞎变道吓人了还...",
+      "startAt": "2026-06-20T06:06:03.180Z",
+      "endAt": "2026-06-20T06:28:09.390Z",
+      "route": {
+        "from": "河北省，唐山市，丰南区，黄各庄镇 · 小军汽车修理",
+        "to": "河北省，唐山市，路南区，永红桥街道 · 逸境佳苑"
+      },
+      "spanIds": [
+        "C2233_zve1_day3_drive_speech_s1-16",
+        "C2233_zve1_day3_drive_visual_s4-14",
+        "C2234_zve1_day3_drive_speech_s4-20",
+        "C2234_zve1_day3_drive_visual_s6-17",
+        "C2235_zve1_day3_drive_speech_s1-15",
+        "C2235_zve1_day3_drive_visual_s3-17",
+        "C2236_zve1_day3_drive_speech_s0-8",
+        "C2236_zve1_day3_drive_visual_s6-13"
+      ]
+    },
+    {
+      "id": "event-pharos-d4c5acb747d3",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "开滦国家矿山公园",
+      "summary": "开滦快拍，拍矿史、工业外观、轨道、设备、煤矿叙事和唐山城市质感。 / 固定机位观察 / 停车场 / 天气光线不明 / 有口播语音 / 质疑收费原因 / 工业建筑 / 电力塔 / A parking lot with several cars, including a white SUV and a grey SUV, with industrial buildings and a tall electricity pylon in t...",
+      "startAt": "2026-06-20T06:32:50.240Z",
+      "endAt": "2026-06-20T07:57:17.580Z",
+      "location": "开滦国家矿山公园",
+      "spanIds": [
+        "C2237_zve1_day3_broll_speech_s1-13",
+        "C2238_zve1_day3_broll_speech_s0-16",
+        "C2239_zve1_day3_broll_s0-35",
+        "C2240_zve1_day3_broll_speech_s2-10",
+        "C2241_zve1_day3_broll_speech_s1-20",
+        "C2242_zve1_day3_broll_speech_s0-13",
+        "C2243_zve1_day3_broll_speech_s3-19",
+        "C2244_zve1_day3_broll_speech_s2-12",
+        "C2246_zve1_day3_broll_visual_s0-16",
+        "C2247_zve1_day3_broll_speech_s0-6",
+        "C2248_zve1_day3_broll_speech_s1-25",
+        "C2249_zve1_day3_broll_speech_s1-8",
+        "C2250_zve1_day3_broll_speech_s0-14",
+        "C2251_zve1_day3_broll_speech_s0-12",
+        "C2252_zve1_day3_broll_speech_s0-8",
+        "C2252_zve1_day3_broll_s8-10",
+        "C2253_zve1_day3_broll_speech_s0-2",
+        "C2254_zve1_day3_broll_speech_s1-7",
+        "C2255_zve1_day3_broll_visual_s0-16",
+        "C2256_zve1_day3_broll_speech_s1-18",
+        "C2257_zve1_day3_broll_s0-36",
+        "C2258_zve1_day3_broll_speech_s1-9",
+        "C2259_zve1_day3_broll_speech_s1-9",
+        "C2260_zve1_day3_broll_speech_s0-3",
+        "C2261_zve1_day3_broll_speech_s0-5",
+        "C2262_zve1_day3_broll_speech_s1-20",
+        "C2263_zve1_day3_broll_speech_s0-2",
+        "C2264_zve1_day3_broll_speech_s0-11",
+        "C2265_zve1_day3_broll_speech_s0-16",
+        "C2266_zve1_day3_broll_speech_s0-8",
+        "C2267_zve1_day3_broll_speech_s1-3",
+        "C2267_zve1_day3_broll_speech_s6-10",
+        "C2268_zve1_day3_broll_speech_s1-9",
+        "C2269_zve1_day3_broll_speech_s1-7",
+        "C2270_zve1_day3_broll_speech_s0-21",
+        "C2271_zve1_day3_broll_speech_s0-7",
+        "C2272_zve1_day3_broll_speech_s3-9",
+        "C2273_zve1_day3_broll_speech_s0-8",
+        "C2274_zve1_day3_broll_speech_s7-12",
+        "C2275_zve1_day3_broll_speech_s1-5",
+        "C2276_zve1_day3_talking-head_speech_s0-7",
+        "C2277_zve1_day3_broll_speech_s1-4",
+        "C2278_zve1_day3_broll_speech_s2-6",
+        "C2279_zve1_day3_broll_visual_s0-3",
+        "C2280_zve1_day3_broll_speech_s0-1",
+        "C2281_zve1_day3_broll_speech_s2-9",
+        "C2281_zve1_day3_broll_visual_s15-18",
+        "C2282_zve1_day3_broll_speech_s0-10",
+        "C2283_zve1_day3_broll_speech_s0-4",
+        "C2284_zve1_day3_broll_speech_s1-7",
+        "C2285_zve1_day3_broll_speech_s0-14",
+        "C2286_zve1_day3_broll_speech_s1-7",
+        "C2287_zve1_day3_broll_speech_s1-5",
+        "C2288_zve1_day3_broll_speech_s0-2",
+        "C2289_zve1_day3_broll_speech_s0-8",
+        "C2290_zve1_day3_broll_visual_s0-1",
+        "C2291_zve1_day3_drive_speech_s0-8",
+        "C2292_zve1_day3_broll_visual_s0-2",
+        "C2293_zve1_day3_broll_speech_s1-6",
+        "C2294_zve1_day3_broll_speech_s7-12",
+        "C2294_zve1_day3_broll_speech_s16-18",
+        "C2295_zve1_day3_broll_speech_s0-11",
+        "C2296_zve1_day3_broll_speech_s0-2",
+        "C2297_zve1_day3_broll_speech_s1-12",
+        "C2298_zve1_day3_broll_speech_s4-5",
+        "C2299_zve1_day3_broll_speech_s1-10",
+        "C2300_zve1_day3_broll_speech_s1-9",
+        "C2300_zve1_day3_broll_speech_s12-16",
+        "C2301_zve1_day3_broll_speech_s2-9",
+        "C2302_zve1_day3_broll_speech_s0-10",
+        "C2302_zve1_day3_broll_speech_s12-19",
+        "C2303_zve1_day3_broll_speech_s0-18",
+        "C2304_zve1_day3_broll_s0-1",
+        "C2305_zve1_day3_broll_speech_s1-6",
+        "C2306_zve1_day3_talking-head_speech_s0-18",
+        "DSC09503_photos_photo",
+        "DSC09510_photos_photo",
+        "DSC09528_photos_photo"
+      ]
+    },
+    {
+      "id": "route-44c00796b0f8",
+      "kind": "route",
+      "reviewStatus": "pending",
+      "title": "行车：河北省，唐山市，开平区，开平镇 · 老郭板面 → 河北省，唐山市，丰润区，常庄镇",
+      "summary": "第一人称行车 / 郊区道路 / 晴天 / 无口播语音 / 城市道路行驶 / 白色面包车 / 加油站 / A series of driving shots along a multi-lane road in a suburban area. The footage captures a white van and SUV driving ahead, passing by a gas station, commercial buil...",
+      "startAt": "2026-06-20T08:24:43.000Z",
+      "endAt": "2026-06-20T08:38:59.568Z",
+      "route": {
+        "from": "河北省，唐山市，开平区，开平镇 · 老郭板面",
+        "to": "河北省，唐山市，丰润区，常庄镇"
+      },
+      "spanIds": [
+        "C2307_zve1_day3_drive_s0-270",
+        "C2308_zve1_day3_drive_s0-54"
+      ]
+    },
+    {
+      "id": "event-d53ff0673a40",
+      "kind": "event",
+      "reviewStatus": "pending",
+      "title": "服务区用餐休息",
+      "summary": "固定机位观察 / 兰州服务区停车场 / 晴天 / 有口播语音 / 服务区用餐休息 / 肯德基门店外观 / 停车场车辆 / A KFC restaurant building with a parking lot containing several cars, including a white SUV and a white sedan. / 兰州服务区 吃个饭这里还有肯德基挂好的 / 超市内部 / 室内灯光 / 店内环境展示 / ...",
+      "startAt": "2026-06-20T08:55:07.080Z",
+      "endAt": "2026-06-20T08:56:28.720Z",
+      "location": "河北省，唐山市，滦州市，王店子镇 · 滦州服务区唐山大队警务室",
+      "spanIds": [
+        "C2309_zve1_day3_broll_speech_s1-5",
+        "C2310_zve1_day3_broll_speech_s0-9"
+      ]
+    },
+    {
+      "id": "route-fe2455e022cd",
+      "kind": "route",
+      "reviewStatus": "pending",
+      "title": "行车：河北省，唐山市，滦州市，油榨镇 · 贾营村 → 河北省，秦皇岛市，海港区，海滨路街道 · 秦皇岛市玻璃博物馆",
+      "summary": "第一人称行车 / 高速公路 / 晴天 / 无口播语音 / 高速路段行驶 / 多车道公路 / 绿树护栏 / A point-of-view shot from a vehicle driving on a multi-lane highway. The road is flanked by dense green trees and green guardrails on both sides. The sky is clear and...",
+      "startAt": "2026-06-20T10:11:33.000Z",
+      "endAt": "2026-06-20T11:09:19.035Z",
+      "route": {
+        "from": "河北省，唐山市，滦州市，油榨镇 · 贾营村",
+        "to": "河北省，秦皇岛市，海港区，海滨路街道 · 秦皇岛市玻璃博物馆"
+      },
+      "spanIds": [
+        "C2311_zve1_day3_drive_s0-14",
+        "C2312_zve1_day3_drive_s0-61",
+        "C2313_zve1_day3_drive_s0-23",
+        "C2314_zve1_day3_drive_s0-51",
+        "C2315_zve1_day3_drive_s0-75",
+        "C2316_zve1_day3_drive_s0-42",
+        "C2317_zve1_day3_drive_s0-11",
+        "C2318_zve1_day3_drive_s0-30"
+      ]
+    },
+    {
+      "id": "event-pharos-53f3479ff57e",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "秦皇岛西港花园/开埠地",
+      "summary": "港口初步扫街和延时找构图，拍铁轨、仓库、游客、港口边界和蓝调前的海风。 / 固定机位观察 / 停车场 / 晚霞 / 有口播语音 / 晚霞结束遗憾 / 停车等待 / 情景不明 / A white SUV and a black sedan are parked in a foggy parking lot with a mural on the wall. / 哎呀这边晚霞要结束了最后晚了半个小时到没赶上它那一开始 非常的金色 最后早知...",
+      "startAt": "2026-06-20T11:22:11.640Z",
+      "endAt": "2026-06-20T12:29:15.000Z",
+      "location": "秦皇岛西港花园/开埠地",
+      "spanIds": [
+        "C2319_zve1_day3_broll_speech_s0-14",
+        "C2320_zve1_day3_broll_speech_s1-13",
+        "C2321_zve1_day3_broll_speech_s0-22",
+        "C2322_zve1_day3_talking-head_s0-36",
+        "C2323_zve1_day3_broll_speech_s0-4",
+        "C2324_zve1_day3_broll_speech_s0-7",
+        "C2325_zve1_day3_broll_speech_s0-1",
+        "C2326_zve1_day3_broll_speech_s0-8",
+        "C2327_zve1_day3_broll_speech_s2-8",
+        "C2328_zve1_day3_broll_speech_s1-10",
+        "C2329_zve1_day3_broll_s0-17",
+        "C2330_zve1_day3_broll_s0-7",
+        "C2331_zve1_day3_broll_s0-16",
+        "C2332_zve1_day3_broll_speech_s1-10",
+        "C2333_zve1_day3_broll_speech_s0-17",
+        "C2334_zve1_day3_broll_speech_s0-8",
+        "C2335_zve1_day3_broll_speech_s1-19",
+        "C2336_zve1_day3_broll_visual_s0-7",
+        "C2337_zve1_day3_broll_speech_s0-28",
+        "C2338_zve1_day3_broll_visual_s0-9",
+        "C2339_zve1_day3_broll_speech_s0-7",
+        "C2340_zve1_day3_broll_speech_s6-26",
+        "DSC09542_photos_photo",
+        "DSC09547_photos_photo",
+        "DSC09565_photos_photo",
+        "DSC09566_photos_photo",
+        "DSC09571_photos_photo",
+        "DSC09584_photos_photo",
+        "DSC09585_photos_photo"
+      ]
+    },
+    {
+      "id": "route-6819f8f8ea93",
+      "kind": "route",
+      "reviewStatus": "pending",
+      "title": "行车：河北省，秦皇岛市，海港区，海滨路街道 · 秦皇岛金海粮油工业有限公司 → 河北省，秦皇岛市，昌黎县，团林管理处 · 潮河小学",
+      "summary": "第一人称行车 / 车内 / 夜晚 / 有口播语音 / 雾天行车临时停车 / 夜间行车 / 雾天 / A night view from inside a car shows a bright streetlight and distant red taillights on a dark road. / 停了吧停了吧它那个雾没除掉 / 多车道公路 / 无口播语音 / 夜间行车口播 / 绿灯通行 / 车辆前行 / Nighttime d...",
+      "startAt": "2026-06-20T13:15:58.780Z",
+      "endAt": "2026-06-20T14:26:10.032Z",
+      "route": {
+        "from": "河北省，秦皇岛市，海港区，海滨路街道 · 秦皇岛金海粮油工业有限公司",
+        "to": "河北省，秦皇岛市，昌黎县，团林管理处 · 潮河小学"
+      },
+      "spanIds": [
+        "C2341_zve1_day3_drive_speech_s0-3",
+        "C2342_zve1_day3_drive_visual_s0-30",
+        "C2343_zve1_day3_drive_s0-82",
+        "C2344_zve1_day3_drive_speech_s4-16",
+        "C2344_zve1_day3_drive_visual_s8-26",
+        "C2344_zve1_day3_drive_speech_s19-23"
+      ]
+    },
+    {
+      "id": "event-pharos-dbce49c3e47f",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "新开口码头/福来岛附近住宿",
+      "summary": "入住福来岛附近，备份素材、充电、准备D4日出设备。 / 第一人称行车 / 林荫铺装道路 / 夜晚 / 无口播语音 / 夜间林荫行驶 / 路灯 / 远光灯 / Nighttime driving footage on a paved road lined with trees and streetlights, with distant headlights visible ahead. / 森林或乡村道路 / 夜间森林穿行 / 车灯照...",
+      "startAt": "2026-06-20T14:29:42.000Z",
+      "endAt": "2026-06-20T14:35:48.712Z",
+      "location": "新开口码头/福来岛附近住宿",
+      "spanIds": [
+        "C2345_zve1_day3_drive_s0-31",
+        "C2346_zve1_day3_drive_s0-34",
+        "C2347_zve1_day3_drive_speech_s0-19",
+        "C2347_zve1_day3_drive_visual_s4-15",
+        "C2348_zve1_day3_drive_speech_s1-6",
+        "C2348_zve1_day3_drive_visual_s4-15",
+        "C2348_zve1_day3_drive_speech_s12-14"
+      ]
+    },
+    {
+      "id": "event-pharos-c59733835c39",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "福来岛南侧停车场/海龟岛",
+      "summary": "日出前到达反应和架机，拍海龟岛入口、滩涂乱石、细高灯标、头灯、脚架和第一道天光。 / 固定机位观察 / 停车场 / 夜晚 / 有口播语音 / 车辆停放观察 / 湿滑地面 / 夜间灯光 / A dark car is parked in a lot at night, with red lights illuminating the scene and other vehicles visible in the background. ...",
+      "startAt": "2026-06-20T19:43:01.900Z",
+      "endAt": "2026-06-20T20:21:34.620Z",
+      "location": "福来岛南侧停车场/海龟岛",
+      "spanIds": [
+        "C2349_zve1_day4_broll_speech_s0-12",
+        "C2350_zve1_day4_broll_speech_s0-12",
+        "C2351_zve1_day4_broll_speech_s2-8",
+        "C2352_zve1_day4_broll_speech_s0-13",
+        "C2353_zve1_day4_broll_speech_s1-7",
+        "C2354_zve1_day4_talking-head_speech_s0-8",
+        "C2355_zve1_day4_broll_speech_s1-8",
+        "C2356_zve1_day4_broll_speech_s0-19",
+        "C2357_zve1_day4_broll_speech_s1-8",
+        "DSC09591_photos_photo",
+        "DSC09594_photos_photo",
+        "DSC04044_photos_photo"
+      ]
+    },
+    {
+      "id": "event-pharos-05304b6d5385",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "福来岛灯塔/海龟岛日出机位",
+      "summary": "福来岛灯塔/海龟岛日出双机位延时。A7R6推荐50-400mm压细高灯标、渔船、港池水面和日出方向，A7R5推荐20mm纳入滩涂乱石、低矮海岸、天空和灯标环境。 / 固定机位观察 / 海边堤坝 / 日落 / 无口播语音 / 海边日落观景 / 灯塔 / 船只 / A stone breakwater extends into the sea at sunset, with people standing near a lighthous...",
+      "startAt": "2026-06-20T20:23:26.000Z",
+      "endAt": "2026-06-20T21:15:55.000Z",
+      "location": "福来岛灯塔/海龟岛日出机位",
+      "spanIds": [
+        "C2358_zve1_day4_broll_s0-51",
+        "C2359_zve1_day4_broll_speech_s0-7",
+        "C2360_zve1_day4_broll_speech_s0-1",
+        "C2361_zve1_day4_broll_speech_s1-8",
+        "20260621_秦皇岛福来岛日出2_ts-final_broll_s0-13",
+        "20260621_秦皇岛福来岛日出1_ts-final_timelapse_s0-33",
+        "C2362_zve1_day4_broll_speech_s6-9",
+        "C2363_zve1_day4_broll_speech_s0-6",
+        "C2364_zve1_day4_broll_speech_s0-8",
+        "C2365_zve1_day4_broll_s0-1",
+        "C2365_zve1_day4_broll_speech_s0-3",
+        "C2367_zve1_day4_broll_speech_s0-2",
+        "C2367_zve1_day4_broll_s2-3",
+        "C2368_zve1_day4_broll_speech_s0-11",
+        "C2369_zve1_day4_talking-head_speech_s2-28",
+        "DSC09602_photos_photo",
+        "DSC04080_photos_photo",
+        "DSC04137_photos_photo",
+        "DSC09606_photos_photo",
+        "DSC09608_photos_photo",
+        "DSC09611_photos_photo",
+        "DSC04248_photos_photo",
+        "DSC09653_photos_photo",
+        "DSC09668_photos_photo",
+        "DSC09680_photos_photo",
+        "DSC09705_photos_photo",
+        "DSC00327_photos_photo",
+        "DSC04389_photos_photo",
+        "DSC09834_photos_photo",
+        "DSC04521_photos_photo",
+        "DSC09920_photos_photo",
+        "DSC09921_photos_photo",
+        "DSC09926_photos_photo",
+        "DSC09933_photos_photo",
+        "DSC09938_photos_photo",
+        "DSC09940_photos_photo",
+        "DSC09948_photos_photo",
+        "DSC09950_photos_photo",
+        "DSC09953_photos_photo",
+        "DSC09954_photos_photo"
+      ]
+    },
+    {
+      "id": "event-pharos-6daa640b69ce",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "新开口南岸一级渔港",
+      "summary": "日出后周边转转，拍渔港、船、人、海边小路、滩涂乱石和清晨劳作，不去阿那亚。 / 固定机位观察 / 岩石海岸 / 雨天 / 无口播语音 / 亲子戏水 / 黄色雨靴 / 蓝色建筑 / A man and a child in yellow waders walk through shallow water near a rocky shoreline, with a Ferris wheel and blue building visib...",
+      "startAt": "2026-06-20T21:19:05.000Z",
+      "endAt": "2026-06-20T21:55:34.980Z",
+      "location": "新开口南岸一级渔港",
+      "spanIds": [
+        "C2370_zve1_day4_broll_speech_s0-6",
+        "C2371_zve1_day4_broll_speech_s0-9",
+        "C2372_zve1_day4_broll_speech_s1-19",
+        "C2373_zve1_day4_broll_speech_s0-19",
+        "C2374_zve1_day4_broll_speech_s0-7",
+        "C2375_zve1_day4_broll_speech_s1-4",
+        "C2376_zve1_day4_broll_speech_s0-10",
+        "C2377_zve1_day4_broll_speech_s1-7",
+        "C2378_zve1_day4_broll_speech_s0-7",
+        "C2379_zve1_day4_broll_speech_s0-9",
+        "C2380_zve1_day4_broll_speech_s1-8",
+        "DSC09962_photos_photo",
+        "DSC09963_photos_photo",
+        "DSC09964_photos_photo",
+        "DSC09967_photos_photo",
+        "DSC09970_photos_photo",
+        "DSC09973_photos_photo",
+        "DSC00330_photos_photo",
+        "DSC09977_photos_photo",
+        "DSC09982_photos_photo",
+        "DSC09983_photos_photo"
+      ]
+    },
+    {
+      "id": "event-pharos-2b1b2960e989",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "新开口码头/福来岛附近住宿",
+      "summary": "补觉后出发前记录，拍整理、退房和今日放弃山海关后直奔天津的决定。 / 细节特写 / 水面近景 / 天气光线不明 / 有口播语音 / 情景不明 / 平静水面 / 绿色波纹 / The video shows a close-up view of calm, greenish water with gentle ripples on the surface. / 对喔 / 固定机位观察 / 浑浊水域边缘 / 观察水母生态 / 水母特写 /...",
+      "startAt": "2026-06-21T01:14:42.000Z",
+      "endAt": "2026-06-21T02:12:45.620Z",
+      "location": "新开口码头/福来岛附近住宿",
+      "spanIds": [
+        "C2381_zve1_day4_broll_speech_s0-2",
+        "C2382_zve1_day4_broll_speech_s0-20",
+        "C2383_zve1_day4_broll_speech_s0-11",
+        "C2384_zve1_day4_drive_visual_s0-3",
+        "C2384_zve1_day4_drive_speech_s4-17",
+        "C2384_zve1_day4_drive_visual_s5-16",
+        "C2385_zve1_day4_broll_speech_s0-17",
+        "C2386_zve1_day4_broll_speech_s0-7",
+        "C2387_zve1_day4_broll_speech_s1-3",
+        "C2387_zve1_day4_broll_speech_s8-13"
+      ]
+    },
+    {
+      "id": "route-fc0373609659",
+      "kind": "route",
+      "reviewStatus": "pending",
+      "title": "行车：河北省，秦皇岛市，昌黎县，团林管理处 → 河北省，秦皇岛市，昌黎县，团林管理处 · 秦皇岛江鹏水产渔需药店",
+      "summary": "第一人称行车 / 林荫公路 / 晴天 / 无口播语音 / 前方车辆行驶 / 两车道道路 / 绿树成荫 / A view from a moving vehicle traveling down a two-lane road surrounded by lush green trees. A white box truck and a black SUV are driving ahead in the same direction....",
+      "startAt": "2026-06-21T02:20:45.000Z",
+      "endAt": "2026-06-21T02:22:07.600Z",
+      "route": {
+        "from": "河北省，秦皇岛市，昌黎县，团林管理处",
+        "to": "河北省，秦皇岛市，昌黎县，团林管理处 · 秦皇岛江鹏水产渔需药店"
+      },
+      "spanIds": [
+        "C2388_zve1_day4_drive_s0-45",
+        "C2389_zve1_day4_drive_speech_s0-15"
+      ]
+    },
+    {
+      "id": "event-pharos-47c3566dff59",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "福来岛附近早午饭点",
+      "summary": "出发前早午饭和补给，拍餐食、饮水、查路况，11:30准时去天津。 / 第一人称行车 / 餐厅门前 / 晴天 / 有口播语音 / 车辆停靠场景 / 森屿海餐厅 / 彩色遮阳伞 / A beige van is parked in front of a building with a sign reading '森屿海餐厅' and colorful umbrellas outside. / 早安 / 无口播语音 / 固定机位观察 / 现...",
+      "startAt": "2026-06-21T02:35:30.000Z",
+      "endAt": "2026-06-21T03:06:01.460Z",
+      "location": "福来岛附近早午饭点",
+      "spanIds": [
+        "C2390_zve1_day4_drive_speech_s0-2",
+        "C2390_zve1_day4_drive_visual_s0-3",
+        "C2391_zve1_day4_broll_speech_s0-12",
+        "C2392_zve1_day4_broll_speech_s0-6",
+        "C2393_zve1_day4_broll_speech_s2-11",
+        "C2394_zve1_day4_broll_s0-1",
+        "C2394_zve1_day4_broll_speech_s1-29",
+        "C2395_zve1_day4_broll_s0-1",
+        "C2395_zve1_day4_broll_speech_s0-7",
+        "C2396_zve1_day4_broll_visual_s0-3",
+        "C2397_zve1_day4_broll_speech_s0-6",
+        "C2398_zve1_day4_broll_speech_s0-2",
+        "C2399_zve1_day4_broll_speech_s0-4",
+        "C2399_zve1_day4_broll_speech_s7-10",
+        "C2400_zve1_day4_broll_speech_s0-18",
+        "C2401_zve1_day4_broll_speech_s0-9",
+        "C2402_zve1_day4_broll_speech_s0-2",
+        "C2403_zve1_day4_broll_speech_s0-11",
+        "C2404_zve1_day4_broll_visual_s0-2",
+        "C2405_zve1_day4_broll_speech_s0-6"
+      ]
+    },
+    {
+      "id": "route-ba7bc2eb0f17",
+      "kind": "route",
+      "reviewStatus": "pending",
+      "title": "行车：河北省，秦皇岛市，昌黎县，大蒲河管理处 · 机场快速路 → 河北省，唐山市，丰南区，黑沿子镇 · 服务区停车场(建设中)",
+      "summary": "第一人称行车 / 郊区道路 / 天气光线不明 / 有口播语音 / 郊区冷清路况观察 / 多车道行驶 / 减速过灯 / A vehicle drives on a multi-lane road with trees lining both sides and a blue overhead sign visible ahead. / 建议走左侧第二车道轻柔减速可不停车过灯感觉青黄岛这边 可能这边阿纳亚这边这边是已经 这边是郊区吧就特别...",
+      "startAt": "2026-06-21T05:17:40.000Z",
+      "endAt": "2026-06-21T07:54:44.059Z",
+      "route": {
+        "from": "河北省，秦皇岛市，昌黎县，大蒲河管理处 · 机场快速路",
+        "to": "河北省，唐山市，丰南区，黑沿子镇 · 服务区停车场(建设中)"
+      },
+      "spanIds": [
+        "C2406_zve1_day4_drive_speech_s0-23",
+        "C2406_zve1_day4_drive_visual_s6-18",
+        "C2407_zve1_day4_drive_speech_s0-15",
+        "C2407_zve1_day4_drive_visual_s4-14",
+        "C2408_zve1_day4_drive_s0-127",
+        "C2409_zve1_day4_drive_s0-63",
+        "C2410_zve1_day4_drive_s0-177",
+        "C2411_zve1_day4_drive_s0-41",
+        "C2412_zve1_day4_drive_s0-39"
+      ]
+    },
+    {
+      "id": "event-4dd247d5d10a",
+      "kind": "event",
+      "reviewStatus": "pending",
+      "title": "停车加油休息",
+      "summary": "固定机位观察 / 加油站服务区 / 天气光线不明 / 有口播语音 / 停车加油休息 / 红色卡车 / 白色 SUV / A gas station with a red truck and a white SUV parked under the canopy, and a building with a uSmile sign on the right. / 来这个地方驾个游这边 8块4 95 然后臭臭的 这旁边好多风车呀感觉很震撼",
+      "startAt": "2026-06-21T07:59:07.380Z",
+      "endAt": "2026-06-21T07:59:19.800Z",
+      "location": "河北省，唐山市，丰南区，黑沿子镇 · 涧河服务区汽修服务",
+      "spanIds": [
+        "C2413_zve1_day4_broll_speech_s1-14"
+      ]
+    },
+    {
+      "id": "route-7a0c2f09a8d9",
+      "kind": "route",
+      "reviewStatus": "pending",
+      "title": "行车：河北省，唐山市，丰南区，黑沿子镇 → 天津市，河东区，大王庄街道 · 天津邮政大楼",
+      "summary": "第一人称行车 / 高速公路上 / 阴天 / 无口播语音 / 高速行车途中 / 风力发电机 / 绿色护栏 / A continuous driving sequence along a multi-lane highway under an overcast sky. The road is flanked by green guardrails and numerous large wind turbines visible in t...",
+      "startAt": "2026-06-21T08:09:19.000Z",
+      "endAt": "2026-06-21T09:22:08.112Z",
+      "route": {
+        "from": "河北省，唐山市，丰南区，黑沿子镇",
+        "to": "天津市，河东区，大王庄街道 · 天津邮政大楼"
+      },
+      "spanIds": [
+        "C2414_zve1_day4_drive_s0-164",
+        "C2415_zve1_day4_drive_s0-53",
+        "C2418_zve1_day4_drive_s0-61",
+        "C2419_zve1_day4_drive_s0-66",
+        "C2420_zve1_day4_drive_s0-41",
+        "C2421_zve1_day4_drive_s0-47",
+        "C2422_zve1_day4_drive_speech_s2-11",
+        "C2422_zve1_day4_drive_visual_s6-22",
+        "C2422_zve1_day4_drive_visual_s16-19",
+        "C2423_zve1_day4_drive_speech_s0-9",
+        "C2423_zve1_day4_drive_visual_s3-16",
+        "C2423_zve1_day4_drive_speech_s13-16",
+        "C2424_zve1_day4_drive_s0-51",
+        "C2425_zve1_day4_drive_s0-52",
+        "C2426_zve1_day4_drive_s0-99"
+      ]
+    },
+    {
+      "id": "event-pharos-e5a02ef20b6b",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "津湾云顶高空观景台",
+      "summary": "津湾云顶日落和海河蓝调双机位延时。A7R6推荐50-400mm拍海河、桥和城市压缩，A7R5推荐20mm拍城市广角和天空。 / 第一人称行车 / 城市中心 / 阴天 / 无口播语音 / 城市建筑穿行 / 高楼林立 / 施工区域 / A series of frames showing a car driving through a city with tall buildings, construction sites, and ot...",
+      "startAt": "2026-06-21T09:34:35.000Z",
+      "endAt": "2026-06-21T11:58:28.000Z",
+      "location": "津湾云顶高空观景台",
+      "spanIds": [
+        "C2427_zve1_day4_drive_s0-83",
+        "C2428_zve1_day4_drive_s0-87",
+        "C2435_zve1_day4_broll_speech_s0-4",
+        "C2436_zve1_day4_talking-head_speech_s1-19",
+        "C2437_zve1_day4_broll_visual_s0-7",
+        "C2438_zve1_day4_broll_speech_s1-22",
+        "C2439_zve1_day4_broll_speech_s0-1",
+        "C2440_zve1_day4_broll_speech_s0-7",
+        "C2441_zve1_day4_broll_speech_s1-14",
+        "C2442_zve1_day4_broll_visual_s0-1",
+        "C2443_zve1_day4_broll_speech_s2-8",
+        "C2444_zve1_day4_broll_speech_s0-2",
+        "C2445_zve1_day4_broll_speech_s1-13",
+        "C2446_zve1_day4_broll_speech_s1-7",
+        "C2447_zve1_day4_broll_speech_s0-6",
+        "C2448_zve1_day4_broll_speech_s4-16",
+        "C2449_zve1_day4_broll_speech_s0-2",
+        "C2450_zve1_day4_broll_speech_s0-9",
+        "C2451_zve1_day4_aerial_speech_s0-2",
+        "C2452_zve1_day4_aerial_speech_s0-7",
+        "C2453_zve1_day4_aerial_speech_s0-7",
+        "C2454_zve1_day4_aerial_speech_s0-9",
+        "C2455_zve1_day4_broll_speech_s0-5",
+        "C2456_zve1_day4_broll_speech_s1-14",
+        "C2457_zve1_day4_broll_speech_s1-11",
+        "DSC09997_photos_photo",
+        "DSC04745_photos_photo",
+        "DSC04746_photos_photo",
+        "DSC00003_photos_photo",
+        "DSC00005_photos_photo",
+        "DSC04748_photos_photo",
+        "DSC04750_photos_photo",
+        "DSC04753_photos_photo",
+        "DSC00011_photos_photo",
+        "DSC00014_photos_photo",
+        "DSC00015_photos_photo",
+        "DSC00016_photos_photo",
+        "DSC00018_photos_photo",
+        "DSC04759_photos_photo",
+        "DSC00020_photos_photo",
+        "DSC00021_photos_photo",
+        "DSC00024_photos_photo",
+        "DSC00025_photos_photo",
+        "DSC00026_photos_photo",
+        "DSC00027_photos_photo",
+        "DSC00030_photos_photo",
+        "DSC00032_photos_photo",
+        "DSC00033_photos_photo",
+        "DSC00035_photos_photo",
+        "DSC00037_photos_photo"
+      ]
+    },
+    {
+      "id": "event-pharos-cb6d24d38d57",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "天津津湾/解放北路附近",
+      "summary": "抵达天津后的休整和轻扫街，拍海河、解放北路建筑、入住/停车和晚饭前恢复。 / 固定机位观察 / 京湾广场 / 天气光线不明 / 有口播语音 / 城市地标介绍 / 黄色面包车 / 天津站背景 / A yellow van is parked on a large paved plaza with a river and city buildings in the background. / 这是京湾广场 然后对面这个大大的天津站 来到天...",
+      "startAt": "2026-06-21T09:50:24.500Z",
+      "endAt": "2026-06-21T10:12:09.880Z",
+      "location": "天津津湾/解放北路附近",
+      "spanIds": [
+        "C2429_zve1_day4_broll_speech_s2-17",
+        "C2430_zve1_day4_broll_speech_s0-5",
+        "C2431_zve1_day4_broll_s0-1",
+        "C2431_zve1_day4_broll_speech_s0-8",
+        "C2432_zve1_day4_broll_speech_s0-6",
+        "C2433_zve1_day4_broll_speech_s4-6",
+        "C2434_zve1_day4_broll_speech_s0-2",
+        "DSC09985_photos_photo"
+      ]
+    },
+    {
+      "id": "event-pharos-c6c4a87de700",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "天津津湾/海河附近住宿",
+      "summary": "入住/回房收工，拍海河夜景、房间、充电和D5天津日出扫街计划。 / 手持自拍口播 / 建筑入口 / 夜晚 / 有口播语音 / 拍摄准备 / 戴白帽男子 / 木质大门 / A man in a white hat takes a photo of a woman standing near the entrance of a building with large wooden doors and columns. / 看起来挺美的 /...",
+      "startAt": "2026-06-21T12:47:33.000Z",
+      "endAt": "2026-06-21T12:58:57.000Z",
+      "location": "天津津湾/海河附近住宿",
+      "spanIds": [
+        "C2458_zve1_day4_broll_speech_s0-1",
+        "C2459_zve1_day4_broll_speech_s0-3",
+        "C2460_zve1_day4_broll_speech_s0-13",
+        "C2461_zve1_day4_broll_speech_s0-23",
+        "DSC00049_photos_photo"
+      ]
+    },
+    {
+      "id": "event-pharos-ac2782e2e71d",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "解放北路风情区",
+      "summary": "解放北路扫街，拍银行建筑、树影、路口、人车和近代城市质感。 / 固定机位观察 / 欧式广场白天 / 晴天 / 有口播语音 / 天气对比 / 广场大屏 / 情景不明 / A sunny day on a wide pedestrian plaza with European-style buildings, a large screen, and people walking. / 最后一天大白天的天景这边没有晚上那幺多人今天天气好得 ...",
+      "startAt": "2026-06-22T03:11:59.880Z",
+      "endAt": "2026-06-22T04:15:35.480Z",
+      "location": "解放北路风情区",
+      "spanIds": [
+        "C2462_zve1_day5_broll_speech_s0-10",
+        "C2463_zve1_day5_talking-head_speech_s0-21",
+        "C2464_zve1_day5_drive_speech_s1-17",
+        "C2465_zve1_day5_broll_speech_s0-6",
+        "C2466_zve1_day5_broll_speech_s1-14",
+        "C2467_zve1_day5_broll_speech_s1-5",
+        "C2468_zve1_day5_drive_speech_s0-3",
+        "C2468_zve1_day5_drive_visual_s0-4",
+        "C2469_zve1_day5_broll_speech_s0-12",
+        "C2470_zve1_day5_broll_speech_s0-13",
+        "C2471_zve1_day5_broll_speech_s0-19",
+        "C2472_zve1_day5_broll_s0-1",
+        "C2472_zve1_day5_broll_speech_s2-13",
+        "C2473_zve1_day5_broll_speech_s1-4",
+        "C2473_zve1_day5_broll_speech_s15-17",
+        "C2474_zve1_day5_broll_visual_s0-19",
+        "C2475_zve1_day5_broll_speech_s0-11"
+      ]
+    },
+    {
+      "id": "event-pharos-7cff08012b0b",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "五大道/民园广场",
+      "summary": "五大道和民园广场可选扫街，拍街角、树荫、自行车、建筑和游客之外的生活面。 / 固定机位观察 / 户外建筑墙 / 晴天 / 无口播语音 / 壁画展示 / 女孩头像 / 藤蔓花卉 / A large mural of a girl's face is decorated with hanging green vines and pink flowers, set against a brick building and trees. / ...",
+      "startAt": "2026-06-22T04:43:11.000Z",
+      "endAt": "2026-06-22T05:56:18.380Z",
+      "location": "五大道/民园广场",
+      "spanIds": [
+        "C2476_zve1_day5_broll_visual_s0-2",
+        "C2477_zve1_day5_broll_speech_s0-6",
+        "C2478_zve1_day5_broll_speech_s1-19",
+        "C2479_zve1_day5_broll_speech_s0-4",
+        "C2480_zve1_day5_broll_speech_s0-7",
+        "C2481_zve1_day5_broll_speech_s0-4",
+        "C2482_zve1_day5_broll_speech_s0-4",
+        "C2483_zve1_day5_broll_speech_s1-7",
+        "C2484_zve1_day5_broll_speech_s1-7",
+        "C2485_zve1_day5_broll_visual_s0-9",
+        "C2486_zve1_day5_broll_speech_s0-5",
+        "C2487_zve1_day5_broll_speech_s0-6",
+        "C2489_zve1_day5_broll_speech_s1-3",
+        "C2490_zve1_day5_broll_speech_s1-3",
+        "C2491_zve1_day5_broll_speech_s0-3",
+        "C2492_zve1_day5_broll_speech_s0-9",
+        "C2493_zve1_day5_broll_speech_s0-5",
+        "C2494_zve1_day5_broll_speech_s0-4",
+        "C2495_zve1_day5_broll_speech_s2-26",
+        "C2496_zve1_day5_broll_speech_s0-2",
+        "C2497_zve1_day5_broll_speech_s0-14",
+        "C2498_zve1_day5_broll_speech_s1-3",
+        "C2498_zve1_day5_broll_visual_s8-11",
+        "C2498_zve1_day5_broll_speech_s13-18",
+        "C2499_zve1_day5_broll_speech_s0-7",
+        "C2500_zve1_day5_broll_speech_s0-8",
+        "C2501_zve1_day5_broll_speech_s0-8",
+        "C2502_zve1_day5_broll_s0-1",
+        "C2502_zve1_day5_broll_speech_s0-9",
+        "C2503_zve1_day5_drive_speech_s0-2",
+        "C2503_zve1_day5_drive_visual_s0-3",
+        "C2504_zve1_day5_broll_speech_s0-15",
+        "C2505_zve1_day5_talking-head_speech_s1-25"
+      ]
+    },
+    {
+      "id": "event-pharos-3fc6c88030d7",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "天津中心城区午饭点",
+      "summary": "午饭和返程前补给，拍食物、街边人流、还车时间和机场余量确认。 / 手持自拍口播 / 餐厅外街 / 晴天 / 有口播语音 / 天津菜犹豫尝试 / 红色招牌 / 停放的电动车 / A street scene showing a restaurant with a red sign and blue Chinese characters, surrounded by trees and parked scooters. / 来了天津,最后...",
+      "startAt": "2026-06-22T06:28:51.340Z",
+      "endAt": "2026-06-22T06:57:08.460Z",
+      "location": "天津中心城区午饭点",
+      "spanIds": [
+        "C2506_zve1_day5_broll_speech_s1-16",
+        "C2507_zve1_day5_broll_speech_s0-2",
+        "C2507_zve1_day5_broll_speech_s8-12",
+        "C2508_zve1_day5_broll_speech_s1-3",
+        "C2509_zve1_day5_broll_speech_s1-13",
+        "C2510_zve1_day5_broll_speech_s0-7"
+      ]
+    },
+    {
+      "id": "event-pharos-295d0b31d788",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "天津滨海机场T2国内出发",
+      "summary": "还车、值机、候机和返程收尾，拍机场、行李、登机牌、素材备份状态和舷窗。 / 固定机位观察 / 天津站广场 / 天气光线不明 / 有口播语音 / 赶飞机极限时刻 / 搬完车到达车站 / 时间紧迫 / A white SUV and sedan are parked in front of a modern building with a large overhanging roof and glass facade. / Two whi...",
+      "startAt": "2026-06-22T09:23:24.000Z",
+      "endAt": "2026-06-22T11:01:31.520Z",
+      "location": "天津滨海机场T2国内出发",
+      "spanIds": [
+        "C2511_zve1_day5_broll_speech_s0-11",
+        "C2512_zve1_day5_aerial_visual_s0-23",
+        "C2513_zve1_day5_aerial_visual_s0-12"
+      ]
+    },
+    {
+      "id": "event-b51310e77197",
+      "kind": "event",
+      "reviewStatus": "pending",
+      "title": "飞机机翼视角",
+      "summary": "航拍俯瞰 / 云海之上 / 阴天 / 无口播语音 / 飞机机翼视角 / 云海翻腾 / 云层下方 / A view from an airplane window shows the wing and engine above a sea of clouds under a cloudy sky.",
+      "startAt": "2026-06-22T11:47:24.000Z",
+      "endAt": "2026-06-22T11:47:41.024Z",
+      "location": "河南省，开封市，兰考县，红庙镇 · 红庙镇双杨小学",
+      "spanIds": [
+        "C2517_zve1_day5_aerial_visual_s0-18"
+      ]
+    },
+    {
+      "id": "event-b5fba23375db",
+      "kind": "event",
+      "reviewStatus": "pending",
+      "title": "飞机窗景夜航",
+      "summary": "航拍俯瞰 / 城市夜景 / 夜晚 / 无口播语音 / 飞机窗景夜航 / 城市灯火 / 桥梁水域 / Night aerial view of a city with illuminated roads and buildings, seen from an airplane window with an engine visible.",
+      "startAt": "2026-06-22T13:28:13.000Z",
+      "endAt": "2026-06-22T13:28:25.940Z",
+      "location": "广东省，广州市，天河区，凤凰街道 · 火炉山森林公园",
+      "spanIds": [
+        "C2518_zve1_day5_aerial_visual_s0-13"
+      ]
+    },
+    {
+      "id": "event-bd2a521bfa95",
+      "kind": "event",
+      "reviewStatus": "pending",
+      "title": "飞机窗景夜航",
+      "summary": "航拍俯瞰 / 城市夜景 / 夜晚 / 无口播语音 / 飞机窗景夜航 / 城市灯光 / 跨海大桥 / A night view from an airplane window shows a city with bright lights and a bridge over water.",
+      "startAt": "2026-06-22T13:29:48.000Z",
+      "endAt": "2026-06-22T13:30:01.526Z",
+      "location": "广东省，广州市，番禺区，新造镇 · 上围",
+      "spanIds": [
+        "C2519_zve1_day5_aerial_visual_s0-14"
+      ]
+    },
+    {
+      "id": "event-c9c68a044b0e",
+      "kind": "event",
+      "reviewStatus": "pending",
+      "title": "城市夜景航拍",
+      "summary": "航拍俯瞰 / 飞机窗外 / 夜晚 / 无口播语音 / 城市夜景航拍 / 飞机引擎可见 / 城市灯光 / Night aerial view from airplane window showing illuminated city lights, roads, and waterways with engine visible on left.",
+      "startAt": "2026-06-22T13:33:47.000Z",
+      "endAt": "2026-06-22T13:33:58.960Z",
+      "location": "广东省，广州市，南沙区，大岗镇 · 庙青排水站(公交站)",
+      "spanIds": [
+        "C2520_zve1_day5_aerial_visual_s0-12"
+      ]
+    },
+    {
+      "id": "event-17bcad02be47",
+      "kind": "event",
+      "reviewStatus": "pending",
+      "title": "城市夜景航拍",
+      "summary": "航拍俯瞰 / 飞机窗外 / 夜晚 / 无口播语音 / 城市夜景航拍 / 飞机引擎可见 / 城市灯光 / Nighttime aerial view of a city with illuminated streets and buildings, seen from an airplane window.",
+      "startAt": "2026-06-22T13:37:36.000Z",
+      "endAt": "2026-06-22T13:37:55.520Z",
+      "location": "广东省，中山市，港口镇 · 南八大街58号",
+      "spanIds": [
+        "C2521_zve1_day5_aerial_visual_s0-20"
+      ]
+    },
+    {
+      "id": "event-59b9301d46a8",
+      "kind": "event",
+      "reviewStatus": "pending",
+      "title": "城市夜景航拍",
+      "summary": "航拍俯瞰 / 飞机窗外 / 夜晚 / 无口播语音 / 城市夜景航拍 / 飞机引擎可见 / 城市灯光 / Aerial night view of a sprawling city with illuminated streets and buildings under a dark sky.",
+      "startAt": "2026-06-22T13:38:45.000Z",
+      "endAt": "2026-06-22T13:39:13.032Z",
+      "location": "广东省，中山市，港口镇 · 沙边村沙边三冲16号楼",
+      "spanIds": [
+        "C2522_zve1_day5_aerial_visual_s0-29"
+      ]
+    },
+    {
+      "id": "event-08d3b96045b8",
+      "kind": "event",
+      "reviewStatus": "pending",
+      "title": "城市夜景航拍",
+      "summary": "航拍俯瞰 / 飞机窗外 / 夜晚 / 无口播语音 / 城市夜景航拍 / 飞机引擎可见 / 城市灯光 / Aerial night view of a sprawling city with dense streetlights and illuminated buildings under a dark sky.",
+      "startAt": "2026-06-22T13:39:15.000Z",
+      "endAt": "2026-06-22T13:39:38.040Z",
+      "location": "广东省，中山市，民众街道 · 邦祁电子(广东)有限公司",
+      "spanIds": [
+        "C2523_zve1_day5_aerial_visual_s0-24"
+      ]
+    },
+    {
+      "id": "event-3c37508f1e72",
+      "kind": "event",
+      "reviewStatus": "pending",
+      "title": "城市夜景航拍",
+      "summary": "航拍俯瞰 / 飞机窗外 / 夜晚 / 无口播语音 / 城市夜景航拍 / 飞机引擎可见 / 城市灯光 / A night view of a city from an airplane window, showing illuminated streets and buildings with an airplane engine visible in the foreground.",
+      "startAt": "2026-06-22T13:46:33.000Z",
+      "endAt": "2026-06-22T13:47:01.032Z",
+      "location": "广东省，东莞市，虎门镇 · 东莞市建峰彩色印刷有限公司",
+      "spanIds": [
+        "C2524_zve1_day5_aerial_visual_s0-29"
+      ]
+    },
+    {
+      "id": "event-8beaca814970",
+      "kind": "event",
+      "reviewStatus": "pending",
+      "title": "城市夜景航拍",
+      "summary": "航拍俯瞰 / 飞机窗外 / 夜晚 / 无口播语音 / 城市夜景航拍 / 飞机引擎可见 / 城市灯光 / A night aerial view of a city with illuminated streets and buildings, seen from an airplane window with the engine visible.",
+      "startAt": "2026-06-22T13:47:56.000Z",
+      "endAt": "2026-06-22T13:48:15.420Z",
+      "location": "广东省，东莞市，长安镇 · OPPO滨海湾畔公寓(5号门)",
+      "spanIds": [
+        "C2525_zve1_day5_aerial_visual_s0-20"
+      ]
+    },
+    {
+      "id": "event-49e1855cd877",
+      "kind": "event",
+      "reviewStatus": "pending",
+      "title": "机场自拍记录",
+      "summary": "固定机位观察 / 机场航站楼 / 室内灯光 / 无口播语音 / 机场自拍记录 / 戴耳机男子 / 机场自拍 / A man with glasses and headphones takes a selfie in a brightly lit airport terminal.",
+      "startAt": "2026-06-22T14:21:48.000Z",
+      "endAt": "2026-06-22T14:21:49.515Z",
+      "location": "airport terminal",
+      "spanIds": [
+        "C2526_zve1_day5_talking-head_visual_s0-2"
+      ]
+    },
+    {
+      "id": "event-c92066234731",
+      "kind": "event",
+      "reviewStatus": "pending",
+      "title": "机场自拍记录",
+      "summary": "手持自拍口播 / 机场航站楼 / 室内灯光 / 有口播语音 / 机场自拍记录 / 戴耳机男子 / 行程探路 / A man with curly hair and glasses wearing headphones and a backpack takes a selfie in a brightly lit airport terminal. / 今天进程完全结束了何况的气场这次没有进行主要是天气那 边有点累 没有搞完进程感觉下一...",
+      "startAt": "2026-06-22T14:22:00.600Z",
+      "endAt": "2026-06-22T14:22:22.340Z",
+      "location": "airport",
+      "spanIds": [
+        "C2527_zve1_day5_talking-head_speech_s0-23"
+      ]
+    }
+  ]
+}

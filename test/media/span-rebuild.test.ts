@@ -1037,7 +1037,7 @@ describe('rebuildProjectSpans', () => {
     ]);
   });
 
-  it('rejects LM first-person driving output when current evidence is a close-up broll detail', async () => {
+  it('accepts a controlled slot1 tag without a regex support heuristic', async () => {
     const workspaceRoot = await mkdtemp(join(tmpdir(), 'kairos-span-closeup-reject-'));
     workspaces.push(workspaceRoot);
     const projectId = 'project-span-closeup-reject';
@@ -1051,13 +1051,169 @@ describe('rebuildProjectSpans', () => {
     }));
     const runner = new FakePacketRunner([
       [visualReviewRow(['第一人称行车', '车旁', '晴天', '无口播语音', '蝴蝶停驻特写', '蝴蝶', '车身表面'])],
-      [visualReviewRow(['第一人称行车', '车旁', '晴天', '无口播语音', '蝴蝶停驻特写', '蝴蝶', '车身表面'])],
-      [visualReviewRow(['第一人称行车', '车旁', '晴天', '无口播语音', '蝴蝶停驻特写', '蝴蝶', '车身表面'])],
+    ]);
+
+    await rebuildProjectSpans({ workspaceRoot, projectId, agentRunner: runner });
+    const rawSpans = JSON.parse(await readFile(getSpansPath(projectRoot), 'utf-8')) as Array<Record<string, unknown>>;
+
+    expect(runner.calls).toHaveLength(1);
+    expect(rawSpans).toEqual([expect.objectContaining({
+      id: 'asset-butterfly_broll_s0-5',
+      materialPatterns: ['第一人称行车', '车旁', '晴天', '无口播语音', '蝴蝶停驻特写', '蝴蝶', '车身表面'],
+    })]);
+  });
+
+  it('rejects structured slot1 conflicts without reading visual text heuristically', async () => {
+    const workspaceRoot = await mkdtemp(join(tmpdir(), 'kairos-span-structured-slot1-'));
+    workspaces.push(workspaceRoot);
+    const projectId = 'project-span-structured-slot1';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Span Structured Slot1');
+    await writeJson(getAssetsPath(projectRoot), [
+      {
+        id: 'asset-photo',
+        kind: 'photo',
+        sourcePath: 'photo.jpg',
+        displayName: 'photo.jpg',
+        capturedAt: '2026-04-12T01:00:00.000Z',
+      },
+      createVideoAsset({ id: 'asset-nospeech', durationMs: 5_000, capturedAt: '2026-04-12T02:00:00.000Z' }),
+      createVideoAsset({ id: 'asset-drive', durationMs: 5_000, capturedAt: '2026-04-12T03:00:00.000Z' }),
+    ]);
+    await writeJson(getAssetReportPath(projectRoot, 'asset-photo'), report({
+      assetId: 'asset-photo',
+      clipTypeGuess: 'broll',
+      summary: 'A static road photo.',
+      interestingWindows: [],
+    }));
+    await writeJson(getAssetReportPath(projectRoot, 'asset-nospeech'), report({
+      assetId: 'asset-nospeech',
+      clipTypeGuess: 'broll',
+      summary: 'A person stands beside a sign, but there is no transcript.',
+      interestingWindows: [],
+    }));
+    await writeJson(getAssetReportPath(projectRoot, 'asset-drive'), report({
+      assetId: 'asset-drive',
+      clipTypeGuess: 'drive',
+      summary: 'A car drives on a highway.',
+      interestingWindows: [],
+    }));
+    const runner = new FakePacketRunner([
+      [
+        visualReviewRow(['第一人称行车', '公路旁', '晴天', '无口播语音', '静态道路照片', '公路', '路牌']),
+        visualReviewRow(['手持自拍口播', '路边', '晴天', '无口播语音', '路边人物观察', '人物', '路牌']),
+        visualReviewRow(['航拍俯瞰', '高速公路', '晴天', '无口播语音', '高速行车观察', '公路', '车辆']),
+      ],
+      [
+        visualReviewRow(['第一人称行车', '公路旁', '晴天', '无口播语音', '静态道路照片', '公路', '路牌']),
+        visualReviewRow(['手持自拍口播', '路边', '晴天', '无口播语音', '路边人物观察', '人物', '路牌']),
+        visualReviewRow(['航拍俯瞰', '高速公路', '晴天', '无口播语音', '高速行车观察', '公路', '车辆']),
+      ],
+      [visualReviewRow(['第一人称行车', '公路旁', '晴天', '无口播语音', '静态道路照片', '公路', '路牌'])],
+      [visualReviewRow(['手持自拍口播', '路边', '晴天', '无口播语音', '路边人物观察', '人物', '路牌'])],
+      [visualReviewRow(['航拍俯瞰', '高速公路', '晴天', '无口播语音', '高速行车观察', '公路', '车辆'])],
     ]);
 
     await expect(rebuildProjectSpans({ workspaceRoot, projectId, agentRunner: runner }))
       .rejects.toThrow(/could not generate valid materialPatterns/);
-    expect(runner.calls).toHaveLength(3);
+    const partial = JSON.parse(await readFile(
+      join(projectRoot, '.tmp', 'chronology', 'span-rebuild.partial.json'),
+      'utf-8',
+    )) as { failedSpans: Array<{ spanId: string; validationIssues?: string[] }> };
+    const issues = partial.failedSpans.flatMap(item => item.validationIssues ?? []);
+
+    expect(issues).toEqual(expect.arrayContaining([
+      expect.stringContaining('conflicts with type=photo'),
+      expect.stringContaining(`conflicts with slot 4=${'无口播语音'}`),
+      expect.stringContaining('conflicts with type=drive'),
+    ]));
+  });
+
+  it('accepts observable weather and light variants without rewriting them', async () => {
+    const workspaceRoot = await mkdtemp(join(tmpdir(), 'kairos-span-weather-variants-'));
+    workspaces.push(workspaceRoot);
+    const projectId = 'project-span-weather-variants';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Span Weather Variants');
+    await writeJson(getAssetsPath(projectRoot), [
+      createVideoAsset({ id: 'asset-dusk', durationMs: 5_000, capturedAt: '2026-04-12T01:00:00.000Z' }),
+      createVideoAsset({ id: 'asset-light', durationMs: 5_000, capturedAt: '2026-04-12T02:00:00.000Z' }),
+      createVideoAsset({ id: 'asset-dim', durationMs: 5_000, capturedAt: '2026-04-12T03:00:00.000Z' }),
+    ]);
+    await writeJson(getAssetReportPath(projectRoot, 'asset-dusk'), report({
+      assetId: 'asset-dusk',
+      clipTypeGuess: 'drive',
+      summary: 'A car drives on a tree-lined road at dusk.',
+      interestingWindows: [],
+    }));
+    await writeJson(getAssetReportPath(projectRoot, 'asset-light'), report({
+      assetId: 'asset-light',
+      clipTypeGuess: 'broll',
+      summary: 'A tunnel interior under artificial lighting.',
+      interestingWindows: [],
+    }));
+    await writeJson(getAssetReportPath(projectRoot, 'asset-dim'), report({
+      assetId: 'asset-dim',
+      clipTypeGuess: 'broll',
+      summary: 'A dimly lit indoor corridor.',
+      interestingWindows: [],
+    }));
+    const runner = new FakePacketRunner([[
+      visualReviewRow(['第一人称行车', '树荫道路', '黄昏', '无口播语音', '黄昏道路行车', '树荫', '道路转弯']),
+      visualReviewRow(['固定机位观察', '隧道内部', '人工照明', '无口播语音', '隧道内观察', '黄色灯光', '墙面纹理']),
+      visualReviewRow(['固定机位观察', '室内走廊', '光线昏暗', '无口播语音', '昏暗走廊观察', '走廊空间', '弱光环境']),
+    ]]);
+
+    await rebuildProjectSpans({ workspaceRoot, projectId, agentRunner: runner });
+    const rawSpans = JSON.parse(await readFile(getSpansPath(projectRoot), 'utf-8')) as Array<Record<string, unknown>>;
+
+    expect(rawSpans.map(span => span.materialPatterns)).toEqual([
+      ['第一人称行车', '树荫道路', '黄昏', '无口播语音', '黄昏道路行车', '树荫', '道路转弯'],
+      ['固定机位观察', '隧道内部', '人工照明', '无口播语音', '隧道内观察', '黄色灯光', '墙面纹理'],
+      ['固定机位观察', '室内走廊', '光线昏暗', '无口播语音', '昏暗走廊观察', '走廊空间', '弱光环境'],
+    ]);
+  });
+
+  it('does not regex-reject slot2 phrases that include time or motion words', async () => {
+    const workspaceRoot = await mkdtemp(join(tmpdir(), 'kairos-span-slot2-no-regex-'));
+    workspaces.push(workspaceRoot);
+    const projectId = 'project-span-slot2-no-regex';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Span Slot2 No Regex');
+    await writeJson(getAssetsPath(projectRoot), [
+      createVideoAsset({ id: 'asset-night-road', durationMs: 5_000, capturedAt: '2026-04-12T01:00:00.000Z' }),
+      createVideoAsset({ id: 'asset-harbor', durationMs: 5_000, capturedAt: '2026-04-12T02:00:00.000Z' }),
+      createVideoAsset({ id: 'asset-seaside', durationMs: 5_000, capturedAt: '2026-04-12T03:00:00.000Z' }),
+    ]);
+    await writeJson(getAssetReportPath(projectRoot, 'asset-night-road'), report({
+      assetId: 'asset-night-road',
+      clipTypeGuess: 'drive',
+      summary: 'Night road driving.',
+      interestingWindows: [],
+    }));
+    await writeJson(getAssetReportPath(projectRoot, 'asset-harbor'), report({
+      assetId: 'asset-harbor',
+      clipTypeGuess: 'broll',
+      summary: 'A harbor at dusk.',
+      interestingWindows: [],
+    }));
+    await writeJson(getAssetReportPath(projectRoot, 'asset-seaside'), report({
+      assetId: 'asset-seaside',
+      clipTypeGuess: 'broll',
+      summary: 'A seaside sunset scene.',
+      interestingWindows: [],
+    }));
+    const runner = new FakePacketRunner([[
+      visualReviewRow(['第一人称行车', '夜间道路', '夜晚', '无口播语音', '夜间行车观察', '路灯照明', '车辆大灯']),
+      visualReviewRow(['环境远景', '港口黄昏', '黄昏', '无口播语音', '静谧港湾', '灯塔倒影', '水面平静']),
+      visualReviewRow(['环境远景', '海边日落', '日落', '无口播语音', '日落海景', '海洋', '金色反光']),
+    ]]);
+
+    await rebuildProjectSpans({ workspaceRoot, projectId, agentRunner: runner });
+    const rawSpans = JSON.parse(await readFile(getSpansPath(projectRoot), 'utf-8')) as Array<Record<string, unknown>>;
+
+    expect(rawSpans.map(span => span.materialPatterns)).toEqual([
+      ['第一人称行车', '夜间道路', '夜晚', '无口播语音', '夜间行车观察', '路灯照明', '车辆大灯'],
+      ['环境远景', '港口黄昏', '黄昏', '无口播语音', '静谧港湾', '灯塔倒影', '水面平静'],
+      ['环境远景', '海边日落', '日落', '无口播语音', '日落海景', '海洋', '金色反光'],
+    ]);
   });
 
   it('rejects invalid positional slots instead of rewriting them heuristically', async () => {
@@ -1140,6 +1296,53 @@ describe('rebuildProjectSpans', () => {
     expect(rawSpans).toEqual([expect.objectContaining({
       id: 'asset-yak_drive_s0-5',
       materialPatterns: ['第一人称行车', '山路', '雾天', '无口播语音', '牦牛过路临时等待', '牦牛群', '临时等待'],
+    })]);
+  });
+
+  it('feeds slot validation issues back to the LM retry without filling tags in code', async () => {
+    const workspaceRoot = await mkdtemp(join(tmpdir(), 'kairos-span-validation-feedback-'));
+    workspaces.push(workspaceRoot);
+    const projectId = 'project-span-validation-feedback';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Span Validation Feedback');
+    await writeJson(getAssetsPath(projectRoot), [createVideoAsset({ id: 'asset-speech-drive', durationMs: 5_000 })]);
+    await writeJson(getAssetReportPath(projectRoot, 'asset-speech-drive'), report({
+      assetId: 'asset-speech-drive',
+      clipTypeGuess: 'drive',
+      summary: 'A car drives on a highway under a sunny sky.',
+      transcript: '我们正在上高速。',
+      transcriptSegments: [{ startMs: 0, endMs: 1_000, text: '我们正在上高速。' }],
+      interestingWindows: [{ startMs: 0, endMs: 1_000, reason: 'speech-window', semanticKind: 'speech' }],
+    }));
+    const runner = new FakePacketRunner([
+      [speechReviewRow(['第一人称行车', '高速公路', '晴天', '无口播语音', '高速出发说明', '车内说明', '出发提醒'])],
+      [speechReviewRow(['第一人称行车', '高速公路', '晴天', '有口播语音', '高速出发说明', '车内说明', '出发提醒'])],
+    ]);
+
+    await rebuildProjectSpans({ workspaceRoot, projectId, agentRunner: runner });
+    const rawSpans = JSON.parse(await readFile(getSpansPath(projectRoot), 'utf-8')) as Array<Record<string, unknown>>;
+    const retryContent = runner.calls[1]!.packet.inputArtifacts[0]!.content as {
+      expectedRowCount?: number;
+      validationFeedback?: Array<{
+        itemIndex: number;
+        expectedSpeechTag?: string;
+        validationIssues?: string[];
+        lastReturnedRow?: string[];
+      }>;
+    };
+
+    expect(runner.calls).toHaveLength(2);
+    expect(retryContent.expectedRowCount).toBe(1);
+    expect(retryContent.validationFeedback).toEqual([
+      expect.objectContaining({
+        itemIndex: 1,
+        expectedSpeechTag: '有口播语音',
+        validationIssues: expect.arrayContaining([expect.stringContaining('Slot 4 must be exactly 有口播语音')]),
+        lastReturnedRow: ['第一人称行车', '高速公路', '晴天', '无口播语音', '高速出发说明', '车内说明', '出发提醒'],
+      }),
+    ]);
+    expect(rawSpans).toEqual([expect.objectContaining({
+      id: 'asset-speech-drive_drive_speech_s0-1',
+      materialPatterns: ['第一人称行车', '高速公路', '晴天', '有口播语音', '高速出发说明', '车内说明', '出发提醒'],
     })]);
   });
 
@@ -1237,6 +1440,70 @@ describe('rebuildProjectSpans', () => {
     expect(partial.recoveredFailedCount).toBe(1);
     expect(partial.failedSpans[0]).toMatchObject({
       spanId: 'asset-retry_drive_s0-5',
+      recovered: true,
+    });
+  });
+
+  it('revalidates stale slot1 support failures from checkpoint before retrying the LM', async () => {
+    const workspaceRoot = await mkdtemp(join(tmpdir(), 'kairos-span-stale-slot1-'));
+    workspaces.push(workspaceRoot);
+    const projectId = 'project-span-stale-slot1';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Span Stale Slot1');
+    const assets = [createVideoAsset({ id: 'asset-drive', durationMs: 5_000 })];
+    const reports = [report({
+      assetId: 'asset-drive',
+      clipTypeGuess: 'drive',
+      summary: 'A car drives through an urban residential road under overcast sky.',
+      interestingWindows: [],
+    })];
+    await writeJson(getAssetsPath(projectRoot), assets);
+    await writeJson(getAssetReportPath(projectRoot, 'asset-drive'), reports[0]);
+    const generated = buildMaterialSpansFromReports({ assets, reports });
+    const spanId = generated.spans[0]!.id;
+    await writeJson(join(projectRoot, '.tmp', 'chronology', 'span-rebuild.partial.json'), {
+      schemaVersion: '1.0',
+      status: 'running',
+      promptVersion: CMATERIAL_PATTERN_PROMPT_VERSION,
+      inputsHash: generated.inputsHash,
+      spanCount: generated.spans.length,
+      chunkSize: 8,
+      completedCount: 0,
+      spans: [],
+      warnings: [],
+      failedSpans: [{
+        spanId,
+        assetId: 'asset-drive',
+        chunkIndex: 1,
+        reason: 'missing-or-invalid-first-four/story',
+        validationIssues: [
+          'Slot 1 "第一人称行车" is not supported by this item\'s type/semanticKind/transcript/visualObservation; choose a controlled tag supported by the current item only.',
+        ],
+        expectedSpeechTag: '无口播语音',
+        lastReturnedRow: ['第一人称行车', '城市住宅区', '阴天', '无口播语音', '穿行密集住宅区', '高楼林立', '过街天桥'],
+        attempts: 2,
+        recovered: false,
+      }],
+      retryCount: 2,
+      updatedAt: '2026-04-12T00:00:00.000Z',
+    });
+    const runner = new FakePacketRunner([]);
+
+    await rebuildProjectSpans({ workspaceRoot, projectId, agentRunner: runner });
+    const rawSpans = JSON.parse(await readFile(getSpansPath(projectRoot), 'utf-8')) as Array<Record<string, unknown>>;
+    const partial = JSON.parse(await readFile(
+      join(projectRoot, '.tmp', 'chronology', 'span-rebuild.partial.json'),
+      'utf-8',
+    )) as { failedSpans: Array<Record<string, unknown>>; recoveredFailedCount: number };
+
+    expect(runner.calls).toHaveLength(0);
+    expect(rawSpans).toEqual([expect.objectContaining({
+      id: spanId,
+      materialPatterns: ['第一人称行车', '城市住宅区', '阴天', '无口播语音', '穿行密集住宅区', '高楼林立', '过街天桥'],
+    })]);
+    expect(partial.recoveredFailedCount).toBe(1);
+    expect(partial.failedSpans[0]).toMatchObject({
+      spanId,
+      reason: 'recovered-by-checkpoint-row-revalidation',
       recovered: true,
     });
   });

@@ -1,0 +1,475 @@
+{
+  "schemaVersion": "1.0",
+  "updatedAt": "2026-07-07T02:12:32.854Z",
+  "trackCount": 52,
+  "tracks": [
+    {
+      "id": "sidecar-srt-0ae6494ed59354f4",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-0ae6494ed59354f4.gpx",
+      "sourcePath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\drone\\DJI_20260620132837_0930_D.SRT",
+      "pointCount": 870,
+      "startTime": "2026-06-20T05:28:37.000Z",
+      "endTime": "2026-06-20T05:28:51.497Z"
+    },
+    {
+      "id": "sidecar-srt-0b69c7469c83e582",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-0b69c7469c83e582.gpx",
+      "sourcePath": "F:\\vlog-proj\\hebei-wanqing\\drone\\DJI_20260618191730_0863_D.SRT",
+      "pointCount": 2383,
+      "startTime": "2026-06-18T11:17:30.000Z",
+      "endTime": "2026-06-18T11:18:09.740Z"
+    },
+    {
+      "id": "sidecar-srt-0cc8d94309f8cea2",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-0cc8d94309f8cea2.gpx",
+      "sourcePath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\drone\\DJI_20260618190847_0830_D.SRT",
+      "pointCount": 830,
+      "startTime": "2026-06-18T11:08:47.000Z",
+      "endTime": "2026-06-18T11:09:00.830Z"
+    },
+    {
+      "id": "sidecar-srt-1a16193f1160baf7",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-1a16193f1160baf7.gpx",
+      "sourcePath": "F:\\vlog-proj\\hebei-wanqing\\drone\\DJI_20260618190940_0837_D.SRT",
+      "pointCount": 2095,
+      "startTime": "2026-06-18T11:09:41.000Z",
+      "endTime": "2026-06-18T11:10:15.935Z"
+    },
+    {
+      "id": "sidecar-srt-1ae7dc33fba5ef86",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-1ae7dc33fba5ef86.gpx",
+      "sourcePath": "F:\\vlog-proj\\hebei-wanqing\\drone\\DJI_20260620133414_0960_D.SRT",
+      "pointCount": 3499,
+      "startTime": "2026-06-20T05:34:14.000Z",
+      "endTime": "2026-06-20T05:35:12.360Z"
+    },
+    {
+      "id": "sidecar-srt-1e2ded7894421b2a",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-1e2ded7894421b2a.gpx",
+      "sourcePath": "F:\\vlog-proj\\hebei-wanqing\\drone\\DJI_20260618192337_0892_D.SRT",
+      "pointCount": 1068,
+      "startTime": "2026-06-18T11:23:38.000Z",
+      "endTime": "2026-06-18T11:23:55.801Z"
+    },
+    {
+      "id": "sidecar-srt-1e4119eb6b6e5f7d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-1e4119eb6b6e5f7d.gpx",
+      "sourcePath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\drone\\DJI_20260620133738_0974_D.SRT",
+      "pointCount": 2843,
+      "startTime": "2026-06-20T05:37:38.000Z",
+      "endTime": "2026-06-20T05:38:25.415Z"
+    },
+    {
+      "id": "sidecar-srt-25d7ff0c18fdb58c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-25d7ff0c18fdb58c.gpx",
+      "sourcePath": "F:\\vlog-proj\\hebei-wanqing\\drone\\DJI_20260620134147_0007_D.SRT",
+      "pointCount": 779,
+      "startTime": "2026-06-20T05:41:48.000Z",
+      "endTime": "2026-06-20T05:42:00.979Z"
+    },
+    {
+      "id": "sidecar-srt-2dc8d6afb4466b23",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-2dc8d6afb4466b23.gpx",
+      "sourcePath": "F:\\vlog-proj\\hebei-wanqing\\drone\\DJI_20260620133738_0974_D.SRT",
+      "pointCount": 2843,
+      "startTime": "2026-06-20T05:37:38.000Z",
+      "endTime": "2026-06-20T05:38:25.415Z"
+    },
+    {
+      "id": "sidecar-srt-325edc8defc5be3d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-325edc8defc5be3d.gpx",
+      "sourcePath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\drone\\DJI_20260618191620_0861_D.SRT",
+      "pointCount": 956,
+      "startTime": "2026-06-18T11:16:21.000Z",
+      "endTime": "2026-06-18T11:16:36.932Z"
+    },
+    {
+      "id": "sidecar-srt-3356a2113edb8412",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-3356a2113edb8412.gpx",
+      "sourcePath": "F:\\vlog-proj\\hebei-wanqing\\drone\\DJI_20260618191232_0850_D.SRT",
+      "pointCount": 2506,
+      "startTime": "2026-06-18T11:12:32.000Z",
+      "endTime": "2026-06-18T11:13:13.792Z"
+    },
+    {
+      "id": "sidecar-srt-34925f28ab1d19b7",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-34925f28ab1d19b7.gpx",
+      "sourcePath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\drone\\DJI_20260618191103_0845_D.SRT",
+      "pointCount": 926,
+      "startTime": "2026-06-18T11:11:04.000Z",
+      "endTime": "2026-06-18T11:11:19.432Z"
+    },
+    {
+      "id": "sidecar-srt-454e53b23c247d60",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-454e53b23c247d60.gpx",
+      "sourcePath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\drone\\DJI_20260618191232_0850_D.SRT",
+      "pointCount": 2506,
+      "startTime": "2026-06-18T11:12:32.000Z",
+      "endTime": "2026-06-18T11:13:13.792Z"
+    },
+    {
+      "id": "sidecar-srt-46af29d0e7a32d06",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-46af29d0e7a32d06.gpx",
+      "sourcePath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\drone\\DJI_20260620134008_0996_D.SRT",
+      "pointCount": 971,
+      "startTime": "2026-06-20T05:40:09.000Z",
+      "endTime": "2026-06-20T05:40:25.182Z"
+    },
+    {
+      "id": "sidecar-srt-4c1372e7b6b6744b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-4c1372e7b6b6744b.gpx",
+      "sourcePath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\drone\\DJI_20260618190940_0837_D.SRT",
+      "pointCount": 2095,
+      "startTime": "2026-06-18T11:09:41.000Z",
+      "endTime": "2026-06-18T11:10:15.935Z"
+    },
+    {
+      "id": "sidecar-srt-520aea608346ebb8",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-520aea608346ebb8.gpx",
+      "sourcePath": "F:\\vlog-proj\\hebei-wanqing\\drone\\DJI_20260618190728_0825_D.SRT",
+      "pointCount": 709,
+      "startTime": "2026-06-18T11:07:29.000Z",
+      "endTime": "2026-06-18T11:07:40.811Z"
+    },
+    {
+      "id": "sidecar-srt-591d1c34aec00689",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-591d1c34aec00689.gpx",
+      "sourcePath": "F:\\vlog-proj\\hebei-wanqing\\drone\\DJI_20260620133225_0950_D.SRT",
+      "pointCount": 1464,
+      "startTime": "2026-06-20T05:32:25.000Z",
+      "endTime": "2026-06-20T05:32:49.408Z"
+    },
+    {
+      "id": "sidecar-srt-5bafa7704179b07e",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-5bafa7704179b07e.gpx",
+      "sourcePath": "F:\\vlog-proj\\hebei-wanqing\\drone\\DJI_20260618192200_0885_D.SRT",
+      "pointCount": 1465,
+      "startTime": "2026-06-18T11:22:00.000Z",
+      "endTime": "2026-06-18T11:22:24.424Z"
+    },
+    {
+      "id": "sidecar-srt-5ce0f905ad75c455",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-5ce0f905ad75c455.gpx",
+      "sourcePath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\drone\\DJI_20260618192200_0885_D.SRT",
+      "pointCount": 1465,
+      "startTime": "2026-06-18T11:22:00.000Z",
+      "endTime": "2026-06-18T11:22:24.424Z"
+    },
+    {
+      "id": "sidecar-srt-5dcdcdf563b2601f",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-5dcdcdf563b2601f.gpx",
+      "sourcePath": "F:\\vlog-proj\\hebei-wanqing\\drone\\DJI_20260618191639_0862_D.SRT",
+      "pointCount": 496,
+      "startTime": "2026-06-18T11:16:39.000Z",
+      "endTime": "2026-06-18T11:16:47.257Z"
+    },
+    {
+      "id": "sidecar-srt-60a0895e9135cc1a",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-60a0895e9135cc1a.gpx",
+      "sourcePath": "F:\\vlog-proj\\hebei-wanqing\\drone\\DJI_20260618190823_0826_D.SRT",
+      "pointCount": 591,
+      "startTime": "2026-06-18T11:08:23.000Z",
+      "endTime": "2026-06-18T11:08:32.842Z"
+    },
+    {
+      "id": "sidecar-srt-620301a4148e33ed",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-620301a4148e33ed.gpx",
+      "sourcePath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\drone\\DJI_20260620133414_0960_D.SRT",
+      "pointCount": 3499,
+      "startTime": "2026-06-20T05:34:14.000Z",
+      "endTime": "2026-06-20T05:35:12.360Z"
+    },
+    {
+      "id": "sidecar-srt-63476193428d08fc",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-63476193428d08fc.gpx",
+      "sourcePath": "F:\\vlog-proj\\hebei-wanqing\\drone\\DJI_20260618191620_0861_D.SRT",
+      "pointCount": 956,
+      "startTime": "2026-06-18T11:16:21.000Z",
+      "endTime": "2026-06-18T11:16:36.932Z"
+    },
+    {
+      "id": "sidecar-srt-63c4293de04a8af3",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-63c4293de04a8af3.gpx",
+      "sourcePath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\drone\\DJI_20260618191210_0849_D.SRT",
+      "pointCount": 1072,
+      "startTime": "2026-06-18T11:12:11.000Z",
+      "endTime": "2026-06-18T11:12:28.867Z"
+    },
+    {
+      "id": "sidecar-srt-6ab62d8e49311cb6",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-6ab62d8e49311cb6.gpx",
+      "sourcePath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\drone\\DJI_20260618190823_0826_D.SRT",
+      "pointCount": 591,
+      "startTime": "2026-06-18T11:08:23.000Z",
+      "endTime": "2026-06-18T11:08:32.842Z"
+    },
+    {
+      "id": "sidecar-srt-7509dd8d38c5f81e",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-7509dd8d38c5f81e.gpx",
+      "sourcePath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\drone\\DJI_20260618191639_0862_D.SRT",
+      "pointCount": 496,
+      "startTime": "2026-06-18T11:16:39.000Z",
+      "endTime": "2026-06-18T11:16:47.257Z"
+    },
+    {
+      "id": "sidecar-srt-763ddf3f8207eb1f",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-763ddf3f8207eb1f.gpx",
+      "sourcePath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\drone\\DJI_20260620134514_0032_D.SRT",
+      "pointCount": 2045,
+      "startTime": "2026-06-20T05:45:14.000Z",
+      "endTime": "2026-06-20T05:45:48.101Z"
+    },
+    {
+      "id": "sidecar-srt-766a0cc168181cce",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-766a0cc168181cce.gpx",
+      "sourcePath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\drone\\DJI_20260618191730_0863_D.SRT",
+      "pointCount": 2383,
+      "startTime": "2026-06-18T11:17:30.000Z",
+      "endTime": "2026-06-18T11:18:09.740Z"
+    },
+    {
+      "id": "sidecar-srt-7d20fb5e4a6da843",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-7d20fb5e4a6da843.gpx",
+      "sourcePath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\drone\\DJI_20260618192337_0892_D.SRT",
+      "pointCount": 1068,
+      "startTime": "2026-06-18T11:23:38.000Z",
+      "endTime": "2026-06-18T11:23:55.801Z"
+    },
+    {
+      "id": "sidecar-srt-7fe514d6532e57c1",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-7fe514d6532e57c1.gpx",
+      "sourcePath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\drone\\DJI_20260620133225_0950_D.SRT",
+      "pointCount": 1464,
+      "startTime": "2026-06-20T05:32:25.000Z",
+      "endTime": "2026-06-20T05:32:49.408Z"
+    },
+    {
+      "id": "sidecar-srt-82b8cf69e3a1e665",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-82b8cf69e3a1e665.gpx",
+      "sourcePath": "F:\\vlog-proj\\hebei-wanqing\\drone\\DJI_20260619130752_0893_D.SRT",
+      "pointCount": 2562,
+      "startTime": "2026-06-19T05:07:53.000Z",
+      "endTime": "2026-06-19T05:08:35.727Z"
+    },
+    {
+      "id": "sidecar-srt-8389dc0afcfe6605",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-8389dc0afcfe6605.gpx",
+      "sourcePath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\drone\\DJI_20260620134147_0007_D.SRT",
+      "pointCount": 779,
+      "startTime": "2026-06-20T05:41:48.000Z",
+      "endTime": "2026-06-20T05:42:00.979Z"
+    },
+    {
+      "id": "sidecar-srt-83c25a5a59202b30",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-83c25a5a59202b30.gpx",
+      "sourcePath": "F:\\vlog-proj\\hebei-wanqing\\drone\\DJI_20260620134008_0996_D.SRT",
+      "pointCount": 971,
+      "startTime": "2026-06-20T05:40:09.000Z",
+      "endTime": "2026-06-20T05:40:25.182Z"
+    },
+    {
+      "id": "sidecar-srt-843433a4fafb9176",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-843433a4fafb9176.gpx",
+      "sourcePath": "F:\\vlog-proj\\hebei-wanqing\\drone\\DJI_20260618191103_0845_D.SRT",
+      "pointCount": 926,
+      "startTime": "2026-06-18T11:11:04.000Z",
+      "endTime": "2026-06-18T11:11:19.432Z"
+    },
+    {
+      "id": "sidecar-srt-89c2921f6fe7ab69",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-89c2921f6fe7ab69.gpx",
+      "sourcePath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\drone\\DJI_20260618191038_0841_D.SRT",
+      "pointCount": 666,
+      "startTime": "2026-06-18T11:10:38.000Z",
+      "endTime": "2026-06-18T11:10:49.094Z"
+    },
+    {
+      "id": "sidecar-srt-9c7c07f38b2eb554",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-9c7c07f38b2eb554.gpx",
+      "sourcePath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\drone\\DJI_20260619130752_0893_D.SRT",
+      "pointCount": 2562,
+      "startTime": "2026-06-19T05:07:53.000Z",
+      "endTime": "2026-06-19T05:08:35.727Z"
+    },
+    {
+      "id": "sidecar-srt-a280761d28c8619c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-a280761d28c8619c.gpx",
+      "sourcePath": "F:\\vlog-proj\\hebei-wanqing\\drone\\DJI_20260618191538_0860_D.SRT",
+      "pointCount": 1069,
+      "startTime": "2026-06-18T11:15:38.000Z",
+      "endTime": "2026-06-18T11:15:55.817Z"
+    },
+    {
+      "id": "sidecar-srt-ad62b1b33351bac1",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-ad62b1b33351bac1.gpx",
+      "sourcePath": "F:\\vlog-proj\\hebei-wanqing\\drone\\DJI_20260618191210_0849_D.SRT",
+      "pointCount": 1072,
+      "startTime": "2026-06-18T11:12:11.000Z",
+      "endTime": "2026-06-18T11:12:28.867Z"
+    },
+    {
+      "id": "sidecar-srt-b2f9d0c405f6e9f6",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-b2f9d0c405f6e9f6.gpx",
+      "sourcePath": "F:\\vlog-proj\\hebei-wanqing\\drone\\DJI_20260618191038_0841_D.SRT",
+      "pointCount": 666,
+      "startTime": "2026-06-18T11:10:38.000Z",
+      "endTime": "2026-06-18T11:10:49.094Z"
+    },
+    {
+      "id": "sidecar-srt-b53e0e90a56707d0",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-b53e0e90a56707d0.gpx",
+      "sourcePath": "F:\\vlog-proj\\hebei-wanqing\\drone\\DJI_20260619131644_0910_D.SRT",
+      "pointCount": 2047,
+      "startTime": "2026-06-19T05:16:45.000Z",
+      "endTime": "2026-06-19T05:17:19.134Z"
+    },
+    {
+      "id": "sidecar-srt-b6f1a350e0fab8f0",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-b6f1a350e0fab8f0.gpx",
+      "sourcePath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\drone\\DJI_20260618191538_0860_D.SRT",
+      "pointCount": 1069,
+      "startTime": "2026-06-18T11:15:38.000Z",
+      "endTime": "2026-06-18T11:15:55.817Z"
+    },
+    {
+      "id": "sidecar-srt-b70f133fca5c6ddc",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-b70f133fca5c6ddc.gpx",
+      "sourcePath": "F:\\vlog-proj\\hebei-wanqing\\drone\\DJI_20260618190847_0830_D.SRT",
+      "pointCount": 830,
+      "startTime": "2026-06-18T11:08:47.000Z",
+      "endTime": "2026-06-18T11:09:00.830Z"
+    },
+    {
+      "id": "sidecar-srt-b893976007f886fb",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-b893976007f886fb.gpx",
+      "sourcePath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\drone\\DJI_20260618190728_0825_D.SRT",
+      "pointCount": 709,
+      "startTime": "2026-06-18T11:07:29.000Z",
+      "endTime": "2026-06-18T11:07:40.811Z"
+    },
+    {
+      "id": "sidecar-srt-b98f30726ff3a87a",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-b98f30726ff3a87a.gpx",
+      "sourcePath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\drone\\DJI_20260620132745_0926_D.SRT",
+      "pointCount": 1218,
+      "startTime": "2026-06-20T05:27:45.000Z",
+      "endTime": "2026-06-20T05:28:05.303Z"
+    },
+    {
+      "id": "sidecar-srt-c4b0da30229f8e26",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c4b0da30229f8e26.gpx",
+      "sourcePath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\drone\\DJI_20260620133650_0973_D.SRT",
+      "pointCount": 1606,
+      "startTime": "2026-06-20T05:36:50.000Z",
+      "endTime": "2026-06-20T05:37:16.777Z"
+    },
+    {
+      "id": "sidecar-srt-da7fb8d53e8bcb08",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-da7fb8d53e8bcb08.gpx",
+      "sourcePath": "F:\\vlog-proj\\hebei-wanqing\\drone\\DJI_20260620132837_0930_D.SRT",
+      "pointCount": 870,
+      "startTime": "2026-06-20T05:28:37.000Z",
+      "endTime": "2026-06-20T05:28:51.497Z"
+    },
+    {
+      "id": "sidecar-srt-e42f5a4dd47dcbfa",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-e42f5a4dd47dcbfa.gpx",
+      "sourcePath": "F:\\vlog-proj\\hebei-wanqing\\drone\\DJI_20260620133650_0973_D.SRT",
+      "pointCount": 1606,
+      "startTime": "2026-06-20T05:36:50.000Z",
+      "endTime": "2026-06-20T05:37:16.777Z"
+    },
+    {
+      "id": "sidecar-srt-e7117b1fe854c2bb",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-e7117b1fe854c2bb.gpx",
+      "sourcePath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\drone\\DJI_20260620132944_0937_D.SRT",
+      "pointCount": 2328,
+      "startTime": "2026-06-20T05:29:44.000Z",
+      "endTime": "2026-06-20T05:30:22.823Z"
+    },
+    {
+      "id": "sidecar-srt-eb864cb152d4f21f",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-eb864cb152d4f21f.gpx",
+      "sourcePath": "F:\\vlog-proj\\hebei-wanqing\\drone\\DJI_20260620132745_0926_D.SRT",
+      "pointCount": 1218,
+      "startTime": "2026-06-20T05:27:45.000Z",
+      "endTime": "2026-06-20T05:28:05.303Z"
+    },
+    {
+      "id": "sidecar-srt-efe2df76104dc7e5",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-efe2df76104dc7e5.gpx",
+      "sourcePath": "F:\\vlog-proj\\hebei-wanqing\\drone\\DJI_20260620134514_0032_D.SRT",
+      "pointCount": 2045,
+      "startTime": "2026-06-20T05:45:14.000Z",
+      "endTime": "2026-06-20T05:45:48.101Z"
+    },
+    {
+      "id": "sidecar-srt-f1f38925a72251c4",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-f1f38925a72251c4.gpx",
+      "sourcePath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\drone\\DJI_20260619131644_0910_D.SRT",
+      "pointCount": 2047,
+      "startTime": "2026-06-19T05:16:45.000Z",
+      "endTime": "2026-06-19T05:17:19.134Z"
+    },
+    {
+      "id": "sidecar-srt-f5a4b4da40af306c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-f5a4b4da40af306c.gpx",
+      "sourcePath": "F:\\vlog-proj\\hebei-wanqing\\drone\\DJI_20260620132944_0937_D.SRT",
+      "pointCount": 2328,
+      "startTime": "2026-06-20T05:29:44.000Z",
+      "endTime": "2026-06-20T05:30:22.823Z"
+    }
+  ]
+}

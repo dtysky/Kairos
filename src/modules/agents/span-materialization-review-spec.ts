@@ -53,15 +53,29 @@ export function buildSpanMaterializationReviewMlPrompt(packet: IAgentPacket): st
   const content = packet.inputArtifacts?.[0]?.content as {
     items?: unknown;
     attempt?: unknown;
+    expectedRowCount?: unknown;
+    validationFeedback?: unknown;
   } | undefined;
   const items = Array.isArray(content?.items) ? content.items : [];
+  const expectedRowCount = typeof content?.expectedRowCount === 'number'
+    ? content.expectedRowCount
+    : items.length;
+  const validationFeedback = Array.isArray(content?.validationFeedback)
+    ? content.validationFeedback
+    : [];
   return [
     buildSpanMaterializationReviewSystemPrompt(),
     '',
     '本地 text-LM 输出补充要求：',
     '- 只输出一行顶层 JSON 数组，格式：[["拍摄视角/构图形态","当前环境","天气光线","口播语音","情景故事","自由标签1","自由标签2"], ...]。',
+    `- 顶层数组长度必须正好是 expectedRowCount=${expectedRowCount}；如果 expectedRowCount=1，只能返回一个内层 string[]，不得补写其它历史 item。`,
     '- 不要输出 {items: ...}，不要输出 id，不能加 Markdown 代码块。',
+    '- 如果 validationFeedback 非空，必须逐条修正反馈中列出的 slot；反馈只描述输出协议错误，不提供新的画面事实。',
     `attempt: ${String(content?.attempt ?? 1)}`,
+    `expectedRowCount: ${expectedRowCount}`,
     `items: ${JSON.stringify(items)}`,
+    validationFeedback.length > 0
+      ? `validationFeedback: ${JSON.stringify(validationFeedback)}`
+      : '',
   ].join('\n');
 }

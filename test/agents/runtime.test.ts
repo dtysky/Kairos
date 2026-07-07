@@ -116,4 +116,58 @@ describe('MlJsonPacketAgentRunner', () => {
     expect(capturedPrompt).toContain('每行必须正好 7 个中文短标签');
     expect(capturedPrompt).toContain('不能决定 speech keep/drop');
   });
+
+  it('parses the first balanced JSON value and ignores extra trailing brackets', async () => {
+    const mlClient = {
+      async textGenerate() {
+        return {
+          text: '[["固定机位观察","港口码头","晴天","无口播语音","港口观察","船只","车辆"]]]',
+        };
+      },
+    } as unknown as MlClient;
+    const runner = new MlJsonPacketAgentRunner(mlClient);
+
+    await expect(runner.run<string[][]>({
+      promptId: 'media/span-materialization-review',
+      packet: {
+        stage: 'media/span-materialization-review',
+        identity: 'span-materialization-patterns',
+        mission: 'test',
+        hardConstraints: [],
+        allowedInputs: [],
+        inputArtifacts: [{ label: 'items', content: { items: [{}], expectedRowCount: 1 } }],
+        outputSchema: {},
+        reviewRubric: [],
+      },
+    })).resolves.toEqual([
+      ['固定机位观察', '港口码头', '晴天', '无口播语音', '港口观察', '船只', '车辆'],
+    ]);
+  });
+
+  it('repairs an unclosed JSON array shell without changing row content', async () => {
+    const mlClient = {
+      async textGenerate() {
+        return {
+          text: '[["细节特写","机械物体特写","天气光线不明","无口播语音","情景不明","机械细节","炖煮器具"]',
+        };
+      },
+    } as unknown as MlClient;
+    const runner = new MlJsonPacketAgentRunner(mlClient);
+
+    await expect(runner.run<string[][]>({
+      promptId: 'media/span-materialization-review',
+      packet: {
+        stage: 'media/span-materialization-review',
+        identity: 'span-materialization-patterns',
+        mission: 'test',
+        hardConstraints: [],
+        allowedInputs: [],
+        inputArtifacts: [{ label: 'items', content: { items: [{}], expectedRowCount: 1 } }],
+        outputSchema: {},
+        reviewRubric: [],
+      },
+    })).resolves.toEqual([
+      ['细节特写', '机械物体特写', '天气光线不明', '无口播语音', '情景不明', '机械细节', '炖煮器具'],
+    ]);
+  });
 });

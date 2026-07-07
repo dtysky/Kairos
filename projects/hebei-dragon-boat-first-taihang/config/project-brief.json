@@ -10,6 +10,10 @@
       "rawPath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\zve1",
       "alternatePaths": [
         {
+          "path": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\zve1",
+          "rawPath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\zve1"
+        },
+        {
           "path": "/Volumes/Peely SSD/zve1",
           "rawPath": "/Volumes/Peely SSD/raw/zve1"
         }
@@ -37,6 +41,10 @@
       "path": "F:\\vlog-proj\\hebei-wanqing\\drone",
       "rawPath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\drone",
       "alternatePaths": [
+        {
+          "path": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\drone",
+          "rawPath": "D:\\vlog-p3-conv\\raw-hebei-wanqing\\drone"
+        },
         {
           "path": "/Volumes/Peely SSD/drone",
           "rawPath": "/Volumes/Peely SSD/raw/drone"

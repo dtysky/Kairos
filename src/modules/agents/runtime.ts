@@ -98,16 +98,7 @@ function parseJsonValue<T>(raw: string, source: string): T {
     .replace(/^```(?:json)?\s*/iu, '')
     .replace(/\s*```$/u, '')
     .trim();
-  const objectStart = unfenced.indexOf('{');
-  const arrayStart = unfenced.indexOf('[');
-  const starts = [objectStart, arrayStart].filter(index => index >= 0);
-  const start = starts.length > 0 ? Math.min(...starts) : -1;
-  const open = start >= 0 ? unfenced[start] : '';
-  const close = open === '[' ? ']' : '}';
-  const end = start >= 0 ? unfenced.lastIndexOf(close) : -1;
-  const jsonText = start >= 0 && end >= start
-    ? unfenced.slice(start, end + 1)
-    : unfenced;
+  const jsonText = extractJsonText(unfenced);
   try {
     return JSON.parse(jsonText) as T;
   } catch (error) {
@@ -116,4 +107,80 @@ function parseJsonValue<T>(raw: string, source: string): T {
       `${source} returned invalid JSON: ${error instanceof Error ? error.message : 'unknown parse error'}; output=${snippet}`,
     );
   }
+}
+
+function extractJsonText(input: string): string {
+  const objectStart = input.indexOf('{');
+  const arrayStart = input.indexOf('[');
+  const starts = [objectStart, arrayStart].filter(index => index >= 0);
+  const start = starts.length > 0 ? Math.min(...starts) : -1;
+  if (start < 0) return input;
+
+  const scanned = scanFirstJsonValue(input, start);
+  if (scanned.complete) return scanned.text;
+  if (scanned.completedText) return scanned.completedText;
+
+  const open = input[start];
+  const close = open === '[' ? ']' : '}';
+  const end = close ? input.lastIndexOf(close) : -1;
+  return end >= start ? input.slice(start, end + 1) : input.slice(start);
+}
+
+function scanFirstJsonValue(
+  input: string,
+  start: number,
+): { complete: true; text: string } | { complete: false; completedText?: string } {
+  const stack: string[] = [];
+  let inString = false;
+  let escape = false;
+
+  for (let index = start; index < input.length; index += 1) {
+    const char = input[index]!;
+    if (inString) {
+      if (escape) {
+        escape = false;
+      } else if (char === '\\') {
+        escape = true;
+      } else if (char === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inString = true;
+      continue;
+    }
+    if (char === '{') {
+      stack.push('}');
+      continue;
+    }
+    if (char === '[') {
+      stack.push(']');
+      continue;
+    }
+    if (char !== '}' && char !== ']') {
+      continue;
+    }
+
+    if (stack.length === 0) {
+      return { complete: false };
+    }
+    const expected = stack.pop();
+    if (char !== expected) {
+      return { complete: false };
+    }
+    if (stack.length === 0) {
+      return { complete: true, text: input.slice(start, index + 1) };
+    }
+  }
+
+  if (inString || stack.length === 0) {
+    return { complete: false };
+  }
+
+  return {
+    complete: false,
+    completedText: `${input.slice(start).trimEnd()}${[...stack].reverse().join('')}`,
+  };
 }

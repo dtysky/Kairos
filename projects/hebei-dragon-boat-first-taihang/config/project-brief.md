@@ -8,15 +8,19 @@
 路径：F:\vlog-proj\hebei-wanqing\zve1
 Root代号：zve1
 原始路径：D:\vlog-p3-conv\raw-hebei-wanqing\zve1
-备选路径1：/Volumes/Peely SSD/zve1
-原始路径1：/Volumes/Peely SSD/raw/zve1
+备选路径1：D:\vlog-p3-conv\raw-hebei-wanqing\zve1
+原始路径1：D:\vlog-p3-conv\raw-hebei-wanqing\zve1
+备选路径2：/Volumes/Peely SSD/zve1
+原始路径2：/Volumes/Peely SSD/raw/zve1
 说明：VLOG和行车等主要视频
 
 路径：F:\vlog-proj\hebei-wanqing\drone
 Root代号：drone
 原始路径：D:\vlog-p3-conv\raw-hebei-wanqing\drone
-备选路径1：/Volumes/Peely SSD/drone
-原始路径1：/Volumes/Peely SSD/raw/drone
+备选路径1：D:\vlog-p3-conv\raw-hebei-wanqing\drone
+原始路径1：D:\vlog-p3-conv\raw-hebei-wanqing\drone
+备选路径2：/Volumes/Peely SSD/drone
+原始路径2：/Volumes/Peely SSD/raw/drone
 说明：航拍视频
 
 路径：F:\vlog-proj\hebei-wanqing\ts-final

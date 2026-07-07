@@ -62,6 +62,27 @@ const CMATERIAL_PATTERN_MAX_COUNT = CSPAN_MATERIAL_PATTERN_MAX_COUNT;
 const CMATERIAL_PATTERN_REQUIRED_COUNT = CSPAN_MATERIAL_PATTERN_REQUIRED_COUNT;
 const CMATERIAL_PATTERN_VIEWPOINT_TAG_SET = new Set<string>(CSPAN_MATERIAL_PATTERN_VIEWPOINT_TAGS);
 const CMATERIAL_PATTERN_SPEECH_TAG_SET = new Set<string>(CSPAN_MATERIAL_PATTERN_SPEECH_TAGS);
+const CPHOTO_CONFLICT_VIEWPOINT_TAGS = new Set<string>([
+  '第一人称行车',
+  '车窗外观察',
+  '车内自拍口播',
+  '手持自拍口播',
+  '固定机位口播',
+  '第三人称跟拍',
+  '多人互动记录',
+  '航拍运动',
+  '延时记录',
+]);
+const CSPEECH_CONFLICT_VIEWPOINT_TAGS = new Set<string>([
+  '车内自拍口播',
+  '手持自拍口播',
+  '固定机位口播',
+]);
+const CDRIVE_CONFLICT_VIEWPOINT_TAGS = new Set<string>([
+  '航拍俯瞰',
+  '航拍运动',
+  '延时记录',
+]);
 const CSPEECH_SPAN_MERGE_GAP_MS = 3_000;
 const CSPEECH_SPAN_MAX_DURATION_MS = 45_000;
 const CSPEECH_SPAN_MAX_VISIBLE_CHARS = 160;
@@ -139,6 +160,9 @@ interface ISpanRebuildFailedSpan {
   assetId?: string;
   chunkIndex?: number;
   reason: string;
+  validationIssues?: string[];
+  expectedSpeechTag?: string;
+  lastReturnedRow?: string[];
   attempts: number;
   lastError?: string;
   recovered?: boolean;
@@ -163,7 +187,15 @@ interface IChunkMaterialPatternRequestResult {
   needsRetry: boolean;
   repairCount: number;
   failureReasonBySpanId: Map<string, string>;
+  failureDetailBySpanId: Map<string, ISpanMaterialPatternFailureDetail>;
   requestError?: string;
+}
+
+interface ISpanMaterialPatternFailureDetail {
+  reason: string;
+  validationIssues: string[];
+  expectedSpeechTag?: string;
+  lastReturnedRow?: string[];
 }
 
 interface ISpanMaterializationReviewDecision {
@@ -1200,6 +1232,7 @@ async function generateSpanMaterializationReview(input: {
     repairCount += firstAttempt.repairCount;
     let chunkDecisions = firstAttempt.decisions;
     let failureReasonBySpanId = firstAttempt.failureReasonBySpanId;
+    let failureDetailBySpanId = firstAttempt.failureDetailBySpanId;
     let chunkLastError = firstAttempt.requestError;
     let attempts = 1;
     if (firstAttempt.needsRetry) {
@@ -1213,10 +1246,12 @@ async function generateSpanMaterializationReview(input: {
         chunkTotal: chunks.length,
         attempt: 2,
         warnings: input.warnings,
+        retryFeedbackBySpanId: firstAttempt.failureDetailBySpanId,
       });
       repairCount += secondAttempt.repairCount;
       chunkDecisions = mergeDecisionMaps(firstAttempt.decisions, secondAttempt.decisions);
       failureReasonBySpanId = mergeFailureReasonMaps(firstAttempt.failureReasonBySpanId, secondAttempt.failureReasonBySpanId);
+      failureDetailBySpanId = mergeFailureDetailMaps(firstAttempt.failureDetailBySpanId, secondAttempt.failureDetailBySpanId);
       chunkLastError = secondAttempt.requestError ?? firstAttempt.requestError;
       attempts = 2;
     }
@@ -1232,6 +1267,7 @@ async function generateSpanMaterializationReview(input: {
         assetId: span.assetId,
         chunkIndex: chunkIndex + 1,
         reason: failureReasonBySpanId.get(span.id) ?? 'missing-or-invalid-materialPatterns',
+        ...failureDetailForFailedSpan(failureDetailBySpanId.get(span.id)),
         attempts,
         lastError: chunkLastError,
         recovered: false,
@@ -1308,6 +1344,45 @@ async function generateSpanMaterializationReview(input: {
       },
     });
 
+    let retryFailure = failure;
+    if (failure.lastReturnedRow && failure.lastReturnedRow.length > 0) {
+      const checkpointRow = applyMaterializationReviewRow(failure.lastReturnedRow, span);
+      if (checkpointRow.complete) {
+        decisionBySpanId.set(span.id, checkpointRow.decision);
+        recoveredFailedCount += failure.recovered ? 0 : 1;
+        failedBySpanId.set(span.id, {
+          ...failure,
+          reason: 'recovered-by-checkpoint-row-revalidation',
+          recovered: true,
+        });
+        await writeSpanRebuildPatternCheckpoint({
+          partialPath: input.partialPath,
+          status: 'running',
+          inputsHash: input.inputsHash,
+          spanCount: input.spans.length,
+          spans: input.spans,
+          decisionBySpanId,
+          failedBySpanId,
+          baseWarnings: input.baseWarnings,
+          warnings: input.warnings,
+          activeSpanIds: [span.id],
+          retryCount,
+          repairCount,
+          recoveredFailedCount,
+          storyUnknownFallbackCount,
+        });
+        continue;
+      }
+      retryFailure = {
+        ...failure,
+        reason: checkpointRow.reason,
+        validationIssues: checkpointRow.validationIssues,
+        expectedSpeechTag: checkpointRow.expectedSpeechTag,
+        lastReturnedRow: checkpointRow.lastReturnedRow ?? failure.lastReturnedRow,
+      };
+      failedBySpanId.set(span.id, retryFailure);
+    }
+
     retryCount += 1;
     const retryResult = await requestMaterializationReviewForChunk({
       agentRunner: input.agentRunner,
@@ -1315,8 +1390,9 @@ async function generateSpanMaterializationReview(input: {
       items: [buildMaterializationReviewItem(span)],
       chunkIndex: Math.max(0, (failure.chunkIndex ?? 1) - 1),
       chunkTotal: chunks.length,
-      attempt: failure.attempts + 1,
+      attempt: retryFailure.attempts + 1,
       warnings: input.warnings,
+      retryFeedbackBySpanId: new Map([[span.id, failureDetailFromFailedSpan(retryFailure, span)]]),
     });
     repairCount += retryResult.repairCount;
     const retriedDecision = retryResult.decisions.get(span.id);
@@ -1325,17 +1401,18 @@ async function generateSpanMaterializationReview(input: {
       recoveredFailedCount += failure.recovered ? 0 : 1;
       failedBySpanId.set(span.id, {
         ...failure,
-        attempts: failure.attempts + 1,
+        attempts: retryFailure.attempts + 1,
         reason: 'recovered-by-single-span-retry',
-        lastError: retryResult.requestError ?? failure.lastError,
+        lastError: retryResult.requestError ?? retryFailure.lastError,
         recovered: true,
       });
     } else {
       failedBySpanId.set(span.id, {
-        ...failure,
-        attempts: failure.attempts + 1,
+        ...retryFailure,
+        attempts: retryFailure.attempts + 1,
         reason: retryResult.failureReasonBySpanId.get(span.id) ?? 'invalid-after-single-span-retry',
-        lastError: retryResult.requestError ?? failure.lastError,
+        ...failureDetailForFailedSpan(retryResult.failureDetailBySpanId.get(span.id)),
+        lastError: retryResult.requestError ?? retryFailure.lastError,
         recovered: false,
       });
       input.warnings.push(`material pattern span ${span.id}: failed-list retry still returned invalid row`);
@@ -1406,12 +1483,17 @@ async function requestMaterializationReviewForChunk(input: {
   chunkTotal: number;
   attempt: number;
   warnings: string[];
+  retryFeedbackBySpanId?: Map<string, ISpanMaterialPatternFailureDetail>;
 }): Promise<IChunkMaterialPatternRequestResult> {
   const packet = buildMaterializationReviewPacket({
     items: input.items,
     chunkIndex: input.chunkIndex,
     chunkTotal: input.chunkTotal,
     attempt: input.attempt,
+    retryFeedback: buildMaterialPatternRetryFeedback({
+      chunk: input.chunk,
+      retryFeedbackBySpanId: input.retryFeedbackBySpanId,
+    }),
   });
   let raw: unknown;
   try {
@@ -1434,6 +1516,11 @@ async function requestMaterializationReviewForChunk(input: {
       needsRetry: true,
       repairCount: 0,
       failureReasonBySpanId: new Map(input.chunk.map(span => [span.id, 'request-failed'] as const)),
+      failureDetailBySpanId: new Map(input.chunk.map(span => [span.id, {
+        reason: 'request-failed',
+        validationIssues: [`LM request failed: ${requestError}`],
+        expectedSpeechTag: resolveSpeechTag(span),
+      }] as const)),
       requestError,
     };
   }
@@ -1447,6 +1534,7 @@ async function requestMaterializationReviewForChunk(input: {
   });
   const decisions = new Map<string, ISpanMaterializationReviewDecision>();
   const failureReasonBySpanId = new Map<string, string>();
+  const failureDetailBySpanId = new Map<string, ISpanMaterialPatternFailureDetail>();
   let repairCount = 0;
   let invalidRowCount = 0;
 
@@ -1454,12 +1542,23 @@ async function requestMaterializationReviewForChunk(input: {
     input.chunk.forEach((span, index) => {
       if (index >= rows.length) {
         failureReasonBySpanId.set(span.id, 'missing-row');
+        failureDetailBySpanId.set(span.id, {
+          reason: 'missing-row',
+          validationIssues: ['LM returned fewer rows than expected; return one row for this item in the same order.'],
+          expectedSpeechTag: resolveSpeechTag(span),
+        });
         return;
       }
       const decision = applyMaterializationReviewRow(rows[index], span);
       if (!decision.complete) {
         invalidRowCount += 1;
         failureReasonBySpanId.set(span.id, decision.reason);
+        failureDetailBySpanId.set(span.id, {
+          reason: decision.reason,
+          validationIssues: decision.validationIssues,
+          expectedSpeechTag: decision.expectedSpeechTag,
+          lastReturnedRow: decision.lastReturnedRow,
+        });
         return;
       }
       if (decision.repaired) {
@@ -1479,6 +1578,11 @@ async function requestMaterializationReviewForChunk(input: {
     input.warnings.push(`material pattern chunk ${input.chunkIndex + 1}/${input.chunkTotal}: LM response did not contain ordered rows`);
     for (const span of input.chunk) {
       failureReasonBySpanId.set(span.id, 'missing-response-rows');
+      failureDetailBySpanId.set(span.id, {
+        reason: 'missing-response-rows',
+        validationIssues: ['LM response must be a top-level JSON array of ordered rows.'],
+        expectedSpeechTag: resolveSpeechTag(span),
+      });
     }
   }
   if (invalidRowCount > 0) {
@@ -1488,7 +1592,7 @@ async function requestMaterializationReviewForChunk(input: {
   }
 
   const needsRetry = rows.length === 0 || rows.length < input.chunk.length || invalidRowCount > 0;
-  return { decisions, needsRetry, repairCount, failureReasonBySpanId };
+  return { decisions, needsRetry, repairCount, failureReasonBySpanId, failureDetailBySpanId };
 }
 
 function normalizeReturnedMaterializationReviewRows(input: {
@@ -1542,6 +1646,7 @@ function buildMaterializationReviewPacket(input: {
   chunkIndex: number;
   chunkTotal: number;
   attempt: number;
+  retryFeedback?: ISpanMaterialPatternRetryFeedback[];
 }): IAgentPacket {
   return {
     stage: 'media/span-materialization-review',
@@ -1556,12 +1661,24 @@ function buildMaterializationReviewPacket(input: {
         chunkIndex: input.chunkIndex + 1,
         chunkTotal: input.chunkTotal,
         attempt: input.attempt,
+        expectedRowCount: input.items.length,
         items: input.items,
+        validationFeedback: input.retryFeedback && input.retryFeedback.length > 0
+          ? input.retryFeedback
+          : undefined,
       },
     }],
     outputSchema: buildSpanMaterializationReviewOutputSchema(),
     reviewRubric: buildSpanMaterializationReviewHardConstraints(),
   };
+}
+
+interface ISpanMaterialPatternRetryFeedback {
+  itemIndex: number;
+  reason: string;
+  validationIssues: string[];
+  expectedSpeechTag?: string;
+  lastReturnedRow?: string[];
 }
 
 function buildMaterializationReviewItem(span: IKtepSlice): ISpanMaterialPatternItem {
@@ -1595,15 +1712,30 @@ function applyMaterializationReviewRow(
 } | {
   complete: false;
   reason: string;
+  validationIssues: string[];
+  expectedSpeechTag?: string;
+  lastReturnedRow?: string[];
   repaired: false;
 } {
   const materialPatterns = resolveMaterialPatternRow(row);
   if (!materialPatterns) {
-    return { complete: false, reason: 'review-row-missing-materialPatterns', repaired: false };
+    return {
+      complete: false,
+      reason: 'review-row-missing-materialPatterns',
+      validationIssues: ['Row must be a string[] materialPatterns row, or an object with materialPatterns/patterns string[].'],
+      repaired: false,
+    };
   }
   const repaired = sanitizeReturnedMaterialPatterns(materialPatterns, span);
   if (!repaired.complete || repaired.patterns.length === 0) {
-    return { complete: false, reason: 'missing-or-invalid-first-four/story', repaired: false };
+    return {
+      complete: false,
+      reason: 'missing-or-invalid-first-four/story',
+      validationIssues: repaired.validationIssues,
+      expectedSpeechTag: repaired.expectedSpeechTag,
+      lastReturnedRow: materialPatterns.filter((item): item is string => typeof item === 'string'),
+      repaired: false,
+    };
   }
 
   const finalSpan = stripUndefined({
@@ -1671,9 +1803,15 @@ function sanitizeReturnedMaterialPatterns(
   value: unknown,
   span: IKtepSlice,
   options: { allowStoryUnknownFallback?: boolean } = {},
-): { patterns: string[]; repaired: boolean; complete: boolean } {
+): { patterns: string[]; repaired: boolean; complete: boolean; validationIssues: string[]; expectedSpeechTag?: string } {
   if (!Array.isArray(value)) {
-    return { patterns: [], repaired: false, complete: false };
+    return {
+      patterns: [],
+      repaired: false,
+      complete: false,
+      validationIssues: ['materialPatterns must be an array of strings.'],
+      expectedSpeechTag: resolveSpeechTag(span),
+    };
   }
   const raw = value
     .filter((item): item is string => typeof item === 'string')
@@ -1686,30 +1824,64 @@ function repairMaterialPatterns(
   raw: string[],
   span: IKtepSlice,
   options: { allowStoryUnknownFallback?: boolean } = {},
-): { patterns: string[]; repaired: boolean; complete: boolean } {
+): { patterns: string[]; repaired: boolean; complete: boolean; validationIssues: string[]; expectedSpeechTag?: string } {
+  const expectedSpeechTag = resolveSpeechTag(span);
   if (raw.length < CMATERIAL_PATTERN_REQUIRED_COUNT || raw.length > CMATERIAL_PATTERN_MAX_COUNT) {
-    return { patterns: [], repaired: false, complete: false };
+    return {
+      patterns: [],
+      repaired: false,
+      complete: false,
+      validationIssues: [
+        `Row must contain ${CMATERIAL_PATTERN_REQUIRED_COUNT}-${CMATERIAL_PATTERN_MAX_COUNT} tags; received ${raw.length}.`,
+        'Slots 1-5 are required; slots 6-7 may be short LM-authored free tags.',
+      ],
+      expectedSpeechTag,
+    };
   }
   const cleaned = raw
     .map(normalizePatternCandidate)
     .filter((item): item is string => typeof item === 'string');
   if (cleaned.length !== raw.length) {
-    return { patterns: [], repaired: false, complete: false };
+    return {
+      patterns: [],
+      repaired: false,
+      complete: false,
+      validationIssues: ['Every tag must be a non-empty short string of 48 comparable characters or fewer.'],
+      expectedSpeechTag,
+    };
   }
 
-  const viewpoint = normalizeViewpointTag(cleaned[0], span);
+  const viewpoint = normalizeViewpointTag(cleaned[0], span, expectedSpeechTag);
   const environment = normalizeEnvironmentTag(cleaned[1]);
   const weatherLight = normalizeWeatherLightTag(cleaned[2]);
-  const speech = normalizeSpeechTag(cleaned[3], resolveSpeechTag(span));
+  const speech = normalizeSpeechTag(cleaned[3], expectedSpeechTag);
+  const validationIssues = buildMaterialPatternSlotIssues({
+    cleaned,
+    span,
+    viewpoint,
+    environment,
+    weatherLight,
+    speech,
+    expectedSpeechTag,
+  });
   if (!viewpoint || !environment || !weatherLight || !speech) {
-    return { patterns: [], repaired: false, complete: false };
+    return { patterns: [], repaired: false, complete: false, validationIssues, expectedSpeechTag };
   }
   const normalizedStory = normalizeStoryTag(cleaned[4], [viewpoint, environment, weatherLight, speech]);
   const story = normalizedStory ?? (options.allowStoryUnknownFallback ? CSPAN_MATERIAL_PATTERN_STORY_UNKNOWN : undefined);
   const required = [viewpoint, environment, weatherLight, speech];
   const freeCandidates = cleaned.slice(5);
   if (freeCandidates.some(item => required.includes(item) || item === story || !isValidFreeMaterialPattern(item))) {
-    return { patterns: [], repaired: false, complete: false };
+    return {
+      patterns: [],
+      repaired: false,
+      complete: false,
+      validationIssues: [
+        ...validationIssues,
+        'Slots 6-7 must be LM-authored short factual free tags, not duplicates of slots 1-5, speech tags, weather unknown tags, technical exposure terms, or full sentences.',
+      ],
+      expectedSpeechTag,
+    };
   }
   const freeTags = freeCandidates
     .slice(0, Math.max(0, CMATERIAL_PATTERN_MAX_COUNT - CMATERIAL_PATTERN_REQUIRED_COUNT));
@@ -1720,51 +1892,84 @@ function repairMaterialPatterns(
     patterns,
     repaired: false,
     complete,
+    validationIssues: story ? validationIssues : [
+      ...validationIssues,
+      `Slot 5 must be a short scene-story phrase supported by the item, or the exact unknown token ${CSPAN_MATERIAL_PATTERN_STORY_UNKNOWN}.`,
+    ],
+    expectedSpeechTag,
   };
+}
+
+function buildMaterialPatternSlotIssues(input: {
+  cleaned: string[];
+  span: IKtepSlice;
+  viewpoint?: string;
+  environment?: string;
+  weatherLight?: string;
+  speech?: string;
+  expectedSpeechTag: string;
+}): string[] {
+  const issues: string[] = [];
+  const [rawViewpoint, rawEnvironment, rawWeatherLight] = input.cleaned;
+  if (!input.viewpoint) {
+    if (!rawViewpoint || !CMATERIAL_PATTERN_VIEWPOINT_TAG_SET.has(rawViewpoint)) {
+      issues.push(`Slot 1 must be exactly one controlled viewpoint tag: ${CSPAN_MATERIAL_PATTERN_VIEWPOINT_TAGS.join(' / ')}.`);
+    } else {
+      issues.push(
+        findStructuredViewpointConflict(rawViewpoint, input.span, input.expectedSpeechTag)
+          ?? `Slot 1 must be exactly one controlled viewpoint tag: ${CSPAN_MATERIAL_PATTERN_VIEWPOINT_TAGS.join(' / ')}.`,
+      );
+    }
+  }
+  if (!input.environment) {
+    issues.push(
+      `Slot 2 "${rawEnvironment ?? ''}" must be a short current-environment phrase from this item, or exactly ${CSPAN_MATERIAL_PATTERN_ENVIRONMENT_UNKNOWN}; it must not be a viewpoint, speech tag, weather/light tag, composite carrier label, technical exposure term, or full sentence.`,
+    );
+  }
+  if (!input.weatherLight) {
+    issues.push(
+      `Slot 3 "${rawWeatherLight ?? ''}" must be an observable weather/light phrase such as 晴天/阴天/下雨/雾天/黄昏/夜晚/室内灯光/人工照明/光线昏暗, or exactly ${CSPAN_MATERIAL_PATTERN_WEATHER_UNKNOWN}; do not write 光线不明 or technical exposure terms.`,
+    );
+  }
+  if (!input.speech) {
+    issues.push(`Slot 4 must be exactly ${input.expectedSpeechTag} for this item; it is determined only from transcript/transcriptSegments/semanticKind.`);
+  }
+  if (!input.cleaned[4]) {
+    issues.push(`Slot 5 is required: write a short scene-story phrase, or exactly ${CSPAN_MATERIAL_PATTERN_STORY_UNKNOWN}.`);
+  }
+  return issues;
 }
 
 function normalizeViewpointTag(
   value: string | undefined,
   span: IKtepSlice,
+  expectedSpeechTag: string,
 ): string | undefined {
   if (
     value
     && CMATERIAL_PATTERN_VIEWPOINT_TAG_SET.has(value)
-    && isViewpointTagCompatibleWithSpan(value, span)
+    && !findStructuredViewpointConflict(value, span, expectedSpeechTag)
   ) {
     return value;
   }
   return undefined;
 }
 
-function isViewpointTagCompatibleWithSpan(tag: string, span: IKtepSlice): boolean {
-  const text = spanFactText(span);
-  const hasAerialEvidence = /航拍|无人机|俯瞰|鸟瞰|空中|aerial|drone|overhead|bird'?s[-\s]?eye/iu.test(text);
-  const hasAerialMotionEvidence = /跟随|追踪|环绕|推进|掠过|移动|follow|tracking|orbit|moving|passes?|flies?\s+over|sweeping/iu.test(text);
-  const hasDetailEvidence = /特写|细节|近景|close[-\s]?up|macro|detail|resting|停驻|触摸|手部|手表|腕表|车漆特写|车身线条|蝴蝶|butterfly|wrist|watch|hand gently|glossy yellow|yellow (?:car )?surface|paint and body|body lines|speaker grille|water droplets/iu.test(text);
-  const hasDrivingPovEvidence = /第一视角|驾驶视角|行车记录|车窗|挡风玻璃|车内向前|windshield|dashcam|driving\s+pov|view from (?:inside )?(?:a|the)?\s*(?:car|vehicle)/iu.test(text);
-  const hasWideEnvironmentEvidence = /远景|全景|广角|风景|环境|山谷|山地|森林|村庄|街道|公路|道路|河流|湖泊|建筑|wide shot|wide-angle|panoramic|landscape|scenery|valley|village|street|highway|river|lake|building/iu.test(text);
-
-  if (tag === '第一人称行车') {
-    if (hasAerialEvidence || hasDetailEvidence) return false;
-    return span.type === 'drive' || hasDrivingPovEvidence;
+function findStructuredViewpointConflict(
+  tag: string,
+  span: IKtepSlice,
+  expectedSpeechTag: string,
+): string | undefined {
+  if (span.type === 'photo' && CPHOTO_CONFLICT_VIEWPOINT_TAGS.has(tag)) {
+    return `Slot 1 "${tag}" conflicts with type=photo; choose a still-image-compatible controlled tag such as 环境远景, 细节特写, 固定机位观察, 航拍俯瞰, or 视角不明.`;
   }
-  if (tag === '车窗外观察') {
-    return span.type === 'drive' || /车窗|窗外|挡风玻璃|windshield|vehicle window/iu.test(text);
+  if (expectedSpeechTag === CSPAN_MATERIAL_PATTERN_SPEECH_ABSENT && CSPEECH_CONFLICT_VIEWPOINT_TAGS.has(tag)) {
+    return `Slot 1 "${tag}" conflicts with slot 4=${CSPAN_MATERIAL_PATTERN_SPEECH_ABSENT}; a 口播 viewpoint requires transcript, transcriptSegments, or semanticKind=speech/mixed.`;
   }
-  if (tag === '航拍俯瞰') {
-    return span.type === 'aerial' || hasAerialEvidence;
+  if (span.type === 'drive' && CDRIVE_CONFLICT_VIEWPOINT_TAGS.has(tag)) {
+    return `Slot 1 "${tag}" conflicts with type=drive; choose a driving-compatible controlled tag such as 第一人称行车, 车窗外观察, 固定机位观察, 环境远景, or 视角不明.`;
   }
-  if (tag === '航拍运动') {
-    return (span.type === 'aerial' || hasAerialEvidence) && hasAerialMotionEvidence;
-  }
-  if (tag === '细节特写') {
-    return hasDetailEvidence;
-  }
-  if (tag === '环境远景') {
-    return hasWideEnvironmentEvidence;
-  }
-  return true;
+  return undefined;
 }
 
 function normalizeEnvironmentTag(value: string | undefined): string | undefined {
@@ -1773,8 +1978,7 @@ function normalizeEnvironmentTag(value: string | undefined): string | undefined 
     candidate
     && !CMATERIAL_PATTERN_VIEWPOINT_TAG_SET.has(candidate)
     && !CMATERIAL_PATTERN_SPEECH_TAG_SET.has(candidate)
-    && !looksLikeWeatherLightTag(candidate)
-    && !looksLikeCompositeEnvironmentTag(candidate)
+    && candidate !== CSPAN_MATERIAL_PATTERN_WEATHER_UNKNOWN
     && !containsTechnicalWeatherTerm(candidate)
     && !looksLikeSourceSentence(candidate)
   ) {
@@ -1791,7 +1995,6 @@ function normalizeWeatherLightTag(value: string | undefined): string | undefined
     && !CMATERIAL_PATTERN_VIEWPOINT_TAG_SET.has(candidate)
     && !CMATERIAL_PATTERN_SPEECH_TAG_SET.has(candidate)
     && !containsTechnicalWeatherTerm(candidate)
-    && (candidate === CSPAN_MATERIAL_PATTERN_WEATHER_UNKNOWN || looksLikeWeatherLightTag(candidate))
     && !looksLikeSourceSentence(candidate)
   ) {
     return candidate;
@@ -1850,25 +2053,8 @@ function isValidFreeMaterialPattern(value: string): boolean {
   return sanitizeMaterialPatterns([value]).length > 0;
 }
 
-function looksLikeWeatherLightTag(value: string): boolean {
-  return /晴天|晴朗|雨天|下雨|小雨|大雨|暴雨|雪天|下雪|飘雪|降雪|阴天|多云|云层|雾天|大雾|薄雾|晚霞|夕阳|日落|日出|夜晚|夜间|丁达尔|阳光|蓝天|灯光|sunny|sunlight|rain(?:ing)?|snow(?:ing|fall)?|overcast|cloudy|fog(?:gy)?|mist(?:y)?|night|light|tyndall/iu.test(value);
-}
-
-function looksLikeCompositeEnvironmentTag(value: string): boolean {
-  return /行车|口播|自拍|航拍|照片|语音|素材|画面/iu.test(value);
-}
-
 function containsTechnicalWeatherTerm(value: string): boolean {
   return CSPAN_MATERIAL_PATTERN_TECHNICAL_WEATHER_TERMS.some(term => value.includes(term));
-}
-
-function spanFactText(span: IKtepSlice): string {
-  return [
-    span.type,
-    span.semanticKind,
-    span.transcript,
-    span.visualObservation,
-  ].filter(Boolean).join(' ');
 }
 
 function mergeDecisionMaps(
@@ -1891,6 +2077,67 @@ function mergeFailureReasonMaps(
     merged.set(id, reason);
   }
   return merged;
+}
+
+function mergeFailureDetailMaps(
+  first: Map<string, ISpanMaterialPatternFailureDetail>,
+  second: Map<string, ISpanMaterialPatternFailureDetail>,
+): Map<string, ISpanMaterialPatternFailureDetail> {
+  const merged = new Map(first);
+  for (const [id, detail] of second) {
+    merged.set(id, detail);
+  }
+  return merged;
+}
+
+function buildMaterialPatternRetryFeedback(input: {
+  chunk: IKtepSlice[];
+  retryFeedbackBySpanId?: Map<string, ISpanMaterialPatternFailureDetail>;
+}): ISpanMaterialPatternRetryFeedback[] {
+  if (!input.retryFeedbackBySpanId || input.retryFeedbackBySpanId.size === 0) return [];
+  return input.chunk
+    .map((span, index) => {
+      const detail = input.retryFeedbackBySpanId?.get(span.id);
+      if (!detail) return null;
+      return stripUndefined({
+        itemIndex: index + 1,
+        reason: detail.reason,
+        validationIssues: detail.validationIssues,
+        expectedSpeechTag: detail.expectedSpeechTag ?? resolveSpeechTag(span),
+        lastReturnedRow: detail.lastReturnedRow,
+      }) as ISpanMaterialPatternRetryFeedback;
+    })
+    .filter((item): item is ISpanMaterialPatternRetryFeedback => item != null);
+}
+
+function failureDetailForFailedSpan(
+  detail: ISpanMaterialPatternFailureDetail | undefined,
+): Pick<ISpanRebuildFailedSpan, 'validationIssues' | 'expectedSpeechTag' | 'lastReturnedRow'> {
+  return stripUndefined({
+    validationIssues: detail?.validationIssues,
+    expectedSpeechTag: detail?.expectedSpeechTag,
+    lastReturnedRow: detail?.lastReturnedRow,
+  });
+}
+
+function failureDetailFromFailedSpan(
+  failure: ISpanRebuildFailedSpan,
+  span: IKtepSlice,
+): ISpanMaterialPatternFailureDetail {
+  const validationIssues = normalizeRetryValidationIssues(failure.validationIssues);
+  return {
+    reason: failure.reason,
+    validationIssues: validationIssues.length > 0
+      ? validationIssues
+      : [`Previous attempt failed with reason: ${failure.reason}. Regenerate this row to satisfy the fixed slot contract.`],
+    expectedSpeechTag: failure.expectedSpeechTag ?? resolveSpeechTag(span),
+    lastReturnedRow: failure.lastReturnedRow,
+  };
+}
+
+function normalizeRetryValidationIssues(issues: string[] | undefined): string[] {
+  return (issues ?? [])
+    .filter(issue => !/Slot 1 "[^"]+" is not supported by this item's type\/semanticKind\/transcript\/visualObservation/u.test(issue));
 }
 
 function isActiveFailedSpan(value: ISpanRebuildFailedSpan | undefined): value is ISpanRebuildFailedSpan {
@@ -2055,6 +2302,15 @@ function normalizeCheckpointFailedSpan(
     reason: typeof value.reason === 'string' && value.reason.trim()
       ? value.reason.trim()
       : 'checkpoint-failed-span',
+    validationIssues: Array.isArray(value.validationIssues)
+      ? value.validationIssues.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+      : undefined,
+    expectedSpeechTag: typeof value.expectedSpeechTag === 'string' && CMATERIAL_PATTERN_SPEECH_TAG_SET.has(value.expectedSpeechTag)
+      ? value.expectedSpeechTag
+      : undefined,
+    lastReturnedRow: Array.isArray(value.lastReturnedRow)
+      ? value.lastReturnedRow.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+      : undefined,
     attempts: getNonNegativeInteger(value.attempts),
     lastError: typeof value.lastError === 'string' ? value.lastError : undefined,
     recovered,

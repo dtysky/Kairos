@@ -1,0 +1,28 @@
+{
+  "prose": "",
+  "segments": [],
+  "captureTimeOverrides": [
+    {
+      "rootRef": "root-draft-1783061472983-kd0ipy",
+      "sourcePath": "20260621_秦皇岛福来岛日出1.mp4",
+      "currentCapturedAt": "2026-06-23T06:37:35.000Z",
+      "currentSource": "container",
+      "requiresExplicitDate": true,
+      "correctedDate": "2026-06-21",
+      "correctedTime": "04:54:00",
+      "timezone": "Asia/Shanghai",
+      "note": "该素材 Root 已标记为拍摄时间必须人工确认；按 Pharos 福来岛日出执行窗口校正"
+    },
+    {
+      "rootRef": "root-draft-1783061472983-kd0ipy",
+      "sourcePath": "20260621_秦皇岛福来岛日出2.mp4",
+      "currentCapturedAt": "2026-06-23T06:37:12.000Z",
+      "currentSource": "container",
+      "requiresExplicitDate": true,
+      "correctedDate": "2026-06-21",
+      "correctedTime": "04:48:00",
+      "timezone": "Asia/Shanghai",
+      "note": "该素材 Root 已标记为拍摄时间必须人工确认；按 Pharos 福来岛日出执行窗口校正"
+    }
+  ]
+}
