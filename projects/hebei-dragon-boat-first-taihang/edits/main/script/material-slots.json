@@ -1,0 +1,3156 @@
+{
+  "id": "material-slots-main-travel-vlog-codex-20260708T041236Z",
+  "projectId": "hebei-dragon-boat-first-taihang",
+  "generatedAt": "2026-07-08T04:12:36.405Z",
+  "status": "current",
+  "segments": [
+    {
+      "segmentId": "FW-01-01",
+      "slots": [
+        {
+          "id": "fw-01-01-slot-01",
+          "query": "石家庄机场深夜落地。共4段：普通视频2（有语音0/无语音2）、口播2（有语音2/无语音0）。按已确认剪辑框架召回本段所有有效素材，供人工粗剪审查。",
+          "requirement": "required",
+          "targetBundles": [
+            "现场普通视频观察",
+            "人物现场说明"
+          ],
+          "chosenSpanIds": [
+            "C1976_zve1_day1_broll_visual_s0-3",
+            "C1977_zve1_day1_broll_visual_s0-7",
+            "C1978_zve1_day1_talking-head_speech_s3-19",
+            "C1979_zve1_day1_talking-head_speech_s0-16"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-01-02",
+      "slots": [
+        {
+          "id": "fw-01-02-slot-01",
+          "query": "夜路到市区与酒店安顿。共5段：行车2（有语音1/无语音1）、普通视频3（有语音3/无语音0）。按已确认剪辑框架召回本段所有有效素材，供人工粗剪审查。",
+          "requirement": "required",
+          "targetBundles": [
+            "行程推进与路况观察",
+            "现场普通视频观察"
+          ],
+          "chosenSpanIds": [
+            "C1980_zve1_day1_drive_speech_s0-5",
+            "C1980_zve1_day1_drive_visual_s1-8",
+            "C1981_zve1_day1_broll_speech_s1-5",
+            "C1982_zve1_day1_broll_speech_s0-4",
+            "C1983_zve1_day1_broll_speech_s1-7"
+          ],
+          "treatments": {
+            "C1980_zve1_day1_drive_visual_s1-8": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-01",
+      "slots": [
+        {
+          "id": "fw-02-01-slot-01",
+          "query": "取车和正式出发。共8段：行车2（有语音1/无语音1）、航拍1（有语音1/无语音0）、普通视频4（有语音3/无语音1）、口播1（有语音1/无语音0）。按已确认剪辑框架召回本段所有有效素材，供人工粗剪审查。",
+          "requirement": "required",
+          "targetBundles": [
+            "行程推进与路况观察",
+            "航拍空间观察",
+            "现场普通视频观察",
+            "人物现场说明"
+          ],
+          "chosenSpanIds": [
+            "C1984_zve1_day1_aerial_speech_s1-7",
+            "C1985_zve1_day1_broll_s0-33",
+            "C1986_zve1_day1_broll_speech_s1-12",
+            "C1987_zve1_day1_broll_speech_s0-12",
+            "C1988_zve1_day1_drive_speech_s1-6",
+            "C1988_zve1_day1_drive_visual_s1-7",
+            "C1989_zve1_day1_talking-head_speech_s0-8",
+            "C1990_zve1_day1_broll_speech_s0-5"
+          ],
+          "treatments": {
+            "C1988_zve1_day1_drive_visual_s1-7": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-02",
+      "slots": [
+        {
+          "id": "fw-02-02-slot-01",
+          "query": "驶向华北制药。共10段：行车10（有语音3/无语音7）。按已确认剪辑框架召回本段所有有效素材，供人工粗剪审查。",
+          "requirement": "required",
+          "targetBundles": [
+            "行程推进与路况观察"
+          ],
+          "chosenSpanIds": [
+            "C1993_zve1_day1_drive_s0-54",
+            "C1994_zve1_day1_drive_visual_s0-4",
+            "C1994_zve1_day1_drive_visual_s0-4_ms0-3520",
+            "C1995_zve1_day1_drive_speech_s3-9",
+            "C1995_zve1_day1_drive_visual_s7-24",
+            "C1995_zve1_day1_drive_speech_s12-16",
+            "C1995_zve1_day1_drive_visual_s20-27",
+            "C1996_zve1_day1_drive_s0-53",
+            "C1997_zve1_day1_drive_speech_s3-21",
+            "C1997_zve1_day1_drive_visual_s6-18"
+          ],
+          "treatments": {
+            "C1993_zve1_day1_drive_s0-54": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C1994_zve1_day1_drive_visual_s0-4": {
+              "audio": -100
+            },
+            "C1994_zve1_day1_drive_visual_s0-4_ms0-3520": {
+              "audio": -100
+            },
+            "C1995_zve1_day1_drive_visual_s7-24": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C1995_zve1_day1_drive_visual_s20-27": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C1996_zve1_day1_drive_s0-53": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C1997_zve1_day1_drive_visual_s6-18": {
+              "audio": -100,
+              "speed": 5
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-03",
+      "slots": [
+        {
+          "id": "fw-02-03-slot-01",
+          "query": "华北制药厂区外观。共8段：行车2（有语音1/无语音1）、普通视频4（有语音3/无语音1）、口播1（有语音1/无语音0）、照片1。按已确认剪辑框架召回本段所有有效素材，供人工粗剪审查。",
+          "requirement": "required",
+          "targetBundles": [
+            "行程推进与路况观察",
+            "现场普通视频观察",
+            "人物现场说明",
+            "事件尾部照片包"
+          ],
+          "chosenSpanIds": [
+            "C1999_zve1_day1_broll_speech_s0-8",
+            "C2000_zve1_day1_broll_visual_s0-2",
+            "C2001_zve1_day1_talking-head_speech_s0-16",
+            "C2002_zve1_day1_broll_speech_s0-13",
+            "C2002_zve1_day1_broll_speech_s16-18",
+            "C2003_zve1_day1_drive_speech_s0-22",
+            "C2003_zve1_day1_drive_visual_s5-16",
+            "DSC09256_photos_photo"
+          ],
+          "treatments": {
+            "C2003_zve1_day1_drive_visual_s5-16": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DSC09256_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-04",
+      "slots": [
+        {
+          "id": "fw-02-04-slot-01",
+          "query": "华北制药生活区。共62段：行车3（有语音2/无语音1）、普通视频33（有语音31/无语音2）、口播6（有语音6/无语音0）、照片20。按已确认剪辑框架召回本段所有有效素材，供人工粗剪审查。",
+          "requirement": "required",
+          "targetBundles": [
+            "行程推进与路况观察",
+            "现场普通视频观察",
+            "人物现场说明",
+            "事件尾部照片包"
+          ],
+          "chosenSpanIds": [
+            "C2004_zve1_day1_talking-head_speech_s2-22",
+            "C2005_zve1_day1_drive_speech_s0-7",
+            "C2006_zve1_day1_drive_speech_s0-4",
+            "C2006_zve1_day1_drive_visual_s1-6",
+            "C2007_zve1_day1_broll_speech_s0-15",
+            "C2008_zve1_day1_broll_speech_s0-2",
+            "C2009_zve1_day1_broll_speech_s0-12",
+            "C2010_zve1_day1_broll_speech_s0-7",
+            "C2011_zve1_day1_broll_speech_s0-10",
+            "C2012_zve1_day1_broll_speech_s1-3",
+            "C2013_zve1_day1_broll_speech_s1-15",
+            "C2014_zve1_day1_broll_speech_s0-8",
+            "C2015_zve1_day1_broll_speech_s0-4",
+            "C2016_zve1_day1_broll_speech_s0-2",
+            "C2017_zve1_day1_broll_speech_s0-3",
+            "C2018_zve1_day1_broll_speech_s0-7",
+            "C2019_zve1_day1_broll_speech_s0-13",
+            "C2020_zve1_day1_broll_speech_s2-6",
+            "C2021_zve1_day1_broll_speech_s5-8",
+            "C2022_zve1_day1_broll_speech_s1-11",
+            "C2023_zve1_day1_broll_speech_s0-4",
+            "C2024_zve1_day1_broll_speech_s0-6",
+            "C2025_zve1_day1_talking-head_speech_s0-19",
+            "C2026_zve1_day1_broll_speech_s0-5",
+            "C2027_zve1_day1_broll_speech_s0-7",
+            "C2028_zve1_day1_broll_speech_s0-6",
+            "C2029_zve1_day1_broll_speech_s1-23",
+            "C2030_zve1_day1_broll_speech_s0-25",
+            "C2031_zve1_day1_talking-head_speech_s1-18",
+            "C2031_zve1_day1_talking-head_speech_s21-26",
+            "C2033_zve1_day1_broll_speech_s0-17",
+            "C2034_zve1_day1_broll_s0-38",
+            "C2035_zve1_day1_broll_s0-1",
+            "C2035_zve1_day1_broll_speech_s2-10",
+            "C2036_zve1_day1_broll_speech_s0-13",
+            "C2037_zve1_day1_broll_speech_s0-7",
+            "C2038_zve1_day1_broll_speech_s1-16",
+            "C2039_zve1_day1_broll_speech_s3-9",
+            "C2039_zve1_day1_broll_speech_s14-16",
+            "C2040_zve1_day1_broll_speech_s1-9",
+            "C2041_zve1_day1_talking-head_speech_s0-10",
+            "C2041_zve1_day1_talking-head_speech_s13-26",
+            "DSC09258_photos_photo",
+            "DSC09259_photos_photo",
+            "DSC09262_photos_photo",
+            "DSC09265_photos_photo",
+            "DSC09266_photos_photo",
+            "DSC09269_photos_photo",
+            "DSC09270_photos_photo",
+            "DSC09271_photos_photo",
+            "DSC09275_photos_photo",
+            "DSC09276_photos_photo",
+            "DSC09279_photos_photo",
+            "DSC09281_photos_photo",
+            "DSC09282_photos_photo",
+            "DSC09284_photos_photo",
+            "DSC09287_photos_photo",
+            "DSC09290_photos_photo",
+            "DSC09292_photos_photo",
+            "DSC09293_photos_photo",
+            "DSC09294_photos_photo",
+            "DSC09296_photos_photo"
+          ],
+          "treatments": {
+            "C2006_zve1_day1_drive_visual_s1-6": {
+              "audio": -100,
+              "speed": 2
+            },
+            "DSC09258_photos_photo": {
+              "audio": -100
+            },
+            "DSC09259_photos_photo": {
+              "audio": -100
+            },
+            "DSC09262_photos_photo": {
+              "audio": -100
+            },
+            "DSC09265_photos_photo": {
+              "audio": -100
+            },
+            "DSC09266_photos_photo": {
+              "audio": -100
+            },
+            "DSC09269_photos_photo": {
+              "audio": -100
+            },
+            "DSC09270_photos_photo": {
+              "audio": -100
+            },
+            "DSC09271_photos_photo": {
+              "audio": -100
+            },
+            "DSC09275_photos_photo": {
+              "audio": -100
+            },
+            "DSC09276_photos_photo": {
+              "audio": -100
+            },
+            "DSC09279_photos_photo": {
+              "audio": -100
+            },
+            "DSC09281_photos_photo": {
+              "audio": -100
+            },
+            "DSC09282_photos_photo": {
+              "audio": -100
+            },
+            "DSC09284_photos_photo": {
+              "audio": -100
+            },
+            "DSC09287_photos_photo": {
+              "audio": -100
+            },
+            "DSC09290_photos_photo": {
+              "audio": -100
+            },
+            "DSC09292_photos_photo": {
+              "audio": -100
+            },
+            "DSC09293_photos_photo": {
+              "audio": -100
+            },
+            "DSC09294_photos_photo": {
+              "audio": -100
+            },
+            "DSC09296_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-05",
+      "slots": [
+        {
+          "id": "fw-02-05-slot-01",
+          "query": "市区转场与万青墙绘。共17段：行车1（有语音0/无语音1）、普通视频11（有语音8/无语音3）、口播3（有语音2/无语音1）、照片2。按已确认剪辑框架召回本段所有有效素材，供人工粗剪审查。",
+          "requirement": "required",
+          "targetBundles": [
+            "行程推进与路况观察",
+            "现场普通视频观察",
+            "人物现场说明",
+            "事件尾部照片包"
+          ],
+          "chosenSpanIds": [
+            "C2042_zve1_day1_drive_s0-141",
+            "C2045_zve1_day1_broll_s0-1",
+            "C2045_zve1_day1_broll_speech_s1-8",
+            "C2046_zve1_day1_broll_speech_s0-3",
+            "C2047_zve1_day1_broll_speech_s1-4",
+            "C2048_zve1_day1_broll_speech_s0-3",
+            "C2048_zve1_day1_broll_speech_s10-12",
+            "C2049_zve1_day1_talking-head_speech_s1-3",
+            "C2049_zve1_day1_talking-head_speech_s9-11",
+            "C2050_zve1_day1_broll_speech_s1-4",
+            "C2050_zve1_day1_broll_speech_s9-12",
+            "C2051_zve1_day1_broll_visual_s0-3",
+            "C2052_zve1_day1_broll_s0-1",
+            "C2052_zve1_day1_broll_speech_s0-19",
+            "C2053_zve1_day1_talking-head_s0-40",
+            "DSC00236_photos_photo",
+            "DSC09297_photos_photo"
+          ],
+          "treatments": {
+            "C2042_zve1_day1_drive_s0-141": {
+              "audio": -100,
+              "speed": 5
+            },
+            "DSC00236_photos_photo": {
+              "audio": -100
+            },
+            "DSC09297_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-06",
+      "slots": [
+        {
+          "id": "fw-02-06-slot-01",
+          "query": "出城去井陉。共16段：行车15（有语音3/无语音12）、照片1。按已确认剪辑框架召回本段所有有效素材，供人工粗剪审查。",
+          "requirement": "required",
+          "targetBundles": [
+            "行程推进与路况观察",
+            "事件尾部照片包"
+          ],
+          "chosenSpanIds": [
+            "C2054_zve1_day1_drive_s0-45",
+            "C2055_zve1_day1_drive_s0-104",
+            "C2056_zve1_day1_drive_s0-46",
+            "C2057_zve1_day1_drive_speech_s3-15",
+            "C2057_zve1_day1_drive_visual_s7-19",
+            "C2057_zve1_day1_drive_visual_s20-26",
+            "C2058_zve1_day1_drive_s0-59",
+            "C2059_zve1_day1_drive_speech_s0-8",
+            "C2059_zve1_day1_drive_visual_s5-12",
+            "C2060_zve1_day1_drive_speech_s0-19",
+            "C2060_zve1_day1_drive_visual_s5-16",
+            "C2061_zve1_day1_drive_visual_s0-20",
+            "C2061_zve1_day1_drive_visual_s6-17",
+            "C2062_zve1_day1_drive_s0-320",
+            "C2063_zve1_day1_drive_s0-41",
+            "DSC09302_photos_photo"
+          ],
+          "treatments": {
+            "C2054_zve1_day1_drive_s0-45": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2055_zve1_day1_drive_s0-104": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2056_zve1_day1_drive_s0-46": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2057_zve1_day1_drive_visual_s7-19": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2057_zve1_day1_drive_visual_s20-26": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C2058_zve1_day1_drive_s0-59": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2059_zve1_day1_drive_visual_s5-12": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C2060_zve1_day1_drive_visual_s5-16": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C2061_zve1_day1_drive_visual_s0-20": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2061_zve1_day1_drive_visual_s6-17": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2062_zve1_day1_drive_s0-320": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2063_zve1_day1_drive_s0-41": {
+              "audio": -100,
+              "speed": 5
+            },
+            "DSC09302_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-07",
+      "slots": [
+        {
+          "id": "fw-02-07-slot-01",
+          "query": "井陉县晚餐。共14段：行车4（有语音2/无语音2）、普通视频7（有语音7/无语音0）、口播1（有语音1/无语音0）、照片2。按已确认剪辑框架召回本段所有有效素材，供人工粗剪审查。",
+          "requirement": "required",
+          "targetBundles": [
+            "行程推进与路况观察",
+            "现场普通视频观察",
+            "人物现场说明",
+            "事件尾部照片包"
+          ],
+          "chosenSpanIds": [
+            "C2064_zve1_day1_broll_speech_s0-11",
+            "C2065_zve1_day1_broll_speech_s1-5",
+            "C2066_zve1_day1_drive_speech_s0-10",
+            "C2066_zve1_day1_drive_visual_s4-11",
+            "C2067_zve1_day1_broll_speech_s0-7",
+            "C2067_zve1_day1_broll_speech_s10-11",
+            "C2067_zve1_day1_broll_speech_s14-19",
+            "C2068_zve1_day1_broll_speech_s0-10",
+            "C2069_zve1_day1_broll_speech_s1-6",
+            "C2070_zve1_day1_talking-head_speech_s0-8",
+            "C2071_zve1_day1_drive_visual_s0-4",
+            "C2071_zve1_day1_drive_speech_s0-3",
+            "DSC00288_photos_photo",
+            "DSC09306_photos_photo"
+          ],
+          "treatments": {
+            "C2066_zve1_day1_drive_visual_s4-11": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C2071_zve1_day1_drive_visual_s0-4": {
+              "audio": -100
+            },
+            "DSC00288_photos_photo": {
+              "audio": -100
+            },
+            "DSC09306_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-08",
+      "slots": [
+        {
+          "id": "fw-02-08-slot-01",
+          "query": "进入矿区与解放第一矿。共67段：行车5（有语音1/无语音4）、航拍8（有语音0/无语音8）、普通视频34（有语音22/无语音12）、口播1（有语音1/无语音0）、照片19。按已确认剪辑框架召回本段所有有效素材，供人工粗剪审查。",
+          "requirement": "required",
+          "targetBundles": [
+            "行程推进与路况观察",
+            "航拍空间观察",
+            "现场普通视频观察",
+            "人物现场说明",
+            "事件尾部照片包"
+          ],
+          "chosenSpanIds": [
+            "C2072_zve1_day1_drive_s0-156",
+            "C2073_zve1_day1_drive_s0-186",
+            "C2074_zve1_day1_broll_speech_s0-12",
+            "C2075_zve1_day1_talking-head_speech_s0-24",
+            "C2076_zve1_day1_broll_speech_s0-7",
+            "C2077_zve1_day1_broll_speech_s3-9",
+            "C2078_zve1_day1_broll_speech_s1-4",
+            "C2079_zve1_day1_broll_speech_s0-15",
+            "C2080_zve1_day1_broll_speech_s0-3",
+            "C2081_zve1_day1_broll_s0-1",
+            "C2081_zve1_day1_broll_speech_s0-10",
+            "C2082_zve1_day1_broll_visual_s0-2",
+            "C2083_zve1_day1_broll_s0-1",
+            "C2083_zve1_day1_broll_speech_s1-11",
+            "C2084_zve1_day1_broll_speech_s2-4",
+            "C2084_zve1_day1_broll_speech_s10-15",
+            "C2085_zve1_day1_broll_speech_s0-9",
+            "C2086_zve1_day1_broll_speech_s0-12",
+            "C2087_zve1_day1_broll_speech_s1-7",
+            "C2088_zve1_day1_broll_visual_s0-5",
+            "C2089_zve1_day1_broll_speech_s5-12",
+            "DJI_20260618190728_0825_D_drone_aerial_s0-12",
+            "DJI_20260618190823_0826_D_drone_aerial_s0-10",
+            "DJI_20260618190847_0830_D_drone_aerial_s0-14",
+            "DJI_20260618190940_0837_D_drone_aerial_s0-35",
+            "DJI_20260618191038_0841_D_drone_aerial_s0-12",
+            "DJI_20260618191103_0845_D_drone_aerial_s0-16",
+            "DJI_20260618191210_0849_D_drone_aerial_s0-18",
+            "DJI_20260618191232_0850_D_drone_aerial_s0-42",
+            "DJI_20260618191538_0860_D_drone_broll_s0-18",
+            "DJI_20260618191620_0861_D_drone_broll_s0-16",
+            "DJI_20260618191639_0862_D_drone_broll_s0-9",
+            "DJI_20260618191730_0863_D_drone_broll_s0-40",
+            "DJI_20260618192200_0885_D_drone_broll_s0-25",
+            "C2090_zve1_day1_broll_speech_s0-6",
+            "C2091_zve1_day1_broll_speech_s8-10",
+            "DJI_20260618192337_0892_D_drone_broll_s0-18",
+            "C2091_zve1_day1_broll_speech_s16-26",
+            "C2092_zve1_day1_broll_visual_s0-3",
+            "C2093_zve1_day1_broll_speech_s3-6",
+            "C2093_zve1_day1_broll_speech_s8-21",
+            "C2094_zve1_day1_broll_speech_s0-18",
+            "C2095_zve1_day1_broll_speech_s0-8",
+            "C2096_zve1_day1_broll_visual_s0-4",
+            "C2097_zve1_day1_broll_speech_s2-11",
+            "C2098_zve1_day1_drive_speech_s4-12",
+            "C2098_zve1_day1_drive_visual_s6-13",
+            "C2099_zve1_day1_drive_s0-39",
+            "DSC09307_photos_photo",
+            "DSC09308_photos_photo",
+            "DSC09309_photos_photo",
+            "DSC09320_photos_photo",
+            "DSC09325_photos_photo",
+            "DSC09328_photos_photo",
+            "DSC09329_photos_photo",
+            "DSC09331_photos_photo",
+            "DSC09336_photos_photo",
+            "DSC09337_photos_photo",
+            "DSC09339_photos_photo",
+            "DJI_20260618190928_0836_D-HDR_photos_photo",
+            "DJI_20260618191816_0864_D-HDR_photos_photo",
+            "DJI_20260618191932_0881_D-HDR_photos_photo",
+            "DSC09340_photos_photo",
+            "DSC09343_photos_photo",
+            "DSC09346_photos_photo",
+            "DSC09348_photos_photo",
+            "DSC09357_photos_photo"
+          ],
+          "treatments": {
+            "C2072_zve1_day1_drive_s0-156": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2073_zve1_day1_drive_s0-186": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2098_zve1_day1_drive_visual_s6-13": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C2099_zve1_day1_drive_s0-39": {
+              "audio": -100,
+              "speed": 5
+            },
+            "DSC09307_photos_photo": {
+              "audio": -100
+            },
+            "DSC09308_photos_photo": {
+              "audio": -100
+            },
+            "DSC09309_photos_photo": {
+              "audio": -100
+            },
+            "DSC09320_photos_photo": {
+              "audio": -100
+            },
+            "DSC09325_photos_photo": {
+              "audio": -100
+            },
+            "DSC09328_photos_photo": {
+              "audio": -100
+            },
+            "DSC09329_photos_photo": {
+              "audio": -100
+            },
+            "DSC09331_photos_photo": {
+              "audio": -100
+            },
+            "DSC09336_photos_photo": {
+              "audio": -100
+            },
+            "DSC09337_photos_photo": {
+              "audio": -100
+            },
+            "DSC09339_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260618190928_0836_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260618191816_0864_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260618191932_0881_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DSC09340_photos_photo": {
+              "audio": -100
+            },
+            "DSC09343_photos_photo": {
+              "audio": -100
+            },
+            "DSC09346_photos_photo": {
+              "audio": -100
+            },
+            "DSC09348_photos_photo": {
+              "audio": -100
+            },
+            "DSC09357_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-09",
+      "slots": [
+        {
+          "id": "fw-02-09-slot-01",
+          "query": "夜行白石山镇。共12段：行车11（有语音5/无语音6）、普通视频1（有语音1/无语音0）。按已确认剪辑框架召回本段所有有效素材，供人工粗剪审查。",
+          "requirement": "required",
+          "targetBundles": [
+            "行程推进与路况观察",
+            "现场普通视频观察"
+          ],
+          "chosenSpanIds": [
+            "C2100_zve1_day1_drive_s0-53",
+            "C2101_zve1_day1_drive_s0-227",
+            "C2103_zve1_day1_drive_speech_s1-3",
+            "C2103_zve1_day1_drive_visual_s3-16",
+            "C2103_zve1_day1_drive_speech_s7-10",
+            "C2104_zve1_day1_drive_s0-31",
+            "C2105_zve1_day1_drive_speech_s3-9",
+            "C2105_zve1_day1_drive_visual_s7-25",
+            "C2105_zve1_day1_drive_speech_s11-26",
+            "C2106_zve1_day1_drive_s0-111",
+            "C2107_zve1_day1_drive_speech_s0-19",
+            "C2108_zve1_day2_broll_speech_s2-14"
+          ],
+          "treatments": {
+            "C2100_zve1_day1_drive_s0-53": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2101_zve1_day1_drive_s0-227": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2103_zve1_day1_drive_visual_s3-16": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C2104_zve1_day1_drive_s0-31": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2105_zve1_day1_drive_visual_s7-25": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2106_zve1_day1_drive_s0-111": {
+              "audio": -100,
+              "speed": 5
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-01",
+      "slots": [
+        {
+          "id": "fw-03-01-slot-01",
+          "query": "白石山早晨与胎压插曲。共18段：行车5（有语音2/无语音3）、普通视频10（有语音9/无语音1）、口播3（有语音2/无语音1）。按已确认剪辑框架召回本段所有有效素材，供人工粗剪审查。",
+          "requirement": "required",
+          "targetBundles": [
+            "行程推进与路况观察",
+            "现场普通视频观察",
+            "人物现场说明"
+          ],
+          "chosenSpanIds": [
+            "C2109_zve1_day2_drive_visual_s0-4",
+            "C2109_zve1_day2_drive_speech_s0-4",
+            "C2110_zve1_day2_broll_speech_s0-9",
+            "C2111_zve1_day2_talking-head_speech_s0-2",
+            "C2112_zve1_day2_talking-head_speech_s0-9",
+            "C2112_zve1_day2_talking-head_s8-9",
+            "C2113_zve1_day2_broll_speech_s0-11",
+            "C2114_zve1_day2_drive_visual_s20-81",
+            "C2115_zve1_day2_broll_speech_s0-13",
+            "C2116_zve1_day2_broll_speech_s2-6",
+            "C2117_zve1_day2_broll_speech_s0-9",
+            "C2118_zve1_day2_drive_speech_s0-10",
+            "C2118_zve1_day2_drive_visual_s4-11",
+            "C2119_zve1_day2_broll_speech_s0-1",
+            "C2120_zve1_day2_broll_speech_s0-8",
+            "C2121_zve1_day2_broll_speech_s0-4",
+            "C2121_zve1_day2_broll_s4-5",
+            "C2122_zve1_day2_broll_speech_s1-10"
+          ],
+          "treatments": {
+            "C2109_zve1_day2_drive_visual_s0-4": {
+              "audio": -100
+            },
+            "C2114_zve1_day2_drive_visual_s20-81": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2118_zve1_day2_drive_visual_s4-11": {
+              "audio": -100,
+              "speed": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-02",
+      "slots": [
+        {
+          "id": "fw-03-02-slot-01",
+          "query": "石窝村和古长城。共14段：行车7（有语音2/无语音5）、航拍2（有语音0/无语音2）、普通视频1（有语音1/无语音0）、照片4。按已确认剪辑框架召回本段所有有效素材，供人工粗剪审查。",
+          "requirement": "required",
+          "targetBundles": [
+            "行程推进与路况观察",
+            "航拍空间观察",
+            "现场普通视频观察",
+            "事件尾部照片包"
+          ],
+          "chosenSpanIds": [
+            "C2123_zve1_day2_drive_s0-34",
+            "C2124_zve1_day2_drive_speech_s2-6",
+            "C2125_zve1_day2_drive_s0-170",
+            "C2126_zve1_day2_drive_s0-88",
+            "C2127_zve1_day2_drive_s0-45",
+            "C2128_zve1_day2_drive_speech_s0-14",
+            "C2128_zve1_day2_drive_visual_s4-11",
+            "DJI_20260619130752_0893_D_drone_aerial_s0-43",
+            "DJI_20260619131644_0910_D_drone_aerial_s0-35",
+            "C2129_zve1_day2_broll_speech_s0-5",
+            "DJI_20260619130930_0898_D-HDR_photos_photo",
+            "DJI_20260619131725_0911_D-HDR_photos_photo",
+            "DJI_20260619131842_0917_D-HDR_photos_photo",
+            "DJI_20260619132400_0920_D-HDR_photos_photo"
+          ],
+          "treatments": {
+            "C2123_zve1_day2_drive_s0-34": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2125_zve1_day2_drive_s0-170": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2126_zve1_day2_drive_s0-88": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2127_zve1_day2_drive_s0-45": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2128_zve1_day2_drive_visual_s4-11": {
+              "audio": -100,
+              "speed": 3
+            },
+            "DJI_20260619130930_0898_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260619131725_0911_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260619131842_0917_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260619132400_0920_D-HDR_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-03",
+      "slots": [
+        {
+          "id": "fw-03-03-slot-01",
+          "query": "紫荆关转场与易水湖。共79段：行车2（有语音0/无语音2）、航拍1（有语音1/无语音0）、普通视频41（有语音39/无语音2）、口播4（有语音4/无语音0）、照片31。按已确认剪辑框架召回本段所有有效素材，供人工粗剪审查。",
+          "requirement": "required",
+          "targetBundles": [
+            "行程推进与路况观察",
+            "航拍空间观察",
+            "现场普通视频观察",
+            "人物现场说明",
+            "事件尾部照片包"
+          ],
+          "chosenSpanIds": [
+            "C2134_zve1_day2_drive_s0-33",
+            "C2136_zve1_day2_drive_s0-85",
+            "C2138_zve1_day2_talking-head_speech_s0-25",
+            "C2139_zve1_day2_broll_speech_s0-3",
+            "C2140_zve1_day2_broll_speech_s1-16",
+            "C2141_zve1_day2_broll_speech_s0-2",
+            "C2142_zve1_day2_broll_speech_s0-8",
+            "C2143_zve1_day2_broll_speech_s0-3",
+            "C2145_zve1_day2_broll_speech_s2-9",
+            "C2146_zve1_day2_broll_speech_s0-7",
+            "C2147_zve1_day2_broll_speech_s0-11",
+            "C2148_zve1_day2_broll_speech_s1-4",
+            "C2149_zve1_day2_talking-head_speech_s0-15",
+            "C2150_zve1_day2_broll_speech_s1-6",
+            "C2151_zve1_day2_broll_speech_s3-6",
+            "C2152_zve1_day2_broll_speech_s1-8",
+            "C2153_zve1_day2_talking-head_speech_s1-7",
+            "C2154_zve1_day2_broll_speech_s0-2",
+            "C2155_zve1_day2_broll_speech_s1-10",
+            "C2156_zve1_day2_broll_speech_s1-5",
+            "C2157_zve1_day2_broll_speech_s0-7",
+            "C2158_zve1_day2_broll_speech_s0-17",
+            "C2159_zve1_day2_broll_speech_s0-20",
+            "C2160_zve1_day2_broll_speech_s3-12",
+            "C2161_zve1_day2_broll_speech_s0-4",
+            "C2162_zve1_day2_broll_speech_s0-10",
+            "C2163_zve1_day2_broll_s0-1",
+            "C2163_zve1_day2_broll_speech_s0-8",
+            "C2164_zve1_day2_broll_speech_s0-8",
+            "C2165_zve1_day2_broll_speech_s0-7",
+            "C2166_zve1_day2_broll_speech_s1-10",
+            "C2167_zve1_day2_aerial_speech_s0-13",
+            "C2168_zve1_day2_broll_speech_s0-9",
+            "C2169_zve1_day2_broll_speech_s3-7",
+            "C2170_zve1_day2_broll_speech_s0-7",
+            "C2171_zve1_day2_broll_speech_s0-9",
+            "C2172_zve1_day2_broll_speech_s0-9",
+            "C2173_zve1_day2_broll_speech_s0-6",
+            "C2173_zve1_day2_broll_speech_s9-22",
+            "C2174_zve1_day2_broll_speech_s0-4",
+            "C2175_zve1_day2_broll_speech_s0-10",
+            "C2176_zve1_day2_broll_s0-1",
+            "C2176_zve1_day2_broll_speech_s1-12",
+            "C2177_zve1_day2_broll_speech_s0-9",
+            "C2178_zve1_day2_broll_speech_s0-7",
+            "C2179_zve1_day2_broll_speech_s0-9",
+            "C2180_zve1_day2_broll_speech_s1-6",
+            "C2181_zve1_day2_talking-head_speech_s0-11",
+            "DSC09413_photos_photo",
+            "DSC09414_photos_photo",
+            "DSC09422_photos_photo",
+            "DSC03952_photos_photo",
+            "DSC09426_photos_photo",
+            "DSC09427_photos_photo",
+            "DSC09428_photos_photo",
+            "DSC09429_photos_photo",
+            "DSC03954_photos_photo",
+            "DSC09430_photos_photo",
+            "DSC09431_photos_photo",
+            "DSC09433_photos_photo",
+            "DSC09434_photos_photo",
+            "DSC09435_photos_photo",
+            "DSC09436_photos_photo",
+            "DSC09437_photos_photo",
+            "DSC09439_photos_photo",
+            "DSC09441_photos_photo",
+            "DSC09443_photos_photo",
+            "DSC09446_photos_photo",
+            "DSC09448_photos_photo",
+            "DSC09449_photos_photo",
+            "DSC09451_photos_photo",
+            "DSC09452_photos_photo",
+            "DSC09453_photos_photo",
+            "DSC09455_photos_photo",
+            "DSC09459_photos_photo",
+            "DSC09460_photos_photo",
+            "DSC09461_photos_photo",
+            "DSC09466_photos_photo",
+            "DSC09468_photos_photo"
+          ],
+          "treatments": {
+            "C2134_zve1_day2_drive_s0-33": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2136_zve1_day2_drive_s0-85": {
+              "audio": -100,
+              "speed": 5
+            },
+            "DSC09413_photos_photo": {
+              "audio": -100
+            },
+            "DSC09414_photos_photo": {
+              "audio": -100
+            },
+            "DSC09422_photos_photo": {
+              "audio": -100
+            },
+            "DSC03952_photos_photo": {
+              "audio": -100
+            },
+            "DSC09426_photos_photo": {
+              "audio": -100
+            },
+            "DSC09427_photos_photo": {
+              "audio": -100
+            },
+            "DSC09428_photos_photo": {
+              "audio": -100
+            },
+            "DSC09429_photos_photo": {
+              "audio": -100
+            },
+            "DSC03954_photos_photo": {
+              "audio": -100
+            },
+            "DSC09430_photos_photo": {
+              "audio": -100
+            },
+            "DSC09431_photos_photo": {
+              "audio": -100
+            },
+            "DSC09433_photos_photo": {
+              "audio": -100
+            },
+            "DSC09434_photos_photo": {
+              "audio": -100
+            },
+            "DSC09435_photos_photo": {
+              "audio": -100
+            },
+            "DSC09436_photos_photo": {
+              "audio": -100
+            },
+            "DSC09437_photos_photo": {
+              "audio": -100
+            },
+            "DSC09439_photos_photo": {
+              "audio": -100
+            },
+            "DSC09441_photos_photo": {
+              "audio": -100
+            },
+            "DSC09443_photos_photo": {
+              "audio": -100
+            },
+            "DSC09446_photos_photo": {
+              "audio": -100
+            },
+            "DSC09448_photos_photo": {
+              "audio": -100
+            },
+            "DSC09449_photos_photo": {
+              "audio": -100
+            },
+            "DSC09451_photos_photo": {
+              "audio": -100
+            },
+            "DSC09452_photos_photo": {
+              "audio": -100
+            },
+            "DSC09453_photos_photo": {
+              "audio": -100
+            },
+            "DSC09455_photos_photo": {
+              "audio": -100
+            },
+            "DSC09459_photos_photo": {
+              "audio": -100
+            },
+            "DSC09460_photos_photo": {
+              "audio": -100
+            },
+            "DSC09461_photos_photo": {
+              "audio": -100
+            },
+            "DSC09466_photos_photo": {
+              "audio": -100
+            },
+            "DSC09468_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-04",
+      "slots": [
+        {
+          "id": "fw-03-04-slot-01",
+          "query": "华北平原夜入保定。共36段：行车22（有语音8/无语音14）、普通视频8（有语音6/无语音2）、口播1（有语音1/无语音0）、照片5。按已确认剪辑框架召回本段所有有效素材，供人工粗剪审查。",
+          "requirement": "required",
+          "targetBundles": [
+            "行程推进与路况观察",
+            "现场普通视频观察",
+            "人物现场说明",
+            "事件尾部照片包"
+          ],
+          "chosenSpanIds": [
+            "C2182_zve1_day2_drive_s0-42",
+            "C2183_zve1_day2_drive_speech_s0-14",
+            "C2183_zve1_day2_drive_visual_s4-15",
+            "C2184_zve1_day2_drive_s0-34",
+            "C2185_zve1_day2_drive_s0-52",
+            "C2186_zve1_day2_drive_speech_s1-5",
+            "C2186_zve1_day2_drive_visual_s2-8",
+            "C2187_zve1_day2_drive_s0-41",
+            "C2188_zve1_day2_drive_speech_s3-5",
+            "C2188_zve1_day2_drive_visual_s6-23",
+            "C2188_zve1_day2_drive_speech_s9-12",
+            "C2188_zve1_day2_drive_speech_s17-20",
+            "C2189_zve1_day2_drive_s0-58",
+            "C2190_zve1_day2_drive_s0-93",
+            "C2191_zve1_day2_drive_speech_s0-16",
+            "C2191_zve1_day2_drive_visual_s4-15",
+            "C2192_zve1_day2_drive_speech_s2-14",
+            "C2192_zve1_day2_drive_visual_s3-13",
+            "C2193_zve1_day2_broll_speech_s0-5",
+            "C2193_zve1_day2_broll_speech_s8-29",
+            "C2194_zve1_day2_broll_s0-31",
+            "DSC09474_photos_photo",
+            "C2195_zve1_day2_drive_s0-31",
+            "C2196_zve1_day2_drive_speech_s0-14",
+            "C2196_zve1_day2_drive_visual_s3-17",
+            "C2197_zve1_day2_drive_s0-35",
+            "C2198_zve1_day2_talking-head_speech_s0-15",
+            "C2199_zve1_day2_broll_speech_s1-5",
+            "C2200_zve1_day2_broll_speech_s1-9",
+            "C2201_zve1_day2_broll_visual_s0-2",
+            "C2202_zve1_day2_broll_speech_s0-2",
+            "C2203_zve1_day2_broll_speech_s0-10",
+            "DSC09483_photos_photo",
+            "DSC09484_photos_photo",
+            "DSC09485_photos_photo",
+            "DSC09487_photos_photo"
+          ],
+          "treatments": {
+            "C2182_zve1_day2_drive_s0-42": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2183_zve1_day2_drive_visual_s4-15": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C2184_zve1_day2_drive_s0-34": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2185_zve1_day2_drive_s0-52": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2186_zve1_day2_drive_visual_s2-8": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C2187_zve1_day2_drive_s0-41": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2188_zve1_day2_drive_visual_s6-23": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2189_zve1_day2_drive_s0-58": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2190_zve1_day2_drive_s0-93": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2191_zve1_day2_drive_visual_s4-15": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C2192_zve1_day2_drive_visual_s3-13": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DSC09474_photos_photo": {
+              "audio": -100
+            },
+            "C2195_zve1_day2_drive_s0-31": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2196_zve1_day2_drive_visual_s3-17": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C2197_zve1_day2_drive_s0-35": {
+              "audio": -100,
+              "speed": 5
+            },
+            "DSC09483_photos_photo": {
+              "audio": -100
+            },
+            "DSC09484_photos_photo": {
+              "audio": -100
+            },
+            "DSC09485_photos_photo": {
+              "audio": -100
+            },
+            "DSC09487_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-01",
+      "slots": [
+        {
+          "id": "fw-04-01-slot-01",
+          "query": "保定早晨和城市气口。共7段：普通视频6（有语音6/无语音0）、口播1（有语音1/无语音0）。按已确认剪辑框架召回本段所有有效素材，供人工粗剪审查。",
+          "requirement": "required",
+          "targetBundles": [
+            "现场普通视频观察",
+            "人物现场说明"
+          ],
+          "chosenSpanIds": [
+            "C2204_zve1_day3_broll_speech_s2-11",
+            "C2205_zve1_day3_broll_speech_s0-5",
+            "C2206_zve1_day3_broll_speech_s0-4",
+            "C2207_zve1_day3_broll_speech_s2-9",
+            "C2208_zve1_day3_broll_speech_s0-3",
+            "C2209_zve1_day3_broll_speech_s4-8",
+            "C2210_zve1_day3_talking-head_speech_s1-12"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-02",
+      "slots": [
+        {
+          "id": "fw-04-02-slot-01",
+          "query": "保定到唐山高速。共29段：行车26（有语音8/无语音18）、普通视频2（有语音2/无语音0）、口播1（有语音1/无语音0）。按已确认剪辑框架召回本段所有有效素材，供人工粗剪审查。",
+          "requirement": "required",
+          "targetBundles": [
+            "行程推进与路况观察",
+            "现场普通视频观察",
+            "人物现场说明"
+          ],
+          "chosenSpanIds": [
+            "C2211_zve1_day3_drive_speech_s1-8",
+            "C2211_zve1_day3_drive_visual_s4-10",
+            "C2212_zve1_day3_drive_s0-53",
+            "C2213_zve1_day3_drive_s0-65",
+            "C2214_zve1_day3_drive_s0-44",
+            "C2215_zve1_day3_drive_speech_s0-3",
+            "C2216_zve1_day3_drive_s0-36",
+            "C2217_zve1_day3_drive_s0-45",
+            "C2218_zve1_day3_drive_speech_s0-18",
+            "C2218_zve1_day3_drive_visual_s4-18",
+            "C2219_zve1_day3_broll_speech_s1-9",
+            "C2220_zve1_day3_talking-head_speech_s0-9",
+            "C2221_zve1_day3_broll_speech_s0-6",
+            "C2222_zve1_day3_drive_visual_s2-9",
+            "C2222_zve1_day3_drive_speech_s2-10",
+            "C2223_zve1_day3_drive_s0-60",
+            "C2224_zve1_day3_drive_s0-41",
+            "C2225_zve1_day3_drive_speech_s0-6",
+            "C2225_zve1_day3_drive_visual_s8-26",
+            "C2225_zve1_day3_drive_speech_s11-15",
+            "C2225_zve1_day3_drive_speech_s21-28",
+            "C2226_zve1_day3_drive_speech_s0-16",
+            "C2226_zve1_day3_drive_visual_s7-19",
+            "C2226_zve1_day3_drive_visual_s18-21",
+            "C2227_zve1_day3_drive_s0-48",
+            "C2228_zve1_day3_drive_s0-18",
+            "C2229_zve1_day3_drive_s0-53",
+            "C2230_zve1_day3_drive_s0-29",
+            "C2231_zve1_day3_drive_s0-2"
+          ],
+          "treatments": {
+            "C2211_zve1_day3_drive_visual_s4-10": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C2212_zve1_day3_drive_s0-53": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2213_zve1_day3_drive_s0-65": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2214_zve1_day3_drive_s0-44": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2216_zve1_day3_drive_s0-36": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2217_zve1_day3_drive_s0-45": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2218_zve1_day3_drive_visual_s4-18": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C2222_zve1_day3_drive_visual_s2-9": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C2223_zve1_day3_drive_s0-60": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2224_zve1_day3_drive_s0-41": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2225_zve1_day3_drive_visual_s8-26": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2226_zve1_day3_drive_visual_s7-19": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2226_zve1_day3_drive_visual_s18-21": {
+              "audio": -100
+            },
+            "C2227_zve1_day3_drive_s0-48": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2228_zve1_day3_drive_s0-18": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C2229_zve1_day3_drive_s0-53": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2230_zve1_day3_drive_s0-29": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2231_zve1_day3_drive_s0-2": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-03",
+      "slots": [
+        {
+          "id": "fw-04-03-slot-01",
+          "query": "唐山郊外和高速路况。共34段：行车8（有语音4/无语音4）、航拍10（有语音0/无语音10）、普通视频1（有语音0/无语音1）、照片15。按已确认剪辑框架召回本段所有有效素材，供人工粗剪审查。",
+          "requirement": "required",
+          "targetBundles": [
+            "行程推进与路况观察",
+            "航拍空间观察",
+            "现场普通视频观察",
+            "事件尾部照片包"
+          ],
+          "chosenSpanIds": [
+            "DJI_20260620132745_0926_D_drone_aerial_s0-21",
+            "DJI_20260620132837_0930_D_drone_aerial_s0-15",
+            "DJI_20260620132944_0937_D_drone_aerial_s0-39",
+            "DJI_20260620133225_0950_D_drone_aerial_s0-25",
+            "DJI_20260620133414_0960_D_drone_aerial_s0-59",
+            "DJI_20260620133650_0973_D_drone_aerial_s0-27",
+            "DJI_20260620133738_0974_D_drone_aerial_s0-48",
+            "DJI_20260620134008_0996_D_drone_aerial_s0-17",
+            "DJI_20260620134147_0007_D_drone_aerial_s0-14",
+            "DJI_20260620134514_0032_D_drone_aerial_s0-35",
+            "DSC09489_photos_photo",
+            "DJI_20260620132908_0931_D-HDR_photos_photo",
+            "DJI_20260620133121_0944_D-HDR_photos_photo",
+            "DJI_20260620133337_0954_D-HDR_photos_photo",
+            "DJI_20260620133357_0957_D-HDR_photos_photo",
+            "DJI_20260620133529_0963_D-HDR_photos_photo",
+            "DJI_20260620133551_0967_D-HDR_photos_photo",
+            "DJI_20260620133831_0975_D-HDR_photos_photo",
+            "DJI_20260620133921_0987_D-HDR_photos_photo",
+            "DJI_20260620133958_0993_D-HDR_photos_photo",
+            "DJI_20260620134246_0008_D-HDR_photos_photo",
+            "DJI_20260620134315_0011_D-HDR_photos_photo",
+            "DJI_20260620134330_0014_D-HDR_photos_photo",
+            "DJI_20260620134344_0019_D-HDR_photos_photo",
+            "DJI_20260620134500_0029_D-HDR_photos_photo",
+            "C2232_zve1_day3_broll_visual_s0-4",
+            "C2233_zve1_day3_drive_speech_s1-16",
+            "C2233_zve1_day3_drive_visual_s4-14",
+            "C2234_zve1_day3_drive_speech_s4-20",
+            "C2234_zve1_day3_drive_visual_s6-17",
+            "C2235_zve1_day3_drive_speech_s1-15",
+            "C2235_zve1_day3_drive_visual_s3-17",
+            "C2236_zve1_day3_drive_speech_s0-8",
+            "C2236_zve1_day3_drive_visual_s6-13"
+          ],
+          "treatments": {
+            "DSC09489_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260620132908_0931_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260620133121_0944_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260620133337_0954_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260620133357_0957_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260620133529_0963_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260620133551_0967_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260620133831_0975_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260620133921_0987_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260620133958_0993_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260620134246_0008_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260620134315_0011_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260620134330_0014_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260620134344_0019_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260620134500_0029_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "C2233_zve1_day3_drive_visual_s4-14": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C2234_zve1_day3_drive_visual_s6-17": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2235_zve1_day3_drive_visual_s3-17": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C2236_zve1_day3_drive_visual_s6-13": {
+              "audio": -100,
+              "speed": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-04",
+      "slots": [
+        {
+          "id": "fw-04-04-slot-01",
+          "query": "开滦国家矿山公园。共78段：行车1（有语音1/无语音0）、普通视频72（有语音62/无语音10）、口播2（有语音2/无语音0）、照片3。按已确认剪辑框架召回本段所有有效素材，供人工粗剪审查。",
+          "requirement": "required",
+          "targetBundles": [
+            "行程推进与路况观察",
+            "现场普通视频观察",
+            "人物现场说明",
+            "事件尾部照片包"
+          ],
+          "chosenSpanIds": [
+            "C2237_zve1_day3_broll_speech_s1-13",
+            "C2238_zve1_day3_broll_speech_s0-16",
+            "C2239_zve1_day3_broll_s0-35",
+            "C2240_zve1_day3_broll_speech_s2-10",
+            "C2241_zve1_day3_broll_speech_s1-20",
+            "C2242_zve1_day3_broll_speech_s0-13",
+            "C2243_zve1_day3_broll_speech_s3-19",
+            "C2244_zve1_day3_broll_speech_s2-12",
+            "C2246_zve1_day3_broll_visual_s0-16",
+            "C2247_zve1_day3_broll_speech_s0-6",
+            "C2248_zve1_day3_broll_speech_s1-25",
+            "C2249_zve1_day3_broll_speech_s1-8",
+            "C2250_zve1_day3_broll_speech_s0-14",
+            "C2251_zve1_day3_broll_speech_s0-12",
+            "C2252_zve1_day3_broll_speech_s0-8",
+            "C2252_zve1_day3_broll_s8-10",
+            "C2253_zve1_day3_broll_speech_s0-2",
+            "C2254_zve1_day3_broll_speech_s1-7",
+            "C2255_zve1_day3_broll_visual_s0-16",
+            "C2256_zve1_day3_broll_speech_s1-18",
+            "C2257_zve1_day3_broll_s0-36",
+            "C2258_zve1_day3_broll_speech_s1-9",
+            "C2259_zve1_day3_broll_speech_s1-9",
+            "C2260_zve1_day3_broll_speech_s0-3",
+            "C2261_zve1_day3_broll_speech_s0-5",
+            "C2262_zve1_day3_broll_speech_s1-20",
+            "C2263_zve1_day3_broll_speech_s0-2",
+            "C2264_zve1_day3_broll_speech_s0-11",
+            "C2265_zve1_day3_broll_speech_s0-16",
+            "C2266_zve1_day3_broll_speech_s0-8",
+            "C2267_zve1_day3_broll_speech_s1-3",
+            "C2267_zve1_day3_broll_speech_s6-10",
+            "C2268_zve1_day3_broll_speech_s1-9",
+            "C2269_zve1_day3_broll_speech_s1-7",
+            "C2270_zve1_day3_broll_speech_s0-21",
+            "C2271_zve1_day3_broll_speech_s0-7",
+            "C2272_zve1_day3_broll_speech_s3-9",
+            "C2273_zve1_day3_broll_speech_s0-8",
+            "C2274_zve1_day3_broll_speech_s7-12",
+            "C2275_zve1_day3_broll_speech_s1-5",
+            "C2276_zve1_day3_talking-head_speech_s0-7",
+            "C2277_zve1_day3_broll_speech_s1-4",
+            "C2278_zve1_day3_broll_speech_s2-6",
+            "C2279_zve1_day3_broll_visual_s0-3",
+            "C2280_zve1_day3_broll_speech_s0-1",
+            "C2281_zve1_day3_broll_speech_s2-9",
+            "C2281_zve1_day3_broll_visual_s15-18",
+            "C2282_zve1_day3_broll_speech_s0-10",
+            "C2283_zve1_day3_broll_speech_s0-4",
+            "C2284_zve1_day3_broll_speech_s1-7",
+            "C2285_zve1_day3_broll_speech_s0-14",
+            "C2286_zve1_day3_broll_speech_s1-7",
+            "C2287_zve1_day3_broll_speech_s1-5",
+            "C2288_zve1_day3_broll_speech_s0-2",
+            "C2289_zve1_day3_broll_speech_s0-8",
+            "C2290_zve1_day3_broll_visual_s0-1",
+            "C2291_zve1_day3_drive_speech_s0-8",
+            "C2292_zve1_day3_broll_visual_s0-2",
+            "C2293_zve1_day3_broll_speech_s1-6",
+            "C2294_zve1_day3_broll_speech_s7-12",
+            "C2294_zve1_day3_broll_speech_s16-18",
+            "C2295_zve1_day3_broll_speech_s0-11",
+            "C2296_zve1_day3_broll_speech_s0-2",
+            "C2297_zve1_day3_broll_speech_s1-12",
+            "C2298_zve1_day3_broll_speech_s4-5",
+            "C2299_zve1_day3_broll_speech_s1-10",
+            "C2300_zve1_day3_broll_speech_s1-9",
+            "C2300_zve1_day3_broll_speech_s12-16",
+            "C2301_zve1_day3_broll_speech_s2-9",
+            "C2302_zve1_day3_broll_speech_s0-10",
+            "C2302_zve1_day3_broll_speech_s12-19",
+            "C2303_zve1_day3_broll_speech_s0-18",
+            "C2304_zve1_day3_broll_s0-1",
+            "C2305_zve1_day3_broll_speech_s1-6",
+            "C2306_zve1_day3_talking-head_speech_s0-18",
+            "DSC09503_photos_photo",
+            "DSC09510_photos_photo",
+            "DSC09528_photos_photo"
+          ],
+          "treatments": {
+            "DSC09503_photos_photo": {
+              "audio": -100
+            },
+            "DSC09510_photos_photo": {
+              "audio": -100
+            },
+            "DSC09528_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-05",
+      "slots": [
+        {
+          "id": "fw-04-05-slot-01",
+          "query": "唐山到秦皇岛途中补给。共12段：行车10（有语音0/无语音10）、普通视频2（有语音2/无语音0）。按已确认剪辑框架召回本段所有有效素材，供人工粗剪审查。",
+          "requirement": "required",
+          "targetBundles": [
+            "行程推进与路况观察",
+            "现场普通视频观察"
+          ],
+          "chosenSpanIds": [
+            "C2307_zve1_day3_drive_s0-270",
+            "C2308_zve1_day3_drive_s0-54",
+            "C2309_zve1_day3_broll_speech_s1-5",
+            "C2310_zve1_day3_broll_speech_s0-9",
+            "C2311_zve1_day3_drive_s0-14",
+            "C2312_zve1_day3_drive_s0-61",
+            "C2313_zve1_day3_drive_s0-23",
+            "C2314_zve1_day3_drive_s0-51",
+            "C2315_zve1_day3_drive_s0-75",
+            "C2316_zve1_day3_drive_s0-42",
+            "C2317_zve1_day3_drive_s0-11",
+            "C2318_zve1_day3_drive_s0-30"
+          ],
+          "treatments": {
+            "C2307_zve1_day3_drive_s0-270": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2308_zve1_day3_drive_s0-54": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2311_zve1_day3_drive_s0-14": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C2312_zve1_day3_drive_s0-61": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2313_zve1_day3_drive_s0-23": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2314_zve1_day3_drive_s0-51": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2315_zve1_day3_drive_s0-75": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2316_zve1_day3_drive_s0-42": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2317_zve1_day3_drive_s0-11": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C2318_zve1_day3_drive_s0-30": {
+              "audio": -100,
+              "speed": 5
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-06",
+      "slots": [
+        {
+          "id": "fw-04-06-slot-01",
+          "query": "秦皇岛西港花园。共29段：普通视频21（有语音16/无语音5）、口播1（有语音0/无语音1）、照片7。按已确认剪辑框架召回本段所有有效素材，供人工粗剪审查。",
+          "requirement": "required",
+          "targetBundles": [
+            "现场普通视频观察",
+            "人物现场说明",
+            "事件尾部照片包"
+          ],
+          "chosenSpanIds": [
+            "C2319_zve1_day3_broll_speech_s0-14",
+            "C2320_zve1_day3_broll_speech_s1-13",
+            "C2321_zve1_day3_broll_speech_s0-22",
+            "C2322_zve1_day3_talking-head_s0-36",
+            "C2323_zve1_day3_broll_speech_s0-4",
+            "C2324_zve1_day3_broll_speech_s0-7",
+            "C2325_zve1_day3_broll_speech_s0-1",
+            "C2326_zve1_day3_broll_speech_s0-8",
+            "C2327_zve1_day3_broll_speech_s2-8",
+            "C2328_zve1_day3_broll_speech_s1-10",
+            "C2329_zve1_day3_broll_s0-17",
+            "C2330_zve1_day3_broll_s0-7",
+            "C2331_zve1_day3_broll_s0-16",
+            "C2332_zve1_day3_broll_speech_s1-10",
+            "C2333_zve1_day3_broll_speech_s0-17",
+            "C2334_zve1_day3_broll_speech_s0-8",
+            "C2335_zve1_day3_broll_speech_s1-19",
+            "C2336_zve1_day3_broll_visual_s0-7",
+            "C2337_zve1_day3_broll_speech_s0-28",
+            "C2338_zve1_day3_broll_visual_s0-9",
+            "C2339_zve1_day3_broll_speech_s0-7",
+            "C2340_zve1_day3_broll_speech_s6-26",
+            "DSC09542_photos_photo",
+            "DSC09547_photos_photo",
+            "DSC09565_photos_photo",
+            "DSC09566_photos_photo",
+            "DSC09571_photos_photo",
+            "DSC09584_photos_photo",
+            "DSC09585_photos_photo"
+          ],
+          "treatments": {
+            "DSC09542_photos_photo": {
+              "audio": -100
+            },
+            "DSC09547_photos_photo": {
+              "audio": -100
+            },
+            "DSC09565_photos_photo": {
+              "audio": -100
+            },
+            "DSC09566_photos_photo": {
+              "audio": -100
+            },
+            "DSC09571_photos_photo": {
+              "audio": -100
+            },
+            "DSC09584_photos_photo": {
+              "audio": -100
+            },
+            "DSC09585_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-07",
+      "slots": [
+        {
+          "id": "fw-04-07-slot-01",
+          "query": "夜行到福来岛住宿。共13段：行车13（有语音6/无语音7）。按已确认剪辑框架召回本段所有有效素材，供人工粗剪审查。",
+          "requirement": "required",
+          "targetBundles": [
+            "行程推进与路况观察"
+          ],
+          "chosenSpanIds": [
+            "C2341_zve1_day3_drive_speech_s0-3",
+            "C2342_zve1_day3_drive_visual_s0-30",
+            "C2343_zve1_day3_drive_s0-82",
+            "C2344_zve1_day3_drive_speech_s4-16",
+            "C2344_zve1_day3_drive_visual_s8-26",
+            "C2344_zve1_day3_drive_speech_s19-23",
+            "C2345_zve1_day3_drive_s0-31",
+            "C2346_zve1_day3_drive_s0-34",
+            "C2347_zve1_day3_drive_speech_s0-19",
+            "C2347_zve1_day3_drive_visual_s4-15",
+            "C2348_zve1_day3_drive_speech_s1-6",
+            "C2348_zve1_day3_drive_visual_s4-15",
+            "C2348_zve1_day3_drive_speech_s12-14"
+          ],
+          "treatments": {
+            "C2342_zve1_day3_drive_visual_s0-30": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2343_zve1_day3_drive_s0-82": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2344_zve1_day3_drive_visual_s8-26": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2345_zve1_day3_drive_s0-31": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2346_zve1_day3_drive_s0-34": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2347_zve1_day3_drive_visual_s4-15": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C2348_zve1_day3_drive_visual_s4-15": {
+              "audio": -100,
+              "speed": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-01",
+      "slots": [
+        {
+          "id": "fw-05-01-slot-01",
+          "query": "福来岛日出前到达。共14段：普通视频8（有语音8/无语音0）、口播1（有语音1/无语音0）、照片5。按已确认剪辑框架召回本段所有有效素材，供人工粗剪审查。",
+          "requirement": "required",
+          "targetBundles": [
+            "现场普通视频观察",
+            "人物现场说明",
+            "事件尾部照片包"
+          ],
+          "chosenSpanIds": [
+            "C2349_zve1_day4_broll_speech_s0-12",
+            "C2350_zve1_day4_broll_speech_s0-12",
+            "C2351_zve1_day4_broll_speech_s2-8",
+            "C2352_zve1_day4_broll_speech_s0-13",
+            "C2353_zve1_day4_broll_speech_s1-7",
+            "C2354_zve1_day4_talking-head_speech_s0-8",
+            "C2355_zve1_day4_broll_speech_s1-8",
+            "C2356_zve1_day4_broll_speech_s0-19",
+            "C2357_zve1_day4_broll_speech_s1-8",
+            "DSC09591_photos_photo",
+            "DSC09594_photos_photo",
+            "DSC04044_photos_photo",
+            "DSC09598_photos_photo",
+            "DSC09600_photos_photo"
+          ],
+          "treatments": {
+            "DSC09591_photos_photo": {
+              "audio": -100
+            },
+            "DSC09594_photos_photo": {
+              "audio": -100
+            },
+            "DSC04044_photos_photo": {
+              "audio": -100
+            },
+            "DSC09598_photos_photo": {
+              "audio": -100
+            },
+            "DSC09600_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-02",
+      "slots": [
+        {
+          "id": "fw-05-02-slot-01",
+          "query": "灯塔与海龟岛日出。共40段：普通视频13（有语音9/无语音4）、口播1（有语音1/无语音0）、延时1（有语音0/无语音1）、照片25。按已确认剪辑框架召回本段所有有效素材，供人工粗剪审查。",
+          "requirement": "required",
+          "targetBundles": [
+            "现场普通视频观察",
+            "人物现场说明",
+            "延时摄影变化",
+            "事件尾部照片包"
+          ],
+          "chosenSpanIds": [
+            "C2358_zve1_day4_broll_s0-51",
+            "C2359_zve1_day4_broll_speech_s0-7",
+            "C2360_zve1_day4_broll_speech_s0-1",
+            "C2361_zve1_day4_broll_speech_s1-8",
+            "20260621_秦皇岛福来岛日出2_ts-final_broll_s0-13",
+            "20260621_秦皇岛福来岛日出1_ts-final_timelapse_s0-33",
+            "C2362_zve1_day4_broll_speech_s6-9",
+            "C2363_zve1_day4_broll_speech_s0-6",
+            "C2364_zve1_day4_broll_speech_s0-8",
+            "C2365_zve1_day4_broll_s0-1",
+            "C2365_zve1_day4_broll_speech_s0-3",
+            "C2367_zve1_day4_broll_speech_s0-2",
+            "C2367_zve1_day4_broll_s2-3",
+            "C2368_zve1_day4_broll_speech_s0-11",
+            "C2369_zve1_day4_talking-head_speech_s2-28",
+            "DSC09602_photos_photo",
+            "DSC04080_photos_photo",
+            "DSC04137_photos_photo",
+            "DSC09606_photos_photo",
+            "DSC09608_photos_photo",
+            "DSC09611_photos_photo",
+            "DSC04248_photos_photo",
+            "DSC09653_photos_photo",
+            "DSC09668_photos_photo",
+            "DSC09680_photos_photo",
+            "DSC09705_photos_photo",
+            "DSC00327_photos_photo",
+            "DSC04389_photos_photo",
+            "DSC09834_photos_photo",
+            "DSC04521_photos_photo",
+            "DSC09920_photos_photo",
+            "DSC09921_photos_photo",
+            "DSC09926_photos_photo",
+            "DSC09933_photos_photo",
+            "DSC09938_photos_photo",
+            "DSC09940_photos_photo",
+            "DSC09948_photos_photo",
+            "DSC09950_photos_photo",
+            "DSC09953_photos_photo",
+            "DSC09954_photos_photo"
+          ],
+          "treatments": {
+            "DSC09602_photos_photo": {
+              "audio": -100
+            },
+            "DSC04080_photos_photo": {
+              "audio": -100
+            },
+            "DSC04137_photos_photo": {
+              "audio": -100
+            },
+            "DSC09606_photos_photo": {
+              "audio": -100
+            },
+            "DSC09608_photos_photo": {
+              "audio": -100
+            },
+            "DSC09611_photos_photo": {
+              "audio": -100
+            },
+            "DSC04248_photos_photo": {
+              "audio": -100
+            },
+            "DSC09653_photos_photo": {
+              "audio": -100
+            },
+            "DSC09668_photos_photo": {
+              "audio": -100
+            },
+            "DSC09680_photos_photo": {
+              "audio": -100
+            },
+            "DSC09705_photos_photo": {
+              "audio": -100
+            },
+            "DSC00327_photos_photo": {
+              "audio": -100
+            },
+            "DSC04389_photos_photo": {
+              "audio": -100
+            },
+            "DSC09834_photos_photo": {
+              "audio": -100
+            },
+            "DSC04521_photos_photo": {
+              "audio": -100
+            },
+            "DSC09920_photos_photo": {
+              "audio": -100
+            },
+            "DSC09921_photos_photo": {
+              "audio": -100
+            },
+            "DSC09926_photos_photo": {
+              "audio": -100
+            },
+            "DSC09933_photos_photo": {
+              "audio": -100
+            },
+            "DSC09938_photos_photo": {
+              "audio": -100
+            },
+            "DSC09940_photos_photo": {
+              "audio": -100
+            },
+            "DSC09948_photos_photo": {
+              "audio": -100
+            },
+            "DSC09950_photos_photo": {
+              "audio": -100
+            },
+            "DSC09953_photos_photo": {
+              "audio": -100
+            },
+            "DSC09954_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-03",
+      "slots": [
+        {
+          "id": "fw-05-03-slot-01",
+          "query": "新开口渔港清晨。共23段：普通视频11（有语音11/无语音0）、照片12。按已确认剪辑框架召回本段所有有效素材，供人工粗剪审查。",
+          "requirement": "required",
+          "targetBundles": [
+            "现场普通视频观察",
+            "事件尾部照片包"
+          ],
+          "chosenSpanIds": [
+            "C2370_zve1_day4_broll_speech_s0-6",
+            "C2371_zve1_day4_broll_speech_s0-9",
+            "C2372_zve1_day4_broll_speech_s1-19",
+            "C2373_zve1_day4_broll_speech_s0-19",
+            "C2374_zve1_day4_broll_speech_s0-7",
+            "C2375_zve1_day4_broll_speech_s1-4",
+            "C2376_zve1_day4_broll_speech_s0-10",
+            "C2377_zve1_day4_broll_speech_s1-7",
+            "C2378_zve1_day4_broll_speech_s0-7",
+            "C2379_zve1_day4_broll_speech_s0-9",
+            "C2380_zve1_day4_broll_speech_s1-8",
+            "DSC09962_photos_photo",
+            "DSC09963_photos_photo",
+            "DSC09964_photos_photo",
+            "DSC09967_photos_photo",
+            "DSC09970_photos_photo",
+            "DSC09973_photos_photo",
+            "DSC00330_photos_photo",
+            "DSC09977_photos_photo",
+            "DSC09982_photos_photo",
+            "DSC09983_photos_photo",
+            "DSC09957_photos_photo",
+            "DSC09961_photos_photo"
+          ],
+          "treatments": {
+            "DSC09962_photos_photo": {
+              "audio": -100
+            },
+            "DSC09963_photos_photo": {
+              "audio": -100
+            },
+            "DSC09964_photos_photo": {
+              "audio": -100
+            },
+            "DSC09967_photos_photo": {
+              "audio": -100
+            },
+            "DSC09970_photos_photo": {
+              "audio": -100
+            },
+            "DSC09973_photos_photo": {
+              "audio": -100
+            },
+            "DSC00330_photos_photo": {
+              "audio": -100
+            },
+            "DSC09977_photos_photo": {
+              "audio": -100
+            },
+            "DSC09982_photos_photo": {
+              "audio": -100
+            },
+            "DSC09983_photos_photo": {
+              "audio": -100
+            },
+            "DSC09957_photos_photo": {
+              "audio": -100
+            },
+            "DSC09961_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-04",
+      "slots": [
+        {
+          "id": "fw-05-04-slot-01",
+          "query": "退房早午饭与离开秦皇岛。共32段：行车7（有语音3/无语音4）、普通视频25（有语音21/无语音4）。按已确认剪辑框架召回本段所有有效素材，供人工粗剪审查。",
+          "requirement": "required",
+          "targetBundles": [
+            "行程推进与路况观察",
+            "现场普通视频观察"
+          ],
+          "chosenSpanIds": [
+            "C2381_zve1_day4_broll_speech_s0-2",
+            "C2382_zve1_day4_broll_speech_s0-20",
+            "C2383_zve1_day4_broll_speech_s0-11",
+            "C2384_zve1_day4_drive_visual_s0-3",
+            "C2384_zve1_day4_drive_speech_s4-17",
+            "C2384_zve1_day4_drive_visual_s5-16",
+            "C2385_zve1_day4_broll_speech_s0-17",
+            "C2386_zve1_day4_broll_speech_s0-7",
+            "C2387_zve1_day4_broll_speech_s1-3",
+            "C2387_zve1_day4_broll_speech_s8-13",
+            "C2388_zve1_day4_drive_s0-45",
+            "C2389_zve1_day4_drive_speech_s0-15",
+            "C2390_zve1_day4_drive_speech_s0-2",
+            "C2390_zve1_day4_drive_visual_s0-3",
+            "C2391_zve1_day4_broll_speech_s0-12",
+            "C2392_zve1_day4_broll_speech_s0-6",
+            "C2393_zve1_day4_broll_speech_s2-11",
+            "C2394_zve1_day4_broll_s0-1",
+            "C2394_zve1_day4_broll_speech_s1-29",
+            "C2395_zve1_day4_broll_s0-1",
+            "C2395_zve1_day4_broll_speech_s0-7",
+            "C2396_zve1_day4_broll_visual_s0-3",
+            "C2397_zve1_day4_broll_speech_s0-6",
+            "C2398_zve1_day4_broll_speech_s0-2",
+            "C2399_zve1_day4_broll_speech_s0-4",
+            "C2399_zve1_day4_broll_speech_s7-10",
+            "C2400_zve1_day4_broll_speech_s0-18",
+            "C2401_zve1_day4_broll_speech_s0-9",
+            "C2402_zve1_day4_broll_speech_s0-2",
+            "C2403_zve1_day4_broll_speech_s0-11",
+            "C2404_zve1_day4_broll_visual_s0-2",
+            "C2405_zve1_day4_broll_speech_s0-6"
+          ],
+          "treatments": {
+            "C2384_zve1_day4_drive_visual_s0-3": {
+              "audio": -100
+            },
+            "C2384_zve1_day4_drive_visual_s5-16": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C2388_zve1_day4_drive_s0-45": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2390_zve1_day4_drive_visual_s0-3": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-05",
+      "slots": [
+        {
+          "id": "fw-05-05-slot-01",
+          "query": "秦皇岛到天津高速。共25段：行车24（有语音5/无语音19）、普通视频1（有语音1/无语音0）。按已确认剪辑框架召回本段所有有效素材，供人工粗剪审查。",
+          "requirement": "required",
+          "targetBundles": [
+            "行程推进与路况观察",
+            "现场普通视频观察"
+          ],
+          "chosenSpanIds": [
+            "C2406_zve1_day4_drive_speech_s0-23",
+            "C2406_zve1_day4_drive_visual_s6-18",
+            "C2407_zve1_day4_drive_speech_s0-15",
+            "C2407_zve1_day4_drive_visual_s4-14",
+            "C2408_zve1_day4_drive_s0-127",
+            "C2409_zve1_day4_drive_s0-63",
+            "C2410_zve1_day4_drive_s0-177",
+            "C2411_zve1_day4_drive_s0-41",
+            "C2412_zve1_day4_drive_s0-39",
+            "C2413_zve1_day4_broll_speech_s1-14",
+            "C2414_zve1_day4_drive_s0-164",
+            "C2415_zve1_day4_drive_s0-53",
+            "C2418_zve1_day4_drive_s0-61",
+            "C2419_zve1_day4_drive_s0-66",
+            "C2420_zve1_day4_drive_s0-41",
+            "C2421_zve1_day4_drive_s0-47",
+            "C2422_zve1_day4_drive_speech_s2-11",
+            "C2422_zve1_day4_drive_visual_s6-22",
+            "C2422_zve1_day4_drive_visual_s16-19",
+            "C2423_zve1_day4_drive_speech_s0-9",
+            "C2423_zve1_day4_drive_visual_s3-16",
+            "C2423_zve1_day4_drive_speech_s13-16",
+            "C2424_zve1_day4_drive_s0-51",
+            "C2425_zve1_day4_drive_s0-52",
+            "C2426_zve1_day4_drive_s0-99"
+          ],
+          "treatments": {
+            "C2406_zve1_day4_drive_visual_s6-18": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2407_zve1_day4_drive_visual_s4-14": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C2408_zve1_day4_drive_s0-127": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2409_zve1_day4_drive_s0-63": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2410_zve1_day4_drive_s0-177": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2411_zve1_day4_drive_s0-41": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2412_zve1_day4_drive_s0-39": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2414_zve1_day4_drive_s0-164": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2415_zve1_day4_drive_s0-53": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2418_zve1_day4_drive_s0-61": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2419_zve1_day4_drive_s0-66": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2420_zve1_day4_drive_s0-41": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2421_zve1_day4_drive_s0-47": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2422_zve1_day4_drive_visual_s6-22": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2422_zve1_day4_drive_visual_s16-19": {
+              "audio": -100
+            },
+            "C2423_zve1_day4_drive_visual_s3-16": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C2424_zve1_day4_drive_s0-51": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2425_zve1_day4_drive_s0-52": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2426_zve1_day4_drive_s0-99": {
+              "audio": -100,
+              "speed": 5
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-06",
+      "slots": [
+        {
+          "id": "fw-05-06-slot-01",
+          "query": "津湾云顶与天津夜景。共72段：行车2（有语音0/无语音2）、航拍4（有语音4/无语音0）、普通视频29（有语音26/无语音3）、口播1（有语音1/无语音0）、照片36。按已确认剪辑框架召回本段所有有效素材，供人工粗剪审查。",
+          "requirement": "required",
+          "targetBundles": [
+            "行程推进与路况观察",
+            "航拍空间观察",
+            "现场普通视频观察",
+            "人物现场说明",
+            "事件尾部照片包"
+          ],
+          "chosenSpanIds": [
+            "C2427_zve1_day4_drive_s0-83",
+            "C2428_zve1_day4_drive_s0-87",
+            "C2435_zve1_day4_broll_speech_s0-4",
+            "C2436_zve1_day4_talking-head_speech_s1-19",
+            "C2437_zve1_day4_broll_visual_s0-7",
+            "C2438_zve1_day4_broll_speech_s1-22",
+            "C2439_zve1_day4_broll_speech_s0-1",
+            "C2440_zve1_day4_broll_speech_s0-7",
+            "C2441_zve1_day4_broll_speech_s1-14",
+            "C2442_zve1_day4_broll_visual_s0-1",
+            "C2443_zve1_day4_broll_speech_s2-8",
+            "C2444_zve1_day4_broll_speech_s0-2",
+            "C2445_zve1_day4_broll_speech_s1-13",
+            "C2446_zve1_day4_broll_speech_s1-7",
+            "C2447_zve1_day4_broll_speech_s0-6",
+            "C2448_zve1_day4_broll_speech_s4-16",
+            "C2449_zve1_day4_broll_speech_s0-2",
+            "C2450_zve1_day4_broll_speech_s0-9",
+            "C2451_zve1_day4_aerial_speech_s0-2",
+            "C2452_zve1_day4_aerial_speech_s0-7",
+            "C2453_zve1_day4_aerial_speech_s0-7",
+            "C2454_zve1_day4_aerial_speech_s0-9",
+            "C2455_zve1_day4_broll_speech_s0-5",
+            "C2456_zve1_day4_broll_speech_s1-14",
+            "C2457_zve1_day4_broll_speech_s1-11",
+            "DSC09997_photos_photo",
+            "DSC04745_photos_photo",
+            "DSC04746_photos_photo",
+            "DSC00003_photos_photo",
+            "DSC00005_photos_photo",
+            "DSC04748_photos_photo",
+            "DSC04750_photos_photo",
+            "DSC04753_photos_photo",
+            "DSC00011_photos_photo",
+            "DSC00014_photos_photo",
+            "DSC00015_photos_photo",
+            "DSC00016_photos_photo",
+            "DSC00018_photos_photo",
+            "DSC04759_photos_photo",
+            "DSC00020_photos_photo",
+            "DSC00021_photos_photo",
+            "DSC00024_photos_photo",
+            "DSC00025_photos_photo",
+            "DSC00026_photos_photo",
+            "DSC00027_photos_photo",
+            "DSC00030_photos_photo",
+            "DSC00032_photos_photo",
+            "DSC00033_photos_photo",
+            "DSC00035_photos_photo",
+            "DSC00037_photos_photo",
+            "C2429_zve1_day4_broll_speech_s2-17",
+            "C2430_zve1_day4_broll_speech_s0-5",
+            "C2431_zve1_day4_broll_s0-1",
+            "C2431_zve1_day4_broll_speech_s0-8",
+            "C2432_zve1_day4_broll_speech_s0-6",
+            "C2433_zve1_day4_broll_speech_s4-6",
+            "C2434_zve1_day4_broll_speech_s0-2",
+            "DSC09985_photos_photo",
+            "C2458_zve1_day4_broll_speech_s0-1",
+            "C2459_zve1_day4_broll_speech_s0-3",
+            "C2460_zve1_day4_broll_speech_s0-13",
+            "C2461_zve1_day4_broll_speech_s0-23",
+            "DSC00049_photos_photo",
+            "DSC00038_photos_photo",
+            "DSC00039_photos_photo",
+            "DSC00040_photos_photo",
+            "DSC04762_photos_photo",
+            "DSC00042_photos_photo",
+            "DSC04765_photos_photo",
+            "DSC00043_photos_photo",
+            "DSC00045_photos_photo",
+            "DSC00046_photos_photo"
+          ],
+          "treatments": {
+            "C2427_zve1_day4_drive_s0-83": {
+              "audio": -100,
+              "speed": 5
+            },
+            "C2428_zve1_day4_drive_s0-87": {
+              "audio": -100,
+              "speed": 5
+            },
+            "DSC09997_photos_photo": {
+              "audio": -100
+            },
+            "DSC04745_photos_photo": {
+              "audio": -100
+            },
+            "DSC04746_photos_photo": {
+              "audio": -100
+            },
+            "DSC00003_photos_photo": {
+              "audio": -100
+            },
+            "DSC00005_photos_photo": {
+              "audio": -100
+            },
+            "DSC04748_photos_photo": {
+              "audio": -100
+            },
+            "DSC04750_photos_photo": {
+              "audio": -100
+            },
+            "DSC04753_photos_photo": {
+              "audio": -100
+            },
+            "DSC00011_photos_photo": {
+              "audio": -100
+            },
+            "DSC00014_photos_photo": {
+              "audio": -100
+            },
+            "DSC00015_photos_photo": {
+              "audio": -100
+            },
+            "DSC00016_photos_photo": {
+              "audio": -100
+            },
+            "DSC00018_photos_photo": {
+              "audio": -100
+            },
+            "DSC04759_photos_photo": {
+              "audio": -100
+            },
+            "DSC00020_photos_photo": {
+              "audio": -100
+            },
+            "DSC00021_photos_photo": {
+              "audio": -100
+            },
+            "DSC00024_photos_photo": {
+              "audio": -100
+            },
+            "DSC00025_photos_photo": {
+              "audio": -100
+            },
+            "DSC00026_photos_photo": {
+              "audio": -100
+            },
+            "DSC00027_photos_photo": {
+              "audio": -100
+            },
+            "DSC00030_photos_photo": {
+              "audio": -100
+            },
+            "DSC00032_photos_photo": {
+              "audio": -100
+            },
+            "DSC00033_photos_photo": {
+              "audio": -100
+            },
+            "DSC00035_photos_photo": {
+              "audio": -100
+            },
+            "DSC00037_photos_photo": {
+              "audio": -100
+            },
+            "DSC09985_photos_photo": {
+              "audio": -100
+            },
+            "DSC00049_photos_photo": {
+              "audio": -100
+            },
+            "DSC00038_photos_photo": {
+              "audio": -100
+            },
+            "DSC00039_photos_photo": {
+              "audio": -100
+            },
+            "DSC00040_photos_photo": {
+              "audio": -100
+            },
+            "DSC04762_photos_photo": {
+              "audio": -100
+            },
+            "DSC00042_photos_photo": {
+              "audio": -100
+            },
+            "DSC04765_photos_photo": {
+              "audio": -100
+            },
+            "DSC00043_photos_photo": {
+              "audio": -100
+            },
+            "DSC00045_photos_photo": {
+              "audio": -100
+            },
+            "DSC00046_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-07",
+      "slots": [
+        {
+          "id": "fw-05-07-slot-01",
+          "query": "解放北路和五大道。共50段：行车5（有语音3/无语音2）、普通视频43（有语音37/无语音6）、口播2（有语音2/无语音0）。按已确认剪辑框架召回本段所有有效素材，供人工粗剪审查。",
+          "requirement": "required",
+          "targetBundles": [
+            "行程推进与路况观察",
+            "现场普通视频观察",
+            "人物现场说明"
+          ],
+          "chosenSpanIds": [
+            "C2462_zve1_day5_broll_speech_s0-10",
+            "C2463_zve1_day5_talking-head_speech_s0-21",
+            "C2464_zve1_day5_drive_speech_s1-17",
+            "C2465_zve1_day5_broll_speech_s0-6",
+            "C2466_zve1_day5_broll_speech_s1-14",
+            "C2467_zve1_day5_broll_speech_s1-5",
+            "C2468_zve1_day5_drive_speech_s0-3",
+            "C2468_zve1_day5_drive_visual_s0-4",
+            "C2469_zve1_day5_broll_speech_s0-12",
+            "C2470_zve1_day5_broll_speech_s0-13",
+            "C2471_zve1_day5_broll_speech_s0-19",
+            "C2472_zve1_day5_broll_s0-1",
+            "C2472_zve1_day5_broll_speech_s2-13",
+            "C2473_zve1_day5_broll_speech_s1-4",
+            "C2473_zve1_day5_broll_speech_s15-17",
+            "C2474_zve1_day5_broll_visual_s0-19",
+            "C2475_zve1_day5_broll_speech_s0-11",
+            "C2476_zve1_day5_broll_visual_s0-2",
+            "C2477_zve1_day5_broll_speech_s0-6",
+            "C2478_zve1_day5_broll_speech_s1-19",
+            "C2479_zve1_day5_broll_speech_s0-4",
+            "C2480_zve1_day5_broll_speech_s0-7",
+            "C2481_zve1_day5_broll_speech_s0-4",
+            "C2482_zve1_day5_broll_speech_s0-4",
+            "C2483_zve1_day5_broll_speech_s1-7",
+            "C2484_zve1_day5_broll_speech_s1-7",
+            "C2485_zve1_day5_broll_visual_s0-9",
+            "C2486_zve1_day5_broll_speech_s0-5",
+            "C2487_zve1_day5_broll_speech_s0-6",
+            "C2489_zve1_day5_broll_speech_s1-3",
+            "C2490_zve1_day5_broll_speech_s1-3",
+            "C2491_zve1_day5_broll_speech_s0-3",
+            "C2492_zve1_day5_broll_speech_s0-9",
+            "C2493_zve1_day5_broll_speech_s0-5",
+            "C2494_zve1_day5_broll_speech_s0-4",
+            "C2495_zve1_day5_broll_speech_s2-26",
+            "C2496_zve1_day5_broll_speech_s0-2",
+            "C2497_zve1_day5_broll_speech_s0-14",
+            "C2498_zve1_day5_broll_speech_s1-3",
+            "C2498_zve1_day5_broll_visual_s8-11",
+            "C2498_zve1_day5_broll_speech_s13-18",
+            "C2499_zve1_day5_broll_speech_s0-7",
+            "C2500_zve1_day5_broll_speech_s0-8",
+            "C2501_zve1_day5_broll_speech_s0-8",
+            "C2502_zve1_day5_broll_s0-1",
+            "C2502_zve1_day5_broll_speech_s0-9",
+            "C2503_zve1_day5_drive_speech_s0-2",
+            "C2503_zve1_day5_drive_visual_s0-3",
+            "C2504_zve1_day5_broll_speech_s0-15",
+            "C2505_zve1_day5_talking-head_speech_s1-25"
+          ],
+          "treatments": {
+            "C2468_zve1_day5_drive_visual_s0-4": {
+              "audio": -100
+            },
+            "C2503_zve1_day5_drive_visual_s0-3": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-08",
+      "slots": [
+        {
+          "id": "fw-05-08-slot-01",
+          "query": "机场返程与飞机窗景。共20段：航拍11（有语音0/无语音11）、普通视频7（有语音7/无语音0）、口播2（有语音1/无语音1）。按已确认剪辑框架召回本段所有有效素材，供人工粗剪审查。",
+          "requirement": "required",
+          "targetBundles": [
+            "航拍空间观察",
+            "现场普通视频观察",
+            "人物现场说明"
+          ],
+          "chosenSpanIds": [
+            "C2506_zve1_day5_broll_speech_s1-16",
+            "C2507_zve1_day5_broll_speech_s0-2",
+            "C2507_zve1_day5_broll_speech_s8-12",
+            "C2508_zve1_day5_broll_speech_s1-3",
+            "C2509_zve1_day5_broll_speech_s1-13",
+            "C2510_zve1_day5_broll_speech_s0-7",
+            "C2511_zve1_day5_broll_speech_s0-11",
+            "C2512_zve1_day5_aerial_visual_s0-23",
+            "C2513_zve1_day5_aerial_visual_s0-12",
+            "C2517_zve1_day5_aerial_visual_s0-18",
+            "C2518_zve1_day5_aerial_visual_s0-13",
+            "C2519_zve1_day5_aerial_visual_s0-14",
+            "C2520_zve1_day5_aerial_visual_s0-12",
+            "C2521_zve1_day5_aerial_visual_s0-20",
+            "C2522_zve1_day5_aerial_visual_s0-29",
+            "C2523_zve1_day5_aerial_visual_s0-24",
+            "C2524_zve1_day5_aerial_visual_s0-29",
+            "C2525_zve1_day5_aerial_visual_s0-20",
+            "C2526_zve1_day5_talking-head_visual_s0-2",
+            "C2527_zve1_day5_talking-head_speech_s0-23"
+          ],
+          "treatments": {}
+        }
+      ]
+    }
+  ],
+  "coverageAudit": {
+    "generatedAt": "2026-07-08T04:12:36.405Z",
+    "byType": [
+      {
+        "key": "broll",
+        "available": 400,
+        "chosen": 400,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "photo",
+        "available": 188,
+        "chosen": 188,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "drive",
+        "available": 187,
+        "chosen": 187,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "aerial",
+        "available": 37,
+        "chosen": 37,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "talking-head",
+        "available": 35,
+        "chosen": 35,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "timelapse",
+        "available": 1,
+        "chosen": 1,
+        "dropped": 0,
+        "droppedSpanIds": []
+      }
+    ],
+    "byDay": [
+      {
+        "key": "2026-06-20",
+        "available": 279,
+        "chosen": 279,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "2026-06-18",
+        "available": 214,
+        "chosen": 214,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "2026-06-19",
+        "available": 147,
+        "chosen": 147,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "2026-06-21",
+        "available": 129,
+        "chosen": 129,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "2026-06-22",
+        "available": 70,
+        "chosen": 70,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "2026-06-17",
+        "available": 9,
+        "chosen": 9,
+        "dropped": 0,
+        "droppedSpanIds": []
+      }
+    ],
+    "byEvent": [
+      {
+        "key": "event-pharos-551f64fa8382",
+        "available": 4,
+        "chosen": 4,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "石家庄正定国际机场T2航站楼"
+      },
+      {
+        "key": "route-b956bbb7a898",
+        "available": 2,
+        "chosen": 2,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "行车：河北省，石家庄市，正定县，新城铺镇 · 机场北路"
+      },
+      {
+        "key": "event-60173b3b32fc",
+        "available": 1,
+        "chosen": 1,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "酒店入住体验"
+      },
+      {
+        "key": "event-pharos-dff40bf02188",
+        "available": 2,
+        "chosen": 2,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "恒大御景半岛一期附近酒店"
+      },
+      {
+        "key": "event-pharos-b6842e8402ae",
+        "available": 8,
+        "chosen": 8,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "恒大御景半岛一期附近取车点"
+      },
+      {
+        "key": "route-5993984c90ae",
+        "available": 10,
+        "chosen": 10,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "行车：河北省，石家庄市，长安区，高营镇 · 恒大御景半岛2期 → 河北省，石家庄市，长安区，育才街道 · 华北制药集团有限责任公司"
+      },
+      {
+        "key": "event-pharos-52f4eda2ae28",
+        "available": 7,
+        "chosen": 7,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "华北制药和平东路388号"
+      },
+      {
+        "key": "event-pharos-001ca9f7f302",
+        "available": 61,
+        "chosen": 61,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "华北制药集团生活区一区"
+      },
+      {
+        "key": "route-fe977ffa64ae",
+        "available": 1,
+        "chosen": 1,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "行车：河北省，石家庄市，长安区，广安街道 · 荣盛华府B区 → 河北省，石家庄市，长安区，建北街道 · 石家庄清平苑养老服务有限公司"
+      },
+      {
+        "key": "event-pharos-fb258d09d685",
+        "available": 15,
+        "chosen": 15,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "万能青年旅店乐队墙绘打卡点"
+      },
+      {
+        "key": "route-b76decd19ba5",
+        "available": 16,
+        "chosen": 16,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "行车：河北省，石家庄市，裕华区，建通街道 · 建通街出口(南二环西路东向) → 河北省，石家庄市，井陉矿区，横涧乡 · 河北产教园项目"
+      },
+      {
+        "key": "event-pharos-8bcade1fa3aa",
+        "available": 14,
+        "chosen": 14,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "井陉县晚餐"
+      },
+      {
+        "key": "route-464f8659ffff",
+        "available": 2,
+        "chosen": 2,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "行车：河北省，石家庄市，井陉矿区，横涧乡 · 石家庄市矿区文化休闲广场 → 河北省，石家庄市，井陉矿区，凤山镇 · 段家楼景区-宪兵楼"
+      },
+      {
+        "key": "event-pharos-0c1002370fc6",
+        "available": 65,
+        "chosen": 65,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "解放第一矿"
+      },
+      {
+        "key": "route-3622a3e98a21",
+        "available": 11,
+        "chosen": 11,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "行车：河北省，石家庄市，井陉矿区，凤山镇 · 特来电汽车充电站(井陉矿区火车头广场充电站) → 河北省，保定市，涞源县，白石山镇 · 白石山花海"
+      },
+      {
+        "key": "event-pharos-355b4c300b57",
+        "available": 1,
+        "chosen": 1,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "白石山镇住宿"
+      },
+      {
+        "key": "event-pharos-42db749c1115",
+        "available": 7,
+        "chosen": 7,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "白石山镇住宿"
+      },
+      {
+        "key": "route-d18c48453f68",
+        "available": 1,
+        "chosen": 1,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "行车：河北省，保定市，涞源县，白石山镇 · 涞源罗花农家院 → 河北省，保定市，涞源县，白石山镇 · 白石山花海"
+      },
+      {
+        "key": "event-pharos-c42c36ea1721",
+        "available": 2,
+        "chosen": 2,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "胎压报警修车"
+      },
+      {
+        "key": "event-pharos-079c35682612",
+        "available": 8,
+        "chosen": 8,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "白石山镇农家院/午饭点"
+      },
+      {
+        "key": "route-4355c0095018",
+        "available": 5,
+        "chosen": 5,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "行车：河北省，保定市，涞源县，白石山镇 · 悦伟农家院 → 河北省，保定市，涞源县，白石山镇 · 大草滩村"
+      },
+      {
+        "key": "event-pharos-78542b4ce26d",
+        "available": 8,
+        "chosen": 8,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "石窝村"
+      },
+      {
+        "key": "route-31bcc1ef1fe1",
+        "available": 2,
+        "chosen": 2,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "行车：河北省，保定市，易县，紫荆关镇 · 紫荆关出口(G9511涞涞高速东向) → 河北省，保定市，易县，紫荆关镇 · 孙家庄"
+      },
+      {
+        "key": "event-pharos-5a840368308f",
+        "available": 77,
+        "chosen": 77,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "易水湖游览"
+      },
+      {
+        "key": "route-f126e069a22d",
+        "available": 18,
+        "chosen": 18,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "行车：河北省，保定市，易县，安格庄乡 · 恋乡·太行水镇 → 河北省，保定市，徐水区，大王店镇 · 保定市建华商品混凝土有限公司"
+      },
+      {
+        "key": "event-pharos-1ebb1bdb3183",
+        "available": 4,
+        "chosen": 4,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "保定附近华北平原"
+      },
+      {
+        "key": "route-6d39cff7463e",
+        "available": 4,
+        "chosen": 4,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "行车：河北省，保定市，满城区，贤台乡 · 朝阳首府澜园 → 河北省，保定市，竞秀区，保定国家高新区 · 保定飞凌嵌入式技术有限公司"
+      },
+      {
+        "key": "event-pharos-dc3783a189c0",
+        "available": 6,
+        "chosen": 6,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "保定晚餐"
+      },
+      {
+        "key": "event-869129bdaab6",
+        "available": 1,
+        "chosen": 1,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "北方城市晨景"
+      },
+      {
+        "key": "event-451c4461334c",
+        "available": 3,
+        "chosen": 3,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "探访长城4S店"
+      },
+      {
+        "key": "event-pharos-39af4c76f9e3",
+        "available": 3,
+        "chosen": 3,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "保定早餐"
+      },
+      {
+        "key": "route-a053159e2e33",
+        "available": 10,
+        "chosen": 10,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "行车：河北省，保定市，莲池区，五四路街道 · 邢台银行(保定恒祥支行) → 河北省，保定市，雄县，朱各庄镇 · 北涞河北(公交站)"
+      },
+      {
+        "key": "event-95e19654955b",
+        "available": 3,
+        "chosen": 3,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "油价讨论现场"
+      },
+      {
+        "key": "route-75e06fb10a74",
+        "available": 16,
+        "chosen": 16,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "行车：河北省，廊坊市，安次区，东沽港镇 · G18荣乌高速 → 河北省，唐山市，丰南区，振兴街道 · 汉沽北互通立交"
+      },
+      {
+        "key": "event-eeaed4c0bcd9",
+        "available": 25,
+        "chosen": 25,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "航拍视角"
+      },
+      {
+        "key": "event-61be7ec50f06",
+        "available": 1,
+        "chosen": 1,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "女子行走展示"
+      },
+      {
+        "key": "route-9897b2ed32c6",
+        "available": 8,
+        "chosen": 8,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "行车：河北省，唐山市，丰南区，黄各庄镇 · 小军汽车修理 → 河北省，唐山市，路南区，永红桥街道 · 逸境佳苑"
+      },
+      {
+        "key": "event-pharos-d4c5acb747d3",
+        "available": 78,
+        "chosen": 78,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "开滦国家矿山公园"
+      },
+      {
+        "key": "route-44c00796b0f8",
+        "available": 2,
+        "chosen": 2,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "行车：河北省，唐山市，开平区，开平镇 · 老郭板面 → 河北省，唐山市，丰润区，常庄镇"
+      },
+      {
+        "key": "event-d53ff0673a40",
+        "available": 2,
+        "chosen": 2,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "服务区用餐休息"
+      },
+      {
+        "key": "route-fe2455e022cd",
+        "available": 8,
+        "chosen": 8,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "行车：河北省，唐山市，滦州市，油榨镇 · 贾营村 → 河北省，秦皇岛市，海港区，海滨路街道 · 秦皇岛市玻璃博物馆"
+      },
+      {
+        "key": "event-pharos-53f3479ff57e",
+        "available": 29,
+        "chosen": 29,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "秦皇岛西港花园/开埠地"
+      },
+      {
+        "key": "route-6819f8f8ea93",
+        "available": 6,
+        "chosen": 6,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "行车：河北省，秦皇岛市，海港区，海滨路街道 · 秦皇岛金海粮油工业有限公司 → 河北省，秦皇岛市，昌黎县，团林管理处 · 潮河小学"
+      },
+      {
+        "key": "event-pharos-dbce49c3e47f",
+        "available": 7,
+        "chosen": 7,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "新开口码头/福来岛附近住宿"
+      },
+      {
+        "key": "event-pharos-c59733835c39",
+        "available": 12,
+        "chosen": 12,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "福来岛南侧停车场/海龟岛"
+      },
+      {
+        "key": "event-pharos-05304b6d5385",
+        "available": 40,
+        "chosen": 40,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "福来岛灯塔/海龟岛日出机位"
+      },
+      {
+        "key": "event-pharos-6daa640b69ce",
+        "available": 21,
+        "chosen": 21,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "新开口南岸一级渔港"
+      },
+      {
+        "key": "event-pharos-2b1b2960e989",
+        "available": 10,
+        "chosen": 10,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "新开口码头/福来岛附近住宿"
+      },
+      {
+        "key": "route-fc0373609659",
+        "available": 2,
+        "chosen": 2,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "行车：河北省，秦皇岛市，昌黎县，团林管理处 → 河北省，秦皇岛市，昌黎县，团林管理处 · 秦皇岛江鹏水产渔需药店"
+      },
+      {
+        "key": "event-pharos-47c3566dff59",
+        "available": 20,
+        "chosen": 20,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "福来岛附近早午饭点"
+      },
+      {
+        "key": "route-ba7bc2eb0f17",
+        "available": 9,
+        "chosen": 9,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "行车：河北省，秦皇岛市，昌黎县，大蒲河管理处 · 机场快速路 → 河北省，唐山市，丰南区，黑沿子镇 · 服务区停车场(建设中)"
+      },
+      {
+        "key": "event-4dd247d5d10a",
+        "available": 1,
+        "chosen": 1,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "停车加油休息"
+      },
+      {
+        "key": "route-7a0c2f09a8d9",
+        "available": 15,
+        "chosen": 15,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "行车：河北省，唐山市，丰南区，黑沿子镇 → 天津市，河东区，大王庄街道 · 天津邮政大楼"
+      },
+      {
+        "key": "event-pharos-e5a02ef20b6b",
+        "available": 50,
+        "chosen": 50,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "津湾云顶高空观景台"
+      },
+      {
+        "key": "event-pharos-cb6d24d38d57",
+        "available": 8,
+        "chosen": 8,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "天津津湾/解放北路附近"
+      },
+      {
+        "key": "event-pharos-c6c4a87de700",
+        "available": 5,
+        "chosen": 5,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "天津津湾/海河附近住宿"
+      },
+      {
+        "key": "event-pharos-ac2782e2e71d",
+        "available": 17,
+        "chosen": 17,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "解放北路风情区"
+      },
+      {
+        "key": "event-pharos-7cff08012b0b",
+        "available": 33,
+        "chosen": 33,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "五大道/民园广场"
+      },
+      {
+        "key": "event-pharos-3fc6c88030d7",
+        "available": 6,
+        "chosen": 6,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "天津中心城区午饭点"
+      },
+      {
+        "key": "event-pharos-295d0b31d788",
+        "available": 3,
+        "chosen": 3,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "天津滨海机场T2国内出发"
+      },
+      {
+        "key": "event-b51310e77197",
+        "available": 1,
+        "chosen": 1,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "飞机机翼视角"
+      },
+      {
+        "key": "event-b5fba23375db",
+        "available": 1,
+        "chosen": 1,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "飞机窗景夜航"
+      },
+      {
+        "key": "event-bd2a521bfa95",
+        "available": 1,
+        "chosen": 1,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "飞机窗景夜航"
+      },
+      {
+        "key": "event-c9c68a044b0e",
+        "available": 1,
+        "chosen": 1,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "城市夜景航拍"
+      },
+      {
+        "key": "event-17bcad02be47",
+        "available": 1,
+        "chosen": 1,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "城市夜景航拍"
+      },
+      {
+        "key": "event-59b9301d46a8",
+        "available": 1,
+        "chosen": 1,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "城市夜景航拍"
+      },
+      {
+        "key": "event-08d3b96045b8",
+        "available": 1,
+        "chosen": 1,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "城市夜景航拍"
+      },
+      {
+        "key": "event-3c37508f1e72",
+        "available": 1,
+        "chosen": 1,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "城市夜景航拍"
+      },
+      {
+        "key": "event-8beaca814970",
+        "available": 1,
+        "chosen": 1,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "城市夜景航拍"
+      },
+      {
+        "key": "event-49e1855cd877",
+        "available": 1,
+        "chosen": 1,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "机场自拍记录"
+      },
+      {
+        "key": "event-c92066234731",
+        "available": 1,
+        "chosen": 1,
+        "dropped": 0,
+        "droppedSpanIds": [],
+        "label": "机场自拍记录"
+      }
+    ],
+    "speechProtected": {
+      "available": 439,
+      "chosen": 439,
+      "dropped": 0,
+      "droppedSpanIds": []
+    },
+    "notes": [
+      "本次 material.recall 采用人工审查意见：尽可能保留所有有效素材，不做审美性或篇幅性的主动删减；删减交给人工审查。",
+      "21 个未挂 Chronology 事件的照片 span 已按素材 capturedAt 归入最近 FW beat，避免在召回阶段丢失。",
+      "无口播行车已写入静音处理；超过 5 秒的无口播行车按 ceil(durationMs/5000) 且最高 5x 写入整数倍速。",
+      "被选择的 speech-backed 非照片 span 未写静音处理。"
+    ]
+  }
+}

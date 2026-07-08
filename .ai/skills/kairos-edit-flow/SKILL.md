@@ -94,7 +94,7 @@ Capability registry 是原子能力库，不是必经阶段链。当前常见 ca
 - `treatments` 是稀疏覆盖表；缺少 `treatments[spanId]`、`audio` 或 `speed` 时按默认 `{audio:0,speed:1}` 读取。
 - 新生成文件应省略默认 `audio:0` 和 `speed:1`；对象为空时省略该 span entry。
 - 照片必须显式静音 `{audio:-100}`。
-- 被选中的非照片 span 只要有 `transcript`、`transcriptSegments`、`semanticKind=speech/mixed` 或 `materialPatterns=有口播语音`，就不得写或解析出 `audio<=-100`。
+- 被选中的非照片非航拍 span 只要有 `transcript`、`transcriptSegments`、`semanticKind=speech/mixed` 或 `materialPatterns=有口播语音`，就不得写或解析出 `audio<=-100`；航拍视频音轨由 `timeline.generate` 一律强制 disabled，不作为 source-speech 原声保护对象。
 - `speed` 只能是整数倍 `1..5`；新生成文件不得写小数倍速或超过 `5x`，`speed>1` 只允许用于 `drive / aerial`。
 - `query` 和 `targetBundles` 只写人类可读语义，不写 `audio:*`、`speed:*`、`audio=`、`speed=` 或把处理建议藏进自然语言。
 - 未选入的 speech-backed 非照片 span 必须由 `coverageAudit` 暴露；代码不得自动追加到主粗剪时间线。扩召回应回到 `material.recall` 和人工审查。
@@ -136,7 +136,7 @@ Capability registry 是原子能力库，不是必经阶段链。当前常见 ca
 - Resolve 不可用、素材缺失、source range 校验失败、静音失败或必要 clip gain 无法稳定设置时阻塞，不写成功状态。
 - 当前 `speed>1` 不阻塞，但 Resolve 粗剪可记为 pending/ignored，不得假装已应用。
 - 照片静帧默认时长是 `1000ms`；只有剪辑规则 / confirmed Flow Plan 当前 step notes 或运行时 `timelineStillDurationMs` 明确声明时才覆盖。Resolve host 必须回读校验实际照片时长，不能默认使用旧 `5s`。
-- Resolve rough cut 必须自动写入并回读校验 clip color 批处理标记：普通有声视频及其 linked audio item 为 `Orange`，照片 video item 为 `Blue`，延时 video item 为 `Purple`；有声延时的 video item 保持 `Purple`，linked audio item 使用 `Orange`，便于后续分别批量做音频归一、照片填充和延时处理。生成粗剪时还必须创建/复用 Resolve Color Groups `Kairos Photos` 与 `Kairos Timelapse`，并把照片/延时 video item 分别分配进去，供 Color 页 `Group Post-Clip` 批量效果使用。
+- Resolve rough cut 必须自动写入并回读校验 clip color 批处理标记：照片 video item 为 `Blue`，延时 video item 为 `Purple`，行车 video item 为 `Brown`，航拍 video item 为 `Teal`；没有这些视觉分类颜色的普通有声 video item 为 `Orange`；剩余可听 linked audio item 使用 `Orange`，便于后续分别批量做音频归一、照片填充、延时、行车和航拍处理。航拍 linked audio 在粗剪中强制 disabled，不作为 Orange 可听音频筛选目标。生成粗剪时还必须创建/复用 Resolve Color Groups `Kairos Photos` 与 `Kairos Timelapse`，并把照片/延时 video item 分别分配进去，供 Color 页 `Group Post-Clip` 批量效果使用。
 - 每次 `timeline.generate` 成功时，必须同时从已选中、实际有声的 source-speech spans 生成 `.tmp/edit-flow/<editId>/timeline/current.srt`，供用户手动导入达芬奇；字幕时间按生成后的 timeline clip 时间映射，优先用 `transcriptSegments`，没有分段时才用整段 `transcript` 兜底。
 - 任何自动生成的字幕、字幕审查稿、最终 SRT/VTT 和配音插件合并文本都不得自动补 `。` 或 `.`，并应移除行末已有 `。` / `.`；不要全局移除 `？`、`！` 或句内标点。
 - `runs/current.json` 只能保存 step 级轻量摘要和输出路径；`timeline.generate` 不得把完整 KTEP、Resolve clip 明细、source subtitle text 或 `hostSummary.clips` 内联写入 run record，完整审计只写 `.tmp/edit-flow/<editId>/timeline/current.json`，字幕正文只写 `.tmp/edit-flow/<editId>/timeline/current.srt` 等 declared/temporary artifacts。

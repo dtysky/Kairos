@@ -68,6 +68,89 @@ describe('timeline speech source handles', () => {
     }]);
   });
 
+  it('forces aerial clips to disable audio and excludes them from source-speech subtitles', () => {
+    const assets: IKtepAsset[] = [
+      {
+        id: 'asset-aerial',
+        kind: 'video',
+        sourcePath: '/tmp/kairos-aerial.mp4',
+        displayName: 'aerial.mp4',
+        durationMs: 4000,
+        fps: 30,
+      },
+    ];
+    const spans: IKtepSpan[] = [{
+      id: 'span-aerial',
+      assetId: 'asset-aerial',
+      type: 'aerial',
+      semanticKind: 'speech',
+      sourceInMs: 1000,
+      sourceOutMs: 3000,
+      transcript: '航拍风噪误识别',
+      transcriptSegments: [{ startMs: 1100, endMs: 2200, text: '航拍风噪误识别' }],
+      materialPatterns: ['航拍运动', '山谷', '晴天', '有口播语音'],
+    }];
+    const materialSlots: IMaterialSlotsDocument = {
+      id: 'slots-aerial',
+      projectId: 'project-1',
+      generatedAt: '2026-05-27T00:00:00.000Z',
+      segments: [{
+        segmentId: 'fw-aerial',
+        slots: [{
+          id: 'slot-aerial',
+          query: '航拍素材',
+          requirement: 'required',
+          targetBundles: [],
+          chosenSpanIds: ['span-aerial'],
+          treatments: {},
+        }],
+      }],
+    };
+    const events: IChronologyEvent[] = [{
+      id: 'event-aerial',
+      kind: 'event',
+      reviewStatus: 'confirmed',
+      title: '航拍段落',
+      startAt: '2026-05-27T00:00:00.000Z',
+      spanIds: ['span-aerial'],
+    }];
+
+    const build = buildDeterministicTimeline({
+      project: PROJECT,
+      editId: 'main',
+      assets,
+      spans,
+      materialSlots,
+      chronologyEvents: events,
+      cfg: {
+        fps: 30,
+        width: 1920,
+        height: 1080,
+        name: 'Aerial Audio Disabled Timeline',
+        stillDurationMs: 1000,
+      },
+      ingestRoots: [],
+    });
+
+    expect(build.doc.timeline.clips[0]).toMatchObject({
+      spanId: 'span-aerial',
+      sourceInMs: 1000,
+      sourceOutMs: 3000,
+      audioGainDb: -100,
+      muteAudio: true,
+    });
+    expect(build.resolveClips[0]).toMatchObject({
+      spanId: 'span-aerial',
+      spanType: 'aerial',
+      audioGainDb: -100,
+      muteAudio: true,
+    });
+    expect(buildTimelineSourceSpeechSubtitles({
+      clips: build.doc.timeline.clips,
+      spans: build.doc.spans,
+    })).toEqual([]);
+  });
+
   it('packs selected photos at the tail of their chronology event', () => {
     const assets: IKtepAsset[] = [
       ...ASSETS,

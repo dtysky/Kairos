@@ -58,7 +58,7 @@ export function assertMaterialSlotsContract(input: {
         if (asset.kind === 'photo' && treatment.audio > -100) {
           errors.push(`${segment.segmentId}/${slot.id}/${spanId}: photo spans must use audio=-100`);
         }
-        if (asset.kind !== 'photo' && spanHasSpeechTruth(span) && treatment.audio <= -100) {
+        if (asset.kind !== 'photo' && spanRequiresSourceAudioProtection(span) && treatment.audio <= -100) {
           errors.push(`${segment.segmentId}/${slot.id}/${spanId}: speech-backed non-photo spans cannot be muted (audio<=-100)`);
         }
         if (treatment.speed > 1 && span.type !== 'drive' && span.type !== 'aerial') {
@@ -127,7 +127,7 @@ export function buildMaterialRecallCoverageAudit(input: {
   const speechProtectedIds = input.spans
     .filter(span => {
       const asset = assetById.get(span.assetId);
-      return asset?.kind !== 'photo' && spanHasSpeechTruth(span);
+      return asset?.kind !== 'photo' && spanRequiresSourceAudioProtection(span);
     })
     .map(span => span.id);
   const speechChosen = speechProtectedIds.filter(spanId => chosenSpanIds.has(spanId));
@@ -219,6 +219,10 @@ export function spanHasSpeechTruth(span: IKtepSpan): boolean {
     || span.semanticKind === 'speech'
     || span.semanticKind === 'mixed'
     || span.materialPatterns.includes('有口播语音');
+}
+
+export function spanRequiresSourceAudioProtection(span: IKtepSpan): boolean {
+  return span.type !== 'aerial' && spanHasSpeechTruth(span);
 }
 
 function hasForbiddenTreatmentText(value: string): boolean {

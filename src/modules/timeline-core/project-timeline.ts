@@ -32,7 +32,11 @@ import {
 } from '../../store/index.js';
 import { resolveAssetLocalPath } from '../media/root-resolver.js';
 import { assertConfirmedEditFlowPlan } from '../edit-flow/flow-planner.js';
-import { assertMaterialSlotsContract, spanHasSpeechTruth } from '../edit-flow/material-slots-contract.js';
+import {
+  assertMaterialSlotsContract,
+  spanHasSpeechTruth,
+  spanRequiresSourceAudioProtection,
+} from '../edit-flow/material-slots-contract.js';
 import { resolveMaterialSlotTreatment } from '../edit-flow/material-slot-treatments.js';
 import { exportSrt } from '../nle/export-srt.js';
 import { stripGeneratedSubtitlePeriods } from '../nle/subtitle-text.js';
@@ -356,7 +360,11 @@ export function buildDeterministicTimeline(input: {
         }
         const photoStillDurationMs = asset.kind === 'photo' ? resolvePhotoStillDurationMs(input.cfg) : CPHOTO_DEFAULT_DURATION_MS;
         const treatment = resolveMaterialSlotTreatment(slot.treatments[spanId]);
-        const shouldApplySpeechHandles = asset.kind !== 'photo' && treatment.audio > -100 && spanHasSpeechTruth(span);
+        const forceDisableAerialAudio = shouldForceDisableAerialAudio(asset, span);
+        const effectiveAudioGainDb = forceDisableAerialAudio ? -100 : treatment.audio;
+        const shouldApplySpeechHandles = asset.kind !== 'photo'
+          && effectiveAudioGainDb > -100
+          && spanRequiresSourceAudioProtection(span);
         const window = resolveSpanSourceWindow(asset, span, photoStillDurationMs, {
           applySpeechHandles: shouldApplySpeechHandles,
         });
@@ -375,7 +383,7 @@ export function buildDeterministicTimeline(input: {
           ? photoStillDurationMs
           : Math.max(1, Math.round(window.sourceOutMs - window.sourceInMs));
         const clipId = `clip-${String(clipIndex + 1).padStart(5, '0')}`;
-        if (asset.kind !== 'photo' && spanHasSpeechTruth(span) && treatment.audio <= -100) {
+        if (asset.kind !== 'photo' && spanRequiresSourceAudioProtection(span) && effectiveAudioGainDb <= -100) {
           throw new Error(
             `timeline.generate blocked muted speech span: clipId=${clipId} spanId=${span.id} assetId=${asset.id}`,
           );
@@ -385,7 +393,7 @@ export function buildDeterministicTimeline(input: {
           throw new Error(`Unable to resolve asset ${asset.id} (${asset.sourcePath}) from project media roots`);
         }
         const eventContext = resolveChronologyEventContext(eventBySpanId, span.id);
-        const muteAudio = treatment.audio <= -100 || asset.kind === 'photo';
+        const muteAudio = effectiveAudioGainDb <= -100 || asset.kind === 'photo';
         const clip: IKtepClip = {
           id: clipId,
           trackId: 'v1',
@@ -394,7 +402,7 @@ export function buildDeterministicTimeline(input: {
           sliceId: span.id,
           sourceInMs: window.sourceInMs,
           sourceOutMs: window.sourceOutMs,
-          audioGainDb: treatment.audio,
+          audioGainDb: effectiveAudioGainDb,
           timelineInMs: cursorMs,
           timelineOutMs: cursorMs + durationMs,
           ...(muteAudio ? { muteAudio: true } : {}),
@@ -424,7 +432,7 @@ export function buildDeterministicTimeline(input: {
           sourceOutMs: window.sourceOutMs,
           timelineInMs: clip.timelineInMs,
           timelineOutMs: clip.timelineOutMs,
-          audioGainDb: treatment.audio,
+          audioGainDb: effectiveAudioGainDb,
           muteAudio,
           speed,
           requestedSpeed,
@@ -564,6 +572,10 @@ function isClipAudioMuted(clip: IKtepClip): boolean {
   return typeof clip.audioGainDb === 'number'
     && Number.isFinite(clip.audioGainDb)
     && clip.audioGainDb <= -100;
+}
+
+function shouldForceDisableAerialAudio(asset: IKtepAsset, span: IKtepSpan): boolean {
+  return asset.kind === 'video' && span.type === 'aerial';
 }
 
 function resolveSubtitleClipSpeed(clip: IKtepClip): number {

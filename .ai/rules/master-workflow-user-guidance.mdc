@@ -56,7 +56,7 @@ Kairos 的标准顺序是：
   - 中间产物由每个 capability 的 `outputRefs` 决定；不要要求固定 `script/current.json`、固定 beat 或固定 `Script -> Timeline` 顺序
   - `resolve.media_sync` 只在 Flow Plan 声明时同步达芬奇 Media Pool；重复运行时复用已有 MediaPoolItem，事件目录一致则跳过，不一致则移动到新目录并清理空事件目录；`timeline.generate` 只从已同步 Media Pool 选素材，不重新导入或清空 namespace
   - `timeline.generate` 的照片静帧默认是 `1000ms`；只有剪辑规则 / confirmed Flow Plan 或运行时 `timelineStillDurationMs` 明确提及时才可覆盖，不能从旧默认或 Resolve 偏好猜成 `5s`
-  - `timeline.generate` 会自动写 Resolve clip color 批处理标记：普通有声视频/linked audio 为 `Orange`，照片 video item 为 `Blue`，延时 video item 为 `Purple`，有声延时的 linked audio 仍为 `Orange`
+  - `timeline.generate` 会自动写 Resolve clip color 批处理标记：照片 video item 为 `Blue`，延时 video item 为 `Purple`，行车 video item 为 `Brown`，航拍 video item 为 `Teal`，没有视觉分类颜色的普通有声 video item 为 `Orange`，剩余可听 linked audio item 仍为 `Orange`；航拍 linked audio 会强制 disabled
 - 第七步在目标 NLE 和导出目录明确后执行 Export
 
 ## 用户真正该编辑的入口

@@ -358,10 +358,10 @@ Chronology 审查：
 - `script.generate` 只有当剪辑规则明确要求前置文本稿 / beat 稿时才出现。
 - 剪辑规则中适用于某个 capability 的人工规则必须通过 confirmed Flow Plan 当前 step 的 `notes` 传递给下游 packet；skill 不硬编码项目特定规则，runner 也不临时关键词解析原始 markdown。
 - `material.recall` 只输出 `material-slots.json`；`segment-plan.json` 不再是正式输出或下游输入。
-- `material-slots.json` 是素材召回和粗剪建议唯一结构化产物；`chosenSpanIds` 是选择真相，`treatments` 是稀疏覆盖表，缺省按 `{audio:0,speed:1}` 读取，默认值不写；非照片 span 如果有 transcript、transcriptSegments 或 `semanticKind=speech/mixed`，不得静音；同一 chronology event 内照片作为尾部照片包，非照片保持事件内顺序；`speed` 只能写 `1..5` 的整数倍。
+- `material-slots.json` 是素材召回和粗剪建议唯一结构化产物；`chosenSpanIds` 是选择真相，`treatments` 是稀疏覆盖表，缺省按 `{audio:0,speed:1}` 读取，默认值不写；非照片非航拍 span 如果有 transcript、transcriptSegments 或 `semanticKind=speech/mixed`，不得静音；航拍视频原音一律由 `timeline.generate` 强制禁用；同一 chronology event 内照片作为尾部照片包，非照片保持事件内顺序；`speed` 只能写 `1..5` 的整数倍。
 - `resolve.media_sync` 是 deterministic Resolve Media Pool 同步步骤；Media Pool 是素材归档真相，不新增 `media-archive.json`，重复运行只能复用 / 移动 / 补导入。
 - `timeline.generate` 是 deterministic Resolve rough-cut 创建步骤，只读取 `edit-framework.md + material-slots.json + spans + assets + chronology` 并从已同步 Media Pool 选择素材；同一 chronology event 内选中的照片必须在非照片之后形成尾部照片包；不能要求 `script/current.json` 或 `segment-plan.json`，也不能重新导入素材或清空 `Kairos Project Media` namespace。
-- `.tmp/edit-flow/<editId>/timeline/current.json` 只是本机临时 KTEP/manifest 审计；`.tmp/edit-flow/<editId>/timeline/current.srt` 是同步生成的 source-speech SRT，供用户手动导入 Resolve；Resolve 不可用时不能作为成功兜底。
+- `.tmp/edit-flow/<editId>/timeline/current.json` 只是本机临时 KTEP/manifest 审计；`.tmp/edit-flow/<editId>/timeline/current.srt` 是同步生成的 source-speech SRT，供用户手动导入 Resolve；航拍视频强制静音且不进入该 source-speech SRT；Resolve 不可用时不能作为成功兜底。
 - `edits/<editId>/runs/current.json` 只保存轻量 run truth；`timeline.generate` 不得把完整 timeline/KTEP/clip 明细、source subtitle text 或 `hostSummary.clips` 内联进 run record。
 - `trip.event_table` 是事件级组织能力，只使用 confirmed chronology；不要因为 spans stale 或缺 asset reports 阻塞它。
 - `sharded-agent` step 的连续天打包、阈值与 SubAgent 口径只来自 confirmed `step.execution.shardPacking / codexSubagentProfile`；默认不得按 route 拆。

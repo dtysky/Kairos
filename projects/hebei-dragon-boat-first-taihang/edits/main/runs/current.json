@@ -1,0 +1,496 @@
+{
+  "schemaVersion": "1.0",
+  "editId": "main",
+  "updatedAt": "2026-07-08T05:10:17.194Z",
+  "records": [
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-edit-framework-awaiting-review-20260708T031642Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-vlog-codex-20260708T030443Z",
+      "flowPlanHash": "578496958b5481c9f8c23aecd528a4c54cfced9e7f0d99a2ed7900b0d39f70e7",
+      "stepId": "edit-framework-handoff-codex-v1",
+      "capabilityId": "edit.framework",
+      "runner": "agent",
+      "status": "completed",
+      "startedAt": "2026-07-08T03:16:42.300Z",
+      "updatedAt": "2026-07-08T04:07:58.238Z",
+      "completedAt": "2026-07-08T04:07:58.238Z",
+      "inputRefs": [
+        "config/edit-rules/travel-vlog.md",
+        "media/chronology.json",
+        "store/spans.json",
+        "store/assets.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/planning/edit-framework.md"
+      ],
+      "inputSnapshot": {
+        "source": "codex-generated-edit-framework",
+        "projectId": "hebei-dragon-boat-first-taihang",
+        "chronologyStatus": "confirmed",
+        "chronologyEventCount": 71,
+        "spansStatus": "fresh",
+        "spanCount": 848,
+        "editRuleCategory": "travel-vlog",
+        "editRuleHash": "15ab829a550f82e7039557ea5358525d56cfbe852d94ad9581a867254ebe120c",
+        "executionMode": "single bounded shard matching the sharded-agent day packing threshold",
+        "shardPacking": {
+          "base": "day",
+          "metric": "chronologyEventCount",
+          "maxPerShard": 150,
+          "actualShardCount": 1,
+          "preserveOrder": true
+        }
+      },
+      "outputPaths": [
+        "edits/main/planning/edit-framework.md"
+      ],
+      "summary": {
+        "artifact": "edits/main/planning/edit-framework.md",
+        "artifactHash": "289addf97ff2434105de184f360d7465a69a23cbbc8ee100dd53be752b239c7a",
+        "chapterCount": 5,
+        "fwBeatCount": 29,
+        "coveredChronologyEventCount": 71,
+        "validation": "passed-edit-framework-contract",
+        "nextStep": "material.recall",
+        "humanReviewDecision": "Keep as much valid material as possible; do not make editorial deletions on behalf of the user."
+      },
+      "review": {
+        "status": "confirmed",
+        "confirmedAt": "2026-07-08T04:07:58.238Z",
+        "confirmedBy": "user-review-feedback",
+        "note": "尽可能保留有效素材，不要做删减；删减交给用户决定。"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-material-recall-awaiting-review-20260708T041236Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-vlog-codex-20260708T030443Z",
+      "flowPlanHash": "578496958b5481c9f8c23aecd528a4c54cfced9e7f0d99a2ed7900b0d39f70e7",
+      "stepId": "material-recall-codex-v1",
+      "capabilityId": "material.recall",
+      "runner": "agent",
+      "status": "completed",
+      "startedAt": "2026-07-08T04:12:36.405Z",
+      "updatedAt": "2026-07-08T04:15:49.135Z",
+      "completedAt": "2026-07-08T04:12:36.405Z",
+      "inputRefs": [
+        "edits/<editId>/planning/flow-plan.json",
+        "edits/<editId>/planning/edit-framework.md",
+        "store/spans.json",
+        "store/assets.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/script/material-slots.json"
+      ],
+      "inputSnapshot": {
+        "source": "codex-generated-material-recall",
+        "projectId": "hebei-dragon-boat-first-taihang",
+        "chronologyStatus": "confirmed",
+        "chronologyEventCount": 71,
+        "spanCount": 848,
+        "chosenSpanCount": 848,
+        "frameworkHash": "289addf97ff2434105de184f360d7465a69a23cbbc8ee100dd53be752b239c7a",
+        "flowPlanHash": "578496958b5481c9f8c23aecd528a4c54cfced9e7f0d99a2ed7900b0d39f70e7",
+        "executionMode": "single bounded shard matching the sharded-agent day packing threshold",
+        "shardPacking": {
+          "base": "day",
+          "metric": "materialRefCount",
+          "maxPerShard": 2000,
+          "actualShardCount": 1,
+          "preserveOrder": true
+        },
+        "humanReviewPolicy": "尽可能保留有效素材，不做主动删减；删减交给用户决定。"
+      },
+      "outputPaths": [
+        "edits/main/script/material-slots.json"
+      ],
+      "summary": {
+        "artifact": "edits/main/script/material-slots.json",
+        "artifactHash": "ded2fe524edec28c0aae96deb2f27a3a7a94ad65f83a7ea29f2f605e5cd21ded",
+        "segmentCount": 30,
+        "slotCount": 30,
+        "availableSpanCount": 848,
+        "chosenSpanCount": 848,
+        "coveragePercent": 100,
+        "chronologyEventCount": 71,
+        "unassignedSpanCount": 21,
+        "speechProtectedAvailable": 439,
+        "speechProtectedDropped": 0,
+        "treatmentCount": 314,
+        "photoTreatmentCount": 188,
+        "mutedDriveTreatmentCount": 126,
+        "validation": "passed-material-slots-contract",
+        "nextStep": "human review material.recall, then resolve.media_sync",
+        "reviewPolicy": "No editorial deletion in recall; user decides cuts during review.",
+        "humanReviewDecision": "confirmed by user; proceed to resolve.media_sync"
+      },
+      "review": {
+        "status": "confirmed",
+        "confirmedAt": "2026-07-08T04:15:49.135Z",
+        "confirmedBy": "user",
+        "note": "用户确认 material.recall，推进 resolve.media_sync。"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-resolve-media-sync-20260708T041624Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-vlog-codex-20260708T030443Z",
+      "flowPlanHash": "578496958b5481c9f8c23aecd528a4c54cfced9e7f0d99a2ed7900b0d39f70e7",
+      "stepId": "resolve-media-sync-codex-v1",
+      "capabilityId": "resolve.media_sync",
+      "runner": "deterministic",
+      "status": "completed",
+      "startedAt": "2026-07-08T04:16:24.277Z",
+      "updatedAt": "2026-07-08T04:18:07.194Z",
+      "inputRefs": [
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json",
+        "config/project-brief.json"
+      ],
+      "outputRefs": [
+        "Resolve Media Pool: Kairos Project Media"
+      ],
+      "inputSnapshot": {
+        "source": "syncProjectResolveMedia",
+        "projectId": "hebei-dragon-boat-first-taihang",
+        "editId": "main",
+        "editRuleCategory": "travel-vlog",
+        "flowPlanHash": "578496958b5481c9f8c23aecd528a4c54cfced9e7f0d99a2ed7900b0d39f70e7",
+        "resolveProjectName": "端午河北之旅：此生初次入太行 [Edit]"
+      },
+      "outputPaths": [
+        "Resolve Media Pool: Kairos Project Media"
+      ],
+      "summary": {
+        "validation": "passed-resolve-media-sync",
+        "resolveProjectName": "端午河北之旅：此生初次入太行 [Edit]",
+        "namespace": "Kairos Project Media",
+        "hostSummary": {
+          "namespace": "Kairos Project Media",
+          "imported": 746,
+          "moved": 0,
+          "reused": 0,
+          "emptyFoldersDeleted": 0,
+          "eventFolderCount": 72,
+          "mediaItemCount": 746,
+          "chronologyEventFolderCount": 71,
+          "unassignedMaterialSlotFolderCount": 1,
+          "unassignedMaterialSlotMediaItemCount": 21
+        },
+        "nextStep": "timeline.generate"
+      },
+      "review": {
+        "status": "not_required"
+      },
+      "completedAt": "2026-07-08T04:16:54.132Z"
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-timeline-generate-20260708T041844Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-vlog-codex-20260708T030443Z",
+      "flowPlanHash": "578496958b5481c9f8c23aecd528a4c54cfced9e7f0d99a2ed7900b0d39f70e7",
+      "stepId": "timeline-generate-codex-v1",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "failed",
+      "startedAt": "2026-07-08T04:18:44.139Z",
+      "updatedAt": "2026-07-08T04:27:34.517Z",
+      "inputRefs": [
+        "DaVinci Resolve Media Pool",
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "Resolve timeline: Kairos Timelines/<editId> rough cut",
+        ".tmp/edit-flow/<editId>/timeline/current.json",
+        ".tmp/edit-flow/<editId>/timeline/current.srt",
+        "edits/resolve-project-map.json",
+        "edits/resolve-projects/<safe-project-key>/<Resolve项目名>.drp"
+      ],
+      "inputSnapshot": {
+        "source": "buildProjectTimeline",
+        "projectId": "hebei-dragon-boat-first-taihang",
+        "editId": "main",
+        "editRuleCategory": "travel-vlog",
+        "flowPlanHash": "578496958b5481c9f8c23aecd528a4c54cfced9e7f0d99a2ed7900b0d39f70e7",
+        "materialSlotsHash": "ded2fe524edec28c0aae96deb2f27a3a7a94ad65f83a7ea29f2f605e5cd21ded"
+      },
+      "outputPaths": [
+        "Resolve timeline: Kairos Timelines/main rough cut",
+        ".tmp/edit-flow/main/timeline/current.json",
+        ".tmp/edit-flow/main/timeline/current.srt"
+      ],
+      "summary": {
+        "validation": "failed-timeline-generate",
+        "code": "resolve_timeline_fps_mismatch",
+        "details": {
+          "code": "resolve_timeline_fps_mismatch",
+          "message": "Resolve rough-cut timeline frame rate or playback frame rate does not match Kairos runtime config.",
+          "details": {
+            "expectedFps": 30,
+            "actualFps": 30,
+            "actualPlaybackFps": 24,
+            "projectFps": 30,
+            "projectPlaybackFps": "24",
+            "timelineName": "Main [main]"
+          }
+        },
+        "stdout": "",
+        "stderr": "{\"code\": \"resolve_timeline_fps_mismatch\", \"message\": \"Resolve rough-cut timeline frame rate or playback frame rate does not match Kairos runtime config.\", \"details\": {\"expectedFps\": 30.0, \"actualFps\": 30.0, \"actualPlaybackFps\": 24.0, \"projectFps\": 30.0, \"projectPlaybackFps\": \"24\", \"timelineName\": \"Main [main]\"}}\n",
+        "runRecordSummaryPolicy": {
+          "summaryOnly": true
+        },
+        "blocker": "Resolve reports timelinePlaybackFrameRate=24 while Kairos runtime requires 30fps. Resolve 21 scripting returned false for Project/Timeline SetSetting(\"timelinePlaybackFrameRate\", \"30\") and common aliases/values.",
+        "manualUnblock": "Resolve 仍回读 Playback frame rate=24。请在 DaVinci Resolve UI 的 Project Settings > Master Settings 中把 Playback frame rate 改为 30 并保存；确认回读为 30 后才能重跑 timeline.generate。",
+        "retrySafe": "The failed empty Main [main] timeline was removed before retry; Media Pool sync remains completed.",
+        "probeSummary": {
+          "projectTimelineFrameRate": 30,
+          "projectPlaybackFrameRate": "24",
+          "timelinePlaybackSettable": false,
+          "videoMonitorFormatRestored": "UHD 2160p 30"
+        },
+        "lastRetryCheckAt": "2026-07-08T04:27:34.517Z",
+        "lastRetryCheckResult": "blocked-before-rerun",
+        "currentResolveSettings": {
+          "projectTimelineFrameRate": 30,
+          "projectPlaybackFrameRate": "24",
+          "projectVideoMonitorFormat": "UHD 2160p 30",
+          "currentTimeline": null
+        }
+      },
+      "review": {
+        "status": "not_required"
+      },
+      "completedAt": "2026-07-08T04:18:45.035Z",
+      "error": "Resolve rough-cut timeline frame rate or playback frame rate does not match Kairos runtime config."
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-timeline-generate-20260708T050552Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-vlog-codex-20260708T030443Z",
+      "flowPlanHash": "578496958b5481c9f8c23aecd528a4c54cfced9e7f0d99a2ed7900b0d39f70e7",
+      "stepId": "timeline-generate-codex-v1",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "failed",
+      "startedAt": "2026-07-08T05:05:52.740Z",
+      "updatedAt": "2026-07-08T05:05:56.002Z",
+      "inputRefs": [
+        "DaVinci Resolve Media Pool",
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "Resolve timeline: Kairos Timelines/<editId> rough cut",
+        ".tmp/edit-flow/<editId>/timeline/current.json",
+        ".tmp/edit-flow/<editId>/timeline/current.srt",
+        "edits/resolve-project-map.json",
+        "edits/resolve-projects/<safe-project-key>/<Resolve项目名>.drp"
+      ],
+      "inputSnapshot": {
+        "source": "buildProjectTimeline",
+        "projectId": "hebei-dragon-boat-first-taihang",
+        "editId": "main",
+        "editRuleCategory": "travel-vlog",
+        "flowPlanHash": "578496958b5481c9f8c23aecd528a4c54cfced9e7f0d99a2ed7900b0d39f70e7",
+        "materialSlotsHash": "ded2fe524edec28c0aae96deb2f27a3a7a94ad65f83a7ea29f2f605e5cd21ded",
+        "retryAfterResolvePlaybackFpsFix": true
+      },
+      "outputPaths": [
+        "Resolve timeline: Kairos Timelines/main rough cut",
+        ".tmp/edit-flow/main/timeline/current.json",
+        ".tmp/edit-flow/main/timeline/current.srt"
+      ],
+      "summary": {
+        "validation": "failed-timeline-generate",
+        "code": "resolve_rough_cut_source_range_mismatch",
+        "details": {
+          "code": "resolve_rough_cut_source_range_mismatch",
+          "message": "Resolve appended the wrong source range for rough-cut clip clip-00105.",
+          "details": {
+            "clipId": "clip-00105",
+            "assetId": "C2049_zve1_day1",
+            "sourceAbsolutePath": "/Volumes/Peely SSD/zve1/day1/C2049.mp4",
+            "sourceFps": 119.88,
+            "expectedStartFrame": 132,
+            "expectedEndFrame": 446,
+            "actualStartFrame": 131,
+            "actualEndFrame": 443,
+            "sourceInMs": 1100,
+            "sourceOutMs": 3720
+          }
+        },
+        "stdout": "",
+        "stderr": "{\"code\": \"resolve_rough_cut_source_range_mismatch\", \"message\": \"Resolve appended the wrong source range for rough-cut clip clip-00105.\", \"details\": {\"clipId\": \"clip-00105\", \"assetId\": \"C2049_zve1_day1\", \"sourceAbsolutePath\": \"/Volumes/Peely SSD/zve1/day1/C2049.mp4\", \"sourceFps\": 119.88, \"expectedStartFrame\": 132, \"expectedEndFrame\": 446, \"actualStartFrame\": 131, \"actualEndFrame\": 443, \"sourceInMs\": 1100.0, \"sourceOutMs\": 3720.0}}\n",
+        "runRecordSummaryPolicy": {
+          "summaryOnly": true
+        }
+      },
+      "review": {
+        "status": "not_required"
+      },
+      "completedAt": "2026-07-08T05:05:56.002Z",
+      "error": "Resolve appended the wrong source range for rough-cut clip clip-00105."
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-timeline-generate-20260708T050914Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-vlog-codex-20260708T030443Z",
+      "flowPlanHash": "578496958b5481c9f8c23aecd528a4c54cfced9e7f0d99a2ed7900b0d39f70e7",
+      "stepId": "timeline-generate-codex-v1",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "completed",
+      "startedAt": "2026-07-08T05:09:14.735Z",
+      "updatedAt": "2026-07-08T05:10:17.194Z",
+      "inputRefs": [
+        "DaVinci Resolve Media Pool",
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "Resolve timeline: Kairos Timelines/<editId> rough cut",
+        ".tmp/edit-flow/<editId>/timeline/current.json",
+        ".tmp/edit-flow/<editId>/timeline/current.srt",
+        "edits/resolve-project-map.json",
+        "edits/resolve-projects/<safe-project-key>/<Resolve项目名>.drp"
+      ],
+      "inputSnapshot": {
+        "source": "buildProjectTimeline",
+        "projectId": "hebei-dragon-boat-first-taihang",
+        "editId": "main",
+        "editRuleCategory": "travel-vlog",
+        "flowPlanHash": "578496958b5481c9f8c23aecd528a4c54cfced9e7f0d99a2ed7900b0d39f70e7",
+        "materialSlotsHash": "ded2fe524edec28c0aae96deb2f27a3a7a94ad65f83a7ea29f2f605e5cd21ded",
+        "retryAfterHighFpsToleranceFix": true
+      },
+      "outputPaths": [
+        "Resolve timeline: Main [main]",
+        ".tmp/edit-flow/main/timeline/current.json",
+        ".tmp/edit-flow/main/timeline/current.srt",
+        "edits/resolve-projects/Edit/端午河北之旅：此生初次入太行 [Edit].drp"
+      ],
+      "summary": {
+        "validation": "passed-timeline-generate",
+        "resolveProjectName": "端午河北之旅：此生初次入太行 [Edit]",
+        "timelineName": "Main [main]",
+        "clipCount": 848,
+        "subtitleCueCount": 1038,
+        "timelineAuditPath": ".tmp/edit-flow/main/timeline/current.json",
+        "subtitleSrtPath": ".tmp/edit-flow/main/timeline/current.srt",
+        "hostSummary": {
+          "namespace": "Kairos Project Media",
+          "timelineName": "Main [main]",
+          "clipCount": 848,
+          "mutedClipCount": 314,
+          "audioMuteAppliedCount": 126,
+          "audioGainAppliedCount": 0,
+          "audibleClipColoring": {
+            "color": "Orange",
+            "itemScope": "ordinary-video-and-linked-audio; linked-audio-only-when-video-has-visual-category-color",
+            "checked": 1065,
+            "colored": 1065,
+            "failed": 0
+          },
+          "visualClipColoring": {
+            "photo": {
+              "color": "Blue",
+              "itemScope": "video",
+              "checked": 188,
+              "colored": 188,
+              "failed": 0
+            },
+            "timelapse": {
+              "color": "Purple",
+              "itemScope": "video",
+              "checked": 1,
+              "colored": 1,
+              "failed": 0
+            }
+          },
+          "visualClipGrouping": {
+            "photo": {
+              "groupName": "Kairos Photos",
+              "itemScope": "video",
+              "checked": 188,
+              "assigned": 188,
+              "alreadyAssigned": 0,
+              "failed": 0,
+              "created": false
+            },
+            "timelapse": {
+              "groupName": "Kairos Timelapse",
+              "itemScope": "video",
+              "checked": 1,
+              "assigned": 1,
+              "alreadyAssigned": 0,
+              "failed": 0,
+              "created": true
+            }
+          },
+          "speedAppliedCount": 0,
+          "speedIgnoredCount": 115,
+          "timelineCreate": "native-api",
+          "speedStrategy": "ignored",
+          "syncSummary": {
+            "mode": "existing-media-pool",
+            "imported": 0,
+            "moved": 0,
+            "reused": 746
+          },
+          "sourceRangeValidation": {
+            "checked": 660,
+            "passed": 660,
+            "failed": 0,
+            "strategy": "direct-native-append",
+            "maxToleranceFrames": 4
+          },
+          "stillDurationValidation": {
+            "checked": 188,
+            "passed": 188,
+            "failed": 0,
+            "expectedMs": 1000
+          },
+          "clipsExternalized": true,
+          "clipsExternalizedCount": 848,
+          "clipsExternalizedReason": "runs/current.json stores summary-only timeline.generate records; full clip audit is in .tmp/edit-flow/<editId>/timeline/current.json."
+        },
+        "drpSnapshot": {
+          "snapshotPath": "edits/resolve-projects/Edit/端午河北之旅：此生初次入太行 [Edit].drp",
+          "latestPath": "edits/resolve-projects/Edit/端午河北之旅：此生初次入太行 [Edit].drp",
+          "retention": "latest-only",
+          "action": "timeline.generate",
+          "createdAt": "2026-07-08T05:09:35Z"
+        },
+        "nextStep": "resolve.lock_rough_cut",
+        "runRecordSummaryPolicy": {
+          "summaryOnly": true,
+          "externalizedArrays": [
+            "hostSummary.clips"
+          ]
+        }
+      },
+      "review": {
+        "status": "not_required"
+      },
+      "completedAt": "2026-07-08T05:09:35Z"
+    }
+  ]
+}

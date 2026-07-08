@@ -57,7 +57,7 @@ alwaysApply: true
 - Console 的“可启动 / 运行中 / 完成”只能来自真实 capability 和 live job
 - 任何 jobType 只要 runner 没接好，就不能在 capability 或 UI 上继续表现成正式可运行
 - stale progress 只能显示 cached / idle，不得伪装成 running
-- `timeline.generate` 处理照片时默认静帧时长为 `1000ms`；只有剪辑规则 / confirmed Flow Plan 或运行时 `timelineStillDurationMs` 明确覆盖时才改变。Resolve host 必须回读校验实际照片时长，不能把旧 `5s` 或 Resolve 偏好当作默认合同。Resolve rough cut 还必须写入并回读校验批处理 clip color：普通有声视频/linked audio 为 `Orange`，照片 video item 为 `Blue`，延时 video item 为 `Purple`；有声延时的 linked audio item 仍用 `Orange`。
+- `timeline.generate` 处理照片时默认静帧时长为 `1000ms`；只有剪辑规则 / confirmed Flow Plan 或运行时 `timelineStillDurationMs` 明确覆盖时才改变。Resolve host 必须回读校验实际照片时长，不能把旧 `5s` 或 Resolve 偏好当作默认合同。Resolve rough cut 还必须写入并回读校验批处理 clip color：照片 video item 为 `Blue`，延时 video item 为 `Purple`，行车 video item 为 `Brown`，航拍 video item 为 `Teal`；没有这些视觉分类颜色的普通有声 video item 为 `Orange`；剩余可听 linked audio item 仍用 `Orange`；航拍 linked audio 必须 disabled。
 
 ## ML Lifecycle Truth
 

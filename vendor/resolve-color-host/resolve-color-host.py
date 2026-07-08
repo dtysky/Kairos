@@ -2,6 +2,7 @@
 import argparse
 import hashlib
 import json
+import math
 import os
 import re
 import shutil
@@ -37,6 +38,8 @@ CEXPOSURE_SCENE_REASON_GROUP_TAGS = ("white-reference-underexposed",)
 CROUGH_CUT_AUDIBLE_CLIP_COLOR = "Orange"
 CROUGH_CUT_PHOTO_CLIP_COLOR = "Blue"
 CROUGH_CUT_TIMELAPSE_CLIP_COLOR = "Purple"
+CROUGH_CUT_DRIVE_CLIP_COLOR = "Brown"
+CROUGH_CUT_AERIAL_CLIP_COLOR = "Teal"
 CROUGH_CUT_PHOTO_COLOR_GROUP = "Kairos Photos"
 CROUGH_CUT_TIMELAPSE_COLOR_GROUP = "Kairos Timelapse"
 
@@ -593,6 +596,20 @@ def create_rough_cut_timeline(resolve, payload):
             "colored": 0,
             "failed": 0,
         },
+        "drive": {
+            "color": CROUGH_CUT_DRIVE_CLIP_COLOR,
+            "itemScope": "video",
+            "checked": 0,
+            "colored": 0,
+            "failed": 0,
+        },
+        "aerial": {
+            "color": CROUGH_CUT_AERIAL_CLIP_COLOR,
+            "itemScope": "video",
+            "checked": 0,
+            "colored": 0,
+            "failed": 0,
+        },
     }
     visual_clip_grouping = {
         "photo": {
@@ -662,7 +679,7 @@ def create_rough_cut_timeline(resolve, payload):
             if clip["assetKind"] == "photo":
                 validate_rough_cut_still_duration(item, clip, fps, payload.get("stillDurationMs"), still_duration_validation)
             else:
-                validate_rough_cut_source_range(item, media_pool_item, clip, source_range_validation)
+                validate_rough_cut_source_range(item, media_pool_item, clip, source_range_validation, fps)
         linked_items = collect_linked_timeline_items(video_items)
         audio_items = filter_timeline_items_by_track_type(linked_items, "audio")
         visual_clip_color = apply_rough_cut_visual_clip_color(video_items, clip, visual_clip_coloring)
@@ -755,7 +772,7 @@ def mark_existing_rough_cut_clip_colors(resolve, payload):
     if not clips:
         raise HostError(
             "resolve_rough_cut_clip_color_empty",
-            "mark_existing_rough_cut_clip_colors requires at least one photo or timelapse clip.",
+            "mark_existing_rough_cut_clip_colors requires at least one visual-category clip.",
         )
 
     project, current_project_before = load_existing_project(resolve, project_name)
@@ -790,10 +807,24 @@ def mark_existing_rough_cut_clip_colors(resolve, payload):
             "colored": 0,
             "failed": 0,
         },
+        "drive": {
+            "color": CROUGH_CUT_DRIVE_CLIP_COLOR,
+            "itemScope": "video",
+            "checked": 0,
+            "colored": 0,
+            "failed": 0,
+        },
+        "aerial": {
+            "color": CROUGH_CUT_AERIAL_CLIP_COLOR,
+            "itemScope": "video",
+            "checked": 0,
+            "colored": 0,
+            "failed": 0,
+        },
     }
     marked = []
     missing = []
-    category_counts = {"photo": 0, "timelapse": 0}
+    category_counts = {"photo": 0, "timelapse": 0, "drive": 0, "aerial": 0}
     for clip in clips:
         category = resolve_rough_cut_visual_clip_color_category(clip)
         if not category:
@@ -1223,20 +1254,22 @@ def resolve_expected_source_frame_range(media_pool_item, clip, timeline_fps):
         )
     return start_frame, end_frame, source_fps
 
-def validate_rough_cut_source_range(item, media_pool_item, clip, summary):
+def validate_rough_cut_source_range(item, media_pool_item, clip, summary, timeline_fps=None):
     expected_start, expected_end, source_fps = resolve_expected_source_frame_range(
         media_pool_item,
         clip,
-        parse_float(clip.get("fps")) or 30.0,
+        parse_float(timeline_fps) or parse_float(clip.get("fps")) or 30.0,
     )
     actual_start = parse_int(safe_call(item, "GetSourceStartFrame"))
     actual_end = parse_int(safe_call(item, "GetSourceEndFrame"))
+    tolerance = resolve_source_range_validation_tolerance(source_fps, timeline_fps)
     summary["checked"] = int(summary.get("checked") or 0) + 1
+    summary["maxToleranceFrames"] = max(int(summary.get("maxToleranceFrames") or 0), tolerance)
     if (
         actual_start is not None
         and actual_end is not None
-        and abs(actual_start - expected_start) <= 2
-        and abs(actual_end - expected_end) <= 2
+        and abs(actual_start - expected_start) <= tolerance
+        and abs(actual_end - expected_end) <= tolerance
     ):
         summary["passed"] = int(summary.get("passed") or 0) + 1
         return
@@ -1255,8 +1288,18 @@ def validate_rough_cut_source_range(item, media_pool_item, clip, summary):
             "actualEndFrame": actual_end,
             "sourceInMs": clip.get("sourceInMs"),
             "sourceOutMs": clip.get("sourceOutMs"),
+            "timelineFps": timeline_fps,
+            "toleranceFrames": tolerance,
         },
     )
+
+
+def resolve_source_range_validation_tolerance(source_fps, timeline_fps):
+    source = parse_float(source_fps)
+    timeline = parse_float(timeline_fps)
+    if source is not None and timeline is not None and source > 0 and timeline > 0:
+        return max(2, int(math.ceil(source / timeline)))
+    return 2
 
 
 def validate_rough_cut_still_duration(item, clip, timeline_fps, still_duration_ms, summary):
@@ -4005,8 +4048,13 @@ def normalize_rough_cut_clip_color_marker_clips(clips):
         semantic_kind = (stringify_signal_value(clip.get("semanticKind")) or "").lower()
         if not asset_kind:
             asset_kind = "photo" if content_kind == "photo" else "video"
-        if not span_type and "timelapse" in (content_kind, framework_class, semantic_kind):
-            span_type = "timelapse"
+        if not span_type:
+            if "timelapse" in (content_kind, framework_class, semantic_kind):
+                span_type = "timelapse"
+            elif "drive" in (content_kind, framework_class, semantic_kind):
+                span_type = "drive"
+            elif "aerial" in (content_kind, framework_class, semantic_kind):
+                span_type = "aerial"
         marker_clip = {
             "clipId": stringify_signal_value(clip.get("clipId")) or (f"clip-{clip_index:05d}" if clip_index is not None else None),
             "clipIndex": clip_index,
@@ -4269,6 +4317,10 @@ def resolve_rough_cut_visual_clip_color_category(clip):
         return "photo"
     if span_type == "timelapse":
         return "timelapse"
+    if span_type == "drive":
+        return "drive"
+    if span_type == "aerial":
+        return "aerial"
     return None
 
 

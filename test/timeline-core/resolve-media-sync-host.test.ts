@@ -293,6 +293,84 @@ print(json.dumps({
   };
 }
 
+async function inspectRoughCutSourceRangeValidation() {
+  const code = `
+import importlib.util
+import json
+import sys
+
+host_path = sys.argv[1]
+
+spec = importlib.util.spec_from_file_location("resolve_color_host", host_path)
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+
+class FakeMediaPoolItem:
+    def GetClipProperty(self, key=None):
+        props = {
+            "FPS": "119.88",
+            "Start": "0",
+            "End": "1559",
+            "File Path": "H:/media/C2049.mp4",
+        }
+        if key:
+            return props.get(key)
+        return props
+
+
+class FakeTimelineItem:
+    def GetSourceStartFrame(self):
+        return 131
+
+    def GetSourceEndFrame(self):
+        return 443
+
+
+clip = {
+    "clipId": "clip-00105",
+    "assetId": "C2049_zve1_day1",
+    "assetKind": "video",
+    "sourceAbsolutePath": "H:/media/C2049.mp4",
+    "timelineInMs": 0,
+    "timelineOutMs": 2620,
+    "sourceInMs": 1100,
+    "sourceOutMs": 3720,
+    "fps": 119.88,
+}
+
+summary = {"checked": 0, "passed": 0, "failed": 0}
+module.validate_rough_cut_source_range(FakeTimelineItem(), FakeMediaPoolItem(), clip, summary, 30)
+try:
+    module.validate_rough_cut_source_range(FakeTimelineItem(), FakeMediaPoolItem(), clip, {"checked": 0, "passed": 0, "failed": 0}, 119.88)
+    strict_payload = {"ok": True}
+except module.HostError as error:
+    strict_payload = error.to_payload()
+
+print(json.dumps({
+    "summary": summary,
+    "tolerance30": module.resolve_source_range_validation_tolerance(119.88, 30),
+    "toleranceNative": module.resolve_source_range_validation_tolerance(119.88, 119.88),
+    "strictPayload": strict_payload,
+}, ensure_ascii=False))
+`;
+
+  const { stdout } = await exec(
+    pythonPath,
+    ['-c', code, hostPath],
+    {
+      encoding: 'utf8',
+      windowsHide: true,
+    },
+  );
+  return JSON.parse(stdout) as {
+    summary: { checked: number; passed: number; failed: number; maxToleranceFrames: number };
+    tolerance30: number;
+    toleranceNative: number;
+    strictPayload: { code?: string; details?: { toleranceFrames?: number } };
+  };
+}
+
 async function inspectRoughCutClipColoring() {
   const code = `
 import importlib.util
@@ -326,6 +404,11 @@ muted_item = FakeTimelineItem()
 photo_video_item = FakeTimelineItem()
 timelapse_video_item = FakeTimelineItem()
 timelapse_audio_item = FakeTimelineItem()
+drive_video_item = FakeTimelineItem()
+drive_audio_item = FakeTimelineItem()
+muted_drive_video_item = FakeTimelineItem()
+aerial_video_item = FakeTimelineItem()
+aerial_audio_item = FakeTimelineItem()
 audible_summary = {
     "color": "Orange",
     "itemScope": "ordinary-video-and-linked-audio; linked-audio-only-when-video-has-visual-category-color",
@@ -336,6 +419,8 @@ audible_summary = {
 visual_summary = {
     "photo": {"color": "Blue", "itemScope": "video", "checked": 0, "colored": 0, "failed": 0},
     "timelapse": {"color": "Purple", "itemScope": "video", "checked": 0, "colored": 0, "failed": 0},
+    "drive": {"color": "Brown", "itemScope": "video", "checked": 0, "colored": 0, "failed": 0},
+    "aerial": {"color": "Teal", "itemScope": "video", "checked": 0, "colored": 0, "failed": 0},
 }
 
 module.apply_rough_cut_audible_clip_color([ordinary_video_item, ordinary_audio_item], {
@@ -370,6 +455,41 @@ module.apply_rough_cut_audible_clip_color([timelapse_audio_item], {
     "spanType": "timelapse",
     "muteAudio": False,
 }, audible_summary)
+module.apply_rough_cut_visual_clip_color([drive_video_item], {
+    "clipId": "clip-00005",
+    "assetId": "asset-5",
+    "assetKind": "video",
+    "spanType": "drive",
+    "muteAudio": False,
+}, visual_summary)
+module.apply_rough_cut_audible_clip_color([drive_audio_item], {
+    "clipId": "clip-00005",
+    "assetId": "asset-5",
+    "assetKind": "video",
+    "spanType": "drive",
+    "muteAudio": False,
+}, audible_summary)
+module.apply_rough_cut_visual_clip_color([muted_drive_video_item], {
+    "clipId": "clip-00006",
+    "assetId": "asset-6",
+    "assetKind": "video",
+    "spanType": "drive",
+    "muteAudio": True,
+}, visual_summary)
+module.apply_rough_cut_visual_clip_color([aerial_video_item], {
+    "clipId": "clip-00007",
+    "assetId": "asset-7",
+    "assetKind": "video",
+    "spanType": "aerial",
+    "muteAudio": False,
+}, visual_summary)
+module.apply_rough_cut_audible_clip_color([aerial_audio_item], {
+    "clipId": "clip-00007",
+    "assetId": "asset-7",
+    "assetKind": "video",
+    "spanType": "aerial",
+    "muteAudio": False,
+}, audible_summary)
 
 print(json.dumps({
     "audibleSummary": audible_summary,
@@ -380,12 +500,22 @@ print(json.dumps({
     "photoVideoColor": photo_video_item.GetClipColor(),
     "timelapseVideoColor": timelapse_video_item.GetClipColor(),
     "timelapseAudioColor": timelapse_audio_item.GetClipColor(),
+    "driveVideoColor": drive_video_item.GetClipColor(),
+    "driveAudioColor": drive_audio_item.GetClipColor(),
+    "mutedDriveVideoColor": muted_drive_video_item.GetClipColor(),
+    "aerialVideoColor": aerial_video_item.GetClipColor(),
+    "aerialAudioColor": aerial_audio_item.GetClipColor(),
     "ordinaryVideoCalls": ordinary_video_item.calls,
     "ordinaryAudioCalls": ordinary_audio_item.calls,
     "mutedCalls": muted_item.calls,
     "photoVideoCalls": photo_video_item.calls,
     "timelapseVideoCalls": timelapse_video_item.calls,
     "timelapseAudioCalls": timelapse_audio_item.calls,
+    "driveVideoCalls": drive_video_item.calls,
+    "driveAudioCalls": drive_audio_item.calls,
+    "mutedDriveVideoCalls": muted_drive_video_item.calls,
+    "aerialVideoCalls": aerial_video_item.calls,
+    "aerialAudioCalls": aerial_audio_item.calls,
 }, ensure_ascii=False))
 `;
 
@@ -418,12 +548,22 @@ print(json.dumps({
     photoVideoColor: string;
     timelapseVideoColor: string;
     timelapseAudioColor: string;
+    driveVideoColor: string;
+    driveAudioColor: string;
+    mutedDriveVideoColor: string;
+    aerialVideoColor: string;
+    aerialAudioColor: string;
     ordinaryVideoCalls: unknown[];
     ordinaryAudioCalls: unknown[];
     mutedCalls: unknown[];
     photoVideoCalls: unknown[];
     timelapseVideoCalls: unknown[];
     timelapseAudioCalls: unknown[];
+    driveVideoCalls: unknown[];
+    driveAudioCalls: unknown[];
+    mutedDriveVideoCalls: unknown[];
+    aerialVideoCalls: unknown[];
+    aerialAudioCalls: unknown[];
   };
 }
 
@@ -517,7 +657,7 @@ ordinary_group = module.apply_rough_cut_visual_clip_group(
         "clipId": "clip-00001",
         "assetId": "asset-ordinary",
         "assetKind": "video",
-        "spanType": "drive",
+        "spanType": "broll",
     },
     project,
     existing_groups_by_name,
@@ -677,7 +817,8 @@ class FakeTimeline:
 
 photo_item = FakeTimelineItem("clip-00164 photo DSC0001", "media/DSC0001.jpg", 10)
 timelapse_item = FakeTimelineItem("TL0001.mp4", "media/TL0001.mp4", 40)
-ordinary_item = FakeTimelineItem("clip-00166 ordinary C0001", "media/C0001.mp4", 70)
+drive_item = FakeTimelineItem("clip-00166 drive C0001", "media/C0001.mp4", 70)
+aerial_item = FakeTimelineItem("clip-00167 aerial DJI_0001", "media/DJI_0001.mp4", 100)
 clips = module.normalize_rough_cut_clip_color_marker_clips([
     {
         "index": 1,
@@ -702,12 +843,21 @@ clips = module.normalize_rough_cut_clip_color_marker_clips([
         "sourceStem": "C0001",
         "timelineInMs": 3000,
     },
+    {
+        "index": 4,
+        "contentKind": "aerial",
+        "sourceFilePath": "media/DJI_0001.mp4",
+        "sourceStem": "DJI_0001",
+        "timelineInMs": 4000,
+    },
 ])
-entries = module.collect_timeline_video_color_marker_entries(FakeTimeline([photo_item, timelapse_item, ordinary_item]))
+entries = module.collect_timeline_video_color_marker_entries(FakeTimeline([photo_item, timelapse_item, drive_item, aerial_item]))
 state = module.build_timeline_color_marker_match_state(clips, entries)
 summary = {
     "photo": {"color": "Blue", "itemScope": "video", "checked": 0, "colored": 0, "failed": 0},
     "timelapse": {"color": "Purple", "itemScope": "video", "checked": 0, "colored": 0, "failed": 0},
+    "drive": {"color": "Brown", "itemScope": "video", "checked": 0, "colored": 0, "failed": 0},
+    "aerial": {"color": "Teal", "itemScope": "video", "checked": 0, "colored": 0, "failed": 0},
 }
 marked = []
 for clip in clips:
@@ -721,10 +871,12 @@ print(json.dumps({
     "summary": summary,
     "photoColor": photo_item.GetClipColor(),
     "timelapseColor": timelapse_item.GetClipColor(),
-    "ordinaryColor": ordinary_item.GetClipColor(),
+    "driveColor": drive_item.GetClipColor(),
+    "aerialColor": aerial_item.GetClipColor(),
     "photoCalls": photo_item.calls,
     "timelapseCalls": timelapse_item.calls,
-    "ordinaryCalls": ordinary_item.calls,
+    "driveCalls": drive_item.calls,
+    "aerialCalls": aerial_item.calls,
 }, ensure_ascii=False))
 `;
 
@@ -748,10 +900,12 @@ print(json.dumps({
     }>;
     photoColor: string;
     timelapseColor: string;
-    ordinaryColor: string;
+    driveColor: string;
+    aerialColor: string;
     photoCalls: unknown[];
     timelapseCalls: unknown[];
-    ordinaryCalls: unknown[];
+    driveCalls: unknown[];
+    aerialCalls: unknown[];
   };
 }
 
@@ -856,6 +1010,21 @@ describe('Resolve rough-cut host source ranges', () => {
     expect(info.endFrame).toBe(90);
     expect(info.keys).toEqual(['endFrame', 'mediaPoolItem', 'recordFrame', 'startFrame', 'trackIndex']);
   });
+
+  it('allows one timeline frame of high-fps source quantization when validating Resolve appends', async () => {
+    const result = await inspectRoughCutSourceRangeValidation();
+
+    expect(result.tolerance30).toBe(4);
+    expect(result.toleranceNative).toBe(2);
+    expect(result.summary).toEqual({
+      checked: 1,
+      passed: 1,
+      failed: 0,
+      maxToleranceFrames: 4,
+    });
+    expect(result.strictPayload.code).toBe('resolve_rough_cut_source_range_mismatch');
+    expect(result.strictPayload.details?.toleranceFrames).toBe(2);
+  });
 });
 
 describe('Resolve rough-cut timeline settings', () => {
@@ -924,14 +1093,14 @@ except module.HostError as error:
 });
 
 describe('Resolve rough-cut clip color marking', () => {
-  it('colors audible, photo, and timelapse items with separate batch colors', async () => {
+  it('colors audible and visual-category items with separate batch colors', async () => {
     const result = await inspectRoughCutClipColoring();
 
     expect(result.audibleSummary).toEqual({
       color: 'Orange',
       itemScope: 'ordinary-video-and-linked-audio; linked-audio-only-when-video-has-visual-category-color',
-      checked: 3,
-      colored: 3,
+      checked: 5,
+      colored: 5,
       failed: 0,
     });
     expect(result.visualSummary).toMatchObject({
@@ -949,6 +1118,20 @@ describe('Resolve rough-cut clip color marking', () => {
         colored: 1,
         failed: 0,
       },
+      drive: {
+        color: 'Brown',
+        itemScope: 'video',
+        checked: 2,
+        colored: 2,
+        failed: 0,
+      },
+      aerial: {
+        color: 'Teal',
+        itemScope: 'video',
+        checked: 1,
+        colored: 1,
+        failed: 0,
+      },
     });
     expect(result.ordinaryVideoColor).toBe('Orange');
     expect(result.ordinaryAudioColor).toBe('Orange');
@@ -956,12 +1139,22 @@ describe('Resolve rough-cut clip color marking', () => {
     expect(result.photoVideoColor).toBe('Blue');
     expect(result.timelapseVideoColor).toBe('Purple');
     expect(result.timelapseAudioColor).toBe('Orange');
+    expect(result.driveVideoColor).toBe('Brown');
+    expect(result.driveAudioColor).toBe('Orange');
+    expect(result.mutedDriveVideoColor).toBe('Brown');
+    expect(result.aerialVideoColor).toBe('Teal');
+    expect(result.aerialAudioColor).toBe('Orange');
     expect(result.ordinaryVideoCalls).toEqual([['SetClipColor', 'Orange']]);
     expect(result.ordinaryAudioCalls).toEqual([['SetClipColor', 'Orange']]);
     expect(result.mutedCalls).toEqual([]);
     expect(result.photoVideoCalls).toEqual([['SetClipColor', 'Blue']]);
     expect(result.timelapseVideoCalls).toEqual([['SetClipColor', 'Purple']]);
     expect(result.timelapseAudioCalls).toEqual([['SetClipColor', 'Orange']]);
+    expect(result.driveVideoCalls).toEqual([['SetClipColor', 'Brown']]);
+    expect(result.driveAudioCalls).toEqual([['SetClipColor', 'Orange']]);
+    expect(result.mutedDriveVideoCalls).toEqual([['SetClipColor', 'Brown']]);
+    expect(result.aerialVideoCalls).toEqual([['SetClipColor', 'Teal']]);
+    expect(result.aerialAudioCalls).toEqual([['SetClipColor', 'Orange']]);
   });
 
   it('creates and assigns photo and timelapse Color Groups for rough-cut batch effects', async () => {
@@ -1000,21 +1193,27 @@ describe('Resolve rough-cut clip color marking', () => {
     expect(result.alreadyAssignedGroup).toBe('Kairos Timelapse');
   });
 
-  it('matches existing timeline photo and timelapse items without recoloring ordinary video', async () => {
+  it('matches existing timeline visual-category items', async () => {
     const result = await inspectExistingRoughCutClipColorMatching();
 
-    expect(result.normalizedCount).toBe(2);
+    expect(result.normalizedCount).toBe(4);
     expect(result.marked).toEqual([
       { clipIndex: 1, method: 'resolveNameClipId', color: 'Blue' },
       { clipIndex: 2, method: 'sourceAbsolutePath', color: 'Purple' },
+      { clipIndex: 3, method: 'sourceAbsolutePath', color: 'Brown' },
+      { clipIndex: 4, method: 'sourceAbsolutePath', color: 'Teal' },
     ]);
     expect(result.summary.photo).toMatchObject({ checked: 1, colored: 1, failed: 0 });
     expect(result.summary.timelapse).toMatchObject({ checked: 1, colored: 1, failed: 0 });
+    expect(result.summary.drive).toMatchObject({ checked: 1, colored: 1, failed: 0 });
+    expect(result.summary.aerial).toMatchObject({ checked: 1, colored: 1, failed: 0 });
     expect(result.photoColor).toBe('Blue');
     expect(result.timelapseColor).toBe('Purple');
-    expect(result.ordinaryColor).toBe('');
+    expect(result.driveColor).toBe('Brown');
+    expect(result.aerialColor).toBe('Teal');
     expect(result.photoCalls).toEqual([['SetClipColor', 'Blue']]);
     expect(result.timelapseCalls).toEqual([['SetClipColor', 'Purple']]);
-    expect(result.ordinaryCalls).toEqual([]);
+    expect(result.driveCalls).toEqual([['SetClipColor', 'Brown']]);
+    expect(result.aerialCalls).toEqual([['SetClipColor', 'Teal']]);
   });
 });

@@ -1,9 +1,10 @@
 {
   "schemaVersion": "2.0",
-  "status": "draft",
-  "generatedAt": "2026-07-07T16:34:31.884Z",
-  "updatedAt": "2026-07-07T16:34:31.884Z",
-  "inputsHash": "df1f43fa1214390991af4cfd8741b7c5c7eb4670c8fe110a46e15e0cd4bceb3a",
+  "status": "confirmed",
+  "generatedAt": "2026-07-08T03:01:10.335Z",
+  "updatedAt": "2026-07-08T03:03:58.229Z",
+  "confirmedAt": "2026-07-08T03:03:58.229Z",
+  "inputsHash": "8bec59848d5a8cc345d92baffef5b71d69c325c17c78c13669c8a0e6b28f12e5",
   "assetIndex": [
     {
       "assetId": "C1976_zve1_day1",
@@ -3018,7 +3019,7 @@
     {
       "id": "route-b956bbb7a898",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：河北省，石家庄市，正定县，新城铺镇 · 机场北路",
       "summary": "第一人称行车 / 车内驾驶舱 / 夜晚行车 / 有口播语音 / 夜间赶路途中 / G107 国道 / 导航地图 / A person is driving a car at night, with the dashboard and a phone displaying a map illuminated. / 坡往G 10 7方向过去大概20多分钟 / 无口播语音 / 车内仪表盘 / 行车记录 / A driver is seen ...",
       "startAt": "2026-06-17T15:52:01.000Z",
@@ -3036,7 +3037,7 @@
     {
       "id": "event-60173b3b32fc",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "酒店入住体验",
       "summary": "固定机位观察 / 酒店走廊 / 室内灯光 / 有口播语音 / 酒店入住体验 / 空旷走廊 / 蓝色箭头 / A long, empty indoor corridor with white tiled floors featuring blue directional arrows. Glass storefronts line both sides, and a wooden table is visible on the righ...",
       "startAt": "2026-06-17T16:19:53.220Z",
@@ -3083,7 +3084,7 @@
     {
       "id": "route-5993984c90ae",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：河北省，石家庄市，长安区，高营镇 · 恒大御景半岛2期 → 河北省，石家庄市，长安区，育才街道 · 华北制药集团有限责任公司",
       "summary": "第一人称行车 / 城市施工路段 / 阴天 / 无口播语音 / 现代城区穿行 / 宽阔道路 / 建筑起重机 / A series of driving shots through a modern urban area with ongoing construction. The footage captures wide roads, tall residential and commercial buildings, and act...",
       "startAt": "2026-06-18T02:17:03.000Z",
@@ -3200,7 +3201,7 @@
     {
       "id": "route-fe977ffa64ae",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：河北省，石家庄市，长安区，广安街道 · 荣盛华府B区 → 河北省，石家庄市，长安区，建北街道 · 石家庄清平苑养老服务有限公司",
       "summary": "第一人称行车 / 城市街道 / 阴天 / 无口播语音 / 城市穿行 / 多车道交通 / 高楼林立 / A series of driving shots through an urban environment, featuring multiple lanes of traffic, tall buildings, and road infrastructure such as overpasses and street signs...",
       "startAt": "2026-06-18T04:31:53.000Z",
@@ -3243,7 +3244,7 @@
     {
       "id": "route-b76decd19ba5",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：河北省，石家庄市，裕华区，建通街道 · 建通街出口(南二环西路东向) → 河北省，石家庄市，井陉矿区，横涧乡 · 河北产教园项目",
       "summary": "第一人称行车 / 城市多车道道路 / 阴天 / 无口播语音 / 城市道路行驶 / 隔音屏障 / 交通拥堵 / A series of frames showing a vehicle driving on a multi-lane urban road under overcast skies. The left side features a sound barrier wall, while the right side has ...",
       "startAt": "2026-06-18T08:37:46.000Z",
@@ -3300,7 +3301,7 @@
     {
       "id": "route-464f8659ffff",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：河北省，石家庄市，井陉矿区，横涧乡 · 石家庄市矿区文化休闲广场 → 河北省，石家庄市，井陉矿区，凤山镇 · 段家楼景区-宪兵楼",
       "summary": "第一人称行车 / 城市街道 / 天气光线不明 / 无口播语音 / 城市道路行驶 / 树荫街道 / 行人车辆 / A series of driving shots along a tree-lined urban road with light traffic, pedestrians, and buildings visible on both sides. / 工业区停车场 / 雨天 / 驶入废弃矿区 / 湿滑路面 / 工业建筑 ...",
       "startAt": "2026-06-18T10:25:22.000Z",
@@ -3394,7 +3395,7 @@
     {
       "id": "route-3622a3e98a21",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：河北省，石家庄市，井陉矿区，凤山镇 · 特来电汽车充电站(井陉矿区火车头广场充电站) → 河北省，保定市，涞源县，白石山镇 · 白石山花海",
       "summary": "第一人称行车 / 树荫道路 / 黄昏 / 无口播语音 / 会车等待 / 道路转弯 / 路灯照明 / A point-of-view shot from a moving vehicle traveling down a tree-lined road at dusk. The scene transitions from a straight road with oncoming headlights to a curved road...",
       "startAt": "2026-06-18T12:09:51.000Z",
@@ -3452,7 +3453,7 @@
     {
       "id": "route-d18c48453f68",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：河北省，保定市，涞源县，白石山镇 · 涞源罗花农家院 → 河北省，保定市，涞源县，白石山镇 · 白石山花海",
       "summary": "第一人称行车 / 山路 / 雾天 / 无口播语音 / 远眺山景 / 湿滑道路 / 红灯笼 / A wet road with red lanterns on streetlights, trees on both sides, and a mountain in the distance under foggy weather.",
       "startAt": "2026-06-19T00:53:43.312Z",
@@ -3502,7 +3503,7 @@
     {
       "id": "route-4355c0095018",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：河北省，保定市，涞源县，白石山镇 · 悦伟农家院 → 河北省，保定市，涞源县，白石山镇 · 大草滩村",
       "summary": "第一人称行车 / 乡村街道 / 雨天 / 无口播语音 / 雨中行车 / 传统建筑 / 红灯笼 / A point-of-view driving sequence along a wet, two-lane road in a rural Chinese town. The footage captures the journey from a vehicle, showing other cars on the road, trad...",
       "startAt": "2026-06-19T04:43:19.000Z",
@@ -3542,7 +3543,7 @@
     {
       "id": "route-31bcc1ef1fe1",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：河北省，保定市，易县，紫荆关镇 · 紫荆关出口(G9511涞涞高速东向) → 河北省，保定市，易县，紫荆关镇 · 孙家庄",
       "summary": "第一人称行车 / 高速公路 / 天气光线不明 / 无口播语音 / 车辆排队缴费 / 高速/收费站/群山 / A point-of-view shot from inside a car driving on a highway towards a toll gate. The road is flanked by mountains and greenery. Several cars are visible ahead, appro...",
       "startAt": "2026-06-19T06:34:15.000Z",
@@ -3648,7 +3649,7 @@
     {
       "id": "route-f126e069a22d",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：河北省，保定市，易县，安格庄乡 · 恋乡·太行水镇 → 河北省，保定市，徐水区，大王店镇 · 保定市建华商品混凝土有限公司",
       "summary": "第一人称行车 / 乡村道路 / 阴天 / 无口播语音 / 乡村道路行车 / 车辆行驶 / 行人路边行走 / A series of driving shots on a rural road with mountains in the background. The footage shows cars driving, parked cars, and pedestrians walking on the side of the r...",
       "startAt": "2026-06-19T11:15:13.000Z",
@@ -3697,7 +3698,7 @@
     {
       "id": "route-6d39cff7463e",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：河北省，保定市，满城区，贤台乡 · 朝阳首府澜园 → 河北省，保定市，竞秀区，保定国家高新区 · 保定飞凌嵌入式技术有限公司",
       "summary": "第一人称行车 / 多车道公路 / 夜晚 / 无口播语音 / 夜间行车途中 / 夜间行车 / 多车同行 / Nighttime driving footage on a multi-lane road with streetlights illuminating the scene. Several cars are visible ahead, including a white truck and sedans. The road ...",
       "startAt": "2026-06-19T12:52:20.000Z",
@@ -3734,7 +3735,7 @@
     {
       "id": "event-869129bdaab6",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "北方城市晨景",
       "summary": "固定机位观察 / 城市街道 / 天气光线不明 / 有口播语音 / 北方城市晨景 / 空气通透 / 停车场 / A street scene with a white car parked on the left, a black car on the right, and several scooters in the middle. / 这个早上八点的保定就是一个平平无奇的北方城市 但是空气很通透比石家庄那边要通透多了",
       "startAt": "2026-06-20T00:27:04.020Z",
@@ -3747,8 +3748,8 @@
     {
       "id": "event-451c4461334c",
       "kind": "event",
-      "reviewStatus": "pending",
-      "title": "探访长城老家",
+      "reviewStatus": "confirmed",
+      "title": "探访长城4S店",
       "summary": "固定机位观察 / 4S 店外景 / 天气光线不明 / 有口播语音 / 探访长城老家 / 坦克 4S 店 / 蓝色横幅 / A car dealership exterior with blue banners, parked cars, and a glass showroom entrance. / 大早上来了长城老家的4 S店看一下 / 鸿蒙之行探访 / 交通锥 / A black sedan is parked in front...",
       "startAt": "2026-06-20T00:40:52.640Z",
       "endAt": "2026-06-20T00:41:58.880Z",
@@ -3777,7 +3778,7 @@
     {
       "id": "route-a053159e2e33",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：河北省，保定市，莲池区，五四路街道 · 邢台银行(保定恒祥支行) → 河北省，保定市，雄县，朱各庄镇 · 北涞河北(公交站)",
       "summary": "第一人称行车 / 湿滑山路 / 天气光线不明 / 有口播语音 / 感叹雪车造型 / 保定 / 洒雪车 / A green and white road maintenance truck is driving on a wet road, with a white car to its right and another white car in the left lane. / 我靠 前面保定的这个洒雪车它的prof ile居然是月...",
       "startAt": "2026-06-20T02:05:48.020Z",
@@ -3802,7 +3803,7 @@
     {
       "id": "event-95e19654955b",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "油价讨论现场",
       "summary": "手持自拍口播 / 加油站内部 / 晴天 / 有口播语音 / 油价讨论现场 / E95 汽油 / 价格显示 / A view from inside a car at a gas station, showing the side mirror and a fuel pump displaying E95 gasoline prices. / 一春起游这幺明目张胆的写在这里 行吧 看看多少钱 / 户外路边 / 油价对比分析 / 卷发男子...",
       "startAt": "2026-06-20T03:16:38.040Z",
@@ -3817,7 +3818,7 @@
     {
       "id": "route-75e06fb10a74",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：河北省，廊坊市，安次区，东沽港镇 · G18荣乌高速 → 河北省，唐山市，丰南区，振兴街道 · 汉沽北互通立交",
       "summary": "第一人称行车 / 高速公路 / 阴天 / 无口播语音 / 天津欢迎路牌 / 绿色指示牌 / 阴天天空 / A car drives on a highway under an overcast sky, passing a green sign that reads 'Welcome to Tianjin'. / 有口播语音 / 抵达天津卫 / 黑色轿车 / 红色卡车 / A car drives on a highway with ...",
       "startAt": "2026-06-20T03:59:40.760Z",
@@ -3848,7 +3849,7 @@
     {
       "id": "event-eeaed4c0bcd9",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "航拍视角",
       "summary": "环境远景 / 田野远景 / 阴天 / 无口播语音 / 农田树列观察 / 绿色作物 / 远处树林 / A row of tall, dark green trees stands in the distance behind a field of green crops under a grey sky. / 航拍俯瞰 / 乡村公路 / 航拍视角 / 田野 / 车辆 / Aerial view of a highway running ...",
       "startAt": "2026-06-20T05:25:25.000Z",
@@ -3885,7 +3886,7 @@
     {
       "id": "event-61be7ec50f06",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "女子行走展示",
       "summary": "固定机位观察 / 停车场 / 天气光线不明 / 无口播语音 / 女子行走展示 / 绿色连帽衫 / 粉色手提包 / A woman in a green hoodie and blue skirt walks across a parking lot holding a hat and a pink bag.",
       "startAt": "2026-06-20T05:51:06.000Z",
@@ -3898,7 +3899,7 @@
     {
       "id": "route-9897b2ed32c6",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：河北省，唐山市，丰南区，黄各庄镇 · 小军汽车修理 → 河北省，唐山市，路南区，永红桥街道 · 逸境佳苑",
       "summary": "第一人称行车 / 高速公路 / 天气光线不明 / 有口播语音 / 大车密集行车 / 刀片超车 / 唐山高速 / A large truck with a covered cargo is driving on the right lane of a highway, with trees and a green fence on the left side. / 我靠感觉唐山这里面的高速 这个大车好多而且他们不守规矩老是瞎变道吓人了还...",
       "startAt": "2026-06-20T06:06:03.180Z",
@@ -4011,7 +4012,7 @@
     {
       "id": "route-44c00796b0f8",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：河北省，唐山市，开平区，开平镇 · 老郭板面 → 河北省，唐山市，丰润区，常庄镇",
       "summary": "第一人称行车 / 郊区道路 / 晴天 / 无口播语音 / 城市道路行驶 / 白色面包车 / 加油站 / A series of driving shots along a multi-lane road in a suburban area. The footage captures a white van and SUV driving ahead, passing by a gas station, commercial buil...",
       "startAt": "2026-06-20T08:24:43.000Z",
@@ -4028,7 +4029,7 @@
     {
       "id": "event-d53ff0673a40",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "服务区用餐休息",
       "summary": "固定机位观察 / 兰州服务区停车场 / 晴天 / 有口播语音 / 服务区用餐休息 / 肯德基门店外观 / 停车场车辆 / A KFC restaurant building with a parking lot containing several cars, including a white SUV and a white sedan. / 兰州服务区 吃个饭这里还有肯德基挂好的 / 超市内部 / 室内灯光 / 店内环境展示 / ...",
       "startAt": "2026-06-20T08:55:07.080Z",
@@ -4042,7 +4043,7 @@
     {
       "id": "route-fe2455e022cd",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：河北省，唐山市，滦州市，油榨镇 · 贾营村 → 河北省，秦皇岛市，海港区，海滨路街道 · 秦皇岛市玻璃博物馆",
       "summary": "第一人称行车 / 高速公路 / 晴天 / 无口播语音 / 高速路段行驶 / 多车道公路 / 绿树护栏 / A point-of-view shot from a vehicle driving on a multi-lane highway. The road is flanked by dense green trees and green guardrails on both sides. The sky is clear and...",
       "startAt": "2026-06-20T10:11:33.000Z",
@@ -4106,7 +4107,7 @@
     {
       "id": "route-6819f8f8ea93",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：河北省，秦皇岛市，海港区，海滨路街道 · 秦皇岛金海粮油工业有限公司 → 河北省，秦皇岛市，昌黎县，团林管理处 · 潮河小学",
       "summary": "第一人称行车 / 车内 / 夜晚 / 有口播语音 / 雾天行车临时停车 / 夜间行车 / 雾天 / A night view from inside a car shows a bright streetlight and distant red taillights on a dark road. / 停了吧停了吧它那个雾没除掉 / 多车道公路 / 无口播语音 / 夜间行车口播 / 绿灯通行 / 车辆前行 / Nighttime d...",
       "startAt": "2026-06-20T13:15:58.780Z",
@@ -4277,7 +4278,7 @@
     {
       "id": "route-fc0373609659",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：河北省，秦皇岛市，昌黎县，团林管理处 → 河北省，秦皇岛市，昌黎县，团林管理处 · 秦皇岛江鹏水产渔需药店",
       "summary": "第一人称行车 / 林荫公路 / 晴天 / 无口播语音 / 前方车辆行驶 / 两车道道路 / 绿树成荫 / A view from a moving vehicle traveling down a two-lane road surrounded by lush green trees. A white box truck and a black SUV are driving ahead in the same direction....",
       "startAt": "2026-06-21T02:20:45.000Z",
@@ -4326,7 +4327,7 @@
     {
       "id": "route-ba7bc2eb0f17",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：河北省，秦皇岛市，昌黎县，大蒲河管理处 · 机场快速路 → 河北省，唐山市，丰南区，黑沿子镇 · 服务区停车场(建设中)",
       "summary": "第一人称行车 / 郊区道路 / 天气光线不明 / 有口播语音 / 郊区冷清路况观察 / 多车道行驶 / 减速过灯 / A vehicle drives on a multi-lane road with trees lining both sides and a blue overhead sign visible ahead. / 建议走左侧第二车道轻柔减速可不停车过灯感觉青黄岛这边 可能这边阿纳亚这边这边是已经 这边是郊区吧就特别...",
       "startAt": "2026-06-21T05:17:40.000Z",
@@ -4350,7 +4351,7 @@
     {
       "id": "event-4dd247d5d10a",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "停车加油休息",
       "summary": "固定机位观察 / 加油站服务区 / 天气光线不明 / 有口播语音 / 停车加油休息 / 红色卡车 / 白色 SUV / A gas station with a red truck and a white SUV parked under the canopy, and a building with a uSmile sign on the right. / 来这个地方驾个游这边 8块4 95 然后臭臭的 这旁边好多风车呀感觉很震撼",
       "startAt": "2026-06-21T07:59:07.380Z",
@@ -4363,7 +4364,7 @@
     {
       "id": "route-7a0c2f09a8d9",
       "kind": "route",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "行车：河北省，唐山市，丰南区，黑沿子镇 → 天津市，河东区，大王庄街道 · 天津邮政大楼",
       "summary": "第一人称行车 / 高速公路上 / 阴天 / 无口播语音 / 高速行车途中 / 风力发电机 / 绿色护栏 / A continuous driving sequence along a multi-lane highway under an overcast sky. The road is flanked by green guardrails and numerous large wind turbines visible in t...",
       "startAt": "2026-06-21T08:09:19.000Z",
@@ -4599,7 +4600,7 @@
     {
       "id": "event-b51310e77197",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "飞机机翼视角",
       "summary": "航拍俯瞰 / 云海之上 / 阴天 / 无口播语音 / 飞机机翼视角 / 云海翻腾 / 云层下方 / A view from an airplane window shows the wing and engine above a sea of clouds under a cloudy sky.",
       "startAt": "2026-06-22T11:47:24.000Z",
@@ -4612,7 +4613,7 @@
     {
       "id": "event-b5fba23375db",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "飞机窗景夜航",
       "summary": "航拍俯瞰 / 城市夜景 / 夜晚 / 无口播语音 / 飞机窗景夜航 / 城市灯火 / 桥梁水域 / Night aerial view of a city with illuminated roads and buildings, seen from an airplane window with an engine visible.",
       "startAt": "2026-06-22T13:28:13.000Z",
@@ -4625,7 +4626,7 @@
     {
       "id": "event-bd2a521bfa95",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "飞机窗景夜航",
       "summary": "航拍俯瞰 / 城市夜景 / 夜晚 / 无口播语音 / 飞机窗景夜航 / 城市灯光 / 跨海大桥 / A night view from an airplane window shows a city with bright lights and a bridge over water.",
       "startAt": "2026-06-22T13:29:48.000Z",
@@ -4638,7 +4639,7 @@
     {
       "id": "event-c9c68a044b0e",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "城市夜景航拍",
       "summary": "航拍俯瞰 / 飞机窗外 / 夜晚 / 无口播语音 / 城市夜景航拍 / 飞机引擎可见 / 城市灯光 / Night aerial view from airplane window showing illuminated city lights, roads, and waterways with engine visible on left.",
       "startAt": "2026-06-22T13:33:47.000Z",
@@ -4651,7 +4652,7 @@
     {
       "id": "event-17bcad02be47",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "城市夜景航拍",
       "summary": "航拍俯瞰 / 飞机窗外 / 夜晚 / 无口播语音 / 城市夜景航拍 / 飞机引擎可见 / 城市灯光 / Nighttime aerial view of a city with illuminated streets and buildings, seen from an airplane window.",
       "startAt": "2026-06-22T13:37:36.000Z",
@@ -4664,7 +4665,7 @@
     {
       "id": "event-59b9301d46a8",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "城市夜景航拍",
       "summary": "航拍俯瞰 / 飞机窗外 / 夜晚 / 无口播语音 / 城市夜景航拍 / 飞机引擎可见 / 城市灯光 / Aerial night view of a sprawling city with illuminated streets and buildings under a dark sky.",
       "startAt": "2026-06-22T13:38:45.000Z",
@@ -4677,7 +4678,7 @@
     {
       "id": "event-08d3b96045b8",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "城市夜景航拍",
       "summary": "航拍俯瞰 / 飞机窗外 / 夜晚 / 无口播语音 / 城市夜景航拍 / 飞机引擎可见 / 城市灯光 / Aerial night view of a sprawling city with dense streetlights and illuminated buildings under a dark sky.",
       "startAt": "2026-06-22T13:39:15.000Z",
@@ -4690,7 +4691,7 @@
     {
       "id": "event-3c37508f1e72",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "城市夜景航拍",
       "summary": "航拍俯瞰 / 飞机窗外 / 夜晚 / 无口播语音 / 城市夜景航拍 / 飞机引擎可见 / 城市灯光 / A night view of a city from an airplane window, showing illuminated streets and buildings with an airplane engine visible in the foreground.",
       "startAt": "2026-06-22T13:46:33.000Z",
@@ -4703,7 +4704,7 @@
     {
       "id": "event-8beaca814970",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "城市夜景航拍",
       "summary": "航拍俯瞰 / 飞机窗外 / 夜晚 / 无口播语音 / 城市夜景航拍 / 飞机引擎可见 / 城市灯光 / A night aerial view of a city with illuminated streets and buildings, seen from an airplane window with the engine visible.",
       "startAt": "2026-06-22T13:47:56.000Z",
@@ -4716,7 +4717,7 @@
     {
       "id": "event-49e1855cd877",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "机场自拍记录",
       "summary": "固定机位观察 / 机场航站楼 / 室内灯光 / 无口播语音 / 机场自拍记录 / 戴耳机男子 / 机场自拍 / A man with glasses and headphones takes a selfie in a brightly lit airport terminal.",
       "startAt": "2026-06-22T14:21:48.000Z",
@@ -4729,7 +4730,7 @@
     {
       "id": "event-c92066234731",
       "kind": "event",
-      "reviewStatus": "pending",
+      "reviewStatus": "confirmed",
       "title": "机场自拍记录",
       "summary": "手持自拍口播 / 机场航站楼 / 室内灯光 / 有口播语音 / 机场自拍记录 / 戴耳机男子 / 行程探路 / A man with curly hair and glasses wearing headphones and a backpack takes a selfie in a brightly lit airport terminal. / 今天进程完全结束了何况的气场这次没有进行主要是天气那 边有点累 没有搞完进程感觉下一...",
       "startAt": "2026-06-22T14:22:00.600Z",

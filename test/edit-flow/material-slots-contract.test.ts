@@ -9,6 +9,7 @@ const ASSETS: IKtepAsset[] = [
   { id: 'asset-talk', kind: 'video', sourcePath: 'talk.mp4', displayName: 'talk.mp4' },
   { id: 'asset-broll', kind: 'video', sourcePath: 'broll.mp4', displayName: 'broll.mp4' },
   { id: 'asset-drive', kind: 'video', sourcePath: 'drive.mp4', displayName: 'drive.mp4' },
+  { id: 'asset-aerial', kind: 'video', sourcePath: 'aerial.mp4', displayName: 'aerial.mp4' },
   { id: 'asset-photo', kind: 'photo', sourcePath: 'photo.jpg', displayName: 'photo.jpg' },
 ];
 
@@ -44,6 +45,15 @@ const SPANS: IKtepSpan[] = [
     type: 'photo',
     materialPatterns: ['照片远景', '山地', '晴天', '无口播语音'],
   },
+  {
+    id: 'span-aerial',
+    assetId: 'asset-aerial',
+    type: 'aerial',
+    semanticKind: 'speech',
+    transcript: '航拍里的风噪被误识别成口播。',
+    transcriptSegments: [{ startMs: 0, endMs: 1000, text: '航拍里的风噪被误识别成口播。' }],
+    materialPatterns: ['航拍运动', '山谷', '晴天', '有口播语音'],
+  },
 ];
 
 const EVENTS: IChronologyEvent[] = [{
@@ -52,7 +62,7 @@ const EVENTS: IChronologyEvent[] = [{
   reviewStatus: 'confirmed',
   title: '出发口播',
   startAt: '2026-05-01T08:00:00.000Z',
-  spanIds: ['span-talk', 'span-broll', 'span-drive', 'span-photo'],
+  spanIds: ['span-talk', 'span-broll', 'span-drive', 'span-photo', 'span-aerial'],
 }];
 
 describe('material-slots contract', () => {
@@ -106,6 +116,16 @@ describe('material-slots contract', () => {
     })).toThrow(/speed > 1 is only allowed/u);
   });
 
+  it('allows muted aerial spans even when ASR produced speech truth', () => {
+    expect(() => assertMaterialSlotsContract({
+      materialSlots: slotsDocument({
+        'span-aerial': { audio: -100 },
+      }, ['span-aerial']),
+      spans: SPANS,
+      assets: ASSETS,
+    })).not.toThrow();
+  });
+
   it('still requires explicit mute overrides for selected photos', () => {
     expect(() => assertMaterialSlotsContract({
       materialSlots: slotsDocument({}, ['span-photo']),
@@ -147,9 +167,9 @@ describe('material-slots contract', () => {
     });
     expect(audit.byDay[0]).toMatchObject({
       key: '2026-05-01',
-      available: 4,
+      available: 5,
       chosen: 2,
-      dropped: 2,
+      dropped: 3,
     });
   });
 
