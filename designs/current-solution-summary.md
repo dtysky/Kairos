@@ -116,7 +116,7 @@ Kairos 当前需要区分两层：
     - `latestValidationStatus = pending`
     - `manifest.metadataRepair.status = pending`
     - `manifest.managedSidecarSet = []`
-  - 当前 `sync_batch_metadata` 是显式后处理动作：按指定或 latest batch 对最终输出做 metadata normalize，使用受限 ffmpeg 并发并写入文件级进度，更新 `manifest.metadataRepair` 与 `entries[].outputMetadataSnapshot`
+  - 当前 `sync_batch_metadata` 是显式后处理动作：按指定或 latest batch 对最终输出做 metadata normalize，先比较目标 `creation_time / GPS` 与源 snapshot，已一致的文件直接记为 skipped 且不 remux；其余文件使用受限 ffmpeg 并发写入并记录文件级进度，更新 `manifest.metadataRepair.repairedCount / skippedCount` 与 `entries[].outputMetadataSnapshot`
   - 当前 `sync_batch_sidecars` 是显式后处理动作：只复制同 basename 的 `.srt/.wav/.flac/.m4a/.aac/.mp3`，更新 `entries[].sidecars` 与 `managedSidecarSet`；`.xml/.gyroflow` 不作为导出 sidecar
   - 当前后处理动作允许从 `plan.json + 已存在最终输出` 恢复缺失的 `manifest.json`；只有所有计划输出都已存在时才允许恢复，否则仍视为 render batch 失败并要求重跑 `execute_root`
   - 当前 `validate_batch` 已扩展为写入 summary 统计、top-level blockingReasons 和 warning-only 诊断，供 `/color` 直接显示 validation 失败原因

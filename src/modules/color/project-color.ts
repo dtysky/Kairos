@@ -1914,6 +1914,7 @@ export async function executeProjectColorRoot(
     metadataRepair: {
       status: 'pending',
       repairedCount: 0,
+      skippedCount: 0,
       failedOutputs: [],
       warnings: [],
     },
@@ -2031,6 +2032,7 @@ export async function syncProjectColorBatchMetadata(
       rootId,
       batchId,
       repairedCount: 0,
+      skippedCount: 0,
       failedCount: 0,
       concurrency: CCOLOR_METADATA_SYNC_CONCURRENCY,
     },
@@ -2038,6 +2040,7 @@ export async function syncProjectColorBatchMetadata(
 
   const planEntryByKey = new Map(plan.entries.map(entry => [entry.rawRelativePath, entry]));
   let repairedCount = 0;
+  let skippedCount = 0;
   const failedOutputs: NonNullable<IColorBatchManifest['metadataRepair']>['failedOutputs'] = [];
   let completedCount = 0;
   let progressWriteChain: Promise<void> = Promise.resolve();
@@ -2051,28 +2054,32 @@ export async function syncProjectColorBatchMetadata(
     let outputPath = resolve(entry.outputPath);
     let outputMetadataSnapshot = await buildColorFileMetadataSnapshot(outputPath, context.runtimeConfig).catch(() => undefined);
     if (colorMetadataRepairRequired(sourceMetadataSnapshot)) {
-      const outputStats = await stat(outputPath).catch(() => null);
-      if (!outputStats?.isFile()) {
-        failedOutputs.push({
-          rawRelativePath: entry.rawRelativePath,
-          outputPath,
-          reason: 'output file missing',
-        });
+      if (colorMetadataTargetFieldsSynced(sourceMetadataSnapshot, outputMetadataSnapshot)) {
+        skippedCount += 1;
       } else {
-        try {
-          outputPath = await normalizeRenderedColorOutputMetadata(
-            outputPath,
-            sourceMetadataSnapshot,
-            context.runtimeConfig,
-          );
-          repairedCount += 1;
-          outputMetadataSnapshot = await buildColorFileMetadataSnapshot(outputPath, context.runtimeConfig).catch(() => undefined);
-        } catch (error) {
+        const outputStats = await stat(outputPath).catch(() => null);
+        if (!outputStats?.isFile()) {
           failedOutputs.push({
             rawRelativePath: entry.rawRelativePath,
             outputPath,
-            reason: error instanceof Error ? error.message : String(error),
+            reason: 'output file missing',
           });
+        } else {
+          try {
+            outputPath = await normalizeRenderedColorOutputMetadata(
+              outputPath,
+              sourceMetadataSnapshot,
+              context.runtimeConfig,
+            );
+            repairedCount += 1;
+            outputMetadataSnapshot = await buildColorFileMetadataSnapshot(outputPath, context.runtimeConfig).catch(() => undefined);
+          } catch (error) {
+            failedOutputs.push({
+              rawRelativePath: entry.rawRelativePath,
+              outputPath,
+              reason: error instanceof Error ? error.message : String(error),
+            });
+          }
         }
       }
     }
@@ -2101,6 +2108,7 @@ export async function syncProjectColorBatchMetadata(
           rootId,
           batchId,
           repairedCount,
+          skippedCount,
           failedCount: failedOutputs.length,
           concurrency: CCOLOR_METADATA_SYNC_CONCURRENCY,
         },
@@ -2122,6 +2130,7 @@ export async function syncProjectColorBatchMetadata(
     metadataRepair: {
       status: failedOutputs.length > 0 ? 'failed' : 'completed',
       repairedCount,
+      skippedCount,
       failedOutputs,
       warnings,
     },
@@ -2162,6 +2171,7 @@ export async function syncProjectColorBatchMetadata(
       rootId,
       batchId,
       repairedCount,
+      skippedCount,
       failedCount: failures.length,
       concurrency: CCOLOR_METADATA_SYNC_CONCURRENCY,
     },
@@ -2699,6 +2709,7 @@ async function buildRecoveredRenderedColorManifest(
     metadataRepair: {
       status: 'pending',
       repairedCount: 0,
+      skippedCount: 0,
       failedOutputs: [],
       warnings: ['manifest recovered from plan and existing rendered outputs'],
     },
@@ -2710,6 +2721,43 @@ function colorMetadataRepairRequired(
   sourceMetadataSnapshot?: IColorFileMetadataSnapshot,
 ): boolean {
   return Boolean(sourceMetadataSnapshot?.capturedAt || sourceMetadataSnapshot?.gps);
+}
+
+function colorMetadataTargetFieldsSynced(
+  sourceMetadataSnapshot: IColorFileMetadataSnapshot | undefined,
+  outputMetadataSnapshot: IColorFileMetadataSnapshot | undefined,
+): boolean {
+  if (!colorMetadataRepairRequired(sourceMetadataSnapshot)) return true;
+  if (!outputMetadataSnapshot) return false;
+  if (
+    sourceMetadataSnapshot?.capturedAt
+    && !sameOptionalIsoTimestamp(sourceMetadataSnapshot.capturedAt, outputMetadataSnapshot.createTime)
+  ) {
+    return false;
+  }
+  if (
+    sourceMetadataSnapshot?.gps
+    && compareOptionalTuple(
+      sourceMetadataSnapshot.gps[0],
+      sourceMetadataSnapshot.gps[1],
+      outputMetadataSnapshot.gps?.[0],
+      outputMetadataSnapshot.gps?.[1],
+      0.000001,
+    ) !== 'pass'
+  ) {
+    return false;
+  }
+  return true;
+}
+
+function sameOptionalIsoTimestamp(left: string | undefined, right: string | undefined): boolean {
+  if (!left?.trim() || !right?.trim()) return false;
+  const leftMs = Date.parse(left);
+  const rightMs = Date.parse(right);
+  if (Number.isFinite(leftMs) && Number.isFinite(rightMs)) {
+    return leftMs === rightMs;
+  }
+  return left.trim() === right.trim();
 }
 
 function resolveColorExecutor(

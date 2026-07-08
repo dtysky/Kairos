@@ -379,10 +379,11 @@
     - `manifest.managedSidecarSet = []`
   - `sync_batch_metadata` 是显式后处理动作：
     - 对指定或 latest batch 的最终输出做 metadata normalize
+    - normalize 前必须先比较目标文件当前 `creation_time / GPS` 与源 snapshot；已经一致的文件直接记录为 skipped，不启动 ffmpeg remux
     - metadata normalize 必须限流执行并写文件级 progress，不能一次性为整个 root 拉起无界 ffmpeg
     - `creation_time` 改写为源文件 `capturedAt`
     - 源文件带 GPS 时，最终输出必须带可被 `ffprobe` 读回的容器位置标签
-    - 更新 `manifest.metadataRepair` 和 `entries[].outputMetadataSnapshot`
+    - 更新 `manifest.metadataRepair.repairedCount / skippedCount` 和 `entries[].outputMetadataSnapshot`
   - `sync_batch_sidecars` 是显式后处理动作：
     - 只同步同 basename `.srt/.wav/.flac/.m4a/.aac/.mp3`
     - `.xml/.gyroflow` 只服务 prepare/source truth，不作为成片 sidecar 导出

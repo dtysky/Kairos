@@ -85,7 +85,7 @@ description: >-
 - 非 Windows 主机不要套用上述 transient preset 兼容路径；若 Resolve 接受公开 `VideoQuality`，继续使用公共 render setting 设置 `bitrateKbps`。
 - Windows generated preset 必须清空 `RecordPrefix / RecordSuffix / DestSuffix`，保持 `RecordClipUniqueName=false`、`UsePrefixAndSuffixFromSrc=1`、`RecordAllowDupImg=1`；`UsePrefixAndSuffixFromSrc=0` 会让 Resolve queue 成 `00000000.mp4 and more`，`RecordAllowDupImg=0` 会让 Resolve 实际输出单层 `Event_Version.../<sourceName>.mp4`。若 Resolve 仍输出单层 `Event_Version.../<sourceName>.mp4`，host 只能在唯一匹配且目录内单文件时提升回 `TargetDir/<sourceName>.mp4`，否则失败。
 - 每个 `AddRenderJob()` 后必须立刻读取 `GetRenderJobList()` 校验 `OutputFilename` 是否为本批 expected Source Name；不匹配时删除已排 job 并在 `StartRendering()` 前失败。
-- `execute_root` 成功后只记录 rendered manifest；metadata 修复、sidecar 同步与 validation 必须分别通过 `sync_batch_metadata`、`sync_batch_sidecars`、`validate_batch` 手动触发。`sync_batch_metadata` 必须限流 ffmpeg 并写文件级进度。
+- `execute_root` 成功后只记录 rendered manifest；metadata 修复、sidecar 同步与 validation 必须分别通过 `sync_batch_metadata`、`sync_batch_sidecars`、`validate_batch` 手动触发。`sync_batch_metadata` 必须先比较目标 `creation_time / GPS` 与源 snapshot，已一致的文件记录为 skipped 且不 remux；需要写入的文件必须限流 ffmpeg 并写文件级进度。
 - `sync_batch_sidecars` 只同步同 basename `.srt/.wav/.flac/.m4a/.aac/.mp3`；`.xml/.gyroflow` 只作为 prepare/source truth，不作为成片 sidecar 导出。
 - 后处理动作可从 `plan.json + 已存在最终输出` 恢复缺失的 `manifest.json`，但只有计划输出全部存在时才允许恢复。
 - `promote_batch` 已退出正式导出链。

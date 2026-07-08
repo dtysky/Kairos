@@ -1671,6 +1671,7 @@ export type IColorMetadataRepairFailedOutput = z.infer<typeof IColorMetadataRepa
 export const IColorBatchMetadataRepair = z.object({
   status: EColorMetadataRepairStatus.default('pending'),
   repairedCount: z.number().int().nonnegative().default(0),
+  skippedCount: z.number().int().nonnegative().default(0),
   failedOutputs: z.array(IColorMetadataRepairFailedOutput).default([]),
   warnings: z.array(z.string()).default([]),
 });

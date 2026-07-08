@@ -1376,6 +1376,26 @@ describe('project color actions', () => {
     });
     expect(validationBefore.blockingReasons).toContain('metadata sync pending: run sync_batch_metadata before validate_batch');
 
+    vi.spyOn(mediaProbe, 'probe').mockImplementation(async filePath => ({
+      durationMs: 1000,
+      width: 3840,
+      height: 2160,
+      displayWidth: 3840,
+      displayHeight: 2160,
+      rotationDegrees: null,
+      fps: 30,
+      codec: filePath.endsWith('.mp4') ? 'h265' : 'prores',
+      hasAudioStream: true,
+      audioStreamCount: 1,
+      audioCodec: 'aac',
+      audioSampleRate: 48000,
+      audioChannels: 2,
+      audioBitRate: 192000,
+      creationTime: undefined,
+      rawTags: {},
+    }));
+    vi.spyOn(captureTime, 'resolveCaptureTime').mockResolvedValue(null);
+
     await expect(syncProjectColorBatchMetadata({
       workspaceRoot,
       projectId,
@@ -1396,6 +1416,67 @@ describe('project color actions', () => {
       total: 1,
       unit: 'file',
     });
+  });
+
+  it('skips metadata remux when target metadata fields already match source snapshots', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-color-metadata-skip';
+    const { projectRoot, rootId, currentLocalPath } = await seedSingleRootProject({
+      workspaceRoot,
+      projectId,
+      projectName: 'Project Color Metadata Skip',
+      rawFiles: ['day1/A001.mov'],
+    });
+
+    mockColorMetadata({ includeCaptureTime: true, includeGps: true });
+    const executor = createFakeExecutor();
+    await prepareProjectColorRoot({ workspaceRoot, projectId, rootId, executor });
+    const executeResult = await executeProjectColorRoot({
+      workspaceRoot,
+      projectId,
+      rootId,
+      action: 'execute_root',
+      executor,
+    });
+    const outputPath = join(currentLocalPath, 'day1', 'A001.mp4');
+    const renderedPayload = await readFile(outputPath, 'utf-8');
+
+    await syncProjectColorBatchMetadata({
+      workspaceRoot,
+      projectId,
+      rootId,
+      action: 'sync_batch_metadata',
+      batchId: executeResult.batchId,
+    });
+
+    const manifest = await loadColorBatchManifest(projectRoot, executeResult.batchId!);
+    expect(manifest?.metadataRepair).toMatchObject({
+      status: 'completed',
+      repairedCount: 0,
+      skippedCount: 1,
+      failedOutputs: [],
+    });
+    expect(manifest?.entries[0]?.outputMetadataSnapshot).toMatchObject({
+      capturedAt: '2026-02-01T10:00:00.000Z',
+      createTime: '2026-02-01T10:00:00.000Z',
+      gps: [40.1, 120.2],
+    });
+    expect(await readFile(outputPath, 'utf-8')).toBe(renderedPayload);
+    const progress = JSON.parse(await readFile(join(projectRoot, '.tmp', 'color', 'progress.json'), 'utf-8'));
+    expect(progress.extra).toMatchObject({
+      repairedCount: 0,
+      skippedCount: 1,
+      failedCount: 0,
+    });
+
+    const validation = await validateProjectColorBatch({
+      workspaceRoot,
+      projectId,
+      rootId,
+      action: 'validate_batch',
+      batchId: executeResult.batchId,
+    });
+    expect(validation.blockingReasons).toEqual([]);
   });
 
   it('marks execute_root failed instead of leaving a stale rendering state', async () => {

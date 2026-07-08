@@ -172,7 +172,7 @@ Current stable pipeline:
     - `latestValidationStatus` becomes `pending`
     - `metadataRepair.status` starts as `pending`
     - `managedSidecarSet` starts empty
-  - current `sync_batch_metadata` is the explicit post-render action that normalizes final output metadata with bounded ffmpeg concurrency and file-level progress, updates `manifest.metadataRepair`, and refreshes `entries[].outputMetadataSnapshot`
+  - current `sync_batch_metadata` is the explicit post-render action that normalizes final output metadata with bounded ffmpeg concurrency and file-level progress; it first compares target `creation_time / GPS` against the source snapshot, skips already-matching files without remux, updates `manifest.metadataRepair.repairedCount / skippedCount`, and refreshes `entries[].outputMetadataSnapshot`
   - current `sync_batch_sidecars` is the explicit post-render action that copies same-basename `.srt/.wav/.flac/.m4a/.aac/.mp3` files to the final output directory and updates `entries[].sidecars` plus `managedSidecarSet`; `.xml` and `.gyroflow` remain source/prepare truth only and are not exported as managed sidecars
   - current post-render actions can recover a missing `manifest.json` from `plan.json` only when every planned final output already exists; otherwise the batch remains a failed render and must be rerun
   - current `validate_batch` writes formal summary counts, top-level blocking reasons, and warning-only diagnostics; it fails when source `capturedAt / GPS` still needs `sync_batch_metadata`, or when expected export sidecars still need `sync_batch_sidecars`
