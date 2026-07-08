@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-07-06T17:01:46.278Z",
+  "updatedAt": "2026-07-08T16:20:18.914Z",
   "projects": {
     "端午河北之旅：此生初次入太行 [Color]": {
       "projectName": "端午河北之旅：此生初次入太行 [Color]",
@@ -8,7 +8,7 @@
         "projectName": "端午河北之旅：此生初次入太行 [Color]",
         "snapshotPath": "H:\\SacredGrove\\Kairos\\projects\\hebei-dragon-boat-first-taihang\\color\\resolve-projects\\Color\\端午河北之旅：此生初次入太行 [Color].drp",
         "latestPath": "H:\\SacredGrove\\Kairos\\projects\\hebei-dragon-boat-first-taihang\\color\\resolve-projects\\Color\\端午河北之旅：此生初次入太行 [Color].drp",
-        "createdAt": "2026-07-06T17:01:45Z",
+        "createdAt": "2026-07-08T16:20:17Z",
         "mode": "manual",
         "retention": "latest-only",
         "action": "manual",
@@ -20,7 +20,7 @@
         "detail": "save_drp_snapshot exported withStillsAndLUTs=false retention=latest-only"
       },
       "snapshots": [],
-      "updatedAt": "2026-07-06T17:01:46.278Z"
+      "updatedAt": "2026-07-08T16:20:18.914Z"
     }
   }
 }
