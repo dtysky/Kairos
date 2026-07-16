@@ -109,6 +109,11 @@ export {
   type IRefreshAnalyzeSpatialResultsResult,
 } from './spatial-refresh.js';
 export {
+  refineProjectSpeechBoundaries,
+  type IRefineProjectSpeechBoundariesInput,
+  type IRefineProjectSpeechBoundariesResult,
+} from './speech-boundaries.js';
+export {
   buildAnalyzeSpansFromReports,
   buildMaterialSpansFromReports,
   rebuildProjectSpans,

@@ -79,6 +79,8 @@ export interface IResolveRoughCutTimelineInput {
     fps: number;
   };
   stillDurationMs?: number;
+  subtitleSrtPath?: string;
+  subtitleTrackName?: string;
   clips: IResolveRoughCutClipInput[];
 }
 

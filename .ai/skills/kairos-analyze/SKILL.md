@@ -315,6 +315,7 @@ analysis/asset-reports/<assetId>.json
 - coarse prepared state 会写到 `analysis/prepared-assets/<assetId>.json`
 - audio state 会写到 `analysis/audio-checkpoints/<assetId>.json`
   - 当前正式口径是 `selectedTranscript / selectedTranscriptSource / embeddedHealth / protectionHealth / protectedAudio / decisionHints`
+- speech-boundary 补充分析是 Analyze 语境下的 no-ML repair：读取已有 `store/assets.json + store/spans.json`，对 speech/mixed span 周边音频做轻量包络/阈值分析，每个素材诊断明细写到 `analysis/speech-boundaries/<assetId>.json`；正式下游只消费 `store/spans.json` 中的 `effectiveSpeechStartMs / effectiveSpeechEndMs` 两个 source-ms 字段，不把完整分析结构塞进 span，也不覆盖 `sourceInMs/sourceOutMs`、`editSourceInMs/editSourceOutMs` 或 `transcriptSegments`
 - report 里的 `fineScanCompletedAt / fineScanSliceCount` 用来标记 `fine-scan` 是否真正完成
 - `analysis/fine-scan-checkpoints/<assetId>.json` 只代表 fine-scan 的 durable 中间态，不代表当前一定存在 live fine-scan worker
 - 新启动的 Analyze job 不读取 `progress.json.step` 作为恢复指针，而是重新计算 `pendingAssets` 和 `pendingFineScanEntries`；如果 `pendingAssets=0` 且存在待 fine-scan report，首个 live progress 必须直接写 `fine-scan-prefetch`，避免监控页误显示“从 prepare 重新开始”。
@@ -341,6 +342,7 @@ Analyze 运行过程中和阶段末都不再写 `store/spans.json`；span 由 `/
 - 不写 `speedCandidate / pharosRefs / grounding / spatialEvidence / location / routeRole / chronology event`
 - `source-speech` 的持久化目标是素材事实窗口；Analyze 生成 speech windows 和 `span-rebuild` 重建候选 spans 时都必须做 speech 专用合并：同 asset、speech/mixed 通道、相邻间隔 `<=3000ms`、合并后 `<=45s` 且可见中文 transcript `<=160` 字才合并，跨素材、跨语义通道、大停顿或过长口播不合并；合并后保留 transcriptSegments 顺序，任一来源为 `mixed` 时结果为 `mixed`，否则为 `speech`
 - speech/mixed 与 visual 是同一素材内可重叠共存的双通道 truth：speech span 只承载口播 truth，visual span 保留完整视觉窗口与 `visualObservation`，不得因为 speech 重叠被切断、缩短或继承 transcript；后置 Codex/Agent speech-window review 只能修 speech 候选，不得破坏重叠 visual span
+- `effectiveSpeechStartMs / effectiveSpeechEndMs` 是音频边界分析后的有效口播首尾 source ms；它们只用于后续 source-speech 取源窗与 handle 计算，不改变 chronology/recall 使用的素材事实窗口
 - 行车 visual fallback/fine-scan 窗口应按 passage 降碎片，默认同 asset、visual 通道、相邻 source gap `<=60s`、单段 `<=90s`；speech/mixed 行车 span 仍独立存在并可与 visual passage 重叠
 - 细粒度 utterance / pause timing 继续保留在 `transcriptSegments`
 - `materialPatterns` 固定为中文 `string[]`，只保存脚本阶段可消费的素材事实短语；`span-rebuild` 的 LM prompt 只请求 7 项 provisional tags，不再请求或解析口播可用性裁决。前四项固定为 `拍摄视角/构图形态 / 当前环境 / 天气光线 / 口播语音`，其中视角来自受控词表，环境是从当前 span 文本事实提取的短语，天气光线只写可观察自然现象；第 4 项在 speech review pending 时只是候选口径，最终必须由 Agent review 根据裁切/drop/visual-only 结果重写到与 speech truth 一致；第 1 项只描述素材自身可观察的拍摄视角/构图形态，不得重复 `type` 的照片/视频载体语义，也不得写“建场/记录/成果”等后续剪辑用途；slot1/slot2/slot3 的画面语义支持性由 prompt/rubric 要求 LM 自判，代码校验受控词表并用结构字段和错槽保留词拦截硬冲突（如 `photo + 行车/运动/口播视角`、`drive + 航拍视角`、`无口播语音 + 口播视角`、视角/口播 tag 出现在环境或天气槽），不用关键词正则做支持性二次判定；第 5 项是 LLM 短情景故事或 `情景不明`，第 6-7 项是 LLM 短 factual free tags；代码只做协议校验、JSON 壳容错和失败原因反馈，不做启发式补写、旧词替换或兼容映射；重试时可以把具体 slot issue、期望口播槽值和 expected row count 反馈给 LM 重新生成，仍不合格则 `span-rebuild` 失败

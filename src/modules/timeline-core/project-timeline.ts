@@ -9,6 +9,7 @@ import type {
   IKtepProject,
   IKtepSpan,
   IKtepSubtitle,
+  ITranscriptSegment,
   IMaterialSlotsDocument,
 } from '../../protocol/schema.js';
 import { CPROTOCOL, CVERSION, IMaterialSlotsDocument as ZMaterialSlotsDocument } from '../../protocol/schema.js';
@@ -55,8 +56,8 @@ import {
 import { snapshotProjectEditDrp } from './edit-resolve-snapshot.js';
 
 const CPHOTO_DEFAULT_DURATION_MS = 1000;
-const CSPEECH_SOURCE_HEAD_HANDLE_MS = 240;
-const CSPEECH_SOURCE_TAIL_HANDLE_MS = 720;
+const CSPEECH_SOURCE_HEAD_HANDLE_MS = 300;
+const CSPEECH_SOURCE_TAIL_HANDLE_MS = 300;
 const CRESOLVE_PROJECT_MEDIA_NAMESPACE = 'Kairos Project Media';
 const CRESOLVE_TIMELINE_FOLDER_NAME = 'Kairos Timelines';
 
@@ -66,6 +67,9 @@ export interface IBuildProjectTimelineInput {
   workspaceRoot?: string;
   editRuleCategory?: string;
   config?: Partial<IBuildConfig>;
+  timelineNameOverride?: string;
+  writeTimelineArtifacts?: boolean;
+  skipDrpSnapshot?: boolean;
 }
 
 export interface IBuildProjectTimelineResult {
@@ -226,9 +230,12 @@ export async function buildProjectTimeline(
     assetReports,
   });
 
+  const timelineName = input.timelineNameOverride?.trim()
+    || input.config?.name?.trim()
+    || deriveResolveRoughCutTimelineName(editId, scriptBriefConfig.editLabel);
   const cfg = resolveTimelineBuildConfig(runtimeConfig, {
     ...input.config,
-    name: deriveResolveRoughCutTimelineName(editId, scriptBriefConfig.editLabel),
+    name: timelineName,
     chronology: chronology.assetIndex,
   });
   const build = buildDeterministicTimeline({
@@ -269,14 +276,18 @@ export async function buildProjectTimeline(
     stillDurationMs: cfg.stillDurationMs,
     clips: build.resolveClips,
   });
-  await exportSrt(subtitleCues, subtitleSrtPath);
-  resolveTimeline = await attachEditDrpSnapshotToResolveTimeline({
-    resolveTimeline,
-    workspaceRoot: input.workspaceRoot,
-    projectRoot: input.projectRoot,
-    projectId: project.id,
-    editId,
-  });
+  if (input.writeTimelineArtifacts !== false) {
+    await exportSrt(subtitleCues, subtitleSrtPath);
+  }
+  if (!input.skipDrpSnapshot) {
+    resolveTimeline = await attachEditDrpSnapshotToResolveTimeline({
+      resolveTimeline,
+      workspaceRoot: input.workspaceRoot,
+      projectRoot: input.projectRoot,
+      projectId: project.id,
+      editId,
+    });
+  }
   const doc: IKtepDoc = {
     ...build.doc,
     adapterHints: {
@@ -289,7 +300,9 @@ export async function buildProjectTimeline(
       },
     },
   };
-  await writeJson(getTimelineCurrentPath(input.projectRoot, editId), doc);
+  if (input.writeTimelineArtifacts !== false) {
+    await writeJson(getTimelineCurrentPath(input.projectRoot, editId), doc);
+  }
 
   return {
     doc,
@@ -345,7 +358,7 @@ export function buildDeterministicTimeline(input: {
   const placedSpanById = new Map<string, IKtepSpan>();
   const clips: IKtepClip[] = [];
   const resolveClips: IResolveRoughCutClipInput[] = [];
-  let cursorMs = 0;
+  let cursorFrame = 0;
   let clipIndex = 0;
 
   for (const segment of input.materialSlots.segments) {
@@ -382,6 +395,9 @@ export function buildDeterministicTimeline(input: {
         const durationMs = asset.kind === 'photo'
           ? photoStillDurationMs
           : Math.max(1, Math.round(window.sourceOutMs - window.sourceInMs));
+        const durationFrames = Math.max(1, msToTimelineFrame(durationMs, input.cfg.fps));
+        const timelineInMs = timelineFrameToMs(cursorFrame, input.cfg.fps);
+        const timelineOutMs = timelineFrameToMs(cursorFrame + durationFrames, input.cfg.fps);
         const clipId = `clip-${String(clipIndex + 1).padStart(5, '0')}`;
         if (asset.kind !== 'photo' && spanRequiresSourceAudioProtection(span) && effectiveAudioGainDb <= -100) {
           throw new Error(
@@ -403,8 +419,8 @@ export function buildDeterministicTimeline(input: {
           sourceInMs: window.sourceInMs,
           sourceOutMs: window.sourceOutMs,
           audioGainDb: effectiveAudioGainDb,
-          timelineInMs: cursorMs,
-          timelineOutMs: cursorMs + durationMs,
+          timelineInMs,
+          timelineOutMs,
           ...(muteAudio ? { muteAudio: true } : {}),
           linkedScriptSegmentId: segment.segmentId,
           linkedScriptBeatId: slot.id,
@@ -437,7 +453,7 @@ export function buildDeterministicTimeline(input: {
           speed,
           requestedSpeed,
         });
-        cursorMs += durationMs;
+        cursorFrame += durationFrames;
         clipIndex += 1;
       }
     }
@@ -514,7 +530,7 @@ export function buildTimelineSourceSpeechSubtitles(input: {
     }
 
     const speed = resolveSubtitleClipSpeed(clip);
-    const segments = [...(span.transcriptSegments ?? [])]
+    const segments = resolveSubtitleTranscriptSegments(span)
       .filter(segment => normalizeSubtitleText(segment.text))
       .sort((left, right) => left.startMs - right.startMs || left.endMs - right.endMs);
 
@@ -583,6 +599,31 @@ function resolveSubtitleClipSpeed(clip: IKtepClip): number {
     return clip.speed;
   }
   return 1;
+}
+
+function resolveSubtitleTranscriptSegments(span: IKtepSpan): ITranscriptSegment[] {
+  const segments = [...(span.transcriptSegments ?? [])];
+  const offsetMs = resolveEffectiveSpeechTimingOffsetMs(span, segments);
+  if (!offsetMs) return segments;
+  return segments.map(segment => ({
+    ...segment,
+    startMs: Math.max(0, segment.startMs + offsetMs),
+    endMs: Math.max(0, segment.endMs + offsetMs),
+  }));
+}
+
+function resolveEffectiveSpeechTimingOffsetMs(span: IKtepSpan, segments: ITranscriptSegment[]): number {
+  const effective = resolveEffectiveSpeechCoreWindow(span);
+  if (!effective) return 0;
+  const segmentStarts = segments
+    .filter(segment => segment.endMs > segment.startMs && segment.text.trim())
+    .map(segment => segment.startMs);
+  const rawStartMs = segmentStarts.length > 0
+    ? Math.min(...segmentStarts)
+    : firstFiniteNumber(span.sourceInMs, span.editSourceInMs);
+  if (!Number.isFinite(rawStartMs)) return 0;
+  const offsetMs = Math.round(effective.sourceInMs - rawStartMs);
+  return offsetMs > 0 && offsetMs <= 1500 ? offsetMs : 0;
 }
 
 function mapSourceMsToTimelineMs(sourceMs: number, input: {
@@ -807,13 +848,33 @@ function resolveSpanSourceWindow(
     throw new Error(`span ${span.id} does not have a valid source time range`);
   }
   if (options.applySpeechHandles) {
+    const speechCore = resolveEffectiveSpeechCoreWindow(span) ?? { sourceInMs, sourceOutMs };
     return expandSourceWindowWithHandles({
-      sourceInMs,
-      sourceOutMs,
+      sourceInMs: speechCore.sourceInMs,
+      sourceOutMs: speechCore.sourceOutMs,
       assetDurationMs: asset.durationMs,
       headHandleMs: CSPEECH_SOURCE_HEAD_HANDLE_MS,
       tailHandleMs: CSPEECH_SOURCE_TAIL_HANDLE_MS,
     });
+  }
+  return {
+    sourceInMs,
+    sourceOutMs,
+  };
+}
+
+function resolveEffectiveSpeechCoreWindow(span: IKtepSpan): { sourceInMs: number; sourceOutMs: number } | null {
+  const sourceInMs = span.effectiveSpeechStartMs;
+  const sourceOutMs = span.effectiveSpeechEndMs;
+  if (
+    typeof sourceInMs !== 'number'
+    || typeof sourceOutMs !== 'number'
+    || !Number.isFinite(sourceInMs)
+    || !Number.isFinite(sourceOutMs)
+    || sourceInMs < 0
+    || sourceOutMs <= sourceInMs
+  ) {
+    return null;
   }
   return {
     sourceInMs,
@@ -846,6 +907,14 @@ function firstFiniteNumber(...values: Array<number | undefined>): number {
     }
   }
   return Number.NaN;
+}
+
+function msToTimelineFrame(ms: number, fps: number): number {
+  return Math.round((ms / 1000) * fps);
+}
+
+function timelineFrameToMs(frame: number, fps: number): number {
+  return Math.round((frame / fps) * 1000);
 }
 
 function resolveSourceStem(asset: IKtepAsset): string {

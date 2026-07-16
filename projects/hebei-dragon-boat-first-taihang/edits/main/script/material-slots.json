@@ -108,8 +108,8 @@
           ],
           "treatments": {
             "C1993_zve1_day1_drive_s0-54": {
-              "audio": -100,
-              "speed": 5
+              "audio": 0,
+              "speed": 1
             },
             "C1994_zve1_day1_drive_visual_s0-4": {
               "audio": -100
@@ -428,20 +428,20 @@
               "speed": 4
             },
             "C2061_zve1_day1_drive_visual_s0-20": {
-              "audio": -100,
-              "speed": 5
+              "audio": 0,
+              "speed": 1
             },
             "C2061_zve1_day1_drive_visual_s6-17": {
               "audio": -100,
               "speed": 5
             },
             "C2062_zve1_day1_drive_s0-320": {
-              "audio": -100,
-              "speed": 5
+              "audio": 0,
+              "speed": 1
             },
             "C2063_zve1_day1_drive_s0-41": {
-              "audio": -100,
-              "speed": 5
+              "audio": 0,
+              "speed": 1
             },
             "DSC09302_photos_photo": {
               "audio": -100
@@ -795,8 +795,8 @@
               "speed": 5
             },
             "C2125_zve1_day2_drive_s0-170": {
-              "audio": -100,
-              "speed": 5
+              "audio": 0,
+              "speed": 1
             },
             "C2126_zve1_day2_drive_s0-88": {
               "audio": -100,
@@ -1684,8 +1684,8 @@
           ],
           "treatments": {
             "C2342_zve1_day3_drive_visual_s0-30": {
-              "audio": -100,
-              "speed": 5
+              "audio": 0,
+              "speed": 1
             },
             "C2343_zve1_day3_drive_s0-82": {
               "audio": -100,

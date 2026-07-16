@@ -554,6 +554,7 @@ def create_rough_cut_timeline(resolve, payload):
         apply_timeline_spec(project, payload.get("timelineSpec"), timeline)
         safe_call(project, "SetCurrentTimeline", timeline)
         safe_call(timeline, "SetStartTimecode", "00:00:00:00")
+    subtitle_import = import_rough_cut_subtitles(media_pool, timeline, payload)
     namespace_state = collect_namespace_state(namespace_folder)
     media_pool_item_by_source_path = namespace_state["clipBySourcePath"]
     missing = [
@@ -636,7 +637,10 @@ def create_rough_cut_timeline(resolve, payload):
     speed_ignored = 0
     source_range_validation = {"checked": 0, "passed": 0, "failed": 0, "strategy": "direct-native-append"}
     still_duration_validation = {"checked": 0, "passed": 0, "failed": 0, "expectedMs": parse_float(payload.get("stillDurationMs"))}
+    timeline_placement_validation = {"checked": 0, "passed": 0, "failed": 0, "strategy": "sequential-actual-end"}
     fps = parse_float((payload.get("timelineSpec") or {}).get("fps")) or 30.0
+    timeline_start_frame = parse_int(safe_call(timeline, "GetStartFrame")) or 0
+    next_record_frame = 0
     for clip in clips:
         media_pool_item = media_pool_item_by_source_path.get(clip["sourceAbsolutePath"])
         if media_pool_item is None:
@@ -645,7 +649,7 @@ def create_rough_cut_timeline(resolve, payload):
                 f"Unable to find synced rough-cut clip in Resolve Media Pool: {clip['clipId']}",
                 {"clipId": clip["clipId"], "sourceAbsolutePath": clip["sourceAbsolutePath"]},
             )
-        clip_info = build_rough_cut_append_clip_info(media_pool_item, clip, fps)
+        clip_info = build_rough_cut_append_clip_info(media_pool_item, clip, fps, next_record_frame)
         appended_items = safe_call(media_pool, "AppendToTimeline", [clip_info])
         if not appended_items:
             raise HostError(
@@ -680,6 +684,24 @@ def create_rough_cut_timeline(resolve, payload):
                 validate_rough_cut_still_duration(item, clip, fps, payload.get("stillDurationMs"), still_duration_validation)
             else:
                 validate_rough_cut_source_range(item, media_pool_item, clip, source_range_validation, fps)
+        actual_start_frame = min(
+            (frame for frame in (parse_int(safe_call(item, "GetStart")) for item in video_items) if frame is not None),
+            default=None,
+        )
+        actual_end_frame = max(
+            (frame for frame in (parse_int(safe_call(item, "GetEnd")) for item in video_items) if frame is not None),
+            default=None,
+        )
+        validate_rough_cut_timeline_placement(
+            clip,
+            clip_info,
+            timeline_start_frame,
+            actual_start_frame,
+            actual_end_frame,
+            timeline_placement_validation,
+        )
+        if actual_end_frame is not None:
+            next_record_frame = max(0, actual_end_frame - timeline_start_frame)
         linked_items = collect_linked_timeline_items(video_items)
         audio_items = filter_timeline_items_by_track_type(linked_items, "audio")
         visual_clip_color = apply_rough_cut_visual_clip_color(video_items, clip, visual_clip_coloring)
@@ -712,6 +734,9 @@ def create_rough_cut_timeline(resolve, payload):
             "resolveItemName": display_name,
             "timelineInMs": clip["timelineInMs"],
             "timelineOutMs": clip["timelineOutMs"],
+            "recordFrame": clip_info.get("recordFrame"),
+            **({"actualStartFrame": actual_start_frame} if actual_start_frame is not None else {}),
+            **({"actualEndFrame": actual_end_frame} if actual_end_frame is not None else {}),
             "muteAudio": clip["muteAudio"],
             "audioGainDb": clip["audioGainDb"],
             "speed": clip["speed"],
@@ -750,6 +775,9 @@ def create_rough_cut_timeline(resolve, payload):
             },
             "sourceRangeValidation": source_range_validation,
             "stillDurationValidation": still_duration_validation,
+            "timelinePlacementValidation": timeline_placement_validation,
+            "timelineGapValidation": validate_rough_cut_timeline_no_gaps(timeline),
+            "subtitleImport": subtitle_import,
             "clips": appended,
         },
     }
@@ -1159,10 +1187,12 @@ def export_edit_timeline_clip_packet(resolve, payload):
     }
 
 
-def build_rough_cut_append_clip_info(media_pool_item, clip, timeline_fps):
+def build_rough_cut_append_clip_info(media_pool_item, clip, timeline_fps, record_frame_override=None):
     clip_info = {
         "mediaPoolItem": media_pool_item,
-        "recordFrame": ms_to_frame(clip["timelineInMs"], timeline_fps),
+        "recordFrame": int(record_frame_override)
+        if record_frame_override is not None
+        else ms_to_frame(clip["timelineInMs"], timeline_fps),
         "trackIndex": 1,
     }
     if clip["assetKind"] == "photo":
@@ -1172,6 +1202,169 @@ def build_rough_cut_append_clip_info(media_pool_item, clip, timeline_fps):
         clip_info["startFrame"] = start_frame
         clip_info["endFrame"] = end_frame
     return clip_info
+
+
+def import_rough_cut_subtitles(media_pool, timeline, payload):
+    subtitle_srt_path = stringify_signal_value(payload.get("subtitleSrtPath"))
+    if not subtitle_srt_path:
+        return {"enabled": False}
+    if not os.path.isfile(subtitle_srt_path):
+        raise HostError(
+            "resolve_subtitle_srt_missing",
+            "create_rough_cut_timeline subtitleSrtPath does not point to a readable SRT file.",
+            {"subtitleSrtPath": subtitle_srt_path},
+        )
+    subtitle_import_path = prepare_subtitle_import_path(subtitle_srt_path)
+    track_count = parse_int(safe_call(timeline, "GetTrackCount", "subtitle")) or 0
+    if track_count < 1 and not safe_call(timeline, "AddTrack", "subtitle"):
+        raise HostError(
+            "resolve_subtitle_track_create_failed",
+            "Unable to create a subtitle track before importing rough-cut subtitles.",
+            {"subtitleSrtPath": subtitle_srt_path},
+        )
+    track_name = stringify_signal_value(payload.get("subtitleTrackName"))
+    if track_name:
+        safe_call(timeline, "SetTrackName", "subtitle", 1, track_name)
+    media_items = list(iter_values(safe_call(media_pool, "ImportMedia", [subtitle_import_path]) or []))
+    if not media_items:
+        raise HostError(
+            "resolve_subtitle_srt_import_failed",
+            "Resolve did not import the rough-cut subtitle SRT as a media item.",
+            {"subtitleSrtPath": subtitle_srt_path, "subtitleImportPath": subtitle_import_path},
+        )
+    appended_items = list(iter_values(safe_call(media_pool, "AppendToTimeline", [{
+        "mediaPoolItem": media_items[0],
+        "trackIndex": 1,
+        "recordFrame": 0,
+    }]) or []))
+    if not appended_items:
+        raise HostError(
+            "resolve_subtitle_append_failed",
+            "Resolve did not append the rough-cut subtitle SRT to the timeline.",
+            {"subtitleSrtPath": subtitle_srt_path, "subtitleImportPath": subtitle_import_path},
+        )
+    subtitle_items = list(iter_values(safe_call(timeline, "GetItemListInTrack", "subtitle", 1) or []))
+    if not subtitle_items:
+        raise HostError(
+            "resolve_subtitle_items_missing",
+            "Resolve appended the rough-cut subtitle SRT but no subtitle items were found on track 1.",
+            {"subtitleSrtPath": subtitle_srt_path, "subtitleImportPath": subtitle_import_path},
+        )
+    return {
+        "enabled": True,
+        "subtitleSrtPath": subtitle_srt_path,
+        "subtitleImportPath": subtitle_import_path,
+        "trackIndex": 1,
+        "trackName": safe_call(timeline, "GetTrackName", "subtitle", 1),
+        "importedMediaItemCount": len(media_items),
+        "appendReturnedItemCount": len(appended_items),
+        "subtitleItemCount": len(subtitle_items),
+        "firstStartFrame": parse_int(safe_call(subtitle_items[0], "GetStart")),
+        "lastEndFrame": parse_int(safe_call(subtitle_items[-1], "GetEnd")),
+    }
+
+
+def prepare_subtitle_import_path(subtitle_srt_path):
+    source = Path(subtitle_srt_path)
+    try:
+        data = source.read_bytes()
+        digest = hashlib.sha1(data).hexdigest()[:12]
+        import_dir = Path(tempfile.gettempdir()) / "kairos-resolve-subtitle-imports"
+        import_dir.mkdir(parents=True, exist_ok=True)
+        suffix = source.suffix or ".srt"
+        target = import_dir / f"{source.stem}-{digest}-{uuid.uuid4().hex[:8]}{suffix}"
+        target.write_bytes(data)
+        return str(target)
+    except Exception as exc:
+        raise HostError(
+            "resolve_subtitle_import_copy_failed",
+            "Unable to prepare a unique subtitle import copy for Resolve.",
+            {"subtitleSrtPath": subtitle_srt_path, "error": str(exc)},
+        )
+
+
+def validate_rough_cut_timeline_placement(
+    clip,
+    clip_info,
+    timeline_start_frame,
+    actual_start_frame,
+    actual_end_frame,
+    summary,
+):
+    expected_start_frame = parse_int(clip_info.get("recordFrame"))
+    if expected_start_frame is None:
+        raise HostError(
+            "resolve_timeline_record_frame_missing",
+            f"Rough-cut append did not define recordFrame for clip {clip['clipId']}.",
+            {"clipId": clip["clipId"]},
+        )
+    expected_absolute_start = expected_start_frame + int(timeline_start_frame or 0)
+    summary["checked"] = int(summary.get("checked") or 0) + 1
+    if (
+        actual_start_frame is not None
+        and actual_end_frame is not None
+        and actual_end_frame > actual_start_frame
+        and actual_start_frame == expected_absolute_start
+    ):
+        summary["passed"] = int(summary.get("passed") or 0) + 1
+        return
+    summary["failed"] = int(summary.get("failed") or 0) + 1
+    raise HostError(
+        "resolve_timeline_placement_mismatch",
+        f"Resolve appended rough-cut clip {clip['clipId']} at an unexpected timeline frame.",
+        {
+            "clipId": clip["clipId"],
+            "assetId": clip["assetId"],
+            "recordFrame": expected_start_frame,
+            "timelineStartFrame": timeline_start_frame,
+            "expectedAbsoluteStartFrame": expected_absolute_start,
+            "actualStartFrame": actual_start_frame,
+            "actualEndFrame": actual_end_frame,
+        },
+    )
+
+
+def validate_rough_cut_timeline_no_gaps(timeline):
+    items = list(iter_timeline_video_items(timeline))
+    items.sort(key=lambda item: parse_int(safe_call(item, "GetStart")) or 0)
+    summary = {
+        "checked": len(items),
+        "gapCount": 0,
+        "overlapCount": 0,
+        "maxGapFrames": 0,
+        "firstGaps": [],
+        "passed": True,
+    }
+    previous_end = None
+    for index, item in enumerate(items, start=1):
+        start = parse_int(safe_call(item, "GetStart"))
+        end = parse_int(safe_call(item, "GetEnd"))
+        if start is None or end is None:
+            continue
+        if previous_end is not None:
+            delta = start - previous_end
+            if delta > 0:
+                summary["gapCount"] += 1
+                summary["maxGapFrames"] = max(summary["maxGapFrames"], delta)
+                if len(summary["firstGaps"]) < 20:
+                    summary["firstGaps"].append({
+                        "index": index,
+                        "name": safe_call(item, "GetName"),
+                        "gapFrames": delta,
+                        "startFrame": start,
+                        "previousEndFrame": previous_end,
+                    })
+            elif delta < 0:
+                summary["overlapCount"] += 1
+        previous_end = end
+    if summary["gapCount"] > 0:
+        summary["passed"] = False
+        raise HostError(
+            "resolve_timeline_gap_detected",
+            "Resolve rough-cut timeline contains empty video-frame gaps after append.",
+            summary,
+        )
+    return summary
 
 
 def resolve_appended_video_items(timeline, appended_items, clip_info, clip):

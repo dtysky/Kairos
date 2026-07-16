@@ -1,14 +1,14 @@
 {
-  "updatedAt": "2026-07-08T07:58:33.136Z",
+  "updatedAt": "2026-07-16T13:41:17.375Z",
   "projects": {
     "端午河北之旅：此生初次入太行 [Edit]": {
       "projectName": "端午河北之旅：此生初次入太行 [Edit]",
       "safeProjectName": "Edit",
       "latestSnapshot": {
         "projectName": "端午河北之旅：此生初次入太行 [Edit]",
-        "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/hebei-dragon-boat-first-taihang/edits/resolve-projects/Edit/端午河北之旅：此生初次入太行 [Edit].drp",
-        "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/hebei-dragon-boat-first-taihang/edits/resolve-projects/Edit/端午河北之旅：此生初次入太行 [Edit].drp",
-        "createdAt": "2026-07-08T07:58:32Z",
+        "snapshotPath": "H:\\SacredGrove\\Kairos\\projects\\hebei-dragon-boat-first-taihang\\edits\\resolve-projects\\Edit\\端午河北之旅：此生初次入太行 [Edit].drp",
+        "latestPath": "H:\\SacredGrove\\Kairos\\projects\\hebei-dragon-boat-first-taihang\\edits\\resolve-projects\\Edit\\端午河北之旅：此生初次入太行 [Edit].drp",
+        "createdAt": "2026-07-16T13:41:14Z",
         "mode": "manual",
         "retention": "latest-only",
         "action": "manual",
@@ -19,7 +19,7 @@
         "detail": "save_drp_snapshot exported withStillsAndLUTs=false retention=latest-only"
       },
       "snapshots": [],
-      "updatedAt": "2026-07-08T07:58:33.136Z"
+      "updatedAt": "2026-07-16T13:41:17.375Z"
     }
   }
 }

@@ -328,6 +328,8 @@ export const IKtepSpan = z.object({
   sourceOutMs: z.number().optional(),
   editSourceInMs: z.number().optional(),
   editSourceOutMs: z.number().optional(),
+  effectiveSpeechStartMs: z.number().nonnegative().optional(),
+  effectiveSpeechEndMs: z.number().nonnegative().optional(),
   transcript: z.string().optional(),
   transcriptSegments: z.array(ITranscriptSegment).optional(),
   visualObservation: z.string().optional(),

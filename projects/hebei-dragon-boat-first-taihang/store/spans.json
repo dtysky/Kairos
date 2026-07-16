@@ -81,7 +81,9 @@
       "石家庄镇定机场",
       "万年青年旅店"
     ],
-    "speechCoverage": 0.9082687338501292
+    "speechCoverage": 0.9082687338501292,
+    "effectiveSpeechStartMs": 3820,
+    "effectiveSpeechEndMs": 19300
   },
   {
     "id": "C1979_zve1_day1_talking-head_speech_s0-16",
@@ -130,7 +132,9 @@
       "石家庄镇定机场",
       "万年青年旅店"
     ],
-    "speechCoverage": 0.9136125654450262
+    "speechCoverage": 0.9136125654450262,
+    "effectiveSpeechStartMs": 420,
+    "effectiveSpeechEndMs": 15700
   },
   {
     "id": "C1980_zve1_day1_drive_speech_s0-5",
@@ -159,7 +163,9 @@
       "G107 国道",
       "导航地图"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 0,
+    "effectiveSpeechEndMs": 4480
   },
   {
     "id": "C1980_zve1_day1_drive_visual_s1-8",
@@ -208,7 +214,9 @@
       "空旷走廊",
       "蓝色箭头"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1760,
+    "effectiveSpeechEndMs": 5120
   },
   {
     "id": "C1982_zve1_day1_broll_speech_s0-4",
@@ -237,7 +245,9 @@
       "空旷走廊",
       "金属路障"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 980,
+    "effectiveSpeechEndMs": 3740
   },
   {
     "id": "C1983_zve1_day1_broll_speech_s1-7",
@@ -271,7 +281,9 @@
       "蓝色楼梯",
       "人物质疑"
     ],
-    "speechCoverage": 0.7174721189591078
+    "speechCoverage": 0.7174721189591078,
+    "effectiveSpeechStartMs": 1420,
+    "effectiveSpeechEndMs": 6800
   },
   {
     "id": "C1984_zve1_day1_aerial_speech_s1-7",
@@ -305,7 +317,9 @@
       "高楼林立",
       "居民区"
     ],
-    "speechCoverage": 0.8913857677902621
+    "speechCoverage": 0.8913857677902621,
+    "effectiveSpeechStartMs": 1560,
+    "effectiveSpeechEndMs": 6900
   },
   {
     "id": "C1985_zve1_day1_broll_s0-33",
@@ -358,7 +372,9 @@
       "红旗 SUV",
       "自助取车"
     ],
-    "speechCoverage": 0.8125
+    "speechCoverage": 0.8125,
+    "effectiveSpeechStartMs": 1960,
+    "effectiveSpeechEndMs": 11520
   },
   {
     "id": "C1987_zve1_day1_broll_speech_s0-12",
@@ -402,7 +418,9 @@
       "大屏幕",
       "异味"
     ],
-    "speechCoverage": 0.6525129982668978
+    "speechCoverage": 0.6525129982668978,
+    "effectiveSpeechStartMs": 620,
+    "effectiveSpeechEndMs": 12032
   },
   {
     "id": "C1988_zve1_day1_drive_speech_s1-6",
@@ -431,7 +449,9 @@
       "导航屏幕",
       "方向盘"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 2020,
+    "effectiveSpeechEndMs": 6420
   },
   {
     "id": "C1988_zve1_day1_drive_visual_s1-7",
@@ -485,7 +505,9 @@
       "加油标号",
       "河北油价"
     ],
-    "speechCoverage": 0.9119496855345912
+    "speechCoverage": 0.9119496855345912,
+    "effectiveSpeechStartMs": 1180,
+    "effectiveSpeechEndMs": 7540
   },
   {
     "id": "C1990_zve1_day1_broll_speech_s0-5",
@@ -514,7 +536,9 @@
       "黑色 SUV",
       "摩托车背景"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1080,
+    "effectiveSpeechEndMs": 5080
   },
   {
     "id": "C1993_zve1_day1_drive_s0-54",
@@ -602,7 +626,9 @@
       "方方正正路口",
       "高楼树木"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 3740,
+    "effectiveSpeechEndMs": 8860
   },
   {
     "id": "C1995_zve1_day1_drive_visual_s7-24",
@@ -651,7 +677,9 @@
       "湿滑路面",
       "红绿灯路口"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 13440,
+    "effectiveSpeechEndMs": 15960
   },
   {
     "id": "C1995_zve1_day1_drive_visual_s20-27",
@@ -734,7 +762,9 @@
       "多车道行驶",
       "红绿灯前"
     ],
-    "speechCoverage": 0.6465116279069767
+    "speechCoverage": 0.6465116279069767,
+    "effectiveSpeechStartMs": 4080,
+    "effectiveSpeechEndMs": 21280
   },
   {
     "id": "C1997_zve1_day1_drive_visual_s6-18",
@@ -788,7 +818,9 @@
       "砖铺路面",
       "黑色 SUV 停放"
     ],
-    "speechCoverage": 0.9485714285714286
+    "speechCoverage": 0.9485714285714286,
+    "effectiveSpeechStartMs": 1020,
+    "effectiveSpeechEndMs": 8020
   },
   {
     "id": "C2000_zve1_day1_broll_visual_s0-2",
@@ -847,7 +879,9 @@
       "高架桥下",
       "自拍视角"
     ],
-    "speechCoverage": 0.9332425068119891
+    "speechCoverage": 0.9332425068119891,
+    "effectiveSpeechStartMs": 880,
+    "effectiveSpeechEndMs": 15560
   },
   {
     "id": "C2002_zve1_day1_broll_speech_s0-13",
@@ -891,7 +925,9 @@
       "黄色野花",
       "蝴蝶争斗"
     ],
-    "speechCoverage": 0.660377358490566
+    "speechCoverage": 0.660377358490566,
+    "effectiveSpeechStartMs": 1060,
+    "effectiveSpeechEndMs": 12720
   },
   {
     "id": "C2002_zve1_day1_broll_speech_s16-18",
@@ -920,7 +956,9 @@
       "黄色野花",
       "树木背景"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 17220,
+    "effectiveSpeechEndMs": 17920
   },
   {
     "id": "C2003_zve1_day1_drive_speech_s0-22",
@@ -969,7 +1007,9 @@
       "白色面包车",
       "带钟楼建筑"
     ],
-    "speechCoverage": 0.7534883720930232
+    "speechCoverage": 0.7534883720930232,
+    "effectiveSpeechStartMs": 520,
+    "effectiveSpeechEndMs": 21526
   },
   {
     "id": "C2003_zve1_day1_drive_visual_s5-16",
@@ -1090,7 +1130,9 @@
       "卷发男子",
       "戴眼镜"
     ],
-    "speechCoverage": 0.8835758835758836
+    "speechCoverage": 0.8835758835758836,
+    "effectiveSpeechStartMs": 2640,
+    "effectiveSpeechEndMs": 21880
   },
   {
     "id": "C2005_zve1_day1_drive_speech_s0-7",
@@ -1124,7 +1166,9 @@
       "骑行者",
       "过街天桥"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1060,
+    "effectiveSpeechEndMs": 6880
   },
   {
     "id": "DSC09262_photos_photo",
@@ -1172,7 +1216,9 @@
       "路口",
       "车辆"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1220,
+    "effectiveSpeechEndMs": 3400
   },
   {
     "id": "C2006_zve1_day1_drive_visual_s1-6",
@@ -1241,7 +1287,9 @@
       "工地",
       "建筑"
     ],
-    "speechCoverage": 0.5505952380952381
+    "speechCoverage": 0.5505952380952381,
+    "effectiveSpeechStartMs": 1100,
+    "effectiveSpeechEndMs": 14540
   },
   {
     "id": "C2008_zve1_day1_broll_speech_s0-2",
@@ -1270,7 +1318,9 @@
       "步道",
       "文字"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1200,
+    "effectiveSpeechEndMs": 2260
   },
   {
     "id": "C2009_zve1_day1_broll_speech_s0-12",
@@ -1309,7 +1359,9 @@
       "花海",
       "向日葵"
     ],
-    "speechCoverage": 0.7539543057996485
+    "speechCoverage": 0.7539543057996485,
+    "effectiveSpeechStartMs": 880,
+    "effectiveSpeechEndMs": 12260
   },
   {
     "id": "C2010_zve1_day1_broll_speech_s0-7",
@@ -1343,7 +1395,9 @@
       "花丛",
       "金光菊"
     ],
-    "speechCoverage": 0.8842105263157894
+    "speechCoverage": 0.8842105263157894,
+    "effectiveSpeechStartMs": 820,
+    "effectiveSpeechEndMs": 6520
   },
   {
     "id": "DSC09265_photos_photo",
@@ -1420,7 +1474,9 @@
       "花朵特写",
       "黄色花蕊"
     ],
-    "speechCoverage": 0.8108108108108109
+    "speechCoverage": 0.8108108108108109,
+    "effectiveSpeechStartMs": 1140,
+    "effectiveSpeechEndMs": 10020
   },
   {
     "id": "C2012_zve1_day1_broll_speech_s1-3",
@@ -1449,7 +1505,9 @@
       "两人对打",
       "绿色围栏"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1860,
+    "effectiveSpeechEndMs": 3100
   },
   {
     "id": "C2013_zve1_day1_broll_speech_s1-15",
@@ -1498,7 +1556,9 @@
       "牵牛花",
       "蝴蝶"
     ],
-    "speechCoverage": 0.5641025641025641
+    "speechCoverage": 0.5641025641025641,
+    "effectiveSpeechStartMs": 1560,
+    "effectiveSpeechEndMs": 14820
   },
   {
     "id": "C2014_zve1_day1_broll_speech_s0-8",
@@ -1599,7 +1659,9 @@
       "小鸟飞过",
       "摩托车手"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 940,
+    "effectiveSpeechEndMs": 3860
   },
   {
     "id": "C2016_zve1_day1_broll_speech_s0-2",
@@ -1657,7 +1719,9 @@
       "麻雀",
       "搞笑"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 740,
+    "effectiveSpeechEndMs": 2660
   },
   {
     "id": "C2018_zve1_day1_broll_speech_s0-7",
@@ -1691,7 +1755,9 @@
       "红砖岗亭",
       "白车"
     ],
-    "speechCoverage": 0.6541353383458647
+    "speechCoverage": 0.6541353383458647,
+    "effectiveSpeechStartMs": 1540,
+    "effectiveSpeechEndMs": 6860
   },
   {
     "id": "C2019_zve1_day1_broll_speech_s0-13",
@@ -1730,7 +1796,9 @@
       "白色轿车",
       "绿树"
     ],
-    "speechCoverage": 0.6313932980599647
+    "speechCoverage": 0.6313932980599647,
+    "effectiveSpeechStartMs": 1360,
+    "effectiveSpeechEndMs": 12700
   },
   {
     "id": "DSC09271_photos_photo",
@@ -1778,7 +1846,9 @@
       "居民楼",
       "停车棚"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 2620,
+    "effectiveSpeechEndMs": 6240
   },
   {
     "id": "C2021_zve1_day1_broll_speech_s5-8",
@@ -1807,7 +1877,9 @@
       "轮椅老人",
       "街道"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 5720,
+    "effectiveSpeechEndMs": 7600
   },
   {
     "id": "C2022_zve1_day1_broll_speech_s1-11",
@@ -1846,7 +1918,9 @@
       "老人",
       "广场"
     ],
-    "speechCoverage": 0.6801801801801802
+    "speechCoverage": 0.6801801801801802,
+    "effectiveSpeechStartMs": 1920,
+    "effectiveSpeechEndMs": 10800
   },
   {
     "id": "C2023_zve1_day1_broll_speech_s0-4",
@@ -1875,7 +1949,9 @@
       "灰色建筑",
       "标语"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1380,
+    "effectiveSpeechEndMs": 4160
   },
   {
     "id": "C2024_zve1_day1_broll_speech_s0-6",
@@ -1909,7 +1985,9 @@
       "卷发男子",
       "眼镜"
     ],
-    "speechCoverage": 0.5175097276264592
+    "speechCoverage": 0.5175097276264592,
+    "effectiveSpeechStartMs": 160,
+    "effectiveSpeechEndMs": 5300
   },
   {
     "id": "C2025_zve1_day1_talking-head_speech_s0-19",
@@ -1958,7 +2036,9 @@
       "粉色花树",
       "建筑外观"
     ],
-    "speechCoverage": 0.9390519187358917
+    "speechCoverage": 0.9390519187358917,
+    "effectiveSpeechStartMs": 1220,
+    "effectiveSpeechEndMs": 18940
   },
   {
     "id": "C2026_zve1_day1_broll_speech_s0-5",
@@ -2021,7 +2101,9 @@
       "卵树",
       "红花白花"
     ],
-    "speechCoverage": 0.8291925465838509
+    "speechCoverage": 0.8291925465838509,
+    "effectiveSpeechStartMs": 740,
+    "effectiveSpeechEndMs": 7019
   },
   {
     "id": "DSC09275_photos_photo",
@@ -2069,7 +2151,9 @@
       "白色楼房",
       "外部楼梯"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1340,
+    "effectiveSpeechEndMs": 5800
   },
   {
     "id": "C2029_zve1_day1_broll_speech_s1-23",
@@ -2133,7 +2217,9 @@
       "多层建筑",
       "蓝色门面"
     ],
-    "speechCoverage": 0.6434540389972145
+    "speechCoverage": 0.6434540389972145,
+    "effectiveSpeechStartMs": 1580,
+    "effectiveSpeechEndMs": 23120
   },
   {
     "id": "DSC09276_photos_photo",
@@ -2216,7 +2302,9 @@
       "街道停车",
       "建筑外观"
     ],
-    "speechCoverage": 0.7376916868442293
+    "speechCoverage": 0.7376916868442293,
+    "effectiveSpeechStartMs": 540,
+    "effectiveSpeechEndMs": 25320
   },
   {
     "id": "C2031_zve1_day1_talking-head_speech_s1-18",
@@ -2260,7 +2348,9 @@
       "人物自拍",
       "建筑背景"
     ],
-    "speechCoverage": 0.8420413122721749
+    "speechCoverage": 0.8420413122721749,
+    "effectiveSpeechStartMs": 1080,
+    "effectiveSpeechEndMs": 17540
   },
   {
     "id": "C2031_zve1_day1_talking-head_speech_s21-26",
@@ -2289,7 +2379,9 @@
       "人物自拍",
       "白色车辆"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 22120,
+    "effectiveSpeechEndMs": 26080
   },
   {
     "id": "DSC09279_photos_photo",
@@ -2352,7 +2444,9 @@
       "街道停车",
       "盆栽植物"
     ],
-    "speechCoverage": 0.7762998790810157
+    "speechCoverage": 0.7762998790810157,
+    "effectiveSpeechStartMs": 340,
+    "effectiveSpeechEndMs": 16880
   },
   {
     "id": "C2034_zve1_day1_broll_s0-38",
@@ -2486,7 +2580,9 @@
       "户外探索",
       "养鸡"
     ],
-    "speechCoverage": 0.6060606060606061
+    "speechCoverage": 0.6060606060606061,
+    "effectiveSpeechStartMs": 3220,
+    "effectiveSpeechEndMs": 10480
   },
   {
     "id": "C2036_zve1_day1_broll_speech_s0-13",
@@ -2530,7 +2626,9 @@
       "城市绿化",
       "花卉"
     ],
-    "speechCoverage": 0.7126436781609196
+    "speechCoverage": 0.7126436781609196,
+    "effectiveSpeechStartMs": 1020,
+    "effectiveSpeechEndMs": 13200
   },
   {
     "id": "DSC09287_photos_photo",
@@ -2602,7 +2700,9 @@
       "城市探索",
       "旧建筑"
     ],
-    "speechCoverage": 0.8884758364312267
+    "speechCoverage": 0.8884758364312267,
+    "effectiveSpeechStartMs": 1380,
+    "effectiveSpeechEndMs": 6760
   },
   {
     "id": "C2038_zve1_day1_broll_speech_s1-16",
@@ -2646,7 +2746,9 @@
       "城市探险",
       "混凝土台阶"
     ],
-    "speechCoverage": 0.7253814147018031
+    "speechCoverage": 0.7253814147018031,
+    "effectiveSpeechStartMs": 1580,
+    "effectiveSpeechEndMs": 16000
   },
   {
     "id": "C2039_zve1_day1_broll_speech_s3-9",
@@ -2680,7 +2782,9 @@
       "红瓦建筑",
       "金属栏杆"
     ],
-    "speechCoverage": 0.6680327868852459
+    "speechCoverage": 0.6680327868852459,
+    "effectiveSpeechStartMs": 3600,
+    "effectiveSpeechEndMs": 8480
   },
   {
     "id": "C2039_zve1_day1_broll_speech_s14-16",
@@ -2709,7 +2813,9 @@
       "生锈铁门",
       "黑色篷布"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 14820,
+    "effectiveSpeechEndMs": 16300
   },
   {
     "id": "C2040_zve1_day1_broll_speech_s1-9",
@@ -2743,7 +2849,9 @@
       "红色双门",
       "长杆倚靠"
     ],
-    "speechCoverage": 0.8885448916408669
+    "speechCoverage": 0.8885448916408669,
+    "effectiveSpeechStartMs": 2400,
+    "effectiveSpeechEndMs": 8860
   },
   {
     "id": "DSC09292_photos_photo",
@@ -2844,7 +2952,9 @@
       "自拍视角",
       "苏式建筑"
     ],
-    "speechCoverage": 0.8302752293577982
+    "speechCoverage": 0.8302752293577982,
+    "effectiveSpeechStartMs": 940,
+    "effectiveSpeechEndMs": 9660
   },
   {
     "id": "C2041_zve1_day1_talking-head_speech_s13-26",
@@ -2888,7 +2998,9 @@
       "第七批遗址",
       "解放第一矿"
     ],
-    "speechCoverage": 0.945054945054945
+    "speechCoverage": 0.945054945054945,
+    "effectiveSpeechStartMs": 13620,
+    "effectiveSpeechEndMs": 26360
   },
   {
     "id": "DSC09296_photos_photo",
@@ -3003,7 +3115,9 @@
       "乐队介绍",
       "万青乐队"
     ],
-    "speechCoverage": 0.7400611620795107
+    "speechCoverage": 0.7400611620795107,
+    "effectiveSpeechStartMs": 1440,
+    "effectiveSpeechEndMs": 7980
   },
   {
     "id": "C2046_zve1_day1_broll_speech_s0-3",
@@ -3032,7 +3146,9 @@
       "跳广场舞",
       "黑白插画"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1180,
+    "effectiveSpeechEndMs": 2920
   },
   {
     "id": "C2047_zve1_day1_broll_speech_s1-4",
@@ -3061,7 +3177,9 @@
       "跳广场舞",
       "卷发男子"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1880,
+    "effectiveSpeechEndMs": 3680
   },
   {
     "id": "C2048_zve1_day1_broll_speech_s0-3",
@@ -3090,7 +3208,9 @@
       "跳广场舞",
       "彩色壁画"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1600,
+    "effectiveSpeechEndMs": 3340
   },
   {
     "id": "C2048_zve1_day1_broll_speech_s10-12",
@@ -3119,7 +3239,9 @@
       "卷发戴眼镜",
       "彩色壁画"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 10240,
+    "effectiveSpeechEndMs": 11540
   },
   {
     "id": "C2049_zve1_day1_talking-head_speech_s1-3",
@@ -3148,7 +3270,9 @@
       "卷发男子",
       "模仿跳水"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1920,
+    "effectiveSpeechEndMs": 3580
   },
   {
     "id": "C2049_zve1_day1_talking-head_speech_s9-11",
@@ -3177,7 +3301,9 @@
       "卷发戴眼镜",
       "彩色壁画"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 9120,
+    "effectiveSpeechEndMs": 10520
   },
   {
     "id": "C2050_zve1_day1_broll_speech_s1-4",
@@ -3206,7 +3332,9 @@
       "卷发男子",
       "手机互动"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 2260,
+    "effectiveSpeechEndMs": 3980
   },
   {
     "id": "C2050_zve1_day1_broll_speech_s9-12",
@@ -3235,7 +3363,9 @@
       "卷发戴眼镜",
       "彩色壁画"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 10480,
+    "effectiveSpeechEndMs": 12060
   },
   {
     "id": "DSC00236_photos_photo",
@@ -3332,7 +3462,9 @@
       "墙绘图案",
       "浇棉寺"
     ],
-    "speechCoverage": 0.9082672706681767
+    "speechCoverage": 0.9082672706681767,
+    "effectiveSpeechStartMs": 1120,
+    "effectiveSpeechEndMs": 18780
   },
   {
     "id": "C2053_zve1_day1_talking-head_s0-40",
@@ -3447,7 +3579,9 @@
       "自然山道路",
       "历史遗迹"
     ],
-    "speechCoverage": 0.790990990990991
+    "speechCoverage": 0.790990990990991,
+    "effectiveSpeechStartMs": 3820,
+    "effectiveSpeechEndMs": 14920
   },
   {
     "id": "C2057_zve1_day1_drive_visual_s7-19",
@@ -3540,7 +3674,9 @@
       "车辆行驶",
       "背景有树木"
     ],
-    "speechCoverage": 0.6923076923076923
+    "speechCoverage": 0.6923076923076923,
+    "effectiveSpeechStartMs": 780,
+    "effectiveSpeechEndMs": 8580
   },
   {
     "id": "C2059_zve1_day1_drive_visual_s5-12",
@@ -3604,7 +3740,9 @@
       "行车中",
       "气溶胶浓度爆棚"
     ],
-    "speechCoverage": 0.7669256381798002
+    "speechCoverage": 0.7669256381798002,
+    "effectiveSpeechStartMs": 660,
+    "effectiveSpeechEndMs": 18680
   },
   {
     "id": "C2060_zve1_day1_drive_visual_s5-16",
@@ -3760,7 +3898,9 @@
       "医院入口",
       "供销大厦"
     ],
-    "speechCoverage": 0.5195876288659794
+    "speechCoverage": 0.5195876288659794,
+    "effectiveSpeechStartMs": 1180,
+    "effectiveSpeechEndMs": 10880
   },
   {
     "id": "C2065_zve1_day1_broll_speech_s1-5",
@@ -3789,7 +3929,9 @@
       "白色轿车",
       "行人车辆"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 2220,
+    "effectiveSpeechEndMs": 5060
   },
   {
     "id": "DSC00288_photos_photo",
@@ -3842,7 +3984,9 @@
       "银色卡车",
       "红色路障"
     ],
-    "speechCoverage": 0.8098159509202454
+    "speechCoverage": 0.8098159509202454,
+    "effectiveSpeechStartMs": 900,
+    "effectiveSpeechEndMs": 10518
   },
   {
     "id": "C2066_zve1_day1_drive_visual_s4-11",
@@ -3925,7 +4069,9 @@
       "情景不明",
       "情景不明"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 10540,
+    "effectiveSpeechEndMs": 11220
   },
   {
     "id": "C2067_zve1_day1_broll_speech_s14-19",
@@ -3959,7 +4105,9 @@
       "情景不明",
       "情景不明"
     ],
-    "speechCoverage": 0.6372093023255814
+    "speechCoverage": 0.6372093023255814,
+    "effectiveSpeechStartMs": 14460,
+    "effectiveSpeechEndMs": 18760
   },
   {
     "id": "C2068_zve1_day1_broll_speech_s0-10",
@@ -3988,7 +4136,9 @@
       "情景不明",
       "情景不明"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 460,
+    "effectiveSpeechEndMs": 9640
   },
   {
     "id": "C2069_zve1_day1_broll_speech_s1-6",
@@ -4022,7 +4172,9 @@
       "白色车辆行驶",
       "情景不明"
     ],
-    "speechCoverage": 0.6991525423728814
+    "speechCoverage": 0.6991525423728814,
+    "effectiveSpeechStartMs": 1720,
+    "effectiveSpeechEndMs": 6440
   },
   {
     "id": "C2070_zve1_day1_talking-head_speech_s0-8",
@@ -4056,7 +4208,9 @@
       "情景不明",
       "情景不明"
     ],
-    "speechCoverage": 0.6031746031746031
+    "speechCoverage": 0.6031746031746031,
+    "effectiveSpeechStartMs": 1300,
+    "effectiveSpeechEndMs": 7600
   },
   {
     "id": "C2071_zve1_day1_drive_visual_s0-4",
@@ -4103,7 +4257,9 @@
       "情景不明",
       "情景不明"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 900,
+    "effectiveSpeechEndMs": 2900
   },
   {
     "id": "DSC09306_photos_photo",
@@ -4197,7 +4353,9 @@
       "解放第一矿",
       "厂房列车"
     ],
-    "speechCoverage": 0.8110687022900763
+    "speechCoverage": 0.8110687022900763,
+    "effectiveSpeechStartMs": 1120,
+    "effectiveSpeechEndMs": 11600
   },
   {
     "id": "C2075_zve1_day1_talking-head_speech_s0-24",
@@ -4246,7 +4404,9 @@
       "清末矿场",
       "工人运动"
     ],
-    "speechCoverage": 0.94229112833764
+    "speechCoverage": 0.94229112833764,
+    "effectiveSpeechStartMs": 880,
+    "effectiveSpeechEndMs": 24100
   },
   {
     "id": "C2076_zve1_day1_broll_speech_s0-7",
@@ -4352,7 +4512,9 @@
       "青铜雕塑",
       "小鸟雕像"
     ],
-    "speechCoverage": 0.6312056737588653
+    "speechCoverage": 0.6312056737588653,
+    "effectiveSpeechStartMs": 3660,
+    "effectiveSpeechEndMs": 9300
   },
   {
     "id": "DSC09309_photos_photo",
@@ -4400,7 +4562,9 @@
       "生锈",
       "枕木"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1520,
+    "effectiveSpeechEndMs": 4400
   },
   {
     "id": "C2079_zve1_day1_broll_speech_s0-15",
@@ -4444,7 +4608,9 @@
       "枕木特写",
       "生锈铁轨"
     ],
-    "speechCoverage": 0.6277777777777778
+    "speechCoverage": 0.6277777777777778,
+    "effectiveSpeechStartMs": 860,
+    "effectiveSpeechEndMs": 15260
   },
   {
     "id": "C2080_zve1_day1_broll_speech_s0-3",
@@ -4473,7 +4639,9 @@
       "黄色红色火车",
       "地面有杂物"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 520,
+    "effectiveSpeechEndMs": 3300
   },
   {
     "id": "C2081_zve1_day1_broll_s0-1",
@@ -4526,7 +4694,9 @@
       "黄色火车",
       "红色防撞条"
     ],
-    "speechCoverage": 0.950354609929078
+    "speechCoverage": 0.950354609929078,
+    "effectiveSpeechStartMs": 1300,
+    "effectiveSpeechEndMs": 9515
   },
   {
     "id": "DSC09320_photos_photo",
@@ -4623,7 +4793,9 @@
       "破坯后",
       "生命力"
     ],
-    "speechCoverage": 0.8
+    "speechCoverage": 0.8,
+    "effectiveSpeechStartMs": 1760,
+    "effectiveSpeechEndMs": 11360
   },
   {
     "id": "DSC09325_photos_photo",
@@ -4671,7 +4843,9 @@
       "红色工程车",
       "黄色吊车"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 2720,
+    "effectiveSpeechEndMs": 3740
   },
   {
     "id": "C2084_zve1_day1_broll_speech_s10-15",
@@ -4705,7 +4879,9 @@
       "红色矿车",
       "砖砌站台"
     ],
-    "speechCoverage": 0.6446700507614214
+    "speechCoverage": 0.6446700507614214,
+    "effectiveSpeechStartMs": 10840,
+    "effectiveSpeechEndMs": 14780
   },
   {
     "id": "DSC09328_photos_photo",
@@ -4782,7 +4958,9 @@
       "红色矿车",
       "黄色吊机"
     ],
-    "speechCoverage": 0.7710526315789473
+    "speechCoverage": 0.7710526315789473,
+    "effectiveSpeechStartMs": 1340,
+    "effectiveSpeechEndMs": 8940
   },
   {
     "id": "C2086_zve1_day1_broll_speech_s0-12",
@@ -4826,7 +5004,9 @@
       "火车车厢",
       "工业建筑"
     ],
-    "speechCoverage": 0.8225190839694656
+    "speechCoverage": 0.8225190839694656,
+    "effectiveSpeechStartMs": 1100,
+    "effectiveSpeechEndMs": 11580
   },
   {
     "id": "DSC09331_photos_photo",
@@ -4879,7 +5059,9 @@
       "绿色车厢",
       "黄色条纹"
     ],
-    "speechCoverage": 0.7902621722846442
+    "speechCoverage": 0.7902621722846442,
+    "effectiveSpeechStartMs": 1620,
+    "effectiveSpeechEndMs": 6960
   },
   {
     "id": "C2088_zve1_day1_broll_visual_s0-5",
@@ -5323,7 +5505,9 @@
       "铁路碎石",
       "植被丛生"
     ],
-    "speechCoverage": 0.8783783783783784
+    "speechCoverage": 0.8783783783783784,
+    "effectiveSpeechStartMs": 1120,
+    "effectiveSpeechEndMs": 5560
   },
   {
     "id": "C2091_zve1_day1_broll_speech_s8-10",
@@ -5352,7 +5536,9 @@
       "砖砌建筑",
       "路径蜿蜒"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 8620,
+    "effectiveSpeechEndMs": 9800
   },
   {
     "id": "C2091_zve1_day1_broll_speech_s16-26",
@@ -5386,7 +5572,9 @@
       "烧煤厂房",
       "绿植遮挡"
     ],
-    "speechCoverage": 0.6942675159235668
+    "speechCoverage": 0.6942675159235668,
+    "effectiveSpeechStartMs": 16640,
+    "effectiveSpeechEndMs": 26027
   },
   {
     "id": "DJI_20260618192337_0892_D_drone_broll_s0-18",
@@ -5473,7 +5661,9 @@
       "混凝土结构",
       "铺装地面"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 4160,
+    "effectiveSpeechEndMs": 6400
   },
   {
     "id": "C2093_zve1_day1_broll_speech_s8-21",
@@ -5522,7 +5712,9 @@
       "红色铁架",
       "褐色砖墙"
     ],
-    "speechCoverage": 0.5145797598627787
+    "speechCoverage": 0.5145797598627787,
+    "effectiveSpeechStartMs": 8860,
+    "effectiveSpeechEndMs": 20520
   },
   {
     "id": "DSC09343_photos_photo",
@@ -5609,7 +5801,9 @@
       "红拱门",
       "杂草丛生"
     ],
-    "speechCoverage": 0.6197604790419161
+    "speechCoverage": 0.6197604790419161,
+    "effectiveSpeechStartMs": 1440,
+    "effectiveSpeechEndMs": 18140
   },
   {
     "id": "DSC09348_photos_photo",
@@ -5667,7 +5861,9 @@
       "高楼梯",
       "塔"
     ],
-    "speechCoverage": 0.6766467065868264
+    "speechCoverage": 0.6766467065868264,
+    "effectiveSpeechStartMs": 1240,
+    "effectiveSpeechEndMs": 7920
   },
   {
     "id": "C2096_zve1_day1_broll_visual_s0-4",
@@ -5731,7 +5927,9 @@
       "大型砖砌建筑",
       "金属栏杆前景"
     ],
-    "speechCoverage": 0.535
+    "speechCoverage": 0.535,
+    "effectiveSpeechStartMs": 2560,
+    "effectiveSpeechEndMs": 10560
   },
   {
     "id": "DSC09357_photos_photo",
@@ -5784,7 +5982,9 @@
       "驾驶车辆",
       "情景不明"
     ],
-    "speechCoverage": 0.7834757834757835
+    "speechCoverage": 0.7834757834757835,
+    "effectiveSpeechStartMs": 4900,
+    "effectiveSpeechEndMs": 11920
   },
   {
     "id": "C2098_zve1_day1_drive_visual_s6-13",
@@ -5887,7 +6087,9 @@
       "超越大货车",
       "情景不明"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1840,
+    "effectiveSpeechEndMs": 3000
   },
   {
     "id": "C2103_zve1_day1_drive_visual_s3-16",
@@ -5935,7 +6137,9 @@
       "戴镊子闭眼",
       "情景不明"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 7700,
+    "effectiveSpeechEndMs": 9640
   },
   {
     "id": "C2104_zve1_day1_drive_s0-31",
@@ -5988,7 +6192,9 @@
       "情景不明",
       "情景不明"
     ],
-    "speechCoverage": 0.8032786885245902
+    "speechCoverage": 0.8032786885245902,
+    "effectiveSpeechStartMs": 3820,
+    "effectiveSpeechEndMs": 8700
   },
   {
     "id": "C2105_zve1_day1_drive_visual_s7-25",
@@ -6042,7 +6248,9 @@
       "情景不明",
       "情景不明"
     ],
-    "speechCoverage": 0.6002785515320335
+    "speechCoverage": 0.6002785515320335,
+    "effectiveSpeechStartMs": 11620,
+    "effectiveSpeechEndMs": 25980
   },
   {
     "id": "C2106_zve1_day1_drive_s0-111",
@@ -6103,7 +6311,9 @@
       "情景不明",
       "情景不明"
     ],
-    "speechCoverage": 0.8449612403100775
+    "speechCoverage": 0.8449612403100775,
+    "effectiveSpeechStartMs": 280,
+    "effectiveSpeechEndMs": 18340
   },
   {
     "id": "C2108_zve1_day2_broll_speech_s2-14",
@@ -6137,7 +6347,9 @@
       "居客楼",
       "灯光装饰"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 2400,
+    "effectiveSpeechEndMs": 13600
   },
   {
     "id": "C2109_zve1_day2_drive_visual_s0-4",
@@ -6186,7 +6398,9 @@
       "湿滑路面",
       "红灯笼"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1060,
+    "effectiveSpeechEndMs": 3520
   },
   {
     "id": "C2110_zve1_day2_broll_speech_s0-9",
@@ -6225,7 +6439,9 @@
       "砖地湿滑",
       "黑车开门"
     ],
-    "speechCoverage": 0.8206521739130435
+    "speechCoverage": 0.8206521739130435,
+    "effectiveSpeechStartMs": 1080,
+    "effectiveSpeechEndMs": 8440
   },
   {
     "id": "C2111_zve1_day2_talking-head_speech_s0-2",
@@ -6254,7 +6470,9 @@
       "撑伞男子",
       "红夹克"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1260,
+    "effectiveSpeechEndMs": 2280
   },
   {
     "id": "C2112_zve1_day2_talking-head_speech_s0-9",
@@ -6288,7 +6506,9 @@
       "撑伞男子",
       "红夹克"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 840,
+    "effectiveSpeechEndMs": 8512
   },
   {
     "id": "C2112_zve1_day2_talking-head_s8-9",
@@ -6341,7 +6561,9 @@
       "黑色 SUV",
       "红色灯笼"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1220,
+    "effectiveSpeechEndMs": 10420
   },
   {
     "id": "C2114_zve1_day2_drive_visual_s20-81",
@@ -6410,7 +6632,9 @@
       "红色轿车",
       "特写尾灯"
     ],
-    "speechCoverage": 0.6059870550161812
+    "speechCoverage": 0.6059870550161812,
+    "effectiveSpeechStartMs": 100,
+    "effectiveSpeechEndMs": 12460
   },
   {
     "id": "C2116_zve1_day2_broll_speech_s2-6",
@@ -6439,7 +6663,9 @@
       "五轮胎",
       "举升机作业"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 2300,
+    "effectiveSpeechEndMs": 5200
   },
   {
     "id": "C2117_zve1_day2_broll_speech_s0-9",
@@ -6473,7 +6699,9 @@
       "老砂锅",
       "垂柳街道"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1180,
+    "effectiveSpeechEndMs": 9340
   },
   {
     "id": "C2118_zve1_day2_drive_speech_s0-10",
@@ -6507,7 +6735,9 @@
       "联大美食街",
       "红色货车"
     ],
-    "speechCoverage": 0.8233890214797136
+    "speechCoverage": 0.8233890214797136,
+    "effectiveSpeechStartMs": 1080,
+    "effectiveSpeechEndMs": 9460
   },
   {
     "id": "C2118_zve1_day2_drive_visual_s4-11",
@@ -6590,7 +6820,9 @@
       "砂锅老豆腐",
       "番茄豆腐"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 740,
+    "effectiveSpeechEndMs": 7780
   },
   {
     "id": "C2121_zve1_day2_broll_speech_s0-4",
@@ -6619,7 +6851,9 @@
       "粽子配粥",
       "节日赠礼"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 760,
+    "effectiveSpeechEndMs": 3420
   },
   {
     "id": "C2121_zve1_day2_broll_s4-5",
@@ -6672,7 +6906,9 @@
       "食物特写",
       "木质桌面"
     ],
-    "speechCoverage": 0.6611111111111111
+    "speechCoverage": 0.6611111111111111,
+    "effectiveSpeechStartMs": 2200,
+    "effectiveSpeechEndMs": 9400
   },
   {
     "id": "C2123_zve1_day2_drive_s0-34",
@@ -6720,7 +6956,9 @@
       "乡村道路",
       "树木红灯笼"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 2200,
+    "effectiveSpeechEndMs": 5500
   },
   {
     "id": "C2125_zve1_day2_drive_s0-170",
@@ -6821,7 +7059,9 @@
       "古长城",
       "山脉"
     ],
-    "speechCoverage": 0.8096774193548387
+    "speechCoverage": 0.8096774193548387,
+    "effectiveSpeechStartMs": 1100,
+    "effectiveSpeechEndMs": 13500
   },
   {
     "id": "C2128_zve1_day2_drive_visual_s4-11",
@@ -6948,7 +7188,9 @@
       "白色羊群",
       "石墙房屋"
     ],
-    "speechCoverage": 0.8
+    "speechCoverage": 0.8,
+    "effectiveSpeechStartMs": 520,
+    "effectiveSpeechEndMs": 4720
   },
   {
     "id": "DJI_20260619131842_0917_D-HDR_photos_photo",
@@ -7075,7 +7317,9 @@
       "人物自拍",
       "背包水瓶"
     ],
-    "speechCoverage": 0.9629941126997477
+    "speechCoverage": 0.9629941126997477,
+    "effectiveSpeechStartMs": 1340,
+    "effectiveSpeechEndMs": 25120
   },
   {
     "id": "C2139_zve1_day2_broll_speech_s0-3",
@@ -7148,7 +7392,9 @@
       "传统建筑",
       "彩色反光条"
     ],
-    "speechCoverage": 0.6566951566951567
+    "speechCoverage": 0.6566951566951567,
+    "effectiveSpeechStartMs": 2280,
+    "effectiveSpeechEndMs": 16320
   },
   {
     "id": "C2141_zve1_day2_broll_speech_s0-2",
@@ -7177,7 +7423,9 @@
       "黄色隔离带",
       "摩天轮"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 840,
+    "effectiveSpeechEndMs": 2020
   },
   {
     "id": "C2142_zve1_day2_broll_speech_s0-8",
@@ -7211,7 +7459,9 @@
       "木质水车",
       "白色鸽子"
     ],
-    "speechCoverage": 0.8051948051948052
+    "speechCoverage": 0.8051948051948052,
+    "effectiveSpeechStartMs": 700,
+    "effectiveSpeechEndMs": 8400
   },
   {
     "id": "C2143_zve1_day2_broll_speech_s0-3",
@@ -7240,7 +7490,9 @@
       "红色花朵",
       "绿叶背景"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 680,
+    "effectiveSpeechEndMs": 2860
   },
   {
     "id": "C2145_zve1_day2_broll_speech_s2-9",
@@ -7269,7 +7521,9 @@
       "粉色花朵",
       "绿叶衬托"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 2540,
+    "effectiveSpeechEndMs": 8560
   },
   {
     "id": "C2146_zve1_day2_broll_speech_s0-7",
@@ -7303,7 +7557,9 @@
       "人群聚集",
       "石板广场"
     ],
-    "speechCoverage": 0.80625
+    "speechCoverage": 0.80625,
+    "effectiveSpeechStartMs": 1060,
+    "effectiveSpeechEndMs": 7460
   },
   {
     "id": "C2147_zve1_day2_broll_speech_s0-11",
@@ -7337,7 +7593,9 @@
       "长浮桥",
       "远山背景"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1000,
+    "effectiveSpeechEndMs": 10480
   },
   {
     "id": "C2148_zve1_day2_broll_speech_s1-4",
@@ -7366,7 +7624,9 @@
       "浮桥",
       "救生圈"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 2040,
+    "effectiveSpeechEndMs": 4280
   },
   {
     "id": "C2149_zve1_day2_talking-head_speech_s0-15",
@@ -7410,7 +7670,9 @@
       "自拍",
       "戴眼镜男子"
     ],
-    "speechCoverage": 0.9503649635036496
+    "speechCoverage": 0.9503649635036496,
+    "effectiveSpeechStartMs": 1180,
+    "effectiveSpeechEndMs": 14880
   },
   {
     "id": "C2150_zve1_day2_broll_speech_s1-6",
@@ -7444,7 +7706,9 @@
       "双船",
       "中国国旗"
     ],
-    "speechCoverage": 0.8956521739130435
+    "speechCoverage": 0.8956521739130435,
+    "effectiveSpeechStartMs": 1380,
+    "effectiveSpeechEndMs": 5980
   },
   {
     "id": "C2151_zve1_day2_broll_speech_s3-6",
@@ -7473,7 +7737,9 @@
       "轮胎护舷",
       "小船"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 4000,
+    "effectiveSpeechEndMs": 6360
   },
   {
     "id": "C2152_zve1_day2_broll_speech_s1-8",
@@ -7507,7 +7773,9 @@
       "水上飞人",
       "木栈桥"
     ],
-    "speechCoverage": 0.4565916398713826
+    "speechCoverage": 0.4565916398713826,
+    "effectiveSpeechStartMs": 1920,
+    "effectiveSpeechEndMs": 8022
   },
   {
     "id": "DSC09413_photos_photo",
@@ -7574,7 +7842,9 @@
       "卷发戴眼镜男子",
       "水上推进器背景"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1440,
+    "effectiveSpeechEndMs": 6620
   },
   {
     "id": "C2154_zve1_day2_broll_speech_s0-2",
@@ -7603,7 +7873,9 @@
       "阳光反射",
       "涟漪"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1000,
+    "effectiveSpeechEndMs": 2160
   },
   {
     "id": "C2155_zve1_day2_broll_speech_s1-10",
@@ -7642,7 +7914,9 @@
       "水色碧绿",
       "远处山峦"
     ],
-    "speechCoverage": 0.75
+    "speechCoverage": 0.75,
+    "effectiveSpeechStartMs": 1460,
+    "effectiveSpeechEndMs": 9540
   },
   {
     "id": "C2156_zve1_day2_broll_speech_s1-5",
@@ -7671,7 +7945,9 @@
       "绿色山丘",
       "平静湖泊"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1400,
+    "effectiveSpeechEndMs": 5014
   },
   {
     "id": "C2157_zve1_day2_broll_speech_s0-7",
@@ -7705,7 +7981,9 @@
       "木质栈桥",
       "红色栏杆"
     ],
-    "speechCoverage": 0.877906976744186
+    "speechCoverage": 0.877906976744186,
+    "effectiveSpeechStartMs": 660,
+    "effectiveSpeechEndMs": 7540
   },
   {
     "id": "C2158_zve1_day2_broll_speech_s0-17",
@@ -7759,7 +8037,9 @@
       "石阶",
       "森林"
     ],
-    "speechCoverage": 0.5398230088495575
+    "speechCoverage": 0.5398230088495575,
+    "effectiveSpeechStartMs": 780,
+    "effectiveSpeechEndMs": 16600
   },
   {
     "id": "C2159_zve1_day2_broll_speech_s0-20",
@@ -7818,7 +8098,9 @@
       "石阶",
       "花岗岩"
     ],
-    "speechCoverage": 0.5447598253275109
+    "speechCoverage": 0.5447598253275109,
+    "effectiveSpeechStartMs": 1420,
+    "effectiveSpeechEndMs": 19740
   },
   {
     "id": "DSC09422_photos_photo",
@@ -7891,7 +8173,9 @@
       "层状岩石",
       "植被缝隙"
     ],
-    "speechCoverage": 0.8009592326139089
+    "speechCoverage": 0.8009592326139089,
+    "effectiveSpeechStartMs": 3880,
+    "effectiveSpeechEndMs": 12220
   },
   {
     "id": "DSC09426_photos_photo",
@@ -8011,7 +8295,9 @@
       "情景不明",
       "情景不明"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 940,
+    "effectiveSpeechEndMs": 4540
   },
   {
     "id": "C2162_zve1_day2_broll_speech_s0-10",
@@ -8171,7 +8457,9 @@
       "伸手触摸",
       "绿色植物"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 820,
+    "effectiveSpeechEndMs": 7340
   },
   {
     "id": "C2164_zve1_day2_broll_speech_s0-8",
@@ -8200,7 +8488,9 @@
       "手指指向",
       "绿色植物"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 300,
+    "effectiveSpeechEndMs": 7480
   },
   {
     "id": "DSC09436_photos_photo",
@@ -8291,7 +8581,9 @@
       "石阶木栈道",
       "岩石森林"
     ],
-    "speechCoverage": 0.7902097902097902
+    "speechCoverage": 0.7902097902097902,
+    "effectiveSpeechStartMs": 1060,
+    "effectiveSpeechEndMs": 6780
   },
   {
     "id": "DSC09441_photos_photo",
@@ -8349,7 +8641,9 @@
       "三峰合影",
       "木质栈道"
     ],
-    "speechCoverage": 0.851258581235698
+    "speechCoverage": 0.851258581235698,
+    "effectiveSpeechStartMs": 1540,
+    "effectiveSpeechEndMs": 10280
   },
   {
     "id": "DSC09443_photos_photo",
@@ -8407,7 +8701,9 @@
       "航拍视角",
       "绿色山脉"
     ],
-    "speechCoverage": 0.9491803278688524
+    "speechCoverage": 0.9491803278688524,
+    "effectiveSpeechStartMs": 940,
+    "effectiveSpeechEndMs": 13140
   },
   {
     "id": "DSC09446_photos_photo",
@@ -8460,7 +8756,9 @@
       "木质标牌",
       "道教元素"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1320,
+    "effectiveSpeechEndMs": 8860
   },
   {
     "id": "C2169_zve1_day2_broll_speech_s3-7",
@@ -8494,7 +8792,9 @@
       "岩石表面",
       "植被生长"
     ],
-    "speechCoverage": 0.5376344086021505
+    "speechCoverage": 0.5376344086021505,
+    "effectiveSpeechStartMs": 3680,
+    "effectiveSpeechEndMs": 7019
   },
   {
     "id": "DSC09448_photos_photo",
@@ -8547,7 +8847,9 @@
       "层状岩体",
       "水域远景"
     ],
-    "speechCoverage": 0.9134948096885813
+    "speechCoverage": 0.9134948096885813,
+    "effectiveSpeechStartMs": 1040,
+    "effectiveSpeechEndMs": 6820
   },
   {
     "id": "DSC09449_photos_photo",
@@ -8619,7 +8921,9 @@
       "石灰岩",
       "小鸟"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 640,
+    "effectiveSpeechEndMs": 9540
   },
   {
     "id": "DSC09452_photos_photo",
@@ -8672,7 +8976,9 @@
       "岩壁",
       "黄花"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 620,
+    "effectiveSpeechEndMs": 8920
   },
   {
     "id": "DSC09453_photos_photo",
@@ -8725,7 +9031,9 @@
       "背包客",
       "石板路"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 0,
+    "effectiveSpeechEndMs": 5620
   },
   {
     "id": "C2173_zve1_day2_broll_speech_s9-22",
@@ -8764,7 +9072,9 @@
       "背包客",
       "木栏杆"
     ],
-    "speechCoverage": 0.7986230636833046
+    "speechCoverage": 0.7986230636833046,
+    "effectiveSpeechStartMs": 10200,
+    "effectiveSpeechEndMs": 21526
   },
   {
     "id": "DSC09455_photos_photo",
@@ -8812,7 +9122,9 @@
       "地质纹理",
       "矿物变化"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1080,
+    "effectiveSpeechEndMs": 3540
   },
   {
     "id": "C2175_zve1_day2_broll_speech_s0-10",
@@ -8856,7 +9168,9 @@
       "石脚特写",
       "蜿蜒小路"
     ],
-    "speechCoverage": 0.8793503480278422
+    "speechCoverage": 0.8793503480278422,
+    "effectiveSpeechStartMs": 920,
+    "effectiveSpeechEndMs": 9515
   },
   {
     "id": "DSC09459_photos_photo",
@@ -8947,7 +9261,9 @@
       "溪流瀑布",
       "徒步时长"
     ],
-    "speechCoverage": 0.9226190476190477
+    "speechCoverage": 0.9226190476190477,
+    "effectiveSpeechStartMs": 1480,
+    "effectiveSpeechEndMs": 11560
   },
   {
     "id": "DSC09461_photos_photo",
@@ -9005,7 +9321,9 @@
       "石墙",
       "红色指示牌"
     ],
-    "speechCoverage": 0.9040178571428571
+    "speechCoverage": 0.9040178571428571,
+    "effectiveSpeechStartMs": 520,
+    "effectiveSpeechEndMs": 9480
   },
   {
     "id": "DSC09466_photos_photo",
@@ -9058,7 +9376,9 @@
       "岩拱",
       "木平台"
     ],
-    "speechCoverage": 0.8862973760932945
+    "speechCoverage": 0.8862973760932945,
+    "effectiveSpeechStartMs": 720,
+    "effectiveSpeechEndMs": 7510
   },
   {
     "id": "DSC09468_photos_photo",
@@ -9111,7 +9431,9 @@
       "湖泊",
       "游船"
     ],
-    "speechCoverage": 0.8605898123324397
+    "speechCoverage": 0.8605898123324397,
+    "effectiveSpeechStartMs": 1140,
+    "effectiveSpeechEndMs": 8600
   },
   {
     "id": "C2180_zve1_day2_broll_speech_s1-6",
@@ -9140,7 +9462,9 @@
       "游船",
       "浮桥"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1940,
+    "effectiveSpeechEndMs": 5860
   },
   {
     "id": "C2181_zve1_day2_talking-head_speech_s0-11",
@@ -9184,7 +9508,9 @@
       "卷发男子",
       "绿色山水背景"
     ],
-    "speechCoverage": 0.7128712871287128
+    "speechCoverage": 0.7128712871287128,
+    "effectiveSpeechStartMs": 1180,
+    "effectiveSpeechEndMs": 11280
   },
   {
     "id": "C2182_zve1_day2_drive_s0-42",
@@ -9237,7 +9563,9 @@
       "驾车经过行人桥",
       "接近公交站"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1540,
+    "effectiveSpeechEndMs": 13860
   },
   {
     "id": "C2183_zve1_day2_drive_visual_s4-15",
@@ -9324,7 +9652,9 @@
       "弯道超车",
       "绿色山坡"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1640,
+    "effectiveSpeechEndMs": 4400
   },
   {
     "id": "C2186_zve1_day2_drive_visual_s2-8",
@@ -9392,7 +9722,9 @@
       "白色 SUV",
       "车门打开"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 3900,
+    "effectiveSpeechEndMs": 5800
   },
   {
     "id": "C2188_zve1_day2_drive_visual_s6-23",
@@ -9552,7 +9884,9 @@
       "三车道",
       "去雄安"
     ],
-    "speechCoverage": 0.8903225806451613
+    "speechCoverage": 0.8903225806451613,
+    "effectiveSpeechStartMs": 920,
+    "effectiveSpeechEndMs": 16420
   },
   {
     "id": "C2191_zve1_day2_drive_visual_s4-15",
@@ -9611,7 +9945,9 @@
       "树木遮挡",
       "寻找位置"
     ],
-    "speechCoverage": 0.7336956521739131
+    "speechCoverage": 0.7336956521739131,
+    "effectiveSpeechStartMs": 2420,
+    "effectiveSpeechEndMs": 13460
   },
   {
     "id": "C2192_zve1_day2_drive_visual_s3-13",
@@ -9665,7 +10001,9 @@
       "人物行走",
       "红外套"
     ],
-    "speechCoverage": 0.7617021276595745
+    "speechCoverage": 0.7617021276595745,
+    "effectiveSpeechStartMs": 160,
+    "effectiveSpeechEndMs": 4860
   },
   {
     "id": "C2193_zve1_day2_broll_speech_s8-29",
@@ -9714,7 +10052,9 @@
       "人物站立",
       "城市远景"
     ],
-    "speechCoverage": 0.7948463825569871
+    "speechCoverage": 0.7948463825569871,
+    "effectiveSpeechStartMs": 8600,
+    "effectiveSpeechEndMs": 28780
   },
   {
     "id": "C2194_zve1_day2_broll_s0-31",
@@ -9891,7 +10231,9 @@
       "夜间行车",
       "多车道道路"
     ],
-    "speechCoverage": 0.7095375722543352
+    "speechCoverage": 0.7095375722543352,
+    "effectiveSpeechStartMs": 780,
+    "effectiveSpeechEndMs": 14620
   },
   {
     "id": "C2196_zve1_day2_drive_visual_s3-17",
@@ -9969,7 +10311,9 @@
       "卷发男子",
       "戴眼镜"
     ],
-    "speechCoverage": 0.8407079646017699
+    "speechCoverage": 0.8407079646017699,
+    "effectiveSpeechStartMs": 1400,
+    "effectiveSpeechEndMs": 14960
   },
   {
     "id": "C2199_zve1_day2_broll_speech_s1-5",
@@ -9998,7 +10342,9 @@
       "夜间拍摄",
       "牛肉主题"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1640,
+    "effectiveSpeechEndMs": 4400
   },
   {
     "id": "C2200_zve1_day2_broll_speech_s1-9",
@@ -10032,7 +10378,9 @@
       "店铺招牌",
       "夜间拍摄"
     ],
-    "speechCoverage": 0.8194444444444444
+    "speechCoverage": 0.8194444444444444,
+    "effectiveSpeechStartMs": 1400,
+    "effectiveSpeechEndMs": 8600
   },
   {
     "id": "C2201_zve1_day2_broll_visual_s0-2",
@@ -10081,7 +10429,9 @@
       "牛肉炖锅",
       "面条"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 640,
+    "effectiveSpeechEndMs": 1900
   },
   {
     "id": "C2203_zve1_day2_broll_speech_s0-10",
@@ -10125,7 +10475,9 @@
       "鱼香肉丝",
       "木须肉"
     ],
-    "speechCoverage": 0.697841726618705
+    "speechCoverage": 0.697841726618705,
+    "effectiveSpeechStartMs": 1060,
+    "effectiveSpeechEndMs": 9400
   },
   {
     "id": "C2204_zve1_day3_broll_speech_s2-11",
@@ -10159,7 +10511,9 @@
       "空气通透",
       "停车场"
     ],
-    "speechCoverage": 0.8988235294117647
+    "speechCoverage": 0.8988235294117647,
+    "effectiveSpeechStartMs": 2180,
+    "effectiveSpeechEndMs": 10680
   },
   {
     "id": "C2205_zve1_day3_broll_speech_s0-5",
@@ -10188,7 +10542,9 @@
       "坦克 4S 店",
       "蓝色横幅"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1040,
+    "effectiveSpeechEndMs": 4620
   },
   {
     "id": "C2206_zve1_day3_broll_speech_s0-4",
@@ -10217,7 +10573,9 @@
       "坦克 4S 店",
       "交通锥"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1000,
+    "effectiveSpeechEndMs": 4240
   },
   {
     "id": "C2207_zve1_day3_broll_speech_s2-9",
@@ -10251,7 +10609,9 @@
       "敦煌绿车辆",
       "玻璃幕墙"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 2880,
+    "effectiveSpeechEndMs": 9760
   },
   {
     "id": "C2208_zve1_day3_broll_speech_s0-3",
@@ -10280,7 +10640,9 @@
       "驴肉火烧",
       "绿色菜单"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 820,
+    "effectiveSpeechEndMs": 2880
   },
   {
     "id": "C2209_zve1_day3_broll_speech_s4-8",
@@ -10309,7 +10671,9 @@
       "驴肉火烧",
       "肉夹馍"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 4240,
+    "effectiveSpeechEndMs": 7820
   },
   {
     "id": "C2210_zve1_day3_talking-head_speech_s1-12",
@@ -10353,7 +10717,9 @@
       "驴肉火烧",
       "肉夹馍"
     ],
-    "speechCoverage": 0.8294573643410853
+    "speechCoverage": 0.8294573643410853,
+    "effectiveSpeechStartMs": 1420,
+    "effectiveSpeechEndMs": 11740
   },
   {
     "id": "C2211_zve1_day3_drive_speech_s1-8",
@@ -10387,7 +10753,9 @@
       "保定",
       "洒雪车"
     ],
-    "speechCoverage": 0.8668730650154799
+    "speechCoverage": 0.8668730650154799,
+    "effectiveSpeechStartMs": 1380,
+    "effectiveSpeechEndMs": 7840
   },
   {
     "id": "C2211_zve1_day3_drive_visual_s4-10",
@@ -10493,7 +10861,9 @@
       "特斯拉",
       "多车道"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 880,
+    "effectiveSpeechEndMs": 3008
   },
   {
     "id": "C2216_zve1_day3_drive_s0-36",
@@ -10585,7 +10955,9 @@
       "绿色护栏",
       "树木"
     ],
-    "speechCoverage": 0.5177548682703322
+    "speechCoverage": 0.5177548682703322,
+    "effectiveSpeechStartMs": 320,
+    "effectiveSpeechEndMs": 17780
   },
   {
     "id": "C2218_zve1_day3_drive_visual_s4-18",
@@ -10644,7 +11016,9 @@
       "E95 汽油",
       "价格显示"
     ],
-    "speechCoverage": 0.8072625698324022
+    "speechCoverage": 0.8072625698324022,
+    "effectiveSpeechStartMs": 1480,
+    "effectiveSpeechEndMs": 8640
   },
   {
     "id": "C2220_zve1_day3_talking-head_speech_s0-9",
@@ -10678,7 +11052,9 @@
       "卷发男子",
       "眼镜墨镜"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1100,
+    "effectiveSpeechEndMs": 9000
   },
   {
     "id": "C2221_zve1_day3_broll_speech_s0-6",
@@ -10707,7 +11083,9 @@
       "停放车辆",
       "卡车车队"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1020,
+    "effectiveSpeechEndMs": 5860
   },
   {
     "id": "C2222_zve1_day3_drive_speech_s2-10",
@@ -10736,7 +11114,9 @@
       "黑色轿车",
       "红色卡车"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 3300,
+    "effectiveSpeechEndMs": 9840
   },
   {
     "id": "C2222_zve1_day3_drive_visual_s2-9",
@@ -10826,7 +11206,9 @@
       "红色卡车",
       "情景不明"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 240,
+    "effectiveSpeechEndMs": 6240
   },
   {
     "id": "C2225_zve1_day3_drive_visual_s8-26",
@@ -10874,7 +11256,9 @@
       "车内讨论",
       "情景不明"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 11540,
+    "effectiveSpeechEndMs": 14780
   },
   {
     "id": "C2225_zve1_day3_drive_speech_s21-28",
@@ -10913,7 +11297,9 @@
       "感叹风力发电机",
       "情景不明"
     ],
-    "speechCoverage": 0.6327868852459017
+    "speechCoverage": 0.6327868852459017,
+    "effectiveSpeechStartMs": 21540,
+    "effectiveSpeechEndMs": 27640
   },
   {
     "id": "C2226_zve1_day3_drive_speech_s0-16",
@@ -10962,7 +11348,9 @@
       "发现死鸟",
       "情景不明"
     ],
-    "speechCoverage": 0.49873737373737376
+    "speechCoverage": 0.49873737373737376,
+    "effectiveSpeechStartMs": 440,
+    "effectiveSpeechEndMs": 16280
   },
   {
     "id": "C2226_zve1_day3_drive_visual_s7-19",
@@ -11635,7 +12023,9 @@
       "刀片超车",
       "唐山高速"
     ],
-    "speechCoverage": 0.9035326086956522
+    "speechCoverage": 0.9035326086956522,
+    "effectiveSpeechStartMs": 1560,
+    "effectiveSpeechEndMs": 16280
   },
   {
     "id": "C2233_zve1_day3_drive_visual_s4-14",
@@ -11758,7 +12148,9 @@
       "蓝天空气",
       "重工业城市"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1420,
+    "effectiveSpeechEndMs": 14740
   },
   {
     "id": "C2235_zve1_day3_drive_visual_s3-17",
@@ -11807,7 +12199,9 @@
       "导航结束",
       "卡通雕像"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 800,
+    "effectiveSpeechEndMs": 7980
   },
   {
     "id": "C2236_zve1_day3_drive_visual_s6-13",
@@ -11871,7 +12265,9 @@
       "工业建筑",
       "电力塔"
     ],
-    "speechCoverage": 0.9530685920577617
+    "speechCoverage": 0.9530685920577617,
+    "effectiveSpeechStartMs": 1600,
+    "effectiveSpeechEndMs": 12680
   },
   {
     "id": "C2238_zve1_day3_broll_speech_s0-16",
@@ -11910,7 +12306,9 @@
       "古典建筑",
       "雕像"
     ],
-    "speechCoverage": 0.8384831460674157
+    "speechCoverage": 0.8384831460674157,
+    "effectiveSpeechStartMs": 1360,
+    "effectiveSpeechEndMs": 15600
   },
   {
     "id": "C2239_zve1_day3_broll_s0-35",
@@ -11968,7 +12366,9 @@
       "浮雕雕塑",
       "大理石基座"
     ],
-    "speechCoverage": 0.6129943502824858
+    "speechCoverage": 0.6129943502824858,
+    "effectiveSpeechStartMs": 2440,
+    "effectiveSpeechEndMs": 9520
   },
   {
     "id": "C2241_zve1_day3_broll_speech_s1-20",
@@ -12017,7 +12417,9 @@
       "城市模型",
       "信息展板"
     ],
-    "speechCoverage": 0.7737306843267108
+    "speechCoverage": 0.7737306843267108,
+    "effectiveSpeechStartMs": 1940,
+    "effectiveSpeechEndMs": 20060
   },
   {
     "id": "C2242_zve1_day3_broll_speech_s0-13",
@@ -12061,7 +12463,9 @@
       "城市沙盘",
       "玻璃展柜"
     ],
-    "speechCoverage": 0.9261083743842364
+    "speechCoverage": 0.9261083743842364,
+    "effectiveSpeechStartMs": 980,
+    "effectiveSpeechEndMs": 13160
   },
   {
     "id": "C2243_zve1_day3_broll_speech_s3-19",
@@ -12100,7 +12504,9 @@
       "煤炭样本",
       "亚克力支架"
     ],
-    "speechCoverage": 0.782668500687758
+    "speechCoverage": 0.782668500687758,
+    "effectiveSpeechStartMs": 4100,
+    "effectiveSpeechEndMs": 18640
   },
   {
     "id": "C2244_zve1_day3_broll_speech_s2-12",
@@ -12134,7 +12540,9 @@
       "通讯设备",
       "老式收音机"
     ],
-    "speechCoverage": 0.9801324503311258
+    "speechCoverage": 0.9801324503311258,
+    "effectiveSpeechStartMs": 2300,
+    "effectiveSpeechEndMs": 11360
   },
   {
     "id": "C2246_zve1_day3_broll_visual_s0-16",
@@ -12188,7 +12596,9 @@
       "三脚架照片",
       "黑白影像"
     ],
-    "speechCoverage": 0.6943231441048034
+    "speechCoverage": 0.6943231441048034,
+    "effectiveSpeechStartMs": 820,
+    "effectiveSpeechEndMs": 5400
   },
   {
     "id": "C2248_zve1_day3_broll_speech_s1-25",
@@ -12227,7 +12637,9 @@
       "历史照片",
       "明代挖煤"
     ],
-    "speechCoverage": 0.6731967943009796
+    "speechCoverage": 0.6731967943009796,
+    "effectiveSpeechStartMs": 1680,
+    "effectiveSpeechEndMs": 24140
   },
   {
     "id": "C2249_zve1_day3_broll_speech_s1-8",
@@ -12261,7 +12673,9 @@
       "瓷器展品",
       "万寿无疆"
     ],
-    "speechCoverage": 0.5807453416149069
+    "speechCoverage": 0.5807453416149069,
+    "effectiveSpeechStartMs": 1820,
+    "effectiveSpeechEndMs": 8260
   },
   {
     "id": "C2250_zve1_day3_broll_speech_s0-14",
@@ -12305,7 +12719,9 @@
       "挖煤工具",
       "民国时期"
     ],
-    "speechCoverage": 0.5865384615384616
+    "speechCoverage": 0.5865384615384616,
+    "effectiveSpeechStartMs": 1680,
+    "effectiveSpeechEndMs": 14160
   },
   {
     "id": "C2251_zve1_day3_broll_speech_s0-12",
@@ -12349,7 +12765,9 @@
       "梅金石展品",
       "宝石雕刻"
     ],
-    "speechCoverage": 0.7543859649122807
+    "speechCoverage": 0.7543859649122807,
+    "effectiveSpeechStartMs": 540,
+    "effectiveSpeechEndMs": 11940
   },
   {
     "id": "C2252_zve1_day3_broll_speech_s0-8",
@@ -12378,7 +12796,9 @@
       "火车头模型",
       "龙戏珠"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1080,
+    "effectiveSpeechEndMs": 7620
   },
   {
     "id": "C2252_zve1_day3_broll_s8-10",
@@ -12460,7 +12880,9 @@
       "发光岩石",
       "运动模糊"
     ],
-    "speechCoverage": 0.8566308243727598
+    "speechCoverage": 0.8566308243727598,
+    "effectiveSpeechStartMs": 1780,
+    "effectiveSpeechEndMs": 7360
   },
   {
     "id": "C2255_zve1_day3_broll_visual_s0-16",
@@ -12519,7 +12941,9 @@
       "大型壁画",
       "史前森林"
     ],
-    "speechCoverage": 0.8540880503144654
+    "speechCoverage": 0.8540880503144654,
+    "effectiveSpeechStartMs": 1860,
+    "effectiveSpeechEndMs": 17760
   },
   {
     "id": "C2257_zve1_day3_broll_s0-36",
@@ -12572,7 +12996,9 @@
       "岩石标本",
       "黄铁矿"
     ],
-    "speechCoverage": 0.7918918918918919
+    "speechCoverage": 0.7918918918918919,
+    "effectiveSpeechStartMs": 1200,
+    "effectiveSpeechEndMs": 8600
   },
   {
     "id": "C2259_zve1_day3_broll_speech_s1-9",
@@ -12611,7 +13037,9 @@
       "化石板",
       "辽宁朝阳"
     ],
-    "speechCoverage": 0.6189189189189189
+    "speechCoverage": 0.6189189189189189,
+    "effectiveSpeechStartMs": 1380,
+    "effectiveSpeechEndMs": 8780
   },
   {
     "id": "C2260_zve1_day3_broll_speech_s0-3",
@@ -12640,7 +13068,9 @@
       "树干化石",
       "玻璃展柜"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1400,
+    "effectiveSpeechEndMs": 3380
   },
   {
     "id": "C2261_zve1_day3_broll_speech_s0-5",
@@ -12674,7 +13104,9 @@
       "蓝色矿工玩偶",
       "红色消防员玩偶"
     ],
-    "speechCoverage": 0.8497652582159625
+    "speechCoverage": 0.8497652582159625,
+    "effectiveSpeechStartMs": 500,
+    "effectiveSpeechEndMs": 4760
   },
   {
     "id": "C2262_zve1_day3_broll_speech_s1-20",
@@ -12718,7 +13150,9 @@
       "蒸汽机车模型",
       "金色龙纹"
     ],
-    "speechCoverage": 0.8392246294184721
+    "speechCoverage": 0.8392246294184721,
+    "effectiveSpeechStartMs": 1860,
+    "effectiveSpeechEndMs": 19400
   },
   {
     "id": "C2263_zve1_day3_broll_speech_s0-2",
@@ -12747,7 +13181,9 @@
       "楼梯台阶",
       "白色墙壁"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 940,
+    "effectiveSpeechEndMs": 1960
   },
   {
     "id": "C2264_zve1_day3_broll_speech_s0-11",
@@ -12786,7 +13222,9 @@
       "轨道碎石",
       "港口场景"
     ],
-    "speechCoverage": 0.6084452975047985
+    "speechCoverage": 0.6084452975047985,
+    "effectiveSpeechStartMs": 220,
+    "effectiveSpeechEndMs": 10640
   },
   {
     "id": "C2265_zve1_day3_broll_speech_s0-16",
@@ -12830,7 +13268,9 @@
       "船模展示",
       "海港背景画"
     ],
-    "speechCoverage": 0.9670619235836627
+    "speechCoverage": 0.9670619235836627,
+    "effectiveSpeechStartMs": 440,
+    "effectiveSpeechEndMs": 15531
   },
   {
     "id": "C2266_zve1_day3_broll_speech_s0-8",
@@ -12888,7 +13328,9 @@
       "蓝色搪瓷瓶",
       "青铜花瓶"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 2260,
+    "effectiveSpeechEndMs": 2920
   },
   {
     "id": "C2267_zve1_day3_broll_speech_s6-10",
@@ -12922,7 +13364,9 @@
       "红木雕像",
       "笑佛瓷器"
     ],
-    "speechCoverage": 0.845679012345679
+    "speechCoverage": 0.845679012345679,
+    "effectiveSpeechStartMs": 7140,
+    "effectiveSpeechEndMs": 10380
   },
   {
     "id": "C2268_zve1_day3_broll_speech_s1-9",
@@ -12956,7 +13400,9 @@
       "胡福办公室",
       "肖像照片"
     ],
-    "speechCoverage": 0.8938547486033519
+    "speechCoverage": 0.8938547486033519,
+    "effectiveSpeechStartMs": 1960,
+    "effectiveSpeechEndMs": 9120
   },
   {
     "id": "C2269_zve1_day3_broll_speech_s1-7",
@@ -12990,7 +13436,9 @@
       "历史数据图表",
       "解放前事故"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1900,
+    "effectiveSpeechEndMs": 7000
   },
   {
     "id": "C2270_zve1_day3_broll_speech_s0-21",
@@ -13039,7 +13487,9 @@
       "历史文件展示",
       "黑白工人照"
     ],
-    "speechCoverage": 0.7038499506416585
+    "speechCoverage": 0.7038499506416585,
+    "effectiveSpeechStartMs": 400,
+    "effectiveSpeechEndMs": 20523
   },
   {
     "id": "C2271_zve1_day3_broll_speech_s0-7",
@@ -13083,7 +13533,9 @@
       "唐山历史人物",
       "列宁画像"
     ],
-    "speechCoverage": 0.5402298850574713
+    "speechCoverage": 0.5402298850574713,
+    "effectiveSpeechStartMs": 100,
+    "effectiveSpeechEndMs": 7060
   },
   {
     "id": "C2272_zve1_day3_broll_speech_s3-9",
@@ -13122,7 +13574,9 @@
       "青铜雕塑群",
       "历史照片墙"
     ],
-    "speechCoverage": 0.8650519031141869
+    "speechCoverage": 0.8650519031141869,
+    "effectiveSpeechStartMs": 3480,
+    "effectiveSpeechEndMs": 9260
   },
   {
     "id": "C2273_zve1_day3_broll_speech_s0-8",
@@ -13156,7 +13610,9 @@
       "煤矿设备模型",
       "液压支架"
     ],
-    "speechCoverage": 0.7915407854984894
+    "speechCoverage": 0.7915407854984894,
+    "effectiveSpeechStartMs": 1320,
+    "effectiveSpeechEndMs": 7940
   },
   {
     "id": "C2274_zve1_day3_broll_speech_s7-12",
@@ -13190,7 +13646,9 @@
       "红色机械装置",
       "白色齿轮"
     ],
-    "speechCoverage": 0.5377358490566038
+    "speechCoverage": 0.5377358490566038,
+    "effectiveSpeechStartMs": 8240,
+    "effectiveSpeechEndMs": 12032
   },
   {
     "id": "C2275_zve1_day3_broll_speech_s1-5",
@@ -13219,7 +13677,9 @@
       "彩色安全帽",
       "光影效果"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1840,
+    "effectiveSpeechEndMs": 5014
   },
   {
     "id": "C2276_zve1_day3_talking-head_speech_s0-7",
@@ -13253,7 +13713,9 @@
       "特写展示",
       "工程黄安全帽"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1000,
+    "effectiveSpeechEndMs": 6507
   },
   {
     "id": "C2277_zve1_day3_broll_speech_s1-4",
@@ -13282,7 +13744,9 @@
       "游客参观互动",
       "彩色安全帽"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1800,
+    "effectiveSpeechEndMs": 3520
   },
   {
     "id": "C2278_zve1_day3_broll_speech_s2-6",
@@ -13311,7 +13775,9 @@
       "隧道行走",
       "红色灯光隧道"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 3620,
+    "effectiveSpeechEndMs": 6016
   },
   {
     "id": "C2279_zve1_day3_broll_visual_s0-3",
@@ -13394,7 +13860,9 @@
       "隧道上行",
       "黄色安全帽"
     ],
-    "speechCoverage": 0.8814102564102564
+    "speechCoverage": 0.8814102564102564,
+    "effectiveSpeechStartMs": 2860,
+    "effectiveSpeechEndMs": 9100
   },
   {
     "id": "C2281_zve1_day3_broll_visual_s15-18",
@@ -13486,7 +13954,9 @@
       "红色长隧道",
       "三角形天花板"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 820,
+    "effectiveSpeechEndMs": 9940
   },
   {
     "id": "C2283_zve1_day3_broll_speech_s0-4",
@@ -13515,7 +13985,9 @@
       "红色滤镜",
       "英文标识"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1100,
+    "effectiveSpeechEndMs": 3460
   },
   {
     "id": "C2284_zve1_day3_broll_speech_s1-7",
@@ -13549,7 +14021,9 @@
       "墙面文字",
       "红色灯光"
     ],
-    "speechCoverage": 0.8254545454545454
+    "speechCoverage": 0.8254545454545454,
+    "effectiveSpeechStartMs": 1780,
+    "effectiveSpeechEndMs": 7280
   },
   {
     "id": "C2285_zve1_day3_broll_speech_s0-14",
@@ -13588,7 +14062,9 @@
       "圆形金属大门",
       "数字显示屏"
     ],
-    "speechCoverage": 0.5990853658536586
+    "speechCoverage": 0.5990853658536586,
+    "effectiveSpeechStartMs": 840,
+    "effectiveSpeechEndMs": 13960
   },
   {
     "id": "C2286_zve1_day3_broll_speech_s1-7",
@@ -13622,7 +14098,9 @@
       "隧道标识",
       "蓝色顶灯"
     ],
-    "speechCoverage": 0.6245210727969349
+    "speechCoverage": 0.6245210727969349,
+    "effectiveSpeechStartMs": 1880,
+    "effectiveSpeechEndMs": 7100
   },
   {
     "id": "C2287_zve1_day3_broll_speech_s1-5",
@@ -13651,7 +14129,9 @@
       "手持灯笼照明",
       "大型动物可见"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1380,
+    "effectiveSpeechEndMs": 4820
   },
   {
     "id": "C2288_zve1_day3_broll_speech_s0-2",
@@ -13680,7 +14160,9 @@
       "禁止跨越警示",
       "人物站立"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 960,
+    "effectiveSpeechEndMs": 2006
   },
   {
     "id": "C2289_zve1_day3_broll_speech_s0-8",
@@ -13719,7 +14201,9 @@
       "矿工雕像",
       "铁链围栏"
     ],
-    "speechCoverage": 0.946949602122016
+    "speechCoverage": 0.946949602122016,
+    "effectiveSpeechStartMs": 620,
+    "effectiveSpeechEndMs": 8022
   },
   {
     "id": "C2290_zve1_day3_broll_visual_s0-1",
@@ -13773,7 +14257,9 @@
       "生锈金属箱",
       "黄色顶灯"
     ],
-    "speechCoverage": 0.905511811023622
+    "speechCoverage": 0.905511811023622,
+    "effectiveSpeechStartMs": 380,
+    "effectiveSpeechEndMs": 8000
   },
   {
     "id": "C2292_zve1_day3_broll_visual_s0-2",
@@ -13822,7 +14308,9 @@
       "探控车辆",
       "禁止通行标志"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1680,
+    "effectiveSpeechEndMs": 6340
   },
   {
     "id": "C2294_zve1_day3_broll_speech_s7-12",
@@ -13851,7 +14339,9 @@
       "木质支撑",
       "铁链护栏"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 8220,
+    "effectiveSpeechEndMs": 12180
   },
   {
     "id": "C2294_zve1_day3_broll_speech_s16-18",
@@ -13880,7 +14370,9 @@
       "混凝土隧道墙",
       "黑色线缆"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 17220,
+    "effectiveSpeechEndMs": 18027
   },
   {
     "id": "C2295_zve1_day3_broll_speech_s0-11",
@@ -13919,7 +14411,9 @@
       "生锈刮板运输机",
       "金属支柱支撑"
     ],
-    "speechCoverage": 0.7214428857715431
+    "speechCoverage": 0.7214428857715431,
+    "effectiveSpeechStartMs": 920,
+    "effectiveSpeechEndMs": 10900
   },
   {
     "id": "C2296_zve1_day3_broll_speech_s0-2",
@@ -13948,7 +14442,9 @@
       "穿深色制服",
       "戴安全帽"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 700,
+    "effectiveSpeechEndMs": 2140
   },
   {
     "id": "C2297_zve1_day3_broll_speech_s1-12",
@@ -13982,7 +14478,9 @@
       "胶带运输机",
       "红色机器"
     ],
-    "speechCoverage": 0.8490945674044266
+    "speechCoverage": 0.8490945674044266,
+    "effectiveSpeechStartMs": 1720,
+    "effectiveSpeechEndMs": 11660
   },
   {
     "id": "C2298_zve1_day3_broll_speech_s4-5",
@@ -14011,7 +14509,9 @@
       "穿蓝色制服",
       "戴安全帽"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 4940,
+    "effectiveSpeechEndMs": 5820
   },
   {
     "id": "C2299_zve1_day3_broll_speech_s1-10",
@@ -14045,7 +14545,9 @@
       "戴安全帽",
       "穿红色外套"
     ],
-    "speechCoverage": 0.7738095238095238
+    "speechCoverage": 0.7738095238095238,
+    "effectiveSpeechStartMs": 1980,
+    "effectiveSpeechEndMs": 10380
   },
   {
     "id": "DSC09528_photos_photo",
@@ -14103,7 +14605,9 @@
       "头戴安全帽",
       "身穿制服"
     ],
-    "speechCoverage": 0.48424068767908307
+    "speechCoverage": 0.48424068767908307,
+    "effectiveSpeechStartMs": 2220,
+    "effectiveSpeechEndMs": 9200
   },
   {
     "id": "C2300_zve1_day3_broll_speech_s12-16",
@@ -14132,7 +14636,9 @@
       "机械物体特写",
       "枸杞炖煮相关"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 13600,
+    "effectiveSpeechEndMs": 16534
   },
   {
     "id": "C2301_zve1_day3_broll_speech_s2-9",
@@ -14161,7 +14667,9 @@
       "特写钻头",
       "工业机械"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 2920,
+    "effectiveSpeechEndMs": 8512
   },
   {
     "id": "C2302_zve1_day3_broll_speech_s0-10",
@@ -14229,7 +14737,9 @@
       "工人",
       "微笑"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 12860,
+    "effectiveSpeechEndMs": 18680
   },
   {
     "id": "C2303_zve1_day3_broll_speech_s0-18",
@@ -14283,7 +14793,9 @@
       "隧道",
       "搪瓷碗"
     ],
-    "speechCoverage": 0.6712485681557846
+    "speechCoverage": 0.6712485681557846,
+    "effectiveSpeechStartMs": 0,
+    "effectiveSpeechEndMs": 17460
   },
   {
     "id": "C2304_zve1_day3_broll_s0-1",
@@ -14331,7 +14843,9 @@
       "室内环境",
       "墙面文字"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1720,
+    "effectiveSpeechEndMs": 6016
   },
   {
     "id": "C2306_zve1_day3_talking-head_speech_s0-18",
@@ -14375,7 +14889,9 @@
       "蓝天背景",
       "自拍视角"
     ],
-    "speechCoverage": 0.909952606635071
+    "speechCoverage": 0.909952606635071,
+    "effectiveSpeechStartMs": 980,
+    "effectiveSpeechEndMs": 17860
   },
   {
     "id": "C2307_zve1_day3_drive_s0-270",
@@ -14447,7 +14963,9 @@
       "肯德基门店外观",
       "停车场车辆"
     ],
-    "speechCoverage": 0.7688172043010753
+    "speechCoverage": 0.7688172043010753,
+    "effectiveSpeechStartMs": 1320,
+    "effectiveSpeechEndMs": 5040
   },
   {
     "id": "C2310_zve1_day3_broll_speech_s0-9",
@@ -14476,7 +14994,9 @@
       "超市货架陈列",
       "大型树形装饰"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 0,
+    "effectiveSpeechEndMs": 8720
   },
   {
     "id": "C2311_zve1_day3_drive_s0-14",
@@ -14667,7 +15187,9 @@
       "停车等待",
       "情景不明"
     ],
-    "speechCoverage": 0.8738461538461538
+    "speechCoverage": 0.8738461538461538,
+    "effectiveSpeechStartMs": 940,
+    "effectiveSpeechEndMs": 13940
   },
   {
     "id": "C2320_zve1_day3_broll_speech_s1-13",
@@ -14711,7 +15233,9 @@
       "白色车辆",
       "建筑灯光"
     ],
-    "speechCoverage": 0.7674825174825175
+    "speechCoverage": 0.7674825174825175,
+    "effectiveSpeechStartMs": 1480,
+    "effectiveSpeechEndMs": 12920
   },
   {
     "id": "C2321_zve1_day3_broll_speech_s0-22",
@@ -14765,7 +15289,9 @@
       "方向指示牌",
       "木质支撑树"
     ],
-    "speechCoverage": 0.7622309197651663
+    "speechCoverage": 0.7622309197651663,
+    "effectiveSpeechStartMs": 1240,
+    "effectiveSpeechEndMs": 21526
   },
   {
     "id": "C2322_zve1_day3_talking-head_s0-36",
@@ -14813,7 +15339,9 @@
       "菊花特写",
       "人物行走"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 440,
+    "effectiveSpeechEndMs": 4280
   },
   {
     "id": "C2324_zve1_day3_broll_speech_s0-7",
@@ -14842,7 +15370,9 @@
       "紫色黄色花朵",
       "铁轨旁"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 860,
+    "effectiveSpeechEndMs": 7500
   },
   {
     "id": "C2325_zve1_day3_broll_speech_s0-1",
@@ -14871,7 +15401,9 @@
       "蓝色火车",
       "花海氛围"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 440,
+    "effectiveSpeechEndMs": 1080
   },
   {
     "id": "C2326_zve1_day3_broll_speech_s0-8",
@@ -14905,7 +15437,9 @@
       "金属龙门架",
       "火车行驶"
     ],
-    "speechCoverage": 0.8600508905852418
+    "speechCoverage": 0.8600508905852418,
+    "effectiveSpeechStartMs": 400,
+    "effectiveSpeechEndMs": 8260
   },
   {
     "id": "C2327_zve1_day3_broll_speech_s2-8",
@@ -14934,7 +15468,9 @@
       "蓝色火车",
       "金属龙门架"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 2560,
+    "effectiveSpeechEndMs": 7510
   },
   {
     "id": "DSC09542_photos_photo",
@@ -15006,7 +15542,9 @@
       "散乱菊花",
       "向日葵形态"
     ],
-    "speechCoverage": 0.8260869565217391
+    "speechCoverage": 0.8260869565217391,
+    "effectiveSpeechStartMs": 1800,
+    "effectiveSpeechEndMs": 10080
   },
   {
     "id": "C2329_zve1_day3_broll_s0-17",
@@ -15102,7 +15640,9 @@
       "停止营业",
       "海边露台"
     ],
-    "speechCoverage": 0.8636363636363636
+    "speechCoverage": 0.8636363636363636,
+    "effectiveSpeechStartMs": 1820,
+    "effectiveSpeechEndMs": 9515
   },
   {
     "id": "C2333_zve1_day3_broll_speech_s0-17",
@@ -15146,7 +15686,9 @@
       "水面倒影",
       "多人聚集"
     ],
-    "speechCoverage": 0.7828282828282829
+    "speechCoverage": 0.7828282828282829,
+    "effectiveSpeechStartMs": 1060,
+    "effectiveSpeechEndMs": 16900
   },
   {
     "id": "DSC09565_photos_photo",
@@ -15199,7 +15741,9 @@
       "灯塔码头",
       "三脚架"
     ],
-    "speechCoverage": 0.8919667590027701
+    "speechCoverage": 0.8919667590027701,
+    "effectiveSpeechStartMs": 900,
+    "effectiveSpeechEndMs": 8120
   },
   {
     "id": "DSC09566_photos_photo",
@@ -15262,7 +15806,9 @@
       "三座灯塔",
       "水面倒影"
     ],
-    "speechCoverage": 0.9752650176678446
+    "speechCoverage": 0.9752650176678446,
+    "effectiveSpeechStartMs": 1800,
+    "effectiveSpeechEndMs": 18780
   },
   {
     "id": "C2336_zve1_day3_broll_visual_s0-7",
@@ -15331,7 +15877,9 @@
       "高像素细节",
       "龙鱼墙绘"
     ],
-    "speechCoverage": 0.7114967462039046
+    "speechCoverage": 0.7114967462039046,
+    "effectiveSpeechStartMs": 340,
+    "effectiveSpeechEndMs": 28000
   },
   {
     "id": "C2338_zve1_day3_broll_visual_s0-9",
@@ -15404,7 +15952,9 @@
       "彩色灯光",
       "金属结构"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 640,
+    "effectiveSpeechEndMs": 6880
   },
   {
     "id": "C2340_zve1_day3_broll_speech_s6-26",
@@ -15463,7 +16013,9 @@
       "单人独行",
       "空旷道路"
     ],
-    "speechCoverage": 0.6179540709812108
+    "speechCoverage": 0.6179540709812108,
+    "effectiveSpeechStartMs": 6580,
+    "effectiveSpeechEndMs": 25740
   },
   {
     "id": "DSC09584_photos_photo",
@@ -15530,7 +16082,9 @@
       "夜间行车",
       "雾天"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 780,
+    "effectiveSpeechEndMs": 2860
   },
   {
     "id": "C2342_zve1_day3_drive_visual_s0-30",
@@ -15613,7 +16167,9 @@
       "乡间道路",
       "涂鸦建筑"
     ],
-    "speechCoverage": 0.7145390070921985
+    "speechCoverage": 0.7145390070921985,
+    "effectiveSpeechStartMs": 5000,
+    "effectiveSpeechEndMs": 16280
   },
   {
     "id": "C2344_zve1_day3_drive_visual_s8-26",
@@ -15662,7 +16218,9 @@
       "电线杆",
       "两侧建筑"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 20180,
+    "effectiveSpeechEndMs": 22740
   },
   {
     "id": "C2345_zve1_day3_drive_s0-31",
@@ -15754,7 +16312,9 @@
       "行人避让",
       "情绪激烈口播"
     ],
-    "speechCoverage": 0.6567656765676567
+    "speechCoverage": 0.6567656765676567,
+    "effectiveSpeechStartMs": 820,
+    "effectiveSpeechEndMs": 19000
   },
   {
     "id": "C2347_zve1_day3_drive_visual_s4-15",
@@ -15803,7 +16363,9 @@
       "车辆行驶",
       "铁轨辨识讨论"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1840,
+    "effectiveSpeechEndMs": 6100
   },
   {
     "id": "C2348_zve1_day3_drive_visual_s4-15",
@@ -15852,7 +16414,9 @@
       "行车中",
       "城市夜景"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 12620,
+    "effectiveSpeechEndMs": 13740
   },
   {
     "id": "C2349_zve1_day4_broll_speech_s0-12",
@@ -15881,7 +16445,9 @@
       "湿滑地面",
       "夜间灯光"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1420,
+    "effectiveSpeechEndMs": 12380
   },
   {
     "id": "C2350_zve1_day4_broll_speech_s0-12",
@@ -15925,7 +16491,9 @@
       "城墙垛口",
       "剪影轮廓"
     ],
-    "speechCoverage": 0.5294117647058824
+    "speechCoverage": 0.5294117647058824,
+    "effectiveSpeechStartMs": 1180,
+    "effectiveSpeechEndMs": 12060
   },
   {
     "id": "C2351_zve1_day4_broll_speech_s2-8",
@@ -15954,7 +16522,9 @@
       "水面前景",
       "模糊转清晰"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 2280,
+    "effectiveSpeechEndMs": 7540
   },
   {
     "id": "C2352_zve1_day4_broll_speech_s0-13",
@@ -15993,7 +16563,9 @@
       "灯塔远景",
       "水面倒影"
     ],
-    "speechCoverage": 0.8693379790940766
+    "speechCoverage": 0.8693379790940766,
+    "effectiveSpeechStartMs": 1160,
+    "effectiveSpeechEndMs": 12640
   },
   {
     "id": "DSC09591_photos_photo",
@@ -16046,7 +16618,9 @@
       "岩石海岸",
       "远处灯光"
     ],
-    "speechCoverage": 0.8468085106382979
+    "speechCoverage": 0.8468085106382979,
+    "effectiveSpeechStartMs": 1920,
+    "effectiveSpeechEndMs": 6620
   },
   {
     "id": "C2354_zve1_day4_talking-head_speech_s0-8",
@@ -16080,7 +16654,9 @@
       "卷发戴眼镜人物",
       "红色外套"
     ],
-    "speechCoverage": 0.7981651376146789
+    "speechCoverage": 0.7981651376146789,
+    "effectiveSpeechStartMs": 1420,
+    "effectiveSpeechEndMs": 7960
   },
   {
     "id": "C2355_zve1_day4_broll_speech_s1-8",
@@ -16119,7 +16695,9 @@
       "石堤",
       "钓鱼"
     ],
-    "speechCoverage": 0.7774480712166172
+    "speechCoverage": 0.7774480712166172,
+    "effectiveSpeechStartMs": 1500,
+    "effectiveSpeechEndMs": 8240
   },
   {
     "id": "C2356_zve1_day4_broll_speech_s0-19",
@@ -16168,7 +16746,9 @@
       "岩石前景",
       "天空渐变"
     ],
-    "speechCoverage": 0.7764044943820225
+    "speechCoverage": 0.7764044943820225,
+    "effectiveSpeechStartMs": 900,
+    "effectiveSpeechEndMs": 18700
   },
   {
     "id": "DSC09594_photos_photo",
@@ -16240,7 +16820,9 @@
       "粉色云层",
       "水面倒影"
     ],
-    "speechCoverage": 0.7241379310344828
+    "speechCoverage": 0.7241379310344828,
+    "effectiveSpeechStartMs": 1820,
+    "effectiveSpeechEndMs": 7620
   },
   {
     "id": "DSC09598_photos_photo",
@@ -16502,7 +17084,9 @@
       "三脚架相机",
       "日出惊喜"
     ],
-    "speechCoverage": 0.8933717579250721
+    "speechCoverage": 0.8933717579250721,
+    "effectiveSpeechStartMs": 520,
+    "effectiveSpeechEndMs": 7460
   },
   {
     "id": "DSC09680_photos_photo",
@@ -16569,7 +17153,9 @@
       "海上日落",
       "金色倒影"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 200,
+    "effectiveSpeechEndMs": 1000
   },
   {
     "id": "C2361_zve1_day4_broll_speech_s1-8",
@@ -16603,7 +17189,9 @@
       "浮光月经",
       "小朋友可爱"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1020,
+    "effectiveSpeechEndMs": 7820
   },
   {
     "id": "DSC00327_photos_photo",
@@ -16944,7 +17532,9 @@
       "石堤",
       "捕鱼"
     ],
-    "speechCoverage": 0.7727272727272727
+    "speechCoverage": 0.7727272727272727,
+    "effectiveSpeechStartMs": 1420,
+    "effectiveSpeechEndMs": 6260
   },
   {
     "id": "C2364_zve1_day4_broll_speech_s0-8",
@@ -16978,7 +17568,9 @@
       "石堤",
       "蓝海"
     ],
-    "speechCoverage": 0.7027027027027027
+    "speechCoverage": 0.7027027027027027,
+    "effectiveSpeechStartMs": 540,
+    "effectiveSpeechEndMs": 7510
   },
   {
     "id": "C2365_zve1_day4_broll_s0-1",
@@ -17026,7 +17618,9 @@
       "石堤",
       "绸缎海"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1060,
+    "effectiveSpeechEndMs": 2900
   },
   {
     "id": "C2367_zve1_day4_broll_speech_s0-2",
@@ -17113,7 +17707,9 @@
       "灯塔",
       "石堤"
     ],
-    "speechCoverage": 0.6761710794297352
+    "speechCoverage": 0.6761710794297352,
+    "effectiveSpeechStartMs": 960,
+    "effectiveSpeechEndMs": 10780
   },
   {
     "id": "C2369_zve1_day4_talking-head_speech_s2-28",
@@ -17172,7 +17768,9 @@
       "招潮蟹",
       "红色外套"
     ],
-    "speechCoverage": 0.8952837729816147
+    "speechCoverage": 0.8952837729816147,
+    "effectiveSpeechStartMs": 2520,
+    "effectiveSpeechEndMs": 27540
   },
   {
     "id": "DSC09954_photos_photo",
@@ -17282,7 +17880,9 @@
       "红色外套",
       "三脚架"
     ],
-    "speechCoverage": 0.91015625
+    "speechCoverage": 0.91015625,
+    "effectiveSpeechStartMs": 0,
+    "effectiveSpeechEndMs": 5120
   },
   {
     "id": "DSC09963_photos_photo",
@@ -17349,7 +17949,9 @@
       "海边漫步",
       "岩石海岸"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 480,
+    "effectiveSpeechEndMs": 8560
   },
   {
     "id": "C2372_zve1_day4_broll_speech_s1-19",
@@ -17403,7 +18005,9 @@
       "海浪冲刷",
       "海天一色"
     ],
-    "speechCoverage": 0.6883561643835616
+    "speechCoverage": 0.6883561643835616,
+    "effectiveSpeechStartMs": 1520,
+    "effectiveSpeechEndMs": 19030
   },
   {
     "id": "C2373_zve1_day4_broll_speech_s0-19",
@@ -17447,7 +18051,9 @@
       "触摸水母",
       "疑似有毒"
     ],
-    "speechCoverage": 0.912707182320442
+    "speechCoverage": 0.912707182320442,
+    "effectiveSpeechStartMs": 600,
+    "effectiveSpeechEndMs": 18539
   },
   {
     "id": "DSC09967_photos_photo",
@@ -17495,7 +18101,9 @@
       "观察小螃蟹",
       "沙滩行走"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1260,
+    "effectiveSpeechEndMs": 6680
   },
   {
     "id": "C2375_zve1_day4_broll_speech_s1-4",
@@ -17524,7 +18132,9 @@
       "滩水状态",
       "动物足迹"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1960,
+    "effectiveSpeechEndMs": 4060
   },
   {
     "id": "DSC09970_photos_photo",
@@ -17615,7 +18225,9 @@
       "水母群",
       "沙滩波纹"
     ],
-    "speechCoverage": 0.49671772428884026
+    "speechCoverage": 0.49671772428884026,
+    "effectiveSpeechStartMs": 860,
+    "effectiveSpeechEndMs": 10000
   },
   {
     "id": "DSC09977_photos_photo",
@@ -17663,7 +18275,9 @@
       "沙滩",
       "水母"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1600,
+    "effectiveSpeechEndMs": 6140
   },
   {
     "id": "C2378_zve1_day4_broll_speech_s0-7",
@@ -17697,7 +18311,9 @@
       "大量死蟹",
       "沙滩"
     ],
-    "speechCoverage": 0.7719298245614035
+    "speechCoverage": 0.7719298245614035,
+    "effectiveSpeechStartMs": 1040,
+    "effectiveSpeechEndMs": 6740
   },
   {
     "id": "DSC09982_photos_photo",
@@ -17769,7 +18385,9 @@
       "蓝色渔船",
       "背景施工设备"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 520,
+    "effectiveSpeechEndMs": 8820
   },
   {
     "id": "C2380_zve1_day4_broll_speech_s1-8",
@@ -17803,7 +18421,9 @@
       "黄色装载机",
       "红色卡车"
     ],
-    "speechCoverage": 0.6990291262135923
+    "speechCoverage": 0.6990291262135923,
+    "effectiveSpeechStartMs": 2140,
+    "effectiveSpeechEndMs": 8320
   },
   {
     "id": "C2381_zve1_day4_broll_speech_s0-2",
@@ -17886,7 +18506,9 @@
       "水母特写",
       "漂浮杂物"
     ],
-    "speechCoverage": 0.6422680412371135
+    "speechCoverage": 0.6422680412371135,
+    "effectiveSpeechStartMs": 960,
+    "effectiveSpeechEndMs": 20360
   },
   {
     "id": "C2383_zve1_day4_broll_speech_s0-11",
@@ -17925,7 +18547,9 @@
       "大型船只",
       "红色车辆"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 940,
+    "effectiveSpeechEndMs": 11280
   },
   {
     "id": "C2384_zve1_day4_drive_visual_s0-3",
@@ -17989,7 +18613,9 @@
       "铁轨观察",
       "红色汽车"
     ],
-    "speechCoverage": 0.8938640132669984
+    "speechCoverage": 0.8938640132669984,
+    "effectiveSpeechStartMs": 4860,
+    "effectiveSpeechEndMs": 16920
   },
   {
     "id": "C2384_zve1_day4_drive_visual_s5-16",
@@ -18053,7 +18679,9 @@
       "铁轨连接船只",
       "货物转运壮观"
     ],
-    "speechCoverage": 0.8421052631578947
+    "speechCoverage": 0.8421052631578947,
+    "effectiveSpeechStartMs": 860,
+    "effectiveSpeechEndMs": 16440
   },
   {
     "id": "C2386_zve1_day4_broll_speech_s0-7",
@@ -18111,7 +18739,9 @@
       "白色轿车驶过",
       "红色车辆停放"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1920,
+    "effectiveSpeechEndMs": 2860
   },
   {
     "id": "C2387_zve1_day4_broll_speech_s8-13",
@@ -18145,7 +18775,9 @@
       "太阳能屋顶",
       "建筑旁停泊"
     ],
-    "speechCoverage": 0.7881773399014779
+    "speechCoverage": 0.7881773399014779,
+    "effectiveSpeechStartMs": 9140,
+    "effectiveSpeechEndMs": 13200
   },
   {
     "id": "C2388_zve1_day4_drive_s0-45",
@@ -18203,7 +18835,9 @@
       "连续急弯提示",
       "杨树识别"
     ],
-    "speechCoverage": 0.6068493150684932
+    "speechCoverage": 0.6068493150684932,
+    "effectiveSpeechStartMs": 0,
+    "effectiveSpeechEndMs": 14600
   },
   {
     "id": "C2390_zve1_day4_drive_speech_s0-2",
@@ -18291,7 +18925,9 @@
       "电动车停放",
       "挪车抱怨"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1160,
+    "effectiveSpeechEndMs": 11740
   },
   {
     "id": "C2392_zve1_day4_broll_speech_s0-6",
@@ -18320,7 +18956,9 @@
       "海鲜火锅自助",
       "Wolun Hotel"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 660,
+    "effectiveSpeechEndMs": 5526
   },
   {
     "id": "C2393_zve1_day4_broll_speech_s2-11",
@@ -18359,7 +18997,9 @@
       "水果榴莲",
       "电动车充电"
     ],
-    "speechCoverage": 0.5694760820045558
+    "speechCoverage": 0.5694760820045558,
+    "effectiveSpeechStartMs": 2500,
+    "effectiveSpeechEndMs": 11280
   },
   {
     "id": "C2394_zve1_day4_broll_s0-1",
@@ -18432,7 +19072,9 @@
       "青蟹龙虾",
       "大小闸蟹"
     ],
-    "speechCoverage": 0.37058823529411766
+    "speechCoverage": 0.37058823529411766,
+    "effectiveSpeechStartMs": 2020,
+    "effectiveSpeechEndMs": 28544
   },
   {
     "id": "C2395_zve1_day4_broll_s0-1",
@@ -18485,7 +19127,9 @@
       "罗贝蟹虾",
       "大小闸蟹"
     ],
-    "speechCoverage": 0.851145038167939
+    "speechCoverage": 0.851145038167939,
+    "effectiveSpeechStartMs": 1220,
+    "effectiveSpeechEndMs": 6460
   },
   {
     "id": "C2396_zve1_day4_broll_visual_s0-3",
@@ -18539,7 +19183,9 @@
       "不锈钢锅",
       "玻璃盖"
     ],
-    "speechCoverage": 0.7175925925925926
+    "speechCoverage": 0.7175925925925926,
+    "effectiveSpeechStartMs": 1140,
+    "effectiveSpeechEndMs": 5460
   },
   {
     "id": "C2398_zve1_day4_broll_speech_s0-2",
@@ -18568,7 +19214,9 @@
       "不锈钢锅",
       "玻璃盖"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 860,
+    "effectiveSpeechEndMs": 1900
   },
   {
     "id": "C2399_zve1_day4_broll_speech_s0-4",
@@ -18597,7 +19245,9 @@
       "不锈钢锅",
       "玻璃盖"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 840,
+    "effectiveSpeechEndMs": 4040
   },
   {
     "id": "C2399_zve1_day4_broll_speech_s7-10",
@@ -18626,7 +19276,9 @@
       "不锈钢碗",
       "玻璃盖"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 7740,
+    "effectiveSpeechEndMs": 9660
   },
   {
     "id": "C2400_zve1_day4_broll_speech_s0-18",
@@ -18670,7 +19322,9 @@
       "水果蔬菜",
       "自助餐台"
     ],
-    "speechCoverage": 0.7063679245283019
+    "speechCoverage": 0.7063679245283019,
+    "effectiveSpeechStartMs": 1280,
+    "effectiveSpeechEndMs": 18240
   },
   {
     "id": "C2401_zve1_day4_broll_speech_s0-9",
@@ -18709,7 +19363,9 @@
       "火锅食材",
       "榴莲"
     ],
-    "speechCoverage": 0.9370786516853933
+    "speechCoverage": 0.9370786516853933,
+    "effectiveSpeechStartMs": 700,
+    "effectiveSpeechEndMs": 9024
   },
   {
     "id": "C2402_zve1_day4_broll_speech_s0-2",
@@ -18738,7 +19394,9 @@
       "生海鲜拼盘",
       "木桌"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 0,
+    "effectiveSpeechEndMs": 1640
   },
   {
     "id": "C2403_zve1_day4_broll_speech_s0-11",
@@ -18772,7 +19430,9 @@
       "海鲜拼盘",
       "榴莲"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 960,
+    "effectiveSpeechEndMs": 11520
   },
   {
     "id": "C2404_zve1_day4_broll_visual_s0-2",
@@ -18821,7 +19481,9 @@
       "八爪鱼特写",
       "海鲜拼盘"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 720,
+    "effectiveSpeechEndMs": 6180
   },
   {
     "id": "C2406_zve1_day4_drive_speech_s0-23",
@@ -18929,7 +19591,9 @@
       "白色 SUV",
       "警察检查点"
     ],
-    "speechCoverage": 0.7667140825035562
+    "speechCoverage": 0.7667140825035562,
+    "effectiveSpeechStartMs": 380,
+    "effectiveSpeechEndMs": 14440
   },
   {
     "id": "C2407_zve1_day4_drive_visual_s4-14",
@@ -19093,7 +19757,9 @@
       "红色卡车",
       "白色 SUV"
     ],
-    "speechCoverage": 0.7471819645732689
+    "speechCoverage": 0.7471819645732689,
+    "effectiveSpeechStartMs": 1840,
+    "effectiveSpeechEndMs": 14260
   },
   {
     "id": "C2414_zve1_day4_drive_s0-164",
@@ -19241,7 +19907,9 @@
       "公路行车",
       "车辆跟拍"
     ],
-    "speechCoverage": 0.8391608391608392
+    "speechCoverage": 0.8391608391608392,
+    "effectiveSpeechStartMs": 2680,
+    "effectiveSpeechEndMs": 11260
   },
   {
     "id": "C2422_zve1_day4_drive_visual_s6-22",
@@ -19315,7 +19983,9 @@
       "公路行车",
       "城市远景"
     ],
-    "speechCoverage": 0.7178899082568807
+    "speechCoverage": 0.7178899082568807,
+    "effectiveSpeechStartMs": 640,
+    "effectiveSpeechEndMs": 9360
   },
   {
     "id": "C2423_zve1_day4_drive_visual_s3-16",
@@ -19364,7 +20034,9 @@
       "公路行车",
       "城市天际线"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 13900,
+    "effectiveSpeechEndMs": 15180
   },
   {
     "id": "C2424_zve1_day4_drive_s0-51",
@@ -19508,7 +20180,9 @@
       "黄色面包车",
       "天津站背景"
     ],
-    "speechCoverage": 0.69
+    "speechCoverage": 0.69,
+    "effectiveSpeechStartMs": 2500,
+    "effectiveSpeechEndMs": 16500
   },
   {
     "id": "DSC09985_photos_photo",
@@ -19556,7 +20230,9 @@
       "烤肠串",
       "红色纸杯"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1020,
+    "effectiveSpeechEndMs": 4720
   },
   {
     "id": "C2431_zve1_day4_broll_s0-1",
@@ -19614,7 +20290,9 @@
       "三轮车行驶",
       "经过售票处"
     ],
-    "speechCoverage": 0.7138643067846607
+    "speechCoverage": 0.7138643067846607,
+    "effectiveSpeechStartMs": 1400,
+    "effectiveSpeechEndMs": 8180
   },
   {
     "id": "C2432_zve1_day4_broll_speech_s0-6",
@@ -19648,7 +20326,9 @@
       "LED 灯带照明",
       "白色扶手"
     ],
-    "speechCoverage": 0.5291666666666667
+    "speechCoverage": 0.5291666666666667,
+    "effectiveSpeechStartMs": 1300,
+    "effectiveSpeechEndMs": 6100
   },
   {
     "id": "C2433_zve1_day4_broll_speech_s4-6",
@@ -19677,7 +20357,9 @@
       "台阶照明设计",
       "数字显示屏"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 4140,
+    "effectiveSpeechEndMs": 5220
   },
   {
     "id": "C2434_zve1_day4_broll_speech_s0-2",
@@ -19706,7 +20388,9 @@
       "城市天际线",
       "河流景观"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 940,
+    "effectiveSpeechEndMs": 1880
   },
   {
     "id": "C2435_zve1_day4_broll_speech_s0-4",
@@ -19735,7 +20419,9 @@
       "发光鱼群装置",
       "数字屏幕"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 800,
+    "effectiveSpeechEndMs": 4460
   },
   {
     "id": "C2436_zve1_day4_talking-head_speech_s1-19",
@@ -19789,7 +20475,9 @@
       "背包装备准备",
       "天津文旅局"
     ],
-    "speechCoverage": 0.9018264840182648
+    "speechCoverage": 0.9018264840182648,
+    "effectiveSpeechStartMs": 1440,
+    "effectiveSpeechEndMs": 18960
   },
   {
     "id": "C2437_zve1_day4_broll_visual_s0-7",
@@ -19887,7 +20575,9 @@
       "高楼窗户",
       "河流穿城"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 820,
+    "effectiveSpeechEndMs": 1515
   },
   {
     "id": "C2440_zve1_day4_broll_speech_s0-7",
@@ -19921,7 +20611,9 @@
       "模糊视野",
       "天津城市"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 680,
+    "effectiveSpeechEndMs": 7420
   },
   {
     "id": "C2441_zve1_day4_broll_speech_s1-14",
@@ -19955,7 +20647,9 @@
       "MBTI 测试",
       "互动展位"
     ],
-    "speechCoverage": 0.640728476821192
+    "speechCoverage": 0.640728476821192,
+    "effectiveSpeechStartMs": 1500,
+    "effectiveSpeechEndMs": 13580
   },
   {
     "id": "C2442_zve1_day4_broll_visual_s0-1",
@@ -20009,7 +20703,9 @@
       "白色台阶",
       "墙面灯光"
     ],
-    "speechCoverage": 0.7153846153846154
+    "speechCoverage": 0.7153846153846154,
+    "effectiveSpeechStartMs": 3380,
+    "effectiveSpeechEndMs": 8580
   },
   {
     "id": "C2444_zve1_day4_broll_speech_s0-2",
@@ -20038,7 +20734,9 @@
       "紫色栏杆",
       "水平缆绳"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 0,
+    "effectiveSpeechEndMs": 1800
   },
   {
     "id": "C2445_zve1_day4_broll_speech_s1-13",
@@ -20082,7 +20780,9 @@
       "城市全景",
       "阿尔滨龙塔"
     ],
-    "speechCoverage": 0.8162544169611308
+    "speechCoverage": 0.8162544169611308,
+    "effectiveSpeechStartMs": 1600,
+    "effectiveSpeechEndMs": 12920
   },
   {
     "id": "C2446_zve1_day4_broll_speech_s1-7",
@@ -20116,7 +20816,9 @@
       "玻璃护栏",
       "城市夜景"
     ],
-    "speechCoverage": 0.803448275862069
+    "speechCoverage": 0.803448275862069,
+    "effectiveSpeechStartMs": 1660,
+    "effectiveSpeechEndMs": 7460
   },
   {
     "id": "C2447_zve1_day4_broll_speech_s0-6",
@@ -20150,7 +20852,9 @@
       "城市天际线",
       "高空玻璃栈道"
     ],
-    "speechCoverage": 0.8767605633802817
+    "speechCoverage": 0.8767605633802817,
+    "effectiveSpeechStartMs": 160,
+    "effectiveSpeechEndMs": 5840
   },
   {
     "id": "C2448_zve1_day4_broll_speech_s4-16",
@@ -20194,7 +20898,9 @@
       "城市景观",
       "玻璃浮空结构"
     ],
-    "speechCoverage": 0.715034965034965
+    "speechCoverage": 0.715034965034965,
+    "effectiveSpeechStartMs": 4920,
+    "effectiveSpeechEndMs": 16360
   },
   {
     "id": "C2449_zve1_day4_broll_speech_s0-2",
@@ -20223,7 +20929,9 @@
       "城市远景",
       "红色外套人物"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 380,
+    "effectiveSpeechEndMs": 1640
   },
   {
     "id": "C2450_zve1_day4_broll_speech_s0-9",
@@ -20257,7 +20965,9 @@
       "城市风光",
       "戴森耳机"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 840,
+    "effectiveSpeechEndMs": 8720
   },
   {
     "id": "C2451_zve1_day4_aerial_speech_s0-2",
@@ -20286,7 +20996,9 @@
       "高楼林立",
       "铁路轨道"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 860,
+    "effectiveSpeechEndMs": 2200
   },
   {
     "id": "C2452_zve1_day4_aerial_speech_s0-7",
@@ -20320,7 +21032,9 @@
       "城市地标",
       "天井之眼"
     ],
-    "speechCoverage": 0.6830065359477124
+    "speechCoverage": 0.6830065359477124,
+    "effectiveSpeechStartMs": 1020,
+    "effectiveSpeechEndMs": 7019
   },
   {
     "id": "C2453_zve1_day4_aerial_speech_s0-7",
@@ -20359,7 +21073,9 @@
       "火车站建筑",
       "铁路线路"
     ],
-    "speechCoverage": 0.5764331210191083
+    "speechCoverage": 0.5764331210191083,
+    "effectiveSpeechStartMs": 800,
+    "effectiveSpeechEndMs": 7019
   },
   {
     "id": "C2454_zve1_day4_aerial_speech_s0-9",
@@ -20408,7 +21124,9 @@
       "天津站与摩天轮",
       "河流船只"
     ],
-    "speechCoverage": 0.6162790697674418
+    "speechCoverage": 0.6162790697674418,
+    "effectiveSpeechStartMs": 640,
+    "effectiveSpeechEndMs": 9240
   },
   {
     "id": "DSC09997_photos_photo",
@@ -20836,7 +21554,9 @@
       "红色招侠出现",
       "大量红色物体"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 780,
+    "effectiveSpeechEndMs": 4480
   },
   {
     "id": "C2456_zve1_day4_broll_speech_s1-14",
@@ -20875,7 +21595,9 @@
       "红色粉色晚霞",
       "人群围观"
     ],
-    "speechCoverage": 0.9215070643642073
+    "speechCoverage": 0.9215070643642073,
+    "effectiveSpeechStartMs": 1420,
+    "effectiveSpeechEndMs": 14160
   },
   {
     "id": "C2457_zve1_day4_broll_speech_s1-11",
@@ -20909,7 +21631,9 @@
       "晚霞",
       "城市"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 2000,
+    "effectiveSpeechEndMs": 10360
   },
   {
     "id": "DSC00032_photos_photo",
@@ -21185,7 +21909,9 @@
       "戴白帽男子",
       "木质大门"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 280,
+    "effectiveSpeechEndMs": 1200
   },
   {
     "id": "C2459_zve1_day4_broll_speech_s0-3",
@@ -21214,7 +21940,9 @@
       "中国进出口银行",
       "天津分行"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 760,
+    "effectiveSpeechEndMs": 2300
   },
   {
     "id": "C2460_zve1_day4_broll_speech_s0-13",
@@ -21253,7 +21981,9 @@
       "金珠国银行",
       "金色大门"
     ],
-    "speechCoverage": 0.7077464788732394
+    "speechCoverage": 0.7077464788732394,
+    "effectiveSpeechStartMs": 880,
+    "effectiveSpeechEndMs": 12240
   },
   {
     "id": "C2461_zve1_day4_broll_speech_s0-23",
@@ -21302,7 +22032,9 @@
       "钟楼广场",
       "繁华人群"
     ],
-    "speechCoverage": 0.853185595567867
+    "speechCoverage": 0.853185595567867,
+    "effectiveSpeechStartMs": 780,
+    "effectiveSpeechEndMs": 22440
   },
   {
     "id": "DSC00049_photos_photo",
@@ -21354,7 +22086,9 @@
       "广场大屏",
       "情景不明"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1260,
+    "effectiveSpeechEndMs": 10320
   },
   {
     "id": "C2463_zve1_day5_talking-head_speech_s0-21",
@@ -21403,7 +22137,9 @@
       "City Walk 路线",
       "情景不明"
     ],
-    "speechCoverage": 0.9214876033057852
+    "speechCoverage": 0.9214876033057852,
+    "effectiveSpeechStartMs": 1020,
+    "effectiveSpeechEndMs": 20380
   },
   {
     "id": "C2464_zve1_day5_drive_speech_s1-17",
@@ -21452,7 +22188,9 @@
       "红色自行车道",
       "情景不明"
     ],
-    "speechCoverage": 0.6386333771353482
+    "speechCoverage": 0.6386333771353482,
+    "effectiveSpeechStartMs": 1980,
+    "effectiveSpeechEndMs": 17024
   },
   {
     "id": "C2465_zve1_day5_broll_speech_s0-6",
@@ -21486,7 +22224,9 @@
       "工商银行大楼",
       "情景不明"
     ],
-    "speechCoverage": 0.7109375
+    "speechCoverage": 0.7109375,
+    "effectiveSpeechStartMs": 800,
+    "effectiveSpeechEndMs": 5920
   },
   {
     "id": "C2466_zve1_day5_broll_speech_s1-14",
@@ -21525,7 +22265,9 @@
       "美食展示",
       "情景不明"
     ],
-    "speechCoverage": 0.9529983792544571
+    "speechCoverage": 0.9529983792544571,
+    "effectiveSpeechStartMs": 1800,
+    "effectiveSpeechEndMs": 14016
   },
   {
     "id": "C2467_zve1_day5_broll_speech_s1-5",
@@ -21554,7 +22296,9 @@
       "红色遮阳棚",
       "情景不明"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1800,
+    "effectiveSpeechEndMs": 4940
   },
   {
     "id": "C2468_zve1_day5_drive_speech_s0-3",
@@ -21583,7 +22327,9 @@
       "高楼大厦",
       "行车视角"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 840,
+    "effectiveSpeechEndMs": 3280
   },
   {
     "id": "C2468_zve1_day5_drive_visual_s0-4",
@@ -21642,7 +22388,9 @@
       "中国联通招牌",
       "行人过马路"
     ],
-    "speechCoverage": 0.9032846715328468
+    "speechCoverage": 0.9032846715328468,
+    "effectiveSpeechStartMs": 1100,
+    "effectiveSpeechEndMs": 12032
   },
   {
     "id": "C2470_zve1_day5_broll_speech_s0-13",
@@ -21681,7 +22429,9 @@
       "现代建筑入口",
       "玻璃门"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1000,
+    "effectiveSpeechEndMs": 12280
   },
   {
     "id": "C2471_zve1_day5_broll_speech_s0-19",
@@ -21730,7 +22480,9 @@
       "坦克 700",
       "黑色展车"
     ],
-    "speechCoverage": 0.6758304696449027
+    "speechCoverage": 0.6758304696449027,
+    "effectiveSpeechStartMs": 1000,
+    "effectiveSpeechEndMs": 18460
   },
   {
     "id": "C2472_zve1_day5_broll_s0-1",
@@ -21788,7 +22540,9 @@
       "蓝白瓷瓶外墙",
       "龙狮雕塑"
     ],
-    "speechCoverage": 0.672
+    "speechCoverage": 0.672,
+    "effectiveSpeechStartMs": 2080,
+    "effectiveSpeechEndMs": 12080
   },
   {
     "id": "C2473_zve1_day5_broll_speech_s1-4",
@@ -21817,7 +22571,9 @@
       "蓝白瓷瓶装饰",
       "石像雕塑"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1600,
+    "effectiveSpeechEndMs": 3440
   },
   {
     "id": "C2473_zve1_day5_broll_speech_s15-17",
@@ -21846,7 +22602,9 @@
       "售票广告",
       "石像花瓶"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 15140,
+    "effectiveSpeechEndMs": 16580
   },
   {
     "id": "C2474_zve1_day5_broll_visual_s0-19",
@@ -21905,7 +22663,9 @@
       "青铜邮筒",
       "龙纹浮雕"
     ],
-    "speechCoverage": 0.7096114519427403
+    "speechCoverage": 0.7096114519427403,
+    "effectiveSpeechStartMs": 1240,
+    "effectiveSpeechEndMs": 11020
   },
   {
     "id": "C2476_zve1_day5_broll_visual_s0-2",
@@ -21959,7 +22719,9 @@
       "动漫女孩",
       "花丛遮挡"
     ],
-    "speechCoverage": 0.9098039215686274
+    "speechCoverage": 0.9098039215686274,
+    "effectiveSpeechStartMs": 500,
+    "effectiveSpeechEndMs": 5526
   },
   {
     "id": "C2478_zve1_day5_broll_speech_s1-19",
@@ -22003,7 +22765,9 @@
       "罗马拱门",
       "红色跑道"
     ],
-    "speechCoverage": 0.6163069544364509
+    "speechCoverage": 0.6163069544364509,
+    "effectiveSpeechStartMs": 2280,
+    "effectiveSpeechEndMs": 18960
   },
   {
     "id": "C2479_zve1_day5_broll_speech_s0-4",
@@ -22032,7 +22796,9 @@
       "红色跑道",
       "砖柱拱廊"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1000,
+    "effectiveSpeechEndMs": 4000
   },
   {
     "id": "C2480_zve1_day5_broll_speech_s0-7",
@@ -22095,7 +22861,9 @@
       "毛主席透明超白",
       "历史照片"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1340,
+    "effectiveSpeechEndMs": 3560
   },
   {
     "id": "C2482_zve1_day5_broll_speech_s0-4",
@@ -22124,7 +22892,9 @@
       "天津五大道",
       "历史面板"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 500,
+    "effectiveSpeechEndMs": 3460
   },
   {
     "id": "C2483_zve1_day5_broll_speech_s1-7",
@@ -22158,7 +22928,9 @@
       "租界建筑",
       "文字展板"
     ],
-    "speechCoverage": 0.7816901408450704
+    "speechCoverage": 0.7816901408450704,
+    "effectiveSpeechStartMs": 1600,
+    "effectiveSpeechEndMs": 7280
   },
   {
     "id": "C2484_zve1_day5_broll_speech_s1-7",
@@ -22192,7 +22964,9 @@
       "玻璃展柜",
       "大理石走廊"
     ],
-    "speechCoverage": 0.8467153284671532
+    "speechCoverage": 0.8467153284671532,
+    "effectiveSpeechStartMs": 1520,
+    "effectiveSpeechEndMs": 7000
   },
   {
     "id": "C2485_zve1_day5_broll_visual_s0-9",
@@ -22246,7 +23020,9 @@
       "夕阳锁",
       "钥匙展示"
     ],
-    "speechCoverage": 0.7678571428571429
+    "speechCoverage": 0.7678571428571429,
+    "effectiveSpeechStartMs": 1320,
+    "effectiveSpeechEndMs": 4680
   },
   {
     "id": "C2487_zve1_day5_broll_speech_s0-6",
@@ -22280,7 +23056,9 @@
       "墨水鞋带",
       "文具展柜"
     ],
-    "speechCoverage": 0.820627802690583
+    "speechCoverage": 0.820627802690583,
+    "effectiveSpeechStartMs": 1280,
+    "effectiveSpeechEndMs": 5740
   },
   {
     "id": "C2489_zve1_day5_broll_speech_s1-3",
@@ -22309,7 +23087,9 @@
       "老式家具",
       "红色警戒线"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1580,
+    "effectiveSpeechEndMs": 2720
   },
   {
     "id": "C2490_zve1_day5_broll_speech_s1-3",
@@ -22338,7 +23118,9 @@
       "红色隔离带",
       "老式家具"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1520,
+    "effectiveSpeechEndMs": 3040
   },
   {
     "id": "C2491_zve1_day5_broll_speech_s0-3",
@@ -22367,7 +23149,9 @@
       "历史照片墙",
       "天津煤矿"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1220,
+    "effectiveSpeechEndMs": 2900
   },
   {
     "id": "C2492_zve1_day5_broll_speech_s0-9",
@@ -22396,7 +23180,9 @@
       "红色背景牌匾",
       "唐山煤矿"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1180,
+    "effectiveSpeechEndMs": 9080
   },
   {
     "id": "C2493_zve1_day5_broll_speech_s0-5",
@@ -22425,7 +23211,9 @@
       "赫伯特胡佛肖像",
       "美国总统"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1080,
+    "effectiveSpeechEndMs": 4860
   },
   {
     "id": "C2494_zve1_day5_broll_speech_s0-4",
@@ -22454,7 +23242,9 @@
       "旗袍女性海报",
       "响眼广告"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 520,
+    "effectiveSpeechEndMs": 3620
   },
   {
     "id": "C2495_zve1_day5_broll_speech_s2-26",
@@ -22523,7 +23313,9 @@
       "传统店铺招牌",
       "杂货店"
     ],
-    "speechCoverage": 0.5576592082616179
+    "speechCoverage": 0.5576592082616179,
+    "effectiveSpeechStartMs": 2500,
+    "effectiveSpeechEndMs": 25740
   },
   {
     "id": "C2496_zve1_day5_broll_speech_s0-2",
@@ -22552,7 +23344,9 @@
       "木质古董相机",
       "禁止触摸"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 440,
+    "effectiveSpeechEndMs": 2120
   },
   {
     "id": "C2497_zve1_day5_broll_speech_s0-14",
@@ -22596,7 +23390,9 @@
       "老式婚礼照片",
       "新人表情"
     ],
-    "speechCoverage": 0.625544267053701
+    "speechCoverage": 0.625544267053701,
+    "effectiveSpeechStartMs": 540,
+    "effectiveSpeechEndMs": 14016
   },
   {
     "id": "C2498_zve1_day5_broll_speech_s1-3",
@@ -22625,7 +23421,9 @@
       "浴缸",
       "复古家具"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1720,
+    "effectiveSpeechEndMs": 2920
   },
   {
     "id": "C2498_zve1_day5_broll_visual_s8-11",
@@ -22679,7 +23477,9 @@
       "暖气片",
       "老式炉灶"
     ],
-    "speechCoverage": 0.5980861244019139
+    "speechCoverage": 0.5980861244019139,
+    "effectiveSpeechStartMs": 13760,
+    "effectiveSpeechEndMs": 17940
   },
   {
     "id": "C2499_zve1_day5_broll_speech_s0-7",
@@ -22713,7 +23513,9 @@
       "点心架",
       "瓷盘"
     ],
-    "speechCoverage": 0.6045016077170418
+    "speechCoverage": 0.6045016077170418,
+    "effectiveSpeechStartMs": 120,
+    "effectiveSpeechEndMs": 6340
   },
   {
     "id": "C2500_zve1_day5_broll_speech_s0-8",
@@ -22776,7 +23578,9 @@
       "广州理发店",
       "重庆理发店"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1380,
+    "effectiveSpeechEndMs": 7510
   },
   {
     "id": "C2502_zve1_day5_broll_s0-1",
@@ -22839,7 +23643,9 @@
       "购买酸奶",
       "询问同行"
     ],
-    "speechCoverage": 0.7087378640776699
+    "speechCoverage": 0.7087378640776699,
+    "effectiveSpeechStartMs": 880,
+    "effectiveSpeechEndMs": 9120
   },
   {
     "id": "C2503_zve1_day5_drive_speech_s0-2",
@@ -22868,7 +23674,9 @@
       "红色旅游车",
       "大钟塔"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 240,
+    "effectiveSpeechEndMs": 1780
   },
   {
     "id": "C2503_zve1_day5_drive_visual_s0-3",
@@ -22942,7 +23750,9 @@
       "红色钟楼",
       "行人车辆"
     ],
-    "speechCoverage": 0.6628407460545194
+    "speechCoverage": 0.6628407460545194,
+    "effectiveSpeechStartMs": 1100,
+    "effectiveSpeechEndMs": 15040
   },
   {
     "id": "C2505_zve1_day5_talking-head_speech_s1-25",
@@ -22991,7 +23801,9 @@
       "卷发男子",
       "各国建筑"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 2120,
+    "effectiveSpeechEndMs": 24840
   },
   {
     "id": "C2506_zve1_day5_broll_speech_s1-16",
@@ -23040,7 +23852,9 @@
       "红色招牌",
       "停放的电动车"
     ],
-    "speechCoverage": 0.8478260869565217
+    "speechCoverage": 0.8478260869565217,
+    "effectiveSpeechStartMs": 1340,
+    "effectiveSpeechEndMs": 15140
   },
   {
     "id": "C2507_zve1_day5_broll_speech_s0-2",
@@ -23069,7 +23883,9 @@
       "玻璃门",
       "红色鼓图案"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 540,
+    "effectiveSpeechEndMs": 2540
   },
   {
     "id": "C2507_zve1_day5_broll_speech_s8-12",
@@ -23103,7 +23919,9 @@
       "网格门",
       "水果刨冰车"
     ],
-    "speechCoverage": 0.7410071942446043
+    "speechCoverage": 0.7410071942446043,
+    "effectiveSpeechStartMs": 8600,
+    "effectiveSpeechEndMs": 11380
   },
   {
     "id": "C2508_zve1_day5_broll_speech_s1-3",
@@ -23132,7 +23950,9 @@
       "红豆碗",
       "黄色配料"
     ],
-    "speechCoverage": 1
+    "speechCoverage": 1,
+    "effectiveSpeechStartMs": 1600,
+    "effectiveSpeechEndMs": 3220
   },
   {
     "id": "C2509_zve1_day5_broll_speech_s1-13",
@@ -23171,7 +23991,9 @@
       "海鲜豆腐",
       "甜口大炸腿"
     ],
-    "speechCoverage": 0.9636363636363636
+    "speechCoverage": 0.9636363636363636,
+    "effectiveSpeechStartMs": 2000,
+    "effectiveSpeechEndMs": 13000
   },
   {
     "id": "C2510_zve1_day5_broll_speech_s0-7",
@@ -23205,7 +24027,9 @@
       "皮皮虾大锅贴",
       "海鲜锅贴"
     ],
-    "speechCoverage": 0.891640866873065
+    "speechCoverage": 0.891640866873065,
+    "effectiveSpeechStartMs": 580,
+    "effectiveSpeechEndMs": 7040
   },
   {
     "id": "C2511_zve1_day5_broll_speech_s0-11",
@@ -23249,7 +24073,9 @@
       "搬完车到达车站",
       "时间紧迫"
     ],
-    "speechCoverage": 0.7456647398843931
+    "speechCoverage": 0.7456647398843931,
+    "effectiveSpeechStartMs": 480,
+    "effectiveSpeechEndMs": 10860
   },
   {
     "id": "C2512_zve1_day5_aerial_visual_s0-23",
@@ -23538,6 +24364,8 @@
       "戴耳机男子",
       "行程探路"
     ],
-    "speechCoverage": 0.9448022079116836
+    "speechCoverage": 0.9448022079116836,
+    "effectiveSpeechStartMs": 900,
+    "effectiveSpeechEndMs": 22640
   }
 ]

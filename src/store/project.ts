@@ -45,6 +45,7 @@ const CDIRS = [
   'analysis',
   'analysis/asset-reports',
   'analysis/fine-scan-checkpoints',
+  'analysis/speech-boundaries',
   'pharos',
   'gps',
   'gps/tracks',
