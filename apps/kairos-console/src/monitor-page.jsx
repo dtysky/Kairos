@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Tag } from 'hana-ui';
+import { Card, Tag } from './ui-compat.tsx';
 
 export function MonitorPage({ model, emptyLabel, toolbar, afterMonitor }) {
   if (!model) {
@@ -103,37 +103,61 @@ export function MonitorPage({ model, emptyLabel, toolbar, afterMonitor }) {
         </div>
       </Card>
 
-      {(model.sections || []).map(section => (
-        <Card key={section.title} className="monitor-panel section-panel">
-          <h2>{section.title}</h2>
-          <div className="pipeline-metric-grid">
-            {(section.items || []).map(item => (
-              <div key={`${section.title}:${item.label}`} className="pipeline-metric-card">
-                <div className="label">{item.label}</div>
-                <div className="value value-compact">{item.value}</div>
-                {item.sub ? <div className="sub">{item.sub}</div> : null}
+      {(model.sections || []).length > 0 ? (
+        <Card className="monitor-panel section-panel monitor-disclosure-panel">
+          <details className="monitor-disclosure" open={model.progress?.status === 'running'}>
+            <summary>
+              <div>
+                <h2>运行详情</h2>
+                <span>{`${model.sections.length} 个分区 · 运行时按需查看`}</span>
+              </div>
+              <Tag>{model.progress?.status === 'running' ? '当前展开' : '已收起'}</Tag>
+            </summary>
+            <div className="monitor-section-list">
+              {model.sections.map(section => (
+                <section key={section.title} className="monitor-section-block">
+                  <h3>{section.title}</h3>
+                  <div className="pipeline-metric-grid">
+                    {(section.items || []).map(item => (
+                      <div key={`${section.title}:${item.label}`} className="pipeline-metric-card">
+                        <div className="label">{item.label}</div>
+                        <div className="value value-compact">{item.value}</div>
+                        {item.sub ? <div className="sub">{item.sub}</div> : null}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          </details>
+        </Card>
+      ) : null}
+
+      <Card className="monitor-panel section-panel monitor-disclosure-panel">
+        <details className="monitor-disclosure">
+          <summary>
+            <div>
+              <h2>完成产物</h2>
+              <span>{(model.outputs || []).length > 0 ? `${model.outputs.length} 个路径 · 默认收起` : '当前没有可展示的产物'}</span>
+            </div>
+            <Tag>{model.outputs?.filter(output => output.exists).length || 0} ready</Tag>
+          </summary>
+          <div className="monitor-output-list">
+            {(model.outputs || []).map(output => (
+              <div key={`${output.label}:${output.path}`} className="output-row">
+                <div className="output-copy">
+                  <strong>{output.label}</strong>
+                  {output.description ? <div className="muted">{output.description}</div> : null}
+                  <code title={output.path}>{output.path}</code>
+                </div>
+                <Tag>{output.exists ? 'ready' : 'pending'}</Tag>
               </div>
             ))}
           </div>
-        </Card>
-      ))}
-
-      <Card className="monitor-panel section-panel">
-        <h2>完成产物</h2>
-        {(model.outputs || []).length === 0 ? <p className="muted">当前没有可展示的产物。</p> : null}
-        {(model.outputs || []).map(output => (
-          <div key={`${output.label}:${output.path}`} className="output-row">
-            <div className="output-copy">
-              <strong>{output.label}</strong>
-              {output.description ? <div className="muted">{output.description}</div> : null}
-              <code>{output.path}</code>
-            </div>
-            <Tag>{output.exists ? 'ready' : 'pending'}</Tag>
-          </div>
-        ))}
+        </details>
       </Card>
 
-      <Card className="monitor-panel section-panel">
+      <Card className="monitor-panel section-panel monitor-raw-panel">
         <details className="monitor-raw-details">
           <summary>原始进度数据</summary>
           <pre className="raw-json">{JSON.stringify(model.raw, null, 2)}</pre>

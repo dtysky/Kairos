@@ -1,9 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import ReactDOM from 'react-dom';
-import { BrowserRouter as Router, Link, Redirect, Route, Switch } from 'react-router-dom';
-import { Button, Card, Menu, MenuItem, Modal, Option, Select, Tag } from 'hana-ui';
-import 'hana-ui/hana-style.scss';
+import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Badge, Drawer, Table } from 'antd';
+import { Button, Card, Modal, Option, Select, Tag } from './ui-compat.tsx';
 import './app.scss';
+import './redesign.scss';
+import { ConsoleSidebar } from './components/console-sidebar.tsx';
+import { isProjectSwitchBlocked, useConsoleState } from './app-state.tsx';
+import { buildChronologyEventPayload, filterChronologyEvents } from './chronology-view.ts';
 import {
   controlMl,
   confirmProjectChronology,
@@ -48,11 +51,15 @@ import {
   WorkflowPrompt,
 } from './workspace-forms.jsx';
 
-function AppShell() {
+export function AppShell() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { state: consoleState, dispatch } = useConsoleState();
   const [status, setStatus] = useState(null);
   const [capabilities, setCapabilities] = useState(null);
   const storedProjectIdRef = React.useRef(window.localStorage.getItem('kairos.console.projectId') || '');
   const hydratedProjectSelectionRef = React.useRef(false);
+  const projectLoadSequenceRef = React.useRef(0);
   const [projectId, setProjectId] = useState('');
   const [activeEditId, setActiveEditId] = useState(window.localStorage.getItem('kairos.console.editId') || 'main');
   const [config, setConfig] = useState(null);
@@ -133,6 +140,21 @@ function AppShell() {
   const mlService = services.find(service => service.name === 'ml') || null;
   const dashboardService = services.find(service => service.name === 'dashboard') || null;
   const openReviewCount = reviews.filter(review => review.status === 'open').length;
+  const hasUnsavedProjectConfig = useMemo(
+    () => Boolean(config && savedConfig && JSON.stringify(config) !== JSON.stringify(savedConfig)),
+    [config, savedConfig],
+  );
+
+  useEffect(() => {
+    dispatch({ type: 'set-dirty', section: 'project-config', dirty: hasUnsavedProjectConfig });
+  }, [dispatch, hasUnsavedProjectConfig]);
+
+  useEffect(() => {
+    dispatch({
+      type: 'hydrate',
+      payload: { projectId, config, jobs: allJobs, services, reviews },
+    });
+  }, [allJobs, config, dispatch, projectId, reviews, services]);
 
   useEffect(() => {
     if (!projectId || liveProjectJobs.length === 0) return undefined;
@@ -149,6 +171,20 @@ function AppShell() {
     setWorkflowDialog(dialog);
   }
 
+  function requestProjectChange(nextProjectId) {
+    if (!nextProjectId || nextProjectId === projectId) return;
+    if (isProjectSwitchBlocked(consoleState.dirtySections)) {
+      const confirmed = window.confirm('当前页面还有未保存的配置草稿。切换项目会丢失这些修改，仍要切换吗？');
+      if (!confirmed) return;
+    }
+    projectLoadSequenceRef.current += 1;
+    setConfig(null);
+    setSavedConfig(null);
+    setReviews([]);
+    setColorArchive({ roots: [] });
+    setProjectId(nextProjectId);
+  }
+
   async function refreshStatus() {
     try {
       setStatus(await fetchWorkspaceStatus());
@@ -159,12 +195,14 @@ function AppShell() {
   }
 
   async function refreshProject(nextProjectId, nextEditId = activeEditId) {
+    const loadSequence = ++projectLoadSequenceRef.current;
     try {
       const [nextConfig, nextReviews, nextColorArchive] = await Promise.all([
         fetchProjectConfig(nextProjectId, nextEditId),
         fetchProjectReviews(nextProjectId),
         fetchProjectColorArchive(nextProjectId).catch(() => ({ roots: [] })),
       ]);
+      if (loadSequence !== projectLoadSequenceRef.current) return;
       setConfig(nextConfig);
       setColorArchive(nextColorArchive || { roots: [] });
       setSavedConfig(nextConfig);
@@ -629,377 +667,161 @@ function AppShell() {
   }
 
   return (
-    <Router>
-      <Route
-        render={routeProps => (
-          <div className="console-shell">
-            <div className="shell-inner">
-              <TopNav {...routeProps} />
-              <header className="workspace-bar">
-                <div>
-                  <div className="eyebrow">Kairos Supervisor</div>
-                  <h1>{currentProject?.project?.name || 'Kairos Console'}</h1>
-                  {currentProject?.projectId ? <div className="muted">{currentProject.projectId}</div> : null}
-                  <p>工作流优先的配置、监控与任务控制台。</p>
-                </div>
-                <div className="workspace-actions">
-                  <select value={projectId} onChange={event => setProjectId(event.target.value)}>
-                    {projects.map(project => (
-                      <option key={project.projectId} value={project.projectId}>
-                        {formatProjectOptionLabel(project, duplicateProjectNames)}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="service-pills">
-                    <Tag>{`Dashboard ${dashboardService?.status || 'unknown'}`}</Tag>
-                    <Tag>{`ML ${mlService?.status || 'unknown'}`}</Tag>
-                    <Tag>{`${openReviewCount} open review`}</Tag>
-                  </div>
-                </div>
-              </header>
-
-              {message ? <div className="message-banner">{message}</div> : null}
-              {error ? <div className="error-banner">{error}</div> : null}
-              <Modal
-                show={Boolean(workflowDialog)}
-                title={workflowDialog?.title || ''}
-                showClose
-                closeOnClickBg
-                cancel={() => setWorkflowDialog(null)}
-                actions={(
-                  <div className="actions modal-actions">
-                    <Button type="primary" onClick={() => setWorkflowDialog(null)}>
-                      {workflowDialog?.confirmLabel || '知道了'}
-                    </Button>
-                  </div>
-                )}
-              >
-                <div className="modal-copy">
-                  <p>{workflowDialog?.body}</p>
-                  {workflowDialog?.detail ? <p>{workflowDialog.detail}</p> : null}
-                </div>
-              </Modal>
-              <Modal
-                show={Boolean(colorOverwriteDialog)}
-                title="确认覆盖 Color 输出"
-                width={720}
-                showClose
-                closeOnClickBg
-                cancel={() => setColorOverwriteDialog(null)}
-                actions={(
-                  <div className="actions modal-actions">
-                    <Button type="default" onClick={() => setColorOverwriteDialog(null)}>
-                      取消
-                    </Button>
-                    <Button
-                      type="primary"
-                      onClick={() => {
-                        const dialog = colorOverwriteDialog;
-                        setColorOverwriteDialog(null);
-                        if (!dialog) return;
-                        runProjectWorkflow(dialog.jobType, {
-                          ...dialog.args,
-                          overwriteConfirmed: true,
-                          overwritePlanHash: dialog.preview?.overwritePlanHash,
-                        });
-                      }}
-                    >
-                      确认覆盖并导出
-                    </Button>
-                  </div>
-                )}
-              >
-                <div className="modal-copy">
-                  <p>
-                    {`将替换 ${colorOverwriteDialog?.preview?.existingCount || 0} 个已有目标，覆盖范围由当前预览 hash 锁定。`}
-                  </p>
-                  <p>
-                    {`输出 root：${colorOverwriteDialog?.preview?.outputRoot || '多个 roots'}`}
-                  </p>
-                  <p>Resolve 会按 raw 父目录拆临时时间线，直接渲染到最终 root/day 目录。</p>
-                  <div className="color-overwrite-preview-list">
-                    {(colorOverwriteDialog?.preview?.byDirectory || []).slice(0, 12).map(item => (
-                      <div key={item.directory || 'root'} className="color-overwrite-preview-row">
-                        <span>{item.directory || '(root)'}</span>
-                        <strong>{`${item.existingCount}/${item.clipCount}`}</strong>
-                      </div>
-                    ))}
-                  </div>
-                  {(colorOverwriteDialog?.preview?.duplicateStemGroups || []).length > 0 ? (
-                    <p>
-                      {`检测到 ${colorOverwriteDialog.preview.duplicateStemGroups.length} 组同目录重名 stem；导出会在启动 Resolve 前阻塞，请先处理源文件名。`}
-                    </p>
-                  ) : null}
-                </div>
-              </Modal>
-
-              <Switch>
-                <Route
-                  exact
-                  path="/"
-                  render={() => (
-                    <OverviewPage
-                      currentProject={currentProject}
-                      activeJobs={activeJobs}
-                      services={services}
-                      projectProgress={projectProgress}
-                      openReviewCount={openReviewCount}
-                    />
-                  )}
-                />
-                <Route
-                  exact
-                  path="/ingest-gps"
-                  render={() => (
-                    <IngestGpsPage
-                      projectId={projectId}
-                      config={config}
-                      capabilities={capabilities}
-                      jobs={allJobs}
-                      setProjectBrief={setProjectBrief}
-                      setManualItinerary={setManualItinerary}
-                      saveSection={saveSection}
-                      busy={busy}
-                      reviews={reviews}
-                      setReviews={setReviews}
-                      resolveReview={resolveReview}
-                      onRunIngest={() => runProjectWorkflow('ingest')}
-                      onRunGpsRefresh={() => runProjectWorkflow('gps-refresh')}
-                    />
-                  )}
-                />
-                <Route
-                  exact
-                  path="/color"
-                  render={() => (
-                    <ColorPage
-                      projectId={projectId}
-                      config={config}
-                      colorArchive={colorArchive}
-                      capabilities={capabilities}
-                      jobs={allJobs}
-                      setProjectBrief={setProjectBrief}
-                      saveSection={saveSection}
-                      busy={busy}
-                      onRunColorAction={args => runProjectWorkflow('color', args)}
-                      onRequestHostPreflight={(payload, options) => recheckColorHost(projectId, payload, options)}
-                      onSaveDrpSnapshot={saveColorDrpSnapshot}
-                      onRegisterDrpSnapshot={registerColorDrpSnapshot}
-                    />
-                  )}
-                />
-                <Route
-                  exact
-                  path="/analyze/monitor"
-                  render={() => <Redirect to="/analyze" />}
-                />
-                <Route
-                  exact
-                  path="/analyze"
-                  render={() => (
-                    <AnalyzePage
-                      projectId={projectId}
-                      projectProgress={projectProgress}
-	                      activeJobs={activeJobs}
-	                      capabilities={capabilities}
-	                      busy={busy}
-	                      onRun={() => runProjectWorkflow('analyze')}
-	                    />
-	                  )}
-                />
-                <Route
-                  exact
-                  path="/chronology"
-                  render={() => (
-                    <ChronologyPage
-                      projectId={projectId}
-                      config={config?.chronology}
-                      pharosContext={config?.pharosContext}
-                      spans={config?.spans}
-                      capabilities={capabilities}
-                      jobs={activeJobs}
-                      busy={busy}
-                      onRunSpatialRefresh={() => runProjectWorkflow('spatial-refresh')}
-                      onRunSpanRebuild={() => runProjectWorkflow('span-rebuild')}
-                      onRunChronologyBuild={() => runProjectWorkflow('chronology-build')}
-                      onConfirm={confirmChronology}
-                      onSaveEvent={saveChronologyEvent}
-                      onMergeEvents={mergeChronologyEvents}
-                      onSplitEvent={splitChronologyEvent}
-                    />
-                  )}
-                />
-                <Route
-                  exact
-                  path="/style/monitor/:categoryId?"
-                  render={props => <Redirect to={buildStylePath(props.match.params.categoryId)} />}
-                />
-                <Route
-                  exact
-                  path="/style"
-                  render={routeProps => (
-                    <StylePage
-                      config={styleSources}
-                      capabilities={capabilities}
-                      jobs={allJobs}
-                      setStyleSources={setStyleSources}
-                      onSave={saveStyleLibrary}
-                      busy={busy}
-                      onRun={categoryId => runWorkspaceWorkflow('style-analysis', categoryId ? { categoryId } : {})}
-                      location={routeProps.location}
-                      history={routeProps.history}
-                    />
-                  )}
-                />
-                <Route
-                  exact
-                  path="/script"
-                  render={() => <Redirect to="/edit" />}
-                />
-                <Route
-                  exact
-                  path="/edit"
-                  render={() => (
-                    <EditFlowPage
-                      config={config}
-                      activeEditId={activeEditId}
-                      editFlowPlan={config?.editFlowPlan}
-                      editFlowRuns={config?.editFlowRuns}
-                      capabilities={capabilities}
-                      editRules={editRules}
-                      styleSources={styleSources}
-                      busy={busy}
-                      jobs={allJobs}
-                      onSaveEditUnit={saveEditUnitPayload}
-                      onSaveResolveSnapshot={saveEditResolveSnapshot}
-                      onRegisterResolveSnapshot={registerEditResolveSnapshot}
-                      onInstallResolveAssets={installEditResolveAssets}
-                      onRelinkResolveMedia={relinkEditResolveMedia}
-                      editResolveAssetsResult={editResolveAssetsResult}
-                      editResolveAssetsError={editResolveAssetsError}
-                      editRelinkResult={editRelinkResult}
-                      editRelinkError={editRelinkError}
-                    />
-                  )}
-                />
-                <Route
-                  exact
-                  path="/timeline-export"
-                  render={() => (
-                    <TimelineExportPage capabilities={capabilities} />
-                  )}
-                />
-                <Route
-                  exact
-                  path="/project"
-                  render={() => (
-                    <ProjectPage
-                      services={services}
-                      busy={busy}
-                      onControlMl={controlMlService}
-                      reviews={reviews}
-                      setReviews={setReviews}
-                      resolveReview={resolveReview}
-                      currentProject={currentProject}
-                    />
-                  )}
-                />
-                <Redirect to="/" />
-              </Switch>
+    <div className={`console-shell${consoleState.sidebarCollapsed ? ' sidebar-collapsed' : ''}`}>
+      <ConsoleSidebar />
+      <div className="shell-main">
+        <header className="workspace-bar">
+          <div className="workspace-context">
+            <div className="eyebrow">Kairos Supervisor</div>
+            <div className="workspace-title-line">
+              <h1>{currentProject?.project?.name || 'Kairos Console'}</h1>
+              {hasUnsavedProjectConfig ? <Tag color="warning">未保存</Tag> : null}
+            </div>
+            {currentProject?.projectId ? <div className="muted workspace-project-id">{currentProject.projectId}</div> : null}
+          </div>
+          <div className="workspace-actions">
+            <select value={projectId} onChange={event => requestProjectChange(event.target.value)} aria-label="当前项目">
+              {projects.map(project => (
+                <option key={project.projectId} value={project.projectId}>
+                  {formatProjectOptionLabel(project, duplicateProjectNames)}
+                </option>
+              ))}
+            </select>
+            <div className="service-pills">
+              <Tag color={dashboardService?.status === 'running' ? 'success' : 'default'}>{`Supervisor ${dashboardService?.status || 'unknown'}`}</Tag>
+              <Tag color={mlService?.status === 'running' ? 'processing' : 'default'}>{`ML ${mlService?.status || 'unknown'}`}</Tag>
+              <Badge count={activeJobs.length + openReviewCount} size="small" overflowCount={99}>
+                <Button
+                  type="default"
+                  onClick={() => dispatch({ type: 'set-task-center-open', open: true })}
+                >
+                  任务中心
+                </Button>
+              </Badge>
             </div>
           </div>
-        )}
-      />
-    </Router>
+        </header>
+
+        <main className="shell-content">
+          {message ? <div className="message-banner">{message}</div> : null}
+          {error ? <div className="error-banner">{error}</div> : null}
+
+          <Routes>
+            <Route path="/" element={<OverviewPage currentProject={currentProject} activeJobs={activeJobs} services={services} projectProgress={projectProgress} openReviewCount={openReviewCount} />} />
+            <Route path="/ingest-gps" element={<IngestGpsPage projectId={projectId} config={config} capabilities={capabilities} jobs={allJobs} setProjectBrief={setProjectBrief} setManualItinerary={setManualItinerary} saveSection={saveSection} busy={busy} reviews={reviews} setReviews={setReviews} resolveReview={resolveReview} onRunIngest={() => runProjectWorkflow('ingest')} onRunGpsRefresh={() => runProjectWorkflow('gps-refresh')} />} />
+            <Route path="/color" element={<ColorPage projectId={projectId} config={config} colorArchive={colorArchive} capabilities={capabilities} jobs={allJobs} setProjectBrief={setProjectBrief} saveSection={saveSection} busy={busy} onRunColorAction={args => runProjectWorkflow('color', args)} onRequestHostPreflight={(payload, options) => recheckColorHost(projectId, payload, options)} onSaveDrpSnapshot={saveColorDrpSnapshot} onRegisterDrpSnapshot={registerColorDrpSnapshot} />} />
+            <Route path="/analyze/monitor" element={<Navigate to="/analyze" replace />} />
+            <Route path="/analyze" element={<AnalyzePage projectId={projectId} projectProgress={projectProgress} activeJobs={activeJobs} capabilities={capabilities} busy={busy} onRun={() => runProjectWorkflow('analyze')} />} />
+            <Route path="/chronology" element={<ChronologyPage projectId={projectId} config={config?.chronology} pharosContext={config?.pharosContext} spans={config?.spans} capabilities={capabilities} jobs={activeJobs} busy={busy} onRunSpatialRefresh={() => runProjectWorkflow('spatial-refresh')} onRunSpanRebuild={() => runProjectWorkflow('span-rebuild')} onRunChronologyBuild={() => runProjectWorkflow('chronology-build')} onConfirm={confirmChronology} onSaveEvent={saveChronologyEvent} onMergeEvents={mergeChronologyEvents} onSplitEvent={splitChronologyEvent} />} />
+            <Route path="/style/monitor/:categoryId?" element={<StyleMonitorRedirect />} />
+            <Route path="/style" element={<StylePage config={styleSources} capabilities={capabilities} jobs={allJobs} setStyleSources={setStyleSources} onSave={saveStyleLibrary} busy={busy} onRun={categoryId => runWorkspaceWorkflow('style-analysis', categoryId ? { categoryId } : {})} location={location} history={{ push: navigate }} />} />
+            <Route path="/script" element={<Navigate to="/edit" replace />} />
+            <Route path="/edit" element={<EditFlowPage config={config} activeEditId={activeEditId} editFlowPlan={config?.editFlowPlan} editFlowRuns={config?.editFlowRuns} capabilities={capabilities} editRules={editRules} styleSources={styleSources} busy={busy} jobs={allJobs} onSaveEditUnit={saveEditUnitPayload} onSaveResolveSnapshot={saveEditResolveSnapshot} onRegisterResolveSnapshot={registerEditResolveSnapshot} onInstallResolveAssets={installEditResolveAssets} onRelinkResolveMedia={relinkEditResolveMedia} editResolveAssetsResult={editResolveAssetsResult} editResolveAssetsError={editResolveAssetsError} editRelinkResult={editRelinkResult} editRelinkError={editRelinkError} />} />
+            <Route path="/timeline-export" element={<TimelineExportPage capabilities={capabilities} />} />
+            <Route path="/project" element={<ProjectPage services={services} busy={busy} onControlMl={controlMlService} reviews={reviews} setReviews={setReviews} resolveReview={resolveReview} currentProject={currentProject} />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </main>
+      </div>
+
+      <Drawer
+        title="任务中心"
+        width={420}
+        open={consoleState.taskCenterOpen}
+        onClose={() => dispatch({ type: 'set-task-center-open', open: false })}
+      >
+        <div className="task-center-section">
+          <div className="section-header"><h3>活跃任务</h3><Tag>{activeJobs.length}</Tag></div>
+          {activeJobs.length === 0 ? <p className="muted">当前没有活跃任务。</p> : activeJobs.map(job => (
+            <div key={job.jobId} className="task-center-row">
+              <div><strong>{job.jobType}</strong><span>{job.projectId || 'workspace'}</span></div>
+              <Tag>{job.status}</Tag>
+            </div>
+          ))}
+        </div>
+        <div className="task-center-section">
+          <div className="section-header"><h3>待处理 Review</h3><Tag>{openReviewCount}</Tag></div>
+          {reviews.filter(review => review.status === 'open').slice(0, 12).map(review => (
+            <div key={review.id} className="task-center-row">
+              <div><strong>{review.title}</strong><span>{review.stage || review.kind || 'review'}</span></div>
+            </div>
+          ))}
+          {openReviewCount === 0 ? <p className="muted">当前没有待处理 Review。</p> : null}
+        </div>
+      </Drawer>
+
+      <Modal show={Boolean(workflowDialog)} title={workflowDialog?.title || ''} showClose closeOnClickBg cancel={() => setWorkflowDialog(null)} actions={<div className="actions modal-actions"><Button type="primary" onClick={() => setWorkflowDialog(null)}>{workflowDialog?.confirmLabel || '知道了'}</Button></div>}>
+        <div className="modal-copy"><p>{workflowDialog?.body}</p>{workflowDialog?.detail ? <p>{workflowDialog.detail}</p> : null}</div>
+      </Modal>
+      <Modal show={Boolean(colorOverwriteDialog)} title="确认覆盖 Color 输出" width={720} showClose closeOnClickBg cancel={() => setColorOverwriteDialog(null)} actions={<div className="actions modal-actions"><Button type="default" onClick={() => setColorOverwriteDialog(null)}>取消</Button><Button type="primary" onClick={() => { const dialog = colorOverwriteDialog; setColorOverwriteDialog(null); if (!dialog) return; runProjectWorkflow(dialog.jobType, { ...dialog.args, overwriteConfirmed: true, overwritePlanHash: dialog.preview?.overwritePlanHash }); }}>确认覆盖并导出</Button></div>}>
+        <div className="modal-copy">
+          <p>{`将替换 ${colorOverwriteDialog?.preview?.existingCount || 0} 个已有目标，覆盖范围由当前预览 hash 锁定。`}</p>
+          <p>{`输出 root：${colorOverwriteDialog?.preview?.outputRoot || '多个 roots'}`}</p>
+          <p>Resolve 会按 raw 父目录拆临时时间线，直接渲染到最终 root/day 目录。</p>
+          <div className="color-overwrite-preview-list">{(colorOverwriteDialog?.preview?.byDirectory || []).slice(0, 12).map(item => <div key={item.directory || 'root'} className="color-overwrite-preview-row"><span>{item.directory || '(root)'}</span><strong>{`${item.existingCount}/${item.clipCount}`}</strong></div>)}</div>
+          {(colorOverwriteDialog?.preview?.duplicateStemGroups || []).length > 0 ? <p>{`检测到 ${colorOverwriteDialog.preview.duplicateStemGroups.length} 组同目录重名 stem；导出会在启动 Resolve 前阻塞，请先处理源文件名。`}</p> : null}
+        </div>
+      </Modal>
+    </div>
   );
 }
 
 function OverviewPage({ currentProject, activeJobs, services, projectProgress, openReviewCount }) {
-  const workflows = [
-    { path: '/ingest-gps', label: '导入与 GPS', summary: '维护单真值素材 Root、manual-itinerary 与素材时间校正。' },
-    { path: '/color', label: '达芬奇调色', summary: '维护 Root render preset，并执行 prepare / sync groups / execute / validate。' },
-    { path: '/analyze', label: '素材分析', summary: '直接查看分析监控、恢复进度并启动 Analyze。' },
-    { path: '/chronology', label: '编年史', summary: '审查 Chronology V2 的事件、路线、缺口和确认状态。' },
-    { path: '/style', label: '风格分析', summary: '维护 Workspace 风格库、style sources、风格档案和当前分类监控。' },
-    { path: '/edit', label: '剪辑流', summary: '初始化 Edit Unit，审查 Codex Agent 维护的剪辑产物。' },
-    { path: '/timeline-export', label: '时间线与导出', summary: '查看时间线和导出阶段的能力与 blocker。' },
-    { path: '/project', label: '项目', summary: '查看全量 Review Queue 与服务诊断。' },
+  const workflow = [
+    { path: '/ingest-gps', label: '导入 / GPS', state: '准备' },
+    { path: '/analyze', label: 'Analyze', state: projectProgress?.status || '待运行' },
+    { path: '/chronology', label: '编年史', state: '待审查' },
+    { path: '/edit', label: '剪辑流', state: '待进入' },
+    { path: '/timeline-export', label: '时间线 / 导出', state: '待进入' },
   ];
+  const runningServices = services.filter(service => service.status === 'running').length;
+  const healthTone = activeJobs.some(job => ['blocked', 'failed'].includes(job.status)) ? 'warning' : 'success';
 
   return (
-    <div className="route-page">
-      <RouteIntro
-        title="总览"
-        subtitle={`${currentProject?.project?.name || '当前项目'} 的服务状态、最近进度与工作流入口。`}
-      />
-      <div className="card-grid card-grid-two">
+    <div className="route-page overview-page">
+      <RouteIntro title="总览" subtitle="只呈现当前最需要关注的状态、任务与下一步。" />
+      <section className="overview-hero">
+        <div className="overview-health-copy">
+          <div className="eyebrow">Project health</div>
+          <h2>{currentProject?.project?.name || '当前项目'}</h2>
+          <p>{projectProgress?.stepLabel || (activeJobs.length > 0 ? '有任务正在运行' : '当前工作区安静，可以继续下一阶段')}</p>
+        </div>
+        <div className="overview-metrics">
+          <div><span>健康</span><strong><Tag color={healthTone}>{healthTone === 'success' ? '稳定' : '需关注'}</Tag></strong></div>
+          <div><span>活跃任务</span><strong>{activeJobs.length}</strong></div>
+          <div><span>待审查</span><strong>{openReviewCount}</strong></div>
+          <div><span>在线服务</span><strong>{`${runningServices}/${services.length}`}</strong></div>
+        </div>
+      </section>
+
+      <Card className="panel overview-workflow-panel">
+        <div className="section-header"><div><div className="eyebrow">Workflow</div><h2>主流程</h2></div><span className="muted">Color 为素材准备的可选增强；Style 作为 Workspace 输入接入 Edit。</span></div>
+        <div className="overview-workflow-track">
+          {workflow.map((step, index) => (
+            <React.Fragment key={step.path}>
+              <Link to={step.path} className="overview-workflow-step">
+                <span>{String(index + 1).padStart(2, '0')}</span>
+                <strong>{step.label}</strong>
+                <small>{step.state}</small>
+              </Link>
+              {index < workflow.length - 1 ? <div className="overview-workflow-line" /> : null}
+            </React.Fragment>
+          ))}
+        </div>
+      </Card>
+
+      <div className="overview-focus-grid">
         <Card className="panel">
-          <h2>服务摘要</h2>
-          <div className="stack-list">
-            {services.map(service => (
-              <div key={service.name} className="job-item">
-                <div>
-                  <strong>{service.name}</strong>
-                  <div className="muted">{service.url || `${service.port || ''}`}</div>
-                </div>
-                <Tag>{service.status}</Tag>
-              </div>
-            ))}
-          </div>
+          <div className="section-header"><h2>当前任务</h2><Tag>{activeJobs.length}</Tag></div>
+          {activeJobs.length === 0 ? <p className="overview-empty-copy">没有活跃任务。下一步从左侧主流程进入。</p> : activeJobs.slice(0, 4).map(job => (
+            <div key={job.jobId} className="job-item"><div><strong>{job.jobType}</strong><div className="muted">{job.progress?.stepLabel || job.projectId || 'workspace'}</div></div><Tag>{job.status}</Tag></div>
+          ))}
         </Card>
         <Card className="panel">
-          <h2>最近进度</h2>
-          {projectProgress ? (
-            <div className="job-item">
-              <div>
-                <strong>{projectProgress.pipelineLabel || 'media-analyze'}</strong>
-                <div className="muted">{projectProgress.stepLabel || projectProgress.step}</div>
-              </div>
-              <Tag>{projectProgress.status || 'unknown'}</Tag>
-              <div className="muted">{`${projectProgress.current || 0}/${projectProgress.total || 0}`}</div>
-              {projectProgress.fileName ? <div className="muted">{projectProgress.fileName}</div> : null}
-            </div>
-          ) : (
-            <p className="muted">当前项目暂无运行进度。</p>
-          )}
+          <div className="section-header"><h2>最近进度</h2>{projectProgress ? <Tag>{projectProgress.status || 'cached'}</Tag> : null}</div>
+          {projectProgress ? <div className="overview-progress-summary"><strong>{projectProgress.pipelineLabel || 'media-analyze'}</strong><span>{projectProgress.stepLabel || projectProgress.step || '未标记阶段'}</span><small>{`${projectProgress.current || 0}/${projectProgress.total || 0}`}</small></div> : <p className="overview-empty-copy">当前项目没有可展示的 durable progress。</p>}
         </Card>
       </div>
-
-      <Card className="panel">
-        <div className="section-header">
-          <h2>运行中任务</h2>
-          <Tag>{`${activeJobs.length} 个`}</Tag>
-        </div>
-        {activeJobs.length === 0 ? <p className="muted">当前没有活跃 job。</p> : null}
-        <div className="stack-list">
-          {activeJobs.map(job => (
-            <div key={job.jobId} className="job-item">
-              <div>
-                <strong>{job.jobType}</strong>
-                <div className="muted">{job.projectId || 'workspace'}</div>
-              </div>
-              <Tag>{job.status}</Tag>
-              {job.progress?.stepLabel ? <div className="muted">{job.progress.stepLabel}</div> : null}
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      <Card className="panel">
-        <div className="section-header">
-          <h2>工作流入口</h2>
-          <Tag>{`${openReviewCount} open review`}</Tag>
-        </div>
-        <div className="link-card-grid">
-          {workflows.map(workflow => (
-            <Link key={workflow.path} to={workflow.path} className="link-card">
-              <div className="eyebrow">{workflow.path.replace('/', '') || 'home'}</div>
-              <strong>{workflow.label}</strong>
-              <p>{workflow.summary}</p>
-            </Link>
-          ))}
-        </div>
-      </Card>
     </div>
   );
 }
@@ -1019,6 +841,7 @@ function IngestGpsPage({
   onRunIngest,
   onRunGpsRefresh,
 }) {
+  const [activeSection, setActiveSection] = useState('sources');
   if (!config) {
     return (
       <div className="route-page">
@@ -1027,51 +850,27 @@ function IngestGpsPage({
     );
   }
   return (
-    <div className="route-page">
-      <RouteIntro title="导入与 GPS" subtitle="维护单真值素材 Root、行程正文、结构化 segment 与拍摄时间校正。" />
-      <IngestGpsActionPanel
-        projectId={projectId}
-        capabilities={capabilities}
-        jobs={jobs}
-        busy={busy}
-        onRunIngest={onRunIngest}
-        onRunGpsRefresh={onRunGpsRefresh}
-      />
-      <ProjectBriefEditor
-        config={config.projectBrief}
-        pharosStatus={config.pharosStatus}
-        summaries={config.ingestRootSummaries || []}
-        setConfig={setProjectBrief}
-        onSave={() => saveSection('project-brief')}
-        busy={busy['project-brief']}
-      />
-      <ManualItineraryEditor
-        config={config.manualItinerary}
-        setConfig={setManualItinerary}
-        onSave={() => saveSection('manual-itinerary')}
-        busy={busy['manual-itinerary']}
-      />
-      <IngestRootClockEditor
-        config={config.projectBrief}
-        summaries={config.ingestRootSummaries || []}
-        setConfig={setProjectBrief}
-        onSave={() => saveSection('project-brief')}
-        busy={busy['project-brief']}
-      />
-      <CaptureTimeOverridesEditor
-        config={config.manualItinerary}
-        setConfig={setManualItinerary}
-        onSave={() => saveSection('manual-itinerary')}
-        busy={busy['manual-itinerary']}
-      />
-      <ReviewQueuePanel
-        reviews={reviews}
-        setReviews={setReviews}
-        onResolve={resolveReview}
-        title="导入 / GPS Review"
-        emptyLabel="当前没有 ingest / gps 相关 review。"
-        filter={review => review.kind !== 'capture-time-correction' && ['project-init', 'ingest', 'gps-refresh'].includes(review.stage)}
-      />
+    <div className="route-page ingest-gps-page">
+      <RouteIntro title="导入与 GPS" subtitle="先维护事实，再从固定运行栏显式刷新资产与空间缓存。" />
+      <div className="section-tabs" role="tablist" aria-label="导入与 GPS 分区">
+        {[
+          ['sources', '素材源'],
+          ['itinerary', '行程 / GPS'],
+          ['time', '时间校正'],
+          ['review', 'Review'],
+        ].map(([key, label]) => (
+          <button key={key} type="button" role="tab" aria-selected={activeSection === key} className={activeSection === key ? 'is-active' : ''} onClick={() => setActiveSection(key)}>{label}</button>
+        ))}
+      </div>
+      <div className="ingest-section-body">
+        {activeSection === 'sources' ? <ProjectBriefEditor config={config.projectBrief} pharosStatus={config.pharosStatus} summaries={config.ingestRootSummaries || []} setConfig={setProjectBrief} onSave={() => saveSection('project-brief')} busy={busy['project-brief']} /> : null}
+        {activeSection === 'itinerary' ? <ManualItineraryEditor config={config.manualItinerary} setConfig={setManualItinerary} onSave={() => saveSection('manual-itinerary')} busy={busy['manual-itinerary']} /> : null}
+        {activeSection === 'time' ? <><IngestRootClockEditor config={config.projectBrief} summaries={config.ingestRootSummaries || []} setConfig={setProjectBrief} onSave={() => saveSection('project-brief')} busy={busy['project-brief']} /><CaptureTimeOverridesEditor config={config.manualItinerary} setConfig={setManualItinerary} onSave={() => saveSection('manual-itinerary')} busy={busy['manual-itinerary']} /></> : null}
+        {activeSection === 'review' ? <ReviewQueuePanel reviews={reviews} setReviews={setReviews} onResolve={resolveReview} title="导入 / GPS Review" emptyLabel="当前没有 ingest / gps 相关 review。" filter={review => review.kind !== 'capture-time-correction' && ['project-init', 'ingest', 'gps-refresh'].includes(review.stage)} /> : null}
+      </div>
+      <div className="ingest-run-dock">
+        <IngestGpsActionPanel projectId={projectId} capabilities={capabilities} jobs={jobs} busy={busy} onRunIngest={onRunIngest} onRunGpsRefresh={onRunGpsRefresh} />
+      </div>
     </div>
   );
 }
@@ -1102,13 +901,13 @@ function IngestGpsActionPanel({
     && activeGpsRefreshJobs.length === 0;
 
   return (
-    <Card className="panel">
-      <div className="section-header">
-        <h2>导入与 GPS 刷新</h2>
-        <Tag>{latestJob ? formatIngestGpsJobStatus(latestJob.status) : '未运行'}</Tag>
-      </div>
-      <p className="muted">保存配置只落盘；需要更新资产、同源 GPS、derived track 或 chronology 时，在这里显式运行。</p>
-      <div className="actions">
+    <Card className="panel ingest-action-panel">
+      <div className="ingest-action-main">
+        <div>
+          <div className="eyebrow">Run controls</div>
+          <h2>导入与 GPS 刷新</h2>
+        </div>
+        <div className="actions">
         <Button
           type={canRunIngest ? 'primary' : 'disabled'}
           disabled={!canRunIngest}
@@ -1123,10 +922,11 @@ function IngestGpsActionPanel({
         >
           {busy['job:gps-refresh'] ? '启动中…' : activeGpsRefreshJobs.length > 0 ? 'GPS 刷新中…' : '刷新 GPS 缓存'}
         </Button>
+        </div>
       </div>
-      <div className="stack-list">
+      <div className="ingest-action-status">
         {latestJob ? (
-          <div className="job-item">
+          <div className="ingest-action-job">
             <div>
               <strong>{describeIngestGpsJobTitle(latestJob)}</strong>
               <div className="muted">{describeIngestGpsJob(latestJob)}</div>
@@ -1135,7 +935,7 @@ function IngestGpsActionPanel({
             <Tag>{formatIngestGpsJobStatus(latestJob.status)}</Tag>
           </div>
         ) : (
-          <div className="job-item">
+          <div className="ingest-action-job">
             <div>
               <strong>尚未运行</strong>
               <div className="muted">修改素材 Root、FlightRecord、时间校正或行程后，先运行 Ingest 再进入 Analyze。</div>
@@ -1144,13 +944,11 @@ function IngestGpsActionPanel({
           </div>
         )}
         {latestJob?.blockers?.length ? (
-          <div className="pipeline-footnote">
+          <div className="ingest-action-blocker">
             {`Blockers：${latestJob.blockers.join('；')}`}
           </div>
         ) : null}
-        <div className="pipeline-footnote">
-          {`活跃 ingest ${activeIngestJobs.length} · 活跃 gps-refresh ${activeGpsRefreshJobs.length}`}
-        </div>
+        <Tag>{latestJob ? formatIngestGpsJobStatus(latestJob.status) : '未运行'}</Tag>
       </div>
     </Card>
   );
@@ -1184,7 +982,7 @@ function ColorPage({
     <div className="route-page">
       <RouteIntro
         title="达芬奇调色"
-        subtitle="这里优先读取 `config.colorRoots` 这个 root 级 read model；页面按 `Root 摘要 -> 当前 Root Hero -> 所有 Root 常驻可编辑配置 -> Groups -> 次级诊断/归档` 组织。"
+        subtitle="从 Root 状态开始，集中完成 Resolve 准备、分组同步、执行与验证。"
       />
       {colorBlocked ? (
         <WorkflowPrompt
@@ -1195,13 +993,14 @@ function ColorPage({
           detail={colorCapabilityDetail || '请先确认后端是否已经开放 color 能力。'}
         />
       ) : colorCapabilityDetail ? (
-        <WorkflowPrompt
-          eyebrow="Current Scope"
-          title="当前 color 已支持 vendored Resolve backend 闭环入口"
-          body="现在可以在 `/color` 同页维护所有 Root 的 render preset，并按 `Relink Media -> Prepare Root -> Sync Groups -> Execute -> Validate` 触发单 root 闭环，或按 `Relink All Roots / Prepare All Roots / Export All Roots` 触发项目级顺序批处理。"
-          tone="accent"
-          detail={colorCapabilityDetail}
-        />
+        <section className="color-runtime-strip" title={colorCapabilityDetail}>
+          <div>
+            <div className="eyebrow">Resolve runtime</div>
+            <strong>同机 Resolve 后端已连接</strong>
+          </div>
+          <Tag color="success">Root 闭环可用</Tag>
+          <span>Relink → Prepare → Groups → Execute → Validate</span>
+        </section>
       ) : null}
       <ColorCurrentSummary
         config={config}
@@ -1576,24 +1375,26 @@ function ChronologyPage({
   const [kindFilter, setKindFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dayFilter, setDayFilter] = useState('all');
+  const [queryFilter, setQueryFilter] = useState('');
   const [selected, setSelected] = useState({});
   const [drafts, setDrafts] = useState({});
+  const [activeEventId, setActiveEventId] = useState('');
   const chronologyTimeZone = useMemo(() => resolveChronologyTimeZone(pharosContext), [pharosContext]);
 
   useEffect(() => {
     setSelected({});
     setDrafts({});
+    setActiveEventId('');
   }, [chronology?.inputsHash, chronology?.updatedAt]);
 
   const days = useMemo(() => dedupeUiStrings(events
     .map(event => resolveChronologyDay(event, chronologyTimeZone))
     .filter(Boolean)), [events, chronologyTimeZone]);
-  const filteredEvents = events.filter(event => {
-    if (kindFilter !== 'all' && event.kind !== kindFilter) return false;
-    if (statusFilter !== 'all' && event.reviewStatus !== statusFilter) return false;
-    if (dayFilter !== 'all' && resolveChronologyDay(event, chronologyTimeZone) !== dayFilter) return false;
-    return true;
-  });
+  const filteredEvents = filterChronologyEvents(
+    events,
+    { kind: kindFilter, status: statusFilter, day: dayFilter, query: queryFilter },
+    event => resolveChronologyDay(event, chronologyTimeZone),
+  );
   const selectedEventIds = Object.entries(selected)
     .filter(([, value]) => Boolean(value))
     .map(([eventId]) => eventId)
@@ -1611,17 +1412,53 @@ function ChronologyPage({
 
   function saveDraft(event) {
     const draft = drafts[event.id] || event;
-    onSaveEvent(event.id, {
-      kind: draft.kind,
-      reviewStatus: draft.reviewStatus,
-      title: draft.title,
-      summary: draft.summary,
-      startAt: draft.startAt,
-      endAt: draft.endAt,
-      location: draft.location,
-      route: draft.route,
-    });
+    onSaveEvent(event.id, buildChronologyEventPayload(draft));
   }
+
+  const activeEvent = events.find(event => event.id === activeEventId) || null;
+  const activeDraft = activeEvent ? drafts[activeEvent.id] || activeEvent : null;
+  const chronologyColumns = [
+    {
+      title: '时间',
+      key: 'time',
+      width: 190,
+      render: (_, event) => (
+        <div className="chronology-cell-stack">
+          <strong>{formatChronologyTimeRange(event, chronologyTimeZone)}</strong>
+          <span>{resolveChronologyDay(event, chronologyTimeZone)}</span>
+        </div>
+      ),
+    },
+    { title: '类型', dataIndex: 'kind', width: 92, render: value => <Tag>{value}</Tag> },
+    {
+      title: '事件',
+      key: 'event',
+      width: 360,
+      render: (_, event) => (
+        <div className="chronology-event-cell">
+          <strong>{event.title || '未命名事件'}</strong>
+          <span>{event.summary || '暂无摘要'}</span>
+        </div>
+      ),
+    },
+    {
+      title: '地点 / 路线',
+      key: 'location',
+      width: 260,
+      render: (_, event) => event.kind === 'route'
+        ? `${event.route?.from || '未定'} → ${event.route?.to || '未定'}`
+        : event.location || '未定',
+    },
+    { title: '素材', key: 'spans', width: 92, align: 'right', render: (_, event) => `${event.spanIds?.length || 0} spans` },
+    { title: '状态', dataIndex: 'reviewStatus', width: 112, render: value => <Tag color={value === 'confirmed' ? 'success' : value === 'rejected' ? 'error' : 'warning'}>{value}</Tag> },
+    {
+      title: '',
+      key: 'actions',
+      width: 90,
+      fixed: 'right',
+      render: (_, event) => <Button type="default" size="small" onClick={clickEvent => { clickEvent.stopPropagation(); setActiveEventId(event.id); }}>编辑</Button>,
+    },
+  ];
 
   return (
     <div className="route-page">
@@ -1710,6 +1547,12 @@ function ChronologyPage({
         </div>
         <div className="chronology-toolbar">
           <div className="monitor-toolbar-group">
+            <input
+              className="chronology-search"
+              value={queryFilter}
+              onChange={event => setQueryFilter(event.target.value)}
+              placeholder="搜索标题、地点或摘要"
+            />
             <ChronologySelect
               value={dayFilter}
               onChange={setDayFilter}
@@ -1759,120 +1602,57 @@ function ChronologyPage({
             : '尚未生成 Chronology V2。'}
         </div>
       </Card>
-      <div className="chronology-shot-list">
-        {filteredEvents.length === 0 ? (
-          <EmptyPanel label="当前过滤条件下没有 chronology event。" />
-        ) : filteredEvents.map(event => {
-          const draft = drafts[event.id] || event;
-          return (
-            <Card key={event.id} className="chronology-row">
-              <div className="chronology-row-select">
-                <input
-                  type="checkbox"
-                  checked={Boolean(selected[event.id])}
-                  onChange={changeEvent => setSelected(current => ({
-                    ...current,
-                    [event.id]: changeEvent.target.checked,
-                  }))}
-                />
-              </div>
-              <div className="chronology-row-main">
-                <div className="chronology-row-meta">
-                  <Tag>{draft.kind}</Tag>
-                  <Tag>{draft.reviewStatus}</Tag>
-                  <span>{formatChronologyTimeRange(draft, chronologyTimeZone)}</span>
-                  <span>{draft.spanIds?.length || 0} spans</span>
-                </div>
-                <input
-                  className="chronology-title-input"
-                  value={draft.title || ''}
-                  onChange={changeEvent => updateDraft(event, { title: changeEvent.target.value })}
-                />
-                <textarea
-                  value={draft.summary || ''}
-                  onChange={changeEvent => updateDraft(event, { summary: changeEvent.target.value })}
-                  rows={2}
-                />
-                <div className="chronology-row-fields">
-                  <input
-                    value={draft.startAt || ''}
-                    onChange={changeEvent => updateDraft(event, { startAt: changeEvent.target.value })}
-                    placeholder="startAt"
-                  />
-                  <input
-                    value={draft.endAt || ''}
-                    onChange={changeEvent => updateDraft(event, { endAt: changeEvent.target.value })}
-                    placeholder="endAt"
-                  />
-                  <input
-                    value={draft.location || ''}
-                    onChange={changeEvent => updateDraft(event, { location: changeEvent.target.value })}
-                    placeholder="location"
-                  />
-                  <input
-                    value={draft.route?.from || ''}
-                    onChange={changeEvent => updateDraft(event, { route: { ...(draft.route || {}), from: changeEvent.target.value } })}
-                    placeholder="from"
-                  />
-                  <input
-                    value={draft.route?.to || ''}
-                    onChange={changeEvent => updateDraft(event, { route: { ...(draft.route || {}), to: changeEvent.target.value } })}
-                    placeholder="to"
-                  />
-                </div>
-              </div>
-              <div className="chronology-row-actions">
-                <ChronologySelect
-                  value={draft.kind}
-                  onChange={value => updateDraft(event, { kind: value })}
-                  options={[
-                    { value: 'event', label: 'event' },
-                    { value: 'route', label: 'route' },
-                    { value: 'gap', label: 'gap' },
-                  ]}
-                />
-                <ChronologySelect
-                  value={draft.reviewStatus}
-                  onChange={value => updateDraft(event, { reviewStatus: value })}
-                  options={[
-                    { value: 'pending', label: 'pending' },
-                    { value: 'confirmed', label: 'confirmed' },
-                    { value: 'rejected', label: 'rejected' },
-                  ]}
-                />
-                <Button
-                  type={busy[`chronology:event:${event.id}`] ? 'disabled' : 'default'}
-                  disabled={busy[`chronology:event:${event.id}`]}
-                  onClick={() => saveDraft(event)}
-                >
-                  保存
-                </Button>
-                <Button
-                  type={busy[`chronology:event:${event.id}`] ? 'disabled' : 'primary'}
-                  disabled={busy[`chronology:event:${event.id}`]}
-                  onClick={() => onSaveEvent(event.id, { reviewStatus: 'confirmed' })}
-                >
-                  确认
-                </Button>
-                <Button
-                  type={busy[`chronology:event:${event.id}`] ? 'disabled' : 'error'}
-                  disabled={busy[`chronology:event:${event.id}`]}
-                  onClick={() => onSaveEvent(event.id, { reviewStatus: 'rejected' })}
-                >
-                  驳回
-                </Button>
-                <Button
-                  type={(event.spanIds?.length || 0) > 1 && !busy[`chronology:split:${event.id}`] ? 'warning' : 'disabled'}
-                  disabled={(event.spanIds?.length || 0) <= 1 || busy[`chronology:split:${event.id}`]}
-                  onClick={() => onSplitEvent(event.id)}
-                >
-                  拆分
-                </Button>
-              </div>
-            </Card>
-          );
-        })}
-      </div>
+      <Card className="panel chronology-table-panel">
+        <Table
+          virtual
+          rowKey="id"
+          size="small"
+          pagination={false}
+          columns={chronologyColumns}
+          dataSource={filteredEvents}
+          scroll={{ x: 1200, y: 520 }}
+          locale={{ emptyText: '当前过滤条件下没有 chronology event。' }}
+          rowSelection={{
+            selectedRowKeys: selectedEventIds,
+            onChange: keys => setSelected(Object.fromEntries(keys.map(key => [String(key), true]))),
+          }}
+          onRow={event => ({ onClick: () => setActiveEventId(event.id) })}
+        />
+      </Card>
+      <Drawer
+        title={activeDraft?.title || '编辑 Chronology 事件'}
+        width={520}
+        open={Boolean(activeDraft)}
+        onClose={() => setActiveEventId('')}
+        extra={activeDraft ? <Tag>{activeDraft.id}</Tag> : null}
+      >
+        {activeEvent && activeDraft ? (
+          <div className="chronology-drawer-form">
+            <div className="field-grid">
+              <ChronologySelect value={activeDraft.kind} onChange={value => updateDraft(activeEvent, { kind: value })} options={[{ value: 'event', label: 'event' }, { value: 'route', label: 'route' }, { value: 'gap', label: 'gap' }]} />
+              <ChronologySelect value={activeDraft.reviewStatus} onChange={value => updateDraft(activeEvent, { reviewStatus: value })} options={[{ value: 'pending', label: 'pending' }, { value: 'confirmed', label: 'confirmed' }, { value: 'rejected', label: 'rejected' }]} />
+            </div>
+            <label><span>标题</span><input value={activeDraft.title || ''} onChange={event => updateDraft(activeEvent, { title: event.target.value })} /></label>
+            <label><span>摘要</span><textarea rows={5} value={activeDraft.summary || ''} onChange={event => updateDraft(activeEvent, { summary: event.target.value })} /></label>
+            <div className="field-grid">
+              <label><span>开始时间</span><input value={activeDraft.startAt || ''} onChange={event => updateDraft(activeEvent, { startAt: event.target.value })} /></label>
+              <label><span>结束时间</span><input value={activeDraft.endAt || ''} onChange={event => updateDraft(activeEvent, { endAt: event.target.value })} /></label>
+            </div>
+            <label><span>地点</span><input value={activeDraft.location || ''} onChange={event => updateDraft(activeEvent, { location: event.target.value })} /></label>
+            <div className="field-grid">
+              <label><span>路线起点</span><input value={activeDraft.route?.from || ''} onChange={event => updateDraft(activeEvent, { route: { ...(activeDraft.route || {}), from: event.target.value } })} /></label>
+              <label><span>路线终点</span><input value={activeDraft.route?.to || ''} onChange={event => updateDraft(activeEvent, { route: { ...(activeDraft.route || {}), to: event.target.value } })} /></label>
+            </div>
+            <div className="chronology-drawer-meta">{`${activeDraft.spanIds?.length || 0} spans · ${formatChronologyTimeRange(activeDraft, chronologyTimeZone)}`}</div>
+            <div className="actions chronology-drawer-actions">
+              <Button type="default" disabled={busy[`chronology:event:${activeEvent.id}`]} onClick={() => saveDraft(activeEvent)}>保存</Button>
+              <Button type="primary" disabled={busy[`chronology:event:${activeEvent.id}`]} onClick={() => onSaveEvent(activeEvent.id, { reviewStatus: 'confirmed' })}>确认</Button>
+              <Button type="error" disabled={busy[`chronology:event:${activeEvent.id}`]} onClick={() => onSaveEvent(activeEvent.id, { reviewStatus: 'rejected' })}>驳回</Button>
+              <Button type="warning" disabled={(activeEvent.spanIds?.length || 0) <= 1 || busy[`chronology:split:${activeEvent.id}`]} onClick={() => onSplitEvent(activeEvent.id)}>拆分</Button>
+            </div>
+          </div>
+        ) : null}
+      </Drawer>
     </div>
   );
 }
@@ -2075,6 +1855,7 @@ function EditFlowPage({
   const [editRuleCategory, setEditRuleCategory] = useState(inferredSelections.editRuleCategory);
   const [styleCategory, setStyleCategory] = useState(inferredSelections.styleCategory);
   const [externalDrpPath, setExternalDrpPath] = useState('');
+  const [expandedStepIds, setExpandedStepIds] = useState({});
 
   useEffect(() => {
     setEditRuleCategory(inferredSelections.editRuleCategory);
@@ -2106,6 +1887,9 @@ function EditFlowPage({
     });
     return map;
   }, [editFlowRuns]);
+  const firstActionableStepId = useMemo(() => (
+    (editFlowPlan?.steps || []).find(step => latestRunByStep.get(step.id)?.status !== 'completed')?.id || ''
+  ), [editFlowPlan?.steps, latestRunByStep]);
 
   const planStatus = editFlowPlan?.status || 'missing';
   const isBusy = Boolean(busy['edit-unit']);
@@ -2200,14 +1984,18 @@ function EditFlowPage({
           {editFlowPlan ? (
             <div className="edit-flow-plan-body">
               <div className="edit-flow-plan-summary">
-                <strong>{editFlowPlan.summary || `${editFlowPlan.steps?.length || 0} steps`}</strong>
+                <strong>{`${editFlowPlan.steps?.length || 0} 个步骤 · ${formatEditFlowRunStatus(editFlowPlan.status)}`}</strong>
                 <span>{`${editFlowPlan.editRuleHash?.slice(0, 12) || 'no-hash'} · ${editFlowPlan.status}`}</span>
               </div>
-              {(editFlowPlan.assumptions || []).length > 0 ? (
-                <div className="edit-flow-assumptions">
-                  {editFlowPlan.assumptions.map(item => <div key={item}>{item}</div>)}
-                </div>
-              ) : null}
+              <details className="edit-flow-plan-details">
+                <summary>查看计划说明与假设</summary>
+                {editFlowPlan.summary ? <p>{editFlowPlan.summary}</p> : null}
+                {(editFlowPlan.assumptions || []).length > 0 ? (
+                  <div className="edit-flow-assumptions">
+                    {editFlowPlan.assumptions.map(item => <div key={item}>{item}</div>)}
+                  </div>
+                ) : null}
+              </details>
             </div>
           ) : (
             <EmptyPanel title="还没有 Flow Plan" detail="保存 Edit 初始化后，由 Codex Agent 生成并写入 edits/<editId>/planning/flow-plan.json。" />
@@ -2215,6 +2003,14 @@ function EditFlowPage({
         </Card>
       </div>
 
+      <details className="compact-disclosure edit-maintenance-disclosure">
+        <summary>
+          <div className="compact-disclosure-copy">
+            <strong>Resolve 剪辑工程维护</strong>
+            <span>{latestEditDrp?.createdAt ? `最近快照 ${latestEditDrp.createdAt}` : (editResolveProject?.resolveProjectName || '尚未生成剪辑工程快照')}</span>
+          </div>
+          <Tag>按需展开</Tag>
+        </summary>
       <Card className="panel edit-resolve-drp-panel">
         <div className="edit-flow-panel-head">
           <div>
@@ -2336,6 +2132,7 @@ function EditFlowPage({
           </div>
         </div>
       </Card>
+      </details>
 
       <div className="edit-flow-step-section">
         <div className="edit-flow-section-head">
@@ -2350,8 +2147,11 @@ function EditFlowPage({
           const capability = registry.get(step.capabilityId);
           const latestRun = latestRunByStep.get(step.id);
           const runStatus = latestRun?.status || 'pending';
+          const shouldStayOpen = step.id === firstActionableStepId
+            || ['running', 'failed', 'stale', 'awaiting_review'].includes(runStatus);
+          const isExpanded = shouldStayOpen || Boolean(expandedStepIds[step.id]);
           return (
-            <Card key={step.id} className={`panel edit-flow-step edit-flow-step-${runStatus.replace(/_/gu, '-')}`}>
+            <Card key={step.id} className={`panel edit-flow-step edit-flow-step-${runStatus.replace(/_/gu, '-')} ${isExpanded ? 'is-expanded' : 'is-collapsed'}`}>
               <div className="edit-flow-step-grid">
                 <div className="edit-flow-step-index">{String(index + 1).padStart(2, '0')}</div>
 
@@ -2361,34 +2161,49 @@ function EditFlowPage({
                       <h2>{step.title || step.capabilityId}</h2>
                       <span>{`${step.id} / ${step.capabilityId}`}</span>
                     </div>
-                    <EditFlowStatusItem label="状态" value={formatEditFlowRunStatus(runStatus)} tone={runStatusToTone(runStatus)} />
+                    <div className="edit-flow-step-title-actions">
+                      <EditFlowStatusItem label="状态" value={formatEditFlowRunStatus(runStatus)} tone={runStatusToTone(runStatus)} />
+                      {!shouldStayOpen ? (
+                        <button
+                          type="button"
+                          className="edit-flow-step-toggle"
+                          aria-expanded={isExpanded}
+                          onClick={() => setExpandedStepIds(previous => ({
+                            ...previous,
+                            [step.id]: !previous[step.id],
+                          }))}
+                        >
+                          {isExpanded ? '收起' : '展开'}
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
-                  <p>{capability?.summary || step.notes?.join(' ') || 'No capability summary.'}</p>
-                  {(step.notes || []).length > 0 ? (
+                  {isExpanded ? <p>{capability?.summary || step.notes?.join(' ') || 'No capability summary.'}</p> : null}
+                  {isExpanded && (step.notes || []).length > 0 ? (
                     <div className="edit-flow-notes">
                       {step.notes.map(note => <span key={note}>{note}</span>)}
                     </div>
                   ) : null}
 
-                  <div className="edit-flow-ref-grid">
+                  {isExpanded ? <div className="edit-flow-ref-grid">
                     <RefList title="输入" refs={step.inputRefs} />
                     <RefList title="输出" refs={step.outputRefs} />
-                  </div>
+                  </div> : null}
 
-                  {latestRun?.error ? (
+                  {isExpanded && latestRun?.error ? (
                     <div className="edit-flow-run-message edit-flow-run-message-danger">
                       {latestRun.error}
                     </div>
                   ) : null}
-                  {latestRun?.outputPaths?.length ? (
+                  {isExpanded && latestRun?.outputPaths?.length ? (
                     <div className="edit-flow-output-paths">{`输出：${latestRun.outputPaths.join(', ')}`}</div>
                   ) : null}
-                  {hasRunSummary(latestRun?.summary) ? (
+                  {isExpanded && hasRunSummary(latestRun?.summary) ? (
                     <RunSummary summary={latestRun.summary} />
                   ) : null}
                 </div>
 
-                <div className="edit-flow-step-side">
+                {isExpanded ? <div className="edit-flow-step-side">
                   <div className="edit-flow-step-meta">
                     <span>{formatEditFlowExecution(step.execution)}</span>
                     {step.execution?.mode === 'sharded-agent' ? <span>{`shard: ${step.execution.shardBy}`}</span> : null}
@@ -2397,7 +2212,7 @@ function EditFlowPage({
                     <span>{step.runner || capability?.defaultRunner || 'runner'}</span>
                     <span>{step.gate === 'human' ? 'human gate' : 'no gate'}</span>
                   </div>
-                </div>
+                </div> : null}
               </div>
             </Card>
           );
@@ -2650,31 +2465,46 @@ function ScriptPage({
 
 function TimelineExportPage({ capabilities }) {
   const jobs = capabilities?.jobs || [];
+  const relevantJobs = jobs.filter(job => ['timeline', 'export-jianying', 'export-resolve'].includes(job.jobType));
+  const resolveCapability = relevantJobs.find(job => job.jobType === 'export-resolve');
   return (
-    <div className="route-page">
-      <RouteIntro title="时间线与导出" subtitle="这一页先聚合能力和 blocker，不在这轮里扩展新的业务实现。" />
-      <Card className="panel">
-        <h2>当前能力</h2>
-        <div className="stack-list">
-          {jobs.filter(job => ['timeline', 'export-jianying', 'export-resolve'].includes(job.jobType)).map(job => (
-            <div key={job.jobType} className="job-item">
-              <div>
-                <strong>{job.jobType}</strong>
-                <div className="muted">{job.executionMode}</div>
-              </div>
-              <Tag>{job.supported ? 'supported' : 'blocked'}</Tag>
-            </div>
-          ))}
-        </div>
-      </Card>
+    <div className="route-page timeline-export-page">
+      <RouteIntro title="时间线与导出" subtitle="整理当前时间线、目标 NLE 与导出 blocker；不新增业务 runner。" />
+      <section className="timeline-readiness-hero">
+        <div><div className="eyebrow">Readiness</div><h2>{resolveCapability?.supported ? '已具备 Resolve 导出能力' : '等待时间线或宿主条件'}</h2><p>正式导出继续以 confirmed Flow Plan 产物、Resolve timeline 与明确的新输出目录为准。</p></div>
+        <div className="timeline-readiness-state"><span>目标</span><strong>Resolve / Jianying</strong><Tag color={resolveCapability?.supported ? 'success' : 'warning'}>{resolveCapability?.supported ? 'ready' : 'blocked'}</Tag></div>
+      </section>
+      <div className="timeline-export-grid">
+        <Card className="panel">
+          <div className="section-header"><h2>能力状态</h2><Tag>{relevantJobs.length}</Tag></div>
+          <div className="stack-list">
+            {relevantJobs.map(job => <div key={job.jobType} className="job-item"><div><strong>{job.jobType}</strong><div className="muted">{job.executionMode || '未声明执行模式'}</div></div><Tag color={job.supported ? 'success' : 'warning'}>{job.supported ? 'supported' : 'blocked'}</Tag></div>)}
+            {relevantJobs.length === 0 ? <p className="muted">Supervisor 当前未声明 timeline / export capability。</p> : null}
+          </div>
+        </Card>
+        <Card className="panel">
+          <div className="section-header"><h2>正式闸门</h2><Tag>只读</Tag></div>
+          <div className="timeline-gate-list">
+            <div><span>01</span><strong>Flow Plan 产物</strong><small>确认当前 step 的 declared outputs</small></div>
+            <div><span>02</span><strong>目标工程</strong><small>核对 Resolve 项目与时间线身份</small></div>
+            <div><span>03</span><strong>输出路径</strong><small>必须是新的、不覆盖既有内容的目标</small></div>
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }
 
 function ProjectPage({ services, busy, onControlMl, reviews, setReviews, resolveReview, currentProject }) {
+  const runningCount = services.filter(service => service.status === 'running').length;
   return (
-    <div className="route-page">
-      <RouteIntro title="项目" subtitle="查看全量 Review Queue、Supervisor 服务状态与项目级诊断信息。" />
+    <div className="route-page project-page">
+      <RouteIntro title="项目" subtitle="集中查看项目身份、服务真相、Review Queue 与维护入口。" />
+      <section className="project-summary-hero">
+        <div><div className="eyebrow">Project</div><h2>{currentProject?.project?.name || '当前项目'}</h2><code>{currentProject?.projectId || 'workspace'}</code></div>
+        <div><span>服务</span><strong>{`${runningCount}/${services.length}`}</strong><small>running</small></div>
+        <div><span>Review</span><strong>{reviews.filter(review => review.status === 'open').length}</strong><small>open</small></div>
+      </section>
       <Card className="panel">
         <div className="section-header">
           <h2>服务诊断</h2>
@@ -2808,7 +2638,7 @@ function renderAnalyzeToolbarMeta(model, projectProgress) {
   return null;
 }
 
-function pickConsoleProjectId(projects, jobs, storedProjectId) {
+export function pickConsoleProjectId(projects, jobs, storedProjectId) {
   if (!projects.length) {
     return '';
   }
@@ -3053,7 +2883,7 @@ function describeChronologyJobTitle(job) {
   return job.jobType;
 }
 
-function isLiveSupervisorJob(job) {
+export function isLiveSupervisorJob(job) {
   return ['queued', 'running'].includes(job?.status);
 }
 
@@ -3259,36 +3089,9 @@ function shouldAutoOpenScriptWorkflowDialog(workflowState) {
   return ['review_brief', 'ready_for_agent', 'script_generated'].includes(workflowState);
 }
 
-function TopNav({ history, location }) {
-  const items = [
-    { path: '/', label: '总览' },
-    { path: '/ingest-gps', label: '导入与 GPS' },
-    { path: '/color', label: '达芬奇调色' },
-    { path: '/analyze', label: '素材分析' },
-    { path: '/chronology', label: '编年史' },
-    { path: '/style', label: '风格分析' },
-    { path: '/edit', label: '剪辑流' },
-    { path: '/timeline-export', label: '时间线与导出' },
-    { path: '/project', label: '项目' },
-  ];
-  const activePath = resolveTopLevelPath(location.pathname);
-  return (
-    <div className="top-nav-wrap">
-      <Menu
-        horizonal
-        type="linear"
-        className="top-nav"
-        value={activePath}
-        onClick={(_, value) => history.push(value)}
-      >
-        {items.map(item => (
-          <MenuItem key={item.path} value={item.path}>
-            {item.label}
-          </MenuItem>
-        ))}
-      </Menu>
-    </div>
-  );
+function StyleMonitorRedirect() {
+  const { categoryId } = useParams();
+  return <Navigate to={buildStylePath(categoryId)} replace />;
 }
 
 function RouteIntro({ title, subtitle }) {
@@ -3313,7 +3116,7 @@ function resolveTopLevelPath(pathname) {
   return '/';
 }
 
-function resolveCurrentStyleCategory(config, search, jobs = []) {
+export function resolveCurrentStyleCategory(config, search, jobs = []) {
   const params = new URLSearchParams(search || '');
   const requested = params.get('categoryId');
   if (requested && config.categories.some(category => category.categoryId === requested)) {
@@ -3425,5 +3228,3 @@ const SCRIPT_WORKFLOW_STATUS_TEXT = {
   ready_for_agent: '事实刷新与 bundle 索引已完成；正式剪辑请回到 /edit 审查 Codex Agent 产物。',
   script_generated: '脚本已生成，可继续审稿或进入 Timeline。',
 };
-
-ReactDOM.render(<AppShell />, document.getElementById('root'));

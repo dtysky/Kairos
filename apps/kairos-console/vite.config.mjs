@@ -1,10 +1,8 @@
 import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
 export default defineConfig({
-  esbuild: {
-    jsxFactory: 'React.createElement',
-    jsxFragment: 'React.Fragment',
-  },
+  plugins: [react()],
   build: {
     outDir: 'dist',
     emptyOutDir: true,
@@ -12,5 +10,10 @@ export default defineConfig({
   server: {
     host: '127.0.0.1',
     port: 5174,
+  },
+  test: {
+    environment: 'jsdom',
+    setupFiles: './src/test/setup.ts',
+    css: true,
   },
 });

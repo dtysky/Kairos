@@ -5,6 +5,11 @@ dist/
 .env.local
 coverage/
 .DS_Store
+# Generated UI concept renders; keep prompt/review Markdown in version control.
+designs/ui-concepts/**/*.png
+designs/ui-concepts/**/*.jpg
+designs/ui-concepts/**/*.jpeg
+designs/ui-concepts/**/*.webp
 .pnpm-store/
 .tmp/
 projects/*/.tmp/edit-flow/

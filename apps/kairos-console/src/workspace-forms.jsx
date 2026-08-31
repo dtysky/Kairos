@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Card, Divider, Modal, Tag } from 'hana-ui';
+import { Button, Card, Divider, Modal, Tag } from './ui-compat.tsx';
 
 const COLOR_SOURCE_PROFILE_OPTIONS = [
   { value: '', label: '自动 / 未指定' },
@@ -84,60 +84,45 @@ export function ProjectBriefEditor({ config, pharosStatus, summaries = [], setCo
       </div>
       <p className="field-help">`/ingest-gps` 会在这里用结构化表单维护素材 Root；保存时会把 `config/project-brief.json` 作为单真值落盘，并自动回写 `config/project-brief.md` 镜像。</p>
       <Divider />
-      <div className="row-card">
-        <div className="section-header">
-          <h3>Pharos 资产</h3>
-          <Tag>{pharosStatus?.status || 'empty'}</Tag>
-        </div>
-        <div className="field-grid field-grid-three">
-          <Field
-            label="固定目录"
-            value={pharosStatus?.rootPath || ''}
-            onChange={noop}
-            readOnly
-          />
-          <Field
-            label="发现 Trip"
-            value={String(pharosStatus?.discoveredTripCount || 0)}
-            onChange={noop}
-            readOnly
-          />
-          <Field
-            label="纳入 Trip"
-            value={String(pharosStatus?.includedTripCount || 0)}
-            onChange={noop}
-            readOnly
-          />
-        </div>
-        <TextAreaField
-          label="包含 Trip（每行一个，可留空表示全部纳入）"
-          value={(config.pharos?.includedTripIds || []).join('\n')}
-          onChange={value => setConfig(current => ({
-            ...current,
-            pharos: {
-              includedTripIds: splitLines(value),
-            },
-          }))}
-          rows={4}
-        />
-        <div className="pharos-callout">
-          <div className="pharos-callout-title">{pharosNoticeTitle}</div>
-          <p>{pharosNoticeBody}</p>
-          <div className="pharos-callout-path">
-            <code>{pharosRootPath}</code>
+      <details className="row-card compact-disclosure pharos-disclosure">
+        <summary>
+          <div className="compact-disclosure-copy">
+            <strong>Pharos 资产</strong>
+            <code title={pharosRootPath}>{pharosRootPath}</code>
           </div>
-          <pre className="pharos-callout-tree">{`trip-<uuid>/
+          <div className="capture-time-tags">
+            <Tag>{pharosStatus?.status || 'empty'}</Tag>
+            <Tag>{`发现 ${pharosStatus?.discoveredTripCount || 0}`}</Tag>
+            <Tag>{`纳入 ${pharosStatus?.includedTripCount || 0}`}</Tag>
+          </div>
+        </summary>
+        <div className="compact-disclosure-body">
+          <TextAreaField
+            label="包含 Trip（每行一个，可留空表示全部纳入）"
+            value={(config.pharos?.includedTripIds || []).join('\n')}
+            onChange={value => setConfig(current => ({
+              ...current,
+              pharos: {
+                includedTripIds: splitLines(value),
+              },
+            }))}
+            rows={3}
+          />
+          <div className="pharos-callout">
+            <div className="pharos-callout-title">{pharosNoticeTitle}</div>
+            <p>{pharosNoticeBody}</p>
+            <details className="pharos-structure-details">
+              <summary>查看目录结构</summary>
+              <pre className="pharos-callout-tree">{`trip-<uuid>/
   plan.json
   record.json
   gpx/
     *.gpx`}</pre>
+            </details>
+          </div>
+          <p className="muted">{pharosStatus?.latestMessage || 'Console 会先准备固定目录；把 trip 镜像投放进去即可。'}</p>
         </div>
-        {pharosStatus?.latestMessage ? (
-          <p className="muted">{pharosStatus.latestMessage}</p>
-        ) : (
-          <p className="muted">Console 会先帮你准备好这个固定目录；用户只需要把 trip 镜像投放进去。</p>
-        )}
-      </div>
+      </details>
       <Divider />
       <ListToolbar
         title="素材 Root（结构化编辑）"
@@ -169,8 +154,8 @@ export function ProjectBriefEditor({ config, pharosStatus, summaries = [], setCo
           alternatePaths: nextAlternates,
         });
         return (
-          <div key={mapping.rootId || `project-brief-mapping-${index}`} className="row-card">
-            <div className="row-top">
+          <details key={mapping.rootId || `project-brief-mapping-${index}`} className="row-card structured-root-details">
+            <summary className="row-top structured-root-summary">
               <div>
                 <strong>{`Root ${String(index + 1).padStart(2, '0')}`}</strong>
                 <div className="muted capture-time-reason">{mapping.path || '待填写当前素材路径'}</div>
@@ -181,7 +166,8 @@ export function ProjectBriefEditor({ config, pharosStatus, summaries = [], setCo
                 {mapping.flightRecordPath ? <Tag>含 FlightRecord</Tag> : null}
                 {mapping.captureTimePolicy?.mode === 'manual-required' ? <Tag>手动时间</Tag> : null}
               </div>
-            </div>
+            </summary>
+            <div className="structured-root-body">
             <div className={`root-resolution${blockers.length > 0 ? ' has-blockers' : ''}`}>
               <div>
                 <span>当前使用路径</span>
@@ -331,7 +317,8 @@ export function ProjectBriefEditor({ config, pharosStatus, summaries = [], setCo
             >
               删除 Root
             </Button>
-          </div>
+            </div>
+          </details>
         );
       })}
       <Divider />
@@ -349,8 +336,8 @@ export function ProjectBriefEditor({ config, pharosStatus, summaries = [], setCo
       {!config.voiceoverMedia ? (
         <p className="muted">当前未配置配音媒体 Root。需要 Resolve 字幕配音跨设备 relink 时，在这里启用并填写路径。</p>
       ) : (
-        <div className="row-card">
-          <div className="row-top">
+        <details className="row-card structured-root-details">
+          <summary className="row-top structured-root-summary">
             <div>
               <strong>Voiceover</strong>
               <div className="muted capture-time-reason">{config.voiceoverMedia.path || '待填写配音媒体路径'}</div>
@@ -361,7 +348,8 @@ export function ProjectBriefEditor({ config, pharosStatus, summaries = [], setCo
               ) : null}
               {config.voiceoverMedia.resolveProjectAliases?.length ? <Tag>含 Resolve 别名</Tag> : null}
             </div>
-          </div>
+          </summary>
+          <div className="structured-root-body">
           <div className="field-grid field-grid-three">
             <Field
               label="Root ID"
@@ -483,7 +471,8 @@ export function ProjectBriefEditor({ config, pharosStatus, summaries = [], setCo
           >
             移除配音 Root
           </Button>
-        </div>
+          </div>
+        </details>
       )}
       <Divider />
       <ListToolbar
@@ -500,8 +489,8 @@ export function ProjectBriefEditor({ config, pharosStatus, summaries = [], setCo
       {!config.audioMedia ? (
         <p className="muted">当前未配置项目音频媒体 Root。需要 BGM / 音效跨设备 relink 时，在这里启用并填写路径。</p>
       ) : (
-        <div className="row-card">
-          <div className="row-top">
+        <details className="row-card structured-root-details">
+          <summary className="row-top structured-root-summary">
             <div>
               <strong>Audio</strong>
               <div className="muted capture-time-reason">{config.audioMedia.path || '待填写项目音频路径'}</div>
@@ -511,7 +500,8 @@ export function ProjectBriefEditor({ config, pharosStatus, summaries = [], setCo
                 <Tag>{`${normalizeAlternatePathDrafts(config.audioMedia.alternatePaths).length} 组备选`}</Tag>
               ) : null}
             </div>
-          </div>
+          </summary>
+          <div className="structured-root-body">
           <div className="field-grid field-grid-three">
             <Field
               label="Root ID"
@@ -621,18 +611,29 @@ export function ProjectBriefEditor({ config, pharosStatus, summaries = [], setCo
           >
             移除音频 Root
           </Button>
-        </div>
+          </div>
+        </details>
       )}
       <Divider />
-      <TextAreaField
-        label="材料模式短语（每行一条）"
-        value={(config.materialPatternPhrases || []).join('\n')}
-        onChange={value => setConfig(current => ({
-          ...current,
-          materialPatternPhrases: splitLines(value),
-        }))}
-        rows={6}
-      />
+      <details className="compact-disclosure secondary-config-disclosure">
+        <summary>
+          <div className="compact-disclosure-copy">
+            <strong>材料模式短语</strong>
+            <span>{`${config.materialPatternPhrases?.length || 0} 条 · 高级配置`}</span>
+          </div>
+        </summary>
+        <div className="compact-disclosure-body">
+          <TextAreaField
+            label="材料模式短语（每行一条）"
+            value={(config.materialPatternPhrases || []).join('\n')}
+            onChange={value => setConfig(current => ({
+              ...current,
+              materialPatternPhrases: splitLines(value),
+            }))}
+            rows={6}
+          />
+        </div>
+      </details>
     </Card>
   );
 }
@@ -1574,7 +1575,7 @@ export function ColorCurrentSummary({
           <Tag>{capabilityLabel}</Tag>
         </div>
         <p className="muted">
-          {'当前优先消费 `config.colorRoots`。页面按 `Root 摘要 -> 当前 Root Hero -> 所有 Root 常驻可编辑配置 -> Groups -> 次级诊断/归档` 组织；所有 root 的 render preset 都在同一页直接维护。'}
+          先选择 Root，再执行项目级操作；正式参数继续在下方统一维护。
         </p>
         {colorJobs.length > 0 ? (
           <div className="stack-list color-live-jobs">
@@ -1679,27 +1680,6 @@ export function ColorCurrentSummary({
               </div>
               <div className="color-hero-actions">
                 <Button
-                  type={activeRootPreflightBusy ? 'disabled' : 'default'}
-                  disabled={activeRootPreflightBusy || typeof onRequestHostPreflight !== 'function'}
-                  onClick={() => onRequestHostPreflight?.({ rootId: activeRoot.rootId })}
-                >
-                  {activeRootPreflightBusy ? '检查中…' : 'Recheck Host'}
-                </Button>
-                <Button
-                  type={!activeRootDrpBusy && typeof onSaveDrpSnapshot === 'function' ? 'default' : 'disabled'}
-                  disabled={activeRootDrpBusy || typeof onSaveDrpSnapshot !== 'function'}
-                  onClick={() => onSaveDrpSnapshot?.({ rootId: activeRoot.rootId, retention: 'latest-only' })}
-                >
-                  {activeRootDrpBusy ? '保存中…' : '覆盖最新'}
-                </Button>
-                <Button
-                  type={!activeRootDrpBusy && typeof onSaveDrpSnapshot === 'function' ? 'default' : 'disabled'}
-                  disabled={activeRootDrpBusy || typeof onSaveDrpSnapshot !== 'function'}
-                  onClick={() => onSaveDrpSnapshot?.({ rootId: activeRoot.rootId, retention: 'archive' })}
-                >
-                  归档快照
-                </Button>
-                <Button
                   type={canRunColorRootAction('relink_media', activeRoot, capability, liveColorJobs, busy, onRunColorAction) ? 'default' : 'disabled'}
                   disabled={!canRunColorRootAction('relink_media', activeRoot, capability, liveColorJobs, busy, onRunColorAction)}
                   onClick={() => onRunColorAction?.({ rootId: activeRoot.rootId, action: 'relink_media' })}
@@ -1728,20 +1708,6 @@ export function ColorCurrentSummary({
                   {describeColorRootAction('execute_root', activeRoot, liveColorJobs, busy)}
                 </Button>
                 <Button
-                  type={canRunColorRootAction('sync_batch_metadata', activeRoot, capability, liveColorJobs, busy, onRunColorAction) ? 'default' : 'disabled'}
-                  disabled={!canRunColorRootAction('sync_batch_metadata', activeRoot, capability, liveColorJobs, busy, onRunColorAction)}
-                  onClick={() => onRunColorAction?.({ rootId: activeRoot.rootId, action: 'sync_batch_metadata', batchId: activeRoot.current?.latestBatchId })}
-                >
-                  {describeColorRootAction('sync_batch_metadata', activeRoot, liveColorJobs, busy)}
-                </Button>
-                <Button
-                  type={canRunColorRootAction('sync_batch_sidecars', activeRoot, capability, liveColorJobs, busy, onRunColorAction) ? 'default' : 'disabled'}
-                  disabled={!canRunColorRootAction('sync_batch_sidecars', activeRoot, capability, liveColorJobs, busy, onRunColorAction)}
-                  onClick={() => onRunColorAction?.({ rootId: activeRoot.rootId, action: 'sync_batch_sidecars', batchId: activeRoot.current?.latestBatchId })}
-                >
-                  {describeColorRootAction('sync_batch_sidecars', activeRoot, liveColorJobs, busy)}
-                </Button>
-                <Button
                   type={canRunColorRootAction('validate_batch', activeRoot, capability, liveColorJobs, busy, onRunColorAction) ? 'default' : 'disabled'}
                   disabled={!canRunColorRootAction('validate_batch', activeRoot, capability, liveColorJobs, busy, onRunColorAction)}
                   onClick={() => onRunColorAction?.({ rootId: activeRoot.rootId, action: 'validate_batch', batchId: activeRoot.current?.latestBatchId })}
@@ -1765,40 +1731,88 @@ export function ColorCurrentSummary({
                 ) : null}
               </div>
             ) : null}
-            <div className="color-drp-panel">
-              <div className="color-drp-copy">
-                <strong>Resolve DRP 快照</strong>
-                <div className="muted">
-                  {activeRootLatestDrp?.snapshotPath
-                    ? `latest · ${activeRootLatestDrp.latestPath || activeRootLatestDrp.snapshotPath}`
-                    : '还没有 DRP。Resolve scripting 不可用时，用 File -> Export Project... 保存后在这里登记。'}
+            <details className="compact-disclosure color-maintenance-disclosure">
+              <summary>
+                <div className="compact-disclosure-copy">
+                  <strong>Resolve 维护与快照</strong>
+                  <span>{activeRootLatestDrp?.createdAt ? `最近快照 ${activeRootLatestDrp.createdAt}` : '宿主复查、批次维护与 DRP 登记'}</span>
                 </div>
-                {activeRootLatestDrp?.createdAt ? (
-                  <div className="muted">
-                    {`${activeRootLatestDrp.mode || 'auto'} · ${activeRootLatestDrp.retention || 'archive'} · ${activeRootLatestDrp.createdAt} · ${activeRootLatestDrp.projectName || activeRoot.resolveProjectName || ''}`}
+                <Tag>按需展开</Tag>
+              </summary>
+              <div className="compact-disclosure-body">
+                <div className="inline-actions color-maintenance-actions">
+                  <Button
+                    type={activeRootPreflightBusy ? 'disabled' : 'default'}
+                    disabled={activeRootPreflightBusy || typeof onRequestHostPreflight !== 'function'}
+                    onClick={() => onRequestHostPreflight?.({ rootId: activeRoot.rootId })}
+                  >
+                    {activeRootPreflightBusy ? '检查中…' : '复查 Host'}
+                  </Button>
+                  <Button
+                    type={!activeRootDrpBusy && typeof onSaveDrpSnapshot === 'function' ? 'default' : 'disabled'}
+                    disabled={activeRootDrpBusy || typeof onSaveDrpSnapshot !== 'function'}
+                    onClick={() => onSaveDrpSnapshot?.({ rootId: activeRoot.rootId, retention: 'latest-only' })}
+                  >
+                    {activeRootDrpBusy ? '保存中…' : '覆盖最新'}
+                  </Button>
+                  <Button
+                    type={!activeRootDrpBusy && typeof onSaveDrpSnapshot === 'function' ? 'default' : 'disabled'}
+                    disabled={activeRootDrpBusy || typeof onSaveDrpSnapshot !== 'function'}
+                    onClick={() => onSaveDrpSnapshot?.({ rootId: activeRoot.rootId, retention: 'archive' })}
+                  >
+                    归档快照
+                  </Button>
+                  <Button
+                    type={canRunColorRootAction('sync_batch_metadata', activeRoot, capability, liveColorJobs, busy, onRunColorAction) ? 'default' : 'disabled'}
+                    disabled={!canRunColorRootAction('sync_batch_metadata', activeRoot, capability, liveColorJobs, busy, onRunColorAction)}
+                    onClick={() => onRunColorAction?.({ rootId: activeRoot.rootId, action: 'sync_batch_metadata', batchId: activeRoot.current?.latestBatchId })}
+                  >
+                    {describeColorRootAction('sync_batch_metadata', activeRoot, liveColorJobs, busy)}
+                  </Button>
+                  <Button
+                    type={canRunColorRootAction('sync_batch_sidecars', activeRoot, capability, liveColorJobs, busy, onRunColorAction) ? 'default' : 'disabled'}
+                    disabled={!canRunColorRootAction('sync_batch_sidecars', activeRoot, capability, liveColorJobs, busy, onRunColorAction)}
+                    onClick={() => onRunColorAction?.({ rootId: activeRoot.rootId, action: 'sync_batch_sidecars', batchId: activeRoot.current?.latestBatchId })}
+                  >
+                    {describeColorRootAction('sync_batch_sidecars', activeRoot, liveColorJobs, busy)}
+                  </Button>
+                </div>
+                <div className="color-drp-panel">
+                  <div className="color-drp-copy">
+                    <strong>Resolve DRP 快照</strong>
+                    <div className="muted">
+                      {activeRootLatestDrp?.snapshotPath
+                        ? `latest · ${activeRootLatestDrp.latestPath || activeRootLatestDrp.snapshotPath}`
+                        : '还没有 DRP。Resolve scripting 不可用时，用 File -> Export Project... 保存后在这里登记。'}
+                    </div>
+                    {activeRootLatestDrp?.createdAt ? (
+                      <div className="muted">
+                        {`${activeRootLatestDrp.mode || 'auto'} · ${activeRootLatestDrp.retention || 'archive'} · ${activeRootLatestDrp.createdAt} · ${activeRootLatestDrp.projectName || activeRoot.resolveProjectName || ''}`}
+                      </div>
+                    ) : null}
                   </div>
-                ) : null}
+                  <div className="color-drp-register">
+                    <Field
+                      label="登记外部 DRP"
+                      value={externalDrpPath}
+                      onChange={setExternalDrpPath}
+                      placeholder="~/Desktop/项目名 [Color].drp"
+                      disabled={activeRootDrpRegisterBusy}
+                    />
+                    <Button
+                      type={externalDrpPath.trim() && !activeRootDrpRegisterBusy ? 'default' : 'disabled'}
+                      disabled={!externalDrpPath.trim() || activeRootDrpRegisterBusy || typeof onRegisterDrpSnapshot !== 'function'}
+                      onClick={() => {
+                        onRegisterDrpSnapshot?.({ rootId: activeRoot.rootId, path: externalDrpPath.trim() });
+                        setExternalDrpPath('');
+                      }}
+                    >
+                      {activeRootDrpRegisterBusy ? '登记中…' : '登记'}
+                    </Button>
+                  </div>
+                </div>
               </div>
-              <div className="color-drp-register">
-                <Field
-                  label="登记外部 DRP"
-                  value={externalDrpPath}
-                  onChange={setExternalDrpPath}
-                  placeholder="~/Desktop/项目名 [Color].drp"
-                  disabled={activeRootDrpRegisterBusy}
-                />
-                <Button
-                  type={externalDrpPath.trim() && !activeRootDrpRegisterBusy ? 'default' : 'disabled'}
-                  disabled={!externalDrpPath.trim() || activeRootDrpRegisterBusy || typeof onRegisterDrpSnapshot !== 'function'}
-                  onClick={() => {
-                    onRegisterDrpSnapshot?.({ rootId: activeRoot.rootId, path: externalDrpPath.trim() });
-                    setExternalDrpPath('');
-                  }}
-                >
-                  {activeRootDrpRegisterBusy ? '登记中…' : '登记'}
-                </Button>
-              </div>
-            </div>
+            </details>
             {activeRoot.blockers.length > 0 ? (
               <div className="inline-warning">
                 {`主 blocker：${activeRoot.blockers.slice(0, 2).join('；')}`}
@@ -1941,20 +1955,27 @@ export function ColorCurrentSummary({
                     );
                   })}
                 </div>
-                <p className="field-help">
-                  {'`Prepare Root` 会真正同步 Media Pool / grading timeline，并以 `logProfile` 为前置轴，再按 `portrait-review -> lowlight -> windshield-haze -> 高置信 colorCastClass -> 明显 exposureSceneClass` 生成或复用 Resolve Groups；横屏使用 `config/default.drt`，竖屏 Sony/ZV-E1 可用方向专用 DRT 自动 Gyro，并会写入 timeline transform 旋转放大为横屏单 clip 导出。`Group Post-Clip` 是主 creative 真相，`Clip` 只承担 repair / local exception。'}
-                </p>
+                <details className="compact-disclosure color-config-help">
+                  <summary>查看 Prepare / Group 技术说明</summary>
+                  <p className="field-help">
+                    {'`Prepare Root` 会同步 Media Pool / grading timeline，并按 logProfile 与 review addon 生成或复用 Resolve Groups；横竖屏 DRT、Gyro 与 timeline transform 规则保持不变。`Group Post-Clip` 是 creative 真相，`Clip` 只承担 repair / local exception。'}
+                  </p>
+                </details>
               </Card>
 
-              <Card className="panel color-groups-panel">
-                <div className="section-header">
-                  <h2>Groups</h2>
-                  <Tag>{`${activeRoot.groups.length} 个`}</Tag>
-                </div>
-                <p className="muted color-panel-copy">
-                  {'`Group Post-Clip` 是 Resolve 里的主 creative 真相；clip repair 只负责固定槽位 `Gyro -> Dehaze -> User1 -> User2 -> NR`。没有对应 DRT 模板时 Kairos 会跳过自动 Gyro/repair seed 并标记待初始化；竖屏素材仍会应用横屏 transform。导出会按 raw 父目录拆临时时间线，并直接渲染到最终 root 目标后校验。'}
-                </p>
-                <div className="color-group-list">
+              <details className="compact-disclosure color-groups-disclosure">
+                <summary>
+                  <span className="compact-disclosure-copy">
+                    <strong>Groups</strong>
+                    <span>{`${activeRoot.groups.length} 个已同步 · Clip Repair 默认收起`}</span>
+                  </span>
+                  <Tag>按需展开</Tag>
+                </summary>
+                <div className="compact-disclosure-body">
+                  <p className="muted color-panel-copy">
+                    Resolve Group 是创意调色真相；这里仅镜像状态和 clip repair 摘要。
+                  </p>
+                  <div className="color-group-list">
                   {activeRoot.groups.length > 0 ? activeRoot.groups.map(group => (
                     <div key={`${activeRoot.key}:${group.groupKey}`} className="color-group-row">
                       <div className="color-group-row-top">
@@ -1988,9 +2009,10 @@ export function ColorCurrentSummary({
                         </details>
                       ) : null}
                     </div>
-                  )) : <p className="muted">当前还没有已同步的正式 Groups。先运行 `Prepare Root`，如你在 Resolve 里做了调整，再执行一次 `Sync Groups`。</p>}
+                    )) : <p className="muted">当前还没有已同步的正式 Groups。先运行 `Prepare Root`，如你在 Resolve 里做了调整，再执行一次 `Sync Groups`。</p>}
+                  </div>
                 </div>
-              </Card>
+              </details>
             </div>
 
             <div className="color-secondary-stack">
@@ -2238,13 +2260,11 @@ function ColorRootArchivePanels({ root, archive, sectionOpen, setSectionOpen }) 
   const hostSectionKey = `${root.rootId}:host`;
   const recentSectionKey = `${root.rootId}:recent`;
   const failuresSectionKey = `${root.rootId}:failures`;
-  const hostDefaultOpen = ['blocked', 'degraded'].includes(root.hostPreflight?.status || '');
-  const validationDefaultOpen = Array.isArray(archive?.validationFailures) && archive.validationFailures.length > 0;
   const sections = [
     {
       key: hostSectionKey,
       title: 'Host Diagnostics',
-      defaultOpen: hostDefaultOpen,
+      defaultOpen: false,
       body: renderColorHostDiagnostics(root.hostPreflight),
     },
     {
@@ -2256,7 +2276,7 @@ function ColorRootArchivePanels({ root, archive, sectionOpen, setSectionOpen }) 
     {
       key: failuresSectionKey,
       title: 'Validation Failures',
-      defaultOpen: validationDefaultOpen,
+      defaultOpen: false,
       body: renderColorValidationFailures(archive?.validationFailures),
     },
   ];

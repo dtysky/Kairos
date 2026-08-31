@@ -598,7 +598,7 @@ flowchart TD
 ### 当前运行与控制面
 
 - 本地运行时当前由 `Supervisor` 承载，Dashboard 默认在 `127.0.0.1:8940`，ML 默认在 `127.0.0.1:8910`
-- `apps/kairos-console/` 是当前正式 React 控制台，采用“工作流优先”的顶层路由：
+- `apps/kairos-console/` 是当前正式 React 18 + TypeScript + Ant Design 6 控制台，主题使用 `darkAlgorithm + compactAlgorithm`，采用“工作流优先”的顶层路由：
   - `/`
   - `/ingest-gps`
   - `/analyze`
@@ -607,6 +607,17 @@ flowchart TD
   - `/edit`
   - `/timeline-export`
   - `/project`
+- 全局 Shell 的唯一正式左侧导航分组为：
+  - `工作台 / 总览`
+  - `素材准备 / 导入与 GPS / 达芬奇调色`
+  - `素材理解 / 素材分析 / 编年史`
+  - `创作 / 风格分析 / 剪辑流 / 时间线与导出`
+  - `系统 / 项目`
+- 所有路由共享同一侧栏宽度、分组起点、图标槽和单一选中态；顶栏统一承载项目选择、服务状态和任务中心。1280–2560px 使用桌面布局，低于约 1100px 折叠侧栏并转单列。
+- Console 状态层使用 Context + reducer 管理当前项目、配置草稿、任务、服务与 Review；新增的导航、页签、筛选和展开状态只保存在前端本地，不改变项目文件 schema。
+- 页面密度按 `PageHeader -> 状态/摘要 -> 主工作区 -> 诊断` 收口；总览只保留项目健康、真实活跃任务、阻塞/Review 与紧凑工作流轨道，不复制各领域页的完整入口卡片。
+- Chronology 使用固定高度虚拟表格；筛选和批量操作位于统一工具栏，只有当前编辑事件在 Drawer 中挂载表单，250 个事件不会预挂载完整输入控件。
+- Console 的深色 surface 统一由 design token 驱动，旧表单、Pharos 提示、产物路径、DRP、Group 与诊断卡不得使用硬编码白色/浅灰背景；路径、产物、快照、维护动作、归档与原始诊断默认折叠成紧凑摘要，避免监控和配置页因只读信息无限增长。`/color` 的正式 Root 参数仍全部常驻可编辑，Groups / Clip Repair 镜像与 Host 诊断则默认只显示数量和阻塞摘要、按需展开。
 - `Analyze`、`Chronology` 与 `Style` 当前都直接在主路由展示监控内容：
   - `/analyze` 直接展示 Analyze monitor
   - `/chronology` 直接展示 span-rebuild / chronology-build / spatial-refresh 与 Chronology V2 审查

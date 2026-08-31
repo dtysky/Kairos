@@ -60,6 +60,10 @@ Current stable pipeline:
   - `device-media-maps.local.json` 不再是正式配置或缓存；旧项目内残留文件可安全删除
   - 若解析后的 `rawLocalPath` 位于当前素材目录内部，主链 ingest 扫描会显式排除该子树；没有 `rawPath` 的 root 不受影响
 - official local runtime / monitor entry is `Supervisor + React console (apps/kairos-console/)`
+  - the Console uses React 18, TypeScript, React Router 6 and Ant Design 6 with a compact dark theme
+  - the canonical left navigation is grouped as `工作台 / 素材准备 / 素材理解 / 创作 / 系统`; every route shares the same sidebar geometry and a single active item
+  - the top bar owns project selection, service truth and the task center; dirty section drafts block project switching until confirmed
+  - Chronology renders a viewport-bound virtual table and mounts only the active event form in a Drawer
   - `http://127.0.0.1:8940/analyze` is the official Analyze monitor route
   - `http://127.0.0.1:8940/style` is the official workspace-level Style monitor route
   - `http://127.0.0.1:8940/edit` is the official edit-rule-driven Edit Flow route after Chronology

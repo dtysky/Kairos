@@ -47,6 +47,14 @@ The current official local runtime and monitor path is:
 - Edit Flow route: `http://127.0.0.1:8940/edit` (剪辑规则驱动的原子能力流；Chronology 之后的正式剪辑入口)
 - Color route: `http://127.0.0.1:8940/color` (independent DaVinci color render-preset/action/runtime surface backed by the same-machine vendored Resolve backend)
 
+Console UI contract:
+
+- `apps/kairos-console/` uses React 18, TypeScript, React Router 6 and Ant Design 6 with `darkAlgorithm + compactAlgorithm`
+- the shared left navigation is grouped as `工作台 / 素材准备 / 素材理解 / 创作 / 系统`; every child route must use the same width, alignment, icon slot and exactly one selected item
+- the top bar owns project selection, service status and the task center; unsaved section drafts must protect project switching
+- `/chronology` uses a viewport-bound virtual table and mounts only the current event editor in a Drawer; do not pre-render full forms for every event
+- new navigation, tab, filter and disclosure state stays frontend-local and must not change project schemas or Supervisor APIs
+
 Operational lesson that must not be forgotten:
 
 - `scripts/kairos-supervisor.* start` starts `Supervisor + React console`, but does not start ML and does not auto-resume old jobs

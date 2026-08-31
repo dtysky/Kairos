@@ -7,6 +7,22 @@
 
 ## 0. 2026-03-31 增补
 
+## 0.19 2026-08-31 Kairos Console 视觉与前端架构重构
+
+本轮在不改变 Supervisor、ML、Resolve host、项目文件 schema 或 API JSON 的前提下，重构 `apps/kairos-console/` 的桌面控制面：
+
+- 前端基线升级为 React 18、React Router 6、TypeScript 与 Ant Design 6，主题统一使用 `darkAlgorithm + compactAlgorithm`，并以 design tokens 固化深色、中性灰、铜橙强调色、状态色、间距、圆角与字号
+- 全局 Shell 使用固定左侧分组导航：`工作台 / 总览`、`素材准备 / 导入与 GPS / 达芬奇调色`、`素材理解 / 素材分析 / 编年史`、`创作 / 风格分析 / 剪辑流 / 时间线与导出`、`系统 / 项目`；所有子功能共享同一导航宽度、分组起点、图标槽与选中态，只允许一个当前菜单项
+- 顶栏统一承载项目选择器、项目 id 消歧、Supervisor/ML/Resolve 服务状态与任务中心；项目切换继续优先跟随活跃 project-scoped job，并在存在未保存分区草稿时阻塞切换直到用户确认
+- 页面内容使用一致的 `PageHeader -> status/summary -> primary workspace -> diagnostics` 层级；总览只保留项目健康、真实活跃任务、阻塞/Review 与紧凑工作流轨道，不复制各页面的完整操作面板
+- Analyze 与 Style 共享监控视觉组件，但 live job 与 durable progress cache 必须继续分开判断；Style 仍为 Workspace 范围、单分类监控
+- Chronology 使用视口约束的固定高度虚拟表格，筛选和批量操作位于同一工具栏；只有当前事件在 Drawer 中挂载编辑表单，250 个事件不得预挂载完整输入控件
+- Edit 首屏聚合 readiness、Edit Unit 初始化和 Resolve 维护；Flow Plan 仍只读，当前、失败、待审查步骤展开，其余折叠，不新增 Console runner
+- 1280–2560px 为桌面主目标；低于约 1100px 时侧栏折叠、内容转单列。新增侧栏、页签、筛选与展开状态只保存在前端本地，不进入项目 schema
+- 正式 URL、旧监控兼容跳转、localStorage key、4 秒轮询、动作名称、payload、覆盖确认与所有 Supervisor API 保持兼容
+- 深色主题必须贯穿旧表单、提示、路径、产物、DRP、Group 和诊断组件：业务页面不得残留白色/浅灰表面或低对比度浅字；所有 surface 只使用统一 `panel / panel-strong / panel-soft` token，状态色只作为边框、图标或低饱和背景提示
+- 页面默认只常驻当前决策所需的状态、主操作和正式可编辑参数；路径明细、目录结构、完成产物、DRP 登记、批次维护、历史与原始诊断使用紧凑摘要和按需展开。折叠不得隐藏 `/color` 所有 Root 的正式可编辑参数，但 Groups / Clip Repair 镜像与 Host 诊断默认只显示数量、阻塞摘要并按需展开
+
 ## 0.17 2026-07-05 DaVinci color 素材重链维护动作补记
 
 `/color` 素材重链正式从 `prepare_root` 中拆出为独立 same-machine maintenance action：
