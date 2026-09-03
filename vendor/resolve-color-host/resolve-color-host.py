@@ -1214,7 +1214,6 @@ def import_rough_cut_subtitles(media_pool, timeline, payload):
             "create_rough_cut_timeline subtitleSrtPath does not point to a readable SRT file.",
             {"subtitleSrtPath": subtitle_srt_path},
         )
-    subtitle_import_path = prepare_subtitle_import_path(subtitle_srt_path)
     track_count = parse_int(safe_call(timeline, "GetTrackCount", "subtitle")) or 0
     if track_count < 1 and not safe_call(timeline, "AddTrack", "subtitle"):
         raise HostError(
@@ -1225,12 +1224,12 @@ def import_rough_cut_subtitles(media_pool, timeline, payload):
     track_name = stringify_signal_value(payload.get("subtitleTrackName"))
     if track_name:
         safe_call(timeline, "SetTrackName", "subtitle", 1, track_name)
-    media_items = list(iter_values(safe_call(media_pool, "ImportMedia", [subtitle_import_path]) or []))
+    media_items = list(iter_values(safe_call(media_pool, "ImportMedia", [subtitle_srt_path]) or []))
     if not media_items:
         raise HostError(
             "resolve_subtitle_srt_import_failed",
             "Resolve did not import the rough-cut subtitle SRT as a media item.",
-            {"subtitleSrtPath": subtitle_srt_path, "subtitleImportPath": subtitle_import_path},
+            {"subtitleSrtPath": subtitle_srt_path},
         )
     appended_items = list(iter_values(safe_call(media_pool, "AppendToTimeline", [{
         "mediaPoolItem": media_items[0],
@@ -1241,19 +1240,18 @@ def import_rough_cut_subtitles(media_pool, timeline, payload):
         raise HostError(
             "resolve_subtitle_append_failed",
             "Resolve did not append the rough-cut subtitle SRT to the timeline.",
-            {"subtitleSrtPath": subtitle_srt_path, "subtitleImportPath": subtitle_import_path},
+            {"subtitleSrtPath": subtitle_srt_path},
         )
     subtitle_items = list(iter_values(safe_call(timeline, "GetItemListInTrack", "subtitle", 1) or []))
     if not subtitle_items:
         raise HostError(
             "resolve_subtitle_items_missing",
             "Resolve appended the rough-cut subtitle SRT but no subtitle items were found on track 1.",
-            {"subtitleSrtPath": subtitle_srt_path, "subtitleImportPath": subtitle_import_path},
+            {"subtitleSrtPath": subtitle_srt_path},
         )
     return {
         "enabled": True,
         "subtitleSrtPath": subtitle_srt_path,
-        "subtitleImportPath": subtitle_import_path,
         "trackIndex": 1,
         "trackName": safe_call(timeline, "GetTrackName", "subtitle", 1),
         "importedMediaItemCount": len(media_items),
@@ -1262,25 +1260,6 @@ def import_rough_cut_subtitles(media_pool, timeline, payload):
         "firstStartFrame": parse_int(safe_call(subtitle_items[0], "GetStart")),
         "lastEndFrame": parse_int(safe_call(subtitle_items[-1], "GetEnd")),
     }
-
-
-def prepare_subtitle_import_path(subtitle_srt_path):
-    source = Path(subtitle_srt_path)
-    try:
-        data = source.read_bytes()
-        digest = hashlib.sha1(data).hexdigest()[:12]
-        import_dir = Path(tempfile.gettempdir()) / "kairos-resolve-subtitle-imports"
-        import_dir.mkdir(parents=True, exist_ok=True)
-        suffix = source.suffix or ".srt"
-        target = import_dir / f"{source.stem}-{digest}-{uuid.uuid4().hex[:8]}{suffix}"
-        target.write_bytes(data)
-        return str(target)
-    except Exception as exc:
-        raise HostError(
-            "resolve_subtitle_import_copy_failed",
-            "Unable to prepare a unique subtitle import copy for Resolve.",
-            {"subtitleSrtPath": subtitle_srt_path, "error": str(exc)},
-        )
 
 
 def validate_rough_cut_timeline_placement(

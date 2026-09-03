@@ -1069,7 +1069,7 @@ vendor/resolve-color-host/
   → 按 FW/slot/chosenSpanIds 顺序构建 KTEP/manifest 内存稿
   → official Python host 按 chronology event title 重建 Resolve media pool namespace（工程归档组织，不参与召回语义）
   → official Python host 先通过 `resolve.media_sync` 复用/移动/导入达芬奇 Media Pool 的项目全局 `Kairos Project Media` 素材：目标事件目录一致则复用跳过，目录变化则移动，缺失才导入，并在同步结束后清理空事件目录；随后在 `Kairos Timelines` 中通过 Resolve 原生 `MediaPool.AppendToTimeline` 创建/替换 Resolve rough-cut timeline，自动写入并回读校验照片 `Blue`、延时 `Purple`、行车 `Brown`、航拍 `Teal`、普通有声/剩余可听 linked audio `Orange` clip color 批处理标记，创建/复用 `Kairos Photos` / `Kairos Timelapse` Color Groups 并分配照片/延时 video item，同时回读校验 source range / still duration / timeline gap-free placement；航拍 linked audio 强制 disabled；有声非航拍 speech/mixed 非照片 clip 的回读 source range 包含默认 `300ms` head / `300ms` tail handle，照片默认校验 `1000ms`，只有剪辑规则 / confirmed Flow Plan 或 `timelineStillDurationMs` 可覆盖
-- 当 rough-cut 需要携带既有/迁移 SRT 时，Resolve host 在 append 视频前预载 `subtitleSrtPath` 到空 timeline；不得在视频已存在后 append SRT 并假设 `recordFrame` 生效，因为 Resolve 会把字幕整体追加到当前 timeline 末尾。host 导入前必须生成带内容 hash 的唯一 SRT 副本，避免 Resolve 对同一路径复用旧 Media Pool 字幕素材。
+- 当 rough-cut 需要携带既有/迁移 SRT 时，Resolve host 在 append 视频前预载 `subtitleSrtPath` 到空 timeline；不得在视频已存在后 append SRT 并假设 `recordFrame` 生效，因为 Resolve 会把字幕整体追加到当前 timeline 末尾。
   → Resolve timeline 成功后以 `latest-only` 保存项目级 `[Edit]` DRP；失败只写入 `drpSnapshotWarning`
   → Resolve 成功后才写临时 `.tmp/edit-flow/<editId>/timeline/current.json` 审计，并按生成后的 clip 时间映射写 `.tmp/edit-flow/<editId>/timeline/current.srt`
 ```
