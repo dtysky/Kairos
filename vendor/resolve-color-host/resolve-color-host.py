@@ -5297,6 +5297,7 @@ def verify_transient_render_preset(resolve, project, preset_name, bitrate, rende
             "SrcDirLevelsMode": root.findtext("SrcDirLevelsMode"),
         }
         verified_bitrate = get_extra_info_value(extra_info, "h264_datarate") if extra_info is not None else None
+        verified_profile = get_extra_info_value(extra_info, "h264_profile") if extra_info is not None else None
         verified_encoder_map = decode_resolve_string_map(
             get_extra_info_value(extra_info, "encoder_command_param_map") if extra_info is not None else None,
         )
@@ -5310,6 +5311,16 @@ def verify_transient_render_preset(resolve, project, preset_name, bitrate, rende
                     "presetName": preset_name,
                     "requestedEncoderSubtype": expected_subtype,
                     "verifiedEncoderSubtype": verified_subtype,
+                },
+            )
+        if normalize_codec_family((render_format or {}).get("videoCodec")) == "h265" and stringify_signal_value(verified_profile) != "2":
+            raise HostError(
+                "resolve_render_preset_profile_verify_failed",
+                "Resolve did not keep the requested H.265 Main10 profile in the transient render preset.",
+                {
+                    "presetName": preset_name,
+                    "requestedEncodingProfile": "Main10",
+                    "verifiedProfile": verified_profile,
                 },
             )
         if verified_rate_control != "CBR":
@@ -5883,6 +5894,9 @@ def queue_root_render_job(project, target_dir, render_format, clips):
         settings["FormatHeight"] = int(next(iter(unique_heights)))
     if len(unique_fps_values) == 1:
         settings["FrameRate"] = next(iter(unique_fps_values))
+    encoding_profile = default_render_encoding_profile(render_format)
+    if encoding_profile and not needs_windows_fixed_bitrate_preset(render_format):
+        settings["EncodingProfile"] = encoding_profile
     if render_format.get("audioCodec"):
         settings["AudioCodec"] = render_format["audioCodec"]
     if render_format.get("bitrateKbps") and not needs_windows_fixed_bitrate_preset(render_format):
@@ -5988,6 +6002,7 @@ def set_root_render_settings(project, settings):
         "FormatWidth",
         "FormatHeight",
         "FrameRate",
+        "EncodingProfile",
         "AudioCodec",
         "RateControl",
         "VideoQuality",

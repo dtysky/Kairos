@@ -1592,6 +1592,10 @@ export type IColorGroupsSnapshotFile = z.infer<typeof IColorGroupsSnapshotFile>;
 
 export const IColorFileMetadataSnapshot = z.object({
   mediaKind: EAssetKind.optional(),
+  codec: z.string().optional(),
+  codecProfile: z.string().optional(),
+  pixelFormat: z.string().optional(),
+  bitDepth: z.number().int().positive().optional(),
   width: z.number().int().positive().optional(),
   height: z.number().int().positive().optional(),
   displayWidth: z.number().int().positive().optional(),
@@ -1695,6 +1699,7 @@ export type IColorBatchManifest = z.infer<typeof IColorBatchManifest>;
 export const IColorBatchValidationChecks = z.object({
   pathMirror: EColorValidationCheckResult,
   filenameNormalized: EColorValidationCheckResult,
+  main10: EColorValidationCheckResult.default('not_present_in_source'),
   mediaKind: EColorValidationCheckResult,
   resolution: EColorValidationCheckResult,
   fps: EColorValidationCheckResult,

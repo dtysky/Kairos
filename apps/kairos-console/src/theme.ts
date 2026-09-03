@@ -18,8 +18,11 @@ export const kairosTheme: ThemeConfig = {
     colorTextSecondary: '#9ba4ae',
     borderRadius: 8,
     borderRadiusLG: 12,
-    fontSize: 13,
+    fontSize: 14,
+    fontSizeSM: 12,
+    fontSizeLG: 16,
     controlHeight: 34,
+    controlHeightSM: 28,
   },
   components: {
     Button: {

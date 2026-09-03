@@ -79,6 +79,9 @@ describe('probe', () => {
             height: 2160,
             r_frame_rate: '25/1',
             codec_name: 'h265',
+            profile: 'Main 10',
+            pix_fmt: 'yuv420p10le',
+            bits_per_raw_sample: '10',
             side_data_list: [{
               side_data_type: 'Display Matrix',
               rotation: -90,
@@ -99,6 +102,9 @@ describe('probe', () => {
     expect(result.rotationDegrees).toBe(-90);
     expect(result.displayWidth).toBe(2160);
     expect(result.displayHeight).toBe(3840);
+    expect(result.codecProfile).toBe('Main 10');
+    expect(result.pixelFormat).toBe('yuv420p10le');
+    expect(result.bitDepth).toBe(10);
   });
 
   it('uses a stable locale env for photo exiftool probes', async () => {

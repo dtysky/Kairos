@@ -168,7 +168,7 @@ export function ProjectBriefEditor({ config, pharosStatus, summaries = [], setCo
               </div>
             </summary>
             <div className="structured-root-body">
-            <div className={`root-resolution${blockers.length > 0 ? ' has-blockers' : ''}`}>
+            <div className={`root-resolution structured-root-resolution${blockers.length > 0 ? ' has-blockers' : ''}`}>
               <div>
                 <span>当前使用路径</span>
                 <code>{localPath || '未命中'}</code>
@@ -181,7 +181,7 @@ export function ProjectBriefEditor({ config, pharosStatus, summaries = [], setCo
                 <p>{blockers.join(' · ')}</p>
               ) : null}
             </div>
-            <div className="field-grid field-grid-three">
+            <div className="field-grid structured-root-primary-grid">
               <Field
                 label="Root 代号"
                 value={mapping.rootCode || ''}
@@ -197,6 +197,8 @@ export function ProjectBriefEditor({ config, pharosStatus, summaries = [], setCo
                 value={mapping.rawPath || ''}
                 onChange={value => updateMapping({ ...mapping, rawPath: value })}
               />
+            </div>
+            <div className="field-grid structured-root-capture-grid">
               <Field
                 label="FlightRecord"
                 value={mapping.flightRecordPath || ''}
@@ -249,24 +251,42 @@ export function ProjectBriefEditor({ config, pharosStatus, summaries = [], setCo
                 })}
               />
             </div>
-            <TextAreaField
-              label="说明"
-              value={mapping.description}
-              onChange={value => updateMapping({ ...mapping, description: value })}
-              rows={3}
-            />
-            <ListToolbar
-              title="备选路径"
-              onAdd={() => updateAlternates([...alternates, createAlternatePathDraft()])}
-            />
-            {alternates.length === 0 ? (
-              <p className="muted">没有备选路径。主路径不可读时不会自动切换到其他目录。</p>
-            ) : null}
-            {alternates.map((alternate, alternateIndex) => (
-              <div key={`alternate-${mapping.rootId || index}-${alternateIndex}`} className="nested-card alternate-path-card">
-                <div className="row-top">
-                  <strong>{`备选路径 ${alternateIndex + 1}`}</strong>
-                  <div className="capture-time-actions">
+            <div className="structured-root-description">
+              <TextAreaField
+                label="说明"
+                value={mapping.description}
+                onChange={value => updateMapping({ ...mapping, description: value })}
+                rows={2}
+              />
+            </div>
+            <section className="structured-root-alternates">
+              <ListToolbar
+                title="备选路径"
+                onAdd={() => updateAlternates([...alternates, createAlternatePathDraft()])}
+              />
+              {alternates.length === 0 ? (
+                <p className="muted">没有备选路径。主路径不可读时不会自动切换到其他目录。</p>
+              ) : null}
+              {alternates.map((alternate, alternateIndex) => (
+                <div key={`alternate-${mapping.rootId || index}-${alternateIndex}`} className="alternate-path-row">
+                  <strong className="alternate-path-index">{String(alternateIndex + 1).padStart(2, '0')}</strong>
+                  <Field
+                    label="备选路径"
+                    value={alternate.path || ''}
+                    onChange={value => updateAlternates(replaceArrayItem(alternates, alternateIndex, {
+                      ...alternate,
+                      path: value,
+                    }))}
+                  />
+                  <Field
+                    label="原始路径"
+                    value={alternate.rawPath || ''}
+                    onChange={value => updateAlternates(replaceArrayItem(alternates, alternateIndex, {
+                      ...alternate,
+                      rawPath: value,
+                    }))}
+                  />
+                  <div className="capture-time-actions alternate-path-actions">
                     <Button
                       size="small"
                       disabled={alternateIndex === 0}
@@ -290,33 +310,17 @@ export function ProjectBriefEditor({ config, pharosStatus, summaries = [], setCo
                     </Button>
                   </div>
                 </div>
-                <div className="field-grid field-grid-three">
-                  <Field
-                    label="备选路径"
-                    value={alternate.path || ''}
-                    onChange={value => updateAlternates(replaceArrayItem(alternates, alternateIndex, {
-                      ...alternate,
-                      path: value,
-                    }))}
-                  />
-                  <Field
-                    label="原始路径"
-                    value={alternate.rawPath || ''}
-                    onChange={value => updateAlternates(replaceArrayItem(alternates, alternateIndex, {
-                      ...alternate,
-                      rawPath: value,
-                    }))}
-                  />
-                </div>
-              </div>
-            ))}
-            <Button
-              type="error"
-              size="small"
-              onClick={() => removeArrayItem(config.mappings, index, next => setConfig(current => ({ ...current, mappings: next })))}
-            >
-              删除 Root
-            </Button>
+              ))}
+            </section>
+            <div className="structured-root-footer">
+              <Button
+                type="error"
+                size="small"
+                onClick={() => removeArrayItem(config.mappings, index, next => setConfig(current => ({ ...current, mappings: next })))}
+              >
+                删除 Root
+              </Button>
+            </div>
             </div>
           </details>
         );

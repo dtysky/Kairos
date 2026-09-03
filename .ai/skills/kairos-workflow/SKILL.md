@@ -279,6 +279,7 @@ project/
 - 这套内部 GPX 只用于 same-source 索引 / 惰性查找，不改变 `embedded GPS > Pharos GPX > 普通 project GPX > project-derived-track` 的正式优先级；Pharos GPX 不能覆盖同名 `.SRT` / FlightRecord 绑定出的 embedded GPS
 - 照片拍摄时间默认优先吃 EXIF 原始时间和时区；如果照片自身带 GPS，也应直接作为 `embedded GPS` 真值
 - Ingest / GPS 刷新负责解析项目内固定 `pharos/` 并刷新 `analysis/pharos-context.json`；该 cache 必须按输入 fingerprint 和 parser version 自动失效；Analyze 只消费该 cache，不临时补跑 Pharos parse
+- 项目内 Pharos 镜像只包含 canonical `plan.json / record.json? / gpx/*.gpx`；`record-import.json` 是 Pyxis 命令信封，不进入 Kairos。弹性 freeform 可有稀疏/空 `days[]`，未排期 route/shot options 不进入素材匹配、缺口或 chronology
 - Pharos planned shot 归属只使用 `record.json.actual_time` 精确匹配；`expected / unexpected` 且有完整 actual time 的记录才可绑定存在有意义时间重叠的素材，多个单点事件时间窗重叠时只按 `record.json.actual_captures[]` 等显式拍摄类型/设备字段调整优先级，仍同分时优先更窄的 actual window，不从描述、地点或 note 推断语义；`pending / abandoned` 和 planned time segment 不参与素材归属，空间仍只从 trip GPX 按时间反算
 - Pharos/Pyxis 的普通事件过长二次确认只防止上游误写超长 `actual_time`，不改变 Kairos workflow 的归属、刷新或重建步骤
 - Pharos/Pyxis 的非旅行期省电门控只影响移动端自动服务启动，不改变 Kairos workflow 的 Pharos 输入目录、解析、素材归属、GPS 刷新或 chronology 重建步骤

@@ -302,6 +302,13 @@ function mockColorMetadata(options: {
     rotationDegrees: options.rotationDegrees ?? null,
     fps: 30,
     codec: options.codec ?? (filePath.endsWith('.mp4') ? 'h265' : 'prores'),
+    codecProfile: (options.codec ?? (filePath.endsWith('.mp4') ? 'h265' : 'prores')) === 'h265'
+      ? 'Main 10'
+      : null,
+    pixelFormat: (options.codec ?? (filePath.endsWith('.mp4') ? 'h265' : 'prores')) === 'h265'
+      ? 'yuv420p10le'
+      : 'yuv422p10le',
+    bitDepth: 10,
     hasAudioStream: true,
     audioStreamCount: 1,
     audioCodec: 'aac',
@@ -1263,6 +1270,66 @@ describe('project color actions', () => {
     expect(plan?.entries.map(entry => entry.rawRelativePath)).toEqual(syncedClipKeys);
     expect(executedClipKeys).toEqual(syncedClipKeys);
     await expect(readFile(join(currentLocalPath, 'day1', 'A002.mp4'), 'utf-8')).rejects.toThrow();
+  });
+
+  it('fails batch validation when an H.265 render is not Main10 10-bit', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-color-main10-validation';
+    const { projectRoot, rootId } = await seedSingleRootProject({
+      workspaceRoot,
+      projectId,
+      projectName: 'Project Color Main10 Validation',
+      rawFiles: ['day1/A001.mov'],
+    });
+
+    mockColorMetadata();
+    const executor = createFakeExecutor();
+    await prepareProjectColorRoot({ workspaceRoot, projectId, rootId, executor });
+    const executeResult = await executeProjectColorRoot({
+      workspaceRoot,
+      projectId,
+      rootId,
+      action: 'execute_root',
+      executor,
+    });
+
+    vi.spyOn(mediaProbe, 'probe').mockImplementation(async filePath => {
+      const isOutput = filePath.endsWith('.mp4');
+      return {
+        durationMs: 1000,
+        width: 3840,
+        height: 2160,
+        displayWidth: 3840,
+        displayHeight: 2160,
+        rotationDegrees: null,
+        fps: 30,
+        codec: isOutput ? 'hevc' : 'prores',
+        codecProfile: isOutput ? 'Main' : 'HQ',
+        pixelFormat: isOutput ? 'yuv420p' : 'yuv422p10le',
+        bitDepth: isOutput ? 8 : 10,
+        hasAudioStream: true,
+        audioStreamCount: 1,
+        audioCodec: 'aac',
+        audioSampleRate: 48000,
+        audioChannels: 2,
+        audioBitRate: 192000,
+        creationTime: null,
+        rawTags: {},
+      };
+    });
+
+    const validationResult = await validateProjectColorBatch({
+      workspaceRoot,
+      projectId,
+      rootId,
+      action: 'validate_batch',
+      batchId: executeResult.batchId,
+    });
+    const validation = await loadColorBatchValidation(projectRoot, executeResult.batchId!);
+
+    expect(validationResult.blockingReasons).toContain('H.265 Main10 output mismatch');
+    expect(validation?.status).toBe('fail');
+    expect(validation?.entries[0]?.checks.main10).toBe('fail');
   });
 
   it('mirrors same-basename raw sidecars only after manual sidecar sync', async () => {

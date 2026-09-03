@@ -17,6 +17,8 @@ Current stable pipeline:
 - `Pharos -> ingest -> analyze -> chronology -> edit-flow -> export`
 - `Pharos` 的正式输入位置已收口到项目内固定目录 `projects/<projectId>/pharos/<trip_id>/`
   - 每个 trip 子目录当前消费 `plan.json`，可选消费 `record.json` 与 `gpx/*.gpx`
+  - `record-import.json` 是 Pharos → Pyxis 的一次性导入信封，不属于 Kairos 输入；只有合并后的 canonical `record.json` 才能被镜像和解析
+  - `trip_kind: "freeform"` 是弹性行程：`days[]` 可稀疏或为空，未排期 route/shot options 只是备选；Kairos 只消费已排期 shots 与 canonical record 的执行事实
   - 项目初始化会直接创建 `projects/<projectId>/pharos/`；Console 读取项目配置时也会补齐缺失目录
   - `project-brief.md` 只允许通过 `## Pharos` / `包含 Trip：...` 做可选 trip 筛选，不再填写外部 `Pharos` 路径
   - `/ingest-gps` 会明确提示这个固定目录，并提醒用户把 `trip_id/plan.json`、`record.json`、`gpx/` 镜像放进来
@@ -80,6 +82,7 @@ Current stable pipeline:
 - independent `DaVinci color` chain now uses a minimal project-root + runtime/archive split:
   - formal root config now lives in the shared `config/project-brief.json` mappings; `color` only consumes each root mapping上的最小 `color.renderPreset + color.colorSpaceProfile + color.transformPresetKey`
     - `color.renderPreset` 当前正式使用 `bitrateKbps`（单位 `kb/s`）；`/color` 不再接受旧的 bitrate 别名字段
+    - `/color` 的 H.265 正式输出固定为 Main10：非 Windows host 每次显式设置 `EncodingProfile=Main10`，Windows generated preset 固定并回读验证 `h264_profile=2`，最终 `validate_batch` 还会核对实际输出的 HEVC Main 10 / 10-bit 证据
   - `color.colorSpaceProfile` is now a technical-input key, not a creative look or full gamut/primaries descriptor
   - workspace-level default transform mapping now lives in `config/color-transform-presets.json`, and workspace-managed LUT assets now live in `config/luts/`
   - `resolveProjectName / rootNamespace / gradingTimelineName` are derived by convention and stay read-only; `/color` keeps them in advanced/debug info instead of editable config

@@ -7,6 +7,26 @@
 
 ## 0. 2026-03-31 增补
 
+## 0.21 2026-09-01 DaVinci color H.265 Main10 导出合同
+
+`/color` 的 H.265 输出统一收口为 Main10，不再依赖 Resolve Deliver 页当前粘滞状态：
+
+- `EncodingProfile=Main10` 是所有 H.265 `execute_root` 的宿主级固定约束，不进入 `project-brief`、不新增用户可编辑字段，也不随 root、设备或当前 Deliver 页变化
+- 非 Windows 宿主在每个目录级 render job 入队前，必须通过公开 `SetRenderSettings` 显式提交 `EncodingProfile=Main10`；Resolve 返回 `False` 或抛错时必须在 `AddRenderJob / StartRendering` 前阻塞
+- Windows MP4/H.265 generated preset 继续以 `h264_profile=2` 表示 Main10，并在 `ExportRenderPreset` 回读校验中确认该值；不得只依赖初始 XML 写入
+- `validate_batch` 必须从实际输出的 ffprobe video stream 回读 HEVC profile 与像素格式 / 位深；H.265 输出不是 `Main 10` 或没有可验证的 10-bit 证据时，本批 validation 失败
+- 非 H.265 render preset 不冒充 Main10；当前 Color 正式交付仍以 `MP4 + H.265 + AAC` 为主，若未来开放其它 codec，必须另行定义并验证其 profile 合同
+
+## 0.20 2026-09-01 Kairos Console 字号与空间密度收口
+
+Console 在 0.19 深色重构后继续统一文字与容器的比例，避免出现“小字配大面板、大输入框、大段留白”的低效布局：
+
+- 桌面主工作区正文基线为 `14px`，输入内容为 `13px`，标签、状态摘要和辅助信息不得低于 `12px`；只有品牌副标、导航分组等非业务微文本可使用 `10–11px`
+- 常规 panel 内容 padding 收口到约 `14–16px`，相邻业务区块 gap 收口到约 `10–12px`，控件高度保持约 `34px`；字号提升不应反向制造更高的卡片
+- `/ingest-gps` 的单个素材 Root 继续使用一个可折叠编辑容器，但展开后按 `路径真相 -> 基础路径 -> 拍摄时间 -> 说明 -> 备选路径` 紧凑分区；路径解析只显示双列状态摘要，说明默认两行，备选路径使用表格式行而不是一条路径一个嵌套大卡片
+- 在 1920px 桌面宽度、包含两组备选路径的典型 Root 中，展开高度目标为约 `500–600px`，不得恢复到约 `1000px` 的长表单；所有正式字段、排序、删除和保存语义保持不变
+- 这套字号与间距基线适用于总览、Ingest、Analyze、Chronology、Color、Style、Edit、Timeline/Export 与 Project，共享组件不得为单页重新引入 `10px` 业务正文或 `18–24px` 的常规 panel padding
+
 ## 0.19 2026-08-31 Kairos Console 视觉与前端架构重构
 
 本轮在不改变 Supervisor、ML、Resolve host、项目文件 schema 或 API JSON 的前提下，重构 `apps/kairos-console/` 的桌面控制面：
@@ -22,6 +42,16 @@
 - 正式 URL、旧监控兼容跳转、localStorage key、4 秒轮询、动作名称、payload、覆盖确认与所有 Supervisor API 保持兼容
 - 深色主题必须贯穿旧表单、提示、路径、产物、DRP、Group 和诊断组件：业务页面不得残留白色/浅灰表面或低对比度浅字；所有 surface 只使用统一 `panel / panel-strong / panel-soft` token，状态色只作为边框、图标或低饱和背景提示
 - 页面默认只常驻当前决策所需的状态、主操作和正式可编辑参数；路径明细、目录结构、完成产物、DRP 登记、批次维护、历史与原始诊断使用紧凑摘要和按需展开。折叠不得隐藏 `/color` 所有 Root 的正式可编辑参数，但 Groups / Clip Repair 镜像与 Host 诊断默认只显示数量、阻塞摘要并按需展开
+
+## 0.18 2026-08-31 Pharos 弹性行程与 record import 协议同步
+
+Pharos 当前协议新增一次性 `record-import.json`，并扩展 `trip_kind: "freeform"` 的弹性行程语义。Kairos 的正式边界同步为：
+
+- 项目内 `pharos/<trip_id>/` 只镜像和消费 canonical `plan.json`、可选 canonical `record.json` 与 `gpx/*.gpx`
+- `record-import.json` 是 Pharos → Pyxis 的临时命令信封；只有 Pyxis 合并并写回 canonical `record.json` 后，执行记录才进入 Kairos。该 sidecar 不进入 Kairos source fingerprint、素材匹配或 chronology
+- freeform 的 `dates.start/end` 是预计旅行窗口，`days[]` 可稀疏或为空；`pharos:freeform_route_options` 与 `pharos:freeform_shot_options` 是未执行备选，不得被当作 Day、ShotRecord、素材缺口或 chronology event
+- Kairos 继续只解析已经排入 `days[].shots[]` 的分镜，以及 canonical `record.json.records[] / extra_shots[]` 中的执行事实；现有 parser 已满足该边界，因此本轮协议同步不需要代码变更
+- Carta 路线报告、旅行记与本地重建说明仍属于上游派生审阅产物，不进入 Kairos 项目镜像
 
 ## 0.17 2026-07-05 DaVinci color 素材重链维护动作补记
 
@@ -917,7 +947,7 @@ src/modules/ingest/
   → 提取素材自身同源 GPS（DJI 视频 metadata / 照片 EXIF / sidecar SRT / root 级 FlightRecord 切片）
   → 照片若自身 EXIF 带 GPS，直接写资产 `embeddedGps(metadata)`；否则才继续做时间匹配
   → 把 dense same-source 轨迹规范化到 `gps/same-source/tracks/*.gpx` + `gps/same-source/index.json`
-  → 扫描 `project/pharos/<trip_id>/plan.json + record.json? + gpx/` 并生成共享 `pharos-context`
+  → 扫描 `project/pharos/<trip_id>/plan.json + canonical record.json? + gpx/` 并生成共享 `pharos-context`；忽略一次性 `record-import.json` 与 freeform 未排期备选
   → 资产只写 lightweight `embeddedGps` 引用（`trackId / pointCount / representative / time-window`），不再内联 dense `points[]`
   → ingest 刷新项目级 `gps/derived.json`，统一收口 embedded-derived sparse points 与 `manual-itinerary` 编译结果
   → 若弱时间源与项目时间线、文件名完整时间戳或已纳入 `Pharos` trip 边界明显冲突，把待校正素材追加到 `config/manual-itinerary.md` 的“素材时间校正”配置，并阻塞后续 Analyze
@@ -937,6 +967,8 @@ src/modules/ingest/
   - 项目内 `pharos/<trip_id>/` 镜像作为输入仓
   - 项目级 `pharos/` 根目录由项目初始化和 Console 配置读取自动准备；用户不需要再手动先建这个根目录
   - `plan.json` 必需，`record.json` 与 `gpx/` 可缺失
+  - `record-import.json` 只由 Pyxis 消费并合并到 canonical `record.json`，不得进入 Kairos 输入或 fingerprint
+  - freeform 的稀疏/空 `days[]` 是合法输入；只消费已排期 Day shots 与 canonical record 执行事实，不把 route/shot options 当作素材缺口
   - 解析状态由 Supervisor / Console 显示为 `空 / 解析成功 / 解析失败`
   - planned shot 的素材归属只按 `record.json.actual_time` 精确匹配；没有完整 actual time、`pending` 或 `abandoned` 的 shot 均不可匹配素材，其中 `abandoned` 是主动放弃，不作为缺失素材
   - Analyze 的正式空间优先级为 `embedded > Pharos GPX > 普通 project GPX > project-derived-track`

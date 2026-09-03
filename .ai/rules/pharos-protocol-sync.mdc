@@ -40,6 +40,9 @@ alwaysApply: true
 - Pyxis 普通事件完成时长过长的二次确认只发生在上游写入前，用于防止误选超长 `actual_time`；它不新增协议字段，也不授权 Kairos 侧增加归属 fallback 或保护性改判。
 - Pyxis 非旅行期省电门控只控制移动端 GPS / GPX / 语音 / BLE 自动启动；它不新增或修改 WebDAV / JSON 协议字段，也不授权 Kairos 改变 `plan.json / record.json / gpx/` 的只读消费、素材匹配或 chronology 归属规则。
 - Pharos `requirements.md` 2026-07 同步只新增 Carta 实际路线图 / 交互报告在渲染前过滤航段或异常高速 GPX 段（默认 `>300 km/h`）的派生视图规则；原始 GPX 副本、WebDAV 目录、`plan.json / record.json` schema 均不变，Kairos 不消费 Carta 派生报告，因此本轮不需要 Kairos 代码变更。
+- Pharos 2026-08 协议新增一次性 `record-import.json`：它只供 Pyxis 以 `import_id` 幂等合并并回写 canonical `record.json`，明确不进入 Kairos 输入。Kairos 项目镜像、source fingerprint、素材匹配和 chronology 必须忽略该 sidecar。
+- `trip_kind: "freeform"` 的产品语义现为“弹性行程”：`dates` 是预计窗口，`days[]` 可稀疏或为空，`pharos:freeform_route_options / pharos:freeform_shot_options` 是未执行备选。Kairos 只消费已排期 `days[].shots[]` 与 canonical `record.json.records[] / extra_shots[]`，不得把备选项当作素材缺口或 chronology event。
+- 当前 Kairos parser 已只对 `plan.json / record.json / gpx/*.gpx` 建 fingerprint，并忽略未知 freeform extensions；因此本次 2026-08 同步不需要 Kairos 代码变更。
 
 ## 禁止行为
 

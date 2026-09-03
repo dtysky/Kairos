@@ -127,6 +127,7 @@ try:
               "srcDirPreserveLevel": root.findtext("SrcDirPreserveLevel"),
               "srcDirLevelsMode": root.findtext("SrcDirLevelsMode"),
               "datarate": module.get_extra_info_value(extra_info, "h264_datarate"),
+              "profile": module.get_extra_info_value(extra_info, "h264_profile"),
               "encoderMap": module.decode_resolve_string_map(
                 module.get_extra_info_value(extra_info, "encoder_command_param_map"),
                 ),
@@ -157,6 +158,7 @@ try:
               "srcDirPreserveLevel": root.findtext("SrcDirPreserveLevel"),
               "srcDirLevelsMode": root.findtext("SrcDirLevelsMode"),
               "datarate": module.get_extra_info_value(extra_info, "h264_datarate"),
+              "profile": module.get_extra_info_value(extra_info, "h264_profile"),
               "encoderMap": module.decode_resolve_string_map(
                 module.get_extra_info_value(extra_info, "encoder_command_param_map"),
                 ),
@@ -758,6 +760,7 @@ describe('resolve color host clip layout helpers', () => {
     const settings = (result.result as { settings: Record<string, unknown> }).settings;
     expect(toPortableTestPath(settings.TargetDir)).toBe(toPortableTestPath(targetDir));
     expect(settings.FrameRate).toBe('30');
+    expect(settings.EncodingProfile).toBeUndefined();
     expect(settings.RateControl).toBeUndefined();
     expect(settings.VideoQuality).toBeUndefined();
     expect(settings.CustomName).toBeUndefined();
@@ -790,9 +793,40 @@ describe('resolve color host clip layout helpers', () => {
 
     expect(result.ok).toBe(true);
     const settings = (result.result as { settings: Record<string, unknown> }).settings;
+    expect(settings.EncodingProfile).toBe('Main10');
     expect(settings.VideoQuality).toBe(30000);
     expect(settings.CustomName).toBeUndefined();
     expect(settings.UniqueFilenameStyle).toBeUndefined();
+  });
+
+  it('fails before queueing when Resolve rejects the public Main10 profile', async () => {
+    const result = await inspectRenderExportHelper({
+      mode: 'queue_settings',
+      platformOverride: 'darwin',
+      rejectSettingsWithKeys: ['EncodingProfile'],
+      targetDir: join(getTestOutputRoot(), 'day7'),
+      renderFormat: {
+        format: 'MP4',
+        videoCodec: 'H265',
+        extension: 'mp4',
+        audioCodec: 'aac',
+        bitrateKbps: 30000,
+      },
+      clips: [{
+        rawRelativePath: 'day7/C1610.MP4',
+        sourceStem: 'C1610',
+        normalizedOutputFilename: 'C1610.mp4',
+        width: 3840,
+        height: 2160,
+        fps: 30,
+      }],
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.code).toBe('resolve_render_settings_failed');
+    expect(result.details).toMatchObject({
+      failedRenderSetting: 'EncodingProfile',
+    });
   });
 
   it('rejects queued render jobs when Resolve is not using Source Name filenames', async () => {
@@ -934,6 +968,7 @@ describe('resolve color host clip layout helpers', () => {
       srcDirPreserveLevel: '0',
       srcDirLevelsMode: '0',
       datarate: '30000',
+      profile: '2',
       encoderMap: {
         rc: 'CBR',
         preset: expectedWindowsQsv ? 'balance' : 'balanced',

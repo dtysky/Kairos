@@ -2392,6 +2392,7 @@ export async function validateProjectColorBatch(
         rawRelativePath: entry.rawRelativePath,
         outputRelativePath,
         normalizedOutputFilename: entry.normalizedOutputFilename,
+        expectedVideoCodec: manifest.renderPreset.videoCodec,
         sourceMetadata,
         outputMetadata,
       });
@@ -4417,6 +4418,10 @@ async function buildColorFileMetadataSnapshot(
   const mediaKind = classifyExt(lowerExt.toLowerCase()) ?? undefined;
   return {
     mediaKind,
+    codec: probed.codec ?? undefined,
+    codecProfile: probed.codecProfile ?? undefined,
+    pixelFormat: probed.pixelFormat ?? undefined,
+    bitDepth: probed.bitDepth ?? undefined,
     width: probed.width ?? undefined,
     height: probed.height ?? undefined,
     displayWidth: probed.displayWidth ?? probed.width ?? undefined,
@@ -4894,11 +4899,13 @@ function buildColorValidationChecks(input: {
   rawRelativePath: string;
   outputRelativePath: string;
   normalizedOutputFilename: string;
+  expectedVideoCodec?: string;
   sourceMetadata?: IColorFileMetadataSnapshot;
   outputMetadata?: IColorFileMetadataSnapshot;
 }): {
   pathMirror: EColorValidationCheckResult;
   filenameNormalized: EColorValidationCheckResult;
+  main10: EColorValidationCheckResult;
   mediaKind: EColorValidationCheckResult;
   resolution: EColorValidationCheckResult;
   fps: EColorValidationCheckResult;
@@ -4913,6 +4920,7 @@ function buildColorValidationChecks(input: {
   return {
     pathMirror: expectedRelativeDir === actualRelativeDir ? 'pass' : 'fail',
     filenameNormalized: posix.basename(input.outputRelativePath) === input.normalizedOutputFilename ? 'pass' : 'fail',
+    main10: validateColorMain10(input.expectedVideoCodec, input.outputMetadata),
     mediaKind: compareOptionalValue(input.sourceMetadata?.mediaKind, input.outputMetadata?.mediaKind),
     resolution: compareOptionalTuple(
       input.sourceMetadata?.width,
@@ -4937,6 +4945,33 @@ function buildColorValidationChecks(input: {
     ),
     filesystemCreateTime: input.sourceMetadata?.filesystemCreateTime ? 'pass' : 'not_present_in_source',
   };
+}
+
+function normalizeColorVideoCodecFamily(value: string | undefined): string {
+  const normalized = String(value ?? '').trim().toLowerCase().replace(/[^a-z0-9]/gu, '');
+  return ['h265', 'hevc', 'hvc1'].includes(normalized) ? 'h265' : normalized;
+}
+
+function validateColorMain10(
+  expectedVideoCodec: string | undefined,
+  outputMetadata: IColorFileMetadataSnapshot | undefined,
+): EColorValidationCheckResult {
+  if (normalizeColorVideoCodecFamily(expectedVideoCodec) !== 'h265') return 'not_present_in_source';
+  const outputCodec = normalizeColorVideoCodecFamily(outputMetadata?.codec);
+  const outputProfile = String(outputMetadata?.codecProfile ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/gu, '');
+  const bitDepth = outputMetadata?.bitDepth ?? resolveColorPixelFormatBitDepth(outputMetadata?.pixelFormat);
+  return outputCodec === 'h265' && outputProfile === 'main10' && bitDepth === 10
+    ? 'pass'
+    : 'fail';
+}
+
+function resolveColorPixelFormatBitDepth(pixelFormat: string | undefined): number | undefined {
+  const normalized = String(pixelFormat ?? '').trim().toLowerCase();
+  const explicitDepth = normalized.match(/(?:p0?|_)(10|12|14|16)(?:le|be)?$/u);
+  return explicitDepth ? Number(explicitDepth[1]) : undefined;
 }
 
 function compareOptionalValue<T>(source: T | undefined, output: T | undefined): EColorValidationCheckResult {
@@ -4978,6 +5013,7 @@ function collectValidationReasons(
   const reasons: string[] = [];
   if (checks.pathMirror === 'fail') reasons.push('pathMirror mismatch');
   if (checks.filenameNormalized === 'fail') reasons.push('normalized filename mismatch');
+  if (checks.main10 === 'fail') reasons.push('H.265 Main10 output mismatch');
   if (checks.mediaKind === 'fail') reasons.push('mediaKind mismatch');
   if (checks.resolution === 'fail') reasons.push('resolution mismatch');
   if (checks.fps === 'fail') reasons.push('fps mismatch');

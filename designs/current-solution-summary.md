@@ -18,6 +18,8 @@ Kairos 当前需要区分两层：
 - `Pharos` 输入当前固定镜像到项目内 `pharos/<trip_id>/plan.json + record.json? + gpx/`
   - 项目初始化当前会直接创建 `projects/<projectId>/pharos/`
   - Console 读取项目配置时会补齐缺失的 `pharos/` 根目录，并在 `/ingest-gps` 明确提示这个固定投放位置
+  - `record.json` 仍是 Kairos 唯一消费的执行记录真相；Pharos 新增的一次性 `record-import.json` 只供 Pyxis 幂等合并 canonical record，不进入 Kairos 项目镜像、输入 fingerprint、素材匹配或 chronology
+  - `trip_kind: "freeform"` 在产品侧称“弹性行程”：`dates` 是预计旅行窗口，`days[]` 可稀疏或为空；Kairos 只消费已经进入 `days[].shots[]` 的排期分镜与 canonical `record.json` 中的实际记录，忽略 `pharos:freeform_route_options` / `pharos:freeform_shot_options` 等未执行备选
   - Pyxis 对普通事件完成时间的过长二次确认属于 Pharos 上游 UI 防误保护，不改变 `record.json.actual_time` schema；Kairos 仍只消费写入后的实际时间真相
   - Pyxis 非旅行期省电门控属于移动端运行策略，只控制 GPS、GPX、语音与 BLE 自动启动；它不新增 WebDAV/JSON 字段，也不改变 Kairos 的 Pharos 镜像、解析、素材匹配或 chronology 归属逻辑
   - Carta 实际路线图 / 交互报告新增航段和异常高速 GPX 段过滤，只作用于 Carta 本地派生渲染且不改写原始 GPX；Kairos 不消费这些派生报告，因此项目内 `pharos/` 镜像、GPX 读取、素材匹配和 chronology 归属都保持不变
@@ -104,6 +106,7 @@ Kairos 当前需要区分两层：
     - 正式输出命名继续收口为 `sourceStem + targetExtension`；宿主必须使用 Resolve File Name = Source Name，不设置 `CustomName` 或 prefix/suffix
     - Windows Resolve 21 + MP4/H.265 固定码率不依赖该平台上不稳定的公开 `VideoQuality` render setting；宿主必须每次从 Kairos root `renderPreset` 生成干净 render preset XML、导入、加载并直接 `ExportRenderPreset(presetName)` 校验 named preset，把 `h264_datarate` 与 `encoder_command_param_map.bitrate` 写成 `root.color.renderPreset.bitrateKbps`，并把 `encoder_command_param_map.rc` 固定为 `CBR`；不得从当前 Deliver 页保存 preset 再 patch，也不得用 `SaveAsNewRenderPreset` 的当前 UI 粘滞状态当校验真相
     - Windows H.265 root 默认走 Intel Quick Sync preset 语义：transient preset 必须写入并校验 `RecordFormatSubType=hvc1_qsv`、`EncodingProfile=Main10` 对应的 `h264_profile=2`、`preset=balance`、`rc=CBR`、`bitrate=<bitrateKbps>`；encoder map 不得再保留质量模式 `quality` 字段；任一项校验失败不得启动 render
+    - `/color` 的所有 H.265 输出都必须是 Main10：非 Windows 每个 render job 通过公开 `EncodingProfile=Main10` 显式提交且设置失败时禁止入队；Windows generated preset 必须回读验证 `h264_profile=2`；`validate_batch` 还要用实际输出的 HEVC profile 与 10-bit 像素格式 / 位深做最终兜底，不能把 Deliver 页当前状态当作证据
     - Windows generated preset 同时必须清空 `RecordPrefix / RecordSuffix / DestSuffix`，保持 `RecordClipUniqueName=false`、`UsePrefixAndSuffixFromSrc=1`、`RecordAllowDupImg=1`，并在 named preset 校验中确认这些 Source Name / duplicate-name 字段；`UsePrefixAndSuffixFromSrc=0` 已 live-test 证明会 queue 成 `00000000.mp4 and more`；Windows Resolve 21 live probe 证明 `RecordAllowDupImg=0` 即使 queue 中 `OutputFilename` 是 source name，也会实际输出到单层 `Event_Version.../<sourceName>.mp4`；`AlternateInFolder` 不是可靠的直出根目录判据，用户手动正确配置可导出为 `AlternateInFolder=1` 仍直出
     - 每个 `AddRenderJob()` 后必须用 `GetRenderJobList()` 校验 `OutputFilename` 已经是本批 Source Name；`OutputFilename` 是 Resolve 队列 UI 摘要，需接受英文 `and more` / `and N more` 与中文本地化 `及更多` 这类 source-name 多片段摘要；不匹配时删除该 job 并在 `StartRendering()` 前失败
     - 非 Windows 主机继续走 Resolve 公共 render setting 路径；当 `VideoQuality` 可用时，直接由它承载 `root.color.renderPreset.bitrateKbps`
@@ -553,6 +556,7 @@ flowchart TD
 - `edits/`、`timeline/`、`subtitles/`、`adapters/`：edit-unit 计划、能力运行记录、时间线与适配器状态
 - `gps/`：项目级外部轨迹资源与归一化缓存
 - `pharos/`：项目内固定 `Pharos` 镜像目录，按 `trip_id` 分子目录；解析后的共享快照写入 `analysis/pharos-context.json`
+  - 每个 trip 的 canonical 输入边界是 `plan.json + record.json? + gpx/*.gpx`；不得把上游临时 `record-import.json` 或 Carta 派生报告复制为 Kairos 输入
 - `.tmp/`：流水线临时产物、进度、代理音频、关键帧等可清理内容
 
 另外还有一组 **Workspace 级共享资产**，不属于单个项目目录：
@@ -618,6 +622,7 @@ flowchart TD
 - 页面密度按 `PageHeader -> 状态/摘要 -> 主工作区 -> 诊断` 收口；总览只保留项目健康、真实活跃任务、阻塞/Review 与紧凑工作流轨道，不复制各领域页的完整入口卡片。
 - Chronology 使用固定高度虚拟表格；筛选和批量操作位于统一工具栏，只有当前编辑事件在 Drawer 中挂载表单，250 个事件不会预挂载完整输入控件。
 - Console 的深色 surface 统一由 design token 驱动，旧表单、Pharos 提示、产物路径、DRP、Group 与诊断卡不得使用硬编码白色/浅灰背景；路径、产物、快照、维护动作、归档与原始诊断默认折叠成紧凑摘要，避免监控和配置页因只读信息无限增长。`/color` 的正式 Root 参数仍全部常驻可编辑，Groups / Clip Repair 镜像与 Host 诊断则默认只显示数量和阻塞摘要、按需展开。
+- Console 当前统一采用 `14px` 正文、`13px` 输入和不低于 `12px` 的业务辅助文本，常规 panel padding 为约 `14–16px`、区块 gap 为约 `10–12px`；`/ingest-gps` 素材 Root 的路径、时间规则、说明与备选路径采用紧凑分区，备选路径是表格式行。典型两组备选路径 Root 的桌面展开高度目标约 `500–600px`，同时保留全部正式字段、排序、删除与保存语义。
 - `Analyze`、`Chronology` 与 `Style` 当前都直接在主路由展示监控内容：
   - `/analyze` 直接展示 Analyze monitor
   - `/chronology` 直接展示 span-rebuild / chronology-build / spatial-refresh 与 Chronology V2 审查

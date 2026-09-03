@@ -147,6 +147,8 @@ const projectRoot = await initWorkspaceProject(
 - 调 `initWorkspaceProject(workspaceRoot, projectId, name, description?)`
 - 这一步只创建骨架和基础种子文件，不会自动扫描素材
 - 新项目启动后应明确提醒用户：`projects/<projectId>/pharos/` 已经建好，后续只需要把 `trip_id/plan.json + record.json? + gpx/` 镜像放进去
+- 从 Pharos/Carta 本地 trip 目录建立镜像时，只复制 canonical `plan.json`、可选 canonical `record.json` 与 `gpx/*.gpx`；`record-import.json`、路线报告、旅行记、review 和重建说明都不是 Kairos 输入
+- 对 `trip_kind: "freeform"`，允许 `days[]` 稀疏或为空；初始化不把未排期 route/shot options 转写成 Day、执行记录或素材缺口
 
 3. 迁移或修复已有项目
 - 先保留所有已同步产物
@@ -208,7 +210,7 @@ const projectRoot = await initWorkspaceProject(
 | 检查项 | 结论 |
 |---|---|
 | `store/project.json` + `store/manifest.json` | 项目骨架已经存在 |
-| `pharos/` | `Pharos` 固定镜像根目录已经就位，可直接放入 `trip_id/plan.json + record.json? + gpx/` |
+| `pharos/` | `Pharos` 固定镜像根目录已经就位，可直接放入 `trip_id/plan.json + canonical record.json? + gpx/`，不放 `record-import.json` |
 | `config/project-brief.json` + `config/project-brief.md` | 可以继续维护素材路径与说明；Markdown 只是镜像 |
 | `config/project-brief.json` 中的主/备选路径 | 当前机器能解析到可读 Root 时，可以直接进入 Ingest |
 | `store/assets.json` | 可以跳过首轮 Ingest |

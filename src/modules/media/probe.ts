@@ -30,6 +30,9 @@ export interface IProbeResult {
   rotationDegrees: number | null;
   fps: number | null;
   codec: string | null;
+  codecProfile?: string | null;
+  pixelFormat?: string | null;
+  bitDepth?: number | null;
   hasAudioStream: boolean;
   audioStreamCount: number;
   audioCodec: string | null;
@@ -77,6 +80,9 @@ export async function probe(filePath: string, tools?: IMediaToolConfig): Promise
     rotationDegrees,
     fps: parseFps(video?.r_frame_rate),
     codec: video?.codec_name ?? null,
+    codecProfile: video?.profile ?? null,
+    pixelFormat: video?.pix_fmt ?? null,
+    bitDepth: resolveVideoBitDepth(video),
     hasAudioStream: audioStreams.length > 0,
     audioStreamCount: audioStreams.length,
     audioCodec: primaryAudio?.codec_name ?? null,
@@ -202,6 +208,20 @@ function parseFps(rate: string | undefined): number | null {
   const [num, den] = rate.split('/').map(Number);
   if (!num || !den) return null;
   return Math.round((num / den) * 100) / 100;
+}
+
+function resolveVideoBitDepth(video: any): number | null {
+  for (const candidate of [video?.bits_per_raw_sample, video?.bits_per_sample]) {
+    const parsed = parseNumber(candidate);
+    if (parsed != null && parsed > 0) return parsed;
+  }
+  const pixelFormat = typeof video?.pix_fmt === 'string'
+    ? video.pix_fmt.trim().toLowerCase()
+    : '';
+  const explicitDepth = pixelFormat.match(/(?:p0?|_)(10|12|14|16)(?:le|be)?$/u);
+  if (explicitDepth) return Number(explicitDepth[1]);
+  if (pixelFormat && /^(?:yuv|yuva|gbr|gbrp|gray|nv12|uyvy|yuyv)/u.test(pixelFormat)) return 8;
+  return null;
 }
 
 function resolveVideoRotationDegrees(

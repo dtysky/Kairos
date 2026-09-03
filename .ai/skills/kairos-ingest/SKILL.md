@@ -114,6 +114,7 @@ importProjectGpxTracks(input: {
 - 如果 FlightRecord 是 DJI v13/v14 加密日志，可在 `config/runtime.json` 中提供 `djiOpenAPIKey`，避免依赖环境变量
 - ingest 会刷新 `gps/derived.json`，把 embedded-derived sparse points 与可解析的 `manual-itinerary` 条目统一编译进 `project-derived-track`
 - ingest 与 `gps-refresh` 都必须刷新 `analysis/pharos-context.json`；Pharos context 要按项目内 `pharos/` 的输入 fingerprint 自动失效并重建
+- Pharos 输入 fingerprint 只覆盖 canonical `plan.json / record.json / gpx/*.gpx`；一次性 `record-import.json` 只供 Pyxis 合并 canonical record，Kairos 必须忽略。freeform 未排期 route/shot options 也不进入素材匹配或缺口判断
 - Pharos planned shot 的素材归属只使用 `record.json.actual_time` 精确匹配；continuous 行车记录在 `plan` 中没有 planned time 属于正常情况，只要 `record.json` 有完整 actual time 就不应产生 planned-time warning；planned time 不作为素材归属 fallback
 - Pyxis 普通事件完成时长过长二次确认是上游 UI 写入前保护；Kairos ingest / gps-refresh 不因此改写 `record.json`，也不增加 planned-time 或 GPS fallback
 - Carta 实际路线图 / 交互报告过滤航段或异常高速 GPX 段是 Pharos/Carta 本地派生视图规则，不改写原始 GPX、WebDAV 目录或 JSON schema；Kairos ingest / gps-refresh 继续只刷新项目内 `pharos/` 镜像和 GPX/context cache，不消费 Carta 派生报告

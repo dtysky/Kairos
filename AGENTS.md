@@ -66,6 +66,7 @@ Operational lesson that must not be forgotten:
 - `projects/<projectId>/.tmp/media-analyze/progress.json` is durable progress cache, not proof that a live analyze job is running
 - Analyze resume derives the first live stage from actual artifacts, not from `progress.json.step`: if coarse reports are complete and only fine-scan work remains, the monitor should enter `fine-scan-prefetch` instead of briefly resetting to `prepare`.
 - Pharos/Pyxis 非旅行期省电门控只影响移动端 GPS、GPX、语音和 BLE 自动启动；它不新增 WebDAV/JSON 协议字段，也不改变 Kairos 的 Pharos 镜像、解析或素材匹配逻辑。
+- Pharos `record-import.json` 是只供 Pyxis 幂等合并 canonical `record.json` 的一次性命令信封；Kairos 项目镜像、source fingerprint、素材匹配与 chronology 都必须忽略它。`trip_kind=freeform` 是弹性行程，允许稀疏/空 `days[]`；未排期 route/shot options 不得被解释成执行记录或素材缺口。
 - Analyze fact truth lives in `analysis/asset-reports/*.json`; `store/spans.json` and `media/chronology.json` are downstream indexes explicitly rebuilt from `/chronology`.
 - Material identity truth uses `materialIdPolicyVersion=human-source-v1`: roots must carry stable `rootCode`; new `asset.id` is a short locator like `C0506_zve1_day1`; new `span.id` appends type / optional semanticKind / integer-second source range, like `C0506_zve1_day1_drive_speech_s0-7`. Do not introduce random UUIDs or `asset__` / `span__` namespace prefixes for new ingest/analyze/span-rebuild outputs.
 - Material time truth uses `materialTimePolicyVersion=normalized-captured-at-v1`: `store/assets.json` `asset.capturedAt` is already the corrected project time after manual overrides or root `clockOffsetMs`; raw parser time is audit-only (`rawCapturedAt` / metadata). Downstream code must not add root offsets again. `media/chronology.json` `assetIndex[].sortCapturedAt` is a compatibility index equal to `asset.capturedAt`.
@@ -135,6 +136,7 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
 
 - Prefer Windows PowerShell in this repository unless the user explicitly asks for WSL or the step is Linux-only.
 - Treat `projects/<projectId>/pharos/` as a project-local fixed inbox: project init should create it, and Console-side project config loading should repair it if it is missing before asking the user to place trip mirrors.
+- When mirroring a Pharos trip into that inbox, copy only canonical `plan.json`, optional canonical `record.json`, and `gpx/*.gpx`; never copy `record-import.json`, Carta route reports, travelogues, or other derived review artifacts as Kairos inputs.
 - Treat `config/project-brief.json` as the single structured truth for root config; `project-brief.md` is only the human-readable mirror. Project-level `voiceoverMedia` and `audioMedia` also live there and use primary/alternate path candidates.
 - Treat `project-brief` path mappings as the only formal place to declare current media roots, optional `原始路径`, and ordered alternates (`备选路径N` / `原始路径N`).
 - Treat `/ingest-gps` `素材 Root` as the formal structured editor for those path mappings; normal user operation should not be routed back to hand-editing Markdown.
@@ -204,6 +206,7 @@ Read the relevant `SKILL.md` before phase-specific work. Current skills are:
 - Treat same-machine vendored Resolve backend (`vendor/resolve-color-host/` + fixed `.venv`) as the current formal color execution path; do not route color automation back through MCP wording or design assumptions.
 - Treat root-level color config as minimal and project-scoped: the only user-maintained long-term fields are `root.color.renderPreset`, `root.color.colorSpaceProfile`, and optional `root.color.transformPresetKey` on `config/project-brief.json` mappings; naming and group structure are derived or host-owned, not user config.
 - Treat `root.color.renderPreset.bitrateKbps` (`kb/s`) as the only formal target bitrate field for `/color`; do not read or persist old bitrate alias fields.
+- Treat H.265 Main10 as a non-editable `/color` export invariant: non-Windows hosts must set `EncodingProfile=Main10` for every render job, Windows generated presets must verify `h264_profile=2`, and `validate_batch` must reject H.265 outputs without verifiable Main 10 / 10-bit stream evidence.
 - Treat `color.colorSpaceProfile` as a technical-input key, not a creative look or full gamut/primaries descriptor.
 - Treat clip profile truth priority as `source metadata > XML > root.color.colorSpaceProfile fallback`; unresolved DJI private metadata must remain `unknown`, not guessed `dlog-m`.
 - Treat workspace `config/color-transform-presets.json` as the formal `profile -> { deviceFamily/default -> Resolve LUT path }` mapping, and `config/luts/` as the formal optional workspace LUT asset root for same-path copy-missing sync.

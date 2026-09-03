@@ -1,19 +1,19 @@
 {
   "sourceRoot": "../Pharos/designs",
-  "generatedAt": "2026-07-05T13:04:43.688Z",
-  "combinedSha256": "279a64acbd0aefaaa4a726cfddadb0089c764f7ac164a24bcb29a5150c55bfc1",
+  "generatedAt": "2026-08-31T09:15:06.713Z",
+  "combinedSha256": "0653a38ae92f5a7e577d713fed48428e1debd0669caac585bb4ce2690630fe59",
   "files": [
     {
       "path": "overview.md",
-      "sha256": "152f0282132a0e5e1e96809c33101641d49b7d319e24ca22d70f2accca2db0e9"
+      "sha256": "fdb6fca81c76b2ff962d6c216ec3bed36be1110ad86d8b3579969c3a69f95872"
     },
     {
       "path": "protocol.md",
-      "sha256": "aa106205c9b4e15bf6c8909c4b6d4537cdedc35230ce31f88fd94d576a33956e"
+      "sha256": "3febd61979b65b1451bc44727130c577288bd18d6d0abc868d3bbbd15ec63b5a"
     },
     {
       "path": "pyxis-architecture.md",
-      "sha256": "6f21ab541f4594a12af30b81199c7fd316e0d2fb90ef16d3258a671cfecf5c82"
+      "sha256": "ff9c62c06287b7661babfbaab153d7e9d00030392de7770401b3812033be2839"
     },
     {
       "path": "pyxis-voice-ble.md",
@@ -21,7 +21,7 @@
     },
     {
       "path": "requirements.md",
-      "sha256": "b7160c9d49da477d8fd68411d677da82823f1819b3d66be441f9c538e18bac8b"
+      "sha256": "fd9242bb4f8d6b772c990b754b57a74f74a035018453250fbf161b7e6bfa1b91"
     }
   ]
 }
