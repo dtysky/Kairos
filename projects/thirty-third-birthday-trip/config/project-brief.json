@@ -8,6 +8,12 @@
       "rootCode": "zve1",
       "path": "/Volumes/Peely SSD/20260820_33岁生日/zve1",
       "rawPath": "/Volumes/Peely SSD/20260820_33岁生日/raw/zve1",
+      "alternatePaths": [
+        {
+          "path": "F:\\vlog-proj\\20260820_33岁生日\\zve1",
+          "rawPath": "F:\\vlog-proj\\20260820_33岁生日\\raw\\zve1"
+        }
+      ],
       "description": "ZV-E1 主机位视频，包含 VLOG、行车与口播素材",
       "enabled": true,
       "label": "33岁生日/zve1",
@@ -30,6 +36,12 @@
       "rootCode": "a7r6",
       "path": "/Volumes/Peely SSD/20260820_33岁生日/a7r6",
       "rawPath": "/Volumes/Peely SSD/20260820_33岁生日/raw/a7r6",
+      "alternatePaths": [
+        {
+          "path": "F:\\vlog-proj\\20260820_33岁生日\\a7r6",
+          "rawPath": "F:\\vlog-proj\\20260820_33岁生日\\raw\\a7r6"
+        }
+      ],
       "description": "A7R6 补充视频素材",
       "enabled": true,
       "label": "33岁生日/a7r6",
@@ -52,6 +64,12 @@
       "rootCode": "drone",
       "path": "/Volumes/Peely SSD/20260820_33岁生日/drone",
       "rawPath": "/Volumes/Peely SSD/20260820_33岁生日/raw/drone",
+      "alternatePaths": [
+        {
+          "path": "F:\\vlog-proj\\20260820_33岁生日\\drone",
+          "rawPath": "F:\\vlog-proj\\20260820_33岁生日\\raw\\drone"
+        }
+      ],
       "description": "无人机航拍视频及同名 SRT 遥测 sidecar",
       "enabled": true,
       "label": "33岁生日/drone",
@@ -73,6 +91,11 @@
       "rootId": "root-draft-1788240421328-q3s69h",
       "rootCode": "timelaps",
       "path": "/Volumes/Peely SSD/20260820_33岁生日/ts-final",
+      "alternatePaths": [
+        {
+          "path": "F:\\vlog-proj\\20260820_33岁生日\\ts-final"
+        }
+      ],
       "description": "延时摄影",
       "enabled": true,
       "label": "20260820_33岁生日/ts-final",
@@ -91,6 +114,11 @@
       "rootId": "root-draft-1788240491129-9y41t4",
       "rootCode": "photos",
       "path": "/Volumes/Peely SSD/20260820_33岁生日/photos",
+      "alternatePaths": [
+        {
+          "path": "F:\\vlog-proj\\20260820_33岁生日\\photos"
+        }
+      ],
       "description": "照片",
       "enabled": true,
       "label": "20260820_33岁生日/photos",

@@ -8,25 +8,33 @@
 路径：/Volumes/Peely SSD/20260820_33岁生日/zve1
 Root代号：zve1
 原始路径：/Volumes/Peely SSD/20260820_33岁生日/raw/zve1
+备选路径1：F:\vlog-proj\20260820_33岁生日\zve1
+原始路径1：F:\vlog-proj\20260820_33岁生日\raw\zve1
 说明：ZV-E1 主机位视频，包含 VLOG、行车与口播素材
 
 路径：/Volumes/Peely SSD/20260820_33岁生日/a7r6
 Root代号：a7r6
 原始路径：/Volumes/Peely SSD/20260820_33岁生日/raw/a7r6
+备选路径1：F:\vlog-proj\20260820_33岁生日\a7r6
+原始路径1：F:\vlog-proj\20260820_33岁生日\raw\a7r6
 说明：A7R6 补充视频素材
 
 路径：/Volumes/Peely SSD/20260820_33岁生日/drone
 Root代号：drone
 原始路径：/Volumes/Peely SSD/20260820_33岁生日/raw/drone
+备选路径1：F:\vlog-proj\20260820_33岁生日\drone
+原始路径1：F:\vlog-proj\20260820_33岁生日\raw\drone
 说明：无人机航拍视频及同名 SRT 遥测 sidecar
 
 路径：/Volumes/Peely SSD/20260820_33岁生日/ts-final
 Root代号：timelaps
+备选路径1：F:\vlog-proj\20260820_33岁生日\ts-final
 说明：延时摄影
 拍摄时间规则：manual-required(video)
 
 路径：/Volumes/Peely SSD/20260820_33岁生日/photos
 Root代号：photos
+备选路径1：F:\vlog-proj\20260820_33岁生日\photos
 说明：照片
 
 ## Pharos

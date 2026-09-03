@@ -1,18 +1,18 @@
 {
-  "updatedAt": "2026-09-03T10:53:16.819Z",
+  "updatedAt": "2026-09-03T15:40:36.735Z",
   "projects": {
     "33岁生日旅行 [Color]": {
       "projectName": "33岁生日旅行 [Color]",
       "safeProjectName": "33-Color",
       "latestSnapshot": {
         "projectName": "33岁生日旅行 [Color]",
-        "snapshotPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/thirty-third-birthday-trip/color/resolve-projects/33-Color/33岁生日旅行 [Color].drp",
-        "latestPath": "/Users/dtysky/Projects/dtysky/Kairos/projects/thirty-third-birthday-trip/color/resolve-projects/33-Color/33岁生日旅行 [Color].drp",
-        "createdAt": "2026-09-03T10:53:16Z",
+        "snapshotPath": "H:\\SacredGrove\\Kairos\\projects\\thirty-third-birthday-trip\\color\\resolve-projects\\33-Color\\33岁生日旅行 [Color].drp",
+        "latestPath": "H:\\SacredGrove\\Kairos\\projects\\thirty-third-birthday-trip\\color\\resolve-projects\\33-Color\\33岁生日旅行 [Color].drp",
+        "createdAt": "2026-09-03T15:40:35Z",
         "mode": "manual",
         "retention": "latest-only",
         "action": "manual",
-        "rootId": "root-33-birthday-drone",
+        "rootId": "root-33-birthday-a7r6",
         "database": {
           "DbType": "Disk",
           "DbName": "Local Database"
@@ -20,7 +20,7 @@
         "detail": "save_drp_snapshot exported withStillsAndLUTs=false retention=latest-only"
       },
       "snapshots": [],
-      "updatedAt": "2026-09-03T10:53:16.819Z"
+      "updatedAt": "2026-09-03T15:40:36.735Z"
     }
   }
 }
