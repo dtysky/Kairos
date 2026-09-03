@@ -1,0 +1,62 @@
+{
+  "$schema": "pharos/plan/v3.0",
+  "trip_id": "trip-20260819-2f12b67f-e6f5-4bef-812f-573f97a1767f",
+  "trip_kind": "freeform",
+  "title": "33岁生日旅行",
+  "revision": 7,
+  "updated_at": "2026-08-25T09:13:35.643837Z",
+  "timezone": "Asia/Shanghai",
+  "dates": {
+    "start": "2026-08-19",
+    "end": "2026-08-24"
+  },
+  "companion": false,
+  "pre_trip_tasks": [],
+  "days": [
+    {
+      "day": 1,
+      "date": "2026-08-19",
+      "title": "33岁生日旅行",
+      "shots": [],
+      "extensions": null
+    },
+    {
+      "day": 2,
+      "date": "2026-08-20",
+      "title": "2026-08-20",
+      "shots": [],
+      "extensions": null
+    },
+    {
+      "day": 3,
+      "date": "2026-08-21",
+      "title": "2026-08-21",
+      "shots": [],
+      "extensions": null
+    },
+    {
+      "day": 4,
+      "date": "2026-08-22",
+      "title": "2026-08-22",
+      "shots": [],
+      "extensions": null
+    },
+    {
+      "day": 5,
+      "date": "2026-08-23",
+      "title": "2026-08-23",
+      "shots": [],
+      "extensions": null
+    },
+    {
+      "day": 6,
+      "date": "2026-08-24",
+      "title": "2026-08-24",
+      "shots": [],
+      "extensions": null
+    }
+  ],
+  "extensions": {
+    "pyxis:freeform_active": false
+  }
+}

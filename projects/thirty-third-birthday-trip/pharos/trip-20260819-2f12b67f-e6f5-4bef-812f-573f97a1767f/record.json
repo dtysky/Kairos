@@ -1,0 +1,1141 @@
+{
+  "$schema": "pharos/record/v2.0",
+  "trip_id": "trip-20260819-2f12b67f-e6f5-4bef-812f-573f97a1767f",
+  "device_id": "samsung_SM-S9360",
+  "records": [],
+  "extra_shots": [
+    {
+      "id": "extra-001",
+      "day": 1,
+      "kind": "event",
+      "location": "深圳宝安西乡",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-08-19T13:08:00+08:00",
+        "end": "2026-08-19T13:35:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "行前准备与出发记录",
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "33岁生日旅行出发前准备与行前记录",
+      "extensions": {
+        "pharos:reconstructed": true,
+        "pharos:evidence": [
+          "sony_metadata",
+          "user_confirmed"
+        ]
+      }
+    },
+    {
+      "id": "extra-002",
+      "day": 1,
+      "kind": "continuous",
+      "location": "深圳宝安 → 河源黄村服务区",
+      "origin": "深圳宝安西乡",
+      "destination": "黄村服务区",
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-08-19T16:44:00+08:00",
+        "end": "2026-08-19T22:51:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": null,
+      "trigger_radius_km": null,
+      "angles": [
+        {
+          "device": "ZV-E1",
+          "roll": "b-roll",
+          "description": "沿途行车与服务区停留记录"
+        }
+      ],
+      "description": "从宝安出发，经广龙高速和沿途服务区北上",
+      "extensions": {
+        "pharos:reconstructed": true,
+        "pharos:evidence": [
+          "gpx",
+          "sony_metadata"
+        ]
+      }
+    },
+    {
+      "id": "extra-003",
+      "day": 1,
+      "kind": "event",
+      "location": "麻布岗服务区",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-08-19T23:43:00+08:00",
+        "end": "2026-08-19T23:55:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "C3262～C3267：左后胎 1.9 bar 报警及现场检查",
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "在仰天堂／上坪出口前的麻布岗服务区检查胎压报警",
+      "extensions": {
+        "pharos:reconstructed": true,
+        "pharos:evidence": [
+          "sony_metadata",
+          "vehicle_clock",
+          "user_confirmed"
+        ]
+      }
+    },
+    {
+      "id": "extra-004",
+      "day": 1,
+      "kind": "continuous",
+      "location": "麻布岗服务区 → 野猪嶂",
+      "origin": "麻布岗服务区",
+      "destination": "野猪嶂山顶",
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-08-19T23:55:00+08:00",
+        "end": "2026-08-20T01:12:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": null,
+      "trigger_radius_km": null,
+      "angles": [
+        {
+          "device": "ZV-E1",
+          "roll": "b-roll",
+          "description": "经仰天堂／上坪出口驶入山区并登山"
+        }
+      ],
+      "description": "夜间从麻布岗服务区继续前往野猪嶂，包含缺失轨迹重建段",
+      "extensions": {
+        "pharos:reconstructed": true,
+        "pharos:evidence": [
+          "sony_metadata",
+          "gpx_reconstructed",
+          "user_confirmed"
+        ]
+      }
+    },
+    {
+      "id": "extra-005",
+      "day": 2,
+      "kind": "event",
+      "location": "野猪嶂山顶",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-08-20T02:05:00+08:00",
+        "end": "2026-08-20T06:40:00+08:00"
+      },
+      "type": "timelapse",
+      "device": "A7R6",
+      "actual_captures": [
+        {
+          "type": "timelapse",
+          "camera": "A7R6",
+          "lens": "14mm F1.8 GM",
+          "note": "银河星空转日出延时",
+          "extensions": null
+        },
+        {
+          "type": "timelapse",
+          "camera": "A7R5",
+          "lens": "20mm F1.8 G",
+          "note": "银河星空转日出延时",
+          "extensions": null
+        },
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "20mm F1.8 G",
+          "note": "银河核心视频与日出前后记录",
+          "extensions": null
+        },
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": "06:06～06:40 日出航拍",
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "两套银河星空转日出延时、银河视频、少量云海和日出航拍",
+      "extensions": {
+        "pharos:reconstructed": true,
+        "pharos:evidence": [
+          "sony_metadata",
+          "dji_srt",
+          "user_confirmed"
+        ]
+      }
+    },
+    {
+      "id": "extra-006",
+      "day": 2,
+      "kind": "event",
+      "location": "野猪嶂山顶",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-08-20T07:25:00+08:00",
+        "end": "2026-08-20T09:25:00+08:00"
+      },
+      "type": "video",
+      "device": "A7R6",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "A7R6",
+          "lens": "20-70mm F4 G",
+          "note": "天气放晴与生日蛋糕",
+          "extensions": null
+        },
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "山顶记录与收拾过程",
+          "extensions": null
+        },
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": "08:45～09:25 放晴后航拍",
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "云海遗憾后天气放晴，在山顶吃33岁生日蛋糕并航拍",
+      "extensions": {
+        "pharos:reconstructed": true,
+        "pharos:evidence": [
+          "sony_metadata",
+          "dji_srt",
+          "user_confirmed"
+        ]
+      }
+    },
+    {
+      "id": "extra-007",
+      "day": 2,
+      "kind": "continuous",
+      "location": "野猪嶂下山",
+      "origin": "野猪嶂山顶",
+      "destination": "山下道路",
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-08-20T09:34:00+08:00",
+        "end": "2026-08-20T11:47:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": null,
+      "trigger_radius_km": null,
+      "angles": [
+        {
+          "device": "ZV-E1",
+          "roll": "b-roll",
+          "description": "走错路、折返并继续下山"
+        }
+      ],
+      "description": "下山途中走错路，折返后顺利下山",
+      "extensions": {
+        "pharos:reconstructed": true,
+        "pharos:evidence": [
+          "sony_metadata",
+          "gpx_reconstructed",
+          "user_confirmed"
+        ]
+      }
+    },
+    {
+      "id": "extra-008",
+      "day": 2,
+      "kind": "event",
+      "location": "定南县天九镇天九恒锋汽修",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-08-20T12:36:00+08:00",
+        "end": "2026-08-20T13:47:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "C3340～C3344：拆轮、检查和维修",
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "中午在天九镇修车并处理前一晚的轮胎问题",
+      "extensions": {
+        "pharos:reconstructed": true,
+        "pharos:evidence": [
+          "gpx",
+          "sony_metadata",
+          "amap_poi",
+          "user_confirmed"
+        ]
+      }
+    },
+    {
+      "id": "extra-009",
+      "day": 2,
+      "kind": "continuous",
+      "location": "定南天九镇 → 崇义县",
+      "origin": "天九恒锋汽修",
+      "destination": "崇义县城",
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-08-20T13:47:00+08:00",
+        "end": "2026-08-20T18:27:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": null,
+      "trigger_radius_km": null,
+      "angles": [
+        {
+          "device": "ZV-E1",
+          "roll": "b-roll",
+          "description": "经信丰、南康、上犹前往崇义"
+        }
+      ],
+      "description": "修车后继续向湖南方向行驶",
+      "extensions": {
+        "pharos:reconstructed": true,
+        "pharos:evidence": [
+          "gpx",
+          "sony_metadata"
+        ]
+      }
+    },
+    {
+      "id": "extra-010",
+      "day": 2,
+      "kind": "event",
+      "location": "崇义县高阿姨夜宵餐馆",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-08-20T18:27:00+08:00",
+        "end": "2026-08-20T19:30:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "C3364～C3373：门头、菜单、菜品与离店",
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "在崇义县高阿姨夜宵餐馆吃晚饭",
+      "extensions": {
+        "pharos:reconstructed": true,
+        "pharos:evidence": [
+          "gpx",
+          "sony_metadata",
+          "amap_poi",
+          "user_confirmed"
+        ]
+      }
+    },
+    {
+      "id": "extra-011",
+      "day": 2,
+      "kind": "continuous",
+      "location": "崇义县 → 湖南汝城县",
+      "origin": "崇义县",
+      "destination": "汝城县城",
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-08-20T19:30:00+08:00",
+        "end": "2026-08-20T21:33:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": null,
+      "trigger_radius_km": null,
+      "angles": [
+        {
+          "device": "ZV-E1",
+          "roll": "b-roll",
+          "description": "夜间抵达汝城县城"
+        }
+      ],
+      "description": "晚饭后继续前往湖南，入住汝城县城",
+      "extensions": {
+        "pharos:reconstructed": true,
+        "pharos:evidence": [
+          "gpx",
+          "sony_metadata",
+          "user_confirmed"
+        ]
+      }
+    },
+    {
+      "id": "extra-012",
+      "day": 3,
+      "kind": "continuous",
+      "location": "汝城县 → 桂林阳朔",
+      "origin": "汝城县城",
+      "destination": "阳朔漓江边机位",
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-08-21T10:51:00+08:00",
+        "end": "2026-08-21T18:15:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": null,
+      "trigger_radius_km": null,
+      "angles": [
+        {
+          "device": "ZV-E1",
+          "roll": "b-roll",
+          "description": "汝城出发前往阳朔的沿途记录"
+        }
+      ],
+      "description": "从湖南汝城前往桂林阳朔",
+      "extensions": {
+        "pharos:reconstructed": true,
+        "pharos:evidence": [
+          "gpx",
+          "sony_metadata"
+        ]
+      }
+    },
+    {
+      "id": "extra-013",
+      "day": 3,
+      "kind": "event",
+      "location": "阳朔漓江边机位",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-08-21T18:15:00+08:00",
+        "end": "2026-08-21T19:32:00+08:00"
+      },
+      "type": "timelapse",
+      "device": "A7R5",
+      "actual_captures": [
+        {
+          "type": "timelapse",
+          "camera": "A7R5",
+          "lens": "14mm F1.8 GM",
+          "note": "阳朔晚霞延时",
+          "extensions": null
+        },
+        {
+          "type": "timelapse",
+          "camera": "A7R6",
+          "lens": "20-70mm F4 G",
+          "note": "阳朔晚霞延时",
+          "extensions": null
+        },
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "漓江边机位晚霞记录",
+          "extensions": null
+        },
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": "18:38～19:31 晚霞航拍",
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "漓江边双机位晚霞延时、地面视频和航拍",
+      "extensions": {
+        "pharos:reconstructed": true,
+        "pharos:evidence": [
+          "sony_metadata",
+          "dji_srt",
+          "gpx",
+          "user_confirmed"
+        ]
+      }
+    },
+    {
+      "id": "extra-014",
+      "day": 3,
+      "kind": "event",
+      "location": "阳朔城区",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-08-21T20:34:00+08:00",
+        "end": "2026-08-21T22:35:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "阳朔城区晚餐记录",
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "在阳朔城区吃啤酒鱼等本地菜",
+      "extensions": {
+        "pharos:reconstructed": true,
+        "pharos:evidence": [
+          "gpx",
+          "sony_metadata",
+          "user_confirmed"
+        ]
+      }
+    },
+    {
+      "id": "extra-015",
+      "day": 3,
+      "kind": "continuous",
+      "location": "阳朔城区 → 兴坪古镇",
+      "origin": "阳朔城区",
+      "destination": "兴坪古镇住宿地",
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-08-21T23:13:00+08:00",
+        "end": "2026-08-21T23:59:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": null,
+      "trigger_radius_km": null,
+      "angles": [
+        {
+          "device": "ZV-E1",
+          "roll": "b-roll",
+          "description": "夜间前往兴坪住宿"
+        }
+      ],
+      "description": "晚饭后从阳朔城区前往兴坪古镇住宿",
+      "extensions": {
+        "pharos:reconstructed": true,
+        "pharos:evidence": [
+          "gpx",
+          "sony_metadata"
+        ]
+      }
+    },
+    {
+      "id": "extra-016",
+      "day": 4,
+      "kind": "event",
+      "location": "兴坪20元人民币观景点",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-08-22T12:10:00+08:00",
+        "end": "2026-08-22T13:16:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "20元人民币景观机位记录",
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "在兴坪20元人民币观景点拍摄漓江景观",
+      "extensions": {
+        "pharos:reconstructed": true,
+        "pharos:evidence": [
+          "gpx",
+          "sony_metadata"
+        ]
+      }
+    },
+    {
+      "id": "extra-017",
+      "day": 4,
+      "kind": "continuous",
+      "location": "兴坪 → 钟山百里画廊",
+      "origin": "兴坪古镇",
+      "destination": "钟山百里画廊",
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-08-22T14:26:00+08:00",
+        "end": "2026-08-22T16:57:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": null,
+      "trigger_radius_km": null,
+      "angles": [
+        {
+          "device": "ZV-E1",
+          "roll": "b-roll",
+          "description": "从兴坪前往贺州钟山的沿途记录"
+        }
+      ],
+      "description": "下午从兴坪前往钟山百里画廊",
+      "extensions": {
+        "pharos:reconstructed": true,
+        "pharos:evidence": [
+          "gpx",
+          "sony_metadata"
+        ]
+      }
+    },
+    {
+      "id": "extra-018",
+      "day": 4,
+      "kind": "event",
+      "location": "钟山百里画廊／荷塘村",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-08-22T16:57:00+08:00",
+        "end": "2026-08-22T18:22:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "百里画廊地面拍摄",
+          "extensions": null
+        },
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": "16:58～17:47 荷塘村航拍",
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "在钟山百里画廊和荷塘乡村旅游区进行地面与航拍",
+      "extensions": {
+        "pharos:reconstructed": true,
+        "pharos:evidence": [
+          "gpx",
+          "sony_metadata",
+          "dji_srt",
+          "user_confirmed"
+        ]
+      }
+    },
+    {
+      "id": "extra-019",
+      "day": 4,
+      "kind": "event",
+      "location": "公安镇吉塘村田野",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-08-22T18:30:00+08:00",
+        "end": "2026-08-22T19:31:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "对面田野地面拍摄",
+          "extensions": null
+        },
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": "18:43～19:10 田野航拍",
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "转到百里画廊对面田野继续拍摄",
+      "extensions": {
+        "pharos:reconstructed": true,
+        "pharos:evidence": [
+          "gpx",
+          "sony_metadata",
+          "dji_srt",
+          "user_confirmed"
+        ]
+      }
+    },
+    {
+      "id": "extra-020",
+      "day": 4,
+      "kind": "continuous",
+      "location": "吉塘村田野 → 钟山县城",
+      "origin": "公安镇吉塘村",
+      "destination": "钟山县城中心",
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-08-22T19:31:00+08:00",
+        "end": "2026-08-22T20:01:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": null,
+      "trigger_radius_km": null,
+      "angles": [
+        {
+          "device": "ZV-E1",
+          "roll": "b-roll",
+          "description": "拍摄结束后进入钟山县城"
+        }
+      ],
+      "description": "从田野机位前往钟山县城中心",
+      "extensions": {
+        "pharos:reconstructed": true,
+        "pharos:evidence": [
+          "gpx",
+          "sony_metadata"
+        ]
+      }
+    },
+    {
+      "id": "extra-021",
+      "day": 4,
+      "kind": "event",
+      "location": "钟山县城中心",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-08-22T20:01:00+08:00",
+        "end": "2026-08-22T21:16:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "钟山本地特色晚饭记录",
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "在钟山县城中心吃本地特色晚饭",
+      "extensions": {
+        "pharos:reconstructed": true,
+        "pharos:evidence": [
+          "gpx",
+          "sony_metadata",
+          "user_confirmed"
+        ]
+      }
+    },
+    {
+      "id": "extra-022",
+      "day": 5,
+      "kind": "continuous",
+      "location": "钟山县城 → 川岩村",
+      "origin": "钟山县城中心",
+      "destination": "川岩村／川岩洞",
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-08-23T11:13:00+08:00",
+        "end": "2026-08-23T12:44:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": null,
+      "trigger_radius_km": null,
+      "angles": [
+        {
+          "device": "ZV-E1",
+          "roll": "b-roll",
+          "description": "从钟山县城前往川岩村"
+        }
+      ],
+      "description": "从钟山县城出发前往川岩村和川岩洞",
+      "extensions": {
+        "pharos:reconstructed": true,
+        "pharos:evidence": [
+          "gpx",
+          "sony_metadata"
+        ]
+      }
+    },
+    {
+      "id": "extra-023",
+      "day": 5,
+      "kind": "event",
+      "location": "川岩村／川岩洞",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-08-23T12:44:00+08:00",
+        "end": "2026-08-23T14:23:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "川岩村和川岩洞地面拍摄",
+          "extensions": null
+        },
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": "12:52～13:12 及 14:20 补拍",
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "在川岩村和川岩洞进行地面拍摄与航拍",
+      "extensions": {
+        "pharos:reconstructed": true,
+        "pharos:evidence": [
+          "gpx",
+          "sony_metadata",
+          "dji_srt",
+          "user_confirmed"
+        ]
+      }
+    },
+    {
+      "id": "extra-024",
+      "day": 5,
+      "kind": "event",
+      "location": "可达蓝湖／可达梯田",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-08-23T14:28:00+08:00",
+        "end": "2026-08-23T15:56:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "可达梯田沿线与蓝湖地面拍摄",
+          "extensions": null
+        },
+        {
+          "type": "aerial",
+          "camera": "Mavic 4 Pro",
+          "lens": null,
+          "note": "14:50～15:17 蓝湖／梯田航拍",
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "在可达蓝湖和可达梯田一带进行地面与航拍",
+      "extensions": {
+        "pharos:reconstructed": true,
+        "pharos:evidence": [
+          "gpx",
+          "sony_metadata",
+          "dji_srt",
+          "user_confirmed"
+        ]
+      }
+    },
+    {
+      "id": "extra-025",
+      "day": 5,
+      "kind": "event",
+      "location": "望高镇",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-08-23T16:35:00+08:00",
+        "end": "2026-08-23T17:23:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "镇上停留与老友粉记录",
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "返程途中在望高镇吃老友粉",
+      "extensions": {
+        "pharos:reconstructed": true,
+        "pharos:evidence": [
+          "gpx",
+          "sony_metadata",
+          "user_confirmed"
+        ]
+      }
+    },
+    {
+      "id": "extra-026",
+      "day": 5,
+      "kind": "continuous",
+      "location": "望高镇 → 广州黄埔",
+      "origin": "望高镇",
+      "destination": "广州黄埔",
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-08-23T17:23:00+08:00",
+        "end": "2026-08-23T22:37:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": null,
+      "trigger_radius_km": null,
+      "angles": [
+        {
+          "device": "ZV-E1",
+          "roll": "b-roll",
+          "description": "返深途中经过粤北、三水并进入黄埔"
+        }
+      ],
+      "description": "从望高镇返深，途中进入广州黄埔",
+      "extensions": {
+        "pharos:reconstructed": true,
+        "pharos:evidence": [
+          "gpx",
+          "sony_metadata"
+        ]
+      }
+    },
+    {
+      "id": "extra-027",
+      "day": 5,
+      "kind": "event",
+      "location": "广州黄埔时代城附近",
+      "origin": null,
+      "destination": null,
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-08-23T23:02:00+08:00",
+        "end": "2026-08-23T23:36:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": [
+        {
+          "type": "video",
+          "camera": "ZV-E1",
+          "lens": "17-28mm F2.8",
+          "note": "黄埔下高速后的夜宵记录",
+          "extensions": null
+        }
+      ],
+      "trigger_radius_km": null,
+      "angles": null,
+      "description": "在广州黄埔时代城附近下高速吃夜宵",
+      "extensions": {
+        "pharos:reconstructed": true,
+        "pharos:evidence": [
+          "gpx",
+          "sony_metadata",
+          "user_confirmed"
+        ]
+      }
+    },
+    {
+      "id": "extra-028",
+      "day": 5,
+      "kind": "continuous",
+      "location": "黄埔开发大道入口 → S3广深沿江高速",
+      "origin": "黄埔开发大道入口",
+      "destination": "S3广深沿江高速广州段",
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-08-23T23:43:00+08:00",
+        "end": "2026-08-23T23:59:59+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": null,
+      "trigger_radius_km": null,
+      "angles": [
+        {
+          "device": "ZV-E1",
+          "roll": "b-roll",
+          "description": "夜宵后从黄埔驶入广深沿江高速"
+        }
+      ],
+      "description": "从黄埔开发大道入口驶入 S3 广深沿江高速，轨迹后段为本地重建",
+      "extensions": {
+        "pharos:reconstructed": true,
+        "pharos:evidence": [
+          "gpx",
+          "gpx_reconstructed",
+          "sony_metadata",
+          "user_confirmed"
+        ]
+      }
+    },
+    {
+      "id": "extra-029",
+      "day": 6,
+      "kind": "continuous",
+      "location": "S3广深沿江高速 → 西乡北 → 幸福港湾",
+      "origin": "S3广深沿江高速广州段",
+      "destination": "深圳宝安幸福港湾",
+      "gps": null,
+      "gps_start": null,
+      "gps_end": null,
+      "time": {
+        "start": "2026-08-24T00:00:00+08:00",
+        "end": "2026-08-24T01:23:00+08:00"
+      },
+      "type": "video",
+      "device": "ZV-E1",
+      "actual_captures": null,
+      "trigger_radius_km": null,
+      "angles": [
+        {
+          "device": "ZV-E1",
+          "roll": "b-roll",
+          "description": "沿江高速经西乡北返回幸福港湾"
+        }
+      ],
+      "description": "凌晨从广深沿江高速经西乡北返回幸福港湾，路线依据车机确认并重建",
+      "extensions": {
+        "pharos:reconstructed": true,
+        "pharos:evidence": [
+          "gpx_reconstructed",
+          "user_confirmed"
+        ]
+      }
+    }
+  ],
+  "extensions": {
+    "pharos:applied_record_imports": [
+      "record-import-824f3d8e-1f20-4a28-9e64-1f6c584ac680"
+    ]
+  }
+}

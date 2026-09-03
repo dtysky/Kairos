@@ -1,0 +1,109 @@
+{
+  "name": "33岁生日旅行",
+  "description": "来自 Pharos trip-20260819-2f12b67f-e6f5-4bef-812f-573f97a1767f 的 2026 年 33 岁生日旅程后期项目。",
+  "createdAt": "2026-08-31T09:16:28.621Z",
+  "mappings": [
+    {
+      "rootId": "root-33-birthday-zve1",
+      "rootCode": "zve1",
+      "path": "/Volumes/Peely SSD/20260820_33岁生日/zve1",
+      "rawPath": "/Volumes/Peely SSD/20260820_33岁生日/raw/zve1",
+      "description": "ZV-E1 主机位视频，包含 VLOG、行车与口播素材",
+      "enabled": true,
+      "label": "33岁生日/zve1",
+      "priority": 1,
+      "category": "camera",
+      "notes": [
+        "ZV-E1 主机位视频，包含 VLOG、行车与口播素材"
+      ],
+      "color": {
+        "renderPreset": {
+          "container": "mp4",
+          "videoCodec": "h265",
+          "audioCodec": "aac",
+          "bitrateKbps": 30000
+        }
+      }
+    },
+    {
+      "rootId": "root-33-birthday-a7r6",
+      "rootCode": "a7r6",
+      "path": "/Volumes/Peely SSD/20260820_33岁生日/a7r6",
+      "rawPath": "/Volumes/Peely SSD/20260820_33岁生日/raw/a7r6",
+      "description": "A7R6 补充视频素材",
+      "enabled": true,
+      "label": "33岁生日/a7r6",
+      "priority": 2,
+      "category": "camera",
+      "notes": [
+        "A7R6 补充视频素材"
+      ],
+      "color": {
+        "renderPreset": {
+          "container": "mp4",
+          "videoCodec": "h265",
+          "audioCodec": "aac",
+          "bitrateKbps": 30000
+        }
+      }
+    },
+    {
+      "rootId": "root-33-birthday-drone",
+      "rootCode": "drone",
+      "path": "/Volumes/Peely SSD/20260820_33岁生日/drone",
+      "rawPath": "/Volumes/Peely SSD/20260820_33岁生日/raw/drone",
+      "description": "无人机航拍视频及同名 SRT 遥测 sidecar",
+      "enabled": true,
+      "label": "33岁生日/drone",
+      "priority": 3,
+      "category": "drone",
+      "notes": [
+        "无人机航拍视频及同名 SRT 遥测 sidecar"
+      ],
+      "color": {
+        "renderPreset": {
+          "container": "mp4",
+          "videoCodec": "h265",
+          "audioCodec": "aac",
+          "bitrateKbps": 30000
+        }
+      }
+    },
+    {
+      "rootId": "root-draft-1788240421328-q3s69h",
+      "rootCode": "timelaps",
+      "path": "/Volumes/Peely SSD/20260820_33岁生日/ts-final",
+      "description": "延时摄影",
+      "enabled": true,
+      "label": "20260820_33岁生日/ts-final",
+      "priority": 4,
+      "notes": [
+        "延时摄影"
+      ],
+      "captureTimePolicy": {
+        "mode": "manual-required",
+        "requiredKinds": [
+          "video"
+        ]
+      }
+    },
+    {
+      "rootId": "root-draft-1788240491129-9y41t4",
+      "rootCode": "photos",
+      "path": "/Volumes/Peely SSD/20260820_33岁生日/photos",
+      "description": "照片",
+      "enabled": true,
+      "label": "20260820_33岁生日/photos",
+      "priority": 5,
+      "notes": [
+        "照片"
+      ]
+    }
+  ],
+  "pharos": {
+    "includedTripIds": [
+      "trip-20260819-2f12b67f-e6f5-4bef-812f-573f97a1767f"
+    ]
+  },
+  "materialPatternPhrases": []
+}
