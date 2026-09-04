@@ -8,6 +8,7 @@ from __future__ import annotations
 import audioop
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import gc
+import importlib.util
 import json
 import os
 import subprocess
@@ -30,6 +31,7 @@ CLOCAL_NON_MLX_WHISPER_ALT = "whisper-large-v3"
 CLOCAL_NON_MLX_WHISPER_FALLBACK = "whisper-small-ct2"
 CLOCAL_NON_MLX_WHISPER_FALLBACK_ALT = "whisper-small"
 CWHISPER_MODEL = os.getenv("KAIROS_WHISPER_MODEL", "")
+_configured_model_ref: str | None = None
 CSILENCE_GATE_WINDOW_SECONDS = 1.0
 CSILENCE_GATE_RMS_THRESHOLD = 48
 CSILENCE_GATE_PEAK_THRESHOLD = 192
@@ -62,6 +64,10 @@ def _audio_temp_dir() -> Path:
 
 
 def _resolve_mlx_model_ref() -> str:
+    if _configured_model_ref:
+        configured = Path(_configured_model_ref).expanduser()
+        local = configured if configured.is_absolute() else _repo_root() / configured
+        return str(local) if local.exists() else _configured_model_ref
     if CWHISPER_MODEL:
         return CWHISPER_MODEL
     local = _repo_root() / "models" / CLOCAL_MLX_WHISPER
@@ -132,6 +138,10 @@ def _first_complete_local_model_dir(candidates: list[Path]) -> Path | None:
 
 
 def _resolve_non_mlx_model_ref() -> str:
+    if _configured_model_ref:
+        configured = Path(_configured_model_ref).expanduser()
+        local = configured if configured.is_absolute() else _repo_root() / configured
+        return str(local) if local.exists() else _configured_model_ref
     if CWHISPER_MODEL:
         return CWHISPER_MODEL
 
@@ -473,6 +483,44 @@ def _transcribe_mlx(wav_path: Path, language: str | None) -> tuple[list[dict], l
 _asr_pipeline = None
 
 
+def configure(model_ref: str | None = None) -> None:
+    global _configured_model_ref
+    normalized = str(model_ref or "").strip() or None
+    if normalized != _configured_model_ref:
+        unload()
+        _configured_model_ref = normalized
+
+
+def get_status() -> dict:
+    model_ref = _resolve_mlx_model_ref() if BACKEND == "mlx" else _resolve_non_mlx_model_ref()
+    model_path = Path(model_ref).expanduser()
+    if not model_path.is_absolute():
+        candidate = _repo_root() / model_path
+        if candidate.exists():
+            model_path = candidate
+    blockers = []
+    dependency = "mlx_whisper" if BACKEND == "mlx" else "faster_whisper"
+    if importlib.util.find_spec(dependency) is None:
+        blockers.append(f"缺少 {dependency} 依赖")
+    if BACKEND == "mlx":
+        complete = (
+            model_path.is_dir()
+            and (model_path / "config.json").is_file()
+            and any(model_path.glob("*.safetensors"))
+        )
+    else:
+        complete = _is_complete_ctranslate2_model_dir(model_path)
+    if not complete:
+        blockers.append(f"Whisper 本地模型不可用或不完整：{model_path}")
+    return {
+        "provider": "whisper-mlx" if BACKEND == "mlx" else "faster-whisper",
+        "available": not blockers,
+        "modelRef": str(model_path),
+        "modelAvailable": complete,
+        "blocker": "；".join(blockers) if blockers else None,
+    }
+
+
 def _non_mlx_device_str() -> str:
     if DEVICE == "cuda":
         return "cuda"
@@ -561,6 +609,8 @@ def _prepare_transcription_input(media_path: str) -> dict:
 def _build_silent_timing(prepared: dict) -> dict:
     return {
         "backend": BACKEND,
+        "runtimeBackend": BACKEND,
+        "provider": "whisper",
         "modelRef": _resolve_mlx_model_ref() if BACKEND == "mlx" else _resolve_non_mlx_model_ref(),
         "totalMs": (time.perf_counter() - prepared["total_started_at"]) * 1000.0,
         "loadMs": 0.0,
@@ -602,6 +652,8 @@ def _transcribe_non_mlx_batch(prepared_entries: list[dict], languages: list[str 
             words,
             {
                 "backend": BACKEND,
+                "runtimeBackend": BACKEND,
+                "provider": "whisper",
                 "modelRef": _resolve_non_mlx_model_ref(),
                 "totalMs": (time.perf_counter() - prepared["total_started_at"]) * 1000.0,
                 "loadMs": load_ms,
@@ -658,6 +710,8 @@ def transcribe_many(
                         words,
                         {
                             "backend": BACKEND,
+                            "runtimeBackend": BACKEND,
+                            "provider": "whisper",
                             "modelRef": _resolve_mlx_model_ref(),
                             "totalMs": (time.perf_counter() - prepared["total_started_at"]) * 1000.0,
                             "loadMs": 0.0,

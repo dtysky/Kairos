@@ -12,6 +12,7 @@ dependencies = [
 [project.optional-dependencies]
 # Apple Silicon: pure MLX stack, no PyTorch
 mlx = [
+    "mlx-audio",
     "mlx-vlm",
     "mlx-whisper",
     "mlx_clip @ git+https://github.com/harperreed/mlx_clip.git",
@@ -20,6 +21,7 @@ mlx = [
 
 # CUDA / CPU: faster-whisper ASR + PyTorch VLM/CLIP stack
 cuda = [
+    "qwen-asr==0.0.6",
     "faster-whisper==1.2.1",
     "ctranslate2==4.6.0",
     "setuptools<81",
@@ -39,3 +41,11 @@ ocr-easy = ["easyocr"]
 
 [project.scripts]
 kairos-ml = "kairos_ml.main:run"
+
+[tool.uv]
+conflicts = [
+    [
+        { extra = "mlx" },
+        { extra = "cuda" },
+    ],
+]

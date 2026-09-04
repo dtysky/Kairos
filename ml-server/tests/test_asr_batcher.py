@@ -20,6 +20,7 @@ class AsrBatcherTests(unittest.TestCase):
             return [
                 (
                     [{"start": 0.0, "end": 0.5, "text": f"segment-{index}"}],
+                    [{"start": 0.0, "end": 0.5, "text": f"word-{index}"}],
                     {"totalMs": 5.0},
                 )
                 for index, _ in enumerate(requests)
@@ -27,7 +28,7 @@ class AsrBatcherTests(unittest.TestCase):
 
         results = [None, None]
 
-        with mock.patch("kairos_ml.whisper_runner.transcribe_many", side_effect=fake_transcribe_many), \
+        with mock.patch("kairos_ml.asr_router.transcribe_many", side_effect=fake_transcribe_many), \
             mock.patch.object(main, "BACKEND", "torch"):
             batcher = main._AsrBatcher(max_items=4, max_wait_ms=40, preprocess_max_concurrency=3)
 
@@ -48,7 +49,7 @@ class AsrBatcherTests(unittest.TestCase):
         self.assertEqual(calls[0][1], 3)
         for result in results:
             self.assertIsNotNone(result)
-            _, timing = result
+            _, _, timing = result
             self.assertTrue(timing["batched"])
             self.assertEqual(timing["batchSize"], 2)
 
@@ -57,6 +58,8 @@ class AsrBatcherTests(unittest.TestCase):
         self.assertIn("limits", payload)
         self.assertIn("asrBatchMaxItems", payload["limits"])
         self.assertIn("asrMode", payload["limits"])
+        self.assertIn("asr", payload)
+        self.assertIn("configuredBackend", payload["asr"])
 
 
 if __name__ == "__main__":

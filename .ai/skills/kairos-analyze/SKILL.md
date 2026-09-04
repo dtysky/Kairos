@@ -80,6 +80,9 @@ Analyze 不会隐式补跑 `ingest`、`gps-refresh` 或 Pharos parse。如果用
 - ML server 是 Analyze 的硬前置条件，不可用时必须直接停掉
 - 不允许在 ML server 不可用时继续产出“看起来完成了”的 fallback analyze 结果
 - 在真正开始粗扫前，应先检查 ML server health；如果不可用，立刻提示用户启动/修复服务后再继续
+- ASR backend 是 `config/runtime.json.asr.backend` 的工作区级显式选择，用户只选择 `qwen3 | whisper`。`backend=qwen3` 在 Apple Silicon/MLX 与 Windows + NVIDIA/Transformers-CUDA 按仓库约定目录使用各自本地 Qwen3-ASR 与 ForcedAligner；模型路径、请求语言和内部音频分片长度不是用户配置。只按当前平台读取对应 checkpoint，任一不可用都直接阻塞，不得跨平台 checkpoint 或静默改用 Whisper。`backend=whisper` 继续使用现有 Whisper 路径，也不得自动切换到 Qwen
+- `/project` 只负责编辑 ASR backend；`/analyze` 必须显示 configured/actual backend、自动发现的 runtime variant、device、model、aligner、availability 与 blocker，并在状态不一致或不可用时禁用启动
+- ASR 推理阶段不得注入共享词表或行程热词：不要向 Qwen 传 `context`，也不要向 Whisper 传 `hotwords / initial_prompt`。`config/transcript-glossary.json` 每项只保留正确写法、可选发音和使用语境；发音只帮助后置 Agent 召回同音候选，必须结合完整句子、相邻口播和时间段行程匹配使用语境后才能采用
 - 只有用户明确接受“这轮先不做 analyze”时，才可以停在这里；不能擅自降级成无 ML 的 analyze
 - 如果 unified `finalize` 返回 invalid JSON，不要先猜是模型坏了还是 prompt 坏了；当前正式做法是先查看 `projects/<projectId>/.tmp/media-analyze/finalize-attempts/<assetId>/attempt-*.json`
 - Analyze 当前会自动对 invalid-JSON `finalize` 做增量 token 重试，默认预算序列为 `512 -> 768 -> 1152`
@@ -239,15 +242,16 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
 
 - 先对视频内主音轨做轻量音频健康检查
 - 提取 `transcript / transcriptSegments / speechCoverage`
-- 当前默认 ASR 质量目标是跨平台一致：
-  - Apple Silicon 默认 `mlx-whisper / whisper-large-v3-turbo`
-  - Windows + CUDA 与 CPU fallback 优先使用完整可用的本地 `faster-whisper / large-v3`（CTranslate2）checkpoint
+- 当前 ASR 路由由工作区显式配置：
+  - `qwen3`：Apple Silicon / MLX 使用本地 MLX checkpoint；Windows + NVIDIA 使用官方 `qwen-asr` Transformers backend 与本地 PyTorch checkpoint；两端都强制配套同格式 `Qwen3-ForcedAligner-0.6B` 生成词级时间
+  - `whisper`：Apple Silicon / MLX 使用 `mlx-whisper / whisper-large-v3-turbo`；Windows + CUDA / CPU 优先完整本地 `faster-whisper / large-v3`（CTranslate2）checkpoint
+  - 两个 backend 之间没有静默 fallback；所选 backend 不可用就停止 Analyze
 - 项目 Analyze caller 当前默认固定传 `language='zh'`
 - TS 侧会在 refined transcript segmentation 之后统一做 Han 文本简体归一：
   - 只转换 Han 文本为简体中文
   - 规范中文标点与中西文空格
   - 英文、数字和其他脚本保持原样
-- 非 MLX 路径不允许在正式 `/asr` 请求里隐式卡住等待远端模型下载：
+- Whisper 的非 MLX 路径不允许在正式 `/asr` 请求里隐式卡住等待远端模型下载：
   - 大模型 cache 完整时直接使用
   - 只有不完整 cache 时，Analyze 必须回退到完整可用的本地 Whisper checkpoint，而不是把音频分析整个挂死
 - Apple Silicon / MLX 与 `faster-whisper` 路径当前都会请求词级时间戳
@@ -342,6 +346,7 @@ Analyze 运行过程中和阶段末都不再写 `store/spans.json`；span 由 `/
 - 不写 `speedCandidate / pharosRefs / grounding / spatialEvidence / location / routeRole / chronology event`
 - `source-speech` 的持久化目标是素材事实窗口；Analyze 生成 speech windows 和 `span-rebuild` 重建候选 spans 时都必须做 speech 专用合并：同 asset、speech/mixed 通道、相邻间隔 `<=3000ms`、合并后 `<=45s` 且可见中文 transcript `<=160` 字才合并，跨素材、跨语义通道、大停顿或过长口播不合并；合并后保留 transcriptSegments 顺序，任一来源为 `mixed` 时结果为 `mixed`，否则为 `speech`
 - speech/mixed 与 visual 是同一素材内可重叠共存的双通道 truth：speech span 只承载口播 truth，visual span 保留完整视觉窗口与 `visualObservation`，不得因为 speech 重叠被切断、缩短或继承 transcript；后置 Codex/Agent speech-window review 只能修 speech 候选，不得破坏重叠 visual span
+- 后置 speech-window review 也负责 ASR 字幕文字校对。原始 report 与 segment 时间/分段不可变，Agent 只能替换 speech/mixed segment text 并重建 span transcript；纠正审计写 `analysis/transcript-reviews/<inputsHash>.json`。工作区 `config/transcript-glossary.json` 的 `pronunciation` 只用于召回候选，词条 `context` 必须与完整口播及 fresh、按 `asset.capturedAt + source time` 裁剪的 Pharos/manual itinerary 相符后，才可作为专名自动纠错证据；Agent 普通词知识仍只负责普通词。无词表/行程证据的新专名不得自动写入。存在 `transcript-correction` 人工项时 meta 保持 `pending-speech-review`，最后确认必须全量校验、批量应用并最后写 `fresh`
 - `effectiveSpeechStartMs / effectiveSpeechEndMs` 是音频边界分析后的有效口播首尾 source ms；它们只用于后续 source-speech 取源窗与 handle 计算，不改变 chronology/recall 使用的素材事实窗口
 - 行车 visual fallback/fine-scan 窗口应按 passage 降碎片，默认同 asset、visual 通道、相邻 source gap `<=60s`、单段 `<=90s`；speech/mixed 行车 span 仍独立存在并可与 visual passage 重叠
 - 细粒度 utterance / pause timing 继续保留在 `transcriptSegments`

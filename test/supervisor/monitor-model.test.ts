@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mkdtemp, mkdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -11,7 +11,24 @@ import {
   writeJson,
 } from '../../src/store/index.js';
 
+const runtimeMocks = vi.hoisted(() => ({
+  getMlServiceStatus: vi.fn(),
+}));
+
+vi.mock('../../src/supervisor/runtime.js', () => ({
+  getMlServiceStatus: runtimeMocks.getMlServiceStatus,
+}));
+
 const workspaces: string[] = [];
+
+beforeEach(() => {
+  runtimeMocks.getMlServiceStatus.mockReset();
+  runtimeMocks.getMlServiceStatus.mockResolvedValue({
+    service: 'ml',
+    status: 'stopped',
+    updatedAt: '2026-09-04T00:00:00.000Z',
+  });
+});
 
 afterEach(async () => {
   await Promise.all(
@@ -90,6 +107,10 @@ describe('buildAnalyzeMonitorModel', () => {
       recognized: 1,
       activePrefetch: 1,
       activeRecognition: 1,
+    });
+    expect(model.asr).toMatchObject({
+      configuredBackend: 'whisper',
+      available: null,
     });
   });
 

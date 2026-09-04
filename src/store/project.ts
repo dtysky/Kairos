@@ -81,6 +81,9 @@ const IRuntimeConfig = z.object({
   fineScanPrefetchMinFreeMemoryMb: z.number().int().positive().optional(),
   fineScanPrefetchMaxReadyAssets: z.number().int().positive().optional(),
   fineScanPrefetchMaxReadyFrameMb: z.number().int().positive().optional(),
+  asr: z.object({
+    backend: z.enum(['qwen3', 'whisper']),
+  }).optional(),
   mlServerUrl: z.string().optional(),
   djiOpenAPIKey: z.string().optional(),
   amapWebServiceKey: z.string().optional(),

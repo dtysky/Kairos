@@ -304,6 +304,21 @@ export {
   resolveReviewItem,
 } from './review-queue.js';
 export {
+  getTranscriptGlossaryPath,
+  loadTranscriptGlossary,
+  saveTranscriptGlossary,
+  normalizeTranscriptGlossary,
+  computeTranscriptGlossaryHash,
+  normalizeGlossaryLookupKey,
+} from './transcript-glossary.js';
+export {
+  CDEFAULT_WORKSPACE_ASR_CONFIG,
+  getWorkspaceAsrConfigPath,
+  loadWorkspaceAsrConfig,
+  saveWorkspaceAsrConfig,
+  normalizeWorkspaceAsrConfig,
+} from './asr-config.js';
+export {
   getProjectBriefConfigPath,
   getManualItineraryConfigPath,
   getScriptBriefConfigPath,

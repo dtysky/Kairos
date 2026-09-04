@@ -325,6 +325,8 @@ flowchart TD
   - 同一素材在 coarse 阶段最多只允许一个关键帧抽取 `ffmpeg`
   - 多条素材可根据 free memory 目标并发数并行推进
 - 视频内音轨的 ASR 已进入正式分析链路，而不再只是附属信息
+- ASR backend 是工作区级显式配置，正式真值位于 `config/runtime.json.asr.backend`，只允许 `qwen3 | whisper`。模型路径不进入用户配置：`backend=qwen3` 在 Apple Silicon 按约定发现 `models/Qwen3-ASR-1.7B-MLX-8bit` 与 `models/Qwen3-ForcedAligner-0.6B-8bit`，在 Windows + NVIDIA 按约定发现 `models/Qwen3-ASR-1_7B` 与 `models/Qwen3-ForcedAligner-0_6B`，并在两端强制产出 ForcedAligner 词级时间；识别语言由 Analyze 请求内部传入，Qwen 长音频分片保持内部安全常量，不作为 Console 字段。`backend=whisper` 保留现有 Apple Silicon `mlx-whisper` 与非 MLX `faster-whisper` 实现。两个正式 backend 之间没有静默降级，所选 backend 的模型、对齐器、依赖、CUDA 或平台不可用时 Analyze 必须 blocked。ML `/health`、Supervisor monitor 与 `/analyze` 共同暴露 configured/actual backend、runtime variant、device、model、aligner、availability 与 blocker，`/project` 只维护后端选择
+- ASR 后置文字校对属于 `/chronology` 的 post span-builder Agent speech-window review，而不是 Analyze：原始 `asset-reports`、ASR checkpoint、segment 时间和分段保持不变；Agent 只校对最终 speech/mixed candidates，并把 reviewed text 写入 `store/spans.json`。工作区共享词表位于 `config/transcript-glossary.json`，每个词条只有唯一正确写法、可选发音和必填使用语境；发音只用于召回同音候选，不等于替换规则，Agent 必须结合完整句子、相邻口播和当前时间段行程判断语境是否匹配。词表只作为后置 Agent 证据，不作为 Qwen `context`、Whisper `hotwords` 或 prompt 注入 ASR；这样同一音形在不同句子中的解释继续由完整语境裁决。有效行程上下文按修正后的 `asset.capturedAt + source time` 选择同日与前后两小时窗口，未决新专名进入 `kind=transcript-correction, stage=chronology` 的 Review Queue。durable audit 为 `analysis/transcript-reviews/<inputsHash>.json`，全部人工项原子确认前 meta 保持 `pending-speech-review`，不得运行 `chronology-build`
 - `transcript / transcriptSegments / speechCoverage / placeHints / inferredGps` 都属于分析层结果
 - `asset report.clipTypeGuess` 当前表示 finalize 后的语义结论；视频素材的正式 `visualSummary + decision` 只在 `finalize` 单次 unified VLM 中产出，前置阶段只保留 cheap planning inputs
 - Analyze 现在按素材分阶段持久化可恢复状态：
@@ -340,15 +342,12 @@ flowchart TD
 - `audio-analysis` 当前已经切到两级素材队列：
   - 本地 health / routing 队列负责 embedded 与 protection 的轻量健康检查
   - ASR 队列只对最终选中的一路音轨转写，并按 free memory 目标并发数动态扩缩
-- 当前默认 ASR 质量目标已经切到跨平台一致：
-  - Apple Silicon 继续使用 `mlx-whisper / whisper-large-v3-turbo`
-  - Windows + CUDA 与 CPU fallback 当前优先使用完整可用的本地 `faster-whisper / large-v3`（CTranslate2）checkpoint，默认目标从 `turbo` 切回完整 `large-v3`
-  - 默认口径不再让 Windows 以较弱 `small` 档或 `turbo` 档换速度，优先保证中文转写质量
+- 当全局显式选择 `whisper` 时，现有跨平台实现继续保留：Apple Silicon 使用 `mlx-whisper / whisper-large-v3-turbo`；Windows + CUDA 与 CPU 使用 `faster-whisper / large-v3`（CTranslate2）。Whisper 实现内部只可解析同 backend 的完整本地 checkpoint，不得被当成 Qwen 不可用时的替代 backend
 - Analyze 当前正式把项目级 ASR caller 固定为中文优先：
   - `/asr` 请求默认传 `language='zh'`
   - TS 侧会在 refined transcript segmentation 之后，把 Han 文本统一归一为简体中文
   - 英文、数字和其他脚本保持原样，不做 LLM 改写
-- 非 MLX 路径当前不允许在正式 `/asr` 请求里隐式卡住等待远端模型下载：
+- Whisper 的非 MLX 路径当前不允许在正式 `/asr` 请求里隐式卡住等待远端模型下载：
   - 如果 `large-v3` 的本地 CTranslate2 checkpoint 或完整 HF cache 已可用，本轮就用它
   - 如果当前只发现不完整 cache，Kairos 应直接回退到完整可用的本地 Whisper checkpoint，而不是把 Analyze 卡死
 - ASR 当前在 Apple Silicon / MLX 与 `faster-whisper` 路径都会请求词级时间戳，避免继续把 TS 细分建立在粗 segment 猜测上
@@ -362,8 +361,8 @@ flowchart TD
   - protection 缺失、不可访问或健康检查失败时回退 embedded
   - protection 只有在健康分数明显更优时才会成为正式 transcript 来源
 - 一旦选择了 protection，它就不再只是 finalize prompt 的辅助信号，而会直接覆盖正式 `report.transcriptSegments`
-- ML server 当前会在 `VLM` 和 `Whisper` 之间互斥卸载，避免两套模型同时常驻显存
-- Analyze 当前在 `audio-analysis -> finalize` 交接时也遵守这条互斥规则：进入 `VLM` 前必须先卸载 `Whisper`，不再为了单素材热路径保留双驻留
+- ML server 当前会在 `VLM` 和当前显式选择的 ASR backend 之间互斥卸载，避免两套重模型同时常驻显存
+- Analyze 当前在 `audio-analysis -> finalize` 交接时也遵守这条互斥规则：进入 `VLM` 前必须先卸载当前 ASR backend，不再为了单素材热路径保留双驻留
 - 当前 VLM 默认模型已切到 `Qwen3.5-9B`：
   - Apple Silicon / MLX 本地优先目录：`models/Qwen3.5-9B-MLX-8bit`
   - Apple Silicon / MLX 无本地目录时的默认 ID：`mlx-community/Qwen3.5-9B-MLX-8bit`

@@ -108,7 +108,7 @@ class _AsrBatcher:
 
     def _process_batch(self, batch: list[_AsrBatchItem]):
         try:
-            from .whisper_runner import transcribe_many
+            from .asr_router import transcribe_many
 
             results = transcribe_many(
                 [(item.audio_path, item.language) for item in batch],
@@ -119,8 +119,8 @@ class _AsrBatcher:
                 elapsed_ms = (time.perf_counter() - item.submitted_at) * 1000.0
                 queue_wait_ms = max(0.0, elapsed_ms - float(payload_timing.get("totalMs") or 0.0))
                 payload_timing["queueWaitMs"] = queue_wait_ms
-                payload_timing["batched"] = False
-                payload_timing["batchSize"] = 1
+                payload_timing["batched"] = len(batch) > 1
+                payload_timing["batchSize"] = len(batch)
                 item.future.set_result((segments, words, payload_timing))
         except Exception as exc:
             for item in batch:
@@ -134,12 +134,14 @@ _asr_batcher = _AsrBatcher(
 )
 
 
-def _unload_whisper():
+def _unload_asr():
     try:
-        from .whisper_runner import unload
+        from .asr_router import unload
 
         if unload():
-            _loaded.discard("whisper")
+            for name in list(_loaded):
+                if name.startswith("asr:"):
+                    _loaded.discard(name)
     except Exception:
         return
 
@@ -157,20 +159,20 @@ def _unload_vlm():
 
 @app.get("/health")
 def health():
+    from .asr_router import get_status
+
+    asr_status = get_status()
     return {
         "status": "ok",
         "device": DEVICE,
         "backend": BACKEND,
         "models_loaded": sorted(_loaded),
+        "asr": asr_status,
         "limits": {
             "asrBatchMaxItems": CASR_BATCH_MAX_ITEMS,
             "asrBatchMaxWaitMs": CASR_BATCH_MAX_WAIT_MS,
             "asrPreprocessMaxConcurrency": CASR_PREPROCESS_MAX_CONCURRENCY,
-            "asrMode": (
-                "faster-whisper-sequential"
-                if BACKEND == "torch"
-                else "mlx-single-inference"
-            ),
+            "asrMode": asr_status.get("provider") or "unavailable",
             "asrQueuedRequests": _asr_batcher.queued_requests(),
         },
     }
@@ -183,8 +185,9 @@ def asr(req: AsrRequest):
         # keep_other_models_loaded is only an explicit override for non-default flows.
         if not req.keep_other_models_loaded:
             _unload_vlm()
-        _loaded.add("whisper")
         segments, words, timing = _asr_batcher.submit(req.audio_path, req.language)
+        actual_backend = str(timing.get("provider") or timing.get("backend") or "unknown")
+        _loaded.add(f"asr:{actual_backend}")
         return {"segments": segments, "words": words, "timing": timing}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -215,10 +218,10 @@ def clip_embed(req: ClipEmbedRequest):
 @app.post("/vlm/analyze")
 def vlm_analyze(req: VlmRequest):
     try:
-        # The default Kairos hot path unloads Whisper before entering VLM so the
+        # The default Kairos hot path unloads the configured ASR backend before entering VLM so the
         # ASR and finalize stages do not keep both models resident together.
         if not req.keep_other_models_loaded:
-            _unload_whisper()
+            _unload_asr()
         from .vlm_runner import analyze
         _loaded.add("vlm")
         description, timing = analyze(req.image_paths, req.prompt, max_tokens=req.max_tokens)
@@ -231,10 +234,10 @@ def vlm_analyze(req: VlmRequest):
 def text_generate(req: TextGenerateRequest):
     try:
         # Text generation reuses the qwen VLM/text residency path but does not
-        # open image inputs. It still unloads Whisper by default to keep the
+        # open image inputs. It still unloads the configured ASR backend by default to keep the
         # same one-heavy-model-at-a-time policy as VLM analysis.
         if not req.keep_other_models_loaded:
-            _unload_whisper()
+            _unload_asr()
         from .vlm_runner import generate_text
         _loaded.add("vlm")
         text, timing = generate_text(req.prompt, max_tokens=req.max_tokens)

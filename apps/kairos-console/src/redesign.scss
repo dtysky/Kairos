@@ -22,6 +22,71 @@
   --sidebar-collapsed-width: 72px;
 }
 
+.analyze-asr-panel,
+.asr-config-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.asr-backend-select {
+  max-width: 420px;
+}
+
+.analyze-asr-panel-blocked {
+  border-color: color-mix(in srgb, #ef6464 42%, var(--border));
+}
+
+.asr-runtime-grid,
+.asr-config-runtime {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.asr-runtime-grid > div,
+.asr-config-runtime > div {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.asr-runtime-grid span,
+.asr-config-runtime span,
+.asr-path-row > span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.asr-path-row {
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.asr-path-row > span {
+  margin: 0;
+}
+
+.asr-path-row code {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+  .asr-runtime-grid,
+  .asr-config-runtime {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 html,
 body,
 #root {
@@ -640,6 +705,27 @@ body {
 .alternate-path-row .field input { min-width: 0; }
 .alternate-path-actions { flex-wrap: nowrap; justify-content: flex-end; }
 .structured-root-footer { display: flex; justify-content: flex-end; padding-top: 8px; border-top: 1px solid var(--border-soft); }
+
+/* Transcript review keeps dense evidence in drawers instead of long cards. */
+.transcript-glossary-panel .ant-table-wrapper,
+.transcript-review-panel .ant-table-wrapper { margin-top: 8px; }
+.transcript-glossary-panel .ant-table-cell,
+.transcript-review-panel .ant-table-cell { font-size: 14px; line-height: 1.4; }
+.drawer-form-stack { display: grid; gap: 14px; }
+.drawer-form-stack .field { margin: 0; }
+.transcript-comparison-row {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 12px 14px;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--panel-soft);
+}
+.transcript-comparison-row span { color: var(--muted); font-size: 13px; }
+.transcript-comparison-row strong { font-size: 15px; line-height: 1.55; }
+.transcript-review-actions { justify-content: flex-end; }
 
 @media (max-width: 1260px) {
   .overview-hero { grid-template-columns: 1fr; }

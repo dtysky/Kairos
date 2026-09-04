@@ -287,7 +287,7 @@ export async function analyzeWorkspaceProjectMedia(
       performance?.recordMlHealthCheck(Date.now() - healthStartedAt);
     }
     if (!mlHandle.available) {
-      throw new Error(buildMlUnavailableErrorMessage(runtimeConfig.mlServerUrl));
+      throw new Error(buildMlUnavailableErrorMessage(runtimeConfig.mlServerUrl, mlHandle.blocker));
     }
     mlUsed = true;
     return mlHandle;
@@ -1343,6 +1343,7 @@ interface IResumeFineScanEntry {
 interface MlAvailability {
   client: MlClient;
   available: boolean;
+  blocker?: string;
 }
 
 interface ICoarseScanTaskState {
@@ -4851,19 +4852,33 @@ function isLikelyInvalidVisualSegment(description?: string): boolean {
 async function createMlAvailability(baseUrl?: string): Promise<MlAvailability> {
   const client = new MlClient(baseUrl);
   try {
-    await client.health();
+    const health = await client.health();
+    if (!health.asr) {
+      return { client, available: false, blocker: 'ML server 未上报 ASR backend 状态，请重启 ML 服务。' };
+    }
+    if (!health.asr.available) {
+      return { client, available: false, blocker: health.asr.blocker || '配置的 ASR backend 不可用。' };
+    }
+    if (!health.asr.configuredBackend || health.asr.actualBackend !== health.asr.configuredBackend) {
+      return {
+        client,
+        available: false,
+        blocker: `ASR backend 不一致：配置 ${health.asr.configuredBackend ?? 'unknown'}，实际 ${health.asr.actualBackend ?? 'unknown'}。`,
+      };
+    }
     return { client, available: true };
-  } catch {
-    return { client, available: false };
+  } catch (error) {
+    return { client, available: false, blocker: error instanceof Error ? error.message : String(error) };
   }
 }
 
-function buildMlUnavailableErrorMessage(baseUrl?: string): string {
+function buildMlUnavailableErrorMessage(baseUrl?: string, blocker?: string): string {
   return [
     `ML server 不可用：${baseUrl ?? 'http://127.0.0.1:8910'}`,
+    blocker,
     '当前 analyze 不允许在无 ML 服务时静默 fallback。',
     '请先启动或修复 ML server，再重新运行 analyze。',
-  ].join(' ');
+  ].filter(Boolean).join(' ');
 }
 
 function estimatePhaseEtaSeconds(

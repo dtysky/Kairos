@@ -11,6 +11,7 @@ import type {
   IKtepSlice,
   IMediaRoot,
   ISpansMeta,
+  ITranscriptReviewItem,
   ITranscriptSegment,
 } from '../../protocol/schema.js';
 import { IKtepSlice as IKtepSliceSchema } from '../../protocol/schema.js';
@@ -52,6 +53,7 @@ import {
 } from '../agents/span-materialization-review-spec.js';
 import { assignUniqueMaterialSpanIds, buildMaterialSpanId } from './material-ids.js';
 import { sanitizeMaterialPatterns } from './semantic-slice.js';
+import { prepareProjectTranscriptReview } from './transcript-review.js';
 
 export const CMATERIAL_PATTERN_PROMPT_VERSION = CSPAN_MATERIALIZATION_REVIEW_PROMPT_VERSION;
 const CMATERIAL_PATTERN_SPAN_BATCH_SIZE = CSPAN_MATERIALIZATION_REVIEW_BATCH_SIZE;
@@ -374,15 +376,29 @@ export async function rebuildProjectSpans(input: {
     baseWarnings: generated.warnings,
     warnings: reviewWarnings,
   });
-  const spans = assignUniqueMaterialSpanIds(
+  const builtSpans = assignUniqueMaterialSpanIds(
     reviewResult.spans,
     new Map(assets.map(asset => [asset.id, { kind: asset.kind }] as const)),
   );
   const now = input.now ?? new Date().toISOString();
-  const speechReviewCandidates = spans.filter(isSpeechReviewCandidateSpan);
+  const speechReviewCandidates = builtSpans.filter(isSpeechReviewCandidateSpan);
   const speechReviewCandidateCount = speechReviewCandidates.length;
   const speechReviewPending = speechReviewCandidateCount > 0;
   const handoffPath = speechReviewPending ? getSpeechWindowAgentHandoffPath(projectRoot) : undefined;
+  const transcriptReview = speechReviewPending
+    ? await prepareProjectTranscriptReview({
+        workspaceRoot: input.workspaceRoot,
+        projectId: input.projectId,
+        projectRoot,
+        assets,
+        reports,
+        spans: builtSpans,
+        speechCandidates: speechReviewCandidates,
+        inputsHash: generated.inputsHash,
+        generatedAt: now,
+      })
+    : undefined;
+  const spans = transcriptReview?.spans ?? builtSpans;
   if (speechReviewPending && handoffPath) {
     await writeSpeechWindowAgentHandoff({
       path: handoffPath,
@@ -393,6 +409,8 @@ export async function rebuildProjectSpans(input: {
       speechCandidates: speechReviewCandidates,
       inputsHash: generated.inputsHash,
       generatedAt: now,
+      transcriptReviewArtifactPath: transcriptReview?.artifactPath,
+      transcriptReviewItems: transcriptReview?.artifact.items ?? [],
     });
   }
   const warnings = dedupeStrings([...generated.warnings, ...reviewWarnings]);
@@ -407,13 +425,21 @@ export async function rebuildProjectSpans(input: {
     speechReview: speechReviewPending
       ? {
           status: 'pending',
+          phase: 'agent',
           candidateCount: speechReviewCandidateCount,
+          autoCorrectionCount: transcriptReview?.autoCorrectionCount ?? 0,
+          pendingCorrectionCount: transcriptReview?.pendingCorrectionCount ?? 0,
           handoffPath,
+          reviewArtifactPath: transcriptReview?.artifactPath,
+          glossaryHash: transcriptReview?.glossaryHash,
+          tripContextHash: transcriptReview?.tripContextHash,
           updatedAt: now,
         }
       : {
           status: 'not-required',
           candidateCount: 0,
+          autoCorrectionCount: 0,
+          pendingCorrectionCount: 0,
           updatedAt: now,
         },
     warnings,
@@ -441,8 +467,11 @@ export async function rebuildProjectSpans(input: {
       visualOnlyCount: reviewResult.visualOnlyCount,
       trimmedSpeechCount: reviewResult.trimmedSpeechCount,
       speechReviewCandidateCount,
+      transcriptAutoCorrectionCount: transcriptReview?.autoCorrectionCount ?? 0,
+      transcriptPendingCorrectionCount: transcriptReview?.pendingCorrectionCount ?? 0,
       spansMetaStatus: meta.status,
       speechWindowAgentHandoffPath: handoffPath,
+      transcriptReviewArtifactPath: transcriptReview?.artifactPath,
     },
   });
   await writeJson(getSpansPath(projectRoot), spans);
@@ -492,8 +521,11 @@ export async function rebuildProjectSpans(input: {
       visualOnlyCount: reviewResult.visualOnlyCount,
       trimmedSpeechCount: reviewResult.trimmedSpeechCount,
       speechReviewCandidateCount,
+      transcriptAutoCorrectionCount: transcriptReview?.autoCorrectionCount ?? 0,
+      transcriptPendingCorrectionCount: transcriptReview?.pendingCorrectionCount ?? 0,
       spansMetaStatus: meta.status,
       speechWindowAgentHandoffPath: handoffPath,
+      transcriptReviewArtifactPath: transcriptReview?.artifactPath,
     },
   });
 
@@ -2335,10 +2367,7 @@ function getSpeechWindowAgentHandoffPath(projectRoot: string): string {
 }
 
 function isSpeechReviewCandidateSpan(span: IKtepSlice): boolean {
-  return span.semanticKind === 'speech'
-    || span.semanticKind === 'mixed'
-    || spanHasSpeechTruth(span)
-    || (span.speechCoverage ?? 0) > 0;
+  return span.semanticKind === 'speech' || span.semanticKind === 'mixed';
 }
 
 async function writeSpeechWindowAgentHandoff(input: {
@@ -2350,6 +2379,8 @@ async function writeSpeechWindowAgentHandoff(input: {
   speechCandidates: IKtepSlice[];
   inputsHash: string;
   generatedAt: string;
+  transcriptReviewArtifactPath?: string;
+  transcriptReviewItems: ITranscriptReviewItem[];
 }): Promise<void> {
   await mkdir(dirname(input.path), { recursive: true });
   const rows = input.speechCandidates.map(span => [
@@ -2376,8 +2407,14 @@ async function writeSpeechWindowAgentHandoff(input: {
     '## Files',
     '',
     `- Input candidates: ${join(input.projectRoot, 'store', 'spans.json')}`,
+    `- Asset identities and corrected capture time: ${join(input.projectRoot, 'store', 'assets.json')}`,
+    `- Immutable raw ASR reports: ${join(input.projectRoot, 'analysis', 'asset-reports')}`,
     `- Meta to update: ${join(input.projectRoot, 'store', 'spans.meta.json')}`,
-    '- Final output contract: rewrite both files directly from the main Agent after shard review.',
+    input.transcriptReviewArtifactPath
+      ? `- Transcript review artifact: ${input.transcriptReviewArtifactPath}`
+      : undefined,
+    `- Workspace glossary: ${join(input.workspaceRoot, 'config', 'transcript-glossary.json')}`,
+    '- Final output contract: SubAgents return structured decisions only; the main Agent validates and merges them through the transcript-review service.',
     '',
     '## Status',
     '',
@@ -2390,25 +2427,41 @@ async function writeSpeechWindowAgentHandoff(input: {
     'Copy this into a Codex/Agent thread:',
     '',
     '```text',
-    `请按 handoff 处理这个 Kairos 项目的 speech-window review：读取 ${input.path}。作为主 Agent，按 asset/day 或稳定 span-id range 启用 subagents 审查 store/spans.json 的 speech/mixed candidates；每个 subagent shard 最多约 1500 条 candidates，尽量保持同一 asset 不跨 shard。合并 shard 后直接写最终 store/spans.json 与 store/spans.meta.json，清理无意义 ASR、裁切可用口播、同步 materialPatterns[3]，最后标记 status=fresh、speechReview.status=completed。speech/mixed 与 visual 可以同素材重叠共存；review 不得缩短、删除或切碎重叠 visual span。不要重跑 span-builder，不要生成 chronology。`,
+    `请按 handoff 处理这个 Kairos 项目的 speech-window + transcript review：读取 ${input.path} 和 ${input.transcriptReviewArtifactPath ?? 'transcript review artifact'}。作为主 Agent，按 asset/day 启用 subagents；每个 shard 最多约 1500 条 candidates。SubAgent 只返回结构化 transcript decisions 和 speech-window 建议，不直接写正式文件。主 Agent校验、去重并合并 speech edits，再调用 transcript-review service 的 applyProjectTranscriptAgentDecisions 落地文字决策。不得改 transcript segment 时间或重新分段，不得改 asset-reports；共享词表的发音只用于召回同音候选，必须结合完整句子、相邻口播、当前行程判断词条使用语境是否匹配。无词表语境/当前行程证据的新专名必须 needs-human。不要重跑 ASR、span-builder 或 chronology。`,
     '```',
     '',
     '## Required Agent Workflow',
     '',
-    '1. Main Agent reads `store/spans.json` and this handoff.',
-    '2. Main Agent shards speech/mixed candidates by asset/day or stable span-id ranges. Each subagent shard must contain at most about 1500 speech candidates, keeping one asset in one shard when practical.',
-    '3. Subagents review only their shard and return reviewed span edits; subagents must not write final project files.',
-    '4. Main Agent merges all shard outputs, drops meaningless ASR noise or converts it to visual-only when the visual evidence is independently useful.',
-    '5. Main Agent writes final `store/spans.json` and `store/spans.meta.json` with `status="fresh"` and `speechReview.status="completed"`.',
+    '1. Main Agent reads `store/spans.json`, the transcript review artifact, `config/transcript-glossary.json`, and this handoff.',
+    '2. Main Agent shards speech/mixed candidates by asset/day or stable span-id ranges. Each subagent shard must contain at most about 1500 speech candidates, keeping one asset in one shard when practical; include the full sentence, neighboring speech, time-scoped trip context, and only the pronunciation-relevant glossary candidates needed by that shard.',
+    '3. Subagents review only their shard and return structured decisions; subagents must not write final project files.',
+    '4. Main Agent validates immutable segment timing, inputsHash, original text hash, evidence and duplicate segment decisions; then merges speech-window edits without changing visual spans.',
+    '5. Main Agent applies transcript decisions through `applyProjectTranscriptAgentDecisions`. Ambiguous items enter Review Queue; only zero pending items may produce `status="fresh"`.',
     '',
     '## Review Contract',
     '',
     '- Meaningless ASR noise must not remain as final speech truth.',
+    '- Transcript correction may replace text only. It must not change segment start/end, resegment speech, or write back to `analysis/asset-reports`.',
+    '- Glossary entries contain `canonical`, optional `pronunciation`, and required `context`. Pronunciation only recalls a possible homophone; it is never a replacement rule.',
+    '- A glossary-backed proper-name auto correction is allowed only when the full sentence, neighboring speech, and current time-scoped trip context match the entry `context`. Use evidence `{source:"glossary", value:<canonical>, ref:<exact glossary context>}`. If context is ambiguous, use `needs-human`.',
+    '- Agent knowledge may auto-correct ordinary lexical errors only; unsupported new proper names must use `needs-human`.',
+    '- Historical corrections are reusable only for the exact same assetId + segment range + original text hash.',
     '- Final retained speech spans must be clipped to usable transcript segment bounds.',
     '- Final visual-only spans must clear `transcript`, `transcriptSegments`, and `speechCoverage`, and use `semanticKind="visual"` when appropriate.',
     '- Speech/mixed and visual spans may overlap in the same asset; do not shorten, delete, split, or transcript-promote overlapping visual spans while reviewing speech candidates.',
     '- `materialPatterns[3]` must match final speech truth: `有口播语音` only when the final span retains usable transcript truth, otherwise `无口播语音`.',
     '- Do not add speed, Pharos, grounding, spatial, location, route, chronology, or random id fields.',
+    '',
+    '## Structured Transcript Decision',
+    '',
+    'Return one decision for every `pending-agent` item in the transcript review artifact:',
+    '',
+    '```json',
+    '{"itemId":"tr-...","inputsHash":"...","originalTextHash":"...","startMs":0,"endMs":1000,"action":"auto-apply|needs-human|keep-original","suggestedText":"...","finalText":"...","confidence":0.99,"containsProperNoun":false,"evidence":[{"source":"glossary|pharos|manual-itinerary|place-hint|agent-knowledge|history","value":"...","ref":"..."}]}',
+    '```',
+    '',
+    `- Transcript items: ${input.transcriptReviewItems.length}`,
+    `- Pending Agent decisions: ${input.transcriptReviewItems.filter(item => item.status === 'pending-agent').length}`,
     '',
     '## ASR Noise That Must Be Removed Or Demoted',
     '',

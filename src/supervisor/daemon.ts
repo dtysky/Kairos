@@ -34,11 +34,15 @@ import {
   saveReviewQueue,
   saveManualItineraryConfig,
   loadStyleSourcesConfig,
+  loadTranscriptGlossary,
+  loadWorkspaceAsrConfig,
   saveProjectBriefConfig,
   saveScriptBriefConfig,
   saveEditUnitConfig,
   saveEditRulesConfig,
   saveStyleSourcesConfig,
+  saveTranscriptGlossary,
+  saveWorkspaceAsrConfig,
   syncWorkspaceProjectBrief,
   touchProjectUpdatedAt,
   writeKairosProgress,
@@ -80,6 +84,7 @@ import {
   resolveMediaRoot,
   type IMediaRootPathResolution,
 } from '../modules/media/root-resolver.js';
+import { resolveTranscriptCorrectionReview } from '../modules/media/transcript-review.js';
 import {
   buildProjectPharosAssetStatus,
   loadOrBuildProjectPharosContext,
@@ -578,6 +583,16 @@ async function routeRequest(
     return;
   }
 
+  if (pathname === '/api/workspace/config/transcript-glossary' && method === 'GET') {
+    sendJson(response, 200, await loadTranscriptGlossary(options.workspaceRoot));
+    return;
+  }
+
+  if (pathname === '/api/workspace/config/asr' && method === 'GET') {
+    sendJson(response, 200, await loadWorkspaceAsrConfig(options.workspaceRoot));
+    return;
+  }
+
   const projectBriefMatch = pathname.match(/^\/api\/projects\/([^/]+)\/config\/project-brief$/u);
   if (projectBriefMatch && method === 'PUT') {
     const projectId = decodeURIComponent(projectBriefMatch[1]!);
@@ -656,6 +671,18 @@ async function routeRequest(
     return;
   }
 
+  if (pathname === '/api/workspace/config/transcript-glossary' && method === 'PUT') {
+    const payload = await readJsonBody(request);
+    sendJson(response, 200, await saveTranscriptGlossary(options.workspaceRoot, payload));
+    return;
+  }
+
+  if (pathname === '/api/workspace/config/asr' && method === 'PUT') {
+    const payload = await readJsonBody(request);
+    sendJson(response, 200, await saveWorkspaceAsrConfig(options.workspaceRoot, payload));
+    return;
+  }
+
   const reviewMatch = pathname.match(/^\/api\/projects\/([^/]+)\/reviews$/u);
   if (reviewMatch && method === 'GET') {
     const projectId = decodeURIComponent(reviewMatch[1]!);
@@ -671,7 +698,18 @@ async function routeRequest(
     const reviewId = decodeURIComponent(resolveReviewMatch[2]!);
     const projectRoot = join(options.workspaceRoot, 'projects', projectId);
     const payload = await readJsonBody(request).catch(() => ({}));
-    const review = await resolveReviewItem(projectRoot, reviewId, payload);
+    const queue = await loadReviewQueue(projectRoot);
+    const current = queue.items.find(item => item.id === reviewId);
+    const review = current?.kind === 'transcript-correction'
+      ? await resolveTranscriptCorrectionReview({
+          workspaceRoot: options.workspaceRoot,
+          projectRoot,
+          reviewId,
+          finalText: typeof payload?.finalText === 'string' ? payload.finalText : undefined,
+          promoteToGlossary: payload?.promoteToGlossary === true,
+          note: typeof payload?.note === 'string' ? payload.note : undefined,
+        })
+      : await resolveReviewItem(projectRoot, reviewId, payload);
     if (!review) {
       sendJson(response, 404, { error: 'review not found' });
       return;

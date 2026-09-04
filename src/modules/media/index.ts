@@ -121,6 +121,14 @@ export {
   type ISpanRebuildResult,
 } from './span-rebuild.js';
 export {
+  getTranscriptReviewArtifactPath,
+  readTranscriptReviewArtifact,
+  prepareProjectTranscriptReview,
+  applyProjectTranscriptAgentDecisions,
+  resolveTranscriptCorrectionReview,
+  type IPrepareTranscriptReviewResult,
+} from './transcript-review.js';
+export {
   inferManualItineraryGps,
   type IManualSpatialContext,
   type IInferManualItineraryGpsInput,

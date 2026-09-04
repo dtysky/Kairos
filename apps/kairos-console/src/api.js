@@ -82,6 +82,14 @@ export function fetchWorkspaceEditRulesConfig() {
   return apiGet('/api/workspace/config/edit-rules');
 }
 
+export function fetchTranscriptGlossary() {
+  return apiGet('/api/workspace/config/transcript-glossary');
+}
+
+export function fetchWorkspaceAsrConfig() {
+  return apiGet('/api/workspace/config/asr');
+}
+
 export function confirmProjectChronology(projectId) {
   return apiPost(`/api/projects/${encodeURIComponent(projectId)}/chronology/confirm`, {});
 }
@@ -128,6 +136,14 @@ export function saveWorkspaceStyleConfig(payload) {
 
 export function saveWorkspaceEditRulesConfig(payload) {
   return apiPut('/api/workspace/config/edit-rules', payload);
+}
+
+export function saveTranscriptGlossary(payload) {
+  return apiPut('/api/workspace/config/transcript-glossary', payload);
+}
+
+export function saveWorkspaceAsrConfig(payload) {
+  return apiPut('/api/workspace/config/asr', payload);
 }
 
 export function resolveProjectReview(projectId, reviewId, payload) {

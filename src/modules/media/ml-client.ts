@@ -24,11 +24,15 @@ export interface IAsrWord {
 
 export interface IMlAsrTiming {
   backend?: string;
+  runtimeBackend?: string;
+  provider?: string;
   modelRef?: string;
+  alignerModelRef?: string;
   totalMs?: number;
   loadMs?: number;
   wavExtractMs?: number;
   inferenceMs?: number;
+  alignmentMs?: number;
   queueWaitMs?: number;
   batched?: boolean;
   batchSize?: number;
@@ -82,6 +86,21 @@ export interface IMlHealth {
   device: string;
   backend: string;
   models_loaded: string[];
+  asr?: {
+    configuredBackend?: 'qwen3' | 'whisper' | null;
+    actualBackend?: 'qwen3' | 'whisper' | null;
+    provider?: string | null;
+    runtimeBackend?: string;
+    runtimeVariant?: string;
+    device?: string;
+    available: boolean;
+    modelRef?: string | null;
+    modelAvailable?: boolean;
+    alignerModelRef?: string | null;
+    alignerAvailable?: boolean | null;
+    timestampMode?: string | null;
+    blocker?: string | null;
+  };
   limits?: {
     asrBatchMaxItems?: number;
     asrBatchMaxWaitMs?: number;

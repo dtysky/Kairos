@@ -21,6 +21,8 @@ import {
   fetchWorkspaceEditRulesConfig,
   fetchWorkspaceStyleConfig,
   fetchWorkspaceStatus,
+  fetchTranscriptGlossary,
+  fetchWorkspaceAsrConfig,
   installProjectEditResolveAssets,
   registerProjectColorDrpSnapshot,
   registerProjectEditResolveSnapshot,
@@ -32,6 +34,8 @@ import {
   saveProjectEditResolveSnapshot,
   saveProjectSection,
   saveWorkspaceStyleConfig,
+  saveTranscriptGlossary,
+  saveWorkspaceAsrConfig,
   startJob,
   startWorkspaceJob,
   splitProjectChronologyEvent,
@@ -48,6 +52,9 @@ import {
   ReviewQueuePanel,
   ScriptBriefEditor,
   StyleSourcesEditor,
+  TranscriptCorrectionReviewPanel,
+  TranscriptGlossaryEditor,
+  AsrConfigEditor,
   WorkflowPrompt,
 } from './workspace-forms.jsx';
 
@@ -67,6 +74,10 @@ export function AppShell() {
   const [savedConfig, setSavedConfig] = useState(null);
   const [styleSources, setStyleSources] = useState(null);
   const [editRules, setEditRules] = useState(null);
+  const [transcriptGlossary, setTranscriptGlossary] = useState(null);
+  const [savedTranscriptGlossary, setSavedTranscriptGlossary] = useState(null);
+  const [asrConfig, setAsrConfig] = useState(null);
+  const [savedAsrConfig, setSavedAsrConfig] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [projectProgress, setProjectProgress] = useState(null);
   const [busy, setBusy] = useState({});
@@ -83,6 +94,8 @@ export function AppShell() {
     refreshStatus();
     refreshStyleSources();
     refreshEditRules();
+    refreshTranscriptGlossary();
+    refreshAsrConfig();
     fetchCapabilities().then(setCapabilities).catch(handleError);
     const timer = window.setInterval(refreshStatus, 4000);
     return () => window.clearInterval(timer);
@@ -144,10 +157,26 @@ export function AppShell() {
     () => Boolean(config && savedConfig && JSON.stringify(config) !== JSON.stringify(savedConfig)),
     [config, savedConfig],
   );
+  const hasUnsavedTranscriptGlossary = useMemo(
+    () => Boolean(transcriptGlossary && savedTranscriptGlossary && JSON.stringify(transcriptGlossary) !== JSON.stringify(savedTranscriptGlossary)),
+    [transcriptGlossary, savedTranscriptGlossary],
+  );
+  const hasUnsavedAsrConfig = useMemo(
+    () => Boolean(asrConfig && savedAsrConfig && JSON.stringify(asrConfig) !== JSON.stringify(savedAsrConfig)),
+    [asrConfig, savedAsrConfig],
+  );
 
   useEffect(() => {
     dispatch({ type: 'set-dirty', section: 'project-config', dirty: hasUnsavedProjectConfig });
   }, [dispatch, hasUnsavedProjectConfig]);
+
+  useEffect(() => {
+    dispatch({ type: 'set-dirty', section: 'transcript-glossary', dirty: hasUnsavedTranscriptGlossary });
+  }, [dispatch, hasUnsavedTranscriptGlossary]);
+
+  useEffect(() => {
+    dispatch({ type: 'set-dirty', section: 'asr-config', dirty: hasUnsavedAsrConfig });
+  }, [dispatch, hasUnsavedAsrConfig]);
 
   useEffect(() => {
     dispatch({
@@ -354,6 +383,63 @@ export function AppShell() {
       setError('');
     } catch (caught) {
       handleError(caught);
+    }
+  }
+
+  async function refreshTranscriptGlossary() {
+    try {
+      const next = await fetchTranscriptGlossary();
+      setTranscriptGlossary(next);
+      setSavedTranscriptGlossary(next);
+      setError('');
+    } catch (caught) {
+      handleError(caught);
+    }
+  }
+
+  async function refreshAsrConfig() {
+    try {
+      const next = await fetchWorkspaceAsrConfig();
+      setAsrConfig(next);
+      setSavedAsrConfig(next);
+      setError('');
+    } catch (caught) {
+      handleError(caught);
+    }
+  }
+
+  async function saveTranscriptGlossaryConfig() {
+    if (!transcriptGlossary) return;
+    const busyKey = 'workspace:transcript-glossary';
+    setBusy(current => ({ ...current, [busyKey]: true }));
+    try {
+      const saved = await saveTranscriptGlossary(transcriptGlossary);
+      setTranscriptGlossary(saved);
+      setSavedTranscriptGlossary(saved);
+      setMessage('已保存字幕共享词表');
+      setError('');
+    } catch (caught) {
+      handleError(caught);
+    } finally {
+      setBusy(current => ({ ...current, [busyKey]: false }));
+    }
+  }
+
+  async function saveAsrConfig() {
+    if (!asrConfig) return;
+    const busyKey = 'workspace:asr-config';
+    setBusy(current => ({ ...current, [busyKey]: true }));
+    try {
+      const saved = await saveWorkspaceAsrConfig(asrConfig);
+      setAsrConfig(saved);
+      setSavedAsrConfig(saved);
+      await refreshStatus();
+      setMessage('已保存 ASR 全局配置；运行时将严格使用所选 backend');
+      setError('');
+    } catch (caught) {
+      handleError(caught);
+    } finally {
+      setBusy(current => ({ ...current, [busyKey]: false }));
     }
   }
 
@@ -643,7 +729,7 @@ export function AppShell() {
     }
   }
 
-  async function resolveReview(reviewId) {
+  async function resolveReview(reviewId, overrides = {}) {
     if (!projectId) return;
     const target = reviews.find(review => review.id === reviewId);
     if (!target) return;
@@ -652,8 +738,12 @@ export function AppShell() {
         note: target.note,
         fields: (target.fields || []).map(field => ({ key: field.key, value: field.value })),
         status: 'resolved',
+        ...overrides,
       });
       await refreshProject(projectId);
+      if (target.kind === 'transcript-correction') {
+        await refreshTranscriptGlossary();
+      }
       setMessage(`已处理 review：${target.title}`);
       setError('');
     } catch (caught) {
@@ -712,13 +802,13 @@ export function AppShell() {
             <Route path="/color" element={<ColorPage projectId={projectId} config={config} colorArchive={colorArchive} capabilities={capabilities} jobs={allJobs} setProjectBrief={setProjectBrief} saveSection={saveSection} busy={busy} onRunColorAction={args => runProjectWorkflow('color', args)} onRequestHostPreflight={(payload, options) => recheckColorHost(projectId, payload, options)} onSaveDrpSnapshot={saveColorDrpSnapshot} onRegisterDrpSnapshot={registerColorDrpSnapshot} />} />
             <Route path="/analyze/monitor" element={<Navigate to="/analyze" replace />} />
             <Route path="/analyze" element={<AnalyzePage projectId={projectId} projectProgress={projectProgress} activeJobs={activeJobs} capabilities={capabilities} busy={busy} onRun={() => runProjectWorkflow('analyze')} />} />
-            <Route path="/chronology" element={<ChronologyPage projectId={projectId} config={config?.chronology} pharosContext={config?.pharosContext} spans={config?.spans} capabilities={capabilities} jobs={activeJobs} busy={busy} onRunSpatialRefresh={() => runProjectWorkflow('spatial-refresh')} onRunSpanRebuild={() => runProjectWorkflow('span-rebuild')} onRunChronologyBuild={() => runProjectWorkflow('chronology-build')} onConfirm={confirmChronology} onSaveEvent={saveChronologyEvent} onMergeEvents={mergeChronologyEvents} onSplitEvent={splitChronologyEvent} />} />
+            <Route path="/chronology" element={<ChronologyPage projectId={projectId} config={config?.chronology} pharosContext={config?.pharosContext} spans={config?.spans} reviews={reviews} setReviews={setReviews} resolveReview={resolveReview} capabilities={capabilities} jobs={activeJobs} busy={busy} onRunSpatialRefresh={() => runProjectWorkflow('spatial-refresh')} onRunSpanRebuild={() => runProjectWorkflow('span-rebuild')} onRunChronologyBuild={() => runProjectWorkflow('chronology-build')} onConfirm={confirmChronology} onSaveEvent={saveChronologyEvent} onMergeEvents={mergeChronologyEvents} onSplitEvent={splitChronologyEvent} />} />
             <Route path="/style/monitor/:categoryId?" element={<StyleMonitorRedirect />} />
             <Route path="/style" element={<StylePage config={styleSources} capabilities={capabilities} jobs={allJobs} setStyleSources={setStyleSources} onSave={saveStyleLibrary} busy={busy} onRun={categoryId => runWorkspaceWorkflow('style-analysis', categoryId ? { categoryId } : {})} location={location} history={{ push: navigate }} />} />
             <Route path="/script" element={<Navigate to="/edit" replace />} />
             <Route path="/edit" element={<EditFlowPage config={config} activeEditId={activeEditId} editFlowPlan={config?.editFlowPlan} editFlowRuns={config?.editFlowRuns} capabilities={capabilities} editRules={editRules} styleSources={styleSources} busy={busy} jobs={allJobs} onSaveEditUnit={saveEditUnitPayload} onSaveResolveSnapshot={saveEditResolveSnapshot} onRegisterResolveSnapshot={registerEditResolveSnapshot} onInstallResolveAssets={installEditResolveAssets} onRelinkResolveMedia={relinkEditResolveMedia} editResolveAssetsResult={editResolveAssetsResult} editResolveAssetsError={editResolveAssetsError} editRelinkResult={editRelinkResult} editRelinkError={editRelinkError} />} />
             <Route path="/timeline-export" element={<TimelineExportPage capabilities={capabilities} />} />
-            <Route path="/project" element={<ProjectPage services={services} busy={busy} onControlMl={controlMlService} reviews={reviews} setReviews={setReviews} resolveReview={resolveReview} currentProject={currentProject} />} />
+            <Route path="/project" element={<ProjectPage services={services} busy={busy} onControlMl={controlMlService} reviews={reviews} setReviews={setReviews} resolveReview={resolveReview} currentProject={currentProject} asrConfig={asrConfig} setAsrConfig={setAsrConfig} onSaveAsrConfig={saveAsrConfig} transcriptGlossary={transcriptGlossary} setTranscriptGlossary={setTranscriptGlossary} onSaveTranscriptGlossary={saveTranscriptGlossaryConfig} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
@@ -1036,11 +1126,11 @@ function AnalyzePage({ projectId, projectProgress, activeJobs, capabilities, bus
         <>
           <div className="monitor-toolbar-group">
 	          <Button
-	            type={canStartAnalyze ? 'primary' : 'disabled'}
-	            disabled={!canStartAnalyze}
+	            type={canStartAnalyze && model?.asr?.available !== false ? 'primary' : 'disabled'}
+	            disabled={!canStartAnalyze || model?.asr?.available === false}
 	            onClick={onRun}
 	          >
-	            {busy['job:analyze'] ? '启动中…' : analyzeJobs.length > 0 ? 'Analyze 运行中…' : '启动 Analyze'}
+	            {busy['job:analyze'] ? '启动中…' : analyzeJobs.length > 0 ? 'Analyze 运行中…' : model?.asr?.available === false ? 'ASR 配置阻塞' : '启动 Analyze'}
 	          </Button>
 	          </div>
 	          <div className="monitor-toolbar-meta">
@@ -1068,7 +1158,30 @@ function AnalyzeAfterMonitor({ model, projectProgress, analyzeJobs }) {
   const finePipeline = pipelines.find(item => item.kind === 'fine-scan') || null;
 
   return (
-    <div className="card-grid card-grid-two">
+    <>
+      <Card className={`panel analyze-asr-panel ${model?.asr?.available === false ? 'analyze-asr-panel-blocked' : ''}`}>
+        <div className="section-header">
+          <div>
+            <h2>ASR 运行配置</h2>
+            <p className="muted">这是实际运行路由，不是偏好顺序；所选 backend 不可用时不会改跑另一个 backend。</p>
+          </div>
+          <Tag color={model?.asr?.available === true ? 'success' : model?.asr?.available === false ? 'error' : 'default'}>
+            {model?.asr?.available === true ? '可用' : model?.asr?.available === false ? '已阻塞' : '待启动检查'}
+          </Tag>
+        </div>
+        <div className="asr-runtime-grid">
+          <div><span>配置 Backend</span><strong>{formatAsrBackend(model?.asr?.configuredBackend)}</strong></div>
+          <div><span>实际 Backend</span><strong>{formatAsrBackend(model?.asr?.actualBackend)}</strong></div>
+          <div><span>运行 Provider</span><strong>{model?.asr?.provider || '尚未装载'}</strong></div>
+          <div><span>时间戳</span><strong>{model?.asr?.timestampMode || '启动时检查'}</strong></div>
+          <div><span>平台运行时</span><strong>{model?.asr?.runtimeVariant || '启动时检查'}</strong></div>
+          <div><span>计算设备</span><strong>{model?.asr?.device || '启动时检查'}</strong></div>
+        </div>
+        {model?.asr?.modelRef ? <div className="asr-path-row"><span>ASR 模型</span><code title={model.asr.modelRef}>{model.asr.modelRef}</code><Tag color={model?.asr?.modelAvailable ? 'success' : 'error'}>{model?.asr?.modelAvailable ? 'ready' : 'missing'}</Tag></div> : null}
+        {model?.asr?.alignerModelRef ? <div className="asr-path-row"><span>Aligner</span><code title={model.asr.alignerModelRef}>{model.asr.alignerModelRef}</code><Tag color={model?.asr?.alignerAvailable ? 'success' : 'error'}>{model?.asr?.alignerAvailable ? 'ready' : 'missing'}</Tag></div> : null}
+        {model?.asr?.blocker ? <div className={model?.asr?.available === false ? 'error-banner' : 'pipeline-footnote'}>{model.asr.blocker}</div> : null}
+      </Card>
+      <div className="card-grid card-grid-two">
       <Card className="panel">
         <div className="section-header">
           <h2>Analyze 并发阶段</h2>
@@ -1126,8 +1239,15 @@ function AnalyzeAfterMonitor({ model, projectProgress, analyzeJobs }) {
           ))}
         </div>
       </Card>
-    </div>
+      </div>
+    </>
   );
+}
+
+function formatAsrBackend(value) {
+  if (value === 'qwen3') return 'Qwen3-ASR';
+  if (value === 'whisper') return 'Whisper';
+  return '尚未装载';
 }
 
 function AnalyzePipelineSection({ title, pipeline, emptyLabel }) {
@@ -1327,6 +1447,9 @@ function ChronologyPage({
   config,
   pharosContext,
   spans,
+  reviews,
+  setReviews,
+  resolveReview,
   capabilities,
   jobs,
   busy,
@@ -1362,10 +1485,11 @@ function ChronologyPage({
     && activeChronologyJobs.length === 0
     && spanRebuildCapability?.supported !== false;
   const speechReview = spans?.meta?.speechReview || {};
+  const isHumanTranscriptReview = speechReview.phase === 'human';
   const speechWindowAgentHandoffPath = speechReview.handoffPath || null;
   const speechReviewHandoffRef = speechWindowAgentHandoffPath
     || `projects/${projectId || '<projectId>'}/.tmp/chronology/speech-window-agent-handoff.md`;
-  const speechReviewAgentPrompt = `请按 handoff 处理这个 Kairos 项目的 speech-window review：读取 ${speechReviewHandoffRef}。作为主 Agent，按 asset/day 或稳定 span-id range 启用 subagents 审查 store/spans.json 的 speech/mixed candidates；每个 subagent shard 最多约 1500 条 candidates，尽量保持同一 asset 不跨 shard。合并 shard 后直接写最终 store/spans.json 与 store/spans.meta.json，清理无意义 ASR、裁切可用口播、同步 materialPatterns[3]，最后标记 status=fresh、speechReview.status=completed。不要重跑 span-builder，不要生成 chronology。`;
+  const speechReviewAgentPrompt = `请按 handoff 处理这个 Kairos 项目的 speech-window + transcript review：读取 ${speechReviewHandoffRef}${speechReview.reviewArtifactPath ? ` 和 ${speechReview.reviewArtifactPath}` : ''}。SubAgents 只返回结构化决策，主 Agent统一校验合并；只改 speech/mixed 文字与口播有效性，不得改 segment 时间/分段、asset-reports 或 visual spans。无词表/当前行程证据的新专名必须进入人工 Review。不要重跑 ASR、span-builder 或 chronology。`;
   const hasFreshSpans = Boolean(spans?.fresh);
   const canStartChronologyBuild = Boolean(projectId)
     && hasFreshSpans
@@ -1504,27 +1628,31 @@ function ChronologyPage({
         <ChronologyProgressPanel jobs={currentChronologyJobs} />
         {isPendingSpeechReview ? (
           <WorkflowPrompt
-            eyebrow="Speech Review Pending"
-            title="等待 Agent 裁切 Speech Windows"
-            body={`当前 spans 只是候选结果，包含 ${speechReview.candidateCount ?? 0} 个 speech/mixed candidates。请去 Codex/Agent 环境启用 subagents 执行 handoff；完成后回到这里运行“生成/刷新编年史”。`}
-            detail={(
+            eyebrow={isHumanTranscriptReview ? 'Human Review Pending' : 'Agent Review Pending'}
+            title={isHumanTranscriptReview ? '确认字幕歧义后再生成编年史' : '等待 Agent 联合审查口播与字幕'}
+            body={isHumanTranscriptReview
+              ? `Agent 已完成自动部分，还有 ${speechReview.pendingCorrectionCount ?? 0} 条字幕需要确认。最后一项确认后才会原子写入 fresh spans。`
+              : `当前有 ${speechReview.candidateCount ?? 0} 个 speech/mixed candidates。Agent 将同时完成 speech-window 裁切与 ASR 文字校对。`}
+            detail={!isHumanTranscriptReview ? (
               <div className="workflow-prompt-command-block">
                 <div className="workflow-prompt-command-label">回到 Codex/Agent 后复制这句：</div>
                 <pre className="workflow-prompt-command">{speechReviewAgentPrompt}</pre>
                 {speechWindowAgentHandoffPath ? <div>{`Handoff: ${speechWindowAgentHandoffPath}`}</div> : null}
+                {speechReview.reviewArtifactPath ? <div>{`Audit: ${speechReview.reviewArtifactPath}`}</div> : null}
               </div>
-            )}
-            actions={(
+            ) : null}
+            actions={!isHumanTranscriptReview ? (
               <Button
                 type="default"
                 onClick={() => window.navigator?.clipboard?.writeText?.(speechReviewAgentPrompt)?.catch?.(() => undefined)}
               >
                 复制 Agent 指令
               </Button>
-            )}
+            ) : null}
             tone="warn"
           />
         ) : null}
+        <TranscriptCorrectionReviewPanel reviews={reviews || []} setReviews={setReviews} onResolve={resolveReview} />
         {spans?.meta?.warnings?.length ? (
           <div className="pipeline-footnote">
             {`${activeChronologyJobs.length > 0 || blockedChronologyJobs.length > 0 ? '上次 spans warning：' : ''}${spans.meta.warnings.slice(0, 3).join('；')}`}
@@ -2495,7 +2623,21 @@ function TimelineExportPage({ capabilities }) {
   );
 }
 
-function ProjectPage({ services, busy, onControlMl, reviews, setReviews, resolveReview, currentProject }) {
+function ProjectPage({
+  services,
+  busy,
+  onControlMl,
+  reviews,
+  setReviews,
+  resolveReview,
+  currentProject,
+  asrConfig,
+  setAsrConfig,
+  onSaveAsrConfig,
+  transcriptGlossary,
+  setTranscriptGlossary,
+  onSaveTranscriptGlossary,
+}) {
   const runningCount = services.filter(service => service.status === 'running').length;
   return (
     <div className="route-page project-page">
@@ -2546,11 +2688,25 @@ function ProjectPage({ services, busy, onControlMl, reviews, setReviews, resolve
           </Button>
         </div>
       </Card>
+      <AsrConfigEditor
+        config={asrConfig}
+        setConfig={setAsrConfig}
+        onSave={onSaveAsrConfig}
+        busy={busy['workspace:asr-config']}
+        runtime={services.find(service => service.name === 'ml')?.health?.asr || null}
+      />
+      <TranscriptGlossaryEditor
+        config={transcriptGlossary}
+        setConfig={setTranscriptGlossary}
+        onSave={onSaveTranscriptGlossary}
+        busy={busy['workspace:transcript-glossary']}
+      />
       <ReviewQueuePanel
         reviews={reviews}
         setReviews={setReviews}
         onResolve={resolveReview}
         title="Review Queue"
+        filter={review => review.kind !== 'transcript-correction'}
       />
     </div>
   );

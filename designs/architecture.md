@@ -64,6 +64,17 @@ Pharos 当前协议新增一次性 `record-import.json`，并扩展 `trip_kind: 
 - `relink_all_roots` 按 enabled root priority 顺序串行执行 root relink，缺失 `rawLocalPath` 的 root 作为 per-root failure/skip 进入摘要，不阻塞其它可重链 root；任一 root 失败时整体 color job 仍应标记 failed
 - 返回摘要必须区分 media pool / timeline 的 relinked、missing target、unmapped、unreadable、old-path remaining 与 skipped non-file item，方便用户判断是盘符未挂载、路径候选不完整，还是 Resolve 工程中存在 compound/timeline 等非文件对象
 
+## 0.17 2026-09-04 ASR 后置 Agent 字幕校对
+
+字幕纠错并入现有 post span-builder `speech-window review`，不新增 Supervisor job、不暂停 Analyze、也不重新执行 ASR。正式链路为：`原始 ASR -> asset reports -> span-rebuild -> Agent 字幕/口播联合审查 -> 歧义人工确认 -> fresh spans -> chronology`。
+
+- `analysis/asset-reports/*.json` 与 ASR checkpoint 保持原始事实，`transcriptSegments[].startMs/endMs` 和分段不可被 Agent 或人工 Review 改写；最终校对文本只进入 speech/mixed `store/spans.json`，同一原始 segment 的所有 span 引用必须一致回写，visual span 不参与。
+- 工作区共享词表为 `config/transcript-glossary.json`，条目只包含唯一 `canonical`（正确写法）、可选 `pronunciation`（发音）与必填 `context`（使用语境）。`pronunciation` 只帮助 Agent 召回可能的同音候选，不是字符串替换规则；Agent 只有在完整句子、相邻口播与当前时间段行程符合 `context` 时才可采用该正确写法，否则进入人工确认。词表通过 Supervisor GET/PUT API 与 `/project` 紧凑编辑器维护；旧 `1.0` 的 `note` 只在迁移时转为保守语境，`aliases/category` 不继续进入正式 schema。
+- Agent 上下文由 fresh `analysis/pharos-context.json`、同时间段 manual itinerary、已修正 `asset.capturedAt + source time`、Pharos match 和已有地点提示组成；root clock offset 不得再次应用。每个候选只携带匹配事件、同日上下文与前后两小时相邻事件。有声明的 Pharos Trip 但 context 缺失或 fingerprint 过期时，span-builder 不生成 handoff，并提示先运行 Ingest/GPS 刷新。
+- 主 Agent 按 asset/day 分片并限制每个 SubAgent 约 1500 candidates；SubAgent 只返回结构化文字决策，主 Agent 校验时间边界、原文 hash、inputsHash、专名证据并统一合并。词表的发音只召回候选，必须同时满足词条 `context` 与完整口播/行程语境；当前行程支持的明显同音/近形专名和不改变原意的高置信普通词错误也可自动落地，没有词表/行程支持的新专名只能建议。
+- durable audit 写入 `analysis/transcript-reviews/<inputsHash>.json`。歧义项使用 Review Queue `kind=transcript-correction, stage=chronology`；存在未决项时 meta 保持 `pending-speech-review` 且 `speechReview.phase=human`。最后一项确认后服务端先全量校验 segment/hash，再批量写 spans、审计与显式勾选的词表提升，最后写 `status=fresh`，任一校验失败不得部分完成。
+- 历史确认只按 `assetId + segment 时间范围 + 原文 hash` 精确复用；ASR 原文变化时不得复用。人工处理期间的词表提升先记录在 audit，整轮结束时一次写入，避免中途改变 glossary hash。
+
 ## 0.16 2026-05-16 Span / Chronology 生成职责拆分补记
 
 当前 Analyze、Span 与 Chronology 的正式职责继续收窄：
@@ -585,11 +596,12 @@ Pharos 当前协议新增一次性 `record-import.json`，并扩展 `trip_kind: 
 1. `coarse-first analyze` 已把 ASR 纳入视频细扫前链路
    - coarse report 可携带 `transcript / transcriptSegments / speechCoverage`
    - 语音窗口会和视觉窗口一起进入 `interestingWindows`
-   - 当前默认 ASR 质量目标已经切到跨平台同一档：
-     - Apple Silicon 继续使用 `mlx-whisper / whisper-large-v3-turbo`
-     - Windows + CUDA 与 CPU fallback 当前优先使用完整可用的本地 `faster-whisper / large-v3`（CTranslate2）checkpoint，默认目标从 `turbo` 切回完整 `large-v3`
-     - 非 MLX 路径不允许在正式 `/asr` 请求里隐式等待远端模型下载；如果目标大模型只有不完整 cache，必须立刻回退到完整可用的本地 Whisper checkpoint
-     - Analyze caller 现在默认固定 `language='zh'`；TS 侧会把 Han 文本统一归一为简体中文，再写入 `report.transcript / transcriptSegments / spans`
+   - 工作区 `config/runtime.json.asr.backend` 显式选择 `qwen3 | whisper`，选择结果是严格运行路由而不是偏好；配置层不再保存模型路径、语言或分片长度：
+     - `qwen3` 有两个严格的平台实现：Apple Silicon/MLX 按约定读取 `models/Qwen3-ASR-1.7B-MLX-8bit` 与 `models/Qwen3-ForcedAligner-0.6B-8bit`；Windows + NVIDIA/CUDA 通过官方 `qwen-asr` Transformers backend 按约定读取 `models/Qwen3-ASR-1_7B` 与 `models/Qwen3-ForcedAligner-0_6B`。两端都强制生成 ForcedAligner 词级时间；当前平台的模型格式、Aligner、依赖、CUDA 或平台缺失时直接阻止 Analyze，不能尝试另一平台 checkpoint
+     - `whisper` 保留 Apple Silicon `mlx-whisper / whisper-large-v3-turbo` 与非 MLX `faster-whisper / large-v3`（CTranslate2）实现；Whisper 内部仍只解析完整的同 backend 本地 checkpoint
+     - `qwen3` 不可用时不得静默执行 Whisper，Whisper 不可用时也不得切换 Qwen；ML `/health`、Supervisor monitor 与 `/analyze` 返回或展示 configured/actual backend、runtime variant、device、model、aligner、availability 和 blocker，`/project` 只维护 Qwen3 / Whisper 后端选择
+     - Analyze caller 现在内部传入 `language='zh'`；这不是用户运行参数。Qwen 长音频按内部 `240s` 安全常量切分，避免超过 ForcedAligner 能力边界，也不在 Console 暴露。TS 侧会把 Han 文本统一归一为简体中文，再写入 `report.transcript / transcriptSegments / spans`
+     - 识别阶段不注入共享词表或行程热词：不得向 Qwen 传 `context`，也不得向 Whisper 传 `hotwords / initial_prompt`。`config/transcript-glossary.json` 每项只记录正确写法、可选发音和使用语境；发音只帮助后置 Agent 召回候选，采用与否由完整句子、相邻口播和当前时间段行程是否符合使用语境决定，让“瞬光 / 顺光”这类同音词由 review 阶段裁决
      - Apple Silicon / MLX 与 `faster-whisper` 路径都会请求词级时间戳；TS 继续把这些词级时间重建为更适合剪辑消费的 refined transcript segments
      - TS 侧统一重建 refined transcript segments：有 `words` 时按词级停顿细分，没有 `words` 时按 segment 文本的标点与长度做保守细分
      - 简体归一只作用于 Han 文本；英文、数字和其他脚本保持原样，不做 LLM 文本纠错
@@ -700,14 +712,14 @@ Pharos 当前协议新增一次性 `record-import.json`，并扩展 `trip_kind: 
    - `asset report` 新增 `fineScanCompletedAt / fineScanSliceCount`，用于恢复 `fine-scan`
    - `retry / resume` 后 ETA 改为按当前阶段重新估算，且当前阶段完成样本少于 `3` 条时不显示 ETA
    - 新 analyze job 的首个 live stage 必须由真实待办推导：如果 `pendingAssets=0` 但存在待恢复的 fine-scan report/checkpoint，首个 progress 写入应为 `fine-scan-prefetch`，而不是无条件回到 `prepare`
-   - ML server 会在 `VLM` 和 `Whisper` 之间互斥卸载，避免两套模型同时常驻显存
-   - `audio-analysis -> finalize` 的正式切换也遵守同一条规则：进入 `VLM` 前必须先卸载 `Whisper`，不再为单素材热路径保留双驻留
+   - ML server 会在 `VLM` 和当前显式选择的 ASR backend 之间互斥卸载，避免两套模型同时常驻显存
+   - `audio-analysis -> finalize` 的正式切换也遵守同一条规则：进入 `VLM` 前必须先卸载当前 ASR backend，不再为单素材热路径保留双驻留
    - 当 unified `finalize` 返回 invalid JSON 时，Analyze 当前会按更高 VLM token 预算自动重试；默认重试序列为 `512 -> 768 -> 1152`
    - `finalize` prompt 会限制 `decision_reasons` 为短列表，优先保住结构化 JSON 完整性而不是冗长枚举
    - 保护音轨只在资产已绑定 `protectionAudio` 时进入 `audio-analysis` 路由决策；当前正式策略是 embedded / protection 双健康检查后只跑一侧 ASR
    - 如果 protection 被选中，它会直接成为正式 `report.transcriptSegments` 来源，而不再只是 finalize prompt 的辅助信号
-   - 当前默认非 MLX ASR 会优先解析完整可用的本地 `faster-whisper large-v3` / CTranslate2 checkpoint；若只发现不完整 cache，则直接回退到完整可用的本地 Whisper checkpoint，避免 Analyze 因首请求下载卡死
-   - 当前默认非 MLX ASR 会在同一常驻 `faster-whisper` 模型上顺序处理活跃素材，优先保证 `large-v3` 文本质量与词级时间戳稳定性
+   - 当且仅当工作区显式选择 `whisper` 时，非 MLX Whisper 实现才会优先解析完整可用的本地 `faster-whisper large-v3` / CTranslate2 checkpoint；同一 Whisper backend 内可选择完整本地 checkpoint，但不得承担 Qwen3 的替代执行
+   - 非 MLX Whisper 实现在同一常驻 `faster-whisper` 模型上顺序处理活跃素材，优先保证 `large-v3` 文本质量与词级时间戳稳定性
    - 当前 VLM 默认模型改为 `Qwen3.5-9B`：
      - Apple Silicon / MLX 本地优先目录：`models/Qwen3.5-9B-MLX-8bit`
      - Apple Silicon / MLX 默认远端 ID：`mlx-community/Qwen3.5-9B-MLX-8bit`

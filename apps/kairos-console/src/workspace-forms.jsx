@@ -1,4 +1,5 @@
 import React from 'react';
+import { Checkbox, Drawer, Table } from 'antd';
 import { Button, Card, Divider, Modal, Tag } from './ui-compat.tsx';
 
 const COLOR_SOURCE_PROFILE_OPTIONS = [
@@ -2899,6 +2900,214 @@ export function ReviewQueuePanel({
   );
 }
 
+export function TranscriptGlossaryEditor({ config, setConfig, onSave, busy }) {
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+  const [editingIndex, setEditingIndex] = React.useState(-1);
+  const [draft, setDraft] = React.useState(null);
+  const [validationError, setValidationError] = React.useState('');
+  const entries = config?.entries || [];
+
+  function openEntry(index) {
+    const entry = index >= 0 ? entries[index] : null;
+    setEditingIndex(index);
+    setDraft(entry
+      ? { ...entry }
+      : { canonical: '', pronunciation: '', context: '' });
+    setValidationError('');
+    setDrawerOpen(true);
+  }
+
+  function commitEntry() {
+    const canonical = draft?.canonical?.trim() || '';
+    const context = draft?.context?.trim() || '';
+    if (!canonical) {
+      setValidationError('正确写法不能为空。');
+      return;
+    }
+    if (!context) {
+      setValidationError('使用语境不能为空。');
+      return;
+    }
+    const canonicalKey = canonical.normalize('NFKC').toLocaleLowerCase('zh-CN');
+    const conflict = entries.some((entry, index) => (
+      index !== editingIndex
+      && entry.canonical.normalize('NFKC').toLocaleLowerCase('zh-CN') === canonicalKey
+    ));
+    if (conflict) {
+      setValidationError('正确写法必须唯一。');
+      return;
+    }
+    const next = {
+      canonical,
+      pronunciation: draft?.pronunciation?.trim() || undefined,
+      context,
+    };
+    setConfig(current => {
+      const currentEntries = [...(current?.entries || [])];
+      if (editingIndex >= 0) currentEntries[editingIndex] = next;
+      else currentEntries.push(next);
+      return { schemaVersion: '2.0', entries: currentEntries };
+    });
+    setDrawerOpen(false);
+  }
+
+  const columns = [
+    { title: '正确写法', dataIndex: 'canonical', width: 220, render: value => <strong>{value}</strong> },
+    { title: '发音', dataIndex: 'pronunciation', width: 180, render: value => value || <span className="muted">自动判断</span> },
+    { title: '使用语境', dataIndex: 'context' },
+    { title: '', key: 'action', width: 84, render: (_, entry, index) => <Button type="default" size="small" onClick={() => openEntry(index)}>编辑</Button> },
+  ];
+
+  return (
+    <Card className="panel transcript-glossary-panel">
+      <SectionHeader
+        title="字幕共享词表"
+        onSave={onSave}
+        busy={busy}
+        actions={<Button type="default" onClick={() => openEntry(-1)}>新增词条</Button>}
+      />
+      <p className="muted">只供 ASR 后置 Agent 校对，不会作为热词送入 Qwen 或 Whisper。发音只用来找可能的同音词，是否采用由完整句子与当前行程语境决定。</p>
+      <Table
+        rowKey="canonical"
+        size="small"
+        pagination={false}
+        dataSource={entries}
+        columns={columns}
+        locale={{ emptyText: '尚未添加字幕词条' }}
+      />
+      <Drawer
+        title={editingIndex >= 0 ? '编辑字幕词条' : '新增字幕词条'}
+        size={460}
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+      >
+        {draft ? (
+          <div className="drawer-form-stack">
+            <Field label="正确写法" value={draft.canonical} onChange={value => setDraft(current => ({ ...current, canonical: value }))} />
+            <Field label="发音（可选）" value={draft.pronunciation || ''} placeholder="例如：shùn guāng" onChange={value => setDraft(current => ({ ...current, pronunciation: value }))} />
+            <TextAreaField label="使用语境" value={draft.context || ''} placeholder="例如：自我介绍、人物介绍时" onChange={value => setDraft(current => ({ ...current, context: value }))} rows={5} />
+            {validationError ? <div className="error-banner">{validationError}</div> : null}
+            <div className="actions">
+              {editingIndex >= 0 ? (
+                <Button
+                  type="error"
+                  onClick={() => {
+                    if (!window.confirm(`删除词条“${entries[editingIndex]?.canonical}”？`)) return;
+                    setConfig(current => ({
+                      schemaVersion: '2.0',
+                      entries: (current?.entries || []).filter((_, index) => index !== editingIndex),
+                    }));
+                    setDrawerOpen(false);
+                  }}
+                >
+                  删除
+                </Button>
+              ) : null}
+              <Button type="primary" onClick={commitEntry}>应用到草稿</Button>
+            </div>
+          </div>
+        ) : null}
+      </Drawer>
+    </Card>
+  );
+}
+
+export function AsrConfigEditor({ config, setConfig, onSave, busy, runtime }) {
+  if (!config) return null;
+  const actualBackend = runtime?.actualBackend || null;
+  const matches = !actualBackend || actualBackend === config.backend;
+  const available = runtime ? runtime.available === true && matches : null;
+
+  return (
+    <Card className="panel asr-config-panel">
+      <SectionHeader title="ASR 全局配置" onSave={onSave} busy={busy} />
+      <p className="muted">这里只选择实际识别后端。模型会按当前平台从约定目录自动发现；所选后端不可用时 Analyze 会直接阻塞，不会静默切换，也不会注入热词。</p>
+      <div className="asr-backend-select">
+        <SelectField
+          label="语音识别"
+          value={config.backend}
+          onChange={backend => setConfig(current => ({ ...current, backend }))}
+          options={[
+            { value: 'qwen3', label: 'Qwen3' },
+            { value: 'whisper', label: 'Whisper' },
+          ]}
+        />
+      </div>
+      <div className="asr-config-runtime">
+        <div><span>配置</span><strong>{config.backend === 'qwen3' ? 'Qwen3-ASR' : 'Whisper'}</strong></div>
+        <div><span>实际</span><strong>{actualBackend === 'qwen3' ? 'Qwen3-ASR' : actualBackend === 'whisper' ? 'Whisper' : 'ML 未启动'}</strong></div>
+        <div><span>运行时</span><strong>{runtime?.runtimeVariant || '待启动检查'}</strong></div>
+        <div><span>设备</span><strong>{runtime?.device || '待启动检查'}</strong></div>
+        <Tag color={available === true ? 'success' : available === false ? 'error' : 'default'}>
+          {available === true ? '运行可用' : available === false ? '运行阻塞' : '待启动检查'}
+        </Tag>
+      </div>
+      {runtime?.modelRef ? <div className="asr-path-row"><span>实际模型</span><code title={runtime.modelRef}>{runtime.modelRef}</code></div> : null}
+      {runtime?.alignerModelRef ? <div className="asr-path-row"><span>实际 Aligner</span><code title={runtime.alignerModelRef}>{runtime.alignerModelRef}</code></div> : null}
+      {runtime?.blocker || !matches ? <div className="error-banner">{!matches ? `ASR backend 不一致：配置 ${config.backend}，实际 ${actualBackend}` : runtime.blocker}</div> : null}
+    </Card>
+  );
+}
+
+export function TranscriptCorrectionReviewPanel({ reviews, setReviews, onResolve }) {
+  const items = reviews.filter(review => review.kind === 'transcript-correction' && review.status === 'open');
+  const [activeId, setActiveId] = React.useState('');
+  const [promoteToGlossary, setPromoteToGlossary] = React.useState(false);
+  const active = items.find(item => item.id === activeId) || null;
+  const finalField = active?.fields?.find(field => field.key === 'finalText');
+  const originalText = active?.currentValue?.originalText || '';
+  const suggestedText = active?.suggestedValue?.suggestedText || finalField?.suggestedValue || originalText;
+
+  function updateFinalText(value) {
+    if (!active) return;
+    updateReviewField(reviews, active.id, 'finalText', value, setReviews);
+  }
+
+  function submit(value) {
+    if (!active) return;
+    const finalText = String(value || '').trim();
+    if (!finalText) return;
+    onResolve(active.id, { finalText, promoteToGlossary });
+    setActiveId('');
+    setPromoteToGlossary(false);
+  }
+
+  const columns = [
+    { title: '素材', key: 'asset', width: 190, render: (_, item) => item.title?.replace(/^字幕校对 · /u, '') || item.id },
+    { title: '原文', key: 'original', render: (_, item) => item.currentValue?.originalText || '—' },
+    { title: '建议', key: 'suggested', render: (_, item) => item.suggestedValue?.suggestedText || '—' },
+    { title: '', key: 'action', width: 88, render: (_, item) => <Button type="default" size="small" onClick={() => { setActiveId(item.id); setPromoteToGlossary(false); }}>确认</Button> },
+  ];
+
+  if (items.length === 0) return null;
+  return (
+    <Card className="panel transcript-review-panel">
+      <div className="section-header">
+        <div><h2>字幕待确认</h2><p className="muted">只确认文字；segment 时间与分段保持不变。</p></div>
+        <Tag color="warning">{`${items.length} 条`}</Tag>
+      </div>
+      <Table rowKey="id" size="small" pagination={false} dataSource={items} columns={columns} scroll={{ y: 320 }} />
+      <Drawer title="确认字幕纠错" size={520} open={Boolean(active)} onClose={() => setActiveId('')}>
+        {active ? (
+          <div className="drawer-form-stack">
+            <div className="transcript-comparison-row"><span>ASR 原文</span><strong>{originalText}</strong></div>
+            <div className="transcript-comparison-row"><span>Agent 建议</span><strong>{suggestedText}</strong></div>
+            {active.currentValue?.evidence ? <TextAreaField label="证据" value={active.currentValue.evidence} readOnly rows={3} onChange={() => undefined} /> : null}
+            {active.currentValue?.context ? <TextAreaField label="当前行程上下文" value={active.currentValue.context} readOnly rows={5} onChange={() => undefined} /> : null}
+            <TextAreaField label="最终文本" value={finalField?.value || ''} onChange={updateFinalText} rows={4} />
+            <Checkbox checked={promoteToGlossary} onChange={event => setPromoteToGlossary(event.target.checked)}>本轮全部确认后加入共享词表（沿用本次口播语境）</Checkbox>
+            <div className="actions transcript-review-actions">
+              <Button type="default" onClick={() => submit(originalText)}>保留原文</Button>
+              <Button type="default" onClick={() => submit(suggestedText)}>采用建议</Button>
+              <Button type="primary" onClick={() => submit(finalField?.value)}>确认手动文本</Button>
+            </div>
+          </div>
+        ) : null}
+      </Drawer>
+    </Card>
+  );
+}
+
 export function SectionHeader({ title, onSave, busy, saveDisabled = false, actions = null }) {
   return (
     <div className="section-header">
@@ -2979,11 +3188,11 @@ export function SelectField({ label, value, onChange, options, disabled = false 
   );
 }
 
-export function TextAreaField({ label, value, onChange, rows = 4, disabled = false }) {
+export function TextAreaField({ label, value, onChange, rows = 4, disabled = false, readOnly = false, placeholder = '' }) {
   return (
     <label className="field field-area">
       <span>{label}</span>
-      <textarea value={value} disabled={disabled} onChange={event => onChange(event.target.value)} rows={rows} />
+      <textarea value={value} disabled={disabled} readOnly={readOnly} placeholder={placeholder} onChange={event => onChange(event.target.value)} rows={rows} />
     </label>
   );
 }

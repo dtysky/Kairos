@@ -186,6 +186,27 @@ export const ITranscriptSegment = z.object({
 });
 export type ITranscriptSegment = z.infer<typeof ITranscriptSegment>;
 
+export const ITranscriptGlossaryEntry = z.object({
+  canonical: z.string(),
+  pronunciation: z.string().optional(),
+  context: z.string(),
+});
+export type ITranscriptGlossaryEntry = z.infer<typeof ITranscriptGlossaryEntry>;
+
+export const ITranscriptGlossaryConfig = z.object({
+  schemaVersion: z.literal('2.0'),
+  entries: z.array(ITranscriptGlossaryEntry).default([]),
+});
+export type ITranscriptGlossaryConfig = z.infer<typeof ITranscriptGlossaryConfig>;
+
+export const EAsrBackend = z.enum(['qwen3', 'whisper']);
+export type EAsrBackend = z.infer<typeof EAsrBackend>;
+
+export const IWorkspaceAsrConfig = z.object({
+  backend: EAsrBackend,
+}).strict();
+export type IWorkspaceAsrConfig = z.infer<typeof IWorkspaceAsrConfig>;
+
 export const EDerivedTrackOriginType = z.enum(['embedded-derived', 'manual-itinerary-derived']);
 export type EDerivedTrackOriginType = z.infer<typeof EDerivedTrackOriginType>;
 
@@ -364,8 +385,14 @@ export const ISpansMeta = z.object({
   spanCount: z.number().int().nonnegative(),
   speechReview: z.object({
     status: z.enum(['not-required', 'pending', 'completed']).optional(),
+    phase: z.enum(['agent', 'human']).optional(),
     candidateCount: z.number().int().nonnegative().optional(),
+    autoCorrectionCount: z.number().int().nonnegative().optional(),
+    pendingCorrectionCount: z.number().int().nonnegative().optional(),
     handoffPath: z.string().optional(),
+    reviewArtifactPath: z.string().optional(),
+    glossaryHash: z.string().optional(),
+    tripContextHash: z.string().optional(),
     updatedAt: z.string().optional(),
   }).optional(),
   warnings: z.array(z.string()).default([]),
@@ -2197,6 +2224,7 @@ export const EReviewStage = z.enum([
   'ingest',
   'gps-refresh',
   'analyze',
+  'chronology',
   'style-analysis',
   'script',
   'timeline',
@@ -2209,12 +2237,105 @@ export type EReviewStatus = z.infer<typeof EReviewStatus>;
 
 export const EReviewItemKind = z.enum([
   'capture-time-correction',
+  'transcript-correction',
   'script-review',
   'agent-approval',
   'style-source-warning',
   'generic',
 ]);
 export type EReviewItemKind = z.infer<typeof EReviewItemKind>;
+
+export const ETranscriptReviewEvidenceSource = z.enum([
+  'glossary',
+  'pharos',
+  'manual-itinerary',
+  'place-hint',
+  'agent-knowledge',
+  'history',
+]);
+export type ETranscriptReviewEvidenceSource = z.infer<typeof ETranscriptReviewEvidenceSource>;
+
+export const ITranscriptReviewEvidence = z.object({
+  source: ETranscriptReviewEvidenceSource,
+  value: z.string(),
+  ref: z.string().optional(),
+});
+export type ITranscriptReviewEvidence = z.infer<typeof ITranscriptReviewEvidence>;
+
+export const ITranscriptReviewContextEvent = z.object({
+  source: z.enum(['pharos', 'manual-itinerary', 'place-hint']),
+  id: z.string(),
+  title: z.string().optional(),
+  location: z.string().optional(),
+  startAt: z.string().optional(),
+  endAt: z.string().optional(),
+  note: z.string().optional(),
+});
+export type ITranscriptReviewContextEvent = z.infer<typeof ITranscriptReviewContextEvent>;
+
+export const ETranscriptReviewItemStatus = z.enum([
+  'pending-agent',
+  'auto-applied',
+  'pending-human',
+  'accepted',
+  'edited',
+  'kept-original',
+]);
+export type ETranscriptReviewItemStatus = z.infer<typeof ETranscriptReviewItemStatus>;
+
+export const ITranscriptReviewItem = z.object({
+  id: z.string(),
+  assetId: z.string(),
+  assetDisplayName: z.string().optional(),
+  assetCapturedAt: z.string().optional(),
+  spanIds: z.array(z.string()).min(1),
+  spanType: ESliceType.optional(),
+  semanticKind: EWindowSemantic.optional(),
+  originalSpanTranscript: z.string().optional(),
+  startMs: z.number().nonnegative(),
+  endMs: z.number().nonnegative(),
+  originalText: z.string(),
+  originalTextHash: z.string(),
+  status: ETranscriptReviewItemStatus,
+  suggestedText: z.string().optional(),
+  finalText: z.string().optional(),
+  confidence: z.number().min(0).max(1).optional(),
+  containsProperNoun: z.boolean().optional(),
+  syntheticSegment: z.boolean().optional(),
+  evidence: z.array(ITranscriptReviewEvidence).default([]),
+  contextEvents: z.array(ITranscriptReviewContextEvent).default([]),
+  promoteToGlossary: z.boolean().optional(),
+  reviewedAt: z.string().optional(),
+});
+export type ITranscriptReviewItem = z.infer<typeof ITranscriptReviewItem>;
+
+export const ITranscriptReviewArtifact = z.object({
+  schemaVersion: z.literal('1.0'),
+  projectId: z.string(),
+  inputsHash: z.string(),
+  glossaryHash: z.string(),
+  tripContextHash: z.string(),
+  status: z.enum(['pending-agent', 'pending-human', 'completed']),
+  generatedAt: z.string(),
+  updatedAt: z.string(),
+  items: z.array(ITranscriptReviewItem).default([]),
+});
+export type ITranscriptReviewArtifact = z.infer<typeof ITranscriptReviewArtifact>;
+
+export const ITranscriptAgentDecision = z.object({
+  itemId: z.string(),
+  inputsHash: z.string(),
+  originalTextHash: z.string(),
+  startMs: z.number().nonnegative(),
+  endMs: z.number().nonnegative(),
+  action: z.enum(['auto-apply', 'needs-human', 'keep-original']),
+  suggestedText: z.string().optional(),
+  finalText: z.string().optional(),
+  confidence: z.number().min(0).max(1),
+  containsProperNoun: z.boolean().default(false),
+  evidence: z.array(ITranscriptReviewEvidence).default([]),
+});
+export type ITranscriptAgentDecision = z.infer<typeof ITranscriptAgentDecision>;
 
 export const IReviewField = z.object({
   key: z.string(),
@@ -2238,6 +2359,12 @@ export const IReviewItem = z.object({
   relatedJobId: z.string().optional(),
   currentValue: z.record(z.string()).optional(),
   suggestedValue: z.record(z.string()).optional(),
+  transcriptCorrection: z.object({
+    artifactPath: z.string(),
+    itemId: z.string(),
+    inputsHash: z.string(),
+    originalTextHash: z.string(),
+  }).optional(),
   fields: z.array(IReviewField).default([]),
   note: z.string().optional(),
   createdAt: z.string(),

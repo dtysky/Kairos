@@ -9,8 +9,10 @@ import {
   listWorkspaceProjects,
   loadFineScanCheckpoint,
   loadStyleSourcesConfig,
+  loadWorkspaceAsrConfig,
 } from '../store/index.js';
 import { listJobRecords, type ISupervisorJobRecord } from './state.js';
+import { getMlServiceStatus } from './runtime.js';
 
 export interface IMonitorChip {
   label: string;
@@ -94,11 +96,28 @@ export interface IMonitorModel {
   metrics: IMonitorMetric[];
   progress: IMonitorProgress;
   pipelines?: IMonitorPipelineSummary[];
+  asr?: IMonitorAsrStatus;
   sections?: IMonitorSection[];
   stepDefinitions: IMonitorStepDefinition[];
   outputs: IMonitorOutput[];
   raw: unknown;
   latestJob: ISupervisorJobRecord | null;
+}
+
+export interface IMonitorAsrStatus {
+  configuredBackend: 'qwen3' | 'whisper';
+  actualBackend?: 'qwen3' | 'whisper' | null;
+  provider?: string | null;
+  runtimeBackend?: string;
+  runtimeVariant?: string;
+  device?: string;
+  available: boolean | null;
+  modelRef?: string | null;
+  modelAvailable?: boolean;
+  alignerModelRef?: string | null;
+  alignerAvailable?: boolean | null;
+  timestampMode?: string | null;
+  blocker?: string | null;
 }
 
 interface IAnalyzeProgressPayload {
@@ -251,6 +270,11 @@ export async function buildAnalyzeMonitorModel(
   const progress = await readJsonFile<IAnalyzeProgressPayload>(progressPath);
   const projectEntry = (await listWorkspaceProjects(workspaceRoot))
     .find(item => item.projectId === projectId);
+  const [asrConfig, mlService] = await Promise.all([
+    loadWorkspaceAsrConfig(workspaceRoot),
+    getMlServiceStatus(workspaceRoot),
+  ]);
+  const asr = buildAnalyzeAsrStatus(asrConfig.backend, mlService);
   const jobs = await listJobRecords(workspaceRoot);
   const latestJob = jobs.find(job => job.projectId === projectId && isAnalyzeMonitorJob(job)) ?? null;
   const liveJob = jobs.find(job =>
@@ -348,6 +372,10 @@ export async function buildAnalyzeMonitorModel(
       { label: `项目 ${projectName}` },
       { label: `流程 ${flowLabel}` },
       { label: statusLabel(monitorStatus), tone: toneForStatus(monitorStatus) },
+      {
+        label: `ASR ${asr.configuredBackend}`,
+        tone: asr.available === true ? 'ok' : asr.available === false ? 'error' : 'default',
+      },
     ],
     metrics: [
       {
@@ -386,6 +414,7 @@ export async function buildAnalyzeMonitorModel(
       updatedAt: progress?.updatedAt ?? latestJob?.updatedAt,
     },
     pipelines: pipelines.length > 0 ? pipelines : undefined,
+    asr,
     stepDefinitions,
     outputs: await Promise.all([
       outputItem('资产报告目录', join(projectRoot, 'analysis', 'asset-reports'), '每条素材的正式分析结果。', reportCount > 0),
@@ -396,6 +425,56 @@ export async function buildAnalyzeMonitorModel(
     raw: progress,
     latestJob,
   };
+}
+
+function buildAnalyzeAsrStatus(
+  configuredBackend: 'qwen3' | 'whisper',
+  mlService: Awaited<ReturnType<typeof getMlServiceStatus>>,
+): IMonitorAsrStatus {
+  if (mlService.status !== 'running') {
+    return {
+      configuredBackend,
+      actualBackend: null,
+      available: null,
+      blocker: 'ML 服务尚未运行；启动 Analyze 时会严格检查所选 ASR backend，不会切换到其他 backend。',
+    };
+  }
+  const health = isPlainRecord(mlService.health) ? mlService.health : {};
+  const runtime = isPlainRecord(health.asr) ? health.asr : null;
+  if (!runtime) {
+    return {
+      configuredBackend,
+      actualBackend: null,
+      available: false,
+      blocker: '当前 ML 服务未上报 ASR backend 运行状态，请重启 ML 服务。',
+    };
+  }
+  const actualBackend = runtime.actualBackend === 'qwen3' || runtime.actualBackend === 'whisper'
+    ? runtime.actualBackend
+    : null;
+  const matches = actualBackend === configuredBackend;
+  const runtimeAvailable = runtime.available === true;
+  return {
+    configuredBackend,
+    actualBackend,
+    provider: typeof runtime.provider === 'string' ? runtime.provider : null,
+    runtimeBackend: typeof runtime.runtimeBackend === 'string' ? runtime.runtimeBackend : undefined,
+    runtimeVariant: typeof runtime.runtimeVariant === 'string' ? runtime.runtimeVariant : undefined,
+    device: typeof runtime.device === 'string' ? runtime.device : undefined,
+    available: runtimeAvailable && matches,
+    modelRef: typeof runtime.modelRef === 'string' ? runtime.modelRef : null,
+    modelAvailable: runtime.modelAvailable === true,
+    alignerModelRef: typeof runtime.alignerModelRef === 'string' ? runtime.alignerModelRef : null,
+    alignerAvailable: typeof runtime.alignerAvailable === 'boolean' ? runtime.alignerAvailable : null,
+    timestampMode: typeof runtime.timestampMode === 'string' ? runtime.timestampMode : null,
+    blocker: !matches
+      ? `ASR backend 不一致：配置 ${configuredBackend}，实际 ${actualBackend ?? 'unknown'}。`
+      : (typeof runtime.blocker === 'string' ? runtime.blocker : null),
+  };
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
 function isAnalyzeMonitorJob(job: ISupervisorJobRecord): boolean {

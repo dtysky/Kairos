@@ -23,7 +23,7 @@ Full deployment guide for a new device. Kairos has three subsystems:
 | Subsystem | Runtime | Location | Required |
 |-----------|---------|----------|----------|
 | TypeScript core | Node.js >= 16 + pnpm | `./` (root) | Always |
-| ML server | Python >= 3.10 + uv/pip | `ml-server/` | For media analysis (Whisper ASR + VLM) |
+| ML server | Python >= 3.10 + uv/pip | `ml-server/` | For media analysis (Qwen3/Whisper ASR + VLM) |
 | Jianying draft backend | Python >= 3.8 + vendored `.venv` | `vendor/pyJianYingDraft/` | Used by Kairos local export for Jianying draft generation |
 
 ### 平台 ML 后端差异
@@ -31,7 +31,7 @@ Full deployment guide for a new device. Kairos has three subsystems:
 | Platform | ASR | CLIP | VLM | 安装方式 |
 |----------|-----|------|-----|---------|
 | macOS Apple Silicon | **mlx-whisper** (`whisper-large-v3-turbo`) | **mlx_clip** | **mlx-vlm** (Qwen3.5-9B-MLX-8bit) | `pip install -e ".[mlx]"` + `./scripts/ml-models-init.sh` |
-| Windows + NVIDIA GPU | **faster-whisper** (`large-v3`) | open-clip-torch (CUDA) | transformers Qwen3.5-9B (CUDA) | `pip install -e ".[cuda]"` |
+| Windows + NVIDIA GPU | **Qwen3-ASR + ForcedAligner** (selected) or faster-whisper | open-clip-torch (CUDA) | transformers Qwen3.5-9B (CUDA) | `pip install -e ".[cuda]"` |
 | Linux / macOS Intel | **faster-whisper** (`large-v3`) | open-clip-torch (CPU) | transformers Qwen3.5-9B (CPU) | `pip install -e ".[cuda]"` |
 
 Apple Silicon 上全栈使用 MLX，**不需要 PyTorch**。后端自动检测，也可通过 `KAIROS_ML_BACKEND=mlx|torch` 强制指定。
@@ -107,13 +107,25 @@ uv pip install --python ../.venv-ml/bin/python -e ".[mlx]"
 
 安装完成后，运行初始化脚本预下载所有 MLX 模型到项目本地 `models/` 目录（见 Step 3d）。
 
+如果工作区 `config/runtime.json.asr.backend` 选择 `qwen3`，Apple Silicon 还必须确认约定目录 `models/Qwen3-ASR-1.7B-MLX-8bit/` 与 `models/Qwen3-ForcedAligner-0.6B-8bit/` 是完整 MLX checkpoint，并包含 `config.json / tokenizer_config.json / preprocessor_config.json / *.safetensors`。这些路径由运行时按约定自动发现，不在 Console 配置。`mlx-audio` 已属于 `.[mlx]` 正式依赖；缺少任一模型或依赖时 Analyze 应显示 blocker，不得改跑 Whisper。
+
 **Windows + NVIDIA GPU：**
 
-```bash
-cd ml-server
-uv venv && uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
-uv pip install -e ".[cuda]"
+```powershell
+# 在 Kairos 仓库根目录执行；scripts/ml-server.ps1 会读取这个环境。
+uv venv .venv-ml --python 3.12
+uv pip install --python .\.venv-ml\Scripts\python.exe torch torchvision --index-url https://download.pytorch.org/whl/cu124
+uv pip install --python .\.venv-ml\Scripts\python.exe -e "ml-server[cuda]"
 ```
+
+当 `config/runtime.json.asr.backend` 选择 `qwen3` 时，还要把官方 PyTorch checkpoint 原样放到 Windows 仓库约定目录：
+
+```text
+models/Qwen3-ASR-1_7B/
+models/Qwen3-ForcedAligner-0_6B/
+```
+
+这两个目录由 Windows 运行时自动发现，至少必须包含 `config.json`、`tokenizer_config.json`、`preprocessor_config.json` 与完整 `*.safetensors`/index。Windows 使用官方 `qwen-asr` Transformers backend、`torch.bfloat16`（不支持时 `float16`）和 `cuda:0`；不支持 CPU Qwen3 fallback，也不会读取 MLX checkpoint。`.[cuda]` 已包含 `qwen-asr`；若包、CUDA、ASR checkpoint 或 ForcedAligner 任一缺失，`/analyze` 会展示明确 blocker。
 
 在 `Windows + NVIDIA GPU` 上，建议直接使用 **Windows 原生 Python 环境** 启动 `kairos-ml`，
 让推理直接走 `CUDA`。不要从 WSL 拉起推理服务。
