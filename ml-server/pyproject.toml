@@ -21,19 +21,27 @@ mlx = [
 
 # CUDA / CPU: faster-whisper ASR + PyTorch VLM/CLIP stack
 cuda = [
-    "qwen-asr==0.0.6",
     "faster-whisper==1.2.1",
     "ctranslate2==4.6.0",
     "setuptools<81",
     "torch",
     "torchvision",
-    "transformers",
+    "transformers>=5.4,<6",
     "accelerate",
     "einops",
     "modelscope",
     "open-clip-torch",
     "tiktoken",
     "transformers_stream_generator==0.0.4",
+]
+
+# Windows Qwen3-ASR is isolated because qwen-asr 0.0.6 pins
+# transformers==4.57.6 while Qwen3.5 VLM requires Transformers 5.x.
+asr-cuda = [
+    "qwen-asr==0.0.6",
+    "torch",
+    "accelerate",
+    "setuptools<81",
 ]
 
 ocr = ["paddleocr", "paddlepaddle"]

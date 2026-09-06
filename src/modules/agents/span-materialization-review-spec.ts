@@ -63,6 +63,13 @@ export function buildSpanMaterializationReviewMlPrompt(packet: IAgentPacket): st
   const validationFeedback = Array.isArray(content?.validationFeedback)
     ? content.validationFeedback
     : [];
+  if (validationFeedback.length > 0 && expectedRowCount === 1) {
+    return buildFocusedSingleItemCorrectionPrompt({
+      item: items[0],
+      validationFeedback,
+      attempt: content?.attempt,
+    });
+  }
   return [
     buildSpanMaterializationReviewSystemPrompt(),
     '',
@@ -77,5 +84,24 @@ export function buildSpanMaterializationReviewMlPrompt(packet: IAgentPacket): st
     validationFeedback.length > 0
       ? `validationFeedback: ${JSON.stringify(validationFeedback)}`
       : '',
+  ].join('\n');
+}
+
+function buildFocusedSingleItemCorrectionPrompt(input: {
+  item: unknown;
+  validationFeedback: unknown[];
+  attempt: unknown;
+}): string {
+  const schema = buildSpanMaterializationReviewOutputSchema();
+  return [
+    '你是 span materialPatterns 的单行 JSON 纠错器。',
+    '任务：根据当前 item 与机器校验结果，重新生成一行满足固定 schema 的完整数据。',
+    '事实边界：只能使用 currentItem 的 type、semanticKind、transcript、transcriptSegments、visualObservation；不能决定 speech keep/drop、裁切或 visual-only。',
+    `attempt: ${String(input.attempt ?? 1)}`,
+    `currentItem: ${JSON.stringify(input.item ?? {})}`,
+    `validationFeedback: ${JSON.stringify(input.validationFeedback)}`,
+    `schema: ${JSON.stringify(schema)}`,
+    '约束：顶层和内层数组均只有一行；该行恰好七个非空中文短标签；slot 4 等于 validationFeedback.expectedSpeechTag；slot 6 与 slot 7 互异且不重复前五项。',
+    '修正 validationFeedback 指出的字段并返回完整行。只输出 JSON，不要解释或 Markdown。',
   ].join('\n');
 }

@@ -41,6 +41,7 @@ export class MlJsonPacketAgentRunner implements IJsonPacketAgentRunner {
     const prompt = buildMlPacketPrompt(input);
     const response = await this.client.textGenerate(prompt, {
       keepOtherModelsLoaded: false,
+      temperature: input.llm?.temperature,
       maxTokens: input.llm?.maxTokens ?? (
         input.promptId === 'media/span-material-patterns'
           ? CSPAN_MATERIAL_PATTERN_MAX_TOKENS

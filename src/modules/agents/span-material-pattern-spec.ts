@@ -1,8 +1,15 @@
 import type { IAgentPacket } from '../../protocol/schema.js';
+import { CSPAN_MATERIAL_PATTERN_REQUIRED_COUNT } from '../../protocol/material-pattern-integrity.js';
+
+export {
+  CSPAN_MATERIAL_PATTERN_REQUIRED_COUNT,
+  hasCompleteSpanMaterialPatterns,
+  summarizeSpanMaterialPatternIntegrity,
+  type ISpanMaterialPatternIntegrity,
+} from '../../protocol/material-pattern-integrity.js';
 
 export const CSPAN_MATERIAL_PATTERN_PROMPT_VERSION = 'media-span-material-patterns-v7';
 export const CSPAN_MATERIAL_PATTERN_SLOT_COUNT = 4;
-export const CSPAN_MATERIAL_PATTERN_REQUIRED_COUNT = 5;
 export const CSPAN_MATERIAL_PATTERN_MAX_COUNT = 7;
 export const CSPAN_MATERIAL_PATTERN_FREE_COUNT = 2;
 export const CSPAN_MATERIAL_PATTERN_BATCH_SIZE = 10;

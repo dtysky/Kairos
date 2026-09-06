@@ -10,6 +10,7 @@ import { buildChronologyEventPayload, filterChronologyEvents } from './chronolog
 import {
   controlMl,
   confirmProjectChronology,
+  commitSpeechTranscriptReview,
   fetchAnalyzeMonitor,
   fetchCapabilities,
   fetchProjectColorArchive,
@@ -33,6 +34,7 @@ import {
   saveProjectColorDrpSnapshot,
   saveProjectEditResolveSnapshot,
   saveProjectSection,
+  saveSpeechTranscriptReviewDraft,
   saveWorkspaceStyleConfig,
   saveTranscriptGlossary,
   saveWorkspaceAsrConfig,
@@ -52,7 +54,7 @@ import {
   ReviewQueuePanel,
   ScriptBriefEditor,
   StyleSourcesEditor,
-  TranscriptCorrectionReviewPanel,
+  SpeechTranscriptReviewPanel,
   TranscriptGlossaryEditor,
   AsrConfigEditor,
   WorkflowPrompt,
@@ -751,6 +753,27 @@ export function AppShell() {
     }
   }
 
+  async function commitSpeechReview(payload) {
+    if (!projectId) return;
+    const busyKey = 'chronology:speech-transcript-review';
+    setBusy(current => ({ ...current, [busyKey]: true }));
+    try {
+      await commitSpeechTranscriptReview(projectId, payload);
+      await refreshProject(projectId);
+      setMessage('口播与字幕审查已提交，spans 已更新为 fresh');
+      setError('');
+    } catch (caught) {
+      handleError(caught);
+    } finally {
+      setBusy(current => ({ ...current, [busyKey]: false }));
+    }
+  }
+
+  async function saveSpeechReviewDraft(payload) {
+    if (!projectId) return null;
+    return saveSpeechTranscriptReviewDraft(projectId, payload);
+  }
+
   function handleError(caught) {
     const nextMessage = caught instanceof Error ? caught.message : String(caught);
     setError(nextMessage);
@@ -802,7 +825,7 @@ export function AppShell() {
             <Route path="/color" element={<ColorPage projectId={projectId} config={config} colorArchive={colorArchive} capabilities={capabilities} jobs={allJobs} setProjectBrief={setProjectBrief} saveSection={saveSection} busy={busy} onRunColorAction={args => runProjectWorkflow('color', args)} onRequestHostPreflight={(payload, options) => recheckColorHost(projectId, payload, options)} onSaveDrpSnapshot={saveColorDrpSnapshot} onRegisterDrpSnapshot={registerColorDrpSnapshot} />} />
             <Route path="/analyze/monitor" element={<Navigate to="/analyze" replace />} />
             <Route path="/analyze" element={<AnalyzePage projectId={projectId} projectProgress={projectProgress} activeJobs={activeJobs} capabilities={capabilities} busy={busy} onRun={() => runProjectWorkflow('analyze')} />} />
-            <Route path="/chronology" element={<ChronologyPage projectId={projectId} config={config?.chronology} pharosContext={config?.pharosContext} spans={config?.spans} reviews={reviews} setReviews={setReviews} resolveReview={resolveReview} capabilities={capabilities} jobs={activeJobs} busy={busy} onRunSpatialRefresh={() => runProjectWorkflow('spatial-refresh')} onRunSpanRebuild={() => runProjectWorkflow('span-rebuild')} onRunChronologyBuild={() => runProjectWorkflow('chronology-build')} onConfirm={confirmChronology} onSaveEvent={saveChronologyEvent} onMergeEvents={mergeChronologyEvents} onSplitEvent={splitChronologyEvent} />} />
+            <Route path="/chronology" element={<ChronologyPage projectId={projectId} config={config?.chronology} pharosContext={config?.pharosContext} spans={config?.spans} reviews={reviews} setReviews={setReviews} resolveReview={resolveReview} capabilities={capabilities} jobs={allJobs} busy={busy} onSaveSpeechReviewDraft={saveSpeechReviewDraft} onCommitSpeechReview={commitSpeechReview} onRunSpatialRefresh={() => runProjectWorkflow('spatial-refresh')} onRunSpanRebuild={(args = {}) => runProjectWorkflow('span-rebuild', args)} onRunChronologyBuild={() => runProjectWorkflow('chronology-build')} onConfirm={confirmChronology} onSaveEvent={saveChronologyEvent} onMergeEvents={mergeChronologyEvents} onSplitEvent={splitChronologyEvent} />} />
             <Route path="/style/monitor/:categoryId?" element={<StyleMonitorRedirect />} />
             <Route path="/style" element={<StylePage config={styleSources} capabilities={capabilities} jobs={allJobs} setStyleSources={setStyleSources} onSave={saveStyleLibrary} busy={busy} onRun={categoryId => runWorkspaceWorkflow('style-analysis', categoryId ? { categoryId } : {})} location={location} history={{ push: navigate }} />} />
             <Route path="/script" element={<Navigate to="/edit" replace />} />
@@ -1156,30 +1179,34 @@ function AnalyzeAfterMonitor({ model, projectProgress, analyzeJobs }) {
   const coarsePipeline = pipelines.find(item => item.kind === 'coarse-scan') || null;
   const audioPipeline = pipelines.find(item => item.kind === 'audio-analysis') || null;
   const finePipeline = pipelines.find(item => item.kind === 'fine-scan') || null;
+  const asrReleased = model?.asr?.lifecycle === 'released';
+  const asrBlocked = model?.asr?.lifecycle === 'unavailable'
+    || (!model?.asr?.lifecycle && model?.asr?.available === false);
 
   return (
     <>
-      <Card className={`panel analyze-asr-panel ${model?.asr?.available === false ? 'analyze-asr-panel-blocked' : ''}`}>
+      <Card className={`panel analyze-asr-panel ${asrBlocked ? 'analyze-asr-panel-blocked' : ''}`}>
         <div className="section-header">
           <div>
             <h2>ASR 运行配置</h2>
             <p className="muted">这是实际运行路由，不是偏好顺序；所选 backend 不可用时不会改跑另一个 backend。</p>
           </div>
-          <Tag color={model?.asr?.available === true ? 'success' : model?.asr?.available === false ? 'error' : 'default'}>
-            {model?.asr?.available === true ? '可用' : model?.asr?.available === false ? '已阻塞' : '待启动检查'}
+          <Tag color={asrReleased || model?.asr?.available === true ? 'success' : asrBlocked ? 'error' : 'default'}>
+            {asrReleased ? '已完成并释放' : model?.asr?.available === true ? '可用' : asrBlocked ? '已阻塞' : '待启动检查'}
           </Tag>
         </div>
         <div className="asr-runtime-grid">
           <div><span>配置 Backend</span><strong>{formatAsrBackend(model?.asr?.configuredBackend)}</strong></div>
           <div><span>实际 Backend</span><strong>{formatAsrBackend(model?.asr?.actualBackend)}</strong></div>
-          <div><span>运行 Provider</span><strong>{model?.asr?.provider || '尚未装载'}</strong></div>
-          <div><span>时间戳</span><strong>{model?.asr?.timestampMode || '启动时检查'}</strong></div>
+          <div><span>运行 Provider</span><strong>{model?.asr?.provider || (asrReleased ? '已卸载' : '尚未装载')}</strong></div>
+          <div><span>时间戳</span><strong>{model?.asr?.timestampMode || (asrReleased ? '字级对齐已完成' : '启动时检查')}</strong></div>
           <div><span>平台运行时</span><strong>{model?.asr?.runtimeVariant || '启动时检查'}</strong></div>
-          <div><span>计算设备</span><strong>{model?.asr?.device || '启动时检查'}</strong></div>
+          <div><span>计算设备</span><strong>{model?.asr?.device || (asrReleased ? '显存已释放' : '启动时检查')}</strong></div>
         </div>
         {model?.asr?.modelRef ? <div className="asr-path-row"><span>ASR 模型</span><code title={model.asr.modelRef}>{model.asr.modelRef}</code><Tag color={model?.asr?.modelAvailable ? 'success' : 'error'}>{model?.asr?.modelAvailable ? 'ready' : 'missing'}</Tag></div> : null}
         {model?.asr?.alignerModelRef ? <div className="asr-path-row"><span>Aligner</span><code title={model.asr.alignerModelRef}>{model.asr.alignerModelRef}</code><Tag color={model?.asr?.alignerAvailable ? 'success' : 'error'}>{model?.asr?.alignerAvailable ? 'ready' : 'missing'}</Tag></div> : null}
-        {model?.asr?.blocker ? <div className={model?.asr?.available === false ? 'error-banner' : 'pipeline-footnote'}>{model.asr.blocker}</div> : null}
+        {model?.asr?.statusDetail ? <div className="pipeline-footnote">{model.asr.statusDetail}</div> : null}
+        {model?.asr?.blocker && !asrReleased ? <div className={asrBlocked ? 'error-banner' : 'pipeline-footnote'}>{model.asr.blocker}</div> : null}
       </Card>
       <div className="card-grid card-grid-two">
       <Card className="panel">
@@ -1334,7 +1361,7 @@ function PipelineMetricCard({ label, value, sub }) {
   );
 }
 
-function ChronologyProgressPanel({ jobs }) {
+function ChronologyProgressPanel({ jobs, onRetry }) {
   const latestJob = [...(jobs || [])].sort(compareActiveProjectJobs)[0] || null;
   if (!latestJob) return null;
   const progress = latestJob.progress || null;
@@ -1353,7 +1380,9 @@ function ChronologyProgressPanel({ jobs }) {
     || latestJob.updatedAt
     || '';
   const isBlockedWithoutProgress = latestJob.status === 'blocked' && !progress;
+  const isFailedWithoutProgress = latestJob.status === 'failed' && !progress;
   const isWaitingForProgress = ['queued', 'running'].includes(latestJob.status) && !progress;
+  const isTerminalFailure = ['blocked', 'failed'].includes(latestJob.status);
 
   return (
     <div className="chronology-progress">
@@ -1362,7 +1391,14 @@ function ChronologyProgressPanel({ jobs }) {
           <strong>{describeChronologyJobTitle(latestJob)}</strong>
           <div className="muted">{progress?.detail || progress?.stepLabel || blockers.join('；') || latestJob.lastError || latestJob.jobId}</div>
         </div>
-        <Tag>{latestJob.status}</Tag>
+        <div className="actions">
+          <Tag color={latestJob.status === 'failed' ? 'error' : latestJob.status === 'blocked' ? 'warning' : undefined}>{latestJob.status}</Tag>
+          {isTerminalFailure && onRetry ? (
+            <Button type="default" size="small" onClick={() => onRetry(latestJob)}>
+              {latestJob.jobType === 'span-rebuild' ? '从 checkpoint 续跑' : '重新运行'}
+            </Button>
+          ) : null}
+        </div>
       </div>
       {progress ? (
         <div className="progress-block chronology-progress-block">
@@ -1375,9 +1411,9 @@ function ChronologyProgressPanel({ jobs }) {
           </div>
         </div>
       ) : null}
-      {isBlockedWithoutProgress ? (
+      {isBlockedWithoutProgress || isFailedWithoutProgress ? (
         <div className="pipeline-footnote">
-          当前没有写入新的 spans；请确认本地 qwen 文本 LM / ML 服务可用后重新运行。
+          {latestJob.lastError || blockers.join('；') || '任务已失败；已完成 checkpoint 会保留供重新运行时继续使用。'}
         </div>
       ) : isWaitingForProgress ? (
         <div className="pipeline-footnote">
@@ -1397,7 +1433,13 @@ function ChronologyProgressPanel({ jobs }) {
           ) : isSpanRebuild ? (
             <>
               <PipelineMetricCard label="素材片段" value={String(extra.spanCount ?? 0)} sub={extra.inputsHash ? `input ${String(extra.inputsHash).slice(0, 12)}` : 'span rebuild 输出'} />
-              <PipelineMetricCard label="重试" value={String(extra.retryCount ?? 0)} sub={`warnings ${extra.warningCount ?? blockers.length ?? 0}`} />
+              <PipelineMetricCard
+                label="重试"
+                value={String(extra.retryCount ?? 0)}
+                sub={extra.activeFailureAttempt
+                  ? `当前 ${extra.activeFailureAttempt}/${extra.activeFailureAttemptLimit ?? 3} · warnings ${extra.warningCount ?? blockers.length ?? 0}`
+                  : `warnings ${extra.warningCount ?? blockers.length ?? 0}`}
+              />
               <PipelineMetricCard label="失败列表" value={String(extra.failedCount ?? 0)} sub={`恢复 ${extra.recoveredFailedCount ?? 0} · 情景不明 ${extra.storyUnknownFallbackCount ?? 0}`} />
             </>
           ) : (
@@ -1413,6 +1455,13 @@ function ChronologyProgressPanel({ jobs }) {
           />
         </div>
       )}
+      {isTerminalFailure && progress ? (
+        <div className="pipeline-footnote">
+          {latestJob.jobType === 'span-rebuild'
+            ? '已完成结果保留在 partial checkpoint；重新运行 span-rebuild 时只处理未完成项。'
+            : '任务终态和最后错误已保留；可从这里重新运行。'}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -1429,8 +1478,8 @@ function resolveSpansOutputUpdatedAt(spans) {
   return timestamps.length ? Math.max(...timestamps) : 0;
 }
 
-function isCurrentChronologyBlockedJob(job, spans) {
-  if (job?.status !== 'blocked') return false;
+function isCurrentChronologyTerminalJob(job, spans) {
+  if (!['blocked', 'failed'].includes(job?.status)) return false;
   if (job.jobType !== 'span-rebuild') return true;
 
   const spansStatus = spans?.status || spans?.meta?.status || 'missing';
@@ -1440,6 +1489,365 @@ function isCurrentChronologyBlockedJob(job, spans) {
   const jobUpdatedAt = Date.parse(job.updatedAt || job.startedAt || '');
   if (!spansUpdatedAt) return false;
   return Number.isFinite(jobUpdatedAt) && jobUpdatedAt > spansUpdatedAt;
+}
+
+export function selectChronologyJobsForDisplay(jobs, projectId, spans) {
+  const chronologyJobs = (jobs || []).filter(job =>
+    job.projectId === projectId && ['spatial-refresh', 'span-rebuild', 'chronology-build'].includes(job.jobType));
+  const activeJobs = chronologyJobs.filter(isLiveSupervisorJob);
+  const latestByType = new Map();
+  for (const job of [...chronologyJobs].sort((left, right) =>
+    Date.parse(right.updatedAt || 0) - Date.parse(left.updatedAt || 0))) {
+    if (!latestByType.has(job.jobType)) latestByType.set(job.jobType, job);
+  }
+  const terminalJobs = Array.from(latestByType.values())
+    .filter(job => isCurrentChronologyTerminalJob(job, spans));
+  const currentJobs = [...activeJobs, ...terminalJobs]
+    .filter((job, index, items) => items.findIndex(item => item.jobId === job.jobId) === index);
+  return { chronologyJobs, activeJobs, terminalJobs, currentJobs };
+}
+
+const CHRONOLOGY_JOB_GUIDANCE = {
+  'span-rebuild': {
+    runningTitle: '正在生成候选素材片段与模式',
+    runningBody: '正在从已完成的素材分析报告重建 spans，不会重跑 ASR、视觉分析或 fine-scan。',
+    runningDetail: '完成后：进入口播与字幕审查；没有口播候选时可直接生成编年史。',
+    failedTitle: '候选素材片段生成未完成',
+    retryLabel: '从 checkpoint 续跑',
+  },
+  'chronology-build': {
+    runningTitle: '正在生成编年史',
+    runningBody: '正在把已审查的素材片段与 GPS、Pharos 时空事实整理为事件和路线。',
+    runningDetail: '完成后：先按页面指引交给 Agent 归并相邻事件，再开放人工编年史审查。',
+    failedTitle: '编年史生成未完成',
+    retryLabel: '重新生成编年史',
+  },
+  'spatial-refresh': {
+    runningTitle: '正在刷新时空真相',
+    runningBody: '正在把更新后的 GPS、Pharos 或素材时间写回现有分析报告的空间层。',
+    runningDetail: '完成后：重新生成候选素材片段与编年史。',
+    failedTitle: '时空真相刷新未完成',
+    retryLabel: '重新刷新时空真相',
+  },
+};
+
+export function resolveChronologyNextStep({ spans, chronology, eventConsolidation = null, activeJobs = [], terminalJobs = [] }) {
+  const spansStatus = spans?.status || spans?.meta?.status || 'missing';
+  const hasFreshSpans = spans?.fresh === true || (spans?.fresh == null && spansStatus === 'fresh');
+  const incompletePatternCount = Number.isFinite(spans?.materialPatternIntegrity?.incompleteCount)
+    ? spans.materialPatternIntegrity.incompleteCount
+    : 0;
+  const activeJob = [...activeJobs].sort(compareActiveProjectJobs)[0] || null;
+  if (activeJob) {
+    const copy = CHRONOLOGY_JOB_GUIDANCE[activeJob.jobType] || CHRONOLOGY_JOB_GUIDANCE['chronology-build'];
+    return {
+      key: `running-${activeJob.jobType}`,
+      eyebrow: '当前阶段 · 运行中',
+      title: copy.runningTitle,
+      body: copy.runningBody,
+      detail: copy.runningDetail,
+      tone: 'accent',
+      action: null,
+    };
+  }
+
+  const chronologyUpdatedAt = Date.parse(chronology?.updatedAt || chronology?.generatedAt || '');
+  const relevantTerminalJobs = terminalJobs.filter(job => {
+    if (job.jobType !== 'chronology-build' || !Number.isFinite(chronologyUpdatedAt)) return true;
+    const jobUpdatedAt = Date.parse(job.updatedAt || job.startedAt || '');
+    return !Number.isFinite(jobUpdatedAt) || jobUpdatedAt > chronologyUpdatedAt;
+  });
+  const terminalJob = [...relevantTerminalJobs].sort(compareActiveProjectJobs)[0] || null;
+  if (terminalJob) {
+    const copy = CHRONOLOGY_JOB_GUIDANCE[terminalJob.jobType] || CHRONOLOGY_JOB_GUIDANCE['chronology-build'];
+    return {
+      key: `retry-${terminalJob.jobType}`,
+      eyebrow: terminalJob.status === 'blocked' ? '下一步 · 解除阻塞' : '下一步 · 重试',
+      title: copy.failedTitle,
+      body: terminalJob.lastError || terminalJob.blockers?.[0] || '任务没有完成；已完成的持久化结果仍然保留。',
+      detail: terminalJob.jobType === 'span-rebuild'
+        ? '续跑只处理未完成项。成功后进入口播与字幕审查。'
+        : copy.runningDetail,
+      tone: 'error',
+      action: terminalJob.jobType,
+      actionLabel: copy.retryLabel,
+    };
+  }
+
+  if (incompletePatternCount > 0) {
+    return {
+      key: 'repair-patterns',
+      eyebrow: '下一步 · 修复素材模式',
+      title: `原位修复 ${incompletePatternCount} 条不完整 materialPatterns`,
+      body: '只重新生成异常条目的 7 项检索模式，保留现有 span、口播窗口、字幕和人工审查结果。',
+      detail: '完成后：继续当前生成链路。',
+      tone: 'warn',
+      action: 'repair-patterns',
+      actionLabel: `修复 ${incompletePatternCount} 条`,
+    };
+  }
+
+  if (spansStatus === 'pending-speech-review') {
+    const isHumanReview = spans?.meta?.speechReview?.phase === 'human';
+    return {
+      key: 'speech-review',
+      eyebrow: '下一步 · 口播与字幕审查',
+      title: isHumanReview ? '完成本轮口播与字幕审查' : '生成口播与字幕审查报告',
+      body: isHumanReview
+        ? '复核默认接受的字幕修正、口播裁切和取消建议，提交后才会把 spans 标记为 fresh。'
+        : '让 Codex Agent 根据 handoff 生成统一分表报告；这一步不会重新识别音频或改变字幕时间。',
+      detail: '完成后：生成编年史。',
+      tone: 'warn',
+      action: 'speech-review',
+      actionLabel: isHumanReview ? '前往审查表' : '查看 Agent 指引',
+    };
+  }
+
+  if (!hasFreshSpans) {
+    return {
+      key: 'span-rebuild',
+      eyebrow: '下一步 · 生成素材片段',
+      title: '生成候选素材片段与模式',
+      body: '使用现有 assets 和 Analyze 报告生成素材片段及检索模式，不会重跑 ASR、视觉分析或 fine-scan。',
+      detail: '完成后：审查口播与字幕；没有口播候选时可直接生成编年史。',
+      tone: 'accent',
+      action: 'span-rebuild',
+      actionLabel: '生成候选素材片段与模式',
+    };
+  }
+
+  if (!chronology) {
+    const spanCountLabel = Number.isFinite(spans?.count) ? ` ${spans.count} 个` : '';
+    return {
+      key: 'chronology-build',
+      eyebrow: '下一步 · 生成编年史',
+      title: `用已审查的${spanCountLabel}素材片段生成编年史`,
+      body: '把 fresh spans 与 GPS、Pharos 时空事实整理成事件、路线和缺口，不会重跑素材分析或字幕审查。',
+      detail: '完成后：先让 Agent 归并相邻普通事件，再进行人工 Chronology V2 审查。',
+      tone: 'accent',
+      action: 'chronology-build',
+      actionLabel: '生成编年史',
+    };
+  }
+
+  if (!isChronologyEventConsolidationReady(chronology, eventConsolidation)) {
+    return {
+      key: 'event-consolidation',
+      eyebrow: '下一步 · Agent 事件归并',
+      title: `归并 ${eventConsolidation?.candidateEventCount ?? chronology.events?.length ?? 0} 个候选事件`,
+      body: '复制页面指令交给 Codex Agent，让它合并相邻普通事件，或让 Pharos 锚点吸收属于同一行程的周边普通事件。允许跨零点，不会改 GPS、路线、源时间或 span。',
+      detail: '完成后：开放人工编年史审查。',
+      tone: 'warn',
+      action: 'event-consolidation',
+      actionLabel: '查看 Agent 指引',
+    };
+  }
+
+  if (chronology.status !== 'confirmed') {
+    return {
+      key: 'review-chronology',
+      eyebrow: '下一步 · 审查编年史',
+      title: `审查 ${chronology.events?.length || 0} 个事件、路线和缺口`,
+      body: '检查时间、地点、路线和素材归属；需要时编辑、合并、拆分或驳回，然后确认整份编年史。',
+      detail: '完成后：进入 Edit Flow 规划剪辑。',
+      tone: 'warn',
+      action: 'review-chronology',
+      actionLabel: '开始审查',
+    };
+  }
+
+  return {
+    key: 'edit-flow',
+    eyebrow: '下一步 · Edit Flow',
+    title: '编年史已确认，可以开始剪辑规划',
+    body: `已确认 ${chronology.events?.length || 0} 个事件、路线和缺口；Edit Flow 将按剪辑规则选择需要执行的能力。`,
+    detail: '进入 Edit Flow 后初始化或继续当前 Edit Unit。',
+    tone: 'ok',
+    action: 'edit-flow',
+    actionLabel: '进入 Edit Flow',
+  };
+}
+
+const CHRONOLOGY_STAGE_STATUS_LABELS = {
+  waiting: '等待中',
+  running: '执行中',
+  ready: '可执行',
+  review: '待审查',
+  completed: '已完成',
+  warning: '警告',
+  failed: '失败',
+};
+
+export function resolveChronologyPipelineStages({ spans, chronology, eventConsolidation = null, activeJobs = [], terminalJobs = [] }) {
+  const spansStatus = spans?.status || spans?.meta?.status || 'missing';
+  const integrity = spans?.materialPatternIntegrity || {};
+  const incompletePatternCount = Number.isFinite(integrity.incompleteCount)
+    ? integrity.incompleteCount
+    : 0;
+  const completePatternCount = Number.isFinite(integrity.completeCount)
+    ? integrity.completeCount
+    : Math.max(0, (spans?.count || 0) - incompletePatternCount);
+  const spanJob = activeJobs.find(job => job.jobType === 'span-rebuild') || null;
+  const chronologyJob = activeJobs.find(job => job.jobType === 'chronology-build') || null;
+  const spanFailure = terminalJobs.find(job => job.jobType === 'span-rebuild') || null;
+  const chronologyUpdatedAt = Date.parse(chronology?.updatedAt || chronology?.generatedAt || '');
+  const chronologyFailure = terminalJobs.find(job => {
+    if (job.jobType !== 'chronology-build') return false;
+    if (!Number.isFinite(chronologyUpdatedAt)) return true;
+    const jobUpdatedAt = Date.parse(job.updatedAt || job.startedAt || '');
+    return !Number.isFinite(jobUpdatedAt) || jobUpdatedAt > chronologyUpdatedAt;
+  }) || null;
+  const stageOneComplete = (spansStatus === 'fresh' || spansStatus === 'pending-speech-review')
+    && (spans?.count || 0) > 0
+    && incompletePatternCount === 0;
+  const speechPhase = spans?.meta?.speechReview?.phase;
+  const speechPending = spansStatus === 'pending-speech-review';
+  const hasFreshSpans = stageOneComplete && !speechPending
+    && (spans?.fresh === true || (spans?.fresh == null && spansStatus === 'fresh'));
+
+  let spanStage;
+  if (spanJob) {
+    spanStage = {
+      status: 'running',
+      detail: spanJob.progress?.detail || '正在生成素材片段和 7 项检索模式。',
+    };
+  } else if (spanFailure) {
+    spanStage = {
+      status: 'failed',
+      detail: spanFailure.lastError || spanFailure.blockers?.[0] || '任务未完成，checkpoint 已保留。',
+      action: incompletePatternCount > 0 ? 'repair-patterns' : 'span-rebuild',
+      actionLabel: incompletePatternCount > 0 ? `续修 ${incompletePatternCount} 条` : '从 checkpoint 续跑',
+    };
+  } else if (incompletePatternCount > 0) {
+    spanStage = {
+      status: 'warning',
+      detail: `${completePatternCount}/${spans?.count || integrity.totalCount || 0} 条满足 7 项契约；${incompletePatternCount} 条需要原位修复。`,
+      action: 'repair-patterns',
+      actionLabel: `修复 ${incompletePatternCount} 条`,
+    };
+  } else if (!stageOneComplete) {
+    spanStage = {
+      status: 'ready',
+      detail: '使用现有 Analyze 报告生成候选片段和检索模式。',
+      action: 'span-rebuild',
+      actionLabel: '生成素材片段与模式',
+    };
+  } else {
+    spanStage = {
+      status: 'completed',
+      detail: `${spans?.count || 0} 个 span，materialPatterns 完整。`,
+    };
+  }
+
+  let speechStage;
+  if (!stageOneComplete) {
+    speechStage = { status: 'waiting', detail: '等待素材片段与模式完成。' };
+  } else if (speechPending) {
+    const isHuman = speechPhase === 'human';
+    speechStage = {
+      status: 'review',
+      detail: isHuman
+        ? '报告已生成；复核默认接受的字幕修正、裁切和取消建议。'
+        : '需要回到 Codex/Agent，按 handoff 生成统一审查报告。',
+      action: 'speech-review',
+      actionLabel: isHuman ? '打开审查表' : '查看 Agent 指引',
+    };
+  } else {
+    speechStage = {
+      status: 'completed',
+      detail: spans?.meta?.speechReview?.status === 'not-required' ? '没有需要审查的口播候选。' : '口播与字幕审查已完成。',
+    };
+  }
+
+  let buildStage;
+  if (chronologyJob) {
+    buildStage = {
+      status: 'running',
+      detail: chronologyJob.progress?.detail || '正在聚合事件、路线、缺口和地点。',
+    };
+  } else if (chronologyFailure) {
+    buildStage = {
+      status: 'failed',
+      detail: chronologyFailure.lastError || chronologyFailure.blockers?.[0] || '编年史生成未完成。',
+      action: 'chronology-build',
+      actionLabel: '重新生成编年史',
+    };
+  } else if (chronology) {
+    buildStage = { status: 'completed', detail: `已生成 ${chronology.events?.length || 0} 个事件、路线和缺口。` };
+  } else if (hasFreshSpans) {
+    buildStage = {
+      status: 'ready',
+      detail: `使用 ${spans?.count || 0} 个已审查 span 构建 Chronology V2。`,
+      action: 'chronology-build',
+      actionLabel: '生成编年史',
+    };
+  } else {
+    buildStage = { status: 'waiting', detail: '等待口播与字幕审查完成。' };
+  }
+
+  const consolidationReady = isChronologyEventConsolidationReady(chronology, eventConsolidation);
+  let consolidationStage;
+  if (!chronology) {
+    consolidationStage = { status: 'waiting', detail: '等待确定性编年史候选生成。' };
+  } else if (consolidationReady) {
+    const mergedCount = eventConsolidation?.mergeGroupCount || 0;
+    consolidationStage = {
+      status: 'completed',
+      detail: eventConsolidation?.status === 'not-required'
+        ? '没有需要 Agent 归并的相邻普通事件。'
+        : `Agent 归并已完成${mergedCount ? `，合并 ${mergedCount} 组事件` : '，本轮无需合并'}。`,
+    };
+  } else {
+    consolidationStage = {
+      status: 'review',
+      detail: '复制 handoff 指令交给 Codex Agent；完成前人工编年史审查保持锁定。',
+      action: 'event-consolidation',
+      actionLabel: '查看 Agent 指引',
+    };
+  }
+
+  const reviewStage = chronology && consolidationReady
+    ? chronology.status === 'confirmed'
+      ? { status: 'completed', detail: `${chronology.events?.length || 0} 个事件、路线和缺口已确认。` }
+      : {
+          status: 'review',
+          detail: '检查时间、地点、路线和素材归属，然后确认整份编年史。',
+          action: 'review-chronology',
+          actionLabel: '开始审查',
+        }
+    : { status: 'waiting', detail: chronology ? '等待 Agent 事件归并完成。' : '等待 Chronology V2 生成。' };
+  const editStage = chronology?.status === 'confirmed'
+    ? {
+        status: 'ready',
+        detail: '编年史已确认，可以进入剪辑规则驱动的能力流。',
+        action: 'edit-flow',
+        actionLabel: '进入 Edit Flow',
+      }
+    : { status: 'waiting', detail: '等待编年史确认。' };
+
+  const stages = [
+    { key: 'spans', title: '素材片段与模式', ...spanStage },
+    { key: 'speech-review', title: '口播与字幕审查', ...speechStage },
+    { key: 'chronology-build', title: '编年史生成', ...buildStage },
+    { key: 'event-consolidation', title: 'Agent 事件归并', ...consolidationStage },
+    { key: 'chronology-review', title: '编年史审查', ...reviewStage },
+    { key: 'edit-flow', title: 'Edit Flow', ...editStage },
+  ];
+  const currentIndex = stages.findIndex(stage => stage.status !== 'completed' && stage.status !== 'waiting');
+  return stages.map((stage, index) => ({
+    ...stage,
+    index: index + 1,
+    statusLabel: CHRONOLOGY_STAGE_STATUS_LABELS[stage.status] || stage.status,
+    current: index === currentIndex,
+  }));
+}
+
+export function isChronologyEventConsolidationReady(chronology, eventConsolidation) {
+  if (!chronology) return false;
+  if (chronology.status === 'confirmed') return true;
+  return Boolean(eventConsolidation
+    && eventConsolidation.inputsHash === chronology.inputsHash
+    && ['completed', 'not-required'].includes(eventConsolidation.status));
 }
 
 function ChronologyPage({
@@ -1453,6 +1861,8 @@ function ChronologyPage({
   capabilities,
   jobs,
   busy,
+  onSaveSpeechReviewDraft,
+  onCommitSpeechReview,
   onRunSpatialRefresh,
   onRunSpanRebuild,
   onRunChronologyBuild,
@@ -1461,15 +1871,18 @@ function ChronologyPage({
   onMergeEvents,
   onSplitEvent,
 }) {
+  const navigate = useNavigate();
   const chronology = config?.chronology || null;
+  const eventConsolidation = config?.eventConsolidation || null;
   const events = chronology?.events || [];
   const spansStatus = spans?.status || spans?.meta?.status || 'missing';
   const isPendingSpeechReview = spansStatus === 'pending-speech-review';
-  const chronologyJobs = (jobs || []).filter(job =>
-    job.projectId === projectId && ['spatial-refresh', 'span-rebuild', 'chronology-build'].includes(job.jobType));
-  const activeChronologyJobs = chronologyJobs.filter(isLiveSupervisorJob);
-  const blockedChronologyJobs = chronologyJobs.filter(job => isCurrentChronologyBlockedJob(job, spans));
-  const currentChronologyJobs = [...activeChronologyJobs, ...blockedChronologyJobs];
+  const chronologyJobState = selectChronologyJobsForDisplay(jobs, projectId, spans);
+  const activeChronologyJobs = chronologyJobState.activeJobs;
+  const terminalChronologyJobs = chronologyJobState.terminalJobs;
+  const blockedChronologyJobs = terminalChronologyJobs.filter(job => job.status === 'blocked');
+  const failedChronologyJobs = terminalChronologyJobs.filter(job => job.status === 'failed');
+  const currentChronologyJobs = chronologyJobState.currentJobs;
   const spatialRefreshJobs = activeChronologyJobs.filter(job => job.jobType === 'spatial-refresh');
   const spanRebuildJobs = activeChronologyJobs.filter(job => job.jobType === 'span-rebuild');
   const chronologyBuildJobs = activeChronologyJobs.filter(job => job.jobType === 'chronology-build');
@@ -1485,17 +1898,29 @@ function ChronologyPage({
     && activeChronologyJobs.length === 0
     && spanRebuildCapability?.supported !== false;
   const speechReview = spans?.meta?.speechReview || {};
+  const speechTranscriptReview = spans?.speechTranscriptReview || null;
   const isHumanTranscriptReview = speechReview.phase === 'human';
   const speechWindowAgentHandoffPath = speechReview.handoffPath || null;
   const speechReviewHandoffRef = speechWindowAgentHandoffPath
     || `projects/${projectId || '<projectId>'}/.tmp/chronology/speech-window-agent-handoff.md`;
-  const speechReviewAgentPrompt = `请按 handoff 处理这个 Kairos 项目的 speech-window + transcript review：读取 ${speechReviewHandoffRef}${speechReview.reviewArtifactPath ? ` 和 ${speechReview.reviewArtifactPath}` : ''}。SubAgents 只返回结构化决策，主 Agent统一校验合并；只改 speech/mixed 文字与口播有效性，不得改 segment 时间/分段、asset-reports 或 visual spans。无词表/当前行程证据的新专名必须进入人工 Review。不要重跑 ASR、span-builder 或 chronology。`;
-  const hasFreshSpans = Boolean(spans?.fresh);
+  const speechReviewAgentPrompt = `请按 kairos-speech-review skill 和 handoff 生成这个项目的口播与字幕审查报告：读取 ${speechReviewHandoffRef}${speechReview.reviewArtifactPath ? ` 和 ${speechReview.reviewArtifactPath}` : ''}，调用 stageProjectSpeechTranscriptReview 写统一 JSON 和分表报告。简体中文正字归一直接应用；其余建议默认接受但不要在用户提交前写入正式 spans。不要重跑 ASR、span-builder、fine-scan 或 chronology。`;
+  const eventConsolidationHandoffRef = eventConsolidation?.handoffPath
+    || `projects/${projectId || '<projectId>'}/.tmp/chronology/event-consolidation-agent-handoff.md`;
+  const eventConsolidationAgentPrompt = `请按 kairos-chronology-consolidation skill 处理项目 ${projectId || '<projectId>'}：读取 ${eventConsolidationHandoffRef} 和当前 media/chronology.json。合并语义连续的相邻普通 pending event；也允许用 anchorEventId 指定组内唯一 confirmed Pharos event，让其吸收两侧属于同一行程的相邻普通 pending event，并保留 Pharos id、标题、地点和 confirmed 状态。允许跨自然日零点，不得跨 route、gap 或另一个 Pharos event，也不得修改 GPS、路线、源时间和 span。按 handoff 写 decisions 并运行其中的应用命令；不要重跑 chronology-build、Analyze 或 span-rebuild。`;
+  const hasFreshSpans = spans?.fresh === true || (spans?.fresh == null && spansStatus === 'fresh');
+  const chronologyReviewUnlocked = isChronologyEventConsolidationReady(chronology, eventConsolidation);
   const canStartChronologyBuild = Boolean(projectId)
     && hasFreshSpans
     && !busy['job:chronology-build']
     && activeChronologyJobs.length === 0
     && chronologyBuildCapability?.supported !== false;
+  const pipelineStages = resolveChronologyPipelineStages({
+    spans,
+    chronology,
+    eventConsolidation,
+    activeJobs: activeChronologyJobs,
+    terminalJobs: terminalChronologyJobs,
+  });
   const [kindFilter, setKindFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dayFilter, setDayFilter] = useState('all');
@@ -1539,6 +1964,41 @@ function ChronologyPage({
     onSaveEvent(event.id, buildChronologyEventPayload(draft));
   }
 
+  function retryChronologyJob(job) {
+    if (job?.jobType === 'span-rebuild') return onRunSpanRebuild();
+    if (job?.jobType === 'chronology-build') return onRunChronologyBuild();
+    if (job?.jobType === 'spatial-refresh') return onRunSpatialRefresh();
+    return undefined;
+  }
+
+  function runChronologyStageAction(action) {
+    if (action === 'span-rebuild') return onRunSpanRebuild();
+    if (action === 'repair-patterns') return onRunSpanRebuild({ mode: 'repair-patterns' });
+    if (action === 'chronology-build') return onRunChronologyBuild();
+    if (action === 'spatial-refresh') return onRunSpatialRefresh();
+    if (action === 'speech-review') {
+      document.getElementById('chronology-speech-review')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return undefined;
+    }
+    if (action === 'event-consolidation') {
+      document.getElementById('chronology-event-consolidation')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return undefined;
+    }
+    if (action === 'review-chronology') {
+      document.getElementById('chronology-review')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return undefined;
+    }
+    if (action === 'edit-flow') return navigate('/edit');
+    return undefined;
+  }
+
+  function isChronologyStageActionDisabled(action) {
+    if (action === 'span-rebuild' || action === 'repair-patterns') return !canStartSpanRebuild;
+    if (action === 'chronology-build') return !canStartChronologyBuild;
+    if (action === 'spatial-refresh') return !canStartSpatialRefresh;
+    return false;
+  }
+
   const activeEvent = events.find(event => event.id === activeEventId) || null;
   const activeDraft = activeEvent ? drafts[activeEvent.id] || activeEvent : null;
   const chronologyColumns = [
@@ -1580,7 +2040,7 @@ function ChronologyPage({
       key: 'actions',
       width: 90,
       fixed: 'right',
-      render: (_, event) => <Button type="default" size="small" onClick={clickEvent => { clickEvent.stopPropagation(); setActiveEventId(event.id); }}>编辑</Button>,
+      render: (_, event) => <Button type="default" size="small" disabled={!chronologyReviewUnlocked} onClick={clickEvent => { clickEvent.stopPropagation(); setActiveEventId(event.id); }}>编辑</Button>,
     },
   ];
 
@@ -1593,81 +2053,153 @@ function ChronologyPage({
       <Card className="panel">
         <div className="section-header">
           <h2>生成链路</h2>
-          <Tag>{`spans ${spans?.status || 'missing'} · ${spans?.count || 0}`}</Tag>
+          <Tag color={(spans?.materialPatternIntegrity?.incompleteCount || 0) > 0 ? 'warning' : undefined}>
+            {(spans?.materialPatternIntegrity?.incompleteCount || 0) > 0
+              ? `materialPatterns 缺失 · ${spans.materialPatternIntegrity.incompleteCount}`
+              : `spans ${spans?.status || 'missing'} · ${spans?.count || 0}`}
+          </Tag>
         </div>
-        <div className="chronology-toolbar">
-          <div className="monitor-toolbar-group">
-            <Button
-              type={canStartSpanRebuild ? 'primary' : 'disabled'}
-              disabled={!canStartSpanRebuild}
-              onClick={onRunSpanRebuild}
+        <div className="chronology-stage-rail" aria-label="Chronology 生成链路">
+          {pipelineStages.map(stage => (
+            <section
+              key={stage.key}
+              className={`chronology-stage-card is-${stage.status}${stage.current ? ' is-current' : ''}`}
+              aria-current={stage.current ? 'step' : undefined}
             >
-              {busy['job:span-rebuild'] || spanRebuildJobs.length > 0 ? '生成中…' : '生成候选素材片段与模式'}
-            </Button>
-            <Button
-              type={canStartChronologyBuild ? 'primary' : 'disabled'}
-              disabled={!canStartChronologyBuild}
-              onClick={onRunChronologyBuild}
-            >
-              {busy['job:chronology-build'] || chronologyBuildJobs.length > 0 ? '刷新中…' : '生成/刷新编年史'}
-            </Button>
-            <Button
-              type={canStartSpatialRefresh ? 'default' : 'disabled'}
-              disabled={!canStartSpatialRefresh}
-              onClick={onRunSpatialRefresh}
-            >
-              {busy['job:spatial-refresh'] || spatialRefreshJobs.length > 0 ? '刷新中…' : '刷新时空真相'}
-            </Button>
-          </div>
-          <div className="monitor-toolbar-meta">
-            <span>{activeChronologyJobs.length > 0 ? `${activeChronologyJobs.length} 个任务运行中` : '当前无 chronology 任务'}</span>
-            {blockedChronologyJobs.length > 0 ? <span>{`${blockedChronologyJobs.length} 个任务已阻塞`}</span> : null}
-            {spans?.meta?.inputsHash ? <span>{`spans input ${spans.meta.inputsHash.slice(0, 12)}`}</span> : null}
-          </div>
+              <div className="chronology-stage-card-head">
+                <span className="chronology-stage-index">{stage.index}</span>
+                <span className={`chronology-stage-status is-${stage.status}`}>{stage.statusLabel}</span>
+              </div>
+              <h3>{stage.title}</h3>
+              <p>{stage.detail}</p>
+              {stage.action ? (
+                <Button
+                  type={stage.current ? 'primary' : 'default'}
+                  disabled={isChronologyStageActionDisabled(stage.action)}
+                  onClick={() => runChronologyStageAction(stage.action)}
+                >
+                  {stage.actionLabel}
+                </Button>
+              ) : null}
+            </section>
+          ))}
         </div>
-        <ChronologyProgressPanel jobs={currentChronologyJobs} />
-        {isPendingSpeechReview ? (
-          <WorkflowPrompt
-            eyebrow={isHumanTranscriptReview ? 'Human Review Pending' : 'Agent Review Pending'}
-            title={isHumanTranscriptReview ? '确认字幕歧义后再生成编年史' : '等待 Agent 联合审查口播与字幕'}
-            body={isHumanTranscriptReview
-              ? `Agent 已完成自动部分，还有 ${speechReview.pendingCorrectionCount ?? 0} 条字幕需要确认。最后一项确认后才会原子写入 fresh spans。`
-              : `当前有 ${speechReview.candidateCount ?? 0} 个 speech/mixed candidates。Agent 将同时完成 speech-window 裁切与 ASR 文字校对。`}
-            detail={!isHumanTranscriptReview ? (
-              <div className="workflow-prompt-command-block">
-                <div className="workflow-prompt-command-label">回到 Codex/Agent 后复制这句：</div>
-                <pre className="workflow-prompt-command">{speechReviewAgentPrompt}</pre>
-                {speechWindowAgentHandoffPath ? <div>{`Handoff: ${speechWindowAgentHandoffPath}`}</div> : null}
-                {speechReview.reviewArtifactPath ? <div>{`Audit: ${speechReview.reviewArtifactPath}`}</div> : null}
+        <ChronologyProgressPanel jobs={currentChronologyJobs} onRetry={retryChronologyJob} />
+        <div id="chronology-speech-review">
+          {isPendingSpeechReview ? (
+            <WorkflowPrompt
+              eyebrow={isHumanTranscriptReview ? 'Human Review Pending' : 'Agent Review Pending'}
+              title={isHumanTranscriptReview ? '审查口播与字幕建议后再生成编年史' : '等待 Agent 生成口播与字幕审查报告'}
+              body={isHumanTranscriptReview
+                ? `建议修正、裁切和取消默认接受；手动取消不采用的项目，并处理 ${speechReview.needsListeningCount ?? 0} 条需人工听音项后统一提交。`
+                : `当前有 ${speechReview.candidateCount ?? 0} 个 speech/mixed candidates。Agent 将生成分表报告，不会直接应用裁切、取消或非正字归一的文字修改。`}
+              detail={!isHumanTranscriptReview ? (
+                <div className="workflow-prompt-command-block">
+                  <div className="workflow-prompt-command-label">回到 Codex/Agent 后复制这句：</div>
+                  <pre className="workflow-prompt-command">{speechReviewAgentPrompt}</pre>
+                  {speechWindowAgentHandoffPath ? <div>{`Handoff: ${speechWindowAgentHandoffPath}`}</div> : null}
+                  {speechReview.reviewArtifactPath ? <div>{`Audit: ${speechReview.reviewArtifactPath}`}</div> : null}
+                  {speechReview.reportPath ? <div>{`Report: ${speechReview.reportPath}`}</div> : null}
+                </div>
+              ) : null}
+              actions={!isHumanTranscriptReview ? (
+                <Button
+                  type="default"
+                  onClick={() => window.navigator?.clipboard?.writeText?.(speechReviewAgentPrompt)?.catch?.(() => undefined)}
+                >
+                  复制 Agent 指令
+                </Button>
+              ) : null}
+              tone="warn"
+            />
+          ) : null}
+          {isHumanTranscriptReview ? (
+            <SpeechTranscriptReviewPanel
+              projectId={projectId}
+              review={speechTranscriptReview}
+              busy={busy['chronology:speech-transcript-review']}
+              onSaveDraft={onSaveSpeechReviewDraft}
+              onSubmit={onCommitSpeechReview}
+            />
+          ) : null}
+        </div>
+        <div id="chronology-event-consolidation">
+          {chronology && !chronologyReviewUnlocked ? (
+            <WorkflowPrompt
+              eyebrow="Agent Review Pending"
+              title="先完成事件语义归并，再进行人工编年史审查"
+              body={`当前确定性候选包含 ${eventConsolidation?.candidateEventCount ?? events.length} 个普通待审事件。Agent 可合并相邻普通事件，也可让 Pharos 锚点吸收同一行程的周边事件；允许跨零点，不改 GPS、路线、源时间或素材。`}
+              detail={(
+                <div className="workflow-prompt-command-block">
+                  <div className="workflow-prompt-command-label">复制到 Codex Agent：</div>
+                  <pre className="workflow-prompt-command">{eventConsolidationAgentPrompt}</pre>
+                  <div>{`Handoff: ${eventConsolidationHandoffRef}`}</div>
+                  {eventConsolidation?.decisionsPath ? <div>{`Decisions: ${eventConsolidation.decisionsPath}`}</div> : null}
+                </div>
+              )}
+              actions={(
+                <Button
+                  type="primary"
+                  onClick={() => window.navigator?.clipboard?.writeText?.(eventConsolidationAgentPrompt)?.catch?.(() => undefined)}
+                >
+                  复制 Agent 指令
+                </Button>
+              )}
+              tone="warn"
+            />
+          ) : null}
+        </div>
+        <details className="compact-disclosure chronology-maintenance-disclosure">
+          <summary>
+            <span>
+              <strong>维护与诊断</strong>
+              <small>仅在分析报告、GPS、Pharos 或素材时间发生变化时使用</small>
+            </span>
+            <Tag>{`${activeChronologyJobs.length ? `${activeChronologyJobs.length} 运行中` : '当前无任务'}${spans?.meta?.warnings?.length ? ` · ${spans.meta.warnings.length} 条历史警告` : ''}`}</Tag>
+          </summary>
+          <div className="chronology-maintenance-body">
+            <div className="chronology-maintenance-actions">
+              <div>
+                <Button type="default" disabled={!canStartSpanRebuild} onClick={() => onRunSpanRebuild()}>
+                  {busy['job:span-rebuild'] || spanRebuildJobs.length > 0 ? '生成中…' : '生成候选素材片段与模式'}
+                </Button>
+                <span>Analyze 报告或 span 派生策略变化后使用</span>
+              </div>
+              <div>
+                <Button type="default" disabled={!canStartChronologyBuild} onClick={onRunChronologyBuild}>
+                  {busy['job:chronology-build'] || chronologyBuildJobs.length > 0 ? '刷新中…' : '生成/刷新编年史'}
+                </Button>
+                <span>fresh spans 或编年史输入变化后使用</span>
+              </div>
+              <div>
+                <Button type="default" disabled={!canStartSpatialRefresh} onClick={onRunSpatialRefresh}>
+                  {busy['job:spatial-refresh'] || spatialRefreshJobs.length > 0 ? '刷新中…' : '刷新时空真相'}
+                </Button>
+                <span>GPS、Pharos 或素材时间变化后使用</span>
+              </div>
+            </div>
+            <div className="monitor-toolbar-meta chronology-diagnostic-meta">
+              <span>{activeChronologyJobs.length > 0
+                ? `${activeChronologyJobs.length} 个任务运行中`
+                : failedChronologyJobs.length > 0
+                  ? `${failedChronologyJobs.length} 个任务失败`
+                  : blockedChronologyJobs.length > 0
+                    ? `${blockedChronologyJobs.length} 个任务已阻塞`
+                    : '当前无 chronology 任务'}</span>
+              {spans?.meta?.inputsHash ? <span>{`spans input ${spans.meta.inputsHash.slice(0, 12)}`}</span> : null}
+            </div>
+            {spans?.meta?.warnings?.length ? (
+              <div className="chronology-warning-list">
+                <strong>历史 spans 警告</strong>
+                <ul>
+                  {spans.meta.warnings.map((warning, index) => <li key={`${index}:${warning}`}>{warning}</li>)}
+                </ul>
               </div>
             ) : null}
-            actions={!isHumanTranscriptReview ? (
-              <Button
-                type="default"
-                onClick={() => window.navigator?.clipboard?.writeText?.(speechReviewAgentPrompt)?.catch?.(() => undefined)}
-              >
-                复制 Agent 指令
-              </Button>
-            ) : null}
-            tone="warn"
-          />
-        ) : null}
-        <TranscriptCorrectionReviewPanel reviews={reviews || []} setReviews={setReviews} onResolve={resolveReview} />
-        {spans?.meta?.warnings?.length ? (
-          <div className="pipeline-footnote">
-            {`${activeChronologyJobs.length > 0 || blockedChronologyJobs.length > 0 ? '上次 spans warning：' : ''}${spans.meta.warnings.slice(0, 3).join('；')}`}
           </div>
-        ) : null}
+        </details>
       </Card>
-      {config?.blocked ? (
-        <WorkflowPrompt
-          eyebrow="Blocked"
-          title="Chronology 需要重建"
-          body={config.message || '当前 chronology 不可用。先刷新空间结果或重新 Analyze，再回到这里确认。'}
-          tone="error"
-        />
-      ) : null}
-      <Card className="panel">
+      <Card id="chronology-review" className="panel">
         <div className="section-header">
           <h2>Chronology V2</h2>
           <Tag>{chronology ? `${chronology.status} · ${events.length} events` : 'missing'}</Tag>
@@ -1710,14 +2242,14 @@ function ChronologyPage({
           <div className="actions">
             <Button
               type={selectedEventIds.length >= 2 && !busy['chronology:merge'] ? 'default' : 'disabled'}
-              disabled={selectedEventIds.length < 2 || busy['chronology:merge']}
+              disabled={!chronologyReviewUnlocked || selectedEventIds.length < 2 || busy['chronology:merge']}
               onClick={() => onMergeEvents(selectedEventIds)}
             >
               合并
             </Button>
             <Button
               type={chronology && !busy['chronology:confirm'] ? 'primary' : 'disabled'}
-              disabled={!chronology || busy['chronology:confirm']}
+              disabled={!chronology || !chronologyReviewUnlocked || busy['chronology:confirm']}
               onClick={onConfirm}
             >
               {busy['chronology:confirm'] ? '确认中…' : '确认全部'}
@@ -1740,11 +2272,11 @@ function ChronologyPage({
           dataSource={filteredEvents}
           scroll={{ x: 1200, y: 520 }}
           locale={{ emptyText: '当前过滤条件下没有 chronology event。' }}
-          rowSelection={{
+          rowSelection={chronologyReviewUnlocked ? {
             selectedRowKeys: selectedEventIds,
             onChange: keys => setSelected(Object.fromEntries(keys.map(key => [String(key), true]))),
-          }}
-          onRow={event => ({ onClick: () => setActiveEventId(event.id) })}
+          } : undefined}
+          onRow={event => chronologyReviewUnlocked ? ({ onClick: () => setActiveEventId(event.id) }) : ({})}
         />
       </Card>
       <Drawer
@@ -2743,17 +3275,54 @@ function MonitorLoader({ kind, projectId, categoryId, emptyLabel, toolbar, after
     };
   }, [kind, projectId, categoryId]);
 
+  const displayModel = kind === 'analyze' ? normalizeAnalyzeAsrLifecycleForDisplay(model) : model;
   return (
     <div className="route-page">
       {error ? <div className="error-banner">{error}</div> : null}
       <MonitorPage
-        model={model}
+        model={displayModel}
         emptyLabel={emptyLabel}
-        toolbar={typeof toolbar === 'function' ? toolbar(model) : toolbar}
-        afterMonitor={typeof afterMonitor === 'function' ? afterMonitor(model) : afterMonitor}
+        toolbar={typeof toolbar === 'function' ? toolbar(displayModel) : toolbar}
+        afterMonitor={typeof afterMonitor === 'function' ? afterMonitor(displayModel) : afterMonitor}
       />
     </div>
   );
+}
+
+export function normalizeAnalyzeAsrLifecycleForDisplay(model) {
+  if (!model?.asr) return model;
+  const postAsrSteps = new Set([
+    'transcript-segmentation',
+    'semantic-transcript-segmentation',
+    'finalize',
+    'fine-scan-prefetch',
+    'fine-scan-recognition',
+    'chronology',
+  ]);
+  const released = model.asr.lifecycle === 'released'
+    || (
+      model.asr.configuredBackend === 'qwen3'
+      && model.asr.actualBackend === 'qwen3'
+      && model.latestJob?.jobType === 'analyze'
+      && model.latestJob?.status === 'running'
+      && postAsrSteps.has(model.progress?.stepKey)
+    );
+  if (!released) return model;
+  return {
+    ...model,
+    asr: {
+      ...model.asr,
+      lifecycle: 'released',
+      blocker: null,
+      statusDetail: model.asr.statusDetail
+        || '本轮 ASR 与字级对齐已完成，独立 worker 已停止并释放显存；字幕拆分不占用 ML，后续视觉阶段再加载主 VLM。',
+    },
+    chips: (model.chips || []).map(chip => (
+      typeof chip?.label === 'string' && chip.label.startsWith('ASR ')
+        ? { ...chip, tone: 'ok' }
+        : chip
+    )),
+  };
 }
 
 function renderAnalyzeToolbarMeta(model, projectProgress) {

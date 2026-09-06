@@ -492,6 +492,83 @@ body {
 .compact-disclosure-copy > code { overflow: hidden; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .compact-disclosure-body { display: grid; gap: 14px; padding: 14px; }
 
+.chronology-stage-rail {
+  display: flex;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 2px 2px 8px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.chronology-stage-card {
+  position: relative;
+  display: grid;
+  flex: 1 0 220px;
+  min-height: 180px;
+  align-content: start;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  background: var(--panel-soft);
+}
+.chronology-stage-card:not(:last-child)::after {
+  content: "›";
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  right: -10px;
+  width: 8px;
+  color: var(--muted);
+  font-size: 20px;
+  line-height: 1;
+  transform: translateY(-50%);
+}
+.chronology-stage-card.is-current { border-color: color-mix(in srgb, var(--accent) 70%, var(--border-soft)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 24%, transparent); }
+.chronology-stage-card.is-warning,
+.chronology-stage-card.is-review { border-color: color-mix(in srgb, #d99b4b 62%, var(--border-soft)); }
+.chronology-stage-card.is-failed { border-color: color-mix(in srgb, #df6b65 68%, var(--border-soft)); }
+.chronology-stage-card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.chronology-stage-index {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+.chronology-stage-status { color: var(--muted); font-size: 11px; font-weight: 700; }
+.chronology-stage-status.is-running,
+.chronology-stage-status.is-ready { color: var(--accent); }
+.chronology-stage-status.is-completed { color: #64bc8c; }
+.chronology-stage-status.is-warning,
+.chronology-stage-status.is-review { color: #d99b4b; }
+.chronology-stage-status.is-failed { color: #df6b65; }
+.chronology-stage-card h3 { margin: 0; font-size: 14px; line-height: 1.35; }
+.chronology-stage-card p { min-height: 54px; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.chronology-stage-card .ant-btn { width: 100%; margin-top: auto; }
+.chronology-maintenance-disclosure { margin-top: 16px; background: var(--panel-soft); }
+.chronology-maintenance-disclosure > summary > span { min-width: 0; display: grid; flex: 1; gap: 3px; }
+.chronology-maintenance-disclosure > summary small { color: var(--muted); font-size: 12px; font-weight: 400; }
+.chronology-maintenance-body { display: grid; gap: 14px; padding: 14px; }
+.chronology-maintenance-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.chronology-maintenance-actions > div { display: grid; align-content: start; gap: 7px; padding: 12px; border: 1px solid var(--border-soft); border-radius: 8px; background: #0b0f13; }
+.chronology-maintenance-actions .ant-btn { width: 100%; }
+.chronology-maintenance-actions span,
+.chronology-diagnostic-meta,
+.chronology-warning-list { color: var(--muted); font-size: 12px; line-height: 1.5; }
+.chronology-diagnostic-meta { justify-content: flex-start; }
+.chronology-warning-list { padding-top: 12px; border-top: 1px solid var(--border-soft); }
+.chronology-warning-list ul { display: grid; gap: 6px; margin: 8px 0 0; padding-left: 20px; }
+.chronology-warning-list li { overflow-wrap: anywhere; }
+
+@media (max-width: 980px) {
+  .chronology-maintenance-actions { grid-template-columns: 1fr; }
+}
+
 .structured-root-details.row-card { padding: 0; }
 .structured-root-summary { min-height: 54px; padding: 9px 12px; list-style: none; cursor: pointer; }
 .structured-root-summary::-webkit-details-marker { display: none; }
@@ -708,9 +785,34 @@ body {
 
 /* Transcript review keeps dense evidence in drawers instead of long cards. */
 .transcript-glossary-panel .ant-table-wrapper,
-.transcript-review-panel .ant-table-wrapper { margin-top: 8px; }
+.transcript-review-panel .ant-table-wrapper,
+.speech-transcript-review-panel .ant-table-wrapper { margin-top: 8px; }
 .transcript-glossary-panel .ant-table-cell,
-.transcript-review-panel .ant-table-cell { font-size: 14px; line-height: 1.4; }
+.transcript-review-panel .ant-table-cell,
+.speech-transcript-review-panel .ant-table-cell { font-size: 14px; line-height: 1.4; }
+.speech-review-section { margin-top: 22px; }
+.speech-review-section h3 { margin: 0 0 8px; font-size: 16px; }
+.speech-transcript-review-panel input,
+.speech-transcript-review-panel select,
+.speech-transcript-review-panel textarea { min-width: 120px; width: 100%; }
+.speech-review-textarea {
+  min-height: 72px;
+  padding: 8px 10px;
+  line-height: 1.55;
+  resize: vertical;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.speech-review-range-inputs { display: grid; grid-template-columns: repeat(2, minmax(120px, 1fr)); gap: 8px; }
+.speech-review-range-inputs label { display: grid; grid-template-columns: auto minmax(80px, 1fr); gap: 6px; align-items: center; color: var(--muted); }
+.speech-review-trimmed-text { grid-column: 1 / -1; display: grid; gap: 4px; }
+.speech-review-trimmed-text span { color: var(--muted); font-size: 12px; }
+.speech-review-trimmed-text p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.55; }
+.speech-review-status-tags { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.speech-review-save-error { margin-top: 10px; }
+.speech-review-audio-player { display: grid; gap: 4px; justify-items: start; }
+.speech-review-audio-context { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.speech-review-audio-error { color: var(--danger); font-size: 12px; }
 .drawer-form-stack { display: grid; gap: 14px; }
 .drawer-form-stack .field { margin: 0; }
 .transcript-comparison-row {

@@ -21,6 +21,8 @@ import {
   loadAssetReports,
   loadAssets,
   loadIngestRoots,
+  loadSpans,
+  loadSpansMeta,
   resolveWorkspaceProjectRoot,
   touchProjectUpdatedAt,
   writeKairosProgress,
@@ -33,6 +35,7 @@ import {
 } from '../agents/runtime.js';
 import {
   CSPAN_MATERIAL_PATTERN_ENVIRONMENT_UNKNOWN,
+  CSPAN_MATERIAL_PATTERN_FREE_COUNT,
   CSPAN_MATERIAL_PATTERN_MAX_COUNT,
   CSPAN_MATERIAL_PATTERN_REQUIRED_COUNT,
   CSPAN_MATERIAL_PATTERN_SPEECH_ABSENT,
@@ -43,6 +46,7 @@ import {
   CSPAN_MATERIAL_PATTERN_VIEWPOINT_TAGS,
   CSPAN_MATERIAL_PATTERN_VIEWPOINT_UNKNOWN,
   CSPAN_MATERIAL_PATTERN_WEATHER_UNKNOWN,
+  summarizeSpanMaterialPatternIntegrity,
 } from '../agents/span-material-pattern-spec.js';
 import {
   buildSpanMaterializationReviewHardConstraints,
@@ -60,6 +64,7 @@ const CMATERIAL_PATTERN_SPAN_BATCH_SIZE = CSPAN_MATERIALIZATION_REVIEW_BATCH_SIZ
 const CMATERIAL_PATTERN_TRANSCRIPT_LIMIT = 220;
 const CMATERIAL_PATTERN_TEXT_LIMIT = 220;
 const CMATERIAL_PATTERN_MAX_TOKENS = CSPAN_MATERIALIZATION_REVIEW_MAX_TOKENS;
+const CMATERIAL_PATTERN_FAILED_LIST_RETRY_LIMIT = 3;
 const CMATERIAL_PATTERN_MAX_COUNT = CSPAN_MATERIAL_PATTERN_MAX_COUNT;
 const CMATERIAL_PATTERN_REQUIRED_COUNT = CSPAN_MATERIAL_PATTERN_REQUIRED_COUNT;
 const CMATERIAL_PATTERN_VIEWPOINT_TAG_SET = new Set<string>(CSPAN_MATERIAL_PATTERN_VIEWPOINT_TAGS);
@@ -102,6 +107,16 @@ export interface IProjectSpanRebuildResult {
   assetCount: number;
   reportCount: number;
   spanCount: number;
+  inputsHash: string;
+  warnings: string[];
+  meta: ISpansMeta;
+}
+
+export interface IProjectSpanPatternRepairResult {
+  projectRoot: string;
+  spanCount: number;
+  repairedCount: number;
+  incompleteCountBefore: number;
   inputsHash: string;
   warnings: string[];
   meta: ISpansMeta;
@@ -166,6 +181,7 @@ interface ISpanRebuildFailedSpan {
   expectedSpeechTag?: string;
   lastReturnedRow?: string[];
   attempts: number;
+  correctionAttempts?: number;
   lastError?: string;
   recovered?: boolean;
   fallbackStoryUnknown?: boolean;
@@ -399,6 +415,7 @@ export async function rebuildProjectSpans(input: {
       })
     : undefined;
   const spans = transcriptReview?.spans ?? builtSpans;
+  const normalizedSpeechReviewCandidates = spans.filter(isSpeechReviewCandidateSpan);
   if (speechReviewPending && handoffPath) {
     await writeSpeechWindowAgentHandoff({
       path: handoffPath,
@@ -406,7 +423,7 @@ export async function rebuildProjectSpans(input: {
       projectId: input.projectId,
       projectRoot,
       spans,
-      speechCandidates: speechReviewCandidates,
+      speechCandidates: normalizedSpeechReviewCandidates,
       inputsHash: generated.inputsHash,
       generatedAt: now,
       transcriptReviewArtifactPath: transcriptReview?.artifactPath,
@@ -432,6 +449,7 @@ export async function rebuildProjectSpans(input: {
           handoffPath,
           reviewArtifactPath: transcriptReview?.artifactPath,
           glossaryHash: transcriptReview?.glossaryHash,
+          normalizationHash: transcriptReview?.normalizationHash,
           tripContextHash: transcriptReview?.tripContextHash,
           updatedAt: now,
         }
@@ -458,7 +476,7 @@ export async function rebuildProjectSpans(input: {
     extra: {
       spanCount: spans.length,
       warningCount: warnings.length,
-      failedCount: reviewResult.failedSpans.length,
+      failedCount: activeFailedSpanArrayCount(reviewResult.failedSpans),
       recoveredFailedCount: reviewResult.recoveredFailedCount,
       storyUnknownFallbackCount: reviewResult.storyUnknownFallbackCount,
       retryCount: reviewResult.retryCount,
@@ -486,7 +504,7 @@ export async function rebuildProjectSpans(input: {
     spans: reviewResult.checkpointSpans,
     warnings,
     failedSpans: reviewResult.failedSpans,
-    failedCount: reviewResult.failedSpans.length,
+    failedCount: activeFailedSpanArrayCount(reviewResult.failedSpans),
     recoveredFailedCount: reviewResult.recoveredFailedCount,
     storyUnknownFallbackCount: reviewResult.storyUnknownFallbackCount,
     retryCount: reviewResult.retryCount,
@@ -512,7 +530,7 @@ export async function rebuildProjectSpans(input: {
       spanCount: spans.length,
       warningCount: warnings.length,
       inputsHash: generated.inputsHash,
-      failedCount: reviewResult.failedSpans.length,
+      failedCount: activeFailedSpanArrayCount(reviewResult.failedSpans),
       recoveredFailedCount: reviewResult.recoveredFailedCount,
       storyUnknownFallbackCount: reviewResult.storyUnknownFallbackCount,
       retryCount: reviewResult.retryCount,
@@ -537,6 +555,186 @@ export async function rebuildProjectSpans(input: {
     inputsHash: generated.inputsHash,
     warnings,
     meta,
+  };
+}
+
+export async function repairProjectSpanMaterialPatterns(input: {
+  workspaceRoot: string;
+  projectId: string;
+  now?: string;
+  agentRunner?: IJsonPacketAgentRunner;
+  progressPath?: string;
+}): Promise<IProjectSpanPatternRepairResult> {
+  if (!input.agentRunner) {
+    throw new AgentRunnerUnavailableError(
+      'span-rebuild repair-patterns requires a local text LM runner; existing spans were not rewritten.',
+    );
+  }
+  const projectRoot = resolveWorkspaceProjectRoot(input.workspaceRoot, input.projectId);
+  const progressPath = input.progressPath ?? getProjectProgressPath(projectRoot, 'chronology');
+  const [spans, meta] = await Promise.all([
+    loadSpans(projectRoot),
+    loadSpansMeta(projectRoot),
+  ]);
+  if (!meta || spans.length === 0 || meta.spanCount !== spans.length) {
+    throw new Error('Cannot repair materialPatterns selectively because current spans/meta are missing or inconsistent. Run span-rebuild first.');
+  }
+
+  const before = summarizeSpanMaterialPatternIntegrity(spans);
+  const repairCandidates = spans.filter(span => before.incompleteSpanIds.includes(span.id));
+  const repairInputsHash = createHash('sha256')
+    .update(stableStringify({
+      mode: 'repair-patterns',
+      promptVersion: CMATERIAL_PATTERN_PROMPT_VERSION,
+      spansInputsHash: meta.inputsHash,
+      spans: repairCandidates.map(span => ({
+        id: span.id,
+        assetId: span.assetId,
+        type: span.type,
+        semanticKind: span.semanticKind,
+        transcript: span.transcript,
+        transcriptSegments: span.transcriptSegments,
+        visualObservation: span.visualObservation,
+        materialPatterns: span.materialPatterns,
+      })),
+    }))
+    .digest('hex');
+  const partialPath = join(projectRoot, '.tmp', 'chronology', 'span-pattern-repair.partial.json');
+
+  if (repairCandidates.length === 0) {
+    await writeSpanRebuildProgress(progressPath, {
+      status: 'succeeded',
+      step: 'done',
+      stepLabel: '素材模式完整',
+      stepIndex: 4,
+      stepTotal: 4,
+      current: spans.length,
+      total: spans.length,
+      unit: 'span',
+      etaSeconds: 0,
+      detail: `${spans.length} 个 span 均满足 7 项 materialPatterns 契约，无需修复`,
+      extra: { mode: 'repair-patterns', spanCount: spans.length, repairedCount: 0, inputsHash: repairInputsHash },
+    });
+    return {
+      projectRoot,
+      spanCount: spans.length,
+      repairedCount: 0,
+      incompleteCountBefore: 0,
+      inputsHash: repairInputsHash,
+      warnings: [],
+      meta,
+    };
+  }
+
+  await writeSpanRebuildProgress(progressPath, {
+    status: 'running',
+    step: 'patterns',
+    stepLabel: '修复不完整素材模式',
+    stepIndex: 2,
+    stepTotal: 4,
+    current: 0,
+    total: repairCandidates.length,
+    unit: 'span',
+    detail: `只修复 ${repairCandidates.length} 个不满足 7 项契约的 span，保留其余 span 和人工审查结果`,
+    extra: {
+      mode: 'repair-patterns',
+      spanCount: spans.length,
+      incompleteCountBefore: repairCandidates.length,
+      partialCheckpointPath: partialPath,
+    },
+  });
+
+  const reviewWarnings: string[] = [];
+  const reviewResult = await generateSpanMaterializationReview({
+    spans: repairCandidates,
+    agentRunner: input.agentRunner,
+    progressPath,
+    partialPath,
+    inputsHash: repairInputsHash,
+    baseWarnings: [],
+    warnings: reviewWarnings,
+  });
+  const repairedPatternsById = new Map(
+    reviewResult.spans.map(span => [span.id, span.materialPatterns] as const),
+  );
+  const nextSpans = spans.map(span => {
+    const materialPatterns = repairedPatternsById.get(span.id);
+    return materialPatterns ? { ...span, materialPatterns } : span;
+  });
+  const after = summarizeSpanMaterialPatternIntegrity(nextSpans);
+  if (after.incompleteCount > 0) {
+    throw new Error(
+      `Selective materialPatterns repair left ${after.incompleteCount} incomplete span(s): ${after.incompleteSpanIds.slice(0, 8).join(', ')}`,
+    );
+  }
+
+  const now = input.now ?? new Date().toISOString();
+  const nextMeta: ISpansMeta = {
+    ...meta,
+    warnings: meta.warnings.filter(warning => !/^material pattern (?:chunk|span) /u.test(warning)),
+  };
+  await writeSpanRebuildProgress(progressPath, {
+    status: 'running',
+    step: 'write',
+    stepLabel: '写入修复结果',
+    stepIndex: 4,
+    stepTotal: 4,
+    current: repairCandidates.length,
+    total: repairCandidates.length,
+    unit: 'span',
+    detail: `已验证 ${nextSpans.length} 个 span；正在原位写入 ${repairCandidates.length} 个 materialPatterns 修复`,
+    extra: { mode: 'repair-patterns', repairedCount: repairCandidates.length, inputsHash: repairInputsHash },
+  });
+  await writeJson(getSpansPath(projectRoot), nextSpans);
+  await writeSpansMeta(projectRoot, nextMeta);
+  await writeSpanRebuildPartial(partialPath, {
+    status: 'succeeded',
+    promptVersion: CMATERIAL_PATTERN_PROMPT_VERSION,
+    inputsHash: repairInputsHash,
+    spanCount: repairCandidates.length,
+    chunkSize: CMATERIAL_PATTERN_SPAN_BATCH_SIZE,
+    completedCount: repairCandidates.length,
+    spans: reviewResult.checkpointSpans,
+    warnings: reviewWarnings,
+    failedSpans: reviewResult.failedSpans,
+    failedCount: activeFailedSpanArrayCount(reviewResult.failedSpans),
+    recoveredFailedCount: reviewResult.recoveredFailedCount,
+    storyUnknownFallbackCount: reviewResult.storyUnknownFallbackCount,
+    retryCount: reviewResult.retryCount,
+    repairCount: reviewResult.repairCount,
+  });
+  await touchProjectUpdatedAt(projectRoot);
+  await writeSpanRebuildProgress(progressPath, {
+    status: 'succeeded',
+    step: 'done',
+    stepLabel: '素材模式修复完成',
+    stepIndex: 4,
+    stepTotal: 4,
+    current: repairCandidates.length,
+    total: repairCandidates.length,
+    unit: 'span',
+    etaSeconds: 0,
+    detail: `已修复 ${repairCandidates.length} 个 span；${nextSpans.length} 个 span 均满足 7 项 materialPatterns 契约`,
+    extra: {
+      mode: 'repair-patterns',
+      spanCount: nextSpans.length,
+      repairedCount: repairCandidates.length,
+      incompleteCountBefore: repairCandidates.length,
+      incompleteCountAfter: 0,
+      warningCount: reviewWarnings.length,
+      inputsHash: repairInputsHash,
+      partialCheckpointPath: partialPath,
+      completedAt: now,
+    },
+  });
+  return {
+    projectRoot,
+    spanCount: nextSpans.length,
+    repairedCount: repairCandidates.length,
+    incompleteCountBefore: repairCandidates.length,
+    inputsHash: repairInputsHash,
+    warnings: reviewWarnings,
+    meta: nextMeta,
   };
 }
 
@@ -1353,28 +1551,6 @@ async function generateSpanMaterializationReview(input: {
     const failure = activeFailures[index]!;
     const span = spanById.get(failure.spanId);
     if (!span) continue;
-    await writeSpanRebuildProgress(input.progressPath, {
-      status: 'running',
-      step: 'pattern-failures',
-      stepLabel: '补处理失败列表',
-      stepIndex: 3,
-      stepTotal: 4,
-      current: decisionBySpanId.size,
-      total: input.spans.length,
-      unit: 'span',
-      etaSeconds: estimateSpanRebuildEtaSeconds(patternStartedAtMs, decisionBySpanId.size, input.spans.length),
-      fileIndex: index + 1,
-      fileTotal: activeFailures.length,
-      detail: `正在补处理失败列表 ${index + 1}/${activeFailures.length}：${span.id}`,
-      extra: {
-        retryCount,
-        repairCount,
-        warningCount: input.warnings.length,
-        failedCount: activeFailedSpanCount(failedBySpanId),
-        recoveredFailedCount,
-        storyUnknownFallbackCount,
-      },
-    });
 
     let retryFailure = failure;
     if (failure.lastReturnedRow && failure.lastReturnedRow.length > 0) {
@@ -1415,57 +1591,96 @@ async function generateSpanMaterializationReview(input: {
       failedBySpanId.set(span.id, retryFailure);
     }
 
-    retryCount += 1;
-    const retryResult = await requestMaterializationReviewForChunk({
-      agentRunner: input.agentRunner,
-      chunk: [span],
-      items: [buildMaterializationReviewItem(span)],
-      chunkIndex: Math.max(0, (failure.chunkIndex ?? 1) - 1),
-      chunkTotal: chunks.length,
-      attempt: retryFailure.attempts + 1,
-      warnings: input.warnings,
-      retryFeedbackBySpanId: new Map([[span.id, failureDetailFromFailedSpan(retryFailure, span)]]),
-    });
-    repairCount += retryResult.repairCount;
-    const retriedDecision = retryResult.decisions.get(span.id);
-    if (retriedDecision) {
-      decisionBySpanId.set(span.id, retriedDecision);
-      recoveredFailedCount += failure.recovered ? 0 : 1;
-      failedBySpanId.set(span.id, {
-        ...failure,
-        attempts: retryFailure.attempts + 1,
-        reason: 'recovered-by-single-span-retry',
-        lastError: retryResult.requestError ?? retryFailure.lastError,
-        recovered: true,
+    let correctionAttempts = retryFailure.correctionAttempts ?? 0;
+    while (
+      correctionAttempts < CMATERIAL_PATTERN_FAILED_LIST_RETRY_LIMIT
+      && !decisionBySpanId.has(span.id)
+    ) {
+      const correctionAttempt = correctionAttempts + 1;
+      const totalAttempt = retryFailure.attempts + 1;
+      await writeSpanRebuildProgress(input.progressPath, {
+        status: 'running',
+        step: 'pattern-failures',
+        stepLabel: '自动纠错失败列表',
+        stepIndex: 3,
+        stepTotal: 4,
+        current: decisionBySpanId.size,
+        total: input.spans.length,
+        unit: 'span',
+        etaSeconds: estimateSpanRebuildEtaSeconds(patternStartedAtMs, decisionBySpanId.size, input.spans.length),
+        fileIndex: index + 1,
+        fileTotal: activeFailures.length,
+        detail: `失败项 ${index + 1}/${activeFailures.length}：${span.id}，自动纠错 ${correctionAttempt}/${CMATERIAL_PATTERN_FAILED_LIST_RETRY_LIMIT}`,
+        extra: {
+          retryCount,
+          repairCount,
+          warningCount: input.warnings.length,
+          failedCount: activeFailedSpanCount(failedBySpanId),
+          recoveredFailedCount,
+          storyUnknownFallbackCount,
+          activeFailureAttempt: correctionAttempt,
+          activeFailureAttemptLimit: CMATERIAL_PATTERN_FAILED_LIST_RETRY_LIMIT,
+        },
       });
-    } else {
-      failedBySpanId.set(span.id, {
-        ...retryFailure,
-        attempts: retryFailure.attempts + 1,
-        reason: retryResult.failureReasonBySpanId.get(span.id) ?? 'invalid-after-single-span-retry',
-        ...failureDetailForFailedSpan(retryResult.failureDetailBySpanId.get(span.id)),
-        lastError: retryResult.requestError ?? retryFailure.lastError,
-        recovered: false,
-      });
-      input.warnings.push(`material pattern span ${span.id}: failed-list retry still returned invalid row`);
-    }
 
-    await writeSpanRebuildPatternCheckpoint({
-      partialPath: input.partialPath,
-      status: 'running',
-      inputsHash: input.inputsHash,
-      spanCount: input.spans.length,
-      spans: input.spans,
-      decisionBySpanId,
-      failedBySpanId,
-      baseWarnings: input.baseWarnings,
-      warnings: input.warnings,
-      activeSpanIds: [span.id],
-      retryCount,
-      repairCount,
-      recoveredFailedCount,
-      storyUnknownFallbackCount,
-    });
+      retryCount += 1;
+      const retryResult = await requestMaterializationReviewForChunk({
+        agentRunner: input.agentRunner,
+        chunk: [span],
+        items: [buildMaterializationReviewItem(span)],
+        chunkIndex: Math.max(0, (failure.chunkIndex ?? 1) - 1),
+        chunkTotal: chunks.length,
+        attempt: totalAttempt,
+        warnings: input.warnings,
+        retryFeedbackBySpanId: new Map([[span.id, failureDetailFromFailedSpan(retryFailure, span)]]),
+      });
+      correctionAttempts = correctionAttempt;
+      repairCount += retryResult.repairCount;
+      const retriedDecision = retryResult.decisions.get(span.id);
+      if (retriedDecision) {
+        decisionBySpanId.set(span.id, retriedDecision);
+        recoveredFailedCount += failure.recovered ? 0 : 1;
+        failedBySpanId.set(span.id, {
+          ...retryFailure,
+          attempts: totalAttempt,
+          correctionAttempts,
+          reason: 'recovered-by-single-span-retry',
+          lastError: retryResult.requestError ?? retryFailure.lastError,
+          recovered: true,
+        });
+      } else {
+        retryFailure = {
+          ...retryFailure,
+          attempts: totalAttempt,
+          correctionAttempts,
+          reason: retryResult.failureReasonBySpanId.get(span.id) ?? 'invalid-after-single-span-retry',
+          ...failureDetailForFailedSpan(retryResult.failureDetailBySpanId.get(span.id)),
+          lastError: retryResult.requestError ?? retryFailure.lastError,
+          recovered: false,
+        };
+        failedBySpanId.set(span.id, retryFailure);
+        input.warnings.push(
+          `material pattern span ${span.id}: correction attempt ${correctionAttempt}/${CMATERIAL_PATTERN_FAILED_LIST_RETRY_LIMIT} returned an invalid row`,
+        );
+      }
+
+      await writeSpanRebuildPatternCheckpoint({
+        partialPath: input.partialPath,
+        status: 'running',
+        inputsHash: input.inputsHash,
+        spanCount: input.spans.length,
+        spans: input.spans,
+        decisionBySpanId,
+        failedBySpanId,
+        baseWarnings: input.baseWarnings,
+        warnings: input.warnings,
+        activeSpanIds: [span.id],
+        retryCount,
+        repairCount,
+        recoveredFailedCount,
+        storyUnknownFallbackCount,
+      });
+    }
   }
 
   const unresolvedSpans = input.spans.filter(span => !decisionBySpanId.has(span.id));
@@ -1482,9 +1697,46 @@ async function generateSpanMaterializationReview(input: {
       }
     }
     const preview = unresolvedSpans.slice(0, 8).map(span => span.id).join(', ');
-    throw new Error(
-      `span-rebuild could not generate valid materialPatterns for ${unresolvedSpans.length} span(s): ${preview}`,
-    );
+    const lastError = `span-rebuild could not generate valid materialPatterns for ${unresolvedSpans.length} span(s) after automatic correction: ${preview}`;
+    await writeSpanRebuildPatternCheckpoint({
+      partialPath: input.partialPath,
+      status: 'failed',
+      inputsHash: input.inputsHash,
+      spanCount: input.spans.length,
+      spans: input.spans,
+      decisionBySpanId,
+      failedBySpanId,
+      baseWarnings: input.baseWarnings,
+      warnings: input.warnings,
+      activeSpanIds: unresolvedSpans.map(span => span.id),
+      retryCount,
+      repairCount,
+      recoveredFailedCount,
+      storyUnknownFallbackCount,
+      lastError,
+    });
+    await writeSpanRebuildProgress(input.progressPath, {
+      status: 'failed',
+      step: 'pattern-failures',
+      stepLabel: '自动纠错已用尽',
+      stepIndex: 3,
+      stepTotal: 4,
+      current: decisionBySpanId.size,
+      total: input.spans.length,
+      unit: 'span',
+      detail: lastError,
+      extra: {
+        retryCount,
+        repairCount,
+        warningCount: input.warnings.length,
+        failedCount: unresolvedSpans.length,
+        recoveredFailedCount,
+        storyUnknownFallbackCount,
+        activeFailureAttemptLimit: CMATERIAL_PATTERN_FAILED_LIST_RETRY_LIMIT,
+        partialCheckpointPath: input.partialPath,
+      },
+    });
+    throw new Error(lastError);
   }
 
   const decisions = input.spans
@@ -1534,7 +1786,7 @@ async function requestMaterializationReviewForChunk(input: {
       packet,
       llm: {
         jsonMode: true,
-        temperature: 0.1,
+        temperature: Math.min(0.3, 0.1 + Math.max(0, input.attempt - 1) * 0.05),
         maxTokens: CMATERIAL_PATTERN_MAX_TOKENS,
       },
     });
@@ -1864,8 +2116,8 @@ function repairMaterialPatterns(
       repaired: false,
       complete: false,
       validationIssues: [
-        `Row must contain ${CMATERIAL_PATTERN_REQUIRED_COUNT}-${CMATERIAL_PATTERN_MAX_COUNT} tags; received ${raw.length}.`,
-        'Slots 1-5 are required; slots 6-7 may be short LM-authored free tags.',
+        `Row must contain exactly ${CMATERIAL_PATTERN_REQUIRED_COUNT} tags; received ${raw.length}.`,
+        'Slots 1-7 are required; slots 6-7 are short LM-authored factual free tags.',
       ],
       expectedSpeechTag,
     };
@@ -1916,17 +2168,22 @@ function repairMaterialPatterns(
     };
   }
   const freeTags = freeCandidates
-    .slice(0, Math.max(0, CMATERIAL_PATTERN_MAX_COUNT - CMATERIAL_PATTERN_REQUIRED_COUNT));
+    .slice(0, CSPAN_MATERIAL_PATTERN_FREE_COUNT);
   const patterns = [...required, ...(story ? [story] : []), ...freeTags].slice(0, CMATERIAL_PATTERN_MAX_COUNT);
-  const complete = Boolean(story);
+  const complete = Boolean(story) && freeTags.length === CSPAN_MATERIAL_PATTERN_FREE_COUNT;
 
   return {
     patterns,
     repaired: false,
     complete,
-    validationIssues: story ? validationIssues : [
+    validationIssues: [
       ...validationIssues,
-      `Slot 5 must be a short scene-story phrase supported by the item, or the exact unknown token ${CSPAN_MATERIAL_PATTERN_STORY_UNKNOWN}.`,
+      ...(!story
+        ? [`Slot 5 must be a short scene-story phrase supported by the item, or the exact unknown token ${CSPAN_MATERIAL_PATTERN_STORY_UNKNOWN}.`]
+        : []),
+      ...(freeTags.length !== CSPAN_MATERIAL_PATTERN_FREE_COUNT
+        ? [`Slots 6-7 are required; received ${freeTags.length} valid free tag(s).`]
+        : []),
     ],
     expectedSpeechTag,
   };
@@ -2180,6 +2437,10 @@ function activeFailedSpanCount(failedBySpanId: Map<string, ISpanRebuildFailedSpa
   return Array.from(failedBySpanId.values()).filter(isActiveFailedSpan).length;
 }
 
+function activeFailedSpanArrayCount(failedSpans: ISpanRebuildFailedSpan[]): number {
+  return failedSpans.filter(item => !item.recovered).length;
+}
+
 async function writeSpanRebuildPatternCheckpoint(input: {
   partialPath?: string;
   status: ISpanRebuildPartialCheckpoint['status'];
@@ -2209,7 +2470,7 @@ async function writeSpanRebuildPatternCheckpoint(input: {
     warnings: dedupeStrings([...input.baseWarnings, ...input.warnings]),
     activeSpanIds: input.activeSpanIds,
     failedSpans,
-    failedCount: failedSpans.length,
+    failedCount: activeFailedSpanArrayCount(failedSpans),
     recoveredFailedCount: input.recoveredFailedCount,
     storyUnknownFallbackCount: input.storyUnknownFallbackCount,
     retryCount: input.retryCount,
@@ -2304,9 +2565,12 @@ async function loadReusableSpanRebuildPartial(input: {
     }
   }
 
-  const failedSpans = (Array.isArray(raw.failedSpans) ? raw.failedSpans : [])
+  const checkpointFailedSpans = (Array.isArray(raw.failedSpans) ? raw.failedSpans : [])
     .map(item => normalizeCheckpointFailedSpan(item, decisions))
     .filter((item): item is ISpanRebuildFailedSpan => item != null && spanById.has(item.spanId));
+  const failedSpans = raw.status === 'failed'
+    ? checkpointFailedSpans.map(item => item.recovered ? item : { ...item, correctionAttempts: 0 })
+    : checkpointFailedSpans;
   const warnings = (Array.isArray(raw.warnings) ? raw.warnings : [])
     .filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
 
@@ -2344,6 +2608,7 @@ function normalizeCheckpointFailedSpan(
       ? value.lastReturnedRow.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
       : undefined,
     attempts: getNonNegativeInteger(value.attempts),
+    correctionAttempts: getNonNegativeInteger(value.correctionAttempts),
     lastError: typeof value.lastError === 'string' ? value.lastError : undefined,
     recovered,
     fallbackStoryUnknown: recovered && value.fallbackStoryUnknown === true,
@@ -2413,8 +2678,10 @@ async function writeSpeechWindowAgentHandoff(input: {
     input.transcriptReviewArtifactPath
       ? `- Transcript review artifact: ${input.transcriptReviewArtifactPath}`
       : undefined,
-    `- Workspace glossary: ${join(input.workspaceRoot, 'config', 'transcript-glossary.json')}`,
-    '- Final output contract: SubAgents return structured decisions only; the main Agent validates and merges them through the transcript-review service.',
+    `- Built-in domain glossaries: ${join(input.workspaceRoot, 'resources', 'transcript-glossaries')}`,
+    `- Workspace personal glossary: ${join(input.workspaceRoot, 'config', 'transcript-glossary.json')}`,
+    `- Deterministic text normalization: ${join(input.workspaceRoot, 'config', 'transcript-normalization.json')}`,
+    '- Final output contract: Agent returns structured transcript and window decisions, then stages one user-facing report through `stageProjectSpeechTranscriptReview`.',
     '',
     '## Status',
     '',
@@ -2427,27 +2694,29 @@ async function writeSpeechWindowAgentHandoff(input: {
     'Copy this into a Codex/Agent thread:',
     '',
     '```text',
-    `请按 handoff 处理这个 Kairos 项目的 speech-window + transcript review：读取 ${input.path} 和 ${input.transcriptReviewArtifactPath ?? 'transcript review artifact'}。作为主 Agent，按 asset/day 启用 subagents；每个 shard 最多约 1500 条 candidates。SubAgent 只返回结构化 transcript decisions 和 speech-window 建议，不直接写正式文件。主 Agent校验、去重并合并 speech edits，再调用 transcript-review service 的 applyProjectTranscriptAgentDecisions 落地文字决策。不得改 transcript segment 时间或重新分段，不得改 asset-reports；共享词表的发音只用于召回同音候选，必须结合完整句子、相邻口播、当前行程判断词条使用语境是否匹配。无词表语境/当前行程证据的新专名必须 needs-human。不要重跑 ASR、span-builder 或 chronology。`,
+    `请按 kairos-speech-review skill 和这个 handoff 处理项目的口播与字幕审查：读取 ${input.path} 与 ${input.transcriptReviewArtifactPath ?? 'transcript review artifact'}，以程序已归一的字幕文本为输入，结合内置领域词表、工作区个性词表和时间段行程语境，为每个 pending transcript item 和 speech/mixed span 返回结构化决策，再调用 stageProjectSpeechTranscriptReview 生成统一审查 JSON 与分表 Markdown。其余修正、裁切和取消只生成默认接受的建议，不能在用户提交前写入正式 spans。带明确地点、道路设施或方向锚点的导航播报属于行程事实，不得仅因它来自导航而取消。保持原文、保持窗口和无需调整的现场声音不要写进报告。不得改 segment 时间/分段或 asset-reports，不要重跑 ASR、span-builder、fine-scan 或 chronology。`,
     '```',
     '',
     '## Required Agent Workflow',
     '',
-    '1. Main Agent reads `store/spans.json`, the transcript review artifact, `config/transcript-glossary.json`, and this handoff.',
-    '2. Main Agent shards speech/mixed candidates by asset/day or stable span-id ranges. Each subagent shard must contain at most about 1500 speech candidates, keeping one asset in one shard when practical; include the full sentence, neighboring speech, time-scoped trip context, and only the pronunciation-relevant glossary candidates needed by that shard.',
-    '3. Subagents review only their shard and return structured decisions; subagents must not write final project files.',
-    '4. Main Agent validates immutable segment timing, inputsHash, original text hash, evidence and duplicate segment decisions; then merges speech-window edits without changing visual spans.',
-    '5. Main Agent applies transcript decisions through `applyProjectTranscriptAgentDecisions`. Ambiguous items enter Review Queue; only zero pending items may produce `status="fresh"`.',
+    '1. Main Agent reads `store/spans.json`, the transcript review artifact, built-in domain glossaries, the workspace personal glossary, and this handoff.',
+    '2. Agent reviews each pending transcript item from its normalized full sentence, neighboring speech, effective glossary context and time-scoped trip context, and returns one structured transcript decision per pending item.',
+    '3. Agent reviews each speech/mixed span for usable spoken content and returns one structured window decision per span. `keep` rows are omitted from the user report.',
+    '4. `stageProjectSpeechTranscriptReview` validates immutable timing, effective-glossary/normalization/trip hashes, duplicate decisions, proposed trim boundaries and visual recall preservation, and generates the unified review report including the automatic-normalization audit rows prepared before Agent review.',
+    '5. User reviews five separate tables in `/chronology`; suggestions start accepted, while subtitle needs-listening rows remain unresolved. `commitProjectSpeechTranscriptReview` applies the final batch atomically and writes `status="fresh"`.',
     '',
     '## Review Contract',
     '',
     '- Meaningless ASR noise must not remain as final speech truth.',
     '- Transcript correction may replace text only. It must not change segment start/end, resegment speech, or write back to `analysis/asset-reports`.',
-    '- Glossary entries contain `canonical`, optional `pronunciation`, and required `context`. Pronunciation only recalls a possible homophone; it is never a replacement rule.',
+    '- Effective glossary entries contain only unique `canonical` and required `context` fields; workspace entries override built-in context for the same canonical.',
+    '- Deterministic exact text normalization is already applied before Agent review. Review the normalized sentence normally; do not revert configured replacements.',
     '- A glossary-backed proper-name auto correction is allowed only when the full sentence, neighboring speech, and current time-scoped trip context match the entry `context`. Use evidence `{source:"glossary", value:<canonical>, ref:<exact glossary context>}`. If context is ambiguous, use `needs-human`.',
     '- Agent knowledge may auto-correct ordinary lexical errors only; unsupported new proper names must use `needs-human`.',
     '- Historical corrections are reusable only for the exact same assetId + segment range + original text hash.',
-    '- Final retained speech spans must be clipped to usable transcript segment bounds.',
-    '- Final visual-only spans must clear `transcript`, `transcriptSegments`, and `speechCoverage`, and use `semanticKind="visual"` when appropriate.',
+    '- A trim suggestion must retain one positive range bounded by existing transcript segments.',
+    '- A cancel suggestion must preserve the same source range as a valid visual span with `visualObservation`; it clears speech truth only after user submission.',
+    '- Navigation speech with a concrete place, road facility, or named direction is useful trip evidence and must not be cancelled solely because it is navigation audio.',
     '- Speech/mixed and visual spans may overlap in the same asset; do not shorten, delete, split, or transcript-promote overlapping visual spans while reviewing speech candidates.',
     '- `materialPatterns[3]` must match final speech truth: `有口播语音` only when the final span retains usable transcript truth, otherwise `无口播语音`.',
     '- Do not add speed, Pharos, grounding, spatial, location, route, chronology, or random id fields.',
@@ -2463,12 +2732,13 @@ async function writeSpeechWindowAgentHandoff(input: {
     `- Transcript items: ${input.transcriptReviewItems.length}`,
     `- Pending Agent decisions: ${input.transcriptReviewItems.filter(item => item.status === 'pending-agent').length}`,
     '',
-    '## ASR Noise That Must Be Removed Or Demoted',
+    '## Structured Window Decision',
     '',
-    '- Single-character or low-information fragments such as `中`.',
-    '- Subtitle/platform/OCR-like hallucinations such as `中文本幕李宗盛`, `字幕志愿者`, `作曲宗盛`, generic credits, or channel boilerplate.',
-    '- Camera/phone commands, test mic, waiting/filler, isolated expletives, and context-free reactions.',
-    '- Repeated fragments that do not form a usable statement.',
+    'Return one decision for every speech/mixed candidate span:',
+    '',
+    '```json',
+    '{"spanId":"...","inputsHash":"...","action":"keep|trim|cancel|needs-human","retainStartMs":1000,"retainEndMs":5000,"confidence":0.95,"reason":"...","evidence":["..."]}',
+    '```',
     '',
     '## Speech Candidate Index',
     '',
@@ -2541,7 +2811,7 @@ async function writeSpanRebuildProgress(
     stepDefinitions: [
       { key: 'slice', label: '生成候选素材片段' },
       { key: 'patterns', label: '生成候选素材模式' },
-      { key: 'pattern-failures', label: '补处理失败列表' },
+      { key: 'pattern-failures', label: '自动纠错失败列表' },
       { key: 'write', label: '写入结果' },
     ],
     ...progress,

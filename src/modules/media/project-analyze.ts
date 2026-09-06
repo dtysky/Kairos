@@ -99,6 +99,11 @@ import {
   type ITranscriptContext,
 } from './transcript-signal.js';
 import { transcribe, type ITranscription } from './transcriber.js';
+import {
+  CTRANSCRIPT_SEGMENTATION_POLICY_VERSION,
+  segmentAlignedTranscript,
+} from './transcript-segmentation.js';
+import { buildAdaptiveSpeechWindowGroups } from './speech-windowing.js';
 import { enforceProjectTimelineConsistency } from './timeline-consistency.js';
 import {
   applyTypeAwareWindowExpansion,
@@ -106,6 +111,7 @@ import {
   isSpeechSemanticWindow,
   mergeInterestingWindowsByPreferredBounds,
   resolveWindowPreferredRange,
+  trimSpeechOverlappingVisualWindows,
 } from './window-policy.js';
 import { resolveAnalyzePrimarySpatial } from './spatial-priority.js';
 
@@ -136,6 +142,7 @@ const CANALYZE_STEP_DEFINITIONS = [
   { key: 'prepare', label: '准备素材分析' },
   { key: 'coarse-scan', label: '粗扫素材' },
   { key: 'audio-analysis', label: '分析视频内音轨' },
+  { key: 'transcript-segmentation', label: '校验字级时间并拆分字幕' },
   { key: 'finalize', label: '统一完成素材分析' },
   { key: 'fine-scan-prefetch', label: '预抽细扫关键帧' },
   { key: 'fine-scan-recognition', label: '识别细扫素材' },
@@ -413,6 +420,19 @@ export async function analyzeWorkspaceProjectMedia(
       runtimeConfig,
       getMlHandle,
       performance,
+      progressTotal,
+      toOverallProgressIndex,
+      writeAnalyzeStepProgress,
+    });
+
+    await runTranscriptSegmentationPipeline({
+      projectId: input.projectId,
+      projectName: project.name,
+      projectRoot,
+      preparedAnalyses,
+      audioContextsByAssetId,
+      getMlHandle,
+      mlRequiredForRun: pendingAssets.length > 0 || pendingFineScanEntries.length > 0,
       progressTotal,
       toOverallProgressIndex,
       writeAnalyzeStepProgress,
@@ -942,6 +962,111 @@ async function runAudioAnalysisPipeline(input: {
   return contexts;
 }
 
+async function runTranscriptSegmentationPipeline(input: {
+  projectId: string;
+  projectName: string;
+  projectRoot: string;
+  preparedAnalyses: IPreparedAssetAnalysis[];
+  audioContextsByAssetId: Map<string, IAudioAnalysisContext>;
+  getMlHandle: () => Promise<MlAvailability>;
+  mlRequiredForRun: boolean;
+  progressTotal: number;
+  toOverallProgressIndex: (localIndex: number) => number;
+  writeAnalyzeStepProgress: (inputStep: IAnalyzeStepProgressInput) => Promise<void>;
+}): Promise<void> {
+  const tasks = input.preparedAnalyses.filter(prepared => {
+    const transcript = input.audioContextsByAssetId.get(prepared.asset.id)?.selectedTranscript;
+    if (!transcript) return false;
+    if (transcript.alignedTokens.length === 0) {
+      return transcript.segmentation.status !== 'completed';
+    }
+    return transcript.segmentation.status !== 'completed'
+      || transcript.segmentation.policyVersion !== CTRANSCRIPT_SEGMENTATION_POLICY_VERSION;
+  });
+  if (tasks.length === 0 && !input.mlRequiredForRun) return;
+  if (input.mlRequiredForRun) {
+    const ml = await input.getMlHandle();
+    await ml.client.unloadAsr();
+  }
+
+  const startedAtMs = Date.now();
+  for (const [index, prepared] of tasks.entries()) {
+    const audioContext = input.audioContextsByAssetId.get(prepared.asset.id);
+    const transcript = audioContext?.selectedTranscript;
+    if (!audioContext || !transcript) continue;
+
+    await input.writeAnalyzeStepProgress({
+      step: 'transcript-segmentation',
+      fileName: prepared.asset.displayName,
+      fileIndex: input.toOverallProgressIndex(index),
+      fileTotal: input.progressTotal,
+      current: index,
+      total: tasks.length,
+      unit: 'files',
+      etaSeconds: estimatePhaseEtaSeconds(startedAtMs, index, tasks.length),
+      detail: `正在校验字级时间并按 ASR 标点拆分 ${prepared.asset.displayName} 的口播字幕`,
+      extra: {
+        projectId: input.projectId,
+        projectName: input.projectName,
+        segmentationTotal: tasks.length,
+        segmentationCompletedCount: index,
+        assetId: prepared.asset.id,
+      },
+    });
+
+    const segmented = segmentAlignedTranscript({
+      assetId: prepared.asset.id,
+      rawText: transcript.rawText,
+      tokens: transcript.alignedTokens,
+    });
+    const updatedTranscript = normalizeTranscriptContext({
+      ...transcript,
+      alignedTokens: segmented.alignedTokens,
+      transcript: segmented.transcript,
+      segments: segmented.segments,
+      segmentation: segmented.segmentation,
+      speechCoverage: computeSpeechCoverage(
+        prepared.asset.durationMs ?? 0,
+        segmented.alignedTokens,
+      ),
+      speechWindows: buildSpeechWindows(
+        prepared.asset.durationMs ?? 0,
+        segmented.alignedTokens,
+      ),
+    });
+    audioContext.selectedTranscript = updatedTranscript;
+    audioContext.decisionHints = buildProtectedAudioDecisionHints(
+      audioContext.protectedAudio,
+      audioContext.selectedTranscriptSource === 'protection' ? updatedTranscript : null,
+    );
+    input.audioContextsByAssetId.set(prepared.asset.id, audioContext);
+    await writeAudioAnalysisCheckpoint(input.projectRoot, {
+      assetId: prepared.asset.id,
+      selectedTranscript: updatedTranscript,
+      selectedTranscriptSource: audioContext.selectedTranscriptSource,
+      embeddedHealth: audioContext.embeddedHealth,
+      protectionHealth: audioContext.protectionHealth,
+      protectedAudio: audioContext.protectedAudio,
+      decisionHints: audioContext.decisionHints,
+    });
+  }
+  await input.writeAnalyzeStepProgress({
+    step: 'transcript-segmentation',
+    fileIndex: input.toOverallProgressIndex(tasks.length),
+    fileTotal: input.progressTotal,
+    current: tasks.length,
+    total: tasks.length,
+    unit: 'files',
+    detail: `已完成 ${tasks.length} 条素材的字级时间校验与确定性字幕拆分`,
+    extra: {
+      projectId: input.projectId,
+      projectName: input.projectName,
+      segmentationTotal: tasks.length,
+      segmentationCompletedCount: tasks.length,
+    },
+  });
+}
+
 function buildConcurrentAssetLabel(activeAssetNames: string[]): string | undefined {
   if (activeAssetNames.length === 0) return undefined;
   if (activeAssetNames.length <= 3) return activeAssetNames.join('、');
@@ -961,11 +1086,15 @@ function buildEmptyAudioAnalysisContext(
 function restoreAudioAnalysisContextFromCheckpoint(input: {
   checkpoint: Awaited<ReturnType<typeof loadAudioAnalysisCheckpoint>>;
   hasAvailableProtectionAudio: boolean;
+  durationMs: number;
 }): IAudioAnalysisContext | null {
   if (!input.checkpoint) return null;
 
   return {
-    selectedTranscript: normalizeTranscriptContext(input.checkpoint.selectedTranscript ?? null),
+    selectedTranscript: normalizeTranscriptWithAdaptiveSpeechWindows(
+      input.durationMs,
+      input.checkpoint.selectedTranscript ?? null,
+    ),
     selectedTranscriptSource: input.checkpoint.selectedTranscriptSource,
     embeddedHealth: input.checkpoint.embeddedHealth,
     protectionHealth: input.checkpoint.protectionHealth,
@@ -1003,6 +1132,7 @@ async function runAudioAnalysisLocalTask(input: {
     const restored = restoreAudioAnalysisContextFromCheckpoint({
       checkpoint,
       hasAvailableProtectionAudio,
+      durationMs: input.task.prepared.asset.durationMs ?? 0,
     });
     if (restored) {
       return {
@@ -1089,15 +1219,23 @@ async function runAudioAnalysisAsrTask(input: {
   ml: MlAvailability;
   performance?: AnalyzePerformanceSession;
 }): Promise<IAudioAnalysisTaskState> {
-  const selectedTranscript = await transcribeSelectedAudioSource({
-    asset: input.task.prepared.asset,
-    localVideoPath: input.task.prepared.localPath,
-    hasAudioTrack: input.task.prepared.hasAudioTrack,
-    protectionAudioLocalPath: input.task.protectionAudioLocalPath,
-    selectedTranscriptSource: input.task.selectedTranscriptSource,
-    ml: input.ml,
-    performance: input.performance,
-  });
+  let selectedTranscript: ITranscriptContext | null;
+  try {
+    selectedTranscript = await transcribeSelectedAudioSource({
+      asset: input.task.prepared.asset,
+      localVideoPath: input.task.prepared.localPath,
+      hasAudioTrack: input.task.prepared.hasAudioTrack,
+      protectionAudioLocalPath: input.task.protectionAudioLocalPath,
+      selectedTranscriptSource: input.task.selectedTranscriptSource,
+      ml: input.ml,
+      performance: input.performance,
+    });
+  } catch (error) {
+    throw new Error(
+      `素材 ${input.task.prepared.asset.id} (${input.task.prepared.asset.displayName}) ASR 失败：${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
+    );
+  }
   const embeddedHealth = enrichAudioHealthWithTranscript(
     input.task.embeddedHealth,
     input.task.selectedTranscriptSource === 'embedded' ? selectedTranscript : null,
@@ -1368,9 +1506,9 @@ interface IAudioAnalysisTaskState {
 
 const CTALKING_HEAD_AUDIO_LED_MIN_SPEECH_COVERAGE = 0.12;
 const CTALKING_HEAD_AUDIO_LED_GAP_MS = 12_000;
-const CSPEECH_WINDOW_MERGE_GAP_MS = 3_000;
-const CSPEECH_WINDOW_MAX_DURATION_MS = 45_000;
-const CSPEECH_WINDOW_MAX_VISIBLE_CHARS = 160;
+const CPERSISTED_SPEECH_SLICE_MERGE_GAP_MS = 3_000;
+const CPERSISTED_SPEECH_SLICE_MAX_DURATION_MS = 45_000;
+const CPERSISTED_SPEECH_SLICE_MAX_VISIBLE_CHARS = 160;
 const CDRIVE_VISUAL_PASSAGE_GAP_MS = 60_000;
 const CDRIVE_VISUAL_PASSAGE_MAX_DURATION_MS = 90_000;
 const CDEFERRED_SCENE_DETECT_WINDOW_GAP_MS = 12_000;
@@ -1478,9 +1616,19 @@ async function loadOrPrepareAssetVisualCoarse(
   }
 
   const prepared = await prepareAssetVisualCoarse(input);
+  if (prepared.sampleFrames.length === 0) {
+    throw new Error(
+      `素材 ${input.asset.displayName} 在 coarse-scan 阶段未生成任何有效代表帧，不能写入可恢复 checkpoint。`,
+    );
+  }
+  const sourceStat = await stat(input.localPath);
   await writePreparedAssetCheckpoint(input.projectRoot, {
-    schemaVersion: 2,
+    schemaVersion: 3,
     assetId: prepared.asset.id,
+    sourceFingerprint: {
+      sizeBytes: sourceStat.size,
+      mtimeMs: Math.round(sourceStat.mtimeMs),
+    },
     shotBoundaries: prepared.shotBoundaries,
     shotBoundariesResolved: prepared.shotBoundariesResolved,
     sampleFrames: prepared.sampleFrames,
@@ -1494,11 +1642,14 @@ async function loadOrPrepareAssetVisualCoarse(
 async function loadPreparedAssetVisualCoarse(
   input: IAnalyzeSingleAssetInput,
 ): Promise<IPreparedAssetAnalysis | null> {
-  const checkpoint = await loadPreparedAssetCheckpoint(input.projectRoot, input.asset.id);
+  const checkpoint = await loadPreparedAssetCheckpoint(input.projectRoot, input.asset.id, {
+    sourcePath: input.localPath,
+    requireSampleFrames: true,
+  });
   if (!checkpoint) return null;
 
   const sampleFrames = await filterExistingKeyframes(checkpoint.sampleFrames);
-  if (checkpoint.sampleFrames.length > 0 && sampleFrames.length === 0) {
+  if (sampleFrames.length !== checkpoint.sampleFrames.length) {
     return null;
   }
 
@@ -1535,7 +1686,10 @@ async function loadOrAnalyzePreparedAudio(input: {
     const checkpoint = await loadAudioAnalysisCheckpoint(input.projectRoot, input.prepared.asset.id);
     if (checkpoint) {
       return {
-        selectedTranscript: normalizeTranscriptContext(checkpoint.selectedTranscript ?? null),
+        selectedTranscript: normalizeTranscriptWithAdaptiveSpeechWindows(
+          input.prepared.asset.durationMs ?? 0,
+          checkpoint.selectedTranscript ?? null,
+        ),
         selectedTranscriptSource: checkpoint.selectedTranscriptSource,
         embeddedHealth: checkpoint.embeddedHealth,
         protectionHealth: checkpoint.protectionHealth,
@@ -1756,6 +1910,9 @@ async function finalizePreparedAsset(
     gpsSummary: primarySpatial.gpsSummary,
     inferredGps,
     summary: planning.visualSummary?.description,
+    asrRawText: audioContext.selectedTranscript?.rawText,
+    alignedTokens: audioContext.selectedTranscript?.alignedTokens,
+    transcriptSegmentation: audioContext.selectedTranscript?.segmentation,
     transcript: audioContext.selectedTranscript?.transcript,
     transcriptSegments: audioContext.selectedTranscript?.segments,
     speechCoverage: audioContext.selectedTranscript?.speechCoverage,
@@ -1902,11 +2059,17 @@ async function resolvePreparedAssetPlanning(input: {
     windows: decidedPlan.interestingWindows,
     shotBoundaries: input.prepared.shotBoundaries,
   });
+  const coalescedWindows = unifiedAnalysis.decision.clipType === 'drive'
+    ? coalesceDriveVisualWindows(expandedWindows)
+    : expandedWindows;
+  const overlapResolvedWindows = trimSpeechOverlappingVisualWindows({
+    windows: coalescedWindows,
+    assetDurationMs: input.prepared.asset.durationMs ?? 0,
+    clipType: unifiedAnalysis.decision.clipType,
+  });
   const expandedPlan: IMediaAnalysisPlan = {
     ...decidedPlan,
-    interestingWindows: unifiedAnalysis.decision.clipType === 'drive'
-      ? coalesceDriveVisualWindows(expandedWindows)
-      : expandedWindows,
+    interestingWindows: orderInterestingWindows(overlapResolvedWindows),
   };
   const audioLedPlan = applyTalkingHeadAudioLedWindowStrategy({
     plan: expandedPlan,
@@ -2573,44 +2736,66 @@ async function transcribeAudioContext(input: {
     return { context: null };
   }
 
-  try {
-      const result = await transcribe(
-        input.ml.client,
-        input.localPath,
-        'zh',
-        { keepOtherModelsLoaded: CAUDIO_ANALYSIS_KEEP_OTHER_MODELS_LOADED },
-      );
-    const segments = result.segments
-      .map(segment => ({
-        startMs: Math.max(0, Math.round(segment.start * 1000)),
-        endMs: Math.max(Math.round(segment.start * 1000), Math.round(segment.end * 1000)),
-        text: segment.text.trim(),
-      }))
-      .filter(segment => segment.endMs > segment.startMs && segment.text.length > 0);
+  const result = await transcribe(
+    input.ml.client,
+    input.localPath,
+    'zh',
+    { keepOtherModelsLoaded: CAUDIO_ANALYSIS_KEEP_OTHER_MODELS_LOADED },
+  );
+  const tokenSegments = result.alignedTokens.map(token => ({
+    startMs: token.startMs,
+    endMs: token.endMs,
+    text: token.text,
+  }));
 
-    const transcript = result.fullText.trim();
-    if (!transcript && segments.length === 0) {
-      return {
-        context: null,
-        timing: result.timing,
-        roundTripMs: result.roundTripMs,
-      };
-    }
-
+  const transcript = result.fullText.trim();
+  if (!transcript && tokenSegments.length === 0) {
+    return {
+      context: null,
+      timing: result.timing,
+      roundTripMs: result.roundTripMs,
+    };
+  }
+  if (transcript && tokenSegments.length === 0) {
     return {
       context: normalizeTranscriptContext({
-        transcript,
-        segments,
-        evidence: result.evidence,
-        speechCoverage: computeSpeechCoverage(input.durationMs, segments),
-        speechWindows: buildSpeechWindows(input.durationMs, segments),
+        rawText: transcript,
+        alignedTokens: [],
+        segmentation: {
+          status: 'completed',
+          provider: result.timing?.provider,
+          modelRef: result.timing?.modelRef,
+          policyVersion: 'unaligned-no-valid-transcript',
+          attempts: 0,
+          completedAt: new Date().toISOString(),
+        },
+        transcript: '',
+        segments: [],
+        speechCoverage: 0,
+        speechWindows: [],
       }),
       timing: result.timing,
       roundTripMs: result.roundTripMs,
     };
-  } catch {
-    return { context: null };
   }
+
+  return {
+    context: normalizeTranscriptContext({
+      rawText: transcript,
+      alignedTokens: result.alignedTokens,
+      segmentation: {
+        status: 'pending',
+        policyVersion: CTRANSCRIPT_SEGMENTATION_POLICY_VERSION,
+        attempts: 0,
+      },
+      transcript,
+      segments: [],
+      speechCoverage: computeSpeechCoverage(input.durationMs, tokenSegments),
+      speechWindows: buildSpeechWindows(input.durationMs, tokenSegments),
+    }),
+    timing: result.timing,
+    roundTripMs: result.roundTripMs,
+  };
 }
 
 export async function evaluateProtectedAudioFallback(input: {
@@ -2855,60 +3040,26 @@ function buildSpeechWindows(
 ): IInterestingWindow[] {
   if (durationMs <= 0 || segments.length === 0) return [];
 
-  return buildMergedSpeechSegmentGroups(durationMs, segments)
+  return buildAdaptiveSpeechWindowGroups(durationMs, segments)
     .map(group => ({
-      startMs: Math.max(0, group.startMs - 500),
-      endMs: Math.min(durationMs, group.endMs + 900),
+      startMs: Math.max(0, group.startMs),
+      endMs: Math.min(durationMs, group.endMs),
       semanticKind: 'speech' as const,
       reason: 'speech-window',
     }))
     .filter(window => window.endMs > window.startMs);
 }
 
-interface ISpeechSegmentGroup {
-  startMs: number;
-  endMs: number;
-  text: string;
-}
-
-function buildMergedSpeechSegmentGroups(
+function normalizeTranscriptWithAdaptiveSpeechWindows(
   durationMs: number,
-  segments: ITranscriptSegment[],
-): ISpeechSegmentGroup[] {
-  const normalized = segments
-    .map(segment => ({
-      startMs: Math.max(0, Math.min(durationMs, segment.startMs)),
-      endMs: Math.max(0, Math.min(durationMs, segment.endMs)),
-      text: segment.text.trim(),
-    }))
-    .filter(segment => segment.endMs > segment.startMs && segment.text.length > 0)
-    .sort((left, right) => left.startMs - right.startMs || left.endMs - right.endMs);
-
-  const groups: ISpeechSegmentGroup[] = [];
-  for (const segment of normalized) {
-    const previous = groups[groups.length - 1];
-    if (previous && canMergeSpeechSegmentIntoGroup(previous, segment, durationMs)) {
-      previous.endMs = Math.max(previous.endMs, segment.endMs);
-      previous.text = [previous.text, segment.text].filter(Boolean).join(' ').trim();
-      continue;
-    }
-    groups.push({ ...segment });
-  }
-
-  return groups;
-}
-
-function canMergeSpeechSegmentIntoGroup(
-  group: ISpeechSegmentGroup,
-  segment: ISpeechSegmentGroup,
-  durationMs: number,
-): boolean {
-  if (segment.startMs - group.endMs > CSPEECH_WINDOW_MERGE_GAP_MS) return false;
-  const mergedStartMs = Math.max(0, group.startMs - 500);
-  const mergedEndMs = Math.min(durationMs, segment.endMs + 900);
-  if (mergedEndMs - mergedStartMs > CSPEECH_WINDOW_MAX_DURATION_MS) return false;
-  const mergedText = [group.text, segment.text].filter(Boolean).join('');
-  return countVisibleTranscriptChars(mergedText) <= CSPEECH_WINDOW_MAX_VISIBLE_CHARS;
+  transcript?: ITranscriptContext | null,
+): ITranscriptContext | null {
+  const normalized = normalizeTranscriptContext(transcript);
+  if (!normalized || normalized.alignedTokens.length === 0) return normalized;
+  return {
+    ...normalized,
+    speechWindows: buildSpeechWindows(durationMs, normalized.alignedTokens),
+  };
 }
 
 function countVisibleTranscriptChars(text: string): number {
@@ -3286,13 +3437,12 @@ async function preparePhotoVisualCoarse(
     buildAssetTempDir(input.projectRoot, input.asset.id),
     input.runtimeConfig,
   );
-  const sampleFrames = proxyFrame ? [proxyFrame] : [];
 
   return {
     ...input,
     shotBoundaries: [],
     shotBoundariesResolved: true,
-    sampleFrames,
+    sampleFrames: [proxyFrame],
     coarseSampleTimestamps: [0],
     hasAudioTrack: false,
     sourceContext: buildPreparedSourceContext(input.asset, input.roots),
@@ -4987,9 +5137,15 @@ function restoreTranscriptContextFromReport(
   }
 
   return normalizeTranscriptContext({
+    rawText: report.asrRawText ?? report.transcript ?? '',
+    alignedTokens: report.alignedTokens ?? [],
+    segmentation: report.transcriptSegmentation ?? {
+      status: 'completed',
+      policyVersion: 'legacy-report',
+      attempts: 0,
+    },
     transcript: report.transcript ?? '',
     segments: report.transcriptSegments ?? [],
-    evidence: [],
     speechCoverage: report.speechCoverage ?? 0,
     speechWindows: report.interestingWindows.filter(window => isSpeechSemanticWindow(window)),
   });
@@ -5066,13 +5222,13 @@ function canMergePersistedSpeechSlices(
   right: IKtepSlice,
 ): boolean {
   if (left.assetId !== right.assetId) return false;
-  if (resolvePersistedSpeechGapMs(left, right) > CSPEECH_WINDOW_MERGE_GAP_MS) return false;
+  if (resolvePersistedSpeechGapMs(left, right) > CPERSISTED_SPEECH_SLICE_MERGE_GAP_MS) return false;
   const sourceInMs = pickDefinedMin([left.sourceInMs, right.sourceInMs]);
   const sourceOutMs = pickDefinedMax([left.sourceOutMs, right.sourceOutMs]);
   if (
     typeof sourceInMs === 'number'
     && typeof sourceOutMs === 'number'
-    && sourceOutMs - sourceInMs > CSPEECH_WINDOW_MAX_DURATION_MS
+    && sourceOutMs - sourceInMs > CPERSISTED_SPEECH_SLICE_MAX_DURATION_MS
   ) {
     return false;
   }
@@ -5081,7 +5237,7 @@ function canMergePersistedSpeechSlices(
     ...(right.transcriptSegments ?? []),
   ]);
   const transcript = buildMergedSliceTranscript(transcriptSegments, [left.transcript, right.transcript]);
-  return countVisibleTranscriptChars(transcript) <= CSPEECH_WINDOW_MAX_VISIBLE_CHARS;
+  return countVisibleTranscriptChars(transcript) <= CPERSISTED_SPEECH_SLICE_MAX_VISIBLE_CHARS;
 }
 
 function resolvePersistedSpeechGapMs(

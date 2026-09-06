@@ -1,10 +1,25 @@
 {
-  "schemaVersion": "2.0",
+  "schemaVersion": "3.0",
   "entries": [
     {
       "canonical": "瞬光",
-      "pronunciation": "shunguang",
-      "context": "自我介绍、人物介绍时"
+      "context": "自我介绍或者人物介绍时"
+    },
+    {
+      "canonical": "黄凿顶",
+      "context": "提到去过的地名时"
+    },
+    {
+      "canonical": "hi4t",
+      "context": "介绍汽车相关知识"
+    },
+    {
+      "canonical": "hi4z",
+      "context": "介绍汽车相关知识"
+    },
+    {
+      "canonical": "桑拿鸡",
+      "context": "介绍广东或广西菜品、走地鸡和蒸汽烹饪鸡肉时"
     }
   ]
 }

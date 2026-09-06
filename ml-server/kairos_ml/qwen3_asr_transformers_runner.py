@@ -11,7 +11,6 @@ from typing import Any
 from .device import DEVICE
 from .whisper_runner import (
     _build_silent_timing as _build_whisper_silent_timing,
-    _group_words_to_segments,
     _normalize_text,
     _normalize_timestamp_pair,
     _prepare_transcription_input,
@@ -137,26 +136,48 @@ def _aligned_items(value: Any) -> list[Any]:
         return []
 
 
-def _extract_words(result: Any, offset_seconds: float) -> list[dict]:
-    text = _normalize_text(getattr(result, "text", ""))
+def _extract_words(
+    result: Any,
+    offset_seconds: float,
+    expected_tokens: list[str] | None = None,
+) -> list[dict]:
     timestamps = getattr(result, "time_stamps", None)
+    items = _aligned_items(timestamps)
+    if expected_tokens is not None and len(items) != len(expected_tokens):
+        raise RuntimeError(
+            "Qwen3 ForcedAligner token count does not cover ASR text: "
+            f"expected={len(expected_tokens)} actual={len(items)}"
+        )
     words: list[dict] = []
-    for item in _aligned_items(timestamps):
-        item_text = _normalize_text(
+    for index, item in enumerate(items):
+        item_text = _normalize_text(expected_tokens[index]) if expected_tokens is not None else _normalize_text(
             item.get("text", "") if isinstance(item, dict) else getattr(item, "text", "")
         )
         raw_start = item.get("start_time", 0.0) if isinstance(item, dict) else getattr(item, "start_time", 0.0)
         raw_end = item.get("end_time", raw_start) if isinstance(item, dict) else getattr(item, "end_time", raw_start)
         start, end = _normalize_timestamp_pair(raw_start, raw_end)
-        if item_text and end > start:
+        # ForcedAligner may assign the same boundary to a weak character while
+        # still returning that character in the authoritative aligned sequence.
+        # Keep those zero-duration items whenever the utterance contains at
+        # least one usable positive-duration item; TypeScript validates the
+        # complete character coverage before accepting the checkpoint.
+        if item_text and end >= start:
             words.append({
                 "start": offset_seconds + start,
                 "end": offset_seconds + end,
                 "text": item_text,
             })
-    if text and not words:
-        raise RuntimeError("Qwen3 ForcedAligner returned no word timestamps")
     return words
+
+
+def _expected_alignment_tokens(asr: Any, text: str, language: str) -> list[str] | None:
+    forced_aligner = getattr(asr, "forced_aligner", None)
+    processor = getattr(forced_aligner, "aligner_processor", None)
+    encode_timestamp = getattr(processor, "encode_timestamp", None)
+    if not callable(encode_timestamp):
+        return None
+    tokens, _input_text = encode_timestamp(text, language)
+    return [str(token) for token in tokens]
 
 
 def _transcribe_prepared(
@@ -164,9 +185,10 @@ def _transcribe_prepared(
     prepared: dict,
     language: str,
     chunk_duration_seconds: int,
-) -> tuple[list[dict], list[dict], float, float, int]:
+) -> tuple[str, list[dict], float, float, int]:
     chunks = _split_wav(prepared["wav_path"], chunk_duration_seconds)
     words: list[dict] = []
+    raw_text_parts: list[str] = []
     inference_ms = 0.0
     alignment_ms = 0.0
     try:
@@ -186,12 +208,17 @@ def _transcribe_prepared(
                 raise RuntimeError(
                     f"Qwen3-ASR returned {len(results)} results for one source chunk"
                 )
-            words.extend(_extract_words(results[0], offset_seconds))
+            raw_text = _normalize_text(getattr(results[0], "text", ""))
+            if raw_text:
+                raw_text_parts.append(raw_text)
+            expected_tokens = _expected_alignment_tokens(asr, raw_text, language) if raw_text else []
+            chunk_words = _extract_words(results[0], offset_seconds, expected_tokens)
+            words.extend(chunk_words)
     finally:
         for chunk_path, _offset_seconds, cleanup in chunks:
             if cleanup:
                 chunk_path.unlink(missing_ok=True)
-    return _group_words_to_segments(words), words, inference_ms, alignment_ms, len(chunks)
+    return "".join(raw_text_parts), words, inference_ms, alignment_ms, len(chunks)
 
 
 def transcribe_many(
@@ -200,9 +227,9 @@ def transcribe_many(
     model_path: str,
     aligner_model_path: str,
     preprocess_max_concurrency: int = 1,
-) -> list[tuple[list[dict], list[dict], dict]]:
+) -> list[tuple[str, list[dict], list[dict], dict]]:
     prepared_entries: list[dict | None] = [None] * len(requests)
-    outputs: list[tuple[list[dict], list[dict], dict] | None] = [None] * len(requests)
+    outputs: list[tuple[str, list[dict], list[dict], dict] | None] = [None] * len(requests)
     with ThreadPoolExecutor(max_workers=max(1, preprocess_max_concurrency)) as executor:
         future_map = {
             executor.submit(_prepare_transcription_input, media_path): (index, language)
@@ -224,7 +251,7 @@ def transcribe_many(
                     "alignmentMs": 0.0,
                     "device": "cuda",
                 })
-                outputs[index] = ([], [], timing)
+                outputs[index] = ("", [], [], timing)
                 prepared["wav_path"].unlink(missing_ok=True)
                 continue
             prepared_entries[index] = prepared
@@ -237,14 +264,15 @@ def transcribe_many(
                 if prepared is None:
                     continue
                 language = _language_name(prepared["language"])
-                segments, words, inference_ms, alignment_ms, chunk_count = _transcribe_prepared(
+                raw_text, words, inference_ms, alignment_ms, chunk_count = _transcribe_prepared(
                     asr,
                     prepared,
                     language,
                     _CHUNK_DURATION_SECONDS,
                 )
                 outputs[index] = (
-                    segments,
+                    raw_text,
+                    [],
                     words,
                     {
                         "backend": "qwen3",

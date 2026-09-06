@@ -1452,7 +1452,11 @@ describe('buildMediaChronology', () => {
       await expect(buildProjectChronology({ workspaceRoot, projectId }))
         .rejects.toThrow(/requires fresh spans.*span-rebuild/u);
 
-      await writeJson(getSpansPath(projectRoot), [span({ id: 'span-1', assetId: 'asset-1' })]);
+      await writeJson(getSpansPath(projectRoot), [span({
+        id: 'span-1',
+        assetId: 'asset-1',
+        materialPatterns: ['环境远景', '道路环境', '晴天', '无口播语音', '道路环境观察', '道路延伸', '周边景观'],
+      })]);
       await writeJson(getSpansMetaPath(projectRoot), {
         schemaVersion: '1.0',
         status: 'stale',
@@ -1496,7 +1500,11 @@ describe('buildMediaChronology', () => {
       const projectId = 'project-chronology-geocode-null';
       const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Chronology Geocode Null');
       await writeJson(getAssetsPath(projectRoot), [asset('asset-1')]);
-      await writeJson(getSpansPath(projectRoot), [span({ id: 'span-1', assetId: 'asset-1' })]);
+      await writeJson(getSpansPath(projectRoot), [span({
+        id: 'span-1',
+        assetId: 'asset-1',
+        materialPatterns: ['环境远景', '道路环境', '晴天', '无口播语音', '道路环境观察', '道路延伸', '周边景观'],
+      })]);
       await writeJson(getSpansMetaPath(projectRoot), {
         schemaVersion: '1.0',
         status: 'fresh',
@@ -1526,7 +1534,14 @@ describe('buildMediaChronology', () => {
         }),
       ]);
       await writeJson(getSpansPath(projectRoot), [
-        span({ id: 'drive-span', assetId: 'asset-drive', type: 'drive', sourceInMs: 0, sourceOutMs: 60_000 }),
+        span({
+          id: 'drive-span',
+          assetId: 'asset-drive',
+          type: 'drive',
+          sourceInMs: 0,
+          sourceOutMs: 60_000,
+          materialPatterns: ['第一人称行车', '道路环境', '晴天', '无口播语音', '道路行车观察', '道路推进', '沿途景观'],
+        }),
       ]);
       await writeJson(getSpansMetaPath(projectRoot), {
         schemaVersion: '1.0',

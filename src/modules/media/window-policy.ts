@@ -19,6 +19,10 @@ interface IWindowExpansionPolicy {
   minDurationMs: number;
 }
 
+export const CSPEECH_VISUAL_OVERLAP_IOU_THRESHOLD = 0.5;
+export const CVISUAL_REMAINDER_MIN_DURATION_MS = 15_000;
+export const CSPEECH_ALIGNED_PADDING_MS = 250;
+
 export interface ITypeAwareWindowExpansionInput {
   clipType: EClipType;
   durationMs: number;
@@ -38,6 +42,66 @@ export function applyTypeAwareWindowExpansion(
     .filter((window): window is IInterestingWindow => window != null);
 
   return mergeInterestingWindowsByPreferredBounds(expanded);
+}
+
+export function trimSpeechOverlappingVisualWindows(input: {
+  windows: IInterestingWindow[];
+  assetDurationMs: number;
+  clipType: EClipType;
+}): IInterestingWindow[] {
+  const speechRanges = mergeRanges(
+    input.windows
+      .filter(window => isSpeechSemanticWindow(window))
+      .map(resolveWindowPreferredRange)
+      .filter((range): range is IResolvedRange => range != null),
+  );
+  if (speechRanges.length === 0) {
+    return input.windows.map(cloneWindow);
+  }
+
+  return input.windows.flatMap(window => {
+    if (isSpeechSemanticWindow(window)) return [cloneWindow(window)];
+
+    const visualRange = resolveWindowPreferredRange(window);
+    if (!visualRange) return [];
+    const overlappingSpeechRanges = speechRanges.filter(
+      range => intersectRangeDurationMs(visualRange, range) > 0,
+    );
+    if (overlappingSpeechRanges.length === 0) return [cloneWindow(window)];
+
+    const intersectionMs = overlappingSpeechRanges.reduce(
+      (sum, range) => sum + intersectRangeDurationMs(visualRange, range),
+      0,
+    );
+    const speechDurationMs = overlappingSpeechRanges.reduce(
+      (sum, range) => sum + range.endMs - range.startMs,
+      0,
+    );
+    const unionMs = visualRange.endMs - visualRange.startMs + speechDurationMs - intersectionMs;
+    const iou = unionMs > 0 ? intersectionMs / unionMs : 0;
+    if (iou < CSPEECH_VISUAL_OVERLAP_IOU_THRESHOLD) {
+      return [cloneWindow(window)];
+    }
+
+    return subtractRanges(visualRange, overlappingSpeechRanges)
+      .filter(range => range.endMs - range.startMs >= CVISUAL_REMAINDER_MIN_DURATION_MS)
+      .map(range => ({
+        ...cloneWindow(window),
+        windowId: undefined,
+        startMs: range.startMs,
+        endMs: range.endMs,
+        editStartMs: range.startMs,
+        editEndMs: range.endMs,
+        reason: mergeReasonTokens(window.reason, 'speech-overlap-trimmed'),
+        ...(input.clipType === 'drive' && {
+          speedCandidate: buildDriveSpeedCandidate(
+            input.assetDurationMs,
+            range.endMs - range.startMs,
+            `drive:${mergeReasonTokens(window.reason, 'speech-overlap-trimmed')}`,
+          ),
+        }),
+      }));
+  });
 }
 
 export function isSpeechSemanticWindow(
@@ -235,7 +299,17 @@ function expandWindow(
   const focusEnd = clampMs(window.endMs, 0, input.durationMs);
   if (focusEnd <= focusStart) return null;
 
-  const policy = resolvePolicy(input.clipType, window, input.durationMs);
+  if (isSpeechSemanticWindow(window)) {
+    return {
+      ...window,
+      startMs: focusStart,
+      endMs: focusEnd,
+      editStartMs: Math.max(0, focusStart - CSPEECH_ALIGNED_PADDING_MS),
+      editEndMs: Math.min(input.durationMs, focusEnd + CSPEECH_ALIGNED_PADDING_MS),
+    };
+  }
+
+  const policy = resolvePolicy(input.clipType, input.durationMs);
   const cuts = buildCutPoints(input.durationMs, input.shotBoundaries ?? []);
 
   let editStart = Math.max(0, focusStart - policy.beforeMs);
@@ -293,10 +367,9 @@ function findIntersectingTranscriptSegments(
 
 function resolvePolicy(
   clipType: EClipType,
-  window: IInterestingWindow,
   durationMs: number,
 ): IWindowExpansionPolicy {
-  if (isSpeechSemanticWindow(window) || clipType === 'talking-head') {
+  if (clipType === 'talking-head') {
     return { beforeMs: 250, afterMs: 750, minDurationMs: 2_400 };
   }
 
@@ -380,6 +453,60 @@ function resolvePreferredRange(
   }
 
   return null;
+}
+
+function mergeRanges(ranges: IResolvedRange[]): IResolvedRange[] {
+  const sorted = [...ranges]
+    .filter(range => range.endMs > range.startMs)
+    .sort((left, right) => left.startMs - right.startMs || left.endMs - right.endMs);
+  const merged: IResolvedRange[] = [];
+
+  for (const range of sorted) {
+    const previous = merged[merged.length - 1];
+    if (previous && range.startMs <= previous.endMs) {
+      previous.endMs = Math.max(previous.endMs, range.endMs);
+      continue;
+    }
+    merged.push({ ...range });
+  }
+
+  return merged;
+}
+
+function intersectRangeDurationMs(left: IResolvedRange, right: IResolvedRange): number {
+  return Math.max(0, Math.min(left.endMs, right.endMs) - Math.max(left.startMs, right.startMs));
+}
+
+function subtractRanges(
+  source: IResolvedRange,
+  cuts: IResolvedRange[],
+): IResolvedRange[] {
+  let remainders: IResolvedRange[] = [{ ...source }];
+
+  for (const cut of cuts) {
+    remainders = remainders.flatMap(remainder => {
+      if (cut.endMs <= remainder.startMs || cut.startMs >= remainder.endMs) {
+        return [remainder];
+      }
+
+      const split: IResolvedRange[] = [];
+      if (cut.startMs > remainder.startMs) {
+        split.push({
+          startMs: remainder.startMs,
+          endMs: Math.min(cut.startMs, remainder.endMs),
+        });
+      }
+      if (cut.endMs < remainder.endMs) {
+        split.push({
+          startMs: Math.max(cut.endMs, remainder.startMs),
+          endMs: remainder.endMs,
+        });
+      }
+      return split;
+    });
+  }
+
+  return remainders;
 }
 
 function ensureMinimumDuration(

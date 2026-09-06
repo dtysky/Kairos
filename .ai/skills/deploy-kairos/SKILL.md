@@ -31,10 +31,12 @@ Full deployment guide for a new device. Kairos has three subsystems:
 | Platform | ASR | CLIP | VLM | 安装方式 |
 |----------|-----|------|-----|---------|
 | macOS Apple Silicon | **mlx-whisper** (`whisper-large-v3-turbo`) | **mlx_clip** | **mlx-vlm** (Qwen3.5-9B-MLX-8bit) | `pip install -e ".[mlx]"` + `./scripts/ml-models-init.sh` |
-| Windows + NVIDIA GPU | **Qwen3-ASR + ForcedAligner** (selected) or faster-whisper | open-clip-torch (CUDA) | transformers Qwen3.5-9B (CUDA) | `pip install -e ".[cuda]"` |
+| Windows + NVIDIA GPU | 独立 `.venv-asr`：**Qwen3-ASR + ForcedAligner**；`.venv-ml` 可运行 Whisper | open-clip-torch (CUDA) | `.venv-ml`：transformers Qwen3.5-9B (CUDA) | 两个隔离环境，分别安装 `.[asr-cuda]` 与 `.[cuda]` |
 | Linux / macOS Intel | **faster-whisper** (`large-v3`) | open-clip-torch (CPU) | transformers Qwen3.5-9B (CPU) | `pip install -e ".[cuda]"` |
 
 Apple Silicon 上全栈使用 MLX，**不需要 PyTorch**。后端自动检测，也可通过 `KAIROS_ML_BACKEND=mlx|torch` 强制指定。
+
+Windows 不得把 `qwen-asr==0.0.6` 安装到主 `.venv-ml`：它固定依赖 Transformers 4.57.6，与 Qwen3.5 当前运行版本冲突。使用 `.venv-asr` 启动仅供内部访问的 loopback worker，优先端口为 `8911`，若真实 socket bind 探测不可用则由 Supervisor 选择临时端口，并把实际 URL 注入运行在 `8910` 的 gateway/VLM；Supervisor 负责两者的 health、日志、启动与停止，且只停止本轮记录的 worker，不终止外部端口占用者。
 
 当前默认 ASR 质量目标已经收口为跨平台一致：Apple Silicon 继续使用 `mlx-whisper / whisper-large-v3-turbo`，非 MLX 路径改为 `faster-whisper / large-v3`，优先保证中文准确率与词级时间戳。
 
@@ -112,10 +114,15 @@ uv pip install --python ../.venv-ml/bin/python -e ".[mlx]"
 **Windows + NVIDIA GPU：**
 
 ```powershell
-# 在 Kairos 仓库根目录执行；scripts/ml-server.ps1 会读取这个环境。
+# 在 Kairos 仓库根目录执行；Supervisor 使用 .venv-ml 启动 8910 gateway/VLM。
 uv venv .venv-ml --python 3.12
 uv pip install --python .\.venv-ml\Scripts\python.exe torch torchvision --index-url https://download.pytorch.org/whl/cu124
 uv pip install --python .\.venv-ml\Scripts\python.exe -e "ml-server[cuda]"
+
+# Qwen3-ASR/ForcedAligner 使用固定 Transformers 4.57.6，单独运行在 Supervisor 管理的 loopback worker（优先 8911，占用时自动换端口）。
+uv venv .venv-asr --python 3.12
+uv pip install --python .\.venv-asr\Scripts\python.exe torch torchvision --index-url https://download.pytorch.org/whl/cu124
+uv pip install --python .\.venv-asr\Scripts\python.exe -e "ml-server[asr-cuda]"
 ```
 
 当 `config/runtime.json.asr.backend` 选择 `qwen3` 时，还要把官方 PyTorch checkpoint 原样放到 Windows 仓库约定目录：
@@ -125,7 +132,7 @@ models/Qwen3-ASR-1_7B/
 models/Qwen3-ForcedAligner-0_6B/
 ```
 
-这两个目录由 Windows 运行时自动发现，至少必须包含 `config.json`、`tokenizer_config.json`、`preprocessor_config.json` 与完整 `*.safetensors`/index。Windows 使用官方 `qwen-asr` Transformers backend、`torch.bfloat16`（不支持时 `float16`）和 `cuda:0`；不支持 CPU Qwen3 fallback，也不会读取 MLX checkpoint。`.[cuda]` 已包含 `qwen-asr`；若包、CUDA、ASR checkpoint 或 ForcedAligner 任一缺失，`/analyze` 会展示明确 blocker。
+这两个目录由 Windows 运行时自动发现，至少必须包含 `config.json`、`tokenizer_config.json`、`preprocessor_config.json` 与完整 `*.safetensors`/index。Windows 使用 `.venv-asr` 中 `.[asr-cuda]` 提供的官方 `qwen-asr` Transformers backend、`torch.bfloat16`（不支持时 `float16`）和 `cuda:0`；不支持 CPU Qwen3 fallback，也不会读取 MLX checkpoint。主 `.venv-ml` 的 `.[cuda]` 不安装 `qwen-asr`。若任一环境、CUDA、ASR checkpoint 或 ForcedAligner 缺失，`/analyze` 会展示明确 blocker。
 
 在 `Windows + NVIDIA GPU` 上，建议直接使用 **Windows 原生 Python 环境** 启动 `kairos-ml`，
 让推理直接走 `CUDA`。不要从 WSL 拉起推理服务。

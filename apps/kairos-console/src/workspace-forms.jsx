@@ -1,6 +1,7 @@
 import React from 'react';
-import { Checkbox, Drawer, Table } from 'antd';
+import { Checkbox, Drawer, Radio, Table } from 'antd';
 import { Button, Card, Divider, Modal, Tag } from './ui-compat.tsx';
+import { buildSpeechReviewAudioUrl } from './api.js';
 
 const COLOR_SOURCE_PROFILE_OPTIONS = [
   { value: '', label: '自动 / 未指定' },
@@ -2912,7 +2913,7 @@ export function TranscriptGlossaryEditor({ config, setConfig, onSave, busy }) {
     setEditingIndex(index);
     setDraft(entry
       ? { ...entry }
-      : { canonical: '', pronunciation: '', context: '' });
+      : { canonical: '', context: '' });
     setValidationError('');
     setDrawerOpen(true);
   }
@@ -2939,21 +2940,19 @@ export function TranscriptGlossaryEditor({ config, setConfig, onSave, busy }) {
     }
     const next = {
       canonical,
-      pronunciation: draft?.pronunciation?.trim() || undefined,
       context,
     };
     setConfig(current => {
       const currentEntries = [...(current?.entries || [])];
       if (editingIndex >= 0) currentEntries[editingIndex] = next;
       else currentEntries.push(next);
-      return { schemaVersion: '2.0', entries: currentEntries };
+      return { schemaVersion: '3.0', entries: currentEntries };
     });
     setDrawerOpen(false);
   }
 
   const columns = [
     { title: '正确写法', dataIndex: 'canonical', width: 220, render: value => <strong>{value}</strong> },
-    { title: '发音', dataIndex: 'pronunciation', width: 180, render: value => value || <span className="muted">自动判断</span> },
     { title: '使用语境', dataIndex: 'context' },
     { title: '', key: 'action', width: 84, render: (_, entry, index) => <Button type="default" size="small" onClick={() => openEntry(index)}>编辑</Button> },
   ];
@@ -2966,7 +2965,7 @@ export function TranscriptGlossaryEditor({ config, setConfig, onSave, busy }) {
         busy={busy}
         actions={<Button type="default" onClick={() => openEntry(-1)}>新增词条</Button>}
       />
-      <p className="muted">只供 ASR 后置 Agent 校对，不会作为热词送入 Qwen 或 Whisper。发音只用来找可能的同音词，是否采用由完整句子与当前行程语境决定。</p>
+      <p className="muted">只供 ASR 后置 Agent 校对，不会作为热词送入 Qwen 或 Whisper。是否采用由完整句子、相邻口播与当前行程语境决定。</p>
       <Table
         rowKey="canonical"
         size="small"
@@ -2984,7 +2983,6 @@ export function TranscriptGlossaryEditor({ config, setConfig, onSave, busy }) {
         {draft ? (
           <div className="drawer-form-stack">
             <Field label="正确写法" value={draft.canonical} onChange={value => setDraft(current => ({ ...current, canonical: value }))} />
-            <Field label="发音（可选）" value={draft.pronunciation || ''} placeholder="例如：shùn guāng" onChange={value => setDraft(current => ({ ...current, pronunciation: value }))} />
             <TextAreaField label="使用语境" value={draft.context || ''} placeholder="例如：自我介绍、人物介绍时" onChange={value => setDraft(current => ({ ...current, context: value }))} rows={5} />
             {validationError ? <div className="error-banner">{validationError}</div> : null}
             <div className="actions">
@@ -2994,7 +2992,7 @@ export function TranscriptGlossaryEditor({ config, setConfig, onSave, busy }) {
                   onClick={() => {
                     if (!window.confirm(`删除词条“${entries[editingIndex]?.canonical}”？`)) return;
                     setConfig(current => ({
-                      schemaVersion: '2.0',
+                      schemaVersion: '3.0',
                       entries: (current?.entries || []).filter((_, index) => index !== editingIndex),
                     }));
                     setDrawerOpen(false);
@@ -3106,6 +3104,344 @@ export function TranscriptCorrectionReviewPanel({ reviews, setReviews, onResolve
       </Drawer>
     </Card>
   );
+}
+
+const SPEECH_TRANSCRIPT_REVIEW_SECTIONS = [
+  { category: 'transcript-auto-normalized', title: '字幕｜已自动修正', kind: 'transcript' },
+  { category: 'transcript-suggested-correction', title: '字幕｜建议修正', kind: 'transcript' },
+  { category: 'transcript-needs-listening', title: '字幕｜需人工听音', kind: 'transcript' },
+  { category: 'speech-window-suggested-trim', title: '口播窗口｜建议裁切', kind: 'window' },
+  { category: 'speech-window-suggested-cancel', title: '口播窗口｜建议取消', kind: 'window' },
+];
+
+export function SpeechTranscriptReviewPanel({ projectId, review, onSaveDraft, onSubmit, busy = false }) {
+  const [drafts, setDrafts] = React.useState({});
+  const [activeAudioId, setActiveAudioId] = React.useState(null);
+  const [saveStatus, setSaveStatus] = React.useState('saved');
+  const [saveError, setSaveError] = React.useState('');
+  const draftDirtyRef = React.useRef(false);
+  const saveSequenceRef = React.useRef(0);
+  const saveTimerRef = React.useRef(null);
+  const saveDraftHandlerRef = React.useRef(onSaveDraft);
+
+  React.useEffect(() => {
+    saveDraftHandlerRef.current = onSaveDraft;
+  }, [onSaveDraft]);
+
+  React.useEffect(() => {
+    const next = {};
+    for (const item of review?.items || []) {
+      const legacyRejectedTranscript = item.category === 'transcript-needs-listening'
+        && item.selection === 'rejected';
+      next[item.id] = {
+        selection: legacyRejectedTranscript ? 'accepted' : item.selection,
+        finalText: legacyRejectedTranscript
+          ? item.originalText || ''
+          : item.finalText || item.suggestedText || item.originalText || '',
+        retainStartMs: item.retainStartMs,
+        retainEndMs: item.retainEndMs,
+        windowAction: item.resolvedWindowAction || '',
+      };
+    }
+    setDrafts(next);
+    setActiveAudioId(null);
+    draftDirtyRef.current = false;
+    setSaveStatus('saved');
+    setSaveError('');
+  }, [review?.inputsHash, review?.updatedAt]);
+
+  React.useEffect(() => {
+    if (!draftDirtyRef.current || !review || typeof saveDraftHandlerRef.current !== 'function') return undefined;
+    const sequence = ++saveSequenceRef.current;
+    const payload = buildSpeechReviewResolutionPayload(review, drafts, true);
+    if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = window.setTimeout(async () => {
+      try {
+        await saveDraftHandlerRef.current(payload);
+        if (saveSequenceRef.current !== sequence) return;
+        draftDirtyRef.current = false;
+        setSaveStatus('saved');
+        setSaveError('');
+      } catch (caught) {
+        if (saveSequenceRef.current !== sequence) return;
+        setSaveStatus('error');
+        setSaveError(caught instanceof Error ? caught.message : String(caught));
+      }
+    }, 600);
+    return () => {
+      if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+    };
+  }, [drafts, review?.inputsHash]);
+
+  if (!review || review.status === 'pending-agent') return null;
+
+  function updateDraft(itemId, patch) {
+    draftDirtyRef.current = true;
+    setSaveStatus('saving');
+    setSaveError('');
+    setDrafts(current => ({ ...current, [itemId]: { ...(current[itemId] || {}), ...patch } }));
+  }
+
+  const unresolved = (review.items || []).filter(item => (
+    item.category === 'transcript-needs-listening'
+    && (drafts[item.id]?.selection || item.selection) === 'unresolved'
+  ));
+
+  function submitReview() {
+    saveSequenceRef.current += 1;
+    if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+    onSubmit(buildSpeechReviewResolutionPayload(review, drafts, false));
+  }
+
+  function renderReviewControl(item) {
+    const draft = drafts[item.id] || item;
+    if (item.selection === 'applied') return <Tag color="success">已应用</Tag>;
+    if (item.category.endsWith('needs-listening')) {
+      const completed = (draft.selection || item.selection) !== 'unresolved';
+      return (
+        <Radio
+          aria-label={`${item.id} 审查完成`}
+          checked={completed}
+          onClick={() => updateDraft(item.id, { selection: completed ? 'unresolved' : 'accepted' })}
+          onChange={() => undefined}
+        >
+          审查完成
+        </Radio>
+      );
+    }
+    return (
+      <Checkbox
+        checked={(draft.selection || item.selection) === 'accepted'}
+        onChange={event => updateDraft(item.id, { selection: event.target.checked ? 'accepted' : 'rejected' })}
+      >
+        接受建议
+      </Checkbox>
+    );
+  }
+
+  function audioColumn(category) {
+    return category === 'transcript-needs-listening'
+      ? [{
+        title: '试听',
+        key: 'audio',
+        width: 128,
+        render: (_, item) => (
+          <SpeechReviewAudioPlayer
+            projectId={projectId}
+            item={item}
+            active={activeAudioId === item.id}
+            setActiveId={setActiveAudioId}
+          />
+        ),
+      }]
+      : [];
+  }
+
+  function transcriptColumns(category) {
+    return [
+      { title: '状态', key: 'status', width: 150, render: (_, item) => renderReviewControl(item) },
+      { title: '素材', key: 'asset', width: 150, render: (_, item) => item.assetDisplayName || item.assetId },
+      { title: '段', dataIndex: 'spanIds', width: 210, render: value => value.join(', ') },
+      { title: '时间', key: 'time', width: 185, render: (_, item) => formatSpeechReviewRange(item.startMs, item.endMs) },
+      ...audioColumn(category),
+      { title: '原文', dataIndex: 'originalText' },
+      {
+        title: '建议文本',
+        key: 'suggestedText',
+        render: (_, item) => item.selection === 'applied'
+          ? item.finalText || item.suggestedText
+          : (
+            <textarea
+              className="speech-review-textarea"
+              aria-label={`${item.id} 最终文本`}
+              rows={3}
+              value={drafts[item.id]?.finalText ?? item.suggestedText ?? ''}
+              onChange={event => updateDraft(item.id, { finalText: event.target.value })}
+            />
+          ),
+      },
+      { title: '依据', dataIndex: 'reason' },
+    ];
+  }
+
+  function windowColumns(category) {
+    return [
+      { title: '状态', key: 'status', width: 150, render: (_, item) => renderReviewControl(item) },
+      { title: '素材', key: 'asset', width: 150, render: (_, item) => item.assetDisplayName || item.assetId },
+      { title: '窗口', dataIndex: 'spanIds', width: 230, render: value => value.join(', ') },
+      { title: '时间', key: 'time', width: 185, render: (_, item) => formatSpeechReviewRange(item.startMs, item.endMs) },
+      ...audioColumn(category),
+      { title: '原内容', dataIndex: 'originalText' },
+      {
+        title: '建议结果',
+        key: 'result',
+        render: (_, item) => {
+          const draft = drafts[item.id] || item;
+          const action = item.category === 'speech-window-suggested-trim'
+            ? 'trim'
+            : item.category === 'speech-window-suggested-cancel'
+              ? 'cancel'
+              : draft.windowAction || 'keep';
+          if (action === 'cancel') {
+            return '取消口播属性和字幕，保留视觉素材召回';
+          }
+          if (action === 'trim') {
+            return (
+              <div className="speech-review-range-inputs">
+                <label>起点 <input type="number" value={draft.retainStartMs ?? ''} onChange={event => updateDraft(item.id, { retainStartMs: Number(event.target.value) })} /></label>
+                <label>终点 <input type="number" value={draft.retainEndMs ?? ''} onChange={event => updateDraft(item.id, { retainEndMs: Number(event.target.value) })} /></label>
+                <div className="speech-review-trimmed-text">
+                  <span>裁切后口播</span>
+                  <p>{speechReviewRetainedText(item, draft.retainStartMs, draft.retainEndMs) || '当前范围没有可显示的字幕文本'}</p>
+                </div>
+              </div>
+            );
+          }
+          return '不调整口播窗口';
+        },
+      },
+      { title: '依据', dataIndex: 'reason' },
+    ];
+  }
+
+  return (
+    <Card className="panel speech-transcript-review-panel">
+      <div className="section-header">
+        <div>
+          <h2>口播与字幕审查</h2>
+          <p className="muted">建议项默认接受；取消勾选即可不采用。所有分类分别成表，提交前不会写入正式 spans。</p>
+        </div>
+        <div className="speech-review-status-tags">
+          <Tag color={saveStatus === 'error' ? 'error' : saveStatus === 'saving' ? 'processing' : 'success'}>
+            {saveStatus === 'error' ? '草稿保存失败' : saveStatus === 'saving' ? '草稿保存中' : '草稿已保存'}
+          </Tag>
+          <Tag color={unresolved.length > 0 ? 'warning' : 'success'}>{unresolved.length > 0 ? `${unresolved.length} 条待听音` : '可以提交'}</Tag>
+        </div>
+      </div>
+      {saveError ? <div className="error-banner speech-review-save-error">{saveError}</div> : null}
+      {SPEECH_TRANSCRIPT_REVIEW_SECTIONS.map(section => {
+        const rows = (review.items || []).filter(item => item.category === section.category);
+        if (rows.length === 0) return null;
+        return (
+          <section className="speech-review-section" key={section.category}>
+            <h3>{section.title}</h3>
+            <Table
+              rowKey="id"
+              size="small"
+              pagination={false}
+              dataSource={rows}
+              columns={section.kind === 'transcript' ? transcriptColumns(section.category) : windowColumns(section.category)}
+              scroll={{ x: 1180, y: 320 }}
+            />
+          </section>
+        );
+      })}
+      <div className="actions transcript-review-actions">
+        <Button type="primary" disabled={unresolved.length > 0 || review.status === 'completed'} loading={busy} onClick={submitReview}>
+          {review.status === 'completed' ? '审查已提交' : '提交整轮审查'}
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+function buildSpeechReviewResolutionPayload(review, drafts, allowUnresolved) {
+  const resolutions = (review.items || [])
+    .filter(item => item.selection !== 'applied' && item.category !== 'speech-window-needs-listening')
+    .map(item => {
+      const draft = drafts[item.id] || {};
+      const selection = draft.selection || item.selection;
+      const needsListening = item.category.endsWith('needs-listening');
+      return {
+        itemId: item.id,
+        selection: needsListening
+          ? allowUnresolved && selection === 'unresolved' ? 'unresolved' : 'accepted'
+          : selection === 'rejected' ? 'rejected' : 'accepted',
+        finalText: item.category.startsWith('transcript-') ? draft.finalText : undefined,
+        windowAction: undefined,
+        retainStartMs: draft.retainStartMs,
+        retainEndMs: draft.retainEndMs,
+      };
+    });
+  return { inputsHash: review.inputsHash, resolutions };
+}
+
+function SpeechReviewAudioPlayer({ projectId, item, active, setActiveId }) {
+  const audioRef = React.useRef(null);
+  const [error, setError] = React.useState('');
+  const source = buildSpeechReviewAudioUrl(projectId, item.assetId, item.startMs, item.endMs);
+
+  React.useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || active) return undefined;
+    if (!audio.paused) audio.pause();
+    audio.currentTime = 0;
+    return undefined;
+  }, [active]);
+
+  React.useEffect(() => () => {
+    if (audioRef.current && !audioRef.current.paused) audioRef.current.pause();
+  }, []);
+
+  async function togglePlayback() {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (active) {
+      audio.pause();
+      audio.currentTime = 0;
+      setActiveId(null);
+      return;
+    }
+    setError('');
+    setActiveId(item.id);
+    audio.currentTime = 0;
+    try {
+      await audio.play();
+    } catch {
+      setError('播放失败');
+      setActiveId(null);
+    }
+  }
+
+  return (
+    <div className="speech-review-audio-player">
+      <audio
+        ref={audioRef}
+        src={source}
+        preload="none"
+        loop
+        onError={() => { setError('播放失败'); setActiveId(null); }}
+      />
+      <Button type={active ? 'primary' : 'default'} size="small" onClick={togglePlayback}>
+        {active ? '暂停' : '循环播放'}
+      </Button>
+      <span className="speech-review-audio-context">前后各 1 秒</span>
+      {error ? <span className="speech-review-audio-error">{error}</span> : null}
+    </div>
+  );
+}
+
+function formatSpeechReviewRange(startMs, endMs) {
+  return `${formatSpeechReviewTime(startMs)}–${formatSpeechReviewTime(endMs)}`;
+}
+
+function speechReviewRetainedText(item, startMs, endMs) {
+  if (!Array.isArray(item.transcriptSegments) || item.transcriptSegments.length === 0) return item.suggestedText || '';
+  return item.transcriptSegments
+    .filter(segment => segment.startMs >= startMs && segment.endMs <= endMs)
+    .map(segment => String(segment.text || '').trim())
+    .filter(Boolean)
+    .join(' ')
+    .trim();
+}
+
+function formatSpeechReviewTime(value) {
+  const totalMs = Math.max(0, Math.round(Number(value) || 0));
+  const hours = Math.floor(totalMs / 3_600_000);
+  const minutes = Math.floor((totalMs % 3_600_000) / 60_000);
+  const seconds = Math.floor((totalMs % 60_000) / 1000);
+  const ms = totalMs % 1000;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
 }
 
 export function SectionHeader({ title, onSave, busy, saveDisabled = false, actions = null }) {

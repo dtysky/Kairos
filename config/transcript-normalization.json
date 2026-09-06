@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0",
+  "rules": [
+    {
+      "from": "我操",
+      "to": "卧槽"
+    }
+  ]
+}

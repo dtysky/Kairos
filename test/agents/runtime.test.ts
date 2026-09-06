@@ -85,6 +85,7 @@ describe('MlJsonPacketAgentRunner', () => {
         label: 'span-materialization-review-items',
         content: {
           attempt: 1,
+          expectedRowCount: 1,
           items: [{
             type: 'drive',
             semanticKind: 'speech',
@@ -93,6 +94,13 @@ describe('MlJsonPacketAgentRunner', () => {
               { index: 2, startMs: 1200, endMs: 4000, text: '雨天出发' },
             ],
             visualObservation: '车内雨天行车画面',
+          }],
+          validationFeedback: [{
+            itemIndex: 1,
+            reason: 'row-length-out-of-range',
+            validationIssues: ['Row must contain exactly 7 tags; received 8.'],
+            expectedSpeechTag: '有口播语音',
+            lastReturnedRow: ['车内自拍口播', '车内', '下雨', '有口播语音', '雨天出发说明', '出发说明', '雨天行程', '多余标签'],
           }],
         },
       }],
@@ -103,18 +111,29 @@ describe('MlJsonPacketAgentRunner', () => {
     const result = await runner.run<string[][]>({
       promptId: 'media/span-materialization-review',
       packet,
-      llm: { jsonMode: true },
+      llm: { jsonMode: true, temperature: 0.2 },
     });
 
     expect(result).toEqual([
       ['车内自拍口播', '车内', '下雨', '有口播语音', '雨天出发说明', '出发说明', '雨天行程'],
     ]);
-    expect(capturedOptions).toMatchObject({ maxTokens: CSPAN_MATERIALIZATION_REVIEW_MAX_TOKENS });
+    expect(capturedOptions).toMatchObject({
+      maxTokens: CSPAN_MATERIALIZATION_REVIEW_MAX_TOKENS,
+      temperature: 0.2,
+    });
     expect(capturedPrompt).not.toContain('keepSegmentIndexes');
     expect(capturedPrompt).not.toContain('keepVisualOnly');
-    expect(capturedPrompt).toContain('只输出一行顶层 JSON 数组');
-    expect(capturedPrompt).toContain('每行必须正好 7 个中文短标签');
+    expect(capturedPrompt).toContain('顶层和内层数组均只有一行');
+    expect(capturedPrompt).toContain('恰好七个非空中文短标签');
     expect(capturedPrompt).toContain('不能决定 speech keep/drop');
+    expect(capturedPrompt).toContain('单行 JSON 纠错器');
+    expect(capturedPrompt).toContain('固定 schema');
+    expect(capturedPrompt).toContain('slot 4 等于 validationFeedback.expectedSpeechTag');
+    expect(capturedPrompt).toContain('slot 6 与 slot 7 互异且不重复前五项');
+    expect(capturedPrompt).not.toContain('禁止第 8 项');
+    expect(capturedPrompt).not.toContain('如果上一行');
+    expect(capturedPrompt).not.toContain('可见物体、地貌或动作');
+    expect(capturedPrompt.trimEnd().endsWith('只输出 JSON，不要解释或 Markdown。')).toBe(true);
   });
 
   it('parses the first balanced JSON value and ignores extra trailing brackets', async () => {

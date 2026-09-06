@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { z } from 'zod';
 import { IKtepAsset, IKtepSlice, IKtepSpan, ISpansMeta } from '../protocol/schema.js';
+import { summarizeSpanMaterialPatternIntegrity } from '../protocol/material-pattern-integrity.js';
 import { readJsonOrNull, writeJson } from './writer.js';
 
 export interface IMergeResult {
@@ -108,6 +109,12 @@ export async function assertFreshSpans(projectRoot: string): Promise<{ spans: IK
   }
   if (meta.spanCount !== spans.length) {
     throw new Error(`Script/Timeline requires fresh spans: meta spanCount ${meta.spanCount} does not match store/spans.json count ${spans.length}. Run /chronology span-rebuild first.`);
+  }
+  const materialPatternIntegrity = summarizeSpanMaterialPatternIntegrity(spans);
+  if (materialPatternIntegrity.incompleteCount > 0) {
+    throw new Error(
+      `Script/Timeline requires fresh spans: ${materialPatternIntegrity.incompleteCount} span(s) do not contain exactly ${materialPatternIntegrity.expectedCount} materialPatterns. Run /chronology material pattern repair first.`,
+    );
   }
   return { spans, meta };
 }

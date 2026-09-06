@@ -186,18 +186,74 @@ export const ITranscriptSegment = z.object({
 });
 export type ITranscriptSegment = z.infer<typeof ITranscriptSegment>;
 
+export const IAlignedTranscriptToken = z.object({
+  index: z.number().int().nonnegative(),
+  startMs: z.number().int().nonnegative(),
+  endMs: z.number().int().nonnegative(),
+  gapAfterMs: z.number().int().nonnegative(),
+  text: z.string().min(1),
+});
+export type IAlignedTranscriptToken = z.infer<typeof IAlignedTranscriptToken>;
+
+export const IAlignedTokenTimingRepair = z.object({
+  index: z.number().int().nonnegative(),
+  text: z.string().min(1),
+  anchor: z.enum(['left', 'right']),
+  originalStartMs: z.number().int().nonnegative(),
+  originalEndMs: z.number().int().nonnegative(),
+  repairedStartMs: z.number().int().nonnegative(),
+  repairedEndMs: z.number().int().nonnegative(),
+});
+export type IAlignedTokenTimingRepair = z.infer<typeof IAlignedTokenTimingRepair>;
+
+export const IAlignedTokenTimingValidation = z.object({
+  policyVersion: z.string(),
+  status: z.enum(['valid', 'repaired']),
+  sourceP90TokenDurationMs: z.number().int().nonnegative(),
+  adaptiveOutlierThresholdMs: z.number().int().nonnegative(),
+  replacementTokenDurationMs: z.number().int().nonnegative(),
+  originalMaxTokenDurationMs: z.number().int().nonnegative(),
+  repairedMaxTokenDurationMs: z.number().int().nonnegative(),
+  normalizedGapCount: z.number().int().nonnegative(),
+  repairs: z.array(IAlignedTokenTimingRepair),
+});
+export type IAlignedTokenTimingValidation = z.infer<typeof IAlignedTokenTimingValidation>;
+
+export const ITranscriptSegmentation = z.object({
+  status: z.enum(['pending', 'completed']),
+  provider: z.string().optional(),
+  modelRef: z.string().optional(),
+  promptVersion: z.string().optional(),
+  policyVersion: z.string().optional(),
+  attempts: z.number().int().nonnegative(),
+  completedAt: z.string().optional(),
+  timingValidation: IAlignedTokenTimingValidation.optional(),
+});
+export type ITranscriptSegmentation = z.infer<typeof ITranscriptSegmentation>;
+
 export const ITranscriptGlossaryEntry = z.object({
   canonical: z.string(),
-  pronunciation: z.string().optional(),
   context: z.string(),
 });
 export type ITranscriptGlossaryEntry = z.infer<typeof ITranscriptGlossaryEntry>;
 
 export const ITranscriptGlossaryConfig = z.object({
-  schemaVersion: z.literal('2.0'),
+  schemaVersion: z.literal('3.0'),
   entries: z.array(ITranscriptGlossaryEntry).default([]),
 });
 export type ITranscriptGlossaryConfig = z.infer<typeof ITranscriptGlossaryConfig>;
+
+export const ITranscriptNormalizationRule = z.object({
+  from: z.string(),
+  to: z.string(),
+});
+export type ITranscriptNormalizationRule = z.infer<typeof ITranscriptNormalizationRule>;
+
+export const ITranscriptNormalizationConfig = z.object({
+  schemaVersion: z.literal('1.0'),
+  rules: z.array(ITranscriptNormalizationRule).default([]),
+});
+export type ITranscriptNormalizationConfig = z.infer<typeof ITranscriptNormalizationConfig>;
 
 export const EAsrBackend = z.enum(['qwen3', 'whisper']);
 export type EAsrBackend = z.infer<typeof EAsrBackend>;
@@ -391,7 +447,13 @@ export const ISpansMeta = z.object({
     pendingCorrectionCount: z.number().int().nonnegative().optional(),
     handoffPath: z.string().optional(),
     reviewArtifactPath: z.string().optional(),
+    reportPath: z.string().optional(),
+    suggestedCorrectionCount: z.number().int().nonnegative().optional(),
+    suggestedTrimCount: z.number().int().nonnegative().optional(),
+    suggestedCancelCount: z.number().int().nonnegative().optional(),
+    needsListeningCount: z.number().int().nonnegative().optional(),
     glossaryHash: z.string().optional(),
+    normalizationHash: z.string().optional(),
     tripContextHash: z.string().optional(),
     updatedAt: z.string().optional(),
   }).optional(),
@@ -792,6 +854,9 @@ export const IAssetCoarseReport = z.object({
   gpsSummary: z.string().optional(),
   inferredGps: IInferredGps.optional(),
   summary: z.string().optional(),
+  asrRawText: z.string().optional(),
+  alignedTokens: z.array(IAlignedTranscriptToken).optional(),
+  transcriptSegmentation: ITranscriptSegmentation.optional(),
   transcript: z.string().optional(),
   transcriptSegments: z.array(ITranscriptSegment).optional(),
   speechCoverage: z.number().min(0).max(1).optional(),
@@ -858,6 +923,61 @@ export const IProjectChronology = z.object({
   events: z.array(IChronologyEvent),
 }).strict();
 export type IProjectChronology = z.infer<typeof IProjectChronology>;
+
+export const EChronologyEventConsolidationStatus = z.enum(['pending-agent', 'completed', 'not-required']);
+export type EChronologyEventConsolidationStatus = z.infer<typeof EChronologyEventConsolidationStatus>;
+
+export const IChronologyEventConsolidationDecision = z.object({
+  sourceEventIds: z.array(z.string().min(1)).min(2),
+  anchorEventId: z.string().min(1).optional(),
+  title: z.string().min(1),
+  summary: z.string().min(1),
+  reason: z.string().min(1),
+}).strict();
+export type IChronologyEventConsolidationDecision = z.infer<typeof IChronologyEventConsolidationDecision>;
+
+export const IChronologyEventConsolidationSubmission = z.object({
+  schemaVersion: z.literal('1.0'),
+  projectId: z.string().min(1),
+  inputsHash: z.string().min(1),
+  candidateHash: z.string().min(1),
+  decisions: z.array(IChronologyEventConsolidationDecision),
+}).strict();
+export type IChronologyEventConsolidationSubmission = z.infer<typeof IChronologyEventConsolidationSubmission>;
+
+export const IChronologyEventConsolidationState = z.object({
+  schemaVersion: z.literal('1.0'),
+  projectId: z.string().min(1),
+  inputsHash: z.string().min(1),
+  candidateHash: z.string().min(1),
+  resultHash: z.string().optional(),
+  status: EChronologyEventConsolidationStatus,
+  generatedAt: z.string(),
+  updatedAt: z.string(),
+  completedAt: z.string().optional(),
+  candidateEventCount: z.number().int().nonnegative(),
+  eventCountBefore: z.number().int().nonnegative(),
+  eventCountAfter: z.number().int().nonnegative().optional(),
+  mergeGroupCount: z.number().int().nonnegative(),
+  handoffPath: z.string(),
+  decisionsPath: z.string(),
+  auditPath: z.string().optional(),
+  note: z.string().optional(),
+}).strict();
+export type IChronologyEventConsolidationState = z.infer<typeof IChronologyEventConsolidationState>;
+
+export const IChronologyEventConsolidationAudit = z.object({
+  schemaVersion: z.literal('1.0'),
+  projectId: z.string().min(1),
+  inputsHash: z.string().min(1),
+  candidateHash: z.string().min(1),
+  resultHash: z.string().min(1),
+  generatedAt: z.string(),
+  decisions: z.array(IChronologyEventConsolidationDecision),
+  beforeEvents: z.array(IChronologyEvent),
+  afterEvents: z.array(IChronologyEvent),
+}).strict();
+export type IChronologyEventConsolidationAudit = z.infer<typeof IChronologyEventConsolidationAudit>;
 
 // ─── Model-Driven Script Prep ──────────────────────────────
 
@@ -2247,6 +2367,7 @@ export type EReviewItemKind = z.infer<typeof EReviewItemKind>;
 
 export const ETranscriptReviewEvidenceSource = z.enum([
   'glossary',
+  'normalization',
   'pharos',
   'manual-itinerary',
   'place-hint',
@@ -2309,15 +2430,31 @@ export const ITranscriptReviewItem = z.object({
 });
 export type ITranscriptReviewItem = z.infer<typeof ITranscriptReviewItem>;
 
+export const ITranscriptAutoNormalizationItem = z.object({
+  id: z.string(),
+  assetId: z.string(),
+  assetDisplayName: z.string().optional(),
+  spanIds: z.array(z.string()).min(1),
+  startMs: z.number().nonnegative(),
+  endMs: z.number().nonnegative(),
+  originalText: z.string(),
+  originalTextHash: z.string(),
+  finalText: z.string(),
+  ruleIds: z.array(z.string()).min(1),
+});
+export type ITranscriptAutoNormalizationItem = z.infer<typeof ITranscriptAutoNormalizationItem>;
+
 export const ITranscriptReviewArtifact = z.object({
   schemaVersion: z.literal('1.0'),
   projectId: z.string(),
   inputsHash: z.string(),
   glossaryHash: z.string(),
+  normalizationHash: z.string().optional(),
   tripContextHash: z.string(),
   status: z.enum(['pending-agent', 'pending-human', 'completed']),
   generatedAt: z.string(),
   updatedAt: z.string(),
+  autoNormalizations: z.array(ITranscriptAutoNormalizationItem).default([]),
   items: z.array(ITranscriptReviewItem).default([]),
 });
 export type ITranscriptReviewArtifact = z.infer<typeof ITranscriptReviewArtifact>;
@@ -2336,6 +2473,111 @@ export const ITranscriptAgentDecision = z.object({
   evidence: z.array(ITranscriptReviewEvidence).default([]),
 });
 export type ITranscriptAgentDecision = z.infer<typeof ITranscriptAgentDecision>;
+
+export const ESpeechWindowAgentAction = z.enum(['keep', 'trim', 'cancel', 'needs-human']);
+export type ESpeechWindowAgentAction = z.infer<typeof ESpeechWindowAgentAction>;
+
+export const ISpeechWindowAgentDecision = z.object({
+  spanId: z.string(),
+  inputsHash: z.string(),
+  action: ESpeechWindowAgentAction,
+  retainStartMs: z.number().nonnegative().optional(),
+  retainEndMs: z.number().nonnegative().optional(),
+  confidence: z.number().min(0).max(1),
+  reason: z.string(),
+  evidence: z.array(z.string()).default([]),
+});
+export type ISpeechWindowAgentDecision = z.infer<typeof ISpeechWindowAgentDecision>;
+
+export const ESpeechTranscriptReviewCategory = z.enum([
+  'transcript-auto-normalized',
+  'transcript-suggested-correction',
+  'transcript-needs-listening',
+  'speech-window-suggested-trim',
+  'speech-window-suggested-cancel',
+  'speech-window-needs-listening',
+]);
+export type ESpeechTranscriptReviewCategory = z.infer<typeof ESpeechTranscriptReviewCategory>;
+
+export const ESpeechTranscriptReviewSelection = z.enum(['applied', 'accepted', 'rejected', 'unresolved']);
+export type ESpeechTranscriptReviewSelection = z.infer<typeof ESpeechTranscriptReviewSelection>;
+
+export const ISpeechTranscriptReviewItem = z.object({
+  id: z.string(),
+  category: ESpeechTranscriptReviewCategory,
+  selection: ESpeechTranscriptReviewSelection,
+  assetId: z.string(),
+  assetDisplayName: z.string().optional(),
+  spanIds: z.array(z.string()).min(1),
+  startMs: z.number().nonnegative(),
+  endMs: z.number().nonnegative(),
+  originalText: z.string().optional(),
+  transcriptSegments: z.array(ITranscriptSegment).optional(),
+  originalTextHash: z.string().optional(),
+  suggestedText: z.string().optional(),
+  finalText: z.string().optional(),
+  retainStartMs: z.number().nonnegative().optional(),
+  retainEndMs: z.number().nonnegative().optional(),
+  resolvedWindowAction: z.enum(['keep', 'trim', 'cancel']).optional(),
+  reason: z.string(),
+  evidence: z.array(ITranscriptReviewEvidence).default([]),
+  windowEvidence: z.array(z.string()).default([]),
+  contextEvents: z.array(ITranscriptReviewContextEvent).default([]),
+  confidence: z.number().min(0).max(1).optional(),
+  containsProperNoun: z.boolean().optional(),
+  visualSpanIds: z.array(z.string()).default([]),
+  resolvedAt: z.string().optional(),
+}).superRefine((item, context) => {
+  if (item.endMs < item.startMs) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: 'review item endMs must be >= startMs' });
+  }
+  if (item.category === 'transcript-auto-normalized' && item.selection !== 'applied') {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: 'auto-normalized transcript item must be applied' });
+  }
+  if (item.category.includes('suggested') && !['accepted', 'rejected'].includes(item.selection)) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: 'suggested review item must be accepted or rejected' });
+  }
+  if (item.category.endsWith('needs-listening') && !['unresolved', 'accepted', 'rejected'].includes(item.selection)) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: 'needs-listening item has invalid selection' });
+  }
+  if (item.category === 'speech-window-suggested-trim') {
+    if (item.retainStartMs === undefined || item.retainEndMs === undefined || item.retainEndMs <= item.retainStartMs) {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: 'trim item requires a positive retained range' });
+    }
+  }
+});
+export type ISpeechTranscriptReviewItem = z.infer<typeof ISpeechTranscriptReviewItem>;
+
+export const ISpeechTranscriptReviewArtifact = z.object({
+  schemaVersion: z.literal('1.0'),
+  projectId: z.string(),
+  inputsHash: z.string(),
+  baselineSpansHash: z.string(),
+  glossaryHash: z.string(),
+  normalizationHash: z.string().optional(),
+  tripContextHash: z.string(),
+  status: z.enum(['pending-agent', 'pending-human', 'completed']),
+  generatedAt: z.string(),
+  updatedAt: z.string(),
+  reportPath: z.string(),
+  items: z.array(ISpeechTranscriptReviewItem).default([]),
+});
+export type ISpeechTranscriptReviewArtifact = z.infer<typeof ISpeechTranscriptReviewArtifact>;
+
+export const ISpeechTranscriptReviewResolution = z.object({
+  itemId: z.string(),
+  selection: z.enum(['accepted', 'rejected']),
+  finalText: z.string().optional(),
+  windowAction: z.enum(['keep', 'trim', 'cancel']).optional(),
+  retainStartMs: z.number().nonnegative().optional(),
+  retainEndMs: z.number().nonnegative().optional(),
+});
+export type ISpeechTranscriptReviewResolution = z.infer<typeof ISpeechTranscriptReviewResolution>;
+
+export const ISpeechTranscriptReviewDraftResolution = ISpeechTranscriptReviewResolution.extend({
+  selection: z.enum(['accepted', 'rejected', 'unresolved']),
+});
+export type ISpeechTranscriptReviewDraftResolution = z.infer<typeof ISpeechTranscriptReviewDraftResolution>;
 
 export const IReviewField = z.object({
   key: z.string(),

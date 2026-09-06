@@ -60,6 +60,7 @@ export interface IMlVlmTiming {
 }
 
 export interface IAsrResult {
+  rawText?: string;
   segments: IAsrSegment[];
   words?: IAsrWord[];
   timing?: IMlAsrTiming;
@@ -113,6 +114,7 @@ export interface IMlHealth {
 export interface IMlRequestOptions {
   keepOtherModelsLoaded?: boolean;
   maxTokens?: number;
+  temperature?: number;
 }
 
 export class MlClient {
@@ -182,7 +184,12 @@ export class MlClient {
       prompt,
       keep_other_models_loaded: options?.keepOtherModelsLoaded ?? false,
       max_tokens: options?.maxTokens,
+      temperature: options?.temperature,
     });
+  }
+
+  async unloadAsr(): Promise<void> {
+    await this.post<{ unloaded: boolean; workerStopped?: boolean }>('/asr/unload', {});
   }
 
   private normalizePath(filePath: string): string {

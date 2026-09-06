@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { access, mkdir } from 'node:fs/promises';
+import { access, mkdir, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { IMediaToolConfig } from './probe.js';
 import type { IShotBoundary } from './shot-detect.js';
@@ -51,12 +51,13 @@ export async function extractImageProxy(
   filePath: string,
   outputDir: string,
   tools?: IMediaToolConfig,
-): Promise<IKeyframeResult | null> {
+): Promise<IKeyframeResult> {
   await mkdir(outputDir, { recursive: true });
   const ffmpeg = tools?.ffmpegPath?.trim() || 'ffmpeg';
   const inputPath = toExecutableInputPath(filePath, ffmpeg);
   const outPath = join(outputDir, 'image_proxy.jpg');
-  const existingProxy = await resolveExistingKeyframe(outPath, 0);
+  const sourceMtimeMs = await resolveSourceMtimeMs(filePath);
+  const existingProxy = await resolveExistingKeyframe(outPath, 0, sourceMtimeMs);
   if (existingProxy) return existingProxy;
   const outputPathForTool = toExecutableInputPath(outPath, ffmpeg);
   const vf = buildAnalysisProxyFilter(tools);
@@ -72,9 +73,24 @@ export async function extractImageProxy(
     ]);
     await access(outPath);
     return { timeMs: 0, path: outPath };
-  } catch {
-    return null;
+  } catch (error) {
+    throw new Error(
+      `无法为图片生成分析代理：${filePath}；${formatMediaToolError(error)}`,
+    );
   }
+}
+
+function formatMediaToolError(error: unknown): string {
+  const stderr = typeof error === 'object'
+    && error !== null
+    && 'stderr' in error
+    && typeof error.stderr === 'string'
+    ? error.stderr.trim()
+    : '';
+  if (stderr) {
+    return stderr.split(/\r?\n/).slice(-8).join(' | ');
+  }
+  return error instanceof Error ? error.message : String(error);
 }
 
 /**
@@ -92,6 +108,7 @@ export async function extractKeyframes(
   const ffmpeg = tools?.ffmpegPath?.trim() || 'ffmpeg';
   const inputPath = toExecutableInputPath(filePath, ffmpeg);
   const vf = buildAnalysisProxyFilter(tools);
+  const sourceMtimeMs = await resolveSourceMtimeMs(filePath);
   const concurrency = resolveKeyframeExtractConcurrency(
     timestampsMs.length,
     tools?.keyframeExtractConcurrency,
@@ -127,6 +144,7 @@ export async function extractKeyframes(
           inputPath,
           outputDir,
           vf,
+          sourceMtimeMs,
         });
         if (result) {
           extractedCount += 1;
@@ -148,11 +166,12 @@ async function extractSingleKeyframeAtTimestamp(
     inputPath: string;
     outputDir: string;
     vf: string;
+    sourceMtimeMs?: number;
   },
 ): Promise<IKeyframeResult | null> {
   const sec = timeMs / 1000;
   const outPath = join(input.outputDir, `kf_${timeMs}.jpg`);
-  const existingKeyframe = await resolveExistingKeyframe(outPath, timeMs);
+  const existingKeyframe = await resolveExistingKeyframe(outPath, timeMs, input.sourceMtimeMs);
   if (existingKeyframe) return existingKeyframe;
   const outputPathForTool = toExecutableInputPath(outPath, input.ffmpeg);
 
@@ -176,12 +195,22 @@ async function extractSingleKeyframeAtTimestamp(
 async function resolveExistingKeyframe(
   outPath: string,
   timeMs: number,
+  sourceMtimeMs?: number,
 ): Promise<IKeyframeResult | null> {
   try {
-    await access(outPath);
+    const outputStat = await stat(outPath);
+    if (sourceMtimeMs != null && outputStat.mtimeMs < sourceMtimeMs) return null;
     return { timeMs, path: outPath };
   } catch {
     return null;
+  }
+}
+
+async function resolveSourceMtimeMs(filePath: string): Promise<number | undefined> {
+  try {
+    return (await stat(filePath)).mtimeMs;
+  } catch {
+    return undefined;
   }
 }
 

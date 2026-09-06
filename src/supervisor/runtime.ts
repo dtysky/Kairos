@@ -1,6 +1,7 @@
-import { mkdir } from 'node:fs/promises';
+import { access, mkdir, readFile } from 'node:fs/promises';
 import { createWriteStream } from 'node:fs';
 import { spawn, execFile as execFileCallback, type ChildProcess } from 'node:child_process';
+import { createServer } from 'node:net';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import nodeFetch from 'node-fetch';
@@ -28,6 +29,23 @@ export interface IMlServiceConfig {
   stderrPath: string;
   healthUrl: string;
   command: string[];
+}
+
+const CASR_WORKER_PREFERRED_PORT = 8911;
+
+type TAsrWorkerRuntime = NonNullable<ISupervisorServiceRecord['asrWorker']>;
+
+function resolveAsrWorkerConfig(workspaceRoot: string, port: number) {
+  const serviceRoot = getSupervisorServiceRoot(workspaceRoot, 'ml');
+  return {
+    port,
+    url: `http://127.0.0.1:${port}`,
+    pythonPath: join(workspaceRoot, '.venv-asr', 'Scripts', 'python.exe'),
+    workingDirectory: join(workspaceRoot, 'ml-server'),
+    stdoutPath: join(serviceRoot, 'asr-worker-stdout.log'),
+    stderrPath: join(serviceRoot, 'asr-worker-stderr.log'),
+    command: ['-m', 'uvicorn', 'kairos_ml.main:app', '--host', '127.0.0.1', '--port', String(port)],
+  };
 }
 
 export function resolveMlServiceConfig(workspaceRoot: string): IMlServiceConfig {
@@ -100,6 +118,7 @@ export async function startMlService(workspaceRoot: string): Promise<ISupervisor
       stdoutPath: config.stdoutPath,
       stderrPath: config.stderrPath,
       health: existingHealth,
+      asrWorker: existing?.asrWorker,
     };
     await writeServiceRecord(workspaceRoot, running);
     return running;
@@ -113,6 +132,10 @@ export async function startMlService(workspaceRoot: string): Promise<ISupervisor
     }
   }
 
+  const asrWorker = process.platform === 'win32' && await isQwenAsrConfigured(workspaceRoot)
+    ? await startAsrWorker(workspaceRoot, existing?.asrWorker)
+    : null;
+
   const stdout = createWriteStream(config.stdoutPath, { flags: 'w' });
   const stderr = createWriteStream(config.stderrPath, { flags: 'w' });
   const child = spawn(
@@ -123,6 +146,10 @@ export async function startMlService(workspaceRoot: string): Promise<ISupervisor
       detached: false,
       stdio: ['ignore', 'pipe', 'pipe'],
       windowsHide: true,
+      env: {
+        ...process.env,
+        ...(asrWorker ? { KAIROS_ASR_WORKER_URL: asrWorker.url } : {}),
+      },
     },
   );
   child.stdout?.pipe(stdout);
@@ -140,6 +167,7 @@ export async function startMlService(workspaceRoot: string): Promise<ISupervisor
     updatedAt: new Date().toISOString(),
     stdoutPath: config.stdoutPath,
     stderrPath: config.stderrPath,
+    asrWorker: asrWorker ?? undefined,
   };
   await writeServiceRecord(workspaceRoot, pendingRecord);
 
@@ -157,6 +185,7 @@ export async function startMlService(workspaceRoot: string): Promise<ISupervisor
     return running;
   } catch (error) {
     await terminateChildProcess(child);
+    if (asrWorker) await stopAsrWorker(workspaceRoot, asrWorker).catch(() => undefined);
     const failed: ISupervisorServiceRecord = {
       ...pendingRecord,
       status: 'error',
@@ -184,6 +213,7 @@ export async function stopMlService(workspaceRoot: string): Promise<ISupervisorS
   if (listenerPid && shouldStop) {
     await killPid(listenerPid);
   }
+  await stopAsrWorker(workspaceRoot, record?.asrWorker);
 
   const stopped: ISupervisorServiceRecord = {
     name: 'ml',
@@ -201,6 +231,93 @@ export async function stopMlService(workspaceRoot: string): Promise<ISupervisorS
   };
   await writeServiceRecord(workspaceRoot, stopped);
   return stopped;
+}
+
+async function startAsrWorker(
+  workspaceRoot: string,
+  trackedWorker?: TAsrWorkerRuntime,
+): Promise<TAsrWorkerRuntime> {
+  const existingHealth = trackedWorker
+    ? await waitForJson(`${trackedWorker.url}/health`, 2_000).catch(() => null)
+    : null;
+  if (trackedWorker && isQwenAsrWorkerHealth(existingHealth)) {
+    const listenerPid = await findPortListenerPid(trackedWorker.port);
+    return {
+      ...trackedWorker,
+      listenerPid: listenerPid ?? trackedWorker.listenerPid,
+    };
+  }
+
+  const port = await selectAvailableLoopbackPort();
+  const config = resolveAsrWorkerConfig(workspaceRoot, port);
+  await access(config.pythonPath).catch(() => {
+    throw new Error(`Missing Windows Qwen ASR runtime: ${config.pythonPath}`);
+  });
+
+  const stdout = createWriteStream(config.stdoutPath, { flags: 'w' });
+  const stderr = createWriteStream(config.stderrPath, { flags: 'w' });
+  const child = spawn(config.pythonPath, config.command, {
+    cwd: config.workingDirectory,
+    detached: false,
+    stdio: ['ignore', 'pipe', 'pipe'],
+    windowsHide: true,
+    env: { ...process.env, KAIROS_ASR_WORKER_URL: '' },
+  });
+  child.stdout?.pipe(stdout);
+  child.stderr?.pipe(stderr);
+  try {
+    const health = await waitForJson(`${config.url}/health`, 60_000);
+    if (!isQwenAsrWorkerHealth(health)) {
+      throw new Error(`Port ${config.port} did not expose a Kairos Qwen ASR worker.`);
+    }
+    const listenerPid = await findPortListenerPid(config.port);
+    return {
+      port: config.port,
+      url: config.url,
+      launcherPid: child.pid ?? undefined,
+      listenerPid: listenerPid ?? child.pid ?? undefined,
+    };
+  } catch (error) {
+    await terminateChildProcess(child);
+    throw error;
+  }
+}
+
+async function stopAsrWorker(
+  workspaceRoot: string,
+  trackedWorker?: TAsrWorkerRuntime,
+): Promise<void> {
+  if (process.platform !== 'win32') return;
+  const worker = trackedWorker ?? (await loadServiceRecord(workspaceRoot, 'ml'))?.asrWorker;
+  if (!worker) return;
+  const listenerPid = await findPortListenerPid(worker.port);
+  if (!listenerPid) return;
+  const health = await waitForJson(`${worker.url}/health`, 2_000).catch(() => null);
+  const isTrackedPid = listenerPid === worker.listenerPid || listenerPid === worker.launcherPid;
+  if (isQwenAsrWorkerHealth(health) || isTrackedPid) await killPid(listenerPid);
+}
+
+function isQwenAsrWorkerHealth(value: unknown): boolean {
+  if (!value || typeof value !== 'object') return false;
+  const health = value as {
+    status?: unknown;
+    asr?: { configuredBackend?: unknown; actualBackend?: unknown; runtimeVariant?: unknown };
+  };
+  return health.status === 'ok'
+    && health.asr?.configuredBackend === 'qwen3'
+    && health.asr.actualBackend === 'qwen3'
+    && typeof health.asr.runtimeVariant === 'string';
+}
+
+async function isQwenAsrConfigured(workspaceRoot: string): Promise<boolean> {
+  try {
+    const raw = JSON.parse(await readFile(join(workspaceRoot, 'config', 'runtime.json'), 'utf8')) as {
+      asr?: { backend?: unknown };
+    };
+    return raw.asr?.backend === 'qwen3';
+  } catch {
+    return false;
+  }
 }
 
 export async function getMlServiceStatus(workspaceRoot: string): Promise<ISupervisorServiceRecord> {
@@ -225,6 +342,7 @@ export async function getMlServiceStatus(workspaceRoot: string): Promise<ISuperv
     stdoutPath: config.stdoutPath,
     stderrPath: config.stderrPath,
     health: health ?? undefined,
+    asrWorker: record?.asrWorker,
     lastError: isRunning
       ? undefined
       : (isStarting
@@ -233,6 +351,35 @@ export async function getMlServiceStatus(workspaceRoot: string): Promise<ISuperv
   };
   await writeServiceRecord(workspaceRoot, status);
   return status;
+}
+
+export async function selectAvailableLoopbackPort(
+  preferredPort = CASR_WORKER_PREFERRED_PORT,
+): Promise<number> {
+  const preferred = await probeLoopbackPort(preferredPort).catch(() => null);
+  if (preferred !== null) return preferred;
+
+  const fallback = await probeLoopbackPort(0);
+  if (fallback === null) {
+    throw new Error('Cannot allocate a loopback port for the Kairos ASR worker.');
+  }
+  return fallback;
+}
+
+async function probeLoopbackPort(port: number): Promise<number | null> {
+  return new Promise((resolve, reject) => {
+    const server = createServer();
+    server.unref();
+    server.once('error', () => resolve(null));
+    server.listen({ host: '127.0.0.1', port, exclusive: true }, () => {
+      const address = server.address();
+      const selectedPort = typeof address === 'object' && address ? address.port : null;
+      server.close(error => {
+        if (error) reject(error);
+        else resolve(selectedPort);
+      });
+    });
+  });
 }
 
 export async function waitForJson(url: string, timeoutMs: number): Promise<unknown> {

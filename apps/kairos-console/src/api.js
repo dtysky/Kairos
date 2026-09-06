@@ -150,6 +150,23 @@ export function resolveProjectReview(projectId, reviewId, payload) {
   return apiPost(`/api/projects/${encodeURIComponent(projectId)}/reviews/${encodeURIComponent(reviewId)}/resolve`, payload);
 }
 
+export function commitSpeechTranscriptReview(projectId, payload) {
+  return apiPost(`/api/projects/${encodeURIComponent(projectId)}/speech-transcript-review/commit`, payload);
+}
+
+export function saveSpeechTranscriptReviewDraft(projectId, payload) {
+  return apiPut(`/api/projects/${encodeURIComponent(projectId)}/speech-transcript-review/draft`, payload);
+}
+
+export function buildSpeechReviewAudioUrl(projectId, assetId, startMs, endMs) {
+  const contextMs = 1000;
+  const query = new URLSearchParams({
+    startMs: String(Math.max(0, Math.floor(Number(startMs) || 0) - contextMs)),
+    endMs: String(Math.max(0, Math.ceil(Number(endMs) || 0) + contextMs)),
+  });
+  return `/api/projects/${encodeURIComponent(projectId)}/speech-transcript-review/audio/${encodeURIComponent(assetId)}?${query}`;
+}
+
 export function startJob(projectId, jobType, args = {}) {
   return apiPost('/api/jobs', { jobType, projectId, args });
 }

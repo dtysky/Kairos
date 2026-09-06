@@ -14,6 +14,11 @@ from kairos_ml import qwen3_asr_transformers_runner as runner
 class _FakeAsr:
     def __init__(self):
         self.calls = []
+        self.forced_aligner = SimpleNamespace(
+            aligner_processor=SimpleNamespace(
+                encode_timestamp=lambda text, language: (list(text), "encoded")
+            )
+        )
 
     def transcribe(self, **kwargs):
         self.calls.append(kwargs)
@@ -71,7 +76,7 @@ class Qwen3AsrTransformersRunnerTests(unittest.TestCase):
                 target.writeframes(b"\x01\x00" * (frame_rate * 61))
 
             fake_asr = _FakeAsr()
-            segments, words, _inference_ms, _alignment_ms, chunk_count = runner._transcribe_prepared(
+            raw_text, words, _inference_ms, _alignment_ms, chunk_count = runner._transcribe_prepared(
                 fake_asr,
                 {"wav_path": wav_path},
                 "Chinese",
@@ -82,7 +87,38 @@ class Qwen3AsrTransformersRunnerTests(unittest.TestCase):
         self.assertEqual(len(fake_asr.calls), 3)
         self.assertTrue(all("context" not in call for call in fake_asr.calls))
         self.assertEqual([round(word["start"], 1) for word in words], [0.1, 0.2, 30.1, 30.2, 60.1, 60.2])
-        self.assertEqual("".join(segment["text"] for segment in segments), "测试测试测试")
+        self.assertEqual(raw_text, "测试测试测试")
+
+    def test_allows_punctuation_only_output_without_fake_timestamps(self):
+        punctuation = SimpleNamespace(text="……。", time_stamps=SimpleNamespace(items=[]))
+        self.assertEqual(runner._extract_words(punctuation, 0.0), [])
+
+        speech = SimpleNamespace(text="有字", time_stamps=SimpleNamespace(items=[]))
+        self.assertEqual(runner._extract_words(speech, 0.0), [])
+
+        weak_character = SimpleNamespace(text="空", time_stamps=SimpleNamespace(items=[
+            SimpleNamespace(text="空", start_time=0.2, end_time=0.2),
+        ]))
+        self.assertEqual(runner._extract_words(weak_character, 0.0), [{
+            "start": 0.2,
+            "end": 0.2,
+            "text": "空",
+        }])
+
+    def test_uses_asr_characters_as_alignment_labels(self):
+        result = SimpleNamespace(time_stamps=SimpleNamespace(items=[
+            SimpleNamespace(text="智", start_time=0.1, end_time=0.2),
+            SimpleNamespace(text="慧", start_time=0.2, end_time=0.3),
+        ]))
+        self.assertEqual(runner._extract_words(result, 0.0, ["智", "能"]), [
+            {"start": 0.1, "end": 0.2, "text": "智"},
+            {"start": 0.2, "end": 0.3, "text": "能"},
+        ])
+
+    def test_rejects_incomplete_forced_alignment_coverage(self):
+        result = SimpleNamespace(time_stamps=SimpleNamespace(items=[]))
+        with self.assertRaisesRegex(RuntimeError, "does not cover ASR text"):
+            runner._extract_words(result, 0.0, ["有", "字"])
 
 
 if __name__ == "__main__":

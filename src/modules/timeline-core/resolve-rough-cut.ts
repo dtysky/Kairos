@@ -81,6 +81,7 @@ export interface IResolveRoughCutTimelineInput {
   stillDurationMs?: number;
   subtitleSrtPath?: string;
   subtitleTrackName?: string;
+  resumeExpectedAnchorClipId?: string;
   clips: IResolveRoughCutClipInput[];
 }
 
@@ -99,6 +100,19 @@ export interface IResolveRoughCutTimelineResult {
   drpSnapshot?: IColorResolveProjectSnapshot;
   drpSnapshotWarning?: string;
   hostSummary?: Record<string, unknown>;
+}
+
+export interface IResolveRoughCutSuffixResult extends IResolveRoughCutTimelineResult {
+  hostSummary?: Record<string, unknown> & {
+    resume?: {
+      anchorClipId: string;
+      currentTimecode: string;
+      playheadFrame: number;
+      preserveThroughFrame: number;
+      deletedItemCount: number;
+      appendedClipIds: string[];
+    };
+  };
 }
 
 export interface IResolveEditMediaRelinkRoot {
@@ -152,6 +166,19 @@ export async function createResolveRoughCutTimeline(
   });
 }
 
+export async function regenerateResolveRoughCutTimelineSuffix(
+  input: IResolveRoughCutTimelineInput,
+  config: IResolveTimelineHostConfig = {},
+  execFileImpl: IExecFile = exec,
+): Promise<IResolveRoughCutSuffixResult> {
+  return runResolveTimelineRequest<IResolveRoughCutSuffixResult>({
+    operation: 'regenerate_rough_cut_suffix',
+    input,
+    config,
+    execFileImpl,
+  });
+}
+
 export async function relinkResolveEditMedia(
   input: IResolveEditMediaRelinkInput,
   config: IResolveTimelineHostConfig = {},
@@ -166,7 +193,7 @@ export async function relinkResolveEditMedia(
 }
 
 async function runResolveTimelineRequest<T>(request: {
-  operation: 'create_rough_cut_timeline' | 'sync_rough_cut_media' | 'relink_edit_media';
+  operation: 'create_rough_cut_timeline' | 'regenerate_rough_cut_suffix' | 'sync_rough_cut_media' | 'relink_edit_media';
   input: unknown;
   config: IResolveTimelineHostConfig;
   execFileImpl: IExecFile;

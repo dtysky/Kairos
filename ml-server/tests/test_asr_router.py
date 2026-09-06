@@ -34,7 +34,8 @@ class AsrRouterTests(unittest.TestCase):
                 self.assertEqual(asr_config.load_config(), {"backend": "qwen3"})
 
     def test_unavailable_qwen_never_calls_whisper(self):
-        with mock.patch.object(asr_router, "load_config", return_value=QWEN_CONFIG), \
+        with mock.patch.object(asr_router, "BACKEND", "mlx"), \
+            mock.patch.object(asr_router, "load_config", return_value=QWEN_CONFIG), \
             mock.patch.object(asr_router, "qwen3_runtime_config", return_value=QWEN_RUNTIME), \
             mock.patch.object(asr_router, "get_status", return_value={
                 "available": False,
@@ -47,8 +48,9 @@ class AsrRouterTests(unittest.TestCase):
             whisper.assert_not_called()
 
     def test_qwen_route_uses_qwen_runner_only(self):
-        expected = [([], [], {"provider": "qwen3"})]
-        with mock.patch.object(asr_router, "load_config", return_value=QWEN_CONFIG), \
+        expected = [("", [], [], {"provider": "qwen3"})]
+        with mock.patch.object(asr_router, "BACKEND", "mlx"), \
+            mock.patch.object(asr_router, "load_config", return_value=QWEN_CONFIG), \
             mock.patch.object(asr_router, "qwen3_runtime_config", return_value=QWEN_RUNTIME), \
             mock.patch.object(asr_router, "get_status", return_value={
                 "available": True,
@@ -63,7 +65,7 @@ class AsrRouterTests(unittest.TestCase):
             whisper.assert_not_called()
 
     def test_windows_cuda_route_uses_transformers_runner_only(self):
-        expected = [([], [], {"provider": "qwen3-transformers"})]
+        expected = [("", [], [], {"provider": "qwen3-transformers"})]
         with mock.patch.object(asr_router, "BACKEND", "torch"), \
             mock.patch.object(asr_router, "DEVICE", "cuda"), \
             mock.patch.object(asr_router, "load_config", return_value=QWEN_CONFIG), \
@@ -98,7 +100,7 @@ class AsrRouterTests(unittest.TestCase):
         self.assertEqual(status["provider"], "qwen3-transformers")
         self.assertEqual(status["runtimeVariant"], "transformers-cuda")
         self.assertEqual(status["device"], "cuda")
-        self.assertTrue(status["modelRef"].endswith("models/qwen-windows"))
+        self.assertTrue(status["modelRef"].replace("\\", "/").endswith("models/qwen-windows"))
 
 
 if __name__ == "__main__":

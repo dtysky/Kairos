@@ -5,6 +5,30 @@ import {
 } from '../../src/modules/media/transcript-signal.js';
 
 describe('transcript signal filtering', () => {
+  it('keeps explicit unaligned raw ASR text for audit without creating subtitle segments', () => {
+    const transcript = normalizeTranscriptContext({
+      rawText: '哎呀！',
+      alignedTokens: [],
+      segmentation: {
+        status: 'completed',
+        policyVersion: 'unaligned-no-valid-transcript',
+        attempts: 0,
+      },
+      transcript: '',
+      segments: [],
+      speechCoverage: 0,
+      speechWindows: [],
+    });
+
+    expect(transcript).toMatchObject({
+      rawText: '哎呀！',
+      transcript: '',
+      alignedTokens: [],
+      segments: [],
+      speechCoverage: 0,
+    });
+  });
+
   it('drops sparse transcript context below the credibility threshold', () => {
     const transcript = normalizeTranscriptContext({
       transcript: 'can can can can',

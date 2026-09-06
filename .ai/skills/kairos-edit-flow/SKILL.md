@@ -86,7 +86,7 @@ Capability registry 是原子能力库，不是必经阶段链。当前常见 ca
 - `chosenSpanIds` 是选择真相；不得让后续 script 或 timeline 阶段改写召回选择。
 - 选择边界必须来自剪辑规则、Flow Plan 或合同校验；不得自行发明每段数量上限、代表抽样、全局压缩比例或“看起来好审”的删除规则。
 - 如果剪辑规则要求“尽可能添加有效片段”，则应保留所有符合规则与合同的有效候选；只剔除明确无效、重复、被规则排除、合同拒绝或人工确认删除的片段。
-- 口播和纯视觉窗口重叠时，默认按 speech/visual 双通道 truth 共存：speech-backed span 保留口播，visual span 保留完整画面观察；`material.recall` 不得因为 speech 命中而静默删除、切碎或缩短同源重叠 visual span。只有剪辑规则或人工审查明确要求去掉某个视觉候选时，才可在 `coverageAudit` 中记录后删除。
+- 新 Analyze 已在 fine-scan 前按 `IoU >= 0.5` 扣除 speech，并只把连续时长 `>=15000ms` 的 visual remainder 留作候选；`material.recall` 应像其他视觉候选一样决定是否选用这些 remainder，但不得再次改写其 source range。旧 report 若仍有同源 speech/visual 重叠，recall 不得静默切碎历史 span，时间线继续以 source-speech 优先和 source-range subtraction 作兼容防线。
 - 同一原始素材的无口播行车去重、静音、加速，只按剪辑规则和合同执行；不要把这条扩展成对所有素材类型的抽样上限。
 
 ### `material-slots.json`
@@ -137,7 +137,8 @@ Capability registry 是原子能力库，不是必经阶段链。当前常见 ca
 - 当前 `speed>1` 不阻塞，但 Resolve 粗剪可记为 pending/ignored，不得假装已应用。
 - 照片静帧默认时长是 `1000ms`；只有剪辑规则 / confirmed Flow Plan 当前 step notes 或运行时 `timelineStillDurationMs` 明确声明时才覆盖。Resolve host 必须回读校验实际照片时长，不能默认使用旧 `5s`。
 - Resolve rough cut 必须自动写入并回读校验 clip color 批处理标记：照片 video item 为 `Blue`，延时 video item 为 `Purple`，行车 video item 为 `Brown`，航拍 video item 为 `Teal`；没有这些视觉分类颜色的普通有声 video item 为 `Orange`；剩余可听 linked audio item 使用 `Orange`，便于后续分别批量做音频归一、照片填充、延时、行车和航拍处理。航拍 linked audio 在粗剪中强制 disabled，不作为 Orange 可听音频筛选目标。生成粗剪时还必须创建/复用 Resolve Color Groups `Kairos Photos` 与 `Kairos Timelapse`，并把照片/延时 video item 分别分配进去，供 Color 页 `Group Post-Clip` 批量效果使用。
-- 每次 `timeline.generate` 成功时，必须同时从已选中、实际有声的 source-speech spans 生成 `.tmp/edit-flow/<editId>/timeline/current.srt`，供用户手动导入达芬奇；有 `effectiveSpeechStartMs/effectiveSpeechEndMs` 的 speech/mixed span 应以这两个有效口播首尾作为 source-speech 核心窗口后再加默认 handle，字幕时间按生成后的 timeline clip 时间映射，优先用 `transcriptSegments`，没有分段时才用整段 `transcript` 兜底。
+- 每次 `timeline.generate` 成功时，必须同时从已选中、实际有声的 source-speech spans 生成 `.tmp/edit-flow/<editId>/timeline/current.srt`；speech/mixed span 应先取有效 `transcriptSegments` 的首末时间作为 Qwen aligned 核心窗口，再只加一次前后各 `250ms` padding。旧 `effectiveSpeechStartMs/effectiveSpeechEndMs` 仅在 timed segments 缺失时兼容读取，之后才回退 source/edit window；没有分段时才用整段 `transcript` 兜底。字幕绝对时间必须来自 Resolve 单遍原生落片回读的 `actualStartFrame / actualEndFrame`，不能来自预估毫秒 cursor；生成 SRT 后不得为了字幕再次重建视频时间线，也不得把未执行的 SRT 导入写成成功。SRT 必须重新校验既定的 36 文本单位句界：只有 `，` / `,` 是软标点，其余 Unicode 标点直接结束句子；超长句选择满足上限所需的最少且最均衡的逗号边界，无可用逗号的 clause 仍超限时才按字符兜底。同一 clip 内 gap `<1500ms` 且合并后 `<=36` 的候选必须继续合并；最终 cue 停在软逗号时必须提升为 `。`，并在 source-speech SRT 中保留。拆出的 cue 在原 segment 时间内按文本单位比例分配，不得借此改写 span 或重分 transcriptSegments。
+- 用户明确要求保留已人工剪好的前缀时，`timeline.generate` 使用 `resume-from-current-playhead` 维护模式：播放头命中的完整 video item 是最后保留项，其稳定 `clip-xxxxx` 是计划锚点。Resolve host 只删除锚点后的旧 video/audio/subtitle 并追加后续计划 clips；Node 只输出绝对时间码的 `remaining.srt` 供用户手动导入，不覆盖前缀字幕，也不声称已导入。
 - 任何自动生成的字幕、字幕审查稿、最终 SRT/VTT 和配音插件合并文本都不得自动补 `。` 或 `.`，并应移除行末已有 `。` / `.`；不要全局移除 `？`、`！` 或句内标点。
 - `runs/current.json` 只能保存 step 级轻量摘要和输出路径；`timeline.generate` 不得把完整 KTEP、Resolve clip 明细、source subtitle text 或 `hostSummary.clips` 内联写入 run record，完整审计只写 `.tmp/edit-flow/<editId>/timeline/current.json`，字幕正文只写 `.tmp/edit-flow/<editId>/timeline/current.srt` 等 declared/temporary artifacts。
 - Resolve timeline 成功后应尝试保存项目级 `${projectBrief.name} [Edit]` DRP 快照；所有 editId 共用同一 Resolve `[Edit]` 工程与 `edits/resolve-project-map.json`。latest 文件名是 `${Resolve项目名}.drp`，不是 `latest.drp`。自动快照失败只写 warning，不回滚 timeline。

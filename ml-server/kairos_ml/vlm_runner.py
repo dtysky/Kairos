@@ -74,7 +74,12 @@ def _normalize_max_tokens(max_tokens: int | None) -> int:
     return max(1, value)
 
 
-def _analyze_mlx(image_paths: list[str], prompt: str, max_tokens: int | None = None) -> tuple[str, dict]:
+def _analyze_mlx(
+    image_paths: list[str],
+    prompt: str,
+    max_tokens: int | None = None,
+    temperature: float | None = None,
+) -> tuple[str, dict]:
     from mlx_vlm import generate, apply_chat_template  # type: ignore
 
     total_started_at = time.perf_counter()
@@ -98,7 +103,9 @@ def _analyze_mlx(image_paths: list[str], prompt: str, max_tokens: int | None = N
     generate_started_at = time.perf_counter()
     result = generate(
         _model, _processor, formatted, image=abs_paths,
-        max_tokens=token_budget, temperature=0.1, verbose=False,
+        max_tokens=token_budget,
+        temperature=0.1 if temperature is None else min(2.0, max(0.01, float(temperature))),
+        verbose=False,
     )
     generate_ms = (time.perf_counter() - generate_started_at) * 1000.0
     text = result.text if hasattr(result, "text") else str(result)
@@ -251,7 +258,12 @@ def unload() -> bool:
     return True
 
 
-def _analyze_transformers(image_paths: list[str], prompt: str, max_tokens: int | None = None) -> tuple[str, dict]:
+def _analyze_transformers(
+    image_paths: list[str],
+    prompt: str,
+    max_tokens: int | None = None,
+    temperature: float | None = None,
+) -> tuple[str, dict]:
     import torch
     from PIL import Image
 
@@ -293,8 +305,14 @@ def _analyze_transformers(image_paths: list[str], prompt: str, max_tokens: int |
         h2d_ms = (time.perf_counter() - h2d_started_at) * 1000.0
 
     generate_started_at = time.perf_counter()
+    generation_options = {"max_new_tokens": token_budget}
+    if temperature is not None and temperature > 0:
+        generation_options.update({
+            "do_sample": True,
+            "temperature": min(2.0, max(0.01, float(temperature))),
+        })
     with torch.no_grad():
-        generated_ids = _model.generate(**inputs, max_new_tokens=token_budget)
+        generated_ids = _model.generate(**inputs, **generation_options)
     generate_ms = (time.perf_counter() - generate_started_at) * 1000.0
 
     trimmed = [out[len(inp):] for inp, out in zip(inputs["input_ids"], generated_ids)]
@@ -335,16 +353,30 @@ def analyze(image_paths: list[str], prompt: str, max_tokens: int | None = None) 
     return description, timing
 
 
-def generate_text(prompt: str, max_tokens: int | None = None) -> tuple[str, dict]:
+def generate_text(
+    prompt: str,
+    max_tokens: int | None = None,
+    temperature: float | None = None,
+) -> tuple[str, dict]:
     if BACKEND == "mlx":
         load_ms, model_ref = _load_mlx()
-        description, timing = _analyze_mlx([], prompt, max_tokens=max_tokens)
+        description, timing = _analyze_mlx(
+            [],
+            prompt,
+            max_tokens=max_tokens,
+            temperature=temperature,
+        )
         timing["loadMs"] = load_ms
         timing["modelRef"] = model_ref
         return description, timing
 
     load_ms, model_ref = _load_transformers()
-    description, timing = _analyze_transformers([], prompt, max_tokens=max_tokens)
+    description, timing = _analyze_transformers(
+        [],
+        prompt,
+        max_tokens=max_tokens,
+        temperature=temperature,
+    )
     timing["loadMs"] = load_ms
     timing["modelRef"] = model_ref
     return description, timing

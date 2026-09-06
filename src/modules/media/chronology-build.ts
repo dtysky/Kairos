@@ -19,6 +19,7 @@ import { loadOrBuildProjectPharosContext } from '../pharos/context.js';
 import { buildMediaChronologyWithProgress, type IChronologyTimedPoint } from './chronology.js';
 import { loadGpxPoints } from './gpx-spatial.js';
 import { createProjectReverseGeocodeService, type IReverseGeocodeService } from './reverse-geocode.js';
+import { prepareProjectChronologyEventConsolidation } from './chronology-event-consolidation.js';
 
 export interface IProjectChronologyBuildResult {
   projectRoot: string;
@@ -142,6 +143,12 @@ export async function buildProjectChronology(input: {
     });
 
     await writeChronology(projectRoot, chronology);
+    await prepareProjectChronologyEventConsolidation({
+      workspaceRoot: input.workspaceRoot,
+      projectId: input.projectId,
+      chronology,
+      now: input.now,
+    });
     await touchProjectUpdatedAt(projectRoot);
 
     await writeChronologyBuildProgress(progressPath, {

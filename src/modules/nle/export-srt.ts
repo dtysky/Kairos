@@ -9,18 +9,24 @@ import { stripGeneratedSubtitlePeriods } from './subtitle-text.js';
 export async function exportSrt(
   cues: IKtepSubtitle[],
   outputPath: string,
+  options: ISrtFormattingOptions = {},
 ): Promise<void> {
-  const content = formatSrt(cues);
+  const content = formatSrt(cues, options);
   await mkdir(dirname(outputPath), { recursive: true });
   await writeFile(outputPath, content, 'utf-8');
 }
 
-export function formatSrt(cues: IKtepSubtitle[]): string {
+export interface ISrtFormattingOptions {
+  preserveTerminalPeriods?: boolean;
+}
+
+export function formatSrt(cues: IKtepSubtitle[], options: ISrtFormattingOptions = {}): string {
   const sorted = [...cues].sort((a, b) => a.startMs - b.startMs);
   return sorted.map((cue, i) => {
     const start = msToSrtTime(cue.startMs);
     const end = msToSrtTime(cue.endMs);
-    return `${i + 1}\n${start} --> ${end}\n${stripGeneratedSubtitlePeriods(cue.text)}\n`;
+    const text = options.preserveTerminalPeriods ? cue.text : stripGeneratedSubtitlePeriods(cue.text);
+    return `${i + 1}\n${start} --> ${end}\n${text}\n`;
   }).join('\n');
 }
 

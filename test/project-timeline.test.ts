@@ -194,6 +194,7 @@ async function createTimelineProjectFixture(
       sourceOutMs: 5_000,
       editSourceInMs: 500,
       editSourceOutMs: 4_500,
+      materialPatterns: ['第一人称行车', '道路环境', '晴天', '无口播语音', '道路行车观察', '道路推进', '沿途景观'],
     }),
     createSlice({
       id: 'slice-talk',
@@ -211,7 +212,7 @@ async function createTimelineProjectFixture(
         text: 'Original cue text',
       }],
       speechCoverage: 0.85,
-      materialPatterns: ['拍摄视角：固定机位', '当前环境：车内', '天气光线：自然光', '有口播语音'],
+      materialPatterns: ['固定机位口播', '车内', '自然光', '有口播语音', '车内人物口播', '人物讲述', '固定构图'],
     }),
   ];
   const chronologyAssetIndex = [

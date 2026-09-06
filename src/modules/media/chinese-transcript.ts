@@ -40,6 +40,7 @@ export function normalizeTranscriptSegmentsToSimplified<T extends { text: string
 
 function normalizeChineseTypography(text: string): string {
   return text
+    .replace(/(什|怎|这|那|多)幺/gu, '$1么')
     .replace(/[「」『』]/gu, mark => CCORNER_QUOTES_TO_MAINLAND[mark] ?? mark)
     .replace(/\s+/gu, ' ')
     .replace(/\s+([，。！？；：、,.!?;:%])/gu, '$1')

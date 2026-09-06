@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { access, mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { access, mkdtemp, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { getAnalyzePerformanceProfilePath } from '../../src/modules/media/analyze-profile.js';
@@ -17,6 +17,23 @@ const workspaces: string[] = [];
 
 const detectShotsMock = vi.fn();
 const extractKeyframesMock = vi.fn();
+const availableMlHealth = {
+  status: 'ok',
+  device: 'apple',
+  backend: 'mlx',
+  models_loaded: [],
+  asr: {
+    configuredBackend: 'qwen3' as const,
+    actualBackend: 'qwen3' as const,
+    provider: 'qwen3-test',
+    runtimeBackend: 'mlx',
+    runtimeVariant: 'test',
+    device: 'apple',
+    available: true,
+    modelAvailable: true,
+    alignerAvailable: true,
+  },
+};
 
 vi.mock('../../src/modules/media/shot-detect.js', async () => {
   const actual = await vi.importActual<typeof import('../../src/modules/media/shot-detect.js')>(
@@ -27,7 +44,6 @@ vi.mock('../../src/modules/media/shot-detect.js', async () => {
     detectShots: detectShotsMock,
   };
 });
-
 vi.mock('../../src/modules/media/keyframe.js', async () => {
   const actual = await vi.importActual<typeof import('../../src/modules/media/keyframe.js')>(
     '../../src/modules/media/keyframe.js',
@@ -48,6 +64,14 @@ afterEach(async () => {
 beforeEach(() => {
   detectShotsMock.mockReset();
   extractKeyframesMock.mockReset();
+  vi.spyOn(MlClient.prototype, 'unloadAsr').mockResolvedValue();
+  vi.spyOn(MlClient.prototype, 'textGenerate').mockImplementation(async prompt => {
+    const sourceText = prompt.split('\n').find(line => line.startsWith('sourceText='))?.slice('sourceText='.length) ?? '';
+    return {
+      text: JSON.stringify({ segments: [sourceText] }),
+      timing: { backend: 'mlx', modelRef: 'test-qwen-text' },
+    };
+  });
 });
 
 async function createWorkspace(): Promise<string> {
@@ -104,12 +128,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       }));
     });
 
-    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue({
-      status: 'ok',
-      device: 'apple',
-      backend: 'mlx',
-      models_loaded: [],
-    });
+    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue(availableMlHealth);
     vi.spyOn(MlClient.prototype, 'vlmAnalyze').mockImplementation(async (imagePaths, prompt) => {
       if (prompt.includes('semantic clip type and materialization policy')) {
         return {
@@ -180,6 +199,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
     expect(report.fineScanMode).toBeUndefined();
     expect(result.fineScannedAssetIds).toEqual([]);
     expect(result.sliceCount).toBe(0);
+    expect(vi.mocked(MlClient.prototype.unloadAsr)).toHaveBeenCalledTimes(1);
     await expect(access(getSlicesPath(projectRoot))).rejects.toThrow();
     expect(detectShotsMock).not.toHaveBeenCalled();
   });
@@ -231,14 +251,14 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       }));
     });
 
-    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue({
-      status: 'ok',
-      device: 'apple',
-      backend: 'mlx',
-      models_loaded: [],
-    });
+    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue(availableMlHealth);
     const asrSpy = vi.spyOn(MlClient.prototype, 'asrDetailed').mockResolvedValue({
+      rawText: 'Driving through the valley now. The lake opens up on the left side.',
       segments: [
+        { start: 0.2, end: 2.4, text: 'Driving through the valley now.' },
+        { start: 4.1, end: 6.2, text: 'The lake opens up on the left side.' },
+      ],
+      words: [
         { start: 0.2, end: 2.4, text: 'Driving through the valley now.' },
         { start: 4.1, end: 6.2, text: 'The lake opens up on the left side.' },
       ],
@@ -370,7 +390,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
     expect(detectShotsMock).not.toHaveBeenCalled();
   });
 
-  it('keeps nearby direct-path speech evidence in reports without persisting spans', async () => {
+  it('keeps sparse direct-path speech in one evidence window without persisting spans', async () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-analyze-direct-speech-coalesce';
     const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Direct Speech Coalesce Project');
@@ -417,14 +437,15 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       }));
     });
 
-    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue({
-      status: 'ok',
-      device: 'apple',
-      backend: 'mlx',
-      models_loaded: [],
-    });
+    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue(availableMlHealth);
     vi.spyOn(MlClient.prototype, 'asrDetailed').mockResolvedValue({
+      rawText: '第一句来了。第二句接着说。第三句收尾。',
       segments: [
+        { start: 10, end: 12, text: '第一句来了。' },
+        { start: 14.8, end: 16.4, text: '第二句接着说。' },
+        { start: 21.5, end: 23.1, text: '第三句收尾。' },
+      ],
+      words: [
         { start: 10, end: 12, text: '第一句来了。' },
         { start: 14.8, end: 16.4, text: '第二句接着说。' },
         { start: 21.5, end: 23.1, text: '第三句收尾。' },
@@ -498,20 +519,28 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       await readFile(getAssetReportPath(projectRoot, 'asset-direct-speech'), 'utf-8'),
     ) as {
       materializationPath?: string;
-      interestingWindows: Array<{ startMs: number; endMs: number; semanticKind?: string }>;
+      interestingWindows: Array<{
+        startMs: number;
+        endMs: number;
+        editStartMs?: number;
+        editEndMs?: number;
+        semanticKind?: string;
+      }>;
     };
     const speechWindows = report.interestingWindows.filter(window => window.semanticKind === 'speech');
 
     expect(result.sliceCount).toBe(0);
     expect(speechWindows.map(window => [window.startMs, window.endMs])).toEqual([
-      [9_500, 17_300],
-      [21_000, 24_000],
+      [10_000, 23_100],
+    ]);
+    expect(speechWindows.map(window => [window.editStartMs, window.editEndMs])).toEqual([
+      [9_750, 23_350],
     ]);
     await expect(access(getSlicesPath(projectRoot))).rejects.toThrow();
     expect(detectShotsMock).not.toHaveBeenCalled();
   });
 
-  it('uses audio-led windows and runs deferred scene detect for fragmented talking-head windows', async () => {
+  it('keeps a sparse audio-led window intact and defers full scene detect to fine-scan', async () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-analyze-audio-led';
     const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Audio-led Analyze Project');
@@ -559,14 +588,14 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       }));
     });
 
-    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue({
-      status: 'ok',
-      device: 'apple',
-      backend: 'mlx',
-      models_loaded: [],
-    });
+    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue(availableMlHealth);
     vi.spyOn(MlClient.prototype, 'asrDetailed').mockResolvedValue({
+      rawText: 'We are stopping here to explain the route. This overlook is the best view on the trip.',
       segments: [
+        { start: 10, end: 22, text: 'We are stopping here to explain the route.' },
+        { start: 48, end: 58, text: 'This overlook is the best view on the trip.' },
+      ],
+      words: [
         { start: 10, end: 22, text: 'We are stopping here to explain the route.' },
         { start: 48, end: 58, text: 'This overlook is the best view on the trip.' },
       ],
@@ -653,12 +682,14 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
 
     expect(report.materializationPath).toBe('fine-scan');
     expect(['windowed', 'full']).toContain(report.fineScanMode);
-    expect(report.interestingWindows.length).toBeGreaterThan(0);
+    expect(report.interestingWindows).toHaveLength(1);
     expect(report.interestingWindows.every(window => window.reason.includes('speech-window'))).toBe(true);
     expect(report.fineScanReasons).toContain('talking-head:audio-led-windows');
     expect(detectShotsMock).toHaveBeenCalledTimes(1);
-    expect(profile.ffmpeg.sceneDetectPhases?.finalize?.callCount).toBe(1);
-    expect(profile.assets[0]?.sceneDetectPhases?.finalize?.callCount).toBe(1);
+    expect(profile.ffmpeg.sceneDetectPhases?.finalize?.callCount).toBe(0);
+    expect(profile.ffmpeg.sceneDetectPhases?.['fine-scan']?.callCount).toBe(1);
+    expect(profile.assets[0]?.sceneDetectPhases?.finalize?.callCount).toBe(0);
+    expect(profile.assets[0]?.sceneDetectPhases?.['fine-scan']?.callCount).toBe(1);
   });
 
   it('keeps shot-split talking-head fine-scan evidence in reports without persisting spans', async () => {
@@ -711,14 +742,13 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       }));
     });
 
-    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue({
-      status: 'ok',
-      device: 'apple',
-      backend: 'mlx',
-      models_loaded: [],
-    });
+    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue(availableMlHealth);
     vi.spyOn(MlClient.prototype, 'asrDetailed').mockResolvedValue({
+      rawText: '这一整段都在连续说话。',
       segments: [
+        { start: 4, end: 15, text: '这一整段都在连续说话。' },
+      ],
+      words: [
         { start: 4, end: 15, text: '这一整段都在连续说话。' },
       ],
       timing: {
@@ -845,12 +875,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       }));
     });
 
-    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue({
-      status: 'ok',
-      device: 'apple',
-      backend: 'mlx',
-      models_loaded: [],
-    });
+    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue(availableMlHealth);
     const vlmSpy = vi.spyOn(MlClient.prototype, 'vlmAnalyze').mockResolvedValue({
       description: 'not-json',
       timing: {
@@ -961,12 +986,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       }));
     });
 
-    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue({
-      status: 'ok',
-      device: 'apple',
-      backend: 'mlx',
-      models_loaded: [],
-    });
+    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue(availableMlHealth);
     const vlmSpy = vi.spyOn(MlClient.prototype, 'vlmAnalyze').mockResolvedValue({
       description: JSON.stringify({
         visual_summary: {
@@ -1057,12 +1077,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       }));
     });
 
-    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue({
-      status: 'ok',
-      device: 'apple',
-      backend: 'mlx',
-      models_loaded: [],
-    });
+    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue(availableMlHealth);
     const vlmSpy = vi.spyOn(MlClient.prototype, 'vlmAnalyze')
       .mockResolvedValueOnce({
         description: '{"visual_summary": {"scene_type": "broken"',
@@ -1182,12 +1197,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       }));
     });
 
-    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue({
-      status: 'ok',
-      device: 'apple',
-      backend: 'mlx',
-      models_loaded: [],
-    });
+    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue(availableMlHealth);
     vi.spyOn(MlClient.prototype, 'vlmAnalyze').mockImplementation(async (imagePaths, prompt) => {
       if (prompt.includes('semantic clip type and materialization policy')) {
         return {
@@ -1324,14 +1334,14 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       }));
     });
 
-    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue({
-      status: 'ok',
-      device: 'apple',
-      backend: 'mlx',
-      models_loaded: [],
-    });
+    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue(availableMlHealth);
     vi.spyOn(MlClient.prototype, 'asrDetailed').mockResolvedValue({
+      rawText: 'We are passing the old bridge now. This curve opens straight into the forest.',
       segments: [
+        { start: 14, end: 21, text: 'We are passing the old bridge now.' },
+        { start: 59.2, end: 63.4, text: 'This curve opens straight into the forest.' },
+      ],
+      words: [
         { start: 14, end: 21, text: 'We are passing the old bridge now.' },
         { start: 59.2, end: 63.4, text: 'This curve opens straight into the forest.' },
       ],
@@ -1475,12 +1485,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       }));
     });
 
-    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue({
-      status: 'ok',
-      device: 'apple',
-      backend: 'mlx',
-      models_loaded: [],
-    });
+    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue(availableMlHealth);
     vi.spyOn(MlClient.prototype, 'vlmAnalyze').mockImplementation(async (imagePaths, prompt) => {
       if (prompt.includes('semantic clip type and materialization policy')) {
         return {
@@ -1608,12 +1613,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       }));
     });
 
-    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue({
-      status: 'ok',
-      device: 'apple',
-      backend: 'mlx',
-      models_loaded: [],
-    });
+    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue(availableMlHealth);
     vi.spyOn(MlClient.prototype, 'vlmAnalyze').mockImplementation(async (imagePaths, prompt) => {
       if (prompt.includes('semantic clip type and materialization policy')) {
         return {
@@ -1761,9 +1761,14 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       createdAt: '2026-03-31T08:15:30.000Z',
       updatedAt: '2026-03-31T08:15:30.000Z',
     });
+    const mediaStat = await stat(mediaPath);
     await writePreparedAssetCheckpoint(projectRoot, {
-      schemaVersion: 2,
+      schemaVersion: 3,
       assetId: 'asset-resume',
+      sourceFingerprint: {
+        sizeBytes: mediaStat.size,
+        mtimeMs: Math.round(mediaStat.mtimeMs),
+      },
       shotBoundaries: [],
       shotBoundariesResolved: false,
       sampleFrames: [{
@@ -1815,12 +1820,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       droppedInvalidSliceCount: 0,
     });
 
-    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue({
-      status: 'ok',
-      device: 'apple',
-      backend: 'mlx',
-      models_loaded: [],
-    });
+    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue(availableMlHealth);
     vi.spyOn(MlClient.prototype, 'vlmAnalyze').mockResolvedValue({
       description: JSON.stringify({
         scene_type: 'landscape',
@@ -1943,9 +1943,14 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
         createdAt: '2026-03-31T08:15:30.000Z',
         updatedAt: '2026-03-31T08:15:30.000Z',
       });
+      const mediaStat = await stat(mediaPath);
       await writePreparedAssetCheckpoint(projectRoot, {
-        schemaVersion: 2,
+        schemaVersion: 3,
         assetId,
+        sourceFingerprint: {
+          sizeBytes: mediaStat.size,
+          mtimeMs: Math.round(mediaStat.mtimeMs),
+        },
         shotBoundaries: [],
         shotBoundariesResolved: false,
         sampleFrames: [{
@@ -1986,12 +1991,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       }));
     });
 
-    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue({
-      status: 'ok',
-      device: 'apple',
-      backend: 'mlx',
-      models_loaded: [],
-    });
+    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue(availableMlHealth);
     vi.spyOn(MlClient.prototype, 'vlmAnalyze').mockResolvedValue({
       description: JSON.stringify({
         scene_type: 'landscape',
@@ -2088,12 +2088,7 @@ describe('analyzeWorkspaceProjectMedia profiling', () => {
       updatedAt: '2026-03-31T08:15:30.000Z',
     });
 
-    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue({
-      status: 'ok',
-      device: 'apple',
-      backend: 'mlx',
-      models_loaded: [],
-    });
+    vi.spyOn(MlClient.prototype, 'health').mockResolvedValue(availableMlHealth);
 
     const { analyzeWorkspaceProjectMedia } = await import('../../src/modules/media/project-analyze.js');
     const result = await analyzeWorkspaceProjectMedia({

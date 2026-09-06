@@ -1,9 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  buildSpeechReviewAudioUrl,
   fetchTranscriptGlossary,
+  commitSpeechTranscriptReview,
   fetchWorkspaceAsrConfig,
   resolveProjectReview,
   saveProjectSection,
+  saveSpeechTranscriptReviewDraft,
   saveTranscriptGlossary,
   saveWorkspaceAsrConfig,
   startJob,
@@ -12,6 +15,12 @@ import {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('Supervisor API compatibility', () => {
+  it('builds a path-only speech review audio URL', () => {
+    expect(buildSpeechReviewAudioUrl('trip one', 'C3289/zve1', 1020.8, 8740.2)).toBe(
+      '/api/projects/trip%20one/speech-transcript-review/audio/C3289%2Fzve1?startMs=20&endMs=9741',
+    );
+  });
+
   it('keeps the existing job payload shape', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ jobId: 'j1' }), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
@@ -33,7 +42,7 @@ describe('Supervisor API compatibility', () => {
   });
 
   it('round-trips the workspace transcript glossary endpoint', async () => {
-    const glossary = { schemaVersion: '2.0', entries: [] };
+    const glossary = { schemaVersion: '3.0', entries: [] };
     const fetchMock = vi.fn().mockImplementation(async () => new Response(JSON.stringify(glossary), { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
     await fetchTranscriptGlossary();
@@ -42,6 +51,28 @@ describe('Supervisor API compatibility', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/workspace/config/transcript-glossary', expect.objectContaining({
       method: 'PUT',
       body: JSON.stringify(glossary),
+    }));
+  });
+
+  it('submits the unified speech and transcript review in one batch', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ status: 'completed' }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const payload = { inputsHash: 'hash', resolutions: [{ itemId: 'item-1', selection: 'rejected' }] };
+    await commitSpeechTranscriptReview('trip', payload);
+    expect(fetchMock).toHaveBeenCalledWith('/api/projects/trip/speech-transcript-review/commit', expect.objectContaining({
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }));
+  });
+
+  it('persists speech review draft choices before final submission', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ status: 'pending-human' }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const payload = { inputsHash: 'hash', resolutions: [{ itemId: 'item-1', selection: 'rejected' }] };
+    await saveSpeechTranscriptReviewDraft('trip', payload);
+    expect(fetchMock).toHaveBeenCalledWith('/api/projects/trip/speech-transcript-review/draft', expect.objectContaining({
+      method: 'PUT',
+      body: JSON.stringify(payload),
     }));
   });
 

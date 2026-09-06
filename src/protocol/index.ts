@@ -140,7 +140,11 @@ export {
   IStyleSourceCategoryConfig,
   IStyleSourcesConfig,
   ITranscriptGlossaryEntry,
+  IAlignedTranscriptToken,
+  ITranscriptSegmentation,
   ITranscriptGlossaryConfig,
+  ITranscriptNormalizationRule,
+  ITranscriptNormalizationConfig,
   EAsrBackend,
   IWorkspaceAsrConfig,
   EReviewStage,
@@ -151,8 +155,17 @@ export {
   ITranscriptReviewContextEvent,
   ETranscriptReviewItemStatus,
   ITranscriptReviewItem,
+  ITranscriptAutoNormalizationItem,
   ITranscriptReviewArtifact,
   ITranscriptAgentDecision,
+  ESpeechWindowAgentAction,
+  ISpeechWindowAgentDecision,
+  ESpeechTranscriptReviewCategory,
+  ESpeechTranscriptReviewSelection,
+  ISpeechTranscriptReviewItem,
+  ISpeechTranscriptReviewArtifact,
+  ISpeechTranscriptReviewResolution,
+  ISpeechTranscriptReviewDraftResolution,
   IReviewField,
   IReviewItem,
   IReviewQueue,
@@ -203,6 +216,12 @@ export {
   IAgentContract,
   IStoreManifest,
 } from './schema.js';
+export {
+  CSPAN_MATERIAL_PATTERN_REQUIRED_COUNT,
+  hasCompleteSpanMaterialPatterns,
+  summarizeSpanMaterialPatternIntegrity,
+  type ISpanMaterialPatternIntegrity,
+} from './material-pattern-integrity.js';
 
 export {
   validateKtepDoc,

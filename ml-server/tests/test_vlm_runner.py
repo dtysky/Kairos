@@ -73,9 +73,9 @@ class VlmRunnerTests(unittest.TestCase):
         with mock.patch.object(vlm_runner, "BACKEND", "torch"), \
              mock.patch.object(vlm_runner, "_load_transformers", return_value=(12.0, "qwen-text")), \
              mock.patch.object(vlm_runner, "_analyze_transformers", return_value=('{"items":[]}', {"loadMs": 0.0})) as analyze:
-            text, timing = vlm_runner.generate_text("生成素材模式", max_tokens=128)
+            text, timing = vlm_runner.generate_text("生成素材模式", max_tokens=128, temperature=0.2)
 
-        analyze.assert_called_once_with([], "生成素材模式", max_tokens=128)
+        analyze.assert_called_once_with([], "生成素材模式", max_tokens=128, temperature=0.2)
         self.assertEqual(text, '{"items":[]}')
         self.assertEqual(timing["loadMs"], 12.0)
         self.assertEqual(timing["modelRef"], "qwen-text")

@@ -7,6 +7,7 @@ import { writeJobRecord } from '../../src/supervisor/state.js';
 import {
   getWorkspaceStyleAnalysisProgressPath,
   initWorkspaceProject,
+  saveWorkspaceAsrConfig,
   saveStyleSourcesConfig,
   writeJson,
 } from '../../src/store/index.js';
@@ -43,7 +44,7 @@ async function createWorkspace(): Promise<string> {
 }
 
 describe('buildAnalyzeMonitorModel', () => {
-  it('returns structured coarse/audio/fine-scan pipeline summaries', async () => {
+  it('returns structured coarse/audio/segmentation/fine-scan pipeline summaries', async () => {
     const workspaceRoot = await createWorkspace();
     const projectId = 'project-monitor-model';
     const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Monitor Model Project');
@@ -74,6 +75,8 @@ describe('buildAnalyzeMonitorModel', () => {
         audioActiveAsrCount: 1,
         audioTargetAsrConcurrency: 3,
         audioCheckpointedCount: 1,
+        segmentationTotal: 3,
+        segmentationCompletedCount: 1,
         fineScanAssetTotal: 2,
         prefetchedAssetCount: 1,
         recognizedAssetCount: 1,
@@ -86,7 +89,12 @@ describe('buildAnalyzeMonitorModel', () => {
     const model = await buildAnalyzeMonitorModel(workspaceRoot, projectId);
     const pipelineKinds = (model.pipelines || []).map(item => item.kind);
 
-    expect(pipelineKinds).toEqual(['coarse-scan', 'audio-analysis', 'fine-scan']);
+    expect(pipelineKinds).toEqual([
+      'coarse-scan',
+      'audio-analysis',
+      'transcript-segmentation',
+      'fine-scan',
+    ]);
     expect(model.pipelines?.find(item => item.kind === 'coarse-scan')).toMatchObject({
       total: 4,
       completed: 3,
@@ -101,6 +109,11 @@ describe('buildAnalyzeMonitorModel', () => {
       targetAsrConcurrency: 3,
       activeAssetNames: ['clip-a.mp4', 'clip-b.mp4'],
     });
+    expect(model.pipelines?.find(item => item.kind === 'transcript-segmentation')).toMatchObject({
+      total: 3,
+      completed: 1,
+      pending: 2,
+    });
     expect(model.pipelines?.find(item => item.kind === 'fine-scan')).toMatchObject({
       total: 2,
       prefetched: 1,
@@ -112,6 +125,58 @@ describe('buildAnalyzeMonitorModel', () => {
       configuredBackend: 'whisper',
       available: null,
     });
+  });
+
+  it('treats the stopped Qwen worker as released during post-ASR Analyze stages', async () => {
+    const workspaceRoot = await createWorkspace();
+    const projectId = 'project-monitor-asr-released';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'ASR Released Project');
+    await saveWorkspaceAsrConfig(workspaceRoot, { backend: 'qwen3' });
+    const progressRoot = join(projectRoot, '.tmp', 'media-analyze');
+    await mkdir(progressRoot, { recursive: true });
+    await writeJson(join(progressRoot, 'progress.json'), {
+      status: 'running',
+      step: 'finalize',
+      stepLabel: '统一完成素材分析',
+      current: 2,
+      total: 4,
+    });
+    await writeJobRecord(workspaceRoot, {
+      jobId: 'analyze-asr-released',
+      jobType: 'analyze',
+      executionMode: 'deterministic',
+      projectId,
+      args: {},
+      status: 'running',
+      updatedAt: '2026-09-05T03:00:00.000Z',
+      blockers: [],
+    });
+    runtimeMocks.getMlServiceStatus.mockResolvedValue({
+      name: 'ml',
+      status: 'running',
+      updatedAt: '2026-09-05T03:00:00.000Z',
+      health: {
+        asr: {
+          configuredBackend: 'qwen3',
+          actualBackend: 'qwen3',
+          available: false,
+          runtimeVariant: 'transformers-cuda-worker',
+          blocker: 'Qwen ASR worker unavailable: connection refused',
+        },
+      },
+    });
+
+    const model = await buildAnalyzeMonitorModel(workspaceRoot, projectId);
+
+    expect(model.asr).toMatchObject({
+      configuredBackend: 'qwen3',
+      actualBackend: 'qwen3',
+      available: false,
+      lifecycle: 'released',
+      blocker: null,
+    });
+    expect(model.asr?.statusDetail).toContain('释放显存');
+    expect(model.chips.find(chip => chip.label === 'ASR qwen3')?.tone).toBe('ok');
   });
 
   it('treats spatial-refresh as an active analyze monitor job', async () => {

@@ -10,6 +10,7 @@ import {
 	  loadProjectBriefConfig,
 	  loadRuntimeConfig,
   buildProjectChronology,
+  repairProjectSpanMaterialPatterns,
   rebuildProjectSpans,
 	  prepareWorkspaceStyleAnalysisForAgent,
 	  ColorPrepBlockedError,
@@ -253,11 +254,17 @@ async function runJob(
       const runtimeConfig = await loadRuntimeConfig(projectRoot);
       try {
         return {
-          result: await rebuildProjectSpans({
-            workspaceRoot,
-            projectId,
-            agentRunner: new MlJsonPacketAgentRunner(new MlClient(runtimeConfig.mlServerUrl)),
-          }),
+          result: await (toStringValue(args.mode) === 'repair-patterns'
+            ? repairProjectSpanMaterialPatterns({
+                workspaceRoot,
+                projectId,
+                agentRunner: new MlJsonPacketAgentRunner(new MlClient(runtimeConfig.mlServerUrl)),
+              })
+            : rebuildProjectSpans({
+                workspaceRoot,
+                projectId,
+                agentRunner: new MlJsonPacketAgentRunner(new MlClient(runtimeConfig.mlServerUrl)),
+              })),
         };
       } catch (error) {
         if (error instanceof AgentRunnerUnavailableError) {

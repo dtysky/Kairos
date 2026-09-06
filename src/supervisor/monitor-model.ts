@@ -64,7 +64,7 @@ export interface IMonitorProgress {
 }
 
 export interface IMonitorPipelineSummary {
-  kind: 'coarse-scan' | 'audio-analysis' | 'fine-scan';
+  kind: 'coarse-scan' | 'audio-analysis' | 'transcript-segmentation' | 'fine-scan';
   total?: number;
   completed?: number;
   pending?: number;
@@ -117,6 +117,8 @@ export interface IMonitorAsrStatus {
   alignerModelRef?: string | null;
   alignerAvailable?: boolean | null;
   timestampMode?: string | null;
+  lifecycle: 'ready' | 'released' | 'unavailable' | 'not-running';
+  statusDetail?: string | null;
   blocker?: string | null;
 }
 
@@ -156,6 +158,8 @@ interface IAnalyzeProgressPayload {
     audioActiveAsrCount?: number;
     audioTargetAsrConcurrency?: number;
     audioCheckpointedCount?: number;
+    segmentationTotal?: number;
+    segmentationCompletedCount?: number;
     fineScanAssetTotal?: number;
     prefetchedAssetCount?: number;
     recognizedAssetCount?: number;
@@ -240,6 +244,7 @@ const CANALYZE_STEP_DESCRIPTIONS: Record<string, string> = {
   prepare: '装载项目上下文并准备素材分析工作目录。',
   'coarse-scan': '按素材级 worker 抽取粗扫关键帧；单素材同一时刻最多一个 ffmpeg，多素材按内存动态并发。',
   'audio-analysis': '先做 embedded/protection 双健康检查，再将选中的单一路径送入 ASR 队列，按内存动态并发。',
+  'transcript-segmentation': '校验并修复异常字级时间，再按 ASR 标点、句长和短间隔确定性拆分字幕。',
   finalize: '统一完成视觉总结、clip type 判断与 fine-scan 策略决策。',
   'fine-scan-prefetch': '为待细扫素材预抽关键帧，并准备识别所需中间态。',
   'fine-scan-recognition': '消费已准备好的关键帧，生成细扫切片与视觉理解结果。',
@@ -270,18 +275,24 @@ export async function buildAnalyzeMonitorModel(
   const progress = await readJsonFile<IAnalyzeProgressPayload>(progressPath);
   const projectEntry = (await listWorkspaceProjects(workspaceRoot))
     .find(item => item.projectId === projectId);
-  const [asrConfig, mlService] = await Promise.all([
+  const [asrConfig, mlService, jobs] = await Promise.all([
     loadWorkspaceAsrConfig(workspaceRoot),
     getMlServiceStatus(workspaceRoot),
+    listJobRecords(workspaceRoot),
   ]);
-  const asr = buildAnalyzeAsrStatus(asrConfig.backend, mlService);
-  const jobs = await listJobRecords(workspaceRoot);
   const latestJob = jobs.find(job => job.projectId === projectId && isAnalyzeMonitorJob(job)) ?? null;
   const liveJob = jobs.find(job =>
     job.projectId === projectId
       && isAnalyzeMonitorJob(job)
       && isLiveJobStatus(job.status),
   ) ?? null;
+  const asr = buildAnalyzeAsrStatus(asrConfig.backend, mlService, {
+    releasedForActiveAnalyze: Boolean(
+      asrConfig.backend === 'qwen3'
+        && liveJob?.jobType === 'analyze'
+        && isPostAsrAnalyzeStep(progress?.step),
+    ),
+  });
   const [reportCount, preparedCount, audioCheckpointCount] = await Promise.all([
     countChildren(join(projectRoot, 'analysis', 'asset-reports')),
     countChildren(getPreparedAssetCheckpointRoot(projectRoot)),
@@ -334,6 +345,18 @@ export async function buildAnalyzeMonitorModel(
       activeAssetNames: progress?.extra?.activeAssetNames,
     }
     : null;
+  const segmentationPipeline = progress?.extra?.segmentationTotal || isTranscriptSegmentationStep(progress?.step)
+    ? {
+      kind: 'transcript-segmentation' as const,
+      total: progress?.extra?.segmentationTotal ?? total,
+      completed: progress?.extra?.segmentationCompletedCount,
+      pending: typeof progress?.extra?.segmentationTotal === 'number'
+        && typeof progress?.extra?.segmentationCompletedCount === 'number'
+        ? Math.max(0, progress.extra.segmentationTotal - progress.extra.segmentationCompletedCount)
+        : undefined,
+      active: isTranscriptSegmentationStep(progress?.step) ? 1 : undefined,
+    }
+    : null;
   const fineScanPipeline = progress?.extra?.fineScanAssetTotal || fineScanCheckpointSummary.total > 0
     ? {
       kind: 'fine-scan' as const,
@@ -350,7 +373,7 @@ export async function buildAnalyzeMonitorModel(
       checkpointRecognizing: fineScanCheckpointSummary.recognizing,
     }
     : null;
-  const pipelines = [coarsePipeline, audioPipeline, fineScanPipeline]
+  const pipelines = [coarsePipeline, audioPipeline, segmentationPipeline, fineScanPipeline]
     .filter(Boolean) as IMonitorPipelineSummary[];
   const completionMetric = isFineScanPipelineStep && typeof fineScanRecognized === 'number'
     ? {
@@ -374,7 +397,9 @@ export async function buildAnalyzeMonitorModel(
       { label: statusLabel(monitorStatus), tone: toneForStatus(monitorStatus) },
       {
         label: `ASR ${asr.configuredBackend}`,
-        tone: asr.available === true ? 'ok' : asr.available === false ? 'error' : 'default',
+        tone: asr.lifecycle === 'ready' || asr.lifecycle === 'released'
+          ? 'ok'
+          : asr.lifecycle === 'unavailable' ? 'error' : 'default',
       },
     ],
     metrics: [
@@ -430,12 +455,14 @@ export async function buildAnalyzeMonitorModel(
 function buildAnalyzeAsrStatus(
   configuredBackend: 'qwen3' | 'whisper',
   mlService: Awaited<ReturnType<typeof getMlServiceStatus>>,
+  options: { releasedForActiveAnalyze?: boolean } = {},
 ): IMonitorAsrStatus {
   if (mlService.status !== 'running') {
     return {
       configuredBackend,
       actualBackend: null,
       available: null,
+      lifecycle: 'not-running',
       blocker: 'ML 服务尚未运行；启动 Analyze 时会严格检查所选 ASR backend，不会切换到其他 backend。',
     };
   }
@@ -446,6 +473,7 @@ function buildAnalyzeAsrStatus(
       configuredBackend,
       actualBackend: null,
       available: false,
+      lifecycle: 'unavailable',
       blocker: '当前 ML 服务未上报 ASR backend 运行状态，请重启 ML 服务。',
     };
   }
@@ -454,6 +482,9 @@ function buildAnalyzeAsrStatus(
     : null;
   const matches = actualBackend === configuredBackend;
   const runtimeAvailable = runtime.available === true;
+  const released = configuredBackend === 'qwen3'
+    && matches
+    && (runtime.lifecycleState === 'released' || options.releasedForActiveAnalyze === true);
   return {
     configuredBackend,
     actualBackend,
@@ -461,16 +492,36 @@ function buildAnalyzeAsrStatus(
     runtimeBackend: typeof runtime.runtimeBackend === 'string' ? runtime.runtimeBackend : undefined,
     runtimeVariant: typeof runtime.runtimeVariant === 'string' ? runtime.runtimeVariant : undefined,
     device: typeof runtime.device === 'string' ? runtime.device : undefined,
-    available: runtimeAvailable && matches,
+    available: released ? false : runtimeAvailable && matches,
     modelRef: typeof runtime.modelRef === 'string' ? runtime.modelRef : null,
     modelAvailable: runtime.modelAvailable === true,
     alignerModelRef: typeof runtime.alignerModelRef === 'string' ? runtime.alignerModelRef : null,
     alignerAvailable: typeof runtime.alignerAvailable === 'boolean' ? runtime.alignerAvailable : null,
     timestampMode: typeof runtime.timestampMode === 'string' ? runtime.timestampMode : null,
-    blocker: !matches
+    lifecycle: released
+      ? 'released'
+      : runtimeAvailable && matches ? 'ready' : 'unavailable',
+    statusDetail: released
+      ? '本轮 ASR 与字级对齐已完成，独立 worker 已停止并释放显存；字幕拆分不占用 ML，后续视觉阶段再加载主 VLM。'
+      : null,
+    blocker: released
+      ? null
+      : !matches
       ? `ASR backend 不一致：配置 ${configuredBackend}，实际 ${actualBackend ?? 'unknown'}。`
       : (typeof runtime.blocker === 'string' ? runtime.blocker : null),
   };
+}
+
+function isTranscriptSegmentationStep(step: string | undefined): boolean {
+  return step === 'transcript-segmentation' || step === 'semantic-transcript-segmentation';
+}
+
+function isPostAsrAnalyzeStep(step: string | undefined): boolean {
+  return isTranscriptSegmentationStep(step)
+    || step === 'finalize'
+    || step === 'fine-scan-prefetch'
+    || step === 'fine-scan-recognition'
+    || step === 'chronology';
 }
 
 function isPlainRecord(value: unknown): value is Record<string, unknown> {
@@ -579,6 +630,7 @@ function buildAnalyzeSteps(progress: IAnalyzeProgressPayload | null): IMonitorSt
       { key: 'prepare', label: '准备素材分析' },
       { key: 'coarse-scan', label: '粗扫素材' },
       { key: 'audio-analysis', label: '分析视频内音轨' },
+      { key: 'transcript-segmentation', label: '校验字级时间并拆分字幕' },
       { key: 'finalize', label: '统一完成素材分析' },
       { key: 'fine-scan-prefetch', label: '预抽细扫关键帧' },
       { key: 'fine-scan-recognition', label: '识别细扫素材' },

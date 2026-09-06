@@ -1,13 +1,16 @@
 import type {
-  IKtepEvidence,
+  IAlignedTranscriptToken,
   IInterestingWindow,
+  ITranscriptSegmentation,
   ITranscriptSegment,
 } from '../../protocol/schema.js';
 
 export interface ITranscriptContext {
+  rawText: string;
+  alignedTokens: IAlignedTranscriptToken[];
+  segmentation: ITranscriptSegmentation;
   transcript: string;
   segments: ITranscriptSegment[];
-  evidence: IKtepEvidence[];
   speechCoverage: number;
   speechWindows: IInterestingWindow[];
 }
@@ -18,6 +21,15 @@ export function normalizeTranscriptContext(
   transcript?: ITranscriptContext | null,
 ): ITranscriptContext | null {
   if (!transcript) return null;
+
+  const explicitRawText = transcript.rawText?.trim() ?? '';
+  const rawText = explicitRawText || transcript.transcript.trim();
+  const alignedTokens = transcript.alignedTokens ?? [];
+  const segmentation = transcript.segmentation ?? {
+    status: 'completed' as const,
+    promptVersion: 'legacy-context',
+    attempts: 0,
+  };
 
   const segments = transcript.segments
     .map(segment => ({
@@ -34,13 +46,19 @@ export function normalizeTranscriptContext(
     .filter((window): window is IInterestingWindow => window != null);
   const speechCoverage = Math.max(0, Math.min(1, transcript.speechCoverage));
 
-  if (!normalizedTranscript && segments.length === 0) return null;
-  if (speechCoverage < CMIN_CREDIBLE_SPEECH_COVERAGE) return null;
+  if (!rawText && !normalizedTranscript && segments.length === 0 && alignedTokens.length === 0) return null;
+  if (
+    speechCoverage < CMIN_CREDIBLE_SPEECH_COVERAGE
+    && alignedTokens.length === 0
+    && !explicitRawText
+  ) return null;
 
   return {
+    rawText,
+    alignedTokens: alignedTokens.map(token => ({ ...token })),
+    segmentation: { ...segmentation },
     transcript: normalizedTranscript,
     segments,
-    evidence: [...transcript.evidence],
     speechCoverage,
     speechWindows,
   };

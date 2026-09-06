@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, utimes, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -291,5 +291,52 @@ describe('extractKeyframes', () => {
 
     const result = await extraction;
     expect(result.map(frame => frame.timeMs)).toEqual([1000, 2000, 3000]);
+  });
+});
+
+describe('extractImageProxy', () => {
+  it('regenerates an existing image proxy after the source file changes', async () => {
+    const workspaceRoot = await createWorkspace();
+    const sourcePath = join(workspaceRoot, 'panorama.jpg');
+    const outputDir = join(workspaceRoot, 'photo-proxy');
+    const proxyPath = join(outputDir, 'image_proxy.jpg');
+    await mkdir(outputDir, { recursive: true });
+    await writeFile(sourcePath, 'replacement-source');
+    await writeFile(proxyPath, 'stale-proxy');
+    await utimes(proxyPath, new Date('2026-01-01T00:00:00Z'), new Date('2026-01-01T00:00:00Z'));
+    await utimes(sourcePath, new Date('2026-01-02T00:00:00Z'), new Date('2026-01-02T00:00:00Z'));
+    execFileMock.mockImplementation((
+      _file: string,
+      args: string[],
+      callback: ExecCallback,
+    ) => {
+      writeOutputs([args.at(-1)!]);
+      callback(null, '', '');
+    });
+
+    const { extractImageProxy } = await import('../../src/modules/media/keyframe.js');
+    const result = await extractImageProxy(sourcePath, outputDir);
+
+    expect(execFileMock).toHaveBeenCalledTimes(1);
+    expect(result.path).toBe(proxyPath);
+  });
+
+  it('surfaces the ffmpeg decoder failure instead of returning an empty proxy result', async () => {
+    const workspaceRoot = await createWorkspace();
+    const outputDir = join(workspaceRoot, 'photo-proxy');
+    const decoderError = Object.assign(new Error('ffmpeg exited with code 69'), {
+      stderr: 'Picture size 36184x14837 is invalid\nNothing was written into output file',
+    });
+    execFileMock.mockImplementation((
+      _file: string,
+      _args: string[],
+      callback: ExecCallback,
+    ) => callback(decoderError, '', decoderError.stderr));
+
+    const { extractImageProxy } = await import('../../src/modules/media/keyframe.js');
+
+    await expect(extractImageProxy('/tmp/panorama.jpg', outputDir)).rejects.toThrow(
+      /Picture size 36184x14837 is invalid.*Nothing was written into output file/,
+    );
   });
 });

@@ -2,10 +2,11 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { IProjectChronology, type IChronologyEvent, type IProjectChronology as TProjectChronology } from '../protocol/schema.js';
 import { writeJson } from './writer.js';
+import { assertChronologyEventConsolidationReady } from './chronology-consolidation.js';
 
 export class ChronologyV1UnsupportedError extends Error {
   constructor() {
-    super('media/chronology.json 仍是 legacy v1 素材数组。请先在 /chronology 执行时空刷新，重建 Chronology V2，再进入 Script 或 Timeline。');
+    super('media/chronology.json 仍是 legacy v1 素材数组。请先在 /chronology 生成 Chronology V2，再进入 Edit Flow。');
     this.name = 'ChronologyV1UnsupportedError';
   }
 }
@@ -42,7 +43,7 @@ export async function loadChronologyReviewState(projectRoot: string): Promise<IC
       return {
         chronology: null,
         blocked: true,
-        message: 'media/chronology.json 尚未生成。请先在 /chronology 执行时空刷新，生成 Chronology V2，再进入 Script 或 Timeline。',
+        message: 'media/chronology.json 尚未生成。请先在 /chronology 的“编年史生成”阶段生成 Chronology V2，再进入 Edit Flow。',
       };
     }
     return { chronology, blocked: false };
@@ -90,6 +91,7 @@ export async function markChronologyStale(projectRoot: string): Promise<TProject
 
 export async function confirmChronology(projectRoot: string): Promise<TProjectChronology> {
   const chronology = await readRequiredChronology(projectRoot);
+  await assertChronologyEventConsolidationReady(projectRoot, chronology);
   const now = new Date().toISOString();
   const confirmed: TProjectChronology = {
     ...chronology,
@@ -110,6 +112,7 @@ export async function updateChronologyEvent(
   patch: Partial<Pick<IChronologyEvent, 'kind' | 'reviewStatus' | 'title' | 'summary' | 'startAt' | 'endAt' | 'location' | 'route'>>,
 ): Promise<TProjectChronology> {
   const chronology = await readRequiredChronology(projectRoot);
+  await assertChronologyEventConsolidationReady(projectRoot, chronology);
   const index = chronology.events.findIndex(event => event.id === eventId);
   if (index < 0) {
     throw new Error(`Chronology event not found: ${eventId}`);
@@ -129,6 +132,7 @@ export async function mergeChronologyEvents(
   eventIds: string[],
 ): Promise<TProjectChronology> {
   const chronology = await readRequiredChronology(projectRoot);
+  await assertChronologyEventConsolidationReady(projectRoot, chronology);
   const selected = chronology.events.filter(event => eventIds.includes(event.id));
   if (selected.length < 2) {
     throw new Error('Merging chronology events requires at least two event ids.');
@@ -160,6 +164,7 @@ export async function splitChronologyEvent(
   eventId: string,
 ): Promise<TProjectChronology> {
   const chronology = await readRequiredChronology(projectRoot);
+  await assertChronologyEventConsolidationReady(projectRoot, chronology);
   const index = chronology.events.findIndex(event => event.id === eventId);
   if (index < 0) {
     throw new Error(`Chronology event not found: ${eventId}`);

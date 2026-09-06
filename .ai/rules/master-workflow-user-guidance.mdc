@@ -19,6 +19,7 @@ alwaysApply: true
 - 必须优先遵循 `kairos-workflow` skill 作为总控口径，再根据当前阶段调用对应的 phase skill。
 - 当用户没有明确说明当前已经做到哪一步时，先根据项目内已有产物判断可恢复阶段，再继续，不要默认从头重跑。
 - 对用户的说明应优先使用“下一步做什么 + 为什么 + 需要用户提供什么”的方式，而不是只罗列内部实现细节。
+- 正式工作流页面必须根据当前产物与 live job 状态明确一个当前阶段和一个主操作：多阶段页面可按正式顺序横向展示阶段模块，但每个模块必须有独立状态、说明和阶段动作，只有当前可执行模块使用主按钮。维护操作降为次级入口，已恢复的历史 warning / hash / checkpoint 等信息折叠到诊断详情，不能与当前主操作争夺注意力。
 - 如果当前任务涉及需求、行为、工作流、正式入口或用户路径变更，必须额外遵守 `change-management-discipline.mdc`：先进入 `Plan` 模式（或宿主等价的结构化计划确认），再更新设计文档、再实现，最后回查并同步设计文档 / rules / skills。
 - 当前正式控制面是 `Supervisor + React console (apps/kairos-console/)`；`/analyze` 与 `/style` 是正式监控路由，旧静态监控页和兼容脚本不能再被解释成新的正式入口。
 - `scripts/kairos-supervisor.* start` 只会启动 `Supervisor + React console`，不会顺带启动 ML，也不会恢复旧 job。
@@ -44,7 +45,7 @@ Kairos 的标准顺序是：
 - 第三步执行 Ingest，把素材扫描进 `store/assets.json`
 - 第四步执行 Analyze，只生成 `analysis/asset-reports/*.json` 作为分析事实真相
 - 素材主键协议是 `materialIdPolicyVersion=human-source-v1`：root 必须有稳定 `rootCode`，新资产和 span 不得再使用随机 UUID，也不得使用 `asset__` / `span__` namespace 前缀；审查、report、chronology、material-slots 和 timeline 都以短 source locator 作为正式外键
-- 第五步进入 `/chronology`：先显式生成 fresh `store/spans.json`，再生成、审查并确认 Chronology V2；素材时间真值是已修正的 `asset.capturedAt`，Chronology 的 `sortCapturedAt` 只是兼容镜像；Edit Flow 先以 `schemaVersion=2.0` 且 `status=confirmed` 的 chronology 为入口，后续 step 只按 confirmed Flow Plan 的 `inputRefs` 要求消费 spans / assets / asset reports
+- 第五步进入 `/chronology`：先显式生成 fresh `store/spans.json`，再生成确定性 Chronology V2 候选；随后复制 UI 指令交给 Codex Agent 做事件语义归并，归并完成后才进行人工审查并确认 Chronology V2。Agent 可以合并相邻普通事件，也可以让 confirmed Pharos 事件吸收两侧属于同一行程的普通事件；后者保留 Pharos id、标题、地点与确认状态。跨自然日零点仍可归入同一事件，但 route、gap 和另一个 Pharos event 不可跨越。素材时间真值是已修正的 `asset.capturedAt`，Chronology 的 `sortCapturedAt` 只是兼容镜像；Edit Flow 先以 `schemaVersion=2.0` 且 `status=confirmed` 的 chronology 为入口，后续 step 只按 confirmed Flow Plan 的 `inputRefs` 要求消费 spans / assets / asset reports
 - 第六步在 `/edit` 进入 Edit Flow：
   - 初始化 Edit Unit：选择/创建 `editId`，选择 workspace `editRuleCategory`，可选选择 `styleCategory`，写入 `edits/<editId>/config/edit-unit.json`
   - Flow Plan、剪辑框架、素材召回等产物由 Codex Agent 直接在仓库内生成和维护；`/edit` 只读展示，不提供生成 Flow、确认 Flow、运行 step、运行下一步或确认 gate 的按钮
@@ -86,7 +87,7 @@ Kairos 的标准顺序是：
 - 有 `store/assets.json` 但缺少对应 `analysis/asset-reports/*.json`：先做 `Analyze`
 - 如果已有完整 `analysis/asset-reports/*.json`，用户只改了 span 派生口径，优先去 `/chronology` 运行 `生成候选素材片段与模式`，不能默认重跑完整 Analyze
 - 如果用户只改了 GPS / Pharos context / 空间优先级 / reverse-geocode 逻辑，先运行 `spatial-refresh` 修补 reports，再回 `/chronology` 重新生成 spans 和 chronology
-- 有 `store/spans.json` 但缺 fresh `store/spans.meta.json`，或 meta 为 `pending-speech-review`，或 `media/chronology.json` 缺失、仍是旧数组 v1、或不是 `status=confirmed` 的 Chronology V2：先去 `/chronology` 生成候选素材片段与模式；如 pending 则交给 Codex/Agent SubAgents 完成 speech-window review，且每个 speech-review subagent shard 上限约 1500 candidates；再生成/审查/确认 chronology
+- 有 `store/spans.json` 但缺 fresh `store/spans.meta.json`，或 meta 为 `pending-speech-review`，或 `media/chronology.json` 缺失、仍是旧数组 v1、或不是 `status=confirmed` 的 Chronology V2：先去 `/chronology` 生成候选素材片段与模式；如 pending 则由 Codex Agent 生成统一口播与字幕审查报告，用户在五张分类表中复核默认接受的建议并处理字幕需听音项。提交后生成 chronology 候选，再复制 UI 指令交给 Codex Agent 完成事件语义归并，最后才开放人工 chronology 审查和确认；无法可靠提出动作的窗口保持原状，不增加人工任务
 - 有 confirmed chronology，但缺少 `edits/<editId>/config/edit-unit.json` 或其中没有 `editRuleCategory`：先进入 `/edit` 初始化 Edit Unit
 - 有 Edit Unit 但缺少 confirmed `edits/<editId>/planning/flow-plan.json`：由 Codex Agent 生成/更新 Flow Plan；如果后续 capability 声明需要 fresh spans，再由该 step 精确阻塞
 - 有 confirmed Flow Plan 但缺少当前 `plannerPolicyVersion=codex-agent-v1` 或 `materialIdPolicyVersion=human-source-v1`：视为旧计划，由 Codex Agent 重新生成

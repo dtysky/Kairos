@@ -182,7 +182,11 @@ def _extract_audio_wav(media_path: str) -> Path:
     subprocess.run(
         [_ffmpeg_path(), "-i", media_path,
          "-vn", "-ac", "1", "-ar", "16000", "-f", "wav", "-y", str(out_path)],
-        check=True, capture_output=True, text=True,
+        check=True,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
     )
     return out_path
 
@@ -623,8 +627,8 @@ def _build_silent_timing(prepared: dict) -> dict:
     }
 
 
-def _transcribe_non_mlx_batch(prepared_entries: list[dict], languages: list[str | None]) -> list[tuple[list[dict], list[dict], dict]]:
-    outputs: list[tuple[list[dict], list[dict], dict] | None] = [None] * len(prepared_entries)
+def _transcribe_non_mlx_batch(prepared_entries: list[dict], languages: list[str | None]) -> list[tuple[str, list[dict], list[dict], dict]]:
+    outputs: list[tuple[str, list[dict], list[dict], dict] | None] = [None] * len(prepared_entries)
     load_started_at = time.perf_counter()
     asr = _get_non_mlx_asr()
     load_ms = (time.perf_counter() - load_started_at) * 1000.0
@@ -648,6 +652,7 @@ def _transcribe_non_mlx_batch(prepared_entries: list[dict], languages: list[str 
         inference_ms = (time.perf_counter() - inference_started_at) * 1000.0
 
         outputs[index] = (
+            " ".join(segment.get("text", "") for segment in segments).strip(),
             segments,
             words,
             {
@@ -672,9 +677,9 @@ def _transcribe_non_mlx_batch(prepared_entries: list[dict], languages: list[str 
 def transcribe_many(
     requests: list[tuple[str, str | None]],
     preprocess_max_concurrency: int = 1,
-) -> list[tuple[list[dict], list[dict], dict]]:
+) -> list[tuple[str, list[dict], list[dict], dict]]:
     prepared_entries: list[dict | None] = [None] * len(requests)
-    outputs: list[tuple[list[dict], list[dict], dict] | None] = [None] * len(requests)
+    outputs: list[tuple[str, list[dict], list[dict], dict] | None] = [None] * len(requests)
 
     with ThreadPoolExecutor(max_workers=max(1, preprocess_max_concurrency)) as executor:
         future_map = {
@@ -686,7 +691,7 @@ def transcribe_many(
             prepared = future.result()
             prepared["language"] = language
             if not prepared["has_effective_audio"]:
-                outputs[index] = ([], [], _build_silent_timing(prepared))
+                outputs[index] = ("", [], [], _build_silent_timing(prepared))
                 prepared["wav_path"].unlink(missing_ok=True)
                 continue
             prepared_entries[index] = prepared
@@ -706,6 +711,7 @@ def transcribe_many(
                     segments, words = _transcribe_mlx(prepared["wav_path"], prepared["language"])
                     inference_ms = (time.perf_counter() - inference_started_at) * 1000.0
                     outputs[index] = (
+                        " ".join(segment.get("text", "") for segment in segments).strip(),
                         segments,
                         words,
                         {
@@ -740,5 +746,5 @@ def transcribe_many(
 
 # ── Public API ───────────────────────────────────────────────
 
-def transcribe(audio_path: str, language: str | None = None) -> tuple[list[dict], list[dict], dict]:
+def transcribe(audio_path: str, language: str | None = None) -> tuple[str, list[dict], list[dict], dict]:
     return transcribe_many([(audio_path, language)], preprocess_max_concurrency=1)[0]

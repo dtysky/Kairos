@@ -9,7 +9,6 @@ from typing import Any
 from .device import BACKEND, DEVICE
 from .whisper_runner import (
     _build_silent_timing as _build_whisper_silent_timing,
-    _group_words_to_segments,
     _normalize_text,
     _normalize_timestamp_pair,
     _prepare_transcription_input,
@@ -140,9 +139,9 @@ def transcribe_many(
     model_path: str,
     aligner_model_path: str,
     preprocess_max_concurrency: int = 1,
-) -> list[tuple[list[dict], list[dict], dict]]:
+) -> list[tuple[str, list[dict], list[dict], dict]]:
     prepared_entries: list[dict | None] = [None] * len(requests)
-    outputs: list[tuple[list[dict], list[dict], dict] | None] = [None] * len(requests)
+    outputs: list[tuple[str, list[dict], list[dict], dict] | None] = [None] * len(requests)
     with ThreadPoolExecutor(max_workers=max(1, preprocess_max_concurrency)) as executor:
         future_map = {
             executor.submit(_prepare_transcription_input, media_path): (index, language)
@@ -164,7 +163,7 @@ def transcribe_many(
                     "alignerModelRef": aligner_model_path,
                     "alignmentMs": 0.0,
                 })
-                outputs[index] = ([], [], timing)
+                outputs[index] = ("", [], [], timing)
                 prepared["wav_path"].unlink(missing_ok=True)
                 continue
             prepared_entries[index] = prepared
@@ -190,9 +189,10 @@ def transcribe_many(
                 alignment_started_at = time.perf_counter()
                 words = _align_segments(aligner, prepared["wav_path"], raw_segments, language)
                 alignment_ms = (time.perf_counter() - alignment_started_at) * 1000.0
-                segments = _group_words_to_segments(words) if words else []
+                raw_text = "".join(_normalize_text(segment.get("text") or "") for segment in raw_segments)
                 outputs[index] = (
-                    segments,
+                    raw_text,
+                    [],
                     words,
                     {
                         "backend": "qwen3",

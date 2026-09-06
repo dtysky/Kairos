@@ -111,6 +111,16 @@ export {
   ChronologyV1UnsupportedError,
 } from './chronology.js';
 export {
+  getChronologyEventConsolidationStatePath,
+  getChronologyEventConsolidationHandoffPath,
+  getChronologyEventConsolidationDecisionsPath,
+  getChronologyEventConsolidationAuditPath,
+  loadChronologyEventConsolidationState,
+  writeChronologyEventConsolidationState,
+  writeChronologyEventConsolidationAudit,
+  assertChronologyEventConsolidationReady,
+} from './chronology-consolidation.js';
+export {
   CDEFAULT_EDIT_ID,
   normalizeEditId,
   getProjectEditsRoot,
@@ -193,6 +203,8 @@ export {
 export {
   getTimelineCurrentPath,
   getTimelineSubtitleSrtPath,
+  getTimelineRemainingPath,
+  getTimelineRemainingSrtPath,
   getTimelineRoughCutBasePath,
   getTimelineSegmentCutsRoot,
   getTimelineSegmentCutPath,
@@ -305,12 +317,23 @@ export {
 } from './review-queue.js';
 export {
   getTranscriptGlossaryPath,
+  getTranscriptDomainGlossaryRoot,
   loadTranscriptGlossary,
+  loadTranscriptDomainGlossary,
+  loadEffectiveTranscriptGlossary,
   saveTranscriptGlossary,
   normalizeTranscriptGlossary,
   computeTranscriptGlossaryHash,
   normalizeGlossaryLookupKey,
 } from './transcript-glossary.js';
+export {
+  getTranscriptNormalizationPath,
+  loadTranscriptNormalization,
+  saveTranscriptNormalization,
+  normalizeTranscriptNormalization,
+  computeTranscriptNormalizationHash,
+  applyTranscriptNormalizations,
+} from './transcript-normalization.js';
 export {
   CDEFAULT_WORKSPACE_ASR_CONFIG,
   getWorkspaceAsrConfigPath,

@@ -12,6 +12,9 @@ export {
   CSPAN_MATERIAL_PATTERN_REQUIRED_COUNT,
   CSPAN_MATERIAL_PATTERN_STORY_UNKNOWN,
   CSPAN_MATERIAL_PATTERN_VIEWPOINT_TAGS,
+  hasCompleteSpanMaterialPatterns,
+  summarizeSpanMaterialPatternIntegrity,
+  type ISpanMaterialPatternIntegrity,
 } from './span-material-pattern-spec.js';
 export {
   buildSpanMaterializationReviewHardConstraints,

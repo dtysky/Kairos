@@ -184,7 +184,7 @@ async function seedProject(workspaceRoot: string): Promise<string> {
     sourceOutMs: 7_000,
     visualObservation: '海边步行镜头。',
     transcript: '海边很安静。',
-    materialPatterns: ['高辨识度地点快速建场'],
+    materialPatterns: ['环境远景', '海岸步道', '晴天', '有口播语音', '海边步行观察', '高辨识度地点', '路线起点'],
     grounding: {
       speechMode: 'available',
       speechValue: 'emotional',
@@ -357,7 +357,7 @@ describe('model-driven script preparation', () => {
     expect(result.scriptBriefPath).toBe(getScriptBriefPath(projectRoot));
 
     const facts = await loadMaterialOverviewFacts(projectRoot);
-    expect(facts?.topMaterialPatterns).toContain('高辨识度地点快速建场');
+    expect(facts?.topMaterialPatterns).toContain('高辨识度地点');
 
     const bundles = await loadMaterialBundles(projectRoot);
     expect(bundles[0]?.memberSpanIds).toContain('span-coast');

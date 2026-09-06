@@ -19,6 +19,12 @@ export interface ISupervisorServiceRecord {
   startedAt?: string;
   updatedAt: string;
   health?: unknown;
+  asrWorker?: {
+    port: number;
+    url: string;
+    launcherPid?: number;
+    listenerPid?: number;
+  };
   stdoutPath?: string;
   stderrPath?: string;
   lastError?: string;
@@ -45,6 +51,32 @@ export interface ISupervisorJobRecord {
   promptSnapshotPath?: string;
   configSnapshotPath?: string;
   lastError?: string;
+}
+
+export function progressBelongsToSupervisorJob(
+  job: ISupervisorJobRecord,
+  progress: unknown,
+): boolean {
+  if (!progress || typeof progress !== 'object' || Array.isArray(progress)) return false;
+  const record = progress as Record<string, unknown>;
+  const phaseKey = record.phaseKey;
+  if (['span-rebuild', 'chronology-build'].includes(job.jobType) && phaseKey !== job.jobType) {
+    return false;
+  }
+  const extra = record.extra;
+  const progressJobId = extra
+    && typeof extra === 'object'
+    && !Array.isArray(extra)
+    && typeof (extra as Record<string, unknown>).jobId === 'string'
+      ? (extra as Record<string, unknown>).jobId as string
+      : undefined;
+  if (['queued', 'running'].includes(job.status)) {
+    return progressJobId == null || progressJobId === job.jobId;
+  }
+  if (!['failed', 'blocked'].includes(job.status)) {
+    return false;
+  }
+  return progressJobId === job.jobId;
 }
 
 export function getSupervisorRoot(workspaceRoot: string): string {

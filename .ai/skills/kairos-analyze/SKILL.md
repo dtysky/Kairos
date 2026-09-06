@@ -19,6 +19,12 @@ description: >-
 - 在有空间线索时，为 coarse report 挂上 GPS / 地点上下文
 
 当前 v1 的正式 Analyze 语义口径是：
+- 音频主链是 `ASR raw + ForcedAligner alignedTokens -> aligned-token timing repair -> transcript-segmentation -> finalize`。`qwen3-character-alignment-v2` 把中文、英文和数字 aligner token 都按 Unicode 字符展开；程序校验字符覆盖、索引、时间和 gap，并按单素材字时长分布收缩吞入长静音的异常 token，修复不得改变字符或原文，原始/修复时间必须写入 segmentation 审计
+- 字幕拆句不调用 Qwen3.5：只有 `，` / `,` 不结束句子，其他 Unicode 标点都结束句子；超过 36 字时只在已有逗号处均衡拆开并把该逗号改为句号；相邻句仅在 token gap `<1500ms` 且合并后 `<=36` 字时顺序合并。最终 segments 必须连续覆盖全部 token，时间由首尾 token 重建
+- `/analyze` 的 ASR 卡片按真实生命周期显示：`ready` 可运行、`released` 表示本轮 ASR 已完成且独立 worker 已释放显存、`unavailable` 才是阻塞、`not-running` 表示整个 ML 尚未启动。Windows worker 优先使用 8911，端口不可绑定时由 Supervisor 自动选择可用 loopback 端口并注入 gateway。活跃作业已经进入 semantic/finalize/fine-scan 时不得把 worker 连接拒绝显示为错误，也不得为了消除提示重新启动 worker
+- `/chronology` 的 span-rebuild failed-list 必须复用 `.tmp/chronology/span-rebuild.partial.json`，只补未完成 span；主 chunk 重试后，每个失败项最多再自动纠错三次并在每次调用后更新最新 validation feedback、attempt 和 checkpoint。单条纠错 prompt 只包含当前 item、机器校验结果与固定七槽 schema，不得累计错误案例、素材例子或业务特例；次数用尽后才阻塞，不能因少量协议错误重算已完成 materialPatterns
+- audio checkpoint 使用 schema v3，旧 v2 必须重跑 ASR；asset report 保留 raw/token/segmentation 审计字段。后置 transcript review 只改文字，不拆句、合句或改时间
+- ASR transcript 不生成固定置信度 evidence。Windows Qwen ASR 使用 Supervisor 管理的独立 `.venv-asr` worker，ASR 后卸载模型并终止 worker；确定性字幕拆句不加载文本模型，后续 finalize / fine-scan 才按需进入主 VLM
 - `Asset Report Truth -> Explicit Span Rebuild -> Chronology Review`
 - `Span` 当前只承载素材片段事实索引，不承载 Pharos/GPS/route/speed 决策
 - `slice` 仅作为兼容命名继续存在于少量代码和导出字段中
@@ -82,7 +88,7 @@ Analyze 不会隐式补跑 `ingest`、`gps-refresh` 或 Pharos parse。如果用
 - 在真正开始粗扫前，应先检查 ML server health；如果不可用，立刻提示用户启动/修复服务后再继续
 - ASR backend 是 `config/runtime.json.asr.backend` 的工作区级显式选择，用户只选择 `qwen3 | whisper`。`backend=qwen3` 在 Apple Silicon/MLX 与 Windows + NVIDIA/Transformers-CUDA 按仓库约定目录使用各自本地 Qwen3-ASR 与 ForcedAligner；模型路径、请求语言和内部音频分片长度不是用户配置。只按当前平台读取对应 checkpoint，任一不可用都直接阻塞，不得跨平台 checkpoint 或静默改用 Whisper。`backend=whisper` 继续使用现有 Whisper 路径，也不得自动切换到 Qwen
 - `/project` 只负责编辑 ASR backend；`/analyze` 必须显示 configured/actual backend、自动发现的 runtime variant、device、model、aligner、availability 与 blocker，并在状态不一致或不可用时禁用启动
-- ASR 推理阶段不得注入共享词表或行程热词：不要向 Qwen 传 `context`，也不要向 Whisper 传 `hotwords / initial_prompt`。`config/transcript-glossary.json` 每项只保留正确写法、可选发音和使用语境；发音只帮助后置 Agent 召回同音候选，必须结合完整句子、相邻口播和时间段行程匹配使用语境后才能采用
+- ASR 推理阶段不得注入内置领域词表、工作区个性词表、文字归一或行程热词：不要向 Qwen 传 `context`，也不要向 Whisper 传 `hotwords / initial_prompt`。两层词表只在 post-ASR Agent 审查合并使用，文字归一只在候选字幕准备阶段执行
 - 只有用户明确接受“这轮先不做 analyze”时，才可以停在这里；不能擅自降级成无 ML 的 analyze
 - 如果 unified `finalize` 返回 invalid JSON，不要先猜是模型坏了还是 prompt 坏了；当前正式做法是先查看 `projects/<projectId>/.tmp/media-analyze/finalize-attempts/<assetId>/attempt-*.json`
 - Analyze 当前会自动对 invalid-JSON `finalize` 做增量 token 重试，默认预算序列为 `512 -> 768 -> 1152`
@@ -247,17 +253,16 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
   - `whisper`：Apple Silicon / MLX 使用 `mlx-whisper / whisper-large-v3-turbo`；Windows + CUDA / CPU 优先完整本地 `faster-whisper / large-v3`（CTranslate2）checkpoint
   - 两个 backend 之间没有静默 fallback；所选 backend 不可用就停止 Analyze
 - 项目 Analyze caller 当前默认固定传 `language='zh'`
-- TS 侧会在 refined transcript segmentation 之后统一做 Han 文本简体归一：
+- TS 侧会对 ASR 原文与 aligned token 做一致的上下文 Han 文本简体归一，然后校验字符覆盖：
   - 只转换 Han 文本为简体中文
   - 规范中文标点与中西文空格
   - 英文、数字和其他脚本保持原样
 - Whisper 的非 MLX 路径不允许在正式 `/asr` 请求里隐式卡住等待远端模型下载：
   - 大模型 cache 完整时直接使用
   - 只有不完整 cache 时，Analyze 必须回退到完整可用的本地 Whisper checkpoint，而不是把音频分析整个挂死
-- Apple Silicon / MLX 与 `faster-whisper` 路径当前都会请求词级时间戳
-- Analyze 在 TS 侧统一重建 refined `transcriptSegments`：
-  - 有 `words` 时按词级停顿、标点与长度约束细分
-  - 没有 `words` 时按 segment 文本的标点与长度做保守细分
+- ASR backend 必须返回带时间的 aligned token；无论底层 Qwen3 + ForcedAligner 或 Whisper 返回字符还是词，写 checkpoint 前都统一展开为 Unicode 单字符 token
+- Analyze 必须在 TS 侧按当前确定性合同重建 `transcriptSegments`：非逗号 Unicode 标点结束句子，36 字上限只在已有逗号处分割，句间 gap `<1500ms` 且合并后不超限时合并；不得调用 LLM 改写或裁决句界
+- `speechWindows` 不是 `transcriptSegments` 的同义物，也不交给 Qwen3.5 决定。它必须在 semantic segmentation 前只读取有效 aligned-token 时间：按单素材 log-gap 上尾估计候选边界，用 token 时长节奏保护过滤呼吸/词间停顿，对单候选验证相对显著性，并在稀疏长尾中识别自然断层。不得读取字幕句界、文字、标点或字数，不得使用统一秒数、最长窗口或字符上限
 - 如果资产已绑定 `protectionAudio`，先对 embedded 与 protection 都做轻量音频健康检查，重点观察低电平、静音比例、语音线索偏弱等问题
 - 把 ASR 命中的语音时间窗并入 `interestingWindows`
 - `interestingWindows` 现在需要区分两层语义：
@@ -265,7 +270,7 @@ Analyze 阶段如果要给素材补空间上下文，来源优先级必须是：
   - `editStartMs / editEndMs` 作为后续 Script/Timeline 默认消费的 edit-friendly bounds
 - 但要把“极稀疏语音”当噪声处理：如果 `speechCoverage` 低到只剩零星词片段（当前阈值为 `< 0.05`），应直接丢弃整段 transcript 上下文，不写入 coarse report，也不要让它推动 `interestingWindows` 或 fine-scan
 - 不要把“高 coverage 但内容本来就简单/重复”的素材误判为 ASR 故障；那类结果可以保留，只是后续由剪辑策略自己决定值不值得用
-- `report.transcriptSegments` 当前应理解为 refined transcript segmentation，而不是直接照搬后端的粗 segment
+- `report.transcriptSegments` 是通过连续 token 覆盖和字级时间异常校验的确定性 punctuation-gap segmentation，不是后端粗 segment 或 LLM 输出
 - `report.transcript`、`report.transcriptSegments`、source-speech spans 与 timeline subtitle 输入当前统一使用简体归一后的文本
 - 当前保护音轨策略是保守 fallback，不是双主音轨竞争：
   - 视频内无线 mic 仍是默认主音轨
@@ -317,9 +322,12 @@ analysis/asset-reports/<assetId>.json
 当前恢复口径补充：
 
 - coarse prepared state 会写到 `analysis/prepared-assets/<assetId>.json`
+  - checkpoint 必须记录源文件 size/mtime fingerprint；恢复时源文件变化、`sampleFrames=[]`、任一代表帧文件缺失或代表帧早于源文件都视为 stale 并重新粗扫，源文件替换后不得复用旧 image proxy/keyframes
+  - 照片代理生成失败必须直接报告底层媒体工具原因且不得写空 checkpoint；不得把代理失败延迟误报成 photo finalize 缺少 VLM 描述
 - audio state 会写到 `analysis/audio-checkpoints/<assetId>.json`
   - 当前正式口径是 `selectedTranscript / selectedTranscriptSource / embeddedHealth / protectionHealth / protectedAudio / decisionHints`
-- speech-boundary 补充分析是 Analyze 语境下的 no-ML repair：读取已有 `store/assets.json + store/spans.json`，对 speech/mixed span 周边音频做轻量包络/阈值分析，每个素材诊断明细写到 `analysis/speech-boundaries/<assetId>.json`；正式下游只消费 `store/spans.json` 中的 `effectiveSpeechStartMs / effectiveSpeechEndMs` 两个 source-ms 字段，不把完整分析结构塞进 span，也不覆盖 `sourceInMs/sourceOutMs`、`editSourceInMs/editSourceOutMs` 或 `transcriptSegments`
+  - 恢复 v3 checkpoint 时必须从 `selectedTranscript.alignedTokens` 重新执行当前 speech-window policy；这一步只更新本轮内存上下文，不需要重跑 ASR
+- 历史 speech-boundary no-ML 包络/阈值能力只保留诊断用途，可把素材明细写到 `analysis/speech-boundaries/<assetId>.json`，但不得覆盖 Qwen aligned timing 或成为正式下游取源真值；`effectiveSpeechStartMs / effectiveSpeechEndMs` 只作无 timed transcriptSegments 时的旧数据兼容字段
 - report 里的 `fineScanCompletedAt / fineScanSliceCount` 用来标记 `fine-scan` 是否真正完成
 - `analysis/fine-scan-checkpoints/<assetId>.json` 只代表 fine-scan 的 durable 中间态，不代表当前一定存在 live fine-scan worker
 - 新启动的 Analyze job 不读取 `progress.json.step` 作为恢复指针，而是重新计算 `pendingAssets` 和 `pendingFineScanEntries`；如果 `pendingAssets=0` 且存在待 fine-scan report，首个 live progress 必须直接写 `fine-scan-prefetch`，避免监控页误显示“从 prepare 重新开始”。
@@ -344,11 +352,11 @@ Analyze 运行过程中和阶段末都不再写 `store/spans.json`；span 由 `/
 - `sourceInMs / sourceOutMs` 继续保留兼容性的 focus/evidence window
 - `editSourceInMs / editSourceOutMs` 承载 edit-friendly bounds，供 Script/Timeline 默认优先使用
 - 不写 `speedCandidate / pharosRefs / grounding / spatialEvidence / location / routeRole / chronology event`
-- `source-speech` 的持久化目标是素材事实窗口；Analyze 生成 speech windows 和 `span-rebuild` 重建候选 spans 时都必须做 speech 专用合并：同 asset、speech/mixed 通道、相邻间隔 `<=3000ms`、合并后 `<=45s` 且可见中文 transcript `<=160` 字才合并，跨素材、跨语义通道、大停顿或过长口播不合并；合并后保留 transcriptSegments 顺序，任一来源为 `mixed` 时结果为 `mixed`，否则为 `speech`
-- speech/mixed 与 visual 是同一素材内可重叠共存的双通道 truth：speech span 只承载口播 truth，visual span 保留完整视觉窗口与 `visualObservation`，不得因为 speech 重叠被切断、缩短或继承 transcript；后置 Codex/Agent speech-window review 只能修 speech 候选，不得破坏重叠 visual span
-- 后置 speech-window review 也负责 ASR 字幕文字校对。原始 report 与 segment 时间/分段不可变，Agent 只能替换 speech/mixed segment text 并重建 span transcript；纠正审计写 `analysis/transcript-reviews/<inputsHash>.json`。工作区 `config/transcript-glossary.json` 的 `pronunciation` 只用于召回候选，词条 `context` 必须与完整口播及 fresh、按 `asset.capturedAt + source time` 裁剪的 Pharos/manual itinerary 相符后，才可作为专名自动纠错证据；Agent 普通词知识仍只负责普通词。无词表/行程证据的新专名不得自动写入。存在 `transcript-correction` 人工项时 meta 保持 `pending-speech-review`，最后确认必须全量校验、批量应用并最后写 `fresh`
-- `effectiveSpeechStartMs / effectiveSpeechEndMs` 是音频边界分析后的有效口播首尾 source ms；它们只用于后续 source-speech 取源窗与 handle 计算，不改变 chronology/recall 使用的素材事实窗口
-- 行车 visual fallback/fine-scan 窗口应按 passage 降碎片，默认同 asset、visual 通道、相邻 source gap `<=60s`、单段 `<=90s`；speech/mixed 行车 span 仍独立存在并可与 visual passage 重叠
+- `source-speech` 的持久化目标是素材事实窗口；Analyze 使用上述 aligned-token 自适应规则生成 speech windows。`span-rebuild` 只对已经存在的同 asset、同 speech/mixed 通道候选做保守合并：相邻间隔 `<=3000ms`、合并后 `<=45s` 且可见中文 transcript `<=160` 字才合并；这些兼容限制不得拆分一个 Analyze speech window。合并后保留 transcriptSegments 顺序，任一来源为 `mixed` 时结果为 `mixed`，否则为 `speech`
+- speech/mixed 与 visual 仍是分开的双通道 truth，但新 Analyze 必须在类型扩窗完成、fine-scan/VLM 前消除高重合候选：对同素材 speech edit-range 集合与每个 visual edit range 计算区间集合 IoU，只有 `IoU >= 0.5` 才扣除 speech；扣除后每段连续 remainder `<15000ms` 删除，`>=15000ms` 裁成独立 visual 候选，交给 `material.recall` 决定是否采用。`IoU < 0.5` 保持 visual 原窗。旧 report 已有重叠窗口按历史事实读取；`span-rebuild` 与后置 `kairos-speech-review` 不得事后切碎或改写它们，visual 也不得继承 transcript
+- 后置统一审查也负责 ASR 字幕文字校对。原始 report 与 segment 时间/分段不可变；简体中文正字归一和工作区精确文字归一先写入 candidate spans 并记录审计，Agent 再审查归一后文本；其余字幕修正和窗口裁切/取消先写 `analysis/speech-transcript-reviews/<inputsHash>.json`，在 Console 分五类审查。建议项默认接受，只有字幕需人工听音项未决并阻塞提交；取消 speech truth 时保留视觉召回。effective glossary 合并内置领域词表和工作区个性词表，无词表/行程证据的新专名不得自动写入
+- speech window 的 `sourceInMs/sourceOutMs` 必须等于组内首末 aligned token 时间；`editSourceInMs/editSourceOutMs` 只在两侧各加一次 `250ms`，不得吸附 shot boundary 或套用视觉窗口最短时长。`effectiveSpeechStartMs / effectiveSpeechEndMs` 不再是 Qwen v3 正式口播边界，只在 timed transcriptSegments 缺失时兼容读取
+- 行车 visual fallback/fine-scan 窗口应按 passage 降碎片，默认同 asset、visual 通道、相邻 source gap `<=60s`、单段 `<=90s`；随后先应用上述 speech/visual IoU 与连续 remainder 规则，再生成 fine-scan 计划
 - 细粒度 utterance / pause timing 继续保留在 `transcriptSegments`
 - `materialPatterns` 固定为中文 `string[]`，只保存脚本阶段可消费的素材事实短语；`span-rebuild` 的 LM prompt 只请求 7 项 provisional tags，不再请求或解析口播可用性裁决。前四项固定为 `拍摄视角/构图形态 / 当前环境 / 天气光线 / 口播语音`，其中视角来自受控词表，环境是从当前 span 文本事实提取的短语，天气光线只写可观察自然现象；第 4 项在 speech review pending 时只是候选口径，最终必须由 Agent review 根据裁切/drop/visual-only 结果重写到与 speech truth 一致；第 1 项只描述素材自身可观察的拍摄视角/构图形态，不得重复 `type` 的照片/视频载体语义，也不得写“建场/记录/成果”等后续剪辑用途；slot1/slot2/slot3 的画面语义支持性由 prompt/rubric 要求 LM 自判，代码校验受控词表并用结构字段和错槽保留词拦截硬冲突（如 `photo + 行车/运动/口播视角`、`drive + 航拍视角`、`无口播语音 + 口播视角`、视角/口播 tag 出现在环境或天气槽），不用关键词正则做支持性二次判定；第 5 项是 LLM 短情景故事或 `情景不明`，第 6-7 项是 LLM 短 factual free tags；代码只做协议校验、JSON 壳容错和失败原因反馈，不做启发式补写、旧词替换或兼容映射；重试时可以把具体 slot issue、期望口播槽值和 expected row count 反馈给 LM 重新生成，仍不合格则 `span-rebuild` 失败
 - `visualObservation?: string` 保存 span 级一句视觉事实描述；所有 keep 的非音频 material span 都必须有该字段，缺失属于 Analyze 阶段失败
@@ -430,7 +438,7 @@ const localPath = resolveAssetLocalPath(asset, roots);
 - 只要开始执行一个可能持续较久的 Analyze，就应同步启动或刷新本地监控面板，而不是只在后台静默运行
 - 启动 Analyze 后，agent 应主动把监控面板 URL 告诉用户；如果分析已经开始但面板还没打开，应立即补开
 - 正式 Analyze 监控路由是 `http://127.0.0.1:8940/analyze`
-- `/chronology` 页面会显示活跃 `spatial-refresh / span-rebuild / chronology-build` jobs；`spatial-refresh / chronology-build` 不启动 Kairos ML，`span-rebuild` 会启动本地 ML 服务按 8 个 candidate span 一批调用 qwen 文本 LM 做 provisional materialPatterns 归纳，LM 只返回 ordered pattern rows，代码按 chunk 顺序写回候选 spans，但不重跑 VLM / ASR，也不做最终 speech-window 裁切；已完成 checkpoint 和 failed span 列表写入 `.tmp/chronology/span-rebuild.partial.json`，正式 `store/spans.json` 只在全量收口后写入。若存在 speech/mixed candidates，meta 必须是 `pending-speech-review` 并展示 `.tmp/chronology/speech-window-agent-handoff.md`，`chronology-build` 必须 disabled 直到 Agent 写回 `fresh`；handoff/SubAgent 分片必须以约 1500 candidates 为单 shard 上限。`chronology-build` 必须覆盖同一 progress 文件为自己的 live 阶段，不得显示旧 span-rebuild cache；长循环中至少按批次更新 span 时空归属解析、event/route 聚合计数和 GPS reverse-geocode 地名解析计数。
+- `/chronology` 页面会显示活跃 `spatial-refresh / span-rebuild / chronology-build` jobs；任务失败或阻塞后还要显示与该 job id 匹配的 durable terminal progress、错误、失败数、自动重试次数和 checkpoint 续跑操作，不能把 progress cache 误报成 live。`spatial-refresh / chronology-build` 不启动 Kairos ML，`span-rebuild` 会启动本地 ML 服务按 8 个 candidate span 一批调用 qwen 文本 LM 做 provisional materialPatterns 归纳，LM 只返回 ordered pattern rows，代码按 chunk 顺序写回候选 spans，但不重跑 VLM / ASR，也不做最终 speech-window 裁切；已完成 checkpoint 和 failed span 列表写入 `.tmp/chronology/span-rebuild.partial.json`，正式候选 `store/spans.json` 只在全量 span-builder 成功后写入。若存在 speech/mixed candidates，meta 必须是 `pending-speech-review` 并展示 handoff 或已 staged 的六表审查；`chronology-build` 必须 disabled 直到用户提交后写回 `fresh`。
 - `React console` 的 Analyze 监控读取项目内 `.tmp/media-analyze/progress.json`，Chronology 监控读取 `.tmp/chronology/progress.json`；当前项目上下文必须正确，不能把面板混到别的项目进度目录
 - Console 刷新时，默认项目上下文应优先跟随最新的 active project-scoped job；只有当前没有活跃项目 job 时，才回退到本地记忆的上次选择
 - 如果多个项目 display name 相同，项目选择器必须直接显示 `projectId`，避免把 Analyze monitor 请求到同名旧项目
@@ -487,6 +495,7 @@ scripts/kairos-supervisor.sh
 | 文件 | 内容 |
 |------|------|
 | `analysis/asset-reports/*.json` | 单素材粗扫报告（含 focus windows、edit bounds、ASR、fine-scan windows、空间字段） |
+| `.tmp/transcript-segmentation-audit/report.{json,md}` | v3 结果的字级覆盖、时间异常修复、gap、segmentation policy 与 evidence 审计，以及指定素材的新旧拆句和逐字时间抽检 |
 | `store/spans.json` | 由 `/chronology` 的 `span-rebuild` 显式生成的 stripped 素材片段索引 |
 | `store/spans.meta.json` | spans freshness / hash / counts / warnings |
 | `media/chronology.json` | 由 `/chronology` 的 `chronology-build` 显式生成的 Chronology V2 项目级编年史 |

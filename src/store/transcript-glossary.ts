@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { z } from 'zod';
 import {
@@ -18,8 +19,21 @@ const ILegacyTranscriptGlossaryConfig = z.object({
   })).default([]),
 });
 
+const IV2TranscriptGlossaryConfig = z.object({
+  schemaVersion: z.literal('2.0'),
+  entries: z.array(z.object({
+    canonical: z.string(),
+    pronunciation: z.string().optional(),
+    context: z.string(),
+  })).default([]),
+});
+
 export function getTranscriptGlossaryPath(workspaceRoot: string): string {
   return join(workspaceRoot, 'config', 'transcript-glossary.json');
+}
+
+export function getTranscriptDomainGlossaryRoot(workspaceRoot: string): string {
+  return join(workspaceRoot, 'resources', 'transcript-glossaries');
 }
 
 export async function loadTranscriptGlossary(
@@ -31,10 +45,20 @@ export async function loadTranscriptGlossary(
   );
   const current = ITranscriptGlossaryConfig.safeParse(stored);
   if (current.success) return normalizeTranscriptGlossary(current.data);
+  const v2 = IV2TranscriptGlossaryConfig.safeParse(stored);
+  if (v2.success) {
+    return normalizeTranscriptGlossary({
+      schemaVersion: '3.0',
+      entries: v2.data.entries.map(entry => ({
+        canonical: entry.canonical,
+        context: entry.context,
+      })),
+    });
+  }
   const legacy = ILegacyTranscriptGlossaryConfig.safeParse(stored);
   if (legacy.success) {
     return normalizeTranscriptGlossary({
-      schemaVersion: '2.0',
+      schemaVersion: '3.0',
       entries: legacy.data.entries.map(entry => ({
         canonical: entry.canonical,
         context: entry.note?.trim()
@@ -42,7 +66,7 @@ export async function loadTranscriptGlossary(
       })),
     });
   }
-  return { schemaVersion: '2.0', entries: [] };
+  return { schemaVersion: '3.0', entries: [] };
 }
 
 export async function saveTranscriptGlossary(
@@ -52,6 +76,51 @@ export async function saveTranscriptGlossary(
   const normalized = normalizeTranscriptGlossary(config);
   await writeJson(getTranscriptGlossaryPath(workspaceRoot), normalized);
   return normalized;
+}
+
+export async function loadEffectiveTranscriptGlossary(
+  workspaceRoot: string,
+): Promise<TTranscriptGlossaryConfig> {
+  const [domain, workspace] = await Promise.all([
+    loadTranscriptDomainGlossary(workspaceRoot),
+    loadTranscriptGlossary(workspaceRoot),
+  ]);
+  const entries = new Map<string, ITranscriptGlossaryEntry>();
+  for (const entry of domain.entries) entries.set(normalizeGlossaryLookupKey(entry.canonical), entry);
+  for (const entry of workspace.entries) entries.set(normalizeGlossaryLookupKey(entry.canonical), entry);
+  return normalizeTranscriptGlossary({ schemaVersion: '3.0', entries: [...entries.values()] });
+}
+
+export async function loadTranscriptDomainGlossary(
+  workspaceRoot: string,
+): Promise<TTranscriptGlossaryConfig> {
+  const root = getTranscriptDomainGlossaryRoot(workspaceRoot);
+  let names: string[];
+  try {
+    names = (await readdir(root, { withFileTypes: true }))
+      .filter(entry => entry.isFile() && entry.name.endsWith('.json'))
+      .map(entry => entry.name)
+      .sort((left, right) => left.localeCompare(right, 'en'));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return { schemaVersion: '3.0', entries: [] };
+    }
+    throw error;
+  }
+  const entries: ITranscriptGlossaryEntry[] = [];
+  const owners = new Map<string, string>();
+  for (const name of names) {
+    const stored = await readJsonOrNull(join(root, name), z.unknown());
+    const parsed = ITranscriptGlossaryConfig.parse(stored);
+    for (const entry of normalizeTranscriptGlossary(parsed).entries) {
+      const key = normalizeGlossaryLookupKey(entry.canonical);
+      const owner = owners.get(key);
+      if (owner) throw new Error(`duplicate built-in transcript glossary canonical ${entry.canonical}: ${owner}, ${name}`);
+      owners.set(key, name);
+      entries.push(entry);
+    }
+  }
+  return normalizeTranscriptGlossary({ schemaVersion: '3.0', entries });
 }
 
 export function normalizeTranscriptGlossary(
@@ -69,7 +138,7 @@ export function normalizeTranscriptGlossary(
     }
     canonicalOwners.set(canonicalKey, entry.canonical);
   }
-  return ITranscriptGlossaryConfig.parse({ schemaVersion: '2.0', entries });
+  return ITranscriptGlossaryConfig.parse({ schemaVersion: '3.0', entries });
 }
 
 export function computeTranscriptGlossaryHash(config: TTranscriptGlossaryConfig): string {
@@ -93,7 +162,6 @@ function normalizeTranscriptGlossaryEntry(entry: ITranscriptGlossaryEntry): ITra
   }
   return {
     canonical,
-    pronunciation: entry.pronunciation?.normalize('NFKC').trim() || undefined,
     context,
   };
 }

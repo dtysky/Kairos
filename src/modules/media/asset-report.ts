@@ -7,6 +7,8 @@ import type {
   EFinalizeFineScanMode,
   EKeepDecision,
   EMaterializationPath,
+  IAlignedTranscriptToken,
+  ITranscriptSegmentation,
   ITranscriptSegment,
   IPharosMatch,
   IPharosRef,
@@ -23,6 +25,9 @@ export interface IBuildAssetCoarseReportInput {
   gpsSummary?: string;
   inferredGps?: IInferredGps;
   summary?: string;
+  asrRawText?: string;
+  alignedTokens?: IAlignedTranscriptToken[];
+  transcriptSegmentation?: ITranscriptSegmentation;
   transcript?: string;
   transcriptSegments?: ITranscriptSegment[];
   speechCoverage?: number;
@@ -69,6 +74,9 @@ export function buildAssetCoarseReport(
     gpsSummary: input.gpsSummary,
     inferredGps: input.inferredGps,
     summary: input.summary,
+    asrRawText: input.asrRawText?.trim() || undefined,
+    alignedTokens: input.alignedTokens,
+    transcriptSegmentation: input.transcriptSegmentation,
     transcript: input.transcript?.trim() || undefined,
     transcriptSegments: input.transcriptSegments?.filter(segment => segment.text.trim().length > 0),
     speechCoverage: input.speechCoverage,

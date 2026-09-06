@@ -3,17 +3,22 @@ import { join } from 'node:path';
 import { z } from 'zod';
 import {
   IAudioHealthSummary,
+  IAlignedTranscriptToken,
   IInterestingWindow,
-  IKtepEvidence,
   IProtectedAudioAssessment,
+  ITranscriptSegmentation,
   ITranscriptSegment,
 } from '../protocol/schema.js';
 import { readJsonOrNull, writeJson } from './writer.js';
 
+export const CAUDIO_ALIGNMENT_CONTRACT_VERSION = 'qwen3-character-alignment-v2';
+
 const ITranscriptCheckpoint = z.object({
+  rawText: z.string(),
+  alignedTokens: z.array(IAlignedTranscriptToken),
+  segmentation: ITranscriptSegmentation,
   transcript: z.string(),
   segments: z.array(ITranscriptSegment),
-  evidence: z.array(IKtepEvidence),
   speechCoverage: z.number().min(0).max(1),
   speechWindows: z.array(IInterestingWindow),
 });
@@ -27,7 +32,8 @@ const EAudioTranscriptSource = z.enum(['embedded', 'protection']);
 export type EAudioTranscriptSource = z.infer<typeof EAudioTranscriptSource>;
 
 const IAudioAnalysisCheckpoint = z.object({
-  schemaVersion: z.literal(2),
+  schemaVersion: z.literal(3),
+  alignmentContractVersion: z.literal(CAUDIO_ALIGNMENT_CONTRACT_VERSION),
   assetId: z.string(),
   selectedTranscript: ITranscriptCheckpoint.nullable().optional(),
   selectedTranscriptSource: EAudioTranscriptSource.optional(),
@@ -60,10 +66,11 @@ export async function loadAudioAnalysisCheckpoint(
 
 export async function writeAudioAnalysisCheckpoint(
   projectRoot: string,
-  checkpoint: Omit<IAudioAnalysisCheckpoint, 'updatedAt' | 'schemaVersion'> & { updatedAt?: string },
+  checkpoint: Omit<IAudioAnalysisCheckpoint, 'updatedAt' | 'schemaVersion' | 'alignmentContractVersion'> & { updatedAt?: string },
 ): Promise<void> {
   await writeJson(getAudioAnalysisCheckpointPath(projectRoot, checkpoint.assetId), {
-    schemaVersion: 2,
+    schemaVersion: 3,
+    alignmentContractVersion: CAUDIO_ALIGNMENT_CONTRACT_VERSION,
     ...checkpoint,
     updatedAt: checkpoint.updatedAt ?? new Date().toISOString(),
   });

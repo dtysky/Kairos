@@ -318,9 +318,12 @@ project/
 
 Chronology 审查：
 - `/chronology` 是 Analyze 和 Edit Flow 之间的正式审查页，提供 `生成候选素材片段与模式` 与 `生成/刷新编年史` 两步，并展示 active job 的 text-LM chunk / retry / warning 进度
+- `/chronology` 必须从当前产物和 live job 推导五段横向阶段链：素材片段与模式、口播与字幕审查、编年史生成、编年史审查、Edit Flow。每段显示独立状态、数量/阻塞原因和自己的启动、重试、Agent 或审查动作，只有当前可执行段用主按钮；重复重建、时空刷新与已恢复的历史 warning/hash/checkpoint 收在“维护与诊断”。
+- 素材片段阶段只有在每条 `materialPatterns` 正好 7 项时才算完成。存在不完整行时使用 `span-rebuild` 的 `repair-patterns` 模式只补这些行；不得借修复模式重建其它 span、撤销口播审查或改变窗口/id，且 `chronology-build` 必须继续阻塞到完整性恢复。
 - `span-rebuild` 只读取 `store/assets.json + analysis/asset-reports/*.json`，再用本地 qwen 文本 LM 从每个 span 的最小文本事实按 8 个 span 一批生成 provisional 中文 `materialPatterns[]`；LM 只返回 ordered pattern rows，代码按 chunk 顺序写回候选 spans；已完成 checkpoint 写 `.tmp/chronology/span-rebuild.partial.json`，全量成功后才写正式 `store/spans.json + store/spans.meta.json`
-- 若存在 speech/mixed candidate spans，`span-rebuild` 必须把 meta 标为 `pending-speech-review`，写 `.tmp/chronology/speech-window-agent-handoff.md`，并阻塞 `chronology-build`；用户需要在 Codex/Agent 环境启用 SubAgents 完成 speech-window 裁切、drop/visual-only 和 materialPatterns slot 4 对齐，再由主 Agent 写回 `status=fresh`。speech-window review 的 SubAgent 分片必须按 asset/day 或稳定 span range 打包，每个 shard 最多约 1500 个 candidates，避免换聊天窗口后退回小碎片默认；speech review 只修 speech/mixed 候选，不得缩短、删除或切碎同素材重叠 visual span。
+- 若存在 speech/mixed candidate spans，`span-rebuild` 必须把 meta 标为 `pending-speech-review`，写 `.tmp/chronology/speech-window-agent-handoff.md`，并阻塞 `chronology-build`。随后使用 `kairos-speech-review`：Agent 生成统一口播与字幕审查产物，Console 将字幕自动正字归一、建议修正、需人工听音，以及窗口建议裁切、建议取消分成五张表；建议默认接受，只有字幕需听音项默认未决。窗口无法可靠提出裁切或取消时保持原窗口并省略人工任务。整轮提交通过校验后才写回 `status=fresh`。取消 speech truth 必须保留同范围视觉召回。
 - `chronology-build` 要求 spans `status=fresh`，再从 assets + fresh spans + root time + Pharos context 写 Chronology V2，默认 `draft`
+- `chronology-build` 完成后必须按 UI 的 handoff 运行 Codex Agent 事件语义归并，再开放人工审查。普通模式合并完整 chronology 顺序中相邻且地点一致的 `pending event`；Pharos 吸收模式以组内唯一 confirmed `event-pharos-*` 为锚点，吸收两侧属于同一行程的相邻普通事件，并保留锚点 id、标题、地点和 confirmed 状态。可跨自然日零点，但不得跨 route、gap 或另一个 Pharos event；不得改 GPS、路线、源时间和 span 内容。程序验证并写回 draft chronology 与审计后，用户才审查和确认
 - `chronology-build` 写 `media/chronology.json` 时必须有可用 GPS reverse-geocode service；无 service、cache/provider 反查不到 route/event GPS anchor 时直接失败，不允许用素材标签、`materialPatterns`、manual itinerary 或 Pharos continuous route prose 生成地点
 - 用户必须在 `/chronology` 确认 Chronology V2 后，Edit Flow 才能继续
 - 旧数组 v1、`draft` 或 `stale` chronology 都应阻塞 Edit Flow，并提示重建或确认
@@ -425,7 +428,7 @@ if (!assets || assets.length === 0) {
 如果只是空间规则、GPX、Pharos context 或 reverse-geocode 逻辑变化，且已有 Analyze 产物完整，则可走更轻的：
 
 ```
-已有项目 → /chronology spatial-refresh → 生成候选素材片段与模式 → 如有 pending speech review 则交给 Agent/SubAgents → 生成/刷新编年史 → 确认 chronology → 视需要重跑 Edit Flow steps
+已有项目 → /chronology spatial-refresh → 生成候选素材片段与模式 → 如有 pending speech review 则生成并提交统一审查 → 生成/刷新编年史 → 确认 chronology → 视需要重跑 Edit Flow steps
 ```
 
 ### 追加流程
@@ -444,7 +447,7 @@ const result = await appendAssets(projectRoot, newAssets);
 const toAnalyze = findUnanalyzedAssets(allAssets, existingReports);
 // 仅对 toAnalyze 中的资产做镜头检测、ML 分析
 await analyzeWorkspaceProjectMedia({ workspaceRoot, projectId, assetIds: toAnalyze.map((asset) => asset.id) });
-// 然后从 /chronology 显式运行 span-rebuild（需要本地 qwen 文本 LM / ML 服务）；若 pending speech review，先交给 Agent/SubAgents，再运行 chronology-build
+// 然后从 /chronology 显式运行 span-rebuild（需要本地 qwen 文本 LM / ML 服务）；若 pending speech review，先生成并提交统一口播与字幕审查，再运行 chronology-build
 ```
 
 3. **重新创作**：受影响的 Edit Flow steps 和 Export 需要在新素材基础上重新执行

@@ -11,6 +11,7 @@ import { CSPAN_MATERIALIZATION_REVIEW_MAX_TOKENS } from '../../src/modules/agent
 import {
   buildMaterialSpansFromReports,
   CMATERIAL_PATTERN_PROMPT_VERSION,
+  repairProjectSpanMaterialPatterns,
   rebuildProjectSpans,
 } from '../../src/modules/media/span-rebuild.js';
 import type { IAssetCoarseReport, IKtepAsset } from '../../src/protocol/index.js';
@@ -1109,7 +1110,13 @@ describe('rebuildProjectSpans', () => {
         visualReviewRow(['航拍俯瞰', '高速公路', '晴天', '无口播语音', '高速行车观察', '公路', '车辆']),
       ],
       [visualReviewRow(['第一人称行车', '公路旁', '晴天', '无口播语音', '静态道路照片', '公路', '路牌'])],
+      [visualReviewRow(['第一人称行车', '公路旁', '晴天', '无口播语音', '静态道路照片', '公路', '路牌'])],
+      [visualReviewRow(['第一人称行车', '公路旁', '晴天', '无口播语音', '静态道路照片', '公路', '路牌'])],
       [visualReviewRow(['手持自拍口播', '路边', '晴天', '无口播语音', '路边人物观察', '人物', '路牌'])],
+      [visualReviewRow(['手持自拍口播', '路边', '晴天', '无口播语音', '路边人物观察', '人物', '路牌'])],
+      [visualReviewRow(['手持自拍口播', '路边', '晴天', '无口播语音', '路边人物观察', '人物', '路牌'])],
+      [visualReviewRow(['航拍俯瞰', '高速公路', '晴天', '无口播语音', '高速行车观察', '公路', '车辆'])],
+      [visualReviewRow(['航拍俯瞰', '高速公路', '晴天', '无口播语音', '高速行车观察', '公路', '车辆'])],
       [visualReviewRow(['航拍俯瞰', '高速公路', '晴天', '无口播语音', '高速行车观察', '公路', '车辆'])],
     ]);
 
@@ -1238,14 +1245,16 @@ describe('rebuildProjectSpans', () => {
       [],
       [visualReviewRow(['湿滑山路行车', '山路行车', '高反差', '语音口播素材', '连续弯道', '手动跟车', '多余标签'])],
       [visualReviewRow(['湿滑山路行车', '山路行车', '高反差', '语音口播素材', '连续弯道', '手动跟车', '多余标签'])],
+      [visualReviewRow(['湿滑山路行车', '山路行车', '高反差', '语音口播素材', '连续弯道', '手动跟车', '多余标签'])],
+      [visualReviewRow(['湿滑山路行车', '山路行车', '高反差', '语音口播素材', '连续弯道', '手动跟车', '多余标签'])],
     ]);
 
     await expect(rebuildProjectSpans({ workspaceRoot, projectId, agentRunner: runner }))
       .rejects.toThrow(/could not generate valid materialPatterns/);
-    expect(runner.calls).toHaveLength(3);
+    expect(runner.calls).toHaveLength(5);
   });
 
-  it('accepts rows with missing free slots and does not heuristically fill them', async () => {
+  it('retries rows with missing required free slots instead of accepting an incomplete contract', async () => {
     const workspaceRoot = await mkdtemp(join(tmpdir(), 'kairos-span-free-slots-'));
     workspaces.push(workspaceRoot);
     const projectId = 'project-span-free-slots';
@@ -1259,16 +1268,81 @@ describe('rebuildProjectSpans', () => {
     }));
     const runner = new FakePacketRunner([
       [visualReviewRow(['航拍运动', '山地环境', '阴天', '无口播语音', '空中展示山地'])],
+      [visualReviewRow(['航拍运动', '山地环境', '阴天', '无口播语音', '空中展示山地', '雪山群峰', '云层俯瞰'])],
     ]);
 
     await rebuildProjectSpans({ workspaceRoot, projectId, agentRunner: runner });
     const rawSpans = JSON.parse(await readFile(getSpansPath(projectRoot), 'utf-8')) as Array<Record<string, unknown>>;
 
-    expect(runner.calls).toHaveLength(1);
+    expect(runner.calls).toHaveLength(2);
     expect(rawSpans).toEqual([expect.objectContaining({
       id: 'asset-drone_aerial_s0-5',
-      materialPatterns: ['航拍运动', '山地环境', '阴天', '无口播语音', '空中展示山地'],
+      materialPatterns: ['航拍运动', '山地环境', '阴天', '无口播语音', '空中展示山地', '雪山群峰', '云层俯瞰'],
     })]);
+  });
+
+  it('repairs only incomplete materialPatterns while preserving reviewed span fields', async () => {
+    const workspaceRoot = await mkdtemp(join(tmpdir(), 'kairos-span-pattern-repair-'));
+    workspaces.push(workspaceRoot);
+    const projectId = 'project-span-pattern-repair';
+    const projectRoot = await initWorkspaceProject(workspaceRoot, projectId, 'Span Pattern Repair');
+    const completeSpan = {
+      id: 'asset-complete_broll_visual_s0-5',
+      assetId: 'asset-complete',
+      type: 'broll',
+      semanticKind: 'visual',
+      sourceInMs: 0,
+      sourceOutMs: 5_000,
+      visualObservation: '山谷道路远景。',
+      materialPatterns: ['环境远景', '山谷道路', '晴天', '无口播语音', '山谷道路观察', '道路延伸', '远山层次'],
+    };
+    const reviewedSpan = {
+      id: 'asset-reviewed_drive_speech_s5-20',
+      assetId: 'asset-reviewed',
+      type: 'drive',
+      semanticKind: 'speech',
+      sourceInMs: 5_000,
+      sourceOutMs: 20_000,
+      effectiveSpeechStartMs: 5_300,
+      effectiveSpeechEndMs: 19_700,
+      transcript: '修正后的人工审查字幕',
+      transcriptSegments: [{ startMs: 5_300, endMs: 19_700, text: '修正后的人工审查字幕' }],
+      visualObservation: '车内第一人称行车。',
+      materialPatterns: ['第一人称行车', '车内', '晴天', '有口播语音', '行车口播'],
+    };
+    await writeJson(getSpansPath(projectRoot), [completeSpan, reviewedSpan]);
+    await writeJson(getSpansMetaPath(projectRoot), {
+      schemaVersion: '1.0',
+      status: 'fresh',
+      generatedAt: '2026-09-06T00:00:00.000Z',
+      inputsHash: 'reviewed-spans',
+      assetCount: 2,
+      reportCount: 2,
+      spanCount: 2,
+      speechReview: { status: 'completed', candidateCount: 1 },
+      warnings: [
+        'material pattern chunk 1/1: retrying because LM returned missing rows',
+        'manual review retained',
+      ],
+    });
+    const runner = new FakePacketRunner([[
+      speechReviewRow(['第一人称行车', '车内', '晴天', '有口播语音', '行车口播', '驾驶说明', '道路观察']),
+    ]]);
+
+    const result = await repairProjectSpanMaterialPatterns({ workspaceRoot, projectId, agentRunner: runner });
+    const nextSpans = await loadSpans(projectRoot);
+    const nextMeta = await loadSpansMeta(projectRoot);
+
+    expect(result.repairedCount).toBe(1);
+    expect(runner.calls).toHaveLength(1);
+    expect(nextSpans[0]).toEqual(expect.objectContaining(completeSpan));
+    expect(nextSpans[1]).toEqual(expect.objectContaining({
+      ...reviewedSpan,
+      materialPatterns: ['第一人称行车', '车内', '晴天', '有口播语音', '行车口播', '驾驶说明', '道路观察'],
+    }));
+    expect(nextMeta?.status).toBe('fresh');
+    expect(nextMeta?.warnings).toEqual(['manual review retained']);
+    await expect(assertFreshSpans(projectRoot)).resolves.toMatchObject({ spans: expect.any(Array) });
   });
 
   it('retries rows with missing story slot and writes the retried story', async () => {
@@ -1368,6 +1442,8 @@ describe('rebuildProjectSpans', () => {
       [visualReviewRow(['第一人称行车', '山路', '阴天', '无口播语音'])],
       [visualReviewRow(['第一人称行车', '山路', '阴天', '无口播语音'])],
       [visualReviewRow(['第一人称行车', '山路', '阴天', '无口播语音'])],
+      [visualReviewRow(['第一人称行车', '山路', '阴天', '无口播语音'])],
+      [visualReviewRow(['第一人称行车', '山路', '阴天', '无口播语音'])],
     ]);
 
     await expect(rebuildProjectSpans({ workspaceRoot, projectId, agentRunner: runner }))
@@ -1375,14 +1451,32 @@ describe('rebuildProjectSpans', () => {
     const partial = JSON.parse(await readFile(
       join(projectRoot, '.tmp', 'chronology', 'span-rebuild.partial.json'),
       'utf-8',
-    )) as { failedCount: number; recoveredFailedCount: number; storyUnknownFallbackCount: number };
+    )) as { status: string; failedCount: number; failedSpans: Array<{ correctionAttempts?: number }>; recoveredFailedCount: number; storyUnknownFallbackCount: number };
+    const progress = JSON.parse(await readFile(getProjectProgressPath(projectRoot, 'chronology'), 'utf-8')) as {
+      status: string;
+      step: string;
+      extra?: { activeFailureAttemptLimit?: number; failedCount?: number };
+    };
 
-    expect(runner.calls).toHaveLength(3);
+    expect(runner.calls).toHaveLength(5);
     expect(partial).toMatchObject({
+      status: 'failed',
       failedCount: 1,
       recoveredFailedCount: 0,
       storyUnknownFallbackCount: 0,
     });
+    expect(partial.failedSpans[0]?.correctionAttempts).toBe(3);
+    expect(progress).toMatchObject({
+      status: 'failed',
+      step: 'pattern-failures',
+      extra: { activeFailureAttemptLimit: 3, failedCount: 1 },
+    });
+
+    const recoveryRunner = new FakePacketRunner([
+      [visualReviewRow(['第一人称行车', '山路', '阴天', '无口播语音', '山路行车观察', '连续弯道', '车窗视角'])],
+    ]);
+    await rebuildProjectSpans({ workspaceRoot, projectId, agentRunner: recoveryRunner });
+    expect(recoveryRunner.calls).toHaveLength(1);
   });
 
   it('records a failed row in the checkpoint and recovers it in the failed-list pass', async () => {
@@ -1436,7 +1530,7 @@ describe('rebuildProjectSpans', () => {
         materialPatterns: ['第一人称行车', '山路', '阴天', '无口播语音', '山路行车观察', '连续弯道', '车窗视角'],
       }),
     ]);
-    expect(partial.failedCount).toBe(1);
+    expect(partial.failedCount).toBe(0);
     expect(partial.recoveredFailedCount).toBe(1);
     expect(partial.failedSpans[0]).toMatchObject({
       spanId: 'asset-retry_drive_s0-5',
@@ -1539,7 +1633,7 @@ describe('rebuildProjectSpans', () => {
         sourceSpanId: generated.spans[0]!.id,
         semanticKind: 'visual',
         id: 'asset-done_broll_visual_s0-5',
-        materialPatterns: ['固定机位观察', '室内餐厅', '室内灯光', '无口播语音', '餐厅环境观察'],
+        materialPatterns: ['固定机位观察', '室内餐厅', '室内灯光', '无口播语音', '餐厅环境观察', '餐桌陈设', '用餐空间'],
       }],
       warnings: [],
       failedSpans: [],
@@ -1558,7 +1652,7 @@ describe('rebuildProjectSpans', () => {
     expect(rawSpans).toEqual([
       expect.objectContaining({
         id: 'asset-done_broll_visual_s0-5',
-        materialPatterns: ['固定机位观察', '室内餐厅', '室内灯光', '无口播语音', '餐厅环境观察'],
+        materialPatterns: ['固定机位观察', '室内餐厅', '室内灯光', '无口播语音', '餐厅环境观察', '餐桌陈设', '用餐空间'],
       }),
       expect.objectContaining({
         id: 'asset-pending_aerial_s0-5',

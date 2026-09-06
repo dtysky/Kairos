@@ -1,15 +1,17 @@
 import { randomUUID } from 'node:crypto';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { createReadStream, createWriteStream } from 'node:fs';
-import { access, mkdir, readFile } from 'node:fs/promises';
+import { access, mkdir, readFile, stat } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
+import { summarizeSpanMaterialPatternIntegrity } from '../protocol/material-pattern-integrity.js';
 import {
   getProjectProgressPath,
   getWorkspaceStyleAnalysisProgressPath,
   loadAssets,
   loadColorArchiveViews,
   loadChronologyReviewState,
+  loadChronologyEventConsolidationState,
   loadSpans,
   loadSpansMeta,
   loadColorGroupsSnapshots,
@@ -84,7 +86,13 @@ import {
   resolveMediaRoot,
   type IMediaRootPathResolution,
 } from '../modules/media/root-resolver.js';
-import { resolveTranscriptCorrectionReview } from '../modules/media/transcript-review.js';
+import {
+  commitProjectSpeechTranscriptReview,
+  loadCurrentSpeechTranscriptReview,
+  resolveTranscriptCorrectionReview,
+  saveProjectSpeechTranscriptReviewDraft,
+} from '../modules/media/transcript-review.js';
+import { prepareProjectSpeechReviewAudio } from '../modules/media/speech-review-audio.js';
 import {
   buildProjectPharosAssetStatus,
   loadOrBuildProjectPharosContext,
@@ -102,6 +110,7 @@ import {
   getSupervisorJobRoot,
   listJobRecords,
   loadJobRecord,
+  progressBelongsToSupervisorJob,
   writeJobRecord,
   writeServiceRecord,
   type ISupervisorJobRecord,
@@ -278,6 +287,7 @@ async function routeRequest(
       spans,
       spansMeta,
       chronologyState,
+      chronologyEventConsolidation,
       colorCurrent,
       colorGroupSnapshots,
       workspaceColorTransformPresets,
@@ -296,6 +306,7 @@ async function routeRequest(
       loadSpans(projectRoot),
       loadSpansMeta(projectRoot),
       loadChronologyReviewState(projectRoot),
+      loadChronologyEventConsolidationState(projectRoot),
       loadColorCurrent(projectRoot),
       loadColorGroupsSnapshots(projectRoot),
       loadColorTransformPresetsConfig(options.workspaceRoot).catch(() => ({ profiles: {}, discoveredPresets: {} })),
@@ -320,6 +331,8 @@ async function routeRequest(
       projectRoot,
       includedTripIds: projectBrief.pharos?.includedTripIds ?? [],
     });
+    const speechTranscriptReview = await loadCurrentSpeechTranscriptReview(projectRoot);
+    const materialPatternIntegrity = summarizeSpanMaterialPatternIntegrity(spans);
     sendJson(response, 200, {
       projectBrief,
       manualItinerary,
@@ -336,9 +349,20 @@ async function routeRequest(
         count: spans.length,
         meta: spansMeta,
         status: spansMeta?.status ?? 'missing',
-        fresh: spans.length > 0 && spansMeta?.status === 'fresh' && spansMeta.spanCount === spans.length,
+        fresh: spans.length > 0
+          && spansMeta?.status === 'fresh'
+          && spansMeta.spanCount === spans.length
+          && materialPatternIntegrity.incompleteCount === 0,
+        materialPatternIntegrity: {
+          ...materialPatternIntegrity,
+          incompleteSpanIds: materialPatternIntegrity.incompleteSpanIds.slice(0, 20),
+        },
+        speechTranscriptReview,
       },
-      chronology: chronologyState,
+      chronology: {
+        ...chronologyState,
+        eventConsolidation: chronologyEventConsolidation,
+      },
       editResolveProject: {
         resolveProjectName: editResolveProjectName,
         latestDrpSnapshot: resolveLatestEditDrpSnapshot(editResolveProjectMap, editResolveProjectName),
@@ -689,6 +713,74 @@ async function routeRequest(
     const projectRoot = join(options.workspaceRoot, 'projects', projectId);
     await syncCaptureTimeReviewsFromConfig(projectRoot);
     sendJson(response, 200, await loadReviewQueue(projectRoot));
+    return;
+  }
+
+  const speechTranscriptCommitMatch = pathname.match(/^\/api\/projects\/([^/]+)\/speech-transcript-review\/commit$/u);
+  if (speechTranscriptCommitMatch && method === 'POST') {
+    const projectId = decodeURIComponent(speechTranscriptCommitMatch[1]!);
+    const projectRoot = join(options.workspaceRoot, 'projects', projectId);
+    const payload = await readJsonBody(request).catch(() => ({}));
+    const inputsHash = typeof payload?.inputsHash === 'string' ? payload.inputsHash : '';
+    if (!inputsHash) {
+      sendJson(response, 400, { error: 'inputsHash is required' });
+      return;
+    }
+    const artifact = await commitProjectSpeechTranscriptReview({
+      workspaceRoot: options.workspaceRoot,
+      projectRoot,
+      inputsHash,
+      resolutions: Array.isArray(payload?.resolutions) ? payload.resolutions : [],
+    });
+    sendJson(response, 200, artifact);
+    return;
+  }
+
+  const speechTranscriptDraftMatch = pathname.match(/^\/api\/projects\/([^/]+)\/speech-transcript-review\/draft$/u);
+  if (speechTranscriptDraftMatch && method === 'PUT') {
+    const projectId = decodeURIComponent(speechTranscriptDraftMatch[1]!);
+    const projectRoot = join(options.workspaceRoot, 'projects', projectId);
+    const payload = await readJsonBody(request).catch(() => ({}));
+    const inputsHash = typeof payload?.inputsHash === 'string' ? payload.inputsHash : '';
+    if (!inputsHash) {
+      sendJson(response, 400, { error: 'inputsHash is required' });
+      return;
+    }
+    const artifact = await saveProjectSpeechTranscriptReviewDraft({
+      workspaceRoot: options.workspaceRoot,
+      projectRoot,
+      inputsHash,
+      resolutions: Array.isArray(payload?.resolutions) ? payload.resolutions : [],
+    });
+    sendJson(response, 200, artifact);
+    return;
+  }
+
+  const speechReviewAudioMatch = pathname.match(/^\/api\/projects\/([^/]+)\/speech-transcript-review\/audio\/([^/]+)$/u);
+  if (speechReviewAudioMatch && method === 'GET') {
+    const projectId = decodeURIComponent(speechReviewAudioMatch[1]!);
+    const assetId = decodeURIComponent(speechReviewAudioMatch[2]!);
+    const rawStartMs = url.searchParams.get('startMs');
+    const rawEndMs = url.searchParams.get('endMs');
+    if (rawStartMs === null || rawEndMs === null) {
+      sendJson(response, 400, { error: 'startMs and endMs are required' });
+      return;
+    }
+    const clip = await prepareProjectSpeechReviewAudio({
+      workspaceRoot: options.workspaceRoot,
+      projectRoot: join(options.workspaceRoot, 'projects', projectId),
+      assetId,
+      startMs: Number(rawStartMs),
+      endMs: Number(rawEndMs),
+    });
+    const clipStat = await stat(clip.path);
+    response.writeHead(200, {
+      'Content-Type': clip.contentType,
+      'Content-Length': clipStat.size,
+      'Cache-Control': 'private, max-age=86400',
+      'X-Content-Type-Options': 'nosniff',
+    });
+    createReadStream(clip.path).pipe(response);
     return;
   }
 
@@ -1169,19 +1261,10 @@ async function loadJobsWithProgress(workspaceRoot: string): Promise<Array<ISuper
 
 async function readJobProgressForStatus(job: ISupervisorJobRecord): Promise<unknown> {
   if (!job.progressPath) return null;
-  if (!['queued', 'running'].includes(job.status)) return null;
+  if (!['queued', 'running', 'failed', 'blocked'].includes(job.status)) return null;
   const progress = await readJsonFile(job.progressPath);
-  if (!progressBelongsToLiveJob(job, progress)) return null;
+  if (!progressBelongsToSupervisorJob(job, progress)) return null;
   return progress;
-}
-
-function progressBelongsToLiveJob(job: ISupervisorJobRecord, progress: unknown): boolean {
-  if (!progress || typeof progress !== 'object') return false;
-  const phaseKey = Reflect.get(progress, 'phaseKey');
-  if (['span-rebuild', 'chronology-build'].includes(job.jobType)) {
-    return phaseKey === job.jobType;
-  }
-  return true;
 }
 
 async function reconcileInterruptedJobs(workspaceRoot: string): Promise<void> {

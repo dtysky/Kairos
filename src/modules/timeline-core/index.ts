@@ -16,6 +16,7 @@ export {
 export {
   buildProjectTimeline,
   buildTimelineSourceSpeechSubtitles,
+  selectDeterministicTimelineSuffix,
   syncProjectResolveMedia,
   type IBuildProjectTimelineInput,
   type IBuildProjectTimelineResult,

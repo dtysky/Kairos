@@ -6,6 +6,13 @@ export {
   type IProjectChronologyBuildResult,
 } from './chronology-build.js';
 export {
+  prepareProjectChronologyEventConsolidation,
+  applyProjectChronologyEventConsolidation,
+  computeChronologyEventHash,
+  type IPrepareChronologyEventConsolidationResult,
+  type IApplyChronologyEventConsolidationResult,
+} from './chronology-event-consolidation.js';
+export {
   resolveMediaRoots,
   resolveMediaRoot,
   resolveRootPath,
@@ -69,6 +76,32 @@ export {
 } from './analyze-profile.js';
 export { transcribe, type ITranscription } from './transcriber.js';
 export {
+  segmentAlignedTranscript,
+  CTRANSCRIPT_SEGMENTATION_POLICY_VERSION,
+  CTRANSCRIPT_SEGMENTATION_MAX_CHARACTERS,
+  CTRANSCRIPT_SEGMENTATION_MERGE_GAP_MS,
+  type ITranscriptSegmentationResult,
+} from './transcript-segmentation.js';
+export {
+  validateAndRepairAlignedTokenTiming,
+  validateAlignedTokenStructure,
+  CALIGNED_TOKEN_TIMING_POLICY_VERSION,
+  type IAlignedTokenTimingResult,
+} from './aligned-token-timing.js';
+export {
+  applyTranscriptSegmentationToAssetReport,
+  type IAssetReportTranscriptSegmentationSummary,
+} from './transcript-segmentation-report.js';
+export {
+  buildAdaptiveSpeechWindowGroups,
+  planAdaptiveSpeechWindows,
+  CSPEECH_WINDOW_POLICY_VERSION,
+  type IAdaptiveSpeechWindowDiagnostics,
+  type IAdaptiveSpeechWindowGroup,
+  type IAdaptiveSpeechWindowPlan,
+  type TSpeechWindowBoundaryMode,
+} from './speech-windowing.js';
+export {
   createProjectReverseGeocodeService,
   isLikelyChinaCoordinate,
   resolveAnalyzeLocationText,
@@ -116,7 +149,9 @@ export {
 export {
   buildAnalyzeSpansFromReports,
   buildMaterialSpansFromReports,
+  repairProjectSpanMaterialPatterns,
   rebuildProjectSpans,
+  type IProjectSpanPatternRepairResult,
   type IProjectSpanRebuildResult,
   type ISpanRebuildResult,
 } from './span-rebuild.js';
@@ -126,8 +161,21 @@ export {
   prepareProjectTranscriptReview,
   applyProjectTranscriptAgentDecisions,
   resolveTranscriptCorrectionReview,
+  stageProjectSpeechTranscriptReview,
+  saveProjectSpeechTranscriptReviewDraft,
+  commitProjectSpeechTranscriptReview,
+  getSpeechTranscriptReviewArtifactPath,
+  getSpeechTranscriptReviewReportPath,
+  readSpeechTranscriptReviewArtifact,
+  loadCurrentSpeechTranscriptReview,
   type IPrepareTranscriptReviewResult,
+  type IStageSpeechTranscriptReviewResult,
 } from './transcript-review.js';
+export {
+  normalizeSpeechReviewAudioRange,
+  prepareProjectSpeechReviewAudio,
+  type ISpeechReviewAudioClip,
+} from './speech-review-audio.js';
 export {
   inferManualItineraryGps,
   type IManualSpatialContext,

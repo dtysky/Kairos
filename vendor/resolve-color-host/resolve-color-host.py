@@ -76,6 +76,8 @@ def main() -> int:
             result = sync_rough_cut_media(resolve, request_input)
         elif operation == "create_rough_cut_timeline":
             result = create_rough_cut_timeline(resolve, request_input)
+        elif operation == "regenerate_rough_cut_suffix":
+            result = regenerate_rough_cut_suffix(resolve, request_input)
         elif operation == "mark_existing_rough_cut_clip_colors":
             result = mark_existing_rough_cut_clip_colors(resolve, request_input)
         elif operation == "relink_edit_media":
@@ -543,18 +545,6 @@ def create_rough_cut_timeline(resolve, payload):
     assert_timeline_matches_spec(project, timeline, payload.get("timelineSpec"))
     safe_call(resolve, "OpenPage", "edit")
     safe_call(project, "SetCurrentTimeline", timeline)
-    safe_call(timeline, "SetStartTimecode", "00:00:00:00")
-    try:
-        clear_timeline_items(timeline)
-    except HostError as error:
-        if error.code != "resolve_timeline_clear_failed":
-            raise
-        timeline = recreate_timeline(media_pool, project, timeline, timeline_name)
-        move_timeline_media_pool_item(media_pool, timeline_name, timeline_folder, timeline_folder_name)
-        apply_timeline_spec(project, payload.get("timelineSpec"), timeline)
-        safe_call(project, "SetCurrentTimeline", timeline)
-        safe_call(timeline, "SetStartTimecode", "00:00:00:00")
-    subtitle_import = import_rough_cut_subtitles(media_pool, timeline, payload)
     namespace_state = collect_namespace_state(namespace_folder)
     media_pool_item_by_source_path = namespace_state["clipBySourcePath"]
     missing = [
@@ -572,6 +562,24 @@ def create_rough_cut_timeline(resolve, payload):
             "Resolve Media Pool is missing rough-cut media; run resolve.media_sync before timeline.generate.",
             {"missing": missing[:50], "missingCount": len(missing), "namespace": namespace},
         )
+    resume_state = None
+    if payload.get("resumeFromCurrentPlayhead") is True:
+        resume_state = prepare_rough_cut_suffix_resume(project, media_pool, timeline, clips, payload)
+        clips = resume_state["clips"]
+        subtitle_import = {"enabled": False, "reason": "suffix-srt-manual-import"}
+    else:
+        safe_call(timeline, "SetStartTimecode", "00:00:00:00")
+        try:
+            clear_timeline_items(timeline)
+        except HostError as error:
+            if error.code != "resolve_timeline_clear_failed":
+                raise
+            timeline = recreate_timeline(media_pool, project, timeline, timeline_name)
+            move_timeline_media_pool_item(media_pool, timeline_name, timeline_folder, timeline_folder_name)
+            apply_timeline_spec(project, payload.get("timelineSpec"), timeline)
+            safe_call(project, "SetCurrentTimeline", timeline)
+            safe_call(timeline, "SetStartTimecode", "00:00:00:00")
+        subtitle_import = import_rough_cut_subtitles(media_pool, timeline, payload)
     appended = []
     audio_gain_applied = 0
     audio_mute_applied = 0
@@ -640,7 +648,7 @@ def create_rough_cut_timeline(resolve, payload):
     timeline_placement_validation = {"checked": 0, "passed": 0, "failed": 0, "strategy": "sequential-actual-end"}
     fps = parse_float((payload.get("timelineSpec") or {}).get("fps")) or 30.0
     timeline_start_frame = parse_int(safe_call(timeline, "GetStartFrame")) or 0
-    next_record_frame = 0
+    next_record_frame = int(resume_state["preserveRecordFrame"]) if resume_state else 0
     for clip in clips:
         media_pool_item = media_pool_item_by_source_path.get(clip["sourceAbsolutePath"])
         if media_pool_item is None:
@@ -747,7 +755,13 @@ def create_rough_cut_timeline(resolve, payload):
             **({"requestedSpeed": requested_speed, "speedIgnored": True} if abs(requested_speed - 1.0) > 0.001 else {}),
         })
 
+    timeline_gap_validation = validate_rough_cut_timeline_no_gaps(timeline)
     save_project(project, resolve)
+    if resume_state and resume_state.get("backupTimeline") is not None:
+        delete_timeline(media_pool, resume_state["backupTimeline"])
+        resume_state["backupTimeline"] = None
+        resume_state["backupRemoved"] = True
+        save_project(project, resolve)
     return {
         "resolveProjectName": payload["resolveProjectName"],
         "timelineName": timeline_name,
@@ -776,11 +790,219 @@ def create_rough_cut_timeline(resolve, payload):
             "sourceRangeValidation": source_range_validation,
             "stillDurationValidation": still_duration_validation,
             "timelinePlacementValidation": timeline_placement_validation,
-            "timelineGapValidation": validate_rough_cut_timeline_no_gaps(timeline),
+            "timelineGapValidation": timeline_gap_validation,
             "subtitleImport": subtitle_import,
             "clips": appended,
+            **({"resume": serialize_rough_cut_resume_state(resume_state, appended)} if resume_state else {}),
         },
     }
+
+
+def regenerate_rough_cut_suffix(resolve, payload):
+    request = dict(payload or {})
+    request["resumeFromCurrentPlayhead"] = True
+    return create_rough_cut_timeline(resolve, request)
+
+
+def prepare_rough_cut_suffix_resume(project, media_pool, timeline, clips, payload):
+    fps = resolve_timeline_fps(project, timeline)
+    current_timecode = stringify_signal_value(safe_call(timeline, "GetCurrentTimecode"))
+    start_timecode = stringify_signal_value(safe_call(timeline, "GetStartTimecode")) or "00:00:00:00"
+    if not current_timecode:
+        raise HostError(
+            "resolve_timeline_playhead_unavailable",
+            "Resolve did not expose the current rough-cut playhead timecode.",
+        )
+    timeline_start_frame = parse_int(safe_call(timeline, "GetStartFrame")) or 0
+    playhead_frame = timeline_start_frame + (
+        parse_timeline_timecode_frame(current_timecode, fps)
+        - parse_timeline_timecode_frame(start_timecode, fps)
+    )
+    video_items = list(iter_timeline_video_items(timeline))
+    if not video_items:
+        raise HostError(
+            "resolve_timeline_resume_empty",
+            "The existing rough-cut timeline has no video item to preserve.",
+        )
+    candidates = []
+    preceding = []
+    for item in video_items:
+        start_frame = parse_int(safe_call(item, "GetStart"))
+        end_frame = parse_int(safe_call(item, "GetEnd"))
+        if start_frame is None or end_frame is None or end_frame <= start_frame:
+            continue
+        row = (start_frame, end_frame, item)
+        if start_frame <= playhead_frame < end_frame:
+            candidates.append(row)
+        elif end_frame <= playhead_frame:
+            preceding.append(row)
+    if candidates:
+        anchor_start_frame, preserve_through_frame, anchor_item = sorted(candidates, key=lambda row: (row[0], row[1]))[-1]
+    elif preceding:
+        anchor_start_frame, preserve_through_frame, anchor_item = sorted(preceding, key=lambda row: (row[1], row[0]))[-1]
+    else:
+        raise HostError(
+            "resolve_timeline_resume_anchor_missing",
+            "The current playhead is before every existing rough-cut video item.",
+            {"currentTimecode": current_timecode, "playheadFrame": playhead_frame},
+        )
+    anchor_item_name = stringify_signal_value(safe_call(anchor_item, "GetName")) or ""
+    anchor_match = re.search(r"(?:^|\s)(clip-\d{5}(?:-r\d{2})?)(?:\s|$)", anchor_item_name)
+    if not anchor_match:
+        raise HostError(
+            "resolve_timeline_resume_anchor_id_missing",
+            "The video item under the playhead does not retain a stable clip-xxxxx plan anchor.",
+            {
+                "currentTimecode": current_timecode,
+                "playheadFrame": playhead_frame,
+                "itemName": anchor_item_name,
+            },
+        )
+    anchor_clip_id = anchor_match.group(1)
+    expected_anchor_clip_id = stringify_signal_value((payload or {}).get("resumeExpectedAnchorClipId"))
+    if expected_anchor_clip_id and anchor_clip_id != expected_anchor_clip_id:
+        raise HostError(
+            "resolve_timeline_resume_anchor_changed",
+            "The Resolve playhead moved to a different planned clip after resume preflight.",
+            {
+                "expectedAnchorClipId": expected_anchor_clip_id,
+                "actualAnchorClipId": anchor_clip_id,
+                "currentTimecode": current_timecode,
+                "playheadFrame": playhead_frame,
+            },
+        )
+    planned_indexes = [index for index, clip in enumerate(clips) if clip.get("clipId") == anchor_clip_id]
+    if len(planned_indexes) != 1:
+        raise HostError(
+            "resolve_timeline_resume_anchor_plan_mismatch",
+            "The preserved Resolve clip anchor does not map uniquely to the deterministic plan.",
+            {"anchorClipId": anchor_clip_id, "matchCount": len(planned_indexes)},
+        )
+    suffix_clips = clips[planned_indexes[0] + 1:]
+    if not suffix_clips:
+        raise HostError(
+            "resolve_timeline_resume_suffix_empty",
+            "The playhead anchor is already the final clip in the deterministic plan.",
+            {"anchorClipId": anchor_clip_id},
+        )
+
+    backup_name = build_rough_cut_resume_backup_name(safe_call(timeline, "GetName"))
+    backup_timeline = duplicate_timeline(project, timeline, backup_name)
+    safe_call(project, "SetCurrentTimeline", timeline)
+
+    deleted_by_track = {}
+    preserved_by_track = {}
+    crossing_by_track = {}
+    for track_type in ("video", "audio", "subtitle"):
+        to_delete = []
+        preserved = 0
+        crossing = 0
+        for item in iter_timeline_track_items(timeline, track_type):
+            start_frame = parse_int(safe_call(item, "GetStart"))
+            end_frame = parse_int(safe_call(item, "GetEnd"))
+            if start_frame is None:
+                continue
+            if start_frame >= preserve_through_frame:
+                to_delete.append(item)
+            else:
+                preserved += 1
+                if end_frame is not None and end_frame > preserve_through_frame:
+                    crossing += 1
+        if to_delete:
+            result = safe_call(timeline, "DeleteClips", to_delete, False)
+            if result is False:
+                result = safe_call(timeline, "DeleteClips", to_delete)
+            if result is False:
+                raise HostError(
+                    "resolve_timeline_suffix_delete_failed",
+                    f"Unable to delete the old {track_type} suffix after the preserved clip.",
+                    {
+                        "anchorClipId": anchor_clip_id,
+                        "preserveThroughFrame": preserve_through_frame,
+                        "backupTimelineName": backup_name,
+                    },
+                )
+        deleted_by_track[track_type] = len(to_delete)
+        preserved_by_track[track_type] = preserved
+        crossing_by_track[track_type] = crossing
+
+    remaining_suffix_video = [
+        stringify_signal_value(safe_call(item, "GetName"))
+        for item in iter_timeline_video_items(timeline)
+        if (parse_int(safe_call(item, "GetStart")) or 0) >= preserve_through_frame
+    ]
+    if remaining_suffix_video:
+        raise HostError(
+            "resolve_timeline_suffix_delete_verify_failed",
+            "Old video items remain after the preserved rough-cut boundary.",
+            {
+                "anchorClipId": anchor_clip_id,
+                "preserveThroughFrame": preserve_through_frame,
+                "remaining": remaining_suffix_video[:20],
+                "backupTimelineName": backup_name,
+            },
+        )
+
+    return {
+        "clips": suffix_clips,
+        "anchorClipId": anchor_clip_id,
+        "anchorItemName": anchor_item_name,
+        "anchorStartFrame": anchor_start_frame,
+        "currentTimecode": current_timecode,
+        "playheadFrame": playhead_frame,
+        "preserveThroughFrame": preserve_through_frame,
+        "preserveRecordFrame": preserve_through_frame - timeline_start_frame,
+        "deletedByTrack": deleted_by_track,
+        "preservedByTrack": preserved_by_track,
+        "crossingByTrack": crossing_by_track,
+        "deletedItemCount": sum(deleted_by_track.values()),
+        "backupTimeline": backup_timeline,
+        "backupTimelineName": backup_name,
+        "backupRemoved": False,
+    }
+
+
+def serialize_rough_cut_resume_state(state, appended):
+    return {
+        "anchorClipId": state["anchorClipId"],
+        "anchorItemName": state["anchorItemName"],
+        "anchorStartFrame": state["anchorStartFrame"],
+        "currentTimecode": state["currentTimecode"],
+        "playheadFrame": state["playheadFrame"],
+        "preserveThroughFrame": state["preserveThroughFrame"],
+        "preserveRecordFrame": state["preserveRecordFrame"],
+        "deletedByTrack": state["deletedByTrack"],
+        "preservedByTrack": state["preservedByTrack"],
+        "crossingByTrack": state["crossingByTrack"],
+        "deletedItemCount": state["deletedItemCount"],
+        "backupTimelineName": state["backupTimelineName"],
+        "backupRemoved": state["backupRemoved"],
+        "appendedClipIds": [entry.get("clipId") for entry in appended],
+    }
+
+
+def build_rough_cut_resume_backup_name(timeline_name):
+    base = stringify_signal_value(timeline_name) or "Kairos Rough Cut"
+    return f"{base} [resume backup {time.strftime('%Y%m%d-%H%M%S')}]"
+
+
+def parse_timeline_timecode_frame(value, fps):
+    match = re.match(r"^(\d{2}):(\d{2}):(\d{2})[:;](\d{2})$", stringify_signal_value(value) or "")
+    nominal_fps = int(round(parse_float(fps) or 0))
+    if not match or nominal_fps <= 0:
+        raise HostError(
+            "resolve_timeline_timecode_invalid",
+            f"Unable to parse Resolve timeline timecode: {value}",
+            {"timecode": value, "fps": fps},
+        )
+    hours, minutes, seconds, frames = [int(part) for part in match.groups()]
+    if minutes >= 60 or seconds >= 60 or frames >= nominal_fps:
+        raise HostError(
+            "resolve_timeline_timecode_invalid",
+            f"Resolve timeline timecode is outside the expected range: {value}",
+            {"timecode": value, "fps": fps},
+        )
+    return ((hours * 60 + minutes) * 60 + seconds) * nominal_fps + frames
 
 
 def mark_existing_rough_cut_clip_colors(resolve, payload):
