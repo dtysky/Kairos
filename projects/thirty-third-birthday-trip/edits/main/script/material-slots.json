@@ -1,0 +1,4116 @@
+{
+  "id": "material-slots-main-travel-vlog-codex-20260906T094636Z",
+  "projectId": "thirty-third-birthday-trip",
+  "generatedAt": "2026-09-06T09:46:36.014Z",
+  "status": "current",
+  "segments": [
+    {
+      "segmentId": "FW-01-01",
+      "slots": [
+        {
+          "id": "FW-01-01-SLOT-01",
+          "query": "出发前先吃牛排：餐桌上摆着带骨牛排、配菜和饮品，两人边吃边讨论干式熟成的香气、酸味和拍摄设备。",
+          "requirement": "required",
+          "targetBundles": [
+            "普通视频"
+          ],
+          "chosenSpanIds": [
+            "C3224_zve1_broll_s0-1",
+            "C3224_zve1_broll_speech_s0-13",
+            "C3225_zve1_broll_speech_s0-62",
+            "C3226_zve1_broll_s0-16",
+            "C3227_zve1_broll_speech_s11-16",
+            "C3228_zve1_broll_s0-1",
+            "C3228_zve1_broll_speech_s0-9",
+            "C3229_zve1_broll_speech_s2-11"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-01-02",
+      "slots": [
+        {
+          "id": "FW-01-02-SLOT-01",
+          "query": "三十三岁生日旅行正式发车：男子从深圳驾车前往惠州方向，车内说明第二天生日以及上山看银河和日出的计划；途中天空通透，阳光穿过云层，高速上出现彩虹。",
+          "requirement": "required",
+          "targetBundles": [
+            "行车画面",
+            "照片尾包"
+          ],
+          "chosenSpanIds": [
+            "C3230_zve1_drive_speech_s0-24",
+            "C3230_zve1_drive_visual_s6-23",
+            "C3231_zve1_drive_speech_s1-23",
+            "C3231_zve1_drive_visual_s6-23",
+            "C3232_zve1_drive_speech_s1-11",
+            "C3232_zve1_drive_visual_s4-11",
+            "C3233_zve1_drive_speech_s0-22",
+            "C3233_zve1_drive_visual_s5-16",
+            "C3234_zve1_drive_speech_s0-19",
+            "C3234_zve1_drive_visual_s4-18",
+            "C3235_zve1_drive_speech_s1-19",
+            "C3235_zve1_drive_visual_s5-20",
+            "C3236_zve1_drive_speech_s0-22",
+            "C3236_zve1_drive_visual_s5-16",
+            "C3237_zve1_drive_speech_s0-10",
+            "C3237_zve1_drive_visual_s14-30",
+            "C3238_zve1_drive_speech_s10-29",
+            "C3238_zve1_drive_visual_s15-57",
+            "C3238_zve1_drive_speech_s46-71",
+            "C3239_zve1_drive_speech_s1-6",
+            "C3239_zve1_drive_visual_s3-10",
+            "C3240_zve1_drive_speech_s0-32",
+            "C3240_zve1_drive_visual_s9-29",
+            "C3241_zve1_drive_speech_s0-14",
+            "C3241_zve1_drive_visual_s3-17",
+            "C3242_zve1_drive_speech_s14-38",
+            "C3242_zve1_drive_visual_s20-69",
+            "C3242_zve1_drive_speech_s66-70",
+            "C3243_zve1_drive_speech_s0-7",
+            "C3243_zve1_drive_visual_s7-19",
+            "DSC06957_photos_photo",
+            "DSC06961_photos_photo",
+            "DSC06965_photos_photo",
+            "DSC06978_photos_photo",
+            "DSC06983_photos_photo",
+            "DSC06986_photos_photo",
+            "DSC06988_photos_photo",
+            "DSC06990_photos_photo",
+            "DSC06994_photos_photo",
+            "DSC07000_photos_photo",
+            "DSC07006_photos_photo",
+            "DSC07017_photos_photo"
+          ],
+          "treatments": {
+            "C3230_zve1_drive_visual_s6-23": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3231_zve1_drive_visual_s6-23": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3232_zve1_drive_visual_s4-11": {
+              "audio": -100
+            },
+            "C3233_zve1_drive_visual_s5-16": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3234_zve1_drive_visual_s4-18": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3235_zve1_drive_visual_s5-20": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3236_zve1_drive_visual_s5-16": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3237_zve1_drive_visual_s14-30": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3238_zve1_drive_visual_s15-57": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3239_zve1_drive_visual_s3-10": {
+              "audio": -100
+            },
+            "C3240_zve1_drive_visual_s9-29": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3241_zve1_drive_visual_s3-17": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3242_zve1_drive_visual_s20-69": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3243_zve1_drive_visual_s7-19": {
+              "audio": -100,
+              "speed": 2
+            },
+            "DSC06957_photos_photo": {
+              "audio": -100
+            },
+            "DSC06961_photos_photo": {
+              "audio": -100
+            },
+            "DSC06965_photos_photo": {
+              "audio": -100
+            },
+            "DSC06978_photos_photo": {
+              "audio": -100
+            },
+            "DSC06983_photos_photo": {
+              "audio": -100
+            },
+            "DSC06986_photos_photo": {
+              "audio": -100
+            },
+            "DSC06988_photos_photo": {
+              "audio": -100
+            },
+            "DSC06990_photos_photo": {
+              "audio": -100
+            },
+            "DSC06994_photos_photo": {
+              "audio": -100
+            },
+            "DSC07000_photos_photo": {
+              "audio": -100
+            },
+            "DSC07006_photos_photo": {
+              "audio": -100
+            },
+            "DSC07017_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-01-03",
+      "slots": [
+        {
+          "id": "FW-01-03-SLOT-01",
+          "query": "路边撞见粉色晚霞：黄色车辆停在服务区充电场地，乌云背后出现粉紫色晚霞；人物在停车区看着云层变粉并连续发出惊叹。",
+          "requirement": "required",
+          "targetBundles": [
+            "普通视频",
+            "照片尾包"
+          ],
+          "chosenSpanIds": [
+            "C3244_zve1_broll_speech_s0-8",
+            "C3245_zve1_broll_speech_s0-12",
+            "C3246_zve1_broll_speech_s0-13",
+            "DSC01433_photos_photo",
+            "DSC01439_photos_photo",
+            "DSC01441_photos_photo"
+          ],
+          "treatments": {
+            "DSC01433_photos_photo": {
+              "audio": -100
+            },
+            "DSC01439_photos_photo": {
+              "audio": -100
+            },
+            "DSC01441_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-01-04",
+      "slots": [
+        {
+          "id": "FW-01-04-SLOT-01",
+          "query": "恐龙服务区里的泡面晚餐：夜间服务区布置了恐龙嘴、恐龙蛋和主题展厅，同行人边走边互动；男子坐在室内吃泡面，称这是三十二岁最后一餐，并评价洗手间等设施。",
+          "requirement": "required",
+          "targetBundles": [
+            "普通视频",
+            "口播视频"
+          ],
+          "chosenSpanIds": [
+            "C3247_zve1_broll_speech_s0-7",
+            "C3248_zve1_broll_speech_s0-14",
+            "C3249_zve1_broll_speech_s0-3",
+            "C3250_zve1_broll_speech_s0-19",
+            "C3251_zve1_broll_speech_s0-8",
+            "C3252_zve1_broll_s0-1",
+            "C3252_zve1_broll_speech_s0-10",
+            "C3253_zve1_broll_speech_s0-8",
+            "C3254_zve1_broll_speech_s0-10",
+            "C3255_zve1_talking-head_speech_s0-16",
+            "C3256_zve1_broll_speech_s0-22",
+            "C3257_zve1_broll_speech_s0-5",
+            "C3258_zve1_broll_visual_s0-5",
+            "C3259_zve1_broll_speech_s8-12",
+            "C3260_zve1_broll_speech_s1-18",
+            "C3261_zve1_talking-head_speech_s0-16"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-01-05",
+      "slots": [
+        {
+          "id": "FW-01-05-SLOT-01",
+          "query": "快到山顶时胎压报警：仪表在麻布岗服务区显示胎压异常，人物蹲在车旁检查轮胎和裂纹，用气压表、充气泵临时处理，并说明夜间找不到修理厂。",
+          "requirement": "required",
+          "targetBundles": [
+            "行车画面",
+            "普通视频",
+            "口播视频"
+          ],
+          "chosenSpanIds": [
+            "C3262_zve1_drive_speech_s0-7",
+            "C3263_zve1_broll_speech_s0-15",
+            "C3264_zve1_broll_speech_s0-14",
+            "C3265_zve1_broll_speech_s0-32",
+            "C3266_zve1_broll_speech_s0-15",
+            "C3267_zve1_broll_speech_s0-6",
+            "C3268_zve1_talking-head_visual_s1-3",
+            "C3269_zve1_talking-head_speech_s0-13"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-01",
+      "slots": [
+        {
+          "id": "FW-02-01-SLOT-01",
+          "query": "雾夜开上野猪嶂：车辆经过灯火明亮的仰天堂收费站后进入乡道、桥梁和连续山路，黑暗中突然出现团雾；车内不断回应导航、弯道、路面和雾气。",
+          "requirement": "required",
+          "targetBundles": [
+            "行车画面"
+          ],
+          "chosenSpanIds": [
+            "C3270_zve1_drive_speech_s2-12",
+            "C3270_zve1_drive_visual_s12-57",
+            "C3270_zve1_drive_speech_s19-27",
+            "C3271_zve1_drive_speech_s1-50",
+            "C3271_zve1_drive_visual_s16-43",
+            "C3272_zve1_drive_speech_s0-22",
+            "C3272_zve1_drive_visual_s5-16",
+            "C3273_zve1_drive_speech_s2-11",
+            "C3273_zve1_drive_visual_s5-20",
+            "C3274_zve1_drive_speech_s2-17",
+            "C3274_zve1_drive_visual_s7-19",
+            "C3275_zve1_drive_speech_s1-35",
+            "C3275_zve1_drive_visual_s11-26",
+            "C3276_zve1_drive_speech_s2-49",
+            "C3276_zve1_drive_speech_s56-96",
+            "C3276_zve1_drive_visual_s78-131",
+            "C3276_zve1_drive_speech_s108-145",
+            "C3276_zve1_drive_speech_s182-234",
+            "C3276_zve1_drive_visual_s204-257",
+            "C3276_zve1_drive_speech_s257-293",
+            "C3277_zve1_drive_speech_s2-30",
+            "C3277_zve1_drive_visual_s17-34",
+            "C3277_zve1_drive_visual_s45-51",
+            "C3278_zve1_drive_speech_s3-11",
+            "C3278_zve1_drive_visual_s4-11",
+            "C3280_zve1_drive_speech_s1-4",
+            "C3280_zve1_drive_visual_s10-23",
+            "C3281_zve1_drive_visual_s0-6",
+            "C3281_zve1_drive_visual_s0-6_ms759-5014",
+            "C3282_zve1_drive_speech_s0-33",
+            "C3282_zve1_drive_visual_s10-31",
+            "C3283_zve1_drive_visual_s0-4",
+            "C3283_zve1_drive_speech_s0-4",
+            "C3284_zve1_drive_speech_s0-37",
+            "C3284_zve1_drive_visual_s11-32",
+            "C3285_zve1_drive_speech_s0-19",
+            "C3285_zve1_drive_visual_s16-43",
+            "C3285_zve1_drive_speech_s23-38",
+            "C3285_zve1_drive_speech_s43-50",
+            "C3286_zve1_drive_speech_s1-16",
+            "C3286_zve1_drive_visual_s4-15",
+            "C3287_zve1_drive_speech_s0-43",
+            "C3287_zve1_drive_visual_s13-37",
+            "C3288_zve1_drive_speech_s0-130",
+            "C3288_zve1_drive_visual_s32-117",
+            "C3289_zve1_drive_speech_s0-106",
+            "C3289_zve1_drive_visual_s78-138",
+            "C3289_zve1_drive_speech_s132-195",
+            "C3289_zve1_drive_visual_s164-224",
+            "C3289_zve1_drive_speech_s223-388",
+            "C3289_zve1_drive_visual_s250-311",
+            "C3290_zve1_drive_speech_s0-79",
+            "C3290_zve1_drive_visual_s42-124",
+            "C3290_zve1_drive_speech_s96-104",
+            "C3290_zve1_drive_speech_s116-162",
+            "C3290_zve1_drive_visual_s137-148"
+          ],
+          "treatments": {
+            "C3270_zve1_drive_visual_s12-57": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3271_zve1_drive_visual_s16-43": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C3272_zve1_drive_visual_s5-16": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3273_zve1_drive_visual_s5-20": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3274_zve1_drive_visual_s7-19": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3275_zve1_drive_visual_s11-26": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3276_zve1_drive_visual_s78-131": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3276_zve1_drive_visual_s204-257": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3277_zve1_drive_visual_s17-34": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3277_zve1_drive_visual_s45-51": {
+              "audio": -100
+            },
+            "C3278_zve1_drive_visual_s4-11": {
+              "audio": -100
+            },
+            "C3280_zve1_drive_visual_s10-23": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3281_zve1_drive_visual_s0-6": {
+              "audio": -100
+            },
+            "C3281_zve1_drive_visual_s0-6_ms759-5014": {
+              "audio": -100
+            },
+            "C3282_zve1_drive_visual_s10-31": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3283_zve1_drive_visual_s0-4": {
+              "audio": -100
+            },
+            "C3284_zve1_drive_visual_s11-32": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C3285_zve1_drive_visual_s16-43": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C3286_zve1_drive_visual_s4-15": {
+              "audio": -100
+            },
+            "C3287_zve1_drive_visual_s13-37": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C3288_zve1_drive_visual_s32-117": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3289_zve1_drive_visual_s78-138": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3289_zve1_drive_visual_s164-224": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3289_zve1_drive_visual_s250-311": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3290_zve1_drive_visual_s42-124": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3290_zve1_drive_visual_s137-148": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-02-02",
+      "slots": [
+        {
+          "id": "FW-02-02-SLOT-01",
+          "query": "三十三岁第一晚的银河与云雾：车辆和人物停在野猪嶂草坡与风机旁，银河、星轨和远处灯光铺满夜空；口播记录生日凌晨看到银河的兴奋，延时从星空走到雾晨，航拍呈现风机立在云海和群山上方。",
+          "requirement": "required",
+          "targetBundles": [
+            "行车画面",
+            "航拍画面",
+            "普通视频",
+            "延时画面",
+            "照片尾包"
+          ],
+          "chosenSpanIds": [
+            "20260820_河源野猪嶂星空1_timelaps_timelapse_s0-51",
+            "20260820_河源野猪嶂星空2_timelaps_timelapse_s0-77",
+            "C3291_zve1_broll_speech_s1-49",
+            "C3292_zve1_broll_speech_s0-28",
+            "C3293_zve1_broll_speech_s5-39",
+            "C3294_zve1_drive_visual_s3-13",
+            "C3294_zve1_drive_speech_s5-15",
+            "C3295_zve1_broll_speech_s0-9",
+            "C3296_zve1_broll_speech_s0-11",
+            "C3297_zve1_broll_speech_s0-9",
+            "C3298_zve1_broll_speech_s5-15",
+            "C3299_zve1_broll_visual_s9-14",
+            "C3300_zve1_broll_speech_s0-4",
+            "C3301_zve1_broll_speech_s0-31",
+            "C3302_zve1_drive_speech_s0-26",
+            "C3302_zve1_drive_visual_s19-48",
+            "C3302_zve1_drive_speech_s34-50",
+            "C3303_zve1_drive_speech_s0-11",
+            "C3303_zve1_drive_visual_s6-13",
+            "C3304_zve1_broll_speech_s0-16",
+            "C3305_zve1_broll_speech_s0-30",
+            "C3306_zve1_broll_visual_s1-3",
+            "C3307_zve1_broll_visual_s6-8",
+            "DJI_20260820060620_0861_D_drone_broll_s0-23",
+            "DJI_20260820060654_0865_D_drone_aerial_s0-23",
+            "DJI_20260820060737_0872_D_drone_aerial_s0-25",
+            "DJI_20260820060937_0882_D_drone_aerial_s0-5",
+            "DJI_20260820061039_0889_D_drone_aerial_s0-35",
+            "DJI_20260820061122_0890_D_drone_aerial_s0-25",
+            "DJI_20260820061204_0894_D_drone_aerial_s0-44",
+            "DJI_20260820061258_0898_D_drone_aerial_s0-51",
+            "DJI_20260820061453_0917_D_drone_aerial_s0-28",
+            "DJI_20260820061936_0921_D_drone_aerial_s0-39",
+            "DJI_20260820062642_0931_D_drone_aerial_s0-43",
+            "DJI_20260820062911_0935_D_drone_aerial_s0-13",
+            "DJI_20260820063023_0951_D_drone_aerial_s0-37",
+            "DJI_20260820063119_0958_D_drone_aerial_s0-44",
+            "DJI_20260820063920_0014_D_drone_broll_s0-13",
+            "DSC02862_photos_photo",
+            "DSC07028_photos_photo",
+            "DSC07040_photos_photo",
+            "DSC02868_photos_photo",
+            "DSC02869_photos_photo",
+            "DSC02875_photos_photo",
+            "DSC07239_photos_photo",
+            "DSC03002_photos_photo",
+            "DSC07680_photos_photo",
+            "DSC07713_photos_photo",
+            "DSC01452_photos_photo",
+            "DSC01454_photos_photo",
+            "DSC01463_photos_photo",
+            "DSC01464_photos_photo",
+            "DSC01465_photos_photo",
+            "DSC08078_photos_photo",
+            "DSC01470_photos_photo",
+            "DJI_20260820060902_0876_D-HDR_photos_photo",
+            "DJI_20260820060914_0879_D-HDR_photos_photo",
+            "DJI_20260820060954_0883_D-HDR_photos_photo",
+            "DJI_20260820061155_0891_D-HDR_photos_photo",
+            "DJI_20260820061253_0895_D-HDR_photos_photo",
+            "DJI_20260820061421_0908_D-HDR_photos_photo",
+            "DJI_20260820061439_0914_D-HDR_photos_photo",
+            "DJI_20260820061536_0918_D-HDR_photos_photo",
+            "DJI_20260820062950_0942_D-HDR_photos_photo",
+            "DJI_20260820063008_0948_D-HDR_photos_photo",
+            "DSC08258_photos_photo",
+            "DSC08260_photos_photo",
+            "DJI_20260820063212_0959_D-HDR_photos_photo",
+            "DJI_20260820063438_0971_D-HDR_photos_photo",
+            "DJI_20260820063510_0980_D-HDR_photos_photo",
+            "DJI_20260820063613_0986_D-HDR_photos_photo",
+            "DJI_20260820063808_0998_D-HDR_photos_photo",
+            "DJI_20260820063859_0013_D-HDR_photos_photo",
+            "DJI_20260820063939_0015_D-HDR_photos_photo"
+          ],
+          "treatments": {
+            "C3294_zve1_drive_visual_s3-13": {
+              "audio": -100
+            },
+            "C3302_zve1_drive_visual_s19-48": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C3303_zve1_drive_visual_s6-13": {
+              "audio": -100
+            },
+            "DSC02862_photos_photo": {
+              "audio": -100
+            },
+            "DSC07028_photos_photo": {
+              "audio": -100
+            },
+            "DSC07040_photos_photo": {
+              "audio": -100
+            },
+            "DSC02868_photos_photo": {
+              "audio": -100
+            },
+            "DSC02869_photos_photo": {
+              "audio": -100
+            },
+            "DSC02875_photos_photo": {
+              "audio": -100
+            },
+            "DSC07239_photos_photo": {
+              "audio": -100
+            },
+            "DSC03002_photos_photo": {
+              "audio": -100
+            },
+            "DSC07680_photos_photo": {
+              "audio": -100
+            },
+            "DSC07713_photos_photo": {
+              "audio": -100
+            },
+            "DSC01452_photos_photo": {
+              "audio": -100
+            },
+            "DSC01454_photos_photo": {
+              "audio": -100
+            },
+            "DSC01463_photos_photo": {
+              "audio": -100
+            },
+            "DSC01464_photos_photo": {
+              "audio": -100
+            },
+            "DSC01465_photos_photo": {
+              "audio": -100
+            },
+            "DSC08078_photos_photo": {
+              "audio": -100
+            },
+            "DSC01470_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260820060902_0876_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260820060914_0879_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260820060954_0883_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260820061155_0891_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260820061253_0895_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260820061421_0908_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260820061439_0914_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260820061536_0918_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260820062950_0942_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260820063008_0948_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DSC08258_photos_photo": {
+              "audio": -100
+            },
+            "DSC08260_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260820063212_0959_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260820063438_0971_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260820063510_0980_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260820063613_0986_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260820063808_0998_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260820063859_0013_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260820063939_0015_D-HDR_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-01",
+      "slots": [
+        {
+          "id": "FW-03-01-SLOT-01",
+          "query": "牛群、蛋糕和下山烂路：雾散后的山坡上有牛群、风机和黄色车辆，牛在车旁吃遗留的西瓜，人物在户外吃三十三岁生日蛋糕；车辆随后沿碎石路、水坑和弯曲坡道下山。",
+          "requirement": "required",
+          "targetBundles": [
+            "行车画面",
+            "航拍画面",
+            "普通视频",
+            "照片尾包"
+          ],
+          "chosenSpanIds": [
+            "C3308_zve1_broll_speech_s0-14",
+            "C3309_zve1_broll_speech_s0-8",
+            "C3310_zve1_broll_speech_s0-9",
+            "C3311_zve1_broll_speech_s0-20",
+            "C0050_a7r6_broll_visual_s0-3",
+            "C0051_a7r6_broll_speech_s0-129",
+            "C0052_a7r6_broll_visual_s0-7",
+            "C0053_a7r6_broll_speech_s2-257",
+            "C0054_a7r6_broll_speech_s0-13",
+            "C0055_a7r6_broll_s0-2",
+            "C0056_a7r6_broll_visual_s0-2",
+            "C0057_a7r6_drive_speech_s0-20",
+            "DJI_20260820084530_0018_D_drone_broll_s0-21",
+            "C0058_a7r6_broll_visual_s0-14",
+            "DJI_20260820084701_0028_D_drone_broll_s0-21",
+            "C0059_a7r6_broll_speech_s0-6",
+            "C0060_a7r6_broll_speech_s4-26",
+            "C0061_a7r6_broll_s0-13",
+            "DJI_20260820090123_0051_D_drone_aerial_s0-11",
+            "DJI_20260820090359_0064_D_drone_aerial_s0-57",
+            "C3312_zve1_drive_speech_s1-13",
+            "C3312_zve1_drive_visual_s33-39",
+            "C3312_zve1_drive_visual_s175-194",
+            "DJI_20260820090617_0065_D_drone_drive_s0-49",
+            "C3312_zve1_drive_speech_s198-296",
+            "DJI_20260820090732_0066_D_drone_drive_s0-64",
+            "C3312_zve1_drive_visual_s296-313",
+            "C3312_zve1_drive_speech_s302-310",
+            "DJI_20260820090847_0067_D_drone_drive_s0-18",
+            "DJI_20260820090919_0068_D_drone_drive_s0-39",
+            "C3313_zve1_drive_speech_s140-168",
+            "DJI_20260820091250_0093_D_drone_drive_s0-54",
+            "C3313_zve1_drive_speech_s185-197",
+            "C3313_zve1_drive_visual_s205-222",
+            "DJI_20260820091352_0094_D_drone_drive_s0-52",
+            "C3313_zve1_drive_speech_s253-262",
+            "C3313_zve1_drive_visual_s311-381",
+            "C3313_zve1_drive_speech_s318-321",
+            "DJI_20260820091646_0107_D_drone_drive_s0-36",
+            "C3313_zve1_drive_visual_s418-435",
+            "C3313_zve1_drive_speech_s452-457",
+            "C3313_zve1_drive_speech_s464-467",
+            "DJI_20260820091813_0108_D_drone_drive_s0-100",
+            "C3313_zve1_drive_speech_s478-480",
+            "DJI_20260820092044_0109_D_drone_drive_s0-32",
+            "DJI_20260820092244_0110_D_drone_drive_s0-23",
+            "DJI_20260820092355_0114_D_drone_drive_s0-41",
+            "DSC01478_photos_photo",
+            "DSC01485_photos_photo",
+            "DSC08282_photos_photo",
+            "DSC08300_photos_photo",
+            "DSC08304_photos_photo",
+            "DSC08311_photos_photo",
+            "DJI_20260820084609_0019_D-HDR_photos_photo",
+            "DSC08313_photos_photo",
+            "DJI_20260820084633_0027_D-HDR_photos_photo",
+            "DSC08315_photos_photo",
+            "DJI_20260820084730_0029_D-HDR_photos_photo",
+            "DSC08319_photos_photo",
+            "DJI_20260820084755_0037_D-HDR_photos_photo",
+            "DSC08323_photos_photo",
+            "DSC08325_photos_photo",
+            "DJI_20260820090107_0047_D-HDR_photos_photo",
+            "DJI_20260820090232_0060_D-HDR_photos_photo",
+            "DJI_20260820090249_0063_D-HDR_photos_photo",
+            "DJI_20260820091016_0071_D-HDR_photos_photo",
+            "DJI_20260820091148_0083_D-HDR_photos_photo",
+            "DJI_20260820091158_0086_D-HDR_photos_photo",
+            "DJI_20260820091512_0100_D-HDR_photos_photo",
+            "DJI_20260820091545_0106_D-HDR_photos_photo",
+            "DJI_20260820092451_0117_D-HDR_photos_photo"
+          ],
+          "treatments": {
+            "C3312_zve1_drive_visual_s33-39": {
+              "audio": -100
+            },
+            "C3312_zve1_drive_visual_s175-194": {
+              "audio": -100,
+              "speed": 2
+            },
+            "DJI_20260820090617_0065_D_drone_drive_s0-49": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DJI_20260820090732_0066_D_drone_drive_s0-64": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3312_zve1_drive_visual_s296-313": {
+              "audio": -100,
+              "speed": 2
+            },
+            "DJI_20260820090847_0067_D_drone_drive_s0-18": {
+              "audio": -100,
+              "speed": 2
+            },
+            "DJI_20260820090919_0068_D_drone_drive_s0-39": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DJI_20260820091250_0093_D_drone_drive_s0-54": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3313_zve1_drive_visual_s205-222": {
+              "audio": -100,
+              "speed": 2
+            },
+            "DJI_20260820091352_0094_D_drone_drive_s0-52": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3313_zve1_drive_visual_s311-381": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DJI_20260820091646_0107_D_drone_drive_s0-36": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3313_zve1_drive_visual_s418-435": {
+              "audio": -100,
+              "speed": 2
+            },
+            "DJI_20260820091813_0108_D_drone_drive_s0-100": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DJI_20260820092044_0109_D_drone_drive_s0-32": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DJI_20260820092244_0110_D_drone_drive_s0-23": {
+              "audio": -100,
+              "speed": 3
+            },
+            "DJI_20260820092355_0114_D_drone_drive_s0-41": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DSC01478_photos_photo": {
+              "audio": -100
+            },
+            "DSC01485_photos_photo": {
+              "audio": -100
+            },
+            "DSC08282_photos_photo": {
+              "audio": -100
+            },
+            "DSC08300_photos_photo": {
+              "audio": -100
+            },
+            "DSC08304_photos_photo": {
+              "audio": -100
+            },
+            "DSC08311_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260820084609_0019_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DSC08313_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260820084633_0027_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DSC08315_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260820084730_0029_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DSC08319_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260820084755_0037_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DSC08323_photos_photo": {
+              "audio": -100
+            },
+            "DSC08325_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260820090107_0047_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260820090232_0060_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260820090249_0063_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260820091016_0071_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260820091148_0083_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260820091158_0086_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260820091512_0100_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260820091545_0106_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260820092451_0117_D-HDR_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-02",
+      "slots": [
+        {
+          "id": "FW-03-02-SLOT-01",
+          "query": "唱着生日歌下山进江西：黄色车辆从雾中风机山路下行，碎石路逐渐转为铺装公路并驶向江西定南；车内唱起生日歌，人物回顾没有拍到日出但仍觉得这趟上山值得。",
+          "requirement": "required",
+          "targetBundles": [
+            "行车画面",
+            "口播视频",
+            "照片尾包"
+          ],
+          "chosenSpanIds": [
+            "C3314_zve1_drive_speech_s0-72",
+            "C3314_zve1_drive_visual_s19-78",
+            "C3315_zve1_drive_visual_s20-81",
+            "C3315_zve1_drive_speech_s55-72",
+            "C3316_zve1_drive_visual_s0-3",
+            "C3316_zve1_drive_speech_s2-26",
+            "C3317_zve1_drive_speech_s0-23",
+            "C3317_zve1_drive_visual_s6-22",
+            "C3318_zve1_talking-head_speech_s0-12",
+            "C3319_zve1_drive_visual_s6-16",
+            "C3319_zve1_drive_visual_s14-29",
+            "C3320_zve1_drive_visual_s12-59",
+            "C3320_zve1_drive_speech_s14-49",
+            "C3320_zve1_drive_speech_s51-54",
+            "C3321_zve1_drive_speech_s1-23",
+            "C3321_zve1_drive_visual_s37-112",
+            "C3321_zve1_drive_speech_s37-84",
+            "C3321_zve1_drive_speech_s93-131",
+            "C3321_zve1_drive_speech_s142-150",
+            "C3322_zve1_drive_speech_s0-15",
+            "C3322_zve1_drive_visual_s10-24",
+            "C3322_zve1_drive_speech_s17-22",
+            "C3322_zve1_drive_speech_s28-34",
+            "C3323_zve1_drive_speech_s0-39",
+            "C3323_zve1_drive_visual_s19-67",
+            "C3323_zve1_drive_speech_s54-62",
+            "C3323_zve1_drive_speech_s66-85",
+            "C0062_a7r6_drive_speech_s0-11",
+            "C3324_zve1_drive_visual_s0-3",
+            "C3324_zve1_drive_speech_s3-32",
+            "C0063_a7r6_drive_s0-42",
+            "C0064_a7r6_drive_s0-46",
+            "C3325_zve1_drive_speech_s0-18",
+            "C3325_zve1_drive_visual_s35-107",
+            "C3325_zve1_drive_visual_s90-95",
+            "C3325_zve1_drive_visual_s117-128",
+            "C3326_zve1_drive_speech_s0-9",
+            "C3326_zve1_drive_visual_s13-62",
+            "C3326_zve1_drive_speech_s46-67",
+            "C3327_zve1_drive_speech_s0-14",
+            "C3327_zve1_drive_visual_s16-70",
+            "C3328_zve1_drive_speech_s1-13",
+            "C3328_zve1_drive_visual_s4-11",
+            "C3329_zve1_drive_speech_s1-8",
+            "C3329_zve1_drive_visual_s13-52",
+            "C3329_zve1_drive_speech_s16-23",
+            "C3330_zve1_drive_speech_s0-15",
+            "C3330_zve1_drive_visual_s3-17",
+            "C3331_zve1_talking-head_speech_s0-5",
+            "C3332_zve1_talking-head_speech_s0-29",
+            "C3333_zve1_drive_speech_s0-8",
+            "C3334_zve1_drive_speech_s0-11",
+            "C3334_zve1_drive_visual_s4-11",
+            "C3335_zve1_drive_speech_s1-5",
+            "C3335_zve1_drive_speech_s7-19",
+            "C3335_zve1_drive_visual_s8-27",
+            "C3335_zve1_drive_speech_s21-25",
+            "C3336_zve1_drive_speech_s0-36",
+            "C3336_zve1_drive_visual_s14-29",
+            "C3336_zve1_drive_visual_s40-43",
+            "C3337_zve1_drive_speech_s0-36",
+            "C3337_zve1_drive_visual_s11-33",
+            "C3338_zve1_drive_speech_s3-21",
+            "C3338_zve1_drive_visual_s6-17",
+            "DSC01487_photos_photo",
+            "DSC01489_photos_photo",
+            "DSC01493_photos_photo",
+            "DSC08332_photos_photo"
+          ],
+          "treatments": {
+            "C3314_zve1_drive_visual_s19-78": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3315_zve1_drive_visual_s20-81": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3316_zve1_drive_visual_s0-3": {
+              "audio": -100
+            },
+            "C3317_zve1_drive_visual_s6-22": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3319_zve1_drive_visual_s6-16": {
+              "audio": -100
+            },
+            "C3319_zve1_drive_visual_s14-29": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3320_zve1_drive_visual_s12-59": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3321_zve1_drive_visual_s37-112": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3322_zve1_drive_visual_s10-24": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3323_zve1_drive_visual_s19-67": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3324_zve1_drive_visual_s0-3": {
+              "audio": -100
+            },
+            "C0063_a7r6_drive_s0-42": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C0064_a7r6_drive_s0-46": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3325_zve1_drive_visual_s35-107": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3325_zve1_drive_visual_s90-95": {
+              "audio": -100
+            },
+            "C3325_zve1_drive_visual_s117-128": {
+              "audio": -100
+            },
+            "C3326_zve1_drive_visual_s13-62": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3327_zve1_drive_visual_s16-70": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3328_zve1_drive_visual_s4-11": {
+              "audio": -100
+            },
+            "C3329_zve1_drive_visual_s13-52": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3330_zve1_drive_visual_s3-17": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3334_zve1_drive_visual_s4-11": {
+              "audio": -100
+            },
+            "C3335_zve1_drive_visual_s8-27": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3336_zve1_drive_visual_s14-29": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3336_zve1_drive_visual_s40-43": {
+              "audio": -100
+            },
+            "C3337_zve1_drive_visual_s11-33": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C3338_zve1_drive_visual_s6-17": {
+              "audio": -100,
+              "speed": 2
+            },
+            "DSC01487_photos_photo": {
+              "audio": -100
+            },
+            "DSC01489_photos_photo": {
+              "audio": -100
+            },
+            "DSC01493_photos_photo": {
+              "audio": -100
+            },
+            "DSC08332_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-03-03",
+      "slots": [
+        {
+          "id": "FW-03-03-SLOT-01",
+          "query": "天九镇终于把轮胎修好：车辆在天九镇街道寻找汽修店，维修人员用千斤顶抬车、拆下轮胎检查，人物在旁记录轮胎和修理过程。",
+          "requirement": "required",
+          "targetBundles": [
+            "行车画面",
+            "普通视频"
+          ],
+          "chosenSpanIds": [
+            "C3339_zve1_drive_speech_s0-15",
+            "C3339_zve1_drive_visual_s10-31",
+            "C3339_zve1_drive_speech_s21-35",
+            "C3340_zve1_broll_s0-1",
+            "C3340_zve1_broll_speech_s0-10",
+            "C3340_zve1_broll_s9-11",
+            "C3341_zve1_broll_speech_s4-8",
+            "C3342_zve1_broll_speech_s3-22",
+            "C3343_zve1_broll_s0-1",
+            "C3343_zve1_broll_speech_s0-13",
+            "C3344_zve1_broll_speech_s0-12"
+          ],
+          "treatments": {
+            "C3339_zve1_drive_visual_s10-31": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-01",
+      "slots": [
+        {
+          "id": "FW-04-01-SLOT-01",
+          "query": "修好车一路开向崇义：车辆离开定南，沿林荫道路、多车道公路和赣州山地驶向崇义；蓝天白云清晰，车内谈到当天的好天气、早晨云海和轮胎问题已经有了补救。",
+          "requirement": "required",
+          "targetBundles": [
+            "行车画面"
+          ],
+          "chosenSpanIds": [
+            "C3345_zve1_drive_speech_s1-26",
+            "C3345_zve1_drive_visual_s7-19",
+            "C3346_zve1_drive_speech_s1-14",
+            "C3346_zve1_drive_visual_s4-11",
+            "C3347_zve1_drive_speech_s0-10",
+            "C3347_zve1_drive_visual_s11-25",
+            "C3347_zve1_drive_speech_s16-25",
+            "C3347_zve1_drive_visual_s30-32",
+            "C3348_zve1_drive_speech_s0-13",
+            "C3348_zve1_drive_visual_s3-10",
+            "C3349_zve1_drive_speech_s2-8",
+            "C3349_zve1_drive_visual_s7-19",
+            "C3349_zve1_drive_speech_s12-23",
+            "C3350_zve1_drive_speech_s0-18",
+            "C3350_zve1_drive_visual_s4-18",
+            "C3351_zve1_drive_speech_s1-18",
+            "C3351_zve1_drive_visual_s5-20",
+            "C3352_zve1_drive_speech_s1-26",
+            "C3352_zve1_drive_visual_s7-24",
+            "C3353_zve1_drive_speech_s2-13",
+            "C3353_zve1_drive_visual_s3-10",
+            "C3354_zve1_drive_speech_s0-16",
+            "C3354_zve1_drive_visual_s4-14",
+            "C3355_zve1_drive_speech_s0-10",
+            "C3355_zve1_drive_visual_s4-11",
+            "C3356_zve1_drive_speech_s0-7",
+            "C3356_zve1_drive_visual_s1-8",
+            "C3357_zve1_drive_speech_s1-14",
+            "C3357_zve1_drive_visual_s3-17",
+            "C3358_zve1_drive_speech_s2-32",
+            "C3358_zve1_drive_visual_s14-39",
+            "C3359_zve1_drive_speech_s0-8",
+            "C3359_zve1_drive_visual_s2-8",
+            "C3360_zve1_drive_speech_s0-32",
+            "C3360_zve1_drive_visual_s15-66",
+            "C3360_zve1_drive_speech_s49-71",
+            "C3361_zve1_drive_speech_s0-16",
+            "C3361_zve1_drive_visual_s18-35",
+            "C3361_zve1_drive_speech_s22-36",
+            "C3361_zve1_drive_visual_s39-42",
+            "C3361_zve1_drive_speech_s44-53",
+            "C3362_zve1_drive_speech_s1-13",
+            "C3362_zve1_drive_visual_s3-16"
+          ],
+          "treatments": {
+            "C3345_zve1_drive_visual_s7-19": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3346_zve1_drive_visual_s4-11": {
+              "audio": -100
+            },
+            "C3347_zve1_drive_visual_s11-25": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3347_zve1_drive_visual_s30-32": {
+              "audio": -100
+            },
+            "C3348_zve1_drive_visual_s3-10": {
+              "audio": -100
+            },
+            "C3349_zve1_drive_visual_s7-19": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3350_zve1_drive_visual_s4-18": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3351_zve1_drive_visual_s5-20": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3352_zve1_drive_visual_s7-24": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3353_zve1_drive_visual_s3-10": {
+              "audio": -100
+            },
+            "C3354_zve1_drive_visual_s4-14": {
+              "audio": -100
+            },
+            "C3355_zve1_drive_visual_s4-11": {
+              "audio": -100
+            },
+            "C3356_zve1_drive_visual_s1-8": {
+              "audio": -100
+            },
+            "C3357_zve1_drive_visual_s3-17": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3358_zve1_drive_visual_s14-39": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C3359_zve1_drive_visual_s2-8": {
+              "audio": -100
+            },
+            "C3360_zve1_drive_visual_s15-66": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3361_zve1_drive_visual_s18-35": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3361_zve1_drive_visual_s39-42": {
+              "audio": -100
+            },
+            "C3362_zve1_drive_visual_s3-16": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-02",
+      "slots": [
+        {
+          "id": "FW-04-02-SLOT-01",
+          "query": "崇义吃一顿江西菜：车辆进入崇义城区寻找停车位置，随后出现餐馆门面、菜单和桌上菜品；人物点了腰花、茄子等江西菜，并讨论辣度、分量、味道和性价比。",
+          "requirement": "required",
+          "targetBundles": [
+            "行车画面",
+            "普通视频",
+            "口播视频"
+          ],
+          "chosenSpanIds": [
+            "C3363_zve1_drive_speech_s1-62",
+            "C3363_zve1_drive_visual_s12-58",
+            "C3365_zve1_broll_speech_s0-11",
+            "C3366_zve1_broll_speech_s0-17",
+            "C3367_zve1_broll_speech_s0-5",
+            "C3368_zve1_broll_s0-1",
+            "C3368_zve1_broll_speech_s0-11",
+            "C3369_zve1_broll_speech_s0-7",
+            "C3370_zve1_broll_visual_s0-2",
+            "C3371_zve1_broll_speech_s0-7",
+            "C3372_zve1_broll_speech_s9-19",
+            "C3373_zve1_talking-head_speech_s0-10"
+          ],
+          "treatments": {
+            "C3363_zve1_drive_visual_s12-58": {
+              "audio": -100,
+              "speed": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-03",
+      "slots": [
+        {
+          "id": "FW-04-03-SLOT-01",
+          "query": "吃完继续摸黑赶到汝城：车辆夜间从崇义经过收费站和缺少照明的山地高速驶向湖南汝城，窗外能看到黑暗山体、星星和月亮，车内持续评论夜路环境。",
+          "requirement": "required",
+          "targetBundles": [
+            "行车画面"
+          ],
+          "chosenSpanIds": [
+            "C3374_zve1_drive_speech_s0-19",
+            "C3374_zve1_drive_visual_s5-16",
+            "C3375_zve1_drive_speech_s0-19",
+            "C3375_zve1_drive_visual_s4-15",
+            "C3376_zve1_drive_speech_s0-25",
+            "C3376_zve1_drive_visual_s6-23",
+            "C3377_zve1_drive_speech_s0-9",
+            "C3377_zve1_drive_visual_s11-25",
+            "C3377_zve1_drive_visual_s20-24",
+            "C3378_zve1_drive_speech_s0-13",
+            "C3378_zve1_drive_visual_s13-37",
+            "C3378_zve1_drive_visual_s18-22",
+            "C3378_zve1_drive_visual_s30-34",
+            "C3379_zve1_drive_speech_s0-6",
+            "C3379_zve1_drive_visual_s7-24",
+            "C3379_zve1_drive_visual_s10-27",
+            "C3380_zve1_drive_speech_s0-17",
+            "C3380_zve1_drive_visual_s10-31",
+            "C3380_zve1_drive_speech_s22-35",
+            "C3381_zve1_drive_visual_s0-3",
+            "C3381_zve1_drive_visual_s3-17",
+            "C3381_zve1_drive_speech_s10-17"
+          ],
+          "treatments": {
+            "C3374_zve1_drive_visual_s5-16": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3375_zve1_drive_visual_s4-15": {
+              "audio": -100
+            },
+            "C3376_zve1_drive_visual_s6-23": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3377_zve1_drive_visual_s11-25": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3377_zve1_drive_visual_s20-24": {
+              "audio": -100
+            },
+            "C3378_zve1_drive_visual_s13-37": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C3378_zve1_drive_visual_s18-22": {
+              "audio": -100
+            },
+            "C3378_zve1_drive_visual_s30-34": {
+              "audio": -100
+            },
+            "C3379_zve1_drive_visual_s7-24": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3379_zve1_drive_visual_s10-27": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3380_zve1_drive_visual_s10-31": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3381_zve1_drive_visual_s0-3": {
+              "audio": -100
+            },
+            "C3381_zve1_drive_visual_s3-17": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-04-04",
+      "slots": [
+        {
+          "id": "FW-04-04-SLOT-01",
+          "query": "两百元住进升级房：夜间酒店入口和停车车辆先出现，镜头随后进入有大床、地毯和行李的客房；人物说明一晚两百元并称房型得到升级。",
+          "requirement": "required",
+          "targetBundles": [
+            "普通视频"
+          ],
+          "chosenSpanIds": [
+            "C3382_zve1_broll_speech_s0-11",
+            "C3383_zve1_broll_speech_s0-8"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-01",
+      "slots": [
+        {
+          "id": "FW-05-01-SLOT-01",
+          "query": "从汝城出发追阳朔晚霞：黄色车辆离开汝城，经过城区、多车道路和绿色山地向桂林方向行驶；车内说明要去阳朔看晚霞，并对沿途车辆、天气和道路作出即时反应。",
+          "requirement": "required",
+          "targetBundles": [
+            "行车画面"
+          ],
+          "chosenSpanIds": [
+            "C3384_zve1_drive_speech_s0-17",
+            "C3385_zve1_drive_speech_s0-15",
+            "C3385_zve1_drive_visual_s4-18",
+            "C3386_zve1_drive_s0-25",
+            "C3387_zve1_drive_visual_s5-20",
+            "C3387_zve1_drive_visual_s5-11",
+            "C3388_zve1_drive_speech_s0-15",
+            "C3388_zve1_drive_visual_s5-20",
+            "C3388_zve1_drive_visual_s19-21",
+            "C3389_zve1_drive_s0-13",
+            "C3390_zve1_drive_speech_s7-30",
+            "C3390_zve1_drive_visual_s28-107",
+            "C3390_zve1_drive_speech_s65-82",
+            "C3391_zve1_drive_speech_s0-10",
+            "C3391_zve1_drive_visual_s9-28",
+            "C3391_zve1_drive_speech_s14-18",
+            "C3391_zve1_drive_speech_s23-31",
+            "C3392_zve1_drive_speech_s6-11",
+            "C3392_zve1_drive_visual_s13-36",
+            "C3392_zve1_drive_speech_s19-23",
+            "C3392_zve1_drive_speech_s27-32",
+            "C3393_zve1_drive_speech_s2-10",
+            "C3393_zve1_drive_speech_s13-44",
+            "C3393_zve1_drive_visual_s14-38",
+            "C3394_zve1_drive_speech_s2-19",
+            "C3394_zve1_drive_visual_s4-18",
+            "C3395_zve1_drive_speech_s3-29",
+            "C3395_zve1_drive_visual_s8-21",
+            "C3396_zve1_drive_speech_s0-83",
+            "C3396_zve1_drive_visual_s22-27",
+            "C3397_zve1_drive_s0-25",
+            "C3398_zve1_drive_s0-114",
+            "C3399_zve1_drive_s0-17",
+            "C3400_zve1_drive_visual_s9-29",
+            "C3400_zve1_drive_speech_s15-32",
+            "C3401_zve1_drive_speech_s0-3",
+            "C3401_zve1_drive_visual_s4-15",
+            "C3402_zve1_drive_speech_s3-15",
+            "C3402_zve1_drive_visual_s12-34",
+            "C3403_zve1_drive_speech_s3-15",
+            "C3403_zve1_drive_visual_s12-27",
+            "C3403_zve1_drive_speech_s25-28",
+            "C3403_zve1_drive_speech_s36-39",
+            "C3404_zve1_drive_speech_s0-28",
+            "C3404_zve1_drive_visual_s9-29"
+          ],
+          "treatments": {
+            "C3385_zve1_drive_visual_s4-18": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3386_zve1_drive_s0-25": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C3387_zve1_drive_visual_s5-20": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3387_zve1_drive_visual_s5-11": {
+              "audio": -100
+            },
+            "C3388_zve1_drive_visual_s5-20": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3388_zve1_drive_visual_s19-21": {
+              "audio": -100
+            },
+            "C3389_zve1_drive_s0-13": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3390_zve1_drive_visual_s28-107": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3391_zve1_drive_visual_s9-28": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3392_zve1_drive_visual_s13-36": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C3393_zve1_drive_visual_s14-38": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C3394_zve1_drive_visual_s4-18": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3395_zve1_drive_visual_s8-21": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3396_zve1_drive_visual_s22-27": {
+              "audio": -100
+            },
+            "C3397_zve1_drive_s0-25": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C3398_zve1_drive_s0-114": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3399_zve1_drive_s0-17": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3400_zve1_drive_visual_s9-29": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3401_zve1_drive_visual_s4-15": {
+              "audio": -100
+            },
+            "C3402_zve1_drive_visual_s12-34": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C3403_zve1_drive_visual_s12-27": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3404_zve1_drive_visual_s9-29": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-02",
+      "slots": [
+        {
+          "id": "FW-05-02-SLOT-01",
+          "query": "黄关服务区看云雾：潮湿的黄关服务区停车场十分开阔，银色车辆停在亭子附近，远处山峰被云雾裹住，人物短暂感叹眼前山景。",
+          "requirement": "required",
+          "targetBundles": [
+            "普通视频"
+          ],
+          "chosenSpanIds": [
+            "C3405_zve1_broll_s0-2",
+            "C3406_zve1_broll_speech_s1-15"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-03",
+      "slots": [
+        {
+          "id": "FW-05-03-SLOT-01",
+          "query": "穿过桂林山路去阳朔：车辆穿过恭城至阳朔之间的阴天山地公路，绿色丘陵和路旁车辆持续掠过；车内观察疑似碰撞现场并谈到疲劳驾驶。",
+          "requirement": "required",
+          "targetBundles": [
+            "行车画面",
+            "照片尾包"
+          ],
+          "chosenSpanIds": [
+            "C3407_zve1_drive_speech_s0-3",
+            "C3407_zve1_drive_speech_s5-13",
+            "C3407_zve1_drive_visual_s12-27",
+            "C3408_zve1_drive_visual_s3-16",
+            "C3408_zve1_drive_visual_s11-17",
+            "C3409_zve1_drive_speech_s1-20",
+            "C3409_zve1_drive_visual_s4-15",
+            "C3410_zve1_drive_visual_s0-23",
+            "C3411_zve1_drive_visual_s9-28",
+            "C3411_zve1_drive_speech_s13-16",
+            "C3411_zve1_drive_speech_s17-27",
+            "C3412_zve1_drive_speech_s1-10",
+            "C3412_zve1_drive_visual_s16-42",
+            "C3412_zve1_drive_speech_s18-38",
+            "C3412_zve1_drive_visual_s43-48",
+            "C3413_zve1_drive_speech_s3-34",
+            "C3413_zve1_drive_visual_s10-31",
+            "C3414_zve1_drive_visual_s0-2",
+            "C3414_zve1_drive_visual_s3-16",
+            "C3415_zve1_drive_visual_s0-1",
+            "C3415_zve1_drive_visual_s0-1_ms0-512",
+            "C3416_zve1_drive_speech_s0-10",
+            "C3416_zve1_drive_visual_s4-11",
+            "C3417_zve1_drive_speech_s0-25",
+            "C3417_zve1_drive_visual_s11-32",
+            "C3417_zve1_drive_visual_s35-37",
+            "C3418_zve1_drive_speech_s1-40",
+            "C3418_zve1_drive_visual_s12-27",
+            "C3419_zve1_drive_speech_s9-40",
+            "C3419_zve1_drive_visual_s15-41",
+            "C3420_zve1_drive_speech_s0-23",
+            "C3420_zve1_drive_visual_s8-26",
+            "C3421_zve1_drive_speech_s0-89",
+            "C3421_zve1_drive_visual_s20-69",
+            "DSC08363_photos_photo"
+          ],
+          "treatments": {
+            "C3407_zve1_drive_visual_s12-27": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3408_zve1_drive_visual_s3-16": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3408_zve1_drive_visual_s11-17": {
+              "audio": -100
+            },
+            "C3409_zve1_drive_visual_s4-15": {
+              "audio": -100
+            },
+            "C3410_zve1_drive_visual_s0-23": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C3411_zve1_drive_visual_s9-28": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3412_zve1_drive_visual_s16-42": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C3412_zve1_drive_visual_s43-48": {
+              "audio": -100
+            },
+            "C3413_zve1_drive_visual_s10-31": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3414_zve1_drive_visual_s0-2": {
+              "audio": -100
+            },
+            "C3414_zve1_drive_visual_s3-16": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3415_zve1_drive_visual_s0-1": {
+              "audio": -100
+            },
+            "C3415_zve1_drive_visual_s0-1_ms0-512": {
+              "audio": -100
+            },
+            "C3416_zve1_drive_visual_s4-11": {
+              "audio": -100
+            },
+            "C3417_zve1_drive_visual_s11-32": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C3417_zve1_drive_visual_s35-37": {
+              "audio": -100
+            },
+            "C3418_zve1_drive_visual_s12-27": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3419_zve1_drive_visual_s15-41": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C3420_zve1_drive_visual_s8-26": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3421_zve1_drive_visual_s20-69": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DSC08363_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-04",
+      "slots": [
+        {
+          "id": "FW-05-04-SLOT-01",
+          "query": "终于赶到漓江边日落：人物背着设备穿过草地寻找漓江边机位，地面、航拍和照片共同记录河流、喀斯特峰林、热气球、晚霞和水面倒影；口播从找构图、等日落说到拍摄结束后的满足。",
+          "requirement": "required",
+          "targetBundles": [
+            "航拍画面",
+            "普通视频",
+            "口播视频",
+            "照片尾包"
+          ],
+          "chosenSpanIds": [
+            "C3422_zve1_broll_speech_s0-22",
+            "C3423_zve1_broll_visual_s0-3",
+            "C3424_zve1_broll_speech_s0-23",
+            "C3425_zve1_broll_speech_s0-20",
+            "C3426_zve1_broll_speech_s0-55",
+            "C3427_zve1_broll_s0-2",
+            "C3428_zve1_broll_speech_s0-26",
+            "C3429_zve1_broll_speech_s0-29",
+            "DJI_20260821184839_0210_D_drone_broll_s0-16",
+            "DJI_20260821185008_0226_D_drone_broll_s0-12",
+            "C3430_zve1_broll_visual_s0-3",
+            "C3431_zve1_broll_speech_s0-34",
+            "C3432_zve1_broll_speech_s0-37",
+            "DJI_20260821191639_0273_D_drone_broll_s0-2",
+            "DJI_20260821183741_0127_D_drone_aerial_s0-39",
+            "DJI_20260821183854_0137_D_drone_aerial_s0-33",
+            "DJI_20260821183959_0144_D_drone_aerial_s0-19",
+            "DJI_20260821184032_0148_D_drone_aerial_s0-45",
+            "DJI_20260821184402_0188_D_drone_aerial_s0-29",
+            "DJI_20260821185503_0272_D_drone_aerial_s0-152",
+            "DJI_20260821191643_0274_D_drone_aerial_s0-25",
+            "DJI_20260821191737_0282_D_drone_aerial_s0-13",
+            "DJI_20260821191757_0286_D_drone_aerial_s0-31",
+            "DJI_20260821191846_0293_D_drone_aerial_s0-7",
+            "DJI_20260821191855_0294_D_drone_aerial_s0-14",
+            "DJI_20260821192031_0313_D_drone_aerial_s0-22",
+            "DJI_20260821192619_0356_D_drone_aerial_s0-11",
+            "DJI_20260821193018_0369_D_drone_aerial_s0-17",
+            "C3433_zve1_broll_speech_s0-41",
+            "DJI_20260821192319_0347_D_drone_broll_s0-7",
+            "DJI_20260821192340_0348_D_drone_broll_s0-29",
+            "DJI_20260821192426_0349_D_drone_broll_s0-19",
+            "C3434_zve1_broll_visual_s17-19",
+            "C3435_zve1_talking-head_speech_s0-10",
+            "DSC08365_photos_photo",
+            "DSC08377_photos_photo",
+            "DSC08382_photos_photo",
+            "DSC08385_photos_photo",
+            "DSC08414_photos_photo",
+            "DSC04880_photos_photo",
+            "DSC08450_photos_photo",
+            "DSC08456_photos_photo",
+            "DSC08458_photos_photo",
+            "DJI_20260821184135_0155_D-HDR_photos_photo",
+            "DJI_20260821184315_0167_D-HDR_全景图_photos_photo",
+            "DJI_20260821184931_0220_D-HDR_photos_photo",
+            "DJI_20260821185213_0256_D-HDR_全景图_photos_photo",
+            "DSC05702_photos_photo",
+            "DSC01521_photos_photo",
+            "DSC05791_photos_photo",
+            "DSC09175_photos_photo",
+            "DSC05854_photos_photo",
+            "DJI_20260821191751_0283_D-HDR_photos_photo",
+            "DSC09190_photos_photo",
+            "DJI_20260821191837_0290_D-HDR_photos_photo",
+            "DJI_20260821191936_0298_D-HDR_photos_photo",
+            "DJI_20260821192024_0312_D-HDR_全景图_photos_photo",
+            "DJI_20260821192155_0340_D-HDR_全景图_photos_photo",
+            "DJI_20260821192257_0346_D-HDR_photos_photo",
+            "DJI_20260821192502_0352_D-HDR_photos_photo",
+            "DJI_20260821192512_0355_D-HDR_photos_photo",
+            "DJI_20260821192952_0365_D-HDR_photos_photo",
+            "DSC01526_photos_photo",
+            "DSC01527_photos_photo",
+            "DJI_20260821193242_0393_D-HDR_全景图_photos_photo",
+            "DSC09551_photos_photo",
+            "DSC06119_photos_photo"
+          ],
+          "treatments": {
+            "DSC08365_photos_photo": {
+              "audio": -100
+            },
+            "DSC08377_photos_photo": {
+              "audio": -100
+            },
+            "DSC08382_photos_photo": {
+              "audio": -100
+            },
+            "DSC08385_photos_photo": {
+              "audio": -100
+            },
+            "DSC08414_photos_photo": {
+              "audio": -100
+            },
+            "DSC04880_photos_photo": {
+              "audio": -100
+            },
+            "DSC08450_photos_photo": {
+              "audio": -100
+            },
+            "DSC08456_photos_photo": {
+              "audio": -100
+            },
+            "DSC08458_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260821184135_0155_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260821184315_0167_D-HDR_全景图_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260821184931_0220_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260821185213_0256_D-HDR_全景图_photos_photo": {
+              "audio": -100
+            },
+            "DSC05702_photos_photo": {
+              "audio": -100
+            },
+            "DSC01521_photos_photo": {
+              "audio": -100
+            },
+            "DSC05791_photos_photo": {
+              "audio": -100
+            },
+            "DSC09175_photos_photo": {
+              "audio": -100
+            },
+            "DSC05854_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260821191751_0283_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DSC09190_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260821191837_0290_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260821191936_0298_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260821192024_0312_D-HDR_全景图_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260821192155_0340_D-HDR_全景图_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260821192257_0346_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260821192502_0352_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260821192512_0355_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260821192952_0365_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DSC01526_photos_photo": {
+              "audio": -100
+            },
+            "DSC01527_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260821193242_0393_D-HDR_全景图_photos_photo": {
+              "audio": -100
+            },
+            "DSC09551_photos_photo": {
+              "audio": -100
+            },
+            "DSC06119_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-05",
+      "slots": [
+        {
+          "id": "FW-05-05-SLOT-01",
+          "query": "阳朔夜里去吃啤酒鱼：阳朔夜间商场、亮灯餐馆和食客出现在画面中，人物走进餐馆品尝啤酒鱼等本地菜，并谈到网上对啤酒鱼的评价。",
+          "requirement": "required",
+          "targetBundles": [
+            "普通视频"
+          ],
+          "chosenSpanIds": [
+            "C3436_zve1_broll_speech_s0-6",
+            "C3437_zve1_broll_s0-1",
+            "C3437_zve1_broll_speech_s0-7",
+            "C3438_zve1_broll_speech_s0-9",
+            "C3439_zve1_broll_speech_s0-11",
+            "C3440_zve1_broll_speech_s0-9",
+            "C3441_zve1_broll_speech_s0-17",
+            "C3442_zve1_broll_speech_s0-15",
+            "C3443_zve1_broll_speech_s0-13",
+            "C3444_zve1_broll_speech_s0-16"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-06",
+      "slots": [
+        {
+          "id": "FW-05-06-SLOT-01",
+          "query": "穿过隧道去兴坪：车辆夜间经过龙脊山隧道、桥梁、路灯和限速路段驶向兴坪，车内评论隧道的设施年代感、出洞后的桥面和夜间交通。",
+          "requirement": "required",
+          "targetBundles": [
+            "行车画面"
+          ],
+          "chosenSpanIds": [
+            "C3445_zve1_drive_speech_s1-41",
+            "C3445_zve1_drive_visual_s13-36",
+            "C3446_zve1_drive_visual_s0-2",
+            "C3446_zve1_drive_speech_s8-17",
+            "C3446_zve1_drive_speech_s30-102",
+            "C3446_zve1_drive_visual_s48-86",
+            "C3446_zve1_drive_speech_s110-186",
+            "C3446_zve1_drive_visual_s128-166",
+            "C3447_zve1_drive_speech_s2-35",
+            "C3447_zve1_drive_visual_s13-61",
+            "C3447_zve1_drive_visual_s37-41",
+            "C3447_zve1_drive_speech_s47-63",
+            "C3448_zve1_drive_speech_s0-31",
+            "C3448_zve1_drive_visual_s22-88",
+            "C3448_zve1_drive_visual_s40-45",
+            "C3448_zve1_drive_speech_s51-97"
+          ],
+          "treatments": {
+            "C3445_zve1_drive_visual_s13-36": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C3446_zve1_drive_visual_s0-2": {
+              "audio": -100
+            },
+            "C3446_zve1_drive_visual_s48-86": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3446_zve1_drive_visual_s128-166": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3447_zve1_drive_visual_s13-61": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3447_zve1_drive_visual_s37-41": {
+              "audio": -100
+            },
+            "C3448_zve1_drive_visual_s22-88": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3448_zve1_drive_visual_s40-45": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-05-07",
+      "slots": [
+        {
+          "id": "FW-05-07-SLOT-01",
+          "query": "深夜看一眼兴坪房间：客房内有床铺、行李和通往阳台的玻璃门，人物进房后查看室内与阳台，并表示住宿环境不错。",
+          "requirement": "required",
+          "targetBundles": [
+            "普通视频"
+          ],
+          "chosenSpanIds": [
+            "C3449_zve1_broll_speech_s0-11"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-01",
+      "slots": [
+        {
+          "id": "FW-06-01-SLOT-01",
+          "query": "民宿醒来先看山景和工地：从民宿阳台和天台望出去能看到喀斯特山地、树木和施工场地，人物体验秋千与镜面平台，同时吐槽工地和树木遮住了部分山水视野。",
+          "requirement": "required",
+          "targetBundles": [
+            "普通视频",
+            "照片尾包"
+          ],
+          "chosenSpanIds": [
+            "C3450_zve1_broll_speech_s0-3",
+            "C3450_zve1_broll_s3-5",
+            "C3451_zve1_broll_s0-1",
+            "C3451_zve1_broll_speech_s0-15",
+            "C3452_zve1_broll_s0-1",
+            "C3452_zve1_broll_speech_s0-7",
+            "C3453_zve1_broll_speech_s0-12",
+            "C3454_zve1_broll_visual_s0-37",
+            "C3455_zve1_broll_speech_s0-27",
+            "DSC01566_photos_photo",
+            "DSC01568_photos_photo"
+          ],
+          "treatments": {
+            "DSC01566_photos_photo": {
+              "audio": -100
+            },
+            "DSC01568_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-02",
+      "slots": [
+        {
+          "id": "FW-06-02-SLOT-01",
+          "query": "徒步找到二十元人民币背景：两人从兴坪古镇经过施工路段、换币摊和竹林走到河边，用二十元纸币与远处喀斯特山峰比对，在黄布倒影附近拍照；河面有竹筏，之后还记录了用餐、停车和充电条件。",
+          "requirement": "required",
+          "targetBundles": [
+            "普通视频",
+            "口播视频",
+            "照片尾包"
+          ],
+          "chosenSpanIds": [
+            "C3456_zve1_broll_speech_s0-12",
+            "C3457_zve1_talking-head_speech_s0-8",
+            "C3458_zve1_broll_speech_s0-8",
+            "C3459_zve1_broll_speech_s0-10",
+            "C3460_zve1_broll_speech_s0-23",
+            "C3461_zve1_broll_speech_s0-71",
+            "C3462_zve1_broll_speech_s0-13",
+            "C3463_zve1_broll_speech_s0-19",
+            "C3464_zve1_broll_speech_s1-18",
+            "C3465_zve1_broll_speech_s0-13",
+            "C3466_zve1_broll_speech_s0-9",
+            "C3467_zve1_broll_speech_s0-14",
+            "C3468_zve1_talking-head_speech_s0-24",
+            "C3469_zve1_broll_speech_s2-30",
+            "C3470_zve1_broll_speech_s0-49",
+            "C3470_zve1_broll_s48-50",
+            "C3471_zve1_broll_speech_s0-4",
+            "C3472_zve1_broll_speech_s0-7",
+            "C3473_zve1_broll_speech_s1-5",
+            "C3474_zve1_broll_speech_s0-16",
+            "DSC09562_photos_photo",
+            "DSC01580_photos_photo",
+            "DSC01622_photos_photo",
+            "DSC09570_photos_photo"
+          ],
+          "treatments": {
+            "DSC09562_photos_photo": {
+              "audio": -100
+            },
+            "DSC01580_photos_photo": {
+              "audio": -100
+            },
+            "DSC01622_photos_photo": {
+              "audio": -100
+            },
+            "DSC09570_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-03",
+      "slots": [
+        {
+          "id": "FW-06-03-SLOT-01",
+          "query": "离开阳朔，第一次去贺州：男子穿红衣驾车离开兴坪，沿城市道路和山地公路前往贺州钟山；车内回顾在阳朔短时间内拍到的风光，也回应路上的拥堵和天气。",
+          "requirement": "required",
+          "targetBundles": [
+            "行车画面"
+          ],
+          "chosenSpanIds": [
+            "C3475_zve1_drive_visual_s0-3",
+            "C3475_zve1_drive_speech_s3-21",
+            "C3476_zve1_drive_visual_s66-113",
+            "C3476_zve1_drive_speech_s98-116",
+            "C3476_zve1_drive_visual_s173-220",
+            "C3476_zve1_drive_speech_s206-233",
+            "C3476_zve1_drive_speech_s238-250",
+            "C3477_zve1_drive_speech_s1-13",
+            "C3477_zve1_drive_visual_s3-16",
+            "C3478_zve1_drive_speech_s0-11",
+            "C3478_zve1_drive_visual_s6-13",
+            "C3479_zve1_drive_speech_s0-10",
+            "C3479_zve1_drive_visual_s4-11",
+            "C3480_zve1_drive_speech_s0-10",
+            "C3481_zve1_drive_visual_s0-3",
+            "C3481_zve1_drive_visual_s11-32",
+            "C3482_zve1_drive_speech_s1-12",
+            "C3482_zve1_drive_visual_s3-10",
+            "C3483_zve1_drive_speech_s0-14",
+            "C3483_zve1_drive_visual_s6-23",
+            "C3484_zve1_drive_speech_s0-12",
+            "C3484_zve1_drive_visual_s5-12",
+            "C3485_zve1_drive_visual_s0-13",
+            "C3485_zve1_drive_visual_s6-13",
+            "C3486_zve1_drive_speech_s0-44",
+            "C3486_zve1_drive_visual_s16-70",
+            "C3486_zve1_drive_speech_s54-75",
+            "C3487_zve1_drive_speech_s0-25",
+            "C3487_zve1_drive_visual_s7-24",
+            "C3488_zve1_drive_speech_s0-23",
+            "C3488_zve1_drive_visual_s8-27",
+            "C3489_zve1_drive_speech_s0-135",
+            "C3489_zve1_drive_visual_s33-103",
+            "C3490_zve1_drive_speech_s0-5",
+            "C3490_zve1_drive_visual_s4-11"
+          ],
+          "treatments": {
+            "C3475_zve1_drive_visual_s0-3": {
+              "audio": -100
+            },
+            "C3476_zve1_drive_visual_s66-113": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3476_zve1_drive_visual_s173-220": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3477_zve1_drive_visual_s3-16": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3478_zve1_drive_visual_s6-13": {
+              "audio": -100
+            },
+            "C3479_zve1_drive_visual_s4-11": {
+              "audio": -100
+            },
+            "C3481_zve1_drive_visual_s0-3": {
+              "audio": -100
+            },
+            "C3481_zve1_drive_visual_s11-32": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C3482_zve1_drive_visual_s3-10": {
+              "audio": -100
+            },
+            "C3483_zve1_drive_visual_s6-23": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3484_zve1_drive_visual_s5-12": {
+              "audio": -100
+            },
+            "C3485_zve1_drive_visual_s0-13": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3485_zve1_drive_visual_s6-13": {
+              "audio": -100
+            },
+            "C3486_zve1_drive_visual_s16-70": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3487_zve1_drive_visual_s7-24": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3488_zve1_drive_visual_s8-27": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3489_zve1_drive_visual_s33-103": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3490_zve1_drive_visual_s4-11": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-04",
+      "slots": [
+        {
+          "id": "FW-06-04-SLOT-01",
+          "query": "开进钟山百里画廊：黄色车辆驶入百里画廊和荷塘村的乡村道路，周围是田野、河道、桥路、村落与连片喀斯特峰丛；人物在田边观察拍摄，航拍从高处展示水墨田园的山水关系。",
+          "requirement": "required",
+          "targetBundles": [
+            "行车画面",
+            "航拍画面",
+            "普通视频",
+            "口播视频",
+            "照片尾包"
+          ],
+          "chosenSpanIds": [
+            "C3491_zve1_broll_speech_s0-15",
+            "C3492_zve1_talking-head_speech_s0-4",
+            "DJI_20260822165755_0397_D_drone_drive_s0-3",
+            "C3493_zve1_drive_speech_s23-53",
+            "C3493_zve1_drive_visual_s36-108",
+            "C3493_zve1_drive_speech_s64-94",
+            "C3493_zve1_drive_visual_s118-129",
+            "C3493_zve1_drive_speech_s121-127",
+            "C3493_zve1_drive_speech_s142-145",
+            "DJI_20260822165801_0398_D_drone_aerial_s0-30",
+            "DJI_20260822165922_0405_D_drone_aerial_s0-49",
+            "DJI_20260822170120_0415_D_drone_aerial_s0-13",
+            "DJI_20260822170148_0419_D_drone_aerial_s0-32",
+            "DJI_20260822170628_0486_D_drone_aerial_s0-41",
+            "DJI_20260822170917_0505_D_drone_aerial_s0-22",
+            "DJI_20260822171432_0522_D_drone_aerial_s0-29",
+            "DJI_20260822172530_0542_D_drone_aerial_s0-1",
+            "DJI_20260822172532_0543_D_drone_aerial_s0-11",
+            "DJI_20260822172617_0544_D_drone_aerial_s0-2",
+            "DJI_20260822173136_0570_D_drone_aerial_s0-22",
+            "DJI_20260822173618_0597_D_drone_aerial_s0-7",
+            "DJI_20260822171250_0521_D_drone_drive_s0-59",
+            "DJI_20260822171924_0535_D_drone_drive_s0-85",
+            "DJI_20260822172113_0536_D_drone_drive_s0-25",
+            "DJI_20260822172150_0537_D_drone_drive_s0-34",
+            "DJI_20260822172313_0541_D_drone_drive_s0-95",
+            "DJI_20260822172646_0548_D_drone_drive_s0-103",
+            "C3494_zve1_drive_speech_s0-63",
+            "C3494_zve1_drive_visual_s53-123",
+            "C3494_zve1_drive_speech_s72-148",
+            "DJI_20260822173200_0571_D_drone_drive_s0-23",
+            "C3494_zve1_drive_speech_s194-206",
+            "DJI_20260822173328_0572_D_drone_drive_s0-39",
+            "DJI_20260822174402_0646_D_drone_drive_s0-11",
+            "DJI_20260822174441_0647_D_drone_drive_visual_s16-70",
+            "C3495_zve1_broll_speech_s0-12",
+            "DJI_20260822174648_0654_D_drone_drive_s0-26",
+            "C3496_zve1_broll_speech_s0-15",
+            "C3497_zve1_drive_speech_s0-46",
+            "C3497_zve1_drive_visual_s18-63",
+            "C3497_zve1_drive_speech_s48-70",
+            "C3497_zve1_drive_speech_s75-80",
+            "C3498_zve1_broll_speech_s0-47",
+            "C3499_zve1_broll_speech_s1-26",
+            "C3500_zve1_broll_speech_s0-18",
+            "C3501_zve1_broll_speech_s0-19",
+            "C3502_zve1_broll_s0-2",
+            "C3503_zve1_broll_s0-82",
+            "C3504_zve1_broll_speech_s1-27",
+            "C3505_zve1_broll_speech_s1-9",
+            "DJI_20260822170032_0409_D-HDR_photos_photo",
+            "DJI_20260822170256_0437_D-HDR_全景图_photos_photo",
+            "DJI_20260822170309_0438_D-HDR_photos_photo",
+            "DJI_20260822170342_0447_D-HDR_全景图_photos_photo",
+            "DJI_20260822170615_0483_D-HDR_photos_photo",
+            "DJI_20260822170714_0487_D-HDR_photos_photo",
+            "DJI_20260822170835_0499_D-HDR_photos_photo",
+            "DJI_20260822171005_0517_D-HDR_全景图_photos_photo",
+            "DJI_20260822171656_0531_D-HDR_photos_photo",
+            "DJI_20260822172624_0547_D-HDR_photos_photo",
+            "DJI_20260822172910_0549_D-HDR_photos_photo",
+            "DJI_20260822172925_0557_D-HDR_photos_photo",
+            "DSC09584_photos_photo",
+            "DSC09588_photos_photo",
+            "DJI_20260822173012_0563_D-HDR_photos_photo",
+            "DJI_20260822173455_0585_D-HDR_photos_photo",
+            "DJI_20260822173544_0588_D-HDR_photos_photo",
+            "DJI_20260822173637_0600_D-HDR_photos_photo",
+            "DJI_20260822173753_0606_D-HDR_photos_photo",
+            "DJI_20260822173917_0609_D-HDR_photos_photo",
+            "DJI_20260822174031_0610_D-HDR_photos_photo",
+            "DJI_20260822174129_0621_D-HDR_photos_photo",
+            "DJI_20260822174217_0633_D-HDR_photos_photo",
+            "DJI_20260822174336_0645_D-HDR_photos_photo",
+            "DJI_20260822174608_0650_D-HDR_photos_photo",
+            "DJI_20260822174619_0653_D-HDR_photos_photo",
+            "DSC09596_photos_photo",
+            "DSC09600_photos_photo",
+            "DJI_20260822174801_0665_D-HDR_photos_photo",
+            "DSC06125-Pano_photos_photo",
+            "DSC06134_photos_photo",
+            "DSC06139_photos_photo",
+            "DSC01638_photos_photo",
+            "DSC09602_photos_photo"
+          ],
+          "treatments": {
+            "DJI_20260822165755_0397_D_drone_drive_s0-3": {
+              "audio": -100
+            },
+            "C3493_zve1_drive_visual_s36-108": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3493_zve1_drive_visual_s118-129": {
+              "audio": -100
+            },
+            "DJI_20260822171250_0521_D_drone_drive_s0-59": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DJI_20260822171924_0535_D_drone_drive_s0-85": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DJI_20260822172113_0536_D_drone_drive_s0-25": {
+              "audio": -100,
+              "speed": 3
+            },
+            "DJI_20260822172150_0537_D_drone_drive_s0-34": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DJI_20260822172313_0541_D_drone_drive_s0-95": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DJI_20260822172646_0548_D_drone_drive_s0-103": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3494_zve1_drive_visual_s53-123": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DJI_20260822173200_0571_D_drone_drive_s0-23": {
+              "audio": -100,
+              "speed": 3
+            },
+            "DJI_20260822173328_0572_D_drone_drive_s0-39": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DJI_20260822174402_0646_D_drone_drive_s0-11": {
+              "audio": -100,
+              "speed": 2
+            },
+            "DJI_20260822174441_0647_D_drone_drive_visual_s16-70": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DJI_20260822174648_0654_D_drone_drive_s0-26": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C3497_zve1_drive_visual_s18-63": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DJI_20260822170032_0409_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822170256_0437_D-HDR_全景图_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822170309_0438_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822170342_0447_D-HDR_全景图_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822170615_0483_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822170714_0487_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822170835_0499_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822171005_0517_D-HDR_全景图_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822171656_0531_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822172624_0547_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822172910_0549_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822172925_0557_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DSC09584_photos_photo": {
+              "audio": -100
+            },
+            "DSC09588_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822173012_0563_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822173455_0585_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822173544_0588_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822173637_0600_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822173753_0606_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822173917_0609_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822174031_0610_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822174129_0621_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822174217_0633_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822174336_0645_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822174608_0650_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822174619_0653_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DSC09596_photos_photo": {
+              "audio": -100
+            },
+            "DSC09600_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822174801_0665_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DSC06125-Pano_photos_photo": {
+              "audio": -100
+            },
+            "DSC06134_photos_photo": {
+              "audio": -100
+            },
+            "DSC06139_photos_photo": {
+              "audio": -100
+            },
+            "DSC01638_photos_photo": {
+              "audio": -100
+            },
+            "DSC09602_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-05",
+      "slots": [
+        {
+          "id": "FW-06-05-SLOT-01",
+          "query": "水墨田园再探一小段：两辆车出现在绿色群山环绕的乡村道路上，车内注意到同行车辆和路边糯玉米。",
+          "requirement": "required",
+          "targetBundles": [
+            "行车画面"
+          ],
+          "chosenSpanIds": [
+            "C3506_zve1_drive_speech_s0-9",
+            "C3506_zve1_drive_visual_s1-8"
+          ],
+          "treatments": {
+            "C3506_zve1_drive_visual_s1-8": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-06",
+      "slots": [
+        {
+          "id": "FW-06-06-SLOT-01",
+          "query": "误入吉塘村田野拍到晚霞：车辆沿无名窄村道进入吉塘村农田，四周有稻田、荷塘、电线塔、喀斯特山峰和乡间行人；航拍看到田块与道路，延时记录夕阳从金黄转为蓝紫并映在水面。",
+          "requirement": "required",
+          "targetBundles": [
+            "行车画面",
+            "航拍画面",
+            "普通视频",
+            "延时画面",
+            "照片尾包"
+          ],
+          "chosenSpanIds": [
+            "C3507_zve1_drive_speech_s0-12",
+            "C3507_zve1_drive_visual_s13-61",
+            "C3507_zve1_drive_speech_s17-23",
+            "C3507_zve1_drive_speech_s28-54",
+            "C3507_zve1_drive_speech_s59-64",
+            "C3508_zve1_drive_speech_s0-100",
+            "C3508_zve1_drive_visual_s23-92",
+            "C3509_zve1_drive_speech_s0-44",
+            "C3509_zve1_drive_visual_s14-30",
+            "DJI_20260822184239_0681_D_drone_drive_s0-50",
+            "DJI_20260822184517_0685_D_drone_drive_s0-42",
+            "DJI_20260822184750_0695_D_drone_drive_s0-11",
+            "DJI_20260822185204_0732_D_drone_drive_s0-46",
+            "DJI_20260822185333_0733_D_drone_drive_s0-37",
+            "C3510_zve1_drive_speech_s1-28",
+            "C3510_zve1_drive_visual_s8-21",
+            "DJI_20260822185730_0743_D_drone_drive_s0-58",
+            "20260822_阳朔漓江晚霞1_timelaps_timelapse_s0-46",
+            "20260822_阳朔漓江晚霞2_timelaps_timelapse_s0-59",
+            "DJI_20260822190022_0747_D_drone_drive_s0-32",
+            "DJI_20260822190203_0748_D_drone_drive_s0-30",
+            "DJI_20260822190417_0764_D_drone_aerial_s0-3",
+            "DJI_20260822190537_0768_D_drone_aerial_s0-2",
+            "C3511_zve1_drive_speech_s0-15",
+            "C3511_zve1_drive_visual_s4-11",
+            "C3512_zve1_broll_speech_s0-32",
+            "DJI_20260822190933_0793_D_drone_broll_s0-31",
+            "C3513_zve1_broll_speech_s0-7",
+            "DJI_20260822184103_0675_D-HDR_photos_photo",
+            "DJI_20260822184822_0698_D-HDR_photos_photo",
+            "DJI_20260822184855_0705_D-HDR_photos_photo",
+            "DJI_20260822184937_0716_D-HDR_photos_photo",
+            "DJI_20260822185007_0722_D-HDR_photos_photo",
+            "DJI_20260822185019_0725_D-HDR_photos_photo",
+            "DJI_20260822185044_0726_D-HDR_photos_photo",
+            "DJI_20260822185118_0731_D-HDR_photos_photo",
+            "DJI_20260822185431_0734_D-HDR_photos_photo",
+            "DJI_20260822185900_0744_D-HDR_photos_photo",
+            "DJI_20260822190258_0752_D-HDR_photos_photo",
+            "DJI_20260822190340_0761_D-HDR_photos_photo",
+            "DJI_20260822190613_0769_D-HDR_photos_photo",
+            "DJI_20260822190854_0789_D-HDR_photos_photo",
+            "DSC01640_photos_photo",
+            "DSC01641_photos_photo",
+            "DSC01643_photos_photo",
+            "DJI_20260822191022_0799_D-HDR_photos_photo",
+            "DJI_20260822191044_0805_D-HDR_photos_photo",
+            "DSC09611_photos_photo",
+            "DSC09616_photos_photo",
+            "DSC09618_photos_photo",
+            "DSC09620_photos_photo",
+            "DSC09623_photos_photo"
+          ],
+          "treatments": {
+            "C3507_zve1_drive_visual_s13-61": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3508_zve1_drive_visual_s23-92": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3509_zve1_drive_visual_s14-30": {
+              "audio": -100,
+              "speed": 2
+            },
+            "DJI_20260822184239_0681_D_drone_drive_s0-50": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DJI_20260822184517_0685_D_drone_drive_s0-42": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DJI_20260822184750_0695_D_drone_drive_s0-11": {
+              "audio": -100,
+              "speed": 2
+            },
+            "DJI_20260822185204_0732_D_drone_drive_s0-46": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DJI_20260822185333_0733_D_drone_drive_s0-37": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3510_zve1_drive_visual_s8-21": {
+              "audio": -100,
+              "speed": 2
+            },
+            "DJI_20260822185730_0743_D_drone_drive_s0-58": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DJI_20260822190022_0747_D_drone_drive_s0-32": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DJI_20260822190203_0748_D_drone_drive_s0-30": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C3511_zve1_drive_visual_s4-11": {
+              "audio": -100
+            },
+            "DJI_20260822184103_0675_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822184822_0698_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822184855_0705_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822184937_0716_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822185007_0722_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822185019_0725_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822185044_0726_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822185118_0731_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822185431_0734_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822185900_0744_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822190258_0752_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822190340_0761_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822190613_0769_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822190854_0789_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DSC01640_photos_photo": {
+              "audio": -100
+            },
+            "DSC01641_photos_photo": {
+              "audio": -100
+            },
+            "DSC01643_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822191022_0799_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260822191044_0805_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DSC09611_photos_photo": {
+              "audio": -100
+            },
+            "DSC09616_photos_photo": {
+              "audio": -100
+            },
+            "DSC09618_photos_photo": {
+              "audio": -100
+            },
+            "DSC09620_photos_photo": {
+              "audio": -100
+            },
+            "DSC09623_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-07",
+      "slots": [
+        {
+          "id": "FW-06-07-SLOT-01",
+          "query": "摸黑从村道回县城：车辆在夜色中沿贴着高草和山坡的狭窄村道驶向钟山县城，车灯照亮路缘，车内谈到会车、田边窄路和离开乡村。",
+          "requirement": "required",
+          "targetBundles": [
+            "行车画面"
+          ],
+          "chosenSpanIds": [
+            "C3514_zve1_drive_visual_s2-5",
+            "C3514_zve1_drive_speech_s8-35",
+            "C3514_zve1_drive_visual_s14-38",
+            "C3514_zve1_drive_speech_s36-44",
+            "C3515_zve1_drive_visual_s3-16",
+            "C3515_zve1_drive_speech_s4-17",
+            "C3516_zve1_drive_speech_s0-7",
+            "C3516_zve1_drive_visual_s4-11",
+            "C3517_zve1_drive_speech_s10-44",
+            "C3517_zve1_drive_visual_s18-63",
+            "C3517_zve1_drive_speech_s49-53",
+            "C3517_zve1_drive_visual_s59-64",
+            "C3517_zve1_drive_visual_s70-81",
+            "C3518_zve1_drive_speech_s2-52",
+            "C3518_zve1_drive_visual_s18-47"
+          ],
+          "treatments": {
+            "C3514_zve1_drive_visual_s2-5": {
+              "audio": -100
+            },
+            "C3514_zve1_drive_visual_s14-38": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C3515_zve1_drive_visual_s3-16": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3516_zve1_drive_visual_s4-11": {
+              "audio": -100
+            },
+            "C3517_zve1_drive_visual_s18-63": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3517_zve1_drive_visual_s59-64": {
+              "audio": -100
+            },
+            "C3517_zve1_drive_visual_s70-81": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3518_zve1_drive_visual_s18-47": {
+              "audio": -100,
+              "speed": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-06-08",
+      "slots": [
+        {
+          "id": "FW-06-08-SLOT-01",
+          "query": "牛肠酸、捞粉和榴莲的一晚：车辆进入钟山县城街道和地下停车场，两人在夜市、商场寻找牛肠酸、捞粉和糖水，随后去超市购买折扣水果与榴莲，并回住处继续品尝。",
+          "requirement": "required",
+          "targetBundles": [
+            "行车画面",
+            "普通视频",
+            "口播视频"
+          ],
+          "chosenSpanIds": [
+            "C3519_zve1_drive_speech_s0-77",
+            "C3519_zve1_drive_speech_s87-172",
+            "C3519_zve1_drive_visual_s101-173",
+            "C3519_zve1_drive_speech_s203-222",
+            "C3519_zve1_drive_speech_s232-494",
+            "C3519_zve1_drive_visual_s321-393",
+            "C3519_zve1_drive_visual_s431-448",
+            "C3520_zve1_broll_speech_s0-7",
+            "C3521_zve1_broll_speech_s1-10",
+            "C3522_zve1_broll_speech_s0-10",
+            "C3523_zve1_broll_speech_s1-9",
+            "C3524_zve1_broll_speech_s0-9",
+            "C3525_zve1_broll_speech_s0-12",
+            "C3526_zve1_broll_speech_s0-18",
+            "C3527_zve1_broll_speech_s0-7",
+            "C3528_zve1_broll_s0-1",
+            "C3528_zve1_broll_speech_s0-15",
+            "C3529_zve1_broll_s0-1",
+            "C3529_zve1_broll_speech_s0-21",
+            "C3530_zve1_broll_speech_s0-11",
+            "C3531_zve1_talking-head_speech_s0-13"
+          ],
+          "treatments": {
+            "C3519_zve1_drive_visual_s101-173": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3519_zve1_drive_visual_s321-393": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3519_zve1_drive_visual_s431-448": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-01",
+      "slots": [
+        {
+          "id": "FW-07-01-SLOT-01",
+          "query": "三角包和油茶开场：早餐盘里有钟山三角包、鸡蛋、玉米、薯类和米制食物，人物尝试贺州油茶并讨论地方早餐；之后镜头来到酒店露台和钟山县城上方。",
+          "requirement": "required",
+          "targetBundles": [
+            "普通视频"
+          ],
+          "chosenSpanIds": [
+            "C3532_zve1_broll_speech_s0-12",
+            "C3533_zve1_broll_speech_s0-7",
+            "C3534_zve1_broll_speech_s0-16",
+            "C3535_zve1_broll_s0-1",
+            "C3535_zve1_broll_speech_s0-14",
+            "C3536_zve1_broll_speech_s1-12",
+            "C3537_zve1_broll_speech_s0-16",
+            "C3538_zve1_broll_speech_s0-11"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-02",
+      "slots": [
+        {
+          "id": "FW-07-02-SLOT-01",
+          "query": "从钟山县城开向望高镇：男子坐在驾驶位穿过钟山县城街道、繁忙路口和通往平桂望高镇的公路，车内一路回应导航、天气、摩托车和其他车流。",
+          "requirement": "required",
+          "targetBundles": [
+            "行车画面",
+            "照片尾包"
+          ],
+          "chosenSpanIds": [
+            "C3539_zve1_drive_speech_s1-9",
+            "C3539_zve1_drive_visual_s9-28",
+            "C3539_zve1_drive_speech_s14-23",
+            "C3539_zve1_drive_visual_s29-31",
+            "C3540_zve1_drive_speech_s2-22",
+            "C3540_zve1_drive_visual_s5-21",
+            "C3541_zve1_drive_speech_s0-95",
+            "C3541_zve1_drive_visual_s22-87",
+            "C3542_zve1_drive_speech_s0-7",
+            "C3542_zve1_drive_visual_s4-15",
+            "C3543_zve1_drive_speech_s0-21",
+            "C3543_zve1_drive_visual_s7-19",
+            "C3544_zve1_drive_speech_s3-11",
+            "C3544_zve1_drive_visual_s4-15",
+            "C3545_zve1_drive_speech_s1-36",
+            "C3545_zve1_drive_visual_s20-50",
+            "C3545_zve1_drive_speech_s49-57",
+            "C3546_zve1_drive_speech_s0-17",
+            "C3546_zve1_drive_visual_s4-14",
+            "C3547_zve1_drive_speech_s1-146",
+            "C3547_zve1_drive_visual_s36-110",
+            "C3548_zve1_drive_speech_s0-19",
+            "C3548_zve1_drive_speech_s20-23",
+            "C3548_zve1_drive_visual_s38-115",
+            "C3548_zve1_drive_speech_s57-68",
+            "C3548_zve1_drive_speech_s73-96",
+            "C3548_zve1_drive_speech_s99-125",
+            "C3548_zve1_drive_visual_s125-136",
+            "C3548_zve1_drive_speech_s126-130",
+            "C3549_zve1_drive_speech_s1-7",
+            "C3549_zve1_drive_speech_s12-15",
+            "C3549_zve1_drive_speech_s21-84",
+            "C3549_zve1_drive_visual_s23-91",
+            "C3549_zve1_drive_speech_s88-100",
+            "C3550_zve1_drive_speech_s2-21",
+            "C3550_zve1_drive_visual_s37-112",
+            "C3550_zve1_drive_speech_s43-81",
+            "C3550_zve1_drive_speech_s101-150",
+            "DSC09635_photos_photo"
+          ],
+          "treatments": {
+            "C3539_zve1_drive_visual_s9-28": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3539_zve1_drive_visual_s29-31": {
+              "audio": -100
+            },
+            "C3540_zve1_drive_visual_s5-21": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3541_zve1_drive_visual_s22-87": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3542_zve1_drive_visual_s4-15": {
+              "audio": -100
+            },
+            "C3543_zve1_drive_visual_s7-19": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3544_zve1_drive_visual_s4-15": {
+              "audio": -100
+            },
+            "C3545_zve1_drive_visual_s20-50": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C3546_zve1_drive_visual_s4-14": {
+              "audio": -100
+            },
+            "C3547_zve1_drive_visual_s36-110": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3548_zve1_drive_visual_s38-115": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3548_zve1_drive_visual_s125-136": {
+              "audio": -100
+            },
+            "C3549_zve1_drive_visual_s23-91": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3550_zve1_drive_visual_s37-112": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DSC09635_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-03",
+      "slots": [
+        {
+          "id": "FW-07-03-SLOT-01",
+          "query": "车从天然石拱门下穿过去：川岩洞的巨大天然石拱横跨道路与河谷，黄色车辆从拱门下经过并在洞口附近停靠，周围能看到河床、木栏、游客和牛群；人物比较这里与此前见过的穿洞，并谈到商业设施、音乐和景观。",
+          "requirement": "required",
+          "targetBundles": [
+            "行车画面",
+            "普通视频",
+            "照片尾包"
+          ],
+          "chosenSpanIds": [
+            "C3551_zve1_drive_speech_s0-3",
+            "C3552_zve1_drive_visual_s19-49",
+            "DJI_20260823125226_0824_D_drone_drive_s0-35",
+            "C3553_zve1_drive_speech_s0-43",
+            "C3553_zve1_drive_visual_s61-105",
+            "C3553_zve1_drive_visual_s68-72",
+            "C3553_zve1_drive_speech_s95-161",
+            "C3553_zve1_drive_visual_s161-205",
+            "C3553_zve1_drive_speech_s180-234",
+            "DJI_20260823125603_0840_D_drone_drive_s0-3",
+            "DJI_20260823125732_0841_D_drone_drive_s0-53",
+            "DJI_20260823125924_0842_D_drone_drive_s0-41",
+            "DJI_20260823130315_0849_D_drone_drive_s0-64",
+            "C3554_zve1_drive_speech_s27-45",
+            "C3554_zve1_drive_visual_s59-102",
+            "C3554_zve1_drive_speech_s77-82",
+            "C3554_zve1_drive_visual_s155-198",
+            "C3554_zve1_drive_speech_s168-205",
+            "DJI_20260823131028_0868_D_drone_drive_s0-78",
+            "C3555_zve1_broll_speech_s0-8",
+            "C3556_zve1_broll_s0-1",
+            "C3556_zve1_broll_speech_s0-8",
+            "C3557_zve1_broll_speech_s2-28",
+            "C3558_zve1_broll_speech_s0-31",
+            "C3559_zve1_broll_s0-72",
+            "C3560_zve1_broll_speech_s0-7",
+            "C3561_zve1_broll_speech_s0-6",
+            "C3562_zve1_broll_s0-1",
+            "C3562_zve1_broll_speech_s0-6",
+            "DJI_20260823141939_0869_D_drone_drive_s0-105",
+            "DJI_20260823125144_0818_D-HDR_photos_photo",
+            "DJI_20260823125312_0825_D-HDR_photos_photo",
+            "DJI_20260823125532_0837_D-HDR_photos_photo",
+            "DJI_20260823130241_0846_D-HDR_photos_photo",
+            "DJI_20260823130456_0850_D-HDR_photos_photo",
+            "DJI_20260823130842_0865_D-HDR_photos_photo",
+            "DSC09641_photos_photo",
+            "DSC01657_photos_photo",
+            "DSC06149_photos_photo",
+            "DSC06157_photos_photo",
+            "DSC06158_photos_photo",
+            "DSC06162_photos_photo",
+            "DSC01683_photos_photo",
+            "DSC01701_photos_photo",
+            "DSC01702_photos_photo",
+            "DSC01710_photos_photo",
+            "DSC01716_photos_photo",
+            "DSC06166_photos_photo"
+          ],
+          "treatments": {
+            "C3552_zve1_drive_visual_s19-49": {
+              "audio": -100,
+              "speed": 3
+            },
+            "DJI_20260823125226_0824_D_drone_drive_s0-35": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3553_zve1_drive_visual_s61-105": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3553_zve1_drive_visual_s68-72": {
+              "audio": -100
+            },
+            "C3553_zve1_drive_visual_s161-205": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DJI_20260823125603_0840_D_drone_drive_s0-3": {
+              "audio": -100
+            },
+            "DJI_20260823125732_0841_D_drone_drive_s0-53": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DJI_20260823125924_0842_D_drone_drive_s0-41": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DJI_20260823130315_0849_D_drone_drive_s0-64": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3554_zve1_drive_visual_s59-102": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3554_zve1_drive_visual_s155-198": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DJI_20260823131028_0868_D_drone_drive_s0-78": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DJI_20260823141939_0869_D_drone_drive_s0-105": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DJI_20260823125144_0818_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260823125312_0825_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260823125532_0837_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260823130241_0846_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260823130456_0850_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260823130842_0865_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DSC09641_photos_photo": {
+              "audio": -100
+            },
+            "DSC01657_photos_photo": {
+              "audio": -100
+            },
+            "DSC06149_photos_photo": {
+              "audio": -100
+            },
+            "DSC06157_photos_photo": {
+              "audio": -100
+            },
+            "DSC06158_photos_photo": {
+              "audio": -100
+            },
+            "DSC06162_photos_photo": {
+              "audio": -100
+            },
+            "DSC01683_photos_photo": {
+              "audio": -100
+            },
+            "DSC01701_photos_photo": {
+              "audio": -100
+            },
+            "DSC01702_photos_photo": {
+              "audio": -100
+            },
+            "DSC01710_photos_photo": {
+              "audio": -100
+            },
+            "DSC01716_photos_photo": {
+              "audio": -100
+            },
+            "DSC06166_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-04",
+      "slots": [
+        {
+          "id": "FW-07-04-SLOT-01",
+          "query": "路上又被牛拦住：雨后的山路绕过绿色山坡，一头牛停在湿路中央；车内说明正从川岩洞前往可达蓝湖，并对挡路的牛说话。",
+          "requirement": "required",
+          "targetBundles": [
+            "行车画面"
+          ],
+          "chosenSpanIds": [
+            "C3563_zve1_drive_speech_s2-52",
+            "C3563_zve1_drive_visual_s17-45"
+          ],
+          "treatments": {
+            "C3563_zve1_drive_visual_s17-45": {
+              "audio": -100,
+              "speed": 3
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-05",
+      "slots": [
+        {
+          "id": "FW-07-05-SLOT-01",
+          "query": "可达梯田和蓝色湖水：车辆沿阴雨中的狭窄山路经过可达梯田，随后出现蓝色湖面、清澈浅水、绿色田块和山脊风机；航拍和照片展开梯田、湖水、盘山路与风机群，人物多次感叹水色和清澈度。",
+          "requirement": "required",
+          "targetBundles": [
+            "行车画面",
+            "航拍画面",
+            "普通视频",
+            "口播视频",
+            "照片尾包"
+          ],
+          "chosenSpanIds": [
+            "C3564_zve1_drive_speech_s1-15",
+            "C3564_zve1_drive_visual_s3-17",
+            "C3565_zve1_drive_speech_s0-16",
+            "C3565_zve1_drive_visual_s20-81",
+            "C3565_zve1_drive_speech_s20-26",
+            "C3565_zve1_drive_speech_s50-88",
+            "C3566_zve1_drive_speech_s0-73",
+            "C3566_zve1_drive_visual_s15-57",
+            "C3567_zve1_drive_speech_s0-90",
+            "C3567_zve1_drive_visual_s20-69",
+            "C3568_zve1_drive_speech_s0-18",
+            "C3568_zve1_drive_speech_s46-215",
+            "C3568_zve1_drive_visual_s57-100",
+            "C3568_zve1_drive_visual_s151-194",
+            "C3569_zve1_drive_speech_s0-11",
+            "C3570_zve1_drive_speech_s0-15",
+            "C3570_zve1_drive_speech_s24-54",
+            "C3570_zve1_drive_visual_s76-79",
+            "C3570_zve1_drive_visual_s95-98",
+            "C3570_zve1_drive_speech_s166-175",
+            "DJI_20260823144950_0870_D_drone_aerial_s0-19",
+            "DJI_20260823145041_0878_D_drone_aerial_s0-12",
+            "DJI_20260823145133_0888_D_drone_aerial_s0-13",
+            "DJI_20260823145201_0892_D_drone_aerial_s0-26",
+            "DJI_20260823145248_0896_D_drone_aerial_s0-21",
+            "DJI_20260823151146_0952_D_drone_aerial_s0-40",
+            "DJI_20260823151229_0953_D_drone_aerial_s0-22",
+            "DJI_20260823151305_0954_D_drone_aerial_s0-8",
+            "DJI_20260823151507_0970_D_drone_aerial_s0-9",
+            "C3570_zve1_drive_visual_s204-208",
+            "C3570_zve1_drive_speech_s217-319",
+            "DJI_20260823145445_0903_D_drone_drive_s0-4",
+            "C3570_zve1_drive_speech_s338-384",
+            "DJI_20260823145539_0904_D_drone_drive_s0-80",
+            "C3570_zve1_drive_speech_s393-601",
+            "DJI_20260823145831_0908_D_drone_drive_s0-17",
+            "DJI_20260823145857_0909_D_drone_drive_s0-2",
+            "DJI_20260823145937_0916_D_drone_drive_visual_s17-72",
+            "C3570_zve1_drive_speech_s620-629",
+            "C3571_zve1_broll_speech_s0-8",
+            "DJI_20260823150114_0917_D_drone_drive_s0-16",
+            "DJI_20260823150202_0921_D_drone_drive_visual_s31-116",
+            "C3572_zve1_broll_s0-1",
+            "C3572_zve1_broll_speech_s0-21",
+            "DJI_20260823151600_0980_D_drone_broll_s0-51",
+            "C3573_zve1_broll_speech_s0-10",
+            "C3574_zve1_broll_speech_s0-13",
+            "C3575_zve1_broll_speech_s0-37",
+            "C3576_zve1_talking-head_speech_s0-38",
+            "DSC01719_photos_photo",
+            "DJI_20260823145025_0872_D-HDR_photos_photo",
+            "DJI_20260823145035_0875_D-HDR_photos_photo",
+            "DJI_20260823145117_0882_D-HDR_photos_photo",
+            "DJI_20260823145152_0889_D-HDR_photos_photo",
+            "DJI_20260823145230_0893_D-HDR_photos_photo",
+            "DJI_20260823145332_0900_D-HDR_photos_photo",
+            "DJI_20260823145917_0913_D-HDR_photos_photo",
+            "DJI_20260823150145_0918_D-HDR_photos_photo",
+            "DJI_20260823150451_0925_D-HDR_photos_photo",
+            "DJI_20260823150609_0934_D-HDR_photos_photo",
+            "DSC01722_photos_photo",
+            "DSC01742_photos_photo",
+            "DSC01746_photos_photo",
+            "DSC01748_photos_photo",
+            "DSC09648_photos_photo",
+            "DSC09651_photos_photo"
+          ],
+          "treatments": {
+            "C3564_zve1_drive_visual_s3-17": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3565_zve1_drive_visual_s20-81": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3566_zve1_drive_visual_s15-57": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3567_zve1_drive_visual_s20-69": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3568_zve1_drive_visual_s57-100": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3568_zve1_drive_visual_s151-194": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3570_zve1_drive_visual_s76-79": {
+              "audio": -100
+            },
+            "C3570_zve1_drive_visual_s95-98": {
+              "audio": -100
+            },
+            "C3570_zve1_drive_visual_s204-208": {
+              "audio": -100
+            },
+            "DJI_20260823145445_0903_D_drone_drive_s0-4": {
+              "audio": -100
+            },
+            "DJI_20260823145539_0904_D_drone_drive_s0-80": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DJI_20260823145831_0908_D_drone_drive_s0-17": {
+              "audio": -100,
+              "speed": 2
+            },
+            "DJI_20260823145857_0909_D_drone_drive_s0-2": {
+              "audio": -100
+            },
+            "DJI_20260823145937_0916_D_drone_drive_visual_s17-72": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DJI_20260823150114_0917_D_drone_drive_s0-16": {
+              "audio": -100,
+              "speed": 2
+            },
+            "DJI_20260823150202_0921_D_drone_drive_visual_s31-116": {
+              "audio": -100,
+              "speed": 4
+            },
+            "DSC01719_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260823145025_0872_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260823145035_0875_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260823145117_0882_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260823145152_0889_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260823145230_0893_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260823145332_0900_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260823145917_0913_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260823150145_0918_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260823150451_0925_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DJI_20260823150609_0934_D-HDR_photos_photo": {
+              "audio": -100
+            },
+            "DSC01722_photos_photo": {
+              "audio": -100
+            },
+            "DSC01742_photos_photo": {
+              "audio": -100
+            },
+            "DSC01746_photos_photo": {
+              "audio": -100
+            },
+            "DSC01748_photos_photo": {
+              "audio": -100
+            },
+            "DSC09648_photos_photo": {
+              "audio": -100
+            },
+            "DSC09651_photos_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-06",
+      "slots": [
+        {
+          "id": "FW-07-06-SLOT-01",
+          "query": "下山路边还有一座蓝湖：黄色车辆沿阴天下的弯曲森林公路下山，路旁有蓝色水库、远山和水闸，车内先猜测水体性质，随后确认进入二〇七国道。",
+          "requirement": "required",
+          "targetBundles": [
+            "行车画面"
+          ],
+          "chosenSpanIds": [
+            "C3577_zve1_drive_visual_s0-28",
+            "C3577_zve1_drive_visual_s13-37",
+            "C3578_zve1_drive_visual_s0-3",
+            "C3578_zve1_drive_speech_s2-29",
+            "C3579_zve1_drive_visual_s14-29",
+            "C3579_zve1_drive_speech_s15-20",
+            "C3580_zve1_drive_speech_s0-62",
+            "C3580_zve1_drive_visual_s12-58",
+            "C3581_zve1_drive_visual_s0-1",
+            "C3581_zve1_drive_visual_s1-7",
+            "C3582_zve1_drive_visual_s0-5",
+            "C3582_zve1_drive_visual_s3-10"
+          ],
+          "treatments": {
+            "C3577_zve1_drive_visual_s0-28": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C3577_zve1_drive_visual_s13-37": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C3578_zve1_drive_visual_s0-3": {
+              "audio": -100
+            },
+            "C3579_zve1_drive_visual_s14-29": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3580_zve1_drive_visual_s12-58": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3581_zve1_drive_visual_s0-1": {
+              "audio": -100
+            },
+            "C3581_zve1_drive_visual_s1-7": {
+              "audio": -100
+            },
+            "C3582_zve1_drive_visual_s0-5": {
+              "audio": -100
+            },
+            "C3582_zve1_drive_visual_s3-10": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-07-07",
+      "slots": [
+        {
+          "id": "FW-07-07-SLOT-01",
+          "query": "望高镇停下来吃粉：黄色车辆停在望高镇街边充电设施附近，人物进入餐馆品尝老友粉和酸辣鱼粉，讨论分量、价格和味道，饭后又观察雨中街道和沿街店铺。",
+          "requirement": "required",
+          "targetBundles": [
+            "普通视频",
+            "口播视频"
+          ],
+          "chosenSpanIds": [
+            "C3583_zve1_broll_s0-1",
+            "C3583_zve1_broll_speech_s0-9",
+            "C3584_zve1_broll_s0-1",
+            "C3584_zve1_broll_speech_s0-13",
+            "C3585_zve1_broll_visual_s0-4",
+            "C3586_zve1_broll_speech_s0-7",
+            "C3587_zve1_broll_speech_s0-9",
+            "C3588_zve1_talking-head_speech_s0-14",
+            "C3589_zve1_broll_s0-1",
+            "C3589_zve1_broll_speech_s0-5",
+            "C3590_zve1_broll_s0-1",
+            "C3590_zve1_broll_speech_s0-7"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-08-01",
+      "slots": [
+        {
+          "id": "FW-08-01-SLOT-01",
+          "query": "从粉尘工业路开回广东：车辆离开望高镇，经过有厂房、粉尘、货车和施工痕迹的道路，再沿坑洼路面驶向清远连山方向；车内讨论粉体厂、重车、道路破损和周边环境。",
+          "requirement": "required",
+          "targetBundles": [
+            "行车画面"
+          ],
+          "chosenSpanIds": [
+            "C3591_zve1_drive_speech_s0-16",
+            "C3591_zve1_drive_visual_s3-16",
+            "C3592_zve1_drive_speech_s0-21",
+            "C3592_zve1_drive_visual_s7-19",
+            "C3593_zve1_drive_speech_s1-19",
+            "C3593_zve1_drive_visual_s4-18",
+            "C3594_zve1_drive_speech_s0-17",
+            "C3595_zve1_drive_speech_s2-20",
+            "C3595_zve1_drive_visual_s9-28",
+            "C3595_zve1_drive_speech_s23-29",
+            "C3596_zve1_drive_speech_s0-15",
+            "C3596_zve1_drive_visual_s6-23",
+            "C3596_zve1_drive_speech_s17-25",
+            "C3597_zve1_drive_speech_s2-15",
+            "C3597_zve1_drive_visual_s14-63",
+            "C3597_zve1_drive_visual_s19-22",
+            "C3597_zve1_drive_speech_s23-67",
+            "C3598_zve1_drive_speech_s1-17",
+            "C3598_zve1_drive_visual_s3-16",
+            "C3599_zve1_drive_speech_s1-7",
+            "C3599_zve1_drive_visual_s1-8",
+            "C3600_zve1_drive_speech_s0-20",
+            "C3600_zve1_drive_visual_s6-22",
+            "C3601_zve1_drive_visual_s5-16",
+            "C3601_zve1_drive_speech_s5-8",
+            "C3601_zve1_drive_speech_s17-22"
+          ],
+          "treatments": {
+            "C3591_zve1_drive_visual_s3-16": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3592_zve1_drive_visual_s7-19": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3593_zve1_drive_visual_s4-18": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3595_zve1_drive_visual_s9-28": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3596_zve1_drive_visual_s6-23": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3597_zve1_drive_visual_s14-63": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3597_zve1_drive_visual_s19-22": {
+              "audio": -100
+            },
+            "C3598_zve1_drive_visual_s3-16": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3599_zve1_drive_visual_s1-8": {
+              "audio": -100
+            },
+            "C3600_zve1_drive_visual_s6-22": {
+              "audio": -100,
+              "speed": 2
+            },
+            "C3601_zve1_drive_visual_s5-16": {
+              "audio": -100,
+              "speed": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-08-02",
+      "slots": [
+        {
+          "id": "FW-08-02-SLOT-01",
+          "query": "夜里遇见路边休息的司机：佛山三水一处夜间停车区里有白色货车、蓝色车位、白色面包车和坐在地面的人，车内人物观察司机在车旁整理休息用品。",
+          "requirement": "required",
+          "targetBundles": [
+            "普通视频"
+          ],
+          "chosenSpanIds": [
+            "C3602_zve1_broll_visual_s1-3",
+            "C3602_zve1_broll_speech_s4-18"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-08-03",
+      "slots": [
+        {
+          "id": "FW-08-03-SLOT-01",
+          "query": "第一次自己开上白云机场高速：车辆夜间经过收费设施、高架和白云机场方向指示牌，跟着货车向黄埔行驶；车内谈到过去常打车去机场，这是第一次自己驾车经过这段机场高速。",
+          "requirement": "required",
+          "targetBundles": [
+            "行车画面"
+          ],
+          "chosenSpanIds": [
+            "C3603_zve1_drive_speech_s0-36",
+            "C3603_zve1_drive_visual_s18-76",
+            "C3603_zve1_drive_speech_s41-48",
+            "C3603_zve1_drive_speech_s57-83",
+            "C3604_zve1_drive_speech_s1-14",
+            "C3604_zve1_drive_visual_s26-85",
+            "C3604_zve1_drive_visual_s31-38",
+            "C3604_zve1_drive_speech_s39-44",
+            "C3604_zve1_drive_speech_s47-111",
+            "C3605_zve1_drive_visual_s0-30",
+            "C3605_zve1_drive_visual_s43-51",
+            "C3605_zve1_drive_visual_s56-63",
+            "C3605_zve1_drive_speech_s74-84"
+          ],
+          "treatments": {
+            "C3603_zve1_drive_visual_s18-76": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3604_zve1_drive_visual_s26-85": {
+              "audio": -100,
+              "speed": 4
+            },
+            "C3604_zve1_drive_visual_s31-38": {
+              "audio": -100
+            },
+            "C3605_zve1_drive_visual_s0-30": {
+              "audio": -100,
+              "speed": 3
+            },
+            "C3605_zve1_drive_visual_s43-51": {
+              "audio": -100
+            },
+            "C3605_zve1_drive_visual_s56-63": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-08-04",
+      "slots": [
+        {
+          "id": "FW-08-04-SLOT-01",
+          "query": "黄埔充电时闯进夜市：车辆充电期间，人物走进仍有许多店铺营业的黄埔商业街，最后一餐出现鸡排、西瓜、炒饭、寿司和奶茶。",
+          "requirement": "required",
+          "targetBundles": [
+            "普通视频"
+          ],
+          "chosenSpanIds": [
+            "C3606_zve1_broll_speech_s0-14",
+            "C3607_zve1_broll_speech_s0-9",
+            "C3608_zve1_broll_speech_s0-4"
+          ],
+          "treatments": {}
+        }
+      ]
+    },
+    {
+      "segmentId": "FW-08-05",
+      "slots": [
+        {
+          "id": "FW-08-05-SLOT-01",
+          "query": "广州夜街与跨日照片：夜街上有亮灯树木、停放车辆、店铺和坐在台阶上的人，口播感叹周围繁华；跨日照片另有黄色越野车驶过泥地与绿色山地、蓝色湖面，以及喀斯特群山前的橙紫晚霞。",
+          "requirement": "required",
+          "targetBundles": [
+            "普通视频",
+            "照片尾包"
+          ],
+          "chosenSpanIds": [
+            "C3609_zve1_broll_speech_s1-15",
+            "kedatitian_1.1.3_photos_photo",
+            "kedatitian_1.2.2_photos_photo",
+            "kedatitian_1.3.1_photos_photo",
+            "cover-1-b_timelaps_photo",
+            "cover-1-wx_timelaps_photo"
+          ],
+          "treatments": {
+            "kedatitian_1.1.3_photos_photo": {
+              "audio": -100
+            },
+            "kedatitian_1.2.2_photos_photo": {
+              "audio": -100
+            },
+            "kedatitian_1.3.1_photos_photo": {
+              "audio": -100
+            },
+            "cover-1-b_timelaps_photo": {
+              "audio": -100
+            },
+            "cover-1-wx_timelaps_photo": {
+              "audio": -100
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "coverageAudit": {
+    "generatedAt": "2026-09-06T09:46:36.014Z",
+    "byType": [
+      {
+        "key": "drive",
+        "label": "drive",
+        "available": 607,
+        "chosen": 597,
+        "dropped": 10,
+        "droppedSpanIds": [
+          "C3312_zve1_drive_visual_s68-123",
+          "C3312_zve1_drive_visual_s144-161",
+          "C3312_zve1_drive_visual_s220-275",
+          "C3313_zve1_drive_visual_s98-168",
+          "C3494_zve1_drive_visual_s141-152",
+          "C3519_zve1_drive_visual_s211-228",
+          "C3551_zve1_drive_visual_s0-3",
+          "C3570_zve1_drive_visual_s628-631",
+          "C3605_zve1_drive_visual_s20-81",
+          "C3605_zve1_drive_visual_s69-73"
+        ]
+      },
+      {
+        "key": "broll",
+        "label": "broll",
+        "available": 210,
+        "chosen": 210,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "talking-head",
+        "label": "talking-head",
+        "available": 15,
+        "chosen": 15,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "aerial",
+        "label": "aerial",
+        "available": 52,
+        "chosen": 52,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "timelapse",
+        "label": "timelapse",
+        "available": 4,
+        "chosen": 4,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "photo",
+        "label": "photo",
+        "available": 221,
+        "chosen": 218,
+        "dropped": 3,
+        "droppedSpanIds": [
+          "DSC08268_photos_photo",
+          "DSC08269_photos_photo",
+          "DSC08275_photos_photo"
+        ]
+      }
+    ],
+    "byDay": [
+      {
+        "key": "2026-08-19",
+        "label": "2026-08-19",
+        "available": 78,
+        "chosen": 78,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "2026-08-20",
+        "label": "2026-08-20",
+        "available": 368,
+        "chosen": 361,
+        "dropped": 7,
+        "droppedSpanIds": [
+          "DSC08268_photos_photo",
+          "DSC08269_photos_photo",
+          "DSC08275_photos_photo",
+          "C3312_zve1_drive_visual_s68-123",
+          "C3312_zve1_drive_visual_s144-161",
+          "C3312_zve1_drive_visual_s220-275",
+          "C3313_zve1_drive_visual_s98-168"
+        ]
+      },
+      {
+        "key": "2026-08-21",
+        "label": "2026-08-21",
+        "available": 176,
+        "chosen": 176,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "2026-08-22",
+        "label": "2026-08-22",
+        "available": 246,
+        "chosen": 244,
+        "dropped": 2,
+        "droppedSpanIds": [
+          "C3494_zve1_drive_visual_s141-152",
+          "C3519_zve1_drive_visual_s211-228"
+        ]
+      },
+      {
+        "key": "2026-08-23",
+        "label": "2026-08-23",
+        "available": 236,
+        "chosen": 232,
+        "dropped": 4,
+        "droppedSpanIds": [
+          "C3551_zve1_drive_visual_s0-3",
+          "C3570_zve1_drive_visual_s628-631",
+          "C3605_zve1_drive_visual_s20-81",
+          "C3605_zve1_drive_visual_s69-73"
+        ]
+      },
+      {
+        "key": "2026-08-24",
+        "label": "2026-08-24",
+        "available": 3,
+        "chosen": 3,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "2026-08-25",
+        "label": "2026-08-25",
+        "available": 2,
+        "chosen": 2,
+        "dropped": 0,
+        "droppedSpanIds": []
+      }
+    ],
+    "byEvent": [
+      {
+        "key": "FW-01-01",
+        "label": "FW-01-01 出发前先吃牛排",
+        "available": 8,
+        "chosen": 8,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-01-02",
+        "label": "FW-01-02 三十三岁生日旅行正式发车",
+        "available": 42,
+        "chosen": 42,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-01-03",
+        "label": "FW-01-03 路边撞见粉色晚霞",
+        "available": 6,
+        "chosen": 6,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-01-04",
+        "label": "FW-01-04 恐龙服务区里的泡面晚餐",
+        "available": 16,
+        "chosen": 16,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-01-05",
+        "label": "FW-01-05 快到山顶时胎压报警",
+        "available": 8,
+        "chosen": 8,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-02-01",
+        "label": "FW-02-01 雾夜开上野猪嶂",
+        "available": 56,
+        "chosen": 56,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-02-02",
+        "label": "FW-02-02 三十三岁第一晚的银河与云雾",
+        "available": 74,
+        "chosen": 74,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-03-01",
+        "label": "FW-03-01 牛群、蛋糕和下山烂路",
+        "available": 75,
+        "chosen": 71,
+        "dropped": 4,
+        "droppedSpanIds": [
+          "C3312_zve1_drive_visual_s68-123",
+          "C3312_zve1_drive_visual_s144-161",
+          "C3312_zve1_drive_visual_s220-275",
+          "C3313_zve1_drive_visual_s98-168"
+        ]
+      },
+      {
+        "key": "FW-03-02",
+        "label": "FW-03-02 唱着生日歌下山进江西",
+        "available": 68,
+        "chosen": 68,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-03-03",
+        "label": "FW-03-03 天九镇终于把轮胎修好",
+        "available": 11,
+        "chosen": 11,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-04-01",
+        "label": "FW-04-01 修好车一路开向崇义",
+        "available": 43,
+        "chosen": 43,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-04-02",
+        "label": "FW-04-02 崇义吃一顿江西菜",
+        "available": 12,
+        "chosen": 12,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-04-03",
+        "label": "FW-04-03 吃完继续摸黑赶到汝城",
+        "available": 22,
+        "chosen": 22,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-04-04",
+        "label": "FW-04-04 两百元住进升级房",
+        "available": 2,
+        "chosen": 2,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-05-01",
+        "label": "FW-05-01 从汝城出发追阳朔晚霞",
+        "available": 45,
+        "chosen": 45,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-05-02",
+        "label": "FW-05-02 黄关服务区看云雾",
+        "available": 2,
+        "chosen": 2,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-05-03",
+        "label": "FW-05-03 穿过桂林山路去阳朔",
+        "available": 35,
+        "chosen": 35,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-05-04",
+        "label": "FW-05-04 终于赶到漓江边日落",
+        "available": 67,
+        "chosen": 67,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-05-05",
+        "label": "FW-05-05 阳朔夜里去吃啤酒鱼",
+        "available": 10,
+        "chosen": 10,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-05-06",
+        "label": "FW-05-06 穿过隧道去兴坪",
+        "available": 16,
+        "chosen": 16,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-05-07",
+        "label": "FW-05-07 深夜看一眼兴坪房间",
+        "available": 1,
+        "chosen": 1,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-06-01",
+        "label": "FW-06-01 民宿醒来先看山景和工地",
+        "available": 11,
+        "chosen": 11,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-06-02",
+        "label": "FW-06-02 徒步找到二十元人民币背景",
+        "available": 24,
+        "chosen": 24,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-06-03",
+        "label": "FW-06-03 离开阳朔，第一次去贺州",
+        "available": 35,
+        "chosen": 35,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-06-04",
+        "label": "FW-06-04 开进钟山百里画廊",
+        "available": 85,
+        "chosen": 84,
+        "dropped": 1,
+        "droppedSpanIds": [
+          "C3494_zve1_drive_visual_s141-152"
+        ]
+      },
+      {
+        "key": "FW-06-05",
+        "label": "FW-06-05 水墨田园再探一小段",
+        "available": 2,
+        "chosen": 2,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-06-06",
+        "label": "FW-06-06 误入吉塘村田野拍到晚霞",
+        "available": 52,
+        "chosen": 52,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-06-07",
+        "label": "FW-06-07 摸黑从村道回县城",
+        "available": 15,
+        "chosen": 15,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-06-08",
+        "label": "FW-06-08 牛肠酸、捞粉和榴莲的一晚",
+        "available": 22,
+        "chosen": 21,
+        "dropped": 1,
+        "droppedSpanIds": [
+          "C3519_zve1_drive_visual_s211-228"
+        ]
+      },
+      {
+        "key": "FW-07-01",
+        "label": "FW-07-01 三角包和油茶开场",
+        "available": 8,
+        "chosen": 8,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-07-02",
+        "label": "FW-07-02 从钟山县城开向望高镇",
+        "available": 39,
+        "chosen": 39,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-07-03",
+        "label": "FW-07-03 车从天然石拱门下穿过去",
+        "available": 49,
+        "chosen": 48,
+        "dropped": 1,
+        "droppedSpanIds": [
+          "C3551_zve1_drive_visual_s0-3"
+        ]
+      },
+      {
+        "key": "FW-07-04",
+        "label": "FW-07-04 路上又被牛拦住",
+        "available": 2,
+        "chosen": 2,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-07-05",
+        "label": "FW-07-05 可达梯田和蓝色湖水",
+        "available": 67,
+        "chosen": 66,
+        "dropped": 1,
+        "droppedSpanIds": [
+          "C3570_zve1_drive_visual_s628-631"
+        ]
+      },
+      {
+        "key": "FW-07-06",
+        "label": "FW-07-06 下山路边还有一座蓝湖",
+        "available": 12,
+        "chosen": 12,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-07-07",
+        "label": "FW-07-07 望高镇停下来吃粉",
+        "available": 12,
+        "chosen": 12,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-08-01",
+        "label": "FW-08-01 从粉尘工业路开回广东",
+        "available": 26,
+        "chosen": 26,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-08-02",
+        "label": "FW-08-02 夜里遇见路边休息的司机",
+        "available": 2,
+        "chosen": 2,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-08-03",
+        "label": "FW-08-03 第一次自己开上白云机场高速",
+        "available": 15,
+        "chosen": 13,
+        "dropped": 2,
+        "droppedSpanIds": [
+          "C3605_zve1_drive_visual_s20-81",
+          "C3605_zve1_drive_visual_s69-73"
+        ]
+      },
+      {
+        "key": "FW-08-04",
+        "label": "FW-08-04 黄埔充电时闯进夜市",
+        "available": 3,
+        "chosen": 3,
+        "dropped": 0,
+        "droppedSpanIds": []
+      },
+      {
+        "key": "FW-08-05",
+        "label": "FW-08-05 广州夜街与跨日照片",
+        "available": 6,
+        "chosen": 6,
+        "dropped": 0,
+        "droppedSpanIds": []
+      }
+    ],
+    "speechProtected": {
+      "available": 463,
+      "chosen": 463,
+      "dropped": 0,
+      "droppedSpanIds": []
+    },
+    "notes": [
+      "41 个 FW beat 共映射 1106 个 span；另外 3 张有效风机照片缺少已确认 FW beat 归属，保持未选：DSC08268_photos_photo、DSC08269_photos_photo、DSC08275_photos_photo。",
+      "框架声明另有 2 个视频没有任何 span；它们不具备可写入 chosenSpanIds 的片段，只作为零 span 输入缺口记录。",
+      "口播与纯视觉窗口默认双通道共存；除下列完全重复、无人机跟车同窗冲突或同源无口播行车超出三段的明确情形外，没有因时间重叠删除视觉候选。",
+      "C3312_zve1_drive_visual_s68-123：同源无口播行车语义去重：C3312_zve1 仅保留 3 个互异画面时刻",
+      "C3312_zve1_drive_visual_s144-161：同源无口播行车语义去重：C3312_zve1 仅保留 3 个互异画面时刻",
+      "C3312_zve1_drive_visual_s220-275：同源无口播行车语义去重：C3312_zve1 仅保留 3 个互异画面时刻",
+      "C3313_zve1_drive_visual_s98-168：同源无口播行车语义去重：C3313_zve1 仅保留 3 个互异画面时刻",
+      "C3519_zve1_drive_visual_s211-228：同源无口播行车语义去重：C3519_zve1 仅保留 3 个互异画面时刻",
+      "C3570_zve1_drive_visual_s628-631：同源无口播行车语义去重：C3570_zve1 仅保留 3 个互异画面时刻",
+      "C3605_zve1_drive_visual_s20-81：同源无口播行车语义去重：C3605_zve1 仅保留 3 个互异画面时刻",
+      "C3605_zve1_drive_visual_s69-73：同源无口播行车语义去重：C3605_zve1 仅保留 3 个互异画面时刻",
+      "C3551_zve1_drive_visual_s0-3：与同源口播 C3551_zve1_drive_speech_s0-3 的 source range 和画面完全相同，按口播优先删除重复视觉候选",
+      "C3494_zve1_drive_visual_s141-152：与 DJI_20260822173136_0570_D_drone_aerial_s0-22 同窗记录黄色车辆沿乡村道路行驶，按无人机跟车优先删除重复无口播行车候选",
+      "所有 speechProtected 非照片、非航拍 span 均已选入；droppedSpanIds 为空。",
+      "301 个被选无口播行车均显式静音；其中 215 个原时长超过 10 秒并按 ceil(duration/10000) 写 2..4 倍整数速度。受最大 4 倍约束，81 个原时长超过 40 秒的 span 只能写 4 倍，目标时长仍会超过 10 秒。"
+    ]
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "updatedAt": "2026-09-06T15:14:04.014Z",
+  "projects": {
+    "33岁生日旅行 [Edit]": {
+      "projectName": "33岁生日旅行 [Edit]",
+      "safeProjectName": "33-Edit",
+      "latestSnapshot": {
+        "projectName": "33岁生日旅行 [Edit]",
+        "snapshotPath": "H:\\SacredGrove\\Kairos\\projects\\thirty-third-birthday-trip\\edits\\resolve-projects\\33-Edit\\33岁生日旅行 [Edit].drp",
+        "latestPath": "H:\\SacredGrove\\Kairos\\projects\\thirty-third-birthday-trip\\edits\\resolve-projects\\33-Edit\\33岁生日旅行 [Edit].drp",
+        "createdAt": "2026-09-06T15:14:01Z",
+        "mode": "manual",
+        "retention": "latest-only",
+        "action": "manual",
+        "database": {
+          "DbType": "Disk",
+          "DbName": "Local Database"
+        },
+        "detail": "save_drp_snapshot exported withStillsAndLUTs=false retention=latest-only"
+      },
+      "snapshots": [],
+      "updatedAt": "2026-09-06T15:14:04.014Z"
+    }
+  }
+}

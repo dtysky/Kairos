@@ -1,0 +1,62 @@
+{
+  "prose": "",
+  "segments": [],
+  "captureTimeOverrides": [
+    {
+      "rootRef": "root-33-birthday-drone",
+      "sourcePath": "DJI_20260820063119_0958_D.mp4",
+      "currentCapturedAt": "2026-09-03T23:23:31.000Z",
+      "currentSource": "container",
+      "suggestedDate": "2026-08-20",
+      "suggestedTime": "06:31:19",
+      "correctedDate": "2026-08-20",
+      "correctedTime": "06:31:12",
+      "timezone": "Asia/Shanghai",
+      "note": "文件名时间 2026-08-20 06:31:19与当前时间存在过大残余漂移 7m55s（阈值 5m00s）；当前时间 2026-09-04 超出 Pharos trip 33岁生日旅行 的时间边界 2026-08-19 ~ 2026-08-24"
+    },
+    {
+      "rootRef": "root-draft-1788240421328-q3s69h",
+      "sourcePath": "20260820_河源野猪嶂星空1.mp4",
+      "currentCapturedAt": "2026-08-24T17:37:51.000Z",
+      "currentSource": "container",
+      "requiresExplicitDate": true,
+      "correctedDate": "2026-08-20",
+      "correctedTime": "02:00:00",
+      "timezone": "Asia/Shanghai",
+      "note": "该素材 Root 已标记为拍摄时间必须人工确认"
+    },
+    {
+      "rootRef": "root-draft-1788240421328-q3s69h",
+      "sourcePath": "20260820_河源野猪嶂星空2.mp4",
+      "currentCapturedAt": "2026-08-25T02:36:55.000Z",
+      "currentSource": "container",
+      "requiresExplicitDate": true,
+      "correctedDate": "2026-08-20",
+      "correctedTime": "02:00:00",
+      "timezone": "Asia/Shanghai",
+      "note": "该素材 Root 已标记为拍摄时间必须人工确认"
+    },
+    {
+      "rootRef": "root-draft-1788240421328-q3s69h",
+      "sourcePath": "20260822_阳朔漓江晚霞1.mp4",
+      "currentCapturedAt": "2026-08-25T03:24:27.000Z",
+      "currentSource": "container",
+      "requiresExplicitDate": true,
+      "correctedDate": "2026-08-22",
+      "correctedTime": "19:00:00",
+      "timezone": "Asia/Shanghai",
+      "note": "该素材 Root 已标记为拍摄时间必须人工确认"
+    },
+    {
+      "rootRef": "root-draft-1788240421328-q3s69h",
+      "sourcePath": "20260822_阳朔漓江晚霞2.mp4",
+      "currentCapturedAt": "2026-08-25T04:27:29.000Z",
+      "currentSource": "container",
+      "requiresExplicitDate": true,
+      "correctedDate": "2026-08-22",
+      "correctedTime": "19:00:00",
+      "timezone": "Asia/Shanghai",
+      "note": "该素材 Root 已标记为拍摄时间必须人工确认"
+    }
+  ]
+}

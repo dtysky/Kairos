@@ -1,0 +1,695 @@
+{
+  "schemaVersion": "1.0",
+  "editId": "main",
+  "updatedAt": "2026-09-06T10:38:12.527Z",
+  "records": [
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-edit-framework-20260906T084024069Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-documentary-codex-20260906T083902Z",
+      "flowPlanHash": "be8876e9127609d80842a2d6e7879ad98ceeaafba9a844af9d2bf00386153dd0",
+      "stepId": "edit-framework-handoff-codex-v1",
+      "capabilityId": "edit.framework",
+      "runner": "agent",
+      "status": "stale",
+      "startedAt": "2026-09-06T08:40:24.069Z",
+      "updatedAt": "2026-09-06T08:55:16.192Z",
+      "completedAt": "2026-09-06T08:45:58.512Z",
+      "inputRefs": [
+        "config/edit-rules/travel-documentary.md",
+        "media/chronology.json",
+        "store/spans.json",
+        "store/assets.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/planning/edit-framework.md"
+      ],
+      "inputSnapshot": {
+        "source": "codex-subagent-generated-edit-framework",
+        "projectId": "thirty-third-birthday-trip",
+        "chronologyStatus": "confirmed",
+        "chronologyEventCount": 41,
+        "spansStatus": "fresh",
+        "spanCount": 1109,
+        "editRuleCategory": "travel-documentary",
+        "editRuleHash": "44685379994514f2b987bb169a4cfce6d4d2950a90a04197f9f68d3a6b73d624",
+        "executionMode": "single bounded shard matching sharded-agent day packing threshold",
+        "shardPacking": {
+          "base": "day",
+          "metric": "chronologyEventCount",
+          "maxPerShard": 150,
+          "actualShardCount": 1,
+          "preserveOrder": true
+        },
+        "subagentTask": "/root/edit_framework"
+      },
+      "outputPaths": [
+        "edits/main/planning/edit-framework.md"
+      ],
+      "summary": {
+        "artifact": "edits/main/planning/edit-framework.md",
+        "artifactHash": "bd2c4c85cddb7efe378ada51f570e36fc1aa696253faa21122426737391ffeb7",
+        "chapterCount": 7,
+        "fwBeatCount": 41,
+        "coveredChronologyEventCount": 41,
+        "coveredAssignedSpanCount": 1106,
+        "totalSpanCount": 1109,
+        "unassignedSpanCount": 3,
+        "zeroSpanAssetCount": 2,
+        "validation": "passed-edit-framework-contract-and-source-count-audit",
+        "nextStep": "human review edit.framework; after confirmation run material.recall"
+      },
+      "error": "edit unit config changed; regenerate Flow Plan and downstream edit artifacts with Codex Agent",
+      "review": {
+        "status": "pending",
+        "note": "edit unit config changed; regenerate Flow Plan and downstream edit artifacts with Codex Agent"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-edit-framework-vlog-20260906T085738537Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-vlog-codex-20260906T085722Z",
+      "flowPlanHash": "52a7f01a50ac11291375523cd7b0f7c7eadae544250e86f033bee7077b34f2f5",
+      "stepId": "edit-framework-handoff-codex-v1",
+      "capabilityId": "edit.framework",
+      "runner": "agent",
+      "status": "completed",
+      "startedAt": "2026-09-06T08:57:38.537Z",
+      "updatedAt": "2026-09-06T09:39:57.201Z",
+      "completedAt": "2026-09-06T09:01:23.470Z",
+      "inputRefs": [
+        "config/edit-rules/travel-vlog.md",
+        "media/chronology.json",
+        "store/spans.json",
+        "store/assets.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/planning/edit-framework.md"
+      ],
+      "inputSnapshot": {
+        "source": "codex-subagent-regenerated-travel-vlog-framework",
+        "projectId": "thirty-third-birthday-trip",
+        "chronologyStatus": "confirmed",
+        "chronologyEventCount": 41,
+        "spansStatus": "fresh",
+        "spanCount": 1109,
+        "editRuleCategory": "travel-vlog",
+        "editRuleHash": "c3c3b95d9ee15855720abe4c389e4c0821a7403f0c07e5ae32f2668059449198",
+        "executionMode": "single bounded shard matching sharded-agent day packing threshold",
+        "shardPacking": {
+          "base": "day",
+          "metric": "chronologyEventCount",
+          "maxPerShard": 150,
+          "actualShardCount": 1,
+          "preserveOrder": true
+        },
+        "supersedesStaleRuleCategory": "travel-documentary",
+        "subagentTask": "/root/edit_framework"
+      },
+      "outputPaths": [
+        "edits/main/planning/edit-framework.md"
+      ],
+      "summary": {
+        "artifact": "edits/main/planning/edit-framework.md",
+        "artifactHash": "0d9efacd9b0d3390f68a391fccf63d85e189f5bbdc0fc3de405326c010a06fce",
+        "chapterCount": 8,
+        "fwBeatCount": 41,
+        "coveredChronologyEventCount": 41,
+        "coveredAssignedSpanCount": 1106,
+        "totalSpanCount": 1109,
+        "unassignedSpanCount": 3,
+        "zeroSpanAssetCount": 2,
+        "validation": "passed-edit-framework-contract-and-source-count-audit",
+        "regeneratedForEditRuleCategory": "travel-vlog",
+        "nextStep": "human review edit.framework; after confirmation run material.recall"
+      },
+      "review": {
+        "status": "confirmed",
+        "confirmedAt": "2026-09-06T09:39:57.201Z",
+        "confirmedBy": "user",
+        "note": "用户确认 travel-vlog 剪辑框架并要求推进 material.recall。"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "run-material-recall-20260906T093957201Z",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-vlog-codex-20260906T085722Z",
+      "flowPlanHash": "52a7f01a50ac11291375523cd7b0f7c7eadae544250e86f033bee7077b34f2f5",
+      "stepId": "material-recall-codex-v1",
+      "capabilityId": "material.recall",
+      "runner": "agent",
+      "status": "completed",
+      "startedAt": "2026-09-06T09:39:57.201Z",
+      "updatedAt": "2026-09-06T09:51:12.282Z",
+      "completedAt": "2026-09-06T09:51:12.282Z",
+      "inputRefs": [
+        "edits/<editId>/planning/flow-plan.json",
+        "edits/<editId>/planning/edit-framework.md",
+        "store/spans.json",
+        "store/assets.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/script/material-slots.json"
+      ],
+      "inputSnapshot": {
+        "source": "codex-subagent-generated-material-recall",
+        "projectId": "thirty-third-birthday-trip",
+        "frameworkHash": "0d9efacd9b0d3390f68a391fccf63d85e189f5bbdc0fc3de405326c010a06fce",
+        "spansHash": "77bc89b24482dcd46e39c2212e3a4b3d26591df33cc02a985d1fe7052d636818",
+        "assetsHash": "7e02421a3e143f62e84f2ce1fde54f2b5e49fb63fc1c9af6349c4265760de117",
+        "spanCount": 1109,
+        "editRuleCategory": "travel-vlog",
+        "flowPlanStepId": "material-recall-codex-v1",
+        "executionMode": "single bounded shard matching sharded-agent day packing threshold",
+        "shardPacking": {
+          "base": "day",
+          "metric": "materialRefCount",
+          "maxPerShard": 2000,
+          "actualShardCount": 1,
+          "preserveOrder": true
+        }
+      },
+      "outputPaths": [
+        "edits/main/script/material-slots.json"
+      ],
+      "summary": {
+        "artifact": "edits/main/script/material-slots.json",
+        "artifactHash": "dd49af85e2b8457f3baab0fce5f2d45d7721de7cb97cb486cb7825dce9ff6b01",
+        "segmentCount": 41,
+        "slotCount": 41,
+        "availableSpanCount": 1109,
+        "chosenSpanCount": 1096,
+        "droppedSpanCount": 13,
+        "coveragePercent": 98.83,
+        "speechProtectedAvailable": 463,
+        "speechProtectedChosen": 463,
+        "speechProtectedDropped": 0,
+        "photoChosenCount": 218,
+        "treatmentCount": 519,
+        "mutedTreatmentCount": 519,
+        "speedCounts": {
+          "2": 91,
+          "3": 32,
+          "4": 92
+        },
+        "unresolvedOver10AfterFourTimesCount": 81,
+        "warnings": [
+          "81 个被选无口播行车 span 原长超过 40 秒；4 倍速后仍超过 10 秒，需在时间线阶段明确处理，不能标记为已满足规则。"
+        ],
+        "validation": "passed-schema-material-slots-contract-uniqueness-order-treatment-coverage-audit",
+        "nextStep": "human review material.recall; after confirmation run resolve.media_sync"
+      },
+      "review": {
+        "status": "confirmed",
+        "confirmedAt": "2026-09-06T09:51:12.282Z",
+        "confirmedBy": "user",
+        "note": "用户接受本轮素材召回并要求进入 resolve.media_sync。"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "24fd292b-798c-48f8-82b0-628424b1a5e3",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-vlog-codex-20260906T085722Z",
+      "flowPlanHash": "52a7f01a50ac11291375523cd7b0f7c7eadae544250e86f033bee7077b34f2f5",
+      "stepId": "resolve-media-sync-codex-v1",
+      "capabilityId": "resolve.media_sync",
+      "runner": "deterministic",
+      "status": "completed",
+      "startedAt": "2026-09-06T09:51:12.291Z",
+      "updatedAt": "2026-09-06T09:55:07.964Z",
+      "completedAt": "2026-09-06T09:55:07.964Z",
+      "inputRefs": [
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json",
+        "config/project-brief.json"
+      ],
+      "outputRefs": [
+        "Resolve Media Pool: Kairos Project Media"
+      ],
+      "inputSnapshot": {
+        "source": "syncProjectResolveMedia",
+        "projectId": "thirty-third-birthday-trip",
+        "editRuleCategory": "travel-vlog",
+        "chronologyStatus": "confirmed",
+        "spansStatus": "fresh"
+      },
+      "outputPaths": [],
+      "summary": {
+        "validation": "passed-resolve-media-sync",
+        "resolveProjectName": "33岁生日旅行 [Edit]",
+        "namespace": "Kairos Project Media",
+        "hostSummary": {
+          "namespace": "Kairos Project Media",
+          "imported": 730,
+          "moved": 0,
+          "reused": 0,
+          "emptyFoldersDeleted": 0,
+          "eventFolderCount": 41,
+          "mediaItemCount": 730
+        },
+        "nextStep": "timeline.generate"
+      },
+      "review": {
+        "status": "not_required"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "31fb8157-ea15-43d8-a66e-111ca80b824d",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-vlog-codex-20260906T085722Z",
+      "flowPlanHash": "52a7f01a50ac11291375523cd7b0f7c7eadae544250e86f033bee7077b34f2f5",
+      "stepId": "timeline-generate-codex-v1",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "failed",
+      "startedAt": "2026-09-06T09:57:21.889Z",
+      "updatedAt": "2026-09-06T09:57:34.679Z",
+      "completedAt": "2026-09-06T09:57:34.679Z",
+      "inputRefs": [
+        "DaVinci Resolve Media Pool",
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "Resolve timeline: Kairos Timelines/<editId> rough cut",
+        ".tmp/edit-flow/<editId>/timeline/current.json",
+        ".tmp/edit-flow/<editId>/timeline/current.srt",
+        "edits/resolve-project-map.json",
+        "edits/resolve-projects/<safe-project-key>/<Resolve项目名>.drp"
+      ],
+      "inputSnapshot": {
+        "source": "buildProjectTimeline",
+        "projectId": "thirty-third-birthday-trip",
+        "editRuleCategory": "travel-vlog",
+        "resolveMediaSyncRunId": "24fd292b-798c-48f8-82b0-628424b1a5e3",
+        "materialSlots": "edits/main/script/material-slots.json",
+        "chronologyStatus": "confirmed",
+        "spansStatus": "fresh"
+      },
+      "outputPaths": [],
+      "summary": {},
+      "error": "Resolve rough-cut timeline frame rate or playback frame rate does not match Kairos runtime config.",
+      "review": {
+        "status": "not_required"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "c3558d8e-14ba-4737-83e8-0756d13efb83",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-vlog-codex-20260906T085722Z",
+      "flowPlanHash": "52a7f01a50ac11291375523cd7b0f7c7eadae544250e86f033bee7077b34f2f5",
+      "stepId": "timeline-generate-codex-v1",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "completed",
+      "startedAt": "2026-09-06T10:02:36.190Z",
+      "updatedAt": "2026-09-06T10:08:01.751Z",
+      "completedAt": "2026-09-06T10:08:01.751Z",
+      "inputRefs": [
+        "DaVinci Resolve Media Pool",
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "Resolve timeline: Kairos Timelines/<editId> rough cut",
+        ".tmp/edit-flow/<editId>/timeline/current.json",
+        ".tmp/edit-flow/<editId>/timeline/current.srt",
+        "edits/resolve-project-map.json",
+        "edits/resolve-projects/<safe-project-key>/<Resolve项目名>.drp"
+      ],
+      "inputSnapshot": {
+        "source": "buildProjectTimeline",
+        "projectId": "thirty-third-birthday-trip",
+        "editRuleCategory": "travel-vlog",
+        "resolveMediaSyncRunId": "24fd292b-798c-48f8-82b0-628424b1a5e3",
+        "materialSlots": "edits/main/script/material-slots.json",
+        "chronologyStatus": "confirmed",
+        "spansStatus": "fresh",
+        "retryAfter": "resolve playback fps corrected to 30 by user"
+      },
+      "outputPaths": [
+        ".tmp\\edit-flow\\main\\timeline\\current.json",
+        ".tmp\\edit-flow\\main\\timeline\\current.srt",
+        "edits\\resolve-projects\\33-Edit\\33岁生日旅行 [Edit].drp"
+      ],
+      "summary": {
+        "validation": "passed-resolve-timeline-generation",
+        "resolveProjectName": "33岁生日旅行 [Edit]",
+        "timelineName": "Main [main]",
+        "clipCount": 1096,
+        "subtitleCueCount": 2172,
+        "subtitleSrtPath": ".tmp\\edit-flow\\main\\timeline\\current.srt",
+        "mutedClipCount": 571,
+        "audioMuteAppliedCount": 353,
+        "audibleClipColoring": {
+          "color": "Orange",
+          "itemScope": "ordinary-video-and-linked-audio; linked-audio-only-when-video-has-visual-category-color",
+          "checked": 746,
+          "colored": 746,
+          "failed": 0
+        },
+        "visualClipColoring": {
+          "photo": {
+            "color": "Blue",
+            "itemScope": "video",
+            "checked": 218,
+            "colored": 218,
+            "failed": 0
+          },
+          "timelapse": {
+            "color": "Purple",
+            "itemScope": "video",
+            "checked": 4,
+            "colored": 4,
+            "failed": 0
+          },
+          "drive": {
+            "color": "Brown",
+            "itemScope": "video",
+            "checked": 597,
+            "colored": 597,
+            "failed": 0
+          },
+          "aerial": {
+            "color": "Teal",
+            "itemScope": "video",
+            "checked": 52,
+            "colored": 52,
+            "failed": 0
+          }
+        },
+        "visualClipGrouping": {
+          "photo": {
+            "groupName": "Kairos Photos",
+            "itemScope": "video",
+            "checked": 218,
+            "assigned": 218,
+            "alreadyAssigned": 0,
+            "failed": 0,
+            "created": true
+          },
+          "timelapse": {
+            "groupName": "Kairos Timelapse",
+            "itemScope": "video",
+            "checked": 4,
+            "assigned": 4,
+            "alreadyAssigned": 0,
+            "failed": 0,
+            "created": true
+          }
+        },
+        "speedAppliedCount": 0,
+        "speedIgnoredCount": 215,
+        "speedStrategy": "ignored",
+        "syncSummary": {
+          "mode": "existing-media-pool",
+          "imported": 0,
+          "moved": 0,
+          "reused": 730
+        },
+        "sourceRangeValidation": {
+          "checked": 878,
+          "passed": 878,
+          "failed": 0,
+          "strategy": "direct-native-append",
+          "maxToleranceFrames": 2
+        },
+        "stillDurationValidation": {
+          "checked": 218,
+          "passed": 218,
+          "failed": 0,
+          "expectedMs": 1000
+        },
+        "timelinePlacementValidation": {
+          "checked": 1096,
+          "passed": 1096,
+          "failed": 0,
+          "strategy": "sequential-actual-end"
+        },
+        "timelineGapValidation": {
+          "checked": 1096,
+          "gapCount": 0,
+          "overlapCount": 0,
+          "maxGapFrames": 0,
+          "firstGaps": [],
+          "passed": true
+        },
+        "subtitleImport": {
+          "enabled": false
+        },
+        "drpSnapshot": {
+          "projectName": "33岁生日旅行 [Edit]",
+          "snapshotPath": "H:\\SacredGrove\\Kairos\\projects\\thirty-third-birthday-trip\\edits\\resolve-projects\\33-Edit\\33岁生日旅行 [Edit].drp",
+          "latestPath": "H:\\SacredGrove\\Kairos\\projects\\thirty-third-birthday-trip\\edits\\resolve-projects\\33-Edit\\33岁生日旅行 [Edit].drp",
+          "createdAt": "2026-09-06T10:08:00Z",
+          "mode": "auto",
+          "retention": "latest-only",
+          "action": "timeline.generate",
+          "database": {
+            "DbType": "Disk",
+            "DbName": "Local Database"
+          },
+          "detail": "save_drp_snapshot exported withStillsAndLUTs=false retention=latest-only"
+        },
+        "nextStep": "resolve.lock_rough_cut"
+      },
+      "review": {
+        "status": "not_required"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "609c6abd-18d2-475c-bd30-2fcfd4061199",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-vlog-codex-20260906T085722Z",
+      "flowPlanHash": "52a7f01a50ac11291375523cd7b0f7c7eadae544250e86f033bee7077b34f2f5",
+      "stepId": "timeline-generate-codex-v1",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "failed",
+      "startedAt": "2026-09-06T10:22:58.349Z",
+      "updatedAt": "2026-09-06T10:31:46.895Z",
+      "completedAt": "2026-09-06T10:31:46.895Z",
+      "inputRefs": [
+        "DaVinci Resolve Media Pool",
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "Resolve timeline: Kairos Timelines/<editId> rough cut",
+        ".tmp/edit-flow/<editId>/timeline/current.json",
+        ".tmp/edit-flow/<editId>/timeline/current.srt",
+        "edits/resolve-project-map.json",
+        "edits/resolve-projects/<safe-project-key>/<Resolve项目名>.drp"
+      ],
+      "inputSnapshot": {
+        "source": "buildProjectTimeline",
+        "projectId": "thirty-third-birthday-trip",
+        "editRuleCategory": "travel-vlog",
+        "resolveMediaSyncRunId": "24fd292b-798c-48f8-82b0-628424b1a5e3",
+        "materialSlots": "edits/main/script/material-slots.json",
+        "chronologyStatus": "confirmed",
+        "spansStatus": "fresh",
+        "retryAfter": "Resolve actual-frame subtitle alignment v1"
+      },
+      "outputPaths": [],
+      "summary": {},
+      "error": "Interrupted after the subtitle timing implementation was simplified from two placements to one.",
+      "review": {
+        "status": "not_required"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "runId": "94bfe363-4d97-426d-b83c-79d2281e8309",
+      "editId": "main",
+      "flowPlanId": "edit-flow-main-travel-vlog-codex-20260906T085722Z",
+      "flowPlanHash": "52a7f01a50ac11291375523cd7b0f7c7eadae544250e86f033bee7077b34f2f5",
+      "stepId": "timeline-generate-codex-v1",
+      "capabilityId": "timeline.generate",
+      "runner": "deterministic",
+      "status": "completed",
+      "startedAt": "2026-09-06T10:31:46.897Z",
+      "updatedAt": "2026-09-06T10:38:12.527Z",
+      "completedAt": "2026-09-06T10:38:12.527Z",
+      "inputRefs": [
+        "DaVinci Resolve Media Pool",
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "Resolve timeline: Kairos Timelines/<editId> rough cut",
+        ".tmp/edit-flow/<editId>/timeline/current.json",
+        ".tmp/edit-flow/<editId>/timeline/current.srt",
+        "edits/resolve-project-map.json",
+        "edits/resolve-projects/<safe-project-key>/<Resolve项目名>.drp"
+      ],
+      "inputSnapshot": {
+        "source": "buildProjectTimeline",
+        "projectId": "thirty-third-birthday-trip",
+        "editRuleCategory": "travel-vlog",
+        "resolveMediaSyncRunId": "24fd292b-798c-48f8-82b0-628424b1a5e3",
+        "materialSlots": "edits/main/script/material-slots.json",
+        "chronologyStatus": "confirmed",
+        "spansStatus": "fresh",
+        "retryAfter": "Resolve actual-frame subtitle alignment v1"
+      },
+      "outputPaths": [
+        ".tmp/edit-flow/main/timeline/current.json",
+        ".tmp/edit-flow/main/timeline/current.srt",
+        "edits\\resolve-projects\\33-Edit\\33岁生日旅行 [Edit].drp"
+      ],
+      "summary": {
+        "validation": "passed-single-placement-resolve-actual-frame-subtitle-generation",
+        "resolveProjectName": "33岁生日旅行 [Edit]",
+        "timelineName": "Main [main]",
+        "clipCount": 1096,
+        "subtitleCueCount": 2172,
+        "subtitleSrtPath": ".tmp/edit-flow/main/timeline/current.srt",
+        "resolveActualFrameTiming": {
+          "policyVersion": "resolve-actual-frame-v1",
+          "placementPasses": 1,
+          "plannedDurationMs": 21840067,
+          "actualDurationMs": 21810033,
+          "durationDeltaMs": -30034,
+          "subtitlePreloaded": false
+        },
+        "mutedClipCount": 571,
+        "audioMuteAppliedCount": 353,
+        "audibleClipColoring": {
+          "color": "Orange",
+          "itemScope": "ordinary-video-and-linked-audio; linked-audio-only-when-video-has-visual-category-color",
+          "checked": 746,
+          "colored": 746,
+          "failed": 0
+        },
+        "visualClipColoring": {
+          "photo": {
+            "color": "Blue",
+            "itemScope": "video",
+            "checked": 218,
+            "colored": 218,
+            "failed": 0
+          },
+          "timelapse": {
+            "color": "Purple",
+            "itemScope": "video",
+            "checked": 4,
+            "colored": 4,
+            "failed": 0
+          },
+          "drive": {
+            "color": "Brown",
+            "itemScope": "video",
+            "checked": 597,
+            "colored": 597,
+            "failed": 0
+          },
+          "aerial": {
+            "color": "Teal",
+            "itemScope": "video",
+            "checked": 52,
+            "colored": 52,
+            "failed": 0
+          }
+        },
+        "visualClipGrouping": {
+          "photo": {
+            "groupName": "Kairos Photos",
+            "itemScope": "video",
+            "checked": 218,
+            "assigned": 218,
+            "alreadyAssigned": 0,
+            "failed": 0,
+            "created": false
+          },
+          "timelapse": {
+            "groupName": "Kairos Timelapse",
+            "itemScope": "video",
+            "checked": 4,
+            "assigned": 4,
+            "alreadyAssigned": 0,
+            "failed": 0,
+            "created": false
+          }
+        },
+        "speedAppliedCount": 0,
+        "speedIgnoredCount": 215,
+        "speedStrategy": "ignored",
+        "syncSummary": {
+          "mode": "existing-media-pool",
+          "imported": 0,
+          "moved": 0,
+          "reused": 730
+        },
+        "sourceRangeValidation": {
+          "checked": 878,
+          "passed": 878,
+          "failed": 0,
+          "strategy": "direct-native-append",
+          "maxToleranceFrames": 2
+        },
+        "stillDurationValidation": {
+          "checked": 218,
+          "passed": 218,
+          "failed": 0,
+          "expectedMs": 1000
+        },
+        "timelinePlacementValidation": {
+          "checked": 1096,
+          "passed": 1096,
+          "failed": 0,
+          "strategy": "sequential-actual-end"
+        },
+        "timelineGapValidation": {
+          "checked": 1096,
+          "gapCount": 0,
+          "overlapCount": 0,
+          "maxGapFrames": 0,
+          "firstGaps": [],
+          "passed": true
+        },
+        "subtitleImport": {
+          "enabled": false
+        },
+        "drpSnapshot": {
+          "projectName": "33岁生日旅行 [Edit]",
+          "snapshotPath": "H:\\SacredGrove\\Kairos\\projects\\thirty-third-birthday-trip\\edits\\resolve-projects\\33-Edit\\33岁生日旅行 [Edit].drp",
+          "latestPath": "H:\\SacredGrove\\Kairos\\projects\\thirty-third-birthday-trip\\edits\\resolve-projects\\33-Edit\\33岁生日旅行 [Edit].drp",
+          "createdAt": "2026-09-06T10:37:32Z",
+          "mode": "auto",
+          "retention": "latest-only",
+          "action": "timeline.generate",
+          "database": {
+            "DbType": "Disk",
+            "DbName": "Local Database"
+          },
+          "detail": "save_drp_snapshot exported withStillsAndLUTs=false retention=latest-only"
+        },
+        "nextStep": "resolve.lock_rough_cut"
+      },
+      "review": {
+        "status": "not_required"
+      }
+    }
+  ]
+}

@@ -17,6 +17,7 @@
       "description": "ZV-E1 主机位视频，包含 VLOG、行车与口播素材",
       "enabled": true,
       "label": "33岁生日/zve1",
+      "clockOffsetMs": 15000,
       "priority": 1,
       "category": "camera",
       "notes": [
@@ -45,6 +46,7 @@
       "description": "A7R6 补充视频素材",
       "enabled": true,
       "label": "33岁生日/a7r6",
+      "clockOffsetMs": -13000,
       "priority": 2,
       "category": "camera",
       "notes": [
@@ -73,6 +75,7 @@
       "description": "无人机航拍视频及同名 SRT 遥测 sidecar",
       "enabled": true,
       "label": "33岁生日/drone",
+      "clockOffsetMs": 7000,
       "priority": 3,
       "category": "drone",
       "notes": [

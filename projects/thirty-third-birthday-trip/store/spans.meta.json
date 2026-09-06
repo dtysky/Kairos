@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "1.0",
+  "status": "fresh",
+  "generatedAt": "2026-09-06T04:24:46.574Z",
+  "inputsHash": "430e082a7746d5f8349c3d8c30b37e2efb4e106b927b367e35623af07fc22730",
+  "assetCount": 735,
+  "reportCount": 735,
+  "spanCount": 1109,
+  "speechReview": {
+    "status": "completed",
+    "phase": "agent",
+    "candidateCount": 463,
+    "autoCorrectionCount": 57,
+    "pendingCorrectionCount": 0,
+    "handoffPath": "H:\\SacredGrove\\Kairos\\projects\\thirty-third-birthday-trip\\.tmp\\chronology\\speech-window-agent-handoff.md",
+    "reviewArtifactPath": "H:\\SacredGrove\\Kairos\\projects\\thirty-third-birthday-trip\\analysis\\transcript-reviews\\430e082a7746d5f8349c3d8c30b37e2efb4e106b927b367e35623af07fc22730.json",
+    "reportPath": "H:\\SacredGrove\\Kairos\\projects\\thirty-third-birthday-trip\\.tmp\\chronology\\speech-transcript-review-430e082a.md",
+    "suggestedCorrectionCount": 155,
+    "suggestedTrimCount": 95,
+    "suggestedCancelCount": 64,
+    "needsListeningCount": 129,
+    "glossaryHash": "4a0c974b97fe6f5eb3ae480230b804de8dbe39f5475fd807e7d4cbc07a40cdd3",
+    "tripContextHash": "53e831504952a5afa4060abfcd4e3ec6df91d8008f37368f8d5269d6a07b88f0",
+    "updatedAt": "2026-09-06T05:08:34.525Z"
+  },
+  "warnings": [
+    "manually refreshed speech windows, fine-scan truth, and spans for C3289_zve1, C3325_zve1, C3570_zve1 from corrected aligned-token reports; non-target spans preserved",
+    "restored the 1109-span pre-apply baseline before staging the unified speech/transcript review; no ASR, VLM, fine-scan, or asset report was rerun"
+  ]
+}

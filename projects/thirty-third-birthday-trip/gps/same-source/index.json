@@ -1,0 +1,988 @@
+{
+  "schemaVersion": "1.0",
+  "updatedAt": "2026-09-04T16:08:28.222Z",
+  "trackCount": 109,
+  "tracks": [
+    {
+      "id": "sidecar-srt-052c51621185423c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-052c51621185423c.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260820061258_0898_D.SRT",
+      "pointCount": 3005,
+      "startTime": "2026-08-19T22:13:06.000Z",
+      "endTime": "2026-08-19T22:13:56.118Z"
+    },
+    {
+      "id": "sidecar-srt-05333529aed83dfe",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-05333529aed83dfe.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260820061122_0890_D.SRT",
+      "pointCount": 1492,
+      "startTime": "2026-08-19T22:11:29.000Z",
+      "endTime": "2026-08-19T22:11:53.875Z"
+    },
+    {
+      "id": "sidecar-srt-06afd0e4a4e51588",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-06afd0e4a4e51588.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260820062642_0931_D.SRT",
+      "pointCount": 2547,
+      "startTime": "2026-08-19T22:26:49.000Z",
+      "endTime": "2026-08-19T22:27:31.476Z"
+    },
+    {
+      "id": "sidecar-srt-074090f0a3a73397",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-074090f0a3a73397.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260821193018_0369_D.SRT",
+      "pointCount": 985,
+      "startTime": "2026-08-21T11:30:25.000Z",
+      "endTime": "2026-08-21T11:30:41.416Z"
+    },
+    {
+      "id": "sidecar-srt-0899491fbe4416ab",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-0899491fbe4416ab.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822170917_0505_D.SRT",
+      "pointCount": 1306,
+      "startTime": "2026-08-22T09:09:24.000Z",
+      "endTime": "2026-08-22T09:09:45.772Z"
+    },
+    {
+      "id": "sidecar-srt-0aef02a342827bc6",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-0aef02a342827bc6.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260823145248_0896_D.SRT",
+      "pointCount": 1223,
+      "startTime": "2026-08-23T06:52:55.000Z",
+      "endTime": "2026-08-23T06:53:15.387Z"
+    },
+    {
+      "id": "sidecar-srt-0d9b96fd65f5f55e",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-0d9b96fd65f5f55e.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260823151146_0952_D.SRT",
+      "pointCount": 2384,
+      "startTime": "2026-08-23T07:11:54.000Z",
+      "endTime": "2026-08-23T07:12:33.757Z"
+    },
+    {
+      "id": "sidecar-srt-11700811402a55db",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-11700811402a55db.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822172313_0541_D.SRT",
+      "pointCount": 5650,
+      "startTime": "2026-08-22T09:23:21.000Z",
+      "endTime": "2026-08-22T09:24:55.247Z"
+    },
+    {
+      "id": "sidecar-srt-12cfd2936fe2ce8a",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-12cfd2936fe2ce8a.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260820084530_0018_D.SRT",
+      "pointCount": 1232,
+      "startTime": "2026-08-20T00:45:37.000Z",
+      "endTime": "2026-08-20T00:45:57.537Z"
+    },
+    {
+      "id": "sidecar-srt-15347a4d4814852a",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-15347a4d4814852a.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260820092244_0110_D.SRT",
+      "pointCount": 1327,
+      "startTime": "2026-08-20T01:22:52.000Z",
+      "endTime": "2026-08-20T01:23:14.122Z"
+    },
+    {
+      "id": "sidecar-srt-169d4be00b73978e",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-169d4be00b73978e.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260820084701_0028_D.SRT",
+      "pointCount": 1204,
+      "startTime": "2026-08-20T00:47:08.000Z",
+      "endTime": "2026-08-20T00:47:28.070Z"
+    },
+    {
+      "id": "sidecar-srt-1886c925c520c956",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-1886c925c520c956.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260821183741_0127_D.SRT",
+      "pointCount": 2311,
+      "startTime": "2026-08-21T10:37:48.000Z",
+      "endTime": "2026-08-21T10:38:26.539Z"
+    },
+    {
+      "id": "sidecar-srt-1cc49752e9e73f0b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-1cc49752e9e73f0b.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260820063023_0951_D.SRT",
+      "pointCount": 2204,
+      "startTime": "2026-08-19T22:30:31.000Z",
+      "endTime": "2026-08-19T22:31:07.754Z"
+    },
+    {
+      "id": "sidecar-srt-21ab424619e96991",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-21ab424619e96991.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260821191737_0282_D.SRT",
+      "pointCount": 719,
+      "startTime": "2026-08-21T11:17:44.000Z",
+      "endTime": "2026-08-21T11:17:55.978Z"
+    },
+    {
+      "id": "sidecar-srt-221105adbe91ffa5",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-221105adbe91ffa5.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260823125603_0840_D.SRT",
+      "pointCount": 157,
+      "startTime": "2026-08-23T04:56:10.000Z",
+      "endTime": "2026-08-23T04:56:12.602Z"
+    },
+    {
+      "id": "sidecar-srt-235d1cae21d017bb",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-235d1cae21d017bb.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260820090847_0067_D.SRT",
+      "pointCount": 1048,
+      "startTime": "2026-08-20T01:08:54.000Z",
+      "endTime": "2026-08-20T01:09:11.467Z"
+    },
+    {
+      "id": "sidecar-srt-2520690f22441754",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-2520690f22441754.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260820091646_0107_D.SRT",
+      "pointCount": 2135,
+      "startTime": "2026-08-20T01:16:53.000Z",
+      "endTime": "2026-08-20T01:17:28.594Z"
+    },
+    {
+      "id": "sidecar-srt-25434c2e04aa6c03",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-25434c2e04aa6c03.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260820060737_0872_D.SRT",
+      "pointCount": 1474,
+      "startTime": "2026-08-19T22:07:44.000Z",
+      "endTime": "2026-08-19T22:08:08.574Z"
+    },
+    {
+      "id": "sidecar-srt-287fe8472c2c12fa",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-287fe8472c2c12fa.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822174648_0654_D.SRT",
+      "pointCount": 1557,
+      "startTime": "2026-08-22T09:46:56.000Z",
+      "endTime": "2026-08-22T09:47:21.959Z"
+    },
+    {
+      "id": "sidecar-srt-2ae8dbca8c3820b2",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-2ae8dbca8c3820b2.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822184750_0695_D.SRT",
+      "pointCount": 655,
+      "startTime": "2026-08-22T10:47:58.000Z",
+      "endTime": "2026-08-22T10:48:08.910Z"
+    },
+    {
+      "id": "sidecar-srt-2da2a3de86fcfe43",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-2da2a3de86fcfe43.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260821192319_0347_D.SRT",
+      "pointCount": 417,
+      "startTime": "2026-08-21T11:23:26.000Z",
+      "endTime": "2026-08-21T11:23:32.939Z"
+    },
+    {
+      "id": "sidecar-srt-2f26516ad802f2fc",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-2f26516ad802f2fc.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260823145937_0916_D.SRT",
+      "pointCount": 4651,
+      "startTime": "2026-08-23T06:59:44.000Z",
+      "endTime": "2026-08-23T07:01:01.580Z"
+    },
+    {
+      "id": "sidecar-srt-301652d57eb7b59f",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-301652d57eb7b59f.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260821191855_0294_D.SRT",
+      "pointCount": 804,
+      "startTime": "2026-08-21T11:19:02.000Z",
+      "endTime": "2026-08-21T11:19:15.396Z"
+    },
+    {
+      "id": "sidecar-srt-34482fbb6adbdf3f",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-34482fbb6adbdf3f.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260823150114_0917_D.SRT",
+      "pointCount": 935,
+      "startTime": "2026-08-23T07:01:21.000Z",
+      "endTime": "2026-08-23T07:01:36.582Z"
+    },
+    {
+      "id": "sidecar-srt-376aeab223f585ac",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-376aeab223f585ac.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260821191757_0286_D.SRT",
+      "pointCount": 1855,
+      "startTime": "2026-08-21T11:18:04.000Z",
+      "endTime": "2026-08-21T11:18:34.931Z"
+    },
+    {
+      "id": "sidecar-srt-3de3e5e1e83f29ce",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-3de3e5e1e83f29ce.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260820092355_0114_D.SRT",
+      "pointCount": 2446,
+      "startTime": "2026-08-20T01:24:03.000Z",
+      "endTime": "2026-08-20T01:24:43.791Z"
+    },
+    {
+      "id": "sidecar-srt-41ff9bcbb7bd75ef",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-41ff9bcbb7bd75ef.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260820063119_0958_D.SRT",
+      "pointCount": 2585,
+      "startTime": "2026-08-19T22:31:12.000Z",
+      "endTime": "2026-08-19T22:31:55.110Z"
+    },
+    {
+      "id": "sidecar-srt-43e930fbd1d6fef2",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-43e930fbd1d6fef2.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260823145445_0903_D.SRT",
+      "pointCount": 215,
+      "startTime": "2026-08-23T06:54:53.000Z",
+      "endTime": "2026-08-23T06:54:56.569Z"
+    },
+    {
+      "id": "sidecar-srt-463637f3f2d4b55b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-463637f3f2d4b55b.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260821184839_0210_D.SRT",
+      "pointCount": 924,
+      "startTime": "2026-08-21T10:48:46.000Z",
+      "endTime": "2026-08-21T10:49:01.398Z"
+    },
+    {
+      "id": "sidecar-srt-47761b028a3104ee",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-47761b028a3104ee.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260823145041_0878_D.SRT",
+      "pointCount": 685,
+      "startTime": "2026-08-23T06:50:49.000Z",
+      "endTime": "2026-08-23T06:51:00.411Z"
+    },
+    {
+      "id": "sidecar-srt-4dca879108230c12",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-4dca879108230c12.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260821191846_0293_D.SRT",
+      "pointCount": 394,
+      "startTime": "2026-08-21T11:18:53.000Z",
+      "endTime": "2026-08-21T11:18:59.556Z"
+    },
+    {
+      "id": "sidecar-srt-4efd9c601160e215",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-4efd9c601160e215.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260821191643_0274_D.SRT",
+      "pointCount": 1495,
+      "startTime": "2026-08-21T11:16:51.000Z",
+      "endTime": "2026-08-21T11:17:15.925Z"
+    },
+    {
+      "id": "sidecar-srt-4f68ae7ac1c68f70",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-4f68ae7ac1c68f70.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822171250_0521_D.SRT",
+      "pointCount": 3504,
+      "startTime": "2026-08-22T09:12:57.000Z",
+      "endTime": "2026-08-22T09:13:55.443Z"
+    },
+    {
+      "id": "sidecar-srt-52a0cdff74576a92",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-52a0cdff74576a92.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260823145133_0888_D.SRT",
+      "pointCount": 778,
+      "startTime": "2026-08-23T06:51:41.000Z",
+      "endTime": "2026-08-23T06:51:53.962Z"
+    },
+    {
+      "id": "sidecar-srt-5435a857bfd097ab",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-5435a857bfd097ab.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822173200_0571_D.SRT",
+      "pointCount": 1325,
+      "startTime": "2026-08-22T09:32:08.000Z",
+      "endTime": "2026-08-22T09:32:30.089Z"
+    },
+    {
+      "id": "sidecar-srt-559e48eb747f27b2",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-559e48eb747f27b2.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822190203_0748_D.SRT",
+      "pointCount": 1777,
+      "startTime": "2026-08-22T11:02:10.000Z",
+      "endTime": "2026-08-22T11:02:39.630Z"
+    },
+    {
+      "id": "sidecar-srt-55a29b61b5df8c4e",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-55a29b61b5df8c4e.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260823125226_0824_D.SRT",
+      "pointCount": 2095,
+      "startTime": "2026-08-23T04:52:34.000Z",
+      "endTime": "2026-08-23T04:53:08.935Z"
+    },
+    {
+      "id": "sidecar-srt-57abfd02d79802e2",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-57abfd02d79802e2.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822173136_0570_D.SRT",
+      "pointCount": 1303,
+      "startTime": "2026-08-22T09:31:44.000Z",
+      "endTime": "2026-08-22T09:32:05.721Z"
+    },
+    {
+      "id": "sidecar-srt-5ea0858091dacb68",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-5ea0858091dacb68.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260823125924_0842_D.SRT",
+      "pointCount": 2417,
+      "startTime": "2026-08-23T04:59:31.000Z",
+      "endTime": "2026-08-23T05:00:11.308Z"
+    },
+    {
+      "id": "sidecar-srt-61a3adacc461a40d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-61a3adacc461a40d.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260821192619_0356_D.SRT",
+      "pointCount": 606,
+      "startTime": "2026-08-21T11:26:27.000Z",
+      "endTime": "2026-08-21T11:26:37.093Z"
+    },
+    {
+      "id": "sidecar-srt-620fe10f54831769",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-620fe10f54831769.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822172150_0537_D.SRT",
+      "pointCount": 2009,
+      "startTime": "2026-08-22T09:21:57.000Z",
+      "endTime": "2026-08-22T09:22:30.500Z"
+    },
+    {
+      "id": "sidecar-srt-647341fc209ba8a8",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-647341fc209ba8a8.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822185204_0732_D.SRT",
+      "pointCount": 2699,
+      "startTime": "2026-08-22T10:52:12.000Z",
+      "endTime": "2026-08-22T10:52:57.012Z"
+    },
+    {
+      "id": "sidecar-srt-6a9aed8f819b7bb2",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-6a9aed8f819b7bb2.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260823145201_0892_D.SRT",
+      "pointCount": 1530,
+      "startTime": "2026-08-23T06:52:08.000Z",
+      "endTime": "2026-08-23T06:52:33.509Z"
+    },
+    {
+      "id": "sidecar-srt-6e4173ff68c11a5d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-6e4173ff68c11a5d.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822172646_0548_D.SRT",
+      "pointCount": 6124,
+      "startTime": "2026-08-22T09:26:53.000Z",
+      "endTime": "2026-08-22T09:28:35.155Z"
+    },
+    {
+      "id": "sidecar-srt-6fd4e3d61fec3632",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-6fd4e3d61fec3632.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260821185503_0272_D.SRT",
+      "pointCount": 9095,
+      "startTime": "2026-08-21T10:55:11.000Z",
+      "endTime": "2026-08-21T10:57:42.724Z"
+    },
+    {
+      "id": "sidecar-srt-723d269e6d753f3a",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-723d269e6d753f3a.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260823151305_0954_D.SRT",
+      "pointCount": 442,
+      "startTime": "2026-08-23T07:13:12.000Z",
+      "endTime": "2026-08-23T07:13:19.357Z"
+    },
+    {
+      "id": "sidecar-srt-78e8cdf63c2f31c4",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-78e8cdf63c2f31c4.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260823141939_0869_D.SRT",
+      "pointCount": 6247,
+      "startTime": "2026-08-23T06:19:46.000Z",
+      "endTime": "2026-08-23T06:21:30.208Z"
+    },
+    {
+      "id": "sidecar-srt-7a571b4778868333",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-7a571b4778868333.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260820092044_0109_D.SRT",
+      "pointCount": 1909,
+      "startTime": "2026-08-20T01:20:51.000Z",
+      "endTime": "2026-08-20T01:21:22.832Z"
+    },
+    {
+      "id": "sidecar-srt-7b1c91604b67d085",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-7b1c91604b67d085.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822190537_0768_D.SRT",
+      "pointCount": 63,
+      "startTime": "2026-08-22T11:05:44.000Z",
+      "endTime": "2026-08-22T11:05:45.033Z"
+    },
+    {
+      "id": "sidecar-srt-7b7323051499549c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-7b7323051499549c.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260820091813_0108_D.SRT",
+      "pointCount": 5938,
+      "startTime": "2026-08-20T01:18:20.000Z",
+      "endTime": "2026-08-20T01:19:59.052Z"
+    },
+    {
+      "id": "sidecar-srt-7be7b8cdec3daf36",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-7be7b8cdec3daf36.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260821185008_0226_D.SRT",
+      "pointCount": 691,
+      "startTime": "2026-08-21T10:50:16.000Z",
+      "endTime": "2026-08-21T10:50:27.511Z"
+    },
+    {
+      "id": "sidecar-srt-7ee75fdeece29bf4",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-7ee75fdeece29bf4.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260821192031_0313_D.SRT",
+      "pointCount": 1294,
+      "startTime": "2026-08-21T11:20:38.000Z",
+      "endTime": "2026-08-21T11:20:59.571Z"
+    },
+    {
+      "id": "sidecar-srt-7fac8bf5e26f3867",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-7fac8bf5e26f3867.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822173328_0572_D.SRT",
+      "pointCount": 2331,
+      "startTime": "2026-08-22T09:33:35.000Z",
+      "endTime": "2026-08-22T09:34:13.873Z"
+    },
+    {
+      "id": "sidecar-srt-8420876fe0291819",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-8420876fe0291819.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260820090617_0065_D.SRT",
+      "pointCount": 2883,
+      "startTime": "2026-08-20T01:06:24.000Z",
+      "endTime": "2026-08-20T01:07:12.082Z"
+    },
+    {
+      "id": "sidecar-srt-860d51d16bcd53dd",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-860d51d16bcd53dd.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260820062911_0935_D.SRT",
+      "pointCount": 739,
+      "startTime": "2026-08-19T22:29:19.000Z",
+      "endTime": "2026-08-19T22:29:31.312Z"
+    },
+    {
+      "id": "sidecar-srt-869abd3efd81bcbd",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-869abd3efd81bcbd.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260823145831_0908_D.SRT",
+      "pointCount": 997,
+      "startTime": "2026-08-23T06:58:38.000Z",
+      "endTime": "2026-08-23T06:58:54.616Z"
+    },
+    {
+      "id": "sidecar-srt-87ba4c0778b5a14c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-87ba4c0778b5a14c.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260820060620_0861_D.SRT",
+      "pointCount": 1332,
+      "startTime": "2026-08-19T22:06:28.000Z",
+      "endTime": "2026-08-19T22:06:50.205Z"
+    },
+    {
+      "id": "sidecar-srt-88ed7a4b3967fa3a",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-88ed7a4b3967fa3a.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260820090919_0068_D.SRT",
+      "pointCount": 2310,
+      "startTime": "2026-08-20T01:09:26.000Z",
+      "endTime": "2026-08-20T01:10:04.522Z"
+    },
+    {
+      "id": "sidecar-srt-8a7e7bd054ee50f5",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-8a7e7bd054ee50f5.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822190933_0793_D.SRT",
+      "pointCount": 1828,
+      "startTime": "2026-08-22T11:09:41.000Z",
+      "endTime": "2026-08-22T11:10:11.481Z"
+    },
+    {
+      "id": "sidecar-srt-8b673e86212a8cd1",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-8b673e86212a8cd1.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260820061453_0917_D.SRT",
+      "pointCount": 1643,
+      "startTime": "2026-08-19T22:15:00.000Z",
+      "endTime": "2026-08-19T22:15:27.387Z"
+    },
+    {
+      "id": "sidecar-srt-8c57987a24ce006d",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-8c57987a24ce006d.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260821184032_0148_D.SRT",
+      "pointCount": 2640,
+      "startTime": "2026-08-21T10:40:40.000Z",
+      "endTime": "2026-08-21T10:41:24.028Z"
+    },
+    {
+      "id": "sidecar-srt-8d565a740a7879e6",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-8d565a740a7879e6.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822184239_0681_D.SRT",
+      "pointCount": 2964,
+      "startTime": "2026-08-22T10:42:46.000Z",
+      "endTime": "2026-08-22T10:43:35.434Z"
+    },
+    {
+      "id": "sidecar-srt-8eaf2c8c494fbd18",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-8eaf2c8c494fbd18.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260821192340_0348_D.SRT",
+      "pointCount": 1685,
+      "startTime": "2026-08-21T11:23:47.000Z",
+      "endTime": "2026-08-21T11:24:15.095Z"
+    },
+    {
+      "id": "sidecar-srt-91e8c459df23f37e",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-91e8c459df23f37e.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260820060937_0882_D.SRT",
+      "pointCount": 269,
+      "startTime": "2026-08-19T22:09:44.000Z",
+      "endTime": "2026-08-19T22:09:48.470Z"
+    },
+    {
+      "id": "sidecar-srt-92606f06159b4322",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-92606f06159b4322.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260823150202_0921_D.SRT",
+      "pointCount": 7714,
+      "startTime": "2026-08-23T07:02:09.000Z",
+      "endTime": "2026-08-23T07:04:17.683Z"
+    },
+    {
+      "id": "sidecar-srt-a18ef932a52169c8",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-a18ef932a52169c8.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260821191639_0273_D.SRT",
+      "pointCount": 72,
+      "startTime": "2026-08-21T11:16:46.000Z",
+      "endTime": "2026-08-21T11:16:47.183Z"
+    },
+    {
+      "id": "sidecar-srt-a261487ad1ba7511",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-a261487ad1ba7511.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822190417_0764_D.SRT",
+      "pointCount": 145,
+      "startTime": "2026-08-22T11:04:24.000Z",
+      "endTime": "2026-08-22T11:04:26.401Z"
+    },
+    {
+      "id": "sidecar-srt-a67f9cbcd324cf33",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-a67f9cbcd324cf33.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260820090123_0051_D.SRT",
+      "pointCount": 616,
+      "startTime": "2026-08-20T01:01:30.000Z",
+      "endTime": "2026-08-20T01:01:40.260Z"
+    },
+    {
+      "id": "sidecar-srt-b450736533da3b23",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-b450736533da3b23.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260821184402_0188_D.SRT",
+      "pointCount": 1723,
+      "startTime": "2026-08-21T10:44:10.000Z",
+      "endTime": "2026-08-21T10:44:38.729Z"
+    },
+    {
+      "id": "sidecar-srt-b570a8c577944d07",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-b570a8c577944d07.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822165922_0405_D.SRT",
+      "pointCount": 2935,
+      "startTime": "2026-08-22T08:59:29.000Z",
+      "endTime": "2026-08-22T09:00:17.950Z"
+    },
+    {
+      "id": "sidecar-srt-b6d32dc396113c0b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-b6d32dc396113c0b.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260823151600_0980_D.SRT",
+      "pointCount": 3042,
+      "startTime": "2026-08-23T07:16:07.000Z",
+      "endTime": "2026-08-23T07:16:57.735Z"
+    },
+    {
+      "id": "sidecar-srt-bbe598040e9e6c55",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-bbe598040e9e6c55.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260823151229_0953_D.SRT",
+      "pointCount": 1300,
+      "startTime": "2026-08-23T07:12:36.000Z",
+      "endTime": "2026-08-23T07:12:57.671Z"
+    },
+    {
+      "id": "sidecar-srt-c055f44f8c46308c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c055f44f8c46308c.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260820061204_0894_D.SRT",
+      "pointCount": 2619,
+      "startTime": "2026-08-19T22:12:11.000Z",
+      "endTime": "2026-08-19T22:12:54.678Z"
+    },
+    {
+      "id": "sidecar-srt-c07e1d8f6583c8d3",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c07e1d8f6583c8d3.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260820060654_0865_D.SRT",
+      "pointCount": 1340,
+      "startTime": "2026-08-19T22:07:02.000Z",
+      "endTime": "2026-08-19T22:07:24.339Z"
+    },
+    {
+      "id": "sidecar-srt-c42539e8729b58a6",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c42539e8729b58a6.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822185730_0743_D.SRT",
+      "pointCount": 3419,
+      "startTime": "2026-08-22T10:57:37.000Z",
+      "endTime": "2026-08-22T10:58:34.025Z"
+    },
+    {
+      "id": "sidecar-srt-c6632ee38c98a8f2",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c6632ee38c98a8f2.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822171924_0535_D.SRT",
+      "pointCount": 5078,
+      "startTime": "2026-08-22T09:19:31.000Z",
+      "endTime": "2026-08-22T09:20:55.704Z"
+    },
+    {
+      "id": "sidecar-srt-c7187e5e63da1a1e",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c7187e5e63da1a1e.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260823144950_0870_D.SRT",
+      "pointCount": 1131,
+      "startTime": "2026-08-23T06:49:58.000Z",
+      "endTime": "2026-08-23T06:50:16.852Z"
+    },
+    {
+      "id": "sidecar-srt-c9b2e1e75e088285",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-c9b2e1e75e088285.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822172532_0543_D.SRT",
+      "pointCount": 628,
+      "startTime": "2026-08-22T09:25:39.000Z",
+      "endTime": "2026-08-22T09:25:49.460Z"
+    },
+    {
+      "id": "sidecar-srt-ca3456d1e428a927",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-ca3456d1e428a927.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822170148_0419_D.SRT",
+      "pointCount": 1916,
+      "startTime": "2026-08-22T09:01:55.000Z",
+      "endTime": "2026-08-22T09:02:26.949Z"
+    },
+    {
+      "id": "sidecar-srt-cd130527692483aa",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-cd130527692483aa.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260820063920_0014_D.SRT",
+      "pointCount": 724,
+      "startTime": "2026-08-19T22:39:27.000Z",
+      "endTime": "2026-08-19T22:39:39.060Z"
+    },
+    {
+      "id": "sidecar-srt-cea2503459a3b3c2",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-cea2503459a3b3c2.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260823145857_0909_D.SRT",
+      "pointCount": 60,
+      "startTime": "2026-08-23T06:59:04.000Z",
+      "endTime": "2026-08-23T06:59:04.983Z"
+    },
+    {
+      "id": "sidecar-srt-cf4f7ab5b08afc52",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-cf4f7ab5b08afc52.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260821192426_0349_D.SRT",
+      "pointCount": 1137,
+      "startTime": "2026-08-21T11:24:33.000Z",
+      "endTime": "2026-08-21T11:24:51.952Z"
+    },
+    {
+      "id": "sidecar-srt-d3ff6e0646789c83",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-d3ff6e0646789c83.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822172530_0542_D.SRT",
+      "pointCount": 27,
+      "startTime": "2026-08-22T09:25:37.000Z",
+      "endTime": "2026-08-22T09:25:37.433Z"
+    },
+    {
+      "id": "sidecar-srt-d4676a0e252f8aa0",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-d4676a0e252f8aa0.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822184517_0685_D.SRT",
+      "pointCount": 2461,
+      "startTime": "2026-08-22T10:45:25.000Z",
+      "endTime": "2026-08-22T10:46:06.042Z"
+    },
+    {
+      "id": "sidecar-srt-d633f58767838a96",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-d633f58767838a96.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822174441_0647_D.SRT",
+      "pointCount": 4543,
+      "startTime": "2026-08-22T09:44:49.000Z",
+      "endTime": "2026-08-22T09:46:04.778Z"
+    },
+    {
+      "id": "sidecar-srt-d926c2f408740835",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-d926c2f408740835.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260820091250_0093_D.SRT",
+      "pointCount": 3190,
+      "startTime": "2026-08-20T01:12:58.000Z",
+      "endTime": "2026-08-20T01:13:51.204Z"
+    },
+    {
+      "id": "sidecar-srt-dacbe9b69fd6f7f1",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-dacbe9b69fd6f7f1.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260820090732_0066_D.SRT",
+      "pointCount": 3811,
+      "startTime": "2026-08-20T01:07:40.000Z",
+      "endTime": "2026-08-20T01:08:43.565Z"
+    },
+    {
+      "id": "sidecar-srt-dae0dd48d93ccd52",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-dae0dd48d93ccd52.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260820091352_0094_D.SRT",
+      "pointCount": 3074,
+      "startTime": "2026-08-20T01:13:59.000Z",
+      "endTime": "2026-08-20T01:14:50.269Z"
+    },
+    {
+      "id": "sidecar-srt-db7d6525a2b90b7a",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-db7d6525a2b90b7a.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822172617_0544_D.SRT",
+      "pointCount": 85,
+      "startTime": "2026-08-22T09:26:24.000Z",
+      "endTime": "2026-08-22T09:26:25.400Z"
+    },
+    {
+      "id": "sidecar-srt-de9f7e733005408b",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-de9f7e733005408b.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260820090359_0064_D.SRT",
+      "pointCount": 3399,
+      "startTime": "2026-08-20T01:04:06.000Z",
+      "endTime": "2026-08-20T01:05:02.691Z"
+    },
+    {
+      "id": "sidecar-srt-df5671f9335693ca",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-df5671f9335693ca.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822173618_0597_D.SRT",
+      "pointCount": 417,
+      "startTime": "2026-08-22T09:36:26.000Z",
+      "endTime": "2026-08-22T09:36:32.939Z"
+    },
+    {
+      "id": "sidecar-srt-e09db97c9f3e7832",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-e09db97c9f3e7832.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260820061936_0921_D.SRT",
+      "pointCount": 2299,
+      "startTime": "2026-08-19T22:19:44.000Z",
+      "endTime": "2026-08-19T22:20:22.339Z"
+    },
+    {
+      "id": "sidecar-srt-e0bce284f3c48c95",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-e0bce284f3c48c95.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260823145539_0904_D.SRT",
+      "pointCount": 4776,
+      "startTime": "2026-08-23T06:55:46.000Z",
+      "endTime": "2026-08-23T06:57:05.665Z"
+    },
+    {
+      "id": "sidecar-srt-e1a94839e17ec6d9",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-e1a94839e17ec6d9.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822172113_0536_D.SRT",
+      "pointCount": 1442,
+      "startTime": "2026-08-22T09:21:21.000Z",
+      "endTime": "2026-08-22T09:21:45.041Z"
+    },
+    {
+      "id": "sidecar-srt-e27f7e63306cf43f",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-e27f7e63306cf43f.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260820061039_0889_D.SRT",
+      "pointCount": 2044,
+      "startTime": "2026-08-19T22:10:46.000Z",
+      "endTime": "2026-08-19T22:11:20.084Z"
+    },
+    {
+      "id": "sidecar-srt-e53acae987803843",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-e53acae987803843.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822165755_0397_D.SRT",
+      "pointCount": 173,
+      "startTime": "2026-08-22T08:58:03.000Z",
+      "endTime": "2026-08-22T08:58:05.868Z"
+    },
+    {
+      "id": "sidecar-srt-ee5b5fbefc12a162",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-ee5b5fbefc12a162.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260823130315_0849_D.SRT",
+      "pointCount": 3806,
+      "startTime": "2026-08-23T05:03:23.000Z",
+      "endTime": "2026-08-23T05:04:26.482Z"
+    },
+    {
+      "id": "sidecar-srt-efb7d93e2a7e4b1f",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-efb7d93e2a7e4b1f.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822170120_0415_D.SRT",
+      "pointCount": 721,
+      "startTime": "2026-08-22T09:01:27.000Z",
+      "endTime": "2026-08-22T09:01:39.011Z"
+    },
+    {
+      "id": "sidecar-srt-f0827b8e76157de2",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-f0827b8e76157de2.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260823131028_0868_D.SRT",
+      "pointCount": 4623,
+      "startTime": "2026-08-23T05:10:35.000Z",
+      "endTime": "2026-08-23T05:11:52.113Z"
+    },
+    {
+      "id": "sidecar-srt-f1b97800bd239659",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-f1b97800bd239659.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822190022_0747_D.SRT",
+      "pointCount": 1867,
+      "startTime": "2026-08-22T11:00:29.000Z",
+      "endTime": "2026-08-22T11:01:00.131Z"
+    },
+    {
+      "id": "sidecar-srt-f1c916b41306318f",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-f1c916b41306318f.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260823151507_0970_D.SRT",
+      "pointCount": 520,
+      "startTime": "2026-08-23T07:15:15.000Z",
+      "endTime": "2026-08-23T07:15:23.658Z"
+    },
+    {
+      "id": "sidecar-srt-f554137055166ab2",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-f554137055166ab2.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822170628_0486_D.SRT",
+      "pointCount": 2449,
+      "startTime": "2026-08-22T09:06:35.000Z",
+      "endTime": "2026-08-22T09:07:15.841Z"
+    },
+    {
+      "id": "sidecar-srt-f5c24471036f522f",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-f5c24471036f522f.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822171432_0522_D.SRT",
+      "pointCount": 1731,
+      "startTime": "2026-08-22T09:14:39.000Z",
+      "endTime": "2026-08-22T09:15:07.862Z"
+    },
+    {
+      "id": "sidecar-srt-f5eef9aa94c636dc",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-f5eef9aa94c636dc.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822185333_0733_D.SRT",
+      "pointCount": 2202,
+      "startTime": "2026-08-22T10:53:41.000Z",
+      "endTime": "2026-08-22T10:54:17.720Z"
+    },
+    {
+      "id": "sidecar-srt-f6c9ab60c57140d7",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-f6c9ab60c57140d7.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260821183959_0144_D.SRT",
+      "pointCount": 1093,
+      "startTime": "2026-08-21T10:40:07.000Z",
+      "endTime": "2026-08-21T10:40:25.218Z"
+    },
+    {
+      "id": "sidecar-srt-fc2b588768adb202",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-fc2b588768adb202.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260821183854_0137_D.SRT",
+      "pointCount": 1945,
+      "startTime": "2026-08-21T10:39:01.000Z",
+      "endTime": "2026-08-21T10:39:33.433Z"
+    },
+    {
+      "id": "sidecar-srt-fccef960bb4d939c",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-fccef960bb4d939c.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822174402_0646_D.SRT",
+      "pointCount": 621,
+      "startTime": "2026-08-22T09:44:09.000Z",
+      "endTime": "2026-08-22T09:44:19.343Z"
+    },
+    {
+      "id": "sidecar-srt-fd249b66918999a3",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-fd249b66918999a3.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260822165801_0398_D.SRT",
+      "pointCount": 1738,
+      "startTime": "2026-08-22T08:58:08.000Z",
+      "endTime": "2026-08-22T08:58:36.979Z"
+    },
+    {
+      "id": "sidecar-srt-ffd08515b64119ce",
+      "originType": "sidecar-srt",
+      "relativePath": "tracks/sidecar-srt-ffd08515b64119ce.gpx",
+      "sourcePath": "F:\\vlog-proj\\20260820_33岁生日\\drone\\DJI_20260823125732_0841_D.SRT",
+      "pointCount": 3146,
+      "startTime": "2026-08-23T04:57:39.000Z",
+      "endTime": "2026-08-23T04:58:31.470Z"
+    }
+  ]
+}

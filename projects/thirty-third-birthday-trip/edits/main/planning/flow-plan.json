@@ -1,0 +1,243 @@
+{
+  "schemaVersion": "1.0",
+  "plannerPolicyVersion": "codex-agent-v1",
+  "materialIdPolicyVersion": "human-source-v1",
+  "materialTimePolicyVersion": "normalized-captured-at-v1",
+  "id": "edit-flow-main-travel-vlog-codex-20260906T085722Z",
+  "projectId": "thirty-third-birthday-trip",
+  "editId": "main",
+  "editRuleCategory": "travel-vlog",
+  "editRuleHash": "c3c3b95d9ee15855720abe4c389e4c0821a7403f0c07e5ae32f2668059449198",
+  "generatedAt": "2026-09-06T08:57:22.837Z",
+  "updatedAt": "2026-09-06T13:15:11.309Z",
+  "status": "stale",
+  "confirmedAt": "2026-09-06T08:57:22.837Z",
+  "staleReason": "edit rule markdown hash changed",
+  "summary": "旅行 VLOG 剪辑流：以已确认编年史和 fresh spans 生成可审查剪辑框架，经人工确认后召回素材、同步 Resolve Media Pool、生成带辅助口播 SRT 的粗剪并人工锁定；锁定后完成最终字幕对齐校验与替换 SRT。",
+  "assumptions": [
+    "当前 Chronology V2 已确认，共 41 个事件，时间范围为 2026-08-19 至 2026-08-25。",
+    "当前 spans 为 fresh 且 speech review completed；material.recall 与 timeline.generate 可以消费 store/spans.json 和 store/assets.json。",
+    "travel-vlog 规则没有要求独立事件表、行程表、素材档案或素材库文档，因此不生成 trip.event_table 或 material.archive。",
+    "规则中的 LLM 文本稿件由 edit.framework 承担，不增加 script.generate。",
+    "edit.framework 可以读取 confirmed chronology、spans 与 assets 理解项目事实，但正式 handoff 不写 chronology/event/route/gap/span/asset id 或具体素材主键。",
+    "material.recall 只消费已确认 edit-framework.md、store/spans.json、store/assets.json 和当前 step notes，不把完整 chronology 或 asset reports 作为语义选择接口。",
+    "resolve.media_sync 与 timeline.generate 可读取 chronology 做 Resolve 路径、分组和同事件照片尾部约束，但不得改变 material-slots 的选择与顺序。",
+    "short-trip-photo-vlog 仍是 legacy 档案，travel-vlog 当前规则未要求强制 styleUsage，因此本计划不启用风格层。"
+  ],
+  "steps": [
+    {
+      "id": "edit-framework-handoff-codex-v1",
+      "capabilityId": "edit.framework",
+      "title": "生成旅行 VLOG 剪辑框架",
+      "inputRefs": [
+        "config/edit-rules/travel-vlog.md",
+        "media/chronology.json",
+        "store/spans.json",
+        "store/assets.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/planning/edit-framework.md"
+      ],
+      "outputTypes": {
+        "edits/<editId>/planning/edit-framework.md": "planning-markdown"
+      },
+      "runner": "agent",
+      "execution": {
+        "mode": "sharded-agent",
+        "shardBy": "day",
+        "shardPacking": {
+          "base": "day",
+          "metric": "chronologyEventCount",
+          "maxPerShard": 150,
+          "preserveOrder": true
+        },
+        "codexSubagentProfile": {
+          "reasoningEffort": "high",
+          "forkContext": false,
+          "speed": "standard"
+        },
+        "reason": "剪辑规则要求使用 SubAgent，按自然日连续打包且约 150 个事件为阈值；当前 41 个事件组成一个包。"
+      },
+      "gate": "human",
+      "notes": [
+        "输出必须遵守当前 VLOG 剪辑规则附录：全片章节、分段操作稿、不可用 / 缺口、人工审查点。",
+        "按天、重点时间、行车、航拍和关键事件组织框架，保持素材整体时间顺序。",
+        "全片章节只做宏观概览；分段操作稿是 material.recall 的唯一 FW beat handoff，每行使用稳定 FW beat id。",
+        "spans 列必须写准确的素材类型数量和视频语音拆分，不得用高密度、多段、少量、含口播等模糊概括。",
+        "不得输出 chronology/event/route/gap/span/asset id、具体素材主键或证据索引。",
+        "叙事列只写客观画面和声音总结，不写保留、优先、插入、加速、静音等剪辑指导。",
+        "尽可能覆盖有效片段和真实缺口，不为版面整齐擅自过度剔除。"
+      ]
+    },
+    {
+      "id": "material-recall-codex-v1",
+      "capabilityId": "material.recall",
+      "title": "按剪辑框架召回素材槽位",
+      "inputRefs": [
+        "edits/<editId>/planning/flow-plan.json",
+        "edits/<editId>/planning/edit-framework.md",
+        "store/spans.json",
+        "store/assets.json"
+      ],
+      "outputRefs": [
+        "edits/<editId>/script/material-slots.json"
+      ],
+      "outputTypes": {
+        "edits/<editId>/script/material-slots.json": "material-slots-json"
+      },
+      "runner": "agent",
+      "execution": {
+        "mode": "sharded-agent",
+        "shardBy": "day",
+        "shardPacking": {
+          "base": "day",
+          "metric": "materialRefCount",
+          "maxPerShard": 2000,
+          "preserveOrder": true
+        },
+        "codexSubagentProfile": {
+          "reasoningEffort": "high",
+          "forkContext": false,
+          "speed": "standard"
+        },
+        "reason": "剪辑规则要求素材召回使用 SubAgent，按天连续打包且约 2000 个 span 为阈值。"
+      },
+      "gate": "human",
+      "notes": [
+        "只按 edit-framework.md 的分段操作稿 FW beat 顺序召回素材。",
+        "尽可能纳入有效片段，不得发明每段数量上限、代表抽样或全局压缩比例。",
+        "同一时间窗口中无人机跟车与非口播行车重复时优先无人机跟车。",
+        "行车之外，同一事件中航拍聚在一起并插入普通视频之中，照片聚在事件最后。",
+        "口播与纯视觉窗口重叠时优先口播；只有明确重复或冲突时才删除视觉候选，并在 coverageAudit 说明。",
+        "同一原始素材的无口播行车按画面语义去重，最多保留三段；所有无口播行车静音。",
+        "超过 10 秒的无口播行车使用整数倍速压到 10 秒以内，最大 4 倍；treatments.speed 只能写 1..4 的整数。",
+        "treatments 使用稀疏覆盖；照片显式静音；被选中的非照片、非航拍 speech-backed span 不得静音。",
+        "未选入的 speech-backed 非照片 span 必须在 coverageAudit 暴露。"
+      ]
+    },
+    {
+      "id": "resolve-media-sync-codex-v1",
+      "capabilityId": "resolve.media_sync",
+      "title": "同步 Resolve Media Pool 工程归档",
+      "inputRefs": [
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json",
+        "config/project-brief.json"
+      ],
+      "outputRefs": [
+        "Resolve Media Pool: Kairos Project Media"
+      ],
+      "runner": "deterministic",
+      "execution": {
+        "mode": "deterministic",
+        "shardBy": "none",
+        "reason": "Resolve Media Pool 同步是确定性工程维护步骤。"
+      },
+      "gate": "none",
+      "notes": [
+        "按已确认编年史组织 Kairos Project Media。",
+        "重复运行复用已有 MediaPoolItem；分类变化时只移动，不重导入；结束后清理空事件目录。",
+        "该步骤不做素材选择。"
+      ]
+    },
+    {
+      "id": "timeline-generate-codex-v1",
+      "capabilityId": "timeline.generate",
+      "title": "生成 Resolve 粗剪时间线",
+      "inputRefs": [
+        "DaVinci Resolve Media Pool",
+        "edits/<editId>/planning/edit-framework.md",
+        "edits/<editId>/script/material-slots.json",
+        "store/spans.json",
+        "store/assets.json",
+        "media/chronology.json"
+      ],
+      "outputRefs": [
+        "Resolve timeline: Kairos Timelines/<editId> rough cut",
+        ".tmp/edit-flow/<editId>/timeline/current.json",
+        ".tmp/edit-flow/<editId>/timeline/current.srt",
+        "edits/resolve-project-map.json",
+        "edits/resolve-projects/<safe-project-key>/<Resolve项目名>.drp"
+      ],
+      "outputTypes": {
+        ".tmp/edit-flow/<editId>/timeline/current.json": "ktep-audit-json",
+        ".tmp/edit-flow/<editId>/timeline/current.srt": "source-speech-srt"
+      },
+      "runner": "deterministic",
+      "execution": {
+        "mode": "deterministic",
+        "shardBy": "none",
+        "reason": "按人工确认的 material-slots 顺序确定性落片。"
+      },
+      "gate": "none",
+      "notes": [
+        "以 material-slots.segments 与 chosenSpanIds 顺序为落片真相，不得由 chronology 替换或补选。",
+        "同一事件中的照片统一作为尾部照片包；照片默认时长 1000ms。",
+        "缺失 treatment 按 {audio:0,speed:1}；speech-backed 非照片、非航拍 span 禁止静音。",
+        "对 material-slots 中 2..4 倍的行车 speed 先走正式 Resolve 能力；若当前脚本入口不能稳定应用，必须明确暴露 pending/ignored，不能假装已经加速。",
+        "按正式颜色合同写入并回读校验 Resolve clip color。",
+        "成功时从实际有声 source-speech spans 同步生成 current.srt，供用户导入辅助剪辑；字幕不得保留行末句号。"
+      ]
+    },
+    {
+      "id": "resolve-lock-rough-cut-manual-v1",
+      "capabilityId": "resolve.lock_rough_cut",
+      "title": "人工锁定 Resolve 粗剪",
+      "inputRefs": [
+        "Resolve timeline: Kairos Timelines/<editId> rough cut"
+      ],
+      "outputRefs": [
+        "edits/<editId>/timeline/locked-rough-cut.json"
+      ],
+      "runner": "manual",
+      "execution": {
+        "mode": "manual",
+        "shardBy": "none",
+        "reason": "粗剪需要人工与 LLM 交互调整并由人工确认阶段性定稿。"
+      },
+      "gate": "human",
+      "notes": [
+        "只有人工确认粗剪锁定后才能进入字幕与旁白阶段。"
+      ]
+    },
+    {
+      "id": "postlock-subtitle-alignment-codex-v1",
+      "capabilityId": "postlock.subtitle_narration",
+      "title": "最终字幕对齐校验并生成 SRT",
+      "inputRefs": [
+        "edits/<editId>/timeline/locked-rough-cut.json",
+        "Resolve timeline: locked rough cut subtitle track",
+        ".tmp/edit-flow/<editId>/postlock/current-timeline-clip-packet.json",
+        ".tmp/edit-flow/<editId>/timeline/current.srt",
+        "media/chronology.json",
+        "store/spans.json",
+        "store/assets.json",
+        "gps/reverse-geocode-cache.json",
+        "config/edit-rules/travel-vlog.md"
+      ],
+      "outputRefs": [
+        "edits/<editId>/subtitles/final.srt",
+        "edits/<editId>/subtitles/final-subtitle-alignment-audit.md"
+      ],
+      "outputTypes": {
+        "edits/<editId>/subtitles/final.srt": "subtitle-srt",
+        "edits/<editId>/subtitles/final-subtitle-alignment-audit.md": "review-markdown"
+      },
+      "runner": "agent",
+      "execution": {
+        "mode": "single-agent",
+        "shardBy": "none",
+        "reason": "粗剪锁定后，按实际 timeline clip 与已有口播字幕完成最终文字和时间对齐校验。"
+      },
+      "gate": "human",
+      "notes": [
+        "只在人工锁定粗剪后执行；当前 Resolve timeline、subtitle track 与 clip packet 是时间边界真相。",
+        "校验字幕对应 clip、文字、地名和时间对齐，不为无口播画面生成额外旁白。",
+        "不得改变已锁定 clip 边界或素材选择；只输出最终替换 SRT 和审计。",
+        "SRT 不得自动补或保留行末 。 / .；保留问号、叹号和句内标点。",
+        "用户审查后手动替换 Resolve 字幕并确认结束。"
+      ]
+    }
+  ]
+}

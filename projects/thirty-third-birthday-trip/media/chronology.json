@@ -1,0 +1,4600 @@
+{
+  "schemaVersion": "2.0",
+  "status": "confirmed",
+  "generatedAt": "2026-09-06T07:34:45.908Z",
+  "updatedAt": "2026-09-06T08:28:38.567Z",
+  "confirmedAt": "2026-09-06T08:28:38.567Z",
+  "inputsHash": "8d14525a64128bff69d931600829b4ffe02beb61df9b20f44f568589ae45edb3",
+  "assetIndex": [
+    {
+      "assetId": "C3224_zve1",
+      "sortCapturedAt": "2026-08-19T05:08:41.000Z"
+    },
+    {
+      "assetId": "C3225_zve1",
+      "sortCapturedAt": "2026-08-19T05:09:04.000Z"
+    },
+    {
+      "assetId": "C3226_zve1",
+      "sortCapturedAt": "2026-08-19T05:19:34.000Z"
+    },
+    {
+      "assetId": "C3227_zve1",
+      "sortCapturedAt": "2026-08-19T05:30:22.000Z"
+    },
+    {
+      "assetId": "C3228_zve1",
+      "sortCapturedAt": "2026-08-19T05:34:09.000Z"
+    },
+    {
+      "assetId": "C3229_zve1",
+      "sortCapturedAt": "2026-08-19T05:34:54.000Z"
+    },
+    {
+      "assetId": "C3230_zve1",
+      "sortCapturedAt": "2026-08-19T08:50:02.000Z"
+    },
+    {
+      "assetId": "C3231_zve1",
+      "sortCapturedAt": "2026-08-19T08:53:34.000Z"
+    },
+    {
+      "assetId": "C3232_zve1",
+      "sortCapturedAt": "2026-08-19T08:55:17.000Z"
+    },
+    {
+      "assetId": "C3233_zve1",
+      "sortCapturedAt": "2026-08-19T09:14:37.000Z"
+    },
+    {
+      "assetId": "C3234_zve1",
+      "sortCapturedAt": "2026-08-19T09:19:37.000Z"
+    },
+    {
+      "assetId": "C3235_zve1",
+      "sortCapturedAt": "2026-08-19T09:52:59.000Z"
+    },
+    {
+      "assetId": "C3236_zve1",
+      "sortCapturedAt": "2026-08-19T09:58:34.000Z"
+    },
+    {
+      "assetId": "DSC06957_photos",
+      "sortCapturedAt": "2026-08-19T09:59:45.000Z"
+    },
+    {
+      "assetId": "C3237_zve1",
+      "sortCapturedAt": "2026-08-19T10:00:05.000Z"
+    },
+    {
+      "assetId": "DSC06961_photos",
+      "sortCapturedAt": "2026-08-19T10:00:45.000Z"
+    },
+    {
+      "assetId": "C3238_zve1",
+      "sortCapturedAt": "2026-08-19T10:03:03.000Z"
+    },
+    {
+      "assetId": "C3239_zve1",
+      "sortCapturedAt": "2026-08-19T10:09:58.000Z"
+    },
+    {
+      "assetId": "C3240_zve1",
+      "sortCapturedAt": "2026-08-19T10:17:53.000Z"
+    },
+    {
+      "assetId": "DSC06965_photos",
+      "sortCapturedAt": "2026-08-19T10:18:11.000Z"
+    },
+    {
+      "assetId": "DSC06978_photos",
+      "sortCapturedAt": "2026-08-19T10:18:43.000Z"
+    },
+    {
+      "assetId": "C3241_zve1",
+      "sortCapturedAt": "2026-08-19T10:19:37.000Z"
+    },
+    {
+      "assetId": "DSC06983_photos",
+      "sortCapturedAt": "2026-08-19T10:24:25.000Z"
+    },
+    {
+      "assetId": "DSC06986_photos",
+      "sortCapturedAt": "2026-08-19T10:25:02.000Z"
+    },
+    {
+      "assetId": "DSC06988_photos",
+      "sortCapturedAt": "2026-08-19T10:25:45.000Z"
+    },
+    {
+      "assetId": "DSC06990_photos",
+      "sortCapturedAt": "2026-08-19T10:25:56.000Z"
+    },
+    {
+      "assetId": "C3242_zve1",
+      "sortCapturedAt": "2026-08-19T10:29:54.000Z"
+    },
+    {
+      "assetId": "DSC06994_photos",
+      "sortCapturedAt": "2026-08-19T10:31:01.000Z"
+    },
+    {
+      "assetId": "DSC07000_photos",
+      "sortCapturedAt": "2026-08-19T10:32:52.000Z"
+    },
+    {
+      "assetId": "DSC07006_photos",
+      "sortCapturedAt": "2026-08-19T10:33:18.000Z"
+    },
+    {
+      "assetId": "C3243_zve1",
+      "sortCapturedAt": "2026-08-19T10:40:34.000Z"
+    },
+    {
+      "assetId": "DSC07017_photos",
+      "sortCapturedAt": "2026-08-19T10:42:26.000Z"
+    },
+    {
+      "assetId": "DSC01433_photos",
+      "sortCapturedAt": "2026-08-19T10:58:52.000Z"
+    },
+    {
+      "assetId": "C3244_zve1",
+      "sortCapturedAt": "2026-08-19T10:59:20.000Z"
+    },
+    {
+      "assetId": "C3245_zve1",
+      "sortCapturedAt": "2026-08-19T10:59:51.000Z"
+    },
+    {
+      "assetId": "C3246_zve1",
+      "sortCapturedAt": "2026-08-19T11:00:08.000Z"
+    },
+    {
+      "assetId": "DSC01439_photos",
+      "sortCapturedAt": "2026-08-19T11:00:53.000Z"
+    },
+    {
+      "assetId": "DSC01441_photos",
+      "sortCapturedAt": "2026-08-19T11:01:58.000Z"
+    },
+    {
+      "assetId": "C3247_zve1",
+      "sortCapturedAt": "2026-08-19T14:09:16.000Z"
+    },
+    {
+      "assetId": "C3248_zve1",
+      "sortCapturedAt": "2026-08-19T14:09:38.000Z"
+    },
+    {
+      "assetId": "C3249_zve1",
+      "sortCapturedAt": "2026-08-19T14:09:56.000Z"
+    },
+    {
+      "assetId": "C3250_zve1",
+      "sortCapturedAt": "2026-08-19T14:10:01.000Z"
+    },
+    {
+      "assetId": "C3251_zve1",
+      "sortCapturedAt": "2026-08-19T14:10:22.000Z"
+    },
+    {
+      "assetId": "C3252_zve1",
+      "sortCapturedAt": "2026-08-19T14:16:56.000Z"
+    },
+    {
+      "assetId": "C3253_zve1",
+      "sortCapturedAt": "2026-08-19T14:20:36.000Z"
+    },
+    {
+      "assetId": "C3254_zve1",
+      "sortCapturedAt": "2026-08-19T14:22:49.000Z"
+    },
+    {
+      "assetId": "C3255_zve1",
+      "sortCapturedAt": "2026-08-19T14:23:09.000Z"
+    },
+    {
+      "assetId": "C3256_zve1",
+      "sortCapturedAt": "2026-08-19T14:23:56.000Z"
+    },
+    {
+      "assetId": "C3257_zve1",
+      "sortCapturedAt": "2026-08-19T14:27:23.000Z"
+    },
+    {
+      "assetId": "C3258_zve1",
+      "sortCapturedAt": "2026-08-19T14:27:44.000Z"
+    },
+    {
+      "assetId": "C3259_zve1",
+      "sortCapturedAt": "2026-08-19T14:27:57.000Z"
+    },
+    {
+      "assetId": "C3260_zve1",
+      "sortCapturedAt": "2026-08-19T14:28:18.000Z"
+    },
+    {
+      "assetId": "C3261_zve1",
+      "sortCapturedAt": "2026-08-19T14:39:49.000Z"
+    },
+    {
+      "assetId": "C3262_zve1",
+      "sortCapturedAt": "2026-08-19T15:43:16.000Z"
+    },
+    {
+      "assetId": "C3263_zve1",
+      "sortCapturedAt": "2026-08-19T15:43:32.000Z"
+    },
+    {
+      "assetId": "C3264_zve1",
+      "sortCapturedAt": "2026-08-19T15:47:33.000Z"
+    },
+    {
+      "assetId": "C3265_zve1",
+      "sortCapturedAt": "2026-08-19T15:50:05.000Z"
+    },
+    {
+      "assetId": "C3266_zve1",
+      "sortCapturedAt": "2026-08-19T15:51:18.000Z"
+    },
+    {
+      "assetId": "C3267_zve1",
+      "sortCapturedAt": "2026-08-19T15:55:20.000Z"
+    },
+    {
+      "assetId": "C3268_zve1",
+      "sortCapturedAt": "2026-08-19T16:06:25.000Z"
+    },
+    {
+      "assetId": "C3269_zve1",
+      "sortCapturedAt": "2026-08-19T16:06:30.000Z"
+    },
+    {
+      "assetId": "C3270_zve1",
+      "sortCapturedAt": "2026-08-19T16:13:58.000Z"
+    },
+    {
+      "assetId": "C3271_zve1",
+      "sortCapturedAt": "2026-08-19T16:19:55.000Z"
+    },
+    {
+      "assetId": "C3272_zve1",
+      "sortCapturedAt": "2026-08-19T16:21:28.000Z"
+    },
+    {
+      "assetId": "C3273_zve1",
+      "sortCapturedAt": "2026-08-19T16:24:07.000Z"
+    },
+    {
+      "assetId": "C3274_zve1",
+      "sortCapturedAt": "2026-08-19T16:24:35.000Z"
+    },
+    {
+      "assetId": "C3275_zve1",
+      "sortCapturedAt": "2026-08-19T16:25:18.000Z"
+    },
+    {
+      "assetId": "C3276_zve1",
+      "sortCapturedAt": "2026-08-19T16:26:10.000Z"
+    },
+    {
+      "assetId": "C3277_zve1",
+      "sortCapturedAt": "2026-08-19T16:31:13.000Z"
+    },
+    {
+      "assetId": "C3278_zve1",
+      "sortCapturedAt": "2026-08-19T16:35:42.000Z"
+    },
+    {
+      "assetId": "C3279_zve1",
+      "sortCapturedAt": "2026-08-19T16:36:24.000Z"
+    },
+    {
+      "assetId": "C3280_zve1",
+      "sortCapturedAt": "2026-08-19T16:37:20.000Z"
+    },
+    {
+      "assetId": "C3281_zve1",
+      "sortCapturedAt": "2026-08-19T16:38:24.000Z"
+    },
+    {
+      "assetId": "C3282_zve1",
+      "sortCapturedAt": "2026-08-19T16:38:36.000Z"
+    },
+    {
+      "assetId": "C3283_zve1",
+      "sortCapturedAt": "2026-08-19T16:39:21.000Z"
+    },
+    {
+      "assetId": "C3284_zve1",
+      "sortCapturedAt": "2026-08-19T16:39:29.000Z"
+    },
+    {
+      "assetId": "C3285_zve1",
+      "sortCapturedAt": "2026-08-19T16:49:02.000Z"
+    },
+    {
+      "assetId": "C3286_zve1",
+      "sortCapturedAt": "2026-08-19T16:50:02.000Z"
+    },
+    {
+      "assetId": "C3287_zve1",
+      "sortCapturedAt": "2026-08-19T16:52:22.000Z"
+    },
+    {
+      "assetId": "C3288_zve1",
+      "sortCapturedAt": "2026-08-19T16:54:19.000Z"
+    },
+    {
+      "assetId": "C3289_zve1",
+      "sortCapturedAt": "2026-08-19T16:56:41.000Z"
+    },
+    {
+      "assetId": "C3290_zve1",
+      "sortCapturedAt": "2026-08-19T17:10:02.000Z"
+    },
+    {
+      "assetId": "DSC02862_photos",
+      "sortCapturedAt": "2026-08-19T17:30:52.000Z"
+    },
+    {
+      "assetId": "DSC07028_photos",
+      "sortCapturedAt": "2026-08-19T17:42:38.000Z"
+    },
+    {
+      "assetId": "DSC07040_photos",
+      "sortCapturedAt": "2026-08-19T17:50:39.000Z"
+    },
+    {
+      "assetId": "DSC02868_photos",
+      "sortCapturedAt": "2026-08-19T17:51:19.000Z"
+    },
+    {
+      "assetId": "DSC02869_photos",
+      "sortCapturedAt": "2026-08-19T17:51:53.000Z"
+    },
+    {
+      "assetId": "DSC02875_photos",
+      "sortCapturedAt": "2026-08-19T17:55:04.000Z"
+    },
+    {
+      "assetId": "20260820_河源野猪嶂星空1_timelaps",
+      "sortCapturedAt": "2026-08-19T18:00:00.000Z"
+    },
+    {
+      "assetId": "20260820_河源野猪嶂星空2_timelaps",
+      "sortCapturedAt": "2026-08-19T18:00:00.000Z"
+    },
+    {
+      "assetId": "C3291_zve1",
+      "sortCapturedAt": "2026-08-19T18:05:18.000Z"
+    },
+    {
+      "assetId": "C3292_zve1",
+      "sortCapturedAt": "2026-08-19T18:06:11.000Z"
+    },
+    {
+      "assetId": "C3293_zve1",
+      "sortCapturedAt": "2026-08-19T18:08:45.000Z"
+    },
+    {
+      "assetId": "DSC07239_photos",
+      "sortCapturedAt": "2026-08-19T18:45:40.000Z"
+    },
+    {
+      "assetId": "DSC03002_photos",
+      "sortCapturedAt": "2026-08-19T18:57:05.000Z"
+    },
+    {
+      "assetId": "DSC07680_photos",
+      "sortCapturedAt": "2026-08-19T21:11:04.000Z"
+    },
+    {
+      "assetId": "C3294_zve1",
+      "sortCapturedAt": "2026-08-19T21:17:20.000Z"
+    },
+    {
+      "assetId": "C3295_zve1",
+      "sortCapturedAt": "2026-08-19T21:18:08.000Z"
+    },
+    {
+      "assetId": "C3296_zve1",
+      "sortCapturedAt": "2026-08-19T21:19:54.000Z"
+    },
+    {
+      "assetId": "DSC07713_photos",
+      "sortCapturedAt": "2026-08-19T21:20:12.000Z"
+    },
+    {
+      "assetId": "C3297_zve1",
+      "sortCapturedAt": "2026-08-19T21:26:29.000Z"
+    },
+    {
+      "assetId": "DSC01452_photos",
+      "sortCapturedAt": "2026-08-19T21:30:30.000Z"
+    },
+    {
+      "assetId": "DSC01454_photos",
+      "sortCapturedAt": "2026-08-19T21:30:50.000Z"
+    },
+    {
+      "assetId": "C3298_zve1",
+      "sortCapturedAt": "2026-08-19T21:36:08.000Z"
+    },
+    {
+      "assetId": "DSC01463_photos",
+      "sortCapturedAt": "2026-08-19T21:40:04.000Z"
+    },
+    {
+      "assetId": "DSC01464_photos",
+      "sortCapturedAt": "2026-08-19T21:40:42.000Z"
+    },
+    {
+      "assetId": "DSC01465_photos",
+      "sortCapturedAt": "2026-08-19T21:42:12.000Z"
+    },
+    {
+      "assetId": "C3299_zve1",
+      "sortCapturedAt": "2026-08-19T21:43:11.000Z"
+    },
+    {
+      "assetId": "C3300_zve1",
+      "sortCapturedAt": "2026-08-19T21:43:49.000Z"
+    },
+    {
+      "assetId": "C3301_zve1",
+      "sortCapturedAt": "2026-08-19T21:44:52.000Z"
+    },
+    {
+      "assetId": "C3302_zve1",
+      "sortCapturedAt": "2026-08-19T21:45:32.000Z"
+    },
+    {
+      "assetId": "C3303_zve1",
+      "sortCapturedAt": "2026-08-19T21:46:55.000Z"
+    },
+    {
+      "assetId": "DSC08078_photos",
+      "sortCapturedAt": "2026-08-19T21:47:20.000Z"
+    },
+    {
+      "assetId": "DSC01470_photos",
+      "sortCapturedAt": "2026-08-19T21:47:55.000Z"
+    },
+    {
+      "assetId": "C3304_zve1",
+      "sortCapturedAt": "2026-08-19T21:51:02.000Z"
+    },
+    {
+      "assetId": "C3305_zve1",
+      "sortCapturedAt": "2026-08-19T21:51:50.000Z"
+    },
+    {
+      "assetId": "C3306_zve1",
+      "sortCapturedAt": "2026-08-19T21:54:19.000Z"
+    },
+    {
+      "assetId": "C3307_zve1",
+      "sortCapturedAt": "2026-08-19T21:54:42.000Z"
+    },
+    {
+      "assetId": "DJI_20260820060620_0861_D_drone",
+      "sortCapturedAt": "2026-08-19T22:06:28.000Z"
+    },
+    {
+      "assetId": "DJI_20260820060654_0865_D_drone",
+      "sortCapturedAt": "2026-08-19T22:07:02.000Z"
+    },
+    {
+      "assetId": "DJI_20260820060737_0872_D_drone",
+      "sortCapturedAt": "2026-08-19T22:07:44.000Z"
+    },
+    {
+      "assetId": "DJI_20260820060902_0876_D-HDR_photos",
+      "sortCapturedAt": "2026-08-19T22:09:03.000Z"
+    },
+    {
+      "assetId": "DJI_20260820060914_0879_D-HDR_photos",
+      "sortCapturedAt": "2026-08-19T22:09:14.000Z"
+    },
+    {
+      "assetId": "DJI_20260820060937_0882_D_drone",
+      "sortCapturedAt": "2026-08-19T22:09:44.000Z"
+    },
+    {
+      "assetId": "DJI_20260820060954_0883_D-HDR_photos",
+      "sortCapturedAt": "2026-08-19T22:09:54.000Z"
+    },
+    {
+      "assetId": "DJI_20260820061039_0889_D_drone",
+      "sortCapturedAt": "2026-08-19T22:10:46.000Z"
+    },
+    {
+      "assetId": "DJI_20260820061122_0890_D_drone",
+      "sortCapturedAt": "2026-08-19T22:11:29.000Z"
+    },
+    {
+      "assetId": "DJI_20260820061155_0891_D-HDR_photos",
+      "sortCapturedAt": "2026-08-19T22:11:55.000Z"
+    },
+    {
+      "assetId": "DJI_20260820061204_0894_D_drone",
+      "sortCapturedAt": "2026-08-19T22:12:11.000Z"
+    },
+    {
+      "assetId": "DJI_20260820061253_0895_D-HDR_photos",
+      "sortCapturedAt": "2026-08-19T22:12:53.000Z"
+    },
+    {
+      "assetId": "DJI_20260820061258_0898_D_drone",
+      "sortCapturedAt": "2026-08-19T22:13:06.000Z"
+    },
+    {
+      "assetId": "DJI_20260820061421_0908_D-HDR_photos",
+      "sortCapturedAt": "2026-08-19T22:14:21.000Z"
+    },
+    {
+      "assetId": "DJI_20260820061439_0914_D-HDR_photos",
+      "sortCapturedAt": "2026-08-19T22:14:39.000Z"
+    },
+    {
+      "assetId": "DJI_20260820061453_0917_D_drone",
+      "sortCapturedAt": "2026-08-19T22:15:00.000Z"
+    },
+    {
+      "assetId": "DJI_20260820061536_0918_D-HDR_photos",
+      "sortCapturedAt": "2026-08-19T22:15:36.000Z"
+    },
+    {
+      "assetId": "DJI_20260820061936_0921_D_drone",
+      "sortCapturedAt": "2026-08-19T22:19:44.000Z"
+    },
+    {
+      "assetId": "DJI_20260820062642_0931_D_drone",
+      "sortCapturedAt": "2026-08-19T22:26:49.000Z"
+    },
+    {
+      "assetId": "DJI_20260820062911_0935_D_drone",
+      "sortCapturedAt": "2026-08-19T22:29:19.000Z"
+    },
+    {
+      "assetId": "DJI_20260820062950_0942_D-HDR_photos",
+      "sortCapturedAt": "2026-08-19T22:29:50.000Z"
+    },
+    {
+      "assetId": "DJI_20260820063008_0948_D-HDR_photos",
+      "sortCapturedAt": "2026-08-19T22:30:08.000Z"
+    },
+    {
+      "assetId": "DSC08258_photos",
+      "sortCapturedAt": "2026-08-19T22:30:29.000Z"
+    },
+    {
+      "assetId": "DJI_20260820063023_0951_D_drone",
+      "sortCapturedAt": "2026-08-19T22:30:31.000Z"
+    },
+    {
+      "assetId": "DSC08260_photos",
+      "sortCapturedAt": "2026-08-19T22:30:48.000Z"
+    },
+    {
+      "assetId": "DJI_20260820063119_0958_D_drone",
+      "sortCapturedAt": "2026-08-19T22:31:12.000Z"
+    },
+    {
+      "assetId": "DJI_20260820063212_0959_D-HDR_photos",
+      "sortCapturedAt": "2026-08-19T22:32:12.000Z"
+    },
+    {
+      "assetId": "DJI_20260820063438_0971_D-HDR_photos",
+      "sortCapturedAt": "2026-08-19T22:34:39.000Z"
+    },
+    {
+      "assetId": "DJI_20260820063510_0980_D-HDR_photos",
+      "sortCapturedAt": "2026-08-19T22:35:10.000Z"
+    },
+    {
+      "assetId": "DJI_20260820063613_0986_D-HDR_photos",
+      "sortCapturedAt": "2026-08-19T22:36:13.000Z"
+    },
+    {
+      "assetId": "DJI_20260820063808_0998_D-HDR_photos",
+      "sortCapturedAt": "2026-08-19T22:38:09.000Z"
+    },
+    {
+      "assetId": "DJI_20260820063859_0013_D-HDR_photos",
+      "sortCapturedAt": "2026-08-19T22:38:59.000Z"
+    },
+    {
+      "assetId": "DJI_20260820063920_0014_D_drone",
+      "sortCapturedAt": "2026-08-19T22:39:27.000Z"
+    },
+    {
+      "assetId": "DJI_20260820063939_0015_D-HDR_photos",
+      "sortCapturedAt": "2026-08-19T22:39:39.000Z"
+    },
+    {
+      "assetId": "DSC08268_photos",
+      "sortCapturedAt": "2026-08-19T22:53:21.000Z"
+    },
+    {
+      "assetId": "DSC08269_photos",
+      "sortCapturedAt": "2026-08-19T22:53:31.000Z"
+    },
+    {
+      "assetId": "DSC08275_photos",
+      "sortCapturedAt": "2026-08-19T22:54:57.000Z"
+    },
+    {
+      "assetId": "C3308_zve1",
+      "sortCapturedAt": "2026-08-19T23:25:40.000Z"
+    },
+    {
+      "assetId": "C3309_zve1",
+      "sortCapturedAt": "2026-08-19T23:26:03.000Z"
+    },
+    {
+      "assetId": "C3310_zve1",
+      "sortCapturedAt": "2026-08-19T23:26:30.000Z"
+    },
+    {
+      "assetId": "DSC01478_photos",
+      "sortCapturedAt": "2026-08-19T23:26:37.000Z"
+    },
+    {
+      "assetId": "C3311_zve1",
+      "sortCapturedAt": "2026-08-19T23:27:00.000Z"
+    },
+    {
+      "assetId": "DSC01485_photos",
+      "sortCapturedAt": "2026-08-19T23:30:46.000Z"
+    },
+    {
+      "assetId": "DSC08282_photos",
+      "sortCapturedAt": "2026-08-19T23:58:46.000Z"
+    },
+    {
+      "assetId": "C0050_a7r6",
+      "sortCapturedAt": "2026-08-20T00:00:39.000Z"
+    },
+    {
+      "assetId": "C0051_a7r6",
+      "sortCapturedAt": "2026-08-20T00:00:45.000Z"
+    },
+    {
+      "assetId": "C0052_a7r6",
+      "sortCapturedAt": "2026-08-20T00:05:08.000Z"
+    },
+    {
+      "assetId": "C0053_a7r6",
+      "sortCapturedAt": "2026-08-20T00:10:08.000Z"
+    },
+    {
+      "assetId": "C0054_a7r6",
+      "sortCapturedAt": "2026-08-20T00:15:47.000Z"
+    },
+    {
+      "assetId": "C0055_a7r6",
+      "sortCapturedAt": "2026-08-20T00:16:35.000Z"
+    },
+    {
+      "assetId": "C0056_a7r6",
+      "sortCapturedAt": "2026-08-20T00:16:39.000Z"
+    },
+    {
+      "assetId": "DSC08300_photos",
+      "sortCapturedAt": "2026-08-20T00:17:07.000Z"
+    },
+    {
+      "assetId": "DSC08304_photos",
+      "sortCapturedAt": "2026-08-20T00:33:32.000Z"
+    },
+    {
+      "assetId": "C0057_a7r6",
+      "sortCapturedAt": "2026-08-20T00:33:56.000Z"
+    },
+    {
+      "assetId": "DSC08311_photos",
+      "sortCapturedAt": "2026-08-20T00:37:30.000Z"
+    },
+    {
+      "assetId": "DJI_20260820084530_0018_D_drone",
+      "sortCapturedAt": "2026-08-20T00:45:37.000Z"
+    },
+    {
+      "assetId": "DJI_20260820084609_0019_D-HDR_photos",
+      "sortCapturedAt": "2026-08-20T00:46:09.000Z"
+    },
+    {
+      "assetId": "DSC08313_photos",
+      "sortCapturedAt": "2026-08-20T00:46:11.000Z"
+    },
+    {
+      "assetId": "C0058_a7r6",
+      "sortCapturedAt": "2026-08-20T00:46:15.000Z"
+    },
+    {
+      "assetId": "DJI_20260820084633_0027_D-HDR_photos",
+      "sortCapturedAt": "2026-08-20T00:46:33.000Z"
+    },
+    {
+      "assetId": "DSC08315_photos",
+      "sortCapturedAt": "2026-08-20T00:47:01.000Z"
+    },
+    {
+      "assetId": "DJI_20260820084701_0028_D_drone",
+      "sortCapturedAt": "2026-08-20T00:47:08.000Z"
+    },
+    {
+      "assetId": "DJI_20260820084730_0029_D-HDR_photos",
+      "sortCapturedAt": "2026-08-20T00:47:30.000Z"
+    },
+    {
+      "assetId": "DSC08319_photos",
+      "sortCapturedAt": "2026-08-20T00:47:32.000Z"
+    },
+    {
+      "assetId": "DJI_20260820084755_0037_D-HDR_photos",
+      "sortCapturedAt": "2026-08-20T00:47:55.000Z"
+    },
+    {
+      "assetId": "C0059_a7r6",
+      "sortCapturedAt": "2026-08-20T00:49:22.000Z"
+    },
+    {
+      "assetId": "DSC08323_photos",
+      "sortCapturedAt": "2026-08-20T00:49:25.000Z"
+    },
+    {
+      "assetId": "C0060_a7r6",
+      "sortCapturedAt": "2026-08-20T00:49:50.000Z"
+    },
+    {
+      "assetId": "DSC08325_photos",
+      "sortCapturedAt": "2026-08-20T00:49:56.000Z"
+    },
+    {
+      "assetId": "C0061_a7r6",
+      "sortCapturedAt": "2026-08-20T00:50:44.000Z"
+    },
+    {
+      "assetId": "DJI_20260820090107_0047_D-HDR_photos",
+      "sortCapturedAt": "2026-08-20T01:01:07.000Z"
+    },
+    {
+      "assetId": "DJI_20260820090123_0051_D_drone",
+      "sortCapturedAt": "2026-08-20T01:01:30.000Z"
+    },
+    {
+      "assetId": "DJI_20260820090232_0060_D-HDR_photos",
+      "sortCapturedAt": "2026-08-20T01:02:32.000Z"
+    },
+    {
+      "assetId": "DJI_20260820090249_0063_D-HDR_photos",
+      "sortCapturedAt": "2026-08-20T01:02:49.000Z"
+    },
+    {
+      "assetId": "C3312_zve1",
+      "sortCapturedAt": "2026-08-20T01:03:23.000Z"
+    },
+    {
+      "assetId": "DJI_20260820090359_0064_D_drone",
+      "sortCapturedAt": "2026-08-20T01:04:06.000Z"
+    },
+    {
+      "assetId": "DJI_20260820090617_0065_D_drone",
+      "sortCapturedAt": "2026-08-20T01:06:24.000Z"
+    },
+    {
+      "assetId": "DJI_20260820090732_0066_D_drone",
+      "sortCapturedAt": "2026-08-20T01:07:40.000Z"
+    },
+    {
+      "assetId": "DJI_20260820090847_0067_D_drone",
+      "sortCapturedAt": "2026-08-20T01:08:54.000Z"
+    },
+    {
+      "assetId": "DJI_20260820090919_0068_D_drone",
+      "sortCapturedAt": "2026-08-20T01:09:26.000Z"
+    },
+    {
+      "assetId": "DJI_20260820091016_0071_D-HDR_photos",
+      "sortCapturedAt": "2026-08-20T01:10:16.000Z"
+    },
+    {
+      "assetId": "C3313_zve1",
+      "sortCapturedAt": "2026-08-20T01:10:29.000Z"
+    },
+    {
+      "assetId": "DJI_20260820091148_0083_D-HDR_photos",
+      "sortCapturedAt": "2026-08-20T01:11:48.000Z"
+    },
+    {
+      "assetId": "DJI_20260820091158_0086_D-HDR_photos",
+      "sortCapturedAt": "2026-08-20T01:11:58.000Z"
+    },
+    {
+      "assetId": "DJI_20260820091250_0093_D_drone",
+      "sortCapturedAt": "2026-08-20T01:12:58.000Z"
+    },
+    {
+      "assetId": "DJI_20260820091352_0094_D_drone",
+      "sortCapturedAt": "2026-08-20T01:13:59.000Z"
+    },
+    {
+      "assetId": "DJI_20260820091512_0100_D-HDR_photos",
+      "sortCapturedAt": "2026-08-20T01:15:12.000Z"
+    },
+    {
+      "assetId": "DJI_20260820091545_0106_D-HDR_photos",
+      "sortCapturedAt": "2026-08-20T01:15:45.000Z"
+    },
+    {
+      "assetId": "DJI_20260820091646_0107_D_drone",
+      "sortCapturedAt": "2026-08-20T01:16:53.000Z"
+    },
+    {
+      "assetId": "DJI_20260820091813_0108_D_drone",
+      "sortCapturedAt": "2026-08-20T01:18:20.000Z"
+    },
+    {
+      "assetId": "DJI_20260820092044_0109_D_drone",
+      "sortCapturedAt": "2026-08-20T01:20:51.000Z"
+    },
+    {
+      "assetId": "DJI_20260820092244_0110_D_drone",
+      "sortCapturedAt": "2026-08-20T01:22:52.000Z"
+    },
+    {
+      "assetId": "DJI_20260820092355_0114_D_drone",
+      "sortCapturedAt": "2026-08-20T01:24:03.000Z"
+    },
+    {
+      "assetId": "DJI_20260820092451_0117_D-HDR_photos",
+      "sortCapturedAt": "2026-08-20T01:24:51.000Z"
+    },
+    {
+      "assetId": "C3314_zve1",
+      "sortCapturedAt": "2026-08-20T01:26:20.000Z"
+    },
+    {
+      "assetId": "C3315_zve1",
+      "sortCapturedAt": "2026-08-20T01:30:47.000Z"
+    },
+    {
+      "assetId": "C3316_zve1",
+      "sortCapturedAt": "2026-08-20T01:32:30.000Z"
+    },
+    {
+      "assetId": "DSC01487_photos",
+      "sortCapturedAt": "2026-08-20T01:32:46.000Z"
+    },
+    {
+      "assetId": "DSC01489_photos",
+      "sortCapturedAt": "2026-08-20T01:33:02.000Z"
+    },
+    {
+      "assetId": "DSC01493_photos",
+      "sortCapturedAt": "2026-08-20T01:33:26.000Z"
+    },
+    {
+      "assetId": "C3317_zve1",
+      "sortCapturedAt": "2026-08-20T01:34:29.000Z"
+    },
+    {
+      "assetId": "C3318_zve1",
+      "sortCapturedAt": "2026-08-20T01:34:55.000Z"
+    },
+    {
+      "assetId": "C3319_zve1",
+      "sortCapturedAt": "2026-08-20T01:36:22.000Z"
+    },
+    {
+      "assetId": "C3320_zve1",
+      "sortCapturedAt": "2026-08-20T01:37:43.000Z"
+    },
+    {
+      "assetId": "C3321_zve1",
+      "sortCapturedAt": "2026-08-20T01:40:45.000Z"
+    },
+    {
+      "assetId": "C3322_zve1",
+      "sortCapturedAt": "2026-08-20T01:56:11.000Z"
+    },
+    {
+      "assetId": "C3323_zve1",
+      "sortCapturedAt": "2026-08-20T01:57:55.000Z"
+    },
+    {
+      "assetId": "DSC08332_photos",
+      "sortCapturedAt": "2026-08-20T02:00:01.000Z"
+    },
+    {
+      "assetId": "C0062_a7r6",
+      "sortCapturedAt": "2026-08-20T02:00:30.000Z"
+    },
+    {
+      "assetId": "C3324_zve1",
+      "sortCapturedAt": "2026-08-20T02:10:12.000Z"
+    },
+    {
+      "assetId": "C0063_a7r6",
+      "sortCapturedAt": "2026-08-20T02:21:31.000Z"
+    },
+    {
+      "assetId": "C0064_a7r6",
+      "sortCapturedAt": "2026-08-20T02:24:22.000Z"
+    },
+    {
+      "assetId": "C3325_zve1",
+      "sortCapturedAt": "2026-08-20T02:31:34.000Z"
+    },
+    {
+      "assetId": "C3326_zve1",
+      "sortCapturedAt": "2026-08-20T02:36:00.000Z"
+    },
+    {
+      "assetId": "C3327_zve1",
+      "sortCapturedAt": "2026-08-20T02:40:05.000Z"
+    },
+    {
+      "assetId": "C3328_zve1",
+      "sortCapturedAt": "2026-08-20T02:46:50.000Z"
+    },
+    {
+      "assetId": "C3329_zve1",
+      "sortCapturedAt": "2026-08-20T02:48:11.000Z"
+    },
+    {
+      "assetId": "C3330_zve1",
+      "sortCapturedAt": "2026-08-20T02:58:30.000Z"
+    },
+    {
+      "assetId": "C3331_zve1",
+      "sortCapturedAt": "2026-08-20T02:59:10.000Z"
+    },
+    {
+      "assetId": "C3332_zve1",
+      "sortCapturedAt": "2026-08-20T02:59:25.000Z"
+    },
+    {
+      "assetId": "C3333_zve1",
+      "sortCapturedAt": "2026-08-20T03:07:16.000Z"
+    },
+    {
+      "assetId": "C3334_zve1",
+      "sortCapturedAt": "2026-08-20T03:42:39.000Z"
+    },
+    {
+      "assetId": "C3335_zve1",
+      "sortCapturedAt": "2026-08-20T04:01:02.000Z"
+    },
+    {
+      "assetId": "C3336_zve1",
+      "sortCapturedAt": "2026-08-20T04:27:34.000Z"
+    },
+    {
+      "assetId": "C3337_zve1",
+      "sortCapturedAt": "2026-08-20T04:30:53.000Z"
+    },
+    {
+      "assetId": "C3338_zve1",
+      "sortCapturedAt": "2026-08-20T04:34:28.000Z"
+    },
+    {
+      "assetId": "C3339_zve1",
+      "sortCapturedAt": "2026-08-20T04:35:50.000Z"
+    },
+    {
+      "assetId": "C3340_zve1",
+      "sortCapturedAt": "2026-08-20T04:43:14.000Z"
+    },
+    {
+      "assetId": "C3341_zve1",
+      "sortCapturedAt": "2026-08-20T04:44:36.000Z"
+    },
+    {
+      "assetId": "C3342_zve1",
+      "sortCapturedAt": "2026-08-20T04:47:12.000Z"
+    },
+    {
+      "assetId": "C3343_zve1",
+      "sortCapturedAt": "2026-08-20T04:48:22.000Z"
+    },
+    {
+      "assetId": "C3344_zve1",
+      "sortCapturedAt": "2026-08-20T04:59:04.000Z"
+    },
+    {
+      "assetId": "C3345_zve1",
+      "sortCapturedAt": "2026-08-20T05:50:28.000Z"
+    },
+    {
+      "assetId": "C3346_zve1",
+      "sortCapturedAt": "2026-08-20T05:52:21.000Z"
+    },
+    {
+      "assetId": "C3347_zve1",
+      "sortCapturedAt": "2026-08-20T05:58:14.000Z"
+    },
+    {
+      "assetId": "C3348_zve1",
+      "sortCapturedAt": "2026-08-20T05:59:25.000Z"
+    },
+    {
+      "assetId": "C3349_zve1",
+      "sortCapturedAt": "2026-08-20T06:06:57.000Z"
+    },
+    {
+      "assetId": "C3350_zve1",
+      "sortCapturedAt": "2026-08-20T06:09:28.000Z"
+    },
+    {
+      "assetId": "C3351_zve1",
+      "sortCapturedAt": "2026-08-20T06:10:47.000Z"
+    },
+    {
+      "assetId": "C3352_zve1",
+      "sortCapturedAt": "2026-08-20T08:00:19.000Z"
+    },
+    {
+      "assetId": "C3353_zve1",
+      "sortCapturedAt": "2026-08-20T08:13:26.000Z"
+    },
+    {
+      "assetId": "C3354_zve1",
+      "sortCapturedAt": "2026-08-20T09:28:27.000Z"
+    },
+    {
+      "assetId": "C3355_zve1",
+      "sortCapturedAt": "2026-08-20T09:28:50.000Z"
+    },
+    {
+      "assetId": "C3356_zve1",
+      "sortCapturedAt": "2026-08-20T09:45:00.000Z"
+    },
+    {
+      "assetId": "C3357_zve1",
+      "sortCapturedAt": "2026-08-20T10:09:12.000Z"
+    },
+    {
+      "assetId": "C3358_zve1",
+      "sortCapturedAt": "2026-08-20T10:11:20.000Z"
+    },
+    {
+      "assetId": "C3359_zve1",
+      "sortCapturedAt": "2026-08-20T10:17:12.000Z"
+    },
+    {
+      "assetId": "C3360_zve1",
+      "sortCapturedAt": "2026-08-20T10:19:45.000Z"
+    },
+    {
+      "assetId": "C3361_zve1",
+      "sortCapturedAt": "2026-08-20T10:21:49.000Z"
+    },
+    {
+      "assetId": "C3362_zve1",
+      "sortCapturedAt": "2026-08-20T10:24:41.000Z"
+    },
+    {
+      "assetId": "C3363_zve1",
+      "sortCapturedAt": "2026-08-20T10:26:47.000Z"
+    },
+    {
+      "assetId": "C3364_zve1",
+      "sortCapturedAt": "2026-08-20T10:28:51.000Z"
+    },
+    {
+      "assetId": "C3365_zve1",
+      "sortCapturedAt": "2026-08-20T10:29:01.000Z"
+    },
+    {
+      "assetId": "C3366_zve1",
+      "sortCapturedAt": "2026-08-20T10:29:34.000Z"
+    },
+    {
+      "assetId": "C3367_zve1",
+      "sortCapturedAt": "2026-08-20T10:29:56.000Z"
+    },
+    {
+      "assetId": "C3368_zve1",
+      "sortCapturedAt": "2026-08-20T10:39:55.000Z"
+    },
+    {
+      "assetId": "C3369_zve1",
+      "sortCapturedAt": "2026-08-20T10:41:29.000Z"
+    },
+    {
+      "assetId": "C3370_zve1",
+      "sortCapturedAt": "2026-08-20T10:45:08.000Z"
+    },
+    {
+      "assetId": "C3371_zve1",
+      "sortCapturedAt": "2026-08-20T10:45:11.000Z"
+    },
+    {
+      "assetId": "C3372_zve1",
+      "sortCapturedAt": "2026-08-20T10:46:14.000Z"
+    },
+    {
+      "assetId": "C3373_zve1",
+      "sortCapturedAt": "2026-08-20T11:21:04.000Z"
+    },
+    {
+      "assetId": "C3374_zve1",
+      "sortCapturedAt": "2026-08-20T11:36:32.000Z"
+    },
+    {
+      "assetId": "C3375_zve1",
+      "sortCapturedAt": "2026-08-20T11:47:48.000Z"
+    },
+    {
+      "assetId": "C3376_zve1",
+      "sortCapturedAt": "2026-08-20T12:47:56.000Z"
+    },
+    {
+      "assetId": "C3377_zve1",
+      "sortCapturedAt": "2026-08-20T13:07:19.000Z"
+    },
+    {
+      "assetId": "C3378_zve1",
+      "sortCapturedAt": "2026-08-20T13:34:06.000Z"
+    },
+    {
+      "assetId": "C3379_zve1",
+      "sortCapturedAt": "2026-08-20T13:35:39.000Z"
+    },
+    {
+      "assetId": "C3380_zve1",
+      "sortCapturedAt": "2026-08-20T13:37:03.000Z"
+    },
+    {
+      "assetId": "C3381_zve1",
+      "sortCapturedAt": "2026-08-20T13:40:20.000Z"
+    },
+    {
+      "assetId": "C3382_zve1",
+      "sortCapturedAt": "2026-08-20T13:50:19.000Z"
+    },
+    {
+      "assetId": "C3383_zve1",
+      "sortCapturedAt": "2026-08-20T13:55:10.000Z"
+    },
+    {
+      "assetId": "C3384_zve1",
+      "sortCapturedAt": "2026-08-21T02:52:00.000Z"
+    },
+    {
+      "assetId": "C3385_zve1",
+      "sortCapturedAt": "2026-08-21T02:52:43.000Z"
+    },
+    {
+      "assetId": "C3386_zve1",
+      "sortCapturedAt": "2026-08-21T02:54:18.000Z"
+    },
+    {
+      "assetId": "C3387_zve1",
+      "sortCapturedAt": "2026-08-21T02:58:48.000Z"
+    },
+    {
+      "assetId": "C3388_zve1",
+      "sortCapturedAt": "2026-08-21T03:18:46.000Z"
+    },
+    {
+      "assetId": "C3389_zve1",
+      "sortCapturedAt": "2026-08-21T03:26:00.000Z"
+    },
+    {
+      "assetId": "C3390_zve1",
+      "sortCapturedAt": "2026-08-21T03:30:15.000Z"
+    },
+    {
+      "assetId": "C3391_zve1",
+      "sortCapturedAt": "2026-08-21T03:38:06.000Z"
+    },
+    {
+      "assetId": "C3392_zve1",
+      "sortCapturedAt": "2026-08-21T04:49:42.000Z"
+    },
+    {
+      "assetId": "C3393_zve1",
+      "sortCapturedAt": "2026-08-21T05:02:51.000Z"
+    },
+    {
+      "assetId": "C3394_zve1",
+      "sortCapturedAt": "2026-08-21T05:05:32.000Z"
+    },
+    {
+      "assetId": "C3395_zve1",
+      "sortCapturedAt": "2026-08-21T05:06:21.000Z"
+    },
+    {
+      "assetId": "C3396_zve1",
+      "sortCapturedAt": "2026-08-21T06:25:11.000Z"
+    },
+    {
+      "assetId": "C3397_zve1",
+      "sortCapturedAt": "2026-08-21T07:02:03.000Z"
+    },
+    {
+      "assetId": "C3398_zve1",
+      "sortCapturedAt": "2026-08-21T07:05:55.000Z"
+    },
+    {
+      "assetId": "C3399_zve1",
+      "sortCapturedAt": "2026-08-21T07:14:29.000Z"
+    },
+    {
+      "assetId": "C3400_zve1",
+      "sortCapturedAt": "2026-08-21T07:31:03.000Z"
+    },
+    {
+      "assetId": "C3401_zve1",
+      "sortCapturedAt": "2026-08-21T07:41:37.000Z"
+    },
+    {
+      "assetId": "C3402_zve1",
+      "sortCapturedAt": "2026-08-21T07:46:24.000Z"
+    },
+    {
+      "assetId": "C3403_zve1",
+      "sortCapturedAt": "2026-08-21T07:47:36.000Z"
+    },
+    {
+      "assetId": "C3404_zve1",
+      "sortCapturedAt": "2026-08-21T07:48:37.000Z"
+    },
+    {
+      "assetId": "C3405_zve1",
+      "sortCapturedAt": "2026-08-21T07:58:33.000Z"
+    },
+    {
+      "assetId": "C3406_zve1",
+      "sortCapturedAt": "2026-08-21T07:58:43.000Z"
+    },
+    {
+      "assetId": "C3407_zve1",
+      "sortCapturedAt": "2026-08-21T08:36:54.000Z"
+    },
+    {
+      "assetId": "C3408_zve1",
+      "sortCapturedAt": "2026-08-21T08:46:44.000Z"
+    },
+    {
+      "assetId": "C3409_zve1",
+      "sortCapturedAt": "2026-08-21T08:49:27.000Z"
+    },
+    {
+      "assetId": "C3410_zve1",
+      "sortCapturedAt": "2026-08-21T08:55:13.000Z"
+    },
+    {
+      "assetId": "C3411_zve1",
+      "sortCapturedAt": "2026-08-21T08:57:21.000Z"
+    },
+    {
+      "assetId": "C3412_zve1",
+      "sortCapturedAt": "2026-08-21T09:05:42.000Z"
+    },
+    {
+      "assetId": "C3413_zve1",
+      "sortCapturedAt": "2026-08-21T09:07:45.000Z"
+    },
+    {
+      "assetId": "C3414_zve1",
+      "sortCapturedAt": "2026-08-21T09:18:55.000Z"
+    },
+    {
+      "assetId": "C3415_zve1",
+      "sortCapturedAt": "2026-08-21T09:19:52.000Z"
+    },
+    {
+      "assetId": "C3416_zve1",
+      "sortCapturedAt": "2026-08-21T09:19:55.000Z"
+    },
+    {
+      "assetId": "C3417_zve1",
+      "sortCapturedAt": "2026-08-21T09:20:56.000Z"
+    },
+    {
+      "assetId": "DSC08363_photos",
+      "sortCapturedAt": "2026-08-21T09:21:15.000Z"
+    },
+    {
+      "assetId": "C3418_zve1",
+      "sortCapturedAt": "2026-08-21T09:25:04.000Z"
+    },
+    {
+      "assetId": "C3419_zve1",
+      "sortCapturedAt": "2026-08-21T09:28:31.000Z"
+    },
+    {
+      "assetId": "C3420_zve1",
+      "sortCapturedAt": "2026-08-21T09:32:32.000Z"
+    },
+    {
+      "assetId": "C3421_zve1",
+      "sortCapturedAt": "2026-08-21T09:33:52.000Z"
+    },
+    {
+      "assetId": "C3422_zve1",
+      "sortCapturedAt": "2026-08-21T09:41:32.000Z"
+    },
+    {
+      "assetId": "C3423_zve1",
+      "sortCapturedAt": "2026-08-21T09:51:55.000Z"
+    },
+    {
+      "assetId": "C3424_zve1",
+      "sortCapturedAt": "2026-08-21T09:52:14.000Z"
+    },
+    {
+      "assetId": "C3425_zve1",
+      "sortCapturedAt": "2026-08-21T09:52:44.000Z"
+    },
+    {
+      "assetId": "DSC08365_photos",
+      "sortCapturedAt": "2026-08-21T10:03:49.000Z"
+    },
+    {
+      "assetId": "DSC08377_photos",
+      "sortCapturedAt": "2026-08-21T10:05:48.000Z"
+    },
+    {
+      "assetId": "DSC08382_photos",
+      "sortCapturedAt": "2026-08-21T10:06:08.000Z"
+    },
+    {
+      "assetId": "DSC08385_photos",
+      "sortCapturedAt": "2026-08-21T10:06:08.000Z"
+    },
+    {
+      "assetId": "DSC08414_photos",
+      "sortCapturedAt": "2026-08-21T10:12:37.000Z"
+    },
+    {
+      "assetId": "DSC04880_photos",
+      "sortCapturedAt": "2026-08-21T10:12:39.000Z"
+    },
+    {
+      "assetId": "C3426_zve1",
+      "sortCapturedAt": "2026-08-21T10:15:22.000Z"
+    },
+    {
+      "assetId": "DSC08450_photos",
+      "sortCapturedAt": "2026-08-21T10:17:59.000Z"
+    },
+    {
+      "assetId": "DSC08456_photos",
+      "sortCapturedAt": "2026-08-21T10:19:40.000Z"
+    },
+    {
+      "assetId": "DSC08458_photos",
+      "sortCapturedAt": "2026-08-21T10:22:39.000Z"
+    },
+    {
+      "assetId": "C3427_zve1",
+      "sortCapturedAt": "2026-08-21T10:24:07.000Z"
+    },
+    {
+      "assetId": "C3428_zve1",
+      "sortCapturedAt": "2026-08-21T10:24:20.000Z"
+    },
+    {
+      "assetId": "C3429_zve1",
+      "sortCapturedAt": "2026-08-21T10:24:50.000Z"
+    },
+    {
+      "assetId": "DJI_20260821183741_0127_D_drone",
+      "sortCapturedAt": "2026-08-21T10:37:48.000Z"
+    },
+    {
+      "assetId": "DJI_20260821183854_0137_D_drone",
+      "sortCapturedAt": "2026-08-21T10:39:01.000Z"
+    },
+    {
+      "assetId": "DJI_20260821183959_0144_D_drone",
+      "sortCapturedAt": "2026-08-21T10:40:07.000Z"
+    },
+    {
+      "assetId": "DJI_20260821184032_0148_D_drone",
+      "sortCapturedAt": "2026-08-21T10:40:40.000Z"
+    },
+    {
+      "assetId": "DJI_20260821184135_0155_D-HDR_photos",
+      "sortCapturedAt": "2026-08-21T10:41:36.000Z"
+    },
+    {
+      "assetId": "DJI_20260821184315_0167_D-HDR_全景图_photos",
+      "sortCapturedAt": "2026-08-21T10:43:46.000Z"
+    },
+    {
+      "assetId": "DJI_20260821184402_0188_D_drone",
+      "sortCapturedAt": "2026-08-21T10:44:10.000Z"
+    },
+    {
+      "assetId": "DJI_20260821184839_0210_D_drone",
+      "sortCapturedAt": "2026-08-21T10:48:46.000Z"
+    },
+    {
+      "assetId": "DJI_20260821184931_0220_D-HDR_photos",
+      "sortCapturedAt": "2026-08-21T10:49:31.000Z"
+    },
+    {
+      "assetId": "DJI_20260821185008_0226_D_drone",
+      "sortCapturedAt": "2026-08-21T10:50:16.000Z"
+    },
+    {
+      "assetId": "DJI_20260821185213_0256_D-HDR_全景图_photos",
+      "sortCapturedAt": "2026-08-21T10:52:13.000Z"
+    },
+    {
+      "assetId": "DJI_20260821185503_0272_D_drone",
+      "sortCapturedAt": "2026-08-21T10:55:11.000Z"
+    },
+    {
+      "assetId": "C3430_zve1",
+      "sortCapturedAt": "2026-08-21T11:07:02.000Z"
+    },
+    {
+      "assetId": "C3431_zve1",
+      "sortCapturedAt": "2026-08-21T11:07:22.000Z"
+    },
+    {
+      "assetId": "DSC05702_photos",
+      "sortCapturedAt": "2026-08-21T11:07:35.000Z"
+    },
+    {
+      "assetId": "C3432_zve1",
+      "sortCapturedAt": "2026-08-21T11:07:59.000Z"
+    },
+    {
+      "assetId": "DSC01521_photos",
+      "sortCapturedAt": "2026-08-21T11:09:11.000Z"
+    },
+    {
+      "assetId": "DSC05791_photos",
+      "sortCapturedAt": "2026-08-21T11:13:32.000Z"
+    },
+    {
+      "assetId": "DJI_20260821191639_0273_D_drone",
+      "sortCapturedAt": "2026-08-21T11:16:46.000Z"
+    },
+    {
+      "assetId": "DJI_20260821191643_0274_D_drone",
+      "sortCapturedAt": "2026-08-21T11:16:51.000Z"
+    },
+    {
+      "assetId": "DSC09175_photos",
+      "sortCapturedAt": "2026-08-21T11:17:26.000Z"
+    },
+    {
+      "assetId": "DJI_20260821191737_0282_D_drone",
+      "sortCapturedAt": "2026-08-21T11:17:44.000Z"
+    },
+    {
+      "assetId": "DSC05854_photos",
+      "sortCapturedAt": "2026-08-21T11:17:45.000Z"
+    },
+    {
+      "assetId": "DJI_20260821191751_0283_D-HDR_photos",
+      "sortCapturedAt": "2026-08-21T11:17:52.000Z"
+    },
+    {
+      "assetId": "DJI_20260821191757_0286_D_drone",
+      "sortCapturedAt": "2026-08-21T11:18:04.000Z"
+    },
+    {
+      "assetId": "DSC09190_photos",
+      "sortCapturedAt": "2026-08-21T11:18:26.000Z"
+    },
+    {
+      "assetId": "DJI_20260821191837_0290_D-HDR_photos",
+      "sortCapturedAt": "2026-08-21T11:18:37.000Z"
+    },
+    {
+      "assetId": "DJI_20260821191846_0293_D_drone",
+      "sortCapturedAt": "2026-08-21T11:18:53.000Z"
+    },
+    {
+      "assetId": "DJI_20260821191855_0294_D_drone",
+      "sortCapturedAt": "2026-08-21T11:19:02.000Z"
+    },
+    {
+      "assetId": "DJI_20260821191936_0298_D-HDR_photos",
+      "sortCapturedAt": "2026-08-21T11:19:36.000Z"
+    },
+    {
+      "assetId": "C3433_zve1",
+      "sortCapturedAt": "2026-08-21T11:20:21.000Z"
+    },
+    {
+      "assetId": "DJI_20260821192024_0312_D-HDR_全景图_photos",
+      "sortCapturedAt": "2026-08-21T11:20:24.000Z"
+    },
+    {
+      "assetId": "DJI_20260821192031_0313_D_drone",
+      "sortCapturedAt": "2026-08-21T11:20:38.000Z"
+    },
+    {
+      "assetId": "DJI_20260821192155_0340_D-HDR_全景图_photos",
+      "sortCapturedAt": "2026-08-21T11:21:55.000Z"
+    },
+    {
+      "assetId": "DJI_20260821192257_0346_D-HDR_photos",
+      "sortCapturedAt": "2026-08-21T11:22:57.000Z"
+    },
+    {
+      "assetId": "DJI_20260821192319_0347_D_drone",
+      "sortCapturedAt": "2026-08-21T11:23:26.000Z"
+    },
+    {
+      "assetId": "DJI_20260821192340_0348_D_drone",
+      "sortCapturedAt": "2026-08-21T11:23:47.000Z"
+    },
+    {
+      "assetId": "DJI_20260821192426_0349_D_drone",
+      "sortCapturedAt": "2026-08-21T11:24:33.000Z"
+    },
+    {
+      "assetId": "DJI_20260821192502_0352_D-HDR_photos",
+      "sortCapturedAt": "2026-08-21T11:25:02.000Z"
+    },
+    {
+      "assetId": "DJI_20260821192512_0355_D-HDR_photos",
+      "sortCapturedAt": "2026-08-21T11:25:12.000Z"
+    },
+    {
+      "assetId": "DJI_20260821192619_0356_D_drone",
+      "sortCapturedAt": "2026-08-21T11:26:27.000Z"
+    },
+    {
+      "assetId": "DJI_20260821192952_0365_D-HDR_photos",
+      "sortCapturedAt": "2026-08-21T11:29:52.000Z"
+    },
+    {
+      "assetId": "DJI_20260821193018_0369_D_drone",
+      "sortCapturedAt": "2026-08-21T11:30:25.000Z"
+    },
+    {
+      "assetId": "DSC01526_photos",
+      "sortCapturedAt": "2026-08-21T11:30:55.000Z"
+    },
+    {
+      "assetId": "DSC01527_photos",
+      "sortCapturedAt": "2026-08-21T11:31:04.000Z"
+    },
+    {
+      "assetId": "C3434_zve1",
+      "sortCapturedAt": "2026-08-21T11:31:46.000Z"
+    },
+    {
+      "assetId": "DJI_20260821193242_0393_D-HDR_全景图_photos",
+      "sortCapturedAt": "2026-08-21T11:32:42.000Z"
+    },
+    {
+      "assetId": "DSC09551_photos",
+      "sortCapturedAt": "2026-08-21T11:43:20.000Z"
+    },
+    {
+      "assetId": "DSC06119_photos",
+      "sortCapturedAt": "2026-08-21T11:44:42.000Z"
+    },
+    {
+      "assetId": "C3435_zve1",
+      "sortCapturedAt": "2026-08-21T11:58:22.000Z"
+    },
+    {
+      "assetId": "C3436_zve1",
+      "sortCapturedAt": "2026-08-21T12:34:31.000Z"
+    },
+    {
+      "assetId": "C3437_zve1",
+      "sortCapturedAt": "2026-08-21T12:39:13.000Z"
+    },
+    {
+      "assetId": "C3438_zve1",
+      "sortCapturedAt": "2026-08-21T12:55:58.000Z"
+    },
+    {
+      "assetId": "C3439_zve1",
+      "sortCapturedAt": "2026-08-21T12:56:46.000Z"
+    },
+    {
+      "assetId": "C3440_zve1",
+      "sortCapturedAt": "2026-08-21T13:01:34.000Z"
+    },
+    {
+      "assetId": "C3441_zve1",
+      "sortCapturedAt": "2026-08-21T13:07:15.000Z"
+    },
+    {
+      "assetId": "C3442_zve1",
+      "sortCapturedAt": "2026-08-21T13:08:10.000Z"
+    },
+    {
+      "assetId": "C3443_zve1",
+      "sortCapturedAt": "2026-08-21T14:09:03.000Z"
+    },
+    {
+      "assetId": "C3444_zve1",
+      "sortCapturedAt": "2026-08-21T14:34:56.000Z"
+    },
+    {
+      "assetId": "C3445_zve1",
+      "sortCapturedAt": "2026-08-21T15:13:19.000Z"
+    },
+    {
+      "assetId": "C3446_zve1",
+      "sortCapturedAt": "2026-08-21T15:30:40.000Z"
+    },
+    {
+      "assetId": "C3447_zve1",
+      "sortCapturedAt": "2026-08-21T15:43:23.000Z"
+    },
+    {
+      "assetId": "C3448_zve1",
+      "sortCapturedAt": "2026-08-21T15:45:22.000Z"
+    },
+    {
+      "assetId": "C3449_zve1",
+      "sortCapturedAt": "2026-08-21T15:59:10.000Z"
+    },
+    {
+      "assetId": "C3450_zve1",
+      "sortCapturedAt": "2026-08-22T02:54:52.000Z"
+    },
+    {
+      "assetId": "C3451_zve1",
+      "sortCapturedAt": "2026-08-22T02:55:05.000Z"
+    },
+    {
+      "assetId": "C3452_zve1",
+      "sortCapturedAt": "2026-08-22T03:06:59.000Z"
+    },
+    {
+      "assetId": "C3453_zve1",
+      "sortCapturedAt": "2026-08-22T03:07:34.000Z"
+    },
+    {
+      "assetId": "C3454_zve1",
+      "sortCapturedAt": "2026-08-22T03:16:17.000Z"
+    },
+    {
+      "assetId": "DSC01566_photos",
+      "sortCapturedAt": "2026-08-22T03:22:24.000Z"
+    },
+    {
+      "assetId": "DSC01568_photos",
+      "sortCapturedAt": "2026-08-22T03:22:37.000Z"
+    },
+    {
+      "assetId": "C3455_zve1",
+      "sortCapturedAt": "2026-08-22T03:23:52.000Z"
+    },
+    {
+      "assetId": "C3456_zve1",
+      "sortCapturedAt": "2026-08-22T03:36:17.000Z"
+    },
+    {
+      "assetId": "C3457_zve1",
+      "sortCapturedAt": "2026-08-22T03:36:53.000Z"
+    },
+    {
+      "assetId": "C3458_zve1",
+      "sortCapturedAt": "2026-08-22T03:41:21.000Z"
+    },
+    {
+      "assetId": "C3459_zve1",
+      "sortCapturedAt": "2026-08-22T03:43:30.000Z"
+    },
+    {
+      "assetId": "C3460_zve1",
+      "sortCapturedAt": "2026-08-22T04:10:17.000Z"
+    },
+    {
+      "assetId": "C3461_zve1",
+      "sortCapturedAt": "2026-08-22T04:12:07.000Z"
+    },
+    {
+      "assetId": "C3462_zve1",
+      "sortCapturedAt": "2026-08-22T04:14:59.000Z"
+    },
+    {
+      "assetId": "DSC09562_photos",
+      "sortCapturedAt": "2026-08-22T04:20:34.000Z"
+    },
+    {
+      "assetId": "C3463_zve1",
+      "sortCapturedAt": "2026-08-22T04:26:39.000Z"
+    },
+    {
+      "assetId": "C3464_zve1",
+      "sortCapturedAt": "2026-08-22T04:27:19.000Z"
+    },
+    {
+      "assetId": "C3465_zve1",
+      "sortCapturedAt": "2026-08-22T04:28:00.000Z"
+    },
+    {
+      "assetId": "C3466_zve1",
+      "sortCapturedAt": "2026-08-22T04:28:18.000Z"
+    },
+    {
+      "assetId": "DSC01580_photos",
+      "sortCapturedAt": "2026-08-22T04:30:05.000Z"
+    },
+    {
+      "assetId": "C3467_zve1",
+      "sortCapturedAt": "2026-08-22T04:35:22.000Z"
+    },
+    {
+      "assetId": "C3468_zve1",
+      "sortCapturedAt": "2026-08-22T04:36:03.000Z"
+    },
+    {
+      "assetId": "C3469_zve1",
+      "sortCapturedAt": "2026-08-22T04:39:50.000Z"
+    },
+    {
+      "assetId": "DSC01622_photos",
+      "sortCapturedAt": "2026-08-22T04:41:03.000Z"
+    },
+    {
+      "assetId": "DSC09570_photos",
+      "sortCapturedAt": "2026-08-22T04:43:25.000Z"
+    },
+    {
+      "assetId": "C3470_zve1",
+      "sortCapturedAt": "2026-08-22T04:45:24.000Z"
+    },
+    {
+      "assetId": "C3471_zve1",
+      "sortCapturedAt": "2026-08-22T04:57:01.000Z"
+    },
+    {
+      "assetId": "C3472_zve1",
+      "sortCapturedAt": "2026-08-22T05:13:12.000Z"
+    },
+    {
+      "assetId": "C3473_zve1",
+      "sortCapturedAt": "2026-08-22T05:16:03.000Z"
+    },
+    {
+      "assetId": "C3474_zve1",
+      "sortCapturedAt": "2026-08-22T05:40:59.000Z"
+    },
+    {
+      "assetId": "C3475_zve1",
+      "sortCapturedAt": "2026-08-22T05:54:37.000Z"
+    },
+    {
+      "assetId": "C3476_zve1",
+      "sortCapturedAt": "2026-08-22T05:55:41.000Z"
+    },
+    {
+      "assetId": "C3477_zve1",
+      "sortCapturedAt": "2026-08-22T06:05:24.000Z"
+    },
+    {
+      "assetId": "C3478_zve1",
+      "sortCapturedAt": "2026-08-22T06:26:34.000Z"
+    },
+    {
+      "assetId": "C3479_zve1",
+      "sortCapturedAt": "2026-08-22T06:46:53.000Z"
+    },
+    {
+      "assetId": "C3480_zve1",
+      "sortCapturedAt": "2026-08-22T07:01:21.000Z"
+    },
+    {
+      "assetId": "C3481_zve1",
+      "sortCapturedAt": "2026-08-22T07:02:56.000Z"
+    },
+    {
+      "assetId": "C3482_zve1",
+      "sortCapturedAt": "2026-08-22T07:16:44.000Z"
+    },
+    {
+      "assetId": "C3483_zve1",
+      "sortCapturedAt": "2026-08-22T08:11:33.000Z"
+    },
+    {
+      "assetId": "C3484_zve1",
+      "sortCapturedAt": "2026-08-22T08:23:52.000Z"
+    },
+    {
+      "assetId": "C3485_zve1",
+      "sortCapturedAt": "2026-08-22T08:27:01.000Z"
+    },
+    {
+      "assetId": "C3486_zve1",
+      "sortCapturedAt": "2026-08-22T08:28:42.000Z"
+    },
+    {
+      "assetId": "C3487_zve1",
+      "sortCapturedAt": "2026-08-22T08:31:05.000Z"
+    },
+    {
+      "assetId": "C3488_zve1",
+      "sortCapturedAt": "2026-08-22T08:34:58.000Z"
+    },
+    {
+      "assetId": "C3489_zve1",
+      "sortCapturedAt": "2026-08-22T08:45:22.000Z"
+    },
+    {
+      "assetId": "C3490_zve1",
+      "sortCapturedAt": "2026-08-22T08:47:47.000Z"
+    },
+    {
+      "assetId": "C3491_zve1",
+      "sortCapturedAt": "2026-08-22T08:50:09.000Z"
+    },
+    {
+      "assetId": "C3492_zve1",
+      "sortCapturedAt": "2026-08-22T08:50:30.000Z"
+    },
+    {
+      "assetId": "DJI_20260822165755_0397_D_drone",
+      "sortCapturedAt": "2026-08-22T08:58:03.000Z"
+    },
+    {
+      "assetId": "DJI_20260822165801_0398_D_drone",
+      "sortCapturedAt": "2026-08-22T08:58:08.000Z"
+    },
+    {
+      "assetId": "DJI_20260822165922_0405_D_drone",
+      "sortCapturedAt": "2026-08-22T08:59:29.000Z"
+    },
+    {
+      "assetId": "DJI_20260822170032_0409_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T09:00:32.000Z"
+    },
+    {
+      "assetId": "DJI_20260822170120_0415_D_drone",
+      "sortCapturedAt": "2026-08-22T09:01:27.000Z"
+    },
+    {
+      "assetId": "DJI_20260822170148_0419_D_drone",
+      "sortCapturedAt": "2026-08-22T09:01:55.000Z"
+    },
+    {
+      "assetId": "DJI_20260822170256_0437_D-HDR_全景图_photos",
+      "sortCapturedAt": "2026-08-22T09:02:51.000Z"
+    },
+    {
+      "assetId": "DJI_20260822170309_0438_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T09:03:10.000Z"
+    },
+    {
+      "assetId": "DJI_20260822170342_0447_D-HDR_全景图_photos",
+      "sortCapturedAt": "2026-08-22T09:03:57.000Z"
+    },
+    {
+      "assetId": "C3493_zve1",
+      "sortCapturedAt": "2026-08-22T09:06:01.000Z"
+    },
+    {
+      "assetId": "DJI_20260822170615_0483_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T09:06:15.000Z"
+    },
+    {
+      "assetId": "DJI_20260822170628_0486_D_drone",
+      "sortCapturedAt": "2026-08-22T09:06:35.000Z"
+    },
+    {
+      "assetId": "DJI_20260822170714_0487_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T09:07:14.000Z"
+    },
+    {
+      "assetId": "DJI_20260822170835_0499_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T09:08:36.000Z"
+    },
+    {
+      "assetId": "DJI_20260822170917_0505_D_drone",
+      "sortCapturedAt": "2026-08-22T09:09:24.000Z"
+    },
+    {
+      "assetId": "DJI_20260822171005_0517_D-HDR_全景图_photos",
+      "sortCapturedAt": "2026-08-22T09:10:01.000Z"
+    },
+    {
+      "assetId": "DJI_20260822171250_0521_D_drone",
+      "sortCapturedAt": "2026-08-22T09:12:57.000Z"
+    },
+    {
+      "assetId": "DJI_20260822171432_0522_D_drone",
+      "sortCapturedAt": "2026-08-22T09:14:39.000Z"
+    },
+    {
+      "assetId": "DJI_20260822171656_0531_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T09:16:56.000Z"
+    },
+    {
+      "assetId": "DJI_20260822171924_0535_D_drone",
+      "sortCapturedAt": "2026-08-22T09:19:31.000Z"
+    },
+    {
+      "assetId": "DJI_20260822172113_0536_D_drone",
+      "sortCapturedAt": "2026-08-22T09:21:21.000Z"
+    },
+    {
+      "assetId": "DJI_20260822172150_0537_D_drone",
+      "sortCapturedAt": "2026-08-22T09:21:57.000Z"
+    },
+    {
+      "assetId": "DJI_20260822172313_0541_D_drone",
+      "sortCapturedAt": "2026-08-22T09:23:21.000Z"
+    },
+    {
+      "assetId": "DJI_20260822172530_0542_D_drone",
+      "sortCapturedAt": "2026-08-22T09:25:37.000Z"
+    },
+    {
+      "assetId": "DJI_20260822172532_0543_D_drone",
+      "sortCapturedAt": "2026-08-22T09:25:39.000Z"
+    },
+    {
+      "assetId": "DJI_20260822172617_0544_D_drone",
+      "sortCapturedAt": "2026-08-22T09:26:24.000Z"
+    },
+    {
+      "assetId": "DJI_20260822172624_0547_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T09:26:24.000Z"
+    },
+    {
+      "assetId": "DJI_20260822172646_0548_D_drone",
+      "sortCapturedAt": "2026-08-22T09:26:53.000Z"
+    },
+    {
+      "assetId": "DJI_20260822172910_0549_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T09:29:10.000Z"
+    },
+    {
+      "assetId": "DJI_20260822172925_0557_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T09:29:25.000Z"
+    },
+    {
+      "assetId": "DSC09584_photos",
+      "sortCapturedAt": "2026-08-22T09:29:28.000Z"
+    },
+    {
+      "assetId": "C3494_zve1",
+      "sortCapturedAt": "2026-08-22T09:29:29.000Z"
+    },
+    {
+      "assetId": "DSC09588_photos",
+      "sortCapturedAt": "2026-08-22T09:29:49.000Z"
+    },
+    {
+      "assetId": "DJI_20260822173012_0563_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T09:30:12.000Z"
+    },
+    {
+      "assetId": "DJI_20260822173136_0570_D_drone",
+      "sortCapturedAt": "2026-08-22T09:31:44.000Z"
+    },
+    {
+      "assetId": "DJI_20260822173200_0571_D_drone",
+      "sortCapturedAt": "2026-08-22T09:32:08.000Z"
+    },
+    {
+      "assetId": "DJI_20260822173328_0572_D_drone",
+      "sortCapturedAt": "2026-08-22T09:33:35.000Z"
+    },
+    {
+      "assetId": "DJI_20260822173455_0585_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T09:34:56.000Z"
+    },
+    {
+      "assetId": "DJI_20260822173544_0588_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T09:35:44.000Z"
+    },
+    {
+      "assetId": "DJI_20260822173618_0597_D_drone",
+      "sortCapturedAt": "2026-08-22T09:36:26.000Z"
+    },
+    {
+      "assetId": "DJI_20260822173637_0600_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T09:36:37.000Z"
+    },
+    {
+      "assetId": "DJI_20260822173753_0606_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T09:37:53.000Z"
+    },
+    {
+      "assetId": "DJI_20260822173917_0609_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T09:39:17.000Z"
+    },
+    {
+      "assetId": "DJI_20260822174031_0610_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T09:40:31.000Z"
+    },
+    {
+      "assetId": "DJI_20260822174129_0621_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T09:41:29.000Z"
+    },
+    {
+      "assetId": "DJI_20260822174217_0633_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T09:42:17.000Z"
+    },
+    {
+      "assetId": "DJI_20260822174336_0645_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T09:43:36.000Z"
+    },
+    {
+      "assetId": "DJI_20260822174402_0646_D_drone",
+      "sortCapturedAt": "2026-08-22T09:44:09.000Z"
+    },
+    {
+      "assetId": "DJI_20260822174441_0647_D_drone",
+      "sortCapturedAt": "2026-08-22T09:44:49.000Z"
+    },
+    {
+      "assetId": "C3495_zve1",
+      "sortCapturedAt": "2026-08-22T09:46:03.000Z"
+    },
+    {
+      "assetId": "DJI_20260822174608_0650_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T09:46:08.000Z"
+    },
+    {
+      "assetId": "DJI_20260822174619_0653_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T09:46:19.000Z"
+    },
+    {
+      "assetId": "DSC09596_photos",
+      "sortCapturedAt": "2026-08-22T09:46:51.000Z"
+    },
+    {
+      "assetId": "DJI_20260822174648_0654_D_drone",
+      "sortCapturedAt": "2026-08-22T09:46:56.000Z"
+    },
+    {
+      "assetId": "C3496_zve1",
+      "sortCapturedAt": "2026-08-22T09:47:10.000Z"
+    },
+    {
+      "assetId": "DSC09600_photos",
+      "sortCapturedAt": "2026-08-22T09:47:10.000Z"
+    },
+    {
+      "assetId": "DJI_20260822174801_0665_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T09:48:01.000Z"
+    },
+    {
+      "assetId": "C3497_zve1",
+      "sortCapturedAt": "2026-08-22T09:49:36.000Z"
+    },
+    {
+      "assetId": "C3498_zve1",
+      "sortCapturedAt": "2026-08-22T09:59:06.000Z"
+    },
+    {
+      "assetId": "C3499_zve1",
+      "sortCapturedAt": "2026-08-22T10:02:08.000Z"
+    },
+    {
+      "assetId": "C3500_zve1",
+      "sortCapturedAt": "2026-08-22T10:08:55.000Z"
+    },
+    {
+      "assetId": "DSC06125-Pano_photos",
+      "sortCapturedAt": "2026-08-22T10:09:07.000Z"
+    },
+    {
+      "assetId": "C3501_zve1",
+      "sortCapturedAt": "2026-08-22T10:10:21.000Z"
+    },
+    {
+      "assetId": "DSC06134_photos",
+      "sortCapturedAt": "2026-08-22T10:16:08.000Z"
+    },
+    {
+      "assetId": "DSC06139_photos",
+      "sortCapturedAt": "2026-08-22T10:17:01.000Z"
+    },
+    {
+      "assetId": "C3502_zve1",
+      "sortCapturedAt": "2026-08-22T10:18:12.000Z"
+    },
+    {
+      "assetId": "C3503_zve1",
+      "sortCapturedAt": "2026-08-22T10:18:18.000Z"
+    },
+    {
+      "assetId": "DSC01638_photos",
+      "sortCapturedAt": "2026-08-22T10:19:57.000Z"
+    },
+    {
+      "assetId": "DSC09602_photos",
+      "sortCapturedAt": "2026-08-22T10:21:51.000Z"
+    },
+    {
+      "assetId": "C3504_zve1",
+      "sortCapturedAt": "2026-08-22T10:21:56.000Z"
+    },
+    {
+      "assetId": "C3505_zve1",
+      "sortCapturedAt": "2026-08-22T10:22:24.000Z"
+    },
+    {
+      "assetId": "C3506_zve1",
+      "sortCapturedAt": "2026-08-22T10:22:37.000Z"
+    },
+    {
+      "assetId": "C3507_zve1",
+      "sortCapturedAt": "2026-08-22T10:30:41.000Z"
+    },
+    {
+      "assetId": "C3508_zve1",
+      "sortCapturedAt": "2026-08-22T10:36:09.000Z"
+    },
+    {
+      "assetId": "C3509_zve1",
+      "sortCapturedAt": "2026-08-22T10:38:38.000Z"
+    },
+    {
+      "assetId": "DJI_20260822184103_0675_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T10:41:03.000Z"
+    },
+    {
+      "assetId": "DJI_20260822184239_0681_D_drone",
+      "sortCapturedAt": "2026-08-22T10:42:46.000Z"
+    },
+    {
+      "assetId": "DJI_20260822184517_0685_D_drone",
+      "sortCapturedAt": "2026-08-22T10:45:25.000Z"
+    },
+    {
+      "assetId": "DJI_20260822184750_0695_D_drone",
+      "sortCapturedAt": "2026-08-22T10:47:58.000Z"
+    },
+    {
+      "assetId": "DJI_20260822184822_0698_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T10:48:22.000Z"
+    },
+    {
+      "assetId": "DJI_20260822184855_0705_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T10:48:55.000Z"
+    },
+    {
+      "assetId": "DJI_20260822184937_0716_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T10:49:37.000Z"
+    },
+    {
+      "assetId": "DJI_20260822185007_0722_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T10:50:07.000Z"
+    },
+    {
+      "assetId": "DJI_20260822185019_0725_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T10:50:19.000Z"
+    },
+    {
+      "assetId": "DJI_20260822185044_0726_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T10:50:44.000Z"
+    },
+    {
+      "assetId": "DJI_20260822185118_0731_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T10:51:18.000Z"
+    },
+    {
+      "assetId": "DJI_20260822185204_0732_D_drone",
+      "sortCapturedAt": "2026-08-22T10:52:12.000Z"
+    },
+    {
+      "assetId": "DJI_20260822185333_0733_D_drone",
+      "sortCapturedAt": "2026-08-22T10:53:41.000Z"
+    },
+    {
+      "assetId": "C3510_zve1",
+      "sortCapturedAt": "2026-08-22T10:53:48.000Z"
+    },
+    {
+      "assetId": "DJI_20260822185431_0734_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T10:54:31.000Z"
+    },
+    {
+      "assetId": "DJI_20260822185730_0743_D_drone",
+      "sortCapturedAt": "2026-08-22T10:57:37.000Z"
+    },
+    {
+      "assetId": "DJI_20260822185900_0744_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T10:59:00.000Z"
+    },
+    {
+      "assetId": "20260822_阳朔漓江晚霞1_timelaps",
+      "sortCapturedAt": "2026-08-22T11:00:00.000Z"
+    },
+    {
+      "assetId": "20260822_阳朔漓江晚霞2_timelaps",
+      "sortCapturedAt": "2026-08-22T11:00:00.000Z"
+    },
+    {
+      "assetId": "DJI_20260822190022_0747_D_drone",
+      "sortCapturedAt": "2026-08-22T11:00:29.000Z"
+    },
+    {
+      "assetId": "DJI_20260822190203_0748_D_drone",
+      "sortCapturedAt": "2026-08-22T11:02:10.000Z"
+    },
+    {
+      "assetId": "DJI_20260822190258_0752_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T11:02:58.000Z"
+    },
+    {
+      "assetId": "DJI_20260822190340_0761_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T11:03:40.000Z"
+    },
+    {
+      "assetId": "DJI_20260822190417_0764_D_drone",
+      "sortCapturedAt": "2026-08-22T11:04:24.000Z"
+    },
+    {
+      "assetId": "DJI_20260822190537_0768_D_drone",
+      "sortCapturedAt": "2026-08-22T11:05:44.000Z"
+    },
+    {
+      "assetId": "DJI_20260822190613_0769_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T11:06:13.000Z"
+    },
+    {
+      "assetId": "C3511_zve1",
+      "sortCapturedAt": "2026-08-22T11:06:28.000Z"
+    },
+    {
+      "assetId": "C3512_zve1",
+      "sortCapturedAt": "2026-08-22T11:08:43.000Z"
+    },
+    {
+      "assetId": "DJI_20260822190854_0789_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T11:08:54.000Z"
+    },
+    {
+      "assetId": "DSC01640_photos",
+      "sortCapturedAt": "2026-08-22T11:09:20.000Z"
+    },
+    {
+      "assetId": "DSC01641_photos",
+      "sortCapturedAt": "2026-08-22T11:09:31.000Z"
+    },
+    {
+      "assetId": "DJI_20260822190933_0793_D_drone",
+      "sortCapturedAt": "2026-08-22T11:09:41.000Z"
+    },
+    {
+      "assetId": "DSC01643_photos",
+      "sortCapturedAt": "2026-08-22T11:09:47.000Z"
+    },
+    {
+      "assetId": "C3513_zve1",
+      "sortCapturedAt": "2026-08-22T11:10:08.000Z"
+    },
+    {
+      "assetId": "DJI_20260822191022_0799_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T11:10:22.000Z"
+    },
+    {
+      "assetId": "DJI_20260822191044_0805_D-HDR_photos",
+      "sortCapturedAt": "2026-08-22T11:10:44.000Z"
+    },
+    {
+      "assetId": "DSC09611_photos",
+      "sortCapturedAt": "2026-08-22T11:12:11.000Z"
+    },
+    {
+      "assetId": "DSC09616_photos",
+      "sortCapturedAt": "2026-08-22T11:12:50.000Z"
+    },
+    {
+      "assetId": "DSC09618_photos",
+      "sortCapturedAt": "2026-08-22T11:13:03.000Z"
+    },
+    {
+      "assetId": "DSC09620_photos",
+      "sortCapturedAt": "2026-08-22T11:14:09.000Z"
+    },
+    {
+      "assetId": "DSC09623_photos",
+      "sortCapturedAt": "2026-08-22T11:16:18.000Z"
+    },
+    {
+      "assetId": "C3514_zve1",
+      "sortCapturedAt": "2026-08-22T11:31:30.000Z"
+    },
+    {
+      "assetId": "C3515_zve1",
+      "sortCapturedAt": "2026-08-22T11:46:45.000Z"
+    },
+    {
+      "assetId": "C3516_zve1",
+      "sortCapturedAt": "2026-08-22T11:47:29.000Z"
+    },
+    {
+      "assetId": "C3517_zve1",
+      "sortCapturedAt": "2026-08-22T11:48:16.000Z"
+    },
+    {
+      "assetId": "C3518_zve1",
+      "sortCapturedAt": "2026-08-22T11:55:06.000Z"
+    },
+    {
+      "assetId": "C3519_zve1",
+      "sortCapturedAt": "2026-08-22T12:01:39.000Z"
+    },
+    {
+      "assetId": "C3520_zve1",
+      "sortCapturedAt": "2026-08-22T12:12:48.000Z"
+    },
+    {
+      "assetId": "C3521_zve1",
+      "sortCapturedAt": "2026-08-22T12:15:53.000Z"
+    },
+    {
+      "assetId": "C3522_zve1",
+      "sortCapturedAt": "2026-08-22T12:16:26.000Z"
+    },
+    {
+      "assetId": "C3523_zve1",
+      "sortCapturedAt": "2026-08-22T12:17:02.000Z"
+    },
+    {
+      "assetId": "C3524_zve1",
+      "sortCapturedAt": "2026-08-22T12:26:29.000Z"
+    },
+    {
+      "assetId": "C3525_zve1",
+      "sortCapturedAt": "2026-08-22T12:26:47.000Z"
+    },
+    {
+      "assetId": "C3526_zve1",
+      "sortCapturedAt": "2026-08-22T12:28:45.000Z"
+    },
+    {
+      "assetId": "C3527_zve1",
+      "sortCapturedAt": "2026-08-22T13:03:04.000Z"
+    },
+    {
+      "assetId": "C3528_zve1",
+      "sortCapturedAt": "2026-08-22T13:06:11.000Z"
+    },
+    {
+      "assetId": "C3529_zve1",
+      "sortCapturedAt": "2026-08-22T13:16:30.000Z"
+    },
+    {
+      "assetId": "C3530_zve1",
+      "sortCapturedAt": "2026-08-22T13:58:34.000Z"
+    },
+    {
+      "assetId": "C3531_zve1",
+      "sortCapturedAt": "2026-08-22T13:58:47.000Z"
+    },
+    {
+      "assetId": "C3532_zve1",
+      "sortCapturedAt": "2026-08-23T00:47:47.000Z"
+    },
+    {
+      "assetId": "C3533_zve1",
+      "sortCapturedAt": "2026-08-23T00:48:39.000Z"
+    },
+    {
+      "assetId": "C3534_zve1",
+      "sortCapturedAt": "2026-08-23T01:00:55.000Z"
+    },
+    {
+      "assetId": "C3535_zve1",
+      "sortCapturedAt": "2026-08-23T01:07:01.000Z"
+    },
+    {
+      "assetId": "C3536_zve1",
+      "sortCapturedAt": "2026-08-23T01:09:21.000Z"
+    },
+    {
+      "assetId": "C3537_zve1",
+      "sortCapturedAt": "2026-08-23T01:10:27.000Z"
+    },
+    {
+      "assetId": "C3538_zve1",
+      "sortCapturedAt": "2026-08-23T01:14:06.000Z"
+    },
+    {
+      "assetId": "C3539_zve1",
+      "sortCapturedAt": "2026-08-23T03:13:26.000Z"
+    },
+    {
+      "assetId": "C3540_zve1",
+      "sortCapturedAt": "2026-08-23T03:14:26.000Z"
+    },
+    {
+      "assetId": "C3541_zve1",
+      "sortCapturedAt": "2026-08-23T03:16:04.000Z"
+    },
+    {
+      "assetId": "DSC09635_photos",
+      "sortCapturedAt": "2026-08-23T03:18:00.000Z"
+    },
+    {
+      "assetId": "C3542_zve1",
+      "sortCapturedAt": "2026-08-23T03:20:09.000Z"
+    },
+    {
+      "assetId": "C3543_zve1",
+      "sortCapturedAt": "2026-08-23T03:20:53.000Z"
+    },
+    {
+      "assetId": "C3544_zve1",
+      "sortCapturedAt": "2026-08-23T04:15:46.000Z"
+    },
+    {
+      "assetId": "C3545_zve1",
+      "sortCapturedAt": "2026-08-23T04:21:24.000Z"
+    },
+    {
+      "assetId": "C3546_zve1",
+      "sortCapturedAt": "2026-08-23T04:22:54.000Z"
+    },
+    {
+      "assetId": "C3547_zve1",
+      "sortCapturedAt": "2026-08-23T04:24:51.000Z"
+    },
+    {
+      "assetId": "C3548_zve1",
+      "sortCapturedAt": "2026-08-23T04:29:37.000Z"
+    },
+    {
+      "assetId": "C3549_zve1",
+      "sortCapturedAt": "2026-08-23T04:32:41.000Z"
+    },
+    {
+      "assetId": "C3550_zve1",
+      "sortCapturedAt": "2026-08-23T04:36:14.000Z"
+    },
+    {
+      "assetId": "C3551_zve1",
+      "sortCapturedAt": "2026-08-23T04:49:20.000Z"
+    },
+    {
+      "assetId": "C3552_zve1",
+      "sortCapturedAt": "2026-08-23T04:50:48.000Z"
+    },
+    {
+      "assetId": "DJI_20260823125144_0818_D-HDR_photos",
+      "sortCapturedAt": "2026-08-23T04:51:44.000Z"
+    },
+    {
+      "assetId": "DJI_20260823125226_0824_D_drone",
+      "sortCapturedAt": "2026-08-23T04:52:34.000Z"
+    },
+    {
+      "assetId": "C3553_zve1",
+      "sortCapturedAt": "2026-08-23T04:52:41.000Z"
+    },
+    {
+      "assetId": "DJI_20260823125312_0825_D-HDR_photos",
+      "sortCapturedAt": "2026-08-23T04:53:13.000Z"
+    },
+    {
+      "assetId": "DJI_20260823125532_0837_D-HDR_photos",
+      "sortCapturedAt": "2026-08-23T04:55:32.000Z"
+    },
+    {
+      "assetId": "DJI_20260823125603_0840_D_drone",
+      "sortCapturedAt": "2026-08-23T04:56:10.000Z"
+    },
+    {
+      "assetId": "DJI_20260823125732_0841_D_drone",
+      "sortCapturedAt": "2026-08-23T04:57:39.000Z"
+    },
+    {
+      "assetId": "DJI_20260823125924_0842_D_drone",
+      "sortCapturedAt": "2026-08-23T04:59:31.000Z"
+    },
+    {
+      "assetId": "DJI_20260823130241_0846_D-HDR_photos",
+      "sortCapturedAt": "2026-08-23T05:02:41.000Z"
+    },
+    {
+      "assetId": "DJI_20260823130315_0849_D_drone",
+      "sortCapturedAt": "2026-08-23T05:03:23.000Z"
+    },
+    {
+      "assetId": "C3554_zve1",
+      "sortCapturedAt": "2026-08-23T05:04:02.000Z"
+    },
+    {
+      "assetId": "DJI_20260823130456_0850_D-HDR_photos",
+      "sortCapturedAt": "2026-08-23T05:04:56.000Z"
+    },
+    {
+      "assetId": "DJI_20260823130842_0865_D-HDR_photos",
+      "sortCapturedAt": "2026-08-23T05:08:42.000Z"
+    },
+    {
+      "assetId": "DJI_20260823131028_0868_D_drone",
+      "sortCapturedAt": "2026-08-23T05:10:35.000Z"
+    },
+    {
+      "assetId": "C3555_zve1",
+      "sortCapturedAt": "2026-08-23T05:11:24.000Z"
+    },
+    {
+      "assetId": "DSC09641_photos",
+      "sortCapturedAt": "2026-08-23T05:13:51.000Z"
+    },
+    {
+      "assetId": "DSC01657_photos",
+      "sortCapturedAt": "2026-08-23T05:32:19.000Z"
+    },
+    {
+      "assetId": "DSC06149_photos",
+      "sortCapturedAt": "2026-08-23T05:34:38.000Z"
+    },
+    {
+      "assetId": "DSC06157_photos",
+      "sortCapturedAt": "2026-08-23T05:35:35.000Z"
+    },
+    {
+      "assetId": "DSC06158_photos",
+      "sortCapturedAt": "2026-08-23T05:35:40.000Z"
+    },
+    {
+      "assetId": "C3556_zve1",
+      "sortCapturedAt": "2026-08-23T05:36:00.000Z"
+    },
+    {
+      "assetId": "DSC06162_photos",
+      "sortCapturedAt": "2026-08-23T05:36:14.000Z"
+    },
+    {
+      "assetId": "C3557_zve1",
+      "sortCapturedAt": "2026-08-23T05:45:45.000Z"
+    },
+    {
+      "assetId": "DSC01683_photos",
+      "sortCapturedAt": "2026-08-23T05:52:46.000Z"
+    },
+    {
+      "assetId": "DSC01701_photos",
+      "sortCapturedAt": "2026-08-23T05:54:35.000Z"
+    },
+    {
+      "assetId": "DSC01702_photos",
+      "sortCapturedAt": "2026-08-23T05:54:45.000Z"
+    },
+    {
+      "assetId": "C3558_zve1",
+      "sortCapturedAt": "2026-08-23T05:55:50.000Z"
+    },
+    {
+      "assetId": "DSC01710_photos",
+      "sortCapturedAt": "2026-08-23T06:01:00.000Z"
+    },
+    {
+      "assetId": "C3559_zve1",
+      "sortCapturedAt": "2026-08-23T06:02:28.000Z"
+    },
+    {
+      "assetId": "DSC01716_photos",
+      "sortCapturedAt": "2026-08-23T06:04:06.000Z"
+    },
+    {
+      "assetId": "C3560_zve1",
+      "sortCapturedAt": "2026-08-23T06:07:06.000Z"
+    },
+    {
+      "assetId": "C3561_zve1",
+      "sortCapturedAt": "2026-08-23T06:07:28.000Z"
+    },
+    {
+      "assetId": "DSC06166_photos",
+      "sortCapturedAt": "2026-08-23T06:08:51.000Z"
+    },
+    {
+      "assetId": "C3562_zve1",
+      "sortCapturedAt": "2026-08-23T06:17:40.000Z"
+    },
+    {
+      "assetId": "DJI_20260823141939_0869_D_drone",
+      "sortCapturedAt": "2026-08-23T06:19:46.000Z"
+    },
+    {
+      "assetId": "C3563_zve1",
+      "sortCapturedAt": "2026-08-23T06:23:25.000Z"
+    },
+    {
+      "assetId": "C3564_zve1",
+      "sortCapturedAt": "2026-08-23T06:28:28.000Z"
+    },
+    {
+      "assetId": "C3565_zve1",
+      "sortCapturedAt": "2026-08-23T06:29:05.000Z"
+    },
+    {
+      "assetId": "C3566_zve1",
+      "sortCapturedAt": "2026-08-23T06:30:48.000Z"
+    },
+    {
+      "assetId": "C3567_zve1",
+      "sortCapturedAt": "2026-08-23T06:32:26.000Z"
+    },
+    {
+      "assetId": "C3568_zve1",
+      "sortCapturedAt": "2026-08-23T06:36:16.000Z"
+    },
+    {
+      "assetId": "C3569_zve1",
+      "sortCapturedAt": "2026-08-23T06:41:09.000Z"
+    },
+    {
+      "assetId": "DSC01719_photos",
+      "sortCapturedAt": "2026-08-23T06:41:14.000Z"
+    },
+    {
+      "assetId": "C3570_zve1",
+      "sortCapturedAt": "2026-08-23T06:49:46.000Z"
+    },
+    {
+      "assetId": "DJI_20260823144950_0870_D_drone",
+      "sortCapturedAt": "2026-08-23T06:49:58.000Z"
+    },
+    {
+      "assetId": "DJI_20260823145025_0872_D-HDR_photos",
+      "sortCapturedAt": "2026-08-23T06:50:25.000Z"
+    },
+    {
+      "assetId": "DJI_20260823145035_0875_D-HDR_photos",
+      "sortCapturedAt": "2026-08-23T06:50:35.000Z"
+    },
+    {
+      "assetId": "DJI_20260823145041_0878_D_drone",
+      "sortCapturedAt": "2026-08-23T06:50:49.000Z"
+    },
+    {
+      "assetId": "DJI_20260823145117_0882_D-HDR_photos",
+      "sortCapturedAt": "2026-08-23T06:51:17.000Z"
+    },
+    {
+      "assetId": "DJI_20260823145133_0888_D_drone",
+      "sortCapturedAt": "2026-08-23T06:51:41.000Z"
+    },
+    {
+      "assetId": "DJI_20260823145152_0889_D-HDR_photos",
+      "sortCapturedAt": "2026-08-23T06:51:52.000Z"
+    },
+    {
+      "assetId": "DJI_20260823145201_0892_D_drone",
+      "sortCapturedAt": "2026-08-23T06:52:08.000Z"
+    },
+    {
+      "assetId": "DJI_20260823145230_0893_D-HDR_photos",
+      "sortCapturedAt": "2026-08-23T06:52:30.000Z"
+    },
+    {
+      "assetId": "DJI_20260823145248_0896_D_drone",
+      "sortCapturedAt": "2026-08-23T06:52:55.000Z"
+    },
+    {
+      "assetId": "DJI_20260823145332_0900_D-HDR_photos",
+      "sortCapturedAt": "2026-08-23T06:53:32.000Z"
+    },
+    {
+      "assetId": "DJI_20260823145445_0903_D_drone",
+      "sortCapturedAt": "2026-08-23T06:54:53.000Z"
+    },
+    {
+      "assetId": "DJI_20260823145539_0904_D_drone",
+      "sortCapturedAt": "2026-08-23T06:55:46.000Z"
+    },
+    {
+      "assetId": "DJI_20260823145831_0908_D_drone",
+      "sortCapturedAt": "2026-08-23T06:58:38.000Z"
+    },
+    {
+      "assetId": "DJI_20260823145857_0909_D_drone",
+      "sortCapturedAt": "2026-08-23T06:59:04.000Z"
+    },
+    {
+      "assetId": "DJI_20260823145917_0913_D-HDR_photos",
+      "sortCapturedAt": "2026-08-23T06:59:17.000Z"
+    },
+    {
+      "assetId": "DJI_20260823145937_0916_D_drone",
+      "sortCapturedAt": "2026-08-23T06:59:44.000Z"
+    },
+    {
+      "assetId": "C3571_zve1",
+      "sortCapturedAt": "2026-08-23T07:00:50.000Z"
+    },
+    {
+      "assetId": "DJI_20260823150114_0917_D_drone",
+      "sortCapturedAt": "2026-08-23T07:01:21.000Z"
+    },
+    {
+      "assetId": "DJI_20260823150145_0918_D-HDR_photos",
+      "sortCapturedAt": "2026-08-23T07:01:45.000Z"
+    },
+    {
+      "assetId": "DJI_20260823150202_0921_D_drone",
+      "sortCapturedAt": "2026-08-23T07:02:09.000Z"
+    },
+    {
+      "assetId": "DJI_20260823150451_0925_D-HDR_photos",
+      "sortCapturedAt": "2026-08-23T07:04:51.000Z"
+    },
+    {
+      "assetId": "DJI_20260823150609_0934_D-HDR_photos",
+      "sortCapturedAt": "2026-08-23T07:06:09.000Z"
+    },
+    {
+      "assetId": "C3572_zve1",
+      "sortCapturedAt": "2026-08-23T07:10:36.000Z"
+    },
+    {
+      "assetId": "DSC01722_photos",
+      "sortCapturedAt": "2026-08-23T07:10:58.000Z"
+    },
+    {
+      "assetId": "DJI_20260823151146_0952_D_drone",
+      "sortCapturedAt": "2026-08-23T07:11:54.000Z"
+    },
+    {
+      "assetId": "DJI_20260823151229_0953_D_drone",
+      "sortCapturedAt": "2026-08-23T07:12:36.000Z"
+    },
+    {
+      "assetId": "DJI_20260823151305_0954_D_drone",
+      "sortCapturedAt": "2026-08-23T07:13:12.000Z"
+    },
+    {
+      "assetId": "DJI_20260823151507_0970_D_drone",
+      "sortCapturedAt": "2026-08-23T07:15:15.000Z"
+    },
+    {
+      "assetId": "DSC01742_photos",
+      "sortCapturedAt": "2026-08-23T07:15:38.000Z"
+    },
+    {
+      "assetId": "DJI_20260823151600_0980_D_drone",
+      "sortCapturedAt": "2026-08-23T07:16:07.000Z"
+    },
+    {
+      "assetId": "C3573_zve1",
+      "sortCapturedAt": "2026-08-23T07:16:17.000Z"
+    },
+    {
+      "assetId": "DSC01746_photos",
+      "sortCapturedAt": "2026-08-23T07:16:31.000Z"
+    },
+    {
+      "assetId": "DSC01748_photos",
+      "sortCapturedAt": "2026-08-23T07:17:58.000Z"
+    },
+    {
+      "assetId": "C3574_zve1",
+      "sortCapturedAt": "2026-08-23T07:18:23.000Z"
+    },
+    {
+      "assetId": "C3575_zve1",
+      "sortCapturedAt": "2026-08-23T07:19:29.000Z"
+    },
+    {
+      "assetId": "C3576_zve1",
+      "sortCapturedAt": "2026-08-23T07:21:17.000Z"
+    },
+    {
+      "assetId": "DSC09648_photos",
+      "sortCapturedAt": "2026-08-23T07:44:59.000Z"
+    },
+    {
+      "assetId": "DSC09651_photos",
+      "sortCapturedAt": "2026-08-23T07:45:44.000Z"
+    },
+    {
+      "assetId": "C3577_zve1",
+      "sortCapturedAt": "2026-08-23T07:56:30.000Z"
+    },
+    {
+      "assetId": "C3578_zve1",
+      "sortCapturedAt": "2026-08-23T08:04:17.000Z"
+    },
+    {
+      "assetId": "C3579_zve1",
+      "sortCapturedAt": "2026-08-23T08:07:18.000Z"
+    },
+    {
+      "assetId": "C3580_zve1",
+      "sortCapturedAt": "2026-08-23T08:10:35.000Z"
+    },
+    {
+      "assetId": "C3581_zve1",
+      "sortCapturedAt": "2026-08-23T08:15:15.000Z"
+    },
+    {
+      "assetId": "C3582_zve1",
+      "sortCapturedAt": "2026-08-23T08:18:03.000Z"
+    },
+    {
+      "assetId": "C3583_zve1",
+      "sortCapturedAt": "2026-08-23T08:35:25.000Z"
+    },
+    {
+      "assetId": "C3584_zve1",
+      "sortCapturedAt": "2026-08-23T08:47:02.000Z"
+    },
+    {
+      "assetId": "C3585_zve1",
+      "sortCapturedAt": "2026-08-23T08:55:26.000Z"
+    },
+    {
+      "assetId": "C3586_zve1",
+      "sortCapturedAt": "2026-08-23T08:55:33.000Z"
+    },
+    {
+      "assetId": "C3587_zve1",
+      "sortCapturedAt": "2026-08-23T08:58:28.000Z"
+    },
+    {
+      "assetId": "C3588_zve1",
+      "sortCapturedAt": "2026-08-23T09:18:37.000Z"
+    },
+    {
+      "assetId": "C3589_zve1",
+      "sortCapturedAt": "2026-08-23T09:23:53.000Z"
+    },
+    {
+      "assetId": "C3590_zve1",
+      "sortCapturedAt": "2026-08-23T09:24:07.000Z"
+    },
+    {
+      "assetId": "C3591_zve1",
+      "sortCapturedAt": "2026-08-23T09:38:05.000Z"
+    },
+    {
+      "assetId": "C3592_zve1",
+      "sortCapturedAt": "2026-08-23T09:39:47.000Z"
+    },
+    {
+      "assetId": "C3593_zve1",
+      "sortCapturedAt": "2026-08-23T09:43:42.000Z"
+    },
+    {
+      "assetId": "C3594_zve1",
+      "sortCapturedAt": "2026-08-23T09:44:02.000Z"
+    },
+    {
+      "assetId": "C3595_zve1",
+      "sortCapturedAt": "2026-08-23T09:44:41.000Z"
+    },
+    {
+      "assetId": "C3596_zve1",
+      "sortCapturedAt": "2026-08-23T09:45:57.000Z"
+    },
+    {
+      "assetId": "C3597_zve1",
+      "sortCapturedAt": "2026-08-23T09:48:41.000Z"
+    },
+    {
+      "assetId": "C3598_zve1",
+      "sortCapturedAt": "2026-08-23T09:51:45.000Z"
+    },
+    {
+      "assetId": "C3599_zve1",
+      "sortCapturedAt": "2026-08-23T10:05:28.000Z"
+    },
+    {
+      "assetId": "C3600_zve1",
+      "sortCapturedAt": "2026-08-23T10:22:53.000Z"
+    },
+    {
+      "assetId": "C3601_zve1",
+      "sortCapturedAt": "2026-08-23T10:29:58.000Z"
+    },
+    {
+      "assetId": "C3602_zve1",
+      "sortCapturedAt": "2026-08-23T13:21:30.000Z"
+    },
+    {
+      "assetId": "C3603_zve1",
+      "sortCapturedAt": "2026-08-23T13:56:37.000Z"
+    },
+    {
+      "assetId": "C3604_zve1",
+      "sortCapturedAt": "2026-08-23T14:30:52.000Z"
+    },
+    {
+      "assetId": "C3605_zve1",
+      "sortCapturedAt": "2026-08-23T14:35:54.000Z"
+    },
+    {
+      "assetId": "C3606_zve1",
+      "sortCapturedAt": "2026-08-23T15:02:25.000Z"
+    },
+    {
+      "assetId": "C3607_zve1",
+      "sortCapturedAt": "2026-08-23T15:14:33.000Z"
+    },
+    {
+      "assetId": "C3608_zve1",
+      "sortCapturedAt": "2026-08-23T15:20:24.000Z"
+    },
+    {
+      "assetId": "C3609_zve1",
+      "sortCapturedAt": "2026-08-23T15:36:31.000Z"
+    },
+    {
+      "assetId": "kedatitian_1.1.3_photos",
+      "sortCapturedAt": "2026-08-23T17:43:03.000Z"
+    },
+    {
+      "assetId": "kedatitian_1.2.2_photos",
+      "sortCapturedAt": "2026-08-23T17:43:04.000Z"
+    },
+    {
+      "assetId": "kedatitian_1.3.1_photos",
+      "sortCapturedAt": "2026-08-23T17:43:04.000Z"
+    },
+    {
+      "assetId": "cover-1-b_timelaps",
+      "sortCapturedAt": "2026-08-25T06:52:09.000Z"
+    },
+    {
+      "assetId": "cover-1-wx_timelaps",
+      "sortCapturedAt": "2026-08-25T06:52:11.000Z"
+    }
+  ],
+  "events": [
+    {
+      "id": "event-pharos-6c056dc1b237",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "深圳宝安西乡",
+      "summary": "33岁生日旅行出发前准备与行前记录 / 固定机位观察 / 室内餐桌 / 室内灯光 / 无口播语音 / 试吃牛排评价 / 干式熟成 / 闻香 / A cooked steak with a bone is served on a rustic plate alongside a small bowl of pickled vegetables on a wooden board. / 有口播语音 / A table with a ste...",
+      "startAt": "2026-08-19T05:08:41.000Z",
+      "endAt": "2026-08-19T05:35:04.518Z",
+      "location": "深圳宝安西乡",
+      "spanIds": [
+        "C3224_zve1_broll_s0-1",
+        "C3224_zve1_broll_speech_s0-13",
+        "C3225_zve1_broll_speech_s0-62",
+        "C3226_zve1_broll_s0-16",
+        "C3227_zve1_broll_speech_s11-16",
+        "C3228_zve1_broll_s0-1",
+        "C3228_zve1_broll_speech_s0-9",
+        "C3229_zve1_broll_speech_s2-11"
+      ]
+    },
+    {
+      "id": "route-5b1fb11101da",
+      "kind": "route",
+      "reviewStatus": "confirmed",
+      "title": "行车：广东省，深圳市，宝安区，西乡街道 → 广东省，惠州市，惠城区，三栋镇 · 御水龙庭13栋",
+      "summary": "第一人称行车 / 车内驾驶位 / 天气光线不明 / 有口播语音 / 生日出发看日出 / 驾驶蓝色衬衫男子 / 车内乘客 / A man wearing glasses and a blue shirt is driving a car with a passenger in the back seat. / 大家好，我是瞬光，今天是八月十九号，明天就是我生日了，所以前两天假紧急的从深圳开到一个山顶去看生日的第一次银河和日出，希望一切顺...",
+      "startAt": "2026-08-19T08:50:02.000Z",
+      "endAt": "2026-08-19T10:42:26.000Z",
+      "route": {
+        "from": "广东省，深圳市，宝安区，西乡街道",
+        "to": "广东省，惠州市，惠城区，三栋镇 · 御水龙庭13栋"
+      },
+      "spanIds": [
+        "C3230_zve1_drive_speech_s0-24",
+        "C3230_zve1_drive_visual_s6-23",
+        "C3231_zve1_drive_speech_s1-23",
+        "C3231_zve1_drive_visual_s6-23",
+        "C3232_zve1_drive_speech_s1-11",
+        "C3232_zve1_drive_visual_s4-11",
+        "C3233_zve1_drive_speech_s0-22",
+        "C3233_zve1_drive_visual_s5-16",
+        "C3234_zve1_drive_speech_s0-19",
+        "C3234_zve1_drive_visual_s4-18",
+        "C3235_zve1_drive_speech_s1-19",
+        "C3235_zve1_drive_visual_s5-20",
+        "C3236_zve1_drive_speech_s0-22",
+        "C3236_zve1_drive_visual_s5-16",
+        "C3237_zve1_drive_speech_s0-10",
+        "C3237_zve1_drive_visual_s14-30",
+        "C3238_zve1_drive_speech_s10-29",
+        "C3238_zve1_drive_visual_s15-57",
+        "C3238_zve1_drive_speech_s46-71",
+        "C3239_zve1_drive_speech_s1-6",
+        "C3239_zve1_drive_visual_s3-10",
+        "C3240_zve1_drive_speech_s0-32",
+        "C3240_zve1_drive_visual_s9-29",
+        "C3241_zve1_drive_speech_s0-14",
+        "C3241_zve1_drive_visual_s3-17",
+        "C3242_zve1_drive_speech_s14-38",
+        "C3242_zve1_drive_visual_s20-69",
+        "C3242_zve1_drive_speech_s66-70",
+        "C3243_zve1_drive_speech_s0-7",
+        "C3243_zve1_drive_visual_s7-19",
+        "DSC06957_photos_photo",
+        "DSC06961_photos_photo",
+        "DSC06965_photos_photo",
+        "DSC06978_photos_photo",
+        "DSC06983_photos_photo",
+        "DSC06986_photos_photo",
+        "DSC06988_photos_photo",
+        "DSC06990_photos_photo",
+        "DSC06994_photos_photo",
+        "DSC07000_photos_photo",
+        "DSC07006_photos_photo",
+        "DSC07017_photos_photo"
+      ]
+    },
+    {
+      "id": "event-26cd62c69d8e",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "观赏晚霞",
+      "summary": "固定机位观察 / 充电站停车场 / 晴天 / 无口播语音 / 车辆充电 / 白色车棚 / 地面标线 / A yellow SUV is parked under a white canopy at a charging station, with green and white markings on the ground. / 手持自拍口播 / 户外路边 / 黄昏 / 有口播语音 / 观赏晚霞 / 金属杆剪影 / 粉紫色云层 / A...",
+      "startAt": "2026-08-19T10:58:52.000Z",
+      "endAt": "2026-08-19T11:01:58.000Z",
+      "location": "广东省，惠州市，惠城区，水口街道 · 水口南服务区修车补胎",
+      "spanIds": [
+        "C3244_zve1_broll_speech_s0-8",
+        "C3245_zve1_broll_speech_s0-12",
+        "C3246_zve1_broll_speech_s0-13",
+        "DSC01433_photos_photo",
+        "DSC01439_photos_photo",
+        "DSC01441_photos_photo"
+      ]
+    },
+    {
+      "id": "event-2327bd160591",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "黄村恐龙主题服务区体验",
+      "summary": "游览恐龙主题布景和展厅，在服务区吃泡面、体验互动恐龙，并评价卫生间等设施。",
+      "startAt": "2026-08-19T14:09:16.000Z",
+      "endAt": "2026-08-19T14:40:04.531Z",
+      "location": "广东省，河源市，东源县，黄村镇 · 罗洞",
+      "spanIds": [
+        "C3247_zve1_broll_speech_s0-7",
+        "C3248_zve1_broll_speech_s0-14",
+        "C3249_zve1_broll_speech_s0-3",
+        "C3250_zve1_broll_speech_s0-19",
+        "C3251_zve1_broll_speech_s0-8",
+        "C3252_zve1_broll_s0-1",
+        "C3252_zve1_broll_speech_s0-10",
+        "C3253_zve1_broll_speech_s0-8",
+        "C3254_zve1_broll_speech_s0-10",
+        "C3255_zve1_talking-head_speech_s0-16",
+        "C3256_zve1_broll_speech_s0-22",
+        "C3257_zve1_broll_speech_s0-5",
+        "C3258_zve1_broll_visual_s0-5",
+        "C3259_zve1_broll_speech_s8-12",
+        "C3260_zve1_broll_speech_s1-18",
+        "C3261_zve1_talking-head_speech_s0-16"
+      ]
+    },
+    {
+      "id": "event-pharos-7136b91e6274",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "麻布岗服务区",
+      "summary": "在麻布岗服务区因胎压报警停车检查，查看轮胎破损后决定先补足胎压，漏气时继续补气，第二天再正式处理。",
+      "startAt": "2026-08-19T15:43:16.000Z",
+      "endAt": "2026-08-19T16:06:42.523Z",
+      "location": "麻布岗服务区",
+      "spanIds": [
+        "C3262_zve1_drive_speech_s0-7",
+        "C3263_zve1_broll_speech_s0-15",
+        "C3264_zve1_broll_speech_s0-14",
+        "C3265_zve1_broll_speech_s0-32",
+        "C3266_zve1_broll_speech_s0-15",
+        "C3267_zve1_broll_speech_s0-6",
+        "C3268_zve1_talking-head_visual_s1-3",
+        "C3269_zve1_talking-head_speech_s0-13"
+      ]
+    },
+    {
+      "id": "route-bbd0f7b6d6ce",
+      "kind": "route",
+      "reviewStatus": "confirmed",
+      "title": "行车：仰天堂收费站 → 野猪嶂山顶",
+      "summary": "第一人称行车 / 夜间收费站入口 / 夜晚灯光 / 有口播语音 / 抵达仰天堂收费站 / 收费站 / 夜间行车 / A car drives at night towards a brightly lit toll station with multiple lanes and overhead signs. / 到达仰天堂， 到达仰天堂收费站， 也不知道为啥叫仰天堂。 / 夜间高速公路 / 无口播语音 / 接近收费站 / 高速公路 ...",
+      "startAt": "2026-08-19T16:14:00.060Z",
+      "endAt": "2026-08-19T17:12:43.220Z",
+      "route": {
+        "from": "仰天堂收费站",
+        "to": "野猪嶂山顶"
+      },
+      "spanIds": [
+        "C3270_zve1_drive_speech_s2-12",
+        "C3270_zve1_drive_visual_s12-57",
+        "C3270_zve1_drive_speech_s19-27",
+        "C3271_zve1_drive_speech_s1-50",
+        "C3271_zve1_drive_visual_s16-43",
+        "C3272_zve1_drive_speech_s0-22",
+        "C3272_zve1_drive_visual_s5-16",
+        "C3273_zve1_drive_speech_s2-11",
+        "C3273_zve1_drive_visual_s5-20",
+        "C3274_zve1_drive_speech_s2-17",
+        "C3274_zve1_drive_visual_s7-19",
+        "C3275_zve1_drive_speech_s1-35",
+        "C3275_zve1_drive_visual_s11-26",
+        "C3276_zve1_drive_speech_s2-49",
+        "C3276_zve1_drive_speech_s56-96",
+        "C3276_zve1_drive_visual_s78-131",
+        "C3276_zve1_drive_speech_s108-145",
+        "C3276_zve1_drive_speech_s182-234",
+        "C3276_zve1_drive_visual_s204-257",
+        "C3276_zve1_drive_speech_s257-293",
+        "C3277_zve1_drive_speech_s2-30",
+        "C3277_zve1_drive_visual_s17-34",
+        "C3277_zve1_drive_visual_s45-51",
+        "C3278_zve1_drive_speech_s3-11",
+        "C3278_zve1_drive_visual_s4-11",
+        "C3280_zve1_drive_speech_s1-4",
+        "C3280_zve1_drive_visual_s10-23",
+        "C3281_zve1_drive_visual_s0-6",
+        "C3281_zve1_drive_visual_s0-6_ms759-5014",
+        "C3282_zve1_drive_speech_s0-33",
+        "C3282_zve1_drive_visual_s10-31",
+        "C3283_zve1_drive_visual_s0-4",
+        "C3283_zve1_drive_speech_s0-4",
+        "C3284_zve1_drive_speech_s0-37",
+        "C3284_zve1_drive_visual_s11-32",
+        "C3285_zve1_drive_speech_s0-19",
+        "C3285_zve1_drive_visual_s16-43",
+        "C3285_zve1_drive_speech_s23-38",
+        "C3285_zve1_drive_speech_s43-50",
+        "C3286_zve1_drive_speech_s1-16",
+        "C3286_zve1_drive_visual_s4-15",
+        "C3287_zve1_drive_speech_s0-43",
+        "C3287_zve1_drive_visual_s13-37",
+        "C3288_zve1_drive_speech_s0-130",
+        "C3288_zve1_drive_visual_s32-117",
+        "C3289_zve1_drive_speech_s0-106",
+        "C3289_zve1_drive_visual_s78-138",
+        "C3289_zve1_drive_speech_s132-195",
+        "C3289_zve1_drive_visual_s164-224",
+        "C3289_zve1_drive_speech_s223-388",
+        "C3289_zve1_drive_visual_s250-311",
+        "C3290_zve1_drive_speech_s0-79",
+        "C3290_zve1_drive_visual_s42-124",
+        "C3290_zve1_drive_speech_s96-104",
+        "C3290_zve1_drive_speech_s116-162",
+        "C3290_zve1_drive_visual_s137-148"
+      ]
+    },
+    {
+      "id": "event-pharos-61663abf820b",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "野猪嶂山顶",
+      "summary": "在野猪嶂山顶完成两组星空延时，并继续记录银河、风机、草甸、生日现场、云海和日出等待过程。",
+      "startAt": "2026-08-19T17:30:52.000Z",
+      "endAt": "2026-08-19T22:39:39.096Z",
+      "location": "野猪嶂山顶",
+      "spanIds": [
+        "20260820_河源野猪嶂星空1_timelaps_timelapse_s0-51",
+        "DSC02862_photos_photo",
+        "DSC07028_photos_photo",
+        "DSC07040_photos_photo",
+        "DSC02868_photos_photo",
+        "DSC02869_photos_photo",
+        "DSC02875_photos_photo",
+        "20260820_河源野猪嶂星空2_timelaps_timelapse_s0-77",
+        "C3291_zve1_broll_speech_s1-49",
+        "C3292_zve1_broll_speech_s0-28",
+        "C3293_zve1_broll_speech_s5-39",
+        "C3294_zve1_drive_visual_s3-13",
+        "C3294_zve1_drive_speech_s5-15",
+        "C3295_zve1_broll_speech_s0-9",
+        "C3296_zve1_broll_speech_s0-11",
+        "C3297_zve1_broll_speech_s0-9",
+        "C3298_zve1_broll_speech_s5-15",
+        "C3299_zve1_broll_visual_s9-14",
+        "C3300_zve1_broll_speech_s0-4",
+        "C3301_zve1_broll_speech_s0-31",
+        "C3302_zve1_drive_speech_s0-26",
+        "C3302_zve1_drive_visual_s19-48",
+        "C3302_zve1_drive_speech_s34-50",
+        "C3303_zve1_drive_speech_s0-11",
+        "C3303_zve1_drive_visual_s6-13",
+        "C3304_zve1_broll_speech_s0-16",
+        "C3305_zve1_broll_speech_s0-30",
+        "C3306_zve1_broll_visual_s1-3",
+        "C3307_zve1_broll_visual_s6-8",
+        "DJI_20260820060620_0861_D_drone_broll_s0-23",
+        "DJI_20260820060654_0865_D_drone_aerial_s0-23",
+        "DJI_20260820060737_0872_D_drone_aerial_s0-25",
+        "DJI_20260820060937_0882_D_drone_aerial_s0-5",
+        "DJI_20260820061039_0889_D_drone_aerial_s0-35",
+        "DJI_20260820061122_0890_D_drone_aerial_s0-25",
+        "DJI_20260820061204_0894_D_drone_aerial_s0-44",
+        "DJI_20260820061258_0898_D_drone_aerial_s0-51",
+        "DJI_20260820061453_0917_D_drone_aerial_s0-28",
+        "DJI_20260820061936_0921_D_drone_aerial_s0-39",
+        "DJI_20260820062642_0931_D_drone_aerial_s0-43",
+        "DJI_20260820062911_0935_D_drone_aerial_s0-13",
+        "DJI_20260820063023_0951_D_drone_aerial_s0-37",
+        "DJI_20260820063119_0958_D_drone_aerial_s0-44",
+        "DJI_20260820063920_0014_D_drone_broll_s0-13",
+        "DSC07239_photos_photo",
+        "DSC03002_photos_photo",
+        "DSC07680_photos_photo",
+        "DSC07713_photos_photo",
+        "DSC01452_photos_photo",
+        "DSC01454_photos_photo",
+        "DSC01463_photos_photo",
+        "DSC01464_photos_photo",
+        "DSC01465_photos_photo",
+        "DSC08078_photos_photo",
+        "DSC01470_photos_photo",
+        "DJI_20260820060902_0876_D-HDR_photos_photo",
+        "DJI_20260820060914_0879_D-HDR_photos_photo",
+        "DJI_20260820060954_0883_D-HDR_photos_photo",
+        "DJI_20260820061155_0891_D-HDR_photos_photo",
+        "DJI_20260820061253_0895_D-HDR_photos_photo",
+        "DJI_20260820061421_0908_D-HDR_photos_photo",
+        "DJI_20260820061439_0914_D-HDR_photos_photo",
+        "DJI_20260820061536_0918_D-HDR_photos_photo",
+        "DJI_20260820062950_0942_D-HDR_photos_photo",
+        "DJI_20260820063008_0948_D-HDR_photos_photo",
+        "DSC08258_photos_photo",
+        "DSC08260_photos_photo",
+        "DJI_20260820063212_0959_D-HDR_photos_photo",
+        "DJI_20260820063438_0971_D-HDR_photos_photo",
+        "DJI_20260820063510_0980_D-HDR_photos_photo",
+        "DJI_20260820063613_0986_D-HDR_photos_photo",
+        "DJI_20260820063808_0998_D-HDR_photos_photo",
+        "DJI_20260820063859_0013_D-HDR_photos_photo",
+        "DJI_20260820063939_0015_D-HDR_photos_photo"
+      ]
+    },
+    {
+      "id": "event-pharos-d2e3c3fb1d3b",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "野猪嶂山顶",
+      "summary": "云海遗憾后天气放晴，在山顶吃33岁生日蛋糕并航拍 / 第一人称行车 / 草地山坡 / 雾天 / 有口播语音 / 牛群吃瓜趣事 / 黄色 SUV / 雾中放牧 / A yellow SUV is parked on a grassy hillside in foggy weather, with several cows grazing nearby. / 我靠！这里居然出现了几只牛，在我的车旁边。 他们把那个之前有人落在那的西瓜给吃了...",
+      "startAt": "2026-08-19T23:25:40.000Z",
+      "endAt": "2026-08-20T01:24:51.000Z",
+      "location": "野猪嶂山顶",
+      "spanIds": [
+        "C3308_zve1_broll_speech_s0-14",
+        "C3309_zve1_broll_speech_s0-8",
+        "C3310_zve1_broll_speech_s0-9",
+        "C3311_zve1_broll_speech_s0-20",
+        "C0050_a7r6_broll_visual_s0-3",
+        "C0051_a7r6_broll_speech_s0-129",
+        "C0052_a7r6_broll_visual_s0-7",
+        "C0053_a7r6_broll_speech_s2-257",
+        "C0054_a7r6_broll_speech_s0-13",
+        "C0055_a7r6_broll_s0-2",
+        "C0056_a7r6_broll_visual_s0-2",
+        "C0057_a7r6_drive_speech_s0-20",
+        "DJI_20260820084530_0018_D_drone_broll_s0-21",
+        "C0058_a7r6_broll_visual_s0-14",
+        "DJI_20260820084701_0028_D_drone_broll_s0-21",
+        "C0059_a7r6_broll_speech_s0-6",
+        "C0060_a7r6_broll_speech_s4-26",
+        "C0061_a7r6_broll_s0-13",
+        "DJI_20260820090123_0051_D_drone_aerial_s0-11",
+        "C3312_zve1_drive_speech_s1-13",
+        "C3312_zve1_drive_visual_s33-39",
+        "DJI_20260820090359_0064_D_drone_aerial_s0-57",
+        "C3312_zve1_drive_visual_s68-123",
+        "C3312_zve1_drive_visual_s144-161",
+        "C3312_zve1_drive_visual_s175-194",
+        "DJI_20260820090617_0065_D_drone_drive_s0-49",
+        "C3312_zve1_drive_speech_s198-296",
+        "C3312_zve1_drive_visual_s220-275",
+        "DJI_20260820090732_0066_D_drone_drive_s0-64",
+        "C3312_zve1_drive_visual_s296-313",
+        "C3312_zve1_drive_speech_s302-310",
+        "DJI_20260820090847_0067_D_drone_drive_s0-18",
+        "DJI_20260820090919_0068_D_drone_drive_s0-39",
+        "C3313_zve1_drive_visual_s98-168",
+        "C3313_zve1_drive_speech_s140-168",
+        "DJI_20260820091250_0093_D_drone_drive_s0-54",
+        "C3313_zve1_drive_speech_s185-197",
+        "C3313_zve1_drive_visual_s205-222",
+        "DJI_20260820091352_0094_D_drone_drive_s0-52",
+        "C3313_zve1_drive_speech_s253-262",
+        "C3313_zve1_drive_visual_s311-381",
+        "C3313_zve1_drive_speech_s318-321",
+        "DJI_20260820091646_0107_D_drone_drive_s0-36",
+        "C3313_zve1_drive_visual_s418-435",
+        "C3313_zve1_drive_speech_s452-457",
+        "C3313_zve1_drive_speech_s464-467",
+        "DJI_20260820091813_0108_D_drone_drive_s0-100",
+        "C3313_zve1_drive_speech_s478-480",
+        "DJI_20260820092044_0109_D_drone_drive_s0-32",
+        "DJI_20260820092244_0110_D_drone_drive_s0-23",
+        "DJI_20260820092355_0114_D_drone_drive_s0-41",
+        "DSC01478_photos_photo",
+        "DSC01485_photos_photo",
+        "DSC08282_photos_photo",
+        "DSC08300_photos_photo",
+        "DSC08304_photos_photo",
+        "DSC08311_photos_photo",
+        "DJI_20260820084609_0019_D-HDR_photos_photo",
+        "DSC08313_photos_photo",
+        "DJI_20260820084633_0027_D-HDR_photos_photo",
+        "DSC08315_photos_photo",
+        "DJI_20260820084730_0029_D-HDR_photos_photo",
+        "DSC08319_photos_photo",
+        "DJI_20260820084755_0037_D-HDR_photos_photo",
+        "DSC08323_photos_photo",
+        "DSC08325_photos_photo",
+        "DJI_20260820090107_0047_D-HDR_photos_photo",
+        "DJI_20260820090232_0060_D-HDR_photos_photo",
+        "DJI_20260820090249_0063_D-HDR_photos_photo",
+        "DJI_20260820091016_0071_D-HDR_photos_photo",
+        "DJI_20260820091148_0083_D-HDR_photos_photo",
+        "DJI_20260820091158_0086_D-HDR_photos_photo",
+        "DJI_20260820091512_0100_D-HDR_photos_photo",
+        "DJI_20260820091545_0106_D-HDR_photos_photo",
+        "DJI_20260820092451_0117_D-HDR_photos_photo"
+      ]
+    },
+    {
+      "id": "route-e985e159371b",
+      "kind": "route",
+      "reviewStatus": "confirmed",
+      "title": "行车：广东省，河源市，龙川县，麻布岗镇 · 野猪嶂 → 江西省，赣州市，定南县，天九镇 · 天九圩镇管理服务中心",
+      "summary": "第一人称行车 / 山区公路 / 雾天 / 有口播语音 / 车内庆祝 / 生日快乐歌 / 大风车 / A yellow vehicle travels on a gravel road through misty green mountains, passing a large wind turbine and concrete barriers. / 祝你生日快乐， 祝你生日快乐， 祝你生日快乐， 祝你生日快乐， 祝你生日快乐， 祝你...",
+      "startAt": "2026-08-20T01:26:20.300Z",
+      "endAt": "2026-08-20T04:34:48.580Z",
+      "route": {
+        "from": "广东省，河源市，龙川县，麻布岗镇 · 野猪嶂",
+        "to": "江西省，赣州市，定南县，天九镇 · 天九圩镇管理服务中心"
+      },
+      "spanIds": [
+        "C3314_zve1_drive_speech_s0-72",
+        "C3314_zve1_drive_visual_s19-78",
+        "C3315_zve1_drive_visual_s20-81",
+        "C3315_zve1_drive_speech_s55-72",
+        "C3316_zve1_drive_visual_s0-3",
+        "C3316_zve1_drive_speech_s2-26",
+        "C3317_zve1_drive_speech_s0-23",
+        "C3317_zve1_drive_visual_s6-22",
+        "C3318_zve1_talking-head_speech_s0-12",
+        "C3319_zve1_drive_visual_s6-16",
+        "C3319_zve1_drive_visual_s14-29",
+        "C3320_zve1_drive_visual_s12-59",
+        "C3320_zve1_drive_speech_s14-49",
+        "C3320_zve1_drive_speech_s51-54",
+        "C3321_zve1_drive_speech_s1-23",
+        "C3321_zve1_drive_visual_s37-112",
+        "C3321_zve1_drive_speech_s37-84",
+        "C3321_zve1_drive_speech_s93-131",
+        "C3321_zve1_drive_speech_s142-150",
+        "C3322_zve1_drive_speech_s0-15",
+        "C3322_zve1_drive_visual_s10-24",
+        "C3322_zve1_drive_speech_s17-22",
+        "C3322_zve1_drive_speech_s28-34",
+        "C3323_zve1_drive_speech_s0-39",
+        "C3323_zve1_drive_visual_s19-67",
+        "C3323_zve1_drive_speech_s54-62",
+        "C3323_zve1_drive_speech_s66-85",
+        "C0062_a7r6_drive_speech_s0-11",
+        "C3324_zve1_drive_visual_s0-3",
+        "C3324_zve1_drive_speech_s3-32",
+        "C0063_a7r6_drive_s0-42",
+        "C0064_a7r6_drive_s0-46",
+        "C3325_zve1_drive_speech_s0-18",
+        "C3325_zve1_drive_visual_s35-107",
+        "C3325_zve1_drive_visual_s90-95",
+        "C3325_zve1_drive_visual_s117-128",
+        "C3326_zve1_drive_speech_s0-9",
+        "C3326_zve1_drive_visual_s13-62",
+        "C3326_zve1_drive_speech_s46-67",
+        "C3327_zve1_drive_speech_s0-14",
+        "C3327_zve1_drive_visual_s16-70",
+        "C3328_zve1_drive_speech_s1-13",
+        "C3328_zve1_drive_visual_s4-11",
+        "C3329_zve1_drive_speech_s1-8",
+        "C3329_zve1_drive_visual_s13-52",
+        "C3329_zve1_drive_speech_s16-23",
+        "C3330_zve1_drive_speech_s0-15",
+        "C3330_zve1_drive_visual_s3-17",
+        "C3331_zve1_talking-head_speech_s0-5",
+        "C3332_zve1_talking-head_speech_s0-29",
+        "C3333_zve1_drive_speech_s0-8",
+        "C3334_zve1_drive_speech_s0-11",
+        "C3334_zve1_drive_visual_s4-11",
+        "C3335_zve1_drive_speech_s1-5",
+        "C3335_zve1_drive_speech_s7-19",
+        "C3335_zve1_drive_visual_s8-27",
+        "C3335_zve1_drive_speech_s21-25",
+        "C3336_zve1_drive_speech_s0-36",
+        "C3336_zve1_drive_visual_s14-29",
+        "C3336_zve1_drive_visual_s40-43",
+        "C3337_zve1_drive_speech_s0-36",
+        "C3337_zve1_drive_visual_s11-33",
+        "C3338_zve1_drive_speech_s3-21",
+        "C3338_zve1_drive_visual_s6-17",
+        "DSC01487_photos_photo",
+        "DSC01489_photos_photo",
+        "DSC01493_photos_photo",
+        "DSC08332_photos_photo"
+      ]
+    },
+    {
+      "id": "event-pharos-baa7ac4a94cb",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "定南县天九镇天九恒锋汽修",
+      "summary": "中午在天九镇修车并处理前一晚的轮胎问题 / 第一人称行车 / 城市街道 / 阴天 / 有口播语音 / 寻找汽修店 / 黄色车辆 / 路边停车 / A yellow vehicle drives down a city street with parked cars and trucks on both sides under a cloudy sky. / A yellow vehicle drives down a tree-lin...",
+      "startAt": "2026-08-20T04:35:50.000Z",
+      "endAt": "2026-08-20T04:59:15.520Z",
+      "location": "定南县天九镇天九恒锋汽修",
+      "spanIds": [
+        "C3339_zve1_drive_speech_s0-15",
+        "C3339_zve1_drive_visual_s10-31",
+        "C3339_zve1_drive_speech_s21-35",
+        "C3340_zve1_broll_s0-1",
+        "C3340_zve1_broll_speech_s0-10",
+        "C3340_zve1_broll_s9-11",
+        "C3341_zve1_broll_speech_s4-8",
+        "C3342_zve1_broll_speech_s3-22",
+        "C3343_zve1_broll_s0-1",
+        "C3343_zve1_broll_speech_s0-13",
+        "C3344_zve1_broll_speech_s0-12"
+      ]
+    },
+    {
+      "id": "route-cf86dc302cea",
+      "kind": "route",
+      "reviewStatus": "confirmed",
+      "title": "行车：江西省，赣州市，定南县，天九镇 · 赣州市伟馨农业发展有限公司 → 江西省，赣州市，崇义县，横水镇 · 崇义章源钨业股份有限公司",
+      "summary": "第一人称行车 / 山路 / 晴天 / 有口播语音 / 云海拍摄完美 / 蓝天白云 / 车辆行驶 / A yellow vehicle drives on a straight road lined with trees under a blue sky with scattered clouds. / 今天的天气好好呀， 蓝蓝的天，白白的云，空气非常的通透。 如果今天早上那个云海拍到，就更完美。 哎，没有如果，已经很完美了。 虽然胎轮...",
+      "startAt": "2026-08-20T05:50:29.660Z",
+      "endAt": "2026-08-20T10:24:56.816Z",
+      "route": {
+        "from": "江西省，赣州市，定南县，天九镇 · 赣州市伟馨农业发展有限公司",
+        "to": "江西省，赣州市，崇义县，横水镇 · 崇义章源钨业股份有限公司"
+      },
+      "spanIds": [
+        "C3345_zve1_drive_speech_s1-26",
+        "C3345_zve1_drive_visual_s7-19",
+        "C3346_zve1_drive_speech_s1-14",
+        "C3346_zve1_drive_visual_s4-11",
+        "C3347_zve1_drive_speech_s0-10",
+        "C3347_zve1_drive_visual_s11-25",
+        "C3347_zve1_drive_speech_s16-25",
+        "C3347_zve1_drive_visual_s30-32",
+        "C3348_zve1_drive_speech_s0-13",
+        "C3348_zve1_drive_visual_s3-10",
+        "C3349_zve1_drive_speech_s2-8",
+        "C3349_zve1_drive_visual_s7-19",
+        "C3349_zve1_drive_speech_s12-23",
+        "C3350_zve1_drive_speech_s0-18",
+        "C3350_zve1_drive_visual_s4-18",
+        "C3351_zve1_drive_speech_s1-18",
+        "C3351_zve1_drive_visual_s5-20",
+        "C3352_zve1_drive_speech_s1-26",
+        "C3352_zve1_drive_visual_s7-24",
+        "C3353_zve1_drive_speech_s2-13",
+        "C3353_zve1_drive_visual_s3-10",
+        "C3354_zve1_drive_speech_s0-16",
+        "C3354_zve1_drive_visual_s4-14",
+        "C3355_zve1_drive_speech_s0-10",
+        "C3355_zve1_drive_visual_s4-11",
+        "C3356_zve1_drive_speech_s0-7",
+        "C3356_zve1_drive_visual_s1-8",
+        "C3357_zve1_drive_speech_s1-14",
+        "C3357_zve1_drive_visual_s3-17",
+        "C3358_zve1_drive_speech_s2-32",
+        "C3358_zve1_drive_visual_s14-39",
+        "C3359_zve1_drive_speech_s0-8",
+        "C3359_zve1_drive_visual_s2-8",
+        "C3360_zve1_drive_speech_s0-32",
+        "C3360_zve1_drive_visual_s15-66",
+        "C3360_zve1_drive_speech_s49-71",
+        "C3361_zve1_drive_speech_s0-16",
+        "C3361_zve1_drive_visual_s18-35",
+        "C3361_zve1_drive_speech_s22-36",
+        "C3361_zve1_drive_visual_s39-42",
+        "C3361_zve1_drive_speech_s44-53",
+        "C3362_zve1_drive_speech_s1-13",
+        "C3362_zve1_drive_visual_s3-16"
+      ]
+    },
+    {
+      "id": "event-pharos-cd9d81e2858a",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "崇义县高阿姨夜宵餐馆",
+      "summary": "在崇义县高阿姨夜宵餐馆吃晚饭 / 第一人称行车 / 城市街道 / 天气光线不明 / 有口播语音 / 寻找目的地停车 / 城市建筑 / 路边停车 / The vehicle drives down a city street with buildings and trees on both sides, passing parked cars and scooters. / 在城市对面有一座山。 神奇。 随后到达目的地。 即将到达目的地...",
+      "startAt": "2026-08-20T10:26:48.180Z",
+      "endAt": "2026-08-20T11:21:13.300Z",
+      "location": "崇义县高阿姨夜宵餐馆",
+      "spanIds": [
+        "C3363_zve1_drive_speech_s1-62",
+        "C3363_zve1_drive_visual_s12-58",
+        "C3365_zve1_broll_speech_s0-11",
+        "C3366_zve1_broll_speech_s0-17",
+        "C3367_zve1_broll_speech_s0-5",
+        "C3368_zve1_broll_s0-1",
+        "C3368_zve1_broll_speech_s0-11",
+        "C3369_zve1_broll_speech_s0-7",
+        "C3370_zve1_broll_visual_s0-2",
+        "C3371_zve1_broll_speech_s0-7",
+        "C3372_zve1_broll_speech_s9-19",
+        "C3373_zve1_talking-head_speech_s0-10"
+      ]
+    },
+    {
+      "id": "route-aeb708611c9a",
+      "kind": "route",
+      "reviewStatus": "confirmed",
+      "title": "行车：江西省，赣州市，崇义县，横水镇 · 石垇下 → 湖南省，郴州市，汝城县，卢阳镇 · 汝城体育馆",
+      "summary": "手持自拍口播 / 街道夜景 / 夜晚 / 有口播语音 / 美食点评 / 街头自拍 / 夜景车流 / A vehicle approaches a toll station at night, passing under a large illuminated gate with Chinese characters and multiple lanes. / A night-time view from a vehicle appro...",
+      "startAt": "2026-08-20T11:36:32.000Z",
+      "endAt": "2026-08-20T13:40:36.534Z",
+      "route": {
+        "from": "江西省，赣州市，崇义县，横水镇 · 石垇下",
+        "to": "湖南省，郴州市，汝城县，卢阳镇 · 汝城体育馆"
+      },
+      "spanIds": [
+        "C3374_zve1_drive_speech_s0-19",
+        "C3374_zve1_drive_visual_s5-16",
+        "C3375_zve1_drive_speech_s0-19",
+        "C3375_zve1_drive_visual_s4-15",
+        "C3376_zve1_drive_speech_s0-25",
+        "C3376_zve1_drive_visual_s6-23",
+        "C3377_zve1_drive_speech_s0-9",
+        "C3377_zve1_drive_visual_s11-25",
+        "C3377_zve1_drive_visual_s20-24",
+        "C3378_zve1_drive_speech_s0-13",
+        "C3378_zve1_drive_visual_s13-37",
+        "C3378_zve1_drive_visual_s18-22",
+        "C3378_zve1_drive_visual_s30-34",
+        "C3379_zve1_drive_speech_s0-6",
+        "C3379_zve1_drive_visual_s7-24",
+        "C3379_zve1_drive_visual_s10-27",
+        "C3380_zve1_drive_speech_s0-17",
+        "C3380_zve1_drive_visual_s10-31",
+        "C3380_zve1_drive_speech_s22-35",
+        "C3381_zve1_drive_visual_s0-3",
+        "C3381_zve1_drive_visual_s3-17",
+        "C3381_zve1_drive_speech_s10-17"
+      ]
+    },
+    {
+      "id": "event-f64267cbe720",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "评价住宿价格",
+      "summary": "固定机位观察 / 酒店外观 / 夜晚 / 有口播语音 / 评价住宿价格 / 两百元一晚 / 入口雨棚 / The image shows the illuminated facade of the Long Teng International Hotel at night, featuring a large entrance canopy and several parked cars. / 住小地方就这点好。 这个酒店才两百块钱...",
+      "startAt": "2026-08-20T13:50:19.000Z",
+      "endAt": "2026-08-20T13:55:17.019Z",
+      "location": "湖南省，郴州市，汝城县，卢阳镇 · 汝城体育馆",
+      "spanIds": [
+        "C3382_zve1_broll_speech_s0-11",
+        "C3383_zve1_broll_speech_s0-8"
+      ]
+    },
+    {
+      "id": "route-2ae22c164ce8",
+      "kind": "route",
+      "reviewStatus": "confirmed",
+      "title": "行车：湖南省，郴州市，汝城县，卢阳镇 · 汝城县第一中学(建设中) → 广西壮族自治区，桂林市，灌阳县，黄关镇",
+      "summary": "第一人称行车 / 公路道路 / 夜晚 / 有口播语音 / 离开汝城前往阳朔 / 观察晚霞 / 查看车辆 / A yellow vehicle drives down a wide road lined with trees and tall buildings, passing a person on a scooter. / 离开汝城，前往桂林阳朔， 今天据说有晚霞，去看一下吧。 / 多车道公路 / 阴天 / 吐槽逆行大车 / 黄色...",
+      "startAt": "2026-08-21T02:52:00.000Z",
+      "endAt": "2026-08-21T07:49:05.632Z",
+      "route": {
+        "from": "湖南省，郴州市，汝城县，卢阳镇 · 汝城县第一中学(建设中)",
+        "to": "广西壮族自治区，桂林市，灌阳县，黄关镇"
+      },
+      "spanIds": [
+        "C3384_zve1_drive_speech_s0-17",
+        "C3385_zve1_drive_speech_s0-15",
+        "C3385_zve1_drive_visual_s4-18",
+        "C3386_zve1_drive_s0-25",
+        "C3387_zve1_drive_visual_s5-20",
+        "C3387_zve1_drive_visual_s5-11",
+        "C3388_zve1_drive_speech_s0-15",
+        "C3388_zve1_drive_visual_s5-20",
+        "C3388_zve1_drive_visual_s19-21",
+        "C3389_zve1_drive_s0-13",
+        "C3390_zve1_drive_speech_s7-30",
+        "C3390_zve1_drive_visual_s28-107",
+        "C3390_zve1_drive_speech_s65-82",
+        "C3391_zve1_drive_speech_s0-10",
+        "C3391_zve1_drive_visual_s9-28",
+        "C3391_zve1_drive_speech_s14-18",
+        "C3391_zve1_drive_speech_s23-31",
+        "C3392_zve1_drive_speech_s6-11",
+        "C3392_zve1_drive_visual_s13-36",
+        "C3392_zve1_drive_speech_s19-23",
+        "C3392_zve1_drive_speech_s27-32",
+        "C3393_zve1_drive_speech_s2-10",
+        "C3393_zve1_drive_speech_s13-44",
+        "C3393_zve1_drive_visual_s14-38",
+        "C3394_zve1_drive_speech_s2-19",
+        "C3394_zve1_drive_visual_s4-18",
+        "C3395_zve1_drive_speech_s3-29",
+        "C3395_zve1_drive_visual_s8-21",
+        "C3396_zve1_drive_speech_s0-83",
+        "C3396_zve1_drive_visual_s22-27",
+        "C3397_zve1_drive_s0-25",
+        "C3398_zve1_drive_s0-114",
+        "C3399_zve1_drive_s0-17",
+        "C3400_zve1_drive_visual_s9-29",
+        "C3400_zve1_drive_speech_s15-32",
+        "C3401_zve1_drive_speech_s0-3",
+        "C3401_zve1_drive_visual_s4-15",
+        "C3402_zve1_drive_speech_s3-15",
+        "C3402_zve1_drive_visual_s12-34",
+        "C3403_zve1_drive_speech_s3-15",
+        "C3403_zve1_drive_visual_s12-27",
+        "C3403_zve1_drive_speech_s25-28",
+        "C3403_zve1_drive_speech_s36-39",
+        "C3404_zve1_drive_speech_s0-28",
+        "C3404_zve1_drive_visual_s9-29"
+      ]
+    },
+    {
+      "id": "event-d149f2de53e9",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "到达服务区",
+      "summary": "车窗外观察 / 服务区停车场 / 多云 / 无口播语音 / 到达服务区 / 银色 SUV / 传统亭子 / A wide-angle view of a spacious, wet parking lot under a partly cloudy sky. A silver SUV is parked near a traditional-style pavilion on the right. In the background,...",
+      "startAt": "2026-08-21T07:58:33.000Z",
+      "endAt": "2026-08-21T07:58:57.660Z",
+      "location": "广西壮族自治区，桂林市，灌阳县，黄关镇",
+      "spanIds": [
+        "C3405_zve1_broll_s0-2",
+        "C3406_zve1_broll_speech_s1-15"
+      ]
+    },
+    {
+      "id": "route-2ece760f491f",
+      "kind": "route",
+      "reviewStatus": "confirmed",
+      "title": "行车：广西壮族自治区，桂林市，恭城瑶族自治县，栗木镇 · 苏家 → 广西壮族自治区，桂林市，阳朔县，阳朔镇 · 燕莎热气球飞行体验",
+      "summary": "第一人称行车 / 山路 / 阴天 / 有口播语音 / 山路行车观察 / 黄色车辆 / 绿色山丘 / A yellow vehicle drives on a highway through a mountainous landscape with green hills and a cloudy sky. / 怎么撞上？ / 多云 / 讨论事故 / A yellow vehicle drives on a highway throug...",
+      "startAt": "2026-08-21T08:36:54.620Z",
+      "endAt": "2026-08-21T09:35:20.740Z",
+      "route": {
+        "from": "广西壮族自治区，桂林市，恭城瑶族自治县，栗木镇 · 苏家",
+        "to": "广西壮族自治区，桂林市，阳朔县，阳朔镇 · 燕莎热气球飞行体验"
+      },
+      "spanIds": [
+        "C3407_zve1_drive_speech_s0-3",
+        "C3407_zve1_drive_speech_s5-13",
+        "C3407_zve1_drive_visual_s12-27",
+        "C3408_zve1_drive_visual_s3-16",
+        "C3408_zve1_drive_visual_s11-17",
+        "C3409_zve1_drive_speech_s1-20",
+        "C3409_zve1_drive_visual_s4-15",
+        "C3410_zve1_drive_visual_s0-23",
+        "C3411_zve1_drive_visual_s9-28",
+        "C3411_zve1_drive_speech_s13-16",
+        "C3411_zve1_drive_speech_s17-27",
+        "C3412_zve1_drive_speech_s1-10",
+        "C3412_zve1_drive_visual_s16-42",
+        "C3412_zve1_drive_speech_s18-38",
+        "C3412_zve1_drive_visual_s43-48",
+        "C3413_zve1_drive_speech_s3-34",
+        "C3413_zve1_drive_visual_s10-31",
+        "C3414_zve1_drive_visual_s0-2",
+        "C3414_zve1_drive_visual_s3-16",
+        "C3415_zve1_drive_visual_s0-1",
+        "C3415_zve1_drive_visual_s0-1_ms0-512",
+        "C3416_zve1_drive_speech_s0-10",
+        "C3416_zve1_drive_visual_s4-11",
+        "C3417_zve1_drive_speech_s0-25",
+        "C3417_zve1_drive_visual_s11-32",
+        "C3417_zve1_drive_visual_s35-37",
+        "C3418_zve1_drive_speech_s1-40",
+        "C3418_zve1_drive_visual_s12-27",
+        "C3419_zve1_drive_speech_s9-40",
+        "C3419_zve1_drive_visual_s15-41",
+        "C3420_zve1_drive_speech_s0-23",
+        "C3420_zve1_drive_visual_s8-26",
+        "C3421_zve1_drive_speech_s0-89",
+        "C3421_zve1_drive_visual_s20-69",
+        "DSC08363_photos_photo"
+      ]
+    },
+    {
+      "id": "event-pharos-a1d817046ec4",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "阳朔漓江边机位",
+      "summary": "抵达阳朔漓江边机位，沿草地寻找构图并准备日落延时；随后完成漓江、喀斯特山峰、晚霞与倒影的地面和航拍拍摄，并在收尾时回顾本次拍摄。",
+      "startAt": "2026-08-21T09:41:32.300Z",
+      "endAt": "2026-08-21T11:58:31.024Z",
+      "location": "阳朔漓江边机位",
+      "spanIds": [
+        "C3422_zve1_broll_speech_s0-22",
+        "C3423_zve1_broll_visual_s0-3",
+        "C3424_zve1_broll_speech_s0-23",
+        "C3425_zve1_broll_speech_s0-20",
+        "DSC08365_photos_photo",
+        "DSC08377_photos_photo",
+        "DSC08382_photos_photo",
+        "DSC08385_photos_photo",
+        "DSC08414_photos_photo",
+        "DSC04880_photos_photo",
+        "C3426_zve1_broll_speech_s0-55",
+        "C3427_zve1_broll_s0-2",
+        "C3428_zve1_broll_speech_s0-26",
+        "C3429_zve1_broll_speech_s0-29",
+        "DJI_20260821183741_0127_D_drone_aerial_s0-39",
+        "DJI_20260821183854_0137_D_drone_aerial_s0-33",
+        "DJI_20260821183959_0144_D_drone_aerial_s0-19",
+        "DJI_20260821184032_0148_D_drone_aerial_s0-45",
+        "DJI_20260821184402_0188_D_drone_aerial_s0-29",
+        "DJI_20260821184839_0210_D_drone_broll_s0-16",
+        "DJI_20260821185008_0226_D_drone_broll_s0-12",
+        "DJI_20260821185503_0272_D_drone_aerial_s0-152",
+        "C3430_zve1_broll_visual_s0-3",
+        "C3431_zve1_broll_speech_s0-34",
+        "C3432_zve1_broll_speech_s0-37",
+        "DJI_20260821191639_0273_D_drone_broll_s0-2",
+        "DJI_20260821191643_0274_D_drone_aerial_s0-25",
+        "DJI_20260821191737_0282_D_drone_aerial_s0-13",
+        "DJI_20260821191757_0286_D_drone_aerial_s0-31",
+        "DJI_20260821191846_0293_D_drone_aerial_s0-7",
+        "DJI_20260821191855_0294_D_drone_aerial_s0-14",
+        "C3433_zve1_broll_speech_s0-41",
+        "DJI_20260821192031_0313_D_drone_aerial_s0-22",
+        "DJI_20260821192319_0347_D_drone_broll_s0-7",
+        "DJI_20260821192340_0348_D_drone_broll_s0-29",
+        "DJI_20260821192426_0349_D_drone_broll_s0-19",
+        "DJI_20260821192619_0356_D_drone_aerial_s0-11",
+        "DJI_20260821193018_0369_D_drone_aerial_s0-17",
+        "DSC08450_photos_photo",
+        "DSC08456_photos_photo",
+        "DSC08458_photos_photo",
+        "DJI_20260821184135_0155_D-HDR_photos_photo",
+        "DJI_20260821184315_0167_D-HDR_全景图_photos_photo",
+        "DJI_20260821184931_0220_D-HDR_photos_photo",
+        "DJI_20260821185213_0256_D-HDR_全景图_photos_photo",
+        "DSC05702_photos_photo",
+        "DSC01521_photos_photo",
+        "DSC05791_photos_photo",
+        "DSC09175_photos_photo",
+        "DSC05854_photos_photo",
+        "DJI_20260821191751_0283_D-HDR_photos_photo",
+        "DSC09190_photos_photo",
+        "DJI_20260821191837_0290_D-HDR_photos_photo",
+        "DJI_20260821191936_0298_D-HDR_photos_photo",
+        "DJI_20260821192024_0312_D-HDR_全景图_photos_photo",
+        "DJI_20260821192155_0340_D-HDR_全景图_photos_photo",
+        "DJI_20260821192257_0346_D-HDR_photos_photo",
+        "DJI_20260821192502_0352_D-HDR_photos_photo",
+        "DJI_20260821192512_0355_D-HDR_photos_photo",
+        "DJI_20260821192952_0365_D-HDR_photos_photo",
+        "DSC01526_photos_photo",
+        "DSC01527_photos_photo",
+        "C3434_zve1_broll_visual_s17-19",
+        "DJI_20260821193242_0393_D-HDR_全景图_photos_photo",
+        "DSC09551_photos_photo",
+        "DSC06119_photos_photo",
+        "C3435_zve1_talking-head_speech_s0-10"
+      ]
+    },
+    {
+      "id": "event-pharos-72280c1ab6f8",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "阳朔城区",
+      "summary": "在阳朔城区吃啤酒鱼等本地菜 / 固定机位观察 / 商场走廊 / 夜晚 / 有口播语音 / 介绍西楼阳朔商场 / 商场 / luckin coffee / A wide shot of a brightly lit shopping mall corridor with a Luckin Coffee store on the left and people sitting on a bench on the right. / 戏楼阳朔...",
+      "startAt": "2026-08-21T12:34:31.000Z",
+      "endAt": "2026-08-21T14:35:11.531Z",
+      "location": "阳朔城区",
+      "spanIds": [
+        "C3436_zve1_broll_speech_s0-6",
+        "C3437_zve1_broll_s0-1",
+        "C3437_zve1_broll_speech_s0-7",
+        "C3438_zve1_broll_speech_s0-9",
+        "C3439_zve1_broll_speech_s0-11",
+        "C3440_zve1_broll_speech_s0-9",
+        "C3441_zve1_broll_speech_s0-17",
+        "C3442_zve1_broll_speech_s0-15",
+        "C3443_zve1_broll_speech_s0-13",
+        "C3444_zve1_broll_speech_s0-16"
+      ]
+    },
+    {
+      "id": "route-e9f23250ace7",
+      "kind": "route",
+      "reviewStatus": "confirmed",
+      "title": "行车：广西壮族自治区，桂林市，阳朔县，阳朔镇 · 妙奇幻江景酒店(阳朔西街漓江店) → 广西壮族自治区，桂林市，阳朔县，兴坪镇 · 陈杰电动车租赁",
+      "summary": "第一人称行车 / 隧道内 / 夜晚灯光 / 有口播语音 / 驾驶途中 / 龙脊山隧道 / 限速标志 / The first image shows a vehicle driving through a tunnel at night, while the second image shows a vehicle driving on a bridge at night. / 这个龙脊山隧道感觉非常的原始粗犷， 可能是修的比较早了， ...",
+      "startAt": "2026-08-21T15:13:20.660Z",
+      "endAt": "2026-08-21T15:46:58.598Z",
+      "route": {
+        "from": "广西壮族自治区，桂林市，阳朔县，阳朔镇 · 妙奇幻江景酒店(阳朔西街漓江店)",
+        "to": "广西壮族自治区，桂林市，阳朔县，兴坪镇 · 陈杰电动车租赁"
+      },
+      "spanIds": [
+        "C3445_zve1_drive_speech_s1-41",
+        "C3445_zve1_drive_visual_s13-36",
+        "C3446_zve1_drive_visual_s0-2",
+        "C3446_zve1_drive_speech_s8-17",
+        "C3446_zve1_drive_speech_s30-102",
+        "C3446_zve1_drive_visual_s48-86",
+        "C3446_zve1_drive_speech_s110-186",
+        "C3446_zve1_drive_visual_s128-166",
+        "C3447_zve1_drive_speech_s2-35",
+        "C3447_zve1_drive_visual_s13-61",
+        "C3447_zve1_drive_visual_s37-41",
+        "C3447_zve1_drive_speech_s47-63",
+        "C3448_zve1_drive_speech_s0-31",
+        "C3448_zve1_drive_visual_s22-88",
+        "C3448_zve1_drive_visual_s40-45",
+        "C3448_zve1_drive_speech_s51-97"
+      ]
+    },
+    {
+      "id": "event-93c8efe4329c",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "入住评价",
+      "summary": "第一人称行车 / 酒店室内 / 夜晚 / 有口播语音 / 入住评价 / 酒店阳台 / 玻璃门 / A bedroom with a bed, a backpack on a suitcase, and a glass door leading to a bathroom. / The video shows a bedroom with a bed and a glass door, followed by a close-up of...",
+      "startAt": "2026-08-21T15:59:10.000Z",
+      "endAt": "2026-08-21T15:59:20.027Z",
+      "location": "广西壮族自治区，桂林市，阳朔县，兴坪镇 · 陈杰电动车租赁",
+      "spanIds": [
+        "C3449_zve1_broll_speech_s0-11"
+      ]
+    },
+    {
+      "id": "event-435d3df5f5d4",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "兴坪民宿晨间观景",
+      "summary": "从民宿阳台和天台观察喀斯特山景、施工现场、秋千与天空之镜，体验双人秋千并评价住宿景观。",
+      "startAt": "2026-08-22T02:54:52.000Z",
+      "endAt": "2026-08-22T03:24:18.027Z",
+      "location": "广西壮族自治区，桂林市，阳朔县，兴坪镇 · 陈杰电动车租赁",
+      "spanIds": [
+        "C3450_zve1_broll_speech_s0-3",
+        "C3450_zve1_broll_s3-5",
+        "C3451_zve1_broll_s0-1",
+        "C3451_zve1_broll_speech_s0-15",
+        "C3452_zve1_broll_s0-1",
+        "C3452_zve1_broll_speech_s0-7",
+        "C3453_zve1_broll_speech_s0-12",
+        "C3454_zve1_broll_visual_s0-37",
+        "C3455_zve1_broll_speech_s0-27",
+        "DSC01566_photos_photo",
+        "DSC01568_photos_photo"
+      ]
+    },
+    {
+      "id": "event-pharos-65440aee661b",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "兴坪20元人民币观景点",
+      "summary": "从兴坪古镇出发寻找二十元人民币背景机位，沿途观察施工、换币摊和竹林；探路到河边完成黄布倒影打卡与拍摄，随后用餐并复盘附近停车和充电条件。",
+      "startAt": "2026-08-22T03:36:17.000Z",
+      "endAt": "2026-08-22T05:41:14.019Z",
+      "location": "兴坪20元人民币观景点",
+      "spanIds": [
+        "C3456_zve1_broll_speech_s0-12",
+        "C3457_zve1_talking-head_speech_s0-8",
+        "C3458_zve1_broll_speech_s0-8",
+        "C3459_zve1_broll_speech_s0-10",
+        "C3460_zve1_broll_speech_s0-23",
+        "C3461_zve1_broll_speech_s0-71",
+        "C3462_zve1_broll_speech_s0-13",
+        "C3463_zve1_broll_speech_s0-19",
+        "C3464_zve1_broll_speech_s1-18",
+        "C3465_zve1_broll_speech_s0-13",
+        "C3466_zve1_broll_speech_s0-9",
+        "C3467_zve1_broll_speech_s0-14",
+        "C3468_zve1_talking-head_speech_s0-24",
+        "C3469_zve1_broll_speech_s2-30",
+        "C3470_zve1_broll_speech_s0-49",
+        "C3470_zve1_broll_s48-50",
+        "C3471_zve1_broll_speech_s0-4",
+        "C3472_zve1_broll_speech_s0-7",
+        "DSC09562_photos_photo",
+        "DSC01580_photos_photo",
+        "DSC01622_photos_photo",
+        "DSC09570_photos_photo",
+        "C3473_zve1_broll_speech_s1-5",
+        "C3474_zve1_broll_speech_s0-16"
+      ]
+    },
+    {
+      "id": "route-2d0a27bb4982",
+      "kind": "route",
+      "reviewStatus": "confirmed",
+      "title": "行车：广西壮族自治区，桂林市，阳朔县，兴坪镇 · 陈杰电动车租赁 → 广西壮族自治区，贺州市，钟山县，公安镇 · 钟山水墨田园",
+      "summary": "第一人称行车 / 车内驾驶位 / 天气光线不明 / 无口播语音 / 驾驶准备 / 男性驾驶员 / 红色上衣 / A man with curly hair and glasses wearing a red shirt sits in the driver's seat of a car, looking forward. / 有口播语音 / 行程回顾 / 阳朔出发 / 贺州前往 / A man with curly hair and...",
+      "startAt": "2026-08-22T05:54:37.000Z",
+      "endAt": "2026-08-22T08:47:57.264Z",
+      "route": {
+        "from": "广西壮族自治区，桂林市，阳朔县，兴坪镇 · 陈杰电动车租赁",
+        "to": "广西壮族自治区，贺州市，钟山县，公安镇 · 钟山水墨田园"
+      },
+      "spanIds": [
+        "C3475_zve1_drive_visual_s0-3",
+        "C3475_zve1_drive_speech_s3-21",
+        "C3476_zve1_drive_visual_s66-113",
+        "C3476_zve1_drive_speech_s98-116",
+        "C3476_zve1_drive_visual_s173-220",
+        "C3476_zve1_drive_speech_s206-233",
+        "C3476_zve1_drive_speech_s238-250",
+        "C3477_zve1_drive_speech_s1-13",
+        "C3477_zve1_drive_visual_s3-16",
+        "C3478_zve1_drive_speech_s0-11",
+        "C3478_zve1_drive_visual_s6-13",
+        "C3479_zve1_drive_speech_s0-10",
+        "C3479_zve1_drive_visual_s4-11",
+        "C3480_zve1_drive_speech_s0-10",
+        "C3481_zve1_drive_visual_s0-3",
+        "C3481_zve1_drive_visual_s11-32",
+        "C3482_zve1_drive_speech_s1-12",
+        "C3482_zve1_drive_visual_s3-10",
+        "C3483_zve1_drive_speech_s0-14",
+        "C3483_zve1_drive_visual_s6-23",
+        "C3484_zve1_drive_speech_s0-12",
+        "C3484_zve1_drive_visual_s5-12",
+        "C3485_zve1_drive_visual_s0-13",
+        "C3485_zve1_drive_visual_s6-13",
+        "C3486_zve1_drive_speech_s0-44",
+        "C3486_zve1_drive_visual_s16-70",
+        "C3486_zve1_drive_speech_s54-75",
+        "C3487_zve1_drive_speech_s0-25",
+        "C3487_zve1_drive_visual_s7-24",
+        "C3488_zve1_drive_speech_s0-23",
+        "C3488_zve1_drive_visual_s8-27",
+        "C3489_zve1_drive_speech_s0-135",
+        "C3489_zve1_drive_visual_s33-103",
+        "C3490_zve1_drive_speech_s0-5",
+        "C3490_zve1_drive_visual_s4-11"
+      ]
+    },
+    {
+      "id": "event-pharos-c7fc24a7bcae",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "钟山百里画廊／荷塘村",
+      "summary": "进入钟山百里画廊和荷塘村，沿水墨田园自驾并进行地面与航拍拍摄，记录喀斯特田野、乡村道路及同行人的现场互动。",
+      "startAt": "2026-08-22T08:50:09.000Z",
+      "endAt": "2026-08-22T10:22:32.020Z",
+      "location": "钟山百里画廊／荷塘村",
+      "spanIds": [
+        "C3491_zve1_broll_speech_s0-15",
+        "C3492_zve1_talking-head_speech_s0-4",
+        "DJI_20260822165755_0397_D_drone_drive_s0-3",
+        "DJI_20260822165801_0398_D_drone_aerial_s0-30",
+        "DJI_20260822165922_0405_D_drone_aerial_s0-49",
+        "DJI_20260822170120_0415_D_drone_aerial_s0-13",
+        "DJI_20260822170148_0419_D_drone_aerial_s0-32",
+        "C3493_zve1_drive_speech_s23-53",
+        "DJI_20260822170628_0486_D_drone_aerial_s0-41",
+        "C3493_zve1_drive_visual_s36-108",
+        "C3493_zve1_drive_speech_s64-94",
+        "C3493_zve1_drive_visual_s118-129",
+        "C3493_zve1_drive_speech_s121-127",
+        "C3493_zve1_drive_speech_s142-145",
+        "DJI_20260822170917_0505_D_drone_aerial_s0-22",
+        "DJI_20260822171250_0521_D_drone_drive_s0-59",
+        "DJI_20260822171432_0522_D_drone_aerial_s0-29",
+        "DJI_20260822171924_0535_D_drone_drive_s0-85",
+        "DJI_20260822172113_0536_D_drone_drive_s0-25",
+        "DJI_20260822172150_0537_D_drone_drive_s0-34",
+        "DJI_20260822172313_0541_D_drone_drive_s0-95",
+        "DJI_20260822172530_0542_D_drone_aerial_s0-1",
+        "DJI_20260822172532_0543_D_drone_aerial_s0-11",
+        "DJI_20260822172617_0544_D_drone_aerial_s0-2",
+        "DJI_20260822172646_0548_D_drone_drive_s0-103",
+        "C3494_zve1_drive_speech_s0-63",
+        "C3494_zve1_drive_visual_s53-123",
+        "C3494_zve1_drive_speech_s72-148",
+        "DJI_20260822173136_0570_D_drone_aerial_s0-22",
+        "C3494_zve1_drive_visual_s141-152",
+        "DJI_20260822173200_0571_D_drone_drive_s0-23",
+        "C3494_zve1_drive_speech_s194-206",
+        "DJI_20260822173328_0572_D_drone_drive_s0-39",
+        "DJI_20260822173618_0597_D_drone_aerial_s0-7",
+        "DJI_20260822174402_0646_D_drone_drive_s0-11",
+        "DJI_20260822174441_0647_D_drone_drive_visual_s16-70",
+        "C3495_zve1_broll_speech_s0-12",
+        "DJI_20260822174648_0654_D_drone_drive_s0-26",
+        "C3496_zve1_broll_speech_s0-15",
+        "C3497_zve1_drive_speech_s0-46",
+        "C3497_zve1_drive_visual_s18-63",
+        "C3497_zve1_drive_speech_s48-70",
+        "C3497_zve1_drive_speech_s75-80",
+        "C3498_zve1_broll_speech_s0-47",
+        "C3499_zve1_broll_speech_s1-26",
+        "C3500_zve1_broll_speech_s0-18",
+        "C3501_zve1_broll_speech_s0-19",
+        "C3502_zve1_broll_s0-2",
+        "C3503_zve1_broll_s0-82",
+        "DJI_20260822170032_0409_D-HDR_photos_photo",
+        "DJI_20260822170256_0437_D-HDR_全景图_photos_photo",
+        "DJI_20260822170309_0438_D-HDR_photos_photo",
+        "DJI_20260822170342_0447_D-HDR_全景图_photos_photo",
+        "DJI_20260822170615_0483_D-HDR_photos_photo",
+        "DJI_20260822170714_0487_D-HDR_photos_photo",
+        "DJI_20260822170835_0499_D-HDR_photos_photo",
+        "DJI_20260822171005_0517_D-HDR_全景图_photos_photo",
+        "DJI_20260822171656_0531_D-HDR_photos_photo",
+        "DJI_20260822172624_0547_D-HDR_photos_photo",
+        "DJI_20260822172910_0549_D-HDR_photos_photo",
+        "DJI_20260822172925_0557_D-HDR_photos_photo",
+        "DSC09584_photos_photo",
+        "DSC09588_photos_photo",
+        "DJI_20260822173012_0563_D-HDR_photos_photo",
+        "DJI_20260822173455_0585_D-HDR_photos_photo",
+        "DJI_20260822173544_0588_D-HDR_photos_photo",
+        "DJI_20260822173637_0600_D-HDR_photos_photo",
+        "DJI_20260822173753_0606_D-HDR_photos_photo",
+        "DJI_20260822173917_0609_D-HDR_photos_photo",
+        "DJI_20260822174031_0610_D-HDR_photos_photo",
+        "DJI_20260822174129_0621_D-HDR_photos_photo",
+        "DJI_20260822174217_0633_D-HDR_photos_photo",
+        "DJI_20260822174336_0645_D-HDR_photos_photo",
+        "DJI_20260822174608_0650_D-HDR_photos_photo",
+        "DJI_20260822174619_0653_D-HDR_photos_photo",
+        "DSC09596_photos_photo",
+        "DSC09600_photos_photo",
+        "DJI_20260822174801_0665_D-HDR_photos_photo",
+        "DSC06125-Pano_photos_photo",
+        "DSC06134_photos_photo",
+        "DSC06139_photos_photo",
+        "DSC01638_photos_photo",
+        "DSC09602_photos_photo",
+        "C3504_zve1_broll_speech_s1-27",
+        "C3505_zve1_broll_speech_s1-9"
+      ]
+    },
+    {
+      "id": "route-61ffc093564a",
+      "kind": "route",
+      "reviewStatus": "confirmed",
+      "title": "行车：广西壮族自治区，贺州市，钟山县，公安镇 · 钟山水墨田园",
+      "summary": "第一人称行车 / 乡村道路 / 晴天 / 有口播语音 / 探路途中 / 糯玉米 / 破晓 / Two cars are parked on a rural road with green mountains in the background. / 哎，破晓好帅呀！ 糯玉米，看到了糯玉米，破晓好帅呀！ / 无口播语音 / 车辆停放 / 乡村公路 / 绿色山脉",
+      "startAt": "2026-08-22T10:22:37.060Z",
+      "endAt": "2026-08-22T10:22:45.512Z",
+      "location": "广西壮族自治区，贺州市，钟山县，公安镇 · 钟山水墨田园",
+      "route": {
+        "from": "广西壮族自治区，贺州市，钟山县，公安镇 · 钟山水墨田园",
+        "to": "广西壮族自治区，贺州市，钟山县，公安镇 · 钟山水墨田园"
+      },
+      "spanIds": [
+        "C3506_zve1_drive_speech_s0-9",
+        "C3506_zve1_drive_visual_s1-8"
+      ]
+    },
+    {
+      "id": "event-pharos-7edb8aca2041",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "公安镇吉塘村田野",
+      "summary": "转到百里画廊对面田野继续拍摄 / 第一人称行车 / 乡村道路 / 晴天 / 有口播语音 / 探路途中 / 村道 / 无名道路 / The video shows a vehicle driving on a narrow road through a lush, green, mountainous landscape with power lines and signs visible. / 我要去往这里面开一开了，去探探路。 靠，...",
+      "startAt": "2026-08-22T10:30:41.780Z",
+      "endAt": "2026-08-22T11:16:18.000Z",
+      "location": "公安镇吉塘村田野",
+      "spanIds": [
+        "C3507_zve1_drive_speech_s0-12",
+        "C3507_zve1_drive_visual_s13-61",
+        "C3507_zve1_drive_speech_s17-23",
+        "C3507_zve1_drive_speech_s28-54",
+        "C3507_zve1_drive_speech_s59-64",
+        "C3508_zve1_drive_speech_s0-100",
+        "C3508_zve1_drive_visual_s23-92",
+        "C3509_zve1_drive_speech_s0-44",
+        "C3509_zve1_drive_visual_s14-30",
+        "DJI_20260822184239_0681_D_drone_drive_s0-50",
+        "DJI_20260822184517_0685_D_drone_drive_s0-42",
+        "DJI_20260822184750_0695_D_drone_drive_s0-11",
+        "DJI_20260822185204_0732_D_drone_drive_s0-46",
+        "DJI_20260822185333_0733_D_drone_drive_s0-37",
+        "C3510_zve1_drive_speech_s1-28",
+        "C3510_zve1_drive_visual_s8-21",
+        "DJI_20260822185730_0743_D_drone_drive_s0-58",
+        "20260822_阳朔漓江晚霞1_timelaps_timelapse_s0-46",
+        "20260822_阳朔漓江晚霞2_timelaps_timelapse_s0-59",
+        "DJI_20260822190022_0747_D_drone_drive_s0-32",
+        "DJI_20260822190203_0748_D_drone_drive_s0-30",
+        "DJI_20260822190417_0764_D_drone_aerial_s0-3",
+        "DJI_20260822190537_0768_D_drone_aerial_s0-2",
+        "C3511_zve1_drive_speech_s0-15",
+        "C3511_zve1_drive_visual_s4-11",
+        "C3512_zve1_broll_speech_s0-32",
+        "DJI_20260822190933_0793_D_drone_broll_s0-31",
+        "C3513_zve1_broll_speech_s0-7",
+        "DJI_20260822184103_0675_D-HDR_photos_photo",
+        "DJI_20260822184822_0698_D-HDR_photos_photo",
+        "DJI_20260822184855_0705_D-HDR_photos_photo",
+        "DJI_20260822184937_0716_D-HDR_photos_photo",
+        "DJI_20260822185007_0722_D-HDR_photos_photo",
+        "DJI_20260822185019_0725_D-HDR_photos_photo",
+        "DJI_20260822185044_0726_D-HDR_photos_photo",
+        "DJI_20260822185118_0731_D-HDR_photos_photo",
+        "DJI_20260822185431_0734_D-HDR_photos_photo",
+        "DJI_20260822185900_0744_D-HDR_photos_photo",
+        "DJI_20260822190258_0752_D-HDR_photos_photo",
+        "DJI_20260822190340_0761_D-HDR_photos_photo",
+        "DJI_20260822190613_0769_D-HDR_photos_photo",
+        "DJI_20260822190854_0789_D-HDR_photos_photo",
+        "DSC01640_photos_photo",
+        "DSC01641_photos_photo",
+        "DSC01643_photos_photo",
+        "DJI_20260822191022_0799_D-HDR_photos_photo",
+        "DJI_20260822191044_0805_D-HDR_photos_photo",
+        "DSC09611_photos_photo",
+        "DSC09616_photos_photo",
+        "DSC09618_photos_photo",
+        "DSC09620_photos_photo",
+        "DSC09623_photos_photo"
+      ]
+    },
+    {
+      "id": "route-ce84485fe910",
+      "kind": "route",
+      "reviewStatus": "confirmed",
+      "title": "行车：广西壮族自治区，贺州市，钟山县，公安镇 · 钟山华诚环保科技有限公司 → 广西壮族自治区，贺州市，钟山县，钟山镇 · 海民装饰",
+      "summary": "第一人称行车 / 乡村窄路 / 夜晚 / 无口播语音 / 离开乡村前往城里 / 乡村夜行 / 窄路会车 / A night-time view from a vehicle driving on a narrow road, with headlights illuminating tall grass on the left and a hillside on the right. / 有口播语音 / 田间误入 / A vehicl...",
+      "startAt": "2026-08-22T11:31:32.060Z",
+      "endAt": "2026-08-22T11:55:57.300Z",
+      "route": {
+        "from": "广西壮族自治区，贺州市，钟山县，公安镇 · 钟山华诚环保科技有限公司",
+        "to": "广西壮族自治区，贺州市，钟山县，钟山镇 · 海民装饰"
+      },
+      "spanIds": [
+        "C3514_zve1_drive_visual_s2-5",
+        "C3514_zve1_drive_speech_s8-35",
+        "C3514_zve1_drive_visual_s14-38",
+        "C3514_zve1_drive_speech_s36-44",
+        "C3515_zve1_drive_visual_s3-16",
+        "C3515_zve1_drive_speech_s4-17",
+        "C3516_zve1_drive_speech_s0-7",
+        "C3516_zve1_drive_visual_s4-11",
+        "C3517_zve1_drive_speech_s10-44",
+        "C3517_zve1_drive_visual_s18-63",
+        "C3517_zve1_drive_speech_s49-53",
+        "C3517_zve1_drive_visual_s59-64",
+        "C3517_zve1_drive_visual_s70-81",
+        "C3518_zve1_drive_speech_s2-52",
+        "C3518_zve1_drive_visual_s18-47"
+      ]
+    },
+    {
+      "id": "event-pharos-f0fba491e082",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "钟山县城中心",
+      "summary": "在钟山县城中心寻找停车并品尝牛肠酸、捞粉等本地晚餐，随后逛超市购买折扣水果和榴莲，回到住处继续品尝。",
+      "startAt": "2026-08-22T12:01:39.000Z",
+      "endAt": "2026-08-22T13:58:59.032Z",
+      "location": "钟山县城中心",
+      "spanIds": [
+        "C3519_zve1_drive_speech_s0-77",
+        "C3519_zve1_drive_speech_s87-172",
+        "C3519_zve1_drive_visual_s101-173",
+        "C3519_zve1_drive_speech_s203-222",
+        "C3519_zve1_drive_visual_s211-228",
+        "C3519_zve1_drive_speech_s232-494",
+        "C3519_zve1_drive_visual_s321-393",
+        "C3519_zve1_drive_visual_s431-448",
+        "C3520_zve1_broll_speech_s0-7",
+        "C3521_zve1_broll_speech_s1-10",
+        "C3522_zve1_broll_speech_s0-10",
+        "C3523_zve1_broll_speech_s1-9",
+        "C3524_zve1_broll_speech_s0-9",
+        "C3525_zve1_broll_speech_s0-12",
+        "C3526_zve1_broll_speech_s0-18",
+        "C3527_zve1_broll_speech_s0-7",
+        "C3528_zve1_broll_s0-1",
+        "C3528_zve1_broll_speech_s0-15",
+        "C3529_zve1_broll_s0-1",
+        "C3529_zve1_broll_speech_s0-21",
+        "C3530_zve1_broll_speech_s0-11",
+        "C3531_zve1_talking-head_speech_s0-13"
+      ]
+    },
+    {
+      "id": "event-3c16b976d52d",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "钟山酒店早餐与晨间活动",
+      "summary": "在酒店品尝钟山三角包和贺州油茶，记录同伴困倦休息，随后到露台俯瞰钟山县城并在酒店内活动。",
+      "startAt": "2026-08-23T00:47:47.000Z",
+      "endAt": "2026-08-23T01:14:16.980Z",
+      "location": "广西壮族自治区，贺州市，钟山县，钟山镇 · 钟山县第一中学",
+      "spanIds": [
+        "C3532_zve1_broll_speech_s0-12",
+        "C3533_zve1_broll_speech_s0-7",
+        "C3534_zve1_broll_speech_s0-16",
+        "C3535_zve1_broll_s0-1",
+        "C3535_zve1_broll_speech_s0-14",
+        "C3536_zve1_broll_speech_s1-12",
+        "C3537_zve1_broll_speech_s0-16",
+        "C3538_zve1_broll_speech_s0-11"
+      ]
+    },
+    {
+      "id": "route-36f2d438b351",
+      "kind": "route",
+      "reviewStatus": "confirmed",
+      "title": "行车：广西壮族自治区，贺州市，钟山县，钟山镇 · 钟山县第一中学 → 广西壮族自治区，贺州市，平桂区，望高镇",
+      "summary": "第一人称行车 / 车内驾驶 / 天气光线不明 / 有口播语音 / 抱怨天气右转 / 卷发男子 / 灰色衬衫 / A man with curly hair and glasses is driving a car, wearing a grey shirt and a seatbelt. / 今天，今天天气右转个啥呀？ 哪来右转呢？ / 无口播语音 / 专注驾驶路况 / 蓝色方向盘 / A man with curly hair an...",
+      "startAt": "2026-08-23T03:13:27.340Z",
+      "endAt": "2026-08-23T04:38:43.654Z",
+      "route": {
+        "from": "广西壮族自治区，贺州市，钟山县，钟山镇 · 钟山县第一中学",
+        "to": "广西壮族自治区，贺州市，平桂区，望高镇"
+      },
+      "spanIds": [
+        "C3539_zve1_drive_speech_s1-9",
+        "C3539_zve1_drive_visual_s9-28",
+        "C3539_zve1_drive_speech_s14-23",
+        "C3539_zve1_drive_visual_s29-31",
+        "C3540_zve1_drive_speech_s2-22",
+        "C3540_zve1_drive_visual_s5-21",
+        "C3541_zve1_drive_speech_s0-95",
+        "C3541_zve1_drive_visual_s22-87",
+        "C3542_zve1_drive_speech_s0-7",
+        "C3542_zve1_drive_visual_s4-15",
+        "C3543_zve1_drive_speech_s0-21",
+        "C3543_zve1_drive_visual_s7-19",
+        "C3544_zve1_drive_speech_s3-11",
+        "C3544_zve1_drive_visual_s4-15",
+        "C3545_zve1_drive_speech_s1-36",
+        "C3545_zve1_drive_visual_s20-50",
+        "C3545_zve1_drive_speech_s49-57",
+        "C3546_zve1_drive_speech_s0-17",
+        "C3546_zve1_drive_visual_s4-14",
+        "C3547_zve1_drive_speech_s1-146",
+        "C3547_zve1_drive_visual_s36-110",
+        "C3548_zve1_drive_speech_s0-19",
+        "C3548_zve1_drive_speech_s20-23",
+        "C3548_zve1_drive_visual_s38-115",
+        "C3548_zve1_drive_speech_s57-68",
+        "C3548_zve1_drive_speech_s73-96",
+        "C3548_zve1_drive_speech_s99-125",
+        "C3548_zve1_drive_visual_s125-136",
+        "C3548_zve1_drive_speech_s126-130",
+        "C3549_zve1_drive_speech_s1-7",
+        "C3549_zve1_drive_speech_s12-15",
+        "C3549_zve1_drive_speech_s21-84",
+        "C3549_zve1_drive_visual_s23-91",
+        "C3549_zve1_drive_speech_s88-100",
+        "C3550_zve1_drive_speech_s2-21",
+        "C3550_zve1_drive_visual_s37-112",
+        "C3550_zve1_drive_speech_s43-81",
+        "C3550_zve1_drive_speech_s101-150",
+        "DSC09635_photos_photo"
+      ]
+    },
+    {
+      "id": "event-pharos-0f29f3714bd5",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "川岩村／川岩洞",
+      "summary": "在川岩村和川岩洞进行地面拍摄与航拍 / 第一人称行车 / 山路 / 阴天 / 有口播语音 / 拒绝通行 / 天然石拱门 / 黄色车辆 / A yellow vehicle drives on a road towards a large natural rock archway surrounded by green hills. / 不行。 / 无口播语音 / 接近石拱门 / 绿色山丘 / 石拱门内 / 穿过拱门 / 停放车辆 / ...",
+      "startAt": "2026-08-23T04:49:20.000Z",
+      "endAt": "2026-08-23T06:21:30.235Z",
+      "location": "川岩村／川岩洞",
+      "spanIds": [
+        "C3551_zve1_drive_speech_s0-3",
+        "C3551_zve1_drive_visual_s0-3",
+        "C3552_zve1_drive_visual_s19-49",
+        "DJI_20260823125226_0824_D_drone_drive_s0-35",
+        "C3553_zve1_drive_speech_s0-43",
+        "C3553_zve1_drive_visual_s61-105",
+        "C3553_zve1_drive_visual_s68-72",
+        "C3553_zve1_drive_speech_s95-161",
+        "C3553_zve1_drive_visual_s161-205",
+        "C3553_zve1_drive_speech_s180-234",
+        "DJI_20260823125603_0840_D_drone_drive_s0-3",
+        "DJI_20260823125732_0841_D_drone_drive_s0-53",
+        "DJI_20260823125924_0842_D_drone_drive_s0-41",
+        "DJI_20260823130315_0849_D_drone_drive_s0-64",
+        "C3554_zve1_drive_speech_s27-45",
+        "C3554_zve1_drive_visual_s59-102",
+        "C3554_zve1_drive_speech_s77-82",
+        "C3554_zve1_drive_visual_s155-198",
+        "C3554_zve1_drive_speech_s168-205",
+        "DJI_20260823131028_0868_D_drone_drive_s0-78",
+        "C3555_zve1_broll_speech_s0-8",
+        "C3556_zve1_broll_s0-1",
+        "C3556_zve1_broll_speech_s0-8",
+        "C3557_zve1_broll_speech_s2-28",
+        "C3558_zve1_broll_speech_s0-31",
+        "C3559_zve1_broll_s0-72",
+        "C3560_zve1_broll_speech_s0-7",
+        "C3561_zve1_broll_speech_s0-6",
+        "C3562_zve1_broll_s0-1",
+        "C3562_zve1_broll_speech_s0-6",
+        "DJI_20260823141939_0869_D_drone_drive_s0-105",
+        "DJI_20260823125144_0818_D-HDR_photos_photo",
+        "DJI_20260823125312_0825_D-HDR_photos_photo",
+        "DJI_20260823125532_0837_D-HDR_photos_photo",
+        "DJI_20260823130241_0846_D-HDR_photos_photo",
+        "DJI_20260823130456_0850_D-HDR_photos_photo",
+        "DJI_20260823130842_0865_D-HDR_photos_photo",
+        "DSC09641_photos_photo",
+        "DSC01657_photos_photo",
+        "DSC06149_photos_photo",
+        "DSC06157_photos_photo",
+        "DSC06158_photos_photo",
+        "DSC06162_photos_photo",
+        "DSC01683_photos_photo",
+        "DSC01701_photos_photo",
+        "DSC01702_photos_photo",
+        "DSC01710_photos_photo",
+        "DSC01716_photos_photo",
+        "DSC06166_photos_photo"
+      ]
+    },
+    {
+      "id": "route-9f477046ad12",
+      "kind": "route",
+      "reviewStatus": "confirmed",
+      "title": "行车：广西壮族自治区，贺州市，平桂区，望高镇",
+      "summary": "第一人称行车 / 湿滑山路 / 下雨 / 有口播语音 / 牛群过路 / 黑牛 / 山路 / A wet road winds through a lush green mountainous area, with a cow standing on the path and a yellow vehicle hood visible in the foreground. / 离开川岩洞，前往可达蓝湖。 我靠，你怎么也落单了？ 怎么还叫...",
+      "startAt": "2026-08-23T06:23:27.700Z",
+      "endAt": "2026-08-23T06:24:16.780Z",
+      "location": "广西壮族自治区，贺州市，平桂区，望高镇",
+      "route": {
+        "from": "广西壮族自治区，贺州市，平桂区，望高镇",
+        "to": "广西壮族自治区，贺州市，平桂区，望高镇"
+      },
+      "spanIds": [
+        "C3563_zve1_drive_speech_s2-52",
+        "C3563_zve1_drive_visual_s17-45"
+      ]
+    },
+    {
+      "id": "event-pharos-8b8c97563a33",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "可达蓝湖／可达梯田",
+      "summary": "在可达蓝湖和可达梯田一带进行地面与航拍 / 第一人称行车 / 蜿蜒山路 / 下雨 / 有口播语音 / 车辆停放 / 白色车辆 / 绿色山坡 / A wet, winding road curves through a green, hilly landscape with several white cars parked on the side. / 这车停这干嘛？ 这徒步路线吗？ 难道是？ 哎，搞不懂， 你们要弄啥呢？ 这是在。 ...",
+      "startAt": "2026-08-23T06:28:29.660Z",
+      "endAt": "2026-08-23T07:45:44.000Z",
+      "location": "可达蓝湖／可达梯田",
+      "spanIds": [
+        "C3564_zve1_drive_speech_s1-15",
+        "C3564_zve1_drive_visual_s3-17",
+        "C3565_zve1_drive_speech_s0-16",
+        "C3565_zve1_drive_visual_s20-81",
+        "C3565_zve1_drive_speech_s20-26",
+        "C3565_zve1_drive_speech_s50-88",
+        "C3566_zve1_drive_speech_s0-73",
+        "C3566_zve1_drive_visual_s15-57",
+        "C3567_zve1_drive_speech_s0-90",
+        "C3567_zve1_drive_visual_s20-69",
+        "C3568_zve1_drive_speech_s0-18",
+        "C3568_zve1_drive_speech_s46-215",
+        "C3568_zve1_drive_visual_s57-100",
+        "C3568_zve1_drive_visual_s151-194",
+        "C3569_zve1_drive_speech_s0-11",
+        "C3570_zve1_drive_speech_s0-15",
+        "DJI_20260823144950_0870_D_drone_aerial_s0-19",
+        "C3570_zve1_drive_speech_s24-54",
+        "DJI_20260823145041_0878_D_drone_aerial_s0-12",
+        "C3570_zve1_drive_visual_s76-79",
+        "C3570_zve1_drive_visual_s95-98",
+        "DJI_20260823145133_0888_D_drone_aerial_s0-13",
+        "DJI_20260823145201_0892_D_drone_aerial_s0-26",
+        "C3570_zve1_drive_speech_s166-175",
+        "DJI_20260823145248_0896_D_drone_aerial_s0-21",
+        "C3570_zve1_drive_visual_s204-208",
+        "C3570_zve1_drive_speech_s217-319",
+        "DJI_20260823145445_0903_D_drone_drive_s0-4",
+        "C3570_zve1_drive_speech_s338-384",
+        "DJI_20260823145539_0904_D_drone_drive_s0-80",
+        "C3570_zve1_drive_speech_s393-601",
+        "DJI_20260823145831_0908_D_drone_drive_s0-17",
+        "DJI_20260823145857_0909_D_drone_drive_s0-2",
+        "DJI_20260823145937_0916_D_drone_drive_visual_s17-72",
+        "C3570_zve1_drive_speech_s620-629",
+        "C3570_zve1_drive_visual_s628-631",
+        "C3571_zve1_broll_speech_s0-8",
+        "DJI_20260823150114_0917_D_drone_drive_s0-16",
+        "DJI_20260823150202_0921_D_drone_drive_visual_s31-116",
+        "C3572_zve1_broll_s0-1",
+        "C3572_zve1_broll_speech_s0-21",
+        "DJI_20260823151146_0952_D_drone_aerial_s0-40",
+        "DJI_20260823151229_0953_D_drone_aerial_s0-22",
+        "DJI_20260823151305_0954_D_drone_aerial_s0-8",
+        "DJI_20260823151507_0970_D_drone_aerial_s0-9",
+        "DJI_20260823151600_0980_D_drone_broll_s0-51",
+        "C3573_zve1_broll_speech_s0-10",
+        "C3574_zve1_broll_speech_s0-13",
+        "C3575_zve1_broll_speech_s0-37",
+        "C3576_zve1_talking-head_speech_s0-38",
+        "DSC01719_photos_photo",
+        "DJI_20260823145025_0872_D-HDR_photos_photo",
+        "DJI_20260823145035_0875_D-HDR_photos_photo",
+        "DJI_20260823145117_0882_D-HDR_photos_photo",
+        "DJI_20260823145152_0889_D-HDR_photos_photo",
+        "DJI_20260823145230_0893_D-HDR_photos_photo",
+        "DJI_20260823145332_0900_D-HDR_photos_photo",
+        "DJI_20260823145917_0913_D-HDR_photos_photo",
+        "DJI_20260823150145_0918_D-HDR_photos_photo",
+        "DJI_20260823150451_0925_D-HDR_photos_photo",
+        "DJI_20260823150609_0934_D-HDR_photos_photo",
+        "DSC01722_photos_photo",
+        "DSC01742_photos_photo",
+        "DSC01746_photos_photo",
+        "DSC01748_photos_photo",
+        "DSC09648_photos_photo",
+        "DSC09651_photos_photo"
+      ]
+    },
+    {
+      "id": "route-3d7e208c5e4c",
+      "kind": "route",
+      "reviewStatus": "confirmed",
+      "title": "行车：广西壮族自治区，贺州市，富川瑶族自治县，白沙镇 → 广西壮族自治区，贺州市，富川瑶族自治县，白沙镇 · 木塘",
+      "summary": "第一人称行车 / 蜿蜒山路 / 阴天 / 无口播语音 / 海边消失的隐喻 / 黄色车辆 / 远山 / A yellow vehicle travels along a winding asphalt road through a lush green landscape with distant mountains under a cloudy sky. / 黄色车辆行驶 / 植被 / 森林公路 / 湖泊远景 / 水库 / A yel...",
+      "startAt": "2026-08-23T07:56:30.000Z",
+      "endAt": "2026-08-23T08:18:12.016Z",
+      "route": {
+        "from": "广西壮族自治区，贺州市，富川瑶族自治县，白沙镇",
+        "to": "广西壮族自治区，贺州市，富川瑶族自治县，白沙镇 · 木塘"
+      },
+      "spanIds": [
+        "C3577_zve1_drive_visual_s0-28",
+        "C3577_zve1_drive_visual_s13-37",
+        "C3578_zve1_drive_visual_s0-3",
+        "C3578_zve1_drive_speech_s2-29",
+        "C3579_zve1_drive_visual_s14-29",
+        "C3579_zve1_drive_speech_s15-20",
+        "C3580_zve1_drive_speech_s0-62",
+        "C3580_zve1_drive_visual_s12-58",
+        "C3581_zve1_drive_visual_s0-1",
+        "C3581_zve1_drive_visual_s1-7",
+        "C3582_zve1_drive_visual_s0-5",
+        "C3582_zve1_drive_visual_s3-10"
+      ]
+    },
+    {
+      "id": "event-pharos-1da050587bbc",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "望高镇",
+      "summary": "返程途中在望高镇停车寻找餐馆，品尝老友粉和酸辣鱼粉，饭后继续观察雨中街道与沿街台球店。",
+      "startAt": "2026-08-23T08:35:25.000Z",
+      "endAt": "2026-08-23T09:24:13.507Z",
+      "location": "望高镇",
+      "spanIds": [
+        "C3583_zve1_broll_s0-1",
+        "C3583_zve1_broll_speech_s0-9",
+        "C3584_zve1_broll_s0-1",
+        "C3584_zve1_broll_speech_s0-13",
+        "C3585_zve1_broll_visual_s0-4",
+        "C3586_zve1_broll_speech_s0-7",
+        "C3587_zve1_broll_speech_s0-9",
+        "C3588_zve1_talking-head_speech_s0-14",
+        "C3589_zve1_broll_s0-1",
+        "C3589_zve1_broll_speech_s0-5",
+        "C3590_zve1_broll_s0-1",
+        "C3590_zve1_broll_speech_s0-7"
+      ]
+    },
+    {
+      "id": "route-3d1c5cf7d720",
+      "kind": "route",
+      "reviewStatus": "confirmed",
+      "title": "行车：广西壮族自治区，贺州市，平桂区，望高镇 · 贺州市益聚新材料有限公司 → 广东省，清远市，连山壮族瑶族自治县，福堂镇",
+      "summary": "第一人称行车 / 工业厂区道路 / 阴天 / 有口播语音 / 粉体厂粉尘弥漫 / 道路坑洼 / 工业建筑 / A vehicle travels on a multi-lane road with industrial buildings on the left and a vegetated hillside on the right. / 还挺大， 这一种就是全是粉尘。 嗯，这里有一个粉体厂，所以空气中到处都是那个粉， 感觉这边人...",
+      "startAt": "2026-08-23T09:38:05.000Z",
+      "endAt": "2026-08-23T10:30:19.035Z",
+      "route": {
+        "from": "广西壮族自治区，贺州市，平桂区，望高镇 · 贺州市益聚新材料有限公司",
+        "to": "广东省，清远市，连山壮族瑶族自治县，福堂镇"
+      },
+      "spanIds": [
+        "C3591_zve1_drive_speech_s0-16",
+        "C3591_zve1_drive_visual_s3-16",
+        "C3592_zve1_drive_speech_s0-21",
+        "C3592_zve1_drive_visual_s7-19",
+        "C3593_zve1_drive_speech_s1-19",
+        "C3593_zve1_drive_visual_s4-18",
+        "C3594_zve1_drive_speech_s0-17",
+        "C3595_zve1_drive_speech_s2-20",
+        "C3595_zve1_drive_visual_s9-28",
+        "C3595_zve1_drive_speech_s23-29",
+        "C3596_zve1_drive_speech_s0-15",
+        "C3596_zve1_drive_visual_s6-23",
+        "C3596_zve1_drive_speech_s17-25",
+        "C3597_zve1_drive_speech_s2-15",
+        "C3597_zve1_drive_visual_s14-63",
+        "C3597_zve1_drive_visual_s19-22",
+        "C3597_zve1_drive_speech_s23-67",
+        "C3598_zve1_drive_speech_s1-17",
+        "C3598_zve1_drive_visual_s3-16",
+        "C3599_zve1_drive_speech_s1-7",
+        "C3599_zve1_drive_visual_s1-8",
+        "C3600_zve1_drive_speech_s0-20",
+        "C3600_zve1_drive_visual_s6-22",
+        "C3601_zve1_drive_visual_s5-16",
+        "C3601_zve1_drive_speech_s5-8",
+        "C3601_zve1_drive_speech_s17-22"
+      ]
+    },
+    {
+      "id": "event-2bf42066368e",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "司机路边休息",
+      "summary": "车窗外观察 / 服务区停车场 / 夜晚 / 无口播语音 / 司机路边休息 / 白色卡车 / 蓝色停车位 / A white truck is parked in a blue marked parking space at night, next to a person sitting on the ground and a white minivan. / 高速服务区 / 有口播语音 / 服务区停车争议 / 卡车铺床 / 行人标志 ...",
+      "startAt": "2026-08-23T13:21:31.020Z",
+      "endAt": "2026-08-23T13:21:47.536Z",
+      "location": "广东省，佛山市，三水区，云东海街道 · 创享建筑工程有限公司",
+      "spanIds": [
+        "C3602_zve1_broll_visual_s1-3",
+        "C3602_zve1_broll_speech_s4-18"
+      ]
+    },
+    {
+      "id": "route-0395401eb944",
+      "kind": "route",
+      "reviewStatus": "confirmed",
+      "title": "行车：广东省，广州市，白云区，均禾街道 · 广州广外外籍人员子女学校 → 广东省，广州市，黄埔区，云埔街道 · 广汽本田汽车有限公司",
+      "summary": "第一人称行车 / 机场高速 / 夜晚 / 有口播语音 / 首次自驾去机场 / 广州白云机场 / 高架桥 / A night-time driving sequence shows a vehicle approaching a toll plaza, then following a truck on a highway with overhead signs for Baiyun Airport and Shenzhen. / 哇，...",
+      "startAt": "2026-08-23T13:56:37.000Z",
+      "endAt": "2026-08-23T14:37:17.060Z",
+      "route": {
+        "from": "广东省，广州市，白云区，均禾街道 · 广州广外外籍人员子女学校",
+        "to": "广东省，广州市，黄埔区，云埔街道 · 广汽本田汽车有限公司"
+      },
+      "spanIds": [
+        "C3603_zve1_drive_speech_s0-36",
+        "C3603_zve1_drive_visual_s18-76",
+        "C3603_zve1_drive_speech_s41-48",
+        "C3603_zve1_drive_speech_s57-83",
+        "C3604_zve1_drive_speech_s1-14",
+        "C3604_zve1_drive_visual_s26-85",
+        "C3604_zve1_drive_visual_s31-38",
+        "C3604_zve1_drive_speech_s39-44",
+        "C3604_zve1_drive_speech_s47-111",
+        "C3605_zve1_drive_visual_s0-30",
+        "C3605_zve1_drive_visual_s20-81",
+        "C3605_zve1_drive_visual_s43-51",
+        "C3605_zve1_drive_visual_s56-63",
+        "C3605_zve1_drive_visual_s69-73",
+        "C3605_zve1_drive_speech_s74-84"
+      ]
+    },
+    {
+      "id": "event-pharos-26f1da25e883",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "广州黄埔时代城附近",
+      "summary": "在广州黄埔时代城附近下高速吃夜宵 / 车窗外观察 / 黄埔夜市街道 / 夜晚 / 有口播语音 / 夜市探店 / 店铺林立 / 热闹氛围 / The video shows a night view of a commercial street with several brightly lit storefronts, including a pizza shop and a noodle restaurant. / 车在充电，闯入了...",
+      "startAt": "2026-08-23T15:02:25.000Z",
+      "endAt": "2026-08-23T15:20:27.520Z",
+      "location": "广州黄埔时代城附近",
+      "spanIds": [
+        "C3606_zve1_broll_speech_s0-14",
+        "C3607_zve1_broll_speech_s0-9",
+        "C3608_zve1_broll_speech_s0-4"
+      ]
+    },
+    {
+      "id": "event-7dd2f58c9332",
+      "kind": "event",
+      "reviewStatus": "confirmed",
+      "title": "感叹街道繁华",
+      "summary": "固定机位观察 / 夜间街道 / 夜晚 / 有口播语音 / 感叹街道繁华 / 行人休息 / 树木灯光 / Nighttime street scene with illuminated trees, parked cars, and people sitting on steps. / 嗯，也好繁华呀！ 四季青花店，沙县小吃。 / 细节特写 / 泥泞越野场地 / 阴天 / 无口播语音 / 越野穿越 / 泥地驾驶 / 梯田背景 / A y...",
+      "startAt": "2026-08-23T15:36:32.340Z",
+      "endAt": "2026-08-25T06:52:11.000Z",
+      "location": "广东省，广州市，黄埔区，云埔街道 · 广汽本田汽车有限公司",
+      "spanIds": [
+        "C3609_zve1_broll_speech_s1-15",
+        "kedatitian_1.1.3_photos_photo",
+        "kedatitian_1.2.2_photos_photo",
+        "kedatitian_1.3.1_photos_photo",
+        "cover-1-b_timelaps_photo",
+        "cover-1-wx_timelaps_photo"
+      ]
+    }
+  ]
+}
